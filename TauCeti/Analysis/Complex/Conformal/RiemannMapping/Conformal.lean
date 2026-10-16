@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.Conformal.Biholomorph
 public import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Existence
 

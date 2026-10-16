@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.DiaconisFreedman
-public import TauCeti.Probability.Exchangeability.Recurrence.LastExit
+public import TauCeti.Probability.Recurrent.SuccessorArray
 -- Non-public: finite-dimensional determinacy of a law is used only inside the proofs below.
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 -- Non-public: the convergence of masses of eventually coinciding events is used only in a proof.

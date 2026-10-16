@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Product
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Basic
 
 /-!
 # Subdivisions of finite toric fans

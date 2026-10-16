@@ -44,6 +44,9 @@ the Laplacian.
 * `ContinuousOn.integral_toSphere_smul`: the sphere integrals `r ↦ ∫ u ∈ S, f (r • u)` depend
   continuously on the radius `r ∈ [0, R]` when `f` is continuous on the closed ball of radius
   `R`.
+* `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
+  `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
+  polar coordinates, and the corresponding formula for the measure of the ball.
 -/
 
 public section
@@ -139,6 +142,44 @@ theorem _root_.ContinuousOn.integral_toSphere_smul {f : E → F} {R : ℝ}
       (hmem r hr)).aestronglyMeasurable
   · exact ae_of_all _ fun u ↦ hC _ (hmem r hr u)
   · exact hf.comp (continuous_id.smul continuous_const).continuousOn fun r hr ↦ hmem r hr u
+
+/-- **Integration over a ball in polar coordinates.** For `f` integrable on the ball
+`ball 0 R`, the integral of `f` over `ball 0 R` is the integral over the radii `s ∈ (0, R)` of
+the sphere integrals, against the radial Jacobian `s ^ (d - 1)`. -/
+theorem setIntegral_ball_zero_eq_integral_Ioo {f : E → F} {R : ℝ}
+    (hf : IntegrableOn f (ball (0 : E) R) μ) :
+    ∫ x in ball (0 : E) R, f x ∂μ = ∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1) •
+      ∫ θ : sphere (0 : E) 1, f (s • (θ : E)) ∂μ.toSphere := by
+  have hint : Integrable ((ball (0 : E) R).indicator f) μ :=
+    hf.integrable_indicator measurableSet_ball
+  rw [← integral_indicator measurableSet_ball, integral_eq_integral_Ioi_integral_toSphere _ hint]
+  -- The sphere integrals of the truncation: those of `f` below the radius `R`, zero above.
+  have hinner : ∀ s ∈ Ioi (0 : ℝ), s ^ (Module.finrank ℝ E - 1) •
+      ∫ θ : sphere (0 : E) 1, (ball (0 : E) R).indicator f (s • (θ : E)) ∂μ.toSphere =
+        (Iio R).indicator (fun s ↦ s ^ (Module.finrank ℝ E - 1) •
+          ∫ θ : sphere (0 : E) 1, f (s • (θ : E)) ∂μ.toSphere) s := by
+    intro s hs
+    have hs : 0 < s := hs
+    have hmem : ∀ θ : sphere (0 : E) 1, s • (θ : E) ∈ ball (0 : E) R ↔ s < R := fun θ ↦ by
+      rw [mem_ball_zero_iff, norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hs.le]
+    by_cases hsR : s < R
+    · rw [indicator_of_mem (mem_Iio.mpr hsR)]
+      simp_rw [indicator_of_mem ((hmem _).mpr hsR)]
+    · rw [indicator_of_notMem (by simpa using hsR)]
+      simp_rw [indicator_of_notMem ((not_congr (hmem _)).mpr hsR)]
+      simp
+  rw [setIntegral_congr_fun measurableSet_Ioi hinner, setIntegral_indicator measurableSet_Iio,
+    Ioi_inter_Iio]
+
+/-- The radial Jacobian integrates against the total surface measure to the measure of the ball:
+`(∫ s in (0, R), s ^ (d - 1)) * μ.toSphere(S) = μ (ball 0 R)`. -/
+theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
+    (∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1)) * μ.toSphere.real univ =
+      μ.real (ball (0 : E) R) := by
+  have h := setIntegral_ball_zero_eq_integral_Ioo (μ := μ) (f := fun _ : E ↦ (1 : ℝ)) (R := R)
+    (integrableOn_const measure_ball_lt_top.ne)
+  simp only [integral_const, smul_eq_mul, mul_one, measureReal_restrict_apply_univ] at h
+  rw [h, ← integral_mul_const]
 
 /-- **Radial fundamental theorem of calculus.** For a `C¹` function `f` with compact support on a
 nontrivial finite-dimensional real normed space of dimension `d`,

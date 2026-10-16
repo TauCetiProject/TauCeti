@@ -12,14 +12,17 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 # Regular local rings of schemes
 
 On an affine open with Noetherian ring of sections, regularity of that ring is equivalent to
-regularity of the local rings at every point of the open. In particular, the local rings of the
-spectrum of a regular ring are regular.
+regularity of the local rings at every point of the open. In particular, a Noetherian ring is
+regular exactly when the local rings of its spectrum are regular. Open immersions identify local
+rings, so they preserve and reflect their regularity.
 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_of_isRegularRing`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
+* `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
+* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
 -/
 
 public section
@@ -65,6 +68,25 @@ instance isRegularLocalRing_stalk_Spec (R : CommRingCat.{u}) [IsRegularRing R] (
   have : IsRegularRing Γ(Spec R, ⊤) :=
     .of_ringEquiv (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.symm
   isRegularLocalRing_stalk_of_isRegularRing (isAffineOpen_top _) (Set.mem_univ x)
+
+/-- A Noetherian ring is regular exactly when the local rings of its spectrum are regular. -/
+theorem isRegularRing_iff_isRegularLocalRing_stalk_Spec (R : CommRingCat.{u})
+    [IsNoetherianRing R] :
+    IsRegularRing R ↔ ∀ x : Spec R, IsRegularLocalRing ((Spec R).presheaf.stalk x) := by
+  refine ⟨fun _ _ ↦ inferInstance, fun h ↦ ?_⟩
+  let e := (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv
+  have : IsNoetherianRing Γ(Spec R, ⊤) := isNoetherianRing_of_ringEquiv R e.symm
+  have := (isRegularRing_iff_isRegularLocalRing_stalk (isAffineOpen_top (Spec R))).mpr
+    fun x _ ↦ h x
+  exact .of_ringEquiv e
+
+/-- An open immersion `f : X ⟶ Y` identifies the local ring of `X` at `x` with the local ring of
+`Y` at `f x`, so one is regular exactly when the other is. -/
+theorem isRegularLocalRing_stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsOpenImmersion f] (x : X) :
+    IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) :=
+  let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
+  ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
 
 end AlgebraicGeometry
 

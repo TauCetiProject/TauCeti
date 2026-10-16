@@ -8,14 +8,18 @@ module
 public import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
+import Mathlib.Analysis.Convex.Combination
 
 /-!
-# The unit sphere is simply connected above rank two
+# Spheres are simply connected above rank two
 
-The unit sphere of a real normed space `E` with `2 < Module.rank ℝ E` is simply connected;
-in particular `Sⁿ` is simply connected for `2 ≤ n`.
+Every sphere of nonnegative radius in a real normed space `E` with `2 < Module.rank ℝ E` is
+simply connected; in particular `Sⁿ` is simply connected for `2 ≤ n`.
+Spheres of positive radius are obtained from the unit sphere by dilation and translation;
+a sphere of radius zero is a singleton.
 
 The proof is the classical one, in the form that avoids any smoothing or simplicial
 approximation. A loop `γ` is compared with the radial projection of the piecewise-linear
@@ -33,32 +37,28 @@ contributing node is within distance one of `γ t`. The nonnegative hat function
 origin, and its radial projection is a homotopy of loops on the sphere. Also `Λ k t ≠ 0` forces
 `k` to be `⌊N t⌋` or `⌊N t⌋ + 1`, so `L t` lies in the span of two of the nodes.
 A finite family of proper subspaces of `E` cannot cover `E`
-(`Submodule.exists_forall_notMem_of_forall_ne_top`), and the spans of two vectors are proper
-exactly because the rank exceeds two, so the projected loop omits a point of the sphere. Loops
+(`Submodule.exists_forall_notMem_of_forall_ne_top`), and each two-vector span is proper
+because the rank exceeds two, so the projected loop omits a point of the sphere. Loops
 omitting a point are null-homotopic by `Path.homotopic_refl_of_notMem_range`.
 
 Rank two is genuinely the boundary: the circle is not simply connected.
 
 ## Main declarations
 
-* `TauCeti.exists_homotopic_notMem_range`: every loop on the unit sphere is homotopic to a
-  loop that omits a point of the sphere.
-* `TauCeti.simplyConnectedSpace_sphere`: **the unit sphere of a real normed space of rank
-  greater than two is simply connected.**
+* `Path.exists_homotopic_notMem_range`: every path on the unit sphere is homotopic to a
+  path with the same endpoints that omits a point of the sphere.
+* `TauCeti.simplyConnectedSpace_sphere`: spheres of nonnegative radius in real normed spaces
+  of rank greater than two are simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
+  `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
 
 ## References
 
-This is the missing input to the `π₁(RPⁿ)` line of `TauCetiRoadmap/UniversalCovers/README.md`,
-Stage 4, item 13: `TauCeti.RealProjectiveSpace.fundamentalGroupMulEquiv` and its corollaries were
-stated against a simply connected covering sphere, and this file discharges that hypothesis.
+Simple connectivity of the covering sphere gives the fundamental groups of real projective
+spaces and lens spaces through their covering maps.
 Hatcher, *Algebraic Topology*, Corollary 1.15 gives the classical theorem; the hat-function
 interpolation and finite-span avoidance argument used here is this repository's own arrangement.
-
-Concurrent work by Joël Riou in [mathlib4#28246](https://github.com/leanprover-community/mathlib4/pull/28246)
-formalizes the same theorem upstream by a different route. This implementation is independent; if
-that pull request lands, a future Mathlib bump should replace this file's theorem with the upstream
-API. No Mathlib code is vendored.
 -/
 
 public section
@@ -70,7 +70,9 @@ open scoped unitInterval
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+section Interpolation
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The `k`-th hat-function formula for a subdivision into `N` equal parts. -/
 private def hatFunction (N k : ℕ) (t : I) : ℝ := max 0 (1 - |(N : ℝ) * (t : ℝ) - (k : ℝ)|)
@@ -81,7 +83,8 @@ private def nodeParam (N k : ℕ) : I :=
 
 /-- The piecewise linear interpolation of the nodes `node 0, …, node N` through the hat
 functions of the subdivision of the unit interval into `N` equal parts. -/
-private def nodeInterp (N : ℕ) (node : ℕ → E) (t : I) : E :=
+private def nodeInterp {E : Type*} [AddCommMonoid E] [Module ℝ E]
+    (N : ℕ) (node : ℕ → E) (t : I) : E :=
   ∑ k ∈ Finset.range (N + 1), hatFunction N k t • node k
 
 private theorem hatFunction_nonneg (N k : ℕ) (t : I) : 0 ≤ hatFunction N k t := le_max_left _ _
@@ -137,14 +140,6 @@ private theorem eq_floor_or_of_hatFunction_ne_zero {N k : ℕ} {t : I}
   have hk1' : k < ⌊(N : ℝ) * (t : ℝ)⌋₊ + 2 := by exact_mod_cast hk1
   have hk2' : ⌊(N : ℝ) * (t : ℝ)⌋₊ < k + 1 := by exact_mod_cast hk2
   omega
-
-/-- At `t` the hat function of the node `⌊N t⌋` is positive. -/
-private theorem hatFunction_floor_pos {N : ℕ} (t : I) :
-    0 < hatFunction N ⌊(N : ℝ) * (t : ℝ)⌋₊ t := by
-  obtain ⟨h1, h2⟩ := floor_bounds N t
-  have habs : |(N : ℝ) * (t : ℝ) - ((⌊(N : ℝ) * (t : ℝ)⌋₊ : ℕ) : ℝ)| < 1 := by
-    rw [abs_lt]; constructor <;> linarith
-  exact lt_max_of_lt_right (by linarith)
 
 /-- The hat weights form a partition of unity on the unit interval. -/
 private theorem sum_hatFunction_eq_one (N : ℕ) (t : I) :
@@ -233,13 +228,15 @@ private theorem continuous_nodeInterp (N : ℕ) (node : ℕ → E) :
     Continuous (nodeInterp N node) :=
   continuous_finsetSum _ fun k _ => (continuous_hatFunction N k).smul continuous_const
 
-private theorem nodeInterp_zero (N : ℕ) (node : ℕ → E) : nodeInterp N node 0 = node 0 := by
+private theorem nodeInterp_zero {E : Type*} [AddCommMonoid E] [Module ℝ E]
+    (N : ℕ) (node : ℕ → E) : nodeInterp N node 0 = node 0 := by
   rw [nodeInterp, Finset.sum_eq_single 0]
   · rw [hatFunction_zero_self, one_smul]
   · exact fun k _ hk => by rw [hatFunction_zero_of_ne N hk, zero_smul]
   · exact fun hc => absurd (Finset.mem_range.mpr (Nat.succ_pos N)) hc
 
-private theorem nodeInterp_one (N : ℕ) (node : ℕ → E) : nodeInterp N node 1 = node N := by
+private theorem nodeInterp_one {E : Type*} [AddCommMonoid E] [Module ℝ E]
+    (N : ℕ) (node : ℕ → E) : nodeInterp N node 1 = node N := by
   rw [nodeInterp, Finset.sum_eq_single N]
   · rw [hatFunction_one_self, one_smul]
   · exact fun k hk hkN => by
@@ -247,7 +244,8 @@ private theorem nodeInterp_one (N : ℕ) (node : ℕ → E) : nodeInterp N node 
   · exact fun hc => absurd (Finset.mem_range.mpr (Nat.lt_succ_self N)) hc
 
 /-- The interpolation at `t` lies in the span of the two nodes straddling `t`. -/
-private theorem nodeInterp_mem_span (N : ℕ) (node : ℕ → E) (t : I) :
+private theorem nodeInterp_mem_span {E : Type*} [AddCommMonoid E] [Module ℝ E]
+    (N : ℕ) (node : ℕ → E) (t : I) :
     nodeInterp N node t ∈
       Submodule.span ℝ {node ⌊(N : ℝ) * (t : ℝ)⌋₊, node (⌊(N : ℝ) * (t : ℝ)⌋₊ + 1)} := by
   rw [nodeInterp]
@@ -263,91 +261,37 @@ hat-function interpolation. -/
 private theorem norm_nodeInterp_sub_lt_one {N : ℕ} {node : ℕ → E} {a : E} (t : I)
     (h : ∀ k, hatFunction N k t ≠ 0 → ‖a - node k‖ < 1) :
     ‖nodeInterp N node t - a‖ < 1 := by
-  have hsum := sum_hatFunction_eq_one N t
-  have hrearrange : nodeInterp N node t - a =
-      ∑ k ∈ Finset.range (N + 1), hatFunction N k t • (node k - a) := by
-    rw [nodeInterp]
-    calc
-      ∑ k ∈ Finset.range (N + 1), hatFunction N k t • node k - a =
-          ∑ k ∈ Finset.range (N + 1), hatFunction N k t • node k -
-            (∑ k ∈ Finset.range (N + 1), hatFunction N k t) • a := by rw [hsum, one_smul]
-      _ = ∑ k ∈ Finset.range (N + 1),
-          (hatFunction N k t • node k - hatFunction N k t • a) := by
-            rw [Finset.sum_sub_distrib, ← Finset.sum_smul]
-      _ = ∑ k ∈ Finset.range (N + 1), hatFunction N k t • (node k - a) := by
-            apply Finset.sum_congr rfl
-            intro k _
-            rw [smul_sub]
-  rw [hrearrange]
-  calc
-    ‖∑ k ∈ Finset.range (N + 1), hatFunction N k t • (node k - a)‖ ≤
-        ∑ k ∈ Finset.range (N + 1), ‖hatFunction N k t • (node k - a)‖ :=
-      norm_sum_le _ _
-    _ = ∑ k ∈ Finset.range (N + 1), hatFunction N k t * ‖node k - a‖ := by
-      apply Finset.sum_congr rfl
-      intro k _
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (hatFunction_nonneg N k t)]
-    _ < ∑ k ∈ Finset.range (N + 1), hatFunction N k t * 1 := by
-      apply Finset.sum_lt_sum
-      · intro k _
-        by_cases hk : hatFunction N k t = 0
-        · simp [hk]
-        · exact mul_le_mul_of_nonneg_left (by simpa [norm_sub_rev] using (h k hk).le)
-            (hatFunction_nonneg N k t)
-      · let m := ⌊(N : ℝ) * (t : ℝ)⌋₊
-        have hm : m ∈ Finset.range (N + 1) := by
-          rw [Finset.mem_range]
-          have hrle : (N : ℝ) * (t : ℝ) ≤ N :=
-            mul_le_of_le_one_right (Nat.cast_nonneg N) (unitInterval.le_one t)
-          have hmle : m ≤ N := by
-            have h0 : (0 : ℝ) ≤ (N : ℝ) * (t : ℝ) :=
-              mul_nonneg (Nat.cast_nonneg N) (unitInterval.nonneg t)
-            have : (m : ℝ) ≤ N := (Nat.floor_le h0).trans hrle
-            exact_mod_cast this
-          omega
-        refine ⟨m, hm, mul_lt_mul_of_pos_left ?_ (hatFunction_floor_pos t)⟩
-        simpa [norm_sub_rev] using h m (ne_of_gt (hatFunction_floor_pos t))
-    _ = 1 := by simpa using hsum
+  classical
+  let nodes := (Finset.range (N + 1)).filter fun k => hatFunction N k t ≠ 0
+  have hsum : ∑ k ∈ nodes, hatFunction N k t = 1 := by
+    simpa only [nodes, Finset.sum_filter_ne_zero] using sum_hatFunction_eq_one N t
+  have hinterp : nodeInterp N node t = ∑ k ∈ nodes, hatFunction N k t • node k := by
+    dsimp [nodeInterp, nodes]
+    symm
+    apply Finset.sum_filter_of_ne
+    intro k _ hk hzero
+    exact hk (by simp [hzero])
+  have hmem : (∑ k ∈ nodes, hatFunction N k t • node k) ∈ ball a 1 := by
+    refine (convex_ball a 1).sum_mem (fun k _ => hatFunction_nonneg N k t) hsum ?_
+    intro k hk
+    simpa [mem_ball, dist_eq_norm, norm_sub_rev] using h k (Finset.mem_filter.mp hk).2
+  simpa [← hinterp, mem_ball, dist_eq_norm] using hmem
 
-/-- A segment from a unit vector to a point less than one away never meets the origin. -/
-private theorem segment_ne_zero_of_norm_sub_lt {a b : E} (ha : ‖a‖ = 1)
-    (hab : ‖b - a‖ < 1) (u : I) : (1 - (u : ℝ)) • a + (u : ℝ) • b ≠ 0 := by
-  intro hz
-  have hform : (1 - (u : ℝ)) • a + (u : ℝ) • b = a + (u : ℝ) • (b - a) := by
-    rw [sub_smul, one_smul, smul_sub]
-    abel
-  rw [hform] at hz
-  have heq : a = -((u : ℝ) • (b - a)) := eq_neg_of_add_eq_zero_left hz
-  have hnorm := congrArg norm heq
-  rw [ha, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_nonneg (unitInterval.nonneg u)] at hnorm
-  have hle : (u : ℝ) * ‖b - a‖ ≤ ‖b - a‖ := by
-    exact mul_le_of_le_one_left (norm_nonneg _) (unitInterval.le_one u)
-  linarith
+end Interpolation
 
-private theorem span_pair_ne_top (h : 2 < Module.rank ℝ E) (a b : E) :
-    Submodule.span ℝ ({a, b} : Set E) ≠ ⊤ := by
-  intro hab
-  have hcard : Cardinal.mk ({a, b} : Set E) ≤ 2 :=
-    calc Cardinal.mk ({a, b} : Set E) ≤ Cardinal.mk ({b} : Set E) + 1 := Cardinal.mk_insert_le
-      _ = 2 := by rw [Cardinal.mk_singleton]; exact one_add_one_eq_two
-  have h2 : Module.rank ℝ ↥(Submodule.span ℝ ({a, b} : Set E)) ≤ 2 :=
-    (rank_span_le _).trans hcard
-  rw [hab, rank_top] at h2
-  exact absurd h2 (not_le.mpr h)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- **Every loop on the unit sphere of a real normed space of rank greater than two is
-homotopic to a loop that omits a point of the sphere.** The comparison loop is the radial
-projection of the piecewise linear interpolation of finitely many values of the loop, and the
-point it omits is obtained by avoiding the finitely many planes those values span. -/
-theorem exists_homotopic_notMem_range (h : 2 < Module.rank ℝ E)
-    {x : sphere (0 : E) 1}
-    (γ : Path x x) :
-    ∃ γ' : Path x x, γ.Homotopic γ' ∧ ∃ p : sphere (0 : E) 1, p ∉ Set.range γ' := by
+/-- Every path on the unit sphere of a real normed space of rank greater than two is
+homotopic, with fixed endpoints, to a path that omits a point of the sphere. -/
+theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
+    (γ : Path x y) (h : 2 < Module.rank ℝ E) :
+    ∃ γ' : Path x y, γ.Homotopic γ' ∧ ∃ p : sphere (0 : E) 1, p ∉ Set.range γ' := by
+  classical
   have hγnorm : ∀ t, ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := fun t =>
     mem_sphere_zero_iff_norm.mp (γ t).2
   have hγcont : Continuous fun t : I => ((γ t : sphere (0 : E) 1) : E) :=
     continuous_subtype_val.comp γ.continuous
-  -- Choose a subdivision so fine that the loop moves by less than `1` across each step.
+  -- Choose a subdivision so fine that the path moves by less than `1` across each step.
   obtain ⟨δ, hδ, hδ'⟩ := Metric.uniformContinuous_iff.mp
     (CompactSpace.uniformContinuous_of_continuous hγcont) 1 one_pos
   obtain ⟨N₀, hN₀⟩ := exists_nat_one_div_lt hδ
@@ -376,38 +320,51 @@ theorem exists_homotopic_notMem_range (h : 2 < Module.rank ℝ E)
     have hlt := hLclose t
     rw [ht, zero_sub, norm_neg, hγnorm t] at hlt
     exact lt_irrefl 1 hlt
-  -- The interpolation matches the loop at both ends of the interval.
+  -- The interpolation matches the path at both ends of the interval.
   have hnodeParam0 : nodeParam N 0 = (0 : I) := Subtype.ext (by simp [nodeParam])
   have hnodeParamN : nodeParam N N = (1 : I) :=
     Subtype.ext (by simp [nodeParam])
   have hL0 : nodeInterp N node 0 = ((x : sphere (0 : E) 1) : E) := by
     simp only [nodeInterp_zero, hnode, hnodeParam0, γ.source]
-  have hL1 : nodeInterp N node 1 = ((x : sphere (0 : E) 1) : E) := by
+  have hL1 : nodeInterp N node 1 = ((y : sphere (0 : E) 1) : E) := by
     simp only [nodeInterp_one, hnode, hnodeParamN, γ.target]
-  -- The comparison loop.
+  -- The comparison path.
   have hcontL : Continuous (nodeInterp N node) := continuous_nodeInterp N node
   let Lsphere := normalizeToSphere (nodeInterp N node) hcontL hLne
   have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.2
-  let γ' : Path x x :=
+  let γ' : Path x y :=
     { toFun := Lsphere
       continuous_toFun := Lsphere.continuous
       source' := Subtype.ext (by
         rw [coe_normalizeToSphere_apply, hL0, normalize_eq_self_of_norm_eq_one hx1])
       target' := Subtype.ext (by
-        rw [coe_normalizeToSphere_apply, hL1, normalize_eq_self_of_norm_eq_one hx1]) }
-  -- The straight-line homotopy between the loop and the comparison loop misses the origin.
+        rw [coe_normalizeToSphere_apply, hL1,
+          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.2)]) }
+  -- The straight-line homotopy between the path and the comparison path misses the origin.
   have hGne : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) + (z.1 : ℝ) • nodeInterp N node z.2
         ≠ 0 := by
-    rintro ⟨u, t⟩
-    exact segment_ne_zero_of_norm_sub_lt (hγnorm t) (hLclose t) u
+    intro z hz
+    have hmem := (convex_ball ((γ z.2 : sphere (0 : E) 1) : E) 1)
+      (by simp : ((γ z.2 : sphere (0 : E) 1) : E) ∈ ball (γ z.2 : E) 1)
+      (by simpa [mem_ball, dist_eq_norm] using hLclose z.2)
+      (sub_nonneg.mpr (unitInterval.le_one z.1)) (unitInterval.nonneg z.1)
+      (sub_add_cancel 1 (z.1 : ℝ))
+    simp [hz, mem_ball, hγnorm] at hmem
   have hsquare : γ.Homotopic γ' :=
     γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hcontL
       (fun t => coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t) hL0 hL1 hGne
-  -- The comparison loop lives in finitely many planes, which cannot cover `E`.
+  -- The comparison path lives in finitely many planes, which cannot cover `E`.
   have hVne : ∀ m : Fin (N + 1),
-      Submodule.span ℝ ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E) ≠ ⊤ := fun m =>
-    span_pair_ne_top h _ _
+      Submodule.span ℝ ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E) ≠ ⊤ := by
+    intro m htop
+    have hcard : Cardinal.mk ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E) ≤ 2 :=
+      calc
+        _ ≤ Cardinal.mk ({node ((m : ℕ) + 1)} : Set E) + 1 := Cardinal.mk_insert_le
+        _ = 2 := by simp [one_add_one_eq_two]
+    have hdim := (rank_span_le (R := ℝ) ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E)).trans hcard
+    rw [htop, rank_top] at hdim
+    exact h.not_ge hdim
   obtain ⟨w, hw⟩ := Submodule.exists_forall_notMem_of_forall_ne_top
     (fun m : Fin (N + 1) => Submodule.span ℝ ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E)) hVne
   have hw0 : w ≠ 0 := fun h0 => hw ⟨0, Nat.succ_pos N⟩ (h0 ▸ Submodule.zero_mem _)
@@ -427,26 +384,42 @@ theorem exists_homotopic_notMem_range (h : 2 < Module.rank ℝ E)
     exact Submodule.smul_mem _ _ (nodeInterp_mem_span N node t)
   exact hw ⟨⌊(N : ℝ) * (t : ℝ)⌋₊, Nat.lt_succ_of_le (hfloor_le t)⟩ hwmem
 
-/-- **The unit sphere of a real normed space of rank greater than two is simply
-connected.** Every loop is homotopic to one omitting a point, and the punctured sphere contracts
-to the antipode of the omitted point. -/
-theorem simplyConnectedSpace_sphere (h : 2 < Module.rank ℝ E) :
-    SimplyConnectedSpace (sphere (0 : E) 1) := by
-  have hpc : PathConnectedSpace (sphere (0 : E) 1) :=
-    isPathConnected_iff_pathConnectedSpace.mp
-      (isPathConnected_sphere (Cardinal.one_lt_two.trans h) 0 zero_le_one)
-  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨hpc, fun x γ => ?_⟩
-  obtain ⟨γ', hγγ', p, hp⟩ := exists_homotopic_notMem_range h γ
-  exact hγγ'.trans (γ'.homotopic_refl_of_notMem_range hp)
+/-- Every sphere of nonnegative radius in a real normed space of rank greater than two is
+simply connected. -/
+theorem simplyConnectedSpace_sphere (h : 2 < Module.rank ℝ E) (c : E) {r : ℝ}
+    (hr : 0 ≤ r) : SimplyConnectedSpace (sphere c r) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [sphere_zero]
+    infer_instance
+  have hsunit : SimplyConnectedSpace (sphere (0 : E) 1) := by
+    have hpc : PathConnectedSpace (sphere (0 : E) 1) :=
+      isPathConnected_iff_pathConnectedSpace.mp
+        (isPathConnected_sphere (Cardinal.one_lt_two.trans h) 0 zero_le_one)
+    refine simply_connected_iff_loops_nullhomotopic.mpr ⟨hpc, fun x γ => ?_⟩
+    obtain ⟨γ', hγγ', p, hp⟩ := γ.exists_homotopic_notMem_range h
+    exact hγγ'.trans (γ'.homotopic_refl_of_notMem_range hp)
+  let e : sphere (0 : E) 1 ≃ₜ sphere c r :=
+    ((Homeomorph.smulOfNeZero r hr.ne').trans (Homeomorph.addRight c)).subtype fun x => by
+      simp [mem_sphere_iff_norm, Homeomorph.smulOfNeZero_apply,
+        norm_smul, Real.norm_eq_abs, abs_of_pos hr, hr.ne']
+  exact e.symm.toHomotopyEquiv.simplyConnectedSpace
 
 /-- **The `n`-sphere is simply connected for `2 ≤ n`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
-  refine simplyConnectedSpace_sphere ?_
+  refine simplyConnectedSpace_sphere ?_ 0 zero_le_one
   have hrank : Module.rank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = ((n + 1 : ℕ) : Cardinal) := by
     simp [← Module.finrank_eq_rank]
   rw [hrank]
   exact_mod_cast (by omega : 2 < n + 1)
+
+/-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
+theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :
+    SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
+  refine simplyConnectedSpace_sphere ?_ 0 zero_le_one
+  rw [← Module.finrank_eq_rank, finrank_real_of_complex, finrank_euclideanSpace_fin,
+    Nat.ofNat_lt_cast]
+  omega
 
 end TauCeti
 

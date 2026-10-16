@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharZero.Idempotent
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.Data.ZMod.Divisibility
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Component
@@ -32,8 +33,11 @@ The decomposition has idempotents: `zHat.idem ℓ`, written `ω_ℓ` in prose, i
 with `ℓ`-adic component `1` and all other components `0`. It is idempotent, orthogonal to the
 idempotents of the other primes, multiplication by it keeps the `ℓ`-adic component and kills the
 others, and it reduces to `1` modulo every power of `ℓ` and to `0` modulo every `n` prime to `ℓ`.
+It is unequal to every integer (`zHat.idem_ne_intCast`), so `ℤ → ℤ̂` is not surjective
+(`zHat.not_surjective_ofInt`).
 In particular `ω_2 * (1 - ω_2) = 0` with both factors nonzero: the profinite integers are not a
-domain (`zHat.not_isDomain`).
+domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `1`
+(`zHat.tendsto_sum_idem`), expressing recovery from the prime factors in the product topology.
 
 ## Main definitions
 
@@ -53,6 +57,8 @@ domain (`zHat.not_isDomain`).
   and the characterization of `ω_ℓ * a = a`.
 * `TauCeti.zHat.toZMod_idem_of_dvd_pow`, `TauCeti.zHat.toZMod_idem_of_not_dvd`: the reductions of
   `ω_ℓ` at the finite levels.
+* `TauCeti.zHat.idem_ne_intCast`: `ω_ℓ` is not an integer.
+* `TauCeti.zHat.not_surjective_ofInt`: the integers are a proper subgroup of `ℤ̂`.
 * `TauCeti.zHat.not_isDomain`: the profinite integers are not a domain.
 
 ## References
@@ -294,6 +300,20 @@ theorem idem_ne_one : idem.{u} ℓ ≠ 1 := fun h ↦ by
   have := Fact.mk hpp
   exact one_ne_zero <| by rw [← component_idem_of_ne ℓ (Nat.lt_of_succ_le hp).ne', h, map_one]
 
+/-- The prime idempotent `ω_ℓ` is unequal to every integer in the profinite integers. -/
+theorem idem_ne_intCast (n : ℤ) : idem.{u} ℓ ≠ n := by
+  intro h
+  rcases isIdempotentElem_intCast_iff.mp (h ▸ isIdempotentElem_idem ℓ) with rfl | rfl
+  · exact idem_ne_zero ℓ (by simpa using h)
+  · exact idem_ne_one ℓ (by simpa using h)
+
+/-- **The integers are a proper subgroup of the profinite integers**: the canonical homomorphism
+`ℤ → ℤ̂` is not surjective, since `ω_2` is not an integer. -/
+theorem not_surjective_ofInt : ¬ Function.Surjective (ofInt : Multiplicative ℤ →* zHat.{u}) :=
+  fun h ↦ by
+    obtain ⟨z, hz⟩ := h (idem.{u} 2).toMul
+    exact idem_ne_intCast 2 z.toAdd (by rw [← ofMul_ofInt, hz, ofMul_toMul])
+
 /-- **The profinite integers are not a domain**: `ω_2 * (1 - ω_2) = 0` with both factors
 nonzero. -/
 theorem not_isDomain : ¬ IsDomain (Additive zHat.{u}) := fun _ ↦ by
@@ -304,6 +324,24 @@ theorem not_isDomain : ¬ IsDomain (Additive zHat.{u}) := fun _ ↦ by
   · exact idem_ne_one 2 (sub_eq_zero.mp h).symm
 
 end Idempotents
+
+/-- The finite sums of the prime idempotents tend to `1` as the finite set of primes grows. -/
+theorem tendsto_sum_idem :
+    Filter.Tendsto (fun s : Finset Nat.Primes ↦ ∑ p ∈ s, idem.{u} p)
+      Filter.atTop (nhds 1) := by
+  classical
+  have h : Filter.Tendsto
+      (fun s : Finset Nat.Primes ↦ ringEquivPiPadicInt (∑ p ∈ s, idem.{u} p))
+      Filter.atTop (nhds 1) := by
+    refine tendsto_pi_nhds.mpr fun p ↦ ?_
+    apply tendsto_const_nhds.congr'
+    filter_upwards [Filter.eventually_ge_atTop ({p} : Finset Nat.Primes)] with s hs
+    have hp : p ∈ s := hs (Finset.mem_singleton_self p)
+    simp only [ringEquivPiPadicInt_apply, map_sum, component_idem]
+    simp_rw [Nat.Primes.coe_nat_inj]
+    simp [hp]
+  simpa only [Function.comp_def, RingEquiv.symm_apply_apply, map_one] using
+    continuous_ringEquivPiPadicInt_symm.{u}.continuousAt.tendsto.comp h
 
 end zHat
 

@@ -27,6 +27,8 @@ defined in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel`.
 ## Main declarations
 
 * `TauCeti.upperTriangularGroup`: the subgroup of upper-triangular elements of `GL m R`.
+* `TauCeti.UpperTriangularGroup.mem_comap_toGL_iff`: its preimage in `SL m R` consists of the
+  upper-triangular determinant-one matrices.
 * `TauCeti.UpperTriangularGroup.diag`: the diagonal homomorphism to `m → Rˣ`.
 * `TauCeti.UpperTriangularGroup.diagonalHom`: its section by diagonal matrices.
 * `TauCeti.UpperTriangularGroup.exists_det_eq_one_map_inv_mul_mul_map_mem`:
@@ -76,6 +78,13 @@ theorem mem_iff {g : GL m R} :
 theorem isUpperTriangular (g : upperTriangularGroup m R) :
     ((g : GL m R) : Matrix m m R).IsUpperTriangular :=
   g.2
+
+/-- A determinant-one matrix lies in the preimage of the upper-triangular group exactly when it
+is upper triangular. -/
+theorem mem_comap_toGL_iff {s : Matrix.SpecialLinearGroup m R} :
+    s ∈ (upperTriangularGroup m R).comap Matrix.SpecialLinearGroup.toGL ↔
+      (s : Matrix m m R).IsUpperTriangular := by
+  rw [Subgroup.mem_comap, mem_iff, Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- Apply a ring homomorphism entrywise to an invertible upper-triangular matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) :
@@ -207,6 +216,15 @@ theorem ker_diag :
       (upperUnitriangularGroup m R).subgroupOf (upperTriangularGroup m R) := by
   ext g
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, diag_eq_one_iff]
+
+/-- Removing an invertible diagonal factor on the right of an upper-triangular matrix gives an
+upper-unitriangular matrix exactly when the factor equals its diagonal projection. -/
+theorem mul_inv_diagGL_mem_upperUnitriangularGroup_iff (g : upperTriangularGroup m R)
+    (d : m → Rˣ) :
+    (g : GL m R) * (diagGL d)⁻¹ ∈ upperUnitriangularGroup m R ↔ diag g = d := by
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_diagonalHom, map_mul, map_inv,
+    diag_diagonalHom, mul_inv_eq_one] using
+    (diag_eq_one_iff (g := g * (diagonalHom d)⁻¹)).symm
 
 end UpperTriangularGroup
 

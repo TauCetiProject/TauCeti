@@ -7,9 +7,9 @@ module
 
 public import TauCeti.GroupTheory.Index.Exact
 public import TauCeti.GroupTheory.Torsion
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Devissage
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FixedPoints
-public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -24,8 +24,10 @@ holds for the zero module and for the trivial modules of order `p`, and which pa
 `M ⧸ N` to `M` for every such extension, holds for every `M`. This is the **dévissage induction
 principle** `TauCeti.IsProP.finite_pPrimary_induction`, the pro-`p` case of dévissage
 (NSW (3.3.2), final clause; Koch takes it as the definition of cohomological dimension for pro-`p`
-groups). The principle itself needs no topology on `G` beyond the pro-`p` hypothesis; compactness
-enters only through the long exact cohomology sequence in the corollaries below.
+groups), and the instance of the general principle
+`TauCeti.ContCohomology.finite_induction_of_exists_addSubgroup` for the `p`-primary modules.
+The principle itself needs no topology on `G` beyond the pro-`p` hypothesis; compactness enters
+only through the long exact cohomology sequence in the corollaries below.
 
 For a compact pro-`p` group `G`, two properties of the continuous cohomology `Hⁿ(G, -)` in a fixed
 degree `n` are run through it, using exactness of the long exact sequence at `Hⁿ(G, M)`
@@ -104,38 +106,16 @@ theorem IsProP.finite_pPrimary_induction (hG : IsProP p G)
       motive A → motive C → motive B)
     (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
-    motive M := by
-  -- strong induction on the order of the coefficient module
-  suffices H : ∀ (k : ℕ) (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
-      Nat.card M = k → motive M from
-    H _ M hM rfl
-  intro k
-  induction k using Nat.strong_induction_on with
-  | _ k ih =>
-  intro M _ _ _ _ _ _ hM hk
-  rcases subsingleton_or_nontrivial M with hM₀ | _
-  · exact zero M
-  -- a `G`-stable subgroup `N` of order `p` with trivial action
-  obtain ⟨N, hNcard, hNfix⟩ :=
-    exists_addSubgroup_natCard_eq_invariant_of_isProP hG (isPPrimaryTorsion_iff.1 hM)
-  have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ (hNfix g x hx).symm ▸ hx
-  let := N.restrictDistribMulAction hN
-  let := N.quotientDistribMulAction hN
-  have : ContinuousSMul G N := N.restrictDistribMulAction_continuousSMul hN
-  have : ContinuousAdd M := ⟨continuous_of_discreteTopology⟩
-  have : ContinuousSMul G (M ⧸ N) := N.quotientDistribMulAction_continuousSMul hN
-  have hNtriv : ∀ (g : G) (a : N), g • a = a := fun g a ↦
-    Subtype.ext ((N.restrictDistribMulAction_coe_smul hN g a).trans (hNfix g a a.2))
-  have hMN : IsPPrimaryTorsion p (M ⧸ N) :=
-    hM.of_surjective (QuotientAddGroup.mk' N) (QuotientAddGroup.mk'_surjective N)
-  refine extension N M (M ⧸ N) (DiscreteShortExact.ofAddSubgroup N hN) hNcard hNtriv
-    (isPPrimaryTorsion_of_natCard_eq_pow (hNcard.trans (pow_one p).symm)) hM hMN
-    (prime N hNcard hNtriv) ?_
-  -- the quotient has smaller order, and the induction hypothesis applies to it
-  refine ih _ ?_ (M ⧸ N) hMN rfl
-  rw [← hk, AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup N, hNcard]
-  exact lt_mul_of_one_lt_right Nat.card_pos hp.out.one_lt
+    motive M :=
+  finite_induction_of_exists_addSubgroup (fun M _ _ ↦ IsPPrimaryTorsion p M) (· = p)
+    (fun _ hk ↦ hk ▸ hp.out.one_lt)
+    (fun _ _ _ _ _ _ f hf hM ↦ hM.of_surjective f.toAddMonoidHom hf)
+    (fun _ _ _ _ _ _ _ _ hM ↦
+      exists_addSubgroup_natCard_eq_invariant_of_isProP hG (isPPrimaryTorsion_iff.1 hM)) zero
+    (fun A B C _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ S hA hAtriv hB hC ↦
+      extension A B C S hA hAtriv (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))
+        hB hC (prime A hA hAtriv))
+    M hM
 
 /-- **Dévissage for pro-`p` groups.** Let `G` be a compact pro-`p` group. If `Hⁿ(G, A)` vanishes
 for every discrete `G`-module `A` of order `p` on which `G` acts trivially, then `Hⁿ(G, M)`

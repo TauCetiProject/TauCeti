@@ -7,19 +7,29 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
+import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 
 /-!
-# Continuity of Spin transvection lifts
+# Continuity and noncompactness of Spin transvection lifts
 
 The canonical Clifford lift `spinTransvection hQ hu huw` of an Eichler transvection has carrier
 `1 + ι Q w * ι Q u`. Consequently it varies continuously with the isotropic vector `u` and its
 orthogonal parameter `w`. For fixed `u`, this continuity descends through the quotient topology on
 `u^⊥ / K ∙ u`, making `spinTransvectionHom hQ hu` a continuous root-subgroup homomorphism.
 
+Over a nontrivially normed field, the Spin root subgroup of `u` maps continuously onto the Eichler
+root subgroup of `SO(Q)`, so it is compact exactly when the parameter space `u^⊥ / K ∙ u` is
+trivial. For a nonzero isotropic vector this happens exactly when `dim V ≤ 2`.
+
 ## Main results
 
 * `CliffordAlgebra.continuous_spinTransvection` proves continuity for families in both parameters.
 * `CliffordAlgebra.continuous_spinTransvectionHom` proves continuity of the quotient homomorphism.
+* `CliffordAlgebra.isCompact_range_spinTransvectionHom_iff`: the Spin root subgroup is compact
+  exactly when its parameter space is trivial.
+* `CliffordAlgebra.isCompact_range_spinTransvectionHom_iff_finrank_le_two`: for a nonzero isotropic
+  vector, the Spin root subgroup is compact exactly when `dim V ≤ 2`.
 
 ## References
 
@@ -40,6 +50,7 @@ variable {K : Type u} [Field K] [TopologicalSpace K] [Invertible (2 : K)]
 
 /-- Continuously varying isotropic vectors and orthogonal parameters determine continuously varying
 Spin lifts of Eichler transvections. -/
+@[fun_prop]
 theorem continuous_spinTransvection {X : Type w} [TopologicalSpace X] (u w : X → V)
     (hQ : Q.Nondegenerate) (hu : ∀ x, Q (u x) = 0)
     (huw : ∀ x, polar Q (u x) (w x) = 0)
@@ -71,5 +82,41 @@ theorem continuous_spinTransvectionHom {u : V} (hQ : Q.Nondegenerate) (hu : Q u 
   apply Additive.toMul.injective
   rw [Function.comp_apply, Submodule.mkQ_apply,
     toMul_spinTransvectionHom_mk hQ hu (hw w), toMul_ofMul]
+
+section Noncompact
+
+variable {K : Type u} [NontriviallyNormedField K] [Invertible (2 : K)]
+  {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {Q : QuadraticForm K V} {u : V}
+
+/-- **Compactness of a Spin root subgroup.** For a nondegenerate form and an isotropic vector `u`
+outside the polar radical, the image of the Spin root-subgroup homomorphism
+`u^⊥ / K ∙ u → Spin(Q)` is compact exactly when the parameter space `u^⊥ / K ∙ u` is trivial. -/
+theorem isCompact_range_spinTransvectionHom_iff (hQ : Q.Nondegenerate) (hu : Q u = 0)
+    (hpolar : Q.polarBilin u ≠ 0) :
+    IsCompact (Set.range (spinTransvectionHom hQ hu)) ↔
+      Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
+        (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
+  refine ⟨fun hcpt ↦ (isCompact_range_transvectionHom_iff hu hpolar).mp ?_,
+    fun _ ↦ (Set.subsingleton_range _).isCompact⟩
+  have hcont : Continuous (spinToSpecialOrthogonal Q).toAdditive :=
+    continuous_ofMul.comp ((TauCeti.CliffordAlgebra.continuous_spinToSpecialOrthogonal Q).comp
+      continuous_toMul)
+  rw [← spinToSpecialOrthogonal_comp_spinTransvectionHom hQ hu, AddMonoidHom.coe_comp,
+    Set.range_comp]
+  exact hcpt.image hcont
+
+/-- **Spin root subgroups are noncompact from dimension three on.** For a nonzero isotropic vector
+`u` of a nondegenerate quadratic form on a finite-dimensional space, the Spin root subgroup of `u`
+is compact exactly when `dim V ≤ 2`, where it is trivial. -/
+theorem isCompact_range_spinTransvectionHom_iff_finrank_le_two (hQ : Q.Nondegenerate)
+    (hu : Q u = 0) (hu₀ : u ≠ 0) :
+    IsCompact (Set.range (spinTransvectionHom hQ hu)) ↔ Module.finrank K V ≤ 2 := by
+  have hpolar := hQ.polarBilin_ne_zero hu₀
+  rw [isCompact_range_spinTransvectionHom_iff hQ hu hpolar, ← Module.finrank_zero_iff (R := K),
+    finrank_transvectionParameter hu hpolar]
+  omega
+
+end Noncompact
 
 end CliffordAlgebra

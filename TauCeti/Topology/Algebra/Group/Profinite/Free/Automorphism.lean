@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Quotient
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Surjective
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
 
 /-!
 # Continuous automorphisms of a free pro-`p` group of finite rank
@@ -28,6 +29,14 @@ by which endomorphisms of a free pro-`p` group given on a basis by conjugated un
 the automorphisms of free pro-`p` groups preserving the peripheral conjugacy classes up to a common
 exponent, are shown to be automorphisms.
 
+Burnside's basis theorem also shows that every abstract automorphism `σ` of the Frattini quotient
+`freeProP p X ⧸ proPFrattini p (freeProP p X)` comes from a continuous automorphism: lifts of the
+images under `σ` of the classes of the generators `of i` generate the free group, so the
+automorphism sending each `of i` to such a lift induces `σ`. Hence the map
+`ContinuousAut (freeProP p X) →* MulAut (freeProP p X ⧸ proPFrattini p _)` is surjective. Its
+target is the automorphism group of the `𝔽_p`-vector space with basis the classes of the
+generators (`TauCeti.freeProP.frattiniQuotientBasis`), that is `GL_n(𝔽_p)` for `X = Fin n`.
+
 ## Main definitions
 
 * `TauCeti.freeProP.finSuccExtend`: the automorphism of the free pro-`p` group on `Fin (n + 1)`
@@ -42,6 +51,8 @@ exponent, are shown to be automorphisms.
   is compatible with the identity, composition and inversion.
 * `TauCeti.freeProP.exists_continuousAut_of_topologicallyGenerates`: every topological generating
   family of `F` indexed by `X` is the image of the basis under a continuous automorphism.
+* `TauCeti.freeProP.mapQuotient_proPFrattini_surjective`: every automorphism of the Frattini
+  quotient of the free pro-`p` group of finite rank is induced by a continuous automorphism.
 * `TauCeti.IsProP.exists_continuousAut_apply_eq_conj_padicPow`: for every family of units `u` and
   every family of conjugators `c`, some continuous automorphism of `F` sends `x i` to
   `(c i)⁻¹ * x i ^ u i * c i`.
@@ -50,8 +61,8 @@ exponent, are shown to be automorphisms.
 
 ## References
 
-* L. Ribes and P. Zalesskii, *Profinite Groups*, 2nd ed., Proposition 2.5.2 (the Hopf property)
-  and Proposition 2.8.7 (Burnside's basis theorem).
+* L. Ribes and P. Zalesskii, *Profinite Groups*, 2nd ed., Proposition 2.5.2 (the Hopf property),
+  Proposition 2.8.7 (Burnside's basis theorem) and §4.5 (automorphisms of free pro-`p` groups).
 -/
 
 public section
@@ -194,6 +205,42 @@ theorem exists_continuousAut_of_topologicallyGenerates {F : Type v} [Group F] [T
   refine ⟨e.trans ((continuousMulEquivOfTopologicallyGenerates (e ∘ y) hey).trans e.symm),
     fun i ↦ ?_⟩
   simp
+
+/-- **Automorphisms of the Frattini quotient of a free pro-`p` group lift.** For a prime `p` and a
+finite type `X`, every abstract automorphism `σ` of the Frattini quotient
+`freeProP p X ⧸ proPFrattini p (freeProP p X)` is induced by a continuous automorphism of the free
+pro-`p` group, namely one sending each generator `of i` to a lift of `σ` applied to its class. -/
+theorem mapQuotient_proPFrattini_surjective [Fact p.Prime] :
+    Function.Surjective
+      (ContinuousAut.mapQuotient (isTopCharacteristic_proPFrattini (G := freeProP p X) p)) := by
+  intro σ
+  let Φ := proPFrattini p (freeProP p X)
+  have : DiscreteTopology (freeProP p X ⧸ Φ) := QuotientGroup.discreteTopology
+    ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_proPFrattini p)
+  -- Lift the images under `σ` of the classes of the generators.
+  choose y hy using fun i ↦ QuotientGroup.mk_surjective (σ (QuotientGroup.mk (s := Φ) (of i)))
+  -- In the discrete Frattini quotient, the classes of the generators generate abstractly.
+  have hx : Subgroup.closure (QuotientGroup.mk' Φ '' Set.range of) = ⊤ := by
+    refine top_unique ?_
+    rw [← (topologicallyGenerates_iff_frattiniQuotient (isProP_freeProP p X) _).mp
+      (topologicalClosure_closure_range_of_eq_top p X)]
+    exact Subgroup.topologicalClosure_minimal _ le_rfl (isClosed_discrete _)
+  -- So do their images under `σ`, the classes of the `y i`, and by Burnside's basis theorem the
+  -- `y i` generate the free pro-`p` group topologically.
+  have hy' : (Subgroup.closure (Set.range y)).topologicalClosure = ⊤ := by
+    have himage : QuotientGroup.mk' Φ '' Set.range y =
+        σ.toMonoidHom '' (QuotientGroup.mk' Φ '' Set.range of) := by
+      simp only [← Set.range_comp]
+      congr 1
+      funext i
+      simp [hy]
+    rw [topologicallyGenerates_iff_frattiniQuotient (isProP_freeProP p X), himage,
+      ← MonoidHom.map_closure, hx, Subgroup.map_top_of_surjective _ σ.surjective]
+    exact top_unique (Subgroup.le_topologicalClosure _)
+  refine ⟨continuousMulEquivOfTopologicallyGenerates y hy',
+    MulEquiv.toMonoidHom_injective <| MonoidHom.eq_of_eqOn_dense hx ?_⟩
+  rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
+  simp [hy]
 
 end freeProP
 

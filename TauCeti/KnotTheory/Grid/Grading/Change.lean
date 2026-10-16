@@ -16,6 +16,9 @@ This file records how the Maslov and Alexander gradings of two grid states diffe
 pure identity between the grading formulas of any two states, then localized to the four corners
 of a rectangle move.
 
+Two grading functions with the same changes across rectangles agree everywhere once they agree
+at one grid state, by rectangle connectivity.
+
 The two Maslov gradings split the same way: their difference is the change in the state's
 `J`-self-pairing minus twice the change in the marking pairing,
 `M_O(x) - M_O(y) = (J(x, x) - J(y, y)) - 2 (J_O(x) - J_O(y))`, and similarly for `M_X`. The
@@ -168,6 +171,21 @@ theorem JCenter_pointSet_sub_eq (P : Finset (Fin n × Fin n)) :
   ring
 
 end GridRectangleBetween
+
+namespace GridState
+
+variable {n : ℕ}
+
+/-- Two grading functions that change in the same way across every rectangle, and agree at one
+grid state, agree everywhere. -/
+theorem eq_of_forall_sub_eq {A : Type*} [AddGroup A] {f g : GridState n → A}
+    (x₀ : GridState n) (h₀ : f x₀ = g x₀)
+    (h : ∀ x y, GridRectangleBetween x y → f x - f y = g x - g y) (x : GridState n) :
+    f x = g x :=
+  GridState.rectangle_induction_on (P := fun x ↦ f x = g x) x₀ h₀
+    (fun x y R hx ↦ by simpa only [hx, sub_right_inj] using h x y R) x
+
+end GridState
 
 namespace GridDiagram
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.KrullDimension.Regular
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Krull dimension of a principal quotient

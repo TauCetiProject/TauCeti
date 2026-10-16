@@ -19,10 +19,17 @@ matrix is symmetric and invertible, the standard form over a nontrivial `R` is i
 dimension a nondegenerate symmetric form that is not alternating, the model for the orthonormal
 normal form of such forms.
 
+In the other direction, `LinearMap.BilinForm.toMatrix` reads a bilinear form in a basis as its
+Gram matrix. For a nondegenerate form, the Gram matrix in the `B`-dual basis is the inverse
+transpose of the Gram matrix in the original basis; for a symmetric form it is the inverse Gram
+matrix, which is how the dual of a lattice is described in coordinates.
+
 ## Main results
 
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
+* `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
+  basis is the inverse transpose of its Gram matrix in the original basis.
 -/
 
 public section
@@ -38,3 +45,25 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
   simp [Subsingleton.elim x 0]
 
 end Matrix
+
+namespace LinearMap.BilinForm
+
+open Matrix Module
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Fintype ι] [DecidableEq ι]
+
+/-- The Gram matrix of a nondegenerate bilinear form in the `B`-dual basis of `b` is the inverse of
+the transpose of its Gram matrix in `b`. For a symmetric form this is the inverse Gram matrix. -/
+theorem toMatrix_dualBasis (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate) (b : Basis ι K V) :
+    toMatrix (B.dualBasis hB b) B = (toMatrix b B)ᵀ⁻¹ := by
+  refine (Matrix.inv_eq_left_inv ?_).symm
+  ext i j
+  calc (toMatrix (B.dualBasis hB b) B * (toMatrix b B)ᵀ) i j
+      = B (B.dualBasis hB b i)
+          (∑ k, (B.dualBasis hB b).repr (b j) k • B.dualBasis hB b k) := by
+        simp [Matrix.mul_apply, toMatrix_apply, dualBasis_repr_apply, mul_comm]
+    _ = (1 : Matrix ι ι K) i j := by
+        rw [(B.dualBasis hB b).sum_repr, apply_dualBasis_left, Matrix.one_apply]
+        simp only [eq_comm]
+
+end LinearMap.BilinForm

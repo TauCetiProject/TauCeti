@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
@@ -17,8 +18,8 @@ coordinate topology through that basis. This identifies the canonical topology u
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
 module topology of a finite-dimensional space is Hausdorff and locally compact, and every subspace
-of a finite-dimensional space is closed. No norm or completeness hypothesis on the scalars is
-needed.
+of a finite-dimensional space is closed; over σ-compact scalars it is σ-compact. No norm or
+completeness hypothesis on the scalars is needed.
 
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
@@ -63,6 +64,12 @@ theorem locallyCompactSpace (b : _root_.Module.Basis ι K V) [LocallyCompactSpac
     LocallyCompactSpace V :=
   (equivFunHomeomorph b).isOpenEmbedding.locallyCompactSpace
 
+/-- The module topology is σ-compact when the scalars are σ-compact and the module has a finite
+basis. -/
+theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K] :
+    SigmaCompactSpace V :=
+  (equivFunHomeomorph b).isClosedEmbedding.sigmaCompactSpace
+
 end ModuleTopology
 
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
@@ -83,6 +90,14 @@ theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
   exact ModuleTopology.locallyCompactSpace b
+
+/-- The module topology of a finite-dimensional space over a σ-compact division ring equipped
+with a topological semiring structure is σ-compact. -/
+theorem sigmaCompactSpace_moduleTopology [SigmaCompactSpace K] :
+    @SigmaCompactSpace V (moduleTopology K V) := by
+  let _ : TopologicalSpace V := moduleTopology K V
+  let b := Module.finBasis K V
+  exact ModuleTopology.sigmaCompactSpace b
 
 /-- Every subspace of a finite-dimensional space over a Hausdorff division ring equipped with a
 topological semiring structure is closed for the module topology. -/

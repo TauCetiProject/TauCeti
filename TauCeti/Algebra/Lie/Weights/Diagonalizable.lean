@@ -60,10 +60,6 @@ to honest.
 
 ## References
 
-This is the "honest weight spaces (the diagonalizability theorem)" item of Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`isSemisimple_toEnd_cartan` is `TauCeti.isSemisimple_toEnd_cartan`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.4 and §20.1.
 -/
 

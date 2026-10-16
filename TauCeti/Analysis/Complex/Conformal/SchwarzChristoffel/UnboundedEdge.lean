@@ -65,6 +65,33 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- The boundary map is continuous on a right outer edge with an integrable finite endpoint,
+independently of the total exponent. -/
+theorem continuousOn_schwarzChristoffelBoundary_Ici (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {p : ℝ} (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → a i ≤ p) :
+    ContinuousOn (schwarzChristoffelBoundary a e z₀) (Ici p) := by
+  apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
+  intro x hx
+  exact Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ
+    (by norm_num) hp (fun i _ hi => ha i hi) hx
+
+/-- On a right outer edge, distance from the finite endpoint parametrizes the boundary map
+in the edge direction, independently of the total exponent. -/
+theorem schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_le
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p x : ℝ}
+    (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → a i ≤ p) (hx : p ≤ x) :
+    schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ p =
+      (‖schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ p‖ : ℂ) *
+        Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
+  have hsum : -1 < ∑ i with a i = x, e i :=
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ
+      (by norm_num) hp (fun i _ hi => ha i hi) hx
+  exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀
+    (fun i hi hmem => (not_lt_of_ge (ha i hi)) hmem.1) hp hsum
+    ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+
 /-- **The Schwarz--Christoffel boundary map is injective on a right-hand unbounded edge.**
 Under `-1 < ∑ i with a i = p, e i` and `∀ i, e i ≠ 0 → a i ≤ p`, distinct finite parameters in
 `Ici p` have distinct boundary values. -/
@@ -100,19 +127,14 @@ theorem schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul
   let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let u : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
-  have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
-    fun _ i hei hi ↦ (not_lt_of_ge (ha i hei)) hi.1
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
     fun {q} hq ↦ by
       simpa using
         (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
           (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
   have hformula : ∀ {x : ℝ}, x ∈ Ici p →
-      B x - B p = ((‖B x - B p‖ : ℝ) : ℂ) * u := by
-    intro x hx
-    simpa [B, u] using
-      schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ (hfree hx) hp (hsum hx)
-        (x := x) (y := p) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+      B x - B p = ((‖B x - B p‖ : ℝ) : ℂ) * u :=
+    fun hx => schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_le a e z₀ hp ha hx
   have hBtop : Tendsto B atTop (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atTop_atTop
@@ -148,17 +170,11 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
       simpa using
         (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
           (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
-  -- The endpoint `p` is integrable, and every later point is free of prevertices by `hfree`.
-  have hcont : ContinuousOn B (Ici p) := by
-    apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
-    intro x hx
-    exact hsum hx
+  have hcont : ContinuousOn B (Ici p) :=
+    continuousOn_schwarzChristoffelBoundary_Ici a e z₀ hp ha
   have hformula : ∀ {x : ℝ}, x ∈ Ici p →
-      B x - B p = ((d x : ℝ) : ℂ) * u := by
-    intro x hx
-    have h := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ (hfree hx) hp (hsum hx)
-      (x := x) (y := p) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
-    simpa [B, d, u] using h
+      B x - B p = ((d x : ℝ) : ℂ) * u :=
+    fun hx => schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_le a e z₀ hp ha hx
   have hBtop : Tendsto B atTop (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atTop_atTop
@@ -280,6 +296,43 @@ theorem schwarzChristoffelBoundary_lt_vertexAtInfinity (a e : ι → ℝ) (z₀ 
 
 /-! ### The left-hand edge -/
 
+/-- The boundary map is continuous on a left outer edge with an integrable finite endpoint,
+independently of the total exponent. -/
+theorem continuousOn_schwarzChristoffelBoundary_Iic (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {p : ℝ} (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → p ≤ a i) :
+    ContinuousOn (schwarzChristoffelBoundary a e z₀) (Iic p) := by
+  apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
+  intro x hx
+  exact Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+    Finset.univ (by norm_num) hp (fun i _ hi => ha i hi) hx
+
+/-- On a left outer edge, distance from the finite endpoint parametrizes the boundary map
+in direction `-exp (π * (∑ i, e i) * I)`, independently of the total exponent. -/
+theorem schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_ge
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p x : ℝ}
+    (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → p ≤ a i) (hx : x ≤ p) :
+    schwarzChristoffelBoundary a e z₀ p - schwarzChristoffelBoundary a e z₀ x =
+      (‖schwarzChristoffelBoundary a e z₀ p - schwarzChristoffelBoundary a e z₀ x‖ : ℂ) *
+        Complex.exp ((Real.pi * ∑ i, e i) * Complex.I) := by
+  rcases hx.eq_or_lt with rfl | hxp
+  · simp
+  have hsum : -1 < ∑ i with a i = x, e i :=
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+      Finset.univ (by norm_num) hp (fun i _ hi => ha i hi) hx
+  have hangle : schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
+    rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter]
+    congr 1
+    apply Finset.sum_congr rfl
+    intro i _
+    by_cases hi : e i = 0
+    · simp [hi]
+    · simp [hxp.trans_le (ha i hi)]
+  simpa only [hangle, Complex.ofReal_mul] using schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀
+    (fun i hi hmem => (not_lt_of_ge (ha i hi)) hmem.2) hsum hp
+    (x := p) (y := x) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+
 /-- **The Schwarz--Christoffel boundary map is injective on a left-hand unbounded edge.**
 Under `-1 < ∑ i with a i = p, e i` and `∀ i, e i ≠ 0 → p ≤ a i`, distinct finite
 parameters in `Iic p` have distinct boundary values. -/
@@ -314,30 +367,13 @@ theorem schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul
   let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let u : ℂ := Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)
-  have hfree : ∀ {q : ℝ}, q ∈ Iic p → ∀ i, e i ≠ 0 → a i ∉ Ioo q p :=
-    fun _ i hei hi ↦ (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
     fun {_} hq ↦
       Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
         Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
-  have hangle : ∀ {x : ℝ}, x < p →
-      schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
-    intro x hx
-    rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter]
-    congr 1
-    apply Finset.sum_congr rfl
-    intro i _
-    rcases eq_or_ne (e i) 0 with hei | hei
-    · simp [hei]
-    · simp [hx.trans_le (ha i hei)]
   have hformula : ∀ {x : ℝ}, x ∈ Iic p →
-      B p - B x = ((‖B p - B x‖ : ℝ) : ℂ) * u := by
-    intro x hx
-    rcases eq_or_lt_of_le (mem_Iic.mp hx) with rfl | hxp
-    · simp
-    · simpa [B, u, hangle hxp] using
-        schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ (hfree hx) (hsum hx) hp
-          (x := p) (y := x) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+      B p - B x = ((‖B p - B x‖ : ℝ) : ℂ) * u :=
+    fun hx => schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_ge a e z₀ hp ha hx
   have hBbot : Tendsto B atBot (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atBot_atTop
@@ -372,28 +408,11 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
     fun {_} hq =>
       Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
         Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
-  have hangle : ∀ {x : ℝ}, x < p →
-      schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
-    intro x hx
-    rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter]
-    congr 1
-    apply Finset.sum_congr rfl
-    intro i _
-    rcases eq_or_ne (e i) 0 with hei | hei
-    · simp [hei]
-    · simp [hx.trans_le (ha i hei)]
-  have hcont : ContinuousOn B (Iic p) := by
-    apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
-    intro x hx
-    exact hsum hx
+  have hcont : ContinuousOn B (Iic p) :=
+    continuousOn_schwarzChristoffelBoundary_Iic a e z₀ hp ha
   have hformula : ∀ {x : ℝ}, x ∈ Iic p →
-      B p - B x = ((d x : ℝ) : ℂ) * u := by
-    intro x hx
-    rcases eq_or_lt_of_le (mem_Iic.mp hx) with rfl | hxp
-    · simp [d]
-    · have h := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ (hfree hx) (hsum hx) hp
-        (x := p) (y := x) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
-      simpa [B, d, u, hangle hxp] using h
+      B p - B x = ((d x : ℝ) : ℂ) * u :=
+    fun hx => schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_ge a e z₀ hp ha hx
   have hBbot : Tendsto B atBot (nhds V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atBot_atTop

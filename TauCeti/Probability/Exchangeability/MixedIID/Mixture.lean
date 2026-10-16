@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.MixedIID.Implications
 -- Non-public: used only inside the proof below.
-import TauCeti.Probability.Exchangeability.FiniteMarginals
+import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.MixtureInjective
 

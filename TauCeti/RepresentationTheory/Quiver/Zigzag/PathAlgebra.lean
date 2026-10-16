@@ -11,9 +11,10 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 /-!
 # Vertices, oriented edges, and backtracks in a doubled path algebra
 
-The zigzag algebra of a simple graph `G` is a quotient of the path algebra of the doubled quiver
-`TauCeti.DoubledQuiver G` by relations among the paths of length at most two. This file names those
-short paths and their path-algebra elements, and computes the products among them.
+For a simple graph `G`, the zigzag relation quotient is obtained from the path algebra of
+`TauCeti.DoubledQuiver G` by relations among length-two paths and by killing longer paths.
+This file names the short paths and their path-algebra elements, and computes their products.
+The public zigzag algebra uses a separate dual-numbers convention on isolated vertices.
 
 A length-one path is the arrow of an adjacency, and a length-two path from a vertex back to itself
 is a *backtrack*: it leaves along an edge and returns along the same edge. The two decomposition
@@ -46,10 +47,7 @@ returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
 
 ## References
 
-This is the second clause of Layer 0 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks
-for the paths and path-algebra elements attached to vertices, oriented edges, and backtracks
-together with their source and target corner identities. See Huerfano--Khovanov, *A category for
-the adjoint representation*, Section 3.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.
 -/
 
 public section
@@ -94,11 +92,16 @@ theorem backtrackPath_eq_cons {i j : V} (h : G.Adj i j) :
 theorem length_backtrackPath {i j : V} (h : G.Adj i j) : (backtrackPath G h).length = 2 := by
   rw [backtrackPath_eq_comp, _root_.Quiver.Path.length_comp, length_arrowPath, length_arrowPath]
 
-/-- A backtrack determines the neighbour it visits. -/
-theorem eq_of_backtrackPath_eq {i j j' : V} {h : G.Adj i j} {h' : G.Adj i j'}
-    (he : backtrackPath G h = backtrackPath G h') : j = j' := by
-  rw [backtrackPath_eq_cons, backtrackPath_eq_cons] at he
-  simpa using _root_.Quiver.Path.obj_eq_of_cons_eq_cons he
+/-- Two backtracks based at the same vertex are equal exactly when they visit the same neighbour. -/
+@[simp]
+theorem backtrackPath_inj {i j j' : V} {h : G.Adj i j} {h' : G.Adj i j'} :
+    backtrackPath G h = backtrackPath G h' ↔ j = j' := by
+  constructor
+  · intro he
+    rw [backtrackPath_eq_cons, backtrackPath_eq_cons] at he
+    simpa using _root_.Quiver.Path.obj_eq_of_cons_eq_cons he
+  · rintro rfl
+    rfl
 
 /-- Every length-one path of a doubled quiver is the arrow of an adjacency. -/
 theorem exists_eq_arrowPath {i j : V} (p : _root_.Quiver.Path (vertex G i) (vertex G j))
@@ -135,8 +138,8 @@ section Algebra
 
 variable (k : Type w) [Semiring k]
 
-/-- The path-algebra element of the backtrack at `i` along an edge to `j`. It descends to the
-volume element at `i` in the zigzag algebra, where it no longer depends on the chosen edge. -/
+/-- The path-algebra element of the backtrack at `i` along an edge to `j`. Its class in the
+zigzag relation quotient is the volume at `i`, independent of the chosen incident edge. -/
 noncomputable def backtrackElem {i j : V} (h : G.Adj i j) : pathAlgebra k (DoubledQuiver G) :=
   ofPath ⟨vertex G i, vertex G i, backtrackPath G h⟩
 
@@ -252,23 +255,13 @@ private def shortPathIndex :
   | .inr (.inr d) => ⟨vertex G d.fst, vertex G d.fst, backtrackPath G d.adj⟩
 
 private theorem shortPathIndex_injective : Function.Injective (shortPathIndex G) := by
-  have hlen : ∀ x, (shortPathIndex G x).2.2.length =
-      Sum.elim (fun _ : V => 0) (Sum.elim (fun _ : G.Dart => 1) fun _ : G.Dart => 2) x := by
-    rintro (v | d | d) <;> simp [shortPathIndex]
-  rintro x y hxy
-  have hl : Sum.elim (fun _ : V => 0) (Sum.elim (fun _ : G.Dart => 1) fun _ : G.Dart => 2) x
-      = Sum.elim (fun _ : V => 0) (Sum.elim (fun _ : G.Dart => 1) fun _ : G.Dart => 2) y := by
-    rw [← hlen x, ← hlen y, hxy]
-  -- The three blocks have paths of lengths `0`, `1` and `2`, so `hl` rules out mixed pairs; the
-  -- three remaining cases compare endpoints of equal paths.
-  rcases x with v | ⟨⟨a, b⟩, hab⟩ | ⟨⟨a, b⟩, hab⟩ <;>
-    rcases y with v' | ⟨⟨a', b'⟩, ha'b'⟩ | ⟨⟨a', b'⟩, ha'b'⟩ <;>
-    simp only [Sum.elim_inl, Sum.elim_inr] at hl
+  -- Length distinguishes the three blocks; within each block, compare the vertices visited.
+  rintro (v | ⟨⟨a, b⟩, hab⟩ | ⟨⟨a, b⟩, hab⟩)
+    (v' | ⟨⟨a', b'⟩, ha'b'⟩ | ⟨⟨a', b'⟩, ha'b'⟩) hxy <;>
+    have hl := congrArg (fun p : Quiver.TotalPath (DoubledQuiver G) => p.2.2.length) hxy <;>
+    simp [shortPathIndex] at hl
   · simp only [shortPathIndex] at hxy
     simpa using congrArg Sigma.fst hxy
-  · simp at hl
-  · simp at hl
-  · simp at hl
   · simp only [shortPathIndex] at hxy
     have h1 : a = a' := by simpa using congrArg Sigma.fst hxy
     have h2 : b = b' := by
@@ -276,14 +269,11 @@ private theorem shortPathIndex_injective : Function.Injective (shortPathIndex G)
     subst h1
     subst h2
     rfl
-  · simp at hl
-  · simp at hl
-  · simp at hl
   · simp only [shortPathIndex] at hxy
     have h1 : a = a' := by simpa using congrArg Sigma.fst hxy
     subst h1
     simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at hxy
-    have h2 : b = b' := eq_of_backtrackPath_eq G hxy
+    have h2 : b = b' := (backtrackPath_inj G).1 hxy
     subst h2
     rfl
 
@@ -291,7 +281,7 @@ private theorem shortPathIndex_injective : Function.Injective (shortPathIndex G)
 independent in the path algebra of a doubled quiver: they are distinct basis paths, of lengths
 `0`, `1`, and `2` respectively. -/
 theorem linearIndependent_vertexIdempotent_ofArrow_backtrackElem
-    (k : Type w) [CommSemiring k] :
+    (k : Type w) [Semiring k] :
     LinearIndependent k
       (Sum.elim (fun v : V => (vertexIdempotent k (vertex G v) : pathAlgebra k (DoubledQuiver G)))
         (Sum.elim (fun d : G.Dart => (ofArrow (arrow G d.adj) : pathAlgebra k (DoubledQuiver G)))

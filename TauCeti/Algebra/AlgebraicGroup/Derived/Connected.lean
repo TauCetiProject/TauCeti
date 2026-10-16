@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
+import Mathlib.RingTheory.FiniteStability
 import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
@@ -33,6 +34,8 @@ identity component to be the whole subgroup.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open scoped TensorProduct
 open WithConv

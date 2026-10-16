@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!

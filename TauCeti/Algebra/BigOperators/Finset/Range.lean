@@ -10,6 +10,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Range reindexing for finite sums
@@ -35,9 +36,28 @@ which reindex a sum over antidiagonals to a rectangle.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
+* `two_mul_sum_range_pair`: twice the sum of the products over the pairs `i < j < k` is the
+  square of the sum minus the sum of the squares.
+* `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
+  adjacent contributions, retaining the final boundary term.
 -/
 
 public section
+
+namespace Finset
+
+/-- Regroup a sum whose initial term is `g 0` and whose successive terms are
+`g (k + 1) + h k`, retaining the final contribution `g n`. -/
+theorem sum_range_succ_eq_sum_range_add {M : Type*} [AddCommMonoid M]
+    {f g h : ℕ → M} {n : ℕ} (hzero : f 0 = g 0)
+    (hsucc : ∀ k < n, f (k + 1) = g (k + 1) + h k) :
+    ∑ k ∈ range (n + 1), f k = (∑ k ∈ range n, (g k + h k)) + g n := by
+  rw [sum_range_succ', hzero,
+    sum_congr rfl (fun k hk ↦ hsucc k (mem_range.mp hk)), sum_add_distrib, sum_add_distrib]
+  have hshift := (sum_range_succ' g n).symm.trans (sum_range_succ g n)
+  simpa only [add_assoc, add_left_comm, add_comm] using congrArg (· + ∑ k ∈ range n, h k) hshift
+
+end Finset
 
 namespace TauCeti
 
@@ -107,7 +127,7 @@ theorem sum_range_add_antidiagonal_of_support
     rfl
   · intro ij hij
     rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hij
-    let q : (n : ℕ) × (ℕ × ℕ) := ⟨ij.1 + ij.2, ij⟩
+    let q : (_ : ℕ) × (ℕ × ℕ) := ⟨ij.1 + ij.2, ij⟩
     have hsum : ij.1 + ij.2 < k + l := by omega
     have hq : q ∈ t := by
       rw [Finset.mem_filter, Finset.mem_sigma, Finset.mem_range, mem_antidiagonal]
@@ -250,5 +270,17 @@ theorem sum_range_min_zero {R : Type*} [Semiring R] (a : ℕ → R) (c : R) (r :
   have hidx : 1 + (r + 1) = r + 2 := by omega
   rw [hmin]
   simp [Finset.sum_range_succ, hidx]
+
+
+/-- Twice the sum over pairs `i < j < k` is the square of the sum minus the sum of squares. -/
+theorem two_mul_sum_range_pair {R : Type*} [CommRing R] (k : ℕ) (d : ℕ → R) :
+    2 * ∑ j ∈ range k, ∑ i ∈ range j, d i * d j =
+      (∑ i ∈ range k, d i) ^ 2 - ∑ i ∈ range k, d i ^ 2 := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [sum_range_succ, mul_add, ih, ← sum_mul, sum_range_succ d,
+      sum_range_succ (fun i ↦ d i ^ 2)]
+    ring
 
 end TauCeti

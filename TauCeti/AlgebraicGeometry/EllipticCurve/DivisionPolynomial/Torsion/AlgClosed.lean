@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.Integral
+-- Proof-only: the points of `W` are those of its base change along the identity.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 -- Proof-only: the `y`-coordinate of a point with rational `x` is rational.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 -- Proof-only: the absorption of integral elements by an algebraically closed field
@@ -29,6 +32,8 @@ closed field ask for an invertible index in exchange.
   of `F`.
 * `WeierstrassCurve.mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed`: such an `n`-torsion
   point is therefore the base change of one over `F`.
+* `WeierstrassCurve.torsionBy_baseChange_eq_bot_iff_of_isAlgClosed`: for `n ≠ 0`, the
+  `n`-torsion of `W` over `Ω` is trivial exactly when that of `W` itself is.
 
 ## References
 
@@ -75,6 +80,26 @@ theorem mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed [DecidableEq F] [De
       (f := Algebra.ofId F Ω) (FaithfulSMul.algebraMap_injective F Ω) x₀ y₀).mp hns), ?_⟩
     rw [Affine.Point.map_some]
     simp only [Algebra.ofId_apply]
+
+/-- **An extension of an algebraically closed field adds no `n`-torsion**, for `n ≠ 0`: the
+`n`-torsion subgroup of `W` over `Ω` is trivial exactly when that of `W` is. Base change is
+injective on points, and every `n`-torsion point over `Ω` comes from one over `F`. -/
+theorem torsionBy_baseChange_eq_bot_iff_of_isAlgClosed [DecidableEq F] [DecidableEq Ω] {n : ℤ}
+    (hn : n ≠ 0) :
+    AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point n = ⊥ ↔
+      AddSubgroup.torsionBy W.toAffine.Point n = ⊥ := by
+  let e := Affine.Point.equivBaseChangeSelf W.toAffine
+  let φ := Affine.Point.baseChange (W' := W) F Ω
+  have hφ : Function.Injective φ := Affine.Point.map_injective _
+  simp only [AddSubgroup.eq_bot_iff_forall, Submodule.mem_toAddSubgroup,
+    Submodule.mem_torsionBy_iff]
+  refine ⟨fun h P hP ↦ e.injective (hφ ?_), fun h Q hQ ↦ ?_⟩
+  · rw [map_zero, map_zero]
+    exact h (φ (e P)) (by rw [← map_zsmul, ← map_zsmul, hP, map_zero, map_zero])
+  · obtain ⟨P, rfl⟩ := W.mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed hn hQ
+    have hnP : n • P = 0 := hφ (by rwa [map_zsmul, map_zero])
+    have hP : e.symm P = 0 := h (e.symm P) (by rw [← map_zsmul, hnP, map_zero])
+    rw [← e.apply_symm_apply P, hP, map_zero, map_zero]
 
 end WeierstrassCurve
 

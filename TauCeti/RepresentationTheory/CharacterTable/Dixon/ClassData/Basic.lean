@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.MultiplicationMatrix
+import Mathlib.Data.List.GetD
 
 /-!
 # Executable conjugacy-class data
 
-The class-algebra theory of a finite group is indexed by `ConjClasses G`, a quotient type: perfect
-for stating theorems, useless for computing with, since nothing picks a representative of a class
-or orders the classes. The Burnside--Dixon--Schneider character-table algorithm needs both, because
-its input is the array of structure constants `aᵢⱼₖ` and its output is a table whose rows and
-columns are numbered.
+The class-algebra theory of a finite group is indexed by `ConjClasses G`, a quotient type. For
+`[Fintype G] [DecidableEq G]`, Mathlib makes it a `Fintype` with decidable equality, but nothing
+numbers the classes or picks a representative of each. The Burnside--Dixon--Schneider
+character-table algorithm needs both, because its input is the array of structure constants `aᵢⱼₖ`
+and its output is a table whose rows and columns are numbered.
 
 This file supplies the missing numbering. A `TauCeti.ClassData G` is a list of elements of `G`, one
 from each conjugacy class; the two fields say that no two entries are conjugate and that every
@@ -64,12 +65,7 @@ order `8` as a closed instance of everything here.
 
 ## References
 
-This implements the object `ClassData` and the executable `structureConstant` of Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-the layer that makes the Burnside--Dixon--Schneider algorithm executable. The `Fin`-indexed family
-`classFinset` is what the class-multiplication matrices are indexed by, while `classes` packages
-the same family as the executable `List (Finset G)` requested there. See J. D. Dixon, *High speed
-computation of group characters*, Numer. Math. 10 (1967) 446-450.
+* J. D. Dixon, *High speed computation of group characters*, Numer. Math. 10 (1967), 446–450.
 -/
 
 -- The definitions carrying the computation are individually `@[expose]`d below: a downstream
@@ -94,6 +90,7 @@ finiteness what turns the classes into `Finset`s.
 The order of `reps` is the arbitrary but fixed numbering of the conjugacy classes that a
 computation indexes by; `TauCeti.ClassData.equivConjClasses` identifies it with
 `ConjClasses G`. -/
+@[ext]
 structure ClassData (G : Type*) [Group G] where
   /-- The chosen representatives, in the order that numbers the classes. -/
   reps : List G
@@ -103,14 +100,6 @@ structure ClassData (G : Type*) [Group G] where
   exists_isConj : ∀ g : G, ∃ x ∈ reps, IsConj x g
 
 namespace ClassData
-
-/-- **Class data is determined by its representatives**: the two remaining fields are proofs. -/
-@[ext]
-theorem ext {d₁ d₂ : ClassData G} (h : d₁.reps = d₂.reps) : d₁ = d₂ := by
-  cases d₁
-  cases d₂
-  subst h
-  rfl
 
 /-- Class data extracted from a list `l` that meets every conjugacy class: keep an entry exactly
 when it is not conjugate to any entry kept from the part of `l` after it. Since `List.pwFilter`
@@ -146,8 +135,8 @@ theorem reps_ofList [DecidableRel (IsConj : G → G → Prop)] (l : List G)
     (hl : ∀ g : G, ∃ x ∈ l, IsConj x g) :
     (ofList l hl).reps = l.pwFilter fun x y => ¬ IsConj x y := (rfl)
 
-/-- Every finite group has class data; the witness is noncomputable only because
-`Finset.toList` is. -/
+/-- Every finite group has class data. The witness is noncomputable: it enumerates `G` through
+`Fintype.ofFinite` and `Finset.toList`, and decides conjugacy classically. -/
 noncomputable instance [Finite G] : Inhabited (ClassData G) := by
   letI := Fintype.ofFinite G
   letI := Classical.decRel (IsConj : G → G → Prop)
@@ -269,24 +258,10 @@ theorem equivConjClasses_symm_apply (C : ConjClasses G) :
 
 omit [DecidableRel (IsConj : G → G → Prop)] in
 /-- **The numbering has the expected length**: `d.reps` lists as many elements as `G` has
-conjugacy classes. The bijection is the one underlying `TauCeti.ClassData.equivConjClasses`, but it
-is exhibited here from the two fields directly, since the count itself needs neither a finite `G`
-nor a decidable conjugacy. -/
+conjugacy classes. The statement assumes neither a finite `G` nor a decidable conjugacy. -/
 theorem numClasses_eq_card_conjClasses : d.numClasses = Nat.card (ConjClasses G) := by
-  have hbij : Function.Bijective d.classOf := by
-    constructor
-    · intro i j hij
-      rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj] at hij
-      by_contra hne
-      exact d.not_isConj_rep hne hij
-    · refine Quotient.ind fun g => ?_
-      obtain ⟨x, hx, hxg⟩ := d.exists_isConj g
-      obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
-      refine ⟨⟨i, hi⟩, ?_⟩
-      rw [ConjClasses.quotient_mk_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj]
-      -- the representative `d.rep ⟨i, hi⟩` is the list entry `d.reps[i]` by definition
-      exact hxg
-  simpa using Nat.card_congr (Equiv.ofBijective _ hbij)
+  classical
+  simpa only [Nat.card_fin] using Nat.card_congr d.equivConjClasses
 
 /-! ### Reindexing numbered tables -/
 
@@ -314,13 +289,7 @@ theorem reindexTableOfMap_apply_classOf {R S : Type*}
     (i j : Fin d.numClasses) :
     d.reindexTableOfMap f table (finCongr d.numClasses_eq_card_conjClasses i) (d.classOf j) =
       f (table i j) := by
-  rw [d.reindexTableOfMap_apply]
-  have hi : (finCongr d.numClasses_eq_card_conjClasses).symm
-      (finCongr d.numClasses_eq_card_conjClasses i) = i :=
-    (finCongr d.numClasses_eq_card_conjClasses).symm_apply_apply i
-  have hj : d.equivConjClasses.symm (d.classOf j) = j := by
-    rw [← d.equivConjClasses_apply j, Equiv.symm_apply_apply]
-  rw [hi, hj]
+  simp only [d.reindexTableOfMap_apply, ← d.equivConjClasses_apply, Equiv.symm_apply_apply]
 
 -- Finiteness enters only from here: it is what presents a conjugacy class as a `Finset`, and so
 -- what lets the structure constants be counted.
@@ -450,6 +419,14 @@ theorem getElem_structureConstantTable (i : ℕ) (hi : i < d.structureConstantTa
         (List.finRange d.numClasses).map fun k =>
           d.structureConstant ⟨i, d.length_structureConstantTable ▸ hi⟩ j k := by
   simp [structureConstantTable]
+
+/-- Reading the tabulated structure constants at three valid indices recovers the corresponding
+computed structure constant. This `getD` form is convenient when a whole literal table is rewritten
+at once. -/
+theorem getD_structureConstantTable (i j k : Fin d.numClasses) :
+    (((d.structureConstantTable.getD i.val []).getD j.val []).getD k.val 0) =
+      d.structureConstant i j k := by
+  simp [List.getD_eq_getElem?_getD]
 
 end StructureConstants
 

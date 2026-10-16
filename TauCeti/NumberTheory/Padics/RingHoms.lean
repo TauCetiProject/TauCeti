@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
@@ -37,12 +38,16 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
   reduction and truncation, as divisibility statements.
+* `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
+  reduce to `1` modulo `p ^ n`.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
   `PadicInt.appr_natCast_modEq`: the truncations are compatible with each other and with the
   ring operations, modulo `p ^ n`.
+* `PadicInt.appr_natCast_pow_of_le`: the truncation of `p ^ m` modulo `p ^ n` is `0` for
+  `n ≤ m`.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
 * `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
@@ -57,10 +62,12 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
-* `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
-  `ℤ_[p]`.
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
-  homomorphism to the units of `ZMod (p ^ n)`.
+  homomorphism to the units of `ZMod (p ^ n)`; it is surjective, that is, every unit of
+  `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]` (`PadicInt.unitsToZModPow_surjective`),
+  compatible with the reductions `ZMod.unitsMap` between levels
+  (`PadicInt.unitsMap_unitsToZModPow`), and trivial at level `0`
+  (`PadicInt.unitsToZModPow_zero_apply`).
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
 -/
@@ -124,6 +131,14 @@ theorem toZModPow_eq_zero_iff_dvd (n : ℕ) (x : ℤ_[p]) :
     toZModPow n x = 0 ↔ (p : ℤ_[p]) ^ n ∣ x := by
   rw [← RingHom.mem_ker, ker_toZModPow, Ideal.mem_span_singleton]
 
+/-- A `p`-adic integer within `p ^ (-n)` of `1` reduces to `1` modulo `p ^ n`. -/
+theorem toZModPow_eq_one_of_norm_sub_one_le {n : ℕ} {x : ℤ_[p]}
+    (hx : ‖x - 1‖ ≤ (p : ℝ) ^ (-(n : ℤ))) :
+    toZModPow n x = 1 := by
+  rw [← sub_eq_zero, ← map_one (toZModPow (p := p) n), ← map_sub,
+    ← RingHom.mem_ker, ker_toZModPow, ← norm_le_pow_iff_mem_span_pow]
+  exact hx
+
 /-- Reducing the truncation `x mod p ^ n` further modulo `p` gives `x mod p`. -/
 @[simp]
 theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
@@ -165,6 +180,15 @@ theorem appr_mul_modEq (x y : ℤ_[p]) (n : ℕ) :
 /-- Truncation fixes a natural number modulo `p ^ n`. -/
 theorem appr_natCast_modEq (k n : ℕ) : ((k : ℤ_[p])).appr n ≡ k [MOD p ^ n] := by
   rw [← ZMod.natCast_eq_natCast_iff, ← toZModPow_eq_natCast_appr, map_natCast]
+
+/-- The truncation of `p ^ m` modulo `p ^ n` vanishes when `n ≤ m`. -/
+@[simp]
+theorem appr_natCast_pow_of_le {m n : ℕ} (h : n ≤ m) : ((p : ℤ_[p]) ^ m).appr n = 0 := by
+  have hm := appr_natCast_modEq (p := p) (p ^ m) n
+  rw [Nat.cast_pow] at hm
+  exact Nat.eq_zero_of_dvd_of_lt
+    (Nat.modEq_zero_iff_dvd.mp (hm.trans (Nat.modEq_zero_iff_dvd.mpr (pow_dvd_pow p h))))
+    (appr_lt _ n)
 
 /-- The truncation `toZModPow n` identifies the quotient of `ℤ_[p]` by the ideal `(p ^ n)` with
 `ZMod (p ^ n)`. This is the `p ^ n` analogue of `PadicInt.residueField`. -/
@@ -273,18 +297,6 @@ theorem continuous_quotientSpanToZModPow (n : ℕ) {q : ℤ_[p]} (hq : (p : ℤ_
     Continuous (quotientSpanToZModPow n hq) :=
   Ideal.Quotient.continuous_lift _ (continuous_toZModPow n) _
 
-/-- Every unit of `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because
-truncation is a surjective local homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the
-target `ZMod 1` is the trivial ring, so there is nothing to lift. -/
-theorem surjective_units_map_toZModPow (n : ℕ) :
-    Function.Surjective (Units.map (toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom) := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
-    exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
-  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
-    exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
-      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
-
 /-- Truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous homomorphism to the units of
 `ZMod (p ^ n)`. -/
 noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →ₜ* (ZMod (p ^ n))ˣ where
@@ -297,6 +309,31 @@ noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →ₜ* (ZMod (p ^ n))ˣ 
 theorem coe_unitsToZModPow_apply (n : ℕ) (u : ℤ_[p]ˣ) :
     ((unitsToZModPow n u : (ZMod (p ^ n))ˣ) : ZMod (p ^ n)) = toZModPow n (u : ℤ_[p]) :=
   (rfl)
+
+/-- Truncation modulo `p ^ n` on the units of `ℤ_[p]` is surjective: every unit of `ZMod (p ^ n)`
+lifts to a unit of `ℤ_[p]`. -/
+theorem unitsToZModPow_surjective (n : ℕ) :
+    Function.Surjective (unitsToZModPow (p := p) n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+    exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
+  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+    exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
+      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+
+/-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
+truncation modulo `p ^ m`. -/
+@[simp]
+theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ) :
+    ZMod.unitsMap h (unitsToZModPow n u) = unitsToZModPow m u := by
+  ext
+  rw [ZMod.unitsMap_val, coe_unitsToZModPow_apply, coe_unitsToZModPow_apply,
+    cast_toZModPow _ _ ((Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).mp h)]
+
+/-- Truncation modulo `p ^ 0 = 1` sends every unit to `1`. -/
+theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
+  have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+  exact Subsingleton.elim _ _
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

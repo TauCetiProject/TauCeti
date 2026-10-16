@@ -21,7 +21,7 @@ Euclidean angle between their velocities at parameter `0`. Since Möbius transfo
 velocities by multiplication by the nonzero complex number `smulDeriv`, the angle is invariant
 under the action (`geodesicAngle_mul`): this is the conformality of `PSL(2, ℝ)`.
 
-Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 8 (2008): the definition of
+Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010): the definition of
 the angle between geodesics as the angle between tangent vectors, §2 p. 7; Theorem 5.1 and
 Corollary 5.2 (Möbius transformations preserve the norm on tangent spaces, hence angles), p. 17–18.
 -/

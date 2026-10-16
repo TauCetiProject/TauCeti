@@ -32,6 +32,8 @@ components.
 * `FiniteLocallyFreeSheaf.rank_eq_of_iso`, `FiniteLocallyFreeSheaf.rank_free_apply` and
   `FiniteLocallyFreeSheaf.rank_pullback_apply`: the rank is invariant under isomorphism, is `|I|`
   for the free sheaf on `I`, and is preserved by pullback;
+* `FiniteLocallyFreeSheaf.rank_biprod_apply` and `FiniteLocallyFreeSheaf.rank_tensor_apply`: rank
+  is additive under direct sums and multiplicative under tensor products;
 * `FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one`: the invertible sheaves are exactly
   the finite locally free sheaves of rank one at every point, so that the fully faithful inclusion
   `InvertibleSheaf.toFiniteLocallyFree` identifies `InvertibleSheaf X` with the rank-one objects
@@ -45,7 +47,7 @@ components.
 
 public section
 
-open CategoryTheory TopologicalSpace
+open CategoryTheory Limits MonoidalCategory TopologicalSpace
 
 namespace TauCeti
 
@@ -89,6 +91,9 @@ theorem natCard_generatingSections_eq_of_mem
     (asIso (σ.restrict f).π ≪≫ (asIso (τ.restrict g).π).symm :) (Opposite.op (Over.mk (𝟙 W)))
 
 namespace FiniteLocallyFreeSheaf
+
+attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
+attribute [local instance] preservesBinaryBiproducts_of_preservesBinaryProducts
 
 /-- A finite locally free sheaf is free on a finite basis over some open neighbourhood of each
 point. -/
@@ -175,6 +180,68 @@ theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFre
   exact ((pullback f).obj E).rank_apply_eq_natCard_of_obj_eq (pullback_obj_obj f E)
     (U := f ⁻¹ᵁ U) hx τ (SheafOfModules.GeneratingSections.isIso_mapIso_π _ _ _ _)
     (by rw [SheafOfModules.GeneratingSections.mapIso_I]; exact hI)
+
+/-- Two finite locally free sheaves are free on finite bases over a common open neighbourhood of
+each point: the intersection of neighbourhoods on which each of them is free. -/
+private theorem exists_generatingSections_pair (E F : FiniteLocallyFreeSheaf X) (x : X) :
+    ∃ (W : X.Opens) (_ : x ∈ W) (σ : (E.obj.over W).GeneratingSections)
+      (τ : (F.obj.over W).GeneratingSections), IsIso σ.π ∧ Finite σ.I ∧ IsIso τ.π ∧ Finite τ.I := by
+  obtain ⟨U, hxU, σ, hσ, hI⟩ := E.exists_generatingSections x
+  obtain ⟨V, hxV, τ, hτ, hJ⟩ := F.exists_generatingSections x
+  have : σ.IsFiniteType := ⟨hI⟩
+  have : τ.IsFiniteType := ⟨hJ⟩
+  exact ⟨U ⊓ V, ⟨hxU, hxV⟩, σ.restrict (homOfLE inf_le_left), τ.restrict (homOfLE inf_le_right),
+    SheafOfModules.GeneratingSections.isIso_restrict_π σ _,
+    (SheafOfModules.GeneratingSections.isFiniteType_restrict σ _).finite,
+    SheafOfModules.GeneratingSections.isIso_restrict_π τ _,
+    (SheafOfModules.GeneratingSections.isFiniteType_restrict τ _).finite⟩
+
+/-- The rank of a direct sum is the sum of the ranks of its summands. -/
+@[simp]
+theorem rank_biprod_apply (E F : FiniteLocallyFreeSheaf X) (x : X) :
+    (E ⊞ F).rank x = E.rank x + F.rank x := by
+  obtain ⟨W, hx, σ, τ, hσ, hI, hτ, hJ⟩ := exists_generatingSections_pair E F x
+  have : σ.IsFiniteType := ⟨hI⟩
+  have : τ.IsFiniteType := ⟨hJ⟩
+  -- The direct sum of the two bases, transported to the restriction of the direct sum.
+  let e : E.obj.over W ⊞ F.obj.over W ≅ (E ⊞ F).obj.over W :=
+    (SheafOfModules.overBiprodIso E.obj F.obj W).symm ≪≫
+      (SheafOfModules.overFunctor X.ringCatSheaf W).mapIso
+        ((ObjectProperty.ι (Scheme.Modules.isFiniteLocallyFree X)).mapBiprod E F).symm
+  let ρ := SheafOfModules.GeneratingSections.equivOfIso e (σ.biprod τ)
+  have : Finite ρ.I := (SheafOfModules.GeneratingSections.isFiniteType_equivOfIso e _).finite
+  rw [(E ⊞ F).rank_apply_eq_natCard hx ρ, E.rank_apply_eq_natCard hx σ,
+    F.rank_apply_eq_natCard hx τ, SheafOfModules.GeneratingSections.equivOfIso_apply_I,
+    SheafOfModules.GeneratingSections.biprod_I, Nat.card_sum]
+
+/-- The rank of a tensor product is the product of the ranks of its factors. -/
+@[simp]
+theorem rank_tensor_apply (E F : FiniteLocallyFreeSheaf X) (x : X) :
+    (E ⊗ F).rank x = E.rank x * F.rank x := by
+  obtain ⟨W, hx, σ, τ, hσ, hI, hτ, hJ⟩ := exists_generatingSections_pair E F x
+  -- The monoidal structure on sheaves of modules is stated over sheaves of commutative rings, and
+  -- instance search does not recognize `X.ringCatSheaf.over W` as the restriction of `X.sheaf`.
+  let _ : MonoidalCategory
+      (_root_.SheafOfModules.{u} (X.ringCatSheaf.over W)) :=
+    SheafOfModules.monoidalCategory (X.sheaf.over W)
+  -- The basis of the free sheaf on `σ.I × τ.I`, transported to the restriction of the tensor
+  -- product.
+  let e : (E ⊗ F).obj.over W ≅
+      _root_.SheafOfModules.free (R := X.ringCatSheaf.over W) (σ.I × τ.I) :=
+    (SheafOfModules.overFunctor X.ringCatSheaf W).mapIso
+        (Functor.Monoidal.μIso (ObjectProperty.ι (Scheme.Modules.isFiniteLocallyFree X))
+          E F).symm ≪≫
+      SheafOfModules.overTensorIso E.obj F.obj W ≪≫
+      tensorIso (asIso σ.π).symm (asIso τ.π).symm ≪≫ SheafOfModules.freeTensorFreeIso σ.I τ.I
+  let ρ := SheafOfModules.GeneratingSections.equivOfIso e.symm
+    (_root_.SheafOfModules.free.generatingSections (σ.I × τ.I))
+  have : Finite ρ.I := by
+    rw [SheafOfModules.GeneratingSections.equivOfIso_apply_I,
+      _root_.SheafOfModules.free.generatingSections_I]
+    infer_instance
+  rw [(E ⊗ F).rank_apply_eq_natCard hx ρ, E.rank_apply_eq_natCard hx σ,
+    F.rank_apply_eq_natCard hx τ, SheafOfModules.GeneratingSections.equivOfIso_apply_I,
+    _root_.SheafOfModules.free.generatingSections_I, Nat.card_prod]
 
 /-- The rank locus of `E` in rank `n`: the clopen set of points at which `E` has rank `n`. -/
 def rankLocus (E : FiniteLocallyFreeSheaf X) (n : ℕ) : TopologicalSpace.Clopens X :=

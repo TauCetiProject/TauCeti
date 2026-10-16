@@ -14,16 +14,16 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 import TauCeti.FieldTheory.IntermediateField.FieldRange
 
 /-!
-# The function field of a Weierstrass curve has degree two over `R(x)`
+# Rank two over a Weierstrass curve's rational parameter
 
 Mathlib gives the coordinate ring `R[W]` a power basis `{1, Y}` over `R[X]`, and defines the
-function field `R(W)` as its fraction field. It says nothing about `R(W)` as an extension of the
-rational function field. The algebra structure for that pair *is* Mathlib's
-`FractionRing.liftAlgebra`, but deliberately not an instance — for a general target it collides
-with the identity structure on `FractionRing R[X]` itself — so the degree cannot be stated without
-introducing it. This file exports it as an instance and proves the degree, in two forms: over an
-abstract fraction field `L` of `R[X]` acting through a scalar tower, and over the copy of the
-rational function field that sits *inside* `R(W)` as an intermediate field.
+total fraction ring `R(W)` as its fraction ring. Its rank over any fraction ring of `R[X]` acting
+through a compatible scalar tower is two, for any nontrivial commutative base ring `R`.
+Over an integral domain these fraction rings are fields. The algebra structure for that pair is
+Mathlib's `FractionRing.liftAlgebra`, which is not a general instance because it collides with
+the identity structure on `FractionRing R[X]` itself. This file exports the specialized action
+as an instance. Over a field `F`, it also computes the degree above the copy of the rational
+function field that sits inside `F(W)` as an intermediate field.
 
 ## Main results
 
@@ -31,17 +31,17 @@ rational function field that sits *inside* `R(W)` as an intermediate field.
   `R[X]`-module — the companion of Mathlib's `Module.Free` instance, which Mathlib has only as a
   lemma, so instance search cannot reach it.
 * `WeierstrassCurve.Affine.finrank_coordinateRing`: the coordinate ring's `Module.finrank` over
-  `R[X]` is two, needing only `[Nontrivial R]` — which discharges the `StrongRankCondition R[X]`
-  that `Module.finrank` wants, through `commRing_strongRankCondition`.
+  `R[X]` is two, over any nontrivial commutative base ring.
 * `WeierstrassCurve.Affine.algebraFractionRingFunctionField`: the `R(x)`-algebra structure on
   `R(W)`, over any integral domain. Exporting it is enough to bring Mathlib's own
   `FractionRing.liftAlgebra` API to bear on this pair — the tower `R[X] ⊆ R(x) ⊆ R(W)` is then
   found by instance search, and the induced map is
   `FractionRing.algebraMap_liftAlgebra R[X] W.FunctionField`; neither needs restating here.
-* `WeierstrassCurve.Affine.finrank_functionField`: `[R(W) : L] = 2` for any fraction field `L` of
-  `R[X]` — so it serves `RatFunc R` as well as `FractionRing R[X]`.
+* `WeierstrassCurve.Affine.finrank_functionField`: `[R(W) : L] = 2` for any commutative fraction
+  ring `L` of `R[X]` acting through the polynomial-ring scalar tower — so it serves `RatFunc R`
+  as well as `FractionRing R[X]` when `R` is a field.
 * `WeierstrassCurve.Affine.finiteDimensional_functionField`: the extension is finite-dimensional
-  over the same arbitrary `L`, which `finrank = 2` does not give by instance search.
+  over any fraction field `L` of `R[X]`, which `finrank = 2` does not give by instance search.
 * `WeierstrassCurve.Affine.isFunctionField`: `W.FunctionField` is an algebraic function field of
   one variable over `F`.
 * `WeierstrassCurve.Affine.ratFuncRange`: the copy of the rational function field `F(x)` inside
@@ -51,27 +51,17 @@ rational function field that sits *inside* `R(W)` as an intermediate field.
 * `WeierstrassCurve.Affine.finrank_ratFuncRange`: `[F(W) : F(x)] = 2` for that copy. This is the
   degree above a subfield of `F(W)` rather than above an abstract `L`, which is what any argument
   comparing two subfields of `F(W)` — a tower, or a relative degree — needs; the two are related
-  by `TauCeti.AlgHom.finrank_fieldRange`, since the copy and `RatFunc F` are isomorphic as fields
+  by `AlgHom.finrank_fieldRange`, since the copy and `RatFunc F` are isomorphic as fields
   acting on `F(W)`.
 * `WeierstrassCurve.Affine.relfinrank_map_ratFuncRange_fieldRange`: mapping the pair
   `F(x) ⊆ F(W)` along a function-field embedding preserves its relative degree two.
 * `WeierstrassCurve.Affine.finrank_map_ratFuncRange`: consequently the image of `F(x)` sits twice
   the degree of the image of `F(W)` below the target.
 
-Exporting the algebra instance is safe here for the reason Mathlib withholds it in general: the
-collision is with the identity structure on `FractionRing R[X]`, and `R(W)` is a *quadratic*
-extension, so the two can never coincide. The degree itself is Mathlib's
-`IsFractionRing.finrank_eq` — `L` and `R(W)` are fraction rings of `R[X]` and `R[W]`, so their
-degrees agree — with no algebraicity, finiteness or base-change hypothesis.
-
-## Roadmap
-
-The Hasse strand of `TauCetiRoadmap/EllipticCurves/README.md`, Layer 3. The degree of the Frobenius
-isogeny is computed from the tower `K(W) ⊇ K(x) ⊇ K(x^q)`, where the outer degrees are this `2` and
-the inner degree is `q`; the roadmap calls the Frobenius "the key input to Layer 3". It is also
-Layer 0 infrastructure: the roadmap's §"What Mathlib already has (consume)" lists
-`Affine.FunctionField` as consumed, and this is a complement to that API rather than a
-reimplementation of it.
+The degree is useful in function-field towers, such as `K(W) ⊇ K(x) ⊇ K(x^q)` when computing
+the degree of Frobenius. It follows from Mathlib's `IsFractionRing.finrank_eq`: `L` and `R(W)`
+are fraction rings of `R[X]` and `R[W]`, so their ranks agree, without algebraicity, finiteness or
+base-change hypotheses.
 
 ## References
 
@@ -79,8 +69,8 @@ reimplementation of it.
 
 ## Provenance
 
-Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FrobeniusIsogeny.lean`: the
+Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0,
+`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FrobeniusIsogeny.lean`: the
 declarations `coordinateRing_finite`, `finrank_coordinateRing_eq_two`, its anonymous
 `Algebra (FractionRing K[X]) K(W)` instance, and `finrank_functionField_eq_two`.
 `finiteDimensional_functionField` is not in the source.
@@ -88,9 +78,10 @@ declarations `coordinateRing_finite`, `finrank_coordinateRing_eq_two`, its anony
 Changes from the source. They are stated there inside a file that also builds the Frobenius
 isogeny; here they are separated out, since the degree of `R(W)` over the rational function field
 is a fact about the curve and not about any isogeny. The source states everything over a field;
-here the coordinate-ring half needs only a nontrivial commutative ring and the function-field half
-an integral domain, which is all either argument uses, and the degree is stated over an arbitrary
-fraction field of `R[X]` rather than over `FractionRing R[X]` alone.
+here both rank computations need only a nontrivial commutative base ring, and the degree is stated
+over an arbitrary commutative fraction ring of `R[X]` rather than over `FractionRing R[X]` alone.
+The canonical fraction-field algebra instance still assumes an integral domain, while finiteness
+over a field `L` needs no separate domain or nontriviality hypothesis on `R`.
 
 The source's remaining declarations are **not** ported, each being reachable without them: its
 `Module K[X] K[W]`, `IsScalarTower K[X] K(x) K(W)`, `Algebra.IsIntegral K[X] K[W]` and two
@@ -127,34 +118,18 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve.Affine R)
 instance moduleFinite_coordinateRing : Module.Finite R[X] W.CoordinateRing :=
   .of_basis (CoordinateRing.basis W)
 
-/-- **The coordinate ring has rank two over `R[X]`.** `Nontrivial R` is what `Module.finrank`
-needs: it gives `StrongRankCondition R[X]` through `commRing_strongRankCondition`. -/
+/-- The coordinate ring has rank two over `R[X]` for any nontrivial commutative base ring. -/
 @[simp]
 lemma finrank_coordinateRing [Nontrivial R] :
     Module.finrank R[X] W.CoordinateRing = 2 :=
   (Module.finrank_eq_card_basis (CoordinateRing.basis W)).trans (Fintype.card_fin 2)
 
-end CommRing
-
-section Domain
-
-variable {R : Type*} [CommRing R] [IsDomain R] (W : WeierstrassCurve.Affine R)
-
-/-- **The rational function field `R(x)` acts on the function field `R(W)`.** Mathlib keeps
-`FractionRing.liftAlgebra` out of the instance graph because it collides with the identity
-structure when the target *is* `FractionRing R[X]`; `R(W)` is a quadratic extension of `R(x)`, so
-that collision cannot arise for this pair and the instance is exported. -/
-noncomputable instance algebraFractionRingFunctionField :
-    Algebra (FractionRing R[X]) W.FunctionField :=
-  FractionRing.liftAlgebra R[X] W.FunctionField
-
-/-- **The function field of a Weierstrass curve is a quadratic extension of the rational function
-field.** Stated for an arbitrary fraction field `L` of `R[X]`, so that it serves `RatFunc R` as
-well as `FractionRing R[X]`; the latter is found by instance search through
-`algebraFractionRingFunctionField`. -/
+/-- The total fraction ring of the coordinate ring has rank two over any fraction ring `L` of
+`R[X]` acting through a compatible scalar tower. When `R` is an integral domain, this says that
+the function field is a quadratic extension of the rational function field. -/
 @[simp]
-theorem finrank_functionField (L : Type*) [Field L] [Algebra R[X] L] [IsFractionRing R[X] L]
-    [Algebra L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
+theorem finrank_functionField [Nontrivial R] (L : Type*) [CommRing L] [Algebra R[X] L]
+    [IsFractionRing R[X] L] [Algebra L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
     Module.finrank L W.FunctionField = 2 := by
   -- `L` and `R(W)` are fraction rings of `R[X]` and `R[W]`, so their degrees agree.
   rw [IsFractionRing.finrank_eq R[X] L W.CoordinateRing W.FunctionField, finrank_coordinateRing]
@@ -163,8 +138,21 @@ theorem finrank_functionField (L : Type*) [Field L] [Algebra R[X] L] [IsFraction
 not give this by instance search, and downstream norm/trace/separability arguments need it. -/
 instance finiteDimensional_functionField (L : Type*) [Field L] [Algebra R[X] L]
     [IsFractionRing R[X] L] [Algebra L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
-    FiniteDimensional L W.FunctionField :=
-  .of_finrank_pos (by simp)
+    FiniteDimensional L W.FunctionField := by
+  have : Nontrivial R := ((algebraMap R[X] L).comp C).domain_nontrivial
+  exact .of_finrank_pos (by simp)
+
+end CommRing
+
+section Domain
+
+variable {R : Type*} [CommRing R] [IsDomain R] (W : WeierstrassCurve.Affine R)
+
+/-- The action of `R(x)` on `R(W)` obtained by extending the polynomial-ring action to
+fractions. It supplies the scalar tower `R[X] ⊆ R(x) ⊆ R(W)`. -/
+noncomputable instance algebraFractionRingFunctionField :
+    Algebra (FractionRing R[X]) W.FunctionField :=
+  FractionRing.liftAlgebra R[X] W.FunctionField
 
 end Domain
 
@@ -214,10 +202,10 @@ theorem mem_ratFuncRange {z : W.FunctionField} :
 
 /-- **`[F(W) : F(x)] = 2`**, for the copy of the rational function field inside `F(W)`: the
 `L = RatFunc F` case of `finrank_functionField`, transported along the embedding by
-`TauCeti.AlgHom.finrank_fieldRange`. -/
+`AlgHom.finrank_fieldRange`. -/
 @[simp]
 theorem finrank_ratFuncRange : Module.finrank (ratFuncRange W) W.FunctionField = 2 :=
-  (TauCeti.AlgHom.finrank_fieldRange (IsScalarTower.toAlgHom F (RatFunc F) W.FunctionField)
+  ((IsScalarTower.toAlgHom F (RatFunc F) W.FunctionField).finrank_fieldRange
     fun z ↦ (IsScalarTower.toAlgHom_apply F (RatFunc F) W.FunctionField z).symm).trans
       (finrank_functionField W (RatFunc F))
 

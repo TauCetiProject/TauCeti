@@ -10,6 +10,8 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.Subrepresentation
 public import Mathlib.Algebra.Category.ModuleCat.Simple
 public import Mathlib.Algebra.Category.ModuleCat.Ulift
+import Mathlib.CategoryTheory.Preadditive.Schur
+import Mathlib.Order.Preorder.Finite
 
 /-!
 # The vertex simple representations of a quiver
@@ -57,6 +59,8 @@ line through `x` at `i` and zero elsewhere, which is `Sᵢ`.
 * `TauCeti.hom_simpleRep_eq_zero_iff` and `TauCeti.simpleRep_hom_eq_zero_iff`: a morphism into or
   out of `Sᵢ` is detected by its component at `i`.
 * `TauCeti.dimVector_simpleRep`: the dimension vector of `Sᵢ` is `Pi.single i 1`.
+* `TauCeti.exists_mono_simpleRep_of_not_isZero`: over a finite-vertex acyclic quiver, every
+  nonzero representation contains a vertex simple.
 * `TauCeti.not_nonempty_simpleRep_iso`: vertex simples at distinct vertices are not isomorphic.
 
 ## Implementation notes
@@ -456,6 +460,47 @@ theorem exists_iso_simpleRep_of_simple (hQ : Quiver.IsAcyclic Q) (M : QuiverRep 
   refine ⟨i, ⟨?_⟩⟩
   have := isIso_simpleRepHom x hxp hx hspan hM
   exact (asIso (simpleRepHom x hxp)).symm
+
+/-- Every nonzero representation of a finite-vertex acyclic quiver contains a vertex simple
+as a subrepresentation. No finite-dimensionality of the vertex spaces is needed. -/
+theorem exists_mono_simpleRep_of_not_isZero {k : Type u} {Q : Type v}
+    [Field k] [Quiver.{w} Q] [Finite Q] (hQ : Quiver.IsAcyclic Q)
+    {M : QuiverRep.{u, v, w, u} k Q} (hM : ¬ IsZero M) :
+    ∃ i : Q, ∃ f : simpleRep k Q i ⟶ M, Mono f := by
+  classical
+  let s : Set Q := {i | ¬ IsZero (M.obj i)}
+  have hs : s.Nonempty := by
+    by_contra h
+    exact hM (Functor.isZero M fun i ↦ not_not.mp fun hi ↦ h ⟨i, hi⟩)
+  -- Choose a maximal vertex in the nonzero support for the reachability relation.
+  let : LE Q := ⟨fun i j ↦ Nonempty (Quiver.Path i j)⟩
+  have : IsTrans Q (· ≤ · : Q → Q → Prop) := ⟨fun _ _ _ hij hjl ↦ by
+    obtain ⟨p⟩ := hij
+    obtain ⟨q⟩ := hjl
+    exact ⟨p.comp q⟩⟩
+  obtain ⟨i, hi, hmax⟩ := s.toFinite.exists_maximal hs
+  have hzero : ∀ {j : Q}, j ≠ i → Quiver.Path i j → IsZero (M.obj j) := by
+    intro j hji p
+    by_contra hj
+    obtain ⟨q⟩ : Nonempty (Quiver.Path j i) := hmax hj ⟨p⟩
+    exact hji (hQ.eq_of_paths p q).symm
+  obtain ⟨x, hx⟩ : ∃ x : M.obj ((Paths.of Q).obj i), x ≠ 0 := by
+    have : Nontrivial (M.obj ((Paths.of Q).obj i)) := by
+      rw [← not_subsingleton_iff_nontrivial]
+      exact fun h ↦ hi (ModuleCat.isZero_iff_subsingleton.mpr h)
+    exact exists_ne 0
+  have hxp : ∀ {j : Q} (p : Quiver.Path i j), p.length ≠ 0 → M.map p x = 0 := by
+    intro j p hp
+    by_cases hji : j = i
+    · subst j
+      exact False.elim (hp (hQ.length_eq_zero p))
+    · have : Subsingleton (M.obj j) := ModuleCat.subsingleton_of_isZero (hzero hji p)
+      exact Subsingleton.elim _ _
+  refine ⟨i, simpleRepHom x hxp, mono_of_nonzero_from_simple ?_⟩
+  intro hf
+  apply hx
+  simpa [hf] using
+    (simpleRepHom_app_generator x hxp).symm
 
 /-- Vertex simples at distinct vertices are not isomorphic: their dimension vectors differ. -/
 theorem not_nonempty_simpleRep_iso {i j : Q} (h : i ≠ j) :

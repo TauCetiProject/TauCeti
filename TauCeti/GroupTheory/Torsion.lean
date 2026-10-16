@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -55,6 +56,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 
 * `TauCeti.IsPPrimaryTorsion`: every element of `M` lies in the `p`-primary component.
 * `TauCeti.isPPrimaryTorsion_iff`: every element is killed by some power of `p`.
+* `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
+  makes the `p`-primary component trivial.
 * `TauCeti.isPPrimaryTorsion_additive_iff`: for a multiplicative group `M`, `Additive M` is
   `p`-primary torsion exactly when `M` is a `p`-group.
 * `TauCeti.IsPPrimaryTorsion.of_injective`, `TauCeti.IsPPrimaryTorsion.of_surjective`: the
@@ -62,6 +65,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 * `TauCeti.IsPPrimaryTorsion.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.IsPPrimaryTorsion.exists_pow_smul_eq_zero`: a finite `p`-primary torsion group is
   annihilated by one power of `p`.
+* `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
+  of finite order is already the image of a `p`-primary element.
 -/
 
 public section
@@ -215,6 +220,18 @@ theorem isPPrimaryTorsion_iff_primaryComponent_eq_top :
     IsPPrimaryTorsion p M ↔ AddCommGroup.primaryComponent M p = ⊤ :=
   (AddSubgroup.eq_top_iff' _).symm
 
+/-- If multiplication by `p` is injective, the `p`-primary component is trivial. -/
+theorem primaryComponent_eq_bot_of_injective_nsmul
+    (hp : Function.Injective fun x : M => p • x) :
+    AddCommGroup.primaryComponent M p = ⊥ := by
+  rw [AddSubgroup.eq_bot_iff_forall]
+  intro x hx
+  obtain ⟨m, hm⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hpPow : Function.Injective fun y : M => p ^ m • y := by
+    rw [← smul_iterate]
+    exact hp.iterate m
+  exact hpPow (by simpa using hm)
+
 /-- For a multiplicative commutative group `M`, `Additive M` is `p`-primary torsion exactly when
 `M` is a `p`-group. -/
 theorem isPPrimaryTorsion_additive_iff {M : Type*} [CommGroup M] :
@@ -263,5 +280,23 @@ theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
     simpa using hm⟩
 
 end IsPPrimaryTorsion
+
+/-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
+`p`, an additive homomorphism `f` and an element `m` of finite order with `f m` in the `p`-primary
+component, some element of the `p`-primary component has the same image. -/
+theorem exists_mem_primaryComponent_apply_eq {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
+    (f : F) (hp : p.Prime) {m : M} (hm : IsOfFinAddOrder m)
+    (hfm : f m ∈ AddCommGroup.primaryComponent N p) :
+    ∃ m' ∈ AddCommGroup.primaryComponent M p, f m' = f m := by
+  obtain ⟨k, hk⟩ := hfm
+  obtain ⟨b, c, hc, hord⟩ :=
+    Nat.exists_eq_pow_mul_and_not_dvd hm.addOrderOf_pos.ne' p hp.ne_one
+  -- Bézout for the coprime `c` and `p ^ k`: `i • c • y + j • p ^ k • y = y` for every `y`
+  obtain ⟨i, j, hij⟩ := exists_zsmul_add_zsmul_eq_of_coprime (G := N)
+    (((hp.coprime_iff_not_dvd.2 hc).symm).pow_right k)
+  refine ⟨i • c • m, ⟨b, ?_⟩, ?_⟩
+  · rw [smul_comm, smul_smul, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
+  · rw [map_zsmul, map_nsmul]
+    simpa [hk] using hij (f m)
 
 end TauCeti

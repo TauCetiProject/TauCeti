@@ -33,10 +33,14 @@ instance — independent of the presentation up to summands built from projectiv
 
 * `TauCeti.exists_comp_eq_of_range_le`: a map from a projective module factors through any map
   whose range contains its range.
+* `TauCeti.exists_lift_projective_presentation`: module maps lift to commutative squares between
+  projective presentations.
 * `TauCeti.exists_linearEquiv_comp_fst_eq_comp_snd_comp`: two maps from projective modules with
   equal ranges differ, after stabilisation, by an automorphism.
 * `TauCeti.exists_linearEquiv_comp_prodMap_comp_fst_eq`: two projective presentations of the same
   module are stably isomorphic as arrows.
+* `LinearMap.projective_ker_of_projective_ker`: whether the kernel of a surjection from a
+  projective module is projective does not depend on the surjection.
 
 ## References
 
@@ -95,6 +99,34 @@ theorem exists_linearEquiv_comp_fst_eq_comp_snd_comp [AddCommGroup A] [Module R 
 
 end EqualRange
 
+section LiftPresentation
+
+variable {M N P₀ P₁ Q₀ Q₁ : Type*}
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  [AddCommMonoid P₀] [Module R P₀] [AddCommMonoid P₁] [Module R P₁]
+  [AddCommMonoid Q₀] [Module R Q₀] [AddCommMonoid Q₁] [Module R Q₁]
+  {p : P₁ →ₗ[R] P₀} {q : Q₁ →ₗ[R] Q₀} {π : P₀ →ₗ[R] M} {ρ : Q₀ →ₗ[R] N}
+
+/-- A map to a presented module lifts to a square from any complex with projective terms.
+In particular, module maps lift to squares between projective presentations. The source needs
+only a zero composite, and the target needs exactness and a surjective augmentation. -/
+theorem exists_lift_projective_presentation [Module.Projective R P₀] [Module.Projective R P₁]
+    (hp : π ∘ₗ p = 0) (hq : Function.Exact q ρ) (hρ : Function.Surjective ρ)
+    (f : M →ₗ[R] N) :
+    ∃ (f₀ : P₀ →ₗ[R] Q₀) (f₁ : P₁ →ₗ[R] Q₁),
+      ρ ∘ₗ f₀ = f ∘ₗ π ∧ f₀ ∘ₗ p = q ∘ₗ f₁ := by
+  obtain ⟨f₀, hf₀⟩ := Module.projective_lifting_property ρ (f ∘ₗ π) hρ
+  have hrange : range (f₀ ∘ₗ p) ≤ range q := by
+    rw [← LinearMap.exact_iff.mp hq]
+    rintro _ ⟨x, rfl⟩
+    simp only [mem_ker, comp_apply]
+    rw [← comp_apply, hf₀]
+    simp only [comp_apply, ← comp_apply π p, hp, zero_apply, map_zero]
+  obtain ⟨f₁, hf₁⟩ := exists_comp_eq_of_range_le hrange
+  exact ⟨f₀, f₁, hf₀, hf₁.symm⟩
+
+end LiftPresentation
+
 section Presentation
 
 variable {M P₀ P₁ Q₀ Q₁ : Type*} [AddCommMonoid M] [Module R M]
@@ -143,5 +175,31 @@ theorem exists_linearEquiv_comp_prodMap_comp_fst_eq {f : P₁ →ₗ[R] P₀} {�
   exact ⟨e₀, e₁, he₁⟩
 
 end Presentation
+
+section Kernel
+
+variable {R : Type*} [Semiring R] {M P Q : Type*} [AddCommMonoid M] [Module R M]
+  [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+  [Module.Projective R P] [Module.Projective R Q]
+
+/-- **Projectivity of the kernel does not depend on the projective presentation.** If `f : P → M`
+and `g : Q → M` are surjections from projective modules and `ker g` is projective, then so is
+`ker f`: by Schanuel's lemma `ker f × Q ≃ P × ker g`, of which `ker f` is a direct summand. -/
+theorem _root_.LinearMap.projective_ker_of_projective_ker (f : P →ₗ[R] M)
+    (hf : Function.Surjective f) (g : Q →ₗ[R] M) (hg : Function.Surjective g)
+    [Module.Projective R (ker g)] : Module.Projective R (ker f) := by
+  obtain ⟨e, he⟩ := exists_linearEquiv_comp_fst_eq_comp_snd_comp (a := f) (b := g)
+    (by rw [range_eq_top.mpr hf, range_eq_top.mpr hg])
+  have he' (x : P × Q) : f x.1 = g (e x).2 := congr($he x)
+  -- `e` carries `ker f × Q` onto `P × ker g`; restrict it to `ker f × 0` and invert it.
+  let a : ker f →ₗ[R] P × Q := e.toLinearMap ∘ₗ inl R P Q ∘ₗ (ker f).subtype
+  let b : P × ker g →ₗ[R] P := fst R P Q ∘ₗ e.symm.toLinearMap ∘ₗ id.prodMap (ker g).subtype
+  have ha (x : ker f) : snd R P Q (a x) ∈ ker g := by simp [a, ← he']
+  have hb (y : P × ker g) : b y ∈ ker f := by simp [b, he']
+  let i : ker f →ₗ[R] P × ker g := (fst R P Q ∘ₗ a).prod ((snd R P Q ∘ₗ a).codRestrict _ ha)
+  refine .of_split i (b.codRestrict _ hb) (LinearMap.ext fun x ↦ Subtype.ext ?_)
+  simp [i, a, b]
+
+end Kernel
 
 end TauCeti

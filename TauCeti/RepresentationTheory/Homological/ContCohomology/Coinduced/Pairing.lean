@@ -34,14 +34,30 @@ ev (m ⋆ f) = μ m (ev f),      tr (m ⋆ f) = μ m (tr f).
 These two identities are the coefficient-level input to the projection formula for
 corestriction and cup products.
 
+A `U`-equivariant biadditive pairing `μ : A →+ B →+ C` of `U`-modules also induces the
+**pointwise pairing** of the coinduced modules,
+
+```text
+Coind_U^G A × Coind_U^G B → Coind_U^G C,
+    (f, f') ↦ (g ↦ μ (f g) (f' g)),
+```
+
+which is `G`-equivariant for the right-translation action and commutes with evaluation at `1`.
+Followed by the trace, the pointwise pairing is the pairing through which the internal hom out of
+a coinduced module is identified with a coinduced module, and the coefficient pairing along which
+Shapiro's isomorphism is multiplicative.
+
 ## Main definitions
 
 * `TauCeti.DiscreteCoind.pairing`: the biadditive pairing with a coinduced module.
+* `TauCeti.DiscreteCoind.pointwisePairing`: the pointwise pairing of two coinduced modules.
 
 ## Main results
 
 * `TauCeti.DiscreteCoind.eval_pairing`: evaluation at `1` commutes with the pairing.
 * `TauCeti.DiscreteCoind.trace_pairing`: the coinduced trace commutes with the pairing.
+* `TauCeti.DiscreteCoind.pointwisePairing_smul`, `TauCeti.DiscreteCoind.eval_pointwisePairing`:
+  the pointwise pairing is `G`-equivariant and commutes with evaluation at `1`.
 
 ## References
 
@@ -54,7 +70,9 @@ public section
 
 namespace TauCeti.DiscreteCoind
 
-universe u
+universe u v w x
+
+section Pairing
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
   (U : Subgroup G) (hU : IsOpen (U : Set G))
@@ -114,5 +132,54 @@ theorem trace_pairing (m : M) (f : DiscreteCoind G U N) :
   apply Finset.sum_congr rfl
   intro x _
   rw [← hμ x.out (x.out⁻¹ • m) (f x.out⁻¹), smul_inv_smul]
+
+end Pairing
+
+section Pointwise
+
+variable {G : Type u} [Group G] [TopologicalSpace G] (U : Subgroup G)
+  {A : Type v} {B : Type w} {C : Type x}
+  [AddCommGroup A] [DistribMulAction U A]
+  [AddCommGroup B] [DistribMulAction U B]
+  [AddCommGroup C] [DistribMulAction U C]
+  (μ : A →+ B →+ C)
+  (hμ : ∀ (u : U) (a : A) (b : B), μ (u • a) (u • b) = u • μ a b)
+
+include hμ in
+/-- The `U`-equivariance of `g ↦ μ (f g) (f' g)`, the defining law of a coinduced function. -/
+private theorem pointwisePairing_apply_mul (f : DiscreteCoind G U A) (f' : DiscreteCoind G U B)
+    (u : U) (g : G) :
+    μ (f ((u : G) * g)) (f' ((u : G) * g)) = u • μ (f g) (f' g) := by
+  rw [f.apply_mul, f'.apply_mul, hμ]
+
+/-- **The pointwise pairing of two coinduced modules**: a `U`-equivariant biadditive pairing
+`μ : A →+ B →+ C` of `U`-modules pairs coinduced functions value by value,
+`pointwisePairing U μ hμ f f' g = μ (f g) (f' g)`. -/
+def pointwisePairing : DiscreteCoind G U A →+ DiscreteCoind G U B →+ DiscreteCoind G U C where
+  toFun f :=
+    { toFun := fun f' => mk G U C (fun g => μ (f g) (f' g))
+        (f.isLocallyConstant.comp₂ f'.isLocallyConstant fun a b => μ a b)
+        (pointwisePairing_apply_mul U μ hμ f f')
+      map_zero' := ext fun g => by simp
+      map_add' := fun f₁ f₂ => ext fun g => by simp }
+  map_zero' := AddMonoidHom.ext fun f' => ext fun g => by simp
+  map_add' := fun f₁ f₂ => AddMonoidHom.ext fun f' => ext fun g => by simp
+
+@[simp]
+theorem pointwisePairing_apply (f : DiscreteCoind G U A) (f' : DiscreteCoind G U B) (g : G) :
+    pointwisePairing U μ hμ f f' g = μ (f g) (f' g) := (rfl)
+
+/-- The pointwise pairing of coinduced modules is `G`-equivariant. -/
+theorem pointwisePairing_smul [ContinuousMul G] (g : G) (f : DiscreteCoind G U A)
+    (f' : DiscreteCoind G U B) :
+    pointwisePairing U μ hμ (g • f) (g • f') = g • pointwisePairing U μ hμ f f' :=
+  ext fun x => by simp only [pointwisePairing_apply, coe_smul]
+
+/-- Evaluation at `1` commutes with the pointwise pairing of coinduced modules. -/
+theorem eval_pointwisePairing (f : DiscreteCoind G U A) (f' : DiscreteCoind G U B) :
+    eval G U C (pointwisePairing U μ hμ f f') = μ (eval G U A f) (eval G U B f') := by
+  simp
+
+end Pointwise
 
 end TauCeti.DiscreteCoind

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.BinaryBiproducts
+public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 
@@ -37,6 +39,10 @@ finite-dimensional indecomposables is finite, so that "the indecomposables" may 
   finite-dimensional indecomposables refutes finite representation type.
 * `TauCeti.IsFiniteRepType.finite_of_pairwise_nonisomorphic`: conversely, under finite
   representation type every such family is indexed by a finite type.
+* `TauCeti.isFiniteRepType_of_map`: finite representation type transfers along a map of
+  indecomposables reflecting isomorphisms outside one exceptional isomorphism class.
+* `TauCeti.IsFiniteRepType.of_ulift`: finite representation type for vertex spaces in a universe
+  implies it for vertex spaces in any smaller one.
 
 ## Implementation notes
 
@@ -70,7 +76,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v w t
+universe u v w t v' w' t'
 
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 
@@ -130,5 +136,54 @@ theorem IsFiniteRepType.finite_of_pairwise_nonisomorphic (h : IsFiniteRepType.{u
   @Finite.of_injective _ _ h _ (toIndecSkeleton_injective hfin hind hne)
 
 end Criterion
+
+/-- **Finite representation type descends along a map of indecomposables reflecting isomorphisms
+away from one isomorphism class.** If a map `F` carries the finite-dimensional indecomposable
+representations of `Q` outside an exceptional family `E` to finite-dimensional indecomposables of
+`Q'`, reflects isomorphisms among them, and the members of `E` are mutually isomorphic, then finite
+representation type of `Q'` implies that of `Q`. -/
+theorem isFiniteRepType_of_map {Q' : Type v'} [Quiver.{w'} Q']
+    (E : QuiverRep.{u, v, w, t} k Q → Prop)
+    (F : QuiverRep.{u, v, w, t} k Q → QuiverRep.{u, v', w', t'} k Q')
+    (hF : ∀ M, IsFinDim k Q M → Indecomposable M → ¬ E M →
+      IsFinDim k Q' (F M) ∧ Indecomposable (F M))
+    (hFiso : ∀ M N, Indecomposable M → Indecomposable N → ¬ E M → ¬ E N →
+      Nonempty (F M ≅ F N) → Nonempty (M ≅ N))
+    (hE : ∀ M N, Indecomposable M → Indecomposable N → E M → E N → Nonempty (M ≅ N))
+    (h : IsFiniteRepType.{u, v', w', t'} k Q') : IsFiniteRepType.{u, v, w, t} k Q := by
+  classical
+  let P : ObjectProperty (QuiverRep.{u, v, w, t} k Q) :=
+    fun M ↦ IsFinDim k Q M ∧ Indecomposable M
+  let M : Skeleton P.FullSubcategory → QuiverRep.{u, v, w, t} k Q :=
+    fun a ↦ ((fromSkeleton _).obj a).obj
+  have hM (a : Skeleton P.FullSubcategory) : P (M a) := ((fromSkeleton _).obj a).property
+  have heq (a b : Skeleton P.FullSubcategory) (hab : Nonempty (M a ≅ M b)) : a = b := by
+    rw [← toSkeleton_fromSkeleton_obj a, ← toSkeleton_fromSkeleton_obj b]
+    exact (ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso P (hM a) (hM b)).mpr hab
+  -- the classes outside `E` embed in the classes of `Q'`
+  have hreg : Finite {a // ¬ E (M a)} := h.finite_of_pairwise_nonisomorphic
+    (M := fun a ↦ F (M a.1)) (fun a ↦ (hF _ (hM a).1 (hM a).2 a.2).1)
+    (fun a ↦ (hF _ (hM a).1 (hM a).2 a.2).2) fun a b hab hiso ↦
+      hab (Subtype.ext (heq _ _ (hFiso _ _ (hM a).2 (hM b).2 a.2 b.2 hiso)))
+  -- the classes in `E` are a single one
+  have hexc : Subsingleton {a // E (M a)} :=
+    ⟨fun a b ↦ Subtype.ext (heq _ _ (hE _ _ (hM a).2 (hM b).2 a.2 b.2))⟩
+  exact isFiniteRepType_iff.mpr (Finite.of_equiv _ (Equiv.sumCompl fun a ↦ E (M a)))
+
+/-- **Finite representation type descends to a smaller universe of vertex spaces.** Lifting the
+vertex spaces of a representation to a larger universe, through `ModuleCat.uliftFunctor`, is fully
+faithful, so it carries the finite-dimensional indecomposables to finite-dimensional indecomposables
+and non-isomorphic ones to non-isomorphic ones. -/
+theorem IsFiniteRepType.of_ulift (h : IsFiniteRepType.{u, v, w, max t t'} k Q) :
+    IsFiniteRepType.{u, v, w, t} k Q := by
+  let L := (Functor.whiskeringRight (Paths Q) _ _).obj (ModuleCat.uliftFunctor.{t', t} k)
+  have hL : L.FullyFaithful := (ModuleCat.fullyFaithfulUliftFunctor k).whiskeringRight (Paths Q)
+  refine isFiniteRepType_of_map (fun _ ↦ False) L.obj (fun M hM hM' _ ↦ ⟨?_,
+    L.indecomposable_obj_of_map_bijective hM' (hL.map_bijective _ _)⟩)
+    (fun _ _ _ _ _ _ ⟨e⟩ ↦ ⟨hL.preimageIso e⟩) (fun _ _ _ _ h ↦ h.elim) h
+  refine isFinDim_iff.mpr fun x ↦ ?_
+  have := isFinDim_iff.mp hM x
+  rw [Functor.whiskeringRight_obj_obj, Functor.comp_obj, ModuleCat.uliftFunctor_obj]
+  exact ULift.moduleEquiv.symm.finiteDimensional
 
 end TauCeti

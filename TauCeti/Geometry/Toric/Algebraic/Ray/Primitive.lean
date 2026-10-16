@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Primitive
-public import TauCeti.Geometry.Toric.Algebraic.Cone
+public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Basic
 

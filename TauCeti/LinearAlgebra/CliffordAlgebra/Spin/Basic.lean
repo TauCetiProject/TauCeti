@@ -11,8 +11,10 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 # Basic Spin-group carrier facts
 
 This file records the carrier-level criterion that a product of two Clifford vectors with
-unit product of norms belongs to the Spin group.  The action and its orthogonal comparison are
-defined in `Spin.Action` and `Pin.Action`.
+unit product of norms belongs to the Spin group, identifies membership in the range of
+`spinGroup.toUnits` with membership of the underlying Clifford value, includes the Spin group in
+the even Clifford subalgebra, and proves that the Spin group of the zero module is trivial. The
+action and its orthogonal comparison are defined in `Spin.Action` and `Pin.Action`.
 -/
 
 public section
@@ -23,6 +25,30 @@ namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
+
+/-- A Clifford unit belongs to the range of the canonical map from the Spin group exactly when
+its Clifford value belongs to the Spin group. -/
+@[simp↓]
+theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
+    u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
+  constructor
+  · rintro ⟨s, rfl⟩
+    exact s.2
+  · intro hu
+    refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
+    apply Units.ext
+    rfl
+
+/-- **The inclusion of the Spin group into the even Clifford subalgebra**, the Spin group
+consisting of even elements by `spinGroup.mem_even`. -/
+def spinGroupToEven (Q : QuadraticForm R M) : spinGroup Q →* even Q :=
+  Submonoid.inclusion fun _ hx => spinGroup.mem_even hx
+
+/-- A Spin-group element sits in the even subalgebra as itself. -/
+@[simp]
+theorem coe_spinGroupToEven_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
+    (spinGroupToEven Q x : CliffordAlgebra Q) = x :=
+  (rfl)
 
 /-- The product of two Clifford generators belongs to Spin when their norms multiply to one. -/
 theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
@@ -48,5 +74,15 @@ theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
       _ = 1 := by rw [← map_mul, hxy, map_one]
   · rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
     exact ι_mul_ι_mem_evenOdd_zero Q x y
+
+/-- The Spin group of a quadratic form on the zero module is trivial, because the Lipschitz group
+containing it is (`lipschitzGroup_eq_bot`). -/
+instance instSubsingletonSpinGroup [Subsingleton M] : Subsingleton (spinGroup Q) := by
+  refine ⟨fun x y => Subtype.ext ?_⟩
+  have h (z : spinGroup Q) : (z : CliffordAlgebra Q) = 1 := by
+    obtain ⟨w, hw, hwz⟩ := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin z.2)
+    rw [SetLike.mem_coe, Subgroup.mem_toSubmonoid, lipschitzGroup_eq_bot, Subgroup.mem_bot] at hw
+    simp [← hwz, hw]
+  rw [h x, h y]
 
 end CliffordAlgebra

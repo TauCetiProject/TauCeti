@@ -27,6 +27,8 @@ point of the chart of the intersection cone.
   space of this gluing data.
 * `TauCeti.Toric.Fan.analyticAffineChartι`: the inclusion of an affine analytic chart into the
   realization, an open embedding by `TauCeti.Toric.Fan.isOpenEmbedding_analyticAffineChartι`.
+* `TauCeti.Toric.Fan.analyticAffineChartι_faceAffinePointMap`: face-localization maps commute
+  with the chart inclusions into the realization.
 * `TauCeti.Toric.Fan.exists_analyticAffineChartι_apply_eq`: the affine charts cover the
   realization.
 * `TauCeti.Toric.Fan.analyticAffineChartι_eq_analyticAffineChartι_iff`: points of two charts are
@@ -68,7 +70,7 @@ identity, triple-overlap and cocycle laws. -/
 @[expose] noncomputable def analyticGlueData : TopCat.GlueData :=
   TopCat.GlueData.mk'
     { J := Φ.cones
-      U σ := (Φ.analyticAffineChartDiagram hΦ).obj σ
+      U σ := (Φ.analyticAffineChartDiagram).obj σ
       V σ τ := Φ.analyticOverlapOpens hΦ σ τ
       t σ τ := Φ.analyticOverlapTransition hΦ σ τ
       V_id := Φ.analyticOverlapOpens_self hΦ
@@ -93,7 +95,7 @@ identity, triple-overlap and cocycle laws. -/
 
 /-- The space of the gluing data at a cone is its affine analytic chart. -/
 @[simp] theorem analyticGlueData_U (σ : Φ.cones) :
-    (Φ.analyticGlueData hΦ).U σ = (Φ.analyticAffineChartDiagram hΦ).obj σ := (rfl)
+    (Φ.analyticGlueData hΦ).U σ = (Φ.analyticAffineChartDiagram).obj σ := (rfl)
 
 /-- The overlap space of the gluing data at two cones is the overlap open set of the first
 chart with the second. -/
@@ -117,7 +119,7 @@ noncomputable abbrev analyticRealization : TopCat := (Φ.analyticGlueData hΦ).g
 
 /-- The inclusion of the affine analytic chart of a cone into the analytic realization. -/
 noncomputable def analyticAffineChartι (σ : Φ.cones) :
-    (Φ.analyticAffineChartDiagram hΦ).obj σ ⟶ Φ.analyticRealization hΦ :=
+    (Φ.analyticAffineChartDiagram).obj σ ⟶ Φ.analyticRealization hΦ :=
   (Φ.analyticGlueData hΦ).ι σ
 
 /-- The chart inclusion is the inclusion of the gluing data at the cone. -/
@@ -131,9 +133,17 @@ theorem isOpenEmbedding_analyticAffineChartι (σ : Φ.cones) :
 
 /-- Every point of the analytic realization lies in one of the affine analytic charts. -/
 theorem exists_analyticAffineChartι_apply_eq (x : Φ.analyticRealization hΦ) :
-    ∃ (σ : Φ.cones) (y : (Φ.analyticAffineChartDiagram hΦ).obj σ),
+    ∃ (σ : Φ.cones) (y : (Φ.analyticAffineChartDiagram).obj σ),
       Φ.analyticAffineChartι hΦ σ y = x :=
   (Φ.analyticGlueData hΦ).ι_jointly_surjective x
+
+/-- Two maps out of the analytic realization agree when they agree on every affine analytic
+chart. -/
+theorem analyticRealization_hom_ext {Z : TopCat} {g g' : Φ.analyticRealization hΦ ⟶ Z}
+    (h : ∀ σ, Φ.analyticAffineChartι hΦ σ ≫ g = Φ.analyticAffineChartι hΦ σ ≫ g') : g = g' := by
+  ext x
+  obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
+  exact ConcreteCategory.congr_hom (h σ) y
 
 /-- A subset of the analytic realization is open exactly when its preimage in every affine
 analytic chart is open. -/
@@ -144,29 +154,29 @@ theorem isOpen_iff_forall_preimage_analyticAffineChartι (s : Set (Φ.analyticRe
 /-- Points of the affine analytic charts of two cones `σ` and `τ` have the same image in the
 analytic realization exactly when they come from a common point of the chart of `σ ⊓ τ`. -/
 theorem analyticAffineChartι_eq_analyticAffineChartι_iff {σ τ : Φ.cones}
-    (x : (Φ.analyticAffineChartDiagram hΦ).obj σ)
-    (y : (Φ.analyticAffineChartDiagram hΦ).obj τ) :
+    (x : (Φ.analyticAffineChartDiagram).obj σ)
+    (y : (Φ.analyticAffineChartDiagram).obj τ) :
     Φ.analyticAffineChartι hΦ σ x = Φ.analyticAffineChartι hΦ τ y ↔
-      ∃ z : (Φ.analyticAffineChartDiagram hΦ).obj (σ ⊓ τ),
-        Φ.analyticOverlapLeft hΦ σ τ z = x ∧ Φ.analyticOverlapRight hΦ σ τ z = y := by
+      ∃ z : (Φ.analyticAffineChartDiagram).obj (σ ⊓ τ),
+        Φ.analyticOverlapLeft σ τ z = x ∧ Φ.analyticOverlapRight σ τ z = y := by
   -- `TopCat.GlueData.ι_eq_iff_rel` is stated over the index type of the gluing data, which is
   -- `Φ.cones` only after unfolding `analyticGlueData`; apply it rather than rewriting with it.
   refine ((Φ.analyticGlueData hΦ).ι_eq_iff_rel σ τ x y).trans ?_
   -- On a point of the intersection chart, the transition of the gluing data is the opposite
   -- overlap inclusion. The gluing data is phrased on `TopCat` objects, whose points agree with
   -- those of the overlap open sets only after unfolding `Opens.toTopCat`, hence `erw`.
-  have key : ∀ (z : (Φ.analyticAffineChartDiagram hΦ).obj (σ ⊓ τ)) (hz),
-      Subtype.val ((Φ.analyticGlueData hΦ).t σ τ ⟨Φ.analyticOverlapLeft hΦ σ τ z, hz⟩) =
-        Φ.analyticOverlapRight hΦ σ τ z := fun z hz ↦ by
+  have key : ∀ (z : (Φ.analyticAffineChartDiagram).obj (σ ⊓ τ)) (hz),
+      Subtype.val ((Φ.analyticGlueData hΦ).t σ τ ⟨Φ.analyticOverlapLeft σ τ z, hz⟩) =
+        Φ.analyticOverlapRight σ τ z := fun z hz ↦ by
     erw [analyticGlueData_t, analyticOverlapTransition_apply, analyticOverlapHomeomorph_apply]
   constructor
   · rintro ⟨v, hx, hy⟩
     obtain ⟨z, hz⟩ := (Φ.mem_analyticOverlapOpens hΦ σ τ v.1).1 v.2
-    obtain rfl : v = ⟨Φ.analyticOverlapLeft hΦ σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩ :=
+    obtain rfl : v = ⟨Φ.analyticOverlapLeft σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩ :=
       Subtype.ext hz.symm
     exact ⟨z, hx, (key z _).symm.trans hy⟩
   · rintro ⟨z, rfl, rfl⟩
-    exact ⟨⟨Φ.analyticOverlapLeft hΦ σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩, rfl, key z _⟩
+    exact ⟨⟨Φ.analyticOverlapLeft σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩, rfl, key z _⟩
 
 /-- The inclusion of the chart of a face factors through the chart diagram map into the chart of
 the ambient cone. -/
@@ -174,18 +184,44 @@ the ambient cone. -/
 -- analytic face map first. The simp form is `analyticFaceMap_comp_analyticAffineChartι` below.
 @[reassoc]
 theorem analyticAffineChartDiagram_map_comp_analyticAffineChartι {τ σ : Φ.cones} (f : τ ⟶ σ) :
-    (Φ.analyticAffineChartDiagram hΦ).map f ≫ Φ.analyticAffineChartι hΦ σ =
+    (Φ.analyticAffineChartDiagram).map f ≫ Φ.analyticAffineChartι hΦ σ =
       Φ.analyticAffineChartι hΦ τ := by
   apply TopCat.ext
   intro x
   rw [TopCat.comp_app, analyticAffineChartι_eq_analyticAffineChartι_iff]
-  refine ⟨(Φ.analyticAffineChartDiagram hΦ).map (homOfLE (le_inf (leOfHom f) le_rfl)) x, ?_, ?_⟩
+  refine ⟨(Φ.analyticAffineChartDiagram).map (homOfLE (le_inf (leOfHom f) le_rfl)) x, ?_, ?_⟩
   · rw [analyticOverlapLeft_def, analyticChartMap_comp]
     congr 1
   · rw [analyticOverlapRight_def, analyticChartMap_comp]
     have : (homOfLE (le_inf (leOfHom f) le_rfl) : τ ⟶ σ ⊓ τ) ≫ homOfLE inf_le_right = 𝟙 τ :=
       Subsingleton.elim _ _
     rw [this, CategoryTheory.Functor.map_id, TopCat.id_app]
+
+/-- The face-localization map followed by the ambient chart inclusion is the face chart
+inclusion, for any face inclusion in a regular fan. -/
+theorem analyticAffineChartι_faceAffinePointMap {τ σ : Φ.cones} (h : τ ≤ σ)
+    (x : (Φ.analyticAffineChartDiagram).obj τ) :
+    Φ.analyticAffineChartι hΦ σ
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h) x) =
+      Φ.analyticAffineChartι hΦ τ x := by
+  let f : τ ⟶ σ := homOfLE h
+  have hface : (Φ.analyticAffineChartDiagram).map f x =
+      faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h) x :=
+    Φ.analyticFaceMap_apply f x
+  exact (congrArg (Φ.analyticAffineChartι hΦ σ) hface).symm.trans
+    (ConcreteCategory.congr_hom
+      (Φ.analyticAffineChartDiagram_map_comp_analyticAffineChartι hΦ f) x)
+
+/-- The face-localization images of a point of a common face have the same image in the
+analytic realization of the fan. -/
+theorem analyticAffineChartι_faceAffinePointMap_eq {υ σ τ : Φ.cones}
+    (hυσ : υ ≤ σ) (hυτ : υ ≤ τ) (x : (Φ.analyticAffineChartDiagram).obj υ) :
+    Φ.analyticAffineChartι hΦ σ
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 υ.2 hυσ) x) =
+      Φ.analyticAffineChartι hΦ τ
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le τ.2 υ.2 hυτ) x) :=
+  (Φ.analyticAffineChartι_faceAffinePointMap hΦ hυσ x).trans
+    (Φ.analyticAffineChartι_faceAffinePointMap hΦ hυτ x).symm
 
 /-- The inclusion of the chart of a face factors through the analytic face map into the chart of
 the ambient cone. -/
@@ -196,9 +232,9 @@ the ambient cone. -/
 -- associated form is stated by hand rather than by `reassoc`.
 @[simp]
 theorem analyticFaceMap_comp_analyticAffineChartι {τ σ : Φ.cones} (f : τ ⟶ σ) :
-    CategoryStruct.comp (X := (Φ.analyticAffineChartDiagram hΦ).obj τ)
-        (Y := (Φ.analyticAffineChartDiagram hΦ).obj σ)
-        (Φ.analyticFaceMap ((isRegular_iff.mp hΦ) τ.1 τ.2) ((isRegular_iff.mp hΦ) σ.1 σ.2) f)
+    CategoryStruct.comp (X := (Φ.analyticAffineChartDiagram).obj τ)
+        (Y := (Φ.analyticAffineChartDiagram).obj σ)
+        (Φ.analyticFaceMap f)
         (Φ.analyticAffineChartι hΦ σ) =
       Φ.analyticAffineChartι hΦ τ :=
   Φ.analyticAffineChartDiagram_map_comp_analyticAffineChartι hΦ f
@@ -207,9 +243,9 @@ theorem analyticFaceMap_comp_analyticAffineChartι {τ σ : Φ.cones} (f : τ �
 @[simp]
 theorem analyticFaceMap_comp_analyticAffineChartι_assoc {τ σ : Φ.cones} (f : τ ⟶ σ) {Z : TopCat}
     (h : Φ.analyticRealization hΦ ⟶ Z) :
-    CategoryStruct.comp (X := (Φ.analyticAffineChartDiagram hΦ).obj τ)
-        (Y := (Φ.analyticAffineChartDiagram hΦ).obj σ)
-        (Φ.analyticFaceMap ((isRegular_iff.mp hΦ) τ.1 τ.2) ((isRegular_iff.mp hΦ) σ.1 σ.2) f)
+    CategoryStruct.comp (X := (Φ.analyticAffineChartDiagram).obj τ)
+        (Y := (Φ.analyticAffineChartDiagram).obj σ)
+        (Φ.analyticFaceMap f)
         (Φ.analyticAffineChartι hΦ σ ≫ h) =
       Φ.analyticAffineChartι hΦ τ ≫ h :=
   Φ.analyticAffineChartDiagram_map_comp_analyticAffineChartι_assoc hΦ f h
@@ -218,7 +254,7 @@ theorem analyticFaceMap_comp_analyticAffineChartι_assoc {τ σ : Φ.cones} (f :
 the intersection cone. -/
 @[reassoc (attr := simp)]
 theorem analyticOverlapLeft_comp_analyticAffineChartι (σ τ : Φ.cones) :
-    Φ.analyticOverlapLeft hΦ σ τ ≫ Φ.analyticAffineChartι hΦ σ =
+    Φ.analyticOverlapLeft σ τ ≫ Φ.analyticAffineChartι hΦ σ =
       Φ.analyticAffineChartι hΦ (σ ⊓ τ) := by
   rw [analyticOverlapLeft_def, analyticAffineChartDiagram_map_comp_analyticAffineChartι]
 
@@ -226,7 +262,7 @@ theorem analyticOverlapLeft_comp_analyticAffineChartι (σ τ : Φ.cones) :
 the intersection cone. -/
 @[reassoc (attr := simp)]
 theorem analyticOverlapRight_comp_analyticAffineChartι (σ τ : Φ.cones) :
-    Φ.analyticOverlapRight hΦ σ τ ≫ Φ.analyticAffineChartι hΦ τ =
+    Φ.analyticOverlapRight σ τ ≫ Φ.analyticAffineChartι hΦ τ =
       Φ.analyticAffineChartι hΦ (σ ⊓ τ) := by
   rw [analyticOverlapRight_def, analyticAffineChartDiagram_map_comp_analyticAffineChartι]
 

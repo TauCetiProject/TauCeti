@@ -122,7 +122,7 @@ theorem hasDerivAt_resolventFun (hb : S.HasGrowthBound omega M) {lambda : ℝ}
     HasDerivAt (S.resolventFun hb) (-(S.resolventFun hb lambda ^ 2)) lambda := by
   have hMpos : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hb.one_le
   have hd : (0 : ℝ) < lambda - omega := sub_pos.mpr hl
-  set C : ℝ := (M / (lambda - omega)) ^ 2 * (M / ((lambda - omega) / 2)) with hC
+  set C : ℝ := (M / (lambda - omega)) ^ 2 * (M / ((lambda - omega) / 2))
   have hCpos : 0 < C := by
     have h1 : 0 < M / (lambda - omega) := div_pos hMpos hd
     exact mul_pos (pow_pos h1 2) (div_pos hMpos (by linarith))

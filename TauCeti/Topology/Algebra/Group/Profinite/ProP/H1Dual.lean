@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 

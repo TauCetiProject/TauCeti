@@ -9,7 +9,9 @@ public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.GroupTheory.Perm.Basic
+public import TauCeti.GroupTheory.Perm.FiberSubgroup
 import TauCeti.Algebra.MvPolynomial.Monomial
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
 import TauCeti.GroupTheory.Perm.Partition
 
 /-!
@@ -36,6 +38,8 @@ characters of the Young permutation modules.
   is the generating function of the `π`-invariant colourings.**
 * `TauCeti.coeff_psumPart_partition`: its coefficient at `x^d` counts the `π`-invariant colourings
   with `d i` points of each colour `i`.
+* `TauCeti.sum_card_smul_psumPart_partition`: **averaged over `Equiv.Perm α` against the number of
+  invariant colourings with fiber sizes `r`, the power-sum products give `(card α)! • ∏ᵢ h_{r i}`.**
 
 ## References
 
@@ -80,6 +84,8 @@ theorem isHomogeneous_psumPart [Fintype σ] {n : ℕ} (μ : n.Partition) :
 variable {α : Type*}
 
 variable [Fintype α] [DecidableEq α] [Fintype σ]
+
+section InvariantColouring
 
 /-- Local decidable equality for colourings in the power-sum expansion. -/
 noncomputable local instance instDecidableEqPowerSumColour : DecidableEq σ := Classical.decEq σ
@@ -132,5 +138,92 @@ theorem coeff_psumPart_partition (π : Perm α) (d : σ →₀ ℕ) :
     simp only [eq_comm]
   rw [psumPart_partition_eq_sum_prod_X, coeff_sum]
   simp only [hX, coeff_monomial, sum_boole, filter_filter, hcontent]
+
+end InvariantColouring
+
+/-! ### Averaging over the symmetric group -/
+
+section Average
+
+variable [DecidableEq σ] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Averaging power sums against invariant colourings gives complete homogeneous polynomials**:
+for `r : ι → ℕ` with total `card α`,
+
+`∑_π #{c : α → ι | c ∘ π = c, c has fibers of sizes r} • p_{ρ(π)} = (card α)! • ∏ᵢ h_{r i}`.
+
+The count on the left is the value at `π` of the permutation character on the colourings with
+fiber sizes `r`, so this is the statement that the Frobenius characteristic of that permutation
+representation is the product `∏ᵢ h_{r i}`.  Both sides expand over colourings of `α` by pairs
+`ι × σ`: the left side counts each pair colouring once for every permutation preserving it, and
+`TauCeti.sum_natCard_fiberSubgroup_smul` evaluates that count. -/
+theorem sum_card_smul_psumPart_partition (r : ι → ℕ) (hr : ∑ i, r i = Fintype.card α) :
+    ∑ π : Perm α, #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = r i} •
+        psumPart σ R π.partition =
+      (Fintype.card α).factorial • ∏ i, hsymm σ R (r i) := by
+  -- a pair of colourings, one fixed by `π` with fibers of sizes `r` and one fixed by `π`, is a
+  -- colouring by pairs fixed by `π` whose first coordinate has fibers of sizes `r`
+  have h1 : ∀ π : Perm α,
+      #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = r i} • psumPart σ R π.partition =
+        ∑ h : α → ι × σ, if h ∘ π = h ∧ ∀ i, #{a | (h a).1 = i} = r i
+          then ∏ a, (X (h a).2 : MvPolynomial σ R) else 0 := fun π => by
+    rw [psumPart_partition_eq_sum_prod_X, ← sum_const, ← sum_product', ← sum_filter]
+    refine sum_equiv (arrowProdEquivProdArrow α (fun _ => ι) (fun _ => σ)).symm (fun x => ?_)
+      fun x _ => rfl
+    simp only [mem_product, mem_filter, mem_univ, true_and, funext_iff, Function.comp_apply,
+      arrowProdEquivProdArrow, coe_fn_symm_mk, Prod.ext_iff, forall_and]
+    tauto
+  -- the term of a colouring by pairs, read off its fiber sizes `A : ι × σ → ℕ`
+  let F : (ι × σ → ℕ) → MvPolynomial σ R := fun A =>
+    if ∀ i, ∑ s, A (i, s) = r i then ∏ s, X s ^ ∑ i, A (i, s) else 0
+  have h2 : ∀ h : α → ι × σ,
+      (∑ π : Perm α, if h ∘ π = h ∧ ∀ i, #{a | (h a).1 = i} = r i
+        then ∏ a, (X (h a).2 : MvPolynomial σ R) else 0) =
+        Nat.card (fiberSubgroup h) • F fun k => #{a | h a = k} := fun h => by
+    have hcard : Nat.card (fiberSubgroup h) = #{π : Perm α | h ∘ π = h} := by
+      rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+      exact Nat.card_congr (Equiv.subtypeEquivRight fun π => by
+        rw [mem_fiberSubgroup, funext_iff]; rfl)
+    -- the fibers of the two coordinates of `h` are unions of fibers of `h`
+    have hfst : ∀ i, #{a | (h a).1 = i} = ∑ s, #{a | h a = (i, s)} := fun i => by
+      rw [card_eq_sum_card_fiberwise (f := fun a => (h a).2) (t := univ) fun _ _ => mem_univ _]
+      exact sum_congr rfl fun s _ => by
+        rw [filter_filter]
+        exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff])
+    have hsnd : ∀ s, #{a | (h a).2 = s} = ∑ i, #{a | h a = (i, s)} := fun s => by
+      rw [card_eq_sum_card_fiberwise (f := fun a => (h a).1) (t := univ) fun _ _ => mem_univ _]
+      exact sum_congr rfl fun i _ => by
+        rw [filter_filter]
+        exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff, and_comm])
+    have hX : ∏ a, (X (h a).2 : MvPolynomial σ R) = ∏ s, X s ^ #{a | (h a).2 = s} := by
+      rw [← prod_fiberwise univ fun a => (h a).2]
+      exact prod_congr rfl fun s _ => by
+        rw [prod_congr rfl fun a ha => by rw [(mem_filter.1 ha).2], prod_const]
+    simp only [F, ← hfst, ← hsnd, ← hX, hcard]
+    split_ifs with hC
+    · simp only [hC, implies_true, and_true]
+      rw [← sum_filter, sum_const]
+    · simp [hC]
+  rw [sum_congr rfl fun π _ => h1 π, sum_comm, sum_congr rfl fun h _ => h2 h,
+    sum_natCard_fiberSubgroup_smul]
+  congr 1
+  -- a fiber-size function with the right row sums is a family of exponent vectors, one per row
+  simp only [F]
+  rw [← sum_filter]
+  simp_rw [hsymm_eq_sum_piAntidiag]
+  rw [prod_univ_sum]
+  refine sum_nbij' (fun A i s => A (i, s)) (fun D p => D p.1 p.2) (fun A hA => ?_)
+    (fun D hD => ?_) (fun _ _ => rfl) (fun _ _ => rfl) (fun A _ => ?_)
+  · rw [mem_filter] at hA
+    simp only [Fintype.mem_piFinset, mem_piAntidiag, mem_univ, implies_true, and_true]
+    exact hA.2
+  · simp only [Fintype.mem_piFinset, mem_piAntidiag, mem_univ, implies_true, and_true] at hD
+    simp only [mem_filter, mem_piAntidiag, mem_univ, implies_true, and_true, hD]
+    rw [Fintype.sum_prod_type]
+    simp only [hD, hr]
+  · rw [prod_comm]
+    exact prod_congr rfl fun s _ => (prod_pow_eq_pow_sum _ _ _).symm
+
+end Average
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
@@ -299,8 +300,7 @@ theorem integrableOn_rpow_mul_one_add_rpow_iff (ha : 0 < a) :
     refine lt_of_not_ge fun hb ↦ ?_
     by_cases hab : 0 < a + b
     · exact not_integrableOn_rpow_mul_one_add_rpow_of_nonpos hab hb h
-    · have hab' : a + b ≤ 0 := le_of_not_gt hab
-      have htail : IntegrableOn
+    · have htail : IntegrableOn
           (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (Ioi 1) :=
         h.mono_set fun x hx ↦ by simpa only [mem_Ioi] using lt_trans zero_lt_one hx
       have hpow : IntegrableOn (fun x : ℝ => x ^ (a - 1)) (Ioi 1) := by
@@ -355,7 +355,6 @@ private lemma abs_deriv_sqrt_smul (s : ℝ) {t : ℝ} (ht : t ∈ Ioi (0 : ℝ))
     |1 / (2 * Real.sqrt t)| • ((1 + Real.sqrt t ^ 2) ^ (-s)) =
       2⁻¹ * (t ^ (-(1 / 2) : ℝ) * (1 + t) ^ (-s)) := by
   have ht0 : (0 : ℝ) < t := ht
-  have hst : (0 : ℝ) < Real.sqrt t := Real.sqrt_pos.mpr ht0
   have hpow : t ^ (-(1 / 2) : ℝ) = (Real.sqrt t)⁻¹ := by
     rw [Real.rpow_neg ht0.le, Real.sqrt_eq_rpow]
   rw [smul_eq_mul, Real.sq_sqrt ht0.le, abs_of_nonneg (by positivity), hpow]

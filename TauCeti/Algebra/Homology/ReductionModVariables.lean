@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.Data.Finsupp.Weight
-public import TauCeti.LinearAlgebra.Finsupp.LSum
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 
 /-!
 # Graded complexes of free modules over a polynomial ring modulo the variables
@@ -43,19 +41,12 @@ Without the grading the statement fails: on `S = R[V]`, multiplication by `1 + V
 from `S` to itself, both with zero differential, which becomes the identity after setting `V = 0`
 but is not surjective.
 
-## Main definitions
-
-* `LinearMap.constantCoeffReduction`: the reduction of a map between free modules over a
-  polynomial ring modulo the variables.
-
 ## Main results
 
 * `LinearMap.ker_le_range_of_mapRange_constantCoeff`: a graded square-zero endomorphism of a free
   module over a polynomial ring is exact if its reduction modulo the variables is.
 * `LinearMap.homologyMap_bijective_of_mapRange_constantCoeff`: a graded chain map between such
   complexes induces a bijection on homology if its reduction modulo the variables does.
-* `LinearMap.constantCoeffReduction_mapRange_constantCoeff`: `constantCoeffReduction f` is a
-  reduction of `f` modulo the variables in the sense of the two results above.
 
 ## References
 
@@ -73,46 +64,6 @@ namespace LinearMap
 open MvPolynomial
 
 variable {R σ ι κ : Type*}
-
-section Coefficients
-
-variable [CommRing R]
-  {f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
-  {f₀ : (ι →₀ R) →ₗ[R] (κ →₀ R)}
-
-/-- The matrix coefficients of the reduction of `f` modulo the variables are the constant
-coefficients of those of `f`. -/
-private theorem reduction_single_apply
-    (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
-      (f x).mapRange constantCoeff (map_zero _)) (i : ι) (c : R) (j : κ) :
-    f₀ (Finsupp.single i c) j = c * constantCoeff (f (Finsupp.single i 1) j) := by
-  have h : Finsupp.single i c =
-      (Finsupp.single i (C c : MvPolynomial σ R)).mapRange constantCoeff (map_zero _) := by
-    rw [mapRange_single, constantCoeff_C]
-  rw [h, hf₀, Finsupp.mapRange_apply, ← Finsupp.smul_single_one i (C c), map_smul,
-    Finsupp.smul_apply, smul_eq_mul, map_mul, constantCoeff_C]
-
-/-- `f` maps `J ^ k • (ι →₀ S)` into `J ^ k • (κ →₀ S)`, for `J` the ideal of the variables. -/
-private theorem apply_mem_pow_idealOfVars {k : ℕ} {z : ι →₀ MvPolynomial σ R}
-    (hz : ∀ i, z i ∈ idealOfVars σ R ^ k) (j : κ) : f z j ∈ idealOfVars σ R ^ k := by
-  rw [apply_apply_eq_finsuppSum_mul]
-  exact Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦ Ideal.mul_mem_right _ _ (hz i)
-
-/-- On `J ^ k • (ι →₀ S)`, the coefficients of `f` in total degree `k` are computed by the
-reduction `f₀` of `f` modulo the variables. -/
-private theorem coeff_apply_of_mem_pow_idealOfVars
-    (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
-      (f x).mapRange constantCoeff (map_zero _))
-    {k : ℕ} {z : ι →₀ MvPolynomial σ R} (hz : ∀ i, z i ∈ idealOfVars σ R ^ k)
-    {e : σ →₀ ℕ} (he : degree e = k) (j : κ) :
-    (f z j).coeff e = f₀ (z.mapRange (lcoeff R e) (map_zero _)) j := by
-  rw [apply_apply_eq_finsuppSum_mul, apply_apply_eq_finsuppSum_mul,
-    Finsupp.sum_mapRange_index (by simp), Finsupp.sum, Finsupp.sum, coeff_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coeff_mul_of_mem_pow_idealOfVars _ (hz i) _ he.le, reduction_single_apply hf₀, one_mul,
-    lcoeff_apply]
-
-end Coefficients
 
 section Exactness
 
@@ -164,54 +115,28 @@ private theorem DegreeGE.eq_zero (hw : ∀ v, w v < 0) {G : ℤ} (hG : ∀ i, g 
 
 variable (hw : ∀ v, w v < 0)
   (hhom : ∀ i j, IsWeightedHomogeneous w (d (Finsupp.single i 1) j) (g i + r - g j))
-  (hd₀ : ∀ x, d₀ (x.mapRange constantCoeff (map_zero _)) =
-    (d x).mapRange constantCoeff (map_zero _))
-include hhom hd₀
-
-/-- The reduction of `d` moves the degree `g` of generators by `r`. -/
-private theorem reduction_single_apply_ne_zero {i j : ι} {c : R}
-    (h : d₀ (Finsupp.single i c) j ≠ 0) : g j = g i + r := by
-  rw [reduction_single_apply hd₀, constantCoeff_eq] at h
-  have := hhom i j (right_ne_zero_of_mul h)
-  rw [map_zero] at this
-  omega
-
-/-- The reduction of `d` commutes with restricting to generators in a set of degrees, up to the
-shift by `r`. -/
-private theorem filter_reduction_apply (P : ℤ → Prop) [DecidablePred P] (u : ι →₀ R) :
-    (d₀ u).filter (fun j ↦ P (g j)) = d₀ (u.filter fun i ↦ P (g i + r)) := by
-  induction u using Finsupp.induction_linear with
-  | zero => rw [filter_zero, map_zero, filter_zero]
-  | add u v hu hv => rw [map_add, filter_add, hu, hv, filter_add, map_add]
-  | single i c =>
-    by_cases hP : P (g i + r)
-    · rw [filter_single_of_pos (p := fun i ↦ P (g i + r)) hP, filter_eq_self_iff]
-      intro j hj
-      rwa [reduction_single_apply_ne_zero hhom hd₀ hj]
-    · rw [filter_single_of_neg (p := fun i ↦ P (g i + r)) hP, map_zero, filter_eq_zero_iff]
-      intro j hj
-      by_contra h
-      exact hP (reduction_single_apply_ne_zero hhom hd₀ h ▸ hj)
+include hhom
 
 /-- One step of the filtration argument: a cycle in `J ^ k • (ι →₀ S)` of degree at least `a` is
 congruent modulo `J ^ (k + 1) • (ι →₀ S)` to a boundary of a chain of degree at least `a - r`. -/
-private theorem exists_sub_apply_mem_pow_idealOfVars (hexact : ker d₀ ≤ range d₀) {k : ℕ}
+private theorem exists_sub_apply_mem_pow_idealOfVars
+    (hexact : ker d.constantCoeffReduction ≤ range d.constantCoeffReduction) {k : ℕ}
     {a : ℤ} {z : ι →₀ MvPolynomial σ R} (hz : d z = 0) (hza : DegreeGE w g a z)
     (hzk : ∀ i, z i ∈ idealOfVars σ R ^ k) :
     ∃ y, DegreeGE w g (a - r) y ∧ ∀ i, (z - d y) i ∈ idealOfVars σ R ^ (k + 1) := by
   classical
   -- the coefficients of `z` at the monomials `V ^ e` of total degree `k`
   let zc (e : σ →₀ ℕ) : ι →₀ R := z.mapRange (lcoeff R e) (map_zero _)
-  have hzc (e : σ →₀ ℕ) (he : degree e = k) : ∃ u, d₀ u = zc e := by
+  have hzc (e : σ →₀ ℕ) (he : degree e = k) : ∃ u, d.constantCoeffReduction u = zc e := by
     refine hexact (Finsupp.ext fun j ↦ ?_)
-    rw [← coeff_apply_of_mem_pow_idealOfVars hd₀ hzk he, hz]
+    rw [← coeff_apply_of_mem_pow_idealOfVars d hzk he, hz]
     simp
   choose u hu using fun e ↦ (em (degree e = k)).elim (fun he ↦ (hzc e he).imp fun _ h _ ↦ h)
     fun he ↦ ⟨0, fun h ↦ absurd h he⟩
   -- primitives of these coefficients, restricted to generators of degree at least `a - r`
   let u' (e : σ →₀ ℕ) : ι →₀ R := (u e).filter fun i ↦ a ≤ g i + r + weight w e
-  have hu' (e : σ →₀ ℕ) (he : degree e = k) : d₀ (u' e) = zc e := by
-    have := filter_reduction_apply hhom hd₀ (fun q ↦ a ≤ q + weight w e) (u e)
+  have hu' (e : σ →₀ ℕ) (he : degree e = k) : d.constantCoeffReduction (u' e) = zc e := by
+    have := filter_constantCoeffReduction_apply d hhom (fun q ↦ a ≤ q + weight w e) (u e)
     rw [hu e he, (filter_eq_self_iff (fun j ↦ a ≤ g j + weight w e) _).mpr
       fun i hi ↦ hza i e (by simpa [zc] using hi)] at this
     exact this.symm
@@ -233,6 +158,9 @@ private theorem exists_sub_apply_mem_pow_idealOfVars (hexact : ker d₀ ≤ rang
     split_ifs at he with heE
     · exact (Finset.mem_filter.mp heE).2.ge
     · exact absurd rfl he
+  have hdyk (j : ι) : d y j ∈ idealOfVars σ R ^ k := by
+    rw [apply_apply_eq_finsuppSum_mul]
+    exact Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦ Ideal.mul_mem_right _ _ (hyk i)
   refine ⟨y, fun i e he ↦ ?_, fun j ↦ ?_⟩
   · rw [hy] at he
     split_ifs at he with heE
@@ -244,8 +172,8 @@ private theorem exists_sub_apply_mem_pow_idealOfVars (hexact : ker d₀ ≤ rang
     rw [Finsupp.sub_apply, coeff_sub]
     rcases Nat.lt_succ_iff_lt_or_eq.mp he with he | he
     · rw [(mem_pow_idealOfVars_iff' k _).mp (hzk j) e he,
-        (mem_pow_idealOfVars_iff' k _).mp (apply_mem_pow_idealOfVars hyk j) e he, sub_zero]
-    · rw [coeff_apply_of_mem_pow_idealOfVars hd₀ hyk he, sub_eq_zero]
+        (mem_pow_idealOfVars_iff' k _).mp (hdyk j) e he, sub_zero]
+    · rw [coeff_apply_of_mem_pow_idealOfVars d hyk he, sub_eq_zero]
       by_cases heE : e ∈ E
       · have : y.mapRange (lcoeff R e) (map_zero _) = u' e := Finsupp.ext fun i ↦ by
           simp [hy, heE]
@@ -255,7 +183,7 @@ private theorem exists_sub_apply_mem_pow_idealOfVars (hexact : ker d₀ ≤ rang
           simp [hy, heE]
         rw [this, map_zero, Finsupp.zero_apply, hE he heE]
 
-omit hhom hd₀ in
+omit hhom in
 /-- **Graded Nakayama lemma for free complexes over a polynomial ring.** Let `d` be a square-zero
 endomorphism of the free module `ι →₀ R[V_v : v ∈ σ]` which is homogeneous of degree `r` when the
 generator `i` has degree `g i` and the variable `V_v` has negative degree `w v`, with the degrees
@@ -270,6 +198,9 @@ theorem ker_le_range_of_mapRange_constantCoeff
       (d x).mapRange constantCoeff (map_zero _)) (hg : BddAbove (Set.range g))
     (hd : d ∘ₗ d = 0) (hexact : ker d₀ ≤ range d₀) : ker d ≤ range d := by
   classical
+  have hred : d₀ = d.constantCoeffReduction :=
+    eq_of_mapRange_constantCoeff _ _ hd₀ (constantCoeffReduction_mapRange_constantCoeff d) rfl
+  subst d₀
   intro z hz
   obtain ⟨G, hG⟩ := hg
   replace hG (i : ι) : g i ≤ G := hG (Set.mem_range_self i)
@@ -289,7 +220,7 @@ theorem ker_le_range_of_mapRange_constantCoeff
       have hcycle : d (z - d y) = 0 := by
         rw [map_sub, mem_ker.mp hz, ← comp_apply d d, hd, zero_apply, sub_zero]
       obtain ⟨y', hy'a, hy'k⟩ :=
-        exists_sub_apply_mem_pow_idealOfVars (d := d) hhom hd₀ hexact hcycle hya hyk
+        exists_sub_apply_mem_pow_idealOfVars (d := d) hhom hexact hcycle hya hyk
       refine ⟨y + y', ?_, ?_⟩
       · rw [map_add, ← sub_sub]
         exact hya.sub (by simpa using hy'a.apply hhom)
@@ -299,147 +230,6 @@ theorem ker_le_range_of_mapRange_constantCoeff
   omega
 
 end Exactness
-
-section Reduction
-
-variable [CommSemiring R] {μ : Type*}
-
-/-- If `f₀` and `g₀` are the reductions of `f` and `g` modulo the variables, then `g₀ ∘ f₀` is the
-reduction of `g ∘ f`. -/
-theorem comp_apply_mapRange_constantCoeff
-    (g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R))
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
-    {f₀ : (ι →₀ R) →ₗ[R] (κ →₀ R)} {g₀ : (κ →₀ R) →ₗ[R] (μ →₀ R)}
-    (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
-      (f x).mapRange constantCoeff (map_zero _))
-    (hg₀ : ∀ x, g₀ (x.mapRange constantCoeff (map_zero _)) =
-      (g x).mapRange constantCoeff (map_zero _)) (x : ι →₀ MvPolynomial σ R) :
-    (g₀ ∘ₗ f₀) (x.mapRange constantCoeff (map_zero _)) =
-      ((g ∘ₗ f) x).mapRange constantCoeff (map_zero _) := by
-  rw [comp_apply, hf₀, hg₀, comp_apply]
-
-/-- A reduction modulo the variables is determined by the map it reduces: reductions `f₀` of `f`
-and `f₀'` of `f'` agree when `f = f'`. -/
-theorem eq_of_mapRange_constantCoeff (f₀ f₀' : (ι →₀ R) →ₗ[R] (κ →₀ R))
-    {f f' : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
-    (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
-      (f x).mapRange constantCoeff (map_zero _))
-    (hf₀' : ∀ x, f₀' (x.mapRange constantCoeff (map_zero _)) =
-      (f' x).mapRange constantCoeff (map_zero _)) (h : f = f') :
-    f₀ = f₀' := by
-  refine LinearMap.ext fun x ↦ ?_
-  obtain ⟨x, rfl⟩ := Finsupp.mapRange_surjective _ (map_zero _)
-    (fun c ↦ ⟨C c, constantCoeff_C σ c⟩) x
-  rw [hf₀, hf₀', h]
-
-/-- The reduction of an `S`-linear map `f : (ι →₀ S) → (κ →₀ S)` modulo the variables, for
-`S = R[V_v : v ∈ σ]`: the `R`-linear map `(ι →₀ R) → (κ →₀ R)` whose matrix coefficients are the
-constant coefficients of those of `f`. It is the reduction in the sense of this file
-(`LinearMap.constantCoeffReduction_mapRange_constantCoeff`). -/
-noncomputable def constantCoeffReduction
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) :
-    (ι →₀ R) →ₗ[R] (κ →₀ R) :=
-  Finsupp.linearCombination R fun i ↦
-    (f (Finsupp.single i 1)).mapRange constantCoeff (map_zero _)
-
-/-- The matrix coefficients of the reduction of `f` modulo the variables are the constant
-coefficients of those of `f`. -/
-@[simp]
-theorem constantCoeffReduction_single_apply
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) (i : ι) (c : R)
-    (j : κ) :
-    f.constantCoeffReduction (Finsupp.single i c) j =
-      c * constantCoeff (f (Finsupp.single i 1) j) := by
-  simp [constantCoeffReduction]
-
-/-- **The reduction commutes with setting the variables to zero.** Applying
-`constantCoeffReduction f` to the constant coefficients of `x` gives the constant coefficients of
-`f x`. -/
-@[simp]
-theorem constantCoeffReduction_mapRange_constantCoeff
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
-    (x : ι →₀ MvPolynomial σ R) :
-    f.constantCoeffReduction (x.mapRange constantCoeff (map_zero _)) =
-      (f x).mapRange constantCoeff (map_zero _) := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp
-  | add x y hx hy =>
-    rw [Finsupp.mapRange_add (map_add _), map_add, hx, hy, map_add,
-      Finsupp.mapRange_add (map_add _)]
-  | single i p =>
-    ext j
-    rw [Finsupp.mapRange_single, constantCoeffReduction_single_apply, Finsupp.mapRange_apply,
-      ← Finsupp.smul_single_one i p, map_smul, Finsupp.smul_apply, smul_eq_mul, map_mul]
-
-/-- The reduction of a composite is the composite of the reductions. -/
-@[simp]
-theorem constantCoeffReduction_comp
-    (g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R))
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) :
-    (g ∘ₗ f).constantCoeffReduction = g.constantCoeffReduction ∘ₗ f.constantCoeffReduction :=
-  eq_of_mapRange_constantCoeff _ _ (constantCoeffReduction_mapRange_constantCoeff _)
-    (comp_apply_mapRange_constantCoeff g f (constantCoeffReduction_mapRange_constantCoeff f)
-      (constantCoeffReduction_mapRange_constantCoeff g)) rfl
-
-/-- The identity map reduces to the identity map. -/
-@[simp]
-theorem constantCoeffReduction_id :
-    (LinearMap.id : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
-      (ι →₀ MvPolynomial σ R)).constantCoeffReduction = LinearMap.id := by
-  exact eq_of_mapRange_constantCoeff _ _
-    (constantCoeffReduction_mapRange_constantCoeff _) (fun _ ↦ rfl) rfl
-
-/-- Reduction commutes with addition of linear maps. -/
-@[simp]
-theorem constantCoeffReduction_add
-    (f g : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
-      (κ →₀ MvPolynomial σ R)) :
-    (f + g).constantCoeffReduction = f.constantCoeffReduction + g.constantCoeffReduction := by
-  ext i c
-  simp [mul_add]
-
-/-- Reduction commutes with scalar multiplication of linear maps. -/
-@[simp]
-theorem constantCoeffReduction_smul (p : MvPolynomial σ R)
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
-      (κ →₀ MvPolynomial σ R)) :
-    (p • f).constantCoeffReduction = constantCoeff p • f.constantCoeffReduction := by
-  ext i c
-  simp [constantCoeffReduction_single_apply]
-
-/-- The reduction of the zero map is zero. -/
-@[simp]
-theorem constantCoeffReduction_zero :
-    constantCoeffReduction
-      (0 : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) = 0 := by
-  ext i c
-  simp
-
-end Reduction
-
-section ReductionRing
-
-variable [CommRing R]
-
-/-- Reduction commutes with negation of linear maps. -/
-@[simp]
-theorem constantCoeffReduction_neg
-    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
-      (κ →₀ MvPolynomial σ R)) :
-    (-f).constantCoeffReduction = -f.constantCoeffReduction := by
-  ext i c
-  simp
-
-/-- Reduction commutes with subtraction of linear maps. -/
-@[simp]
-theorem constantCoeffReduction_sub
-    (f g : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
-      (κ →₀ MvPolynomial σ R)) :
-    (f - g).constantCoeffReduction = f.constantCoeffReduction - g.constantCoeffReduction := by
-  ext i c
-  simp [mul_sub]
-
-end ReductionRing
 
 section QuasiIso
 

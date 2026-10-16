@@ -43,11 +43,8 @@ equation `two_mul_characteristicWeight`, with no integer division to discharge.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose programme includes the conjugation symmetry of the weight function and
-the resulting involution of lattice homology. The convention follows Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
-[arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
+The convention follows Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after
+Ozsváth--Szabó, [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
 
 public section

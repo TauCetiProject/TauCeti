@@ -118,8 +118,7 @@ private theorem eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le (hp : p �
     rw [h1]
     exact congrArg (· - phi x) h2
   rw [hL, enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
-  exact eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
-    (phi.contDiff.of_le (by simp)) Fact.out hp h
+  exact (phi.contDiff.of_le (by simp)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv Fact.out hp h
 
 /-- **The translation estimate on `W^{1,p}_0(ℝⁿ)`**: for `1 ≤ p < ∞`, every `u` in the closure of
 the test functions satisfies
@@ -127,7 +126,7 @@ the test functions satisfies
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖∇u‖_p`.
 
 The estimate for a single test function comes from
-`TauCeti.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`; the set of jets obeying it is closed, so
+`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`; the set of jets obeying it is closed, so
 `TauCeti.w1p0Submodule_subset_of_isClosed` passes it to the closure. Composing with a
 zero-extension operator turns this into the corresponding estimate on `W^{1,p}_0(Ω)` for an
 arbitrary open `Ω`, which is the form the Fréchet--Kolmogorov compactness criterion consumes in
@@ -259,7 +258,7 @@ theorem Sobolev1JetLp.value_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) :
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.value J) := by
   rw [← Sobolev1JetLp.valueL_apply, ← Sobolev1JetLp.valueL_apply,
     Sobolev1JetLp.valueL_eq_compLpL]
-  exact Measure.compLpL_translateLp _ h J
+  exact (WithLp.fstL 2 ℝ ℝ E).compLpL_translateLp h J
 
 omit [FiniteDimensional ℝ E] in
 /-- The gradient component of a translated whole-space jet is the translate of its gradient
@@ -269,7 +268,7 @@ theorem Sobolev1JetLp.gradient_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) 
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.gradient J) := by
   rw [← Sobolev1JetLp.gradientL_apply, ← Sobolev1JetLp.gradientL_apply,
     Sobolev1JetLp.gradientL_eq_compLpL]
-  exact Measure.compLpL_translateLp _ h J
+  exact (WithLp.sndL 2 ℝ ℝ E).compLpL_translateLp h J
 
 omit [FiniteDimensional ℝ E] in
 /-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities

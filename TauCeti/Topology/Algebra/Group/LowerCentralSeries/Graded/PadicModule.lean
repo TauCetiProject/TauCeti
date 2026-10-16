@@ -20,9 +20,13 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
 ## Main definitions
 
 * `TauCeti.IsProP.gradedPieceModule`: the canonical `ℤ_p`-module structure on a graded piece.
+* `TauCeti.IsProP.gradedPieceModule_def`: its identification with the canonical module on the
+  underlying abelian pro-`p` quotient.
 
 ## Main results
 
+* `TauCeti.IsProP.mk_padicPow_eq_of_pow_dvd_sub`: exponents congruent modulo `p ^ k` give
+  the same power modulo the `k`-th term of the lower `p`-series.
 * `TauCeti.IsProP.gradedMk_padicPow`, `TauCeti.IsProP.gradedMkZero_padicPow`: a `p`-adic power
   becomes scalar multiplication on a graded piece.
 * `TauCeti.IsProP.mk_commutatorElement_padicPow_left`,
@@ -32,6 +36,8 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
   the same statements for classes in the graded pieces.
 * `TauCeti.IsProP.gradedBracket_smul_left`, `TauCeti.IsProP.gradedBracket_smul_right`: the graded
   bracket is `ℤ_p`-linear in each variable.
+* `TauCeti.IsProP.gradedBracket_gradedMkZero_padicPow_neg_add`: the brackets `[a^{-u}, b]` and
+  `[a, b^u]` of degree-zero classes cancel.
 * `TauCeti.IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv`: the commutator of the inverse
   of a conjugated `p`-adic power `c⁻¹ y ^ u c` with `x⁻¹` has class `u` times the graded bracket
   of the classes of `y` and `x`.
@@ -54,6 +60,22 @@ universe u
 variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
+/-- In a pro-`p` group, exponents congruent modulo `p ^ k` give the same `p`-adic power
+modulo the `k`-th term of the lower `p`-series. -/
+theorem IsProP.mk_padicPow_eq_of_pow_dvd_sub (hG : IsProP p G) (g : G) (k : ℕ)
+    {u v : ℤ_[p]} (huv : (p : ℤ_[p]) ^ k ∣ u - v) :
+    QuotientGroup.mk' (pLowerCentralSeries p G k) (hG.padicPow g u) =
+      QuotientGroup.mk' (pLowerCentralSeries p G k) (hG.padicPow g v) := by
+  obtain ⟨a, ha⟩ := huv
+  have hu : u = v + (p : ℤ_[p]) ^ k * a := by rw [← ha]; ring
+  have hpk : g ^ p ^ k ∈ pLowerCentralSeries p G k := by
+    simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) k
+  have haq : QuotientGroup.mk' (pLowerCentralSeries p G k)
+      (hG.padicPow (g ^ p ^ k) a) = 1 :=
+    (QuotientGroup.eq_one_iff _).2 (hG.padicPow_mem (isClosed_pLowerCentralSeries k) hpk a)
+  rw [hu, hG.padicPow_add, hG.padicPow_mul, ← Nat.cast_pow, hG.padicPow_natCast,
+    map_mul, haq, mul_one]
+
 /-- The canonical `ℤ_p`-module structure on a graded piece of the lower `q`-series of a pro-`p`
 group. It is the module structure on the abelian pro-`p` quotient `λ_n / λ_{n+1}`. -/
 @[instance_reducible]
@@ -66,6 +88,16 @@ noncomputable def IsProP.gradedPieceModule (hG : IsProP p G) (q n : ℕ) :
     rw [isClosed_induced_iff]
     exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
   exact ((hG.subgroup R).quotient N).module
+
+/-- The graded-piece module is the canonical module on its underlying abelian pro-`p` quotient. -/
+theorem IsProP.gradedPieceModule_def (hG : IsProP p G) (q n : ℕ) :
+    hG.gradedPieceModule q n =
+      let R := pLowerCentralSeries q G n
+      let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
+      letI : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
+      letI : IsClosed (N : Set R) :=
+        (isClosed_pLowerCentralSeries (n + 1)).preimage continuous_subtype_val
+      ((hG.subgroup R).quotient N).module := (rfl)
 
 /-- In a pro-`p` group, the class of a `p`-adic power in a graded piece of the lower `q`-series is
 the corresponding `ℤ_p`-scalar multiple. -/
@@ -230,6 +262,17 @@ theorem IsProP.gradedBracket_smul_right (hG : IsProP p G) {q j k : ℕ} (u : ℤ
     gradedBracket_gradedMk]
   exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.2 y.2⟩ u
 
+/-- **The brackets `[a^{-u}, b]` and `[a, b^u]` of degree-zero classes cancel**: both are the
+`p`-adic power, with opposite exponents, of the class of the commutator `⁅a, b⁆`. -/
+theorem IsProP.gradedBracket_gradedMkZero_padicPow_neg_add (hG : IsProP p G) (q : ℕ) (a b : G)
+    (u : ℤ_[p]) :
+    gradedBracket q G 0 0 (gradedMkZero q G (hG.padicPow a (-u))) (gradedMkZero q G b) +
+      gradedBracket q G 0 0 (gradedMkZero q G a) (gradedMkZero q G (hG.padicPow b u)) = 0 := by
+  let _ : Module ℤ_[p] (gradedPiece q G 0) := hG.gradedPieceModule q 0
+  let _ : Module ℤ_[p] (gradedPiece q G (0 + 0 + 1)) := hG.gradedPieceModule q (0 + 0 + 1)
+  rw [hG.gradedMkZero_padicPow, hG.gradedMkZero_padicPow, hG.gradedBracket_smul_left,
+    hG.gradedBracket_smul_right, neg_smul, neg_add_cancel]
+
 /-- The class of the commutator of the inverse of a conjugated `p`-adic power `c⁻¹ y ^ u c` with
 the inverse of `x ∈ λ_m` is `u` times the graded bracket of the classes of `y` and `x`. -/
 theorem IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv (hG : IsProP p G) {q m : ℕ}
@@ -243,10 +286,8 @@ theorem IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv (hG : IsProP p G
   let _ : Module ℤ_[p] (gradedPiece q G 0) := hG.gradedPieceModule q 0
   let _ : Module ℤ_[p] (gradedPiece q G m) := hG.gradedPieceModule q m
   let _ : Module ℤ_[p] (gradedPiece q G (0 + m + 1)) := hG.gradedPieceModule q (0 + m + 1)
-  rw [← gradedBracket_gradedMk
-      (⟨(c⁻¹ * hG.padicPow y u * c)⁻¹, mem_pLowerCentralSeries_zero q _⟩ :
-        pLowerCentralSeries q G 0) x⁻¹]
-  simp only [gradedMk_zero, gradedMkZero_inv, gradedMkZero_conj, hG.gradedMkZero_padicPow,
+  rw [← gradedBracket_gradedMkZero_gradedMk]
+  simp only [gradedMkZero_inv, gradedMkZero_conj, hG.gradedMkZero_padicPow,
     gradedMk_inv, map_neg, AddMonoidHom.neg_apply, neg_neg, hG.gradedBracket_smul_left]
 
 end TauCeti

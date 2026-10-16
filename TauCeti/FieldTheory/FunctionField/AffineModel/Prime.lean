@@ -14,11 +14,10 @@ public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 
 An *affine model* of `F / k` is a Dedekind `k`-subalgebra `R` of `F` whose fraction field is `F`.
 `TauCeti/FieldTheory/FunctionField/AffineModel/Place.lean` sends a place of `F / k` that is finite
-on `R` to a height one prime of `R`, its centre. This file supplies the other direction: the
-normalized `𝔭`-adic valuation of `F` attached to a height one prime `𝔭` of `R` is trivial on the
-constants — every nonzero constant is a unit of `R`, hence lies outside `𝔭` — so it *is* a place
-of `F / k`. The two constructions are mutually inverse, which packages the correspondence as a
-bijection
+on `R` to a height one prime of `R`, its centre. The converse construction,
+`TauCeti.Place.ofPrime`, and its order and residue-field API live in
+`TauCeti/FieldTheory/FunctionField/Place/Adic.lean`. This file proves that the two constructions
+are mutually inverse and packages the correspondence as a bijection
 
 `{P : Place k F | R ⊆ 𝒪_P} ≃ HeightOneSpectrum R`.
 
@@ -35,8 +34,6 @@ above becomes the bijection `S ≃ HeightOneSpectrum 𝒪_S`.
 
 ## Main definitions
 
-* `TauCeti.Place.ofPrime`: the place of `F / k` attached to a height one prime of an affine
-  model.
 * `TauCeti.Place.residueHom`: evaluation of the elements of the model at a place finite on it, a
   `k`-algebra map `R → F_P` whose kernel is the centre of the place
   (`TauCeti.Place.ker_residueHom`).
@@ -52,12 +49,9 @@ above becomes the bijection `S ≃ HeightOneSpectrum 𝒪_S`.
   as exactly the places finite on the model, with `TauCeti.Place.range_ofPrime` and
   `TauCeti.Place.compl_range_ofPrime` the same statement for the finite chart and its complement
   as sets of places.
-* `TauCeti.Place.ord_ofPrime_algebraMap`: the coefficient formula `ord_P r = mult_𝔭 (r)`, for
-  `r ≠ 0`, the `𝔭`-form of `TauCeti.Place.ord_algebraMap_eq_multiplicity_center`.
 * `TauCeti.Place.quotientAlgEquivResidueField`: the residue field of a place finite on the model
   is `R` modulo the centre of the place, whence `TauCeti.Place.degree_eq_finrank_quotient_center`;
-  `TauCeti.Place.quotientAlgEquivResidueFieldOfPrime` and `TauCeti.Place.degree_ofPrime` are the
-  `𝔭`-forms, `F_P = R ⧸ 𝔭` and `deg P = [R ⧸ 𝔭 : k]`.
+  the corresponding formulas at `TauCeti.Place.ofPrime` are supplied by the basic adic-place API.
 
 ## References
 
@@ -78,46 +72,6 @@ universe u v w
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
   {R : Type w} [CommRing R] [Algebra k R] [Algebra R F]
   [IsScalarTower k R F]
-
-section OfPrime
-
-variable [IsDedekindDomain R] [IsFractionRing R F]
-
-variable (k F)
-
-/-- **The place of `F / k` attached to a height one prime `𝔭` of an affine model `R`**: its
-valuation is Mathlib's normalized `𝔭`-adic valuation of `F`. Triviality on the constants is the
-only thing to check, and it holds because a nonzero constant is a unit of `R` and therefore
-avoids `𝔭`. -/
-noncomputable def ofPrime (𝔭 : HeightOneSpectrum R) : Place k F where
-  valuation := 𝔭.valuation F
-  valuation_surjective := 𝔭.valuation_surjective F
-  isTrivialOn := ⟨fun c hc ↦ by
-    rw [IsScalarTower.algebraMap_apply k R F, HeightOneSpectrum.valuation_eq_one_iff_notMem]
-    exact Ideal.notMem_of_isUnit _ ((isUnit_iff_ne_zero.mpr hc).map (algebraMap k R))⟩
-
-variable (𝔭 : HeightOneSpectrum R)
-
-@[simp]
-theorem valuation_ofPrime : (ofPrime k F 𝔭).valuation = 𝔭.valuation F := (rfl)
-
-/-- An affine model is contained in the valuation ring of the place of each of its height one
-primes: the place of `𝔭` is finite on `R`. -/
-theorem algebraMap_mem_integers_ofPrime (r : R) :
-    algebraMap R F r ∈ (ofPrime k F 𝔭).integers :=
-  (ofPrime k F 𝔭).mem_integers_iff.mpr (by rw [valuation_ofPrime]; exact 𝔭.valuation_le_one r)
-
-/-- The valuation of the place of `𝔭` extends the `𝔭`-adic valuation of the model. -/
-theorem valuation_ofPrime_algebraMap (r : R) :
-    (ofPrime k F 𝔭).valuation (algebraMap R F r) = 𝔭.intValuation r := by
-  rw [valuation_ofPrime, HeightOneSpectrum.valuation_of_algebraMap]
-
-/-- The elements of the model with a zero at the place of `𝔭` are exactly the elements of `𝔭`. -/
-theorem valuation_ofPrime_algebraMap_lt_one_iff {r : R} :
-    (ofPrime k F 𝔭).valuation (algebraMap R F r) < 1 ↔ r ∈ 𝔭.asIdeal := by
-  rw [valuation_ofPrime, HeightOneSpectrum.valuation_lt_one_iff_mem]
-
-end OfPrime
 
 section Correspondence
 
@@ -157,11 +111,6 @@ theorem heightOneSpectrumEquiv_apply
 theorem coe_heightOneSpectrumEquiv_symm_apply (𝔭 : HeightOneSpectrum R) :
     ((heightOneSpectrumEquiv k F R).symm 𝔭).1 = ofPrime k F 𝔭 := (rfl)
 
-/-- Distinct height one primes of a model give distinct places. -/
-theorem ofPrime_injective : Function.Injective (ofPrime (R := R) k F) := fun 𝔭 𝔮 h ↦
-  HeightOneSpectrum.eq_of_valuation_isEquiv_valuation (K := F)
-    (by rw [← valuation_ofPrime k F 𝔭, ← valuation_ofPrime k F 𝔮, h])
-
 /-- **A place of `F / k` is the place of a height one prime of an affine model `R` exactly when
 it is finite on `R`**: the image of `TauCeti.Place.ofPrime` is the finite chart of the model. -/
 theorem exists_eq_ofPrime_iff (P : Place k F) :
@@ -186,15 +135,6 @@ theorem compl_range_ofPrime :
   rw [range_ofPrime]
   ext P
   simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall]
-
-/-- **The coefficient formula on the finite chart**: the order at the place of `𝔭` of a nonzero
-element of the model is the multiplicity of `𝔭` in the ideal it generates. This is
-`TauCeti.Place.ord_algebraMap_eq_multiplicity_center` at the place of `𝔭`, whose centre is `𝔭`,
-and it is what turns a divisor supported on the finite chart into a factorization of ideals. -/
-theorem ord_ofPrime_algebraMap (𝔭 : HeightOneSpectrum R) {r : R} (hr : r ≠ 0) :
-    (ofPrime k F 𝔭).ord (algebraMap R F r) = multiplicity 𝔭.asIdeal (Ideal.span {r}) := by
-  rw [(ofPrime k F 𝔭).ord_algebraMap_eq_multiplicity_center
-    (algebraMap_mem_integers_ofPrime k F 𝔭) hr, center_ofPrime]
 
 end Correspondence
 
@@ -268,35 +208,6 @@ theorem degree_eq_finrank_quotient_center :
   exact ((P.quotientAlgEquivResidueField hR).toLinearEquiv.finrank_eq).symm
 
 end ResidueField
-
-section ResidueFieldOfPrime
-
-variable [IsDedekindDomain R] [IsFractionRing R F]
-
-variable (k F) (𝔭 : HeightOneSpectrum R)
-
-/-- **The residue field of the place of a height one prime `𝔭` of an affine model is `R ⧸ 𝔭`**,
-as `k`-algebras: this is `TauCeti.Place.quotientAlgEquivResidueField` at the place of `𝔭`, whose
-centre is `𝔭`. -/
-noncomputable def quotientAlgEquivResidueFieldOfPrime :
-    (R ⧸ 𝔭.asIdeal) ≃ₐ[k] (ofPrime k F 𝔭).ResidueField :=
-  (Ideal.quotientEquivAlgOfEq k
-      (congrArg HeightOneSpectrum.asIdeal (center_ofPrime k F 𝔭)).symm).trans
-    ((ofPrime k F 𝔭).quotientAlgEquivResidueField (algebraMap_mem_integers_ofPrime k F 𝔭))
-
-@[simp]
-theorem quotientAlgEquivResidueFieldOfPrime_mk (r : R) :
-    quotientAlgEquivResidueFieldOfPrime k F 𝔭 (Ideal.Quotient.mk 𝔭.asIdeal r)
-      = (ofPrime k F 𝔭).residueHom (algebraMap_mem_integers_ofPrime k F 𝔭) r := (rfl)
-
-/-- **The degree of the place of `𝔭` is the residue degree of `𝔭`**: the weight a divisor
-attaches to a place of the finite chart is the one Mathlib's ideal theory attaches to the
-corresponding prime. -/
-theorem degree_ofPrime : (ofPrime k F 𝔭).degree = Module.finrank k (R ⧸ 𝔭.asIdeal) := by
-  rw [(ofPrime k F 𝔭).degree_eq_finrank_quotient_center (algebraMap_mem_integers_ofPrime k F 𝔭),
-    center_ofPrime]
-
-end ResidueFieldOfPrime
 
 end Place
 

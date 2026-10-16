@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Notation
 
@@ -25,6 +25,8 @@ by hyperbolic distance `|s|`, upward for `s > 0` and downward for `s < 0`.
 * `Matrix.SpecialLinearGroup.dilation`: the dilation matrix, with entries `coe_dilation`.
 * `Matrix.SpecialLinearGroup.dilation_add`, `dilation_inv`: the family is a one-parameter
   subgroup.
+* `Matrix.SpecialLinearGroup.eq_dilation_two_mul_log`: every diagonal matrix of `SL(2, ℝ)` with
+  positive entries is a dilation.
 -/
 
 public section
@@ -64,5 +66,16 @@ theorem dilation_add (s t : ℝ) : dilation (s + t) = dilation s * dilation t :=
 @[simp]
 theorem dilation_inv (s : ℝ) : (dilation s)⁻¹ = dilation (-s) :=
   inv_eq_of_mul_eq_one_right (by rw [← dilation_add, add_neg_cancel, dilation_zero])
+
+/-- A diagonal matrix of `SL(2, ℝ)` with positive entries is a dilation: the one by twice the
+logarithm of its top-left entry. -/
+theorem eq_dilation_two_mul_log {A : SL(2, ℝ)} (h₁₀ : A 1 0 = 0) (h₀₁ : A 0 1 = 0)
+    (hpos : 0 < A 0 0) : A = dilation (2 * Real.log (A 0 0)) := by
+  have hdet := A.det_coe
+  rw [Matrix.det_fin_two, h₁₀, h₀₁, mul_zero, sub_zero] at hdet
+  have h₁₁ : A 1 1 = (A 0 0)⁻¹ := eq_inv_of_mul_eq_one_right hdet
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [h₁₀, h₀₁, h₁₁, Real.exp_neg, Real.exp_log hpos]
 
 end Matrix.SpecialLinearGroup

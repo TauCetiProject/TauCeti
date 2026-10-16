@@ -14,10 +14,15 @@ For `n ≠ ∞`, a map between manifolds is `C^n` at a point if and only if it i
 neighbourhood of that point (`contMDiffAt_iff_contMDiffAt_nhds`), so the set of points where it
 is `C^n` is open.  This file records that openness.
 
+It also records that the regularity indices `∞` and `ω` are nonzero, as `NeZero` instances, so
+that statements about `C^n` manifolds assuming `[NeZero n]` (that is, `1 ≤ n`) apply to smooth
+and analytic manifolds.
+
 ## Main results
 
 * `TauCeti.isOpen_setOfPred_contMDiffAt`: for `n ≠ ∞`, the set of points where a map is `C^n` is
   open.
+* The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
 
 public section
@@ -25,6 +30,14 @@ public section
 open scoped ContDiff
 
 namespace TauCeti
+
+/-- The smoothness index `∞` is nonzero, so smooth manifolds are differentiable. -/
+instance : NeZero (∞ : ℕ∞ω) :=
+  ⟨WithTop.coe_ne_zero.2 ENat.top_ne_zero⟩
+
+/-- The analyticity index `ω` is nonzero, so analytic manifolds are differentiable. -/
+instance : NeZero (ω : ℕ∞ω) :=
+  ⟨WithTop.top_ne_zero⟩
 
 variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜]

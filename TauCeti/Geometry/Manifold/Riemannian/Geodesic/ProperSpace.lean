@@ -65,7 +65,7 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
 
 /-! ### Closed balls as images of tangent balls
 
@@ -85,7 +85,7 @@ theorem image_riemannianExp_closedBall_subset (p : M) (r : ℝ) :
 
 variable {p : M} {r : ℝ}
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] [IsRiemannianManifold I M] in
+omit [I.Boundaryless] [IsRiemannianManifold I M] in
 /-- If every point of the closed ball of radius `r` about `p` is reached from `p` by a minimizing
 initial velocity, that ball is contained in the image under `exp_p` of the closed tangent ball of
 radius `r`. -/

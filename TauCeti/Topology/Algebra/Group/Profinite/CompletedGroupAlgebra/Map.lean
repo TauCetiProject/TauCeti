@@ -41,6 +41,8 @@ algebras.
 * `TauCeti.completedGroupAlgebra.proj_map`, `TauCeti.completedGroupAlgebra.proj_map_of_le`: the
   levelwise description of `map`; `TauCeti.completedGroupAlgebra.mapDomain_map_proj_of_le` is the
   compatibility between the levels of `R[[Γ]]` behind it.
+* `TauCeti.completedGroupAlgebra.proj_map_eq_zero_iff`: the level `V` of `map R f hf x` vanishes
+  exactly when the level `f⁻¹(V)` of `x` does.
 * `TauCeti.completedGroupAlgebra.map_of`: `map` sends the group element `γ` to the group element
   `f γ`.
 * `TauCeti.completedGroupAlgebra.map_id`, `TauCeti.completedGroupAlgebra.map_comp`: the functor
@@ -126,6 +128,15 @@ theorem proj_map_of_le (U : OpenNormalSubgroup Γ) (V : OpenNormalSubgroup Δ)
       MonoidAlgebra.mapDomain (QuotientGroup.map U.toSubgroup V.toSubgroup f h) (proj R Γ U x) := by
   have hU : U ≤ V.comap f hf := fun _ hg ↦ OpenNormalSubgroup.mem_comap.mpr (h hg)
   rw [proj_map, mapDomain_map_proj_of_le R f hU]
+
+/-- The projection of `map R f hf x` at the level `V` of `R[[Δ]]` vanishes exactly when the
+projection of `x` at the level `f⁻¹(V)` of `R[[Γ]]` does: the map `R[Γ ⧸ f⁻¹(V)] → R[Δ ⧸ V]`
+induced by `f` is injective. -/
+theorem proj_map_eq_zero_iff (V : OpenNormalSubgroup Δ) (x : completedGroupAlgebra R Γ) :
+    proj R Δ V (map R f hf x) = 0 ↔ proj R Γ (V.comap f hf) x = 0 := by
+  rw [proj_map]
+  exact (MonoidAlgebra.mapDomain_injective (QuotientGroup.map_injective_of_eq_comap f
+    V.toSubgroup (V.toSubgroup_comap f hf))).eq_iff' (MonoidAlgebra.mapDomain_zero (R := R) _)
 
 /-- The induced map sends the group element `γ` to the group element `f γ`. -/
 @[simp]

@@ -106,16 +106,7 @@ theorem hasGaloisLabel_three_one_iff :
     fun hsq => not_referenceSubgroup_three_one_le_alternatingGroup
       ((h.isSquare_discr_iff_three hchar).mp hsq)⟩, fun ⟨hirr, hdeg, hsq⟩ => ?_⟩
   have hf0 : f ≠ 0 := by rintro rfl; simp at hdeg
-  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
-  have hdiscr : f.discr ≠ 0 := fun hzero => hsq ⟨0, by simp [hzero]⟩
-  have hscaleddiscr : (C f.leadingCoeff⁻¹ * f).discr ≠ 0 := by
-    rw [discr_C_mul _ (inv_ne_zero hlc)]
-    exact mul_ne_zero (pow_ne_zero _ (inv_ne_zero hlc)) hdiscr
-  have hscaledmonic : (C f.leadingCoeff⁻¹ * f).Monic := by
-    rw [mul_comm]
-    exact monic_mul_leadingCoeff_inv hf0
-  have hsep : f.Separable :=
-    (hscaledmonic.discr_ne_zero_iff.mp hscaleddiscr).of_mul_right
+  have hsep : f.Separable := (discr_ne_zero_iff hf0).mp fun hzero => hsq ⟨0, by simp [hzero]⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_three hsep hirr hdeg
   obtain ⟨_ | _ | _, hlt⟩ := j
   · exact (hsq ((hj.isSquare_discr_iff_three hchar).mpr

@@ -9,7 +9,11 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
 
 /-!
-# Powers of a subring scalar acting on a submodule
+# Pointwise scalar actions on submodules
+
+This file also records how scalar products that fix or annihilate a scalar control its
+pointwise image of the whole module. The image-membership result needs only a distributive
+monoid action.
 
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
@@ -90,3 +94,35 @@ theorem smul_mem_pow_smul {S : Subring A} (M₀ : Submodule S M) {s : A} (hs0 : 
   exact Submodule.smul_mem_pointwise_smul _ _ _ hmem
 
 end Submodule
+
+namespace TauCeti
+
+section Monoid
+
+variable {S M R : Type*} [Semiring S] [Monoid R]
+  [AddCommMonoid M] [Module S M] [DistribMulAction R M] [SMulCommClass R S M]
+
+/-- **An element `r` fixed on the left by `f` carries the whole module into `f • M`**: if
+`f * r = r` then every multiple of `r` lies in `f • M`. No idempotency is needed. -/
+theorem smul_mem_smul_top_of_mul_eq_self {f r : R} (hr : f * r = r) (x : M) :
+    r • x ∈ f • (⊤ : Submodule S M) := by
+  rw [← hr, mul_smul]
+  exact Submodule.smul_mem_pointwise_smul _ _ _ trivial
+
+end Monoid
+
+section Semiring
+
+variable {S M R : Type*} [Semiring S] [Semiring R]
+  [AddCommMonoid M] [Module S M] [Module R M] [SMulCommClass R S M]
+
+/-- **An element that kills `e` on the right annihilates `e • M`**: if `r * e = 0` then `r` sends
+every element of `e • M` to zero. No idempotency is needed. -/
+theorem smul_eq_zero_of_mul_eq_zero_of_mem_smul_top {r e : R} (hr : r * e = 0) {x : M}
+    (hx : x ∈ e • (⊤ : Submodule S M)) : r • x = 0 := by
+  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
+  rw [smul_smul, hr, zero_smul]
+
+end Semiring
+
+end TauCeti

@@ -7,22 +7,27 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Pi
+public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Direct sums of linear codes
 
-This file defines the direct sum of two linear codes on the disjoint union of their coordinate
-types. A word belongs to the direct sum precisely when its restrictions to the two summands belong
-to the respective codes. Inclusion and equality of direct sums are therefore decided summandwise.
+This file defines the direct sum of two linear codes with an arbitrary module alphabet on the
+disjoint union of their coordinate types. A word belongs to the direct sum precisely when its
+restrictions to the two summands belong to the respective codes. Inclusion and equality of direct
+sums are therefore decided summandwise.
 
 The direct sum is identified linearly with the product of the two codes. Consequently its dimension
 is the sum of the dimensions and its cardinality is the product of the cardinalities. Hamming weight
 and distance are additive across the two coordinate summands; consequently a natural number
 divides all weights of a direct sum exactly when it divides all weights of both summands.
 Canonical reindexings by the commutativity and associativity equivalences for `Sum` give the
-corresponding code identities.
+corresponding code identities. Relabelling, or monomially transforming, the two coordinate blocks
+separately acts on the two constituent codes separately. Hence permutation and monomial
+equivalence are compatible with direct sums, and the direct sum is commutative and associative up
+to permutation equivalence.
 
 The construction follows the direct-sum convention in Huffman and Pless, *Fundamentals of
 Error-Correcting Codes*, Section 1.6.
@@ -32,44 +37,44 @@ public section
 
 namespace Submodule
 
-variable {R ι κ ν : Type*}
+variable {R A ι κ ν : Type*}
 
 section Semiring
 
-variable [Semiring R]
+variable [Semiring R] [AddCommMonoid A] [Module R A]
 
 /-- The direct sum of two linear codes, on the disjoint union of their coordinate types. -/
-def directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    Submodule R (ι ⊕ κ → R) :=
-  (C.prod D).map (LinearEquiv.sumArrowLequivProdArrow ι κ R R).symm.toLinearMap
+def directSum (C : Submodule R (ι → A)) (D : Submodule R (κ → A)) :
+    Submodule R (ι ⊕ κ → A) :=
+  (C.prod D).map (LinearEquiv.sumArrowLequivProdArrow ι κ R A).symm.toLinearMap
 
 /-- A word belongs to a direct sum exactly when each of its two restrictions belongs to the
 corresponding code. -/
 @[simp]
-theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
-    {x : ι ⊕ κ → R} :
+theorem mem_directSum_iff {C : Submodule R (ι → A)} {D : Submodule R (κ → A)}
+    {x : ι ⊕ κ → A} :
     x ∈ directSum C D ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D := by
   rw [directSum, mem_map_equiv, LinearEquiv.symm_symm, mem_prod]
   rfl
 
 /-- A word of the first code, extended by zeros, belongs to a direct sum. -/
-theorem sumElim_zero_right_mem_directSum {C : Submodule R (ι → R)} (D : Submodule R (κ → R))
-    {x : ι → R} (hx : x ∈ C) : Sum.elim x (0 : κ → R) ∈ directSum C D :=
+theorem sumElim_zero_right_mem_directSum {C : Submodule R (ι → A)} (D : Submodule R (κ → A))
+    {x : ι → A} (hx : x ∈ C) : Sum.elim x (0 : κ → A) ∈ directSum C D :=
   mem_directSum_iff.mpr ⟨hx, D.zero_mem⟩
 
 /-- A word of the second code, extended by zeros, belongs to a direct sum. -/
-theorem sumElim_zero_left_mem_directSum (C : Submodule R (ι → R)) {D : Submodule R (κ → R)}
-    {y : κ → R} (hy : y ∈ D) : Sum.elim (0 : ι → R) y ∈ directSum C D :=
+theorem sumElim_zero_left_mem_directSum (C : Submodule R (ι → A)) {D : Submodule R (κ → A)}
+    {y : κ → A} (hy : y ∈ D) : Sum.elim (0 : ι → A) y ∈ directSum C D :=
   mem_directSum_iff.mpr ⟨C.zero_mem, hy⟩
 
 /-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
-def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
+def directSumEquivProd (C : Submodule R (ι → A)) (D : Submodule R (κ → A)) :
     directSum C D ≃ₗ[R] C × D :=
-  ((LinearEquiv.sumArrowLequivProdArrow ι κ R R).symm.ofSubmodules (C.prod D) (directSum C D)
+  ((LinearEquiv.sumArrowLequivProdArrow ι κ R A).symm.ofSubmodules (C.prod D) (directSum C D)
     (directSum.eq_1 C D).symm).symm.trans (prodEquiv C D)
 
-private theorem directSumEquivProd_apply_eq (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) (x : directSum C D) :
+private theorem directSumEquivProd_apply_eq (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (x : directSum C D) :
     directSumEquivProd C D x =
       (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.mp x.2).1⟩,
         ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.mp x.2).2⟩) := by
@@ -86,28 +91,28 @@ private theorem directSumEquivProd_apply_eq (C : Submodule R (ι → R))
       LinearEquiv.sumArrowLequivProdArrow_apply_snd]
 
 @[simp]
-theorem directSumEquivProd_apply_fst (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+theorem directSumEquivProd_apply_fst (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
     (x : directSum C D) (i : ι) :
     (directSumEquivProd C D x).1.1 i = x.1 (.inl i) := by
   exact congrArg (fun y : C × D ↦ y.1.1 i) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
-theorem directSumEquivProd_apply_snd (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+theorem directSumEquivProd_apply_snd (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
     (x : directSum C D) (j : κ) :
     (directSumEquivProd C D x).2.1 j = x.1 (.inr j) := by
   exact congrArg (fun y : C × D ↦ y.2.1 j) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
-theorem directSumEquivProd_symm_apply_inl (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) (x : C) (y : D) (i : ι) :
+theorem directSumEquivProd_symm_apply_inl (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (x : C) (y : D) (i : ι) :
     ((directSumEquivProd C D).symm (x, y)).1 (.inl i) = x.1 i := by
   have h := directSumEquivProd_apply_eq C D ((directSumEquivProd C D).symm (x, y))
   rw [LinearEquiv.apply_symm_apply] at h
   exact (congrArg (fun z : C × D ↦ z.1.1 i) h).symm
 
 @[simp]
-theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) (x : C) (y : D) (j : κ) :
+theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (x : C) (y : D) (j : κ) :
     ((directSumEquivProd C D).symm (x, y)).1 (.inr j) = y.1 j := by
   have h := directSumEquivProd_apply_eq C D ((directSumEquivProd C D).symm (x, y))
   rw [LinearEquiv.apply_symm_apply] at h
@@ -115,13 +120,13 @@ theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
 
 /-- Direct sum is monotone in both constituent codes. -/
 @[gcongr]
-theorem directSum_mono {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)}
+theorem directSum_mono {C C' : Submodule R (ι → A)} {D D' : Submodule R (κ → A)}
     (hC : C ≤ C') (hD : D ≤ D') : directSum C D ≤ directSum C' D' :=
   map_mono (prod_mono hC hD)
 
 /-- One direct sum lies in another exactly when the constituent codes lie in each other. -/
 @[simp]
-theorem directSum_le_directSum_iff {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)} :
+theorem directSum_le_directSum_iff {C C' : Submodule R (ι → A)} {D D' : Submodule R (κ → A)} :
     directSum C D ≤ directSum C' D' ↔ C ≤ C' ∧ D ≤ D' := by
   refine ⟨fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩, fun h ↦ directSum_mono h.1 h.2⟩
   · exact (mem_directSum_iff.mp (h (sumElim_zero_right_mem_directSum D hx))).1
@@ -129,16 +134,16 @@ theorem directSum_le_directSum_iff {C C' : Submodule R (ι → R)} {D D' : Submo
 
 /-- Two direct sums are equal exactly when their constituent codes are equal. -/
 @[simp]
-theorem directSum_inj {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)} :
+theorem directSum_inj {C C' : Submodule R (ι → A)} {D D' : Submodule R (κ → A)} :
     directSum C D = directSum C' D' ↔ C = C' ∧ D = D' := by
   simp only [le_antisymm_iff, directSum_le_directSum_iff]
   tauto
 
 /-- Reindexing a direct sum by swapping the coordinate summands swaps the two codes. -/
 @[simp]
-theorem map_directSum_sumComm (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
+theorem map_directSum_sumComm (C : Submodule R (ι → A)) (D : Submodule R (κ → A)) :
     (directSum C D).map
-        (LinearEquiv.funCongrLeft R R (Equiv.sumComm κ ι)).toLinearMap =
+        (LinearEquiv.funCongrLeft R A (Equiv.sumComm κ ι)).toLinearMap =
       directSum D C := by
   ext x
   rw [mem_map_equiv, mem_directSum_iff, mem_directSum_iff]
@@ -147,24 +152,71 @@ theorem map_directSum_sumComm (C : Submodule R (ι → R)) (D : Submodule R (κ 
 /-- Reindexing an iterated direct sum by associating its coordinate summands associates the
 three codes in the same way. -/
 @[simp]
-theorem map_directSum_sumAssoc (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
-    (E : Submodule R (ν → R)) :
+theorem map_directSum_sumAssoc (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
+    (E : Submodule R (ν → A)) :
     (directSum (directSum C D) E).map
-        (LinearEquiv.funCongrLeft R R (Equiv.sumAssoc ι κ ν).symm).toLinearMap =
+        (LinearEquiv.funCongrLeft R A (Equiv.sumAssoc ι κ ν).symm).toLinearMap =
       directSum C (directSum D E) := by
   ext x
   simp only [mem_map_equiv, mem_directSum_iff]
   exact and_assoc
 
+/-- Relabelling the two coordinate blocks of a direct sum separately relabels the two
+constituent codes. -/
+@[simp]
+theorem map_directSum_sumCongr {ι' κ' : Type*} (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (e : ι' ≃ ι) (f : κ' ≃ κ) :
+    (directSum C D).map (LinearEquiv.funCongrLeft R A (e.sumCongr f)).toLinearMap =
+      directSum (C.map (LinearEquiv.funCongrLeft R A e).toLinearMap)
+        (D.map (LinearEquiv.funCongrLeft R A f).toLinearMap) := by
+  ext x
+  simp only [mem_map_equiv, mem_directSum_iff, LinearEquiv.funCongrLeft_symm]
+  refine and_congr (iff_of_eq (congrArg (· ∈ C) (funext fun i ↦ ?_)))
+    (iff_of_eq (congrArg (· ∈ D) (funext fun j ↦ ?_))) <;> simp
+
+/-- A direct sum is permutation equivalent to the direct sum taken in the other order. -/
+theorem isPermutationEquivalent_directSum_comm (C : Submodule R (ι → R))
+    (D : Submodule R (κ → R)) :
+    TauCeti.IsPermutationEquivalent (directSum C D) (directSum D C) :=
+  TauCeti.isPermutationEquivalent_iff.mpr
+    ⟨Equiv.sumComm ι κ, by rw [Equiv.sumComm_symm, map_directSum_sumComm]⟩
+
+/-- An iterated direct sum is permutation equivalent to the direct sum associated the other
+way. -/
+theorem isPermutationEquivalent_directSum_assoc (C : Submodule R (ι → R))
+    (D : Submodule R (κ → R)) (E : Submodule R (ν → R)) :
+    TauCeti.IsPermutationEquivalent (directSum (directSum C D) E)
+      (directSum C (directSum D E)) :=
+  TauCeti.isPermutationEquivalent_iff.mpr ⟨Equiv.sumAssoc ι κ ν, map_directSum_sumAssoc C D E⟩
+
 end Semiring
+
+section Monomial
+
+variable [CommSemiring R] {ι' κ' : Type*}
+
+/-- A monomial transformation acting blockwise on the two coordinate summands maps a direct sum
+to the direct sum of the images of the two constituent codes. -/
+@[simp]
+theorem map_directSum_monomialEquiv (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+    (u : ι → Rˣ) (v : κ → Rˣ) (e : ι ≃ ι') (f : κ ≃ κ') :
+    (directSum C D).map (TauCeti.monomialEquiv (Sum.elim u v) (e.sumCongr f)).toLinearMap =
+      directSum (C.map (TauCeti.monomialEquiv u e).toLinearMap)
+        (D.map (TauCeti.monomialEquiv v f).toLinearMap) := by
+  ext x
+  simp only [mem_map_equiv, mem_directSum_iff]
+  refine and_congr (iff_of_eq (congrArg (· ∈ C) (funext fun i ↦ ?_)))
+    (iff_of_eq (congrArg (· ∈ D) (funext fun j ↦ ?_))) <;> simp
+
+end Monomial
 
 section Finrank
 
-variable [Semiring R] [StrongRankCondition R]
+variable [Semiring R] [AddCommMonoid A] [Module R A] [StrongRankCondition R]
 
 /-- The dimension of a direct sum is the sum of the dimensions of its constituent codes. -/
 @[simp]
-theorem finrank_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+theorem finrank_directSum (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
     [Module.Free R C] [Module.Free R D] [Module.Finite R C] [Module.Finite R D] :
     Module.finrank R (directSum C D) = Module.finrank R C + Module.finrank R D := by
   rw [(directSumEquivProd C D).finrank_eq, Module.finrank_prod]
@@ -173,12 +225,12 @@ end Finrank
 
 section Cardinality
 
-variable [Semiring R]
+variable [Semiring R] [AddCommMonoid A] [Module R A]
 
 /-- The cardinality of a direct sum is the product of the cardinalities of its constituent
 codes. -/
 @[simp↓]
-theorem natCard_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
+theorem natCard_directSum (C : Submodule R (ι → A)) (D : Submodule R (κ → A)) :
     Nat.card (directSum C D) = Nat.card C * Nat.card D := by
   rw [Nat.card_congr (directSumEquivProd C D).toEquiv, Nat.card_prod]
 
@@ -186,13 +238,13 @@ end Cardinality
 
 section Hamming
 
-variable [Semiring R] [DecidableEq R] [Fintype ι] [Fintype κ]
+variable [Semiring R] [AddCommMonoid A] [Module R A] [DecidableEq A] [Fintype ι] [Fintype κ]
 
 /-- Hamming weight is additive on words in a direct sum. -/
 @[simp]
-theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) (x : C) (y : D) :
-    hammingNorm ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → R) =
+theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (x : C) (y : D) :
+    hammingNorm ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → A) =
       hammingNorm x.1 + hammingNorm y.1 := by
   rw [← TauCeti.hammingNorm_sumElim x.1 y.1]
   apply congrArg hammingNorm
@@ -201,8 +253,8 @@ theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → R))
 
 /-- All weights of a direct sum are divisible by `k` exactly when this holds in both
 constituent codes. -/
-theorem forall_dvd_hammingNorm_directSum_iff (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) (k : ℕ) :
+theorem forall_dvd_hammingNorm_directSum_iff (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (k : ℕ) :
     (∀ z ∈ directSum C D, k ∣ hammingNorm z) ↔
       (∀ x ∈ C, k ∣ hammingNorm x) ∧ ∀ y ∈ D, k ∣ hammingNorm y := by
   constructor
@@ -216,10 +268,10 @@ theorem forall_dvd_hammingNorm_directSum_iff (C : Submodule R (ι → R))
 
 /-- Hamming distance is additive on pairs of words in a direct sum. -/
 @[simp]
-theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) (x x' : C) (y y' : D) :
-    hammingDist ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → R)
-        ((directSumEquivProd C D).symm (x', y') : ι ⊕ κ → R) =
+theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (x x' : C) (y y' : D) :
+    hammingDist ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → A)
+        ((directSumEquivProd C D).symm (x', y') : ι ⊕ κ → A) =
       hammingDist x.1 x'.1 + hammingDist y.1 y'.1 := by
   rw [← TauCeti.hammingDist_sumElim x.1 x'.1 y.1 y'.1]
   apply congrArg₂ hammingDist
@@ -231,3 +283,33 @@ theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → R))
 end Hamming
 
 end Submodule
+
+namespace TauCeti
+
+open Submodule
+
+variable {R ι κ ι' κ' : Type*}
+
+/-- Permutation equivalence is compatible with direct sums: relabellings of the two summands
+combine to a relabelling of the direct sum. -/
+theorem IsPermutationEquivalent.directSum [Semiring R] {C : Submodule R (ι → R)}
+    {C' : Submodule R (ι' → R)} {D : Submodule R (κ → R)} {D' : Submodule R (κ' → R)}
+    (hC : IsPermutationEquivalent C C') (hD : IsPermutationEquivalent D D') :
+    IsPermutationEquivalent (directSum C D) (directSum C' D') := by
+  obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp hC
+  obtain ⟨f, rfl⟩ := isPermutationEquivalent_iff.mp hD
+  exact isPermutationEquivalent_iff.mpr
+    ⟨e.sumCongr f, by rw [Equiv.sumCongr_symm, map_directSum_sumCongr]⟩
+
+/-- Monomial equivalence is compatible with direct sums: monomial transformations of the two
+summands combine blockwise to one of the direct sum. -/
+theorem IsMonomialEquivalent.directSum [CommSemiring R] {C : Submodule R (ι → R)}
+    {C' : Submodule R (ι' → R)} {D : Submodule R (κ → R)} {D' : Submodule R (κ' → R)}
+    (hC : IsMonomialEquivalent C C') (hD : IsMonomialEquivalent D D') :
+    IsMonomialEquivalent (directSum C D) (directSum C' D') := by
+  obtain ⟨u, e, rfl⟩ := isMonomialEquivalent_iff.mp hC
+  obtain ⟨v, f, rfl⟩ := isMonomialEquivalent_iff.mp hD
+  exact isMonomialEquivalent_iff.mpr
+    ⟨Sum.elim u v, e.sumCongr f, map_directSum_monomialEquiv C D u v e f⟩
+
+end TauCeti

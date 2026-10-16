@@ -11,7 +11,8 @@ public import Mathlib.Algebra.Category.Ring.Limits
 /-!
 # Basic definitions for sheaves of modules
 
-This file collects the coefficient sheaf obtained by forgetting commutativity, the counit
+This file collects the coefficient sheaf obtained by forgetting commutativity, the original
+commutative-ring actions on its section modules, the counit
 identifying the sheafification of the underlying presheaf of a sheaf of modules with that sheaf,
 and the vanishing of every sheaf of modules over a sheaf of rings whose sections are trivial.
 
@@ -59,6 +60,14 @@ analogue of `AlgebraicGeometry.Scheme.ringCatSheaf`. -/
 abbrev ringCatSheaf (R : Sheaf J CommRingCat.{u})
     [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})] : Sheaf J RingCat.{u} :=
   (sheafCompose J (forget₂ CommRingCat RingCat.{u})).obj R
+
+/-- Sections of a sheaf of modules over the underlying ring sheaf retain the module action
+of the original commutative ring of sections. -/
+instance _root_.SheafOfModules.sectionModule
+    {R : Sheaf J CommRingCat.{u}} [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+    (P : _root_.SheafOfModules.{v} (ringCatSheaf R)) (U : Cᵒᵖ) :
+    Module (R.obj.obj U) (P.val.obj U) :=
+  inferInstanceAs (Module ((ringCatSheaf R).obj.obj U) (P.val.obj U))
 
 /-- Sheafifying the underlying presheaf of modules of a sheaf of `R`-modules `M`, for a sheaf of
 rings `R`, recovers `M`; this is the counit of the sheafification adjunction. -/

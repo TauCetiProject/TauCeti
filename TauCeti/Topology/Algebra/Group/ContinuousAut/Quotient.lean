@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 
 /-!
@@ -61,6 +62,24 @@ theorem mapQuotient_eq_iff [N.Normal] {φ ψ : ContinuousAut G} :
   · simpa using congrArg (fun α : MulAut (G ⧸ N) ↦ α (x : G ⧸ N)) h
   · obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
     simpa using h x
+
+/-- The quotient automorphisms induced by one continuous automorphism on two characteristic
+quotients `G ⧸ N` and `G ⧸ M`, `N ≤ M`, are compatible with the quotient map `G ⧸ N → G ⧸ M`. -/
+theorem mapOfLE_mapQuotient {M : Subgroup G} [N.Normal] [M.Normal] (hM : IsTopCharacteristic G M)
+    (hle : N ≤ M) (φ : ContinuousAut G) (q : G ⧸ N) :
+    QuotientGroup.mapOfLE hle (mapQuotient hN φ q) =
+      mapQuotient hM φ (QuotientGroup.mapOfLE hle q) := by
+  induction q using QuotientGroup.induction_on with
+  | H x => simp
+
+/-- The coordinate of a continuous automorphism on a characteristic quotient `G ⧸ N` determines its
+coordinate on every characteristic quotient `G ⧸ M` with `N ≤ M`. -/
+theorem mapQuotient_eq_mapQuotient_of_le {M : Subgroup G} [N.Normal] [M.Normal]
+    (hM : IsTopCharacteristic G M) (hle : N ≤ M) {φ ψ : ContinuousAut G}
+    (h : mapQuotient hN φ = mapQuotient hN ψ) : mapQuotient hM φ = mapQuotient hM ψ := by
+  rw [mapQuotient_eq_iff] at h ⊢
+  intro x
+  simpa using congrArg (QuotientGroup.mapOfLE hle) (h x)
 
 /-- The quotient coordinate carries conjugation by `g` to conjugation by its class. -/
 @[simp]

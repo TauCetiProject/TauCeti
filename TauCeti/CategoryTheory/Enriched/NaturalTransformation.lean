@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
+import Mathlib.Tactic.ApplyFun
 
 /-!
 # Natural transformations at the monoidal unit

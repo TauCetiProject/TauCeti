@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
-import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
+import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 
 /-!
 # Trace identities for `2 × 2` matrices

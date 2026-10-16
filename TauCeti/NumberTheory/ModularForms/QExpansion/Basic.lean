@@ -36,6 +36,11 @@ shift. That is what a `q`-support hypothesis is spent on when descending along `
 stated here rather than at the descent because it mentions only coefficients, divisibility and
 `Function.Periodic.qParam`.
 
+Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`,
+and a periodic function whose `q`-expansion has no constant term is asymptotic at `i∞` to its
+`q`-coefficient times `q`.  These are what a function with a pole at the cusp, such as `j`, is
+expanded through: one multiplies by `q` and divides the expansion of the product by `q`.
+
 ## Main declarations
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
@@ -45,6 +50,9 @@ stated here rather than at the descent because it mentions only coefficients, di
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
+* `TauCeti.UpperHalfPlane.qExpansion_qParam`: the `q`-expansion of `q` is `X`.
+* `TauCeti.UpperHalfPlane.tendsto_div_qParam_atImInfty`: `f / q` tends to the `q`-coefficient of
+  `f` when the constant coefficient vanishes.
 
 ## References
 
@@ -55,6 +63,7 @@ stated here rather than at the descent because it mentions only coefficients, di
 public noncomputable section
 
 open UpperHalfPlane
+open scoped Manifold
 
 namespace TauCeti
 
@@ -93,6 +102,48 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
     simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
       using hfanalytic.hasFPowerSeriesAt
   simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
+
+/-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_comp_ofComplex (hh : h ≠ 0) :
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h :=
+  _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+    simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
+      mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
+      Complex.exp_two_pi_mul_I, one_mul]
+
+/-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
+theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
+    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
+  have hper := periodic_qParam_comp_ofComplex hh.ne'
+  have hhol : MDiff (fun τ : ℍ ↦ Function.Periodic.qParam h τ) :=
+    Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe
+  have hbdd : IsBoundedAtImInfty (fun τ : ℍ ↦ Function.Periodic.qParam h τ) :=
+    (_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ
+  ext m
+  rw [← qExpansion_coeff_unique hh
+    (_root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh hper hhol hbdd)
+    (c := fun m ↦ PowerSeries.coeff m (PowerSeries.X : PowerSeries ℂ)) (fun τ ↦ ?_) m]
+  convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
+  rw [PowerSeries.coeff_X]
+  split_ifs with hm <;> simp [hm]
+
+/-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
+coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/
+theorem UpperHalfPlane.tendsto_div_qParam_atImInfty {f : ℍ → ℂ} (hh : 0 < h)
+    (hfper : Function.Periodic (f ∘ ofComplex) h)
+    (hfdiff : DifferentiableAt ℂ (cuspFunction h f) 0) (hf0 : (qExpansion h f).coeff 0 = 0) :
+    Filter.Tendsto (fun τ ↦ f τ / Function.Periodic.qParam h τ) atImInfty
+      (nhds ((qExpansion h f).coeff 1)) := by
+  have hderiv : HasDerivAt (cuspFunction h f) ((qExpansion h f).coeff 1) 0 := by
+    simpa [_root_.UpperHalfPlane.qExpansion_coeff] using hfdiff.hasDerivAt
+  have h0 : cuspFunction h f 0 = 0 := by
+    simpa [_root_.UpperHalfPlane.qExpansion_coeff] using hf0
+  have hq : Filter.Tendsto (fun τ : ℍ ↦ Function.Periodic.qParam h τ) atImInfty
+      (nhdsWithin 0 {0}ᶜ) :=
+    tendsto_nhdsWithin_iff.mpr ⟨_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh,
+      .of_forall fun τ ↦ Function.Periodic.qParam_ne_zero _⟩
+  refine (hderiv.tendsto_slope_zero.comp hq).congr fun τ ↦ ?_
+  simp [h0, _root_.UpperHalfPlane.eq_cuspFunction τ hh.ne' hfper, div_eq_inv_mul]
 
 /-- **The `n`-th `q`-expansion coefficient as a `ℂ`-linear functional on cusp forms.**
 `f ↦ (qExpansion h f).coeff n`, bundled: the coefficient of a linear combination of cusp forms

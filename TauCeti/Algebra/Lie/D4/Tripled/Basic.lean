@@ -152,6 +152,14 @@ def loweringMatrix (i : Fin 4) : Matrix (Fin 24) (Fin 24) ℤ :=
 def cartanGeneratorMatrix (i : Fin 4) : Matrix (Fin 24) (Fin 24) ℤ :=
   weightTable.cartanGeneratorMatrix i
 
+/-- The raising matrix is the raising matrix of the tripled weight table. -/
+theorem raisingMatrix_def (i : Fin 4) : raisingMatrix i = weightTable.raisingMatrix i :=
+  (rfl)
+
+/-- The lowering matrix is the lowering matrix of the tripled weight table. -/
+theorem loweringMatrix_def (i : Fin 4) : loweringMatrix i = weightTable.loweringMatrix i :=
+  (rfl)
+
 /-- The entry formula for a simple raising matrix. -/
 @[simp]
 theorem raisingMatrix_apply (i : Fin 4) (a b : Fin 24) :

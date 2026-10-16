@@ -61,7 +61,7 @@ theorem contMDiffSMul_complexTorus_analyticRealization (n : ℕ∞ω) :
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
   have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
   let κ := Finite.equivFin (ToricRay σ.1)
-  let g := (analyticChartGenerators Φ σ hσ).2
+  let g := (analyticChartGenerators Φ σ).2
   let _ := affinePointTopology g
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
   let P := Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n

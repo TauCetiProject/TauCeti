@@ -1,0 +1,207 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.FieldTheory.Galois.Basic
+public import TauCeti.Algebra.Polynomial.AdditivePolynomial
+
+/-!
+# Artin–Schreier extensions of an additive polynomial
+
+Let `V` be a finite additive subgroup of a field `K`, with additive polynomial
+`a_V = ∏_{c ∈ V} (X - c)`, and let `y` be a root of `a_V - u` in an extension `L` of `K` generating
+`L`. By additivity of `a_V`, the other roots are the translates `y + c`, `c ∈ V`, so `a_V - u`
+splits in `L` into distinct linear factors. Hence `L / K` is Galois, every automorphism `σ`
+translates `y` by an element `σ y - y` of `V`, and this translation is an injective homomorphism
+`Gal(L/K) → V`. In particular `[L : K] ≤ |V|`, and when equality holds the Galois group is `V`.
+
+For `V` the prime field of a field of characteristic `p` this is the Artin–Schreier theory of
+`TauCeti/FieldTheory/ArtinSchreier/Basic.lean`. For larger `V` the Galois group is elementary
+abelian; these are the extensions of Stichtenoth's Proposition 3.7.10, where the degree `|V|` is
+forced by a totally ramified place
+(`TauCeti/FieldTheory/FunctionField/ArtinSchreier/Additive/Basic.lean`).
+
+## Main definitions
+
+* `AddSubgroup.artinSchreierTranslationHom`: the homomorphism `Gal(L/K) → V`, `σ ↦ σ y - y`.
+* `AddSubgroup.artinSchreierAutEquiv`: the isomorphism `Gal(L/K) ≃ V` when `[L : K] = |V|`.
+
+## Main results
+
+* `AddSubgroup.map_additivePolynomial_sub_C_eq_prod`: `a_V - u = ∏_{c ∈ V} (X - (y + c))`.
+* `AddSubgroup.separable_additivePolynomial_sub_C`: `a_V - u` is separable.
+* `AddSubgroup.isGalois_of_aeval_additivePolynomial_eq`: `L / K` is Galois.
+* `AddSubgroup.artinSchreierTranslationHom_injective`: an automorphism is determined by its
+  translation.
+* `AddSubgroup.finrank_le_card_of_aeval_additivePolynomial_eq`: `[L : K] ≤ |V|`.
+
+## References
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Proposition 3.7.10.
+-/
+
+public section
+
+open Polynomial
+open scoped IntermediateField
+
+namespace AddSubgroup
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+variable (V : AddSubgroup K) [Fintype V] {u : K} {y : L}
+
+section Root
+
+variable (hy : aeval y V.additivePolynomial = algebraMap K L u)
+include hy
+
+/-- If `y` is a root of `a_V - u`, then `a_V - u` is the product of `X - (y + c)` over `c ∈ V`. -/
+theorem map_additivePolynomial_sub_C_eq_prod :
+    (V.additivePolynomial - C u).map (algebraMap K L) =
+      ∏ c : V, (X - C (y + algebraMap K L c)) := by
+  have hX : aeval (X : L[X]) V.additivePolynomial = V.additivePolynomial.map (algebraMap K L) := by
+    rw [← aeval_map_algebraMap L, aeval_X_left_apply]
+  have h := V.aeval_additivePolynomial_sub (A := L[X]) X (C y)
+  rw [hX, ← algebraMap_eq (R := L), aeval_algebraMap_apply, hy, algebraMap_eq,
+    aeval_additivePolynomial] at h
+  rw [Polynomial.map_sub, map_C, ← h]
+  refine Fintype.prod_congr _ _ fun c ↦ ?_
+  rw [IsScalarTower.algebraMap_apply K L L[X], algebraMap_eq, C_add]
+  ring
+
+/-- `a_V - u` splits in any field containing one of its roots. -/
+theorem splits_additivePolynomial_sub_C :
+    ((V.additivePolynomial - C u).map (algebraMap K L)).Splits := by
+  rw [V.map_additivePolynomial_sub_C_eq_prod hy]
+  exact Splits.prod fun c _ ↦ Splits.X_sub_C _
+
+omit hy in
+/-- `a_V - u` is separable: over a splitting field its roots are the distinct translates
+`y + c`, `c ∈ V`, of any one root `y`. -/
+theorem separable_additivePolynomial_sub_C (u : K) : (V.additivePolynomial - C u).Separable := by
+  set f := V.additivePolynomial - C u
+  have hdeg : (f.map (algebraMap K f.SplittingField)).degree ≠ 0 := by
+    rw [degree_map, degree_eq_natDegree (V.monic_additivePolynomial_sub_C u).ne_zero,
+      natDegree_additivePolynomial_sub_C]
+    exact_mod_cast Fintype.card_ne_zero
+  obtain ⟨y, hy⟩ := (SplittingField.splits f).exists_eval_eq_zero hdeg
+  rw [eval_map_algebraMap, map_sub, aeval_C, sub_eq_zero] at hy
+  rw [← separable_map (algebraMap K f.SplittingField), V.map_additivePolynomial_sub_C_eq_prod hy]
+  refine separable_prod_X_sub_C_iff'.mpr fun c _ d _ h ↦ ?_
+  exact Subtype.val_injective ((algebraMap K _).injective (add_left_cancel h))
+
+/-- A root of `a_V - u` is integral over `K`. -/
+theorem isIntegral_of_aeval_additivePolynomial_eq : IsIntegral K y :=
+  ⟨_, V.monic_additivePolynomial_sub_C u, by
+    rw [← aeval_def, map_sub, hy, aeval_C, sub_self]⟩
+
+/-- Every `K`-automorphism of `L` translates the root `y` by an element of `V`. -/
+theorem exists_mem_aut_apply_eq_add_of_aeval_additivePolynomial_eq (σ : Gal(L/K)) :
+    ∃ c ∈ V, σ y = y + algebraMap K L c := by
+  obtain ⟨c, hc, h⟩ := (V.aeval_additivePolynomial_eq_zero_iff (x := σ y - y)).mp (by
+    rw [aeval_additivePolynomial_sub, aeval_algHom_apply, hy, AlgEquiv.commutes, sub_self])
+  exact ⟨c, hc, by rw [h, add_sub_cancel]⟩
+
+private noncomputable def translation (σ : Gal(L/K)) : V :=
+  ⟨(V.exists_mem_aut_apply_eq_add_of_aeval_additivePolynomial_eq hy σ).choose,
+    (V.exists_mem_aut_apply_eq_add_of_aeval_additivePolynomial_eq hy σ).choose_spec.1⟩
+
+private theorem translation_spec (σ : Gal(L/K)) :
+    σ y = y + algebraMap K L (translation V hy σ : K) :=
+  (V.exists_mem_aut_apply_eq_add_of_aeval_additivePolynomial_eq hy σ).choose_spec.2
+
+/-- The translation homomorphism `Gal(L/K) → V`, `σ ↦ σ y - y`, of a root `y` of `a_V - u`. The
+multiplicative type tag matches composition in `Gal(L/K)`. -/
+noncomputable def artinSchreierTranslationHom : Gal(L/K) →* Multiplicative V where
+  toFun σ := Multiplicative.ofAdd (translation V hy σ)
+  map_one' := by
+    have h := translation_spec V hy 1
+    rw [AlgEquiv.one_apply, left_eq_add, map_eq_zero_iff _ (algebraMap K L).injective] at h
+    exact congrArg Multiplicative.ofAdd (Subtype.ext h)
+  map_mul' σ τ := by
+    have hστ := translation_spec V hy (σ * τ)
+    rw [AlgEquiv.mul_apply, translation_spec V hy τ, map_add, AlgEquiv.commutes,
+      translation_spec V hy σ, add_assoc, ← map_add] at hστ
+    exact congrArg Multiplicative.ofAdd (Subtype.ext
+      ((algebraMap K L).injective (add_left_cancel hστ).symm))
+
+/-- An automorphism translates the root `y` by its image under the translation homomorphism. -/
+theorem aut_apply_eq_add_artinSchreierTranslationHom (σ : Gal(L/K)) :
+    σ y = y + algebraMap K L ((V.artinSchreierTranslationHom hy σ).toAdd : K) :=
+  translation_spec V hy σ
+
+variable (hgen : K⟮y⟯ = ⊤)
+include hgen
+
+/-- A field generated by a root of `a_V - u` is a splitting field of `a_V - u`. -/
+theorem isSplittingField_additivePolynomial_sub_C :
+    IsSplittingField K L (V.additivePolynomial - C u) := by
+  refine ⟨V.splits_additivePolynomial_sub_C hy, top_unique ?_⟩
+  rw [← IntermediateField.top_toSubalgebra, ← hgen,
+    IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
+      (V.isIntegral_of_aeval_additivePolynomial_eq hy).isAlgebraic]
+  apply Algebra.adjoin_mono
+  rw [Set.singleton_subset_iff, mem_rootSet_of_ne (V.monic_additivePolynomial_sub_C u).ne_zero,
+    map_sub, hy, aeval_C, sub_self]
+
+/-- A field generated by a root of `a_V - u` is finite over `K`. -/
+theorem finiteDimensional_of_aeval_additivePolynomial_eq : FiniteDimensional K L :=
+  let := V.isSplittingField_additivePolynomial_sub_C hy hgen
+  IsSplittingField.finiteDimensional L (V.additivePolynomial - C u)
+
+/-- A field generated by a root of `a_V - u` is Galois over `K`. -/
+theorem isGalois_of_aeval_additivePolynomial_eq : IsGalois K L := by
+  let := V.isSplittingField_additivePolynomial_sub_C hy hgen
+  exact IsGalois.of_separable_splitting_field (V.separable_additivePolynomial_sub_C u)
+
+/-- An automorphism of a field generated by a root of `a_V - u` is determined by its translation
+of the root. -/
+theorem artinSchreierTranslationHom_injective :
+    Function.Injective (V.artinSchreierTranslationHom hy) := by
+  have hint := V.isIntegral_of_aeval_additivePolynomial_eq hy
+  intro σ τ h
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply (PowerBasis.ofAdjoinSimpleEqTop hint hgen).algHom_ext
+  simp only [PowerBasis.ofAdjoinSimpleEqTop_gen, AlgEquiv.coe_toAlgHom]
+  rw [aut_apply_eq_add_artinSchreierTranslationHom V hy σ,
+    aut_apply_eq_add_artinSchreierTranslationHom V hy τ, h]
+
+/-- The degree of a field generated by a root of `a_V - u` is at most `|V|`. -/
+theorem finrank_le_card_of_aeval_additivePolynomial_eq : Module.finrank K L ≤ Fintype.card V := by
+  have := V.finiteDimensional_of_aeval_additivePolynomial_eq hy hgen
+  have := V.isGalois_of_aeval_additivePolynomial_eq hy hgen
+  rw [← IsGalois.card_aut_eq_finrank, ← Nat.card_eq_fintype_card,
+    ← Nat.card_congr (Multiplicative.toAdd (α := V))]
+  exact Nat.card_le_card_of_injective _ (V.artinSchreierTranslationHom_injective hy hgen)
+
+/-- When `[L : K] = |V|`, the translation homomorphism identifies the Galois group with `V`. -/
+noncomputable def artinSchreierAutEquiv (hfin : Module.finrank K L = Fintype.card V) :
+    Gal(L/K) ≃* Multiplicative V := by
+  have := V.finiteDimensional_of_aeval_additivePolynomial_eq hy hgen
+  have := V.isGalois_of_aeval_additivePolynomial_eq hy hgen
+  refine MulEquiv.ofBijective (V.artinSchreierTranslationHom hy) ?_
+  rw [Nat.bijective_iff_injective_and_card]
+  refine ⟨V.artinSchreierTranslationHom_injective hy hgen, ?_⟩
+  rw [IsGalois.card_aut_eq_finrank, hfin, Nat.card_congr Multiplicative.toAdd,
+    Nat.card_eq_fintype_card]
+
+@[simp]
+theorem artinSchreierAutEquiv_apply (hfin : Module.finrank K L = Fintype.card V)
+    (σ : Gal(L/K)) :
+    V.artinSchreierAutEquiv hy hgen hfin σ = V.artinSchreierTranslationHom hy σ := (rfl)
+
+/-- The inverse of the Galois-group isomorphism translates the root by its argument. -/
+@[simp]
+theorem artinSchreierAutEquiv_symm_apply (hfin : Module.finrank K L = Fintype.card V)
+    (c : Multiplicative V) :
+    (V.artinSchreierAutEquiv hy hgen hfin).symm c y = y + algebraMap K L (c.toAdd : K) := by
+  rw [aut_apply_eq_add_artinSchreierTranslationHom V hy,
+    ← artinSchreierAutEquiv_apply V hy hgen hfin, MulEquiv.apply_symm_apply]
+
+end Root
+
+end AddSubgroup

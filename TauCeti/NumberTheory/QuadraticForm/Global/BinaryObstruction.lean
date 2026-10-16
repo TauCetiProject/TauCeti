@@ -97,7 +97,7 @@ theorem infinite_anisotropic_sumTwoSquares_atFinitePlace :
   have hmaps : Set.MapsTo f Set.univ
       {v : HeightOneSpectrum (𝓞 ℚ) |
         (sumTwoSquares.atFinitePlace v).Anisotropic} := by
-    intro n hn
+    intro n _
     apply anisotropic_sumTwoSquares_atFinitePlace
     have heq : Rat.HeightOneSpectrum.primesEquiv (f n) = (⟨n.1, n.2.1⟩ : Nat.Primes) := by
       exact Equiv.apply_symm_apply _ _

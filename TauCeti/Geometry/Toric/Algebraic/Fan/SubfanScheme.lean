@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
 /-!
 # The open subscheme associated to a subfan
 
-A collection of cones of a finite regular fan that is closed under faces determines an open
+A collection of cones of a finite fan that is closed under faces determines an open
 subscheme of the fan's toric scheme. On each cone chart, the inclusion is the usual chart
 inclusion. This supplies the algebraic open-subfan restriction used by toric chart gluing and
 comparison with complex points.
@@ -36,11 +36,11 @@ ambient chart inclusion at the least containing cone, is the ambient chart inclu
 cone. -/
 @[reassoc (attr := simp)]
 theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
-    (hΦ : Φ.IsRegular) (σ : (Φ.subfan S hS hface).cones) :
+    (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfanInclusion S hS hface).affineToricChartMap σ ≫
-      Φ.affineToricChartι hΦ ⟨(Φ.subfanInclusion S hS hface).leastCone σ.2,
+      Φ.affineToricChartι ⟨(Φ.subfanInclusion S hS hface).leastCone σ.2,
         (Φ.subfanInclusion S hS hface).leastCone_mem σ.2⟩ =
-      Φ.affineToricChartι hΦ ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
+      Φ.affineToricChartι ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
   let f := Φ.subfanInclusion S hS hface
   -- The let-bound `f` is definitionally the subfan inclusion.
   have hleast : f.leastCone σ.2 = σ.1 :=
@@ -52,7 +52,7 @@ theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
     rw [FanHom.affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     simp only [f, subfanInclusion_latticeMap, subfanInclusion_realMap]
   rw [hmap]
-  exact faceAffineToricSchemeMap_comp_affineToricChartι hΦ
+  exact faceAffineToricSchemeMap_comp_affineToricChartι
     (τ := ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩)
     (σ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) hσleast
 
@@ -60,29 +60,26 @@ theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
 ordinary inclusion of that chart into the ambient fan scheme. -/
 @[reassoc]
 theorem affineToricChartι_comp_subfanInclusion_algebraicMap
-    (hΦ : Φ.IsRegular) (σ : (Φ.subfan S hS hface).cones) :
-    (Φ.subfan S hS hface).affineToricChartι
-        (hΦ.subfan S hS hface) σ ≫
-      (Φ.subfanInclusion S hS hface).algebraicMap (hΦ.subfan S hS hface) hΦ =
-      Φ.affineToricChartι hΦ ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
+    (σ : (Φ.subfan S hS hface).cones) :
+    (Φ.subfan S hS hface).affineToricChartι σ ≫
+      (Φ.subfanInclusion S hS hface).algebraicMap =
+      Φ.affineToricChartι ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
   simp
 
 /-- The map of algebraic realizations induced by a subfan inclusion is injective on points. -/
-theorem subfanInclusion_algebraicMap_injective (hΦ : Φ.IsRegular) :
-    Function.Injective
-      ((Φ.subfanInclusion S hS hface).algebraicMap (hΦ.subfan S hS hface) hΦ) := by
+theorem subfanInclusion_algebraicMap_injective :
+    Function.Injective (Φ.subfanInclusion S hS hface).algebraicMap := by
   intro x y hxy
   obtain ⟨σ, a, rfl⟩ :=
-    (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq (hΦ.subfan S hS hface) x
+    (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq x
   obtain ⟨τ, b, rfl⟩ :=
-    (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq (hΦ.subfan S hS hface) y
+    (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq y
   rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
     affineToricChartι_comp_subfanInclusion_algebraicMap,
     affineToricChartι_comp_subfanInclusion_algebraicMap] at hxy
-  apply ((Φ.subfan S hS hface).affineToricChartι_eq_affineToricChartι_iff
-    (hΦ.subfan S hS hface) a b).2
+  apply ((Φ.subfan S hS hface).affineToricChartι_eq_affineToricChartι_iff a b).2
   obtain ⟨z, hza, hzb⟩ :=
-    (Φ.affineToricChartι_eq_affineToricChartι_iff hΦ
+    (Φ.affineToricChartι_eq_affineToricChartι_iff
       (σ := ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩)
       (τ := ⟨τ.1, hS (by simpa only [subfan_cones] using τ.2)⟩) a b).1 hxy
   refine ⟨z, ?_, ?_⟩
@@ -91,36 +88,33 @@ theorem subfanInclusion_algebraicMap_injective (hΦ : Φ.IsRegular) :
 
 /-- The image of a subfan's algebraic realization is the union of its cone charts in the
 ambient fan scheme. -/
-theorem range_subfanInclusion_algebraicMap (hΦ : Φ.IsRegular) :
-    Set.range ((Φ.subfanInclusion S hS hface).algebraicMap
-      (hΦ.subfan S hS hface) hΦ) =
+theorem range_subfanInclusion_algebraicMap :
+    Set.range (Φ.subfanInclusion S hS hface).algebraicMap =
       ⋃ σ : (Φ.subfan S hS hface).cones,
-        Set.range (Φ.affineToricChartι hΦ
+        Set.range (Φ.affineToricChartι
           ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩) := by
   ext x
   constructor
   · rintro ⟨y, rfl⟩
     obtain ⟨σ, z, rfl⟩ :=
-      (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq (hΦ.subfan S hS hface) y
+      (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq y
     refine Set.mem_iUnion.mpr ⟨σ, ⟨z, ?_⟩⟩
     rw [← Scheme.Hom.comp_apply, affineToricChartι_comp_subfanInclusion_algebraicMap]
   · intro hx
     obtain ⟨σ, z, rfl⟩ := Set.mem_iUnion.mp hx
-    refine ⟨(Φ.subfan S hS hface).affineToricChartι
-      (hΦ.subfan S hS hface) σ z, ?_⟩
+    refine ⟨(Φ.subfan S hS hface).affineToricChartι σ z, ?_⟩
     rw [← Scheme.Hom.comp_apply, affineToricChartι_comp_subfanInclusion_algebraicMap]
 
-/-- A face-closed subfan of a regular finite fan defines an open subscheme of its algebraic
+/-- A face-closed subfan of a finite fan defines an open subscheme of its algebraic
 toric variety. Its map to the ambient scheme is the toric map induced by the inclusion of fans. -/
-instance isOpenImmersion_subfanInclusion_algebraicMap (hΦ : Φ.IsRegular) :
-    IsOpenImmersion
-      ((Φ.subfanInclusion S hS hface).algebraicMap (hΦ.subfan S hS hface) hΦ) := by
+instance isOpenImmersion_subfanInclusion_algebraicMap :
+    IsOpenImmersion (Φ.subfanInclusion S hS hface).algebraicMap := by
   apply IsOpenImmersion.of_forall_source_exists _
-    (Φ.subfanInclusion_algebraicMap_injective S hS hface hΦ)
+    (Φ.subfanInclusion_algebraicMap_injective S hS hface)
   intro x
   obtain ⟨σ, y, hy⟩ :=
-    (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq (hΦ.subfan S hS hface) x
-  refine ⟨_, (Φ.subfan S hS hface).affineToricChartι (hΦ.subfan S hS hface) σ,
+    (Φ.subfan S hS hface).exists_affineToricChartι_apply_eq x
+  refine ⟨_, (Φ.subfan S hS hface).affineToricChartι σ,
     inferInstance, ⟨y, hy⟩, ?_⟩
   rw [affineToricChartι_comp_subfanInclusion_algebraicMap]
   infer_instance

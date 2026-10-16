@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.ThreeArmVanishing
-public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless

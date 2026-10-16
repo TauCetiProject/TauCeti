@@ -24,6 +24,8 @@ integral basis, hence linearly independent, so a regular cone is simplicial.
 
 * `TauCeti.Toric.ToricRay.iSup_toPointedCone`: a salient finitely generated cone is the join of
   its rays.
+* `TauCeti.Toric.ToricRay.nonempty_of_ne_bot`: a nonzero salient finitely generated cone has a
+  ray.
 * `TauCeti.Toric.IsToricCone.hull_primitiveGenerator`: a toric cone is the cone hull of its
   primitive ray generators.
 * `TauCeti.Toric.mem_dualSemigroup_iff_primitiveGenerator`: an integral character lies in the dual
@@ -58,6 +60,15 @@ theorem ToricRay.iSup_toPointedCone (hσ : σ.FG) (hsal : (σ : ConvexCone ℝ V
     ⟨⟨ℝ ∙₊ v, hs ▸ hvσ⟩, PointedCone.finrank_span_coe_hull_singleton hv0⟩
   exact SetLike.mem_coe.2
     (le_iSup (fun ρ : ToricRay σ ↦ ρ.toPointedCone) ρ (PointedCone.subset_hull rfl))
+
+/-- A nonzero salient finitely generated pointed cone has a ray. -/
+theorem ToricRay.nonempty_of_ne_bot (hσ : σ.FG) (hsal : (σ : ConvexCone ℝ V).Salient)
+    (hσ0 : σ ≠ ⊥) : Nonempty (ToricRay σ) := by
+  by_contra h
+  let _ : IsEmpty (ToricRay σ) := not_nonempty_iff.mp h
+  have hgen := ToricRay.iSup_toPointedCone hσ hsal
+  rw [iSup_of_empty] at hgen
+  exact hσ0 hgen.symm
 
 /-- A toric cone in an integral lattice is the cone hull of its primitive ray generators. -/
 theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) :

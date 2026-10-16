@@ -89,9 +89,6 @@ cohomology uses this file's locally constant coinduction on discrete modules.
 The trace construction follows Brown, *Cohomology of Groups*, III §9.
 -/
 
--- Blueprint: Layer 7 (coinduced modules and Shapiro's lemma) of the human-authored roadmap
--- `TauCetiRoadmap/ProfiniteCohomology/README.md`.
-
 public section
 
 namespace TauCeti
@@ -114,6 +111,7 @@ def coind : AddSubgroup (G → A) where
 
 variable {G U A}
 
+/-- Membership in the coinduced module: local constancy and `U`-equivariance. -/
 theorem mem_coind_iff {f : G → A} :
     f ∈ coind G U A ↔
       IsLocallyConstant f ∧ ∀ (u : U) (g : G), f ((u : G) * g) = u • f g := Iff.rfl
@@ -145,6 +143,7 @@ section Scalar
 variable {R G A : Type*} [Semiring R] [Group G] [TopologicalSpace G] {U : Subgroup G}
   [AddCommGroup A] [Module R A] [DistribMulAction U A] [SMulCommClass U R A]
 
+/-- Pointwise scalar multiplication by a ring commuting with the `U`-action. -/
 instance instSMulCoindScalar : SMul R (coind G U A) where
   smul r f :=
     ⟨fun g => r • f.1 g,
@@ -154,7 +153,7 @@ instance instSMulCoindScalar : SMul R (coind G U A) where
 
 @[simp]
 theorem coind_scalar_smul_apply (r : R) (f : coind G U A) (g : G) :
-    ((r • f : coind G U A) : G → A) g = r • f.1 g := rfl
+    ((r • f : coind G U A) : G → A) g = r • (f : G → A) g := rfl
 
 instance instModuleCoindScalar : Module R (coind G U A) :=
   Function.Injective.module R (AddSubgroup.subtype _) Subtype.val_injective fun _ _ => rfl
@@ -163,14 +162,16 @@ end Scalar
 
 section Action
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   {A : Type*} [AddCommGroup A] [DistribMulAction U A]
 
+/-- The coinduced module is closed under right translation. -/
 theorem rightTranslation_mem_coind {f : G → A} (hf : f ∈ coind G U A) (g : G) :
     (fun x : G => f (x * g)) ∈ coind G U A :=
   ⟨(isLocallyConstant_of_mem_coind hf).comp_continuous (continuous_mul_const g),
     fun u x => by simpa [mul_assoc] using apply_mul_of_mem_coind hf u (x * g)⟩
 
+/-- The right-translation action `(g • f) x = f (x * g)`. -/
 instance instSMulCoind : SMul G (coind G U A) where
   smul g f := ⟨fun x => (f : G → A) (x * g), rightTranslation_mem_coind f.2 g⟩
 
@@ -188,9 +189,8 @@ instance instDistribMulActionCoind : DistribMulAction G (coind G U A) where
 theorem stabilizer_coind_eq (f : coind G U A) :
     MulAction.stabilizer G f = rightTranslationStabilizer (f : G → A) := by
   ext g
-  rw [mem_rightTranslationStabilizer]
-  exact ⟨fun h x => congrFun (Subtype.ext_iff.mp h) x,
-    fun h => Subtype.ext (funext fun x => h x)⟩
+  simp only [MulAction.mem_stabilizer_iff, mem_rightTranslationStabilizer, Subtype.ext_iff,
+    funext_iff, coind_smul_apply]
 
 end Action
 
@@ -200,9 +200,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [CompactSp
   {U : Subgroup G} {A : Type*} [AddCommGroup A] [DistribMulAction U A]
 
 /-- **The coinduced module of a compact group is a discrete `G`-module**: every stabilizer of the
-right-translation action is open. This is uniform local constancy
-(`TauCeti.isOpen_rightTranslationStabilizer`), and it is the reason the coinduced module can be
-used as coefficients for continuous cohomology. -/
+right-translation action is open. This is what lets the coinduced module serve as coefficients for
+continuous cohomology. -/
 theorem isOpen_stabilizer_coind (f : coind G U A) :
     IsOpen (MulAction.stabilizer G f : Set G) := by
   rw [stabilizer_coind_eq]
@@ -228,7 +227,7 @@ def coindEval : coind G U A →+ A where
 theorem coindEval_apply (f : coind G U A) : coindEval G U f = (f : G → A) 1 := (rfl)
 
 /-- The counit is `U`-equivariant for the restriction of the right-translation action. -/
-theorem coindEval_smul [ContinuousMul G] (u : U) (f : coind G U A) :
+theorem coindEval_smul [SeparatelyContinuousMul G] (u : U) (f : coind G U A) :
     coindEval G U ((u : G) • f) = u • coindEval G U f := by simp
 
 variable (G U) in
@@ -268,7 +267,7 @@ theorem coindEval_coindMap (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u •
 
 /-- `coindMap` is `G`-equivariant. -/
 @[simp]
-theorem coindMap_smul [ContinuousMul G] (φ : A →+ B)
+theorem coindMap_smul [SeparatelyContinuousMul G] (φ : A →+ B)
     (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a) (g : G) (f : coind G U A) :
     coindMap G U φ hφ (g • f) = g • coindMap G U φ hφ f := by
   ext x; simp
@@ -282,8 +281,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] {U : Subgroup G}
 
 variable (U) in
 /-- The summand `x • f x⁻¹` of the trace of a coinduced element, as a function of the coset
-`x U` rather than of `x`. It is well defined because `f` is `U`-equivariant: replacing a
-representative `x` by `x * u` multiplies the value of `f` by `u⁻¹` and the outer action by `u`. -/
+`x U` rather than of `x`. -/
 def coindTraceTerm (f : coind G U M) (x : G ⧸ U) : M :=
   x.liftOn (fun g => g • (f : G → M) g⁻¹) fun a b hab => by
     obtain ⟨u, rfl⟩ : ∃ u : U, b = a * (u : G) :=
@@ -305,24 +303,21 @@ theorem coindTraceTerm_out (f : coind G U M) (x : G ⧸ U) :
 
 @[simp]
 theorem coindTraceTerm_zero (x : G ⧸ U) : coindTraceTerm U (0 : coind G U M) x = 0 := by
-  rw [coindTraceTerm_out]
+  induction x using QuotientGroup.induction_on
   simp
 
 @[simp]
 theorem coindTraceTerm_add (f f' : coind G U M) (x : G ⧸ U) :
     coindTraceTerm U (f + f') x = coindTraceTerm U f x + coindTraceTerm U f' x := by
-  rw [coindTraceTerm_out, coindTraceTerm_out, coindTraceTerm_out]
-  simp [smul_add]
+  induction x using QuotientGroup.induction_on
+  simp
 
 /-- The effect of right translation on a summand of the trace: translating the coinduced element
 by `g` translates the coset index by `g⁻¹` and multiplies the summand by `g`. -/
-theorem coindTraceTerm_smul [ContinuousMul G] (g : G) (f : coind G U M) (x : G ⧸ U) :
+theorem coindTraceTerm_smul [SeparatelyContinuousMul G] (g : G) (f : coind G U M) (x : G ⧸ U) :
     coindTraceTerm U (g • f) x = g • coindTraceTerm U f (g⁻¹ • x) := by
-  have hx : g⁻¹ • x = ((g⁻¹ * x.out : G) : G ⧸ U) := by
-    rw [← MulAction.Quotient.coe_smul_out U g⁻¹ x, smul_eq_mul]
-  conv_lhs => rw [← QuotientGroup.out_eq' x]
-  rw [hx, coindTraceTerm_mk, coindTraceTerm_mk, coind_smul_apply, smul_smul,
-    mul_inv_cancel_left, mul_inv_rev, inv_inv]
+  induction x using QuotientGroup.induction_on
+  simp [smul_smul]
 
 variable [U.FiniteIndex]
 
@@ -347,16 +342,10 @@ theorem coindTrace_eq_sum_transversal (t : G ⧸ U → G)
   exact Finset.sum_congr rfl fun x _ => by rw [← coindTraceTerm_mk f (t x), ht x]
 
 /-- The trace is `G`-equivariant for the right-translation action on the coinduced module. -/
-theorem coindTrace_smul [ContinuousMul G] (g : G) (f : coind G U M) :
+theorem coindTrace_smul [SeparatelyContinuousMul G] (g : G) (f : coind G U M) :
     coindTrace G U (g • f) = g • coindTrace G U f := by
-  rw [coindTrace_apply, coindTrace_apply, Finset.smul_sum]
-  calc
-    ∑ x : G ⧸ U, coindTraceTerm U (g • f) x
-        = ∑ x : G ⧸ U, g • coindTraceTerm U f (g⁻¹ • x) :=
-      Finset.sum_congr rfl fun x _ => coindTraceTerm_smul g f x
-    _ = ∑ x : G ⧸ U, g • coindTraceTerm U f x :=
-      Fintype.sum_equiv (MulAction.toPerm g⁻¹) _ _ fun x =>
-        congrArg (fun y => g • coindTraceTerm U f y) (MulAction.toPerm_apply g⁻¹ x).symm
+  simp only [coindTrace_apply, Finset.smul_sum, coindTraceTerm_smul]
+  exact Equiv.sum_comp (MulAction.toPerm g⁻¹) fun x => g • coindTraceTerm U f x
 
 /-- The trace is natural in the coefficient module: a `G`-equivariant map of coefficients
 commutes with it. -/
@@ -371,9 +360,8 @@ theorem coindTrace_coindMap {N : Type*} [AddCommGroup N] [DistribMulAction G N] 
 @[simp]
 theorem coindTrace_top_eq_coindEval (f : coind G ⊤ M) :
     coindTrace G ⊤ f = coindEval G ⊤ f := by
-  have : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
-  rw [coindTrace_apply,
-    Fintype.sum_subsingleton (coindTraceTerm (⊤ : Subgroup G) f) ((1 : G) : G ⧸ (⊤ : Subgroup G)),
+  have := QuotientGroup.subsingleton_quotient_top (G := G)
+  rw [coindTrace_apply, Fintype.sum_subsingleton _ ((1 : G) : G ⧸ (⊤ : Subgroup G)),
     coindTraceTerm_mk]
   simp
 
@@ -385,22 +373,18 @@ variable {G : Type*} [Group G] [TopologicalSpace G] {U : Subgroup G}
   {A B C : Type*} [AddCommGroup A] [DistribMulAction U A] [AddCommGroup B]
   [DistribMulAction U B] [AddCommGroup C] [DistribMulAction U C]
 
-/-- **Coinduction preserves injectivity.** No topological hypothesis is needed: the induced map is
-postcomposition. -/
+/-- **Coinduction preserves injectivity.** No topological hypothesis is needed. -/
 theorem coindMap_injective (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a)
     (hinj : Function.Injective φ) : Function.Injective (coindMap G U φ hφ) := fun _ _ h =>
   Subtype.ext (funext fun g => hinj (congrFun (Subtype.ext_iff.mp h) g))
 
 /-- **Coinduction is exact in the middle.** If `A →+ B →+ C` is exact at `B` with `φ` injective,
-then the coinduced sequence is exact at `Coind_U^G B`. Choosing the preimage is unambiguous, so no
-section of the group is needed here; that is only the case in
-`TauCeti.coindMap_surjective`. -/
+then the coinduced sequence is exact at `Coind_U^G B`. No topological hypothesis is needed. -/
 theorem coindMap_range_eq_ker (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a)
     (ψ : B →+ C) (hψ : ∀ (u : U) (b : B), ψ (u • b) = u • ψ b) (hinj : Function.Injective φ)
     (hexact : AddMonoidHom.range φ = AddMonoidHom.ker ψ) :
     AddMonoidHom.range (coindMap G U φ hφ) = AddMonoidHom.ker (coindMap G U ψ hψ) := by
   have : Nonempty A := ⟨0⟩
-  have hli : ∀ a : A, Function.invFun φ (φ a) = a := Function.leftInverse_invFun hinj
   ext F
   simp only [AddMonoidHom.mem_range, AddMonoidHom.mem_ker]
   constructor
@@ -415,12 +399,9 @@ theorem coindMap_range_eq_ker (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u 
     have hinvFun : ∀ g : G, φ (Function.invFun φ ((F : G → B) g)) = (F : G → B) g := fun g =>
       Function.invFun_eq (hmem g)
     refine ⟨⟨fun g => Function.invFun φ ((F : G → B) g),
-      (isLocallyConstant_of_mem_coind F.2).comp (Function.invFun φ), fun u g => ?_⟩, ?_⟩
-    · obtain ⟨a, ha⟩ := hmem g
-      have h1 : (F : G → B) ((u : G) * g) = φ (u • a) := by
-        rw [apply_mul_of_mem_coind F.2 u g, ← ha, hφ]
-      simp only [h1, ← ha, hli]
-    · exact Subtype.ext (funext hinvFun)
+      (isLocallyConstant_of_mem_coind F.2).comp (Function.invFun φ), fun u g =>
+        hinj (by rw [hinvFun, hφ, hinvFun, apply_mul_of_mem_coind F.2])⟩,
+      Subtype.ext (funext hinvFun)⟩
 
 end Exactness
 
@@ -431,12 +412,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Comp
   {A B : Type*} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
   [DistribMulAction U A] [ContinuousSMul U A] [AddCommGroup B] [DistribMulAction U B]
 
-/-- **Coinduction preserves surjectivity**, and this is where the topology does the work: a
-locally constant `U`-equivariant map `G → B` is lifted through `φ` by choosing preimages along a
-*continuous* factorization of `G` over the right cosets of `U`
-(`TauCeti.exists_continuous_rightCosetFactorization`, from the continuous coset section). The
-factor `w g •` is forced — without it the lift is not `U`-equivariant — and it is exactly what
-discreteness of `A` and continuity of the `U`-action make locally constant again.
+/-- **Coinduction preserves surjectivity** for a closed subgroup `U` of a profinite group `G`
+and a discrete `U`-module `A` with continuous action.
 
 Together with `TauCeti.coindMap_injective` and `TauCeti.coindMap_range_eq_ker` this says that
 coinduction along a closed subgroup of a profinite group sends a short exact sequence of discrete
@@ -469,15 +446,13 @@ embeds a discrete module into. -/
 @[simp]
 theorem mem_coind_bot_iff {A : Type*} [AddCommGroup A] [DistribMulAction (⊥ : Subgroup G) A]
     {f : G → A} : f ∈ coind G ⊥ A ↔ IsLocallyConstant f :=
-  ⟨fun hf => hf.1, fun hf => ⟨hf, fun u g => by
-    have hu : u = 1 := Subtype.ext (Subgroup.mem_bot.mp u.2)
-    rw [hu, OneMemClass.coe_one, one_mul, one_smul]⟩⟩
+  ⟨fun hf => hf.1, fun hf => ⟨hf, fun u g => by simp [Subsingleton.elim u 1]⟩⟩
 
 variable {A : Type*} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
   [DistribMulAction (⊤ : Subgroup G) A]
 
-/-- For `U = ⊤` the orbit map `g ↦ g • a` is a member of the coinduced module: it is locally
-constant because that orbit map is continuous and `A` is discrete. -/
+/-- For `U = ⊤` and discrete `A`, a continuous orbit map `g ↦ g • a` is a member of the coinduced
+module. -/
 theorem smul_mem_coind_top {a : A}
     (hcont : Continuous fun g : G => (⟨g, Subgroup.mem_top g⟩ : (⊤ : Subgroup G)) • a) :
     (fun g : G => (⟨g, Subgroup.mem_top g⟩ : (⊤ : Subgroup G)) • a) ∈ coind G ⊤ A := by
@@ -487,9 +462,8 @@ theorem smul_mem_coind_top {a : A}
   simp only [h, mul_smul]
 
 variable (G A) in
-/-- **`Coind_G^G A` is `A`**: evaluation at `1` is an isomorphism, with inverse `a ↦ (g ↦ g • a)`.
-The inverse uses continuity of each orbit map; without it `g ↦ g • a` need not be locally
-constant. -/
+/-- **`Coind_G^G A` is `A`** for discrete `A` with continuous orbit maps: evaluation at `1` is an
+isomorphism, with inverse `a ↦ (g ↦ g • a)`. -/
 def coindEvalTopEquiv
     (hcont : ∀ a : A, Continuous fun g : G =>
       (⟨g, Subgroup.mem_top g⟩ : (⊤ : Subgroup G)) • a) : coind G ⊤ A ≃+ A where

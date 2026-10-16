@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction
 
@@ -23,25 +22,21 @@ while no curve can be shorter than that chord. Hence
 * with its ambient metric, a convex open subset satisfies `IsRiemannianManifold`, which makes the
   ordinary-metric layer (`dist`, closed balls, `ProperSpace`, `CompleteSpace`) available on it.
 
-This computation is the Layer 0 target that lets downstream Hopf--Rinow work treat examples such as
-the open unit ball in the ordinary metric presentation. No finite-dimensionality assumption is
-needed: convexity is the only substantive hypothesis. The general facts about path length used
-along the way live in their canonical modules:
-`TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`
-(`Riemannian.Distance`), `TauCeti.Manifold.pathELength_lineMap`
+This computation lets examples such as the open unit ball use the ordinary metric presentation.
+No finite-dimensionality assumption is needed: convexity is the only substantive hypothesis. The
+general facts about path length used along the way live in their canonical modules:
+`TauCeti.Manifold.pathELength_lineMap`
 (`Riemannian.PathELength`), and `TauCeti.Manifold.pathELength_subtypeVal_comp`
-(`Riemannian.Restriction`).
+(`Riemannian.Restriction`). That module also proves
+`TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to any open
+submanifold cannot decrease distance.
 
 ## Main results
 
-* `TauCeti.Manifold.enorm_sub_le_riemannianEDist_subtype`: on any open subset of an inner product
-  space, no curve is shorter than the chord between its endpoints;
-* `TauCeti.Manifold.riemannianEDist_eq_enorm_sub_of_convex`: on a convex open subset, the
+* `TopologicalSpace.Opens.riemannianEDist_eq_enorm_sub_of_convex`: on a convex open subset, the
   restricted Riemannian extended distance is the ambient norm distance.
-* `TauCeti.Manifold.isRiemannianManifold_of_convex`: the ambient metric makes a convex open
+* `TopologicalSpace.Opens.isRiemannianManifold_of_convex`: the ambient metric makes a convex open
   subset a Riemannian manifold.
-* `TopologicalSpace.Opens.convexSegment`: the straight segment between two points of a
-  convex open subset, clamped outside `[0, 1]`.
 * `TopologicalSpace.Opens.exists_pathELength_eq_edist_of_convex`: any two points of a
   convex open subset are joined by a `C¹` path whose Riemannian length is their distance.
 
@@ -50,140 +45,53 @@ along the way live in their canonical modules:
 * The ambient distance computation adapts the proof of the `IsRiemannianManifold 𝓘(ℝ, F) F`
   instance in [Mathlib, `Mathlib/Geometry/Manifold/Riemannian/Basic.lean`](https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Geometry/Manifold/Riemannian/Basic.lean)
   by S. Gouëzel.
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 0, "Restriction to open submanifolds".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 1, §2 (arc length; the length of a
   segment).
 -/
 
 public section
 
-open Bundle Manifold MeasureTheory Set TopologicalSpace Topology
-open scoped Bundle ContDiff ENNReal Manifold TauCeti Topology
-
-noncomputable section
+open Manifold Set TopologicalSpace
+open scoped Bundle ENNReal Manifold TauCeti
 
 namespace TopologicalSpace.Opens
 
 /-! ### Convex open subsets of an inner product space -/
 
-section ConvexOpenSubset
+section InnerProductSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 variable (U : Opens F)
-
-/-- The straight segment in `U`, affinely parametrized on `[0, 1]` at constant speed and clamped
-to `[0, 1]` outside, so as to be defined on all of `ℝ`. -/
-def convexSegment (hU : Convex ℝ (U : Set F)) (x y : U) : ℝ → U := fun t =>
-  Subtype.mk
-    (⇑(ContinuousAffineMap.lineMap (R := ℝ) (↑x : F) (↑y : F))
-      (Set.projIcc 0 1 zero_le_one t))
-    (by rw [ContinuousAffineMap.coe_lineMap_eq]
-        exact hU.lineMap_mem x.property y.property
-          (Set.projIcc 0 1 zero_le_one t).property)
-
-/-- On `[0, 1]`, the value of `convexSegment` in the ambient space is the affine line map. -/
-theorem convexSegment_val_eqOn (hU : Convex ℝ (U : Set F)) (x y : U) :
-    ∀ t ∈ Icc 0 1,
-      ((Subtype.val : U → F) ∘ convexSegment U hU x y) t =
-        ⇑(ContinuousAffineMap.lineMap (R := ℝ) (↑x : F) (↑y : F)) t := by
-  intro t ht
-  simp only [Function.comp_apply, convexSegment, Subtype.coe_mk,
-    ContinuousAffineMap.coe_lineMap_eq, Set.projIcc_of_mem zero_le_one ht]
-
-/-- The straight segment in a convex open subset is `C¹` on `[0, 1]`. -/
-theorem contMDiffOn_convexSegment (hU : Convex ℝ (U : Set F)) (x y : U) :
-    CMDiff[Icc 0 1] 1 (convexSegment U hU x y) := by
-  have hlm : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, F) 1
-      ⇑(ContinuousAffineMap.lineMap (R := ℝ) (↑x : F) (↑y : F)) (Icc 0 1) :=
-    contMDiffOn_iff_contDiffOn.mpr
-      (ContinuousAffineMap.contDiff
-        (ContinuousAffineMap.lineMap (R := ℝ) (↑x : F) (↑y : F))).contDiffOn
-  have heq := convexSegment_val_eqOn U hU x y
-  have hcomp : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, F) 1
-      ((Subtype.val : U → F) ∘ convexSegment U hU x y) (Icc 0 1) :=
-    ContMDiffOn.congr hlm heq
-  exact (TauCeti.ContMDiffOn.subtypeVal_comp_iff U (convexSegment U hU x y)
-    (Icc 0 1)).mp hcomp
 
 /-- The length of a straight segment in a convex open subset is the ambient norm distance between
 its endpoints. -/
 theorem pathELength_convexSegment (hU : Convex ℝ (U : Set F)) (x y : U) :
-    pathELength 𝓘(ℝ, F) (convexSegment U hU x y) 0 1 = ‖((x : F) - (y : F))‖ₑ := by
-  have hval := convexSegment_val_eqOn U hU x y
-  rw [TauCeti.Manifold.pathELength_subtypeVal_comp (contMDiffOn_convexSegment U hU x y),
-    Manifold.pathELength_congr hval]
+    pathELength (M := U) 𝓘(ℝ, F) ((U : Set F).convexSegment hU x y) 0 1 =
+      ‖((x : F) - (y : F))‖ₑ := by
+  rw [TauCeti.Manifold.pathELength_subtypeVal_comp (contMDiffOn_convexSegment U hU x y)]
+  apply (Manifold.pathELength_congr ((U : Set F).convexSegment_val_eqOn hU x y)).trans
+  rw [← ContinuousAffineMap.coe_lineMap_eq]
   exact TauCeti.Manifold.pathELength_lineMap _ _
-
-/-- The straight segment in a convex open subset starts at its first endpoint. -/
-@[simp]
-theorem convexSegment_zero (hU : Convex ℝ (U : Set F)) (x y : U) :
-    convexSegment U hU x y 0 = x := by
-  refine Subtype.ext ?_
-  simp only [convexSegment, Subtype.coe_mk]
-  rw [Set.projIcc_of_mem zero_le_one (left_mem_Icc.2 zero_le_one)]
-  simp [ContinuousAffineMap.coe_lineMap_eq]
-
-/-- The straight segment in a convex open subset ends at its second endpoint. -/
-@[simp]
-theorem convexSegment_one (hU : Convex ℝ (U : Set F)) (x y : U) :
-    convexSegment U hU x y 1 = y := by
-  refine Subtype.ext ?_
-  simp only [convexSegment, Subtype.coe_mk]
-  rw [Set.projIcc_of_mem zero_le_one (right_mem_Icc.2 zero_le_one)]
-  simp [ContinuousAffineMap.coe_lineMap_eq]
-
-end ConvexOpenSubset
-
-end TopologicalSpace.Opens
-
-namespace TauCeti
-
-namespace Manifold
-
-/-! ### Convex open subsets of an inner product space -/
-
-section ConvexOpenSubset
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-variable (U : Opens F)
-
-/-- In an open subset of an inner product space, endowed with the restriction of the standard
-Riemannian metric, no curve is shorter than the chord between its endpoints read in the ambient
-space. -/
-theorem enorm_sub_le_riemannianEDist_subtype (x y : U) :
-    ‖((x : F) - (y : F))‖ₑ ≤ riemannianEDist 𝓘(ℝ, F) x y := by
-  have hamb : ∀ z w : F, riemannianEDist 𝓘(ℝ, F) z w = ‖z - w‖ₑ := fun z w =>
-    (IsRiemannianManifold.out (I := 𝓘(ℝ, F)) z w).symm.trans (edist_eq_enorm_sub ..)
-  refine le_riemannianEDist_of_forall_le_pathELength (M := U)
-    (I := 𝓘(ℝ, F)) fun γ h0 h1 hγ ↦ ?_
-  rw [pathELength_subtypeVal_comp hγ]
-  calc ‖((x : F) - (y : F))‖ₑ
-      = riemannianEDist 𝓘(ℝ, F)
-          (((Subtype.val : U → F) ∘ γ) 0) (((Subtype.val : U → F) ∘ γ) 1) := by
-        rw [Function.comp_apply, Function.comp_apply, h0, h1]
-        exact (hamb _ _).symm
-    _ ≤ pathELength 𝓘(ℝ, F) ((Subtype.val : U → F) ∘ γ) 0 1 :=
-        riemannianEDist_le_pathELength (contMDiff_subtype_val.comp_contMDiffOn hγ) rfl rfl
-          zero_le_one
 
 /-- **The Riemannian distance of a convex open subset is the ambient norm distance.** For an
 open subset `U` of a real inner product space `F`, endowed with the restriction of the standard
 Riemannian metric, the Riemannian extended distance between two points of `U` equals their norm
 distance read in `F`: the straight segment stays in `U` and realizes the distance. Together with
-`TauCeti.Manifold.isRiemannianManifold_of_convex`, this is what makes the ordinary-metric layer
-available
-on such a `U`, e.g. for the open unit ball example of the Hopf--Rinow roadmap. -/
+`TopologicalSpace.Opens.isRiemannianManifold_of_convex`, this identifies the ambient metric
+with the distance induced by the restricted Riemannian metric. -/
 @[simp]
 theorem riemannianEDist_eq_enorm_sub_of_convex (hU : Convex ℝ (U : Set F)) (x y : U) :
     riemannianEDist 𝓘(ℝ, F) x y = ‖((x : F) - (y : F))‖ₑ :=
   ((riemannianEDist_le_pathELength
-      (TopologicalSpace.Opens.contMDiffOn_convexSegment U hU x y)
-      (TopologicalSpace.Opens.convexSegment_zero U hU x y)
-      (TopologicalSpace.Opens.convexSegment_one U hU x y)
+      (contMDiffOn_convexSegment U hU x y)
+      (Set.convexSegment_zero (U : Set F) hU x y)
+      (Set.convexSegment_one (U : Set F) hU x y)
       zero_le_one).trans_eq
-    (TopologicalSpace.Opens.pathELength_convexSegment U hU x y)).antisymm
-    (enorm_sub_le_riemannianEDist_subtype U x y)
+    (pathELength_convexSegment U hU x y)).antisymm
+    (by
+      have h := U.riemannianEDist_le_riemannianEDist_subtype (I := 𝓘(ℝ, F)) x y
+      rwa [← IsRiemannianManifold.out (I := 𝓘(ℝ, F)) (x : F) (y : F),
+        edist_eq_enorm_sub] at h)
 
 /-- A convex open subset of an inner product space, endowed with its ambient metric, satisfies
 the `IsRiemannianManifold` predicate: its ambient extended distance is the infimum of the lengths
@@ -194,43 +102,23 @@ theorem isRiemannianManifold_of_convex (hU : Convex ℝ (U : Set F)) :
     rw [Subtype.edist_eq, edist_eq_enorm_sub,
       riemannianEDist_eq_enorm_sub_of_convex U hU x y]⟩
 
-end ConvexOpenSubset
-
-end Manifold
-
-end TauCeti
-
-namespace TopologicalSpace.Opens
-
 /-! ### Distance-realizing segments in convex open subsets -/
-
-section ConvexOpenSubset
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-variable (U : Opens F)
 
 /-- A straight segment in a convex open subset realizes the ambient distance between its
 endpoints. -/
 theorem pathELength_convexSegment_eq_edist (hU : Convex ℝ (U : Set F)) (x y : U) :
-    pathELength 𝓘(ℝ, F) (convexSegment U hU x y) 0 1 = edist x y := by
-  let _ := TauCeti.Manifold.isRiemannianManifold_of_convex U hU
-  calc
-    pathELength 𝓘(ℝ, F) (convexSegment U hU x y) 0 1 = ‖((x : F) - (y : F))‖ₑ :=
-      pathELength_convexSegment U hU x y
-    _ = riemannianEDist 𝓘(ℝ, F) x y :=
-      (TauCeti.Manifold.riemannianEDist_eq_enorm_sub_of_convex U hU x y).symm
-    _ = edist x y := (IsRiemannianManifold.out (I := 𝓘(ℝ, F)) x y).symm
+    pathELength (M := U) 𝓘(ℝ, F) ((U : Set F).convexSegment hU x y) 0 1 = edist x y := by
+  rw [pathELength_convexSegment U hU x y, Subtype.edist_eq, edist_eq_enorm_sub]
 
 /-- Any two points of a convex open subset of a real inner-product space are joined by a `C¹`
 path whose Riemannian length is their ambient distance. -/
 theorem exists_pathELength_eq_edist_of_convex (hU : Convex ℝ (U : Set F)) (x y : U) :
     ∃ γ : ℝ → U, CMDiff[Icc 0 1] 1 γ ∧ γ 0 = x ∧ γ 1 = y ∧
       pathELength 𝓘(ℝ, F) γ 0 1 = edist x y := by
-  let _ := TauCeti.Manifold.isRiemannianManifold_of_convex U hU
-  exact ⟨convexSegment U hU x y, contMDiffOn_convexSegment U hU x y,
-    convexSegment_zero U hU x y, convexSegment_one U hU x y,
+  exact ⟨(U : Set F).convexSegment hU x y, contMDiffOn_convexSegment U hU x y,
+    Set.convexSegment_zero (U : Set F) hU x y, Set.convexSegment_one (U : Set F) hU x y,
     pathELength_convexSegment_eq_edist U hU x y⟩
 
-end ConvexOpenSubset
+end InnerProductSpace
 
 end TopologicalSpace.Opens

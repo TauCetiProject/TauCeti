@@ -7,6 +7,7 @@ module
 
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Order.Atoms.Finite
+import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
@@ -109,7 +110,7 @@ theorem eq_top_of_forall_not_le_openNormalSubgroup_index_eq (hG : IsProP p G)
     Subgroup.NormalizerCondition.normal_of_coatom
       M (Group.normalizerCondition_of_isNilpotent (G := Q)) hM
   let _ : M.Normal := hMnormal
-  have hMindex : M.index = p := hQU.index_eq_prime_of_isCoatom hM
+  have hMindex : M.index = p := hQU.isCoatom_iff_index_eq_prime.mp hM
   have hUle : U.toSubgroup ≤ M.comap q := by
     intro x hx
     rw [Subgroup.mem_comap]

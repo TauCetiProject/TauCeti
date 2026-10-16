@@ -288,9 +288,10 @@ theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_exists_dynk
     (o : Orientation G) :
     ¬ Module.Finite k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
   classical
-  exact not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef k o fun h ↦
-    hD (SimpleGraph.exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
-      (SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef h))
+  refine not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef k o fun h ↦ hD ?_
+  obtain ⟨t, ht, -, hφ⟩ := SimpleGraph.exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
+    (SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef h)
+  exact ⟨t, ht, hφ⟩
 
 end NonDynkin
 

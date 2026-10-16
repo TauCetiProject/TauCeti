@@ -8,16 +8,37 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 
 /-!
-# Degree bounds for products of polynomials
+# Degrees of polynomial sums and products
 
 Mathlib's `Polynomial.degree_mul_le` bounds the degree of a product by the sum of the degrees.
 This file records the strict form with one factor of degree below a natural number `a` and the
 other of `natDegree` at most `n`: the product has degree below `a + n`.  Stating the bound with
 `degree` on the strict side lets the zero polynomial through on either side, which is what a
 coefficient window of prescribed length needs when it is read off polynomials that may vanish.
+
+`TauCeti.degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le` combines two such product bounds
+into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
+`Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
+linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
+`Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
+
+The simp lemma `Polynomial.natDegree_X_pow_sub_X` computes the degree of `X ^ p - X` for
+any ring and any exponent `p > 1`.
 -/
 
 public section
+
+namespace Polynomial
+
+/-- The nonconstant part of an Artin–Schreier polynomial has its expected natural degree. -/
+@[simp]
+theorem natDegree_X_pow_sub_X {R : Type*} [Ring R] [Nontrivial R]
+    {p : ℕ} (hp : 1 < p) : (X ^ p - X : R[X]).natDegree = p := by
+  rw [natDegree_sub_eq_left_of_natDegree_lt] <;> rw [natDegree_X_pow]
+  rw [natDegree_X]
+  exact hp
+
+end Polynomial
 
 namespace TauCeti
 
@@ -36,5 +57,29 @@ theorem _root_.Polynomial.degree_mul_lt_of_degree_lt_of_natDegree_le {A q : R[X]
       _ < (a : WithBot ℕ) + n :=
         WithBot.add_lt_add_of_lt_of_le (degree_ne_bot.mpr hq0) hA (degree_le_of_natDegree_le hq)
       _ = ((a + n : ℕ) : WithBot ℕ) := by push_cast; rfl
+
+/-- A relation with multipliers of degrees below `m - j` and `n - j` has degree below
+`(m - j) + (n - j) + j`, provided the input degrees are bounded by `m` and `n` and `j` lies
+below both bounds. Either input or multiplier may be zero. -/
+theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n j : ℕ}
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j ≤ m) (hjn : j ≤ n)
+    (hA : A.degree < (m - j : ℕ)) (hB : B.degree < (n - j : ℕ)) :
+    (A * q + B * p).degree < (((m - j) + (n - j) + j : ℕ) : WithBot ℕ) := by
+  apply (degree_add_le _ _).trans_lt
+  apply max_lt
+  · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hA hn).trans_le
+      (WithBot.coe_le_coe.mpr (by omega : m - j + n ≤ (m - j) + (n - j) + j))
+  · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hB hm).trans_le
+      (WithBot.coe_le_coe.mpr (by omega : n - j + m ≤ (m - j) + (n - j) + j))
+
+/-- A product of `card s` monic linear factors has degree at most `card s`; unlike
+`natDegree_multiset_prod_X_sub_C_eq_card`, this needs no nontriviality. -/
+theorem _root_.Polynomial.natDegree_multiset_prod_X_sub_C_le {S : Type*} [CommRing S]
+    (s : Multiset S) : (s.map fun a ↦ X - C a).prod.natDegree ≤ Multiset.card s := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [Multiset.map_cons, Multiset.prod_cons, Multiset.card_cons, add_comm]
+    exact natDegree_mul_le.trans (add_le_add (natDegree_X_sub_C_le a) ih)
 
 end TauCeti

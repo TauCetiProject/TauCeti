@@ -7,7 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import TauCeti.Geometry.Hodge.Dual
+public import TauCeti.Geometry.Hodge.HodgeForm
 public import TauCeti.Geometry.Hodge.Tate.Twist
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import TauCeti.Geometry.Hodge.Substructure
+import TauCeti.LinearAlgebra.FreeModule.Int
 
 /-!
 # Self-duality from a polarization
@@ -18,8 +22,13 @@ twisting the dual by `-n`; this restores weight `n`. On the lattice the same map
 equivalence: its cokernel records the discriminant of the integral polarizing form. It is always
 injective, and it is an equivalence exactly when the form is a perfect pairing.
 
-This is the self-duality supplied by the Hodge--Riemann bilinear relations. It is the bridge from
-the dual of a pure Hodge structure to polarizations on duals and internal Homs.
+This is the self-duality supplied by the Hodge--Riemann bilinear relations, and it makes duals of
+polarizable structures polarizable. The inverse form on the dual is in general only rational, since
+the inverse of an integral form is integral only when the form is a perfect pairing. Instead, the
+image of the integral self-duality has finite index `c`, so there is a Hodge morphism
+`V^*(-n) → V` inverting self-duality up to the factor `c`. That morphism is injective, so the
+polarizing form of `V` pulls back along it to a polarizing form of `V^*(-n)`, and a Tate twist
+turns this into a polarizing form of `V^*`.
 
 ## Main declarations
 
@@ -31,6 +40,10 @@ the dual of a pure Hodge structure to polarizations on duals and internal Homs.
   isomorphism.
 * `TauCeti.Hodge.Polarization.toDualHom_toIntLinearMap_bijective_iff_isPerfPair`: the integral
   self-duality is an isomorphism exactly for a perfect integral polarizing form.
+* `TauCeti.Hodge.Polarization.exists_comp_toDualHom_eq_nsmul_id`: the integral self-duality is
+  invertible up to a nonzero integer.
+* `TauCeti.Hodge.IsPolarizable.dual`: the dual of a polarizable pure Hodge structure is
+  polarizable.
 
 ## References
 
@@ -155,6 +168,58 @@ theorem toDualHom_toIntLinearMap_bijective_iff_isPerfPair (P : Polarization hℂ
   · intro h
     exact h.bijective_left
 
+/-- **Self-duality is invertible up to a nonzero integer.** For a polarization of `V`, there is a
+Hodge morphism `g : V^*(-n) → V` such that composing it with self-duality, in either order, is
+multiplication by a nonzero natural number `c`. Over `ℚ`, `c⁻¹ • g` is the inverse of
+self-duality. -/
+theorem exists_comp_toDualHom_eq_nsmul_id (P : Polarization hℂ hs) :
+    ∃ c : ℕ, c ≠ 0 ∧ ∃ g : HodgeStructure.Hom hs.dualTateTwist hs,
+      P.toDualHom.comp g = c • HodgeStructure.Hom.id _ ∧
+        g.comp P.toDualHom = c • HodgeStructure.Hom.id _ := by
+  obtain ⟨c, hc, g, hfg, hgf⟩ := LinearMap.exists_comp_eq_nsmul_id_of_injective
+    P.toDualHom_toIntLinearMap_injective (Module.finrank_linearMap_self ℤ ℤ V).symm
+  have hcomplex : P.toDualHom.toLinearMap ∘ₗ
+      integralMapToComplex (isBaseChange_dualLatticeMap hℂ) ιℂ g = c • LinearMap.id := by
+    rw [HodgeStructure.Hom.toLinearMap_def, ← integralMapToComplex_comp, hfg,
+      integralMapToComplex_nsmul, integralMapToComplex_id]
+  let g' : HodgeStructure.Hom hs.dualTateTwist hs :=
+    { toIntLinearMap := g
+      map_mem_F p y hy := by
+        -- `c • y` lies in the image of self-duality, which by strictness meets `F^p` of the
+        -- target in the image of `F^p` of the source.
+        have hmem : c • y ∈ LinearMap.range P.toDualHom.toLinearMap ⊓ hs.dualTateTwist.F p :=
+          ⟨⟨_, by simpa using congr($hcomplex y)⟩, nsmul_mem hy c⟩
+        rw [P.toDualHom.range_inf_F] at hmem
+        obtain ⟨x, hx, hxy⟩ := hmem
+        have hgy : integralMapToComplex (isBaseChange_dualLatticeMap hℂ) ιℂ g y = x := by
+          refine P.toDualHom_toLinearMap_injective ?_
+          rw [hxy]
+          simpa using congr($hcomplex y)
+        exact hgy ▸ hx }
+  refine ⟨c, hc, g', HodgeStructure.Hom.ext fun x ↦ ?_, HodgeStructure.Hom.ext fun x ↦ ?_⟩
+  · simpa [g'] using congr($hfg x)
+  · simpa [g'] using congr($hgf x)
+
 end Polarization
+
+/-- The same-weight twist `V^*(-n)` of the dual of a polarizable pure Hodge structure is
+polarizable: a polarizing form of `V` pulls back along an inverse of self-duality up to a nonzero
+integer. -/
+theorem IsPolarizable.dualTateTwist (h : IsPolarizable hℂ hs) :
+    IsPolarizable (isBaseChange_dualLatticeMap hℂ) hs.dualTateTwist := by
+  obtain ⟨P⟩ := isPolarizable_iff_nonempty.mp h
+  obtain ⟨c, hc, g, hfg, -⟩ := P.exists_comp_toDualHom_eq_nsmul_id
+  refine h.of_injective g fun y y' hyy' ↦ smul_right_injective (Module.Dual ℤ V) hc ?_
+  have hcomp (z : Module.Dual ℤ V) : P.Qint (g.toIntLinearMap z) = c • z := by
+    simpa using congr(HodgeStructure.Hom.toIntLinearMap $hfg z)
+  simp only [← hcomp, hyy']
+
+/-- **The dual of a polarizable pure Hodge structure is polarizable.** -/
+theorem IsPolarizable.dual (h : IsPolarizable hℂ hs) :
+    IsPolarizable (isBaseChange_dualLatticeMap hℂ) hs.dual := by
+  obtain ⟨P⟩ := isPolarizable_iff_nonempty.mp h.dualTateTwist
+  refine (⟨_, P.isPolarization.of_F_eq_F_add n (by ring) fun p ↦ ?_⟩ :
+    Polarization _ hs.dual).isPolarizable
+  rw [HodgeStructure.dualTateTwist_F, add_sub_cancel_right]
 
 end TauCeti.Hodge

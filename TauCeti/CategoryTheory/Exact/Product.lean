@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.Functor
+public import TauCeti.CategoryTheory.Exact.Frobenius
 public import TauCeti.CategoryTheory.Products.Preadditive
 
 /-!
@@ -18,7 +18,9 @@ lemmas.
 
 The projection functors preserve conflations and jointly detect them. Inserting a zero object in
 either coordinate is also conflation-exact. These functors are the input for the product formula
-for exact Grothendieck groups.
+for exact Grothendieck groups. Relative projectives and injectives are computed componentwise,
+and products preserve enough projectives, enough injectives, and Frobenius exact structures.
+This also supplies the exact structure used to compare stable categories with their products.
 
 ## Main definitions
 
@@ -40,6 +42,9 @@ for exact Grothendieck groups.
   conflations.
 * `TauCeti.ExactStructure.IsConflationExact.prod`: the product of two conflation-exact functors
   is conflation-exact for the product structures.
+* `TauCeti.ExactStructure.prod_isProjective_iff` and `.prod_isInjective_iff`: relative
+  projectivity and injectivity are componentwise.
+* `TauCeti.ExactStructure.IsFrobenius.prod`: a product of Frobenius exact categories is Frobenius.
 
 ## References
 
@@ -291,6 +296,105 @@ theorem prod (hF : E₁.IsConflationExact E₂ F) (hG : E₁'.IsConflationExact 
 end IsConflationExact
 
 end Functor
+
+/-- Relative projectivity for the product exact structure is componentwise. -/
+@[simp]
+theorem prod_isProjective_iff (Q : C × D) :
+    (E.prod E').isProjective Q ↔ E.isProjective Q.1 ∧ E'.isProjective Q.2 := by
+  simp only [isProjective_iff]
+  constructor
+  · intro hQ
+    constructor
+    · intro X Y p hp f
+      obtain ⟨g, hg⟩ := hQ
+        ((prod_isDeflation_iff E E'
+          ((p, 𝟙 Q.2) : (X, Q.2) ⟶ (Y, Q.2))).mpr ⟨hp, E'.isDeflation_id _⟩)
+        (f, 𝟙 Q.2)
+      exact ⟨g.1, congrArg Prod.fst hg⟩
+    · intro X Y p hp f
+      obtain ⟨g, hg⟩ := hQ
+        ((prod_isDeflation_iff E E'
+          ((𝟙 Q.1, p) : (Q.1, X) ⟶ (Q.1, Y))).mpr ⟨E.isDeflation_id _, hp⟩)
+        (𝟙 Q.1, f)
+      exact ⟨g.2, congrArg Prod.snd hg⟩
+  · rintro ⟨h₁, h₂⟩ X Y p hp f
+    obtain ⟨hp₁, hp₂⟩ := (prod_isDeflation_iff E E' p).mp hp
+    obtain ⟨g₁, hg₁⟩ := h₁ hp₁ f.1
+    obtain ⟨g₂, hg₂⟩ := h₂ hp₂ f.2
+    exact ⟨(g₁, g₂), Prod.hom_ext hg₁ hg₂⟩
+
+/-- Relative injectivity for the product exact structure is componentwise. -/
+@[simp]
+theorem prod_isInjective_iff (Q : C × D) :
+    (E.prod E').isInjective Q ↔ E.isInjective Q.1 ∧ E'.isInjective Q.2 := by
+  simp only [isInjective_iff]
+  constructor
+  · intro hQ
+    constructor
+    · intro X Y i hi f
+      obtain ⟨g, hg⟩ := hQ
+        ((prod_isInflation_iff E E'
+          ((i, 𝟙 Q.2) : (X, Q.2) ⟶ (Y, Q.2))).mpr ⟨hi, E'.isInflation_id _⟩)
+        (f, 𝟙 Q.2)
+      exact ⟨g.1, congrArg Prod.fst hg⟩
+    · intro X Y i hi f
+      obtain ⟨g, hg⟩ := hQ
+        ((prod_isInflation_iff E E'
+          ((𝟙 Q.1, i) : (Q.1, X) ⟶ (Q.1, Y))).mpr ⟨E.isInflation_id _, hi⟩)
+        (𝟙 Q.1, f)
+      exact ⟨g.2, congrArg Prod.snd hg⟩
+  · rintro ⟨h₁, h₂⟩ X Y i hi f
+    obtain ⟨hi₁, hi₂⟩ := (prod_isInflation_iff E E' i).mp hi
+    obtain ⟨g₁, hg₁⟩ := h₁ hi₁ f.1
+    obtain ⟨g₂, hg₂⟩ := h₂ hi₂ f.2
+    exact ⟨(g₁, g₂), Prod.hom_ext hg₁ hg₂⟩
+
+/-- A product of exact categories with enough relative projectives has enough relative
+projectives, using componentwise presentations. -/
+theorem EnoughProjectives.prod {E : ExactStructure C} {E' : ExactStructure D}
+    (hE : E.EnoughProjectives) (hE' : E'.EnoughProjectives) :
+    (E.prod E').EnoughProjectives := by
+  constructor
+  intro X
+  let P := hE.projectivePresentation X.1
+  let Q := hE'.projectivePresentation X.2
+  exact ⟨{
+    K := (P.K, Q.K)
+    P := (P.P, Q.P)
+    i := (P.i, Q.i)
+    p := (P.p, Q.p)
+    zero := Prod.hom_ext P.zero Q.zero
+    conflation := (prod_conflation_iff E E' _).mpr ⟨P.conflation, Q.conflation⟩
+    isProjective := (prod_isProjective_iff E E' _).mpr ⟨P.isProjective, Q.isProjective⟩ }⟩
+
+/-- A product of exact categories with enough relative injectives has enough relative
+injectives, using componentwise presentations. -/
+theorem EnoughInjectives.prod {E : ExactStructure C} {E' : ExactStructure D}
+    (hE : E.EnoughInjectives) (hE' : E'.EnoughInjectives) :
+    (E.prod E').EnoughInjectives := by
+  constructor
+  intro X
+  let P := hE.injectivePresentation X.1
+  let Q := hE'.injectivePresentation X.2
+  exact ⟨{
+    I := (P.I, Q.I)
+    K := (P.K, Q.K)
+    i := (P.i, Q.i)
+    p := (P.p, Q.p)
+    zero := Prod.hom_ext P.zero Q.zero
+    conflation := (prod_conflation_iff E E' _).mpr ⟨P.conflation, Q.conflation⟩
+    isInjective := (prod_isInjective_iff E E' _).mpr ⟨P.isInjective, Q.isInjective⟩ }⟩
+
+/-- The componentwise exact structure on a product of Frobenius exact categories is Frobenius.
+Its projective-injectives are the pairs of projective-injectives. -/
+theorem IsFrobenius.prod {E : ExactStructure C} {E' : ExactStructure D}
+    (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) :
+    (E.prod E').IsFrobenius where
+  enoughProjectives := hE.enoughProjectives.prod hE'.enoughProjectives
+  enoughInjectives := hE.enoughInjectives.prod hE'.enoughInjectives
+  projective_iff_injective X := by
+    rw [prod_isProjective_iff, prod_isInjective_iff,
+      hE.projective_iff_injective, hE'.projective_iff_injective]
 
 end ExactStructure
 

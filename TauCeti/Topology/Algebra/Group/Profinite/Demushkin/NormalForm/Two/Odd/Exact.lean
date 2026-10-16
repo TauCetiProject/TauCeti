@@ -130,8 +130,9 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_odd {n : ℕ} 
     exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_padicPow hn ⟨e₀ r, hmem⟩ h
   set t : Fin n → freeProP 2 (Fin n) :=
     fun i ↦ (isProP_freeProP 2 (Fin n)).padicPow (of i) (a i) with ht_def
-  have ht : ∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure := fun i ↦
-    (isProP_freeProP 2 (Fin n)).padicPow_mem_topologicalClosure_closure_singleton _ _
+  have ht : ∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure := fun i ↦ by
+    simpa only [closedZpowers_def, Subgroup.zpowers_eq_closure] using
+      (isProP_freeProP 2 (Fin n)).padicPow_mem_closedZpowers (of i) (a i)
   have h4 : ((2 : ℕ) : ℤ_[2]) ^ 2 = 4 := by norm_num
   have ht2 : ∀ i, t i ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 2 := fun i ↦
     (padicPow_mem_pLowerCentralSeries_iff i (a i) 2).2 (h4 ▸ ha i)

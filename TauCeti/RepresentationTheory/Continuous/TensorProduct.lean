@@ -27,28 +27,25 @@ Mathlib's inner product on `V ⊗[𝕜] W` (`TensorProduct.instInnerProductSpace
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.tprod`: the tensor product `π ⊗ ρ` of two continuous
+* `ContRepresentation.tprod`: the tensor product `π ⊗ ρ` of two continuous
   representations.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.continuous_tprod` and
-  `TauCeti.ContRepresentation.IsUnitary.tprod`: the tensor product of continuous representations is
+* `ContRepresentation.continuous_tprod` and
+  `ContRepresentation.IsUnitary.tprod`: the tensor product of continuous representations is
   continuous, and of unitary ones is unitary.
-* `TauCeti.ContRepresentation.matrixCoeff_tprod`: matrix coefficients of a tensor product at pure
+* `ContRepresentation.matrixCoeff_tprod`: matrix coefficients of a tensor product at pure
   tensors are products of matrix coefficients.
 
-The construction supplies the "products of matrix coefficients of `π, ρ` are matrix coefficients of
-`π ⊗ ρ`" item of Layer 3 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
-open scoped InnerProductSpace TensorProduct
+open TauCeti
 
-namespace TauCeti
+open scoped InnerProductSpace TensorProduct
 
 namespace ContRepresentation
 
@@ -99,5 +96,3 @@ theorem matrixCoeff_tprod (hπ : Continuous π) (hρ : Continuous ρ) (v w : V) 
   simp
 
 end ContRepresentation
-
-end TauCeti

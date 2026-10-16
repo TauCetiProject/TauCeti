@@ -9,7 +9,7 @@ public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.IsLocalHomeomorph
 
 /-!
-# Local path-connectedness passes to the domain of a local homeomorphism
+# Local homeomorphisms: local path-connectedness and local inverses
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -19,13 +19,23 @@ The intended use is a covering map, whose total space is therefore locally path-
 as the base is; this is what lets the covers built over a locally path-connected base be fed back
 into results that require a locally path-connected source, such as the lifting criterion.
 
+A local inverse `L` of `p` composed with `p` is a local deck transformation of `p`. Near a point
+`z` it agrees with every local deck transformation of `p` that is continuous at `z` and sends `z`
+into the target of `L`. This is what identifies the transition maps of charts pushed forward along
+`p` with deck transformations.
+
 ## Main results
 
 * `IsLocalHomeomorph.locallyPathConnectedSpace`: the domain of a local homeomorphism into a
   locally path-connected space is locally path-connected.
+* `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
+  `p` agrees with any continuous local deck transformation sending `z` into the target of that
+  local inverse.
 -/
 
 public section
+
+open Topology
 
 namespace TauCeti
 
@@ -55,5 +65,18 @@ theorem _root_.IsLocalHomeomorph.locallyPathConnectedSpace [LocallyPathConnected
       (hVsub.trans Set.inter_subset_left)).mem_nhds ⟨p e, hpeV, by simp [φ]⟩
   · rintro z ⟨y, hyV, rfl⟩
     exact hWU (hVsub hyV).2
+
+/-- Let `L` be a local inverse of a local homeomorphism `p` at `e`. If `φ` is continuous at `z`,
+satisfies `p ∘ φ = p` near `z`, and sends `z` into the target of `L`, then `L ∘ p` agrees with `φ`
+near `z`. -/
+theorem _root_.IsLocalHomeomorph.localInverseAt_comp_eventuallyEq {p : E → B}
+    (hp : IsLocalHomeomorph p) {e z : E} {φ : E → E} (hφ : ContinuousAt φ z)
+    (hφz : φ z ∈ (hp.localInverseAt e).target) (hpφ : p ∘ φ =ᶠ[𝓝 z] p) :
+    hp.localInverseAt e ∘ p =ᶠ[𝓝 z] φ := by
+  set L := hp.localInverseAt e
+  filter_upwards [hφ.preimage_mem_nhds (L.open_target.mem_nhds hφz), hpφ] with w hw hpw
+  have hL : L (L.symm (φ w)) = φ w := L.right_inv hw
+  rw [hp.localInverseAt_symm] at hL
+  rwa [Function.comp_apply, ← hpw]
 
 end TauCeti

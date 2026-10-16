@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Discriminant
+import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # Discriminants in algebra towers

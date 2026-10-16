@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -76,7 +77,7 @@ theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
       mlieBracket I Y Z + fun y ↦ cov Y y (Z y) := by
     rw [heq, sub_add_cancel]
   have hd := congrArg (fun s ↦ cov s x u) ha
-  rw [cov.isCovariantDerivativeOn.add (hb.mdifferentiable (by simp) x)
+  rw [cov.isCovariantDerivativeOnUniv.add (hb.mdifferentiable (by simp) x)
     (hZY.mdifferentiable (by simp) x)] at hd
   exact eq_sub_of_add_eq hd.symm
 

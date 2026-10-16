@@ -77,18 +77,8 @@ private lemma exists_finiteType_isFractionRing_functionField :
         ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ le_top) ?_
     exact RingHom.FiniteType.of_surjective _
       (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective
-  have htower : IsScalarTower k Γ(X, U) X.functionField := by
-    apply IsScalarTower.of_algebraMap_eq'
-    ext c
-    have h : (X ↘ Spec (.of k)).appLE ⊤ U le_top ≫ X.germToFunctionField U =
-        (X ↘ Spec (.of k)).appTop ≫ X.germToFunctionField ⊤ := by
-      simp only [Scheme.Hom.appLE, Category.assoc, TopCat.Presheaf.germ_res]
-      -- What remains compares germs on `(X ↘ Spec k) ⁻¹ᵁ ⊤` and on `⊤`, which are the same open
-      -- by definition; rewriting along `Scheme.Hom.preimage_top` would need to transport the
-      -- membership proof inside `germ`.
-      rfl
-    have := congrArg (fun f ↦ f ((Scheme.ΓSpecIso (.of k)).inv c)) h
-    simpa [φ, RingHom.algebraMap_toAlgebra] using this.symm
+  have htower : IsScalarTower k Γ(X, U) X.functionField :=
+    .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U)
   refine ⟨Γ(X, U), inferInstance, inferInstance, inferInstance, inferInstance, htower, hft,
     functionField_isFractionRing_of_isAffineOpen X U hU, ?_⟩
   -- The nonempty open `U` of the irreducible space `X` has the dimension of `X`, and `U` is

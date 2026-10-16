@@ -37,6 +37,11 @@ over a finite field, `TauCeti.Isogeny.isSeparable_oneSubFrobeniusIsogeny`:
 * `TauCeti.Isogeny.Hom.pullbackDifferential_zsmul_id_invariantDifferential`: `[n]^*ω = n • ω`.
 * `TauCeti.Isogeny.Hom.pullbackDifferential_id` and `pullbackDifferential_comp`: the pullback is
   functorial in the morphism.
+* `pullbackDifferential_zsmul_sub_zsmul_id_invariantDifferential_of_pullbackDifferential_eq_zero`:
+  `(r • f - s • id)^*ω = -s • ω` when `f^*ω = 0`.
+* `TauCeti.Isogeny.Hom.zsmul_sub_zsmul_id_ne_zero_of_pullbackDifferential_eq_zero` and
+  `Hom.isSeparable_toIsogeny_zsmul_sub_zsmul_id_iff_of_pullbackDifferential_eq_zero`:
+  the pencil is nonzero when `s ≠ 0` in the field, and a nonzero pencil is separable exactly then.
 
 ## Provenance
 
@@ -46,6 +51,12 @@ The AINTLIB `HasseWeil` project (Chris Birkbeck, Apache 2.0, commit
 in `RouteBGeneral.lean`, and for a scalar coefficient `omegaPullbackCoeff` of the pulled-back `d x`
 rather than for the differential. Here the statement is for two arbitrary morphisms
 `f, g : W₁ → W₂` and for the pulled-back differential itself; nothing is taken from the source.
+
+The same revision proves Frobenius-pencil separability as `genuineIsogSmulSub_isSeparable`
+in `GapSpines.lean`, using the scalar identity `genuineIsogSmulSub_omegaPullbackCoeff`, and
+transports it across base change in `WeilPairing/PencilSeparable.lean`. The pencil lemmas here
+are independent proofs for any endomorphism `f` with `f^*ω = 0`, using the pulled-back
+differential and function-field separability; no finite-field or Frobenius hypothesis is needed.
 
 ## References
 
@@ -96,6 +107,16 @@ theorem pullbackDifferential_comp {W₃ : WeierstrassCurve.Affine F} (g : Hom W�
   · simp only [Hom.zero_comp, pullbackDifferential_zero, LinearMap.comp_zero]
   rw [ofIsogeny_comp_ofIsogeny, pullbackDifferential_ofIsogeny, pullbackDifferential_ofIsogeny,
     pullbackDifferential_ofIsogeny, Isogeny.pullbackDifferential_comp]
+
+/-- Pullback along a power is the corresponding power of the pullback operator. -/
+@[simp]
+theorem pullbackDifferential_pow (f : Hom W₁ W₁) (n : ℕ) :
+    (f ^ n).pullbackDifferential = f.pullbackDifferential ^ n := by
+  induction n with
+  | zero => simp [Module.End.one_eq_id]
+  | succ n ih =>
+    rw [pow_succ', mul_def, pullbackDifferential_comp, ih,
+      ← Module.End.mul_eq_comp, ← pow_succ]
 
 /-- **Negation negates the pullback of the invariant differential.** -/
 @[simp]
@@ -180,6 +201,46 @@ theorem pullbackDifferential_zsmul_id_invariantDifferential (W : WeierstrassCurv
       n • invariantDifferential W := by
   rw [pullbackDifferential_zsmul_invariantDifferential, pullbackDifferential_id,
     LinearMap.id_apply]
+
+variable {W : WeierstrassCurve.Affine F} [W.IsElliptic]
+
+/-- If `f` kills the invariant differential, the pencil `r • f - s • id` pulls it back to
+`-s • ω`. -/
+theorem
+  pullbackDifferential_zsmul_sub_zsmul_id_invariantDifferential_of_pullbackDifferential_eq_zero
+    {f : Hom W W}
+    (hf : f.pullbackDifferential (invariantDifferential W) = 0) (r s : ℤ) :
+    (r • f - s • id W).pullbackDifferential (invariantDifferential W) =
+      -s • invariantDifferential W := by
+  simp only [pullbackDifferential_sub_invariantDifferential,
+    pullbackDifferential_zsmul_invariantDifferential, hf,
+    pullbackDifferential_id, LinearMap.id_apply, smul_zero, zero_sub, neg_smul]
+
+/-- If `f` kills the invariant differential and `s` is nonzero in the field, then
+`r • f - s • id` is nonzero. -/
+theorem zsmul_sub_zsmul_id_ne_zero_of_pullbackDifferential_eq_zero {f : Hom W W}
+    (hf : f.pullbackDifferential (invariantDifferential W) = 0) (r s : ℤ)
+    (hs : (s : F) ≠ 0) : r • f - s • id W ≠ 0 := by
+  intro h
+  have hω :=
+    pullbackDifferential_zsmul_sub_zsmul_id_invariantDifferential_of_pullbackDifferential_eq_zero
+      hf r s
+  rw [h, pullbackDifferential_zero, LinearMap.zero_apply] at hω
+  exact hs ((zsmul_invariantDifferential_eq_zero_iff W s).mp (by
+    simpa using hω.symm))
+
+/-- If `f` kills the invariant differential, a nonzero pencil `r • f - s • id` is separable
+exactly when `s` is nonzero in the field. -/
+theorem isSeparable_toIsogeny_zsmul_sub_zsmul_id_iff_of_pullbackDifferential_eq_zero {f : Hom W W}
+    (hf : f.pullbackDifferential (invariantDifferential W) = 0) (r s : ℤ)
+    (h : r • f - s • id W ≠ 0) :
+    Algebra.IsSeparable (toIsogeny h).fieldPullback.fieldRange W.FunctionField ↔
+      (s : F) ≠ 0 := by
+  rw [isSeparable_iff_pullbackDifferential_ne_zero,
+    ← pullbackDifferential_ofIsogeny, ofIsogeny_toIsogeny,
+    pullbackDifferential_zsmul_sub_zsmul_id_invariantDifferential_of_pullbackDifferential_eq_zero
+      hf]
+  simp [zsmul_invariantDifferential_eq_zero_iff]
 
 end Hom
 

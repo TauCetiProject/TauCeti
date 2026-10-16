@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
+public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
+public import TauCeti.Data.List.PermanencesMinusVariations
 
 /-!
 # Semialgebraic sets
@@ -25,6 +27,11 @@ Every closure property proved here follows directly from the definition:
 
 * the Boolean operations, including finite unions and intersections;
 * every polynomial sign condition, such as `{x | p(x) ≤ q(x)}` or `{x | sign p(x) = ε}`;
+* any condition on the signs of finitely many polynomials
+  (`TauCeti.isSemialgebraic_setOf_sign_eval`), in particular a prescribed permanences minus
+  variations of their values (`TauCeti.isSemialgebraic_setOf_permanencesMinusVariations_eval`);
+* the vanishing of a prescribed set of coefficients of a polynomial family
+  `P : Polynomial (MvPolynomial σ R)` (`TauCeti.isSemialgebraic_setOf_forall_coeff_eq_zero`);
 * inverse images under polynomial maps (`TauCeti.IsSemialgebraic.preimage_eval`), and hence
   under changes of coordinates, in particular coordinate permutations;
 * products, in the form `σ ⊕ τ → R` and in the form `Fin (m + n) → R`;
@@ -32,6 +39,15 @@ Every closure property proved here follows directly from the definition:
   of a subset of `Fin (n + 1) → R`, which are the horizontal and vertical slices of a cylinder
   over `Fin n → R` with distinguished coordinate `0`; the vertical slice is a subset of
   `Fin 1 → R`, the one-coordinate space of the definition.
+
+Conversely, every semialgebraic set is described by a condition on the signs of finitely many
+polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`), and so membership in it depends
+on only finitely many coordinates (`TauCeti.IsSemialgebraic.exists_finset_mem_iff_of_eqOn`).
+
+Closure under projection is recorded as the property `TauCeti.HasSemialgebraicProjections R` of the
+ordered ring `R`, with field `TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`.
+Its consequences, such as quantifier elimination and the image and composition laws of
+semialgebraic functions, are stated under this assumption.
 
 ## References
 
@@ -225,6 +241,52 @@ theorem isSemialgebraic_sign_eval_eq (p : MvPolynomial σ R) (ε : SignType) :
   · simpa only [SignType.neg_eq_neg_one, sign_eq_neg_one_iff] using isSemialgebraic_eval_neg p
   · simpa only [SignType.pos_eq_one, sign_eq_one_iff] using isSemialgebraic_eval_pos p
 
+omit [IsOrderedAddMonoid R] in
+/-- A sign condition on finitely many polynomials defines a semialgebraic set: membership may
+depend in any way on the signs of their values. -/
+theorem isSemialgebraic_setOf_sign_eval {ι : Type*} [Finite ι] (p : ι → MvPolynomial σ R)
+    (Φ : (ι → SignType) → Prop) :
+    IsSemialgebraic {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} := by
+  have : {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} =
+      ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | SignType.sign (eval x (p i)) = ε i} := by
+    ext x
+    simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
+    exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
+  rw [this]
+  exact .biUnion (toFinite _) fun ε _ => .iInter fun i => isSemialgebraic_sign_eval_eq _ _
+
+omit [IsOrderedAddMonoid R] in
+/-- A condition on the permanences minus variations of the values of finitely many polynomials
+defines a semialgebraic set, since the statistic depends only on the signs of the values. -/
+theorem isSemialgebraic_setOf_permanencesMinusVariations_eval
+    (l : List (MvPolynomial σ R)) (c : ℤ) :
+    IsSemialgebraic {x : σ → R | (l.map (eval x)).permanencesMinusVariations = c} := by
+  have h (x : σ → R) : (l.map (eval x)).permanencesMinusVariations =
+      (List.ofFn fun i : Fin l.length =>
+        SignType.sign (eval x l[i])).permanencesMinusVariations := by
+    rw [← List.permanencesMinusVariations_map_sign, List.map_map]
+    exact congrArg List.permanencesMinusVariations (List.ofFn_getElem_eq_map l _).symm
+  simpa only [h] using isSemialgebraic_setOf_sign_eval (fun i : Fin l.length => l[i])
+    fun ε => (List.ofFn ε).permanencesMinusVariations = c
+
+omit [IsOrderedAddMonoid R] in
+/-- The parameters at which the coefficients of `P` of index in `s` all vanish form a
+semialgebraic set. -/
+theorem isSemialgebraic_setOf_forall_coeff_eq_zero (P : Polynomial (MvPolynomial σ R))
+    (s : Set ℕ) :
+    IsSemialgebraic {x : σ → R | ∀ n ∈ s, eval x (P.coeff n) = 0} := by
+  have : {x : σ → R | ∀ n ∈ s, eval x (P.coeff n) = 0} =
+      ⋂ n ∈ s ∩ P.support, {x | eval x (P.coeff n) = 0} := by
+    ext x
+    simp only [mem_ofPred_eq, mem_iInter, mem_inter_iff, Finset.mem_coe]
+    refine ⟨fun h n hn => h n hn.1, fun h n hn => ?_⟩
+    by_cases hP : n ∈ P.support
+    · exact h n ⟨hn, hP⟩
+    · rw [Polynomial.notMem_support_iff.mp hP, map_zero]
+  rw [this]
+  exact .biInter (P.support.finite_toSet.inter_of_right s) fun n _ =>
+    isSemialgebraic_eval_eq_zero _
+
 /-! ### Finite sets -/
 
 omit [IsOrderedAddMonoid R] in
@@ -291,6 +353,12 @@ theorem IsSemialgebraic.image_appendEquiv_prod {m n : ℕ} {s : Set (Fin m → R
   rw [Equiv.image_eq_preimage_symm]
   exact (hs.preimage_comp (Fin.castAdd n)).inter (ht.preimage_comp (Fin.natAdd m))
 
+/-- The cylinder `Fin.tail ⁻¹' s` over a semialgebraic subset `s` of `Fin n → R`, with
+distinguished coordinate `0`, is semialgebraic. -/
+theorem IsSemialgebraic.preimage_tail {n : ℕ} {s : Set (Fin n → R)} (hs : IsSemialgebraic s) :
+    IsSemialgebraic (Fin.tail ⁻¹' s : Set (Fin (n + 1) → R)) :=
+  hs.preimage_comp Fin.succ
+
 /-- The horizontal section at height `t` of a semialgebraic subset of `Fin (n + 1) → R`, whose
 distinguished coordinate is `0`, is semialgebraic. -/
 theorem IsSemialgebraic.preimage_cons_left {n : ℕ} {s : Set (Fin (n + 1) → R)}
@@ -318,5 +386,47 @@ theorem IsSemialgebraic.preimage_cons_right {n : ℕ} {s : Set (Fin (n + 1) → 
     (Fin.cons (X 0) fun j => C (x j) : Fin (n + 1) → MvPolynomial (Fin 1) R)
   rw [hf] at h
   exact h
+
+/-! ### Sign-condition normal form -/
+
+/-- **Sign-condition normal form.** Every semialgebraic set is described by a condition on the
+signs of finitely many polynomials. -/
+theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsSemialgebraic s) :
+    ∃ (m : ℕ) (p : Fin m → MvPolynomial σ R) (Φ : (Fin m → SignType) → Prop),
+      s = {x | Φ fun i => SignType.sign (eval x (p i))} := by
+  refine IsSemialgebraic.induction (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 0, by simp⟩)
+    (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩)
+    ⟨0, Fin.elim0, fun _ => False, by simp⟩
+    (fun s _ ⟨m, p, Φ, hs⟩ => ⟨m, p, fun ε => ¬Φ ε, hs ▸ compl_ofPred _⟩)
+    (fun s t _ _ ⟨m, p, Φ, hs⟩ ⟨m', p', Φ', ht⟩ => ⟨m + m', Fin.append p p',
+      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
+  ext x
+  simp [hs, ht]
+
+/-- **Finitely many coordinates.** Membership in a semialgebraic set depends on only finitely
+many coordinates: those of the variables of the polynomials describing it. -/
+theorem IsSemialgebraic.exists_finset_mem_iff_of_eqOn {s : Set (σ → R)} (hs : IsSemialgebraic s) :
+    ∃ F : Finset σ, ∀ x y : σ → R, EqOn x y F → (x ∈ s ↔ y ∈ s) := by
+  classical
+  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
+  refine ⟨Finset.univ.biUnion fun i => (p i).vars, fun x y hxy => ?_⟩
+  have h (i : Fin m) : eval x (p i) = eval y (p i) :=
+    eval₂Hom_congr' rfl (fun j hj _ => hxy (by simpa using ⟨i, hj⟩)) rfl
+  simp [h]
+
+/-! ### Projection closure -/
+
+variable (R) in
+/-- Semialgebraic subsets of the coordinate spaces over `R` *have semialgebraic projections* if,
+for every `n`, forgetting the coordinate `0` (`Fin.tail`) maps semialgebraic subsets of
+`Fin (n + 1) → R` to semialgebraic subsets of `Fin n → R`. For `R = ℝ` this is the
+Tarski–Seidenberg theorem, proved by cylindrical algebraic decomposition in
+`TauCeti.Geometry.RealAlgebraic.CAD.Existence`. It fails for some ordered fields: over `ℚ`,
+forgetting `t` maps the parabola `{(t, x) | t ^ 2 = x}` to the set of rational squares, which is
+dense and codense in the positive rationals and so is not semialgebraic. -/
+class HasSemialgebraicProjections : Prop where
+  /-- Forgetting the coordinate `0` maps semialgebraic sets to semialgebraic sets. -/
+  isSemialgebraic_image_tail {n : ℕ} {s : Set (Fin (n + 1) → R)} :
+    IsSemialgebraic s → IsSemialgebraic (Fin.tail '' s)
 
 end TauCeti

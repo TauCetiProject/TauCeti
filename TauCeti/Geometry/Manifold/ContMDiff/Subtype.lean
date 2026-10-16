@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiff.Basic
+public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Analysis.Convex.Segment
 
 /-!
 # Smoothness of maps into an open submanifold
@@ -17,7 +19,8 @@ insensitive to whether the codomain is read in the submanifold or in the ambient
 Mathlib records this through `ContMDiffWithinAt.subtypeVal_comp_iff` within a set and through
 `ContMDiffAt.subtypeVal_comp_iff` at a point, both at regularity `∞`. Since smoothness into a
 manifold is a local invariant property at *every* regularity, the same characterizations hold for
-arbitrary `n`; this file supplies them.
+arbitrary `n`; this file supplies them. In a convex open subset of a normed real space, these
+characterizations show that the clamped affine segment is `C^n` on `[0, 1]` at every regularity.
 
 ## Main results
 
@@ -25,6 +28,8 @@ arbitrary `n`; this file supplies them.
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
+* `TopologicalSpace.Opens.contMDiffOn_convexSegment`: the affine segment in a convex open subset
+  of a normed real space is smooth on `[0, 1]` at every regularity.
 
 ## References
 
@@ -34,8 +39,8 @@ arbitrary `n`; this file supplies them.
 
 public section
 
-open ChartedSpace Set TopologicalSpace
-open scoped ContDiff
+open ChartedSpace Manifold Set TopologicalSpace
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -80,3 +85,18 @@ theorem ContMDiff.subtypeVal_comp_iff (U : Opens M') (f : M → U) :
    fun h _ => (ContMDiffWithinAt.subtypeVal_comp_iff U f Set.univ _).mpr (h _)⟩
 
 end TauCeti
+
+namespace TopologicalSpace.Opens
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable (U : Opens F) {n : ℕ∞ω}
+
+/-- The clamped affine segment in a convex open subset is `C^n` on `[0, 1]` for every `n`. -/
+theorem contMDiffOn_convexSegment (hU : Convex ℝ (U : Set F)) (x y : U) :
+    ContMDiffOn (M' := U) 𝓘(ℝ, ℝ) 𝓘(ℝ, F) n
+      ((U : Set F).convexSegment hU x y) (Icc 0 1) := by
+  apply (TauCeti.ContMDiffOn.subtypeVal_comp_iff U _ (Icc 0 1)).mp
+  apply ContMDiffOn.congr _ ((U : Set F).convexSegment_val_eqOn hU x y)
+  exact contMDiffOn_iff_contDiffOn.mpr (AffineMap.contDiff_lineMap _ _).contDiffOn
+
+end TopologicalSpace.Opens

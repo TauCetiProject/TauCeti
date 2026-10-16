@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Limits
 public import TauCeti.GroupTheory.QuotientGroup.Map
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The finite-quotient system of a group cohomology tower
@@ -180,8 +180,8 @@ theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
 the transition map `G ⧸ V → G ⧸ U` after `G → G ⧸ V`. -/
 @[simp]
 theorem continuousFiniteQuotientMap_comp_quotientMk (hVU : V ≤ U) :
-    (continuousFiniteQuotientMap G hVU).comp (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-      ContinuousMonoidHom.quotientMk U.toSubgroup := by
+    (continuousFiniteQuotientMap G hVU).comp (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) =
+      Subgroup.quotientMkContinuousMonoidHom U.toSubgroup := by
   ext g
   simp
 

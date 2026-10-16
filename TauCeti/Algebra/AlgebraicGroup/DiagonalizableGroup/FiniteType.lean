@@ -28,11 +28,10 @@ characters. When the base ring has connected prime spectrum, every coordinate Ho
 morphism arises uniquely from a character-group homomorphism, so the coordinate-ring functor
 is fully faithful.
 
-This advances the reductive-groups roadmap Layer 4 target constructing the anti-equivalence
-between finitely generated abelian groups and diagonalizable groups. It supplies the
-finite-type source and the coordinate-algebra functor, which is full and faithful over a base
-with connected prime spectrum. It does not prove essential surjectivity, construct the
-scheme-side functor, or depend on the general Hopf-algebra/affine-group-scheme anti-equivalence.
+This file supplies the finite-type source and the coordinate-algebra functor, which is full and
+faithful over a base with connected prime spectrum. It does not prove essential surjectivity,
+construct the scheme-side functor, or depend on the general Hopf-algebra/affine-group-scheme
+anti-equivalence.
 
 ## Main declarations
 
@@ -107,9 +106,9 @@ the contravariant point map given by precomposition of characters. -/
 theorem mapPointsFunctor_coordinateMap_app {G H : FGCommGrpCat.{v}} (φ : G ⟶ H)
     (A : CommAlgCat.{w} R)
     (p : HopfAlgebra.points (R := R) (H := MonoidAlgebra R H) A) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap R φ).hom).app A p =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R φ).hom).app A p =
       pointsMap (FGCommGrpCat.toMonoidHom φ) p := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, pointsMap_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, pointsMap_apply]
   exact congrArg (fun f => WithConv.toConv (p.ofConv.comp f))
     (congrArg BialgHom.toAlgHom (toBialgHom_coordinateMap R φ))
 

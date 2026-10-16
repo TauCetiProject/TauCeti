@@ -34,6 +34,9 @@ FONT_FAMILY = "'Helvetica Neue',Helvetica,Arial,'Liberation Sans',sans-serif"
 # Scale design-space font sizes with each SVG's viewBox so all cards have the same
 # perceived type size when CSS fits them to the page column.
 REFERENCE_WIDTH = 980
+# Design-space sizes of a chart's title and subtitle, which layouts beneath them build on.
+TITLE_SIZE = 19
+SUBTITLE_SIZE = 13
 
 # Distinct on the navy background; tools may assign these by order or stable hash.
 PALETTE = [
@@ -56,8 +59,8 @@ def base_css(width: int) -> str:
     """Shared typography, ticks, grid, and axes for one chart width."""
     return (
         f"text{{font-family:{FONT_FAMILY};fill:{TEXT}}}"
-        f".title{{font-size:{css_px(width, 19)};font-weight:600}}"
-        f".subtitle{{font-size:{css_px(width, 13)};fill:{MUTED}}}"
+        f".title{{font-size:{css_px(width, TITLE_SIZE)};font-weight:600}}"
+        f".subtitle{{font-size:{css_px(width, SUBTITLE_SIZE)};fill:{MUTED}}}"
         f".tick{{font-size:{css_px(width, 12)};fill:{MUTED}}}"
         f".grid{{stroke:{GRID};stroke-width:{svg_unit(width, 1)}}}"
         f".axis{{stroke:{AXIS};stroke-width:{svg_unit(width, 1)}}}"

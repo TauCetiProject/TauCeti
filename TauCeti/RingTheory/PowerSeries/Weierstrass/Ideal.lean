@@ -94,7 +94,7 @@ theorem IsDistinguished.span_singleton_eq_of_forall_le (hc : 0 < c)
     (hmin : ∀ g ∈ I, ∀ t, IsDistinguished c t (g : PowerSeries K) → s ≤ t) :
     Ideal.span {f} = I := by
   refine le_antisymm (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hfI)) fun g hg ↦ ?_
-  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc g
+  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc hf.coeff_ne_zero.isUnit g
   have hrI : r ∈ I := by
     have hrsub : r = g - q * f := by rw [← hqr]; ring
     rw [hrsub]
@@ -147,7 +147,8 @@ theorem exists_isMonicOfDegree_span_singleton_eq (hc : 0 < c)
   have hf0 : (f : PowerSeries K) ≠ 0 := fun h ↦
     hI (hf.trans (Ideal.span_singleton_eq_bot.mpr (by simpa using h)))
   obtain ⟨n, hn⟩ := exists_isDistinguished hc f.2 hf0
-  obtain ⟨e, ω, he, hω, heω⟩ := hn.exists_isUnit_isMonicOfDegree_mul_eq hc f.2
+  obtain ⟨e, ω, he, hω, heω⟩ :=
+    hn.exists_isUnit_isMonicOfDegree_mul_eq hn.coeff_ne_zero.isUnit hc f.2
   have hωmem : ((ω : PowerSeries K)).IsRestricted c :=
     isRestricted_of_forall_coeff_eq_zero (n := ω.natDegree + 1) fun m hm ↦ by
       rw [Polynomial.coeff_coe]

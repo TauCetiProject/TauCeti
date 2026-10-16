@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Ideal
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
 # The Lie algebra of the kernel of an affine group morphism
@@ -66,7 +67,6 @@ private noncomputable def counitCoefficientEquiv :
     (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toLinearEquiv
 
 /-- The coefficient identification is the identity after forgetting its Hopf-algebra index. -/
-@[simp]
 private theorem counitCoefficientEquiv_apply
     (b : Bialgebra.CounitAlgebra R K B) :
     Bialgebra.CounitAlgebra.algEquivSelf R H B (counitCoefficientEquiv b) =
@@ -106,10 +106,13 @@ theorem derivationComp_eq_zero_iff_vanishes_kernelHopfIdeal (f : H ⟶ K)
     rw [kernelHopfIdeal_toIdeal, Ideal.map] at hx
     apply Derivation.apply_eq_zero_of_mem_span d (x := x) (S := f.hom ''
       ((HopfIdeal.augmentation R H).toIdeal : Set H)) _ _ hx
-    · rintro _ ⟨y, hy, rfl⟩
+    · rintro _ ⟨y, hy, rfl⟩ m
       have hyε : Coalgebra.counit (R := R) y = 0 :=
         (HopfIdeal.mem_augmentation R H).mp (HopfIdeal.mem_toIdeal.mp hy)
-      simpa using (CoalgHomClass.counit_comp_apply f.hom y).trans hyε
+      have hfyε : Coalgebra.counit (R := R) (f.hom y) = 0 :=
+        (CoalgHomClass.counit_comp_apply f.hom y).trans hyε
+      apply (Bialgebra.CounitAlgebra.algEquivSelf R K B).injective
+      simp only [Bialgebra.CounitAlgebra.algEquivSelf_smul, hfyε, map_zero, zero_mul]
     · rintro _ ⟨y, _, rfl⟩
       have hvalue := DFunLike.congr_fun hcomp y
       rw [derivationComp_apply_eq_counitCoefficientEquiv] at hvalue

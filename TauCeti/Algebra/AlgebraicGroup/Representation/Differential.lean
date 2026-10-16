@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
 # Differentiating a comodule representation
@@ -15,7 +17,9 @@ public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 A right comodule over a commutative bialgebra carries a representation of its tangent
 Lie algebra at the identity. A counit-valued derivation acts by contraction of the coaction.
 This is the infinitesimal part of the existing action on dual-number points, and comodule
-morphisms intertwine the differentiated actions.
+morphisms intertwine the differentiated actions, and subcomodules are stable under them.
+Pairing the differentiated action with a functional recovers the tangent vector applied to the
+corresponding matrix coefficient.
 
 The construction works over any commutative ring, for comodules of arbitrary rank, without
 smoothness or an antipode. For coordinate Hopf algebras it differentiates rational group
@@ -114,3 +118,45 @@ theorem snd_endOfPoint_derivationToDualNumberEquivLift
       TensorProduct.lid_tmul, LinearMap.tensorComponent_tmul]
 
 end TauCeti.Comodule
+
+namespace Derivation
+
+open TauCeti
+
+variable {R H M : Type*} [CommRing R] [CommRing H] [Bialgebra R H]
+variable [AddCommGroup M] [Module R M] [Comodule R H M]
+
+/-- A tangent vector at the identity, applied to a matrix coefficient `c(φ, m)`, is the
+functional `φ` applied to the differentiated action of the tangent vector on `m`. -/
+theorem apply_matrixCoefficient (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (φ : Module.Dual R M) (m : M) :
+    Bialgebra.CounitAlgebra.algEquivSelf R H R
+        (d (Comodule.matrixCoefficient (R := R) (C := H) φ m)) =
+      φ (Comodule.differential (R := R) (H := H) (M := M) d m) := by
+  rw [Comodule.differential_apply, Comodule.matrixCoefficient_def]
+  induction Comodule.coact (R := R) (C := H) (M := M) m with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul n h =>
+    simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.lid_tmul, map_smul,
+      LinearMap.tensorComponent_tmul, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+      Derivation.coeFn_coe]
+    rw [LinearMap.map_smul_of_tower φ, smul_eq_mul, mul_comm]
+    -- The scalar action on the counit synonym is that of `R` on itself; the coefficient
+    -- identification is `R`-linear for it.
+    exact (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearEquiv.map_smul (φ n) (d h)
+
+end Derivation
+
+namespace TauCeti.Subcomodule
+
+variable {R H M : Type*} [CommRing R] [CommRing H] [Bialgebra R H]
+variable [AddCommGroup M] [Module R M] [Comodule R H M]
+
+/-- A subcomodule is stable under the differentiated action of every tangent vector. -/
+theorem differential_mem (N : Subcomodule R H M)
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) {m : M} (hm : m ∈ N) :
+    Comodule.differential (R := R) (H := H) (M := M) d m ∈ N := by
+  rw [Comodule.differential_apply, LinearMap.tensorComponent_def]
+  exact N.rid_lTensor_coact_mem _ hm
+
+end TauCeti.Subcomodule

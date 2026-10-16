@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Correspondence
+public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Measurable
 import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
@@ -21,6 +22,13 @@ joint sampling laws against one mixing measure on graphon space, and that mixing
 unique. This is the integral form of the Diaconis–Janson correspondence; its finite-window form
 is `mixtureExchangeableLaw`.
 
+A random graphon, given as a family of graphons over a probability space of parameters whose class
+depends almost-everywhere measurably on the parameter, produces such a mixture directly: sample
+the parameter, then run the joint sampler of the graphon it selects. The mixing measure of that
+law is the law of the class of the random graphon, carried into the unit-interval graphon space
+by `toGraphonSpaceI`; for graphons on the unit interval it is the law of the class itself. A
+jointly measurable family of graphons has a measurable class (`measurable_graphonSpace_mk`).
+
 ## Main results
 
 * `TauCeti.DenseGraphLimits.exchangeableGraphLawEquivInfinite_mixtureExchangeableLaw_law` — the
@@ -29,7 +37,12 @@ is `mixtureExchangeableLaw`.
 * `TauCeti.DenseGraphLimits.graphonMixtureLawEquiv_law` — the law attached to a mixing measure is
   the integral of the joint sampling laws against it;
 * `TauCeti.DenseGraphLimits.InfiniteExchangeableGraphLaw.existsUnique_bind_infiniteSampleLawOnSpace`
-  — every exchangeable law on infinite graphs is such an integral, for exactly one mixing measure.
+  — every exchangeable law on infinite graphs is such an integral, for exactly one mixing measure;
+* `TauCeti.DenseGraphLimits.bind_map_graphonSpace_mk_infiniteSampleLawOnSpace` — mixing over the
+  class of a random graphon is mixing over its representatives;
+* `TauCeti.DenseGraphLimits.graphonMixtureLawEquiv_symm_eq_map` — the mixing measure of a mixture
+  of joint sampling laws over a random graphon is the law of the class of that random graphon in
+  the unit-interval graphon space.
 
 ## References
 
@@ -86,6 +99,46 @@ theorem InfiniteExchangeableGraphLaw.existsUnique_bind_infiniteSampleLawOnSpace
   · refine graphonMixtureLawEquiv.injective ?_
     rw [Equiv.apply_symm_apply]
     exact InfiniteExchangeableGraphLaw.ext (by rw [graphonMixtureLawEquiv_law, hQ])
+
+section RandomGraphon
+
+variable {T : Type*} [MeasurableSpace T]
+
+/-- **Mixing over a random graphon.** For a measure `ν` on parameters and a family of graphons `W`
+whose class is `ν`-almost-everywhere measurable in the parameter, mixing the descended joint
+sampling laws against the law of the class of `W t` is mixing the joint sampling laws of the
+graphons `W t` against `ν`. -/
+theorem bind_map_graphonSpace_mk_infiniteSampleLawOnSpace (ν : Measure T) {W : T → Graphon Ω μ}
+    (hW : AEMeasurable (fun t => (SeparationQuotient.mk (W t) : GraphonSpace Ω μ)) ν) :
+    (ν.map fun t => SeparationQuotient.mk (W t)).bind infiniteSampleLawOnSpace =
+      ν.bind fun t => infiniteSampleLaw (W t) := by
+  rw [TauCeti.MeasureTheory.bind_map hW measurable_infiniteSampleLawOnSpace.aemeasurable]
+  simp only [Function.comp_def, infiniteSampleLawOnSpace_mk]
+
+/-- **The mixing measure of a random graphon.** If an exchangeable law on infinite graphs is the
+mixture, against a probability measure `ν`, of the joint sampling laws of a family `W` of graphons
+whose class is `ν`-almost-everywhere measurable in the parameter, then the mixing measure the
+Diaconis–Janson correspondence assigns to it is the law under `ν` of the class of `W t` in the
+unit-interval graphon space. For graphons on the unit interval, `toGraphonSpaceI_eq_self` removes
+the embedding. -/
+theorem graphonMixtureLawEquiv_symm_eq_map (L : InfiniteExchangeableGraphLaw)
+    (ν : ProbabilityMeasure T) {W : T → Graphon Ω μ}
+    (hW : AEMeasurable (fun t => (SeparationQuotient.mk (W t) : GraphonSpace Ω μ)) ν)
+    (hL : L.law = (ν : Measure T).bind fun t => infiniteSampleLaw (W t)) :
+    graphonMixtureLawEquiv.symm L =
+      ν.map fun t => toGraphonSpaceI (SeparationQuotient.mk (W t)) := by
+  rw [Equiv.symm_apply_eq]
+  refine InfiniteExchangeableGraphLaw.ext ?_
+  simp only [toGraphonSpaceI_mk]
+  rw [hL, graphonMixtureLawEquiv_law, ProbabilityMeasure.toMeasure_map,
+    bind_map_graphonSpace_mk_infiniteSampleLawOnSpace _
+      (by simpa only [Function.comp_def, toGraphonSpaceI_mk] using
+        isometry_toGraphonSpaceI.continuous.measurable.comp_aemeasurable hW)]
+  congr 1
+  funext t
+  exact infiniteSampleLaw_eq_of_cutDist_eq_zero _ _ (Graphon.cutDist_unitIntervalRepr _)
+
+end RandomGraphon
 
 end DenseGraphLimits
 

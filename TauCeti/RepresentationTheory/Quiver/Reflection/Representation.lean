@@ -389,7 +389,6 @@ private theorem reflectRepMapApp_self
   · rename_i h
     exact (h rfl).elim
 
-@[simp]
 private theorem reflectRepMapApp_of_ne
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSink i)
     {j : Reflect Q i} (hj : j ≠ i) :
@@ -401,34 +400,8 @@ private theorem reflectRepMapApp_of_ne
 
 /-! The components of the reflected morphism are transports of components of the original one, so
 every identity about them is an identity of the original conjugated by `eqToHom`. The general
-transport API is in `TauCeti.CategoryTheory.EqToHom`; the next three private lemmas specialize it
-to the identities, compositions, and sums used to construct the reflection functor. -/
-
-/-- A conjugated identity is the identity. -/
-private theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
-    (f : Y ⟶ Y) (hf : f = 𝟙 Y) : eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
-  subst h
-  simp [hf]
-
-/-- Conjugation distributes over composition. -/
-private theorem eqToHom_conjugate_eq_comp {C : Type*} [Category* C] {X X' Y Y' Z Z' : C}
-    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z')
-    (hf : f = g ≫ h) :
-    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
-      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
-  subst hX
-  subst hY
-  subst hZ
-  simp [hf]
-
-/-- Conjugation by object equalities is additive. -/
-private theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] {X X' Y Y' : C}
-    (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hfgh : f = g + h) :
-    eqToHom hX ≫ f ≫ eqToHom hY
-      = (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
-  subst hX
-  subst hY
-  simp [hfgh]
+transport API is in `TauCeti.CategoryTheory.EqToHom`, including the conjugation rules for the
+identities, compositions, and sums used to construct the reflection functor. -/
 
 /-- The components of the reflected morphism are natural for every arrow of the reflected
 quiver. -/
@@ -534,6 +507,39 @@ instance reflectionFunctor_additive (i : Q) (hi : IsSink i) :
     · rw [reflectRepMapApp_of_ne _ _ hj, reflectRepMapApp_of_ne _ _ hj,
         reflectRepMapApp_of_ne _ _ hj]
       exact eqToHom_conjugate_add _ _ rfl
+
+/-- The BGP reflection functor preserves scalar multiplication on morphisms. -/
+instance reflectionFunctor_linear (i : Q) (hi : IsSink i) :
+    (reflectionFunctor.{u, v, w, x} (k := k) i hi).Linear k where
+  map_smul {X Y} η r := by
+    apply NatTrans.ext
+    funext j
+    classical
+    rw [NatTrans.app_smul, reflectionFunctor_map_app (r • η) hi j,
+      reflectionFunctor_map_app η hi j]
+    by_cases hj : j = i
+    · subst j
+      rw [reflectRepMapApp_self, reflectRepMapApp_self]
+      have hker : incomingKerMap (r • η) i = r • incomingKerMap η i := by
+        ext f e
+        rfl
+      rw [hker]
+      have h := (Linear.homCongr k (eqToIso (reflectRep_obj_self X hi)).symm
+        (eqToIso (reflectRep_obj_self Y hi)).symm).map_smul r
+          (ModuleCat.ofHom (incomingKerMap η i))
+      simp only [Linear.homCongr_apply, Iso.symm_inv, Iso.symm_hom, eqToIso.hom,
+        eqToIso.inv, Category.assoc] at h
+      -- The component API identifies the functor objects and the transported module morphisms.
+      convert h using 1
+      rfl
+    · rw [reflectRepMapApp_of_ne _ _ hj, reflectRepMapApp_of_ne _ _ hj]
+      have h := (Linear.homCongr k (eqToIso (reflectRep_obj_of_ne X hi hj)).symm
+        (eqToIso (reflectRep_obj_of_ne Y hi hj)).symm).map_smul r (η.app j)
+      simp only [Linear.homCongr_apply, Iso.symm_inv, Iso.symm_hom, eqToIso.hom,
+        eqToIso.inv, Category.assoc] at h
+      -- The component API identifies the functor objects and the transported module morphisms.
+      convert h using 1
+      rfl
 
 /-- Unfolding `TauCeti.reflectionFunctor` on objects. The body of the functor is not exposed
 outside this module, so the public `TauCeti.reflectionFunctor_obj` below cannot itself be proved

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
+public import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
+public import Mathlib.Algebra.Field.ZMod
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
@@ -19,8 +21,9 @@ closed subgroup of `GL₂₆`. Their coordinate algebras are scalar extensions o
 algebra and a Laurent polynomial algebra, respectively, so each has connected spectrum.
 The common-kernel construction then preserves connectedness of the generated subgroup.
 
-This supplies a geometric property of the generated subgroup needed when comparing the
-short-root carrier with a pinned simply connected type-`F₄` group scheme.
+Since this generated subgroup is the scalar extension of the prime-field carrier, the carrier
+itself is geometrically connected
+(`TauCeti.F4ShortRoot.PrimeField.geometricallyConnectedCommHopfAlgProperty_quotient_definingIdeal`).
 
 ## References
 
@@ -57,5 +60,14 @@ theorem geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra
   rw [generatedCoordinateHopfAlgebra_def, generatedDefiningIdeal_def]
   exact CommHopfAlgCat.geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient
     (baseChangeGenerator k) (connectedSpace_baseChangeGeneratorCodomain k)
+
+/-- **The short-root type-`F₄` carrier over `𝔽₂` is geometrically connected.** -/
+theorem geometricallyConnectedCommHopfAlgProperty_quotient_definingIdeal :
+    geometricallyConnectedCommHopfAlgProperty (ZMod 2)
+      (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26) definingIdeal) :=
+  geometricallyConnectedCommHopfAlgProperty.of_baseChange (ZMod 2) (AlgebraicClosure (ZMod 2)) _
+    ((geometricallyConnectedCommHopfAlgProperty _).prop_of_iso
+      (coordinateHopfAlgebraGeneratedIso _).symm
+      (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra _))
 
 end TauCeti.F4ShortRoot.PrimeField

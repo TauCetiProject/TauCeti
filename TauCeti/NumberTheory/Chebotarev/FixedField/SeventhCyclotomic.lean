@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 public import TauCeti.NumberTheory.NumberField.Frobenius.Tower
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.SeventhCyclotomic
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.SeventhCyclotomic.Quadratic
+import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
@@ -16,8 +17,9 @@ import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 # Frobenius at three in the seventh cyclotomic field
 
 The residue of three generates the units modulo seven. Its square generates the subgroup fixing
-the quadratic intermediate field. At a prime above three, restriction to that field has residue
-degree two, and the relative Frobenius is the square of the absolute Frobenius. In particular the
+the quadratic intermediate field, identified by its Gaussian-period generator with `ℚ(√-7)`.
+At a prime above three, restriction to that field has residue degree two, and the relative
+Frobenius is the square of the absolute Frobenius. In particular the
 relative Frobenius has order three, not six. This gives a concrete check on the power in the
 Frobenius tower law.
 
@@ -66,6 +68,19 @@ theorem isArithFrobAt_frobeniusThreeSeven
   have hm := seven_not_mem_of_absNorm_three 𝔭 h𝔭
   apply (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hm Q _).2
   simp [h𝔭]
+
+/-- At a prime above three, the unpowered restriction of the absolute Frobenius is an
+arithmetic Frobenius of `ℚ(√-7)/ℚ`. Its action on the square-root generator is negation,
+by `restrictNormal_frobeniusThreeSeven_apply_sqrtNegSeven`. -/
+theorem isArithFrobAt_restrictNormal_frobeniusThreeSeven
+    (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    (h𝔭 : Ideal.absNorm 𝔭.asIdeal = 3)
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
+    IsArithFrobAt (𝓞 ℚ)
+      ((frobeniusThreeSeven (L := L)).restrictNormal
+        (seventhCyclotomicQuadraticSubfield (L := L)))
+      (Q.under (𝓞 (seventhCyclotomicQuadraticSubfield (L := L)))) :=
+  (isArithFrobAt_frobeniusThreeSeven 𝔭 h𝔭 Q).restrictNormal
 
 /-- At a prime above three, the prime below it in the quadratic fixed field has residue degree
 two over `ℚ`. -/

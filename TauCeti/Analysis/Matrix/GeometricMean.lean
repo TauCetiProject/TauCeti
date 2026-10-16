@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.GeometricMean
 
+import TauCeti.Analysis.Matrix.Sqrt
+
 /-!
 # The positive semidefinite solution of `A * S * A = T`
 
@@ -34,6 +36,10 @@ reversed equation.
   geometric mean is Hermitian, and this one is positive definite when `T` is.
 * `Matrix.PosDef.mul_mul_conjTranspose_geometricMean`: the solution satisfies `A * S * Aᴴ = T`.
 * `Matrix.PosDef.inv_geometricMean_ringInverse`: reversing `S` and `T` inverts the solution.
+* `Matrix.PosDef.trace_geometricMean_ringInverse_mul`: the cross trace of the solution is the
+  trace of the square root of the covariance sandwich.
+* `Matrix.PosDef.trace_one_sub_geometricMean_ringInverse_mul_mul_conjTranspose`: the trace of
+  the covariance left by subtracting the standard positive map.
 -/
 
 public section
@@ -109,6 +115,42 @@ theorem PosDef.mul_mul_conjTranspose_geometricMean (hS : S.PosDef) (hT : T.PosSe
     geometricMean S⁻¹ʳ T * S * (geometricMean S⁻¹ʳ T)ᴴ = T := by
   rw [isHermitian_geometricMean.eq,
     geometricMean_ringInverse_mul_mul_geometricMean_ringInverse hS.isStrictlyPositive hT.nonneg]
+
+/-- An algebraic trace identity for `geometricMean S⁻¹ʳ T`. When `T` is positive semidefinite,
+the geometric mean is the standard positive solution and the right-hand side is the trace of the
+positive square root of the covariance sandwich. -/
+theorem PosDef.trace_geometricMean_ringInverse_mul (hS : S.PosDef) :
+    (geometricMean S⁻¹ʳ T * S).trace =
+      (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace := by
+  rw [← hS.posSemidef.trace_sqrt_mul_mul_sqrt (geometricMean S⁻¹ʳ T),
+    hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt]
+  set R := CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)
+  set Q := CFC.sqrt S
+  have hQ : IsUnit Q := hS.isStrictlyPositive.isUnit_cfcSqrt S
+  let _ : Invertible Q := hQ.invertible
+  rw [Matrix.mul_assoc, Matrix.trace_mul_comm Q ((Q⁻¹ * R * Q⁻¹) * Q)]
+  simpa only [Matrix.mul_assoc, Matrix.inv_mul_of_invertible, Matrix.one_mul] using
+    Matrix.trace_conj' hQ R
+
+/-- The trace of the covariance transformed by `1 - A`, for the standard positive solution
+`A * S * A = T`, is the Bures covariance expression. -/
+theorem PosDef.trace_one_sub_geometricMean_ringInverse_mul_mul_conjTranspose (hS : S.PosDef)
+    (hT : T.PosSemidef) :
+    ((1 - geometricMean S⁻¹ʳ T) * S * (1 - geometricMean S⁻¹ʳ T)ᴴ).trace =
+      S.trace + T.trace -
+        2 * (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace := by
+  set A := geometricMean S⁻¹ʳ T
+  have hA : A.IsHermitian := isHermitian_geometricMean
+  have hASA : A * S * Aᴴ = T := hS.mul_mul_conjTranspose_geometricMean hT
+  have hcross : (A * S).trace =
+      (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace :=
+    hS.trace_geometricMean_ringInverse_mul
+  have hexpand : (1 - A) * S * (1 - A)ᴴ = S - A * S - S * Aᴴ + A * S * Aᴴ := by
+    rw [Matrix.conjTranspose_sub, Matrix.conjTranspose_one]
+    noncomm_ring
+  rw [hexpand, Matrix.trace_add, Matrix.trace_sub, Matrix.trace_sub, hASA, hA.eq,
+    Matrix.trace_mul_comm S A, hcross]
+  ring
 
 /-- **Reversing the equation inverts the solution.** The solution of `A * S * A = T`, inverted, is
 the solution of `B * T * B = S`: the geometric mean commutes with inversion and is symmetric in

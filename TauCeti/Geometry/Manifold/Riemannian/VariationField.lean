@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 
@@ -97,7 +98,7 @@ theorem hasDerivAt_inner_variationField_curveVelocity {t : ℝ}
       (inner ℝ (alongCurve (leviCivitaConnection I M) (F 0) (variationField I F) t)
           (curveVelocity I (F 0) t) +
         inner ℝ (variationField I F t)
-          (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t)) t := by
+          (acceleration (leviCivitaConnection I M) (F 0) t)) t := by
   have hbase : F 0 t ∈ (trivializationAt E (TangentSpace I) (F 0 t)).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 t)
   have hVcoord := hf.differentiableAt_sectionCoord_curveVelocity_fst (f := F) hbase
@@ -106,7 +107,7 @@ theorem hasDerivAt_inner_variationField_curveVelocity {t : ℝ}
   obtain ⟨u, hu, hγu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγt
   have hγcoord := differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := F 0)
     (hγu.mono interior_subset) isOpen_interior (mem_interior_iff_mem_nhds.mpr hu)
-  rw [variationField_def]
+  rw [variationField_def, acceleration_def]
   exact (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
     |>.hasDerivAt_inner_alongCurve (hγt.mdifferentiableAt two_ne_zero) hVcoord hγcoord
 

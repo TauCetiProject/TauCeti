@@ -8,17 +8,20 @@ module
 public import Mathlib.Algebra.QuaternionBasis
 
 /-!
-# Quaternion bases with commuting generators
+# Quaternion bases: anticommutators and commuting generators
 
 Mathlib's `QuaternionAlgebra.Basis A c₁ c₂ c₃` records elements `i j k` of an `R`-algebra `A`
 satisfying the relations of `ℍ[R,c₁,c₂,c₃]`, and `QuaternionAlgebra.Basis.liftHom` is the
-algebra map `ℍ[R,c₁,c₂,c₃] →ₐ[R] A` they induce. This file shows that two such bases of the same
+algebra map `ℍ[R,c₁,c₂,c₃] →ₐ[R] A` they induce. This file computes the anticommutators of the
+generators `i j k`, which vanish when `c₂ = 0`, and shows that two such bases of the same
 algebra whose generators commute pairwise induce algebra maps with commuting images. That is the
 hypothesis `Algebra.TensorProduct.lift` needs to assemble the two maps into one out of the tensor
 product, as `TauCeti/Algebra/Quaternion/TensorProduct.lean` does for the common slot lemma.
 
 ## Main results
 
+* `QuaternionAlgebra.Basis.i_mul_j_add_j_mul_i`, `QuaternionAlgebra.Basis.i_mul_k_add_k_mul_i`,
+  and `QuaternionAlgebra.Basis.j_mul_k_add_k_mul_j`: the anticommutators of the generators.
 * `QuaternionAlgebra.Basis.commute_liftHom`: two quaternion bases of one algebra whose generators
   commute pairwise induce commuting algebra maps.
 -/
@@ -30,6 +33,19 @@ open scoped Quaternion
 namespace QuaternionAlgebra.Basis
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {c₁ c₂ c₃ d₁ d₂ d₃ : R}
+
+/-- The anticommutator of the generators `i` and `j` of a quaternion basis. -/
+theorem i_mul_j_add_j_mul_i (q : Basis A c₁ c₂ c₃) : q.i * q.j + q.j * q.i = c₂ • q.j := by
+  rw [q.i_mul_j, q.j_mul_i, add_sub_cancel]
+
+/-- The anticommutator of the generators `i` and `k` of a quaternion basis. -/
+theorem i_mul_k_add_k_mul_i (q : Basis A c₁ c₂ c₃) : q.i * q.k + q.k * q.i = c₂ • q.k := by
+  rw [q.i_mul_k, q.k_mul_i, neg_smul, add_neg_cancel_comm]
+
+/-- The anticommutator of the generators `j` and `k` of a quaternion basis. -/
+theorem j_mul_k_add_k_mul_j (q : Basis A c₁ c₂ c₃) :
+    q.j * q.k + q.k * q.j = (c₂ * c₃) • 1 := by
+  rw [q.j_mul_k, q.k_mul_j, sub_add_cancel]
 
 /-- Two quaternion bases of the same algebra whose generators `i` and `j` commute pairwise induce
 commuting algebra maps out of the corresponding quaternion algebras. -/

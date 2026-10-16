@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Disc automorphisms are infinitesimal isometries of the Poincaré metric

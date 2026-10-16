@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Analysis.Contour.Winding.LocallyConstant
 public import TauCeti.Analysis.Contour.Winding.Vanishing
+public import TauCeti.Topology.FilledHull
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
 # The winding number on the unbounded component
@@ -18,8 +20,8 @@ set on which the far-field vanishing theorem gives no information. At that point
 number is zero, and componentwise constancy transports the value back to every point of the
 component.
 
-This proves the final part of the classical off-curve winding package in Layer 0 of the contour
-integration roadmap: the winding number is zero on the unbounded component.
+This proves the last part of the classical off-curve winding package: the winding number is zero on
+the unbounded component.
 
 ## Main results
 
@@ -27,6 +29,9 @@ integration roadmap: the winding number is zero on the unbounded component.
   every unbounded component of the curve complement.
 * `TauCeti.Contour.IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component` — the direct
   piecewise-`C¹` form.
+* `TauCeti.Contour.IsPiecewiseC1On.isNullHomologous_of_filledHull_subset` — every closed curve in a
+  set without holes, one whose complement has no bounded connected component, is null-homologous
+  there.
 
 ## References
 
@@ -42,6 +47,22 @@ open scoped Topology
 
 namespace TauCeti.Contour
 
+/-- A continuous curve with integrable derivative and integer indices has zero winding
+number on every unbounded component of its trace complement. -/
+theorem _root_.ContinuousOn.windingNumber_eq_zero_of_unbounded_component_of_integer
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : ContinuousOn γ (uIcc a b))
+    (hderiv : IntervalIntegrable (deriv γ) volume a b)
+    (hint : ∀ z, z ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b z = n)
+    {z : ℂ} (hz : ¬IsBounded (connectedComponentIn ((γ '' uIcc a b)ᶜ) z)) :
+    windingNumber γ a b z = 0 := by
+  obtain ⟨K, hK, hKgood⟩ := Filter.mem_cocompact.mp
+    (hγ.windingNumber_eventually_zero_cocompact_of_integer hderiv hint)
+  have hnot : ¬connectedComponentIn ((γ '' uIcc a b)ᶜ) z ⊆ K :=
+    fun hsubset ↦ hz (hK.isBounded.subset hsubset)
+  obtain ⟨w, hw, hwK⟩ := Set.not_subset.mp hnot
+  exact (hγ.windingNumber_eq_of_mem_connectedComponentIn_of_integer hderiv hint hw).symm.trans
+    (hKgood hwK).2
+
 /-- **The winding number vanishes on every unbounded component of the curve complement.**
 For a closed curve with the usual off-curve regularity, if the connected component of `w` in
 `ℂ \ γ '' [[a, b]]` is unbounded, then the winding number about `w` is zero. Unboundedness also
@@ -56,16 +77,10 @@ theorem windingNumber_eq_zero_of_unbounded_component {γ : ℝ → ℂ} {a b : �
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     {w : ℂ} (hcomp : ¬IsBounded (connectedComponentIn ((γ '' uIcc a b)ᶜ) w)) :
     windingNumber γ a b w = 0 := by
-  obtain ⟨K, hK_compact, hK_good⟩ :=
-    Filter.mem_cocompact.mp
-      (windingNumber_eventually_zero_cocompact hclosed hP hγ_cont hγ_diff hderiv_int)
-  have hnot_subset : ¬connectedComponentIn ((γ '' uIcc a b)ᶜ) w ⊆ K :=
-    fun hsubset ↦ hcomp (hK_compact.isBounded.subset hsubset)
-  obtain ⟨w', hw'_comp, hw'_notK⟩ := Set.not_subset.mp hnot_subset
-  have hw'_zero : windingNumber γ a b w' = 0 := (hK_good hw'_notK).2
-  exact
-    (windingNumber_eq_of_mem_connectedComponentIn hclosed hP hγ_cont hγ_diff hderiv_int
-      hw'_comp).symm.trans hw'_zero
+  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
+  exact hγ_cont.windingNumber_eq_zero_of_unbounded_component_of_integer hderiv_int
+    (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz) hcomp
 
 /-- **Piecewise-`C¹` form of vanishing on the unbounded component.** If the component of `w` in the
 complement of a closed piecewise-`C¹` curve is unbounded, its winding number about `w` is zero. The
@@ -117,5 +132,19 @@ theorem IsPiecewiseC1On.windingNumber_eq_zero_of_ray {γ : ℝ → ℂ} {a b : �
     simpa using norm_sub_le (w + (c : ℂ) * v) w
   rw [hnorm] at hge
   linarith
+
+/-- **A closed curve in a set without holes is null-homologous there.** If `filledHull U ⊆ U`,
+that is, if every connected component of `ℂ \ U` is unbounded, then every closed piecewise-`C¹`
+curve in `U` has winding number zero about every point outside `U`. For open `U`, the hypothesis
+is the plane form of the connectedness of the complement of `U` in the Riemann sphere. -/
+theorem IsPiecewiseC1On.isNullHomologous_of_filledHull_subset {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
+    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (hγU : MapsTo γ (uIcc a b) U)
+    (hU : filledHull U ⊆ U) : IsNullHomologous γ a b U := by
+  rw [isNullHomologous_iff]
+  intro w hw
+  refine hγ.windingNumber_eq_zero_of_unbounded_component hclosed fun hbdd => hw (hU ?_)
+  refine (mem_filledHull_iff (K := U)).2 (hbdd.subset (connectedComponentIn_mono w ?_))
+  rintro _ hx ⟨t, ht, rfl⟩
+  exact hx (hγU ht)
 
 end TauCeti.Contour

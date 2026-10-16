@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 public import TauCeti.RingTheory.Huber.Uniform
 
+import Mathlib.Topology.UniformSpace.CompleteSeparated
 import TauCeti.RingTheory.Adjoin.Inverse
 
 /-!

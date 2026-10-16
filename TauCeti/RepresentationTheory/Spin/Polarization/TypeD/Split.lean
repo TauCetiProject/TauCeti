@@ -86,7 +86,7 @@ the copy of the dual in the first, and there is no orthogonal remainder, so the 
 module is the exterior algebra on `n` generators. -/
 noncomputable def typeDSplitPolarization (n : ℕ) :
     SpinPolarizationData (QuadraticForm.dualProd ℚ (Fin n → ℚ)) :=
-  SpinPolarizationData.hyperbolic fun m h => (Module.forall_dual_apply_eq_zero_iff ℚ m).mp h
+  SpinPolarizationData.hyperbolic (Module.eval_apply_injective ℚ)
 
 /-- The exterior summand of the split model is the copy of `Fin n → ℚ`. -/
 @[simp]

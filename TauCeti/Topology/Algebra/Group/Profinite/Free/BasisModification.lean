@@ -44,6 +44,11 @@ up to `λ_{m+2}(F)`, and the commutator `⁅w_i, x_i⁆` lies in `λ_{m+1}(F)` a
 class in `gr_{m+1}(F)`. That term is the trace, in every degree, of the failure of additivity of
 `π` on `gr_0(F)` at `p = 2`.
 
+At level `m = 0`, where `θ_w` is an arbitrary continuous endomorphism of `F`, the class of
+`r⁻¹ * θ_w r` in `gr_1(F)` is still a function of the classes `ω_i ∈ gr_0(F)` alone, but a
+quadratic one; that map and its polarization identity are in
+`TauCeti.Topology.Algebra.Group.Profinite.Free.BasisModification.LevelZero`.
+
 The image of `δ` is the subspace of `gr_{m+1}(F)` that the successive-approximation arguments of
 the classification of Demushkin groups compare with `gr_{m+1}(F)`; there `m + 1` is the modulus of
 the normal-form congruence, and the classes `ω_i` are the level-`m` basis corrections.
@@ -1115,7 +1120,7 @@ private theorem range_basisModificationDelta_eq_top_of_forall_smul_gradedPow_add
           rw [map_sub, ← gradedBracketLinear_apply y₀ (φ u • y₀), map_smul,
             gradedBracketLinear_apply, gradedBracket_self, smul_zero, sub_zero]
         rw [← gradedPow_gradedBracket_left_zero_of_odd hp, hswap, ← e,
-          gradedPow_neg_of_one_le le_rfl, gradedPow_gradedBracket_left_zero_of_odd hp]
+          gradedPow_neg, gradedPow_gradedBracket_left_zero_of_odd hp]
         exact neg_mem (hker 1 le_rfl _ (hsplit u))
       have hππ (u : gradedPiece p (freeProP p X) 0) :
           gradedPow p (freeProP p X) 1 (gradedPow p (freeProP p X) 0 u) ∈
@@ -1336,7 +1341,7 @@ theorem range_basisModificationDelta_sup_gradedPowIterSpan_compl_eq_top_two (hm 
             (gradedMkZero 2 (freeProP 2 X) (of k))
           rw [gradedCast_rfl] at hswap
           rw [← neg_neg (gradedBracket 2 (freeProP 2 X) 0 0 _ _), ← hswap,
-            gradedPow_neg_of_one_le le_rfl]
+            gradedPow_neg]
           exact neg_mem (hgen k hk _)
         · exact hgen j hj _
     | succ m hm ih =>

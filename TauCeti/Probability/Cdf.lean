@@ -90,6 +90,13 @@ theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
     ((cdf ν).right_continuous x).rightLim_eq]
 
+/-- The mass of a bounded interval `Ioc a b` is the increment of the cumulative distribution
+function between its endpoints. -/
+theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ}
+    (hab : a ≤ b) : ν.real (Ioc a b) = cdf ν b - cdf ν a := by
+  rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
+    cdf_eq_real]
+
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/
 theorem cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν]

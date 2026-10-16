@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.ContinuousOn
-public import TauCeti.Analysis.Convex.Polyhedron
+public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
 # Piecewise-linear maps between real topological vector spaces
@@ -61,12 +61,14 @@ such a family of affine pieces.
   argument.
 * `TauCeti.IsPLOn.mono`, `TauCeti.IsPLOn.congr`, `TauCeti.isPLOn_of_locally`,
   `TauCeti.IsPLOn.comp`: the four closure properties a `Pregroupoid` property must have.
+* `ContinuousAffineMap.isPLOn_affineGraph`: the graph of a continuous affine map is piecewise
+  affine on every subset of its domain.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
 This is part of the structure-group track of layer 1 of the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`); the groupoid built from it lives in
-`TauCeti/Geometry/Manifold/PLGroupoid.lean`.
+`TauCeti/Geometry/Manifold/PLGroupoid/Basic.lean`.
 -/
 
 public section
@@ -85,6 +87,13 @@ on each of which the map `f` agrees with a continuous affine map. -/
 def IsPiecewiseAffineOn (f : E → F) (V : Set E) : Prop :=
   ∃ (n : ℕ) (C : Fin n → Set E) (A : Fin n → (E →ᴬ[ℝ] F)),
     (∀ i, IsConvexPolyhedron (C i)) ∧ V ⊆ ⋃ i, C i ∧ ∀ i, EqOn f (A i) (V ∩ C i)
+
+/-- The finite polyhedral decomposition characterizing piecewise affineness. -/
+theorem isPiecewiseAffineOn_iff :
+    IsPiecewiseAffineOn f V ↔
+      ∃ (n : ℕ) (C : Fin n → Set E) (A : Fin n → (E →ᴬ[ℝ] F)),
+        (∀ i, IsConvexPolyhedron (C i)) ∧ V ⊆ ⋃ i, C i ∧
+          ∀ i, EqOn f (A i) (V ∩ C i) := Iff.rfl
 
 /-- The constructor of `TauCeti.IsPiecewiseAffineOn` for a cover indexed by an arbitrary finite
 type, rather than by `Fin n`. -/
@@ -168,6 +177,10 @@ with a continuous affine map. -/
 def IsPLOn (f : E → F) (s : Set E) : Prop :=
   ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, IsPiecewiseAffineOn f V
 
+/-- The local finite-decomposition characterization of piecewise linearity. -/
+theorem isPLOn_iff :
+    IsPLOn f s ↔ ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, IsPiecewiseAffineOn f V := Iff.rfl
+
 /-- A piecewise affine map is piecewise linear on the set carrying its decomposition. -/
 theorem IsPiecewiseAffineOn.isPLOn (h : IsPiecewiseAffineOn f V) : IsPLOn f V :=
   fun _ _ => ⟨V, self_mem_nhdsWithin, h⟩
@@ -175,6 +188,16 @@ theorem IsPiecewiseAffineOn.isPLOn (h : IsPiecewiseAffineOn f V) : IsPLOn f V :=
 /-- A continuous affine map is piecewise linear on every set. -/
 theorem isPLOn_continuousAffineMap (A : E →ᴬ[ℝ] F) (s : Set E) : IsPLOn (⇑A) s :=
   (isPiecewiseAffineOn_continuousAffineMap A s).isPLOn
+
+/-- The graph of a continuous affine map is piecewise affine on every subset of its domain. -/
+theorem _root_.ContinuousAffineMap.isPLOn_affineGraph
+    {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    (A : E →ᴬ[ℝ] F) (s : Set E) :
+    IsPLOn (fun x : E => (x, A x)) s := by
+  convert isPLOn_continuousAffineMap ((ContinuousAffineMap.id ℝ E).prod A) s using 1
+  funext x
+  rfl
 
 /-- The identity is piecewise linear on every set. -/
 theorem isPLOn_id (s : Set E) : IsPLOn (id : E → E) s :=
@@ -225,6 +248,39 @@ theorem IsPLOn.comp {t : Set F} (hg : IsPLOn g t) (hf : IsPLOn f s) (hst : s ⊆
   have hpre : f ⁻¹' W ∈ 𝓝[s] x := (hf.continuousOn x hx).tendsto_nhdsWithin hst hW
   exact ⟨V ∩ (s ∩ f ⁻¹' W), inter_mem hV (inter_mem self_mem_nhdsWithin hpre),
     hPAg.comp (hPAf.mono inter_subset_left) fun _ hy => hy.2.2⟩
+
+section AffineTransport
+
+variable {E' F' : Type*} [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
+  [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
+
+/-- Continuous affine extension and restriction transport PL maps to the image of a set.
+Only the domain restriction must undo its extension; the codomain map may be arbitrary. -/
+theorem IsPLOn.affine_transport (hf : IsPLOn f s)
+    (A : E →ᴬ[ℝ] E') (B : E' →ᴬ[ℝ] E) (C : F →ᴬ[ℝ] F')
+    (hBA : ∀ x ∈ s, B (A x) = x) : IsPLOn (C ∘ f ∘ B) (A '' s) := by
+  have hBs : A '' s ⊆ B ⁻¹' s := by
+    rintro _ ⟨x, hx, rfl⟩
+    simpa only [Set.mem_preimage, hBA x hx] using hx
+  exact (isPLOn_continuousAffineMap C Set.univ).comp
+    (hf.comp (isPLOn_continuousAffineMap B (A '' s)) hBs) (fun _ _ ↦ Set.mem_univ _)
+
+/-- PL regularity is preserved and reflected by continuous affine extensions with left
+inverses on the set and its image under the map under consideration. -/
+theorem isPLOn_affine_transport_iff
+    (A : E →ᴬ[ℝ] E') (B : E' →ᴬ[ℝ] E)
+    (C : F →ᴬ[ℝ] F') (D : F' →ᴬ[ℝ] F)
+    (hBA : ∀ x ∈ s, B (A x) = x) (hDC : ∀ x ∈ s, D (C (f x)) = f x) :
+    IsPLOn (C ∘ f ∘ B) (A '' s) ↔ IsPLOn f s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.affine_transport A B C hBA⟩
+  have hcomp := (isPLOn_continuousAffineMap D Set.univ).comp
+    (h.comp (isPLOn_continuousAffineMap A s) (fun x hx ↦ Set.mem_image_of_mem A hx))
+    (fun _ _ ↦ Set.mem_univ _)
+  refine hcomp.congr ?_
+  intro x hx
+  simp only [Function.comp_apply, hBA x hx, hDC x hx]
+
+end AffineTransport
 
 /-- A polyhedral cover of `s` on whose cells `f` is affine and which is *locally finite along `s`*
 — every point of `s` has a neighbourhood meeting only finitely many cells — makes `f` piecewise

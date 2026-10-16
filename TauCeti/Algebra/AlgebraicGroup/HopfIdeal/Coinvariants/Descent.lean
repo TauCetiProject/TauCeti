@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.BaseChange
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.RingTheory.Flat.Descent
 import TauCeti.RingTheory.TensorProduct.Descent
-import TauCeti.RingTheory.Flat.TensorProduct
+import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 /-!
 # Descent of faithful flatness over coinvariants

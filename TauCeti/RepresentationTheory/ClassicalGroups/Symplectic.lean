@@ -25,8 +25,6 @@ preserves it, and packages the resulting equivariant self-duality.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 0.
 * The equivariance, self-duality, and character constructions follow the formal template in
   `TauCeti.RepresentationTheory.ClassicalGroups.Orthogonal`.
 -/

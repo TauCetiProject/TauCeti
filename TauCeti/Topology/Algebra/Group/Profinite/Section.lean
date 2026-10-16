@@ -13,6 +13,7 @@ import Mathlib.Tactic.Group
 import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Topology.Algebra.ProperAction.Basic
 import Mathlib.Topology.Homeomorph.Lemmas
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Continuous sections of profinite quotients

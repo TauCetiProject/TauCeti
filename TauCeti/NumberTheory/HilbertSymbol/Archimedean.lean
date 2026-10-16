@@ -168,7 +168,7 @@ theorem prod_hilbertSymbol_realCliffordWeight (p q : ℕ) :
     simp only [Units.val_mk0, ← realCliffordForm_def]
     exact QuadraticMap.Equivalent.refl _
   rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
-    ← (_root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm p q).sigNeg_eq,
+    ← (TauCeti.equivalent_realSignatureForm_realCliffordForm p q).sigNeg_eq,
     _root_.QuadraticForm.sigNeg_realSignatureForm]
 
 end Real

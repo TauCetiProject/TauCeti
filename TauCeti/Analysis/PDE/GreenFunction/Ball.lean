@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 
 /-!
 # The Green kernel and the Poisson kernel of the Euclidean unit ball
@@ -27,14 +28,17 @@ is harmonic in `y` away from the pole and vanishes for `‖y‖ = 1`.  The corre
 through the identity `‖‖x‖ y - x / ‖x‖‖² = ‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1`, whose right-hand side is
 defined at `x = 0` as well, where the corrector is the constant value of `Φ` on the unit sphere.
 
-The outward normal derivative of `G(x, ·)` on the unit sphere is the negative of the **Poisson
-kernel** of the ball,
+Outside dimension two, the outward normal derivative of `G(x, ·)` on the unit sphere is the
+negative of the **Poisson kernel** of the ball,
 
 `K(x, y) = (1 - ‖x‖²) / (n ωₙ ‖x - y‖ⁿ)`,
 
 where `ωₙ` is the volume of the unit ball.  This is the boundary term of Green's representation
 formula on the ball, and the kernel of the Poisson integral solving the Dirichlet problem for the
-Laplacian there.
+Laplacian there.  For a boundary point `y`, the identity `1 - ‖x‖² = -(2 ⟪y, x - y⟫ + ‖x - y‖²)`
+writes `K(·, y)` as a combination of the dipole `⟪y, x - y⟫ ‖x - y‖⁻ⁿ` and the radial power
+`‖x - y‖^(2 - n)`, both harmonic away from `y`; so `K(·, y)` is harmonic in its pole away from
+`y`, in every dimension.
 
 The kernel is normalized for the negative Laplacian, as `TauCeti.newtonianKernel` is.  In
 dimension two that kernel vanishes identically, so the planar case is instead
@@ -52,8 +56,11 @@ dimension two that kernel vanishes identically, so the planar case is instead
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
 * `TauCeti.ballPoissonKernel`: the Poisson kernel of the unit ball.
+* `TauCeti.contDiffOn_ballPoissonKernel`: joint smoothness of the Poisson kernel off the diagonal.
+* `TauCeti.harmonicAt_ballPoissonKernel_left`, `TauCeti.harmonicOnNhd_ballPoissonKernel_left`:
+  for a boundary point `y`, the Poisson kernel is harmonic in its pole away from `y`.
 * `TauCeti.fderiv_ballGreenKernel_normal`: the outward normal derivative of the Green kernel on
-  the unit sphere is the negative Poisson kernel.
+  the unit sphere is the negative Poisson kernel outside dimension two.
 
 ## References
 
@@ -76,17 +83,7 @@ open scoped RealInnerProductSpace
 
 section Reflection
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- The squared length of `‖x‖ • y - x / ‖x‖`, which is `‖x‖ ‖y - x*‖` for the reflection
-`x* = x / ‖x‖²` of `x` through the unit sphere.  The right-hand side is a polynomial in `x` and
-`y`, defined at `x = 0` as well. -/
-theorem norm_sq_norm_smul_sub_inv_norm_smul {x : F} (hx : x ≠ 0) (y : F) :
-    ‖‖x‖ • y - ‖x‖⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1 := by
-  have hnorm : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
-  rw [norm_sub_sq_real, real_inner_smul_left, real_inner_smul_right, real_inner_comm x y]
-  simp only [norm_smul, Real.norm_eq_abs, abs_norm, abs_inv, mul_pow, inv_pow]
-  field_simp
+variable {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- The reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is at least `(1 - ‖x‖ ‖y‖)²`. -/
 theorem one_sub_norm_mul_norm_sq_le (x y : F) :
@@ -137,7 +134,8 @@ theorem ballGreenCorrector_comm (x y : EuclideanSpace ℝ (Fin n)) :
 theorem ballGreenCorrector_eq_newtonianKernel {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0)
     (y : EuclideanSpace ℝ (Fin n)) :
     ballGreenCorrector n x y = newtonianKernel n (‖x‖ • y - ‖x‖⁻¹ • x) := by
-  rw [ballGreenCorrector_def, newtonianKernel_def, ← norm_sq_norm_smul_sub_inv_norm_smul hx y,
+  rw [ballGreenCorrector_def, newtonianKernel_def,
+    ← norm_sq_norm_smul_sub_inv_norm_smul (norm_ne_zero_iff.mpr hx) y,
     norm_rpow_eq_norm_sq_rpow]
 
 /-- At the pole `x = 0`, the corrector is the constant value of the Newtonian kernel on the unit
@@ -193,7 +191,7 @@ theorem harmonicAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)}
       rw [ballGreenCorrector_eq_newtonianKernel hx, sub_eq_neg_add]
     have hne : -(‖x‖⁻¹ • x) + ‖x‖ • y ≠ 0 := by
       intro hzero
-      have hsq := norm_sq_norm_smul_sub_inv_norm_smul hx y
+      have hsq := norm_sq_norm_smul_sub_inv_norm_smul (norm_ne_zero_iff.mpr hx) y
       rw [sub_eq_neg_add, hzero, norm_zero] at hsq
       exact h.ne' (by simpa using hsq.symm)
     rw [hfun]
@@ -307,20 +305,21 @@ theorem harmonicAt_ballGreenKernel {x y : EuclideanSpace ℝ (Fin n)} (hxy : y �
   rw [ballGreenKernel_fun]
   exact (harmonicAt_newtonianKernel_sub n hxy).sub (harmonicAt_ballGreenCorrector h)
 
-/-- For a pole in the open unit ball, the Green kernel is harmonic on the punctured ball. -/
-theorem harmonicOnNhd_ballGreenKernel {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) :
+/-- For a pole in the closed unit ball, the Green kernel is harmonic on the punctured open ball. -/
+theorem harmonicOnNhd_ballGreenKernel {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1) :
     HarmonicOnNhd (ballGreenKernel n x) (ball (0 : EuclideanSpace ℝ (Fin n)) 1 \ {x}) := by
   intro y hy
   rw [Set.mem_sdiff, mem_ball_zero_iff, Set.mem_singleton_iff] at hy
-  exact harmonicAt_ballGreenKernel hy.2 (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos
-    ((mul_le_of_le_one_right (norm_nonneg x) hy.1.le).trans_lt hx).ne)
+  have hxy : ‖x‖ * ‖y‖ < 1 :=
+    (mul_le_of_le_one_left (norm_nonneg y) hx).trans_lt hy.1
+  exact harmonicAt_ballGreenKernel hy.2
+    (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos hxy.ne)
 
 /-- Outside dimension two, the Green kernel of the unit ball is positive inside the ball away
 from the pole. -/
 theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1)
     (hy : ‖y‖ < 1) (hxy : y ≠ x) :
     0 < ballGreenKernel n x y := by
-  have hω := volume_real_unitBall_pos n
   have hsub : 0 < ‖y - x‖ ^ 2 := by
     have : y - x ≠ 0 := sub_ne_zero.mpr hxy
     positivity
@@ -354,8 +353,9 @@ theorem hasFDerivAt_ballGreenKernel (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fi
 
 `K(x, y) = (1 - ‖x‖²) / (n ωₙ ‖x - y‖ⁿ)`,
 
-for `x` in the ball and `y` on the unit sphere; `ωₙ` is the volume of the unit ball.  It is the
-negative outward normal derivative of the Green kernel `ballGreenKernel n x` on the sphere. -/
+for `x` in the ball and `y` on the unit sphere; `ωₙ` is the volume of the unit ball.  Outside
+dimension two, it is the negative outward normal derivative of `ballGreenKernel n x` on the
+sphere. -/
 def ballPoissonKernel (n : ℕ) (x y : EuclideanSpace ℝ (Fin n)) : ℝ :=
   (1 - ‖x‖ ^ 2) /
     ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * ‖x - y‖ ^ n)
@@ -388,37 +388,37 @@ theorem ballPoissonKernel_pos_on_sphere (x : EuclideanSpace ℝ (Fin n)) (hx : �
   rw [h] at hx
   linarith
 
+/-- The Poisson kernel of the unit ball is smooth, jointly in the pole and the boundary variable,
+away from the diagonal. -/
+theorem contDiffOn_ballPoissonKernel {k : WithTop ℕ∞} :
+    ContDiffOn ℝ k (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) ↦
+      ballPoissonKernel n p.1 p.2) {p | p.1 ≠ p.2} := by
+  intro p hp
+  have hsub : p.1 - p.2 ≠ 0 := sub_ne_zero.mpr hp
+  have hn : (0 : ℝ) < n := by exact_mod_cast pos_of_ne_zero_euclideanSpace hsub
+  have hω := volume_real_unitBall_pos n
+  have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * ‖p.1 - p.2‖ ^ n ≠
+      0 := by
+    have := norm_pos_iff.mpr hsub
+    positivity
+  simp only [ballPoissonKernel_def]
+  refine ContDiffAt.contDiffWithinAt (ContDiffAt.div ?_ ?_ hden)
+  · exact contDiffAt_const.sub ((contDiff_norm_sq ℝ).contDiffAt.comp p contDiffAt_fst)
+  · exact contDiffAt_const.mul (((contDiffAt_norm ℝ hsub).comp p
+      (contDiffAt_fst.sub contDiffAt_snd)).pow n)
+
 /-- The Poisson kernel is continuous as a function of the boundary point when its pole
 lies off the unit sphere. -/
 theorem continuous_ballPoissonKernel_on_sphere
     (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ ≠ 1) :
     Continuous (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       ballPoissonKernel n x y) := by
-  rw [continuous_iff_continuousAt]
-  intro y
-  have hn : n ≠ 0 := by
-    intro hn
-    subst n
-    have hy : ‖(y : EuclideanSpace ℝ (Fin 0))‖ = 1 := norm_eq_of_mem_sphere y
-    have hy0 : (y : EuclideanSpace ℝ (Fin 0)) = 0 := Subsingleton.elim _ _
-    simp [hy0] at hy
-  have hxy : x ≠ (y : EuclideanSpace ℝ (Fin n)) := by
-    intro h
-    have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
-    rw [h] at hx
-    exact hx hy
-  have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
-      ‖x - (y : EuclideanSpace ℝ (Fin n))‖ ^ n ≠ 0 := by
-    have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-    have hvol := volume_real_unitBall_pos n
-    have hnorm : 0 < ‖x - (y : EuclideanSpace ℝ (Fin n))‖ :=
-      norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
-    positivity
-  simp only [ballPoissonKernel_def]
-  apply ContinuousAt.div
-  · fun_prop
-  · fun_prop
-  · exact hden
+  refine (contDiffOn_ballPoissonKernel (n := n) (k := 0)).continuousOn.comp_continuous
+    (f := fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
+      (x, (y : EuclideanSpace ℝ (Fin n))))
+    (continuous_const.prodMk continuous_subtype_val) ?_
+  intro y hxy
+  exact hx ((congrArg norm hxy).trans (norm_eq_of_mem_sphere y))
 
 /-- The Poisson kernel is integrable over any subset of the sphere when its pole
 lies off the sphere. -/
@@ -434,9 +434,51 @@ theorem integrableOn_ballPoissonKernel
         isCompact_univ
   exact hint.integrableOn
 
-/-- **The Poisson kernel is the normal derivative of the Green kernel.**  On the unit sphere, the
-derivative of the Green kernel with pole `x` off the sphere, taken in the direction of the outward
-unit normal `y`, is the negative of the Poisson kernel. -/
+/-- For a boundary point `y`, the Poisson kernel splits, away from `y`, into a dipole and a
+radial power centred at `y`, using `1 - ‖x‖² = -(2 ⟪y, x - y⟫ + ‖x - y‖²)` on the unit sphere. -/
+private theorem ballPoissonKernel_eq_of_norm_eq_one {x y : EuclideanSpace ℝ (Fin n)}
+    (hy : ‖y‖ = 1) (hxy : x ≠ y) :
+    ballPoissonKernel n x y =
+      -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        (⟪(2 : ℝ) • y, x - y⟫_ℝ * ‖x - y‖ ^ (-(n : ℝ)) + ‖x - y‖ ^ (2 - n : ℝ)) := by
+  have hpos : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
+  have hnum : 1 - ‖x‖ ^ 2 = -(2 * ⟪y, x - y⟫_ℝ + ‖x - y‖ ^ 2) := by
+    rw [norm_sub_sq_real, inner_sub_right, real_inner_self_eq_norm_sq, hy, real_inner_comm]
+    ring
+  have hsplit : ‖x - y‖ ^ (2 - n : ℝ) = ‖x - y‖ ^ 2 * ‖x - y‖ ^ (-(n : ℝ)) := by
+    rw [sub_eq_add_neg (2 : ℝ), Real.rpow_add hpos, Real.rpow_two]
+  rw [ballPoissonKernel_def, hnum, hsplit, real_inner_smul_left, Real.rpow_neg hpos.le,
+    Real.rpow_natCast, div_eq_mul_inv, mul_inv]
+  ring
+
+/-- For a point `y` of the unit sphere, the Poisson kernel `x ↦ K(x, y)` is harmonic in its pole
+`x` away from `y`, in particular throughout the open unit ball. -/
+theorem harmonicAt_ballPoissonKernel_left {x y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ = 1)
+    (hxy : x ≠ y) :
+    HarmonicAt (fun z ↦ ballPoissonKernel n z y) x := by
+  set c := -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
+  have hG : HarmonicAt (fun w : EuclideanSpace ℝ (Fin n) ↦
+      c * (⟪(2 : ℝ) • y, w⟫_ℝ * ‖w‖ ^ (-(n : ℝ)) + ‖w‖ ^ (2 - n : ℝ))) (x + -y) := by
+    have hw : x + -y ≠ 0 := by rwa [← sub_eq_add_neg, sub_ne_zero]
+    have h := ((harmonicAt_inner_mul_norm_rpow_neg_finrank ((2 : ℝ) • y) hw).add
+      (harmonicAt_norm_rpow_two_sub_finrank hw)).const_smul (c := c)
+    simp only [finrank_euclideanSpace_fin] at h
+    exact h
+  have heq : (fun z ↦ ballPoissonKernel n z y) =ᶠ[nhds x] fun z ↦
+      c * (⟪(2 : ℝ) • y, z + -y⟫_ℝ * ‖z + -y‖ ^ (-(n : ℝ)) + ‖z + -y‖ ^ (2 - n : ℝ)) := by
+    filter_upwards [eventually_ne_nhds hxy] with z hz
+    rw [← sub_eq_add_neg, ballPoissonKernel_eq_of_norm_eq_one hy hz]
+  exact (harmonicAt_congr_nhds heq).2 (harmonicAt_comp_add_right_iff.2 hG)
+
+/-- For a point `y` of the unit sphere, the Poisson kernel `x ↦ K(x, y)` is harmonic on the
+complement of `{y}`. -/
+theorem harmonicOnNhd_ballPoissonKernel_left {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ = 1) :
+    HarmonicOnNhd (fun z ↦ ballPoissonKernel n z y) {y}ᶜ :=
+  fun _ hx ↦ harmonicAt_ballPoissonKernel_left hy hx
+
+/-- **Outside dimension two, the Poisson kernel is the negative normal derivative of the Green
+kernel.** On the unit sphere, the derivative of the Green kernel with pole `x` off the sphere,
+taken in the direction of the outward unit normal `y`, is the negative of the Poisson kernel. -/
 theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)}
     (hx : ‖x‖ ≠ 1) (hy : ‖y‖ = 1) :
     fderiv ℝ (ballGreenKernel n x) y y = -ballPoissonKernel n x y := by
@@ -445,7 +487,7 @@ theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (
     exact hx hy
   have h : 0 < ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1 :=
     norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos (by rw [hy, mul_one]; exact hx)
-  have hsub : 0 < ‖y - x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
+  have _ : 0 < ‖y - x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   rw [(hasFDerivAt_ballGreenKernel hn hxy h).fderiv, ← norm_sub_sq_eq_of_norm_eq_one x hy,
     ballPoissonKernel_def, norm_sub_rev x y]
   have hpow : (‖y - x‖ ^ 2) ^ (-(n : ℝ) / 2) = ‖y - x‖ ^ (-(n : ℝ)) :=
@@ -457,8 +499,9 @@ theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (
   rw [div_eq_mul_inv, mul_inv]
   ring
 
-/-- The radial derivative of the Green kernel of the unit ball at a boundary point `y`, along the
-ray from the center through `y`, is the negative of the Poisson kernel. -/
+/-- Outside dimension two, the radial derivative of the Green kernel of the unit ball at a
+boundary point `y`, along the ray from the center through `y`, is the negative of the Poisson
+kernel. -/
 theorem hasDerivAt_ballGreenKernel_radial (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)}
     (hx : ‖x‖ ≠ 1) (hy : ‖y‖ = 1) :
     HasDerivAt (fun t : ℝ => ballGreenKernel n x (t • y)) (-ballPoissonKernel n x y) 1 := by

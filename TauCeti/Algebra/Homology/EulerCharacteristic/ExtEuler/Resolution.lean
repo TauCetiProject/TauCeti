@@ -143,7 +143,7 @@ theorem isExtFinite (r : (ExactStructure.abelian C).FiniteResolution P X)
     IsExtFinite.{w} k X Y := by
   induction r with
   | @base X hX => exact hfinite X hX
-  | @step K Q X hQ i p zero hp r ih =>
+  | @step K Q X hQ i p zero hp _ ih =>
       exact ih.of_shortExact₃' ((ExactStructure.abelian_conflation _).mp hp) (hfinite Q hQ)
 
 /-- A finite resolution along an object property whose objects are projective and have

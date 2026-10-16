@@ -23,7 +23,7 @@ length restriction for Type II codes.
 * `IsDoublyEven.aeval_weightEnumerator_mul_second`: the fourth-root symmetry over any
   commutative ring.
 * `IsDoublyEven.aeval_weightEnumerator_mul_I`: its polynomial identity over `ℂ`.
-* `aeval_weightEnumerator_add_sub_of_eq_euclideanDual`: the integral self-dual MacWilliams
+* `aeval_weightEnumerator_add_sub_of_isSelfDual`: the integral self-dual MacWilliams
   symmetry.
 
 See Huffman and Pless, *Fundamentals of Error-Correcting Codes*, Chapters 7 and 9.
@@ -64,11 +64,11 @@ theorem IsDoublyEven.aeval_weightEnumerator_mul_I (hC : IsDoublyEven C) :
     (by simp [← map_pow, Complex.I_pow_four]) (X 0) (X 1)
 
 /-- The integral MacWilliams symmetry of a self-dual binary code. -/
-theorem aeval_weightEnumerator_add_sub_of_eq_euclideanDual (hC : C = C.euclideanDual) :
+theorem aeval_weightEnumerator_add_sub_of_isSelfDual (hC : C.IsSelfDual) :
     aeval ![X 0 + X 1, X 0 - X 1] (C : Set (ι → ZMod 2)).weightEnumerator =
       (2 : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
         (C : Set (ι → ZMod 2)).weightEnumerator := by
-  have h := Submodule.aeval_weightEnumerator_of_eq_euclideanDual hC
+  have h := Submodule.aeval_weightEnumerator_of_isSelfDual hC
   norm_num [Nat.card_eq_fintype_card] at h
   exact h
 

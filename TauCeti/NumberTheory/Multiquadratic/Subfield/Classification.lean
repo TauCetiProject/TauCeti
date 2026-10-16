@@ -85,7 +85,7 @@ theorem finrank_adjoin_prodRootMem (hroot : ∀ i, root i ^ 2 = algebraMap K L (
   -- Transport the degree across the `M`-into-`L` lift algebra equivalence.
   rw [LinearEquiv.finrank_eq (liftAlgEquiv (adjoin K {prodRootMem (K := K) root S})).toLinearEquiv,
     lift_adjoin_simple, prodRootMem_coe]
-  exact finrank_adjoin_prod_root hroot hSsq
+  exact IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare (prod_root_sq hroot S) hSsq
 
 variable (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
@@ -106,11 +106,11 @@ def quadraticSubfieldOfFinset (S : {S : Finset ι // S.Nonempty}) :
 include hroot hindep in
 /-- **Distinct nonempty subsets give distinct quadratic subfields.** The subset-product assignment
 `quadraticSubfieldOfFinset` is injective: this is the `M`-level reading of
-`eq_of_adjoin_prod_root_eq`, transported across the lift. -/
+`adjoin_prod_root_injective`, transported across the lift. -/
 theorem quadraticSubfieldOfFinset_injective [NeZero (2 : K)] :
     Function.Injective (quadraticSubfieldOfFinset hroot hindep) := by
-  rintro ⟨S, hS⟩ ⟨T, hT⟩ h
-  refine Subtype.ext (eq_of_adjoin_prod_root_eq hroot hindep hS ?_)
+  rintro ⟨S, _⟩ ⟨T, _⟩ h
+  refine Subtype.ext (adjoin_prod_root_injective hroot hindep ?_)
   -- The `M`-level equality of subfields lifts to an `L`-level equality of subset-product fields.
   have h' : adjoin K {prodRootMem (K := K) root S} = adjoin K {prodRootMem (K := K) root T} := by
     have hval := congrArg Subtype.val h

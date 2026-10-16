@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Even
+public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Isotropic
 
 /-!
@@ -16,7 +17,9 @@ For an even modulus, the discriminant group of the zero-code Construction A latt
 quadratic form.  The coordinate isometry identifies quadratic isotropy of the subgroup attached
 to a code with quadratic isotropy of the code in the standard coordinate alphabet.  Consequently,
 gluing the zero-code lattice along this subgroup gives exactly the existing Construction A
-integral lattice, not merely an abstractly isometric copy.
+integral lattice, not merely an abstractly isometric copy.  The general gluing criterion then
+says that the glued lattice is unimodular exactly when the code is Lagrangian, that is, equal to
+its own orthogonal complement in the coordinate alphabet.
 
 This supplies the quadratic refinement of the bilinear code transport in
 `TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Basic`.
@@ -27,6 +30,8 @@ This supplies the quadratic refinement of the bilinear code transport in
   quadratic isotropy through the coordinate discriminant isometry.
 * `TauCeti.ConstructionA.ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_integralLattice`
   identifies quadratic gluing with the Construction A integral lattice.
+* `TauCeti.ConstructionA.isUnimodular_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_iff`:
+  the glued lattice is unimodular exactly when the code is Lagrangian.
 
 ## References
 
@@ -107,5 +112,20 @@ theorem ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_integralLattic
   · simpa only [IntegralLattice.ofIsotropicSubgroup_form,
       IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_form] using
       congrArg IntegralLattice.form h
+
+/-- **Gluing along a code gives a unimodular lattice exactly when the code is Lagrangian.** For an
+even modulus and a quadratically isotropic code `C`, the overlattice of the zero-code lattice
+`m ℤ^ι` glued along the discriminant subgroup of `C` is unimodular exactly when `C` equals its
+orthogonal complement in the coordinate alphabet `(ℤ/m)^ι`. -/
+theorem isUnimodular_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_iff
+    (hm : Even (m : ℕ)) (C : AdditiveCode (ZMod m) ι)
+    (hC : ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C) :
+    ((zeroLattice m ι).ofIsotropicSubgroup (isEven_zeroLattice m ι hm)
+        (codeInZeroLatticeDiscriminantGroup m ι C)
+        ((isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff m ι hm C).mpr
+          hC)).IsUnimodular ↔
+      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).IsLagrangian C :=
+  ((zeroLattice m ι).isUnimodular_ofIsotropicSubgroup_iff_isLagrangian _ _ _).trans
+    (isLagrangian_codeInZeroLatticeDiscriminantGroup_iff m ι C)
 
 end TauCeti.ConstructionA

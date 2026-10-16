@@ -32,6 +32,14 @@ deviation carries it into the degree `m + 1` for every `m`, and it is the reason
 basis-modification maps of the theory of Demushkin groups acquire an extra bracket term at
 `p = 2`.
 
+At `m = 0` the congruence hypothesis is empty, so every continuous endomorphism `θ` has a graded
+deviation, which is then the difference `θ_* - id` between the induced graded map and the identity.
+It is still additive, but it is no longer a derivation: in degree zero the Leibniz rule picks up
+the quadratic correction `D [x, y] = [D x, y] - [D y, x] + [D x, D y]`, because
+`[x + D x, y + D y]` expands bilinearly. This is the level at which the basis modifications of a
+free pro-`p` group are arbitrary endomorphisms, and the correction is what makes the
+basis-modification map in degree one quadratic rather than linear.
+
 The motivating case is a free pro-`p` group `F` on generators `x_i` and the endomorphism
 `x_i ↦ x_i * w_i` with `w_i ∈ λ_m(F)`, which moves a relator `r ∈ λ_1(F)` inside its coset by an
 element of `λ_{m+1}(F)` whose class is `D_1 ρ`, for `ρ ∈ gr_1(F)` the class of `r`. That case is
@@ -52,6 +60,10 @@ developed in
 * `TauCeti.gradedDeviation_gradedPow_of_one_le`, `TauCeti.gradedDeviation_gradedPow_zero`,
   `TauCeti.gradedDeviation_gradedPow_zero_of_odd`, `TauCeti.gradedDeviation_gradedPow_zero_of_two`:
   compatibility with `π`, exact in every degree.
+* `TauCeti.gradedCast_gradedDeviation_eq_gradedMap_sub`,
+  `TauCeti.gradedDeviation_gradedBracket_zero_zero`: at `m = 0`, where `θ` is an arbitrary
+  continuous endomorphism, `D_k = θ_* - id`, and the Leibniz rule in degree zero acquires the
+  quadratic correction `[D x, D y]`.
 
 ## References
 
@@ -114,11 +126,12 @@ theorem inv_mul_apply_mem_pLowerCentralSeries {k : ℕ} {g : G} (hg : g ∈ pLow
       have hθx : θ x = x * u := (mul_inv_cancel_left x (θ x)).symm
       have hθy : θ y = y * v := (mul_inv_cancel_left y (θ y)).symm
       rw [hmem, map_commutatorElement, hθx, hθy,
-        mk_eq_mk_mul_mk_of_le (m + k + 1) (by omega) (mk_commutatorElement_mul_left hu
-          (mem_pLowerCentralSeries_zero p (y * v)) x),
+        mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le (m + k + 1) (by omega)
+          (mk_commutatorElement_mul_left hu (mem_pLowerCentralSeries_zero p (y * v)) x),
         mk_eq_one_of_mem_pLowerCentralSeries_of_le (m + k + 1)
           (commutator_mem_pLowerCentralSeries_succ hu (y * v)) le_rfl, mul_one,
-        mk_eq_mk_mul_mk_of_le (m + k + 1) (by omega) (mk_commutatorElement_mul_right hx hv y),
+        mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le (m + k + 1) (by omega)
+          (mk_commutatorElement_mul_right hx hv y),
         mk_eq_one_of_mem_pLowerCentralSeries_of_le (m + k + 1)
           (commutator_mem_pLowerCentralSeries hx hv) (by omega), mul_one]
 
@@ -226,10 +239,13 @@ theorem gradedDeviation_gradedBracket (hm : 1 ≤ m) {j k : ℕ} (x : gradedPiec
   have h : ((⁅(x : G) * u, (y : G) * v⁆ : G) : G ⧸ pLowerCentralSeries p G (m + (j + k + 1) + 1)) =
       ((⁅(x : G), (y : G)⁆ : G) : G ⧸ _) * ((⁅(x : G), v⁆ : G) : G ⧸ _) *
         ((⁅u, (y : G)⁆ : G) : G ⧸ _) := by
-    rw [mk_eq_mk_mul_mk_of_le _ (by omega) (mk_commutatorElement_mul_left hu
-        (mul_mem y.2 (pLowerCentralSeries_antitone (Nat.le_add_left k m) hv)) x),
-      mk_eq_mk_mul_mk_of_le _ (by omega) (mk_commutatorElement_mul_right x.2 hv y),
-      mk_eq_mk_mul_mk_of_le _ (by omega) (mk_commutatorElement_mul_right hu hv y),
+    rw [mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
+        (mk_commutatorElement_mul_left hu
+          (mul_mem y.2 (pLowerCentralSeries_antitone (Nat.le_add_left k m) hv)) x),
+      mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
+        (mk_commutatorElement_mul_right x.2 hv y),
+      mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
+        (mk_commutatorElement_mul_right hu hv y),
       mk_eq_one_of_mem_pLowerCentralSeries_of_le _ (commutator_mem_pLowerCentralSeries hu hv)
         (by omega), mul_one]
   rw [map_commutatorElement, hθx, hθy, QuotientGroup.mk_mul, QuotientGroup.mk_inv, h,
@@ -357,5 +373,59 @@ theorem gradedDeviation_gradedPow_zero_of_two (hp : p = 2) (x : gradedPiece p G 
   rw [gradedDeviation_gradedPow_zero, Nat.choose_self, one_nsmul]
 
 end Deviation
+
+/-! ### The deviation of an arbitrary continuous endomorphism -/
+
+section DeviationZero
+
+variable (θ : G →* G) (hθc : Continuous θ) (hθ : ∀ g, g⁻¹ * θ g ∈ pLowerCentralSeries p G 0)
+
+/-- **The graded deviation of an arbitrary endomorphism is the graded map minus the identity.**
+Every continuous endomorphism `θ` is congruent to the identity modulo `λ_0 = G`, and its deviation
+in degree `k` is `D_k x = θ_* x - x`, with the degrees `0 + k` and `k` identified. -/
+theorem gradedCast_gradedDeviation_eq_gradedMap_sub (k : ℕ) (x : gradedPiece p G k) :
+    gradedCast p G (zero_add k) (gradedDeviation θ hθc hθ k x) = gradedMap p θ hθc k x - x := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k x
+  rw [gradedDeviation_gradedMk, gradedCast_gradedMk, gradedMap_gradedMk, sub_eq_neg_add,
+    ← gradedMk_inv, ← gradedMk_mul]
+  rfl
+
+/-- **The graded deviation of an arbitrary endomorphism in degree zero**: `D_0 x = θ_* x - x`. -/
+theorem gradedDeviation_zero_eq_gradedMap_sub (x : gradedPiece p G 0) :
+    gradedDeviation θ hθc hθ 0 x = gradedMap p θ hθc 0 x - x := by
+  have h := gradedCast_gradedDeviation_eq_gradedMap_sub θ hθc hθ 0 x
+  rwa [gradedCast_rfl] at h
+
+/-- **The graded deviation of an arbitrary endomorphism in degree one**: `D_1 x = θ_* x - x`. -/
+theorem gradedDeviation_one_eq_gradedMap_sub (x : gradedPiece p G 1) :
+    gradedDeviation θ hθc hθ 1 x = gradedMap p θ hθc 1 x - x := by
+  have h := gradedCast_gradedDeviation_eq_gradedMap_sub θ hθc hθ 1 x
+  rwa [gradedCast_rfl] at h
+
+/-- **The Leibniz rule in degree zero for an arbitrary endomorphism**, with its quadratic
+correction: `D [x, y] = [D x, y] - [D y, x] + [D x, D y]` for `x, y ∈ gr_0(G)`. The correction
+`[D x, D y]` is the bilinear expansion of `[x + D x, y + D y] - [x, y]`; for an endomorphism
+congruent to the identity modulo `λ_1` it vanishes, and the rule is
+`TauCeti.gradedDeviation_gradedBracket_zero`. -/
+theorem gradedDeviation_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
+    gradedDeviation θ hθc hθ 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 x) y -
+        gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 y) x +
+        gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 x) (gradedDeviation θ hθc hθ 0 y) := by
+  -- Skew-symmetry in degree zero, with both sides in `gr_1(G)`.
+  have hswap : gradedBracket p G 0 0 x (gradedDeviation θ hθc hθ 0 y) =
+      -gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 y) x := by
+    have h := gradedCast_gradedBracket_swap (gradedDeviation θ hθc hθ 0 y) x
+    rwa [gradedCast_rfl] at h
+  have hx : gradedMap p θ hθc 0 x = x + gradedDeviation θ hθc hθ 0 x := by
+    rw [gradedDeviation_zero_eq_gradedMap_sub, add_sub_cancel]
+  have hy : gradedMap p θ hθc 0 y = y + gradedDeviation θ hθc hθ 0 y := by
+    rw [gradedDeviation_zero_eq_gradedMap_sub, add_sub_cancel]
+  rw [gradedDeviation_one_eq_gradedMap_sub, gradedMap_gradedBracket_zero_zero, hx, hy]
+  simp only [map_add, AddMonoidHom.add_apply]
+  rw [hswap]
+  abel
+
+end DeviationZero
 
 end TauCeti

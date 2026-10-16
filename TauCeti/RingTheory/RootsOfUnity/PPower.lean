@@ -14,7 +14,8 @@ public import Mathlib.RingTheory.IntegralDomain
 # Roots of unity of `p`-power order
 
 For a commutative monoid, the `p`-power roots of unity form the primary component of its unit
-group. In a domain, this subgroup is cyclic when finite.
+group. In a reduced ring of exponential characteristic `p` this subgroup is trivial, and in a
+domain it is cyclic when finite.
 -/
 
 public section
@@ -41,6 +42,16 @@ theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
       rootsOfUnity_le_of_dvd (pow_dvd_pow p (le_max_right m n))⟩
   simp only [mem_pPowerRootsOfUnity_iff, Subgroup.mem_iSup_of_directed hdir,
     mem_rootsOfUnity]
+
+/-- In a reduced ring of exponential characteristic `p`, the only root of unity of `p`-power
+order is `1`, since the Frobenius is injective. -/
+@[simp]
+theorem pPowerRootsOfUnity_eq_bot (R : Type*) [CommRing R] [IsReduced R] [ExpChar R p] :
+    pPowerRootsOfUnity p R = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  obtain ⟨n, hn⟩ := (mem_pPowerRootsOfUnity_iff p R x).1 hx
+  have hx : x ∈ rootsOfUnity (p ^ n * 1) R := by rwa [mul_one, mem_rootsOfUnity]
+  rwa [mem_rootsOfUnity_prime_pow_mul_iff, rootsOfUnity_one, Subgroup.mem_bot] at hx
 
 end TauCeti
 

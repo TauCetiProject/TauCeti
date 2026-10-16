@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
-public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
 # Extension of scalars for the Lipschitz group
@@ -25,6 +24,8 @@ automorphisms.
   tensors.
 * `CliffordAlgebra.lipschitzToOrthogonal_baseChange` gives the commuting square with extension of
   orthogonal automorphisms.
+* `CliffordAlgebra.lipschitzGroupBaseChange_baseChange` identifies direct and successive scalar
+  extension.
 -/
 
 public section
@@ -33,7 +34,7 @@ open scoped TensorProduct
 
 namespace CliffordAlgebra
 
-universe u v w
+universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommRing R] [CommRing A] [Algebra R A]
@@ -117,5 +118,30 @@ theorem lipschitzToOrthogonal_baseChange (x : lipschitzGroup Q) :
         lipschitzVectorAction_baseChange_tmul]
   | add z w hz hw =>
       simp only [map_add, hz, hw]
+
+section ScalarTower
+
+variable {B : Type x} [CommRing B] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
+
+/-- Direct and successive scalar extension of a Lipschitz element agree after transport along the
+canonical scalar-tower isometry. -/
+@[simp]
+theorem lipschitzGroupBaseChange_baseChange (x : lipschitzGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).toIsometry.lipschitzGroupMap
+        (lipschitzGroupBaseChange (A := B) Q x) =
+      lipschitzGroupBaseChange (A := B) (Q.baseChange A)
+        (lipschitzGroupBaseChange (A := A) Q x) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  apply Subtype.ext
+  apply Units.ext
+  rw [QuadraticMap.Isometry.coe_lipschitzGroupMap_apply,
+    coe_lipschitzGroupBaseChange_apply, coe_lipschitzGroupBaseChange_apply,
+    coe_lipschitzGroupBaseChange_apply]
+  exact ofBaseChangeAux_baseChange Q _
+
+end ScalarTower
 
 end CliffordAlgebra

@@ -135,6 +135,12 @@ theorem toEigenform_toCuspForm (f : Newform N k) : f.toEigenform.toCuspForm = f.
 theorem toEigenform_χ (f : Newform N k) : f.toEigenform.χ = f.χ :=
   EigenformAwayFromLevel.toEigenform_χ _ _
 
+/-- The full eigenform attached to a newform remains normalised. -/
+theorem toEigenform_qExpansion_coeff_one (f : Newform N k) :
+    (qExpansion 1 f.toEigenform.toCuspForm).coeff 1 = 1 := by
+  rw [toEigenform_toCuspForm]
+  exact f.isNorm
+
 @[simp]
 theorem toEigenform_toEigenformAwayFromLevel (f : Newform N k) :
     f.toEigenform.toEigenformAwayFromLevel = f.toEigenformAwayFromLevel :=
@@ -145,10 +151,7 @@ theorem toEigenform_toEigenformAwayFromLevel (f : Newform N k) :
 @[simp]
 theorem toEigenform_eigenvalue_eq_qExpansion_coeff (f : Newform N k) (n : ℕ+) :
     f.toEigenform.eigenvalue n = (qExpansion 1 f.toCuspForm).coeff n := by
-  have h₁ : (qExpansion 1 f.toEigenform.toCuspForm).coeff 1 = 1 := by
-    rw [toEigenform_toCuspForm]
-    exact f.isNorm
-  have h := f.toEigenform.qExpansion_coeff_eq_eigenvalue h₁ n
+  have h := f.toEigenform.qExpansion_coeff_eq_eigenvalue f.toEigenform_qExpansion_coeff_one n
   rw [toEigenform_toCuspForm] at h
   exact h.symm
 

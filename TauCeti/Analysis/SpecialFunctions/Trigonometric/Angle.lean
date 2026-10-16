@@ -20,10 +20,19 @@ agree exactly when the reals agree in `Real.Angle`. That is the transport step b
 computation of a normalised angle: the identity is proved in `Real.Angle`, where `2π` is
 invisible, and then read back as an equality of representatives.
 
+It also records how the representative `Real.Angle.toReal ∈ (-π, π]` behaves on differences of
+angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_sign_eq_neg_sign`.
+
 ## Main results
 
+* `Real.exists_int_eq_add_of_cos_sin_eq`: reals whose `cos` and `sin` at `2π` times them agree
+  differ by an integer.
 * `Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq`: two reals have the same `[0, 2π)` representative
   exactly when they are equal in `Real.Angle`.
+* `Real.Angle.toReal_sub_of_sign_eq`: for angles of the same sign, the subtracted one not `π`,
+  `toReal` of the difference is the difference of the `toReal`s.
+* `Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq`: for angles of the same nonzero sign, the
+  difference has positive sign exactly when the representatives increase.
 -/
 
 public section
@@ -44,5 +53,32 @@ theorem _root_.Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq {x y : ℝ} :
   · obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.mp h
     have hshift : x = y + k • (2 * Real.pi) := by rw [zsmul_eq_mul]; linarith
     rw [hshift, toIcoMod_add_zsmul]
+
+/-- The representative of a difference of two angles of the same sign is the difference of the
+representatives, provided the subtracted angle is not `π`. -/
+theorem _root_.Real.Angle.toReal_sub_of_sign_eq {θ ψ : Real.Angle} (hψ : ψ ≠ ↑Real.pi)
+    (hs : θ.sign = ψ.sign) : (θ - ψ).toReal = θ.toReal - ψ.toReal := by
+  have hψ' : -ψ ≠ ↑Real.pi := fun h ↦ hψ (by rw [← neg_neg ψ, h, Real.Angle.neg_coe_pi])
+  rw [sub_eq_add_neg, Real.Angle.toReal_add_of_sign_eq_neg_sign (.inr hψ')
+    (by rw [Real.Angle.sign_neg, neg_neg, hs]), Real.Angle.toReal_neg_eq_neg_toReal_iff.2 hψ,
+    ← sub_eq_add_neg]
+
+/-- For two angles of the same nonzero sign, their difference has positive sign exactly when their
+representatives are in increasing order. -/
+theorem _root_.Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.Angle}
+    (hs : θ.sign = ψ.sign) (h0 : θ.sign ≠ 0) : (ψ - θ).sign = 1 ↔ θ.toReal < ψ.toReal := by
+  rw [← Real.Angle.sign_toReal (Real.Angle.sub_ne_pi_of_sign_eq_of_sign_ne_zero ψ θ hs.symm h0),
+    Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm, sign_eq_one_iff,
+    sub_pos]
+
+/-- If `cos` and `sin` agree at `2πa` and `2πb`, then `a` and `b` differ by an integer: this is
+Mathlib's `Real.Angle.cos_sin_inj` read through `Real.Angle.angle_eq_iff_two_pi_dvd_sub`. -/
+theorem _root_.Real.exists_int_eq_add_of_cos_sin_eq {a b : ℝ}
+    (hc : Real.cos (2 * Real.pi * a) = Real.cos (2 * Real.pi * b))
+    (hs : Real.sin (2 * Real.pi * a) = Real.sin (2 * Real.pi * b)) : ∃ n : ℤ, a = b + n := by
+  obtain ⟨n, hn⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.cos_sin_inj hc hs)
+  refine ⟨n, ?_⟩
+  have hpi : (2 * Real.pi) ≠ 0 := by positivity
+  exact mul_left_cancel₀ hpi (by linarith)
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial
+public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExchangeRelations
 import Mathlib.Algebra.MonoidAlgebra.Module
 

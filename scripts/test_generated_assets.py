@@ -13,6 +13,7 @@ import unittest
 
 import generated_assets
 import pr_stats_graphs
+import roadmap_completion
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -20,6 +21,10 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 class GeneratedAssets(unittest.TestCase):
     def test_it_covers_every_pr_statistics_asset(self):
         for name in pr_stats_graphs.ASSET_NAMES:
+            self.assertIn(name, generated_assets.GENERATED_ASSETS, name)
+
+    def test_it_covers_every_roadmap_completion_asset(self):
+        for name in roadmap_completion.ASSET_NAMES:
             self.assertIn(name, generated_assets.GENERATED_ASSETS, name)
 
     def test_it_names_nothing_twice(self):

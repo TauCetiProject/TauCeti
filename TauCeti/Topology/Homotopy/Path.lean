@@ -47,10 +47,17 @@ are homotopic in the ambient space; and the pasting lemma
 `Path.Homotopic.trans_of_subpath_trans`, which assembles homotopies over the segments of a
 partition into a homotopy of the whole paths.
 
+`IsSimplyConnected.isPathHomotopyTrivial` records that a simply connected set is
+path-homotopy-trivial. `AlgebraicTopology/ThricePuncturedSphere/LoopAtInfinity.lean` uses it to
+compare paths inside a closed half-plane.
+
 `Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
 value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
 values of the path on an interval containing its endpoints. They are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
+
+The path-homotopy quotient API also records that reversing twice is the identity and that the
+reverse of the constant class is constant.
 -/
 
 public section
@@ -286,6 +293,17 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 namespace Homotopic.Quotient
 
+/-- Reversing a path-homotopy class twice recovers the original class. -/
+@[simp]
+theorem symm_symm {x₀ x₁ : X} (γ : Homotopic.Quotient x₀ x₁) : γ.symm.symm = γ := by
+  induction γ using Quotient.ind with
+  | mk γ => exact congrArg mk (Path.symm_symm γ)
+
+/-- The reverse of the constant path-homotopy class is the constant class. -/
+@[simp]
+theorem symm_refl (x : X) : (refl x).symm = refl x := by
+  rw [← mk_refl, ← mk_symm, Path.refl_symm, mk_refl]
+
 /-- The quotient topology on path-homotopy classes. This instance is load-bearing:
 `Path.Homotopic.Quotient` is a `def` over `Quotient`, and instance search does not unfold it to
 find the generic `TopologicalSpace (Quotient _)`. -/
@@ -430,7 +448,7 @@ variable {X : Type*} [TopologicalSpace X]
 in `X` whose images lie in `U` and which share endpoints are homotopic in `X`.
 This is the form of "`U` is simply connected" used in the universal-cover
 construction: it is weaker than `IsSimplyConnected U` because the homotopy is not required
-to lie inside `U`. -/
+to lie inside `U` (`IsSimplyConnected.isPathHomotopyTrivial`). -/
 def IsPathHomotopyTrivial (U : Set X) : Prop :=
   ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q
 
@@ -444,6 +462,15 @@ theorem isPathHomotopyTrivial_def {U : Set X} :
 theorem IsPathHomotopyTrivial.nullhomotopic {U : Set X} (hU : IsPathHomotopyTrivial U)
     {x : X} (γ : Path x x) (hγ : range γ ⊆ U) : γ.Homotopic (Path.refl x) :=
   hU γ _ hγ (by simpa using hγ ⟨0, γ.source⟩)
+
+/-- **A simply connected set is path-homotopy-trivial.** Two paths with the same endpoints whose
+ranges lie in a simply connected set are homotopic in the ambient space. -/
+theorem IsSimplyConnected.isPathHomotopyTrivial {U : Set X} (hU : IsSimplyConnected U) :
+    IsPathHomotopyTrivial U :=
+  isPathHomotopyTrivial_def.mpr fun _ _ _ _ hp hq ↦
+    let ⟨K, _⟩ := Path.exists_homotopy_forall_mem_of_isSimplyConnected hU
+      (range_subset_iff.1 hp) (range_subset_iff.1 hq)
+    ⟨K⟩
 
 end IsPathHomotopyTrivial
 

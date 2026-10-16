@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
-public import TauCeti.NumberTheory.LocalField.TamelyRamified
+public import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 

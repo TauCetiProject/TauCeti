@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.FieldTheory.IntermediateField.Lift
+public import TauCeti.FieldTheory.IntermediateField.Map
 public import TauCeti.Order.Hom.Set
 
 /-!
@@ -37,10 +38,28 @@ Both steps are existing order isomorphisms, composed:
   `OrderDual.toDual K.fixingSubgroup` in `(Subgroup Gal(L/F))ᵒᵈ`, which is definitionally
   `(Set.Ici K.fixingSubgroup)ᵒᵈ` — so the composition needs no bridging step.
 
+The same dictionary holds for an *abstract* field `K` given with an embedding
+`φ : K →ₐ[F] L`, which is how a number field sits inside its normal closure:
+
+`IntermediateField F K ≃o (Set.Ici φ.fieldRange.fixingSubgroup)ᵒᵈ`,
+
+sending `E` to the subgroup fixing `φ(E)` and a subgroup `H` to the preimage `φ⁻¹(L^H)`. It is
+the intermediate-field dictionary for `φ(K)`, transported along `φ.equivFieldRange` by
+`IntermediateField.orderIsoMapComap`. The base subgroup `φ.fieldRange.fixingSubgroup` is the
+stabilizer of `φ` under postcomposition, by
+`TauCeti.FieldTheory.stabilizer_algHom_eq_fixingSubgroup`. Under the dictionary the degree
+`[E : F]` of an intermediate field is the index of its subgroup.
+
 ## Main results
 
 * `IntermediateField.intermediateFieldEquivSubgroup`: the dictionary,
   `IntermediateField F K ≃o (Set.Ici K.fixingSubgroup)ᵒᵈ`.
+* `AlgHom.intermediateFieldEquivSubgroup`: the dictionary of an embedded field,
+  `IntermediateField F K ≃o (Set.Ici φ.fieldRange.fixingSubgroup)ᵒᵈ`, with the evaluation rules
+  `AlgHom.coe_intermediateFieldEquivSubgroup_apply` and
+  `AlgHom.intermediateFieldEquivSubgroup_symm_apply`.
+* `AlgHom.index_intermediateFieldEquivSubgroup_apply`: the subgroup attached to `E` has index
+  `[E : F]`.
 
 The evaluation rules for `OrderIso.Iic`, which Mathlib does not state, are in
 `TauCeti/Order/Hom/Set.lean`.
@@ -49,6 +68,8 @@ The evaluation rules for `OrderIso.Iic`, which Mathlib does not state, are in
 
 * S. Lang, *Algebra*, Chapter VI §1, Theorem 1.1, for the fundamental theorem of Galois theory
   that the second step restricts.
+* J. Neukirch, *Algebraic Number Theory*, Chapter I, §9, for subfields of a number field read
+  off its normal closure.
 -/
 
 public section
@@ -87,5 +108,53 @@ theorem lift_intermediateFieldEquivSubgroup_symm_apply (H : (Set.Ici K.fixingSub
   rfl
 
 end IntermediateField
+
+namespace AlgHom
+
+variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
+  [FiniteDimensional F L] [IsGalois F L]
+
+/-- **The subfield dictionary of an embedded field.** For `L / F` finite Galois and any
+embedding `φ : K →ₐ[F] L`, the intermediate fields of `K / F` correspond order-reversingly to the
+subgroups of `Gal(L/F)` containing the subgroup fixing `φ(K)` pointwise. `K` is an abstract
+field, not a subfield of `L`, and need not be normal over `F`. -/
+noncomputable def intermediateFieldEquivSubgroup (φ : K →ₐ[F] L) :
+    IntermediateField F K ≃o (Set.Ici φ.fieldRange.fixingSubgroup)ᵒᵈ :=
+  (IntermediateField.orderIsoMapComap φ.equivFieldRange).trans
+    φ.fieldRange.intermediateFieldEquivSubgroup
+
+/-- **The dictionary sends an intermediate field of `K / F` to the subgroup fixing its image.** -/
+@[simp]
+theorem coe_intermediateFieldEquivSubgroup_apply (φ : K →ₐ[F] L) (E : IntermediateField F K) :
+    (OrderDual.ofDual (φ.intermediateFieldEquivSubgroup E)).1 = (E.map φ).fixingSubgroup := by
+  -- the image of `E` in `φ(K)`, lifted back to `L`, is the image of `E` under `φ` itself
+  have hφ : (IntermediateField.val φ.fieldRange).comp φ.equivFieldRange.toAlgHom = φ :=
+    AlgHom.ext (equivFieldRange_apply_coe φ)
+  rw [intermediateFieldEquivSubgroup, OrderIso.trans_apply,
+    IntermediateField.coe_intermediateFieldEquivSubgroup_apply,
+    IntermediateField.orderIsoMapComap_apply, IntermediateField.lift, IntermediateField.map_map,
+    hφ]
+
+/-- **The inverse sends a subgroup to the preimage of its fixed field.** -/
+@[simp]
+theorem intermediateFieldEquivSubgroup_symm_apply (φ : K →ₐ[F] L)
+    (H : (Set.Ici φ.fieldRange.fixingSubgroup)ᵒᵈ) :
+    φ.intermediateFieldEquivSubgroup.symm H =
+      (IntermediateField.fixedField (OrderDual.ofDual H).1).comap φ := by
+  rw [← IntermediateField.lift_intermediateFieldEquivSubgroup_symm_apply,
+    intermediateFieldEquivSubgroup, OrderIso.symm_trans_apply,
+    IntermediateField.orderIsoMapComap_symm_apply]
+  ext x
+  rw [IntermediateField.mem_comap, IntermediateField.mem_comap,
+    ← equivFieldRange_apply_coe φ x, IntermediateField.mem_lift, AlgEquiv.coe_toAlgHom]
+
+/-- **Degree is index.** The subgroup attached to an intermediate field `E` of `K / F` has index
+`[E : F]` in `Gal(L/F)`. -/
+theorem index_intermediateFieldEquivSubgroup_apply (φ : K →ₐ[F] L) (E : IntermediateField F K) :
+    (OrderDual.ofDual (φ.intermediateFieldEquivSubgroup E)).1.index = Module.finrank F E := by
+  rw [coe_intermediateFieldEquivSubgroup_apply,
+    ← IntermediateField.finrank_eq_fixingSubgroup_index, (E.equivMap φ).toLinearEquiv.finrank_eq]
+
+end AlgHom
 
 end

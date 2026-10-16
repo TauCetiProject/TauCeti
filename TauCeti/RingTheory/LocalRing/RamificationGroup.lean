@@ -54,11 +54,14 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
   maximal ideal, `TauCeti.IsLocalRing.ramificationGroup_zero_eq_ker_toRingAut` identifies it with
   the kernel of the action on the residue field, and
+  `TauCeti.IsLocalRing.residue_smul_eq_of_mem_ramificationGroup_zero` is its pointwise form, while
   `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` reads that off as Mathlib's
   `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
 * `TauCeti.IsLocalRing.instNormalRamificationGroup`: each `G_i` is normal in `G`.
 * `TauCeti.IsLocalRing.ramificationGroupGradedSubgroupHom`: subgroup inclusion induces an
   injective homomorphism `H_i / H_{i+1} → G_i / G_{i+1}` on successive quotients.
+* `TauCeti.IsLocalRing.ramificationGroupGradedConj`: conjugation by an element of the ambient
+  group induces an automorphism of each successive quotient.
 * `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
   `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
   filtration cuts out the kernel of the action, and reaches it at a finite index once `G_0` is
@@ -81,6 +84,10 @@ integer indexing that Herbrand theory uses.
   `ξ` of a discrete valuation ring under a faithful action of a finite group.
 * `TauCeti.IsLocalRing.sum_min_lowerIndex_natCast`: the truncated count
   `∑_{σ ∈ G} min (i_G(σ), m) = ∑_{k < m} #G_k` for a finite group `G`.
+* `TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow`: along an
+  equivariant homomorphism of local rings inducing isomorphisms `S ⧸ 𝔪 ^ n ≃ T ⧸ 𝔪 ^ n`, such as
+  the inclusion of a discrete valuation ring into its completion, the ramification groups are the
+  preimages of each other.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
@@ -239,6 +246,14 @@ theorem ramificationGroup_zero_eq_ker_toRingAut :
       rw [map_sub, ResidueField.residue_smul, sub_eq_zero]
       exact h (residue S x)
     rwa [residue_eq_zero_iff] at hx
+
+/-- An element of the zeroth ramification group acts trivially on every residue class. -/
+theorem residue_smul_eq_of_mem_ramificationGroup_zero {g : G}
+    (hg : g ∈ ramificationGroup G S 0) (x : S) :
+    residue S (g • x) = residue S x := by
+  have hx := mem_ramificationGroup_zero_iff.mp hg x
+  rw [← residue_eq_zero_iff, map_sub, sub_eq_zero] at hx
+  exact hx
 
 /-- For a valuation subring of a field, the zeroth ramification group of the decomposition
 subgroup is Mathlib's `ValuationSubring.inertiaSubgroup`, which is defined as that same kernel. -/
@@ -610,7 +625,93 @@ theorem ramificationGroupGradedSubgroupHom_injective (H : Subgroup G) (i : ℤ) 
       rw [subgroupOf_ramificationGroup] at hmem
       exact hmem
 
+/-! ### Conjugation on the graded pieces -/
+
+/-- Conjugation by an element of the ambient group induces an automorphism on every successive
+quotient `G_i/G_{i+1}` of the ramification filtration. -/
+noncomputable def ramificationGroupGradedConj (g : G) (i : ℤ) :
+    RamificationGroupGraded G S i ≃* RamificationGroupGraded G S i :=
+  QuotientGroup.congr
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    (MulAut.conjNormal g) <| by
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact Subgroup.mem_subgroupOf.mpr
+          ((inferInstance : (ramificationGroup G S (i + 1)).Normal).conj_mem y
+            (Subgroup.mem_subgroupOf.mp hy) g)
+      · intro hx
+        refine ⟨(MulAut.conjNormal g).symm x, ?_, (MulAut.conjNormal g).apply_symm_apply x⟩
+        exact Subgroup.mem_subgroupOf.mpr
+          ((inferInstance : (ramificationGroup G S (i + 1)).Normal).conj_mem x
+            (Subgroup.mem_subgroupOf.mp hx) g⁻¹)
+
+/-- On a class represented by `x ∈ G_i`, the induced conjugation is represented by
+`g * x * g⁻¹`. -/
+@[simp]
+theorem ramificationGroupGradedConj_mk (g : G) (i : ℤ)
+    (x : ramificationGroup G S i) :
+    ramificationGroupGradedConj G S g i (QuotientGroup.mk x) =
+      QuotientGroup.mk (MulAut.conjNormal g x) := by
+  exact QuotientGroup.congr_mk _ _ _ _ x
+
+/-- Conjugation by the identity acts trivially on each ramification quotient. -/
+@[simp]
+theorem ramificationGroupGradedConj_one (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S 1 i x = x := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
+
+/-- Conjugation by a product is the composite of the corresponding conjugation automorphisms. -/
+@[simp]
+theorem ramificationGroupGradedConj_mul (g h : G) (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S (g * h) i x =
+      ramificationGroupGradedConj G S g i (ramificationGroupGradedConj G S h i x) := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
+
 end Subgroup
+
+section Comap
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+  {H : Type*} [Group H] {T : Type*} [CommRing T] [IsLocalRing T] [MulSemiringAction H T]
+
+/-- **Ramification groups along a map that is an isomorphism modulo every power of the maximal
+ideal.** Let `f : S →+* T` be a homomorphism of local rings, equivariant along `φ : G →* H`, such
+that `f⁻¹ (𝔪_T ^ n) = 𝔪_S ^ n` and `S` surjects onto `T ⧸ 𝔪_T ^ n` for every `n`, as for the
+inclusion of a discrete valuation ring into its completion. Then `G_i` is the preimage of `H_i`
+under `φ`.
+
+The approximation argument generalizes
+`IsDedekindDomain.HeightOneSpectrum.mem_ramificationGroup_iff_decompositionHom_mem` from
+`TauCeti/NumberTheory/NumberField/LocalGlobal/RamificationGroup.lean`. -/
+theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f : S →+* T)
+    (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x)
+    (hcomap : ∀ n : ℕ, (maximalIdeal T ^ n).comap f = maximalIdeal S ^ n)
+    (hdense : ∀ (n : ℕ) (y : T), ∃ x : S, y - f x ∈ maximalIdeal T ^ n) (i : ℤ) :
+    ramificationGroup G S i = (ramificationGroup H T i).comap φ := by
+  ext σ
+  rw [Subgroup.mem_comap, mem_ramificationGroup_iff, mem_ramificationGroup_iff]
+  refine ⟨fun h y ↦ ?_, fun h x ↦ ?_⟩
+  · -- approximate `y` by `f x`; then `φ σ` moves `y - f x` within `𝔪_T ^ n`, and moves `f x` by
+    -- the image of `σ • x - x`
+    obtain ⟨x, hx⟩ := hdense (i + 1).toNat y
+    have hσx : f (σ • x - x) ∈ maximalIdeal T ^ (i + 1).toNat := by
+      rw [← Ideal.mem_comap, hcomap]
+      exact h x
+    have hsplit : φ σ • y - y = φ σ • (y - f x) + f (σ • x - x) - (y - f x) := by
+      rw [map_sub, hf, smul_sub]
+      ring
+    rw [hsplit]
+    exact sub_mem (add_mem (smul_mem_maximalIdeal_pow _ hx) hσx) hx
+  · rw [← hcomap, Ideal.mem_comap, map_sub, hf]
+    exact h (f x)
+
+end Comap
 
 section Real
 

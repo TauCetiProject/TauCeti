@@ -20,7 +20,8 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   the center of `SL(2, ℤ)` (`sl2zToPSL2R_ker`), since an integer matrix casts to a real
   scalar matrix iff it is itself scalar.
 * `psl2zToPSL2R : PSL(2, ℤ) →* PSL(2, ℝ)` — the injective descent
-  (`psl2zToPSL2R_injective`).
+  (`psl2zToPSL2R_injective`); both maps have the same range
+  (`TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
@@ -137,6 +138,22 @@ def psl2zToPSL2R : PSL(2, ℤ) →* PSL(2, ℝ) :=
 `sl2zToPSL2R.ker = center SL(2, ℤ)` under the `PSL(2, ℤ)`-projection, which is `⊥`. -/
 theorem psl2zToPSL2R_injective : Function.Injective psl2zToPSL2R :=
   QuotientGroup.injective_lift_iff _ _ _ |>.2 sl2zToPSL2R_ker.symm
+
+namespace TauCeti
+
+/-- The images in `PSL(2, ℝ)` of `SL(2, ℤ)` and its projective quotient are the same.
+This identifies the effective ambient group for finite-index modular subgroups. -/
+theorem range_sl2zToPSL2R_eq_range_psl2zToPSL2R :
+    sl2zToPSL2R.range = psl2zToPSL2R.range := by
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    exact ⟨(g : PSL(2, ℤ)), by simp⟩
+  · rintro ⟨g, rfl⟩
+    induction g using QuotientGroup.induction_on with
+    | H g => exact ⟨g, by simp⟩
+
+end TauCeti
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 

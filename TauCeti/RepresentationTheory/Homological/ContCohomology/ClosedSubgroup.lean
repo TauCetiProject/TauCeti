@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialGroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Separation.Profinite
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The cohomology of a closed subgroup as a colimit over the open subgroups containing it

@@ -43,9 +43,6 @@ component-idempotent decomposition.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 6.7 and 14.
-
-This advances Layer 3, "Identity component `G°` and component group `π₀(G)`", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -58,10 +55,7 @@ universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
 
-/-- Locally expose the group structure carried by the bundled rational component group. -/
-noncomputable local instance componentGroupPointsGroupForTransfer
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) : Group (componentGroupPoints H) :=
-  (componentGroupPoints H).str
+attribute [local instance] componentGroupPointsGroup
 
 /-- The group structure on the connected components of the spectrum of a finite-type affine
 group. It is characterized by the requirement that the canonical bijection from

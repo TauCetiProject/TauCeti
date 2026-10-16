@@ -21,13 +21,10 @@ which multiplies the two coefficient factors in `C`. The file first builds this 
 packages them as `Comodule.tensor`, and finally makes the construction functorial in both
 arguments (`Comodule.Hom.tensorMap`).
 
-Both laws come from the same source: the bialgebra axioms say that the comultiplication and
-the counit of `C` are *algebra* homomorphisms, hence commute with the multiplication that
-`tensorCombine` performs. That single observation is isolated as
-`lTensor_comp_tensorCombine`, and instantiating it at `Bialgebra.comulAlgHom` and
-`Bialgebra.counitAlgHom` supplies the coefficient half of each law; the remaining half is the
-coefficient-free reassociation bookkeeping in
-`assoc_comp_tensorCombine_rTensor_comp_tensorCombine`.
+Coefficient combination is natural in both carrier modules and respects the associator and
+unitors. Associativity needs only an associative coefficient multiplication, while the
+unitor laws need a multiplicative identity. For commutative coefficients it also respects
+the tensor symmetry. These compatibilities give the tensor product its monoidal structure.
 
 Following `Comodule.cofree`, `Comodule.tensor` is not a global instance: an `R`-module can
 carry many coactions, so a global instance on a tensor product would make `Comodule`
@@ -56,11 +53,8 @@ resolution non-confluent.
 ## References
 
 This is the standard tensor product of right comodules over a bialgebra; see Sweedler, *Hopf
-Algebras*, Chapter 2. It advances the Layer 1 target "Comodules over a coalgebra/Hopf algebra
-... tensor products, duals, the regular representation" of the Tau Ceti reductive-groups
-roadmap, `ReductiveGroups/README.md` in TauCetiRoadmap, which asks for the rigid monoidal
-category of finite-dimensional comodules; the tensor product built here is its underlying
-bifunctor.
+Algebras*, Chapter 2. The tensor product is the underlying bifunctor of the monoidal
+category of comodules.
 -/
 
 public section
@@ -119,52 +113,21 @@ theorem tensorCombine_natural (f : M →ₗ[R] M') (g : N →ₗ[R] N') :
       tensorCombine (R := R) (C := C) (M := M') (N := N') ∘ₗ
         TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
           (TensorProduct.map g (LinearMap.id : C →ₗ[R] C)) := by
-  rw [tensorCombine_def, tensorCombine_def]
-  have h := TensorProduct.tensorTensorTensorComm_comp_map (R := R) (M := M) (N := C)
-    (P := N) (Q := C) (S := M') (T := C) (V := N') (W := C) f
-    (LinearMap.id : C →ₗ[R] C) g (LinearMap.id : C →ₗ[R] C)
-  calc
-    TensorProduct.map (TensorProduct.map f g) (LinearMap.id : C →ₗ[R] C) ∘ₗ
-        (TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N)
-          (LinearMap.mul' R C) ∘ₗ
-        (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap) =
-        (TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
-            (LinearMap.mul' R C) ∘ₗ
-          TensorProduct.map (TensorProduct.map f g)
-            (TensorProduct.map (LinearMap.id : C →ₗ[R] C) LinearMap.id)) ∘ₗ
-          (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap := by
-      rw [LinearMap.comp_assoc]
-      apply TensorProduct.ext'
-      intro x y
-      simp [TensorProduct.map_map]
-    _ = TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
-          (LinearMap.mul' R C) ∘ₗ
-        (TensorProduct.map (TensorProduct.map f g)
-            (TensorProduct.map (LinearMap.id : C →ₗ[R] C) LinearMap.id) ∘ₗ
-          (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap) := by
-      rw [LinearMap.comp_assoc]
-    _ = TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
-          (LinearMap.mul' R C) ∘ₗ
-        ((TensorProduct.tensorTensorTensorComm R M' C N' C).toLinearMap ∘ₗ
-          TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
-            (TensorProduct.map g (LinearMap.id : C →ₗ[R] C))) := by
-      rw [← h]
-    _ = (TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
-          (LinearMap.mul' R C) ∘ₗ
-        (TensorProduct.tensorTensorTensorComm R M' C N' C).toLinearMap) ∘ₗ
-          TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
-            (TensorProduct.map g (LinearMap.id : C →ₗ[R] C)) := by
-      rw [LinearMap.comp_assoc]
+  refine TensorProduct.ext_fourfold' fun m c n d => ?_
+  simp
 
 end Combine
 
 section Coherence
 
 variable {P : Type*}
-variable [Semiring C] [Algebra R C]
 variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 variable [AddCommMonoid P] [Module R P]
+
+section Assoc
+
+variable [NonUnitalSemiring C] [Module R C] [SMulCommClass R C C] [IsScalarTower R C C]
 
 /-- Combining three coacted factors is compatible with reassociation. The two sides multiply
 the coefficient factors as `(c * d) * e` and `c * (d * e)`, respectively. -/
@@ -197,6 +160,12 @@ theorem tensorCombine_assoc_symm (x : M ⊗[R] C) (y : N ⊗[R] C) (z : P ⊗[R]
   simpa [TensorProduct.map_map] using congrArg
     (TensorProduct.map (TensorProduct.assoc R M N P).symm.toLinearMap LinearMap.id)
     (tensorCombine_assoc (R := R) (C := C) x y z).symm
+
+end Assoc
+
+section Unit
+
+variable [NonAssocSemiring C] [Module R C] [SMulCommClass R C C] [IsScalarTower R C C]
 
 /-- Combining the trivial coefficient `1` on the left and applying the left tensor unitor
 scales a coacted vector by the scalar in the trivial factor. -/
@@ -243,6 +212,8 @@ theorem tensorCombine_rid_symm (x : M ⊗[R] C) :
   simpa [TensorProduct.map_map] using congrArg
     (TensorProduct.map (TensorProduct.rid R M).symm.toLinearMap LinearMap.id)
     (tensorCombine_rid (R := R) (C := C) x (r := 1))
+
+end Unit
 
 end Coherence
 
@@ -343,13 +314,8 @@ theorem lTensor_comp_tensorCombine (φ : C →ₐ[R] D) :
     φ.toLinearMap.lTensor (M ⊗[R] N) ∘ₗ tensorCombine (R := R) (C := C) (M := M) (N := N) =
       tensorCombine (R := R) (C := D) (M := M) (N := N) ∘ₗ
         TensorProduct.map (φ.toLinearMap.lTensor M) (φ.toLinearMap.lTensor N) := by
-  refine TensorProduct.ext' fun x y => ?_
-  induction x using TensorProduct.inductionOn with
-  | add p q hp hq => simp only [add_tmul, map_add, hp, hq]
-  | tmul m c =>
-    induction y using TensorProduct.inductionOn with
-    | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-    | tmul n d => simp
+  refine TensorProduct.ext_fourfold' fun m c n d => ?_
+  simp
 
 end Slot
 
@@ -458,9 +424,8 @@ theorem tensorCoact_coassoc :
   simp only [LinearMap.comp_apply, TensorProduct.map_tmul, LinearEquiv.coe_coe] at h1 h2 h3 ⊢
   rw [tensorCoact_tmul, hsplit, h1, h2, coassoc_apply, coassoc_apply, h3]
 
-/-- The diagonal coaction on `M ⊗[R] N` satisfies the counit law: the counit of `C` is an
-algebra homomorphism, so it turns the product of the two coefficients into the product of
-their counits, which is `1`. -/
+/-- Applying the counit to the diagonal coaction recovers the original tensor with
+coefficient `1`. -/
 theorem tensorCoact_counit :
     Coalgebra.counit.lTensor (M ⊗[R] N) ∘ₗ
         tensorCoact (R := R) (C := C) (M := M) (N := N) =
@@ -550,9 +515,8 @@ left-hand side `ofHom (Comodule.Hom.id R C _)` with a bare `Comodule.Hom.id R C 
 lemma `@[simp]` therefore fails the `simpNF` linter. (Contrast `cofreeMap_id`, whose left-hand side
 `cofreeMap LinearMap.id` carries no bare `Comodule.Hom.id` and so stays normal.) -/
 theorem tensorMap_id : tensorMap (id R C M) (id R C N) = id R C (M ⊗[R] N) := by
-  refine Comodule.Hom.ext fun x => ?_
-  rw [tensorMap_apply, id_toLinearMap, id_toLinearMap, TensorProduct.map_id]
-  rfl
+  apply toLinearMap_injective
+  simp
 
 variable {M'' : Type*} {N'' : Type*}
 variable [AddCommMonoid M''] [Module R M''] [Comodule R C M'']
@@ -563,9 +527,8 @@ variable [AddCommMonoid N''] [Module R N''] [Comodule R C N'']
 theorem tensorMap_comp (f : Hom R C M M') (f' : Hom R C M' M'')
     (g : Hom R C N N') (g' : Hom R C N' N'') :
     tensorMap (f'.comp f) (g'.comp g) = (tensorMap f' g').comp (tensorMap f g) := by
-  refine Comodule.Hom.ext fun x => ?_
-  rw [Comodule.Hom.comp_apply, tensorMap_apply, tensorMap_apply, tensorMap_apply,
-    comp_toLinearMap, comp_toLinearMap, TensorProduct.map_comp, LinearMap.comp_apply]
+  apply toLinearMap_injective
+  simp [TensorProduct.map_comp]
 
 end Hom
 

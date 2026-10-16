@@ -37,6 +37,8 @@ of a split conflation is zero.
 
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_eq`: any map
   induced by an extension to `I(X)` agrees with `connectingMap` in the stable category.
+* `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_eq_connectingMap_comp`: the
+  connecting map may be computed from any relative injective presentation of `X`.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_g_comp_connectingMap` and
   `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_comp_cokernelMap`:
   consecutive composites of the standard triangle vanish in the stable category.
@@ -122,6 +124,24 @@ theorem projectiveStableFunctor_map_connectingMap_eq
     (b := hE.connectingMiddleMap hS - a) ?_ ?_
   · rw [Preadditive.comp_sub, ha, f_comp_connectingMiddleMap, sub_self]
   · rw [Preadditive.comp_sub, Preadditive.sub_comp, g_comp_connectingMap, hδ]
+
+/-- The connecting map may be computed from any relative injective presentation
+`X ⟶ P.I ⟶ P.K` of the first term `X` of the conflation: a map `δ : Z ⟶ P.K` induced on
+cokernels by an extension `Y ⟶ P.I` of the inflation of `P` is the connecting map, followed by
+the comparison of the chosen suspension with `P.K`, in the stable category. -/
+theorem projectiveStableFunctor_map_eq_connectingMap_comp (P : E.InjectivePresentation S.X₁)
+    (a : S.X₂ ⟶ P.I) (δ : S.X₃ ⟶ P.K) (ha : S.f ≫ a = P.i) (hδ : S.g ≫ δ = a ≫ P.p) :
+    E.projectiveStableFunctor.map δ = E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+      (hE.projectiveStableIsoSuspensionObj P).inv := by
+  rw [projectiveStableIsoSuspensionObj_inv, ← Functor.map_comp]
+  -- Both maps are third components of morphisms from `S` to the short complex of `P` which are
+  -- the identity on first terms; the middle term of `P` is projective.
+  exact E.projectiveStableFunctor_map_τ₃_eq_of_τ₁_eq hS (T := ShortComplex.mk P.i P.p P.zero)
+    (hE.isProjective_I P) (φ := ⟨𝟙 _, a, δ, by simpa using ha.symm, hδ.symm⟩)
+    (ψ := ⟨𝟙 _, hE.connectingMiddleMap hS ≫ (hE.suspensionPresentation S.X₁).middleMap P (𝟙 _),
+      hE.connectingMap hS ≫ (hE.suspensionPresentation S.X₁).cokernelMap P (𝟙 _),
+      by simp [InjectivePresentation.i_comp_middleMap],
+      by simp [InjectivePresentation.p_comp_cokernelMap]⟩) rfl
 
 /-- The composite `Y ⟶ Z ⟶ ΣX` of the standard triangle vanishes in the stable category: it
 factors through the injective `I(X)`. -/

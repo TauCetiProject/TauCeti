@@ -110,7 +110,7 @@ theorem is_two_pretransitive_iff_irreducible_divByMonic
   have : IsGalois F L := IsGalois.of_separable_splitting_field hsep
   -- `p.Gal` acts transitively on the roots of `p`; the type is left to the lemma, since restating
   -- it re-synthesizes the root action.
-  have := isPretransitive_of_irreducible hp
+  have := Gal.galActionAux_isPretransitive hp
   -- Double transitivity is transitivity of the point stabilizer on the complement; the ordinary
   -- root-orbit criterion then turns the latter into irreducibility of `q`.
   rw [SubMulAction.ofStabilizer.isMultiplyPretransitive (a := x), is_one_pretransitive_iff,

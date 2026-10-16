@@ -5,35 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Topology.ClusterSet
+import Mathlib.Analysis.Convex.PathConnected
 
 /-!
 # The cluster set of a map on a convex domain
 
-`TauCeti.isPreconnected_clusterSetOn` makes the cluster set of a map connected as soon as the
-approach regions `U ∩ t` are connected along a neighbourhood basis of the approach point. On a
-**convex** domain that hypothesis is automatic, at every point of the ambient space: the
-intersection of `U` with a ball is convex, and balls form a neighbourhood basis. This file records
-that specialization, which is how the hypothesis is discharged in practice — the disc, a half-plane
-and a polygon are all convex.
+In a real locally convex topological vector space, every point has a neighbourhood basis of convex
+sets. Their intersections with a convex domain `U` are convex, hence preconnected. Thus a continuous
+map on `U` with values in a compact Hausdorff set has a preconnected cluster set, by
+`TauCeti.isPreconnected_clusterSetOn`.
 
-Convexity of `U` is used only through the convexity of `U ∩ ball w δ`; the point `w` is arbitrary
-and in particular need not lie in `U`, the interesting case being a boundary point. Nothing is
-assumed of the map beyond continuity on `U` and values in a compact set: connectedness of the
-cluster set is a property of the *domain*, not of the map.
+The approach point `w` need not lie in `U`. At a point of `closure U`, compactness also makes the
+cluster set nonempty, so it is connected; `TauCeti.isCompact_clusterSetOn` supplies its compactness.
+No norm or separation assumption on the domain is needed.
 
-The consumer is the Carathéodory boundary correspondence, layer **L5** of the conformal-mapping
-roadmap, where `U` is the unit disc: the cluster set of a Riemann map at a boundary point is a
-continuum, and the conformal layer places that continuum *on the frontier of the image*.
-Carathéodory's theorem is the assertion that for a Jordan domain it degenerates to a point.
+For example, the unit disc, half-planes and convex polygons are convex. The cluster set of a bounded
+holomorphic injection from the unit disc is therefore a continuum at each boundary point. This
+is the connectedness input for Carathéodory's boundary correspondence, which proves that the
+continuum is a singleton when the image is a Jordan domain.
 
 ## Main results
 
-* `TauCeti.isPreconnected_clusterSetOn_of_convex` and `TauCeti.isConnected_clusterSetOn_of_convex`
-  — on a convex domain the cluster set is preconnected, and is a continuum at a point of the
-  closure.
-* `TauCeti.isConnected_clusterSetOn_of_convex_of_isBounded` — the form used in practice: a
+* `Convex.isPreconnected_clusterSetOn` and `Convex.isConnected_clusterSetOn`: on a convex domain
+  the cluster set is preconnected, and is connected at a point of the closure.
+* `Convex.isConnected_clusterSetOn_of_isBounded`: the form for a
   continuous map with bounded image into a proper metric space.
 
 ## References
@@ -44,46 +41,50 @@ Carathéodory's theorem is the assertion that for a Jordan domain it degenerates
 
 public section
 
-namespace TauCeti
+namespace Convex
 
-open Metric Set Topology
+open Set Topology TauCeti
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E]
+  [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E]
 
 section Compact
 
-variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace Y] [T2Space Y]
+variable {Y : Type*} [TopologicalSpace Y] [T2Space Y]
   {U : Set E} {K : Set Y} {f : E → Y} {w : E}
 
-/-- **On a convex domain the cluster set is preconnected.** The neighbourhood-basis hypothesis of
-`TauCeti.isPreconnected_clusterSetOn` is discharged by the balls around `w`, whose intersections
-with a convex `U` are convex, hence preconnected. -/
-theorem isPreconnected_clusterSetOn_of_convex (hUc : Convex ℝ U) (hK : IsCompact K)
+/-- A continuous map on a convex domain in a real locally convex space, with values in a compact
+Hausdorff set, has a preconnected cluster set at every approach point. -/
+theorem isPreconnected_clusterSetOn (hUc : Convex ℝ U) (hK : IsCompact K)
     (hfK : MapsTo f U K) (hfc : ContinuousOn f U) : IsPreconnected (clusterSetOn f U w) :=
-  isPreconnected_clusterSetOn hK hfK hfc fun s hs => by
-    obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.mp hs
-    exact ⟨ball w δ, ball_mem_nhds w hδ, hball, (hUc.inter (convex_ball w δ)).isPreconnected⟩
+  TauCeti.isPreconnected_clusterSetOn hK hfK hfc fun s hs => by
+    obtain ⟨t, ⟨ht, htc⟩, hts⟩ := (LocallyConvexSpace.convex_basis (𝕜 := ℝ) w).mem_iff.mp hs
+    exact ⟨t, ht, hts, (hUc.inter htc).isPreconnected⟩
 
-/-- **On a convex domain the cluster set at a point of the closure is a continuum.** -/
-theorem isConnected_clusterSetOn_of_convex (hUc : Convex ℝ U) (hK : IsCompact K)
+/-- A continuous map on a convex domain in a real locally convex space, with values in a compact
+Hausdorff set, has a connected cluster set at each point of the closure of its domain.
+Compactness of the cluster set is given by `TauCeti.isCompact_clusterSetOn`. -/
+theorem isConnected_clusterSetOn (hUc : Convex ℝ U) (hK : IsCompact K)
     (hfK : MapsTo f U K) (hfc : ContinuousOn f U) (hw : w ∈ closure U) :
     IsConnected (clusterSetOn f U w) :=
-  ⟨clusterSetOn_nonempty hK hfK hw, isPreconnected_clusterSetOn_of_convex hUc hK hfK hfc⟩
+  ⟨clusterSetOn_nonempty hK hfK hw, hUc.isPreconnected_clusterSetOn hK hfK hfc⟩
 
 end Compact
 
 section Proper
 
-variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MetricSpace Y] [ProperSpace Y]
+variable {Y : Type*} [MetricSpace Y] [ProperSpace Y]
   {U : Set E} {f : E → Y} {w : E}
 
-/-- **The continuum property in the form it is applied in**: a continuous map on a convex domain,
-with bounded image in a proper metric space, has a continuum for its cluster set at every point of
-the closure of the domain — in particular at every boundary point. -/
-theorem isConnected_clusterSetOn_of_convex_of_isBounded (hUc : Convex ℝ U) (hfc : ContinuousOn f U)
+/-- A continuous map on a convex domain in a real locally convex space, with bounded image in a
+proper metric space, has a connected cluster set at each point of the closure of its domain.
+Compactness of the cluster set is given by `TauCeti.isCompact_clusterSetOn_of_isBounded`. -/
+theorem isConnected_clusterSetOn_of_isBounded (hUc : Convex ℝ U) (hfc : ContinuousOn f U)
     (hfb : Bornology.IsBounded (f '' U)) (hw : w ∈ closure U) :
     IsConnected (clusterSetOn f U w) :=
-  isConnected_clusterSetOn_of_convex hUc hfb.isCompact_closure
+  hUc.isConnected_clusterSetOn hfb.isCompact_closure
     (fun z hz => subset_closure ⟨z, hz, rfl⟩) hfc hw
 
 end Proper
 
-end TauCeti
+end Convex

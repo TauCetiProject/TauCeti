@@ -4,9 +4,14 @@
 Run with: PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
 """
 
+import copy
 import datetime as dt
 import json
+import os
 import pathlib
+import re
+import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -91,6 +96,10 @@ class Headings(unittest.TestCase):
         text = "## Part A — Hermite\n### A1: orthogonality\n### A2: the basis\n## Part B — Chebyshev\n### B1: x\n"
         self.assertEqual(rp.layer_headings(text), ["Part A — Hermite", "Part B — Chebyshev"])
 
+    def test_a_repeated_id_is_a_later_mention_of_its_layer(self):
+        text = "### Part A — Hermite\n### Part B — Chebyshev\n## Worked examples\n### Part A\n### Part B — Chebyshev\n"
+        self.assertEqual(rp.layer_headings_with_lines(text), [("Part A — Hermite", 1), ("Part B — Chebyshev", 2)])
+
     def test_bold_bullets_are_the_fallback(self):
         text = "## Layers\n- **L0 — the engine** (consumes X). Stuff.\n- **L1 — Montel.** More.\n"
         self.assertEqual(rp.layer_headings(text), ["L0 — the engine", "L1 — Montel"])
@@ -157,7 +166,10 @@ class Status(unittest.TestCase):
         states, why = rp.states_from_marker(unbound, "Widgets", layers, SHA, README_SHA)
         self.assertIsNone(states)
         self.assertIn("no readme_sha", why)
-        self.assertIsNone(rp.states_from_marker(dict(m, readme_sha="abc"), "Widgets", layers, SHA, README_SHA)[0])
+        for named in ("abc", "z" * 12, "a" * 65, README_SHA[:12].upper(), 7):
+            states, why = rp.states_from_marker(dict(m, readme_sha=named), "Widgets", layers, SHA, README_SHA)
+            self.assertIsNone(states)
+            self.assertIn("not a README hash", why)
 
     def test_marker_is_refused_whole_with_a_reason(self):
         st = rp.parse_status(MARKER + STATUS)
@@ -320,10 +332,11 @@ class Tree(unittest.TestCase):
                                                "readme_sha": sub_readme[:12], "layers": {"Layer 0": "p", "Layer 1": "p"}}}
         gadgets, gtwin, widgets, sub, wtwin, done = rp.read_roadmaps(self.root, hand)
         self.assertEqual((sub["states"], sub["assessment"]["source"]), (["done", "untouched"], "marker"))
-        # Twin's marker was made against another README, so it is refused, with the reason.
-        self.assertEqual(wtwin["assessment"]["reason"], "invalid-marker")
-        self.assertIn("different README", wtwin["assessment"]["detail"])
-        self.assertEqual(wtwin["states"], ["unassessed"] * 2)
+        # Twin's marker was made against another README with the same layers, so its verdicts are
+        # kept, flagged, exactly as for a top-level roadmap.
+        self.assertEqual((wtwin["assessment"]["reason"], wtwin["assessment"]["readme_changed"]), ("ok", True))
+        self.assertEqual(wtwin["states"], ["done", "untouched"])
+        self.assertFalse(sub["assessment"]["readme_changed"])
         # The umbrella's own marker is still its own, and a child of another umbrella with the same
         # name is not touched by Widgets/Twin's.
         self.assertEqual((widgets["states"], widgets["assessment"]["source"]), (["done", "partial", "untouched"], "marker"))
@@ -384,13 +397,59 @@ class Tree(unittest.TestCase):
         widgets = rp.read_roadmaps(self.root, {})[2]
         self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
         self.assertIn("does not parse", widgets["assessment"]["detail"])
-        # A valid marker over an edited README: unassessed, with the README reason, no fallback.
-        status.write_text(MARKER + STATUS)
-        (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text(README.replace("text\n", "new requirements\n"))
+        self.assertFalse(widgets["assessment"]["readme_changed"])
+
+    def test_a_marker_for_an_edited_readme_keeps_its_states_flagged_while_the_layers_are_the_same(self):
+        status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
+        readme = self.root / rp.AREAS_DIR / "Widgets" / "README.md"
+        status.write_text(MARKER.replace('"state":"partial"', '"state":"partial","remaining":"the other half"') + STATUS)
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        self.assertFalse(widgets["assessment"]["readme_changed"])
+        # Same layer ids, edited requirements: the report's verdicts stay, flagged, and the marker
+        # is still preferred to a transcription.
+        readme.write_text(README.replace("text\n", "new requirements\n"))
         widgets = rp.read_roadmaps(self.root, {"TauCetiRoadmap/Widgets": entry()})[2]
-        self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
-        self.assertIn("different README", widgets["assessment"]["detail"])
-        self.assertEqual(widgets["states"], ["unassessed"] * 3)
+        a = widgets["assessment"]
+        self.assertEqual((a["source"], a["reason"], a["readme_changed"]), ("marker", "ok", True))
+        self.assertEqual(widgets["states"], ["done", "partial", "untouched"])
+        self.assertEqual(a["remaining"], {"Layer 1": "the other half"})
+        self.assertIn("README changed after this report", a["detail"])
+        # A re-layered README cannot take the old verdicts: unassessed, saying both what changed
+        # and why the layers no longer fit.
+        readme.write_text(README.replace("### Layer 2.5: gizmos — and more\n", "### Layer 2.5: gizmos\n### Layer 3: more\n"))
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        a = widgets["assessment"]
+        self.assertEqual((a["reason"], a["readme_changed"]), ("invalid-marker", False))
+        self.assertIn("different README", a["detail"])
+        self.assertIn("Layer 3", a["detail"])
+        self.assertEqual(widgets["states"], ["unassessed"] * 4)
+        # Other faults are reported as before, not retried against the marker's own README.
+        readme.write_text(README.replace("text\n", "new requirements\n"))
+        status.write_text(MARKER.replace('"roadmap":"Widgets"', '"roadmap":"Gadgets"') + STATUS)
+        a = rp.read_roadmaps(self.root, {})[2]["assessment"]
+        self.assertEqual((a["reason"], a["readme_changed"]), ("invalid-marker", False))
+        self.assertNotIn("different README", a["detail"])
+
+    def test_only_a_readme_hash_can_name_an_earlier_readme(self):
+        """The fallback retries a marker against its own `readme_sha`, which any string matches, so
+        a value that is not a hash must be refused before the README comparison, not after."""
+        status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
+        (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text(README.replace("text\n", "new requirements\n"))
+
+        def assessment(named):
+            status.write_text(MARKER.replace(f'"readme_sha":"{README_SHA[:12]}"', f'"readme_sha":{json.dumps(named)}') + STATUS)
+            widgets = rp.read_roadmaps(self.root, {})[2]
+            return widgets["states"], widgets["assessment"]
+
+        for named in ("z" * 12, "a" * 65, "not-a-real-hash", " " * 12, README_SHA[:12].upper(), README_SHA[:11],
+                      " " + README_SHA[:12], README_SHA[:12] + "\n", 7):
+            states, a = assessment(named)
+            self.assertEqual((states, a["reason"], a["readme_changed"]), (["unassessed"] * 3, "invalid-marker", False), named)
+            self.assertIn("not a README hash", a["detail"])
+        # A hash of the earlier README, as a twelve-character prefix or whole, is still kept, flagged.
+        for named in (README_SHA[:12], README_SHA):
+            states, a = assessment(named)
+            self.assertEqual((states, a["reason"], a["readme_changed"]), (["done", "partial", "untouched"], "ok", True), named)
 
     def test_no_layers_and_no_report_are_distinct_reasons(self):
         (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text("# Roadmap: widgets\n\nprose\n")
@@ -398,6 +457,251 @@ class Tree(unittest.TestCase):
         rows = rp.read_roadmaps(self.root, {})
         self.assertEqual(rows[2]["assessment"]["reason"], "no-layers")
         self.assertEqual(rows[3]["assessment"]["reason"], "no-report")
+
+
+class Topics(unittest.TestCase):
+    """Rows are grouped by the arXiv category each roadmap declares in its own metadata.toml."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = pathlib.Path(self.tmp.name)
+        for base, name, meta in ((rp.AREAS_DIR, "Primes", 'topic = "math.NT"\n'),
+                                 (rp.AREAS_DIR, "Curves", 'topic = "math.AG"\n'),
+                                 (rp.AREAS_DIR, "Bare", None),
+                                 (rp.AREAS_DIR, "Odd", 'topic = "physics.gen-ph"\n'),
+                                 (rp.AREAS_DIR, "Broken", "topic = \n"),
+                                 (rp.COMPLETED_DIR, "Finished", 'topic = "math.CO"\n')):
+            d = root / base / name
+            d.mkdir(parents=True)
+            (d / "README.md").write_text(f"# {name}\n### Layer 0: a\n")
+            if meta is not None:
+                (d / "metadata.toml").write_text(meta)
+        sub = root / rp.AREAS_DIR / "Primes" / "Sub"
+        sub.mkdir()
+        (sub / "README.md").write_text("# Sub\n### Layer 0: a\n")
+        (sub / "Suggested.lean").write_text("")
+        self.rows = rp.read_roadmaps(root, {})
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def topic(self, data, row_id):
+        return next(r["topic"] for r in data["rows"] if r["id"] == row_id)
+
+    def test_each_roadmap_is_grouped_by_its_declared_category(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes"), "Number Theory")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Curves"), "Algebraic Geometry")
+        self.assertEqual(self.topic(data, "Completed/Finished"), "Combinatorics")
+
+    def test_a_sub_roadmap_is_in_its_parent_s_category(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes/Sub"), "Number Theory")
+
+    def test_no_or_unknown_or_malformed_metadata_is_unsorted(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        for name in ("Bare", "Odd", "Broken"):
+            self.assertEqual(self.topic(data, f"TauCetiRoadmap/{name}"), rp.UNSORTED, name)
+
+    def test_the_topic_list_is_the_categories_in_use_by_name(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(data["topics"], ["Algebraic Geometry", "Combinatorics",
+                                          "Number Theory"])
+
+
+@unittest.skipUnless(shutil.which("node"), "Node is needed for snapshot validation")
+class TopicScheme(unittest.TestCase):
+    """A snapshot says which classification its topics follow, so one from before the switch to
+    arXiv categories can be told apart from a current one."""
+
+    def test_build_stamps_the_scheme(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        self.assertEqual(rp.build([], [], now, now, None, None, "test")["topic_scheme"], rp.TOPIC_SCHEME)
+
+    def test_only_a_current_snapshot_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / "progress.json"
+            self.assertFalse(rp.snapshot_is_current(path))  # missing
+            path.write_text("{not json")
+            self.assertFalse(rp.snapshot_is_current(path))
+            path.write_text(json.dumps({"schema_version": 3, "topics": ["Number theory"]}))
+            self.assertFalse(rp.snapshot_is_current(path))  # from before the scheme existed
+            path.write_text(json.dumps({"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME}))
+            self.assertFalse(rp.snapshot_is_current(path))  # a stamp alone is insufficient
+            now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+            path.write_text(json.dumps(rp.build([], [], now, now, None, None, "test")))
+            self.assertTrue(rp.snapshot_is_current(path))
+            self.assertEqual(rp.main(["--check-snapshot", str(path)]), 0)
+            path.write_text("[]")
+            self.assertEqual(rp.main(["--check-snapshot", str(path)]), 1)
+
+    def test_rejects_invalid_board_data_and_category_assignments(self):
+        snapshot = json.loads((pathlib.Path(__file__).resolve().parents[1] /
+                               "web/static_files/progress.json").read_text())
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / "progress.json"
+            path.write_text(json.dumps(snapshot))
+            self.assertTrue(rp.snapshot_is_current(path))
+            for field, value in (("schema_version", 2), ("topics", None), ("rows", None),
+                                 ("global", {}), ("topics", ["obsolete category"])):
+                with self.subTest(field=field, value=value):
+                    broken = {**snapshot, field: value}
+                    path.write_text(json.dumps(broken))
+                    self.assertFalse(rp.snapshot_is_current(path))
+            for field, value in (("arxiv", "math.BAD"), ("arxiv", []),
+                                 ("topic", "obsolete category"),
+                                 ("parent_id", "__proto__")):
+                with self.subTest(row_field=field):
+                    broken = copy.deepcopy(snapshot)
+                    broken["rows"][0][field] = value
+                    path.write_text(json.dumps(broken))
+                    self.assertFalse(rp.snapshot_is_current(path))
+            # The browser leaves malformed individual display rows out rather than
+            # rejecting the whole board. Category metadata still validates above.
+            broken = copy.deepcopy(snapshot)
+            broken["rows"][0]["layers"] = None
+            path.write_text(json.dumps(broken))
+            self.assertTrue(rp.snapshot_is_current(path))
+            broken = copy.deepcopy(snapshot)
+            del broken["rows"][0]["arxiv"]
+            path.write_text(json.dumps(broken))
+            self.assertFalse(rp.snapshot_is_current(path))
+            broken = copy.deepcopy(snapshot)
+            child = next(row for row in broken["rows"] if row["parent_id"] is not None)
+            child["arxiv"] = "math.NT" if child["arxiv"] != "math.NT" else "math.AG"
+            child["topic"] = rp.topic_label(child["arxiv"])
+            broken["topics"] = sorted({row["topic"] for row in broken["rows"]} - {rp.UNSORTED})
+            path.write_text(json.dumps(broken))
+            self.assertFalse(rp.snapshot_is_current(path))
+
+
+@unittest.skipUnless(shutil.which("node"), "Node is needed for snapshot validation")
+class PagesFailurePath(unittest.TestCase):
+    """The Pages workflow restores the last published static files from a cache and then
+    regenerates them. When the progress board's regeneration fails, the restored snapshot is
+    published only if it validates in the current topic scheme; one from before the switch would show the
+    old hand-assigned topics under the new label, so the committed fallback replaces it. This runs
+    the workflow step's own script, with generation made to fail."""
+
+    REPO = pathlib.Path(__file__).resolve().parents[1]
+    NOW = dt.datetime(2026, 10, 1, tzinfo=UTC)
+    COMMITTED = {**rp.build([], [], NOW, NOW, None, None, "test"), "which": "committed"}
+
+    def step_script(self):
+        text = (self.REPO / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
+        start = text.index("- name: Regenerate the roadmap progress board into static_files")
+        lines = text[text.index("run: |", start):].split("\n")[1:]
+        indent = len(lines[0]) - len(lines[0].lstrip())
+        body = []
+        for line in lines:
+            if line.strip() and len(line) - len(line.lstrip()) < indent:
+                break
+            body.append(line[indent:])
+        return "\n".join(body)
+
+    def publish_after_failure(self, restored, restored_validator=None):
+        """The JSON left for publication when generation fails over `restored` (None: no file)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / "scripts").mkdir()
+            for name in ("roadmap_progress.py", "arxiv_categories.py"):
+                (root / "scripts" / name).write_text((self.REPO / "scripts" / name).read_text(encoding="utf-8"))
+            static = root / "web" / "static_files"
+            static.mkdir(parents=True)
+            (static / "progress.js").write_text((self.REPO / "web/static_files/progress.js").read_text())
+            (static / "progress.json").write_text(json.dumps(self.COMMITTED))
+            git = ["git", "-C", d, "-c", "user.name=t", "-c", "user.email=t@t"]
+            subprocess.run(["git", "init", "-q", d], check=True)
+            subprocess.run(git + ["add", "."], check=True)
+            subprocess.run(git + ["commit", "-qm", "fallback"], check=True)
+            if restored_validator is not None:
+                (static / "progress.js").write_text(restored_validator)
+            if restored is None:
+                (static / "progress.json").unlink()
+            else:
+                (static / "progress.json").write_text(json.dumps(restored))
+            script = (self.step_script()
+                      .replace("${{ github.repository }}", "example/repo")
+                      .replace("/tmp/roadmap", str(root / "no-roadmap-here")))  # generation fails
+            run = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", script], cwd=d, text=True,
+                                 capture_output=True, env={**os.environ, "RUNNER_TEMP": d})
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertIn("roadmap progress", (root / "data-failures").read_text())
+            return json.loads((static / "progress.json").read_text())
+
+    def test_a_legacy_restored_snapshot_is_replaced_by_the_committed_fallback(self):
+        legacy = {"schema_version": 3, "topics": ["Number theory", "Algebraic geometry"], "which": "legacy"}
+        self.assertEqual(self.publish_after_failure(legacy)["which"], "committed")
+
+    def test_a_current_restored_snapshot_is_kept(self):
+        current = {**self.COMMITTED, "which": "last published"}
+        self.assertEqual(self.publish_after_failure(current)["which"], "last published")
+
+    def test_a_current_snapshot_is_kept_when_the_cache_also_restores_legacy_javascript(self):
+        current = {**self.COMMITTED, "which": "last published"}
+        legacy_js = "document.getElementById('progress-board');"
+        self.assertEqual(self.publish_after_failure(current, legacy_js)["which"], "last published")
+
+    def test_a_stamped_but_malformed_snapshot_is_replaced(self):
+        broken = {"topic_scheme": rp.TOPIC_SCHEME, "which": "malformed"}
+        self.assertEqual(self.publish_after_failure(broken)["which"], "committed")
+
+    def test_no_restored_snapshot_means_the_committed_fallback(self):
+        self.assertEqual(self.publish_after_failure(None)["which"], "committed")
+
+
+class BoardSearch(unittest.TestCase):
+    """The board's search box (`matchInfo` in progress.js) finds a roadmap by its category's name,
+    which is what the board shows, and by its arXiv code, which it no longer shows. Runs the
+    function itself under node; skipped where there is no node."""
+
+    JS = pathlib.Path(__file__).resolve().parents[1] / "web" / "static_files" / "progress.js"
+
+    def match_info_source(self):
+        text = self.JS.read_text(encoding="utf-8")
+        start = text.index("function matchInfo(r) {")
+        depth, i = 0, text.index("{", start)
+        while True:
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            if depth == 0:
+                return text[start:i + 1]
+            i += 1
+
+    def search(self, rows_and_queries):
+        import shutil
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("node is not installed")
+        harness = ("var state = {q: ''};\n" + self.match_info_source() + "\n"
+                   "var cases = " + json.dumps(rows_and_queries) + ";\n"
+                   "console.log(JSON.stringify(cases.map(function (c) {"
+                   " state.q = c[1]; return matchInfo(c[0]); })));\n")
+        run = subprocess.run([node, "-e", harness], capture_output=True, text=True, check=True)
+        return json.loads(run.stdout)
+
+    def row(self, topic, arxiv="absent"):
+        r = {"name": "Primes", "title": "Primes in progressions", "topic": topic, "layers": ["Layer 0: x"],
+             "status": None}
+        if arxiv != "absent":
+            r["arxiv"] = arxiv
+        return r
+
+    def test_a_category_is_found_by_its_code_and_by_its_name(self):
+        nt = self.row("Number Theory", "math.NT")
+        got = self.search([[nt, "math.NT"], [nt, "MATH.nt"], [nt, "math.nt"], [nt, "Number Theory"],
+                           [nt, "number"], [nt, "math.AG"]])
+        self.assertEqual([g["hit"] for g in got], [True, True, True, True, True, False])
+        self.assertEqual(got[0]["where"], "topic Number Theory")  # the explanation names, never codes
+
+    def test_an_unsorted_row_without_a_code_is_matched_by_name_only(self):
+        for arxiv in ("absent", None):
+            unsorted = self.row("Unsorted", arxiv)
+            got = self.search([[unsorted, "math.NT"], [unsorted, "unsorted"]])
+            self.assertEqual([g["hit"] for g in got], [False, True], arxiv)
 
 
 class Activity(unittest.TestCase):
@@ -462,8 +766,8 @@ class Activity(unittest.TestCase):
                {"number": 5, "merged_at": None, "open": True, "labels": ["roadmap/Widgets"]}]
         exported = dt.datetime(2026, 9, 18, 12, 30, tzinfo=UTC)
         cutoff = dt.datetime(2026, 9, 17, 3, 0, tzinfo=UTC)
-        data = rp.build(rows, prs, {"order": ["T"], "map": {"Widgets": "T"}}, exported, cutoff,
-                        "2026-09-17T03:00:00Z", "abc1234", "test")
+        rows[0]["arxiv"] = "math.NT"
+        data = rp.build(rows, prs, exported, cutoff, "2026-09-17T03:00:00Z", "abc1234", "test")
         self.assertEqual(data["exported_at"], "2026-09-18T12:30:00Z")
         self.assertEqual(data["collected_at"], "2026-09-17T03:00:00Z")
         self.assertEqual(data["cutoff"], "2026-09-17T03:00:00Z")
@@ -471,17 +775,206 @@ class Activity(unittest.TestCase):
         self.assertEqual(data["rows"][0]["activity"]["total"], 2)
         self.assertEqual(data["rows"][0]["activity"]["open"], 1)
         self.assertEqual(data["global"]["open"], 1)
-        self.assertEqual(data["rows"][0]["topic"], "T")
+        self.assertEqual(data["rows"][0]["topic"], "Number Theory")
+        self.assertEqual(data["topics"], ["Number Theory"])
         self.assertEqual(data["global"]["first_merge"], "2026-08-30T00:00:00Z")
         self.assertEqual(data["global"]["total"], 3)
         self.assertEqual(data["global"]["unattributed"]["no_label"], 1)
 
     def test_build_with_no_rows_or_prs_is_well_formed_and_unknown_collection_stays_unknown(self):
         now = dt.datetime(2026, 9, 17, tzinfo=UTC)
-        data = rp.build([], [], {}, now, now, None, None, "test")
+        data = rp.build([], [], now, now, None, None, "test")
         self.assertIsNone(data["global"]["first_merge"])
         self.assertIsNone(data["collected_at"])
         self.assertEqual(data["global"]["total"], 0)
+
+
+NODE = shutil.which("node")
+BOARD_JS = pathlib.Path(__file__).resolve().parent.parent / "web" / "static_files" / "progress.js"
+# Runs the Progress page's script on a progress.json with just enough of a DOM to render into, and
+# prints what it wrote: the whole board, the table body, and the "N roadmaps shown" line.
+HARNESS = r"""
+const fs = require("fs"), vm = require("vm");
+const [src, dataPath, search] = process.argv.slice(1);
+const parts = {};
+function el() { return { innerHTML: "", textContent: "", value: "", addEventListener() {} }; }
+const root = Object.assign(el(), { querySelector: (sel) => parts[sel] || (parts[sel] = el()) });
+const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+vm.runInContext(fs.readFileSync(src, "utf8"), vm.createContext({
+  document: { getElementById: (id) => (id === "progress-board" ? root : null) },
+  location: { search, pathname: "/progress", hash: "", origin: "https://example.org" },
+  history: { pushState() {}, replaceState() {} },
+  window: { addEventListener() {} },
+  URLSearchParams, setTimeout, clearTimeout,
+  fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve(data) }),
+}));
+setTimeout(() => process.stdout.write(JSON.stringify({
+  page: root.innerHTML, rows: (parts[".pb-rows"] || el()).innerHTML, count: (parts[".pb-count"] || el()).textContent })));
+"""
+
+
+@unittest.skipUnless(NODE, "the board's script needs node to run")
+class Board(unittest.TestCase):
+    """The page's script on rows the generator read: an umbrella, Widgets, whose own report is
+    current and assesses two sub-roadmaps without reports of their own, beside Gadgets, a
+    roadmap with a current report."""
+    SUB = "# Roadmap: sub\n### Layer 0: a\n### Layer 1: b\n"
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = pathlib.Path(tmp.name)
+        self.widgets = self.dir / rp.AREAS_DIR / "Widgets"
+        self.widgets.mkdir(parents=True)
+        head, rest = STATUS.split("\n", 1)
+        subs = "".join(self.marker(f"Widgets/{c}") for c in ("Sub", "Twin"))
+        (self.widgets / "README.md").write_text(README)
+        (self.widgets / "STATUS.md").write_text(head + "\n" + MARKER + subs + rest)
+        for c in ("Sub", "Twin"):
+            (self.widgets / c).mkdir()
+            (self.widgets / c / "README.md").write_text(self.SUB)
+            (self.widgets / c / "Suggested.lean").write_text("")
+        gadgets = self.dir / rp.AREAS_DIR / "Gadgets"
+        gadgets.mkdir(parents=True)
+        (gadgets / "README.md").write_text(README)
+        (gadgets / "STATUS.md").write_text(MARKER.replace('"roadmap":"Widgets"', '"roadmap":"Gadgets"')
+                                           + STATUS.replace("Widgets", "Gadgets"))
+
+    def marker(self, roadmap):
+        return (f'<!--tauceti-coverage:v1 {{"roadmap":"{roadmap}","to_sha":"{SHA}","readme_sha":"{rp.sha256(self.SUB)}",'
+                '"layers":[{"id":"Layer 0","state":"done"},{"id":"Layer 1","state":"partial"}]}-->\n')
+
+    def edit(self, child):
+        """Change a sub-roadmap's requirements after its report, keeping its layer ids."""
+        (self.widgets / child / "README.md").write_text(self.SUB + "\nA new requirement.\n")
+
+    def board(self, search="", since=None, tamper=None):
+        rows = rp.read_roadmaps(self.dir, {})
+        for r in rows:
+            r["topic"] = "Widgetry"
+            n = (since or {}).get(r["name"], 0)
+            r["activity"] = None if r["parent"] else {"weekly": [n], "total": n, "recent": n, "last": None, "since_report": n, "open": 0}
+        merged = sum((since or {}).values())
+        if tamper:
+            tamper({r["name"]: r for r in rows})
+        # The envelope `build` writes, with activity set directly: pull requests since the report
+        # are an input here, not what is under test. Every one carries a single roadmap label, so
+        # the global figures are the rows' sum.
+        data = {"schema_version": 3, "exported_at": "2026-09-17T00:00:00Z", "collected_at": None,
+                "cutoff": "2026-09-17T00:00:00Z", "recent_days": rp.RECENT_DAYS, "roadmap_head": None,
+                "prs_source": "test", "update_due_prs": rp.UPDATE_DUE_PRS, "weeks": ["2026-09-14"],
+                "topics": ["Widgetry"], "rows": rows,
+                "global": {"weekly": [merged], "recent": merged, "total": merged, "open": 0, "first_merge": None,
+                           "unattributed": {"no_label": 0, "several_labels": 0, "unknown_area": 0}}}
+        path = self.dir / "progress.json"
+        path.write_text(json.dumps(data))
+        out = subprocess.run([NODE, "-e", HARNESS, str(BOARD_JS), str(path), search],
+                             check=True, capture_output=True, text=True).stdout
+        page = json.loads(out)
+        self.assertNotIn("pb-error", page["page"])
+        return page
+
+    @staticmethod
+    def row(html, rid):
+        """The table row shown for roadmap `rid`, or None."""
+        m = re.search(rf'<tr class="pb-row[^"]*" id="rm-{re.sub(r"[^A-Za-z0-9]+", "-", rid)}">.*?</tr>', html, re.S)
+        return m.group(0) if m else None
+
+    def test_a_stale_sub_roadmap_makes_its_umbrella_report_due_and_is_counted_once(self):
+        page = self.board()
+        self.assertIn("<b>0</b> due an update", page["page"])
+        self.assertNotIn("README changed", page["rows"])
+        self.edit("Sub")
+        page = self.board()
+        widgets = self.row(page["rows"], "TauCetiRoadmap/Widgets")
+        # Widgets' own states are current, but its totals count Sub's old ones, and its report is
+        # the one that must reassess Sub.
+        self.assertIn(">sub-roadmap README changed<", widgets)
+        self.assertNotIn(">README changed<", widgets)
+        self.assertIn("This roadmap’s report covers Sub, so it is due an update.", widgets)
+        self.assertIn('class="pb-age stale"', widgets)
+        self.assertNotIn('class="pb-age stale"', self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        self.assertIn("<b>1</b> due an update", page["page"])
+        # Under "update due" the stale sub-roadmap is shown, flagged, rather than hidden beneath
+        # its umbrella, and the umbrella is a match in its own right.
+        page = self.board("?show=due")
+        self.assertEqual(page["count"], "2 roadmaps shown of 4")
+        self.assertNotIn(">context<", self.row(page["rows"], "TauCetiRoadmap/Widgets"))
+        self.assertIn(">README changed<", self.row(page["rows"], "TauCetiRoadmap/Widgets/Sub"))
+        self.assertIsNone(self.row(page["rows"], "TauCetiRoadmap/Widgets/Twin"))
+        self.assertIsNone(self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        # A second stale sub-roadmap is due from the same report, which is still counted once.
+        self.edit("Twin")
+        page = self.board()
+        self.assertIn("<b>1</b> due an update", page["page"])
+        self.assertIn("The READMEs of Sub, Twin changed", self.row(page["rows"], "TauCetiRoadmap/Widgets"))
+        self.assertEqual(self.board("?show=due")["count"], "3 roadmaps shown of 4")
+
+    def test_a_sub_roadmap_with_its_own_report_does_not_make_the_umbrella_report_due(self):
+        (self.widgets / "Twin" / "STATUS.md").write_text(self.marker("Twin") + STATUS.replace("Widgets", "Twin"))
+        self.edit("Twin")
+        page = self.board()
+        widgets = self.row(page["rows"], "TauCetiRoadmap/Widgets")
+        # The umbrella's totals still carry the warning, but only Twin's own report is due.
+        self.assertIn(">sub-roadmap README changed<", widgets)
+        self.assertIn("Twin has its own report, which is due an update.", widgets)
+        self.assertNotIn("This roadmap’s report covers", widgets)
+        self.assertNotIn('class="pb-age stale"', widgets)
+        self.assertIn("<b>1</b> due an update", page["page"])
+        page = self.board("?show=due")
+        self.assertEqual(page["count"], "1 roadmap shown of 4")
+        self.assertIn(">context<", self.row(page["rows"], "TauCetiRoadmap/Widgets"))
+        self.assertIn('class="pb-age stale"', self.row(page["rows"], "TauCetiRoadmap/Widgets/Twin"))
+
+    def test_update_due_sorts_a_stale_report_before_a_busier_current_one(self):
+        (self.widgets / "README.md").write_text(README.replace("text\n", "new requirements\n"))
+        rows = self.board("?sort=due&group=none", since={"Gadgets": rp.UPDATE_DUE_PRS - 1})["rows"]
+        self.assertLess(rows.index('id="rm-TauCetiRoadmap-Widgets"'), rows.index('id="rm-TauCetiRoadmap-Gadgets"'))
+        # Among reports that are not due, more pull requests since still sorts first.
+        (self.widgets / "README.md").write_text(README)
+        rows = self.board("?sort=due&group=none", since={"Widgets": 1, "Gadgets": 0})["rows"]
+        self.assertLess(rows.index('id="rm-TauCetiRoadmap-Widgets"'), rows.index('id="rm-TauCetiRoadmap-Gadgets"'))
+
+    def test_a_malformed_row_is_named_and_the_rest_of_the_board_is_shown(self):
+        def repeat(rows):
+            rows["Gadgets"]["layer_ids"][1] = rows["Gadgets"]["layer_ids"][0]
+        page = self.board(since={"Widgets": 7, "Gadgets": 7}, tamper=repeat)
+        self.assertIn("1 roadmap not shown", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Gadgets</code> (repeated layer id)", page["page"])
+        self.assertIsNone(self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        self.assertIsNotNone(self.row(page["rows"], "TauCetiRoadmap/Widgets"))
+        self.assertTrue(page["count"].endswith(" of 3"), page["count"])
+        # The topic's activity is the rows shown; the pull-request tile is all of Tau Ceti, and the
+        # notice says which is which.
+        self.assertIn("<b>7</b> PRs merged in", page["rows"])
+        self.assertIn("<b>14</b> merged up to the cutoff", page["page"])
+        self.assertIn("leave it out; the pull-request figures, which count all of Tau Ceti, do not.", page["page"])
+        self.assertNotIn("pb-left-out", self.board()["page"])
+
+    def test_an_umbrella_whose_sub_roadmaps_are_all_left_out_counts_its_own_layers(self):
+        def unalign(rows):
+            rows["Sub"]["states"].pop()
+            rows["Twin"]["states"].pop()
+        whole = self.board()["page"]
+        page = self.board(tamper=unalign)
+        self.assertIn("2 roadmaps not shown", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Widgets/Twin</code> (layers, ids, lines and states do not align)", page["page"])
+        self.assertIsNone(self.row(page["rows"], "TauCetiRoadmap/Widgets/Sub"))
+        self.assertIsNotNone(self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        # Widgets is a leaf again: its own three layers replace Sub's and Twin's two each, once.
+        self.assertIn("of 7 reported done", whole)
+        self.assertIn("of 6 reported done", page["page"])
+        self.assertIn("2 roadmaps · 6 layers", page["rows"])
+
+    def test_a_left_out_umbrella_takes_its_sub_roadmaps_with_it(self):
+        def unalign(rows):
+            rows["Widgets"]["states"].pop()
+        page = self.board(tamper=unalign)
+        self.assertIn("3 roadmaps not shown", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Widgets</code> (layers, ids, lines and states do not align)", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Widgets/Sub</code> (its umbrella roadmap is left out)", page["page"])
+        self.assertIsNotNone(self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        self.assertEqual(page["count"], "1 roadmap shown of 1")
 
 
 if __name__ == "__main__":

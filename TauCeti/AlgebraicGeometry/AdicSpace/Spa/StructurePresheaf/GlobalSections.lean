@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChange
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!
@@ -47,6 +47,8 @@ itself an isomorphism.
 * `TauCeti.ValuationSpectrum.toPresentationLimit_comp_πToPresentation` and
   `TauCeti.ValuationSpectrum.toPresentationLimit_comp_presentationLimitMap` : the canonical map
   projects to the structure maps and commutes with restriction.
+* `TauCeti.ValuationSpectrum.presentationLimit_spaBasicOpen_hom_ext` : morphisms out of the
+  sections over a rational open are determined by their composites with the canonical map.
 * `TauCeti.ValuationSpectrum.isIso_toPresentationLimit_top` : on the whole spectrum the canonical
   map is an isomorphism.
 
@@ -113,13 +115,39 @@ theorem toPresentationLimit_comp_presentationLimitMap {V W : Opens ↥(spa Aplus
     simp
   exact key (presentationIndexRestrict_obj_pres h i)
 
+/-- **Morphisms out of the sections over a rational open are determined on `A`**: two morphisms
+out of `presentationLimit (R(p))` into a complete separated topological ring agree once they agree
+after the canonical map from `A`. The sections over `R(p)` are `A⟨p⟩`, in which the image of
+`A[1/s]` is dense. -/
+theorem presentationLimit_spaBasicOpen_hom_ext (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    {X : CompleteSeparatedTopCommRingCat.{v}}
+    {f g : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ⟶ X}
+    (h : toPresentationLimit Aplus _ ≫ f = toPresentationLimit Aplus _ ≫ g) : f = g := by
+  rw [← (presentationLimitRationalIso Aplus hAplus p hp).hom_inv_id_assoc f,
+    ← (presentationLimitRationalIso Aplus hAplus p hp).hom_inv_id_assoc g]
+  refine congrArg _ (p.hom_ext ?_)
+  -- through `presentationLimitRationalIso`, the canonical map is the structure map `A → A⟨p⟩`
+  have key : toPresentationLimit Aplus _ ≫ (presentationLimitRationalIso Aplus hAplus p hp).hom =
+      p.toCompletionLocObjHom := by simp
+  rw [← Iso.eq_comp_inv] at key
+  rw [key, Category.assoc, Category.assoc] at h
+  have h' := congrArg (·.hom) h
+  simp only [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocObjHom_hom,
+    Category.assoc] at h'
+  rw [Presentation.toCompletionLocTopHom_eq, ObjectProperty.FullSubcategory.comp_hom,
+    ObjectProperty.FullSubcategory.comp_hom, Category.assoc, Category.assoc]
+  exact (cancel_epi (eqToHom _)).mp h'
+
 /-! ### Global sections -/
 
 /-- The structure map of the trivial presentation `({1}, 1)` is an isomorphism, for complete
 Hausdorff `A`. -/
 private theorem isIso_toCompletionLocObjHom_one :
-    IsIso (Presentation.toCompletionLocObjHom (P := P)
-      ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩) := by
+    IsIso (Presentation.trivial P).toCompletionLocObjHom := by
+  -- The projection equations identify the presentation for the denominator-one API.
+  rw [show Presentation.trivial P =
+    ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩ from by ext <;> simp]
   have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := fun t ht ↦ by
     rw [Finset.mem_singleton.mp ht]
     exact isPowerBounded_one
@@ -159,7 +187,7 @@ private theorem isIso_toCompletionLocObjHom_one :
 subset `R({1}/1)` is the whole adic spectrum. -/
 private noncomputable def trivialIndex :
     PresentationIndex (P := P) Aplus ⊤ where
-  pres := ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
+  pres := Presentation.trivial P
   isOpen_span := by simp
   le_open := le_top
 

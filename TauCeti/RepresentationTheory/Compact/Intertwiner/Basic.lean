@@ -29,7 +29,7 @@ The target `W` is not assumed complete. `averageOperator` is `TauCeti.haarAverag
 family valued in the operator space `V →L[𝕜] W`, so it inherits that average's convention: it is the
 displayed Haar integral when that space is complete, and the Bochner integral's junk value `0`
 otherwise. `[CompleteSpace W]` is what supplies completeness of `V →L[𝕜] W`, so the statements that
-read the average's actual value, from `TauCeti.ContRepresentation.averageOperator_apply` onwards,
+read the average's actual value, from `ContRepresentation.averageOperator_apply` onwards,
 carry it.
 
 The construction is a projection onto the intertwiners: it is linear in `T`, it fixes every
@@ -38,30 +38,29 @@ That last fact is what pins the constant `d⁻¹` in the first Schur orthogonali
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.averageOperator`: the Haar average `∫ g, ρ g⁻¹ ∘ T ∘ π g`.
-* `TauCeti.ContRepresentation.averageOperatorₗ`: the same, bundled as a linear map in `T`.
-* `TauCeti.ContRepresentation.averageIntertwiner`: the average packaged as a term of Mathlib's
+* `ContRepresentation.averageOperator`: the Haar average `∫ g, ρ g⁻¹ ∘ T ∘ π g`.
+* `ContRepresentation.averageOperatorₗ`: the same, bundled as a linear map in `T`.
+* `ContRepresentation.averageIntertwiner`: the average packaged as a term of Mathlib's
   `ContIntertwiningMap π ρ`.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.averageOperator_comp`: the average intertwines `π` with `ρ`.
-* `TauCeti.ContRepresentation.averageOperator_eq_self`: the average fixes an operator that already
+* `ContRepresentation.averageOperator_comp`: the average intertwines `π` with `ρ`.
+* `ContRepresentation.averageOperator_eq_self`: the average fixes an operator that already
   intertwines, so `averageOperator` is idempotent
-  (`TauCeti.ContRepresentation.averageOperator_averageOperator`).
-* `TauCeti.ContRepresentation.trace_averageOperator`: averaging a self-map of a finite-dimensional
+  (`ContRepresentation.averageOperator_averageOperator`).
+* `ContRepresentation.trace_averageOperator`: averaging a self-map of a finite-dimensional
   representation preserves the trace.
-* `TauCeti.ContRepresentation.inner_matrixCoeffLp_eq_inner_averageOperator`: the `L²` inner product
+* `ContRepresentation.inner_matrixCoeffLp_eq_inner_averageOperator`: the `L²` inner product
   of two matrix coefficients is a matrix entry of the average of a **rank-one** operator. This is
   the identity that turns Schur orthogonality into a statement about intertwiners.
-* `TauCeti.ContRepresentation.schur_orthogonality_distinct`: **the second Schur orthogonality
+* `ContRepresentation.schur_orthogonality_distinct`: **the second Schur orthogonality
   relation.** If there is no nonzero continuous intertwiner `π → ρ`, every matrix coefficient of `π`
   is `L²`-orthogonal to every matrix coefficient of `ρ`.
 
-This is the intertwiner half of Layer 4 of the [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose orthogonality statements are pinned in its `Suggested.lean`. Schur's lemma itself is not used
-here: `schur_orthogonality_distinct` takes the vanishing of the intertwiner space as a hypothesis,
-which is precisely what Schur's lemma supplies for inequivalent irreducibles.
+Schur's lemma itself is not used here: `schur_orthogonality_distinct` takes the vanishing of the
+intertwiner space as a hypothesis, which is precisely what Schur's lemma supplies for inequivalent
+irreducibles.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
@@ -73,29 +72,46 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
+/-- An action operator composed with the action of the inverse group element is the identity. -/
+private theorem comp_inv_self {𝕜 G W : Type*} [RCLike 𝕜] [Group G]
+    [NormedAddCommGroup W] [NormedSpace 𝕜 W] (ρ : ContRepresentation 𝕜 G W) (g : G) :
+    (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id 𝕜 W := by
+  rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
+  rfl
+
+/-- Conjugation `S ↦ ρ g⁻¹ ∘ S ∘ π g`, packaged as a continuous linear map on operators. It is the
+action operator at `g⁻¹` of the Hom representation of
+`TauCeti/RepresentationTheory/Continuous/LinHom.lean`, which is what makes it linear. -/
+private noncomputable def conjAction {𝕜 G V W : Type*} [RCLike 𝕜] [Group G]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W) (g : G) :
+    (V →L[𝕜] W) →L[𝕜] V →L[𝕜] W :=
+  ContRepresentation.linHom π ρ g⁻¹
+
+/-- `conjAction` is conjugation, unfolded. -/
+private theorem conjAction_apply {𝕜 G V W : Type*} [RCLike 𝕜] [Group G]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W) (g : G) (S : V →L[𝕜] W) :
+    conjAction π ρ g S = (ρ g⁻¹).comp (S.comp (π g)) := by
+  rw [conjAction, ContRepresentation.linHom_apply, inv_inv]
+
+end TauCeti
+
+open TauCeti
+
 namespace ContRepresentation
 
 section CompactGroup
 
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [CompleteSpace W]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
   (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ)
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
-  [BorelSpace G] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] [CompleteSpace W] in
-/-- An action operator composed with the action of the inverse group element is the identity. -/
-private theorem comp_inv_self (g : G) : (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id 𝕜 W := by
-  rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
-  rfl
-
 include hπ hρ
 
-omit [CompleteSpace W] in
 /-- The integrand `g ↦ ρ g⁻¹ ∘ T ∘ π g` of the averaging construction, as a continuous map on the
 group. Continuity is where the two continuity hypotheses on the representations are used. -/
 private noncomputable def conjFamily (T : V →L[𝕜] W) : C(G, V →L[𝕜] W) where
@@ -103,8 +119,6 @@ private noncomputable def conjFamily (T : V →L[𝕜] W) : C(G, V →L[𝕜] W)
   continuous_toFun :=
     (hρ.comp continuous_inv).clm_comp (Continuous.clm_comp continuous_const hπ)
 
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [CompleteSpace W] in
 /-- The integrand of the averaging construction, evaluated at a group element and a vector. This
 is the unfolding lemma that keeps the proofs below from reaching through `conjFamily`'s
 definition. -/
@@ -113,31 +127,33 @@ private theorem conjFamily_apply_apply (T : V →L[𝕜] W) (g : G) (v : V) :
     conjFamily π hπ ρ hρ T g v = ρ g⁻¹ (T (π g v)) :=
   rfl
 
-omit [CompleteSpace W] in
+/-- Conjugating the integrand by the action at `g` translates its group variable on the right by
+`g`: `ρ g⁻¹ ∘ (ρ h⁻¹ ∘ T ∘ π h) ∘ π g = ρ (h * g)⁻¹ ∘ T ∘ π (h * g)`. -/
+private theorem conjAction_comp_conjFamily (T : V →L[𝕜] W) (g : G) :
+    (conjAction π ρ g : C(V →L[𝕜] W, V →L[𝕜] W)).comp (conjFamily π hπ ρ hρ T)
+      = (conjFamily π hπ ρ hρ T).comp (ContinuousMap.mulRight g) := by
+  ext h v
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, conjAction_apply,
+    ContinuousLinearMap.comp_apply, conjFamily_apply_apply, ContinuousMap.coe_mulRight,
+    mul_inv_rev, map_mul ρ, map_mul π, mul_apply_eq_comp]
+
+variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
+
 /-- The **Haar average of an operator over a pair of representations**,
 `∫ g, ρ g⁻¹ ∘ T ∘ π g ∂(haarProb G)`.
 
 On a complete `W` this is always defined — the integrand is continuous and Haar measure is
 finite — and it always intertwines `π` with `ρ`
-(`TauCeti.ContRepresentation.averageOperator_comp`). `W` is not assumed complete. The average is
+(`ContRepresentation.averageOperator_comp`). `W` is not assumed complete. The average is
 taken in the operator space `V →L[𝕜] W`, so it is `TauCeti.haarAverage`'s junk value `0` unless that
 space is complete, which `[CompleteSpace W]` supplies; that is why the results below that read the
 average's actual value carry it. -/
 noncomputable def averageOperator (T : V →L[𝕜] W) : V →L[𝕜] W :=
   haarAverage G (𝕜 := 𝕜) (conjFamily π hπ ρ hρ T)
 
-/-- The average of an operator, evaluated at a vector. -/
-theorem averageOperator_apply (T : V →L[𝕜] W) (v : V) :
-    averageOperator π hπ ρ hρ T v = ∫ g, ρ g⁻¹ (T (π g v)) ∂haarProb G := by
-  have h := (ContinuousLinearMap.apply 𝕜 W v).haarAverage_comp_comm (G := G)
-    (conjFamily π hπ ρ hρ T)
-  simp only [ContinuousLinearMap.apply_apply] at h
-  rw [averageOperator, ← h, haarAverage_apply]
-  rfl
-
 /-! ### Linearity in the averaged operator -/
 
-omit [CompleteSpace W] in
 @[simp]
 theorem averageOperator_zero : averageOperator π hπ ρ hρ 0 = 0 := by
   have hzero : conjFamily π hπ ρ hρ 0 = 0 := by
@@ -145,7 +161,6 @@ theorem averageOperator_zero : averageOperator π hπ ρ hρ 0 = 0 := by
     simp
   rw [averageOperator, hzero, map_zero]
 
-omit [CompleteSpace W] in
 @[simp]
 theorem averageOperator_add (T₁ T₂ : V →L[𝕜] W) :
     averageOperator π hπ ρ hρ (T₁ + T₂)
@@ -156,7 +171,6 @@ theorem averageOperator_add (T₁ T₂ : V →L[𝕜] W) :
     simp
   rw [averageOperator, averageOperator, averageOperator, hadd, map_add]
 
-omit [CompleteSpace W] in
 @[simp]
 theorem averageOperator_smul (c : 𝕜) (T : V →L[𝕜] W) :
     averageOperator π hπ ρ hρ (c • T) = c • averageOperator π hπ ρ hρ T := by
@@ -165,7 +179,6 @@ theorem averageOperator_smul (c : 𝕜) (T : V →L[𝕜] W) :
     simp
   rw [averageOperator, averageOperator, hsmul, map_smul]
 
-omit [CompleteSpace W] in
 /-- Haar averaging over a pair of representations, bundled as a linear map in the averaged
 operator. Bundling supplies the remaining additive identities (`map_neg`, `map_sub`, `map_sum`)
 through the `LinearMap` API. -/
@@ -174,11 +187,21 @@ noncomputable def averageOperatorₗ : (V →L[𝕜] W) →ₗ[𝕜] V →L[𝕜
   map_add' := averageOperator_add π hπ ρ hρ
   map_smul' := averageOperator_smul π hπ ρ hρ
 
-omit [CompleteSpace W] in
 @[simp]
 theorem averageOperatorₗ_apply (T : V →L[𝕜] W) :
     averageOperatorₗ π hπ ρ hρ T = averageOperator π hπ ρ hρ T :=
   (rfl)
+
+variable [CompleteSpace W]
+
+/-- The average of an operator, evaluated at a vector. -/
+theorem averageOperator_apply (T : V →L[𝕜] W) (v : V) :
+    averageOperator π hπ ρ hρ T v = ∫ g, ρ g⁻¹ (T (π g v)) ∂haarProb G := by
+  have h := (ContinuousLinearMap.apply 𝕜 W v).haarAverage_comp_comm (G := G)
+    (conjFamily π hπ ρ hρ T)
+  simp only [ContinuousLinearMap.apply_apply] at h
+  rw [averageOperator, ← h, haarAverage_apply]
+  rfl
 
 /-! ### The average is an intertwiner
 
@@ -186,32 +209,6 @@ The proof is the same shape as the invariance half of Weyl's unitarian trick: co
 fixed pair of action operators is a continuous *linear* map on operators, so it commutes with Haar
 averaging, and on the integrand it acts as right translation of the group variable, which the Haar
 average does not see. -/
-
-omit hπ hρ [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [CompleteSpace W] in
-/-- Conjugation `S ↦ ρ g⁻¹ ∘ S ∘ π g`, packaged as a continuous linear map on operators. It is the
-action operator at `g⁻¹` of the Hom representation of
-`TauCeti/RepresentationTheory/Continuous/LinHom.lean`, which is what makes it linear. -/
-private noncomputable def conjAction (g : G) : (V →L[𝕜] W) →L[𝕜] V →L[𝕜] W :=
-  ContRepresentation.linHom π ρ g⁻¹
-
-omit hπ hρ [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
-  [BorelSpace G] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] [CompleteSpace W] in
-/-- `conjAction` is conjugation, unfolded. -/
-private theorem conjAction_apply (g : G) (S : V →L[𝕜] W) :
-    conjAction π ρ g S = (ρ g⁻¹).comp (S.comp (π g)) := by
-  rw [conjAction, ContRepresentation.linHom_apply, inv_inv]
-
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [CompleteSpace W] in
-/-- Conjugating the integrand by the action at `g` translates its group variable on the right by
-`g`: `ρ g⁻¹ ∘ (ρ h⁻¹ ∘ T ∘ π h) ∘ π g = ρ (h * g)⁻¹ ∘ T ∘ π (h * g)`. -/
-private theorem conjAction_comp_conjFamily (T : V →L[𝕜] W) (g : G) :
-    (conjAction π ρ g : C(V →L[𝕜] W, V →L[𝕜] W)).comp (conjFamily π hπ ρ hρ T)
-      = (conjFamily π hπ ρ hρ T).comp (ContinuousMap.mulRight g) := by
-  ext h v
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, conjAction_apply,
-    ContinuousLinearMap.comp_apply, conjFamily_apply_apply, ContinuousMap.coe_mulRight,
-    mul_inv_rev, map_mul ρ, map_mul π, mul_apply_eq_comp]
 
 /-- The averaged operator is fixed by conjugation: `ρ g⁻¹ ∘ A ∘ π g = A`. -/
 private theorem conjAction_averageOperator (T : V →L[𝕜] W) (g : G) :
@@ -306,22 +303,12 @@ end SelfAverage
 section Trace
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [FiniteDimensional 𝕜 V]
-
-/-- Completeness of `V` is not an extra hypothesis on the trace results below: a finite-dimensional
-normed space over an `RCLike` field is already complete. Mathlib keeps `FiniteDimensional.complete`
-out of the global instance set, so it is installed here as a local instance instead. -/
-local instance completeSpace_of_finiteDimensional : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 include hπ
 
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ V]
-  [SMulCommClass ℝ 𝕜 V] [FiniteDimensional 𝕜 V] in
 /-- Conjugation does not change the trace, so each value of the integrand has the trace of `T`.
 The conjugating unit is the action of `g⁻¹`, viewed through `Representation.asGroupHom`. -/
 private theorem trace_conjFamily (T : V →L[𝕜] V) (g : G) :
@@ -334,6 +321,16 @@ private theorem trace_conjFamily (T : V →L[𝕜] V) (g : G) :
     simp [← map_inv, Representation.asGroupHom_apply,
       ContRepresentation.toMonoidHom_apply]
   rw [hconj, LinearMap.trace_conj]
+
+variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [FiniteDimensional 𝕜 V]
+
+/-- Completeness of `V` is not an extra hypothesis on the trace results below: a finite-dimensional
+normed space over an `RCLike` field is already complete. Mathlib keeps `FiniteDimensional.complete`
+out of the global instance set, so it is installed here as a local instance instead. -/
+local instance completeSpace_of_finiteDimensional : CompleteSpace V :=
+  FiniteDimensional.complete 𝕜 V
 
 /-- **Averaging preserves the trace.** In finite dimensions each conjugate `π g⁻¹ ∘ T ∘ π g` has the
 trace of `T`, and averaging a constant returns that constant. This is what fixes the normalizing
@@ -390,11 +387,11 @@ theorem inner_averageOperator_of_isUnitary (hunitary : IsUnitary ρ) (T : V →L
 operator.** For the rank-one operator `InnerProductSpace.rankOne 𝕜 w' w = ⟪w, ·⟫ • w'` the
 integrand `⟪ρ g v', T (π g v)⟫` is exactly the pointwise product
 `⟪ρ g v', w'⟫ · conj ⟪π g v, w⟫` computed by
-`TauCeti.ContRepresentation.inner_matrixCoeffLp`.
+`ContRepresentation.inner_matrixCoeffLp`.
 
 This is the identity that reduces Schur orthogonality to a statement about the intertwiner space:
 the operator on the right is an intertwiner `π → ρ` by
-`TauCeti.ContRepresentation.averageOperator_comp`. -/
+`ContRepresentation.averageOperator_comp`. -/
 theorem inner_matrixCoeffLp_eq_inner_averageOperator (hunitary : IsUnitary ρ)
     (v w : V) (v' w' : W) :
     ⟪matrixCoeffLp π hπ v w, matrixCoeffLp ρ hρ v' w'⟫_𝕜
@@ -424,5 +421,3 @@ theorem schur_orthogonality_distinct (hunitary : IsUnitary ρ)
 end Orthogonality
 
 end ContRepresentation
-
-end TauCeti

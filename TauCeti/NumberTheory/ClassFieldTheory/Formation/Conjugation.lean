@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Algebra.Group.Subgroup.Map
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
@@ -56,6 +56,8 @@ conjugation with the resulting map on norm quotients.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugate`: the conjugate layer `gVg⁻¹ ◁ gUg⁻¹`.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugateGalEquiv`: the induced isomorphism
   `U/V ≃* gUg⁻¹/gVg⁻¹` of Galois groups.
+* `TauCeti.ClassFieldTheory.NormalLayer.conjugateGroundHom`: inverse conjugation `gUg⁻¹ → U`, as a
+  continuous homomorphism of ground subgroups.
 * `TauCeti.ClassFieldTheory.Formation.levelConjEquiv`: acting by `g` is an isomorphism
   `A^U ≃ A^{gUg⁻¹}` of levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugateCoefficientEquiv` and
@@ -88,6 +90,8 @@ conjugation with the resulting map on norm quotients.
   `TauCeti.ClassFieldTheory.NormalLayer.isIntertwiningMap_conjugateCoefficientEquiv`.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv_conjugateCohomologyIso_zero_apply`: in
   degree zero, conjugation of cohomology is the action of `g` on the ground level.
+* `TauCeti.ClassFieldTheory.NormalLayer.conjugateTateIso_hom_tateHIsoH_inv`: in positive degrees,
+  conjugation of Tate cohomology is conjugation of ordinary cohomology.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_conjugateCoefficientEquiv` and
   `TauCeti.ClassFieldTheory.NormalLayer.map_normSubgroup_conjugateGroundLevelEquiv`: conjugation
   commutes with the norm of a layer and carries its norm subgroup onto that of the conjugate
@@ -97,6 +101,9 @@ conjugation with the resulting map on norm quotients.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient_conjugateTateIso_apply`:
   conjugation commutes with the canonical identification of degree-zero Tate cohomology with the
   norm quotient.
+* `TauCeti.ClassFieldTheory.LayerRefinement.conjugate` and
+  `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_comp_conjugateCohomologyIso_hom`:
+  conjugation carries refinements to refinements and commutes with inflation.
 
 ## Implementation notes
 
@@ -253,6 +260,15 @@ theorem conj_mem_top_conjugate {x : G} :
   rw [mem_top_conjugate]
   simp [mul_assoc]
 
+/-- The ground subgroup of the conjugate layer is the conjugate `gUg⁻¹` of the ground subgroup,
+read as the image of `U` under conjugation by `g`. -/
+theorem toSubgroup_ground_conjugate :
+    (L.conjugate g).ground.toSubgroup = L.ground.toSubgroup.map (MulAut.conj g).toMonoidHom := by
+  ext x
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, OpenSubgroup.mem_toSubgroup,
+    OpenSubgroup.mem_toSubgroup]
+  exact L.mem_ground_conjugate g
+
 /-! ### The Galois group of a conjugate layer -/
 
 /-- Conjugation by `g` as an isomorphism `U ≃* gUg⁻¹` of the ground subgroups of a layer and its
@@ -272,6 +288,32 @@ theorem conjugateGroundEquiv_apply_coe (u : L.ground) :
 theorem conjugateGroundEquiv_symm_apply_coe (v : (L.conjugate g).ground) :
     (((L.conjugateGroundEquiv g).symm v : L.ground) : G) = g⁻¹ * v * g :=
   (Subgroup.coe_congrOfMapEq_symm_apply _ _ v).trans (MulAut.conj_symm_apply g v)
+
+/-- Inverse conjugation `v ↦ g⁻¹ v g`, the inverse ground-subgroup equivalence, as a continuous
+homomorphism from the ground subgroup `gUg⁻¹` of the conjugate layer to the ground subgroup `U` of
+the layer. -/
+def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
+  toMonoidHom := (L.conjugateGroundEquiv g).symm.toMonoidHom
+  continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
+    ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).congr
+      fun v => (L.conjugateGroundEquiv_symm_apply_coe g v).symm
+
+/-- On elements of `G`, the inverse-conjugation homomorphism is `v ↦ g⁻¹ * v * g`. -/
+@[simp]
+theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
+    (L.conjugateGroundHom g v : G) = g⁻¹ * v * g :=
+  L.conjugateGroundEquiv_symm_apply_coe g v
+
+variable {M : Type} [AddMonoid M] [DistribMulAction G M] in
+/-- The action of `g` on `M` and inverse conjugation form a compatible pair. -/
+theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup) (m : M) :
+    DistribSMul.toAddMonoidHom M g (L.conjugateGroundHom g v • m) =
+      v • DistribSMul.toAddMonoidHom M g m := by
+  rw [DistribSMul.toAddMonoidHom_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
+    Subgroup.smul_def, smul_smul, smul_smul]
+  congr 1
+  rw [conjugateGroundHom_apply_coe]
+  group
 
 /-- Conjugation carries the top subgroup of a layer, read inside its ground subgroup, onto the
 corresponding subgroup of the conjugate layer. This is what lets it descend to Galois groups. -/
@@ -395,12 +437,52 @@ def conjugateCohomologyIso (n : ℕ) : L.H F n ≅ (L.conjugate g).H F n :=
   groupCohomology.mapIso (L.conjugateGalEquiv g) (L.conjugateCoefficientEquiv F g)
     (fun γ ↦ LinearMap.ext fun x ↦ L.conjugateCoefficientEquiv_rep_apply F g γ x) n
 
+/-- Conjugation on ordinary cohomology is Mathlib's `groupCohomology.mapIso` of the isomorphism of
+Galois groups and the action of `g` on the coefficients. -/
+theorem conjugateCohomologyIso_def (n : ℕ) :
+    L.conjugateCohomologyIso F g n =
+      groupCohomology.mapIso (L.conjugateGalEquiv g) (L.conjugateCoefficientEquiv F g)
+        (fun γ ↦ LinearMap.ext fun x ↦ L.conjugateCoefficientEquiv_rep_apply F g γ x) n :=
+  (rfl)
+
 /-- **Conjugation on the Tate cohomology of a layer**, in every integer degree. In the degrees
 where Mathlib compares Tate cohomology with ordinary cohomology or homology, it is the ordinary
 change-of-group map of that theory, by `TauCeti.TateCohomology.map_comp_isoGroupCohomology_hom`
 and `TauCeti.TateCohomology.map_comp_isoGroupHomology_hom`. -/
 def conjugateTateIso (r : ℤ) : L.TateH F r ≅ (L.conjugate g).TateH F r :=
   TateCohomology.mapIso (L.isIntertwiningMap_conjugateCoefficientEquiv F g) r
+
+/-- Conjugation on Tate cohomology is the Tate map of the compatible pair
+`isIntertwiningMap_conjugateCoefficientEquiv`. -/
+theorem conjugateTateIso_hom (r : ℤ) :
+    (L.conjugateTateIso F g r).hom =
+      TateCohomology.map (L.isIntertwiningMap_conjugateCoefficientEquiv F g) r :=
+  TateCohomology.mapIso_hom _ r
+
+/-- **In positive degrees, conjugation of Tate cohomology is conjugation of ordinary
+cohomology**, through the identifications `tateHIsoH` of a layer and its conjugate. -/
+theorem conjugateTateIso_hom_tateHIsoH_inv (n : ℕ) [NeZero n] (u : L.H F n) :
+    (L.conjugateTateIso F g n).hom ((L.tateHIsoH F n).inv u) =
+      ((L.conjugate g).tateHIsoH F n).inv ((L.conjugateCohomologyIso F g n).hom u) := by
+  refine (ModuleCat.mono_iff_injective ((L.conjugate g).tateHIsoH F n).hom).1 inferInstance ?_
+  rw [Iso.inv_hom_id_apply, conjugateTateIso_hom, tateHIsoH_def, tateHIsoH_def]
+  -- The Tate map of the conjugation pair is the change-of-group map of ordinary cohomology, which
+  -- is how `conjugateCohomologyIso` is defined.
+  have hm : (TateCohomology.isoGroupCohomology n).hom.app ((L.conjugate g).rep F)
+      (TateCohomology.map (L.isIntertwiningMap_conjugateCoefficientEquiv F g) n
+        (((TateCohomology.isoGroupCohomology n).app (L.rep F)).inv u)) =
+      groupCohomology.map ((L.conjugateGalEquiv g).symm : (L.conjugate g).Gal →* L.Gal)
+        (Representation.IsIntertwiningMap.ofRes (L.isIntertwiningMap_conjugateCoefficientEquiv F g))
+        n ((TateCohomology.isoGroupCohomology n).hom.app (L.rep F)
+          (((TateCohomology.isoGroupCohomology n).app (L.rep F)).inv u)) :=
+    ConcreteCategory.congr_hom (TateCohomology.map_comp_isoGroupCohomology_hom
+      (L.isIntertwiningMap_conjugateCoefficientEquiv F g) n) _
+  refine hm.trans <| (congrArg _ (((TateCohomology.isoGroupCohomology n).app
+    (L.rep F)).inv_hom_id_apply u)).trans ?_
+  rw [conjugateCohomologyIso, groupCohomology.mapIso_hom]
+  congr 3
+  ext x
+  simp
 
 /-- **In degree zero, conjugation of cohomology is the action of `g` on the ground level.** Read
 through the identification of `H⁰(U/V, A^V)` with `A^U`, conjugating a class is applying `g` to
@@ -716,5 +798,47 @@ theorem conjugateTateIso_trans_conjugateTateIso (r : ℤ) :
   · simp
 
 end NormalLayer
+
+/-! ### Conjugation of refinements -/
+
+namespace LayerRefinement
+
+variable {old new : NormalLayer G}
+
+/-- **Conjugation carries refinements to refinements**: if `L/F` refines `K/F`, then `gL/gF`
+refines `gK/gF`. -/
+theorem conjugate (T : LayerRefinement old new) (g : G) :
+    LayerRefinement (old.conjugate g) (new.conjugate g) :=
+  ⟨by ext x; simp [T.same_ground], fun _ hx ↦ T.top_le hx⟩
+
+/-- **Conjugation commutes with inflation**: inflating from `K/F` to `L/F` and then conjugating by
+`g` is conjugating by `g` and then inflating from `gK/gF` to `gL/gF`. -/
+@[reassoc, elementwise]
+theorem cohomologyInfl_comp_conjugateCohomologyIso_hom (T : LayerRefinement old new)
+    (F : Formation G) (g : G) (n : ℕ) :
+    T.cohomologyInfl F n ≫ (new.conjugateCohomologyIso F g n).hom =
+      (old.conjugateCohomologyIso F g n).hom ≫ (T.conjugate g).cohomologyInfl F n := by
+  rw [cohomologyInfl_def, cohomologyInfl_def, NormalLayer.conjugateCohomologyIso_def,
+    NormalLayer.conjugateCohomologyIso_def, groupCohomology.mapIso_hom,
+    groupCohomology.mapIso_hom]
+  refine (groupCohomology.map_comp _ _ _ _ n).symm.trans
+    (Eq.trans ?_ (groupCohomology.map_comp _ _ _ _ n))
+  refine groupCohomology.map_congr ?_ ?_ n
+  · refine MonoidHom.ext fun γ ↦ ?_
+    induction γ using QuotientGroup.induction_on with
+    | H w =>
+      rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+        MonoidHom.coe_ofClass, NormalLayer.conjugateGalEquiv_symm_mk, galHom_mk, galHom_mk,
+        NormalLayer.conjugateGalEquiv_symm_mk]
+      exact congrArg QuotientGroup.mk (Subtype.ext (by simp))
+  -- Both composites act by `g` on an element of `A^V`, read in `A^{gV'g⁻¹}`.
+  refine LinearMap.ext fun x ↦ Subtype.ext ?_
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    Rep.resMap_hom_toLinearMap, LinearMap.coe_comp,
+    Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply]
+  rw [Rep.hom_ofHom, Rep.hom_ofHom]
+  simp
+
+end LayerRefinement
 
 end TauCeti.ClassFieldTheory

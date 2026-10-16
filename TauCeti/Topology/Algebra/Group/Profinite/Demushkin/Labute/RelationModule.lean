@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Map
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationModule
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Module
 
 /-!
 # Labute's abelianized character kernel
@@ -124,6 +124,14 @@ noncomputable def labuteRelatorClass (χ : F →ₜ* ℤ_[p]ˣ) (r : F)
     labuteE χ :=
   Additive.ofMul
     ((⟨r, hr⟩ : (χ : F →* ℤ_[p]ˣ).ker) : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)
+
+/-- The relator class is the class of the relator in the topological abelianization of the
+character kernel. -/
+theorem labuteRelatorClass_def (χ : F →ₜ* ℤ_[p]ˣ) (r : F) (hr : r ∈ (χ : F →* ℤ_[p]ˣ).ker) :
+    labuteRelatorClass χ r hr =
+      Additive.ofMul
+        ((⟨r, hr⟩ : (χ : F →* ℤ_[p]ˣ).ker) : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker) :=
+  (rfl)
 
 /-- Conjugating a relator before taking its class agrees with Labute's action. -/
 @[simp]

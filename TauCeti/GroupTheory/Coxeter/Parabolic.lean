@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.StrongExchange
+import Mathlib.Tactic.Group
 
 /-!
 # Standard parabolic subgroups and minimal coset representatives
@@ -341,10 +342,6 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
   have h2 : ℓ u = ℓ (u * v * v₀) + ℓ ((u * v * v₀)⁻¹ * u) := by
     have h := cs.length_mul_of_isMinimalCosetRep hmin hmem'
     rwa [← mul_assoc, mul_inv_cancel, one_mul] at h
-  have h3 : ℓ ((u * v * v₀)⁻¹ * u) = ℓ (u⁻¹ * (u * v * v₀)) := by
-    rw [← cs.length_inv (u⁻¹ * (u * v * v₀))]
-    congr 1
-    group
   have h4 : u⁻¹ * (u * v * v₀) = 1 := by
     rw [← cs.length_eq_zero_iff]
     omega

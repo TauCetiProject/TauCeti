@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import TauCeti.CategoryTheory.Action.EssentiallySmall
-public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal
+public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 
 /-!

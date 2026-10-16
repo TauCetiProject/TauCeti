@@ -34,6 +34,6 @@ variable {K : Type*} [Field K] [IsAlgClosed K]
 /-- Over an algebraically closed field, such as `ℂ`, the Hilbert symbol is always `1`. -/
 @[simp]
 theorem hilbertSymbol_eq_one_of_isAlgClosed (a b : Kˣ) : hilbertSymbol a b = 1 := by
-  obtain ⟨z, hz⟩ := IsAlgClosed.exists_eq_mul_self (b : K)
+  obtain ⟨z, hz⟩ := IsAlgClosed.isSquare (b : K)
   exact (hilbertSymbol_eq_one_iff a b).mpr ⟨z, 0, by rw [hz]; ring⟩
 end TauCeti

@@ -181,13 +181,10 @@ pro-`p` abelian group with a continuous action of `G`, the explicit second conti
 group `H²(G, M)` is zero: every class is the class of a profinite extension of `G` by `M`, which
 splits. -/
 theorem subsingleton_H2 (hproj : IsProjective.{u, max u v, u} p G) (hG : IsProP p G)
-    (hM : IsProP p M) : Subsingleton (H2 G (Additive M)) := by
-  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
-  obtain ⟨Y, rfl⟩ := ProfiniteGroupExtension.exists_contCohomologyClass_eq c
-  rw [ProfiniteGroupExtension.contCohomologyClass_def,
-    ← Y.toGroupExtension.exists_splitting_continuous_iff_contCohomologyClass_eq_zero]
-  exact Y.toGroupExtension.exists_splitting_continuous_of_isProjective Y.continuous_inl
-    Y.continuous_rightHom hM hG hproj
+    (hM : IsProP p M) : Subsingleton (H2 G (Additive M)) :=
+  ProfiniteGroupExtension.subsingleton_H2_of_forall_exists_splitting fun Y ↦
+    Y.toGroupExtension.exists_splitting_continuous_of_isProjective Y.continuous_inl
+      Y.continuous_rightHom hM hG hproj
 
 end Cohomology
 

@@ -7,7 +7,7 @@ module
 
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun
+public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun.Basic
 
 /-!
 # Limits of L¹-Cauchy graphon sequences

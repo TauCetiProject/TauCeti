@@ -7,10 +7,11 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.FrobeniusPrimeCount
 public import TauCeti.NumberTheory.Chebotarev.PrimesCongruent
+import TauCeti.NumberTheory.Chebotarev.Density.PrimesCongruent
 import TauCeti.NumberTheory.Cyclotomic.Aut
 
 /-!
-# Natural density of cyclotomic Frobenius fibres and arithmetic progressions
+# Prime counting and natural density in arithmetic progressions
 
 Natural-density Chebotarev gives density `1 / φ(m)` for each arithmetic Frobenius fibre of
 `ℚ(ζₘ)`. The cyclotomic Frobenius formula identifies the fibre tagged by `a` with primes whose
@@ -18,6 +19,10 @@ norm is congruent to `a` modulo `m`, up to finitely many primes dividing the lev
 invertible arithmetic progression has the same natural density, measured relative to all primes.
 No restriction on the nonzero level is needed: the possible discrepancy at two for levels
 congruent to two modulo four is finite.
+
+The corresponding prime-counting statement is that the number of primes in an invertible
+progression up to `x` is asymptotic to `Li(x) / φ(m)`, equivalently its quotient by
+`x / log x` tends to `1 / φ(m)`.
 
 In particular, each of the four fibres of `ℚ(ζ₅)` has natural density `1/4`, agreeing with its
 Dirichlet density. The existing exact fibre dictionary sends arithmetic Frobenius to the norm
@@ -35,6 +40,33 @@ open IsDedekindDomain IsCyclotomicExtension
 open scoped NumberField
 
 namespace NumberField.Chebotarev
+
+open Asymptotics Filter TauCeti
+
+/-- **The prime number theorem for arithmetic progressions.** At every nonzero level `m`, the
+number of primes of `𝒪 ℚ` whose norms are congruent to an invertible residue `a` modulo `m`
+is asymptotic to `Li(x) / φ(m)`.
+This is the logarithmic-integral form of equidistribution among the invertible residue classes. -/
+theorem primeCount_primesCongruent_isEquivalent_logIntegral (m a : ℕ) [NeZero m]
+    (ha : IsUnit (a : ZMod m)) :
+    (fun x : ℝ ↦ primeCount ℚ
+      {p : HeightOneSpectrum (𝓞 ℚ) | Ideal.absNorm p.asIdeal % m = a % m} x) ~[atTop]
+      (fun x ↦ (1 / (Nat.totient m : ℝ)) * Real.logIntegral x) := by
+  simpa only [one_div] using
+    ((primeCount_primesCongruent_sub_mul_logIntegral_isLittleO m a ha).trans_isBigO
+    (Real.logIntegral_isEquivalent_div_log.isBigO_symm.const_mul_right
+      (inv_ne_zero (Nat.cast_ne_zero.mpr
+        (Nat.totient_pos.mpr (NeZero.pos m)).ne')))).isEquivalent
+
+/-- The number of primes in an invertible residue class modulo `m`, divided by `x / log x`,
+tends to `1 / φ(m)`. -/
+theorem tendsto_primeCount_primesCongruent (m a : ℕ) [NeZero m]
+    (ha : IsUnit (a : ZMod m)) :
+    Tendsto (fun x : ℝ ↦ primeCount ℚ
+      {p : HeightOneSpectrum (𝓞 ℚ) | Ideal.absNorm p.asIdeal % m = a % m} x /
+        (x / Real.log x)) atTop (nhds (1 / (Nat.totient m : ℝ))) := by
+  apply Real.tendsto_div_div_log_of_isLittleO_logIntegral
+  simpa only [one_div] using primeCount_primesCongruent_sub_mul_logIntegral_isLittleO m a ha
 
 /-- Over `ℚ`, the cyclotomic Frobenius fibre tagged by a unit modulo `m` has natural density
 `1 / φ(m)`. -/

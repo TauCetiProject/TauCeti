@@ -33,6 +33,8 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_unique`: that action characterizes `C`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_piece`, `…_F`, `…_conjF`: `C` preserves the Hodge
   components and both filtrations.
+* `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator`: the `μ`-eigenspace of `C` is spanned
+  by the Hodge components on which `i^{2p-n} = μ`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_comp_weilOperator`: `C ∘ C = (-1)^n`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperatorEquiv`: `C` bundled as a linear automorphism.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_comap`: `C` is compatible with transport of Hodge
@@ -56,6 +58,8 @@ Structures*, §2.
 public section
 
 namespace TauCeti.Hodge
+
+open IsBaseChange
 
 universe u v
 
@@ -100,7 +104,7 @@ by `i^{2p-n}`. -/
 theorem weilOperator_unique (hs : HodgeStructureOn W ω n) (f : W →ₗ[ℂ] W)
     (hf : ∀ p : ℤ, ∀ x ∈ hs.piece p, f x = Complex.I ^ (2 * p - n) • x) :
     f = hs.weilOperator :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [hf p x hx, hs.weilOperator_apply_of_mem hx]
 
 /-- The Weil operator preserves every Hodge component. -/
@@ -144,10 +148,38 @@ theorem weilOperator_mem_conjF (hs : HodgeStructureOn W ω n) {p : ℤ} {x : W}
     (hx : x ∈ hs.conjF p) : hs.weilOperator x ∈ hs.conjF p :=
   (hs.weilOperator_conjF p).le ⟨x, hx, rfl⟩
 
+/-- The Hodge projections intertwine the Weil operator with multiplication by `i^{2p-n}`. -/
+theorem proj_weilOperator (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
+    hs.proj p (hs.weilOperator x) = Complex.I ^ (2 * p - n) • hs.proj p x := by
+  refine hs.piece_induction_on (motive := fun y ↦
+    hs.proj p (hs.weilOperator y) = Complex.I ^ (2 * p - n) • hs.proj p y) x
+    (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
+  rw [hs.weilOperator_apply_of_mem hy, map_smul]
+  rcases eq_or_ne q p with rfl | hqp
+  · rfl
+  · rw [hs.proj_apply_eq_zero_of_mem_of_ne hy hqp, smul_zero, smul_zero]
+
+/-- **The eigenspaces of the Weil operator.** The `μ`-eigenspace of the Weil operator is spanned
+by the Hodge components `H^{p,n-p}` on which it acts by `i^{2p-n} = μ`. -/
+theorem eigenspace_weilOperator (hs : HodgeStructureOn W ω n) (μ : ℂ) :
+    Module.End.eigenspace hs.weilOperator μ =
+      ⨆ p, ⨆ (_ : Complex.I ^ (2 * p - n) = μ), hs.piece p := by
+  refine le_antisymm (fun x hx ↦ hs.mem_of_proj_mem fun p ↦ ?_)
+    (iSup₂_le fun p hp x hx ↦ ?_)
+  · by_cases hp : Complex.I ^ (2 * p - n) = μ
+    · exact Submodule.mem_iSup_of_mem p (Submodule.mem_iSup_of_mem hp (hs.proj_mem p x))
+    · have h := hs.proj_weilOperator p x
+      rw [Module.End.mem_eigenspace_iff.1 hx, map_smul] at h
+      have hzero : (μ - Complex.I ^ (2 * p - n)) • hs.proj p x = 0 := by
+        rw [sub_smul, h, sub_self]
+      rw [(smul_eq_zero.1 hzero).resolve_left (sub_ne_zero.2 (Ne.symm hp))]
+      exact zero_mem _
+  · rw [Module.End.mem_eigenspace_iff, hs.weilOperator_apply_of_mem hx, hp]
+
 /-- **The Weil operator squares to the weight sign:** `C ∘ C = (-1)^n`. -/
 theorem weilOperator_comp_weilOperator (hs : HodgeStructureOn W ω n) :
     hs.weilOperator ∘ₗ hs.weilOperator = ((-1 : ℂ) ^ n) • LinearMap.id :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [LinearMap.comp_apply, hs.weilOperator_apply_of_mem hx, map_smul,
       hs.weilOperator_apply_of_mem hx, smul_smul, I_zpow_mul_self,
       negOne_zpow_two_mul_sub, LinearMap.smul_apply, LinearMap.id_apply]
@@ -367,10 +399,10 @@ variable {Q : LinearMap.BilinForm ℤ V}
 zero unless their degrees add up to the weight, and on a pair of components that do, the two
 scalars `i^(2p-n)` and `i^(2p'-n)` by which the Weil operator acts are inverse to each other. -/
 theorem isOrthogonal_weilOperator (h : IsPolarization hℂ hs Q) :
-    (integralFormBaseChange hℂ Q).IsOrthogonal hs.weilOperator := by
-  have key : ((integralFormBaseChange hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
-      integralFormBaseChange hℂ Q := by
-    refine hs.linearMap_ext_of_piece fun p x hx ↦ hs.linearMap_ext_of_piece fun p' y hy ↦ ?_
+    (bilinForm hℂ Q).IsOrthogonal hs.weilOperator := by
+  have key : ((bilinForm hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
+      bilinForm hℂ Q := by
+    refine hs.addHom_ext_of_piece fun p x hx ↦ hs.addHom_ext_of_piece fun p' y hy ↦ ?_
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply]
     by_cases hpp : p + p' = n
     · rw [hs.weilOperator_apply_of_mem hx, hs.weilOperator_apply_of_mem hy]

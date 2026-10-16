@@ -1,10 +1,12 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
+public import Mathlib.GroupTheory.PGroup
+public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
@@ -57,8 +59,17 @@ restrictions.
   vanishes is killed by `[G : S]`.
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
   by the order of the group.
+* `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
+  vanishes when the order of the group is a unit of the coefficient ring.
+* `groupCohomology.zmultiples_map_subtype_eq_top`: a class of full `p`-order restricts to a
+  generator on a `p`-subgroup whose cohomology has the order of the subgroup.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
+
+* `TauCeti.groupCohomology.δ_comp_corestriction`: corestriction commutes with the connecting
+  maps in every ordinary cohomological degree.
+* `Rep.H0Iso_inv_comp_corestriction_comp_H0Iso_hom`: degree-zero corestriction is the relative
+  norm on invariants under the canonical ordinary degree-zero comparison.
 
 ## References
 
@@ -163,6 +174,27 @@ theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : grou
     (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
   rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
 
+/-- Corestriction from a finite-index subgroup commutes with the connecting maps of
+any short exact sequence of representations, in every ordinary cohomological degree. -/
+@[reassoc]
+theorem δ_comp_corestriction {X : ShortComplex (Rep k G)} (hX : X.ShortExact)
+    (i j : ℕ) (hij : i + 1 = j) :
+    δ ((Rep.shortExact_res S.subtype).2 hX) i j hij ≫ corestriction S X.X₁ j =
+      corestriction S X.X₃ i ≫ δ hX i j hij := by
+  classical
+  let hRes := (Rep.shortExact_res S.subtype).2 hX
+  have hSh := δ_comp_coindIso_hom S hRes i j hij
+  dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hSh
+  rw [← cancel_epi (groupCohomology.coindIso (res S.subtype X.X₃) i).hom,
+    ← reassoc_of% hSh, coindIso_hom_comp_corestriction,
+    reassoc_of% (coindIso_hom_comp_corestriction S X.X₃ i)]
+  exact _root_.groupCohomology.δ_naturality (hRes.map_of_exact (coindFunctor k S.subtype)) hX
+    { τ₁ := (coindResAdjunction k S).counit.app X.X₁
+      τ₂ := (coindResAdjunction k S).counit.app X.X₂
+      τ₃ := (coindResAdjunction k S).counit.app X.X₃
+      comm₁₂ := ((coindResAdjunction k S).counit.naturality X.f).symm
+      comm₂₃ := ((coindResAdjunction k S).counit.naturality X.g).symm } i j hij
+
 /-! ### Transitivity -/
 
 section Transitivity
@@ -200,12 +232,6 @@ private theorem resCoindAdjunction_counit_app_hom_apply
     ((resCoindAdjunction k f).counit.app N).hom x = x.1 1 :=
   rfl
 
-private theorem coind_ρ_apply_coe_apply
-    {D E V : Type u} [Group D] [Group E] [AddCommGroup V] [Module k V] (f : D →* E)
-    (N : Representation k D V) (x : Representation.coindV f N) (e e' : E) :
-    ((Representation.coind f N e) x).1 e' = x.1 (e' * e) :=
-  rfl
-
 private theorem evalOne_hom_apply (f : coindComp φ₁ φ₂ M) :
     (evalOne φ₁ φ₂ M).hom f = f.1 1 :=
   rfl
@@ -220,7 +246,7 @@ private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
     hom_comm_apply, resCoindAdjunction_counit_app_hom_apply, evalOne_hom_apply] at h
   simpa only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Rep.of_ρ,
-    coind_ρ_apply_coe_apply, one_mul] using h
+    Representation.coind_apply_coe_apply, one_mul] using h
 
 open scoped Classical in
 /-- The trace of `φ₁.range` after `restrictCoind`, a `B`-equivariant map
@@ -269,7 +295,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
     traceRestrictRange_hom_apply] at h
   have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
-    simpa only [Rep.of_ρ, coind_ρ_apply_coe_apply, one_mul] using h
+    simpa only [Rep.of_ρ, Representation.coind_apply_coe_apply, one_mul] using h
   rw [h', traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
     Subgroup.coindResAdjunction_counit_app_hom_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
@@ -416,4 +442,98 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
     (ModuleCat.subsingleton_of_isZero
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
 
+/-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
+of the coefficient ring. -/
+theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
+    Subsingleton (groupCohomology A (n + 1)) := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨c, hc⟩ := h.exists_left_inv
+  rw [← one_smul k x, ← hc, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
+
+/-- **A class of full `p`-order restricts to a generator on a `p`-subgroup.** Let `u ∈ Hⁿ(G, A)`
+have order divisible by the `p`-part of `#G`, and let `S` be a `p`-subgroup of `G` with
+`#Hⁿ(S, A) = #S`. Then the restriction of `u` generates `Hⁿ(S, A)`: corestriction carries it to
+`[G : S] • u`, whose order is divisible by `#S`. -/
+theorem zmultiples_map_subtype_eq_top {p : ℕ} [Fact p.Prime] {A : Rep k G} {n : ℕ}
+    {u : groupCohomology A n} (hu : p ^ padicValNat p (Nat.card G) ∣ addOrderOf u)
+    {S : Subgroup G} (hS : IsPGroup p S)
+    (hcard : Nat.card (groupCohomology (res S.subtype A) n) = Nat.card S) :
+    AddSubgroup.zmultiples (map S.subtype (𝟙 (res S.subtype A)) n u) = ⊤ := by
+  set v := map S.subtype (𝟙 (res S.subtype A)) n u
+  have : Finite (groupCohomology (res S.subtype A) n) :=
+    Nat.finite_of_card_ne_zero (hcard ▸ Nat.card_pos.ne')
+  obtain ⟨b, hb⟩ := hS.exists_card_eq
+  -- `addOrderOf v • [G : S] • u = cor (addOrderOf v • v) = 0`, so `#S ∣ addOrderOf v`.
+  have hcor := TauCeti.groupCohomology.map_subtype_id_comp_corestriction_apply S A n u
+  have hm : (addOrderOf v * S.index) • u = 0 := by
+    rw [mul_comm, mul_nsmul, ← hcor, ← map_nsmul, addOrderOf_nsmul_eq_zero, map_zero]
+  have hm0 : addOrderOf v ≠ 0 := (addOrderOf_pos v).ne'
+  have hi0 : S.index ≠ 0 := Subgroup.index_ne_zero_of_finite
+  have hval : padicValNat p S.index + b ≤ padicValNat p (addOrderOf v * S.index) := by
+    rw [← padicValNat_dvd_iff_le (mul_ne_zero hm0 hi0)]
+    refine dvd_trans ?_ ((hu.trans (addOrderOf_dvd_of_nsmul_eq_zero hm)))
+    rw [← S.index_mul_card, hb, padicValNat.mul hi0 (pow_ne_zero _ (Fact.out : p.Prime).ne_zero),
+      padicValNat.prime_pow]
+  rw [padicValNat.mul hm0 hi0] at hval
+  have hpb : p ^ b ∣ addOrderOf v := (padicValNat_dvd_iff_le hm0).2 (by omega)
+  have hord : addOrderOf v = Nat.card (groupCohomology (res S.subtype A) n) := by
+    rw [hcard, hb]
+    exact Nat.dvd_antisymm (hb ▸ hcard ▸ addOrderOf_dvd_natCard v) hpb
+  exact AddSubgroup.eq_top_of_card_eq _ ((Nat.card_zmultiples v).trans hord)
+
 end groupCohomology
+
+namespace Rep
+
+universe u
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Under the degree-zero identification with invariants, corestriction is the relative norm.
+The quotient `Fintype` is explicit so that the relative norm uses the caller's coset enumeration. -/
+@[reassoc]
+theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
+    (H : Subgroup G) [H.FiniteIndex] [Fintype (G ⧸ H)] :
+    (groupCohomology.H0Iso (res H.subtype M)).inv ≫
+        TauCeti.groupCohomology.corestriction H M 0 ≫ (groupCohomology.H0Iso M).hom =
+      ModuleCat.ofHom (Representation.relNormInvariants M.ρ H) := by
+  classical
+  rw [Iso.inv_comp_eq, ← cancel_epi (groupCohomology.coindIso (res H.subtype M) 0).hom,
+    reassoc_of% (TauCeti.groupCohomology.coindIso_hom_comp_corestriction H M 0)]
+  rw [groupCohomology.map_id_comp_H0Iso_hom]
+  ext y
+  let f := (groupCohomology.H0Iso (coind H.subtype (res H.subtype M))).hom y
+  let x := (groupCohomology.H0Iso (res H.subtype M)).hom
+    ((groupCohomology.coindIso (res H.subtype M) 0).hom y)
+  have hx : (x : M) = f.1.1 1 := by
+    have h := groupCohomology.map_H0Iso_hom_f_apply H.subtype
+      ((resCoindAdjunction k H.subtype).counit.app (res H.subtype M)) y
+    rw [← TauCeti.groupCohomology.coindIso_hom] at h
+    exact h
+  have hf (g : G) : f.1.1 g = f.1.1 1 := by
+    have h := congrArg (fun a : coind H.subtype (res H.subtype M) => a.1 1)
+      ((Representation.mem_invariants _ _).mp f.2 g)
+    convert h using 1
+    exact congrArg f.1.1 (one_mul g).symm
+  -- Both maps on invariants are restrictions of their underlying linear maps.
+  apply Subtype.ext
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
+  suffices heq : ((coindResAdjunction.{u, u, u} k H).counit.app M).hom f.1 =
+      Representation.relNorm M.ρ H x by
+    exact heq.trans (Representation.coe_relNormInvariants (ρ := M.ρ) (H := H) x).symm
+  rw [Subgroup.coindResAdjunction_counit_app_hom_apply, Representation.relNorm_apply]
+  -- The trace uses its fixed finite-index enumeration; the norm keeps the caller's instance.
+  let : Fintype (Quotient (QuotientGroup.rightRel H)) :=
+    @QuotientGroup.fintypeQuotientRightRel G _ H
+      (@Subgroup.fintypeQuotientOfFiniteIndex G _ H _)
+  refine Fintype.sum_equiv (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) _ _
+    fun q => ?_
+  rw [hf, ← hx]
+  apply M.ρ.apply_eq_apply_of_quotientGroup_mk_eq
+    ((Representation.mem_invariants _ _).1 x.2)
+  calc ((q.out⁻¹ : G) : G ⧸ H) =
+      QuotientGroup.quotientRightRelEquivQuotientLeftRel H q :=
+        congrArg (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) q.out_eq
+    _ = _ := ((QuotientGroup.quotientRightRelEquivQuotientLeftRel H q).out_eq').symm
+
+end Rep

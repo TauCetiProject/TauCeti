@@ -38,7 +38,7 @@ variable (Γ : BipartiteRibbonGraph.{u})
 
 /-- The combinatorial genus of a bipartite ribbon graph. It has its geometric meaning for a
 connected graph; the defining truncated quotient need not be a genus for a disconnected graph. -/
-noncomputable def genus : ℕ := ((2 - Γ.eulerChar) / 2).toNat
+@[expose] def genus : ℕ := ((2 - Γ.eulerChar) / 2).toNat
 
 /-- The genus is obtained from the graph's Euler characteristic. -/
 theorem genus_def : Γ.genus = ((2 - Γ.eulerChar) / 2).toNat := (rfl)

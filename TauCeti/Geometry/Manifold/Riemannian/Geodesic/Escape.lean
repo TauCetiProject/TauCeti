@@ -59,11 +59,10 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space M] [T2Space (TangentBundle I M)]
+  [T2Space M]
 
 variable {p : M} {v : TangentSpace I p}
 
-omit [T2Space M] in
 /-- Along its maximal interval, the velocity lift of a maximal geodesic lies over the geodesic and
 has the norm of the initial velocity. -/
 private theorem maximalIntegralCurve_geodesicSpray_mem_norm_le {K : Set M} {t : ℝ}

@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 
 /-!
-# Linear asymptotics as limits of ratios
+# Elementary asymptotic criteria
+
+Two general criteria that supplement Mathlib's asymptotics API.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
@@ -16,14 +18,21 @@ into limits of normalized functions, and conversely recovers error estimates fro
 The quotient is right division: multiplication need not be commutative. For ordered fields,
 the ratio formulation also supports order arguments.
 
+In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
+power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
+remainder of one order be read as a remainder of a smaller order.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
   `f / g → a`, for an eventually nonzero `g`.
+* `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
+  whenever `n ≤ m`.
 
 ## Related results
 
-Mathlib's `Asymptotics.isLittleO_iff_tendsto'` is the underlying zero-limit ratio criterion.
+Mathlib's `Asymptotics.isLittleO_iff_tendsto'` is the underlying zero-limit ratio criterion, and
+`Asymptotics.isBigO_pow_pow_cobounded_of_le` is the comparison of powers at infinity.
 -/
 
 public section
@@ -40,5 +49,15 @@ theorem isLittleO_sub_mul_iff_tendsto_div {α 𝕜 : Type*} [NormedDivisionRing 
   rw [isLittleO_iff_tendsto' (hg.mono fun x hx ↦ by simp [hx])]
   refine (tendsto_congr' (hg.mono fun x hx ↦ ?_)).trans tendsto_sub_nhds_zero_iff
   rw [sub_div, mul_div_cancel_right₀ _ hx]
+
+/-- **At the origin a higher power of the norm is dominated by a lower one.** The norm is at most
+one near `0`, so `‖x‖ ^ m = O(‖x‖ ^ n)` whenever `n ≤ m`. -/
+theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddCommGroup E]
+    {m n : ℕ} (h : n ≤ m) :
+    (fun x : E ↦ ‖x‖ ^ m) =O[𝓝 (0 : E)] fun x ↦ ‖x‖ ^ n := by
+  refine isBigO_iff.2 ⟨1, ?_⟩
+  filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with x hx
+  simp only [one_mul, norm_pow, norm_norm]
+  exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
 
 end Asymptotics

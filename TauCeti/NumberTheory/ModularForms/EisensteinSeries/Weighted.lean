@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Basic
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.NumberTheory.ModularForms.Identities
 
 /-!
 # Eisenstein series weighted by a function of residues
@@ -266,7 +268,7 @@ theorem weightedEisensteinSeries_eq_tsum_eisensteinSeries (hk : 3 ≤ k) (z : �
   congr 1
   -- sort the coprime pairs by residue class
   have hsub := ((summable_norm_weightedEisensteinSummand (fun a ↦ W (r • a)) hk z).subtype
-    (gammaSet 1 1 0)).of_norm
+    (· ∈ gammaSet 1 1 0)).of_norm
   have hσ' := (gammaSetOneSigmaEquiv N).symm.summable_iff.mpr hsub
   rw [Function.comp_def] at hσ'
   rw [← (gammaSetOneSigmaEquiv N).symm.tsum_eq, hσ'.tsum_sigma, tsum_fintype]

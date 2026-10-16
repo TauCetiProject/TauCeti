@@ -30,7 +30,7 @@ set, so the basis-free and matrix descriptions carry the same projective actions
 
 * `TauCeti.IsProjectiveRep.toPGL_rescale`: rescaling a lift does not change its map to `PGL`.
 * `MonoidHom.exists_isProjectiveRep_toPGL_eq`: every homomorphism to `PGL` is obtained from a
-  projective representation on the coordinate module.
+  projective representation on any module with a chosen basis of the same size.
 
 ## References
 
@@ -85,13 +85,8 @@ theorem IsProjectiveRep.toPGL_rescale (h : IsProjectiveRep ρ α) (b : Module.Ba
     (c : G → kˣ) (hc : c 1 = 1) :
     (h.rescale c hc).toPGL b = h.toPGL b := by
   ext g
-  rw [toPGL_apply, toPGL_apply, Matrix.ProjGenLinGroup.mk_eq_mk_iff]
-  refine ⟨(c g)⁻¹, ?_⟩
-  rw [← Module.Basis.toGL_smulOfUnit b (c g)⁻¹, ← map_mul]
-  congr 1
-  ext x
-  simp [LinearEquiv.mul_apply, LinearEquiv.trans_apply, LinearEquiv.smulOfUnit_apply,
-    map_smul, smul_smul, ← Units.val_mul]
+  simp only [toPGL_apply, ← LinearEquiv.mul_eq_trans, map_mul, Module.Basis.toGL_smulOfUnit,
+    Matrix.ProjGenLinGroup.mk_scalar, one_mul]
 
 /-!
 ## Lifting a homomorphism from `PGL`
@@ -138,38 +133,29 @@ private theorem pglLift_mul (q : G →* PGL(ι, k)) (g₁ g₂ : G) :
     pglLift q g₁ * pglLift q g₂ =
       Matrix.GeneralLinearGroup.scalar ι (pglComparisonScalar q g₁ g₂)⁻¹ *
         pglLift q (g₁ * g₂) := by
-  calc
-    pglLift q g₁ * pglLift q g₂ =
-        (pglLift q g₁ * pglLift q g₂ *
-          Matrix.GeneralLinearGroup.scalar ι (pglComparisonScalar q g₁ g₂)) *
-            Matrix.GeneralLinearGroup.scalar ι (pglComparisonScalar q g₁ g₂)⁻¹ := by
-              simp
-    _ = pglLift q (g₁ * g₂) *
-        Matrix.GeneralLinearGroup.scalar ι (pglComparisonScalar q g₁ g₂)⁻¹ := by
-          rw [pglLift_mul_scalar]
-    _ = Matrix.GeneralLinearGroup.scalar ι (pglComparisonScalar q g₁ g₂)⁻¹ *
-        pglLift q (g₁ * g₂) :=
-      (Matrix.GeneralLinearGroup.scalar_commute (n := ι)
-        (pglComparisonScalar q g₁ g₂)⁻¹ (pglLift q (g₁ * g₂))).symm
+  rw [Matrix.GeneralLinearGroup.scalar_commute, map_inv, eq_mul_inv_iff_mul_eq]
+  exact pglLift_mul_scalar q g₁ g₂
 
-private noncomputable def pglLinearLift (q : G →* PGL(ι, k)) (g : G) :
-    (ι → k) ≃ₗ[k] ι → k :=
-  (Pi.basisFun k ι).toGL.symm (pglLift q g)
+private noncomputable def pglLinearLift (q : G →* PGL(ι, k)) (b : Module.Basis ι k V)
+    (g : G) : V ≃ₗ[k] V :=
+  b.toGL.symm (pglLift q g)
 
-private theorem toGL_pglLinearLift (q : G →* PGL(ι, k)) (g : G) :
-    (Pi.basisFun k ι).toGL (pglLinearLift q g) = pglLift q g :=
+private theorem toGL_pglLinearLift (q : G →* PGL(ι, k)) (b : Module.Basis ι k V) (g : G) :
+    b.toGL (pglLinearLift q b g) = pglLift q g :=
   MulEquiv.apply_symm_apply _ _
 
-private theorem pglLinearLift_one (q : G →* PGL(ι, k)) : pglLinearLift q 1 = 1 := by
+private theorem pglLinearLift_one (q : G →* PGL(ι, k)) (b : Module.Basis ι k V) :
+    pglLinearLift q b 1 = 1 := by
   rw [pglLinearLift, pglLift_one, map_one]
 
-private theorem pglLinearLift_mul_apply (q : G →* PGL(ι, k)) (g₁ g₂ : G) (x : ι → k) :
-    pglLinearLift q g₁ (pglLinearLift q g₂ x) =
-      (((pglComparisonScalar q g₁ g₂)⁻¹ : kˣ) : k) • pglLinearLift q (g₁ * g₂) x := by
-  have hmul : pglLinearLift q g₁ * pglLinearLift q g₂ =
+private theorem pglLinearLift_mul_apply (q : G →* PGL(ι, k)) (b : Module.Basis ι k V)
+    (g₁ g₂ : G) (x : V) :
+    pglLinearLift q b g₁ (pglLinearLift q b g₂ x) =
+      (((pglComparisonScalar q g₁ g₂)⁻¹ : kˣ) : k) • pglLinearLift q b (g₁ * g₂) x := by
+  have hmul : pglLinearLift q b g₁ * pglLinearLift q b g₂ =
       LinearEquiv.smulOfUnit (pglComparisonScalar q g₁ g₂)⁻¹ *
-        pglLinearLift q (g₁ * g₂) := by
-    apply (Pi.basisFun k ι).toGL.injective
+        pglLinearLift q b (g₁ * g₂) := by
+    apply b.toGL.injective
     rw [map_mul, map_mul, Module.Basis.toGL_smulOfUnit, toGL_pglLinearLift, toGL_pglLinearLift,
       toGL_pglLinearLift]
     exact pglLift_mul q g₁ g₂
@@ -187,17 +173,26 @@ open TauCeti
 
 open scoped MatrixGroups
 
-variable {k G ι : Type*} [CommRing k] [Monoid G] [Fintype ι] [DecidableEq ι] [Nonempty ι]
+variable {k G V ι : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+  [Fintype ι] [DecidableEq ι]
 
 /-- Every homomorphism to a matrix projective general linear group is represented by a normalized
-projective lift on the coordinate module.  The nonempty-index hypothesis excludes the zero module,
-where scalar factors cannot be recovered faithfully from their action. -/
-theorem exists_isProjectiveRep_toPGL_eq (q : G →* PGL(ι, k)) :
-    ∃ (ρ : G → (ι → k) ≃ₗ[k] ι → k) (α : G → G → kˣ)
-      (h : IsProjectiveRep ρ α), h.toPGL (Pi.basisFun k ι) = q := by
-  refine ⟨pglLinearLift q, fun g₁ g₂ ↦ (pglComparisonScalar q g₁ g₂)⁻¹,
-    IsProjectiveRep.of_map_one_mul_apply (pglLinearLift_one q) (pglLinearLift_mul_apply q), ?_⟩
-  ext g
-  rw [IsProjectiveRep.toPGL_apply, toGL_pglLinearLift, mk_pglLift]
+projective lift on any module with a chosen finite basis. This includes the empty basis, where
+`PGL` is trivial and the identity lift has trivial factor set. -/
+theorem exists_isProjectiveRep_toPGL_eq (q : G →* PGL(ι, k)) (b : Module.Basis ι k V) :
+    ∃ (ρ : G → V ≃ₗ[k] V) (α : G → G → kˣ) (h : IsProjectiveRep ρ α), h.toPGL b = q := by
+  cases isEmpty_or_nonempty ι with
+  | inl hι =>
+    let : Subsingleton (PGL(ι, k)) := Matrix.ProjGenLinGroup.mk_surjective.subsingleton
+    refine ⟨_, _, IsProjectiveRep.of_monoidHom (1 : G →* (V ≃ₗ[k] V)), ?_⟩
+    ext g
+    exact Subsingleton.elim _ _
+  | inr hι =>
+    let : FaithfulSMul k V := .of_injective _ b.equivFun.symm.injective
+    refine ⟨pglLinearLift q b, fun g₁ g₂ ↦ (pglComparisonScalar q g₁ g₂)⁻¹,
+      IsProjectiveRep.of_map_one_mul_apply (pglLinearLift_one q b)
+        (pglLinearLift_mul_apply q b), ?_⟩
+    ext g
+    rw [IsProjectiveRep.toPGL_apply, toGL_pglLinearLift, mk_pglLift]
 
 end MonoidHom

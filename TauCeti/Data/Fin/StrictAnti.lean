@@ -6,65 +6,56 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
-public import Mathlib.Order.Preorder.Finite
 
 /-!
 # Strictly antitone sequences indexed by `Fin n`
 
 A sequence `f : Fin n → α` is strictly antitone when it strictly decreases along the indices.  This
-file records the three facts about such sequences that the Pieri rule for Schur polynomials needs.
+file records three facts about such sequences, used for beta-numbers of Young diagrams and the Pieri
+rule for Schur polynomials.
 
 Over `ℕ` a strictly antitone sequence drops by at least one at each step, so it drops by at least
-the index gap: `TauCeti.add_sub_le_of_strictAnti`.  This is what makes a strictly decreasing
-sequence of `n` natural numbers a sequence of beta-numbers of a Young diagram.  The increasing
-analogue indexed by all of `ℕ` is `StrictMono.add_le_nat`.
+the index gap: `StrictAnti.add_sub_le_nat`.  This is what makes a strictly decreasing sequence of
+`n` natural numbers a sequence of beta-numbers of a Young diagram.  The increasing analogue indexed
+by all of `ℕ` is `StrictMono.add_le_nat`.
 
 Over any linear order, an *injective* sequence becomes strictly antitone after precomposition with a
-suitable permutation of the indices (`TauCeti.exists_strictAnti_comp`), and that permutation is
-unique (`TauCeti.eq_of_strictAnti_comp`): sorting into decreasing order is possible and
-unambiguous.  Mathlib's `Tuple.sort` sorts into *increasing* order; composing with the reversal
-`Fin.revPerm` turns it around.
+suitable permutation of the indices (`Function.Injective.exists_strictAnti_comp`), and over any
+partial order that permutation is unique (`StrictAnti.perm_eq`): sorting into decreasing order is
+possible and unambiguous.  Mathlib's `Tuple.sort` sorts into *increasing* order; composing with the
+reversal `Fin.revPerm` turns it around.
 
 ## Main results
 
-* `TauCeti.add_sub_le_of_strictAnti`: a strictly antitone sequence of naturals drops by at least
-  the index gap.
-* `TauCeti.exists_strictAnti_comp`: an injective sequence can be sorted into decreasing order.
-* `TauCeti.eq_of_strictAnti_comp`: the sorting permutation is unique.
+* `StrictAnti.add_sub_le_nat`: a strictly antitone sequence of naturals drops by at least the index
+  gap.
+* `Function.Injective.exists_strictAnti_comp`: an injective sequence can be sorted into decreasing
+  order.
+* `StrictAnti.perm_eq`: the sorting permutation is unique.
 -/
 
 public section
 
-namespace TauCeti
-
 open Equiv
+
+variable {n : ℕ} {α : Type*}
 
 /-- **A strictly antitone sequence of naturals drops by at least the index gap**: it loses at least
 one unit at each step, hence at least `j - i` units between the indices `i ≤ j`. -/
-theorem add_sub_le_of_strictAnti {n : ℕ} {η : Fin n → ℕ} (hη : StrictAnti η) {i j : Fin n}
+theorem StrictAnti.add_sub_le_nat {η : Fin n → ℕ} (hη : StrictAnti η) {i j : Fin n}
     (hij : i ≤ j) : η j + ((j : ℕ) - (i : ℕ)) ≤ η i := by
-  have key : ∀ k : ℕ, ∀ i j : Fin n, (i : ℕ) + k = (j : ℕ) → η j + k ≤ η i := by
-    intro k
-    induction k with
-    | zero =>
-      intro i j hij
-      have hij' : i = j := Fin.ext (by omega)
-      subst hij'
-      simp
-    | succ k ih =>
-      intro i j hij
-      have hi : (i : ℕ) + 1 < n := by omega
-      have hlt : η ⟨(i : ℕ) + 1, hi⟩ < η i := hη (by simp [Fin.lt_def])
-      have := ih ⟨(i : ℕ) + 1, hi⟩ j (by simp; omega)
-      omega
-  exact key _ i j (by omega)
-
-variable {n : ℕ} {α : Type*} [LinearOrder α]
+  obtain ⟨j, hj⟩ := j
+  simp only [Fin.le_def] at hij
+  induction j, hij using Nat.le_induction with
+  | base => simp
+  | succ k hik ih =>
+    have := hη (Fin.mk_lt_mk.mpr k.lt_succ_self : (⟨k, by omega⟩ : Fin n) < ⟨k + 1, hj⟩)
+    grind
 
 /-- **Sorting into decreasing order.**  Precomposing an injective sequence indexed by `Fin n` with
 a suitable permutation of the indices makes it strictly antitone. -/
-theorem exists_strictAnti_comp {f : Fin n → α} (hf : Function.Injective f) :
-    ∃ τ : Perm (Fin n), StrictAnti (f ∘ τ) := by
+theorem Function.Injective.exists_strictAnti_comp [LinearOrder α] {f : Fin n → α}
+    (hf : Function.Injective f) : ∃ τ : Perm (Fin n), StrictAnti (f ∘ τ) := by
   have hmono : StrictMono (f ∘ Tuple.sort f) :=
     (Tuple.monotone_sort f).strictMono_of_injective (hf.comp (Tuple.sort f).injective)
   refine ⟨Fin.revPerm.trans (Tuple.sort f), fun i j hij => ?_⟩
@@ -72,13 +63,7 @@ theorem exists_strictAnti_comp {f : Fin n → α} (hf : Function.Injective f) :
 
 /-- **The sorting permutation is unique.**  Two permutations of the indices that both make a
 sequence strictly antitone are equal. -/
-theorem eq_of_strictAnti_comp {f : Fin n → α} {τ₁ τ₂ : Perm (Fin n)}
-    (h₁ : StrictAnti (f ∘ τ₁)) (h₂ : StrictAnti (f ∘ τ₂)) : τ₁ = τ₂ := by
-  have hf : Function.Injective f := by
-    have hfact : (f : Fin n → α) = (f ∘ ⇑τ₁) ∘ ⇑τ₁.symm := funext fun i => by simp
-    rw [hfact]
-    exact h₁.injective.comp τ₁.symm.injective
-  exact Equiv.ext fun i =>
-    hf (congrFun (Tuple.unique_antitone h₁.antitone h₂.antitone) i)
-
-end TauCeti
+theorem StrictAnti.perm_eq [PartialOrder α] {f : Fin n → α} {τ₁ τ₂ : Perm (Fin n)}
+    (h₁ : StrictAnti (f ∘ τ₁)) (h₂ : StrictAnti (f ∘ τ₂)) : τ₁ = τ₂ :=
+  Equiv.ext <| congrFun <| ((τ₁.injective_comp f).mp h₁.injective).comp_left
+    (Tuple.unique_antitone h₁.antitone h₂.antitone)

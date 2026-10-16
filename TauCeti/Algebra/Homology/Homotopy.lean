@@ -8,12 +8,13 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Constructions on chain homotopies
 
-Two constructions producing new chain homotopies from old ones.
+Three constructions of chain homotopies: two produce new homotopies from old ones, and the
+third assembles a null-homotopy from components given all at once.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -30,6 +31,12 @@ exhibits every power `sᵐ` as homotopic to the identity, through the explicit o
 `∑_{k < m} sᵏ ≫ h`.  Its components are needed, and not just the existence of some homotopy, when
 `m` is allowed to vary from one summand of `K` to another, as in the proof that small singular
 chains for an open cover include as a chain homotopy equivalence.
+
+`Homotopy.mkChainComplex` builds a null-homotopy of a chain map between `ℕ`-indexed chain
+complexes from its components `h n : P.X n ⟶ Q.X (n + 1)`, given all at once together with the
+homotopy identities in degree zero and in positive degrees.  It is the non-inductive counterpart of
+Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
+recursion of their own rather than one degree at a time from the previous two.
 -/
 
 @[expose] public section
@@ -109,21 +116,21 @@ variable [Preadditive C] {K : HomologicalComplex C c} {s : K ⟶ K}
 `K` to a chain endomorphism `s`, then `h.idPow m` is a chain homotopy from the identity to the
 `m`-th power of `s`, whose operator in bidegree `(i, j)` is `∑_{k < m} (sᵏ)ᵢ ≫ hᵢⱼ`. -/
 @[no_expose]
-def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m) where
-  hom i j := ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ h.hom i j
+def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m).asHom where
+  hom i j := ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ h.hom i j
   zero i j hij := by simp [h.zero i j hij]
   comm i := by
-    have hdn : dNext i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
-        ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom := by
+    have hdn : dNext i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f a ≫ h.hom a b) =
+        ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ dNext i h.hom := by
       simpa only [Finset.sum_fn, dNext_comp_left] using
-        map_sum (dNext i) (fun k a b ↦ (End.of s ^ k).f a ≫ h.hom a b) (Finset.range m)
-    have hpv : prevD i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
-        ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ prevD i h.hom := by
+        map_sum (dNext i) (fun k a b ↦ (End.of s ^ k).asHom.f a ≫ h.hom a b) (Finset.range m)
+    have hpv : prevD i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f a ≫ h.hom a b) =
+        ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ prevD i h.hom := by
       simpa only [Finset.sum_fn, prevD_comp_left] using
-        map_sum (prevD i) (fun k a b ↦ (End.of s ^ k).f a ≫ h.hom a b) (Finset.range m)
-    have hstep : ∀ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom +
-        (End.of s ^ k).f i ≫ prevD i h.hom =
-        (End.of s ^ k).f i - (End.of s ^ (k + 1)).f i := fun k _ ↦ by
+        map_sum (prevD i) (fun k a b ↦ (End.of s ^ k).asHom.f a ≫ h.hom a b) (Finset.range m)
+    have hstep : ∀ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ dNext i h.hom +
+        (End.of s ^ k).asHom.f i ≫ prevD i h.hom =
+        (End.of s ^ k).asHom.f i - (End.of s ^ (k + 1)).asHom.f i := fun k _ ↦ by
       have hsum : dNext i h.hom + prevD i h.hom = 𝟙 (K.X i) - s.f i := by
         have hc := h.comm i
         rw [HomologicalComplex.id_f] at hc
@@ -132,14 +139,50 @@ def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m)
       rw [← Preadditive.comp_add, hsum, Preadditive.comp_sub, Category.comp_id,
         HomologicalComplex.pow_f_succ]
     rw [hdn, hpv, ← Finset.sum_add_distrib, Finset.sum_congr rfl hstep,
-      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).f i) m, pow_zero, End.one_def,
+      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).asHom.f i) m, pow_zero, End.one_asHom,
       HomologicalComplex.id_f]
     abel
 
 @[simp]
 lemma idPow_hom (h : Homotopy (𝟙 K) s) (m : ℕ) (i j : ι) :
-    (h.idPow m).hom i j = ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ h.hom i j := (rfl)
+    (h.idPow m).hom i j = ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ h.hom i j := (rfl)
 
 end Homotopy
 
 end Pow
+
+section MkChainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : ChainComplex C ℕ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a chain map `e : P ⟶ Q` between `ℕ`-indexed chain complexes, from its
+components `h n : P.X n ⟶ Q.X (n + 1)` and the homotopy identities `e.f 0 = h 0 ≫ d` and
+`e.f (n + 1) = d ≫ h n + h (n + 1) ≫ d`. The components are given all at once; compare
+`Homotopy.mkInductive`, which constructs them one degree at a time. -/
+@[no_expose]
+def mkChainComplex (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1)) (comm_zero : e.f 0 = h 0 ≫ Q.d 1 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) n ≫ h n + h (n + 1) ≫ Q.d (n + 2) (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : i + 1 = j then h i ≫ eqToHom (congrArg Q.X hij) else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.down_Rel] using hij)
+  comm i := by
+    cases i with
+    | zero =>
+        rw [dNext_zero_chainComplex, prevD_chainComplex]
+        simpa using comm_zero
+    | succ i =>
+        rw [dNext_succ_chainComplex, prevD_chainComplex]
+        simpa using comm_succ i
+
+@[simp]
+lemma mkChainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1))
+    (comm_zero : e.f 0 = h 0 ≫ Q.d 1 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) n ≫ h n + h (n + 1) ≫ Q.d (n + 2) (n + 1))
+    (n : ℕ) : (mkChainComplex e h comm_zero comm_succ).hom n (n + 1) = h n := by
+  simp [mkChainComplex]
+
+end Homotopy
+
+end MkChainComplex

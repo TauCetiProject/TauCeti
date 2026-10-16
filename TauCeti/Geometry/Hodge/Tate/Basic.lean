@@ -30,7 +30,8 @@ Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.
 * `TauCeti.Hodge.tate_F`: its filtration is `⊤` exactly in degrees at most `-m`.
 * `TauCeti.Hodge.tate_piece`: its only nonzero Hodge component has bidegree `(-m,-m)`.
 * `TauCeti.Hodge.finrank_tate_piece`: its Hodge number there is one and all others are zero.
-* `TauCeti.Hodge.tateHodgeType`: the numerical Hodge type of `ℤ(m)`.
+* `TauCeti.Hodge.tateHodgeType`: the numerical Hodge type of `ℤ(m)`, effective exactly when
+  `m ≤ 0` (`TauCeti.Hodge.tateHodgeType_isEffective_iff`).
 * `TauCeti.Hodge.isPolarization_tate`: multiplication of integers satisfies the Hodge–Riemann
   relations for it, and `TauCeti.Hodge.tatePolarization` bundles that as a polarization.
 -/
@@ -38,6 +39,8 @@ Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.
 public section
 
 namespace TauCeti.Hodge
+
+open IsBaseChange
 
 /-- The integral lattice map `ℤ → ℂ` used by the Tate Hodge structure. -/
 abbrev tateLatticeMap : ℤ →ₗ[ℤ] ℂ :=
@@ -164,6 +167,11 @@ theorem tate_hodgeNumber (m p : ℤ) : (tate m).hodgeNumber p = if p = -m then 1
 theorem tate_hodgeType (m : ℤ) : (tate m).hodgeType = tateHodgeType m := by
   ext p <;> simp
 
+/-- The Hodge type of `ℤ(m)` is effective exactly when `m ≤ 0`. -/
+@[simp]
+theorem tateHodgeType_isEffective_iff (m : ℤ) : (tateHodgeType m).IsEffective ↔ m ≤ 0 := by
+  rw [← tate_hodgeType, HodgeStructureOn.hodgeType_isEffective_iff, tate_isEffective_iff]
+
 /-- The single Hodge number of `ℤ(m)` accounts for the whole rank-one lattice. -/
 theorem finsum_tateHodgeType_h_eq_one (m : ℤ) : ∑ᶠ p, (tateHodgeType m).h p = 1 := by
   rw [← tate_hodgeType, HodgeStructureOn.hodgeType_h,
@@ -179,10 +187,10 @@ theorem latticeConj_tateLatticeMap (z : ℂ) :
   exact congrArg (fun f ↦ f z) huniq.symm
 
 /-- The complexification of integer multiplication is complex multiplication. -/
-theorem integralFormBaseChange_tateLatticeMap_mul :
-    integralFormBaseChange isBaseChange_tateLatticeMap (LinearMap.mul ℤ ℤ) =
+theorem bilinForm_tateLatticeMap_mul :
+    bilinForm isBaseChange_tateLatticeMap (LinearMap.mul ℤ ℤ) =
       LinearMap.mul ℂ ℂ :=
-  (integralFormBaseChange_unique isBaseChange_tateLatticeMap _ _ fun x y ↦ by simp).symm
+  (bilinForm_unique isBaseChange_tateLatticeMap _ _ fun x y ↦ by simp).symm
 
 /-- Multiplication of integers satisfies the Hodge–Riemann relations for `ℤ(m)`. -/
 theorem isPolarization_tate (m : ℤ) :
@@ -206,7 +214,7 @@ theorem isPolarization_tate (m : ℤ) :
     by_cases hp : p = -m
     · subst hp
       have hexp : 2 * -m - -2 * m = 0 := by ring
-      rw [hexp, zpow_zero, one_mul, integralFormBaseChange_tateLatticeMap_mul,
+      rw [hexp, zpow_zero, one_mul, bilinForm_tateLatticeMap_mul,
         latticeConj_tateLatticeMap]
       simpa [Complex.mul_conj] using Complex.normSq_pos.mpr hx0
     · have hbot : (tate m).piece p = (⊥ : Submodule ℂ ℂ) := by simp [hp]
@@ -223,7 +231,7 @@ def tatePolarization (m : ℤ) :
 @[simp]
 theorem tatePolarization_Q (m : ℤ) :
     (tatePolarization m).Q = LinearMap.mul ℂ ℂ := by
-  rw [Polarization.Q_def, tatePolarization, integralFormBaseChange_tateLatticeMap_mul]
+  rw [Polarization.Q_def, tatePolarization, bilinForm_tateLatticeMap_mul]
 
 /-- The Tate Hodge structure is polarizable. -/
 theorem isPolarizable_tate (m : ℤ) : IsPolarizable isBaseChange_tateLatticeMap (tate m) :=

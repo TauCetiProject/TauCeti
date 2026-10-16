@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Normal.Basic
 public import Mathlib.FieldTheory.SeparableClosure
 public import Mathlib.GroupTheory.Exponent
+import TauCeti.Algebra.Polynomial.XPowSubC
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
@@ -76,11 +77,7 @@ private theorem splits_X_sq_sub_C (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
     apply Subtype.ext
     rw [IntermediateField.coe_pow, IntermediateField.coe_algebraMap_apply]
     exact hroot i
-  have hfac : (X ^ 2 - C (d i)).map (algebraMap K (adjoin K (Set.range root)))
-      = (X - C ⟨root i, hmem⟩) * (X - C (-⟨root i, hmem⟩)) := by
-    rw [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C, ← hy2, map_pow, map_neg]; ring
-  rw [hfac]
-  exact (Polynomial.Splits.X_sub_C _).mul (Polynomial.Splits.X_sub_C _)
+  exact Polynomial.splits_map_X_pow_two_sub_C hy2
 
 /-- The `i`-th generator, as an element of the multiquadratic field `M`. -/
 @[expose] noncomputable def gen (root : ι → L) (i : ι) : adjoin K (Set.range root) :=

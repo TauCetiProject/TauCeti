@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.Algebra.MvPolynomial.AevalConstX
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
@@ -43,6 +44,8 @@ respects, such as the Alexander grading, descends to this quotient.
   restricting the polynomial action.
 * `TauCeti.GridDiagram.unblockedHomologyIso`: `GH⁻` is `ker ∂⁻ ⧸ im ∂⁻`.
 * `TauCeti.GridDiagram.unblockedHomologyClass`: the class in `GH⁻` of a cycle.
+* `TauCeti.GridDiagram.unblockedHomologyEquivOfIntertwining`: the equivalence of unblocked grid
+  homologies induced by a semilinear equivalence intertwining the differentials.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyModule`: the `R[U]`-module structure on the
   unblocked grid homology of a knot grid.
 
@@ -55,6 +58,9 @@ respects, such as the Alexander grading, descends to this quotient.
 * `TauCeti.GridDiagram.unblockedHomologyClass_surjective` and
   `TauCeti.GridDiagram.unblockedHomologyClass_eq_zero_iff`: every class is the class of a cycle,
   and a cycle has zero class exactly when it is a boundary.
+* `TauCeti.GridDiagram.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass`: the
+  equivalence induced by an intertwining map sends the class of a cycle `z` to the class of its
+  image.
 * `TauCeti.GridDiagram.IsKnot.isTorsionBySet_unblockedHomology`: for a knot grid, `GH⁻` is
   annihilated by the kernel of `R[V₀, …, V_{n-1}] → R[U]`.
 * `TauCeti.GridDiagram.IsKnot.aeval_smul_unblockedHomology` and
@@ -186,6 +192,90 @@ theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDiffer
   exact ((ModuleCat.mono_iff_injective _).mp inferInstance).eq_iff.symm
 
 end Quotient
+
+/-! ### The equivalence induced by an intertwining map -/
+
+section Intertwining
+
+variable (G R) (G' : GridDiagram n)
+  {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ] (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
+  (he : ∀ c, G'.unblockedDifferential R (e c) = e (G.unblockedDifferential R c))
+
+include he
+
+omit [CharP R 2] in
+/-- A map intertwining two unblocked differentials sends cycles to cycles. -/
+theorem map_mem_ker_unblockedDifferential_of_intertwining {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    e c ∈ LinearMap.ker (G'.unblockedDifferential R) := by
+  rw [LinearMap.mem_ker] at hc ⊢
+  rw [he, hc, map_zero]
+
+/-- The semilinear equivalence of cycle submodules induced by an equivalence intertwining two
+unblocked differentials. -/
+private noncomputable def unblockedCyclesEquivOfIntertwining :
+    LinearMap.ker (G.unblockedDifferential R) ≃ₛₗ[σ] LinearMap.ker (G'.unblockedDifferential R) :=
+  e.ofSubmodules _ _ (e.map_ker_of_intertwine _ _ he)
+
+omit [CharP R 2] in
+/-- The cycle equivalence acts on underlying chains by `e`. -/
+@[simp]
+private theorem coe_unblockedCyclesEquivOfIntertwining_apply
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    (G.unblockedCyclesEquivOfIntertwining R G' e he z : GridChainMinus R n) = e z :=
+  e.ofSubmodules_apply _ z
+
+/-- The cycle equivalence carries boundaries onto boundaries. -/
+private theorem map_boundariesInKer_unblockedCyclesEquivOfIntertwining :
+    (G.unblockedDifferential R).boundariesInKer.map
+        (G.unblockedCyclesEquivOfIntertwining R G' e he :
+          LinearMap.ker (G.unblockedDifferential R) →ₛₗ[σ]
+            LinearMap.ker (G'.unblockedDifferential R)) =
+      (G'.unblockedDifferential R).boundariesInKer := by
+  have hrange := e.map_range_of_intertwine _ _ he
+  ext z
+  simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, LinearEquiv.coe_coe]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    rw [coe_unblockedCyclesEquivOfIntertwining_apply, ← hrange]
+    exact Submodule.mem_map_of_mem hw
+  · intro hz
+    rw [← hrange] at hz
+    obtain ⟨w, ⟨v, rfl⟩, hwz⟩ := hz
+    refine ⟨⟨G.unblockedDifferential R v, ?_⟩, ⟨v, rfl⟩, Subtype.ext ?_⟩
+    · rw [LinearMap.mem_ker, ← LinearMap.comp_apply, unblockedDifferential_comp_self_eq_zero,
+        LinearMap.zero_apply]
+    · rw [coe_unblockedCyclesEquivOfIntertwining_apply]
+      exact hwz
+
+/-- **The equivalence of unblocked grid homologies induced by an intertwining map.** A
+semilinear equivalence `e` of chain modules with `∂⁻' ∘ e = e ∘ ∂⁻` induces a semilinear
+equivalence `GH⁻(G) ≃ GH⁻(G')`, sending the class of a cycle `z` to the class of `e z`. -/
+noncomputable def unblockedHomologyEquivOfIntertwining :
+    G.unblockedHomology R ≃ₛₗ[σ] G'.unblockedHomology R :=
+  (G.unblockedHomologyIso R).toLinearEquiv.trans <|
+    (Submodule.Quotient.equiv _ _ (G.unblockedCyclesEquivOfIntertwining R G' e he)
+      (G.map_boundariesInKer_unblockedCyclesEquivOfIntertwining R G' e he)).trans
+        (G'.unblockedHomologyIso R).toLinearEquiv.symm
+
+/-- `unblockedHomologyEquivOfIntertwining` sends the class of a cycle `z` to the class of its
+image. -/
+@[simp]
+theorem unblockedHomologyEquivOfIntertwining_unblockedHomologyClass
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    G.unblockedHomologyEquivOfIntertwining R G' e he (G.unblockedHomologyClass R z) =
+      G'.unblockedHomologyClass R
+        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.2⟩ := by
+  simp only [unblockedHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
+    LinearEquiv.symm_apply_eq]
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    unblockedHomologyIso_hom_unblockedHomologyClass,
+    unblockedHomologyIso_hom_unblockedHomologyClass]
+  simp only [LinearMap.homologyπ_apply, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  exact congrArg _ (Subtype.ext (G.coe_unblockedCyclesEquivOfIntertwining_apply R G' e he z))
+
+end Intertwining
 
 namespace IsKnot
 

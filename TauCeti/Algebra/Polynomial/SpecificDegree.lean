@@ -60,6 +60,26 @@ open Polynomial
 
 namespace Polynomial
 
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- A cubic with a root `a` over a commutative ring is `(X - a)` times a quadratic. -/
+theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : R[X]}
+    (hdeg : g.natDegree = 3) {a : R} (ha : g.IsRoot a) :
+    ∃ q : R[X], q.natDegree = 2 ∧ g = (X - C a) * q := by
+  obtain ⟨q, hq⟩ := dvd_iff_isRoot.2 ha
+  have hg0 : g ≠ 0 := fun h0 => by simp [h0] at hdeg
+  have := Nontrivial.of_polynomial_ne hg0
+  have hq0 : q ≠ 0 := right_ne_zero_of_mul (hq ▸ hg0)
+  refine ⟨q, ?_, hq⟩
+  rw [hq, (monic_X_sub_C a).natDegree_mul' hq0, natDegree_X_sub_C] at hdeg
+  omega
+
+end CommRing
+
+section Field
+
 variable {F : Type*} [Field F]
 
 /-- An irreducible polynomial whose degree is nonzero in the coefficient field is separable: the
@@ -84,21 +104,6 @@ theorem separable_of_irreducible_of_natDegree_eq_four {f : F[X]} (hchar : ringCh
   have hfour : ((4 : ℕ) : F) = 2 * 2 := by norm_num
   rw [hdeg, hfour]
   exact mul_ne_zero htwo htwo
-
-/-- A cubic with a root `a` in its coefficient field is `(X - a)` times a quadratic. This is the
-one factorization step shared by the two splitting criteria below. -/
-theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : F[X]}
-    (hdeg : g.natDegree = 3) {a : F} (ha : g.IsRoot a) :
-    ∃ q : F[X], q.natDegree = 2 ∧ g = (X - C a) * q := by
-  obtain ⟨q, hq⟩ := dvd_iff_isRoot.2 ha
-  have hg0 : g ≠ 0 := fun h0 => by simp [h0] at hdeg
-  have hq0 : q ≠ 0 := by
-    rintro rfl
-    rw [mul_zero] at hq
-    exact hg0 hq
-  refine ⟨q, ?_, hq⟩
-  rw [hq, natDegree_mul (X_sub_C_ne_zero a) hq0, natDegree_X_sub_C] at hdeg
-  omega
 
 /-- Away from characteristic two, a quadratic splits over its coefficient field exactly when its
 discriminant is a square. This is `Polynomial.splits_quadratic_iff_isSquare` read on `discr`
@@ -214,6 +219,8 @@ theorem Splits.exists_isRoot_ne {g : F[X]} (hsplit : g.Splits) (hsep : g.Separab
   · exact ⟨y, hroot y, fun hya => hxy (Subtype.ext (hxa.trans hya.symm))⟩
   · exact ⟨x, hroot x, hxa⟩
 
+end Field
+
 section CommRing
 
 variable {R : Type*} [CommRing R]
@@ -296,14 +303,15 @@ theorem X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff (a b c d : R) :
 
 end CommRing
 
-section IsDomain
+section NoZeroDivisors
 
-variable {R : Type*} [CommRing R] [IsDomain R]
+variable {R : Type*} [CommRing R] [NoZeroDivisors R]
 
-/-- A monic polynomial of degree between one and five over a domain is irreducible as soon as it
-has no root and no monic quadratic factor: a proper monic factor of least degree has degree at
-most half the degree, so it is linear or quadratic. This extends
-`Polynomial.Monic.irreducible_iff_roots_eq_zero_of_degree_le_three` to degrees four and five. -/
+/-- A monic polynomial of degree between one and five over a commutative ring without zero
+divisors is irreducible as soon as it has no root and no monic quadratic factor: a proper monic
+factor of least degree has degree at most half the degree, so it is linear or quadratic.
+This extends `Polynomial.Monic.irreducible_iff_roots_eq_zero_of_degree_le_three` to degrees four
+and five. -/
 theorem Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd {p : R[X]}
     (hp : p.Monic) (hdeg : p.natDegree ∈ Finset.Icc 1 5) (hroot : ∀ x, ¬ p.IsRoot x)
     (hquad : ∀ a b : R, ¬ X ^ 2 + C a * X + C b ∣ p) : Irreducible p := by
@@ -322,21 +330,22 @@ theorem Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd {
       rwa [hc, C_1, one_mul] at h
     rwa [← hqeq]
 
-/-- The quintic `X⁵ + cX + d` over a domain is irreducible when it has no root and no pair
-`(a, b)` solves the two equations of `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff`,
-that is, when it has neither a linear nor a monic quadratic factor. Over a finite field both
-conditions are finite checks. -/
+/-- The quintic `X⁵ + cX + d` over a commutative ring without zero divisors is irreducible when
+it has no root and no pair `(a, b)` solves the two equations of
+`Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff`, that is, when it has neither a linear
+nor a monic quadratic factor. Over a finite field both conditions are finite checks. -/
 theorem irreducible_X_pow_five_add_C_mul_X_add_C {c d : R}
     (hroot : ∀ x : R, x ^ 5 + c * x + d ≠ 0)
     (hquad : ∀ a b : R,
       ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c = 0 ∧ a ^ 3 * b - 2 * a * b ^ 2 + d = 0)) :
     Irreducible (X ^ 5 + C c * X + C d : R[X]) := by
+  nontriviality R
   have hdeg : (X ^ 5 + C c * X + C d : R[X]).natDegree = 5 := by compute_degree!
   refine Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd (by monicity!)
     (by rw [hdeg]; decide) (fun x => by simpa using hroot x) fun a b => ?_
   rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff]
   exact hquad a b
 
-end IsDomain
+end NoZeroDivisors
 
 end Polynomial

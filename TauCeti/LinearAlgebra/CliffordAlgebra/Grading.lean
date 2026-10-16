@@ -44,6 +44,9 @@ belongs to the grading API independently of any spin representation.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
+* `Module.Basis.mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero`: an exterior element is
+  homogeneous of a given parity exactly when its coordinates vanish at every index set of the
+  other parity.
 -/
 
 public section
@@ -136,5 +139,45 @@ theorem exteriorAlgebra_mem_evenOdd_iff [Nontrivial R] (b : Module.Basis I R M) 
   rw [(CliffordAlgebra.evenOdd_isCompl (Q := (0 : QuadraticForm R M))).inf_eq_bot,
     Submodule.mem_bot] at hbot
   exact b.ExteriorAlgebra.ne_zero s hbot
+
+/-- **An exterior element is homogeneous of parity `i` exactly when it has no coordinates of the
+other parity**: its coordinate in the exterior coordinate basis vanishes at every index set whose
+cardinality has the other parity. -/
+theorem mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {i : ZMod 2}
+    {x : _root_.ExteriorAlgebra R M} :
+    x ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i ↔
+      ∀ t : Finset I, (t.card : ZMod 2) ≠ i → b.ExteriorAlgebra.repr x t = 0 := by
+  classical
+  have hsupp : ∀ (j : ZMod 2) (y : _root_.ExteriorAlgebra R M),
+      (∀ t : Finset I, (t.card : ZMod 2) ≠ j → b.ExteriorAlgebra.repr y t = 0) →
+        y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) j := by
+    intro j y hy
+    rw [← b.ExteriorAlgebra.linearCombination_repr y, Finsupp.linearCombination_apply]
+    refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
+    have hs' : (s.card : ZMod 2) = j := by_contra fun h ↦ Finsupp.mem_support_iff.1 hs (hy s h)
+    exact hs' ▸ b.exteriorAlgebra_mem_evenOdd_card s
+  refine ⟨fun hx t ht ↦ ?_, hsupp i x⟩
+  -- `y` is the part of `x` of the parity opposite to `i`; it is homogeneous of both parities.
+  let y := b.ExteriorAlgebra.repr.symm
+    ((b.ExteriorAlgebra.repr x).filter fun s ↦ (s.card : ZMod 2) ≠ i)
+  have hrepr (s : Finset I) : b.ExteriorAlgebra.repr y s =
+      if (s.card : ZMod 2) ≠ i then b.ExteriorAlgebra.repr x s else 0 := by
+    simp only [y, LinearEquiv.apply_symm_apply, Finsupp.filter_apply]
+  have hflip : ∀ c d : ZMod 2, c ≠ d + 1 → c = d := by decide
+  have hy₁ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1) :=
+    hsupp _ y fun s hs ↦ by rw [hrepr, ite_eq_right (not_not.2 (hflip _ _ hs))]
+  have hy₀ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i := by
+    have hrest : x - y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i :=
+      hsupp i _ fun s hs ↦ by rw [map_sub, Finsupp.sub_apply, hrepr, ite_eq_left hs, sub_self]
+    simpa using Submodule.sub_mem _ hx hrest
+  have hdisj : Disjoint (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i)
+      (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1)) := by
+    rcases (by decide : ∀ c : ZMod 2, c = 0 ∨ c = 1) i with rfl | rfl
+    · exact (CliffordAlgebra.evenOdd_isCompl (0 : QuadraticForm R M)).disjoint
+    · exact (CliffordAlgebra.evenOdd_isCompl (0 : QuadraticForm R M)).disjoint.symm
+  have hy : y = 0 := (Submodule.disjoint_def.1 hdisj) y hy₀ hy₁
+  have hcoord := hrepr t
+  rw [hy, ite_eq_left ht, map_zero, Finsupp.coe_zero, Pi.zero_apply] at hcoord
+  exact hcoord.symm
 
 end Module.Basis

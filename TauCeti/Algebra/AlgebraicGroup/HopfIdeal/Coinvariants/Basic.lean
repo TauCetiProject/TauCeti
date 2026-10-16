@@ -161,8 +161,8 @@ variable {I : HopfIdeal R H} {h : H}
 theorem mem_coinvariants_iff_comul_sub_mem_rightTensorIdeal :
     h ∈ I.coinvariants ↔
       Coalgebra.comul (R := R) h - h ⊗ₜ[R] (1 : H) ∈
-        rightTensorIdeal (R := R) (H := H) I.toIdeal := by
-  rw [← ker_tensorProduct_map_id_quotient, RingHom.mem_ker, mem_coinvariants_iff]
+        Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal := by
+  rw [← Ideal.ker_tensorProduct_map_id_quotient, RingHom.mem_ker, mem_coinvariants_iff]
   simp [sub_eq_zero]
 
 /-- A coinvariant minus its counit lies in the Hopf ideal: the augmentation ideal of the
@@ -300,11 +300,11 @@ theorem IsNormal.antipode_mem_coinvariants (hI : I.IsNormal) (hh : h ∈ I.coinv
   have hconj : g * n⁻¹ * g⁻¹ ∈ CommHopfAlgCat.quotientPointsSubgroup H I A :=
     (CommHopfAlgCat.quotientPointsSubgroup_normal H I hI A).conj_mem _ (inv_mem hn) g
   calc (g * n).ofConv (HopfAlgebraStruct.antipode R h)
-      _ = ((g * n)⁻¹).ofConv h := (AlgHom.convInv_apply _ h).symm
+      _ = ((g * n)⁻¹).ofConv h := (WithConv.algHom_inv_apply _ h).symm
       _ = (g⁻¹ * (g * n⁻¹ * g⁻¹)).ofConv h := by
         simp only [mul_inv_rev, ← mul_assoc, inv_mul_cancel, one_mul]
       _ = (g⁻¹).ofConv h := ofConv_mul_apply_of_mem_coinvariants hh _ hconj
-      _ = g.ofConv (HopfAlgebraStruct.antipode R h) := AlgHom.convInv_apply _ h
+      _ = g.ofConv (HopfAlgebraStruct.antipode R h) := WithConv.algHom_inv_apply _ h
 
 /-- **Coinvariants of a normal Hopf ideal form a right coideal.** Over a flat Hopf algebra,
 comultiplication maps the coinvariants of a normal Hopf ideal into `H^{co H/I} ⊗ H`. -/
@@ -340,6 +340,13 @@ noncomputable def IsNormal.coinvariantsSubcoalgebra [Module.Flat R H]
     rw [Submodule.range_map_subtype_subtype]
     exact ⟨comul_mem_range_lTensor_of_mem_coinvariants hc,
       hI.comul_mem_range_rTensor_of_mem_coinvariants hc⟩
+
+/-- The underlying submodule of the coinvariant subcoalgebra is the coinvariant subalgebra. -/
+@[simp]
+theorem IsNormal.coinvariantsSubcoalgebra_carrier [Module.Flat R H]
+    [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinvariants)] (hI : I.IsNormal) :
+    hI.coinvariantsSubcoalgebra.carrier = Subalgebra.toSubmodule I.coinvariants :=
+  (rfl)
 
 /-- The subcoalgebra of coinvariants has the coinvariants as its elements. -/
 @[simp]

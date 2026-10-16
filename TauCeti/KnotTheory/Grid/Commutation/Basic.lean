@@ -39,6 +39,10 @@ and chain homotopies for commutation invariance are later Lane G.5 targets.
 * `TauCeti.GridDiagram.rowsNoninterleaving_transpose` and
   `TauCeti.GridDiagram.columnsNoninterleaving_transpose`: diagonal reflection exchanges row and
   column non-interleaving.
+* `TauCeti.GridDiagram.columnsNoninterleaving_of_X_eq_finRotate_O` and
+  `TauCeti.GridDiagram.rowsNoninterleaving_of_X_eq_finRotate_O`: a column (or row) whose two
+  markings are adjacent, with the `X`-marking cyclically after the `O`-marking, is
+  non-interleaving with every column (or row).
 
 ## References
 
@@ -136,6 +140,26 @@ theorem columnsNoninterleaving_self (a : Fin n) : ColumnsNoninterleaving G a a :
 @[simp]
 theorem rowsNoninterleaving_self (a : Fin n) : RowsNoninterleaving G a a := by
   simp [RowsNoninterleaving]
+
+/-- A column whose `X`-marking lies directly above its `O`-marking is non-interleaving with
+every column. -/
+theorem columnsNoninterleaving_of_X_eq_finRotate_O {a : Fin n}
+    (h : G.X a = finRotate n (G.O a)) (b : Fin n) : ColumnsNoninterleaving G a b := by
+  rcases eq_or_ne b a with rfl | hba
+  · exact G.columnsNoninterleaving_self b
+  · exact Grid.noninterleaving_of_eq_finRotate h (fun h' ↦ hba (G.O.toPerm.injective h'))
+      (fun h' ↦ hba (G.X.toPerm.injective h'))
+
+/-- A row whose `X`-marking lies directly right of its `O`-marking is non-interleaving with every
+row. -/
+theorem rowsNoninterleaving_of_X_eq_finRotate_O {a : Fin n}
+    (h : G.X.transpose a = finRotate n (G.O.transpose a)) (b : Fin n) :
+    RowsNoninterleaving G a b := by
+  rcases eq_or_ne b a with rfl | hba
+  · exact G.rowsNoninterleaving_self b
+  · exact Grid.noninterleaving_of_eq_finRotate h
+      (fun h' ↦ hba (G.O.transpose.toPerm.injective h'))
+      (fun h' ↦ hba (G.X.transpose.toPerm.injective h'))
 
 /-- Column non-interleaving is symmetric in the two columns. -/
 theorem columnsNoninterleaving_comm {a b : Fin n} :

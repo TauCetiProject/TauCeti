@@ -12,8 +12,12 @@ public import Mathlib.Topology.Category.TopCat.Basic
 # Skeletal objects of relative CW complexes
 
 The stages of a relative CW complex's skeletal filtration, bundled as topological spaces.
-Characteristic-map lemmas describe how open cells sit outside the lower skeleton, how their
-coordinates are unique, and how cells account for points in consecutive skeleta.
+Characteristic-map lemmas describe their continuity on the closed unit ball (bundled as
+`TauCeti.cellMap`), how open cells sit outside the lower skeleton, how their coordinates are
+unique, and how cells account for points in consecutive skeleta, so that a map sends
+`skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
+`n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
+skeleton above any given level.
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -32,6 +36,21 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X]
 /-- The `n`-th stage of the skeletal filtration, as an object of `TopCat`. -/
 abbrev skeletonObj (n : ℕ) : TopCat.{w} := TopCat.of (skeletonLT C (n : ℕ∞) : Set X)
 
+/-- If there are no cells of dimension at least `n`, the stage `skeletonLT C n` is the
+whole relative CW complex, including its base. -/
+lemma skeletonLT_eq_complex_of_isEmpty_cell (n : ℕ)
+    (hn : ∀ m, n ≤ m → IsEmpty (cell C m)) :
+    (skeletonLT C (n : ℕ∞) : Set X) = C := by
+  refine Set.Subset.antisymm (skeletonLT C _).subset_complex ?_
+  conv_lhs => rw [← union_iUnion_openCell_eq_complex (C := C)]
+  refine Set.union_subset (skeletonLT C _).base_subset ?_
+  refine Set.iUnion_subset fun m ↦ Set.iUnion_subset fun j ↦ ?_
+  have hm : m < n := by
+    by_contra h
+    exact (hn m (Nat.le_of_not_gt h)).false j
+  exact (openCell_subset_skeletonLT m j).trans
+    (skeletonLT_mono (by exact_mod_cast hm))
+
 variable {C}
 
 /-- The characteristic map of an `n`-cell sends the open unit ball into its open cell, which is
@@ -39,6 +58,33 @@ disjoint from `skeletonLT C n`. -/
 lemma map_notMem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ < 1) :
     map n j y ∉ (skeletonLT C (n : ℕ∞) : Set X) := fun h ↦
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left h ⟨y, mem_ball_zero_iff.2 hy, rfl⟩
+
+omit [T2Space X] in
+/-- The characteristic map of an `n`-cell is continuous on the closed unit ball, as a map out of
+the subtype. -/
+lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
+    Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
+  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+
+omit [T2Space X] in
+/-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
+`Fin n → ℝ` into the complex. -/
+def cellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, C) :=
+  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩,
+    (continuous_map_closedBall j).subtype_mk _⟩
+
+omit [T2Space X] in
+/-- The value of `TauCeti.cellMap` as a point of the complex. -/
+lemma cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
+    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩ :=
+  (rfl)
+
+omit [T2Space X] in
+/-- The value of `TauCeti.cellMap` in the ambient space is the characteristic map. -/
+@[simp]
+lemma coe_cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
+    (cellMap j y : X) = map n j y :=
+  (rfl)
 
 omit [T2Space X] in
 /-- Two points of open unit balls with the same image under characteristic maps of `n`-cells come
@@ -71,5 +117,26 @@ lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy :
     map n j y ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
+
+/-- A map out of a relative CW complex sends `skeletonLT C (n + 1)` into a set `T` exactly when
+it sends `skeletonLT C n` into `T` and sends every closed `n`-cell, read through its
+characteristic map, into `T`. -/
+lemma mapsTo_skeletonLT_succ_iff {Y : Type*} {n : ℕ} {g : C → Y} {T : Set Y} :
+    MapsTo g {x : C | (x : X) ∈ skeletonLT C ((n + 1 : ℕ) : ℕ∞)} T ↔
+      MapsTo g {x : C | (x : X) ∈ skeletonLT C n} T ∧ ∀ (j : cell C n) y, g (cellMap j y) ∈ T := by
+  refine ⟨fun h ↦ ⟨h.mono_left fun x hx ↦ skeletonLT_mono (by exact_mod_cast n.le_succ) hx,
+    fun j y ↦ h (map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2))⟩,
+    fun ⟨h, hcell⟩ x hx ↦ ?_⟩
+  obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map (x := (x : X)) hx
+  · exact h hx'
+  · convert hcell j ⟨y, mem_closedBall_zero_iff.2 hy.le⟩
+    exact Subtype.ext hxy.symm
+
+/-- Every point of a relative CW complex lies in some skeleton above any given level. -/
+lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
+    ∃ j : ℕ, x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X) := by
+  rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
+  obtain ⟨j, hj⟩ := hx
+  exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
 
 end TauCeti

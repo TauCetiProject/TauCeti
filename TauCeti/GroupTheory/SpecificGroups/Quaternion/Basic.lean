@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Quaternion
+import Mathlib.Algebra.Group.TypeTags.Finite
 
 /-!
 # Quaternion-group infrastructure

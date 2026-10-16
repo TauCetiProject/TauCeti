@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
-import Mathlib.Topology.Instances.Matrix
 
 /-!
 # Continuity of the Lipschitz action
@@ -120,25 +119,9 @@ theorem continuous_lipschitzVectorAction_toLinearMap :
     Continuous (fun x : lipschitzGroup Q =>
       (lipschitzVectorAction Q x : Module.End K V)) := by
   let b := Module.finBasis K V
-  let : IsModuleTopology K (Matrix (Fin (Module.finrank K V))
-      (Fin (Module.finrank K V)) K) :=
-    inferInstanceAs (IsModuleTopology K
-      (Fin (Module.finrank K V) → Fin (Module.finrank K V) → K))
-  have hmatrix : Continuous (fun x : lipschitzGroup Q =>
-      LinearMap.toMatrix b b
-        (lipschitzVectorAction Q x : Module.End K V)) := by
-    apply continuous_matrix
-    intro i j
-    have hcoord : Continuous (b.coord i) :=
-      IsModuleTopology.continuous_of_linearMap (b.coord i)
-    simp only [LinearMap.toMatrix_apply, ← Module.Basis.coord_apply]
-    exact (hcoord.comp (continuous_lipschitzVectorAction_apply Q (b j))).congr fun _ => rfl
-  have hback : Continuous (LinearMap.toMatrixAlgEquiv b).symm :=
-    IsModuleTopology.continuous_of_linearMap
-      (LinearMap.toMatrixAlgEquiv b).symm.toLinearMap
-  convert hback.comp hmatrix using 1
-  funext x
-  exact ((LinearMap.toMatrixAlgEquiv b).symm_apply_apply _).symm
+  rw [b.continuous_iff_apply]
+  intro j
+  exact (continuous_lipschitzVectorAction_apply Q (b j)).congr fun _ => rfl
 
 /-- The linear-automorphism-valued Lipschitz action varies continuously. -/
 @[fun_prop]
