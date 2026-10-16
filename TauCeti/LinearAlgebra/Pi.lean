@@ -32,12 +32,16 @@ weights.
   families vanishing outside them.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
+  one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
+* `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
+  products is the sum of the ranks of the finite free component hom spaces.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -47,6 +51,16 @@ weights.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum on two different coordinates differ regularly at some coordinate.
 -/
+
+/-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
+tuple of length `n` gives the family supported at the last index with value `x` there. -/
+public theorem Fin.snoc_zero_eq_single {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, Zero (M i)]
+    (x : M (Fin.last n)) :
+    Fin.snoc (0 : (i : Fin n) → M i.castSucc) x = Pi.single (Fin.last n) x := by
+  funext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => simp
 
 namespace Submodule
 
@@ -152,6 +166,31 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
 end LinearMap
 
 namespace TauCeti
+
+/-- The finite rank of maps between two finite dependent products is the sum of the ranks
+of the component hom spaces, provided those hom spaces are finite free. The scalar semiring
+`R` need only act on the target modules, commuting with their `A`-actions; no algebra structure
+on `A` is required.
+
+The underlying Hom-space decompositions are Mathlib's `LinearMap.lsum` and
+`LinearEquiv.linearMapPi`. -/
+public theorem finrank_linearMap_pi_eq_sum {R A ι κ : Type*} [Semiring R] [StrongRankCondition R]
+    [Semiring A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
+    [∀ i, AddCommMonoid (S i)] [∀ i, Module A (S i)]
+    [∀ j, AddCommMonoid (T j)] [∀ j, Module R (T j)] [∀ j, Module A (T j)]
+    [∀ j, SMulCommClass A R (T j)] [∀ i j, Module.Free R (S i →ₗ[A] T j)]
+    [∀ i j, Module.Finite R (S i →ₗ[A] T j)] :
+    Module.finrank R (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
+      ∑ i, ∑ j, Module.finrank R (S i →ₗ[A] T j) := by
+  classical
+  let _ (i : ι) : Module.Free R (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Free.of_equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R)
+  let _ (i : ι) : Module.Finite R (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R)
+  rw [← (LinearMap.lsum A S R).finrank_eq, Module.finrank_pi_fintype]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R).finrank_eq,
+      Module.finrank_pi_fintype]
 
 variable {K ι : Type*} [Ring K] [DecidableEq ι]
 

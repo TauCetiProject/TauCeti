@@ -71,7 +71,7 @@ identity of pairings on the nose, with no error term.
 ## Implementation notes
 
 `TauCeti.ClassFunction.indExtend` is bundled as a `k`-linear map, matching
-`TauCeti.ClassFunction.ind`: the value at the identity is a linear functional of `φ`, so the
+`Subgroup.indClassFunction`: the value at the identity is a linear functional of `φ`, so the
 correction is linear in `φ` too, and the pairing identity then says exactly that the map is an
 isometry for `TauCeti.ClassFunction.characterPairing`.  Because the definition is not exposed,
 `TauCeti.ClassFunction.indExtend_def` records the defining formula for consumers.
@@ -92,8 +92,6 @@ degree of an irreducible character.
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 7, Lemma 7.2 and Theorem 7.5.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8, the exceptional-character correspondence.
 -/
 
 public section
@@ -115,7 +113,7 @@ The corrected class function vanishes at the identity, which is what makes induc
 trivial-intersection subgroup an isometry on it; adding the multiple of the trivial character of `G`
 back restores the degree, `φ*(1) = φ(1)`. -/
 noncomputable def indExtend [H.FiniteIndex] : ClassFunction k H →ₗ[k] ClassFunction k G where
-  toFun φ := ind H (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
+  toFun φ := H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
     φ.1 1 • ofCharacter (Representation.trivial k G k)
   map_add' φ ψ := by
     have hval : ((φ + ψ : ClassFunction k H) : H → k) 1 = φ.1 1 + ψ.1 1 := rfl
@@ -138,7 +136,7 @@ noncomputable def indExtend [H.FiniteIndex] : ClassFunction k H →ₗ[k] ClassF
 /-- **The defining formula of the exceptional extension.**  The definition itself is not exposed,
 so this is what a consumer unfolds it with. -/
 theorem indExtend_def [H.FiniteIndex] (φ : ClassFunction k H) :
-    indExtend H φ = ind H (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
+    indExtend H φ = H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
       φ.1 1 • ofCharacter (Representation.trivial k G k) :=
   (rfl)
 
@@ -162,8 +160,8 @@ private theorem sub_smul_trivial_apply_one (φ : ClassFunction k H) :
 
 /-- Forgetting the class-function bundling of an induced class function. -/
 private theorem coe_ind [H.FiniteIndex] (f : ClassFunction k H) :
-    ((ind H f : ClassFunction k G) : G → k) = indClassFun H (f : H → k) :=
-  funext fun g => ind_apply f g
+    ((H.indClassFunction f : ClassFunction k G) : G → k) = Subgroup.indClassFun H (f : H → k) :=
+  funext fun g => Subgroup.indClassFunction_apply H f g
 
 /-- The trivial character of `G` restricts to the trivial character of `H`. -/
 private theorem comap_subtype_ofCharacter_trivial :
@@ -189,9 +187,9 @@ private theorem coe_ofCharacter_trivial :
 /-- Induction takes a class function vanishing at the identity to one vanishing at the identity:
 every summand of the coset sum at the identity is the value of `f` at the identity. -/
 private theorem ind_apply_one_of_apply_one_eq_zero [H.FiniteIndex] {f : ClassFunction k H}
-    (hf : (f : H → k) 1 = 0) : (ind H f).1 1 = 0 := by
+    (hf : (f : H → k) 1 = 0) : (H.indClassFunction f).1 1 = 0 := by
   classical
-  rw [ind_apply, indClassFun_apply]
+  rw [Subgroup.indClassFunction_apply, Subgroup.indClassFun_apply]
   refine Finset.sum_eq_zero fun t _ => ?_
   -- the representative conjugates the identity to the identity, so every summand is `f 1`
   simp only [mul_one, inv_mul_cancel, one_mem, ↓reduceDIte]
@@ -240,12 +238,12 @@ variable [Finite G]
 trivial-intersection subgroup whose order is invertible in `k`.
 
 The correction term is what makes this work: `φ - φ(1) · 1_H` vanishes at the identity, so
-restriction undoes its induction (`TauCeti.ClassFunction.comap_subtype_ind_eq_self`), and the
+restriction undoes its induction (`Subgroup.comap_subtype_indClassFunction_eq_self`), and the
 trivial character of `G` restricts to that of `H`, returning the term that was subtracted. -/
 theorem comap_subtype_indExtend (hH : IsTISubgroup H) (hk : IsUnit (Nat.card H : k))
     (φ : ClassFunction k H) : comap H.subtype (indExtend H φ) = φ := by
   rw [indExtend_def, map_add, map_smul,
-    comap_subtype_ind_eq_self hH hk _ (sub_smul_trivial_apply_one φ),
+    H.comap_subtype_indClassFunction_eq_self hH hk _ (sub_smul_trivial_apply_one φ),
     comap_subtype_ofCharacter_trivial, sub_add_cancel]
 
 /-- **Distinct class functions have distinct exceptional extensions**, restriction being a left
@@ -275,13 +273,13 @@ theorem characterPairing_indExtend_indExtend (hG : IsUnit (Nat.card G : k)) (hH 
   have hk : IsUnit (Nat.card H : k) := isUnit_natCard_subgroup H hG
   -- Frobenius reciprocity against the trivial character, which restricts to the trivial character
   have hcross : ∀ f : ClassFunction k H,
-      characterPairing (ind H f) (ofCharacter (Representation.trivial k G k)) =
+      characterPairing (H.indClassFunction f) (ofCharacter (Representation.trivial k G k)) =
         characterPairing f (ofCharacter (Representation.trivial k H k)) :=
     fun f => by rw [characterPairing_ind hG, comap_subtype_ofCharacter_trivial]
   -- the induction isometry on the two corrected class functions
   have hAB : characterPairing
-      (ind H (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)))
-      (ind H (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k))) =
+      (H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)))
+      (H.indClassFunction (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k))) =
         characterPairing φ ψ -
           ψ.1 1 * characterPairing φ (ofCharacter (Representation.trivial k H k)) -
           φ.1 1 * characterPairing ψ (ofCharacter (Representation.trivial k H k)) +
@@ -289,12 +287,12 @@ theorem characterPairing_indExtend_indExtend (hG : IsUnit (Nat.card G : k)) (hH 
     rw [characterPairing_ind_ind hG hH _ _ (sub_smul_trivial_apply_one ψ),
       characterPairing_sub_smul_trivial hk]
   have hAtG : characterPairing
-      (ind H (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)))
+      (H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)))
       (ofCharacter (Representation.trivial k G k)) =
         characterPairing φ (ofCharacter (Representation.trivial k H k)) - φ.1 1 := by
     rw [hcross, characterPairing_sub_smul_trivial_right hk]
   have htGB : characterPairing (ofCharacter (Representation.trivial k G k))
-      (ind H (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k))) =
+      (H.indClassFunction (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k))) =
         characterPairing ψ (ofCharacter (Representation.trivial k H k)) - ψ.1 1 := by
     rw [characterPairing_symm, hcross, characterPairing_sub_smul_trivial_right hk]
   -- expand both extensions by bilinearity and cancel
@@ -326,10 +324,10 @@ theorem indExtend_mem_virtualCharacters {φ : ClassFunction k H} {n : ℤ}
         Int.cast_smul_eq_zsmul]
     rw [this]
     exact sub_mem hφ (zsmul_mem one_mem_virtualCharacters n)
-  have hind : ((ind H (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) :
+  have hind : ((H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) :
       ClassFunction k G) : G → k) ∈ virtualCharacters k G := by
     rw [coe_ind]
-    exact indClassFun_mem_virtualCharacters H hsub
+    exact Subgroup.indClassFun_mem_virtualCharacters H hsub
   have hcorr : ((φ.1 1 • ofCharacter (Representation.trivial k G k) : ClassFunction k G) :
       G → k) ∈ virtualCharacters k G := by
     have : ((φ.1 1 • ofCharacter (Representation.trivial k G k) : ClassFunction k G) : G → k) =

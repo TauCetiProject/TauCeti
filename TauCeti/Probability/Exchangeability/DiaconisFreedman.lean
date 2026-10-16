@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.DiracProba
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import TauCeti.Probability.Exchangeability.MixedMarkovChain
 public import TauCeti.Probability.Exchangeability.RowExchangeable
-public import TauCeti.Probability.Exchangeability.SuccessorArray
+public import TauCeti.Probability.Process.SuccessorArray
 
 /-!
 # From a row exchangeable successor array back to a mixture of Markov chains

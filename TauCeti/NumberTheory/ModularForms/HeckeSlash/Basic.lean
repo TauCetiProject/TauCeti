@@ -163,7 +163,8 @@ variable [Finite (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹)]
 /-- The enumeration `∑` needs, obtained from the `Finite` assumption by choice. It is `local`
 and `noncomputable`: the sum below does not depend on which enumeration is chosen, so no
 declaration in this file should carry one as data. -/
-noncomputable local instance : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) :=
+noncomputable local instance fintypeDecompQuotient :
+    Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) :=
   Fintype.ofFinite _
 
 /-- **The slash sum over a chosen decomposition of a double coset**: `∑ᵥ f ∣[k] (δ τᵥ⁻¹)`, over

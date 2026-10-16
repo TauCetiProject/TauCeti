@@ -55,6 +55,9 @@ noetherianness satisfies them (`laurentGluing_isStronglyNoetherian`).
 * `TauCeti.ValuationSpectrum.isSheafFor_laurentSieve_of_isSheafFor` : a presheaf of sets
   satisfying the sheaf condition for two-piece Laurent covers of rational subsets satisfies it for
   every Laurent sieve of a rational subset.
+* `TauCeti.ValuationSpectrum.isSheafFor_ofArrows_inf_laurentCoverOpen_of_injective` : the
+  presentation-limit presheaf of sets satisfies the sheaf condition for a two-piece Laurent cover
+  once restriction to the two pieces is injective and compatible sections over them glue.
 * `TauCeti.ValuationSpectrum.isSheafFor_ofArrows_inf_laurentCoverOpen` : over a strongly
   noetherian Tate ring, the presentation-limit presheaf satisfies the sheaf condition for the
   two-piece Laurent cover of a rational subset.
@@ -119,6 +122,44 @@ theorem isSheafFor_laurentSieve_of_isSheafFor {F : (Opens ↥(spa Aplus))ᵒᵖ 
 
 end Induction
 
+/-! ### The two-piece sheaf condition from gluing on presentation limits -/
+
+section Gluing
+
+variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A]
+  (P : PairOfDefinition A) {Aplus : Subring A}
+
+/-- **The two-piece Laurent sheaf condition from gluing on presentation limits.** Let `W` be an
+open of `Spa(A, A⁺)` and `f ∈ A`. Suppose that a section of `presentationLimit` over `W` is
+determined by its restrictions to the two pieces `W ⊓ laurentCoverOpen Aplus f b`, and that
+sections over the two pieces which agree on their overlap are the restrictions of a section over
+`W`. Then the presentation-limit presheaf of sets satisfies the sheaf condition for the cover of
+`W` by the two pieces. -/
+theorem isSheafFor_ofArrows_inf_laurentCoverOpen_of_injective {W : Opens ↥(spa Aplus)} (f : A)
+    (hinj : Function.Injective fun (x : presentationLimit (P := P) Aplus W) (b : Bool) ↦
+      (presentationLimitMap (P := P) (inf_le_left : W ⊓ laurentCoverOpen Aplus f b ≤ W)).hom.1 x)
+    (hex : ∀ x : ∀ b, presentationLimit (P := P) Aplus (W ⊓ laurentCoverOpen Aplus f b),
+      (presentationLimitMap (P := P) (inf_le_left :
+          (W ⊓ laurentCoverOpen Aplus f true) ⊓ (W ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1
+            (x true) =
+        (presentationLimitMap (P := P) (inf_le_right :
+          (W ⊓ laurentCoverOpen Aplus f true) ⊓ (W ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1
+            (x false) →
+      ∃ a : presentationLimit (P := P) Aplus W, ∀ b,
+        (presentationLimitMap (P := P) (inf_le_left : W ⊓ laurentCoverOpen Aplus f b ≤ W)).hom.1 a =
+          x b) :
+    (Presieve.ofArrows (fun b ↦ W ⊓ laurentCoverOpen Aplus f b)
+      fun _ ↦ homOfLE inf_le_left).IsSheafFor
+        (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+          forget _root_.TopCommRingCat) := by
+  rw [isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap]
+  intro x hx
+  -- of the pairwise overlaps, only that of the two distinct pieces is needed
+  obtain ⟨a, ha⟩ := hex x (hx true false)
+  exact ⟨a, ha, fun a' ha' ↦ hinj (funext fun b ↦ (ha' b).trans (ha b).symm)⟩
+
+end Gluing
+
 /-! ### The strongly noetherian case -/
 
 section StronglyNoetherian
@@ -137,35 +178,10 @@ theorem isSheafFor_ofArrows_inf_laurentCoverOpen
       fun _ ↦ homOfLE inf_le_left).IsSheafFor
         (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
           forget _root_.TopCommRingCat) := by
-  obtain ⟨T, s, hT, hWT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hW)
-  obtain rfl : W = spaBasicOpen Aplus T s :=
-    Opens.ext (hWT.trans (Set.ext fun _ ↦ mem_spaBasicOpen.symm))
-  -- `τ V` reads a section of the presheaf of sets as an element of `presentationLimit V`
-  let τ (V : Opens ↥(spa Aplus)) := (eqToHom (presentationLimitPresheaf_obj P Aplus
-    (Opposite.op V))).hom.1
-  have hτ (V : Opens ↥(spa Aplus)) : Function.Injective (τ V) :=
-    Function.LeftInverse.injective
-      (eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op V))).hom_inv_id_apply
-  rw [Presieve.isSheafFor_arrows_iff]
-  intro x hx
-  have hover : (presentationLimitMap (P := P) inf_le_left).hom.1 (τ _ (x true)) =
-      (presentationLimitMap (P := P) inf_le_right).hom.1 (τ _ (x false)) := by
-    rw [← eqToHom_apply_presentationLimitPresheaf_map_apply,
-      ← eqToHom_apply_presentationLimitPresheaf_map_apply]
-    exact congrArg (τ _)
-      (hx true false _ (homOfLE inf_le_left) (homOfLE inf_le_right) (Subsingleton.elim _ _))
-  obtain ⟨a, ha⟩ := exists_presentationLimitMap_eq_of_inf_laurentCoverOpen P hAplus hT f
-    (fun b ↦ τ _ (x b)) hover
-  -- the gluing is `a`, transported back to the presheaf of sets
-  let e := presentationLimitPresheaf_obj P Aplus (Opposite.op (spaBasicOpen Aplus T s))
-  have hτa : τ _ ((eqToHom e.symm).hom.1 a) = a :=
-    (eqToIso e.symm).hom_inv_id_apply a
-  refine ⟨(eqToHom e.symm).hom.1 a, fun b ↦ hτ _ ?_, fun a' ha' ↦ hτ _ ?_⟩
-  · rw [eqToHom_apply_presentationLimitPresheaf_map_apply, hτa, ha b]
-  · refine Eq.trans ?_ hτa.symm
-    refine injective_presentationLimitMap_inf_laurentCoverOpen P hAplus hT f (funext fun b ↦ ?_)
-    dsimp only
-    rw [← eqToHom_apply_presentationLimitPresheaf_map_apply, ha' b, ha b]
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
+  exact isSheafFor_ofArrows_inf_laurentCoverOpen_of_injective P f
+    (injective_presentationLimitMap_inf_laurentCoverOpen P hAplus hT f)
+    (exists_presentationLimitMap_eq_of_inf_laurentCoverOpen P hAplus hT f)
 
 /-- **Wedhorn's Lemma 8.34(i) in degree zero: the sheaf condition for Laurent covers.** Let `A` be
 a strongly noetherian Tate ring, `A⁺` a subring of power-bounded elements, `W` a rational subset

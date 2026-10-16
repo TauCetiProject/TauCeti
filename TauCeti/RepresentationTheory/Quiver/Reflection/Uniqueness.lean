@@ -59,11 +59,9 @@ where it is concentrated at the sink.
 
 ## References
 
-This is the uniqueness milestone of Layer 5 ("Gabriel's theorem") of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, that the reflection
-induction transports the dimension vector faithfully. See Bernstein--Gelfand--Ponomarev, *Coxeter
-functors and Gabriel's theorem*, and Derksen--Weyman, *An Introduction to Quiver Representations*,
-Ch. 2.
+This is the uniqueness step of the reflection induction for Gabriel's theorem. See
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman, *An
+Introduction to Quiver Representations*, Ch. 2.
 -/
 
 public section
@@ -239,7 +237,7 @@ isomorphic exactly when their dimension vectors agree.** The forward direction i
 `TauCeti.dimVector_eq_of_iso` and needs none of the hypotheses; the converse is
 `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`. -/
 theorem nonempty_iso_iff_dimVector_eq_of_indecomposable
-    [q : _root_.Quiver.{w} V] [hq : ∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V)
+    [_root_.Quiver.{w} V] [∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V)
     (hpd : (titsForm V).PosDef) (M N : QuiverRep.{u, v, w, max v w x} k V)
     (hM : Indecomposable M) (hN : Indecomposable N)
     (hfdM : IsFinDim.{u, v, w, max v w x} k V M) (hfdN : IsFinDim.{u, v, w, max v w x} k V N) :

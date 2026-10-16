@@ -15,12 +15,8 @@ common effective part.  If `D` and `E` are effective divisors, `D ⊓ E` is the 
 lying below both.  Removing it from `D` and from `E` gives two residual effective divisors with
 disjoint support.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
-lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
-symmetric powers `Symᵈ X`").  The later Abel-map and linear-system arguments need to split
-unordered effective divisors into their common sub-divisor and the two remaining parts; this file
-supplies that operation at the existing formal Weil-divisor level, before scheme-level symmetric
-powers or relative Cartier divisors are available.
+This file splits unordered effective divisors into their common sub-divisor and the two remaining
+parts, at the level of formal Weil divisors.
 -/
 
 public section

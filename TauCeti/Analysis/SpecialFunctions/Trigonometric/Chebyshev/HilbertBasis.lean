@@ -12,13 +12,11 @@ public import TauCeti.Probability.Moments.VanishingMoments
 /-!
 # The Chebyshev `T` polynomials as a Hilbert basis of `L²(measureT)`
 
-Roadmap **Part C**: the normalized Chebyshev `T` modes `Tₙ/√‖Tₙ‖²` are a Hilbert basis of
-`L²([-1,1]; measureT)`, where `measureT` is Mathlib's Chebyshev orthogonality measure (weight
-`(1-x²)^{-1/2}`).
+The normalized Chebyshev `T` modes `Tₙ/√‖Tₙ‖²` are a Hilbert basis of `L²([-1,1]; measureT)`, where
+`measureT` is Mathlib's Chebyshev orthogonality measure (weight `(1-x²)^{-1/2}`).
 
-Every input is already merged; this file only supplies the missing assembly. Orthonormality is
-`TauCeti.orthonormal_normalizedChebyshevTLp`; completeness is the one step that had been left open,
-because it needs the **function-level** moment-determinacy theorem
+Orthonormality is `TauCeti.orthonormal_normalizedChebyshevTLp`; completeness needs the
+**function-level** moment-determinacy theorem
 `TauCeti.ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp` (a vector of `L²(measureT)`
 orthogonal to every monomial is a.e. `0`). That theorem asks only for a *single* positive rate `a`
 with `e^{a|x|}` integrable, which is free here: the Chebyshev measure has compact support `[-1,1]`,
@@ -84,10 +82,9 @@ theorem orthogonal_span_normalizedChebyshevTLp_eq_bot :
     (Lp.memLp g) (monomial_moment_measureT_eq_zero 𝕜 g hmode)
   exact (Lp.eq_zero_iff_ae_eq_zero).mpr hae
 
-/-- **Roadmap Part C: the Chebyshev `T` polynomials are a Hilbert basis of `L²(measureT)`.**
-Orthonormality is `orthonormal_normalizedChebyshevTLp`; completeness is
-`orthogonal_span_normalizedChebyshevTLp_eq_bot`, which is where the shipped Chebyshev groundwork had
-stopped, one step short of the function-level moment-determinacy theorem. -/
+/-- **The Chebyshev `T` polynomials are a Hilbert basis of `L²(measureT)`.** Orthonormality is
+`orthonormal_normalizedChebyshevTLp`; completeness is
+`orthogonal_span_normalizedChebyshevTLp_eq_bot`. -/
 noncomputable def chebyshevTHilbertBasis : HilbertBasis ℕ 𝕜 (Lp 𝕜 2 measureT) :=
   HilbertBasis.mkOfOrthogonalEqBot orthonormal_normalizedChebyshevTLp
     (orthogonal_span_normalizedChebyshevTLp_eq_bot 𝕜)

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.LoopAtInfinity
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
@@ -16,8 +17,9 @@ import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 # The positive local generator at infinity
 
 The standard punctured neighborhood of infinity is `D∞* = {z | 2 < ‖z‖}`. Its coordinate
-`w = 1/z` identifies it with the punctured disc of radius `1/2`. Taking the direction of `w`
-and then the degree of a circle loop identifies its fundamental group with `ℤ`.
+`w = 1/z` identifies it with the punctured disc of radius `1/2`, so it is path connected
+(`isPathConnected_puncturedNeighborhoodInf`). Taking the direction of `w` and then the degree of a
+circle loop identifies its fundamental group with `ℤ`.
 
 The clockwise large-circle loop `δ.symm`, restricted to `D∞*`, has degree `+1` in this
 coordinate. It therefore generates the local fundamental group. Under inclusion into the
@@ -79,7 +81,8 @@ theorem map_directionAtInf_bijective (z : puncturedNeighborhoodInf) :
         (FundamentalGroup.map (⟨infBallHomeomorph, infBallHomeomorph.continuous⟩ :
           C(puncturedNeighborhoodInf, ↥(ball (0 : ℂ) (1 / 2) \ {0}))) z) := by
     dsimp only [directionAtInf]
-    exact funext fun γ => FundamentalGroupoid.map_comp_map _ _ γ
+    exact funext fun γ =>
+      CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
   rw [hcomp]
   have hhome : ⇑(FundamentalGroup.homeomorphMulEquiv infBallHomeomorph z) =
       ⇑(FundamentalGroup.map
@@ -100,8 +103,21 @@ theorem infFundamentalGroupMulEquivInt_fromPath {z : puncturedNeighborhoodInf} (
     infFundamentalGroupMulEquivInt z (FundamentalGroup.fromPath (.mk γ)) =
       Multiplicative.ofAdd (Circle.degree (γ.map directionAtInf.continuous)) := by
   simp only [infFundamentalGroupMulEquivInt, MulEquiv.trans_apply,
-    MulEquiv.ofBijective_apply, FundamentalGroup.map_apply,
-    ← Path.Homotopic.Quotient.mk_map, Circle.fundamentalGroupMulEquiv_fromPath]
+    MulEquiv.ofBijective_apply]
+  -- The image of the class of `γ` is, by definition, the class of the mapped loop.
+  exact Circle.fundamentalGroupMulEquiv_fromPath _
+
+/-- The standard punctured neighborhood of infinity is path connected: in the coordinate `w = 1/z`
+it is a punctured disc, which is homotopy equivalent to a circle. -/
+theorem isPathConnected_puncturedNeighborhoodInf : IsPathConnected puncturedNeighborhoodInf := by
+  have : PathConnectedSpace (sphere (0 : ℂ) (1 / 4)) := by
+    refine isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere ?_ 0 (by norm_num))
+    rw [Complex.rank_real_complex]
+    exact Nat.one_lt_ofNat
+  have hstar := (convex_ball (0 : ℂ) (1 / 2)).starConvex (mem_ball_self (by norm_num))
+  have := (hstar.sphereHomotopyEquiv (r := 1 / 4) (by norm_num)
+    (sphere_subset_ball (by norm_num))).pathConnectedSpace
+  exact isPathConnected_iff_pathConnectedSpace.2 infBallHomeomorph.symm.pathConnectedSpace
 
 /-- The point `pPlus` lies in the standard punctured neighborhood of infinity. -/
 theorem pPlus_mem_puncturedNeighborhoodInf : pPlus ∈ puncturedNeighborhoodInf := by
@@ -181,11 +197,12 @@ theorem transport_δInf_eq_periphInf :
       (FundamentalGroup.map
         (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
         (FundamentalGroup.fromPath (.mk δInf))) = periphInf := by
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, map_val_δInf,
+  rw [FundamentalGroup.map_fromPath _ _ δInf, map_val_δInf,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periphInf_eq_fromPath]
   -- The imported identity uses generic quotient notation, whereas the transport API uses
   -- `Path.Homotopic.Quotient.mk`; both denote the same homotopy class.
-  exact (Path.Homotopic.Quotient.trans_assoc (.mk αPlus) (.mk δ.symm) (.mk αPlus.symm)).symm
+  exact congrArg CategoryTheory.End.of
+    (Path.Homotopic.Quotient.trans_assoc (.mk αPlus) (.mk δ.symm) (.mk αPlus.symm)).symm
 
 /-- Transporting the included positive local generator along any path gives the peripheral
 conjugacy class at infinity. Thus the class is independent of the transporting path. -/

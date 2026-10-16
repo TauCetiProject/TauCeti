@@ -13,10 +13,10 @@ import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic
 # Atomic regressions for the map form of the cut distance
 
 The harder direction of `cutDist_eq_cutDistPullback` applies Janson's Thm A.9 to the *coupling*, so
-the atomic cases to check are atomic couplings. The three checks below run the equivalence at a
-point-mass coupling, at finitely atomic ones, and at ones mixing an atomic with a continuous
-direction, and in each case they **evaluate** the map form rather than only instantiating the
-equivalence.
+the atomic cases to check are atomic couplings. The regression examples below run the
+equivalence at a point-mass coupling, at finitely atomic ones, and at ones mixing an atomic with a
+continuous direction. Each example evaluates the map form using the equivalence and an exact
+coupling-side distance formula.
 
 The values come from the coupling side, where they can be computed exactly: against a constant
 graphon, and against a graphon on a point mass, every coupling contributes the same cut norm
@@ -32,12 +32,19 @@ and no rectangle does better (`cutDist_finiteGraphGraphonOnFin_top_two_const_hal
 
 These examples compare the map form with independently computed distances on carriers with
 different atomic structures. In each case the nonzero value witnesses that the map form includes
-the relevant pullbacks.
+the relevant pullbacks. `CutMetric.Pullback.Constant` computes the same values from the definition
+of the map form, without the equivalence (`cutDistPullback_dirac_dirac`,
+`cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half`).
+
+The checks are deliberately unnamed. Their statements are special cases of those two
+carrier-generic theorems, so downstream developments should cite `cutDistPullback_dirac_dirac` and
+`cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half` rather than a regression here.
 
 ## Main results
 
-* The point-mass, finitely atomic, and mixed examples evaluate `cutDistPullback` using
-  `cutDist_dirac_dirac` and `cutDist_finiteGraphGraphonOnFin_top_two_const_half`.
+* The point-mass example evaluates `cutDistPullback` using `cutDist_dirac_dirac`.
+* The finitely atomic and mixed examples evaluate `cutDistPullback` as `1/8` using
+  `cutDist_finiteGraphGraphonOnFin_top_two_const_half`.
 
 ## References
 

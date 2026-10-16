@@ -30,9 +30,6 @@ further operator whose integrality has to be checked.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §26.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This is a shared prerequisite for the Chevalley--Demazure carriers in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section

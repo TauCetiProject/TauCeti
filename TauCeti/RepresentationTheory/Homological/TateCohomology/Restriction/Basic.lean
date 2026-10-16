@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Restriction in negative Tate degrees and maps in the two low degrees
@@ -178,7 +179,7 @@ private theorem h0_res_le :
     (range M.ρ.norm).submoduleOf M.ρ.invariants ≤
       Submodule.comap
         (Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H)))
+          (M.ρ.invariants_le_invariants_comp H.subtype))
         ((range (Rep.res H.subtype M).ρ.norm).submoduleOf (Rep.res H.subtype M).ρ.invariants) :=
   fun _ hx => Representation.range_norm_le_range_norm_comp_subtype (H := H) hx
 
@@ -209,7 +210,7 @@ same element, viewed as an `H`-invariant element. -/
 theorem H0π_comp_H0Res :
     H0π M ≫ H0Res M H =
       ModuleCat.ofHom (Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) ≫
+        (M.ρ.invariants_le_invariants_comp H.subtype)) ≫
         H0π (Rep.res H.subtype M) := by
   rw [H0Res]
   exact ModuleCat.comp_conj_mapQ _ _ (H0π_comp_H0IsoNormQuotient_hom _)
@@ -233,7 +234,8 @@ theorem H0Cor_comp_H0Res_apply (x : tateCohomology M 0) :
     rw [H0π_comp_H0Res_apply, H0π_comp_H0Cor_apply, ← map_nsmul]
     congr 1
     ext
-    simpa using Representation.relNorm_apply_of_mem_invariants (H := H) y.2
+    simpa using M.ρ.relNorm_apply_of_forall_apply_eq (H := H)
+      ((Representation.mem_invariants _ _).1 y.2)
 
 /-- Restriction followed by corestriction is multiplication by the index, in degree zero. -/
 theorem H0Res_comp_H0Cor :
@@ -260,7 +262,7 @@ private theorem hNegOne_cor_le :
         (Submodule.inclusion
           (Representation.ker_norm_comp_subtype_le_ker_norm (ρ := M.ρ) (H := H)))
         ((Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
-  fun _ hx => Representation.coinvariantsKer_comp_subtype_le (H := H) hx
+  fun _ hx => M.ρ.coinvariantsKer_comp_le H.subtype hx
 
 /-- Restriction to a subgroup in degree `-1` Tate cohomology, induced by the relative transfer. -/
 def HNegOneRes :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Induced
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The round metric on the unit sphere
@@ -23,6 +24,8 @@ Thurston's eight model geometries.
 
 ## Main definitions
 
+* `TauCeti.sphereTangentEquiv`: the isometric identification of tangent spaces with the
+  orthogonal complements of their radius vectors.
 * `TauCeti.sphereRoundMetric`: the analytic round metric on the unit sphere.
 * `TauCeti.instRiemannianBundleSphere`, `TauCeti.instIsContMDiffRiemannianBundleSphere` and
   `TauCeti.instIsContinuousRiemannianBundleSphere`: the corresponding instances.
@@ -102,5 +105,26 @@ differential of the inclusion. -/
 theorem norm_tangentSpace_sphere (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) x) :
     ‖v‖ = ‖mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_tangentSpace_sphere]
+
+/-- The differential of the unit-sphere inclusion identifies its round tangent space
+isometrically with the orthogonal complement of the radius vector. -/
+def sphereTangentEquiv (x : sphere (0 : E) 1) :
+    TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] (ℝ ∙ (x : E))ᗮ :=
+  let L : TangentSpace (𝓡 n) x →ₗᵢ[ℝ] E :=
+    { toLinearMap := (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x).toLinearMap
+      norm_map' := fun v => (norm_tangentSpace_sphere x v).symm }
+  L.equivRange.trans (LinearIsometryEquiv.ofEq _ _ (range_mvfderiv_subtypeVal x))
+
+/-- In ambient coordinates, the tangent-space identification is the differential of
+inclusion. -/
+@[simp]
+theorem coe_sphereTangentEquiv_apply (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    (sphereTangentEquiv x v : E) =
+      mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v := by
+  simp only [sphereTangentEquiv, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.coe_ofEq_apply]
+  rw [LinearIsometry.equivRange_apply_coe]
+  exact mvfderiv_apply_eq_mfderiv_apply _ x v
 
 end TauCeti

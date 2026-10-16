@@ -43,8 +43,6 @@ representatives. The corresponding representative form is
 
 ## References
 
-This proves the "degree divides the order" item of Layer 4 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups*, Theorem 3.11, or J.-P. Serre, *Linear
 Representations of Finite Groups*, Section 6.5.
 -/
@@ -128,7 +126,7 @@ theorem finrank_dvd_card : finrank k V ∣ Nat.card G := by
     (isIntegral_centralCharacter_classSumCenter ρ C) ?_
   obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
   rw [ClassFunction.toConjClasses_mk, ClassFunction.ofCharacter_apply]
-  exact isIntegral_char ρ.dual (isOfFinOrder_of_finite g).orderOf_pos.ne' (pow_orderOf_eq_one g)
+  exact ρ.dual.isIntegral_char (isOfFinOrder_of_finite g).orderOf_pos.ne' (pow_orderOf_eq_one g)
 
 end Dvd
 

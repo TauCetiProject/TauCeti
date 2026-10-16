@@ -44,7 +44,7 @@ The construction and the invariant-subspace argument extend
 is new here.
 
 Faithfulness and simplicity are the representation-theoretic inputs for proving that `SL_n` is
-reductive, one of the worked examples accompanying Layer 6 of the ReductiveGroups roadmap.
+reductive.
 -/
 
 public section
@@ -140,10 +140,10 @@ theorem basePointsRepresentation_eq_mulVec
       ((pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) *ᵥ v) := by
   rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom g,
     GeneralLinear.basePointsRepresentation_eq_mulVec]
-  have hg : AlgHom.mapDomain (coordinateMap R n).hom g =
+  have hg : BialgHom.mapDomain (coordinateMap R n).hom g =
       CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R n)
         (definingHopfIdeal R n) (CommAlgCat.of R R) g := by
-    rw [AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
   rw [hg, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL]
   rfl
 
@@ -175,11 +175,11 @@ theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))
   rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom q,
     GeneralLinear.basePointsRepresentation_eq_mulVec] at h
   have hpoint :
-      AlgHom.mapDomain (coordinateMap R n).hom q =
+      BialgHom.mapDomain (coordinateMap R n).hom q =
         CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
           (CommAlgCat.of R R) q := by
-    rw [AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL,
     MulEquiv.apply_symm_apply] at h
   exact h
@@ -218,7 +218,7 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
     rw [finrank_span_singleton hv, finrank_top, Module.finrank_pi k] at hfin
     simp only [Fintype.card_fin] at hfin
     omega
-  obtain ⟨z, hz⟩ := SetLike.exists_not_mem_of_ne_top (k ∙ v) hspan rfl
+  obtain ⟨z, hz⟩ := SetLike.exists_notMem_of_ne_top (k ∙ v) hspan rfl
   obtain ⟨f, hfz, hfspan⟩ :=
     Submodule.exists_dual_map_eq_bot_of_notMem hz inferInstance
   have hfv : f v = 0 := by

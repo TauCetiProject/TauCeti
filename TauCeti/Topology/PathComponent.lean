@@ -25,6 +25,8 @@ gives local path connectedness of the subspace.
 * `Joined.eq_of_totallyDisconnectedSpace` and
   `ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace`: in a totally disconnected space,
   the path components are the points.
+* `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
+  `TauCeti.PathComponentBasepoints.choose` giving one.
 
 ## References
 
@@ -86,5 +88,25 @@ theorem _root_.Joined.eq_of_totallyDisconnectedSpace [TotallyDisconnectedSpace X
 theorem _root_.ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace
     [TotallyDisconnectedSpace X] : Function.Injective (ZerothHomotopy.mk (X := X)) :=
   fun _ _ h ↦ Joined.eq_of_totallyDisconnectedSpace (Quotient.exact h)
+
+/-- A choice of a basepoint in each path component of a space: a section of the projection
+`ZerothHomotopy.mk` to the set of path components. -/
+@[ext]
+structure PathComponentBasepoints (X : Type*) [TopologicalSpace X] where
+  /-- The chosen basepoint of a path component. -/
+  point : ZerothHomotopy X → X
+  /-- The chosen basepoint of a path component lies in that component. -/
+  mk_point : ∀ c, ZerothHomotopy.mk (point c) = c
+
+attribute [simp] PathComponentBasepoints.mk_point
+
+/-- Some choice of a basepoint in each path component, through a right inverse of the surjection
+`ZerothHomotopy.mk`. -/
+noncomputable def PathComponentBasepoints.choose (X : Type*) [TopologicalSpace X] :
+    PathComponentBasepoints X :=
+  ⟨Function.surjInv ZerothHomotopy.mk_surjective, Function.surjInv_eq _⟩
+
+instance (X : Type*) [TopologicalSpace X] : Nonempty (PathComponentBasepoints X) :=
+  ⟨PathComponentBasepoints.choose X⟩
 
 end TauCeti

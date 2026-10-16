@@ -326,7 +326,7 @@ The `IsFiniteMeasure` instance the cut norm needs is supplied explicitly from th
 `TauCeti.DenseGraphLimits.cutDist_le`; being a `Prop` class it is interchangeable with any other. -/
 theorem counting_lemma_coupling (F : SimpleGraph V) [DecidableRel F.Adj] (U : Graphon Ω₁ μ₁)
     (W : Graphon Ω₂ μ₂) {π : Measure (Ω₁ × Ω₂)}
-    (hπ : TauCeti.MeasureTheory.IsCoupling μ₁ μ₂ π) :
+    (hπ : IsCoupling π μ₁ μ₂) :
     |homDensity F U - homDensity F W|
       ≤ (F.edgeFinset.card : ℝ) * @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) := by
   have := hπ.isProbabilityMeasure
@@ -354,7 +354,7 @@ theorem abs_homDensity_sub_le_cutDist (F : SimpleGraph V) [DecidableRel F.Adj]
     |homDensity F U - homDensity F W| ≤ (F.edgeFinset.card : ℝ) * cutDist U W := by
   classical
   by_cases hF : F.edgeFinset.card = 0
-  · have h := counting_lemma_coupling F U W (TauCeti.MeasureTheory.isCoupling_prod μ₁ μ₂)
+  · have h := counting_lemma_coupling F U W (isCoupling_prod μ₁ μ₂)
     simpa [hF] using h
   · have hcard : 0 < (F.edgeFinset.card : ℝ) := by positivity
     have hdiv : |homDensity F U - homDensity F W| / (F.edgeFinset.card : ℝ) ≤ cutDist U W :=

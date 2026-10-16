@@ -144,7 +144,7 @@ theorem isFunctionField_iff_functionField [Algebra (RatFunc k) F]
       rw [AlgHom.fieldRange_eq_map, ← RatFunc.adjoin_X, IntermediateField.adjoin_map]
       simp only [Set.image_singleton, f, IsScalarTower.coe_toAlgHom', y]
     let : FiniteDimensional f.fieldRange F := hrange.symm ▸ inferInstance
-    exact AlgHom.finiteDimensional_of_fieldRange f (fun z ↦ by
+    exact f.finiteDimensional_of_fieldRange (fun z ↦ by
       simp only [f, IsScalarTower.coe_toAlgHom'])
   · intro hF
     let : FunctionField k F := hF
@@ -213,20 +213,34 @@ theorem IsFunctionField.of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
   have hxF : Transcendental k (algebraMap E F x) :=
     (transcendental_algebraMap_iff (algebraMap E F).injective).2 hx
   let f : k⟮x⟯ →ₐ[k] F := (IsScalarTower.toAlgHom k E F).comp (k⟮x⟯).val
-  have hrange : f.fieldRange = k⟮algebraMap E F x⟯ := by
-    simp only [f, IntermediateField.fieldRange_comp_val, IntermediateField.adjoin_map,
-      Set.image_singleton, IsScalarTower.coe_toAlgHom']
+  have hrange : f.fieldRange = k⟮algebraMap E F x⟯ :=
+    SetLike.coe_injective (IntermediateField.range_algebraMap_adjoin_simple x)
   have hfinite : FiniteDimensional f.fieldRange F := by
     rw [hrange]
     exact hF.finiteDimensional_adjoin hxF
   have hfiniteF : FiniteDimensional k⟮x⟯ F := by
     let : FiniteDimensional f.fieldRange F := hfinite
-    exact AlgHom.finiteDimensional_of_fieldRange f (fun z ↦ by
+    exact f.finiteDimensional_of_fieldRange (fun z ↦ by
       simpa only [f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
         IntermediateField.coe_val, IntermediateField.algebraMap_apply] using
         (IsScalarTower.algebraMap_apply k⟮x⟯ E F z))
   let : FiniteDimensional k⟮x⟯ F := hfiniteF
   exact ⟨x, hx, FiniteDimensional.left k⟮x⟯ E F⟩
+
+/-- **An algebraic function field is algebraic over every algebraic function field below it**: if
+`E / k` and `F / k` are algebraic function fields and `F` is an `E`-algebra compatibly with `k`,
+then `F / E` is algebraic, since both have transcendence degree one over `k`. So every
+`k`-embedding of algebraic function fields is an algebraic extension. -/
+theorem IsFunctionField.isAlgebraic_of_isFunctionField {E : Type w} [Field E] [Algebra k E]
+    [Algebra E F] [IsScalarTower k E F] (hE : IsFunctionField k E) (hF : IsFunctionField k F) :
+    Algebra.IsAlgebraic E F := by
+  rw [← trdeg_eq_zero_iff]
+  have h := lift_trdeg_add_eq k E F
+  rw [hE.trdeg_eq_one, hF.trdeg_eq_one, Cardinal.lift_one, Cardinal.lift_one] at h
+  have hz : Cardinal.lift.{w} (Algebra.trdeg E F) ≤ 0 :=
+    (Cardinal.add_le_add_iff_of_lt_aleph0 Cardinal.one_lt_aleph0).mp <| by
+      rw [zero_add, add_comm, h]
+  simpa using hz
 
 /-! ### Change of base field -/
 

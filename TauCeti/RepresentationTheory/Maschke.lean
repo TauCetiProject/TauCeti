@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RingTheory.Semisimple.HomDimension
 
 /-!
 # Maschke's theorem for intertwining maps
@@ -33,6 +34,8 @@ irreducible `σ` that embeds in `ρ` is also a quotient of `ρ`, because the emb
   has an intertwining left inverse.
 * `TauCeti.Rep.nonempty_splitting_of_shortExact`: a short exact sequence in `Rep` splits.
 * `TauCeti.FDRep.nonempty_splitting_of_shortExact`: a short exact sequence in `FDRep` splits.
+* `Representation.finrank_intertwiningMap_comm`: intertwining-space dimension is symmetric for
+  finite-dimensional representations.
 
 ## References
 
@@ -77,6 +80,22 @@ theorem exists_leftInverse_of_injective (f : IntertwiningMap ρ σ) (hf : Functi
     _ = v := hqv
 
 end Representation.IntertwiningMap
+
+namespace Representation
+
+variable {k G V W : Type*} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+  [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+  [FiniteDimensional k V] [FiniteDimensional k W]
+
+/-- When the finite group order is invertible, the spaces of intertwining maps in the two
+directions between finite-dimensional representations have equal dimension. -/
+theorem finrank_intertwiningMap_comm (ρ : Representation k G V) (σ : Representation k G W) :
+    Module.finrank k (IntertwiningMap ρ σ) = Module.finrank k (IntertwiningMap σ ρ) := by
+  rw [(IntertwiningMap.equivLinearMapAsModule ρ σ).finrank_eq,
+    (IntertwiningMap.equivLinearMapAsModule σ ρ).finrank_eq]
+  exact TauCeti.finrank_linearMap_comm_of_isSemisimpleModule ρ.asModule σ.asModule
+
+end Representation
 
 namespace TauCeti
 

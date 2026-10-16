@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 
 /-!
 # The conditional rectangle common ending for de Finetti
@@ -25,7 +25,8 @@ there extends to the full joint-law identity in `ConditionallyIIDWith`.
 
 ## Main results
 
-* `conditionallyIID_of_jointRectangles` — the Layer 1 common ending, at a named directing measure;
+* `conditionallyIID_of_jointRectangles` — the conditional common ending, at a named directing
+  measure;
 * `conditionallyIIDWith_of_measure_inter_blockCylinder_eq_setLIntegral` — a set-integral
   factorization of the mass of a directing-measure event met with a block cylinder, converted here
   into the joint-rectangle identity above. A reusable seam assuming no standard-Borel structure on
@@ -35,14 +36,12 @@ there extends to the full joint-law identity in `ConditionallyIIDWith`.
   `conditionallyIID_iff_exists_forall_jointRectangles` — characteristic forms for the named and
   existential predicates.
 
-This advances `TauCetiRoadmap/Exchangeability/README.md`, Layer 1, the conditional common ending
-`conditionallyIID_of_jointRectangles`.  The joint-law formulation is Kallenberg's conditional
-i.i.d. identity (*Probabilistic Symmetries and Invariance Principles*, 2005, §1.1, equation (2)).
-The rectangle-extension argument is the joint-space analogue of the common-ending strategy in
-`cameronfreer/exchangeability` (`DeFinetti/CommonEnding.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`), adapted to Tau Ceti's stronger
-`ConditionallyIIDWith` predicate and Mathlib's `generateFrom_eq_prod`, `generateFrom_pi`, and
-π-system API.
+The joint-law formulation is Kallenberg's conditional i.i.d. identity (*Probabilistic Symmetries and
+Invariance Principles*, 2005, §1.1, equation (2)). The rectangle-extension argument is the
+joint-space analogue of the common-ending strategy in `cameronfreer/exchangeability`
+(`DeFinetti/CommonEnding.lean`, pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`), adapted to Tau
+Ceti's stronger `ConditionallyIIDWith` predicate and Mathlib's `generateFrom_eq_prod`,
+`generateFrom_pi`, and π-system API.
 -/
 
 public section
@@ -112,7 +111,7 @@ naturally produce, since a block argument reads disjoint windows in increasing o
 
 This theorem is, alone among the rectangle endings, stated for a sequence. The obstruction is
 inherited rather than intrinsic: the statement is phrased with `blockCylinder`, which
-`Exchangeability/Cylinder.lean` defines only for `X : ℕ → Ω → α`, and the sorting reduction needs a
+`Process/Cylinder.lean` defines only for `X : ℕ → Ω → α`, and the sorting reduction needs a
 linear order on the index — hence `ℕ`. The others quantify over an arbitrary index type.
 
 This is a reusable seam: nothing here mentions how `ν` was built, so a route supplies only its own

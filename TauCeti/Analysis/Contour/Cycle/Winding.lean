@@ -216,7 +216,7 @@ theorem windingNumber_eventually_zero_cocompact (C : Cycle) :
       ∀ᶠ z in Filter.cocompact ℂ,
         (∀ t ∈ uIcc γ.a γ.b, γ t ≠ z) ∧
           TauCeti.Contour.windingNumber γ γ.a γ.b z = 0 := by
-    intro γ hγ
+    intro γ _
     obtain ⟨P, hP, hdiff⟩ := γ.isPiecewiseC1On.exists_countable_differentiableAt
     exact TauCeti.Contour.windingNumber_eventually_zero_cocompact γ.source_eq_target hP
       γ.continuousOn hdiff γ.intervalIntegrable_deriv

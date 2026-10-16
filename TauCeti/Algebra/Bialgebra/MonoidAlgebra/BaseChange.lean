@@ -35,6 +35,8 @@ coordinate Hopf algebra remains the group algebra of the same character group.
   bialgebra over the extended scalars.
 * `TauCeti.MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv`: the equivalence is natural
   in the indexing monoid.
+* `TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul`: the
+  equivalence is compatible with a scalar tower `R → k → K`.
 
 ## References
 
@@ -107,5 +109,17 @@ theorem mapDomainBialgHom_comp_scalarTensorBialgEquiv (φ : G →* G') :
     · intro g
       simp
     · ext
+
+/-- **Base change of monoid bialgebras composes in stages.** For a scalar tower `R → k → K`,
+extending an element of `R[G]` to `k[G]` and then to `K[G]` agrees with extending it to `K[G]`
+directly. -/
+theorem scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul {R : Type*}
+    [CommSemiring R] [Algebra R k] [Algebra R K] [IsScalarTower R k K]
+    {y : _root_.MonoidAlgebra R G} :
+    scalarTensorBialgEquiv k K (1 ⊗ₜ[k] scalarTensorBialgEquiv R k (1 ⊗ₜ[R] y)) =
+      scalarTensorBialgEquiv R K (1 ⊗ₜ[R] y) := by
+  simp only [scalarTensorBialgEquiv_tmul, one_smul]
+  ext g
+  simp [IsScalarTower.algebraMap_apply R k K]
 
 end TauCeti.MonoidAlgebra

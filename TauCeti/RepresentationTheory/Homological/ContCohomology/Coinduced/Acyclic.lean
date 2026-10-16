@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Zero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.Topology.Algebra.Monoid
 
 /-!
@@ -34,7 +34,7 @@ is defined recursively by `d (n + 1) F x = F - d n (F x)`. Two observations driv
 * The full, non-invariant, coinduced resolution of *any* representation is contracted by
   evaluation at `1`: `d n (F 1) + (d (n + 1) F) 1 = F`, the single-point case of
   `TopRep.d_sum_apply_add_sum_d_apply` in
-  `TauCeti/RepresentationTheory/Homological/ContCohomology/Resolution.lean`. This is immediate
+  `TauCeti/RepresentationTheory/Homological/ContCohomology/Resolution/Basic.lean`. This is immediate
   from the recursion, but evaluation at `1` is not equivariant, so it does not act on the
   invariants.
 * For the coefficients `X = Coind_1^G A`, an invariant element `F` of level `m` of the resolution
@@ -329,7 +329,6 @@ theorem coindAcyclic (A : SmoothDiscreteTopRep.{v, u, u} R (⊥ : Subgroup G)) (
     (hn : 0 < n) :
     Limits.IsZero (continuousCohomology n ((smoothDiscreteι R G).obj (coindTopRep R G ⊥ A))) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  have : DiscreteTopology A.obj.V := A.property.discreteTopology
   rw [ObjectProperty.ι_obj, toSmoothDiscrete_obj_obj]
   exact TopModuleCat.isZero_of_subsingleton _
 

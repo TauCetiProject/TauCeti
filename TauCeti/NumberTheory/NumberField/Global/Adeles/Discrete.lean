@@ -22,7 +22,7 @@ additive fact underlying the compactness of the norm-one idele class group.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.eq_zero_of_forall_norm_lt_one_of_forall_mem_adicCompletionIntegers`:
+* `TauCeti.GlobalNumberFields.eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles`:
   the only element of `K` whose adele has norm less than `1` at every infinite place and is
   integral at every finite place is `0`.
 * `TauCeti.GlobalNumberFields.discreteTopology_principalSubgroup`: `K` is discrete in `𝔸[K]`.
@@ -47,12 +47,11 @@ variable (K : Type*) [Field K] [NumberField K]
 variable {K} in
 /-- The only element of a number field whose adele has norm less than `1` at every infinite place
 and is integral at every finite place is `0`. -/
-theorem eq_zero_of_forall_norm_lt_one_of_forall_mem_adicCompletionIntegers {x : K}
+theorem eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles {x : K}
     (hinf : ∀ w : InfinitePlace K, ‖(algebraMap K 𝔸[K] x).1 w‖ < 1)
-    (hfin : ∀ v : HeightOneSpectrum (𝓞 K),
-      (algebraMap K 𝔸[K] x).2 v ∈ v.adicCompletionIntegers K) :
+    (hfin : (algebraMap K 𝔸[K] x).2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K) :
     x = 0 := by
-  obtain ⟨a, rfl⟩ := (FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff x).mp hfin
+  obtain ⟨a, rfl⟩ := (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) x).mp hfin
   have hlt (w : InfinitePlace K) : w (algebraMap (𝓞 K) K a) < 1 :=
     (InfinitePlace.Completion.norm_coe w _).symm.trans_lt (hinf w)
   by_contra ha
@@ -64,13 +63,12 @@ additive subgroup of `𝔸[K]`. -/
 instance discreteTopology_principalSubgroup :
     DiscreteTopology (AdeleRing.principalSubgroup (𝓞 K) K) := by
   let U : Set 𝔸[K] := (⋂ w : InfinitePlace K, {a | ‖a.1 w‖ < 1}) ∩
-    {a | ∀ v : HeightOneSpectrum (𝓞 K), a.2 v ∈ v.adicCompletionIntegers K}
+    {a | a.2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K}
   have hU : IsOpen U := by
     refine IsOpen.inter ?_ ?_
     · exact isOpen_iInter_of_finite fun w ↦ isOpen_lt
         (continuous_norm.comp ((continuous_apply w).comp continuous_fst)) continuous_const
-    · exact (RestrictedProduct.isOpen_forall_mem fun v ↦
-        Valued.isOpen_valuationSubring _).preimage continuous_snd
+    · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
   rw [discreteTopology_iff_isOpen_singleton_zero]
   convert hU.preimage continuous_subtype_val
   ext ⟨_, x, rfl⟩
@@ -80,8 +78,8 @@ instance discreteTopology_principalSubgroup :
   · obtain rfl : x = 0 := (AdeleRing.algebraMap_injective (𝓞 K) K).eq_iff.mp <| by
       simpa using congrArg Subtype.val h
     exact ⟨fun w ↦ (InfinitePlace.Completion.norm_coe w _).trans_lt (by simp),
-      (FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff 0).mpr ⟨0, map_zero _⟩⟩
-  · obtain rfl := eq_zero_of_forall_norm_lt_one_of_forall_mem_adicCompletionIntegers h.1 h.2
+      (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) 0).mpr ⟨0, map_zero _⟩⟩
+  · obtain rfl := eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles h.1 h.2
     simp
 
 /-- **`K` is closed in its adele ring**: the diagonal copy of a number field is a closed additive

@@ -133,6 +133,19 @@ theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω
         simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using h)
       exact hs.fderiv_right le_rfl
 
+/-- Iterated gradients do not enlarge the topological support of a scalar function.
+No differentiability assumption is needed. -/
+theorem tsupport_iteratedGradientChain_subset (f : F → ℝ) (j : ℕ) :
+    tsupport (iteratedGradientChain f j) ⊆ tsupport f := by
+  induction j with
+  | zero =>
+      rw [iteratedGradientChain_zero]
+      exact (tsupport_comp_subset (map_zero (InnerProductSpace.toDual ℝ F).symm) _).trans
+        (tsupport_fderiv_subset ℝ)
+  | succ j ih =>
+      rw [iteratedGradientChain_succ]
+      exact (tsupport_fderiv_subset ℝ).trans ih
+
 /-- Every field in the iterated-gradient chain of a compactly supported function has compact
 support. -/
 theorem hasCompactSupport_iteratedGradientChain {f : F → ℝ} (hf : HasCompactSupport f) :

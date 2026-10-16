@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Enriched.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
 /-!
 # Differential graded categories
@@ -45,8 +45,12 @@ category; that category and its quotient by homotopy are not built here.
 
 * `TauCeti.dgDifferential_dgComp`: the graded Leibniz rule.
 * `TauCeti.dgComp_assoc`: composition of homogeneous morphisms is associative.
+* `TauCeti.dgDifferential_negOnePow_smul_dgComp` and `TauCeti.negOnePow_smul_dgComp_assoc`: the
+  Leibniz rule and associativity for Keller-ordered composition
+  `g ∘ f = (-1) ^ (p * q) • dgComp f g`.
 * `TauCeti.dgId_dgComp` and `TauCeti.dgComp_dgId`: the identity is a two-sided unit.
 * `TauCeti.dgDifferential_dgId`: the identity is a cycle.
+* `TauCeti.castDeg`: transport a homogeneous morphism along an equality of degrees.
 
 ## References
 
@@ -92,6 +96,33 @@ theorem dgDifferential_dgDifferential {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     dgDifferential R (n + 1) (dgDifferential R n f) = 0 := by
   rw [← ModuleCat.comp_apply, (dgHomComplex R X Y).d_comp_d]
   simp
+
+/-! ### Degree transport -/
+
+/-- Transport a homogeneous morphism along an equality of degrees. -/
+noncomputable def castDeg {X Y : C} {p p' : ℤ} (hp : p = p') :
+    DGHom R p X Y →ₗ[R] DGHom R p' X Y :=
+  ((dgHomComplex R X Y).XIsoOfEq hp).hom.hom
+
+/-- Degree transport is the isomorphism `HomologicalComplex.XIsoOfEq` between the two degree
+components of the Hom complex. -/
+theorem castDeg_def {X Y : C} {p p' : ℤ} (hp : p = p') :
+    castDeg R (X := X) (Y := Y) hp = ((dgHomComplex R X Y).XIsoOfEq hp).hom.hom :=
+  (rfl)
+
+/-- Transport along a self-equality of degrees leaves a homogeneous morphism unchanged. -/
+@[simp]
+theorem castDeg_self {X Y : C} {p : ℤ} (hp : p = p) (f : DGHom R p X Y) :
+    castDeg R hp f = f := by
+  simp [castDeg]
+
+/-- Degree transport commutes with a differential between arbitrary equal indices. -/
+theorem d_castDeg {X Y : C} {a b a' b' : ℤ} (h : a = b) (h' : a' = b')
+    (f : DGHom R a X Y) :
+    ((dgHomComplex R X Y).d b b').hom (castDeg R h f) =
+      castDeg R h' (((dgHomComplex R X Y).d a a').hom f) := by
+  subst h h'
+  simp [castDeg]
 
 /-! ### Composition -/
 
@@ -162,6 +193,42 @@ theorem dgComp_smul {X Y Z : C} {p q n : ℤ} (r : R) (f : DGHom R p X Y) (g : D
     (h : p + q = n) : dgComp R f (r • g) h = r • dgComp R f g h := by
   rw [dgComp, dgComp, TensorProduct.tmul_smul, map_smul]
 
+/-- Composition commutes with a sign `u : ℤˣ` on its first factor. -/
+theorem units_smul_dgComp {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) : dgComp R (u • f) g h = u • dgComp R f g h := by
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, smul_dgComp]
+
+/-- Composition commutes with a sign `u : ℤˣ` on its second factor. -/
+theorem dgComp_units_smul {X Y Z : C} {p q n : ℤ} (u : ℤˣ) (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) : dgComp R f (u • g) h = u • dgComp R f g h := by
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, dgComp_smul]
+
+/-- Degree transport in the first argument commutes with DG composition. -/
+theorem castDeg_dgComp {X Y Z : C} {p p' q n n' : ℤ} (hp : p = p') (hn : n = n')
+    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p' + q = n') :
+    dgComp R (castDeg R hp f) g h = castDeg R hn (dgComp R f g (by omega)) := by
+  subst hp hn
+  simp [castDeg]
+
+/-- Degree transport in the second argument commutes with DG composition. -/
+theorem dgComp_castDeg {X Y Z : C} {p q q' n n' : ℤ} (hq : q = q') (hn : n = n')
+    (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q' = n') :
+    dgComp R f (castDeg R hq g) h = castDeg R hn (dgComp R f g (by omega)) := by
+  subst hq hn
+  simp [castDeg]
+
+theorem sum_dgComp {ι : Type*} (s : Finset ι) {X Y Z : C} {p q n : ℤ} (f : ι → DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) :
+    dgComp R (∑ i ∈ s, f i) g h = ∑ i ∈ s, dgComp R (f i) g h := by
+  rw [dgComp, TensorProduct.sum_tmul, map_sum]
+  rfl
+
+theorem dgComp_sum {ι : Type*} (s : Finset ι) {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y)
+    (g : ι → DGHom R q Y Z) (h : p + q = n) :
+    dgComp R f (∑ i ∈ s, g i) h = ∑ i ∈ s, dgComp R f (g i) h := by
+  rw [dgComp, TensorProduct.tmul_sum, map_sum]
+  rfl
+
 /-! ### The Leibniz rule -/
 
 /- Composition is a chain map out of the tensor product of the two Hom complexes; restricting
@@ -191,6 +258,16 @@ theorem dgDifferential_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y) (g :
     ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply] using key
+
+/-- The graded Leibniz rule for the differentials of the Hom complexes between arbitrary consecutive
+indices `p ⟶ p'`, `q ⟶ q'` and `n ⟶ n'`, so that the degrees need not be written as `p + 1`. -/
+theorem dgHomComplex_d_dgComp {X Y Z : C} {p q n p' q' n' : ℤ} (hp : p + 1 = p')
+    (hq : q + 1 = q') (hn : n + 1 = n') (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q = n) :
+    ((dgHomComplex R X Z).d n n').hom (dgComp R f g h) =
+      dgComp R (((dgHomComplex R X Y).d p p').hom f) g (by omega) +
+        p.negOnePow • dgComp R f (((dgHomComplex R Y Z).d q q').hom g) (by omega) := by
+  subst hp hq hn
+  exact dgDifferential_dgComp R f g h
 
 /-! ### Associativity -/
 
@@ -224,6 +301,47 @@ theorem dgComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ} (f : DGHom R p W X) (g 
     ModuleCat.MonoidalCategory.associator_hom_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply, dgCompMap_tmul] at key
   exact key
+
+/-! ### Keller-ordered composition
+
+Composition in Keller's order, `g ∘ f` for `f` of degree `p` followed by `g` of degree `q`, is
+the enriched composite twisted by the Koszul sign: `g ∘ f = (-1) ^ (p * q) • dgComp f g`.  The
+two lemmas below state the Leibniz rule and associativity for these signed composites. -/
+
+/-- **The Leibniz rule in Keller's order**: for the Keller-ordered composite
+`g ∘ f = (-1) ^ (p * q) • dgComp f g`, `d (g ∘ f) = d g ∘ f + (-1) ^ |g| • g ∘ d f`. -/
+theorem dgDifferential_negOnePow_smul_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) :
+    dgDifferential R n ((p * q).negOnePow • dgComp R f g h) =
+      (p * (q + 1)).negOnePow • dgComp R f (dgDifferential R q g) (by omega) +
+        q.negOnePow • ((p + 1) * q).negOnePow • dgComp R (dgDifferential R p f) g (by omega) := by
+  rw [map_zsmul_unit, dgDifferential_dgComp, smul_add, smul_smul, smul_smul]
+  have e₁ : (p * q).negOnePow * p.negOnePow = (p * (q + 1)).negOnePow := by
+    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨0, by ring⟩
+  have e₂ : q.negOnePow * ((p + 1) * q).negOnePow = (p * q).negOnePow := by
+    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨q, by ring⟩
+  rw [e₁, e₂]
+  exact add_comm _ _
+
+/-- **Keller-ordered composition is associative**: the Koszul signs of the two bracketings
+`(k ∘ g) ∘ f` and `k ∘ (g ∘ f)` agree. -/
+theorem negOnePow_smul_dgComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ} (f : DGHom R p W X)
+    (g : DGHom R q X Y) (k : DGHom R r Y Z) (hpq : p + q = pq) (hqr : q + r = qr)
+    (hn : p + q + r = n) :
+    (pq * r).negOnePow • dgComp R ((p * q).negOnePow • dgComp R f g hpq) k
+        (by omega : pq + r = n) =
+      (p * qr).negOnePow • dgComp R f ((q * r).negOnePow • dgComp R g k hqr)
+        (by omega : p + qr = n) := by
+  subst hpq hqr
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, smul_dgComp, dgComp_smul, smul_smul,
+    ← Int.cast_mul]
+  rw [dgComp_assoc R f g k rfl rfl hn]
+  congr 1
+  rw [← Units.val_mul, ← Units.val_mul, ← Int.negOnePow_add, ← Int.negOnePow_add]
+  congr 3
+  ring
 
 /-! ### The identity -/
 

@@ -73,19 +73,6 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
 variable [T2Space M]
 
 omit [T2Space M] in
-private theorem contMDiffOn_two_proj_of_isMIntegralCurveOn_geodesicSpray
-    {z : ℝ → TangentBundle I M} {s : Set ℝ} (hs : IsOpen s)
-    (hz : IsMIntegralCurveOn z (geodesicSpray I M) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I 2 (fun t ↦ (z t).proj) s := by
-  intro t ht
-  have hz2 : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 z t :=
-    (hz.isMIntegralCurveAt (hs.mem_nhds ht)).contMDiffAt_two
-      (contMDiff_one_geodesicSpray (I := I) (M := M)).contMDiffAt
-  have hproj : ContMDiffAt I.tangent I 2 TotalSpace.proj (z t) :=
-    Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
-  exact (hproj.comp t hz2).contMDiffWithinAt
-
-omit [T2Space M] in
 /-- The maximal integral-curve domain of the geodesic spray through `(p, v)` is the maximal
 geodesic interval with initial data `(p, v)`. -/
 theorem maximalIntegralCurveInterval_geodesicSpray (p : M) (v : TangentSpace I p) :
@@ -95,10 +82,8 @@ theorem maximalIntegralCurveInterval_geodesicSpray (p : M) (v : TangentSpace I p
   · intro t ht
     obtain ⟨z, a, b, hz, hz0, h0, ht, -⟩ :=
       exists_isMIntegralCurveOn_maximalIntegralCurve_eq ht
-    have hbase : ContMDiffOn 𝓘(ℝ, ℝ) I 2 (fun r ↦ (z r).proj) (Ioo a b) :=
-      contMDiffOn_two_proj_of_isMIntegralCurveOn_geodesicSpray isOpen_Ioo hz
     have hgeo : IsGeodesicCurveOn I (fun r ↦ (z r).proj) (Ioo a b) :=
-      isGeodesicCurveOn_proj_of_isMIntegralCurveOn (uniqueDiffOn_Ioo a b) hz hbase
+      isGeodesicCurveOn_proj_of_isMIntegralCurveOn (uniqueDiffOn_Ioo a b) hz
     have hlift := eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
       (I := I) (M := M) (s := Ioo a b) (t := (0 : ℝ))
       ((uniqueDiffOn_Ioo a b) 0 h0) hz h0
@@ -164,14 +149,9 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     rw [← hdomains]
     exact isMIntegralCurveOn_maximalIntegralCurve
       (contMDiff_one_geodesicSpray (I := I) (M := M))
-  have hbase : ContMDiffOn 𝓘(ℝ, ℝ) I 2 (maximalGeodesic I M p v)
-      (geodesicInterval I M p v) := by
-    exact contMDiffOn_two_proj_of_isMIntegralCurveOn_geodesicSpray
-      isOpen_geodesicInterval hz
   have hgeo : IsGeodesicCurveOn I (maximalGeodesic I M p v)
       (geodesicInterval I M p v) :=
-    isGeodesicCurveOn_proj_of_isMIntegralCurveOn
-      (isOpen_geodesicInterval.uniqueDiffOn) hz hbase
+    isGeodesicCurveOn_proj_of_isMIntegralCurveOn isOpen_geodesicInterval.uniqueDiffOn hz
   have h0 : (0 : ℝ) ∈ geodesicInterval I M p v := zero_mem_geodesicInterval
   have hlift := eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
     (I := I) (M := M) (s := geodesicInterval I M p v) (t := (0 : ℝ))

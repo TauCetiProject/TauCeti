@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.IndexTwoNorm
 
 /-!
 # Naturality of the index-two graph class
@@ -35,6 +35,10 @@ that differ by an inner automorphism of the absolute Galois group of the base.
 * `TauCeti.ContCohomology.trivialF2Map_graphClass`: pullback of the graph class along a continuous
   homomorphism is the graph class of the pulled-back subgroup and homomorphism.
 * `TauCeti.ContCohomology.graphClass_comp_of_conj`: the graph class is invariant under conjugation.
+* `TauCeti.ContCohomology.trivialF2Map_evensNormIndexTwo`: the index-two norm is natural under
+  pullback when the inverse-image subgroup still has index two.
+* `TauCeti.ContCohomology.evensNormIndexTwo_comp_of_conj`: the index-two norm is invariant under
+  conjugation of the subgroup and its input class.
 
 ## References
 
@@ -61,16 +65,6 @@ local instance continuousSMul_trivialF2_naturality (K : Type u) [Group K] [Topol
     [IsTopologicalGroup K] : ContinuousSMul K (trivialF2 K).V :=
   (isSmoothDiscrete_trivialF2 K).continuousSMul
 
-/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
-private noncomputable def trivialF2Transfer : (trivialF2 G).V →+ (trivialF2 H).V :=
-  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-
-omit [IsTopologicalGroup G] [LocallyCompactSpace G] [IsTopologicalGroup H]
-  [LocallyCompactSpace H] in
-private theorem trivialF2Transfer_smul (φ : H →ₜ* G) (h : H) (m : (trivialF2 G).V) :
-    trivialF2Transfer (φ h • m) = h • (trivialF2Transfer m : (trivialF2 H).V) := by
-  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
-
 /-- **Naturality of the graph class.** For a continuous homomorphism `φ : H → G`, an open
 subgroup `U` of index two in `G` whose preimage `φ⁻¹(U)` also has index two, and a continuous
 homomorphism `α : U → 𝔽₂`, pulling the graph class of `α` back along `φ` gives the graph class of
@@ -88,20 +82,19 @@ theorem trivialF2Map_graphClass (φ : H →ₜ* G) (U : OpenSubgroup G)
     graphClass_eq_evensGraphCochainClass _ hφU s hs, evensGraphCochainClass_def U,
     evensGraphCochainClass_def (U.comap (φ : H →* G) φ.continuous)]
   have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
-    (ofDiscreteModule_trivialF2 H) trivialF2Transfer (trivialF2Transfer_smul φ)
+    (ofDiscreteModule_trivialF2 H) trivialF2CoeffHom (trivialF2CoeffHom_smul (φ : H →* G))
     (fun m ↦ by
-      simp [trivialF2Transfer, eqToHom_ofDiscreteModule_trivialF2_apply]) 2
+      simp [eqToHom_ofDiscreteModule_trivialF2_apply]) 2
   have happ := ConcreteCategory.congr_hom hmap
     (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
       (evensGraphCocycle U (φ s) α hU hφs hα))
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
     explicitH2AddEquivContinuousCohomology_map G (trivialF2 G).V H (trivialF2 H).V φ
-      trivialF2Transfer (trivialF2Transfer_smul φ), explicitMap2_mk] at happ
+      trivialF2CoeffHom (trivialF2CoeffHom_smul (φ : H →* G)), explicitMap2_mk] at happ
   rw [happ]
   congr 3
   ext ⟨h, k⟩
-  simp only [cocyclesMap2_apply, coe_evensGraphCocycle, trivialF2Transfer,
-    AddEquiv.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, AddEquiv.trans_apply,
+  simp only [cocyclesMap2_apply, coe_evensGraphCocycle, trivialF2CoeffHom_apply,
     AddEquiv.apply_symm_apply]
   exact congrArg _ (evensGraphCochain_comap (φ : H →* G) U.toSubgroup s α h k).symm
 
@@ -140,5 +133,36 @@ theorem graphClass_comp_of_conj (U V : OpenSubgroup G) (hU : U.toSubgroup.index 
           (a2 := (c : G →* G).subgroupComap U.toSubgroup v) ((hκ v).trans (hc v).symm)
     _ = trivialF2Map c 2 (graphClass U hU α hα) := (trivialF2Map_graphClass c U hU hV α hα).symm
     _ = graphClass U hU α hα := by rw [hcid, ConcreteCategory.id_apply]
+
+/-- **Naturality of the index-two Evens norm.** If `φ : H → G` pulls an index-two open subgroup
+`U` back to another index-two subgroup, then pulling the norm back along `φ` is the norm of the
+pulled-back degree-one class. -/
+@[simp]
+theorem trivialF2Map_evensNormIndexTwo (φ : H →ₜ* G) (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2)
+    (hφU : (U.comap (φ : H →* G) φ.continuous).toSubgroup.index = 2)
+    (x : continuousCohomology 1 (trivialF2 U.toSubgroup)) :
+    trivialF2Map φ 2 (evensNormIndexTwo U hU x) =
+      evensNormIndexTwo (U.comap (φ : H →* G) φ.continuous) hφU
+        (trivialF2Map
+          (⟨(φ : H →* G).subgroupComap U.toSubgroup,
+            φ.continuous.subtype_map fun _ hx => hx⟩ :
+            (U.comap (φ : H →* G) φ.continuous).toSubgroup →ₜ* U.toSubgroup) 1 x) := by
+  obtain ⟨α, hα, rfl⟩ := homClass_surjective U.toSubgroup x
+  rw [evensNormIndexTwo_homClass, trivialF2Map_homClass,
+    evensNormIndexTwo_homClass]
+  convert trivialF2Map_graphClass φ U hU hφU α hα using 1
+
+/-- **The index-two Evens norm is invariant under conjugation.** Suppose `κ : V → U` is
+conjugation by `g⁻¹` between two index-two open subgroups. Pulling a degree-one class from `U`
+along `κ` and taking its norm from `V` gives the original norm from `U`. -/
+theorem evensNormIndexTwo_comp_of_conj (U V : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2) (hV : V.toSubgroup.index = 2) (g : G)
+    (κ : V.toSubgroup →ₜ* U.toSubgroup) (hκ : ∀ v : V.toSubgroup, (κ v : G) = g⁻¹ * v * g)
+    (x : continuousCohomology 1 (trivialF2 U.toSubgroup)) :
+    evensNormIndexTwo V hV (trivialF2Map κ 1 x) = evensNormIndexTwo U hU x := by
+  obtain ⟨α, hα, rfl⟩ := homClass_surjective U.toSubgroup x
+  rw [trivialF2Map_homClass, evensNormIndexTwo_homClass, evensNormIndexTwo_homClass,
+    graphClass_comp_of_conj U V hU hV g κ hκ]
 
 end TauCeti.ContCohomology

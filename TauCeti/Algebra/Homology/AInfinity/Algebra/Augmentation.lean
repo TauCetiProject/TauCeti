@@ -246,7 +246,7 @@ private theorem coe_evalNat_suspend_reducedOperation (ε : 𝒜.Augmentation) (n
     ((MultilinearMap.evalNat (MultilinearMap.suspend d (ε.reducedOperation n)) x :
         ε.augmentationIdeal) : A) =
       MultilinearMap.evalNat (MultilinearMap.suspend d (𝒜.m n)) (fun i ↦ (x i : A)) := by
-  rw [AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, Submodule.coe_smul,
+  rw [MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_suspend, Submodule.coe_smul,
     coe_evalNat_reducedOperation]
 
 private theorem coe_stasheffTerm_reducedOperation (ε : 𝒜.Augmentation)
@@ -274,10 +274,10 @@ private theorem coe_stasheffSum_reducedOperation (ε : 𝒜.Augmentation)
         (n - p - s)) = _
   rw [map_sum]
   apply Finset.sum_congr rfl
-  intro p hp
+  intro p _
   rw [map_sum]
   apply Finset.sum_congr rfl
-  intro s hs
+  intro s _
   exact ε.coe_stasheffTerm_reducedOperation d x p s (n - p - s)
 
 private noncomputable def reducedTaylor (ε : 𝒜.Augmentation) :

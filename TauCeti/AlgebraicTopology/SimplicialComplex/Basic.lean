@@ -60,6 +60,19 @@ theorem faces_map {κ : Type*} [DecidableEq κ] (f : ι → κ) :
     (K.map f).faces = (fun σ : Finset ι => σ.image f) '' K.faces :=
   rfl
 
+/-- Successive vertex maps agree with mapping by their composite. -/
+@[simp]
+theorem map_map {κ μ : Type*} [DecidableEq κ] [DecidableEq μ] (f : ι → κ) (g : κ → μ) :
+    (K.map f).map g = K.map (g ∘ f) := by
+  apply PreAbstractSimplicialComplex.ext
+  simp only [faces_map, Set.image_image, Finset.image_image, Function.comp_def]
+
+/-- The identity vertex map leaves a complex unchanged. -/
+@[simp]
+theorem map_id [DecidableEq ι] : K.map id = K := by
+  refine SetLike.ext fun τ => ?_
+  simp [mem_map_iff]
+
 /-- An injective relabeling preserves and reflects finiteness of the face collection. -/
 theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
     (f : ι → κ) (hf : Function.Injective f) : (K.map f).faces.Finite ↔ K.faces.Finite := by

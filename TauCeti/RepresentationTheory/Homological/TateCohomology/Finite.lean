@@ -16,13 +16,17 @@ Herbrand quotient of a finite cyclic group uses: a finite representation has Her
 (`TauCeti.TateCohomology.herbrandQuotient_eq_one_of_finite`), and a finite kernel or cokernel does
 not change the quotient (`TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₁`
 and its relatives).
+
+Along a short exact sequence, the connecting map also makes `Ĥⁿ⁺¹(G, X₁)` finite when
+`Ĥⁿ(G, X₃)` is finite and `Ĥⁿ⁺¹(G, X₂)` vanishes
+(`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂`).
 -/
 
 public section
 
 universe u
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace TauCeti.TateCohomology
 
@@ -46,5 +50,15 @@ instance finite_tateCohomology (M : Rep R G) [Finite M] (n : ℤ) : Finite (tate
   have : Finite ((tateComplex M).sc n).moduleCatLeftHomologyData.H :=
     Finite.of_surjective _ (Submodule.mkQ_surjective _)
   exact ((tateComplex M).sc n).moduleCatHomologyIso.toLinearEquiv.toEquiv.finite_iff.mpr this
+
+/-- In a short exact sequence, if `Ĥⁿ(G, X₃)` is finite and `Ĥⁿ⁺¹(G, X₂)` vanishes, then
+`Ĥⁿ⁺¹(G, X₁)` is finite, since the connecting map onto it is surjective. -/
+theorem finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ {S : ShortComplex (Rep R G)}
+    (hS : S.ShortExact) (n : ℤ) (hzero : IsZero (tateCohomology S.X₂ (n + 1)))
+    [Finite (tateCohomology S.X₃ n)] : Finite (tateCohomology S.X₁ (n + 1)) := by
+  have hepi := (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).epi_δ
+    n (n + 1) rfl hzero
+  exact Finite.of_surjective (_root_.TateCohomology.δ hS n)
+    ((ModuleCat.epi_iff_surjective _).1 hepi)
 
 end TauCeti.TateCohomology

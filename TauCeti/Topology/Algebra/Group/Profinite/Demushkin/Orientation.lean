@@ -24,7 +24,8 @@ topologically generate `ℤ_2ˣ = {±1} × (1 + 4ℤ_2)`. The marked generators 
 
 ## Main declarations
 
-* `TauCeti.negThreeUnit`: the `2`-adic unit `-3`.
+* `TauCeti.negThreeUnit`: the `2`-adic unit `-3`, whose negative is `-1 + 2²`
+  (`TauCeti.negThreeUnit_neg_coe`).
 * `TauCeti.standardD0Orientation`: the standard orientation `D₀ →ₜ* ℤ_2ˣ`, with its values
   `TauCeti.standardD0Orientation_d0A`, `TauCeti.standardD0Orientation_d0S` and
   `TauCeti.standardD0Orientation_d0Y`.
@@ -64,6 +65,12 @@ noncomputable abbrev negThreeUnit : ℤ_[2]ˣ := isUnit_neg_three.unit
 @[simp]
 theorem negThreeUnit_coe : (negThreeUnit : ℤ_[2]) = -3 :=
   isUnit_neg_three.unit_spec
+
+/-- The negative of `negThreeUnit` is `3 = -1 + 2 ^ 2`, the generator `-1 + 2 ^ k` at `k = 2` of the
+twisted closed subgroups `U^[k]` of `ℤ₂ˣ`. -/
+theorem negThreeUnit_neg_coe : ((-negThreeUnit : ℤ_[2]ˣ) : ℤ_[2]) = -1 + 2 ^ 2 := by
+  rw [Units.val_neg, negThreeUnit_coe]
+  norm_num
 
 /-- The inverse of `negThreeUnit` is the value `(1 - 2 ^ 2)⁻¹` of the orientation character table:
 `(-3)⁻¹ · (1 - 2²) = 1`. -/

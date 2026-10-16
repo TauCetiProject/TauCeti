@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Cochain
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.InhomogeneousF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2.Character
 
 /-!
 # The index-two graph class of the Evens norm
@@ -32,9 +32,8 @@ places the class in Mathlib's canonical continuous cohomology.
 * `TauCeti.ContCohomology.evensHomCocycleAmbient`: a continuous homomorphism `α` on a subgroup
   `U`, as a continuous `1`-cocycle of `U` with the lifted trivial `𝔽₂` coefficients of the
   ambient group. It represents the class of `α` to which the restriction, corestriction and cup
-  products of the ambient group apply.
-* `TauCeti.ContCohomology.evensHomCocycle`: a continuous homomorphism `G → 𝔽₂` as a continuous
-  `1`-cocycle of `G` with the lifted trivial `𝔽₂` coefficients.
+  products of the ambient group apply. On the whole group the corresponding cocycle is
+  `TauCeti.ContCohomology.evensHomCocycle` of `TrivialF2/Character.lean`.
 * `TauCeti.ContCohomology.evensGraphCocycle`: the lifted continuous graph `2`-cocycle.
 * `TauCeti.ContCohomology.explicitGraphClass`: the choice-free class of the graph cocycle in the
   explicit inhomogeneous model `H²`, which carries the explicit restriction, corestriction, cup
@@ -121,26 +120,6 @@ theorem coe_evensHomCocycleAmbient (U : Subgroup G)
     (evensHomCocycleAmbient U α hα : U → (trivialF2 G).V) =
       fun h => (trivialF2Equiv G).symm (Multiplicative.toAdd (α h)) :=
   (rfl)
-
-/-- A continuous homomorphism `y : G →* Multiplicative (ZMod 2)`, as a continuous `1`-cocycle of
-`G` with coefficients in the lifted trivial `𝔽₂` object `trivialF2 G`. Its restriction to a
-subgroup `U` is `evensHomCocycleAmbient U (y.comp U.subtype)`. -/
-noncomputable def evensHomCocycle (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
-    Z1 G (trivialF2 G).V :=
-  (Z1EquivOfSmulEqSelf (fun g x => by
-    rw [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply])).symm
-    (Additive.ofMul
-      ⟨(trivialF2Equiv G).symm.toAddMonoidHom.toMultiplicative.comp y,
-        (continuous_of_discreteTopology : Continuous (trivialF2Equiv G).symm).comp
-          (continuous_toAdd.comp hy)⟩)
-
-/-- The underlying cochain of `evensHomCocycle`. -/
-@[simp]
-theorem coe_evensHomCocycle (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
-    (evensHomCocycle y hy : G → (trivialF2 G).V) =
-      fun g => (trivialF2Equiv G).symm (Multiplicative.toAdd (y g)) := by
-  funext g
-  simp [evensHomCocycle]
 
 end HomCocycle
 

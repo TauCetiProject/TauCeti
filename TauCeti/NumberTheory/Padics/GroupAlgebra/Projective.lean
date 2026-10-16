@@ -207,7 +207,7 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
     rw [← PadicInt.maximalIdeal_eq_span_p]
     infer_instance
   have : Module.Finite ℤ_[p] (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
-    .linearMap_of_isNoetherianRing
+    .linearMap_of_isNoetherian
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
     .of_finite _ _
   have : IsNoetherian (MonoidAlgebra ℤ_[p] G) N := isNoetherian_of_tower ℤ_[p] inferInstance
@@ -227,7 +227,8 @@ private theorem mem_span_p_smul_top_pi_iff {ι : Type*} {v : ι → MonoidAlgebr
         (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) (ι → MonoidAlgebra ℤ_[p] G)) ↔
       ∀ i, MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p)) (v i) = 0 := by
   rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p,
-    Submodule.mem_span_algebraMap_smul_top_iff]
+    Submodule.mem_span_algebraMap_smul_iff]
+  simp only [Submodule.mem_top, true_and]
   constructor
   · rintro ⟨w, rfl⟩ i
     rw [Pi.smul_apply, ← RingHom.mem_ker, ker_padicMonoidAlgebraReduction, Algebra.smul_def,

@@ -43,10 +43,9 @@ lattice, as recorded by the determinant of `CartanMatrix.E 7`.
 ## References
 
 The coordinates and node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
-Plate VI, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section 12.1.
-This is the `E₇` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. Its assembly follows the existing
-`E₈` construction in this directory.
+Plate VI, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section 12.1. Its
+assembly follows the `E₈` construction in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Datum`.
 -/
 
 public section

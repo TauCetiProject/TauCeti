@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Subspace.Basic
 public import TauCeti.RingTheory.AdjoinRoot.Basic
-public import TauCeti.RingTheory.Polynomial.Truncated
+public import TauCeti.RingTheory.Polynomial.Truncated.Basic
 public import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 
 /-!

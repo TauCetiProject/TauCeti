@@ -140,9 +140,6 @@ theorem resToImagAxis_slash_two_of_diagonal (F : ℍ → ℂ) {d : GL (Fin 2) �
     rw [Matrix.det_fin_two, h₁₀, h₀₁]
     ring
   have hd' : 0 < d 0 0 * d 1 1 := hdet ▸ hd
-  have h₁₁ : (d 1 1 : ℝ) ≠ 0 := by
-    have : d 1 1 ≠ 0 := fun h ↦ by simp [h] at hd'
-    exact_mod_cast this
   -- the axis is rescaled by the positive ratio `r = d₀₀ / d₁₁`
   set r : ℝ := (d 0 0 : ℝ) / d 1 1 with hr
   have hr0 : 0 < r := by
@@ -197,7 +194,7 @@ theorem exists_isBigO_rat_slash_exp {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArith
     simpa [hg', Subsingleton.elim (Rat.castHom ℝ) (algebraMap ℚ ℝ), map_inv]
       using Subgroup.IsArithmetic.conj Γ g⁻¹
   obtain ⟨c, hc, hO⟩ := CuspFormClass.exp_decay_atImInfty' (CuspForm.translate f g')
-  rw [CuspForm.coe_translate_gl] at hO
+  rw [CuspForm.coe_translate] at hO
   exact ⟨c, hc, hO⟩
 
 open Asymptotics Filter in

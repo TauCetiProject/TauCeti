@@ -203,7 +203,6 @@ theorem exists_path_injective_diam_range_le_circle {z w : Circle} (hzw : z ≠ w
 `π / 2` times it smaller than `η`, which is how a bound stated as a multiple of the chord becomes a
 bound below a prescribed tolerance. -/
 private lemma pi_div_two_mul_lt {η d : ℝ} (hη : 0 < η) (hd : d < 2 / π * η) : π / 2 * d < η := by
-  have hπ : 0 < π := Real.pi_pos
   calc π / 2 * d < π / 2 * (2 / π * η) := mul_lt_mul_of_pos_left hd (by positivity)
     _ = η := by field_simp
 
@@ -217,7 +216,6 @@ private theorem exists_pos_forall_isPreconnected_union_eq_compl_pair_circle_diam
     ∃ δ > 0, ∀ ⦃z w : Circle⦄, z ≠ w → dist z w < δ →
       ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
         P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) < η := by
-  have hπ : 0 < π := Real.pi_pos
   refine ⟨2 / π * η, by positivity, fun z w hzw hd => ?_⟩
   obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ :=
     exists_isPreconnected_union_eq_compl_pair_circle_diam_le hzw
@@ -229,7 +227,6 @@ consumes. -/
 private theorem exists_pos_forall_exists_path_injective_diam_range_lt_circle {η : ℝ} (hη : 0 < η) :
     ∃ δ > 0, ∀ ⦃z w : Circle⦄, z ≠ w → dist z w < δ →
       ∃ γ : Path z w, Function.Injective γ ∧ Metric.diam (range γ) < η := by
-  have hπ : 0 < π := Real.pi_pos
   refine ⟨2 / π * η, by positivity, fun z w hzw hd => ?_⟩
   obtain ⟨γ, hinj, hdiam⟩ := exists_path_injective_diam_range_le_circle hzw
   exact ⟨γ, hinj, hdiam.trans_lt (pi_div_two_mul_lt hη hd)⟩

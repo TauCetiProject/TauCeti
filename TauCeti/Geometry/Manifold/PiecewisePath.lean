@@ -184,7 +184,7 @@ private theorem isPiecewiseContMDiffOn_of_partition_of_subset :
   intro k
   induction k with
   | zero =>
-      intro τ hτ hγ s t hs hst ht
+      intro τ _ hγ s t hs hst ht
       exact .of_contMDiffOn hst
         ((hγ 0).mono (Icc_subset_Icc (by simpa using hs) (by simpa using ht)))
   | succ k ih =>

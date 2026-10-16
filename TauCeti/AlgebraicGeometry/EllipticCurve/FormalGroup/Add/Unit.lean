@@ -73,7 +73,7 @@ applies to the rest of that file. The source's `rename (fun _ ↦ s)` spelling i
 `PowerSeries.toMvPowerSeries s` throughout, as elsewhere in `FormalGroup/`.
 
 The source's private `ringHom_invOfUnit` is not ported. It carries no elliptic content, and the
-general statement now lives in a general file as `MvPowerSeries.ringHom_invOfUnit`, which this file
+general statement now lives in a general file as `MvPowerSeries.map_invOfUnit`, which this file
 uses directly.
 -/
 
@@ -91,7 +91,7 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 substitution: both series have zero constant coefficient. -/
 private theorem hasSubst_unitR :
     HasSubst (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) :=
-  hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simp)
+  hasSubst_of_constantCoeff_zero (by rintro (_ | _) <;> simp)
 
 /-- The `w`-expansion in the first parameter survives the specialization. -/
 private theorem subst_unitR_toMvPowerSeries_inl :
@@ -186,7 +186,7 @@ private theorem subst_unitR_formalThirdRoot_eq {L : PowerSeries R}
   have hInv : subst (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) (invOfUnit D 1) =
       invOfUnit (1 + PowerSeries.C W.a₂ * L + PowerSeries.C W.a₄ * L ^ 2 +
         PowerSeries.C W.a₆ * L ^ 3) 1 := by
-    have h := MvPowerSeries.ringHom_invOfUnit (S := R) (u := 1) (v := 1)
+    have h := MvPowerSeries.map_invOfUnit (S := R) (u := 1) (v := 1)
       (substAlgHom hasSubst_unitR) hD1
       (by rw [coe_substAlgHom, hDsub]; exact hD1')
     rwa [coe_substAlgHom, hDsub] at h
@@ -256,7 +256,7 @@ theorem subst_unitR_formalAdd :
   have h : (fun _ : Unit ↦ subst
       (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) (formalThirdRoot W)) =
       fun _ : Unit ↦ (formalInverse W : MvPowerSeries Unit R) := by
-    funext u
+    funext _
     exact subst_unitR_formalThirdRoot W
   rw [h]
   exact subst_formalInverse_self W
@@ -265,7 +265,7 @@ theorem subst_unitR_formalAdd :
 substitution. -/
 private theorem hasSubst_unitL :
     HasSubst (Sum.elim (fun _ ↦ 0) X : Unit ⊕ Unit → MvPowerSeries Unit R) :=
-  hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simp)
+  hasSubst_of_constantCoeff_zero (by rintro (_ | _) <;> simp)
 
 /-- **The left unit law**: `F(0, z) = z`, by the right unit law and commutativity. -/
 @[simp]

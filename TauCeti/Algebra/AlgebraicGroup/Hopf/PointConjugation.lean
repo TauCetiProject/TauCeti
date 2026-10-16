@@ -29,6 +29,9 @@ schemes, in particular conjugacy of Borel subgroups and maximal tori.
 * `TauCeti.HopfAlgebra.pointConjugationFiniteTypeIso`: the same automorphism as an isomorphism
   in the category of finite-type commutative Hopf algebras.
 
+* `AlgHom.apply_pointConjugationAlgHom`: evaluation of point conjugation as contraction of the
+  universal conjugation tensor.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Sections 3.5 and 10.20.
@@ -74,7 +77,7 @@ theorem comp_pointConjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
       WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) := by
     rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv]
   rw [← hmapValue, toConv_pointConjugationAlgHom, map_mul, map_mul, map_inv]
-  rw [AlgHom.mapValue_algebraOfId]
+  rw [WithConv.mapValue_algebraOfId]
   simp [AlgHom.mapValue_apply]
 
 /-- Conjugation by the identity point is the identity coordinate map. -/
@@ -127,8 +130,6 @@ private theorem map_comp_comul_pointConjugationAlgHom
   apply WithConv.toConv_injective
   rw [Bialgebra.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
     Bialgebra.comulPoint_eq_include_mul]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight,
     comp_pointConjugationAlgHom
@@ -160,10 +161,10 @@ theorem pointConjugationBialgEquiv_toAlgHom (g : WithConv (H →ₐ[R] R)) :
 conjugates it by the corresponding constant point. -/
 theorem mapDomain_pointConjugationBialgEquiv {A : Type w} [CommSemiring A] [Algebra R A]
     (g : WithConv (H →ₐ[R] R)) (x : WithConv (H →ₐ[R] A)) :
-    AlgHom.mapDomain (A := A) (pointConjugationBialgEquiv g).toBialgHom x =
+    BialgHom.mapDomain (A := A) (pointConjugationBialgEquiv g).toBialgHom x =
       AlgHom.mapValue (H := H) (Algebra.ofId R A) g * x *
         (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ := by
-  rw [AlgHom.mapDomain_apply]
+  rw [BialgHom.mapDomain_apply]
   exact comp_pointConjugationAlgHom g x
 
 section FiniteType
@@ -208,17 +209,38 @@ variable {R H K : Type*} [CommSemiring R] [CommSemiring H] [CommSemiring K]
 scheme-theoretically: conjugation restricts to the identity coordinate map. -/
 theorem comp_pointConjugationAlgHom_mapDomain_of_isCocomm (π : H →ₐc[R] K)
     (t : WithConv (K →ₐ[R] R)) :
-    π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom (AlgHom.mapDomain π t)) =
+    π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom (BialgHom.mapDomain π t)) =
       π.toAlgHom := by
   apply WithConv.toConv_injective
   rw [HopfAlgebra.comp_pointConjugationAlgHom]
-  have ht : AlgHom.mapValue (H := H) (Algebra.ofId R K) (AlgHom.mapDomain π t) =
-      AlgHom.mapDomain π (AlgHom.mapValue (H := K) (Algebra.ofId R K) t) := by
-    exact (DFunLike.congr_fun (AlgHom.mapValue_mapDomain π (Algebra.ofId R K)) t).symm
-  have hi : toConv π.toAlgHom = AlgHom.mapDomain π (toConv (AlgHom.id R K)) := by
-    rw [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.id_comp]
+  have ht : AlgHom.mapValue (H := H) (Algebra.ofId R K) (BialgHom.mapDomain π t) =
+      BialgHom.mapDomain π (AlgHom.mapValue (H := K) (Algebra.ofId R K) t) := by
+    exact (DFunLike.congr_fun (BialgHom.mapValue_mapDomain π (Algebra.ofId R K)) t).symm
+  have hi : toConv π.toAlgHom = BialgHom.mapDomain π (toConv (AlgHom.id R K)) := by
+    rw [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.id_comp]
   rw [ht, hi, ← map_inv, ← map_mul, ← map_mul]
   congr 1
   simp [mul_comm]
 
 end BialgHom
+
+namespace AlgHom
+
+open scoped TensorProduct
+
+variable {R H A : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
+  [CommSemiring A] [Algebra R A]
+
+/-- Evaluation of rational conjugation is specialization of its universal coordinate morphism
+in the conjugating variable, followed by evaluation in the acted-on variable. -/
+theorem apply_pointConjugationAlgHom (f : H →ₐ[R] A) (g : WithConv (H →ₐ[R] R)) (x : H) :
+    f (TauCeti.HopfAlgebra.pointConjugationAlgHom g x) =
+      TensorProduct.lid R A (TensorProduct.map g.ofConv.toLinearMap f.toLinearMap
+        (TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x)) := by
+  rw [TauCeti.HopfAlgebra.pointConjugationAlgHom, AlgHom.comp_apply]
+  induction TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x
+      using TensorProduct.inductionOn with
+  | add a b ha hb => simp_all
+  | tmul a b => simp [AlgHom.mapValue_apply, Algebra.smul_def]
+
+end AlgHom

@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Index
+public import TauCeti.Analysis.Fredholm.Basic
 
 /-!
 # The zero Fredholm operator
 
 This file characterizes when the zero continuous linear map is Fredholm. Its kernel is the whole
 domain and its cokernel is the whole codomain, so it is Fredholm exactly when both spaces are
-finite dimensional. In that case its index is `dim E - dim F`.
+finite dimensional. Its index formula is supplied by
+`TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
 
 The result isolates the finite-dimensional block in a Fredholm decomposition: after an
 invertible block is split off, a remaining zero block records precisely the kernel and cokernel.
@@ -23,8 +24,6 @@ neither a norm nor continuity of addition or scalar multiplication is required.
 
 * `TauCeti.isFredholm_zero_iff`: the zero operator is Fredholm exactly when its domain and
   codomain are finite dimensional.
-* `ContinuousLinearMap.index_zero`: the index of the zero operator is the difference of
-  the dimensions of its domain and codomain.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
 A.1.
@@ -68,17 +67,6 @@ lemma isFredholm_zero_iff :
         closedComplemented_ker := by simp }
 
 end Topological
-
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- The index of the zero continuous linear map is the dimension of its domain minus the
-dimension of its codomain. -/
-@[simp]
-lemma _root_.ContinuousLinearMap.index_zero :
-    ContinuousLinearMap.index (0 : E →L[𝕜] F) = (finrank 𝕜 E : ℤ) - finrank 𝕜 F := by
-  simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_zero] using
-    (LinearMap.index_zero (R := 𝕜) (M := E) (N := F))
 
 end TauCeti
 

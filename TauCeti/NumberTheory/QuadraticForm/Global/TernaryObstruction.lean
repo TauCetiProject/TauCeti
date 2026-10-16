@@ -66,12 +66,23 @@ every real place. -/
 def sumTwoSquaresSubSq : _root_.QuadraticForm ℚ (Fin 3 → ℚ) :=
   weightedSumSquares ℚ ![1, 1, -1]
 
+/-- `sumTwoSquaresSubSq` is the diagonal form `⟨1, 1, -1⟩`. -/
+theorem sumTwoSquaresSubSq_def : sumTwoSquaresSubSq = weightedSumSquares ℚ ![(1 : ℚ), 1, -1] := by
+  ext x
+  simp [sumTwoSquaresSubSq, weightedSumSquares_apply, Fin.sum_univ_three]
+
 /-- The value of `⟨1, 1, -1⟩` at `(x, y, z)` is `x² + y² - z²`. -/
 @[simp]
 theorem sumTwoSquaresSubSq_apply (x : Fin 3 → ℚ) :
     sumTwoSquaresSubSq x = x 0 ^ 2 + x 1 ^ 2 - x 2 ^ 2 := by
   simp [sumTwoSquaresSubSq, weightedSumSquares_apply, Fin.sum_univ_three, pow_two]
   ring
+
+/-- `⟨1, 1, -1⟩` is nondegenerate. -/
+theorem nondegenerate_sumTwoSquaresSubSq : sumTwoSquaresSubSq.Nondegenerate := by
+  rw [sumTwoSquaresSubSq_def]
+  exact nondegenerate_weightedSumSquares fun i =>
+    isRegular_iff_ne_zero.mpr (by fin_cases i <;> simp)
 
 /-- The form `⟨1, 1, -3⟩` is isotropic at every real place of `ℚ`: `(√3, 0, 1)` is a zero. -/
 theorem not_anisotropic_sumTwoSquaresSubThreeSq_atRealPlace

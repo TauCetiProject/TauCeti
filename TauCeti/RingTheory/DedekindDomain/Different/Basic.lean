@@ -179,7 +179,7 @@ variable [IsDedekindDomain A] [IsDedekindDomain B] [Module.IsTorsionFree A B] [M
 nonzero ideal `p` of `A`, then `I` divides `differentIdeal A B` exactly when the integral trace
 carries the complement `Q` into `p`.
 
-This upgrades Mathlib's one-way `not_dvd_differentIdeal_of_intTrace_not_mem` to an equivalence.
+This upgrades Mathlib's one-way `not_dvd_differentIdeal_of_intTrace_notMem` to an equivalence.
 The converse direction adapts the argument that Mathlib runs inline in
 `pow_sub_one_dvd_differentIdeal_aux` and `dvd_differentIdeal_of_not_isSeparable`
 (`Mathlib/RingTheory/DedekindDomain/Different.lean`, Andrew Yang). -/
@@ -189,7 +189,7 @@ theorem dvd_differentIdeal_iff_forall_intTrace_mem
     I ∣ differentIdeal A B ↔ ∀ x ∈ Q, Algebra.intTrace A B x ∈ p := by
   refine ⟨fun hdvd x hx ↦ ?_, fun htr ↦ ?_⟩
   · by_contra hx'
-    exact not_dvd_differentIdeal_of_intTrace_not_mem A I Q hIQ x hx hx' hdvd
+    exact not_dvd_differentIdeal_of_intTrace_notMem A I Q hIQ x hx hx' hdvd
   let K := FractionRing A
   let L := FractionRing B
   have hp' : Ideal.map (algebraMap A B) p ≠ ⊥ :=

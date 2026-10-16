@@ -11,18 +11,20 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
 # The du Bois-Reymond lemma on an interval
 
 A function on an open interval whose distributional derivative vanishes is constant. Concretely,
-if `f : ℝ → F` is continuous on `Ioo a b` and
+if `f : ℝ → F` is locally integrable on `Ioo a b` and
 
 `∫ x, deriv ψ x • f x = 0`
 
-for every smooth `ψ : ℝ → ℝ` with `tsupport ψ ⊆ Ioo a b`, then `f` is constant on
-`Ioo a b`. This is the one-variable **du Bois-Reymond lemma**, the derivative form of the
-fundamental lemma of the calculus of variations, whose zeroth-order form is Mathlib's
+for every smooth `ψ : ℝ → ℝ` with `tsupport ψ ⊆ Ioo a b`, then `f` is almost everywhere equal to a
+constant on `Ioo a b`, and constant there if it is continuous on `Ioo a b`. This is the
+one-variable **du Bois-Reymond lemma**, the derivative form of the fundamental lemma of the
+calculus of variations, whose zeroth-order form is Mathlib's
 `IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`.
 
 The reduction to the zeroth-order lemma is the classical one. Fix a test function `ρ` on the
@@ -30,7 +32,7 @@ interval with total integral `1`. For a test function `g`, the function `g - (�
 integral zero, so its primitive `ψ` is again a test function on the interval, with `deriv ψ = g -
 (∫ g) ρ`; the hypothesis applied to `ψ` gives `∫ g • f = (∫ g) • ∫ ρ • f`, that is
 `∫ g • (f - c) = 0` for the constant `c = ∫ ρ • f`. Hence `f = c` almost everywhere on the
-interval, and everywhere by continuity.
+interval, and everywhere if `f` is continuous.
 
 The one-sided version says that a continuous real function whose distributional derivative is
 nonnegative is monotone: if `∫ x, deriv ψ x * f x ≤ 0` for every nonnegative test function `ψ` on
@@ -43,8 +45,10 @@ which are close to `f x` and `f y` by continuity.
 
 * `ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero`: the primitive of a test function on
   an interval with total integral zero is a test function on the interval.
-* `ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero`: **the du Bois-Reymond
-  lemma**.
+* `MeasureTheory.LocallyIntegrableOn.exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero`:
+  **the du Bois-Reymond lemma**.
+* `ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero`: its form for continuous
+  functions.
 * `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`: a continuous function with nonnegative
   distributional derivative is monotone.
 -/
@@ -120,23 +124,28 @@ theorem _root_.ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero {a b : ℝ}
   exact ⟨ψ, hψ, isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) hsupp,
     hsupp.trans fun t ht ↦ ⟨by linarith [ht.1], by linarith [ht.2]⟩, hψd⟩
 
-variable [CompleteSpace F]
+end TauCeti
 
-/-- **The du Bois-Reymond lemma.** A function continuous on an open interval whose pairing with
-the derivative of every test function on the interval vanishes,
-`∫ x, deriv ψ x • f x = 0`, is constant on the interval. -/
-theorem _root_.ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero {a b : ℝ}
-    {f : ℝ → F} (hf : ContinuousOn f (Ioo a b))
+namespace MeasureTheory.LocallyIntegrableOn
+
+open Set Filter
+open scoped ContDiff
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- **The du Bois-Reymond lemma.** A function locally integrable on an open interval whose
+pairing with the derivative of every test function on the interval vanishes,
+`∫ x, deriv ψ x • f x = 0`, is almost everywhere equal to a constant on the interval. -/
+theorem exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero
+    {a b : ℝ} {f : ℝ → F} (hf : LocallyIntegrableOn f (Ioo a b))
     (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → ∫ x, deriv ψ x • f x = 0) :
-    ∃ c : F, EqOn f (fun _ ↦ c) (Ioo a b) := by
+    ∃ c : F, f =ᵐ[volume.restrict (Ioo a b)] fun _ ↦ c := by
   rcases le_or_gt b a with hba | hab
-  · exact ⟨0, fun x hx ↦ absurd hx (by simp [Ioo_eq_empty (not_lt.mpr hba)])⟩
-  -- A test function `g` on the interval pairs with `f` like a compactly supported continuous
-  -- function.
-  have hint : ∀ g : ℝ → ℝ, Continuous g → HasCompactSupport g → tsupport g ⊆ Ioo a b →
+  · exact ⟨0, by simp [Ioo_eq_empty (not_lt.mpr hba), EventuallyEq]⟩
+  -- A test function `g` on the interval pairs integrably with `f`.
+  have hint : ∀ g : ℝ → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ioo a b →
       Integrable fun x ↦ g x • f x := fun g hg hgc hgs ↦
-    ((hg.continuousOn.smul hf).continuous_of_tsupport_subset isOpen_Ioo
-      ((tsupport_smul_subset_left g f).trans hgs)).integrable_of_hasCompactSupport hgc.smul_right
+    TestFunction.integrable_smul (Ω := ⟨Ioo a b, isOpen_Ioo⟩) ⟨g, hg, hgc, hgs⟩ hf
   -- A normalized bump function supported in the interval.
   let β : ContDiffBump ((a + b) / 2) := ⟨(b - a) / 8, (b - a) / 4, by linarith, by linarith⟩
   have hrOut : β.rOut = (b - a) / 4 := rfl
@@ -173,20 +182,35 @@ theorem _root_.ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero
     have h0 := h ψ hψ hψs
     rw [hψd] at h0
     simp only [hφ_def, sub_smul, mul_smul] at h0
-    have hρf : Integrable fun x ↦ (∫ y, g y) • ρ x • f x :=
-      (hint ρ hρ.continuous hρc hρs).smul _
-    rw [integral_sub (hint g hg.continuous hgc hgs) hρf, MeasureTheory.integral_smul,
-      sub_eq_zero] at h0
+    have hρf : Integrable fun x ↦ (∫ y, g y) • ρ x • f x := (hint ρ hρ hρc hρs).smul _
+    rw [integral_sub (hint g hg hgc hgs) hρf, MeasureTheory.integral_smul, sub_eq_zero] at h0
     simp only [smul_sub]
-    rw [integral_sub (hint g hg.continuous hgc hgs) (hgi.smul_const _),
-      _root_.integral_smul_const, h0, sub_self]
+    rw [integral_sub (hint g hg hgc hgs) (hgi.smul_const _), _root_.integral_smul_const, h0,
+      sub_self]
   have hae := isOpen_Ioo.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-    ((hf.sub continuousOn_const).locallyIntegrableOn measurableSet_Ioo) key
-  have heq : EqOn (fun x ↦ f x - ∫ y, ρ y • f y) (fun _ ↦ (0 : F)) (Ioo a b) :=
-    Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' measurableSet_Ioo).mpr hae) isOpen_Ioo
-      (hf.sub continuousOn_const) continuousOn_const
-  intro x hx
-  exact sub_eq_zero.mp (heq hx)
+    (hf.sub (locallyIntegrableOn_const _)) key
+  filter_upwards [(ae_restrict_iff' measurableSet_Ioo).mpr hae] with x hx
+  exact sub_eq_zero.mp hx
+
+end MeasureTheory.LocallyIntegrableOn
+
+namespace TauCeti
+
+open MeasureTheory Set Filter Topology intervalIntegral
+open scoped ContDiff
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- **The du Bois-Reymond lemma** for continuous functions. A function continuous on an open
+interval whose pairing with the derivative of every test function on the interval vanishes,
+`∫ x, deriv ψ x • f x = 0`, is constant on the interval. -/
+theorem _root_.ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero {a b : ℝ}
+    {f : ℝ → F} (hf : ContinuousOn f (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → ∫ x, deriv ψ x • f x = 0) :
+    ∃ c : F, EqOn f (fun _ ↦ c) (Ioo a b) := by
+  have hf' := hf.locallyIntegrableOn (μ := volume) measurableSet_Ioo
+  obtain ⟨c, hc⟩ := hf'.exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero h
+  exact ⟨c, Measure.eqOn_open_of_ae_eq hc isOpen_Ioo hf continuousOn_const⟩
 
 /-- For a nonnegative bump `β` of integral one vanishing outside `(-r, r)` and `x ≤ y`, the
 difference `ψ t = B (t - x) - B (t - y)` of translates of the primitive `B` of `β` is a
@@ -312,7 +336,7 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
         rw [Real.dist_eq]; linarith [min_le_left δ ε, lt_min hδ hε])
   obtain ⟨rx, hrx, hxsub, hfx⟩ := hnear x hx
   obtain ⟨ry, hry, hysub, hfy⟩ := hnear y hy
-  set r := min rx ry with hr_def
+  set r := min rx ry with _
   have hr : 0 < r := lt_min hrx hry
   have hrx' : r ≤ rx := min_le_left _ _
   have hry' : r ≤ ry := min_le_right _ _
