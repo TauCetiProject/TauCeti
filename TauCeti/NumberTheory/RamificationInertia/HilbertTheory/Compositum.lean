@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.IntegralClosure
 public import TauCeti.NumberTheory.RamificationInertia.HilbertTheory.Unramified
 public import TauCeti.FieldTheory.Galois.FixedField
-import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.NumberTheory.RamificationInertia.Splitting
 
 /-!
@@ -71,9 +70,13 @@ theorem ncard_primesOver_eq_finrank_iff_forall_stabilizer_le_of_isIntegralClosur
     (p : Ideal A) [p.IsMaximal] :
     (p.primesOver C).ncard = Module.finrank A C ↔
       ∀ Q ∈ p.primesOver B, stabilizer Gal(M/K) Q ≤ H := by
-  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
+  obtain ⟨_, _, _, _⟩ :=
+    TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup
+      (A := A) (K := K) (M := M) (B := B)
+  obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C
+  obtain ⟨_, _, _⟩ := TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField
+    (A := A) (K := K) (M := M) H C
   have : Module.Finite C B := Module.Finite.right A C B
   rw [ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one]
   simp_rw [← mul_eq_one, ← Subgroup.relIndex_eq_one]
@@ -102,9 +105,13 @@ theorem isUnramifiedIn_iff_forall_inertia_le_of_isIntegralClosure
     (p : Ideal A) [p.IsMaximal] :
     Algebra.IsUnramifiedIn C p ↔
       ∀ Q ∈ p.primesOver B, Q.inertia Gal(M/K) ≤ H := by
-  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
+  obtain ⟨_, _, _, _⟩ :=
+    TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup
+      (A := A) (K := K) (M := M) (B := B)
+  obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C
+  obtain ⟨_, _, _⟩ := TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField
+    (A := A) (K := K) (M := M) H C
   exact TauCeti.RamificationInertia.isUnramifiedIn_iff_forall_inertia_le A C H p
 
 section Compositum

@@ -89,7 +89,8 @@ variable [IsDomain A] [IsIntegrallyClosed A]
 omit [IsScalarTower A K M] [IsGalois K M] [IsIntegrallyClosed A] in
 include A in
 /-- The subgroup `H` is a Galois group of `B` over `C`, and `C` embeds in `B`. -/
-theorem fixedFieldGaloisSetup : IsGaloisGroup H C B ∧ FaithfulSMul C B := by
+theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul :
+    IsGaloisGroup H C B ∧ FaithfulSMul C B := by
   have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
   have : FaithfulSMul C M := .trans C (fixedField H) M
   exact ⟨IsGaloisGroup.of_isIntegralClosure_fixedField A H C B, .tower_bot C B M⟩
@@ -105,8 +106,10 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
     DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K)) ≃
       p.primesOver C :=
   have := IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M
-  have := (fixedFieldGaloisSetup (A := A) (B := B) H C).1
-  have := (fixedFieldGaloisSetup (A := A) (B := B) H C).2
+  have := (TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C).1
+  have := (TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C).2
   Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C
 
 /-- The double coset law sends the class of `σ` to the contraction `σ Q ∩ C`. -/
@@ -115,7 +118,8 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : Gal(M/K))
     (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C
       (DoubleCoset.mk H _ σ) : Ideal C) = (σ • Q).under C := by
   have := IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M
-  obtain ⟨_, _⟩ := fixedFieldGaloisSetup (A := A) (B := B) H C
+  obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C
   rw [doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure,
     doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
 
@@ -138,29 +142,25 @@ variable [IsDedekindDomain A]
 include K M in
 /-- Over a Dedekind base, `B` is a finite flat `A`-algebra and a domain, with Galois group
 `Gal(M/K)`. -/
-theorem integralClosureGaloisSetup :
+theorem _root_.TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup :
     IsDomain B ∧ Module.Finite A B ∧ Module.Flat A B ∧ IsGaloisGroup Gal(M/K) A B := by
   have : IsDomain B := (IsIntegralClosure.algebraMap_injective B A M).isDomain _
   have : FaithfulSMul A M := .trans A K M
   exact ⟨inferInstance, IsIntegralClosure.finite A K M B, TauCeti.IsIntegralClosure.flat A M B,
     IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M⟩
 
+omit [Algebra A M] [IsScalarTower A K M] [Algebra C M] [IsScalarTower C (fixedField H) M] in
 include K M H in
-/-- Over a Dedekind base, `C` is a finite flat Dedekind `A`-algebra and a domain, and `B` is a
-flat `C`-algebra with Galois group `H`. -/
-theorem fixedFieldIntegralClosureSetup :
-    IsDomain C ∧ IsDedekindDomain C ∧ Module.Finite A C ∧ Module.Flat A C ∧
-      IsGaloisGroup H C B ∧ FaithfulSMul C B ∧ Module.Flat C B := by
-  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
+/-- Over a Dedekind base, `C` is a Dedekind domain and a finite flat `A`-algebra. -/
+theorem _root_.TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField :
+    IsDedekindDomain C ∧ Module.Finite A C ∧ Module.Flat A C := by
   have : IsDomain C := (IsIntegralClosure.algebraMap_injective C A (fixedField H)).isDomain _
   have : Algebra.IsSeparable K (fixedField H) :=
     Algebra.isSeparable_tower_bot_of_isSeparable K (fixedField H) M
   have : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain A K (fixedField H) C
   have : FaithfulSMul A (fixedField H) := .trans A K (fixedField H)
-  obtain ⟨_, _⟩ := fixedFieldGaloisSetup (A := A) (B := B) H C
-  exact ⟨inferInstance, inferInstance, IsIntegralClosure.finite A K (fixedField H) C,
-    TauCeti.IsIntegralClosure.flat A (fixedField H) C, inferInstance, inferInstance,
-    inferInstance⟩
+  exact ⟨inferInstance, IsIntegralClosure.finite A K (fixedField H) C,
+    TauCeti.IsIntegralClosure.flat A (fixedField H) C⟩
 
 omit [Q.IsPrime] in
 /-- **The local degree of `σ Q ∩ C` is an index of decomposition groups**:
@@ -170,9 +170,13 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex_of_isIntegralClosu
     [Q.IsMaximal] (σ : Gal(M/K)) :
     ((σ • Q).under C).ramificationIdx A * ((σ • Q).under C).inertiaDeg A =
       H.relIndex (MulAut.conj σ • stabilizer Gal(M/K) Q) := by
-  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
+  obtain ⟨_, _, _, _⟩ :=
+    TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup
+      (A := A) (K := K) (M := M) (B := B)
+  obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C
+  obtain ⟨_, _, _⟩ := TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField
+    (A := A) (K := K) (M := M) H C
   have : (σ • Q).IsMaximal := by
     rw [pointwise_smul_eq_comap]
     infer_instance
@@ -197,9 +201,13 @@ residue extension of `Q` over `p` is separable. The residue fields need not be f
 theorem ramificationIdx_under_smul_eq_relIndex_inertia_of_isIntegralClosure [Q.IsMaximal]
     [Algebra.IsSeparable (A ⧸ p) (B ⧸ Q)] (σ : Gal(M/K)) :
     ((σ • Q).under C).ramificationIdx A = H.relIndex (MulAut.conj σ • Q.inertia Gal(M/K)) := by
-  obtain ⟨_, _, _, _⟩ := integralClosureGaloisSetup (A := A) (K := K) (M := M) (B := B)
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
+  obtain ⟨_, _, _, _⟩ :=
+    TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup
+      (A := A) (K := K) (M := M) (B := B)
+  obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C
+  obtain ⟨_, _, _⟩ := TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField
+    (A := A) (K := K) (M := M) H C
   obtain rfl := Q.over_def p
   exact ramificationIdx_under_smul_eq_relIndex_inertia Q H C σ
 
@@ -213,8 +221,10 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsIntegralClosure_eq_fin
           A) =
       Module.finrank K (fixedField H) := by
   classical
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    fixedFieldIntegralClosureSetup (A := A) (K := K) (M := M) (B := B) H C
+  obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
+    (A := A) (B := B) H C
+  obtain ⟨_, _, _⟩ := TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField
+    (A := A) (K := K) (M := M) H C
   have : p.IsPrime := isPrime_of_liesOver Q p
   let e := Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C
   let _ := Fintype.ofFinite
