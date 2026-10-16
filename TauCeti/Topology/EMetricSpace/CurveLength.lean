@@ -19,12 +19,7 @@ variation, without any Lipschitz or bounded-variation hypothesis on the parametr
 The results include empty and singleton parameter intervals.
 
 Both raw Hausdorff measure `μH[1]` and Euclidean-normalized measure `μHE[1]` are supported.
-For the lower bound, the central formal input is `IsPreconnected.edist_le_hausdorffMeasure`:
-apply it to the subarcs of a partition and add their measures. Injectivity on the open interval
-ensures that distinct subarcs overlap only at their common endpoint or at `γ a` and `γ b`, and
-finitely many points have zero one-dimensional Hausdorff measure. The reverse bound is the
-general trace estimate `eVariationOn.hausdorffMeasure_image_le`, which needs no continuity or
-injectivity.
+These results let one compute the length of such a curve from its trace using either convention.
 -/
 
 public section
