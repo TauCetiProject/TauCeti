@@ -37,6 +37,7 @@ types of two bases of the same module are equivalent.
   by any basis whatsoever.
 * `WeierstrassCurve.Affine.regulator_eq_one_of_finrank_eq_zero`: the rank-zero convention.
 * `WeierstrassCurve.Affine.regulator_nonneg`: the regulator is non-negative.
+* `WeierstrassCurve.Affine.regulator_pos`: under Northcott finiteness, the regulator is positive.
 
 ## References
 
@@ -116,5 +117,13 @@ theorem regulator_eq_one_of_finrank_eq_zero [W.toAffine.IsElliptic]
 theorem regulator_nonneg [W.toAffine.IsElliptic] [Module.Finite ℤ (PointModTorsion W)] :
     0 ≤ regulator W :=
   abs_nonneg _
+
+/-- The regulator is strictly positive under Northcott finiteness, including in rank zero,
+where it equals `1`. -/
+theorem regulator_pos [W.toAffine.IsElliptic] [Module.Finite ℤ (PointModTorsion W)]
+    [Northcott (Point.canonicalHeight (W := W))] : 0 < regulator W := by
+  rw [regulator_eq_abs_det_neronTateGramMatrix W (Module.finBasis ℤ (PointModTorsion W))]
+  exact (posDef_neronTateGramMatrix W (Module.finBasis ℤ (PointModTorsion W))).det_pos.trans_le
+    (le_abs_self _)
 
 end WeierstrassCurve.Affine
