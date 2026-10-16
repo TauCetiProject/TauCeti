@@ -12,8 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 # Pointwise products of square-integrable functions on a product measure
 
 The product `(x, y) ↦ f x * g y` of two square-integrable functions with values in a nonunital
-normed ring is square-integrable for the product measure. Only the second measure needs to be
-s-finite.
+normed ring is square-integrable for the product measure. Neither measure needs to be s-finite.
 `MeasureTheory.MemLp.mul_prod` gives membership, while `MeasureTheory.Lp.prodMul` packages the
 product as an `Lp` vector with its almost-everywhere representative and additive and scalar laws.
 
@@ -26,7 +25,7 @@ public section
 open MeasureTheory
 
 variable {𝕜 α β : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
-  {μ : Measure α} {ν : Measure β} [SFinite ν]
+  {μ : Measure α} {ν : Measure β}
 
 namespace MeasureTheory
 

@@ -26,8 +26,8 @@ distributivity equivalence
 A ⊗[R] (M ⊗[R] H) ≃ (A ⊗[R] M) ⊗[A] (A ⊗[R] H).
 ```
 
-This is coefficient-ring base change, rather than the existing scalar-extension functor that
-only changes the module on which an `H`-valued point acts. It is the representation transport
+This is coefficient-ring base change, rather than the scalar-extension functor that only
+changes the module on which an `H`-valued point acts. It is the representation transport
 needed to compare geometric unipotence before and after a field extension.
 
 ## Main declarations
@@ -45,7 +45,7 @@ needed to compare geometric unipotence before and after a field extension.
 * M. Sweedler, *Hopf Algebras*, Chapter 2.
 
 This supplies a prerequisite for base-change invariance of geometric unipotence and hence for
-comparison of unipotent radicals in Layer 5 of the ReductiveGroups roadmap.
+comparison of unipotent radicals.
 -/
 
 public section

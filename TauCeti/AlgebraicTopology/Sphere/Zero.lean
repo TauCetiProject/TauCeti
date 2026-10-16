@@ -7,24 +7,24 @@ module
 
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Ball.Action
-public import Mathlib.Analysis.Normed.Module.RCLike.Real
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.PathComponent
 
 /-!
 # The zero-sphere
 
-The unit sphere of a one-dimensional real normed space consists of a point `p` on it and its
-antipode `-p`.  It is therefore finite and discrete, and its path components are its two points:
-the component of `-p` is the only path component other than that of `p`.
+Every sphere in a one-dimensional real normed space is finite and discrete. If a sphere centered
+at zero contains `p`, it consists of `p` and its antipode `-p`. On the unit sphere, these two
+points are distinct, so the component of `-p` is the only path component other than that of `p`.
 
 These are the inputs for the degree-zero computation of the reduced homology of spheres, which is
 the base case of the induction on dimension through the suspension isomorphism.
 
 ## Main results
 
-* `TauCeti.sphere_eq_pair_of_finrank_eq_one`: the unit sphere is `{p, -p}`.
-* `TauCeti.discreteTopology_sphere_of_finrank_eq_one`: the unit sphere is discrete.
+* `TauCeti.sphere_eq_pair_of_finrank_eq_one`: a sphere centered at zero containing `p` is `{p, -p}`.
+* `TauCeti.finite_sphere_of_finrank_eq_one`: every sphere is finite.
+* `TauCeti.discreteTopology_sphere_of_finrank_eq_one`: every sphere is discrete.
 * `TauCeti.zerothHomotopySphereUnique`: the path component of `-p` is the unique path component
   other than that of `p`.
 -/
@@ -37,45 +37,43 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The unit sphere of a one-dimensional real normed space consists of a point on it and its
-antipode. -/
-theorem sphere_eq_pair_of_finrank_eq_one (h : finrank ℝ E = 1) {p : E}
-    (hp : p ∈ sphere (0 : E) 1) : sphere (0 : E) 1 = {p, -p} := by
-  have hp' : ‖p‖ = 1 := by simpa using hp
-  have hp0 : p ≠ 0 := by
-    rintro rfl
-    simp at hp'
+/-- A sphere centered at zero in a one-dimensional real normed space consists of a point on it
+and its antipode. For radius zero, the two points coincide. -/
+theorem sphere_eq_pair_of_finrank_eq_one (h : finrank ℝ E = 1) {r : ℝ} {p : E}
+    (hp : p ∈ sphere (0 : E) r) : sphere (0 : E) r = {p, -p} := by
+  have hp' : ‖p‖ = r := by simpa using hp
   ext x
   simp only [mem_sphere_zero_iff_norm, Set.mem_insert_iff, Set.mem_singleton_iff]
   constructor
   · intro hx
-    obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' p hp0).mp h x
-    rw [norm_smul, hp', mul_one, Real.norm_eq_abs] at hx
-    rcases (abs_eq zero_le_one).mp hx with rfl | rfl
-    · simp
-    · simp
-  · rintro (rfl | rfl)
-    · exact hp'
-    · simpa using hp'
+    exact eq_or_eq_neg_of_norm_eq_of_finrank_eq_one h (hx.trans hp'.symm)
+  · rintro (rfl | rfl) <;> simpa using hp'
 
-/-- The unit sphere of a one-dimensional real normed space is finite. -/
-theorem finite_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) : Finite (sphere (0 : E) 1) := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ h
-  obtain ⟨p, hp⟩ := NormedSpace.sphere_nonempty (E := E) (x := 0).mpr zero_le_one
-  rw [sphere_eq_pair_of_finrank_eq_one h hp]
-  infer_instance
+/-- Every sphere in a one-dimensional real normed space is finite. -/
+theorem finite_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) (x : E) (r : ℝ) :
+    Finite (sphere x r) := by
+  apply Set.finite_coe_iff.mpr
+  have hs : (sphere (0 : E) r).Finite := by
+    rcases (sphere (0 : E) r).eq_empty_or_nonempty with hs | ⟨p, hp⟩
+    · rw [hs]
+      exact Set.finite_empty
+    · rw [sphere_eq_pair_of_finrank_eq_one h hp]
+      simp
+  have ht : ⇑(IsometryEquiv.addLeft x) '' sphere (0 : E) r = sphere x r := by simp
+  rw [← ht]
+  exact hs.image _
 
-/-- The unit sphere of a one-dimensional real normed space is discrete. -/
-theorem discreteTopology_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) :
-    DiscreteTopology (sphere (0 : E) 1) :=
-  have := finite_sphere_of_finrank_eq_one h
+/-- Every sphere in a one-dimensional real normed space is discrete. -/
+theorem discreteTopology_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) (x : E) (r : ℝ) :
+    DiscreteTopology (sphere x r) :=
+  have := finite_sphere_of_finrank_eq_one h x r
   inferInstance
 
 /-- On the unit sphere of a one-dimensional real normed space, a point and its antipode lie in
 distinct path components. -/
 theorem zerothHomotopy_mk_neg_ne (h : finrank ℝ E = 1) (p : sphere (0 : E) 1) :
     ZerothHomotopy.mk (-p) ≠ ZerothHomotopy.mk p :=
-  have := discreteTopology_sphere_of_finrank_eq_one h
+  have := discreteTopology_sphere_of_finrank_eq_one h 0 1
   fun hc ↦ ne_neg_of_mem_unit_sphere ℝ p
     (ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace hc).symm
 
@@ -84,7 +82,7 @@ unique path component other than that of `p`. -/
 @[instance_reducible]
 def zerothHomotopySphereUnique (h : finrank ℝ E = 1) (p : sphere (0 : E) 1) :
     Unique {c : ZerothHomotopy (sphere (0 : E) 1) // c ≠ ZerothHomotopy.mk p} :=
-  haveI := discreteTopology_sphere_of_finrank_eq_one h
+  haveI := discreteTopology_sphere_of_finrank_eq_one h 0 1
   { default := ⟨ZerothHomotopy.mk (-p), zerothHomotopy_mk_neg_ne h p⟩
     uniq := by
       rintro ⟨c, hc⟩

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 
 /-!
 # Gram-matrix lattices on the standard rational coordinate space
@@ -24,6 +25,8 @@ Cartan matrix computable from that matrix alone.
 ## Main declarations
 
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_apply`: the form in coordinates.
+* `TauCeti.IntegralLattice.norm_ofGramMatrix_basisFun_intCast`: the rational norm of an integer
+  vector is its integral Gram-matrix norm.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_right`: pairing against a standard
   coordinate vector is the corresponding row combination of `G`.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_basisFun`: the Gram matrix of the standard
@@ -61,6 +64,18 @@ theorem form_ofGramMatrix_basisFun_apply (x y : ι → ℚ) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Finset.mul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ (mul_assoc _ _ _)
+
+open _root_.Matrix in
+/-- The rational norm of an integer vector in a standard-coordinate Gram-matrix lattice is its
+integral Gram-matrix norm. -/
+theorem norm_ofGramMatrix_basisFun_intCast (v : ι → ℤ) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).norm (fun j ↦ (v j : ℚ)) =
+      (((v ᵥ* G) ⬝ᵥ v : ℤ) : ℚ) := by
+  rw [norm_apply, form_ofGramMatrix_basisFun_apply]
+  simp only [vecMul, dotProduct]
+  push_cast
+  simp_rw [Finset.sum_mul, Finset.mul_sum, mul_assoc]
+  exact Finset.sum_comm
 
 /-- Pairing an arbitrary vector against the `i`-th standard coordinate vector collapses the double
 sum to the `i`-th row combination of the Gram matrix. -/

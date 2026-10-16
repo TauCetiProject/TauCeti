@@ -176,7 +176,6 @@ theorem exists_smul_convolutionCLM_eq_star_matrixCoeff (k : C(G, 𝕜)) {μ : �
           = star (ContRepresentation.matrixCoeff (convolutionEigenspaceRepresentation k μ)
               (continuous_convolutionEigenspaceRepresentation k hμ) ⟨f, hf⟩ y) := by
   have := finiteDimensional_eigenspace_convolutionOperator k hμ
-  have hπ := continuous_convolutionEigenspaceRepresentation k hμ
   obtain ⟨y, hy⟩ :
       ∃ y : Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ,
         ∀ h : Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ,

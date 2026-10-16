@@ -32,6 +32,8 @@ then takes the difference of the two newforms.
   eigenvector of `S_k(N, χ)` with `a₁ = 0` is old.
 * `HeckeRing.GL2.eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew`:
   in the new part, it is zero.
+* `TauCeti.qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew`: a nonzero good Hecke
+  eigenvector in the new part has nonzero first coefficient.
 
 ## References
 
@@ -75,5 +77,23 @@ theorem eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspForms
     (mem_cuspFormsOld_of_forall_prime_heckeRingHomCusp_of_one_eq_zero ha h1) hnew
 
 end HeckeRing.GL2
+
+namespace TauCeti
+
+open HeckeRing.GL2
+
+variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+/-- A nonzero good Hecke eigenvector in the new subspace has nonzero first coefficient. -/
+theorem qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew
+    {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hχ : F ∈ cuspFormCharSpace k χ) (hnew : F ∈ cuspFormsNew N k) (hF : F ≠ 0)
+    (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
+      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨F, hχ⟩ = c • ⟨F, hχ⟩) :
+    (qExpansion 1 F).coeff 1 ≠ 0 := fun h1 ↦
+  hF (eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew (F := ⟨F, hχ⟩)
+    (fun p hp hpN ↦ by rw [heckeTCompositeGamma0_prime N hp]; exact h p hp hpN) h1 hnew)
+
+end TauCeti
 
 end

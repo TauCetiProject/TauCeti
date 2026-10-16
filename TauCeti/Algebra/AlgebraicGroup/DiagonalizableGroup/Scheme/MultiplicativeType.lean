@@ -30,8 +30,7 @@ diagonalizable property, and then specialized to the canonical object `D(G) = Sp
 
 The proof structure follows
 `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.LinearlyReductive`, replacing linear
-reductivity by the coordinate-side multiplicative-type property. This supplies a Layer 4 example
-from the ReductiveGroups roadmap.
+reductivity by the coordinate-side multiplicative-type property.
 -/
 
 public section

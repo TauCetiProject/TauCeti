@@ -13,7 +13,8 @@ public import Mathlib.Analysis.Complex.Basic
 The quotient `z₂ / z₁` of two points of an open half-plane through the origin is never a
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
-four axis-aligned half-planes cover the common cases.
+four axis-aligned half-planes cover the common cases. A relative displacement smaller than
+the distance to a pole also gives a slit-plane quotient.
 
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
@@ -25,6 +26,7 @@ is a principal logarithm.
 
 ## Main declarations
 
+* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
@@ -36,6 +38,20 @@ open Complex
 open scoped NNReal
 
 namespace TauCeti
+
+/-- The quotient under the proximity inequality lies in the slit plane. -/
+theorem div_sub_mem_slitPlane_of_dist_lt_dist
+    {x y w : ℂ} (h : dist y x < dist x w) :
+    (y - w) / (x - w) ∈ slitPlane := by
+  have hne : x - w ≠ 0 := sub_ne_zero.mpr
+    (dist_pos.mp (lt_of_le_of_lt dist_nonneg h))
+  have hsub : (y - w) / (x - w) - 1 = (y - x) / (x - w) := by
+    field_simp
+    ring
+  apply Complex.ball_one_subset_slitPlane
+  rw [Metric.mem_ball, dist_eq_norm, hsub, norm_div, div_lt_one (norm_pos_iff.mpr hne)]
+  simpa only [dist_eq_norm] using h
+
 
 /-- The ratio of two members of an open half-plane through the origin lies in the slit
 plane. The half-plane with normal direction `a` is `{z | 0 < (conj a * z).re}`; degenerate
@@ -91,7 +107,7 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
     · refine ⟨min z.re 1, lt_min hpos one_pos, fun x hx => (hre x).trans' ?_⟩
       nlinarith [min_le_left z.re 1, min_le_right z.re 1,
         mul_nonneg (sub_nonneg.2 (min_le_right z.re 1)) hx]
-    · have hy : 0 < |z.im| := abs_pos.mpr him
+    · have _ : 0 < |z.im| := abs_pos.mpr him
       have hu : 0 ≤ |z.re| := abs_nonneg _
       refine ⟨min (|z.im| / (2 * |z.re| + 2)) (1 / 4), lt_min (by positivity) (by norm_num),
         fun x hx => ?_⟩

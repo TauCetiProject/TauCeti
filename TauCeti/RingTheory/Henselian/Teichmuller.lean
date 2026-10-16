@@ -40,6 +40,8 @@ fields.
 * `TauCeti.teichmuller_eq_iff`: the characterization of its values.
 * `TauCeti.eq_teichmuller`: it is the only multiplicative section of reduction.
 * `TauCeti.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
+* `TauCeti.teichmuller_neg_one`: for odd `q` it sends `-1` to `-1`.
+* `TauCeti.unitsMap_teichmuller`: it is natural along local homomorphisms.
 * `TauCeti.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism `μ_{q-1}(R) ≃* kˣ`.
 * `TauCeti.isComplement'_rootsOfUnity_ker_unitsMap_residue`,
   `TauCeti.unitsMulEquivRootsOfUnityProdKerResidue`: the Teichmüller splitting
@@ -169,6 +171,35 @@ theorem card_rootsOfUnity :
     Nat.card (rootsOfUnity (Nat.card (ResidueField R) - 1) R) =
       Nat.card (ResidueField R) - 1 := by
   rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+
+/-- For odd `q`, the Teichmüller lift of `-1` is `-1`. (For even `q` the residue `-1` is `1`,
+whose lift is `1`.) -/
+@[simp]
+theorem teichmuller_neg_one (hq : Odd (Nat.card (ResidueField R))) :
+    teichmuller R (-1) = -1 :=
+  (teichmuller_eq_iff R).2 ⟨(Nat.Odd.sub_odd hq odd_one).neg_one_pow, by simp⟩
+
+section Naturality
+
+variable {R} {S : Type*} [CommRing S] [HenselianLocalRing S] [Finite (ResidueField S)]
+
+/-- **Naturality of the Teichmüller lift.** For a local homomorphism `f : R → S` of Henselian local
+rings with finite residue fields, `f` carries the Teichmüller lift in `R` of `x` to the
+Teichmüller lift in `S` of the image of `x` under the induced map of residue fields. -/
+@[simp] theorem unitsMap_teichmuller (f : R →+* S) [IsLocalHom f] (x : (ResidueField R)ˣ) :
+    Units.map (f : R →* S) (teichmuller R x) =
+      teichmuller S (Units.map (ResidueField.map f : ResidueField R →* ResidueField S) x) := by
+  refine ((teichmuller_eq_iff S).2 ⟨?_, ?_⟩).symm
+  -- The residue field of `S` is a finite extension of that of `R`, so `q_R - 1 ∣ q_S - 1`.
+  · obtain ⟨k, hk⟩ : Nat.card (ResidueField R) - 1 ∣ Nat.card (ResidueField S) - 1 := by
+      let := (ResidueField.map f).toAlgebra
+      have : Module.Finite (ResidueField R) (ResidueField S) := .of_finite
+      rw [Module.natCard_eq_pow_finrank (K := ResidueField R) (V := ResidueField S)]
+      exact Nat.sub_one_dvd_pow_sub_one _ _
+    rw [hk, pow_mul, ← map_pow, teichmuller_pow_card_sub_one, map_one, one_pow]
+  · simp [← ResidueField.map_residue]
+
+end Naturality
 
 /-! ### The Teichmüller splitting of the unit group
 

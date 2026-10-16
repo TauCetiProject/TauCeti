@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Analytic
 import TauCeti.Analysis.Normed.Operator.Resolvent.RestrictScalars
-import TauCeti.Analysis.Normed.Operator.Resolvent.Shift
+import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 public import TauCeti.Analysis.Semigroups.PhaseShift
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import TauCeti.Analysis.Semigroups.Resolvent.PowerBounds

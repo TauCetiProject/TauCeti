@@ -324,7 +324,7 @@ theorem holderOnWith_preciseRepresentative {s : Set X} {C M α ρ : ℝ≥0}
   · -- Distant points: both values have norm at most `M`, and `2M ≤ (2M / ρ^α) dist^α`.
     have hbound : ∀ z ∈ s, ‖preciseRepresentative μ f z‖ ≤ M := fun z hz =>
       norm_preciseRepresentative_le hρ' (hf z hz) (hbdd z hz) (hlim z hz)
-    have hρα : (0 : ℝ) < (ρ : ℝ) ^ (α : ℝ) := Real.rpow_pos_of_pos hρ' _
+    have _ : (0 : ℝ) < (ρ : ℝ) ^ (α : ℝ) := Real.rpow_pos_of_pos hρ' _
     calc dist (preciseRepresentative μ f x) (preciseRepresentative μ f y)
         ≤ ‖preciseRepresentative μ f x‖ + ‖preciseRepresentative μ f y‖ := dist_le_norm_add_norm _ _
       _ ≤ 2 * M := by linarith [hbound x hx, hbound y hy]

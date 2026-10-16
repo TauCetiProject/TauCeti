@@ -63,7 +63,7 @@ theorem isClosed_image_of_tendsto_cobounded [MetricSpace β] (hA : IsClosed A)
     (hf : ContinuousOn f A) (hp : Tendsto f (cobounded α ⊓ 𝓟 A) (cobounded β)) :
     IsClosed (f '' A) := by
   refine isClosed_of_closure_subset fun y hy => ?_
-  obtain ⟨_, x₀, hx₀, rfl⟩ := closure_nonempty_iff.mp ⟨y, hy⟩
+  obtain ⟨_, x₀, _, rfl⟩ := closure_nonempty_iff.mp ⟨y, hy⟩
   -- Near `y`, the values of `f` on `A` come from a compact part of `A`.
   obtain ⟨R, -, hR⟩ := ((hasBasis_cobounded_compl_closedBall x₀).inf_principal A).mem_iff.mp
     (hp ((hasBasis_cobounded_compl_closedBall y).mem_of_mem (i := 1) trivial))

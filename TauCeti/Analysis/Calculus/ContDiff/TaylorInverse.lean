@@ -38,7 +38,7 @@ theorem length_eq_iff {n : ℕ} (c : OrderedFinpartition n) :
   constructor
   · intro h
     have hs (i : Fin c.length) : c.partSize i = 1 := by
-      have he : (∑ j : Fin c.length, (1 : ℕ)) = ∑ j, c.partSize j := by
+      have he : (∑ _ : Fin c.length, (1 : ℕ)) = ∑ j, c.partSize j := by
         simp [h]
       exact ((Finset.sum_eq_sum_iff_of_le (fun j _ ↦ c.partSize_pos j)).mp he i
         (Finset.mem_univ i)).symm

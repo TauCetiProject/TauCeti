@@ -99,7 +99,7 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
   -- Zero extension gives the fixed support and norm bounds in Fréchet--Kolmogorov.
   have hsupp : ∀ f ∈ S, ∀ᵐ x ∂mu, x ∉ (Omega : Set E) → f x = 0 := by
     intro f hf
-    obtain ⟨u, hu, rfl⟩ := hf
+    obtain ⟨u, _, rfl⟩ := hf
     rw [W1p0.coeFn_valueExtendByZeroL_eq_value]
     exact W1p0.value_extendByZeroL_ae_eq_zero_compl u
   have hbdd : ∀ f ∈ S, eLpNorm f p mu ≤ 1 := by

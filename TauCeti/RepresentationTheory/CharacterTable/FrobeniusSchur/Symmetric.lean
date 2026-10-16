@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Dihedral.Three
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.TotallyOrthogonal
 
 /-!

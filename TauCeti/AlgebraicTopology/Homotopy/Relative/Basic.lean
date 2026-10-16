@@ -210,7 +210,7 @@ theorem map_map (f : X ⟶ Y) (g : Y ⟶ Z) (p : RelGenLoop N X) :
 
 @[simp]
 theorem map_const (f : X ⟶ Y) : map f (const : RelGenLoop N X) = const := by
-  ext y
+  ext _
   exact BasedTopPair.Hom.fst_map_basepoint f
 
 /-- Postcomposition preserves homotopy through relative cubes. -/

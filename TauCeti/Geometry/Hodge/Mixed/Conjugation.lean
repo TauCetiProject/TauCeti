@@ -383,7 +383,7 @@ theorem map_latticeConj_deligneSplitting_sup_below (p q : ℤ) :
         ((mhs.deligneSplittingBelow_le_WC q p).trans
           ((mhs.WC_monotone (by omega)).trans_eq hk₀))
       simp only [hI, hIswap, hbelow, Submodule.map_bot, sup_bot_eq]
-    · intro k hk₀k ih p q hpq
+    · intro k _ ih p q hpq
       rcases lt_or_eq_of_le hpq with hpq' | hpq'
       · exact ih p q (by omega)
       · exact mhs.map_latticeConj_deligneSplitting_sup_below_of_lower p q

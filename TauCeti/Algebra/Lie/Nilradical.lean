@@ -277,6 +277,11 @@ ambient algebra acts nilpotently, and is in general smaller. -/
 def nilradical : LieIdeal R L :=
   sSup { I : LieIdeal R L | LieRing.IsNilpotent I }
 
+/-- The nilradical is the supremum of all nilpotent Lie ideals. -/
+theorem nilradical_def :
+    nilradical R L = sSup {I : LieIdeal R L | LieRing.IsNilpotent I} :=
+  (rfl)
+
 /-- The nilradical of a Noetherian Lie algebra is nilpotent. -/
 instance nilradicalIsNilpotent [IsNoetherian R L] : LieRing.IsNilpotent (nilradical R L) := by
   have hwf := LieSubmodule.wellFoundedGT_of_noetherian R L L

@@ -17,7 +17,7 @@ unit sphere, with the radial surface Jacobian, gives total flux `-1` through eve
 centered at the pole. This is the boundary form of the normalization in the distributional
 identity `-Δ Gₙ = δ₀`. The case `n = 2` is excluded because the normalization of
 `newtonianKernel` degenerates there. The logarithmic planar kernel is developed separately on
-`ℂ` as `planarNewtonianKernel` in `TauCeti.Analysis.PDE.FundamentalSolution.Flux`.
+`ℂ` as `planarNewtonianKernel` in `TauCeti.Analysis.PDE.FundamentalSolution.Planar.Flux`.
 
 The measure `volume.toSphere` is Mathlib's polar-coordinate surface measure. Its total mass is
 `n` times the volume of the Euclidean unit ball.
@@ -75,7 +75,6 @@ theorem integral_fderiv_newtonianKernel_sub_sphere_normal
   rw [integral_const]
   simp only [Measure.toSphere_real_apply_univ, finrank_euclideanSpace, Fintype.card_fin,
     smul_eq_mul]
-  have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn0
   have hvol := volume_real_unitBall_pos n
   calc
     r ^ ((n : ℝ) - 1) *

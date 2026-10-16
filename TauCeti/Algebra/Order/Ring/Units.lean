@@ -23,7 +23,7 @@ Being of index `2`, the quotient `Rˣ ⧸ Units.posSubgroup R` is *the* two-elem
 ## Main definitions and results
 
 * `Units.instFiniteIndexPosSubgroup`: the positive units have finite index.
-* `Units.instIsMulTorsionFreePosSubgroup`: the positive units are torsion-free, so a
+* `Units.instHasUniqueRootsPosSubgroup`: the positive units have unique roots, so a
   homomorphism into them is determined by its values up to positive multiples.
 * `Units.signEquiv`: the sign isomorphism `Rˣ ⧸ Units.posSubgroup R ≃* ℤˣ`, with
   `Units.signEquiv_mk_eq_one_iff` and `Units.signEquiv_mk_eq_neg_one_iff` reading its two values
@@ -42,8 +42,8 @@ instance instFiniteIndexPosSubgroup (R : Type*) [Ring R] [LinearOrder R] [IsStri
 
 /-- The positive units of a linearly ordered semiring are torsion-free: a positive element is
 determined by any of its nonzero powers. -/
-instance instIsMulTorsionFreePosSubgroup (R : Type*) [Semiring R] [LinearOrder R]
-    [IsStrictOrderedRing R] : IsMulTorsionFree (Units.posSubgroup R) where
+instance instHasUniqueRootsPosSubgroup (R : Type*) [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] : HasUniqueRoots (Units.posSubgroup R) where
   pow_left_injective _ hn x y h := Subtype.ext <| Units.ext <|
     (pow_left_inj₀ ((Units.mem_posSubgroup _).1 x.2).le ((Units.mem_posSubgroup _).1 y.2).le
       hn).1 (by simpa using congrArg (fun z : Units.posSubgroup R ↦ ((z : Rˣ) : R)) h)

@@ -89,7 +89,7 @@ namespace IsDGRightModule
 up to the shift by one that it applies to degrees. -/
 theorem map_decompose (hM : IsDGRightModule h ℳ dM) (q : ℤ) (x : M) :
     dM (decompose ℳ x q : M) = (decompose ℳ (dM x) (q + 1) : M) :=
-  DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
+  DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) q x
 
 /-- Every homogeneous projection of a boundary is again a boundary. -/

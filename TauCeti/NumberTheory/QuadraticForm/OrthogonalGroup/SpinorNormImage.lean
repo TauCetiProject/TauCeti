@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.CompactOpen
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.LowRank
+public import TauCeti.NumberTheory.Padics.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Isometry
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
@@ -23,6 +25,9 @@ squares form an open subgroup of the units, hence the square-class quotient is d
 In dimension at most one the local special orthogonal spinor norm is trivial, so every reference
 image is trivial. Thus openness alone does not identify the reference image with any particular
 nontrivial subgroup of local square classes.
+
+Isometric transport of a local special orthogonal reference subgroup preserves its spinor-norm
+image, allowing these reference families to be compared across quadratic coordinates.
 
 ## Main definitions
 
@@ -45,14 +50,6 @@ open _root_.QuadraticMap
 open scoped TensorProduct
 
 noncomputable section
-
-/-- The canonical invertibility witness for two over the rationals. -/
-local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
-/-- The canonical invertibility witness for two over a `p`-adic field. -/
-local instance spinorNormImageInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_[p]) :=
-  invertibleOfNonzero two_ne_zero
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {Q : QuadraticForm ℚ V} (U : OrthogonalCompactOpens Q)
@@ -115,6 +112,35 @@ theorem OrthogonalCompactOpens.localSpinorNormImage_eq_bot_of_finrank_le_one
   exact MonoidHom.range_one
 
 end
+
+section Isometry
+
+variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
+  [AddCommGroup W] [Module ℚ W] [FiniteDimensional ℚ W]
+  {Q : QuadraticForm ℚ V} {Q' : QuadraticForm ℚ W}
+
+/-- Isometric transport of a local special orthogonal reference subgroup preserves its
+spinor-norm image. -/
+theorem OrthogonalCompactOpens.localSpinorNormImage_eq_of_isometry
+    (U : OrthogonalCompactOpens Q) (U' : OrthogonalCompactOpens Q')
+    (hQ : Q.Nondegenerate) (p : Nat.Primes)
+    (e : (Q.baseChange ℚ_[p]).IsometryEquiv (Q'.baseChange ℚ_[p]))
+    (he : Set.BijOn e.specialOrthogonalGroupCongr (U.specialOrthogonal p)
+      (U'.specialOrthogonal p)) :
+    U.localSpinorNormImage hQ p = U'.localSpinorNormImage
+      (QuadraticForm.Nondegenerate.of_baseChange
+        (e.nondegenerate_iff.mp (QuadraticForm.Nondegenerate.baseChange hQ))) p := by
+  have hmap : (U.specialOrthogonal p).map (e.specialOrthogonalGroupCongr : _ →* _) =
+      U'.specialOrthogonal p := SetLike.coe_injective he.image_eq
+  simp only [localSpinorNormImage, localSpinorNorm, MonoidHom.range_comp,
+    _root_.Subgroup.range_subtype]
+  rw [← hmap, _root_.Subgroup.map_map]
+  congr 1
+  ext g
+  exact (e.spinorNorm_specialOrthogonalGroupCongr
+    (QuadraticForm.Nondegenerate.baseChange hQ) g).symm
+
+end Isometry
 
 end QuadraticMap
 end TauCeti

@@ -534,7 +534,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_of_apply_eq
     (h₂ : (χ (presentedProPGen 2 n _ 2) : ℤ_[2]) * (1 - 2 ^ f) = 1)
     (h : ∀ i, i ≠ 0 → i ≠ 2 → χ (presentedProPGen 2 n _ i) = 1) : HasPrescriptionProperty χ := by
   refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
-    fun F hFc hF r hr ↦ ?_
+    fun F _ hF r hr ↦ ?_
   have h1 := h 1 one_ne_zero (by omega)
   rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOdd, presentedProP.comp_mk_freeProPGen,
     presentedProP.comp_mk_freeProPGen, h₀, h1, Units.val_neg, Units.val_one,
@@ -733,7 +733,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff
   refine ⟨apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd
     f 1 χ hmem one_pos, fun h₀ ↦ ?_⟩
   refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
-    fun F hFc hF r hr ↦ ?_
+    fun F _ hF r hr ↦ ?_
   rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOdd, presentedProP.comp_mk_freeProPGen,
     h₀, freeProPGen_eq_one_of_le 2 le_rfl, hF.map_one, map_one]
   simp
@@ -770,7 +770,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq
     (h₀ : χ (presentedProPGen 2 n _ 0) = -1)
     (h : ∀ i, i ≠ 0 → χ (presentedProPGen 2 n _ i) = 1) : HasPrescriptionProperty χ := by
   refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
-    fun F hFc hF r hr ↦ ?_
+    fun F _ hF r hr ↦ ?_
   rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOddTop,
     presentedProP.comp_mk_freeProPGen, h₀, Finset.sum_eq_zero fun i _ ↦
       hF.map_labuteComm_eq_zero_of_eq_one
@@ -1185,7 +1185,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoRankTwo_of_apply_e
     (h₀ : χ (presentedProPGen 2 2 _ 0) = 1)
     (h₁ : (χ (presentedProPGen 2 2 _ 1) : ℤ_[2]) * (1 + a) = -1) : HasPrescriptionProperty χ := by
   refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
-    fun F hFc hF r hr ↦ ?_
+    fun F _ hF r hr ↦ ?_
   have hc01 := hF.mul_mul_map_labuteComm (freeProPGen 2 2 0) (freeProPGen 2 2 1)
   rw [presentedProP.comp_mk_freeProPGen, presentedProP.comp_mk_freeProPGen, h₀, Units.val_one,
     one_mul, sub_self, zero_mul, add_zero] at hc01

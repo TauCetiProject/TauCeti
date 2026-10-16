@@ -43,10 +43,19 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
   is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
   valuation to the additive order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
+  element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
+  the maximal ideal.
+* `IsDedekindDomain.HeightOneSpectrum.isLocalization_valuationSubring`: the adic valuation ring
+  is a localization at the prime, exposing Mathlib's quotient-to-residue equivalence.
+* `IsDedekindDomain.HeightOneSpectrum.finite_residueField_valuationSubring`: its residue field is
+  finite whenever the quotient of the original domain by the prime is finite.
 * `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
   semifield constants.
 * `IsDedekindDomain.HeightOneSpectrum.exists_mem_intValuation_eq_exp_neg_one`: a set generating a
   height one prime contains an element of order of vanishing `1`.
+* `IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_intValuation_of_squarefree`: in a principal
+  ideal domain, a squarefree element vanishes to order at most `1` at every height one prime.
 
 ## Implementation notes
 
@@ -210,6 +219,45 @@ theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
   · intro h
     rw [h, WithZero.log_exp, neg_neg]
 
+/-- An element of `R` lies in the prime `v` exactly when its image in the valuation ring of `K` at
+`v` lies in the maximal ideal. The algebra structure of `R` on the valuation ring is taken as a
+hypothesis, compatible with `K`, since there is no such instance in general; for `R = ℤ` it is
+the canonical one. -/
+theorem algebraMap_mem_maximalIdeal_valuationSubring_iff (v : HeightOneSpectrum R)
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] (r : R) :
+    algebraMap R (v.valuation K).valuationSubring r ∈ IsLocalRing.maximalIdeal _ ↔
+      r ∈ v.asIdeal := by
+  rw [Valuation.mem_maximalIdeal_iff, ← ValuationSubring.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply, v.valuation_lt_one_iff_mem]
+
+variable (v : HeightOneSpectrum R)
+
+/-- The valuation ring at `v` is a localization at `v.asIdeal`, for any algebra structure
+compatible with its inclusion in the fraction field. This exposes Mathlib's localization API,
+including `IsLocalization.AtPrime.equivQuotMaximalIdeal`. -/
+instance isLocalization_valuationSubring
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] :
+    IsLocalization.AtPrime (v.valuation K).valuationSubring v.asIdeal := by
+  let e : valuationSubringAtPrime K v ≃ₐ[R] (v.valuation K).valuationSubring :=
+    { RingEquiv.subringCongr (congrArg ValuationSubring.toSubring
+        (v.valuationSubringAtPrime_eq_valuationSubring (K := K))) with
+      commutes' := fun r ↦ by
+        apply Subtype.ext
+        exact (IsScalarTower.algebraMap_apply R (valuationSubringAtPrime K v) K r).symm.trans
+          (IsScalarTower.algebraMap_apply R (v.valuation K).valuationSubring K r) }
+  exact IsLocalization.isLocalization_of_algEquiv v.asIdeal.primeCompl e
+
+/-- The valuation residue field at `v` is finite when the quotient by `v` is finite. -/
+instance finite_residueField_valuationSubring
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] [Finite (R ⧸ v.asIdeal)] :
+    Finite (IsLocalRing.ResidueField (v.valuation K).valuationSubring) :=
+  Finite.of_equiv (R ⧸ v.asIdeal)
+    (IsLocalization.AtPrime.equivQuotMaximalIdeal v.asIdeal
+      (v.valuation K).valuationSubring).toEquiv
+
 end IsDedekindDomain.HeightOneSpectrum
 
 end ValueGroup
@@ -257,5 +305,14 @@ theorem exists_mem_intValuation_eq_exp_neg_one {s : Set R} (hs : Ideal.span s = 
     exact h r hr (v.intValuation_eq_exp_neg_one_of_mem_of_notMem_sq (hs ▸ Ideal.subset_span hr)
       hr2)
   exact (Ideal.pow_succ_lt_pow v.ne_bot 1).not_ge (by rwa [pow_one])
+
+/-- **A squarefree element of a principal ideal domain vanishes to order at most `1`** at every
+height one prime, by the squarefree multiplicity bound for its principal ideal. -/
+theorem exp_neg_one_le_intValuation_of_squarefree [IsPrincipalIdealRing R] {r : R}
+    (hr : Squarefree r) : WithZero.exp (-1) ≤ v.intValuation r := by
+  apply (v.exp_le_intValuation_iff_emultiplicity_le (n := 1)).mpr
+  have hsf : Squarefree (Ideal.span ({r} : Set R)) := Ideal.squarefree_span_singleton.mpr hr
+  exact ((squarefree_iff_emultiplicity_le_one _).mp hsf v.asIdeal).resolve_right
+    fun h ↦ v.isPrime.ne_top (Ideal.isUnit_iff.mp h)
 
 end IsDedekindDomain.HeightOneSpectrum

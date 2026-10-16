@@ -10,11 +10,12 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# Hom from a finite biproduct in a linear category
+# Hom to and from a biproduct in a linear category
 
 The universal property of a biproduct identifies morphisms out of it with families of
 morphisms out of its summands. In a linear category this is a linear equivalence, so finiteness
-and rank of the Hom module can be read summand by summand.
+and rank of the Hom module can be read summand by summand. Dually, morphisms into a biproduct
+are families of morphisms into its summands.
 -/
 
 public section
@@ -53,6 +54,32 @@ theorem homBiproductLinearEquiv_apply (f : ⨁ X ⟶ Y) (j : J) :
 @[simp]
 theorem homBiproductLinearEquiv_symm_apply (f : ∀ j, X j ⟶ Y) :
     (homBiproductLinearEquiv k X Y).symm f = biproduct.desc f :=
+  (rfl)
+
+/-- Morphisms into a biproduct form the product of the Hom spaces into its summands. -/
+noncomputable def homToBiproductLinearEquiv :
+    (Y ⟶ ⨁ X) ≃ₗ[k] (∀ j, Y ⟶ X j) where
+  toFun f j := f ≫ biproduct.π X j
+  invFun f := biproduct.lift f
+  left_inv f := biproduct.hom_ext _ _ fun j ↦ by simp
+  right_inv f := funext fun j ↦ by simp
+  map_add' f g := by
+    ext j
+    simp
+  map_smul' r f := by
+    ext j
+    simp
+
+/-- The equivalence reads off a morphism's component at a summand. -/
+@[simp]
+theorem homToBiproductLinearEquiv_apply (f : Y ⟶ ⨁ X) (j : J) :
+    homToBiproductLinearEquiv k X Y f j = f ≫ biproduct.π X j :=
+  (rfl)
+
+/-- The inverse assembles a family of morphisms by the biproduct lift map. -/
+@[simp]
+theorem homToBiproductLinearEquiv_symm_apply (f : ∀ j, Y ⟶ X j) :
+    (homToBiproductLinearEquiv k X Y).symm f = biproduct.lift f :=
   (rfl)
 
 /-- Finite Hom modules out of each summand give a finite Hom module out of a finite

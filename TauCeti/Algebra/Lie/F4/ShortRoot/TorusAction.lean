@@ -123,13 +123,8 @@ private theorem f4Root_eq_of_repr_smul_rootVector_inl_ne_zero
     f4Root γ = f4Root α := by
   classical
   by_contra hroot
-  have hlabel : f4KillingRootLabel α ≠ f4KillingRootLabel γ := by
-    intro hlabel
-    apply hroot
-    have hindex : α = γ := by
-      simpa only [f4PinnedRootIndex_f4KillingRootLabel] using
-        congrArg f4PinnedRootIndex hlabel
-    exact congrArg f4Root hindex.symm
+  have hlabel : f4KillingRootLabel α ≠ f4KillingRootLabel γ := fun hlabel =>
+    hroot (congrArg f4Root (f4KillingRootLabel_injective hlabel).symm)
   rw [map_smul, f4ModularRootVector_eq_basis,
     f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
     Finsupp.single_apply] at hne

@@ -176,7 +176,7 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [IsProbabilityMeasure ν] (n 
   have hstep : markovStep κ n
       = (κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
           (measurable_pi_apply (Fin.last n))).comap (iicEquivFin α n) he := by
-    ext u s hs
+    ext u s _
     simp [markovStep, Kernel.comap_apply, iicEquivFin_apply]
   have key : ((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n
       = (markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1))) :=

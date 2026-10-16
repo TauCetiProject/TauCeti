@@ -464,7 +464,7 @@ private theorem rawState_weight {R : Type*} [CommRing R] (D : PDCode n)
     (stateWeight (rawState D u) a : R) = ∏ i, smoothingWeight a (D.overPair i) (u i) := by
   rw [stateWeight_def, Units.coe_prod]
   apply Finset.prod_congr rfl
-  intro i hi
+  intro i _
   cases hu : u i <;> cases ho : D.overPair i <;>
     simp [rawState, smoothingWeight, overWeight, hu, ho]
 
@@ -517,10 +517,10 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
   simp only [Fintype.sum_prod_type, ← assembleState.eq_def]
   rw [Finset.sum_comm]
   apply Finset.sum_congr rfl
-  intro r hr
+  intro r _
   rw [Finset.mul_sum]
   apply Finset.sum_congr rfl
-  intro q hq
+  intro q _
   rw [assembleState_prod, rawLoopCount_assemble D c h side q r, localLoopValue]
   simp only [overPair_outside D c]
   ring
@@ -536,7 +536,7 @@ PD-code and all six acyclic strand height orders. -/
   simp only [Bool.false_eq_true, ↓reduceIte] at hs0 hs1
   rw [hs0, hs1]
   apply Finset.sum_congr rfl
-  intro r hr
+  intro r _
   congr 1
   have ho : (fun j ↦ (D.reidemeisterThree c).overPair (c j)) =
       ![D.overPair (c 2), D.overPair (c 1), D.overPair (c 0)] := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
@@ -366,15 +366,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_s
       (LinearMap.range g.hom).mkQ_surjective (by simp)
   have : Module.FinitePresentation R (cokernel g : ModuleCat R) :=
     Module.FinitePresentation.of_equiv (ModuleCat.cokernelIsoRangeQuotient g).symm.toLinearEquiv
-  let eM := @asIso _ _ _ _ (M.fromTildeΓ)
-    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
-  let eN := @asIso _ _ _ _ (N.fromTildeΓ)
-    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
-  let e : tilde (cokernel g) ≅ cokernel f :=
-    PreservesCokernel.iso (tilde.functor R) g ≪≫
-      cokernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
-  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
-    (isFinitePresentation_tilde (cokernel g))
+  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso
+    (tildeCokernelIso f) (isFinitePresentation_tilde (cokernel g))
 
 /-- Over a Noetherian ring, the ambient kernel of a morphism from a quasicoherent sheaf
 of finite type to a quasicoherent sheaf is finitely presented. -/

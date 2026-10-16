@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.PL.Map
-public import TauCeti.Analysis.Convex.Polyhedron.Pi
+public import TauCeti.Analysis.Convex.Polyhedron.Pi.Neighborhood
 import Mathlib.Topology.Compactness.Compact
 
 /-!
 # Finite PL decompositions on compact sets
 
-A PL map on a compact subset of a finite real coordinate space admits a finite
+A PL map on a compact subset of a real coordinate product admits a finite
 piecewise-affine decomposition. Compactness thus lets one use finitely many
 affine pieces to describe a map given by local PL data.
 
@@ -29,38 +29,37 @@ open Set Filter Topology Metric
 
 namespace TauCeti
 
-variable {ι : Type*} [Finite ι]
+variable {ι : Type*}
   {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
   {s : Set (ι → ℝ)} {f : (ι → ℝ) → F}
 
-/-- A PL map on a compact subset of a finite real coordinate space admits a finite
+/-- A PL map on a compact subset of a real coordinate product admits a finite
 piecewise-affine decomposition on that set. -/
 theorem IsPLOn.isPiecewiseAffineOn_of_isCompact (hf : IsPLOn f s) (hs : IsCompact s) :
     IsPiecewiseAffineOn f s := by
   classical
-  let _ := Fintype.ofFinite ι
-  have hlocal (x : s) : ∃ (r : ℝ), 0 < r ∧ IsPiecewiseAffineOn f (s ∩ closedBall x.1 r) := by
+  have hlocal (x : s) : ∃ C ∈ 𝓝 x.1, IsConvexPolyhedron C ∧
+      IsPiecewiseAffineOn f (s ∩ C) := by
     obtain ⟨V, hV, hpiece⟩ := isPLOn_iff.mp hf x.1 x.2
     obtain ⟨U, hU, hUV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hV
-    obtain ⟨r, hr, hball⟩ := nhds_basis_closedBall.mem_iff.mp hU
-    exact ⟨r, hr, hpiece.mono (fun y hy => hUV ⟨hball hy.2, hy.1⟩)⟩
-  choose r hr hpiece using hlocal
-  -- Restrict the cells to polyhedral closed balls before taking a finite subcover,
-  -- ensuring that each selected formula remains valid wherever its cell meets the base.
+    obtain ⟨C, hC, hpoly, hCU⟩ := exists_isConvexPolyhedron_mem_nhds_pi hU
+    exact ⟨C, hC, hpoly, hpiece.mono (fun y hy => hUV ⟨hCU hy.2, hy.1⟩)⟩
+  choose C hC hpoly hpiece using hlocal
+  -- Cutting each local decomposition by a polyhedral neighbourhood keeps its affine
+  -- formulas valid on the whole selected cell, including overlaps in the finite subcover.
   obtain ⟨t, ht⟩ := hs.elim_nhdsWithin_subcover'
-    (fun x _ => closedBall x (r ⟨x, ‹x ∈ s›⟩))
-    (fun x hx => nhdsWithin_le_nhds (closedBall_mem_nhds x (hr ⟨x, hx⟩)))
-  choose n C A hC hcover heq using
+    (fun x hx => C ⟨x, hx⟩) (fun x hx => nhdsWithin_le_nhds (hC ⟨x, hx⟩))
+  choose n D A hD hcover heq using
     fun x : t => isPiecewiseAffineOn_iff.mp (hpiece x.1)
   refine isPiecewiseAffineOn_of_finite (ι := Σ x : t, Fin (n x))
-    (C := fun p => C p.1 p.2 ∩ closedBall p.1.1.1 (r p.1.1))
+    (C := fun p => D p.1 p.2 ∩ C p.1.1)
     (A := fun p => A p.1 p.2)
-    (fun p => (hC p.1 p.2).inter (isConvexPolyhedron_closedBall_pi _ (hr _).le)) ?_ ?_
+    (fun p => (hD p.1 p.2).inter (hpoly p.1.1)) ?_ ?_
   · intro y hy
     obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.mp (ht hy)
     obtain ⟨j, hj⟩ := mem_iUnion.mp (hcover ⟨x, hx⟩ ⟨hy, hxy⟩)
     exact mem_iUnion.mpr ⟨⟨⟨x, hx⟩, j⟩, hj, hxy⟩
-  · rintro ⟨x, j⟩ y ⟨hy, hyC, hyball⟩
-    exact heq x j ⟨⟨hy, hyball⟩, hyC⟩
+  · rintro ⟨x, j⟩ y ⟨hy, hyC, hyCneigh⟩
+    exact heq x j ⟨⟨hy, hyCneigh⟩, hyC⟩
 
 end TauCeti

@@ -25,10 +25,9 @@ component at `M` is the usual point action on `A ⊗[R] M`. These automorphisms 
 homomorphism, which restricts by precomposition to the finite-comodule functor.
 
 This is the base change of the neutral underlying-module functor, without a faithfulness claim:
-scalar extension along an arbitrary `R → A` need not be faithful. Equipping this functor and
-these natural automorphisms with their tensor compatibilities is a separate step; together, the
-constructions supply categorical infrastructure for Tannakian reconstruction in Layer 1 of the
-reductive-groups roadmap.
+scalar extension along an arbitrary `R → A` need not be faithful. Equipping this functor and these
+natural automorphisms with their tensor compatibilities is not done here. Together, these
+constructions supply categorical infrastructure for Tannakian reconstruction.
 
 ## Main declarations
 
@@ -121,9 +120,10 @@ theorem pointNatIso_inv_app (g : WithConv (H →ₐ[R] A))
 /-- Algebra-valued points act on the scalar-extension functor by natural automorphisms. -/
 noncomputable def pointNatIsoHom :
     WithConv (H →ₐ[R] A) →* Aut (ComoduleCat.scalarExtensionFunctor R H A) where
-  toFun := pointNatIso R H A
+  toFun g := .of (pointNatIso R H A g)
   map_one' := by
     apply Aut.ext
+    apply Iso.ext
     apply NatTrans.ext
     funext M
     -- Extensionality exposes a component of `Aut`; reduction identifies that component
@@ -133,6 +133,7 @@ noncomputable def pointNatIsoHom :
     simp
   map_mul' g h := by
     apply Aut.ext
+    apply Iso.ext
     apply NatTrans.ext
     funext M
     -- Multiplication in `Aut` is reverse isomorphism composition, so reducing the bundled
@@ -153,7 +154,7 @@ noncomputable def pointNatIsoHom :
 /-- Evaluating the points action homomorphism gives the corresponding natural automorphism. -/
 @[simp]
 theorem pointNatIsoHom_apply (g : WithConv (H →ₐ[R] A)) :
-    pointNatIsoHom R H A g = pointNatIso R H A g :=
+    (pointNatIsoHom R H A g).asIso = pointNatIso R H A g :=
   (rfl)
 
 /-- Restricting the point action to finitely generated comodules gives automorphisms of the
@@ -172,16 +173,16 @@ private theorem fgPointNatIsoHom_apply (g : WithConv (H →ₐ[R] A)) :
     fgPointNatIsoHom R H A g =
       (Aut.autMulEquivOfIso
         (eqToIso (FGComoduleCat.scalarExtensionFunctor_def R H A)).symm)
-          ((((Functor.whiskeringLeft _ _ _).obj
+          (.of (((Functor.whiskeringLeft _ _ _).obj
             (FGComoduleCat.incl (R := R) (C := H))).mapIso
-              (pointNatIsoHom R H A g))) :=
+              (pointNatIsoHom R H A g).asIso)) :=
   (rfl)
 
 /-- The component of the finite-comodule point automorphism is the transported point action. -/
 @[simp]
 theorem fgPointNatIsoHom_hom_app (g : WithConv (H →ₐ[R] A))
     (M : FGComoduleCat.{u, v, w} R H) :
-    (fgPointNatIsoHom R H A g).hom.app M =
+    (fgPointNatIsoHom R H A g).asIso.hom.app M =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj R H A M) ≫
         (Comodule.pointsAction M g).toModuleIsoₛ.hom ≫
           eqToHom (FGComoduleCat.scalarExtensionFunctor_obj R H A M).symm := by
@@ -201,7 +202,7 @@ point action. -/
 @[simp]
 theorem fgPointNatIsoHom_inv_app (g : WithConv (H →ₐ[R] A))
     (M : FGComoduleCat.{u, v, w} R H) :
-    (fgPointNatIsoHom R H A g).inv.app M =
+    (fgPointNatIsoHom R H A g).asIso.inv.app M =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj R H A M) ≫
         (Comodule.pointsAction M g).toModuleIsoₛ.inv ≫
           eqToHom (FGComoduleCat.scalarExtensionFunctor_obj R H A M).symm := by

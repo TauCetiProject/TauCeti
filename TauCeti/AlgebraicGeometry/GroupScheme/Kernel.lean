@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Limits
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
@@ -16,7 +19,8 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
 This file constructs the scheme-theoretic kernel of an arbitrary homomorphism of group schemes
 over an arbitrary base. It is the categorical kernel in `Grp (Over S)`, equivalently the fibre of
 the homomorphism over the identity section. No affineness, finiteness, or flatness hypothesis is
-imposed.
+imposed. Its points with values in any `Z` over the base are the points of the source killed by the
+homomorphism, as a group, and it is commutative when the source is.
 
 Formation of this kernel commutes with arbitrary base change. Categorically, this follows because
 pullback of schemes over a base preserves limits, limits of group objects are created by the
@@ -29,6 +33,16 @@ recorded explicitly for downstream use.
 * `TauCeti.GroupScheme.isPullback_kernel`: a group-scheme kernel is the fibre over the identity.
 * `TauCeti.GroupScheme.isPullback_kernel_scheme`: the corresponding square of underlying schemes
   is a pullback.
+* `TauCeti.GroupScheme.kernelPointsMulEquiv`: the points of a kernel with values in `Z` are the
+  kernel of the induced homomorphism on points with values in `Z`.
+* `TauCeti.GroupScheme.isPullback_kernel_left`: on underlying schemes, the kernel with its
+  structure morphism is the fibre over the identity section.
+* `TauCeti.GroupScheme.isFinite_kernel_hom`, `TauCeti.GroupScheme.flat_kernel_hom` and
+  `TauCeti.GroupScheme.locallyOfFinitePresentation_kernel_hom`: the kernel of a finite, flat, or
+  locally finitely presented homomorphism is finite, flat, or locally of finite presentation over
+  the base.
+* `TauCeti.GroupScheme.isCommMonObj_kernel`: the kernel of a homomorphism out of a commutative
+  group scheme is commutative.
 * `TauCeti.GroupScheme.kernelBaseChangeIso`: the canonical isomorphism from the base change of a
   kernel to the kernel of the base-changed homomorphism.
 * `TauCeti.GroupScheme.kernelMap_comp_kernelBaseChangeIso_inv`: naturality of the comparison
@@ -129,6 +143,103 @@ theorem isPullback_kernel_scheme {S : Scheme.{u}} {G H : Grp (Over S)} (f : G �
       (0 : kernel f ⟶ Grp.trivial (Over S)).hom.hom.left f.hom.hom.left
       (0 : Grp.trivial (Over S) ⟶ H).hom.hom.left := by
   exact ((isPullback_kernel f).map (Grp.forget _)).map (Over.forget _)
+
+/-! ### Points of a kernel -/
+
+section Points
+
+open MonObj
+
+variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H)
+
+/-- A homomorphism of group schemes kills its kernel: the composite of the kernel inclusion and
+the homomorphism is the unit point. -/
+@[reassoc]
+theorem kernel_ι_comp_hom : (kernel.ι f).hom.hom ≫ f.hom.hom = 1 :=
+  congrArg (fun g ↦ g.hom.hom) (kernel.condition f)
+
+/-- The categorical kernel of a homomorphism of group schemes, as a square of `Over S`: it is the
+fibre of the homomorphism over the unit section. -/
+theorem isPullback_kernel_hom :
+    IsPullback (kernel.ι f).hom.hom (CartesianMonoidalCategory.toUnit _) f.hom.hom η[H.X] :=
+  (isPullback_kernel f).map (Grp.forget _)
+
+/-- The inclusion of the kernel of a homomorphism of group schemes is a monomorphism of
+`Over S`. -/
+instance mono_kernel_ι_hom : Mono (kernel.ι f).hom.hom :=
+  inferInstanceAs (Mono ((Grp.forget _).map (kernel.ι f)))
+
+/-- On underlying schemes, the kernel of a homomorphism of group schemes, with its structure
+morphism to the base, is the fibre of the homomorphism over the identity section. -/
+theorem isPullback_kernel_left :
+    IsPullback (kernel.ι f).hom.hom.left (kernel f).X.hom f.hom.hom.left η[H.X].left :=
+  (isPullback_kernel_hom f).map (Over.forget S)
+
+/-- The kernel of a finite homomorphism of group schemes is finite over the base. -/
+instance isFinite_kernel_hom [IsFinite f.hom.hom.left] : IsFinite (kernel f).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_kernel_left f) ‹_›
+
+/-- The kernel of a flat homomorphism of group schemes is flat over the base. -/
+instance flat_kernel_hom [Flat f.hom.hom.left] : Flat (kernel f).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_kernel_left f) ‹_›
+
+/-- The kernel of a homomorphism of group schemes locally of finite presentation is locally of
+finite presentation over the base. -/
+instance locallyOfFinitePresentation_kernel_hom [LocallyOfFinitePresentation f.hom.hom.left] :
+    LocallyOfFinitePresentation (kernel f).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_kernel_left f) ‹_›
+
+variable {f} {Z : Over S}
+
+/-- The point of the kernel of `f` given by a point `x` of `G` with values in `Z` which is killed
+by `f`. -/
+noncomputable def kernelLift (x : Z ⟶ G.X) (hx : x ≫ f.hom.hom = 1) : Z ⟶ (kernel f).X :=
+  (isPullback_kernel_hom f).lift x (CartesianMonoidalCategory.toUnit Z) (by rw [hx, Hom.one_def])
+
+/-- The point `kernelLift x hx` of the kernel maps to `x` in `G`. -/
+@[reassoc (attr := simp)]
+theorem kernelLift_ι (x : Z ⟶ G.X) (hx : x ≫ f.hom.hom = 1) :
+    kernelLift x hx ≫ (kernel.ι f).hom.hom = x :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- Two points of the kernel of `f` agree if their images in `G` do. -/
+theorem kernel_hom_ext {y y' : Z ⟶ (kernel f).X}
+    (h : y ≫ (kernel.ι f).hom.hom = y' ≫ (kernel.ι f).hom.hom) : y = y' :=
+  (cancel_mono _).1 h
+
+variable (f Z)
+
+/-- **The points of a kernel.** The points of the kernel of a homomorphism `f : G ⟶ H` of group
+schemes with values in `Z` form the kernel of the induced homomorphism from the points of `G` to
+the points of `H` with values in `Z`. -/
+noncomputable def kernelPointsMulEquiv :
+    (Z ⟶ (kernel f).X) ≃* (IsMonHom.monoidHom f.hom.hom Z).ker where
+  toFun y := ⟨y ≫ (kernel.ι f).hom.hom, by simp [kernel_ι_comp_hom]⟩
+  invFun x := kernelLift x.1 (MonoidHom.mem_ker.1 x.2 :)
+  left_inv y := kernel_hom_ext (kernelLift_ι _ _)
+  right_inv x := Subtype.ext (kernelLift_ι _ _)
+  map_mul' y y' := Subtype.ext (MonObj.mul_comp _ _ _)
+
+/-- A point of the kernel corresponds to its image in `G`. -/
+@[simp]
+theorem coe_kernelPointsMulEquiv_apply (y : Z ⟶ (kernel f).X) :
+    (kernelPointsMulEquiv f Z y : Z ⟶ G.X) = y ≫ (kernel.ι f).hom.hom :=
+  (rfl)
+
+/-- The point of the kernel corresponding to a point `x` of `G` killed by `f` maps to `x` in
+`G`. -/
+@[simp]
+theorem kernelPointsMulEquiv_symm_apply_ι (x : (IsMonHom.monoidHom f.hom.hom Z).ker) :
+    (kernelPointsMulEquiv f Z).symm x ≫ (kernel.ι f).hom.hom = x :=
+  kernelLift_ι x.1 (MonoidHom.mem_ker.1 x.2 :)
+
+/-- **The kernel of a homomorphism out of a commutative group scheme is commutative**: its group
+law is the restriction of that of the source. -/
+instance isCommMonObj_kernel [IsCommMonObj G.X] : IsCommMonObj (kernel f).X :=
+  (isCommMonObj_iff_isMulCommutative _).2 fun _ ↦ ⟨⟨fun y y' ↦ kernel_hom_ext (by
+    simp only [MonObj.mul_comp, mul_comm])⟩⟩
+
+end Points
 
 /-- The underlying-scheme isomorphism from the base change of a scheme-theoretic kernel to the
 kernel of the base-changed homomorphism. -/

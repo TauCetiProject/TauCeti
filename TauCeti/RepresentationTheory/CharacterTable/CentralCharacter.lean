@@ -59,8 +59,6 @@ dot notation on a representation does not reach them: they are applied as `centr
 
 ## References
 
-This implements the "central characters, integrally" item of Layer 4 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 3, or J.-P. Serre, *Linear
 Representations of Finite Groups*, Section 6.5.
 -/
@@ -87,7 +85,7 @@ variable [IsAlgClosed k] [FiniteDimensional k V] [ρ.IsIrreducible]
 the scalar by which each central element of the group algebra acts.
 
 An irreducible representation is a simple `k[G]`-module, so this is `TauCeti.centralCharacter` for
-the algebra `k[G]`; the roadmap writes it `ωᵪ`. -/
+the algebra `k[G]`, often written `ωᵪ`. -/
 noncomputable def centralCharacter : Subalgebra.center k k[G] →ₐ[k] k :=
   TauCeti.centralCharacter k k[G] ρ.asModule
 
@@ -159,9 +157,8 @@ variable [Fintype G] [DecidableEq G]
 character on the class sum of `C`, times the degree `χ(1)`, is the size of `C` times the character
 value on `C`.
 
-This is the identity `ωᵪ(K_C) = |C| · χ(g) / χ(1)` of the roadmap, stated so that no invertibility
-of the degree is needed; see `TauCeti.Representation.centralCharacter_classSumCenter` for the
-quotient form. -/
+This is the identity `ωᵪ(K_C) = |C| · χ(g) / χ(1)`, stated so that no invertibility of the degree is
+needed; see `TauCeti.Representation.centralCharacter_classSumCenter` for the quotient form. -/
 theorem centralCharacter_classSumCenter_mul_character_one {C : ConjClasses G} {g : G}
     (hg : ConjClasses.mk g = C) :
     centralCharacter ρ (classSumCenter C) * ρ.character 1 =

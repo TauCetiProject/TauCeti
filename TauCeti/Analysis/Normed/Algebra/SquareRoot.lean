@@ -39,6 +39,8 @@ near `1` in a bare Banach algebra, with smooth dependence on the element.
   value really is a square root.
 * `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
   the uniqueness statement: an element close to `1` is recovered from its square.
+* `TauCeti.eventually_sqrtNearOne_fixed`: a continuous map fixing `1` and reversing products
+  fixes the square root of every fixed element sufficiently close to `1`.
 
 ## References
 
@@ -132,5 +134,19 @@ theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
 /-- The square root near the identity is continuous at the identity. -/
 theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
   contDiffAt_sqrtNearOne.continuousAt
+
+/-- A map continuous at `1`, fixing `1`, and reversing products fixes the square root near
+the identity of every fixed element sufficiently close to `1`. -/
+theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
+    (h1 : adj 1 = 1) (hmul : ∀ x y, adj (x * y) = adj y * adj x) :
+    ∀ᶠ a in 𝓝 (1 : A), adj a = a → adj (sqrtNearOne A a) = sqrtNearOne A a := by
+  have hroot : Tendsto (sqrtNearOne A) (𝓝 1) (𝓝 1) := by
+    simpa only [sqrtNearOne_one] using (continuousAt_sqrtNearOne (A := A)).tendsto
+  have hadj : Tendsto (fun a ↦ adj (sqrtNearOne A a)) (𝓝 1) (𝓝 1) := by
+    simpa only [Function.comp_def, h1] using hc.tendsto.comp hroot
+  filter_upwards [eventually_mul_self_sqrtNearOne,
+    hadj.eventually eventually_sqrtNearOne_mul_self] with a hs hu ha
+  rw [← hmul, hs, ha] at hu
+  exact hu.symm
 
 end TauCeti

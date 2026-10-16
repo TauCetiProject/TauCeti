@@ -51,6 +51,7 @@ The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coeffici
 exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
 the last variable is kept.
+
 -/
 
 public section
@@ -186,6 +187,43 @@ theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y :
     polynomial_eval_map_finSuccEquiv' φ 0 s y f
 
 end Map
+
+/-- Moving the polynomial variable into the coefficient ring maps a constant multivariate
+polynomial by the univariate constant-coefficient homomorphism. -/
+theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial σ R) :
+    ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) (Polynomial.C g) =
+      map Polynomial.C g := by
+  rw [AlgEquiv.trans_apply]
+  induction g using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, optionEquivLeft_symm_C_X,
+      optionEquivRight_X_some, hp, map_X]
+
+/-- Moving the univariate variable into the coefficient ring commutes with specializing the
+multivariate variables, while retaining the univariate variable as a polynomial variable. -/
+theorem eval₂Hom_optionEquivRight_optionEquivLeft_symm {σ S : Type*} [CommSemiring S]
+    (f : R →+* S) (x : σ → S) (p : Polynomial (MvPolynomial σ R)) :
+    eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)
+        (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) p) =
+      p.map (eval₂Hom f x) := by
+  have hC (g : MvPolynomial σ R) :
+      eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)
+          (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) (Polynomial.C g)) =
+        Polynomial.C (eval₂Hom f x g) := by
+    rw [optionEquivRight_optionEquivLeft_symm_C, eval₂Hom_map_hom,
+      Polynomial.mapRingHom_comp_C]
+    exact (map_eval₂Hom f x Polynomial.C g).symm
+  have h : (eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)).comp
+      ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) =
+        Polynomial.mapRingHom (eval₂Hom f x) := by
+    apply Polynomial.ringHom_ext
+    · intro g
+      simpa only [RingHom.comp_apply, RingHom.coe_coe, Polynomial.coe_mapRingHom,
+        Polynomial.map_C] using hC g
+    · simp
+  exact RingHom.congr_fun h p
 
 section Last
 

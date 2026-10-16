@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.EqLocus
+public import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
@@ -32,6 +33,8 @@ is proved in `TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Fixed`.
 * `TauCeti.Comodule.Hom.fixedMap`: the induced linear map on invariant vectors.
 * `TauCeti.Comodule.Hom.mem_fixedSubcomodule_iff_of_injective`: reflection of invariance along
   injective comodule morphisms over a flat coalgebra.
+* `TauCeti.Comodule.decompose_mem_fixedSubcomodule`: for a decomposition into pieces preserved by
+  the coaction, the components of an invariant vector are invariant.
 
 ## References
 
@@ -128,6 +131,41 @@ theorem fixedMap_injective (f : Hom R C M N) (hf : Function.Injective f) :
   exact hf (congrArg Subtype.val h)
 
 end Hom
+
+/-- If a comodule is decomposed into submodules each of which the coaction maps into its tensor
+product with `C`, then every homogeneous component of an invariant vector is invariant. For the
+symmetric algebra of a comodule with its polynomial grading, the homogeneous components of an
+invariant polynomial are invariant. -/
+theorem decompose_mem_fixedSubcomodule {ι : Type*} [DecidableEq ι] (𝒜 : ι → Submodule R M)
+    [DirectSum.Decomposition 𝒜]
+    (h𝒜 : ∀ i, ∀ x ∈ 𝒜 i, coact (R := R) (C := C) x ∈ DirectSum.decomposeTensor 𝒜 C i)
+    {x : M} (hx : x ∈ fixedSubcomodule R C M) (i : ι) :
+    (DirectSum.decompose 𝒜 x i : M) ∈ fixedSubcomodule R C M := by
+  -- The projection onto the `i`-th component commutes with the coaction.
+  let p : M →ₗ[R] M := (𝒜 i).subtype ∘ₗ DirectSum.component R ι (fun j ↦ 𝒜 j) i ∘ₗ
+    (DirectSum.decomposeLinearEquiv 𝒜).toLinearMap
+  have hp (y : M) : p y = DirectSum.decompose 𝒜 y i := (rfl)
+  have hcomm (y : M) : coact (R := R) (C := C) (p y) = p.rTensor C (coact y) := by
+    induction y using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | add y y' hy hy' => simp only [map_add, hy, hy']
+    | @homogeneous j y =>
+      obtain ⟨z, hz⟩ := DirectSum.decomposeTensor_apply (ℳ := 𝒜) (N := C) ▸ h𝒜 j y y.2
+      rw [← hz, ← LinearMap.rTensor_comp_apply]
+      by_cases hji : j = i
+      · subst hji
+        have hpj : p ∘ₗ (𝒜 j).subtype = (𝒜 j).subtype :=
+          LinearMap.ext fun y ↦ by
+            rw [LinearMap.comp_apply, Submodule.subtype_apply, hp,
+              DirectSum.decompose_of_mem_same 𝒜 y.2]
+        rw [hpj, hz, hp, DirectSum.decompose_of_mem_same 𝒜 y.2]
+      · have hpj : p ∘ₗ (𝒜 j).subtype = 0 :=
+          LinearMap.ext fun y ↦ by
+            rw [LinearMap.comp_apply, Submodule.subtype_apply, hp,
+              DirectSum.decompose_of_mem_ne 𝒜 y.2 hji, LinearMap.zero_apply]
+        rw [hpj, LinearMap.rTensor_zero, LinearMap.zero_apply, hp,
+          DirectSum.decompose_of_mem_ne 𝒜 y.2 hji, map_zero]
+  rw [mem_fixedSubcomodule, ← hp, hcomm, mem_fixedSubcomodule.1 hx, LinearMap.rTensor_tmul]
 
 end TauCeti.Comodule
 
