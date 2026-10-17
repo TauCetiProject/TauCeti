@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.RowCoding
+public import TauCeti.Probability.Exchangeability.Arrays.Coding
+public import TauCeti.Probability.Process.Array.RowCoding
 
 /-!
 # The canonical row-coding law of a separately exchangeable array
