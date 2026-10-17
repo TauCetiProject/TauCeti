@@ -67,7 +67,9 @@ theorem exists_roth_hasseDeriv {P : MvPolynomial σ ℤ} {r : σ → ℕ}
       (∀ i, (hasseDeriv d P).degreeOf i ≤ r i) ∧
       ∀ μ, |((hasseDeriv d P).coeff μ : ℝ)| ≤ Real.exp (4 * C₁ * D / L) := by
   obtain ⟨d, hd, hind, hdeg', hcoeff⟩ :=
-    exists_hasseDeriv_eval_ne_zero hdeg hP a (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hb)
+    exists_hasseDeriv_eval_ne_zero hdeg (AbsoluteValue.abs.comp (f := Int.castRingHom ℝ)
+      Int.cast_injective) hP (Int.castRingHom F) a (Int.castRingHom K)
+      (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hb)
   refine ⟨d, hd, le_trans ?_ (le_trans (tsub_le_tsub ha hb) hind), hdeg', fun μ ↦ ?_⟩
   · rw [← ENNReal.ofReal_sub _ (by positivity)]
     exact le_of_eq (congrArg ENNReal.ofReal (by ring))

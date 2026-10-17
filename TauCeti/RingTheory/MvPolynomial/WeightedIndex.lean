@@ -44,8 +44,8 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 * `MvPolynomial.weightedIndex_rename`: renaming along an injective map preserves the index.
 * `MvPolynomial.weightedIndex_toMvPolynomial`: a univariate polynomial placed in the
   coordinate `i` has index `rootMultiplicity / r i`.
-* `MvPolynomial.exists_hasseDeriv_eval_ne_zero`: if an integer polynomial `P` has finite index
-  at `b`, some Hasse derivative `Q = ∂^d P` satisfies `Q(b) ≠ 0` and
+* `MvPolynomial.exists_hasseDeriv_eval_ne_zero`: if a polynomial `P` has finite index at `b`,
+  some Hasse derivative `Q = ∂^d P` satisfies `Q(b) ≠ 0` and
   `Ind_a(P) - Ind_b(P) ≤ Ind_a(Q)` at every other point `a`, and has the same partial degree
   bounds and coefficients at most `2 ^ ∑ᵢ rᵢ` times as large.
 
@@ -53,7 +53,7 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 * L. Pottmeyer, [*Diophantine Approximation*](https://esaga.uni-due.de/f/lukas.pottmeyer/DioApp.pdf)
   (2022), §2.6, Definition 2.6.2, Example 2.6.3 and Exercise 2.19; §3.4, Lemma 3.4.3 and
-  §§3.4.6–3.4.7.
+  §§3.4.6–3.4.7; §3.5, Lemma 3.5.7.
 -/
 
 public section
@@ -466,24 +466,26 @@ theorem weightedIndex_le_sum_degreeOf [Fintype σ] (r : σ → ℕ) (a : σ → 
 
 end Ring
 
-section Int
+section AbsoluteValue
 
-variable {F K : Type*} [Fintype σ] [CommRing F] [CommRing K]
+variable {F K S : Type*} [Fintype σ] [CommRing R] [CommRing F] [CommRing K] [Semiring S]
+  [PartialOrder S] [IsOrderedRing S] [IsDomain S]
 
-/-- **Choice of a nonvanishing Hasse derivative.** Let `P` be an integer polynomial with partial
-degrees `degreeOf i P ≤ r i` and coefficients of absolute value at most `B`. If the index of `P`
-at a point `b` is finite, then some Hasse derivative `Q = ∂^d P` does not vanish at `b`, loses at
-most the index of `P` at `b` from its index at every other point `a`, still has partial degrees at
-most `r i`, and has coefficients of absolute value at most `2 ^ ∑ᵢ rᵢ * B`. -/
-theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ ℤ} {r : σ → ℕ}
-    (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : ℝ} (hB : ∀ μ, |(P.coeff μ : ℝ)| ≤ B) (a : σ → F)
-    {b : σ → K} (hb : weightedIndex r b (P.map (Int.castRingHom K)) ≠ ⊤) :
-    ∃ d : σ →₀ ℕ, eval b ((hasseDeriv d P).map (Int.castRingHom K)) ≠ 0 ∧
-      weightedIndex r a (P.map (Int.castRingHom F)) -
-          weightedIndex r b (P.map (Int.castRingHom K)) ≤
-        weightedIndex r a ((hasseDeriv d P).map (Int.castRingHom F)) ∧
+/-- **Choice of a nonvanishing Hasse derivative** (the proof of Pottmeyer, Lemma 3.5.7). Let `P`
+be a polynomial with partial degrees `degreeOf i P ≤ r i` and coefficients of absolute value at
+most `B`. If the index of the image of `P` under `g` at a point `b` is finite, then some Hasse
+derivative `Q = ∂^d P` does not vanish at `b` after applying `g`, loses at most the index at `b`
+from its index at every point `a` after applying `f`, still has partial degrees at most `r i`,
+and has coefficients of absolute value at most `2 ^ ∑ᵢ rᵢ * B`. -/
+theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ R} {r : σ → ℕ}
+    (hdeg : ∀ i, P.degreeOf i ≤ r i) (abv : AbsoluteValue R S) {B : S}
+    (hB : ∀ μ, abv (P.coeff μ) ≤ B) (f : R →+* F) (a : σ → F) (g : R →+* K) {b : σ → K}
+    (hb : weightedIndex r b (P.map g) ≠ ⊤) :
+    ∃ d : σ →₀ ℕ, eval b ((hasseDeriv d P).map g) ≠ 0 ∧
+      weightedIndex r a (P.map f) - weightedIndex r b (P.map g) ≤
+        weightedIndex r a ((hasseDeriv d P).map f) ∧
       (∀ i, (hasseDeriv d P).degreeOf i ≤ r i) ∧
-      ∀ μ, |((hasseDeriv d P).coeff μ : ℝ)| ≤ 2 ^ (∑ i, r i) * B := by
+      ∀ μ, abv ((hasseDeriv d P).coeff μ) ≤ 2 ^ (∑ i, r i) * B := by
   -- A jet of minimal weight at `b` is nonzero, and its weight is the index at `b`.
   obtain ⟨d, hd, hbd⟩ := exists_weightedIndex_eq_weight (r := r)
     (mt (weightedIndex_eq_top_of_taylor_eq_zero r) hb)
@@ -494,20 +496,14 @@ theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ ℤ} {r : σ → ℕ
     exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _
   -- `|[X^μ] ∂^d P| ≤ 2 ^ |μ + d| |[X^(μ + d)] P|`, and `|μ + d| ≤ ∑ᵢ rᵢ` when
   -- `[X^(μ + d)] P ≠ 0`.
-  have hcoeff : |((hasseDeriv d P).coeff μ : ℝ)| ≤
-      2 ^ (μ + d).degree * |(P.coeff (μ + d) : ℝ)| := by
-    exact_mod_cast abv_coeff_hasseDeriv_le AbsoluteValue.abs d μ P
-  refine hcoeff.trans ?_
+  refine (abv_coeff_hasseDeriv_le abv d μ P).trans ?_
   by_cases hμ : P.coeff (μ + d) = 0
-  · simpa [hμ] using
-      mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abs_nonneg _).trans (hB 0))
-  gcongr
-  · exact one_le_two
-  · rw [Finsupp.degree_eq_sum]
-    exact Finset.sum_le_sum fun j _ ↦
-      (monomial_le_degreeOf j (mem_support_iff.2 hμ)).trans (hdeg j)
-  · exact hB _
+  · simpa [hμ] using mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abv.nonneg _).trans (hB 0))
+  refine mul_le_mul (pow_le_pow_right₀ one_le_two ?_) (hB _) (abv.nonneg _)
+    (pow_nonneg zero_le_two _)
+  rw [Finsupp.degree_eq_sum]
+  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hμ)).trans (hdeg j)
 
-end Int
+end AbsoluteValue
 
 end MvPolynomial
