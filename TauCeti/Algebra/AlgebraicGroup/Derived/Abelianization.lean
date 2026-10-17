@@ -53,15 +53,15 @@ theorem isCocomm_iff_kernelHopfIdeal_le_derivedDefiningIdeal
     Coalgebra.IsCocomm R Q ↔ kernelHopfIdeal f ≤ derivedDefiningIdeal H := by
   constructor
   · intro hQ
-    rw [kernelHopfIdeal_def,
-      ← (derivedDefiningIdeal_eq_augmentation_iff_isCocomm Q).mpr hQ]
-    exact derivedDefiningIdeal_map_le f.hom
+    let := hQ
+    exact f.kernelHopfIdeal_le_derivedDefiningIdeal
   · intro hker
     apply (derivedDefiningIdeal_eq_augmentation_iff_isCocomm Q).mp
     apply le_antisymm (HopfIdeal.le_augmentation R Q _)
     rw [le_derivedDefiningIdeal_iff]
     intro x hx
     rw [RingHom.mem_ker]
+    change TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := Q) x = 0
     have hmap : Function.Injective (Bialgebra.TensorProduct.map f.hom f.hom) := by
       exact TensorProduct.map_injective_of_flat_flat
         (f.hom : Q →ₗ[R] H) (f.hom : Q →ₗ[R] H) hf hf
@@ -69,13 +69,11 @@ theorem isCocomm_iff_kernelHopfIdeal_le_derivedDefiningIdeal
     have hx' : f.hom x ∈ derivedDefiningIdeal H :=
       hker (mem_kernelHopfIdeal_of_mem_augmentation f
         ((HopfIdeal.mem_augmentation R Q).mp (HopfIdeal.mem_toIdeal.mp hx)))
-    have hzero := RingHom.mem_ker.mp
-      (derivedDefiningIdeal_toIdeal_le_ker H
-        (HopfIdeal.mem_toIdeal.mpr hx'))
-    have hnatural := DFunLike.congr_fun (TauCeti.HopfAlgebra.map_comp_commutatorAlgHom f.hom) x
-    simpa only [AlgHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-      BialgHom.coe_toAlgHom, map_zero] using
-      hnatural.trans hzero
+    have hnatural : (Bialgebra.TensorProduct.map f.hom f.hom)
+        (TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := Q) x) =
+          TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) (f.hom x) :=
+      DFunLike.congr_fun (TauCeti.HopfAlgebra.map_comp_commutatorAlgHom f.hom) x
+    rw [hnatural, commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal H hx', map_zero]
 
 end CommHopfAlgCat.Hom
 
@@ -125,10 +123,7 @@ theorem Hom.existsUnique_comp_coinvariantsι_derivedDefiningIdeal
     [Coalgebra.IsCocomm R K] (f : K ⟶ H) :
     ∃! g : K ⟶ coinvariants (isNormal_derivedDefiningIdeal H),
       g ≫ coinvariantsι (isNormal_derivedDefiningIdeal H) = f := by
-  have hf : kernelHopfIdeal f ≤ derivedDefiningIdeal H := by
-    rw [kernelHopfIdeal_def,
-      ← (derivedDefiningIdeal_eq_augmentation_iff_isCocomm K).mpr inferInstance]
-    exact derivedDefiningIdeal_map_le f.hom
+  have hf := f.kernelHopfIdeal_le_derivedDefiningIdeal
   exact ⟨liftCoinvariants (isNormal_derivedDefiningIdeal H) f hf,
     liftCoinvariants_comp_coinvariantsι _ f hf,
     fun g hg ↦ liftCoinvariants_unique _ f hf g hg⟩

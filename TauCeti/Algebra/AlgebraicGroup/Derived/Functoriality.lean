@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
@@ -29,6 +30,8 @@ subgroup schemes.
 
 * `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_map_le`: the derived defining ideals are
   functorial.
+* `CommHopfAlgCat.Hom.kernelHopfIdeal_le_derivedDefiningIdeal`: a morphism from a
+  cocommutative Hopf algebra has kernel contained in the derived defining ideal.
 * `TauCeti.CommHopfAlgCat.derivedMap`: the induced morphism on derived coordinate algebras.
 * `TauCeti.CommHopfAlgCat.derivedFunctor`: the derived coordinate algebra as an endofunctor.
 * `TauCeti.CommHopfAlgCat.derivedQuotientNatTrans`: the ambient quotient maps as a natural
@@ -196,3 +199,20 @@ theorem derivedQuotientNatTrans_app (H : _root_.CommHopfAlgCat.{v} R) :
 end CommHopfAlgCat
 
 end TauCeti
+
+namespace CommHopfAlgCat.Hom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+/-- A homomorphism to a commutative affine group kills the derived subgroup of its source.
+In coordinates, the scheme-theoretic kernel ideal of a morphism from a cocommutative Hopf
+algebra is contained in the derived defining ideal, without flatness or injectivity assumptions. -/
+theorem kernelHopfIdeal_le_derivedDefiningIdeal
+    {R : Type u} [CommRing R] {Q H : CommHopfAlgCat.{v} R}
+    [Coalgebra.IsCocomm R Q] (f : Q ⟶ H) :
+    kernelHopfIdeal f ≤ derivedDefiningIdeal H := by
+  rw [kernelHopfIdeal_def,
+    ← (derivedDefiningIdeal_eq_augmentation_iff_isCocomm Q).mpr inferInstance]
+  exact derivedDefiningIdeal_map_le f.hom
+
+end CommHopfAlgCat.Hom
