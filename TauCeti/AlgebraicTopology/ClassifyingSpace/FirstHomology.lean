@@ -39,11 +39,13 @@ a group in `Type`.
 ## Main results
 
 * `TauCeti.classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv`,
+  `TauCeti.classifyingSpaceFirstHomologyAddEquiv_loopClass`,
   `TauCeti.classifyingSpaceFirstHomologyAddEquiv_symm_ofMul_of`: the class of a loop representing
   `g` corresponds to the class of `g`.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquiv_homologyMap`: naturality in the group.
-* `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEquiv`: the
-  class of a loop representing `g` corresponds to the class of the `1`-chain `g`.
+* `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEquiv`,
+  `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_loopClass`: the class of a loop
+  representing `g` corresponds to the class of the `1`-chain `g`.
 
 ## References
 
@@ -86,6 +88,18 @@ theorem classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv
   rw [classifyingSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
   exact congrArg Additive.ofMul (abelianizationCongr_of _ γ)
 
+/-- The singular homology class of a loop `p` at the base point corresponds to the class of the
+group element `p` represents under `classifyingSpaceFundamentalGroupMulEquiv`. -/
+@[simp]
+theorem classifyingSpaceFirstHomologyAddEquiv_loopClass
+    (p : Path (classifyingSpaceBasepoint G) (classifyingSpaceBasepoint G)) :
+    classifyingSpaceFirstHomologyAddEquiv G
+        (H₁AddEquivHomology _ (loopClass (X := TopCat.of (classifyingSpace G)) p)) =
+      Additive.ofMul (Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p)))) := by
+  rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
+    classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv]
+
 /-- The class of `g` in `Gᵃᵇ` corresponds to the Hurewicz class of a loop representing `g`. -/
 theorem classifyingSpaceFirstHomologyAddEquiv_symm_ofMul_of (g : G) :
     (classifyingSpaceFirstHomologyAddEquiv G).symm (Additive.ofMul (Abelianization.of g)) =
@@ -108,8 +122,10 @@ theorem classifyingSpaceFirstHomologyAddEquiv_homologyMap {H : Type} [Group H] (
       (Abelianization.map φ).toAdditive (classifyingSpaceFirstHomologyAddEquiv G x) := by
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
     (classifyingSpaceBasepoint G)).surjective x
-  obtain ⟨γ, rfl⟩ : ∃ γ, Additive.ofMul (Abelianization.of γ) = a :=
-    QuotientGroup.mk'_surjective _ a.toMul
+  obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
+  -- `Abelianization G` is the quotient of `G` by its commutator subgroup and `Abelianization.of`
+  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Abelianization.of` itself.
+  obtain ⟨γ, rfl⟩ : ∃ γ, Abelianization.of γ = a := QuotientGroup.mk'_surjective _ a
   rw [homologyMap_hurewiczHomologyAddEquiv_mapOfEq _ φ.classifyingSpaceMap_basepoint,
     toMul_ofMul, Abelianization.map_of,
     classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv,
@@ -150,5 +166,19 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEq
   rw [classifyingSpaceFirstHomologyAddEquivGroupHomology, AddEquiv.trans_apply,
     classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv, AddEquiv.trans_apply]
   exact H1AddEquivOfIsTrivial_symm_tmul (A := Rep.trivial ℤ G ℤ) _ 1
+
+/-- The singular homology class of a loop `p` at the base point corresponds to the class in
+`H₁(G, ℤ)` of the `1`-cycle, with coefficient `1`, at the group element that `p` represents under
+`classifyingSpaceFundamentalGroupMulEquiv`. -/
+@[simp]
+theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_loopClass
+    (p : Path (classifyingSpaceBasepoint G) (classifyingSpaceBasepoint G)) :
+    classifyingSpaceFirstHomologyAddEquivGroupHomology G
+        (H₁AddEquivHomology _ (loopClass (X := TopCat.of (classifyingSpace G)) p)) =
+      H1π (Rep.trivial ℤ G ℤ) ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv
+        (Finsupp.single (classifyingSpaceFundamentalGroupMulEquiv G
+          (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p))) 1)) := by
+  rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
+    classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEquiv]
 
 end TauCeti
