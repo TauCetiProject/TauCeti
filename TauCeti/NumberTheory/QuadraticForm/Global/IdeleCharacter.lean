@@ -191,9 +191,7 @@ theorem ideleHilbertCharacter_unitEmbedding (a b : Kˣ) :
   rw [← Fintype.prod_subtype_mul_prod_subtype (fun w : InfinitePlace K ↦ w.IsReal),
     Fintype.prod_eq_one (fun w : {w : InfinitePlace K // ¬w.IsReal} ↦ _) fun w ↦
       hilbertSymbol_completion_eq_one_of_isComplex (not_isReal_iff_isComplex.mp w.2) _ _, mul_one]
-  refine Fintype.prod_congr _ _ fun w ↦ ?_
-  rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
-    units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap]
+  exact Fintype.prod_congr _ _ fun w ↦ hilbertSymbol_completion_eq_unitAtRealPlace w a b
 
 /-! ### Triviality and surjectivity -/
 
@@ -388,9 +386,7 @@ theorem exists_idele_hilbertSymbol_eq_ite (b : Kˣ) (S : Finset (HeightOneSpectr
   have hneg (w : {w : InfinitePlace K // w.IsReal}) (hw : w ∈ T) :
       hilbertSymbol (Units.map (algebraMap K w.1.Completion).toMonoidHom (-1))
         (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = -1 := by
-    rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
-      units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap,
-      hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
+    rw [hilbertSymbol_completion_eq_unitAtRealPlace, hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
     exact ⟨by simp, hT w hw⟩
   let xf : IdeleGroup (𝓞 K) K := ∏ v ∈ S, IdeleGroup.ofAdicCompletion (𝓞 K) K v (u v)
   let xr : IdeleGroup (𝓞 K) K := ∏ w ∈ T, IdeleGroup.ofCompletion (𝓞 K) K w.1

@@ -151,9 +151,7 @@ theorem exists_hilbertSymbol_eq_ite_of_index_dvd_two (hb : IsSquare (algebraMap 
       hx, hST.neg_one_pow]
   obtain ⟨a, haS, haT⟩ := exists_hilbertSymbol_eq_of_mem_sup_range_ideleNormMap hb hmem
   refine ⟨a, fun v ↦ (haS v).trans (hxS v), fun w ↦ ?_⟩
-  rw [← hxT w, ← haT w.1,
-    ← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
-    units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap]
+  rw [← hxT w, ← haT w.1, hilbertSymbol_completion_eq_unitAtRealPlace]
 
 end Kernel
 
@@ -206,7 +204,7 @@ theorem exists_hilbertSymbol_eq_ite_of_forall_index_le (b : Kˣ)
     le_antisymm (h K L 2 hfin)
       (hfin ▸ ClassFieldTheory.finrank_le_index_range_ideleClassNormMap K L)
   have hb : IsSquare (algebraMap K L b) := ⟨QuadraticAlgebra.omega, by
-    rw [QuadraticAlgebra.omega_mul_omega_eq_mk, QuadraticAlgebra.algebraMap_eq]; rfl⟩
+    rw [QuadraticAlgebra.omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero]⟩
   exact exists_hilbertSymbol_eq_ite_of_index_dvd_two hb hprod (hidx ▸ dvd_rfl) S T hS hT hST
 
 open scoped Classical in
