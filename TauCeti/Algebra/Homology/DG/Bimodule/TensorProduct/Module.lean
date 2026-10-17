@@ -159,30 +159,15 @@ theorem tensorBimoduleMap_zero_right (f : M ⟶ M') :
   simpa only [zero_smul] using tensorBimoduleMap_smul_right (0 : R) f (0 : N ⟶ N')
 
 /-- The ordinary balanced tensor product as a bifunctor from DG right modules and DG bimodules to
-DG right modules. -/
-abbrev tensorBimoduleFunctor :
+DG right modules: the composite of the scalar-left embedding, the DG bimodule tensor bifunctor,
+and forgetting the left scalar action. -/
+@[expose]
+def tensorBimoduleFunctor :
     CategoryTheory.Functor (DGRightModuleCat.{uR, uB, uM} hB)
       (CategoryTheory.Functor (DGBimoduleCat.{uR, uB, uC, uN} hB hC)
-        (DGRightModuleCat.{uR, uC, max uM uN} hC)) where
-  obj M :=
-    { obj := tensorBimoduleObj M
-      map := fun g ↦ tensorBimoduleMap (𝟙 M) g
-      map_id := fun N ↦ tensorBimoduleMap_id M N
-      map_comp := fun g g' ↦ by
-        simpa using tensorBimoduleMap_comp (𝟙 M) g (𝟙 M) g' }
-  map f :=
-    { app := fun N ↦ tensorBimoduleMap f (𝟙 N)
-      naturality := fun N N' g ↦ by
-        rw [← tensorBimoduleMap_comp, ← tensorBimoduleMap_comp]
-        simp }
-  map_id M := by
-    apply NatTrans.ext
-    funext N
-    exact tensorBimoduleMap_id M N
-  map_comp f f' := by
-    apply NatTrans.ext
-    funext N
-    simpa using tensorBimoduleMap_comp f (𝟙 N) f' (𝟙 N)
+        (DGRightModuleCat.{uR, uC, max uM uN} hC)) :=
+  toScalarBimoduleFunctor ⋙ DGBimoduleCat.tensorFunctor ⋙
+    (Functor.whiskeringRight _ _ _).obj DGBimoduleCat.forgetToRightModuleCat
 
 @[simp]
 theorem tensorBimoduleFunctor_obj_obj (M : DGRightModuleCat.{uR, uB, uM} hB)
@@ -191,7 +176,10 @@ theorem tensorBimoduleFunctor_obj_obj (M : DGRightModuleCat.{uR, uB, uM} hB)
 
 @[simp]
 theorem tensorBimoduleFunctor_obj_map (M : DGRightModuleCat.{uR, uB, uM} hB) (g : N ⟶ N') :
-    (tensorBimoduleFunctor.obj M).map g = tensorBimoduleMap (𝟙 M) g := (rfl)
+    (tensorBimoduleFunctor.obj M).map g = tensorBimoduleMap (𝟙 M) g := by
+  rw [tensorBimoduleMap, toScalarBimoduleMap_id]
+  -- The composite applies the forgetful functor, which acts on morphisms by `Subtype.val`.
+  rfl
 
 @[simp]
 theorem tensorBimoduleFunctor_map_app (f : M ⟶ M')
@@ -200,34 +188,31 @@ theorem tensorBimoduleFunctor_map_app (f : M ⟶ M')
 
 /-- For a fixed right DG module `M`, the partial functor `N ↦ M ⊗_B N` is additive. -/
 instance (M : DGRightModuleCat.{uR, uB, uM} hB) :
-    ((tensorBimoduleFunctor (hC := hC)).obj M).Additive where
-  map_add := by intros; unfold tensorBimoduleFunctor; exact tensorBimoduleMap_add_right _ _ _
+    ((tensorBimoduleFunctor.{uR, uB, uC, uM, uN} (hC := hC)).obj M).Additive :=
+  (inferInstance : ((DGBimoduleCat.tensorFunctor (hC := hC)).obj M.toScalarBimodule ⋙
+    DGBimoduleCat.forgetToRightModuleCat).Additive)
 
 /-- For a fixed right DG module `M`, the partial functor `N ↦ M ⊗_B N` is `R`-linear. -/
 instance (M : DGRightModuleCat.{uR, uB, uM} hB) :
-    ((tensorBimoduleFunctor (hC := hC)).obj M).Linear R where
-  map_smul := by intros; unfold tensorBimoduleFunctor; exact tensorBimoduleMap_smul_right _ _ _
+    ((tensorBimoduleFunctor.{uR, uB, uC, uM, uN} (hC := hC)).obj M).Linear R :=
+  (inferInstance : ((DGBimoduleCat.tensorFunctor (hC := hC)).obj M.toScalarBimodule ⋙
+    DGBimoduleCat.forgetToRightModuleCat).Linear R)
 
 /-- The tensor bifunctor is additive in the right-module variable: `M ↦ (N ↦ M ⊗_B N)` is an
-additive functor into the functor category. -/
+additive functor into the functor category. This is the composite of additive functors. -/
 instance : (tensorBimoduleFunctor.{uR, uB, uC, uM, uN}
-    (hB := hB) (hC := hC)).Additive where
-  map_add := by
-    intros
-    apply NatTrans.ext
-    funext N
-    unfold tensorBimoduleFunctor
-    exact tensorBimoduleMap_add_left _ _ _
+    (hB := hB) (hC := hC)).Additive :=
+  (inferInstance : (toScalarBimoduleFunctor ⋙ DGBimoduleCat.tensorFunctor ⋙
+    (Functor.whiskeringRight _ _ _).obj DGBimoduleCat.forgetToRightModuleCat).Additive)
 
 /-- The tensor bifunctor is `R`-linear in the right-module variable: `M ↦ (N ↦ M ⊗_B N)` is an
 `R`-linear functor into the functor category. -/
 instance : (tensorBimoduleFunctor.{uR, uB, uC, uM, uN}
     (hB := hB) (hC := hC)).Linear R where
-  map_smul := by
-    intros
+  -- Mathlib has no `Linear` instance for `whiskeringRight`, so check this componentwise.
+  map_smul _ _ := by
     apply NatTrans.ext
     funext N
-    unfold tensorBimoduleFunctor
     exact tensorBimoduleMap_smul_left _ _ _
 
 end TauCeti.DGRightModuleCat
