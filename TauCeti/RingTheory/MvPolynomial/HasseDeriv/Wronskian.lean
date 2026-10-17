@@ -40,8 +40,9 @@ in several variables at a point; admissibility controls their degrees.
 * `MvPolynomial.genWronskian_eq_zero_of_not_linearIndependent`: over an integral domain,
   dependent families have vanishing generalized Wronskians.
 * `MvPolynomial.det_hasseDeriv_sum_mul_toMvPolynomial`: for `P = ∑ₖ fₖ · gₖ(Xᵢ)` with the `fₖ`
-  free of `Xᵢ`, the determinant `det (∂^(D k + l eᵢ) P)` is the product of the generalized
-  Wronskian of the `fₖ` and the Hasse Wronskian of the `gₖ`.
+  free of `Xᵢ` and rows `D k` that do not differentiate in `Xᵢ` (`D k i = 0` for every `k`), the
+  determinant `det (∂^(D k + l eᵢ) P)` is the product of the generalized Wronskian of the `fₖ`
+  and the Hasse Wronskian of the `gₖ`.
 * `MvPolynomial.linearIndependent_iff_exists_genWronskian_ne_zero`: over a field of
   characteristic zero, a family is linearly independent if and only if some admissible generalized
   Wronskian is nonzero.
