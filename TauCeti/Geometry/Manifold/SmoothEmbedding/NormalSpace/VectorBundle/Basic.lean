@@ -208,6 +208,28 @@ theorem continuousOn_normalSpaceTrivialization_coordChangeL
   intro x hx
   exact d₀.coordChangeL f hn d₁ hx
 
+omit [FiniteDimensional 𝕜 V] in
+private theorem NormalChartData.contMDiffOn_coordChangeL {m : ℕ∞ω}
+    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    {x₀ x₁ : M} (d₀ : NormalChartData (P := P) f hn x₀)
+    (d₁ : NormalChartData (P := P) f hn x₁) :
+    ContMDiffOn I 𝓘(𝕜, P →L[𝕜] P) m
+      (fun x => ((d₀.trivialization f hn).coordChangeL 𝕜 (d₁.trivialization f hn) x :
+        P →L[𝕜] P)) (d₀.baseSet ∩ d₁.baseSet) := by
+  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let : CompleteSpace P := FiniteDimensional.complete 𝕜 P
+  exact f.contMDiffOn_normalSpaceTrivializationOfComplement_coordChangeL
+    x₀ x₁ d₀.baseSet d₁.baseSet d₀.isOpen_baseSet d₁.isOpen_baseSet
+      d₀.subset_charts d₁.subset_charts d₀.complement d₁.complement hm
+      d₀.invertible d₁.invertible (d₀.continuous_coordinate_apply f hn)
+      (d₁.continuous_coordinate_apply f hn)
+
+private theorem normalSpaceTrivialization_eq (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
+    f.normalSpaceTrivialization hn hdim x₀ = (normalChartData f hn hdim x₀).trivialization f hn :=
+  rfl
+
 omit [IsManifold I 1 M] [IsManifold J 1 N] in
 /-- Transition operators for the preferred intrinsic normal coordinates are `C^m` for a
 `C^n` embedding when `m + 1 ≤ n`. -/
@@ -224,18 +246,8 @@ theorem contMDiffOn_normalSpaceTrivialization_coordChangeL {m : ℕ∞ω}
         (f.normalSpaceTrivialization hn hdim x₁).baseSet) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace P := FiniteDimensional.complete 𝕜 P
-  let d₀ := normalChartData f hn hdim x₀
-  let d₁ := normalChartData f hn hdim x₁
-  unfold normalSpaceTrivialization
-  rw [NormalChartData.baseSet_trivialization, NormalChartData.baseSet_trivialization]
-  simpa only [d₀, d₁, NormalChartData.trivialization] using
-    f.contMDiffOn_normalSpaceTrivializationOfComplement_coordChangeL
-      x₀ x₁ d₀.baseSet d₁.baseSet d₀.isOpen_baseSet d₁.isOpen_baseSet
-        d₀.subset_charts d₁.subset_charts d₀.complement d₁.complement hm
-        d₀.invertible d₁.invertible (d₀.continuous_coordinate_apply f hn)
-        (d₁.continuous_coordinate_apply f hn)
+  simp only [normalSpaceTrivialization_eq, NormalChartData.baseSet_trivialization]
+  exact NormalChartData.contMDiffOn_coordChangeL f hn hm _ _
 
 private theorem inducing_normalBundle_mk (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x : M) :
