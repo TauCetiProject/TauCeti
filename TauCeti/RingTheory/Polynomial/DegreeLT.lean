@@ -35,12 +35,14 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
   remainder reads off `g * v + u`.
 * `Polynomial.mul_mem_degreeLT_add`: degree bounds add under multiplication.
+* `Polynomial.Monic.sub_mem_degreeLT`: the difference of two monic polynomials of the same degree
+  `n` has degree `< n`.
 * `IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`, `IsCoprime.eq_zero_of_mul_add_mul_eq_zero`:
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
 rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` and `mul_mem_degreeLT_add` need
-only a semiring.
+only a semiring, and `Monic.sub_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -77,6 +79,20 @@ theorem mul_mem_degreeLT_add {p q : R[X]} {m n : ℕ} (hp : p ∈ degreeLT R m) 
   exact WithBot.add_lt_add_of_lt_of_le (by simpa using hq0) hp (degree_le_of_natDegree_le hq)
 
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- The difference of two monic polynomials of the same degree `n` has degree `< n`. -/
+theorem Monic.sub_mem_degreeLT {P Q : R[X]} (hP : P.Monic) (hQ : Q.Monic)
+    (hPQ : P.natDegree = Q.natDegree) : P - Q ∈ degreeLT R P.natDegree := by
+  nontriviality R
+  rw [mem_degreeLT, ← degree_eq_natDegree hP.ne_zero]
+  refine degree_sub_lt_left ?_ hP.ne_zero (by rw [hP.leadingCoeff, hQ.leadingCoeff])
+  rw [degree_eq_natDegree hP.ne_zero, degree_eq_natDegree hQ.ne_zero, hPQ]
+
+end Ring
 
 variable {R : Type*} [CommRing R] {g q : R[X]} {n : ℕ}
 

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.RingTheory.Polynomial.DegreeLT
+public import TauCeti.RingTheory.PowerSeries.Swap
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -21,8 +21,9 @@ algorithm.
 
 The proof is the classical coefficient recursion. A polynomial over `R⟦t⟧` is rewritten as a power
 series in `t` whose coefficients are polynomials over `R`, through the ring homomorphism
-`Polynomial.swapPowerSeries : R⟦X⟧[X] →+* R[X]⟦X⟧`. Write `G = Σ Gₖ tᵏ` and `H = Σ Hₖ tᵏ` with
-`G₀ = g` and `H₀ = h`. The coefficient of `tᵏ` in `G * H = P` reads
+`Polynomial.swapPowerSeries : R⟦X⟧[X] →+* R[X]⟦X⟧` (`TauCeti.RingTheory.PowerSeries.Swap`).
+Write `G = Σ Gₖ tᵏ` and `H = Σ Hₖ tᵏ` with `G₀ = g` and `H₀ = h`. The coefficient of `tᵏ` in
+`G * H = P` reads
 
 `g * Hₖ + h * Gₖ = Pₖ - Σ_{0 < i < k} Gᵢ * H_{k - i}`,
 
@@ -33,16 +34,10 @@ division by `g` give the unique solution of this equation within those degree bo
 Solving it for `k = 1, 2, ...` produces the factors one power of `t` at a time; uniqueness of
 each step gives uniqueness of the factorization.
 
-## Main definitions
-
-* `Polynomial.swapPowerSeries`: the ring homomorphism `R⟦X⟧[X] →+* R[X]⟦X⟧` exchanging the
-  polynomial variable with the power-series variable.
-
 ## Main results
 
-* `Polynomial.coeff_coeff_swapPowerSeries`: the coefficient of `Xⁱ` in the `tᵏ`-coefficient of
-  `swapPowerSeries Q` is the `tᵏ`-coefficient of the coefficient of `Xⁱ` in `Q`.
-* `Polynomial.swapPowerSeries_injective`: `swapPowerSeries` is injective.
+* `Polynomial.coeff_swapPowerSeries_mem_degreeLT`: `swapPowerSeries` preserves degree bounds
+  coefficientwise.
 * `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`: existence of the lifted factorization.
 * `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`: uniqueness of the lifted
   factorization.
@@ -63,69 +58,30 @@ open scoped Polynomial PowerSeries
 
 namespace Polynomial
 
-section swapPowerSeries
-
-variable {R : Type*} [CommSemiring R]
-
-/-- The ring homomorphism `R⟦X⟧[X] →+* R[X]⟦X⟧` exchanging the two variables: a polynomial in
-`X` whose coefficients are power series in `t` is sent to the power series in `t` whose
-coefficients are polynomials in `X`. -/
-def swapPowerSeries : R⟦X⟧[X] →+* R[X]⟦X⟧ :=
-  eval₂RingHom (PowerSeries.map C) (PowerSeries.C X)
-
-/-- The coefficient of `Xⁱ` in the `tᵏ`-coefficient of `swapPowerSeries Q` is the
-`tᵏ`-coefficient of the coefficient of `Xⁱ` in `Q`. -/
-@[simp]
-theorem coeff_coeff_swapPowerSeries (Q : R⟦X⟧[X]) (k i : ℕ) :
-    (PowerSeries.coeff k (swapPowerSeries Q)).coeff i = PowerSeries.coeff k (Q.coeff i) := by
-  induction Q using Polynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | monomial n a =>
-    simp only [swapPowerSeries, coe_eval₂RingHom, eval₂_monomial, ← map_pow,
-      PowerSeries.coeff_mul_C, PowerSeries.coeff_map, coeff_C_mul_X_pow, coeff_monomial]
-    split_ifs <;> simp_all
-
-/-- The constant coefficient of `swapPowerSeries Q` is the reduction of `Q` modulo `t`. -/
-@[simp]
-theorem constantCoeff_swapPowerSeries (Q : R⟦X⟧[X]) :
-    PowerSeries.constantCoeff (swapPowerSeries Q) = Q.map PowerSeries.constantCoeff := by
-  ext i
-  rw [coeff_map, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_coeff_swapPowerSeries]
-
-/-- A polynomial over `R⟦t⟧` is determined by its image under `swapPowerSeries`. -/
-theorem swapPowerSeries_injective : Function.Injective (swapPowerSeries (R := R)) := by
-  intro P Q h
-  ext i k
-  rw [← coeff_coeff_swapPowerSeries, h, coeff_coeff_swapPowerSeries]
-
 /-- If `Q` has degree `< n`, then so does every coefficient of `swapPowerSeries Q`. -/
-theorem coeff_swapPowerSeries_mem_degreeLT {Q : R⟦X⟧[X]} {n : ℕ} (hQ : Q ∈ degreeLT R⟦X⟧ n)
-    (k : ℕ) : PowerSeries.coeff k (swapPowerSeries Q) ∈ degreeLT R n := by
+theorem coeff_swapPowerSeries_mem_degreeLT {R : Type*} [CommSemiring R] {Q : R⟦X⟧[X]} {n : ℕ}
+    (hQ : Q ∈ degreeLT R⟦X⟧ n) (k : ℕ) :
+    PowerSeries.coeff k (swapPowerSeries Q) ∈ degreeLT R n := by
   rw [mem_degreeLT, degree_lt_iff_coeff_zero] at hQ ⊢
   intro i hi
   simp [hQ i hi]
-
-end swapPowerSeries
 
 section Hensel
 
 variable {R : Type*} [CommRing R]
 
-/-- The difference of two monic polynomials of the same degree `n` has degree `< n`. -/
-private theorem sub_mem_degreeLT_of_monic {S : Type*} [CommRing S] [Nontrivial S] {P Q : S[X]}
-    (hP : P.Monic) (hQ : Q.Monic) (hPQ : P.natDegree = Q.natDegree) :
-    P - Q ∈ degreeLT S P.natDegree := by
-  rw [mem_degreeLT, ← degree_eq_natDegree hP.ne_zero]
-  refine degree_sub_lt_left ?_ hP.ne_zero (by rw [hP.leadingCoeff, hQ.leadingCoeff])
-  rw [degree_eq_natDegree hP.ne_zero, degree_eq_natDegree hQ.ne_zero, hPQ]
-
 /-- A power series `F` over `R[X]` whose constant coefficient is monic of degree `d` and whose
-other coefficients have degree `< d` comes from a monic polynomial over `R⟦X⟧`. -/
-private theorem exists_monic_swapPowerSeries_eq {g : R[X]} (hg : g.Monic) {F : R[X]⟦X⟧}
-    (hF₀ : PowerSeries.constantCoeff F = g)
+other coefficients have degree `< d` comes from a monic polynomial over `R⟦X⟧` of degree `d`
+reducing to `g` modulo `t`. -/
+private theorem exists_monic_swapPowerSeries_eq [Nontrivial R] {g : R[X]} (hg : g.Monic)
+    {F : R[X]⟦X⟧} (hF₀ : PowerSeries.constantCoeff F = g)
     (hF : ∀ k, 1 ≤ k → PowerSeries.coeff k F ∈ degreeLT R g.natDegree) :
-    ∃ G : R⟦X⟧[X], G.Monic ∧ swapPowerSeries G = F := by
+    ∃ G : R⟦X⟧[X], G.Monic ∧ G.natDegree = g.natDegree ∧
+      G.map PowerSeries.constantCoeff = g ∧ swapPowerSeries G = F := by
+  suffices ∃ G : R⟦X⟧[X], G.Monic ∧ swapPowerSeries G = F by
+    obtain ⟨G, hG, rfl⟩ := this
+    rw [constantCoeff_swapPowerSeries] at hF₀
+    exact ⟨G, hG, by rw [← hF₀, hG.natDegree_map], hF₀, rfl⟩
   let a : ℕ → R⟦X⟧ := fun i ↦ PowerSeries.mk fun k ↦ (PowerSeries.coeff k F).coeff i
   have hdeg : (∑ i : Fin g.natDegree, C (a i) * X ^ (i : ℕ)).degree < (g.natDegree : WithBot ℕ) :=
     degree_sum_fin_lt _
@@ -203,102 +159,113 @@ private theorem coeff_approx_of_le (p : R[X]⟦X⟧) (g h : R[X]) (a b : R[X] �
     simpa [approx, PowerSeries.coeff_X_pow_mul', show ¬k + 1 ≤ j by omega,
       show j ≠ k + 1 by omega] using ih
 
+/-- The invariants of the successive approximations to the Hensel lift of a monic `P` with
+`P = g * h (mod t)`: their constant coefficients are `g` and `h`, their higher coefficients have
+degree `< deg g` and `< deg h`, and the error vanishes modulo `t ^ (k + 1)`. -/
+private theorem approx_spec [Nontrivial R] {P : R⟦X⟧[X]} (hP : P.Monic) {g h : R[X]} (hg : g.Monic)
+    (hh : h.Monic) (hPgh : P.map PowerSeries.constantCoeff = g * h) {a b : R[X] → R[X]}
+    (ha : ∀ c ∈ degreeLT R (g.natDegree + h.natDegree), a c ∈ degreeLT R g.natDegree)
+    (hb : ∀ c ∈ degreeLT R (g.natDegree + h.natDegree), b c ∈ degreeLT R h.natDegree)
+    (hab : ∀ c ∈ degreeLT R (g.natDegree + h.natDegree), g * b c + h * a c = c) (k : ℕ) :
+    PowerSeries.constantCoeff (approx (swapPowerSeries P) g h a b k).1 = g ∧
+      PowerSeries.constantCoeff (approx (swapPowerSeries P) g h a b k).2 = h ∧
+      (∀ j, 1 ≤ j →
+        PowerSeries.coeff j (approx (swapPowerSeries P) g h a b k).1 ∈ degreeLT R g.natDegree ∧
+          PowerSeries.coeff j (approx (swapPowerSeries P) g h a b k).2 ∈
+            degreeLT R h.natDegree) ∧
+      PowerSeries.X ^ (k + 1) ∣ swapPowerSeries P -
+        (approx (swapPowerSeries P) g h a b k).1 * (approx (swapPowerSeries P) g h a b k).2 := by
+  have hPdeg : P.natDegree = g.natDegree + h.natDegree := by
+    rw [← hP.natDegree_map PowerSeries.constantCoeff, hPgh, hg.natDegree_mul hh]
+  set S := approx (swapPowerSeries P) g h a b
+  induction k with
+  | zero =>
+    refine ⟨by simp [S, approx], by simp [S, approx], fun j hj ↦ ?_, ?_⟩
+    · simp [S, approx, PowerSeries.coeff_C, show j ≠ 0 by omega]
+    · rw [zero_add, pow_one, PowerSeries.X_dvd_iff, map_sub, map_mul,
+        constantCoeff_swapPowerSeries, hPgh]
+      simp [S, approx]
+  | succ k ih =>
+    obtain ⟨h₁, h₂, hdeg, E, hE⟩ := ih
+    set c := PowerSeries.coeff (k + 1) (swapPowerSeries P - (S k).1 * (S k).2) with hc_def
+    -- The error coefficient `c` has degree `< deg g + deg h`, because the current
+    -- approximations are monic polynomials of the degrees of `g` and `h`.
+    have hc : c ∈ degreeLT R (g.natDegree + h.natDegree) := by
+      obtain ⟨G, hG, hGdeg, -, hGS⟩ :=
+        exists_monic_swapPowerSeries_eq hg h₁ fun j hj ↦ (hdeg j hj).1
+      obtain ⟨H, hH, hHdeg, -, hHS⟩ :=
+        exists_monic_swapPowerSeries_eq hh h₂ fun j hj ↦ (hdeg j hj).2
+      rw [hc_def, ← hGS, ← hHS, ← map_mul, ← map_sub, ← hPdeg]
+      refine coeff_swapPowerSeries_mem_degreeLT (hP.sub_mem_degreeLT (hG.mul hH) ?_) _
+      rw [hG.natDegree_mul hH, hGdeg, hHdeg, hPdeg]
+    have hS : S (k + 1) = ((S k).1 + PowerSeries.X ^ (k + 1) * PowerSeries.C (a c),
+        (S k).2 + PowerSeries.X ^ (k + 1) * PowerSeries.C (b c)) := rfl
+    have hcE : PowerSeries.constantCoeff E = c := by
+      simp [hc_def, hE, PowerSeries.coeff_X_pow_mul']
+    refine ⟨by simp [hS, h₁], by simp [hS, h₂], fun j hj ↦ ?_, ?_⟩
+    · simp only [hS, map_add, PowerSeries.coeff_X_pow_mul', PowerSeries.coeff_C]
+      split_ifs
+      · exact ⟨add_mem (hdeg j hj).1 (ha c hc), add_mem (hdeg j hj).2 (hb c hc)⟩
+      · simpa using hdeg j hj
+      · simpa using hdeg j hj
+    · -- The new error is `t ^ (k + 1)` times a series with constant coefficient
+      -- `c - (g * b c + h * a c) = 0`.
+      have hX : PowerSeries.X ∣ E - (S k).1 * PowerSeries.C (b c) -
+          PowerSeries.C (a c) * (S k).2 -
+          PowerSeries.X ^ (k + 1) * PowerSeries.C (a c * b c) := by
+        rw [PowerSeries.X_dvd_iff]
+        simp only [map_sub, map_mul, map_pow, PowerSeries.constantCoeff_X,
+          PowerSeries.constantCoeff_C, h₁, h₂, hcE, zero_pow (Nat.succ_ne_zero k), zero_mul,
+          sub_zero]
+        linear_combination -(hab c hc)
+      obtain ⟨E', hE'⟩ := hX
+      refine ⟨E', ?_⟩
+      rw [hS]
+      rw [map_mul] at hE'
+      linear_combination hE + PowerSeries.X ^ (k + 1) * hE'
+
+/-- If the error of the `k`-th approximation vanishes modulo `t ^ (k + 1)` for every `k`, then the
+limits of the approximations, whose `tʲ`-coefficient is that of the `j`-th approximation, multiply
+to `p`. -/
+private theorem mk_coeff_approx_mul_mk_coeff_approx (p : R[X]⟦X⟧) (g h : R[X])
+    (a b : R[X] → R[X])
+    (hp : ∀ k, PowerSeries.X ^ (k + 1) ∣ p - (approx p g h a b k).1 * (approx p g h a b k).2) :
+    (PowerSeries.mk fun j ↦ PowerSeries.coeff j (approx p g h a b j).1) *
+      (PowerSeries.mk fun j ↦ PowerSeries.coeff j (approx p g h a b j).2) = p := by
+  refine PowerSeries.ext fun n ↦ ?_
+  have hn := PowerSeries.X_pow_dvd_iff.mp (hp n) n n.lt_succ_self
+  rw [map_sub, sub_eq_zero] at hn
+  rw [hn, PowerSeries.coeff_mul, PowerSeries.coeff_mul]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  have hx' := Finset.mem_antidiagonal.mp hx
+  simp only [PowerSeries.coeff_mk, (coeff_approx_of_le p g h a b (show x.1 ≤ n by omega)).1,
+    (coeff_approx_of_le p g h a b (show x.2 ≤ n by omega)).2]
+
 /-- A monic polynomial `P` over `R⟦t⟧` whose reduction modulo `t` is a product `g * h` of
-coprime monic polynomials factors as `P = G * H` with `G` and `H` monic and reducing to `g` and
-`h`. This is the coprime-factor form of Hensel's lemma over `R⟦t⟧`; the factors are unique by
-`Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`. -/
+coprime polynomials with `g` monic factors as `P = G * H` with `G` and `H` monic and reducing to
+`g` and `h`. This is the coprime-factor form of Hensel's lemma over `R⟦t⟧`; `h` is automatically
+monic, and the factors are unique by `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`. -/
 theorem Monic.exists_monic_mul_eq_of_isCoprime {P : R⟦X⟧[X]} (hP : P.Monic) {g h : R[X]}
-    (hg : g.Monic) (hh : h.Monic) (hgh : IsCoprime g h)
-    (hPgh : P.map PowerSeries.constantCoeff = g * h) :
+    (hg : g.Monic) (hgh : IsCoprime g h) (hPgh : P.map PowerSeries.constantCoeff = g * h) :
     ∃ G H : R⟦X⟧[X], G.Monic ∧ H.Monic ∧ G.map PowerSeries.constantCoeff = g ∧
       H.map PowerSeries.constantCoeff = h ∧ G * H = P := by
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact ⟨P, 1, hP, monic_one, Subsingleton.elim _ _, Subsingleton.elim _ _, mul_one P⟩
+  have hh : h.Monic := hg.of_mul_monic_left (hPgh ▸ hP.map _)
   choose! a b ha hb hab using fun c (hc : c ∈ degreeLT R (g.natDegree + h.natDegree)) ↦
     hgh.exists_mem_degreeLT_mul_add_mul_eq hg hc
-  have hPdeg : P.natDegree = g.natDegree + h.natDegree := by
-    rw [← hP.natDegree_map PowerSeries.constantCoeff, hPgh, hg.natDegree_mul hh]
-  -- A power series with the shape of a lifted factor comes from a monic polynomial of the same
-  -- degree.
-  have realize {f : R[X]} (hf : f.Monic) {F : R[X]⟦X⟧} (hF₀ : PowerSeries.constantCoeff F = f)
-      (hF : ∀ k, 1 ≤ k → PowerSeries.coeff k F ∈ degreeLT R f.natDegree) :
-      ∃ G : R⟦X⟧[X], G.Monic ∧ G.natDegree = f.natDegree ∧
-        G.map PowerSeries.constantCoeff = f ∧ swapPowerSeries G = F := by
-    obtain ⟨G, hG, rfl⟩ := exists_monic_swapPowerSeries_eq hf hF₀ hF
-    rw [constantCoeff_swapPowerSeries] at hF₀
-    exact ⟨G, hG, by rw [← hF₀, hG.natDegree_map], hF₀, rfl⟩
+  have inv := approx_spec hP hg hh hPgh ha hb hab
   set S := approx (swapPowerSeries P) g h a b
-  -- The invariants of the approximations: the constant coefficients are `g` and `h`, the higher
-  -- coefficients satisfy the degree bounds, and the error vanishes modulo `t ^ (k + 1)`.
-  have inv : ∀ k, PowerSeries.constantCoeff (S k).1 = g ∧ PowerSeries.constantCoeff (S k).2 = h ∧
-      (∀ j, 1 ≤ j → PowerSeries.coeff j (S k).1 ∈ degreeLT R g.natDegree ∧
-        PowerSeries.coeff j (S k).2 ∈ degreeLT R h.natDegree) ∧
-      PowerSeries.X ^ (k + 1) ∣ swapPowerSeries P - (S k).1 * (S k).2 := by
-    intro k
-    induction k with
-    | zero =>
-      refine ⟨by simp [S, approx], by simp [S, approx], fun j hj ↦ ?_, ?_⟩
-      · simp [S, approx, PowerSeries.coeff_C, show j ≠ 0 by omega]
-      · rw [zero_add, pow_one, PowerSeries.X_dvd_iff, map_sub, map_mul,
-          constantCoeff_swapPowerSeries, hPgh]
-        simp [S, approx]
-    | succ k ih =>
-      obtain ⟨h₁, h₂, hdeg, E, hE⟩ := ih
-      set c := PowerSeries.coeff (k + 1) (swapPowerSeries P - (S k).1 * (S k).2) with hc_def
-      -- The error coefficient `c` has degree `< deg g + deg h`, because the current
-      -- approximations are monic polynomials of the degrees of `g` and `h`.
-      have hc : c ∈ degreeLT R (g.natDegree + h.natDegree) := by
-        obtain ⟨G, hG, hGdeg, -, hGS⟩ := realize hg h₁ fun j hj ↦ (hdeg j hj).1
-        obtain ⟨H, hH, hHdeg, -, hHS⟩ := realize hh h₂ fun j hj ↦ (hdeg j hj).2
-        rw [hc_def, ← hGS, ← hHS, ← map_mul, ← map_sub, ← hPdeg]
-        refine coeff_swapPowerSeries_mem_degreeLT (sub_mem_degreeLT_of_monic hP (hG.mul hH) ?_) _
-        rw [hG.natDegree_mul hH, hGdeg, hHdeg, hPdeg]
-      have hS : S (k + 1) = ((S k).1 + PowerSeries.X ^ (k + 1) * PowerSeries.C (a c),
-          (S k).2 + PowerSeries.X ^ (k + 1) * PowerSeries.C (b c)) := rfl
-      have hcE : PowerSeries.constantCoeff E = c := by
-        simp [hc_def, hE, PowerSeries.coeff_X_pow_mul']
-      refine ⟨by simp [hS, h₁], by simp [hS, h₂], fun j hj ↦ ?_, ?_⟩
-      · simp only [hS, map_add, PowerSeries.coeff_X_pow_mul', PowerSeries.coeff_C]
-        split_ifs
-        · exact ⟨add_mem (hdeg j hj).1 (ha c hc), add_mem (hdeg j hj).2 (hb c hc)⟩
-        · simpa using hdeg j hj
-        · simpa using hdeg j hj
-      · -- The new error is `t ^ (k + 1)` times a series with constant coefficient
-        -- `c - (g * b c + h * a c) = 0`.
-        have hX : PowerSeries.X ∣ E - (S k).1 * PowerSeries.C (b c) -
-            PowerSeries.C (a c) * (S k).2 -
-            PowerSeries.X ^ (k + 1) * PowerSeries.C (a c * b c) := by
-          rw [PowerSeries.X_dvd_iff]
-          simp only [map_sub, map_mul, map_pow, PowerSeries.constantCoeff_X,
-            PowerSeries.constantCoeff_C, h₁, h₂, hcE, zero_pow (Nat.succ_ne_zero k), zero_mul,
-            sub_zero]
-          linear_combination -(hab c hc)
-        obtain ⟨E', hE'⟩ := hX
-        refine ⟨E', ?_⟩
-        rw [hS, map_mul] at *
-        linear_combination hE + PowerSeries.X ^ (k + 1) * hE'
-  have stab {j k : ℕ} (hjk : j ≤ k) :
-      PowerSeries.coeff j (S k).1 = PowerSeries.coeff j (S j).1 ∧
-        PowerSeries.coeff j (S k).2 = PowerSeries.coeff j (S j).2 :=
-    coeff_approx_of_le _ _ _ _ _ hjk
-  let G' : R[X]⟦X⟧ := PowerSeries.mk fun j ↦ PowerSeries.coeff j (S j).1
-  let H' : R[X]⟦X⟧ := PowerSeries.mk fun j ↦ PowerSeries.coeff j (S j).2
-  have hGH' : G' * H' = swapPowerSeries P := by
-    refine PowerSeries.ext fun n ↦ ?_
-    have hn := PowerSeries.X_pow_dvd_iff.mp (inv n).2.2.2 n n.lt_succ_self
-    rw [map_sub, sub_eq_zero] at hn
-    rw [hn, PowerSeries.coeff_mul, PowerSeries.coeff_mul]
-    refine Finset.sum_congr rfl fun x hx ↦ ?_
-    have hx' := Finset.mem_antidiagonal.mp hx
-    simp only [G', H', PowerSeries.coeff_mk, (stab (show x.1 ≤ n by omega)).1,
-      (stab (show x.2 ≤ n by omega)).2]
-  obtain ⟨G, hG, -, hGg, hGS⟩ := realize hg (F := G') (by
-    simp [G', ← PowerSeries.coeff_zero_eq_constantCoeff_apply, S, approx])
-    fun j hj ↦ by simpa [G'] using ((inv j).2.2.1 j hj).1
-  obtain ⟨H, hH, -, hHh, hHS⟩ := realize hh (F := H') (by
-    simp [H', ← PowerSeries.coeff_zero_eq_constantCoeff_apply, S, approx])
-    fun j hj ↦ by simpa [H'] using ((inv j).2.2.1 j hj).2
-  exact ⟨G, H, hG, hH, hGg, hHh, swapPowerSeries_injective (by rw [map_mul, hGS, hHS, hGH'])⟩
+  obtain ⟨G, hG, -, hGg, hGS⟩ := exists_monic_swapPowerSeries_eq hg
+    (F := PowerSeries.mk fun j ↦ PowerSeries.coeff j (S j).1)
+    (by simp [← PowerSeries.coeff_zero_eq_constantCoeff_apply, S, approx])
+    fun j hj ↦ by simpa using ((inv j).2.2.1 j hj).1
+  obtain ⟨H, hH, -, hHh, hHS⟩ := exists_monic_swapPowerSeries_eq hh
+    (F := PowerSeries.mk fun j ↦ PowerSeries.coeff j (S j).2)
+    (by simp [← PowerSeries.coeff_zero_eq_constantCoeff_apply, S, approx])
+    fun j hj ↦ by simpa using ((inv j).2.2.1 j hj).2
+  refine ⟨G, H, hG, hH, hGg, hHh, swapPowerSeries_injective ?_⟩
+  rw [map_mul, hGS, hHS, mk_coeff_approx_mul_mk_coeff_approx _ _ _ _ _ fun n ↦ (inv n).2.2.2]
 
 /-- Uniqueness of Hensel lifting over `R⟦t⟧`: if `G * H = G' * H'` with `G` and `G'` monic and
 reducing modulo `t` to the same polynomial, coprime to the reduction of `H`, then `G = G'` and
@@ -313,7 +280,7 @@ theorem Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime {G G' H H' : R⟦X⟧[X]} (hG
   have hA (k : ℕ) : PowerSeries.coeff k (swapPowerSeries (G - G')) ∈
       degreeLT R (G.map PowerSeries.constantCoeff).natDegree := by
     rw [hG.natDegree_map]
-    exact coeff_swapPowerSeries_mem_degreeLT (sub_mem_degreeLT_of_monic hG hG' hdeg) k
+    exact coeff_swapPowerSeries_mem_degreeLT (hG.sub_mem_degreeLT hG' hdeg) k
   have hrel : swapPowerSeries G' * swapPowerSeries (H - H') +
       swapPowerSeries H * swapPowerSeries (G - G') = 0 := by
     rw [← map_mul, ← map_mul, ← map_add, ← map_zero swapPowerSeries]
