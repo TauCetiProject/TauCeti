@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Algebra.Regular.Defs
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
+
+import Mathlib.Algebra.Regular.Pow
 
 /-!
 # Pair minors and principal minors
@@ -48,6 +51,8 @@ determinant of its restriction to the rows and columns indexed by a finite set o
 * `Matrix.principalMinor_empty`: the empty principal minor is `1`.
 * `Matrix.principalMinor_submatrix_equiv`: principal minors are invariant under reindexing the
   rows and columns by the same equivalence.
+* `Matrix.principalMinor_eq_of_diagonal_intertwining`: principal minors are unchanged by
+  intertwining with a diagonal matrix whose entries are regular.
 -/
 
 public section
@@ -167,6 +172,24 @@ theorem principalMinor_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) (s :
     ← det_submatrix_equiv_self g (A.submatrix Subtype.val Subtype.val), submatrix_submatrix,
     submatrix_submatrix]
   exact congrArg det (ext fun i j ↦ by simp [g])
+
+/-- Diagonal intertwining with regular entries preserves principal minors. The pointwise
+relation expresses `A D = D B` without requiring the index type to be finite. The diagonal
+entries need not be units, and the coefficient ring may have zero divisors. -/
+theorem principalMinor_eq_of_diagonal_intertwining {A B : Matrix ι ι R} {d : ι → R}
+    (s : Finset ι) (hd : ∀ i : s, IsRegular (d i))
+    (h : ∀ i j : s, A i j * d j = d i * B i j) :
+    A.principalMinor s = B.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def]
+  apply (IsRegular.prod (s := Finset.univ) (f := fun i : s ↦ d i) fun i _ ↦ hd i).left
+  dsimp only
+  have hmatrix :
+      Matrix.of (fun i j : s ↦ d j * A i j) = Matrix.of (fun i j : s ↦ d i * B i j) := by
+    ext i j
+    exact (mul_comm _ _).trans (h i j)
+  rw [← det_mul_row (fun i : s ↦ d i) (A.submatrix Subtype.val Subtype.val),
+    ← det_mul_column (fun i : s ↦ d i) (B.submatrix Subtype.val Subtype.val)]
+  exact congrArg Matrix.det hmatrix
 
 end Principal
 
