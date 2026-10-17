@@ -216,7 +216,7 @@ variable (k H A : Type u) [Field k] [CommRing H] [HopfAlgebra k H]
 
 /-- For a tensor automorphism induced by an algebra-valued point `g`, the local functional is
 the restriction of `g` to the chosen finite subcomodule of the regular comodule. -/
-@[simp]
+@[simp↓]
 theorem localFunctional_fgPointTensorIso
     (g : WithConv (H →ₐ[k] A))
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.1) :
