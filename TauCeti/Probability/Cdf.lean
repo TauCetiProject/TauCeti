@@ -24,6 +24,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
+  mass below a point has cdf zero there;
 * `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
   strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
@@ -98,6 +100,12 @@ theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] 
     (hab : a ≤ b) : ν.real (Ioc a b) = cdf ν b - cdf ν a := by
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
+
+/-- An atomless law that gives no mass to the open half-line below `c` has cdf zero at `c`. -/
+theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by
+  have h : ν (Iic c) = 0 := (measure_congr Iio_ae_eq_Iic).symm.trans hc
+  rw [cdf_eq_real, measureReal_def, h, ENNReal.toReal_zero]
 
 /-- A half-open interval has positive mass exactly when the cdf strictly increases across its
 endpoints. -/
