@@ -60,7 +60,7 @@ generalized Wronskian.
 ## References
 
 * L. Pottmeyer, *Diophantine Approximation*, lecture notes (version of 17 January 2022), §3.3:
-  Definition 3.3.5 and Theorem 3.3.7.
+  Definition 3.3.5, Theorem 3.3.7 and Lemma 3.3.9.
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), Proposition 6.3.10, whose proof by Kronecker substitution is followed here.
 * The proof plan (separating weights, translated substitution and multilinear expansion of the
@@ -160,9 +160,14 @@ theorem det_hasseDeriv_sum_mul_toMvPolynomial {i : σ} {D : Fin m → σ →₀ 
           (of fun (l : Fin m) j ↦ (Polynomial.hasseDeriv l (g j)).toMvPolynomial i)ᵀ := by
     ext1 k l
     simp [mul_apply, hasseDeriv_add_single_mul_toMvPolynomial (hD k) (hf _)]
-  rw [hM, det_mul, det_transpose, genWronskian_def, Polynomial.hasseWronskian_def,
-    AlgHom.map_det]
-  congr 2
+  -- The second factor is the Hasse matrix of `g` mapped entrywise by `toMvPolynomial i`.
+  have hg : (of fun (l : Fin m) j ↦ (Polynomial.hasseDeriv l (g j)).toMvPolynomial i) =
+      (Polynomial.toMvPolynomial i).mapMatrix
+        (of fun (l : Fin m) j ↦ Polynomial.hasseDeriv l (g j)) := by
+    ext l j
+    simp [AlgHom.mapMatrix_apply]
+  rw [hM, hg, det_mul, det_transpose, ← AlgHom.map_det, genWronskian_def,
+    Polynomial.hasseWronskian_def]
 
 /-! ### The generalized Wronskian criterion -/
 

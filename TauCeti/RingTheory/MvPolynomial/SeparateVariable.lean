@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.Variables
-public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.MvPolynomial.Basic
@@ -26,8 +26,9 @@ at most those of `P` and the `gₖ` have degree at most `deg_{Xᵢ} P`.
 This is the separation of variables in the proof of Roth's lemma: for rows `D k` that do not
 differentiate in `Xᵢ`, the determinant of the Hasse derivatives `∂^(D k + l eᵢ) P` factors as the
 generalized Wronskian of the `fₖ` times the one-variable Wronskian of the `gₖ`
-(`MvPolynomial.det_hasseDeriv_sum_mul_toMvPolynomial`), and the linear independence of both
-families makes both factors nonzero for suitable rows.
+(`MvPolynomial.det_hasseDeriv_sum_mul_toMvPolynomial`). Over a field of characteristic zero, the
+linear independence of the `fₖ` gives admissible rows `D` with `W_D(f) ≠ 0`, and the linear
+independence of the `gₖ` makes their Hasse Wronskian nonzero.
 
 ## Main results
 
@@ -39,7 +40,8 @@ families makes both factors nonzero for suitable rows.
 ## Implementation notes
 
 Write `P = ∑_{j ≤ N} Qⱼ Xᵢ ^ j` with `Qⱼ` free of `Xᵢ`, where `N = deg_{Xᵢ} P`. The `fₖ` are a basis
-of the span of the `Qⱼ`, and `gₖ = ∑ⱼ cⱼₖ X ^ j` where `cⱼₖ` is the `k`-th coordinate of `Qⱼ`. A
+of the span of the `Qⱼ`, and `gₖ = ∑ⱼ cⱼₖ X ^ j` (built with `Polynomial.ofFn`) where `cⱼₖ` is the
+`k`-th coordinate of `Qⱼ`. A
 linear relation among the `gₖ` gives a linear form on the span vanishing on every `Qⱼ`, hence
 identically, which forces the relation to be trivial.
 
@@ -111,14 +113,12 @@ theorem exists_sum_mul_linearIndependent (P : MvPolynomial σ K) (i : σ) :
   -- The coordinates `cⱼₖ` of `Qⱼ` in the basis `b`, and the one-variable polynomials `gₖ`.
   set c : Fin (N + 1) → Fin (finrank K V) → K := fun j ↦
     b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩
-  set g : Fin (finrank K V) → Polynomial K := fun k ↦
-    ∑ j, Polynomial.C (c j k) * Polynomial.X ^ (j : ℕ) with hg_def
+  set g : Fin (finrank K V) → Polynomial K := fun k ↦ Polynomial.ofFn (N + 1) fun j ↦ c j k
+    with hg_def
   have hQb (j : Fin (N + 1)) : Q j = ∑ k, c j k • (b k : MvPolynomial σ K) := by
     have := congr_arg Subtype.val (b.sum_repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩)
     simp only [Submodule.coe_sum, Submodule.coe_smul] at this
     exact this.symm
-  have hcoeff (k : Fin (finrank K V)) (j : Fin (N + 1)) : (g k).coeff j = c j k := by
-    simp [hg_def, Polynomial.finsetSum_coeff, Fin.val_inj]
   have hbS (k : Fin (finrank K V)) {x : σ →₀ ℕ} (hx : x ∈ (b k : MvPolynomial σ K).support) :
       x ∈ S :=
     (mem_restrictSupport_iff K).1 (hVS (b k).2) hx
@@ -129,7 +129,9 @@ theorem exists_sum_mul_linearIndependent (P : MvPolynomial σ K) (i : σ) :
     refine Fintype.linearIndependent_iff.2 fun a ha k ↦ ?_
     set φ : V →ₗ[K] K := ∑ k, a k • b.coord k
     have hφQ (j : Fin (N + 1)) : ∑ k, a k * c j k = 0 := by
-      simpa [Polynomial.finsetSum_coeff, hcoeff] using congr_arg (Polynomial.coeff · j) ha
+      have hac : ∑ k, a k • (fun j ↦ c j k) = 0 :=
+        Polynomial.injective_ofFn (N + 1) (by simpa [hg_def, map_sum] using ha)
+      simpa using congr_fun hac j
     have hφ (x : MvPolynomial σ K) (hx : x ∈ V) : φ ⟨x, hx⟩ = 0 := by
       induction hx using Submodule.span_induction with
       | mem x hx =>
@@ -143,11 +145,11 @@ theorem exists_sum_mul_linearIndependent (P : MvPolynomial σ K) (i : σ) :
   · obtain ⟨x, hx, hix⟩ := (mem_vars_iff_mem_support i).1 hk
     exact Finsupp.mem_support_iff.1 hix (hbS k hx).1
   · exact degreeOf_le_iff.2 fun x hx ↦ (hbS k hx).2 j
-  · exact Polynomial.natDegree_sum_le_of_forall_le _ _ fun j _ ↦
-      (Polynomial.natDegree_C_mul_X_pow_le _ _).trans (Nat.lt_succ_iff.1 j.2)
+  · exact Nat.lt_succ_iff.1 (Polynomial.ofFn_natDegree_lt N.succ_pos _)
   · rw [hPQ]
-    simp only [hQb, hg_def, map_sum, map_mul, map_pow, Polynomial.toMvPolynomial_C,
-      Polynomial.toMvPolynomial_X, sum_mul, mul_sum, smul_eq_C_mul]
+    simp only [hQb, hg_def, Polynomial.ofFn_eq_sum_monomial, ← Polynomial.C_mul_X_pow_eq_monomial,
+      map_sum, map_mul, map_pow, Polynomial.toMvPolynomial_C, Polynomial.toMvPolynomial_X, sum_mul,
+      mul_sum, smul_eq_C_mul]
     rw [sum_comm]
     refine sum_congr rfl fun j _ ↦ sum_congr rfl fun k _ ↦ ?_
     ring
