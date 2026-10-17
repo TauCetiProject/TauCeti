@@ -124,23 +124,28 @@ theorem ae_mem_Icc_betaMeasure (α β : ℝ) :
   filter_upwards [ae_mem_Ioo_betaMeasure α β] with x hx
   exact ⟨hx.1.le, hx.2.le⟩
 
-private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ}
-    (hx : x ∈ Set.Ioo (0 : ℝ) 1) :
+private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ} :
     betaPDFReal α β x * (x ^ q * (1 - x) ^ s) =
-      (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
-  rw [betaPDFReal]
-  split_ifs with h
-  · calc
-      (1 / beta α β * x ^ (α - 1) * (1 - x) ^ (β - 1)) *
-          (x ^ q * (1 - x) ^ s) =
-        (1 / beta α β) *
-          ((x ^ (α - 1) * x ^ q) * ((1 - x) ^ (β - 1) * (1 - x) ^ s)) := by ring
-      _ = (1 / beta α β) *
-          (x ^ ((α - 1) + q) * (1 - x) ^ ((β - 1) + s)) := by
-        rw [Real.rpow_add hx.1, Real.rpow_add (sub_pos.mpr hx.2)]
-      _ = (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
-        congr 3 <;> ring
-  · exact (h hx).elim
+      Set.indicator (Set.Ioo (0 : ℝ) 1) (fun x ↦
+        (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1))) x := by
+  by_cases hx : x ∈ Set.Ioo (0 : ℝ) 1
+  · rw [Set.indicator_of_mem hx, betaPDFReal]
+    split_ifs with h
+    · calc
+        (1 / beta α β * x ^ (α - 1) * (1 - x) ^ (β - 1)) *
+            (x ^ q * (1 - x) ^ s) =
+          (1 / beta α β) *
+            ((x ^ (α - 1) * x ^ q) * ((1 - x) ^ (β - 1) * (1 - x) ^ s)) := by ring
+        _ = (1 / beta α β) *
+            (x ^ ((α - 1) + q) * (1 - x) ^ ((β - 1) + s)) := by
+          rw [Real.rpow_add hx.1, Real.rpow_add (sub_pos.mpr hx.2)]
+        _ = (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
+          congr 3 <;> ring
+    · exact (h hx).elim
+  · rw [Set.indicator_of_notMem hx, betaPDFReal]
+    split_ifs with h
+    · exact (hx h).elim
+    · simp
 
 /-- A mixed real-power moment of a beta law is integrable exactly when both shifted shape
 parameters are positive. -/
@@ -155,12 +160,7 @@ theorem integrable_rpow_mul_one_sub_rpow_betaMeasure_iff {α β : ℝ}
       Set.indicator (Set.Ioo (0 : ℝ) 1) (fun x ↦
         (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1))) := by
     funext x
-    by_cases hx : x ∈ Set.Ioo (0 : ℝ) 1
-    · rw [Set.indicator_of_mem hx, betaPDFReal_mul_rpow_mul_one_sub_rpow hx]
-    · rw [Set.indicator_of_notMem hx, betaPDFReal]
-      split_ifs with h
-      · exact (hx h).elim
-      · simp
+    exact betaPDFReal_mul_rpow_mul_one_sub_rpow
   rw [hfun, integrable_indicator_iff measurableSet_Ioo]
   have hc : IsUnit (1 / beta α β) := isUnit_iff_ne_zero.mpr (one_div_ne_zero (beta_pos hα hβ).ne')
   have hconst : IntegrableOn
@@ -188,7 +188,7 @@ theorem integral_rpow_mul_one_sub_rpow_betaMeasure {q s : ℝ} {α β : ℝ}
           ∫ x in Set.Ioo (0 : ℝ) 1,
             (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
         refine setIntegral_congr_fun measurableSet_Ioo fun x hx ↦ ?_
-        exact betaPDFReal_mul_rpow_mul_one_sub_rpow hx
+        rw [betaPDFReal_mul_rpow_mul_one_sub_rpow, Set.indicator_of_mem hx]
       _ = (1 / beta α β) * beta (α + q) (β + s) := by
         rw [integral_const_mul, ← integral_Ioc_eq_integral_Ioo,
           ← intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1),
@@ -196,10 +196,7 @@ theorem integral_rpow_mul_one_sub_rpow_betaMeasure {q s : ℝ} {α β : ℝ}
       _ = beta (α + q) (β + s) / beta α β := by
         rw [one_div_mul_eq_div]
   · intro x hx
-    rw [betaPDFReal]
-    split_ifs with h
-    · exact (hx h).elim
-    · simp
+    rw [betaPDFReal_mul_rpow_mul_one_sub_rpow, Set.indicator_of_notMem hx]
 
 /-- The `n`th raw moment of a beta distribution with positive shape parameters. -/
 @[simp]
