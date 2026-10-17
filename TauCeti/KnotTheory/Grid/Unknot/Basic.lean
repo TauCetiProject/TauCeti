@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Fin
-public import TauCeti.KnotTheory.Grid.Diagram.Components
+public import TauCeti.KnotTheory.Grid.Diagram.Components.Basic
 public import TauCeti.KnotTheory.Grid.Grading.Integer
 public import TauCeti.KnotTheory.Grid.StateCardinality
 import Mathlib.Tactic.FinCases

@@ -115,6 +115,10 @@ represented link, expressed as a cyclic permutation of its `O`-marking columns. 
 def componentCycles : Finset (Equiv.Perm (Fin n)) :=
   G.componentPerm.cycleFactorsFinset
 
+/-- The component cycles are the cycle factors of the component permutation. -/
+theorem componentCycles_def : G.componentCycles = G.componentPerm.cycleFactorsFinset :=
+  (rfl)
+
 /-- A permutation is a component cycle exactly when it is a cycle agreeing with the component
 permutation throughout its support. -/
 @[simp]
