@@ -21,16 +21,17 @@ biholomorphism.
 
 The two chart systems match up exactly. The maximal cone omitting the ray `k` corresponds to the
 affine open where the homogeneous coordinate `k` is nonzero, and on it the homogeneous ratios
-`X_j / X_k` of the comparison are the toric homogeneous coordinates, which evaluate characters.
-Both directions are therefore holomorphic chart by chart, for the complex structure of any
-extending basis on the toric charts.
+`X_j / X_k` of the comparison are the toric homogeneous coordinates, which evaluate characters
+(`TauCeti.Toric.preimage_projectiveSpaceHomeomorph_affineOpen` and
+`TauCeti.Toric.ratio_projectiveSpaceHomeomorph_analyticAffineChartι`). Both directions are
+therefore holomorphic chart by chart, for the complex structure of any extending basis on the
+toric charts.
 
 ## Main declarations
 
-* `TauCeti.Toric.ratio_projectiveSpaceHomeomorph_analyticAffineChartι`: on a toric maximal chart,
-  the homogeneous ratios of the comparison are the toric homogeneous coordinates.
-* `TauCeti.Toric.preimage_projectiveSpaceHomeomorph_affineOpen`: the standard affine open where
-  `X_k` is nonzero corresponds to the toric chart of the maximal cone omitting `k`.
+* `TauCeti.Toric.contMDiff_projectiveSpaceHomeomorph`,
+  `TauCeti.Toric.contMDiff_projectiveSpaceHomeomorph_symm`: the comparison and its inverse are
+  holomorphic.
 * `TauCeti.Toric.projectiveSpaceDiffeomorph`: the comparison as a biholomorphism.
 
 ## References
@@ -53,62 +54,6 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 local notation "Φ" => Fan.projectiveSpace b hi
 local notation "hΦ" => Fan.isRegular_projectiveSpace b hi
-
-/-- On the toric chart of the maximal cone omitting `k`, the homogeneous ratios `X_j / X_k` of the
-comparison with the sphere quotient are the normalized toric homogeneous coordinates. -/
-@[simp]
-theorem ratio_projectiveSpaceHomeomorph_analyticAffineChartι (k : Option (Fin n))
-    (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
-    (j : Fin (n + 1)) :
-    ComplexProjectiveSpace.ratio ((finSuccEquiv n).symm k) j
-        (projectiveSpaceHomeomorph b hi
-          ((Φ).analyticAffineChartι hΦ (Fan.projectiveSpaceMaximalCone b hi k) x)) =
-      projectiveSpaceHomogeneousCoordinate b hi k x (finSuccEquiv n j) := by
-  have hn := norm_ne_zero_iff.2 (projectiveSpaceHomogeneousVector_ne_zero b hi k x)
-  rw [projectiveSpaceHomeomorph_apply_chart, ComplexProjectiveSpace.ratio_mk]
-  simp only [NormedSpace.normalize, PiLp.smul_apply, projectiveSpaceHomogeneousVector_apply,
-    Equiv.apply_symm_apply, projectiveSpaceHomogeneousCoordinate_self, Complex.real_smul,
-    mul_one]
-  exact mul_div_cancel_left₀ _ (Complex.ofReal_ne_zero.mpr (inv_ne_zero hn))
-
-/-- The standard affine open of complex projective space where the homogeneous coordinate `k` is
-nonzero corresponds to the toric chart of the maximal cone omitting the ray `k`. -/
-theorem preimage_projectiveSpaceHomeomorph_affineOpen (k : Option (Fin n)) :
-    projectiveSpaceHomeomorph b hi ⁻¹'
-        ComplexProjectiveSpace.affineOpen ((finSuccEquiv n).symm k) =
-      range ((Φ).analyticAffineChartι hΦ (Fan.projectiveSpaceMaximalCone b hi k)) := by
-  ext p
-  constructor
-  · intro hp
-    obtain ⟨v, hv⟩ := ComplexProjectiveSpace.mk_surjective n (projectiveSpaceHomeomorph b hi p)
-    have hk : v.1 ((finSuccEquiv n).symm k) ≠ 0 := by simpa [← hv] using hp
-    refine ⟨_, (projectiveSpaceHomeomorph_symm_mk b hi v k hk).symm.trans ?_⟩
-    rw [hv, Homeomorph.symm_apply_apply]
-  · rintro ⟨x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)),
-      rfl⟩
-    have h := ratio_projectiveSpaceHomeomorph_analyticAffineChartι b hi k x
-      ((finSuccEquiv n).symm k)
-    rw [Equiv.apply_symm_apply, projectiveSpaceHomogeneousCoordinate_self] at h
-    exact (ComplexProjectiveSpace.mem_affineOpen_iff _ _).2 (ne_of_eq_of_ne h one_ne_zero)
-
-/-- On the standard affine open where `X_k` is nonzero, the inverse comparison is the point of
-the toric chart of the maximal cone omitting `k` with toric coordinates the homogeneous ratios
-`X_j / X_k`. -/
-theorem projectiveSpaceHomeomorph_symm_eq_of_mem_affineOpen (k : Option (Fin n))
-    {p : ComplexProjectiveSpace n}
-    (hp : p ∈ ComplexProjectiveSpace.affineOpen ((finSuccEquiv n).symm k)) :
-    let _ := affinePointTopology ((Φ).analyticChartGenerators
-      (Fan.projectiveSpaceMaximalCone b hi k)).2
-    (projectiveSpaceHomeomorph b hi).symm p =
-      (Φ).analyticAffineChartι hΦ (Fan.projectiveSpaceMaximalCone b hi k)
-        ((projectiveSpacePointHomeomorph b hi k
-          ((Φ).analyticChartGenerators (Fan.projectiveSpaceMaximalCone b hi k)).2).symm
-          (fun j ↦ ComplexProjectiveSpace.ratio ((finSuccEquiv n).symm k)
-            ((finSuccEquiv n).symm j) p)) := by
-  obtain ⟨v, rfl⟩ := ComplexProjectiveSpace.mk_surjective n p
-  have hk : v.1 ((finSuccEquiv n).symm k) ≠ 0 := by simpa using hp
-  simp only [ComplexProjectiveSpace.ratio_mk]
-  exact projectiveSpaceHomeomorph_symm_mk b hi v k hk
 
 /-- The comparison from toric projective space to the sphere quotient is holomorphic. -/
 theorem contMDiff_projectiveSpaceHomeomorph (r : ℕ∞ω) :
