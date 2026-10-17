@@ -39,6 +39,9 @@ in several variables at a point; admissibility controls their degrees.
   the generalized Wronskian is the Hasse Wronskian.
 * `MvPolynomial.genWronskian_eq_zero_of_not_linearIndependent`: over an integral domain,
   dependent families have vanishing generalized Wronskians.
+* `MvPolynomial.det_hasseDeriv_sum_mul_toMvPolynomial`: for `P = ∑ₖ fₖ · gₖ(Xᵢ)` with the `fₖ`
+  free of `Xᵢ`, the determinant `det (∂^(D k + l eᵢ) P)` is the product of the generalized
+  Wronskian of the `fₖ` and the Hasse Wronskian of the `gₖ`.
 * `MvPolynomial.linearIndependent_iff_exists_genWronskian_ne_zero`: over a field of
   characteristic zero, a family is linearly independent if and only if some admissible generalized
   Wronskian is nonzero.
@@ -141,6 +144,25 @@ theorem genWronskian_eq_zero_of_not_linearIndependent [IsDomain R] (D : Fin m �
     refine sum_congr rfl fun l _ ↦ ?_
     rw [map_smul, smul_eq_C_mul, mul_comm]
   simpa [mulVec, dotProduct, hc] using hk
+
+/-- **Separation of variables for generalized Wronskians** (Pottmeyer, Lemma 3.3.9). Let
+`P = ∑ₖ fₖ · gₖ(Xᵢ)`, where no `fₖ` involves `Xᵢ`, and let the rows `D k` not differentiate in
+`Xᵢ`. Then the determinant of the Hasse derivatives `∂^(D k + l eᵢ) P` is the product of the
+generalized Wronskian `W_D(f)` and the Hasse Wronskian of the `gₖ`, placed in `Xᵢ`. -/
+theorem det_hasseDeriv_sum_mul_toMvPolynomial {i : σ} {D : Fin m → σ →₀ ℕ} (hD : ∀ k, D k i = 0)
+    {f : Fin m → MvPolynomial σ R} (hf : ∀ k, i ∉ (f k).vars) (g : Fin m → Polynomial R) :
+    (of fun k l : Fin m ↦
+        hasseDeriv (D k + single i (l : ℕ)) (∑ j, f j * (g j).toMvPolynomial i)).det =
+      genWronskian D f * (Polynomial.hasseWronskian g).toMvPolynomial i := by
+  have hM : (of fun k l : Fin m ↦
+      hasseDeriv (D k + single i (l : ℕ)) (∑ j, f j * (g j).toMvPolynomial i)) =
+        of (fun k j ↦ hasseDeriv (D k) (f j)) *
+          (of fun (l : Fin m) j ↦ (Polynomial.hasseDeriv l (g j)).toMvPolynomial i)ᵀ := by
+    ext1 k l
+    simp [mul_apply, hasseDeriv_add_single_mul_toMvPolynomial (hD k) (hf _)]
+  rw [hM, det_mul, det_transpose, genWronskian_def, Polynomial.hasseWronskian_def,
+    AlgHom.map_det]
+  congr 2
 
 /-! ### The generalized Wronskian criterion -/
 
