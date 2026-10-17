@@ -80,8 +80,7 @@ section HessianSymmetry
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. The proof
-compares the two metric product rules for the gradient and uses vanishing torsion. -/
+/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. -/
 theorem hessian_symm [IsManifold I ∞ M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
