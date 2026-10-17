@@ -18,7 +18,8 @@ import Mathlib.Data.Set.Finite.Range
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the partition of a type into the fibres of
 a map to a finite type, the associated indexed partition, cardinality bounds for common
-refinements, the behavior of intersections of parts under refinement, and the coarse parent
+refinements, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+the behavior of intersections of parts under refinement, and the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part.
 -/
@@ -60,6 +61,24 @@ theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [De
   rw [Finpartition.parts_inf]
   exact Finset.card_erase_le.trans
     (Finset.card_image_le.trans_eq (Finset.card_product _ _))
+
+/-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
+theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
+    {a : α} (P : Finpartition a) (Q : ∀ i ∈ P.parts, Finpartition i) : P.bind Q ≤ P := by
+  intro b hb
+  obtain ⟨A, hA, hb⟩ := mem_bind.1 hb
+  exact ⟨A, hA, (Q A hA).le hb⟩
+
+/-- If `Q` refines `P`, then each part of `P` is the union of the parts of `Q` it contains. -/
+theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Finset ι}
+    {P Q : Finpartition s} (hQP : Q ≤ P) (hB : B ∈ P.parts) :
+    {C ∈ Q.parts | C ⊆ B}.biUnion id = B := by
+  refine Finset.Subset.antisymm
+    (Finset.biUnion_subset.2 fun C hC ↦ (Finset.mem_filter.1 hC).2) fun x hx ↦ ?_
+  obtain ⟨C, hC, hxC⟩ := Q.exists_mem (P.le hB hx)
+  obtain ⟨B', hB', hCB'⟩ := hQP hC
+  obtain rfl := P.eq_of_mem_parts hB' hB (hCB' hxC) hx
+  exact Finset.mem_biUnion.2 ⟨C, Finset.mem_filter.2 ⟨hC, hCB'⟩, hxC⟩
 
 variable {Ω : Type*} {u : Set Ω}
 

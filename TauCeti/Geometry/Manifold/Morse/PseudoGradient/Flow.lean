@@ -80,7 +80,6 @@ noncomputable def flow (hX : IsAdaptedPseudoGradient f X) : Flow ℝ M :=
   globalFlow X (hX.contMDiff.of_le (by simp)) hX.maximalIntegralCurveInterval_eq_univ
 
 variable (hX : IsAdaptedPseudoGradient f X)
-include hX
 
 /-- The flow at time `t` is the maximal integral curve of the pseudo-gradient at time `t`. -/
 theorem flow_apply (t : ℝ) (y : M) : hX.flow t y = maximalIntegralCurve X y t := by
@@ -101,10 +100,9 @@ theorem contMDiff_flow_apply (t : ℝ) : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞
   contMDiff_globalFlow_apply hX.maximalIntegralCurveInterval_eq_univ (n := ⊤) le_top
     hX.contMDiff t
 
-omit hX in
 /-- The time-`t` map of the flow of an adapted pseudo-gradient, as a diffeomorphism. Its inverse
 is the time-`(-t)` map. -/
-noncomputable def flowDiffeomorph (hX : IsAdaptedPseudoGradient f X) (t : ℝ) :
+noncomputable def flowDiffeomorph (t : ℝ) :
     M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
   globalFlowDiffeomorph hX.maximalIntegralCurveInterval_eq_univ (n := ⊤) le_top hX.contMDiff t
 

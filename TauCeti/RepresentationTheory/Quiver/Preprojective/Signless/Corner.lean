@@ -32,6 +32,8 @@ are dual to these corners.
 
 * `TauCeti.mem_signlessPreprojectiveCorner_iff`: the graded corner is the degree-`n` part of the
   corner `e_j Π e_i`.
+* `TauCeti.signlessPreprojectiveCorner_zero_self_eq_span` and
+  `TauCeti.signlessPreprojectiveCorner_zero_eq_bot_of_ne`: the corners in degree zero.
 * `TauCeti.signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner`: arrows act on
   the graded corners.
 * `TauCeti.exists_eq_sum_signlessPreprojectiveMk_ofArrow_mul`: last-arrow decomposition in a
@@ -107,6 +109,37 @@ theorem mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiv
   obtain ⟨-, hc⟩ := mem_signlessPreprojectiveCorner_iff.1 hx
   rw [← hc, mul_assoc, signlessPreprojectiveMk_vertexIdempotent_mul_self]
 
+variable (k) in
+/-- **The graded corner `e_i Π_0 e_i` is the line of the vertex idempotent `e_i`**, the class of
+the only path of length zero from `i` to `i`. -/
+theorem signlessPreprojectiveCorner_zero_self_eq_span (i : R) :
+    signlessPreprojectiveCorner k R 0 i i = k ∙ σ (vertexIdempotent k i) := by
+  rw [signlessPreprojectiveCorner, pathsBetween_def, Submodule.map_span, ← Set.range_comp]
+  congr 1
+  refine Set.ext fun x => ⟨?_, fun hx => ⟨⟨Path.nil, Path.length_nil⟩, ?_⟩⟩
+  · rintro ⟨⟨p, hp⟩, rfl⟩
+    obtain rfl := Path.eq_nil_of_length_zero p hp
+    rw [Set.mem_singleton_iff, Function.comp_apply, AlgHom.toLinearMap_apply,
+      vertexIdempotent_eq_ofPath]
+  · rw [Set.mem_singleton_iff.1 hx, Function.comp_apply, AlgHom.toLinearMap_apply,
+      vertexIdempotent_eq_ofPath]
+
+variable (k) in
+/-- **The graded corner `e_j Π_0 e_i` vanishes for `i ≠ j`**: there is no path of length zero
+between distinct vertices. -/
+theorem signlessPreprojectiveCorner_zero_eq_bot_of_ne {i j : R} (h : i ≠ j) :
+    signlessPreprojectiveCorner k R 0 i j = ⊥ := by
+  have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩
+  rw [signlessPreprojectiveCorner, pathsBetween_def, Set.range_eq_empty, Submodule.span_empty,
+    Submodule.map_bot]
+
+variable (k) in
+/-- The vertex idempotent `e_i` lies in the graded corner `e_i Π_0 e_i`. -/
+theorem signlessPreprojectiveMk_vertexIdempotent_mem_signlessPreprojectiveCorner_zero (i : R) :
+    σ (vertexIdempotent k i) ∈ signlessPreprojectiveCorner k R 0 i i := by
+  rw [signlessPreprojectiveCorner_zero_self_eq_span]
+  exact Submodule.mem_span_singleton_self _
+
 /-- Left multiplication by an arrow `b : j ⟶ l` maps `e_j Π_n e_i` into `e_l Π_{n+1} e_i`. -/
 theorem signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner {n : ℕ}
     {i j l : R} (b : j ⟶ l) {x : Π} (hx : x ∈ signlessPreprojectiveCorner k R n i j) :
@@ -119,6 +152,24 @@ theorem signlessPreprojectiveMk_ofArrow_mul_mem_signlessPreprojectiveCorner {n :
   · rw [mul_assoc, mul_assoc (σ (ofArrow b)),
       mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiveCorner hx,
       ← mul_assoc, ← map_mul, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
+
+/-- Distinct graded corners of the signless preprojective algebra meet only in zero. -/
+theorem disjoint_signlessPreprojectiveCorner {m n : ℕ} {i i' j j' : R}
+    (h : m ≠ n ∨ i ≠ i' ∨ j ≠ j') :
+    Disjoint (signlessPreprojectiveCorner k R m i j)
+      (signlessPreprojectiveCorner k R n i' j') := by
+  rw [Submodule.disjoint_def]
+  intro x hx hx'
+  rcases h with hmn | hi | hj
+  · exact Submodule.disjoint_def.1
+      ((isInternal_signlessPreprojectiveGrade k R).submodule_iSupIndep.pairwiseDisjoint hmn) x
+      (mem_signlessPreprojectiveCorner_iff.1 hx).1 (mem_signlessPreprojectiveCorner_iff.1 hx').1
+  · rw [← mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiveCorner hx',
+      ← mul_signlessPreprojectiveMk_vertexIdempotent_of_mem_signlessPreprojectiveCorner hx,
+      mul_assoc, ← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne hi, map_zero, mul_zero]
+  · rw [← signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner hx,
+      ← signlessPreprojectiveMk_vertexIdempotent_mul_of_mem_signlessPreprojectiveCorner hx',
+      ← mul_assoc, ← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne hj, map_zero, zero_mul]
 
 section Fintype
 

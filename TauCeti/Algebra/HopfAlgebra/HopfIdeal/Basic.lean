@@ -319,44 +319,34 @@ instance instSemilatticeSup : SemilatticeSup (HopfIdeal R H) where
     exact add_mem (hIK hy) (hJK hz)
 
 /-- The supremum of a set of Hopf ideals has underlying ideal the supremum of the underlying
-ideals. The four proof obligations are the implementation of this construction, so they are
-discharged inline rather than as standalone lemmas. -/
+ideals. -/
 instance instSupSet : SupSet (HopfIdeal R H) where
   sSup S :=
     { carrier := ⨆ I : S, (I : HopfIdeal R H).toIdeal
       isTwoSided' := by
-        classical
         refine ⟨fun {x} b hx => ?_⟩
-        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-        rcases hx with ⟨f, hf, rfl⟩
-        rw [Finsupp.sum, Finset.sum_mul]
-        exact Submodule.sum_mem _ fun I _ =>
-          Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
+        exact Submodule.iSup_induction _ (motive := (· * b ∈ _)) hx
+          (fun I _ hx => Submodule.mem_iSup_of_mem I (I.1.mul_mem_right hx b))
+          (by simp)
+          (fun _ _ hx hy => by simpa only [add_mul] using add_mem hx hy)
       comul_mem' := fun _ hx => by
-        classical
-        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-        rcases hx with ⟨f, hf, rfl⟩
-        rw [Finsupp.sum, map_sum]
-        refine Submodule.sum_mem _ fun I _ => ?_
-        exact sup_le_sup
-          (Ideal.leftTensorIdeal_mono (R := R) (B := H)
-            (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-          (Ideal.rightTensorIdeal_mono (R := R) (A := H)
-            (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-          ((I : HopfIdeal R H).comul_mem (hf I))
-      counit_eq_zero' := fun _ hx => by
-        classical
-        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-        rcases hx with ⟨f, hf, rfl⟩
-        rw [Finsupp.sum, map_sum]
-        exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
-      antipode_mem' := fun _ hx => by
-        classical
-        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-        rcases hx with ⟨f, hf, rfl⟩
-        rw [Finsupp.sum, map_sum]
-        exact Submodule.sum_mem _ fun I _ =>
-          Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).antipode_mem (hf I)) }
+        refine Submodule.iSup_induction _ (motive := (Coalgebra.comul (R := R) · ∈ _)) hx
+          (fun I _ hx => ?_) (by simp) ?_
+        · exact sup_le_sup
+            (Ideal.leftTensorIdeal_mono (R := R) (B := H) (le_iSup _ I))
+            (Ideal.rightTensorIdeal_mono (R := R) (A := H) (le_iSup _ I))
+            (I.1.comul_mem hx)
+        · intro x y hx hy
+          simpa only [map_add] using add_mem hx hy
+      counit_eq_zero' := fun _ hx =>
+        Submodule.iSup_induction _ (motive := (Coalgebra.counit (R := R) · = 0)) hx
+          (fun I _ hx => I.1.counit_eq_zero hx) (map_zero _)
+          (fun _ _ hx hy => by rw [map_add, hx, hy, add_zero])
+      antipode_mem' := fun _ hx =>
+        Submodule.iSup_induction _ (motive := (HopfAlgebra.antipode R · ∈ _)) hx
+          (fun I _ hx => Submodule.mem_iSup_of_mem I (I.1.antipode_mem hx))
+          (by simp)
+          (fun _ _ hx hy => by simpa only [map_add] using add_mem hx hy) }
 
 /-- The underlying ideal of a supremum of a set of Hopf ideals is the supremum of the
 underlying ideals indexed by that set. -/
