@@ -67,8 +67,7 @@ theorem lintegral_enorm_deriv_mul_eq_lintegral_tsum (hγ : LipschitzOnWith K γ 
         filter_upwards [Icc_mem_nhds ht'.1 ht'.2] with x hx
         exact (hfeq hx).symm
       rw [heq.fderiv_eq, LinearMap.normDet_eq_norm_apply_one]
-      rw [ofReal_norm]
-      rfl
+      rw [ofReal_norm, ContinuousLinearMap.coe_coe, fderiv_apply_one_eq_deriv]
     _ = ∫⁻ y, ∑' t : ↥(Icc a b ∩ f ⁻¹' {y}), g t ∂μHE[1] := harea
     _ = _ := lintegral_congr hfibers
 
