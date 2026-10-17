@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Green.Comparison.Regularity
 public import TauCeti.Analysis.Green.Comparison.PullbackExteriorDerivative
 public import TauCeti.Analysis.Green.Comparison.Area.Image
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
 
 /-!
 # Green on finitely many actual boundary components

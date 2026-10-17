@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.SmoothPartition
 import Mathlib.Topology.Compactness.SigmaCompact
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
 
 /-!
 # Global circulation on an actual smooth boundary

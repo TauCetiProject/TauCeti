@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.DifferentialForm
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import Mathlib.Analysis.Calculus.Deriv.Comp
