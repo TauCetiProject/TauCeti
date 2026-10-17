@@ -36,7 +36,9 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
-  largest norm-achieving exponent for any monomial order.
+  largest norm-achieving exponent for any monomial order, and
+  `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
+  such exponents of two series dominates every other summand of the product coefficient.
 * `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
   restricted series attains its norm, and its smaller weighted coefficient norms stay below a
   constant smaller than its norm.
@@ -327,6 +329,56 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
   exact (not_le_of_gt ht) (hnmax t ht_mem)
 
+/-- **The dominant product summand.** Let `i` and `j` be the largest exponents, for a monomial
+order `m`, at which nonzero restricted series `f` and `g` attain their Gauss norms. Every other
+summand `coeff p.1 f * coeff p.2 g` of the coefficient of `f * g` at `i + j` has a strictly
+smaller product of coefficient norms than `coeff i f * coeff j g`. -/
+theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : MonomialOrder σ)
+    {f g : MvPowerSeries σ R} (hf : IsRestricted c f) (hg : IsRestricted c g) (hf0 : f ≠ 0)
+    (hg0 : g ≠ 0) {i j : σ →₀ ℕ} (hi : AchievesGaussNorm norm c f i)
+    (himax : ∀ t, m.toSyn i < m.toSyn t → ‖coeff t f‖ * t.prod (c · ^ ·) < gaussNorm norm c f)
+    (hj : AchievesGaussNorm norm c g j)
+    (hjmax : ∀ t, m.toSyn j < m.toSyn t → ‖coeff t g‖ * t.prod (c · ^ ·) < gaussNorm norm c g)
+    {p : (σ →₀ ℕ) × (σ →₀ ℕ)} (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
+    ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
+  have hfp : 0 < gaussNorm norm c f := by
+    rw [← norm_eq_gaussNorm (⟨f, hf⟩ : IsRestricted.subring c)]
+    exact norm_pos_iff.mpr fun h ↦ hf0 (congrArg Subtype.val h)
+  have hgp : 0 < gaussNorm norm c g := by
+    rw [← norm_eq_gaussNorm (⟨g, hg⟩ : IsRestricted.subring c)]
+    exact norm_pos_iff.mpr fun h ↦ hg0 (congrArg Subtype.val h)
+  have hp' : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
+  -- Every summand at this exponent has the same positive weight.
+  have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
+      i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
+    simpa [prod_pow_add] using congrArg (fun t ↦ t.prod (c · ^ ·)) hp'
+  -- A different pair forces one exponent beyond the chosen maximal norm achiever.
+  have hsyn : m.toSyn p.1 + m.toSyn p.2 = m.toSyn i + m.toSyn j := by
+    rw [← map_add, ← map_add, hp']
+  have hlt : (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
+      (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) < gaussNorm norm c f * gaussNorm norm c g := by
+    rcases trichotomy_of_add_eq_add hsyn with h | h | h
+    · exact False.elim (hne (Prod.ext (m.toSyn.injective h.1) (m.toSyn.injective h.2)))
+    · have hp2 : m.toSyn j < m.toSyn p.2 :=
+        lt_of_add_lt_add_left (hsyn ▸ add_lt_add_left h (m.toSyn p.2))
+      exact mul_lt_mul' (le_gaussNorm norm c f hf.hasGaussNorm p.1)
+        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hfp
+    · have hp1 : m.toSyn i < m.toSyn p.1 :=
+        lt_of_add_lt_add_right (hsyn ▸ add_lt_add_right h (m.toSyn p.1))
+      simpa only [mul_comm] using
+        mul_lt_mul' (le_gaussNorm norm c g hg.hasGaussNorm p.2) (himax p.1 hp1)
+          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hgp
+  rw [← hi, ← hj] at hlt
+  -- Cancel the common positive weight.
+  apply (mul_lt_mul_iff_of_pos_right
+    (mul_pos (prod_pow_pos (c := c) i) (prod_pow_pos (c := c) j))).mp
+  calc
+    _ = (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
+        (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) := by rw [← hweight]; ring
+    _ < (‖coeff i f‖ * i.prod (c · ^ ·)) *
+        (‖coeff j g‖ * j.prod (c · ^ ·)) := hlt
+    _ = _ := by ring
+
 /-- The Gauss norm of a product of restricted series is the product of their Gauss norms when
 the coefficient norm is multiplicative. Positive polyradii are arbitrary. -/
 theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
@@ -342,52 +394,12 @@ theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
   have : WellFoundedGT σ := (WellOrderingRel.isWellOrder (α := σ)).wf.mono fun _ _ h ↦ h
   obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max MonomialOrder.lex hf0
   obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max MonomialOrder.lex hg0
-  have hfp : 0 < gaussNorm norm c f := by
-    rw [← norm_eq_gaussNorm (⟨f, hf⟩ : IsRestricted.subring c)]
-    exact norm_pos_iff.mpr fun h ↦ hf0 (congrArg Subtype.val h)
-  have hgp : 0 < gaussNorm norm c g := by
-    rw [← norm_eq_gaussNorm (⟨g, hg⟩ : IsRestricted.subring c)]
-    exact norm_pos_iff.mpr fun h ↦ hg0 (congrArg Subtype.val h)
   refine gaussNorm_mul_eq_mul norm c f g hf.hasGaussNorm hg.hasGaussNorm
     (hf.mul hg).hasGaussNorm norm_nonneg norm_zero
     IsUltrametricDist.isNonarchimedean_norm norm_mul norm_neg
-    (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, ?_⟩
-  intro p hp hne
-  have hp' : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
-  -- Every summand at this exponent has the same positive weight.
-  have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
-      i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
-    simpa [prod_pow_add] using congrArg (fun t ↦ t.prod (c · ^ ·)) hp'
-  -- A different pair forces one exponent beyond the chosen maximal norm achiever.
-  have hlt : (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
-      (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) < gaussNorm norm c f * gaussNorm norm c g := by
-    rcases trichotomy_of_add_eq_add (α := Lex (σ →₀ ℕ)) (congrArg toLex hp') with h | h | h
-    · exact False.elim (hne (Prod.ext (toLex.injective h.1) (toLex.injective h.2)))
-    · have hp2 : toLex j < toLex p.2 := by
-        have heq : toLex p.1 + toLex p.2 = toLex i + toLex j := congrArg toLex hp'
-        exact lt_of_add_lt_add_left (α := Lex (σ →₀ ℕ))
-          (heq ▸ add_lt_add_left (α := Lex (σ →₀ ℕ)) h (toLex p.2))
-      exact mul_lt_mul' (le_gaussNorm norm c f hf.hasGaussNorm p.1)
-        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hfp
-    · have hp1 : toLex i < toLex p.1 := by
-        have heq : toLex p.1 + toLex p.2 = toLex i + toLex j := congrArg toLex hp'
-        exact lt_of_add_lt_add_right (α := Lex (σ →₀ ℕ))
-          (heq ▸ add_lt_add_right (α := Lex (σ →₀ ℕ)) h (toLex p.1))
-      simpa only [mul_comm] using
-        mul_lt_mul' (le_gaussNorm norm c g hg.hasGaussNorm p.2) (himax p.1 hp1)
-          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hgp
-  rw [← hi, ← hj] at hlt
-  -- Cancel the common positive weight to apply the dominant-antidiagonal theorem.
-  have hlt' : ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
-    apply (mul_lt_mul_iff_of_pos_right
-      (mul_pos (prod_pow_pos (c := c) i) (prod_pow_pos (c := c) j))).mp
-    calc
-      _ = (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
-          (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) := by rw [← hweight]; ring
-      _ < (‖coeff i f‖ * i.prod (c · ^ ·)) *
-          (‖coeff j g‖ * j.prod (c · ^ ·)) := hlt
-      _ = _ := by ring
-  simpa only [norm_mul] using hlt'
+    (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, fun p hp hne ↦ ?_⟩
+  simpa only [norm_mul] using
+    hf.norm_coeff_mul_norm_coeff_lt MonomialOrder.lex hg hf0 hg0 hi himax hj hjmax hp hne
 
 /-- The Gauss norm inherits multiplicativity from the coefficient norm. -/
 instance [NormMulClass R] : NormMulClass (IsRestricted.subring (R := R) c) where
