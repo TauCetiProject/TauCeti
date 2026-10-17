@@ -6,10 +6,11 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Solvable.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Borel.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Borel.Existence
+import TauCeti.Algebra.AlgebraicGroup.Borel.Radical
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Descent
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Descent
-import Mathlib.RingTheory.Etale.Descent
 
 /-!
 # Descent of solvable-radical candidates
@@ -20,8 +21,8 @@ fields. In particular, passing from an algebraically closed field to its algebra
 introduces no new radical candidates. This is the comparison needed to recognize
 semisimplicity over an algebraically closed ground field.
 
-The proof reuses `Module.Basis.coefficientHopfIdeal`, geometric connectedness and
-solvability descent, and `Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat`.
+Candidate descent reuses Borel-candidate descent together with normality descent.
+The radical comparison reuses `Module.Basis.coefficientHopfIdeal` through Hopf-ideal descent.
 
 ## References
 
@@ -46,21 +47,10 @@ theorem of_baseChange
     (hI : IsSolvableRadicalCandidate
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)
       (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I)) :
-    IsSolvableRadicalCandidate H I := by
-  let e := CommHopfAlgCat.quotientBaseChangeIso (K := K) I
-  let Q := (FiniteTypeCommHopfAlgCat.quotient H I).obj
-  have hconn := (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e
-    hI.geometricallyConnected
-  have hsolv := (geometricallySolvablePointsCommHopfAlgProperty K).prop_of_iso e
-    hI.geometricallySolvable
-  have hsmooth := (smoothCommHopfAlgProperty K).prop_of_iso e
-    ((smoothCommHopfAlgProperty_iff _).mpr hI.smooth)
-  refine .mk (CommHopfAlgCat.isNormal_of_baseChangeHopfIdeal hI.isNormal)
-    (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K Q hconn) ?_
-    (geometricallySolvablePointsCommHopfAlgProperty.of_baseChange Q hsolv)
-  let _ : Algebra.Smooth K (CommHopfAlgCat.baseChange (K := K) Q) :=
-    (smoothCommHopfAlgProperty_iff _).mp hsmooth
-  exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K
+    IsSolvableRadicalCandidate H I :=
+  (HopfIdeal.IsBorelCandidate.of_baseChange
+    (H := H.obj) hI.isBorelCandidate).isSolvableRadicalCandidate_of_isNormal
+    (CommHopfAlgCat.isNormal_of_baseChangeHopfIdeal hI.isNormal)
 
 /-- Being a solvable-radical candidate is invariant under field extension. -/
 @[simp]
