@@ -32,9 +32,10 @@ and right double duals as monoidal functors.
 Applying the left dual functor twice gives the double left dual functor `C ⥤ C`, sending `X`
 to `ᘁ(ᘁX)` and `f` to `ᘁ(ᘁf)`. As for the double right dual functor, the second application
 goes through the opposite monoidal opposite of the left dual functor. The resulting functor is
-strong monoidal, and in a rigid monoidal category it is a monoidal autoequivalence. The double
-left and double right dual functors are the two autoequivalences that a pivotal structure
-trivializes; without a pivotal structure they are inverse rather than naturally isomorphic.
+strong monoidal, and in a rigid monoidal category it is a monoidal autoequivalence. In a rigid
+monoidal category the double left and double right dual functors are mutually inverse
+autoequivalences (EGNO §2.10); a pivotal structure trivializes the double right dual, hence both,
+but in general neither need be isomorphic to the identity.
 
 ## Main declarations
 
@@ -291,14 +292,22 @@ open Functor.LaxMonoidal Functor.OplaxMonoidal
 
 variable (C)
 
-/-- The unit comparison `𝟙_ C ⟶ ᘁ(ᘁ(𝟙_ C))` of the double left dual functor. -/
+/-! The structure morphisms of a composite of monoidal functors are composites of the structure
+morphisms of its factors (`Functor.LaxMonoidal.comp_μ` and its relatives). Those of the left dual
+functor and of its opposite monoidal opposite are, after removing the wrappers, the morphisms of
+`C` displayed below, while those of the removal of the wrappers are identities. -/
+
+/-- The unit comparison `𝟙_ C ⟶ ᘁ(ᘁ(𝟙_ C))` of the double left dual functor: identify `𝟙_ C` with
+`ᘁ(𝟙_ C)`, then take the mate of the identification of `ᘁ(𝟙_ C)` with `𝟙_ C`. The pairings are
+explicit because `ᘁ(𝟙_ C)` is the dual chosen by the rigid structure, which need not be Mathlib's
+`hasLeftDualUnit`. -/
 theorem doubleLeftDualFunctor_ε :
     ε (doubleLeftDualFunctor C) =
       (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).inv ≫
         leftMate HasLeftDual.exact (LeftRigidCategory.leftDual (𝟙_ C)).exact
           (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).hom :=
   (Category.id_comp _ =≫ _).trans
-    (_ ≫= @leftAdjointMate_eq_leftMate C _ _ _ _ _ (LeftRigidCategory.leftDual (𝟙_ C)) _)
+    (_ ≫= leftAdjointMate_eq_leftMate _)
 
 /-- The inverse unit comparison `ᘁ(ᘁ(𝟙_ C)) ⟶ 𝟙_ C` of the double left dual functor. -/
 theorem doubleLeftDualFunctor_η :
@@ -307,9 +316,11 @@ theorem doubleLeftDualFunctor_η :
           (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).inv ≫
         (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).hom :=
   (_ ≫= Category.comp_id _).trans
-    (@leftAdjointMate_eq_leftMate C _ _ _ _ (LeftRigidCategory.leftDual (𝟙_ C)) _ _ =≫ _)
+    (leftAdjointMate_eq_leftMate _ =≫ _)
 
-/-- The tensor comparison `ᘁ(ᘁX) ⊗ ᘁ(ᘁY) ⟶ ᘁ(ᘁ(X ⊗ Y))` of the double left dual functor. -/
+/-- The tensor comparison `ᘁ(ᘁX) ⊗ ᘁ(ᘁY) ⟶ ᘁ(ᘁ(X ⊗ Y))` of the double left dual functor:
+identify `ᘁ(ᘁX) ⊗ ᘁ(ᘁY)` with `ᘁ(ᘁY ⊗ ᘁX)`, then take the mate of the comparison
+`ᘁ(X ⊗ Y) ≅ ᘁY ⊗ ᘁX`. -/
 theorem doubleLeftDualFunctor_μ (X Y : C) :
     μ (doubleLeftDualFunctor C) X Y =
       (leftDualTensorIso (ᘁY) (ᘁX)).inv ≫ ᘁ((leftDualTensorIso X Y).hom) :=
