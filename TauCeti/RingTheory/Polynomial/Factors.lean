@@ -39,6 +39,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.finite`: a nonzero polynomial has finitely many factors.
 * `Polynomial.Factors.normalizedFactors_eq_map_univ_val`: for a nonzero squarefree polynomial,
   its normalized factors are precisely the distinct monic irreducible factors.
+* `Polynomial.Factors.subsingleton_iff_exists_associated_pow`: a nonzero polynomial has at most
+  one factor exactly when it is a unit times a power of an irreducible polynomial.
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
@@ -111,6 +113,24 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=
   let ⟨p, hmonic, hirr, hdvd⟩ := f.exists_monic_irreducible_factor hu
   ⟨⟨p, hirr, hmonic, hdvd⟩⟩
+
+/-- A nonzero polynomial has at most one monic irreducible factor exactly when it is a unit times
+a power of one irreducible polynomial. -/
+lemma subsingleton_iff_exists_associated_pow (hf : f ≠ 0) :
+    Subsingleton f.Factors ↔ ∃ q : K[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) f := by
+  classical
+  refine ⟨fun h ↦ ?_, fun ⟨q, hq, n, hqf⟩ ↦ ⟨fun a b ↦ Subtype.ext ?_⟩⟩
+  · by_cases hu : IsUnit f
+    · exact ⟨X, irreducible_X, 0, by rw [pow_zero]; exact (associated_one_iff_isUnit.mpr hu).symm⟩
+    obtain ⟨q⟩ := nonempty hu
+    refine ⟨q, q.irreducible, exists_associated_prime_pow_of_unique_normalized_factor
+      (fun {m} hm ↦ ?_) hf⟩
+    exact congrArg Subtype.val
+      (Subsingleton.elim (⟨m, (Polynomial.mem_normalizedFactors_iff hf).mp hm⟩ : f.Factors) q)
+  · -- Every factor divides `q ^ n`, hence `q`, so all of them are associated to `q`.
+    have key (r : f.Factors) : Associated (r : K[X]) q :=
+      r.irreducible.associated_of_dvd hq (r.prime.dvd_of_dvd_pow (r.dvd.trans hqf.symm.dvd))
+    exact eq_of_monic_of_associated a.monic b.monic ((key a).trans (key b).symm)
 
 /-- The monic linear factors of `f` correspond to the roots of `f`. -/
 noncomputable def linearEquivRoots :
