@@ -146,12 +146,12 @@ theorem eVariationOn_subpath (γ : Path x y) (s t : I) :
   rw [coe_subpath, eVariationOn.comp_eq_of_monotoneOn γ _ (hm.monotoneOn univ),
     image_univ, range_subpathAux]
 
-/-- A subpath is rectifiable if the original path has bounded variation on its parameter
-interval. -/
-theorem boundedVariationOn_subpath (γ : Path x y) {s t : I}
-    (hγ : BoundedVariationOn γ (uIcc s t)) :
-    BoundedVariationOn (γ.subpath s t) univ := by
-  simpa only [BoundedVariationOn, eVariationOn_subpath] using hγ
+/-- A subpath is rectifiable if and only if the original path has bounded variation on its
+parameter interval. -/
+@[simp↓]
+theorem boundedVariationOn_subpath_iff (γ : Path x y) (s t : I) :
+    BoundedVariationOn (γ.subpath s t) univ ↔ BoundedVariationOn γ (uIcc s t) := by
+  simp only [BoundedVariationOn, eVariationOn_subpath]
 
 /-- Increasing continuous reparametrization fixing the endpoints preserves path length.
 Pauses in the reparametrization are allowed. -/
