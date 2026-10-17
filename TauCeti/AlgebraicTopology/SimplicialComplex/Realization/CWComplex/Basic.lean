@@ -51,6 +51,10 @@ variable {K : AbstractSimplicialComplex ι} {n : ℕ}
 def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
   (c.1.1.orderEmbOfFin c.2).toEmbedding
 
+/-- The chosen vertex enumeration is strictly increasing. -/
+theorem strictMono_vertexEmbedding (c : RealizationCell K n) : StrictMono c.vertexEmbedding :=
+  (c.1.1.orderEmbOfFin c.2).strictMono
+
 /-- The increasing enumeration has the cell's face as its image. -/
 @[simp]
 theorem image_vertexEmbedding (c : RealizationCell K n) :
@@ -60,6 +64,12 @@ theorem image_vertexEmbedding (c : RealizationCell K n) :
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
   simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2)
+
+/-- A cell's characteristic map uses its increasing vertex enumeration. -/
+theorem characteristicMap_def (c : RealizationCell K n) :
+    c.characteristicMap =
+      simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2) :=
+  (rfl)
 
 /-- The source of a simplicial cell's characteristic map is the open unit ball. -/
 @[simp]
