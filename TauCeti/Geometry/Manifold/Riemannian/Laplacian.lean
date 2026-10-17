@@ -96,26 +96,35 @@ theorem hessian_symm [IsManifold I ∞ M]
       (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
     contMDiff_mgradient hf
   have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
-  -- Metric compatibility rewrites the two derivatives of the gradient pairing.
-  have hinnerW :=
-    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-      V hG' hW
-  have hinnerV :=
-    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-      W hG' hV
-  have hinnerW' : (fun y ↦ inner ℝ (mgradient I f y) (W y)) =
-      (fun y ↦ mvfderiv I f y (W y)) := by
-    funext y
-    exact inner_mgradient (I := I) (f := f) (x := y) (W y)
-  have hinnerV' : (fun y ↦ inner ℝ (mgradient I f y) (V y)) =
-      (fun y ↦ mvfderiv I f y (V y)) := by
-    funext y
-    exact inner_mgradient (I := I) (f := f) (x := y) (V y)
-  have hinnerW2 := hinnerW
-  have hinnerV2 := hinnerV
-  rw [hinnerW'] at hinnerW2
-  rw [hinnerV'] at hinnerV2
-  clear hinnerW hinnerV
+  have hessian_apply_eq_mvfderiv_sub :
+      ∀ (V W : (y : M) → TangentSpace I y),
+        MDiffAt (T% V) x → MDiffAt (T% W) x →
+          hessian I f x (V x) (W x) =
+            mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
+              mvfderiv I f x
+                ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
+    intro V W hV hW
+    have hinner :=
+      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+        V (σ := mgradient I f) (τ := W) hG' hW
+    have hinner' : (fun y ↦ inner ℝ (mgradient I f y) (W y)) =
+        (fun y ↦ mvfderiv I f y (W y)) := by
+      funext y
+      exact inner_mgradient (I := I) (f := f) (x := y) (W y)
+    rw [hinner'] at hinner
+    have hinner'' :
+        mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
+          inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
+              (W x) +
+            inner ℝ (mgradient I f x)
+              ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
+      simpa only [Function.comp_apply] using hinner
+    have hgrad := inner_mgradient (I := I) (f := f) (x := x)
+      ((CovariantDerivative.leviCivitaConnection I M W) x (V x))
+    rw [hessian_def]
+    linarith
+  have hessianVW := hessian_apply_eq_mvfderiv_sub V W hV hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub W V hW hV
   have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
@@ -134,29 +143,28 @@ theorem hessian_symm [IsManifold I ∞ M]
           CovariantDerivative.leviCivitaConnection I M V x (W x) =
         VectorField.mlieBracket I V W x := by
     exact sub_eq_zero.mp htw.symm
-  have hinnerW3 :
-      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
-        inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
-          (W x) + inner ℝ (mgradient I f x)
-            (CovariantDerivative.leviCivitaConnection I M W x (V x)) := by
-    simpa only [Function.comp_apply] using hinnerW2
-  have hinnerV3 :
-      mvfderiv I (fun y ↦ mvfderiv I f y (V y)) x (W x) =
-        inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (W x))
-          (V x) + inner ℝ (mgradient I f x)
-            (CovariantDerivative.leviCivitaConnection I M V x (W x)) := by
-    simpa only [Function.comp_apply] using hinnerV2
   have hgradbracket : inner ℝ (mgradient I f x) (VectorField.mlieBracket I V W x) =
       mvfderiv I f x (VectorField.mlieBracket I V W x) :=
     inner_mgradient (I := I) (f := f) (x := x) _
-  dsimp [V, W] at hinnerW3 hinnerV3 htw' hbracket
-  simp only [FiberBundle.extend_apply_self] at hinnerW3 hinnerV3 htw' hbracket
+  have hgradW : inner ℝ (mgradient I f x)
+      ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) =
+      mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) :=
+    inner_mgradient (I := I) (f := f) (x := x) _
+  have hgradV : inner ℝ (mgradient I f x)
+      ((CovariantDerivative.leviCivitaConnection I M V) x (W x)) =
+      mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M V) x (W x)) :=
+    inner_mgradient (I := I) (f := f) (x := x) _
+  dsimp [V, W] at hessianVW hessianWV htw' hbracket hgradbracket hgradW hgradV
+  simp only [FiberBundle.extend_apply_self] at hessianVW hessianWV htw' hbracket
+  simp only [FiberBundle.extend_apply_self] at hgradbracket hgradW hgradV
   rw [← hgradbracket] at hbracket
-  dsimp [hessian]
+  rw [← hgradW] at hessianVW
+  rw [← hgradV] at hessianWV
   -- The two metric-compatibility equations now differ only by the torsion equation.
   have htw_inner := congrArg (fun z ↦ inner ℝ (mgradient I f x) z) htw'
   simp only [inner_sub_right] at htw_inner
-  linarith [hinnerW3, hinnerV3, hbracket, htw_inner]
+  rw [hessianVW, hessianWV]
+  linarith [hessianVW, hessianWV, hbracket, htw_inner]
 
 end HessianSymmetry
 
