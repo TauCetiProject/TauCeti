@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
@@ -27,7 +28,7 @@ partition-of-unity theorem for sections with values in fibrewise convex sets,
 `df(X) < 0` if the point is regular, and for equality with the Morse field if the point lies in a
 closed neighbourhood of a critical point. These neighbourhoods are chosen pairwise disjoint, which
 is possible because a Morse function on a compact manifold has finitely many critical points
-(`TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`).
+(`TauCeti.IsMorse.finite_criticalPoints`).
 
 ## Main declarations
 
@@ -36,7 +37,6 @@ is possible because a Morse function on a compact manifold has finitely many cri
 * `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
   `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
   and the Hessian of `f` at the centre of a Morse chart, read in the preferred chart.
-* `TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`: finiteness of the critical set.
 * `TauCeti.IsMorse.exists_isAdaptedPseudoGradient`: existence of adapted pseudo-gradients.
 
 The chart calculus used here is general and lives in
@@ -305,24 +305,6 @@ section Existence
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 
-/-- **A Morse function on a compact manifold has finitely many critical points.** They form a
-closed set, each of them is isolated by its Morse chart, and a closed discrete subset of a compact
-space is finite. -/
-theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse 𝓘(ℝ, E) f) :
-    {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}.Finite := by
-  have hclosed : IsClosed {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0} := by
-    have := (isOpen_setOf_mfderiv_ne_zero (hf.contMDiff.of_le (by simp))).isClosed_compl
-    simpa only [compl_ofPred, ne_eq, not_not] using this
-  refine hclosed.isCompact.finite (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_)
-  obtain ⟨φ⟩ := hf.nonempty_morseChart hx
-  refine ⟨φ.toChart.source, φ.toChart.open_source, ?_⟩
-  ext y
-  constructor
-  · rintro ⟨hy, hyc⟩
-    exact (φ.mfderiv_eq_zero_iff hy).1 hyc
-  · rintro rfl
-    exact ⟨φ.mem_source, hx⟩
-
 /-- **Existence of adapted pseudo-gradients** (Audin--Damian, Proposition 2.2.3). Every Morse
 function on a compact manifold has a pseudo-gradient field adapted to it. -/
 theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
@@ -330,7 +312,8 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
     ∃ X : (x : M) → TangentSpace 𝓘(ℝ, E) x, IsAdaptedPseudoGradient f X := by
   classical
   set C := {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}
-  have hC : C.Finite := hf.finite_setOf_mfderiv_eq_zero
+  have hC : C.Finite := by
+    simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints
   let φ : ∀ x ∈ C, MorseChart E f x := fun x hx ↦ (hf.nonempty_morseChart hx).some
   obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
   have hK : ∀ x (hx : x ∈ C), ∃ K, K ∈ 𝓝 x ∧ IsClosed K ∧ K ⊆ (φ x hx).toChart.source ∩ W x :=

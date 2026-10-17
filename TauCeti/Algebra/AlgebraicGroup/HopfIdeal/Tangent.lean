@@ -250,6 +250,17 @@ theorem mem_lieSubalgebra_iff (I : HopfIdeal R H)
     exact (descendDerivation_mk I d hd x).trans
       (Bialgebra.CounitAlgebra.algEquivSelf_apply R H B (d x))
 
+/-- Changing coefficients preserves the tangent Lie algebra of a closed subgroup. -/
+theorem mapValue_mem_lieSubalgebra (I : HopfIdeal R H)
+    {C : Type*} [CommRing C] [Algebra R C] (φ : B →ₐ[R] C)
+    {d : Derivation R H (Bialgebra.CounitAlgebra R H B)}
+    (hd : d ∈ I.lieSubalgebra (B := B)) :
+    Derivation.mapValue φ d ∈ I.lieSubalgebra (B := C) := by
+  rw [mem_lieSubalgebra_iff] at hd ⊢
+  intro x hx
+  rw [Derivation.mapValue_apply, hd x hx]
+  exact map_zero φ
+
 /-- The dual-number point of a tangent vector lies in a closed subgroup exactly when the
 vector lies in that subgroup's Lie algebra. -/
 theorem mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff

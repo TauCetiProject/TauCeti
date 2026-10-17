@@ -24,6 +24,7 @@ elementary metric properties.
 * `TauCeti.frontier_setOf_lt_fst`: the frontier of a continuous epigraph is its graph.
 * `LipschitzWith.normalGraphEmbedding`: a `K`-Lipschitz function has a `(K + 1)`-Lipschitz
   graph parametrization.
+* `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
 -/
 
 public section
@@ -163,6 +164,25 @@ theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
   simp only [WithLp.add_fst, WithLp.add_snd, WithLp.toLp_fst, WithLp.toLp_snd, add_zero, ← hx]
   linarith
 
+
+section Linear
+
+variable [NormedSpace ℝ E]
+
+/-- The continuous linear graph map `x ↦ (A x, x)` associated to `A : E →L[ℝ] ℝ`. -/
+def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
+    E →L[ℝ] WithLp 2 (ℝ × E) :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap ∘L
+    A.prod (ContinuousLinearMap.id ℝ E)
+
+/-- The continuous linear graph map is the normal graph parametrization of `A`. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.normalGraphL_apply (A : E →L[ℝ] ℝ) (x : E) :
+    A.normalGraphL x = normalGraphEmbedding A x :=
+  (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst A x).symm
+    (normalGraphEmbedding_snd A x).symm
+
+end Linear
 
 end TauCeti
 
