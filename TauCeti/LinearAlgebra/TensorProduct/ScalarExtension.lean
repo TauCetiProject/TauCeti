@@ -116,6 +116,21 @@ theorem cancelBaseChangeLeft_lTensor (f : N →ₗ[B] N') (z : (B ⊗[R] P) ⊗[
     | add x y hx hy => simp_all [add_tmul]
   | add x y hx hy => simp_all
 
+namespace AlgebraTensorModule
+
+/-- Tensor cancellation commutes with tensoring the underlying linear map on the right. -/
+theorem cancelBaseChange_rTensor (f : N →ₗ[B] N') (z : N ⊗[B] (B ⊗[R] P)) :
+    cancelBaseChange R B B N' P (f.rTensor (B ⊗[R] P) z) =
+      (f.restrictScalars R).rTensor P (cancelBaseChange R B B N P z) := by
+  induction z using TensorProduct.inductionOn with
+  | add z t hz ht => simp only [map_add, hz, ht]
+  | tmul n d =>
+    induction d using TensorProduct.inductionOn with
+    | add d e hd he => simp only [TensorProduct.tmul_add, map_add, hd, he]
+    | tmul b p => simp
+
+end AlgebraTensorModule
+
 end TensorProduct
 
 namespace LinearMap

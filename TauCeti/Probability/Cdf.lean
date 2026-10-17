@@ -26,6 +26,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
+* `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
+  strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
@@ -104,6 +106,15 @@ theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeas
     [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by
   have h : ν (Iic c) = 0 := (measure_congr Iio_ae_eq_Iic).symm.trans hc
   rw [cdf_eq_real, measureReal_def, h, ENNReal.toReal_zero]
+
+/-- A half-open interval has positive mass exactly when the cdf strictly increases across its
+endpoints. -/
+theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ} :
+    0 < ν (Ioc a b) ↔ cdf ν a < cdf ν b := by
+  calc
+    0 < ν (Ioc a b) ↔ 0 < (cdf ν).measure (Ioc a b) := by rw [measure_cdf]
+    _ ↔ cdf ν a < cdf ν b := by
+      rw [StieltjesFunction.measure_Ioc, ENNReal.ofReal_pos, sub_pos]
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/
