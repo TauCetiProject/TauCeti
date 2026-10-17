@@ -28,6 +28,10 @@ theorem exists_forall_apply_eq_apply {𝕜 F : Type*} [NontriviallyNormedField �
     [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] (l : StrongDual 𝕜 (WeakDual 𝕜 F)) :
     ∃ x : F, ∀ φ : WeakDual 𝕜 F, l φ = φ x := by
   obtain ⟨x, rfl⟩ := LinearMap.dualEmbedding_surjective (topDualPairing 𝕜 F) l
-  exact ⟨x, fun _ ↦ rfl⟩
+  -- `WeakDual 𝕜 F` is by definition `WeakBilin (topDualPairing 𝕜 F)`, and `WeakBilin.eval`
+  -- sends `x` to the functional `(topDualPairing 𝕜 F).flip x`.
+  refine ⟨x, fun φ ↦ ?_⟩
+  simp only [WeakBilin.eval, LinearMap.coe_mk, AddHom.coe_mk]
+  exact topDualPairing_apply φ x
 
 end WeakDual
