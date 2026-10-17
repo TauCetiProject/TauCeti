@@ -81,15 +81,17 @@ theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMa
   · apply (cancel_mono (eqToHom ((coneIdentityInjectivePresentation_K N).trans
         (closedShiftFunctor_obj_of 1 N).symm))).mp
     apply (cancel_epi (eqToHom (coneIdentityInjectivePresentation_I M).symm)).mp
-    -- Normalize equality transports before using the public projection equation.
-    erw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp]
+    have hpM := coneIdentityInjectivePresentation_p M
+    have hpN := coneIdentityInjectivePresentation_p N
+    rw [eqToHom_comp_iff, comp_eqToHom_iff] at hpM hpN
+    rw [hpM, hpN]
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp, Category.comp_id, coneIdentityInjectivePresentation_p]
-    simpa only [Category.assoc] using
-      (congrArg (fun e ↦ e ≫ (closedShiftFunctor 1).map f)
-        (coneIdentityInjectivePresentation_p M)).trans
-          (coneMap_comp_coneProjection _ _ f f k hsq).symm
+      Category.id_comp, Category.comp_id]
+    -- The remaining transports are the reflexive characteristic equations for closed shift.
+    -- On its actual shifted objects they are identities, leaving the public cone-map square.
+    change coneProjection (𝟙 (ForgetEnrichment.of _ M)) ≫ (closedShiftFunctor 1).map f =
+      coneMap _ _ f f k hsq ≫ coneProjection (𝟙 (ForgetEnrichment.of _ N))
+    exact (coneMap_comp_coneProjection _ _ f f k hsq).symm
 
 /-- Under the stable quotient, stable suspension is naturally cohomological shift by one. -/
 noncomputable def gradedSplitStableSuspensionIsoShift :
@@ -124,8 +126,9 @@ noncomputable def gradedSplitStableSuspensionIsoShift :
     simpa only [Functor.map_comp, eqToIso.hom, eqToIso.inv, ForgetEnrichment.of_to,
       eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
       Category.id_comp, Category.comp_id] using (reassoc_of% hnat)
-        (eqToHom ((gradedSplitExact_isFrobenius (h := h)).stableSuspension_obj_projectiveStableFunctor_obj
-          Y).symm))).symm
+        (eqToHom
+          ((gradedSplitExact_isFrobenius (h := h)).stableSuspension_obj_projectiveStableFunctor_obj
+            Y).symm))).symm
 
 /-- The suspension comparison is the stable map on cokernels induced by the identity. -/
 @[simp]
@@ -145,9 +148,6 @@ theorem gradedSplitStableSuspensionIsoShift_hom_app
   simp only [Iso.trans_inv, Functor.mapIso_inv, eqToIso.inv,
     ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv, Functor.map_comp]
   simp only [ForgetEnrichment.of_to]
-  -- After the public object identifications, the inverse of this equality isomorphism
-  -- is its defining equality transport. Proof irrelevance identifies the two proofs.
-  rfl
 
 /-- The stable comparison intertwines stable suspension with cohomological shift, with the
 negative sign that gives the cone triangle its positive projection as third arrow. -/
@@ -198,7 +198,8 @@ private theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux
   erw [Category.id_comp]
   apply congrArg (fun f ↦ (gradedSplitStableToHomotopy (h := h)).map
     ((gradedSplitStableSuspensionIsoShift (h := h)).hom.app X) ≫ f)
-  exact eqToHom_trans _ _
+  exact eqToHom_trans (C := DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) _ _
+  all_goals rfl
 
 /-- The stable comparison commutes coherently with the stable and cohomological integer shifts. -/
 @[instance_reducible]
