@@ -206,19 +206,18 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y)
     (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) : Nonempty (MorseChart E f x) := by
   obtain ⟨s, hfs, hsopen, hxs⟩ := _root_.eventually_nhds_iff.1 hf
-  have hs : s ∈ 𝓝 x := hsopen.mem_nhds hxs
   replace hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f s := fun y hy ↦ (hfs y hy).contMDiffWithinAt
   set c := chartAt E x with hc
   set g : E → ℝ := f ∘ (extChartAt 𝓘(ℝ, E) x).symm with hgdef
   set a : E := extChartAt 𝓘(ℝ, E) x x
-  set U := (extChartAt 𝓘(ℝ, E) x).target ∩ (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' interior s
+  set U := (extChartAt 𝓘(ℝ, E) x).target ∩ (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' s
   have hU : IsOpen U := (continuousOn_extChartAt_symm x).isOpen_inter_preimage
-    (isOpen_extChartAt_target x) isOpen_interior
+    (isOpen_extChartAt_target x) hsopen
   have haU : a ∈ U := ⟨mem_extChartAt_target x, by
     rw [mem_preimage, extChartAt_to_inv]
-    exact mem_interior_iff_mem_nhds.2 hs⟩
+    exact hxs⟩
   have hg : ContDiffOn ℝ ∞ g U :=
-    ((hf.mono interior_subset).comp ((contMDiffOn_extChartAt_symm x).mono inter_subset_left)
+    (hf.comp ((contMDiffOn_extChartAt_symm x).mono inter_subset_left)
       fun _ hz ↦ hz.2).contDiffOn
   have h' : IsNondegenerateCriticalPoint g a := (isManifoldNondegenerateCriticalPoint_iff _).1 h
   obtain ⟨φ, -, haφ, hφa, hφ, hφsymm, hφg⟩ :=

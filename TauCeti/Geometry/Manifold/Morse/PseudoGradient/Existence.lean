@@ -257,7 +257,7 @@ theorem hessianQuadraticForm_extChartAt (v : E) :
       ∑ i, φ.weight i * φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x v) i ^ 2 := by
   set ψ := extChartAt 𝓘(ℝ, E) x
   -- In the preferred chart, `f` is the normal form composed with the transition map `τ`.
-  set τ : E → E := φ.toChart ∘ ψ.symm with hτdef
+  set τ : E → E := φ.toChart ∘ ψ.symm
   have hτa : τ (ψ x) = 0 := by simp [τ, ψ]
   have hsrc : ∀ᶠ z in 𝓝 (ψ x), ψ.symm z ∈ φ.toChart.source :=
     (continuousAt_extChartAt_symm x).preimage_mem_nhds
@@ -347,17 +347,9 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
     refine Convex.inter ?_ (convex_iInter fun x ↦ convex_iInter fun hx ↦
       convex_iInter fun _ ↦ convex_singleton _)
     by_cases hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0
-    · have : {v : TangentSpace 𝓘(ℝ, E) y | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 → ℓ y v < 0} = univ := by
-        ext v
-        simp [hy]
-      rw [this]
-      exact convex_univ
-    · have : {v : TangentSpace 𝓘(ℝ, E) y | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 → ℓ y v < 0} =
-          {v | ℓ y v < 0} := by
-        ext v
-        simp [hy]
-      rw [this]
-      exact convex_halfSpace_lt (ℓ y).isLinear (0 : ℝ)
+    · simp [hy, convex_univ]
+    · simp only [Ne, hy, not_false_eq_true, forall_const]
+      exact convex_halfSpace_lt (ℓ y).isLinear 0
   have hloc : ∀ y₀ : M, ∃ U ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
       ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
         (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) U ∧ ∀ y ∈ U, s y ∈ t y := by
@@ -407,19 +399,17 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
   refine ⟨fun y ↦ s y, s.contMDiff, fun y hy ↦ ?_, fun x hx ↦ ?_⟩
   · exact (hs y).1 hy
   have hxC : x ∈ C := hx
-  refine ⟨(φ x hxC).restr isOpen_interior (mem_interior_iff_mem_nhds.2 (hKn x hxC)),
-    fun y hy ↦ ?_⟩
-  rw [MorseChart.restr_source] at hy
-  have hyK : y ∈ K x hxC := interior_subset hy.2
-  have hsy : s y = (φ x hxC).field y := by
+  let ψ := (φ x hxC).restr isOpen_interior (mem_interior_iff_mem_nhds.2 (hKn x hxC))
+  refine ⟨ψ, fun y hy ↦ ?_⟩
+  have hyK : y ∈ K x hxC := by
+    rw [MorseChart.restr_source] at hy
+    exact interior_subset hy.2
+  have hsy : s y = ψ.field y := by
     have := (hs y).2
     simp only [mem_iInter, mem_singleton_iff] at this
-    exact this x hxC hyK
-  have hchart : ⇑((φ x hxC).restr isOpen_interior
-      (mem_interior_iff_mem_nhds.2 (hKn x hxC))).toChart = (φ x hxC).toChart := by
-    rw [MorseChart.restr_toChart, OpenPartialHomeomorph.restr_apply]
-  rw [hsy, hchart, MorseChart.restr_coord, MorseChart.restr_weight]
-  exact (φ x hxC).coord_mfderiv_field hy.1
+    rw [this x hxC hyK, MorseChart.restr_field]
+  rw [hsy]
+  exact ψ.coord_mfderiv_field hy
 
 end Existence
 
