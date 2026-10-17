@@ -86,6 +86,7 @@ theorem factorRoot_nonsingular (p : W.toAffine.f.Factors) :
 
 omit [DecidableEq K] [W.IsElliptic] in
 /-- In characteristic-`≠ 2` normal form, the universal root point `(θ, 0)` is killed by two. -/
+@[simp]
 theorem factorRoot_polynomialY (p : W.toAffine.f.Factors) :
     (W.baseChange (𝕃 p)).toAffine.polynomialY.evalEval (θ p) 0 = 0 := by
   let : (W.baseChange (𝕃 p)).toAffine.IsCharNeTwoNF :=
@@ -251,6 +252,7 @@ theorem rootwiseKummerClass_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : �
 
 omit [DecidableEq K] in
 /-- `factorCohomologicalMap` applies the universal-root character to the restricted class. -/
+@[simp]
 theorem factorCohomologicalMap_apply (p : W.toAffine.f.Factors)
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
     (h2 : IsUnit ((2 : ℕ) : K))
