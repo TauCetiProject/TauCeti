@@ -29,6 +29,10 @@ equation, is what downstream constructions use.
 * `CategoryTheory.Equivalence.powAddIso`: `e ^ (a + b) ≅ e ^ a ⋙ e ^ b`.
 * `CategoryTheory.Equivalence.powSuccRightIso`: `e ^ (j + 1) ≅ e ^ j ⋙ e`, the opposite-handed
   successor isomorphism, which the additivity isomorphism supplies but the recursion does not.
+* `CategoryTheory.Equivalence.inverseCommIso` and `CategoryTheory.Equivalence.powCommIso`: a
+  functor `F` with `e ⋙ F ≅ F ⋙ e'` also intertwines the inverses and all integer powers,
+  `e ^ j ⋙ F ≅ F ⋙ e' ^ j`.  This is how a functor between graded categories which commutes with
+  the grading shifts is compared on every internal degree.
 -/
 
 public section
@@ -37,7 +41,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe v u
+universe v u v' u'
 
 variable {C : Type u} [Category.{v} C]
 
@@ -126,5 +130,38 @@ def _root_.CategoryTheory.Equivalence.powAddIso (e : C ≌ C) : ∀ a b : ℤ,
 def _root_.CategoryTheory.Equivalence.powSuccRightIso (e : C ≌ C) (j : ℤ) :
     (e ^ (j + 1)).functor ≅ (e ^ j).functor ⋙ e.functor :=
   e.powAddIso j 1
+
+section Comm
+
+variable {D : Type u'} [Category.{v'} D] {F : C ⥤ D} {e : C ≌ C} {e' : D ≌ D}
+
+/-- A functor intertwining two autoequivalences, `e ⋙ F ≅ F ⋙ e'`, also intertwines their
+inverses: `e⁻¹ ⋙ F ≅ F ⋙ e'⁻¹`. -/
+def _root_.CategoryTheory.Equivalence.inverseCommIso (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    e.inverse ⋙ F ≅ F ⋙ e'.inverse :=
+  Iso.isoCompInverse (Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft e.inverse σ.symm ≪≫
+    Iso.inverseCompIso (Iso.refl _))
+
+/-- The natural-number powers of two autoequivalences intertwined by a functor are intertwined by
+it, following the recursion defining `CategoryTheory.Equivalence.powNat`. -/
+private def _root_.CategoryTheory.Equivalence.powNatCommIso (e : C ≌ C) (e' : D ≌ D) (F : C ⥤ D)
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) : ∀ n : ℕ,
+    (e.powNat n).functor ⋙ F ≅ F ⋙ (e'.powNat n).functor
+  | 0 => Functor.leftUnitor F ≪≫ (Functor.rightUnitor F).symm
+  | 1 => σ
+  | n + 2 => Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft e.functor
+        (CategoryTheory.Equivalence.powNatCommIso e e' F σ (n + 1)) ≪≫
+      (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight σ _ ≪≫ Functor.associator _ _ _
+
+/-- **A functor intertwining two autoequivalences intertwines all their integer powers**:
+`e ⋙ F ≅ F ⋙ e'` gives `e ^ j ⋙ F ≅ F ⋙ e' ^ j` for every `j : ℤ`.  Negative powers use
+`CategoryTheory.Equivalence.inverseCommIso`. -/
+def _root_.CategoryTheory.Equivalence.powCommIso (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    ∀ j : ℤ, (e ^ j).functor ⋙ F ≅ F ⋙ (e' ^ j).functor
+  | Int.ofNat n => e.powNatCommIso e' F σ n
+  | Int.negSucc n => e.symm.powNatCommIso e'.symm F (Equivalence.inverseCommIso σ) (n + 1)
+
+end Comm
 
 end TauCeti
