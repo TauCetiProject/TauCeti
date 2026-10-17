@@ -33,6 +33,7 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 ## Main definitions
 
 * `LaurentSeries.expand R d`: the `R`-algebra map `R⸨X⸩ → R⸨X⸩` substituting `X ↦ X ^ d`.
+* `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
 * `LaurentSeries.ramifiedEmbedding R n`: the `R`-algebra map `R⸨X⸩ → HahnSeries ℚ R` substituting
   `X ↦ t ^ (1 / n)`.
 
@@ -43,6 +44,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
+* `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
+* `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
 * `LaurentSeries.coeff_ramifiedEmbedding_intCast_div`,
   `LaurentSeries.coeff_ramifiedEmbedding_of_not_den_dvd`: the coefficients of the level-`n`
   embedding.
@@ -171,6 +174,95 @@ theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
     rw [PowerSeries.coeff_expand_of_not_dvd]
     rintro ⟨c, hc⟩
     exact hk ⟨c, by omega⟩
+
+/-! ### Contraction by exponent congruence classes -/
+
+/-- The `r`-th exponent-congruence component of a Laurent series. Its coefficient at `k` is the
+coefficient of the original series at `d * k + r`. -/
+noncomputable def contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : Fin d) : S⸨X⸩ :=
+  ofSuppBddBelow (fun k : ℤ ↦ f.coeff ((d : ℤ) * k + r)) <| by
+    refine ⟨min 0 f.order, ?_⟩
+    intro k hk
+    rw [Function.mem_support] at hk
+    by_contra hle
+    have hklt : k < min 0 f.order := lt_of_not_ge hle
+    have hkneg : k < 0 := hklt.trans_le (min_le_left _ _)
+    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
+    have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
+    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
+    have hindex : (d : ℤ) * k + r < f.order := by
+      have : (d : ℤ) * k + r ≤ k := by nlinarith
+      exact this.trans_lt (hklt.trans_le (min_le_right _ _))
+    exact hk (coeff_eq_zero_of_lt_order hindex)
+
+/-- The coefficient formula for an exponent-congruence component. -/
+@[simp]
+theorem coeff_contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : Fin d) (k : ℤ) :
+    (contract d f r).coeff k = f.coeff ((d : ℤ) * k + r) := (rfl)
+
+/-- Contraction is additive. -/
+@[simp]
+theorem contract_add {S : Type*} [AddCommMonoid S] (d : ℕ+) (f g : S⸨X⸩) (r : Fin d) :
+    contract d (f + g) r = contract d f r + contract d g r := by
+  ext k
+  simp
+
+/-- Every congruence component of the zero series is zero. -/
+@[simp]
+theorem contract_zero {S : Type*} [Zero S] (d : ℕ+) (r : Fin d) :
+    contract d (0 : S⸨X⸩) r = 0 := by
+  ext k
+  simp
+
+/-- At exponent `d * k + r`, a sum of expanded congruence components recovers coefficient `k`
+of component `r`. -/
+theorem coeff_sum_single_mul_expand {A : Type*} [CommSemiring A] (d : ℕ+)
+    (g : Fin d → A⸨X⸩) (r : Fin d) (k : ℤ) :
+    (∑ s : Fin d, single (s : ℤ) 1 * expand A d (g s)).coeff ((d : ℤ) * k + r) =
+      (g r).coeff k := by
+  simp only [coeff_sum, coeff_single_mul, one_mul]
+  rw [Finset.sum_eq_single r]
+  · convert coeff_expand_mul d (g r) k using 1
+    simp
+  · intro s _ hsr
+    apply coeff_expand_of_not_dvd
+    intro hdiv
+    obtain ⟨q, hq⟩ := hdiv
+    have hmod : (r : ℤ) - s = (d : ℤ) * (q - k) := by
+      linear_combination hq
+    have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
+    have hslt : (s : ℤ) < d := by exact_mod_cast s.isLt
+    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
+    have hsnonneg : (0 : ℤ) ≤ s := by exact_mod_cast s.val.zero_le
+    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
+    have hrslt : (r : ℤ) - s < d := by omega
+    have hneg : -(d : ℤ) < (r : ℤ) - s := by omega
+    have hqk : q - k = 0 := by nlinarith [hmod]
+    have hrs : (r : ℤ) = s := by rw [hqk, mul_zero] at hmod; omega
+    exact hsr (Fin.ext (by exact_mod_cast hrs.symm))
+  · simp
+
+/-- A Laurent series is the sum of its expanded exponent-congruence components. -/
+theorem sum_single_mul_expand_contract {A : Type*} [CommSemiring A] (d : ℕ+) (f : A⸨X⸩) :
+    ∑ r : Fin d, single (r : ℤ) 1 * expand A d (contract d f r) = f := by
+  ext z
+  let r : Fin d := ⟨(z % d).toNat, by
+    rw [← Int.ofNat_lt, Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
+    exact Int.emod_lt_of_pos _ (by exact_mod_cast d.pos)⟩
+  let k := z / (d : ℤ)
+  have hr : (r : ℤ) = z % d := by
+    simp only [r]
+    rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
+  have hz : (d : ℤ) * k + r = z := by
+    rw [hr, add_comm, Int.emod_add_mul_ediv]
+  rw [← hz, coeff_sum_single_mul_expand, coeff_contract, hz]
+
+/-- The components in an expansion by exponent congruence classes are unique. -/
+theorem contract_eq_of_sum_eq {A : Type*} [CommSemiring A] (d : ℕ+) (g : Fin d → A⸨X⸩)
+    (f : A⸨X⸩) (h : ∑ r : Fin d, single (r : ℤ) 1 * expand A d (g r) = f) (r : Fin d) :
+    contract d f r = g r := by
+  ext k
+  rw [coeff_contract, ← h, coeff_sum_single_mul_expand]
 
 /-! ### Ramified levels in rational exponents -/
 

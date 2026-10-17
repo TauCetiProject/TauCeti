@@ -242,6 +242,20 @@ theorem IsSmoothForm.add [IsManifold I 1 M] {n : WithTop ℕ∞}
   rw [isSmoothForm_def]
   exact hφ.contMDiff.add_section hψ.contMDiff
 
+/-- The zero differential form has every section regularity. -/
+theorem IsSmoothForm.zero [IsManifold I 1 M] (n : WithTop ℕ∞) :
+    IsSmoothForm I n (0 : RoughForm I M F k) := by
+  rw [isSmoothForm_def]
+  exact contMDiff_zeroSection ℝ (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)
+
+/-- Finite sums preserve section regularity of differential forms. -/
+theorem IsSmoothForm.sum [IsManifold I 1 M] {n : WithTop ℕ∞} {ι : Type*}
+    (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I n (φ i)) :
+    IsSmoothForm I n (∑ i ∈ s, φ i) := by
+  rw [isSmoothForm_def]
+  simpa only [Finset.sum_apply] using
+    ContMDiff.sum_section (fun i hi ↦ (hφ i hi).contMDiff)
+
 /-- Negation preserves regularity of the actual fixed-coefficient bundle section. -/
 theorem IsSmoothForm.neg [IsManifold I 1 M] {n : WithTop ℕ∞}
     {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) : IsSmoothForm I n (-φ) := by

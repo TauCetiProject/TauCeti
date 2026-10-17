@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
-import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Real
 
 /-!
 # The Prékopa–Leindler inequality
