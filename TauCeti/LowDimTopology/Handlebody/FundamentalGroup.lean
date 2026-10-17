@@ -13,6 +13,7 @@ import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.FundamentalGroup.PlaneMinusPoints
+import TauCeti.GroupTheory.FreeGroup.Rank
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
@@ -262,21 +263,10 @@ private theorem continuous_retract :
     Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
       retract g (p.1, p.2) := by
   have hR : (0 : ℝ) < g + 1 := by positivity
-  have hz : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
-      (p.2 : ℂ) := continuous_subtype_val.comp continuous_snd
-  have hclamp : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
-      clamp g p.2 :=
-    (continuous_const.div₀ (continuous_const.max hz.norm)
-      fun _ ↦ (lt_max_of_lt_left hR).ne').smul hz
-  have hpush : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
-      holePush g p.2 := by
-    refine continuous_finsetSum _ fun k _ ↦ ?_
-    have hsub : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
-        (p.2 : ℂ) - holeCenter g k := hz.sub continuous_const
-    exact (((continuous_const.div₀ hsub.norm fun p ↦ norm_ne_zero_iff.2
-      (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.2 k))).max continuous_const).sub
-        continuous_const).smul hsub
-  exact hz.add ((continuous_subtype_val.comp continuous_fst).smul ((hclamp.add hpush).sub hz))
+  unfold retract clamp holePush
+  fun_prop (disch := first
+    | exact fun _ ↦ (lt_max_of_lt_left hR).ne'
+    | exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.2 _)))
 
 /-- The closed disc with `g` holes is homotopy equivalent to the plane punctured at the centres of
 its holes, by inclusion. -/
@@ -340,10 +330,7 @@ elements.** -/
 theorem rank_fundamentalGroup_handlebody_le (x : handlebody g) :
     Group.rank (FundamentalGroup (handlebody g) x) ≤ g := by
   obtain ⟨e⟩ := nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup x
-  classical
   rw [Group.rank_congr e]
-  refine (Group.rank_le (S := Finset.univ.image FreeGroup.of) ?_).trans ?_
-  · rw [Finset.coe_image, Finset.coe_univ, image_univ, FreeGroup.closure_range_of]
-  · exact Finset.card_image_le.trans (by simp)
+  simpa using Group.rank_freeGroup_le (Fin g)
 
 end TauCeti

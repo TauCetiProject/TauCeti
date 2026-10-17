@@ -206,7 +206,9 @@ private theorem pushDown_im (s : ℝ) (z : ℂ) :
 private theorem pushDown_zero (z : ℂ) : pushDown 0 z = z := by
   simp [pushDown]
 
-private theorem continuous_pushDown : Continuous fun p : ℝ × ℂ ↦ pushDown p.1 p.2 := by
+@[fun_prop]
+private theorem continuous_pushDown {X : Type*} [TopologicalSpace X] {s : X → ℝ} {z : X → ℂ}
+    (hs : Continuous s) (hz : Continuous z) : Continuous fun x ↦ pushDown (s x) (z x) := by
   unfold pushDown
   fun_prop
 
@@ -242,6 +244,7 @@ private theorem ramp_eq_one (hδ : 0 < δ) {x : ℝ} (hx : δ / 2 ≤ |x|) : ram
   rw [le_sub_iff_add_le, le_div_iff₀ hδ]
   linarith
 
+@[fun_prop]
 private theorem continuous_ramp (δ : ℝ) : Continuous (ramp δ) := by
   unfold ramp
   fun_prop
@@ -260,8 +263,7 @@ private theorem pushDown_ramp_ne {k : ι} {t : ℝ} {z : ℂ} (hz : z ≠ c k) :
 /-- The comb deformation retracts, in the weak sense, onto the lower half-plane. -/
 private def lowerHomotopyEquivComb : lower ≃ₕ comb c δ :=
   .ofWeakDeformationRetraction subset_union_left (fun p ↦ pushDown p.1 p.2)
-    (continuous_pushDown.comp ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)))
+    (by fun_prop)
     (fun p ↦ pushDown_mem_comb p.1.2.1 p.2.2)
     (fun _ ↦ pushDown_zero _)
     (fun _ ↦ pushDown_one_mem_lower _)
@@ -276,11 +278,9 @@ private theorem contractibleSpace_comb : ContractibleSpace (comb c δ) :=
 private def piecePush (k : ι) (p : unitInterval × ℂ) : ℂ :=
   pushDown ((p.1 : ℝ) * ramp δ (p.2.re - c k)) p.2
 
-private theorem continuous_piecePush (k : ι) : Continuous (piecePush (c := c) (δ := δ) k) :=
-  continuous_pushDown.comp
-    (((continuous_subtype_val.comp continuous_fst).mul
-      ((continuous_ramp δ).comp ((continuous_re.comp continuous_snd).sub continuous_const))).prodMk
-      continuous_snd)
+private theorem continuous_piecePush (k : ι) : Continuous (piecePush (c := c) (δ := δ) k) := by
+  unfold piecePush
+  fun_prop
 
 private theorem piecePush_mem_piece (k : ι) (t : unitInterval) {z : ℂ}
     (hz : z ∈ piece c δ k) : piecePush (c := c) (δ := δ) k (t, z) ∈ piece c δ k := by
@@ -429,6 +429,11 @@ private def shearIm (ψ : ℝ → ℝ) (hψ : Continuous ψ) : ℂ ≃ₜ ℂ wh
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
+@[simp]
+private theorem shearIm_apply (ψ : ℝ → ℝ) (hψ : Continuous ψ) (z : ℂ) :
+    shearIm ψ hψ z = z - (ψ z.re : ℂ) * I :=
+  rfl
+
 /-- A homeomorphism of the plane carries a finite set onto real points, injectively. It is a
 linear map giving the points distinct real parts, followed by a vertical shear along a polynomial
 through their imaginary parts. -/
@@ -456,9 +461,7 @@ private theorem exists_homeomorph_eq_ofReal {s : Set ℂ} (hs : s.Finite) :
   have hP := Lagrange.eval_interpolate_at_node (r := fun z ↦ ((1 + t * I) * z).im) hc'
     (hs.mem_toFinset.2 hz)
   beta_reduce at hP
-  simp only [shearIm, Homeomorph.trans_apply, Homeomorph.coe_mulLeft₀,
-    Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk]
-  rw [hP]
+  rw [Homeomorph.trans_apply, Homeomorph.coe_mulLeft₀, shearIm_apply, hP]
   apply Complex.ext <;> simp
 
 /-- A finite family of distinct real numbers is uniformly separated. -/
