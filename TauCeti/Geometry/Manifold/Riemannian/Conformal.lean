@@ -182,6 +182,7 @@ theorem yamabeRescale_inv
 
 /-- Positive conformal factors are determined by the rescaled metric when the
 model space is nonzero and its dimension is not two. -/
+@[simp]
 theorem yamabeRescale_eq_iff [Nontrivial E]
     {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
     {u v : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hv : ContMDiff I 𝓘(ℝ) k v}
