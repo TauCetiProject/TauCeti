@@ -43,6 +43,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read  # workflow-pinned lint-policy GraphQL reads branches and labels
   statuses: write
   actions: read  # fence status publication against obsolete run attempts
 
