@@ -123,6 +123,9 @@ def singularRelπ (P : TopPair.{u}) :
     (singularChains k).obj P.fst ⟶ P.singularChainComplex (ModuleCat.of k k) :=
   P.singularChainComplexπ _
 
+instance (P : TopPair.{u}) : Epi (singularRelπ k P) :=
+  epi_of_isColimit_cofork (P.isColimitCokernelCoforkSingularChainComplex _)
+
 @[reassoc]
 theorem singularRelπ_naturality {P P' : TopPair.{u}} (f : P ⟶ P') :
     (singularChains k).map (Hom.fst f) ≫ singularRelπ k P' =
@@ -162,7 +165,7 @@ def cubicalToSingularRel (P : TopPair.{u}) :
 @[reassoc (attr := simp)]
 theorem π_cubicalToSingularRel (P : TopPair.{u}) :
     cokernel.π _ ≫ cubicalToSingularRel k P =
-      (cubicalToSingular k).app P.fst ≫ P.singularChainComplexπ (ModuleCat.of k k) :=
+      (cubicalToSingular k).app P.fst ≫ singularRelπ k P :=
   cokernel.π_desc _ _ _
 
 /-- The comparison maps as a morphism of short complexes from the simplicial chain sequence of a
@@ -218,9 +221,16 @@ def singularToCubicalRelCompHomotopy (P : TopPair.{u}) :
       rw [← Category.assoc, singularToCubicalCompHomotopy_hom_naturality, Category.assoc,
         ← HomologicalComplex.comp_f, h, HomologicalComplex.zero_f, comp_zero])
     (by
-      rw [singularRelπ_singularToCubicalRel_assoc, π_cubicalToSingularRel, Category.assoc]
-      rfl)
+      rw [singularRelπ_singularToCubicalRel_assoc, π_cubicalToSingularRel, Category.assoc])
     (by simp)
+
+/-- The quotient equation for the homotopy operator on relative simplicial chains. -/
+@[reassoc (attr := simp)]
+theorem singularRelπ_singularToCubicalRelCompHomotopy_hom (P : TopPair.{u}) (i j : ℕ) :
+    (singularRelπ k P).f i ≫ (singularToCubicalRelCompHomotopy k P).hom i j =
+      (singularToCubicalCompHomotopy k P.fst).hom i j ≫ (singularRelπ k P).f j := by
+  unfold singularToCubicalRelCompHomotopy
+  apply _root_.Homotopy.π_descCokernel_hom
 
 /-- **The relative comparison map to cubical chains is a quasi-isomorphism.** -/
 instance quasiIso_singularToCubicalRel (P : TopPair.{u}) : QuasiIso (singularToCubicalRel k P) :=
