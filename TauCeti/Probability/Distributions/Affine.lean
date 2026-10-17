@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Moments.Basic
@@ -15,10 +17,16 @@ public import Mathlib.Probability.Moments.Variance
 # Affine images of real laws
 
 For a measure `μ` on `ℝ` and real numbers `a`, `b`, the law of `a + b X` for `X` with law `μ` is
-the pushforward `μ.map (fun x => a + b * x)`. This file computes the elementary observables of
-that pushforward in terms of those of `μ`: the cumulative distribution function, integrability
-and moments, and the exponential transforms. Once a location-scale identity between two families
-is known as an equality of measures, these formulas transfer each observable along it.
+the pushforward `μ.map (fun x => a + b * x)`. This file computes its density and elementary
+observables in terms of those of `μ`: the cumulative distribution function, integrability and
+moments, and the exponential transforms. Once a location-scale identity between two families is
+known as an equality of measures, these formulas transfer each observable along it.
+
+At a nonzero slope, an original density `f` becomes
+`|b|⁻¹ f ((x - a) / b)`. The measure-level change of variables is accompanied by `HasPDF`,
+canonical `pdf`, and Radon–Nikodym derivative forms, so callers can use the result whether their
+input is presented as a weighted Lebesgue measure, a random variable, or an absolutely continuous
+law.
 
 The cdf at a positive slope is the cdf of `μ` at the pulled-back point. At a negative slope the
 map reverses order, so it is one minus the mass `μ` gives to the open half-line below the
@@ -34,6 +42,12 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
+* `TauCeti.Probability.affineDensity`,
+  `TauCeti.Probability.map_affine_withDensity_volume` — the transformed density and the
+  measure-level change of variables;
+* `TauCeti.Probability.hasPDF_affine`, `TauCeti.Probability.pdf_affine`,
+  `TauCeti.Probability.rnDeriv_map_affine` — the corresponding random-variable and
+  Radon–Nikodym interfaces;
 * `TauCeti.Probability.cdf_map_affine_of_pos`, `TauCeti.Probability.cdf_map_affine_of_neg` — the
   cdf at a positive and at a negative slope;
 * `TauCeti.Probability.memLp_id_map_affine_iff` — a nonconstant affine image has exactly the
@@ -70,6 +84,94 @@ theorem map_affine_map_affine (a b c d : ℝ) :
   ext x
   simp only [Function.comp_apply]
   ring
+
+/-! ### Densities -/
+
+/-- The density obtained from `f` by the nonconstant affine change of variables
+`x ↦ a + b * x`. For `b ≠ 0`, this is `|b|⁻¹ f ((y - a) / b)`.
+
+At `b = 0` this function is zero; the density transport theorems below deliberately require a
+nonzero slope because the affine image is then a Dirac measure rather than an absolutely
+continuous law. -/
+noncomputable def affineDensity (a b : ℝ) (f : ℝ → ℝ≥0∞) (y : ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal |b|⁻¹ * f ((y - a) / b)
+
+/-- The affine transform of a measurable density is measurable. -/
+@[fun_prop]
+theorem measurable_affineDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) (a b : ℝ) :
+    Measurable (affineDensity a b f) := by
+  unfold affineDensity
+  fun_prop
+
+/-- **Affine change of variables for a real density.** If `b ≠ 0`, pushing a Lebesgue density
+`f` forward by `x ↦ a + b * x` gives the density `|b|⁻¹ f ((y - a) / b)`. -/
+theorem map_affine_withDensity_volume (f : ℝ → ℝ≥0∞) (hb : b ≠ 0) :
+    (volume.withDensity f).map (fun x ↦ a + b * x) =
+      volume.withDensity (affineDensity a b f) := by
+  let A : ℝ ≃L[ℝ] ℝ := ContinuousLinearEquiv.smulLeft (Units.mk0 b hb)
+  have hA (x : ℝ) : A x = b * x := by
+    simp only [A, ContinuousLinearEquiv.smulLeft_apply_apply]
+    rfl
+  have hAinv (x : ℝ) : A.symm x = x / b := by
+    apply A.injective
+    rw [A.apply_symm_apply, hA]
+    exact (mul_div_cancel₀ x hb).symm
+  have hlin : (A : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id := by
+    apply LinearMap.ext
+    intro x
+    simpa using hA x
+  have hdet : LinearMap.det (A : ℝ →ₗ[ℝ] ℝ) = b := by
+    rw [hlin, LinearMap.det_smul]
+    simp
+  have hmap : (fun x : ℝ ↦ a + b * x) = fun x ↦ a + A x := by
+    ext x
+    rw [hA]
+  rw [hmap, Measure.map_affine_withDensity]
+  refine withDensity_congr_ae (.of_forall fun y ↦ ?_)
+  simp only [affineDensity]
+  rw [hAinv, hdet, abs_inv]
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+
+/-- A nonconstant affine transform of a real random variable with a density again has a density. -/
+theorem hasPDF_affine [HasPDF X P] (hb : b ≠ 0) :
+    HasPDF (fun ω ↦ a + b * X ω) P := by
+  let g := affineDensity a b (pdf X P)
+  have hX : AEMeasurable X P := HasPDF.aemeasurable X P volume
+  have hmap : P.map (fun ω ↦ a + b * X ω) = volume.withDensity g := by
+    have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
+    rw [hcomp,
+      ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable hX,
+      map_eq_withDensity_pdf X P volume,
+      map_affine_withDensity_volume (a := a) (b := b) _ hb]
+  exact hasPDF_of_map_eq_withDensity
+    ((hX.const_mul b).const_add a) g
+    (measurable_affineDensity (measurable_pdf X P) a b).aemeasurable hmap
+
+/-- The canonical density of a nonconstant affine transform is
+`|b|⁻¹ pdf X P ((y - a) / b)`. -/
+theorem pdf_affine [HasPDF X P] (hb : b ≠ 0) :
+    pdf (fun ω ↦ a + b * X ω) P =ᵐ[volume] affineDensity a b (pdf X P) := by
+  have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
+  have hmap : P.map (fun ω ↦ a + b * X ω) =
+      volume.withDensity (affineDensity a b (pdf X P)) := by
+    rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable
+      (HasPDF.aemeasurable X P volume), map_eq_withDensity_pdf X P volume,
+      map_affine_withDensity_volume (a := a) (b := b) _ hb]
+  rw [pdf_def, hmap]
+  exact Measure.rnDeriv_withDensity volume
+    (measurable_affineDensity (measurable_pdf X P) a b)
+
+/-- The Radon–Nikodym derivative of a nonconstant affine image of an absolutely continuous real
+measure is the affine transform of its Radon–Nikodym derivative. -/
+theorem rnDeriv_map_affine (hμ : μ ≪ volume) (hb : b ≠ 0) :
+    (μ.map fun x ↦ a + b * x).rnDeriv volume =ᵐ[volume]
+      affineDensity a b (μ.rnDeriv volume) := by
+  let _ : SFinite μ := MeasureTheory.sfinite_of_absolutelyContinuous hμ
+  conv_lhs => rw [← Measure.withDensity_rnDeriv_eq μ volume hμ]
+  rw [map_affine_withDensity_volume (a := a) (b := b) _ hb]
+  exact Measure.rnDeriv_withDensity volume
+    (measurable_affineDensity (Measure.measurable_rnDeriv μ volume) a b)
 
 /-! ### Cumulative distribution functions -/
 
