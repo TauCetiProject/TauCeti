@@ -30,6 +30,8 @@ joining two sign sets whose cardinalities have different parities.
   point is `1 + u X`.
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix_eq_zero_of_card_ne`: the integral matrix does not join
   the two half-spin summands.
+* `TauCeti.TypeDSpinCarrier.rootIntMatrix_eq_zero_of_weight_ne`: the integral matrix vanishes off
+  its signed simple-root weight difference.
 
 ## References
 
@@ -58,6 +60,17 @@ noncomputable def rootIntMatrix (k : Fin n ⊕ Fin n) :
     (TauCeti.serreRootGenerator (CartanMatrix.D n))
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n hn) k (latticeBasis n)
+
+/-- The integral matrix of a numbered root generator is the matrix of its integral root operator
+in the lattice basis. -/
+theorem rootIntMatrix_eq_toMatrix (k : Fin n ⊕ Fin n) :
+    rootIntMatrix n hn k = LinearMap.toMatrix (latticeBasis n) (latticeBasis n)
+      (kostantRootOperator
+        (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn) k) := by
+  rw [rootIntMatrix]
+  exact kostantRootGeneratorIntMatrix_eq_toMatrix _ _ _ _ _ _ _
 
 /-- A represented root generator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_latticeBasis_eq_sum (k : Fin n ⊕ Fin n) (s : Fin (dimension n)) :
@@ -108,5 +121,23 @@ theorem rootIntMatrix_eq_zero_of_card_ne (k : Fin n ⊕ Fin n) {a b : Fin (dimen
     Finset.sum_apply, Finsupp.coe_smul, Pi.smul_apply, Finsupp.single_apply,
     EmbeddingLike.apply_eq_iff_eq] at hcoord
   simpa using hcoord
+
+/-- **A numbered root matrix has no entries outside its signed simple-root weight difference.**
+The weights are the integral spin weights, before any change of coefficient ring. -/
+theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin n ⊕ Fin n) {a b : Fin (dimension n)}
+    (hab : basisWeight n a - basisWeight n b ≠ TypeDStd.rootGeneratorWeight n k) :
+    rootIntMatrix n hn k a b = 0 := by
+  rw [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
+  exact repr_eq_zero_of_isCartanWeightVector
+    (TauCeti.serreRootGenerator (CartanMatrix.D n))
+    (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n hn) (latticeBasis n) (basisWeight n)
+    (isCartanWeightVector_latticeBasis n hn)
+    (isCartanWeightVector_coe_kostantRootOperator
+      (TauCeti.serreRootGenerator (CartanMatrix.D n))
+      (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+      (rep_kostantForm_mem_lattice n hn) k (TypeDStd.lie_serreH_serreRootGenerator n k)
+      (isCartanWeightVector_latticeBasis n hn b))
+    fun h ↦ hab (sub_eq_iff_eq_add'.mpr h)
 
 end TauCeti.TypeDSpinCarrier

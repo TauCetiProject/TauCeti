@@ -136,9 +136,8 @@ theorem normalizedValuation_norm (x : Lˣ) :
     simp only [y, map_mul, map_pow, map_inv]
     rw [hu]
     simp
-  have hnorm : Algebra.normUnits K u = t ^ Module.finrank K L := by
-    apply Units.ext
-    simp [u, Algebra.norm_algebraMap]
+  have hnorm : Algebra.normUnits K u = t ^ Module.finrank K L :=
+    Algebra.normUnits_unitsMap_algebraMap K t
   have hmap : (normalizedValuation K (Algebra.normUnits K u)).toAdd =
       Module.finrank K L * (normalizedValuation L x).toAdd := by
     rw [hnorm, map_pow, ht, toAdd_pow, nsmul_eq_mul]
@@ -353,7 +352,7 @@ theorem not_map_normUnits_unitFiltration_le_succ (hn : IsUnit (Module.finrank K 
   intro h
   obtain ⟨x, hx, hx'⟩ := IsConcreteLE.exists_of_lt (unitFiltration_succ_lt (K := K) hi)
   have hN : Algebra.normUnits K (Units.map (algebraMap K L : K →* L) x) =
-      x ^ Module.finrank K L := Units.ext <| by simp [Algebra.norm_algebraMap]
+      x ^ Module.finrank K L := Units.ext <| by simp
   have hxn := h (Subgroup.mem_map_of_mem _ (unitsMap_algebraMap_mem_unitFiltration hx))
   rw [hN, pow_mem_unitFiltration_succ_iff_of_isUnit hn
     (unitFiltration_antitone (Nat.one_le_iff_ne_zero.2 hi) hx)] at hxn
@@ -420,6 +419,12 @@ theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
     apply Subtype.ext
     simpa using hπeq
   rwa [← hπnorm]
+
+omit [FiniteDimensional K L] in
+/-- In a totally ramified extension, the norm of a uniformizer is a uniformizer. -/
+theorem IsTotallyRamified.irreducible_norm (h : IsTotallyRamified K L) {π : 𝒪[L]}
+    (hπ : Irreducible π) : Irreducible (Algebra.norm 𝒪[K] π) :=
+  (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
 
 omit [FiniteDimensional K L] in
 /-- **The valuation of a norm**: `v_K(N_{L/K}(z)) = f(L/K) v_L(z)` for every `z ∈ 𝒪[L]`, read on

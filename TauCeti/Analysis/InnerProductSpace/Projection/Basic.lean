@@ -28,6 +28,12 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
 `Uᗮ` never decreases the norm of `v`.
 
+Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
+nonzero vector of `U` is orthogonal to `V`.
+
+Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
+`P_U - P_U P_V P_U`.
+
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
@@ -40,6 +46,11 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
+  `U ⊓ Vᗮ = ⊥`.
+* `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
+  `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
+  `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 -/
 
 public section
@@ -183,5 +194,31 @@ theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
     rw [add_sub_cancel] at hle
     rw [U.eq_starProjection_of_norm_le hle]
     exact U.starProjection_apply_mem v
+
+omit [U.HasOrthogonalProjection] in
+/-- The orthogonal projection onto `V` is injective on `U` exactly when `U ⊓ Vᗮ = ⊥`, since its
+kernel is `Vᗮ`. -/
+theorem injOn_starProjection_iff_disjoint :
+    Set.InjOn V.starProjection U ↔ Disjoint U Vᗮ := by
+  simpa using (LinearMap.disjoint_ker_iff_injOn (f := (V.starProjection : E →ₗ[𝕜] E))
+    (p := U)).symm
+
+/-- Compressing `(P_U - P_V)²` to `U` on the right gives `P_U - P_U P_V P_U`. -/
+theorem starProjection_sub_starProjection_sq_mul_starProjection :
+    (U.starProjection - V.starProjection) ^ 2 * U.starProjection =
+      U.starProjection - U.starProjection * V.starProjection * U.starProjection := by
+  have hP := U.isIdempotentElem_starProjection
+  have hQ := V.isIdempotentElem_starProjection
+  simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.mul_self_mul]
+  abel
+
+/-- Compressing `(P_U - P_V)²` to `U` on the left gives `P_U - P_U P_V P_U`. -/
+theorem starProjection_mul_starProjection_sub_starProjection_sq :
+    U.starProjection * (U.starProjection - V.starProjection) ^ 2 =
+      U.starProjection - U.starProjection * V.starProjection * U.starProjection := by
+  have hP := U.isIdempotentElem_starProjection
+  have hQ := V.isIdempotentElem_starProjection
+  simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
+  abel
 
 end Submodule

@@ -20,7 +20,7 @@ Koszul complex
 0 ⟶ e_v Π ⟶ ⨁_{b : i ⟶ v} e_i Π ⟶ e_v Π ⟶ S_v ⟶ 0
 ```
 
-of `TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex` is exact at its left end as
+of `TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex` is exact at its left end as
 soon as `Q` has no sinks (`TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff`). This
 file removes the dependence on the orientation. Since `Π` does not depend on the orientation up to
 isomorphism (`TauCeti.reorientPreprojectiveAlgebraEquiv`), it is enough that *some* reorientation

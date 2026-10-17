@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 
 /-!
-# The universal coefficient theorem for singular cohomology over a principal ideal domain
+# The universal coefficient theorem for singular cohomology
 
 Let `k` be a principal ideal domain, for instance `ℤ`, let `R` be a projective `k`-module, for
 instance `k` itself, and let `M` be any `k`-module.  For a topological space `X`, the singular
@@ -35,8 +35,19 @@ With `k = R = ℤ` this is the classical sequence
 injective coefficient module the `Ext¹` term vanishes and the Kronecker map is an isomorphism over
 any ring (`TopCat.singularKroneckerEquiv`).
 
+Over an arbitrary commutative ring `k` the cycles of the singular chain complex need not split off,
+and there is no such short exact sequence in general.  It survives, with vanishing `Ext¹` term,
+when the homology is projective: if `R` and every `Hₙ(X; R)` are projective, the singular chain
+complex is a complex of projective modules with projective homology, so its cycles are projective
+and split off (`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the Kronecker map
+is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
+(`TopCat.singularKroneckerEquivOfProjectiveHomology`).
+
 ## Main declarations
 
+* `TopCat.singularKronecker_bijective_of_projective_homology` and
+  `TopCat.singularKroneckerEquivOfProjectiveHomology`: over any commutative ring, the Kronecker
+  map is an isomorphism when the coefficients and the homology are projective.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -64,6 +75,43 @@ open CategoryTheory Limits AlgebraicTopology Abelian
 universe w
 
 namespace TopCat
+
+section ProjectiveHomology
+
+variable {k : Type w} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+  [hX : ∀ n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+
+/-- **The universal coefficient theorem with projective homology**, over any commutative ring `k`:
+for a projective coefficient module `R`, if the singular homology modules `Hₙ(X; R)` are all
+projective, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` is bijective in every degree,
+for every module `M`.  The singular chain modules are projective, so the cycles split off and the
+`Ext¹` term of the universal coefficient sequence vanishes. -/
+theorem singularKronecker_bijective_of_projective_homology (n : ℕ) :
+    Function.Bijective (X.singularKronecker (R := R) (M := M) k n) := by
+  -- `Hₙ(X; R)` is by definition the homology of the singular chain complex `C(X; R)`.
+  have (n : ℕ) : Projective (((toSSet.obj X).chainComplex R).homology n) := hX n
+  rw [singularKronecker_def]
+  exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology n
+
+/-- **The universal coefficient isomorphism with projective homology**: over any commutative ring,
+for a projective coefficient module `R` such that every `Hₙ(X; R)` is projective, the Kronecker
+map is a `k`-linear equivalence `Hⁿ(X; R, M) ≃ₗ[k] (Hₙ(X; R) ⟶ M)`.  This applies to `R = k`
+whenever every `Hₙ(X; k)` is a free `k`-module, as for spheres. -/
+def singularKroneckerEquivOfProjectiveHomology (n : ℕ) :
+    X.singularCohomology R k M n ≃ₗ[k]
+      (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X ⟶ M) :=
+  LinearEquiv.ofBijective _ (X.singularKronecker_bijective_of_projective_homology R M n)
+
+/-- The equivalence `TopCat.singularKroneckerEquivOfProjectiveHomology` is the Kronecker map. -/
+@[simp]
+lemma singularKroneckerEquivOfProjectiveHomology_apply (n : ℕ)
+    (α : X.singularCohomology R k M n) :
+    X.singularKroneckerEquivOfProjectiveHomology R M n α = X.singularKronecker k n α :=
+  (rfl)
+
+end ProjectiveHomology
+
+section PrincipalIdealDomain
 
 variable {k : Type w} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
   (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
@@ -184,5 +232,7 @@ lemma singularExtToCohomology_naturality {Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ
           (zero_add 1)) =
       TopCat.singularCohomologyMap f (n + 1) (Y.singularExtToCohomology R M n e) :=
   TauCeti.ChainComplex.extToHomology_naturality (SSet.chainComplexMap (toSSet.map f) R) (n + 1) n e
+
+end PrincipalIdealDomain
 
 end TopCat

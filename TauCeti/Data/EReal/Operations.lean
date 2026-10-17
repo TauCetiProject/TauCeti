@@ -15,8 +15,10 @@ subtraction in which one operand is a *real* number: both `a - (r : EReal)` and 
 are defined for every extended real `a`, are never of the form `∞ - ∞`, and behave like real
 subtraction in the ways recorded here. The first two results below have a real subtrahend and
 the last two a real minuend. The file also records that adding a finite extended nonnegative real
-to a real number is real addition, and how the positive part `ENNReal.ofReal` of a real number
-compares with the number itself in `EReal`.
+to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
+compares with the number itself in `EReal`, and that the coercion from `ℝ≥0∞` commutes with
+infima. The named inclusion `WithTop.toEReal` embeds real heights with a possible top value
+into `EReal` without installing a coercion.
 
 ## Main results
 
@@ -41,6 +43,7 @@ compares with the number itself in `EReal`.
   `x + I ≤ y + J` with `I`, `J` finite extended nonnegative reals.
 * `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
   `a : ℝ≥0∞` is at most `a` in `EReal`.
+* `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima.
 -/
 
 public section
@@ -50,6 +53,41 @@ noncomputable section
 open scoped ENNReal
 
 namespace TauCeti
+
+/-- Regard a real number with a possible top value as an extended real. This inclusion
+preserves `⊤` and never takes the value `⊥`. -/
+def _root_.WithTop.toEReal (x : WithTop ℝ) : EReal := WithBot.some x
+
+/-- The inclusion into `EReal` agrees with the real coercion at finite values. -/
+@[simp]
+theorem _root_.WithTop.toEReal_coe (r : ℝ) : (r : WithTop ℝ).toEReal = (r : EReal) := (rfl)
+
+/-- The inclusion into `EReal` preserves `⊤`. -/
+@[simp]
+theorem _root_.WithTop.toEReal_top : (⊤ : WithTop ℝ).toEReal = ⊤ := (rfl)
+
+/-- The inclusion into `EReal` never takes the value `⊥`. -/
+@[simp]
+theorem _root_.WithTop.toEReal_ne_bot (x : WithTop ℝ) : x.toEReal ≠ ⊥ := WithBot.coe_ne_bot
+
+/-- The inclusion into `EReal` preserves and reflects order. -/
+@[simp]
+theorem _root_.WithTop.toEReal_le_toEReal_iff {x y : WithTop ℝ} :
+    x.toEReal ≤ y.toEReal ↔ x ≤ y := WithBot.coe_le_coe
+
+/-- The inclusion into `EReal` preserves and reflects strict order. -/
+@[simp]
+theorem _root_.WithTop.toEReal_lt_toEReal_iff {x y : WithTop ℝ} :
+    x.toEReal < y.toEReal ↔ x < y := WithBot.coe_lt_coe
+
+/-- The inclusion from `WithTop ℝ` into `EReal` is injective. -/
+theorem _root_.WithTop.toEReal_injective : Function.Injective WithTop.toEReal :=
+  WithBot.coe_injective
+
+/-- A height maps to `⊤` in `EReal` exactly when it was already `⊤`. -/
+@[simp]
+theorem _root_.WithTop.toEReal_eq_top_iff {x : WithTop ℝ} :
+    x.toEReal = ⊤ ↔ x = ⊤ := WithBot.coe_eq_top
 
 /-- Subtracting a real constant commutes with an infimum in `EReal`; both sides are `⊤` when the
 index type is empty. -/
@@ -142,6 +180,20 @@ theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
       rw [EReal.coe_ennreal_ofReal]
       exact le_max_left (x : EReal) 0
     _ ≤ (a : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 h
+
+/-- The coercion from `ℝ≥0∞` to `EReal` commutes with infima; both sides are `⊤` when the index
+type is empty. -/
+@[norm_cast]
+theorem _root_.EReal.coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
+    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
+  apply le_antisymm
+  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
+  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
+      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
+    rw [← EReal.coe_toENNReal hnonneg]
+    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
+      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
+        EReal.toENNReal_coe
 
 end TauCeti
 

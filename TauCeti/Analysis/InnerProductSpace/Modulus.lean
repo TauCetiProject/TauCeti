@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
@@ -44,8 +45,12 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
   own modulus.
 * `ContinuousLinearMap.norm_modulus_apply`: `‖|T| x‖ = ‖T x‖`; consequently
-  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`, and
+  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`,
+  `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
+  `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
+* `ContinuousLinearMap.commute_modulus_of_commute`: an endomorphism commuting with `T† T`
+  commutes with `|T|`.
 * `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
   composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
 
@@ -102,6 +107,11 @@ theorem eq_modulus_iff {T : E →L[𝕜] F} {S : E →L[𝕜] E} :
   rintro rfl
   exact ⟨nonneg_iff_isPositive.1 T.modulus_nonneg, T.modulus_comp_modulus⟩
 
+/-- An endomorphism commuting with the source Gram operator `T† T` commutes with the modulus. -/
+theorem commute_modulus_of_commute {T : E →L[𝕜] F} {S : E →L[𝕜] E}
+    (h : Commute S (T† ∘L T)) : Commute S T.modulus :=
+  (h.symm.cfcₙ_nnreal NNReal.sqrt).symm
+
 end RealAlgebra
 
 /-- The modulus is positive. -/
@@ -131,6 +141,11 @@ theorem modulus_modulus (T : E →L[𝕜] F) : T.modulus.modulus = T.modulus :=
 theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
   (eq_modulus_iff.2 ⟨isPositive_zero, by simp⟩).symm
 
+/-- An operator and its negative have the same modulus. -/
+@[simp]
+theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
+  (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
+
 /-- The modulus is the square root `CFC.sqrt (T† T)` of the continuous functional calculus, for
 every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
 theorem modulus_eq_sqrt [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
@@ -155,6 +170,18 @@ theorem ker_modulus (T : E →L[𝕜] F) : T.modulus.ker = T.ker := by
   ext x
   simp only [LinearMap.mem_ker, coe_coe, ← norm_eq_zero (a := T.modulus x),
     ← norm_eq_zero (a := T x), norm_modulus_apply]
+
+/-- The orthogonal complement of the range of the modulus is the kernel of the operator. -/
+@[simp]
+theorem orthogonal_range_modulus (T : E →L[𝕜] F) : T.modulus.rangeᗮ = T.ker := by
+  rw [orthogonal_range, adjoint_modulus, ker_modulus]
+
+/-- The closure of the range of the modulus is the orthogonal complement of the kernel of the
+operator. This is the initial space of the polar factor of `T`. -/
+@[simp]
+theorem topologicalClosure_range_modulus (T : E →L[𝕜] F) :
+    T.modulus.range.topologicalClosure = T.kerᗮ := by
+  rw [← Submodule.orthogonal_orthogonal_eq_closure, orthogonal_range_modulus]
 
 /-- The modulus and the operator have the same operator norm. -/
 @[simp]

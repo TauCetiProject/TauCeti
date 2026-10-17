@@ -39,7 +39,9 @@ a finite flat morphism is invariant under base change, so it is `n²` everywhere
   integer `n` has rank `n²` at every point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_torsion_hom` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finrank_torsion_hom`: for `n ≠ 0`, the `n`-torsion
-  is finite locally free of rank `n²` over `S`.
+  is finite locally free of rank `n²` over `S`; so is the closed subscheme of its ideal sheaf
+  (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_ker_torsionι_left` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_ker_torsionι_left`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.surjective_mulBy_left`: multiplication by a nonzero
   integer is surjective.
 
@@ -148,6 +150,20 @@ theorem finrank_mulBy_left {n : ℤ} (hn : n ≠ 0) (x : E.carrier) :
 morphism `[n]` along the zero section. -/
 theorem flat_torsion_hom {n : ℤ} (hn : n ≠ 0) : Flat (E.torsion n).X.hom :=
   MorphismProperty.of_isPullback (E.isPullback_torsion n) (E.flat_mulBy_left hn)
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is finite over `S` for `n ≠ 0`. -/
+instance isFinite_ker_torsionι_left {n : ℤ} [NeZero n] :
+    IsFinite ((E.torsionι n).left.ker.subschemeι ≫ E.structureMap) := by
+  have := E.isFinite_torsion_hom (NeZero.ne n)
+  rw [subschemeι_ker_torsionι_left_structureMap]
+  infer_instance
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is flat over `S` for `n ≠ 0`. -/
+instance flat_ker_torsionι_left {n : ℤ} [NeZero n] :
+    Flat ((E.torsionι n).left.ker.subschemeι ≫ E.structureMap) := by
+  have := E.flat_torsion_hom (NeZero.ne n)
+  rw [subschemeι_ker_torsionι_left_structureMap]
+  infer_instance
 
 /-- **The `n`-torsion has rank `n²`** (Katz–Mazur 2.3.1). For an elliptic curve `E` over a scheme
 `S` and `n ≠ 0`, the `n`-torsion `E[n]` is finite, flat and locally of finite presentation over

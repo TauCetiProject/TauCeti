@@ -31,10 +31,10 @@ No hypothesis on the constant field is needed.
 Write `ψ_x : Ω[F⁄k] ≃ Ω_F` for the comparison built from a separating element `x`
 (`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating`, which needs `k` to be the exact
 constant field). Consequently `ψ_{σ x} (σ • ω) = σ • ψ_x (ω)`
-(`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear`). Whenever the
-comparison does not depend on the separating element, for instance over a perfect constant field,
-it is therefore equivariant for the whole automorphism group
-(`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_of_perfectField`):
+(`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear`). Since the
+comparison does not depend on the separating element, it is therefore equivariant for the whole
+automorphism group
+(`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_self`):
 for automorphisms, the Kähler and Weil formalisms are interchangeable.
 
 ## Main results
@@ -43,8 +43,8 @@ for automorphisms, the Kähler and Weil formalisms are interchangeable.
   Weil differentials.
 * `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear`:
   `ψ_{σ x} (σ • ω) = σ • ψ_x (ω)`.
-* `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_of_perfectField`:
-  over a perfect constant field the comparison is equivariant.
+* `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_self`:
+  the comparison is equivariant.
 
 ## References
 
@@ -127,21 +127,20 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear
   rw [hmul, hmul]
   exact (weilDifferentialRepresentation_weilDifferentialSpaceMul σ hF c _).symm
 
-/-- **The Kähler–Weil comparison is equivariant over a perfect field**: over a perfect exact
-constant field the comparison does not depend on the separating element
-(`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField`), so it carries
-the functorial action of a `k`-automorphism `σ` on Kähler differentials to its action on Weil
-differentials. -/
-theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_of_perfectField
-    [PerfectField k] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (σ : F ≃ₐ[k] F)
+/-- **The Kähler–Weil comparison is equivariant**: over an exact constant field the comparison
+does not depend on the separating element
+(`TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq`), so it carries the functorial
+action of a `k`-automorphism `σ` on Kähler differentials to its action on Weil differentials. -/
+theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_self
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (σ : F ≃ₐ[k] F)
     {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (ω : Ω[F⁄k]) :
     kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx
         (mapSemilinear (σ : F →ₐ[k] F) ω) =
       weilDifferentialRepresentation k k F σ
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) := by
   have := IntermediateField.isSeparable_adjoin_simple_map σ (x := x)
-  conv_lhs => rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField hF hex
-    hx (hx.algHom σ σ.injective)]
+  conv_lhs => rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq hF hex hx
+    (hx.algHom σ σ.injective)]
   exact kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear hF hex σ hx ω
 
 end TauCeti

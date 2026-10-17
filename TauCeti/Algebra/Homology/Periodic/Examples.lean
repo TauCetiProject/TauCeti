@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Algebra.Homology.Periodic.DifferentialModule
+public import TauCeti.Algebra.Homology.Periodic.DifferentialModule.Basic
 
 /-!
 # Acyclic differential modules need not be contractible

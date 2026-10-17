@@ -187,6 +187,22 @@ theorem map_normUnits_unitFiltration_le_floor_herbrand (i : ℕ) :
     ((psiNat_le_iff_le_floor_herbrand K L).2 le_rfl))).trans
     (map_normUnits_unitFiltration_psiNat_le K L _)
 
+/-- If `G_{v+1} = Gal(L/K)` in prime degree and `z ∈ 𝓂[L]^v`, then
+`N(1 + z) ≡ 1 + N(z)` modulo `𝓂[K]^(v+1)`. -/
+theorem norm_one_add_sub_one_sub_norm_mem_maximalIdeal_pow_succ
+    (hℓ : (finrank K L).Prime) {v : ℕ}
+    (hG : lowerRamificationGroup K L (v + 1) = ⊤) {z : 𝒪[L]} (hz : z ∈ 𝓂[L] ^ v) :
+    Algebra.norm 𝒪[K] (1 + z) - 1 - Algebra.norm 𝒪[K] z ∈ 𝓂[K] ^ (v + 1) := by
+  obtain ⟨w, hw, hN⟩ := exists_norm_one_add_eq_of_mem_maximalIdeal_pow hℓ hz
+  have heq : Algebra.norm 𝒪[K] (1 + z) - 1 - Algebra.norm 𝒪[K] z =
+      Algebra.trace 𝒪[K] 𝒪[L] z + Algebra.trace 𝒪[K] 𝒪[L] w := by
+    rw [hN]
+    ring
+  rw [heq]
+  exact add_mem (trace_mem_maximalIdeal_pow_succ hℓ.two_le hG hz)
+    (trace_mem_maximalIdeal_pow_succ hℓ.two_le hG
+      (Ideal.pow_le_pow_right (show v ≤ 2 * v by omega) hw))
+
 end Norm
 
 end TauCeti

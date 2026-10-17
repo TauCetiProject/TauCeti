@@ -26,10 +26,13 @@ while its regularity and involutivity are predicates on that family.
 
 ## Main definitions
 
+* `TauCeti.distributionModelFiber`: a tangent-space fibre of a distribution on a normed space,
+  transported to the model vector space.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
 * `TauCeti.IsInvolutiveDistribution I D`: `D` is involutive.
+* `TauCeti.IsInvolutiveDistributionOn I D s`: `D` is involutive on `s`.
 * `TauCeti.standardContactDistribution 𝕜`: the kernel of `dz - x dy` on `𝕜³`.
 
 ## Main results
@@ -40,6 +43,8 @@ while its regularity and involutivity are predicates on that family.
   fibres.
 * `TauCeti.isContMDiffDistribution_top` and `TauCeti.isInvolutiveDistribution_top`: the whole
   tangent bundle is a `C^n` involutive distribution.
+* `TauCeti.IsInvolutiveDistribution.isInvolutiveDistributionOn`: an involutive distribution is
+  involutive on every set.
 * `TauCeti.mlieBracket_sum_smul_mem`: if vector fields differentiable at `x` have values and
   pairwise Lie brackets at `x` in a subspace `D` of the tangent space there, then so does the Lie
   bracket of any two of their combinations with coefficients differentiable at `x`. This is the
@@ -78,6 +83,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω} {k : ℕ} {ι : Type*}
+
+section ModelFiber
+
+/-- The fibre of a distribution on a normed space, transported from the tangent space to the model
+vector space by its canonical identification. -/
+noncomputable def distributionModelFiber
+    (D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)) (p : E) : Submodule 𝕜 E :=
+  (D p).map (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearMap
+
+/-- Membership in `distributionModelFiber`, expressed in the original tangent-space fibre. -/
+@[simp]
+theorem mem_distributionModelFiber
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} {p v : E} :
+    v ∈ distributionModelFiber D p ↔
+      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm v ∈ D p := by
+  unfold distributionModelFiber
+  convert Submodule.mem_map_equiv (p := D p)
+    (e := (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearEquiv) (x := v) using 1
+  rfl
+
+/-- On a normed space, transporting a distribution fibre through the canonical tangent-model
+identification leaves the submodule unchanged. -/
+theorem distributionModelFiber_eq
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) :
+    distributionModelFiber D p = D p := by
+  -- Mathlib's canonical tangent-model identification is definitionally the identity linear map.
+  unfold distributionModelFiber
+  exact Submodule.map_id (D p)
+
+end ModelFiber
 
 section Frame
 
@@ -238,6 +273,15 @@ def IsInvolutiveDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) :
     MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) → (∀ x ∈ U, W x ∈ D x) →
       ∀ x ∈ U, mlieBracket I V W x ∈ D x
 
+variable (I) in
+/-- `D` is involutive on `s`: whenever two vector fields are differentiable and tangent to `D` on
+an open subset of `s`, their Lie bracket is tangent to `D` there. -/
+def IsInvolutiveDistributionOn (D : Π x : M, Submodule 𝕜 (TangentSpace I x))
+    (s : Set M) : Prop :=
+  ∀ ⦃U : Set M⦄, IsOpen U → U ⊆ s → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+    MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) →
+      (∀ x ∈ U, W x ∈ D x) → ∀ x ∈ U, mlieBracket I V W x ∈ D x
+
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
 /-- The defining property of an involutive distribution. -/
@@ -247,6 +291,13 @@ theorem isInvolutiveDistribution_iff : IsInvolutiveDistribution I D ↔
         ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
   Iff.rfl
 
+/-- The defining property of a distribution that is involutive on a set. -/
+theorem isInvolutiveDistributionOn_iff {s : Set M} : IsInvolutiveDistributionOn I D s ↔
+    ∀ ⦃U : Set M⦄, IsOpen U → U ⊆ s → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+      MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) →
+        (∀ x ∈ U, W x ∈ D x) → ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
+  Iff.rfl
+
 /-- The Lie bracket of two vector fields that are differentiable and tangent to an involutive
 distribution on an open set is tangent to it there. -/
 theorem IsInvolutiveDistribution.mlieBracket_mem (hD : IsInvolutiveDistribution I D) {U : Set M}
@@ -254,6 +305,36 @@ theorem IsInvolutiveDistribution.mlieBracket_mem (hD : IsInvolutiveDistribution 
     (hW : MDiff[U] (T% W)) (hVD : ∀ x ∈ U, V x ∈ D x) (hWD : ∀ x ∈ U, W x ∈ D x) {x : M}
     (hx : x ∈ U) : mlieBracket I V W x ∈ D x :=
   hD hU hV hW hVD hWD x hx
+
+/-- The Lie bracket of two vector fields that are differentiable and tangent to a distribution on
+an open subset of its involutivity set is tangent to the distribution there. -/
+theorem IsInvolutiveDistributionOn.mlieBracket_mem {s U : Set M}
+    (hD : IsInvolutiveDistributionOn I D s) (hU : IsOpen U) (hUs : U ⊆ s)
+    {V W : Π x : M, TangentSpace I x} (hV : MDiff[U] (T% V))
+    (hW : MDiff[U] (T% W)) (hVD : ∀ x ∈ U, V x ∈ D x)
+    (hWD : ∀ x ∈ U, W x ∈ D x) {x : M} (hx : x ∈ U) :
+    mlieBracket I V W x ∈ D x :=
+  hD hU hUs hV hW hVD hWD x hx
+
+/-- An involutive distribution is involutive on every set. -/
+theorem IsInvolutiveDistribution.isInvolutiveDistributionOn
+    (hD : IsInvolutiveDistribution I D) (s : Set M) :
+    IsInvolutiveDistributionOn I D s :=
+  fun _ hU _ _ _ hV hW hVD hWD _x hx ↦ hD.mlieBracket_mem hU hV hW hVD hWD hx
+
+/-- A distribution that is involutive on `s` is involutive on every subset of `s`. -/
+theorem IsInvolutiveDistributionOn.mono {s t : Set M}
+    (hD : IsInvolutiveDistributionOn I D s) (ht : t ⊆ s) :
+    IsInvolutiveDistributionOn I D t :=
+  fun _ hU hUt _ _ hV hW hVD hWD ↦ hD hU (hUt.trans ht) hV hW hVD hWD
+
+/-- Involutivity on the whole manifold is equivalent to involutivity. -/
+@[simp]
+theorem isInvolutiveDistributionOn_univ :
+    IsInvolutiveDistributionOn I D univ ↔ IsInvolutiveDistribution I D := by
+  refine ⟨fun hD U hU V W hV hW hVD hWD ↦
+    hD hU (subset_univ U) hV hW hVD hWD, fun hD ↦ ?_⟩
+  exact hD.isInvolutiveDistributionOn univ
 
 /-- The whole tangent bundle is involutive. -/
 theorem isInvolutiveDistribution_top : IsInvolutiveDistribution I (fun _ : M ↦ ⊤) :=

@@ -51,9 +51,12 @@ base field here need not be, so the pairing below takes its values in the top fi
 ## Main results
 
 * `TauCeti.isAbelianGalois_kummerField`: `K(Δ^{1/n})/K` is abelian Galois.
+* `TauCeti.exponent_algEquiv_kummerField_dvd`: its Galois group has exponent dividing `n`.
 * `TauCeti.finiteDimensional_kummerField`: it is finite when `Δ ∩ (Kˣ)ⁿ` has finite index in `Δ`.
 * `TauCeti.finrank_kummerField`: `[K(Δ^{1/n}) : K] = [Δ : Δ ∩ (Kˣ)ⁿ]`, when every element of `Δ`
   has an `n`-th root in `E`.
+* `TauCeti.finrank_kummerField_le_relIndex_mul_finrank`: for a finite subextension `L` of `E`,
+  `[K(Δ^{1/n}) : K] ≤ [Δ : Δ ∩ (Lˣ)ⁿ] · [L : K]`.
 * `TauCeti.exists_eq_algebraMap_mul_of_pow_eq`: over a domain containing the `n`-th roots of
   unity, two elements of a field extension with the same `n`-th power differ by a unit from the
   base; so if `a` has an `n`-th root in a `K`-algebra `R` mapping to `M`, every `n`-th root of
@@ -86,7 +89,7 @@ variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ} [NeZero n] [HasEnoughRo
 of `K` with the same `n`-th power differ by a unit from `K`. -/
 theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (h : x ^ n = y ^ n) :
     ∃ z : Kˣ, x = algebraMap K F z * y := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
   obtain ⟨ξ, rfl⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).1 h.symm
   refine ⟨((rootsOfUnityEquivOfPrimitiveRoots (FaithfulSMul.algebraMap_injective K F) hK).symm
@@ -249,7 +252,7 @@ Each generator is a root of a separable binomial `Xⁿ - a` that splits in `K(Δ
 automorphism multiplies each generator by a constant, so any two automorphisms commute. -/
 instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) := by
   set M := kummerField E n Δ
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have : NeZero (n : K) := hζ.neZero'
   have hdvd {x : E} {a : Kˣ} (hx : x ^ n = algebraMap K E a) :
       minpoly K x ∣ (X : K[X]) ^ n - C (a : K) :=
@@ -278,6 +281,28 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
     ring
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
     algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
+
+/-- **The Galois group of a Kummer extension has exponent dividing the radical exponent.**
+Every `K`-automorphism of `K(Δ^{1/n})`, raised to the `n`-th power, fixes each radical generator.
+-/
+theorem exponent_algEquiv_kummerField_dvd :
+    Monoid.exponent (kummerField E n Δ ≃ₐ[K] kummerField E n Δ) ∣ n := by
+  rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
+  intro σ
+  apply AlgEquiv.coe_toAlgHom_injective
+  refine algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ ?_
+  let y : kummerField E n Δ := ⟨x, mem_kummerField_of_pow_eq ha hx⟩
+  have hy : y ^ n = algebraMap K (kummerField E n Δ) a :=
+    Subtype.ext (by simpa using hx)
+  have hy0 : y ≠ 0 := ne_zero_of_pow_eq_algebraMap hy
+  have hpow (k : ℕ) : (σ ^ k) y / y = (σ y / y) ^ k := by
+    induction k with
+    | zero => simp [hy0]
+    | succ k ih => rw [pow_succ, AlgEquiv.mul_apply_div_self_of_pow_eq _ _ hy, ih, pow_succ]
+  have hone : (σ y / y) ^ n = 1 := by
+    rw [div_pow, ← map_pow, hy, AlgEquiv.commutes, div_self (by simp)]
+  rw [AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, AlgEquiv.one_apply, ← div_eq_one_iff_eq hy0,
+    hpow, hone]
 
 /-- In the Galois group of `K(Δ^{1/n})/K`, an automorphism is determined by how it moves one
 chosen `n`-th root `r a` of each `a ∈ Δ`. -/
@@ -369,6 +394,41 @@ theorem finrank_kummerField [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIn
   rw [← IsGalois.card_aut_eq_finrank]
   exact le_antisymm (natCard_algEquiv_kummerField_le hr)
     (relIndex_le_natCard_algEquiv_kummerField hr)
+
+/-- **The elements of `Δ` that become `n`-th powers in a subfield `L`.** If every element of `Δ`
+has an `n`-th root in `E` and `L` is a finite subextension of `E`, then
+`[K(Δ^{1/n}) : K] ≤ [Δ : Δ ∩ (Lˣ)ⁿ] · [L : K]`, where `Δ ∩ (Lˣ)ⁿ` consists of the elements of `Δ`
+that are `n`-th powers in `L`. -/
+theorem finrank_kummerField_le_relIndex_mul_finrank
+    [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
+    (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) (L : IntermediateField K E)
+    [FiniteDimensional K L] :
+    finrank K (kummerField E n Δ) ≤
+      ((powMonoidHom n : Lˣ →* Lˣ).range.comap (Units.map (algebraMap K L).toMonoidHom)).relIndex
+        Δ * finrank K L := by
+  set P := (powMonoidHom n : Kˣ →* Kˣ).range
+  set D := (powMonoidHom n : Lˣ →* Lˣ).range.comap (Units.map (algebraMap K L).toMonoidHom)
+  have hPD : P ≤ D := by
+    rintro _ ⟨c, rfl⟩
+    exact ⟨Units.map (algebraMap K L).toMonoidHom c, by simp⟩
+  -- `[Δ : Δ ∩ (Kˣ)ⁿ] = [Δ ∩ (Lˣ)ⁿ : Δ ∩ (Kˣ)ⁿ] · [Δ : Δ ∩ (Lˣ)ⁿ]`.
+  have hidx : P.relIndex (D ⊓ Δ) * D.relIndex Δ = P.relIndex Δ := by
+    rw [Subgroup.relIndex_inf_mul_relIndex, inf_eq_left.mpr hPD]
+  have : P.IsFiniteRelIndex (D ⊓ Δ) :=
+    ⟨left_ne_zero_of_mul (hidx.trans_ne Subgroup.IsFiniteRelIndex.relIndex_ne_zero)⟩
+  -- The `n`-th roots of the elements of `Δ ∩ (Lˣ)ⁿ` lie in `L`.
+  have hle : kummerField E n (D ⊓ Δ) ≤ L := by
+    refine kummerField_le_iff.2 fun a ha x hx ↦ ?_
+    obtain ⟨b, hb⟩ := ha.1
+    refine (L.exists_mem_pow_eq_iff_of_pow_eq hx).1 ⟨((b : L) : E), (b : L).2, ?_⟩
+    simpa using congrArg (fun y : Lˣ ↦ ((y : L) : E)) hb
+  calc finrank K (kummerField E n Δ) = P.relIndex (D ⊓ Δ) * D.relIndex Δ := by
+        rw [finrank_kummerField hroots, hidx]
+    _ = finrank K (kummerField E n (D ⊓ Δ)) * D.relIndex Δ := by
+        rw [finrank_kummerField fun a ha ↦ hroots a (Subgroup.mem_inf.mp ha).2]
+    _ ≤ finrank K L * D.relIndex Δ :=
+        Nat.mul_le_mul_right _ (IntermediateField.finrank_le_of_le_right hle)
+    _ = D.relIndex Δ * finrank K L := mul_comm _ _
 
 end Galois
 

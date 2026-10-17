@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.CategoryTheory.Exact.Equivalence
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.Split
@@ -32,6 +33,10 @@ exact structure is the smallest one (`TauCeti.ExactStructure.conflation_of_split
 structure on the same category. Both maps are characterized by their values on object classes,
 and both are natural in conflation-exact functors.
 
+For an exact-additive invariant, this file also provides finite Euler sums of explicitly supported
+`ℤ`-graded object families, together with support independence, reindexing, pointwise isomorphism,
+biproduct, and degreewise-conflation formulas.
+
 ## Main definitions
 
 * `TauCeti.conflationRelation S`: the relation `[X₂] - [X₁] - [X₃]` attached to a short complex,
@@ -39,6 +44,8 @@ and both are natural in conflation-exact functors.
 * `TauCeti.ExactK0 E`: exact `K₀`, with class map `TauCeti.ExactK0.of`.
 * `TauCeti.ExactK0.AdditiveInvariant E G`: an isomorphism-invariant, conflation-additive function
   on objects, and `TauCeti.ExactK0.lift` the homomorphism it induces.
+* `TauCeti.ExactK0.AdditiveInvariant.finiteEulerSum`: the finite Euler sum of the values of an
+  exact-additive invariant on a family of objects.
 * `TauCeti.ExactK0.RightAdditiveInvariant C E' G`: an object-level invariant additive on
   conflations in its second variable, and `TauCeti.ExactK0.RightAdditiveInvariant.rightLift` its
   one-sided descent.
@@ -59,6 +66,9 @@ and both are natural in conflation-exact functors.
   `TauCeti.ExactK0.of_eq_zero_of_isZero` its biproduct and zero-object consequences.
 * `TauCeti.ExactK0.liftEquiv`: the universal property. Conflation-additive invariants with values
   in `G` correspond bijectively to homomorphisms `ExactK0 E →+ G`.
+* `TauCeti.ExactK0.AdditiveInvariant.finiteEulerSum_biprod` and
+  `TauCeti.ExactK0.AdditiveInvariant.finiteEulerSum_conflation`: additivity under pointwise
+  biproducts and degreewise conflations.
 * `TauCeti.ExactK0.RightAdditiveInvariant.rightLift_of` and
   `TauCeti.ExactK0.RightAdditiveInvariant.rightLift_unique`: evaluation and uniqueness of the
   one-sided descent.
@@ -350,6 +360,89 @@ lemma liftEquiv_apply (a : AdditiveInvariant E G) : liftEquiv a = lift a := (rfl
 @[simp]
 lemma liftEquiv_symm_apply_obj (f : ExactK0 E →+ G) (X : C) :
     ((liftEquiv (E := E) (G := G)).symm f).obj X = f (of X) := (rfl)
+
+/-! ### Finite Euler sums of exact-additive invariants -/
+
+namespace AdditiveInvariant
+
+variable (a : ExactK0.AdditiveInvariant E G)
+
+/-- The Euler sum of an exact-additive invariant on a `ℤ`-indexed family of objects, over an
+explicit finite set of degrees. -/
+def finiteEulerSum (X : ℤ → C) (s : Finset ℤ) : G :=
+  TauCeti.finiteEulerSum (fun n ↦ a.obj (X n)) s
+
+omit [EssentiallySmall.{w} C] in
+/-- The object-family Euler sum is its defining finite alternating sum. -/
+theorem finiteEulerSum_def (X : ℤ → C) (s : Finset ℤ) :
+    a.finiteEulerSum X s = ∑ n ∈ s, (n.negOnePow : ℤ) • a.obj (X n) :=
+  by rw [AdditiveInvariant.finiteEulerSum, TauCeti.finiteEulerSum_def]
+
+omit [EssentiallySmall.{w} C] in
+@[simp]
+theorem finiteEulerSum_empty (X : ℤ → C) : a.finiteEulerSum X ∅ = 0 :=
+  TauCeti.finiteEulerSum_empty _
+
+omit [EssentiallySmall.{w} C] in
+/-- Adjoining a new degree adds its signed value to an object-family Euler sum. -/
+@[simp]
+theorem finiteEulerSum_insert (X : ℤ → C) {s : Finset ℤ} {n : ℤ} (hn : n ∉ s) :
+    a.finiteEulerSum X (insert n s) =
+      (n.negOnePow : ℤ) • a.obj (X n) + a.finiteEulerSum X s :=
+  TauCeti.finiteEulerSum_insert _ hn
+
+omit [EssentiallySmall.{w} C] in
+/-- If the object family is zero outside each of two finite sets, both sets compute the same
+Euler sum. -/
+theorem finiteEulerSum_eq_of_isZero (X : ℤ → C) {s t : Finset ℤ}
+    (hs : ∀ n, n ∉ s → IsZero (X n)) (ht : ∀ n, n ∉ t → IsZero (X n)) :
+    a.finiteEulerSum X s = a.finiteEulerSum X t :=
+  TauCeti.finiteEulerSum_eq_of_eq_zero _
+    (fun n hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
+    (fun n hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
+
+omit [EssentiallySmall.{w} C] in
+/-- Pointwise isomorphic object families have the same Euler sum. -/
+theorem finiteEulerSum_iso {X Y : ℤ → C} {s : Finset ℤ}
+    (e : ∀ n ∈ s, X n ≅ Y n) : a.finiteEulerSum X s = a.finiteEulerSum Y s :=
+  TauCeti.finiteEulerSum_congr fun n hn ↦ a.map_iso (e n hn)
+
+omit [EssentiallySmall.{w} C] in
+/-- Translating the degrees of an object family changes its Euler sum by the parity sign of the
+translation. -/
+theorem finiteEulerSum_reindex_add (X : ℤ → C) (m : ℤ) (s : Finset ℤ) :
+    a.finiteEulerSum (fun n ↦ X (n + m)) s =
+      (m.negOnePow : ℤ) •
+        a.finiteEulerSum X (s.map (Equiv.addRight m).toEmbedding) :=
+  by
+    rw [finiteEulerSum, finiteEulerSum]
+    exact TauCeti.finiteEulerSum_reindex_add (G := G) (fun n ↦ a.obj (X n)) m s
+
+omit [EssentiallySmall.{w} C] in
+/-- The Euler sum of pointwise biproducts is the sum of the two Euler sums. -/
+@[simp]
+theorem finiteEulerSum_biprod (X Y : ℤ → C) (s : Finset ℤ) :
+    a.finiteEulerSum (fun n ↦ X n ⊞ Y n) s =
+      a.finiteEulerSum X s + a.finiteEulerSum Y s := by
+  rw [finiteEulerSum, finiteEulerSum, finiteEulerSum, ← TauCeti.finiteEulerSum_add]
+  apply TauCeti.finiteEulerSum_congr
+  intro n _
+  exact a.map_conflation (E.conflation_biprodShortComplex (X n) (Y n))
+
+omit [EssentiallySmall.{w} C] in
+/-- A degreewise family of conflations gives an additive identity of Euler sums. Only the
+degrees in the stated finite range need to be conflations. -/
+theorem finiteEulerSum_conflation (S : ℤ → ShortComplex C) (s : Finset ℤ)
+    (hS : ∀ n ∈ s, E.Conflation (S n)) :
+    a.finiteEulerSum (fun n ↦ (S n).X₂) s =
+      a.finiteEulerSum (fun n ↦ (S n).X₁) s +
+        a.finiteEulerSum (fun n ↦ (S n).X₃) s := by
+  rw [finiteEulerSum, finiteEulerSum, finiteEulerSum, ← TauCeti.finiteEulerSum_add]
+  apply TauCeti.finiteEulerSum_congr
+  intro n hn
+  exact a.map_conflation (hS n hn)
+
+end AdditiveInvariant
 
 /-! ### Biadditive invariants -/
 

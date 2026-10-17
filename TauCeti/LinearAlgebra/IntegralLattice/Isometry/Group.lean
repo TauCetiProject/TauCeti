@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
 public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Orientation
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 
 /-!
@@ -34,6 +35,9 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 
 * `TauCeti.IntegralLattice.Isometry.carrierEquivHom_injective`: a self-isometry is determined by
   its restriction to the carrier.
+* `TauCeti.IntegralLattice.Isometry.orientation_map_eq_iff` and
+  `TauCeti.IntegralLattice.Isometry.orientation_map_eq_neg_iff`: the determinant detects whether
+  a self-isometry preserves or reverses the orientation of any finite carrier basis.
 * `TauCeti.IntegralLattice.index_specialOrthogonalGroup_le_two`: `SO(L)` has index at most two.
 * `TauCeti.IntegralLattice.Isometry.det_neg`: the determinant of negation is `(-1) ^ rank L`.
 
@@ -111,6 +115,22 @@ theorem coe_det (e : Isometry L L) :
 theorem det_eq_one_or_neg_one (e : Isometry L L) : det L e = 1 ∨ det L e = -1 :=
   Int.units_eq_one_or (det L e)
 
+/-- A self-isometry preserves a finite carrier basis orientation exactly when its determinant
+is one. -/
+theorem orientation_map_eq_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℤ L) (e : Isometry L L) :
+    (b.map e.carrierEquiv).orientation = b.orientation ↔ det L e = 1 := by
+  rw [Module.Basis.orientation_comp_linearEquiv_eq_iff_det_pos, ← coe_det]
+  rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
+
+/-- A self-isometry reverses a finite carrier basis orientation exactly when its determinant
+is minus one. -/
+theorem orientation_map_eq_neg_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℤ L) (e : Isometry L L) :
+    (b.map e.carrierEquiv).orientation = -b.orientation ↔ det L e = -1 := by
+  rw [Module.Basis.orientation_comp_linearEquiv_eq_neg_iff_det_neg, ← coe_det]
+  rcases det_eq_one_or_neg_one e with h | h <;> simp [h]
+
 /-- Negation is a self-isometry of every integral lattice: the element `-1` of `O(L)`. -/
 def neg (L : IntegralLattice V) : Isometry L L where
   toIsometryEquiv :=
@@ -167,6 +187,40 @@ theorem index_specialOrthogonalGroup_le_two (L : IntegralLattice V) :
   calc Nat.card (Isometry.det L).range ≤ Nat.card ℤˣ := Nat.card_le_card_of_injective _
         Subtype.val_injective
     _ = 2 := Nat.card_eq_fintype_card.trans Fintype.card_units_int
+
+/-- The determinant-one subgroup has finite index, even when the isometry group is infinite. -/
+instance (L : IntegralLattice V) : (specialOrthogonalGroup L).FiniteIndex :=
+  Subgroup.finiteIndex_ker (Isometry.det L)
+
+/-- The index of the special orthogonal group is one or two. -/
+theorem index_specialOrthogonalGroup_eq_one_or_two (L : IntegralLattice V) :
+    (specialOrthogonalGroup L).index = 1 ∨ (specialOrthogonalGroup L).index = 2 := by
+  have h := index_specialOrthogonalGroup_le_two L
+  have h₀ := (inferInstance : (specialOrthogonalGroup L).FiniteIndex).index_ne_zero
+  omega
+
+/-- The special orthogonal group has index two exactly when an improper isometry exists. -/
+theorem index_specialOrthogonalGroup_eq_two_iff (L : IntegralLattice V) :
+    (specialOrthogonalGroup L).index = 2 ↔ ∃ e : Isometry L L, Isometry.det L e = -1 := by
+  constructor
+  · intro h
+    by_contra! hn
+    have ht : specialOrthogonalGroup L = ⊤ := by
+      apply top_unique
+      intro e _
+      exact mem_specialOrthogonalGroup_iff.mpr
+        ((Isometry.det_eq_one_or_neg_one e).resolve_right (hn e))
+    have h₁ := (Subgroup.index_eq_one.mpr ht)
+    omega
+  · rintro ⟨e, he⟩
+    rcases index_specialOrthogonalGroup_eq_one_or_two L with h | h
+    · have hm : e ∈ specialOrthogonalGroup L := by
+        rw [Subgroup.index_eq_one.mp h]
+        trivial
+      have : (1 : ℤˣ) = -1 := (mem_specialOrthogonalGroup_iff.mp hm).symm.trans he
+      have := congrArg Units.val this
+      norm_num at this
+    · exact h
 
 /-- Negation lies in `SO(L)` exactly when the rank of `L` is even. -/
 theorem neg_mem_specialOrthogonalGroup_iff (L : IntegralLattice V) :

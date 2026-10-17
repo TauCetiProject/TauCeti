@@ -8,6 +8,9 @@ module
 public import Mathlib.Probability.StrongLaw
 -- Public: the statement is about `Measure.infinitePi`; the proof uses `iIndepFun_infinitePi`.
 public import Mathlib.Probability.Independence.InfinitePi
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import Mathlib.Probability.Kernel.MeasurableIntegral
+import Mathlib.MeasureTheory.Constructions.Polish.Basic
 
 /-!
 # The strong law of large numbers on a countable product space
@@ -21,6 +24,10 @@ and this file specializes the strong law to it.
 
 * `TauCeti.Probability.strong_law_ae_infinitePi` — for `f` measurable and integrable against `Q`,
   the averages `n⁻¹ • ∑_{i < n} f (xᵢ)` converge `Q^{⊗ℕ}`-almost everywhere to `∫ f dQ`.
+* `TauCeti.Probability.measurableSet_tendsto_average_integral` — the corresponding convergence
+  event is measurable when the probability measure is allowed to vary.
+* `TauCeti.Probability.measure_compl_tendsto_average_integral_eq_zero` — the tagged product law
+  `δ_Q ⊗ Q^{⊗ℕ}` gives that event full measure.
 
 ## Implementation
 
@@ -36,12 +43,11 @@ identically distributed, transports integrability, and identifies the limit `�
 gives: it has to be composed with the coordinate maps, so that independence and identical
 distribution of the coordinates transfer to the summands.
 
-This is general probability theory with no exchangeability in its statements. It is used by the
-conditional strong law for conditionally i.i.d. processes in
+The measurable tagged form packages the same theorem for integration over a random law. This is
+general probability theory with no exchangeability in its statements. It is used by the conditional
+strong law for conditionally i.i.d. processes in
 `TauCeti.Probability.Exchangeability.ConditionallyIID.StrongLaw`, where the conditional statement is
-reduced fibrewise to this one over the mixing law; see
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 6 (the empirical-measure form of the
-directing-measure theorem).
+reduced fibrewise to this one over the mixing law.
 -/
 
 public section
@@ -92,6 +98,40 @@ theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : 
       (by rw [(heval 0).map_eq]; exact hint.1)]
   simpa only [hlimit] using
     strong_law_ae (fun i (x : ℕ → α) => f (x i)) (hint' 0) hindep hident
+
+variable [SecondCountableTopology E]
+
+omit [CompleteSpace E] in
+/-- The set of a probability measure and a path for which the path averages of `f` converge to its
+integral against that measure is measurable. -/
+theorem measurableSet_tendsto_average_integral {f : α → E} (hf : Measurable f) :
+    MeasurableSet {z : ProbabilityMeasure α × (ℕ → α) |
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (z.2 i)) atTop
+        (𝓝 (∫ y, f y ∂(z.1 : Measure α)))} :=
+  MeasureTheory.measurableSet_tendsto_fun
+    (fun _n => (Finset.measurable_sum _ fun i _ =>
+      hf.comp ((measurable_pi_apply i).comp measurable_snd)).const_smul _)
+    ((hf.stronglyMeasurable.integral_kernel
+      (κ := ⟨((↑) : ProbabilityMeasure α → Measure α), measurable_subtype_coe⟩)).measurable.comp
+        measurable_fst)
+
+/-- The tagged i.i.d. product law `δ_Q ⊗ Q^{⊗ℕ}` gives full measure to the event that the path
+averages of `f` converge to its integral against `Q`. -/
+theorem measure_compl_tendsto_average_integral_eq_zero {f : α → E} (hf : Measurable f)
+    (Q : ProbabilityMeasure α) (hint : Integrable f (Q : Measure α)) :
+    ((Measure.dirac Q).prod (Measure.infinitePi fun _ : ℕ => (Q : Measure α)))
+      {z : ProbabilityMeasure α × (ℕ → α) |
+        Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (z.2 i)) atTop
+          (𝓝 (∫ y, f y ∂(z.1 : Measure α)))}ᶜ = 0 := by
+  have hsl : ∀ᵐ x ∂(Measure.infinitePi fun _ : ℕ => (Q : Measure α)),
+      (Q, x) ∈ {z : ProbabilityMeasure α × (ℕ → α) |
+        Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (z.2 i)) atTop
+          (𝓝 (∫ y, f y ∂(z.1 : Measure α)))} := by
+    filter_upwards [strong_law_ae_infinitePi (Q : Measure α) hf hint] with x hx
+    simpa only [Set.mem_ofPred_eq] using hx
+  rw [Measure.dirac_prod, Measure.map_apply measurable_prodMk_left
+    (measurableSet_tendsto_average_integral hf).compl]
+  exact ae_iff.mp hsl
 
 end Probability
 

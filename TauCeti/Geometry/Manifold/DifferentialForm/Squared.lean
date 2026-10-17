@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 
 /-!
 # The exterior derivative squares to zero
@@ -18,7 +17,7 @@ with boundary and corners and needs neither finite dimensionality nor completene
 
 The unbundled results assume `C²` section regularity; differentiability of the exterior derivative
 is not a separate hypothesis. A simp theorem gives the square-zero identity for bundled smooth
-forms.
+forms, and `TauCeti.mextDerivₗ_comp_mextDerivₗ` gives the identity for the bundled linear maps.
 
 ## References
 
@@ -48,13 +47,9 @@ theorem mextDerivWithin_mextDerivWithin (φ : RoughForm I M F k) {s : Set M}
     mextDerivWithin (mextDerivWithin φ s) s x = 0 := by
   let t : Set E := (extChartAt I x).symm ⁻¹' s ∩ range I
   let a : Set E := (extChartAt I x).symm ⁻¹' s ∩ (extChartAt I x).target
-  have hdiff {y : M} (hy : y ∈ s) :=
-    (φ.contDiffWithinAt_inChartAt (hφ y hy)).differentiableWithinAt (by norm_num)
   have heq : RoughForm.inChartAt (I := I) (mextDerivWithin φ s) x =ᶠ[𝓝[t] (extChartAt I x x)]
-      extDerivWithin (φ.inChartAt x) t := by
-    filter_upwards [nhdsWithin_mono _ inter_subset_right
-      (extChartAt_target_mem_nhdsWithin (I := I) x), self_mem_nhdsWithin] with z hz hzt
-    exact φ.inChartAt_mextDerivWithin hs hz hzt.1 (hsc hzt.1) (hdiff hzt.1)
+      extDerivWithin (φ.inChartAt x) t :=
+    φ.inChartAt_mextDerivWithin_eventuallyEq (hφ.of_le (by norm_num)) hs hsc x
   have hpoint : RoughForm.inChartAt (I := I) (mextDerivWithin φ s) x (extChartAt I x x) =
       extDerivWithin (φ.inChartAt x) t (extChartAt I x x) :=
     heq.self_of_nhdsWithin ⟨by simpa only [mem_preimage, extChartAt_to_inv] using hx,
@@ -90,5 +85,15 @@ theorem SmoothForm.mextDeriv_mextDeriv (φ : SmoothForm I M F k) :
   have hφ := (isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)
   exact TauCeti.mextDeriv_mextDeriv φ.1 ((isSmoothBundleForm_def 2 φ.1).mpr
     (hφ.of_le (by simp)))
+
+variable (I) in
+/-- Successive exterior derivatives compose to zero as linear maps. -/
+@[simp]
+theorem mextDerivₗ_comp_mextDerivₗ (k : ℕ) :
+    (mextDerivₗ I (k + 1)).comp (mextDerivₗ I (M := M) (F := F) k) = 0 := by
+  ext φ : 1
+  apply Subtype.ext
+  simp only [LinearMap.comp_apply, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv,
+    LinearMap.zero_apply, Submodule.coe_zero]
 
 end TauCeti

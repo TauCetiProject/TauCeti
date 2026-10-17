@@ -202,6 +202,10 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
    vertical rhythm the stacked pair has between them. */
 .loc-figure-wide { margin: 2rem 0; }
 .loc-graph { display: block; width: 100%; height: auto; }
+.roadmap-exhaustion { display: block; width: 100%; height: 440px; border: 0; margin: 2rem 0 0; }
+@media (max-width: 640px) {
+  .roadmap-exhaustion { height: 720px; }
+}
 .loc-figure figcaption {
   color: var(--muted);
   font-size: 0.92rem;
