@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Convex.Sequence.Supporting
 public import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Finite.Lemmas
-import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Order.Interval.Set.Nat
 import Mathlib.Order.Interval.Set.OrdConnectedLinear
 import Mathlib.Tactic.Linarith
