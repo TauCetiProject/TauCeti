@@ -28,7 +28,7 @@ law, with no assumptions on its probability carrier.
 
 * `TauCeti.DenseGraphLimits.mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints`
   transports extremality between graph measures and relational measures.
-* `TauCeti.DenseGraphLimits.InfiniteExchangeableGraphLaw.mem_extremePoints_toRelationalLaw_iff`
+* `InfiniteExchangeableGraphLaw.map_toRelationalConfiguration_mem_extremePoints_iff`
   characterizes extremality of the encoded law by dissociation of its finite marginals.
 
 ## References
@@ -133,13 +133,13 @@ theorem mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints
 
 /-- An encoded exchangeable graph law is extreme among all exchangeable relational probability
 measures exactly when its finite graph law is dissociated. -/
-theorem InfiniteExchangeableGraphLaw.mem_extremePoints_toRelationalLaw_iff
+@[simp]
+theorem InfiniteExchangeableGraphLaw.map_toRelationalConfiguration_mem_extremePoints_iff
     (L : InfiniteExchangeableGraphLaw) :
-    L.toRelationalLaw.law ∈
+    L.law.map SimpleGraph.toRelationalConfiguration ∈
         extremePoints ℝ≥0∞ (exchangeableRelationalProbabilityMeasures Language.graph) ↔
       (exchangeableGraphLawEquivInfinite.symm L).IsDissociated := by
-  rw [L.toRelationalLaw_law,
-    ← mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints,
+  rw [← mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints,
     mem_extremePoints_iff_isDissociated]
 
 /-- Every graphon sampling law, encoded as a relational law, is extreme among all exchangeable
