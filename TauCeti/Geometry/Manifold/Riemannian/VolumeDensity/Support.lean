@@ -33,7 +33,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-- Riemannian volume is positive on every nonempty open set of a boundaryless manifold. -/
-instance riemannianVolume_isOpenPosMeasure [I.Boundaryless] :
+instance isOpenPosMeasure_riemannianVolume [I.Boundaryless] :
     Measure.IsOpenPosMeasure (riemannianVolume I M) where
   open_pos U hU hne := by
     obtain ⟨x, hx⟩ := hne
