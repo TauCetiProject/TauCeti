@@ -174,6 +174,12 @@ integer `d(L) - n + 1`. -/
 def wildExponent (L : IntermediateField K (SeparableClosure K)) : ℕ :=
   intermediateFieldDiscriminantExponent L + 1 - Module.finrank K L
 
+/-- The defining equation of `wildExponent`, valid for every subextension: `c(L)` is
+`d(L) + 1 - [L : K]` in truncated subtraction. -/
+theorem wildExponent_def (L : IntermediateField K (SeparableClosure K)) :
+    wildExponent L = intermediateFieldDiscriminantExponent L + 1 - Module.finrank K L := by
+  rw [wildExponent]
+
 /-- **The discriminant bound for `σ_K(n)`**: the discriminant exponent of a totally ramified
 extension of degree `n` is at least `n - 1`. This is
 `ramificationIndex_sub_one_le_discriminantExponent` with `e(L / K) = n`. -/
