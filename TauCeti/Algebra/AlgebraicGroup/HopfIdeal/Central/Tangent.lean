@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Central
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Infinitesimal
 
 /-!
 # Central subgroups and the tangent Lie algebra
