@@ -28,6 +28,8 @@ idele-layer invariants in prime-degree layers.
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.exists_stabilizer_eq_top_of_finrank_prime`: a prime-degree Galois
+  extension of number fields has a finite place whose decomposition group is the whole Galois group.
 * `IntermediateField.exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_prime`:
   a prime-degree finite Galois subextension of `Kˢ/K` has a finite place whose local absolute
   Galois group restricts onto its Galois group.
@@ -49,6 +51,38 @@ open scoped AdicCompletionExtension Pointwise
 
 variable {K : Type} [Field K] [NumberField K]
 
+namespace TauCeti.ClassFieldTheory
+
+variable {L : Type} [Field L] [NumberField L] [Algebra K L]
+
+/-- **A prime-degree Galois extension has a prime with full decomposition group.** If `L/K` is a
+Galois extension of number fields of prime degree, then some finite place `w` of `L` has
+decomposition group all of `Gal(L/K)`. Otherwise every decomposition group would be trivial, as
+`Gal(L/K)` has prime order, and `finrank_eq_one_of_stabilizer_eq_bot` would force `L = K`. -/
+theorem exists_stabilizer_eq_top_of_finrank_prime [IsGalois K L]
+    (hL : (Module.finrank K L).Prime) :
+    ∃ (v : HeightOneSpectrum (𝓞 K))
+      (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}),
+      MulAction.stabilizer Gal(L/K) w.1.asIdeal = ⊤ := by
+  let _ : Fact (Nat.card Gal(L/K)).Prime := ⟨by
+    rwa [IsGalois.card_aut_eq_finrank K L]⟩
+  let _ : IsCyclic Gal(L/K) := isCyclic_of_prime_card (p := Nat.card Gal(L/K)) rfl
+  let _ : IsMulCommutative Gal(L/K) := IsCyclic.isMulCommutative
+  have hnot : ¬ ∀ v : HeightOneSpectrum (𝓞 K),
+      ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+        MulAction.stabilizer Gal(L/K) w.1.asIdeal = ⊥ := fun h ↦
+    hL.ne_one (finrank_eq_one_of_stabilizer_eq_bot (∅ : Finset _) fun v _ ↦ h v)
+  push Not at hnot
+  obtain ⟨v, hv⟩ := hnot
+  obtain ⟨w₀, hw₀⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+  let w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    ⟨w₀, hw₀ ▸ inferInstance⟩
+  refine ⟨v, w, ?_⟩
+  exact (Subgroup.eq_bot_or_eq_top_of_prime_card
+    (MulAction.stabilizer Gal(L/K) w.1.asIdeal)).resolve_left (hv w)
+
+end TauCeti.ClassFieldTheory
+
 namespace IntermediateField
 
 open TauCeti TauCeti.ClassFieldTheory
@@ -65,27 +99,10 @@ theorem exists_surjective_restrictNormalHom_absoluteGaloisGroupMap_of_finrank_pr
       Function.Surjective fun g : AbsoluteGaloisGroup (v.adicCompletion K) ↦
         AlgEquiv.restrictNormalHom L (absoluteGaloisGroupMap τ g) := by
   let _ : NumberField L := NumberField.of_module_finite K L
-  let _ : Fact (Nat.card Gal(L/K)).Prime := ⟨by
-    rwa [IsGalois.card_aut_eq_finrank K L]⟩
-  let _ : IsCyclic Gal(L/K) := isCyclic_of_prime_card (p := Nat.card Gal(L/K)) rfl
-  let _ : IsMulCommutative Gal(L/K) := IsCyclic.isMulCommutative
-  have hdeg : Module.finrank K L ≠ 1 := hL.ne_one
-  have hnot : ¬ ∀ v : HeightOneSpectrum (𝓞 K),
-      ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        MulAction.stabilizer Gal(L/K) w.1.asIdeal = ⊥ := by
-    intro h
-    exact hdeg (finrank_eq_one_of_stabilizer_eq_bot (∅ : Finset _) fun v _ ↦ h v)
-  push Not at hnot
-  obtain ⟨v, hv⟩ := hnot
-  obtain ⟨w₀, hw₀⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
-  let w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
-    ⟨w₀, hw₀ ▸ inferInstance⟩
+  obtain ⟨v, w, hw⟩ := exists_stabilizer_eq_top_of_finrank_prime hL
   let _ : w.1.asIdeal.LiesOver v.asIdeal := w.2
-  have hw : MulAction.stabilizer Gal(L/K) w.1.asIdeal = ⊤ := by
-    rcases Subgroup.eq_bot_or_eq_top_of_prime_card
-      (MulAction.stabilizer Gal(L/K) w.1.asIdeal) with h | h
-    · exact (hv w h).elim
-    · exact h
+  -- Lift the restriction `L → L_w → K_vˢ` to an embedding `Kˢ → K_vˢ`, then lift each element
+  -- of `Gal(L/K) = D_w ≃ Gal(L_w/K_v)` through `G_{K_v} → Gal(L_w/K_v)`.
   let τ' : w.1.adicCompletion L →ₐ[v.adicCompletion K]
       SeparableClosure (v.adicCompletion K) := IsSepClosed.lift
   let φ : L →ₐ[K] SeparableClosure (v.adicCompletion K) :=
