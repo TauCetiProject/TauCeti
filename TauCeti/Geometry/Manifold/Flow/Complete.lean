@@ -68,11 +68,6 @@ theorem isCompleteVectorField_iff_maximalIntegralCurveInterval
 
 namespace IsCompleteVectorField
 
-/-- The maximal-flow domain of a complete vector field is the whole time-state space. -/
-theorem flowDomain_eq_univ {v : (x : M) → TangentSpace I x}
-    (hv : IsCompleteVectorField v) : flowDomain v = univ :=
-  hv
-
 /-- Every pointwise maximal interval of a complete vector field is all of `ℝ`. -/
 theorem maximalIntegralCurveInterval_eq_univ {v : (x : M) → TangentSpace I x}
     (hv : IsCompleteVectorField v) (x : M) :
