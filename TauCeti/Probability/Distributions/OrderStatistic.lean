@@ -91,10 +91,6 @@ def orderStatistic (k : Fin n) (x : Fin n → α) : α :=
 theorem orderStatistic_def (k : Fin n) (x : Fin n → α) :
     orderStatistic k x = x (Tuple.sort x k) := (rfl)
 
-/-- The order statistics of a tuple increase with their position. -/
-theorem monotone_orderStatistic (x : Fin n → α) : Monotone fun k => orderStatistic k x :=
-  Tuple.monotone_sort x
-
 /-- The order statistics of a tuple do not depend on the order in which its entries are
 listed. -/
 @[simp]
