@@ -20,6 +20,9 @@ quadratic `t² = x t + y`, it rescales the relation to a primitive integral one
 `a t² - b t - c = 0`, which is how primitive quadratic equations of irrational numbers enter the
 theory of lattices in quadratic fields (D. A. Cox, *Primes of the Form x² + ny²*, §7).
 
+The positive strengthening chooses `a > 0` by changing the signs of the primitive triple and its
+Bézout coefficients together.
+
 The integer `a` is the common denominator `x.den * y.den` divided by the greatest common divisor
 of the three resulting integers.
 -/
@@ -64,5 +67,27 @@ theorem exists_primitive_common_denominator (x y : ℚ) :
     linear_combination (-Int.gcdA D (Int.gcd B C)) * ha
       + (-Int.gcdB D (Int.gcd B C) * Int.gcdA B C) * hb
       + (-Int.gcdB D (Int.gcd B C) * Int.gcdB B C) * hc + (-Int.gcdB D (Int.gcd B C)) * h₂ - h₁
+
+/-- A positive integral common denominator of two rationals, with primitive denominator and
+numerators witnessed by an integral Bézout identity. -/
+theorem exists_pos_primitive_common_denominator (x y : ℚ) :
+    ∃ a b c : ℤ, 0 < a ∧ (a : ℚ) * x = b ∧ (a : ℚ) * y = c ∧
+      ∃ u v w : ℤ, u * a + v * b + w * c = 1 := by
+  obtain ⟨a, b, c, hb, hc, u, v, w, huvw⟩ := Rat.exists_primitive_common_denominator x y
+  have ha : a ≠ 0 := by
+    intro hz
+    have hb₀ : b = 0 := by
+      apply Int.cast_injective (α := ℚ)
+      simpa [hz] using hb.symm
+    have hc₀ : c = 0 := by
+      apply Int.cast_injective (α := ℚ)
+      simpa [hz] using hc.symm
+    simp [hz, hb₀, hc₀] at huvw
+  rcases lt_or_gt_of_ne ha with hneg | hpos
+  · refine ⟨-a, -b, -c, neg_pos.mpr hneg, ?_, ?_, -u, -v, -w, ?_⟩
+    · simpa only [Int.cast_neg, neg_mul] using congrArg Neg.neg hb
+    · simpa only [Int.cast_neg, neg_mul] using congrArg Neg.neg hc
+    · simpa only [neg_mul_neg] using huvw
+  · exact ⟨a, b, c, hpos, hb, hc, u, v, w, huvw⟩
 
 end Rat
