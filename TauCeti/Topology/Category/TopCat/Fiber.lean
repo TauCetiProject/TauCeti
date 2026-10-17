@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.CommSq
 public import Mathlib.Topology.Category.TopCat.Basic
 
+import Mathlib.Data.Fintype.Sigma
+
 /-!
 # Fibres of morphisms in `TopCat`
 
@@ -44,6 +46,27 @@ lemma fiberι_apply (p : E ⟶ B) (b : B) (x : p.fiber b) : p.fiberι b x = x.1 
 lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
   ext x
   exact x.2
+
+/-- The composite of two maps with finite fibres has finite fibres. -/
+theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
+    (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x})) :
+    ∀ x, Finite ↥((p ≫ q) ⁻¹' {x}) := by
+  intro x
+  let fq : Fintype ↥(q ⁻¹' {x}) :=
+    Classical.choice ((finite_iff_nonempty_fintype _).mp (hfinq x))
+  let fp : ∀ b : ↥(q ⁻¹' {x}), Fintype ↥(p ⁻¹' {b.1}) := fun b =>
+    Classical.choice ((finite_iff_nonempty_fintype _).mp (hfinp b.1))
+  let fs : Fintype (Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1})) :=
+    @Sigma.instFintype _ _ fp fq
+  apply @Finite.of_injective _ _ (Fintype.finite fs)
+    (fun e : ↥((p ≫ q) ⁻¹' {x}) =>
+      (⟨⟨p e, by
+          simpa only [Set.mem_preimage, Set.mem_singleton_iff,
+            ConcreteCategory.comp_apply] using e.property⟩,
+        ⟨e, by simp⟩⟩ : Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1})))
+  intro e e' h
+  apply Subtype.ext
+  exact congrArg (fun z : Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1}) => (z.2 : E)) h
 
 end TopCat.Hom
 

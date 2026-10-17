@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Integer
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic
 
 /-!
 # Cyclotomic Dixon recovery for S₄
@@ -18,7 +18,7 @@ has a sufficiently large balanced residue window.
 `TauCeti.isSome_dixonCyclotomicCharacterTable_symmetricGroupFour` proves success for any such
 prime data, independently of its chosen primitive root. The ordinary table, central table,
 and degrees are those already certified in
-`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour`.
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic`.
 
 ## References
 

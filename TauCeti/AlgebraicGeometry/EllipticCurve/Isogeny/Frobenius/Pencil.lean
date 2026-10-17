@@ -17,10 +17,9 @@ Let `W` be an elliptic curve over a finite field `F`, and let `π` be its Froben
 extension `K`. The endomorphism `r • π - s • id` pulls the invariant differential back to
 `-s • ω`. Consequently it is nonzero and separable whenever `s` is nonzero in `K`.
 
-Over a separably closed extension, the determinant of this pencil on `N`-torsion is its degree
-modulo `N` whenever `N` is invertible and `s` is nonzero in the field. If the extension is also
-algebraic, the degree is the integral quadratic form
-`#F * r² - (#F + 1 - deg (id - π)) * r * s + s²`. This is the degree-form input to the Hasse bound.
+Over a separably closed extension, the degree of the pencil is the integral quadratic form
+`#F * r² - (#F + 1 - deg (id - π)) * r * s + s²`, for all integers `r` and `s`. This is the
+degree-form input to the Hasse bound.
 
 ## Main results
 
@@ -28,12 +27,8 @@ algebraic, the degree is the integral quadratic form
   the pencil is nonzero when `s` is nonzero in the field.
 * `TauCeti.Isogeny.Hom.isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_iff`:
   a nonzero pencil is separable exactly when `s` is nonzero in the field.
-* `TauCeti.Isogeny.Hom.det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id`:
-  over a separably closed extension, the determinant on invertible torsion is the degree
-  modulo `N` when `s` is nonzero in the field.
 * `TauCeti.Isogeny.Hom.degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id`:
-  the integral quadratic degree formula over a separably closed algebraic extension when
-  `s` is nonzero in the field.
+  the integral quadratic degree formula over a separably closed extension.
 
 ## Provenance
 
@@ -81,29 +76,11 @@ theorem isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_i
   rw [pullbackDifferential_ofIsogeny,
     pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
-section Torsion
+variable [IsSepClosed K]
 
-variable [DecidableEq K] [IsSepClosed K]
-
-/-- Over a separably closed field in which `N` is invertible, the determinant of a Frobenius
-pencil on `N`-torsion is its degree modulo `N`, when `s` is nonzero in the field. -/
-theorem det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id
-    {N : ℕ} [NeZero N] (hN : (N : K) ≠ 0) (r s : ℤ) (hs : (s : K) ≠ 0) :
-    LinearMap.det
-      ((r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).torsionLinearMap N) =
-        (r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree := by
-  let h := zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_ne_zero W r s hs
-  have := (isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_iff W r s h).2 hs
-  exact det_torsionLinearMap hN h
-
-end Torsion
-
-variable [IsSepClosed K] [Algebra.IsAlgebraic F K]
-
-/-- Over a separably closed algebraic extension of the finite base, the degree of `r π - s`
-is the integral quadratic form with middle coefficient `#F + 1 - deg (id - π)`, provided
-`s` is nonzero in the field. -/
-theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) (hs : (s : K) ≠ 0) :
+/-- Over a separably closed extension of the finite base, the degree of `r π - s`
+is the integral quadratic form with middle coefficient `#F + 1 - deg (id - π)`. -/
+theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) :
     ((r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree : ℤ) =
       (Nat.card F : ℤ) * r ^ 2 -
         ((Nat.card F : ℤ) + 1 - (id (W⁄K).toAffine -
@@ -125,17 +102,12 @@ theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) (hs 
   · rw [LinearMap.det_toMatrix]
     simpa only [Int.cast_natCast, π] using
       det_torsionLinearMap_ofIsogeny_baseChangeFrobenius W hℓK
-  · have hdet := det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W
-      hℓK (-1) (-1) (by simp)
-    have hone : (1 - M) =
+  · have hone : (1 - M) =
         LinearMap.toMatrix b b ((id (W⁄K).toAffine - π).torsionLinearMap ℓ) := by
       simpa only [Int.cast_neg, Int.cast_one, neg_one_smul, neg_sub_neg] using hmatrix (-1) (-1)
-    rw [hone, LinearMap.det_toMatrix]
-    simpa only [neg_one_zsmul, neg_sub_neg, Int.cast_sub, Int.cast_add, Int.cast_one,
-      Int.cast_natCast, sub_sub_cancel, π] using hdet
-  · rw [hmatrix, LinearMap.det_toMatrix]
-    simpa only [Int.cast_natCast, π] using
-      det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W hℓK r s hs
+    rw [hone, LinearMap.det_toMatrix, det_torsionLinearMap hℓK]
+    simp only [sub_sub_cancel, Int.cast_natCast, π]
+  · rw [hmatrix, LinearMap.det_toMatrix, det_torsionLinearMap hℓK, Int.cast_natCast]
 
 end Hom
 

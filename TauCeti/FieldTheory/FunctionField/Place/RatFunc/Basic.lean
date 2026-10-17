@@ -56,7 +56,8 @@ becomes the bijection `TauCeti.Place.ratFuncEquiv`.
   `TauCeti.Place.adicOfIrreducible_eq_adicOfIrreducible_iff` says a finite place remembers exactly
   the associate class of its polynomial.
 * `TauCeti.Place.exists_algebraMap_notMem_integers_iff_eq_infty`: the place at infinity is the
-  only place of `k(x)` at which a polynomial has a pole.
+  only place of `k(x)` at which a polynomial has a pole;
+  `TauCeti.Place.X_notMem_integers_iff_eq_infty`: it is the only pole of `x`.
 * `TauCeti.Place.eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C` and
   `TauCeti.Place.ratFuncDegreeOneEquiv`: the degree-one places are `ℙ¹(k) = k ∪ {∞}`
   (Stichtenoth, Corollary 1.2.3).
@@ -355,6 +356,22 @@ theorem exists_algebraMap_notMem_integers_iff_eq_infty {P : Place k (RatFunc k)}
     refine ⟨Polynomial.X, ?_⟩
     rw [mem_integers_iff_ord_nonneg, RatFunc.algebraMap_X, ord_infty, RatFunc.intDegree_X]
     omega
+
+/-- **A place of `k(x)` is the place at infinity exactly when `x` has a pole there.** -/
+theorem X_notMem_integers_iff_eq_infty {P : Place k (RatFunc k)} :
+    (RatFunc.X : RatFunc k) ∉ P.integers ↔ P = infty k := by
+  refine ⟨fun h ↦ exists_algebraMap_notMem_integers_iff_eq_infty.mp
+    ⟨Polynomial.X, by rwa [RatFunc.algebraMap_X]⟩, ?_⟩
+  rintro rfl
+  rw [mem_integers_iff_ord_nonneg, ord_infty, RatFunc.intDegree_X]
+  omega
+
+/-- A place of `k(x)` has valuation greater than one on `x` exactly when it is the place at
+infinity. This is the simp-normal form of `X_notMem_integers_iff_eq_infty`. -/
+@[simp]
+theorem one_lt_valuation_X_iff_eq_infty {P : Place k (RatFunc k)} :
+    1 < P.valuation (RatFunc.X : RatFunc k) ↔ P = infty k := by
+  simpa only [mem_integers_iff, not_le] using X_notMem_integers_iff_eq_infty (k := k) (P := P)
 
 /-- A place of `k(x)` has valuation greater than one on a polynomial exactly when it is the
 place at infinity. This is the simp-normal form of

@@ -21,7 +21,13 @@ where the sum `D + E` is cut out by the product of the ideal sheaves
 (`Scheme.IdealSheafData.IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp`). Consequently the
 sum of divisors of degrees `d` and `e` on the base changes of a proper relative curve has degree
 `d + e` (`TauCeti.AlgebraicGeometry.mul_mem_relativeEffectiveCartierDegreeSubfunctor_obj`), so
-addition of divisors restricts to the fixed-degree functors `Div^d_{X/S}`.
+addition of divisors restricts to the fixed-degree functors `Div^d_{X/S}`. Together with the empty
+divisor having degree zero, this gives the degrees of multiples and of finite sums of divisors
+(`TauCeti.AlgebraicGeometry.pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj` and
+`TauCeti.AlgebraicGeometry.prod_mem_relativeEffectiveCartierDegreeSubfunctor_obj`).
+More generally, the rank of any finite sum of relative effective Cartier divisors whose total
+divisor is finite over the base is the sum of their ranks
+(`TauCeti.AlgebraicGeometry.finrank_prod_subschemeι_comp`).
 
 Since ranks of finite flat morphisms and relative effective Cartier divisors are both compatible
 with base change, the statement reduces to the fibres, that is, to a scheme `Y` over a field `K`
@@ -40,6 +46,7 @@ the second ideal sheaf `J` is arbitrary.
   Cartier divisors.
 * S. Kleiman, *The Picard scheme*, in *Fundamental Algebraic Geometry: Grothendieck's FGA
   Explained*, Section 9.3.
+* N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §1.1.
 -/
 
 public section
@@ -139,7 +146,7 @@ theorem IsEffectiveCartier.finrank_mul_subschemeι_comp_of_field {K : Type u} [F
     rw [← Category.assoc, inclusion_subschemeι]
   have hJ' : J.subschemeι ≫ f = iJ ≫ (I * J).subschemeι ≫ f := by
     rw [← Category.assoc, inclusion_subschemeι]
-  have : Module.Finite K Γ((I * J).subscheme, ⊤) := ((I * J).subschemeι ≫ f).finite_of_field rfl
+  have : Module.Finite K Γ((I * J).subscheme, ⊤) := ((I * J).subschemeι ≫ f).moduleFinite_appTop rfl
   rw [hI', hJ', ((I * J).subschemeι ≫ f).finrank_eq_finrank_of_field rfl s,
     (iI ≫ (I * J).subschemeι ≫ f).finrank_eq_finrank_of_field
       (by rw [Scheme.Hom.comp_appTop]; rfl) s,
@@ -209,6 +216,39 @@ namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
 
+/-- Ranks add for a finite sum of relative effective Cartier divisors whose total divisor is
+finite over the base. -/
+theorem finrank_prod_subschemeι_comp
+    {X S : Scheme.{u}} {f : X ⟶ S}
+    {ι : Type*} (s : Finset ι) (I : ι → X.IdealSheafData)
+    (hI : ∀ i ∈ s, (I i).IsRelativeEffectiveCartier f)
+    [hfinite : IsFinite ((∏ i ∈ s, I i).subschemeι ≫ f)] :
+    ((∏ i ∈ s, I i).subschemeι ≫ f).finrank = ∑ i ∈ s, ((I i).subschemeι ≫ f).finrank := by
+  classical
+  induction s using Finset.induction_on generalizing hfinite with
+  | empty =>
+    have : IsFinite ((1 : X.IdealSheafData).subschemeι ≫ f) := by
+      simpa only [Finset.prod_empty] using ‹IsFinite ((∏ i ∈ ∅, I i).subschemeι ≫ f)›
+    simp only [Finset.prod_empty, Finset.sum_empty]
+    have hrel : (1 : X.IdealSheafData).IsRelativeEffectiveCartier f := by simp
+    have := hrel.flat
+    funext t
+    rw [Pi.zero_apply, Scheme.Hom.finrank_eq_zero_iff_notMem_range]
+    rintro ⟨z, -⟩
+    exact isEmptyElim (α := (⊤ : X.IdealSheafData).subscheme) z
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha] at hfinite
+    have hle : I a * ∏ i ∈ s, I i ≤ ∏ i ∈ s, I i :=
+      mul_le_of_le_one_left bot_le le_top
+    have : IsFinite ((∏ i ∈ s, I i).subschemeι ≫ f) := by
+      rw [← Scheme.IdealSheafData.inclusion_subschemeι hle, Category.assoc]
+      infer_instance
+    have hrel := TauCeti.isRelativeEffectiveCartier_prod
+      (fun i hi ↦ hI i (Finset.mem_insert_of_mem hi))
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      (hI a (Finset.mem_insert_self _ _)).finrank_mul_subschemeι_comp hrel,
+      ih (fun i hi ↦ hI i (Finset.mem_insert_of_mem hi))]
+
 variable {S X : Scheme.{u}} (f : X ⟶ S) [IsProper f] [RelativeDimensionLE 1 f]
 
 /-- **Degrees add under addition of divisors.** On the base changes of a proper relative curve,
@@ -227,5 +267,48 @@ lemma mul_mem_relativeEffectiveCartierDegreeSubfunctor_obj {d e : ℕ} {T : (Ove
   refine (hrelD.finrank_mul_subschemeι_comp hrelE).trans ?_
   rw [hD, hE]
   rfl
+
+/-- **The empty divisor has degree zero.** On the base changes of a proper relative curve, the
+identity of the monoid of relative effective Cartier divisors lies in `Div⁰_{X/S}`. -/
+lemma one_mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj (T : (Over S)ᵒᵖ) :
+    (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) ∈
+      (relativeEffectiveCartierDegreeSubfunctor f 0).obj T := by
+  have hrel := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
+    (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T).2
+  have := hrel.flat
+  have := hrel.isFinite
+  rw [mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff]
+  funext t
+  rw [Scheme.Hom.finrank_eq_zero_iff_notMem_range]
+  -- The identity is cut out by the unit ideal sheaf `⊤`, whose closed subscheme is empty.
+  rintro ⟨z, -⟩
+  exact isEmptyElim (α := (⊤ : (pullback T.unop.hom f).IdealSheafData).subscheme) z
+
+/-- **Degrees multiply under repeated addition.** On the base changes of a proper relative curve,
+`n` times a relative effective Cartier divisor of degree `d` has degree `n * d`. -/
+lemma pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj {d : ℕ} {T : (Over S)ᵒᵖ}
+    {D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T}
+    (hD : D ∈ (relativeEffectiveCartierDegreeSubfunctor f d).obj T) (n : ℕ) :
+    D ^ n ∈ (relativeEffectiveCartierDegreeSubfunctor f (n * d)).obj T := by
+  induction n with
+  | zero => simpa using one_mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj f T
+  | succ n ih =>
+    rw [pow_succ, Nat.succ_mul]
+    exact mul_mem_relativeEffectiveCartierDegreeSubfunctor_obj f ih hD
+
+/-- **Degrees add over finite sums of divisors.** On the base changes of a proper relative curve,
+if `D i` has degree `d i` for every `i ∈ s`, then the sum of the `D i`, written multiplicatively as
+`∏ i ∈ s, D i`, has degree `∑ i ∈ s, d i`. -/
+lemma prod_mem_relativeEffectiveCartierDegreeSubfunctor_obj {ι : Type*} (s : Finset ι)
+    {d : ι → ℕ} {T : (Over S)ᵒᵖ} {D : ι → (relativeEffectiveCartierSubfunctor f).toFunctor.obj T}
+    (hD : ∀ i ∈ s, D i ∈ (relativeEffectiveCartierDegreeSubfunctor f (d i)).obj T) :
+    ∏ i ∈ s, D i ∈ (relativeEffectiveCartierDegreeSubfunctor f (∑ i ∈ s, d i)).obj T := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using one_mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj f T
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.sum_insert ha]
+    exact mul_mem_relativeEffectiveCartierDegreeSubfunctor_obj f (hD a (s.mem_insert_self a))
+      (ih fun i hi ↦ hD i (Finset.mem_insert_of_mem hi))
 
 end TauCeti.AlgebraicGeometry

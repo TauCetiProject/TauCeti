@@ -72,8 +72,6 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, “Dominant weights”, and Layer 4, “The rational character is Laurent”.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 

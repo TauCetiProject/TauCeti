@@ -190,11 +190,6 @@ theorem continuous_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
     Continuous fun x => ∇ (phi : E → ℝ) x :=
   (contDiff_gradient_testFunction phi).continuous
 
-/-- The gradient of a test function has compact support. -/
-theorem hasCompactSupport_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
-    HasCompactSupport fun x => ∇ (phi : E → ℝ) x :=
-  (phi.hasCompactSupport.fderiv ℝ).comp_left (map_zero _)
-
 /-- The gradient of a test function on `Ω` vanishes outside `Ω`. -/
 theorem support_gradient_testFunction_subset (phi : 𝓓(Omega, ℝ)) :
     Function.support (fun x => ∇ (phi : E → ℝ) x) ⊆ (Omega : Set E) :=
@@ -209,7 +204,7 @@ variable [MeasurableSpace E] [OpensMeasurableSpace E] {mu : Measure E}
 theorem memLp_gradient_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (fun x => ∇ (phi : E → ℝ) x) q (mu.restrict Omega) :=
   (continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
-    (hasCompactSupport_gradient_testFunction phi)
+    phi.hasCompactSupport.gradient
 
 /-- The gradient of a test function on `Ω`, as an element of `Lᵠ(Ω, E)`. -/
 def gradientTestFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp E q (mu.restrict Omega) :=
@@ -234,7 +229,7 @@ theorem enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv (q : ENNReal) (phi : 𝓓
       eLpNorm (fderiv ℝ (phi : E → ℝ)) q mu := by
   have hgrad : AEStronglyMeasurable (fun x => ∇ (phi : E → ℝ) x) mu :=
     ((continuous_gradient_testFunction phi).stronglyMeasurable_of_hasCompactSupport
-      (hasCompactSupport_gradient_testFunction phi)).aestronglyMeasurable
+      phi.hasCompactSupport.gradient).aestronglyMeasurable
   have hfderiv : AEStronglyMeasurable (fderiv ℝ (phi : E → ℝ)) mu :=
     ((contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous
       |>.stronglyMeasurable_of_hasCompactSupport

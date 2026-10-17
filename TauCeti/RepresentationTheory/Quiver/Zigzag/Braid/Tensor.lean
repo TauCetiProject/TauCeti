@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
+public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import TauCeti.Algebra.Homology.Bifunctor.Support
@@ -41,9 +41,7 @@ universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
-/-- Use the signed path-length grading for bimodule tensor composition. -/
-local instance : GradedAlgebra (zigzagAlgebraInternalGrading k G).piece :=
-  zigzagAlgebraIntegerGradedAlgebra k G
+attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
 /-- Balanced tensor composition in the category of the actual graded zigzag bimodules. -/
 -- Its category indices and object assignment must compute for totalization and tensor maps.

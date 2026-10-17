@@ -33,7 +33,8 @@ on wandering opens, such as the Frobenius windows, with the corresponding pieces
   point of `𝒴` lies in such an open, a Frobenius window, so the stalk maps of `q` are isomorphisms:
   the stalks of `𝒪_𝒳` are local, and the stalk at `q y` receives the valuation of `𝒴` at `y`.
   Frobenius preserves these valuations, so they do not depend on the point `y` of the orbit, and
-  `PreAdicSpace.descend` makes `𝒳` a pre-adic space with `q` a morphism of `𝒱^pre`.
+  `PreAdicSpace.descend`, applied to `q` alone, makes `𝒳` a pre-adic space with `q` a morphism
+  of `𝒱^pre`.
 * `𝒳` is the quotient of `𝒴` by Frobenius: a morphism out of `𝒴` with `φ ≫ g = g` factors
   uniquely through `q`, so `q` is the coequalizer of the identity and Frobenius, among presheafed
   spaces and, when `𝒪_𝒴` is a sheaf, in `𝒱^pre`. On points the factorization is the induced map of
@@ -42,8 +43,9 @@ on wandering opens, such as the Frobenius windows, with the corresponding pieces
 
 The sheaf condition on `𝒪_𝒴` is a hypothesis for the window charts and the stalks of `𝒳`, for `𝒳`
 as a pre-adic space and for the universal property in `𝒱^pre`, as for `isSheaf_spaXPresheaf` and
-`isIso_spaXPresheafRestrict`; it is not proved here. Frobenius on `𝒴`, the projection `q` and its
-universal property among presheafed spaces do not need it.
+`isIso_spaXPresheafRestrict`. It is not proved here; `TauCeti.FarguesFontaine.isSheaf_spaYPresheaf`
+proves it when `R` is the ring of integers of a valuation on a field. Frobenius on `𝒴`, the
+projection `q` and its universal property among presheafed spaces do not need it.
 
 ## Main definitions
 
@@ -501,8 +503,11 @@ private theorem heq_descendedValuation_frobenius (y : spaY p ϖ) :
     (congrArg (fun f ↦ f.base y) (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI)).symm
   exact (congr_arg_heq (descendedValuation P hI) hb).symm.trans
     ((ValuationSpectrum.comap_eqToHom_eq_iff_heq _ h₀.symm _ _).mp
-      (PreAdicSpace.comap_stalkMap_base_eq_of_comp_eq (spaYFrobenius P hI)
-        (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI) y h₀))
+      (PreAdicSpace.comap_stalkMap_base_eq_of_comp_eq
+        (π := fun _ : Unit ↦ quotientPresheafedHom P hI) (i := ()) (j := ()) (𝟙 _)
+        (spaYFrobenius P hI) (by
+          rw [PreAdicSpace.id_toHom, Category.id_comp]
+          exact (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI).symm) y h₀))
 
 /-- Integer powers of Frobenius do not change the descended valuation. -/
 private theorem heq_descendedValuation_zpow (n : ℤ) (y : spaY p ϖ) :
@@ -530,8 +535,10 @@ presheaf is `𝒪_𝒳`, the Frobenius-invariant sections of `𝒪_𝒴`; the st
 stalk of `𝒪_𝒴` at `y` through the projection, hence local, and carries the valuation of `𝒴` at `y`,
 which does not depend on the point `y` of the orbit. -/
 def spaXPreAdicSpace (h : (spaYPresheaf P ϖ).IsSheaf) : PreAdicSpace.{v} :=
-  (spaYPreAdicSpace P hI).descend (quotientPresheafedHom P hI)
-    (isOpenQuotientMap_quotientMap hI).surjective (isIso_stalkMap_quotientPresheafedHom h)
+  PreAdicSpace.descend (fun _ : Unit ↦ spaYPreAdicSpace P hI)
+    (fun _ ↦ quotientPresheafedHom P hI)
+    (fun y ↦ ⟨(), (isOpenQuotientMap_quotientMap hI).surjective y⟩)
+    (fun _ ↦ isIso_stalkMap_quotientPresheafedHom h)
 
 end SpaXPreAdicDef
 
@@ -539,7 +546,9 @@ variable (P hI) in
 /-- **The projection `𝒴 → 𝒳` as a morphism of pre-adic spaces**, when `𝒪_𝒴` is a sheaf. -/
 def quotientPreAdicHom (h : (spaYPresheaf P ϖ).IsSheaf) :
     spaYPreAdicSpace P hI ⟶ spaXPreAdicSpace P hI h :=
-  PreAdicSpace.toDescend _ _ comap_stalkMap_quotientPresheafedHom_eq
+  PreAdicSpace.toDescend (X := fun _ : Unit ↦ spaYPreAdicSpace P hI)
+    (π := fun _ ↦ quotientPresheafedHom P hI) _ _
+    (fun _ _ ↦ comap_stalkMap_quotientPresheafedHom_eq) ()
 
 /-- The presheafed space underlying the pre-adic space `𝒳` is `(𝒳, 𝒪_𝒳)`. -/
 @[simp]
@@ -551,7 +560,8 @@ theorem spaXPreAdicSpace_toPresheafedSpace (h : (spaYPresheaf P ϖ).IsSheaf) :
 @[simp]
 theorem quotientPreAdicHom_toHom (h : (spaYPresheaf P ϖ).IsSheaf) :
     (quotientPreAdicHom P hI h).toHom = quotientPresheafedHom P hI :=
-  PreAdicSpace.toDescend_toHom ..
+  PreAdicSpace.toDescend_toHom (X := fun _ : Unit ↦ spaYPreAdicSpace P hI)
+    (π := fun _ ↦ quotientPresheafedHom P hI) ..
 
 /-- **The pre-adic space `𝒳` is sheafy** when `𝒪_𝒴` is a sheaf. -/
 theorem isSheafy_spaXPreAdicSpace (h : (spaYPresheaf P ϖ).IsSheaf) :

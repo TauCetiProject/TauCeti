@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Hyperbolic.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Factorization
-public import TauCeti.Geometry.Manifold.MFDeriv.Separation
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Classification
 
 /-!
 # The full isometry group of hyperbolic space crossed with a line
@@ -18,10 +17,9 @@ group of this product geometry is the direct product of the factor isometry grou
 In particular, taking the horizontal coordinate space to be `ℝ` identifies the full
 group of the three-dimensional geometry `ℍ² × ℝ`.
 
-The infinitesimal splitting follows from the distinct Ricci constants, as proved in
-`Isometry.Prod.Hyperbolic.Basic`. The global splitting uses
-`MDifferentiable.eq_prodMap_iff_mfderiv_mixed_eq_zero` and the factor isometries are
-recovered by `RiemannianIsometry.exists_prodCongr_of_eq_prodMap`.
+The classification specializes the distinct-Ricci-constant product theorem in
+`Isometry.Prod.Classification`. Its infinitesimal ingredient is also recorded for this
+particular model in `Isometry.Prod.Hyperbolic.Basic`.
 The restriction `n ≥ 2` is essential: `ℍ¹ × ℝ` is a flat plane and has rotations
 mixing its two tangent factors.
 
@@ -50,13 +48,9 @@ of factor isometries: the product homomorphism is surjective. Preservation of th
 factors follows from Ricci curvature rather than being assumed. -/
 theorem prodCongrHom_surjective_hyperbolic_prod_real :
     Function.Surjective (prodCongrHom hypModel H 𝓘(ℝ) ℝ) := by
-  intro Q
-  let x₀ : H := UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp)
-  have hsep := (Q.mdifferentiable.eq_prodMap_iff_mfderiv_mixed_eq_zero x₀ 0).mpr
-    ⟨fun p v => (Q.fst_mfderiv_eq_zero_iff_hyperbolic_prod_real p (0, v)).mpr rfl,
-      fun p v => (Q.snd_mfderiv_eq_zero_iff_hyperbolic_prod_real p (v, 0)).mpr rfl⟩
-  obtain ⟨Φ, Ψ, h⟩ := Q.exists_prodCongr_of_eq_prodMap _ _ hsep
-  exact ⟨(Φ, Ψ), by simpa only [prodCongrHom_apply] using h⟩
+  exact prodCongrHom_surjective_of_ricciTensor_eq_smul_inner (a := -(Module.finrank ℝ E : ℝ))
+    (b := 0) (fun x => UpperHalfSpace.ricciTensor_eq x) (by simp)
+    (by simpa using (Module.finrank_pos (R := ℝ) (M := E)).ne')
 
 /-- The full isometry group of `ℍⁿ × ℝ`, for `n ≥ 2`, is the direct product of
 the factor isometry groups. The forward map takes a pair to its product isometry. -/

@@ -18,11 +18,9 @@ weighted degree whenever the weights are nonnegative, so `weightedDegree w D ≤
 With positive weights this becomes strict unless `D = E`, and equality of degrees under a
 coefficientwise inequality forces equality of divisors.
 
-These are Layer A divisor-and-degree facts for the Jacobian challenge roadmap
-(`TauCetiRoadmap/JacobianChallenge/README.md`): they are the order-theoretic counterpart of the
-existing effective-divisor positivity API and support later complete-linear-system and Abel-map
-bookkeeping.  No external mathematics is vendored; the proofs reuse Tau Ceti's
-`WeilDivisor.Order` API and Mathlib's ordered-additive-group lemmas.
+These are the order-theoretic counterpart of the effective-divisor positivity API. No external
+mathematics is vendored; the proofs reuse Tau Ceti's `WeilDivisor.Order` API and Mathlib's
+ordered-additive-group lemmas.
 -/
 
 public section

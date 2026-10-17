@@ -119,6 +119,15 @@ theorem weight_lt_weight (hc : IsLazardEvaluator V c) {v u : σ →₀ ℕ} (hv 
     _ ≤ u i * c i := Nat.mul_le_mul_right _ hlt
     _ ≤ u i * c i + weight c (u.filter (i < ·)) := Nat.le_add_right _ _
 
+/-- The weight of an evaluator is injective on the set of exponents it evaluates. -/
+theorem weight_injOn (hc : IsLazardEvaluator V c) : Set.InjOn (weight c) V := by
+  intro v hv u hu hweight
+  apply toLex.injective
+  rcases lt_trichotomy (toLex v) (toLex u) with h | h | h
+  · exact ((hc.weight_lt_weight hv h).ne hweight).elim
+  · exact h
+  · exact ((hc.weight_lt_weight hu h).ne hweight.symm).elim
+
 end IsLazardEvaluator
 
 /-- Every finite set of exponents has an evaluator. -/
@@ -306,6 +315,21 @@ theorem min_lazardValuation_le_lazardValuation_add (p q : MvPolynomial σ R) (a 
   simpa [lazardValuation_def] using
     MvPowerSeries.min_lexOrder_le (φ := (taylor a p : MvPowerSeries σ R)) (ψ := taylor a q)
 
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then `p + q` has the Lazard
+valuation of `p`. -/
+theorem lazardValuation_add_of_lt (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardValuation a = p.lazardValuation a := by
+  refine le_antisymm ?_ ((min_eq_left h.le).symm.trans_le
+    (min_lazardValuation_le_lazardValuation_add p q a))
+  obtain ⟨v, hv⟩ : ∃ v : σ →₀ ℕ, p.lazardValuation a = toLex v := by
+    obtain ⟨v, hv⟩ := WithTop.ne_top_iff_exists.1 h.ne_top
+    exact ⟨ofLex v, by rw [toLex_ofLex, hv]⟩
+  rw [hv] at h ⊢
+  refine lazardValuation_le_of_coeff_taylor_ne_zero ?_
+  rw [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply,
+    coeff_taylor_eq_zero_of_lt_lazardValuation h, add_zero]
+  exact coeff_taylor_ne_zero_of_lazardValuation_eq hv
+
 theorem le_lazardValuation_mul (p q : MvPolynomial σ R) (a : σ → R) :
     p.lazardValuation a + q.lazardValuation a ≤ (p * q).lazardValuation a := by
   simpa [lazardValuation_def] using MvPowerSeries.le_lexOrder_mul _ _
@@ -321,6 +345,17 @@ theorem lazardValuation_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial 
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, lazardValuation_mul, ih, succ_nsmul]
+
+/-- Over a nontrivial semiring without zero divisors, the Lazard valuation of a finite product
+is the sum of the valuations. This includes the empty product, whose valuation is zero. -/
+theorem lazardValuation_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
+    (f : ι → MvPolynomial σ R) (s : Finset ι) (a : σ → R) :
+    (∏ i ∈ s, f i).lazardValuation a = ∑ i ∈ s, (f i).lazardValuation a := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, lazardValuation_mul, Finset.sum_insert hi, ih]
 
 /-- Each coordinate of the Lazard valuation of `p` is at most the degree of `p` in that
 variable. -/

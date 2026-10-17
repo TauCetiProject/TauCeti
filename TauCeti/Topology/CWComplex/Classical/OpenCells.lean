@@ -36,6 +36,8 @@ difference of the two skeleta.
   to the `(n-1)`-skeleton gives a closed set.
 * `TauCeti.skeletonLT_succ_diff_skeletonLT`: the difference of two consecutive skeleta is the
   union of the open cells of the top dimension.
+* `TauCeti.notMem_skeletonLT_of_mem_openCell`: a point of an open `n`-cell lies outside the
+  `(n-1)`-skeleton.
 * `TauCeti.disjoint_closedCell_openCell_of_ne`: a closed cell of dimension at most `n` other than
   a given `n`-cell misses its open cell.
 * `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
@@ -102,6 +104,11 @@ lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i))
     ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := (rfl)
 
 variable [T2Space X]
+
+/-- A point of an open `n`-cell does not lie in the `(n-1)`-skeleton. -/
+lemma notMem_skeletonLT_of_mem_openCell {i : cell C n} {x : X} (hx : x ∈ openCell n i) :
+    x ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
+  (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx
 
 /-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its
 frontier lies in the `(m-1)`-skeleton and its open cell is a different open cell. -/

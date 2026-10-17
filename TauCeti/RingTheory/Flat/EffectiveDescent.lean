@@ -264,10 +264,8 @@ noncomputable def equivDescended [Module.FaithfullyFlat R S] {A : Type*} [Ring A
       fun a ↦ by simpa using he a)
     (by
       refine ⟨fun a a' h ↦ ?_, fun ⟨b, hb⟩ ↦ ?_⟩
-      · have h' : (1 : S) ⊗ₜ[R] (a - a') = 0 := by
-          rw [tmul_sub, sub_eq_zero]
-          exact e.injective congr($h.1)
-        simpa [sub_eq_zero] using h'
+      · refine Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) A ?_
+        simpa using e.injective congr($h.1)
       -- The coaction of `D` is the transport of the canonical coaction along `e`.
       have hcompat : ∀ x, D.coaction (e x) =
           Algebra.TensorProduct.map (AlgHom.id R S) (e.toAlgHom.restrictScalars R)
@@ -302,6 +300,17 @@ theorem coe_equivDescended_apply [Module.FaithfullyFlat R S] {A : Type*} [Ring A
 theorem baseChangeEquiv_symm_coe [Module.Flat R S] (a : D.descended) :
     D.baseChangeEquiv.symm a = 1 ⊗ₜ a := by
   rw [AlgEquiv.symm_apply_eq, baseChangeEquiv_tmul, one_smul]
+
+/-- The effectivity comparison carries the right tensor inclusion to the inclusion of the
+descended subalgebra. -/
+theorem baseChangeEquiv_comp_includeRight [Module.Flat R S] :
+    D.baseChangeEquiv.toRingHom.comp
+      (Algebra.TensorProduct.includeRight : D.descended →ₐ[R] S ⊗[R] D.descended).toRingHom =
+      (D.descended.val : D.descended →+* B) := by
+  ext a
+  -- Evaluate the bundled composite at the right inclusion to use the inverse comparison lemma.
+  change D.baseChangeEquiv (1 ⊗ₜ a) = (a : B)
+  rw [← D.baseChangeEquiv_symm_coe, AlgEquiv.apply_symm_apply]
 
 /-! ### Morphisms of descent data -/
 
@@ -382,7 +391,7 @@ theorem descend_comp (g : Hom D' D'') (f : Hom D D') :
 change of the induced morphism of descended algebras. -/
 theorem toAlgHom_baseChangeEquiv [Module.Flat R S] (f : Hom D D') (x : S ⊗[R] D.descended) :
     f.toAlgHom (D.baseChangeEquiv x) =
-      D'.baseChangeEquiv (Algebra.TensorProduct.map (AlgHom.id S S) f.descend x) := by
+      D'.baseChangeEquiv (Algebra.TensorProduct.map (AlgHom.id R S) f.descend x) := by
   induction x using TensorProduct.inductionOn with
   | tmul s a => simp
   | add x y hx hy => simp only [map_add, hx, hy]
@@ -461,7 +470,7 @@ private theorem coe_equivDescendedBaseChange_apply [Module.FaithfullyFlat R S] (
     (equivDescendedBaseChange (R := R) (S := S) a : S ⊗[R] A) = 1 ⊗ₜ a :=
   (rfl)
 
-/-- **Descent of morphisms of affine schemes.** If `S` is faithfully flat over `R`, the
+/-- **Full faithfulness of base change.** If `S` is faithfully flat over `R`, the
 `R`-algebra maps `A → A'` are exactly the morphisms between the canonical descent data on
 `S ⊗[R] A` and `S ⊗[R] A'`, via `f ↦ id ⊗ f`. -/
 noncomputable def baseChangeHomEquiv [Module.FaithfullyFlat R S] :

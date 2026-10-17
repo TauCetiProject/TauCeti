@@ -272,7 +272,6 @@ lemma coeFn_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
 
 /-- The real `measureT` integral of two normalized Chebyshev `T` modes is the Kronecker
 delta. -/
-@[simp]
 lemma integral_normalizedChebyshevT_mul_normalizedChebyshevT_measureT_eq_ite (m n : ℕ) :
     ∫ x, normalizedChebyshevT m x * normalizedChebyshevT n x
         ∂Polynomial.Chebyshev.measureT = if m = n then 1 else 0 := by

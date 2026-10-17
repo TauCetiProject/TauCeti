@@ -8,18 +8,26 @@ module
 public import Mathlib.Topology.Algebra.Monoid
 
 /-!
-# Separately continuous multiplication on subgroups
+# Continuous multiplication on subgroups
 
-A subgroup of a group with separately continuous multiplication has separately continuous
-multiplication for the subspace topology. Mathlib provides this for submonoids, but instance
-search does not see a subgroup as a submonoid, so the subgroup instance is registered separately.
+A subgroup inherits continuous or separately continuous multiplication for the subspace topology.
+Mathlib provides these instances for submonoids, but instance search does not see a subgroup as a
+submonoid, so the subgroup instances are registered separately.
 
 ## Main results
 
 * `Subgroup.separatelyContinuousMul`: a subgroup inherits `SeparatelyContinuousMul`.
+* `Subgroup.continuousMul`: a subgroup inherits `ContinuousMul`, without continuity of inversion.
 -/
 
 public section
+
+/-- A subgroup of a group with continuous multiplication has continuous multiplication. -/
+@[to_additive /-- An additive subgroup of an additive group with continuous addition has
+continuous addition. -/]
+instance Subgroup.continuousMul {G : Type*} [TopologicalSpace G] [Group G]
+    [ContinuousMul G] (S : Subgroup G) : ContinuousMul S :=
+  S.toSubmonoid.continuousMul
 
 /-- A subgroup of a group with separately continuous multiplication has separately continuous
 multiplication. -/

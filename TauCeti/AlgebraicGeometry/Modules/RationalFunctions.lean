@@ -56,6 +56,9 @@ condition and the `𝒪_X`-module structure automatic.
   `TauCeti.AlgebraicGeometry.Scheme.subsingleton_rationalFunctions`, the sections over an empty
   open subset vanish; together these give
   `TauCeti.AlgebraicGeometry.Scheme.isFlasque_rationalFunctions`;
+* `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsHom`, the morphism extending compatible
+  linear maps on nonempty opens, with its computation rule `rationalFunctionsHom_app` and
+  injectivity criterion `rationalFunctionsHom_app_injective`;
 * `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsMul`, multiplication by a rational function
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
@@ -288,6 +291,61 @@ theorem rationalFunctionsEquiv_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i 
       rationalFunctionsEquiv V s := by
   rw [rationalFunctionsEquiv_apply, rationalFunctionsSectionsEquiv_map,
     rationalFunctionsRingEquiv_map, rationalFunctionsEquiv_apply]
+
+section Hom
+
+variable (M : X.Modules)
+  (app : ∀ (U : X.Opens) [Nonempty U],
+    M.val.obj (op U) ⟶ (rationalFunctions X).val.obj (op U))
+  (happ : ∀ {U V : X.Opens} [Nonempty U] [Nonempty V] (i : V ⟶ U) (s : Γ(M, U)),
+    app V (M.presheaf.map i.op s) = (rationalFunctions X).presheaf.map i.op (app U s))
+
+/-- Compatible linear maps to rational functions on nonempty opens extend to a morphism of
+module sheaves. On the empty open the component is the unique map to the zero module. -/
+def rationalFunctionsHom : M ⟶ rationalFunctions X := by
+  classical
+  refine
+    { val :=
+      { app := fun U ↦ if hU : Nonempty U.unop then
+          letI := hU
+          app U.unop
+        else 0
+        naturality := ?_ } }
+  intro U V i
+  by_cases hV : Nonempty V.unop
+  · let := hV
+    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
+      i.unop.le (Classical.choice hV).2⟩⟩
+    let := hU
+    simp only [dite_eq_left hU, dite_eq_left hV]
+    ext s
+    exact happ i.unop s
+  · ext s
+    exact TopCat.Presheaf.section_ext
+      ⟨(rationalFunctions X).presheaf, (rationalFunctions X).isSheaf⟩
+      V.unop _ _ fun x hx ↦ (hV ⟨⟨x, hx⟩⟩).elim
+
+/-- The extension agrees with the supplied linear map on every nonempty open. -/
+@[simp]
+theorem rationalFunctionsHom_app (U : X.Opens) [Nonempty U] (s : Γ(M, U)) :
+    (rationalFunctionsHom M app happ).app U s = app U s := by
+  simp only [rationalFunctionsHom, Scheme.Modules.Hom.app,
+    dite_eq_left (inferInstance : Nonempty U)]
+  rfl
+
+/-- Injectivity on nonempty opens implies injectivity of the extended morphism on all opens. -/
+theorem rationalFunctionsHom_app_injective
+    (hinj : ∀ (U : X.Opens) [Nonempty U], Function.Injective (app U)) (U : X.Opens) :
+    Function.Injective ((rationalFunctionsHom M app happ).app U) := by
+  intro s s' h
+  by_cases hU : Nonempty U
+  · let := hU
+    rw [rationalFunctionsHom_app, rationalFunctionsHom_app] at h
+    exact hinj U h
+  · exact TopCat.Presheaf.section_ext ⟨M.presheaf, M.isSheaf⟩
+      U s s' fun x hx ↦ (hU ⟨⟨x, hx⟩⟩).elim
+
+end Hom
 
 /-- The restriction maps of `𝒦_X` between nonempty open subsets are bijective. -/
 theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :

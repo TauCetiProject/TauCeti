@@ -55,6 +55,11 @@ of `(Kˣ)ⁿ` with a step of the filtration, which is open in `Kˣ`.
   `U(K, i + v_K(n))` is an `n`-th power.
 * `TauCeti.disjoint_rootsOfUnity_unitFiltration`: under the same depth condition, the group
   `U(K,i)` contains no nontrivial `n`-th root of unity.
+* `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: when `n` is invertible in `𝒪[K]`,
+  the `n`-th power map carries every positive-depth step onto itself.
+* `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the same map is a bijection.
+* `TauCeti.pow_mem_unitFiltration_succ_iff_of_isUnit`: on principal units, taking `n`-th powers
+  detects membership in each positive-depth step.
 
 ## References
 
@@ -333,5 +338,56 @@ theorem disjoint_rootsOfUnity_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i :
       (hi p hp hpK (hpb.mul_left a)).trans_le (Nat.mul_le_mul_left _ (Nat.le_add_right _ _)))
       hub hua
     exact Subgroup.disjoint_def.mp (iha ha hia) ((mem_rootsOfUnity a u).mpr h1) hui
+
+/-- For `n` invertible in `𝒪[K]`, the `n`-th power map carries each positive-depth step
+`U(K,i+1)` of the unit filtration onto itself. This is the case `v_K(n) = 0` of
+`map_powMonoidHom_unitFiltration`. -/
+theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
+    (i : ℕ) :
+    (unitFiltration K (i + 1)).map (powMonoidHom n) = unitFiltration K (i + 1) := by
+  have hnK := natCast_ne_zero_of_isUnit hn
+  have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
+  simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) fun p hp hpK hpn ↦
+    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (hv ▸ i.succ_pos) hp hpK hpn
+
+/-- For `n` invertible in `𝒪[K]`, the only `n`-th root of unity in `K` that is a principal unit
+is `1`: the groups `μ_n(K)` and `U(K,1)` intersect trivially. This is the case `v_K(n) = 0` of
+`disjoint_rootsOfUnity_unitFiltration`. -/
+theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
+    Disjoint (rootsOfUnity n K) (unitFiltration K 1) := by
+  have hnK := natCast_ne_zero_of_isUnit hn
+  exact disjoint_rootsOfUnity_unitFiltration hnK fun p hp hpK hpn ↦
+    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK
+      (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.one_pos) hp hpK hpn
+
+/-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
+`U(K,i+1)` of the unit filtration. -/
+theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
+    (i : ℕ) :
+    Function.Bijective (powMonoidHom n : unitFiltration K (i + 1) →* unitFiltration K (i + 1)) := by
+  refine ⟨(MonoidHom.ker_eq_bot_iff _).mp <| eq_bot_iff.mpr fun x hx ↦ Subtype.ext ?_,
+    MonoidHom.range_eq_top.mp ?_⟩
+  · refine Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
+      ((mem_rootsOfUnity n (x : Kˣ)).mpr ?_) (unitFiltration_antitone (Nat.le_add_left 1 i) x.2)
+    simpa using congrArg Subtype.val (MonoidHom.mem_ker.mp hx)
+  · rw [← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
+      map_powMonoidHom_unitFiltration_succ_of_isUnit hn i, Subgroup.subgroupOf_self]
+
+/-- For `n` invertible in `𝒪[K]`, the `n`-th power map detects depth on principal units: for
+`x ∈ U(K,1)`, `x ^ n ∈ U(K,i+1)` exactly when `x ∈ U(K,i+1)`. -/
+theorem pow_mem_unitFiltration_succ_iff_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) {x : Kˣ}
+    (hx : x ∈ unitFiltration K 1) (i : ℕ) :
+    x ^ n ∈ unitFiltration K (i + 1) ↔ x ∈ unitFiltration K (i + 1) := by
+  refine ⟨fun hxn ↦ ?_, fun h ↦ pow_mem h n⟩
+  -- `x ^ n = y ^ n` for some `y ∈ U(K,i+1)`, and `x y⁻¹ ∈ U(K,1)` is an `n`-th root of unity.
+  obtain ⟨y, hy⟩ := (powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn i).2 ⟨_, hxn⟩
+  have hyn : (y : Kˣ) ^ n = x ^ n := by
+    simpa using congrArg Subtype.val hy
+  have hxy : x * (y : Kˣ)⁻¹ = 1 := Subgroup.disjoint_def.mp
+    (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
+    ((mem_rootsOfUnity n _).mpr (by rw [mul_pow, inv_pow, hyn, mul_inv_cancel]))
+    (mul_mem hx (inv_mem (unitFiltration_antitone (Nat.le_add_left 1 i) y.2)))
+  rw [mul_inv_eq_one.mp hxy]
+  exact y.2
 
 end TauCeti

@@ -6,19 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
 # Bilinear forms and base change
 
-This file relates bilinear forms transported along an `IsBaseChange` equivalence to Mathlib's
-canonical base change of bilinear forms, and records how nondegeneracy behaves under that base
-change.
+This file extends bilinear forms to abstract base changes through `IsBaseChange.bilinForm`,
+using Mathlib's canonical tensor base change and transport along a linear equivalence. It also
+records how nondegeneracy behaves under base change.
 
 Nondegeneracy is not preserved by an arbitrary base change: a form can acquire a kernel when its
 discriminant becomes a zero divisor. On a finite free module it is exactly the nonvanishing of
@@ -28,8 +29,22 @@ also preserves it. Those are `TauCeti.nondegenerate_of_nondegenerate_baseChange`
 `TauCeti.bilinForm_toMatrix_baseChange` and `TauCeti.bilinForm_det_toMatrix_baseChange`, say that
 base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
 
+When the scalar algebra is free over the original semiring, base change preserves left separation
+and nondegeneracy without any finiteness or freeness hypothesis on the module carrying the form.
+In particular, this applies to arbitrary extensions of fields, even in infinite dimension.
+Injective localizations also preserve separation and nondegeneracy without any condition on the
+module carrying the form.
+
 ## Main declarations
 
+* `IsBaseChange.bilinForm`: extension to an abstract base change, characterized by its values
+  on the original module.
+* `IsBaseChange.bilinForm_tmul`: extension commutes with tensor products of bilinear forms.
+* `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
+* `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
+  nondegeneracy, without a finite-dimensionality assumption.
+* `LinearMap.BilinForm.Nondegenerate.baseChange_of_isLocalization`: an injective localization
+  preserves nondegeneracy, without a freeness or finiteness assumption on the module.
 * `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
@@ -53,6 +68,216 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
 public section
 
 open Module TensorProduct
+
+namespace LinearMap.BilinForm
+
+section Preservation
+
+variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- Scalar extension commutes with flipping a bilinear form. -/
+@[simp]
+theorem baseChange_flip (B : LinearMap.BilinForm R M) :
+    B.flip.baseChange A = (B.baseChange A).flip := by
+  ext x y
+  simp
+
+variable (A) in
+/-- A free scalar extension preserves left separation of a bilinear form, with no finiteness
+assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingLeft.baseChange [Module.Free R A]
+    {B : LinearMap.BilinForm R M} (hB : B.SeparatingLeft) :
+    (B.baseChange A).SeparatingLeft := by
+  classical
+  let b := Module.Free.chooseBasis R A
+  let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
+  intro x hx
+  apply e.injective
+  ext i
+  apply hB
+  intro w
+  -- Evaluating the extended form and then taking a scalar coordinate is the same as evaluating
+  -- the original form on the corresponding tensor coordinate.
+  have hcoord (z : A ⊗[R] M) : B (e z i) w = b.repr (B.baseChange A z (1 ⊗ₜ[R] w)) i := by
+    induction z with
+    | tmul a m => simp [e, mul_comm]
+    | add z z' hz hz' => simp [hz, hz']
+  simpa [hx] using hcoord x
+
+variable (A) in
+/-- A free scalar extension preserves right separation of a bilinear form, with no finiteness
+assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingRight.baseChange [Module.Free R A]
+    {B : LinearMap.BilinForm R M} (hB : B.SeparatingRight) :
+    (B.baseChange A).SeparatingRight := by
+  have h := LinearMap.SeparatingLeft.baseChange A (B := B.flip) hB
+  rw [baseChange_flip] at h
+  exact h
+
+variable (A) in
+/-- A free scalar extension preserves nondegeneracy of a bilinear form, with no finiteness
+assumption on the module carrying the form. In particular, this applies to extensions of fields. -/
+theorem Nondegenerate.baseChange [Module.Free R A] {B : LinearMap.BilinForm R M}
+    (hB : B.Nondegenerate) : (B.baseChange A).Nondegenerate :=
+  ⟨hB.1.baseChange A, hB.2.baseChange A⟩
+
+variable (A) in
+/-- An injective localization preserves left separation of a bilinear form, without any freeness
+or finiteness assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingLeft.baseChange_of_isLocalization (S : Submonoid R)
+    [IsLocalization S A] [FaithfulSMul R A] {B : LinearMap.BilinForm R M}
+    (hB : B.SeparatingLeft) : (B.baseChange A).SeparatingLeft := by
+  let f : M →ₗ[R] A ⊗[R] M := TensorProduct.mk R A M 1
+  have hf : IsLocalizedModule S f := by
+    rw [isLocalizedModule_iff_isBaseChange S A]
+    exact TensorProduct.isBaseChange R M A
+  intro x hx
+  obtain ⟨⟨v, s⟩, hs⟩ := hf.surj x
+  have hv : v = 0 := hB v fun w ↦ by
+    have h : B.baseChange A (s • x) (1 ⊗ₜ[R] w) = 0 := by simp [hx]
+    rw [hs] at h
+    apply FaithfulSMul.algebraMap_injective R A
+    simpa [f, Algebra.algebraMap_eq_smul_one] using h
+  rw [hv, map_zero] at hs
+  exact (IsLocalizedModule.smul_injective f s) (by simpa using hs)
+
+variable (A) in
+/-- An injective localization preserves right separation of a bilinear form, without any freeness
+or finiteness assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingRight.baseChange_of_isLocalization (S : Submonoid R)
+    [IsLocalization S A] [FaithfulSMul R A] {B : LinearMap.BilinForm R M}
+    (hB : B.SeparatingRight) : (B.baseChange A).SeparatingRight := by
+  have h := LinearMap.SeparatingLeft.baseChange_of_isLocalization A S (B := B.flip) hB
+  rw [baseChange_flip] at h
+  exact h
+
+variable (A) in
+/-- An injective localization preserves nondegeneracy of a bilinear form, without any freeness
+or finiteness assumption on the module carrying the form. -/
+theorem Nondegenerate.baseChange_of_isLocalization (S : Submonoid R)
+    [IsLocalization S A] [FaithfulSMul R A] {B : LinearMap.BilinForm R M}
+    (hB : B.Nondegenerate) : (B.baseChange A).Nondegenerate :=
+  ⟨hB.1.baseChange_of_isLocalization A S, hB.2.baseChange_of_isLocalization A S⟩
+
+end Preservation
+
+end LinearMap.BilinForm
+
+namespace IsBaseChange
+
+section BilinForm
+
+variable {R A M N : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [Module A N]
+  [IsScalarTower R A N] {f : M →ₗ[R] N}
+
+/-- Extend a bilinear form to an abstract base change, transporting Mathlib's tensor-product
+base change along the canonical equivalence. -/
+noncomputable def bilinForm (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
+    LinearMap.BilinForm A N :=
+  LinearMap.BilinForm.congr h.equiv (B.baseChange A)
+
+theorem bilinForm_def (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
+    h.bilinForm B = LinearMap.BilinForm.congr h.equiv (B.baseChange A) :=
+  (rfl)
+
+/-- The extended form agrees with the original form on the image of the structure map. -/
+@[simp]
+theorem bilinForm_apply (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) (x y : M) :
+    h.bilinForm B (f x) (f y) = algebraMap R A (B x y) := by
+  simp [bilinForm_def, h.equiv_symm_apply, Algebra.algebraMap_eq_smul_one]
+
+/-- A bilinear form on a base change is determined by its values on the original module. -/
+theorem bilinForm_unique (h : IsBaseChange A f) (B : LinearMap.BilinForm R M)
+    (C : LinearMap.BilinForm A N) (hC : ∀ x y, C (f x) (f y) = algebraMap R A (B x y)) :
+    C = h.bilinForm B := by
+  refine h.algHom_ext _ _ fun x ↦ h.algHom_ext _ _ fun y ↦ ?_
+  simp [hC x y]
+
+/-- Scalar extension preserves the zero bilinear form. -/
+@[simp]
+theorem bilinForm_zero (h : IsBaseChange A f) :
+    h.bilinForm (0 : LinearMap.BilinForm R M) = 0 :=
+  (h.bilinForm_unique _ _ fun x y ↦ by simp).symm
+
+/-- Scalar extension commutes with addition of bilinear forms. -/
+@[simp]
+theorem bilinForm_add (h : IsBaseChange A f) (B C : LinearMap.BilinForm R M) :
+    h.bilinForm (B + C) = h.bilinForm B + h.bilinForm C :=
+  (h.bilinForm_unique _ _ fun x y ↦ by simp).symm
+
+/-- Scalar extension commutes with flipping a bilinear form. -/
+@[simp]
+theorem bilinForm_flip (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
+    h.bilinForm B.flip = (h.bilinForm B).flip :=
+  (h.bilinForm_unique _ _ fun x y ↦ by simp).symm
+
+/-- Scalar extension commutes with scalar multiples from the original semiring. -/
+@[simp]
+theorem bilinForm_smul (h : IsBaseChange A f) (r : R) (B : LinearMap.BilinForm R M) :
+    h.bilinForm (r • B) = algebraMap R A r • h.bilinForm B :=
+  (h.bilinForm_unique _ _ fun x y ↦ by simp [Algebra.smul_def]).symm
+
+/-- A scalar symmetry between a bilinear form and its flip passes to scalar extension. -/
+theorem bilinForm_apply_symm (h : IsBaseChange A f) (B : LinearMap.BilinForm R M)
+    {r : R} (hB : ∀ x y, B y x = r * B x y) (x y : N) :
+    h.bilinForm B y x = algebraMap R A r * h.bilinForm B x y := by
+  have hflip : B.flip = r • B := by
+    ext u v
+    exact hB u v
+  have hforms : (h.bilinForm B).flip = algebraMap R A r • h.bilinForm B := by
+    rw [← bilinForm_flip, hflip, bilinForm_smul]
+  simpa only [LinearMap.BilinForm.flip_apply, LinearMap.smul_apply, smul_eq_mul] using
+    congr($(hforms) x y)
+
+/-- Scalar extension commutes with pullback along linear maps, lifted to the base changes.
+Supply the target witness `h` when using this as a simp rule, as it is not determined by the
+left-hand side. -/
+theorem bilinForm_comp {M' N' : Type*} [AddCommMonoid M'] [Module R M']
+    [AddCommMonoid N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+    {f' : M' →ₗ[R] N'} (h' : IsBaseChange A f') (h : IsBaseChange A f)
+    (B : LinearMap.BilinForm R M) (l r : M' →ₗ[R] M) :
+    h'.bilinForm (B.comp l r) =
+      (h.bilinForm B).comp (h'.lift (f.comp l)) (h'.lift (f.comp r)) :=
+  (h'.bilinForm_unique _ _ fun x y ↦ by simp [IsBaseChange.lift_eq]).symm
+
+/-- Scalar extension of a block-diagonal form is the block-diagonal form of its two extensions. -/
+@[simp]
+theorem bilinForm_prod {M' N' : Type*} [AddCommMonoid M'] [Module R M']
+    [AddCommMonoid N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+    {f' : M' →ₗ[R] N'} (h : IsBaseChange A f) (h' : IsBaseChange A f')
+    (B : LinearMap.BilinForm R M) (B' : LinearMap.BilinForm R M') :
+    (IsBaseChange.prodMap f f' h h').bilinForm (B.prod B') =
+      (h.bilinForm B).prod (h'.bilinForm B') :=
+  (bilinForm_unique _ _ _ fun x y ↦ by simp [LinearMap.prodMap_apply]).symm
+
+/-- Scalar extension of a tensor product form is the tensor product of the extended forms. -/
+@[simp]
+theorem bilinForm_tmul {M' N' : Type*} [AddCommMonoid M'] [Module R M']
+    [AddCommMonoid N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+    {f' : M' →ₗ[R] N'} (h : IsBaseChange A f) (h' : IsBaseChange A f')
+    (B : LinearMap.BilinForm R M) (B' : LinearMap.BilinForm R M') :
+    (h.tensorProduct h').bilinForm (B.tmul B') =
+      (h.bilinForm B).tmul (h'.bilinForm B') := by
+  refine (bilinForm_unique _ _ _ fun x y ↦ ?_).symm
+  induction x with
+  | tmul v w =>
+    induction y with
+    | tmul v' w' =>
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+        TensorProduct.map_tmul, TensorProduct.mapOfCompatibleSMul_tmul,
+        TensorProduct.mapOfCompatibleSMul_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
+        bilinForm_apply, bilinForm_apply, smul_eq_mul, ← map_mul]
+      exact congrArg _ (LinearMap.BilinForm.tensorDistrib_tmul R R B B' v w v' w').symm
+    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', map_add]
+  | add x x' hx hx' =>
+    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← map_add]
+    exact congrArg _ (LinearMap.map_add₂ (B.tmul B') x x' y).symm
+
+end BilinForm
+
+end IsBaseChange
 
 namespace TauCeti
 

@@ -174,7 +174,7 @@ private theorem coe_reductionLinearMap {ρ : Representation ℤ G W} {σ : Repre
     (f : IntertwiningMap ρ σ) : ⇑(reductionLinearMap k f) = f.toLinearMap.lTensor k := by
   -- `equivLinearMapAsModule` keeps the underlying function of an intertwining map
   have h : ⇑(reductionLinearMap k f) = ⇑(f.baseChange k).toLinearMap := rfl
-  rw [h, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_ltensor]
+  rw [h, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_lTensor]
 
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]
   [AddCommGroup V₂] [Module ℤ V₂] [AddCommGroup V₃] [Module ℤ V₃] {ρ₁ : Representation ℤ G V₁}

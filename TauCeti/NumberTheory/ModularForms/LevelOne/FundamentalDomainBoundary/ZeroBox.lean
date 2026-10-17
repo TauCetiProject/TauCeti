@@ -50,7 +50,7 @@ namespace ModularForm
 /-- The open coordinate box `(-1, 1) ×ℂ (1/2, M)` around the truncated fundamental domain. Its
 floor `1/2` sits strictly below the fundamental domain's lowest point `√3/2` while keeping the
 closed box inside the upper half-plane. -/
-def fdBox (M : ℝ) : Set ℂ := Ioo (-1) 1 ×ℂ Ioo (1 / 2) M
+noncomputable def fdBox (M : ℝ) : Set ℂ := Ioo (-1) 1 ×ℂ Ioo (1 / 2) M
 
 /-- Membership in the box, unfolded to the coordinate bounds. -/
 @[simp]

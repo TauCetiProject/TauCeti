@@ -8,7 +8,9 @@ module
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.AlgebraicTopology.Cellular.Homology
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
+public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 
 /-!
 # Cellular and singular homology of CW pairs
@@ -32,6 +34,9 @@ Composing the inclusion-induced isomorphism `Hₙ(Xⁿ⁺¹, A) ≅ Hₙ(X, A)` 
 `TauCeti.cellularHomologyIso` identifies cellular homology with relative singular homology.
 The formula on cellular cycles specifies the comparison using the inclusion of pairs, without
 choosing singular-chain representatives. No finiteness of the set of cells is required.
+Composing with the quotient map for the empty subspace identifies cellular homology of a
+CW complex with its ordinary singular homology
+(`TauCeti.cellularSingularHomologyIsoOfCWComplex`, `TauCeti.cellularSingularHomologyIsoUniv`).
 Coefficients lie in any abelian category with coproducts exact for the cell indexing types; for
 an infinite-dimensional complex, sequential colimits must be exact as well.
 
@@ -48,6 +53,8 @@ open CategoryTheory Limits Topology Topology.RelCWComplex
 universe w v u
 
 namespace TauCeti
+
+section Relative
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X}
   (C : Set X) [RelCWComplex C D]
@@ -105,16 +112,6 @@ lemma isIso_homologyMap_skeletonPair_map {j k : ℕ}
     ((skeletonPair C j).singularHomology_exact_space R k).epi_f
       ((isZero_singularHomology_skeletonPair_of_ne C R hk).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
-
-/-- The skeleta `skeletonLT C j` and their inclusions, as a sequential diagram of spaces. -/
-private def skeletonFunctor : ℕ ⥤ TopCat.{w} where
-  obj j := skeletonObj C j
-  map f := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (mod_cast f.le)))
-
-/-- The inclusions of the skeleta into the whole complex. -/
-private def skeletonCocone : Cocone (skeletonFunctor C) where
-  pt := TopCat.of C
-  ι := { app j := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C (j : ℕ∞)).subset_complex) }
 
 section Colimit
 
@@ -261,5 +258,67 @@ lemma homologyπ_comp_cellularSingularHomologyIso_hom :
     homologyπ_comp_cellularHomologyIso_hom]
   rw [Category.assoc, ← TopPair.singularHomologyMap_comp, ← skeletonBasePairInclusion_succ,
     skeletonBasePairInclusion_comp_toComplex]
+
+end Relative
+
+section Absolute
+
+variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
+  {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+  [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+
+/-- **Cellular homology is ordinary singular homology**: cellular homology of a CW complex is the
+singular homology of the complex, through the quotient map for the empty subspace. As for
+`TauCeti.cellularSingularHomologyIso`, the inclusion of the `(n + 1)`-skeleton must induce an
+isomorphism on `Hₙ`, which holds for every finite-dimensional complex and, when sequential
+colimits are exact in the coefficient category, for every complex. -/
+def cellularSingularHomologyIsoOfCWComplex (n : ℕ)
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 1)) R n)] :
+    (cellularChainComplex C R).homology n ≅
+      ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C) :=
+  cellularSingularHomologyIso C R n ≪≫ (asIso ((complexBasePair C).singularHomologyπ R n)).symm
+
+/-- The absolute cellular–singular comparison followed by the quotient map for the empty
+subspace is the relative comparison `TauCeti.cellularSingularHomologyIso`. -/
+@[simp, reassoc]
+lemma cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ (n : ℕ)
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 1)) R n)] :
+    (cellularSingularHomologyIsoOfCWComplex C R n).hom ≫
+        (complexBasePair C).singularHomologyπ R n =
+      (cellularSingularHomologyIso C R n).hom := by
+  -- The body is well typed only after unfolding `singularHomologyFunctor`, so `rw [Iso.trans_hom]`
+  -- fails to match it; we close the goal with a term instead.
+  unfold cellularSingularHomologyIsoOfCWComplex
+  exact (Category.assoc _ _ _).trans
+    (((cellularSingularHomologyIso C R n).hom ≫=
+      (asIso ((complexBasePair C).singularHomologyπ R n)).inv_hom_id).trans (Category.comp_id _))
+
+/-- **Cellular homology is ordinary singular homology** for a CW structure on the whole
+space `X`. -/
+def cellularSingularHomologyIsoUniv [CWComplex (Set.univ : Set X)]
+    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ)
+    [IsIso ((skeletonBasePair (Set.univ : Set X) (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex (Set.univ : Set X) (n + 1)) R n)] :
+    (cellularChainComplex (Set.univ : Set X) R).homology n ≅
+      ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of X) :=
+  cellularSingularHomologyIsoOfCWComplex Set.univ R n ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).mapIso
+      (TopCat.isoOfHomeo (Homeomorph.Set.univ X))
+
+/-- The comparison `TauCeti.cellularSingularHomologyIsoUniv` is the absolute comparison for
+`Set.univ`, followed by the map induced by the homeomorphism `Set.univ ≃ₜ X`. -/
+lemma cellularSingularHomologyIsoUniv_hom [CWComplex (Set.univ : Set X)]
+    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ)
+    [IsIso ((skeletonBasePair (Set.univ : Set X) (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex (Set.univ : Set X) (n + 1)) R n)] :
+    (cellularSingularHomologyIsoUniv R n).hom =
+      (cellularSingularHomologyIsoOfCWComplex Set.univ R n).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).map
+          (TopCat.isoOfHomeo (Homeomorph.Set.univ X)).hom := by
+  rw [cellularSingularHomologyIsoUniv, Iso.trans_hom, Functor.mapIso_hom]
+
+end Absolute
 
 end TauCeti

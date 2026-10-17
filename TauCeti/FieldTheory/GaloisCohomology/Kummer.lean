@@ -98,7 +98,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   order `n` over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
 * `TauCeti.explicitCoeff1_kummerCoeffPow_kummerMap`: the power map `μₙ → μₘ` sends the Kummer
   class of `a` at level `n` to its Kummer class at level `m`, and
-  `TauCeti.explicitCoeff1_kummerCoeffPow_surjective`: it is surjective on `H¹`.
+  `TauCeti.explicitCoeff1_kummerCoeffPow_surjective`: it is surjective on `H¹` when `n` is
+  invertible in `K`.
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.explicitMap1_kummerMap`: pullback along an arbitrary field extension carries the
@@ -167,6 +168,13 @@ theorem kummerCoeffIncl_kummerCocycle
   Additive.toMul.injective <| by
     rw [toMul_kummerCoeffIncl, toMul_kummerCocycle, toMul_sub, Additive.toMul_smul,
       toMul_ofMul, div_eq_mul_inv]
+
+/-- **The Kummer cocycle vanishes exactly at the automorphisms fixing the chosen root.** -/
+@[simp]
+theorem kummerCocycle_eq_zero_iff
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (g : AbsoluteGaloisGroup K) : kummerCocycle hα g = 0 ↔ g • α = α := by
+  rw [← toMul_eq_one, ← OneMemClass.coe_eq_one, toMul_kummerCocycle, mul_inv_eq_one]
 
 /-- **The Kummer ratio `g ↦ g α / α` is a continuous `1`-cocycle** with values in `μₙ`. -/
 theorem kummerCocycle_mem_Z1
@@ -420,10 +428,12 @@ theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
 
 /-! ### Changing the level of the roots of unity
 
-For `m ∣ n`, raising to the power `n / m` maps `μₙ` onto `μₘ`. On Kummer classes it is the
-change of level: an `n`th root `α` of `a` gives the `m`th root `α ^ (n / m)` of the same `a`, and
-`(g α / α) ^ (n / m) = g α ^ (n / m) / α ^ (n / m)`. As every class at level `m` is a Kummer
-class, the induced map on `H¹` is surjective. -/
+For `m ∣ n` with `n ≠ 0`, raising to the power `n / m` maps `μₙ` onto `μₘ` (at `n = 0` it is the
+zero map, since `0 / m = 0`). On Kummer classes it is the change of level: an `n`th root `α` of
+`a` gives the `m`th root `α ^ (n / m)` of the same `a`, and
+`(g α / α) ^ (n / m) = g α ^ (n / m) / α ^ (n / m)`. When `n` is invertible in `K`, every class
+at level `m` is a Kummer class, so the induced map on `H¹` is surjective
+(`TauCeti.explicitCoeff1_kummerCoeffPow_surjective`). -/
 
 variable {K n}
 

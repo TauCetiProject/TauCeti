@@ -232,3 +232,20 @@ theorem isProperMap_analyticMap_iff (hΦ0 : Nonempty Φ.cones) :
     f.isProperMap_analyticMap_of_preimage_realMap_subset hΦ hΨ fun τ ↦ (h τ).subset⟩
 
 end TauCeti.Toric.FanHom
+
+namespace TauCeti.Toric.FanHom
+
+universe u
+
+variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
+  [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
+  {i : N →+ V} {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
+
+/-- A continuous analytic map from the realization of a complete regular fan is proper. -/
+theorem isProperMap_analyticMap_of_isComplete (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular)
+    (hΨ : Ψ.IsRegular) (hc : Φ.IsComplete) :
+    IsProperMap (f.analyticMap hΦ hΨ) := by
+  have := Φ.compactSpace_analyticRealization_of_isComplete hΦ hc
+  exact (f.analyticMap hΦ hΨ).hom.continuous.isProperMap
+
+end TauCeti.Toric.FanHom

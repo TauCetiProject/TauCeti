@@ -266,9 +266,8 @@ theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}
 @[instance_reducible]
 noncomputable def zigzagAlgebraIntegerGradedAlgebra :
     GradedAlgebra (zigzagAlgebraIntegerGrade k G) :=
-  { (isInternal_zigzagAlgebraIntegerGrade k G).chooseDecomposition with
-    one_mem := (zigzagAlgebraIntegerGrade_ofNat k G 0).ge SetLike.GradedOne.one_mem
-    mul_mem := fun _ _ _ _ hx hy ↦ mul_mem_zigzagAlgebraIntegerGrade k G hx hy }
+  let _ := zigzagAlgebraGradedAlgebra k G
+  Graded.gradedAlgebraExtendByZero (zigzagAlgebraGrade k G)
 
 /-- The signed path-length grading of the public zigzag algebra as an internal grading. -/
 noncomputable abbrev zigzagAlgebraInternalGrading : InternalGrading k (zigzagAlgebra k G) :=

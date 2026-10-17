@@ -42,7 +42,7 @@ theorem module_finite_indecProjModule (i : Q) :
     Submodule.span (pathAlgebra k Q) {x}
   have hb (j : Q) (p : Quiver.Path i j) :
       QuiverRep.ofVertex k Q (indecProjRep k Q i) j (indecProjRepBasis k i j p) ∈ S := by
-    have h := QuiverRep.smul_ofVertex k Q (indecProjRep k Q i) p
+    have h := QuiverRep.ofPath_smul_ofVertex k Q (indecProjRep k Q i) p
       (indecProjRepBasis k i i Quiver.Path.nil)
     -- Retype the vertex-space map as the representation map to use its basis rule.
     change (PathAlgebra.ofPath ⟨i, j, p⟩ : pathAlgebra k Q) •

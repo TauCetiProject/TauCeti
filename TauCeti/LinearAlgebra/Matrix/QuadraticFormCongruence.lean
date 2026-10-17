@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Int.CongrAllPrimes
-public import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import Mathlib.Tactic.LinearCombination
 
 /-!

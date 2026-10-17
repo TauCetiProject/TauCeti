@@ -90,20 +90,15 @@ spaces `Fin n → k`; `FDRep.of` mediates between the two, and nothing is lost, 
 of an irreducible representation on an arbitrary finite-dimensional space already lies in
 `TauCeti.irreducibleCharacters`.
 
-Following the roadmap, the lattice is an `AddSubgroup (G → k)` and not a `Subring (G → k)`: the
-additive structure is what the integrality arguments downstream use, and closure under the pointwise
-product is recorded as the lemma `TauCeti.mul_mem_virtualCharacters` rather than built into the
-interface. The coefficients in `TauCeti.mem_virtualCharacters_iff` are genuine integers, the scalars
-`(c i : k)` appearing only because the ambient module is a `k`-module; they are determined by the
-element only in characteristic zero, since in positive characteristic the cast `ℤ → k` is not
-injective.
+The lattice is an `AddSubgroup (G → k)` and not a `Subring (G → k)`: the additive structure is what
+the integrality arguments downstream use, and closure under the pointwise product is recorded as the
+lemma `TauCeti.mul_mem_virtualCharacters` rather than built into the interface. The coefficients in
+`TauCeti.mem_virtualCharacters_iff` are genuine integers, the scalars `(c i : k)` appearing only
+because the ambient module is a `k`-module; they are determined by the element only in
+characteristic zero, since in positive characteristic the cast `ℤ → k` is not injective.
 
 ## References
 
-This is the virtual-character-lattice item of Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and the `virtualCharacters` target of Layer 6 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2 and Lemma 4.7, or
 J.-P. Serre, *Linear Representations of Finite Groups* (1977), Sections 2.5 and 9. The norm-`1`
 test over an arbitrary field of characteristic zero is the argument of Serre, Section 12.3
@@ -129,7 +124,7 @@ by the characters of the finite-dimensional representations of `G`.
 
 Its elements, the *virtual characters*, are the differences of genuine characters: characters are
 closed under addition, so an integer combination of them is a difference of two of them. -/
-def virtualCharacters : AddSubgroup (G → k) :=
+noncomputable def virtualCharacters : AddSubgroup (G → k) :=
   AddSubgroup.closure (Set.range (FDRep.character : FDRep k G → G → k))
 
 variable {k G}
@@ -181,8 +176,7 @@ characters is the character of the tensor product, and multiplication by a fixed
 additive, so the property propagates through the additive generation of the lattice.
 
 The lattice is nevertheless kept as an `AddSubgroup`: multiplicativity is recorded by this lemma
-rather than by bundling the carrier as a `Subring (G → k)`, the additive interface being the one
-the roadmap prescribes. -/
+rather than by bundling the carrier as a `Subring (G → k)`. -/
 theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters k G)
     (hg : g ∈ virtualCharacters k G) : f * g ∈ virtualCharacters k G := by
   rw [virtualCharacters] at hf hg ⊢

@@ -68,22 +68,18 @@ eigenvector of the centre with eigenvalue `chi_lam`. In particular the irreducib
 * `TauCeti.IsHighestWeightVector.vermaCentralCharacter_eq_of_representation_eq_smul`: the central
   character is the *only* scalar with that property, which is how its values are computed.
 * `TauCeti.vermaCentralCharacter_casimirElement`: **the central character sends the Casimir
-  element to the Casimir scalar** `⟨lam + rho, lam + rho⟩ - ⟨rho, rho⟩` of Layer 5.
+  element to the Casimir scalar** `⟨lam + rho, lam + rho⟩ - ⟨rho, rho⟩`.
 
-## References
+## Implementation notes
 
-This is the "central characters" half of the first item of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`centralCharacter` is pinned in the accompanying `Suggested.lean` and whose text fixes the route
-used here: the character is defined through the action of the centre on the one-dimensional top
-weight line of the Verma module, and is then shown to be the character of every highest weight
-module of that weight, the Casimir eigenvalue of Layer 5 being its value at the Casimir element.
 The name `TauCeti.centralCharacter` is already taken by the central character of a simple module
 over an arbitrary algebra (`TauCeti/RingTheory/Semisimple/CentralCharacter.lean`), obtained from
 Schur's lemma. That construction is not available here: it assumes `[IsAlgClosed K]`,
 `[IsSimpleModule A M]` and `[FiniteDimensional K M]`, none of which is assumed in this file, and
 `M(lam)` is not known to be simple — simplicity of `M(lam)` is equivalent to antidominance of
 `lam` (Humphreys, BGG Category `O`, §4.8).
+
+## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §23.2.
 * J. E. Humphreys, *Representations of Semisimple Lie Algebras in the BGG Category `O`*, §1.7.

@@ -23,8 +23,8 @@ through `NeZero.charZero`; the instance runs only in that direction.
 
 This file is only the matrix. `TauCeti/NumberTheory/ModularForms/Fricke/Operator.lean` builds
 the Fricke *slash operator* on `M_k(Γ₁(N))` on top of it: the raw `f ↦ f ∣[k] W`, carrying no
-normalizing scalar and so not an involution. The normalized `𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)`,
-which rescales that map and is an involution in even weight, is a later rung.
+normalizing scalar and so not an involution. The normalization
+`𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)` rescales that map to an involution in even weight.
 
 ## Main definitions
 
@@ -54,8 +54,7 @@ different objects in different settings — neither carries a determinant-`N` no
 
 Ported from the AINTLIB `LeanModularForms` project
 (`projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/Fricke.lean`, Chris Birkbeck,
-Apache-2.0, <https://github.com/CBirkbeck/AINTLIB>), realizing part of Layer 6 of the
-ModularForms roadmap.
+Apache-2.0, <https://github.com/CBirkbeck/AINTLIB>).
 -/
 
 open Matrix
@@ -100,9 +99,7 @@ public theorem coe_inv_frickeGL :
   simp [Matrix.det_fin_two_of, NeZero.ne (N : K)]
 
 /-- `W² = (-N) • 1` as matrices. This is the entrywise identity behind the centrality of `W²`
-— its consumer is `frickeGL_sq_mul_comm` of
-`TauCeti/NumberTheory/ModularForms/Fricke/Conjugation.lean` — and, later, behind the scalar the
-normalized Fricke operator divides out. It is not itself a statement that `W²` is central.
+and the scalar the normalized Fricke operator divides out.
 
 Deliberately not `@[simp]`: the left-hand side `↑(W ^ 2)` is not in simp-normal form, since
 `Units.val_pow_eq_pow_val` and the in-file simp lemma `coe_frickeGL` already rewrite its head to

@@ -31,7 +31,8 @@ The proof uses the preceding Tau Ceti two-window identity
 Theorem 1.1.  No material from `cameronfreer/exchangeability` is reused.
 
 `prefixAverage` and `followingAverage` themselves involve no measure and are defined, with their
-pointwise formulas, in `TauCeti.Probability.Process.BlockAverage`; this file adds the `L²` theory.
+pointwise formulas, in `TauCeti.Probability.Process.BlockAverage.Basic`; this file adds the
+contractability-specific `L²` bounds.
 -/
 
 public section
@@ -62,18 +63,6 @@ private theorem followingSelection_injective (n : ℕ) :
 private theorem prefix_ne_following (n : ℕ) (i j : Fin n) :
     (i : ℕ) ≠ n + (j : ℕ) := by
   exact ne_of_lt (lt_of_lt_of_le i.isLt (Nat.le_add_right n j))
-
-/-- A prefix average of `L²` coordinates is itself `L²`. -/
-theorem memLp_prefixAverage (n : ℕ) (hX_L2 : ∀ i : Fin n, MemLp (X i) 2 μ) :
-    MemLp (prefixAverage X n) 2 μ := by
-  rw [prefixAverage_def]
-  exact memLp_blockAverage (fun i : Fin n => (i : ℕ)) hX_L2
-
-/-- A following tail average of `L²` coordinates is itself `L²`. -/
-theorem memLp_followingAverage (n : ℕ) (hX_L2 : ∀ i : Fin n, MemLp (X (n + i)) 2 μ) :
-    MemLp (followingAverage X n) 2 μ := by
-  rw [followingAverage_def]
-  exact memLp_blockAverage (fun i : Fin n => n + (i : ℕ)) hX_L2
 
 /-- **The exact long-average versus tail-average `L²` bound.** For a contractable process,
 the squared `L²` distance between the average of the first `n` coordinates and the average of

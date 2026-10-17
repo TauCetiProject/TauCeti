@@ -76,6 +76,15 @@ theorem symmetricAlgebraMapIso_inv (e : M ≃ₗ[R] N) :
             SymmetricAlgebra.map_surjective R e.symm.toLinearMap e.symm.surjective)) := by
   rw [symmetricAlgebraMapIso, mapIso_inv]
 
+/-- A projective linear automorphism fixes the degree-zero structural morphism. -/
+-- Preserve this square before simplifying the isomorphism to `Proj.map`.
+@[reassoc (attr := simp↓)]
+theorem symmetricAlgebraMapIso_hom_toSpecZero (e : M ≃ₗ[R] M) :
+    (symmetricAlgebraMapIso R e).hom ≫ toSpecZero (homogeneousSubmodule R M) =
+      toSpecZero (homogeneousSubmodule R M) := by
+  rw [symmetricAlgebraMapIso_hom, map_toSpecZero]
+  simp
+
 /-- Inverting a linear equivalence inverts its projective isomorphism. -/
 @[simp]
 theorem symmetricAlgebraMapIso_symm (e : M ≃ₗ[R] N) :
@@ -105,17 +114,17 @@ theorem symmetricAlgebraMapIso_trans (e : M ≃ₗ[R] N) (d : N ≃ₗ[R] P) :
 with the usual (function-composition) multiplication on both groups. -/
 noncomputable def symmetricAlgebraAut :
     (M ≃ₗ[R] M) →* Aut (Proj (homogeneousSubmodule R M)) where
-  toFun e := symmetricAlgebraMapIso R e.symm
-  map_one' := symmetricAlgebraMapIso_refl R
+  toFun e := .of (symmetricAlgebraMapIso R e.symm)
+  map_one' := Aut.ext (symmetricAlgebraMapIso_refl R)
   map_mul' e d := by
     -- Multiplication of linear equivalences and of categorical automorphisms both
     -- reverses the order of `trans`; inverse pullback compensates for contravariance.
-    exact symmetricAlgebraMapIso_trans R e.symm d.symm
+    exact Aut.ext (symmetricAlgebraMapIso_trans R e.symm d.symm)
 
 /-- The automorphism attached to `e` is projective pullback by `e⁻¹`. -/
 @[simp]
 theorem symmetricAlgebraAut_apply (e : M ≃ₗ[R] M) :
-    symmetricAlgebraAut R e = symmetricAlgebraMapIso R e.symm := (rfl)
+    (symmetricAlgebraAut R e).asIso = symmetricAlgebraMapIso R e.symm := (rfl)
 
 variable {G : Type v} [Monoid G]
 

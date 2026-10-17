@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 -- Proof-only: the multiples `n • id` are distinct.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
+-- Proof-only: a separable isogeny is onto on points over a separably closed field.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 -- Proof-only: every isogeny is a separable isogeny after a Frobenius power.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 -- Proof-only: relative Frobenius acts on points by powering the coordinates.
@@ -38,10 +40,16 @@ additivity statements are compared after base change to a separable closure: on 
 additively and compatibly with the action of morphisms (`TauCeti.Isogeny.Hom.pointMap_map`), and on
 morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_injective`).
 
+The same factorisation shows that a nonzero morphism is surjective on points over an algebraically
+closed field: the separable factor is onto on points, and `F^r` is a bijection on points once the
+field is perfect.
+
 ## Main results
 
 * `TauCeti.Isogeny.Hom.pointMap_add`: every morphism acts additively on points, over any field
   (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub`, `pointMap_nsmul` and `pointMap_zsmul`.
+* `TauCeti.Isogeny.Hom.pointMap_surjective`: a nonzero morphism is surjective on points over an
+  algebraically closed field (Silverman II.2.3).
 * `TauCeti.Isogeny.Hom.comp_add`: composition is additive in the inner morphism, over any field.
 * `TauCeti.Isogeny.Hom.compLeftHom`: postcomposition by a morphism, as an additive homomorphism.
 * The `Ring (Hom W W)`, `IsDomain (Hom W W)` and `CharZero (Hom W W)` instances.
@@ -49,7 +57,8 @@ morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_in
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.11–12 and III.4.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.3, II.2.11–12 and
+  III.4.
 -/
 
 public section
@@ -124,6 +133,27 @@ theorem pointMap_nsmul (f : Hom W₁ W₂) (n : ℕ) (P : W₁.Point) :
 theorem pointMap_zsmul (f : Hom W₁ W₂) (n : ℤ) (P : W₁.Point) :
     f.pointMap (n • P) = n • f.pointMap P :=
   f.pointMapHom.map_zsmul n P
+
+/-- **A nonzero morphism is surjective on points over an algebraically closed field**
+(Silverman II.2.3). It factors as a separable isogeny after a Frobenius power `F^r`; the separable
+factor is onto on points over a separably closed field (`TauCeti.Isogeny.toPointHom_surjective`),
+and `F^r` raises the coordinates to the power `p ^ r`, which is bijective on a perfect field. Over a
+separably closed field that is not perfect the statement fails for inseparable morphisms such as
+`[p]`. -/
+theorem pointMap_surjective [IsAlgClosed F] {f : Hom W₁ W₂} (hf : f ≠ 0) :
+    Function.Surjective f.pointMap := by
+  obtain ⟨φ, rfl⟩ := (eq_zero_or_exists_ofIsogeny f).resolve_left hf
+  -- `φ = χ ∘ F^r` with `χ` separable and `F^r` the `r`-fold relative Frobenius
+  obtain ⟨r, χ, hχ, rfl⟩ :=
+    exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq (ringExpChar F) φ
+  have := W₂.isIntegrallyClosed_coordinateRing
+  intro Q
+  obtain ⟨P, rfl⟩ := χ.toPointHom_surjective Q
+  obtain ⟨P, rfl⟩ := Point.mapAlong_surjective _ (iterateFrobenius F (ringExpChar F) r).injective
+    (by rw [coe_iterateFrobenius]; exact (surjective_frobenius F _).iterate r) P
+  refine ⟨P, ?_⟩
+  rw [← ofIsogeny_comp_ofIsogeny, comp_pointMap, pointMap_iterateRelativeFrobeniusIsogeny,
+    pointMap_ofIsogeny_eq_toPointHom]
 
 end PointMap
 

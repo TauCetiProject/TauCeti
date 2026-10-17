@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 public import TauCeti.RingTheory.Flat.Rank
 
 /-!
@@ -24,7 +25,10 @@ For finite flat morphisms `f : X ⟶ Y` and `g : Y ⟶ S`, if `f` has constant r
 finite locally free morphisms multiply in towers. The constancy hypothesis cannot be dropped,
 since the points of `Y` over a given point of `S` can carry different ranks of `f`. Over an
 affine base this is `TauCeti.Module.rankAtStalk_eq_mul_of_rankAtStalk_eq`, and the general case
-reduces to it because the rank is computed after base change to affine opens of `S`.
+reduces to it because the rank is computed after base change to affine opens of `S`. More
+generally, it suffices that `f` have rank `n` on the fibre of `g` over `s`
+(`AlgebraicGeometry.Scheme.Hom.finrank_comp_of_fiber`): after base change to the residue field
+of `s`, the rank of `f` is constant.
 
 The rank is at least `1` at the points of the image (Mathlib's `Scheme.Hom.one_le_finrank_map`)
 and is `0` at every other point (`AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_iff_notMem_range`).
@@ -39,6 +43,8 @@ rank is the `K`-dimension of `Γ(X, ⊤)` (`AlgebraicGeometry.Scheme.Hom.finrank
   rank of `f` at `y`, for an isomorphism `e`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp`: the rank of a composite whose first factor has
   constant rank.
+* `AlgebraicGeometry.Scheme.Hom.finrank_comp_of_fiber`: the rank of a composite whose first factor
+  has constant rank on a fibre of the second.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_iff_notMem_range`: the rank vanishes exactly at
   the points outside the image.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`: over a field, the rank is the
@@ -160,15 +166,23 @@ theorem Scheme.Hom.finrank_comp (f : X ⟶ Y) (g : Y ⟶ S) [Flat f] [IsFinite f
   rwa [finrank_SpecMap_eq_finrank ‹φ.hom.Finite› ‹φ.hom.Flat›,
     ← RingHom.algebraMap_toAlgebra φ.hom, RingHom.finrank_algebraMap] at this
 
-/-- A finite morphism to the spectrum of a field has finite-dimensional global sections, for any
-`K`-algebra structure on `Γ(X, ⊤)` given by the map of global sections. -/
-theorem Scheme.Hom.finite_of_field {K : Type u} [Field K] {X : Scheme.{u}}
-    (f : X ⟶ Spec (.of K)) [IsFinite f] [Algebra K Γ(X, ⊤)]
-    (hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom) :
-    Module.Finite K Γ(X, ⊤) := by
-  rw [← RingHom.finite_algebraMap, hf, CommRingCat.hom_comp]
-  exact f.finite_appTop.comp (RingHom.Finite.of_surjective _
-    (Scheme.ΓSpecIso (.of K)).commRingCatIsoToRingEquiv.symm.surjective)
+/-- **The rank is multiplicative in towers, fibrewise.** If `f : X ⟶ Y` and `g : Y ⟶ S` are finite
+and flat and `f` has rank `n` at every point of the fibre of `g` over `s`, then the rank of
+`f ≫ g` at `s` is `n` times the rank of `g` at `s`. -/
+theorem Scheme.Hom.finrank_comp_of_fiber (f : X ⟶ Y) (g : Y ⟶ S) [Flat f] [IsFinite f] [Flat g]
+    [IsFinite g] {n : ℕ} {s : S} (hf : ∀ y, g y = s → f.finrank y = n) :
+    (f ≫ g).finrank s = n * g.finrank s := by
+  -- Over the residue field of `s`, the base change of `f` has constant rank `n`.
+  let t := S.fromSpecResidueField s
+  obtain ⟨a⟩ : Nonempty (Spec (.of (S.residueField s))) := inferInstance
+  rw [← S.fromSpecResidueField_apply s a, ← finrank_pullback_snd, ← finrank_pullback_snd,
+    ← finrank_comp_left_of_isIso (pullbackRightPullbackFstIso g t f).hom,
+    pullbackRightPullbackFstIso_hom_snd]
+  refine finrank_comp _ _ (fun y ↦ ?_) a
+  rw [finrank_pullback_snd]
+  refine hf _ ?_
+  rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
+  simp only [t, S.fromSpecResidueField_apply]
 
 /-- **Over a field, the rank is the dimension of the global sections.** The rank of a finite
 morphism `f : X ⟶ Spec K` is the `K`-dimension of `Γ(X, ⊤)`, for the `K`-algebra structure given
@@ -178,7 +192,7 @@ theorem Scheme.Hom.finrank_eq_finrank_of_field {K : Type u} [Field K] {X : Schem
     (hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
     (s : Spec (.of K)) : f.finrank s = Module.finrank K Γ(X, ⊤) := by
   have : IsAffine X := isAffine_of_isAffineHom f
-  have : Module.Finite K Γ(X, ⊤) := f.finite_of_field hf
+  have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop hf
   have hfin : (CommRingCat.ofHom (algebraMap K Γ(X, ⊤))).hom.Finite := by
     rwa [CommRingCat.hom_ofHom, RingHom.finite_algebraMap]
   -- `f` is the spectrum of the map of global sections, up to the isomorphism `X ≅ Spec Γ(X, ⊤)`.

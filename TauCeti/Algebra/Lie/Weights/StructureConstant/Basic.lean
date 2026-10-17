@@ -31,10 +31,9 @@ implementation. The constants are non-zero when all three weights are roots, are
 `α` and `β`, transform by the expected ratio when a normalised system is rescaled, and satisfy the
 root-string product formula proved in `TauCeti/Algebra/Lie/Weights/Root/String.lean`.
 
-These are the scalar identities needed before a coherent choice of signs can upgrade an
-`IsSl2System` to a Chevalley basis with constants `±(p + 1)`. This advances the explicit
-Chevalley--Demazure construction in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`; it does
-not assert that an arbitrary normalised system already has integral structure constants.
+These are the scalar identities used when a coherent choice of signs upgrades an `IsSl2System` to a
+Chevalley basis with constants `±(p + 1)`; this file does not assert that an arbitrary normalised
+system already has integral structure constants.
 
 ## Main definitions and results
 
