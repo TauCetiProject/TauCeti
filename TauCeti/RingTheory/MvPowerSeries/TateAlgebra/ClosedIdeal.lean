@@ -33,7 +33,9 @@ complete ultrametric algebra norm.
 
 public section
 
-namespace MvPowerSeries
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {σ : Type*} [Finite σ] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
@@ -42,9 +44,9 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 field is closed for the Gauss norm. -/
 instance isClosed_ideal_isRestrictedSubring (I : Ideal (IsRestricted.subring (R := K) c)) :
     IsClosed (I : Set (IsRestricted.subring (R := K) c)) := by
-  have := TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring (K := K) (c := c)
+  have := isNoetherianRing_isRestricted_subring (K := K) (c := c)
   let : TauCeti.Huber.IsTateRing (IsRestricted.subring (R := K) c) :=
     TauCeti.Huber.IsTateRing.of_normedAlgebra K _
   exact TauCeti.Huber.isClosed_of_isNoetherian I
 
-end MvPowerSeries
+end TauCeti.MvPowerSeries

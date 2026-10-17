@@ -58,8 +58,8 @@ section Surjective
 variable [IsNoetherianRing A]
 
 /-- A surjective algebra homomorphism from a noetherian ultrametric Banach algebra onto a
-completely normed affinoid algebra is an open quotient map. Continuity is automatic, and openness
-is the Banach open mapping theorem. -/
+completely normed affinoid algebra is an open quotient map, so the target carries the quotient
+topology induced by the homomorphism. -/
 theorem isOpenQuotientMap (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) : IsOpenQuotientMap f :=
   let g : A →L[K] B := ⟨f.toLinearMap, hB.continuous_algHom f⟩
@@ -70,11 +70,18 @@ completely normed affinoid algebra, the algebraic first isomorphism theorem `A �
 homeomorphism for the quotient topology on `A ⧸ ker f`. -/
 noncomputable def quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) : (A ⧸ RingHom.ker f) ≃A[K] B :=
-  have h := RingHom.isHomeomorph_kerLift (hB.isOpenQuotientMap f hf).isQuotientMap
-  { Ideal.quotientKerAlgEquivOfSurjective hf with
+  let e := Ideal.quotientKerAlgEquivOfSurjective hf
+  have he : (e : A ⧸ RingHom.ker f → B) = RingHom.kerLift (f : A →+* B) := by
+    funext x
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
+    exact (RingHom.kerLift_mk (f : A →+* B) a).symm
+  have h : IsHomeomorph e := he ▸
+    RingHom.isHomeomorph_kerLift (hB.isOpenQuotientMap f hf).isQuotientMap
+  { e with
     continuous_toFun := h.continuous
-    continuous_invFun := ((Ideal.quotientKerAlgEquivOfSurjective hf).toEquiv
-      |>.toHomeomorphOfContinuousOpen h.continuous h.isOpenMap).symm.continuous }
+    continuous_invFun :=
+      (e.toEquiv.toHomeomorphOfContinuousOpen h.continuous h.isOpenMap).symm.continuous }
 
 /-- The first isomorphism theorem sends the class of `a` to `f a`. -/
 @[simp]
