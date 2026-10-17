@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Units.Regulator
+public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # Certifying a generator of the units modulo torsion in rank one
