@@ -98,29 +98,28 @@ private noncomputable def mapStableConflationTriangleOpIso
       E.projectiveStableFunctor.obj S.X₃ :=
     congrArg Opposite.unop hX₃'
   refine Triangle.isoMk _ _ (eqToIso hX₁) (eqToIso hX₂) (eqToIso hX₃) ?_ ?_ ?_
-  · change ((E.projectiveStableOpFunctor hE.projective_iff_injective).map
-        (E.op.projectiveStableFunctor.map S.op.g)).unop ≫ (eqToIso hX₂).hom =
-      (eqToIso hX₁).hom ≫ E.projectiveStableFunctor.map S.f
+  · dsimp [triangleOpEquivalence, TriangleOpEquivalence.inverse, Functor.mapTriangle]
     rw [E.projectiveStableOpFunctor_map hE.projective_iff_injective S.op.g]
-    simp only [unop_comp, Quiver.Hom.unop_op, eqToHom_unop, eqToIso.hom, Category.assoc,
+    simp only [unop_comp, Quiver.Hom.unop_op, eqToHom_unop, Category.assoc,
       eqToHom_trans]
     dsimp [ShortComplex.op]
     simp
-  · change ((E.projectiveStableOpFunctor hE.projective_iff_injective).map
-        (E.op.projectiveStableFunctor.map S.op.f)).unop ≫ (eqToIso hX₃).hom =
-      (eqToIso hX₂).hom ≫ E.projectiveStableFunctor.map S.g
+  · dsimp [triangleOpEquivalence, TriangleOpEquivalence.inverse, Functor.mapTriangle]
     rw [E.projectiveStableOpFunctor_map hE.projective_iff_injective S.op.f]
-    simp only [unop_comp, Quiver.Hom.unop_op, eqToHom_unop, eqToIso.hom, Category.assoc,
+    simp only [unop_comp, Quiver.Hom.unop_op, eqToHom_unop, Category.assoc,
       eqToHom_trans]
     dsimp [ShortComplex.op]
     simp
-  · dsimp [triangleOpEquivalence, TriangleOpEquivalence.inverse]
+  · -- Expand the degree-one shift comparison and cancel the source suspension identification.
+    dsimp [triangleOpEquivalence, TriangleOpEquivalence.inverse]
     rw [← unop_comp, hE.projectiveStableOpFunctorCommShift_iso_one]
     simp only [Functor.map_comp, Iso.trans_hom, Functor.isoWhiskerRight_hom,
       Functor.isoWhiskerLeft_hom, NatTrans.comp_app, Functor.whiskerRight_app,
       Functor.whiskerLeft_app, Iso.symm_hom, NatIso.op_hom, NatTrans.op_app, Category.assoc]
     rw [← Functor.map_comp_assoc _ (hE.op.stableShiftFunctorOneIso.inv.app _),
       Iso.inv_hom_id_app, CategoryTheory.Functor.map_id, Category.id_comp]
+    -- Express the opposite connecting map through its transpose in the original stable category.
+    -- Keep the local endpoint equalities explicit when using the imported identity.
     have hconn :
         (E.projectiveStableOpFunctor hE.projective_iff_injective).map
             (E.op.projectiveStableFunctor.map (hE.op.connectingMap hS_op)) ≫
@@ -130,25 +129,14 @@ private noncomputable def mapStableConflationTriangleOpIso
             (E.op.projectiveStableFunctor.obj S.op.X₁) =
         eqToHom hX₁' ≫
           (hE.stableConnectingMapOp hS).op ≫
-          hE.enoughProjectives.stableLoop.op.map (eqToHom hX₃'.symm) := by
-      have h : (hE.stableConnectingMapOp hS).op =
-          eqToHom hX₁'.symm ≫
-            (E.projectiveStableOpFunctor hE.projective_iff_injective).map
-              (E.op.projectiveStableFunctor.map (hE.op.connectingMap hS_op)) ≫
-            (E.projectiveStableOpFunctor hE.projective_iff_injective).map
-              (eqToHom (hE.op.stableSuspension_obj_projectiveStableFunctor_obj S.op.X₁).symm) ≫
-            hE.stableSuspensionCompProjectiveStableOpFunctorIso.hom.app
-              (E.op.projectiveStableFunctor.obj S.op.X₁) ≫
-            hE.enoughProjectives.stableLoop.op.map (eqToHom hX₃') :=
-        Quiver.Hom.unop_inj (hE.stableConnectingMapOp_eq hS)
-      rw [h]
-      simp only [Functor.comp_obj, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-        Category.id_comp, ← Functor.map_comp, eqToHom_trans, CategoryTheory.Functor.map_id,
-        Category.comp_id]
+          hE.enoughProjectives.stableLoop.op.map (eqToHom hX₃'.symm) :=
+      hE.projectiveStableOpFunctor_map_connectingMap S hS
     rw [reassoc_of% hconn]
+    -- Move the endpoint identification through the degree -1 comparison by naturality.
     have hn := (NatIso.op hE.stableShiftFunctorNegOneIso).hom.naturality (eqToHom hX₃'.symm)
     simp only [Functor.op_obj, NatIso.op_hom, NatTrans.op_app] at hn
     rw [reassoc_of% hn]
+    -- Expand the opposite-shift unit and cancel the bridge to the original shift.
     rw [opShiftFunctorEquivalence_unitIso_inv_app
       ((E.projectiveStableOpFunctor hE.projective_iff_injective).obj
         (E.op.projectiveStableFunctor.obj S.op.X₁)) 1 (-1) (by simp)]
@@ -158,12 +146,14 @@ private noncomputable def mapStableConflationTriangleOpIso
       (((shiftFunctorOpIso E.ProjectiveStableCategory 1 (-1) (by simp)).hom.app _).unop),
       ← unop_comp, Iso.inv_hom_id_app]
     simp only [Functor.op_obj, unop_id, CategoryTheory.Functor.map_id, Category.id_comp]
+    -- Cancel the successive shifts by -1 and 1 using the suspension-loop counit.
     have hunit :=
       ((shiftFunctorCompIsoId E.ProjectiveStableCategory (-1 : ℤ) 1 (by omega)).inv.naturality
         (eqToHom hX₃)).symm
     simp only [Functor.id_obj, Functor.id_map, Functor.comp_obj, Functor.comp_map] at hunit
     rw [reassoc_of% hunit]
     rw [hE.shiftFunctorCompIsoId_inv_comp_shift_stableShiftFunctorNegOneIso_hom_app_assoc]
+    -- Suspending the transpose recovers the original connecting map.
     have hshift := (hE.stableShiftFunctorOneIso.inv.naturality (hE.stableConnectingMapOp hS)).symm
     rw [reassoc_of% hshift, reassoc_of% (hE.stableSuspension_map_stableConnectingMapOp hS),
       Iso.inv_hom_id_app_assoc]
@@ -223,53 +213,6 @@ theorem projectiveStableOpFunctorIsTriangulated :
   exact Pretriangulated.isomorphic_distinguished _
     (hE.map_stableConflationTriangle_op_mem_distTriang S.unop hS') _
     ((E.projectiveStableOpFunctor hE.projective_iff_injective).mapTriangle.mapIso e)
-
-/-- A triangle in the stable category of `Cᵒᵖ` is distinguished if and only if its image under
-`projectiveStableOpFunctor` corresponds via `triangleOpEquivalence` to a distinguished triangle in
-the stable category of `C`. -/
-theorem mem_distTriang_projectiveStableOp_iff :
-    letI := hE.stableHasShift
-    letI := hE.op.stableHasShift
-    letI : ∀ n : ℤ, (shiftFunctor E.ProjectiveStableCategory n).Additive :=
-      hE.stableShiftFunctor_additive
-    letI : ∀ n : ℤ, (shiftFunctor E.op.ProjectiveStableCategory n).Additive :=
-      hE.op.stableShiftFunctor_additive
-    letI := hE.stablePretriangulated
-    letI := hE.op.stablePretriangulated
-    letI := hE.projectiveStableOpFunctorCommShift
-    ∀ T : Triangle E.op.ProjectiveStableCategory,
-      T ∈ distTriang E.op.ProjectiveStableCategory ↔
-        ((triangleOpEquivalence E.ProjectiveStableCategory).inverse.obj
-          ((E.projectiveStableOpFunctor hE.projective_iff_injective).mapTriangle.obj T)).unop ∈
-          distTriang E.ProjectiveStableCategory := by
-  let := hE.stableHasShift
-  let := hE.op.stableHasShift
-  let : ∀ n : ℤ, (shiftFunctor E.ProjectiveStableCategory n).Additive :=
-    hE.stableShiftFunctor_additive
-  let : ∀ n : ℤ, (shiftFunctor E.op.ProjectiveStableCategory n).Additive :=
-    hE.op.stableShiftFunctor_additive
-  let := hE.stablePretriangulated
-  let := hE.op.stablePretriangulated
-  let := hE.projectiveStableOpFunctorCommShift
-  have := hE.projectiveStableOpFunctorIsTriangulated
-  intro T
-  rw [← (E.projectiveStableOpFunctor hE.projective_iff_injective).map_distinguished_iff T]
-  rfl
-
-/-- The identification of the opposite stable equivalence's forward functor with the opposite
-stable comparison functor respects integral shifts. -/
-theorem projectiveStableOpEquivalence_functor_commShift :
-    letI := hE.stableHasShift
-    letI := hE.op.stableHasShift
-    letI := hE.projectiveStableOpFunctorCommShift
-    letI := hE.projectiveStableOpEquivalenceFunctorCommShift
-    (eqToIso
-      (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).hom.CommShift ℤ := by
-  let := hE.stableHasShift
-  let := hE.op.stableHasShift
-  let := hE.projectiveStableOpFunctorCommShift
-  let := hE.projectiveStableOpEquivalenceFunctorCommShift
-  exact ⟨fun n ↦ by ext; simp⟩
 
 /-- The additive equivalence between the stable category of `Cᵒᵖ` and the opposite stable category
 of `C` is a triangle equivalence. -/

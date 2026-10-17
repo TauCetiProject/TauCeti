@@ -196,20 +196,6 @@ theorem stableShiftFunctorNegOneIso_inv_app (X : E.ProjectiveStableCategory) :
   exact hE.stableSuspension.asEquivalence.shiftFunctorNegOneIso_inv_app
     hE.stableLoopCompStableSuspensionIso X
 
-/-- Shifting the inverse degree `-1` stable shift comparison by `1` recovers the degree `1`
-comparison followed by the suspension-loop counit and the `(-1) + 1 = 0` shift cancellation. -/
-@[reassoc]
-theorem shift_stableShiftFunctorNegOneIso_inv_app (X : E.ProjectiveStableCategory) :
-    letI := hE.stableHasShift
-    (hE.stableShiftFunctorNegOneIso.inv.app X)⟦(1 : ℤ)⟧' =
-      hE.stableShiftFunctorOneIso.hom.app (hE.enoughProjectives.stableLoop.obj X) ≫
-        hE.stableLoopCompStableSuspensionIso.hom.app X ≫
-        (shiftFunctorCompIsoId E.ProjectiveStableCategory (-1 : ℤ) 1 (by omega)).inv.app X := by
-  let := hE.stableHasShift
-  unfold stableShiftFunctorNegOneIso stableHasShift stableShiftFunctorOneIso
-  exact hE.stableSuspension.asEquivalence.shift_shiftFunctorNegOneIso_inv_app
-    hE.stableLoopCompStableSuspensionIso X
-
 /-- Shifting the degree `-1` stable shift comparison by `1` and cancelling `(-1) + 1 = 0`
 recovers the inverse suspension-loop counit followed by the inverse degree `1` comparison. -/
 @[reassoc]
@@ -224,21 +210,6 @@ theorem shiftFunctorCompIsoId_inv_comp_shift_stableShiftFunctorNegOneIso_hom_app
   unfold stableShiftFunctorNegOneIso stableHasShift stableShiftFunctorOneIso
   exact Equivalence.shiftFunctorCompIsoId_inv_comp_shift_shiftFunctorNegOneIso_hom_app
     hE.stableSuspension.asEquivalence hE.stableLoopCompStableSuspensionIso X
-
-/-- Shifting the forward degree `-1` stable shift comparison by `1` recovers the `(-1) + 1 = 0`
-shift cancellation followed by the inverse suspension-loop counit and the inverse degree `1`
-comparison. -/
-@[reassoc]
-theorem shift_stableShiftFunctorNegOneIso_hom_app (X : E.ProjectiveStableCategory) :
-    letI := hE.stableHasShift
-    (hE.stableShiftFunctorNegOneIso.hom.app X)⟦(1 : ℤ)⟧' =
-      (shiftFunctorCompIsoId E.ProjectiveStableCategory (-1 : ℤ) 1 (by omega)).hom.app X ≫
-        hE.stableLoopCompStableSuspensionIso.inv.app X ≫
-        hE.stableShiftFunctorOneIso.inv.app (hE.enoughProjectives.stableLoop.obj X) := by
-  let := hE.stableHasShift
-  unfold stableShiftFunctorNegOneIso stableHasShift stableShiftFunctorOneIso
-  exact hE.stableSuspension.asEquivalence.shift_shiftFunctorNegOneIso_hom_app
-    hE.stableLoopCompStableSuspensionIso X
 
 /-- The chosen suspension object representing `X⟦1⟧` is isomorphic to the shift of `X` in the
 stable category. -/
