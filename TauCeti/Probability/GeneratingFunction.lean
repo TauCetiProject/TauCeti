@@ -14,6 +14,7 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.Probability.Independence.Integration
+import Mathlib.Probability.Moments.IntegrableExpMul
 
 /-!
 # Probability-generating functions
@@ -46,6 +47,8 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   expansion in the singleton masses, valid on `[-1, 1]`.
 * `TauCeti.Probability.hasFPowerSeriesOnBall_pgf` and `TauCeti.Probability.analyticOnNhd_pgf` —
   analyticity on the open unit ball.
+* `TauCeti.Probability.iteratedDeriv_pgf_one` — under a positive exponential moment, the
+  derivatives at one are the factorial moments.
 * `TauCeti.Probability.iteratedDeriv_pgf_zero` — the Taylor coefficients at the origin are the
   singleton masses, with `TauCeti.Probability.pgf_zero` and `TauCeti.Probability.deriv_pgf_zero`
   reading off the first two.
@@ -61,6 +64,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -238,27 +242,28 @@ section Coefficients
 
 open FormalMultilinearSeries
 
+/-- If the monomial integrand is integrable, the probability-generating function is the sum of
+the power series whose coefficients are the singleton masses. -/
+theorem hasSum_pgf_of_integrable (ν : Measure ℕ) {t : ℝ}
+    (ht : Integrable (fun n : ℕ => t ^ n) ν) :
+    HasSum (fun n => ν.real {n} * t ^ n) (pgf id ν t) := by
+  have hsum : Summable (fun n : ℕ => ν.real {n} * ‖t ^ n‖) := by
+    have h := ht
+    rw [← Measure.sum_smul_dirac ν] at h
+    simpa only [measureReal_def] using h.summable_of_dirac
+  rw [pgf_def]
+  simp only [id_eq]
+  rw [integral_countable ht]
+  have hsum' : Summable (fun n : ℕ => ν.real {n} * t ^ n) := by
+    apply Summable.of_norm
+    simpa only [norm_mul, Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg] using hsum
+  simpa only [smul_eq_mul] using hsum'.hasSum
+
 /-- Under a finite measure on `ℕ`, the probability-generating function is the sum of the power
 series whose coefficients are the singleton masses, on `[-1, 1]`. -/
 theorem hasSum_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] {t : ℝ} (ht : |t| ≤ 1) :
     HasSum (fun n => ν.real {n} * t ^ n) (pgf id ν t) := by
-  have hbound : ∀ n : ℕ, ‖ν.real {n} * t ^ n‖ ≤ ν.real {n} := by
-    intro n
-    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs, abs_pow,
-      abs_of_nonneg measureReal_nonneg]
-    exact mul_le_of_le_one_right measureReal_nonneg (pow_le_one₀ (abs_nonneg t) ht)
-  have hsum : Summable fun n => ν.real {n} * t ^ n :=
-    Summable.of_norm_bounded (summable_measure_toReal (fun n => measurableSet_singleton n)
-      fun _ _ hmn => Set.disjoint_singleton.mpr hmn) hbound
-  have hint : Integrable (fun n : ℕ => t ^ n) ν :=
-    integrable_pow_of_abs_le_one (X := id) aemeasurable_id ht
-  have hpgf : pgf id ν t = ∑' n : ℕ, ν.real {n} * t ^ n := by
-    rw [pgf_def]
-    simp only [id_eq]
-    rw [integral_countable hint]
-    simp only [smul_eq_mul]
-  rw [hpgf]
-  exact hsum.hasSum
+  exact hasSum_pgf_of_integrable ν (integrable_pow_of_abs_le_one aemeasurable_id ht)
 
 /-- The power-series expansion of the probability-generating function of a finite measure on `ℕ`
 on `[-1, 1]`. -/
@@ -286,6 +291,152 @@ theorem hasFPowerSeriesOnBall_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
       simpa using hy
     simpa only [ofScalars_apply_eq, smul_eq_mul, zero_add] using
       hasSum_pgf ν hy'.le
+
+private lemma isFiniteMeasure_of_integrable_exp_natCast {ν : Measure ℕ} {t : ℝ} (ht : 0 ≤ t)
+    (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) : IsFiniteMeasure ν := by
+  have hOne : Integrable (fun _ : ℕ => (1 : ℝ)) ν :=
+    hExp.mono' stronglyMeasurable_const.aestronglyMeasurable <|
+      Filter.Eventually.of_forall fun k => by
+        simpa only [norm_one, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using
+          Real.one_le_exp (mul_nonneg ht (Nat.cast_nonneg k))
+  exact (integrable_const_iff.mp hOne).resolve_left one_ne_zero
+
+/-- A nonnegative exponential moment extends the power-series representation of a
+probability-generating function to the open ball of radius `exp t`. -/
+theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast {ν : Measure ℕ} {t : ℝ} (ht : 0 ≤ t)
+    (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) :
+    HasFPowerSeriesOnBall (pgf id ν) (ofScalars ℝ fun k => ν.real {k}) 0
+      (ENNReal.ofReal (Real.exp t)) := by
+  let p := ofScalars ℝ fun k => ν.real {k}
+  let _ : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_exp_natCast ht hExp
+  have hsum_exp : Summable (fun k : ℕ => ν.real {k} * ‖Real.exp (t * (k : ℝ))‖) := by
+    have h := hExp
+    rw [← Measure.sum_smul_dirac ν] at h
+    simpa only [measureReal_def] using h.summable_of_dirac
+  have hp_radius : ENNReal.ofReal (Real.exp t) ≤ p.radius := by
+    have hr := p.le_radius_of_summable_norm (r := Real.toNNReal (Real.exp t)) (by
+      apply hsum_exp.congr
+      intro n
+      simp only [p, ofScalars_norm, Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+      have hexp : Real.exp (t * (n : ℝ)) = Real.exp t ^ n := by
+        rw [mul_comm t, Real.exp_nat_mul]
+      rw [abs_of_pos (Real.exp_pos _), hexp, Real.coe_toNNReal _ (Real.exp_pos t).le])
+    simpa only [ENNReal.coe_nnreal_eq, Real.coe_toNNReal _ (Real.exp_pos t).le] using hr
+  refine ⟨hp_radius, by positivity, ?_⟩
+  intro z hz
+  have hz_lt : |z| < Real.exp t := by
+    rw [mem_eball_zero_iff, ← ofReal_norm,
+      ENNReal.ofReal_lt_ofReal_iff (Real.exp_pos t)] at hz
+    simpa only [Real.norm_eq_abs] using hz
+  have hsum_z : Summable (fun k : ℕ => ν.real {k} * ‖z ^ k‖) := by
+    refine Summable.of_norm_bounded hsum_exp ?_
+    intro k
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg measureReal_nonneg (norm_nonneg _))]
+    gcongr
+    calc
+      ‖z ^ k‖ = |z| ^ k := by simp
+      _ ≤ Real.exp t ^ k := pow_le_pow_left₀ (abs_nonneg z) hz_lt.le k
+      _ = ‖Real.exp (t * (k : ℝ))‖ := by
+        rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), mul_comm, Real.exp_nat_mul]
+  have hz_int : Integrable (fun k : ℕ => z ^ k) ν := by
+    rw [← Measure.sum_smul_dirac ν]
+    exact integrable_sum_dirac (fun k => measure_ne_top ν {k})
+      (by simpa only [measureReal_def] using hsum_z)
+  simpa only [p, ofScalars_apply_eq, smul_eq_mul, zero_add] using
+    hasSum_pgf_of_integrable ν hz_int
+
+/-- A positive exponential moment makes every natural falling factorial integrable. -/
+theorem integrable_descFactorial_of_integrable_exp_natCast {ν : Measure ℕ} {t : ℝ} (ht : 0 < t)
+    (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
+    Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν := by
+  let _ : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_exp_natCast ht.le hExp
+  have hExpNeg : Integrable (fun k : ℕ => Real.exp (-t * (k : ℝ))) ν := by
+    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) <|
+      Filter.Eventually.of_forall fun k => ?_
+    simpa only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using
+      Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr ht.le)
+        (Nat.cast_nonneg k))
+  have hpow : Integrable (fun k : ℕ => (k : ℝ) ^ n) ν :=
+    integrable_pow_of_integrable_exp_mul ht.ne' hExp hExpNeg n
+  refine hpow.mono' (by fun_prop) <| Filter.Eventually.of_forall fun k => ?_
+  exact_mod_cast k.descFactorial_le_pow n
+
+private lemma changeOriginSeries_ofScalars_apply_one (c : ℕ → ℝ) (n l : ℕ) :
+    (((ofScalars ℝ c).changeOriginSeries n l) (fun _ => (1 : ℝ)))
+        (fun _ => (1 : ℝ)) = (Nat.choose (n + l) l : ℝ) * c (n + l) := by
+  rw [FormalMultilinearSeries.changeOriginSeries]
+  simp only [_root_.sum_apply]
+  simp_rw [FormalMultilinearSeries.changeOriginSeriesTerm_apply]
+  have hone (s : {s : Finset (Fin (n + l)) // s.card = l}) :
+      s.val.piecewise (fun _ => (1 : ℝ)) (fun _ => (1 : ℝ)) = fun _ => (1 : ℝ) := by
+    funext i
+    simp [Finset.piecewise]
+  simp_rw [hone]
+  simp only [ofScalars_apply_eq, one_pow, smul_eq_mul, mul_one, Finset.sum_const, nsmul_eq_mul]
+  congr 1
+  norm_cast
+  simp
+
+/-- If a measure on `ℕ` has a positive exponential moment, then the `n`th derivative at one of
+its probability-generating function is its `n`th factorial moment. -/
+theorem iteratedDeriv_pgf_one {ν : Measure ℕ} {t : ℝ} (ht : 0 < t)
+    (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
+    iteratedDeriv n (pgf id ν) 1 = ∫ k : ℕ, (k.descFactorial n : ℝ) ∂ν := by
+  let p := ofScalars ℝ fun k => ν.real {k}
+  have hp : HasFPowerSeriesOnBall (pgf id ν) p 0 (ENNReal.ofReal (Real.exp t)) := by
+    simpa only [p] using hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast ht.le hExp
+  have h_one_ball : (‖(1 : ℝ)‖₊ : ℝ≥0∞) < ENNReal.ofReal (Real.exp t) := by
+    rw [show ‖(1 : ℝ)‖₊ = 1 by norm_num, ENNReal.coe_one, ← ENNReal.ofReal_one,
+      ENNReal.ofReal_lt_ofReal_iff (Real.exp_pos t)]
+    exact Real.one_lt_exp_iff.mpr ht
+  have h_one : (‖(1 : ℝ)‖₊ : ℝ≥0∞) < p.radius := h_one_ball.trans_le hp.r_le
+  have hp_one := hp.changeOrigin (y := (1 : ℝ)) h_one_ball
+  have hderiv :
+      (n.factorial : ℝ) * (p.changeOrigin 1 n) (fun _ => (1 : ℝ)) =
+        iteratedDeriv n (pgf id ν) 1 := by
+    rw [iteratedDeriv_eq_iteratedFDeriv]
+    simpa only [zero_add, nsmul_eq_mul, Nat.cast_ofNat] using hp_one.factorial_smul (1 : ℝ) n
+  have hp_change := p.hasFPowerSeriesOnBall_changeOrigin n (hp.r_pos.trans_le hp.r_le)
+  have hsum_map := hp_change.hasSum (y := (1 : ℝ)) (by
+    rw [mem_eball_zero_iff]
+    exact h_one)
+  have hsum_coeff :
+      HasSum (fun l : ℕ => ((p.changeOriginSeries n l) (fun _ => (1 : ℝ)))
+        (fun _ => (1 : ℝ))) ((p.changeOrigin 1 n) (fun _ => (1 : ℝ))) :=
+    by simpa only [zero_add] using
+      ContinuousMultilinearMap.hasSum_eval hsum_map (fun _ => (1 : ℝ))
+  have hsum_choose :
+      HasSum (fun l : ℕ => (Nat.choose (n + l) l : ℝ) * ν.real {n + l})
+        ((p.changeOrigin 1 n) (fun _ => (1 : ℝ))) := by
+    convert hsum_coeff using 1
+    ext l
+    simpa only [p] using
+      (changeOriginSeries_ofScalars_apply_one (fun k => ν.real {k}) n l).symm
+  have hsum_tail :
+      HasSum (fun l : ℕ => ((n + l).descFactorial n : ℝ) * ν.real {n + l})
+        ((n.factorial : ℝ) * (p.changeOrigin 1 n) (fun _ => (1 : ℝ))) := by
+    convert hsum_choose.mul_left (n.factorial : ℝ) using 1
+    ext l
+    rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.choose_symm_add]
+    push_cast
+    ring
+  let f : ℕ → ℝ := fun k => (k.descFactorial n : ℝ) * ν.real {k}
+  have hsum_tail' :
+      HasSum (fun l : ℕ => f (l + n))
+        ((n.factorial : ℝ) * (p.changeOrigin 1 n) (fun _ => (1 : ℝ))) := by
+    simpa only [f, add_comm] using hsum_tail
+  have hprefix : ∑ k ∈ Finset.range n, f k = 0 := by
+    apply Finset.sum_eq_zero
+    intro k hk
+    simp only [f, Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk), Nat.cast_zero,
+      zero_mul]
+  have hsum_desc :
+      HasSum f ((n.factorial : ℝ) * (p.changeOrigin 1 n) (fun _ => (1 : ℝ))) := by
+    have h := (hasSum_nat_add_iff n).mp hsum_tail'
+    simpa only [hprefix, add_zero] using h
+  have hdesc_int := integrable_descFactorial_of_integrable_exp_natCast ht hExp n
+  rw [← hderiv, integral_countable hdesc_int]
+  simpa only [smul_eq_mul, f, mul_comm] using hsum_desc.tsum_eq.symm
 
 /-- The probability-generating function of a finite measure on `ℕ` is analytic on `(-1, 1)`. -/
 theorem analyticOnNhd_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
