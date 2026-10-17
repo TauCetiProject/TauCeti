@@ -45,7 +45,8 @@ drop under re-indexing.
   The second fails for `Height.mulHeight`.
 * `Height.mulHeightAff_comp_le`, `Height.mulHeightAff_comp_equiv`: monotonicity under
   re-indexing between finite index types, and equality for a bijection between arbitrary ones.
-* `Height.mulHeightAff_zero`: for finite `ι`, the zero tuple has affine height `1`.
+* `Height.mulHeightAff_zero`, `Height.mulHeightAff_one`: the zero tuple (for finite `ι`) and the
+  tuple of ones have affine height `1`.
 * `Height.mulHeightAff_unique`, `Height.mulHeightAff_fin_one`: on a one-element tuple the
   affine height is `Height.mulHeight₁`.
 * `Height.exists_mulHeightAff_smul_ne`: the affine height is not invariant under scaling.
@@ -104,6 +105,20 @@ lemma mulHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
     funext o
     cases o <;> rfl
   rw [mulHeightAff_def, mulHeightAff_def, h, mulHeight_comp_equiv]
+
+/-- The tuple of ones has affine height `1`: appending a coordinate `1` gives the tuple of ones
+on `Option ι`. -/
+@[simp]
+lemma mulHeightAff_one : mulHeightAff (1 : ι → K) = 1 := by
+  have h : (fun o : Option ι ↦ o.elim 1 (1 : ι → K)) = 1 := by
+    funext o
+    cases o <;> rfl
+  rw [mulHeightAff_def, h, mulHeight_one]
+
+/-- The tuple of ones has affine logarithmic height `0`. -/
+@[simp]
+lemma logHeightAff_one : logHeightAff (1 : ι → K) = 0 := by
+  simp [logHeightAff_eq_log_mulHeightAff]
 
 /-- The logarithmic form of `Height.mulHeightAff_comp_equiv`. -/
 lemma logHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
