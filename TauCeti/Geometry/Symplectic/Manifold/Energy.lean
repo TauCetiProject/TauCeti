@@ -135,7 +135,11 @@ attribute [irreducible] stdComplexLineEnergyDensity
 lemma stdComplexLineEnergyDensity_zero (form : SmoothTwoForm I M)
     (J : SmoothAlmostComplexStructure I M) (x : M) :
     form.stdComplexLineEnergyDensity J x 0 = 0 := by
-  simp [stdComplexLineEnergyDensity_def]
+  rw [stdComplexLineEnergyDensity_def]
+  simp only [LinearMap.zero_apply]
+  have hz := SmoothForm.eval₂_self form x (0 : TangentSpace I x)
+  simp only [(J.toEndomorphism x).map_zero, hz, add_zero]
+
 
 /-- When a smooth two-form is fiberwise nondegenerate, the manifold energy density is the linear
 symplectic energy density on the tangent fiber. -/

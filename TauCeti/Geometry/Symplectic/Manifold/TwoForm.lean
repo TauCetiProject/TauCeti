@@ -197,35 +197,36 @@ def constSmooth (omegaForm : SymplecticForm V) :
 @[simp]
 lemma constSmooth_apply (omegaForm : SymplecticForm V) (x v w : V) :
     omegaForm.constSmooth x v w = omegaForm v w := by
-  simp only [constSmooth]
-  -- The two sides of `SmoothTwoForm.const_toContMDiffSection_apply` live in the fiber type
-  -- `TangentSpace 𝓘(ℝ, V) x →L[ℝ] _` and in `V →L[ℝ] _`, so `rw` cannot rewrite underneath the
-  -- application; the equality is transported by `congrArg` instead.
-  exact (congrArg (fun B : V →L[ℝ] V →L[ℝ] ℝ ↦ B v w)
-    (SmoothTwoForm.const_toContMDiffSection_apply _ _ x)).trans
-      (LinearMap.toContinuousBilinearMap_apply _ v w)
+  change SmoothForm.eval₂ omegaForm.constSmooth x
+      ((NormedSpace.fromTangentSpace x).symm v)
+      ((NormedSpace.fromTangentSpace x).symm w) = omegaForm v w
+  exact (SmoothTwoForm.const_model_apply omegaForm.toBilinForm.toContinuousBilinearMap
+    omegaForm.isAlt x v w).trans (by rfl)
 
 /-- Under the canonical identification of a self-model tangent fiber with the model space,
 evaluating a constant smooth symplectic form is evaluating its defining bilinear form. -/
-@[simp]
 lemma fromTangentSpace_constSmooth_apply (omegaForm : SymplecticForm V) (x : V)
     (v w : TangentSpace 𝓘(ℝ, V) x) :
     omegaForm.constSmooth x v w =
       omegaForm (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
-  exact (congrArg
-    (fun B : V →L[ℝ] V →L[ℝ] ℝ ↦
-      B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w))
-    (SmoothTwoForm.const_toContMDiffSection_apply _ _ x)).trans
-      (LinearMap.toContinuousBilinearMap_apply _ _ _)
+  exact (SmoothTwoForm.const_apply omegaForm.toBilinForm.toContinuousBilinearMap
+    omegaForm.isAlt x v w).trans (by rfl)
 
 /-- A constant smooth symplectic form is fiberwise nondegenerate. -/
 @[simp]
 lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
     omegaForm.constSmooth.IsNondegenerate := fun x => by
-  have hx : omegaForm.constSmooth.bilinFormAt x = omegaForm.toBilinForm :=
-    SmoothTwoForm.const_bilinFormAt _ _ x
-  rw [hx]
-  exact omegaForm.nondegenerate
+  have hrefl := (omegaForm.constSmooth.isAlt_bilinFormAt x).isRefl
+  apply (LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl).mpr
+  intro v hv
+  apply (NormedSpace.fromTangentSpace x).injective
+  rw [(NormedSpace.fromTangentSpace x).map_zero]
+  apply (LinearMap.IsRefl.nondegenerate_iff_separatingLeft omegaForm.isRefl).mp
+    omegaForm.nondegenerate
+  intro w
+  have hw := hv ((NormedSpace.fromTangentSpace x).symm w)
+  simpa only [SmoothTwoForm.bilinFormAt_apply, fromTangentSpace_constSmooth_apply,
+    ContinuousLinearEquiv.apply_symm_apply] using hw
 
 /-- A constant smooth symplectic form is closed. -/
 lemma isClosed_constSmooth (omegaForm : SymplecticForm V) : omegaForm.constSmooth.IsClosed :=
