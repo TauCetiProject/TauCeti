@@ -46,6 +46,8 @@ to honest.
   the dimension counts consume; the honest-weight-space refinement is below.
 * `TauCeti.eq_zero_of_forall_genWeightSpace`: a linear functional vanishing on every generalized
   weight space is zero.
+* `TauCeti.genWeightSpace_eq_weightSpace_of_isSemisimple`: generalized and honest weight spaces
+  agree whenever every acting endomorphism is semisimple.
 * `TauCeti.isSemisimple_toEnd_coroot`: a coroot acts semisimply on a finite-dimensional module.
 * `TauCeti.isSemisimple_toEnd_cartan`: **every element of the Cartan subalgebra acts semisimply.**
 * `TauCeti.genWeightSpace_eq_weightSpace`: **the generalized weight spaces are honest weight
@@ -145,6 +147,28 @@ theorem eq_zero_of_genWeightSpace_ne_bot_of_isTrivial {chi : L → K}
 
 end Trivial
 
+/-! ### Honest weight spaces for semisimple actions -/
+
+section Semisimple
+
+variable {K : Type u} {L : Type v} {M : Type w} [Field K] [LieRing L] [LieAlgebra K L]
+  [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+
+/-- Generalized and honest weight spaces of a nilpotent Lie algebra agree when every acting
+endomorphism is semisimple. No splitting or finite-dimensionality hypothesis is needed. -/
+theorem genWeightSpace_eq_weightSpace_of_isSemisimple
+    (h : ∀ x : L, (toEnd K L M x).IsSemisimple) (χ : L → K) :
+    genWeightSpace M χ = weightSpace M χ := by
+  ext m
+  rw [mem_genWeightSpace, mem_weightSpace]
+  refine forall_congr' fun x ↦ ?_
+  rw [← Module.End.mem_maxGenEigenspace,
+    (h x).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace,
+    Module.End.mem_eigenspace_iff, toEnd_apply_apply]
+
+end Semisimple
+
 /-! ### Semisimplicity of the Cartan action -/
 
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K]
@@ -213,11 +237,8 @@ a Killing-semisimple Lie algebra, `LieModule.genWeightSpace M χ` is the simulta
 Mathlib's `LieModule.weightSpace_le_genWeightSpace` is the inclusion that holds always; this is the
 reverse one, and it is exactly the diagonalizability of the Cartan action. -/
 @[simp]
-theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = weightSpace M χ := by
-  refine LieSubmodule.toSubmodule_injective ?_
-  rw [genWeightSpace, LieSubmodule.iInf_toSubmodule]
-  simp only [genWeightSpaceOf_eq_eigenspace]
-  rfl
+theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = weightSpace M χ :=
+  genWeightSpace_eq_weightSpace_of_isSemisimple isSemisimple_toEnd_cartan χ
 
 /-- **Membership of a weight space is the eigenvector equation.** An element of a
 finite-dimensional module lies in the `χ`-weight space exactly when every `x : H` acts on it by the

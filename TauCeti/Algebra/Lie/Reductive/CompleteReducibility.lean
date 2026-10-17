@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Reductive.Basic
 import TauCeti.Algebra.Lie.Submodule.Interval
+import TauCeti.Algebra.Lie.Weights.Diagonalizable
 import Mathlib.Algebra.Lie.LieTheorem
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Order.CompactlyGenerated.Intervals
@@ -107,15 +108,8 @@ theorem complementedLattice_lieSubmodule_of_isSemisimple_center
     [IsTriangularizable K (center K L) M]
     (hZ : ∀ z : center K L, (toEnd K (center K L) M z).IsSemisimple) :
     ComplementedLattice (LieSubmodule K L M) := by
-  have hw (χ : center K L → K) : genWeightSpace M χ = weightSpace M χ := by
-    ext m
-    rw [mem_genWeightSpace, mem_weightSpace]
-    refine forall_congr' fun z ↦ ?_
-    rw [← Module.End.mem_maxGenEigenspace,
-      (hZ z).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace,
-      Module.End.mem_eigenspace_iff, toEnd_apply_apply]
   apply complementedLattice_lieSubmodule_of_iSup_weightSpace_center_eq_top
-  simp_rw [← hw, ← LieSubmodule.iSup_toSubmodule,
+  simp_rw [← genWeightSpace_eq_weightSpace_of_isSemisimple hZ, ← LieSubmodule.iSup_toSubmodule,
     iSup_genWeightSpace_eq_top K (center K L) M, LieSubmodule.top_toSubmodule]
 
 end TauCeti
