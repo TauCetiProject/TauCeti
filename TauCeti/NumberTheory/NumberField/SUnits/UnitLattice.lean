@@ -150,7 +150,9 @@ def logEmbeddingEquiv :
 theorem logEmbeddingEquiv_apply (x : (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
     (logEmbeddingEquiv S (Submodule.Quotient.mk (Additive.ofMul x)) : logSpace S) =
       logEmbedding S (Additive.ofMul x) := by
-  rfl
+  simp only [logEmbeddingEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivRange_apply_mk, LinearEquiv.coe_ofEq_apply,
+    AddMonoidHom.coe_toIntLinearMap]
 
 /-! ### Rank and spanning -/
 
