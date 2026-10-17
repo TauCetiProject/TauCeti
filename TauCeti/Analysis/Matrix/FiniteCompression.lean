@@ -34,8 +34,8 @@ open Filter Finset Matrix Polynomial Topology
 
 variable {ι R : Type*} [DecidableEq ι]
 
-/-- The coefficients of a finite compression are the sums of the principal minors supported
-on its coordinate set. -/
+/-- The `n`-th coefficient of `det (1 - X A_S)` for a finite compression `A_S` is `(-1) ^ n`
+times the sum of the size-`n` principal minors of `A` supported in `S`. -/
 theorem coeff_charpolyRev_finiteCompression [CommRing R] {A : Matrix ι ι R}
     (S : Finset ι) (n : ℕ) :
     (A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev.coeff n =
