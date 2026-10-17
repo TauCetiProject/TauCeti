@@ -152,27 +152,20 @@ theorem explicitH2IsoGroupCohomology_explicitCor2 (x : H2 U M) :
       TauCeti.groupCohomology.corestriction U (Rep.ofDistribMulAction ℤ G M) 2
         (explicitH2IsoGroupCohomology U M x) := by
   classical
-  have hres : Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M) =
-      Rep.ofDistribMulAction ℤ U M := rfl
-  -- Keep the cohomology carrier in the restricted presentation used by corestriction.
+  -- Restricting the associated representation is definitionally the representation of the
+  -- restricted action. Type the comparison directly in the presentation used by corestriction.
   let e : H2 G (DiscreteCoind G U M) ≃+
       groupCohomology
-        (Rep.coind U.subtype (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M))) 2 := by
-    rw [hres]
-    exact coindH2Equiv G M U
+        (Rep.coind U.subtype (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M))) 2 :=
+    coindH2Equiv G M U
   let y := (explicitShapiro2 G U M (isClosed_discrete _)).symm x
-  have he :
-      (groupCohomology.coindIso
-        (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M)) 2).hom (e y) =
-      (groupCohomology.coindIso (Rep.ofDistribMulAction ℤ U M) 2).hom
-        (coindH2Equiv G M U y) := rfl
   have hsh : explicitH2IsoGroupCohomology U M x =
       (groupCohomology.coindIso
         (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M)) 2).hom (e y) := by
     have hs := (coindH2Equiv_shapiro G M U y).symm
     rw [← explicitShapiro2_apply G U M (isClosed_discrete _),
       AddEquiv.apply_symm_apply] at hs
-    exact hs.trans he.symm
+    exact hs
   have hcor :
       TauCeti.groupCohomology.corestriction U (Rep.ofDistribMulAction ℤ G M) 2
           (explicitH2IsoGroupCohomology U M x) =
