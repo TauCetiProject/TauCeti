@@ -76,6 +76,8 @@ namespace TauCeti
 
 open ThricePuncturedSphere
 
+universe u
+
 /-- A **topological branched cover of the sphere of degree `n` with branch values in
 `{0, 1, ∞}`**: a compact, connected, Hausdorff, second countable space `Z` with a surjective
 continuous map `π : Z → OnePoint ℂ` which is a covering map with fibres of `n` points over the
@@ -87,9 +89,9 @@ recorded as `TauCeti.TopBranchedCover.localDegree`. The degree hypothesis only c
 points: over a marked point the fibre has fewer points whenever `π` is branched there, and it is
 the local degrees that add up to `n` instead
 (`TauCeti.TopBranchedCover.finsum_mem_preimage_singleton_localDegree`). -/
-structure TopBranchedCover (n : ℕ) where
+structure TopBranchedCover (n : ℕ) : Type (u + 1) where
   /-- The total space. -/
-  Z : Type
+  Z : Type u
   [instTopologicalSpace : TopologicalSpace Z]
   [instCompactSpace : CompactSpace Z]
   [instConnectedSpace : ConnectedSpace Z]
@@ -277,7 +279,7 @@ instance isoSetoid (n : ℕ) : Setoid (TopBranchedCover n) where
 
 /-- Topological branched covers of the sphere of degree `n` with branch values in `{0, 1, ∞}`,
 up to isomorphism. -/
-def IsoClass (n : ℕ) : Type 1 :=
+def IsoClass (n : ℕ) : Type (u + 1) :=
   Quotient (isoSetoid n)
 
 /-- The isomorphism class of a branched cover. -/
