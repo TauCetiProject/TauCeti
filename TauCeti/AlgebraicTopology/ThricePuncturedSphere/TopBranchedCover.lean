@@ -8,10 +8,13 @@ module
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
 public import TauCeti.Geometry.Manifold.Instances.OnePoint
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
+import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Topological branched covers of the sphere with branch values in `{0, 1, ∞}`
@@ -42,6 +45,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.Iso`: isomorphisms, homeomorphisms commuting with the projections.
 * `TauCeti.TopBranchedCover.IsoClass n`: branched covers of degree `n` up to isomorphism.
 * `TauCeti.TopBranchedCover.localDegree`: the local degree at a point.
+* `TauCeti.TopBranchedCover.connectedCover`: the connected finite cover of the
+  thrice-punctured sphere obtained by deleting the marked fibres.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results
@@ -53,6 +58,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.finsum_mem_preimage_singleton_localDegree`: the local degrees over
   any point sum to the degree.
 * `TauCeti.TopBranchedCover.Iso.localDegree_apply`: isomorphisms preserve local degrees.
+* `TauCeti.TopBranchedCover.Iso.connectedCoverIso`: an isomorphism of branched covers restricts
+  to an isomorphism of their unbranched connected covers.
 
 ## References
 
@@ -122,6 +129,29 @@ theorem isProperMap : IsProperMap X.π :=
 theorem isCoveringMap_restrictPreimage : IsCoveringMap (markedᶜ.restrictPreimage X.π) :=
   X.isCoveringMapOn.isCoveringMap_restrictPreimage
 
+/-! ### The unbranched cover -/
+
+/-- The restriction of a topological branched cover over the thrice-punctured sphere. -/
+def restrict : X.π ⁻¹' range toOnePoint → ThricePuncturedSphere :=
+  isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph.symm ∘
+    (range toOnePoint).restrictPreimage X.π
+
+/-- The restricted projection agrees with the branched covering map, read in the Riemann sphere. -/
+@[simp]
+theorem coe_restrict_apply (z : X.π ⁻¹' range toOnePoint) :
+    (((X.restrict z : ThricePuncturedSphere) : ℂ) : OnePoint ℂ) = X.π z := by
+  have h : isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph (X.restrict z) =
+      (range toOnePoint).restrictPreimage X.π z :=
+    Homeomorph.apply_symm_apply _ _
+  simpa using congrArg Subtype.val h
+
+/-- Deleting the fibres over the three marked points leaves a covering of the
+thrice-punctured sphere. -/
+theorem isCoveringMap_restrict : IsCoveringMap X.restrict := by
+  have h : IsCoveringMapOn X.π (range toOnePoint) := by
+    simpa only [range_toOnePoint] using X.isCoveringMapOn
+  exact h.isCoveringMap_restrictPreimage.homeomorph_comp _
+
 /-- Off the marked fibres, `π` is locally the first power map. -/
 theorem isLocalPowerAt_one {z : X.Z} (hz : X.π z ∉ marked) : IsLocalPowerAt X.π z 1 :=
   X.isCoveringMapOn.isLocalHomeomorphOn.isLocalPowerAt_one (mem_preimage.2 hz)
@@ -171,6 +201,106 @@ theorem finite_preimage_singleton (y : OnePoint ℂ) : (X.π ⁻¹' {y}).Finite 
     (isDiscrete_iff_nhdsNE.2 fun z hz => inf_principal_eq_bot.2 ?_)
   filter_upwards [(X.isLocalPowerAt_localDegree z).eventually_ne] with z' hz' hyz'
   exact hz' (hyz'.trans hz.symm)
+
+/-- The points over `z` in the restricted cover are exactly the points over `z` in the original
+branched cover. -/
+theorem image_val_restrict_preimage_singleton (z : ThricePuncturedSphere) :
+    (Subtype.val : (X.π ⁻¹' range toOnePoint) → X.Z) '' (X.restrict ⁻¹' {z}) =
+      X.π ⁻¹' {toOnePoint z} := by
+  simp only [restrict, preimage_comp, Homeomorph.preimage_symm, image_singleton,
+    Set.image_val_preimage_restrictPreimage]
+  rw [Topology.IsEmbedding.toHomeomorph_apply_coe]
+
+/-- Every fibre of the restricted cover is finite. -/
+theorem finite_restrict_preimage_singleton (z : ThricePuncturedSphere) :
+    (X.restrict ⁻¹' {z}).Finite :=
+  (finite_image_iff Subtype.val_injective.injOn).1 <|
+    X.image_val_restrict_preimage_singleton z ▸ X.finite_preimage_singleton _
+
+/-- Every fibre of the restricted cover has `n` points. -/
+theorem natCard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
+    Nat.card (X.restrict ⁻¹' {z}) = n := by
+  rw [Nat.card_coe_set_eq, ← ncard_image_of_injective _ Subtype.val_injective,
+    X.image_val_restrict_preimage_singleton]
+  apply X.natCard_preimage_singleton
+  have hz : toOnePoint z ∈ markedᶜ := by
+    rw [← range_toOnePoint]
+    exact mem_range_self z
+  simpa only [mem_compl_iff] using hz
+
+private theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (x : X.Z) {U : Set X.Z}
+    (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) := by
+  obtain ⟨φ, hx⟩ := X.exists_mem_source x
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
+    (φ.image_mem_nhds hx (Filter.inter_mem hU (φ.open_source.mem_nhds hx)))
+  have hbt : Metric.ball (φ x) r ⊆ φ.target :=
+    hball.trans <| by
+      rintro _ ⟨y, hy, rfl⟩
+      exact φ.map_source hy.2
+  have hsdiff : φ.symm '' Metric.ball (φ x) r \ {x} =
+      φ.symm '' (Metric.ball (φ x) r \ {φ x}) := by
+    rw [(φ.symm.injOn.mono hbt).image_sdiff_subset
+      (singleton_subset_iff.2 (Metric.mem_ball_self hr)), image_singleton, φ.left_inv hx]
+  refine ⟨φ.symm '' Metric.ball (φ x) r, ?_, ?_, ?_⟩
+  · simpa [φ.left_inv hx] using
+      φ.symm.image_mem_nhds (φ.map_source hx) (Metric.ball_mem_nhds _ hr)
+  · rintro _ ⟨z, hz, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := hball hz
+    rw [φ.left_inv hy.2]
+    exact hy.1
+  · rw [hsdiff]
+    exact (isConnected_ball_sdiff_singleton
+        (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) (φ x) hr).image _
+      (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
+
+/-- Removing the fibres over `0`, `1` and `∞` from the connected total space leaves a connected
+space. -/
+theorem isConnected_preimage_range : IsConnected (X.π ⁻¹' range toOnePoint) := by
+  have hfin : (X.π ⁻¹' marked).Finite :=
+    finite_marked.preimage' fun y _ ↦ X.finite_preimage_singleton y
+  have hpre : IsPreconnected (X.π ⁻¹' marked)ᶜ :=
+    isPreconnected_compl_of_isDiscrete hfin.isClosed hfin.isDiscrete fun x _ _ hU ↦
+      X.exists_mem_nhds_subset_isConnected_sdiff_singleton x hU
+  have htwo : ((2 : ℂ) : OnePoint ℂ) ∉ marked := by
+    norm_num [mem_marked]
+  obtain ⟨z, hz⟩ := X.surjective ((2 : ℂ) : OnePoint ℂ)
+  have hconn : IsConnected (X.π ⁻¹' marked)ᶜ :=
+    ⟨⟨z, fun h ↦ htwo (hz ▸ h)⟩, hpre⟩
+  simpa only [range_toOnePoint, preimage_compl] using hconn
+
+/-- The total space of the restricted cover is path connected. -/
+instance instPathConnectedSpacePreimageRange :
+    PathConnectedSpace (X.π ⁻¹' range toOnePoint) := by
+  have := X.isCoveringMap_restrict.isLocalHomeomorph.locallyPathConnectedSpace
+  have := isConnected_iff_connectedSpace.1 X.isConnected_preimage_range
+  exact pathConnectedSpace_iff_connectedSpace.2 this
+
+/-- Every fibre of the restricted cover can be numbered by `Fin n`. -/
+theorem nonempty_restrict_preimage_singleton_equiv (z : ThricePuncturedSphere) :
+    Nonempty (X.restrict ⁻¹' {z} ≃ Fin n) := by
+  have := (X.finite_restrict_preimage_singleton z).to_subtype
+  exact ⟨(Finite.equivFin _).trans (finCongr (X.natCard_restrict_preimage_singleton z))⟩
+
+/-- The connected degree-`n` cover of the thrice-punctured sphere obtained by deleting the
+fibres over the three marked points.
+
+The definition is exposed so its total space and projection reduce to the restricted cover. -/
+@[expose]
+def connectedCover : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n where
+  cover := ConnectedCoveringSpace.mk
+    (TopCat.ofHom ⟨X.restrict, X.isCoveringMap_restrict.continuous⟩)
+    X.isCoveringMap_restrict
+  nonempty_equiv_fin := X.nonempty_restrict_preimage_singleton_equiv basePt
+
+@[simp]
+theorem connectedCover_coe : (X.connectedCover.cover : TopCat) =
+    TopCat.of (X.π ⁻¹' range toOnePoint) :=
+  rfl
+
+@[simp]
+theorem connectedCover_proj : X.connectedCover.cover.proj =
+    TopCat.ofHom ⟨X.restrict, X.isCoveringMap_restrict.continuous⟩ :=
+  rfl
 
 /-- **The local degrees over any point add up to the degree.** Over an unmarked point this is the
 degree hypothesis; over a marked point `q`, it says that the multiset of local degrees over `q`
@@ -259,6 +389,31 @@ theorem trans_toHomeomorph (ι : Iso X Y) (κ : Iso Y W) :
     (ι.trans κ).toHomeomorph = ι.toHomeomorph.trans κ.toHomeomorph :=
   (rfl)
 
+/-- The homeomorphism of the restricted total spaces induced by an isomorphism of topological
+branched covers. -/
+def restrict (ι : Iso X Y) : X.π ⁻¹' range toOnePoint ≃ₜ Y.π ⁻¹' range toOnePoint :=
+  ι.toHomeomorph.subtype fun z ↦ by simp
+
+@[simp]
+theorem coe_restrict_apply (ι : Iso X Y) (z : X.π ⁻¹' range toOnePoint) :
+    (ι.restrict z : Y.Z) = ι.toHomeomorph z :=
+  (rfl)
+
+/-- The restriction of an isomorphism of topological branched covers commutes with the
+projections to the thrice-punctured sphere. -/
+@[simp]
+theorem restrict_restrict (ι : Iso X Y) (z : X.π ⁻¹' range toOnePoint) :
+    Y.restrict (ι.restrict z) = X.restrict z := by
+  apply isOpenEmbedding_toOnePoint.injective
+  simp only [toOnePoint_apply, TopBranchedCover.coe_restrict_apply, coe_restrict_apply, π_apply]
+
+/-- The restriction of an isomorphism of topological branched covers is an isomorphism of the
+associated connected covers of the thrice-punctured sphere. -/
+def connectedCoverIso (ι : Iso X Y) : X.connectedCover.cover ≅ Y.connectedCover.cover :=
+  CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo ι.restrict) (by
+    ext z
+    exact congrArg Subtype.val (ι.restrict_restrict z))
+
 /-- Isomorphisms of branched covers preserve local degrees. -/
 @[simp]
 theorem localDegree_apply (ι : Iso X Y) (z : X.Z) :
@@ -289,6 +444,19 @@ def IsoClass.mk (X : TopBranchedCover n) : IsoClass n :=
 theorem IsoClass.mk_eq_mk_iff {X Y : TopBranchedCover n} :
     IsoClass.mk X = IsoClass.mk Y ↔ Nonempty (Iso X Y) :=
   Quotient.eq
+
+/-- Restricting over the thrice-punctured sphere sends an isomorphism class of topological
+branched covers to an isomorphism class of connected covers. -/
+def IsoClass.restrict : IsoClass n →
+    ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n :=
+  Quotient.lift (fun X ↦ ConnectedCoverClass.mk X.connectedCover) fun _ _ ⟨ι⟩ ↦
+    ConnectedCoverClass.mk_eq_mk_iff.2 ⟨ι.connectedCoverIso⟩
+
+/-- Restriction on isomorphism classes is represented by restriction of branched covers. -/
+@[simp]
+theorem IsoClass.restrict_mk (X : TopBranchedCover n) :
+    IsoClass.restrict (IsoClass.mk X) = ConnectedCoverClass.mk X.connectedCover :=
+  (rfl)
 
 /-- Every isomorphism class is the class of a branched cover. -/
 theorem IsoClass.mk_surjective : Function.Surjective (IsoClass.mk (n := n)) :=
