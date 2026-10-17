@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
-# Continuity of the Jacobian `normDet`
+# Continuity and one-dimensional values of the Jacobian `normDet`
 
 For finite-dimensional real inner product spaces `U` and `V`, the `m`-dimensional Jacobian
 `LinearMap.normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends continuously on the map.
@@ -19,6 +19,8 @@ antilipschitz constant.
 ## Main declarations
 
 * `ContinuousLinearMap.continuous_normDet`: the Jacobian `normDet` is continuous.
+* `LinearMap.normDet_eq_norm_apply_one`: for a map from `ℝ`, the Jacobian is the norm of the
+  image of `1`.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
@@ -28,6 +30,20 @@ public section
 
 open Function Metric Set
 open scoped NNReal Topology
+
+namespace LinearMap
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The one-dimensional geometric Jacobian of a linear map is the norm of the image of `1`. -/
+theorem normDet_eq_norm_apply_one (A : ℝ →ₗ[ℝ] V) : A.normDet = ‖A 1‖ := by
+  have h := A.normDet_sq_eq_det_gram (OrthonormalBasis.singleton Unit ℝ)
+  rw [Matrix.det_unique] at h
+  simp only [OrthonormalBasis.singleton_apply, Matrix.gram_apply,
+    real_inner_self_eq_norm_sq, RCLike.ofReal_real_eq_id] at h
+  exact sq_eq_sq₀ A.normDet_nonneg (norm_nonneg (A 1)) |>.mp h
+
+end LinearMap
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
