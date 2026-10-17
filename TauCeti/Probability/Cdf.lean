@@ -23,6 +23,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 
 ## Main results
 
+* `MeasureTheory.Measure.leftLim_cdf_eq_measureReal_Iio` identifies the left limit of a cdf with
+  the mass strictly below its argument;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
   strict increase of the cdf;
@@ -52,6 +54,21 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- The left limit of a cumulative distribution function is the mass strictly below its
+argument. -/
+theorem leftLim_cdf_eq_measureReal_Iio (μ : Measure ℝ) [IsProbabilityMeasure μ] (x : ℝ) :
+    leftLim (cdf μ) x = μ.real (Iio x) := by
+  have hnonneg : 0 ≤ leftLim (cdf μ) x := by
+    exact (cdf_nonneg μ (x - 1)).trans
+      ((monotone_cdf μ).le_leftLim (sub_lt_self x one_pos))
+  rw [measureReal_def]
+  calc
+    leftLim (cdf μ) x = ENNReal.toReal (ENNReal.ofReal (leftLim (cdf μ) x)) := by
+      rw [ENNReal.toReal_ofReal hnonneg]
+    _ = ENNReal.toReal ((cdf μ).measure (Iio x)) := by
+      rw [(cdf μ).measure_Iio (tendsto_cdf_atBot μ), sub_zero]
+    _ = ENNReal.toReal (μ (Iio x)) := by rw [measure_cdf μ]
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 

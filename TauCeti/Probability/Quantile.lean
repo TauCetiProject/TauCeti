@@ -27,6 +27,12 @@ when such a point exists (for instance `(dirac a).quantile 1 = a`), and `0` when
 unbounded support to the right. The inverse characterizations below use levels in `Ioo 0 1`,
 which is also the interval the uniform law is taken on.
 
+The *upper quantile* uses the strict threshold
+`μ.upperQuantile t = sInf {x | t < cdf μ x}`. It selects the right endpoint of a cdf plateau,
+whereas `quantile` selects the left endpoint. Its natural characterization uses the left limit of
+the cdf: `μ.upperQuantile t < x ↔ t < leftLim (cdf μ) x`. This distinction is essential when a
+decreasing map transports a law with atoms or gaps in its support.
+
 The main result is **inverse transform sampling**: for a probability measure `μ` the quantile
 function pushes the uniform law on the open unit interval forward to `μ`. It presents every real
 law as the law of one explicit measurable function of a single uniform variable, and it is what
@@ -36,6 +42,7 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 
 * `MeasureTheory.Measure.quantile` — the generalized inverse of the cumulative distribution
   function.
+* `MeasureTheory.Measure.upperQuantile` — the strict-threshold generalized inverse.
 
 ## Main statements
 
@@ -47,6 +54,12 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
+* `MeasureTheory.Measure.upperQuantile_lt_iff` and
+  `MeasureTheory.Measure.le_upperQuantile_iff` — the strict-level characterizations of the upper
+  quantile through the left limit of the cdf;
+* `MeasureTheory.Measure.quantile_le_upperQuantile`,
+  `MeasureTheory.Measure.leftLim_cdf_quantile_le` and
+  `MeasureTheory.Measure.leftLim_cdf_upperQuantile_le` — the lower/upper quantile bounds;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
 * `MeasureTheory.Measure.map_quantile_volume_Ioo` — inverse transform sampling: the quantile
@@ -109,16 +122,39 @@ level `t = 1` the value is the least point where the cumulative distribution fun
 if there is one, and `0` otherwise. -/
 def quantile (μ : Measure ℝ) (t : ℝ) : ℝ := sInf {x : ℝ | t ≤ cdf μ x}
 
+/-- The **upper quantile function** of a measure on `ℝ`: the infimum of the points at which its
+cumulative distribution function is strictly above the level `t`.
+
+For `t` in `Set.Ioo 0 1`, this selects the right endpoint of a plateau of the cumulative
+distribution function, while `Measure.quantile` selects its left endpoint. At levels `t < 0` and
+`1 ≤ t` the value is the junk value `0` (`upperQuantile_of_neg`,
+`upperQuantile_of_one_le`). -/
+def upperQuantile (μ : Measure ℝ) (t : ℝ) : ℝ := sInf {x : ℝ | t < cdf μ x}
+
 /-- The quantile function is the infimum of the points at which the cumulative distribution
 function reaches the level. The definition's body is not exposed, so this is the lemma downstream
 modules should rewrite with. -/
 theorem quantile_def (μ : Measure ℝ) (t : ℝ) :
     μ.quantile t = sInf {x : ℝ | t ≤ cdf μ x} := (rfl)
 
+/-- The upper quantile is the infimum of the points at which the cumulative distribution
+function is strictly above the level. -/
+theorem upperQuantile_def (μ : Measure ℝ) (t : ℝ) :
+    μ.upperQuantile t = sInf {x : ℝ | t < cdf μ x} := (rfl)
+
 /-- Quantiles of two measures at two levels agree when the corresponding cdf level sets agree. -/
 theorem quantile_eq_of_le_cdf_iff (ν μ : Measure ℝ) {u t : ℝ}
     (h : ∀ x, u ≤ cdf ν x ↔ t ≤ cdf μ x) : ν.quantile u = μ.quantile t := by
   rw [quantile_def, quantile_def]
+  apply congrArg sInf
+  ext x
+  exact h x
+
+/-- Upper quantiles of two measures at two levels agree when the corresponding strict cdf level
+sets agree. -/
+theorem upperQuantile_eq_of_lt_cdf_iff (ν μ : Measure ℝ) {u t : ℝ}
+    (h : ∀ x, u < cdf ν x ↔ t < cdf μ x) : ν.upperQuantile u = μ.upperQuantile t := by
+  rw [upperQuantile_def, upperQuantile_def]
   apply congrArg sInf
   ext x
   exact h x
@@ -139,6 +175,21 @@ theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) (ht : 0 < t) : BddBelow {x : �
   by_contra hxa
   exact absurd (ha x (not_le.mp hxa).le) (not_lt.mpr hx)
 
+/-- Below the level `1` some point has cumulative mass strictly above the level. -/
+theorem nonempty_setOf_lt_cdf (μ : Measure ℝ) (ht : t < 1) :
+    {x : ℝ | t < cdf μ x}.Nonempty :=
+  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists
+
+/-- Above the level `0` the points whose cumulative mass is strictly above the level are bounded
+below. -/
+theorem bddBelow_setOf_lt_cdf (μ : Measure ℝ) (ht : 0 < t) :
+    BddBelow {x : ℝ | t < cdf μ x} := by
+  obtain ⟨a, ha⟩ :=
+    eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually (eventually_lt_nhds ht))
+  refine ⟨a, fun x hx ↦ ?_⟩
+  by_contra hxa
+  exact (ha x (not_le.mp hxa).le).asymm hx
+
 /-- At a nonpositive level the quantile function takes the junk value `0`: every point has
 cumulative mass at least the level. -/
 @[simp]
@@ -153,6 +204,22 @@ theorem quantile_of_one_lt (μ : Measure ℝ) (ht : 1 < t) : μ.quantile t = 0 :
   have hset : {x : ℝ | t ≤ cdf μ x} = ∅ :=
     eq_empty_of_forall_notMem fun x hx ↦ absurd (hx.trans (cdf_le_one μ x)) (not_le.2 ht)
   rw [quantile_def, hset, Real.sInf_empty]
+
+/-- Below the level `0` the upper quantile function takes the junk value `0`: every point has
+cumulative mass strictly above the level. -/
+@[simp]
+theorem upperQuantile_of_neg (μ : Measure ℝ) (ht : t < 0) : μ.upperQuantile t = 0 := by
+  have hset : {x : ℝ | t < cdf μ x} = univ :=
+    eq_univ_of_forall fun x ↦ ht.trans_le (cdf_nonneg μ x)
+  rw [upperQuantile_def, hset, Real.sInf_univ]
+
+/-- At and above the level `1` the upper quantile function takes the junk value `0`: no point has
+cumulative mass strictly above the level. -/
+@[simp]
+theorem upperQuantile_of_one_le (μ : Measure ℝ) (ht : 1 ≤ t) : μ.upperQuantile t = 0 := by
+  have hset : {x : ℝ | t < cdf μ x} = ∅ :=
+    eq_empty_of_forall_notMem fun x hx ↦ (not_lt_of_ge ((cdf_le_one μ x).trans ht)) hx
+  rw [upperQuantile_def, hset, Real.sInf_empty]
 
 /-- The cumulative distribution function at the quantile reaches every level strictly below
 `1`. -/
@@ -192,6 +259,91 @@ inverse. -/
 theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1) := by
   rintro s ⟨hs0, hs1⟩ t ⟨_, ht1⟩ hst
   exact (quantile_le_iff μ hs0 hs1).mpr (hst.trans (le_cdf_quantile μ ht1))
+
+/-- The upper quantile lies strictly below a point exactly when the cdf's left limit at that point
+is strictly above the level. -/
+@[simp]
+theorem upperQuantile_lt_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    μ.upperQuantile t < x ↔ t < leftLim (cdf μ) x := by
+  constructor
+  · intro hqx
+    obtain ⟨y, hy, hyx⟩ := exists_lt_of_csInf_lt (nonempty_setOf_lt_cdf μ h1) hqx
+    exact hy.trans_le ((monotone_cdf μ).le_leftLim hyx)
+  · intro hleft
+    have hevent : ∀ᶠ y in 𝓝[<] x, t < cdf μ y :=
+      ((monotone_cdf μ).tendsto_leftLim x).eventually (eventually_gt_nhds hleft)
+    obtain ⟨y, hy, hyx⟩ := (hevent.and self_mem_nhdsWithin).exists
+    exact lt_of_le_of_lt (csInf_le (bddBelow_setOf_lt_cdf μ h0) hy) hyx
+
+/-- A point lies below the upper quantile exactly when the cdf's left limit there has not exceeded
+the level. -/
+@[simp]
+theorem le_upperQuantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    x ≤ μ.upperQuantile t ↔ leftLim (cdf μ) x ≤ t := by
+  simpa only [not_lt] using (upperQuantile_lt_iff (x := x) μ h0 h1).not
+
+/-- For a probability law, the strict upper-quantile characterization says that the mass strictly
+below `x` exceeds the level. -/
+theorem upperQuantile_lt_iff_measureReal_Iio (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (h0 : 0 < t) (h1 : t < 1) : μ.upperQuantile t < x ↔ t < μ.real (Iio x) := by
+  rw [upperQuantile_lt_iff μ h0 h1, leftLim_cdf_eq_measureReal_Iio]
+
+/-- For a probability law, a point lies below the upper quantile exactly when the mass strictly
+below it is at most the level. -/
+theorem le_upperQuantile_iff_measureReal_Iio (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (h0 : 0 < t) (h1 : t < 1) : x ≤ μ.upperQuantile t ↔ μ.real (Iio x) ≤ t := by
+  rw [le_upperQuantile_iff μ h0 h1, leftLim_cdf_eq_measureReal_Iio]
+
+/-- The points whose cdf left limit is strictly above an interior level form the open ray to the
+right of the upper quantile. -/
+theorem setOf_lt_leftLim_cdf_eq_Ioi (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    {x : ℝ | t < leftLim (cdf μ) x} = Ioi (μ.upperQuantile t) := by
+  ext x
+  exact (upperQuantile_lt_iff μ h0 h1).symm
+
+/-- The upper quantile function is monotone on the levels where it is the strict generalized
+inverse. -/
+theorem monotoneOn_upperQuantile (μ : Measure ℝ) : MonotoneOn μ.upperQuantile (Ioo 0 1) := by
+  rintro s hs t ht hst
+  rw [upperQuantile_def, upperQuantile_def]
+  exact csInf_le_csInf (bddBelow_setOf_lt_cdf μ hs.1) (nonempty_setOf_lt_cdf μ ht.2)
+    (fun _ hx ↦ hst.trans_lt hx)
+
+/-- The lower quantile never exceeds the upper quantile at an interior level. -/
+theorem quantile_le_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    μ.quantile t ≤ μ.upperQuantile t := by
+  rw [quantile_def, upperQuantile_def]
+  exact csInf_le_csInf (bddBelow_setOf_le_cdf μ h0) (nonempty_setOf_lt_cdf μ h1) fun _ hx ↦
+    Set.mem_ofPred_eq.mpr hx.le
+
+/-- The cdf's left limit at a lower quantile is at most the quantile level. -/
+theorem leftLim_cdf_quantile_le (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    leftLim (cdf μ) (μ.quantile t) ≤ t := by
+  refine le_of_tendsto ((monotone_cdf μ).tendsto_leftLim (μ.quantile t)) ?_
+  filter_upwards [self_mem_nhdsWithin] with x hx
+  exact ((lt_quantile_iff μ h0 h1).1 hx).le
+
+/-- For a probability law, the mass strictly below a lower quantile is at most its level. -/
+theorem measureReal_Iio_quantile_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (h0 : 0 < t) (h1 : t < 1) : μ.real (Iio (μ.quantile t)) ≤ t := by
+  rw [← leftLim_cdf_eq_measureReal_Iio]
+  exact leftLim_cdf_quantile_le μ h0 h1
+
+/-- The cdf at an upper quantile reaches the quantile level. -/
+theorem le_cdf_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    t ≤ cdf μ (μ.upperQuantile t) :=
+  (le_cdf_quantile μ h1).trans (monotone_cdf μ (quantile_le_upperQuantile μ h0 h1))
+
+/-- The cdf's left limit at an upper quantile is at most the quantile level. -/
+theorem leftLim_cdf_upperQuantile_le (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+    leftLim (cdf μ) (μ.upperQuantile t) ≤ t :=
+  (le_upperQuantile_iff μ h0 h1).1 le_rfl
+
+/-- For a probability law, the mass strictly below an upper quantile is at most its level. -/
+theorem measureReal_Iio_upperQuantile_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (h0 : 0 < t) (h1 : t < 1) : μ.real (Iio (μ.upperQuantile t)) ≤ t := by
+  rw [← leftLim_cdf_eq_measureReal_Iio]
+  exact leftLim_cdf_upperQuantile_le μ h0 h1
 
 /-- For a law with continuous cumulative distribution function, the quantile is an exact right
 inverse of the cumulative distribution function at every level strictly between `0` and `1`. -/
@@ -295,6 +447,49 @@ theorem measurable_quantile (μ : Measure ℝ) : Measurable μ.quantile := by
   rw [hsplit]
   exact (measurableSet_Ioo.inter measurableSet_Iic).union
     (measurableSet_quantile_preimage_Iic_inter_compl μ x)
+
+/-- Off `Ioo 0 1` the upper quantile is constant at its junk value `0`, except possibly at the
+single level `0`; consequently the part of any strict sublevel set living there is measurable. -/
+private theorem measurableSet_upperQuantile_preimage_Iio_inter_compl (μ : Measure ℝ) (x : ℝ) :
+    MeasurableSet (μ.upperQuantile ⁻¹' Iio x ∩ (Ioo (0 : ℝ) 1)ᶜ) := by
+  have hzero : ∀ ⦃s : ℝ⦄, s ∈ Iio (0 : ℝ) ∪ Ici 1 → μ.upperQuantile s = 0 := by
+    rintro s (hs | hs)
+    · exact upperQuantile_of_neg μ hs
+    · exact upperQuantile_of_one_le μ hs
+  have hcover : (Ioo (0 : ℝ) 1)ᶜ = (Iio (0 : ℝ) ∪ Ici 1) ∪ {(0 : ℝ)} := by
+    ext s
+    simp only [mem_compl_iff, mem_Ioo, not_and_or, not_lt, mem_union, mem_Iio, mem_Ici,
+      mem_singleton_iff]
+    grind
+  rw [hcover, inter_union_distrib_left]
+  refine MeasurableSet.union ?_ ((subsingleton_singleton.anti inter_subset_right).measurableSet)
+  by_cases hx : (0 : ℝ) < x
+  · have hall : μ.upperQuantile ⁻¹' Iio x ∩ (Iio (0 : ℝ) ∪ Ici 1) =
+        Iio (0 : ℝ) ∪ Ici 1 := inter_eq_right.mpr fun s hs ↦ by
+      simp [mem_preimage, hzero hs, hx]
+    rw [hall]
+    exact measurableSet_Iio.union measurableSet_Ici
+  · have hnone : μ.upperQuantile ⁻¹' Iio x ∩ (Iio (0 : ℝ) ∪ Ici 1) = ∅ := by
+      refine eq_empty_of_forall_notMem fun s hs ↦ hx ?_
+      have hqs := hs.1
+      rwa [mem_preimage, hzero hs.2, mem_Iio] at hqs
+    rw [hnone]
+    exact MeasurableSet.empty
+
+/-- The upper quantile function is measurable. -/
+@[fun_prop]
+theorem measurable_upperQuantile (μ : Measure ℝ) : Measurable μ.upperQuantile := by
+  refine measurable_of_Iio fun x ↦ ?_
+  have hsplit : μ.upperQuantile ⁻¹' Iio x =
+      (Ioo (0 : ℝ) 1 ∩ Iio (leftLim (cdf μ) x)) ∪
+        (μ.upperQuantile ⁻¹' Iio x ∩ (Ioo (0 : ℝ) 1)ᶜ) := by
+    ext s
+    by_cases hs : s ∈ Ioo (0 : ℝ) 1
+    · simp [hs, upperQuantile_lt_iff μ hs.1 hs.2]
+    · simp [hs]
+  rw [hsplit]
+  exact (measurableSet_Ioo.inter measurableSet_Iio).union
+    (measurableSet_upperQuantile_preimage_Iio_inter_compl μ x)
 
 /-- **Inverse transform sampling.** The quantile function of a probability law on `ℝ` pushes the
 uniform law on the open unit interval forward to that law. -/
