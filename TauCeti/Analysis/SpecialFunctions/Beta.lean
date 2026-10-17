@@ -124,7 +124,7 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
 
 /-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
 left endpoint is greater than `-1`. -/
-theorem pos_of_intervalIntegrable_rpow_mul_one_sub_rpow
+private theorem pos_of_intervalIntegrable_rpow_mul_one_sub_rpow
     (h : IntervalIntegrable
       (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1) :
     0 < a := by
