@@ -37,6 +37,9 @@ definiteness predicate.
 * `TauCeti.IntegralLattice.IsPosSemidef` and related definiteness predicates.
 * `TauCeti.IntegralLattice.isPosDef_ofGramMatrix_iff`: a lattice presented by a Gram matrix is
   positive definite exactly when the matrix is, read over `ℚ`.
+* `TauCeti.IntegralLattice.finrank_eq_of_signature_eq`: equal signatures force equal ranks, and
+  `TauCeti.IntegralLattice.IsPosDef.signature_eq`: a positive definite lattice of rank `n` has
+  signature `(n, 0, 0)`.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -88,6 +91,13 @@ theorem signature_sum_eq_finrank :
     (Q := L.form.toQuadraticMap)
   rw [L.radical_toQuadraticMap] at h
   simpa only [sigPos, sigNull, sigNeg, add_comm, add_left_comm, add_assoc] using h
+
+/-- Integral lattices with equal signatures have equal ranks. -/
+theorem finrank_eq_of_signature_eq {M : IntegralLattice W} (h : L.signature = M.signature) :
+    Module.finrank ℤ L = Module.finrank ℤ M := by
+  rw [L.finrank_carrier, M.finrank_carrier, ← L.signature_sum_eq_finrank,
+    ← M.signature_sum_eq_finrank]
+  exact congrArg (fun s : ℕ × ℕ × ℕ ↦ s.1 + s.2.1 + s.2.2) h
 
 /-- An integral lattice is positive-definite when its quadratic form is positive on every nonzero
 vector. -/
@@ -189,6 +199,13 @@ theorem isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero :
   have := L.finiteDimensional
   exact LinearMap.BilinForm.posDef_toQuadraticMap_iff_finrank_ker_eq_zero_and_sigNeg_eq_zero
     L.form L.isSymm
+
+/-- A positive definite lattice has signature `(n, 0, 0)`, where `n` is its rank. -/
+theorem IsPosDef.signature_eq (hLp : L.IsPosDef) : L.signature = (Module.finrank ℤ L, 0, 0) := by
+  obtain ⟨h0, hneg⟩ := L.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero.mp hLp
+  have hsum := L.signature_sum_eq_finrank
+  rw [h0, hneg, add_zero, add_zero, ← L.finrank_carrier] at hsum
+  simp only [signature, hsum, h0, hneg]
 
 /-- Negative-definiteness is negative-semidefiniteness together with nondegeneracy. -/
 @[grind =]
