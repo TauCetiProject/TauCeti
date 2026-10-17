@@ -186,7 +186,7 @@ theorem ConditionallyIIDWith.jointLaw_arrayRow_eq_arrayRowCodingLaw
       arrayRowCodingLaw (μ.map ν) := by
   have hX : ∀ p, AEMeasurable (X p) μ :=
     aemeasurable_entry_of_aemeasurable_arrayRow h.aemeasurable
-  rw [← map_uncurry_jointPathLaw_arrayRow hX h.measurable_directing,
+  rw [← map_uncurry_jointPathLaw_arrayRow hX h.measurable_directing.aemeasurable,
     h.jointPathLaw_eq_map_unitIntervalCoding, arrayRowCodingLaw_def]
   have hinner : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
       (q.1, fun i ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
