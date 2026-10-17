@@ -15,7 +15,7 @@ public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 Let `R` be an ultrametric seminormed ring with `‖1‖ = 1`, and let `R⁰ = Subring.unitClosedBall R`
 be its closed unit ball. The elements of `R⁰` of norm less than one form an ideal
-`R⁰⁰ = Ideal.unitBall R` of `R⁰`. Its elements are topologically nilpotent in `R` (this is
+`R⁰⁰ = TauCeti.unitBallIdeal R` of `R⁰`. Its elements are topologically nilpotent in `R` (this is
 Mathlib's `tendsto_pow_atTop_nhds_zero_of_norm_lt_one`); conversely, for a power-multiplicative
 norm every topologically nilpotent element has norm less than one. Without
 power-multiplicativity the converse fails (in the dual numbers over `ℚ_[p]` with the maximum
@@ -32,7 +32,7 @@ for Banach modules over nonarchimedean Banach rings.
 
 ## Main definitions
 
-* `Ideal.unitBall R`: the ideal of elements of norm less than one in the closed unit ball.
+* `TauCeti.unitBallIdeal R`: the ideal of elements of norm less than one in the closed unit ball.
 
 ## Main results
 
@@ -42,8 +42,9 @@ for Banach modules over nonarchimedean Banach rings.
   Neumann estimates `‖(1 - x)⁻¹‖ = 1` and `‖(1 - x)⁻¹ - 1‖ = ‖x‖` for `‖x‖ < 1`.
 * `TauCeti.isUnit_unitClosedBall_of_norm_sub_one_lt`: perturbations of one are units of the
   unit ball.
-* `Ideal.unitBall_le_jacobson_bot`: the open-ball ideal lies in the Jacobson radical of the unit
-  ball, so the reduction map is a local homomorphism (`Ideal.isLocalHom_quotientMk_unitBall`).
+* `TauCeti.unitBallIdeal_le_jacobson_bot`: the open-ball ideal lies in the Jacobson radical of
+  the unit ball, so the reduction map is a local homomorphism
+  (`TauCeti.isLocalHom_quotientMk_unitBallIdeal`).
 * `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
   `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed field the unit ball is a
   local ring whose maximal ideal is the open-ball ideal.
@@ -59,13 +60,15 @@ public section
 
 open Filter Topology
 
+namespace TauCeti
+
 section UnitBallIdeal
 
 variable (R : Type*) [SeminormedRing R] [IsUltrametricDist R] [NormOneClass R]
 
 /-- **The open-ball ideal.** In an ultrametric seminormed ring with `‖1‖ = 1`, the elements of
 norm less than one form an ideal of the closed unit ball `Subring.unitClosedBall R`. -/
-def Ideal.unitBall : Ideal (Subring.unitClosedBall R) where
+def unitBallIdeal : Ideal (Subring.unitClosedBall R) where
   carrier := {x | ‖(x : R)‖ < 1}
   add_mem' hx hy := (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hx hy)
   zero_mem' := by simp
@@ -76,18 +79,16 @@ variable {R} in
 /-- An element of the closed unit ball lies in the open-ball ideal exactly when its norm is less
 than one. -/
 @[simp]
-theorem Ideal.mem_unitBall {x : Subring.unitClosedBall R} :
-    x ∈ Ideal.unitBall R ↔ ‖(x : R)‖ < 1 :=
+theorem mem_unitBallIdeal {x : Subring.unitClosedBall R} :
+    x ∈ unitBallIdeal R ↔ ‖(x : R)‖ < 1 :=
   Iff.rfl
 
 /-- The open-ball ideal is proper, since `‖1‖ = 1`. -/
-theorem Ideal.unitBall_ne_top : Ideal.unitBall R ≠ ⊤ := by
-  rw [Ne, Ideal.eq_top_iff_one, Ideal.mem_unitBall]
+theorem unitBallIdeal_ne_top : unitBallIdeal R ≠ ⊤ := by
+  rw [Ne, Ideal.eq_top_iff_one, mem_unitBallIdeal]
   simp
 
 end UnitBallIdeal
-
-namespace TauCeti
 
 /-- **Topological nilpotence for power-multiplicative norms.** If `‖x ^ n‖ = ‖x‖ ^ n` for all
 `n ≥ 1`, then `x` is topologically nilpotent exactly when `‖x‖ < 1`. The implication from right
@@ -147,8 +148,6 @@ theorem isUnit_unitClosedBall_of_norm_sub_one_lt {x : Subring.unitClosedBall R}
 
 end Neumann
 
-end TauCeti
-
 section Jacobson
 
 variable (R : Type*) [NormedCommRing R] [NormOneClass R] [HasSummableGeomSeries R]
@@ -157,24 +156,21 @@ variable (R : Type*) [NormedCommRing R] [NormOneClass R] [HasSummableGeomSeries 
 /-- **The open-ball ideal lies in the Jacobson radical of the unit ball.** In a commutative
 normed ring with `‖1‖ = 1`, convergent geometric series and an ultrametric norm, every element
 `x` of norm less than one makes `x * y + 1` a unit of the unit ball for each `y` in it. -/
-theorem Ideal.unitBall_le_jacobson_bot : Ideal.unitBall R ≤ Ideal.jacobson ⊥ := by
+theorem unitBallIdeal_le_jacobson_bot : unitBallIdeal R ≤ Ideal.jacobson ⊥ := by
   intro x hx
-  refine Ideal.mem_jacobson_bot.mpr fun y ↦
-    TauCeti.isUnit_unitClosedBall_of_norm_sub_one_lt ?_
-  rw [Ideal.mem_unitBall] at hx
+  refine Ideal.mem_jacobson_bot.mpr fun y ↦ isUnit_unitClosedBall_of_norm_sub_one_lt ?_
+  rw [mem_unitBallIdeal] at hx
   simpa using (norm_mul_le (x : R) y).trans_lt
     ((mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.2)).trans_lt hx)
 
 /-- **Unit lifting.** The reduction map from the unit ball to its quotient by the open-ball ideal
 is a local homomorphism: an element of the unit ball whose reduction is a unit is itself a unit
 of the unit ball. -/
-instance Ideal.isLocalHom_quotientMk_unitBall :
-    IsLocalHom (Ideal.Quotient.mk (Ideal.unitBall R)) :=
-  isLocalHom_of_le_jacobson_bot _ (Ideal.unitBall_le_jacobson_bot R)
+instance isLocalHom_quotientMk_unitBallIdeal :
+    IsLocalHom (Ideal.Quotient.mk (unitBallIdeal R)) :=
+  isLocalHom_of_le_jacobson_bot _ (unitBallIdeal_le_jacobson_bot R)
 
 end Jacobson
-
-namespace TauCeti
 
 section Field
 
@@ -214,14 +210,14 @@ instance isLocalRing_unitClosedBall : IsLocalRing (Subring.unitClosedBall K) := 
 /-- **The residue ring of an ultrametric normed field.** The maximal ideal of the unit ball is
 the open-ball ideal, so the reduction `K⁰ ⧸ K⁰⁰` is the residue field of `K⁰`. -/
 theorem maximalIdeal_unitClosedBall :
-    IsLocalRing.maximalIdeal (Subring.unitClosedBall K) = Ideal.unitBall K := by
+    IsLocalRing.maximalIdeal (Subring.unitClosedBall K) = unitBallIdeal K := by
   ext x
   rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, isUnit_unitClosedBall_iff_norm_eq_one,
-    Ideal.mem_unitBall, (Subring.mem_unitClosedBall.mp x.2).lt_iff_ne]
+    mem_unitBallIdeal, (Subring.mem_unitClosedBall.mp x.2).lt_iff_ne]
 
 /-- Over an ultrametric normed field the open-ball ideal is maximal, so the reduction
 `K⁰ ⧸ K⁰⁰` is a field (`Ideal.Quotient.field`). -/
-instance isMaximal_unitBall : (Ideal.unitBall K).IsMaximal :=
+instance isMaximal_unitBallIdeal : (unitBallIdeal K).IsMaximal :=
   maximalIdeal_unitClosedBall (K := K) ▸ IsLocalRing.maximalIdeal.isMaximal _
 
 end Field
