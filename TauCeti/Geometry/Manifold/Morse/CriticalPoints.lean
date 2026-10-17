@@ -79,6 +79,7 @@ def criticalPoints (f : M → ℝ) : Set M :=
   {x | mvfderiv I f x = 0}
 
 /-- A point is critical when the vector-valued manifold derivative vanishes there. -/
+@[simp]
 theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
   Iff.rfl
 
