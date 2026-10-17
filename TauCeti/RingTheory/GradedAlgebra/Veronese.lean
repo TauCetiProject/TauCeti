@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.FiniteType
+public import Mathlib.RingTheory.FiniteType
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Veronese subrings of finitely generated graded algebras
@@ -31,7 +32,6 @@ case.
 
 ## Main results
 
-* `TauCeti.GradedAlgebra.mul_le_grade_add`: `𝒜 i · 𝒜 j ≤ 𝒜 (i + j)`.
 * `TauCeti.GradedAlgebra.grade_add_eq_mul_of_card_mul_le`: `𝒜 (e + N) = 𝒜 e · 𝒜 N` when `h ∣ e`
   and `#s · h ≤ N`.
 * `TauCeti.GradedAlgebra.grade_mul_eq_pow_of_card_mul_le`: `𝒜 (m e) = (𝒜 e) ^ m` for `m ≠ 0`, when
@@ -60,7 +60,7 @@ variable {ι : Type*} [Add ι] [CommSemiring R] [Semiring A] [Algebra R A]
   (𝒜 : ι → Submodule R A) [SetLike.GradedMul 𝒜]
 
 /-- The product of two homogeneous components lies in the component of the sum of the degrees. -/
-theorem mul_le_grade_add (i j : ι) : 𝒜 i * 𝒜 j ≤ 𝒜 (i + j) :=
+private theorem mul_le_grade_add (i j : ι) : 𝒜 i * 𝒜 j ≤ 𝒜 (i + j) :=
   Submodule.mul_le.mpr fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
 
 end GradedMul
@@ -191,19 +191,38 @@ theorem grade_mul_eq_pow_of_card_mul_le (hs : Algebra.adjoin (𝒜 0) (s : Set A
       grade_add_eq_mul_of_card_mul_le hs hdeg hdvd he
         (hse.trans (Nat.le_mul_of_pos_left e (Nat.pos_of_ne_zero hm0)))]
 
-end CommSemiring
+variable (𝒜) in
+/-- A graded algebra of finite type over `𝒜 0` is generated over `𝒜 0` by finitely many
+homogeneous elements of positive degree. This is the semiring version of Mathlib's
+`GradedAlgebra.exists_finset_adjoin_eq_top_and_homogeneous_ne_zero`, which is stated for rings,
+with the same proof: take the nonzero-degree homogeneous components of a finite generating set. -/
+private theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (𝒜 0) A] :
+    ∃ s : Finset A, Algebra.adjoin (𝒜 0) (s : Set A) = ⊤ ∧ ∀ x ∈ s, ∃ n ≠ 0, x ∈ 𝒜 n := by
+  classical
+  obtain ⟨F, hF⟩ := Algebra.FiniteType.out (R := 𝒜 0) (A := A)
+  refine ⟨F.biUnion fun f ↦ ((decompose 𝒜 f).support.filter (· ≠ 0)).image
+    fun n ↦ (decompose 𝒜 f n : A), ?_, ?_⟩
+  · rw [← top_le_iff, ← hF, Algebra.adjoin_le_iff]
+    intro f hf
+    rw [← sum_support_decompose 𝒜 f]
+    refine sum_mem fun n hn ↦ ?_
+    by_cases hn0 : n = 0
+    · subst hn0
+      exact Subalgebra.algebraMap_mem _ (decompose 𝒜 f 0)
+    · exact Algebra.subset_adjoin
+        (by simpa using ⟨f, hf, n, ⟨DFinsupp.mem_support_iff.mp hn, hn0⟩, rfl⟩)
+  · simp only [Finset.mem_biUnion, Finset.mem_image, Finset.mem_filter]
+    rintro _ ⟨f, -, n, ⟨-, hn0⟩, rfl⟩
+    exact ⟨n, hn0, (decompose 𝒜 f n).2⟩
 
-section CommRing
-
-variable [CommRing R] [CommRing A] [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
-
+variable (𝒜) in
 /-- **Veronese subrings of a graded algebra of finite type are eventually generated in degree
 one** (EGA II, §2.1). If `A` is a finitely generated algebra over `𝒜 0`, then there is
 `e > 0` such that for every positive multiple `e'` of `e`, `𝒜 (m e') = (𝒜 e') ^ m` for all
 `m ≠ 0`. -/
 theorem exists_grade_mul_eq_pow [Algebra.FiniteType (𝒜 0) A] :
     ∃ e, 0 < e ∧ ∀ ⦃e'⦄, e ∣ e' → 0 < e' → ∀ ⦃m⦄, m ≠ 0 → 𝒜 (m * e') = 𝒜 e' ^ m := by
-  obtain ⟨s, hs, hpos⟩ := _root_.GradedAlgebra.exists_finset_adjoin_eq_top_and_homogeneous_ne_zero 𝒜
+  obtain ⟨s, hs, hpos⟩ := exists_finset_adjoin_eq_top_and_mem_grade_ne_zero 𝒜
   choose! deg hdeg0 hdeg using hpos
   set h := ∏ x ∈ s, deg x
   have hh : 0 < h := Nat.pos_of_ne_zero (Finset.prod_ne_zero_iff.mpr hdeg0)
@@ -213,6 +232,6 @@ theorem exists_grade_mul_eq_pow [Algebra.FiniteType (𝒜 0) A] :
   calc s.card * h ≤ (s.card + 1) * h := Nat.mul_le_mul_right h (Nat.le_succ _)
     _ ≤ e' := Nat.le_of_dvd he'0 he'
 
-end CommRing
+end CommSemiring
 
 end TauCeti.GradedAlgebra
