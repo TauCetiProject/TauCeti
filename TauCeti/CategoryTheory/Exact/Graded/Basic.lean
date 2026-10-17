@@ -32,6 +32,8 @@ which is the form in which it is usually checked.
   arbitrary additive autoequivalence, no compatibility being needed in either case.
 * `TauCeti.GradedConflationExact`: a graded conflation-exact functor, namely a conflation-exact
   functor together with a chosen commutation isomorphism with the two grading shifts.
+* `TauCeti.GradedConflationExact.abelian`: an exact functor between abelian categories commuting
+  with their grading shifts is graded conflation-exact.
 * `TauCeti.GradedExactEquiv`: a graded exact equivalence, namely an equivalence whose functor and
   whose inverse are conflation-exact, carrying such a commutation isomorphism.
 
@@ -239,6 +241,23 @@ theorem comp_commShift {F : C ⥤ D} {H : D ⥤ K} [F.Additive] [H.Additive]
         Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft F h'.commShift ≪≫
         (Functor.associator _ _ _).symm :=
   (rfl)
+
+section Abelian
+
+variable {A : Type u₁} [Category.{v₁} A] [Abelian A] {B : Type u₂} [Category.{v₂} B] [Abelian B]
+  {e : A ≌ A} [e.functor.Additive] {e' : B ≌ B} [e'.functor.Additive]
+
+/-- An exact functor between abelian categories, together with an isomorphism commuting it with
+chosen additive autoequivalences, is graded conflation-exact for the canonical exact structures
+graded by those autoequivalences. -/
+noncomputable def abelian (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F]
+    [PreservesFiniteColimits F] (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    GradedConflationExact (GradedExactStructure.abelian A e) (GradedExactStructure.abelian B e')
+      F where
+  isConflationExact := ExactStructure.isConflationExact_abelian F
+  commShift := σ
+
+end Abelian
 
 end GradedConflationExact
 
