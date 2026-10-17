@@ -80,7 +80,6 @@ private def basedCycle (g : NormalizedCubicalChain X ℤ (n + 2))
   (K X).moduleCatCyclesMk (chainOf g) (n + 1) (by simp)
     (by
       apply chainEquiv.injective
-      change chainTo ((K X).d (n + 2) (n + 1) (chainOf g)) = chainTo 0
       calc
         chainTo ((K X).d (n + 2) (n + 1) (chainOf g)) =
             NormalizedCubicalChain.boundary X ℤ (n + 1) (chainTo (chainOf g)) :=
@@ -119,6 +118,16 @@ private theorem basedCycle_smul
   apply chainEquiv.injective
   simp only [map_zsmul, iCycles_basedCycle]
 
+/-- The cubical Hurewicz homomorphism sends the class of a generalized loop to the cubical
+Hurewicz class of that loop. -/
+private theorem cubicalHurewiczHom_ofMul_mk (p : Ω^ (Fin (n + 2)) X x) :
+    cubicalHurewiczHom ℤ (n + 1)
+        (Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦p⟧) =
+      GenLoop.cubicalHurewicz ℤ p :=
+  -- `toMul_ofMul` cannot be used by `rw` here: `⟦p⟧` is elaborated at the quotient type
+  -- underlying `HomotopyGroup`, so the step is the definitional equation `toMul (ofMul a) = a`.
+  (cubicalHurewiczHom_apply ℤ (n + 1) _).trans (cubicalHurewicz_mk ℤ (n + 1) p)
+
 private theorem cubicalHurewiczHom_basedClassHom
     (g : NormalizedCubicalChain X ℤ (n + 2))
     (hg : g ∈ Submodule.span ℤ
@@ -135,10 +144,7 @@ private theorem cubicalHurewiczHom_basedClassHom
           Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦p⟧ := by
         simpa only [p] using
           NormalizedCubicalChain.basedClassHom_ofCube_of_isBased hc
-      rw [hbc, cubicalHurewiczHom_apply]
-      change cubicalHurewicz ℤ (n + 1)
-        (Additive.ofMul (⟦p⟧ : HomotopyGroup (Fin (n + 2)) X x)).toMul = _
-      rw [toMul_ofMul, cubicalHurewicz_mk]
+      rw [hbc, cubicalHurewiczHom_ofMul_mk]
       exact (GenLoop.homologyπ_eq_cubicalHurewicz ℤ p (by
         apply (@chainEquiv X _ (n + 2)).injective
         calc
@@ -157,9 +163,7 @@ private theorem cubicalHurewiczHom_basedClassHom
         apply (K X).moduleCat_iCycles_injective
         rw [map_zero]
         apply chainEquiv.injective
-        change chainTo ((K X).iCycles (n + 2) (basedCycle 0 hzero)) = chainTo 0
-        rw [iCycles_basedCycle]
-        exact (map_zero chainEquiv).symm
+        exact (iCycles_basedCycle 0 hzero).trans (map_zero chainEquiv).symm
       simp [hz]
   | add a b ha hb hha hhb =>
       rw [map_add, map_add, hha, hhb, basedCycle_add a b ha hb]
@@ -185,10 +189,7 @@ private theorem cubicalHurewiczHom_surjective
       HomologicalComplex.cyclesMap (D.retractChainMap ℤ) (n + 2) z := by
     apply (K X).moduleCat_iCycles_injective
     apply chainEquiv.injective
-    change chainTo ((K X).iCycles (n + 2) (basedCycle g hg)) =
-      chainTo ((K X).iCycles (n + 2)
-        (HomologicalComplex.cyclesMap (D.retractChainMap ℤ) (n + 2) z))
-    rw [iCycles_basedCycle]
+    refine (iCycles_basedCycle g hg).trans ?_
     rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
     exact (D.normalizedCubicalChainComplexXEquiv_retractChainMap_f_apply ℤ (n + 2)
       ((K X).iCycles (n + 2) z)).symm
@@ -222,17 +223,13 @@ private theorem cubicalHurewiczHom_injective
     induction q using Quotient.inductionOn with
     | _ p =>
       let p' : Ω^ (Fin (n + 2)) X x := p
-      rw [cubicalHurewiczHom_apply] at ha
-      change cubicalHurewicz ℤ (n + 1)
-        (Additive.ofMul (⟦p'⟧ : HomotopyGroup (Fin (n + 2)) X x)).toMul = 0 at ha
-      rw [toMul_ofMul] at ha
+      rw [cubicalHurewiczHom_ofMul_mk] at ha
       have hp : SingularCube.IsBased (n + 2) x p'.1 :=
         SingularCube.isBased_iff_mem_genLoop.2 p'.2
       let g := NormalizedCubicalChain.ofCube X ℤ p'.1
       have hg : g ∈ Submodule.span ℤ
           (NormalizedCubicalChain.ofCube X ℤ '' {c | c.IsBased (n + 2) x}) :=
         Submodule.subset_span ⟨p', hp, rfl⟩
-      rw [cubicalHurewicz_mk] at ha
       rw [← GenLoop.homologyπ_eq_cubicalHurewicz ℤ p' (by
         apply (@chainEquiv X _ (n + 2)).injective
         exact (iCycles_basedCycle g hg).trans (chainTo_chainOf g).symm)] at ha
