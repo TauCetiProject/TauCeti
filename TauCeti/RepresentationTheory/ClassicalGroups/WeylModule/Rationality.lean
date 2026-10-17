@@ -39,43 +39,13 @@ namespace TauCeti
 
 /-! ## Polynomial Weyl representations -/
 
-/-- The Young symmetrizer on the tensor power, corestricted to the Weyl module that is its image. -/
-private noncomputable def weylModuleProjection (n : ℕ) (μ : YoungDiagram) :
-    Representation.IntertwiningMap (tensorPowerRep ℂ n μ.card) (weylRepOfShape ℂ n μ) :=
-  (tensorPowerPermMap (stdRep ℂ n) μ.card
-    (YoungTableau.youngSymmetrizerOver ℂ
-      (StandardYoungTableau.rowSuperstandard μ).toTableau)).codRestrict
-      (weylModuleOfShape ℂ n μ) fun x => by
-        rw [weylModuleOfShape_toSubmodule]
-        refine ⟨x, ?_⟩
-        rw [permTensorActionAlgHom_def, permTensorAction_def]
-        exact LinearMap.congr_fun
-          (tensorPowerPermMap_toLinearMap (stdRep ℂ n) μ.card _) x |>.symm
-
-/-- The corestricted Young symmetrizer is onto the Weyl module. -/
-private theorem weylModuleProjection_surjective (n : ℕ) (μ : YoungDiagram) :
-    Function.Surjective (weylModuleProjection n μ) := by
-  intro x
-  have hx : (x : ⨂[ℂ]^μ.card (Fin n → ℂ)) ∈
-      LinearMap.range (permTensorActionAlgHom ℂ n μ.card
-        (YoungTableau.youngSymmetrizerOver ℂ
-          (StandardYoungTableau.rowSuperstandard μ).toTableau)) :=
-    (weylModuleOfShape_toSubmodule ℂ n μ).le x.property
-  obtain ⟨y, hy⟩ := hx
-  refine ⟨y, Subtype.ext ?_⟩
-  rw [permTensorActionAlgHom_def, permTensorAction_def] at hy
-  rw [weylModuleProjection,
-    Representation.IntertwiningMap.codRestrict_apply_coe]
-  exact (LinearMap.congr_fun
-    (tensorPowerPermMap_toLinearMap (stdRep ℂ n) μ.card _) y).trans hy
-
 /-- **A Weyl representation over `ℂ` is polynomial.**  It is the image of its Young symmetrizer
 on a tensor power of the polynomial standard representation. -/
 @[simp]
 theorem isPolynomialRep_weylRepOfShape (n : ℕ) (μ : YoungDiagram) :
-    IsPolynomialRep (weylRepOfShape ℂ n μ) := by
-  exact (isPolynomialRep_tensorPowerRep n μ.card).of_surjective
-    (weylModuleProjection n μ) (weylModuleProjection_surjective n μ)
+    IsPolynomialRep (weylRepOfShape ℂ n μ) :=
+  (isPolynomialRep_tensorPowerRep n μ.card).of_surjective
+    (weylRepOfShapeProjection ℂ n μ) (weylRepOfShapeProjection_surjective ℂ n μ)
 
 /-! ## Rational Weyl representations -/
 

@@ -221,6 +221,8 @@ functorial powers below inherit polynomiality from the tensor power. -/
 theorem IsPolynomialRep.of_surjective {V : Type y} [AddCommMonoid V] [Module ℂ V]
     {σ : Representation ℂ (GL (Fin n) ℂ) V} (h : IsPolynomialRep ρ)
     (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) : IsPolynomialRep σ := by
+  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
+  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
   let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, hP⟩ := h
   have : Module.Finite ℂ W := Module.Finite.of_basis b
@@ -234,6 +236,8 @@ theorem IsPolynomialRep.of_surjective {V : Type y} [AddCommMonoid V] [Module ℂ
 theorem IsRationalRep.of_surjective {V : Type y} [AddCommMonoid V] [Module ℂ V]
     {σ : Representation ℂ (GL (Fin n) ℂ) V} (h : IsRationalRep ρ)
     (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) : IsRationalRep σ := by
+  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
+  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
   let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, m, hP⟩ := h
   have : Module.Finite ℂ W := Module.Finite.of_basis b
@@ -311,6 +315,8 @@ variable {ρ : Representation ℂ (GL (Fin n) ℂ) W} {σ : Representation ℂ (
 /-- **A tensor product of polynomial representations is polynomial.** -/
 theorem IsPolynomialRep.tprod (hρ : IsPolynomialRep ρ) (hσ : IsPolynomialRep σ) :
     IsPolynomialRep (ρ.tprod σ) := by
+  -- `Representation.toMatrix_tprod_mem` is stated for additive groups; over the field `ℂ` they are
+  -- recovered from the module structures, with negation `(-1) • ·`, extending the given monoids.
   let _ : AddCommGroup W := Module.addCommMonoidToAddCommGroup ℂ
   let _ : AddCommGroup W' := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, hP⟩ := hρ
@@ -323,6 +329,8 @@ theorem IsPolynomialRep.tprod (hρ : IsPolynomialRep ρ) (hσ : IsPolynomialRep 
 /-- **A tensor product of rational representations is rational.** -/
 theorem IsRationalRep.tprod (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ) :
     IsRationalRep (ρ.tprod σ) := by
+  -- `Representation.toMatrix_tprod_mem` is stated for additive groups; over the field `ℂ` they are
+  -- recovered from the module structures, with negation `(-1) • ·`, extending the given monoids.
   let _ : AddCommGroup W := Module.addCommMonoidToAddCommGroup ℂ
   let _ : AddCommGroup W' := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, mP, hP⟩ := hρ
