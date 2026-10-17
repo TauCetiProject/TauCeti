@@ -88,7 +88,7 @@ theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMa
     -- Only the already exposed closed-shift/forgetful object wrappers reduce here.
     -- The presentation itself has been replaced by its public projection equation above.
     simpa only [closedShiftFunctor, EnrichedFunctor.forget_obj, dgShiftFunctor_obj,
-      Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+      Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
       Category.comp_id] using (coneMap_comp_coneProjection _ _ f f k hsq).symm
 
 /-- Under the stable quotient, stable suspension is naturally cohomological shift by one. -/
@@ -198,7 +198,6 @@ private theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux
     ((gradedSplitStableSuspensionIsoShift (h := h)).hom.app X) ≫ f)
   erw [Category.comp_id]
   exact eqToHom_trans (C := DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) _ _
-  all_goals rfl
 
 /-- The stable comparison commutes coherently with the stable and cohomological integer shifts. -/
 @[instance_reducible]
