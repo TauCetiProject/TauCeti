@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
+public import Mathlib.Basic.Real.Basic
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -16,12 +19,16 @@ This file contains general-purpose constructions and facts about finite partitio
 of the top element into an element and its complement, the partition of a type into the fibres of
 a map to a finite type, the associated indexed partition, cardinality bounds for common
 refinements, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
-and the behavior of intersections of parts under refinement.
+the behavior of intersections of parts under refinement, and the coarse parent
+`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
+summation formulas for the fine parts below a coarse part.
 -/
 
 public section
 
 namespace Finpartition
+
+open Finset
 
 /-- The finite partition of the top element into an element and its complement, omitting either
 part when it is bottom. -/
@@ -135,5 +142,100 @@ theorem inter_part_eq_self_or_eq_empty_of_le {P Q : Finpartition u} (href : Q �
   · exact Or.inl (Set.inter_eq_self_of_subset_left (h ▸ hrp'))
   · refine Or.inr (Set.eq_empty_of_subset_empty fun x hx => ?_)
     exact absurd hx.2 (Set.disjoint_left.mp (P.disjoint hp' hp h) (hrp' hx.1))
+
+section Refinement
+
+variable {α : Type*} [Lattice α] [OrderBot α] {a : α} {P Q : Finpartition a}
+
+/-- Distinct parts of a finite partition, viewed as elements of the subtype of parts, are
+disjoint. -/
+theorem pairwiseDisjoint_subtype_val (P : Finpartition a) (t : Set P.parts) :
+    t.PairwiseDisjoint Subtype.val :=
+  fun B _ D _ hBD => P.disjoint B.2 D.2 (Subtype.coe_injective.ne hBD)
+
+/-- The part of a coarser partition `P` containing a part `B` of a finer partition `Q ≤ P`. It is
+uniquely determined, since parts are nonzero and pairwise disjoint; see
+`Finpartition.refinementParent_eq_iff`. -/
+noncomputable def refinementParent (h : Q ≤ P) (B : Q.parts) : P.parts :=
+  ⟨(h B.2).choose, (h B.2).choose_spec.1⟩
+
+/-- A part of a finer partition lies below its coarse parent. -/
+theorem le_refinementParent (h : Q ≤ P) (B : Q.parts) : B.1 ≤ (refinementParent h B).1 :=
+  (h B.2).choose_spec.2
+
+/-- The coarse parent of `B` is the unique coarse part lying above `B`. -/
+@[simp]
+theorem refinementParent_eq_iff (h : Q ≤ P) {B : Q.parts} {A : P.parts} :
+    refinementParent h B = A ↔ B.1 ≤ A.1 := by
+  refine ⟨fun hA => hA ▸ le_refinementParent h B, fun hBA => ?_⟩
+  by_contra hne
+  exact Q.ne_bot B.2 <| disjoint_self.1 <|
+    (P.disjoint (refinementParent h B).2 A.2 (Subtype.coe_injective.ne hne)).mono
+      (le_refinementParent h B) hBA
+
+/-- A double sum over the fine parts can be grouped by the coarse parents of both parts. -/
+theorem sum_sum_eq_sum_sum_fiber [DecidableEq α] {M : Type*} [AddCommMonoid M] (h : Q ≤ P)
+    (F : Q.parts → Q.parts → M) :
+    ∑ B : Q.parts, ∑ D : Q.parts, F B D = ∑ A : P.parts, ∑ C : P.parts,
+      ∑ B with refinementParent h B = A, ∑ D with refinementParent h D = C, F B D := by
+  rw [← Finset.sum_fiberwise Finset.univ (refinementParent h) fun B => ∑ D, F B D]
+  refine Finset.sum_congr rfl fun A _ => ?_
+  conv_rhs => rw [sum_comm]
+  refine Finset.sum_congr rfl fun B _ => ?_
+  exact (Finset.sum_fiberwise Finset.univ (refinementParent h) (F B)).symm
+
+end Refinement
+
+section FinsetRefinement
+
+open scoped Finset
+
+variable {α : Type*} [DecidableEq α] {s : Finset α} {P Q : Finpartition s}
+
+/-- The sizes of the parts of a finite partition add up to the size of its support. -/
+theorem sum_card_subtype (P : Finpartition s) :
+    ∑ A : P.parts, (#A.1 : ℝ) = #s := by
+  rw [Finset.sum_coe_sort P.parts fun A => (#A : ℝ)]
+  exact_mod_cast P.sum_card_parts
+
+/-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one. -/
+theorem sum_sum_weight_le_one (P : Finpartition s) :
+    ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : ℝ) ^ 2) ≤ 1 := by
+  simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]
+  exact div_self_le_one _
+
+/-- Summing a function of the part containing each point groups the points by part. -/
+theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : Finset α → M) :
+    ∑ x ∈ s, f (P.part x) = ∑ A ∈ P.parts, #A • f A := by
+  rw [← Finset.sum_fiberwise_of_maps_to (g := P.part) (t := P.parts)
+    fun x hx => P.part_mem.2 hx]
+  refine Finset.sum_congr rfl fun A hA => ?_
+  rw [Finset.sum_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2], Finset.sum_const]
+  congr 2
+  ext x
+  simp only [Finset.mem_filter, P.part_eq_iff_mem hA, and_iff_right_iff_imp]
+  exact fun hx => P.le hA hx
+
+/-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
+theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
+    ({B | refinementParent h B = A} : Finset Q.parts).biUnion Subtype.val = A.1 := by
+  ext x
+  simp only [Finset.mem_biUnion, Finset.mem_filter, Finset.mem_univ, true_and,
+    refinementParent_eq_iff]
+  refine ⟨fun ⟨B, hBA, hx⟩ => hBA hx, fun hx => ?_⟩
+  have hxs : x ∈ s := P.le A.2 hx
+  set B : Q.parts := ⟨Q.part x, Q.part_mem.2 hxs⟩
+  have hxB : x ∈ B.1 := Q.mem_part hxs
+  have hpar : (refinementParent h B).1 = A.1 :=
+    P.eq_of_mem_parts (refinementParent h B).2 A.2 (le_refinementParent h B hxB) hx
+  exact ⟨B, hpar ▸ le_refinementParent h B, hxB⟩
+
+/-- The sizes of the fine parts with a given coarse parent add up to the size of that parent. -/
+theorem sum_card_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
+    ∑ B with refinementParent h B = A, #B.1 = #A.1 := by
+  conv_rhs => rw [← biUnion_filter_refinementParent_eq h A]
+  rw [Finset.card_biUnion (Q.pairwiseDisjoint_subtype_val _)]
+
+end FinsetRefinement
 
 end Finpartition
