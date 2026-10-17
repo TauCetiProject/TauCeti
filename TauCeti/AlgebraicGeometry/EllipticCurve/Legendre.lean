@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Separable
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.FieldTheory.SplittingField.Construction

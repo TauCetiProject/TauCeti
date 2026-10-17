@@ -22,14 +22,11 @@ of point Abel-Jacobi classes:
 `AJ(Σ nₓ[x]) = Σ nₓ • AJ(x)`.
 
 The same statements are provided for finitely supported multiplicities, for a finite set with
-external multiplicity function, and for the coefficient-one divisor attached to a finite set.
-These are the formal divisor-class normal forms used by the later symmetric-power Abel maps
-`D ↦ 𝒪_X(D - d·x₀)` in the Jacobian roadmap.
+external multiplicity function, and for the coefficient-one divisor attached to a finite set. These
+are the formal divisor-class normal forms of the symmetric-power Abel maps `D ↦ 𝒪_X(D - d·x₀)`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "`Pic⁰ X = ker deg` (as
-an abstract group)", and supplies a direct prerequisite for the Layer C/D Abel-map lane from
-symmetric powers. No external mathematics is vendored; the proofs reuse Tau Ceti's existing
-finite divisor constructors and Abel-Jacobi homomorphism API.
+No external mathematics is vendored; the proofs reuse Tau Ceti's finite divisor constructors and
+Abel-Jacobi homomorphism API.
 -/
 
 public section

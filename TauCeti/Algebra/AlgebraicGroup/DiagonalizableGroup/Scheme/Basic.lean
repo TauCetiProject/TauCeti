@@ -174,11 +174,10 @@ noncomputable def schemeFunctorIsoHopfSpec :
 /-- On objects, the diagonalizable group-scheme functor is `G ↦ Spec R[G]`. -/
 @[simp]
 theorem schemeFunctor_obj (G : (FGCommGrpCat.{u})ᵒᵖ) :
-    (schemeFunctor R).obj G = groupScheme R G.unop :=
+    (schemeFunctor R).obj G = groupScheme R G.unop := by
   -- Keep the defining reduction local, so both public definitions stay opaque to importers.
-  by
-    unfold schemeFunctor groupScheme
-    rfl
+  unfold schemeFunctor groupScheme
+  rfl
 
 /-- On morphisms, the diagonalizable group-scheme functor applies relative spectrum to the
 coordinate map, reversing its direction. The object equalities transport the map between the
@@ -265,7 +264,7 @@ instance isCommMonObj_finiteTypeGroupScheme (G : FGCommGrpCat.{u}) :
   infer_instance
 
 /-- The diagonalizable group-scheme functor is faithful over a nontrivial base ring. -/
-noncomputable instance schemeFunctor_faithful [Nontrivial R] :
+instance schemeFunctor_faithful [Nontrivial R] :
     (schemeFunctor R).Faithful := by
   let : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).Faithful :=
     (AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).faithful
@@ -274,7 +273,7 @@ noncomputable instance schemeFunctor_faithful [Nontrivial R] :
 
 /-- The diagonalizable group-scheme functor is full when the prime spectrum of the base is
 connected. -/
-noncomputable instance schemeFunctor_full [ConnectedSpace (PrimeSpectrum R)] :
+instance schemeFunctor_full [ConnectedSpace (PrimeSpectrum R)] :
     (schemeFunctor R).Full := by
   let : (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} R)
       (_root_.CommHopfAlgCat.{u} R)).op.Full :=

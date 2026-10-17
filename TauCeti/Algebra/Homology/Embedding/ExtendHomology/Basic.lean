@@ -13,7 +13,11 @@ public import Mathlib.Algebra.Homology.HomologySequence
 
 The opcycles isomorphism of an extended complex is natural in chain maps and compatible with
 `HomologicalComplex.opcyclesToCycles`. These identities require homology only in the degrees
-involved, in a category with zero morphisms and a zero object.
+involved, in a category with zero morphisms and a zero object. An extended chain map is an
+epimorphism in homology in a degree of the image exactly when the original map is, the counterpart
+for epimorphisms of Mathlib's `HomologicalComplex.quasiIsoAt_extendMap_iff`. Outside the image,
+an extended complex has zero homology, so every extended chain map is an isomorphism in homology
+there.
 
 Adapted from [TauCetiProject/TauCeti#10141](https://github.com/TauCetiProject/TauCeti/pull/10141).
 -/
@@ -56,5 +60,24 @@ lemma extend_opcyclesToCycles_comp_extendCyclesIso_hom {i j : ι} {i' j' : ι'} 
   let := extend.hasHomology K e hj'
   simp [← cancel_epi ((K.extend e).pOpcycles i'), ← cancel_mono (K.iCycles j),
     K.extend_d_eq e hi' hj']
+
+variable {e} in
+/-- In a degree `j'` in the image of `e`, the map induced in homology by the extension of `φ` is an
+epimorphism exactly when the map induced by `φ` is in the corresponding degree `j`. -/
+lemma epi_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
+    [K.HasHomology j] [L.HasHomology j] [(K.extend e).HasHomology j']
+    [(L.extend e).HasHomology j'] :
+    Epi (homologyMap (extendMap φ e) j') ↔ Epi (homologyMap φ j) :=
+  (MorphismProperty.epimorphisms C).arrow_mk_iso_iff
+    (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj') (by simp))
+
+variable {e} in
+/-- In a degree `j'` outside the image of `e`, the map induced in homology by the extension of `φ`
+is an isomorphism, between zero objects. -/
+lemma isIso_homologyMap_extendMap_of_forall_ne {j' : ι'} (hj' : ∀ j, e.f j ≠ j')
+    [(K.extend e).HasHomology j'] [(L.extend e).HasHomology j'] :
+    IsIso (homologyMap (extendMap φ e) j') :=
+  ⟨0, (K.extend_exactAt e j' hj').isZero_homology.eq_of_src _ _,
+    (L.extend_exactAt e j' hj').isZero_homology.eq_of_src _ _⟩
 
 end HomologicalComplex

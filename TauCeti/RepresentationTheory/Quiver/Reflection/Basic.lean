@@ -46,10 +46,9 @@ and sources in finite acyclic quivers are proved in
 
 ## References
 
-This file supplies the reflected quiver `Q.reflect i` that the reflection functors of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` map into. See
-Derksen--Weyman, *An Introduction to Quiver Representations*, and
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*.
+This file supplies the reflected quiver `Q.reflect i` that the reflection functors map into. See
+Derksen--Weyman, *An Introduction to Quiver Representations*, and Bernstein--Gelfand--Ponomarev,
+*Coxeter functors and Gabriel's theorem*.
 -/
 
 public section

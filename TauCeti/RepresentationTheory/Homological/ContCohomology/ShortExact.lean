@@ -394,8 +394,11 @@ def dual (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulAct
   exact := InternalHom.exact_precomp S.inclDistribMulActionHom S.projDistribMulActionHom
     S.proj_surjective S.exact
 
-/-- **The extension hypothesis of `dual` for a sequence killed by a prime.** If `B` is killed by a
-prime `p`, precomposition with the inclusion of `S` is surjective on internal homs into any `N`. -/
+variable (N : Type vN) [AddCommMonoid N] [DistribMulAction G N] in
+/-- **Extension across the inclusion of a sequence killed by a prime.** If `B` is killed by a
+prime `p`, precomposition with the inclusion of `S` is surjective on internal homs into any
+additive commutative monoid `N` with a distributive `G`-action. For additive group targets, this
+supplies the extension hypothesis of `dual`. -/
 theorem precomp_inclDistribMulActionHom_surjective {p : ℕ} [Fact p.Prime]
     (hB : ∀ b : B, p • b = 0) :
     Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)) :=

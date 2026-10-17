@@ -21,10 +21,15 @@ integral, since `v y ^ p ≤ 1` forces `v y ≤ 1`. For instance the ring of int
 perfect valued field `F` of characteristic `p` is perfect, as is needed to form the Witt vectors
 `W(𝒪_F)` with their Teichmüller expansions.
 
+A domain is the ring of integers of its trivial valuation, so constructions taking a ring of
+integers, such as the Gauss valuations on Witt vectors, apply to a perfect field with its trivial
+valuation.
+
 ## Main results
 
 * `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
 * `Valuation.Integers.perfectRing`: the ring of integers of a perfect ring is perfect.
+* `Valuation.integers_one`: a domain is the ring of integers of its trivial valuation.
 -/
 
 public section
@@ -59,3 +64,15 @@ theorem perfectRing (hv : v.Integers O) (p : ℕ) [PerfectRing R p] : PerfectRin
     exact ⟨z, hv.hom_inj (by simpa only [map_pow] using hy)⟩
 
 end Valuation.Integers
+
+namespace Valuation
+
+variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] [Nontrivial R]
+  [NoZeroDivisors R] [DecidablePred fun x : R ↦ x = 0]
+
+/-- **A domain is the ring of integers of its trivial valuation**, which is at most `1`
+everywhere. -/
+theorem integers_one : (1 : Valuation R Γ₀).Integers R :=
+  ⟨Function.injective_id, one_apply_le_one, fun r _ ↦ ⟨r, rfl⟩⟩
+
+end Valuation

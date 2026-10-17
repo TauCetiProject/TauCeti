@@ -21,6 +21,8 @@ elements of norm at most one.
 
 * `UniformSpace.Completion.instNormMulClass`: the norm of the completion of a seminormed ring
   with a multiplicative norm is multiplicative.
+* `UniformSpace.Completion.instNormOneClass`: the completion of a seminormed ring in which `1`
+  has norm `1` has the same property.
 * `IsPowMul.completion`: the norm of the completion of a seminormed ring with a
   power-multiplicative norm is power-multiplicative.
 -/
@@ -50,3 +52,8 @@ instance UniformSpace.Completion.instNormMulClass {R : Type*} [SeminormedRing R]
     induction x, y using Completion.induction_on₂ with
     | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
     | ih a b => simp only [← Completion.coe_mul, Completion.norm_coe, norm_mul]
+
+/-- The completion of a seminormed ring in which `1` has norm `1` has the same property. -/
+instance UniformSpace.Completion.instNormOneClass {R : Type*} [SeminormedRing R] [NormOneClass R] :
+    NormOneClass (Completion R) where
+  norm_one := by rw [← Completion.coe_one, Completion.norm_coe, norm_one]

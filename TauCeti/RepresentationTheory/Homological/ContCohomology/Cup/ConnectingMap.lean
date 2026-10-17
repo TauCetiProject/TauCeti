@@ -268,11 +268,16 @@ theorem explicitDelta1_explicitCup10_right [ContinuousMul G] (x : H1 G A) (y : H
   -- A double flip is definitionally the original pairing; only its proof witnesses differ.
   change SC.explicitDelta1 (explicitCup10 G A B'' C'' μ''.flip.flip _ _ x y) = _
   rw [← explicitCup01_eq_cup10_flip G B'' A C'' μ''.flip
-    (continuous_flip μ'' hμ'') (equivariant_flip μ'' hequiv''),
+    (μ''.continuous_flip hμ'')
+    (μ''.flip_map_smul hequiv''),
     explicitDelta1_explicitCup01_left SB SC μ.flip μ'.flip μ''.flip
-      (continuous_flip μ hμ) (continuous_flip μ' hμ') (continuous_flip μ'' hμ'')
-      (equivariant_flip μ hequiv) (equivariant_flip μ' hequiv')
-      (equivariant_flip μ'' hequiv'') (fun b a => hincl a b) (fun b a => hproj a b),
+      (μ.continuous_flip hμ)
+      (μ'.continuous_flip hμ')
+      (μ''.continuous_flip hμ'')
+      (μ.flip_map_smul hequiv)
+      (μ'.flip_map_smul hequiv')
+      (μ''.flip_map_smul hequiv'')
+      (fun b a => hincl a b) (fun b a => hproj a b),
     ← neg_inj, neg_neg, explicitCup11_eq_neg_flip]
   simp only [neg_neg]
   congr 1

@@ -42,8 +42,7 @@ solvability survives arbitrary field extension without a smoothness hypothesis.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-These results supply the image-solvability and scalar-extension steps for the solvable radical in
-Layer 6 of the ReductiveGroups roadmap.
+These results supply the image-solvability and scalar-extension steps for the solvable radical.
 -/
 
 public section
@@ -250,23 +249,23 @@ variable {H K : CommHopfAlgCat.{v} k}
 private theorem universalDerivedWord_natural (f : H →ₐc[k] K) (n : ℕ) :
     AlgHom.mapValue (derivedWordCoordinateAlgebra.map f n).toAlgHom
         (universalDerivedWord H n) =
-      AlgHom.mapDomain f (universalDerivedWord K n) := by
+      BialgHom.mapDomain f (universalDerivedWord K n) := by
   induction n with
   | zero =>
       apply WithConv.ofConv_injective
       simp only [derivedWordCoordinateAlgebra.map_zero, universalDerivedWord_zero,
-        AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv,
+        AlgHom.mapValue_apply, BialgHom.mapDomain_apply, ofConv_toConv,
         AlgHom.comp_id, AlgHom.id_comp]
   | succ n ih =>
       apply WithConv.ofConv_injective
       have ih' : (derivedWordCoordinateAlgebra.map f n).toAlgHom.comp
           (universalDerivedWord H n).ofConv =
           (universalDerivedWord K n).ofConv.comp f.toAlgHom := by
-        simpa only [AlgHom.mapValue_apply, AlgHom.mapDomain_apply] using
+        simpa only [AlgHom.mapValue_apply, BialgHom.mapDomain_apply] using
           congrArg WithConv.ofConv ih
       simp only [derivedWordCoordinateAlgebra.map_succ, universalDerivedWord_succ,
         AlgHom.mapValue_apply,
-        AlgHom.mapDomain_apply, ofConv_toConv]
+        BialgHom.mapDomain_apply, ofConv_toConv]
       rw [← AlgHom.comp_assoc, Bialgebra.TensorProduct.map_toAlgHom,
         ← Algebra.TensorProduct.map_comp, ih', Algebra.TensorProduct.map_comp,
         AlgHom.comp_assoc]
@@ -385,7 +384,7 @@ theorem of_injective_of_smooth (f : H ⟶ K) (hf : Function.Injective f.hom)
           ((HopfAlgebra.universalDerivedWord H n).ofConv z) =
           algebraMap k (derivedWordCoordinateAlgebra K n)
             (Coalgebra.counit (R := k) z) := by
-        simpa [AlgHom.mapDomain_apply, AlgHom.convOne_apply] using hz
+        simpa [BialgHom.mapDomain_apply, AlgHom.convOne_apply] using hz
       _ = (derivedWordCoordinateAlgebra.map f₀ n)
           (algebraMap k (derivedWordCoordinateAlgebra H n)
             (Coalgebra.counit (R := k) z)) :=

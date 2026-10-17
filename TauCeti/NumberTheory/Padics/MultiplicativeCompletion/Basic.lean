@@ -14,14 +14,14 @@ public import TauCeti.NumberTheory.Padics.RingHoms
 /-!
 # The p-adic completion of a multiplicative group
 
-For a prime `p` and a field `L`, this file constructs the inverse limit
+For a prime `p` and a commutative monoid `L`, this file constructs the inverse limit
 
 `A(L) = lim_m Lˣ / (Lˣ)^(p^m)`.
 
 The carrier is the subgroup of the product of the power-class groups consisting of compatible
 families.  Its `ℤ_p`-module structure is intrinsic: at level `m`, a `p`-adic integer acts
-through its residue modulo `p^m`.  Field automorphisms preserve power subgroups, and therefore
-act on the whole inverse limit.
+through its residue modulo `p^m`.  For a commutative semiring algebra, algebra automorphisms
+preserve power subgroups and therefore act on the whole inverse limit.
 
 For a finite extension `L` of `ℚ_p`, this completed multiplicative module is the one used in
 local reciprocity and in the Galois-module theory of local units, where it is finitely generated
@@ -35,6 +35,7 @@ only the carrier, its `ℤ_p`-module structure, and its Galois action. Finite ge
 * `padicCompletionUnitsPadicModule`: its intrinsic `ℤ_p`-module structure.
 * `padicCompletionUnitsAut`: the coordinatewise Galois action.
 * `padicCompletionUnitsRepresentation`: the `ℤ_p`-linear Galois representation on `A(L)`.
+* `padicCompletionUnitsCongr`: the isomorphism `A(L) ≃* A(L')` induced by `L ≃* L'`.
 * `padicCompletionUnitsModule`: the integral `ℤ_p[Gal(L/K)]`-module structure on `A(L)`, namely
   Mathlib's `Representation.asModule` structure of `padicCompletionUnitsRepresentation`.
 * `MonoidAlgebra.smul_padicCompletionUnitsOf`: a group-algebra element acts on the class of a unit
@@ -53,7 +54,11 @@ noncomputable section
 
 namespace TauCeti
 
-variable (p : ℕ) (L : Type*) [Field L]
+variable (p : ℕ) (L : Type*)
+
+section CommMonoid
+
+variable [CommMonoid L]
 
 /-- The transition map from `p^(m+1)`-power classes to `p^m`-power classes. -/
 def padicCompletionTransition (m : ℕ) :
@@ -109,7 +114,7 @@ theorem padicCompletionUnitsOf_apply (x : Lˣ) (m : ℕ) :
 
 /-- Compatible homomorphisms on the power-class coordinates induce a homomorphism
 between the completed multiplicative groups. -/
-def padicCompletionUnitsLift (K : Type*) [Field K]
+def padicCompletionUnitsLift (K : Type*) [CommMonoid K]
     (f : ∀ m : ℕ, (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) →*
       (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range))
     (hf : ∀ m x, padicCompletionTransition p K m (f (m + 1) x) =
@@ -126,7 +131,7 @@ def padicCompletionUnitsLift (K : Type*) [Field K]
 
 /-- The induced homomorphism is computed by the given homomorphism at every coordinate. -/
 @[simp]
-theorem padicCompletionUnitsLift_apply (K : Type*) [Field K]
+theorem padicCompletionUnitsLift_apply (K : Type*) [CommMonoid K]
     (f : ∀ m : ℕ, (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) →*
       (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range))
     (hf : ∀ m x, padicCompletionTransition p K m (f (m + 1) x) =
@@ -207,13 +212,8 @@ instance padicCompletionUnitsPadicModule :
 @[simp]
 theorem padicCompletionUnits_natCast_smul (n : ℕ)
     (x : Additive ↑(padicCompletionUnits p L)) :
-    (n : ℤ_[p]) • x = n • x := by
-  apply Additive.toMul.injective
-  apply Subtype.ext
-  funext m
-  rw [padicCompletionUnits_smul_apply, toMul_nsmul]
-  exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq n m)
-    (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
+    (n : ℤ_[p]) • x = n • x :=
+  Nat.cast_smul_eq_nsmul ℤ_[p] n x
 
 /-- Adding a `p ^ m`-multiple in `A(L)` does not change the level-`m` coordinate. -/
 theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
@@ -223,11 +223,13 @@ theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
 
 end PadicModule
 
+end CommMonoid
+
 section GaloisAction
 
-variable (K : Type*) [Field K] [Algebra K L]
+variable [CommSemiring L] (K : Type*) [CommSemiring K] [Algebra K L]
 
-/-- The automorphism of a power-class group induced by a field automorphism. -/
+/-- The automorphism of a power-class group induced by an algebra automorphism. -/
 def padicCompletionPowerClassMap (σ : L ≃ₐ[K] L) (m : ℕ) :
     (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) ≃*
       (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) :=
@@ -274,7 +276,7 @@ private theorem padicCompletionPowerClassMap_mul (σ τ : L ≃ₐ[K] L) (m : �
     simp only [MulEquiv.trans_apply, padicCompletionPowerClassMap_mk]
     exact congrArg _ (Units.ext (by simp))
 
-/-- A field automorphism acts coordinatewise on the completed multiplicative group. -/
+/-- An algebra automorphism acts coordinatewise on the completed multiplicative group. -/
 private def padicCompletionUnitsMap (σ : L ≃ₐ[K] L) :
     ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p L) :=
   padicCompletionUnitsLift p L L
@@ -288,7 +290,7 @@ private theorem padicCompletionUnitsMap_apply (σ : L ≃ₐ[K] L)
       padicCompletionPowerClassMap p L K σ m (x.1 m) := by
   simp [padicCompletionUnitsMap]
 
-/-- A field automorphism acts on the completed multiplicative group by a group automorphism. -/
+/-- An algebra automorphism acts on the completed multiplicative group by a group automorphism. -/
 private def padicCompletionUnitsMulEquiv (σ : L ≃ₐ[K] L) :
     ↑(padicCompletionUnits p L) ≃* ↑(padicCompletionUnits p L) :=
   { padicCompletionUnitsMap p L K σ with
@@ -379,7 +381,7 @@ instance padicCompletionUnitsModule :
     Module (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (Additive ↑(padicCompletionUnits p L)) :=
   inferInstanceAs (Module _ (padicCompletionUnitsRepresentation p L K).asModule)
 
-/-- A group-algebra monomial acts through the corresponding field automorphism, scaled by its
+/-- A group-algebra monomial acts through the corresponding algebra automorphism, scaled by its
 coefficient. -/
 @[simp]
 theorem padicCompletionUnits_single_smul (σ : L ≃ₐ[K] L) (a : ℤ_[p])
@@ -407,22 +409,94 @@ theorem _root_.MonoidAlgebra.smul_padicCompletionUnitsOf [Fintype (L ≃ₐ[K] L
   simp [padicCompletionUnits_single_smul]
 
 variable {L K} in
-/-- For a finite automorphism group, the group algebra acts on the class of a unit fixed by every
-automorphism through the augmentation. -/
-theorem _root_.MonoidAlgebra.smul_padicCompletionUnitsOf_of_forall_eq [Finite (L ≃ₐ[K] L)]
+/-- The group algebra acts on the class of a unit fixed by every automorphism through the
+augmentation. -/
+theorem _root_.MonoidAlgebra.smul_padicCompletionUnitsOf_of_forall_eq
     (x : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) {u : Lˣ}
     (hu : ∀ σ : L ≃ₐ[K] L, Units.map σ.toRingEquiv.toMonoidHom u = u) :
     x • Additive.ofMul (padicCompletionUnitsOf p L u) =
       TauCeti.MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) x •
         Additive.ofMul (padicCompletionUnitsOf p L u) := by
-  have := Fintype.ofFinite (L ≃ₐ[K] L)
-  rw [MonoidAlgebra.smul_padicCompletionUnitsOf]
-  simp only [hu, ← Finset.sum_smul]
-  congr 1
-  conv_rhs => rw [← x.sum_coeff_single]
-  rw [Finsupp.sum_fintype _ _ fun σ ↦ by simp, map_sum]
-  simp
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [add_smul, hx, hy]
+  | single σ a =>
+    simp only [padicCompletionUnits_single_smul, padicCompletionUnitsAut_of, hu,
+      TauCeti.MonoidAlgebra.augmentation_single]
 
 end GaloisAction
+
+/-! ### Transport along a multiplicative equivalence -/
+
+section Congr
+
+variable {L} [CommMonoid L] {L' : Type*} [CommMonoid L']
+
+private theorem congrRangePowMonoidHom_transition (e : L ≃* L') (m : ℕ)
+    (x : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) :
+    padicCompletionTransition p L' m
+        (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e) (p ^ (m + 1)) x) =
+      QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e) (p ^ m)
+        (padicCompletionTransition p L m x) := by
+  induction x using QuotientGroup.induction_on with
+  | H x => simp
+
+/-- A multiplicative equivalence `L ≃* L'` induces
+`A(L) ≃* A(L')`, coordinatewise on the power-class groups. -/
+def padicCompletionUnitsCongr (e : L ≃* L') :
+    ↑(padicCompletionUnits p L) ≃* ↑(padicCompletionUnits p L') where
+  toFun := padicCompletionUnitsLift p L L'
+    (fun m ↦
+      (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e) (p ^ m)).toMonoidHom)
+    (congrRangePowMonoidHom_transition p e)
+  invFun := padicCompletionUnitsLift p L' L
+    (fun m ↦
+      (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.symm) (p ^ m)).toMonoidHom)
+    (congrRangePowMonoidHom_transition p e.symm)
+  left_inv x := Subtype.ext <| funext fun m ↦ by
+    simp [← Units.mapEquiv_symm, ← QuotientGroup.congrRangePowMonoidHom_symm]
+  right_inv x := Subtype.ext <| funext fun m ↦ by
+    simp [← Units.mapEquiv_symm, ← QuotientGroup.congrRangePowMonoidHom_symm]
+  map_mul' := map_mul _
+
+/-- `padicCompletionUnitsCongr` is computed coordinatewise. -/
+@[simp]
+theorem padicCompletionUnitsCongr_apply (e : L ≃* L') (x : ↑(padicCompletionUnits p L)) (m : ℕ) :
+    (padicCompletionUnitsCongr p e x).1 m =
+      QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e) (p ^ m) (x.1 m) :=
+  padicCompletionUnitsLift_apply p L L' _ (congrRangePowMonoidHom_transition p e) x m
+
+/-- `padicCompletionUnitsCongr` is `ℤ_p`-linear. -/
+theorem padicCompletionUnitsCongr_smul [Fact p.Prime] (e : L ≃* L') (a : ℤ_[p])
+    (x : Additive ↑(padicCompletionUnits p L)) :
+    Additive.ofMul (padicCompletionUnitsCongr p e (a • x).toMul) =
+      a • Additive.ofMul (padicCompletionUnitsCongr p e x.toMul) := by
+  apply Additive.toMul.injective
+  ext m
+  simp [padicCompletionUnitsCongr_apply, padicCompletionUnits_smul_apply, map_pow]
+
+end Congr
+
+section CongrAut
+
+variable {L} [CommSemiring L] {L' : Type*} [CommSemiring L']
+variable (K : Type*) [CommSemiring K] [Algebra K L]
+variable {K' : Type*} [CommSemiring K'] [Algebra K' L']
+
+/-- `padicCompletionUnitsCongr` intertwines the actions of automorphisms `σ` of `L` and `σ'` of
+`L'` that correspond under the isomorphism. -/
+theorem padicCompletionUnitsCongr_aut (e : L ≃* L') (σ : L ≃ₐ[K] L) (σ' : L' ≃ₐ[K'] L')
+    (hσ : ∀ y, σ' (e y) = e (σ y)) (x : ↑(padicCompletionUnits p L)) :
+    padicCompletionUnitsCongr p e (padicCompletionUnitsAut p L K σ x) =
+      padicCompletionUnitsAut p L' K' σ' (padicCompletionUnitsCongr p e x) := by
+  ext m
+  rw [padicCompletionUnitsCongr_apply, padicCompletionUnitsAut_apply,
+    padicCompletionUnitsAut_apply, padicCompletionUnitsCongr_apply]
+  obtain ⟨y, hy⟩ := QuotientGroup.mk_surjective (x.1 m)
+  rw [← hy, padicCompletionPowerClassMap_mk, QuotientGroup.congrRangePowMonoidHom_mk,
+    QuotientGroup.congrRangePowMonoidHom_mk, padicCompletionPowerClassMap_mk]
+  exact congrArg _ (Units.ext (hσ y).symm)
+
+end CongrAut
 
 end TauCeti

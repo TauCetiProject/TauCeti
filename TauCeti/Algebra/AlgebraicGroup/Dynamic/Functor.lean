@@ -35,7 +35,7 @@ isomorphic to the functor of points of a commutative Hopf algebra.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
 This is the functorial interface for the dynamic approach to parabolic, Levi, and unipotent
-subgroups in Layer 7, "Structure theory", of the ReductiveGroups roadmap.
+subgroups.
 -/
 
 public section

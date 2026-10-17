@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Standard simplices as quotients of the cube and the prism
 
@@ -26,6 +28,11 @@ their boundary.
   into the vertices `0` and `1` of `Δⁿ⁺¹` in the ratio `s : 1 - s`. Its ends `s = 0` and
   `s = 1` are the face maps `δ 0` and `δ 1`, and it only collapses the segments `I × {w}` with
   `w₀ = 0`.
+* `Convexity.StdSimplex.splitLast c w` maps `Δⁿ × Δᵐ` to `Δⁿ⁺ᵐ` by splitting the last vertex of
+  `Δⁿ` into the vertices of `Δᵐ`. It commutes with the face maps of `Δᵐ`, and it isolates the last
+  coordinate of the cube: `ofCube (n + 1) t` is `ofCube n` of the first `n` coordinates of `t`,
+  with its last vertex split into the edge point `ofCube 1` of the last coordinate; splitting it
+  into an arbitrary edge point `ofCube 1 a` instead replaces the last coordinate of the cube by `a`.
 
 These are the geometric inputs for comparing homotopy groups of a space defined with cubes, as in
 Mathlib's `HomotopyGroup`, with those of its singular simplicial set.
@@ -39,6 +46,9 @@ Mathlib's `HomotopyGroup`, with those of its singular simplicial set.
 * `Convexity.StdSimplex.prism`, with `Convexity.StdSimplex.prism_zero`,
   `Convexity.StdSimplex.prism_one`, `Convexity.StdSimplex.continuous_prism`,
   `Convexity.StdSimplex.surjective_prism` and `Convexity.StdSimplex.prism_eq_prism_iff`.
+* `Convexity.StdSimplex.splitLast`, with `Convexity.StdSimplex.continuous_splitLast`,
+  `Convexity.StdSimplex.splitLast_map_succAbove`, `Convexity.StdSimplex.splitLast_ofCube_init` and
+  `Convexity.StdSimplex.splitLast_ofCube_init_ofCube_one`.
 
 ## References
 
@@ -79,6 +89,11 @@ lemma ofCube_weights_zero {n : ℕ} (t : I^(Fin (n + 1))) : (ofCube (n + 1) t).w
 lemma ofCube_weights_succ {n : ℕ} (t : I^(Fin (n + 1))) (k : Fin (n + 1)) :
     (ofCube (n + 1) t).weights k.succ = t 0 * (ofCube n (Fin.tail t)).weights k :=
   (rfl)
+
+/-- On the cube `I¹`, the coordinate `1` of `ofCube 1 t` is `t₀`. -/
+@[simp]
+lemma ofCube_one_weights_one (t : I^(Fin 1)) : (ofCube 1 t).weights 1 = t 0 := by
+  simpa using ofCube_weights_succ t 0
 
 @[fun_prop]
 lemma continuous_ofCube (n : ℕ) : Continuous (ofCube n) := by
@@ -337,5 +352,116 @@ lemma prism_eq_prism_iff {s s' : I} {w w' : StdSimplex ℝ (Fin (n + 1))} :
       · rw [Fin.succ_zero_eq_one']
         simp [h]
       · rfl
+
+/-- The map `Δⁿ × Δᵐ → Δⁿ⁺ᵐ` which splits the last vertex of `Δⁿ` into the vertices of `Δᵐ`: the
+barycentric coordinates of `splitLast c w` are `(c₀, …, cₙ₋₁, cₙ w₀, …, cₙ wₘ)`. It is the convex
+combination, with weights `c`, of the first `n` vertices of `Δⁿ⁺ᵐ` and of the copy of `w` on the
+last `m + 1` vertices. -/
+def splitLast {m : ℕ} (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1))) :
+    StdSimplex ℝ (Fin (n + m + 1)) :=
+  c.iConvexComb (Fin.lastCases (w.map (Fin.natAdd n)) fun k => .single (Fin.castAdd (m + 1) k))
+
+variable {m : ℕ}
+
+/-- The coordinates of `splitLast c w`, read off the convex combination defining it. -/
+private lemma splitLast_weights (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
+    (k : Fin (n + m + 1)) :
+    (splitLast c w).weights k = c.weights (Fin.last n) * (w.map (Fin.natAdd n)).weights k +
+      ∑ i : Fin n, if Fin.castAdd (m + 1) i = k then c.weights i.castSucc else 0 := by
+  rw [splitLast, iConvexComb, weights_sConvexComb, weights_map,
+    Finsupp.sum_mapDomain_index (by simp) (by simp [add_smul]),
+    Finsupp.sum_fintype _ _ (by simp), Finset.sum_apply', Fin.sum_univ_castSucc, add_comm]
+  simp [Finsupp.single_apply]
+
+@[simp]
+lemma splitLast_weights_castAdd (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
+    (k : Fin n) : (splitLast c w).weights (Fin.castAdd (m + 1) k) = c.weights k.castSucc := by
+  rw [splitLast_weights, weights_map, Finsupp.mapDomain_of_notMem_range]
+  · simp [Fin.castAdd_inj]
+  · rintro ⟨j, hj⟩
+    exact absurd congr(($hj : ℕ)) (by simp; omega)
+
+@[simp]
+lemma splitLast_weights_natAdd (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
+    (j : Fin (m + 1)) :
+    (splitLast c w).weights (Fin.natAdd n j) = c.weights (Fin.last n) * w.weights j := by
+  rw [splitLast_weights, weights_map_apply_of_injective (Fin.natAdd_injective _ _)]
+  exact add_eq_left.2 <| Finset.sum_eq_zero fun i _ => by simp [Fin.ext_iff]; omega
+
+/-- `splitLast` is jointly continuous in the two simplices. -/
+@[fun_prop]
+lemma continuous_splitLast :
+    Continuous fun p : StdSimplex ℝ (Fin (n + 1)) × StdSimplex ℝ (Fin (m + 1)) =>
+      splitLast p.1 p.2 := by
+  rw [(isEmbedding_toFun_comp_weights ℝ (Fin (n + m + 1))).continuous_iff, continuous_pi_iff]
+  refine fun k => Fin.addCases (m := n) (n := m + 1) (fun k => ?_) (fun j => ?_) k
+  · simp only [Function.comp_apply, splitLast_weights_castAdd]
+    fun_prop
+  · simp only [Function.comp_apply, splitLast_weights_natAdd]
+    fun_prop
+
+/-- Splitting the last vertex commutes with the face maps of the simplex replacing it. -/
+@[simp]
+lemma splitLast_map_succAbove (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
+    (j : Fin (m + 2)) :
+    splitLast c (w.map j.succAbove) = (splitLast c w).map (Fin.natAdd n j).succAbove := by
+  refine ext <| Finsupp.ext fun k =>
+    Fin.addCases (m := n) (n := m + 2) (fun k => ?_) (fun i => ?_) k
+  · rw [splitLast_weights_castAdd, ← Fin.natAdd_succAbove_castAdd j k,
+      weights_map_apply_of_injective Fin.succAbove_right_injective, splitLast_weights_castAdd]
+  · rcases Fin.eq_self_or_eq_succAbove j i with rfl | ⟨i, rfl⟩
+    · rw [splitLast_weights_natAdd, weights_map_succAbove_self, weights_map_succAbove_self,
+        mul_zero]
+    · rw [splitLast_weights_natAdd, weights_map_apply_of_injective Fin.succAbove_right_injective,
+        ← Fin.natAdd_succAbove_natAdd,
+        weights_map_apply_of_injective Fin.succAbove_right_injective, splitLast_weights_natAdd]
+
+/-- If the coordinates of `c` after the first are `a` times those of `c'`, then the same holds for
+`splitLast c w` and `splitLast c' w`, for `w` an edge. -/
+private lemma splitLast_weights_succ {c : StdSimplex ℝ (Fin (n + 2))}
+    {c' : StdSimplex ℝ (Fin (n + 1))} {a : ℝ} (hc : ∀ k, c.weights k.succ = a * c'.weights k)
+    (w : StdSimplex ℝ (Fin 2)) (k : Fin (n + 2)) :
+    (splitLast c w).weights k.succ = a * (splitLast c' w).weights k := by
+  -- `Fin.succ` moves each block of `Fin (n + 2)` one index up. The two index identities below need
+  -- the block size to be the numeral `2`: for a general block size `m`, the two sides would live in
+  -- `Fin (n + m + 1)` and `Fin (n + 1 + m)`, so no `Fin.cast`-free lemma states them.
+  refine Fin.addCases (m := n) (n := 2) (fun k => ?_) (fun j => ?_) k
+  · rw [show (Fin.castAdd 2 k).succ = Fin.castAdd 2 k.succ from rfl,
+      splitLast_weights_castAdd, splitLast_weights_castAdd, ← Fin.succ_castSucc, hc]
+  · rw [show (Fin.natAdd n j).succ = Fin.natAdd (n + 1) j from Fin.ext (by simp; omega),
+      splitLast_weights_natAdd, splitLast_weights_natAdd, ← Fin.succ_last, hc, mul_assoc]
+
+/-- The last coordinate of the cube is the coordinate of an edge replacing the last vertex of the
+image of the other coordinates: `ofCube (n + 1) t` is `ofCube n` of the first `n` coordinates of
+`t`, with its last vertex split by `ofCube 1` of the last coordinate. -/
+@[simp]
+lemma splitLast_ofCube_init (t : I^(Fin (n + 1))) :
+    splitLast (ofCube n (Fin.init t)) (ofCube 1 fun _ => t (Fin.last n)) = ofCube (n + 1) t := by
+  induction n with
+  | zero =>
+    refine ext <| Finsupp.ext fun k =>
+      Fin.addCases (m := 0) (n := 2) (fun k => k.elim0) (fun j => ?_) k
+    rw [splitLast_weights_natAdd]
+    simp [ofCube]
+  | succ n ih =>
+    refine ext <| Finsupp.ext fun k => Fin.cases ?_ (fun k => ?_) k
+    · -- The zero coordinate lies in the first block `Fin.castAdd 2` of `Fin (n + 1 + 2)`, where
+      -- `splitLast_weights_castAdd` applies: both indices have value `0`.
+      have h0 : (0 : Fin (n + 1 + 1 + 1)) = Fin.castAdd 2 0 := Fin.ext (by simp)
+      conv_lhs => rw [h0]
+      rw [splitLast_weights_castAdd, Fin.castSucc_zero, ofCube_weights_zero, ofCube_weights_zero]
+      simp only [Fin.init_def, Fin.castSucc_zero]
+    · rw [splitLast_weights_succ (c' := ofCube n (Fin.init (Fin.tail t))) (a := t 0)
+        (fun k => by simp [Fin.tail_init_eq_init_tail, Fin.init]),
+        ofCube_weights_succ, ← ih (Fin.tail t)]
+      simp [Fin.tail]
+
+/-- Replacing the last vertex of `ofCube n` of the first `n` coordinates of `t` by the point
+`(1 - a, a)` of an edge gives `ofCube (n + 1)` of `t` with its last coordinate replaced by `a`. -/
+lemma splitLast_ofCube_init_ofCube_one (t : I^(Fin (n + 1))) (a : I) :
+    splitLast (ofCube n (Fin.init t)) (ofCube 1 fun _ => a) =
+      ofCube (n + 1) (Function.update t (Fin.last n) a) := by
+  have := splitLast_ofCube_init (Function.update t (Fin.last n) a)
+  rwa [Fin.init_update_last, Function.update_self] at this
 
 end Convexity.StdSimplex

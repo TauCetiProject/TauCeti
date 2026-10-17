@@ -69,11 +69,11 @@ private theorem forkBacktrack_false :
       signlessPreprojectiveDForkBacktrack (n := n) k l = 0 := by
   cases l
   · rw [forkBacktrack_false]
-    exact forkTurn_mul_self k (G := DG) (by rw [DynkinType.rank_D]; omega)
+    exact forkTurn_mul_self k (G := DG)
       (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) (by omega)
       (by rw [DynkinType.rank_D]; omega)
   · rw [forkBacktrack_true]
-    exact forkTurn_mul_self k (G := DG) (by rw [DynkinType.rank_D]; omega)
+    exact forkTurn_mul_self k (G := DG)
       (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) (by omega)
       (by rw [DynkinType.rank_D]; omega)
 

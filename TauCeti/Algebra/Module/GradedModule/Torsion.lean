@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Polynomial.Basic
-public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 public import TauCeti.Algebra.Module.GradedModule.Polynomial
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 import TauCeti.Algebra.Module.GradedModule.DirectSum
@@ -161,13 +160,13 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
   have hshift : ∀ ⦃p : ℤ⦄ ⦃x : M⦄,
       x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + -(d : ℤ)) := by
     simpa only [sub_eq_add_neg] using hX
-  let e₀ := G.homogeneousPart G hshift hshift e 0
+  let e₀ := G.homogeneousPartPolynomial G hshift hshift e 0
   have hT := G.isHomogeneous_torsion hd hX
   have he₀T (x : M) : e₀ x ∈ T := by
     rw [← DirectSum.sum_support_decompose G.piece x, map_sum]
     apply T.sum_mem
     intro p _
-    rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
+    rw [G.homogeneousPartPolynomial_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece x p).property, add_zero]
     exact hT p (heT _)
   let ρ := e₀.codRestrict T he₀T
@@ -180,12 +179,12 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
     conv_rhs => rw [← DirectSum.sum_support_decompose G.piece (x : M)]
     apply Finset.sum_congr rfl
     intro p _
-    rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
+    rw [G.homogeneousPartPolynomial_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece (x : M) p).property, add_zero]
     rw [hefix ⟨_, hT p x.property⟩]
     exact DirectSum.decompose_of_mem_same G.piece
       (DirectSum.decompose G.piece (x : M) p).property
-  refine ⟨_root_.LinearMap.ker e₀, ?_, G.isHomogeneous_homogeneousPart G
+  refine ⟨_root_.LinearMap.ker e₀, ?_, G.isHomogeneous_homogeneousPartPolynomial G
     hshift hshift e 0 |>.isHomogeneous_ker⟩
   rw [← e₀.ker_codRestrict T he₀T]
   exact _root_.LinearMap.isCompl_of_proj hρ

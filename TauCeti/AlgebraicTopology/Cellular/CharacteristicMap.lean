@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.SkeletonNeighborhood
 public import TauCeti.AlgebraicTopology.Singular.Excision
-public import TauCeti.Analysis.Normed.Module.Ball.RadialPush
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
 public import TauCeti.Topology.CWComplex.Classical.OpenCells
 
 /-!

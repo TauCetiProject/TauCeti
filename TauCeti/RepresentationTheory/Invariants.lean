@@ -83,6 +83,7 @@ finite-dimensional representations.
   be compared along a surjective homomorphism of groups.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
+* `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -334,6 +335,12 @@ namespace Rep
 
 open CategoryTheory
 open scoped MonoidAlgebra
+
+/-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
+@[simp]
+theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
+    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.1 = x.1 := by
+  simpa [sub_hom, sub_eq_zero] using x.2
 
 variable {k G : Type*} [CommRing k] [Group G]
 

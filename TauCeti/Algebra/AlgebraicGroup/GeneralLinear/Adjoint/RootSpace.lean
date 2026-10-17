@@ -40,9 +40,8 @@ identifying the diagonal tangent directions as torus-fixed vectors.
 * J. S. Milne, *Algebraic Groups* (2017), §21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
 
-This is the first worked root calculation for Layer 7, "Root datum of `(G,T)`", of the
-ReductiveGroups roadmap.  It connects the diagonal torus of `GL_n` to the abstract adjoint
-weight-space API from which the root set of a split pair is read.
+This connects the diagonal torus of `GL_n` to the abstract adjoint weight-space API from which the
+root set of a split pair is read.
 -/
 
 public section
@@ -191,7 +190,7 @@ private theorem universalPoint_diagonalTorusCoordinateMap :
       (CommAlgCat.of k (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))))
       (toConv (AlgHom.id k
         (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))))))
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at hvalue
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hvalue
   rw [AlgHom.id_apply] at hvalue
   exact hvalue
 

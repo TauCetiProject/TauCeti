@@ -43,8 +43,8 @@ shows that direct products of smooth unipotent affine groups are smooth unipoten
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This advances Layer 5, "Unipotent groups", of the ReductiveGroups roadmap by establishing the
-basic product closure needed to assemble unipotent groups from simpler factors.
+This establishes the basic product closure needed to assemble unipotent groups from simpler
+factors.
 -/
 
 public section
@@ -82,12 +82,12 @@ theorem isUnipotentPoint_pointsMulEquiv_iff
     have hgleft : IsUnipotentPoint gleft := by
       have h := hleft.mapDomain (Bialgebra.TensorProduct.projectLeft
         (R := k) (H₁ := H) (H₂ := K))
-      simpa only [AlgHom.mapDomain_apply, gleft, e,
+      simpa only [BialgHom.mapDomain_apply, gleft, e,
         AffineGroup.Product.mapDomain_projectLeft] using h
     have hgright : IsUnipotentPoint gright := by
       have h := hright.mapDomain (Bialgebra.TensorProduct.projectRight
         (R := k) (H₁ := H) (H₂ := K))
-      simpa only [AlgHom.mapDomain_apply, gright, e,
+      simpa only [BialgHom.mapDomain_apply, gright, e,
         AffineGroup.Product.mapDomain_projectRight] using h
     have hfactor : g = gleft * gright := by
       simpa only [e, gleft, gright, map_mul, MulEquiv.symm_apply_apply] using

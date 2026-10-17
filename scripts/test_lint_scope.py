@@ -175,6 +175,38 @@ class LintScopeTest(unittest.TestCase):
             {self.PR_COMPARE: {"files": [f("modified", "lake-manifest.json")]},
              "repos/o/r/pulls/12": pr()}), [])
 
+    def test_approved_dispatch_uses_pr_scope_without_squash_commit_titles(self):
+        for files, expected in (
+            ([f("modified", ".github/workflows/pick-runner.yml"),
+              f("modified", "scripts/test_pick_runner.py")], []),
+            ([f("modified", "TauCeti/A.lean")], ["TauCeti.A"]),
+        ):
+            with self.subTest(files=files):
+                self.assertEqual(self.run_scope(
+                    dict(self.PR_ENV, EVENT="repository_dispatch", IS_BATCH="false"),
+                    {self.PR_COMPARE: {"files": files,
+                                       "commits": [{"commit": {"message": "ordinary PR commit"}}]},
+                     "repos/o/r/pulls/12": pr()}), expected)
+
+    def test_approved_dispatch_keeps_full_lint_policy_and_missing_metadata_fallback(self):
+        env = dict(self.PR_ENV, EVENT="repository_dispatch", IS_BATCH="false")
+        for metadata in (pr(labels=("full-lint",)), pr(head_ref="lint-repair/main")):
+            with self.subTest(metadata=metadata):
+                self.assertIsNone(self.run_scope(
+                    env, {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]},
+                          "repos/o/r/pulls/12": metadata}))
+        self.assertIsNone(self.run_scope(env, {}))
+
+    def test_dispatch_without_explicit_pr_classification_keeps_batch_fallback(self):
+        for classification in ("true", "", "invalid"):
+            with self.subTest(classification=classification):
+                self.assertIsNone(self.run_scope(
+                    dict(self.PR_ENV, EVENT="repository_dispatch", IS_BATCH=classification),
+                    {f"repos/o/r/compare/{SHA_A}...{SHA_B}": {
+                        "files": [f("modified", ".github/workflows/pick-runner.yml")],
+                        "commits": [{"commit": {"message": "ordinary PR commit"}}],
+                        "total_commits": 1}}))
+
     def test_pull_request_without_commits_lints_everything(self):
         for missing in ("BASE", "HEAD", "HEAD_REPO"):
             with self.subTest(missing=missing):
@@ -421,6 +453,7 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertLess(names.index("Checkout the exact candidate head (untrusted contents, no credentials)"), guard)
         scope_step = job["steps"][scope]
         self.assertEqual(scope_step["env"]["SCOPE_REPO"], "pr")
+        self.assertEqual(scope_step["env"]["IS_BATCH"], "${{ env.IS_BATCH }}")
         sandbox = next(i for i, n in enumerate(names) if "Build exact candidate under bwrap" in n)
         self.assertLess(scope, sandbox)
         run = job["steps"][sandbox]["run"]

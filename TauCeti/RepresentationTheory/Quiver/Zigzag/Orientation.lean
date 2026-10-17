@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
+public import TauCeti.Combinatorics.Quiver.Reorient
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
@@ -41,6 +42,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
+* `TauCeti.exists_forall_exists_nonempty_reorient_hom`: a neighbour choice without mutual choices
+  gives a reorientation of any orientation with no sinks.
 
 ## References
 
@@ -486,6 +489,34 @@ theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
       (symmetrifyMap_comp_unsymmetrifyMap G o)).2
 
 end DoubledQuiver
+
+open DoubledQuiver
+
+variable {V : Type u} {G : SimpleGraph V}
+
+/-- If `f` chooses a neighbour at every vertex of `G` with no two vertices choosing each other, then
+some reorientation of any orientation of `G` has no sinks: turning around the arrows `j ⟶ i` with
+`f i = j` leaves every vertex `u` with the outgoing arrow `u ⟶ f u`. -/
+theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {f : V → V}
+    (hf : ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u) :
+    ∃ σ : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → Bool,
+      ∀ u, ∃ w, Nonempty (reorientVertex σ u ⟶ reorientVertex σ w) := by
+  classical
+  let φ := (OrientedQuiver.vertexEquiv G o).symm
+  refine ⟨fun i j _ => decide (f (φ j) = φ i), fun u => ?_⟩
+  obtain ⟨u, rfl⟩ := (OrientedQuiver.vertexEquiv G o).surjective u
+  obtain ⟨hadj, hne⟩ := hf u
+  refine ⟨OrientedQuiver.vertex G o (f u), ?_⟩
+  rw [OrientedQuiver.vertexEquiv_apply]
+  by_cases ho : (⟨(u, f u), hadj⟩ : G.Dart) ∈ o
+  · -- The edge is oriented `u ⟶ f u`, and `f (f u) ≠ u` keeps it.
+    refine ⟨reorientKeep _ (OrientedQuiver.arrow G o hadj ho) ?_⟩
+    simpa only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_eq_true_eq] using hne
+  · -- The edge is oriented `f u ⟶ u`, and is turned around.
+    have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+    refine ⟨reorientFlip _ (OrientedQuiver.arrow G o hadj.symm ho') ?_⟩
+    simp only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_true]
+
 end TauCeti
 
 namespace SimpleGraph.Coloring

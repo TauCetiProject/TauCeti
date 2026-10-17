@@ -32,10 +32,6 @@ three scheme-level pieces attached to an arbitrary diagonal weight cocharacter.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This completes representability of the parabolic, Levi, and unipotent functors attached to a
-weight cocharacter in the dynamic route of Layer 7, "Structure theory", of the ReductiveGroups
-roadmap.
 -/
 
 public section

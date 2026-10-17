@@ -34,7 +34,15 @@ based maps (`TopCat.toSSetPiEquivHomotopyGroup`, `TopCat.toSSetPiEquivHomotopyGr
   (`GenLoop.homotopic_simplexEquiv_iff`).
 
 The bijection sends the identity element to the identity element
-(`TopCat.toSSetPiEquivHomotopyGroup_one`).
+(`TopCat.toSSetPiEquivHomotopyGroup_one`), and it reverses products
+(`TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`). A product `π.mk p * π.mk q` is witnessed by a
+map `Δⁿ⁺² → X` whose facets `n + 2`, `n + 1` and `n` are `p`, the product and `q`, so the product
+runs `p` before `q` in the last direction of the cube
+(`GenLoop.homotopic_simplexEquiv_transAt_last`), whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g`
+before `f`. So in every positive degree the bijection is a group isomorphism onto the opposite of
+Mathlib's homotopy group (`TopCat.toSSetPiMulEquivHomotopyGroupMulOpposite`). In degrees at least
+two Mathlib's homotopy groups are commutative, so the bijection is a group isomorphism
+(`TopCat.toSSetPiMulEquivHomotopyGroup`).
 
 ## Main declarations
 
@@ -46,6 +54,11 @@ The bijection sends the identity element to the identity element
   `SSet.KanComplex.π (n + 1) (TopCat.toSSet.obj X) x ≃ HomotopyGroup (Fin (n + 1)) X x`, with
   `TopCat.toSSetPiEquivHomotopyGroup_mk` its value on a pointed simplex and
   `TopCat.toSSetPiEquivHomotopyGroup_map` its naturality.
+* `TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`, `TopCat.toSSetPiEquivHomotopyGroup_inv`: the
+  bijection reverses products and preserves inverses.
+* `TopCat.toSSetPiMulEquivHomotopyGroupMulOpposite`: the group isomorphism onto the opposite of
+  Mathlib's homotopy group, in every positive degree.
+* `TopCat.toSSetPiMulEquivHomotopyGroup`: the group isomorphism in degrees at least two.
 
 ## References
 
@@ -202,5 +215,83 @@ theorem toSSetPiEquivHomotopyGroup_map {Y : TopCat.{u}} (f : X ⟶ Y)
     rw [KanComplex.π.map_mk, toSSetPiEquivHomotopyGroup_mk, toSSetPiEquivHomotopyGroup_mk,
       HomotopyGroup.map_mk]
     exact congrArg _ (GenLoop.ext _ _ fun t => by simp [yonedaEquiv_comp])
+
+/-- The comparison of homotopy groups reverses products. The product `π.mk p * π.mk q` is the
+class of the facet `n + 1` of an `(n + 2)`-simplex whose facets `n + 2` and `n` are `p` and `q`
+(`SSet.KanComplex.π.mul_mk_eq_iff`), which runs `p` before `q` in the last direction of the
+cube, whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g` before `f` (`HomotopyGroup.mul_spec`). -/
+@[simp]
+theorem toSSetPiEquivHomotopyGroup_mul_reverse
+    (a b : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
+    toSSetPiEquivHomotopyGroup X x n (a * b) =
+      toSSetPiEquivHomotopyGroup X x n b * toSSetPiEquivHomotopyGroup X x n a := by
+  induction a with | mk p
+  induction b with | mk q
+  obtain ⟨pq, ⟨h⟩⟩ := PtSimplex.MulStruct.nonempty p q (Fin.last n)
+  rw [h.mul_eq, toSSetPiEquivHomotopyGroup_mk, toSSetPiEquivHomotopyGroup_mk,
+    toSSetPiEquivHomotopyGroup_mk]
+  -- The facets of the simplex of `h`, read as continuous maps out of the topological simplex.
+  have hface {j : Fin (n + 3)} {r : (toSSet.obj X).PtSimplex (n + 1) (toSSetObj₀Equiv.symm x)}
+      (hj : stdSimplex.δ j ≫ h.map = r.map) (z : StdSimplex ℝ (Fin (n + 2))) :
+      X.toSSetObjEquiv _ (yonedaEquiv h.map) (z.map j.succAbove) =
+        (ptSimplexEquiv X x n r).1 z := by
+    have := congrArg (fun f => X.toSSetObjEquiv _ (yonedaEquiv f) z) hj
+    simpa only [toSSetObjEquiv_yonedaEquiv_δ_comp_apply, coe_ptSimplexEquiv_apply] using this
+  refine (Quotient.sound (GenLoop.homotopic_simplexEquiv_transAt_last
+    (X.toSSetObjEquiv _ (yonedaEquiv h.map))
+    (fun j hj z => ?_) (hface h.δ_castSucc_castSucc_map) (hface h.δ_succ_castSucc_map)
+    (hface h.δ_succ_succ_map))).trans (HomotopyGroup.mul_spec (i := Fin.last n)).symm
+  have := congrArg (fun f => X.toSSetObjEquiv _ (yonedaEquiv f) z) (h.δ_map_of_lt j hj)
+  simpa only [toSSetObjEquiv_yonedaEquiv_δ_comp_apply,
+    toSSetObjEquiv_yonedaEquiv_const_apply] using this
+
+/-- The comparison of homotopy groups commutes with inverses. -/
+@[simp]
+lemma toSSetPiEquivHomotopyGroup_inv
+    (a : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
+    toSSetPiEquivHomotopyGroup X x n a⁻¹ = (toSSetPiEquivHomotopyGroup X x n a)⁻¹ := by
+  -- The unit of the group `π (n + 1)` is not exposed as the `1` of
+  -- `toSSetPiEquivHomotopyGroup_one`. Instead, `a * a⁻¹` is idempotent, so its image is
+  -- idempotent, hence the identity.
+  have hidem : a * a⁻¹ * (a * a⁻¹) = a * a⁻¹ := by rw [mul_inv_cancel, mul_one]
+  have he := congrArg (toSSetPiEquivHomotopyGroup X x n) hidem
+  rw [toSSetPiEquivHomotopyGroup_mul_reverse, mul_eq_left] at he
+  exact eq_inv_of_mul_eq_one_left (by rw [← toSSetPiEquivHomotopyGroup_mul_reverse, he])
+
+variable (X x n) in
+/-- In every positive degree, the comparison of the homotopy groups of the singular simplicial set
+of `X` with those of `X` is a group isomorphism onto the opposite of Mathlib's homotopy group,
+since it reverses products (`TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`). -/
+def toSSetPiMulEquivHomotopyGroupMulOpposite :
+    KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x) ≃*
+      (HomotopyGroup (Fin (n + 1)) X x)ᵐᵒᵖ where
+  toEquiv := (toSSetPiEquivHomotopyGroup X x n).trans MulOpposite.opEquiv
+  map_mul' a b := congrArg MulOpposite.op (toSSetPiEquivHomotopyGroup_mul_reverse a b)
+
+@[simp]
+lemma toSSetPiMulEquivHomotopyGroupMulOpposite_apply
+    (a : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
+    toSSetPiMulEquivHomotopyGroupMulOpposite X x n a =
+      MulOpposite.op (toSSetPiEquivHomotopyGroup X x n a) :=
+  (rfl)
+
+variable (X x n) in
+/-- In degrees at least two, where Mathlib's homotopy groups are commutative, the comparison of the
+homotopy groups of the singular simplicial set of `X` with those of `X` is a group
+isomorphism. -/
+def toSSetPiMulEquivHomotopyGroup :
+    KanComplex.π (n + 2) (toSSet.obj X) (toSSetObj₀Equiv.symm x) ≃*
+      HomotopyGroup (Fin (n + 2)) X x :=
+  (toSSetPiMulEquivHomotopyGroupMulOpposite X x (n + 1)).trans MulOpposite.opMulEquiv.symm
+
+@[simp]
+lemma coe_toSSetPiMulEquivHomotopyGroup :
+    ⇑(toSSetPiMulEquivHomotopyGroup X x n) = toSSetPiEquivHomotopyGroup X x (n + 1) :=
+  (rfl)
+
+@[simp]
+lemma toSSetPiMulEquivHomotopyGroup_toEquiv :
+    (toSSetPiMulEquivHomotopyGroup X x n : _ ≃ _) = toSSetPiEquivHomotopyGroup X x (n + 1) :=
+  (rfl)
 
 end TopCat

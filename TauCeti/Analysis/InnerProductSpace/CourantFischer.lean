@@ -23,6 +23,8 @@ form domination and Weyl's perturbation bound.
 
 * `LinearMap.IsSymmetric.re_inner_apply_self_eq_sum_eigenvalues_mul_sq`:
   diagonal expansion of the Rayleigh form in an eigenbasis.
+* `LinearMap.sq_norm_apply_eq_sum_of_eigenbasis`:
+  diagonal expansion of `‖T x‖²` in an eigenbasis.
 * `LinearMap.IsSymmetric.exists_unit_vector_re_inner_le_eigenvalue` and
   `LinearMap.IsSymmetric.exists_submodule_forall_unit_eigenvalue_le_re_inner`:
   the two min–max directions.
@@ -64,6 +66,19 @@ private theorem sum_sq_norm_repr_eq_sq_norm (b : OrthonormalBasis (Fin n) 𝕜 E
   simp_rw [b.repr_apply_apply]
   exact b.sum_sq_norm_inner_right x
 
+
+/-- The squared norm in any orthonormal eigenbasis: if `S (w i) = μ i • w i` for all `i`, then
+`‖S x‖ ^ 2 = ∑ i, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2`. -/
+theorem LinearMap.sq_norm_apply_eq_sum_of_eigenbasis
+    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → 𝕜}
+    (hw : ∀ i, S (w i) = μ i • w i) (x : E) :
+    ‖S x‖ ^ 2 = ∑ i : Fin n, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2 := by
+  have hrepr : ∀ i, w.repr (S x) i = μ i * w.repr x i := by
+    intro i
+    conv_lhs => rw [← w.sum_repr x]
+    simp [map_sum, hw, smul_smul, mul_comm, Pi.single_apply]
+  rw [← sum_sq_norm_repr_eq_sq_norm w (S x)]
+  simp_rw [hrepr, norm_mul, mul_pow]
 
 namespace LinearMap.IsSymmetric
 

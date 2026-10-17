@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.DenseSubmodule
+public import TauCeti.Topology.Algebra.Module.ZeroSequenceOfUnits
 public import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
 public import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.FinitePresentation
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
-# Submodules with a module-finite closure are closed
+# Closed submodules and noetherianity over Tate rings
 
 A submodule of a complete, metrisable module over a complete Tate ring whose topological closure
-is module-finite is itself closed. This is Bosch–Güntzer–Remmert §3.7.2/1 in its closure form, and
-it is the closedness prerequisite on the route to Wedhorn 6.17/6.18. Its consequence for a
+is module-finite is itself closed. This is Bosch–Güntzer–Remmert §3.7.2/1 in its closure form. It
+gives the *only if* direction of Wedhorn's Proposition 6.17, that every submodule of a noetherian
+module is closed; with the converse `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`
+this file proves Proposition 6.17 in both directions. Its consequence for a
 noetherian ring — every submodule of a finitely generated module is closed — is what makes a finite
 presentation of a finite module *strict*, which is the form in which Wedhorn's Remark 8.29 consumes
 Proposition 6.18(2).
@@ -34,6 +37,11 @@ the closure, that is `N.topologicalClosure = N`, and `N` is closed because its c
 * `TauCeti.Huber.isClosed_of_module_finite_topologicalClosure`: a submodule whose topological
   closure is module-finite is closed.
 * `TauCeti.Huber.isClosed_of_isNoetherian`: in a noetherian module, *every* submodule is closed.
+* `TauCeti.Huber.isNoetherian_iff_forall_isClosed` and
+  `TauCeti.Huber.isNoetherianRing_iff_forall_isClosed`: Wedhorn's Proposition 6.17, that a complete
+  Hausdorff first-countable module over a complete Hausdorff Tate ring, and in particular the ring
+  itself, is noetherian exactly when all of its submodules are closed. The converse direction is
+  `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`.
 * `TauCeti.Huber.IsTateRing.exists_presentation_isStrictMap_isOpenMap`: over a complete
   noetherian Tate ring, a finite module with its module topology has a presentation
   `Aⁿ →[u] Aᵐ →[p] M → 0` with `u` strict and `p` open — Wedhorn's Remark 8.29's use of
@@ -119,14 +127,27 @@ The hypothesis is on the module and not on the ring, because that is all the arg
 noetherian-base, module-finite case is recovered from Mathlib's instance
 `isNoetherian_of_isNoetherianRing_of_finite`, so no separate statement of it is needed.
 
-This is the closedness statement of [Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.17, for a
-module whose complete metrisable topology is *given*. It is not that proposition: 6.17 is about the
-canonical topology of 6.18(1), and the construction of that topology, together with its uniqueness,
-is not available here. -/
+This is the *only if* direction of [Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.17; the
+equivalence is `TauCeti.Huber.isNoetherian_iff_forall_isClosed`. -/
 theorem isClosed_of_isNoetherian [IsNoetherian A V] (N : Submodule A V) :
     IsClosed (N : Set V) :=
   isClosed_of_module_finite_topologicalClosure N <|
     Module.Finite.iff_fg.mpr (IsNoetherian.noetherian _)
+
+/-- **A complete Hausdorff first-countable module over a complete Hausdorff Tate ring is noetherian
+if and only if all of its submodules are closed** ([Wedhorn, *Adic Spaces*][wedhorn_adic],
+Proposition 6.17). The forward direction is `TauCeti.Huber.isClosed_of_isNoetherian`; the converse,
+a Baire category argument, is `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`. -/
+theorem isNoetherian_iff_forall_isClosed :
+    IsNoetherian A V ↔ ∀ N : Submodule A V, IsClosed (N : Set V) :=
+  ⟨fun _ ↦ isClosed_of_isNoetherian, HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed⟩
+
+/-- **A complete Hausdorff Tate ring is noetherian if and only if all of its ideals are closed**
+([Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.17, the case of the ring itself). -/
+theorem isNoetherianRing_iff_forall_isClosed :
+    IsNoetherianRing A ↔ ∀ I : Ideal A, IsClosed (I : Set A) :=
+  have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  isNoetherian_iff_forall_isClosed
 
 section ModuleFinite
 

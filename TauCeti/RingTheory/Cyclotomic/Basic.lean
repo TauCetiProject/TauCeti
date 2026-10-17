@@ -232,7 +232,8 @@ theorem toAdjoinRoot_add (x y : Cyclotomic e) :
 @[simp]
 theorem toAdjoinRoot_neg (x : Cyclotomic e) :
     toAdjoinRoot (-x) = -toAdjoinRoot x := by
-  rw [neg_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toPolynomial, ofCoeffList_map_neg, map_neg]
+  rw [neg_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toPolynomial,
+    TauCeti.Polynomial.ofCoeffList_map_neg, map_neg]
 
 @[simp]
 theorem toAdjoinRoot_mul (x y : Cyclotomic e) :
@@ -468,6 +469,13 @@ theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
     (x : Cyclotomic e) :
     evalCoeffs f r x = x.toPolynomial.eval₂ f r := by
   rw [evalCoeffs, toPolynomial, TauCeti.Polynomial.eval₂_ofCoeffList]
+
+/-- Mapping a Horner evaluation through a ring homomorphism maps the coefficients and the
+point of evaluation. The semirings need not be commutative. -/
+theorem _root_.RingHom.map_evalCoeffs {R S : Type*} [Semiring R] [Semiring S]
+    (g : R →+* S) (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
+    g (evalCoeffs f r x) = evalCoeffs (g.comp f) (g r) x := by
+  rw [evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
 
 /-- The bundled evaluation at a root of the cyclotomic polynomial is the Horner evaluation
 `TauCeti.Cyclotomic.evalCoeffs`. -/

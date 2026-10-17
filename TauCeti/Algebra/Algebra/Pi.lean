@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
@@ -43,6 +45,11 @@ as soon as there are at least as many characters as the dimension
 of copies of the base field. This is how a finite scheme over a field with as many rational points
 as its degree is shown to be étale.
 
+When a family of characters `χ` of `C` and a finite family `ψ` of characters of `D` identify `C`
+and `D` with function algebras, `Algebra.TensorProduct.eq_of_pi_bijective` says that the products
+`Algebra.TensorProduct.lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: they are the
+coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)`.
+
 ## Main definitions
 
 * `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
@@ -50,6 +57,8 @@ as its degree is shown to be étale.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
+* `Algebra.TensorProduct.eq_of_pi_bijective`: characters identifying `C` and `D` with function
+  algebras give separating characters of `C ⊗[R] D`.
 * `TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`: a finite-dimensional algebra over a field
   with at least as many characters as its dimension is the algebra of functions on its characters.
 -/
@@ -107,6 +116,39 @@ theorem surjective_pi_of_injective {K A ι : Type*} [Field K] [Semiring A] [Alge
   exact LinearMap.range_eq_top.mp hr
 
 end AlgHom
+
+open scoped TensorProduct
+
+namespace Algebra.TensorProduct
+
+variable {R C D ι κ : Type*} [CommSemiring R] [Semiring C] [Algebra R C] [Semiring D]
+  [Algebra R D] [_root_.Finite κ]
+
+/-- If a family of characters `χ` of `C` and a finite family `ψ` of characters of `D`
+identify `C` and `D` with the function algebras `ι → R` and `κ → R`, then the characters
+`lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: through
+`C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)` they are the coordinates. -/
+theorem eq_of_pi_bijective {χ : ι → C →ₐ[R] R} {ψ : κ → D →ₐ[R] R}
+    (hχ : Function.Bijective (AlgHom.pi χ)) (hψ : Function.Bijective (AlgHom.pi ψ))
+    {x y : C ⊗[R] D}
+    (h : ∀ i j,
+      lift (χ i) (ψ j) (fun _ _ ↦ .all _ _) x = lift (χ i) (ψ j) (fun _ _ ↦ .all _ _) y) :
+    x = y := by
+  classical
+  have := Fintype.ofFinite κ
+  let F := (_root_.TensorProduct.congr (AlgEquiv.ofBijective _ hχ).toLinearEquiv
+    (AlgEquiv.ofBijective _ hψ).toLinearEquiv).trans
+      (_root_.TensorProduct.piScalarRight R R (ι → R) κ)
+  have hF (z : C ⊗[R] D) (i : ι) (j : κ) :
+      F z j i = lift (χ i) (ψ j) (fun _ _ ↦ .all _ _) z := by
+    induction z using _root_.TensorProduct.inductionOn with
+    | tmul c d => simp [F, _root_.TensorProduct.piScalarRightHom_tmul, mul_comm]
+    | add z z' hz hz' =>
+        simp only [map_add, Pi.add_apply] at hz hz' ⊢
+        rw [hz, hz']
+  exact F.injective <| funext fun j ↦ funext fun i ↦ by rw [hF, hF, h]
+
+end Algebra.TensorProduct
 
 namespace TauCeti
 

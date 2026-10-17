@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
@@ -107,6 +108,8 @@ theorem IsSymm.exists_orthogonal_basis_of_isUnit_two [Free R M] [Module.Finite R
       finrank_self, hd] at h
     omega
   obtain ⟨v, hv⟩ := ih (B := B.restrict N) (hB.restrict N) hN
-  exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
+  obtain ⟨b, hb, -, -⟩ :=
+    hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
+  exact ⟨b, hb⟩
 
 end LinearMap.BilinForm

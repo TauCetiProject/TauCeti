@@ -51,17 +51,10 @@ private theorem isQuasicoherent_kernel_affine {X : Scheme.{u}} [IsAffine X]
     {M N : X.Modules} (f : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent] :
     (kernel f).IsQuasicoherent := by
   let F := Scheme.Modules.restrictFunctor X.isoSpec.inv
-  let G := Scheme.Modules.restrictFunctor X.isoSpec.hom
   have : (F.obj (kernel f)).IsQuasicoherent :=
     (SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf).prop_of_iso
       (PreservesKernel.iso F f).symm (isQuasicoherent_kernel_spec (F.map f))
-  have : (G.obj (F.obj (kernel f))).IsQuasicoherent :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor X.isoSpec.hom _
-  let e : G.obj (F.obj (kernel f)) ≅ kernel f :=
-    (Scheme.Modules.restrictFunctorComp X.isoSpec.hom X.isoSpec.inv).symm.app _ ≪≫
-      (Scheme.Modules.restrictFunctorCongr X.isoSpec.hom_inv_id).app _ ≪≫
-      Scheme.Modules.restrictFunctorId.app _
-  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso e inferInstance
+  exact isQuasicoherent_of_isQuasicoherent_restrict_iso X.isoSpec (kernel f)
 
 /-- The ambient kernel of a morphism of quasicoherent sheaves on any scheme is quasicoherent. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_kernel

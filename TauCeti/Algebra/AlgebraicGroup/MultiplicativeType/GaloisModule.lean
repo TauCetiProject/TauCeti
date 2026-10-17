@@ -34,10 +34,7 @@ lies in the stabilizer of any prescribed cocharacter.
 
 See J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 
-For a torus these groups are finite free lattices with a perfect pairing, so this completes the
-continuous character--cocharacter Galois-module interface in Layer 4, "Tori: split and
-non-split", of the ReductiveGroups roadmap. The later absolute root datum will use these two
-continuous lattices together with their Galois-invariant perfect pairing.
+For a torus these groups are finite free lattices with a perfect pairing.
 -/
 
 public section

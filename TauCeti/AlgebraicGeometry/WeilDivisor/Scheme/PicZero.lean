@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Splitting
 public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.FunctionField
+public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 
 /-!
 # The degree homomorphism on the Picard group, and `Pic⁰` of a curve
@@ -39,6 +41,8 @@ point — the degree is surjective, so `Pic X ⧸ Pic⁰ X ≅ ℤ`.
 * `SchemeWeilDivisor.classGroupPicZeroAddEquivPicZero`, the isomorphism `Cl⁰(X) ≅ Pic⁰(X)`, and
   `SchemeWeilDivisor.weightedDegreeZeroQuotientAddEquivPicZero`, which presents `Pic⁰ X` as the
   degree-zero divisors modulo the principal ones;
+* `SchemeWeilDivisor.picZeroAddEquivDegreeZeroClassGroup`: `Pic⁰ X ≅ Cl⁰(k(X))`, the degree-zero
+  divisor class group of the function field;
 * `SchemeWeilDivisor.eulerDegreeHom_surjective` and
   `SchemeWeilDivisor.picQuotientPicZeroAddEquivInt`: at a point of residue degree one the degree
   is onto `ℤ`, so `Pic X ⧸ Pic⁰ X ≅ ℤ`.
@@ -237,6 +241,64 @@ lemma picQuotientPicZeroAddEquivInt_mk (a : Additive (LineBundleClass X)) :
   rw [QuotientAddGroup.kerLift_mk, LineBundleClass.eulerDegreeHom_apply]
 
 end RationalPoint
+
+section FunctionField
+
+variable (hF : IsFunctionField k X.functionField)
+
+/-- **`Pic⁰ X` is the degree-zero divisor class group of the function field.** On a proper integral
+curve over `k` whose codimension-one local rings are discrete valuation rings, `Pic⁰ X ≅ Cl⁰(k(X))`:
+the line bundle `𝒪_X(D)` of a divisor of degree zero corresponds to the class of the
+function-field divisor of `D`. -/
+def picZeroAddEquivDegreeZeroClassGroup :
+    LineBundleClass.picZero k X ≃+ (Divisor.degreeClass hF).ker :=
+  haveI : X.IsSeparated := ⟨by rw [← Limits.terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
+  have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
+    (UniversallyClosed.eq_valuativeCriterion ▸
+      (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
+  (classGroupPicZeroAddEquivPicZero k X).symm.trans <|
+    (WeilDivisor.OrderSystem.picZeroCongr (CodimensionOnePoint.equivPlace hex hX.out)
+      (AddEquiv.refl _) (fun g ↦ by
+        rw [← equivFunctionFieldDivisor_eq_domCongr, equivFunctionFieldDivisor_principalDivisor,
+          AddEquiv.refl_apply]) _ _
+      (fun x ↦ by
+        rw [CodimensionOnePoint.equivPlace_apply, X.toPlace_degree_eq_residueDegree])).trans
+    (AddEquiv.addSubgroupCongr (Divisor.ker_degreeClass_eq_picZero hF).symm)
+
+/-- `picZeroAddEquivDegreeZeroClassGroup` is the restriction of the composite
+`Pic X ≅ Cl(X) ≅ Cl(k(X))`. -/
+lemma coe_picZeroAddEquivDegreeZeroClassGroup_apply [X.IsSeparated]
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k))) (a : LineBundleClass.picZero k X) :
+    (picZeroAddEquivDegreeZeroClassGroup k hF a : (Place.orderSystem hF).ClassGroup) =
+      classGroupEquivFunctionField hex hX.out hF
+        ((classGroupAddEquivLineBundleClass X).symm (a : Additive (LineBundleClass X))) := by
+  rw [picZeroAddEquivDegreeZeroClassGroup, AddEquiv.trans_apply, AddEquiv.trans_apply]
+  refine (AddEquiv.addSubgroupCongr_apply _ _).trans
+    ((WeilDivisor.OrderSystem.coe_picZeroCongr_apply _ _ _ _ _ _ _).trans ?_)
+  rw [coe_classGroupPicZeroAddEquivPicZero_symm_apply k a]
+  obtain ⟨D, hD⟩ := (WeilDivisor.OrderSystem.ofScheme X).divisorClass_surjective
+    ((classGroupAddEquivLineBundleClass X).symm (a : Additive (LineBundleClass X)))
+  rw [← hD, WeilDivisor.OrderSystem.classGroupCongr_divisorClass,
+    classGroupEquivFunctionField_divisorClass, equivFunctionFieldDivisor_eq_domCongr]
+
+/-- The inverse of `picZeroAddEquivDegreeZeroClassGroup` sends the class of a function-field
+divisor `E` of degree zero to the class of the line bundle `𝒪_X(D)`, where `D` is the divisor on
+`X` corresponding to `E`. -/
+lemma coe_picZeroAddEquivDegreeZeroClassGroup_symm_apply [X.IsSeparated]
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k))) {c : (Divisor.degreeClass hF).ker}
+    {E : Divisor k X.functionField}
+    (hc : (c : (Place.orderSystem hF).ClassGroup) = (Place.orderSystem hF).divisorClass E) :
+    ((picZeroAddEquivDegreeZeroClassGroup k hF).symm c : Additive (LineBundleClass X)) =
+      Additive.ofMul
+        (toLineBundleClass hX.out ((equivFunctionFieldDivisor hex hX.out).symm E)) := by
+  rw [← classGroupToLineBundleClass_divisorClass, ← classGroupAddEquivLineBundleClass_apply]
+  apply (classGroupEquivFunctionField hex hX.out hF).injective.comp
+    (classGroupAddEquivLineBundleClass X).symm.injective
+  rw [Function.comp_apply, Function.comp_apply, AddEquiv.symm_apply_apply,
+    classGroupEquivFunctionField_divisorClass, AddEquiv.apply_symm_apply,
+    ← coe_picZeroAddEquivDegreeZeroClassGroup_apply k hF hex, AddEquiv.apply_symm_apply, hc]
+
+end FunctionField
 
 end SchemeWeilDivisor
 

@@ -43,6 +43,8 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in a domain are the
   elements of `V`.
 * `AddSubgroup.aeval_additivePolynomial_add`: `a_V (x + y) = a_V x + a_V y`.
+* `AddSubgroup.derivative_additivePolynomial`: the derivative of `a_V` is the constant
+  `∏_{c ∈ V, c ≠ 0} (-c)`.
 * `AddSubgroup.separable_additivePolynomial`: `a_V` is separable.
 
 ## References
@@ -170,6 +172,29 @@ theorem aeval_additivePolynomial_sub (x y : A) :
     aeval (x - y) V.additivePolynomial =
       aeval x V.additivePolynomial - aeval y V.additivePolynomial := by
   rw [eq_sub_iff_add_eq, ← aeval_additivePolynomial_add, sub_add_cancel]
+
+/-- **The derivative of `a_V` is constant**: `a_V' = ∏_{c ∈ V, c ≠ 0} (-c)`. In particular it is
+a unit, which makes `a_V - u` separable for every `u`. -/
+@[simp]
+theorem derivative_additivePolynomial :
+    derivative V.additivePolynomial = C (∏ᶠ c : {c : V // c ≠ 0}, -(c : K)) := by
+  classical
+  rw [finprod_eq_prod_of_fintype,
+    ← Finset.prod_subtype ((Finset.univ : Finset V).erase 0) (by simp) fun c : V ↦ -(c : K)]
+  -- Both sides have degree less than `|V|`, so it suffices to compare them on `V`. At a node `c`
+  -- the derivative of the nodal polynomial is `∏_{d ≠ c} (c - d)`, and `d ↦ d - c` reindexes this
+  -- product as `∏_{e ≠ 0} (-e)`.
+  refine Polynomial.eq_of_degree_sub_lt_of_eval_index_eq (s := Finset.univ) (v := ((↑) : V → K))
+    Subtype.val_injective.injOn ?_ fun c _ ↦ ?_
+  · rw [Finset.card_univ]
+    refine (degree_sub_le _ _).trans_lt (max_lt ?_ (degree_C_le.trans_lt ?_))
+    · rw [← V.degree_additivePolynomial]
+      exact degree_derivative_lt V.monic_additivePolynomial.ne_zero
+    · exact_mod_cast Fintype.card_pos
+  · rw [eval_C, additivePolynomial,
+      Lagrange.eval_nodal_derivative_eval_node_eq (Finset.mem_univ c), Lagrange.eval_nodal]
+    exact Finset.prod_nbij' (fun d ↦ d - c) (fun e ↦ e + c) (by simp [sub_eq_zero]) (by simp)
+      (by simp) (by simp) (by simp)
 
 /-- `a_V` is separable: its roots, the elements of `V`, are distinct. -/
 theorem separable_additivePolynomial : V.additivePolynomial.Separable := by

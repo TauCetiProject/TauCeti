@@ -11,8 +11,9 @@ public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 /-!
 # The John–Nirenberg inequality
 
-Let `Q₀` be a dyadic cube in `ℝⁿ = ι → ℝ`, `n ≥ 1`, and let `f : ℝⁿ → E` be integrable on `Q₀`
-with **dyadic mean oscillation** at most `M` on `Q₀`: for every dyadic cube `Q ⊆ Q₀`,
+Let `Q₀` be a dyadic cube in `ℝⁿ = ι → ℝ` for a finite type `ι`, and let `f : ℝⁿ → E` be
+integrable on `Q₀` with **dyadic mean oscillation** at most `M` on `Q₀`: for every dyadic cube
+`Q ⊆ Q₀`,
 
 `⨍_Q ‖f - f_Q‖ ≤ M`, where `f_Q = ⨍_Q f`.
 
@@ -29,14 +30,16 @@ provides. This is what lets Moser's proof of the Harnack inequality cross from b
 powers of a positive supersolution to bounds on positive powers: the logarithm of such a
 supersolution has bounded mean oscillation.
 
-Both statements hold on every cube, not only on dyadic ones. In the sup norm of `ι → ℝ` a cube
-`∏ᵢ [cᵢ - r, cᵢ + r]` is the closed ball `closedBall c r`, and if `f` has mean oscillation at most
-`M` on every closed ball inside it, then the same two bounds hold on `closedBall c r`
+Both statements hold on every cube, not only on dyadic ones. In the sup norm of `ι → ℝ`, for
+`r ≥ 0` the cube `∏ᵢ [cᵢ - r, cᵢ + r]` is the closed ball `closedBall c r`. If `f` has mean
+oscillation at most `M` on every closed ball inside it, then the same two bounds hold on
+`closedBall c r`
 (`TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
 `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`). For `0 < r` this follows from
 the dyadic case by the affine change of variables carrying the unit dyadic cube onto
-`closedBall c r`, which rescales Lebesgue measure by a constant and so preserves averages. For
-`r ≤ 0` the closed ball is null and both bounds are immediate.
+`closedBall c r`, which rescales Lebesgue measure by a constant and so preserves averages.
+In positive dimension, `r ≤ 0` makes the closed ball null. In dimension zero every function is
+constant, so the inequalities also hold, including on the singleton closed ball of radius zero.
 
 In `ℝⁿ = EuclideanSpace ℝ ι`, with any additive Haar measure, the inequality holds on Euclidean
 balls up to a loss in the radius: if `f` has mean oscillation at most `M` on every Euclidean ball
@@ -187,10 +190,10 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
         measure_biUnion_le _ C.to_countable _
 
 /-- **The John–Nirenberg inequality, dyadic form.** Let `f` be integrable on the dyadic cube
-`Q₀ ⊆ ℝⁿ`, `n ≥ 1`, with mean oscillation `⨍_Q ‖f - f_Q‖ ≤ M` on every dyadic cube `Q ⊆ Q₀`.
+`Q₀ ⊆ ℝⁿ`, with mean oscillation `⨍_Q ‖f - f_Q‖ ≤ M` on every dyadic cube `Q ⊆ Q₀`.
 Then the set of points of `Q₀` where `‖f - f_{Q₀}‖` exceeds `2ⁿ⁺¹ N M` has measure at most
 `2⁻ᴺ |Q₀|`. -/
-theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [Nonempty ι] [CompleteSpace E]
+theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
     (hf : IntegrableOn f (dyadicCube q₀.1 q₀.2))
     (hM : ∀ q : ℤ × (ι → ℤ), dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2 →
       ⨍⁻ x in dyadicCube q.1 q.2, ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ ∂volume ≤ M)
@@ -199,6 +202,13 @@ theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [Nonempty ι] [CompleteSpa
         2 ^ (Fintype.card ι + 1) * N * (M : ℝ≥0∞) <
           ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ} ≤
       2⁻¹ ^ N * volume (dyadicCube q₀.1 q₀.2) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- In dimension zero every function is constant, so its mean oscillation vanishes.
+    have hfconst : f = fun _ => f 0 := funext fun x => congrArg f (Subsingleton.elim x 0)
+    rw [hfconst]
+    simp only [setAverage_const (volume_dyadicCube_pos _ _).ne'
+      (volume_dyadicCube_ne_top _ _), sub_self, enorm_zero, not_lt_zero, and_false,
+      ofPred_false, measure_empty, zero_le]
   rcases eq_or_ne M 0 with rfl | hM0
   · -- For `M = 0`, `f` equals its average almost everywhere on `Q₀`.
     have hm : AEMeasurable (fun x => ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ)
@@ -236,14 +246,13 @@ private theorem two_pow_mul_natCast_mul_coe_eq_ofReal (n N : ℕ) (M : ℝ≥0) 
   ring
 
 /-- **The John–Nirenberg inequality.** Let `f` be integrable on the dyadic cube `Q₀ ⊆ ℝⁿ`,
-`n ≥ 1`, with mean oscillation `⨍_Q ‖f - f_Q‖ ≤ M` on every dyadic cube `Q ⊆ Q₀`. Then for
-every `s`,
+with mean oscillation `⨍_Q ‖f - f_Q‖ ≤ M` on every dyadic cube `Q ⊆ Q₀`. Then for every `s`,
 
 `|{x ∈ Q₀ : ‖f x - f_{Q₀}‖ > s}| ≤ 2 exp (-(log 2) s / (2ⁿ⁺¹ M)) |Q₀|`.
 
 For `M = 0` the right-hand side is `2 |Q₀|`, by the convention `s / 0 = 0`, and the bound is
 trivial. -/
-theorem volume_lt_norm_sub_setAverage_le [Nonempty ι] [CompleteSpace E]
+theorem volume_lt_norm_sub_setAverage_le [CompleteSpace E]
     (hf : IntegrableOn f (dyadicCube q₀.1 q₀.2))
     (hM : ∀ q : ℤ × (ι → ℤ), dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2 →
       ⨍⁻ x in dyadicCube q.1 q.2, ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ ∂volume ≤ M)
@@ -328,11 +337,11 @@ private theorem ofReal_exp_mul_norm_le_one_add_tsum (σ : ℝ) (n : ℕ) (M : �
     (by ring)
 
 /-- **Exponential integrability of functions of bounded mean oscillation.** Let `f` be
-integrable on the dyadic cube `Q₀ ⊆ ℝⁿ`, `n ≥ 1`, with mean oscillation `⨍_Q ‖f - f_Q‖ ≤ M` on
+integrable on the dyadic cube `Q₀ ⊆ ℝⁿ`, with mean oscillation `⨍_Q ‖f - f_Q‖ ≤ M` on
 every dyadic cube `Q ⊆ Q₀`. If `ρ = exp (2ⁿ⁺¹ σ M) < 2`, then
 
 `∫_{Q₀} exp (σ ‖f - f_{Q₀}‖) ≤ (1 + 2ρ / (2 - ρ)) |Q₀|`. -/
-theorem setLIntegral_exp_mul_norm_sub_setAverage_le [Nonempty ι] [CompleteSpace E]
+theorem setLIntegral_exp_mul_norm_sub_setAverage_le [CompleteSpace E]
     (hf : IntegrableOn f (dyadicCube q₀.1 q₀.2))
     (hM : ∀ q : ℤ × (ι → ℤ), dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2 →
       ⨍⁻ x in dyadicCube q.1 q.2, ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ ∂volume ≤ M)
@@ -390,13 +399,14 @@ section ClosedBall
 
 /-! ### Arbitrary cubes
 
-In the sup norm of `ι → ℝ` the closed ball `closedBall c r` is the closed cube
+For `r ≥ 0`, in the sup norm of `ι → ℝ` the closed ball `closedBall c r` is the closed cube
 `∏ᵢ [cᵢ - r, cᵢ + r]`. For `0 < r`, the affine bijection `y ↦ 2r y + (c - r)` carries the unit
 dyadic cube `[0, 1)ⁿ` onto this cube up to a null set and its dyadic subcubes onto closed balls
 inside `closedBall c r` up to null sets, and it rescales Lebesgue measure by the constant `(2r)ⁿ`.
 Averages are invariant under it, so the dyadic John–Nirenberg inequality for `f` composed with
-this map gives the inequality on every cube of positive radius. For `r ≤ 0` the closed ball is
-null, so both bounds hold trivially. -/
+this map gives the inequality on every cube of positive radius. In positive dimension the closed
+ball is null for `r ≤ 0`, so both bounds hold trivially; in dimension zero every nonempty closed
+ball is the singleton space and agrees with every dyadic cube. -/
 
 open Metric
 
@@ -492,12 +502,12 @@ private theorem setLAverage_comp_cubeEquiv_le (hr : 0 < r)
   exact closure_mono hq
 
 /-- **The John–Nirenberg inequality** on a cube. Let `f` be integrable on the closed sup-norm ball
-`closedBall c r ⊆ ℝⁿ`, `n ≥ 1`, that is, on the cube `∏ᵢ [cᵢ - r, cᵢ + r]`, with mean oscillation
+`closedBall c r ⊆ ℝⁿ` (the cube `∏ᵢ [cᵢ - r, cᵢ + r]` when `r ≥ 0`), with mean oscillation
 `⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. Then for every `s`,
 
 `|{x ∈ closedBall c r : ‖f x - f_{closedBall c r}‖ > s}| ≤
   2 exp (-(log 2) s / (2ⁿ⁺¹ M)) |closedBall c r|`. -/
-theorem volume_lt_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace E]
+theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     (hf : IntegrableOn f (closedBall c r))
     (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
       ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
@@ -505,6 +515,15 @@ theorem volume_lt_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace
     volume {x ∈ closedBall c r | s < ‖f x - ⨍ y in closedBall c r, f y ∂volume‖} ≤
       ENNReal.ofReal (2 * Real.exp (-(Real.log 2 * s / (2 ^ (Fintype.card ι + 1) * M)))) *
         volume (closedBall c r) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rcases lt_or_ge r 0 with hr | hr
+    · simp [closedBall_eq_empty.2 hr]
+    have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
+      ext x
+      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+    simpa only [hQ (0, 0)] using volume_lt_norm_sub_setAverage_le (q₀ := (0, 0)) (f := f)
+      (by simpa only [hQ (0, 0)] using hf)
+      (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) s
   rcases le_or_gt r 0 with hr | hr
   · rw [volume_closedBall_eq_zero_of_nonpos c hr, mul_zero]
     exact (measure_mono_null (sep_subset _ _)
@@ -528,16 +547,17 @@ theorem volume_lt_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace
   rw [← ENNReal.mul_le_mul_iff_right ha ENNReal.ofReal_ne_top, ← hvol, mul_left_comm, ← hvol]
   calc volume (e ⁻¹' {x ∈ B | s < ‖f x - ⨍ y in B, f y ∂volume‖})
       = volume {x ∈ dyadicCube 0 0 | s < ‖(f ∘ e) x - ⨍ y in B, f y ∂volume‖} :=
-        measure_congr (hB.inter (ae_eq_refl _))
+        measure_congr (hB.inter
+          (Filter.EventuallyEqSet.rfl (s := {x | s < ‖(f ∘ e) x - ⨍ y in B, f y ∂volume‖})))
     _ ≤ _ := hJN
     _ = _ := by rw [measure_congr hB]
 
 /-- **Exponential integrability of functions of bounded mean oscillation** on a cube. Let `f` be
-integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`, `n ≥ 1`, with mean oscillation
+integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`, with mean oscillation
 `⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. If `ρ = exp (2ⁿ⁺¹ σ M) < 2`, then
 
 `∫_{closedBall c r} exp (σ ‖f - f_{closedBall c r}‖) ≤ (1 + 2ρ / (2 - ρ)) |closedBall c r|`. -/
-theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace E]
+theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     (hf : IntegrableOn f (closedBall c r))
     (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
       ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
@@ -546,6 +566,15 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [Nonempty ι] [Co
         ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in closedBall c r, f y ∂volume‖)) ≤
       ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) /
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * volume (closedBall c r) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rcases lt_or_ge r 0 with hr | hr
+    · simp [closedBall_eq_empty.2 hr]
+    have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
+      ext x
+      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+    simpa only [hQ (0, 0)] using setLIntegral_exp_mul_norm_sub_setAverage_le
+      (q₀ := (0, 0)) (f := f) (by simpa only [hQ (0, 0)] using hf)
+      (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) hρ
   rcases le_or_gt r 0 with hr | hr
   · rw [setLIntegral_measure_zero _ _ (volume_closedBall_eq_zero_of_nonpos c hr)]
     exact zero_le

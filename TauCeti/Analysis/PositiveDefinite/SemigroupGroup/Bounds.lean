@@ -16,10 +16,8 @@ positive-definite functions on `ℝ≥0 × V`. The associated kernel is
 bounds on every BCR kernel entry in terms of the two time-diagonal values
 `F (p.1 + p.1, 0)` and `F (q.1 + q.1, 0)`.
 
-These estimates are a small prerequisite for the BCR semigroup--Bochner representation milestone
-in `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2: later arguments need to
-control normalized BCR kernels and detect zero diagonal slices without unfolding
-`IsSemigroupGroupPD`.
+These estimates let arguments control normalized BCR kernels and detect zero diagonal slices without
+unfolding `IsSemigroupGroupPD`.
 
 ## Main declarations
 

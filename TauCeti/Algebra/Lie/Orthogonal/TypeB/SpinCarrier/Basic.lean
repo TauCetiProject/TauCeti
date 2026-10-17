@@ -125,6 +125,7 @@ noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
   Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
+@[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
   simp [basisReflection, signSet]
@@ -418,6 +419,18 @@ noncomputable def carrierι :
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
       (latticeBasis n) (basisWeight n)
+
+/-- The carrier inclusion is the generic Kostant toral-closure inclusion, transported across the
+named presentation of the type-`Bₙ₊₁` spin carrier. -/
+theorem carrierι_def :
+    carrierι n =
+      eqToHom (groupScheme_eq_kostantToralGroupScheme n) ≫
+        kostantToralGroupSchemeι
+          (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+          (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+          (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+          (latticeBasis n) (basisWeight n) := by
+  rw [carrierι]
 
 /-- The spin carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by

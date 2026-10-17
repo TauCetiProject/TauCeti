@@ -18,12 +18,12 @@ exact sequence of chain complexes `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0` and th
 of these short exact sequences, and deduces that the connecting morphism is natural, so that it
 forms a natural transformation `SSetPair.homologyδNatTrans`.
 
-It also records that the quotient maps from ambient to relative homology are natural in the pair:
-they commute with morphisms of simplicial-set pairs. The short exact sequence of chain complexes
-of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the injection of
-the `n`-simplices of `X` into those of `Y`. A morphism of pairs which is a quasi-isomorphism on
-subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative chains
-(`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
+It also records that the quotient maps from ambient to relative chains and homology are natural in
+the pair: they commute with morphisms of simplicial-set pairs. The short exact sequence of chain
+complexes of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the
+injection of the `n`-simplices of `X` into those of `Y`. A morphism of pairs which is a
+quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
+chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -64,6 +64,22 @@ lemma chainComplexShortComplexMap_τ₂ {P P' : SSetPair.{w}} (f : P ⟶ P') (R 
 lemma chainComplexShortComplexMap_τ₃ {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
     (chainComplexShortComplexMap f R).τ₃ = chainComplexMap f R := by
   rw [chainComplexShortComplexMap.eq_def]
+
+/-- The chain maps induced by a morphism of pairs on the chains of the subobjects and of the ambient
+simplicial sets commute with the inclusions of subobject chains into ambient chains. -/
+@[reassoc]
+lemma chainComplexMap_left_comp_chainComplexMap_hom (R : C) {P P' : SSetPair.{w}} (f : P ⟶ P') :
+    SSet.chainComplexMap f.left R ≫ SSet.chainComplexMap P'.hom R =
+      SSet.chainComplexMap P.hom R ≫ SSet.chainComplexMap f.right R :=
+  ((chainComplexFunctorLeftToRight C).app R).naturality f
+
+/-- The quotient maps from ambient to relative chains commute with the chain maps induced by a
+morphism of pairs. -/
+@[reassoc]
+lemma chainComplexπ_naturality (R : C) {P P' : SSetPair.{w}} (f : P ⟶ P') :
+    SSet.chainComplexMap f.right R ≫ P'.chainComplexπ R =
+      P.chainComplexπ R ≫ SSetPair.chainComplexMap f R :=
+  ((chainComplexFunctorπ C).app R).naturality f
 
 /-- In each degree, the map from the chains of the subobject of a pair of simplicial sets to the
 chains of the ambient simplicial set is a split monomorphism. -/

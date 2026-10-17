@@ -18,6 +18,7 @@ turns an inequality against `x ^ (1 / q)` into one between natural-number powers
 ## Main results
 
 * `NNReal.rpow_inv_nnratCast`: `x ^ (1 / q) = (x ^ q.den) ^ (1 / q.num)`.
+* `NNReal.rpow_inv_nnratCast_pow_num`: for `q ≠ 0`, `(x ^ (1 / q)) ^ q.num = x ^ q.den`.
 -/
 
 public section
@@ -30,5 +31,10 @@ namespace NNReal
 theorem rpow_inv_nnratCast (x : ℝ≥0) (q : ℚ≥0) :
     x ^ ((q : ℝ)⁻¹) = (x ^ q.den) ^ ((q.num : ℝ)⁻¹) := by
   rw [NNRat.cast_def, inv_div, div_eq_mul_inv, NNReal.rpow_mul, NNReal.rpow_natCast]
+
+/-- Writing `q = a / b ≠ 0` in lowest terms, `ρ = x ^ (1 / q)` solves `ρ ^ a = x ^ b`. -/
+theorem rpow_inv_nnratCast_pow_num (x : ℝ≥0) {q : ℚ≥0} (hq : q ≠ 0) :
+    (x ^ ((q : ℝ)⁻¹)) ^ q.num = x ^ q.den := by
+  rw [rpow_inv_nnratCast, rpow_inv_natCast_pow _ (NNRat.num_ne_zero.mpr hq)]
 
 end NNReal

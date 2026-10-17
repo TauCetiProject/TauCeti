@@ -307,6 +307,30 @@ theorem gromovWassersteinDistortion_map_swap [SFinite π] (p : ℝ≥0∞) :
     Measure.map_prod_map π π measurable_swap measurable_swap, he.eLpNorm_map_measure]
   exact eLpNorm_congr_ae (.of_forall fun q ↦ edist_comm _ _)
 
+/-- Exchanging the two arguments of both kernels does not change the distortion of a plan. -/
+theorem gromovWassersteinDistortion_comp_swap [SFinite π] (p : ℝ≥0∞) :
+    gromovWassersteinDistortion p (ωX ∘ Prod.swap) (ωY ∘ Prod.swap) π =
+      gromovWassersteinDistortion p ωX ωY π := by
+  have he := (MeasurableEquiv.prodComm : (X × Y) × (X × Y) ≃ᵐ _).measurableEmbedding
+  have hswap : (π.prod π).map MeasurableEquiv.prodComm = π.prod π := Measure.prod_swap
+  rw [gromovWassersteinDistortion_def, gromovWassersteinDistortion_def]
+  conv_rhs => rw [← hswap, he.eLpNorm_map_measure]
+  -- Both integrands evaluate the kernels at the exchanged pair; they agree by unfolding `∘`.
+  rfl
+
+/-- Exchanging the two arguments of both kernels does not change their Gromov–Wasserstein
+distance. The outgoing and incoming views of a measured kernel are therefore compared by the same
+distance. -/
+theorem gromovWassersteinEDist_comp_swap (p : ℝ≥0∞) (μ : Measure X) [SigmaFinite μ]
+    (ωX : X × X → Z) (ν : Measure Y) (ωY : Y × Y → Z) :
+    gromovWassersteinEDist p μ (ωX ∘ Prod.swap) ν (ωY ∘ Prod.swap) =
+      gromovWassersteinEDist p μ ωX ν ωY := by
+  simp only [gromovWassersteinEDist_def]
+  refine iInf_congr fun π ↦ iInf_congr fun hπ ↦ ?_
+  have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
+    (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
+  exact gromovWassersteinDistortion_comp_swap p
+
 /-- **Symmetry.** Exchanging the two measured kernels does not change their Gromov–Wasserstein
 distance. -/
 theorem gromovWassersteinEDist_comm (p : ℝ≥0∞) (μ : Measure X) [IsFiniteMeasure μ]

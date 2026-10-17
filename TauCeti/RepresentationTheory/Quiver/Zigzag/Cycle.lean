@@ -207,7 +207,7 @@ theorem nonempty_algEquiv_zigzagAlgebra_exteriorCycle (hm : 3 ≤ m) (hev : Even
   have : Nontrivial (Fin m) := Fin.nontrivial_iff_two_le.mpr (by omega)
   obtain ⟨e⟩ := nonempty_algEquiv_nonisolatedZigzagQuotient_exteriorCycle k m hm hev
   obtain ⟨n, rfl⟩ : ∃ n, m = n + 1 := ⟨m - 1, by omega⟩
-  exact ⟨e.trans (zigzagAlgebraEquivNonisolated k _ cycleGraph_connected).symm⟩
+  exact ⟨e.trans (zigzagAlgebraEquivNonisolated k _ connected_cycleGraph_add_one).symm⟩
 
 end ExteriorCycleAlgebra
 

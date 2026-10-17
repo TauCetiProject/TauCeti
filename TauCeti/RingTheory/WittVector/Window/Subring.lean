@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.RingOfDefinition
-public import TauCeti.RingTheory.WittVector.IntervalRing
+public import TauCeti.RingTheory.WittVector.IntervalRing.Basic
 
 /-!
 # The window subring of `𝕎 O[1/(p [ϖ])]` and the interval norm

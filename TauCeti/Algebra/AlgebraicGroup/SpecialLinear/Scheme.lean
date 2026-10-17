@@ -151,7 +151,7 @@ noncomputable def schemePointsMulEquiv :
 
 /-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
 gives the determinant-one matrix of the underlying algebra point. -/
-@[simp]
+@[simp↓]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     schemePointsMulEquiv n A (groupSchemePointMulEquiv n A q) =

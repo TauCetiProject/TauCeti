@@ -124,8 +124,7 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
     (hg : ContinuousOn g (closure (Omega : Set E)))
     (hg0 : ∀ x ∈ frontier (Omega : Set E), g x = 0) {u : W1p mu Omega p}
     (hu : W1p.value u =ᵐ[mu.restrict Omega] g) : u ∈ w1p0Submodule mu Omega p := by
-  have hnegv : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hnegv := W1p.value_neg_ae u
   have hneg : W1p.value (-u) =ᵐ[mu.restrict Omega] -g := by
     filter_upwards [hu, hnegv] with x hx hnx
     rw [hnx, Pi.neg_apply, hx, Pi.neg_apply]
