@@ -348,17 +348,20 @@ section CompatiblePairDegree2
 private def transport₂ (f : G × G → M) : H × H → B := fun h ↦ ψ (f (φ.symm h.1, φ.symm h.2))
 
 include hψ in
-private theorem transport₂_mem_cocycles₂_iff (f : G × G → M) :
-    transport₂ φ ψ f ∈ cocycles₂ B ↔ groupCohomology.IsCocycle₂ f := by
+/-- Transport along an action-compatible group and additive equivalence preserves the
+`2`-cocycle condition. -/
+theorem transport₂_mem_cocycles₂_iff (f : G × G → M) :
+    (fun h : H × H ↦ ψ (f (φ.symm h.1, φ.symm h.2))) ∈ cocycles₂ B ↔
+      groupCohomology.IsCocycle₂ f := by
   rw [mem_cocycles₂_iff]
   constructor
   · intro hf g g' g''
     have := hf (φ g) (φ g') (φ g'')
-    simp only [transport₂, ← map_mul, φ.symm_apply_apply] at this
+    simp only [← map_mul, φ.symm_apply_apply] at this
     rw [← hψ, ← map_add, ← map_add] at this
     exact ψ.injective this
   · intro hf h h' h''
-    simp only [transport₂, map_mul, ← map_add, hf (φ.symm h) (φ.symm h') (φ.symm h'')]
+    simp only [map_mul, ← map_add, hf (φ.symm h) (φ.symm h') (φ.symm h'')]
     exact (map_add ψ _ _).trans (congrArg (· + _) (apply_symm_smul φ ψ hψ _ _))
 
 variable [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -395,7 +398,8 @@ noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomolog
     induction y using H2_induction_on with
     | h x =>
       let z : G × G → M := fun g ↦ ψ.symm (x (φ g.1, φ g.2))
-      have hz : transport₂ φ ψ z = x := funext fun h ↦ by simp [transport₂, z]
+      have hz : (fun h : H × H ↦ ψ (z (φ.symm h.1, φ.symm h.2))) = x :=
+        funext fun h ↦ by simp [z]
       have hzc : groupCohomology.IsCocycle₂ z :=
         (transport₂_mem_cocycles₂_iff φ ψ hψ z).1 (hz ▸ x.2)
       exact ⟨⟨z, mem_Z2_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
@@ -427,7 +431,7 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
         (explicitH2AddEquivGroupCohomology φ ψ hψ x) := by
   induction x using QuotientAddGroup.induction_on with
   | H z =>
-    let c : cocycles₂ B := ⟨transport₂ φ ψ z,
+    let c : cocycles₂ B := ⟨fun h ↦ ψ ((z : G × G → M) (φ.symm h.1, φ.symm h.2)),
       (transport₂_mem_cocycles₂_iff φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
     rw [explicitRes2_mk, explicitH2AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
     have hmap := ConcreteCategory.congr_hom
@@ -440,7 +444,7 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
       apply φ.injective
       simpa using (hφS (φS.symm s)).symm
     rw [TauCeti.groupCohomology.mapCocycles₂_apply]
-    simp [cocyclesMap2_apply, c, transport₂, hs]
+    simp [cocyclesMap2_apply, c, hs]
 
 end CompatiblePairDegree2
 
@@ -553,6 +557,14 @@ identities. -/
 noncomputable def explicitH2IsoGroupCohomology :
     H2 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 2 :=
   explicitH2AddEquivGroupCohomology (.refl G) (.refl M) fun _ _ ↦ rfl
+
+/-- The canonical degree-two comparison is the compatible-pair comparison in identity group
+and coefficient coordinates. -/
+theorem explicitH2IsoGroupCohomology_def :
+    explicitH2IsoGroupCohomology G M =
+      explicitH2AddEquivGroupCohomology (MulEquiv.refl G) (AddEquiv.refl M)
+        (fun _ _ ↦ rfl) :=
+  (rfl)
 
 /-- `explicitH2IsoGroupCohomology` sends the class of a continuous `2`-cocycle `z` to the class of
 `z` in Mathlib's `H²`. -/

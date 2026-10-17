@@ -36,6 +36,8 @@ multiplication on `G`.
   `G`-representations;
 * `TauCeti.discreteCoindEquivAlgebraic`: for an open subgroup `U`, the linear equivalence between
   locally constant coinduction and Mathlib's `Representation.coindV`;
+* `TauCeti.discreteCoindAddEquivAlgebraic`: the additive comparison for a discrete group,
+  preserving the caller's coefficient action;
 * `TauCeti.algebraicCoindCounit`: evaluation at `1` on algebraic coinduction with its discrete
   topology, for comparing the two restriction–evaluation Shapiro maps.
 
@@ -597,5 +599,58 @@ theorem algebraicCoindCounit_toLinearMap :
     rfl)
 
 end AlgebraicCounit
+
+section DiscreteAlgebraicComparison
+
+variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+
+/-- For a discrete group, locally constant coinduction is additively equivalent to algebraic
+coinduction of the caller's coefficient action. -/
+noncomputable def discreteCoindAddEquivAlgebraic :
+    DiscreteCoind G U M ≃+ Rep.coind U.subtype
+      (Rep.ofDistribMulAction ℤ U M) :=
+  (discreteCoindEquivAlgebraic ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩).toAddEquiv
+
+/-- The additive coinduction comparison preserves every value of the underlying function. -/
+theorem discreteCoindAddEquivAlgebraic_apply (f : DiscreteCoind G U M) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U f).1 g = f g :=
+  discreteCoindEquivAlgebraic_apply ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ f g
+
+/-- The inverse additive coinduction comparison preserves every value of the underlying
+algebraically coinduced function. -/
+theorem discreteCoindAddEquivAlgebraic_symm_apply
+    (f : Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U).symm f g = f.1 g :=
+  discreteCoindEquivAlgebraic_symm_apply ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ f g
+
+/-- The additive coinduction comparison intertwines right translation. -/
+@[simp↓]
+theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
+    discreteCoindAddEquivAlgebraic G M U (g • f) =
+      (Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)).ρ g
+        (discreteCoindAddEquivAlgebraic G M U f) :=
+  discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ g f
+
+variable [Finite G]
+
+/-- The algebraic restriction–coinduction counit evaluates at the identity after the additive
+coinduction comparison. -/
+theorem discreteCoindAddEquivAlgebraic_eval (f : DiscreteCoind G U M) :
+    ((Rep.resCoindAdjunction ℤ U.subtype).counit.app
+      (Rep.ofDistribMulAction ℤ U M)).hom (discreteCoindAddEquivAlgebraic G M U f) = f 1 := by
+  let A : SmoothDiscreteTopRep ℤ U :=
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩
+  exact (LinearMap.congr_fun (algebraicCoindCounit_toLinearMap
+    (R := ℤ) ⟨U, isOpen_discrete _⟩ A) _).symm.trans
+      ((algebraicCoindCounit_apply ℤ G ⟨U, isOpen_discrete _⟩ A _).trans
+        (discreteCoindAddEquivAlgebraic_apply G M U f 1))
+
+end DiscreteAlgebraicComparison
 
 end TauCeti
