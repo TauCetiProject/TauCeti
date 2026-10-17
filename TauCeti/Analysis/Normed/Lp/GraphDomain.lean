@@ -80,7 +80,7 @@ theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0
 
 end
 
-/-- The normal graph parametrization `y ↦ (φ y, y)` in the Euclidean product `ℝ × E`. -/
+/-- The normal graph parametrization `y ↦ (φ y, y)` in `WithLp 2 (ℝ × E)`. -/
 def normalGraphEmbedding (φ : E → ℝ) (y : E) : WithLp 2 (ℝ × E) :=
   WithLp.toLp 2 (φ y, y)
 
@@ -134,9 +134,11 @@ theorem _root_.LipschitzWith.normalGraphEmbedding [SeminormedAddCommGroup E] {K 
     _ ≤ K * dist x y + dist x y := add_le_add (hφ.dist_le_mul x y) le_rfl
     _ = (K + 1) * dist x y := by ring
 
+section
+
 variable [TopologicalSpace E]
 
-/-- A continuous normal graph is closed in the Euclidean product. -/
+/-- A continuous normal graph is closed in the product `ℝ × E`, represented by `WithLp 2`. -/
 theorem _root_.Continuous.isClosed_range_normalGraphEmbedding {φ : E → ℝ} (hφ : Continuous φ) :
     IsClosed (range (TauCeti.normalGraphEmbedding φ)) := by
   rw [range_normalGraphEmbedding]
@@ -164,10 +166,11 @@ theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
   simp only [WithLp.toLp_fst, WithLp.toLp_snd, ← hx]
   linarith
 
+end
 
 section Linear
 
-variable [NormedSpace ℝ E]
+variable [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The continuous linear graph map `x ↦ (A x, x)` associated to `A : E →L[ℝ] ℝ`. -/
 def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
