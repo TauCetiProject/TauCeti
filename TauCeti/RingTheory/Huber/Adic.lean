@@ -26,6 +26,9 @@ for Witt-vector rings with their `(p, [ϖ])`-adic topology.
 
 * `TauCeti.Huber.PairOfDefinition.adic`: the pair of definition `(A, I)` associated to a finitely
   generated ideal defining the topology.
+* `TauCeti.Huber.PairOfDefinition.adicRingOfDefinitionEquiv`: the isomorphism of its ring of
+  definition with `A`, which carries the ideal of definition onto `I`
+  (`TauCeti.Huber.PairOfDefinition.map_adic_idealOfDefinition`).
 
 ## Main results
 
@@ -82,6 +85,25 @@ theorem mem_adic_idealOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG)
     {x : (adic I hI hfg).ringOfDefinition} :
     x ∈ (adic I hI hfg).idealOfDefinition ↔ (x : A) ∈ I :=
   Ideal.mem_comap
+
+/-- The ring of definition of `adic I hI hfg` is all of `A`, so its inclusion is a ring
+isomorphism. -/
+noncomputable def adicRingOfDefinitionEquiv (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
+    (adic I hI hfg).ringOfDefinition ≃+* A :=
+  Subring.topEquiv
+
+/-- The isomorphism `adicRingOfDefinitionEquiv` is the inclusion. -/
+@[simp]
+theorem adicRingOfDefinitionEquiv_apply (I : Ideal A) (hI : IsAdic I) (hfg : I.FG)
+    (x : (adic I hI hfg).ringOfDefinition) :
+    adicRingOfDefinitionEquiv I hI hfg x = x :=
+  (rfl)
+
+/-- The isomorphism `A₀ ≃ A` of the adic pair carries its ideal of definition onto `I`. -/
+@[simp]
+theorem map_adic_idealOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
+    (adic I hI hfg).idealOfDefinition.map (adicRingOfDefinitionEquiv I hI hfg) = I :=
+  Ideal.map_comap_of_surjective _ Subring.topEquiv.surjective I
 
 /-- The ring of definition of `adic I hI hfg` is all of `A`, so its inclusion is surjective. -/
 private theorem surjective_subtype_adic (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :

@@ -40,8 +40,8 @@ complete for the ideal `I · Â`, and that it is noetherian when `A` is.
 * `TauCeti.Huber.PairOfDefinition.isNoetherianRing_completionRingOfDefinition_of_quotient` and
   the instance `TauCeti.Huber.PairOfDefinition.isNoetherianRing_completionRingOfDefinition`:
   `Â₀` is noetherian when `A₀ ⧸ I`, respectively `A₀`, is; the instance
-  `TauCeti.Huber.PairOfDefinition.isNoetherianRing_completion` states the latter for the ring of
-  definition of `P.completion`.
+  `TauCeti.Huber.PairOfDefinition.isNoetherianRing_completion_ringOfDefinition` states the latter
+  for the ring of definition of `P.completion`.
 * `TauCeti.Huber.isAdicComplete_completion_of_isAdic`: if the topology of `A` is `I`-adic with
   `I` finitely generated, then `Â` is `I · Â`-adically complete.
 * `TauCeti.Huber.isNoetherianRing_completion_of_isAdic_of_fg` and
@@ -50,7 +50,8 @@ complete for the ideal `I · Â`, and that it is noetherian when `A` is.
 
 ## References
 
-* [EGA I][grothendieck-1960], Chapitre 0, (7.2.6) and (7.3.1).
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Publ. Math. IHÉS
+  4 (1960), Chapitre 0, (7.2.6) and (7.3.1).
 * [The Stacks Project][stacks], Lemma 10.96.3 (tag
   [05GG](https://stacks.math.columbia.edu/tag/05GG)).
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Remark 6.8 and the proof of Proposition 6.35.
@@ -82,7 +83,7 @@ instance isAdicComplete_completionIdeal :
 
 /-- The completion map `A₀ → Â₀ ⧸ Îⁿ` is surjective: every point of `Â₀` is congruent modulo the
 open ideal `Îⁿ` to the image of a point of `A₀`. -/
-theorem surjective_mk_comp_toCompletionRingOfDefinition (n : ℕ) :
+theorem mk_comp_toCompletionRingOfDefinition_surjective (n : ℕ) :
     Function.Surjective
       ((Ideal.Quotient.mk (P.completionIdeal ^ n)).comp P.toCompletionRingOfDefinition) := by
   intro y
@@ -112,7 +113,7 @@ noncomputable def quotientPowEquivCompletion (n : ℕ) :
     P.ringOfDefinition ⧸ P.idealOfDefinition ^ n ≃+*
       P.completionRingOfDefinition ⧸ P.completionIdeal ^ n :=
   (Ideal.quotEquivOfEq (P.ker_mk_comp_toCompletionRingOfDefinition n).symm).trans
-    (RingHom.quotientKerEquivOfSurjective (P.surjective_mk_comp_toCompletionRingOfDefinition n))
+    (RingHom.quotientKerEquivOfSurjective (P.mk_comp_toCompletionRingOfDefinition_surjective n))
 
 /-- The isomorphism `A₀ ⧸ Iⁿ ≃ Â₀ ⧸ Îⁿ` is induced by the completion map. -/
 @[simp]
@@ -142,7 +143,7 @@ instance isNoetherianRing_completionRingOfDefinition [IsNoetherianRing P.ringOfD
 restates `isNoetherianRing_completionRingOfDefinition` for `P.completion`, whose ring of
 definition is `Â₀` only propositionally (`completion_ringOfDefinition`), so that instance search
 finds it on the pair of definition of `Â`. -/
-instance isNoetherianRing_completion [IsNoetherianRing P.ringOfDefinition] :
+instance isNoetherianRing_completion_ringOfDefinition [IsNoetherianRing P.ringOfDefinition] :
     IsNoetherianRing P.completion.ringOfDefinition := by
   rw [completion_ringOfDefinition]
   infer_instance
@@ -155,20 +156,18 @@ variable {I : Ideal A} (hI : IsAdic I) (hfg : I.FG)
 
 /-- For the pair of definition `(A, I)` of an `I`-adic ring, the ring of definition of the
 completion is all of `Â`, because the image of `A` is dense. -/
-private theorem surjective_subtype_adic_completionRingOfDefinition :
-    Function.Surjective (PairOfDefinition.adic I hI hfg).completionRingOfDefinition.subtype := by
-  intro x
-  refine ⟨⟨x, ?_⟩, rfl⟩
+private theorem adic_completionRingOfDefinition_eq_top :
+    (PairOfDefinition.adic I hI hfg).completionRingOfDefinition = ⊤ := by
+  ext x
   rw [PairOfDefinition.mem_completionRingOfDefinition_iff, PairOfDefinition.adic_ringOfDefinition,
     Subring.coe_top, Set.image_univ, Completion.denseRange_coe.closure_range]
-  exact Set.mem_univ x
+  exact iff_of_true (Set.mem_univ x) (Subring.mem_top x)
 
 /-- For the pair of definition `(A, I)` of an `I`-adic ring, the inclusion of the ring of
 definition of the completion into `Â` is a ring isomorphism. -/
 private noncomputable def adicCompletionRingOfDefinitionEquiv :
     (PairOfDefinition.adic I hI hfg).completionRingOfDefinition ≃+* Completion A :=
-  RingEquiv.ofBijective _
-    ⟨Subtype.val_injective, surjective_subtype_adic_completionRingOfDefinition hI hfg⟩
+  (RingEquiv.subringCongr (adic_completionRingOfDefinition_eq_top hI hfg)).trans Subring.topEquiv
 
 /-- The isomorphism `Â₀ ≃ Â` carries `Î` onto the ideal `I · Â`. -/
 private theorem map_completionIdeal_adicCompletionRingOfDefinitionEquiv :
@@ -177,11 +176,11 @@ private theorem map_completionIdeal_adicCompletionRingOfDefinitionEquiv :
       = I.map (Completion.coeRingHom : A →+* Completion A) := by
   set P := PairOfDefinition.adic I hI hfg
   have hcomp : ((adicCompletionRingOfDefinitionEquiv hI hfg : _ →+* Completion A).comp
-      P.toCompletionRingOfDefinition) = Completion.coeRingHom.comp P.ringOfDefinition.subtype :=
-    RingHom.ext P.toCompletionRingOfDefinition_apply
+      P.toCompletionRingOfDefinition) =
+        Completion.coeRingHom.comp (PairOfDefinition.adicRingOfDefinitionEquiv I hI hfg) :=
+    RingHom.ext fun x ↦ by simp [P, adicCompletionRingOfDefinitionEquiv]
   rw [← Ideal.map_coe, PairOfDefinition.completionIdeal_def, Ideal.map_map, hcomp, ← Ideal.map_map,
-    ← PairOfDefinition.extendedIdealOfDefinition_def,
-    PairOfDefinition.adic_extendedIdealOfDefinition]
+    Ideal.map_coe, PairOfDefinition.map_adic_idealOfDefinition]
 
 include hI hfg in
 /-- **The completion of an adic ring is adically complete** (Stacks, Lemma 10.96.3): if the
@@ -198,15 +197,10 @@ generated ideal of definition `I` (EGA I, Chapitre 0, (7.2.6)). -/
 theorem isNoetherianRing_completion_of_isAdic_of_fg [IsNoetherianRing (A ⧸ I)] :
     IsNoetherianRing (Completion A) := by
   set P := PairOfDefinition.adic I hI hfg
-  -- the inclusion `A₀ → A` is bijective because `A₀ = ⊤`
-  let e : P.ringOfDefinition ≃+* A := RingEquiv.ofBijective P.ringOfDefinition.subtype
-    ⟨Subtype.val_injective, fun x ↦ ⟨⟨x, by simp [P]⟩, rfl⟩⟩
-  have hI' : I = P.idealOfDefinition.map e := by
-    rw [← Ideal.map_coe, show (e : P.ringOfDefinition →+* A) = P.ringOfDefinition.subtype from
-      RingHom.ext fun _ ↦ rfl, ← PairOfDefinition.extendedIdealOfDefinition_def,
-      PairOfDefinition.adic_extendedIdealOfDefinition]
   have : IsNoetherianRing (P.ringOfDefinition ⧸ P.idealOfDefinition) :=
-    isNoetherianRing_of_ringEquiv _ (Ideal.quotientEquiv _ _ e hI').symm
+    isNoetherianRing_of_ringEquiv _ (Ideal.quotientEquiv _ _
+      (PairOfDefinition.adicRingOfDefinitionEquiv I hI hfg)
+      (PairOfDefinition.map_adic_idealOfDefinition I hI hfg).symm).symm
   have := P.isNoetherianRing_completionRingOfDefinition_of_quotient
   exact isNoetherianRing_of_ringEquiv _ (adicCompletionRingOfDefinitionEquiv hI hfg)
 
