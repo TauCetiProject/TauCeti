@@ -27,6 +27,20 @@ module: `C a` acts coefficientwise on the left, while `X` sends `a Xⁿ` to
 * `TauCeti.SigmaDerivation`: a linear map satisfying the skew Leibniz rule.
 * `TauCeti.OreExtension`: the associated Ore extension with left coefficients.
 * `TauCeti.OreExtension.C` and `TauCeti.OreExtension.X`: its constants and variable.
+* `TauCeti.OreExtension.monomialBasis`: the left monomial basis `Xⁿ` over `R`.
+* `TauCeti.OreExtension.CRingHom` and `TauCeti.OreExtension.CAlgHom`: the inclusion of the
+  coefficients as a ring and as a `k`-algebra homomorphism.
+* `TauCeti.OreExtension.eval₂`: evaluation along a coefficient homomorphism at a chosen element.
+* `TauCeti.OreExtension.lift` and `TauCeti.OreExtension.liftAlgHom`: the universal ring and
+  `k`-algebra homomorphisms out of the Ore extension.
+
+## Main statements
+
+* `TauCeti.OreExtension.X_mul_C`: the Ore commutation relation.
+* `TauCeti.OreExtension.lift_C`, `TauCeti.OreExtension.lift_X`, and
+  `TauCeti.OreExtension.ringHom_ext`: the universal property for ring homomorphisms.
+* `TauCeti.OreExtension.liftAlgHom_C`, `TauCeti.OreExtension.liftAlgHom_X`, and
+  `TauCeti.OreExtension.algHom_ext`: the universal property for `k`-algebra homomorphisms.
 
 ## References
 
@@ -47,7 +61,6 @@ variable {k : Type u} {R : Type v} [CommSemiring k] [Semiring R] [Algebra k R]
 
 /-- A `σ`-derivation is a linear map satisfying
 `δ (a * b) = σ a * δ b + δ a * b` and sending one to zero. -/
-@[ext]
 structure SigmaDerivation (σ : R →ₐ[k] R) extends R →ₗ[k] R where
   /-- The skew Leibniz rule. -/
   leibniz' (a b : R) : toLinearMap (a * b) = σ a * toLinearMap b + toLinearMap a * b
@@ -68,12 +81,19 @@ instance : FunLike (SigmaDerivation σ) R R where
   coe δ := δ.toLinearMap
   coe_injective := by
     intro δ ε h
-    ext a
-    exact congrFun h a
+    cases δ
+    cases ε
+    congr
+    exact LinearMap.ext (congrFun h)
 
-instance : AddMonoidHomClass (SigmaDerivation σ) R R where
+instance : LinearMapClass (SigmaDerivation σ) k R R where
   map_add δ := δ.toLinearMap.map_add
-  map_zero δ := δ.toLinearMap.map_zero
+  map_smulₛₗ δ := δ.toLinearMap.map_smul
+
+/-- Two skew derivations are equal when they agree at every point. -/
+@[ext]
+theorem ext {δ ε : SigmaDerivation σ} (h : ∀ a, δ a = ε a) : δ = ε :=
+  DFunLike.ext _ _ h
 
 @[simp]
 theorem coe_toLinearMap (δ : SigmaDerivation σ) : ⇑δ.toLinearMap = δ := rfl
@@ -94,8 +114,7 @@ theorem map_one (δ : SigmaDerivation σ) : δ 1 = 0 :=
 end SigmaDerivation
 
 /-- The Ore extension `R[X; σ, δ]`, represented by its finitely supported left coefficients. -/
-@[ext]
-structure OreExtension (σ : R →ₐ[k] R) (δ : SigmaDerivation σ) where
+structure OreExtension (σ : R →ₐ[k] R) (δ : SigmaDerivation σ) where ofFinsupp ::
   /-- The finitely supported sequence of left coefficients. -/
   toFinsupp : ℕ →₀ R
 
@@ -109,19 +128,27 @@ theorem toFinsupp_injective :
   cases h
   rfl
 
+/-- The coefficient of `Xⁿ` in an Ore polynomial. -/
+def coeff (p : OreExtension σ δ) (n : ℕ) : R := p.toFinsupp n
+
+theorem coeff_def (p : OreExtension σ δ) (n : ℕ) : coeff p n = p.toFinsupp n := (rfl)
+
+/-- Ore polynomials are equal when all their left coefficients agree. -/
+@[ext]
+theorem ext {p q : OreExtension σ δ} (h : ∀ n, coeff p n = coeff q n) : p = q :=
+  toFinsupp_injective (Finsupp.ext h)
+
 instance : Zero (OreExtension σ δ) := ⟨⟨0⟩⟩
 
 @[no_expose] instance : Add (OreExtension σ δ) :=
   ⟨fun p q => ⟨p.toFinsupp + q.toFinsupp⟩⟩
 
-instance : SMul ℕ (OreExtension σ δ) :=
+instance instNSMul : SMul ℕ (OreExtension σ δ) :=
   ⟨fun n p => ⟨n • p.toFinsupp⟩⟩
 
-instance : SMul k (OreExtension σ δ) :=
-  ⟨fun c p => ⟨c • p.toFinsupp⟩⟩
-
-instance : SMul R (OreExtension σ δ) :=
-  ⟨fun a p => ⟨p.toFinsupp.mapRange (a * ·) (mul_zero a)⟩⟩
+instance smulZeroClass {S : Type*} [SMulZeroClass S R] : SMulZeroClass S (OreExtension σ δ) where
+  smul s p := ⟨s • p.toFinsupp⟩
+  smul_zero s := congrArg ofFinsupp (smul_zero s)
 
 @[simp] theorem toFinsupp_zero : (0 : OreExtension σ δ).toFinsupp = 0 := rfl
 
@@ -133,53 +160,54 @@ instance : SMul R (OreExtension σ δ) :=
 @[simp] theorem toFinsupp_nsmul (p : OreExtension σ δ) (n : ℕ) :
     (n • p).toFinsupp = n • p.toFinsupp := rfl
 
-@[simp] theorem toFinsupp_smul (c : k) (p : OreExtension σ δ) :
-    (c • p).toFinsupp = c • p.toFinsupp := rfl
-
-@[simp] theorem toFinsupp_smul_left (a : R) (p : OreExtension σ δ) :
-    (a • p).toFinsupp = p.toFinsupp.mapRange (a * ·) (mul_zero a) := rfl
+@[simp] theorem toFinsupp_smul {S : Type*} [SMulZeroClass S R] (s : S) (p : OreExtension σ δ) :
+    (s • p).toFinsupp = s • p.toFinsupp := rfl
 
 instance instAddCommMonoid : AddCommMonoid (OreExtension σ δ) :=
   Function.Injective.addCommMonoid toFinsupp toFinsupp_injective toFinsupp_zero
     toFinsupp_add toFinsupp_nsmul
 
-instance : Module k (OreExtension σ δ) :=
-  Function.Injective.module k
+instance module {S : Type*} [Semiring S] [Module S R] : Module S (OreExtension σ δ) :=
+  Function.Injective.module S
     ⟨⟨toFinsupp, toFinsupp_zero⟩, toFinsupp_add⟩ toFinsupp_injective toFinsupp_smul
 
-instance : Module R (OreExtension σ δ) :=
-  Function.Injective.module R
-    ⟨⟨toFinsupp, toFinsupp_zero⟩, toFinsupp_add⟩ toFinsupp_injective toFinsupp_smul_left
+instance smulCommClass {S₁ S₂ : Type*} [SMulZeroClass S₁ R] [SMulZeroClass S₂ R]
+    [SMulCommClass S₁ S₂ R] : SMulCommClass S₁ S₂ (OreExtension σ δ) :=
+  ⟨fun s₁ s₂ p => toFinsupp_injective (smul_comm s₁ s₂ p.toFinsupp)⟩
 
-/-- The coefficient of `Xⁿ` in an Ore polynomial. -/
-def coeff (p : OreExtension σ δ) (n : ℕ) : R := p.toFinsupp n
-
-private def coeffLinearEquiv : OreExtension σ δ ≃ₗ[k] (ℕ →₀ R) where
-  toFun := toFinsupp
-  invFun p := ⟨p⟩
-  left_inv p := by rcases p; rfl
-  right_inv _ := rfl
-  map_add' := toFinsupp_add
-  map_smul' := toFinsupp_smul
+instance isScalarTower {S₁ S₂ : Type*} [SMul S₁ S₂] [SMulZeroClass S₁ R] [SMulZeroClass S₂ R]
+    [IsScalarTower S₁ S₂ R] : IsScalarTower S₁ S₂ (OreExtension σ δ) :=
+  ⟨fun s₁ s₂ p => toFinsupp_injective (smul_assoc s₁ s₂ p.toFinsupp)⟩
 
 /-- The linear equivalence recording the left coefficients of an Ore polynomial. -/
 def leftCoeffLinearEquiv : OreExtension σ δ ≃ₗ[R] (ℕ →₀ R) where
   toFun := toFinsupp
-  invFun p := ⟨p⟩
-  left_inv p := by rcases p; rfl
+  invFun := ofFinsupp
+  left_inv _ := rfl
   right_inv _ := rfl
   map_add' := toFinsupp_add
-  map_smul' := toFinsupp_smul_left
+  map_smul' := toFinsupp_smul
+
+@[simp]
+theorem leftCoeffLinearEquiv_apply (p : OreExtension σ δ) :
+    leftCoeffLinearEquiv p = p.toFinsupp := (rfl)
+
+@[simp]
+theorem leftCoeffLinearEquiv_symm_apply (f : ℕ →₀ R) :
+    (leftCoeffLinearEquiv (σ := σ) (δ := δ)).symm f = ⟨f⟩ := (rfl)
 
 /-- The left monomial basis of an Ore extension. -/
 noncomputable def monomialBasis : Module.Basis ℕ R (OreExtension σ δ) :=
   Module.Basis.ofRepr leftCoeffLinearEquiv
 
+@[simp]
+theorem monomialBasis_repr (p : OreExtension σ δ) : monomialBasis.repr p = p.toFinsupp := (rfl)
+
 /-- The left-coefficient monomial `a Xⁿ`. -/
 def monomial (n : ℕ) : R →ₗ[k] OreExtension σ δ where
   toFun a := ⟨Finsupp.single n a⟩
-  map_add' a b := by ext; simp
-  map_smul' c a := by ext; simp
+  map_add' a b := by ext; simp [coeff_def]
+  map_smul' c a := by ext; simp [coeff_def]
 
 @[simp]
 theorem toFinsupp_monomial (n : ℕ) (a : R) :
@@ -200,8 +228,8 @@ theorem coeff_monomial (m : ℕ) (a : R) (n : ℕ) :
     coeff (monomial (σ := σ) (δ := δ) m a) n = if m = n then a else 0 := by
   by_cases h : m = n
   · subst n
-    simp [coeff]
-  · simp [coeff, h, Ne.symm h]
+    simp [coeff_def]
+  · simp [coeff_def, h, Ne.symm h]
 
 theorem monomial_injective (n : ℕ) :
     Function.Injective (monomial (σ := σ) (δ := δ) n) := by
@@ -211,95 +239,64 @@ theorem monomial_injective (n : ℕ) :
 @[simp]
 theorem monomialBasis_apply (n : ℕ) :
     monomialBasis (σ := σ) (δ := δ) n = monomial n 1 := by
-  -- Expose `Basis.ofRepr` application to compare the two coefficient-sequence wrappers.
-  change leftCoeffLinearEquiv.symm (Finsupp.single n 1) = monomial n 1
-  rfl
+  rw [Module.Basis.apply_eq_iff, monomialBasis_repr, toFinsupp_monomial]
 
 @[simp] theorem coeff_zero (n : ℕ) : coeff (0 : OreExtension σ δ) n = 0 := (rfl)
 
 @[simp] theorem coeff_add (p q : OreExtension σ δ) (n : ℕ) :
-    coeff (p + q) n = coeff p n + coeff q n := by simp [coeff]
-
-private def coeffLeft (a : R) : OreExtension σ δ →ₗ[k] OreExtension σ δ where
-  toFun p := ⟨p.toFinsupp.mapRange (a * ·) (mul_zero a)⟩
-  map_add' p q := by ext n; simp [mul_add]
-  map_smul' c p := by ext n; simp
+    coeff (p + q) n = coeff p n + coeff q n := by simp [coeff_def]
 
 @[simp]
-private theorem coeffLeft_monomial (a b : R) (n : ℕ) :
-    coeffLeft (σ := σ) (δ := δ) a (monomial n b) = monomial n (a * b) := by
-  ext m
-  simp [coeffLeft]
+theorem coeff_smul {S : Type*} [SMulZeroClass S R] (s : S) (p : OreExtension σ δ) (n : ℕ) :
+    coeff (s • p) n = s • coeff p n := (rfl)
 
-private def xOperator : OreExtension σ δ →ₗ[k] OreExtension σ δ where
-  __ := (Finsupp.lsum k fun n =>
+@[simp]
+theorem smul_monomial {S : Type*} [SMulZeroClass S R] (s : S) (n : ℕ) (a : R) :
+    s • monomial (σ := σ) (δ := δ) n a = monomial n (s • a) := by
+  ext m
+  by_cases h : n = m <;> simp [h]
+
+private def xOperator : OreExtension σ δ →ₗ[k] OreExtension σ δ :=
+  (Finsupp.lsum k fun n =>
     (monomial (n + 1)).comp σ.toLinearMap + (monomial n).comp δ.toLinearMap).comp
-      coeffLinearEquiv.toLinearMap
+      (leftCoeffLinearEquiv.toLinearMap.restrictScalars k)
 
 @[simp]
 private theorem xOperator_monomial (a : R) (n : ℕ) :
     xOperator (σ := σ) (δ := δ) (monomial n a) =
       monomial (n + 1) (σ a) + monomial n (δ a) := by
-  -- Expose the `Finsupp.lsum` input so its single-support lemma applies.
-  change (Finsupp.lsum k (fun i =>
-    (monomial (i + 1)).comp σ.toLinearMap + (monomial i).comp δ.toLinearMap))
-      (Finsupp.single n a) = _
-  rw [Finsupp.lsum_single]
-  rfl
+  simp only [xOperator, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    LinearEquiv.coe_coe, leftCoeffLinearEquiv_apply, toFinsupp_monomial, Finsupp.lsum_single,
+    LinearMap.add_apply, AlgHom.toLinearMap_apply, SigmaDerivation.coe_toLinearMap]
 
-private def coeffLeftLinear : R →ₗ[k] Module.End k (OreExtension σ δ) where
-  toFun := coeffLeft
-  map_add' a b := by
-    ext p n
-    simp [coeffLeft, add_mul]
-  map_smul' c a := by
-    ext p n
-    simp [coeffLeft, Algebra.smul_mul_assoc]
-
-private def regularRepresentation : OreExtension σ δ →ₗ[k] Module.End k (OreExtension σ δ) where
-  __ := (Finsupp.lsum k fun n =>
+private def regularRepresentation : OreExtension σ δ →ₗ[k] Module.End k (OreExtension σ δ) :=
+  (Finsupp.lsum k fun n =>
     (LinearMap.mul k (Module.End k (OreExtension σ δ))).flip (xOperator ^ n) ∘ₗ
-      coeffLeftLinear).comp coeffLinearEquiv.toLinearMap
+      (Algebra.lsmul k k (OreExtension σ δ)).toLinearMap).comp
+    (leftCoeffLinearEquiv.toLinearMap.restrictScalars k)
 
 @[simp]
 private theorem regularRepresentation_monomial (a : R) (n : ℕ) :
     regularRepresentation (σ := σ) (δ := δ) (monomial n a) =
-      coeffLeft a * xOperator ^ n := by
-  -- Expose the `Finsupp.lsum` input so its single-support lemma applies.
-  change (Finsupp.lsum k (fun i =>
-    (LinearMap.mul k (Module.End k (OreExtension σ δ))).flip (xOperator ^ i) ∘ₗ
-      coeffLeftLinear)) (Finsupp.single n a) = _
-  rw [Finsupp.lsum_single]
-  rfl
+      Algebra.lsmul k k (OreExtension σ δ) a * xOperator ^ n := by
+  simp only [regularRepresentation, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    LinearEquiv.coe_coe, leftCoeffLinearEquiv_apply, toFinsupp_monomial, Finsupp.lsum_single,
+    LinearMap.flip_apply, LinearMap.mul_apply', AlgHom.toLinearMap_apply]
 
-private def mul (p q : OreExtension σ δ) : OreExtension σ δ := regularRepresentation p q
+@[no_expose] instance : Mul (OreExtension σ δ) := ⟨fun p q => regularRepresentation p q⟩
 
-@[no_expose] instance : Mul (OreExtension σ δ) := ⟨mul⟩
+private theorem mul_def (p q : OreExtension σ δ) : p * q = regularRepresentation p q := rfl
 
 instance instNonUnitalNonAssocSemiring : NonUnitalNonAssocSemiring (OreExtension σ δ) where
-  -- These goals expose private multiplication only to invoke linearity of its representation.
-  left_distrib p q r := by
-    change regularRepresentation p (q + r) = _
-    exact map_add _ _ _
-  right_distrib p q r := by
-    change regularRepresentation (p + q) r = _
-    rw [map_add]
-    rfl
-  zero_mul p := by
-    change regularRepresentation 0 p = 0
-    rw [map_zero]
-    rfl
-  mul_zero p := by
-    change regularRepresentation p 0 = 0
-    exact map_zero _
+  left_distrib p q r := by simp only [mul_def, map_add]
+  right_distrib p q r := by simp only [mul_def, map_add, LinearMap.add_apply]
+  zero_mul p := by simp only [mul_def, map_zero, LinearMap.zero_apply]
+  mul_zero p := by simp only [mul_def, map_zero]
 
 @[simp]
 private theorem monomial_mul_apply (a : R) (n : ℕ) (p : OreExtension σ δ) :
-    monomial n a * p = coeffLeft a ((xOperator ^ n) p) := by
-  -- Expose private multiplication so the monomial representation lemma applies.
-  rw [show monomial n a * p = regularRepresentation (monomial n a) p from rfl,
-    regularRepresentation_monomial]
-  rfl
+    monomial n a * p = a • (xOperator ^ n) p := by
+  rw [mul_def, regularRepresentation_monomial, Module.End.mul_apply, Algebra.lsmul_apply]
 
 /-- The constant Ore polynomial. -/
 def C : R →ₗ[k] OreExtension σ δ := monomial 0
@@ -312,81 +309,61 @@ theorem monomial_zero_left (a : R) : monomial (σ := σ) (δ := δ) 0 a = C a :=
 
 theorem X_eq_monomial : X (σ := σ) (δ := δ) = monomial 1 1 := (rfl)
 
-private theorem xOperator_coeffLeft (a : R) :
-    xOperator (σ := σ) (δ := δ) * coeffLeft a =
-      coeffLeft (σ a) * xOperator + coeffLeft (δ a) := by
+private theorem xOperator_lsmul (a : R) :
+    xOperator (σ := σ) (δ := δ) * Algebra.lsmul k k (OreExtension σ δ) a =
+      Algebra.lsmul k k _ (σ a) * xOperator + Algebra.lsmul k k _ (δ a) := by
   apply LinearMap.ext
   intro p
   induction p using induction_on with
   | zero => simp
   | add n b p hn hb ih =>
-      simp only [map_add, Module.End.mul_apply, LinearMap.add_apply]
-      have ih' : xOperator (coeffLeft a p) =
-          coeffLeft (σ a) (xOperator p) + coeffLeft (δ a) p := by
-        simpa only [Module.End.mul_apply, LinearMap.add_apply] using ih
-      rw [ih']
+      simp only [map_add, Module.End.mul_apply, LinearMap.add_apply, Algebra.lsmul_apply] at ih ⊢
+      rw [ih]
       congr 1
-      simp only [coeffLeft_monomial, xOperator_monomial, map_add]
-      rw [SigmaDerivation.leibniz]
-      simp only [map_mul]
+      simp only [smul_monomial, xOperator_monomial, smul_add, smul_eq_mul,
+        SigmaDerivation.leibniz, map_mul]
       ext m
       simp [add_assoc]
 
 private theorem xOperator_regularRepresentation (p : OreExtension σ δ) :
     xOperator * regularRepresentation p = regularRepresentation (xOperator p) := by
-  rcases p with ⟨p⟩
-  induction p using Finsupp.induction with
-  | zero => rw [ofFinsupp_zero, map_zero, mul_zero, map_zero, map_zero]
-  | @single_add n a p hn ha ih =>
-      -- Identify the structure wrapper with the corresponding monomial sum.
-      rw [show (⟨Finsupp.single n a + p⟩ : OreExtension σ δ) =
-        monomial n a + ⟨p⟩ from rfl, map_add, map_add, mul_add, ih]
+  induction p using induction_on with
+  | zero => rw [map_zero, mul_zero, map_zero, map_zero]
+  | add n a p hn ha ih =>
+      rw [map_add, map_add, mul_add, ih]
       simp only [regularRepresentation_monomial, xOperator_monomial, map_add]
       congr 1
-      rw [← mul_assoc, xOperator_coeffLeft, add_mul, mul_assoc, ← pow_succ']
+      rw [← mul_assoc, xOperator_lsmul, add_mul, mul_assoc, ← pow_succ']
 
 private theorem xOperator_pow_regularRepresentation (n : ℕ) (p : OreExtension σ δ) :
     xOperator ^ n * regularRepresentation p = regularRepresentation ((xOperator ^ n) p) := by
   induction n with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ', mul_assoc, ih, xOperator_regularRepresentation]
-      rfl
+      rw [pow_succ', mul_assoc, ih, xOperator_regularRepresentation, Module.End.mul_apply]
 
-private theorem coeffLeft_mul (a b : R) :
-    coeffLeft (σ := σ) (δ := δ) (a * b) = coeffLeft a * coeffLeft b := by
-  apply LinearMap.ext
-  intro p
-  ext n
-  simp [coeffLeft, Module.End.mul_apply, mul_assoc]
-
-private theorem regularRepresentation_coeffLeft (a : R) (p : OreExtension σ δ) :
-    regularRepresentation (coeffLeft a p) = coeffLeft a * regularRepresentation p := by
+private theorem regularRepresentation_smul (a : R) (p : OreExtension σ δ) :
+    regularRepresentation (a • p) = Algebra.lsmul k k _ a * regularRepresentation p := by
   induction p using induction_on with
   | zero => simp
   | add n b p hn hb ih =>
-      rw [map_add, map_add, map_add, ih, coeffLeft_monomial,
-        regularRepresentation_monomial, regularRepresentation_monomial]
-      rw [coeffLeft_mul, mul_assoc, mul_add]
+      rw [smul_add, map_add, map_add, ih, smul_monomial, smul_eq_mul,
+        regularRepresentation_monomial, regularRepresentation_monomial, map_mul, mul_assoc,
+        mul_add]
 
 private theorem regularRepresentation_mul (p q : OreExtension σ δ) :
     regularRepresentation (p * q) = regularRepresentation p * regularRepresentation q := by
-  rcases p with ⟨p⟩
-  induction p using Finsupp.induction with
-  | zero =>
-      rw [ofFinsupp_zero, zero_mul, map_zero]
-      exact (zero_mul _).symm
-  | @single_add n a p hn ha ih =>
-      -- Identify the structure wrapper with the corresponding monomial sum.
-      rw [show (⟨Finsupp.single n a + p⟩ : OreExtension σ δ) =
-        monomial n a + ⟨p⟩ from rfl, add_mul, map_add, map_add, add_mul, ih]
-      simp only [monomial_mul_apply, regularRepresentation_monomial]
-      rw [regularRepresentation_coeffLeft, ← xOperator_pow_regularRepresentation, mul_assoc]
+  induction p using induction_on with
+  | zero => rw [zero_mul, map_zero, zero_mul]
+  | add n a p hn ha ih =>
+      rw [add_mul, map_add, map_add, add_mul, ih, monomial_mul_apply,
+        regularRepresentation_smul, ← xOperator_pow_regularRepresentation,
+        regularRepresentation_monomial, mul_assoc]
 
 private theorem xOperator_pow_C_one (n : ℕ) :
     (xOperator (σ := σ) (δ := δ) ^ n) (C 1) = monomial n 1 := by
   induction n with
-  | zero => simp [C, monomial]
+  | zero => rw [pow_zero, Module.End.one_apply, monomial_zero_left]
   | succ n ih =>
       rw [pow_succ', Module.End.mul_apply, ih, xOperator_monomial]
       simp
@@ -397,8 +374,8 @@ private theorem regularRepresentation_apply_C_one (p : OreExtension σ δ) :
   | zero => simp
   | add n a p hn ha ih =>
       rw [map_add, LinearMap.add_apply, ih, regularRepresentation_monomial,
-        Module.End.mul_apply, xOperator_pow_C_one, coeffLeft_monomial]
-      simp
+        Module.End.mul_apply, xOperator_pow_C_one, Algebra.lsmul_apply, smul_monomial,
+        smul_eq_mul, mul_one]
 
 private theorem regularRepresentation_injective :
     Function.Injective (regularRepresentation (σ := σ) (δ := δ)) := by
@@ -409,6 +386,8 @@ instance instOne : One (OreExtension σ δ) := ⟨C 1⟩
 
 instance instNatCast : NatCast (OreExtension σ δ) := ⟨Nat.unaryCast⟩
 
+private theorem one_def : (1 : OreExtension σ δ) = monomial 0 1 := rfl
+
 @[simp] theorem toFinsupp_one : (1 : OreExtension σ δ).toFinsupp = Finsupp.single 0 1 := (rfl)
 
 instance instNonUnitalSemiring : NonUnitalSemiring (OreExtension σ δ) where
@@ -417,15 +396,10 @@ instance instNonUnitalSemiring : NonUnitalSemiring (OreExtension σ δ) where
     simp only [regularRepresentation_mul, mul_assoc]
 
 instance instNonAssocSemiring : NonAssocSemiring (OreExtension σ δ) where
-  -- Expose private multiplication to use faithfulness at `C 1` and coefficientwise action.
   one_mul p := by
-    change regularRepresentation (C 1) p = p
-    rw [← monomial_zero_left, regularRepresentation_monomial]
-    change coeffLeft 1 p = p
-    ext n
-    simp [coeffLeft]
+    rw [one_def, monomial_mul_apply, pow_zero, Module.End.one_apply, one_smul]
   mul_one p := by
-    change regularRepresentation p (C 1) = p
+    rw [mul_def]
     exact regularRepresentation_apply_C_one p
 
 instance : Semiring (OreExtension σ δ) where
@@ -435,35 +409,34 @@ instance : Semiring (OreExtension σ δ) where
 
 instance : Algebra k (OreExtension σ δ) :=
   Algebra.ofModule
-    (fun c p q => by
-      -- Expose private multiplication to use linearity in its left input.
-      change regularRepresentation (c • p) q = c • regularRepresentation p q
-      rw [map_smul]
-      rfl)
-    (fun c p q => by
-      -- Expose private multiplication to use linearity in its right input.
-      change regularRepresentation p (c • q) = c • regularRepresentation p q
-      exact map_smul (regularRepresentation p) c q)
-
-@[simp]
-theorem algebraMap_apply (c : k) :
-    algebraMap k (OreExtension σ δ) c = C (algebraMap k R c) := by
-  rw [Algebra.algebraMap_eq_smul_one]
-  ext n
-  simp only [toFinsupp_smul, toFinsupp_one, Finsupp.smul_single, ← monomial_zero_left,
-    toFinsupp_monomial]
-  have hc : c • (1 : R) = algebraMap k R c := by simp [Algebra.smul_def]
-  rw [hc]
+    (fun c p q => by rw [mul_def, mul_def, map_smul, LinearMap.smul_apply])
+    (fun c p q => by rw [mul_def, mul_def, map_smul])
 
 @[simp]
 theorem C_one : C (σ := σ) (δ := δ) 1 = 1 := rfl
 
 @[simp]
+theorem algebraMap_apply (c : k) :
+    algebraMap k (OreExtension σ δ) c = C (algebraMap k R c) := by
+  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, ← C_one, ← map_smul]
+
+@[simp]
+theorem C_mul_monomial (a b : R) (n : ℕ) :
+    C (σ := σ) (δ := δ) a * monomial n b = monomial n (a * b) := by
+  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, Module.End.one_apply, smul_monomial,
+    smul_eq_mul]
+
+@[simp]
 theorem C_mul (a b : R) : C (σ := σ) (δ := δ) (a * b) = C a * C b := by
-  -- Expose private multiplication so the constant regular-representation formula applies.
-  change monomial 0 (a * b) = regularRepresentation (monomial 0 a) (monomial 0 b)
-  rw [regularRepresentation_monomial]
-  rw [pow_zero, mul_one, coeffLeft_monomial]
+  rw [← monomial_zero_left b, C_mul_monomial, monomial_zero_left]
+
+theorem smul_eq_C_mul (a : R) (p : OreExtension σ δ) : a • p = C a * p := by
+  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, Module.End.one_apply]
+
+@[simp]
+theorem coeff_C_mul (a : R) (p : OreExtension σ δ) (n : ℕ) :
+    coeff (C a * p) n = a * coeff p n := by
+  rw [← smul_eq_C_mul, coeff_smul, smul_eq_mul]
 
 /-- Constants embed into the Ore extension as a ring homomorphism. -/
 def CRingHom : R →+* OreExtension σ δ where
@@ -479,6 +452,14 @@ theorem CRingHom_eq_C (a : R) : CRingHom (σ := σ) (δ := δ) a = C a := (rfl)
 theorem CRingHom_injective : Function.Injective (CRingHom (σ := σ) (δ := δ)) :=
   monomial_injective 0
 
+/-- Constants embed into the Ore extension as a `k`-algebra homomorphism. -/
+def CAlgHom : R →ₐ[k] OreExtension σ δ where
+  __ := CRingHom
+  commutes' c := (algebraMap_apply c).symm
+
+@[simp]
+theorem CAlgHom_eq_C (a : R) : CAlgHom (σ := σ) (δ := δ) a = C a := (rfl)
+
 @[simp]
 theorem coeff_C (a : R) (n : ℕ) : coeff (C (σ := σ) (δ := δ) a) n = if n = 0 then a else 0 := by
   rw [← monomial_zero_left, coeff_monomial]
@@ -492,108 +473,97 @@ theorem coeff_X (n : ℕ) : coeff (X (σ := σ) (δ := δ)) n = if n = 1 then 1 
 /-- The defining Ore commutation relation. -/
 theorem X_mul_C (a : R) :
     X (σ := σ) (δ := δ) * C a = C (σ a) * X + C (δ a) := by
-  rw [X_eq_monomial, ← monomial_zero_left, monomial_mul_apply, pow_one, xOperator_monomial,
-    map_add, coeffLeft_monomial, coeffLeft_monomial, ← monomial_zero_left,
-    ← monomial_zero_left]
-  rw [monomial_mul_apply, pow_zero, Module.End.one_apply, coeffLeft_monomial]
-  simp
+  simp [X_eq_monomial, ← monomial_zero_left]
 
-@[simp]
-theorem X_pow (n : ℕ) : X (σ := σ) (δ := δ) ^ n = monomial n 1 := by
+theorem X_pow_eq_monomial (n : ℕ) : X (σ := σ) (δ := δ) ^ n = monomial n 1 := by
   induction n with
   | zero => rfl
   | succ n ih =>
-      rw [pow_succ', ih, X_eq_monomial, monomial_mul_apply, pow_one,
-        xOperator_monomial]
+      rw [pow_succ', ih, X_eq_monomial, monomial_mul_apply, pow_one, xOperator_monomial]
       simp
 
 @[simp]
-theorem C_mul_monomial (a b : R) (n : ℕ) :
-    C (σ := σ) (δ := δ) a * monomial n b = monomial n (a * b) := by
-  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, Module.End.one_apply,
-    coeffLeft_monomial]
+theorem C_mul_X_pow_eq_monomial (a : R) (n : ℕ) :
+    C (σ := σ) (δ := δ) a * X ^ n = monomial n a := by
+  rw [X_pow_eq_monomial, C_mul_monomial, mul_one]
 
 section UniversalProperty
 
 variable {S : Type*} [Semiring S]
 
-/-- Evaluate an Ore polynomial at a coefficient homomorphism `f` and an element `x`, without yet
-assuming that `x` satisfies the Ore commutation relation. -/
-def eval (f : R →+* S) (x : S) : OreExtension σ δ →+ S :=
+/-- Evaluate an Ore polynomial along a coefficient homomorphism `f` at an element `x`, without
+yet assuming that `x` satisfies the Ore commutation relation. -/
+def eval₂ (f : R →+* S) (x : S) : OreExtension σ δ →+ S :=
   (Finsupp.liftAddHom fun n => (AddMonoidHom.mulRight (x ^ n)).comp f.toAddMonoidHom).comp
     leftCoeffLinearEquiv.toLinearMap.toAddMonoidHom
 
 @[simp]
-theorem eval_monomial (f : R →+* S) (x : S) (n : ℕ) (a : R) :
-    eval (σ := σ) (δ := δ) f x (monomial n a) = f a * x ^ n := by
-  simp [eval, leftCoeffLinearEquiv, monomial]
+theorem eval₂_monomial (f : R →+* S) (x : S) (n : ℕ) (a : R) :
+    eval₂ (σ := σ) (δ := δ) f x (monomial n a) = f a * x ^ n := by
+  simp [eval₂]
 
-private theorem eval_coeffLeft (f : R →+* S) (x : S) (a : R) (p : OreExtension σ δ) :
-    eval f x (coeffLeft a p) = f a * eval f x p := by
+private theorem eval₂_smul (f : R →+* S) (x : S) (a : R) (p : OreExtension σ δ) :
+    eval₂ f x (a • p) = f a * eval₂ f x p := by
   induction p using induction_on with
   | zero => simp
   | add n b p hn hb ih =>
-      rw [map_add, map_add, map_add, ih, coeffLeft_monomial,
-        eval_monomial, eval_monomial, map_mul, mul_add, mul_assoc]
+      rw [smul_add, map_add, map_add, ih, smul_monomial, smul_eq_mul,
+        eval₂_monomial, eval₂_monomial, map_mul, mul_add, mul_assoc]
 
-private theorem eval_xOperator (f : R →+* S) (x : S)
+private theorem eval₂_xOperator (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (p : OreExtension σ δ) :
-    eval f x (xOperator p) = x * eval f x p := by
+    eval₂ f x (xOperator p) = x * eval₂ f x p := by
   induction p using induction_on with
   | zero => simp
   | add n a p hn ha ih =>
       rw [map_add, xOperator_monomial]
-      simp only [(eval f x).map_add, eval_monomial, ih]
+      simp only [map_add, eval₂_monomial, ih]
       rw [mul_add]
       congr 1
       rw [← mul_assoc, h, add_mul, pow_succ', mul_assoc]
 
-private theorem eval_xOperator_pow (f : R →+* S) (x : S)
+private theorem eval₂_xOperator_pow (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (n : ℕ) (p : OreExtension σ δ) :
-    eval f x ((xOperator ^ n) p) = x ^ n * eval f x p := by
+    eval₂ f x ((xOperator ^ n) p) = x ^ n * eval₂ f x p := by
   induction n with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, eval_xOperator f x h, ih, pow_succ', mul_assoc]
+      rw [pow_succ', Module.End.mul_apply, eval₂_xOperator f x h, ih, pow_succ', mul_assoc]
 
 /-- Evaluation is multiplicative when the chosen image of `X` satisfies the Ore relation. -/
-theorem eval_mul (f : R →+* S) (x : S)
+theorem eval₂_mul (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (p q : OreExtension σ δ) :
-    eval f x (p * q) = eval f x p * eval f x q := by
+    eval₂ f x (p * q) = eval₂ f x p * eval₂ f x q := by
   induction p using induction_on with
   | zero => simp
   | add n a p hn ha ih =>
-      rw [add_mul, (eval f x).map_add, (eval f x).map_add, add_mul, ih, monomial_mul_apply,
-        eval_coeffLeft, eval_xOperator_pow f x h, eval_monomial, mul_assoc]
+      rw [add_mul, map_add, map_add, add_mul, ih, monomial_mul_apply,
+        eval₂_smul, eval₂_xOperator_pow f x h, eval₂_monomial, mul_assoc]
 
 /-- The universal map from an Ore extension. The chosen image `x` of the variable must satisfy
 the defining Ore commutation relation with every coefficient. -/
 def lift (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) : OreExtension σ δ →+* S where
-  __ := eval f x
+  __ := eval₂ f x
   map_one' := by
-    -- Expose the additive-map carrier of `eval` to use its monomial formula.
-    change eval f x (monomial 0 1) = 1
-    rw [eval_monomial]
+    rw [AddMonoidHom.toFun_eq_coe, ← C_one, ← monomial_zero_left, eval₂_monomial]
     simp
-  map_mul' := eval_mul f x h
+  map_mul' := eval₂_mul f x h
+
+theorem lift_apply (f : R →+* S) (x : S)
+    (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (p : OreExtension σ δ) :
+    lift f x h p = eval₂ f x p := (rfl)
 
 @[simp]
 theorem lift_C (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (a : R) :
     lift f x h (C a) = f a := by
-  -- Expose the ring-hom carrier, which is definitionally the additive evaluation map.
-  change eval f x (C a) = f a
-  rw [← monomial_zero_left, eval_monomial]
-  simp
+  rw [lift_apply, ← monomial_zero_left, eval₂_monomial, pow_zero, mul_one]
 
 @[simp]
 theorem lift_X (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) : lift f x h X = x := by
-  -- Expose the ring-hom carrier, which is definitionally the additive evaluation map.
-  change eval f x X = x
-  rw [X_eq_monomial, eval_monomial]
-  simp
+  rw [lift_apply, X_eq_monomial, eval₂_monomial, map_one, one_mul, pow_one]
 
 /-- A ring homomorphism from an Ore extension is determined by its values on the coefficients
 and the Ore variable. -/
@@ -604,10 +574,36 @@ theorem ringHom_ext {f g : OreExtension σ δ →+* S}
   induction p using induction_on with
   | zero => simp
   | add n a p hn ha ih =>
-      have hmonomial : monomial (σ := σ) (δ := δ) n a =
-          C (σ := σ) (δ := δ) a * monomial n 1 := by simp
-      rw [map_add, map_add, ih, hmonomial, map_mul, map_mul, ← X_pow, map_pow, map_pow,
+      rw [map_add, map_add, ih, ← C_mul_X_pow_eq_monomial, map_mul, map_mul, map_pow, map_pow,
         hC, hX]
+
+variable [Algebra k S]
+
+/-- The universal `k`-algebra map from an Ore extension. The chosen image `x` of the variable
+must satisfy the defining Ore commutation relation with every coefficient. -/
+def liftAlgHom (f : R →ₐ[k] S) (x : S)
+    (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) : OreExtension σ δ →ₐ[k] S where
+  __ := lift (f : R →+* S) x h
+  commutes' c :=
+    (congrArg (lift (f : R →+* S) x h) (algebraMap_apply c)).trans
+      ((lift_C (f : R →+* S) x h _).trans (f.commutes c))
+
+@[simp]
+theorem liftAlgHom_C (f : R →ₐ[k] S) (x : S)
+    (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (a : R) :
+    liftAlgHom f x h (C a) = f a :=
+  lift_C (f : R →+* S) x h a
+
+@[simp]
+theorem liftAlgHom_X (f : R →ₐ[k] S) (x : S)
+    (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) : liftAlgHom f x h X = x :=
+  lift_X (f : R →+* S) x h
+
+/-- A `k`-algebra homomorphism from an Ore extension is determined by its values on the
+coefficients and the Ore variable. -/
+theorem algHom_ext {f g : OreExtension σ δ →ₐ[k] S}
+    (hC : ∀ a, f (C a) = g (C a)) (hX : f X = g X) : f = g :=
+  AlgHom.toRingHom_injective (ringHom_ext hC hX)
 
 end UniversalProperty
 
