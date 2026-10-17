@@ -101,17 +101,9 @@ theorem unitDiskBoundaryLoop_image :
       (by linarith [pi_pos])
     simpa only [Icc_self, image_singleton, hangle] using h.symm
   have hparam : (fun t : ℝ ↦ 2 * π * t - π) '' Ioo (0 : ℝ) 1 = Ioo (-π) π := by
-    ext θ
-    constructor
-    · rintro ⟨t, ht, rfl⟩
-      constructor <;> nlinarith [pi_pos, ht.1, ht.2]
-    · intro hθ
-      refine ⟨(θ + π) / (2 * π), ?_, ?_⟩
-      · constructor
-        · exact div_pos (by linarith [hθ.1]) (by positivity)
-        · exact (div_lt_one (by positivity)).mpr (by linarith [hθ.2])
-      · field_simp
-        ring
+    have hupper : 2 * π + -π = π := by ring
+    simpa only [mul_zero, zero_add, mul_one, hupper, sub_eq_add_neg] using
+      (Set.image_affine_Ioo (a := 2 * π) (by positivity) (-π) 0 1)
   have hloop : unitDiskBoundaryLoop.extend '' Ioo (0 : ℝ) 1 =
       e '' (Circle.exp '' Ioo (-π) π) := by
     rw [← hparam, image_image, image_image]
