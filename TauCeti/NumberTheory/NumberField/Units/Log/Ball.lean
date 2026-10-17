@@ -61,7 +61,6 @@ theorem convex_logBall : Convex ℝ (logBall K) := by
     (WithLp.linearEquiv 1 ℝ (logSpace K)).symm.toLinearMap
 
 /-- The logarithmic ball is symmetric about zero. -/
-@[simp]
 theorem neg_mem_logBall (x : logSpace K) : -x ∈ logBall K ↔ x ∈ logBall K := by
   classical
   simp
