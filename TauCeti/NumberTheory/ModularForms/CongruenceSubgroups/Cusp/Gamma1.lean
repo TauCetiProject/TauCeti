@@ -167,7 +167,7 @@ theorem coe_gamma1CuspLabel_snd_snd (γ : SL(2, ℤ)) :
 
 /-- The label of `γ` is `(g, u, v)` as soon as `gcd(c, N) = g`, `c / g` reduces to `u` and `d`
 reduces to `v`. -/
-private theorem gamma1CuspLabel_eq_mk {γ : SL(2, ℤ)} {g : ℕ} (hg : g ∈ N.divisors)
+theorem gamma1CuspLabel_eq_mk {γ : SL(2, ℤ)} {g : ℕ} (hg : g ∈ N.divisors)
     {u : (ZMod (N / g))ˣ} {v : (ZMod g)ˣ} (h₁ : Int.gcd (γ 1 0) N = g)
     (h₂ : ((γ 1 0 / g : ℤ) : ZMod (N / g)) = u) (h₃ : ((γ 1 1 : ℤ) : ZMod g) = v) :
     gamma1CuspLabel N γ = ⟨⟨g, hg⟩, u, v⟩ := by
