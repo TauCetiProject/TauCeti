@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Ho
 public import TauCeti.Topology.PL.FiniteInf
 public import TauCeti.Topology.PL.Inverse
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import all TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 
 /-!
 # Piecewise-linear transport across a stellar subdivision
@@ -579,6 +580,25 @@ theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
   · intro y
     simp only [Function.comp_apply, he₂inv y, he₁inv (e₂.symm y), Homeomorph.symm_trans_apply]
 
+private theorem exists_isPLHomeomorphPackage
+    (h : StellarEquivalent K L) :
+    ∀ _ : K.faces.Finite, IsPLHomeomorphPackage K L := by
+  unfold PreAbstractSimplicialComplex.StellarEquivalent at h
+  induction h with
+  | rel A B hmove =>
+      intro hfin
+      exact hmove.exists_homeomorph_isPLOn hfin
+  | refl A =>
+      intro _
+      exact ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _,
+        (fun _ => rfl), (fun _ => rfl)⟩
+  | symm A B hAB ih =>
+      intro hfin
+      exact (ih ((StellarEquivalent.finite_faces_iff hAB).mpr hfin)).symm
+  | trans A B C hAB hBC ihAB ihBC =>
+      intro hfin
+      exact (ihAB hfin).trans (ihBC ((StellarEquivalent.finite_faces_iff hAB).mp hfin))
+
 /-- A finite stellar equivalence identifies its weak polyhedra by maps that are piecewise linear
 in their ambient barycentric coordinates. The two `IsPLOn` statements are the coordinate formulas
 needed to transport local PL charts across a sequence of stellar moves. -/
@@ -594,79 +614,9 @@ theorem StellarEquivalent.exists_homeomorph_isPLOn
         (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
         (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := by
   have hQ : (K.faces.Finite ↔ L.faces.Finite) ∧
-      ∀ hfin : K.faces.Finite, IsPLHomeomorphPackage K L := by
-    refine StellarEquivalent.induction_on h
-      (P := fun A B => (A.faces.Finite ↔ B.faces.Finite) ∧
-        (∀ hfin : A.faces.Finite, IsPLHomeomorphPackage A B)) ?_ ?_ ?_ ?_
-    · intro A B hmove
-      exact ⟨hmove.finite_faces_iff, fun hfin => hmove.exists_homeomorph_isPLOn hfin⟩
-    · intro A
-      exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _,
-        (fun _ => rfl), (fun _ => rfl)⟩⟩
-    · intro A B ih
-      exact ⟨ih.1.symm, fun hfin => (ih.2 (ih.1.mpr hfin)).symm⟩
-    · intro A B C ihAB ihBC
-      exact ⟨ihAB.1.trans ihBC.1, fun hfin =>
-        (ihAB.2 hfin).trans (ihBC.2 (ihAB.1.mp hfin))⟩
+      ∀ hfin : K.faces.Finite, IsPLHomeomorphPackage K L :=
+    ⟨h.finite_faces_iff, exists_isPLHomeomorphPackage h⟩
   simpa only [IsPLHomeomorphPackage] using hQ.2 hfin
 
-/-- Stellar equivalent finite precomplexes have homeomorphic weak polyhedra. -/
-theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L)
-    (hfin : K.faces.Finite) :
-    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
-  obtain ⟨e, -⟩ := h.exists_homeomorph_isPLOn hfin
-  exact ⟨e⟩
-
-private noncomputable def topRelabelingHomeomorph {κ : Type*} [DecidableEq κ]
-    (P : PreAbstractSimplicialComplex ι) (f : ι ↪ κ) :
-    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
-      {y : Realization (⊤ : AbstractSimplicialComplex κ) // y.1.support ∈ P.map f} :=
-  P.relabelingHomeomorph f
-    (fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
-      (P.isRelLowerSet_faces.prop_of_mem hτ))
-    (fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
-      (P.map f |>.isRelLowerSet_faces.prop_of_mem hτ))
-
-/-- Intrinsic stellar equivalence gives homeomorphic weak polyhedra even when the two complexes
-use different vertex labels. The two relabelings in the definition are removed by the canonical
-homeomorphisms of `Realization.Relabel`. -/
-theorem StellarEquivalentUpToRelabeling.nonempty_homeomorph
-    (h : StellarEquivalentUpToRelabeling K L) (hfin : K.faces.Finite) :
-    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
-  have aux : ∀ A B : PreAbstractSimplicialComplex ι,
-      StellarEquivalentUpToRelabeling A B →
-        (A.faces.Finite ↔ B.faces.Finite) ∧
-          (A.faces.Finite →
-            Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-              {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B})) := by
-    intro A B hAB
-    apply StellarEquivalentUpToRelabeling.induction_on hAB
-    · intro P Q f g he
-      have hPmap : (P.map f).faces.Finite ↔ P.faces.Finite :=
-        finite_faces_map_iff_of_injective f f.injective
-      have hQmap : (Q.map g).faces.Finite ↔ Q.faces.Finite :=
-        finite_faces_map_iff_of_injective g g.injective
-      refine ⟨hPmap.symm.trans (he.finite_faces_iff.trans hQmap), ?_⟩
-      intro hPfin
-      have hPmapfin : (P.map f).faces.Finite := hPmap.mpr hPfin
-      obtain ⟨e⟩ := he.nonempty_homeomorph hPmapfin
-      exact ⟨(topRelabelingHomeomorph P f).trans
-        (e.trans (topRelabelingHomeomorph Q g).symm)⟩
-    · intro P
-      exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _⟩⟩
-    · intro P Q ih
-      refine ⟨ih.1.symm, ?_⟩
-      intro hQfin
-      obtain ⟨e⟩ := ih.2 (ih.1.mpr hQfin)
-      exact ⟨e.symm⟩
-    · intro P Q R ihPQ ihQR
-      refine ⟨ihPQ.1.trans ihQR.1, ?_⟩
-      intro hPfin
-      obtain ⟨e⟩ := ihPQ.2 hPfin
-      obtain ⟨e'⟩ := ihQR.2 (ihPQ.1.mp hPfin)
-      exact ⟨e.trans e'⟩
-  exact (aux K L h).2 hfin
 
 end PreAbstractSimplicialComplex
