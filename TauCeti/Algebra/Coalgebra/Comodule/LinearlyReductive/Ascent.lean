@@ -55,18 +55,13 @@ theorem IsLinearlyReductive.baseChange (hH : IsLinearlyReductive.{u, v, u} k H) 
   let := Comodule.restrictScalars (R := k) (A := K) (C := H) (M := N)
   let g := f.hom.restrictScalars (R := k)
   intro n
-  have hn : (n : N) ∈ Comodule.fixedSubcomodule k H N := by
-    rw [Comodule.mem_fixedSubcomodule, Comodule.restrictScalars_coact,
-      Comodule.restrictScalarsCoact_eq_tmul_iff]
-    simpa only [Algebra.TensorProduct.one_def] using
-      Comodule.mem_fixedSubcomodule.mp n.property
+  have hn : (n : N) ∈ Comodule.fixedSubcomodule k H N :=
+    (Comodule.mem_fixedSubcomodule_restrictScalars_iff (R := k) (A := K) (n : N)).mpr n.property
   obtain ⟨m, hm, hgm⟩ := g.exists_fixed_preimage_of_isLinearlyReductive hH hn (by
       obtain ⟨m, hm⟩ := hf n
       exact ⟨m, by simpa [g] using hm⟩)
-  have hm' : m ∈ Comodule.fixedSubcomodule K (K ⊗[k] H) M := by
-    rw [Comodule.mem_fixedSubcomodule, Comodule.restrictScalars_coact,
-      Comodule.restrictScalarsCoact_eq_tmul_iff] at hm
-    simpa only [Comodule.mem_fixedSubcomodule, Algebra.TensorProduct.one_def] using hm
+  have hm' : m ∈ Comodule.fixedSubcomodule K (K ⊗[k] H) M :=
+    (Comodule.mem_fixedSubcomodule_restrictScalars_iff (R := k) (A := K) m).mp hm
   exact ⟨⟨m, hm'⟩, Subtype.ext (by simpa [g] using hgm)⟩
 
 /-- Linear reductivity of a commutative Hopf algebra can be checked after any

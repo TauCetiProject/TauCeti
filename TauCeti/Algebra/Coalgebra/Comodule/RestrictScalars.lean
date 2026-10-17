@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
+public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Restriction of scalars for comodules over a base-changed coalgebra
@@ -129,6 +131,15 @@ theorem restrictScalarsCoact_eq_tmul_iff (m : M) (c : C) :
   rw [restrictScalarsCoact_apply, ← LinearEquiv.eq_symm_apply,
     cancelBaseChange_symm_tmul]
 
+/-- Restriction of scalars preserves membership in the fixed subcomodule. -/
+theorem mem_fixedSubcomodule_restrictScalars_iff
+    {C : Type w} [AddCommMonoidWithOne C] [Module R C] [Coalgebra R C]
+    [Comodule A (A ⊗[R] C) M] (m : M) :
+    (letI := restrictScalars (R := R) (A := A) (C := C) (M := M);
+      m ∈ fixedSubcomodule R C M) ↔ m ∈ fixedSubcomodule A (A ⊗[R] C) M := by
+  simp only [mem_fixedSubcomodule, restrictScalars_coact,
+    restrictScalarsCoact_eq_tmul_iff, Algebra.TensorProduct.one_def]
+
 variable {N : Type y} [AddCommMonoid N] [Module A N] [Module R N] [IsScalarTower R A N]
   [Comodule A (A ⊗[R] C) N]
 
@@ -145,17 +156,7 @@ noncomputable def Hom.restrictScalars (f : Hom A (A ⊗[R] C) M N) :
   simp only [LinearMap.comp_apply, restrictScalars_coact, restrictScalarsCoact_apply,
     LinearMap.restrictScalars_apply, Hom.coe_toLinearMap]
   rw [← f.map_coact_apply]
-  have hmap (z : M ⊗[A] (A ⊗[R] C)) :
-      TensorProduct.map (f.toLinearMap.restrictScalars R) LinearMap.id
-          (cancelBaseChange R A A M C z) =
-        cancelBaseChange R A A N C (TensorProduct.map f.toLinearMap LinearMap.id z) := by
-    induction z using TensorProduct.inductionOn with
-    | add z t hz ht => simp only [map_add, hz, ht]
-    | tmul m d =>
-      induction d using TensorProduct.inductionOn with
-      | add d e hd he => simp only [TensorProduct.tmul_add, map_add, hd, he]
-      | tmul a c => simp
-  exact hmap _
+  exact (cancelBaseChange_rTensor f.toLinearMap _).symm
 
 /-- Restriction of a comodule morphism restricts its underlying linear map. -/
 @[simp]

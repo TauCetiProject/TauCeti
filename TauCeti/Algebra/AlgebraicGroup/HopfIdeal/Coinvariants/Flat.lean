@@ -12,7 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Descent
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
-import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
+import Mathlib.RingTheory.FiniteStability
 import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 
 /-!
@@ -72,8 +72,8 @@ theorem exists_coinvariantsLeftTranslation_comap_eq [IsAlgClosed k]
     inv_mul_cancel_right, ofConv_toConv] using
     I.comp_coinvariantsLeftTranslation (toConv q * (toConv p)⁻¹) (toConv p)
 
-/-- A finitely generated coinvariant algebra of a reduced finite-type affine group over
-an algebraically closed field is flat in the ambient coordinate algebra if every prime
+/-- The coordinate algebra of a reduced finite-type affine group over an algebraically
+closed field is flat over a finitely generated coinvariant algebra, provided every prime
 of the coinvariants lifts to an ambient prime. -/
 theorem flat_coinvariants_of_surjective_comap [IsAlgClosed k]
     [Algebra.FiniteType k H] [_root_.IsReduced H] [Algebra.FiniteType k I.coinvariants]
