@@ -389,26 +389,25 @@ theorem add_mem_nonsingularReduction_of_isTateTerminal_IIIStar {ϖ : v.valuation
     P + Q ∈ W.nonsingularReduction v := by
   obtain ⟨h₁, h₂, h₃, h₄, h₆, h₄'⟩ := isTateTerminal_IIIStar.1 h
   obtain ⟨hp, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IIIStar v hϖ h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   by_contra hPQ
   obtain ⟨x₁, y₁, h₁', rfl, hx₁, hy₁⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   obtain ⟨x₂, y₂, h₂', rfl, hx₂, hy₂⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hQ
   obtain ⟨x₃, y₃, ℓ, hN₃, -, -, hx₃, hy₃, hs, -, hc, -⟩ :=
     exists_chord_of_add_notMem_nonsingularReduction v m₃ m₄ m₆ hPQ
+  rw [mem_maximalIdeal_iff_dvd hϖ] at hx₁ hy₁ hx₂ hy₂ hx₃ hy₃
   -- the three points on the chord have `ϖ² ∣ x` and `ϖ³ ∣ y`
   obtain ⟨d₁, e₁⟩ := sq_dvd_and_pow_three_dvd_of_equation _ hp h₁ h₂ h₃ h₄ h₆
-    ((equation_integralModel_iff v).2 h₁'.left) ((key _).1 hx₁) ((key _).1 hy₁)
+    ((equation_integralModel_iff v).2 h₁'.left) hx₁ hy₁
   obtain ⟨d₂, -⟩ := sq_dvd_and_pow_three_dvd_of_equation _ hp h₁ h₂ h₃ h₄ h₆
-    ((equation_integralModel_iff v).2 h₂'.left) ((key _).1 hx₂) ((key _).1 hy₂)
+    ((equation_integralModel_iff v).2 h₂'.left) hx₂ hy₂
   obtain ⟨d₃, -⟩ := sq_dvd_and_pow_three_dvd_of_equation _ hp h₁ h₂ h₃ h₄ h₆
-    ((equation_integralModel_iff v).2 hN₃.left) ((key _).1 hx₃) ((key _).1 hy₃)
+    ((equation_integralModel_iff v).2 hN₃.left) hx₃ hy₃
   -- so the slope is divisible by `ϖ`, since `ℓ² = x₁ + x₂ + x₃ + a₂ − a₁ ℓ`
   have hℓ : ϖ ∣ ℓ := by
     refine hp.dvd_of_dvd_pow (n := 2) ?_
     rw [show ℓ ^ 2 = x₁ + x₂ + x₃ + (integralModel v.valuationSubring W).a₂ -
         (integralModel v.valuationSubring W).a₁ * ℓ by linear_combination hs]
-    exact dvd_sub (dvd_add (dvd_add (dvd_add ((key _).1 hx₁) ((key _).1 hx₂)) ((key _).1 hx₃))
+    exact dvd_sub (dvd_add (dvd_add (dvd_add hx₁ hx₂) hx₃)
       ((dvd_pow_self ϖ two_ne_zero).trans h₂)) (h₁.mul_right ℓ)
   -- and then `ϖ⁴` divides every term of `a₄ = ∑ xᵢ xⱼ + a₃ ℓ + (2 ℓ + a₁) (y₁ − ℓ x₁)`
   refine h₄' ?_
@@ -450,16 +449,15 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IIIStar
     ∃ P : W.Point, P ∉ W.nonsingularReduction v := by
   obtain ⟨-, ⟨A₂, hA₂⟩, -, ⟨A₄, hA₄⟩, ⟨A₆, hA₆⟩, h₄'⟩ := isTateTerminal_IIIStar.1 h
   obtain ⟨hp, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IIIStar v hϖ h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   -- `a₄ / ϖ³` is a unit, since `ϖ⁴ ∤ a₄`
   have he₁ : IsUnit A₄ := by
     by_contra hn
-    obtain ⟨d, hd⟩ := (key _).1 ((mem_maximalIdeal _).2 hn)
+    obtain ⟨d, hd⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 ((mem_maximalIdeal _).2 hn)
     exact h₄' ⟨d, by rw [hA₄, hd]; ring⟩
   -- the equation at `(ϖ² X, 0)`, divided by `ϖ⁵`, has a root `X`
-  obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero (e₂ := -(ϖ * A₂)) ((key ϖ).2 dvd_rfl)
-    ((key _).2 ⟨-A₂, by ring⟩) he₁ A₆
+  obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero (e₂ := -(ϖ * A₂))
+    ((mem_maximalIdeal_iff_dvd hϖ).2 dvd_rfl) ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨-A₂, by ring⟩)
+    he₁ A₆
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular (ϖ ^ 2 * X) 0 := by
     rw [nonsingular_iff']
     refine ⟨by
@@ -472,7 +470,8 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IIIStar
     exact pow_ne_zero 3 hp.ne_zero (hXd.mul_left_eq_zero.1 (by linear_combination hx))
   have hF := (nonsingular_integralModel_iff v).1 hns
   have hx : v ((ϖ ^ 2 * X : v.valuationSubring) : F) < 1 :=
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 ((key _).2 (Dvd.intro (ϖ * X) (by ring)))
+    (Valuation.mem_maximalIdeal_iff (v := v)).1
+      ((mem_maximalIdeal_iff_dvd hϖ).2 (Dvd.intro (ϖ * X) (by ring)))
   exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v m₃ m₄ m₆ hF).2 ⟨hx, by simp⟩⟩
 
 /-- **At the reduction symbol `III*`, `[E(F) : E₀(F)] = 2`**, when the valuation ring is Henselian,

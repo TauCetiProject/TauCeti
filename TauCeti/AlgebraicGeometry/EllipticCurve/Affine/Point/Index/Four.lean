@@ -19,10 +19,10 @@ import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
-# Points with singular reduction at the symbols `Iₙ*`
+# Points with singular reduction: the index four case `Iₙ*`
 
 Let `v` be a valuation on a field `F`, with valuation ring `O`, maximal ideal `𝔪 = (ϖ)` and
-residue field `k`, and let `W` be a Weierstrass curve over `F` with an integral model `W_O` over
+residue field `κ`, and let `W` be a Weierstrass curve over `F` with an integral model `W_O` over
 `O`. The points with nonsingular reduction form the subgroup `E₀(F)` of `W(F)`
 (`WeierstrassCurve.Affine.nonsingularReduction`). When `F` is complete for a discrete valuation
 with perfect residue field and the equation is minimal, the index `[E(F) : E₀(F)]` is the local
@@ -30,13 +30,13 @@ index `c_v` that Tate's algorithm computes (Silverman, *Advanced Topics*, IV.9, 
 file computes the index at the reduction symbols `Iₙ*` with `n ≥ 1`, which Tate's algorithm reaches
 through the subprocedure of its Step 7 (`WeierstrassCurve.IsTateOddStage`,
 `WeierstrassCurve.IsTateEvenStage`). The subprocedure stops at stage `n` when a quadratic over
-`k` has distinct roots:
+`κ` has distinct roots:
 
 * at `n = 2k + 1`, with `a₃ = ϖ^(k+2) A₃` and `a₆ = ϖ^(2k+4) A₆`, the quadratic `T² + A₃ T − A₆`;
 * at `n = 2k + 2`, with `a₂ = ϖ A₂`, `a₄ = ϖ^(k+3) A₄` and `a₆ = ϖ^(2k+5) A₆`, the quadratic
   `A₂ T² + A₄ T + A₆`.
 
-Table 4.1 reports `c_v = 4` when this quadratic has a root in `k`, and `c_v = 2` otherwise. This
+Table 4.1 reports `c_v = 4` when this quadratic has a root in `κ`, and `c_v = 2` otherwise. This
 file proves that over a Henselian valuation ring, and that the index divides `4` in general.
 
 Every stage of the subprocedure satisfies the normal form `ϖ ∣ a₁`, `ϖ ∥ a₂`, `ϖ² ∣ a₃`,
@@ -58,7 +58,7 @@ Hence the points outside `S` form a subgroup `H` of `W(F)` containing `E₀(F)`,
 residue cubic lifts to a point of `H` outside `E₀(F)`, so `[H : E₀(F)] = 2`. Following the
 subprocedure on the coordinates of a point of `S` shows that it is `(ϖ^(k+2) X, ϖ^(k+2) Y)` with
 `Y` (at `n = 2k + 1`) or `X` (at `n = 2k + 2`) a root of the quadratic above modulo `ϖ`. So `S` is
-empty when the quadratic has no root in `k`. Conversely, over a Henselian valuation ring a root,
+empty when the quadratic has no root in `κ`. Conversely, over a Henselian valuation ring a root,
 which is simple, lifts to a point of `S`, and then `[W(F) : H] = 2`.
 
 No discreteness, completeness, minimality or perfectness is assumed. Only the existence of points
@@ -72,13 +72,13 @@ All in the namespace `WeierstrassCurve.Affine`:
   `[E(F) : E₀(F)]` divides `4`.
 * `index_nonsingularReduction_dvd_two_of_isTateTerminal_IStar_two_mul_add_one` and
   `index_nonsingularReduction_dvd_two_of_isTateTerminal_IStar_two_mul_add_two`: if the quadratic
-  of the last stage has no root in `k`, the index divides `2`.
+  of the last stage has no root in `κ`, the index divides `2`.
 * `index_nonsingularReduction_eq_two_of_isTateTerminal_IStar_two_mul_add_one` and
   `index_nonsingularReduction_eq_two_of_isTateTerminal_IStar_two_mul_add_two`: over a Henselian
-  valuation ring, if the quadratic has no root in `k`, the index is `2`.
+  valuation ring, if the quadratic has no root in `κ`, the index is `2`.
 * `index_nonsingularReduction_eq_four_of_isTateTerminal_IStar_two_mul_add_one` and
   `index_nonsingularReduction_eq_four_of_isTateTerminal_IStar_two_mul_add_two`: over a Henselian
-  valuation ring, if the quadratic has a root in `k`, the index is `4`.
+  valuation ring, if the quadratic has a root in `κ`, the index is `4`.
 
 ## References
 
