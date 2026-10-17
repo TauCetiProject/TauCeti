@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
-public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
+public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Normalized
 
 /-!
 # Constant coefficients in cubical chains
@@ -26,6 +26,16 @@ degenerate submodule, so it descends to normalized chains.
   unnormalized chains.
 * `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainConstantEquiv`: the equivalence on
   normalized chains.
+
+## Main statements
+
+* `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_ofCube` and
+  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainConstantEquiv_ofCube`: both
+  equivalences send a cube with a coefficient to the corresponding singleton chain.
+* `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_boundary`: the equivalence
+  commutes with boundaries.
+* `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_degenerate`: it identifies the
+  degenerate submodules.
 
 ## References
 
@@ -98,9 +108,7 @@ theorem twistedCubicalChainConstantEquiv_boundary (n : ℕ) :
     TwistedCubicalChain.boundary_ofCube, map_sum, map_zsmul, map_sub,
     twistedCubicalChainConstantEquiv_ofCube, TwistedCubicalChain.ofSubcube_apply,
     CubicalChain.boundary_single]
-  unfold constantFunctor
-  simp only [Int.reduceNeg, ContinuousMap.comp_apply, Functor.const_obj_obj,
-    Functor.const_obj_map, ModuleCat.hom_id, LinearMap.id_coe]
+  simp only [constantFunctor_obj_map]
   simp_rw [SingularCube.comp_face_id]
   simp only [← Int.cast_smul_eq_zsmul R, Int.cast_pow, Int.cast_neg, Int.cast_one]
   rfl
@@ -135,6 +143,27 @@ def normalizedTwistedCubicalChainConstantEquiv (n : ℕ) :
       NormalizedCubicalChain X R n :=
   Submodule.Quotient.equiv _ _ (twistedCubicalChainConstantEquiv R X n)
     (twistedCubicalChainConstantEquiv_degenerate n)
+
+/-- The normalized constant-coefficient equivalence sends the class of a chain to the class of
+its image under the unnormalized equivalence. -/
+@[simp]
+theorem normalizedTwistedCubicalChainConstantEquiv_mk {n : ℕ}
+    (x : ((constantFunctor X).obj (ModuleCat.of R R)).TwistedCubicalChain n) :
+    normalizedTwistedCubicalChainConstantEquiv R X n (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (twistedCubicalChainConstantEquiv R X n x) := by
+  rw [normalizedTwistedCubicalChainConstantEquiv, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, LinearEquiv.coe_coe]
+
+/-- The normalized constant-coefficient equivalence sends the class of a cube with a coefficient
+to the class of the corresponding singleton chain. -/
+theorem normalizedTwistedCubicalChainConstantEquiv_ofCube {n : ℕ} (c : SingularCube X n)
+    (a : ((constantFunctor X).obj (ModuleCat.of R R)).obj (FundamentalGroupoid.mk (c 0))) :
+    normalizedTwistedCubicalChainConstantEquiv R X n
+        (NormalizedTwistedCubicalChain.ofCube ((constantFunctor X).obj (ModuleCat.of R R)) c a) =
+      Submodule.Quotient.mk (single c ((eqToIso (constantFunctor_obj_obj X (ModuleCat.of R R)
+        (FundamentalGroupoid.mk (c 0)))).hom a)) := by
+  rw [NormalizedTwistedCubicalChain.ofCube_apply, normalizedTwistedCubicalChainConstantEquiv_mk,
+    twistedCubicalChainConstantEquiv_ofCube]
 
 end LocalCoefficientSystem
 
