@@ -39,6 +39,19 @@ Corestricting back to `G_K` multiplies by the index
 (`exists_refinement_ideleLayerCorInfl_eq_index_nsmul`), which turns the sum `1 / n` into
 `1 / [L : F]`.
 
+On a layer `V ◁ G_K` over `K` itself the class can be found on the layer, not only on a
+refinement, once some place has full local degree. Let `χ` be a character of `G_K` with open
+kernel, `v` a finite place and `g ∈ G_{K_v}`, read in `G_K` along an embedding `τ : Kˢ → K_vˢ`.
+The Artin symbols are dense in `G_{K_v}^ab`, so some `b ∈ K_vˣ` has `χ(Art_v b) = χ(τ_* g)`, and
+the carry class of `χ` and of the idele concentrated at `v` with component `b` has sum of local
+invariants `χ(τ_* g)` (`exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq`). For a
+character of the Galois group of the layer this class comes from the layer
+(`exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap`). If the Galois group `G_K ⧸ V` is
+cyclic of order `n` and the decomposition group at `v` maps onto it, a character sending the image
+of a generator to `1 / n` gives a class of the layer with sum of local invariants `1 / n`
+(`exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic`). This is the class of invariant `1 / n`
+that `NormalLayer.map_eq_zero_of_natCard_H2_dvd_degree` takes as input.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: for every `n ≥ 1` there is
@@ -48,6 +61,14 @@ Corestricting back to `G_K` multiplies by the index
   refinement of a given layer over `U`.
 * `TauCeti.ClassFieldTheory.exists_refinement_ideleSumLocalInv_eq`: every layer has a refinement
   carrying an idele-layer class whose local invariants sum to `1 / [L : F]`.
+* `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq`: every
+  value of a character of `G_K` on a decomposition group is the sum of the local invariants of one
+  of its carry classes.
+* `TauCeti.ClassFieldTheory.exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap`: the same on
+  a layer `V ◁ G_K`, for a character of its Galois group.
+* `TauCeti.ClassFieldTheory.exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic`: a cyclic layer
+  `V ◁ G_K` whose decomposition group at some finite place is the whole Galois group carries a
+  class whose local invariants sum to `1 / [G_K : V]`.
 
 ## References
 
@@ -159,6 +180,35 @@ private theorem ideleCoeffInfiniteComponent_placeIdele {E : Ω} {v : HeightOneSp
     _).trans ?_))
   simp only [h1, map_one, toMul_zero, Units.val_one]
 
+/-- **A carry class of an idele concentrated at a finite place is supported there**: for an idele
+of `E = K` concentrated at a place `w` above `v`, the local invariants of the carry class `a ∪ δχ`
+vanish away from `v`, so their sum is the invariant at `v`. -/
+private theorem sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele {E : Ω}
+    (hE : E.toIntermediateField = ⊥) {v : HeightOneSpectrum (𝓞 K)} (w : HeightOneSpectrum (𝓞 E))
+    [w.asIdeal.LiesOver v.asIdeal] (π : (v.adicCompletion K)ˣ)
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K)))) :
+    sumLocalInv K (ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
+      invMap (v.adicCompletion K) ((ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v) := by
+  have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
+      (ideleLocalization K (characterCarryCocycle χ hχ (baseIdele hE (placeIdele w π)) :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v' = 0 := by
+    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π
+      (Finset.notMem_singleton.1 hv')
+    exact (ideleLocalization_fst_apply _ _).trans
+      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ _ hτ')
+  have hinf (u : InfinitePlace K) :
+      infiniteInvMap u ((ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).2 u) = 0 := by
+    rw [ideleLocalization_snd_apply,
+      ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
+        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ _
+        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
+  rw [sumLocalInv_eq_sum K _ hS, Finset.sum_singleton, Finset.sum_eq_zero fun u _ ↦ hinf u,
+    add_zero]
+
 /-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`**, supported at `v`: the
 carry class of a cyclotomic character and of an idele of `K` concentrated at `v`, read in the
 ideles of a finite Galois subextension `E` equal to `K`. -/
@@ -252,27 +302,12 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   let a := baseIdele hE (placeIdele w π)
   let x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) := characterCarryCocycle χ hχ a
   refine ⟨x, ?_⟩
-  -- Its localizations vanish away from `v`.
-  have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
-      (ideleLocalization K x).1 v' = 0 := by
-    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π
-      (Finset.notMem_singleton.1 hv')
-    exact (ideleLocalization_fst_apply _ _).trans
-      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ a hτ')
-  have hinf (u : InfinitePlace K) :
-      infiniteInvMap u ((ideleLocalization K x).2 u) = 0 := by
-    rw [ideleLocalization_snd_apply,
-      ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
-        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ a
-        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
-  -- At `v` the invariant is `v(π) · χ_v(Frob) = 1 / n`.
-  have hv : invMap (v.adicCompletion K) ((ideleLocalization K x).1 v) =
-      ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
-    rw [ideleLocalization_fst_apply,
-      invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
-      (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]
-  rw [sumLocalInv_eq_sum K _ hS, Finset.sum_singleton, hv, Finset.sum_eq_zero fun u _ ↦ hinf u,
-    add_zero]
+  -- Its localizations vanish away from `v`, and at `v` the invariant is
+  -- `v(π) · χ_v(Frob) = 1 / n`.
+  refine (sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ).trans ?_
+  rw [ideleLocalization_fst_apply,
+    invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
+    (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]
 
 /-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`.** -/
 theorem exists_sumLocalInv_ideleLocalization_eq {n : ℕ} (hn : n ≠ 0) :
@@ -317,5 +352,161 @@ theorem exists_refinement_ideleSumLocalInv_eq (L : NormalLayer (AbsoluteGaloisGr
   rw [nsmul_eq_mul]
   push_cast
   field_simp
+
+/-! ### Invariants prescribed on a decomposition group -/
+
+/-- **A value of a character on a decomposition group is a value on a local Artin symbol.** For a
+character `χ` of `G_K` with open kernel, an embedding `τ : Kˢ → K_vˢ` and `g ∈ G_{K_v}`, some
+`b ∈ K_vˣ` has a representative `σ` of its Artin symbol with `χ(τ_* σ) = χ(τ_* g)`: the Artin
+symbols are dense in `G_{K_v}^ab`, and the classes of the elements on which `χ ∘ τ_*` takes the
+value `χ(τ_* g)` form a nonempty open subset. -/
+private theorem exists_mk_eq_artinMap_and_apply_eq {v : HeightOneSpectrum (𝓞 K)}
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (g : AbsoluteGaloisGroup (v.adicCompletion K)) :
+    ∃ (b : (v.adicCompletion K)ˣ) (σ : Field.absoluteGaloisGroup (v.adicCompletion K)),
+      (σ : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
+          artinMap (v.adicCompletion K) b ∧
+        χ (.ofMul (absoluteGaloisGroupMap τ
+          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) σ))) =
+          χ (.ofMul (absoluteGaloisGroupMap τ g)) := by
+  let e := absoluteGaloisGroupRestrictEquiv (v.adicCompletion K)
+  let ψ : Field.absoluteGaloisGroup (v.adicCompletion K) → AbsoluteGaloisGroup K :=
+    fun σ ↦ absoluteGaloisGroupMap τ (e σ)
+  let x₀ := absoluteGaloisGroupMap τ g
+  -- The elements on which `χ` takes the value `χ(x₀)` form a coset of the open kernel of `χ`.
+  let T : Set (AbsoluteGaloisGroup K) := {x | χ (.ofMul x) = χ (.ofMul x₀)}
+  have hT : T = (fun x ↦ Additive.ofMul (x₀⁻¹ * x)) ⁻¹' χ.ker := Set.ext fun x ↦ by
+    simp [T, neg_add_eq_sub, sub_eq_zero]
+  have hS : IsOpen (ψ ⁻¹' T) := by
+    rw [hT]
+    exact hχ.preimage (continuous_ofMul.comp (continuous_const.mul
+      ((absoluteGaloisGroupMap τ).continuous.comp e.continuous)))
+  have hψ : ψ (e.symm g) = x₀ := congrArg _ (e.apply_symm_apply g)
+  have hg : e.symm g ∈ ψ ⁻¹' T := by
+    rw [Set.mem_preimage, hψ]
+    exact rfl
+  obtain ⟨b, σ, hσS, hσ⟩ := (denseRange_artinMap (v.adicCompletion K)).exists_mem_open
+    (QuotientGroup.isOpenMap_coe _ hS) ⟨_, Set.mem_image_of_mem _ hg⟩
+  exact ⟨b, σ, hσ, hσS⟩
+
+/-- **A carry class with sum of local invariants a value of its character on a decomposition
+group**, read in the ideles of a finite Galois subextension `E` equal to `K`. -/
+private theorem exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq_aux {E : Ω}
+    (hE : E.toIntermediateField = ⊥) {v : HeightOneSpectrum (𝓞 K)}
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (g : AbsoluteGaloisGroup (v.adicCompletion K)) :
+    ∃ a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K),
+      sumLocalInv K (ideleLocalization K (characterCarryCocycle χ hχ a :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) = χ (.ofMul (absoluteGaloisGroupMap τ g)) := by
+  obtain ⟨b, σ, hσ, hχσ⟩ := exists_mk_eq_artinMap_and_apply_eq χ hχ τ g
+  obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
+  have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
+  -- An embedding `τ₁ : Kˢ → K_vˢ` along which the idele concentrated at `v` has coordinate `b`.
+  have h0 := exists_ideleCoeffComponent_placeIdele (E := E) w b
+  cases h0 with
+  | intro τ₁ hτ₁ =>
+  let a := baseIdele hE (placeIdele w b)
+  refine ⟨a, ?_⟩
+  -- The localizations of `a ∪ δχ` vanish away from `v`, and at `v` the invariant is
+  -- `χ(τ₁_* σ)`, which does not depend on the embedding.
+  rw [sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele hE w b χ hχ,
+    ideleLocalization_fst_apply,
+    invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap τ₁ χ hχ a b hτ₁ σ hσ,
+    ← hχσ]
+  exact χ.map_ofMul_absoluteGaloisGroupMap_eq τ τ₁ _
+
+/-- **Every value of a character on a decomposition group is the sum of the local invariants of
+one of its carry classes.** Let `χ` be a character of `G_K` with open kernel, `v` a finite place
+of `K`, `τ : Kˢ → K_vˢ` an embedding of separable closures and `g ∈ G_{K_v}`. Then for some
+invariant idele `a`, concentrated at `v`, the local invariants of the carry class `a ∪ δχ` sum to
+`χ(τ_* g)`. -/
+theorem exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq
+    {v : HeightOneSpectrum (𝓞 K)} (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (g : AbsoluteGaloisGroup (v.adicCompletion K)) :
+    ∃ a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K),
+      sumLocalInv K (ideleLocalization K (characterCarryCocycle χ hχ a :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) = χ (.ofMul (absoluteGaloisGroupMap τ g)) :=
+  exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq_aux (E := ⊥) rfl χ hχ τ g
+
+open NormalLayer in
+/-- **A layer over `K` carries a class whose invariant is any value of a character on a
+decomposition group.** Let `χ'` be a character of the abelianized Galois group `G_K ⧸ V` of the
+layer `V ◁ G_K` of the idele formation, `v` a finite place of `K`, `τ : Kˢ → K_vˢ` an embedding of
+separable closures and `g ∈ G_{K_v}`. Then some class of the layer has local invariants summing to
+`χ'` of the image of `g` in `G_K ⧸ V`. -/
+theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (χ' : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+    {v : HeightOneSpectrum (𝓞 K)}
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (g : AbsoluteGaloisGroup (v.adicCompletion K)) :
+    ∃ y : (ofOpenNormal V).H (ideleFormation K) 2,
+      ideleSumLocalInv K (ofOpenNormal V) y =
+        χ' (.ofMul (Abelianization.of ((galOfOpenNormalEquiv V).symm
+          (absoluteGaloisGroupMap τ g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))) := by
+  -- `χ'` read on `G_K`; it vanishes on the open subgroup `V`, so its kernel is open.
+  let χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ) :=
+    χ'.comp (Abelianization.of.comp ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp
+      (QuotientGroup.mk' V.toSubgroup))).toAdditive
+  have hχχ' (x : AbsoluteGaloisGroup K) : χ (.ofMul x) =
+      χ' (.ofMul (Abelianization.of
+        ((galOfOpenNormalEquiv V).symm (x : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))) := by
+    simp [χ]
+  have hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))) :=
+    AddSubgroup.isOpen_mono (H₁ := V.toSubgroup.toAddSubgroup)
+      (fun g hg ↦ by
+        simp [χ, (QuotientGroup.eq_one_iff g.toMul).2 hg])
+      (V.isOpen.preimage continuous_toMul)
+  obtain ⟨a, ha⟩ := exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq χ hχ τ g
+  -- The invariant idele `a` lies in the ground level of the layer.
+  have hmem : ideleCoeffEquivIdeleFormation K (a : IdeleCoeff K) ∈
+      (ideleFormation K).level (ofOpenNormal V).ground :=
+    (Formation.mem_level _).2 fun u _ ↦ by
+      rw [← ideleCoeffEquivIdeleFormation_smul]
+      exact congrArg _ ((FixedPoints.mem_addSubgroup _ _ _).1 a.2 u)
+  refine ⟨(ofOpenNormal V).artinCharacterCup (ideleFormation K) ⟨_, hmem⟩ χ', ?_⟩
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχχ' _ hχ a
+    (Subtype.coe_mk _ hmem).symm, ha, hχχ']
+
+open NormalLayer in
+/-- **A cyclic layer over `K` with a place of full local degree carries a class of invariant
+`1 / [L : K]`.** If the Galois group `G_K ⧸ V` of the layer `V ◁ G_K` of the idele formation is
+cyclic and the decomposition group at a finite place `v`, the image of `G_{K_v}` along an
+embedding `τ : Kˢ → K_vˢ`, maps onto `G_K ⧸ V`, then some class of the layer has local invariants
+summing to `1 / [G_K : V]`. -/
+theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) [IsCyclic (ofOpenNormal V).Gal]
+    {v : HeightOneSpectrum (𝓞 K)}
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (hv : Function.Surjective fun g : AbsoluteGaloisGroup (v.adicCompletion K) ↦
+      (absoluteGaloisGroupMap τ g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)) :
+    ∃ y : (ofOpenNormal V).H (ideleFormation K) 2,
+      ideleSumLocalInv K (ofOpenNormal V) y =
+        ((1 / (ofOpenNormal V).degree : ℚ) : AddCircle (1 : ℚ)) := by
+  obtain ⟨γ, hγ⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := (ofOpenNormal V).Gal)
+  obtain ⟨g, hg⟩ := hv (galOfOpenNormalEquiv V γ)
+  replace hg : (absoluteGaloisGroupMap τ g : AbsoluteGaloisGroup K ⧸ V.toSubgroup) =
+      galOfOpenNormalEquiv V γ := hg
+  -- The Galois group is commutative, so `Abelianization.of` is injective and `γ` keeps its order.
+  have hof : orderOf (Abelianization.of γ) = (ofOpenNormal V).degree := by
+    refine ((orderOf_injective _ ((injective_iff_map_eq_one _).2 fun x hx ↦ ?_) γ).trans
+      hγ).trans (ofOpenNormal V).degree_eq_natCard_gal.symm
+    rwa [← MonoidHom.mem_ker, Abelianization.ker_of,
+      (commutator_eq_bot_iff _).2 inferInstance, Subgroup.mem_bot] at hx
+  obtain ⟨χ', hχ'⟩ := CharacterModule.exists_apply_eq_inv_addOrderOf
+    (Additive.ofMul (Abelianization.of γ))
+    (by rw [addOrderOf_ofMul_eq_orderOf, hof]; exact (ofOpenNormal V).degree_pos.ne')
+  obtain ⟨y, hy⟩ := exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap V χ' τ g
+  refine ⟨y, hy.trans ?_⟩
+  rw [hg, MulEquiv.symm_apply_apply]
+  -- `CharacterModule` is a semireducible definition for `A →+ AddCircle (1 : ℚ)`, so `hχ'` does
+  -- not rewrite the goal, which is stated for the bundled homomorphism; it applies by `exact`.
+  exact hχ'.trans (by rw [addOrderOf_ofMul_eq_orderOf, hof])
 
 end TauCeti.ClassFieldTheory

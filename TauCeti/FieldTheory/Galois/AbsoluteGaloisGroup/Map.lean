@@ -50,7 +50,8 @@ groups transport between isomorphic fields.
 
 * `TauCeti.absoluteGaloisGroupMap_commutes`: `τ (absoluteGaloisGroupMap τ g x) = g (τ x)`.
 * `TauCeti.absoluteGaloisGroupMap_comp`: changing `τ` by an automorphism `h` of `Kˢ` conjugates
-  the map by `h`.
+  the map by `h`, so a character of `G_K` takes the same values along every `τ`
+  (`AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq`).
 * `TauCeti.absoluteGaloisGroupMap_absoluteGaloisGroupMap`: the maps are compatible with
   composition of extensions, and `TauCeti.absoluteGaloisGroupMap_compSeparableClosure` for the
   composite embedding.
@@ -120,6 +121,17 @@ theorem absoluteGaloisGroupMap_comp (h : AbsoluteGaloisGroup K) (g : AbsoluteGal
     absoluteGaloisGroupMap (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) g =
       h⁻¹ * absoluteGaloisGroupMap τ g * h :=
   τ.restrictNormalHom_comp h _
+
+/-- **A character does not see the choice of embedding**: a homomorphism from `G_K` to a
+commutative group, written additively, takes the same value on the images of `g ∈ G_L` along any
+two embeddings `τ, τ' : Kˢ →ₐ[K] Lˢ`, because the two maps differ by conjugation. -/
+theorem _root_.AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq {A : Type*} [AddCommGroup A]
+    (f : Additive (AbsoluteGaloisGroup K) →+ A) (τ τ' : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (g : AbsoluteGaloisGroup L) :
+    f (.ofMul (absoluteGaloisGroupMap τ' g)) = f (.ofMul (absoluteGaloisGroupMap τ g)) := by
+  obtain ⟨h, rfl⟩ := τ.exists_comp_eq_of_normal τ'
+  simp only [absoluteGaloisGroupMap_comp, ofMul_mul, ofMul_inv, map_add, map_neg]
+  abel
 
 /-- **The maps are compatible with composition of extensions** `K → L → M`: if `τ'' : Kˢ → Mˢ`
 is the composite of `τ : Kˢ → Lˢ` and `τ' : Lˢ → Mˢ`, the map `G_M → G_K` along `τ''` is the
