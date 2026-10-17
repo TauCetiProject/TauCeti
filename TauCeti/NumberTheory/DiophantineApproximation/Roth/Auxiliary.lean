@@ -65,60 +65,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
 
-/-- The coefficients of the polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is
-indexed by a finite set `s` of exponents. -/
-private theorem coeff_sum_monomial {A : Type*} [CommSemiring A] {s : Finset (ι → ℕ)}
-    (x : s → A) (m : ι →₀ ℕ) :
-    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).coeff m =
-      if h : ⇑m ∈ s then x ⟨m, h⟩ else 0 := by
-  classical
-  simp only [coeff_sum, coeff_monomial]
-  split_ifs with h
-  · rw [sum_eq_single ⟨m, h⟩]
-    · simp
-    · intro μ _ hμ
-      refine ite_eq_right_iff.mpr fun h' ↦ absurd (Subtype.ext ?_) hμ
-      simpa using congrArg DFunLike.coe h'
-    · simp
-  · refine sum_eq_zero fun μ _ ↦ ite_eq_right_iff.mpr fun h' ↦ absurd ?_ h
-    simp [← h']
-
-omit [Fintype ι] in
-/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` has degree at most `rᵢ` in `Xᵢ` when every exponent
-`μ ∈ s` satisfies `μᵢ ≤ rᵢ`. -/
-private theorem degreeOf_sum_monomial_le [Finite ι] {A : Type*} [CommSemiring A]
-    {s : Finset (ι → ℕ)} {r : ι → ℕ} (hs : ∀ μ ∈ s, ∀ i, μ i ≤ r i) (x : s → A) (i : ι) :
-    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).degreeOf i ≤ r i := by
-  have := Fintype.ofFinite ι
-  refine degreeOf_le_iff.mpr fun m hm ↦ ?_
-  rw [MvPolynomial.mem_support_iff, coeff_sum_monomial] at hm
-  split_ifs at hm with h
-  · exact hs _ h i
-  · exact absurd rfl hm
-
-omit [Fintype ι] in
-/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` is nonzero when its coefficient vector `x` is. -/
-private theorem sum_monomial_ne_zero [Finite ι] {A : Type*} [CommSemiring A]
-    {s : Finset (ι → ℕ)} {x : s → A} (hx : x ≠ 0) :
-    ∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ) ≠ 0 := by
-  have := Fintype.ofFinite ι
-  obtain ⟨μ, hμ⟩ := Function.ne_iff.mp hx
-  refine ne_of_apply_ne (fun Q : MvPolynomial ι A ↦ Q.coeff (Finsupp.equivFunOnFinite.symm μ.1)) ?_
-  rw [coeff_sum_monomial]
-  simpa [μ.2] using hμ
-
-/-- The box `∏ᵢ {0, …, rᵢ}` has `∏ᵢ (rᵢ + 1)` points. -/
-private theorem card_piFinset_range [DecidableEq ι] (r : ι → ℕ) :
-    (#(Fintype.piFinset fun i ↦ range (r i + 1)) : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
-  simp [Fintype.card_piFinset]
-
-/-- The box `∏ᵢ {0, …, rᵢ}` has at most `2 ^ (∑ᵢ rᵢ)` points. -/
-private theorem card_piFinset_range_le_two_pow [DecidableEq ι] (r : ι → ℕ) :
-    #(Fintype.piFinset fun i ↦ range (r i + 1)) ≤ 2 ^ ∑ i, r i := by
-  rw [Fintype.card_piFinset, ← prod_pow_eq_pow_sum]
-  gcongr with i
-  simpa using Nat.lt_two_pow_self
-
 /-- Counting the equations: if `2 D ≤ exp (ε² n / 2)`, then `2 D` times the number of points `d`
 of the box `∏ᵢ {0, …, rᵢ}` with `∑ᵢ dᵢ / rᵢ ≤ (n / 2) (1 - ε)` is at most the number
 `∏ᵢ (rᵢ + 1)` of all points of the box. -/
@@ -208,7 +154,8 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
     rw [hae, he_eq]
     exact house_natCast_mul_pow_mul_pow_le α (hchoose d μ) (hdeg d μ)
   have hN : (Fintype.card box : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
-    rw [Fintype.card_coe, card_piFinset_range]
+    rw [Fintype.card_coe]
+    exact_mod_cast card_piFinset_range r
   have hM : 2 * (finrank ℚ K * Fintype.card rows : ℝ) ≤ Fintype.card box := by
     rw [hN, Fintype.card_coe]
     exact two_mul_mul_card_filter_le hr hε (Nat.cast_nonneg _) hn
