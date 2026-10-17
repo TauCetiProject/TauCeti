@@ -63,14 +63,10 @@ private theorem exists_repr_generator (e : Basis (Fin n) ℝ E) (he : ∀ i, e i
       ∀ x ∈ L, (∀ i, j < i → e.repr x i = 0) → ∃ m : ℤ, e.repr x j = m * e.repr y j := by
   have := e.finiteDimensional_of_finite
   have hspan : span ℤ (Set.range e) ≤ L := span_le.2 (Set.range_subset_iff.2 he)
-  -- A bounded subset of a discrete subgroup is finite.
-  have hdisc : IsDiscrete (L : Set E) := SetLike.isDiscrete_iff_discreteTopology.2 ‹_›
-  -- A discrete additive subgroup is closed; the closedness API is stated for `AddSubgroup`.
-  have hclosed : IsClosed (L : Set E) := by
-    rw [← coe_toAddSubgroup] at hdisc ⊢
-    exact L.toAddSubgroup.isClosed_of_isDiscrete hdisc
+  -- A bounded subset of a discrete (hence closed) subgroup is finite.
   have hfin : (fundamentalDomain e ∩ L).Finite :=
-    Metric.finite_isBounded_inter_isClosed hdisc (fundamentalDomain_isBounded e) hclosed
+    Metric.finite_isBounded_inter_isClosed DiscreteTopology.isDiscrete
+      (fundamentalDomain_isBounded e) L.toAddSubgroup.isClosed_of_discreteTopology
   -- So the attained coordinates in `(0, 1]` form a finite set, which contains `1`.
   set T : Set ℝ :=
     {t | t ∈ Set.Ioc 0 1 ∧ ∃ x ∈ L, (∀ i, j < i → e.repr x i = 0) ∧ e.repr x j = t}
