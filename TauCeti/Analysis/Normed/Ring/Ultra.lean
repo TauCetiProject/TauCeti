@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
+public import Mathlib.RingTheory.Ideal.Quotient.Basic
 
 /-!
 # The closed unit ball and products of elements close to one in ultrametric normed rings
@@ -22,6 +23,7 @@ ball is an open subring. In an ultrametric normed ring, a finite product of elem
   ring.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
+* `Ideal.unitOpenBall`: the open unit ball as an ideal in the closed unit-ball subring.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 -/
 
@@ -61,6 +63,69 @@ theorem Subring.coe_unitClosedBall :
 /-- The closed unit ball of an ultrametric seminormed ring is open. -/
 theorem Subring.isOpen_unitClosedBall : IsOpen (Subring.unitClosedBall R : Set R) :=
   (IsUltrametricDist.closedBall_openAddSubgroup R one_pos).isOpen'
+
+variable {R} in
+/-- An element of the closed unit ball is a unit there if it has a two-sided ambient inverse
+that also lies in the closed unit ball. -/
+theorem Subring.isUnit_unitClosedBall_of_inverse {x : Subring.unitClosedBall R} {y : R}
+    (hy : ‖y‖ ≤ 1) (hxy : (x : R) * y = 1) (hyx : y * (x : R) = 1) : IsUnit x :=
+  isUnit_iff_exists.mpr
+    ⟨⟨y, Subring.mem_unitClosedBall.mpr hy⟩, Subtype.ext hxy, Subtype.ext hyx⟩
+
+namespace Ideal
+
+/-- The open unit ball as an ideal of the closed unit-ball subring of an ultrametric
+commutative ring. -/
+def unitOpenBall (R : Type*) [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R] :
+    Ideal (Subring.unitClosedBall R) where
+  carrier := {x | ‖(x : R)‖ < 1}
+  zero_mem' := by simp
+  add_mem' {x y} hx hy := by
+    exact (IsUltrametricDist.norm_add_le_max (x : R) y).trans_lt (max_lt hx hy)
+  smul_mem' x y hy := by
+    calc
+      ‖((x * y : Subring.unitClosedBall R) : R)‖ ≤ ‖(x : R)‖ * ‖(y : R)‖ :=
+        norm_mul_le _ _
+      _ ≤ 1 * ‖(y : R)‖ := mul_le_mul_of_nonneg_right
+        (Subring.mem_unitClosedBall.mp x.property) (norm_nonneg _)
+      _ < 1 := by simpa using hy
+
+/-- Membership in the open unit-ball ideal means that the ambient norm is less than one. -/
+@[simp]
+theorem mem_unitOpenBall {R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : Subring.unitClosedBall R} :
+    x ∈ unitOpenBall R ↔ ‖(x : R)‖ < 1 :=
+  Iff.rfl
+
+section Field
+
+variable (K : Type*) [NormedField K] [IsUltrametricDist K]
+
+/-- Over a normed field, the open unit ball is the maximal ideal of the closed unit-ball
+subring. -/
+instance isMaximal_unitOpenBall : (unitOpenBall K).IsMaximal := by
+  rw [isMaximal_iff]
+  constructor
+  · simp
+  · intro J x hIJ hx hxJ
+    have hxnorm : ‖(x : K)‖ = 1 :=
+      le_antisymm (Subring.mem_unitClosedBall.mp x.property) (not_lt.mp hx)
+    have hx0 : (x : K) ≠ 0 := norm_ne_zero_iff.mp (by simp [hxnorm])
+    have hinvnorm : ‖(x : K)⁻¹‖ ≤ 1 := by simp [hxnorm]
+    have hu : IsUnit x := Subring.isUnit_unitClosedBall_of_inverse hinvnorm
+      (mul_inv_cancel₀ hx0) (inv_mul_cancel₀ hx0)
+    exact (Ideal.eq_top_iff_one J).mp (J.eq_top_of_isUnit_mem hxJ hu)
+
+/-- The reduction of the closed unit ball of an ultrametric normed field by its open unit ball
+is a field. -/
+theorem isField_quotient_unitOpenBall :
+    IsField (Subring.unitClosedBall K ⧸ unitOpenBall K) := by
+  let _ := Ideal.Quotient.field (unitOpenBall K)
+  exact Field.toIsField _
+
+end Field
+
+end Ideal
 
 end UnitClosedBall
 
