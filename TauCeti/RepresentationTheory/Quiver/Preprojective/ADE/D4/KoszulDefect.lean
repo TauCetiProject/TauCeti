@@ -135,9 +135,7 @@ private theorem exists_ne_zero_mem_preprojectiveCorner_D4_four (v : Q) :
     rw [zigzagD4SignlessEquivPreprojective_mk, orientationPathAlgebraEquiv_ofPath, map_zero]
     simpa [y, q, φ] using hy
   refine ⟨y, hycorner, hy0, fun w b => ?_⟩
-  change π (ofArrow (Quiver.reverse b)) *
-    π (ofPath ⟨φ.obj (vertex zigzagD4Graph a),
-      φ.obj (vertex zigzagD4Graph a), q⟩) = 0
+  dsimp only [y]
   rw [← map_mul, ofArrow_mul_ofPath]
   apply preprojectiveMk_D4_ofPath_eq_zero_of_five_le
   rw [_root_.Quiver.Path.length_cons, hq_length]
