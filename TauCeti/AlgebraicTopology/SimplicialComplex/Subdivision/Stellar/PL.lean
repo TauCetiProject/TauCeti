@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Ho
 public import TauCeti.Topology.PL.FiniteInf
 public import TauCeti.Topology.PL.Inverse
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import all TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 
 /-!
 # Piecewise-linear transport across a stellar subdivision
@@ -526,6 +525,20 @@ def IsPLHomeomorphPackage (A B : PreAbstractSimplicialComplex ι) : Prop :=
       (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
       (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1)
 
+omit [DecidableEq ι] in
+/-- Characterization of a piecewise-linear homeomorphism package by its witness data. -/
+theorem isPLHomeomorphPackage_iff {A B : PreAbstractSimplicialComplex ι} :
+    IsPLHomeomorphPackage A B ↔
+      ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
+      ∃ f g : (ι → ℝ) → (ι → ℝ),
+        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ B} => (x.1.1 : ι → ℝ)) ∧
+        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
+        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := Iff.rfl
+
 /-- The PL package for one stellar move, using the inverse and forward coordinate extensions. -/
 theorem IsStellarMove.exists_homeomorph_isPLOn
     {A B : PreAbstractSimplicialComplex ι} (h : IsStellarMove A B)
@@ -580,43 +593,28 @@ theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
   · intro y
     simp only [Function.comp_apply, he₂inv y, he₁inv (e₂.symm y), Homeomorph.symm_trans_apply]
 
-private theorem exists_isPLHomeomorphPackage
-    (h : StellarEquivalent K L) :
-    ∀ _ : K.faces.Finite, IsPLHomeomorphPackage K L := by
-  unfold PreAbstractSimplicialComplex.StellarEquivalent at h
-  induction h with
-  | rel A B hmove =>
-      intro hfin
-      exact hmove.exists_homeomorph_isPLOn hfin
-  | refl A =>
-      intro _
-      exact ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _,
-        (fun _ => rfl), (fun _ => rfl)⟩
-  | symm A B hAB ih =>
-      intro hfin
-      exact (ih ((StellarEquivalent.finite_faces_iff hAB).mpr hfin)).symm
-  | trans A B C hAB hBC ihAB ihBC =>
-      intro hfin
-      exact (ihAB hfin).trans (ihBC ((StellarEquivalent.finite_faces_iff hAB).mp hfin))
-
 /-- A finite stellar equivalence identifies its weak polyhedra by maps that are piecewise linear
 in their ambient barycentric coordinates. The two `IsPLOn` statements are the coordinate formulas
 needed to transport local PL charts across a sequence of stellar moves. -/
 theorem StellarEquivalent.exists_homeomorph_isPLOn
     (h : StellarEquivalent K L) (hfin : K.faces.Finite) :
-    ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L},
-      ∃ f g : (ι → ℝ) → (ι → ℝ),
-        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-          x.1.support ∈ K} => (x.1.1 : ι → ℝ)) ∧
-        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-          x.1.support ∈ L} => (x.1.1 : ι → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := by
+    IsPLHomeomorphPackage K L := by
   have hQ : (K.faces.Finite ↔ L.faces.Finite) ∧
-      ∀ hfin : K.faces.Finite, IsPLHomeomorphPackage K L :=
-    ⟨h.finite_faces_iff, exists_isPLHomeomorphPackage h⟩
-  simpa only [IsPLHomeomorphPackage] using hQ.2 hfin
+      ∀ hfin : K.faces.Finite, IsPLHomeomorphPackage K L := by
+    refine StellarEquivalent.induction_on h
+      (P := fun A B => (A.faces.Finite ↔ B.faces.Finite) ∧
+        (∀ hfin : A.faces.Finite, IsPLHomeomorphPackage A B)) ?_ ?_ ?_ ?_
+    · intro A B hmove
+      exact ⟨hmove.finite_faces_iff, fun hA => hmove.exists_homeomorph_isPLOn hA⟩
+    · intro A
+      exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _,
+        (fun _ => rfl), (fun _ => rfl)⟩⟩
+    · intro A B ih
+      exact ⟨ih.1.symm, fun hB => (ih.2 (ih.1.mpr hB)).symm⟩
+    · intro A B C ihAB ihBC
+      exact ⟨ihAB.1.trans ihBC.1, fun hA =>
+        (ihAB.2 hA).trans (ihBC.2 (ihAB.1.mp hA))⟩
+  exact hQ.2 hfin
 
 
 end PreAbstractSimplicialComplex
