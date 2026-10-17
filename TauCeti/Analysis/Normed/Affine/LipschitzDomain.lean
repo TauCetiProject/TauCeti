@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Affine.Isometry
-public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.ProperSpace
 import Mathlib.Topology.Algebra.ConstMulAction
@@ -68,31 +67,6 @@ variable {E : Type*} [NormedAddCommGroup E]
 
 section Cylinder
 
-/-- The open cylinder `{x | |x.fst| < h ∧ ‖x.snd‖ < r}` in the Euclidean product `ℝ × E`,
-centred at the origin, of half-height `h` in the normal coordinate and radius `r` in the
-hyperplane `E`. -/
-def normalCylinder (h r : ℝ) : Set (WithLp 2 (ℝ × E)) :=
-  {x | |x.fst| < h ∧ ‖x.snd‖ < r}
-
-@[simp]
-theorem mem_normalCylinder {h r : ℝ} {x : WithLp 2 (ℝ × E)} :
-    x ∈ normalCylinder h r ↔ |x.fst| < h ∧ ‖x.snd‖ < r :=
-  Iff.rfl
-
-/-- The cylinder is open. -/
-theorem isOpen_normalCylinder (h r : ℝ) : IsOpen (normalCylinder (E := E) h r) :=
-  (isOpen_lt (by fun_prop) continuous_const).and (isOpen_lt (by fun_prop) continuous_const)
-
-/-- A cylinder of positive height and radius contains the origin. -/
-theorem zero_mem_normalCylinder {h r : ℝ} (hh : 0 < h) (hr : 0 < r) :
-    (0 : WithLp 2 (ℝ × E)) ∈ normalCylinder h r := by
-  simp [hh, hr]
-
-/-- The cylinder grows with its height and radius. -/
-theorem normalCylinder_mono {h h' r r' : ℝ} (hh : h ≤ h') (hr : r ≤ r') :
-    normalCylinder (E := E) h r ⊆ normalCylinder h' r' :=
-  fun _ hx => ⟨hx.1.trans_le hh, hx.2.trans_le hr⟩
-
 /-- The frontier of the region strictly above the graph of a continuous function is the
 graph. -/
 theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
@@ -113,16 +87,6 @@ theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   simp only [WithLp.add_fst, WithLp.add_snd, WithLp.toLp_fst, WithLp.toLp_snd, add_zero, ← hx]
   linarith
-
-variable [NormedSpace ℝ E]
-
-/-- Dilating a cylinder by `c > 0` multiplies its height and radius by `c`. -/
-theorem smul_normalCylinder {c : ℝ} (hc : 0 < c) (h r : ℝ) :
-    c • normalCylinder (E := E) h r = normalCylinder (c * h) (c * r) := by
-  ext x
-  simp only [mem_smul_set_iff_inv_smul_mem₀ hc.ne', mem_normalCylinder, WithLp.smul_fst,
-    WithLp.smul_snd, smul_eq_mul, abs_mul, norm_smul, Real.norm_eq_abs, abs_inv,
-    abs_of_pos hc, inv_mul_lt_iff₀ hc]
 
 end Cylinder
 
@@ -201,9 +165,12 @@ theorem trans_constVAdd (hc : IsLipschitzChart Ω e γ K h r) (p : WithLp 2 (ℝ
   image_inter_normalCylinder := by
     ext w
     -- The translate `p + w` of a point `w` of the new cylinder lies in the old cylinder.
-    have hC : w ∈ normalCylinder h' r' → p + w ∈ normalCylinder h r := fun hw =>
-      ⟨by rw [WithLp.add_fst]; linarith [abs_add_le p.fst w.fst, hw.1],
-        by rw [WithLp.add_snd]; linarith [norm_add_le p.snd w.snd, hw.2]⟩
+    have hC : w ∈ normalCylinder h' r' → p + w ∈ normalCylinder h r := by
+      intro hw
+      rw [mem_normalCylinder] at hw ⊢
+      simp only [WithLp.add_fst, WithLp.add_snd]
+      exact ⟨by linarith [neg_abs_le p.fst], by linarith [le_abs_self p.fst],
+        by linarith [norm_add_le p.snd w.snd]⟩
     have key : p + w ∈ e '' Ω ∩ normalCylinder h r ↔
         p + w ∈ {x | γ x.snd < x.fst} ∩ normalCylinder h r := by
       rw [hc.image_inter_normalCylinder]
@@ -225,9 +192,11 @@ constant. -/
 theorem exists_isLipschitzChart_eq_zero (hc : IsLipschitzChart Ω e γ K h r) {x : F}
     (hx : e x ∈ normalCylinder h r) :
     ∃ (e' : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ' : E → ℝ) (h' r' : ℝ),
-      IsLipschitzChart Ω e' γ' K h' r' ∧ e' x = 0 :=
-  ⟨_, _, _, _, hc.trans_constVAdd (e x) (sub_pos.2 hx.1) (sub_pos.2 hx.2) (by linarith)
-    (by linarith), by simp⟩
+      IsLipschitzChart Ω e' γ' K h' r' ∧ e' x = 0 := by
+  have hx' : |(e x).fst| < h ∧ ‖(e x).snd‖ < r := by
+    simpa only [mem_normalCylinder, abs_lt, and_assoc] using hx
+  exact ⟨_, _, _, _, hc.trans_constVAdd (e x) (sub_pos.2 hx'.1) (sub_pos.2 hx'.2)
+    (by linarith) (by linarith), by simp⟩
 
 /-- Transporting a Lipschitz chart along an affine isometry `g : F ≃ᵃⁱ[ℝ] G`. -/
 theorem image (hc : IsLipschitzChart Ω e γ K h r) (g : F ≃ᵃⁱ[ℝ] G) :
@@ -396,6 +365,9 @@ theorem isLipschitzDomain_setOf_lt_fst {γ : E → ℝ} {K : ℝ≥0} (hγ : Lip
     IsLipschitzDomain E {x : WithLp 2 (ℝ × E) | γ x.snd < x.fst} :=
   isLipschitzDomain_iff_exists_mem_normalCylinder.2 fun x _ =>
     ⟨_, γ, K, |x.fst| + 1, ‖x.snd‖ + 1,
-      isLipschitzChart_refl_setOf_lt_fst hγ (by positivity) (by positivity), by simp⟩
+      isLipschitzChart_refl_setOf_lt_fst hγ (by positivity) (by positivity), by
+        rw [mem_normalCylinder]
+        change -(|x.fst| + 1) < x.fst ∧ x.fst < |x.fst| + 1 ∧ ‖x.snd‖ < ‖x.snd‖ + 1
+        exact ⟨by linarith [neg_abs_le x.fst], by linarith [le_abs_self x.fst], by linarith⟩⟩
 
 end TauCeti

@@ -17,6 +17,20 @@ Witt decomposition to the nondegenerate summand.
 
 The construction uses the standard complement argument for finite-dimensional vector spaces; see
 Lam, *Introduction to Quadratic Forms over Fields*, Chapter I, §4.
+
+All three summands of a decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A` are determined by `Q`: the zero summand
+lives on a copy of the radical
+(`QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`), and `m` and the class of `A`
+are the Witt index and the anisotropic part of the class of the regular part
+`Q.lift Q.radical le_rfl`.
+
+## Main results
+
+* `QuadraticForm.exists_equivalent_zero_radical_wittDecomposition`: **Witt decomposition** of a
+  possibly degenerate form, `Q ≅ 0 ⊥ m ℍ ⊥ A` with the zero form on the radical.
+* `TauCeti.wittIndex_formClass_lift_radical_eq`,
+  `TauCeti.anisotropicPart_formClass_lift_radical_eq`: uniqueness of the hyperbolic and anisotropic
+  summands of a decomposition of a possibly degenerate form.
 -/
 
 public section
@@ -55,3 +69,50 @@ theorem exists_equivalent_zero_radical_wittDecomposition (Q : QuadraticForm K V)
     exact ⟨e₁.trans (e₀.prod e₂)⟩
 
 end QuadraticForm
+
+namespace TauCeti
+
+section Uniqueness
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+  {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {T : Type*} [AddCommGroup T] [Module K T] {W : Type*} [AddCommGroup W] [Module K W]
+  [FiniteDimensional K W]
+
+-- The class of the regular part, read off a decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A`.
+private theorem formClass_lift_radical_eq_nsmul_hyperbolicClass_add {Q : QuadraticForm K V}
+    {m : ℕ} {A : QuadraticForm K W} (hA : A.Anisotropic)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod
+      ((presentedForm (hyperbolicPresentation K m)).prod A))) :
+    formClass _ Q.nondegenerate_lift_radical =
+      m • hyperbolicClass K + formClass A hA.nondegenerate := by
+  rw [formClass_lift_radical_eq ((nondegenerate_presentedForm _).prod hA.nondegenerate) h,
+    formClass_prod _ (nondegenerate_presentedForm _) _ hA.nondegenerate, formClass_presentedForm,
+    mk_hyperbolicPresentation]
+
+/-- **Uniqueness of the Witt index** in a Witt decomposition of a possibly degenerate form: in any
+decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A` with `A` anisotropic, `m` is the Witt index of the regular part
+of `Q`. -/
+theorem wittIndex_formClass_lift_radical_eq {Q : QuadraticForm K V}
+    {m : ℕ} {A : QuadraticForm K W} (hA : A.Anisotropic)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod
+      ((presentedForm (hyperbolicPresentation K m)).prod A))) :
+    RegularFormClass.wittIndex (formClass _ Q.nondegenerate_lift_radical) = m :=
+  RegularFormClass.wittIndex_eq ((A.anisotropic_formClass hA.nondegenerate).mpr hA)
+    (formClass_lift_radical_eq_nsmul_hyperbolicClass_add hA h)
+
+/-- **Uniqueness of the anisotropic part** in a Witt decomposition of a possibly degenerate form:
+in any decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A` with `A` anisotropic, the class of `A` is the anisotropic
+part of the regular part of `Q`. -/
+theorem anisotropicPart_formClass_lift_radical_eq {Q : QuadraticForm K V}
+    {m : ℕ} {A : QuadraticForm K W} (hA : A.Anisotropic)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod
+      ((presentedForm (hyperbolicPresentation K m)).prod A))) :
+    RegularFormClass.anisotropicPart (formClass _ Q.nondegenerate_lift_radical) =
+      formClass A hA.nondegenerate :=
+  RegularFormClass.anisotropicPart_eq ((A.anisotropic_formClass hA.nondegenerate).mpr hA)
+    (formClass_lift_radical_eq_nsmul_hyperbolicClass_add hA h)
+
+end Uniqueness
+
+end TauCeti

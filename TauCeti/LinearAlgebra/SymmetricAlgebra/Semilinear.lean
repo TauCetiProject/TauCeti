@@ -24,9 +24,10 @@ presheaf of modules into presheaves.
 ## Main declarations
 
 * `SymmetricAlgebra.mapₛₗ`: the ring homomorphism induced by a semilinear map;
-* `SymmetricAlgebra.mapₛₗ_comp_mapₛₗ` and `SymmetricAlgebra.mapₛₗ_eq_id`: functoriality, with the
-  ring homomorphisms and semilinear maps related by pointwise equations, so that they apply to
-  maps that only agree propositionally (as for the restriction maps of a presheaf);
+* `SymmetricAlgebra.mapₛₗ_comp_mapₛₗ`, `SymmetricAlgebra.mapₛₗ_mapₛₗ_eq` and
+  `SymmetricAlgebra.mapₛₗ_eq_id`: functoriality, with the ring homomorphisms and semilinear maps
+  related by pointwise equations, so that they apply to maps that only agree propositionally (as
+  for the restriction maps of a presheaf);
 * `TauCeti.SymmetricAlgebra.mapₛₗ_mem_homogeneousSubmodule` and
   `TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule`: the induced maps preserve degrees;
 * `TauCeti.SymmetricAlgebra.homogeneousSubmoduleMapₛₗ`: the induced semilinear map between
@@ -97,6 +98,17 @@ theorem mapₛₗ_comp_mapₛₗ (f : M →ₛₗ[φ] N) (g : N →ₛₗ[ψ] P)
     (hχ : ∀ r, ψ (φ r) = χ r) (hh : ∀ m, g (f m) = h m) :
     (mapₛₗ g).comp (mapₛₗ f) = mapₛₗ h := by
   ext x <;> simp [hχ, hh]
+
+/-- Two composites of ring homomorphisms induced by semilinear maps agree when the composite ring
+homomorphisms agree and the composite semilinear maps agree pointwise. Unlike
+`SymmetricAlgebra.mapₛₗ_comp_mapₛₗ`, it needs no semilinear map over the composite ring
+homomorphism. -/
+theorem mapₛₗ_mapₛₗ_eq {S' N' : Type*} [CommSemiring S'] [AddCommMonoid N'] [Module S' N']
+    {φ' : R →+* S'} {ψ' : S' →+* T} (f : M →ₛₗ[φ] N) (g : N →ₛₗ[ψ] P) (f' : M →ₛₗ[φ'] N')
+    (g' : N' →ₛₗ[ψ'] P)
+    (hχ : ∀ r, ψ (φ r) = ψ' (φ' r)) (hh : ∀ m, g (f m) = g' (f' m))
+    (x : SymmetricAlgebra R M) : mapₛₗ g (mapₛₗ f x) = mapₛₗ g' (mapₛₗ f' x) := by
+  induction x using SymmetricAlgebra.induction <;> simp_all
 
 end SymmetricAlgebra
 

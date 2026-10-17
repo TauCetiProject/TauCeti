@@ -263,7 +263,7 @@ lemma heckeGen_one_eq_heckeTScalar (p : ℕ) (hp : 0 < p) :
 
 /-- `heckeT(p) = heckeGen 0`: the sum T(p) is the first generator for p prime. -/
 lemma heckeT_prime_eq_heckeGen_zero (p : ℕ) (hp : p.Prime) :
-    heckeT ⟨p, hp.pos⟩ = heckeGen 2 p (0 : Fin 2) := by
+    heckeT p = heckeGen 2 p (0 : Fin 2) := by
   rw [heckeGen_zero_eq_heckeTDiag p hp.pos, heckeT_prime p hp]
 
 private lemma heckeTScalar_mem_range (p : ℕ) (hp : p.Prime) :
@@ -272,19 +272,15 @@ private lemma heckeTScalar_mem_range (p : ℕ) (hp : p.Prime) :
 
 /-- `heckeT(p^k)` lies in the range of the evaluation homomorphism, for all `k`. -/
 lemma heckeT_prime_pow_mem_evalHom_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
-    heckeT ⟨p ^ k, pow_pos hp.pos k⟩ ∈ (evalHom 2 p).range := by
+    heckeT (p ^ k) ∈ (evalHom 2 p).range := by
   induction k using Nat.strongRecOn with
   | ind k ih =>
   match k with
   | 0 =>
-    -- `p ^ 0` also occurs inside the `ℕ+` index's positivity proof, so `pow_zero` cannot
-    -- rewrite it; `congr 1` reduces to the index equality, which is decided structurally.
-    rw [show heckeT ⟨p ^ 0, pow_pos hp.pos 0⟩ = heckeT 1 from by congr 1, heckeT_one]
+    rw [pow_zero, heckeT_one]
     exact (evalHom 2 p).range.one_mem
   | 1 =>
-    have h1 : heckeT ⟨p ^ 1, pow_pos hp.pos 1⟩ = heckeT ⟨p, hp.pos⟩ := by
-      congr 1; exact Subtype.ext (pow_one p)
-    rw [h1, heckeT_prime_eq_heckeGen_zero p hp]; exact heckeGen_mem_evalHom_range 2 p 0
+    rw [pow_one, heckeT_prime_eq_heckeGen_zero p hp]; exact heckeGen_mem_evalHom_range 2 p 0
   | k + 2 =>
     have h_rec := heckeT_prime_pow_recurrence p hp (k + 1) (by omega)
     -- The recurrence is stated at index `k + 1`; truncated ℕ-subtraction writes its two

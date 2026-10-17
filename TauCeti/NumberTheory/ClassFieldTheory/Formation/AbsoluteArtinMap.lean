@@ -86,19 +86,6 @@ attribute [local instance] Subgroup.isClosed_topologicalClosure
 
 namespace NormalLayer
 
-/-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
-whole group. -/
-def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :
-    F.level ⊤ ≃ₗ[ℤ] F.level (ofOpenNormal V).ground :=
-  LinearEquiv.ofEq _ _ (congrArg F.level (ground_ofOpenNormal V).symm)
-
-/-- The identification of `A^G` with the ground level of `V ◁ G` moves no element of the ambient
-module. -/
-@[simp]
-theorem groundEquivOfOpenNormal_apply_coe (F : Formation G) (V : OpenNormalSubgroup G)
-    (a : F.level ⊤) : (dsimp% only (groundEquivOfOpenNormal F V a : F.toRep.V)) = a :=
-  (rfl)
-
 /-- The projection `G^ab → (G/V)^ab` from the topological abelianization of `G` onto the
 abelianized Galois group of the layer `V ◁ G` of an open normal subgroup `V`, written additively.
 It sends the class of `g ∈ G` to the class of `g` (`abelianizationRestrict_mk`). In Galois
@@ -271,14 +258,13 @@ private theorem quotientArtinMap_ofAdd (U : OpenNormalSubgroup (TopologicalAbeli
 private theorem mapOfLE_comp_quotientArtinMap
     {U U' : OpenNormalSubgroup (TopologicalAbelianization G)} (hle : U ≤ U') :
     (QuotientGroup.mapOfLE hle).comp (cf.quotientArtinMap U) = cf.quotientArtinMap U' := by
-  have T := LayerRefinement.ofOpenNormal
-    (OpenNormalSubgroup.toSubgroup_le.mp fun _ hg ↦ mem_comapAb.mpr (hle (mem_comapAb.mp hg)))
+  have hle' : comapAb U ≤ comapAb U' :=
+    OpenNormalSubgroup.toSubgroup_le.mp fun _ hg ↦ mem_comapAb.mpr (hle (mem_comapAb.mp hg))
+  have T := LayerRefinement.ofOpenNormal hle'
   refine MonoidHom.ext fun a ↦ ?_
-  have hground : T.groundEquiv F (groundEquivOfOpenNormal F (comapAb U') a.toAdd) =
-      groundEquivOfOpenNormal F (comapAb U) a.toAdd :=
-    Subtype.ext (by simp)
   rw [MonoidHom.comp_apply, ← ofAdd_toAdd a, quotientArtinMap_ofAdd, quotientArtinMap_ofAdd,
-    mapOfLE_quotientOfAbelianizationGal hle T, ofMul_toMul, cf.artinMap_quotient T, hground]
+    mapOfLE_quotientOfAbelianizationGal hle T, ofMul_toMul, cf.artinMap_quotient T,
+    LayerRefinement.groundEquiv_groundEquivOfOpenNormal F hle']
 
 /-- The **absolute Artin map** `A^G → G^ab` of a class formation over a profinite group `G`: the
 inverse limit of the finite Artin maps `A^G → (G/V)^ab` of the layers `V ◁ G`. Its composite with
@@ -323,8 +309,9 @@ theorem abelianizationRestrict_absoluteArtinMap (V : OpenNormalSubgroup G) (a : 
         (Subgroup.isOpen_mono hVU V.isOpen') }
   -- The layer of `V` refines the layer of the preimage of `U`. Modulo `U`, the absolute Artin
   -- symbol is the Artin symbol for the latter layer, hence the image of that for `V`.
-  have T := LayerRefinement.ofOpenNormal
-    (OpenNormalSubgroup.toSubgroup_le.mp fun g hg ↦ mem_comapAb.mpr (hVU hg) : V ≤ comapAb U)
+  have hVU' : V ≤ comapAb U :=
+    OpenNormalSubgroup.toSubgroup_le.mp fun g hg ↦ mem_comapAb.mpr (hVU hg)
+  have T := LayerRefinement.ofOpenNormal hVU'
   have hcomp (y : Additive (Abelianization (ofOpenNormal V).Gal)) :
       QuotientGroup.lift U.toSubgroup ρ (fun _ h ↦ h)
         (quotientOfAbelianizationGal U (T.quotientHom y).toMul) = y.toMul := by
@@ -335,13 +322,11 @@ theorem abelianizationRestrict_absoluteArtinMap (V : OpenNormalSubgroup G) (a : 
         rw [LayerRefinement.quotientHom_of, toMul_ofMul, LayerRefinement.galHom_mk,
           quotientOfAbelianizationGal_of_mk, Subgroup.coe_inclusion, QuotientGroup.lift_mk, hρ,
           toMul_ofMul]
-  have hground : T.groundEquiv F (groundEquivOfOpenNormal F (comapAb U) a) =
-      groundEquivOfOpenNormal F V a :=
-    Subtype.ext (by simp)
   have key : QuotientGroup.lift U.toSubgroup ρ (fun _ h ↦ h)
       ((cf.absoluteArtinMap a).toMul : TopologicalAbelianization G ⧸ U.toSubgroup) =
       (cf.artinMap (ofOpenNormal V) (groundEquivOfOpenNormal F V a)).toMul := by
-    rw [mk_absoluteArtinMap, quotientArtinMap_ofAdd, cf.artinMap_quotient T, hground]
+    rw [mk_absoluteArtinMap, quotientArtinMap_ofAdd, cf.artinMap_quotient T,
+      LayerRefinement.groundEquiv_groundEquivOfOpenNormal F hVU']
     exact hcomp _
   rw [QuotientGroup.lift_mk, hρdef, MonoidHom.toAdditive_symm_apply_apply, ofMul_toMul] at key
   exact Additive.toMul.injective key

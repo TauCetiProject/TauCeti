@@ -27,6 +27,7 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.splitEvenForm`: its quadratic form `(f, x) ↦ f x`.
 * `TauCeti.splitEvenPolarization`: the canonical polarization by the two coordinate axes.
 * `TauCeti.splitEvenBasis`: the coordinate basis of the first isotropic summand.
+* `TauCeti.finrank_splitEvenPolarization_W`: the first isotropic summand has dimension `n`.
 
 ## References
 
@@ -37,6 +38,8 @@ directly into the spin representation and Kostant-lattice constructions.
 public section
 
 namespace TauCeti
+
+open Module
 
 universe u
 
@@ -121,5 +124,24 @@ theorem coe_splitEvenBasis (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
       (0, Pi.single i 1) := by
   rw [splitEvenBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply,
     SpinPolarizationData.coe_hyperbolicBasis_apply, Pi.basisFun_apply]
+
+variable (K : Type u) [Field K]
+
+/-- The standard split space of `n` hyperbolic planes has dimension `2 * n`. -/
+theorem finrank_splitEvenSpace (n : ℕ) : finrank K (SplitEvenSpace K n) = 2 * n := by
+  simp [SplitEvenSpace, two_mul]
+
+/-- The first isotropic summand in the standard split polarization has dimension `n`. -/
+@[simp]
+theorem finrank_splitEvenPolarization_W (n : ℕ) :
+    finrank K (splitEvenPolarization K n).W = n := by
+  rw [(splitEvenPolarization K n).finrank_W_eq_of_finrank_eq_two_mul
+    (finrank_splitEvenSpace K n)]
+
+/-- The first isotropic summand in a nonzero standard split polarization is nonzero. -/
+theorem splitEvenPolarization_W_ne_bot {n : ℕ} (hn : n ≠ 0) :
+    (splitEvenPolarization K n).W ≠ ⊥ :=
+  Submodule.finrank_eq_zero.not.1 <| by
+    simpa using hn
 
 end TauCeti

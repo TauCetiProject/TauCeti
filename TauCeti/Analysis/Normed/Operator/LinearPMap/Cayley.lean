@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Module
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Intertwining
 
 /-!
 # The Cayley transform of a partial linear map
@@ -20,7 +20,9 @@ For a partial linear map `A` on a complex normed space, the **Cayley transform**
 bounded form of `(A - i)(A + i)⁻¹`. The Cayley transform determines `A`: the graph of `A`
 consists of the pairs `(x - U x, i (x + U x))` (`LinearPMap.mem_graph_iff_exists_cayley`), which
 is the operator identity `A = i (1 + U) (1 - U)⁻¹`. In particular `1` is not an eigenvalue of `U`.
-If both `i` and `-i` are resolvent points, the Cayley transform is surjective.
+If both `i` and `-i` are resolvent points, the Cayley transform is surjective. A bounded operator
+intertwines two partial linear maps having `-i` as a resolvent point exactly when it intertwines
+their Cayley transforms.
 
 The isometry and unitarity of the Cayley transform of a symmetric or self-adjoint operator are in
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley`.
@@ -36,6 +38,7 @@ The isometry and unitarity of the Cayley transform of a symmetric or self-adjoin
   `{(x - U x, i (x + U x)) | x}`.
 * `LinearPMap.cayley_apply_eq_self_iff`: `1` is not an eigenvalue of `U`.
 * `LinearPMap.cayley_surjective`: `U` is surjective when `±i` are resolvent points.
+* `LinearPMap.intertwines_iff_comp_cayley_eq`: `X A ⊆ B X` exactly when `X U_A = U_B X`.
 
 ## References
 
@@ -106,6 +109,24 @@ theorem cayley_surjective (hp : I ∈ A.resolventSet) (hm : -I ∈ A.resolventSe
   ⟨-I • A.resolvent I y - A ⟨A.resolvent I y, resolvent_mem_domain hp y⟩,
     (cayley_neg_I_smul_sub_apply hm ⟨A.resolvent I y, resolvent_mem_domain hp y⟩).trans
       (smul_sub_apply_resolvent hp y)⟩
+
+section Intertwining
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {B : F →ₗ.[ℂ] F} {X : E →L[ℂ] F}
+
+/-- **Cayley intertwining.** If `-i` is a resolvent point of both partial linear maps, a bounded
+operator intertwines them exactly when it intertwines their Cayley transforms. -/
+theorem intertwines_iff_comp_cayley_eq (hA : -I ∈ A.resolventSet) (hB : -I ∈ B.resolventSet) :
+    A.Intertwines B X ↔ X ∘L A.cayley = B.cayley ∘L X := by
+  simp [intertwines_iff_comp_resolvent_eq hA hB, cayley, ContinuousLinearMap.one_def]
+
+/-- An intertwiner of two partial linear maps having `-i` as a resolvent point intertwines their
+Cayley transforms. -/
+theorem Intertwines.comp_cayley_eq (h : A.Intertwines B X) (hA : -I ∈ A.resolventSet)
+    (hB : -I ∈ B.resolventSet) : X ∘L A.cayley = B.cayley ∘L X :=
+  (intertwines_iff_comp_cayley_eq hA hB).mp h
+
+end Intertwining
 
 end LinearPMap
 

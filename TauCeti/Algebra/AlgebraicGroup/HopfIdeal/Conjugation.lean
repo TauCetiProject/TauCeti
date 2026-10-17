@@ -205,8 +205,8 @@ theorem IsNormal.le_conjugate {I : HopfIdeal R H} (hI : I.IsNormal)
     apply WithConv.toConv_injective
     rw [HopfAlgebra.toConv_pointConjugationAlgHom, HopfAlgebra.productMap_comp_conjugationAlgHom,
       WithConv.toConv_ofConv]
-  have hker : rightTensorIdeal (R := R) (H := H) I.toIdeal ≤ I.toIdeal.comap f.toRingHom := by
-    rw [rightTensorIdeal_le_iff]
+  have hker : Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤ I.toIdeal.comap f.toRingHom := by
+    rw [Ideal.rightTensorIdeal_le_iff]
     intro y hy
     simpa [f] using hy
   intro x hx
@@ -264,7 +264,7 @@ by its conjugate. -/
 theorem mapDomain_pointConjugation_mem_conjugate_iff
     (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
     (A : CommAlgCat.{w} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    AlgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
+    BialgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) A ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   have hsurj : Function.Surjective

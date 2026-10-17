@@ -53,6 +53,9 @@ the base ring (`WeierstrassCurve.UniversalTate.comp_lift`).
   `ℤ[A, B][Δ⁻¹]` and the universal elliptic Tate normal form over it.
 * `WeierstrassCurve.UniversalTate.lift`: the classifying homomorphism `ℤ[A, B][Δ⁻¹] →+* R` of an
   elliptic Tate normal form over `R`.
+* `WeierstrassCurve.UniversalTate.curveULift`: the universal elliptic Tate normal form over the copy
+  `ULift.{u} ℤ[A, B][Δ⁻¹]` of `ℤ[A, B][Δ⁻¹]` in `Type u`, over which it is read in schemes of
+  universe `u`.
 
 ## Main results
 
@@ -419,6 +422,56 @@ theorem eq_lift (h : IsUnit (tateNormalForm a b).Δ) {f : Ring →+* R}
   ext
   · simpa using h₁
   · simpa using h₃
+
+universe u
+
+/-- The universal elliptic Tate normal form `Y² + AXY + BY = X³ + BX²`, over the copy
+`ULift.{u} ℤ[A, B][Δ⁻¹]` of its coefficient ring in `Type u`. -/
+noncomputable def curveULift : WeierstrassCurve (ULift.{u} Ring) :=
+  tateNormalForm (.up (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 0)))
+    (.up (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 1)))
+
+/-- The universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is the base change of the one over
+`ℤ[A, B][Δ⁻¹]` along the identification of the two rings. -/
+theorem curveULift_eq :
+    curveULift.{u} = curve.map (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom := by
+  -- `ULift.ringEquiv.symm` is `ULift.up` by definition
+  simp only [curve, polyCurve, baseChange, map_tateNormalForm]
+  rfl
+
+/-- The universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is a Tate normal form. -/
+theorem curveULift_eq_tateNormalForm :
+    curveULift.{u} = tateNormalForm curveULift.a₁ curveULift.a₃ :=
+  (rfl)
+
+/-- The coefficient `a₁` of the universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is that of
+the one over `ℤ[A, B][Δ⁻¹]`. -/
+@[simp]
+theorem curveULift_a₁ : curveULift.{u}.a₁ = .up curve.a₁ :=
+  (rfl)
+
+/-- The coefficient `a₃` of the universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is that of
+the one over `ℤ[A, B][Δ⁻¹]`. -/
+@[simp]
+theorem curveULift_a₃ : curveULift.{u}.a₃ = .up curve.a₃ :=
+  (rfl)
+
+/-- The point `(0, 0)` lies on the universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]`. -/
+theorem equation_curveULift_zero : curveULift.{u}.toAffine.Equation 0 0 := by
+  rw [curveULift_eq_tateNormalForm]
+  exact equation_tateNormalForm_zero _ _
+
+/-- The base change of the universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` along a ring
+homomorphism `φ` is the Tate normal form with the images of `A` and `B` as coefficients. -/
+@[simp]
+theorem map_curveULift {S : Type*} [CommRing S] (φ : ULift.{u} Ring →+* S) :
+    curveULift.map φ = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃) := by
+  simp [curveULift]
+
+/-- The universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is elliptic. -/
+instance : curveULift.{u}.IsElliptic := by
+  rw [curveULift_eq]
+  infer_instance
 
 end UniversalTate
 

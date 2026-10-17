@@ -183,6 +183,27 @@ theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M} {D : ℤ}
     rw [map_smul]
     exact Submodule.smul_mem _ _ hu
 
+/-- Deleting the empty word preserves total letter degree. -/
+theorem isHomogeneous_reducedProjection (G : InternalGrading R M) :
+    LinearMap.IsHomogeneous (reducedProjection R M) (gradedPiece G)
+      (ReducedTensorWords.gradedPiece G) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro D w hw
+  rw [add_zero]
+  refine gradedPiece_induction
+    (motive := fun w ↦ reducedProjection R M w ∈ ReducedTensorWords.gradedPiece G D)
+    hw ?_ ?_ ?_ ?_
+  · intro n d x hx hd
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp
+    · rw [reducedProjection_of_of_pos, ← hd]
+      exact ReducedTensorWords.mem_gradedPiece_of_tprod G hn x d hx
+  · simp
+  · intro x y _ _ hx hy
+    simpa only [map_add] using add_mem hx hy
+  · intro r x _ hx
+    simpa only [map_smul] using Submodule.smul_mem _ r hx
+
 /-! ### The `q`-twisted co-Leibniz identity -/
 
 /-- A `q`-twisted co-Leibniz condition on an endomorphism `b` of the coaugmented tensor coalgebra:
@@ -231,6 +252,45 @@ theorem IsGradedCoderivation.deconcatenation_apply (hb : IsGradedCoderivation G 
             (map (InternalGrading.koszulTwist G q)) (deconcatenation R M z)) := by
   have h := congrArg (fun f : _ →ₗ[_] _ => f z) (isGradedCoderivation_iff.mp hb)
   simpa only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply] using h
+
+/-- The counit vanishes on every value of a signed coderivation. -/
+theorem IsGradedCoderivation.counit_apply (hb : IsGradedCoderivation G q b)
+    (w : TensorWords R M) : counit R M (b w) = 0 := by
+  let e := counit R M
+  let E := TensorProduct.map e e
+  let repr := Coalgebra.Repr.arbitrary R w
+  have he (z : TensorWords R M) :
+      E (deconcatenation R M z) = e z ⊗ₜ[R] (1 : R) := by
+    have h := Coalgebra.sum_map_tmul_counit_eq e z
+      (repr := Coalgebra.Repr.arbitrary R z)
+    rw [← comul_eq_deconcatenation,
+      ← (Coalgebra.Repr.arbitrary R z).eq]
+    simpa only [E, e, map_sum, TensorProduct.map_tmul, counit_eq_counit] using h
+  have hl : E (LinearMap.rTensor (TensorWords R M) b (deconcatenation R M w)) =
+      e (b w) ⊗ₜ[R] (1 : R) := by
+    have h := Coalgebra.sum_map_tmul_counit_eq (e ∘ₗ b) w (repr := repr)
+    rw [← comul_eq_deconcatenation, ← repr.eq]
+    simpa only [E, e, map_sum, TensorProduct.map_tmul, LinearMap.rTensor_tmul,
+      LinearMap.comp_apply, counit_eq_counit] using h
+  have ht (z : TensorWords R M) : e (map (G.koszulTwist q) z) = e z :=
+    LinearMap.congr_fun (counit_comp_map (G.koszulTwist q)) z
+  have hr : E (LinearMap.lTensor (TensorWords R M) b
+      (LinearMap.rTensor (TensorWords R M) (map (G.koszulTwist q))
+        (deconcatenation R M w))) = (1 : R) ⊗ₜ[R] e (b w) := by
+    have h := Coalgebra.sum_counit_tmul_map_eq (e ∘ₗ b) w (repr := repr)
+    rw [← comul_eq_deconcatenation, ← repr.eq]
+    simpa only [E, map_sum, TensorProduct.map_tmul, LinearMap.rTensor_tmul,
+      LinearMap.lTensor_tmul, ht, e, counit_eq_counit, LinearMap.comp_apply] using h
+  have h := congrArg (fun z ↦ TensorProduct.lid R R (E z))
+    (hb.deconcatenation_apply w)
+  simp only [map_add, he, hl, hr, TensorProduct.lid_tmul, smul_eq_mul,
+    mul_one, one_mul] at h
+  exact (add_eq_left.mp h.symm)
+
+/-- The counit composed with a signed coderivation is zero. -/
+theorem IsGradedCoderivation.counit_comp (hb : IsGradedCoderivation G q b) :
+    counit R M ∘ₗ b = 0 :=
+  LinearMap.ext hb.counit_apply
 
 end TensorWords
 

@@ -171,6 +171,16 @@ theorem relIndex_range_powMonoidHom_sUnits [Finite (ClassGroup R)] [Monoid.FG R�
     Subgroup.index_range_powMonoidHom_of_fg _ (NeZero.ne n), finrank_sUnits,
     Set.natCard_ker_powMonoidHom_unit]
 
+/-- For a finite set `S` of primes, the `n`-th powers of `Kˣ` cut out of the `S`-units a subgroup
+of finite index, provided the class group is finite and the ordinary units are finitely
+generated. -/
+instance isFiniteRelIndex_range_powMonoidHom_sUnits [Finite (ClassGroup R)] [Monoid.FG Rˣ]
+    (S : Set (HeightOneSpectrum R)) [Finite S] (n : ℕ) [NeZero n] :
+    (powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex (S.unit K) :=
+  ⟨by
+    rw [relIndex_range_powMonoidHom_sUnits R K S n]
+    exact mul_ne_zero (pow_ne_zero _ (NeZero.ne n)) Nat.card_pos.ne'⟩
+
 end
 
 end TauCeti

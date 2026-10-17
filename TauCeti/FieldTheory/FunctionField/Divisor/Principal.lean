@@ -269,6 +269,21 @@ theorem mem_support_poles_iff (hF : IsFunctionField k F) {z : Fˣ} {P : Place k 
   rw [WeilDivisor.mem_support_iff, coeff_poles]
   omega
 
+/-- A place is outside the support of the pole divisor of `z` exactly when `z` is regular
+there. -/
+theorem coeff_poles_eq_zero_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
+    (poles hF z).coeff P = 0 ↔ (z : F) ∈ P.integers := by
+  rw [coeff_poles, P.mem_integers_iff_ord_nonneg]
+  omega
+
+/-- The function `z` has valuation `exp ((z)_∞(P))` at `P`, the largest pole order that its pole
+divisor allows, exactly when `z⁻¹` is regular at `P`. -/
+theorem valuation_eq_exp_coeff_poles_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
+    P.valuation (z : F) = WithZero.exp ((poles hF z).coeff P) ↔ (z : F)⁻¹ ∈ P.integers := by
+  rw [← neg_neg ((poles hF z).coeff P), ← P.ord_eq_iff_valuation_eq_exp_neg z.ne_zero,
+    coeff_poles, P.mem_integers_iff_ord_nonneg, P.ord_inv]
+  omega
+
 @[simp]
 theorem isEffective_zeros (hF : IsFunctionField k F) (z : Fˣ) :
     WeilDivisor.IsEffective (zeros hF z) :=

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Golay
+public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Golay.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.OrthogonalQuotient
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Quadratic
 

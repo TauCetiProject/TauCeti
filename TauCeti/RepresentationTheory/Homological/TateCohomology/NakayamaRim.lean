@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective.Basic
 import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.Algebra.Module.Projective.Schanuel
 import TauCeti.LinearAlgebra.FreeModule.PID

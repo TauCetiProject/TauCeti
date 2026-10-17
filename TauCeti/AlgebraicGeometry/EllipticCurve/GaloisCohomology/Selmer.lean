@@ -28,9 +28,9 @@ an arbitrary family, as `WeierstrassCurve.shafarevichTateGroup` and `Weierstrass
 the Selmer groups (`TauCeti.ContCohomology.SelmerStructure.selmerGroup`) of two Selmer structures
 localising along the restriction maps `τ i`: on `E(Kˢ)` with the zero local conditions, and on
 `E(Kˢ)[m]` with the local conditions `ker (H¹(G_{L i}, E[m]) → H¹(G_{L i}, E))`.
-The embeddings are genuine data: restriction to `L i` is pullback along the homomorphism
-`G_{L i} → G_K` that `τ i` induces, and there is no such homomorphism without a choice of
-embedding.
+The homomorphism `G_{L i} → G_K` used for pullback requires a choice of embedding. The induced
+cohomology maps and the resulting subgroups are independent of this choice, as proved in
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/EmbeddingIndependence.lean`.
 
 These kernel-based definitions need no hypothesis on `m` or on `W`. When `W` is elliptic and `m`
 is invertible in `K`, the Selmer group is cut out by local Kummer conditions: a class lies in

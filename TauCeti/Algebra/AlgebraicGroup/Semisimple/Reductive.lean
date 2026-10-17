@@ -27,9 +27,6 @@ normal-subgroup condition for reductivity.
 
 * J. S. Milne, *Algebraic Groups* (2017), Section 21.
 * T. A. Springer, *Linear Algebraic Groups*, Chapter 8.
-
-This is a structural implication in Layer 6, "Reductive and semisimple groups", of the
-ReductiveGroups roadmap.
 -/
 
 public section

@@ -39,7 +39,9 @@ right multiplication by `a` is a single cycle on the whole group exactly when `a
 time, along a sign-preserving map of permutation groups, multiplies it by the number of
 permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed
 sum over the permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the
-slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`).
+slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry
+moved to the front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
+`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`).
 -/
 
 public section
@@ -472,5 +474,58 @@ theorem sum_sign_smul_cons_comp_eq_sum_insertNth {α M : Type*} [AddCommGroup M]
     Equiv.inv_apply, decomposeFin'_symm]
   rw [hcomp, Perm.sign_inv, sign_decomposeFin'Symm, Perm.sign_inv, mul_smul]
   simp [Units.smul_def]
+
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the entry moved to the
+front: rearranging `w` by all permutations is the same as moving each entry `w j` to the front,
+with sign `(-1) ^ j`, followed by all rearrangements of the remaining entries `j.removeNth w`.
+This is the expansion of an alternatization along the entry placed in its first argument. -/
+theorem sum_sign_smul_comp_eq_sum_cons_removeNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (w : Fin (n + 1) → α) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (w ∘ σ) =
+      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (Fin.cons (w j) (j.removeNth w ∘ τ)) := by
+  cases n with
+  | zero =>
+    -- Both permutation groups are trivial and `Fin.cons (w 0) (Fin.removeNth 0 w) = w`.
+    have h1 : ∀ σ : Perm (Fin (0 + 1)), σ = 1 := fun σ => Equiv.ext fun i => Fin.ext (by omega)
+    rw [Fintype.sum_eq_single 1 (fun σ hσ => (hσ (h1 σ)).elim), Fin.sum_univ_one,
+      Fintype.sum_eq_single 1 (fun σ hσ => (hσ (Subsingleton.elim _ _)).elim)]
+    simp only [Perm.sign_one, Perm.coe_one, Function.comp_id, one_smul, Fin.val_zero, pow_zero]
+    congr 1
+    funext i
+    rw [Fin.fin_one_eq_zero i]
+    rfl
+  | succ n =>
+  -- Reindex by Mathlib's `decomposeFin'`: `decomposeFin'Symm j τ` sends `0` to `j` and `m.succ`
+  -- to `j.succAbove (τ m)`, so it rearranges `w` into `Fin.cons (w j) (j.removeNth w ∘ τ)`,
+  -- and its sign is `(-1) ^ j * sign τ`.
+  simp_rw [Finset.smul_sum]
+  rw [← Fintype.sum_prod_type']
+  symm
+  refine Fintype.sum_equiv decomposeFin'.symm _ _ fun ⟨j, τ⟩ => ?_
+  have hcomp : w ∘ decomposeFin'Symm j τ = Fin.cons (w j) (j.removeNth w ∘ τ) := by
+    funext m
+    cases m using Fin.cases <;> simp [Fin.removeNth]
+  rw [decomposeFin'_symm, hcomp, sign_decomposeFin'Symm, mul_smul]
+  simp [Units.smul_def]
+
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the entry moved to an
+arbitrary slot `p`: rearranging `w` by all permutations is, up to the sign `(-1) ^ p`, the same as
+inserting each entry `w j` at `p`, with sign `(-1) ^ j`, into all rearrangements of the remaining
+entries `j.removeNth w`. -/
+theorem sum_sign_smul_comp_eq_sum_insertNth_removeNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (w : Fin (n + 1) → α) (p : Fin (n + 1)) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (w ∘ σ) =
+      (-1 : ℤ) ^ (p : ℕ) • ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (p.insertNth (w j) (j.removeNth w ∘ τ)) := by
+  -- Precomposing with `p.cycleRange` moves the front slot to `p` and costs the sign `(-1) ^ p`.
+  have h := sum_sign_smul_comp_eq_sum_cons_removeNth (fun u => g (u ∘ p.cycleRange)) w
+  simp only [Function.comp_assoc, Fin.cons_comp_cycleRange] at h
+  rw [← h, ← Fintype.sum_equiv (Equiv.mulRight p.cycleRange)
+    (fun σ => sign (σ * p.cycleRange) • g (w ∘ ⇑(σ * p.cycleRange))) _ fun σ => rfl]
+  simp only [sign_mul, Fin.sign_cycleRange, Perm.coe_mul, mul_smul, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  rw [smul_comm, Units.smul_def ((-1) ^ (p : ℕ))]
+  simp
 
 end TauCeti

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
-
-import TauCeti.RingTheory.ClassGroup.Basic
+public import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 
 /-!
 # The ray class group of a modulus
@@ -32,8 +31,6 @@ class group (`oneEquivClassGroup`).
 
 ## Main definitions
 
-* `TauCeti.GlobalNumberFields.principalIdealPrimeTo`: the principal fractional ideals whose
-  generators are units at the finite part.
 * `TauCeti.GlobalNumberFields.rayHom`, `TauCeti.GlobalNumberFields.ray`: the principal ideals of
   the elements congruent to one, and the subgroup they form.
 * `TauCeti.GlobalNumberFields.idealsPrimeToClassGroup`: the ordinary ideal class of an invertible
@@ -48,10 +45,8 @@ class group (`oneEquivClassGroup`).
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.toPrincipalIdeal_mem_idealsPrimeTo_iff`: a principal fractional ideal
-  is prime to the modulus exactly when its generator is a unit at every prime dividing the finite
-  part, with `TauCeti.GlobalNumberFields.IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo` the
-  consequence for an element congruent to one.
+* `TauCeti.GlobalNumberFields.IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo`: the principal ideal
+  of an element congruent to one is prime to the modulus.
 * `TauCeti.GlobalNumberFields.idealsPrimeTo_eq_top`: every invertible fractional ideal is prime
   to a modulus whose support is empty, so `TauCeti.GlobalNumberFields.idealsPrimeToEquiv`
   identifies the two carriers there.
@@ -86,42 +81,13 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **A principal fractional ideal is prime to the modulus exactly when its generator is a unit at
-every prime dividing the finite part.** -/
-theorem toPrincipalIdeal_mem_idealsPrimeTo_iff {𝔪 : Modulus K} {x : Kˣ} :
-    toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 ↔ x ∈ primeToSubgroup 𝔪 := by
-  rw [NumberFieldArithmetic.mem_idealsAway_iff, mem_primeToSubgroup]
-  refine ⟨fun h v hv ↦ ?_, fun h v hv ↦ ?_⟩
-  · have hcount := h v ((Modulus.mem_support_iff _ _).mpr hv)
-    rw [FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation K v x, neg_eq_zero] at hcount
-    have hne : v.valuation K (x : K) ≠ 0 := (Valuation.ne_zero_iff _).mpr x.ne_zero
-    rw [← WithZero.exp_log hne, hcount, WithZero.exp_zero]
-  · rw [FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation K v x,
-      h v ((Modulus.mem_support_iff _ _).mp hv), WithZero.log_one, neg_zero]
-
 /-- **The principal ideal of an element congruent to one is prime to the modulus.**  At a prime
 dividing the finite part such an element is a unit, so the multiplicity of its principal ideal
 vanishes there. -/
 theorem IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo {𝔪 : Modulus K} {x : Kˣ}
     (hx : IsCongrOne 𝔪 x) : toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo 𝔪 :=
-  toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr
+  NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr
     (congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx))
-
-/-- The principal fractional ideal of an element that is a unit at every prime dividing the
-finite part of `m`, viewed as an element of `idealsPrimeTo m`. -/
-noncomputable def principalIdealPrimeTo (m : Modulus K) :
-    primeToSubgroup m →* idealsPrimeTo m :=
-  MonoidHom.codRestrict
-    ((toPrincipalIdeal (RingOfIntegers K) K).comp (primeToSubgroup m).subtype)
-    (idealsPrimeTo m) fun x ↦ toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr x.2
-
-/-- `principalIdealPrimeTo` does not change the underlying principal fractional ideal. -/
-@[simp] theorem coe_principalIdealPrimeTo (m : Modulus K) (x : primeToSubgroup m) :
-    ((principalIdealPrimeTo m x : idealsPrimeTo m) :
-        (FractionalIdeal (RingOfIntegers K)⁰ K)ˣ) =
-      toPrincipalIdeal (RingOfIntegers K) K (x : Kˣ) := by
-  simp only [principalIdealPrimeTo, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
-    Subgroup.subtype_apply]
 
 /-- The homomorphism sending an element of `Kˣ` congruent to one modulo `𝔪` to its principal
 fractional ideal, viewed inside the ideals prime to `𝔪`. -/
@@ -158,22 +124,6 @@ noncomputable def idealsPrimeToClassGroup (𝔪 : Modulus K) :
     idealsPrimeToClassGroup 𝔪 I =
       ClassGroup.mk K (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :=
   by simp only [idealsPrimeToClassGroup, MonoidHom.comp_apply, Subgroup.subtype_apply]
-
-/-- The principal fractional ideals prime to a modulus are exactly the kernel of the map to the
-ordinary ideal class group. -/
-theorem range_principalIdealPrimeTo (m : Modulus K) :
-    (principalIdealPrimeTo m).range = (idealsPrimeToClassGroup m).ker := by
-  ext I
-  rw [MonoidHom.mem_range, MonoidHom.mem_ker, idealsPrimeToClassGroup_apply,
-    ClassGroup.mk_eq_one_iff_exists]
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨(x : Kˣ), coe_principalIdealPrimeTo m x⟩
-  · rintro ⟨x, hx⟩
-    refine ⟨⟨x, toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ I.2)⟩, ?_⟩
-    apply Subtype.ext
-    apply Units.ext
-    rw [coe_principalIdealPrimeTo, hx]
 
 /-- **The ray class group of a modulus**: the invertible fractional ideals prime to the finite part
 of `𝔪`, modulo the principal ideals of the elements congruent to one modulo `𝔪`. -/
@@ -231,7 +181,7 @@ arbitrary ideals would hand back a junk class there.  Carrying the coprimality p
 argument also makes multiplicativity `map_mul` rather than a law with side conditions. -/
 noncomputable def idealClass (𝔪 : Modulus K) :
     integralIdealsPrimeTo 𝔪 →* RayClassGroup 𝔪 :=
-  (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support)
+  (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support)
 
 /-- The ray class of a product is the product of the ray classes. -/
 @[simp] theorem idealClass_mul (𝔪 : Modulus K) (I J : integralIdealsPrimeTo 𝔪) :
@@ -240,7 +190,7 @@ noncomputable def idealClass (𝔪 : Modulus K) :
 
 /-- The ray class of an integral ideal is the ray class of the fractional ideal it generates. -/
 theorem idealClass_apply (𝔪 : Modulus K) (I : integralIdealsPrimeTo 𝔪) :
-    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support I) :=
+    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support I) :=
   (rfl)
 
 /-- **The intrinsic triviality criterion for a ray class.**  An integral ideal prime to `𝔪` has
@@ -266,7 +216,7 @@ of `𝔪`. -/
 noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     RayClassGroup 𝔫 →* RayClassGroup 𝔪 :=
   QuotientGroup.map (ray 𝔫) (ray 𝔪)
-    (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h)) <| by
+    (NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h)) <| by
       intro J hJ
       obtain ⟨x, hx, hxJ⟩ := mem_ray_iff.mp hJ
       refine Subgroup.mem_comap.mpr (mem_ray_iff.mpr ⟨x, IsCongrOne.mono h hx, ?_⟩)
@@ -274,7 +224,7 @@ noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 
 @[simp] theorem classMap_rayClassMk {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (I : idealsPrimeTo 𝔫) :
     classMap h (rayClassMk 𝔫 I) =
-      rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h) I) := (rfl)
+      rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h) I) := (rfl)
 
 /-- **The transition map at a modulus and itself is the identity**, as an equality of
 homomorphisms. -/

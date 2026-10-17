@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # The local homology system of a manifold
@@ -34,6 +35,7 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomology R S k`: the relative singular homology `Hₖ(M, M ∖ S)`.
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
+* `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
@@ -98,7 +100,7 @@ lemma localHomologyRestriction_refl (S : Set M) (k : ℕ) :
   (congrArg (TopPair.singularHomologyMap · R k) (TopPair.ofSubsetMap_id _)).trans
     (TopPair.singularHomologyMap_id _ R k)
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T ⊆ W) (k : ℕ) :
     localHomologyRestriction R h₂ k ≫ localHomologyRestriction R h₁ k =
       localHomologyRestriction R (h₁.trans h₂) k := by
@@ -108,6 +110,12 @@ lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T �
   -- proofs; rewriting with `Category.id_comp` is blocked because those proofs depend on the map.
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp (𝟙 (TopCat.of M)) (𝟙 (TopCat.of M)) _ _ _).symm
+
+/-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
+theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
+  rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
+  exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (⟨fun x ↦ ⟨x, by simp⟩, by fun_prop⟩ : C(M, ((∅ : Set M)ᶜ : Set M)))) rfl k
 
 /-- Let `S ⊆ T` contain `x` and `y`, and let the restrictions from `S` and from `T` to `x` be
 isomorphisms. Then comparing `x` with `y` through `T` and restricting from `S` to `x` gives the
@@ -142,7 +150,7 @@ theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialH
     IsIso (localHomologyRestriction R
       (singleton_subset_iff.2 ⟨φ x, hxK, φ.left_inv hx⟩ : {x} ⊆ φ.symm '' K) k) :=
   isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
-    hKc.isClosed (hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ)).isClosed hKφ k
+    hKc.isClosed (φ.isClosed_image_symm_of_isCompact hKc hKφ) hKφ k
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
 target. These patches index the cover over which the local homology system is glued. -/

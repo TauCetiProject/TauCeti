@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.DecompositionGroup
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -26,9 +27,12 @@ above the place, including split algebras and real and complex places.
 * `TauCeti.exists_unit_preimages_of_isUnramifiedAt`: a unit has integral unit preimages
   if one completion above the place is unramified.
 * `TauCeti.mem_range_normUnits_adicCompletion_of_finrank_eq_one`: every element is a local norm
-  if one completion above the place has degree one.
+  if one completion above the place has degree one, and
+  `TauCeti.mem_range_normUnits_completion_of_finrank_eq_one` is its infinite counterpart.
 * `TauCeti.pow_mem_range_normUnits_completion`: at an infinite place every `n`-th power is a local
   norm once `n` kills `Gal(L/K)`.
+* `TauCeti.mem_range_normUnits_completion_of_isComplex`: at a complex place every unit is a local
+  norm, for every finite extension `L/K`.
 
 ## References
 
@@ -117,6 +121,22 @@ theorem mem_range_normUnits_adicCompletion_of_finrank_eq_one (v : HeightOneSpect
   ext
   simp [hb, hw]
 
+/-- **Local norms at an infinite place of degree one.** If some completion `L_w` of `L` above the
+infinite place `v` has degree one over `K_v`, then every element of `K_vˣ` is a norm from the local
+étale algebra `K_v ⊗[K] L`. -/
+theorem mem_range_normUnits_completion_of_finrank_eq_one (v : InfinitePlace K)
+    (hv : ∃ w : {w : InfinitePlace L // w.LiesOver v},
+      Module.finrank v.Completion w.1.Completion = 1)
+    (a : v.Completionˣ) :
+    a ∈ (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range := by
+  classical
+  obtain ⟨w, hw⟩ := hv
+  obtain ⟨b, hb⟩ := Algebra.pow_finrank_mem_range_normUnits v.Completion (S := w.1.Completion) a
+  rw [mem_range_normUnits_completion_iff]
+  refine ⟨Pi.mulSingle w b, ?_⟩
+  rw [finprod_eq_single _ w fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]
+  simp [hb, hw]
+
 /-- **`n`-th powers are local norms at an infinite place.** If `n` kills `Gal(L/K)`, then every
 `n`-th power of `K_vˣ` is a norm from the local étale algebra `K_v ⊗[K] L`: the local degree
 `[L_w : K_v]` is the order of the decomposition group of `w`, a cyclic group of order `1` or `2`,
@@ -144,5 +164,24 @@ theorem pow_mem_range_normUnits_completion [IsGalois K L] {n : ℕ}
   rw [finprod_eq_single _ ⟨w, this⟩ fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]
   ext
   simp [hb, hk, ← pow_mul, mul_comm]
+
+end TauCeti
+
+/-! ### Complex places -/
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+
+/-- **Every unit is a local norm at a complex place.** At a complex place `w` of `K` every unit of
+`K_w ≅ ℂ` is the norm of a unit of the local étale algebra `K_w ⊗[K] L`: it is an `[L : K]`-th
+power, and the `[L : K]`-th power of `b ∈ K_wˣ` is the norm of `b ⊗ 1`. -/
+theorem mem_range_normUnits_completion_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
+    (a : w.Completionˣ) :
+    a ∈ (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range := by
+  obtain ⟨b, rfl⟩ := Completion.mem_range_powMonoidHom (Module.finrank_pos (R := K) (M := L)).ne'
+    a fun hr ↦ (not_isReal_iff_isComplex.mpr hw hr).elim
+  have hb := Algebra.pow_finrank_mem_range_normUnits w.Completion (S := w.Completion ⊗[K] L) b
+  rwa [Module.finrank_baseChange] at hb
 
 end TauCeti
