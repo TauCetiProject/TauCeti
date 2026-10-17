@@ -31,10 +31,7 @@ variable {C₁ C₂ D I₁ I₂ J : Type*} [Category* C₁] [Category* C₂] [Ca
   [HasZeroMorphisms C₁] [HasZeroMorphisms C₂] [Preadditive D]
   {c₁ : ComplexShape I₁} {c₂ : ComplexShape I₂}
   (K₁ : HomologicalComplex C₁ c₁) (K₂ : HomologicalComplex C₂ c₂)
-  (F : C₁ ⥤ C₂ ⥤ D) [F.PreservesZeroMorphisms]
-  [∀ X₁, (F.obj X₁).PreservesZeroMorphisms]
-  (c : ComplexShape J) [TotalComplexShape c₁ c₂ c]
-  [HasMapBifunctor K₁ K₂ F c] [DecidableEq J]
+  (F : C₁ ⥤ C₂ ⥤ D)
 
 private def singleSummandMap (p₀ : I₁) (q₀ : I₂) (p : I₁) (q : I₂) :
     (F.obj (K₁.X p)).obj (K₂.X q) ⟶ (F.obj (K₁.X p₀)).obj (K₂.X q₀) := by
@@ -44,11 +41,47 @@ private def singleSummandMap (p₀ : I₁) (q₀ : I₂) (p : I₁) (q : I₂) :
     exact 𝟙 _
   · exact 0
 
-omit [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms] in
 private theorem singleSummandMap_eq (p₀ : I₁) (q₀ : I₂) :
     singleSummandMap K₁ K₂ F p₀ q₀ p₀ q₀ = 𝟙 _ := by
   classical
   simp [singleSummandMap]
+
+private def twoSummandMap (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂)
+    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
+      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
+    (p : I₁) (q : I₂) :
+    (F.obj (K₁.X p)).obj (K₂.X q) ⟶
+      (F.obj (K₁.X p₀)).obj (K₂.X q₀) ⊞ (F.obj (K₁.X p₁)).obj (K₂.X q₁) := by
+  classical
+  by_cases h₀ : p = p₀ ∧ q = q₀
+  · rcases h₀ with ⟨rfl, rfl⟩
+    exact biprod.inl
+  · by_cases h₁ : p = p₁ ∧ q = q₁
+    · rcases h₁ with ⟨rfl, rfl⟩
+      exact biprod.inr
+    · exact 0
+
+private theorem twoSummandMap_left (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂)
+    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
+      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))] :
+    twoSummandMap K₁ K₂ F p₀ q₀ p₁ q₁ p₀ q₀ = biprod.inl := by
+  classical
+  simp [twoSummandMap]
+
+private theorem twoSummandMap_right (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂)
+    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
+      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
+    (hne : (p₁, q₁) ≠ (p₀, q₀)) :
+    twoSummandMap K₁ K₂ F p₀ q₀ p₁ q₁ p₁ q₁ = biprod.inr := by
+  classical
+  have h : ¬ (p₁ = p₀ ∧ q₁ = q₀) := by
+    rintro ⟨hp, hq⟩
+    exact hne (Prod.ext hp hq)
+  simp [twoSummandMap, h]
+
+variable [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms]
+  (c : ComplexShape J) [TotalComplexShape c₁ c₂ c]
+  [HasMapBifunctor K₁ K₂ F c] [DecidableEq J]
 
 /-- A totalization term with only one potentially nonzero summand is that summand. -/
 def mapBifunctorSingleSummandIso (p₀ : I₁) (q₀ : I₂) (j : J)
@@ -91,41 +124,6 @@ theorem mapBifunctorSingleSummandIso_inv (p₀ : I₁) (q₀ : I₂) (j : J)
   rfl
 
 section Two
-
-private def twoSummandMap (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
-    (p : I₁) (q : I₂) :
-    (F.obj (K₁.X p)).obj (K₂.X q) ⟶
-      (F.obj (K₁.X p₀)).obj (K₂.X q₀) ⊞ (F.obj (K₁.X p₁)).obj (K₂.X q₁) := by
-  classical
-  by_cases h₀ : p = p₀ ∧ q = q₀
-  · rcases h₀ with ⟨rfl, rfl⟩
-    exact biprod.inl
-  · by_cases h₁ : p = p₁ ∧ q = q₁
-    · rcases h₁ with ⟨rfl, rfl⟩
-      exact biprod.inr
-    · exact 0
-
-omit [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms] in
-private theorem twoSummandMap_left (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))] :
-    twoSummandMap K₁ K₂ F p₀ q₀ p₁ q₁ p₀ q₀ = biprod.inl := by
-  classical
-  simp [twoSummandMap]
-
-omit [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms] in
-private theorem twoSummandMap_right (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
-    (hne : (p₁, q₁) ≠ (p₀, q₀)) :
-    twoSummandMap K₁ K₂ F p₀ q₀ p₁ q₁ p₁ q₁ = biprod.inr := by
-  classical
-  have h : ¬ (p₁ = p₀ ∧ q₁ = q₀) := by
-    rintro ⟨hp, hq⟩
-    exact hne (Prod.ext hp hq)
-  simp [twoSummandMap, h]
 
 /-- A totalization term with two potentially nonzero summands is their binary biproduct. -/
 def mapBifunctorTwoSummandIso (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂) (j : J)
