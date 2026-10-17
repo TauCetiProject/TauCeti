@@ -12,12 +12,17 @@ public import Mathlib.MeasureTheory.Group.Measure
 
 This file records measure formulas for finite families of disjoint additive translates.  In
 lattice-point counting, the formula turns disjoint translates of a fundamental-domain cell into
-measure bounds that can be compared with the number of cells.
+measure bounds that can be compared with the number of cells. For a subgroup of finite index in a
+larger subgroup, the same count reads off the measure of the smaller subgroup from that of the
+larger one and the relative index; over a nonarchimedean local field this computes the Haar
+measure of a box of ideals inside the box of integers.
 
 ## Main results
 
 * `Measure.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure
   equal to the number of translates times the measure of the original set.
+* `Subgroup.relIndex_mul_measure`: for `H ≤ K` of finite relative index, the relative index
+  times the measure of `H` is the measure of `K`, for any left-invariant measure.
 -/
 
 public section
@@ -53,3 +58,31 @@ theorem _root_.MeasureTheory.Measure.measure_biUnion_sub_mem
   simp
 
 end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+
+/-- For subgroups `H ≤ K` of finite relative index, the relative index times the measure of `H` is
+the measure of `K`, for any left-invariant measure: `K` is the disjoint union of `H.relIndex K`
+left translates of `H`. This is `Subgroup.index_mul_measure` relative to `K`. -/
+@[to_additive AddSubgroup.relIndex_mul_measure /-- For additive subgroups `H ≤ K` of finite
+relative index, the relative index times the measure of `H` is the measure of `K`, for any
+left-invariant measure: `K` is the disjoint union of `H.relIndex K` translates of `H`. This is
+`AddSubgroup.index_mul_measure` relative to `K`. -/]
+theorem relIndex_mul_measure {H K : Subgroup G} (hHK : H ≤ K) (hindex : H.relIndex K ≠ 0)
+    (hH : MeasurableSet (H : Set G)) (hK : MeasurableSet (K : Set G)) (μ : Measure G)
+    [μ.IsMulLeftInvariant] : H.relIndex K * μ H = μ K := by
+  -- Apply `Subgroup.index_mul_measure` in the group `K`, to the pullback of `μ` along `K ↪ G`.
+  have : MeasurableMul K :=
+    ⟨fun c ↦ ((measurable_const_mul (c : G)).comp measurable_subtype_coe).subtype_mk,
+      fun c ↦ ((measurable_mul_const (c : G)).comp measurable_subtype_coe).subtype_mk⟩
+  have he : MeasurableEmbedding K.subtype := MeasurableEmbedding.subtype_coe hK
+  have := Measure.IsMulLeftInvariant.comap μ he
+  have : (H.subgroupOf K).FiniteIndex := ⟨hindex⟩
+  have h := (H.subgroupOf K).index_mul_measure (measurable_subtype_coe hH) (μ.comap K.subtype)
+  rwa [he.comap_apply, he.comap_apply, image_univ, coe_subgroupOf, coe_subtype,
+    image_preimage_eq_inter_range, Subtype.range_coe, inter_eq_left.2 hHK, ← relIndex,
+    Subtype.range_coe] at h
+
+end Subgroup
