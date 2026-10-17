@@ -86,23 +86,23 @@ lemma compactSpace_of_isOpen_generateFrom (htU : t = generateFrom U)
 two lemmas below are its instances, at a finite intersection of members of `U` and at a single
 member. -/
 lemma isCompact_of_isClosed_generateFrom (htU : t = generateFrom U)
-    (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s)
+    (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, IsOpen[t'] s)
     {s : Set X} (hs : @IsClosed X t' s) : IsCompact s :=
-  isCompact_of_patch htU (fun u hu ↦ @IsClopen.isOpen X t' u (hU u hu))
-    (@IsClosed.isCompact X t' _ hcomp hs)
+  isCompact_of_patch htU hU (@IsClosed.isCompact X t' _ hcomp hs)
 
 /-- Every finite intersection of members of `U` is quasi-compact for the generated topology. -/
 lemma isCompact_sInter_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s)
     {f : Set (Set X)} (hf : f.Finite) (hfU : f ⊆ U) : IsCompact (⋂₀ f) :=
-  isCompact_of_isClosed_generateFrom htU hcomp hU
+  isCompact_of_isClosed_generateFrom htU hcomp (fun u hu ↦ @IsClopen.isOpen X t' u (hU u hu))
     (@IsClopen.isClosed X t' _ (isClopen_sInter_of_subset hU hf hfU))
 
 /-- Every member of `U` is quasi-compact for the generated topology. -/
 lemma isCompact_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s)
     {s : Set X} (hs : s ∈ U) : IsCompact s :=
-  isCompact_of_isClosed_generateFrom htU hcomp hU (@IsClopen.isClosed X t' _ (hU s hs))
+  isCompact_of_isClosed_generateFrom htU hcomp (fun u hu ↦ @IsClopen.isOpen X t' u (hU u hu))
+    (@IsClopen.isClosed X t' _ (hU s hs))
 
 /-- The finite intersections of members of `U` form a basis of the generated topology. -/
 private lemma isTopologicalBasis_sInter_of_patch (htU : t = generateFrom U) :
