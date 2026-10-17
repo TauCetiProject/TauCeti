@@ -122,6 +122,34 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
 
+/-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
+left endpoint is greater than `-1`. -/
+theorem pos_of_intervalIntegrable_rpow_mul_one_sub_rpow
+    (h : IntervalIntegrable
+      (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1) :
+    0 < a := by
+  have hhalf : IntervalIntegrable
+      (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 (1 / 2) :=
+    h.mono_set (by
+      rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2), uIcc_of_le zero_le_one]
+      exact Icc_subset_Icc_right (by norm_num))
+  have hg : ContinuousOn (fun t : ℝ => (1 - t) ^ (-(b - 1))) (uIcc 0 (1 / 2)) :=
+    (continuousOn_const.sub continuousOn_id).rpow_const fun t ht => Or.inl (by
+      rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
+      linarith [ht.2] : (1 : ℝ) - t ≠ 0)
+  have hcancel := hhalf.mul_continuousOn hg
+  have hpow : IntervalIntegrable (fun t : ℝ => t ^ (a - 1)) volume 0 (1 / 2) :=
+    hcancel.congr_uIoo fun t ht => by
+      rw [uIoo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
+      have h1t : 0 < 1 - t := by linarith [ht.2]
+      dsimp only
+      rw [mul_assoc, ← Real.rpow_add h1t, add_neg_cancel, Real.rpow_zero, mul_one]
+  have ha := (intervalIntegral.integrableOn_Ioo_rpow_iff
+      (by norm_num : (0 : ℝ) < 1 / 2)).1
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)).1
+      hpow)
+  linarith
+
 /-- The beta integrand is integrable on the open unit interval exactly when both parameters are
 positive. This includes the sharp failure at either endpoint when the corresponding exponent is
 at most `-1`. -/
@@ -133,37 +161,10 @@ theorem integrableOn_rpow_mul_one_sub_rpow_iff :
     have hI : IntervalIntegrable
         (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1 :=
       (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).2 h
-    have left_endpoint : ∀ p r : ℝ,
-        IntervalIntegrable (fun t : ℝ => t ^ (p - 1) * (1 - t) ^ (r - 1)) volume 0 1 →
-          0 < p := by
-      intro p r hpr
-      have hhalf : IntervalIntegrable
-          (fun t : ℝ => t ^ (p - 1) * (1 - t) ^ (r - 1)) volume 0 (1 / 2) :=
-        hpr.mono_set (by
-          rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2), uIcc_of_le zero_le_one]
-          exact Icc_subset_Icc_right (by norm_num))
-      have hg : ContinuousOn (fun t : ℝ => (1 - t) ^ (-(r - 1))) (uIcc 0 (1 / 2)) :=
-        (continuousOn_const.sub continuousOn_id).rpow_const fun t ht => Or.inl (by
-          rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
-          linarith [ht.2] : (1 : ℝ) - t ≠ 0)
-      have hcancel := hhalf.mul_continuousOn hg
-      have hpow : IntervalIntegrable (fun t : ℝ => t ^ (p - 1)) volume 0 (1 / 2) :=
-        hcancel.congr_uIoo fun t ht => by
-          rw [uIoo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
-          have h1t : 0 < 1 - t := by linarith [ht.2]
-          dsimp only
-          rw [mul_assoc, ← Real.rpow_add h1t]
-          ring_nf
-          simp
-      have hp := (intervalIntegral.integrableOn_Ioo_rpow_iff
-          (by norm_num : (0 : ℝ) < 1 / 2)).1
-        ((intervalIntegrable_iff_integrableOn_Ioo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)).1
-          hpow)
-      linarith
-    refine ⟨left_endpoint a b hI, ?_⟩
-    apply left_endpoint b a
+    refine ⟨pos_of_intervalIntegrable_rpow_mul_one_sub_rpow hI, ?_⟩
     have hreflected := (hI.comp_sub_left 1).symm
-    simpa [sub_sub_cancel, mul_comm] using hreflected
+    exact pos_of_intervalIntegrable_rpow_mul_one_sub_rpow (a := b) (b := a) (by
+      simpa [sub_sub_cancel, mul_comm] using hreflected)
   · rintro ⟨ha, hb⟩
     exact (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).1
       (intervalIntegrable_rpow_mul_one_sub_rpow ha hb
