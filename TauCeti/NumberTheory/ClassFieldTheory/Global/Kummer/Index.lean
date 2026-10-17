@@ -56,14 +56,9 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
   let E := (auxiliaryKummerIdeleSubgroup S T n).subgroupOf J
   let q := QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)
   let f : J →* IdeleClassGroup (𝓞 K) K := q.comp J.subtype
-  have hf : Function.Surjective f := by
-    rw [← MonoidHom.range_eq_top, MonoidHom.range_comp, Subgroup.range_subtype]
-    exact (auxiliaryKummerIdeleClassSubgroup_def S T 1).symm.trans
-      (auxiliaryKummerIdeleClassSubgroup_one_eq_top S T hST)
-  have hmap : E.map f = auxiliaryKummerIdeleClassSubgroup S T n := by
-    dsimp only [E, f, J]
-    rw [auxiliaryKummerIdeleClassSubgroup_def, ← Subgroup.map_map, Subgroup.subgroupOf_map_subtype]
-    exact congrArg (Subgroup.map _) (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
+  have hf : Function.Surjective f := auxiliaryKummerIdeleSubgroup_mk_surjective S T hST
+  have hmap : E.map f = auxiliaryKummerIdeleClassSubgroup S T n :=
+    map_subgroupOf_auxiliaryKummerIdeleSubgroup S T n
   have hker : f.ker.map J.subtype = IdeleGroup.principalSubgroup (𝓞 K) K ⊓ J := by
     rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', Subgroup.map_comap_eq,
       Subgroup.range_subtype, inf_comm]

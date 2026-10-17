@@ -207,6 +207,34 @@ theorem auxiliaryKummerIdeleClassSubgroup_one_eq_top
     ⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).2
       (fun v hvS hvT ↦ hx v (by simp [hvS, hvT])), hc⟩
 
+/-- If the classes of `S ∪ T` generate the ideal class group, the quotient map restricted
+to the auxiliary Kummer subgroup of exponent one is surjective. -/
+theorem auxiliaryKummerIdeleSubgroup_mk_surjective
+    (S T : Finset (HeightOneSpectrum (𝓞 K)))
+    (hST : Subgroup.closure (HeightOneSpectrum.classGroupMk (R := 𝓞 K) ''
+      ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ (T : Set (HeightOneSpectrum (𝓞 K))))) = ⊤) :
+    Function.Surjective
+      ((QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+        (auxiliaryKummerIdeleSubgroup S T 1).subtype) := by
+  rw [← MonoidHom.range_eq_top, MonoidHom.range_comp, Subgroup.range_subtype]
+  exact (auxiliaryKummerIdeleClassSubgroup_def S T 1).symm.trans
+    (auxiliaryKummerIdeleClassSubgroup_one_eq_top S T hST)
+
+/-- Restricting the auxiliary Kummer subgroup to the exponent-one subgroup before taking
+its image in the idele class group gives the same auxiliary Kummer idele-class subgroup. -/
+@[simp]
+theorem map_subgroupOf_auxiliaryKummerIdeleSubgroup
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
+    ((auxiliaryKummerIdeleSubgroup S T n).subgroupOf
+      (auxiliaryKummerIdeleSubgroup S T 1)).map
+        ((QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+          (auxiliaryKummerIdeleSubgroup S T 1).subtype) =
+      auxiliaryKummerIdeleClassSubgroup S T n := by
+  rw [auxiliaryKummerIdeleClassSubgroup_def, ← Subgroup.map_map,
+    Subgroup.subgroupOf_map_subtype]
+  exact congrArg (Subgroup.map _)
+    (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
+
 /-- If the classes of `S ∪ T` generate the ideal class group, the index of the auxiliary Kummer
 idele-class subgroup divides the product of the local power-class counts. -/
 theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
@@ -219,21 +247,12 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
   let f : auxiliaryKummerIdeleSubgroup S T 1 →* IdeleClassGroup (𝓞 K) K :=
     (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
       (auxiliaryKummerIdeleSubgroup S T 1).subtype
-  have hf : Function.Surjective f := by
-    intro c
-    obtain ⟨x, hx, hc⟩ :=
-      IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
-    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).mpr
-      (fun v hvS hvT ↦ hx v (by simp [hvS, hvT]))⟩, hc⟩
+  have hf : Function.Surjective f := auxiliaryKummerIdeleSubgroup_mk_surjective S T hST
   have hmap :
       ((auxiliaryKummerIdeleSubgroup S T n).subgroupOf
           (auxiliaryKummerIdeleSubgroup S T 1)).map f =
-        auxiliaryKummerIdeleClassSubgroup S T n := by
-    dsimp only [f]
-    rw [auxiliaryKummerIdeleClassSubgroup, ← Subgroup.map_map,
-      Subgroup.subgroupOf_map_subtype]
-    exact congrArg (Subgroup.map _)
-      (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
+        auxiliaryKummerIdeleClassSubgroup S T n :=
+    map_subgroupOf_auxiliaryKummerIdeleSubgroup S T n
   rw [← relIndex_auxiliaryKummerIdeleSubgroup, Subgroup.relIndex, ← hmap]
   exact Subgroup.index_map_dvd _ hf
 
