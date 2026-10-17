@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Tangent
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.ClosedRootSubgroup
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Tangent
 
 /-!
 # Integral root differentials of the Geck carrier
@@ -41,8 +38,8 @@ identified with an independently pinned simply connected group scheme.
 * `TauCeti.DynkinType.tangentMatrix_derivationComp_geckRootSubgroupCoordinateMap`: the
   differential of a numbered root subgroup is the tangent parameter times the integral root
   matrix.
-* `TauCeti.DynkinType.geckRootVector`: the normalized root vector, with
-  `TauCeti.DynkinType.tangentMatrix_geckRootVector` and
+* `TauCeti.DynkinType.geckRootVector`: the normalized root vector, the Kostant toral-closure
+  root vector of the Geck data, with `TauCeti.DynkinType.tangentMatrix_geckRootVector` and
   `TauCeti.DynkinType.range_derivationCompLieHom_geckRootSubgroupCoordinateMap_eq_span`.
 
 ## References
@@ -53,9 +50,11 @@ identified with an independently pinned simply connected group scheme.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1–2.
 
-The matrix calculation is the general Kostant root-subgroup tangent theorem of
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Tangent`; the root-vector
-interface follows the type-`D` spin carrier in
+The Geck carrier is a Kostant toral closure, so every statement here except the identification
+with Geck's rational matrices specializes the generic root-vector layer of
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Tangent`
+(`TauCeti.DynkinType.geckRootVector_eq_kostantToralRootVector`). The root-vector interface
+follows the type-`D` spin carrier in
 `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Differential`.
 -/
 
@@ -117,26 +116,21 @@ coefficient ring. -/
 theorem geckRootIntMatrix_eq_zero_of_weight_ne (i : Fin t.rank ⊕ Fin t.rank)
     {a b : Fin (t.geckDim ht)}
     (hab : t.geckWeightFin ht a - t.geckWeightFin ht b ≠ t.rootGeneratorWeight ht i) :
-    t.geckRootIntMatrix ht i a b = 0 := by
-  rw [geckRootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
-  exact repr_eq_zero_of_isCartanWeightVector (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-    (t.geckRepresentation ht) (t.geckCoordinateLattice ht).toAddSubgroup
+    t.geckRootIntMatrix ht i a b = 0 :=
+  kostantRootGeneratorIntMatrix_eq_zero_of_weight_ne (t.lieBasis ht).rootGenerator
+    (t.lieBasis ht).h (t.geckRepresentation ht) (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) (t.geckCoordinateBasisFin ht)
-    (t.geckWeightFin ht) (t.isCartanWeightVector_geckCoordinateBasisFin ht)
-    (isCartanWeightVector_coe_kostantRootOperator (t.lieBasis ht).rootGenerator
-      (t.lieBasis ht).h (t.geckRepresentation ht) (t.geckCoordinateLattice ht).toAddSubgroup
-      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) i
-      (t.lie_lieBasis_h_rootGenerator ht i) (t.isCartanWeightVector_geckCoordinateBasisFin ht b))
-    fun h ↦ hab (sub_eq_iff_eq_add'.mpr h)
+    (t.geckWeightFin ht) i (t.lie_lieBasis_h_rootGenerator ht i)
+    (t.isCartanWeightVector_geckCoordinateBasisFin ht) hab
 
 /-! ## The root differentials -/
 
 variable {B : Type v} [CommRing B]
 
 /-- The differential of a numbered integral root subgroup of the Geck carrier is its integral
-root matrix multiplied by the additive tangent parameter, over every coefficient ring. -/
--- Match before simplification changes the counit-indexed integer module structure.
-@[simp↓]
+root matrix multiplied by the additive tangent parameter, over every coefficient ring. It is not
+a `simp` lemma: `tangentMatrix_derivationComp_kostantRootSubgroupToralCoordinateMap` already
+rewrites it. -/
 theorem tangentMatrix_derivationComp_geckRootSubgroupCoordinateMap (i : Fin t.rank ⊕ Fin t.rank)
     (d : Derivation ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)
       (Bialgebra.CounitAlgebra ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) B)) :
@@ -144,22 +138,8 @@ theorem tangentMatrix_derivationComp_geckRootSubgroupCoordinateMap (i : Fin t.ra
         (HopfIdeal.quotientLieHom (B := B) (t.geckDefiningIdeal ht)
           (derivationComp (B := B) (t.geckRootSubgroupCoordinateMap ht i).hom d)) =
       AdditiveGroup.gaTangentLinearEquiv d •
-        (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
-  have hcomp : (t.geckRootSubgroupCoordinateMap ht i).hom.comp
-      (Bialgebra.Quotient.mkBialgHom (t.geckDefiningIdeal ht).toIdeal) =
-      (kostantRootSubgroupCoordinateMap (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        (t.geckRepresentation ht) (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) i
-        (t.isNilpotent_geckRepresentation_rootGenerator ht i)
-        (t.geckCoordinateBasisFin ht)).hom := by
-    rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      mkQuotient_comp_kostantRootSubgroupToralCoordinateMap]
-  rw [HopfIdeal.quotientLieHom_apply, ← LinearMap.comp_apply, ← derivationComp_comp, hcomp]
-  simpa only [geckRootIntMatrix_eq_toMatrix, algebraMap_int_eq, Int.coe_castRingHom] using
-    tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap (t.lieBasis ht).rootGenerator
-      (t.lieBasis ht).h (t.geckRepresentation ht) (t.geckCoordinateLattice ht).toAddSubgroup
-      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) i
-      (t.isNilpotent_geckRepresentation_rootGenerator ht i) (t.geckCoordinateBasisFin ht) d
+        (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) :=
+  tangentMatrix_derivationComp_kostantRootSubgroupToralCoordinateMap _ _ _ _ _ _ _ _ i d
 
 /-- Every numbered integral root-subgroup differential of the Geck carrier is injective, including
 when its coefficient ring has nilpotents. -/
@@ -174,8 +154,21 @@ def geckRootVector (i : Fin t.rank ⊕ Fin t.rank) :
         (t.geckDefiningIdeal ht).toIdeal)
       (Bialgebra.CounitAlgebra ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht) ⧸
         (t.geckDefiningIdeal ht).toIdeal) B) :=
-  derivationComp (B := B) (t.geckRootSubgroupCoordinateMap ht i).hom
-    ((AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := B)).symm 1)
+  kostantToralRootVector (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht) (t.geckCoordinateBasisFin ht)
+    (t.geckWeightFin ht) i
+
+/-- The normalized Geck root vector is the Kostant toral-closure root vector of the Geck data. -/
+theorem geckRootVector_eq_kostantToralRootVector (i : Fin t.rank ⊕ Fin t.rank) :
+    t.geckRootVector ht (B := B) i =
+      kostantToralRootVector (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        (t.geckRepresentation ht) (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht) (t.geckCoordinateBasisFin ht)
+        (t.geckWeightFin ht) i := by
+  rw [geckRootVector]
 
 /-- The normalized root vector is the differential of the numbered root subgroup at the additive
 unit tangent vector. -/
@@ -183,7 +176,7 @@ theorem geckRootVector_def (i : Fin t.rank ⊕ Fin t.rank) :
     t.geckRootVector ht (B := B) i =
       derivationComp (B := B) (t.geckRootSubgroupCoordinateMap ht i).hom
         ((AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := B)).symm 1) := by
-  rw [geckRootVector]
+  rw [geckRootVector_eq_kostantToralRootVector, kostantToralRootVector_def]
 
 /-- The matrix of a normalized root vector is its integral root matrix. -/
 @[simp]
@@ -192,8 +185,8 @@ theorem tangentMatrix_geckRootVector (i : Fin t.rank ⊕ Fin t.rank) :
         (HopfIdeal.quotientLieHom (B := B) (t.geckDefiningIdeal ht)
           (t.geckRootVector ht (B := B) i)) =
       (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
-  rw [geckRootVector_def, tangentMatrix_derivationComp_geckRootSubgroupCoordinateMap,
-    LinearEquiv.apply_symm_apply, one_smul]
+  rw [geckRootVector_eq_kostantToralRootVector]
+  exact tangentMatrix_kostantToralRootVector _ _ _ _ _ _ _ _ i
 
 /-- The differential with additive parameter `c` is `c` times the normalized root vector. -/
 theorem derivationComp_geckRootSubgroupCoordinateMap_eq_smul_geckRootVector
@@ -201,8 +194,10 @@ theorem derivationComp_geckRootSubgroupCoordinateMap_eq_smul_geckRootVector
     (d : Derivation ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)
       (Bialgebra.CounitAlgebra ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) B)) :
     derivationComp (B := B) (t.geckRootSubgroupCoordinateMap ht i).hom d =
-      AdditiveGroup.gaTangentLinearEquiv d • t.geckRootVector ht (B := B) i :=
-  AdditiveGroup.derivationComp_eq_smul _ d
+      AdditiveGroup.gaTangentLinearEquiv d • t.geckRootVector ht (B := B) i := by
+  rw [geckRootVector_eq_kostantToralRootVector]
+  exact derivationComp_kostantRootSubgroupToralCoordinateMap_eq_smul_kostantToralRootVector
+    _ _ _ _ _ _ _ _ i d
 
 /-- Coefficient change preserves the normalized integral root vector. -/
 -- Match before simplification changes the counit-indexed integer module structure.
@@ -210,22 +205,21 @@ theorem derivationComp_geckRootSubgroupCoordinateMap_eq_smul_geckRootVector
 theorem mapValue_geckRootVector {C : Type*} [CommRing C] (φ : B →ₐ[ℤ] C)
     (i : Fin t.rank ⊕ Fin t.rank) :
     Derivation.mapValue φ (t.geckRootVector ht (B := B) i) = t.geckRootVector ht (B := C) i :=
-  AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one φ _
+  mapValue_kostantToralRootVector _ _ _ _ _ _ _ _ φ i
 
 /-- The image of each root-subgroup differential is precisely its normalized root line. -/
 theorem range_derivationCompLieHom_geckRootSubgroupCoordinateMap_eq_span
     (i : Fin t.rank ⊕ Fin t.rank) :
     (derivationCompLieHom (B := B) (t.geckRootSubgroupCoordinateMap ht i).hom).range.toSubmodule =
       B ∙ t.geckRootVector ht (B := B) i :=
-  AdditiveGroup.range_derivationCompLieHom_eq_span B _
+  range_derivationCompLieHom_kostantRootSubgroupToralCoordinateMap_eq_span _ _ _ _ _ _ _ _ i
 
 /-- A normalized root vector is nonzero over every nontrivial coefficient ring.
 Use this directly: simplification changes the inherited integer module in the zero derivation
 before this statement can match. -/
 theorem geckRootVector_ne_zero [Nontrivial B] (i : Fin t.rank ⊕ Fin t.rank) :
     t.geckRootVector ht (B := B) i ≠ 0 :=
-  AdditiveGroup.derivationComp_gaTangentLinearEquiv_symm_one_ne_zero _
-    (t.derivationComp_geckRootSubgroupCoordinateMap_injective ht (B := B) i)
+  kostantToralRootVector_ne_zero _ _ _ _ _ _ _ _ i (t.geckRootSubgroupCoordinateMap_surjective ht i)
 
 end
 

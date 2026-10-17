@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.AdjointWeight
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.BaseChange
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Root.Differential
 
@@ -47,15 +47,17 @@ module.
 * J. S. Milne, *Algebraic Groups* (2017), §§10.a and 21.1.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 
-The weight-space interpretation uses `TauCeti.HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus`,
-and the argument follows the type-`D` spin carrier in
-`TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Weights`. The matrix support calculation is
-`TauCeti.DynkinType.geckRootIntMatrix_eq_zero_of_weight_ne`.
+The Geck carrier is a Kostant toral closure, so these statements specialize the generic
+adjoint-weight layer of
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.AdjointWeight`;
+the weight-space interpretation is `TauCeti.HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus`.
+The interface follows the type-`D` spin carrier in
+`TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Weights`.
 -/
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory WithConv TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType
 
@@ -68,14 +70,6 @@ attribute [local instance high] Algebra.toModule
 attribute [local instance high] Ideal.instModuleCotangentOfAlgebra
 
 variable (t : DynkinType) (ht : t.Valid)
-
-private theorem geckWeightTorusIntegralCoordinateMap_comp_quotient :
-    (t.geckWeightTorusIntegralCoordinateMap ht).hom.comp
-        (Bialgebra.Quotient.mkBialgHom (t.geckDefiningIdeal ht).toIdeal) =
-      (GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht)).hom := by
-  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-    geckWeightTorusIntegralCoordinateMap_def,
-    UniversalEnvelopingAlgebra.mkQuotient_comp_kostantWeightTorusToralCoordinateMap]
 
 /-- Over any commutative value ring, the weight torus acts on each normalized integral Geck root
 vector through its signed simple-root character. This includes rings with nilpotents. -/
@@ -91,19 +85,10 @@ theorem adDerivation_geckWeightTorus_geckRootVector {B : Type*} [CommRing B]
       (DiagonalizableGroup.charOfPoint s.ofConv
         (SplitTorus.weightCharacter (t.rootGeneratorWeight ht i)) : B) •
         t.geckRootVector ht (B := B) i := by
-  apply HopfIdeal.quotientLieHom_injective (t.geckDefiningIdeal ht)
-  apply (GeneralLinear.tangentLinearEquivMatrix (R := ℤ) (B := B) (t.geckDim ht)).injective
-  rw [GeneralLinear.tangentLinearEquivMatrix_apply,
-    GeneralLinear.tangentLinearEquivMatrix_apply]
-  ext a b
-  rw [HopfIdeal.tangentMatrix_adDerivation_weightTorus_apply (t.geckDefiningIdeal ht)
-    (t.geckWeightFin ht) (t.geckWeightTorusIntegralCoordinateMap ht).hom
-    (t.geckWeightTorusIntegralCoordinateMap_comp_quotient ht),
-    map_smul, map_smul, Matrix.smul_apply, smul_eq_mul, tangentMatrix_geckRootVector]
-  by_cases hab : t.geckWeightFin ht a - t.geckWeightFin ht b = t.rootGeneratorWeight ht i
-  · rw [hab]
-  · rw [Matrix.map_apply, t.geckRootIntMatrix_eq_zero_of_weight_ne ht i hab]
-    simp
+  rw [geckWeightTorusIntegralCoordinateMap_def, geckRootVector_eq_kostantToralRootVector]
+  exact adDerivation_kostantWeightTorusToral_kostantToralRootVector
+    _ _ _ _ _ _ _ _ s i (t.lie_lieBasis_h_rootGenerator ht i)
+    (t.isCartanWeightVector_geckCoordinateBasisFin ht)
 
 variable [Module.Projective ℤ (Bialgebra.CotangentSpace ℤ
   (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht) ⧸ (t.geckDefiningIdeal ht).toIdeal))]
@@ -122,7 +107,8 @@ theorem mem_adjointWeightSpace_geckWeightTorus_iff (α : Multiplicative (Fin t.r
             (Derivation.cotangentLinearEquiv (B := ℤ) x)) a b = 0 :=
   HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus (t.geckDefiningIdeal ht)
     (t.geckWeightFin ht) (t.geckWeightTorusIntegralCoordinateMap ht).hom
-    (t.geckWeightTorusIntegralCoordinateMap_comp_quotient ht) α x
+    (by rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+      mkQuotient_comp_geckWeightTorusIntegralCoordinateMap]) α x
 
 /-- A normalized Geck root differential, viewed in the cotangent dual of the integral carrier, has
 its prescribed signed simple-root character. -/
@@ -130,11 +116,10 @@ theorem geckRootVector_mem_adjointWeightSpace (i : Fin t.rank ⊕ Fin t.rank) :
     (Derivation.cotangentLinearEquiv (B := ℤ)).symm (t.geckRootVector ht (B := ℤ) i) ∈
       Derivation.adjointWeightSpace (t.geckWeightTorusIntegralCoordinateMap ht).hom
         (SplitTorus.weightCharacter (t.rootGeneratorWeight ht i)) := by
-  rw [mem_adjointWeightSpace_geckWeightTorus_iff]
-  intro a b hab
-  rw [LinearEquiv.apply_symm_apply, tangentMatrix_geckRootVector, Matrix.map_apply]
-  simp only [Int.cast_id]
-  exact t.geckRootIntMatrix_eq_zero_of_weight_ne ht i fun h ↦ hab (congrArg _ h)
+  rw [geckWeightTorusIntegralCoordinateMap_def, geckRootVector_eq_kostantToralRootVector]
+  exact kostantToralRootVector_mem_adjointWeightSpace
+    _ _ _ _ _ _ _ _ i (t.lie_lieBasis_h_rootGenerator ht i)
+    (t.isCartanWeightVector_geckCoordinateBasisFin ht)
 
 /-- Every numbered signed simple-root character occurs as a nontrivial adjoint weight of the
 integral Geck carrier, assuming its cotangent module is projective. -/
@@ -142,20 +127,15 @@ theorem rootGeneratorWeight_mem_nontrivialAdjointWeights_geckWeightTorus
     (i : Fin t.rank ⊕ Fin t.rank) :
     SplitTorus.weightCharacter (t.rootGeneratorWeight ht i) ∈
       Derivation.nontrivialAdjointWeights (t.geckWeightTorusIntegralCoordinateMap ht).hom := by
-  rw [Derivation.mem_nontrivialAdjointWeights]
-  refine ⟨?_, ?_⟩
-  · intro h
-    have hdiag := congrArg
-      (fun c : Multiplicative (Fin t.rank →₀ ℤ) ↦
-        Multiplicative.toAdd c (Sum.elim id id i)) h
-    simp only [SplitTorus.toAdd_weightCharacter, toAdd_one, Finsupp.zero_apply] at hdiag
+  have hα₀ : t.rootGeneratorWeight ht i ≠ 0 := by
+    intro h
+    have hdiag := congrFun h (Sum.elim id id i)
     cases i <;> simp at hdiag
-  · intro hbot
-    have hv := t.geckRootVector_mem_adjointWeightSpace ht i
-    rw [hbot, Submodule.mem_bot] at hv
-    have hz := congrArg (Derivation.cotangentLinearEquiv (B := ℤ)) hv
-    exact t.geckRootVector_ne_zero ht i
-      (by simpa only [LinearEquiv.apply_symm_apply, map_zero] using hz)
+  rw [geckWeightTorusIntegralCoordinateMap_def]
+  exact weightCharacter_mem_nontrivialAdjointWeights_kostantWeightTorusToral
+    _ _ _ _ _ _ _ _ i (t.lie_lieBasis_h_rootGenerator ht i)
+    (t.isCartanWeightVector_geckCoordinateBasisFin ht) hα₀
+    (t.geckRootSubgroupCoordinateMap_surjective ht i)
 
 end
 
