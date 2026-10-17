@@ -288,16 +288,18 @@ theorem integral_pow_gammaMeasure (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
   rw [h, Real.rpow_neg hr.le, Real.rpow_natCast]
   field_simp [(Real.Gamma_pos_of_pos ha).ne', (pow_pos hr n).ne']
 
+private lemma inv_pow_ae_eq_rpow_neg_gammaMeasure (n : ℕ) :
+    (fun x : ℝ ↦ (x ^ n)⁻¹) =ᵐ[gammaMeasure a r] fun x ↦ x ^ (-(n : ℝ)) := by
+  filter_upwards [ae_pos_gammaMeasure a r] with x hx
+  rw [← Real.rpow_natCast, ← Real.rpow_neg hx.le]
+
 /-- The `n`th inverse power is integrable under a Gamma law exactly when `n` is below the
 shape. -/
 @[simp]
 theorem integrable_inv_pow_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
     Integrable (fun x : ℝ ↦ (x ^ n)⁻¹) (gammaMeasure a r) ↔ (n : ℝ) < a := by
-  have hfun : (fun x : ℝ ↦ (x ^ n)⁻¹) =ᵐ[gammaMeasure a r]
-      fun x ↦ x ^ (-(n : ℝ)) := by
-    filter_upwards [ae_pos_gammaMeasure a r] with x hx
-    rw [← Real.rpow_natCast, ← Real.rpow_neg hx.le]
-  rw [integrable_congr hfun, integrable_rpow_gammaMeasure_iff ha hr]
+  rw [integrable_congr (inv_pow_ae_eq_rpow_neg_gammaMeasure n),
+    integrable_rpow_gammaMeasure_iff ha hr]
   constructor <;> intro h <;> linarith
 
 /-- The `n`th inverse moment of a Gamma law, when `n` is below the shape. -/
@@ -306,11 +308,7 @@ theorem integral_inv_pow_gammaMeasure (hr : 0 < r) (n : ℕ)
     (hn : (n : ℝ) < a) :
     ∫ x, (x ^ n)⁻¹ ∂gammaMeasure a r = r ^ n * Real.Gamma (a - n) / Real.Gamma a := by
   have ha : 0 < a := lt_of_le_of_lt (Nat.cast_nonneg n) hn
-  have hfun : (fun x : ℝ ↦ (x ^ n)⁻¹) =ᵐ[gammaMeasure a r]
-      fun x ↦ x ^ (-(n : ℝ)) := by
-    filter_upwards [ae_pos_gammaMeasure a r] with x hx
-    rw [← Real.rpow_natCast, ← Real.rpow_neg hx.le]
-  rw [integral_congr_ae hfun,
+  rw [integral_congr_ae (inv_pow_ae_eq_rpow_neg_gammaMeasure n),
     integral_rpow_gammaMeasure ha hr (q := -(n : ℝ)) (by linarith)]
   simp only [neg_neg, Real.rpow_natCast, sub_eq_add_neg]
 
