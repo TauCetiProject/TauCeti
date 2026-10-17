@@ -12,11 +12,13 @@ public import TauCeti.Analysis.Complex.LeviForm
 
 Let `f` be a real function on a complex vector space `V` of complex dimension `n`. The function
 is **strictly plurisubharmonic** at `x` if its Levi form `TauCeti.leviForm f x` is positive
-definite, and **strongly `q`-pseudoconvex** at `x` if the Levi form has at least `n - q` positive
-eigenvalues, that is, if it is positive definite on some complex subspace of dimension at least
-`n - q`. With this convention, which counts positive directions at the point itself, strong
-`0`-pseudoconvexity is strict plurisubharmonicity. In the Andreotti–Grauert convention, which
-counts `n - q + 1` positive directions, it is strong `(q + 1)`-convexity.
+definite, and **strongly `q`-pseudoconvex** at `x` if the Levi form is positive definite on some
+complex subspace of dimension at least `n - q`; here positivity means that the real part of the
+Levi diagonal is positive. When `f` is `C²` the Levi form is Hermitian (`TauCeti.isSymm_leviForm`),
+and this says that it has at least `n - q` positive eigenvalues. With this convention, which counts
+positive directions at the point itself, strong `0`-pseudoconvexity is strict plurisubharmonicity.
+In the Andreotti–Grauert convention, which counts `n - q + 1` positive directions, it is strong
+`(q + 1)`-convexity.
 
 The main result bounds the real Morse index: if `f` is strongly `q`-pseudoconvex at `x`, then the
 negative index of inertia of the real Hessian of `f` at `x` is at most `n + q`; in particular a
@@ -69,11 +71,12 @@ def IsStrictlyPlurisubharmonicAt (f : V → ℝ) (x : V) : Prop :=
   ∀ v : V, v ≠ 0 → 0 < (leviForm f x v v).re
 
 /-- A real function `f` on a finite-dimensional complex space `V` is **strongly
-`q`-pseudoconvex** at `x` if its Levi form at `x` has at least `dim_ℂ V - q` positive
-eigenvalues: there is a complex subspace `P` with `dim_ℂ V ≤ dim_ℂ P + q` on which the Levi form
-is positive definite. (By Sylvester's law of inertia for Hermitian forms, the largest dimension of
-such a subspace is the number of positive eigenvalues.) For `q ≥ dim_ℂ V` the condition always
-holds, and strong `0`-pseudoconvexity is strict plurisubharmonicity. -/
+`q`-pseudoconvex** at `x` if there is a complex subspace `P` with `dim_ℂ V ≤ dim_ℂ P + q` on which
+the Levi form at `x` is positive definite: `0 < Re (leviForm f x v v)` for every nonzero `v ∈ P`.
+When `f` is `C²` the Levi form is Hermitian, and by Sylvester's law of inertia for Hermitian forms
+the largest dimension of such a subspace is the number of positive eigenvalues, so the condition
+says that the Levi form has at least `dim_ℂ V - q` positive eigenvalues. For `q ≥ dim_ℂ V` the
+condition always holds, and strong `0`-pseudoconvexity is strict plurisubharmonicity. -/
 def IsStronglyPseudoconvexAt [FiniteDimensional ℂ V] (q : ℕ) (f : V → ℝ) (x : V) : Prop :=
   ∃ P : Submodule ℂ V,
     Fintype.card (Module.Free.ChooseBasisIndex ℂ V) ≤ finrank ℂ P + q ∧
@@ -114,6 +117,7 @@ theorem IsStrictlyPlurisubharmonicAt.isStronglyPseudoconvexAt
   exact ⟨⊤, by simp, fun v _ hv ↦ h v hv⟩
 
 /-- Strong `0`-pseudoconvexity is strict plurisubharmonicity. -/
+@[simp]
 theorem isStronglyPseudoconvexAt_zero_iff [FiniteDimensional ℂ V] :
     IsStronglyPseudoconvexAt 0 f x ↔ IsStrictlyPlurisubharmonicAt f x := by
   constructor
