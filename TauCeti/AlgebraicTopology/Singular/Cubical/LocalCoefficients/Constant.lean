@@ -54,39 +54,25 @@ chains.  The equivalence forgets that the copy of `R` attached to each cube was 
 dependent direct summand. -/
 def twistedCubicalChainConstantEquiv (n : ℕ) :
     ((constantFunctor X).obj (ModuleCat.of R R)).TwistedCubicalChain n ≃ₗ[R]
-      CubicalChain X R n := by
-  let L := (constantFunctor X).obj (ModuleCat.of R R)
-  let e (c : SingularCube X n) : L.obj (FundamentalGroupoid.mk (c 0)) ≅ ModuleCat.of R R :=
-    eqToIso (constantFunctor_obj_obj X (ModuleCat.of R R) _)
-  let toMap : L.TwistedCubicalChain n →ₗ[R] CubicalChain X R n :=
-    TwistedCubicalChain.desc L fun c ↦ Finsupp.lsingle c ∘ₗ (e c).hom.hom
-  let invMap : CubicalChain X R n →ₗ[R] L.TwistedCubicalChain n :=
-    Finsupp.linearCombination R fun c ↦ TwistedCubicalChain.ofCube L c ((e c).inv 1)
-  have hRight : toMap ∘ₗ invMap = LinearMap.id := by
-    refine Finsupp.lhom_ext' fun c ↦ LinearMap.ext fun a ↦ ?_
-    dsimp only [toMap, invMap]
-    simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply]
-    rw [Finsupp.linearCombination_single, map_smul,
-      TwistedCubicalChain.desc_ofCube, LinearMap.comp_apply,
-      Iso.inv_hom_id_apply]
-    simp
-  have hLeft : invMap ∘ₗ toMap = LinearMap.id := by
-    refine TwistedCubicalChain.hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
-    dsimp only [toMap, invMap]
-    simp only [LinearMap.coe_comp, Function.comp_apply]
-    rw [TwistedCubicalChain.desc_ofCube, LinearMap.comp_apply, Finsupp.lsingle_apply,
-      Finsupp.linearCombination_single, ← map_smul, LinearMap.id_apply]
-    congr 1
-    calc
-      (e c).hom a • (e c).inv 1 = (e c).inv ((e c).hom a • 1) :=
-        ((e c).inv.hom.map_smul _ _).symm
-      _ = (e c).inv ((e c).hom a) := by rw [smul_eq_mul, mul_one]
-      _ = a := Iso.hom_inv_id_apply (e c) a
-  exact
-    { toLinearMap := toMap
-      invFun := invMap
-      left_inv := fun x ↦ LinearMap.congr_fun hLeft x
-      right_inv := fun x ↦ LinearMap.congr_fun hRight x }
+      CubicalChain X R n :=
+  open scoped Classical in
+  DirectSum.congrLinearEquiv (fun c : SingularCube X n ↦
+      (eqToIso (constantFunctor_obj_obj X (ModuleCat.of R R)
+        (FundamentalGroupoid.mk (c 0)))).toLinearEquiv) ≪≫ₗ
+    (finsuppLEquivDirectSum R R (SingularCube X n)).symm
+
+/-- The constant-coefficient equivalence sends a cube with a coefficient to the corresponding
+singleton chain. -/
+theorem twistedCubicalChainConstantEquiv_ofCube {n : ℕ} (c : SingularCube X n)
+    (a : ((constantFunctor X).obj (ModuleCat.of R R)).obj (FundamentalGroupoid.mk (c 0))) :
+    twistedCubicalChainConstantEquiv R X n
+        (TwistedCubicalChain.ofCube ((constantFunctor X).obj (ModuleCat.of R R)) c a) =
+      single c ((eqToIso (constantFunctor_obj_obj X (ModuleCat.of R R)
+        (FundamentalGroupoid.mk (c 0)))).hom a) := by
+  classical
+  rw [twistedCubicalChainConstantEquiv, TwistedCubicalChain.ofCube_eq_lof,
+    LinearEquiv.trans_apply, DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof]
+  exact finsuppLEquivDirectSum_symm_lof R R (SingularCube X n) c _
 
 /-- On the summand indexed by a cube, the constant-coefficient equivalence is the corresponding
 singleton map. -/
@@ -98,9 +84,8 @@ theorem twistedCubicalChainConstantEquiv_comp_ofCube {n : ℕ} (c : SingularCube
       Finsupp.lsingle c := by
   apply LinearMap.ext
   intro a
-  unfold twistedCubicalChainConstantEquiv
-  simp only [LinearMap.coe_comp, Function.comp_apply, TwistedCubicalChain.desc_ofCube,
-    Iso.inv_hom_id_apply]
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    twistedCubicalChainConstantEquiv_ofCube, Iso.inv_hom_id_apply, Finsupp.lsingle_apply]
 
 /-- The constant-coefficient equivalence commutes with cubical boundaries. -/
 theorem twistedCubicalChainConstantEquiv_boundary (n : ℕ) :
@@ -108,16 +93,17 @@ theorem twistedCubicalChainConstantEquiv_boundary (n : ℕ) :
         TwistedCubicalChain.boundary ((constantFunctor X).obj (ModuleCat.of R R)) n =
       CubicalChain.boundary X R n ∘ₗ
         (twistedCubicalChainConstantEquiv R X (n + 1)).toLinearMap := by
-  unfold twistedCubicalChainConstantEquiv constantFunctor
   refine TwistedCubicalChain.hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, TwistedCubicalChain.boundary_ofCube,
-    map_sum, map_zsmul, map_sub, TwistedCubicalChain.desc_ofCube,
-    TwistedCubicalChain.ofSubcube_apply, Finsupp.lsingle_apply,
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    TwistedCubicalChain.boundary_ofCube, map_sum, map_zsmul, map_sub,
+    twistedCubicalChainConstantEquiv_ofCube, TwistedCubicalChain.ofSubcube_apply,
     CubicalChain.boundary_single]
+  unfold constantFunctor
   simp only [Int.reduceNeg, ContinuousMap.comp_apply, Functor.const_obj_obj,
-    Functor.const_obj_map, ModuleCat.hom_id, LinearMap.id_coe, id_eq]
+    Functor.const_obj_map, ModuleCat.hom_id, LinearMap.id_coe]
   simp_rw [SingularCube.comp_face_id]
   simp only [← Int.cast_smul_eq_zsmul R, Int.cast_pow, Int.cast_neg, Int.cast_one]
+  rfl
 
 /-- Under the constant-coefficient equivalence, the locally coefficiented degenerate chains are
 exactly the ordinary degenerate chains. -/
@@ -129,10 +115,7 @@ theorem twistedCubicalChainConstantEquiv_degenerate (n : ℕ) :
   · rw [Submodule.map_le_iff_le_comap]
     refine TwistedCubicalChain.degenerate_le fun c hc a ↦ ?_
     rw [Submodule.mem_comap]
-    unfold twistedCubicalChainConstantEquiv
-    dsimp only
-    rw [TwistedCubicalChain.desc_ofCube, LinearMap.comp_apply,
-      Finsupp.lsingle_apply]
+    rw [LinearEquiv.coe_coe, twistedCubicalChainConstantEquiv_ofCube]
     exact CubicalChain.single_mem_degenerate R hc _
   · rw [CubicalChain.degenerate_def]
     refine Submodule.span_le.2 ?_
@@ -141,10 +124,7 @@ theorem twistedCubicalChainConstantEquiv_degenerate (n : ℕ) :
       (FundamentalGroupoid.mk (c 0)))
     refine ⟨TwistedCubicalChain.ofCube ((constantFunctor X).obj (ModuleCat.of R R)) c
       (e.inv 1), TwistedCubicalChain.ofCube_mem_degenerate hc (e.inv 1), ?_⟩
-    unfold twistedCubicalChainConstantEquiv
-    dsimp only
-    rw [TwistedCubicalChain.desc_ofCube, LinearMap.comp_apply,
-      Finsupp.lsingle_apply]
+    rw [LinearEquiv.coe_coe, twistedCubicalChainConstantEquiv_ofCube]
     exact congrArg (single c) (Iso.inv_hom_id_apply e 1)
 
 variable (R X) in
