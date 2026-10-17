@@ -55,6 +55,7 @@ namespace TauCeti.Probability
 
 /-- **Exponential tilting of a Gaussian law shifts its mean.** Tilting `N(m, v)` by
 `exp (t * x)` gives `N(m + v t, v)`; at variance zero both sides are the point mass at `m`. -/
+@[simp]
 theorem gaussianReal_tilted_mul (m : ℝ) (v : ℝ≥0) (t : ℝ) :
     (gaussianReal m v).tilted (t * ·) = gaussianReal (m + v * t) v := by
   rcases eq_or_ne v 0 with rfl | hv
@@ -96,6 +97,7 @@ theorem gammaMeasure_tilted_mul {a r t : ℝ} (ha : 0 < a) (hr : 0 < r) (ht : t 
 /-- **Exponential tilting of a Poisson law scales its rate.** Tilting the native Poisson law of
 rate `r` by `exp (t * n)` gives the Poisson law of rate `r * exp t`; at rate zero both sides are the
 point mass at `0`. -/
+@[simp]
 theorem poissonMeasure_tilted_mul (r : ℝ≥0) (t : ℝ) :
     (poissonMeasure r).tilted (fun n ↦ t * n) = poissonMeasure (r * (exp t).toNNReal) := by
   have hZ : ∫ n, exp (t * n) ∂poissonMeasure r = exp (r * (exp t - 1)) := by
