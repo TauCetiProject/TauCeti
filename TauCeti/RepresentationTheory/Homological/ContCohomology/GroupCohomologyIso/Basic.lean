@@ -398,10 +398,10 @@ noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomolog
     induction y using H2_induction_on with
     | h x =>
       let z : G × G → M := fun g ↦ ψ.symm (x (φ g.1, φ g.2))
-      have hz : transport₂ φ ψ z = x := funext fun h ↦ by simp [transport₂, z]
+      have hz : (fun h : H × H ↦ ψ (z (φ.symm h.1, φ.symm h.2))) = x :=
+        funext fun h ↦ by simp [z]
       have hzc : groupCohomology.IsCocycle₂ z :=
-        (transport₂_mem_cocycles₂_iff φ ψ hψ z).1
-          (show transport₂ φ ψ z ∈ cocycles₂ B from hz ▸ x.2)
+        (transport₂_mem_cocycles₂_iff φ ψ hψ z).1 (hz ▸ x.2)
       exact ⟨⟨z, mem_Z2_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
         congrArg (H2π B) (Subtype.ext hz)⟩
   have hker : (B2 G M).addSubgroupOf (Z2 G M) = f.ker := by
@@ -431,7 +431,7 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
         (explicitH2AddEquivGroupCohomology φ ψ hψ x) := by
   induction x using QuotientAddGroup.induction_on with
   | H z =>
-    let c : cocycles₂ B := ⟨transport₂ φ ψ z,
+    let c : cocycles₂ B := ⟨fun h ↦ ψ ((z : G × G → M) (φ.symm h.1, φ.symm h.2)),
       (transport₂_mem_cocycles₂_iff φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
     rw [explicitRes2_mk, explicitH2AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
     have hmap := ConcreteCategory.congr_hom
@@ -445,7 +445,6 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
       simpa using (hφS (φS.symm s)).symm
     rw [TauCeti.groupCohomology.mapCocycles₂_apply]
     simp [cocyclesMap2_apply, c, hs]
-    rfl
 
 end CompatiblePairDegree2
 

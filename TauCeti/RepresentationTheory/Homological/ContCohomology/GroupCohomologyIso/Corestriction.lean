@@ -33,6 +33,11 @@ inversion of cosets. No new cochain formula for corestriction is introduced.
 The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Type`, as in
 `explicitH2IsoGroupCohomology` at the pinned Mathlib version.
 
+## Main results
+
+* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: the additive coinduction comparison identifies
+  the algebraic coinduction–restriction counit with the discrete trace.
+
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Chapter III, §9, the coinduced-module construction
@@ -42,6 +47,34 @@ The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Typ
 public noncomputable section
 
 open CategoryTheory _root_.groupCohomology
+
+namespace TauCeti
+
+variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [Finite G] [DistribMulAction G M] [ContinuousSMul G M]
+
+open Classical in
+/-- The algebraic coinduction–restriction counit agrees with the discrete trace after the
+additive coinduction comparison. -/
+theorem discreteCoindAddEquivAlgebraic_trace (f : DiscreteCoind G U M) :
+    ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)).hom
+        (discreteCoindAddEquivAlgebraic G M U f) = DiscreteCoind.trace G U M f := by
+  let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel U
+  let t : G ⧸ U → G := fun q ↦ ((e.symm q).out)⁻¹
+  have ht (q : G ⧸ U) : (QuotientGroup.mk (t q) : G ⧸ U) = q :=
+    (congrArg e (Quotient.out_eq (e.symm q))).trans (e.apply_symm_apply q)
+  refine (Subgroup.coindResAdjunction_counit_app_hom_apply U
+    (Rep.ofDistribMulAction ℤ G M) (discreteCoindAddEquivAlgebraic G M U f)).trans ?_
+  rw [DiscreteCoind.trace_eq_sum_transversal t ht]
+  let : Fintype (G ⧸ U) := Subgroup.fintypeQuotientOfFiniteIndex
+  exact Fintype.sum_equiv e _ _ fun q ↦ by
+    simp only [t, e.symm_apply_apply, inv_inv]
+    exact (congrArg (fun m : M ↦ (Rep.ofDistribMulAction ℤ G M).ρ q.out⁻¹ m)
+      (discreteCoindAddEquivAlgebraic_apply G M U f q.out)).trans
+        (Rep.ofDistribMulAction_ρ_apply_apply ℤ G M q.out⁻¹ (f q.out))
+
+end TauCeti
 
 namespace TauCeti.ContCohomology
 
@@ -112,24 +145,6 @@ section Corestriction
 
 variable [Finite G] [DistribMulAction G M] [ContinuousSMul G M]
 
-open Classical in
-private theorem coindEquiv_trace (f : DiscreteCoind G U M) :
-    ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)).hom
-        (discreteCoindAddEquivAlgebraic G M U f) = DiscreteCoind.trace G U M f := by
-  let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel U
-  let t : G ⧸ U → G := fun q ↦ ((e.symm q).out)⁻¹
-  have ht (q : G ⧸ U) : (QuotientGroup.mk (t q) : G ⧸ U) = q :=
-    (congrArg e (Quotient.out_eq (e.symm q))).trans (e.apply_symm_apply q)
-  refine (Subgroup.coindResAdjunction_counit_app_hom_apply U
-    (Rep.ofDistribMulAction ℤ G M) (discreteCoindAddEquivAlgebraic G M U f)).trans ?_
-  rw [DiscreteCoind.trace_eq_sum_transversal t ht]
-  let : Fintype (G ⧸ U) := Subgroup.fintypeQuotientOfFiniteIndex
-  exact Fintype.sum_equiv e _ _ fun q ↦ by
-    simp only [t, e.symm_apply_apply, inv_inv]
-    exact (congrArg (fun m : M ↦ (Rep.ofDistribMulAction ℤ G M).ρ q.out⁻¹ m)
-      (discreteCoindAddEquivAlgebraic_apply G M U f q.out)).trans
-        (Rep.ofDistribMulAction_ρ_apply_apply ℤ G M q.out⁻¹ (f q.out))
-
 /-- For a finite discrete group, the explicit-to-ordinary comparison in degree two preserves
 cohomological corestriction from every subgroup. -/
 theorem explicitH2IsoGroupCohomology_explicitCor2 (x : H2 U M) :
@@ -175,7 +190,7 @@ theorem explicitH2IsoGroupCohomology_explicitCor2 (x : H2 U M) :
     (discreteCoindAddEquivAlgebraic_smul G M U) (fun _ _ ↦ rfl)
     (DiscreteCoind.trace G U M) DiscreteCoind.continuous_trace
     ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M))
-    (fun f ↦ (coindEquiv_trace G M U f).symm) y
+    (fun f ↦ (discreteCoindAddEquivAlgebraic_trace G M U f).symm) y
 
 end Corestriction
 
