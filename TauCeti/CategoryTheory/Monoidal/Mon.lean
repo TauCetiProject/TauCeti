@@ -18,6 +18,10 @@ This file provides general-purpose facts about monoid objects and their commutat
 * `TauCeti.isCommMonObj_of_grp_iso`: commutativity of a group object is preserved by isomorphism.
 * `TauCeti.isCommMonObj_of_mono`: a monoid subobject of a commutative monoid object is commutative.
 * `TauCeti.monObj_eq_of_mono`: a monomorphism admits at most one compatible monoid structure.
+* `CategoryTheory.MonObj.isMonHom_one`: the unit of a monoid object is a monoid homomorphism
+  from the trivial monoid on the tensor unit.
+* `CategoryTheory.MonObj.isMonHom_mul`: the multiplication of a commutative monoid object is a
+  monoid homomorphism.
 -/
 
 public section
@@ -61,3 +65,28 @@ theorem isCommMonObj_of_mono
     simp [IsMonHom.mul_hom, ← BraidedCategory.braiding_naturality_assoc]
 
 end TauCeti
+
+namespace CategoryTheory.MonObj
+
+open MonoidalCategory
+
+universe u v
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (M : C) [MonObj M]
+
+/-- The unit `𝟙_ C ⟶ M` of a monoid object is a monoid homomorphism, for the trivial monoid
+structure on the tensor unit. -/
+instance isMonHom_one : IsMonHom η[M] where
+  mul_hom := by
+    rw [MonObj.mul_def, tensorHom_def', Category.assoc, one_mul, leftUnitor_naturality]
+
+/-- The multiplication `M ⊗ M ⟶ M` of a commutative monoid object is a monoid homomorphism. -/
+instance isMonHom_mul [BraidedCategory C] [IsCommMonObj M] : IsMonHom μ[M] where
+  one_hom := by
+    have h := IsMonHom.mul_hom η[M]
+    simp only [MonObj.mul_def] at h
+    rw [tensorObj.one_def, Category.assoc, ← h, Iso.inv_hom_id_assoc]
+  mul_hom := by
+    rw [tensorObj.mul_def, Category.assoc, mul_mul_mul_comm]
+
+end CategoryTheory.MonObj
