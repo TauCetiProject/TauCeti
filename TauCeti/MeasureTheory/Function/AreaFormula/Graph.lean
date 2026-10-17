@@ -25,7 +25,7 @@ chart formula used when boundary traces are assembled from Lipschitz graph chart
 ## Main declarations
 
 * `TauCeti.normalGraph`: the graph parametrization into `WithLp 2 (F × E)`.
-* `TauCeti.normalGraphL`: the corresponding construction for continuous linear maps.
+* `ContinuousLinearMap.normalGraphL`: the corresponding construction for continuous linear maps.
 * `LipschitzWith.lintegral_normalGraph_image_eq_lintegral_normDet_fderiv_mul`: the weighted
   graph area formula.
 * `LipschitzWith.lintegral_normDet_fderiv_normalGraph_eq_euclideanHausdorffMeasure_image`: the
@@ -113,29 +113,30 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The continuous linear graph map associated to `A : E →L[ℝ] F`. -/
-def normalGraphL (A : E →L[ℝ] F) : E →L[ℝ] WithLp 2 (F × E) :=
+def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] F) : E →L[ℝ] WithLp 2 (F × E) :=
   (WithLp.prodContinuousLinearEquiv 2 ℝ F E).symm.toContinuousLinearMap ∘L
     A.prod (ContinuousLinearMap.id ℝ E)
 
 /-- The continuous linear graph map acts by `x ↦ (A x, x)`. -/
 @[simp]
-theorem normalGraphL_apply (A : E →L[ℝ] F) (x : E) :
-    normalGraphL A x = normalGraph A x :=
-  by simp [normalGraphL, normalGraph]
+theorem _root_.ContinuousLinearMap.normalGraphL_apply (A : E →L[ℝ] F) (x : E) :
+    A.normalGraphL x = normalGraph A x := by
+  simp [ContinuousLinearMap.normalGraphL, normalGraph]
 
 /-- The derivative of a graph parametrization is the graph of the derivative. -/
 theorem _root_.HasFDerivAt.normalGraph {f : E → F} {f' : E →L[ℝ] F} {x : E}
-    (hf : HasFDerivAt f f' x) : HasFDerivAt (normalGraph f) (normalGraphL f') x := by
+    (hf : HasFDerivAt f f' x) : HasFDerivAt (normalGraph f) f'.normalGraphL x := by
   rw [funext (normalGraph_apply f)]
   convert (((WithLp.prodContinuousLinearEquiv 2 ℝ F E).symm :
     (F × E) →L[ℝ] WithLp 2 (F × E)).hasFDerivAt.comp x
-      (hf.prodMk (hasFDerivAt_id x))) using 1 <;> simp [normalGraphL, Function.comp_def]
+      (hf.prodMk (hasFDerivAt_id x))) using 1 <;>
+    simp [ContinuousLinearMap.normalGraphL, Function.comp_def]
 
 /-- At a differentiability point, the Fréchet derivative of a graph parametrization is the
 continuous linear graph of the derivative. -/
 theorem _root_.DifferentiableAt.fderiv_normalGraph {f : E → F} {x : E}
     (hf : DifferentiableAt ℝ f x) :
-    fderiv ℝ (normalGraph f) x = normalGraphL (fderiv ℝ f x) :=
+    fderiv ℝ (normalGraph f) x = (fderiv ℝ f x).normalGraphL :=
   hf.hasFDerivAt.normalGraph.fderiv
 
 end Linear
@@ -180,14 +181,8 @@ theorem volume_le_euclideanHausdorffMeasure_normalGraph_image (f : E → F) (s :
     LipschitzWith.of_edist_le WithLp.edist_snd_le
   have h := hproj.lipschitzOnWith.euclideanHausdorffMeasure_image_le
     (s := normalGraph f '' s) (finrank ℝ E)
-  have himage : WithLp.snd '' (normalGraph f '' s) = s := by
-    ext x
-    simp only [mem_image]
-    constructor
-    · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-      exact hy
-    · intro hx
-      exact ⟨normalGraph f x, ⟨x, hx, rfl⟩, rfl⟩
+  have himage : WithLp.snd '' (normalGraph f '' s) = s :=
+    LeftInverse.image_image (g := WithLp.snd) (f := normalGraph f) (fun _ ↦ rfl) s
   rw [himage, InnerProductSpace.euclideanHausdorffMeasure_eq_volume] at h
   simpa using h
 
