@@ -14,6 +14,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Divergence, Hessian, and Laplace–Beltrami operators
@@ -74,6 +75,91 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
+
+section HessianSymmetry
+
+variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. The proof
+compares the two metric product rules for the gradient and uses vanishing torsion. -/
+theorem hessian_symm [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) (v w : TangentSpace I x) :
+    hessian I f x v w = hessian I f x w v := by
+  let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
+  let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
+  have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
+  have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
+  let _ : IsManifold I (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold I ∞ M)
+  have hG : ContMDiff I I.tangent ∞
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
+    contMDiff_mgradient hf
+  have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
+  -- Metric compatibility rewrites the two derivatives of the gradient pairing.
+  have hinnerW :=
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      V hG' hW
+  have hinnerV :=
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      W hG' hV
+  have hinnerW' : (fun y ↦ inner ℝ (mgradient I f y) (W y)) =
+      (fun y ↦ mvfderiv I f y (W y)) := by
+    funext y
+    exact inner_mgradient (I := I) (f := f) (x := y) (W y)
+  have hinnerV' : (fun y ↦ inner ℝ (mgradient I f y) (V y)) =
+      (fun y ↦ mvfderiv I f y (V y)) := by
+    funext y
+    exact inner_mgradient (I := I) (f := f) (x := y) (V y)
+  have hinnerW2 := hinnerW
+  have hinnerV2 := hinnerV
+  rw [hinnerW'] at hinnerW2
+  rw [hinnerV'] at hinnerV2
+  clear hinnerW hinnerV
+  have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
+  let _ : IsManifold I (minSmoothness ℝ 2) M :=
+    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
+  -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
+  have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
+    hf.contMDiffAt (by simp) hV hW
+  have hzero :
+      (CovariantDerivative.leviCivitaConnection I M).torsion x (V x) (W x) = 0 := by
+    rw [CovariantDerivative.torsion_leviCivitaConnection_eq_zero I]
+    simp
+  have htw := CovariantDerivative.torsion_apply
+    (CovariantDerivative.leviCivitaConnection I M) hV hW
+  rw [hzero] at htw
+  have htw' :
+      CovariantDerivative.leviCivitaConnection I M W x (V x) -
+          CovariantDerivative.leviCivitaConnection I M V x (W x) =
+        VectorField.mlieBracket I V W x := by
+    exact sub_eq_zero.mp htw.symm
+  have hinnerW3 :
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
+        inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
+          (W x) + inner ℝ (mgradient I f x)
+            (CovariantDerivative.leviCivitaConnection I M W x (V x)) := by
+    simpa only [Function.comp_apply] using hinnerW2
+  have hinnerV3 :
+      mvfderiv I (fun y ↦ mvfderiv I f y (V y)) x (W x) =
+        inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (W x))
+          (V x) + inner ℝ (mgradient I f x)
+            (CovariantDerivative.leviCivitaConnection I M V x (W x)) := by
+    simpa only [Function.comp_apply] using hinnerV2
+  have hgradbracket : inner ℝ (mgradient I f x) (VectorField.mlieBracket I V W x) =
+      mvfderiv I f x (VectorField.mlieBracket I V W x) :=
+    inner_mgradient (I := I) (f := f) (x := x) _
+  dsimp [V, W] at hinnerW3 hinnerV3 htw' hbracket
+  simp only [FiberBundle.extend_apply_self] at hinnerW3 hinnerV3 htw' hbracket
+  rw [← hgradbracket] at hbracket
+  dsimp [hessian]
+  -- The two metric-compatibility equations now differ only by the torsion equation.
+  have htw_inner := congrArg (fun z ↦ inner ℝ (mgradient I f x) z) htw'
+  simp only [inner_sub_right] at htw_inner
+  linarith [hinnerW3, hinnerV3, hbracket, htw_inner]
+
+end HessianSymmetry
 
 /-- The Laplace–Beltrami operator, with the sign convention `Δ = div ∘ grad`. -/
 noncomputable def laplaceBeltrami (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
