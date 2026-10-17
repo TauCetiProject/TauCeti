@@ -20,7 +20,9 @@ by the unit of sheafification of `Symⁿ M`.
 Its mate under an adjunction `G ⊣ φ_*` is the canonical natural map
 `G (Symⁿ M) ⟶ Symⁿ (G M)`. The adjunction is an explicit argument, so the same construction
 applies both to pullback of sheaves of modules and to pullback of modules on schemes. In degree
-one the comparison is an isomorphism for every such adjunction.
+one the comparison is an isomorphism for every such adjunction. The pushforward comparison
+is invertible in every degree when the functor of sites is also cocontinuous and the
+coefficient-ring map is an isomorphism.
 
 As for exterior powers in `TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Pullback`,
 the pushforward comparison and its degree-one computation are instances of
@@ -108,6 +110,18 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
     (by rw [_root_.SheafOfModules.symmetricPowerOneIso_hom_app, Iso.inv_hom_id_assoc])
     (PresheafOfModules.pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
       (commRingCatHom φ) M.val)
+
+/-- Restriction along a continuous and cocontinuous functor with an isomorphism of coefficient
+sheaves preserves every symmetric power. -/
+instance isIso_pushforwardSymmetricPowerComparison [F.IsCocontinuous J K] [IsIso φ] (n : ℕ) :
+    IsIso (pushforwardSymmetricPowerComparison φ n) := by
+  have hα : IsIso (commRingCatHom φ) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro U
+    exact (ConcreteCategory.isIso_iff_bijective _).mpr
+      ((ConcreteCategory.isIso_iff_bijective (φ.hom.app U)).mp inferInstance)
+  unfold pushforwardSymmetricPowerComparison
+  infer_instance
 
 variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
     _root_.SheafOfModules.{u} (ringCatSheaf R)} (adj : G ⊣ _root_.SheafOfModules.pushforward φ)
