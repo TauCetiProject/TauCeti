@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.RootsOfUnity.Congruence
 
 /-!
 # Tate modules of abelian groups
@@ -55,10 +56,19 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
 * `TauCeti.TateModule.nonempty_linearEquiv_of_natCard`: if `A[p^n]` has `(p^n)^r` elements for
   every `n`, then `T_p A ≃ ℤ_p^r`; hence `T_p A` is free of rank `r`
   (`TauCeti.TateModule.free_of_natCard`, `TauCeti.TateModule.finrank_eq_of_natCard`).
+* `TauCeti.TateModule.proj_eq_zero_iff`: the kernel of the projection to `A[p^n]` is
+  `p^n T_p A`. So `T_p A` has no `p`-torsion (`TauCeti.TateModule.eq_zero_of_pow_nsmul_eq_zero`)
+  and only `0` is divisible by every power of `p`
+  (`TauCeti.TateModule.eq_zero_of_forall_exists_eq_pow_nsmul`).
+* `TauCeti.TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq`: **Serre's lemma**. An
+  endomorphism of finite order of `T_p A` inducing the identity on `A[p^k]`, with `p^k ≥ 3`, is the
+  identity.
 
 ## References
 
 * J. H. Silverman, *The Arithmetic of Elliptic Curves*, III.7.
+* J.-P. Serre and J. Tate, *Good reduction of abelian varieties*, Ann. of Math. 88 (1968),
+  492–517.
 -/
 
 public section
@@ -638,6 +648,79 @@ theorem finrank_eq_of_natCard : Module.finrank ℤ_[p] (TateModule p A) = r := b
   rw [(nonempty_linearEquiv_of_natCard hcard).some.finrank_eq, Module.finrank_fin_fun]
 
 end Free
+
+/-! ### Divisibility by powers of `p`, and endomorphisms of finite order -/
+
+section Divisibility
+
+/-- **The kernel of the projection to `A[p ^ n]` is `p ^ n T_p A`.** -/
+theorem proj_eq_zero_iff {x : TateModule p A} {n : ℕ} :
+    proj n x = 0 ↔ ∃ y : TateModule p A, x = p ^ n • y := by
+  refine ⟨fun hx ↦ ?_, ?_⟩
+  · -- The component of `y` at level `m` is the component of `x` at level `n + m`.
+    have hmem (m : ℕ) :
+        (proj (n + m) x : A) ∈ AddSubgroup.torsionBy A ((p ^ m : ℕ) : ℤ) := by
+      rw [AddSubgroup.torsionBy.nsmul_iff, ← coe_proj_eq_pow_nsmul, hx, ZeroMemClass.coe_zero]
+    have hcompat (m : ℕ) : p • (proj (n + (m + 1)) x : A) = proj (n + m) x := by
+      rw [← add_assoc]
+      simpa only [tateModuleTransition_apply] using congrArg Subtype.val (proj_succ x (n + m))
+    refine ⟨mk (fun m ↦ ⟨proj (n + m) x, hmem m⟩) fun m ↦
+      Subtype.ext (by rw [tateModuleTransition_apply]; exact hcompat m),
+      ext fun m ↦ Subtype.ext ?_⟩
+    rw [coe_proj_eq_pow_nsmul x m n, add_comm m n, map_nsmul, AddSubgroup.coe_nsmul, proj_mk]
+  · rintro ⟨y, rfl⟩
+    rw [map_nsmul]
+    exact AddSubgroup.torsionBy.nsmul _
+
+/-- **The Tate module has no `p`-torsion.** -/
+theorem eq_zero_of_pow_nsmul_eq_zero {x : TateModule p A} {k : ℕ} (h : p ^ k • x = 0) :
+    x = 0 :=
+  ext fun n ↦ Subtype.ext <| by
+    rw [coe_proj_eq_pow_nsmul x n k, ← AddSubgroup.coe_nsmul, ← map_nsmul, h, map_zero, map_zero,
+      ZeroMemClass.coe_zero, ZeroMemClass.coe_zero]
+
+/-- **Only `0` is divisible by every power of `p` in the Tate module.** -/
+theorem eq_zero_of_forall_exists_eq_pow_nsmul {x : TateModule p A}
+    (h : ∀ n, ∃ y : TateModule p A, x = p ^ n • y) : x = 0 :=
+  ext fun n ↦ by rw [proj_eq_zero_iff.mpr (h n), map_zero]
+
+/-- **Serre's lemma on the Tate module.** An endomorphism of finite order of `T_p A` that induces
+the identity on `A[p ^ k]`, with `p ^ k ≥ 3`, is the identity. -/
+theorem eq_one_of_isOfFinOrder_of_forall_proj_eq [hp : Fact p.Prime]
+    {φ : Module.End ℤ_[p] (TateModule p A)} (hφ : IsOfFinOrder φ) {k : ℕ} (hk : 3 ≤ p ^ k)
+    (hfix : ∀ t, proj k (φ t) = proj k t) : φ = 1 := by
+  have hcast (n : ℕ) (ψ : Module.End ℤ_[p] (TateModule p A)) (t : TateModule p A) :
+      ((n : Module.End ℤ_[p] (TateModule p A)) * ψ) t = n • ψ t := by
+    rw [Module.End.mul_apply, Module.End.natCast_apply]
+  refine eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hp.out (fun ψ ψ' h ↦ ?_) (fun ψ hψ ↦ ?_) hk hφ
+    ?_
+  · -- `T_p A` has no `p`-torsion, so `p` is left regular in its endomorphism ring.
+    refine LinearMap.ext fun t ↦ sub_eq_zero.mp (eq_zero_of_pow_nsmul_eq_zero (k := 1) ?_)
+    have := LinearMap.congr_fun h t
+    rw [hcast, hcast] at this
+    rw [pow_one, smul_sub, this, sub_self]
+  · -- An endomorphism divisible by every power of `p` has values divisible by every power of `p`.
+    refine LinearMap.ext fun t ↦ eq_zero_of_forall_exists_eq_pow_nsmul fun n ↦ ?_
+    obtain ⟨ψ', rfl⟩ := hψ n
+    exact ⟨ψ' t, by rw [← Nat.cast_pow, hcast]⟩
+  · -- `φ - 1` takes values in `p ^ k T_p A`, which is the image of the injective map `p ^ k`.
+    set g : Module.End ℤ_[p] (TateModule p A) := ((p ^ k : ℕ) : Module.End ℤ_[p] (TateModule p A))
+    have hg : Function.Injective g := fun s t hst ↦ sub_eq_zero.mp
+      (eq_zero_of_pow_nsmul_eq_zero (k := k) (by
+        rw [smul_sub, ← Module.End.natCast_apply (R := ℤ_[p]),
+          ← Module.End.natCast_apply (R := ℤ_[p])]
+        exact sub_eq_zero.mpr hst))
+    have hrange (t : TateModule p A) : (φ - 1) t ∈ LinearMap.range g := by
+      obtain ⟨y, hy⟩ := (proj_eq_zero_iff (n := k) (x := (φ - 1) t)).mp (by
+        rw [LinearMap.sub_apply, Module.End.one_apply, map_sub, hfix, sub_self])
+      exact ⟨y, by rw [hy, Module.End.natCast_apply]⟩
+    refine ⟨(LinearEquiv.ofInjective g hg).symm.toLinearMap ∘ₗ (φ - 1).codRestrict _ hrange,
+      LinearMap.ext fun t ↦ ?_⟩
+    rw [← Nat.cast_pow, Module.End.mul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      ← LinearEquiv.ofInjective_apply (f := g) (h := hg), LinearEquiv.apply_symm_apply,
+      LinearMap.codRestrict_apply]
+
+end Divisibility
 
 end TateModule
 

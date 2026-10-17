@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!

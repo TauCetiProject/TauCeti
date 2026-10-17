@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import Mathlib.Data.Finset.Sym
-import Mathlib.Data.Sym.Sym2.Order
+import Mathlib.Order.Sym2
 import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!

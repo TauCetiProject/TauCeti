@@ -9,7 +9,7 @@ import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.GroupTheory.Abelianization.Finite
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Permutation.Basic
-public import TauCeti.RepresentationTheory.Augmentation
+public import TauCeti.RepresentationTheory.Augmentation.Basic
 
 /-!
 # Herbrand quotient of the sum-zero permutation lattice

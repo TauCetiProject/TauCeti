@@ -50,7 +50,10 @@ separable degree, which connects the two.
 The same comparison bounds the `p`-torsion of `W` over `K` itself: the kernel of `[p]` has at most
 as many points as its separable degree, which is at most `deg V = p`. So `E[p]` is either zero or
 cyclic of order `p`, and it is the latter over an algebraically closed field exactly when `W` is
-ordinary.
+ordinary. More generally, when `p` divides `n ≠ 0`, the `n`-torsion of `W` over `K` has fewer than
+`n²` points, although `[n]` has degree `n²`. Over a separably closed field a finite étale
+`n`-torsion scheme of rank `n²` would have `n²` points, so this bound shows that the `n`-torsion
+is not étale where the characteristic divides `n`.
 
 ## Main results
 
@@ -67,6 +70,9 @@ ordinary.
   `k = 1` or any `k ≠ 0`.
 * `WeierstrassCurve.natCard_torsionBy_le` and `WeierstrassCurve.torsionBy_eq_zmultiples`: `W` has
   at most `p` points of order dividing `p`, so a nonzero one generates them all.
+* `WeierstrassCurve.natCard_torsionBy_lt`: in characteristic `p > 0`, when `p ∣ n ≠ 0`, `W` has
+  fewer than `n²` points of order dividing `n`, which detects the failure of the `n`-torsion to be
+  étale.
 
 ## References
 
@@ -246,6 +252,47 @@ theorem torsionBy_eq_zmultiples {Q : W.toAffine.Point} (hQ : p • Q = 0) (hQ₀
     ((Submodule.mem_torsionBy_iff _ _).2 (by rwa [natCast_zsmul]))) ?_).symm
   rw [Nat.card_zmultiples, addOrderOf_eq_prime (hp := ⟨hp⟩) hQ hQ₀]
   exact natCard_torsionBy_le p W
+
+open scoped Classical in
+/-- **A curve has fewer than `n²` points of order dividing `n`** when the characteristic `p > 0`
+divides `n ≠ 0`, although `[n]` has degree `n²`. This is the input that detects the failure of the
+`n`-torsion of `W` to be étale where the characteristic divides `n`: over a separably closed field,
+a finite étale `n`-torsion of rank `n²` would have exactly `n²` points. -/
+theorem natCard_torsionBy_lt (hp : p.Prime) {n : ℤ} (hn : n ≠ 0) (hpn : (p : ℤ) ∣ n) :
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) < n.natAbs ^ 2 := by
+  -- write `n = p k`; the `n`-torsion then has at most `p k² < n²` points
+  obtain ⟨k, rfl⟩ := hpn
+  have hk : k ≠ 0 := right_ne_zero_of_mul hn
+  have := W.finite_torsionBy (mod_cast hp.ne_zero : (p : ℤ) ≠ 0)
+  have := W.finite_torsionBy hk
+  -- the `k`-torsion has at most `deg [k] = k²` points
+  have hk' : Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) ≤ k.natAbs ^ 2 := by
+    have h := (mulByIntIsogenyOfNeZero W.toAffine hk).card_ker_le_degree
+    rwa [ker_mulByIntIsogeny_eq_torsionBy, Affine.baseChange_self,
+      degree_mulByIntIsogenyOfNeZero] at h
+  -- multiplication by `k` maps the `p k`-torsion to the `p`-torsion, with kernel the `k`-torsion
+  let φ := (zsmulAddGroupHom k).comp
+    (AddSubgroup.torsionBy W.toAffine.Point ((p : ℤ) * k)).subtype
+  have hker : Nat.card φ.ker ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) :=
+    Nat.card_le_card_of_injective
+      (fun x ↦ ⟨x.1.1, (Submodule.mem_torsionBy_iff _ _).2 (AddMonoidHom.mem_ker.1 x.2)⟩)
+      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy).1))
+  have hrange : Nat.card φ.range ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point (p : ℤ)) := by
+    refine AddSubgroup.card_le_of_le ?_
+    rintro _ ⟨x, rfl⟩
+    have hx := (Submodule.mem_torsionBy_iff _ _).1 x.2
+    exact (Submodule.mem_torsionBy_iff _ _).2 (by simpa [φ, smul_smul, mul_comm] using hx)
+  have hcard := AddSubgroup.card_ker_mul_card_range φ
+  have hp' := natCard_torsionBy_le p W
+  rw [Int.natAbs_mul, Int.natAbs_natCast]
+  calc Nat.card (AddSubgroup.torsionBy W.toAffine.Point ((p : ℤ) * k))
+      ≤ k.natAbs ^ 2 * p := by
+        rw [← hcard]
+        exact Nat.mul_le_mul (hker.trans hk') (hrange.trans (by simpa using hp'))
+    _ < (p * k.natAbs) ^ 2 := by
+        have h1 := hp.two_le
+        have h2 : 0 < k.natAbs := Int.natAbs_pos.2 hk
+        nlinarith
 
 end WeierstrassCurve
 

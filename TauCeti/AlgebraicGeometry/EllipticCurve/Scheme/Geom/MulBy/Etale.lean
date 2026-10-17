@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale
-import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
+public import TauCeti.AlgebraicGeometry.GroupScheme.Etale
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
-import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 
 /-!
-# Étale multiplication on an elliptic curve over a field
+# Étale multiplication on an elliptic curve over an arbitrary base
 
-Multiplication by an integer invertible in the base field is étale on the whole elliptic
-curve, not just over its zero section. Its kernel is the étale torsion scheme `E[n]`.
+Multiplication by an integer invertible in every residue field of the base is étale on the
+whole elliptic curve. Its kernel is the torsion scheme `E[n]`, which is formally unramified
+and flat over the base.
 The kernel-pair identity identifies the self-pullback of `[n]` with `E[n] × E`, whose
 projection to `E` is étale. Étaleness then descends along the finite faithfully flat
 multiplication map.
@@ -24,8 +24,8 @@ division points through infinitesimal thickenings.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_mulBy_left_of_field`: multiplication by
-  an integer invertible in the base field is étale.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_mulBy_left_of_forall_intCast_ne_zero`:
+  multiplication by an integer invertible in every residue field is étale.
 
 ## References
 
@@ -34,35 +34,39 @@ division points through infinitesimal thickenings.
 
 public section
 
-open CategoryTheory Limits CartesianMonoidalCategory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry
 
 universe u
 
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
-/-- Multiplication by an integer invertible in the base field is étale
-(Katz–Mazur 2.3.1). -/
-theorem etale_mulBy_left_of_field {K : Type u} [Field K]
-    (E : EllipticCurveGeom (Spec (.of K))) {n : ℤ} (hn : (n : K) ≠ 0) :
+/-- Multiplication by an integer invertible in every residue field of the base is étale
+(Katz–Mazur 2.3.1). No reducedness or Noetherian hypothesis on the base is needed. -/
+theorem etale_mulBy_left_of_forall_intCast_ne_zero {S : Scheme.{u}}
+    (E : EllipticCurveGeom S) {n : ℤ} (hn : ∀ s : S, (n : S.residueField s) ≠ 0) :
     Etale (E.mulBy n).left := by
+  rcases isEmpty_or_nonempty S with hS | hS
+  · have : IsEmpty E.carrier := ⟨fun x ↦ isEmptyElim (E.structureMap x)⟩
+    have : IsIso (E.mulBy n).left :=
+      @_root_.AlgebraicGeometry.isIso_of_isEmpty E.carrier E.carrier (E.mulBy n).left inferInstance
+    infer_instance
   have hn₀ : n ≠ 0 := by
+    obtain ⟨s⟩ := hS
     rintro rfl
-    exact hn Int.cast_zero
+    exact hn s Int.cast_zero
   have := E.isFinite_mulBy_left hn₀
   have := E.flat_mulBy_left hn₀
   have := E.surjective_mulBy_left hn₀
-  have := E.etale_torsion_hom hn
-  have hk : IsPullback (E.torsionι n) (toUnit (E.torsion n).X)
-      (E.mulBy n) MonObj.one := by
-    apply IsPullback.of_map_of_faithful (Over.forget _)
-    simpa only [Over.forget_map, Over.toUnit_left, E.one_left] using E.isPullback_torsion n
-  -- In the self-pullback, `[n]` becomes the projection `E[n] × E ⟶ E`.
-  have h := (isPullback_mul_of_isPullback_one (E.mulBy n) (E.torsionι n) hk).map (Over.forget _)
-  have hs : Etale (snd (E.torsion n).X (Over.mk E.structureMap)).left := by
-    rw [Over.snd_left]
-    infer_instance
-  have hf : (@Surjective ⊓ @Flat ⊓ @QuasiCompact : MorphismProperty Scheme)
-      (E.mulBy n).left := ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
-  exact MorphismProperty.of_isPullback_of_descendsAlong h.flip hf hs
+  have hT := E.etale_torsion_hom_of_forall_intCast_ne_zero hn
+  have : Surjective (Grp.ofHom (E.mulBy n)).hom.hom.left := by
+    simpa only [Grp.ofHom_hom_hom] using E.surjective_mulBy_left hn₀
+  have : Flat (Grp.ofHom (E.mulBy n)).hom.hom.left := by
+    simpa only [Grp.ofHom_hom_hom] using E.flat_mulBy_left hn₀
+  have : QuasiCompact (Grp.ofHom (E.mulBy n)).hom.hom.left := by
+    simpa only [Grp.ofHom_hom_hom] using
+      (inferInstance : QuasiCompact (E.mulBy n).left)
+  rw [E.torsion_eq_kernel, E.forget₂Grp_map_intCast] at hT
+  simpa only [Grp.ofHom_hom_hom] using
+    (Grp.etale_iff_etale_kernel (Grp.ofHom (E.mulBy n))).mpr hT
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

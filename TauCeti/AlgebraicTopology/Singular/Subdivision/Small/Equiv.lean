@@ -116,8 +116,9 @@ lemma smallSingularChains.comp_singularSubdivisionX {n : ℕ}
 after any larger number of subdivisions. -/
 lemma smallSingularChains.comp_singularSubdivisionChainMap_pow_of_le {n m m' : ℕ} (hm : m ≤ m')
     {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
-    (hf : f ≫ (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n) :
-    f ≫ (End.of (singularSubdivisionChainMap R X) ^ m').f n ∈ smallSingularChains R U n := by
+    (hf : f ≫ (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈
+      smallSingularChains R U n) :
+    f ≫ (End.of (singularSubdivisionChainMap R X) ^ m').asHom.f n ∈ smallSingularChains R U n := by
   induction m', hm using Nat.le_induction with
   | base => exact hf
   | succ m' _ ih =>
@@ -130,13 +131,13 @@ variable (R U)
 subordinate to the family `U`. -/
 def singularSubdivisionOrder {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) : ℕ :=
   sInf {m | (TopCat.toSSet.obj X).ιChainComplex σ ≫
-    (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n}
+    (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n}
 
 /-- The subdivision order is at most any number of subdivisions that makes the simplex
 subordinate to `U`. -/
 lemma singularSubdivisionOrder_le {n m : ℕ} {σ : TopCat.toSSet.obj X _⦋n⦌}
     (hσ : (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n) :
+      (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n) :
     singularSubdivisionOrder R U σ ≤ m :=
   Nat.sInf_le hσ
 
@@ -146,11 +147,11 @@ theorem mem_smallSingularChains_ιChainComplex_comp_pow (hU : ∀ i, IsOpen (U i
     (hcov : ⋃ i, U i = Set.univ) {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) {m : ℕ}
     (hm : singularSubdivisionOrder R U σ ≤ m) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n := by
+      (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n := by
   obtain ⟨n₀, hn₀⟩ := exists_iterate_singularSubdivision_factor_small R U hU hcov σ
   exact smallSingularChains.comp_singularSubdivisionChainMap_pow_of_le hm
     (Nat.sInf_mem (s := {m | (TopCat.toSSet.obj X).ιChainComplex σ ≫
-        (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n})
+        (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n})
       ⟨n₀, (mem_smallSingularChains_iff _).2 (hn₀ n₀ le_rfl)⟩)
 
 /-- A simplex already subordinate to `U` needs no subdivision. -/
@@ -287,7 +288,7 @@ lemma mem_smallSingularChains_ιChainComplex_comp_idPow_hom_sub {n : ℕ}
   have hsum : ((singularSubdivisionHomotopy R X).idPow m).hom n (n + 1) -
       ((singularSubdivisionHomotopy R X).idPow m').hom n (n + 1) =
       ∑ k ∈ Finset.Ico m' m,
-        (End.of (singularSubdivisionChainMap R X) ^ k).f n ≫ singularPrismX R X n := by
+        (End.of (singularSubdivisionChainMap R X) ^ k).asHom.f n ≫ singularPrismX R X n := by
     rw [Finset.sum_Ico_eq_sub _ hmm]
     simp
   rw [hsum, Preadditive.comp_sum]
@@ -330,12 +331,12 @@ theorem mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox {n : ℕ
           (singularSubdivisionDepth_δ_le R U k σ j)) _
   have hf : (TopCat.toSSet.obj X).ιChainComplex σ ≫ (singularSmallApprox R U).f n =
       (TopCat.toSSet.obj X).ιChainComplex σ ≫
-          (End.of (singularSubdivisionChainMap R X) ^ m).f n +
+          (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n +
         (TopCat.toSSet.obj X).ιChainComplex σ ≫
           (dNext n ((singularSubdivisionHomotopy R X).idPow m).hom -
             dNext n (singularSmallApproxHom R U)) := by
     have hsplit : (singularSmallApprox R U).f n =
-        (End.of (singularSubdivisionChainMap R X) ^ m).f n +
+        (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n +
           (dNext n ((singularSubdivisionHomotopy R X).idPow m).hom -
             dNext n (singularSmallApproxHom R U)) +
           (prevD n ((singularSubdivisionHomotopy R X).idPow m).hom -

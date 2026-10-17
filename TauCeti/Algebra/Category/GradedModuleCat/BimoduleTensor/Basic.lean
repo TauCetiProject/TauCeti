@@ -72,7 +72,7 @@ local instance (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SMulCommClass A Bᵐᵒᵖ M :=
   TauCeti.Algebra.TensorProduct.moduleSMulCommClass (k := k) (A := A) (B := Bᵐᵒᵖ) M
 
-local instance [SetLike.GradedOne Δ.piece]
+local instance leftGradedSMul [SetLike.GradedOne Δ.piece]
     (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SetLike.GradedSMul Γ.piece M.grading.piece where
   smul_mem {p q} {a m} ha hm := by
@@ -130,6 +130,44 @@ noncomputable def bimoduleModuleTensorMk :
 theorem bimoduleModuleTensorMk_apply (m : M) (n : N) :
     bimoduleModuleTensorMk Γ Δ M N m n = bimoduleModuleTensorTmul Γ Δ M N m n :=
   BalancedTensorProduct.mk_apply k B m n
+
+/-- Forgetting the output grading identifies the left-module tensor carrier with the
+balanced quotient. -/
+noncomputable def bimoduleModuleTensorUnderlyingEquiv :
+    bimoduleModuleTensorObj Γ Δ M N ≃ₗ[k] BalancedTensorProduct k B M N :=
+  LinearEquiv.refl k T
+
+@[simp]
+theorem bimoduleModuleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      BalancedTensorProduct.tmul k B m n := (rfl)
+
+@[simp]
+theorem bimoduleModuleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
+    (bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).symm (BalancedTensorProduct.tmul k B m n) =
+      bimoduleModuleTensorTmul Γ Δ M N m n := (rfl)
+
+/-- The carrier identification preserves the output left action. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_smul (a : A)
+    (z : bimoduleModuleTensorObj Γ Δ M N) :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (a • z) =
+      a • bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z := (rfl)
+
+/-- The carrier identification preserves membership in each internal degree piece. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_mem_iff {p : ℤ}
+    {z : bimoduleModuleTensorObj Γ Δ M N} :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z ∈
+        (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
+      z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p := Iff.rfl
+
+/-- The left-module tensor carrier identification is homogeneous of degree zero. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_isHomogeneous :
+    LinearMap.IsHomogeneous (bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).toLinearMap
+      (bimoduleModuleTensorObj Γ Δ M N).grading.piece
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
+    rw [add_zero]
+    exact (bimoduleModuleTensorUnderlyingEquiv_mem_iff Γ Δ M N).2 hx
 
 /-- Balancing transfers the right action on the bimodule to the left module. -/
 theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
@@ -335,7 +373,8 @@ theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N')
   exact BalancedTensorProduct.tmul_smul k B _ _ _
 
 /-- Balanced tensor action of graded bimodules on graded left modules. -/
-@[implicit_reducible]
+-- Expose the object assignment so action maps and associator components have computed types.
+@[expose, implicit_reducible]
 noncomputable def bimoduleModuleTensor :
     GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
       GradedModuleCat.{vN} Δ.piece ⥤ GradedModuleCat.{max vM vN} Γ.piece where
@@ -494,6 +533,22 @@ theorem bimoduleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
 theorem bimoduleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
     (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).symm (BalancedTensorProduct.tmul k B m n) =
       bimoduleTensorTmul Γ Δ Θ M N m n := (rfl)
+
+/-- The bimodule carrier identification preserves every internal degree piece. -/
+theorem bimoduleTensorUnderlyingEquiv_mem_iff {p : ℤ}
+    {z : bimoduleTensorObj Γ Δ Θ M N} :
+    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N z ∈
+        (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
+      z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p := Iff.rfl
+
+/-- The bimodule tensor carrier identification is homogeneous of degree zero. -/
+theorem bimoduleTensorUnderlyingEquiv_isHomogeneous :
+    LinearMap.IsHomogeneous (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap
+      (bimoduleTensorObj Γ Δ Θ M N).grading.piece
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
+    rw [add_zero]
+    exact (bimoduleTensorUnderlyingEquiv_mem_iff Γ Δ Θ M N).2 hx
 
 @[simp]
 theorem bimoduleTensorTmul_zero_left (n : N) :

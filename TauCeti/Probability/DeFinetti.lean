@@ -17,6 +17,7 @@ public import TauCeti.Probability.Exchangeability.PathSpace.Law.Extreme
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.ZeroOne
 public import TauCeti.Probability.DeFinetti.Correspondence
 public import TauCeti.Probability.DeFinetti.CanonicalMixture
+public import TauCeti.Probability.DeFinetti.WitnessAgreement
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.WeakConvergence
 public import TauCeti.Probability.DeFinetti.EmpiricalMeasure
 public import TauCeti.Probability.DeFinetti.Coding
@@ -48,6 +49,9 @@ This module declares nothing of its own; it is a curated re-export, and it build
 * `deFinetti_mixture` — the unique mixture representation;
 * `mixedIID_mixingLaw_unique` — uniqueness of the mixing *law*;
 * `conditionallyIID_ae_unique` — a.e. uniqueness of the directing *measure*;
+* `ContractableLaw.invariantConditionalProbabilityMeasure_ae_eq_directingProbabilityMeasure` — the
+  Koopman route's invariant-conditioned witness agrees a.e. with the canonical tail-conditioned
+  directing measure of a contractable path law;
 * `ConditionallyIIDWith.ae_map_directing_eq_of_comp_injective` — compatibility of directing
   measures with measurable value maps and injective coordinate selections;
 * `conditionallyIID_of_exchangeableFamily` — the countable-index extension;

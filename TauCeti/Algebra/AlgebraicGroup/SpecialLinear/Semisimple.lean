@@ -88,20 +88,9 @@ theorem semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
     (forget₂ (FiniteTypeCommHopfAlgCat K) (_root_.CommHopfAlgCat K)).mapIso
       (finiteTypeCoordinateHopfAlgebraBaseChangeIso k K n) ≪≫
         eqToIso (finiteTypeCoordinateHopfAlgebra_obj K n)
-  apply semisimpleCommHopfAlgProperty_of_geometricFiber_iso k _ G
-    hred.smooth hred.geometricallyConnected e
-  intro I hnormal hconnected hsmooth hsolvable
-  let _ : Algebra.Smooth K (CommHopfAlgCat.quotient G I) := hsmooth
-  let _ : IsReduced (CommHopfAlgCat.quotient G I) := isReduced_of_smooth K _
-  let _ : ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G I)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace K _ hconnected
-  let _ : Group.IsSolvable
-      (WithConv (CommHopfAlgCat.quotient G I →ₐ[K] AlgebraicClosure K)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff K _).mp hsolvable
-  let φ : K →ₐ[K] AlgebraicClosure K := Algebra.ofId K (AlgebraicClosure K)
-  let _ : Group.IsSolvable (WithConv (CommHopfAlgCat.quotient G I →ₐ[K] K)) :=
-    Group.isSolvable_of_isSolvable_injective (AlgHom.mapValue_injective φ.injective)
-  exact eq_augmentation_of_isNormal_of_isSolvable n I hnormal
+  exact semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolvable k _ G
+    hred.smooth hred.geometricallyConnected e fun I hI _ _ _ ↦
+      eq_augmentation_of_isNormal_of_isSolvable n I hI
 
 end
 

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BaseChange
 
 /-!
@@ -19,8 +19,9 @@ The convention is `Proj(Sym M)`: `M` is the module of linear homogeneous coordin
 For the projective space of lines in a finite locally free module `V`, take `M = V∨`.
 No finite generation or freeness is needed for the comparison of projective spectra.
 
-One side is `Proj` of the scalar-extended graded ring. Identification with the scheme
-fiber product over `Spec R` is a separate assertion, not part of this isomorphism.
+One side is `Proj` of the scalar-extended graded ring. Composing with `Proj.baseChangeIso`
+gives `Proj.symmetricAlgebraBaseChangeIso`, identifying the scheme fiber product over
+`Spec R` for arbitrary coefficient extensions, with lemmas for both projections.
 The construction combines `Proj.mapIso` with the graded symmetric-algebra base-change maps.
 The comparison commutes with `Proj.toSpecZero`, and the degree-zero comparison preserves
 the scalar copy of `S` in both presentations.
@@ -32,7 +33,7 @@ the scalar copy of `S` in both presentations.
 
 public section
 
-open CategoryTheory TauCeti.SymmetricAlgebra
+open CategoryTheory CategoryTheory.Limits TauCeti.SymmetricAlgebra
 open scoped TensorProduct
 
 namespace AlgebraicGeometry.Proj
@@ -82,5 +83,40 @@ theorem symmetricAlgebraScalarTensorIso_hom_toSpecZero :
         Spec.map (CommRingCat.ofHom
           scalarTensorGradedAlgHom.toGradedRingHom.gradedZeroRingHom) := by
   rw [symmetricAlgebraScalarTensorIso_hom, map_toSpecZero]
+
+/-- The scalar-extended symmetric-algebra presentation identifies projective space with
+its scheme fiber product after arbitrary extension of coefficients. -/
+noncomputable def symmetricAlgebraBaseChangeIso :
+    Proj (homogeneousSubmodule S (S ⊗[R] M)) ≅
+      pullback (toSpecCoeff (homogeneousSubmodule R M))
+        (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
+  symmetricAlgebraScalarTensorIso R S M ≪≫ baseChangeIso (homogeneousSubmodule R M) S
+
+/-- The projective projection of the comparison is the scalar-tensor comparison followed
+by the projective coefficient projection. -/
+@[reassoc (attr := simp)]
+theorem symmetricAlgebraBaseChangeIso_hom_fst :
+    (symmetricAlgebraBaseChangeIso R S M).hom ≫ pullback.fst _ _ =
+      (symmetricAlgebraScalarTensorIso R S M).hom ≫
+        baseChangeProjection (homogeneousSubmodule R M) S := by
+  simp [symmetricAlgebraBaseChangeIso]
+
+/-- The parameter projection of the comparison is the coefficient structure morphism. -/
+@[reassoc (attr := simp)]
+theorem symmetricAlgebraBaseChangeIso_hom_snd :
+    (symmetricAlgebraBaseChangeIso R S M).hom ≫ pullback.snd _ _ =
+      toSpecCoeff (homogeneousSubmodule S (S ⊗[R] M)) := by
+  simp only [symmetricAlgebraBaseChangeIso, Iso.trans_hom, Category.assoc,
+    baseChangeIso_hom_snd, toSpecCoeff_def,
+    symmetricAlgebraScalarTensorIso_hom_toSpecZero_assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp,
+    scalarTensorGradedAlgHom_gradedZeroRingHom_comp_algebraMap]
+
+/-- The inverse comparison preserves the parameter projection. -/
+@[reassoc (attr := simp)]
+theorem symmetricAlgebraBaseChangeIso_inv_toSpecCoeff :
+    (symmetricAlgebraBaseChangeIso R S M).inv ≫
+        toSpecCoeff (homogeneousSubmodule S (S ⊗[R] M)) = pullback.snd _ _ := by
+  rw [← symmetricAlgebraBaseChangeIso_hom_snd R S M, Iso.inv_hom_id_assoc]
 
 end AlgebraicGeometry.Proj

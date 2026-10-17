@@ -50,7 +50,7 @@ theorem affineADiagram_eq_cycleGraph (n : ℕ) (hn : 2 ≤ n) :
 /-- The graph underlying `Ãₙ` is connected. -/
 theorem connected (n : ℕ) (hn : 2 ≤ n) : (affineADiagram n hn).Connected := by
   rw [affineADiagram_eq_cycleGraph n hn]
-  exact SimpleGraph.cycleGraph_connected (n := n)
+  exact SimpleGraph.connected_cycleGraph_add_one (n := n)
 
 /-- Adjacency in the affine `A` diagram is characterized by neighboring vertices. -/
 theorem adj_iff (n : ℕ) (hn : 2 ≤ n) (i j : Fin (n + 1)) :

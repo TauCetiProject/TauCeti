@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.ControlledClosure
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
-public import TauCeti.RingTheory.WittVector.IntervalRing.Basic
+public import TauCeti.RingTheory.WittVector.IntervalRing.Presentation
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 
 /-!
@@ -35,15 +33,9 @@ is surjective. This is the form taken here by the first isomorphism of Kedlaya's
 fixes the left endpoint of the interval. Kedlaya normalises the Gauss norms so that `p` has a
 fixed norm and evaluates at a Teichmüller representative `[z]`; here the Teichmüller
 representatives have norms independent of the radius, and the variable is sent to `p⁻¹`, of norm
-`ρ₁'⁻¹` on `B^{[ρ₁', ρ₂]}`. The proof lifts `d = y / (p [ϖ]) ^ m ∈ 𝕎 O[1/(p [ϖ])]` by splitting the
-Teichmüller expansion `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b`, which gives Kedlaya's estimate (4.9.1) for
-the lift, and then lifts all of `B^{[ρ₁', ρ₂]}{T/c}` by the successive approximation of
-`controlled_closure_of_complete`, since such polynomials are dense.
-
-Combined with the noetherianity of the restricted power series rings over the radius rings `A^r`
-(Kedlaya's Theorem 3.2) and a presentation of `B^{[ρ₁, ρ₂]}` over `A^r` for a suitable `ρ₁`, this
-is how Kedlaya proves that the rings `B^I{T/c}` are noetherian (his Theorem 4.10), and hence that
-`B^I` is strongly noetherian.
+`ρ₁'⁻¹` on `B^{[ρ₁', ρ₂]}`. The evaluation is already surjective on the series with coefficients
+in the radius ring `A^{ρ₂}` (`TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective`),
+since restricting to the subinterval is compatible with the coefficient maps from `A^{ρ₂}`.
 
 ## Main definitions
 
@@ -60,15 +52,15 @@ is how Kedlaya proves that the rings `B^I{T/c}` are noetherian (his Theorem 4.10
   increase the norm.
 * `TauCeti.WittVector.intervalRingRestrict_self` and
   `TauCeti.WittVector.intervalRingRestrict_intervalRingRestrict`: restriction is functorial.
-* `TauCeti.WittVector.norm_ringInverse_natCast_intervalRing`: `‖p⁻¹‖ = max(ρ₁⁻¹, ρ₂⁻¹)` in
-  `B^{[ρ₁, ρ₂]}`.
+* `TauCeti.WittVector.intervalRingRestrict_toIntervalRing`: restriction to a subinterval is
+  compatible with the coefficient maps from the radius ring.
 * `TauCeti.WittVector.intervalRingRestrictedEval_surjective`: the evaluation at `p⁻¹` is
   surjective.
 
 ## References
 
 * K. S. Kedlaya, *Noetherian properties of Fargues–Fontaine curves*, IMRN 2016, no. 8,
-  2544–2567; arXiv:1410.5160v3, Lemma 4.4, Corollaries 4.5 and 4.6, Lemma 4.9 and Theorem 4.10.
+  2544–2567; arXiv:1410.5160v3, Lemma 4.4, Corollaries 4.5 and 4.6 and Lemma 4.9.
 -/
 
 public section
@@ -246,6 +238,29 @@ theorem intervalRingRestrict_comp {ρ₁'' ρ₂'' : ℝ≥0} {hρ₁'' : ρ₁'
   AlgHom.ext fun x ↦ by
     rw [AlgHom.comp_apply, intervalRingRestrict_intervalRingRestrict h₁ h₁₂ h₂ h₁' h₁₂' h₂']
 
+/-- Restricting to a subinterval with the same right endpoint is compatible with the coefficient
+maps from the radius ring. -/
+@[simp]
+theorem intervalRingRestrict_toIntervalRing (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂)
+    (x : RadiusRing p hv hϖ hϖ' hρ₂) :
+    intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂ h₁ h₁₂ le_rfl
+        (RadiusRing.toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ (h₁.trans h₁₂) x) =
+      RadiusRing.toIntervalRing p hv hϖ hϖ' hρ₁' hρ₂ h₁₂ x := by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_eq ((continuous_intervalRingRestrict h₁ h₁₂ le_rfl).comp
+      (RadiusRing.isometry_toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ _).continuous)
+      (RadiusRing.isometry_toIntervalRing p hv hϖ hϖ' hρ₁' hρ₂ h₁₂).continuous
+  | ih a =>
+    rw [RadiusRing.toIntervalRing_coe, RadiusRing.toIntervalRing_coe, intervalRingRestrict_coe]
+    -- `𝕎 O`-algebra homomorphisms out of the localisation `𝕎 O[1/[ϖ]]` are unique
+    have h : ((intervalLocalizationEquiv p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂).toAlgHom.comp
+        (RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)) =
+          RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂ :=
+      IsLocalization.algHom_subsingleton (Submonoid.powers (teichmuller p ϖ)) |>.elim _ _
+    rw [← h]
+    simp
+
 end Restrict
 
 section Presentation
@@ -254,132 +269,6 @@ open MvPowerSeries
 
 variable (hv : v.Integers O) (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap O K ϖ) < 1) {ρ₁ ρ₂ ρ₁' : ℝ≥0}
   (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1) (hρ₁' : ρ₁' ∈ Set.Ioo 0 1)
-
-/-- **Kedlaya's estimate (4.9.1)** in the normalisation `λ_ρ(p) = ρ`. Every
-`d ∈ 𝕎 O[1/(p [ϖ])]` is a polynomial `∑_{i ≤ m} zᵢ p^(-(m - i))` in `p⁻¹` whose coefficients `zᵢ`
-satisfy `λ_{[ρ₁, ρ₂]}(zᵢ) ρ₁'^(-(m - i)) ≤ λ_{[ρ₁', ρ₂]}(d)`, for `ρ₁ ≤ ρ₁'`. Write
-`d = y / (p [ϖ]) ^ m` and split `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b`; then `zᵢ = [yᵢ] / [ϖ] ^ m` for
-`i < m` and `zₘ = b / [ϖ] ^ m`. -/
-private theorem exists_sum_eq_mul_inv_pow (h₁ : ρ₁ ≤ ρ₁')
-    (d : IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂) :
-    ∃ (m : ℕ) (z : ℕ → IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂),
-      (∀ i ≤ m, max (gaussValuationAway p hv hϖ ρ₁ hρ₁ _ (z i))
-          (gaussValuationAway p hv hϖ ρ₂ hρ₂ _ (z i)) * ρ₁'⁻¹ ^ (m - i) ≤
-        max (gaussValuationAway p hv hϖ ρ₁' hρ₁' _ d) (gaussValuationAway p hv hϖ ρ₂ hρ₂ _ d)) ∧
-      d = ∑ i ∈ Finset.range (m + 1),
-        z i *
-          ((IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁' hρ₂).unit⁻¹ : _) ^ (m - i) := by
-  -- Write `d = y / s` with `s = (p [ϖ]) ^ m`, split `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b`, and take
-  -- `zᵢ = tᵢ / s` with `tᵢ = [yᵢ] pᵐ` for `i < m` and `tₘ = b pᵐ`. The first goal compares Gauss
-  -- valuations term by term; the second is the identity `∑ tᵢ p^(-(m - i)) = y`.
-  obtain ⟨⟨y, s⟩, rfl⟩ :=
-    IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) d
-  set L' := IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂
-  set u := (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁' hρ₂).unit
-  obtain ⟨m, hm⟩ := s.2
-  obtain ⟨b, hb⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul y m
-  set t : ℕ → 𝕎 O := fun i ↦
-    if i < m then teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ m else b * (p : 𝕎 O) ^ m
-  refine ⟨m, fun i ↦ algebraMap (𝕎 O) L' (t i) * IsLocalization.mk' L' 1 s, fun i hi ↦ ?_, ?_⟩
-  · set V := v (algebraMap O K ϖ)
-    have hs {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
-        gaussValuation p hv ρ hρ.2 (s : 𝕎 O) = (ρ * V) ^ m := by
-      rw [← hm]
-      simp [V]
-    have hz {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (x : 𝕎 O) :
-        gaussValuationAway p hv hϖ ρ hρ L' (algebraMap (𝕎 O) L' x * IsLocalization.mk' L' 1 s) =
-          gaussValuation p hv ρ hρ.2 x * ((ρ * V) ^ m)⁻¹ := by
-      rw [map_mul, gaussValuationAway_algebraMap, gaussValuationAway_mk', map_one, one_mul, hs hρ]
-    -- the factor `ρᵐ` contributed by `pᵐ` cancels against the denominator
-    have hcancel {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (a : ℝ≥0) :
-        a * ρ ^ m * ((ρ * V) ^ m)⁻¹ = a * (V ^ m)⁻¹ := by
-      rw [mul_pow, mul_inv, mul_assoc, mul_inv_cancel_left₀ (pow_ne_zero _ hρ.1.ne')]
-    have hd₁ : gaussValuationAway p hv hϖ ρ₁' hρ₁' L' (IsLocalization.mk' L' y s) =
-        gaussValuation p hv ρ₁' hρ₁'.2 y * ((ρ₁' * V) ^ m)⁻¹ := by
-      rw [gaussValuationAway_mk', hs hρ₁']
-    have hd₂ : gaussValuationAway p hv hϖ ρ₂ hρ₂ L' (IsLocalization.mk' L' y s) =
-        gaussValuation p hv ρ₂ hρ₂.2 y * ((ρ₂ * V) ^ m)⁻¹ := by
-      rw [gaussValuationAway_mk', hs hρ₂]
-    rw [hd₁, hd₂]
-    rcases hi.lt_or_eq with hi | rfl
-    · -- a coefficient `[yᵢ] / [ϖ] ^ m` with `i < m`
-      have hti (ρ : ℝ≥0) (hρ : ρ ∈ Set.Ioo 0 1) :
-          gaussValuationAway p hv hϖ ρ hρ L'
-              (algebraMap (𝕎 O) L' (t i) * IsLocalization.mk' L' 1 s) =
-            v (algebraMap O K (y.teichmullerCoeff i)) * (V ^ m)⁻¹ := by
-        rw [hz hρ]
-        simp only [t, hi, ite_true, gaussValuation_teichmuller_mul_pow, hcancel hρ]
-      rw [hti ρ₁ hρ₁, hti ρ₂ hρ₂, max_self]
-      refine le_max_of_le_left ?_
-      calc v (algebraMap O K (y.teichmullerCoeff i)) * (V ^ m)⁻¹ * ρ₁'⁻¹ ^ (m - i)
-          = v (algebraMap O K (y.teichmullerCoeff i)) * ρ₁' ^ i * ((ρ₁' * V) ^ m)⁻¹ := by
-            have : ρ₁' ^ i ≠ 0 := pow_ne_zero _ hρ₁'.1.ne'
-            rw [inv_pow, mul_pow, ← pow_mul_pow_sub ρ₁' hi.le]
-            field_simp
-        _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₁'.2 y i
-    · -- the tail coefficient `b / [ϖ] ^ m`
-      have htm (ρ : ℝ≥0) (hρ : ρ ∈ Set.Ioo 0 1) :
-          gaussValuationAway p hv hϖ ρ hρ L'
-              (algebraMap (𝕎 O) L' (t i) * IsLocalization.mk' L' 1 s) =
-            gaussValuation p hv ρ hρ.2 b * (V ^ i)⁻¹ := by
-        rw [hz hρ]
-        simp only [t, lt_self_iff_false, ite_false, map_mul, map_pow, gaussValuation_p, hcancel hρ]
-      have htail (ρ : ℝ≥0) (hρ : ρ ∈ Set.Ioo 0 1) :
-          gaussValuation p hv ρ hρ.2 b * (V ^ i)⁻¹ ≤
-            gaussValuation p hv ρ hρ.2 y * ((ρ * V) ^ i)⁻¹ := by
-        rw [mul_pow, mul_inv, ← mul_assoc]
-        gcongr
-        exact (le_mul_inv_iff₀ (pow_pos hρ.1 i)).mpr
-          (gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul hv hρ.2 hb)
-      rw [htm ρ₁ hρ₁, htm ρ₂ hρ₂, Nat.sub_self, pow_zero, mul_one]
-      refine max_le (le_max_of_le_left ((?_ : _ ≤ _).trans (htail ρ₁' hρ₁')))
-        (le_max_of_le_right (htail ρ₂ hρ₂))
-      gcongr
-      exact gaussValuation_mono hv hρ₁.2 hρ₁'.2 h₁ b
-  · -- `pᵐ p^(-(m - i)) = pⁱ` turns the sum into the Teichmüller splitting of `y`
-    have hpu : (p : L') * (u⁻¹ : L'ˣ) = 1 := by
-      simp [u]
-    have hpow (i : ℕ) (hi : i ≤ m) :
-        (p : L') ^ m * ((u⁻¹ : L'ˣ) : L') ^ (m - i) = (p : L') ^ i := by
-      rw [← pow_mul_pow_sub (p : L') hi, mul_assoc, ← mul_pow, hpu, one_pow, mul_one]
-    have key : ∀ i ∈ Finset.range m, algebraMap (𝕎 O) L' (t i) * ((u⁻¹ : L'ˣ) : L') ^ (m - i) =
-        algebraMap (𝕎 O) L' (teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i) := by
-      intro i hi
-      simp only [t, Finset.mem_range.mp hi, ite_true, map_mul, map_pow, map_natCast, mul_assoc,
-        hpow i (Finset.mem_range.mp hi).le]
-    dsimp only
-    rw [IsLocalization.mk'_eq_mul_mk'_one y s]
-    simp_rw [mul_right_comm _ (IsLocalization.mk' L' 1 s), ← Finset.sum_mul]
-    congr 1
-    rw [Finset.sum_range_succ, Finset.sum_congr rfl key, ← map_sum, Nat.sub_self, pow_zero, mul_one]
-    simp only [t, lt_self_iff_false, ite_false, ← map_add]
-    rw [mul_comm b, ← hb]
-
-variable {hv hϖ hϖ' hρ₁ hρ₂} in
-/-- `Ring.inverse p` in `B^I` is the image of `p⁻¹ ∈ 𝕎 O[1/(p [ϖ])]`. -/
-private theorem ringInverse_natCast_intervalRing :
-    Ring.inverse (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) =
-      (((IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit⁻¹ : _ˣ) :
-        IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) := by
-  set u := (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit
-  have h : (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) =
-      (Units.map (Completion.coeRingHom : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ →+*
-        IntervalRing p hv hϖ hϖ' hρ₁ hρ₂).toMonoidHom u : _) := by
-    simp [u]
-  rw [h, Ring.inverse_unit, Units.coe_map_inv]
-  -- `Completion.coeRingHom` is the coercion `𝕎 O[1/(p [ϖ])] → B^I`
-  rfl
-
-variable {hv hϖ hϖ' hρ₁ hρ₂} in
-/-- The norm of `p⁻¹` in `B^I` is `max(ρ₁⁻¹, ρ₂⁻¹)`. -/
-theorem norm_ringInverse_natCast_intervalRing :
-    ‖Ring.inverse (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ)⁻¹ (ρ₂ : ℝ)⁻¹ := by
-  have hp (ρ : ℝ≥0) (hρ : ρ ∈ Set.Ioo 0 1) :
-      gaussValuationAway p hv hϖ ρ hρ (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) p = ρ := by
-    rw [← map_natCast (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)),
-      gaussValuationAway_algebraMap, gaussValuation_p]
-  rw [ringInverse_natCast_intervalRing, Completion.norm_coe, IntervalLocalization.norm_def,
-    map_units_inv, map_units_inv, IsUnit.unit_spec, hp, hp, NNReal.coe_inv, NNReal.coe_inv]
 
 variable {k : ℕ} (c : Fin k → ℝ) [∀ i, Fact (0 < c i)]
 
@@ -409,7 +298,7 @@ noncomputable def intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂ 
     (Fin.cases (by
       have h : ((ρ₂ : ℝ))⁻¹ ≤ (ρ₁' : ℝ)⁻¹ :=
         inv_anti₀ (by exact_mod_cast hρ₁'.1) (by exact_mod_cast h₁₂)
-      simpa [norm_ringInverse_natCast_intervalRing] using h) fun i ↦ by simp)
+      simpa using h) fun i ↦ by simp)
 
 variable {c}
 
@@ -451,91 +340,6 @@ theorem continuous_intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂
     Continuous (intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂) :=
   continuous_restrictedEval₂ _ _ _ _
 
-/-- **Lifting constants from `𝕎 O[1/(p [ϖ])]`.** Every `d ∈ 𝕎 O[1/(p [ϖ])]`, viewed as a constant
-of `B^{[ρ₁', ρ₂]}{T/c}`, is the image of a polynomial in `U` of norm at most `λ_{[ρ₁', ρ₂]}(d)`,
-by Kedlaya's estimate `exists_sum_eq_mul_inv_pow`. -/
-private theorem exists_intervalRingRestrictedEval_eq_algebraMap_coe (h₁ : ρ₁ ≤ ρ₁')
-    (h₁₂ : ρ₁' ≤ ρ₂) [∀ j, Fact (0 < (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j)]
-    (d : IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂) :
-    ∃ g, intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂ g =
-      algebraMap _ _ (d : IntervalRing p hv hϖ hϖ' hρ₁' hρ₂) ∧ ‖g‖ ≤ ‖d‖ := by
-  obtain ⟨m, z, hz, hd⟩ := exists_sum_eq_mul_inv_pow hv hϖ hϖ' hρ₁ hρ₂ hρ₁' h₁ d
-  set e := intervalLocalizationEquiv p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂
-  set U : IsRestricted.subring (R := IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)
-      (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) :=
-    ⟨X 0, isRestricted_monomial _ (Finsupp.single 0 1) 1⟩
-  refine ⟨∑ i ∈ Finset.range (m + 1),
-    algebraMap _ _ ((e.symm (z i) : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
-      IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) * U ^ (m - i), ?_, ?_⟩
-  · simp only [map_sum, map_mul, map_pow, intervalRingRestrictedEval_algebraMap, U,
-      intervalRingRestrictedEval_X_zero, intervalRingRestrict_coe, e, AlgEquiv.apply_symm_apply,
-      ringInverse_natCast_intervalRing]
-    conv_rhs => rw [hd]
-    simp only [← map_pow, ← map_mul, ← map_sum]
-    congr 1
-    -- the completion map `𝕎 O[1/(p [ϖ])] → B^{[ρ₁', ρ₂]}` is a ring homomorphism
-    exact (map_sum (Completion.coeRingHom : IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂ →+* _) _ _
-      |>.trans
-      (Finset.sum_congr rfl fun i _ ↦ by
-        -- `Completion.coeRingHom` is the coercion `𝕎 O[1/(p [ϖ])] → B^{[ρ₁', ρ₂]}`
-        rw [map_mul, map_pow]
-        rfl)).symm
-  · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg d) fun i hi ↦ ?_
-    have hU : ‖U‖ = (ρ₁' : ℝ)⁻¹ := norm_X _
-    have hb : ‖((e.symm (z i) : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
-        IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ =
-          max (gaussValuationAway p hv hϖ ρ₁ hρ₁ _ (z i) : ℝ)
-            (gaussValuationAway p hv hϖ ρ₂ hρ₂ _ (z i)) := by
-      rw [Completion.norm_coe, IntervalLocalization.norm_def, ← AlgEquiv.coe_toAlgHom,
-        gaussValuationAway_algHom, gaussValuationAway_algHom]
-    calc _ ≤ ‖algebraMap _ _ ((e.symm (z i) : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
-            IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ * ‖U‖ ^ (m - i) :=
-          (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le _ _)
-      _ ≤ ‖d‖ := by
-        rw [norm_algebraMap_isRestrictedSubring, hb, hU, IntervalLocalization.norm_def]
-        exact_mod_cast hz i (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))
-
-/-- **Lifting polynomials with coefficients in `𝕎 O[1/(p [ϖ])]`.** A polynomial in `T` whose
-coefficients come from `𝕎 O[1/(p [ϖ])]` is the image of an element of no larger norm: lift each
-coefficient by `exists_intervalRingRestrictedEval_eq_algebraMap_coe` and multiply by the matching
-monomial in the variables `T`. -/
-private theorem exists_intervalRingRestrictedEval_eq_of_finite (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂)
-    [∀ j, Fact (0 < (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j)]
-    {h : IsRestricted.subring (R := IntervalRing p hv hϖ hϖ' hρ₁' hρ₂) c}
-    (hfin :
-      {α | coeff α (h : MvPowerSeries (Fin k) (IntervalRing p hv hϖ hϖ' hρ₁' hρ₂)) ≠ 0}.Finite)
-    (hcoe : ∀ α, ∃ d : IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂,
-      (d : IntervalRing p hv hϖ hϖ' hρ₁' hρ₂) =
-        coeff α (h : MvPowerSeries (Fin k) (IntervalRing p hv hϖ hϖ' hρ₁' hρ₂))) :
-    ∃ g, intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂ g = h ∧ ‖g‖ ≤ ‖h‖ := by
-  classical
-  choose d hd using hcoe
-  choose g hg hgn using fun α ↦
-    exists_intervalRingRestrictedEval_eq_algebraMap_coe hv hϖ hϖ' hρ₁ hρ₂ hρ₁' h₁ h₁₂ (c := c) (d α)
-  -- the monomial `Tᵅ` in the variables `T i = X i.succ`
-  set T : (Fin k →₀ ℕ) → IsRestricted.subring (R := IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)
-      (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) := fun α ↦ α.prod fun i n ↦
-    ⟨X i.succ, isRestricted_monomial _ (Finsupp.single i.succ 1) 1⟩ ^ n
-  have hT (α : Fin k →₀ ℕ) : intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂ (T α) =
-      ⟨monomial α 1, isRestricted_monomial c α 1⟩ := by
-    simp [T, mk_monomial_eq_algebraMap_mul_prod]
-  have hTn (α : Fin k →₀ ℕ) : ‖T α‖ ≤ α.prod (c · ^ ·) :=
-    (Finset.norm_prod_le _ _).trans (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦
-      (norm_pow_le _ _).trans (by rw [norm_X, Fin.cons_succ]))
-  refine ⟨∑ α ∈ hfin.toFinset, g α * T α, ?_, ?_⟩
-  · apply Subtype.ext
-    ext β
-    simp only [map_sum, map_mul, hg, hT, hd, AddSubmonoidClass.coe_finsetSum, Subring.coe_mul,
-      coe_algebraMap_isRestrictedSubring, map_sum, coeff_C_mul, coeff_monomial, mul_ite, mul_one,
-      mul_zero, Finset.sum_ite_eq, Set.Finite.mem_toFinset]
-    split_ifs with hβ
-    · rfl
-    · exact (not_not.mp hβ).symm
-  · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg h) fun α _ ↦ ?_
-    refine ((norm_mul_le _ _).trans (mul_le_mul ((hgn α).trans ?_) (hTn α) (norm_nonneg _)
-      (norm_nonneg _))).trans (norm_coeff_mul_prod_le h α)
-    rw [← hd α, Completion.norm_coe]
-
 /-- **Kedlaya's Lemma 4.9, moving the left endpoint.** For `ρ₁ ≤ ρ₁' ≤ ρ₂`, the evaluation
 
 ```text
@@ -543,66 +347,30 @@ B^{[ρ₁, ρ₂]}{T/c, U/ρ₁'⁻¹} → B^{[ρ₁', ρ₂]}{T/c},    T ↦ T,
 ```
 
 is surjective, so `B^{[ρ₁', ρ₂]}{T/c}` is a quotient of a ring of restricted power series over
-`B^{[ρ₁, ρ₂]}` with one more variable. The lifts are controlled: elements of
-`𝕎 O[1/(p [ϖ])]` lift without increasing the norm (Kedlaya's estimate (4.9.1)), and these are dense,
-so the open mapping argument of `controlled_closure_of_complete` lifts everything. -/
+`B^{[ρ₁, ρ₂]}` with one more variable. It is already surjective on the series with coefficients in
+the radius ring `A^{ρ₂}` (`TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective`). -/
 theorem intervalRingRestrictedEval_surjective (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂) :
     Function.Surjective (intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂) := by
-  classical
   have : ∀ j, Fact (0 < (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j) :=
     Fin.cases ⟨inv_pos.mpr (by exact_mod_cast hρ₁'.1)⟩ fun i ↦ ⟨(Fact.out : 0 < c i)⟩
-  let Ψ' := (intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂).toAddMonoidHom
-    |>.mkNormedAddGroupHom 1
-    fun g ↦ by
-      rw [one_mul]
-      exact norm_intervalRingRestrictedEval_le hv hϖ hϖ' hρ₁ hρ₂ hρ₁' h₁ h₁₂ g
-  -- the polynomials in `T` with coefficients in `𝕎 O[1/(p [ϖ])]`, which are dense
-  set s : Set (IntervalRing p hv hϖ hϖ' hρ₁' hρ₂) :=
-    Set.range ((↑) : IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂ → _)
-  set K := AddSubgroup.closure ((fun x : (Fin k →₀ ℕ) × IntervalRing p hv hϖ hϖ' hρ₁' hρ₂ ↦
-    (⟨monomial x.1 x.2, isRestricted_monomial c x.1 x.2⟩ : IsRestricted.subring (R := _) c)) ''
-      (Set.univ ×ˢ s))
-  have hK : Ψ'.SurjectiveOnWith K 1 := by
-    intro h hh
-    -- an element of `K` has finitely many coefficients, all from `𝕎 O[1/(p [ϖ])]`
-    have hP :
-        {α | coeff α (h : MvPowerSeries (Fin k) (IntervalRing p hv hϖ hϖ' hρ₁' hρ₂)) ≠ 0}.Finite ∧
-        ∀ α, ∃ d : IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂,
-          (d : IntervalRing p hv hϖ hϖ' hρ₁' hρ₂) =
-            coeff α (h : MvPowerSeries (Fin k) (IntervalRing p hv hϖ hϖ' hρ₁' hρ₂)) := by
-      induction hh using AddSubgroup.closure_induction with
-      | mem x hx =>
-        obtain ⟨⟨t, b⟩, ⟨-, d, rfl⟩, rfl⟩ := hx
-        refine ⟨(Set.finite_singleton t).subset fun α hα ↦ Set.mem_singleton_iff.mpr ?_,
-          fun α ↦ ⟨if α = t then d else 0, ?_⟩⟩
-        · by_contra h'
-          exact hα (by simp [coeff_monomial, h'])
-        · split_ifs with h'
-          · simp [h']
-          · simp [coeff_monomial, h']
-      | zero => exact ⟨by simp, fun α ↦ ⟨0, by simp⟩⟩
-      | add x y _ _ hx hy =>
-        refine ⟨(hx.1.union hy.1).subset fun α hα ↦ ?_, fun α ↦ ?_⟩
-        · by_contra h'
-          simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at h'
-          exact hα (by simp [h'.1, h'.2])
-        · obtain ⟨a, ha⟩ := hx.2 α
-          obtain ⟨b, hb⟩ := hy.2 α
-          exact ⟨a + b, by simp [Completion.coe_add, ha, hb]⟩
-      | neg x _ hx =>
-        refine ⟨by simpa using hx.1, fun α ↦ ?_⟩
-        obtain ⟨a, ha⟩ := hx.2 α
-        exact ⟨-a, by simp [Completion.coe_neg, ha]⟩
-    obtain ⟨g, hg, hgn⟩ :=
-      exists_intervalRingRestrictedEval_eq_of_finite hv hϖ hϖ' hρ₁ hρ₂ hρ₁' h₁ h₁₂ hP.1 hP.2
-    exact ⟨g, hg, by simpa using hgn⟩
-  have hdense : K.topologicalClosure = ⊤ := by
-    rw [eq_top_iff, ← SetLike.coe_subset_coe, AddSubgroup.topologicalClosure_coe,
-      (dense_closure_monomial (s := s) Completion.denseRange_coe).closure_eq]
-    exact fun _ _ ↦ Set.mem_univ _
-  intro h
-  obtain ⟨g, hg, -⟩ := controlled_closure_of_complete one_pos one_pos hK h (hdense ▸ trivial)
-  exact ⟨g, hg⟩
+  -- the coefficient map `A^{ρ₂}{T/c, U/ρ₁'⁻¹} → B^{[ρ₁, ρ₂]}{T/c, U/ρ₁'⁻¹}`
+  let ι := restrictedEval₂ (c := (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ))
+    ((algebraMap _ (IsRestricted.subring
+      (R := IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ))).comp
+        (RadiusRing.toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ (h₁.trans h₁₂)))
+    (fun j ↦ ⟨X j, isRestricted_monomial _ (Finsupp.single j 1) 1⟩) (fun a ↦ by simp)
+    fun j ↦ by simp
+  have hι : Continuous ι := continuous_restrictedEval₂ _ _ _ _
+  have h : (intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂).comp ι =
+      RadiusRing.restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁' hρ₂ c h₁₂ := by
+    refine RadiusRing.eq_restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁' hρ₂ h₁₂ _ ?_
+      (fun a ↦ by simp [ι]) (by simp [ι]) fun i ↦ by simp [ι]
+    rw [RingHom.coe_comp]
+    exact (continuous_intervalRingRestrictedEval hv hϖ hϖ' hρ₁ hρ₂ hρ₁' h₁ h₁₂).comp hι
+  intro g
+  obtain ⟨f, rfl⟩ :=
+    RadiusRing.restrictedEvalIntervalRing_surjective p hv hϖ hϖ' hρ₁' hρ₂ h₁₂ g
+  exact ⟨ι f, by rw [← h, RingHom.comp_apply]⟩
 
 end Presentation
 

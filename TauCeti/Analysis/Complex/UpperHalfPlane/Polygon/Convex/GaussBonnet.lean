@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.NormalForm
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 import TauCeti.Data.Fin.Basic
 
@@ -17,8 +19,8 @@ import TauCeti.Data.Fin.Basic
 The invariant area of a convex hyperbolic polygon with `n` vertices in `ℍ ∪ ∂ℍ` and interior
 angles `α₀, …, αₙ₋₁` (with `αᵢ = 0` at an ideal vertex) is `(n - 2) π - (α₀ + ⋯ + αₙ₋₁)`
 (`ConvexPolygon.volume_carrier`). In particular the area is finite
-(`ConvexPolygon.volume_carrier_ne_top`), the angle sum is at most `(n - 2) π`
-(`ConvexPolygon.sum_interiorAngle_le`), an ideal polygon has area `(n - 2) π`, and an ideal
+(`ConvexPolygon.volume_carrier_ne_top`), the angle sum is less than `(n - 2) π`
+(`ConvexPolygon.sum_interiorAngle_lt`), an ideal polygon has area `(n - 2) π`, and an ideal
 triangle has area `π`.
 
 A polygon without ideal vertices is a compact convex polygon, whose area is
@@ -36,7 +38,8 @@ these statements the vertices are indexed by natural numbers `k`, cast to `Fin n
 * `ConvexPolygon.volume_carrier`: **Gauss–Bonnet for convex polygons with ideal vertices**.
 * `ConvexPolygon.volume_carrier_ne_top`, `ConvexPolygon.toReal_volume_carrier`: the area is
   finite, equal to the angular defect.
-* `ConvexPolygon.sum_interiorAngle_le`: the angular defect is nonnegative.
+* `ConvexPolygon.sum_interiorAngle_le`, `ConvexPolygon.sum_interiorAngle_lt`: the angular defect
+  is nonnegative, and in fact positive.
 * `ConvexPolygon.volume_carrier_of_forall_eq_inr`: an ideal polygon has area `(n - 2) π`;
   `ConvexPolygon.volume_carrier_three_of_forall_eq_inr`: an ideal triangle has area `π`.
 * `ConvexPolygon.volume_carrier_three_of_vertex_one_of_vertex_two`: a triangle with two ideal
@@ -225,16 +228,18 @@ theorem volume_carrier :
     rw [← hvol, ← hsum]
     exact Q.volume_carrier_of_vertex_zero hQ₀
 
+/-- The angular defect of a convex polygon is positive: the sum of its interior angles is less
+than `(n - 2) π`, since the carrier has nonempty interior and hence positive area. -/
+theorem sum_interiorAngle_lt : ∑ i, P.interiorAngle i < (n - 2) * π := by
+  have hpos : 0 < volume P.carrier :=
+    (isOpen_interior.measure_pos volume P.nonempty_interior_carrier).trans_le
+      (measure_mono interior_subset)
+  rwa [volume_carrier, ENNReal.ofReal_pos, sub_pos] at hpos
+
 /-- The angular defect of a convex polygon is nonnegative: the sum of its interior angles is at
 most `(n - 2) π`. -/
-theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π := by
-  by_cases h : ∀ i, ∃ z : ℍ, P.vertex i = .inl z
-  · obtain ⟨Q, rfl⟩ := P.exists_eq_toConvexPolygon h
-    simp_rw [CompactConvexPolygon.interiorAngle_toConvexPolygon]
-    exact Q.sum_interiorAngle_le
-  · obtain ⟨Q, hQ₀, -, hsum⟩ := P.exists_vertex_zero_eq_infty_of_not_forall_eq_inl h
-    rw [← hsum]
-    exact Q.sum_interiorAngle_le_of_vertex_zero hQ₀
+theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π :=
+  P.sum_interiorAngle_lt.le
 
 /-- A convex polygon has finite area. -/
 theorem volume_carrier_ne_top : volume P.carrier ≠ ⊤ := by

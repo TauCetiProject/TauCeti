@@ -87,8 +87,8 @@ private noncomputable def crossRecut (E : GridPentagonRectangleDecomposition a s
     (hturn : s ∈ Grid.cIco E.pentagon.bottom E.rectangle.bottom) :
     GridRectanglePentagonDecomposition a s x z where
   middle := (E.toRectangleDecomposition.recut hone hf hs).middle
-  rectangle := (E.toRectangleDecomposition.recut hone hf hs).first
-  pentagon := GridPentagonBetween.ofRightEq
+  first := (E.toRectangleDecomposition.recut hone hf hs).first
+  second := GridPentagonBetween.ofRightEq
     (E.toRectangleDecomposition.recut hone hf hs).second
     (E.crossRecut_geometry hcommon hone hf hs hrow).2.1
     (by rwa [(E.crossRecut_geometry hcommon hone hf hs hrow).2.2.2.2.1,
@@ -105,7 +105,8 @@ private theorem crossRecut_toRectangleDecomposition
     (E.crossRecut hcommon hone hf hs hrow hturn).toRectangleDecomposition =
       E.toRectangleDecomposition.recut hone hf hs := by
   apply GridRectangleDecomposition.ext <;>
-    simp [crossRecut, (E.crossRecut_geometry hcommon hone hf hs hrow).2.1]
+    simp [crossRecut, GridRectanglePentagonDecomposition.pentagon,
+      (E.crossRecut_geometry hcommon hone hf hs hrow).2.1]
 
 /-- The inverse cross-recut shares its terminal side, with the pentagon starting inside the
 rectangle's column interval. -/

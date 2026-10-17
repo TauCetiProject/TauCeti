@@ -253,6 +253,19 @@ theorem weilDifferentialOrder_repartitionDualMul (hF : IsFunctionField k F)
   simp only [weilDifferentialOrder, weilDifferentialDivisor_repartitionDualMul hF hex hmem hω z,
     AlgebraicGeometry.WeilDivisor.coeff_add, Divisor.coeff_principal]
 
+/-- If a nonzero Weil differential `ω` equals `z · η`, then `v_P(ω) = ord_P z + v_P(η)` at every
+place. This is `weilDifferentialOrder_repartitionDualMul` for a differential given only up to
+equality, with its own proofs of membership and nonvanishing. -/
+theorem weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}
+    (hωmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0)
+    (hηmem : η ∈ weilDifferentialSpace k F) (hη : η ≠ 0) {z : F} (hz : z ≠ 0)
+    (h : ω = repartitionDualMul hF z η) (P : Place k F) :
+    weilDifferentialOrder hF hex hωmem hω P =
+      P.ord z + weilDifferentialOrder hF hex hηmem hη P := by
+  subst h
+  exact weilDifferentialOrder_repartitionDualMul hF hex hηmem hη (Units.mk0 z hz) P
+
 /-- The divisors of any two nonzero Weil differentials have the same divisor class. -/
 theorem divisorClass_weilDifferentialDivisor_eq (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}

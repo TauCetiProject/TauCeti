@@ -7,18 +7,38 @@ module
 
 public import Mathlib.RingTheory.IsAdjoinRoot
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.RingTheory.Polynomial.Monic.Ideal
 
 /-!
-# Monic equations for divisors on the relative affine line
+# Divisors of fixed degree on the relative affine line
 
-A monic polynomial over an arbitrary ring cuts out a relative effective Cartier divisor on
+A monic polynomial over an arbitrary ring `R` cuts out a relative effective Cartier divisor on
 `Spec R[X]` over `Spec R`. Its closed subscheme is finite free of degree equal to the degree of
 the polynomial. Lower coefficients give distinct divisors, and arbitrary change of the
 coefficient ring pulls back the divisor by applying that homomorphism to each coefficient.
 
-Together with the finite free quotient chart, these are the equations and base-change rules
-for parameterizing divisors on the affine line. No reducedness, characteristic, or
-separability assumption is imposed, and a constant monic equation gives the empty divisor.
+Conversely, if `R` is nontrivial, every closed subscheme of `Spec R[X]` that is finite and flat
+over `Spec R` of constant rank `n` is cut out by a unique monic polynomial of degree `n`; in
+particular it is a relative effective Cartier divisor. In all cases, the relative effective Cartier
+divisors on the affine line over `Spec R` that are finite of constant degree `n` over `Spec R` are
+parameterized by the `n` lower coefficients of their monic equations, and this parameterization
+commutes with every change of the coefficient ring. This is the affine-base form of the
+identification of the degree-`n` divisors on the affine line with affine `n`-space.
+No reducedness, characteristic, or separability assumption is imposed, and a constant monic
+equation gives the empty divisor.
+
+## Main declarations
+
+* `Polynomial.zeroIdealSheaf`: the ideal sheaf of the zero scheme of a polynomial, with
+  `Polynomial.Monic.isRelativeEffectiveCartier_zeroIdealSheaf` and
+  `Polynomial.Monic.finrank_zeroIdealSheaf` for monic polynomials;
+* `AlgebraicGeometry.Scheme.IdealSheafData.existsUnique_monic_zeroIdealSheaf_eq`: over a
+  nontrivial coefficient ring, a finite flat closed subscheme of constant rank `n` has a unique
+  monic equation of degree `n`;
+* `TauCeti.Polynomial.coeffEquivAffineLineDivisor`: the coefficient chart for the finite relative
+  effective Cartier divisors of degree `n` on the affine line over `Spec R`, and
+  `TauCeti.Polynomial.comap_coeffEquivAffineLineDivisor`, its compatibility with change of the
+  coefficient ring.
 
 ## References
 
@@ -101,9 +121,9 @@ theorem Monic.isRelativeEffectiveCartier_zeroIdealSheaf {p : R[X]} (hp : p.Monic
   refine ⟨?_, ?_⟩
   · rw [zeroIdealSheaf_eq_ofIdealTop, Ideal.map_span, Set.image_singleton]
     apply Scheme.IdealSheafData.isEffectiveCartier_ofIdealTop_span_singleton
-    let e := (Scheme.ΓSpecIso (.of R[X])).symm.commRingCatIsoToRingEquiv
-    exact (Equiv.isSMulRegular_congr (e := e.toEquiv)
-      (fun b ↦ e.map_mul p b)).mp hp.isRegular.left.isSMulRegular
+    intro U
+    exact (isAffineOpen_top _).isSMulRegular_map le_top
+      (Scheme.isSMulRegular_ΓSpecIso_inv hp.isRegular.left.isSMulRegular)
   · have := hp.free_adjoinRoot
     have hflat : Flat (Spec.map (CommRingCat.ofHom (algebraMap R (AdjoinRoot p)))) :=
       Flat.SpecMap_iff.mpr <|
@@ -181,3 +201,122 @@ theorem Monic.zeroIdealSheaf_eq_iff {p q : R[X]} (hp : p.Monic) (hq : q.Monic) :
   exact eq_of_monic_of_dvd_of_natDegree_le hq hp hqp (hp.natDegree_le_of_dvd hq.ne_zero hpq)
 
 end Polynomial
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {R : Type u} [CommRing R]
+
+/-- **Finite flat closed subschemes of the affine line.** When `R` is nontrivial, a closed
+subscheme of `Spec R[X]` that is finite and flat over `Spec R` of constant rank `n` is the zero
+scheme of a unique monic polynomial of degree `n`. In particular it is a relative effective
+Cartier divisor
+(`Polynomial.Monic.isRelativeEffectiveCartier_zeroIdealSheaf`). The closed subscheme need not be
+free over `Spec R`, and `R` need not be reduced. -/
+theorem existsUnique_monic_zeroIdealSheaf_eq [Nontrivial R] {n : ℕ}
+    (D : (Spec (.of R[X])).IdealSheafData)
+    [Flat (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X])))]
+    [IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X])))]
+    (hD : (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))).finrank =
+      fun _ ↦ n) :
+    ∃! p : R[X], p.Monic ∧ p.natDegree = n ∧ p.zeroIdealSheaf = D := by
+  -- The closed subscheme is `Spec (R[X] ⧸ I)` for the ideal `I` of global sections of `D`.
+  obtain ⟨I, e, he⟩ := (IsClosedImmersion.Spec_iff (f := D.subschemeι)).mp inferInstance
+  have hDI : D = ofIdealTop (I.map (Scheme.ΓSpecIso (.of R[X])).inv.hom) := by
+    rw [← D.ker_subschemeι, he, Scheme.Hom.ker_comp_of_isIso, Scheme.Hom.ker_Spec_map,
+      CommRingCat.hom_ofHom, Ideal.mk_ker]
+  replace he : D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X])) =
+      e.hom ≫ Spec.map (CommRingCat.ofHom (algebraMap R (R[X] ⧸ I))) := by
+    rw [he, Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+      IsScalarTower.algebraMap_eq R R[X] (R[X] ⧸ I), Ideal.Quotient.algebraMap_eq]
+  have hflat : Flat (Spec.map (CommRingCat.ofHom (algebraMap R (R[X] ⧸ I)))) := by
+    rw [← e.inv_hom_id_assoc (Spec.map _), ← he]
+    infer_instance
+  have hfin : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap R (R[X] ⧸ I)))) := by
+    rw [← e.inv_hom_id_assoc (Spec.map _), ← he]
+    infer_instance
+  have : Module.Flat R (R[X] ⧸ I) := RingHom.flat_algebraMap_iff.mp (Flat.SpecMap_iff.mp hflat)
+  have : Module.Finite R (R[X] ⧸ I) :=
+    RingHom.finite_algebraMap.mp ((IsFinite.SpecMap_iff _).mp hfin)
+  rw [he, Scheme.Hom.finrank_comp_left_of_isIso] at hD
+  obtain ⟨p, ⟨hp, hdeg, hpI⟩, -⟩ := I.existsUnique_monic_span_of_flat_quotient (n := n)
+    fun x _ ↦ (Scheme.Hom.finrank_SpecMap_algebraMap R _ x).symm.trans (congrFun hD x)
+  have hpD : p.zeroIdealSheaf = D := by
+    rw [zeroIdealSheaf_eq_ofIdealTop, hpI, hDI]
+  exact ⟨p, ⟨hp, hdeg, hpD⟩, fun q ⟨hq, _, hqD⟩ ↦
+    (hq.zeroIdealSheaf_eq_iff hp).mp (hqD.trans hpD.symm)⟩
+
+end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace TauCeti.Polynomial
+
+variable (R : Type u) [CommRing R] (n : ℕ)
+
+/-- Lower coefficients parameterize the relative effective Cartier divisors on the affine line
+`Spec R[X]` over `Spec R` that are finite of constant degree `n` over `Spec R`. The divisor of a
+tuple `c` is the zero scheme of `X^n + ∑ i, c i * X^i`. Over the zero ring both sides are
+singletons, so no nontriviality assumption is needed. -/
+noncomputable def coeffEquivAffineLineDivisor :
+    (Fin n → R) ≃ {D : (Spec (.of R[X])).IdealSheafData //
+      D.IsRelativeEffectiveCartier (Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
+      IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
+      (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))).finrank =
+        fun _ ↦ n} :=
+  Equiv.ofBijective
+    (fun c ↦ ⟨(monicOfCoeff c).zeroIdealSheaf,
+      (monic_monicOfCoeff c).isRelativeEffectiveCartier_zeroIdealSheaf,
+      (monic_monicOfCoeff c).isFinite_zeroIdealSheaf, by
+        rcases subsingleton_or_nontrivial R with _ | _
+        · -- Over the zero ring `Spec R` is empty, so every rank function agrees.
+          have : IsEmpty (Spec (.of R)) := inferInstanceAs (IsEmpty (PrimeSpectrum R))
+          exact _root_.funext isEmptyElim
+        · exact (monic_monicOfCoeff c).finrank_zeroIdealSheaf.trans
+            (by rw [natDegree_monicOfCoeff])⟩)
+    ⟨fun c d h ↦ (monicOfCoeff_inj c d).mp
+        (((monic_monicOfCoeff c).zeroIdealSheaf_eq_iff (monic_monicOfCoeff d)).mp
+          (congrArg Subtype.val h)),
+      fun ⟨D, hrel, hfin, hrank⟩ ↦ by
+        rcases subsingleton_or_nontrivial R with _ | _
+        · -- Over the zero ring the affine line is empty and carries a single ideal sheaf.
+          have : Subsingleton Γ(Spec (.of R[X]), ⊤) :=
+            (Scheme.ΓSpecIso (.of R[X])).commRingCatIsoToRingEquiv.subsingleton
+          exact ⟨0, Subtype.ext
+            (Scheme.IdealSheafData.equivOfIsAffine.injective (Subsingleton.elim _ _))⟩
+        have := hrel.flat
+        obtain ⟨p, ⟨hp, hdeg, hpD⟩, -⟩ := D.existsUnique_monic_zeroIdealSheaf_eq hrank
+        exact ⟨fun i ↦ p.coeff i,
+          Subtype.ext (by simpa only [monicOfCoeff_coeff hp hdeg] using hpD)⟩⟩
+
+/-- The forward coefficient chart is the zero scheme of the monic polynomial with the given lower
+coefficients. -/
+@[simp]
+lemma coeffEquivAffineLineDivisor_apply (c : Fin n → R) :
+    (coeffEquivAffineLineDivisor R n c).1 = (monicOfCoeff c).zeroIdealSheaf :=
+  (rfl)
+
+/-- The inverse chart recovers the lower coefficients of any monic equation of the divisor. -/
+lemma coeffEquivAffineLineDivisor_symm_apply
+    (D : {D : (Spec (.of R[X])).IdealSheafData //
+      D.IsRelativeEffectiveCartier (Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
+      IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
+      (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))).finrank =
+        fun _ ↦ n})
+    {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) (hpD : p.zeroIdealSheaf = D.1) :
+    (coeffEquivAffineLineDivisor R n).symm D = fun i : Fin n ↦ p.coeff i := by
+  nontriviality R
+  apply (coeffEquivAffineLineDivisor R n).injective
+  apply Subtype.ext
+  rw [Equiv.apply_symm_apply, coeffEquivAffineLineDivisor_apply, monicOfCoeff_coeff hp hdeg, hpD]
+
+/-- Pulling back along the change of coefficient ring `Spec S[X] ⟶ Spec R[X]` acts coordinatewise
+on the coefficient chart. The ring homomorphism need not be flat or injective, and `S` may be
+the zero ring. -/
+-- The left-hand side already simplifies via `coeffEquivAffineLineDivisor_apply`, so a simp
+-- attribute here would fail `simpNF`.
+lemma comap_coeffEquivAffineLineDivisor {S : Type u} [CommRing S] (φ : R →+* S)
+    (c : Fin n → R) :
+    (coeffEquivAffineLineDivisor R n c).1.comap
+        (Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom φ))) =
+      (coeffEquivAffineLineDivisor S n (fun i ↦ φ (c i))).1 := by
+  simp only [coeffEquivAffineLineDivisor_apply, zeroIdealSheaf_map, map_monicOfCoeff]
+
+end TauCeti.Polynomial

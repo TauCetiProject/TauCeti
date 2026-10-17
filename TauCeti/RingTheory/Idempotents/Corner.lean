@@ -30,12 +30,19 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   `R`-algebra is a unital `R`-algebra.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
   agrees with the corner submodule `TauCeti.cornerSubmodule R e e`.
+* `IsIdempotentElem.cornerMap`: a homomorphism of nonunital semirings restricts to a unital
+  homomorphism of corners; a surjective homomorphism remains surjective on corners.
+* `IsIdempotentElem.cornerEquiv`: a ring equivalence restricts to an equivalence of corners.
+* `IsIdempotentElem.cornerPiEquiv`: the corner of an idempotent in a product of rings is the
+  product of the corners of its components.
 
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
   corner ring `eAe` is fixed by `e` on both sides.
+* `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
+  is.
 
 ## References
 
@@ -189,6 +196,94 @@ theorem val_algebraMap (r : R) : (algebraMap R he.Corner r).1 = r • e := (rfl)
 end Algebra
 
 end Corner
+
+section Map
+
+variable {A B : Type*} [NonUnitalSemiring A] [NonUnitalSemiring B]
+  {e : A} (he : IsIdempotentElem e)
+
+/-- A nonunital homomorphism restricts to a unital homomorphism between idempotent corners.
+The unit in the source is `e`, and the unit in the target is its image. -/
+def cornerMap (f : A →ₙ+* B) : he.Corner →+* (he.map f).Corner where
+  toFun x := ⟨f x.1, (Subsemigroup.mem_corner_iff (he.map f)).mpr
+    ⟨by rw [← map_mul, he.mul_corner_val], by rw [← map_mul, he.corner_val_mul]⟩⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' x y := Subtype.ext (map_mul f x.1 y.1)
+  map_zero' := Subtype.ext (by simp)
+  map_add' x y := Subtype.ext (map_add f x.1 y.1)
+
+@[simp]
+theorem val_cornerMap (f : A →ₙ+* B) (x : he.Corner) : (he.cornerMap f x).1 = f x.1 :=
+  (rfl)
+
+/-- A surjective homomorphism is surjective on every idempotent corner. -/
+theorem cornerMap_surjective (f : A →ₙ+* B) (hf : Function.Surjective f) :
+    Function.Surjective (he.cornerMap f) := by
+  intro y
+  obtain ⟨x, hx⟩ := hf y.1
+  refine ⟨⟨e * x * e, x, rfl⟩, ?_⟩
+  apply Subtype.ext
+  exact (map_mul f (e * x) e).trans (by
+    rw [map_mul, hx, (he.map f).mul_corner_val, (he.map f).corner_val_mul])
+
+/-- A ring equivalence restricts to an equivalence between the corner `eAe` and the corner of the
+image of `e`. -/
+def cornerEquiv (f : A ≃+* B) : he.Corner ≃+* (he.map f).Corner where
+  toFun := he.cornerMap f.toNonUnitalRingHom
+  invFun y := ⟨f.symm y.1, (Subsemigroup.mem_corner_iff he).mpr
+    ⟨f.injective (by rw [map_mul, f.apply_symm_apply, (he.map f).mul_corner_val]),
+      f.injective (by rw [map_mul, f.apply_symm_apply, (he.map f).corner_val_mul])⟩⟩
+  left_inv x := Subtype.ext (f.symm_apply_apply x.1)
+  right_inv y := Subtype.ext (f.apply_symm_apply y.1)
+  map_mul' := map_mul (he.cornerMap f.toNonUnitalRingHom)
+  map_add' := map_add (he.cornerMap f.toNonUnitalRingHom)
+
+@[simp]
+theorem val_cornerEquiv_apply (f : A ≃+* B) (x : he.Corner) : (he.cornerEquiv f x).1 = f x.1 :=
+  (rfl)
+
+@[simp]
+theorem val_cornerEquiv_symm_apply (f : A ≃+* B) (y : (he.map f).Corner) :
+    ((he.cornerEquiv f).symm y).1 = f.symm y.1 :=
+  (rfl)
+
+end Map
+
+section Pi
+
+variable {ι : Type*} {A : ι → Type*}
+
+/-- An element of a product is idempotent exactly when each of its components is. -/
+@[simp]
+theorem _root_.Pi.isIdempotentElem_iff [∀ i, Mul (A i)] {e : ∀ i, A i} :
+    IsIdempotentElem e ↔ ∀ i, IsIdempotentElem (e i) :=
+  funext_iff
+
+variable [∀ i, NonUnitalSemiring (A i)] {e : ∀ i, A i} (he : IsIdempotentElem e)
+
+/-- **The corner of an idempotent in a product is the product of the corners** of its
+components. -/
+def cornerPiEquiv : he.Corner ≃+* ∀ i, (Pi.isIdempotentElem_iff.mp he i).Corner where
+  toFun x i := ⟨x.1 i, (Subsemigroup.mem_corner_iff (Pi.isIdempotentElem_iff.mp he i)).mpr
+    ⟨congrFun (he.mul_corner_val x) i, congrFun (he.corner_val_mul x) i⟩⟩
+  invFun y := ⟨fun i ↦ (y i).1, (Subsemigroup.mem_corner_iff he).mpr
+    ⟨funext fun i ↦ (Pi.isIdempotentElem_iff.mp he i).mul_corner_val (y i),
+      funext fun i ↦ (Pi.isIdempotentElem_iff.mp he i).corner_val_mul (y i)⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+theorem val_cornerPiEquiv_apply (x : he.Corner) (i : ι) : (he.cornerPiEquiv x i).1 = x.1 i :=
+  (rfl)
+
+@[simp]
+theorem val_cornerPiEquiv_symm_apply (y : ∀ i, (Pi.isIdempotentElem_iff.mp he i).Corner) :
+    (he.cornerPiEquiv.symm y).1 = fun i ↦ (y i).1 :=
+  (rfl)
+
+end Pi
 
 variable {A : Type u} [NonUnitalSemiring A] {e : A} (he : IsIdempotentElem e)
   {R : Type v} [Semiring R] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]

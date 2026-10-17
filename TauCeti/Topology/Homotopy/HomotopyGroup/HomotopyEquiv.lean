@@ -79,8 +79,8 @@ def homotopyAlongMap {f g : C(X, Y)} (H : f.Homotopy g) {x : X} {y₀ y₁ : Y} 
     HomotopyAlong ((H.evalAt x).cast hf.symm hg.symm) (_root_.GenLoop.map f hf p)
       (_root_.GenLoop.map g hg p) where
   toContinuousMap := ⟨fun tz => H (tz.1, p tz.2), by fun_prop⟩
-  map_zero_left z := H.apply_zero (p z)
-  map_one_left z := H.apply_one (p z)
+  map_zero_left z := (H.apply_zero (p z)).trans (_root_.GenLoop.map_apply f hf p z).symm
+  map_one_left z := (H.apply_one (p z)).trans (_root_.GenLoop.map_apply g hg p z).symm
   map_boundary t z hz := congrArg (fun w => H (t, w)) (_root_.GenLoop.boundary p z hz)
 
 /-- **Freely homotopic maps agree on generalized loops, up to transport along the trace of the
