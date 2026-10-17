@@ -195,45 +195,25 @@ theorem normalizedTwistedCubicalChainConstantEquiv_naturality {Y : TopCat.{v}}
           NormalizedTwistedCubicalChain.coefficientMap
             (pullbackConstantIso f (ModuleCat.of R R)).hom n := by
   refine NormalizedTwistedCubicalChain.hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
-  simp only [LinearMap.comp_apply]
-  let eY : ((pullback f).obj ((constantFunctor Y).obj (ModuleCat.of R R))).obj
-      (FundamentalGroupoid.mk (c 0)) ≅
-        ((constantFunctor Y).obj (ModuleCat.of R R)).obj
-          (FundamentalGroupoid.mk ((f.comp c) 0)) := eqToIso (by simp)
-  have hmap :
-      NormalizedTwistedCubicalChain.map f ((constantFunctor Y).obj (ModuleCat.of R R)) n
-          (NormalizedTwistedCubicalChain.ofCube _ c a) =
-        NormalizedTwistedCubicalChain.ofCube _ (f.comp c) (eY.hom a) := by
-    rw [NormalizedTwistedCubicalChain.map_ofCube]
-    congr 1
-  rw [hmap]
+  -- The fibres of the constant systems and of their pullback are all `R` by definition, since
+  -- `constantFunctor_obj_obj` is `rfl`; so the transports `(eqToIso _).hom` produced by
+  -- `normalizedTwistedCubicalChainConstantEquiv_ofCube` are identities and `a` serves as an
+  -- element of `R` throughout.  The component of `pullbackConstantIso` is removed in the last
+  -- step by `pullbackConstantIso_hom_app`.
   calc
-    _ = Submodule.Quotient.mk
-        (single (f.comp c) ((eqToIso (constantFunctor_obj_obj Y (ModuleCat.of R R)
-          (FundamentalGroupoid.mk ((f.comp c) 0)))).hom (eY.hom a))) :=
-      normalizedTwistedCubicalChainConstantEquiv_ofCube
-        (R := R) (X := Y) (c := f.comp c) (a := eY.hom a)
-    _ = _ := by
-      rw [NormalizedTwistedCubicalChain.coefficientMap_ofCube]
-      let aX := (pullbackConstantIso f (ModuleCat.of R R)).hom.app
-        (FundamentalGroupoid.mk (c 0)) a
-      have hX := normalizedTwistedCubicalChainConstantEquiv_ofCube
-        (R := R) (X := X) (c := c) (a := aX)
-      calc
-        _ = Submodule.Quotient.mk
-            (single (f.comp c) ((eqToIso (constantFunctor_obj_obj X (ModuleCat.of R R)
-              (FundamentalGroupoid.mk (c 0)))).hom aX)) := by
-          congr 2
-          simp [eY, aX]
-          -- Both sides are the same transport between constant fibres; proof irrelevance
-          -- identifies the equality proofs used to construct the two `eqToIso`s.
-          rfl
-        _ = NormalizedCubicalChain.map R f n
-            (Submodule.Quotient.mk (single c ((eqToIso
-              (constantFunctor_obj_obj X (ModuleCat.of R R)
-                (FundamentalGroupoid.mk (c 0)))).hom aX))) := by
-          rw [NormalizedCubicalChain.map_mk, CubicalChain.map_single]
-        _ = _ := congrArg (NormalizedCubicalChain.map R f n) hX.symm
+    _ = (Submodule.Quotient.mk (single (f.comp c) a) : NormalizedCubicalChain Y R n) :=
+      (congrArg _ (NormalizedTwistedCubicalChain.map_ofCube c a)).trans
+        (normalizedTwistedCubicalChainConstantEquiv_ofCube (f.comp c) a)
+    _ = NormalizedCubicalChain.map R f n (Submodule.Quotient.mk (single c a)) :=
+      ((NormalizedCubicalChain.map_mk (R := R) f _).trans
+        (congrArg _ (CubicalChain.map_single (R := R) f c a))).symm
+    _ = NormalizedCubicalChain.map R f n (normalizedTwistedCubicalChainConstantEquiv R X n
+          (NormalizedTwistedCubicalChain.ofCube _ c (𝟙 (ModuleCat.of R R) a))) :=
+      congrArg _ (normalizedTwistedCubicalChainConstantEquiv_ofCube c _).symm
+    _ = _ := congrArg _ ((congrArg (fun b ↦ normalizedTwistedCubicalChainConstantEquiv R X n
+          (NormalizedTwistedCubicalChain.ofCube _ c b))
+        (ConcreteCategory.congr_hom (pullbackConstantIso_hom_app f _ _) a)).symm.trans
+      (congrArg _ (NormalizedTwistedCubicalChain.coefficientMap_ofCube _ c a).symm))
 
 variable {Z : TopCat.{u}}
 
@@ -281,13 +261,9 @@ theorem normalizedTwistedCubicalChainComplexConstantIso_hom_naturality
           (normalizedTwistedCubicalChainComplexConstantIso R Z).hom ≫
           (normalizedCubicalChainComplex R).map f := by
   ext n : 1
-  have hordinary : ((normalizedCubicalChainComplex R).map f).f n =
-      ModuleCat.ofHom (NormalizedCubicalChain.map R f.hom n) := by
-    ext x
-    exact normalizedCubicalChainComplex_map_f_apply f n x
   simp only [HomologicalComplex.comp_f, normalizedTwistedCubicalChainComplexMap_f,
     normalizedTwistedCubicalChainComplexCoefficientMap_f,
-    normalizedTwistedCubicalChainComplexConstantIso_hom_f, hordinary]
+    normalizedTwistedCubicalChainComplexConstantIso_hom_f, normalizedCubicalChainComplex_map_f]
   exact congrArg ModuleCat.ofHom
     (normalizedTwistedCubicalChainConstantEquiv_naturality (R := R) (f := f.hom) n)
 
