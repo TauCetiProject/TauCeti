@@ -209,7 +209,8 @@ theorem measurable_offDiagonalPairSquareContextOfStripsAndDiagonal [MeasurableSp
     ((measurable_pi_apply _).prodMk (measurable_pi_apply _))
 
 /-- Reading the square context off the crossing strips and the diagonal of an array recovers its
-square context: this is how a coding of the strips and the diagonal feeds the pair coding. -/
+square context, so the square context factors through the restriction of the array to the
+crossing strips and the diagonal. -/
 @[simp]
 theorem offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict :
     offDiagonalPairSquareContextOfStripsAndDiagonal (α := α) e i j ∘
