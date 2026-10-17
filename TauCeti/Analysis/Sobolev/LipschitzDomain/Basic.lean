@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Affine.Isometry
-public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -114,28 +114,6 @@ theorem smul_normalCylinder {c : ℝ} (hc : 0 < c) (a b : ℝ) :
   rw [mem_smul_set_iff_inv_smul_mem₀ hc.ne']
   simp only [mem_normalCylinder, WithLp.smul_fst, WithLp.smul_snd, smul_eq_mul, norm_smul,
     norm_inv, Real.norm_eq_abs, abs_of_pos hc, inv_mul_lt_iff₀ hc, lt_inv_mul_iff₀ hc, mul_neg]
-
-omit [NormedSpace ℝ E] in
-/-- The frontier of the region strictly above the graph of a continuous function is the
-graph. -/
-theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
-    frontier {x : WithLp 2 (ℝ × E) | γ x.snd < x.fst} = {x | x.fst = γ x.snd} := by
-  have hopen : IsOpen {x : WithLp 2 (ℝ × E) | γ x.snd < x.fst} :=
-    isOpen_lt (by fun_prop) (by fun_prop)
-  refine Subset.antisymm
-    (fun x hx => (frontier_lt_subset_eq (by fun_prop) (by fun_prop) hx).symm) fun x hx => ?_
-  rw [mem_ofPred_eq] at hx
-  rw [hopen.frontier_eq, Set.mem_sdiff, mem_ofPred_eq]
-  refine ⟨?_, fun h => h.ne' hx⟩
-  -- A graph point is the limit of the points `x + (t, 0)` above it, as `t → 0⁺`.
-  have hlim : Tendsto (fun t : ℝ => x + WithLp.toLp 2 (t, (0 : E))) (𝓝[>] 0) (𝓝 x) := by
-    have hcont : Continuous fun t : ℝ => x + WithLp.toLp 2 (t, (0 : E)) := by fun_prop
-    have h0 := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-    rwa [Prod.mk_zero_zero, WithLp.toLp_zero, add_zero] at h0
-  refine mem_closure_of_tendsto hlim ?_
-  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-  simp only [WithLp.add_fst, WithLp.add_snd, WithLp.toLp_fst, WithLp.toLp_snd, add_zero, ← hx]
-  linarith
 
 
 end TauCeti
