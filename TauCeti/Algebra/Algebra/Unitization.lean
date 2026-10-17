@@ -45,6 +45,21 @@ theorem map_inl (f : A →ₙₐ[R] B) (r : R) :
     map f (inl r : Unitization R A) = algebraMap R (Unitization R B) r := by
   simp [map]
 
+/-- The scalar component of the induced map of unitizations is unchanged. -/
+@[simp]
+theorem fst_map (f : A →ₙₐ[R] B) (x : Unitization R A) :
+    (map (R := R) f x).fst = x.fst := by
+  rw [← inl_fst_add_inr_snd_eq x, map_add]
+  simp [algebraMap_eq_inl]
+
+/-- The nonunital-algebra component of the induced map of unitizations is obtained by applying the
+original homomorphism. -/
+@[simp]
+theorem snd_map (f : A →ₙₐ[R] B) (x : Unitization R A) :
+    (map (R := R) f x).snd = f x.snd := by
+  rw [← inl_fst_add_inr_snd_eq x, map_add]
+  simp [algebraMap_eq_inl]
+
 /-- The identity homomorphism induces the identity homomorphism of forced unitizations. -/
 @[simp]
 theorem map_id : map (R := R) (NonUnitalAlgHom.id R A) = AlgHom.id R (Unitization R A) := by

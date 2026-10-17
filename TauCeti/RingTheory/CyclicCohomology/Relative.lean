@@ -81,6 +81,7 @@ theorem unitizationScalarRestriction_apply (n : ℕ)
         (fun i ↦ algebraMap R (Unitization R A) (a i)) := by
   simp only [unitizationScalarRestriction, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
+  -- The nonunital algebra homomorphism underlying `Algebra.ofId` evaluates as the scalar inclusion.
   congr 1
 
 /-- Pullback along the augmentation evaluates a scalar cochain on the scalar components. -/
@@ -92,6 +93,7 @@ theorem unitizationAugmentationPullback_apply (n : ℕ) (phi : cyclicCochains R 
       (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) (fun i ↦ (a i).fst) := by
   simp only [unitizationAugmentationPullback, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
+  -- The linear map underlying `Unitization.fstHom` evaluates as the first projection.
   rfl
 
 /-- Pullback along the augmentation is a right inverse to scalar restriction. -/
@@ -284,6 +286,7 @@ private theorem relative_iCycles_toCycles (n : ℕ) (φ : relativeCyclicCocycles
     (relativeCyclicCochainComplex R A M).iCycles n (relativeToCycles R A M n φ) =
       (relativeCyclicCochainComplexXIso R A M n).inv φ.1 := by
   rw [relativeToCycles, ← ConcreteCategory.comp_apply, HomologicalComplex.liftCycles_i]
+  -- The reflexive term isomorphism and the subtype inclusion both evaluate to the cocycle carrier.
   rfl
 
 private theorem relative_homologyπ_toCycles_eq_zero_iff {n m : ℕ}
@@ -318,6 +321,7 @@ theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
       relativeCyclicCocycles R A M n := by
     have h : K.d n (n + 1) (K.iCycles n c) = 0 := by
       rw [← ConcreteCategory.comp_apply, K.iCycles_d]
+      -- Evaluating the zero morphism of modules gives the zero element.
       rfl
     rw [relativeCyclicCocycles, LinearMap.mem_ker,
       ← relativeCyclicCochainComplex_d_apply, h, map_zero]
@@ -515,6 +519,7 @@ theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : relativeCyclicCocycles R B
   apply (relativeCyclicCochainComplex R A M).moduleCat_iCycles_injective n
   rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
     ConcreteCategory.comp_apply, relative_iCycles_toCycles, relative_iCycles_toCycles]
+  -- Both sides reduce to `relativeCyclicCochainsMap` applied to the cocycle carrier.
   rfl
 
 /-- The identity homomorphism induces the identity on relative cyclic cohomology. -/
@@ -643,6 +648,7 @@ def relativeCyclicCochainComplexIsKernel :
       exact ModuleCat.hom_ext (LinearMap.ext fun x ↦ by
         simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp,
           Function.comp_apply]
+        -- `LinearMap.codRestrict` preserves the underlying value of the restricted map.
         rfl))
     (fun e he m hm ↦ by
       apply HomologicalComplex.hom_ext _ _
@@ -666,12 +672,24 @@ def relativeCyclicCochainComplexIsKernel :
           symm
           simp only [relativeCyclicCochainComplexLift, Category.assoc,
             Iso.inv_hom_id_assoc]
+          -- After the subtype inclusion, `LinearMap.codRestrict` is the original linear map.
           exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl))
 
 /-- Pullback of cyclic cochain complexes along the augmentation. -/
 def unitizationAugmentationPullbackComplexMap :
     cyclicCochainComplex R R M ⟶ cyclicCochainComplex R (Unitization R A) M :=
   cyclicCochainComplexMap M (Unitization.fstHom R A).toNonUnitalAlgHom
+
+/-- Under the identifications `cyclicCochainComplexXIso`, the components of pullback along the
+augmentation are pullback of cyclic cochains along the augmentation. -/
+@[reassoc, elementwise]
+theorem unitizationAugmentationPullbackComplexMap_f (n : ℕ) :
+    (unitizationAugmentationPullbackComplexMap R A M).f n ≫
+        (cyclicCochainComplexXIso R (Unitization R A) M n).hom =
+      (cyclicCochainComplexXIso R R M n).hom ≫
+        ModuleCat.ofHom (unitizationAugmentationPullback R A M n) := by
+  rw [unitizationAugmentationPullbackComplexMap, cyclicCochainComplexMap_f,
+    unitizationAugmentationPullback]
 
 /-- Pullback along the augmentation splits scalar restriction as a cochain map. -/
 @[simp]
