@@ -186,7 +186,7 @@ end
 
 namespace Submodule
 
-namespace IsLattice
+section Rationalization
 
 variable {R : Type u} {K : Type v} {V' : Type w}
 variable [CommRing R] [IsDomain R]
@@ -195,7 +195,7 @@ variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
 /-- The inclusion of a free full lattice submodule over an integral domain into its ambient vector
 space over the fraction field exhibits that space as base change from `R` to `K`. -/
-theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
+theorem IsLattice.isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
     IsBaseChange K S.subtype := by
   have : Module.IsTorsionFree R K :=
     Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective R K)
@@ -211,13 +211,6 @@ theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice
     rw [← Module.Basis.baseChange_apply K b i, Basis.equiv_apply,
       Basis.extendOfIsLattice_apply, Equiv.refl_apply]
   exact IsBaseChange.of_equiv e fun x ↦ DFunLike.congr_fun hmap x
-
-end IsLattice
-
-variable {R : Type u} {K : Type v} {V' : Type w}
-variable [CommRing R] [IsDomain R]
-variable [Field K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
 /-- The canonical equivalence from the scalar extension of a free full lattice submodule to its
 ambient vector space. -/
@@ -239,6 +232,10 @@ theorem rationalizationEquiv_symm_coe (S : Submodule R V') [Module.Free R S] [S.
     (x : S) : (rationalizationEquiv S).symm (x : V') = 1 ⊗ₜ[R] x :=
   (IsLattice.isBaseChange_subtype S).equiv_symm_apply x
 
+end Rationalization
+
+section Map
+
 variable {V : Type u} {W : Type v}
 variable [AddCommGroup V] [Module ℚ V]
 variable [AddCommGroup W] [Module ℚ W]
@@ -252,30 +249,28 @@ theorem IsLattice.map (S : Submodule ℤ V) [S.IsLattice ℚ] (e : V ≃ₗ[ℚ]
     simp [Submodule.map_coe, Submodule.span_image_linearEquiv,
       _root_.Submodule.IsLattice.span_eq_top]
 
+end Map
+
 end Submodule
 
 namespace TensorProduct
 
 variable {R : Type u} {K : Type v} {M : Type w}
-variable [CommRing R] [Field K] [Algebra R K]
-variable [AddCommGroup M] [Module R M]
+
+section CommRing
+
+variable [CommRing R] [CommRing K] [Algebra R K]
 
 /-- The unit pure tensors are the `R`-span of the base change of any basis. -/
-theorem range_mk_one_eq_span {ι : Type*} (b : Basis ι R M) :
+theorem range_mk_one_eq_span [AddCommGroup M] [Module R M] {ι : Type*} (b : Basis ι R M) :
     LinearMap.range (TensorProduct.mk R K M 1) =
       Submodule.span R (Set.range (b.baseChange K)) := by
   rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
   exact congrArg (Submodule.span R)
     (congrArg Set.range (funext fun i ↦ (Basis.baseChange_apply K b i).symm))
 
-section UnitTensorLattice
-
-variable {R : Type u} {K : Type v} {M : Type w}
-variable [CommRing R] [CommRing K] [Algebra R K]
-variable [AddCommMonoid M] [Module R M] [Module.Finite R M]
-
 /-- The unit pure tensors form a full lattice in the scalar extension of a finite module. -/
-instance isLattice_range_mk_one :
+instance isLattice_range_mk_one [AddCommMonoid M] [Module R M] [Module.Finite R M] :
     (LinearMap.range (TensorProduct.mk R K M 1)).IsLattice K where
   fg := by
     rw [LinearMap.range_eq_map]
@@ -289,9 +284,10 @@ instance isLattice_range_mk_one :
       rw [tmul_eq_smul_one_tmul]
       exact Submodule.smul_mem _ k (Submodule.subset_span ⟨m, rfl⟩)
 
-end UnitTensorLattice
+end CommRing
 
-variable [IsFractionRing R K] [Module.Free R M]
+variable [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+variable [AddCommGroup M] [Module R M] [Module.Free R M]
 
 variable (R K M) in
 /-- A finite free module is canonically isomorphic to the lattice of unit pure tensors in its
