@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # Charts pulled back along a local homeomorphism
@@ -42,8 +42,6 @@ composite with a `C^n` local diffeomorphism is.
   for the pulled-back charts.
 * `IsLocalHomeomorph.compatible_chartedSpaceComap`: any `C^n` manifold structure on `M` for which
   `p` is a `C^n` local diffeomorphism is compatible with the pulled-back charts.
-* `ContMDiff.of_comp_isLocalDiffeomorph`: a continuous map whose composite with a `C^n` local
-  diffeomorphism is `C^n` is itself `C^n`; also in `Within` and `On` forms.
 
 ## References
 
@@ -60,39 +58,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
   {I' : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-
-section LocalDiffeomorph
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {B : Type*} [TopologicalSpace B]
-  [ChartedSpace H B] {p : M → B} {f : N → M}
-
-/-- A continuous map is `C^n` within a set at a point when its composite with a map that is a
-`C^n` local diffeomorphism at the image point is `C^n` there. -/
-theorem ContMDiffWithinAt.of_comp_isLocalDiffeomorph {s : Set N} {y : N}
-    (hp : IsLocalDiffeomorphAt I I n p (f y)) (hf : ContinuousWithinAt f s y)
-    (hpf : ContMDiffWithinAt I' I n (p ∘ f) s y) : ContMDiffWithinAt I' I n f s y := by
-  have hcomp : ContMDiffWithinAt I' I n (hp.localInverse ∘ (p ∘ f)) s y :=
-    hp.contMDiffAt_localInverse.comp_contMDiffWithinAt y hpf
-  have heq : Filter.EventuallyEq (nhdsWithin y s) (hp.localInverse ∘ (p ∘ f)) f := by
-    filter_upwards [hf.preimage_mem_nhdsWithin
-      (hp.localInverse.open_target.mem_nhds hp.localInverse_mem_target)] with z hz
-    exact hp.localInverse_left_inv hz
-  exact hcomp.congr_of_eventuallyEq heq.symm
-    (hp.localInverse_left_inv hp.localInverse_mem_target).symm
-
-/-- A continuous map on a set is `C^n` there when its composite with a `C^n` local diffeomorphism
-is `C^n` on that set. -/
-theorem ContMDiffOn.of_comp_isLocalDiffeomorph (hp : IsLocalDiffeomorph I I n p) {s : Set N}
-    (hf : ContinuousOn f s) (hpf : ContMDiffOn I' I n (p ∘ f) s) : ContMDiffOn I' I n f s :=
-  fun y hy ↦ (hpf y hy).of_comp_isLocalDiffeomorph (hp (f y)) (hf y hy)
-
-/-- A continuous map is `C^n` when its composite with a `C^n` local diffeomorphism is `C^n`. -/
-theorem ContMDiff.of_comp_isLocalDiffeomorph (hp : IsLocalDiffeomorph I I n p)
-    (hf : Continuous f) (hpf : ContMDiff I' I n (p ∘ f)) : ContMDiff I' I n f := by
-  rw [← contMDiffOn_univ]
-  exact hpf.contMDiffOn.of_comp_isLocalDiffeomorph hp hf.continuousOn
-
-end LocalDiffeomorph
 
 namespace IsLocalHomeomorph
 
