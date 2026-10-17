@@ -13,18 +13,18 @@ import Mathlib.Topology.Algebra.InfiniteSum.Basic
 /-!
 # Base change of Tate curves and their parameters
 
-The analytic Tate equation and its two coordinate series commute with isometric embeddings of
-complete non-archimedean normed fields. Consequently the multiplicative parameter map descends
-from units to the quotients by `q^ℤ`, and the descended coordinate pair is compatible with that
-map.
+The analytic Tate equation commutes with isometric homomorphisms of complete non-archimedean
+normed rings, and its two coordinate series commute with continuous homomorphisms of normed
+fields. Consequently the multiplicative parameter map descends from units to the quotients by
+`q^ℤ`, and the descended coordinate pair is compatible with that map.
 
 These comparisons are the extension-compatibility input for the point-level Tate uniformisation.
 They apply in particular to finite extensions equipped with their norm-preserving field embedding.
 
 ## Main definitions
 
-* `TauCeti.tateParameterBaseChange`: the map `Kˣ / q^ℤ → Lˣ / f(q)^ℤ` induced by an isometric
-  field embedding.
+* `TauCeti.tateParameterBaseChange`: the map `Kˣ / q^ℤ → Lˣ / f(q)^ℤ` induced by a field
+  homomorphism.
 
 ## Main results
 
@@ -47,14 +47,15 @@ open PowerSeries
 
 namespace TauCeti
 
-variable {K L : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
-  [NormedField L] [CompleteSpace L] [IsUltrametricDist L]
+variable {K L : Type*}
 
-section Coordinates
+section Coefficients
 
-variable (f : K →+* L) [RingHomIsometric f]
+variable [NormedCommRing K] [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K]
+  [NormedCommRing L] [NormOneClass L] [CompleteSpace L] [IsUltrametricDist L]
+  (f : K →+* L) [RingHomIsometric f]
 
-/-- The fourth analytic Tate coefficient commutes with an isometric field embedding. -/
+/-- The fourth analytic Tate coefficient commutes with an isometric ring homomorphism. -/
 theorem map_tateCurveA₄ (q : K) (hq : ‖q‖ < 1) :
     f (tateCurveA₄ q hq) =
       tateCurveA₄ (f q) (by rwa [RingHomIsometric.norm_map]) := by
@@ -62,7 +63,7 @@ theorem map_tateCurveA₄ (q : K) (hq : ‖q‖ < 1) :
     map_divisorSumAt f (RingHom.isometry f).continuous 3 q hq]
   simp only [map_ofNat]
 
-/-- The sixth analytic Tate coefficient commutes with an isometric field embedding. -/
+/-- The sixth analytic Tate coefficient commutes with an isometric ring homomorphism. -/
 theorem map_tateCurveA₆ (q : K) (hq : ‖q‖ < 1) :
     f (tateCurveA₆ q hq) =
       tateCurveA₆ (f q) (by rwa [RingHomIsometric.norm_map]) := by
@@ -73,36 +74,7 @@ theorem map_tateCurveA₆ (q : K) (hq : ‖q‖ < 1) :
   intro n
   simp
 
-omit [CompleteSpace L] [IsUltrametricDist L] in
-/-- The first analytic Tate coordinate commutes with an isometric field embedding. -/
-theorem map_tateUniformizationX (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    f (tateUniformizationX q u) =
-      tateUniformizationX (Units.map f q) (Units.map f u) := by
-  rw [tateUniformizationX_def, tateUniformizationX_def, map_sub, map_mul,
-    map_divisorSumAt f (RingHom.isometry f).continuous 1 (q : K) hq,
-    Summable.map_tsum (summable_tateUniformizationX q hq u) f
-      (RingHom.isometry f).continuous]
-  simp only [map_ofNat, Units.coe_map]
-  congr 1
-  apply tsum_congr
-  intro n
-  simp
-
-omit [CompleteSpace L] [IsUltrametricDist L] in
-/-- The second analytic Tate coordinate commutes with an isometric field embedding. -/
-theorem map_tateUniformizationY (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    f (tateUniformizationY q u) =
-      tateUniformizationY (Units.map f q) (Units.map f u) := by
-  rw [tateUniformizationY_def, tateUniformizationY_def, map_add,
-    map_divisorSumAt f (RingHom.isometry f).continuous 1 (q : K) hq,
-    Summable.map_tsum (summable_tateUniformizationY q hq u) f
-      (RingHom.isometry f).continuous]
-  congr 1
-  apply tsum_congr
-  intro n
-  simp
-
-/-- The specialized Tate equation commutes with an isometric field embedding. -/
+/-- The specialized Tate equation commutes with an isometric ring homomorphism. -/
 theorem map_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).map f =
       tateCurveAt (Units.map f q) (by simpa using hq) := by
@@ -117,28 +89,52 @@ theorem map_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     convert map_tateCurveA₆ f (q : K) hq using 1
     all_goals simp
 
+end Coefficients
+
+section Coordinates
+
+variable [NormedField K] [CompleteSpace K] [IsUltrametricDist K] [NormedField L]
+  (f : K →+* L) (hf : Continuous f)
+include hf
+
+/-- The first analytic Tate coordinate commutes with a continuous field homomorphism. -/
+theorem map_tateUniformizationX (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    f (tateUniformizationX q u) =
+      tateUniformizationX (Units.map f q) (Units.map f u) := by
+  rw [tateUniformizationX_def, tateUniformizationX_def, map_sub, map_mul,
+    map_divisorSumAt f hf 1 (q : K) hq,
+    Summable.map_tsum (summable_tateUniformizationX q hq u) f hf]
+  simp only [map_ofNat, Units.coe_map]
+  congr 1
+  apply tsum_congr
+  intro n
+  simp
+
+/-- The second analytic Tate coordinate commutes with a continuous field homomorphism. -/
+theorem map_tateUniformizationY (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    f (tateUniformizationY q u) =
+      tateUniformizationY (Units.map f q) (Units.map f u) := by
+  rw [tateUniformizationY_def, tateUniformizationY_def, map_add,
+    map_divisorSumAt f hf 1 (q : K) hq,
+    Summable.map_tsum (summable_tateUniformizationY q hq u) f hf]
+  congr 1
+  apply tsum_congr
+  intro n
+  simp
+
 end Coordinates
 
 section Parameters
 
-variable (f : K →+* L)
+variable [NormedField K] [NormedField L] (f : K →+* L)
 
-omit [CompleteSpace K] [IsUltrametricDist K] [CompleteSpace L] [IsUltrametricDist L] in
-private theorem zpowers_le_comap_unitsMap (q : Kˣ) :
-    Subgroup.zpowers q ≤ Subgroup.comap (Units.map (f : K →* L))
-      (Subgroup.zpowers (Units.map (f : K →* L) q)) := by
-  simpa only [MonoidHom.map_zpowers] using
-    Subgroup.le_comap_map (Units.map (f : K →* L)) (Subgroup.zpowers q)
-
-omit [CompleteSpace K] [IsUltrametricDist K] [CompleteSpace L] [IsUltrametricDist L] in
 /-- Base change of multiplicative Tate parameters, from `Kˣ / q^ℤ` to `Lˣ / f(q)^ℤ`. -/
 noncomputable def tateParameterBaseChange (q : Kˣ) :
     Kˣ ⧸ Subgroup.zpowers q →* Lˣ ⧸ Subgroup.zpowers (Units.map (f : K →* L) q) :=
   QuotientGroup.map (Subgroup.zpowers q) (Subgroup.zpowers (Units.map (f : K →* L) q))
     (Units.map (f : K →* L))
-    (zpowers_le_comap_unitsMap f q)
+    (Subgroup.map_le_iff_le_comap.mp (MonoidHom.map_zpowers _ q).le)
 
-omit [CompleteSpace K] [IsUltrametricDist K] [CompleteSpace L] [IsUltrametricDist L] in
 /-- Base change of Tate parameters sends the class of a unit to the class of its image. -/
 @[simp]
 theorem tateParameterBaseChange_mk (q u : Kˣ) :
@@ -147,19 +143,16 @@ theorem tateParameterBaseChange_mk (q u : Kˣ) :
         Lˣ ⧸ Subgroup.zpowers (Units.map (f : K →* L) q)) := by
   apply QuotientGroup.map_mk
 
-variable [RingHomIsometric f]
-
-omit [CompleteSpace L] [IsUltrametricDist L] in
-/-- The coordinate pair on the multiplicative quotient commutes with base change. -/
-theorem tateQuotientCoordinates_tateParameterBaseChange (q : Kˣ)
-    (hq : ‖(q : K)‖ < 1) (x : Kˣ ⧸ Subgroup.zpowers q) :
+/-- The coordinate pair on the multiplicative quotient commutes with continuous base change. -/
+theorem tateQuotientCoordinates_tateParameterBaseChange [CompleteSpace K] [IsUltrametricDist K]
+    (hf : Continuous f) (q : Kˣ) (hq : ‖(q : K)‖ < 1) (x : Kˣ ⧸ Subgroup.zpowers q) :
     tateQuotientCoordinates (Units.map (f : K →* L) q) (tateParameterBaseChange f q x) =
       (f (tateQuotientCoordinates q x).1, f (tateQuotientCoordinates q x).2) := by
   induction x using QuotientGroup.induction_on with
   | H u =>
     rw [tateParameterBaseChange_mk, tateQuotientCoordinates_mk,
-      tateQuotientCoordinates_mk, map_tateUniformizationX f q u hq,
-      map_tateUniformizationY f q u hq]
+      tateQuotientCoordinates_mk, map_tateUniformizationX f hf q u hq,
+      map_tateUniformizationY f hf q u hq]
 
 end Parameters
 
