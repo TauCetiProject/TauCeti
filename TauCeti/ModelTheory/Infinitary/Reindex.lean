@@ -144,6 +144,7 @@ theorem reindex_bot : reindex c (⊥ : L.BoundedFormulaInf ι α n) = ⊥ := by
 end ReindexEqs
 
 /-- **Transport along the identity coding is the identity**, syntactically. -/
+@[simp]
 theorem reindex_id : ∀ {n} (φ : L.BoundedFormulaInf ι α n), reindex (.id ι) φ = φ := by
   intro n φ
   induction φ with
