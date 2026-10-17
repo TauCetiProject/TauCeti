@@ -29,10 +29,9 @@ characteristic.
 
 The actual levels form a lattice of intermediate fields mirroring divisibility: level `n` lies in
 level `m` exactly when `n ∣ m`, the intersection of levels `n` and `m` is level `gcd n m`, their
-compositum is level `lcm n m`, level one is `K⸨X⸩` and the levels exhaust the Puiseux field. For
-the compositum, a Bézout relation writes the parameter `t ^ (1 / lcm n m)` as a product of integer
-powers of `t ^ (1 / n)` and `t ^ (1 / m)`, and the power basis shows that this parameter generates
-its level.
+compositum is level `lcm n m`, level one is `K⸨X⸩` and the levels exhaust the Puiseux field. These
+formulas reduce questions about finitely many ramified subextensions, such as the smallest level
+containing given Puiseux series, to divisibility of the levels.
 
 The contraction and decomposition API follows the design proposed in
 [Mathlib PR #42313](https://github.com/leanprover-community/mathlib4/pull/42313).
@@ -403,6 +402,24 @@ theorem coe_levelPowerBasis_gen_pow (K : Type*) [Field K] {e L : ℕ+} {k : ℕ}
   rw [nsmul_eq_mul, hL]
   field_simp
 
+/-- The generator `t ^ (1 / d)` of the level-`d` power basis is nonzero. -/
+theorem levelPowerBasis_gen_ne_zero (K : Type*) [Field K] (d : ℕ+) :
+    ((levelPowerBasis K d).gen : TauCeti.puiseuxField K) ≠ 0 := fun h ↦
+  single_ne_zero (one_ne_zero (α := K)) (a := (d⁻¹ : ℚ)) <| by
+    rw [← coe_levelPowerBasis_gen, h, ZeroMemClass.coe_zero]
+
+/-- An intermediate field containing the generator `t ^ (1 / d)` contains level `d`. -/
+theorem level_le_of_levelPowerBasis_gen_mem (K : Type*) [Field K] {d : ℕ+}
+    {S : IntermediateField K⸨X⸩ (TauCeti.puiseuxField K)}
+    (h : ((levelPowerBasis K d).gen : TauCeti.puiseuxField K) ∈ S) : level K d ≤ S := by
+  intro x hx
+  obtain ⟨f, hf⟩ := (levelPowerBasis K d).exists_eq_aeval' ⟨x, hx⟩
+  have hx' : x = Polynomial.aeval ((levelPowerBasis K d).gen : TauCeti.puiseuxField K) f := by
+    rw [IntermediateField.aeval_coe, ← hf]
+  rw [hx']
+  exact Algebra.adjoin_le (Set.singleton_subset_iff.mpr h)
+    (Polynomial.aeval_mem_adjoin_singleton _ _)
+
 /-- For `n ∣ m`, level `n` is contained in level `m`. -/
 theorem level_le_level_of_dvd (K : Type*) [Field K] {n m : ℕ+} (h : n ∣ m) :
     level K n ≤ level K m := fun x hx ↦ by
@@ -436,48 +453,36 @@ theorem level_inf_level (K : Type*) [Field K] (n m : ℕ+) :
   simp only [mem_level_iff, mem_range_levelEmbedding_iff]
   rw [← Algebra.mem_inf, range_ramifiedEmbedding_inf]
 
+/-- Bézout for powers: if `a` and `b` are coprime and `u ≠ 0`, then `u` is a product of integer
+powers of `u ^ a` and `u ^ b`. -/
+private theorem zpow_gcdA_mul_zpow_gcdB {G : Type*} [GroupWithZero G] {u : G} (hu : u ≠ 0)
+    {a b : ℕ} (hab : a.Coprime b) : (u ^ a) ^ a.gcdA b * (u ^ b) ^ a.gcdB b = u := by
+  have hexp : (a : ℤ) * a.gcdA b + b * a.gcdB b = 1 := by
+    rw [← Nat.gcd_eq_gcd_ab, hab, Nat.cast_one]
+  calc (u ^ a) ^ a.gcdA b * (u ^ b) ^ a.gcdB b
+      = u ^ ((a : ℤ) * a.gcdA b) * u ^ ((b : ℤ) * a.gcdB b) := by
+        simp only [zpow_mul, zpow_natCast]
+    _ = u ^ ((a : ℤ) * a.gcdA b + b * a.gcdB b) := (zpow_add₀ hu _ _).symm
+    _ = u := by rw [hexp, zpow_one]
+
 /-- The compositum of levels `n` and `m` is level `lcm n m`. -/
 @[simp]
 theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
     level K n ⊔ level K m = level K (n.lcm m) := by
   refine le_antisymm (sup_le (level_le_level_of_dvd K (n.dvd_lcm_left m))
-    (level_le_level_of_dvd K (n.dvd_lcm_right m))) ?_
-  set L := n.lcm m
-  set u : TauCeti.puiseuxField K := ((levelPowerBasis K L).gen : TauCeti.puiseuxField K)
+    (level_le_level_of_dvd K (n.dvd_lcm_right m))) (level_le_of_levelPowerBasis_gen_mem K ?_)
   -- Write `n = a * g` and `m = b * g` with `g = gcd n m` and `a`, `b` coprime, so that
-  -- `L = n * b = m * a`. Then `u ^ b` and `u ^ a` are the parameters of levels `n` and `m`,
-  -- and a Bézout relation `a * A + b * B = 1` gives `u = (u ^ a) ^ A * (u ^ b) ^ B`.
+  -- `lcm n m = n * b = m * a`. Then `u ^ b` and `u ^ a` are the parameters of levels `n` and `m`
+  -- for the parameter `u` of level `lcm n m`, and a Bézout relation recovers `u`.
   obtain ⟨a, b, hab, hn, hm⟩ := Nat.exists_coprime (n : ℕ) m
-  have hg : 0 < Nat.gcd n m := Nat.gcd_pos_of_pos_left _ n.pos
-  have hLn : (L : ℕ) = n * b := by
-    refine Nat.eq_of_mul_eq_mul_left hg ?_
-    rw [PNat.lcm_coe, Nat.gcd_mul_lcm]
-    calc (n : ℕ) * m = n * (b * Nat.gcd n m) := congrArg _ hm
-      _ = Nat.gcd n m * (n * b) := by ring
-  have hLm : (L : ℕ) = m * a := by
-    rw [hLn]
-    calc (n : ℕ) * b = a * Nat.gcd n m * b := by rw [← hn]
-      _ = b * Nat.gcd n m * a := by ring
-      _ = m * a := by rw [← hm]
-  have hu0 : u ≠ 0 := by
-    intro h
-    apply single_ne_zero (one_ne_zero (α := K)) (a := (L⁻¹ : ℚ))
-    rw [← coe_levelPowerBasis_gen, ← ZeroMemClass.coe_zero (TauCeti.puiseuxField K)]
-    exact congrArg Subtype.val h
-  have hu : u ∈ level K n ⊔ level K m := by
-    have h1 : u = (u ^ a) ^ (a.gcdA b) * (u ^ b) ^ (a.gcdB b) := by
-      rw [← zpow_natCast, ← zpow_natCast, ← zpow_mul, ← zpow_mul, ← zpow_add₀ hu0,
-        ← Nat.gcd_eq_gcd_ab, hab, Nat.cast_one, zpow_one]
-    rw [h1, coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
-    exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
-      (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
-  intro x hx
-  obtain ⟨f, hf⟩ := (levelPowerBasis K L).exists_eq_aeval' ⟨x, hx⟩
-  have hx' : x = Polynomial.aeval u f := by
-    rw [IntermediateField.aeval_coe, ← hf]
-  rw [hx']
-  exact Algebra.adjoin_le (Set.singleton_subset_iff.mpr hu)
-    (Polynomial.aeval_mem_adjoin_singleton _ _)
+  have hL : ((n.lcm m : ℕ+) : ℕ) = a * b * Nat.gcd n m := by
+    rw [PNat.lcm_coe, ← hab.lcm_eq_mul, ← Nat.lcm_mul_right, ← hn, ← hm]
+  have hLn : ((n.lcm m : ℕ+) : ℕ) = n * b := by rw [hL, mul_right_comm, ← hn]
+  have hLm : ((n.lcm m : ℕ+) : ℕ) = m * a := by rw [hL, mul_comm a, mul_right_comm, ← hm]
+  rw [← zpow_gcdA_mul_zpow_gcdB (levelPowerBasis_gen_ne_zero K _) hab,
+    coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
+  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
+    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
 
 /-- The levels exhaust the Puiseux field. -/
 @[simp]
