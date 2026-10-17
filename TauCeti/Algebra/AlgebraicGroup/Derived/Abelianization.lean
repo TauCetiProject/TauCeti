@@ -63,18 +63,10 @@ theorem isCocomm_iff_kernelHopfIdeal_le_derivedDefiningIdeal
     rw [le_derivedDefiningIdeal_iff]
     intro x hx
     rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
-    have hmap : Function.Injective (Bialgebra.TensorProduct.map f.hom f.hom) := by
-      exact TensorProduct.map_injective_of_flat_flat
-        (f.hom : Q →ₗ[R] H) (f.hom : Q →ₗ[R] H) hf hf
-    apply hmap
     have hx' : f.hom x ∈ derivedDefiningIdeal H :=
       hker (mem_kernelHopfIdeal_of_mem_augmentation f
         ((HopfIdeal.mem_augmentation R Q).mp (HopfIdeal.mem_toIdeal.mp hx)))
-    have hnatural : (Bialgebra.TensorProduct.map f.hom f.hom)
-        (TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := Q) x) =
-          TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) (f.hom x) :=
-      DFunLike.congr_fun (TauCeti.HopfAlgebra.map_comp_commutatorAlgHom f.hom) x
-    rw [hnatural, commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal H hx', map_zero]
+    exact f.hom.commutatorAlgHom_eq_zero_of_map_mem_derivedDefiningIdeal hf hx'
 
 end CommHopfAlgCat.Hom
 

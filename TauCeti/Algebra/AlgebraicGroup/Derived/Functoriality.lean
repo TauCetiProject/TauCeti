@@ -200,6 +200,31 @@ end CommHopfAlgCat
 
 end TauCeti
 
+namespace BialgHom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+/-- For an injective morphism between flat commutative Hopf algebras, the commutator
+coordinate morphism vanishes on every element whose image lies in the target's derived
+defining ideal. -/
+theorem commutatorAlgHom_eq_zero_of_map_mem_derivedDefiningIdeal
+    {R H K : Type*} [CommSemiring R] [CommSemiring H] [CommSemiring K]
+    [HopfAlgebra R H] [HopfAlgebra R K] [Module.Flat R H] [Module.Flat R K]
+    (f : H →ₐc[R] K) (hf : Function.Injective f) {x : H}
+    (hx : f x ∈ derivedDefiningIdeal (R := R) K) :
+    TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) x = 0 := by
+  have hmap : Function.Injective (Bialgebra.TensorProduct.map f f) :=
+    TensorProduct.map_injective_of_flat_flat
+      (f : H →ₗ[R] K) (f : H →ₗ[R] K) hf hf
+  apply hmap
+  have hnatural : (Bialgebra.TensorProduct.map f f)
+      (TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) x) =
+        TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := K) (f x) :=
+    DFunLike.congr_fun (TauCeti.HopfAlgebra.map_comp_commutatorAlgHom f) x
+  rw [hnatural, commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal K hx, map_zero]
+
+end BialgHom
+
 namespace CommHopfAlgCat.Hom
 
 open TauCeti TauCeti.CommHopfAlgCat
