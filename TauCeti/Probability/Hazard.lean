@@ -31,17 +31,12 @@ determines it: `S x = exp (-∫ t in 0..x, f t / S t)`.
 
 ## Main results
 
-* `TauCeti.Probability.survival_eq_exp_integral_hazard` — a positive absolutely continuous
-  survival function is reconstructed from its hazard rate;
 * `TauCeti.Probability.intervalIntegrable_div_one_sub_cdf` — the hazard rate of a cdf is integrable
   on an interval of positive survival;
 * `TauCeti.Probability.one_sub_cdf_eq_mul_exp_neg_integral` — the hazard reconstruction of the
   survival function;
 * `TauCeti.Probability.hasDerivAt_neg_log_one_sub_cdf` — the cumulative hazard has the hazard rate
   as its derivative wherever the cdf is differentiable and survival is positive;
-* `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
-  `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` — survival starts at one
-  for an atomless or absolutely continuous law carried by the nonnegative half-line;
 * `TauCeti.Probability.one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity` and
   `TauCeti.Probability.one_sub_cdf_eq_exp_neg_integral_rnDeriv` — survival is the exponential of
   minus the cumulative hazard for a law on `[0, ∞)` with a density, or absolutely continuous with
@@ -65,30 +60,6 @@ theorem hasDerivAt_neg_log_one_sub_cdf {t d : ℝ} (hd : HasDerivAt (cdf μ) d t
     (ht : cdf μ t < 1) :
     HasDerivAt (fun s => -Real.log (1 - cdf μ s)) (d / (1 - cdf μ t)) t := by
   simpa [neg_div] using ((hd.const_sub 1).log (sub_pos.2 ht).ne').fun_neg
-
-/-- **Survival reconstruction from the hazard rate.** If `S` is absolutely continuous on the
-interval between `a` and `x`, is positive there, and has derivative `-f` almost everywhere, then
-the hazard rate `f / S` is interval integrable and
-`S x = S a * exp (-∫ t in a..x, f t / S t)`. -/
-theorem survival_eq_exp_integral_hazard {S : ℝ → ℝ}
-    (hS : AbsolutelyContinuousOnInterval S a x) (hpos : ∀ t ∈ uIcc a x, 0 < S t)
-    (hderiv : ∀ᵐ t, t ∈ uIoc a x → HasDerivAt S (-f t) t) :
-    IntervalIntegrable (fun t => f t / S t) volume a x ∧
-      S x = S a * Real.exp (-∫ t in a..x, f t / S t) := by
-  have hne : ∀ t ∈ uIcc a x, S t ≠ 0 := fun t ht => (hpos t ht).ne'
-  have hint : IntervalIntegrable (fun t => f t / S t) volume a x := by
-    have h : (fun t => f t / S t) = -fun t => -f t / S t := by
-      ext t
-      simp [neg_div]
-    rw [h]
-    exact (hS.intervalIntegrable_div_of_ae_hasDerivAt hne hderiv).neg
-  refine ⟨hint, ?_⟩
-  have h := hS.integral_div_eq_log_sub_log hne hderiv
-  simp only [neg_div, intervalIntegral.integral_neg] at h
-  have ha : 0 < S a := hpos a left_mem_uIcc
-  have hx : 0 < S x := hpos x right_mem_uIcc
-  rw [h, Real.exp_sub, Real.exp_log hx, Real.exp_log ha]
-  field_simp
 
 private theorem absolutelyContinuousOnInterval_one_sub_cdf
     (hac : AbsolutelyContinuousOnInterval (cdf μ) a x) :
@@ -121,21 +92,6 @@ theorem one_sub_cdf_eq_mul_exp_neg_integral (hac : AbsolutelyContinuousOnInterva
     1 - cdf μ x = (1 - cdf μ a) * Real.exp (-∫ t in a..x, f t / (1 - cdf μ t)) := by
   exact (survival_eq_exp_integral_hazard (absolutelyContinuousOnInterval_one_sub_cdf hac)
     (fun t ht => sub_pos.2 (hS t ht)) (ae_hasDerivAt_one_sub_cdf hf)).2
-
-/-- **Survival starts at one.** An atomless probability law carried by the nonnegative half-line
-has survival probability one at zero. -/
-theorem one_sub_cdf_zero_eq_one [IsProbabilityMeasure μ] [NullSingletonClass μ]
-    (h0 : μ (Iio 0) = 0) :
-    1 - cdf μ 0 = 1 := by
-  rw [Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0, sub_zero]
-
-/-- **Survival starts at one for an absolutely continuous law.** A probability law absolutely
-continuous with respect to Lebesgue measure and carried by the nonnegative half-line has survival
-probability one at zero. -/
-theorem one_sub_cdf_zero_eq_one_of_absolutelyContinuous [IsProbabilityMeasure μ]
-    (hac : μ ≪ volume) (h0 : μ (Iio 0) = 0) : 1 - cdf μ 0 = 1 := by
-  have : NullSingletonClass μ := ⟨fun t ↦ hac (measure_singleton t)⟩
-  exact one_sub_cdf_zero_eq_one h0
 
 /-! ### Laws with a density -/
 
