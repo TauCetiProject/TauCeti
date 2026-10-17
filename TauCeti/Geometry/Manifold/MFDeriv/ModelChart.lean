@@ -41,12 +41,12 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {f : M → ℝ}
 
 section Chart
 
-variable {e : OpenPartialHomeomorph M E} {h : E → ℝ}
+variable [NormedSpace ℝ E] {e : OpenPartialHomeomorph M E} {h : E → ℝ}
 
 /-- If `f = h ∘ e` on the source of a chart `e` of the maximal atlas, with `h` differentiable,
 then `df_y = dh_{e y} ∘ de_y`. -/
@@ -94,21 +94,18 @@ end Chart
 
 section Preferred
 
-variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The coordinate expression of `f` in the preferred chart at `p`. -/
 theorem eqOn_comp_chartAt_symm (p : M) :
     EqOn f ((f ∘ (chartAt E p).symm) ∘ chartAt E p) (chartAt E p).source := fun y hy ↦ by
   simp [(chartAt E p).left_inv hy]
 
-omit [FiniteDimensional ℝ E] in
+variable [NormedSpace ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
+
 /-- The coordinate expression of a smooth function is smooth on the chart target. -/
 theorem contDiffOn_comp_chartAt_symm (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (p : M) :
     ContDiffOn ℝ ∞ (f ∘ (chartAt E p).symm) (chartAt E p).target :=
   (hf.comp_contMDiffOn contMDiffOn_chart_symm).contDiffOn
 
-omit [FiniteDimensional ℝ E] in
 /-- A point is critical for a smooth `f` exactly when it is critical for the coordinate expression
 of `f` in the preferred extended chart at that point. -/
 theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
@@ -122,7 +119,6 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm (hf : ContMDiff 𝓘(ℝ
     (((contDiffOn_comp_chartAt_symm hf x).contDiffAt ((chartAt E x).open_target.mem_nhds
       (mem_chart_target E x))).differentiableAt (by simp))
 
-omit [FiniteDimensional ℝ E] in
 /-- The regular points of a smooth function form an open set. -/
 theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) :
     IsOpen {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0} := by
