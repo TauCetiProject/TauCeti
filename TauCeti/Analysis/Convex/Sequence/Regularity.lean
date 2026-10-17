@@ -13,16 +13,18 @@ public import Mathlib.Topology.Algebra.Ring.Real
 /-!
 # Regularity of supporting values
 
-The supporting value is concave wherever it is finite. For a nonempty height sequence,
-this domain is a lower interval of slopes. No convexity assumption on the heights is
-needed for concavity.
+The real supporting value is concave on the slopes where the supporting value is not
+negative infinity. For a nonempty height sequence, this is its finite-value domain
+and is a lower interval of slopes. No convexity assumption on the heights is needed.
+For the empty sequence, the real supporting value is the constant zero function.
 
 For a nonempty finite point set, the supporting value is the minimum of finitely many
-real affine functions on the whole slope line. For a convex height sequence on an
-unbounded domain, a later edge of slope `m` gives one finite set of candidate indices
-that computes every supporting value at slopes strictly below `m`. Consequently the
-real supporting value is continuous there. The same finite set works on every compact
-slope interval below that edge; no assertion is made at a limiting terminal-ray slope.
+real affine functions on the whole slope line. For a convex height sequence, a finite
+edge `[m, m+1]` gives the finite set of finite-height indices `n ≤ m`, which computes
+every supporting value at slopes strictly below `unitSlope h m`, with no bounded-domain
+assumption. Consequently the real supporting value is continuous there. The same finite
+set works on every compact slope interval below that edge; no assertion is made at a
+limiting terminal-ray slope.
 These finite reductions are useful for identifying active coefficients and for local
 piecewise-affine descriptions of Newton polygons.
 
@@ -50,11 +52,17 @@ theorem convex_setOf_supportingValue_ne_bot (a : ℕ → WithTop ℝ) :
   exact ⟨fun x _ y hy z hz =>
     ne_bot_of_le_ne_bot hy (supportingValue_antitone a hz.2)⟩
 
-/-- The real supporting value of a nonempty height sequence is concave on its
-finite-value domain. Convexity and admissibility of the height sequence are not required. -/
-theorem concaveOn_supportingValue (hne : ∃ n, a n ≠ ⊤) :
+/-- The real supporting value is concave where the supporting value is not negative
+infinity. For a nonempty height sequence this is its finite-value domain; for the empty
+sequence the real supporting value is constant zero. No convexity or admissibility is required. -/
+theorem concaveOn_supportingValue_toReal (a : ℕ → WithTop ℝ) :
     ConcaveOn ℝ {σ | supportingValue a σ ≠ ⊥}
       (fun σ => (supportingValue a σ).toReal) := by
+  obtain rfl | ha := eq_or_ne a ⊤
+  · simpa using concaveOn_const (0 : ℝ) (convex_setOf_supportingValue_ne_bot ⊤)
+  have hne : ∃ n, a n ≠ ⊤ := by
+    by_contra! h
+    exact ha (funext h)
   refine ⟨convex_setOf_supportingValue_ne_bot a, ?_⟩
   intro x hx y hy u v hu hv huv
   have htop (σ : ℝ) : supportingValue a σ ≠ ⊤ :=
@@ -69,9 +77,10 @@ theorem concaveOn_supportingValue (hne : ∃ n, a n ≠ ⊤) :
   intro n
   by_cases hn : a n = ⊤
   · simp [hn]
-  have hx' := hline x hx n
-  have hy' := hline y hy n
-  rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe] at hx' hy' ⊢
+  have hx' := WithTop.untop₀_le_untop₀ hn (hline x hx n)
+  have hy' := WithTop.untop₀_le_untop₀ hn (hline y hy n)
+  apply WithTop.le_of_untop₀_le_untop₀ WithTop.coe_ne_top
+  simp only [WithTop.untop₀_coe] at hx' hy' ⊢
   simp only [smul_eq_mul] at *
   nlinarith [mul_le_mul_of_nonneg_left hx' hu, mul_le_mul_of_nonneg_left hy' hv,
     congrArg (fun t : ℝ => t * (a n).untop₀) huv]
@@ -93,24 +102,32 @@ theorem supportingValue_eq_coe_inf' {I : Finset ℕ} (hI : I.Nonempty)
     intro n
     by_cases hn : a n = ⊤
     · simp [hn]
-    rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe]
+    apply WithTop.le_of_untop₀_le_untop₀ WithTop.coe_ne_top
+    simp only [WithTop.untop₀_coe]
     have := I.inf'_le (fun n => (a n).untop₀ - σ * n) ((hdom n).mp hn)
     linarith
 
-/-- The real supporting value of a nonempty finite point set is continuous at every
+/-- The real supporting value of a finite point set is continuous at every
 real slope. This does not require the original heights to be convex. -/
 theorem continuous_supportingValue_toReal_of_finite
-    (hfinite : {n | a n ≠ ⊤}.Finite) (hne : {n | a n ≠ ⊤}.Nonempty) :
+    (hfinite : {n | a n ≠ ⊤}.Finite) :
     Continuous (fun σ => (supportingValue a σ).toReal) := by
   classical
+  obtain rfl | ha := eq_or_ne a ⊤
+  · simpa using (continuous_const : Continuous (fun _ : ℝ => (0 : ℝ)))
+  have hne : {n | a n ≠ ⊤}.Nonempty := by
+    by_contra h
+    apply ha
+    funext n
+    by_contra hn
+    exact h ⟨n, hn⟩
   let I := hfinite.toFinset
   have hI : I.Nonempty := hfinite.toFinset_nonempty.mpr hne
   have heq (σ : ℝ) : (supportingValue a σ).toReal =
       I.inf' hI (fun n => (a n).untop₀ - σ * n) := by
     rw [supportingValue_eq_coe_inf' hI (by simp [I]), EReal.toReal_coe]
   simp_rw [heq]
-  exact Continuous.finset_inf'_apply hI fun n _ =>
-    continuous_const.sub (continuous_id.mul continuous_const)
+  fun_prop
 
 /-- A later finite edge bounds the indices needed to compute all supporting values at
 smaller slopes. One finite nonempty set works uniformly on the whole open half-line. -/
@@ -141,8 +158,9 @@ theorem IsConvexSeq.exists_finset_supportingValue_eq_inf' (hh : IsConvexSeq h)
   apply le_antisymm
   · apply le_inf'
     intro n hn
-    have hcn := isSupportingLine_iff_forall.mp hc n
-    rw [← WithTop.coe_untop₀_of_ne_top ((hmem n).mp hn).2, WithTop.coe_le_coe] at hcn
+    have hcn := WithTop.untop₀_le_untop₀ ((hmem n).mp hn).2
+      (isSupportingLine_iff_forall.mp hc n)
+    simp only [WithTop.untop₀_coe] at hcn
     linarith
   · exact (I.inf'_le _ ((hmem l).mpr ⟨hf.left_le_right.trans hum, hlfin⟩)).trans_eq hlreal
 
@@ -152,9 +170,8 @@ theorem IsConvexSeq.continuousOn_supportingValue_toReal (hh : IsConvexSeq h)
     {m : ℕ} (hm : m ∈ finiteEdges h) :
     ContinuousOn (fun σ => (supportingValue h σ).toReal) (Iio (unitSlope h m)) := by
   obtain ⟨I, hI, _, heq⟩ := hh.exists_finset_supportingValue_eq_inf' hm
-  have hc : Continuous (fun σ => I.inf' hI (fun n => (h n).untop₀ - σ * n)) :=
-    Continuous.finset_inf'_apply hI fun n _ =>
-      continuous_const.sub (continuous_id.mul continuous_const)
+  have hc : Continuous (fun σ => I.inf' hI (fun n => (h n).untop₀ - σ * n)) := by
+    fun_prop
   exact hc.continuousOn.congr fun σ hσ => by rw [heq σ hσ, EReal.toReal_coe]
 
 end TauCeti
