@@ -32,7 +32,7 @@ deformation retract of the plane punctured at those `g` points: points inside a 
 radially out from its centre to its boundary circle, points outside the big disc are pushed
 radially in to its boundary circle, and all other points stay put. The fundamental group of the
 punctured plane is free on the punctures
-(`TauCeti.nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup`).
+(`TauCeti.nonempty_fundamentalGroup_compl_mulEquiv_freeGroup`).
 
 ## Main results
 
@@ -69,8 +69,8 @@ variable (g) in
 private def holeCenter (k : Fin g) : ℝ := 2 * k + 1 - g
 
 private theorem mem_planarSurface_iff {z : ℂ} :
-    z ∈ planarSurface g ↔ ‖z‖ ≤ g + 1 ∧ ∀ k, 2⁻¹ ≤ ‖z - holeCenter g k‖ :=
-  mem_planarSurface
+    z ∈ planarSurface g ↔ ‖z‖ ≤ g + 1 ∧ ∀ k, 2⁻¹ ≤ ‖z - holeCenter g k‖ := by
+  simp only [mem_planarSurface, holeCenter]
 
 private theorem norm_holeCenter_le (k : Fin g) : ‖(holeCenter g k : ℂ)‖ ≤ g - 1 := by
   have hk : ((k : ℕ) : ℝ) + 1 ≤ g := by exact_mod_cast k.isLt
@@ -91,6 +91,12 @@ private theorem two_le_norm_holeCenter_sub {i j : Fin g} (hij : i ≠ j) :
     2 ≤ ‖(holeCenter g i : ℂ) - holeCenter g j‖ := by
   rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
   exact two_le_abs_holeCenter_sub hij
+
+private theorem injective_holeCenter : Function.Injective fun k : Fin g ↦ (holeCenter g k : ℂ) :=
+  fun i j hij ↦ by_contra fun h ↦ by
+    have := two_le_norm_holeCenter_sub h
+    rw [show (holeCenter g i : ℂ) = holeCenter g j from hij, sub_self, norm_zero] at this
+    norm_num at this
 
 private theorem mem_compl_range_iff {z : ℂ} :
     z ∈ (range fun k ↦ (holeCenter g k : ℂ))ᶜ ↔ ∀ k, z ≠ holeCenter g k := by
@@ -296,9 +302,10 @@ theorem nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (z : planarSu
     Nonempty (FundamentalGroup (planarSurface g) z ≃* FreeGroup (Fin g)) := by
   obtain ⟨e⟩ := planarSurfaceHomotopyEquiv.nonempty_fundamentalGroupMulEquiv z
     (planarSurfaceHomotopyEquiv z)
-  obtain ⟨f⟩ := nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup two_pos
-    (fun _ _ ↦ two_le_abs_holeCenter_sub) (planarSurfaceHomotopyEquiv z)
-  exact ⟨e.trans f⟩
+  obtain ⟨f⟩ := nonempty_fundamentalGroup_compl_mulEquiv_freeGroup (finite_range _)
+    (planarSurfaceHomotopyEquiv z)
+  exact ⟨e.trans <| f.trans <|
+    FreeGroup.freeGroupCongr (Equiv.ofInjective _ injective_holeCenter).symm⟩
 
 /-- The standard handlebody of genus `g` is homotopy equivalent to the closed disc with `g` holes,
 by projection. -/

@@ -11,20 +11,26 @@ public import Mathlib.Analysis.Complex.Basic
 
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.Contractible
+import Mathlib.LinearAlgebra.Lagrange
+import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.GroupTheory.CoprodI
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
-# The fundamental group of the plane minus a set of real points
+# The fundamental group of the plane minus finitely many points
 
-Let `c i`, for `i : ι`, be real numbers any two of which are at distance at least `δ > 0`. Then
-the fundamental group of `ℂ` with the points `c i` removed is the free group on `ι`, at every
-base point (`TauCeti.nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup`). The index set
-may be infinite: the separation hypothesis is what keeps the punctures discrete.
+The fundamental group of `ℂ` with a finite set `s` of points removed is the free group on `s`, at
+every base point (`TauCeti.nonempty_fundamentalGroup_compl_mulEquiv_freeGroup`).
 
-The proof is the Seifert--van Kampen theorem for a family of open sets with a common
+A homeomorphism of the plane first moves the punctures onto the real axis: a linear map gives
+them distinct real parts, and a vertical shear along a polynomial through their imaginary parts
+then makes them real. So it suffices to treat real points `c i`, for `i : ι`, any two of which are
+at distance at least `δ > 0`.
+
+For those, the proof is the Seifert--van Kampen theorem for a family of open sets with a common
 simply connected pairwise intersection (`TauCeti.vanKampenWideEquiv`). The common part is a
 *comb*: the open lower half-plane together with the *teeth*, the points whose real part is at
 distance more than `δ / 4` from every `c i`. The `k`-th member of the cover adds to the comb the
@@ -40,8 +46,8 @@ fundamental group is infinite cyclic (`StarConvex.fundamentalGroupMulEquivInt`).
 
 ## Main results
 
-* `TauCeti.nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup`: the fundamental group of
-  `ℂ` minus a separated family of real points `c i` is free on the index set.
+* `TauCeti.nonempty_fundamentalGroup_compl_mulEquiv_freeGroup`: the fundamental group of `ℂ`
+  minus a finite set of points is free on that set.
 
 ## References
 
@@ -87,6 +93,13 @@ variable (c δ) in
 /-- The lower half-plane together with the strip about `c k`, a set star-convex about `c k`. -/
 private def model (k : ι) : Set ℂ := lower ∪ strip c δ k
 
+private theorem convex_lower : Convex ℝ lower := by
+  unfold lower
+  exact convex_halfSpace_im_lt 0
+
+private theorem neg_I_mem_lower : -I ∈ lower := by
+  simp [lower]
+
 private theorem ofReal_notMem_lower (x : ℝ) : (x : ℂ) ∉ lower := by
   simp [lower]
 
@@ -101,7 +114,7 @@ private theorem mem_strip_self (hδ : 0 < δ) (k : ι) : (c k : ℂ) ∈ strip c
   simp [strip, hδ]
 
 private theorem neg_I_mem_comb : -I ∈ comb c δ :=
-  .inl (by simp [lower])
+  .inl neg_I_mem_lower
 
 private theorem neg_I_mem_compl_range : -I ∈ (range fun i ↦ (c i : ℂ))ᶜ := by
   rintro ⟨i, hi⟩
@@ -256,8 +269,7 @@ private def lowerHomotopyEquivComb : lower ≃ₕ comb c δ :=
 
 /-- The comb is contractible. -/
 private theorem contractibleSpace_comb : ContractibleSpace (comb c δ) :=
-  haveI : ContractibleSpace lower :=
-    (convex_halfSpace_im_lt (r := 0)).contractibleSpace ⟨-I, by simp⟩
+  haveI : ContractibleSpace lower := convex_lower.contractibleSpace ⟨-I, neg_I_mem_lower⟩
   lowerHomotopyEquivComb.symm.contractibleSpace
 
 /-- The time-`t` push of a point of the `k`-th member. -/
@@ -374,10 +386,9 @@ private theorem pathConnectedSpace_compl_range [Nonempty ι] (hδ : 0 < δ)
       (comb_subset_piece k neg_I_mem_comb)).joined
   exact ⟨⟨b⟩, fun z w ↦ (hb z).trans (hb w).symm⟩
 
-/-- **The fundamental group of the plane minus a separated family of real points is free.** If
-the real numbers `c i` are pairwise at distance at least `δ > 0`, then the fundamental group of
-`ℂ` with the points `c i` removed is the free group on `ι`, at every base point. -/
-theorem nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (hδ : 0 < δ)
+/-- If the real numbers `c i` are pairwise at distance at least `δ > 0`, then the fundamental
+group of `ℂ` with the points `c i` removed is the free group on `ι`, at every base point. -/
+private theorem nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (hδ : 0 < δ)
     (hc : Pairwise fun i j ↦ δ ≤ |c i - c j|) (z : ↥(range fun i ↦ (c i : ℂ))ᶜ) :
     Nonempty (FundamentalGroup ↥(range fun i ↦ (c i : ℂ))ᶜ z ≃* FreeGroup ι) := by
   rcases isEmpty_or_nonempty ι with hι | hι
@@ -406,5 +417,76 @@ theorem nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (hδ : 0 < δ)
     (MulEquiv.coprodICongr fun k ↦
       (nonempty_fundamentalGroup_cover_mulEquiv_int hδ hc k _).some.trans
         FreeGroup.mulEquivIntOfUnique.symm).trans freeGroupEquivCoprodI.symm⟩
+
+/-! ### Finitely many punctures anywhere in the plane -/
+
+/-- The vertical shear `z ↦ z - ψ z.re * I` of the plane, a homeomorphism keeping real parts. -/
+private def shearIm (ψ : ℝ → ℝ) (hψ : Continuous ψ) : ℂ ≃ₜ ℂ where
+  toFun z := z - (ψ z.re : ℂ) * I
+  invFun z := z + (ψ z.re : ℂ) * I
+  left_inv z := by simp
+  right_inv z := by simp
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+/-- A homeomorphism of the plane carries a finite set onto real points, injectively. It is a
+linear map giving the points distinct real parts, followed by a vertical shear along a polynomial
+through their imaginary parts. -/
+private theorem exists_homeomorph_eq_ofReal {s : Set ℂ} (hs : s.Finite) :
+    ∃ (e : ℂ ≃ₜ ℂ) (c : ℂ → ℝ), InjOn c s ∧ ∀ z ∈ s, e z = c z := by
+  obtain ⟨t, ht⟩ :=
+    ((hs.prod hs).image fun p : ℂ × ℂ ↦ (p.1 - p.2).re / (p.1 - p.2).im).exists_notMem
+  have hu : (1 + t * I : ℂ) ≠ 0 := fun h ↦ by simpa using congrArg re h
+  have hc : InjOn (fun z ↦ ((1 + t * I) * z).re) s := by
+    intro a ha b hb hab
+    by_contra hne
+    have hre : (a - b).re = t * (a - b).im := by
+      simp only [mul_re, add_re, one_re, mul_im, ofReal_re, I_re, ofReal_im, I_im, add_im,
+        one_im] at hab
+      simp only [sub_re, sub_im]
+      linarith
+    have him : (a - b).im ≠ 0 := fun h ↦
+      hne (sub_eq_zero.1 (Complex.ext (by simpa [h] using hre) (by simpa using h)))
+    exact ht ⟨(a, b), ⟨ha, hb⟩, by simp only [hre, mul_div_assoc, div_self him, mul_one]⟩
+  have hc' : InjOn (fun z ↦ ((1 + t * I) * z).re) hs.toFinset := by rwa [hs.coe_toFinset]
+  let P := Lagrange.interpolate hs.toFinset (fun z ↦ ((1 + t * I) * z).re)
+    fun z ↦ ((1 + t * I) * z).im
+  refine ⟨(Homeomorph.mulLeft₀ _ hu).trans (shearIm _ P.continuous),
+    fun z ↦ ((1 + t * I) * z).re, hc, fun z hz ↦ ?_⟩
+  have hP := Lagrange.eval_interpolate_at_node (r := fun z ↦ ((1 + t * I) * z).im) hc'
+    (hs.mem_toFinset.2 hz)
+  beta_reduce at hP
+  simp only [shearIm, Homeomorph.trans_apply, Homeomorph.coe_mulLeft₀,
+    Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk]
+  rw [hP]
+  apply Complex.ext <;> simp
+
+/-- A finite family of distinct real numbers is uniformly separated. -/
+private theorem exists_pos_pairwise_le_abs_sub [Finite ι] (hc : Function.Injective c) :
+    ∃ δ > 0, Pairwise fun i j ↦ δ ≤ |c i - c j| := by
+  by_cases h : Nonempty {p : ι × ι // p.1 ≠ p.2}
+  · obtain ⟨p, hp⟩ := Finite.exists_min fun p : {p : ι × ι // p.1 ≠ p.2} ↦ |c p.1.1 - c p.1.2|
+    exact ⟨_, abs_pos.2 (sub_ne_zero.2 (hc.ne p.2)), fun i j hij ↦ hp ⟨(i, j), hij⟩⟩
+  · exact ⟨1, one_pos, fun i j hij ↦ (h ⟨⟨(i, j), hij⟩⟩).elim⟩
+
+/-- **The fundamental group of the plane minus finitely many points is free** on those points,
+at every base point. -/
+theorem nonempty_fundamentalGroup_compl_mulEquiv_freeGroup {s : Set ℂ} (hs : s.Finite)
+    (z : ↥sᶜ) : Nonempty (FundamentalGroup ↥sᶜ z ≃* FreeGroup s) := by
+  obtain ⟨e, c, hc, he⟩ := exists_homeomorph_eq_ofReal hs
+  have : Finite s := hs
+  obtain ⟨δ, hδ, hcδ⟩ := exists_pos_pairwise_le_abs_sub hc.injective
+  have himage : e '' sᶜ = (range fun i : s ↦ (c i : ℂ))ᶜ := by
+    rw [e.image_compl]
+    congr 1
+    ext w
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      exact ⟨⟨x, hx⟩, (he x hx).symm⟩
+    · rintro ⟨⟨x, hx⟩, rfl⟩
+      exact ⟨x, hx, he x hx⟩
+  let f : ↥sᶜ ≃ₜ ↥(range fun i : s ↦ (c i : ℂ))ᶜ := (e.image sᶜ).trans (.setCongr himage)
+  obtain ⟨φ⟩ := nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup hδ hcδ (f z)
+  exact ⟨(FundamentalGroup.homeomorphMulEquiv f z).trans φ⟩
 
 end TauCeti
