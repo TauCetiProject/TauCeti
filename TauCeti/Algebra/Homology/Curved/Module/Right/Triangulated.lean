@@ -122,8 +122,6 @@ private noncomputable def mapStableConflationTriangleIso
       Functor.whiskerRight_app, stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app,
       Iso.inv_hom_id_app_map_assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
       Preadditive.comp_neg]
-    -- Only the public cokernel object equation identifies the endpoint with the shift.
-    simp only [coneIdentityInjectivePresentation_K] at key ⊢
     rw [eqToHom_comp_iff, comp_eqToHom_iff] at key
     simp only [key, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc,
       eqToHom_map]
