@@ -39,7 +39,7 @@ variable {R M : Type*} [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M
 
 /-- If two normed families tend to zero cofinitely, then their pointwise scalar products, indexed
 by pairs, also tend to zero cofinitely. -/
-theorem tendsto_smul_cofinite_nhds_zero {α β : Type*} {f : α → R} {g : β → M}
+theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero {α β : Type*} {f : α → R} {g : β → M}
     (hf : Tendsto f cofinite (𝓝 0)) (hg : Tendsto g cofinite (𝓝 0)) :
     Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
   squeeze_zero_norm (fun ij ↦ norm_smul_le (f ij.1) (g ij.2))
@@ -55,7 +55,7 @@ theorem _root_.Summable.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g
     (hf : Summable f) (hg : Summable g) :
     Summable fun ij : α × β ↦ f ij.1 • g ij.2 :=
   (NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero _).mpr <|
-    tendsto_smul_cofinite_nhds_zero hf.tendsto_cofinite_zero hg.tendsto_cofinite_zero
+    hf.tendsto_cofinite_zero.smul_cofinite_nhds_zero hg.tendsto_cofinite_zero
 
 /-- Scalar multiplication distributes over two infinite sums in a complete Hausdorff ultrametric
 normed module. -/
