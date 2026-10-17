@@ -86,24 +86,23 @@ the simply connected type-F₄ datum. -/
 theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 4) (A : Type v) [CommRing A]
     [Algebra (ZMod 2) A] (s : Fin 4 → Aˣ) :
     simpleWeylPoint i A * weightTorusPoints A s * (simpleWeylPoint i A)⁻¹ =
-      weightTorusPoints A (F4ShortRoot.simpleReflectionTorusPoint i A s) := by
+      weightTorusPoints A
+        (DynkinType.F4.geckSimpleReflectionTorusPoint DynkinType.valid_F4 i A s) := by
   apply Subtype.ext
-  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint,
+  simpa (config := { instances := true }) only [DynkinType.rank,
+    Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint,
     coe_weightTorusPoints] using
     congrArg Subtype.val (F4ShortRoot.simpleWeylPoint_conj_weightTorusPoints i A s)
 
 /-- Each prime-field pinned Weyl representative normalizes the weight torus. -/
 theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin 4) (A : Type v)
     [CommRing A] [Algebra (ZMod 2) A] :
-    simpleWeylPoint i A ∈ Subgroup.normalizer (weightTorusPoints A).range := by
-  refine Subgroup.mem_normalizer_iff.2 fun x ↦ ⟨?_, ?_⟩
-  · rintro ⟨s, rfl⟩
-    exact ⟨_, (simpleWeylPoint_conj_weightTorusPoints i A s).symm⟩
-  · rintro ⟨s, hs⟩
-    have h := simpleWeylPoint_conj_weightTorusPoints i A
-      (F4ShortRoot.simpleReflectionTorusPoint i A s)
-    rw [F4ShortRoot.simpleReflectionTorusPoint_simpleReflectionTorusPoint, hs] at h
-    exact ⟨_, mul_left_cancel (mul_right_cancel h)⟩
+    simpleWeylPoint i A ∈ Subgroup.normalizer (weightTorusPoints A).range :=
+  (weightTorusPoints A).mem_normalizer_range_of_surjective
+    (Function.Involutive.surjective
+      (DynkinType.F4.geckSimpleReflectionTorusPoint_geckSimpleReflectionTorusPoint
+        DynkinType.valid_F4 i A))
+    (simpleWeylPoint_conj_weightTorusPoints i A)
 
 end
 

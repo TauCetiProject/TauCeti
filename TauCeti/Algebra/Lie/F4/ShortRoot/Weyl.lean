@@ -5,8 +5,9 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PointsFunctor
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Basic
 
 /-!
 # Simple Weyl representatives in the short-root F₄ carrier
@@ -100,44 +101,17 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 4) (A : Type v) [CommRi
     coe_rootSubgroupPoints, coe_kostantToralRootSubgroupPoints] using
     congrArg Subtype.val h
 
-/-- The simple reflection of the type-F₄ root datum on split-torus points. -/
-def simpleReflectionTorusPoint (i : Fin 4) (A : Type v) [CommRing A] :
-    (Fin 4 → Aˣ) →* (Fin 4 → Aˣ) :=
-  weylReflectTorusPoint (fun j : Fin 4 ↦ CartanMatrix.F₄ i j) i
-
-/-- The torus reflection is the multiplicative reflection in the numbered simple root. -/
-theorem simpleReflectionTorusPoint_def (i : Fin 4) (A : Type v) [CommRing A] :
-    simpleReflectionTorusPoint i A =
-      weylReflectTorusPoint (fun j : Fin 4 ↦ CartanMatrix.F₄ i j) i :=
-  (rfl)
-
-/-- The reflecting character is the matching simple root of the named simply connected datum. -/
-theorem simpleReflectionTorusPoint_eq_weylReflectTorusPoint_root_simpleIndex
-    (i : Fin 4) (A : Type v) [CommRing A] :
-    simpleReflectionTorusPoint i A =
-      weylReflectTorusPoint (fun j : Fin 4 ↦
-        (F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i) j) i := by
-  rw [simpleReflectionTorusPoint_def]
-  congr 1
-  funext j
-  simpa only [rank_F4, cartanMatrix_F4] using
-    (congrFun (F4.root_simpleIndex valid_F4 i) j).symm
-
-/-- Reflecting a torus point twice gives the original point. -/
-@[simp]
-theorem simpleReflectionTorusPoint_simpleReflectionTorusPoint (i : Fin 4) (A : Type v)
-    [CommRing A] (s : Fin 4 → Aˣ) :
-    simpleReflectionTorusPoint i A (simpleReflectionTorusPoint i A s) = s := by
-  apply weylReflectTorusPoint_weylReflectTorusPoint
-  simpa only [rank_F4, cartanMatrix_F4] using F4.cartanMatrix_apply_same i
-
 /-- Conjugation by the pinned Weyl representative acts on the weight torus through the
 matching simple reflection of the simply connected root datum. -/
 @[simp]
 theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 4) (A : Type v) [CommRing A]
     (s : Fin 4 → Aˣ) :
     simpleWeylPoint i A * weightTorusPoints A s * (simpleWeylPoint i A)⁻¹ =
-      weightTorusPoints A (simpleReflectionTorusPoint i A s) := by
+      weightTorusPoints A (F4.geckSimpleReflectionTorusPoint valid_F4 i A s) := by
+  rw [F4.geckSimpleReflectionTorusPoint_def valid_F4 i A,
+    F4.root_simpleIndex valid_F4 i]
+  dsimp (config := { instances := true }) only [rank]
+  simp only [cartanMatrix_F4]
   have hpos (q : Fin 4) : rootWeight (.inl i) q = CartanMatrix.F₄ i q := by
     simpa only [rank_F4, cartanMatrix_F4] using
       F4.rootGeneratorWeight_inl (ht := valid_F4) i q
@@ -162,21 +136,17 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 4) (A : Type v) [CommRin
     isCartanWeightVector_latticeBasis A s
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint,
-    coe_weightTorusPoints, coe_kostantToralWeightTorusPoints, simpleReflectionTorusPoint_def] using
+    coe_weightTorusPoints, coe_kostantToralWeightTorusPoints] using
     congrArg Subtype.val h
 
 /-- Every pinned simple Weyl representative normalizes the weight torus. -/
 theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin 4) (A : Type v)
     [CommRing A] :
-    simpleWeylPoint i A ∈ Subgroup.normalizer (weightTorusPoints A).range := by
-  refine Subgroup.mem_normalizer_iff.2 fun x ↦ ⟨?_, ?_⟩
-  · rintro ⟨s, rfl⟩
-    exact ⟨_, (simpleWeylPoint_conj_weightTorusPoints i A s).symm⟩
-  · rintro ⟨s, hs⟩
-    have h := simpleWeylPoint_conj_weightTorusPoints i A
-      (simpleReflectionTorusPoint i A s)
-    rw [simpleReflectionTorusPoint_simpleReflectionTorusPoint, hs] at h
-    exact ⟨_, mul_left_cancel (mul_right_cancel h)⟩
+    simpleWeylPoint i A ∈ Subgroup.normalizer (weightTorusPoints A).range :=
+  (weightTorusPoints A).mem_normalizer_range_of_surjective
+    (Function.Involutive.surjective
+      (F4.geckSimpleReflectionTorusPoint_geckSimpleReflectionTorusPoint valid_F4 i A))
+    (simpleWeylPoint_conj_weightTorusPoints i A)
 
 end
 
