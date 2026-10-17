@@ -22,7 +22,7 @@ separation or completeness hypotheses on the model.
 
 ## Main declarations
 
-* `TauCeti.SmoothForm.mem_closedForms_zero_iff`: a smooth `0`-form is closed exactly when its
+* `TauCeti.mem_closedForms_zero_iff`: a smooth `0`-form is closed exactly when its
   function is locally constant.
 * `TauCeti.closedFormsZeroEquiv`: closed smooth `0`-forms are locally constant functions.
 * `TauCeti.deRhamCohomologyZeroEquiv`: `H⁰_dR(M) ≃ₗ[ℝ] LocallyConstant M ℝ`.
@@ -48,7 +48,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   [IsManifold I 2 M]
 
 /-- A smooth real `0`-form is closed exactly when its function is locally constant. -/
-theorem SmoothForm.mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
+theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
     φ ∈ closedForms I M 0 ↔ IsLocallyConstant fun x ↦ φ.1 x 0 := by
   have hφ : IsSmoothForm I ∞ (RoughForm.ofFunction I fun x ↦ φ.1 x 0) := by
     rw [← RoughForm.eq_ofFunction, isSmoothForm_def]
@@ -60,12 +60,12 @@ theorem SmoothForm.mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
 variable (M) in
 /-- Closed smooth real `0`-forms are exactly the locally constant real functions. -/
 def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
-  toFun φ := ⟨fun x ↦ φ.1.1 x 0, (SmoothForm.mem_closedForms_zero_iff I φ.1).mp φ.2⟩
+  toFun φ := ⟨fun x ↦ φ.1.1 x 0, (mem_closedForms_zero_iff I φ.1).mp φ.2⟩
   invFun f := ⟨⟨RoughForm.ofFunction I f, mem_smoothForms.mpr <|
       (isSmoothBundleForm_def ∞ _).mpr <| (isSmoothForm_def ∞ _).mp <|
         isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
           ((IsLocallyConstant.iff_eventually_eq f).mp f.isLocallyConstant x)⟩,
-    (SmoothForm.mem_closedForms_zero_iff I _).mpr <| by
+    (mem_closedForms_zero_iff I _).mpr <| by
       simp only [RoughForm.ofFunction_apply]
       exact f.isLocallyConstant⟩
   map_add' _ _ := rfl

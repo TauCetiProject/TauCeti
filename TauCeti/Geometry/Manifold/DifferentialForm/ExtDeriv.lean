@@ -351,6 +351,7 @@ theorem mextDeriv_ofFunction (f : M → F) (x : M) :
 
 /-- The exterior derivative of the `0`-form of a function vanishes at a point exactly when the
 manifold derivative of the function does. -/
+@[simp]
 theorem mextDeriv_ofFunction_apply_eq_zero_iff {f : M → F} {x : M} :
     mextDeriv (RoughForm.ofFunction I f) x = 0 ↔ mfderiv I 𝓘(ℝ, F) f x = 0 := by
   rw [mextDeriv_ofFunction]
