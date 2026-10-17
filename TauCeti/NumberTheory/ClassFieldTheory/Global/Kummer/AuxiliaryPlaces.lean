@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.LocalPowerClass
+public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
+public import TauCeti.RingTheory.Ideal.PrimesOver
 
 import TauCeti.NumberTheory.ClassFieldTheory.Global.FrobeniusGeneration
 import TauCeti.NumberTheory.NumberField.Frobenius.SplitBasis
@@ -22,8 +24,7 @@ properties needed in the counting step of the Kummer proof of the second fundame
 * `S` and `T` are disjoint;
 * `p ^ #T = [M : L]`;
 * the `S`-units surject onto the product of the local unit `p`-th power classes at `T`;
-* every place in `T` has ramification index times residue degree one in `L`, equivalently local
-  degree one.
+* every place in `T` has a place of `L` above it of local degree one.
 
 The Frobenius elements outside `S` generate `Gal(M/L)` by the first fundamental inequality.
 The Frobenius-basis theorem extracts `T`; its cardinality identity then makes the Kummer-theoretic
@@ -32,7 +33,7 @@ counting bound for local power classes an equality.
 ## Main result
 
 * `TauCeti.ClassFieldTheory.exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective`: the
-  auxiliary set `T`, including its cardinality, local-power-class and splitting properties.
+  auxiliary set `T`, including its cardinality, local-power-class and local-degree properties.
 
 ## References
 
@@ -54,8 +55,7 @@ variable {K E : Type} [Field K] [NumberField K] [Field E] [Algebra K E]
 finite places above `p`, and let `M = K(U_S^{1/p})` in an ambient field containing the required
 radicals. For every intermediate field `L/K` in `M`, there is a finite set `T`, disjoint from
 `S`, such that `p ^ #T = [M : L]`, the `S`-units surject onto the local unit `p`-th power
-classes at `T`, and every place in `T` has ramification index times residue degree one in `L`
-(equivalently, local degree one). -/
+classes at `T`, and every place in `T` has a place of `L` above it of local degree one. -/
 theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
     {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S)
@@ -71,7 +71,7 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
           Function.Surjective
             (Set.unitLocalPowerClassMap (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) hST p) ∧
           ∀ v ∈ T, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-            w.1.asIdeal.ramificationIdx (𝓞 K) * w.1.asIdeal.inertiaDeg (𝓞 K) = 1 := by
+            Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1 := by
   classical
   let _ : NeZero p := ⟨hp.ne_zero⟩
   have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
@@ -136,13 +136,6 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
       (K := K) (M := M) (S := (S : Set (HeightOneSpectrum (𝓞 K))))
       (T := (T : Set (HeightOneSpectrum (𝓞 K)))) hST' hp.ne_zero L σ Q hσ hfix hζ
       havoid hrootsM hM hbound
-  refine ⟨T, hST', hcard, hsurj, ?_⟩
-  intro v hv
-  obtain ⟨w, hw⟩ := hsplit v hv
-  refine ⟨w, ?_⟩
-  let _ : w.1.asIdeal.LiesOver v.asIdeal := w.2
-  rw [← HeightOneSpectrum.finrank_adicCompletion (R := 𝓞 K) (K := K) (B := 𝓞 L)
-    (L := L) v w.1]
-  exact hw
+  exact ⟨T, hST', hcard, hsurj, hsplit⟩
 
 end TauCeti.ClassFieldTheory
