@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Basic
@@ -14,6 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Calculus along absolutely continuous curves
@@ -39,6 +41,8 @@ fundamental-theorem results to curves.
   the fundamental theorem for the canonical derivative of such a curve.
 * `AbsolutelyContinuousOnInterval.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt`:
   integration by parts with supplied almost-everywhere derivatives.
+* `AbsolutelyContinuousOnInterval.integral_div_eq_log_sub_log`: the fundamental theorem for the
+  logarithmic derivative of a nonvanishing absolutely continuous real function.
 * `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
@@ -176,6 +180,41 @@ theorem integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt
     ((hf.intervalIntegrable_of_ae_hasDerivAt hff').mul_continuousOn hg.continuousOn)
     ((hg.intervalIntegrable_of_ae_hasDerivAt hgg').continuousOn_mul hf.continuousOn)] at h
   exact eq_sub_of_add_eq' h
+
+end AbsolutelyContinuousOnInterval
+
+namespace AbsolutelyContinuousOnInterval
+
+variable {f V : ℝ → ℝ} {a b : ℝ}
+
+/-- The logarithm of an absolutely continuous real function that does not vanish on the interval
+is absolutely continuous. -/
+protected theorem log (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) :
+    AbsolutelyContinuousOnInterval (fun t ↦ Real.log (f t)) a b :=
+  hf.comp_of_contDiffAt fun _ ⟨t, ht, hft⟩ ↦ Real.contDiffAt_log.2 (hft ▸ h0 t ht)
+
+private theorem ae_hasDerivAt_log (h0 : ∀ t ∈ uIcc a b, f t ≠ 0)
+    (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
+    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ Real.log (f t)) (V t / f t) t := by
+  filter_upwards [hV] with t ht hmem
+  exact (ht hmem).log (h0 t (uIoc_subset_uIcc hmem))
+
+/-- The logarithmic derivative `V / f` of an absolutely continuous real function `f` that does not
+vanish on the interval is interval integrable, where `V` is the derivative of `f` at almost every
+point. -/
+theorem intervalIntegrable_div_of_ae_hasDerivAt (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
+    IntervalIntegrable (fun t ↦ V t / f t) volume a b :=
+  (hf.log h0).intervalIntegrable_of_ae_hasDerivAt (ae_hasDerivAt_log h0 hV)
+
+/-- The fundamental theorem of calculus for the logarithmic derivative: if `f` is absolutely
+continuous and nonvanishing on the interval, with derivative `V` at almost every point, then
+`∫ t in a..b, V t / f t = log (f b) - log (f a)`. -/
+theorem integral_div_eq_log_sub_log (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
+    ∫ t in a..b, V t / f t = Real.log (f b) - Real.log (f a) :=
+  (hf.log h0).integral_eq_sub_of_ae_hasDerivAt (ae_hasDerivAt_log h0 hV)
 
 end AbsolutelyContinuousOnInterval
 

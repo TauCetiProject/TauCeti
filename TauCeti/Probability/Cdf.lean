@@ -24,6 +24,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
+  mass below a point has cdf zero there;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
@@ -96,6 +98,14 @@ theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] 
     (hab : a ≤ b) : ν.real (Ioc a b) = cdf ν b - cdf ν a := by
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
+
+/-- An atomless law that gives no mass to the open half-line below `c` has cdf zero at `c`. -/
+theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by
+  have h : ν (Iic c) = 0 := by
+    rw [← Iio_insert, insert_eq]
+    exact measure_union_null (measure_singleton c) hc
+  rw [cdf_eq_real, measureReal_def, h, ENNReal.toReal_zero]
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/
