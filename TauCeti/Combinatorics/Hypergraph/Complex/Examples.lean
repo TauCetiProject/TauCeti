@@ -36,31 +36,31 @@ theorem faces_filledTriangle : filledTriangle.faces = (univ : Finset (Fin 3)).po
     subset_univ, and_true, mem_powerset]
   exact iff_true_intro s.eq_empty_or_nonempty
 
-private theorem level_filledTriangle (n : ℕ) :
-    filledTriangle.level n = (univ : Finset (Fin 3)).powersetCard n := by
+private theorem slice_filledTriangle (n : ℕ) :
+    filledTriangle.faces.slice n = (univ : Finset (Fin 3)).powersetCard n := by
   ext s
+  simp [Finset.mem_slice]
+
+example : filledTriangle.faces.slice 0 = {∅} := filledTriangle.slice_zero
+
+example : #(filledTriangle.faces.slice 1) = 3 := by
+  rw [slice_filledTriangle]
+  decide
+
+example : #(filledTriangle.faces.slice 2) = 3 := by
+  rw [slice_filledTriangle]
+  decide
+
+example : #(filledTriangle.faces.slice 3) = 1 := by
+  rw [slice_filledTriangle]
+  decide
+
+example : (univ : Finset (Fin 3)) ∈ filledTriangle.faces.slice 3 := by
+  rw [slice_filledTriangle]
   simp
 
-example : filledTriangle.level 0 = {∅} := by simp
-
-example : #(filledTriangle.level 1) = 3 := by
-  rw [level_filledTriangle]
-  decide
-
-example : #(filledTriangle.level 2) = 3 := by
-  rw [level_filledTriangle]
-  decide
-
-example : #(filledTriangle.level 3) = 1 := by
-  rw [level_filledTriangle]
-  decide
-
-example : (univ : Finset (Fin 3)) ∈ filledTriangle.level 3 := by
-  rw [level_filledTriangle]
-  simp
-
-example : filledTriangle.level 4 = ∅ :=
-  filledTriangle.level_eq_empty_of_lt (by decide)
+example : filledTriangle.faces.slice 4 = ∅ :=
+  filledTriangle.slice_eq_empty_of_lt (by decide)
 
 example : filledTriangle.toPreAbstractSimplicialComplex = simplex (univ : Finset (Fin 3)) := by
   apply SetLike.ext

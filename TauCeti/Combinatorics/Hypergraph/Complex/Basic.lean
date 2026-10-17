@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
-public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Finset.Slice
 public import Mathlib.Data.Finset.Union
 public import Mathlib.Data.Set.Finite.Basic
 
@@ -14,8 +14,8 @@ public import Mathlib.Data.Set.Finite.Basic
 # Finite bounded hypergraph complexes
 
 A `HypergraphComplex r V` is a finite downward-closed family of finite vertex sets, containing
-the empty face and with face cardinalities bounded by `r`. Its `level n` consists of the faces
-with exactly `n` vertices: in particular, triples have level three, not level two.
+the empty face and with face cardinalities bounded by `r`. Mathlib's `C.faces.slice n` gives
+the faces with exactly `n` vertices: in particular, triples have level three, not level two.
 These finite levels provide the uncolored face data underlying colored hypergraph decompositions.
 
 `toPreAbstractSimplicialComplex` forgets the empty face and the cardinality bound. Conversely,
@@ -49,41 +49,25 @@ namespace HypergraphComplex
 
 variable {r : ℕ} {V : Type*} (C : HypergraphComplex r V)
 
-/-- The faces with exactly `n` vertices. Level zero contains just the empty face. -/
-def level (n : ℕ) : Finset (Finset V) :=
-  C.faces.filter (fun s => s.card = n)
-
-/-- Membership in a level specifies both face membership and cardinality. -/
-@[simp]
-theorem mem_level {s : Finset V} {n : ℕ} :
-    s ∈ C.level n ↔ s ∈ C.faces ∧ s.card = n := by
-  simp [level]
-
 /-- The unique face of cardinality zero is the empty face. -/
 @[simp]
-theorem level_zero : C.level 0 = {∅} := by
+theorem slice_zero : C.faces.slice 0 = {∅} := by
   classical
   ext s
-  simp only [mem_level, Finset.card_eq_zero, Finset.mem_singleton]
+  simp only [Finset.mem_slice, Finset.card_eq_zero, Finset.mem_singleton]
   exact ⟨And.right, by rintro rfl; exact ⟨C.empty_mem, rfl⟩⟩
 
 /-- Levels above the cardinality bound are empty. -/
-theorem level_eq_empty_of_lt {n : ℕ} (hn : r < n) : C.level n = ∅ := by
+theorem slice_eq_empty_of_lt {n : ℕ} (hn : r < n) : C.faces.slice n = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.mpr
   intro s hs
-  obtain ⟨hs, hcard⟩ := C.mem_level.mp hs
+  obtain ⟨hs, hcard⟩ := Finset.mem_slice.mp hs
   exact (not_le_of_gt hn) (hcard ▸ C.card_le s hs)
 
-/-- Distinct levels have no common faces. -/
-theorem disjoint_level {m n : ℕ} (h : m ≠ n) : Disjoint (C.level m) (C.level n) := by
-  rw [Finset.disjoint_left]
-  intro s hm hn
-  exact h ((C.mem_level.mp hm).2.symm.trans (C.mem_level.mp hn).2)
-
 /-- The levels from zero to the cardinality bound enumerate every face. -/
-theorem biUnion_level [DecidableEq V] :
-    (Finset.range (r + 1)).biUnion C.level = C.faces := by
-  unfold level
+theorem biUnion_slice [DecidableEq V] :
+    (Finset.range (r + 1)).biUnion C.faces.slice = C.faces := by
+  unfold Finset.slice
   exact Finset.biUnion_filter_eq_of_maps_to
     (fun s hs => Finset.mem_range.mpr (Nat.lt_succ_of_le (C.card_le s hs)))
 
