@@ -377,32 +377,34 @@ theorem tateGauge_equiv [ContinuousMul A] (ha : 1 < a) {B₀ : Subring A}
   refine ⟨a ^ (max k l : ℤ), zpow_pos ha₀ _, fun x ↦ ⟨(hk x).trans ?_, (hl x).trans ?_⟩⟩ <;>
     gcongr <;> first | exact tateGauge_nonneg ha₀.le _ | exact ha.le | omega
 
-/-- The zero set of the Tate gauge is the closure of zero. -/
+/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and `ϖ ∈ A₀`, then the
+zero set of the Tate gauge is the closure of zero. -/
 theorem tateGauge_eq_zero_iff [IsTopologicalRing A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) {x : A} :
     tateGauge A₀ ϖ a x = 0 ↔ x ∈ closure ({0} : Set A) := by
   rw [tateGauge_eq_zero_iff_forall hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha,
     R0Space.closure_singleton, hb.ker]
   simp
 
-/-- The Tate gauge separates points exactly when `A` is Hausdorff. -/
+/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and `ϖ ∈ A₀`, then the
+Tate gauge separates points exactly when `A` is Hausdorff. -/
 theorem t2Space_iff_forall_tateGauge_eq_zero_iff [IsTopologicalRing A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : T2Space A ↔ ∀ x, (tateGauge A₀ ϖ a x = 0 ↔ x = 0) := by
   simp_rw [tateGauge_eq_zero_iff hb ha hϖ, IsTopologicalAddGroup.t2Space_iff_zero_closed,
     ← closure_subset_iff_isClosed, Set.subset_def, Set.mem_singleton_iff]
   exact ⟨fun h x ↦ ⟨h x, fun hx ↦ hx ▸ subset_closure rfl⟩, fun h x ↦ (h x).1⟩
 
-/-- In a nonzero Hausdorff ring the Tate gauge of one is one. -/
+/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in a nonzero Hausdorff
+topological ring and `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
 theorem tateGauge_one [IsTopologicalRing A] [T2Space A] [Nontrivial A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : tateGauge A₀ ϖ a 1 = 1 := by
   have hA := exists_zpow_mul_mem_of_hasBasis hb
   have ha₀ : 0 ≤ a := zero_le_one.trans ha.le
-  change (tateSeminorm hϖ hA ha) 1 = 1
+  rw [← coe_tateSeminorm hϖ hA ha]
   apply (RingSeminorm.seminorm_one_eq_one_iff_ne_zero _
     (tateGauge_le_one ha₀ A₀.one_mem)).2
   intro h
   have h1 : tateGauge A₀ ϖ a 1 = 0 := by
-    rw [← coe_tateSeminorm hϖ hA ha, h]
-    rfl
+    simpa using RingSeminorm.eq_zero_iff.1 h 1
   exact one_ne_zero <|
     ((t2Space_iff_forall_tateGauge_eq_zero_iff hb ha hϖ).1 inferInstance 1).1 h1
 
