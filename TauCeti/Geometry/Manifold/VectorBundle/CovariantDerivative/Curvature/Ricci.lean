@@ -25,7 +25,8 @@ and the metric need not vary smoothly. Compactness and absence of boundary are n
 We give the coordinate formula in any basis and the inner-product formula in an
 orthonormal basis. The constant-curvature calculation fixes the sign convention:
 `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` gives `Ric = (dim - 1) κ g`.
-Here the calculation is stated for any bilinear form in place of `κ g`.
+The calculation is stated for any bilinear form in place of `κ g`, and then specialised
+to `κ g`.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
@@ -152,5 +153,19 @@ theorem ricciTensor_eq_of_curvatureTensor_eq_smul_sub (x : M)
     LinearMap.trace_smulRight]
   simp only [LinearMap.smul_apply, LinearMap.flip_apply, smul_eq_mul]
   ring
+
+/-- The Ricci tensor of the constant-curvature model `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` is
+`(dim - 1) κ g`. -/
+theorem ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub
+    [RiemannianBundle (TangentSpace I : M → Type _)] (x : M) (k : ℝ)
+    (h : ∀ w u v, curvature x w u v =
+      k • (inner ℝ u v • w - inner ℝ w v • u)) :
+    cov.ricciTensor x =
+      ((Module.finrank ℝ (TangentSpace I x) - 1 : ℝ) * k) • innerₗ (TangentSpace I x) := by
+  rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_sub x (k • innerₗ (TangentSpace I x)),
+    smul_smul]
+  intro w u v
+  rw [h w u v]
+  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_sub, smul_smul, smul_eq_mul]
 
 end CovariantDerivative

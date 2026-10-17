@@ -69,14 +69,12 @@ instance moduleCat_ab5OfSize : AB5OfSize.{0, 0} (ModuleCat.{v} R) where
       (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
 
 variable {C : Type u'} [Category.{v'} C] [Abelian C]
-variable {J : Type w} [Category.{w} J] [HasColimitsOfShape J C]
-  [HasExactColimitsOfShape J C]
+variable {J : Type w} [Category.{w} J]
 
 private noncomputable abbrev shortComplexDiagram
     (F : J ⥤ ShortComplex C) : ShortComplex (J ⥤ C) :=
   (ShortComplex.functorEquivalence J C).inverse.obj F
 
-omit [HasColimitsOfShape J C] [HasExactColimitsOfShape J C] in
 /-- Evaluating the short complex of diagrams attached to `F` at `j` gives back `F.obj j`. This is
 the corresponding component of the counit of `ShortComplex.functorEquivalence`, stated with the
 evaluated short complex as its source so that later composites are well typed. -/
@@ -85,7 +83,6 @@ private noncomputable def shortComplexDiagramEvaluationIso
     (shortComplexDiagram F).map ((evaluation J C).obj j) ≅ F.obj j :=
   ((ShortComplex.functorEquivalence J C).counitIso.app F).app j
 
-omit [HasColimitsOfShape J C] [HasExactColimitsOfShape J C] in
 private theorem shortComplexDiagramEvaluationIso_hom_naturality
     (F : J ⥤ ShortComplex C) {X Y : J} (f : X ⟶ Y) :
     (shortComplexDiagram F).mapNatTrans ((evaluation J C).map f) ≫
@@ -93,7 +90,6 @@ private theorem shortComplexDiagramEvaluationIso_hom_naturality
       (shortComplexDiagramEvaluationIso F X).hom ≫ F.map f :=
   ((ShortComplex.functorEquivalence J C).counitIso.app F).hom.naturality f
 
-omit [HasColimitsOfShape J C] [HasExactColimitsOfShape J C] in
 private theorem shortComplexDiagramEvaluationIso_inv_naturality
     (F : J ⥤ ShortComplex C) {X Y : J} (f : X ⟶ Y) :
     F.map f ≫ (shortComplexDiagramEvaluationIso F Y).inv =
@@ -102,7 +98,44 @@ private theorem shortComplexDiagramEvaluationIso_inv_naturality
   rw [Iso.comp_inv_eq, Category.assoc, shortComplexDiagramEvaluationIso_hom_naturality,
     Iso.inv_hom_id_assoc]
 
-omit [HasExactColimitsOfShape J C] in
+private theorem mapHomologyIso_evaluation_naturality
+    (F : J ⥤ ShortComplex C) {X Y : J} (f : X ⟶ Y) :
+    ShortComplex.homologyMap
+          ((shortComplexDiagram F).mapNatTrans ((evaluation J C).map f)) ≫
+        ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom =
+      ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom ≫
+        (shortComplexDiagram F).homology.map f := by
+  -- The transition map of the homology diagram is the component of `(evaluation J C).map f`.
+  have h : ShortComplex.homologyMap
+        ((shortComplexDiagram F).mapNatTrans ((evaluation J C).map f)) ≫
+      ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom =
+      ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom ≫
+        ((evaluation J C).map f).app (shortComplexDiagram F).homology := by
+    rw [NatTrans.app_homology ((evaluation J C).map f) (shortComplexDiagram F)]
+    simp
+  exact h
+
+/-- The pointwise homology diagram of `F` is the homology of the associated short complex of
+diagrams, because evaluation preserves homology. -/
+private noncomputable def shortComplexHomologyDiagramIso (F : J ⥤ ShortComplex C) :
+    F ⋙ ShortComplex.homologyFunctor C ≅ (shortComplexDiagram F).homology :=
+  NatIso.ofComponents
+    (fun j ↦ ShortComplex.homologyMapIso (shortComplexDiagramEvaluationIso F j).symm ≪≫
+      (shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj j))
+    (fun {X Y} f ↦ by
+      have h : ShortComplex.homologyMap (F.map f) ≫
+            (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F Y).inv ≫
+              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom) =
+          (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F X).inv ≫
+              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom) ≫
+            (shortComplexDiagram F).homology.map f := by
+        rw [Category.assoc, ← mapHomologyIso_evaluation_naturality, ← Category.assoc,
+          ← Category.assoc, ← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp,
+          shortComplexDiagramEvaluationIso_inv_naturality]
+      exact h)
+
+variable [HasColimitsOfShape J C]
+
 private theorem mapNatTrans_evaluation_comp_colim
     (F : J ⥤ ShortComplex C) {X Y : J} (f : X ⟶ Y) :
     (shortComplexDiagram F).mapNatTrans ((evaluation J C).map f) ≫
@@ -140,42 +173,7 @@ private noncomputable def isColimitShortComplexColimCocone (F : J ⥤ ShortCompl
     (IsColimit.ofIsoColimit (colimit.isColimit (F ⋙ ShortComplex.π₃))
       (Cocone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm))
 
-omit [HasColimitsOfShape J C] [HasExactColimitsOfShape J C] in
-private theorem mapHomologyIso_evaluation_naturality
-    (F : J ⥤ ShortComplex C) {X Y : J} (f : X ⟶ Y) :
-    ShortComplex.homologyMap
-          ((shortComplexDiagram F).mapNatTrans ((evaluation J C).map f)) ≫
-        ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom =
-      ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom ≫
-        (shortComplexDiagram F).homology.map f := by
-  -- The transition map of the homology diagram is the component of `(evaluation J C).map f`.
-  have h : ShortComplex.homologyMap
-        ((shortComplexDiagram F).mapNatTrans ((evaluation J C).map f)) ≫
-      ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom =
-      ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom ≫
-        ((evaluation J C).map f).app (shortComplexDiagram F).homology := by
-    rw [NatTrans.app_homology ((evaluation J C).map f) (shortComplexDiagram F)]
-    simp
-  exact h
-
-/-- The pointwise homology diagram of `F` is the homology of the associated short complex of
-diagrams, because evaluation preserves homology. -/
-private noncomputable def shortComplexHomologyDiagramIso (F : J ⥤ ShortComplex C) :
-    F ⋙ ShortComplex.homologyFunctor C ≅ (shortComplexDiagram F).homology :=
-  NatIso.ofComponents
-    (fun j ↦ ShortComplex.homologyMapIso (shortComplexDiagramEvaluationIso F j).symm ≪≫
-      (shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj j))
-    (fun {X Y} f ↦ by
-      have h : ShortComplex.homologyMap (F.map f) ≫
-            (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F Y).inv ≫
-              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom) =
-          (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F X).inv ≫
-              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom) ≫
-            (shortComplexDiagram F).homology.map f := by
-        rw [Category.assoc, ← mapHomologyIso_evaluation_naturality, ← Category.assoc,
-          ← Category.assoc, ← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp,
-          shortComplexDiagramEvaluationIso_inv_naturality]
-      exact h)
+variable [HasExactColimitsOfShape J C]
 
 private theorem shortComplex_mapHomologyIso_colimit (F : J ⥤ ShortComplex C) (j : J) :
     ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj j)).hom ≫

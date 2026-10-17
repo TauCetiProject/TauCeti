@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.CohomologicalSymbol
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
-import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Reciprocity
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Reciprocity
 
 /-!
 # The product formula for the norm-equation Hilbert symbol and for the Hasse invariant
@@ -24,6 +24,8 @@ finite and real places is the sign of that sum
 (`TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign`). This file transports the
 cases of the cohomological law that are proved, so the multiplicative formula holds
 
+* over every number field for which `H¹` of the idele-class formation vanishes on every layer
+  after every finite extension;
 * whenever some square root of `b` lies in a cyclotomic extension of `K`;
 * in particular whenever `b` is rational;
 * for all `a, b ∈ ℚˣ`, where it reads `∏_ℓ (a, b)_ℓ · (a, b)_∞ = 1` over the primes `ℓ` and the
@@ -34,10 +36,13 @@ Multiplying the product formula over the pairs of coefficients of a diagonalizat
 product of its finite Hasse signs and of its real Hasse signs is `1`. With the other conditions
 already checked in `QuadraticForm.isAdmissible_globalInvariants_iff`, the system of local
 invariants of `Q` is then admissible when `Q` has positive rank. This holds whenever `Q` has a
-diagonalization with rational coefficients, and so for every regular form over `ℚ`.
+diagonalization with rational coefficients, and so for every regular form over `ℚ`. Under the
+idele-class `H¹`-vanishing hypothesis it holds for every regular form over every number field.
 
 ## Main results
 
+* `TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_subsingleton_h1_globalFormation`:
+  the product formula from idele-class `H¹`-vanishing over all finite extensions.
 * `TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_mem_adjoin`: the product
   formula when a square root of `b` lies in a cyclotomic extension of `K`.
 * `TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_coe_eq_ratCast`: the product
@@ -49,6 +54,10 @@ diagonalization with rational coefficients, and so for every regular form over `
   admissibility of the system of local invariants, for a form with a rational diagonalization.
 * `QuadraticForm.globalInvariants_hasseProduct_eq_one_rat` and
   `QuadraticForm.isAdmissible_globalInvariants_rat`: the same for every regular form over `ℚ`.
+* `QuadraticForm.globalInvariants_hasseProduct_eq_one_of_subsingleton_h1_globalFormation` and
+  `QuadraticForm.isAdmissible_globalInvariants_of_subsingleton_h1_globalFormation`: the Hasse
+  product formula and admissibility over an arbitrary number field from idele-class
+  `H¹`-vanishing.
 
 ## References
 
@@ -67,6 +76,25 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 namespace TauCeti
 
 variable {K : Type} [Field K] [NumberField K]
+
+open scoped Classical in
+/-- **Hilbert's product formula from idele-class `H¹`-vanishing.** Suppose `H¹` vanishes on
+every layer of the idele-class formation over every finite extension of `K`. Then the product of
+the norm-equation Hilbert symbols `(a_v, b_v)_v` over the finite and real places is `1` for every
+`a, b ∈ Kˣ`. -/
+theorem finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_subsingleton_h1_globalFormation
+    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E]
+      (V : OpenNormalSubgroup (TauCeti.AbsoluteGaloisGroup E)),
+      Subsingleton ((ClassFieldTheory.NormalLayer.ofOpenNormal V).H
+        (ClassFieldTheory.globalFormation E) 1))
+    (a b : Kˣ) :
+    (∏ᶠ v : HeightOneSpectrum (NumberField.RingOfIntegers K),
+        hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b)) *
+      ∏ w : {w : InfinitePlace K // w.IsReal},
+        hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 := by
+  rw [finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign,
+    ClassFieldTheory.hilbertProductFormula_of_subsingleton_h1_globalFormation h a b,
+    hilbertSign_zero]
 
 open scoped Classical in
 /-- **Hilbert's product formula for a cyclotomic radicand.** For `a, b ∈ Kˣ`, if some square root
@@ -126,6 +154,35 @@ open Finset
 variable {K : Type} [Field K] [NumberField K]
 variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 variable (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+
+/-- **The Hasse product formula from idele-class `H¹`-vanishing.** If `H¹` vanishes on every
+layer of the idele-class formation over every finite extension of `K`, then the product of the
+finite and real Hasse signs of every regular form over `K` is `1`. -/
+theorem globalInvariants_hasseProduct_eq_one_of_subsingleton_h1_globalFormation
+    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E]
+      (V : OpenNormalSubgroup (TauCeti.AbsoluteGaloisGroup E)),
+      Subsingleton ((TauCeti.ClassFieldTheory.NormalLayer.ofOpenNormal V).H
+        (TauCeti.ClassFieldTheory.globalFormation E) 1)) :
+    (Q.globalInvariants hQ).hasseProduct = 1 := by
+  obtain ⟨a, hdiag⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
+    (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
+  rw [QuadraticMap.weightedSumSquares_units] at hdiag
+  rw [Q.globalInvariants_hasseProduct_eq_prod hQ hdiag]
+  exact prod_eq_one fun i _ ↦ prod_eq_one fun j _ ↦
+    TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_subsingleton_h1_globalFormation
+      h _ _
+
+/-- **Admissibility from idele-class `H¹`-vanishing.** If `H¹` vanishes on every layer of the
+idele-class formation over every finite extension of `K`, the local invariants of every regular
+positive-rank form over `K` are admissible. -/
+theorem isAdmissible_globalInvariants_of_subsingleton_h1_globalFormation
+    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E]
+      (V : OpenNormalSubgroup (TauCeti.AbsoluteGaloisGroup E)),
+      Subsingleton ((TauCeti.ClassFieldTheory.NormalLayer.ofOpenNormal V).H
+        (TauCeti.ClassFieldTheory.globalFormation E) 1))
+    (hn : 1 ≤ Module.finrank K V) : (Q.globalInvariants hQ).IsAdmissible :=
+  (Q.isAdmissible_globalInvariants_iff hQ).mpr
+    ⟨hn, Q.globalInvariants_hasseProduct_eq_one_of_subsingleton_h1_globalFormation hQ h⟩
 
 /-- **The Hasse product formula for a form with rational coefficients.** If a regular form `Q`
 over a number field `K` is isometric to `⟨a₁, …, aₙ⟩` with every `aᵢ` rational, the product of the

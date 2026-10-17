@@ -25,7 +25,9 @@ through public statements only:
   for an empty source carrier, with unused target indices, and with a decoder that sends several
   target indices to the same branch;
 * a countable conjunction can have infinite free-variable support;
-* changing a valuation outside support preserves truth, also under a quantifier.
+* changing a valuation outside support preserves truth, also under a quantifier;
+* `simp` uses a formula- or sentence-level hypothesis, or a default-priority formula-level rewrite
+  rule, before descending to bounded realization.
 -/
 
 universe u v u' uι w
@@ -181,3 +183,30 @@ example {v₁ v₂ : ℕ → ℕ} (h : v₁ 0 = v₂ 0) :
   simpa [Term.varFinsetLeft] using h
 
 end TauCeti
+
+/-! ### Formula- and sentence-level facts in `simp` -/
+
+-- The bridges to bounded realization are low-priority simp lemmas, so a hypothesis stated at the
+-- formula or sentence level is used as stated rather than pre-empted.
+example {L : Language.{u, v}} {ι : Type uι} {α : Type u'} {M : Type w} [L.Structure M]
+    (φ : L.FormulaInf ι α) (v : α → M) (h : φ.Realize v) : φ.Realize v ∧ True := by
+  simp [h]
+
+example {L : Language.{u, v}} {ι : Type uι} {M : Type w} [L.Structure M]
+    (φ : L.SentenceInf ι) (h : φ.Realize M) : φ.Realize M ∧ True := by
+  simp [h]
+
+-- A formula-level rewrite rule at default priority fires before the fallback, so a downstream
+-- library can state such rules without raising their priority.
+example {L : Language.{u, v}} {ι : Type uι} {α : Type u'} {M : Type w} [L.Structure M]
+    (φ ψ : L.FormulaInf ι α) (v : α → M) (h : φ.Realize v) :
+    (φ ⊓ ψ).Realize v ↔ ψ.Realize v := by
+  have key : ∀ φ ψ : L.FormulaInf ι α, (φ ⊓ ψ).Realize v ↔ φ.Realize v ∧ ψ.Realize v :=
+    fun _ _ => by simp only [FormulaInf.realize_def, realize_inf]
+  simp [key, h]
+
+-- With no formula-level fact in play, `simp` still reaches bounded realization through the
+-- fallback.
+example {L : Language.{u, v}} {ι : Type uι} {α : Type u'} {M : Type w} [L.Structure M]
+    (φ : L.FormulaInf ι α) (v : α → M) : (φ ⊓ ⊤).Realize v ↔ φ.Realize v := by
+  simp
