@@ -31,9 +31,10 @@ temperature.
   objective.
 * `Matrix.ofReal_entropicTransportValue_eq`: for a pointwise nonnegative real cost, the finite and
   measure-theoretic primal values agree.
-* `Matrix.isDiagonalScaling_gibbs_iff`: finite diagonal scaling is exactly the generic Gibbs
-  density formula.
-* `Matrix.entropicDualValue_eq_mul_relEntropyDual`: the generic and finite dual objectives agree.
+* `Matrix.isDiagonalScaling_gibbs_iff`: for a pointwise nonnegative real cost, diagonal scaling
+  is exactly the generic Gibbs density formula.
+* `Matrix.entropicDualValue_eq_mul_relEntropyDual`: for a nonzero temperature and a pointwise
+  nonnegative real cost, the generic and finite dual objectives agree.
 -/
 
 public section

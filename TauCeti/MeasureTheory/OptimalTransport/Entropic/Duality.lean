@@ -133,8 +133,9 @@ theorem entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp (C : Matrix X Y ℝ) (ε :
   congr 1
   ring
 
-/-- A matrix is a diagonal scaling of the product-weighted Gibbs kernel exactly when its entries
-are the product of the row and column weights multiplied by the generic Gibbs factor. -/
+/-- For a pointwise nonnegative real cost, a matrix is a diagonal scaling of the product-weighted
+Gibbs kernel exactly when its entries are the product of the row and column weights multiplied by
+the generic Gibbs factor. -/
 theorem isDiagonalScaling_gibbs_iff (P C : Matrix X Y ℝ) (a : X → ℝ) (b : Y → ℝ)
     (ε : ℝ≥0) (φ : X → ℝ) (ψ : Y → ℝ) (hC : ∀ i j, 0 ≤ C i j) :
     IsDiagonalScaling P
