@@ -348,17 +348,20 @@ section CompatiblePairDegree2
 private def transport₂ (f : G × G → M) : H × H → B := fun h ↦ ψ (f (φ.symm h.1, φ.symm h.2))
 
 include hψ in
-private theorem transport₂_mem_cocycles₂_iff (f : G × G → M) :
-    transport₂ φ ψ f ∈ cocycles₂ B ↔ groupCohomology.IsCocycle₂ f := by
+/-- Transport along an action-compatible group and additive equivalence preserves the
+`2`-cocycle condition. -/
+theorem transport₂_mem_cocycles₂_iff (f : G × G → M) :
+    (fun h : H × H ↦ ψ (f (φ.symm h.1, φ.symm h.2))) ∈ cocycles₂ B ↔
+      groupCohomology.IsCocycle₂ f := by
   rw [mem_cocycles₂_iff]
   constructor
   · intro hf g g' g''
     have := hf (φ g) (φ g') (φ g'')
-    simp only [transport₂, ← map_mul, φ.symm_apply_apply] at this
+    simp only [← map_mul, φ.symm_apply_apply] at this
     rw [← hψ, ← map_add, ← map_add] at this
     exact ψ.injective this
   · intro hf h h' h''
-    simp only [transport₂, map_mul, ← map_add, hf (φ.symm h) (φ.symm h') (φ.symm h'')]
+    simp only [map_mul, ← map_add, hf (φ.symm h) (φ.symm h') (φ.symm h'')]
     exact (map_add ψ _ _).trans (congrArg (· + _) (apply_symm_smul φ ψ hψ _ _))
 
 variable [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -397,7 +400,8 @@ noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomolog
       let z : G × G → M := fun g ↦ ψ.symm (x (φ g.1, φ g.2))
       have hz : transport₂ φ ψ z = x := funext fun h ↦ by simp [transport₂, z]
       have hzc : groupCohomology.IsCocycle₂ z :=
-        (transport₂_mem_cocycles₂_iff φ ψ hψ z).1 (hz ▸ x.2)
+        (transport₂_mem_cocycles₂_iff φ ψ hψ z).1
+          (show transport₂ φ ψ z ∈ cocycles₂ B from hz ▸ x.2)
       exact ⟨⟨z, mem_Z2_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
         congrArg (H2π B) (Subtype.ext hz)⟩
   have hker : (B2 G M).addSubgroupOf (Z2 G M) = f.ker := by
@@ -440,7 +444,8 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
       apply φ.injective
       simpa using (hφS (φS.symm s)).symm
     rw [TauCeti.groupCohomology.mapCocycles₂_apply]
-    simp [cocyclesMap2_apply, c, transport₂, hs]
+    simp [cocyclesMap2_apply, c, hs]
+    rfl
 
 end CompatiblePairDegree2
 
