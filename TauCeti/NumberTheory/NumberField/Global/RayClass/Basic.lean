@@ -127,6 +127,7 @@ noncomputable def idealsPrimeToClassGroup (𝔪 : Modulus K) :
 
 /-- **The ray class group of a modulus**: the invertible fractional ideals prime to the finite part
 of `𝔪`, modulo the principal ideals of the elements congruent to one modulo `𝔪`. -/
+@[expose]
 def RayClassGroup (𝔪 : Modulus K) : Type _ :=
   idealsPrimeTo 𝔪 ⧸ ray 𝔪
 
@@ -136,6 +137,7 @@ noncomputable instance (𝔪 : Modulus K) : CommGroup (RayClassGroup 𝔪) :=
 noncomputable instance (𝔪 : Modulus K) : Inhabited (RayClassGroup 𝔪) := ⟨1⟩
 
 /-- The ray class of an invertible fractional ideal prime to the modulus. -/
+@[expose]
 noncomputable def rayClassMk (𝔪 : Modulus K) :
     idealsPrimeTo 𝔪 →* RayClassGroup 𝔪 :=
   QuotientGroup.mk' (ray 𝔪)

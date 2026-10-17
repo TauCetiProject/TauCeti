@@ -90,6 +90,7 @@ theorem mem_finiteRay_iff {m : Ideal R} {hm : m ≠ ⊥}
   · exact ⟨⟨x, hx⟩, Subtype.ext (Units.ext (by rw [coe_finiteRayHom, hxI]))⟩
 
 /-- The finite ray class group of a Dedekind domain modulo a nonzero ideal. -/
+@[expose]
 def FiniteRayClassGroup (m : Ideal R) (hm : m ≠ ⊥) (K : Type*) [Field K] [Algebra R K]
     [IsFractionRing R K] : Type _ :=
   idealsAway K (finiteRaySupport m hm) ⧸ finiteRay m hm
@@ -100,6 +101,7 @@ instance (m : Ideal R) (hm : m ≠ ⊥) : CommGroup (FiniteRayClassGroup m hm K)
 instance (m : Ideal R) (hm : m ≠ ⊥) : Inhabited (FiniteRayClassGroup m hm K) := ⟨1⟩
 
 /-- The finite ray class of an invertible fractional ideal prime to the modulus. -/
+@[expose]
 def finiteRayClassMk (m : Ideal R) (hm : m ≠ ⊥) :
     idealsAway K (finiteRaySupport m hm) →* FiniteRayClassGroup m hm K :=
   QuotientGroup.mk' (finiteRay m hm)
@@ -176,6 +178,15 @@ theorem finiteIdealClass_eq_one_iff {m : Ideal R} {hm : m ≠ ⊥}
 def finiteIdealsToClassGroup (m : Ideal R) (hm : m ≠ ⊥) :
     idealsAway K (finiteRaySupport m hm) →* ClassGroup R :=
   (ClassGroup.mk K).comp (idealsAway K (finiteRaySupport m hm)).subtype
+
+/-- The ordinary ideal-class map sends an ideal away from the modulus to its class as a
+fractional ideal. -/
+@[simp]
+theorem finiteIdealsToClassGroup_apply (m : Ideal R) (hm : m ≠ ⊥)
+    (I : idealsAway K (finiteRaySupport m hm)) :
+    finiteIdealsToClassGroup (K := K) m hm I =
+      ClassGroup.mk K (I : (FractionalIdeal R⁰ K)ˣ) :=
+  (rfl)
 
 private theorem finiteRay_le_ker_finiteIdealsToClassGroup (m : Ideal R) (hm : m ≠ ⊥) :
     finiteRay m hm ≤ (finiteIdealsToClassGroup (K := K) m hm).ker := by

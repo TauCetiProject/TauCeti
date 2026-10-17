@@ -55,16 +55,11 @@ theorem isCongrOne_ofFinitePart_iff {m : Ideal (RingOfIntegers K)} {hm : m ≠ �
 /-- Fractional ideals prime to `m`, in the generic and number-field presentations. -/
 def finiteIdealsPrimeToEquiv (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
     NumberFieldArithmetic.idealsAway K (Ideal.finiteRaySupport m hm) ≃*
-      idealsPrimeTo (Modulus.ofFinitePart m hm) where
-  toFun I := ⟨I, NumberFieldArithmetic.mem_idealsAway_iff.mpr fun v hv ↦
-    NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v
-      (by rwa [Modulus.support_ofFinitePart] at hv)⟩
-  invFun I := ⟨I, NumberFieldArithmetic.mem_idealsAway_iff.mpr fun v hv ↦
-    NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v
-      (by rwa [Modulus.support_ofFinitePart])⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
+      idealsPrimeTo (Modulus.ofFinitePart m hm) :=
+  MulEquiv.subgroupCongr (by
+    change NumberFieldArithmetic.idealsAway K (Ideal.finiteRaySupport m hm) =
+      NumberFieldArithmetic.idealsAway K (Modulus.ofFinitePart m hm).support
+    rw [Modulus.support_ofFinitePart])
 
 /-- The prime-to-ideal comparison does not change the underlying fractional ideal. -/
 @[simp]
@@ -99,63 +94,15 @@ theorem map_finiteRay_eq_ray (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
     exact Ideal.mem_finiteRay_iff.mpr
       ⟨x, isCongrOne_ofFinitePart_iff.mp hx, by simpa using hxJ⟩
 
-/-- Map the generic finite ray class group to the existing number-field ray class group with empty
-infinite part. -/
-def finiteRayClassToRayClass (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
-    Ideal.FiniteRayClassGroup m hm K →*
-      RayClassGroup (Modulus.ofFinitePart m hm) :=
-  Ideal.finiteRayClassLift
-    ((rayClassMk (Modulus.ofFinitePart m hm)).comp (finiteIdealsPrimeToEquiv m hm).toMonoidHom) <|
-      fun I hI ↦ by
-        rw [MonoidHom.mem_ker, MonoidHom.comp_apply, rayClassMk_eq_one_iff,
-          ← map_finiteRay_eq_ray m hm]
-        exact ⟨I, hI, rfl⟩
-
-/-- Map the number-field ray class group with empty infinite part back to the generic finite ray
-class group. -/
-def rayClassToFiniteRayClass (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
-    RayClassGroup (Modulus.ofFinitePart m hm) →*
-      Ideal.FiniteRayClassGroup m hm K :=
-  rayClassLift
-    ((Ideal.finiteRayClassMk m hm).comp
-      (finiteIdealsPrimeToEquiv m hm).symm.toMonoidHom) <| fun J hJ ↦ by
-        rw [MonoidHom.mem_ker, MonoidHom.comp_apply,
-          Ideal.finiteRayClassMk_eq_one_iff]
-        rw [← map_finiteRay_eq_ray m hm] at hJ
-        obtain ⟨I, hI, rfl⟩ := hJ
-        simpa using hI
-
-/-- The generic-to-number-field map sends a quotient representative to the same ideal. -/
-@[simp]
-theorem finiteRayClassToRayClass_finiteRayClassMk (m : Ideal (RingOfIntegers K))
-    (hm : m ≠ ⊥) (I : NumberFieldArithmetic.idealsAway K
-      (Ideal.finiteRaySupport m hm)) :
-    finiteRayClassToRayClass m hm (Ideal.finiteRayClassMk m hm I) =
-      rayClassMk (Modulus.ofFinitePart m hm) (finiteIdealsPrimeToEquiv m hm I) := by
-  exact Ideal.finiteRayClassLift_finiteRayClassMk _ _ _
-
-/-- The number-field-to-generic map sends a quotient representative to the same ideal. -/
-@[simp]
-theorem rayClassToFiniteRayClass_rayClassMk (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥)
-    (I : idealsPrimeTo (Modulus.ofFinitePart m hm)) :
-    rayClassToFiniteRayClass m hm (rayClassMk (Modulus.ofFinitePart m hm) I) =
-      Ideal.finiteRayClassMk m hm ((finiteIdealsPrimeToEquiv m hm).symm I) := by
-  exact rayClassLift_rayClassMk _ _ _
-
 /-- The Dedekind-domain finite ray class group agrees canonically with the number-field ray class
 group having empty infinite part. -/
 def finiteRayClassGroupEquiv (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
     Ideal.FiniteRayClassGroup m hm K ≃*
-      RayClassGroup (Modulus.ofFinitePart m hm) where
-  toFun := finiteRayClassToRayClass m hm
-  invFun := rayClassToFiniteRayClass m hm
-  left_inv c := by
-    obtain ⟨I, rfl⟩ := Ideal.finiteRayClassMk_surjective m hm c
-    simp
-  right_inv c := by
-    obtain ⟨I, rfl⟩ := rayClassMk_surjective (Modulus.ofFinitePart m hm) c
-    simp
-  map_mul' := map_mul (finiteRayClassToRayClass m hm)
+      RayClassGroup (Modulus.ofFinitePart m hm) := by
+  change (NumberFieldArithmetic.idealsAway K (Ideal.finiteRaySupport m hm) ⧸
+      Ideal.finiteRay (K := K) m hm) ≃*
+    (idealsPrimeTo (Modulus.ofFinitePart m hm) ⧸ ray (Modulus.ofFinitePart m hm))
+  exact QuotientGroup.congr _ _ (finiteIdealsPrimeToEquiv m hm) (map_finiteRay_eq_ray m hm)
 
 /-- The finite-ray-class comparison carries the generic quotient map to the number-field quotient
 map without changing the ideal representative. -/
@@ -165,25 +112,22 @@ theorem finiteRayClassGroupEquiv_finiteRayClassMk (m : Ideal (RingOfIntegers K))
       (Ideal.finiteRaySupport m hm)) :
     finiteRayClassGroupEquiv m hm
         (Ideal.finiteRayClassMk m hm I) =
-      rayClassMk (Modulus.ofFinitePart m hm) (finiteIdealsPrimeToEquiv m hm I) :=
-  finiteRayClassToRayClass_finiteRayClassMk m hm I
+      rayClassMk (Modulus.ofFinitePart m hm) (finiteIdealsPrimeToEquiv m hm I) := by
+  change QuotientGroup.congr (Ideal.finiteRay (K := K) m hm)
+      (ray (Modulus.ofFinitePart m hm)) (finiteIdealsPrimeToEquiv m hm)
+        (map_finiteRay_eq_ray m hm) (QuotientGroup.mk' (Ideal.finiteRay m hm) I) =
+    QuotientGroup.mk' (ray (Modulus.ofFinitePart m hm)) (finiteIdealsPrimeToEquiv m hm I)
+  exact QuotientGroup.congr_mk' _ _ _ _ I
 
 /-- Integral ideals prime to `m`, in the generic and number-field presentations. -/
 def finiteIntegralIdealsPrimeToEquiv (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
     NumberFieldArithmetic.integralIdealsAway
         (Ideal.finiteRaySupport m hm) ≃*
-      integralIdealsPrimeTo (Modulus.ofFinitePart m hm) where
-  toFun I := ⟨I, by
-    apply NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-    obtain ⟨hI, hprime⟩ := NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.2
-    exact ⟨hI, fun v hv ↦ hprime v (by rwa [Modulus.support_ofFinitePart] at hv)⟩⟩
-  invFun I := ⟨I, by
-    apply NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-    obtain ⟨hI, hprime⟩ := NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.2
-    exact ⟨hI, fun v hv ↦ hprime v (by rwa [Modulus.support_ofFinitePart])⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
+      integralIdealsPrimeTo (Modulus.ofFinitePart m hm) :=
+  MulEquiv.submonoidCongr (by
+    change NumberFieldArithmetic.integralIdealsAway (Ideal.finiteRaySupport m hm) =
+      NumberFieldArithmetic.integralIdealsAway (Modulus.ofFinitePart m hm).support
+    rw [Modulus.support_ofFinitePart])
 
 /-- The integral prime-to-ideal comparison does not change the underlying ideal. -/
 @[simp]
