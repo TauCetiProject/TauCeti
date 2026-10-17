@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ComplexProjectiveSpace.Basic
-public import Mathlib.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # Homogeneous-coordinate charts on complex projective space
@@ -99,10 +99,13 @@ private theorem affineVector_ne_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
   have := congrArg (fun v : EuclideanSpace ℂ (Fin (n + 1)) ↦ v k) h
   simp [affineVector] at this
 
-private def affineSphere (k : Fin (n + 1)) (z : Fin n → ℂ) :
-    sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 :=
-  ⟨NormedSpace.normalize (affineVector k z),
-    mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize (affineVector_ne_zero k z))⟩
+private theorem continuous_affineVector (k : Fin (n + 1)) : Continuous (affineVector k) :=
+  (PiLp.continuous_toLp 2 (fun _ : Fin (n + 1) ↦ ℂ)).comp
+    (continuous_const.finInsertNth k continuous_id)
+
+private def affineSphere (k : Fin (n + 1)) :
+    C((Fin n → ℂ), sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :=
+  normalizeToSphere (affineVector k) (continuous_affineVector k) (affineVector_ne_zero k)
 
 /-- The projective point whose `k`th coordinate is one and whose remaining coordinates are `z`.
 The representative is normalized only to meet the unit-sphere carrier. -/
@@ -121,12 +124,7 @@ theorem ratio_affineParam (k j : Fin (n + 1)) (z : Fin n → ℂ) :
 /-- Standard affine parametrizations are continuous, including on all coordinate hyperplanes. -/
 @[fun_prop]
 theorem continuous_affineParam (k : Fin (n + 1)) : Continuous (affineParam k) := by
-  have hv : Continuous (affineVector k) :=
-    (PiLp.continuous_toLp 2 (fun _ : Fin (n + 1) ↦ ℂ)).comp
-      (continuous_const.finInsertNth k continuous_id)
-  apply (continuous_mk n).comp
-  exact ((hv.norm.inv₀ (fun z ↦ norm_ne_zero_iff.2 (affineVector_ne_zero k z))).smul hv).subtype_mk
-      (fun z ↦ (affineSphere k z).2)
+  exact (continuous_mk n).comp (affineSphere k).continuous
 
 /-- Homogeneous ratios recover a point on their affine domain. -/
 @[simp]
@@ -205,7 +203,8 @@ theorem affineChart_transition (k l : Fin (n + 1)) (z : Fin n → ℂ) (j : Fin 
   have hn := norm_ne_zero_iff.2 (affineVector_ne_zero k z)
   dsimp only [affineVector] at hn
   simp only [affineChart_symm_apply, affineChart_apply, affineParam, ratio_mk, affineSphere,
-    NormedSpace.normalize, PiLp.smul_apply, affineVector, Complex.real_smul]
+    coe_normalizeToSphere_apply, NormedSpace.normalize, PiLp.smul_apply, affineVector,
+    Complex.real_smul]
   exact mul_div_mul_left _ _ (Complex.ofReal_ne_zero.mpr (inv_ne_zero hn))
 
 end
