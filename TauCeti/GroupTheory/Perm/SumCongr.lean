@@ -269,7 +269,8 @@ and of `τ`. -/
 @[simp]
 theorem parts_partition_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     (finSumPerm σ τ).partition.parts = σ.partition.parts + τ.partition.parts := by
-  rw [finSumPerm, parts_partition_permCongr, parts_partition_sumCongr]
+  rw [finSumPerm, ← fullCycleType_def, fullCycleType_permCongr, fullCycleType_def,
+    parts_partition_sumCongr]
 
 /-- The number of orbits of `Equiv.Perm.finSumPerm σ τ`, fixed points included, is the sum of the
 numbers of orbits of `σ` and of `τ`. -/
