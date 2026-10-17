@@ -22,8 +22,16 @@ five vanishes.
 
 ## Main result
 
-* `TauCeti.finrank_preprojectiveKoszulDefect_D4`: the defect is one-dimensional exactly in
-  degree four and at the same vertex, and vanishes in every other graded corner.
+* `TauCeti.finrank_preprojectiveCorner_inf_iInf_ker_D4`: the defect is one-dimensional exactly
+  in degree four and at the same vertex, and vanishes in every other graded corner.
+
+## References
+
+* S. Brenner, M. C. R. Butler and A. D. King, *Periodic algebras which are almost Koszul*,
+  Algebr. Represent. Theory 5 (2002), Section 4.
+* P. Etingof and C.-H. Eu, *Koszulity and the Hilbert series of preprojective algebras*, Math.
+  Res. Lett. 14 (2007), Sections 2 and 3.
+* C. M. Ringel, *The preprojective algebra of a quiver*, for the Frobenius and socle input.
 -/
 
 public section
@@ -147,35 +155,14 @@ private theorem exists_ne_zero_mem_preprojectiveCorner_D4_four (v : Q) :
 /-- **The `D₄` preprojective Koszul defect is the degree-four diagonal line.** At a vertex `v`,
 the graded corner of elements killed by every arrow leaving `v` has dimension one for internal
 degree four and source vertex `v`, and dimension zero for every other degree and source. -/
-theorem finrank_preprojectiveKoszulDefect_D4 (v : Q) (m : ℕ) (i : Q) :
+theorem finrank_preprojectiveCorner_inf_iInf_ker_D4 (v : Q) (m : ℕ) (i : Q) :
     Module.finrank k ↥(preprojectiveCorner k Q m (Symmetrify.of.obj i) (Symmetrify.of.obj v) ⊓
       ⨅ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
         LinearMap.ker (LinearMap.mulLeft k (π (ofArrow (Quiver.reverse b))))) =
       if m = 4 ∧ i = v then 1 else 0 := by
-  obtain ⟨n, u, hdim⟩ :=
-    exists_forall_finrank_preprojectiveCorner_inf_iInf_ker_eq k v
   obtain ⟨y, hycorner, hy0, hyarrow⟩ :=
     exists_ne_zero_mem_preprojectiveCorner_D4_four k v
-  let K := preprojectiveCorner k Q 4 (Symmetrify.of.obj v) (Symmetrify.of.obj v) ⊓
-    ⨅ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
-      LinearMap.ker (LinearMap.mulLeft k (π (ofArrow (Quiver.reverse b))))
-  have hyK : y ∈ K := by
-    refine Submodule.mem_inf.2 ⟨hycorner, ?_⟩
-    refine (Submodule.mem_iInf _).2 fun w => (Submodule.mem_iInf _).2 fun b => ?_
-    exact LinearMap.mem_ker.2 (hyarrow w b)
-  have hK : K ≠ ⊥ := by
-    rw [Submodule.ne_bot_iff]
-    exact ⟨y, hyK, hy0⟩
-  have hdim_ne : Module.finrank k K ≠ 0 := by
-    intro hzero
-    exact hK (Submodule.finrank_eq_zero.mp hzero)
-  have hnv : n = 4 ∧ u = v := by
-    by_contra hne
-    have hpair : ¬ (4 = n ∧ v = u) := fun h' => hne ⟨h'.1.symm, h'.2.symm⟩
-    apply hdim_ne
-    simpa only [K, hpair, ↓reduceIte] using hdim 4 v
-  obtain ⟨rfl, rfl⟩ := hnv
-  exact hdim m i
+  exact finrank_preprojectiveCorner_inf_iInf_ker_eq_of_mem k hycorner hy0 hyarrow m i
 
 end Field
 
