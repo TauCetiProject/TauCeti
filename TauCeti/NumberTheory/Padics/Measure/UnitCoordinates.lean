@@ -185,8 +185,10 @@ private def integralOnUnitTests : unitTests (p := p) →L[ℤ_[p]] ℤ_[p] :=
     (X := ℤ_[p]ˣ) (Y := ℤ_[p])) LocallyConstant.toContinuousMap_injective
   ((unitCoordinateIntegral c hc).comp e.symm.toLinearMap).mkContinuous 1 (by
     intro f
-    have he : (e.symm f).toContinuousMap = f.val :=
-      congrArg Subtype.val (e.apply_symm_apply f)
+    -- Use the inverse equivalence's public evaluation lemma at the range-subtype boundary.
+    have he : (e.symm f).toContinuousMap = f.val := by
+      simpa only [LocallyConstant.toContinuousMapLinearMap_apply] using
+        LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f
     simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, one_mul, he,
       Submodule.norm_coe] using unitCoordinateIntegral_norm_le c hc (e.symm f))
 
@@ -257,7 +259,7 @@ theorem existsUnique_ofUnitCoordinates :
 
 /-- The total mass is the sole coefficient at depth zero. -/
 @[simp]
-theorem ofUnitCoordinates_mass : ofUnitCoordinates c hc 1 = c 0 1 := by
+theorem ofUnitCoordinates_apply_one : ofUnitCoordinates c hc 1 = c 0 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by
     simpa only [pow_zero] using (inferInstance : Subsingleton (ZMod 1))
   have h := sum_finiteProjection (↑(PadicInt.unitsToZModPow (p := p) 0) :
@@ -326,7 +328,7 @@ example (u v : ℤ_[3]ˣ) :
       (fun n ↦ Finsupp.single (PadicInt.unitsToZModPow n u) 2 +
         Finsupp.single (PadicInt.unitsToZModPow n v) 3)
       (by intros; simp [Finsupp.mapDomain_add]) 1 = 5 := by
-  rw [ofUnitCoordinates_mass]
+  rw [ofUnitCoordinates_apply_one]
   rw [PadicInt.unitsToZModPow_zero_apply, PadicInt.unitsToZModPow_zero_apply]
   norm_num
 
