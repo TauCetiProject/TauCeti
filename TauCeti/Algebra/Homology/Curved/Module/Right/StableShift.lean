@@ -85,13 +85,11 @@ theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMa
     have hpN := coneIdentityInjectivePresentation_p N
     rw [eqToHom_comp_iff, comp_eqToHom_iff] at hpM hpN
     rw [hpM, hpN]
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp, Category.comp_id]
-    -- The remaining transports are the reflexive characteristic equations for closed shift.
-    -- On its actual shifted objects they are identities, leaving the public cone-map square.
-    change coneProjection (𝟙 (ForgetEnrichment.of _ M)) ≫ (closedShiftFunctor 1).map f =
-      coneMap _ _ f f k hsq ≫ coneProjection (𝟙 (ForgetEnrichment.of _ N))
-    exact (coneMap_comp_coneProjection _ _ f f k hsq).symm
+    -- Only the already exposed closed-shift/forgetful object wrappers reduce here.
+    -- The presentation itself has been replaced by its public projection equation above.
+    simpa only [closedShiftFunctor, EnrichedFunctor.forget_obj, dgShiftFunctor_obj,
+      Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+      Category.comp_id] using (coneMap_comp_coneProjection _ _ f f k hsq).symm
 
 /-- Under the stable quotient, stable suspension is naturally cohomological shift by one. -/
 noncomputable def gradedSplitStableSuspensionIsoShift :
@@ -198,6 +196,7 @@ private theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux
   erw [Category.id_comp]
   apply congrArg (fun f ↦ (gradedSplitStableToHomotopy (h := h)).map
     ((gradedSplitStableSuspensionIsoShift (h := h)).hom.app X) ≫ f)
+  erw [Category.comp_id]
   exact eqToHom_trans (C := DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) _ _
   all_goals rfl
 
