@@ -152,7 +152,7 @@ private theorem exists_sub_mem_pow_succ {T : Finset (MvPolynomial σ R)}
       rw [← map_sum, ha, homogeneousComponent_eq_self ((mem_homogeneousSubmodule n p).mp hp)]
     rw [this, map_sum]
     refine Finset.sum_congr rfl fun t _ ↦ ?_
-    rw [homogeneousComponent_mul_of_right_isHomogeneous (hd t)]
+    rw [(hd t).homogeneousComponent_mul_right]
     split_ifs <;> simp [c, *]
   refine ⟨c, fun t ↦ ?_, ?_, ?_⟩
   · by_cases ht : d t ≤ n
