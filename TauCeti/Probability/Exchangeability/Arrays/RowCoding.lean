@@ -9,6 +9,8 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.JointLaw
 -- Public: the coding representation is used to identify the coupled row law.
 public import TauCeti.Probability.Exchangeability.Arrays.Coding
+-- Public: the canonical coupled coding law appears in the statements.
+public import TauCeti.Probability.Process.Array.RowCoding
 -- Non-public: measurability of pushforward on probability measures is used in the symmetry proof.
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.GiryMonad

@@ -69,6 +69,27 @@ theorem arrayRowCodingLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
           fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
   (rfl)
 
+/-- The coupled row-coding construction sends the zero mixing law to zero. -/
+@[simp]
+theorem arrayRowCodingLaw_zero :
+    arrayRowCodingLaw (0 : Measure (ProbabilityMeasure (ℕ → α))) = 0 := by
+  rw [arrayRowCodingLaw_def, Measure.zero_prod, Measure.map_zero]
+
+/-- The coupled row-coding construction preserves sums of mixing laws. -/
+@[simp]
+theorem arrayRowCodingLaw_add (π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α)))
+    [SFinite π₁] [SFinite π₂] :
+    arrayRowCodingLaw (π₁ + π₂) = arrayRowCodingLaw π₁ + arrayRowCodingLaw π₂ := by
+  rw [arrayRowCodingLaw_def, arrayRowCodingLaw_def, arrayRowCodingLaw_def, Measure.add_prod]
+  exact Measure.map_add _ _ measurable_arrayRowCoding
+
+/-- The coupled row-coding construction preserves nonnegative scalar multiples of mixing laws. -/
+@[simp]
+theorem arrayRowCodingLaw_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    arrayRowCodingLaw (c • π) = c • arrayRowCodingLaw π := by
+  rw [arrayRowCodingLaw_def, arrayRowCodingLaw_def, Measure.prod_smul_left]
+  exact Measure.map_smul _ measurable_arrayRowCoding.aemeasurable
+
 /-- Coding a probability law of random path measures gives a probability law of the coupled
 parameter and array. -/
 instance instIsProbabilityMeasureArrayRowCodingLaw
@@ -111,6 +132,12 @@ theorem rowCodingArrayLaw_eq_map_snd (π : Measure (ProbabilityMeasure (ℕ → 
     rowCodingArrayLaw π = (arrayRowCodingLaw π).map Prod.snd := by
   rw [rowCodingArrayLaw]
 
+/-- The row-coding array construction sends the zero mixing law to zero. -/
+@[simp]
+theorem rowCodingArrayLaw_zero :
+    rowCodingArrayLaw (0 : Measure (ProbabilityMeasure (ℕ → α))) = 0 := by
+  rw [rowCodingArrayLaw_eq_map_snd, arrayRowCodingLaw_zero, Measure.map_zero]
+
 /-- The defining pushforward expression for `rowCodingArrayLaw`. -/
 theorem rowCodingArrayLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
     rowCodingArrayLaw π =
@@ -132,16 +159,15 @@ instance instIsProbabilityMeasureRowCodingArrayLaw
 theorem rowCodingArrayLaw_add (π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α)))
     [SFinite π₁] [SFinite π₂] :
     rowCodingArrayLaw (π₁ + π₂) = rowCodingArrayLaw π₁ + rowCodingArrayLaw π₂ := by
-  rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.add_prod]
-  exact Measure.map_add _ _ measurable_arrayRowCoding.snd
+  simp only [rowCodingArrayLaw_eq_map_snd, arrayRowCodingLaw_add,
+    Measure.map_add _ _ measurable_snd]
 
 /-- The row-coding construction preserves nonnegative scalar multiples of mixing laws. -/
 @[simp]
 theorem rowCodingArrayLaw_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeasure (ℕ → α))) :
     rowCodingArrayLaw (c • π) = c • rowCodingArrayLaw π := by
-  rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.prod_smul_left]
-  exact Measure.map_smul _
-    measurable_arrayRowCoding.snd.aemeasurable
+  simp only [rowCodingArrayLaw_eq_map_snd, arrayRowCodingLaw_smul,
+    Measure.map_smul _ measurable_snd.aemeasurable]
 
 /-- Currying the canonical row-coding array law gives the de Finetti barycenter of its mixing
 law. -/
@@ -149,11 +175,7 @@ law. -/
 theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
     (rowCodingArrayLaw π).map (MeasurableEquiv.curry ℕ ℕ α) = Measure.deFinettiBarycenter π := by
   rw [rowCodingArrayLaw_eq_map_snd, map_snd_arrayRowCodingLaw,
-    Measure.map_map (MeasurableEquiv.measurable _) measurable_uncurry]
-  have h : (MeasurableEquiv.curry ℕ ℕ α) ∘ Function.uncurry = id := by
-    funext x
-    rfl
-  rw [h, Measure.map_id]
+    ← MeasurableEquiv.coe_curry_symm, MeasurableEquiv.map_map_symm]
 
 /-- The row-coding array law determines every finite mixing law on path measures. -/
 theorem eq_of_rowCodingArrayLaw_eq {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
