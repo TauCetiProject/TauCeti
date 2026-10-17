@@ -148,17 +148,6 @@ theorem ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree
     by rw [ideleToClassH2_def] at hy; exact hy
 
 include hK hgen in
-/-- `ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree`, for the cohomology map that
-`ideleToClassH2` applies. -/
-private theorem map_ideleClassHom_eq_zero_iff {L : NormalLayer (AbsoluteGaloisGroup K)}
-    {y : L.H (ideleFormation K) 2} :
-    groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (ideleClassHom K)) 2 y = 0 ↔
-      ideleSumLocalInv K L y = 0 := by
-  have h := ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree hK hgen (L := L) (y := y)
-  rw [ideleToClassH2_def] at h
-  exact h
-
-include hK hgen in
 /-- **Killing the obstruction**, if the Kummer case of the second inequality holds and every layer
 of prime degree `p` carries a class whose local invariants sum to `1/p`: some refinement of every
 layer `L/F` is such that the inflation of every class of `H²(Gal(L/F), C_L)` to it lifts to the
@@ -170,8 +159,16 @@ theorem exists_refinement_mem_range_ideleToClassH2_of_forall_index_le_of_prime_d
         T.cohomologyInfl (globalFormation K) 2 x ∈ (ideleToClassH2 K Lay').range := by
   obtain ⟨Lay', T, hT⟩ := NormalLayer.exists_refinement_forall_exists_map_eq_cohomologyInfl
     (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L) (fun R y ↦ ideleSumLocalInv_res K R y)
-    (fun _ _ ↦ (map_ideleClassHom_eq_zero_iff hK hgen).1)
-    (fun _ _ ↦ (map_ideleClassHom_eq_zero_iff hK hgen).2)
+    (fun L y hy ↦ by
+      have h := ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree
+        hK hgen (L := L) (y := y)
+      rw [ideleToClassH2_def] at h
+      exact h.1 hy)
+    (fun L y hy ↦ by
+      have h := ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree
+        hK hgen (L := L) (y := y)
+      rw [ideleToClassH2_def] at h
+      exact h.2 hy)
     (subsingleton_h1_globalFormation_of_forall_index_le hK)
     (natCard_H2_globalFormation_dvd_degree_of_forall_index_le hK Lay)
     (exists_refinement_ideleSumLocalInv_eq Lay)
