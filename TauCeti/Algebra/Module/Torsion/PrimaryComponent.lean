@@ -46,6 +46,7 @@ after raising to some power.
 
 ## Main statements
 
+* `TauCeti.mapsTo_pPowerTorsion`: a linear map sends `p`-power torsion into `p`-power torsion;
 * `TauCeti.map_pPowerTorsion_of_exact`: in an exact sequence `0 → M → N → P` with `P` free of
   `p`-power torsion, the `p`-power torsion of `N` is that of `M`;
 * `TauCeti.injOn_pPowerTorsion_of_exact`, `TauCeti.surjOn_pPowerTorsion_of_exact`: for `p` prime,
@@ -90,6 +91,11 @@ theorem toAddSubmonoid_pPowerTorsion :
 
 variable {p A M}
 
+/-- A linear map sends `p`-power torsion into `p`-power torsion. -/
+theorem mapsTo_pPowerTorsion {N : Type*} [AddCommMonoid N] [Module A N] (f : M →ₗ[A] N) :
+    Set.MapsTo f (pPowerTorsion p A M) (pPowerTorsion p A N) :=
+  fun _ ⟨k, hk⟩ ↦ ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
+
 /-- In an exact sequence `0 → M → N → P` whose last term has no `p`-power torsion, the `p`-power
 torsion of `N` is the image of that of `M`. -/
 theorem map_pPowerTorsion_of_exact {N P : Type*} [AddCommMonoid N] [Module A N]
@@ -99,10 +105,10 @@ theorem map_pPowerTorsion_of_exact {N P : Type*} [AddCommMonoid N] [Module A N]
   ext y
   simp only [Submodule.mem_map, mem_pPowerTorsion_iff]
   constructor
-  · rintro ⟨z, ⟨k, hk⟩, rfl⟩
-    exact ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
+  · rintro ⟨z, hz, rfl⟩
+    exact mapsTo_pPowerTorsion f hz
   · rintro ⟨k, hk⟩
-    have hy : g y ∈ pPowerTorsion p A P := ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
+    have hy : g y ∈ pPowerTorsion p A P := mapsTo_pPowerTorsion g ⟨k, hk⟩
     obtain ⟨z, rfl⟩ := (hfg y).mp (by rwa [hP, Submodule.mem_bot] at hy)
     exact ⟨z, ⟨k, hf (by rw [map_nsmul, hk, map_zero])⟩, rfl⟩
 
@@ -142,7 +148,7 @@ theorem surjOn_pPowerTorsion_of_exact [Fact p.Prime] {φ : M →ₗ[A] N} {χ : 
     (hφχ : Function.Exact φ χ) (hMt : IsAddTorsion M) (hP : pPowerTorsion p A P = ⊥) :
     Set.SurjOn φ (pPowerTorsion p A M) (pPowerTorsion p A N) := by
   rintro y ⟨k, hk⟩
-  have hχ : χ y ∈ pPowerTorsion p A P := ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
+  have hχ : χ y ∈ pPowerTorsion p A P := mapsTo_pPowerTorsion χ ⟨k, hk⟩
   rw [hP, Submodule.mem_bot] at hχ
   obtain ⟨x, rfl⟩ := (hφχ y).mp hχ
   exact exists_mem_primaryComponent_apply_eq φ Fact.out (hMt x) ⟨k, hk⟩

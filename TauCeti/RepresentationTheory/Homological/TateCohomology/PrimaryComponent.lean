@@ -26,7 +26,8 @@ terms has bijective multiplication by a prime `p`. If `p` is bijective on `X₁`
 (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`); if it is bijective on `X₃`, so is
 `H_Tateⁿ(G, X₁) → H_Tateⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
 argument is `TauCeti.injOn_pPowerTorsion_of_exact` and `TauCeti.surjOn_pPowerTorsion_of_exact`,
-which use that all the groups involved are torsion, being killed by `|G|`
+which use that all the groups involved are torsion
+(`TauCeti.TateCohomology.isAddTorsion_tateCohomology`), being killed by `|G|`
 (`TauCeti.TateCohomology.natCard_nsmul_eq_zero`). Factoring a morphism through its image, it
 follows that a morphism whose kernel and cokernel have bijective multiplication by `p` induces
 bijections of `p`-primary components (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map`).
@@ -101,18 +102,16 @@ components. -/
 theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.g) (pPowerTorsion p k (tateCohomology S.X₂ n))
       (pPowerTorsion p k (tateCohomology S.X₃ n)) := by
-  refine ⟨fun x hx ↦ ?_, ?_, ?_⟩
-  · obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
-    exact mem_pPowerTorsion_iff.mpr ⟨j, by rw [← map_nsmul, hj, map_zero]⟩
+  refine ⟨mapsTo_pPowerTorsion _, ?_, ?_⟩
   · exact injOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₂ hS n))
-      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (isAddTorsion_tateCohomology _ _)
       (pPowerTorsion_tateCohomology_eq_bot hp n)
   · exact surjOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₃ hS n))
-      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (isAddTorsion_tateCohomology _ _)
       (pPowerTorsion_tateCohomology_eq_bot hp (n + 1))
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose last term multiplication by a
@@ -121,19 +120,17 @@ components. -/
 theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.f) (pPowerTorsion p k (tateCohomology S.X₁ n))
       (pPowerTorsion p k (tateCohomology S.X₂ n)) := by
-  refine ⟨fun x hx ↦ ?_, ?_, ?_⟩
-  · obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
-    exact mem_pPowerTorsion_iff.mpr ⟨j, by rw [← map_nsmul, hj, map_zero]⟩
+  refine ⟨mapsTo_pPowerTorsion _, ?_, ?_⟩
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
     exact injOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₁ hS m))
-      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (isAddTorsion_tateCohomology _ _)
       (pPowerTorsion_tateCohomology_eq_bot hp m)
   · exact surjOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₂ hS n))
-      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (isAddTorsion_tateCohomology _ _)
       (pPowerTorsion_tateCohomology_eq_bot hp n)
 
 end ShortExact
@@ -153,16 +150,11 @@ theorem bijOn_pPowerTorsion_map [Fintype G] {A B : Rep k G} (f : A ⟶ B) {p : �
     { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _) } hK n
   have hι := bijOn_pPowerTorsion_map_f (S := .mk _ _ (kernel.condition (cokernel.π f)))
     { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) } hC n
-  have hmaps {X Y : Rep k G} (g : X ⟶ Y) : Set.MapsTo ((tateCohomologyFunctor n).map g)
-      (pPowerTorsion p k (tateCohomology X n)) (pPowerTorsion p k (tateCohomology Y n)) :=
-    fun x hx ↦ by
-      obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
-      exact mem_pPowerTorsion_iff.mpr ⟨j, by rw [← map_nsmul, hj, map_zero]⟩
   let e := (tateCohomologyFunctor n).mapIso (Abelian.coimageIsoImage f)
   have hc : Set.BijOn e.hom (pPowerTorsion p k (tateCohomology (Abelian.coimage f) n))
       (pPowerTorsion p k (tateCohomology (Abelian.image f) n)) :=
     Set.InvOn.bijOn ⟨fun x _ ↦ e.hom_inv_id_apply x, fun y _ ↦ e.inv_hom_id_apply y⟩
-      (hmaps _) (hmaps _)
+      (mapsTo_pPowerTorsion _) (mapsTo_pPowerTorsion _)
   rw [← Abelian.coimage_image_factorisation f, Functor.map_comp, Functor.map_comp]
   exact (hι.comp hc).comp hπ
 
