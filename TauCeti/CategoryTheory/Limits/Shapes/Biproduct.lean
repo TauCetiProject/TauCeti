@@ -165,47 +165,93 @@ theorem hasFiniteBiproducts_of_hasBinaryBiproducts [HasZeroObject C] [HasBinaryB
 /-- A biproduct indexed by a sum type is the binary biproduct of the two indexed parts. -/
 noncomputable def biproductSumIso {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
     [HasBiproduct f] [HasBiproduct g] [hs : HasBiproduct (Sum.elim f g)]
-    [HasBinaryBiproduct (⨁ f) (⨁ g)] : (⨁ Sum.elim f g) ≅ (⨁ f) ⊞ (⨁ g) := by
-  -- Reduce the family so dependent lift types match the projection simp lemmas.
-  change HasBiproduct (Sum.rec f g) at hs
-  change (⨁ Sum.rec f g) ≅ (⨁ f) ⊞ (⨁ g)
-  exact
-    { hom := biprod.lift (biproduct.lift fun j ↦ biproduct.π _ (Sum.inl j))
-        (biproduct.lift fun k ↦ biproduct.π _ (Sum.inr k))
-      inv := biproduct.lift fun i ↦ match i with
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] : (⨁ Sum.elim f g) ≅ (⨁ f) ⊞ (⨁ g) where
+  hom := biprod.lift (biproduct.lift (f := f) fun j ↦ biproduct.π _ (Sum.inl j))
+    (biproduct.lift (f := g) fun k ↦ biproduct.π _ (Sum.inr k))
+  inv := biproduct.lift (f := Sum.elim f g) fun i ↦ match i with
+    | Sum.inl j => biprod.fst ≫ biproduct.π f j
+    | Sum.inr k => biprod.snd ≫ biproduct.π g k
+  hom_inv_id := by
+    -- Normalize the partially applied family, including its instance, so projection lemmas match.
+    dsimp +unfoldPartialApp only [Sum.elim] at hs ⊢
+    apply biproduct.hom_ext
+    rintro (j | k) <;> simp
+  inv_hom_id := by
+    dsimp +unfoldPartialApp only [Sum.elim] at hs ⊢
+    apply biprod.hom_ext
+    · apply biproduct.hom_ext
+      intro j
+      simp
+    · apply biproduct.hom_ext
+      intro k
+      simp
+
+/-- The forward sum-indexed comparison is assembled from the indexed projections. -/
+theorem biproductSumIso_hom {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.elim f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] :
+    (biproductSumIso f g).hom =
+      biprod.lift (biproduct.lift (f := f) fun j ↦ biproduct.π _ (Sum.inl j))
+        (biproduct.lift (f := g) fun k ↦ biproduct.π _ (Sum.inr k)) := (rfl)
+
+/-- The inverse sum-indexed comparison is assembled from the projections of each indexed part. -/
+theorem biproductSumIso_inv {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.elim f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] :
+    (biproductSumIso f g).inv =
+      biproduct.lift (f := Sum.elim f g) (fun i ↦ match i with
         | Sum.inl j => biprod.fst ≫ biproduct.π f j
-        | Sum.inr k => biprod.snd ≫ biproduct.π g k
-      hom_inv_id := by
-        apply biproduct.hom_ext
-        rintro (j | k) <;> simp
-      inv_hom_id := by
-        apply biprod.hom_ext
-        · apply biproduct.hom_ext
-          intro j
-          simp
-        · apply biproduct.hom_ext
-          intro k
-          simp }
+        | Sum.inr k => biprod.snd ≫ biproduct.π g k) := (rfl)
 
 /-- The sum-indexed comparison preserves the projections onto the first indexed part. -/
 @[reassoc (attr := simp)]
 theorem biproductSumIso_hom_fst_π {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
-    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.elim f g)]
+    [HasBiproduct f] [HasBiproduct g] [hs : HasBiproduct (Sum.elim f g)]
     [HasBinaryBiproduct (⨁ f) (⨁ g)] (j : J) :
     (biproductSumIso f g).hom ≫ biprod.fst ≫ biproduct.π f j =
       biproduct.π (Sum.elim f g) (Sum.inl j) := by
-  dsimp +unfoldPartialApp only [biproductSumIso, Sum.elim]
+  rw [biproductSumIso_hom]
+  dsimp +unfoldPartialApp only [Sum.elim] at hs ⊢
   simp
 
 /-- The sum-indexed comparison preserves the projections onto the second indexed part. -/
 @[reassoc (attr := simp)]
 theorem biproductSumIso_hom_snd_π {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
-    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.elim f g)]
+    [HasBiproduct f] [HasBiproduct g] [hs : HasBiproduct (Sum.elim f g)]
     [HasBinaryBiproduct (⨁ f) (⨁ g)] (k : K) :
     (biproductSumIso f g).hom ≫ biprod.snd ≫ biproduct.π g k =
       biproduct.π (Sum.elim f g) (Sum.inr k) := by
-  dsimp +unfoldPartialApp only [biproductSumIso, Sum.elim]
+  rw [biproductSumIso_hom]
+  dsimp +unfoldPartialApp only [Sum.elim] at hs ⊢
   simp
+
+/-- The inverse sum-indexed comparison preserves inclusions from the first indexed part. -/
+@[reassoc (attr := simp)]
+theorem biproduct_ι_biprod_inl_biproductSumIso_inv {J : Type w} {K : Type w'}
+    (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [hs : HasBiproduct (Sum.elim f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] (j : J) :
+    biproduct.ι f j ≫ biprod.inl ≫ (biproductSumIso f g).inv =
+      biproduct.ι (Sum.elim f g) (Sum.inl j) := by
+  classical
+  rw [biproductSumIso_inv]
+  dsimp +unfoldPartialApp only [Sum.elim] at hs ⊢
+  apply biproduct.hom_ext
+  rintro (k | k) <;> simp [biproduct.ι_π]
+
+/-- The inverse sum-indexed comparison preserves inclusions from the second indexed part. -/
+@[reassoc (attr := simp)]
+theorem biproduct_ι_biprod_inr_biproductSumIso_inv {J : Type w} {K : Type w'}
+    (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [hs : HasBiproduct (Sum.elim f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] (k : K) :
+    biproduct.ι g k ≫ biprod.inr ≫ (biproductSumIso f g).inv =
+      biproduct.ι (Sum.elim f g) (Sum.inr k) := by
+  classical
+  rw [biproductSumIso_inv]
+  dsimp +unfoldPartialApp only [Sum.elim] at hs ⊢
+  apply biproduct.hom_ext
+  rintro (j | j) <;> simp [biproduct.ι_π]
 
 variable {J : Type w} (f : Option J → C) [HasBiproduct f]
   [HasBiproduct fun j => f (some j)] [HasBinaryBiproduct (f none) (⨁ fun j => f (some j))]

@@ -192,7 +192,7 @@ theorem simpleMultiplicities_biprod (X Y : C) :
     _ = simpleMultiplicities X + simpleMultiplicities Y := by
       rw [simpleMultiplicities_eq_of_iso_biproduct f e,
         simpleMultiplicities_eq_of_iso_biproduct g d, Fintype.sum_sum_type]
-      rfl
+      simp only [s, Sum.elim_inl, Sum.elim_inr]
 
 /-- An object has no simple summands exactly when it is a zero object. -/
 @[simp]
