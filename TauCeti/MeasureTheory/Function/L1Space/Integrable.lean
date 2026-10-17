@@ -51,4 +51,13 @@ theorem integrable_smul_iff_abs_smul {X F : Type*} [MeasurableSpace X]
   exact ⟨fun h ↦ (h.bdd_smul 1 hu hb).congr hmul,
     fun h ↦ (h.bdd_smul 1 hu hb).congr hinv⟩
 
+/-- An integrable function whose norm is almost everywhere at least one can only be carried by a
+finite measure. -/
+theorem isFiniteMeasure_of_integrable_of_one_le {X F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup F] {f : X → F} {μ : Measure X} (hf : Integrable f μ)
+    (h_one : ∀ᵐ x ∂μ, 1 ≤ ‖f x‖) : IsFiniteMeasure μ := by
+  have hconst : Integrable (fun _ : X ↦ (1 : ℝ)) μ :=
+    hf.norm.mono' aestronglyMeasurable_const (by simpa only [norm_one] using h_one)
+  exact (integrable_const_iff_isFiniteMeasure one_ne_zero).mp hconst
+
 end MeasureTheory
