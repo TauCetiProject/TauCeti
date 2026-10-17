@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Functor
+public import TauCeti.CategoryTheory.Monoidal.Opposite
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 
 /-!
-# The left dual functor is a monoidal equivalence
+# The left dual functor and the double left dual functor
 
 Mathlib's `CategoryTheory.leftDualFunctor C : C ⥤ (Cᵒᵖ)ᴹᵒᵖ` sends an object `X` of a left rigid
 monoidal category to its left dual `ᘁX` and a morphism `f` to its left adjoint mate `ᘁf`. Like
@@ -28,6 +29,13 @@ right dual. Together with the strong monoidal structure, this makes the left dua
 monoidal equivalence. Having both dual functors monoidal is what is needed to compare the left
 and right double duals as monoidal functors.
 
+Applying the left dual functor twice gives the double left dual functor `C ⥤ C`, sending `X`
+to `ᘁ(ᘁX)` and `f` to `ᘁ(ᘁf)`. As for the double right dual functor, the second application
+goes through the opposite monoidal opposite of the left dual functor. The resulting functor is
+strong monoidal, and in a rigid monoidal category it is a monoidal autoequivalence. The double
+left and double right dual functors are the two autoequivalences that a pivotal structure
+trivializes; without a pivotal structure they are inverse rather than naturally isomorphic.
+
 ## Main declarations
 
 * `TauCeti.leftDualTensorIso_hom_naturality`: naturality of `leftDualTensorIso`;
@@ -42,6 +50,12 @@ and right double duals as monoidal functors.
   operation takes right adjoint mates;
 * `TauCeti.leftDualFunctorIsEquivalence`: left duality is an equivalence; together with its
   `Functor.Monoidal` instance, it is a monoidal equivalence.
+* `TauCeti.doubleLeftDualFunctor` and the instance `TauCeti.doubleLeftDualFunctorMonoidal`: the
+  strong monoidal double left dual functor, with structure morphisms given by
+  `TauCeti.doubleLeftDualFunctor_ε`, `TauCeti.doubleLeftDualFunctor_η`,
+  `TauCeti.doubleLeftDualFunctor_μ` and `TauCeti.doubleLeftDualFunctor_δ`;
+* `TauCeti.doubleLeftDualFunctorIsEquivalence`: in a rigid monoidal category, the double left
+  dual functor is an equivalence, hence a monoidal autoequivalence.
 
 ## References
 
@@ -234,5 +248,92 @@ instance leftDualFunctorIsEquivalence : (leftDualFunctor C).IsEquivalence where
           ⟨(mopFunctor (Cᵒᵖ)).mapIso
             (leftDualIso (LeftRigidCategory.leftDual ((X.unmop.unop)ᘁ)).exact
               (RightRigidCategory.rightDual (X.unmop.unop)).exact).symm.op⟩⟩ }
+
+end TauCeti
+
+namespace TauCeti
+
+variable (C : Type u) [Category.{v} C] [MonoidalCategory C]
+
+section DoubleLeftDual
+
+variable [LeftRigidCategory C]
+
+/-- The double left dual functor `C ⥤ C` of a left rigid monoidal category, sending `X` to
+`ᘁ(ᘁX)` and `f` to `ᘁ(ᘁf)`. It applies the left dual functor twice, the second time through its
+opposite monoidal opposite, and returns to `C` by removing the wrappers. -/
+@[expose]
+noncomputable def doubleLeftDualFunctor : C ⥤ C :=
+  leftDualFunctor C ⋙ (leftDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor
+
+/-- The double left dual functor is strong monoidal, as the composite of the strong monoidal
+left dual functor, its opposite monoidal opposite, and the removal of the wrappers. -/
+noncomputable instance doubleLeftDualFunctorMonoidal : (doubleLeftDualFunctor C).Monoidal :=
+  inferInstanceAs
+    (leftDualFunctor C ⋙ (leftDualFunctor C).op.opMop ⋙
+      (opMopOpMopEquivalence C).functor).Monoidal
+
+variable {C}
+
+/-- The double left dual functor sends `X` to `ᘁ(ᘁX)`. -/
+@[simp]
+theorem doubleLeftDualFunctor_obj (X : C) :
+    (doubleLeftDualFunctor C).obj X = (ᘁ(ᘁX) : C) :=
+  (rfl)
+
+/-- The double left dual functor sends `f` to `ᘁ(ᘁf)`. -/
+@[simp]
+theorem doubleLeftDualFunctor_map {X Y : C} (f : X ⟶ Y) :
+    (doubleLeftDualFunctor C).map f = ᘁ(ᘁf) :=
+  (rfl)
+
+open Functor.LaxMonoidal Functor.OplaxMonoidal
+
+variable (C)
+
+/-- The unit comparison `𝟙_ C ⟶ ᘁ(ᘁ(𝟙_ C))` of the double left dual functor. -/
+theorem doubleLeftDualFunctor_ε :
+    ε (doubleLeftDualFunctor C) =
+      (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        leftMate HasLeftDual.exact (LeftRigidCategory.leftDual (𝟙_ C)).exact
+          (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).hom :=
+  (Category.id_comp _ =≫ _).trans
+    (_ ≫= @leftAdjointMate_eq_leftMate C _ _ _ _ _ (LeftRigidCategory.leftDual (𝟙_ C)) _)
+
+/-- The inverse unit comparison `ᘁ(ᘁ(𝟙_ C)) ⟶ 𝟙_ C` of the double left dual functor. -/
+theorem doubleLeftDualFunctor_η :
+    η (doubleLeftDualFunctor C) =
+      leftMate (LeftRigidCategory.leftDual (𝟙_ C)).exact HasLeftDual.exact
+          (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).hom :=
+  (_ ≫= Category.comp_id _).trans
+    (@leftAdjointMate_eq_leftMate C _ _ _ _ (LeftRigidCategory.leftDual (𝟙_ C)) _ _ =≫ _)
+
+/-- The tensor comparison `ᘁ(ᘁX) ⊗ ᘁ(ᘁY) ⟶ ᘁ(ᘁ(X ⊗ Y))` of the double left dual functor. -/
+theorem doubleLeftDualFunctor_μ (X Y : C) :
+    μ (doubleLeftDualFunctor C) X Y =
+      (leftDualTensorIso (ᘁY) (ᘁX)).inv ≫ ᘁ((leftDualTensorIso X Y).hom) :=
+  (Functor.LaxMonoidal.comp_μ _ _ X Y).trans
+    ((Functor.LaxMonoidal.comp_μ _ _ _ _ =≫ _).trans (Category.id_comp _ =≫ _))
+
+/-- The inverse tensor comparison `ᘁ(ᘁ(X ⊗ Y)) ⟶ ᘁ(ᘁX) ⊗ ᘁ(ᘁY)` of the double left dual
+functor. -/
+theorem doubleLeftDualFunctor_δ (X Y : C) :
+    δ (doubleLeftDualFunctor C) X Y =
+      (ᘁ((leftDualTensorIso X Y).inv) :
+        (ᘁ(ᘁ(X ⊗ Y) : C) : C) ⟶ (ᘁ((ᘁY : C) ⊗ (ᘁX : C)) : C)) ≫
+        (leftDualTensorIso (ᘁY) (ᘁX)).hom :=
+  (Functor.OplaxMonoidal.comp_δ _ _ X Y).trans
+    (_ ≫= (Functor.OplaxMonoidal.comp_δ _ _ _ _).trans (Category.comp_id _))
+
+end DoubleLeftDual
+
+/-- The double left dual functor of a rigid monoidal category is an equivalence of categories;
+with its `Functor.Monoidal` instance, it is a monoidal autoequivalence. -/
+instance doubleLeftDualFunctorIsEquivalence [RigidCategory C] :
+    (doubleLeftDualFunctor C).IsEquivalence :=
+  inferInstanceAs
+    (leftDualFunctor C ⋙ (leftDualFunctor C).op.opMop ⋙
+      (opMopOpMopEquivalence C).functor).IsEquivalence
 
 end TauCeti
