@@ -37,8 +37,6 @@ That identification of the polygon count is not proved here.
 
 ## Main results
 
-* `ConvexPolygon.SidePairing.natCard_finiteVertexCycle_eq_sum`: the number of finite vertex
-  cycles as a sum over the finite vertices.
 * `ConvexPolygon.SidePairing.finsum_mem_ellipticOrbits_one_sub_inv_eq`: the sum of `1 - 1 / mₑ`
   over the elliptic orbits as a sum over the vertices plus a term for the self-paired sides.
 * `ConvexPolygon.SidePairing.sum_interiorAngle_eq_two_pi_mul`: the angle sum of a fundamental
@@ -63,17 +61,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing) {Γ : Subgroup PSL(2, ℝ)}
 
-/-- The number of finite vertex cycles is the sum, over the finite vertices, of the inverse
-lengths of their cycles. -/
-theorem natCard_finiteVertexCycle_eq_sum {K : Type*} [Semifield K] [CharZero K] :
-    (Nat.card σ.FiniteVertexCycle : K) =
-      ∑ i, if (P.vertex i).isLeft then (1 : K) / σ.cycleLength i else 0 := by
-  classical
-  rw [← σ.finsum_eq_sum_ite_div_cycleLength (fun hi ↦ ?_) (fun _ ↦ 1) _ fun _ ↦ rfl,
-    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
-    Nat.card_eq_fintype_card]
-  rw [← Sum.not_isRight, ← Sum.not_isRight, σ.isRight_vertex_of_mem_cycle hi]
-
 open scoped Classical in
 /-- **The elliptic orbits read off a fundamental polygon.** If the translates of `P` by a group
 `Γ` containing the side-pairing maps cover `ℍ` and have disjoint interiors, the sum of
@@ -95,12 +82,11 @@ theorem finsum_mem_ellipticOrbits_one_sub_inv_eq (hmap : ∀ i, σ.map i ∈ Γ)
     Fintype.sum_sum_type]
   congr 1
   · rw [← finsum_eq_sum_of_fintype,
-      σ.finsum_eq_sum_ite_div_cycleLength (fun hi ↦ ?_) _
-        (fun i ↦ 1 - (orderOf (σ.cycleMap i) : ℝ)⁻¹) fun i ↦ by
+      σ.finsum_eq_sum_ite_div_cycleLength
+        (fun hi ↦ by
+          rw [σ.isLeft_vertex_eq_of_mem_cycle hi, ne_eq, σ.cycleMap_eq_one_iff_of_mem_cycle hi])
+        _ (fun i ↦ 1 - (orderOf (σ.cycleMap i) : ℝ)⁻¹) fun i ↦ by
         rw [σ.cardStabilizerOnOrbit_ellipticOrbitEquiv_inl_mk]]
-    rw [← Sum.not_isRight, ← Sum.not_isRight, σ.isRight_vertex_of_mem_cycle hi, ne_eq, ne_eq,
-      ← orderOf_eq_one_iff, ← orderOf_eq_one_iff (x := σ.cycleMap _),
-      σ.orderOf_cycleMap_eq_of_mem_cycle hi]
   · simp_rw [σ.cardStabilizerOnOrbit_ellipticOrbitEquiv_inr]
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.card_eq_fintype_card]
     norm_num [div_eq_mul_inv]

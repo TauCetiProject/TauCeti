@@ -334,9 +334,14 @@ theorem isElliptic_of_cycleMap_eq {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl 
 def cycle (j : Fin n) : Finset (Fin n) :=
   Finset.univ.filter fun i ↦ σ.next.SameCycle j i
 
+/-- A vertex `i` is on the cycle through `j` if and only if `i` and `j` lie in the same cycle of
+the successor permutation. -/
+theorem mem_cycle_iff_sameCycle {j i : Fin n} : i ∈ σ.cycle j ↔ σ.next.SameCycle j i := by
+  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
+
 /-- A vertex `i` is on the cycle through `j` if and only if it is an iterated successor of `j`. -/
 theorem mem_cycle_iff (j i : Fin n) : i ∈ σ.cycle j ↔ ∃ m, σ.next^[m] j = i := by
-  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and, ← Equiv.Perm.coe_pow]
+  simp only [mem_cycle_iff_sameCycle, ← Equiv.Perm.coe_pow]
   exact ⟨Equiv.Perm.SameCycle.exists_nat_pow_eq, fun ⟨m, hm⟩ ↦
     hm ▸ Equiv.Perm.sameCycle_pow_right.2 (.refl _ _)⟩
 
@@ -347,7 +352,7 @@ theorem self_mem_cycle (j : Fin n) : j ∈ σ.cycle j :=
 /-- The cycle does not depend on the starting vertex. -/
 theorem cycle_next (j : Fin n) : σ.cycle (σ.next j) = σ.cycle j := by
   ext i
-  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
+  simp only [mem_cycle_iff_sameCycle]
   exact Equiv.Perm.sameCycle_apply_left
 
 /-- The cycle does not depend on the starting vertex, in the simp-normal form of `next`. -/
@@ -374,7 +379,7 @@ theorem card_cycle (j : Fin n) : (σ.cycle j).card = σ.cycleLength j := by
 
 /-- Lying on a common vertex cycle is symmetric. -/
 theorem mem_cycle_comm {j i : Fin n} : i ∈ σ.cycle j ↔ j ∈ σ.cycle i := by
-  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
+  simp only [mem_cycle_iff_sameCycle]
   exact Equiv.Perm.sameCycle_comm
 
 /-- The vertices of one cycle have the same cycle length. -/
@@ -394,6 +399,13 @@ theorem orderOf_cycleMap_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
     rw [Function.iterate_succ_apply', cycleMap_next, ← ih]
     exact (SemiconjBy.orderOf_eq (σ.map _) (by rw [SemiconjBy, inv_mul_cancel_right])).symm
 
+/-- The cycle transformation at one vertex of a cycle is the identity if and only if it is the
+identity at any other vertex of that cycle. -/
+theorem cycleMap_eq_one_iff_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
+    σ.cycleMap i = 1 ↔ σ.cycleMap j = 1 := by
+  rw [← orderOf_eq_one_iff, ← orderOf_eq_one_iff (x := σ.cycleMap j),
+    σ.orderOf_cycleMap_eq_of_mem_cycle hi]
+
 /-- **Summing over vertex cycles.** Let `p` be a property of vertices that is constant along
 cycles. A function on the cycles of the vertices satisfying `p` sums to the sum over these
 vertices of its value on the cycle through each, divided by the length of that cycle. -/
@@ -410,8 +422,7 @@ theorem finsum_eq_sum_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
   induction c using Quotient.inductionOn' with | h a => ?_
   -- the vertices in the fibre over the cycle of `a` are the vertices of `cycle a`
   have hmem (i : {i : Fin n // p i}) (hi : mk i = mk a) : i.1 ∈ σ.cycle a := by
-    simpa only [cycle, Finset.mem_filter, Finset.mem_univ, true_and] using
-      (Quotient.exact' hi).symm
+    simpa only [mem_cycle_iff_sameCycle] using (Quotient.exact' hi).symm
   have hcard : Fintype.card {i : {i : Fin n // p i} // mk i = mk a} = σ.cycleLength a := by
     rw [← σ.card_cycle a, ← Fintype.card_coe]
     refine Fintype.card_congr
@@ -419,9 +430,7 @@ theorem finsum_eq_sum_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
         invFun := fun k ↦ ⟨⟨k.1, (hp k.2).2 a.2⟩, Quotient.sound' ?_⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
-    have hk := k.2
-    simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and] at hk
-    exact hk.symm
+    exact (σ.mem_cycle_iff_sameCycle.1 k.2).symm
   have hL : (σ.cycleLength a : K) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos a).ne'
   rw [Fintype.sum_congr _ (fun _ ↦ g (mk a) / σ.cycleLength a)
       fun i ↦ by
