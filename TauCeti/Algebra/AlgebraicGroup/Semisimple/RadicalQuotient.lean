@@ -76,10 +76,10 @@ theorem semisimple_coinvariants_solvableRadical
       ⟨CommHopfAlgCat.coinvariants hR,
         (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
     semisimpleCommHopfAlgProperty k Q := by
+  intro hR Q
+  -- Elaboration eliminates the statement's letI bindings; restore the instance needed below.
   let _ : Algebra.IsGeometricallyReduced k G := isGeometricallyReduced_of_smooth k G
-  let hR := isNormal_solvableRadicalDefiningIdeal G
-  let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-  exact semisimpleCommHopfAlgProperty_of_kernel_eq_solvableRadical
+  exact semisimpleCommHopfAlgProperty_of_kernel_eq_solvableRadical (Q := Q)
     (CommHopfAlgCat.coinvariantsι hR) (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
     inferInstance hconnected (CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR)
 
