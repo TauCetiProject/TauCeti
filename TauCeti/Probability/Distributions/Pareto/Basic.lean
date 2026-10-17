@@ -62,7 +62,7 @@ namespace TauCeti.Probability
 variable {t r q : ℝ}
 
 /-- The Pareto law presented by its real-valued density. -/
-private theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
+theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
     paretoMeasure t r = volume.withDensity fun x => ENNReal.ofReal (paretoPDFReal t r x) :=
   (rfl)
 
