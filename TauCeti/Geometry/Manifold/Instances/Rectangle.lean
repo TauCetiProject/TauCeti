@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Icc
-public import TauCeti.Geometry.Manifold.Orientation.Interval
-public import TauCeti.Geometry.Manifold.Orientation.Prod
 
 /-!
-# Coordinates and orientation of a rectangle with corners
+# Coordinates and derivatives of a rectangle with corners
 
 A rectangle uses the actual product of the two closed-interval manifolds. Its preferred charts
 are products of the interval charts; their inverse inclusion derivatives retain the signs of
@@ -102,6 +100,26 @@ def subtypeValRectangleTangentEquiv (x : Icc a b × Icc c d) :
     TangentSpace ((𝓡∂ 1).prod (𝓡∂ 1)) x ≃L[ℝ] ℝ × ℝ :=
   (subtypeValIccTangentEquiv x.1).prodCongr (subtypeValIccTangentEquiv x.2)
 
+/-- Rectangle tangent coordinates are the two signed interval projections. -/
+@[simp]
+theorem subtypeValRectangleTangentEquiv_apply (x : Icc a b × Icc c d)
+    (v : EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)) :
+    subtypeValRectangleTangentEquiv x v =
+      ((if (x.1 : ℝ) < b then (1 : ℝ) else -1) * v.1 0,
+        (if (x.2 : ℝ) < d then (1 : ℝ) else -1) * v.2 0) := by
+  change (subtypeValIccTangentEquiv x.1 v.1, subtypeValIccTangentEquiv x.2 v.2) = _
+  simp only [subtypeValIccTangentEquiv_apply, PiLp.proj_apply]
+
+/-- The inverse rectangle tangent map multiplies each coordinate by its chart sign. -/
+@[simp]
+theorem subtypeValRectangleTangentEquiv_symm_apply (x : Icc a b × Icc c d) (v : ℝ × ℝ) :
+    (subtypeValRectangleTangentEquiv x).symm v =
+      (WithLp.toLp 2 (fun _ : Fin 1 ↦ (if (x.1 : ℝ) < b then (1 : ℝ) else -1) * v.1),
+        WithLp.toLp 2 (fun _ : Fin 1 ↦ (if (x.2 : ℝ) < d then (1 : ℝ) else -1) * v.2)) := by
+  change ((subtypeValIccTangentEquiv x.1).symm v.1,
+    (subtypeValIccTangentEquiv x.2).symm v.2) = _
+  ext <;> simp only [subtypeValIccTangentEquiv_symm_apply]
+
 /-- The product tangent equivalence is the actual rectangle inclusion derivative. -/
 theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Icc c d) :
     (subtypeValRectangleTangentEquiv x).toContinuousLinearMap =
@@ -115,41 +133,5 @@ theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Ic
     subtypeValIccTangentEquiv_toContinuousLinearMap, mfderiv_subtypeVal_Icc,
     mfderiv_subtypeVal_Icc, mfderiv_subtypeVal_rectangle]
   rfl
-
-/-- Inclusion carries the canonical rectangle orientation to the standard coordinate-plane
-orientation at every point, including all four corners. -/
-theorem Manifold.Orientation.map_orientationAt_interval_prod (x : Icc a b × Icc c d) :
-    _root_.Orientation.map (Fin 2) (subtypeValRectangleTangentEquiv x).toLinearEquiv
-      (((interval a b).prod (interval c d)).orientationAt x) =
-        (((Module.Basis.singleton (Fin 1) ℝ).prod
-          (Module.Basis.singleton (Fin 1) ℝ)).reindex finSumFinEquiv).orientation := by
-  have hx := map_orientationAt_interval x.1
-  have hy := map_orientationAt_interval x.2
-  rw [orientationAt_interval] at hx hy
-  rw [orientationAt_prod, orientationAt_interval, orientationAt_interval]
-  -- State product transport on the fixed models with their model finrank proofs;
-  -- the tangent-space finrank proofs otherwise retain the dependent base points.
-  change _root_.Orientation.map (Fin (1 + 1))
-    ((subtypeValIccTangentEquiv x.1).toLinearEquiv.prodCongr
-      (subtypeValIccTangentEquiv x.2).toLinearEquiv)
-    (_root_.Orientation.prod
-      (if (x.1 : ℝ) < b then (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation
-        else -(EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation)
-      (if (x.2 : ℝ) < d then (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation
-        else -(EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation) (by simp) (by simp)) = _
-  rw [_root_.Orientation.map_prod, hx, hy, _root_.Orientation.prod_basis_orientation]
-
-/-- Wherever both preferred charts are increasing, the actual tangent orientation of the
-rectangle is the ordered standard coordinate orientation. -/
-theorem orientationAt_interval_prod_of_lt (x : Icc a b × Icc c d)
-    (hx : (x.1 : ℝ) < b) (hy : (x.2 : ℝ) < d) :
-    Manifold.Orientation.orientationAt
-        ((Manifold.Orientation.interval a b).prod (Manifold.Orientation.interval c d)) x =
-      (((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.prod
-        (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis).reindex finSumFinEquiv).orientation := by
-  rw [Manifold.Orientation.orientationAt_prod,
-    Manifold.Orientation.orientationAt_interval, Manifold.Orientation.orientationAt_interval]
-  simp only [hx, hy, ↓reduceIte]
-  exact _root_.Orientation.prod_basis_orientation _ _ _ _
 
 end TauCeti

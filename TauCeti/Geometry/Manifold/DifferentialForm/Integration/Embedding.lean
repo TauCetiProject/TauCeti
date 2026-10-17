@@ -50,7 +50,6 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
       (fderivWithin ℝ (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x)).det =
         |(fderivWithin ℝ (f ∘ (extChartAt I α).symm)
           (range I) (extChartAt I α x)).det| := by
-  have hneg : (-1 : ℤˣ) ≠ 1 := by decide
   have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
   have hc := l.compatible α x x hx' (mem_chart_source H x)
   rw [← tangentCoordChange_def] at hc
@@ -64,40 +63,9 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
       else -l.modelOrientation) = b.orientation at hp
   have hd : 0 < (_root_.Orientation.signBasis l.modelOrientation b : ℝ) *
       (l.sign x ⟨x, mem_chart_source H x⟩ : ℝ) * (F x).toLinearEquiv.toLinearMap.det := by
-    rcases b.orientation_eq_or_eq_neg l.modelOrientation with hb | hb
-    all_goals rw [hb] at hp ⊢
-    · rw [_root_.Orientation.signBasis_orientation]
-      rcases Int.units_eq_one_or (l.sign x ⟨x, mem_chart_source H x⟩) with hs | hs
-      · simp only [hs, ite_true] at hp
-        simpa [hs] using (_root_.Orientation.map_eq_iff_det_pos b.orientation
-          (F x).toLinearEquiv l.card_eq).mp hp
-      · simp only [hs, hneg, ite_false,
-          _root_.Orientation.map_neg] at hp
-        have hn : _root_.Orientation.map (Fin k) (F x).toLinearEquiv b.orientation =
-            -b.orientation := by
-          have he := congrArg Neg.neg hp
-          rw [_root_.neg_neg (_root_.Orientation.map (Fin k) (F x).toLinearEquiv
-            b.orientation)] at he
-          exact he
-        have hh := (_root_.Orientation.map_eq_neg_iff_det_neg b.orientation
-          (F x).toLinearEquiv l.card_eq).mp hn
-        simpa [hs] using neg_pos.mpr hh
-    · rw [_root_.Orientation.signBasis_neg, _root_.Orientation.signBasis_orientation]
-      rcases Int.units_eq_one_or (l.sign x ⟨x, mem_chart_source H x⟩) with hs | hs
-      · simp only [hs, ite_true, _root_.Orientation.map_neg] at hp
-        have hn : _root_.Orientation.map (Fin k) (F x).toLinearEquiv b.orientation =
-            -b.orientation := by
-          have he := congrArg Neg.neg hp
-          rw [_root_.neg_neg (_root_.Orientation.map (Fin k) (F x).toLinearEquiv
-            b.orientation)] at he
-          exact he
-        have hh := (_root_.Orientation.map_eq_neg_iff_det_neg b.orientation
-          (F x).toLinearEquiv l.card_eq).mp hn
-        simpa [hs] using neg_pos.mpr hh
-      · simp only [hs, hneg, ite_false] at hp
-        rw [_root_.neg_neg b.orientation] at hp
-        simpa [hs] using (_root_.Orientation.map_eq_iff_det_pos b.orientation
-          (F x).toLinearEquiv l.card_eq).mp hp
+    rw [← _root_.Orientation.intCast_units_smul_eq_ite] at hp
+    exact _root_.Orientation.signBasis_mul_units_mul_det_pos l.modelOrientation b
+      (F x).toLinearEquiv _ hp
   rw [(hf x).fderivWithin_comp_extChartAt_symm α hx, ← hF x]
   -- The continuous-linear composition and its underlying linear composition share a determinant.
   change _ * _ * ((F x).toLinearEquiv.toLinearMap.comp

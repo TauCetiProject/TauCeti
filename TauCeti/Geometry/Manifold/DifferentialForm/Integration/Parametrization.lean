@@ -170,45 +170,6 @@ variable {N : Type*} [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin
   𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) 1 N]
 
 omit [IsManifold 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) 1 N] [NeZero n] in
-private theorem measurableSet_chart_parameter_piece {Q : (EuclideanSpace ℝ (Fin n)) → N} (hQ :
-  Continuous Q)
-    (D : Set (EuclideanSpace ℝ (Fin n))) (hD : MeasurableSet D) (α : N) {s : Set N}
-    (hs : IsChartMeasurable 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) s) (hsource : s ⊆ (extChartAt 𝓘(ℝ,
-      (EuclideanSpace ℝ (Fin n))) α).source) :
-    MeasurableSet (D ∩ Q ⁻¹' s) := by
-  classical
-  let U := Q ⁻¹' (extChartAt 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) α).source
-  let Ψ := extChartAt 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) α ∘ Q
-  have hsrc : IsOpen (extChartAt 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) α).source := by
-    simpa only [extChartAt_source] using (chartAt (EuclideanSpace ℝ (Fin n)) α).open_source
-  have hU : IsOpen U := hsrc.preimage hQ
-  have hΨ : ContinuousOn Ψ U :=
-    (continuousOn_extChartAt α).comp hQ.continuousOn (fun _ hx ↦ hx)
-  have hm : Measurable (U.piecewise Ψ (fun _ ↦ 0)) :=
-    hΨ.measurable_piecewise continuousOn_const hU.measurableSet
-  have he : D ∩ Q ⁻¹' s = D ∩ U ∩ (U.piecewise Ψ (fun _ ↦ 0)) ⁻¹'
-      ((extChartAt 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) α) '' s) := by
-    ext x
-    constructor
-    · rintro ⟨hx, hxs⟩
-      have hu : x ∈ U := hsource hxs
-      refine ⟨⟨hx, hu⟩, ?_⟩
-      rw [mem_preimage, piecewise_eq_of_mem U _ _ hu]
-      exact mem_image_of_mem _ hxs
-    · rintro ⟨⟨hx, hu⟩, hz⟩
-      rw [mem_preimage, piecewise_eq_of_mem U _ _ hu] at hz
-      obtain ⟨y, hy, heq⟩ := hz
-      refine ⟨hx, ?_⟩
-      have hxy : y = Q x := (extChartAt 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) α).injOn (hsource hy) hu
-        heq
-      -- Unpack preimage membership after identifying the two chart-source points.
-      change Q x ∈ s
-      rwa [← hxy]
-  rw [he]
-  exact (hD.inter hU.measurableSet).inter
-    ((hs.image_extChartAt α hsource).preimage hm)
-
-omit [IsManifold 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) 1 N] [NeZero n] in
 private theorem chart_parameter_piece_image {Q : (EuclideanSpace ℝ (Fin n)) → N} {D : Set
   (EuclideanSpace ℝ (Fin n))}
     (α : N) (s : Set N) :
@@ -219,8 +180,9 @@ private theorem chart_parameter_piece_image {Q : (EuclideanSpace ℝ (Fin n)) �
 private theorem integralTopForm_eq_sum_parameter_integrals {ι : Type*} [Fintype ι]
     [CompactSpace N] (l : Manifold.OrientationLift 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) N (Fin n))
     (φ : RoughForm 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) N ℝ n) (hi : IntegrableTopForm φ)
-    {Q : ι → (EuclideanSpace ℝ (Fin n)) → N} (hQ : ∀ i, Continuous (Q i)) {D : Set (EuclideanSpace
-      ℝ (Fin n))} (hD : MeasurableSet D)
+    {Q : ι → (EuclideanSpace ℝ (Fin n)) → N} {D : Set (EuclideanSpace ℝ (Fin n))}
+    (hQ : ∀ i, ContinuousOn (Q i) D)
+    (hD : MeasurableSet D)
     {Z : Set N} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D)))
     (hinj : ∀ i, InjOn (Q i) D) (d : N → ι → (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin
@@ -245,7 +207,7 @@ private theorem integralTopForm_eq_sum_parameter_integrals {ι : Type*} [Fintype
     '' S j i
   let C := fun j : Fin m ↦ φ.signedInChartAt B (α j) (fun x ↦ l.signAt (α j) x)
   have hS (j : Fin m) (i : ι) : MeasurableSet (S j i) :=
-    measurableSet_chart_parameter_piece (hQ i) D hD (α j) (hsm j) (hsrc j)
+    (hsm j).measurableSet_inter_preimage (hQ i) hD (α j) (hsrc j)
   have hderiv (j : Fin m) (i : ι) : ∀ z ∈ S j i,
       HasFDerivWithinAt (extChartAt 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) (α j) ∘ Q i) (d (α j) i z) (S
         j i) z :=
@@ -333,8 +295,8 @@ follows from intrinsic integrability. -/
 theorem integralTopForm_eq_oriented_parametrizations {ι : Type*} [Fintype ι] [CompactSpace N]
     (l : Manifold.OrientationLift 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) N (Fin n))
     (φ : RoughForm 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) N ℝ n) (hi : IntegrableTopForm φ)
-    {Q : ι → (EuclideanSpace ℝ (Fin n)) → N} (hQ : ∀ i, Continuous (Q i)) {D : Set (EuclideanSpace
-      ℝ (Fin n))} (hD : MeasurableSet D)
+    {Q : ι → (EuclideanSpace ℝ (Fin n)) → N} {D : Set (EuclideanSpace ℝ (Fin n))}
+    (hD : MeasurableSet D)
     {Z : Set N} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D)))
     (hinj : ∀ i, InjOn (Q i) D)
@@ -350,6 +312,8 @@ theorem integralTopForm_eq_oriented_parametrizations {ι : Type*} [Fintype ι] [
       integralTopForm (Manifold.Orientation.mk l) φ =
         ∑ i, ∫ z in D, φ (Q i z)
           (fun j ↦ e i z ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis j)) := by
+  have hQ (i : ι) : ContinuousOn (Q i) D :=
+    fun z hz ↦ (hd i z hz).continuousAt.continuousWithinAt
   let d := fun α i z ↦
     ((trivializationAt (EuclideanSpace ℝ (Fin n)) (TangentSpace 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))))
       α).continuousLinearMapAt ℝ (Q i z)).comp
@@ -379,7 +343,7 @@ positive-dimensional manifold outside its seam, including parameter-integrabilit
 theorem integralTopForm_eq_oriented_parametrization [CompactSpace N]
     (l : Manifold.OrientationLift 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) N (Fin n))
     (φ : RoughForm 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) N ℝ n) (hi : IntegrableTopForm φ)
-    {Q : (EuclideanSpace ℝ (Fin n)) → N} (hQ : Continuous Q) {D : Set (EuclideanSpace ℝ (Fin n))}
+    {Q : (EuclideanSpace ℝ (Fin n)) → N} {D : Set (EuclideanSpace ℝ (Fin n))}
       (hD : MeasurableSet D)
     {p : N} (himage : Q '' D = {p}ᶜ) (hinj : InjOn Q D)
     (e : ∀ z, (EuclideanSpace ℝ (Fin n)) ≃L[ℝ] TangentSpace 𝓘(ℝ, (EuclideanSpace ℝ (Fin n))) (Q z))
@@ -392,7 +356,7 @@ theorem integralTopForm_eq_oriented_parametrization [CompactSpace N]
       integralTopForm (Manifold.Orientation.mk l) φ =
         ∫ z in D, φ (Q z) (fun i ↦ e z ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis i)) := by
   have h := integralTopForm_eq_oriented_parametrizations (ι := PUnit.{1}) l φ hi
-    (Q := fun _ ↦ Q) (fun _ ↦ hQ) hD (finite_singleton p)
+    (Q := fun _ ↦ Q) hD (finite_singleton p)
     (by simpa only [iUnion_const] using himage)
     (fun i j hij ↦ False.elim (hij (Subsingleton.elim i j))) (fun _ ↦ hinj)
     (fun _ ↦ e) (fun _ ↦ hd) (fun _ ↦ ho)
