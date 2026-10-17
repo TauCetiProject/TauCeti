@@ -18,8 +18,7 @@ strongly noetherian Tate ring. This is the pair of hypotheses in Huber's sheafin
 The two alternatives are genuinely needed. In particular, an arbitrary discrete ring need not be
 noetherian, but it has its prime subring as a noetherian ring of definition and is therefore of
 noetherian type. The results here provide the basic introduction and elimination API for this
-class. Stability under completion and topologically finite type extensions is developed
-separately.
+class.
 
 ## References
 
@@ -66,7 +65,7 @@ section TateRing
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
 
 /-- A strongly noetherian Tate ring is of noetherian type. -/
-theorem IsNoetherianType.of_isStronglyNoetherian [IsStronglyNoetherian A] :
+instance IsNoetherianType.of_isStronglyNoetherian [IsStronglyNoetherian A] :
     IsNoetherianType A :=
   ⟨Or.inr ⟨inferInstance, inferInstance⟩⟩
 
@@ -78,17 +77,17 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
 
 /-- Every discrete commutative ring is of noetherian type, even when the ring itself is not
 noetherian: its prime subring is a noetherian ring of definition. -/
-theorem IsNoetherianType.of_discreteTopology : IsNoetherianType A := by
-  let P : PairOfDefinition A :=
+instance IsNoetherianType.of_discreteTopology : IsNoetherianType A := by
+  have h : IsNoetherianRing (⊥ : Subring A) := by
+    rw [← Subring.closure_empty]
+    exact is_noetherian_subring_closure (∅ : Set A) Set.finite_empty
+  exact .of_pairOfDefinition
     { ringOfDefinition := ⊥
       isOpen_ringOfDefinition := isOpen_discrete _
       idealOfDefinition := ⊥
       fg_idealOfDefinition := Submodule.fg_bot
       isAdic_idealOfDefinition := is_bot_adic_iff.mpr inferInstance }
-  apply IsNoetherianType.of_pairOfDefinition P
-  change IsNoetherianRing (↥(⊥ : Subring A))
-  rw [← Subring.closure_empty]
-  exact is_noetherian_subring_closure (∅ : Set A) Set.finite_empty
+    h
 
 end DiscreteRing
 
