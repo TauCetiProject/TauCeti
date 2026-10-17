@@ -95,9 +95,7 @@ theorem neg_sum_mul_log_den_le_log_abs_eval {Q : MvPolynomial σ ℤ} {r : σ �
       Real.log |eval (fun i ↦ (β i : ℝ)) (map (Int.castRingHom ℝ) Q)| := by
   have hcast : eval (fun i ↦ (β i : ℝ)) (map (Int.castRingHom ℝ) Q) =
       ((eval β (map (Int.castRingHom ℚ) Q) : ℚ) : ℝ) := by
-    rw [eval_map, eval_map, ← Rat.coe_castHom, eval₂_comp_left,
-      RingHom.ext_int ((Rat.castHom ℝ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℝ),
-      Rat.coe_castHom, Function.comp_def]
+    simp [eval_map, eval₂_eq']
   rw [hcast] at hQ ⊢
   have h1 : (1 : ℝ) ≤
       (∏ i, ((β i).den : ℝ) ^ r i) * |(eval β (map (Int.castRingHom ℚ) Q) : ℝ)| := by
@@ -195,11 +193,9 @@ theorem log_abs_eval_le_of_le_weightedIndex {P : MvPolynomial σ ℝ} {r : σ �
   have h := abs_eval_le_of_le_weightedIndex hdeg hB ht hκ hD hβ hr
   have hB0 : 0 < B := by
     by_contra! hB0
-    have : B * (∏ i, ((r i : ℝ) + 1)) ^ 2 * (∏ i, (2 * max 1 |a i|) ^ r i) *
-        Real.exp (-(κ * D * t)) ≤ 0 :=
-      mul_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonpos_of_nonneg
-        (mul_nonpos_of_nonpos_of_nonneg hB0 (by positivity)) (by positivity)) (by positivity)
-    exact (abs_pos.2 hP).not_ge (h.trans this)
+    have hK : 0 ≤ (∏ i, ((r i : ℝ) + 1)) ^ 2 * (∏ i, (2 * max 1 |a i|) ^ r i) *
+        Real.exp (-(κ * D * t)) := by positivity
+    linarith [abs_pos.2 hP, mul_nonpos_of_nonpos_of_nonneg hB0 hK]
   refine (Real.log_le_log (abs_pos.2 hP) h).trans_eq ?_
   simp (disch := first | positivity | intro i _; positivity) only [Real.log_mul, Real.log_exp,
     Real.log_pow, Real.log_prod]

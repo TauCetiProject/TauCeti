@@ -161,9 +161,10 @@ theorem abs_eval_hasseDeriv_le {K : Type*} [CommRing K] [LinearOrder K] [IsStric
       _ = B * ∏ i, (2 * max 1 |a i|) ^ r i := by
           simp only [mul_pow, Finset.prod_mul_distrib]
           ring
-  rw [eval_eq', mul_right_comm, mul_comm]
-  exact (Finset.abs_sum_le_sum_abs _ _).trans
-    (Finsupp.sum_le_prod_mul_of_forall_le hle hterm (mul_nonneg hB0 (by positivity)))
+  rw [eval_eq']
+  exact (Finset.abs_sum_le_sum_abs _ _).trans <|
+    (Finsupp.sum_le_prod_mul_of_forall_le hle hterm (mul_nonneg hB0 (by positivity))).trans_eq
+      (by ring)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]
