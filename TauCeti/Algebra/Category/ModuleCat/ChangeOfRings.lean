@@ -34,9 +34,11 @@ universe u v
 
 namespace ModuleCat
 
+-- Mathlib's `ModuleCat` and its scalar-restriction equivalence require rings.
 variable {R S : Type*} [Ring R] [Ring S]
 
 -- Simplify before Mathlib expands the counit into scalar-restriction comparison maps.
+-- The component simp lemmas alone leave their bundled linear-map composite unreduced.
 /-- The counit of restriction of scalars along a ring equivalence keeps each element. -/
 @[simp↓]
 theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply (e : R ≃+* S)
