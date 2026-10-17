@@ -62,6 +62,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The manifold `M` carrying the Riemannian metric `g`: a copy of `M` whose `RiemannianBundle`
 instance is `g`. Distinct metrics on `M` give distinct copies, so that two metrics can be compared
 without installing two metric instances on one carrier. -/
+@[ext]
 structure WithMetric (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) where
   /-- The point of `M` regarded as a point of the copy carrying `g`. -/
   toWithMetric (g) ::
@@ -96,6 +97,24 @@ theorem ofWithMetric_toWithMetric (x : M) : (toWithMetric g x).ofWithMetric = x 
 @[simp]
 theorem toWithMetric_ofWithMetric (x : WithMetric g) : toWithMetric g x.ofWithMetric = x :=
   (rfl)
+
+variable {g} in
+theorem ofWithMetric_injective : Function.Injective (ofWithMetric : WithMetric g → M) :=
+  (equiv g).injective
+
+theorem toWithMetric_injective : Function.Injective (toWithMetric g) :=
+  (equiv g).symm.injective
+
+variable {g} in
+@[simp]
+theorem ofWithMetric_inj {x y : WithMetric g} : x.ofWithMetric = y.ofWithMetric ↔ x = y :=
+  ofWithMetric_injective.eq_iff
+
+/-- Two points of `M` give the same point of the copy only if they are equal. Not tagged
+`@[simp]`: `simp` already proves it with the constructor lemma
+`TauCeti.WithMetric.toWithMetric.injEq`. -/
+theorem toWithMetric_inj {x y : M} : toWithMetric g x = toWithMetric g y ↔ x = y :=
+  (toWithMetric_injective g).eq_iff
 
 /-- The copy of `M` carrying `g` has the topology of `M`. -/
 instance : TopologicalSpace (WithMetric g) :=
@@ -155,6 +174,20 @@ theorem trivializationAt_apply_snd (α x : WithMetric g) (v : TangentSpace I x) 
       (trivializationAt E (TangentSpace I) α.ofWithMetric ⟨x.ofWithMetric, v⟩).2 :=
   (rfl)
 
+/-- The tangent trivializations of the copy and of `M` have the same inverse on fibres. -/
+theorem trivializationAt_linearEquivAt_symm_apply (α x : WithMetric g)
+    (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (hx' : x.ofWithMetric ∈ (trivializationAt E (TangentSpace I) α.ofWithMetric).baseSet)
+    (z : E) :
+    ((trivializationAt E (TangentSpace I) α).linearEquivAt ℝ x hx).symm z =
+      ((trivializationAt E (TangentSpace I) α.ofWithMetric).linearEquivAt ℝ x.ofWithMetric
+        hx').symm z := by
+  apply ((trivializationAt E (TangentSpace I) α).linearEquivAt ℝ x hx).injective
+  rw [LinearEquiv.apply_symm_apply]
+  exact ((trivializationAt_apply_snd α x _).trans
+    (Trivialization.linearEquivAt_apply _ _ hx' _).symm |>.trans
+      (LinearEquiv.apply_symm_apply _ _)).symm
+
 end Charts
 
 variable {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
@@ -208,6 +241,12 @@ theorem hasMFDerivAt_toWithMetric (x : M) :
     (writtenInExtChartAt_toWithMetric_eventuallyEq x)
     ((writtenInExtChartAt_toWithMetric_eventuallyEq x).eq_of_nhdsWithin (mem_range_self _))⟩
 
+/-! The tangent spaces `TangentSpace I x` of a point `x` of the copy and
+`TangentSpace I x.ofWithMetric` of the underlying point of `M` are both, by definition, the model
+space `E`. The following lemmas state that the differentials of `ofWithMetric` and `toWithMetric g`
+are the identity under this identification; later statements comparing tangent vectors of the copy
+with tangent vectors of `M` go through these lemmas rather than through the identification. -/
+
 /-- The differential of `ofWithMetric` is the identity of the model space. -/
 theorem mfderiv_ofWithMetric (x : WithMetric g) :
     mfderiv I I ofWithMetric x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
@@ -218,19 +257,27 @@ theorem mfderiv_toWithMetric (x : M) :
     mfderiv I I (toWithMetric g) x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
   (hasMFDerivAt_toWithMetric x).mfderiv
 
+/-- The differential of `ofWithMetric` maps a tangent vector to itself. -/
+theorem mfderiv_ofWithMetric_apply (x : WithMetric g) (v : TangentSpace I x) :
+    mfderiv I I ofWithMetric x v = v :=
+  DFunLike.congr_fun (mfderiv_ofWithMetric x) v
+
+/-- The differential of `toWithMetric g` maps a tangent vector to itself. -/
+theorem mfderiv_toWithMetric_apply (x : M) (v : TangentSpace I x) :
+    mfderiv I I (toWithMetric g) x v = v :=
+  DFunLike.congr_fun (mfderiv_toWithMetric x) v
+
 /-- Transporting a tangent vector of `M` to the copy and back gives the vector itself. -/
 @[simp]
 theorem mfderiv_ofWithMetric_mfderiv_toWithMetric (x : M) (v : TangentSpace I x) :
-    mfderiv I I ofWithMetric (toWithMetric g x) (mfderiv I I (toWithMetric g) x v) = v :=
-  (DFunLike.congr_fun (mfderiv_ofWithMetric (toWithMetric g x)) _).trans
-    (DFunLike.congr_fun (mfderiv_toWithMetric (g := g) x) v)
+    mfderiv I I ofWithMetric (toWithMetric g x) (mfderiv I I (toWithMetric g) x v) = v := by
+  rw [mfderiv_ofWithMetric_apply, mfderiv_toWithMetric_apply]
 
 /-- Transporting a tangent vector of the copy to `M` and back gives the vector itself. -/
 @[simp]
 theorem mfderiv_toWithMetric_mfderiv_ofWithMetric (x : WithMetric g) (v : TangentSpace I x) :
-    mfderiv I I (toWithMetric g) x.ofWithMetric (mfderiv I I ofWithMetric x v) = v :=
-  (DFunLike.congr_fun (mfderiv_toWithMetric (g := g) x.ofWithMetric) _).trans
-    (DFunLike.congr_fun (mfderiv_ofWithMetric x) v)
+    mfderiv I I (toWithMetric g) x.ofWithMetric (mfderiv I I ofWithMetric x v) = v := by
+  rw [mfderiv_toWithMetric_apply, mfderiv_ofWithMetric_apply]
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
@@ -297,6 +344,19 @@ theorem diffeomorphWithMetric_apply
     diffeomorphWithMetric g g' k x = toWithMetric g' x.ofWithMetric :=
   (rfl)
 
+@[simp]
+theorem diffeomorphWithMetric_symm
+    (g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω) :
+    (diffeomorphWithMetric g g' k).symm = diffeomorphWithMetric g' g k :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+@[simp]
+theorem diffeomorphWithMetric_trans
+    (g' g'' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω) :
+    (diffeomorphWithMetric g g' k).trans (diffeomorphWithMetric g' g'' k) =
+      diffeomorphWithMetric g g'' k :=
+  Diffeomorph.ext fun _ ↦ rfl
+
 /-- The differential of the identity diffeomorphism between two copies of `M` is the identity of
 the model space. -/
 theorem mfderiv_diffeomorphWithMetric
@@ -342,31 +402,20 @@ theorem mfderiv_ofWithMetric_chartLocalFrame (α x : WithMetric g)
     (i : Fin (Module.finrank ℝ E)) :
     mfderiv I I ofWithMetric x (Riemannian.Tensor.chartLocalFrame (I := I) α i x) =
       Riemannian.Tensor.chartLocalFrame (I := I) α.ofWithMetric i x.ofWithMetric := by
-  -- The two frame vectors are equal as vectors of the model space `E`.
-  have key : Riemannian.Tensor.chartLocalFrame (I := I) α i x =
-      Riemannian.Tensor.chartLocalFrame (I := I) α.ofWithMetric i x.ofWithMetric := by
-    by_cases hx : x ∈ (chartAt H α).source
-    · have hx' := (mem_chartAt_source_iff α x).1 hx
-      rw [Riemannian.Tensor.chartLocalFrame_apply_of_mem_chart_source α hx,
-        Riemannian.Tensor.chartLocalFrame_apply_of_mem_chart_source α.ofWithMetric hx']
-      simp only [Trivialization.basisAt, Module.Basis.map_apply]
-      -- Both frame vectors are the preimage of the same basis vector under the tangent
-      -- trivializations, which read tangent vectors in the same coordinates.
-      apply ((trivializationAt E (TangentSpace I) α).linearEquivAt ℝ x
-        (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)).injective
-      rw [LinearEquiv.apply_symm_apply]
-      exact ((trivializationAt_apply_snd α x _).trans
-        (Trivialization.linearEquivAt_apply _ _ _ _).symm |>.trans
-          (LinearEquiv.apply_symm_apply _ _)).symm
-    · have hx' := (mem_chartAt_source_iff α x).not.1 hx
-      rw [Riemannian.Tensor.chartLocalFrame_def, Riemannian.Tensor.chartLocalFrame_def,
-        Trivialization.localFrame_apply_of_notMem _ _
-          (by simpa only [TangentBundle.trivializationAt_baseSet] using hx),
-        Trivialization.localFrame_apply_of_notMem _ _
-          (by simpa only [TangentBundle.trivializationAt_baseSet] using hx')]
-      -- Both junk values are the zero vector of the model space.
-      rfl
-  exact (DFunLike.congr_fun (mfderiv_ofWithMetric x) _).trans key
+  by_cases hx : x ∈ (chartAt H α).source
+  · rw [Riemannian.Tensor.chartLocalFrame_apply_of_mem_chart_source α hx,
+      Riemannian.Tensor.chartLocalFrame_apply_of_mem_chart_source α.ofWithMetric
+        ((mem_chartAt_source_iff α x).1 hx),
+      mfderiv_ofWithMetric_apply]
+    simp only [Trivialization.basisAt, Module.Basis.map_apply]
+    exact trivializationAt_linearEquivAt_symm_apply α x _ _ _
+  · rw [Riemannian.Tensor.chartLocalFrame_def, Riemannian.Tensor.chartLocalFrame_def,
+      Trivialization.localFrame_apply_of_notMem _ _
+        (by simpa only [TangentBundle.trivializationAt_baseSet] using hx),
+      Trivialization.localFrame_apply_of_notMem _ _
+        (by simpa only [TangentBundle.trivializationAt_baseSet] using
+          (mem_chartAt_source_iff α x).not.1 hx),
+      map_zero]
 
 end Metric
 
