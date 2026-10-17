@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.Height.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 public import TauCeti.Algebra.MvPolynomial.Rename
 public import Mathlib.NumberTheory.Height.NumberField
+public import TauCeti.RingTheory.MvPolynomial.AbvCoeff
+import TauCeti.NumberTheory.Height.Basic
 
 /-!
 # Projective coefficient heights of multivariate polynomials
@@ -24,11 +26,22 @@ In particular, constant polynomials and the zero polynomial have multiplicative 
 For nonzero polynomials over number fields, `logHeight_eq_of_numberField` expresses the height
 as a sum of local logarithmic sup norms, with complex-place multiplicity two.
 
+There is no bound for the height of a sum of polynomials in terms of the heights of its terms,
+so the height of a determinant of a matrix of polynomials is bounded place by place.
+`Matrix.mulHeight_det_le` and `Matrix.logHeight_det_le` do this for an `n × n` matrix whose
+entries have partial degrees at most `d j` and coefficients dominated by those of one polynomial
+`P`, up to a factor `C` at the archimedean absolute values:
+`h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`.
+This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's lemma.
+
 ## References
 
 * Lukas Pottmeyer, *Diophantine Approximation*, §3.2, Definition 3.2.1 and Lemma 3.2.2
   (17 January 2022). The absolute heights in those notes correspond to degree-root
-  normalizations of the relative heights defined here.
+  normalizations of the relative heights defined here. The determinant bound is the
+  estimate of §3.4.6.
+* The determinant bound follows `DiophantineApproximation/PolynomialDeterminantHeight.lean` in
+  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
@@ -254,3 +267,75 @@ theorem logHeight_eq_of_numberField {p : MvPolynomial σ K} (hp : p ≠ 0) :
   simp only [Real.log_pow]
 
 end MvPolynomial
+
+namespace Matrix
+
+open Finset Height AdmissibleAbsValues MvPolynomial
+open scoped Nat
+
+variable {K σ : Type*} [Field K] [AdmissibleAbsValues K] [Fintype σ]
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **The height of a determinant of polynomials.** Let `A` be an `n × n` matrix of polynomials
+whose entries have partial degrees at most `d j`, and let `P ≠ 0`. Suppose that, at every
+archimedean absolute value `v`, each coefficient of each entry is bounded by `C` times `v` of
+some coefficient of `P`, and at every nonarchimedean `v` by `v` of some coefficient of `P`. Then
+`H(det A) ≤ (n! (2 ^ (∑ j, d j) * C) ^ n) ^ totalWeight K * H(P) ^ n`. -/
+theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial σ K} (hP : P ≠ 0)
+    {d : σ → ℕ} (hd : ∀ i j k, (A i j).degreeOf k ≤ d k) {C : ℝ} (hC : 1 ≤ C)
+    (harch : ∀ v ∈ archAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ C * v (P.coeff b))
+    (hnon : ∀ v ∈ nonarchAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ v (P.coeff b)) :
+    A.det.mulHeight ≤ ((Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n) ^ totalWeight K *
+      P.mulHeight ^ Fintype.card n := by
+  classical
+  have hx : (fun b : P.support ↦ P.coeff b) ≠ 0 := by
+    obtain ⟨b, hb⟩ := support_nonempty.mpr hP
+    exact Function.ne_iff.mpr ⟨⟨b, hb⟩, mem_support_iff.mp hb⟩
+  -- Every coefficient of `P` is bounded by the local factor of its nonzero coefficients.
+  have hM (v : AbsoluteValue K ℝ) (b : σ →₀ ℕ) :
+      v (P.coeff b) ≤ ⨆ c : P.support, v (P.coeff c) := by
+    by_cases hb : b ∈ P.support
+    · exact Finite.le_ciSup_of_le ⟨b, hb⟩ le_rfl
+    · rw [notMem_support_iff.mp hb, map_zero]
+      exact Real.iSup_nonneg fun _ ↦ v.nonneg _
+  have hB (i j : n) : #(A i j).support ≤ 2 ^ ∑ k, d k :=
+    (card_support_le_two_pow _).trans
+      (Nat.pow_le_pow_right two_pos (Finset.sum_le_sum fun k _ ↦ hd i j k))
+  have hK : (1 : ℝ) ≤ (Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n :=
+    one_le_mul_of_one_le_of_one_le (by exact_mod_cast (Fintype.card n).factorial_pos)
+      (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hC))
+  have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ (⨆ c : P.support, v (P.coeff c)) ^ Fintype.card n :=
+    pow_nonneg (Real.iSup_nonneg fun _ ↦ v.nonneg _) _
+  rw [mulHeight_eq_support, mulHeight_eq_support]
+  refine mulHeight_le_of_forall_iSup_le hx _ hK
+    (fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (mul_nonneg (zero_le_one.trans hK) (hM0 v)))
+    fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (hM0 v)
+  · refine (abv_coeff_det_le A (C := C * ⨆ c : P.support, v (P.coeff c)) hB
+      (fun i j a ↦ ?_) t).trans_eq ?_
+    · obtain ⟨b, hb⟩ := harch v hv i j a
+      exact hb.trans (mul_le_mul_of_nonneg_left (hM v b) (zero_le_one.trans hC))
+    · rw [nsmul_eq_mul, Nat.cast_pow, Nat.cast_ofNat, ← mul_assoc, mul_pow, mul_assoc]
+  · refine abv_coeff_det_le_of_isNonarchimedean A (isNonarchimedean v hv) (fun i j a ↦ ?_) t
+    obtain ⟨b, hb⟩ := hnon v hv i j a
+    exact hb.trans (hM v b)
+
+/-- **The logarithmic height of a determinant of polynomials.** Under the hypotheses of
+`Matrix.mulHeight_det_le`,
+`h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`. -/
+theorem logHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial σ K} (hP : P ≠ 0)
+    {d : σ → ℕ} (hd : ∀ i j k, (A i j).degreeOf k ≤ d k) {C : ℝ} (hC : 1 ≤ C)
+    (harch : ∀ v ∈ archAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ C * v (P.coeff b))
+    (hnon : ∀ v ∈ nonarchAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ v (P.coeff b)) :
+    A.det.logHeight ≤ Fintype.card n * P.logHeight + totalWeight K *
+      (Real.log (Fintype.card n)! + Fintype.card n * (∑ k, d k * Real.log 2 + Real.log C)) := by
+  have hfact : (0 : ℝ) < (Fintype.card n)! := by exact_mod_cast (Fintype.card n).factorial_pos
+  have hC0 : 0 < C := zero_lt_one.trans_le hC
+  have h := Real.log_le_log (MvPolynomial.mulHeight_pos _) (mulHeight_det_le A hP hd hC harch hnon)
+  -- Expand the logarithm of the bound of `Matrix.mulHeight_det_le` into its terms.
+  rw [Real.log_mul (by positivity) (pow_pos (MvPolynomial.mulHeight_pos P) _).ne', Real.log_pow,
+    Real.log_pow, Real.log_mul hfact.ne' (by positivity), Real.log_pow,
+    Real.log_mul (by positivity) hC0.ne', Real.log_pow, Nat.cast_sum, Finset.sum_mul] at h
+  rw [MvPolynomial.logHeight_eq_log_mulHeight, MvPolynomial.logHeight_eq_log_mulHeight]
+  linarith
+
+end Matrix

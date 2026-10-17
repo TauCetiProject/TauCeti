@@ -57,6 +57,9 @@ the double right dual functor is a monoidal autoequivalence.
   strong monoidal double right dual functor, with structure morphisms given by
   `TauCeti.doubleRightDualFunctor_ε`, `TauCeti.doubleRightDualFunctor_η`,
   `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ`;
+* `TauCeti.doubleRightDualFunctor_map_evaluation` and
+  `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
+  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
 * `TauCeti.doubleRightDualFunctorIsEquivalence`: in a rigid monoidal category, the double right
   dual functor is an equivalence, hence a monoidal autoequivalence.
 
@@ -348,6 +351,70 @@ theorem doubleRightDualFunctor_δ (X Y : C) :
       ((rightDualTensorIso X Y).inv)ᘁ ≫ (rightDualTensorIso Yᘁ Xᘁ).hom :=
   (Functor.OplaxMonoidal.comp_δ _ _ X Y).trans
     (_ ≫= (Functor.OplaxMonoidal.comp_δ _ _ _ _).trans (Category.comp_id _))
+
+variable {C}
+
+/-- The double right dual functor carries the evaluation of `(X, Xᘁ)` to the evaluation of
+`(Xᘁᘁ, Xᘁᘁᘁ)`, up to its tensor and unit comparisons. -/
+theorem doubleRightDualFunctor_map_evaluation (X : C) :
+    (doubleRightDualFunctor C).map (ε_ X Xᘁ) =
+      δ (doubleRightDualFunctor C) Xᘁ X ≫ ε_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) ≫
+        ε (doubleRightDualFunctor C) := by
+  -- The same identity with the structure maps unfolded and the objects written as iterated duals
+  -- rather than through the functor, so that the mates below compose. The dual of `𝟙_ C` must be
+  -- the one chosen by the rigid structure.
+  have key : ((rightDualTensorIso Xᘁ Xᘁᘁ).inv ≫ ((rightDualTensorIso Xᘁ X).hom)ᘁ) ≫
+      (@rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) (ε_ X Xᘁ))ᘁ ≫
+        rightMate (RightRigidCategory.rightDual (𝟙_ C)).exact HasRightDual.exact
+          (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom =
+      ε_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) := by
+    simp only [rightDualTensorIso, rightDualIso_hom, rightDualIso_inv,
+      rightAdjointMate_eq_rightMate, ← comp_rightMate, Category.id_comp, Category.comp_id,
+      rightMate_evaluation, rightMate_coevaluation]
+  have h : μ (doubleRightDualFunctor C) Xᘁ X ≫ (doubleRightDualFunctor C).map (ε_ X Xᘁ) ≫
+      η (doubleRightDualFunctor C) = ε_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) := by
+    rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_η, doubleRightDualFunctor_map]
+    exact key
+  calc
+    _ = δ (doubleRightDualFunctor C) Xᘁ X ≫ (μ (doubleRightDualFunctor C) Xᘁ X ≫
+          (doubleRightDualFunctor C).map (ε_ X Xᘁ) ≫ η (doubleRightDualFunctor C)) ≫
+        ε (doubleRightDualFunctor C) := by
+      simp only [Category.assoc, Functor.Monoidal.δ_μ_assoc, Functor.Monoidal.η_ε,
+        Category.comp_id]
+    _ = _ := by rw [h]
+
+/-- The double right dual functor carries the coevaluation of `(X, Xᘁ)` to the coevaluation of
+`(Xᘁᘁ, Xᘁᘁᘁ)`, up to its unit and tensor comparisons. -/
+theorem doubleRightDualFunctor_map_coevaluation (X : C) :
+    (doubleRightDualFunctor C).map (η_ X Xᘁ) =
+      η (doubleRightDualFunctor C) ≫ η_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) ≫
+        μ (doubleRightDualFunctor C) X Xᘁ := by
+  -- As in `doubleRightDualFunctor_map_evaluation`, the dual of `𝟙_ C` must be the one chosen by
+  -- the rigid structure.
+  have key : ((rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        rightMate HasRightDual.exact (RightRigidCategory.rightDual (𝟙_ C)).exact
+          (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom) ≫
+      (@rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) _ (η_ X Xᘁ))ᘁ ≫
+        ((rightDualTensorIso X Xᘁ).inv)ᘁ ≫ (rightDualTensorIso Xᘁᘁ Xᘁ).hom =
+      η_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) := by
+    simp only [rightDualTensorIso, rightDualIso_hom, rightDualIso_inv,
+      rightAdjointMate_eq_rightMate, ← comp_rightMate, Category.id_comp, Category.comp_id,
+      rightMate_evaluation, rightMate_coevaluation]
+  have h : ε (doubleRightDualFunctor C) ≫ (doubleRightDualFunctor C).map (η_ X Xᘁ) ≫
+      δ (doubleRightDualFunctor C) X Xᘁ = η_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) := by
+    rw [doubleRightDualFunctor_ε, doubleRightDualFunctor_δ, doubleRightDualFunctor_map]
+    exact key
+  calc
+    _ = η (doubleRightDualFunctor C) ≫ (ε (doubleRightDualFunctor C) ≫
+          (doubleRightDualFunctor C).map (η_ X Xᘁ) ≫ δ (doubleRightDualFunctor C) X Xᘁ) ≫
+        μ (doubleRightDualFunctor C) X Xᘁ := by
+      simp only [Category.assoc, Functor.Monoidal.η_ε_assoc, Functor.Monoidal.δ_μ,
+        Category.comp_id]
+    _ = _ := by
+      rw [h]
+      -- The two sides differ only in how the intermediate objects are written.
+      rfl
 
 end DoubleRightDual
 
