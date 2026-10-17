@@ -41,45 +41,6 @@ namespace CategoryTheory
 
 universe u v
 
-namespace MonObj
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] {M N T : C} [MonObj T]
-
-/-- Multiplying `f m` by `g 1` gives `f m`, for a monoid homomorphism `g`. -/
-@[reassoc]
-theorem whiskerLeft_one_tensorHom_mul [MonObj N] (f : M ⟶ T) (g : N ⟶ T) [IsMonHom g] :
-    M ◁ η[N] ≫ (f ⊗ₘ g) ≫ μ[T] = (ρ_ M).hom ≫ f := by
-  rw [tensorHom_def', Category.assoc, ← whiskerLeft_comp_assoc, IsMonHom.one_hom,
-    whisker_exchange_assoc, mul_one, rightUnitor_naturality]
-
-/-- Multiplying `f 1` by `g n` gives `g n`, for a monoid homomorphism `f`. -/
-@[reassoc]
-theorem whiskerRight_one_tensorHom_mul [MonObj M] (f : M ⟶ T) (g : N ⟶ T) [IsMonHom f] :
-    η[M] ▷ N ≫ (f ⊗ₘ g) ≫ μ[T] = (λ_ N).hom ≫ g := by
-  rw [tensorHom_def, Category.assoc, ← comp_whiskerRight_assoc, IsMonHom.one_hom,
-    ← whisker_exchange_assoc, one_mul, leftUnitor_naturality]
-
-/-- In `M ⊗ N`, the product of `m ⊗ 1` and `1 ⊗ n` is `m ⊗ n`. -/
-@[reassoc]
-theorem whiskerLeft_one_tensorHom_whiskerRight_one_mul [BraidedCategory C] [MonObj M]
-    [MonObj N] : (M ◁ η[N] ⊗ₘ η[M] ▷ N) ≫ μ[M ⊗ N] = (ρ_ M).hom ⊗ₘ (λ_ N).hom := by
-  rw [tensorObj.mul_def, ← id_tensorHom, ← tensorHom_id, tensorμ_natural_assoc,
-    tensorHom_comp_tensorHom, id_tensorHom, tensorHom_id, mul_one, one_mul, tensorμ,
-    braiding_tensorUnit_left]
-  monoidal
-
-/-- A monoid homomorphism `h` out of `M ⊗ N` is the product of `m ↦ h (m ⊗ 1)` and
-`n ↦ h (1 ⊗ n)`. -/
-theorem tensorHom_whisker_one_comp_mul [BraidedCategory C] [MonObj M] [MonObj N]
-    (h : M ⊗ N ⟶ T) [IsMonHom h] :
-    ((((ρ_ M).inv ≫ M ◁ η[N]) ≫ h) ⊗ₘ (((λ_ N).inv ≫ η[M] ▷ N) ≫ h)) ≫ μ[T] = h := by
-  rw [← tensorHom_comp_tensorHom, ← tensorHom_comp_tensorHom, Category.assoc, Category.assoc,
-    ← IsMonHom.mul_hom, whiskerLeft_one_tensorHom_whiskerRight_one_mul_assoc,
-    tensorHom_comp_tensorHom_assoc, Iso.inv_hom_id, Iso.inv_hom_id, id_tensorHom_id,
-    Category.id_comp]
-
-end MonObj
-
 namespace CommMon
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C]
