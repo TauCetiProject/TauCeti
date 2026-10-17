@@ -22,7 +22,8 @@ needed only on the one compact sublevel, not on the entire space.
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
-homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`). This
+homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
+`TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`. This
 is the topological half of the deformation of sublevels across a band without critical points,
 where the motion is the flow of a vector field `X` with `df(X) = -1` on the band.
 -/
@@ -62,6 +63,16 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
 
+/-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
+def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
+    (hab : a ≤ b) : C({x | f x ≤ a}, {x | f x ≤ b}) :=
+  ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)
+
+@[simp]
+theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
+  (rfl)
+
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if
 `f x ≤ b` and `f x - t ≥ a` with `t ≥ 0`, then `f (φ t x) = f x - t`. Moving each point of
@@ -73,9 +84,9 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
     (hφ : Continuous (Function.uncurry φ)) (hφ0 : ∀ x, φ 0 x = x)
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t) :
     ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}),
-      (∀ x, r (ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) x) = x) ∧
+      (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
       Nonempty (ContinuousMap.HomotopyRel
-        ((ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)).comp r)
+        ((sublevelInclusion f a b hab).comp r)
         (ContinuousMap.id _) {x | f x ≤ a}) := by
   -- Each point of `{f ≤ b}` needs the time `τ x = max (f x - a) 0` to reach `{f ≤ a}`.
   set τ : X → ℝ := fun x ↦ max (f x - a) 0

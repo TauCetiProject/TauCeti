@@ -8,10 +8,12 @@ module
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
+public import TauCeti.Topology.Order.Sublevel
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Dynamics.Flow.Conjugacy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
-import TauCeti.Topology.Order.Sublevel
 
 /-!
 # Deformation of sublevels across a band without critical points
@@ -21,7 +23,7 @@ Let `f` be a smooth real function on a boundaryless finite-dimensional manifold 
 the sublevel `M_b = {f ≤ b}` deformation retracts onto `M_a = {f ≤ a}`, by a homotopy fixing
 `M_a` pointwise (`TauCeti.exists_sublevelDeformation`); in particular the inclusion of `M_a` into
 `M_b` is a homotopy equivalence (`TauCeti.exists_sublevelHomotopyEquiv`). The manifold itself need
-not be compact.
+not be compact; it is assumed σ-compact, so that local fields can be glued by a partition of unity.
 
 Following Milnor, the deformation is the flow of a vector field `X` with `df(X) = -1` on the band.
 Near each regular point a constant chart field, rescaled, has this property, and Mathlib's
@@ -145,11 +147,8 @@ theorem apply_globalFlow_eq_sub [IsManifold I 1 M] [BoundarylessManifold I M]
   have hderiv : ∀ v ∈ Metric.ball u ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 v := by
     intro v hv
     have hvU : γ v ∈ U := hball hv
-    have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ v) := by
-      by_contra hnd
-      have h := hXU _ hvU
-      rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hnd] at h
-      simp at h
+    have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ v) :=
+      mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hXU _ hvU]; norm_num)
     have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hX hcomplete x v)
     rw [hXU _ hvU] at h
     have h' := h.add (hasDerivAt_id' v)
@@ -190,32 +189,21 @@ theorem exists_flow_apply_eq_sub (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     exact hcompact.image e.continuous
   have hreg' : ∀ y ∈ f' ⁻¹' Icc a b, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f' y ≠ 0 := by
     intro y hy h0
-    apply hreg (e.symm y) hy.1 hy.2
-    have h := BoundarylessModel.mfderiv_source I 𝓘(ℝ) f y
-    rw [← he, ← hf'_def, h0] at h
-    ext v
-    have := congrArg (fun L ↦ L ((tangentSpaceCastModel 𝓘(ℝ, E) y).symm
-      (tangentSpaceCastModel I (e.symm y) v))) h
-    simpa using this.symm
+    rw [hf'_def, he, BoundarylessModel.mfderiv_source_eq_zero_iff] at h0
+    exact hreg (e.symm y) hy.1 hy.2 h0
   obtain ⟨X, hX, ⟨U, hUo, hKU, hXU⟩, C, hC, hXC⟩ :=
     exists_vectorField_mvfderiv_eq_neg_one hf' hK hreg'
   have hX1 : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
       (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℝ, E) M')) := hX.of_le (by simp)
   have hcomplete := isCompleteVectorField_of_isCompact_of_eq_zero_off hX1 hC hXC
   -- Conjugate the flow on `M'` back to `M`.
-  let φ' := globalFlow X hX1 hcomplete
-  obtain ⟨φ, hφ⟩ : ∃ φ : Flow ℝ M, ∀ t x, φ t x = e.symm (φ' t (e x)) :=
-    ⟨{ toFun := fun t x ↦ e.symm (φ' t (e x))
-       cont' := e.symm.continuous.comp
-         (φ'.continuous continuous_fst (e.continuous.comp continuous_snd))
-       map_add' := fun t₁ t₂ x ↦ by simp [φ'.map_add]
-       map_zero' := fun x ↦ by simp }, fun _ _ ↦ rfl⟩
   have hfx : ∀ x, f' (e x) = f x := fun x ↦ by simp [hf'_def]
-  refine ⟨φ, fun x t ht hxt hxb ↦ ?_⟩
+  refine ⟨e.symm.conjFlow (globalFlow X hX1 hcomplete), fun x t ht hxt hxb ↦ ?_⟩
   rw [← hfx] at hxt hxb
   have h := apply_globalFlow_eq_sub hX1 hcomplete hf'.continuous hUo hXU
     (fun y h1 h2 ↦ hKU ⟨h1, h2⟩) ht hxt hxb
-  rwa [hfx, hf'_def, comp_apply, ← hφ] at h
+  rw [Homeomorph.conjFlow_apply, Homeomorph.symm_symm]
+  rwa [hfx, hf'_def, comp_apply] at h
 
 /-- **Deformation of sublevels across a band without critical points** (Milnor, Theorem 3.1). If
 `f` is smooth, `a ≤ b`, and the band `f⁻¹[a, b]` is compact and contains no critical point of `f`,
@@ -226,9 +214,9 @@ theorem exists_sublevelDeformation (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a �
     (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) :
     ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}),
-      (∀ x, r (ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) x) = x) ∧
+      (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
       Nonempty (ContinuousMap.HomotopyRel
-        ((ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)).comp r)
+        ((sublevelInclusion f a b hab).comp r)
         (ContinuousMap.id _) {x | f x ≤ a}) := by
   obtain ⟨φ, hφ⟩ := exists_flow_apply_eq_sub hf hcompact hreg
   exact exists_sublevelDeformation_of_apply_eq_sub hf.continuous hab φ φ.cont' φ.map_zero_apply hφ
@@ -243,11 +231,11 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
       ∀ x : {x | f x ≤ a}, (e x : M) = x := by
   obtain ⟨r, hr, ⟨F⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
   refine ⟨
-    { toFun := ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)
+    { toFun := sublevelInclusion f a b hab
       invFun := r
       left_inv := ?_
-      right_inv := ⟨F.toHomotopy⟩ }, fun _ ↦ rfl⟩
-  have : r.comp (ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)) =
+      right_inv := ⟨F.toHomotopy⟩ }, coe_sublevelInclusion_apply f hab⟩
+  have : r.comp (sublevelInclusion f a b hab) =
       ContinuousMap.id _ := ContinuousMap.ext hr
   rw [this]
 

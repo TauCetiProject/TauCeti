@@ -10,12 +10,13 @@ public import Mathlib.Dynamics.Flow
 /-!
 # Conjugacies of flows
 
-This file collects general consequences of an inducing map that semiconjugates two flows. These
-lemmas transport asymptotic trajectory behavior, enabling stable and unstable sets to be
-transferred through coordinate conjugacies.
+This file transports flows along homeomorphisms and collects general consequences of an inducing
+map that semiconjugates two flows. These lemmas transport asymptotic trajectory behavior, enabling
+stable and unstable sets to be transferred through coordinate conjugacies.
 
 ## Main declarations
 
+* `Homeomorph.conjFlow`: the flow `e ∘ φ t ∘ e.symm` transported along a homeomorphism `e`.
 * `Topology.IsInducing.tendsto_flow_iff`: an inducing semiconjugacy transports convergence of flow
   trajectories in either direction.
 * `Homeomorph.tendsto_flow_iff`: a homeomorphic semiconjugacy transports convergence of flow
@@ -51,6 +52,18 @@ theorem Topology.IsInducing.tendsto_flow_iff {f : α → β} (hf : IsInducing f)
 namespace Homeomorph
 
 variable (e : α ≃ₜ β)
+
+/-- The flow `e ∘ φ t ∘ e.symm` obtained by transporting a flow `φ` along a homeomorphism `e`. -/
+def conjFlow (φ : _root_.Flow τ α) : _root_.Flow τ β where
+  toFun t y := e (φ t (e.symm y))
+  cont' := e.continuous.comp (φ.continuous continuous_fst (e.symm.continuous.comp continuous_snd))
+  map_add' t₁ t₂ y := by simp [φ.map_add]
+  map_zero' y := by simp
+
+@[simp]
+theorem conjFlow_apply (φ : _root_.Flow τ α) (t : τ) (y : β) :
+    e.conjFlow φ t y = e (φ t (e.symm y)) :=
+  (rfl)
 
 /-- A homeomorphic semiconjugacy transports convergence of flow trajectories in either direction. -/
 theorem tendsto_flow_iff (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {l : Filter τ}
