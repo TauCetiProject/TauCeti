@@ -15,6 +15,23 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 For an s-finite measure with measurable singletons, the points of positive singleton mass form a
 countable, hence measurable, set. Restricting the measure to this set preserves every point mass;
 restricting it to the complement gives a measure with zero mass on every singleton.
+
+## Main definitions
+
+* `MeasureTheory.Measure.positiveSingletons`: the set of points with nonzero singleton measure.
+* `MeasureTheory.Measure.atomicPart`: the restriction of a measure to `positiveSingletons`.
+* `MeasureTheory.Measure.diffusePart`: the restriction of a measure to `(positiveSingletons μ)ᶜ`.
+
+## Main results
+
+* `MeasureTheory.Measure.countable_positiveSingletons`: an s-finite measure has at most countably
+  many positive-mass singletons.
+* `MeasureTheory.Measure.atomicPart_apply_singleton`,
+  `MeasureTheory.Measure.diffusePart_apply_singleton`: singleton evaluations of the two parts.
+* `MeasureTheory.Measure.atomicPart_eq_sum_dirac_of_countable`,
+  `MeasureTheory.Measure.atomicPart_eq_sum_dirac`: the atomic part as a sum of weighted Dirac
+  measures.
+* `MeasureTheory.Measure.atomicPart_add_diffusePart`: `atomicPart μ + diffusePart μ = μ`.
 -/
 
 public section
@@ -55,12 +72,13 @@ theorem diffusePart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
 
 /-- Restricting to the positive-mass points does not increase a measure. -/
 theorem atomicPart_le (μ : Measure X) : atomicPart μ ≤ μ := by
-  simpa only [atomicPart] using (Measure.restrict_le_self : μ.restrict (positiveSingletons μ) ≤ μ)
+  rw [atomicPart]
+  exact Measure.restrict_le_self
 
 /-- Restricting to the zero-mass points does not increase a measure. -/
 theorem diffusePart_le (μ : Measure X) : diffusePart μ ≤ μ := by
-  simpa only [diffusePart] using
-    (Measure.restrict_le_self : μ.restrict (positiveSingletons μ)ᶜ ≤ μ)
+  rw [diffusePart]
+  exact Measure.restrict_le_self
 
 /-- The atomic part is absolutely continuous with respect to the original measure. -/
 theorem atomicPart_absolutelyContinuous (μ : Measure X) : atomicPart μ ≪ μ :=
@@ -84,7 +102,7 @@ instance diffusePart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
 
 variable [MeasurableSingletonClass X]
 
-/-- A s-finite measure has at most countably many positive-mass singleton sets. -/
+/-- An s-finite measure has at most countably many positive-mass singleton sets. -/
 theorem countable_positiveSingletons (μ : Measure X) [SFinite μ] :
     (positiveSingletons μ).Countable := by
   simpa [positiveSingletons, pos_iff_ne_zero] using
@@ -96,18 +114,15 @@ theorem measurableSet_positiveSingletons (μ : Measure X) [SFinite μ] :
   (countable_positiveSingletons μ).measurableSet
 
 /-- The atomic part preserves the mass of every singleton. -/
+@[simp]
 theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
     atomicPart μ {x} = μ {x} := by
   rw [atomicPart, restrict_apply (measurableSet_singleton x)]
-  by_cases hx : μ {x} = 0
-  · have hx' : x ∉ positiveSingletons μ := by
-      intro hmem
-      exact ((mem_positiveSingletons_iff μ x).1 hmem) hx
-    simpa [hx'] using hx.symm
-  · have hx' : x ∈ positiveSingletons μ := (mem_positiveSingletons_iff μ x).2 hx
-    simp [hx']
+  by_cases hx : μ {x} = 0 <;> simp [hx]
 
-private theorem atomicPart_eq_sum_dirac_of_countable (μ : Measure X)
+/-- When a measure has countably many positive-mass singletons, its atomic part is the sum of the
+point masses at those points. -/
+theorem atomicPart_eq_sum_dirac_of_countable (μ : Measure X)
     [Countable (positiveSingletons μ)] :
     atomicPart μ = Measure.sum fun x : positiveSingletons μ ↦
       μ {(x : X)} • Measure.dirac (x : X) := by
@@ -123,26 +138,21 @@ private theorem atomicPart_eq_sum_dirac_of_countable (μ : Measure X)
         (fun x ↦ measurableSet_singleton (x : X))
     _ = Measure.sum fun x : positiveSingletons μ ↦
         μ {(x : X)} • Measure.dirac (x : X) := by
-      congr 1
-      funext x
-      exact Measure.restrict_singleton μ (x : X)
+      simp only [Measure.restrict_singleton]
 
 /-- The atomic part is the sum of the point masses at its supporting points. -/
 theorem atomicPart_eq_sum_dirac (μ : Measure X) [SFinite μ] :
     atomicPart μ = Measure.sum fun x : positiveSingletons μ ↦
-      μ {(x : X)} • Measure.dirac (x : X) :=
-  @atomicPart_eq_sum_dirac_of_countable X _ _ μ (countable_positiveSingletons μ).to_subtype
+      μ {(x : X)} • Measure.dirac (x : X) := by
+  have := (countable_positiveSingletons μ).to_subtype
+  exact atomicPart_eq_sum_dirac_of_countable μ
 
 /-- The diffuse part gives zero mass to every singleton. -/
+@[simp]
 theorem diffusePart_apply_singleton (μ : Measure X) (x : X) :
     diffusePart μ {x} = 0 := by
   rw [diffusePart, restrict_apply (measurableSet_singleton x)]
-  by_cases hx : x ∈ positiveSingletons μ
-  · simp [hx]
-  · have hzero : μ {x} = 0 := by
-      by_contra hne
-      exact hx ((mem_positiveSingletons_iff μ x).2 hne)
-    simp [hx, hzero]
+  by_cases hx : μ {x} = 0 <;> simp [hx]
 
 /-- The atomic part vanishes on the complement of its supporting points. -/
 @[simp]
