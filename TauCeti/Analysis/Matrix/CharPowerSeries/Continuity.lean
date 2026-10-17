@@ -17,8 +17,9 @@ entrywise perturbation estimate
 
 when both matrices have entries of norm at most `M`, corresponding entries differ by at most
 `ε`, and the size-`n` principal-minor families are summable. There is no factor depending on
-the number of minors or on the size of the index type. The estimate applies in particular to
-matrices with null row majorants, by `Matrix.summable_principalMinor`.
+the number of minors or on the size of the index type. Over complete coefficient rings, the
+estimate applies in particular to matrices with null row majorants, by
+`Matrix.summable_principalMinor`.
 
 Consequently uniform entrywise convergence to a bounded matrix implies convergence of each
 coefficient, provided the principal-minor sums converge. This is the coefficientwise continuity
@@ -41,7 +42,8 @@ variable {ι R : Type*} [DecidableEq ι]
   [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
 /-- Fredholm coefficients are Lipschitz on entrywise bounded sets whenever the defining
-principal-minor sums converge. In particular, this applies to matrices with null row bounds.
+principal-minor sums converge. In particular, over a complete coefficient ring this applies to
+matrices with null row majorants (`Matrix.summable_principalMinor`).
 No completeness hypothesis is needed once summability is supplied. -/
 theorem norm_charCoeff_sub_le {A B : Matrix ι ι R} {n : ℕ} {M ε : ℝ}
     (hM : 0 ≤ M) (hε : 0 ≤ ε) (hA : ∀ i j, ‖A i j‖ ≤ M) (hB : ∀ i j, ‖B i j‖ ≤ M)
