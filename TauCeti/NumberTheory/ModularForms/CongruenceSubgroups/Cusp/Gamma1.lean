@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import Mathlib.Data.ZMod.Units
+import TauCeti.Data.Int.GCD
 import TauCeti.Data.ZMod.Units
 
 /-!
@@ -124,11 +125,6 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff (γ γ' : SL(2, ℤ)) :
 
 /-! ### Labels of cusps -/
 
-private theorem isCoprime_div_gcd (c : ℤ) :
-    IsCoprime (c / Int.gcd c N) ((N / Int.gcd c N : ℕ) : ℤ) := by
-  rw [Int.natCast_div, Int.coe_gcd]
-  exact isCoprime_div_gcd_div_gcd (by exact_mod_cast NeZero.ne N)
-
 omit [NeZero N] in
 private theorem isCoprime_gcd (γ : SL(2, ℤ)) : IsCoprime (γ 1 1) (Int.gcd (γ 1 0) N : ℤ) :=
   (bottom_row_coprime γ).symm.of_isCoprime_of_dvd_right (Int.gcd_dvd_left ..)
@@ -144,7 +140,8 @@ noncomputable def gamma1CuspLabel (γ : SL(2, ℤ)) :
     Σ g : N.divisors, (ZMod (N / g))ˣ × (ZMod g)ˣ :=
   ⟨⟨Int.gcd (γ 1 0) N,
       Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩⟩,
-    ZMod.unitOfIsCoprime _ (isCoprime_div_gcd (γ 1 0)), ZMod.unitOfIsCoprime _ (isCoprime_gcd γ)⟩
+    ZMod.unitOfIsCoprime _ (Int.isCoprime_div_gcd_div_gcd (NeZero.ne N) (γ 1 0)),
+    ZMod.unitOfIsCoprime _ (isCoprime_gcd γ)⟩
 
 /-- The divisor in the label of `γ` is `gcd(c, N)`, for `c` the lower-left entry of `γ`. -/
 @[simp]
@@ -157,7 +154,7 @@ of `γ` and `g = gcd(c, N)`. -/
 theorem coe_gamma1CuspLabel_snd_fst (γ : SL(2, ℤ)) :
     ((gamma1CuspLabel N γ).2.1 : ZMod (N / (gamma1CuspLabel N γ).1)) =
       (γ 1 0 / Int.gcd (γ 1 0) N : ℤ) :=
-  ZMod.coe_unitOfIsCoprime _ (isCoprime_div_gcd (γ 1 0))
+  ZMod.coe_unitOfIsCoprime _ (Int.isCoprime_div_gcd_div_gcd (NeZero.ne N) (γ 1 0))
 
 /-- The second unit in the label of `γ` is `d` modulo `gcd(c, N)`, for `(c, d)` the bottom row
 of `γ`. -/
@@ -287,6 +284,19 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff_gamma1CuspLabel (γ γ' : SL(2, ℤ)) :
     · exact ⟨j, Or.inl ⟨h₁, h₂⟩⟩
     · exact ⟨j, Or.inr ⟨h₁, by rw [h₂]; ring⟩⟩
 
+/-- **The label of `-γ`.** It has the divisor of the label of `γ` and the negatives of its two
+units. -/
+theorem gamma1CuspLabel_neg (γ : SL(2, ℤ)) :
+    gamma1CuspLabel N (-γ) =
+      ⟨(gamma1CuspLabel N γ).1, -(gamma1CuspLabel N γ).2.1, -(gamma1CuspLabel N γ).2.2⟩ := by
+  refine gamma1CuspLabel_eq_mk (gamma1CuspLabel N γ).1.2 ?_ ?_ ?_
+  · simp
+  · rw [Units.val_neg, coe_gamma1CuspLabel_snd_fst, coe_neg, Matrix.neg_apply,
+      Int.neg_ediv_of_dvd (show ((gamma1CuspLabel N γ).1 : ℤ) ∣ γ 1 0 from Int.gcd_dvd_left ..),
+      Int.cast_neg]
+    rfl
+  · rw [Units.val_neg, coe_gamma1CuspLabel_snd_snd, coe_neg, Matrix.neg_apply, Int.cast_neg]
+
 /-- Away from the levels `1`, `2` and `4`, the matrices `γ` and `-γ` have different labels. -/
 theorem gamma1CuspLabel_neg_ne (hN : 2 < N) (hN4 : N ≠ 4) (γ : SL(2, ℤ)) :
     gamma1CuspLabel N (-γ) ≠ gamma1CuspLabel N γ := by
@@ -314,7 +324,7 @@ theorem gamma1CuspLabel_neg_ne (hN : 2 < N) (hN4 : N ≠ 4) (γ : SL(2, ℤ)) :
     rwa [add_sub_cancel_right] at this
   -- `N / g` divides `2 (c / g)`, hence `2`.
   have hm2 : ((N / g : ℕ) : ℤ) ∣ 2 := by
-    refine (isCoprime_div_gcd (γ 1 0)).symm.dvd_of_dvd_mul_right ?_
+    refine (Int.isCoprime_div_gcd_div_gcd (NeZero.ne N) (γ 1 0)).symm.dvd_of_dvd_mul_right ?_
     refine Int.dvd_of_mul_dvd_mul_left hg0 ?_
     have hN' : (N : ℤ) = g * (N / g : ℕ) := by
       exact_mod_cast (Nat.mul_div_cancel' (Int.natCast_dvd_natCast.mp hgN)).symm
