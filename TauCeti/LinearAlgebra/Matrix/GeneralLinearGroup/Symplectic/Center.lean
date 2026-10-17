@@ -48,7 +48,9 @@ theorem mem_range_scalar_of_commute_symplectic
   -- diagonal entry with the entry at the paired coordinate.
   have hlong (a b : Fin (m + m))
       (h : Commute M (transvection a b (1 : R))) : Commute (single a b 1) M := by
-    simpa [Commute, SemiconjBy, transvection, mul_add, add_mul] using h.eq.symm
+    have he := h.eq
+    rw [transvection, mul_add, add_mul, mul_one, one_mul] at he
+    exact (add_left_cancel he).symm
   have hp (i : Fin m) := hlong _ _ (by
     simpa only [TauCeti.GLSymplecticFin.coe_positiveLongRootTransvectionUnit,
       TauCeti.coe_transvectionUnit] using
