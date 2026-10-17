@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
+public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
 
 /-!
 # The closed unit ball and products of elements close to one in ultrametric normed rings
@@ -108,9 +109,7 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClas
     rcases s.eq_empty_or_nonempty with rfl | hs
     · simpa using hfg a (by simp)
     have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
-      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
-            simpa only [List.map_map, Finset.prod_map_toList, Function.comp_apply] using
-              (s.toList.map f).norm_prod_le
+      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le s f
         _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
           fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
         _ = M ^ s.card := Finset.prod_const _

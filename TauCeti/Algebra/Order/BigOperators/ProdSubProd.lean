@@ -40,6 +40,17 @@ namespace TauCeti
 
 open Finset
 
+/-- The norm of a finite product is bounded by the product of the norms, over a seminormed
+commutative ring with `‖1‖ = 1`. -/
+theorem norm_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    (s : Finset ι) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert j s hj ih =>
+    rw [Finset.prod_insert hj, Finset.prod_insert hj]
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
+
 /-- **A finite product of unit-ball elements lies in the unit ball.** Mathlib's
 `Finset.norm_prod_le` gives this over a `NormedCommRing`, but only submultiplicativity of the norm
 and `‖1‖ = 1` are used, so it holds over a seminormed ring. -/
