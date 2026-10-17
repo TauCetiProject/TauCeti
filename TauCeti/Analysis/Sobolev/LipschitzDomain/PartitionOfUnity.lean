@@ -52,7 +52,7 @@ namespace Set
 open Metric Topology TauCeti
 open scoped NNReal ContDiff Manifold
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
 
 /-- **Partition of unity for a bounded Lipschitz domain.** For a bounded Lipschitz domain `Omega`
