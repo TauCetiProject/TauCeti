@@ -69,6 +69,16 @@ private theorem mem_exactForms_of_apply_eq {n m : ℕ} (h : n = m + 1) {φ : Smo
   ext v
   simpa [Fin.cast_eq_self] using (hφ x v).symm
 
+/-- The Leibniz rule with a closed left factor: `d (φ ∧ β) = (-1) ^ k • φ ∧ dβ`. -/
+private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
+    (hφ : mextDeriv φ.1 = 0) (β : SmoothForm I M ℝ l) (x : M)
+    (v : Fin (k + l + 1) → TangentSpace I x) :
+    mextDeriv (φ.1.wedge β.1) x v =
+      (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv β.1) x
+        (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  rw [mextDeriv_wedge (mdifferentiableAt_section φ x) (mdifferentiableAt_section β x), hφ]
+  simp
+
 /-- The wedge of two closed smooth forms is closed. -/
 theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
     (hφ : φ ∈ closedForms I M k) (hψ : ψ ∈ closedForms I M l) :
@@ -114,11 +124,7 @@ theorem wedge_mem_exactForms_of_right_mem {φ : SmoothForm I M ℝ k} {ψ : Smoo
     rw [mem_closedForms] at hφ
     -- `d ((-1) ^ k • φ ∧ β) = φ ∧ dβ` because `φ` is closed.
     refine mem_exactForms_of_apply_eq rfl ((-1 : ℝ) ^ k • wedge φ β) fun x v ↦ ?_
-    rw [← mextDerivₗ_apply, map_smul, Submodule.coe_smul, mextDerivₗ_apply, Pi.smul_apply,
-      ContinuousAlternatingMap.smul_apply, coe_wedge, coe_wedge,
-      mextDeriv_wedge (mdifferentiableAt_section φ x) (mdifferentiableAt_section β x), hφ,
-      mextDerivₗ_apply]
-    simp [← mul_assoc, ← mul_pow]
+    simp [mextDeriv_wedge_of_left_closed hφ, ← mul_assoc, ← mul_pow]
 
 end SmoothForm
 
