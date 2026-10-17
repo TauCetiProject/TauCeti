@@ -64,6 +64,7 @@ theorem IsExhaustiveGradedSimpleFamily.exists_iso_of_concentrated
     apply GradedModuleCat.hom_ext
     apply LinearMap.ext
     intro x
+    -- The categorical identity and zero morphisms act on the underlying module as `x` and `0`.
     change x = 0
     induction x using DirectSum.Decomposition.inductionOn N.obj.grading.piece with
     | zero => rfl
