@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 public import TauCeti.Data.Matrix.Scaling.Basic
+public import TauCeti.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
-public import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 
 /-!
 # Relative entropy on a finite measurable space
@@ -71,17 +70,6 @@ theorem klDiv_eq_ofReal_sum_log_singleton [IsFiniteMeasure μ] [IsFiniteMeasure 
 end TauCeti
 
 namespace MeasureTheory.Measure
-
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-
-/-- On a measurable singleton of nonzero finite reference mass, the log-likelihood ratio is the
-logarithm of the quotient of the two real singleton masses. -/
-theorem llr_eq_log_real_div_real_singleton (π R : Measure α) [π.HaveLebesgueDecomposition R]
-    (x : α)
-    (hR : R {x} ≠ 0) (hRtop : R {x} ≠ ∞) :
-    llr π R x = Real.log (π.real {x} / R.real {x}) := by
-  rw [llr, rnDeriv_eq_measure_singleton_div hR hRtop, ENNReal.toReal_div]
-  rfl
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]

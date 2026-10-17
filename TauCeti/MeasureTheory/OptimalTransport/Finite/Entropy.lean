@@ -25,9 +25,6 @@ the Kullback–Leibler divergence of the plan from the independent plan. It equa
   the product of its marginals is `H(μ) + H(ν) - H(f)`.
 * `TauCeti.relEntropy_vecMulVec_nonneg_of_mem_realPlans` and
   `TauCeti.relEntropy_vecMulVec_le_of_mem_realPlans`: it lies between `0` and `H(μ) + H(ν)`.
-
-The finite measure KL divergence is also identified with matrix relative entropy,
-including Mathlib's finite-measure mass correction.
 -/
 
 public section
