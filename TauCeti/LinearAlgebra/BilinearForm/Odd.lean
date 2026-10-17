@@ -127,22 +127,12 @@ theorem exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self
     let N := B.orthogonal (R ∙ x)
     have hc := B.isCompl_span_singleton_orthogonal_of_isUnit x hx
     obtain ⟨hfinite, hfree⟩ := N.finite_free_of_isCompl hc.symm
-    have hli : ∀ a : R, ∀ y ∈ N, a • x + y = 0 → a = 0 := by
-      intro a y hy hay
-      have hxy : B x y = 0 := hy x (Submodule.mem_span_singleton_self x)
-      have h := congrArg (B x) hay
-      simp only [map_add, map_smul, smul_eq_mul, hxy, add_zero, map_zero] at h
-      exact (mem_nonZeroDivisors_iff_right.mp hx.mem_nonZeroDivisors) a h
-    have hsp : ∀ z : M, ∃ a : R, z + a • x ∈ N := by
-      intro z
-      obtain ⟨a, ha⟩ := (hx.dvd : B x x ∣ B x z)
-      refine ⟨-a, ?_⟩
-      simp [N, orthogonal, ha, mul_comm]
-    let c₀ := Basis.mkFinCons x (Module.finBasis R N) hli hsp
     have hn : finrank R N = n := by
-      have h₀ := Module.finrank_eq_card_basis c₀
-      have h₁ := Module.finrank_eq_card_basis b
-      simp only [Fintype.card_fin] at h₀ h₁
+      have h : finrank R N + 1 = finrank R M :=
+        finrank_orthogonal_span_singleton_add_one_of_dvd B
+          hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd)
+      have hb := Module.finrank_eq_card_basis b
+      simp only [Fintype.card_fin] at hb
       omega
     have hperf : (B.restrict N).IsPerfPair := by
       have hdouble := B.orthogonal_orthogonal_of_isCompl hB.isRefl
