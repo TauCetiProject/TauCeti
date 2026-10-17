@@ -168,9 +168,8 @@ theorem card_orbit_stabilizer_coset (x : G ⧸ H) :
         (primesOverOfCoset p Q H C x).1.inertiaDeg A := by
   induction x using QuotientGroup.induction_on with | H τ => ?_
   rw [coe_primesOverOfCoset_mk,
-    ramificationIdx_mul_inertiaDeg_under_eq_relIndex (τ⁻¹ • Q) H C,
-    stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-    TauCeti.map_conj_eq_conj_smul, Subgroup.card_orbit_quotientGroup_mk]
+    ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex (Q := Q) H C τ⁻¹,
+    Subgroup.card_orbit_quotientGroup_mk]
 
 variable [FaithfulSMul C B]
 
