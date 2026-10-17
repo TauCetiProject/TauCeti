@@ -526,10 +526,41 @@ def IsPLHomeomorphPackage (A B : PreAbstractSimplicialComplex ι) : Prop :=
       (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1)
 
 omit [DecidableEq ι] in
+/-- Construct a piecewise-linear homeomorphism package from its witness data. -/
+theorem IsPLHomeomorphPackage.intro {A B : PreAbstractSimplicialComplex ι}
+    (e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B})
+    (f g : (ι → ℝ) → (ι → ℝ))
+    (hf : IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ A} => (x.1.1 : ι → ℝ)))
+    (hg : IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ B} => (x.1.1 : ι → ℝ)))
+    (he : ∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1)
+    (heinv : ∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) :
+    IsPLHomeomorphPackage A B :=
+  ⟨e, f, g, hf, hg, he, heinv⟩
+
+omit [DecidableEq ι] in
+/-- Extract the homeomorphism and its two ambient piecewise-linear formulas. -/
+theorem IsPLHomeomorphPackage.elim {A B : PreAbstractSimplicialComplex ι}
+    (h : IsPLHomeomorphPackage A B) :
+    ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
+      ∃ f g : (ι → ℝ) → (ι → ℝ),
+        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ B} => (x.1.1 : ι → ℝ)) ∧
+        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
+        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := by
+  simpa only [IsPLHomeomorphPackage] using h
+
+omit [DecidableEq ι] in
 /-- Reflexivity of piecewise-linear homeomorphism packages. -/
 theorem IsPLHomeomorphPackage.refl (A : PreAbstractSimplicialComplex ι) :
     IsPLHomeomorphPackage A A :=
-  ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _, (fun _ => rfl), (fun _ => rfl)⟩
+  IsPLHomeomorphPackage.intro (Homeomorph.refl _) id id (isPLOn_id _) (isPLOn_id _)
+    (fun _ => rfl) (fun _ => rfl)
 
 /-- The PL package for one stellar move, using the inverse and forward coordinate extensions. -/
 theorem IsStellarMove.isPLHomeomorphPackage
@@ -549,23 +580,24 @@ theorem IsStellarMove.isPLHomeomorphPackage
       x.1.support ∈ stellarSubdivision A σ v} => (x.1.1 : ι → ℝ)) := by
     exact isPLOn_continuousAffineMap
       (Finset.stellarSubdivisionCoordinateMap σ v).toContinuousAffineMap _
-  exact ⟨e.symm, f, g, hf, hg, (fun x => by simpa only [f] using (heinv x).symm),
-    (fun y => by simpa only [g, Homeomorph.symm_symm] using (he y).symm)⟩
+  exact IsPLHomeomorphPackage.intro e.symm f g hf hg
+    (fun x => by simpa only [f] using (heinv x).symm)
+    (fun y => by simpa only [g, Homeomorph.symm_symm] using (he y).symm)
 
 omit [DecidableEq ι] in
 /-- Symmetry swaps the forward and inverse maps in a PL homeomorphism package. -/
 theorem IsPLHomeomorphPackage.symm {A B : PreAbstractSimplicialComplex ι}
     (h : IsPLHomeomorphPackage A B) : IsPLHomeomorphPackage B A := by
-  rcases h with ⟨e, f, g, hf, hg, he, heinv⟩
-  exact ⟨e.symm, g, f, hg, hf, heinv, he⟩
+  rcases h.elim with ⟨e, f, g, hf, hg, he, heinv⟩
+  exact IsPLHomeomorphPackage.intro e.symm g f hg hf heinv he
 
 omit [DecidableEq ι] in
 /-- Composition of PL homeomorph packages composes their ambient coordinate formulas. -/
 theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
     (hAB : IsPLHomeomorphPackage A B) (hBC : IsPLHomeomorphPackage B C) :
     IsPLHomeomorphPackage A C := by
-  rcases hAB with ⟨e₁, f₁, g₁, hf₁, hg₁, he₁, he₁inv⟩
-  rcases hBC with ⟨e₂, f₂, g₂, hf₂, hg₂, he₂, he₂inv⟩
+  rcases hAB.elim with ⟨e₁, f₁, g₁, hf₁, hg₁, he₁, he₁inv⟩
+  rcases hBC.elim with ⟨e₂, f₂, g₂, hf₂, hg₂, he₂, he₂inv⟩
   have hmap₁ : (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
       x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ⊆ f₁ ⁻¹'
       (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
@@ -578,8 +610,8 @@ theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
         x.1.support ∈ B} => (x.1.1 : ι → ℝ)) := by
     rintro _ ⟨y, rfl⟩
     exact ⟨e₂.symm y, (he₂inv y).symm⟩
-  refine ⟨e₁.trans e₂, f₂ ∘ f₁, g₁ ∘ g₂,
-    hf₂.comp hf₁ hmap₁, hg₁.comp hg₂ hmap₂, ?_, ?_⟩
+  refine IsPLHomeomorphPackage.intro (e₁.trans e₂) (f₂ ∘ f₁) (g₁ ∘ g₂)
+    (hf₂.comp hf₁ hmap₁) (hg₁.comp hg₂ hmap₂) ?_ ?_
   · intro x
     simp only [Function.comp_apply, he₁ x, he₂ (e₁ x), Homeomorph.trans_apply]
   · intro y
