@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.Analysis.Normed.Group.Rounding
 
 /-!
 # Multiplicative pseudo-uniformisers of seminormed rings
@@ -48,6 +49,8 @@ given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially norme
   `‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * ‖m‖` on modules with contractive action.
 * `TauCeti.NormedRing.PseudoUniformizer.existsUnique_norm_zpow_smul_mem_Ioc`: the shell
   `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1` determines `n` uniquely.
+* `TauCeti.NormedRing.PseudoUniformizer.zpowCeil_norm_zpow_smul`: exact scaling survives
+  rounding the norm of the module up to `‖ϖ‖ ^ ℤ ∪ {0}` (`TauCeti.zpowCeil`).
 * `TauCeti.NormedRing.PseudoUniformizer.isPseudoUniformizer` and
   `TauCeti.NormedRing.IsTate.isTateRing`: comparison with the topological notions.
 * `TauCeti.NormedRing.PseudoUniformizer.ofAlgebraMap`: small nonzero scalars of a normed field
@@ -205,6 +208,14 @@ theorem existsUnique_norm_zpow_smul_mem_Ioc {m : M} (hm : ‖m‖ ≠ 0) :
   convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
   simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
     mul_comm]
+
+/-- **Exact scaling of the rounded norm**: after rounding the norm of `M` up to
+`‖ϖ‖ ^ ℤ ∪ {0}`, integer powers of `ϖ` still scale it exactly,
+`zpowCeil ‖ϖ‖ ‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * zpowCeil ‖ϖ‖ ‖m‖`. -/
+theorem zpowCeil_norm_zpow_smul (n : ℤ) (m : M) :
+    zpowCeil ‖(ϖ.unit : R)‖ ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ =
+      ‖(ϖ.unit : R)‖ ^ n * zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ := by
+  rw [ϖ.norm_zpow_smul, zpowCeil_zpow_mul ϖ.norm_pos ϖ.norm_lt_one]
 
 end Module
 
