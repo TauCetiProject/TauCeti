@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Order.Ring.Star
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+import Mathlib.Algebra.Order.Module.Rat
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
@@ -18,14 +19,14 @@ An integral lattice is positive definite when its rational form is
 (`TauCeti.IntegralLattice.IsPosDef`). This file shows that the same condition can be read on every
 other model of the lattice form: on the integral norm form of the carrier, on the integral Gram
 matrix of any carrier basis, on that Gram matrix with its entries cast to `ℝ`, and on the base
-change of the rational form to `ℝ`. The real statements hold more generally over any linearly
-ordered field whose order is the star order of the trivial star.
+change of the rational form to `ℝ`. Base change holds more generally over any ordered field;
+the real matrix statement requires the order to be the star order of the trivial star.
 
 The real Gram matrix is the form in which positive definiteness enters analytic arguments in
 Euclidean space, and the integral Gram matrix is the form in which it is checked on explicit
-lattices; these equivalences let either be used for `IsPosDef`. The passage from `ℚ` to `ℝ` rests
-on diagonalizing the rational form by a rational congruence
-(`TauCeti.Matrix.posDef_map_ratCast_iff`); the passage from `ℤ` to `ℚ` clears denominators
+lattices; these equivalences let either be used for `IsPosDef`. Ordered-field base change uses
+`LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`. The Gram-matrix comparisons use
+rational congruence (`TauCeti.Matrix.posDef_map_ratCast_iff`) and clearing denominators
 (`TauCeti.Matrix.posDef_map_intCast_iff`).
 
 ## Main results
@@ -69,6 +70,13 @@ theorem isPosDef_iff_posDef_integralNorm : L.IsPosDef ↔ L.integralNorm.PosDef 
     LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _ L.isSymm_integralForm,
     L.gramMatrix_eq_toMatrix]
 
+/-- **A lattice is positive definite exactly when its real form is**, and more generally when
+its rational form remains positive definite after an ordered field extension. -/
+theorem isPosDef_iff_posDef_baseChange {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] : L.IsPosDef ↔ (L.form.baseChange K).toQuadraticMap.PosDef :=
+  have := L.finiteDimensional
+  (LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff (K := K) L.isSymm).symm
+
 variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K] [StarOrderedRing K]
 
 /-- **A lattice is positive definite exactly when its Gram matrix, cast to `ℝ`, is positive
@@ -79,19 +87,5 @@ theorem isPosDef_iff_posDef_map_gramMatrix {ι : Type*} [Finite ι] (b : Basis �
   rw [L.isPosDef_iff_posDef_gramMatrix b, ← Matrix.posDef_map_intCast_iff,
     ← Matrix.posDef_map_ratCast_iff (K := K), Matrix.map_map]
   simp only [Function.comp_def, Rat.cast_intCast]
-
-/-- **A lattice is positive definite exactly when its real form is**: the base change of the
-rational form to `ℝ`, or more generally to any linearly ordered field `K` whose order is the star
-order of the trivial star, is positive definite. -/
-theorem isPosDef_iff_posDef_baseChange :
-    L.IsPosDef ↔ (L.form.baseChange K).toQuadraticMap.PosDef := by
-  classical
-  let b := Free.chooseBasis ℤ L
-  have hsymm := LinearMap.BilinForm.isSymm_iff.mpr
-    (LinearMap.BilinForm.IsSymm.baseChange K (LinearMap.BilinForm.isSymm_iff.mp L.isSymm))
-  rw [LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix ((b.extendOfIsLattice ℚ).baseChange K)
-    _ hsymm, bilinForm_toMatrix_baseChange, ← L.map_gramMatrix, Matrix.map_map,
-    L.isPosDef_iff_posDef_map_gramMatrix (K := K) b]
-  simp only [Function.comp_def, algebraMap_int_eq, eq_intCast, map_intCast]
 
 end TauCeti.IntegralLattice

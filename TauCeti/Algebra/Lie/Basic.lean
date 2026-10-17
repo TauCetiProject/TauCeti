@@ -92,11 +92,14 @@ namespace TauCeti
 
 universe u v w w₁ w₂
 
-variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+section LieModule
+
+variable {R : Type u} {L : Type v} {M : Type w}
 variable [CommRing R] [LieRing L] [AddCommGroup M] [Module R M] [LieRingModule L M]
-  [AddCommGroup N] [Module R N] [LieRingModule L N]
 
 namespace LieModuleEquiv
+
+variable {N : Type w₁} [AddCommGroup N] [Module R N] [LieRingModule L N]
 
 /-- A bijective morphism of Lie modules is an equivalence of Lie modules. This is the Lie module
 analogue of `LieEquiv.ofBijective`. -/
@@ -147,13 +150,13 @@ def congrRight (e : N ≃ₗ⁅R,L⁆ P) : (M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M �
 
 @[simp]
 theorem congrRight_apply (e : N ≃ₗ⁅R,L⁆ P) (f : M →ₗ⁅R,L⁆ N) (m : M) :
-    congrRight (M := M) e f m = e (f m) :=
-  (rfl)
+    congrRight (M := M) e f m = e (f m) := by
+  rfl
 
 @[simp]
 theorem congrRight_symm_apply (e : N ≃ₗ⁅R,L⁆ P) (g : M →ₗ⁅R,L⁆ P) (m : M) :
-    (congrRight (M := M) e).symm g m = e.symm (g m) :=
-  (rfl)
+    (congrRight (M := M) e).symm g m = e.symm (g m) := by
+  rfl
 
 end CongrRight
 
@@ -175,35 +178,17 @@ def congrLeft (e : M ≃ₗ⁅R,L⁆ N) : (M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →
 
 @[simp]
 theorem congrLeft_apply (e : M ≃ₗ⁅R,L⁆ N) (f : M →ₗ⁅R,L⁆ P) (n : N) :
-    congrLeft (P := P) e f n = f (e.symm n) :=
-  (rfl)
+    congrLeft (P := P) e f n = f (e.symm n) := by
+  rfl
 
 @[simp]
 theorem congrLeft_symm_apply (e : M ≃ₗ⁅R,L⁆ N) (g : N →ₗ⁅R,L⁆ P) (m : M) :
-    (congrLeft (P := P) e).symm g m = g (e m) :=
-  (rfl)
+    (congrLeft (P := P) e).symm g m = g (e m) := by
+  rfl
 
 end CongrLeft
 
 end LieModuleEquiv
-
-namespace LieModuleHom
-
-/-! ### Morphism spaces of Lie modules -/
-
-/-- The morphism space of two finite-dimensional Lie modules is finite-dimensional: by
-`LieModule.maxTrivLinearMapEquivLieModuleHom` it is the maximal trivial submodule of the
-finite-dimensional space of all linear maps between them. -/
-instance instFiniteDimensional {K : Type u} {L : Type v} {M : Type w} {N : Type w₁}
-    [Field K] [LieRing L] [LieAlgebra K L]
-    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
-    [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
-    [FiniteDimensional K N] :
-    FiniteDimensional K (M →ₗ⁅K,L⁆ N) :=
-  Module.Finite.equiv (LieModule.maxTrivLinearMapEquivLieModuleHom (R := K) (L := L)
-    (M := M) (N := N))
-
-end LieModuleHom
 
 variable [LieAlgebra R L]
 
@@ -269,9 +254,42 @@ theorem isTrivial_of_forall_lie_eq_zero_of_lieSpan_eq_top {v : M}
   exact Set.singleton_subset_iff.mpr
     ((_root_.LieModule.mem_maxTrivSubmodule R L M v).mpr h)
 
+end LieModule
+
+namespace LieModuleHom
+
+/-! ### Morphism spaces of Lie modules -/
+
+/-- The morphism space of two finite-dimensional Lie modules is finite-dimensional: by
+`LieModule.maxTrivLinearMapEquivLieModuleHom` it is the maximal trivial submodule of the
+finite-dimensional space of all linear maps between them. -/
+instance instFiniteDimensional {K : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+    [Field K] [LieRing L] [LieAlgebra K L]
+    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+    [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+    [FiniteDimensional K N] :
+    FiniteDimensional K (M →ₗ⁅K,L⁆ N) :=
+  Module.Finite.equiv (LieModule.maxTrivLinearMapEquivLieModuleHom (R := K) (L := L)
+    (M := M) (N := N))
+
+end LieModuleHom
+
+/-- **The adjoint action does not depend on the base ring.** A Lie algebra over two commutative
+rings has one bracket, so iterating `ad` over either ring gives the same element. This reads a
+higher Serre relation proved over `ℤ` as the relation asked of a Lie algebra over `ℚ`. -/
+theorem ad_pow_apply_eq_ad_pow_apply {L : Type*} [LieRing L] (R S : Type*) [CommRing R]
+    [CommRing S] [LieAlgebra R L] [LieAlgebra S L] (x y : L) (k : ℕ) :
+    (LieAlgebra.ad R L x ^ k) y = (LieAlgebra.ad S L x ^ k) y := by
+  induction k generalizing y with
+  | zero => simp
+  | succ k ih =>
+      simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply]
+      exact ih ⁅x, y⁆
+
 section Adjoint
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R L']
 
 /-- An additional adjoint action can be applied to the argument before the preceding powers. -/
 theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
@@ -295,26 +313,11 @@ theorem _root_.LieSubalgebra.engel_neg (x : L) :
   refine ⟨fun ⟨n, hn⟩ => ⟨n, ?_⟩, fun ⟨n, hn⟩ => ⟨n, ad_neg_pow_apply_eq_zero hn⟩⟩
   simpa using ad_neg_pow_apply_eq_zero hn
 
-end Adjoint
-
-/-- **The adjoint action does not depend on the base ring.** A Lie algebra over two commutative
-rings has one bracket, so iterating `ad` over either ring gives the same element. This reads a
-higher Serre relation proved over `ℤ` as the relation asked of a Lie algebra over `ℚ`. -/
-theorem ad_pow_apply_eq_ad_pow_apply {L : Type*} [LieRing L] (R S : Type*) [CommRing R]
-    [CommRing S] [LieAlgebra R L] [LieAlgebra S L] (x y : L) (k : ℕ) :
-    (LieAlgebra.ad R L x ^ k) y = (LieAlgebra.ad S L x ^ k) y := by
-  induction k generalizing y with
-  | zero => simp
-  | succ k ih =>
-      simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply]
-      exact ih ⁅x, y⁆
-
 /-- **A Lie homomorphism carries the iterated adjoint action.** `f ((ad x) ^ n y)` is
 `(ad (f x)) ^ n (f y)`; relations of the form `(ad x) ^ n y = 0`, such as
 Serre's, are transported along a homomorphism by this. -/
 @[simp]
-theorem _root_.LieHom.map_ad_pow {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-    [LieRing L'] [LieAlgebra R L'] (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y : L) :
+theorem _root_.LieHom.map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y : L) :
     f ((LieAlgebra.ad R L x ^ n) y) = (LieAlgebra.ad R L' (f x) ^ n) (f y) := by
   induction n generalizing y with
   | zero => simp
@@ -324,8 +327,7 @@ theorem _root_.LieHom.map_ad_pow {R L L' : Type*} [CommRing R] [LieRing L] [LieA
 
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
 to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/
-theorem _root_.LieHom.isNilpotent_ad_of_surjective {R L L' : Type*} [CommRing R]
-    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+theorem _root_.LieHom.isNilpotent_ad_of_surjective
     (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) {x : L}
     (hx : IsNilpotent (LieAlgebra.ad R L x)) :
     IsNilpotent (LieAlgebra.ad R L' (f x)) := by
@@ -335,14 +337,10 @@ theorem _root_.LieHom.isNilpotent_ad_of_surjective {R L L' : Type*} [CommRing R]
   rw [← f.map_ad_pow, hn]
   simp
 
-section LieIdealComap
-
-variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
-  [LieAlgebra R L'] (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L')
+variable (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L')
 
 /-- The restriction of a Lie homomorphism `f` to the preimage of a Lie ideal `I`, as a Lie
 homomorphism into `I`. This is the Lie analogue of `LinearMap.submoduleComap`. -/
-@[expose]
 def _root_.LieHom.lieIdealComap : I.comap f →ₗ⁅R⁆ I where
   toFun x := ⟨f x, LieIdeal.mem_comap.mp x.property⟩
   map_add' _ _ := Subtype.ext (map_add f _ _)
@@ -351,7 +349,7 @@ def _root_.LieHom.lieIdealComap : I.comap f →ₗ⁅R⁆ I where
 
 @[simp]
 theorem _root_.LieHom.coe_lieIdealComap_apply (x : I.comap f) :
-    (f.lieIdealComap I x : L') = f x :=
+    (f.lieIdealComap I x : L') = f x := by
   rfl
 
 /-- The restriction of an injective Lie homomorphism to the preimage of a Lie ideal is
@@ -360,7 +358,7 @@ theorem _root_.LieHom.lieIdealComap_injective (hf : Function.Injective f) :
     Function.Injective (f.lieIdealComap I) := fun x y h ↦
   Subtype.ext (hf (by simpa using congrArg Subtype.val h))
 
-end LieIdealComap
+end Adjoint
 
 end TauCeti
 

@@ -146,7 +146,10 @@ universe v
 
 variable {n : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
   {A : Type v} [AddCommGroup A] [Module (ZMod n) A] [TopologicalSpace A]
-  [IsTopologicalAddGroup A]
+
+section
+
+variable [IsTopologicalAddGroup A]
 
 /-- Continuous homomorphisms into a `ZMod n`-module form a `ZMod n`-module pointwise. -/
 noncomputable instance instModuleContinuousZModHom :
@@ -176,6 +179,8 @@ theorem continuousZModHom.evalₗ_apply (g : G) (f : Additive (G →ₜ* Multipl
   rw [continuousZModHom.evalₗ, AddMonoidHom.coe_toZModLinearMap]
   rfl
 
+end
+
 private def continuousZModDualTensorPure (x : continuousZModDual n G) (a : A) :
     Additive (G →ₜ* Multiplicative A) :=
   Additive.ofMul
@@ -187,7 +192,6 @@ private def continuousZModDualTensorPure (x : continuousZModDual n G) (a : A) :
         Multiplicative (ZMod n) ↦ Multiplicative.ofAdd (Multiplicative.toAdd z • a)).comp
           (Additive.toMul x).continuous }
 
-omit [IsTopologicalAddGroup A] in
 @[simp]
 private theorem continuousZModDualTensorPure_apply
     (x : continuousZModDual n G) (a : A) (g : G) :
@@ -195,7 +199,6 @@ private theorem continuousZModDualTensorPure_apply
       Multiplicative.ofAdd (Multiplicative.toAdd (Additive.toMul x g) • a) :=
   rfl
 
-omit [IsTopologicalAddGroup A] in
 @[simp]
 private theorem continuousZModDualTensorPure_zero (x : continuousZModDual n G) :
     continuousZModDualTensorPure (A := A) x 0 = 0 := by
@@ -204,6 +207,17 @@ private theorem continuousZModDualTensorPure_zero (x : continuousZModDual n G) :
   intro g
   rw [continuousZModDualTensorPure_apply]
   simp
+
+@[simp]
+private theorem continuousZModDualTensorPure_zero_left (a : A) :
+    continuousZModDualTensorPure (G := G) (0 : continuousZModDual n G) a = 0 := by
+  apply Additive.toMul.injective
+  apply ContinuousMonoidHom.ext
+  intro g
+  rw [continuousZModDualTensorPure_apply]
+  simp
+
+variable [IsTopologicalAddGroup A]
 
 @[simp]
 private theorem continuousZModDualTensorPure_add (x : continuousZModDual n G) (a b : A) :
@@ -216,16 +230,6 @@ private theorem continuousZModDualTensorPure_add (x : continuousZModDual n G) (a
   simp only [toMul_add, ContinuousMonoidHom.mul_apply,
     continuousZModDualTensorPure_apply]
   exact congrArg Multiplicative.ofAdd (smul_add _ _ _)
-
-omit [IsTopologicalAddGroup A] in
-@[simp]
-private theorem continuousZModDualTensorPure_zero_left (a : A) :
-    continuousZModDualTensorPure (G := G) (0 : continuousZModDual n G) a = 0 := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModDualTensorPure_apply]
-  simp
 
 @[simp]
 private theorem continuousZModDualTensorPure_add_left
