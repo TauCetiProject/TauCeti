@@ -17,10 +17,10 @@ infinite set contains finite subsets of every cardinality, so its measure is `�
 
 public section
 
-open Set
+open Set MeasureTheory Measure
 open scoped ENNReal
 
-namespace MeasureTheory.Measure
+namespace TauCeti
 
 /-- Zero-dimensional Hausdorff measure is counting measure. Thus the normalized Euclidean
 Hausdorff measure `μHE[0]` also counts points, by `euclideanHausdorffMeasure_zero`. -/
@@ -41,4 +41,4 @@ theorem hausdorffMeasure_zero_eq_count {X : Type*} [EMetricSpace X] [MeasurableS
       _ = μH[0] (t : Set X) := (hfinite t t.finite_toSet).symm
       _ ≤ μH[0] s := measure_mono ht
 
-end MeasureTheory.Measure
+end TauCeti
