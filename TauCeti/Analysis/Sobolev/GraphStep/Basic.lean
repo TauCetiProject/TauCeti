@@ -368,6 +368,14 @@ theorem norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
   rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
   exact WithLp.prod_norm_sq_eq_of_L2 u.1
 
+/-- The graph norm is at most the sum of the norms of the two components. -/
+theorem norm_le_norm_prev_add_norm_weakFDeriv
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (u : WeakDerivStep mu Omega p base) :
+    ‖u‖ ≤ ‖prev base u‖ + ‖weakFDeriv base u‖ := by
+  refine le_of_sq_le_sq ?_ (by positivity)
+  rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
+  nlinarith [norm_nonneg (prev base u), norm_nonneg (weakFDeriv base u)]
+
 end SeminormedModule
 
 section UniformModule
