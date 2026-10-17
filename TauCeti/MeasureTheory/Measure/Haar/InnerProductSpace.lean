@@ -26,6 +26,8 @@ in which a Riemannian volume density is expressed, into integrals against the vo
 
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
+* `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
+  Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
 
 ## References
 
@@ -71,3 +73,18 @@ theorem volume_eq_smul_addHaar (b : Basis ι ℝ E) :
   exact Measure.addHaarMeasure_unique volume b.parallelepiped
 
 end Module.Basis
+
+namespace AffineIsometryEquiv
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- Every affine isometry between finite-dimensional real inner product spaces preserves the
+volume measure: it is a linear isometry followed by a translation. -/
+theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
+  have hf : ⇑f = fun x => f.linearIsometryEquiv x + f 0 := funext fun x => by
+    simpa using f.map_vadd 0 x
+  rw [hf]
+  exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
+
+end AffineIsometryEquiv

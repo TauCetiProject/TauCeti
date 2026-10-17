@@ -25,16 +25,64 @@ open MeasureTheory Set
 
 namespace MeasureTheory.Measure
 
-variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X]
+variable {X : Type*} [MeasurableSpace X]
 
 /-- The set of points carrying positive singleton mass. -/
 def positiveSingletons (μ : Measure X) : Set X := {x | μ {x} ≠ 0}
 
-omit [MeasurableSingletonClass X] in
 /-- Membership in `positiveSingletons` means that the singleton has nonzero mass. -/
 @[simp]
 theorem mem_positiveSingletons_iff (μ : Measure X) (x : X) :
     x ∈ positiveSingletons μ ↔ μ {x} ≠ 0 := Iff.rfl
+
+/-- The restriction of a measure to all of its positive-mass singleton points. -/
+def atomicPart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)
+
+/-- Evaluate the atomic part on a measurable set. -/
+@[simp]
+theorem atomicPart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
+    atomicPart μ s = μ (s ∩ positiveSingletons μ) := by
+  rw [atomicPart, restrict_apply hs]
+
+/-- The complementary restriction to the points with zero singleton mass. -/
+def diffusePart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)ᶜ
+
+/-- Evaluate the diffuse part on a measurable set. -/
+@[simp]
+theorem diffusePart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
+    diffusePart μ s = μ (s ∩ (positiveSingletons μ)ᶜ) := by
+  rw [diffusePart, restrict_apply hs]
+
+/-- Restricting to the positive-mass points does not increase a measure. -/
+theorem atomicPart_le (μ : Measure X) : atomicPart μ ≤ μ := by
+  simpa only [atomicPart] using (Measure.restrict_le_self : μ.restrict (positiveSingletons μ) ≤ μ)
+
+/-- Restricting to the zero-mass points does not increase a measure. -/
+theorem diffusePart_le (μ : Measure X) : diffusePart μ ≤ μ := by
+  simpa only [diffusePart] using
+    (Measure.restrict_le_self : μ.restrict (positiveSingletons μ)ᶜ ≤ μ)
+
+/-- The atomic part is absolutely continuous with respect to the original measure. -/
+theorem atomicPart_absolutelyContinuous (μ : Measure X) : atomicPart μ ≪ μ :=
+  atomicPart_le μ |>.absolutelyContinuous
+
+/-- The diffuse part is absolutely continuous with respect to the original measure. -/
+theorem diffusePart_absolutelyContinuous (μ : Measure X) : diffusePart μ ≪ μ :=
+  diffusePart_le μ |>.absolutelyContinuous
+
+/-- The atomic part of a finite measure is finite. -/
+instance atomicPart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
+    IsFiniteMeasure (atomicPart μ) := by
+  unfold atomicPart
+  infer_instance
+
+/-- The diffuse part of a finite measure is finite. -/
+instance diffusePart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
+    IsFiniteMeasure (diffusePart μ) := by
+  unfold diffusePart
+  infer_instance
+
+variable [MeasurableSingletonClass X]
 
 /-- A s-finite measure has at most countably many positive-mass singleton sets. -/
 theorem countable_positiveSingletons (μ : Measure X) [SFinite μ] :
@@ -46,16 +94,6 @@ theorem countable_positiveSingletons (μ : Measure X) [SFinite μ] :
 theorem measurableSet_positiveSingletons (μ : Measure X) [SFinite μ] :
     MeasurableSet (positiveSingletons μ) :=
   (countable_positiveSingletons μ).measurableSet
-
-/-- The restriction of a measure to all of its positive-mass singleton points. -/
-def atomicPart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)
-
-omit [MeasurableSingletonClass X] in
-/-- Evaluate the atomic part on a measurable set. -/
-@[simp]
-theorem atomicPart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
-    atomicPart μ s = μ (s ∩ positiveSingletons μ) := by
-  rw [atomicPart, restrict_apply hs]
 
 /-- The atomic part preserves the mass of every singleton. -/
 theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
@@ -95,16 +133,6 @@ theorem atomicPart_eq_sum_dirac (μ : Measure X) [SFinite μ] :
       μ {(x : X)} • Measure.dirac (x : X) :=
   @atomicPart_eq_sum_dirac_of_countable X _ _ μ (countable_positiveSingletons μ).to_subtype
 
-/-- The complementary restriction to the points with zero singleton mass. -/
-def diffusePart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)ᶜ
-
-omit [MeasurableSingletonClass X] in
-/-- Evaluate the diffuse part on a measurable set. -/
-@[simp]
-theorem diffusePart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
-    diffusePart μ s = μ (s ∩ (positiveSingletons μ)ᶜ) := by
-  rw [diffusePart, restrict_apply hs]
-
 /-- The diffuse part gives zero mass to every singleton. -/
 theorem diffusePart_apply_singleton (μ : Measure X) (x : X) :
     diffusePart μ {x} = 0 := by
@@ -122,39 +150,6 @@ theorem atomicPart_apply_compl (μ : Measure X) [SFinite μ] :
     atomicPart μ (positiveSingletons μ)ᶜ = 0 := by
   rw [atomicPart_apply μ _ (measurableSet_positiveSingletons μ).compl]
   simp
-
-omit [MeasurableSingletonClass X] in
-/-- Restricting to the positive-mass points does not increase a measure. -/
-theorem atomicPart_le (μ : Measure X) : atomicPart μ ≤ μ := by
-  simpa only [atomicPart] using (Measure.restrict_le_self : μ.restrict (positiveSingletons μ) ≤ μ)
-
-omit [MeasurableSingletonClass X] in
-/-- Restricting to the zero-mass points does not increase a measure. -/
-theorem diffusePart_le (μ : Measure X) : diffusePart μ ≤ μ := by
-  simpa only [diffusePart] using
-    (Measure.restrict_le_self : μ.restrict (positiveSingletons μ)ᶜ ≤ μ)
-
-omit [MeasurableSingletonClass X] in
-/-- The atomic part is absolutely continuous with respect to the original measure. -/
-theorem atomicPart_absolutelyContinuous (μ : Measure X) : atomicPart μ ≪ μ :=
-  atomicPart_le μ |>.absolutelyContinuous
-
-omit [MeasurableSingletonClass X] in
-/-- The diffuse part is absolutely continuous with respect to the original measure. -/
-theorem diffusePart_absolutelyContinuous (μ : Measure X) : diffusePart μ ≪ μ :=
-  diffusePart_le μ |>.absolutelyContinuous
-
-/-- The atomic part of a finite measure is finite. -/
-instance atomicPart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
-    IsFiniteMeasure (atomicPart μ) := by
-  unfold atomicPart
-  infer_instance
-
-/-- The diffuse part of a finite measure is finite. -/
-instance diffusePart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
-    IsFiniteMeasure (diffusePart μ) := by
-  unfold diffusePart
-  infer_instance
 
 /-- The point-mass part and the diffuse remainder sum to the original s-finite measure. -/
 theorem atomicPart_add_diffusePart (μ : Measure X) [SFinite μ] :
