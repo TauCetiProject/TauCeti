@@ -16,8 +16,8 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 A homomorphism of topological groups is *strict* (`Topology.IsStrictMap`) if it is continuous and
 open onto its image with the subspace topology. For first-countable nonarchimedean abelian groups,
 strictness and exactness survive passage to the separated completions: if `G → H → K` is exact
-with strict maps, then so is `Ĝ → Ĥ → K̂`. No Hausdorff hypothesis is made on the original groups;
-an indiscrete group completes to zero.
+with strict maps, then so is `Completion G → Completion H → Completion K`. No Hausdorff hypothesis
+is made on the original groups; an indiscrete group completes to zero.
 
 This is how exactness of an algebraic complex of topological modules (for instance a Čech complex
 of localizations with adic topologies) becomes exactness of the complex of completions, which is
