@@ -35,6 +35,8 @@ Here `H` and `h` are Mathlib's multiplicative and logarithmic heights `Height.mu
   `Q(β) ≠ 0`.
 * `TauCeti.neg_sum_mul_log_den_le_log_abs_eval`: its logarithmic form
   `-∑ᵢ rᵢ log den(βᵢ) ≤ log |Q(β)|`.
+* `TauCeti.prod_abs_sub_pow_le_exp`: `∏ᵢ |βᵢ - aᵢ| ^ dᵢ ≤ exp(-κ D t)` for a multi-index `d ≤ r`
+  of weight at least `t`.
 * `TauCeti.abs_eval_le_of_le_weightedIndex`: the upper bound for a real polynomial of weighted
   index at least `t` at `a`.
 * `TauCeti.log_abs_eval_le_of_le_weightedIndex`: its logarithmic form
@@ -107,9 +109,10 @@ theorem neg_sum_mul_log_den_le_log_abs_eval {Q : MvPolynomial σ ℤ} {r : σ �
 
 /-! ### The upper bound -/
 
-/-- A jet of weight at least `t`, paired with the differences `βᵢ - aᵢ` of rational
-approximations, is exponentially small: `∏ᵢ |βᵢ - aᵢ| ^ dᵢ ≤ exp(-κ D t)`. -/
-private theorem prod_abs_sub_pow_le_exp {r : σ → ℕ} {a : σ → ℝ} {β : σ → ℚ} {κ D t : ℝ}
+/-- **Smallness of a high-weight monomial in the approximation errors.** If `β ∈ ℚ^σ` satisfies
+`|βᵢ - aᵢ| ≤ H(βᵢ) ^ (-κ)` and `D ≤ rᵢ h(βᵢ)` for all `i`, with `κ, D ≥ 0`, then every
+multi-index `d ≤ r` of weight `∑ᵢ dᵢ / rᵢ ≥ t` has `∏ᵢ |βᵢ - aᵢ| ^ dᵢ ≤ exp(-κ D t)`. -/
+theorem prod_abs_sub_pow_le_exp {r : σ → ℕ} {a : σ → ℝ} {β : σ → ℚ} {κ D t : ℝ}
     (hκ : 0 ≤ κ) (hD : 0 ≤ D) (hβ : ∀ i, |(β i : ℝ) - a i| ≤ mulHeight₁ (β i) ^ (-κ))
     (hr : ∀ i, D ≤ r i * logHeight₁ (β i)) {d : σ →₀ ℕ} (hdr : ∀ i, d i ≤ r i)
     (ht : t ≤ ∑ i, (d i : ℝ) / r i) :
