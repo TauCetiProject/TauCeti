@@ -218,7 +218,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
   intro mu _ Omega w A B x₀ r R hA hB hr hrR hball hcacc
   -- A cutoff equal to one on `ball x₀ r` and supported in
   -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hC x₀ hr (by linarith : r < (r + R) / 2)
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hC x₀ hr.le (by linarith : r < (r + R) / 2)
   have htsR : tsupport ψ ⊆ ball x₀ R :=
     hts.trans (closedBall_subset_ball (by linarith))
   have hcpt : HasCompactSupport ψ :=
