@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Translation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.InvariantTheory
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Equivariance
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
+import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 
 /-!
 # Faithful flatness over invariants of a linearly reductive subgroup
@@ -41,26 +42,33 @@ universe u
 variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
   (I : HopfIdeal k H)
 
-/-- Over an algebraically closed field, every closed point of the invariant spectrum
-lifts to a rational point of the ambient group. -/
-theorem exists_kernelPoint_comap_coinvariants_eq [IsAlgClosed k] [Algebra.FiniteType k H]
+/-- Over an algebraically closed field, ambient left translations act transitively on
+closed points of the invariants of a linearly reductive closed subgroup of a finite-type
+affine group. -/
+theorem exists_coinvariantsLeftTranslation_comap_eq [IsAlgClosed k]
+    [Algebra.FiniteType k H]
     (hI : Coalgebra.IsLinearlyReductive.{u, u, u} k (H ⧸ I.toIdeal))
-    (p : PrimeSpectrum I.coinvariants) (hp : IsClosed {p}) :
-    ∃ a : H →ₐ[k] k, PrimeSpectrum.comap I.coinvariants.val.toRingHom
-      (AlgHom.kernelPoint a) = p := by
-  have hpmax := p.isClosed_singleton_iff_isMaximal.mp hp
-  have hproper : p.asIdeal.map I.coinvariants.val.toRingHom ≠ ⊤ := by
-    intro heq
-    have hc := I.comap_map_coinvariants_of_isLinearlyReductive hI p.asIdeal
-    rw [heq, Ideal.comap_top] at hc
-    exact hpmax.ne_top hc.symm
-  obtain ⟨Q, hQmax, hQ⟩ := Ideal.exists_le_maximal _ hproper
-  obtain ⟨a, ha⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k)
-    ⟨Q, hQmax.isPrime⟩ ((PrimeSpectrum.isClosed_singleton_iff_isMaximal _).mpr hQmax)
-  refine ⟨a, ?_⟩
-  rw [ha]
-  exact PrimeSpectrum.ext (hpmax.eq_of_le
-    (Ideal.comap_ne_top _ hQmax.ne_top) (Ideal.map_le_iff_le_comap.mp hQ)).symm
+    (y z : PrimeSpectrum I.coinvariants) (hy : IsClosed {y}) (hz : IsClosed {z}) :
+    ∃ g : WithConv (H →ₐ[k] k),
+      PrimeSpectrum.comap (I.coinvariantsLeftTranslation g).toAlgHom.toRingHom y = z := by
+  let : Algebra.FiniteType k I.coinvariants :=
+    I.finiteType_coinvariants_of_isLinearlyReductive hI
+  let : Algebra.FiniteType I.coinvariants H :=
+    Algebra.FiniteType.of_restrictScalars_finiteType k I.coinvariants H
+  obtain ⟨b, rfl⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) y hy
+  obtain ⟨c, rfl⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) z hz
+  have hlift := _root_.AlgHom.surjective_comp_right_of_comap_surjective (K := k)
+    I.coinvariants.val (RingHom.finiteType_algebraMap.mpr inferInstance)
+    (I.surjective_comap_coinvariants_of_isLinearlyReductive hI)
+  obtain ⟨p, rfl⟩ := hlift b
+  obtain ⟨q, rfl⟩ := hlift c
+  refine ⟨toConv q * (toConv p)⁻¹, ?_⟩
+  refine (AlgHom.comap_kernelPoint (p.comp I.coinvariants.val)
+    (I.coinvariantsLeftTranslation (toConv q * (toConv p)⁻¹)).toAlgHom).trans ?_
+  apply congrArg AlgHom.kernelPoint
+  simpa only [Algebra.ofId_self, _root_.AlgHom.mapValue_id, MonoidHom.id_apply,
+    inv_mul_cancel_right, ofConv_toConv] using
+    I.comp_coinvariantsLeftTranslation (toConv q * (toConv p)⁻¹) (toConv p)
 
 /-- The coordinate algebra of a reduced finite-type affine group over an algebraically
 closed field is faithfully flat over the invariants of a linearly reductive closed subgroup. -/
@@ -99,24 +107,10 @@ theorem faithfullyFlat_coinvariants_of_isLinearlyReductive [IsAlgClosed k]
       exact CommRingCat.hom_ext (RingHom.ext fun x ↦
         (I.coe_coinvariantsLeftTranslation g x).symm)
     · intro y z hy hz
-      obtain ⟨p, hp⟩ := I.exists_kernelPoint_comap_coinvariants_eq hI y hy
-      obtain ⟨q, hq⟩ := I.exists_kernelPoint_comap_coinvariants_eq hI z hz
-      have hp' : AlgHom.kernelPoint (p.comp I.coinvariants.val) = y :=
-        (AlgHom.comap_kernelPoint p I.coinvariants.val).symm.trans hp
-      have hq' : AlgHom.kernelPoint (q.comp I.coinvariants.val) = z :=
-        (AlgHom.comap_kernelPoint q I.coinvariants.val).symm.trans hq
-      let g := toConv q * (toConv p)⁻¹
+      obtain ⟨g, hg⟩ := I.exists_coinvariantsLeftTranslation_comap_eq hI y z hy hz
       refine ⟨g, ?_⟩
-      rw [← hp', ← hq', hb, AlgebraicGeometry.Spec.map_apply]
-      refine (AlgHom.comap_kernelPoint (p.comp I.coinvariants.val)
-        (I.coinvariantsLeftTranslation g).toAlgHom).trans ?_
-      have h := congrArg AlgHom.kernelPoint
-        (I.comp_coinvariantsLeftTranslation g (toConv p))
-      -- The kernel-point API uses the scheme carrier, while Spec.map_apply uses the
-      -- underlying prime spectrum; conversion aligns these presentations before simplification.
-      convert! h using 1
-      simp [g]
-      rfl
+      rw [hb, AlgebraicGeometry.Spec.map_apply]
+      exact hg
   apply RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mpr
   exact ⟨(HasRingHomProperty.Spec_iff (P := @Flat)).mp hflat,
     I.surjective_comap_coinvariants_of_isLinearlyReductive hI⟩

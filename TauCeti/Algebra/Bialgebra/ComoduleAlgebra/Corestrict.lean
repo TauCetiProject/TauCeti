@@ -38,13 +38,27 @@ noncomputable def Corestrict (f : H →ₐc[R] K) : ComoduleAlgebra R K A where
       Comodule.corestrict_coact_apply, Comodule.corestrict_coact_apply]
     exact (Algebra.TensorProduct.map (AlgHom.id R A) f.toAlgHom).map_mul _ _
 
+/-- The underlying comodule of a corestricted comodule algebra is its corestriction. -/
+theorem toComodule_corestrict (f : H →ₐc[R] K) :
+    (Corestrict (A := A) f).toComodule = Comodule.Corestrict f.toCoalgHom := by
+  rfl
+
+/-- The corestricted coaction applies `id ⊗ f` to the original coaction. -/
+theorem coact_corestrict_apply (f : H →ₐc[R] K) (a : A) :
+    letI := Corestrict (A := A) f
+    Comodule.coact (R := R) (C := K) a =
+      Algebra.TensorProduct.map (AlgHom.id R A) f.toAlgHom
+        (Comodule.coact (R := R) (C := H) a) := by
+  rw [toComodule_corestrict, Comodule.corestrict_coact_apply]
+  exact (DFunLike.congr_fun
+    (Algebra.TensorProduct.toLinearMap_map (AlgHom.id R A) f.toAlgHom) _).symm
+
 /-- The corestricted algebra coaction is the original coaction followed by `id ⊗ f`. -/
 theorem coactAlgHom_corestrict (f : H →ₐc[R] K) :
     letI := Corestrict (A := A) f
     coactAlgHom R K A =
       (Algebra.TensorProduct.map (AlgHom.id R A) f.toAlgHom).comp (coactAlgHom R H A) := by
   ext a
-  simp only [coactAlgHom_apply, AlgHom.comp_apply]
-  rfl
+  simp only [coactAlgHom_apply, AlgHom.comp_apply, coact_corestrict_apply]
 
 end TauCeti.ComoduleAlgebra
