@@ -224,7 +224,8 @@ theorem localArtinAt_eq_one_iff_mem_normGroup [IsMulCommutative Gal(L/K)]
     induction z using QuotientGroup.induction_on with
     | H ρ =>
       intro h
-      have h' : φ ρ ∈ (Abelianization.of (G := Gal(L/K))).ker := h
+      have h' : φ ρ ∈ (Abelianization.of (G := Gal(L/K))).ker :=
+        MonoidHom.mem_ker.2 (by rwa [← Abelianization.map_of])
       rw [Abelianization.ker_of, commutator_eq_bot, Subgroup.mem_bot] at h'
       have hρ : ρ = 1 := (HeightOneSpectrum.decompositionEquiv v w).symm.injective <|
         Subtype.ext (by simpa [φ] using h')
@@ -258,8 +259,8 @@ theorem localArtinAt_eq_of_isArithFrobAt {σ : Gal(L/K)} (hσ : IsArithFrobAt (�
       (HeightOneSpectrum.decompositionHom_eq_frobeniusAlgEquiv v w hσ).symm.trans
         (congrFun (HeightOneSpectrum.coe_decompositionEquiv v w) _).symm
   rw [localArtinAt_eq_map_normResidue v w, normResidue_mk _ _ IsSepClosed.lift,
-    localArtinMap_eq_frobenius_pow_valuation, toMul_ofMul, Abelianization.map_of, map_zpow,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hfrob, Subgroup.coe_subtype, map_zpow]
+    localArtinMap_eq_frobenius_pow_valuation]
+  simp [hfrob]
 
 /-- **A uniformizer has Frobenius as local Artin symbol** at a place unramified in `L`. -/
 theorem localArtinAt_uniformizer_eq_of_isArithFrobAt {σ : Gal(L/K)}
