@@ -16,8 +16,8 @@ import TauCeti.MeasureTheory.Measure.Measurability
 # Mixtures with one atom
 
 This file defines `MeasureTheory.Measure.atomMixture μ c w`, the convex mixture of a measure
-`μ` with a point mass at `c`.  The weight `w` belongs to the unit interval and is the mass assigned
-to the distinguished atom.
+`μ` with a point mass at `c`.  The weight `w` belongs to the unit interval and is the weight of
+the added Dirac component.
 
 The main results give the characteristic measure identities: evaluation on measurable sets,
 singleton masses, measurability in all three parameters, and the decomposition of a mixture with
@@ -41,6 +41,12 @@ def atomMixture {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) (w : unitInterval) : Measure α :=
   ENNReal.ofReal (w : ℝ) • Measure.dirac c +
     ENNReal.ofReal (1 - (w : ℝ)) • μ
+
+/-- An atom mixture is the weighted sum of its Dirac and base components. -/
+theorem atomMixture_def {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) (c : α) (w : unitInterval) :
+    atomMixture μ c w = ENNReal.ofReal (w : ℝ) • Measure.dirac c +
+      ENNReal.ofReal (1 - (w : ℝ)) • μ := (rfl)
 
 /-- Evaluation of an atom mixture on a measurable set. -/
 theorem atomMixture_apply {α : Type*} [MeasurableSpace α]
@@ -106,7 +112,7 @@ theorem measurable_atomMixture {β α : Type*} [MeasurableSpace β] [MeasurableS
       (measurable_const.sub (measurable_subtype_coe.comp hw))).mul
       ((Measure.measurable_coe hs).comp hμ))
 
-/-- If the non-atomic component has density `f`, the same component in the mixture has density
+/-- If the base component has density `f`, the same component in the mixture has density
 `(1 - w) f`.  The atom remains separate. -/
 theorem atomMixture_withDensity {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (f : α → ℝ≥0∞) (c : α) (w : unitInterval) :
@@ -149,16 +155,23 @@ theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSi
 
 namespace TauCeti.Probability
 
+/-- Integrating against an atom mixture gives the corresponding convex combination. -/
+theorem integral_atomMixture {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    (μ : Measure α) (c : α) (w : unitInterval) (f : α → ℝ) (hf : Integrable f μ) :
+    ∫ x, f x ∂μ.atomMixture c w =
+      (w : ℝ) * f c + (1 - (w : ℝ)) * ∫ x, f x ∂μ := by
+  rw [Measure.atomMixture, integral_add_measure]
+  · simp [ENNReal.toReal_ofReal (unitInterval.nonneg w),
+      ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
+  · exact (integrable_dirac (by simp)).smul_measure (by simp)
+  · exact hf.smul_measure (by simp)
+
 /-- The mean of an atom mixture is the convex combination of the component means. -/
 theorem integral_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable id μ) :
     ∫ x, x ∂μ.atomMixture c w =
       (w : ℝ) * c + (1 - (w : ℝ)) * ∫ x, x ∂μ := by
-  rw [Measure.atomMixture, integral_add_measure]
-  · simp [ENNReal.toReal_ofReal (unitInterval.nonneg w),
-      ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
-  · exact (integrable_dirac (by simp)).smul_measure (by simp)
-  · exact hμ.smul_measure (by simp)
+  simpa only [id_eq] using integral_atomMixture μ c w id hμ
 
 /-- The second raw moment of an atom mixture is the convex combination of the component second
 moments. -/
@@ -166,11 +179,7 @@ theorem integral_sq_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable (fun x => x ^ 2) μ) :
     ∫ x, x ^ 2 ∂μ.atomMixture c w =
       (w : ℝ) * c ^ 2 + (1 - (w : ℝ)) * ∫ x, x ^ 2 ∂μ := by
-  rw [Measure.atomMixture, integral_add_measure]
-  · simp [ENNReal.toReal_ofReal (unitInterval.nonneg w),
-      ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
-  · exact (integrable_dirac (by simp)).smul_measure (by simp)
-  · exact hμ.smul_measure (by simp)
+  exact integral_atomMixture μ c w (fun x => x ^ 2) hμ
 
 /-- The variance of an atom mixture is the within-component variance plus the variance caused by
 separating the atom from the component mean. -/
@@ -201,7 +210,7 @@ private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
   · exact hμ.smul_measure (by simp)
 
 /-- Away from the pure-atom endpoint, an atom mixture has an exponential moment exactly when its
-non-atomic component does. -/
+base component does. -/
 theorem integrable_exp_mul_id_atomMixture_iff (μ : Measure ℝ) (c : ℝ)
     {w : unitInterval} (hw : w ≠ 1) (t : ℝ) :
     Integrable (fun x => Real.exp (t * x)) (μ.atomMixture c w) ↔
@@ -214,7 +223,7 @@ theorem integrable_exp_mul_id_atomMixture_iff (μ : Measure ℝ) (c : ℝ)
   exact and_iff_right ((integrable_dirac (by simp)).smul_measure (by simp))
 
 /-- The exact exponential-integrability domain of an atom mixture.  A pure atom has every
-exponential moment; otherwise the domain is that of the non-atomic component. -/
+exponential moment; otherwise the domain is that of the base component. -/
 theorem integrableExpSet_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval) :
     integrableExpSet id (μ.atomMixture c w) =
       if w = 1 then Set.univ else integrableExpSet id μ := by
