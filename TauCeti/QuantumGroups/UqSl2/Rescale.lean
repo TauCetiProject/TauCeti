@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.UqSl2.Basic
-public import Mathlib.Algebra.Algebra.Equiv
 
 /-!
 # Rescaling automorphisms of U_q(sl₂)
