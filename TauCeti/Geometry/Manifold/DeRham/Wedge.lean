@@ -69,13 +69,17 @@ private theorem mem_exactForms_of_apply_eq {n m : ℕ} (h : n = m + 1) {φ : Smo
   ext v
   simpa [Fin.cast_eq_self] using (hφ x v).symm
 
-/-- The Leibniz rule with a closed left factor: `d (φ ∧ β) = (-1) ^ k • φ ∧ dβ`. -/
+/-- The Leibniz rule with a closed left factor: `d (φ ∧ β) = (-1) ^ k • φ ∧ dβ`.
+
+The right-hand side is a `(k + (l + 1))`-form while the left-hand side is a `(k + l + 1)`-form,
+so its argument is reindexed along the associativity equality `k + (l + 1) = k + l + 1`, as in
+`mextDeriv_wedge`. -/
 private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
     (hφ : mextDeriv φ.1 = 0) (β : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
     mextDeriv (φ.1.wedge β.1) x v =
       (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv β.1) x
-        (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+        (v ∘ Fin.cast (Nat.add_assoc k l 1).symm) := by
   rw [mextDeriv_wedge (mdifferentiableAt_section φ x) (mdifferentiableAt_section β x), hφ]
   simp
 
