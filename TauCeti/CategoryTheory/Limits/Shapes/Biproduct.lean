@@ -164,42 +164,48 @@ theorem hasFiniteBiproducts_of_hasBinaryBiproducts [HasZeroObject C] [HasBinaryB
 
 /-- A biproduct indexed by a sum type is the binary biproduct of the two indexed parts. -/
 noncomputable def biproductSumIso {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
-    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.rec f g)]
-    [HasBinaryBiproduct (⨁ f) (⨁ g)] : (⨁ Sum.rec f g) ≅ (⨁ f) ⊞ (⨁ g) where
-  hom := biprod.lift (biproduct.lift fun j ↦ biproduct.π _ (Sum.inl j))
-    (biproduct.lift fun k ↦ biproduct.π _ (Sum.inr k))
-  inv := biproduct.lift fun i ↦ match i with
-    | Sum.inl j => biprod.fst ≫ biproduct.π f j
-    | Sum.inr k => biprod.snd ≫ biproduct.π g k
-  hom_inv_id := by
-    apply biproduct.hom_ext
-    rintro (j | k) <;> simp
-  inv_hom_id := by
-    apply biprod.hom_ext
-    · apply biproduct.hom_ext
-      intro j
-      simp
-    · apply biproduct.hom_ext
-      intro k
-      simp
+    [HasBiproduct f] [HasBiproduct g] [hs : HasBiproduct (Sum.elim f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] : (⨁ Sum.elim f g) ≅ (⨁ f) ⊞ (⨁ g) := by
+  -- Reduce the family so dependent lift types match the projection simp lemmas.
+  change HasBiproduct (Sum.rec f g) at hs
+  change (⨁ Sum.rec f g) ≅ (⨁ f) ⊞ (⨁ g)
+  exact
+    { hom := biprod.lift (biproduct.lift fun j ↦ biproduct.π _ (Sum.inl j))
+        (biproduct.lift fun k ↦ biproduct.π _ (Sum.inr k))
+      inv := biproduct.lift fun i ↦ match i with
+        | Sum.inl j => biprod.fst ≫ biproduct.π f j
+        | Sum.inr k => biprod.snd ≫ biproduct.π g k
+      hom_inv_id := by
+        apply biproduct.hom_ext
+        rintro (j | k) <;> simp
+      inv_hom_id := by
+        apply biprod.hom_ext
+        · apply biproduct.hom_ext
+          intro j
+          simp
+        · apply biproduct.hom_ext
+          intro k
+          simp }
 
 /-- The sum-indexed comparison preserves the projections onto the first indexed part. -/
 @[reassoc (attr := simp)]
 theorem biproductSumIso_hom_fst_π {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
-    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.rec f g)]
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.elim f g)]
     [HasBinaryBiproduct (⨁ f) (⨁ g)] (j : J) :
     (biproductSumIso f g).hom ≫ biprod.fst ≫ biproduct.π f j =
-      biproduct.π (Sum.rec f g) (Sum.inl j) := by
-  simp [biproductSumIso]
+      biproduct.π (Sum.elim f g) (Sum.inl j) := by
+  dsimp +unfoldPartialApp only [biproductSumIso, Sum.elim]
+  simp
 
 /-- The sum-indexed comparison preserves the projections onto the second indexed part. -/
 @[reassoc (attr := simp)]
 theorem biproductSumIso_hom_snd_π {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
-    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.rec f g)]
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.elim f g)]
     [HasBinaryBiproduct (⨁ f) (⨁ g)] (k : K) :
     (biproductSumIso f g).hom ≫ biprod.snd ≫ biproduct.π g k =
-      biproduct.π (Sum.rec f g) (Sum.inr k) := by
-  simp [biproductSumIso]
+      biproduct.π (Sum.elim f g) (Sum.inr k) := by
+  dsimp +unfoldPartialApp only [biproductSumIso, Sum.elim]
+  simp
 
 variable {J : Type w} (f : Option J → C) [HasBiproduct f]
   [HasBiproduct fun j => f (some j)] [HasBinaryBiproduct (f none) (⨁ fun j => f (some j))]

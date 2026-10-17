@@ -20,8 +20,7 @@ division rings is required. Equal multiplicities characterize isomorphic objects
 multiplicities are additive on binary biproducts and vanish exactly on zero objects.
 
 Uniqueness uses Mathlib's `HomOrthogonal.equiv_of_iso`: Schur's lemma makes the chosen simple
-representatives hom orthogonal and their endomorphism rings division rings. The resulting
-multiplicities provide the object invariant used to form the free group on simple classes.
+representatives hom orthogonal and their endomorphism rings division rings.
 -/
 
 public section
@@ -180,21 +179,20 @@ theorem simpleMultiplicities_biprod (X Y : C) :
   let := hg
   let := hbf
   let := hbg
-  let s : ι ⊕ κ → C := Sum.rec f g
-  let hs : ∀ i, Simple (s i) := by
-    rintro (i | j) <;> dsimp [s] <;> infer_instance
+  let s : ι ⊕ κ → C := Sum.elim f g
+  let : ∀ i, Simple (s i) := fun
+    | .inl i => hf i
+    | .inr j => hg j
   calc
     simpleMultiplicities (X ⊞ Y) =
-        ∑ i : ι ⊕ κ, (Finsupp.single (@SimpleClasses.classOf C _ _ (s i) (hs i)) 1 :
+        ∑ i : ι ⊕ κ, (Finsupp.single (SimpleClasses.classOf (s i)) 1 :
           SimpleClasses C →₀ ℕ) :=
-      simpleMultiplicities_eq_of_iso_biproduct s (hf := hs)
+      simpleMultiplicities_eq_of_iso_biproduct s
         (biprod.mapIso e d ≪≫ (biproductSumIso f g).symm)
     _ = simpleMultiplicities X + simpleMultiplicities Y := by
       rw [simpleMultiplicities_eq_of_iso_biproduct f e,
-        simpleMultiplicities_eq_of_iso_biproduct g d]
-      exact Fintype.sum_sum_type
-        (fun i : ι ⊕ κ ↦ (Finsupp.single (@SimpleClasses.classOf C _ _ (s i) (hs i)) 1 :
-          SimpleClasses C →₀ ℕ))
+        simpleMultiplicities_eq_of_iso_biproduct g d, Fintype.sum_sum_type]
+      rfl
 
 /-- An object has no simple summands exactly when it is a zero object. -/
 @[simp]

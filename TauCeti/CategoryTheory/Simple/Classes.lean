@@ -19,6 +19,8 @@ in this type exactly isomorphism of representatives, while retaining a chosen re
 
 The type is invariant under equivalence of categories.  This lets finiteness assumptions and sums
 over simple classes be transported without choosing a separate indexing family of objects.
+In a preadditive category with kernels, Schur's lemma makes the chosen representatives of
+distinct simple classes hom orthogonal.
 
 ## Main declarations
 
@@ -27,7 +29,9 @@ over simple classes be transported without choosing a separate indexing family o
 * `TauCeti.SimpleClasses.eq_iff_nonempty_iso`: two classes are equal exactly when their
   representatives are isomorphic;
 * `TauCeti.SimpleClasses.equiv`: an equivalence of categories induces an equivalence between their
-  types of simple classes.
+  types of simple classes;
+* `TauCeti.SimpleClasses.homOrthogonal_repr`: in a preadditive category with kernels, the chosen
+  representatives of distinct simple classes are hom orthogonal (Schur's lemma).
 -/
 
 public section
