@@ -45,7 +45,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 * `TauCeti.Probability.affineDensity`,
   `TauCeti.Probability.map_affine_withDensity_volume` — the transformed density and the
   measure-level change of variables;
-* `TauCeti.Probability.hasPDF_affine`, `TauCeti.Probability.pdf_affine`,
+* `TauCeti.Probability.map_affine_eq_withDensity_pdf`, `TauCeti.Probability.hasLaw_affine`,
+  `TauCeti.Probability.hasPDF_affine`, `TauCeti.Probability.pdf_affine`, and
   `TauCeti.Probability.rnDeriv_map_affine` — the corresponding random-variable and
   Radon–Nikodym interfaces;
 * `TauCeti.Probability.cdf_map_affine_of_pos`, `TauCeti.Probability.cdf_map_affine_of_neg` — the
@@ -96,6 +97,12 @@ continuous law. -/
 noncomputable def affineDensity (a b : ℝ) (f : ℝ → ℝ≥0∞) (y : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal |b|⁻¹ * f ((y - a) / b)
 
+/-- The value of the density obtained by an affine change of variables. -/
+@[simp]
+theorem affineDensity_apply (a b : ℝ) (f : ℝ → ℝ≥0∞) (y : ℝ) :
+    affineDensity a b f y = ENNReal.ofReal |b|⁻¹ * f ((y - a) / b) :=
+  affineDensity.eq_def a b f y
+
 /-- The affine transform of a measurable density is measurable. -/
 @[fun_prop]
 theorem measurable_affineDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) (a b : ℝ) :
@@ -110,8 +117,7 @@ theorem map_affine_withDensity_volume (f : ℝ → ℝ≥0∞) (hb : b ≠ 0) :
       volume.withDensity (affineDensity a b f) := by
   let A : ℝ ≃L[ℝ] ℝ := ContinuousLinearEquiv.smulLeft (Units.mk0 b hb)
   have hA (x : ℝ) : A x = b * x := by
-    simp only [A, ContinuousLinearEquiv.smulLeft_apply_apply]
-    rfl
+    simp [A, Units.smul_def, smul_eq_mul]
   have hAinv (x : ℝ) : A.symm x = x / b := by
     apply A.injective
     rw [A.apply_symm_apply, hA]
@@ -131,37 +137,6 @@ theorem map_affine_withDensity_volume (f : ℝ → ℝ≥0∞) (hb : b ≠ 0) :
   simp only [affineDensity]
   rw [hAinv, hdet, abs_inv]
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
-
-/-- A nonconstant affine transform of a real random variable with a density again has a density. -/
-theorem hasPDF_affine [HasPDF X P] (hb : b ≠ 0) :
-    HasPDF (fun ω ↦ a + b * X ω) P := by
-  let g := affineDensity a b (pdf X P)
-  have hX : AEMeasurable X P := HasPDF.aemeasurable X P volume
-  have hmap : P.map (fun ω ↦ a + b * X ω) = volume.withDensity g := by
-    have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
-    rw [hcomp,
-      ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable hX,
-      map_eq_withDensity_pdf X P volume,
-      map_affine_withDensity_volume (a := a) (b := b) _ hb]
-  exact hasPDF_of_map_eq_withDensity
-    ((hX.const_mul b).const_add a) g
-    (measurable_affineDensity (measurable_pdf X P) a b).aemeasurable hmap
-
-/-- The canonical density of a nonconstant affine transform is
-`|b|⁻¹ pdf X P ((y - a) / b)`. -/
-theorem pdf_affine [HasPDF X P] (hb : b ≠ 0) :
-    pdf (fun ω ↦ a + b * X ω) P =ᵐ[volume] affineDensity a b (pdf X P) := by
-  have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
-  have hmap : P.map (fun ω ↦ a + b * X ω) =
-      volume.withDensity (affineDensity a b (pdf X P)) := by
-    rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable
-      (HasPDF.aemeasurable X P volume), map_eq_withDensity_pdf X P volume,
-      map_affine_withDensity_volume (a := a) (b := b) _ hb]
-  rw [pdf_def, hmap]
-  exact Measure.rnDeriv_withDensity volume
-    (measurable_affineDensity (measurable_pdf X P) a b)
-
 /-- The Radon–Nikodym derivative of a nonconstant affine image of an absolutely continuous real
 measure is the affine transform of its Radon–Nikodym derivative. -/
 theorem rnDeriv_map_affine (hμ : μ ≪ volume) (hb : b ≠ 0) :
@@ -172,6 +147,46 @@ theorem rnDeriv_map_affine (hμ : μ ≪ volume) (hb : b ≠ 0) :
   rw [map_affine_withDensity_volume (a := a) (b := b) _ hb]
   exact Measure.rnDeriv_withDensity volume
     (measurable_affineDensity (Measure.measurable_rnDeriv μ volume) a b)
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+
+/-- The law of a nonconstant affine transform, expressed using the canonical density of the
+original random variable. -/
+theorem map_affine_eq_withDensity_pdf [HasPDF X P] (hb : b ≠ 0) :
+    P.map (fun ω ↦ a + b * X ω) =
+      volume.withDensity (affineDensity a b (pdf X P)) := by
+  have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable
+    (HasPDF.aemeasurable X P volume), map_eq_withDensity_pdf X P volume,
+    map_affine_withDensity_volume (a := a) (b := b) _ hb]
+
+/-- A nonconstant affine transform has the law obtained by affinely transporting its canonical
+density. -/
+theorem hasLaw_affine [HasPDF X P] (hb : b ≠ 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (volume.withDensity (affineDensity a b (pdf X P))) P where
+  aemeasurable := ((HasPDF.aemeasurable X P volume).const_mul b).const_add a
+  map_eq := map_affine_eq_withDensity_pdf (a := a) (b := b) hb
+
+/-- A nonconstant affine transform of a real random variable with a density again has a density. -/
+theorem hasPDF_affine [HasPDF X P] (hb : b ≠ 0) :
+    HasPDF (fun ω ↦ a + b * X ω) P := by
+  let g := affineDensity a b (pdf X P)
+  have hg : AEMeasurable g volume :=
+    (measurable_affineDensity (measurable_pdf X P) a b).aemeasurable
+  have hLaw : HasLaw (fun ω ↦ a + b * X ω) (volume.withDensity g) P :=
+    hasLaw_affine (a := a) (b := b) (X := X) (P := P) hb
+  exact hasPDF_of_hasLaw_withDensity hg hLaw
+
+/-- The canonical density of a nonconstant affine transform is
+`|b|⁻¹ pdf X P ((y - a) / b)`. -/
+theorem pdf_affine [HasPDF X P] (hb : b ≠ 0) :
+    pdf (fun ω ↦ a + b * X ω) P =ᵐ[volume] affineDensity a b (pdf X P) := by
+  have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
+  rw [pdf_def, hcomp,
+    ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable
+      (HasPDF.aemeasurable X P volume)]
+  exact rnDeriv_map_affine (HasPDF.absolutelyContinuous : P.map X ≪ volume) hb
 
 /-! ### Cumulative distribution functions -/
 
