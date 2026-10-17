@@ -28,6 +28,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
+* `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
+  mass of the open ray to its left;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
 
@@ -91,6 +93,24 @@ theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
   intro x
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
     ((cdf ν).right_continuous x).rightLim_eq]
+
+/-- The left limit of the cumulative distribution function of a real probability law at a point is
+the mass of the open ray to the left of that point. -/
+theorem leftLim_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    leftLim (cdf ν) x = ν.real (Iio x) := by
+  have h := (cdf ν).measure_Iio (tendsto_cdf_atBot ν) x
+  rw [measure_cdf, sub_zero] at h
+  have hnonneg : 0 ≤ leftLim (cdf ν) x :=
+    (cdf_nonneg ν (x - 1)).trans ((cdf ν).mono.le_leftLim (by linarith))
+  rw [measureReal_def, h, ENNReal.toReal_ofReal hnonneg]
+
+/-- The mass of the open ray to the left of a point is at most a level exactly when the cumulative
+distribution function stays at most that level at every point strictly to the left. -/
+theorem measureReal_Iio_le_iff_forall_cdf_le (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {x t : ℝ} : ν.real (Iio x) ≤ t ↔ ∀ y < x, cdf ν y ≤ t := by
+  rw [← leftLim_cdf]
+  exact ⟨fun h y hy ↦ ((cdf ν).mono.le_leftLim hy).trans h, fun h ↦
+    le_of_tendsto ((cdf ν).mono.tendsto_leftLim x) (eventually_nhdsWithin_of_forall h)⟩
 
 /-- The mass of a bounded interval `Ioc a b` is the increment of the cumulative distribution
 function between its endpoints. -/
