@@ -41,6 +41,8 @@ replaces `K` by `K(E[m])`, over which `E[m]` is rational.
   restricts to zero over `L` exactly when it restricts to zero on `Gal(Kˢ/σ(L))`.
 * `WeierstrassCurve.ker_pointRes`, `WeierstrassCurve.ker_torsionRes`: the same statement for the
   kernels.
+* `WeierstrassCurve.smul_torsionCoeff_divisionField`: the absolute Galois group of `K(E[m])`
+  acts trivially on the geometric `m`-torsion.
 * `WeierstrassCurve.finite_ker_torsionRes_divisionField`: for `W` elliptic and `m ≠ 0`, restriction
   of `H¹(G_K, E[m])` to the `m`-division field has finite kernel.
 * `WeierstrassCurve.finite_selmerGroup_of_finite_selmerGroup_divisionField`: hence `Sel_m(E/K)` is
@@ -104,6 +106,25 @@ theorem ker_torsionRes (m : ℕ) :
   exact W.torsionRes_eq_zero_iff τ σ
 
 /-! ### Restriction to the division field -/
+
+/-- Every geometric `m`-torsion point is fixed by the absolute Galois group of the
+`m`-division field. No ellipticity or invertibility assumption is needed. -/
+@[simp]
+theorem smul_torsionCoeff_divisionField (m : ℕ)
+    (g : AbsoluteGaloisGroup (W.divisionField m))
+    (P : (W⁄(W.divisionField m)).TorsionCoeff m) : g • P = P := by
+  let e := separableClosureAlgEquiv K (W.divisionField m) (W.divisionField m).val
+  obtain ⟨Q, rfl⟩ := (W.torsionCoeffBaseChange_bijective (τ := e.toAlgHom) m e.bijective).2 P
+  rw [← W.torsionCoeffBaseChange_smul]
+  have hg : absoluteGaloisGroupMap (e : SeparableClosure K →ₐ[K]
+      SeparableClosure (W.divisionField m)) g ∈ (W.divisionField m).fixingSubgroup := by
+    rw [absoluteGaloisGroupMap_separableClosureAlgEquiv]
+    simpa only [_root_.ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      _root_.ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.subgroupSubtype_apply,
+      IntermediateField.fieldRange_val] using
+      (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m)
+        (W.divisionField m).val g).prop
+  rw [(mem_fixingSubgroup_divisionField_iff.1 hg) Q]
 
 /-- **Restriction of `H¹(G_K, E[m])` to the `m`-division field `K(E[m])` has finite kernel**, for
 `W` elliptic and `m ≠ 0`, along any embedding of separable closures. -/
