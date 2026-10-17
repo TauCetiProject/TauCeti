@@ -161,7 +161,7 @@ namespace TauCeti
 
 /-- A vector orthogonal to every elementary tensor has vanishing integral over every measurable
 rectangle whose sides have finite measure. This determines its averages on such rectangles. -/
-theorem setIntegral_prod_eq_zero_of_forall_inner {h : Lp 𝕜 2 (μ.prod ν)}
+theorem setIntegral_prod_eq_zero_of_forall_inner [SFinite ν] {h : Lp 𝕜 2 (μ.prod ν)}
     (hz : ∀ (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν), inner 𝕜 (prodMul F G) h = 0)
     {A : Set α} (hA : MeasurableSet A) (hμA : μ A ≠ ⊤)
     {B : Set β} (hB : MeasurableSet B) (hνB : ν B ≠ ⊤) :

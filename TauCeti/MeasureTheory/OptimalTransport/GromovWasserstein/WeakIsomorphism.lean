@@ -33,9 +33,8 @@ whenever their target discrepancy vanishes on the diagonal; no topology, symmetr
 inequality is needed for this implication. The converse requires an attainment theorem and is
 not asserted here.
 
-Raw kernels admit pullback along a transport map whose target carrier has measurable equality,
-with no finiteness assumption on the source measure. The identity case gives reflexivity under
-measurable
+Raw kernels admit pullback along a transport map whose target carrier has measurable equality
+and whose source measure is s-finite. The identity case gives reflexivity under measurable
 carrier equality. These laws require no structure on the kernel values. The extended-metric
 pullback and reflexivity laws use a.e. strong measurability without measurable carrier equality.
 
@@ -78,10 +77,10 @@ theorem areWeaklyIsomorphicKernels_of_isCoupling {π : Measure (X × Y)}
   ⟨π, hπ, heq⟩
 
 /-- A raw kernel and its pullback along a transport map are weakly isomorphic when the target
-carrier has measurable equality. The graph plan supplies the
+carrier has measurable equality and the source measure is s-finite. The graph plan supplies the
 exact coupling, so neither structure on the kernel target nor measurability of the kernel is
 required. In particular this permits duplication of a measured carrier. -/
-theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y]
+theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFinite μ]
     {f : X → Y} (ωY : Y × Y → Z) (hf : ProbabilityTheory.HasLaw f ν μ) :
     AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY := by
   refine areWeaklyIsomorphicKernels_of_isCoupling (isCoupling_graphPlan hf) ?_
@@ -90,9 +89,9 @@ theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y]
     Measure.quasiMeasurePreserving_snd.ae hgraph] with q hq₁ hq₂
   simp only [Function.comp_apply, Prod.map_apply, hq₁, hq₂]
 
-/-- Every raw kernel on a measure with measurable carrier equality is weakly
+/-- Every raw kernel on an s-finite measure with measurable carrier equality is weakly
 isomorphic to itself. No structure or measurability is required of its values. -/
-theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X]
+theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X] [SFinite μ]
     (ωX : X × X → Z) : AreWeaklyIsomorphicKernels μ ωX μ ωX := by
   simpa using areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw ωX
     (ProbabilityTheory.HasLaw.id (μ := μ))
