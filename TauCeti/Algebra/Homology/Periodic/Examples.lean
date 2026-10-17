@@ -22,8 +22,8 @@ nontrivial, no linear homotopy contracts the differential. This example separate
 contractibility at the boundary between homotopy and derived categories: the one-periodic complex
 is nonzero in the periodic homotopy category but zero in the periodic derived category. Since
 it is acyclic and not contractible, it is not homotopically projective, although its unique term
-is projective. Thus acyclicity does not imply contractibility, and projectivity of the terms does
-not imply homotopical projectivity.
+is projective (`dualNumberDifferentialModule_projective`). Thus acyclicity does not imply
+contractibility, and projectivity of the terms does not imply homotopical projectivity.
 
 ## References
 
@@ -127,11 +127,6 @@ theorem dualNumberDifferentialModule_not_contractible [Nontrivial k] :
   rw [zero_add] at hfst
   exact one_ne_zero hfst
 
-/-- The unique term of the dual-number periodic complex is projective. -/
-theorem dualNumberPeriodicComplex_X_projective (i : ZMod 1) :
-    Projective ((dualNumberPeriodicComplex (k := k)).X i) :=
-  dualNumberDifferentialModule_projective
-
 /-- The dual-number periodic complex is nonzero in the periodic homotopy category. -/
 theorem not_isZero_quotient_obj_dualNumberPeriodicComplex [Nontrivial k] :
     ¬ IsZero ((HomotopyCategory.quotient _ (ComplexShape.up (ZMod 1))).obj
@@ -155,7 +150,7 @@ theorem isZero_Q_obj_dualNumberPeriodicComplex :
   PeriodicComplex.DerivedCategory.isZero_Q_obj _ _ _ dualNumberPeriodicComplex_acyclic
 
 /-- The dual-number periodic complex is not homotopically projective, although its unique term is
-projective. -/
+projective by `dualNumberDifferentialModule_projective`. -/
 theorem not_isHomotopicallyProjective_dualNumberPeriodicComplex [Nontrivial k] :
     ¬ PeriodicComplex.IsHomotopicallyProjective (dualNumberPeriodicComplex (k := k)) := by
   intro h
