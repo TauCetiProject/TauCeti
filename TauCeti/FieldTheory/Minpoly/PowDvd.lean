@@ -63,9 +63,9 @@ theorem pow_dvd_iff (hx : IsSeparable K x) {p : K[X]} {m : ℕ} :
     obtain ⟨g, rfl⟩ := minpoly.dvd K x (p := p) <| by
       rw [← eval_map_algebraMap, ← IsRoot.def, ← dvd_iff_isRoot]
       exact (dvd_pow_self _ m.succ_ne_zero).trans h
-    rw [Polynomial.map_mul, hq, pow_succ', mul_assoc,
-      mul_dvd_mul_iff_left (X_sub_C_ne_zero x)] at h
+    have h' : (X - C x) ^ m ∣ q * g.map (algebraMap K L) := by
+      simpa [hq, pow_succ', mul_assoc, mul_dvd_mul_iff_left, X_sub_C_ne_zero] using h
     rw [pow_succ']
-    exact mul_dvd_mul_left _ (ih (hcop.pow_left.dvd_of_dvd_mul_left h))
+    exact mul_dvd_mul_left _ (ih (hcop.pow_left.dvd_of_dvd_mul_left h'))
 
 end minpoly

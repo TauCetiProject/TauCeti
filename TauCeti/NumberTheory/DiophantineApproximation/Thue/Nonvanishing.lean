@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.FieldTheory.Minpoly.PowDvd
 
+import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.HasseWronskian
 import TauCeti.RingTheory.Polynomial.Wronskian
 
@@ -124,15 +125,12 @@ theorem exists_hasseDeriv_eval_ne_mul_of_dvd [CharZero K] {α : L}
     rw [natDegree_X_sub_C] at this
     omega
   have hdeg := natDegree_le_of_dvd (hcop.mul_dvd hfW hXW) hW
-  rw [natDegree_mul (pow_ne_zero _ hirr.ne_zero) (pow_ne_zero _ (X_sub_C_ne_zero ξ₁)),
-    natDegree_pow, natDegree_pow, natDegree_X_sub_C, mul_one, mul_comm (r - 1)] at hdeg
+  simp [natDegree_mul, hirr.ne_zero, X_sub_C_ne_zero, mul_comm (r - 1)] at hdeg
   have hWlt := natDegree_wronskian_lt_add hW
   -- The Hasse derivative of `A` of order `m` does not vanish at `ξ₁`.
-  have hm : (hasseDeriv m A).eval ξ₁ ≠ 0 := by
-    rw [← taylor_coeff, hm_def, rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
-    exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hA)
+  have hm : (hasseDeriv m A).eval ξ₁ ≠ 0 := hm_def ▸ eval_hasseDeriv_rootMultiplicity_ne_zero hA ξ₁
   refine ⟨m, by omega, fun h ↦ hm ?_⟩
-  rw [map_sub, ← smul_eq_C_mul, map_smul, eval_sub, eval_smul, smul_eq_mul, h, sub_self]
+  simp [A, ← smul_eq_C_mul, h]
 
 /-- **Nonvanishing derivatives of Thue's polynomials**, in the form used in Thue's theorem. Let
 `α` be algebraic of degree `d ≥ 2` over `ℚ`, let `0 ≤ ε < 1 / 2` and `r ≥ 1`, and let `P, Q` be

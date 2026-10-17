@@ -32,6 +32,7 @@ namespace Polynomial
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- The Wronskian commutes with coefficient ring maps. -/
+@[simp]
 theorem map_wronskian (f : R →+* S) (a b : R[X]) :
     (wronskian a b).map f = wronskian (a.map f) (b.map f) := by
   simp only [wronskian, Polynomial.map_sub, Polynomial.map_mul, derivative_map]
