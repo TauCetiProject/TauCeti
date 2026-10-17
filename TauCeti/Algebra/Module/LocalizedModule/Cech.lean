@@ -22,10 +22,10 @@ below `a` and `x_{S ∖ {a}}` is restricted along `M_{f_{S ∖ {a}}} → M_{f_S}
 `i₀ < ⋯ < i_{p+1}`, this is the usual formula `∑_k (-1)^k x_{i₀ ⋯ î_k ⋯ i_{p+1}}`.
 
 When `ι` is finite and the `f i` generate the unit ideal, the complex is exact. This is the
-module-level form of the vanishing of the higher Čech cohomology of the quasi-coherent sheaf `M̃`
-on the cover of `Spec R` by the basic opens `D(f i)`. It is the algebraic input to Huber's proof
-of sheafiness for Huber rings with a noetherian ring of definition, where this complex of
-localizations is topologized and completed.
+module-level form of the vanishing of the higher Čech cohomology of the quasi-coherent sheaf
+associated to `M` on the cover of `Spec R` by the basic opens `D(f i)`. It is the algebraic input
+to Huber's proof of sheafiness for Huber rings with a noetherian ring of definition, where this
+complex of localizations is topologized and completed.
 
 ## Main definitions
 
