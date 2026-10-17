@@ -13,8 +13,10 @@ public import Mathlib.MeasureTheory.Measure.Map
 
 An array process has coordinates indexed by `ℕ × ℕ`. This file provides its row, column and
 diagonal processes, reindexing of both axes, and the measurability needed to pass between the
-entries and the entire array law. These constructions apply to arbitrary array processes; the
-symmetry predicates using them are developed in `Probability.Exchangeability.Arrays.Basic`.
+entries and the entire array law. It also provides `arrayColumn` for an array indexed by `ι × ℕ`,
+read as a sequence of `ι`-indexed columns. These constructions apply to arbitrary array processes;
+the symmetry predicates using them are developed in `Probability.Exchangeability.Arrays.Basic`
+and `Probability.Exchangeability.RowExchangeable`.
 
 The set `symmetricArraysWithDiag α d` records symmetric arrays with a fixed diagonal and is
 stable under simultaneous reindexing of the two axes. It is useful for laws of undirected
@@ -92,6 +94,20 @@ theorem arrayCol_apply (X : ℕ × ℕ → Ω → α) (j : ℕ) (ω : Ω) (i : �
 theorem arrayDiag_apply (X : ℕ × ℕ → Ω → α) (i : ℕ) : arrayDiag X i = X (i, i) :=
   (rfl)
 
+/-! ## Columns of an arbitrary row-indexed array -/
+
+/-- The array `Y : ι × ℕ → Ω → α` read as a process of columns: the `k`-th value is the
+`ι`-indexed vector of entries in column `k`. -/
+def arrayColumn (Y : ι × ℕ → Ω → α) (k : ℕ) (ω : Ω) : ι → α :=
+  fun a => Y (a, k) ω
+
+-- The parentheses in `(rfl)` opt out of the exported-theorem exposure check, so that this, the
+-- complete computational API of `arrayColumn`, can be stated without exposing its body.
+@[simp]
+theorem arrayColumn_apply (Y : ι × ℕ → Ω → α) (k : ℕ) (ω : Ω) (a : ι) :
+    arrayColumn Y k ω a = Y (a, k) ω :=
+  (rfl)
+
 /-- The symmetric arrays with constant diagonal value `d`: `x (i, j) = x (j, i)` and
 `x (i, i) = d`. For `α = Bool` and `d = false` these are the adjacency arrays of the simple
 graphs on `ℕ`. -/
@@ -159,6 +175,13 @@ measurable as a path-valued map. -/
 theorem aemeasurable_arrayCol {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) (j : ℕ) : AEMeasurable (arrayCol X j) μ :=
   AEMeasurable.of_eval fun i ↦ hX (i, j)
+
+/-- If every entry of a row-indexed array is almost everywhere measurable, each column is almost
+everywhere measurable as an `ι`-indexed random vector. -/
+theorem aemeasurable_arrayColumn {ι : Type*} [Countable ι] {μ : Measure Ω}
+    {Y : ι × ℕ → Ω → α} (hY : ∀ p, AEMeasurable (Y p) μ) (k : ℕ) :
+    AEMeasurable (arrayColumn Y k) μ :=
+  AEMeasurable.of_eval fun a => hY (a, k)
 
 /-- **Entry measurability from row measurability**, the converse of `aemeasurable_arrayRow`.  The
 entries are the coordinates of the rows, so this needs no probabilistic structure; a caller holding
