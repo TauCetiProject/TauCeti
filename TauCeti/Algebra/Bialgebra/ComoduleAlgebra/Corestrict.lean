@@ -44,7 +44,7 @@ theorem toComodule_corestrict (f : H →ₐc[R] K) :
   rfl
 
 /-- The corestricted coaction applies `id ⊗ f` to the original coaction. -/
-theorem coact_corestrict_apply (f : H →ₐc[R] K) (a : A) :
+theorem corestrict_coact_apply (f : H →ₐc[R] K) (a : A) :
     letI := Corestrict (A := A) f
     Comodule.coact (R := R) (C := K) a =
       Algebra.TensorProduct.map (AlgHom.id R A) f.toAlgHom
@@ -55,11 +55,11 @@ theorem coact_corestrict_apply (f : H →ₐc[R] K) (a : A) :
 
 /-- The corestricted algebra coaction is the original coaction followed by `id ⊗ f`. -/
 @[simp]
-theorem coactAlgHom_corestrict (f : H →ₐc[R] K) :
+theorem corestrict_coactAlgHom (f : H →ₐc[R] K) :
     letI := Corestrict (A := A) f
     coactAlgHom R K A =
       (Algebra.TensorProduct.map (AlgHom.id R A) f.toAlgHom).comp (coactAlgHom R H A) := by
   ext a
-  simp only [coactAlgHom_apply, AlgHom.comp_apply, coact_corestrict_apply]
+  simp only [coactAlgHom_apply, AlgHom.comp_apply, corestrict_coact_apply]
 
 end TauCeti.ComoduleAlgebra

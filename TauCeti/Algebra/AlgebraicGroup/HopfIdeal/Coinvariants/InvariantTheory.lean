@@ -48,7 +48,7 @@ theorem coinvariants_corestrict_regular :
     (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal)
   ext x
   simp only [ComoduleAlgebra.mem_coinvariants, ← ComoduleAlgebra.coactAlgHom_apply,
-    ComoduleAlgebra.coactAlgHom_corestrict, ComoduleAlgebra.coactAlgHom_self,
+    ComoduleAlgebra.corestrict_coactAlgHom, ComoduleAlgebra.coactAlgHom_self,
     AlgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_toAlgHom,
     Bialgebra.comulAlgHom_apply, mem_coinvariants_iff]
 
