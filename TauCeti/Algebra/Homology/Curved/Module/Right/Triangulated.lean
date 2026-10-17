@@ -125,8 +125,7 @@ private noncomputable def mapStableConflationTriangleIso
     rw [eqToHom_comp_iff, comp_eqToHom_iff] at key
     simp only [key, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc,
       eqToHom_map]
-    simp only [eqToHom_trans, eqToHom_refl, Category.comp_id, Preadditive.neg_comp,
-      Category.assoc]
+    simp only [eqToHom_trans, Preadditive.neg_comp, Category.assoc]
 
 /-- Graded-split conflations give distinguished triangles. The third arrow is the negative
 class of the cokernel map induced by an extension to the first object's identity cone.
