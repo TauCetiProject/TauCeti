@@ -48,6 +48,9 @@ is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
 * `TopCat.singularKronecker_bijective_of_projective_homology` and
   `TopCat.singularKroneckerEquivOfProjectiveHomology`: over any commutative ring, the Kronecker
   map is an isomorphism when the coefficients and the homology are projective.
+* `TopPair.singularKronecker_bijective_of_projective_homology` and
+  `TopPair.singularKroneckerEquivOfProjectiveHomology`: the same for relative cohomology of a
+  pair whose relative homology is projective.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -236,3 +239,38 @@ lemma singularExtToCohomology_naturality {Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ
 end PrincipalIdealDomain
 
 end TopCat
+
+namespace TopPair
+
+variable {k : Type w} [CommRing k] (P : TopPair.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+  [hP : ∀ n, Projective (P.singularHomology R n)]
+
+/-- **The relative universal coefficient theorem with projective homology**, over any commutative
+ring `k`: for a projective coefficient module `R`, if the relative singular homology modules
+`Hₙ(X, A; R)` of a pair are all projective, the relative Kronecker map
+`Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` is bijective in every degree, for every module `M`.  The
+relative singular chain modules are retracts of the absolute ones, hence projective. -/
+theorem singularKronecker_bijective_of_projective_homology (n : ℕ) :
+    Function.Bijective (P.singularKronecker (R := R) (M := M) k n) := by
+  -- `Hₙ(X, A; R)` is by definition the homology of the relative singular chain complex.
+  have (n : ℕ) : Projective ((P.singularChainComplex R).homology n) := hP n
+  rw [singularKronecker_def]
+  exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology n
+
+/-- **The relative universal coefficient isomorphism with projective homology**: over any
+commutative ring, for a projective coefficient module `R` such that every relative homology module
+`Hₙ(X, A; R)` is projective, the relative Kronecker map is a `k`-linear equivalence
+`Hⁿ(X, A; R, M) ≃ₗ[k] (Hₙ(X, A; R) ⟶ M)`. -/
+def singularKroneckerEquivOfProjectiveHomology (n : ℕ) :
+    P.singularCohomology R k M n ≃ₗ[k] (P.singularHomology R n ⟶ M) :=
+  LinearEquiv.ofBijective _ (P.singularKronecker_bijective_of_projective_homology R M n)
+
+/-- The equivalence `TopPair.singularKroneckerEquivOfProjectiveHomology` is the relative Kronecker
+map. -/
+@[simp]
+lemma singularKroneckerEquivOfProjectiveHomology_apply (n : ℕ)
+    (α : P.singularCohomology R k M n) :
+    P.singularKroneckerEquivOfProjectiveHomology R M n α = P.singularKronecker k n α :=
+  (rfl)
+
+end TopPair

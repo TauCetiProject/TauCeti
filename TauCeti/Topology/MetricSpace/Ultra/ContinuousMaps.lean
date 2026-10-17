@@ -11,31 +11,37 @@ public import Mathlib.Topology.MetricSpace.Ultra.Basic
 /-!
 # Ultrametric structure on bounded continuous functions
 
-The uniform distance between two bounded continuous functions is the supremum of the pointwise
-distances, and the strong triangle inequality passes to suprema. Hence bounded continuous
-functions with values in an ultrametric space form an ultrametric space, and so do continuous
-functions vanishing at infinity, whose distance is induced from bounded continuous functions.
-For instance the space `C₀(I, E)` of null families on a discrete index type `I` with values in a
-nonarchimedean normed group `E` has an ultrametric sup norm.
-
-Mathlib's `ContinuousMap.isUltrametricDist` is the corresponding instance for continuous maps on
-a compact space.
+The sup distance on bounded continuous functions `α →ᵇ β` into an ultrametric space `β` is
+ultrametric, and so is the induced distance on the space `C₀(α, β)` of continuous functions
+vanishing at infinity. This complements Mathlib's instance for `C(X, Y)` with `X` compact. In
+particular, for a nonarchimedean normed ring `R` and a discrete index `I`, the model space
+`C₀(I, R)` of nonarchimedean functional analysis has an ultrametric norm.
 -/
 
 public section
 
-open scoped BoundedContinuousFunction ZeroAtInfty
+open scoped ZeroAtInfty BoundedContinuousFunction
 
-variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β] [IsUltrametricDist β]
+namespace BoundedContinuousFunction
 
-/-- Bounded continuous functions with values in an ultrametric space form an ultrametric space. -/
-instance BoundedContinuousFunction.isUltrametricDist : IsUltrametricDist (α →ᵇ β) where
+variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β]
+
+/-- The sup distance on bounded continuous functions into an ultrametric space is
+ultrametric. -/
+instance instIsUltrametricDist [IsUltrametricDist β] : IsUltrametricDist (α →ᵇ β) where
   dist_triangle_max f g h := (dist_le (by positivity)).2 fun x ↦
-    (dist_triangle_max (f x) (g x) (h x)).trans
+    (IsUltrametricDist.dist_triangle_max (f x) (g x) (h x)).trans
       (max_le_max (dist_coe_le_dist x) (dist_coe_le_dist x))
 
-/-- Continuous functions vanishing at infinity with values in an ultrametric space form an
-ultrametric space. -/
-instance ZeroAtInftyContinuousMap.isUltrametricDist [Zero β] : IsUltrametricDist C₀(α, β) where
-  dist_triangle_max f g h := by
-    simpa only [dist_toBCF_eq_dist] using dist_triangle_max f.toBCF g.toBCF h.toBCF
+end BoundedContinuousFunction
+
+namespace ZeroAtInftyContinuousMap
+
+variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β] [Zero β]
+
+/-- The sup distance on continuous functions vanishing at infinity with values in an ultrametric
+space is ultrametric. -/
+instance instIsUltrametricDist [IsUltrametricDist β] : IsUltrametricDist C₀(α, β) where
+  dist_triangle_max f g h := IsUltrametricDist.dist_triangle_max f.toBCF g.toBCF h.toBCF
+
+end ZeroAtInftyContinuousMap
