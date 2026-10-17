@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
+public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Basic
 
 import Mathlib.Tactic.FinCases
 
@@ -20,7 +21,8 @@ quadratic-isotropic discriminant-subgroup gluing operation. When `L` is unimodul
 lattice vector pairs oddly with `v`, the result is an even unimodular two-neighbor.
 
 The carrier is the union of the even-pairing kernel and its half-vector translate. An odd
-pairing makes this kernel the intersection with the original lattice, of index two in each.
+pairing makes this kernel the intersection with the original lattice, of index two in each, so
+the result is a Kneser two-neighbor in the sense of `TauCeti.IntegralLattice.IsNeighbor`.
 
 ## References
 
@@ -430,6 +432,18 @@ theorem relIndex_twoNeighborKernel_twoNeighbor (he : L.IsEven) (v : L)
     ← twoNeighbor_carrier] at h
   exact h.trans (L.natCard_twoNeighborGlueSubgroup v
     (even_iff_two_dvd.mpr (dvd_trans (by decide : (2 : ℤ) ∣ 8) hn)) hv)
+
+/-- **Even two-neighbors are Kneser two-neighbors.** With an odd pairing, the even-pairing kernel
+is the intersection of the original and neighboring carriers, of index two in each. -/
+theorem isNeighbor_twoNeighbor (he : L.IsEven) (v : L) (hn : (8 : ℤ) ∣ L.integralNorm v)
+    (hv : ∃ w : L, Odd (L.integralForm v w)) : L.IsNeighbor (L.twoNeighbor he v hn) 2 where
+  form_eq := (L.twoNeighbor_form he v hn).symm
+  relIndex_inf_left := by
+    rw [L.carrier_inf_twoNeighbor_carrier he v hn hv]
+    exact L.relIndex_twoNeighborKernel v hv
+  relIndex_inf_right := by
+    rw [L.carrier_inf_twoNeighbor_carrier he v hn hv]
+    exact L.relIndex_twoNeighborKernel_twoNeighbor he v hn hv
 
 omit [L.IsNondegenerate] in
 /-- **Even two-neighbors of unimodular lattices are unimodular.** The parity kernel has

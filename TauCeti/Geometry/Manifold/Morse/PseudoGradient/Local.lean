@@ -174,7 +174,7 @@ theorem isMIntegralCurveOn_toChart_symm_linearFlow
     {z : Fin (Module.finrank ℝ E) → ℝ} {s : Set ℝ}
     (hz : ∀ t ∈ s, φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target) :
     IsMIntegralCurveOn (fun t ↦ φ.toChart.symm (φ.coord.symm (φ.linearFlow t z))) X s := by
-  set ℓ : ℝ → E := fun t ↦ φ.coord.symm (φ.linearFlow t z) with hℓ
+  set ℓ : ℝ → E := fun t ↦ φ.coord.symm (φ.linearFlow t z)
   have hℓd (t : ℝ) :
       HasDerivAt ℓ (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by
     simpa [ℓ, Function.comp_def] using
@@ -307,15 +307,12 @@ theorem exists_flow_lt_of_coord_ne_zero (hX : IsAdaptedPseudoGradient f X)
     rwa [div_pos_iff_of_pos_right (by positivity)] at h
   set ε := r / (4 * (n + 1)) with hεdef
   have hε : 0 < ε := by positivity
-  have hεr : 2 * ε ≤ r := by
-    rw [hεdef, ← mul_div_assoc, div_le_iff₀ (by positivity)]
-    nlinarith
+  have h1 : ε * (n + 1) = r / 4 := by
+    rw [hεdef]; field_simp
   have hεn : n * ε ^ 2 < (r / 2) ^ 2 := by
-    have h1 : ε * (n + 1) = r / 4 := by
-      rw [hεdef]; field_simp
     nlinarith [sq_nonneg ε, mul_pos hε hε]
   set z := φ.coord (φ.toChart y)
-  have hz2 : ‖z‖ < r / 2 := by linarith
+  have hz2 : ‖z‖ < r / 2 := by nlinarith
   have hzi (i : Fin (Module.finrank ℝ E)) : |z i| < ε := by
     rw [← Real.norm_eq_abs]
     exact (pi_norm_lt_iff hε).1 hyr i
@@ -328,7 +325,7 @@ theorem exists_flow_lt_of_coord_ne_zero (hX : IsAdaptedPseudoGradient f X)
     (by intro h; rw [h] at hj₀; norm_num at hj₀)
   -- The time at which the largest coordinate of negative weight reaches `r / 2`.
   set T := Real.log (r / 2 / m)
-  have hrm : 1 ≤ r / 2 / m := by rw [le_div_iff₀ hm0]; linarith [hzi j₀]
+  have hrm : 1 ≤ r / 2 / m := by rw [le_div_iff₀ hm0]; nlinarith [hzi j₀]
   have hT0 : 0 ≤ T := Real.log_nonneg hrm
   have hexpT : Real.exp T = r / 2 / m := Real.exp_log (by positivity)
   have hTb : T < Real.log (r / m) := Real.log_lt_log (by positivity) (by gcongr; linarith)

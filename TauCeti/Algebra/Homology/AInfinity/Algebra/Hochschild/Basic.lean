@@ -141,6 +141,22 @@ theorem hochschildDifferential_hochschildDifferential {q : ℤ}
   simp only [LinearMap.comp_assoc, barDifferential_sq, LinearMap.comp_zero]
   module
 
+/-- The Hochschild differential is a graded derivation of the Gerstenhaber bracket.
+All degrees are suspended degrees, so the sign on the second term is `(-1)^p`. -/
+theorem hochschildDifferential_gerstenhaberBracket {p q : ℤ}
+    {F G : ReducedTensorWords R A →ₗ[R] A}
+    (hF : LinearMap.IsHomogeneous F (gradedPiece (𝒜.grading.shift 1))
+      (𝒜.grading.shift 1).piece p)
+    (hG : LinearMap.IsHomogeneous G (gradedPiece (𝒜.grading.shift 1))
+      (𝒜.grading.shift 1).piece q) :
+    𝒜.hochschildDifferential (p + q) (gerstenhaberBracket (𝒜.grading.shift 1) p q F G) =
+      gerstenhaberBracket (𝒜.grading.shift 1) (1 + p) q (𝒜.hochschildDifferential p F) G +
+        negOnePowCast R p •
+          gerstenhaberBracket (𝒜.grading.shift 1) p (1 + q) F
+            (𝒜.hochschildDifferential q G) := by
+  simpa only [hochschildDifferential_def, one_mul] using
+    leibniz_gerstenhaberBracket (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree) hF hG
+
 end AInfinityAlgebra
 
 end TauCeti

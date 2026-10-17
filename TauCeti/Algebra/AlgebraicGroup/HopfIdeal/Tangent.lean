@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
@@ -247,6 +248,20 @@ theorem mem_lieSubalgebra_iff (I : HopfIdeal R H)
     rw [quotientLieHom_apply_apply]
     exact (descendDerivation_mk I d hd x).trans
       (Bialgebra.CounitAlgebra.algEquivSelf_apply R H B (d x))
+
+/-- The identity subgroup has zero Lie algebra, over any commutative base ring. -/
+@[simp]
+theorem lieSubalgebra_augmentation :
+    (augmentation R H).lieSubalgebra (B := B) = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro d hd
+  rw [mem_lieSubalgebra_iff] at hd
+  rw [LieSubalgebra.mem_bot]
+  ext x
+  have hx := hd (x - algebraMap R H (Coalgebra.counit (R := R) x)) (by
+    rw [mem_toIdeal, mem_augmentation]
+    simp)
+  simpa only [map_sub, d.map_algebraMap, sub_zero, Derivation.zero_apply] using hx
 
 /-- The tangent Lie algebra cut out by a join of Hopf ideals consists of the derivations
 belonging to both tangent Lie algebras. -/
