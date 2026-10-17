@@ -199,7 +199,7 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
     rw [he_eq, eval_const_hasseDeriv_monomial]
     simp only [Finsupp.coe_equivFunOnFinite_symm]
     ring
-  · rw [show P.coeff m = _ from coeff_sum_monomial x m]
+  · simp only [P, coeff_sum_monomial]
     split_ifs with h
     · exact (hxle _).trans (rpow_div_sub_le hb hH hN₀ (by linarith) hNR hR)
     · simp
