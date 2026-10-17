@@ -140,12 +140,14 @@ theorem cExp_mem (hp : p ∈ (fun y ↦ -fderiv ℝ (fun x' ↦ c (x', y)) x) ''
   invFunOn_mem hp
 
 /-- The momentum of `cExp c V x p` at `x` is `p`, when `p` is the momentum of a point of `V`. -/
+@[simp]
 theorem neg_fderiv_cExp (hp : p ∈ (fun y ↦ -fderiv ℝ (fun x' ↦ c (x', y)) x) '' V) :
     -fderiv ℝ (fun x' ↦ c (x', cExp c V x p)) x = p :=
   invFunOn_eq hp
 
 /-- For a cost twisted on `V` at `x`, the `c`-exponential recovers a point of `V` from its
 momentum. -/
+@[simp]
 theorem cExp_neg_fderiv (htw : InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x) V) (hy : y ∈ V) :
     cExp c V x (-fderiv ℝ (fun x' ↦ c (x', y)) x) = y :=
   (neg_injective.comp_injOn htw).leftInvOn_invFunOn hy
@@ -216,11 +218,13 @@ theorem cSegment_def : cSegment c V x y₀ y₁ t =
   (rfl)
 
 /-- For a cost twisted on `V` at `x`, the `c`-segment from a point `y₀ ∈ V` starts at `y₀`. -/
+@[simp]
 theorem cSegment_zero (htw : InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x) V) (hy₀ : y₀ ∈ V) :
     cSegment c V x y₀ y₁ 0 = y₀ := by
   simpa [cSegment_def] using cExp_neg_fderiv htw hy₀
 
 /-- For a cost twisted on `V` at `x`, the `c`-segment to a point `y₁ ∈ V` ends at `y₁`. -/
+@[simp]
 theorem cSegment_one (htw : InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x) V) (hy₁ : y₁ ∈ V) :
     cSegment c V x y₀ y₁ 1 = y₁ := by
   simpa [cSegment_def] using cExp_neg_fderiv htw hy₁
