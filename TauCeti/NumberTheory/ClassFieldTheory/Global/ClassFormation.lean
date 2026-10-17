@@ -29,8 +29,7 @@ formation `globalFormation K` as conditional reductions, assuming two arithmetic
   degree `p` carries a class of `H²(Gal(L/F), I_L)` whose local invariants sum to `1/p`.
 
 The names of the results record these inputs: `_of_forall_index_le` for `hK`, as in
-`SecondInequality.lean`, and `_of_prime_degree` for `hgen`. The global invariant itself and the
-class formation it defines are left until both inputs are theorems.
+`SecondInequality.lean`, and `_of_prime_degree` for `hgen`.
 
 From `hK` the fundamental inequalities give `H¹ = 0` and `#H² ∣ [L : F]` on every layer
 (`subsingleton_h1_globalFormation_of_forall_index_le`,
@@ -93,8 +92,7 @@ theorem sumLocalInv_brLocalization_eq_zero_of_forall_index_le (x : Br K) :
 
 include hK in
 /-- **The sum of the local invariants vanishes on the classes that die in the idele classes**, if
-the Kummer case of the second inequality holds: such a class comes from `H²(Gal(L/F), Lˣ)`, and
-its local invariants are those of a global Brauer class. -/
+the Kummer case of the second inequality holds. -/
 theorem ideleSumLocalInv_eq_zero_of_ideleToClassH2_eq_zero_of_forall_index_le
     {L : NormalLayer (AbsoluteGaloisGroup K)} {y : L.H (ideleFormation K) 2}
     (hy : ideleToClassH2 K L y = 0) : ideleSumLocalInv K L y = 0 := by
