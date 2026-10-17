@@ -183,7 +183,7 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
   have hinv : FiniteTypeCommHopfAlgCat.toBialgHom e.inv
       (FiniteTypeCommHopfAlgCat.toBialgHom e.hom x) = x := by
     rw [← BialgHom.comp_apply, ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, e.hom_inv_id]
-    rfl
+    rw [FiniteTypeCommHopfAlgCat.toBialgHom_id, BialgHom.id_apply]
   simpa only [J, HopfIdeal.mem_comap, hinv, HopfIdeal.mem_augmentation,
     CoalgHomClass.counit_comp_apply] using h
 
