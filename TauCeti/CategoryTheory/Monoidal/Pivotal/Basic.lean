@@ -147,10 +147,12 @@ of the inverse of its component at `X`. -/
 theorem pivotalIsoApp_rightDual (X : C) :
     (pivotalIsoApp Xᘁ).hom = ((pivotalIsoApp X).inv)ᘁ := by
   refine rightHom_ext (X := ((Xᘁ : C)ᘁ : C)) ?_
-  rw [rightAdjointMate_comp_evaluation, ← cancel_epi (Xᘁ ◁ (pivotalIsoApp X).hom),
-    whisker_exchange_assoc, ← tensorHom_def_assoc, pivotalIsoApp_tensorHom_comp_evaluation,
-    ← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id, MonoidalCategory.whiskerLeft_id,
-    Category.id_comp]
+  rw [rightAdjointMate_comp_evaluation]
+  -- Cancel the isomorphism `Xᘁ ◁ φ_X` on the left; on the right it cancels against `φ_X⁻¹`.
+  rw [← cancel_epi (Xᘁ ◁ (pivotalIsoApp X).hom), whiskerLeft_hom_inv_assoc]
+  -- The left side is the evaluation calculation `(φ_{Xᘁ} ⊗ φ_X) ≫ ε = ε`.
+  rw [whisker_exchange_assoc, ← tensorHom_def_assoc]
+  exact pivotalIsoApp_tensorHom_comp_evaluation X
 
 /-- The inverse form of the Freyd–Yetter identity: the inverse of the component of the pivotal
 isomorphism at `Xᘁ` is the mate of its component at `X`. -/
