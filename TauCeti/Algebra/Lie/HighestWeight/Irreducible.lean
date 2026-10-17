@@ -80,7 +80,7 @@ diagonal vector `(v, w)`. -/
 
 section Diagonal
 
-variable {K : Type u} {L : Type v} [Field K] [LieRing L]
+variable {K : Type u} {L : Type v} [CommRing K] [LieRing L]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
   {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N]
   {v : M} {w : N}

@@ -53,6 +53,20 @@ theorem signedInChartAt_apply (φ : RoughForm I M ℝ k) (b : Module.Basis (Fin 
           φ.inChartAt α y b
       else 0 := (rfl)
 
+/-- A chart coefficient with constant positive sign is the evaluation of the coordinate
+form extended by zero outside the target. -/
+theorem signedInChartAt_one {j : ℕ} (ψ : RoughForm I M ℝ j)
+    (b : Module.Basis (Fin j) ℝ E) (α : M) (y : E) :
+    ψ.signedInChartAt b α (fun _ ↦ 1) y =
+      ((extChartAt I α).target.indicator (ψ.inChartAt α) y) b := by
+  classical
+  rw [RoughForm.signedInChartAt_apply]
+  split_ifs with hy
+  · rw [indicator_of_mem hy]
+    simp
+  · rw [indicator_of_notMem hy]
+    rfl
+
 /-- Within the chart source, the coefficient uses precisely the sign at the original point. -/
 theorem signedInChartAt_apply_of_mem_source (φ : RoughForm I M ℝ k)
     (b : Module.Basis (Fin k) ℝ E) (α : M)

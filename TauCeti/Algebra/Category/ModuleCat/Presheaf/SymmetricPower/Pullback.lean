@@ -105,6 +105,37 @@ theorem coe_pushforwardSymmetricPowerComparison_app_app_apply (n : ℕ)
   ModuleCat.coe_restrictScalarsSymmetricPowerComparison_app_apply (α.app U).hom n
     (M.obj (F.op.obj U)) x
 
+/-- In degree one, the pushforward comparison is the identity of `α_* M`, read through the
+identifications of first symmetric powers with the presheaves themselves. -/
+@[reassoc (attr := simp)]
+theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
+    (M : PresheafOfModulesOfCommRing.{u} R) :
+    (pushforwardSymmetricPowerComparison α 1).app M ≫
+        (PresheafOfModulesOfCommRing.pushforward α).map
+          ((PresheafOfModulesOfCommRing.symmetricPowerOneIso R).hom.app M) =
+      (PresheafOfModulesOfCommRing.symmetricPowerOneIso S).hom.app
+        ((PresheafOfModulesOfCommRing.pushforward α).obj M) := by
+  ext U x
+  erw [PresheafOfModules.comp_app, ModuleCat.comp_apply,
+    PresheafOfModules.pushforward_map_app_apply]
+  erw [PresheafOfModulesOfCommRing.symmetricPowerOneIso_hom_app_app M (F.op.obj U),
+    PresheafOfModulesOfCommRing.symmetricPowerOneIso_hom_app_app
+      ((PresheafOfModulesOfCommRing.pushforward α).obj M) U]
+  -- Evaluation identifies both pushforward modules with the same underlying type.
+  change (ModuleCat.symmetricPower.iso₁ (M.obj (F.op.obj U))).hom
+      ((ModuleCat.restrictScalarsSymmetricPowerComparison (α.app U).hom 1).app
+        (M.obj (F.op.obj U)) x) =
+    (ModuleCat.symmetricPower.iso₁
+      ((ModuleCat.restrictScalars (α.app U).hom).obj (M.obj (F.op.obj U)))).hom x
+  apply_fun SymmetricAlgebra.ι (R.obj (F.op.obj U)) (M.obj (F.op.obj U))
+  · erw [ModuleCat.symmetricPower.ι_iso₁_hom_apply]
+    erw [ModuleCat.coe_restrictScalarsSymmetricPowerComparison_app_apply]
+    erw [← ModuleCat.symmetricPower.ι_iso₁_hom_apply
+      ((ModuleCat.restrictScalars (α.app U).hom).obj (M.obj (F.op.obj U))) x]
+    erw [SymmetricAlgebra.mapₛₗ_ι]
+    rfl
+  · exact TauCeti.SymmetricAlgebra.ι_injective _ _
+
 variable [(PresheafOfModulesOfCommRing.pushforward.{u} α).IsRightAdjoint]
 
 /-- The canonical map from the pullback of a symmetric power to the symmetric power of a

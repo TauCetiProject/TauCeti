@@ -73,6 +73,9 @@ integral calculation reads off the low-degree evaluations
   Herbrand quotient.
 * `TauCeti.TateCohomology.herbrandQuotient_coind`: **Shapiro's lemma for Herbrand quotients**,
   `h_G(Coind_S^G A) = h_S(A)` for a subgroup `S` of a finite cyclic group `G`.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_of_isIntertwiningMap`: representations of two
+  finite groups matched by an isomorphism of groups and an intertwining equivalence of
+  coefficients have the same Herbrand quotient.
 * `TauCeti.TateCohomology.herbrandQuotient_res_of_bijective`: restriction along an isomorphism of
   finite groups does not change the Herbrand quotient.
 * `TauCeti.TateCohomology.natCard_tateCohomology_mul_of_shortExact`: the exact hexagon of a short
@@ -286,17 +289,23 @@ theorem herbrandQuotient_coind [IsCyclic G] (S : Subgroup G) [Fintype S] (A : Re
     Nat.card_congr (groupCohomology.coindIso A 2).toLinearEquiv.toEquiv,
     Nat.card_congr (groupCohomology.coindIso A 1).toLinearEquiv.toEquiv]
 
+/-- **The Herbrand quotient is invariant under a compatible pair**: an isomorphism `e : G ≃* H`
+of finite groups and an equivalence `e'` of coefficient modules intertwining the action of `G` on
+`M` with the action of `H` on `N` through `e` give `M` and `N` the same Herbrand quotient. -/
+theorem herbrandQuotient_eq_of_isIntertwiningMap {H : Type u} [Group H] [Fintype H]
+    {M : Rep R G} {N : Rep R H} {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) :
+    herbrandQuotient M = herbrandQuotient N := by
+  rw [herbrandQuotient_def, herbrandQuotient_def, natCard_tateCohomology_eq he 0,
+    natCard_tateCohomology_eq he (-1)]
+
 /-- Restriction along an isomorphism of finite groups does not change the Herbrand
 quotient. -/
 theorem herbrandQuotient_res_of_bijective {H : Type u} [Group H] [Fintype H]
     {f : H →* G} (hf : Function.Bijective f) (M : Rep R G) :
-    herbrandQuotient (Rep.res f M) = herbrandQuotient M := by
-  let e := MulEquiv.ofBijective f hf
-  have he : (e : H →* G) = f := by rfl
-  have h (n : ℤ) := natCard_tateCohomology_eq
-    (Rep.isIntertwiningMap_res M (e : H →* G)) n
-  rw [← he]
-  rw [herbrandQuotient_def, herbrandQuotient_def, h 0, h (-1)]
+    herbrandQuotient (Rep.res f M) = herbrandQuotient M :=
+  herbrandQuotient_eq_of_isIntertwiningMap
+    (Rep.isIntertwiningMap_res M (MulEquiv.ofBijective f hf : H →* G))
 
 section ShortExact
 

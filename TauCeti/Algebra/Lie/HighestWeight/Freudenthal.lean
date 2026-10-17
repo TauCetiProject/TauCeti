@@ -131,25 +131,8 @@ private theorem stringTerm_neg_natCast (mu alpha : Dual K H) (j : ℕ) :
 
 end StringTerm
 
-variable [CharZero K] [H.IsCartanSubalgebra] [FiniteDimensional K M]
-
-/-- Past a uniform bound every rung of the two-sided string is missing. -/
-private theorem exists_forall_genWeightSpace_add_zsmul_eq_bot {alpha : Dual K H}
-    (halpha : alpha ≠ 0) (mu : Dual K H) :
-    ∃ N : ℕ, ∀ i : ℤ, N ≤ i.natAbs →
-      genWeightSpace M ((mu + i • alpha : Dual K H) : H → K) = ⊥ := by
-  obtain ⟨N₁, hN₁⟩ := exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) halpha mu
-  obtain ⟨N₂, hN₂⟩ :=
-    exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) (neg_ne_zero.mpr halpha) mu
-  refine ⟨max N₁ N₂, fun i hi ↦ ?_⟩
-  rcases le_or_gt 0 i with h | h
-  · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = (j : ℤ) := ⟨i.toNat, by omega⟩
-    rw [natCast_zsmul]
-    exact hN₁ j (by omega)
-  · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = -(j : ℤ) := ⟨(-i).toNat, by omega⟩
-    simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hN₂ j (by omega)
-
-variable [IsKilling K L] [FiniteDimensional K L]
+variable [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
+  [FiniteDimensional K M]
 
 /-- A string sum is a sum over any long enough initial segment of `ℕ`, the summands off the string
 vanishing. -/
@@ -293,7 +276,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
         (finrank K (genWeightSpace M (mu : H → K)) : K) * invForm mu (alpha : Dual K H) := by
   classical
   have halphaD : (alpha : Dual K H) ≠ 0 := Weight.coe_toLinear_ne_zero_iff.mpr halpha
-  obtain ⟨N, hN⟩ := exists_forall_genWeightSpace_add_zsmul_eq_bot (M := M) halphaD mu
+  obtain ⟨N, hN⟩ := exists_genWeightSpace_add_zsmul_eq_bot_of_le_natAbs (M := M) halphaD mu
   have hbotPos : ∀ j : ℕ, N ≤ j →
       genWeightSpace M ((mu + j • (alpha : Dual K H) : Dual K H) : H → K) = ⊥ := by
     intro j hj

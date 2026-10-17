@@ -227,4 +227,28 @@ theorem subtypeValIccTangentEquiv_toContinuousLinearMap (x : Icc a b) :
     simp only [subtypeValIccTangentEquiv, hx, ↓reduceIte, one_smul, neg_smul]
   all_goals rfl
 
+/-- The derivative of an affine map from the interval to any real normed space is its linear
+part applied to the actual interval inclusion derivative, including at both endpoints. -/
+theorem mfderiv_interval_affine_apply {a b : ℝ} [Fact (a < b)]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (z : F) (L : ℝ →L[ℝ] F) (x : Icc a b) (w : TangentSpace (𝓡∂ 1) x) :
+    NormedSpace.fromTangentSpace (𝕜 := ℝ) (z + L (x : ℝ))
+      (mfderiv (𝓡∂ 1) 𝓘(ℝ, F) (fun t : Icc a b ↦ z + L (t : ℝ)) x w) =
+        L (subtypeValIccTangentEquiv x w) := by
+  have hi := (contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)).mdifferentiable
+    one_ne_zero x
+  have hd := ((L.hasFDerivAt.const_add z).hasMFDerivAt.comp x hi.hasMFDerivAt).mfderiv
+  -- Identify the normed target tangent fiber with its model to state the composed linear map.
+  change mfderiv (𝓡∂ 1) 𝓘(ℝ, F) (fun t : Icc a b ↦ z + L (t : ℝ)) x =
+    L.comp (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val x) at hd
+  rw [hd]
+  have he := congrArg (fun A : TangentSpace (𝓡∂ 1) x →L[ℝ] ℝ ↦ A w)
+    (subtypeValIccTangentEquiv_toContinuousLinearMap x)
+  -- Evaluate the continuous-linear-map equality on w and expose the canonical target fiber.
+  change subtypeValIccTangentEquiv x w =
+    NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : ℝ)
+      (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val x w) at he
+  rw [he]
+  rfl
+
 end TauCeti
