@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 
 /-!
 # The Chevalley involution of Geck's Lie algebra
@@ -284,20 +285,10 @@ private theorem geckHeightConj_mem_lieAlgebra {x : Matrix (b.support ⊕ ι) (b.
       rw [LieEquiv.map_lie]
       exact LieSubalgebra.lie_mem _ hx hy
 
-private theorem map_lieAlgebra_eq_self
-    (e : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R ≃ₗ⁅R⁆
-      Matrix (b.support ⊕ ι) (b.support ⊕ ι) R)
-    (h_mem : ∀ {x}, x ∈ lieAlgebra b → e x ∈ lieAlgebra b)
-    (h_symm : ∀ {x}, x ∈ lieAlgebra b → e.symm x ∈ lieAlgebra b) :
-    (lieAlgebra b).map e = lieAlgebra b := by
-  ext x
-  exact ⟨by rintro ⟨y, hy, rfl⟩; exact h_mem hy,
-    fun hx => ⟨e.symm x, h_symm hx, e.apply_symm_apply x⟩⟩
-
 private theorem geckHeightConj_map_lieAlgebra :
     (lieAlgebra b).map (geckHeightConj b) = lieAlgebra b :=
-  map_lieAlgebra_eq_self b (geckHeightConj b) (geckHeightConj_mem_lieAlgebra b)
-    (geckHeightConj_mem_lieAlgebra b)
+  LieSubalgebra.map_eq_self_of_involutive (geckHeightConj b) (geckHeightMatrix_conj_self b)
+    fun _ ↦ geckHeightConj_mem_lieAlgebra b
 
 private def geckHeightInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (geckHeightConj b).ofSubalgebras _ _ (geckHeightConj_map_lieAlgebra b)
@@ -306,7 +297,12 @@ private def geckHeightInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
 
 private theorem geckOpposition_map_lieAlgebra :
     (lieAlgebra b).map (ωConj b) = lieAlgebra b :=
-  map_lieAlgebra_eq_self b (ωConj b) ωConj_mem_of_mem ωConj_mem_of_mem
+  LieSubalgebra.map_eq_self_of_involutive (ωConj b)
+    (fun x ↦
+      calc
+        ωConj b (ωConj b x) = ω b * (ω b * x * ω b) * ω b := rfl
+        _ = x := by simp only [← mul_assoc, ω_mul_ω, one_mul]; simp [mul_assoc])
+    fun _ ↦ ωConj_mem_of_mem
 
 private def geckOppositionInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (ωConj b).ofSubalgebras _ _ (geckOpposition_map_lieAlgebra b)
