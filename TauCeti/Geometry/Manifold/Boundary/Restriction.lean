@@ -39,8 +39,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 local instance boundaryRestriction_isManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
     ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
 
-/-- Restricting a pulled-back form to the actual boundary is pullback along the restricted map.
-The proof is the pullback chain rule for composition with the smooth boundary inclusion. -/
+/-- Restricting a pulled-back form to the actual boundary is pullback along the restricted map. -/
 theorem boundaryRestriction_mpullback {E' H' N : Type*}
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
     {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]

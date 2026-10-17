@@ -250,8 +250,7 @@ private theorem exists_unitDiskBoundaryLoop_tangentEquiv (z : EuclideanSpace ℝ
     simp [proj]
 
 /-- The circle derivative is positive for the actual induced boundary orientation whenever
-closed-ball inclusion preserves the ambient orientation. The sign follows from the radial
-outward vector and the outward-first characterization. -/
+closed-ball inclusion preserves the ambient orientation. -/
 theorem exists_unitDiskBoundaryLoop_positive_tangentEquiv
     (o : Manifold.Orientation (𝓡∂ 2) D (Fin 2))
     (ho : ∀ x : D, Orientation.map (Fin 2)

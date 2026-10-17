@@ -76,12 +76,13 @@ theorem integralTopForm_mpullback_eq_index_one_area
       obtain ⟨t, ht, he⟩ := hm
       refine ⟨t, ?_, ?_⟩
       · simpa only [uIcc_of_le zero_le_one] using Ioo_subset_Icc_self ht
-      · change f (q.extend t) = f x
+      · -- Path.map extends by applying f; expose that evaluation before rewriting the path point.
+        change f (q.extend t) = f x
         rw [he]
   have hb := integralTopForm_mpullback_eq_curveIntegral o q f hf P Q U hU hrange
     hP.continuousOn hQ.continuousOn hqimage hqinj e hqd hqo
-  have hg := green_ac_index_one zero_lt_one hAC
-    (show (q.map hf.continuous).extend 0 = (q.map hf.continuous).extend 1 by simp)
+  have hclosed : (q.map hf.continuous).extend 0 = (q.map hf.continuous).extend 1 := by simp
+  have hg := green_ac_index_one zero_lt_one hAC hclosed
     hU hHull hP hQ hindex
   refine ⟨hb.1, hb.2.1, hg.2.1, hb.2.2.trans ?_⟩
   rw [curveIntegral_oneForm_eq]
@@ -127,6 +128,7 @@ theorem integralTopForm_mpullback_flux_eq_index_one_area
       fun z ↦ fderiv ℝ X z 1 + fderiv ℝ Y z Complex.I := by
     funext z
     rw [curl]
+    -- Pointwise negation of the coefficient function is the Pi.neg used by fderiv_neg.
     change fderiv ℝ X z 1 - fderiv ℝ (-Y) z Complex.I = _
     rw [fderiv_neg, neg_apply, sub_neg_eq_add]
   rwa [hd] at h

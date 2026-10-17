@@ -117,6 +117,7 @@ theorem integral_image_curl_eq_boundary_curveIntegral
       (NormedSpace.fromTangentSpace (f x)).toContinuousLinearMap.comp
         (mfderiv (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f x))
     (hFo : ∀ x, Orientation.map (Fin (1 + 1)) (F x).toLinearEquiv
+      -- Fix the shared Euclidean tangent model before transporting its pointwise orientation.
       (show Orientation ℝ (EuclideanSpace ℝ (Fin (1 + 1))) (Fin (1 + 1)) from
         o.orientationAt x) = Complex.orientation)
     (P Q : ℂ → ℝ) (U : Set ℂ) (hU : IsOpen U) (hrange : range f ⊆ U)

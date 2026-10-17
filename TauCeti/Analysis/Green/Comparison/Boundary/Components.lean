@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.Comparison.PathCoefficient
-public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.Comparison.Regularity
 public import TauCeti.Analysis.Green.Comparison.PullbackExteriorDerivative
 public import TauCeti.Analysis.Green.Comparison.Area.Image

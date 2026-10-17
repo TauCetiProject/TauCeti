@@ -78,8 +78,7 @@ theorem green_unitDisk (P Q : ℂ → ℝ) (hP : ContDiff ℝ 1 P) (hQ : ContDif
     unitDiskBoundaryLoop_injOn e (fun z hz ↦ (he z hz).1) (fun z hz ↦ (he z hz).2)
   simpa only [Subtype.range_coe_subtype, ofPred_mem_eq] using h
 
-/-- The area form on the actual counterclockwise disk boundary integrates to `π`, by the
-canonical manifold comparison and the Lebesgue measure of the closed unit disk. -/
+/-- The area form on the actual counterclockwise disk boundary integrates to `π`. -/
 theorem curveIntegral_unitDisk_area :
     curveIntegral (oneForm Examples.areaP Examples.areaQ)
       (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) =
