@@ -15,9 +15,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.Finite.Entropy
 
 This file identifies the finite matrix formulas for entropic optimal transport with the generic
 measure-theoretic definitions. For probability mass functions `μ` and `ν` on finite spaces, a
-transportation matrix `A` represents the coupling `A.toPMF.toMeasure`. Its matrix objective is the
-real form of the sum of the transport integral and `ε` times the Kullback--Leibler divergence from
-`μ.toMeasure.prod ν.toMeasure`.
+transportation matrix `A` represents the coupling `A.toPMF.toMeasure`. For a pointwise nonnegative
+real cost, its matrix objective is the real form of the sum of the transport integral and `ε` times
+the Kullback--Leibler divergence from `μ.toMeasure.prod ν.toMeasure`.
 
 The same conventions agree on the dual side. The measure-theoretic Gibbs factor splits into the
 row scaling, the finite Gibbs kernel, and the column scaling. Consequently the generic entropic
@@ -26,9 +26,11 @@ temperature.
 
 ## Main results
 
-* `TauCeti.TransportMatrix.ofReal_entropicTransportObjective_eq`: the matrix primal objective is
-  the real representative of the measure-theoretic primal objective.
-* `Matrix.ofReal_entropicTransportValue_eq`: the finite and measure-theoretic primal values agree.
+* `TauCeti.TransportMatrix.ofReal_entropicTransportObjective_eq`: for a pointwise nonnegative real
+  cost, the matrix primal objective is the real representative of the measure-theoretic primal
+  objective.
+* `Matrix.ofReal_entropicTransportValue_eq`: for a pointwise nonnegative real cost, the finite and
+  measure-theoretic primal values agree.
 * `Matrix.isDiagonalScaling_gibbs_iff`: finite diagonal scaling is exactly the generic Gibbs
   density formula.
 * `Matrix.entropicDualValue_eq_mul_relEntropyDual`: the generic and finite dual objectives agree.
@@ -51,8 +53,8 @@ namespace TransportMatrix
 
 variable {μ : PMF ι} {ν : PMF κ}
 
-/-- The finite matrix objective is the real representative of the measure-theoretic entropic
-objective of the associated coupling. -/
+/-- For a pointwise nonnegative real cost, the finite matrix objective is the real representative
+of the measure-theoretic entropic objective of the associated coupling. -/
 theorem ofReal_entropicTransportObjective_eq (A : TransportMatrix μ ν) (C : Matrix ι κ ℝ)
     (ε : ℝ≥0) (hC : ∀ i j, 0 ≤ C i j) :
     ENNReal.ofReal
@@ -124,8 +126,8 @@ variable [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-/-- The finite matrix entropic transport value is the real representative of the generic
-measure-theoretic entropic transport cost. -/
+/-- For a pointwise nonnegative real cost, the finite matrix entropic transport value is the real
+representative of the generic measure-theoretic entropic transport cost. -/
 theorem ofReal_entropicTransportValue_eq (C : Matrix ι κ ℝ) (ε : ℝ≥0)
     (μ : PMF ι) (ν : PMF κ) (hC : ∀ i j, 0 ≤ C i j) :
     ENNReal.ofReal (C.entropicTransportValue ε (fun i ↦ (μ i).toReal)

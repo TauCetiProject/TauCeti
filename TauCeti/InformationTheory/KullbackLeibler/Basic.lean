@@ -37,6 +37,6 @@ theorem llr_eq_log_real_div_real_singleton (π R : Measure α) [π.HaveLebesgueD
     (hR : R {x} ≠ 0) (hRtop : R {x} ≠ ∞) :
     llr π R x = Real.log (π.real {x} / R.real {x}) := by
   rw [llr, rnDeriv_eq_measure_singleton_div hR hRtop, ENNReal.toReal_div]
-  rfl
+  rw [Measure.real, Measure.real]
 
 end MeasureTheory.Measure
