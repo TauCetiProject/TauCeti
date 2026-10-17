@@ -96,6 +96,14 @@ an elliptic curve over a general base.
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1.7 and VII.5.5.
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics Studies
   108, Princeton University Press, 1985, 2.2.9 and 4.6.2, for the Legendre structures.
+
+## Provenance
+
+The `WeierstrassCurve.UniversalLegendre` namespace is adapted from Tau Ceti's own
+`WeierstrassCurve.UniversalTate` in `TauCeti.AlgebraicGeometry.EllipticCurve.TateNormalForm`: the
+ring as a localisation of a polynomial ring over `ℤ`, and `Ring.ringHom_ext`, `lift`,
+`lift_comp_algebraMap`, `lift_algebraMap`, `map_lift`, `comp_lift` and `eq_lift`, follow the
+declarations of the same names there.
 -/
 
 public section
@@ -122,25 +130,6 @@ namespace WeierstrassCurve
 section CommRing
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {x₁ y₁ x₂ y₂ : R}
-
-/-- **Two points of order two force `2` to be a unit.** If `W` is elliptic and `ψ₂` vanishes at
-`(x₁, y₁)` and at `(x₂, y₂)` with `x₂ - x₁` a unit, then `2` is a unit: modulo `2` both `a₁` and
-`a₃` vanish, and then so does the discriminant. -/
-theorem isUnit_two_of_evalEval_ψ₂_eq_zero [W.IsElliptic] (hψ₁ : W.ψ₂.evalEval x₁ y₁ = 0)
-    (hψ₂ : W.ψ₂.evalEval x₂ y₂ = 0) (hx : IsUnit (x₂ - x₁)) : IsUnit (2 : R) := by
-  rw [ψ₂, Affine.evalEval_polynomialY] at hψ₁ hψ₂
-  obtain ⟨w, hw⟩ := hx.exists_right_inv
-  -- `a₁ = 2α` and `a₃ = 2β`
-  set α := -(y₂ - y₁) * w
-  set β := -y₁ - α * x₁
-  have ha₁ : W.a₁ = 2 * α := by linear_combination w * hψ₂ - w * hψ₁ - W.a₁ * hw
-  have ha₃ : W.a₃ = 2 * β := by linear_combination hψ₁ - x₁ * ha₁
-  -- so `b₂` and `b₆` are divisible by `4` and `b₄` by `2`, and the discriminant is even
-  have hΔ : W.Δ = 2 * (-8 * (α ^ 2 + W.a₂) ^ 2 * W.b₈ - 32 * (W.a₄ + 2 * α * β) ^ 3 -
-      216 * (β ^ 2 + W.a₆) ^ 2 + 144 * (α ^ 2 + W.a₂) * (W.a₄ + 2 * α * β) * (β ^ 2 + W.a₆)) := by
-    rw [Δ, b₂, b₄, b₆, ha₁, ha₃]
-    ring
-  exact isUnit_of_mul_isUnit_left (hΔ ▸ W.isUnit_Δ)
 
 /-- The **change of variables to Legendre form** with scaling `u` and centre `(x₁, y₁)`, defined
 when `2` is a unit: `u`, `r = x₁`, `s = -a₁/2` and `t = y₁`. When `(x₁, y₁)` and `(x₂, y₂)` are
