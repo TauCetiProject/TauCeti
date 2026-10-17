@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.RectangleComparison
-import TauCeti.Analysis.Green.Limit
 public import TauCeti.Analysis.Green.Comparison.Area.Image
-public import TauCeti.Analysis.Green.Comparison.Rectangle.Orientation
 public import TauCeti.Analysis.Green.Comparison.ExteriorDerivative
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Rectangle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
@@ -107,23 +108,21 @@ theorem integralTopForm_rectangle_faces {a b c d : ℝ} [hab : Fact (a < b)]
   have hH (y : ℝ) (hy : y ∈ Icc c d) :
       IntervalIntegrable (fun t ↦ P ⟨t, y⟩) volume a b := by
     apply ContinuousOn.intervalIntegrable_of_Icc hab.out.le
-    apply hP.comp (show ContinuousOn (fun t : ℝ ↦ (⟨t, y⟩ : ℂ)) _ from by
-        simpa only [Function.comp_def, Complex.equivRealProdCLM_symm_apply,
-          Complex.mk_eq_add_mul_I] using
-          (Complex.equivRealProdCLM.symm.continuous.comp
-            (show Continuous (fun t : ℝ ↦ (t, y)) from
-              continuous_id.prodMk continuous_const)).continuousOn)
+    have hc : Continuous (fun t : ℝ ↦ (⟨t, y⟩ : ℂ)) := by
+      simpa only [Function.comp_def, Complex.equivRealProdCLM_symm_apply,
+        Complex.mk_eq_add_mul_I, id_eq] using
+        Complex.equivRealProdCLM.symm.continuous.comp (continuous_id.prodMk continuous_const)
+    apply hP.comp hc.continuousOn
     intro t ht
     exact mem_verticalRegion.mpr ⟨ht, hy⟩
   have hV (x : ℝ) (hx : x ∈ Icc a b) :
       IntervalIntegrable (fun t ↦ Q ⟨x, t⟩) volume c d := by
     apply ContinuousOn.intervalIntegrable_of_Icc hcd.out.le
-    apply hQ.comp (show ContinuousOn (fun t : ℝ ↦ (⟨x, t⟩ : ℂ)) _ from by
+    have hc : Continuous (fun t : ℝ ↦ (⟨x, t⟩ : ℂ)) := by
       simpa only [Function.comp_def, Complex.equivRealProdCLM_symm_apply,
-        Complex.mk_eq_add_mul_I] using
-        (Complex.equivRealProdCLM.symm.continuous.comp
-          (show Continuous (fun t : ℝ ↦ (x, t)) from
-            continuous_const.prodMk continuous_id)).continuousOn)
+        Complex.mk_eq_add_mul_I, id_eq] using
+        Complex.equivRealProdCLM.symm.continuous.comp (continuous_const.prodMk continuous_id)
+    apply hQ.comp hc.continuousOn
     intro t ht
     exact mem_verticalRegion.mpr ⟨hx, ht⟩
   have hB := integralTopForm_horizontal_face c P Q (hH c ⟨le_rfl, hcd.out.le⟩)
@@ -167,12 +166,14 @@ theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
         f ⟨x.1, x.2⟩ := by
     dsimp only [η]
     rw [mpullback_apply, mfderiv_eq_fderiv]
+    -- Put the model-space tangent fibers in their canonical normed-space coordinates.
     change (f (L x) • manifoldAreaForm (L x))
       (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) (L x)).symm
         (fderiv ℝ L x (![(1, 0), (0, 1)] i))) = _
     rw [L.hasFDerivAt.fderiv, ContinuousAlternatingMap.smul_apply,
       manifoldAreaForm_apply]
     simp only [ContinuousLinearEquiv.apply_symm_apply, smul_eq_mul]
+    -- The two canonical tangent equivalences cancel; expose the resulting scalar coefficient.
     change f (L x) * complexAreaForm (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = _
     have hv : (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = Complex.basisOneI := by
       funext i
@@ -185,8 +186,9 @@ theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
 
 /-- Continuity supplies the genuine intrinsic integrability needed for the rectangle area
 comparison, including its corner points. -/
-theorem _root_.Continuous.integrableTopForm_rectangle_areaForm {a b c d : ℝ}
-    [Fact (a < b)] [Fact (c < d)] {f : ℂ → ℝ} (hf : Continuous f) :
+theorem _root_.ContinuousOn.integrableTopForm_rectangle_areaForm {a b c d : ℝ}
+    [Fact (a < b)] [Fact (c < d)] {f : ℂ → ℝ}
+    (hf : ContinuousOn f (verticalRegion a b (fun _ ↦ c) (fun _ ↦ d))) :
     IntegrableTopForm (mpullback ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ)
       (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ))
       (fun z ↦ f z • manifoldAreaForm z)) := by
@@ -196,15 +198,35 @@ theorem _root_.Continuous.integrableTopForm_rectangle_areaForm {a b c d : ℝ}
   have hιC : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ) 1
       (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ)) := by
     exact Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp hι
-  exact Module.Basis.integrableTopForm_mpullback_areaForm
+  have harea : IsSmoothForm 𝓘(ℝ, ℂ) 0 manifoldAreaForm := by
+    apply IsSmoothForm.of_contDiffWithinAt_inChartAt_self
+    intro z
+    rw [manifoldAreaForm_inChartAt]
+    exact contDiffWithinAt_const
+  have hscalar : Continuous (fun x : Icc a b × Icc c d ↦ f (⟨x.1, x.2⟩ : ℂ)) := by
+    apply hf.comp_continuous hιC.continuous
+    intro x
+    exact mem_verticalRegion.mpr ⟨x.1.property, x.2.property⟩
+  have hform := (harea.mpullback hιC).fun_smul (contMDiff_zero_iff.mpr hscalar)
+  have he : mpullback ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ)
+      (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ))
+      (fun z ↦ f z • manifoldAreaForm z) =
+    fun x ↦ f (⟨x.1, x.2⟩ : ℂ) • mpullback ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ)
+      (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ)) manifoldAreaForm x := by
+    ext x v
+    simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply]
+  rw [he]
+  exact hform.integrableTopForm (isClosed_tsupport _).isCompact
     (((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.prod
-      (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis).reindex finSumFinEquiv) hιC hf
+      (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis).reindex finSumFinEquiv)
 
 /-- Green on the actual product interval manifold agrees with the existing finite rectangle
 boundary chain. The area integrand is the pullback of the actual manifold exterior derivative;
 `integralTopForm_rectangle_faces` identifies the chain with the four outward-oriented faces. -/
-theorem _root_.ContDiff.integralTopForm_rectangle_mextDeriv {a b c d : ℝ} [hab : Fact (a < b)]
-    [hcd : Fact (c < d)] {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
+theorem integralTopForm_rectangle_mextDeriv {a b c d : ℝ} [hab : Fact (a < b)]
+    [hcd : Fact (c < d)] {P Q : ℂ → ℝ}
+    (hP : ∀ z ∈ verticalRegion a b (fun _ ↦ c) (fun _ ↦ d), ContDiffAt ℝ 1 P z)
+    (hQ : ∀ z ∈ verticalRegion a b (fun _ ↦ c) (fun _ ↦ d), ContDiffAt ℝ 1 Q z) :
     let ω := mpullback ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ)
       (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ)) (mextDeriv (manifoldOneForm P Q))
     let C := (Division.rectangleRe a b c d hab.out hcd.out).boundary
@@ -212,35 +234,56 @@ theorem _root_.ContDiff.integralTopForm_rectangle_mextDeriv {a b c d : ℝ} [hab
       integralTopForm
           ((Manifold.Orientation.interval a b).prod (Manifold.Orientation.interval c d)) ω =
         BoundaryChain.integral Complex.reCLM P C + BoundaryChain.integral Complex.imCLM Q C := by
-  have hω : mextDeriv (manifoldOneForm P Q) = fun z ↦ curl P Q z • manifoldAreaForm z := by
-    funext z
-    exact DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area
-      (hP.differentiable one_ne_zero z) (hQ.differentiable one_ne_zero z)
+  let R := verticalRegion a b (fun _ ↦ c) (fun _ ↦ d)
+  have hcurl : ContinuousOn (curl P Q) R := by
+    intro z hz
+    exact (((ContinuousLinearMap.apply ℝ ℝ (1 : ℂ)).continuous.continuousAt.comp
+      ((hQ z hz).continuousAt_fderiv one_ne_zero)).sub
+      ((ContinuousLinearMap.apply ℝ ℝ Complex.I).continuous.continuousAt.comp
+        ((hP z hz).continuousAt_fderiv one_ne_zero))).continuousWithinAt
+  have hω : mpullback ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ)
+      (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ))
+      (mextDeriv (manifoldOneForm P Q)) =
+    mpullback ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ, ℂ)
+      (fun x : Icc a b × Icc c d ↦ (⟨x.1, x.2⟩ : ℂ))
+      (fun z ↦ curl P Q z • manifoldAreaForm z) := by
+    ext x v
+    have hx : (⟨x.1, x.2⟩ : ℂ) ∈ R := mem_verticalRegion.mpr ⟨x.1.property, x.2.property⟩
+    rw [mpullback_apply, mpullback_apply,
+      DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area
+        ((hP _ hx).differentiableAt one_ne_zero) ((hQ _ hx).differentiableAt one_ne_zero)]
   dsimp only
   rw [hω]
-  have hi := Continuous.integrableTopForm_rectangle_areaForm (a := a) (b := b) (c := c) (d := d)
-    (ContDiff.continuous_curl hP hQ)
+  have hi := ContinuousOn.integrableTopForm_rectangle_areaForm hcurl
   refine ⟨hi, (integralTopForm_rectangle_areaForm (curl P Q) hi).2.trans ?_⟩
   let L := Complex.equivRealProdCLM.symm
   let f : ℝ × ℝ → ℝ := fun x ↦ Q (L x)
   let g : ℝ × ℝ → ℝ := fun x ↦ -P (L x)
   let f' : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ := fun x ↦ (fderiv ℝ Q (L x)).comp L.toContinuousLinearMap
   let g' : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ := fun x ↦ -(fderiv ℝ P (L x)).comp L.toContinuousLinearMap
-  have hf (x : ℝ × ℝ) : HasFDerivAt f (f' x) x :=
-    (hQ.differentiable one_ne_zero (L x)).hasFDerivAt.comp x L.hasFDerivAt
-  have hg (x : ℝ × ℝ) : HasFDerivAt g (g' x) x :=
-    ((hP.differentiable one_ne_zero (L x)).hasFDerivAt.comp x L.hasFDerivAt).neg
+  have hmem (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : L x ∈ R := by
+    apply mem_verticalRegion.mpr
+    exact ⟨⟨hx.1.1, hx.2.1⟩, ⟨hx.1.2, hx.2.2⟩⟩
+  have hf (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : HasFDerivAt f (f' x) x :=
+    ((hQ (L x) (hmem x hx)).differentiableAt one_ne_zero).hasFDerivAt.comp x L.hasFDerivAt
+  have hg (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : HasFDerivAt g (g' x) x :=
+    (((hP (L x) (hmem x hx)).differentiableAt one_ne_zero).hasFDerivAt.comp x
+      L.hasFDerivAt).neg
   have he (x : ℝ × ℝ) : f' x (1, 0) + g' x (0, 1) = curl P Q ⟨x.1, x.2⟩ := by
     simp [f', g', L, ContinuousLinearMap.comp_apply, Complex.equivRealProdCLM_symm_apply,
       Complex.mk_eq_add_mul_I, curl, sub_eq_add_neg]
   have hfg : IntegrableOn (fun x ↦ f' x (1, 0) + g' x (0, 1)) (Icc (a, c) (b, d)) := by
     simpa only [he, Icc_prod_eq] using
       (integralTopForm_rectangle_areaForm (curl P Q) hi).1
+  have hsubset : Ioo a b ×ˢ Ioo c d ⊆ Icc (a, c) (b, d) := by
+    rw [Icc_prod_eq]
+    exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
   have hD := integral_rectangle_boundary_eq_divergence f g f' g' (a, c) (b, d)
     hab.out hcd.out ∅ countable_empty
-    (hQ.continuous.comp L.continuous).continuousOn
-    (hP.continuous.comp L.continuous).neg.continuousOn
-    (fun x _ ↦ hf x) (fun x _ ↦ hg x) hfg
+    (fun x hx ↦ ((hQ (L x) (hmem x hx)).continuousAt.comp L.continuousAt).continuousWithinAt)
+    (fun x hx ↦ ((hP (L x) (hmem x hx)).continuousAt.comp
+      L.continuousAt).neg.continuousWithinAt)
+    (fun x hx ↦ hf x (hsubset hx.1)) (fun x hx ↦ hg x (hsubset hx.1)) hfg
   have hL (z : ℂ) : L (z.re, z.im) = z := by
     simp [L, Complex.equivRealProdCLM_symm_apply]
   simpa only [f, g, hL, neg_neg, he, Icc_prod_eq] using hD.2.2.symm

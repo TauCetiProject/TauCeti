@@ -62,6 +62,8 @@ theorem outwardFirstBasis_apply (v : ℂ) (hv : v ≠ 0) :
 /-- The actual outward-first basis agrees with Mathlib's standard complex orientation. -/
 theorem orientation_outwardFirstBasis (v : ℂ) (hv : v ≠ 0) :
     (outwardFirstBasis v hv).orientation = Complex.orientation := by
+  -- Complex.orientation is the orientation of basisOneI; expose that basis for the determinant
+  -- test.
   change (outwardFirstBasis v hv).orientation = Complex.basisOneI.orientation
   apply Eq.symm
   apply (Complex.basisOneI.orientation_eq_iff_det_pos _).mpr
@@ -125,12 +127,14 @@ theorem isOutwardPointing_complex_halfSpace
   · intro h
     have hh := h.coordinate_deriv_neg
     rw [mfderiv_extChartAt_self] at hh
+    -- After the chart derivative is the identity, read the half-space test in coordinate zero.
     change (Complex.orthonormalBasisOneI.repr (-I * v)) 0 < 0 at hh
     simpa using hh
   · intro hv
     apply TauCeti.isOutwardPointing_iff.mpr
     refine ⟨hx, ?_⟩
     rw [mfderiv_extChartAt_self]
+    -- After the chart derivative is the identity, read the half-space test in coordinate zero.
     change (Complex.orthonormalBasisOneI.repr (-I * v)) 0 < 0
     simpa using hv
 

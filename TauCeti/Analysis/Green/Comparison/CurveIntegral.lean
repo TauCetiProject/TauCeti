@@ -60,9 +60,10 @@ theorem _root_.Path.integralTopForm_mpullback_of_continuousOn {p q : ℂ} (γ : 
       integralTopForm (Manifold.Orientation.interval 0 1)
         (mpullback (𝓡∂ 1) 𝓘(ℝ, ℂ) (γ : Icc (0 : ℝ) 1 → ℂ) (manifoldOneForm P Q)) =
         curveIntegral (oneForm P Q) γ := by
+  have hγu : ContDiffOn ℝ 1 γ.extend (uIcc 0 1) := by
+    simpa only [uIcc_of_le zero_le_one] using hγ
   have hac : AbsolutelyContinuousOnInterval γ.extend 0 1 :=
-    (show ContDiffOn ℝ 1 γ.extend (uIcc 0 1) by simpa using hγ)
-      |>.absolutelyContinuousOnInterval
+    hγu.absolutelyContinuousOnInterval
   exact ⟨hac.curveIntegrable_oneForm hP hQ,
     Path.integralTopForm_mpullback γ P Q hγ
       (hac.intervalIntegrable_circulationFun (by simpa using hP) (by simpa using hQ))⟩

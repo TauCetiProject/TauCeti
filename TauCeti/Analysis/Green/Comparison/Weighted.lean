@@ -53,15 +53,10 @@ theorem _root_.HasCompactSupport.weighted_mextDeriv_integralTopForm {W : ℂ →
     · simp only [f, indicator_of_notMem hz, zero_smul]
   have hf : Integrable f := hi.integrable_indicator hU
   have hcf : HasCompactSupport f := by
-    apply HasCompactSupport.of_support_subset_isCompact hc.isCompact
-    intro z hz
-    apply subset_tsupport W
-    by_contra hn
-    have hw : W z = 0 := Function.notMem_support.mp hn
-    apply Function.mem_support.mp hz
-    by_cases hzU : z ∈ U
-    · simp only [f, indicator_of_mem hzU, hw, zero_mul]
-    · exact indicator_of_notMem hzU _
+    have h := hc.mul_right (f' := U.indicator (curl P Q))
+    convert h using 1
+    funext z
+    exact indicator_mul_right U W (curl P Q)
   rw [he]
   exact ⟨HasCompactSupport.integrableTopForm_fun_smul_manifoldAreaForm hcf hf,
     (HasCompactSupport.integralTopForm_model_manifoldAreaForm hcf hf).trans (integral_indicator hU)⟩

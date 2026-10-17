@@ -55,11 +55,14 @@ theorem map_orientation_eq_boundaryOrientation_of_outwardFirst
       (fun i ↦ mfderiv (𝓡 1) (𝓡∂ (1 + 1)) (Subtype.val : (𝓡∂ (1 + 1)).boundary M → M) x (b i)) := by
     funext i
     fin_cases i
-    · change F.symm (outwardFirstBasis v hv0 0) = _
+    · -- Evaluate the mapped basis at index zero before using its outward-first definition.
+      change F.symm (outwardFirstBasis v hv0 0) = _
       rw [outwardFirstBasis_apply]
       rfl
-    · change F.symm (outwardFirstBasis v hv0 1) = _
+    · -- Evaluate the mapped basis at index one before using its tangential component.
+      change F.symm (outwardFirstBasis v hv0 1) = _
       rw [outwardFirstBasis_apply]
+      -- Normalize the singleton index and mapped basis before applying the velocity hypothesis.
       change F.symm v = mfderiv (𝓡 1) (𝓡∂ (1 + 1))
         (Subtype.val : (𝓡∂ (1 + 1)).boundary M → M) x (b 0)
       apply F.injective
@@ -68,6 +71,7 @@ theorem map_orientation_eq_boundaryOrientation_of_outwardFirst
   have hb'o : b'.orientation = o.orientationAt (x : M) := by
     rw [Module.Basis.orientation_map, orientation_outwardFirstBasis]
     apply (Orientation.map (Fin 2) F.toLinearEquiv).injective
+    -- Turn transport by the inverse linear equivalence into the inverse orientation equivalence.
     change (Orientation.map (Fin 2) F.toLinearEquiv)
       ((Orientation.map (Fin 2) F.toLinearEquiv).symm Complex.orientation) = _
     rw [Equiv.apply_symm_apply]

@@ -78,6 +78,7 @@ theorem _root_.HasCompactSupport.integrableTopForm_fun_smul_manifoldAreaForm {f 
   refine ⟨hc.isCompact.of_isClosed_subset (_root_.isClosed_tsupport (α := ℂ [⋀^Fin _]→L[ℝ] ℝ) _) ?_,
     ⟨Complex.basisOneI⟩, ?_⟩
   · exact _root_.tsupport_smul_subset_left f
+      -- Use the model-space form as an ordinary coefficient function for support arithmetic.
       (show ℂ → ℂ [⋀^Fin 2]→L[ℝ] ℝ from manifoldAreaForm)
   · intro b c
     have heq : RoughForm.signedInChartAt (I := 𝓘(ℝ, ℂ))

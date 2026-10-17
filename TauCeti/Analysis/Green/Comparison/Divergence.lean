@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.RectangleComparison
-public import TauCeti.Analysis.Green.Orientation
 public import TauCeti.LinearAlgebra.Trace.Complex
 
 /-!
@@ -43,7 +42,6 @@ theorem integral_rectangle_flux_eq_outward {a b c e : ℝ} (hab : a < b) (hce : 
   simp only [Function.comp_apply, Pi.neg_apply] at h
   refine ⟨h.1, h.2.1, ?_⟩
   have hh := h.2.2
-  change _ = _ at hh
   refine hh.trans ?_
   simp [Complex.inner]
   ring

@@ -59,48 +59,6 @@ theorem rectangle_face_normals_outward {a b c d : ℝ} (x : Icc a b) (y : Icc c 
     linarith
 
 
-private theorem exists_interval_tangent_bases {a b : ℝ} [Fact (a < b)] (x : Icc a b) :
-    ∃ B C : Module.Basis (Fin 1) ℝ (EuclideanSpace ℝ (Fin 1)),
-      B.orientation = (Manifold.Orientation.interval a b).orientationAt x ∧
-      C.orientation = (-Manifold.Orientation.interval a b).orientationAt x ∧
-      subtypeValIccTangentEquiv x (B 0) = 1 ∧ subtypeValIccTangentEquiv x (C 0) = -1 := by
-  let e := subtypeValIccTangentEquiv x
-  let B := (Module.Basis.singleton (Fin 1) ℝ).map e.symm.toLinearEquiv
-  have hB : B.orientation = (Manifold.Orientation.interval a b).orientationAt x := by
-    rw [Module.Basis.orientation_map]
-    rw [← Manifold.Orientation.map_orientationAt_interval x]
-    exact (Orientation.map (Fin 1) e.toLinearEquiv).symm_apply_apply _
-  let C := B.unitsSMul (fun _ ↦ (-1 : ℝˣ))
-  have hC : C.orientation = (-Manifold.Orientation.interval a b).orientationAt x := by
-    rw [Manifold.Orientation.orientationAt_neg, ← hB]
-    change (B.unitsSMul _).orientation = -B.orientation
-    rw [Module.Basis.orientation_unitsSMul]
-    simp only [Fin.prod_univ_one, inv_neg, inv_one]
-    exact Module.Ray.units_smul_of_neg (-1) (by norm_num) _
-  refine ⟨B, C, hB, hC, ?_, ?_⟩
-  · simp [B, e, Module.Basis.map_apply]
-  · by_cases hx : (x : ℝ) < b <;>
-      simp [C, Module.Basis.unitsSMul_apply, B, e, Module.Basis.map_apply, hx]
-
-private theorem mfderiv_interval_affine_apply {a b : ℝ} [Fact (a < b)]
-    (z : ℂ) (L : ℝ →L[ℝ] ℂ) (x : Icc a b) (w : TangentSpace (𝓡∂ 1) x) :
-    NormedSpace.fromTangentSpace (𝕜 := ℝ) (z + L (x : ℝ))
-      (mfderiv (𝓡∂ 1) 𝓘(ℝ, ℂ) (fun t : Icc a b ↦ z + L (t : ℝ)) x w) =
-        L (subtypeValIccTangentEquiv x w) := by
-  have hi := (contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)).mdifferentiable
-    one_ne_zero x
-  have hd := ((L.hasFDerivAt.const_add z).hasMFDerivAt.comp x hi.hasMFDerivAt).mfderiv
-  change mfderiv (𝓡∂ 1) 𝓘(ℝ, ℂ) (fun t : Icc a b ↦ z + L (t : ℝ)) x =
-    L.comp (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val x) at hd
-  rw [hd]
-  have he := congrArg (fun A : TangentSpace (𝓡∂ 1) x →L[ℝ] ℝ ↦ A w)
-    (subtypeValIccTangentEquiv_toContinuousLinearMap x)
-  change subtypeValIccTangentEquiv x w =
-    NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : ℝ)
-      (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val x w) at he
-  rw [he]
-  rfl
-
 /-- The canonical rectangle orientation, transported through its actual inclusion derivative
 and the standard real-plane identification, is the complex orientation at every corner and edge. -/
 theorem map_orientationAt_rectangle_complex {a b c d : ℝ} [Fact (a < b)] [Fact (c < d)]
@@ -110,6 +68,7 @@ theorem map_orientationAt_rectangle_complex {a b c d : ℝ} [Fact (a < b)] [Fact
       (((Manifold.Orientation.interval a b).prod
         (Manifold.Orientation.interval c d)).orientationAt x) = Complex.orientation := by
   have h := Manifold.Orientation.map_orientationAt_interval_prod x
+  -- Orientation transport composes underlying linear equivalences, rather than their CLM wrappers.
   change Orientation.map (Fin 2)
     ((subtypeValRectangleTangentEquiv x).toLinearEquiv.trans
       Complex.equivRealProdCLM.symm.toLinearEquiv) _ = _
@@ -155,6 +114,7 @@ theorem exists_horizontal_face_outwardFirst {a b c d : ℝ} [Fact (a < b)] [Fact
         (fun t : Icc a b ↦ (⟨t, y⟩ : ℂ)) := by
       funext t
       apply Complex.ext <;> simp
+    -- Expose the affine map as a single function so its equality rewrites the dependent base point.
     change NormedSpace.fromTangentSpace (𝕜 := ℝ)
       ((fun t : Icc a b ↦ (y : ℂ) * Complex.I + Complex.ofRealCLM t) x)
       (mfderiv (𝓡∂ 1) 𝓘(ℝ, ℂ) _ x w) = _ at h
@@ -211,10 +171,12 @@ theorem exists_vertical_face_outwardFirst {a b c d : ℝ} [Fact (a < b)] [Fact (
         (fun t : Icc c d ↦ (⟨x, t⟩ : ℂ)) := by
       funext t
       apply Complex.ext <;> simp
+    -- Expose the affine map as a single function so its equality rewrites the dependent base point.
     change NormedSpace.fromTangentSpace (𝕜 := ℝ)
       ((fun t : Icc c d ↦ (x : ℂ) + (Complex.I • Complex.ofRealCLM) t) y)
       (mfderiv (𝓡∂ 1) 𝓘(ℝ, ℂ) _ y w) = _ at h
     rw [he] at h
+    -- Evaluate the scalar multiple of ofRealCLM before commuting the complex factors.
     change _ = Complex.I * (subtypeValIccTangentEquiv y w : ℂ) at h
     exact h.trans (mul_comm _ _)
   cases left <;> dsimp only [Bool.false_eq_true, Bool.true_eq, ↓reduceIte]

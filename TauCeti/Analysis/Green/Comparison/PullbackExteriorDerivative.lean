@@ -77,6 +77,7 @@ theorem _root_.ContMDiff.mextDeriv_mpullback_manifoldOneForm_apply {f : M → �
     RoughForm.inChartAt_mpullback_modelSpace _ f x (mem_extChartAt_target x)
       ((hf _).mdifferentiableAt (by norm_num))]
   ext v
+  -- Evaluate the composed alternating maps on v and identify the model tangent fiber with ℂ.
   change curl P Q (f x) • complexAreaForm (fun i ↦ fderivWithin ℝ T (range I) z (v i)) =
     curl P Q (f x) • manifoldAreaForm (f ((extChartAt I x).symm (extChartAt I x x)))
       (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ)
