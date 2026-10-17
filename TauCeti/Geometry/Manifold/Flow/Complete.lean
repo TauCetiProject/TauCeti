@@ -23,7 +23,9 @@ dimensionality.
 
 ## Main declarations
 
-* `TauCeti.IsCompleteVectorField`: the maximal flow is defined at every time and point.
+* `TauCeti.IsCompleteVectorField`: the maximal flow is defined at every time and point, with
+  eliminators `IsCompleteVectorField.flowDomain_eq_univ`, `IsCompleteVectorField.mem_flowDomain`,
+  and `IsCompleteVectorField.mem_maximalIntegralCurveInterval`.
 * `TauCeti.isCompleteVectorField_iff_maximalIntegralCurveInterval`: completeness in terms of
   pointwise maximal intervals.
 * `TauCeti.isCompleteVectorField_iff_exists_isMIntegralCurve`: completeness in terms of global
@@ -55,6 +57,26 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A vector field is complete when its maximal flow is defined at every time and point. -/
 def IsCompleteVectorField (v : (x : M) → TangentSpace I x) : Prop :=
   flowDomain v = univ
+
+namespace IsCompleteVectorField
+
+/-- The maximal-flow domain of a complete vector field is all of `ℝ × M`. This is the defining
+property, named so that it can be used for rewriting. -/
+theorem flowDomain_eq_univ {v : (x : M) → TangentSpace I x} (hv : IsCompleteVectorField v) :
+    flowDomain v = univ :=
+  hv
+
+/-- Every time and point lie in the maximal-flow domain of a complete vector field. -/
+theorem mem_flowDomain {v : (x : M) → TangentSpace I x} (hv : IsCompleteVectorField v)
+    (t : ℝ) (x : M) : (t, x) ∈ flowDomain v :=
+  hv.flowDomain_eq_univ ▸ mem_univ _
+
+/-- Every time lies in each maximal interval of a complete vector field. -/
+theorem mem_maximalIntegralCurveInterval {v : (x : M) → TangentSpace I x}
+    (hv : IsCompleteVectorField v) (x : M) (t : ℝ) : t ∈ maximalIntegralCurveInterval v x :=
+  TauCeti.mem_flowDomain.mp (hv.mem_flowDomain t x)
+
+end IsCompleteVectorField
 
 /-- A vector field is complete precisely when every pointwise maximal interval is all of `ℝ`. -/
 theorem isCompleteVectorField_iff_maximalIntegralCurveInterval
@@ -121,7 +143,9 @@ theorem isCompleteVectorField_of_isCompact_of_eq_zero_off {v : (x : M) → Tange
     {K : Set M} (hK : IsCompact K) (hvK : ∀ x ∉ K, v x = 0) :
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
-  exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_eq_zero_off hv hK hvK
+  exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
+    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) (hK.insert x)
+    (mapsTo_maximalIntegralCurve_insert_of_eq_zero_off hv hvK)
 
 /-- Every `C¹` vector field on a compact boundaryless Banach manifold is complete. -/
 theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
@@ -129,6 +153,7 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) :
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
-  exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_compactSpace hv
+  exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
+    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) isCompact_univ fun _ _ ↦ mem_univ _
 
 end TauCeti

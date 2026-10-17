@@ -15,7 +15,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 A `C¹` vector field `v` on a boundaryless manifold is **complete** when its maximal integral curves
 are all defined for all time. Its maximal integral curves then assemble into a flow of `ℝ` on the
 manifold, and this file packages them as a Mathlib `Flow`. Every `C¹` vector field on a compact
-boundaryless manifold is complete (`maximalIntegralCurveInterval_eq_univ_of_compactSpace`).
+boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
 ## Main declarations
 
@@ -57,11 +57,9 @@ noncomputable def globalFlow (v : (x : M) → TangentSpace I x)
       hcomplete.maximalIntegralCurveInterval_eq_univ, contMDiffOn_univ] at h
     exact h.continuous.comp continuous_swap
   map_add' t₁ t₂ x := by
-    rw [add_comm, maximalIntegralCurve_add hv
-      (by rw [hcomplete.maximalIntegralCurveInterval_eq_univ]; trivial)
-      (by rw [hcomplete.maximalIntegralCurveInterval_eq_univ]; trivial)]
-  map_zero' x := maximalIntegralCurve_zero
-    (hcomplete.maximalIntegralCurveInterval_eq_univ x ▸ mem_univ 0)
+    rw [add_comm, maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval _ _)
+      (hcomplete.mem_maximalIntegralCurveInterval _ _)]
+  map_zero' x := maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)
 
 variable (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
   (hcomplete : IsCompleteVectorField v)

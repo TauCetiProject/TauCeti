@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
-public import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 
