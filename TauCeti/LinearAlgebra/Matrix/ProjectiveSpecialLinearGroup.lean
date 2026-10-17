@@ -162,6 +162,11 @@ theorem _root_.Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R (Γ : Subgroup SL(
 
 end TauCeti
 
+/-- The image in `PSL(2, ℝ)` of a subgroup of `SL(2, ℤ)` lies in the image of `PSL(2, ℤ)`. -/
+theorem Subgroup.map_sl2zToPSL2R_le_range (H : Subgroup SL(2, ℤ)) :
+    H.map sl2zToPSL2R ≤ psl2zToPSL2R.range :=
+  TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R ▸ H.map_le_range sl2zToPSL2R
+
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 variable {S : Type*} [CommRing S]

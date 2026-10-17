@@ -11,6 +11,9 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 /-!
 # Finite-index modular groups as cofinite Fuchsian groups
 
+The image in `PSL(2, ℝ)` of a subgroup `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the
+image of the full modular group, since `{±I}` acts trivially.
+
 Every finite-index subgroup of `SL(2, ℤ)` gives a cofinite subgroup of `PSL(2, ℝ)`.
 Its parabolic fixed points are exactly the rational boundary points: equivalently, the
 orbit of infinity under the full modular group. The subgroup can split this one modular
@@ -33,40 +36,33 @@ namespace Subgroup
 
 variable (H : Subgroup SL(2, ℤ)) [H.FiniteIndex]
 
-private theorem finiteRelIndex_map_sl2zToPSL2R :
-    (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range := by
-  have htop : (⊤ : Subgroup SL(2, ℤ)).map sl2zToPSL2R =
-      psl2zToPSL2R.range := by
-    rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
-    ext x
-    simp
-  rw [← htop]
-  have hH : H.IsFiniteRelIndex (⊤ : Subgroup SL(2, ℤ)) :=
-    Subgroup.isFiniteRelIndex_iff_finiteIndex.mpr inferInstance
-  exact hH.map sl2zToPSL2R
+omit [H.FiniteIndex] in
+/-- **The arithmetic index of a modular subgroup.** The image of `H ≤ SL(2, ℤ)` in `PSL(2, ℝ)`
+has index `[SL(2, ℤ) : ±H]` in the image of `SL(2, ℤ)`, since `sl2zToPSL2R` has kernel `{±I}`. -/
+theorem relIndex_map_sl2zToPSL2R :
+    (H.map sl2zToPSL2R).relIndex psl2zToPSL2R.range = H.withCenter.index := by
+  rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R, ← index_comap, comap_map_eq,
+    sl2zToPSL2R_ker, withCenter_def]
+
+/-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
+instance isFiniteRelIndex_map_sl2zToPSL2R :
+    (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
+  ⟨H.relIndex_map_sl2zToPSL2R ▸ FiniteIndex.index_ne_zero⟩
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has cofinite effective image in `PSL(2, ℝ)`.
 This formulation applies directly to `Γ(N)`, `Γ₀(N)`, and `Γ₁(N)`. -/
 theorem isCofinite_map_sl2zToPSL2R :
     (H.map sl2zToPSL2R).IsCofinite := by
-  have hle : H.map sl2zToPSL2R ≤ psl2zToPSL2R.range := by
-    rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
-    exact Subgroup.map_le_range sl2zToPSL2R H
-  apply (Subgroup.isCofinite_iff_isCofinite_and_finiteIndex hle).mpr
+  apply (Subgroup.isCofinite_iff_isCofinite_and_finiteIndex H.map_sl2zToPSL2R_le_range).mpr
   exact ⟨TauCeti.ModularGroup.isCofinite_psl2zToPSL2RRange,
-    Subgroup.isFiniteRelIndex_iff_finiteIndex.mp (finiteRelIndex_map_sl2zToPSL2R H)⟩
+    Subgroup.isFiniteRelIndex_iff_finiteIndex.mp inferInstance⟩
 
 /-- The parabolic fixed points of a finite-index integral modular subgroup are the
 rational boundary points, described as the full modular orbit of infinity. -/
 theorem isCuspPoint_map_sl2zToPSL2R_iff_orbit_infty (c : OnePoint ℝ) :
     (H.map sl2zToPSL2R).IsCuspPoint c ↔
       c ∈ orbit psl2zToPSL2R.range (∞ : OnePoint ℝ) := by
-  have hle : H.map sl2zToPSL2R ≤ psl2zToPSL2R.range := by
-    rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
-    exact Subgroup.map_le_range sl2zToPSL2R H
-  let _ : (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
-    finiteRelIndex_map_sl2zToPSL2R H
-  rw [Subgroup.isCuspPoint_iff_of_isFiniteRelIndex hle]
+  rw [Subgroup.isCuspPoint_iff_of_isFiniteRelIndex H.map_sl2zToPSL2R_le_range]
   constructor
   · exact TauCeti.ModularGroup.cuspPoint_mem_orbit_infty
   · intro hc
@@ -78,13 +74,8 @@ theorem isCuspPoint_map_sl2zToPSL2R_iff_orbit_infty (c : OnePoint ℝ) :
 `ℙ¹(ℚ)` in the real projective boundary. -/
 theorem isCuspPoint_map_sl2zToPSL2R_iff_rat (c : OnePoint ℝ) :
     (H.map sl2zToPSL2R).IsCuspPoint c ↔
-      c ∈ Set.range (OnePoint.map Rat.cast) := by
-  have hle : H.map sl2zToPSL2R ≤ psl2zToPSL2R.range := by
-    rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
-    exact Subgroup.map_le_range sl2zToPSL2R H
-  let _ : (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
-    finiteRelIndex_map_sl2zToPSL2R H
-  exact (Subgroup.isCuspPoint_iff_of_isFiniteRelIndex hle).trans
+      c ∈ Set.range (OnePoint.map Rat.cast) :=
+  (Subgroup.isCuspPoint_iff_of_isFiniteRelIndex H.map_sl2zToPSL2R_le_range).trans
     ((TauCeti.ModularGroup.isCuspPoint_iff_isCusp c).trans isCusp_SL2Z_iff)
 
 /-- The point `γ • ∞` of the projective boundary is a cusp point of the effective image of a
