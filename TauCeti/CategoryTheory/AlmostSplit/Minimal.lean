@@ -48,12 +48,8 @@ theorem IsRightAlmostSplit.isLeftAlmostSplit_of_minimal (hg : IsRightAlmostSplit
     (hS : S.ShortExact) (hmin : ∀ b : S.X₂ ⟶ S.X₂, b ≫ S.g = S.g → IsIso b) :
     IsLeftAlmostSplit S.f := by
   have := hS.mono_f
-  have := hS.epi_g
   refine isLeftAlmostSplit_iff.mpr ⟨?_, fun X h hh ↦ ?_⟩
-  · intro hf
-    exact hg.not_isSplitEpi
-      (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
-        (retraction S.f) (IsSplitMono.id S.f) inferInstance).isSplitEpi_g
+  · exact fun hf ↦ hg.not_isSplitEpi ((isSplitMono_f_iff_isSplitEpi_g hS).mp hf)
   · let sq := IsPushout.of_hasPushout S.f h
     let q := cobaseChangeπ S sq
     have hT : (cobaseChange S sq).ShortExact :=
@@ -150,10 +146,8 @@ when its final map is right almost split. No separate minimality assumption is n
 theorem ShortExact.isAlmostSplit_iff_isRightAlmostSplit (hS : S.ShortExact)
     [IsLocalRing (End S.X₁)] : S.IsAlmostSplit ↔ TauCeti.IsRightAlmostSplit S.g := by
   refine ⟨fun h ↦ h.isRightAlmostSplit_g, fun hg ↦ ?_⟩
-  have := hS.mono_f
   have hf : ¬ IsSplitMono S.f := fun hf ↦
-    hg.not_isSplitEpi (Splitting.ofExactOfRetraction S hS.exact
-      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
+    hg.not_isSplitEpi ((TauCeti.isSplitMono_f_iff_isSplitEpi_g hS).mp hf)
   exact hS.isAlmostSplit_of_isRightAlmostSplit hg (hS.isIso_of_comp_g_eq hf)
 
 /-- A short exact sequence with local right-hand endomorphism ring is almost split exactly
@@ -161,10 +155,8 @@ when its initial map is left almost split. No separate minimality assumption is 
 theorem ShortExact.isAlmostSplit_iff_isLeftAlmostSplit (hS : S.ShortExact)
     [IsLocalRing (End S.X₃)] : S.IsAlmostSplit ↔ TauCeti.IsLeftAlmostSplit S.f := by
   refine ⟨fun h ↦ h.isLeftAlmostSplit_f, fun hf ↦ ?_⟩
-  have := hS.epi_g
   have hg : ¬ IsSplitEpi S.g := fun hg ↦
-    hf.not_isSplitMono (Splitting.ofExactOfSection S hS.exact
-      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
+    hf.not_isSplitMono ((TauCeti.isSplitMono_f_iff_isSplitEpi_g hS).mpr hg)
   exact hS.isAlmostSplit_of_isLeftAlmostSplit hf (hS.isIso_of_f_comp_eq hg)
 
 end CategoryTheory.ShortComplex

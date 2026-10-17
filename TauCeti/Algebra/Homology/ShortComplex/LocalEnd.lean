@@ -30,9 +30,26 @@ public section
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Preadditive
 
-namespace CategoryTheory.ShortComplex
-
 universe v u
+
+namespace TauCeti
+
+/-- In a short exact sequence, the initial map is a split monomorphism exactly when the final
+map is a split epimorphism. -/
+theorem isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] [Preadditive C]
+    [Balanced C] {S : ShortComplex C} (hS : S.ShortExact) :
+    IsSplitMono S.f ↔ IsSplitEpi S.g := by
+  constructor
+  · intro hf
+    exact (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
+      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
+  · intro hg
+    exact (ShortComplex.Splitting.ofExactOfSection S hS.exact
+      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
+
+end TauCeti
+
+namespace CategoryTheory.ShortComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S : ShortComplex C}
 
@@ -72,7 +89,8 @@ theorem Exact.isIso_τ₃_of_τ₁_eq_id (hS : S.Exact) [Epi S.g] [IsLocalRing (
   obtain ⟨γ, hγ⟩ := hS.desc' (𝟙 S.X₂ - φ.τ₂) hcoker
   have hγg : γ ≫ S.g = 𝟙 S.X₃ - φ.τ₃ := by
     apply (cancel_epi S.g).mp
-    simpa [Category.assoc, sub_comp, comp_sub, φ.comm₂₃] using congrArg (· ≫ S.g) hγ
+    rw [← Category.assoc, hγ]
+    simp [sub_comp, comp_sub, φ.comm₂₃]
   have hnot : ¬ IsIso (𝟙 S.X₃ - φ.τ₃) := fun h ↦
     hg (IsSplitEpi.mk' ⟨inv (𝟙 S.X₃ - φ.τ₃) ≫ γ, by
       rw [Category.assoc, hγg, IsIso.inv_hom_id]⟩)
