@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # First-order quantities under a conformal change of metric
@@ -119,11 +120,6 @@ theorem chartGramMatrix_rescale (α x : M) :
     mfderiv_ofWithMetric_chartLocalFrame, mfderiv_ofWithMetric_chartLocalFrame]
   simp only [smul_eq_mul]
 
-private theorem sqrt_pow_mul {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (d : ℝ) :
-    √(c ^ m * d) = c ^ ((m : ℝ) / 2) * √d := by
-  rw [Real.sqrt_mul (pow_nonneg hc m), Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul hc, mul_one_div]
-
 /-- **Volume density under conformal change.** In real dimension `n`, the volume density of the
 rescaled metric `f g` in any chart is `f ^ (n / 2)` times that of `g`. -/
 theorem chartVolumeDensity_rescale (α x : M) :
@@ -132,6 +128,7 @@ theorem chartVolumeDensity_rescale (α x : M) :
       f x ^ ((Module.finrank ℝ E : ℝ) / 2) *
         chartVolumeDensity (I := I) (toWithMetric g α) (toWithMetric g x) := by
   rw [chartVolumeDensity_def, chartVolumeDensity_def, chartGramMatrix_rescale, Matrix.det_smul,
-    Fintype.card_fin, sqrt_pow_mul (hf_pos x).le]
+    Fintype.card_fin, Real.sqrt_mul (pow_nonneg (hf_pos x).le _),
+    Real.sqrt_pow_eq_rpow (hf_pos x).le]
 
 end TauCeti.WithMetric
