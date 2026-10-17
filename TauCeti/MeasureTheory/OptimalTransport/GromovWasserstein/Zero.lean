@@ -22,7 +22,8 @@ finiteness, or measurability assumptions on the kernels.
 
 For exponents at least one, weak isomorphisms preserve distance to a third measured kernel.
 These invariance statements need only an extended pseudometric target and finite measures on
-the two isomorphic carriers; only the comparison carrier must be standard Borel. Together with
+the two isomorphic carriers, assuming couplings glue in both orders. A standard Borel comparison
+carrier supplies these gluings. Together with
 the zero-distance characterization, they supply the separation and representative-independence
 needed to put Gromov–Wasserstein distance on weak-isomorphism classes. No equality of the raw
 presentations is asserted.
@@ -95,11 +96,51 @@ theorem gromovWassersteinEDist_eq_zero_iff [EMetricSpace Z]
 
 section Invariance
 
-variable [PseudoEMetricSpace Z] [StandardBorelSpace W] [IsFiniteMeasure μ]
+variable [PseudoEMetricSpace Z] [IsFiniteMeasure μ]
+
+/-- Replacing the first measured kernel by a weakly isomorphic one preserves its distance to
+a third measured kernel whenever couplings glue in both orders of the isomorphic carriers.
+No standard Borel structure is required, and the comparison measure need not be finite. -/
+theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_left_of_exists_glue
+    (h : AreWeaklyIsomorphicKernels μ ωX ν ωY)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hωW : AEStronglyMeasurable ωW (ρ.prod ρ)) (hp : 1 ≤ p)
+    (hglueXYW : ∀ π σ, IsCoupling π μ ν → IsCoupling σ ν ρ →
+      ∃ γ : Measure (X × Y × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ)
+    (hglueYXW : ∀ π σ, IsCoupling π ν μ → IsCoupling σ μ ρ →
+      ∃ γ : Measure (Y × X × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ) :
+    gromovWassersteinEDist p μ ωX ρ ωW = gromovWassersteinEDist p ν ωY ρ ωW := by
+  obtain ⟨π, hπ, -⟩ := h.exists_isCoupling
+  have : IsFiniteMeasure ν := ⟨hπ.measure_univ_eq ▸ measure_lt_top μ _⟩
+  apply le_antisymm
+  · simpa only [h.gromovWassersteinEDist_eq_zero edist_self p, zero_add] using
+      (gromovWassersteinEDist_triangle_of_exists_glue hp hωX hωY hωW hglueXYW)
+  · simpa only [h.symm.gromovWassersteinEDist_eq_zero edist_self p, zero_add] using
+      (gromovWassersteinEDist_triangle_of_exists_glue hp hωY hωX hωW hglueYXW)
+
+/-- Replacing the second measured kernel by a weakly isomorphic one preserves its distance
+from a third measured kernel whenever couplings glue in both orders of the isomorphic carriers,
+with the comparison carrier last. The comparison measure need not be finite. -/
+theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_right_of_exists_glue
+    (h : AreWeaklyIsomorphicKernels μ ωX ν ωY)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hωW : AEStronglyMeasurable ωW (ρ.prod ρ)) (hp : 1 ≤ p)
+    (hglueXYW : ∀ π σ, IsCoupling π μ ν → IsCoupling σ ν ρ →
+      ∃ γ : Measure (X × Y × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ)
+    (hglueYXW : ∀ π σ, IsCoupling π ν μ → IsCoupling σ μ ρ →
+      ∃ γ : Measure (Y × X × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ) :
+    gromovWassersteinEDist p ρ ωW μ ωX = gromovWassersteinEDist p ρ ωW ν ωY := by
+  obtain ⟨π, hπ, -⟩ := h.exists_isCoupling
+  have : IsFiniteMeasure ν := ⟨hπ.measure_univ_eq ▸ measure_lt_top μ _⟩
+  rw [← gromovWassersteinEDist_comm p μ ωX ρ ωW,
+    ← gromovWassersteinEDist_comm p ν ωY ρ ωW]
+  exact h.gromovWassersteinEDist_congr_left_of_exists_glue hωX hωY hωW hp hglueXYW hglueYXW
 
 /-- Replacing the first measured kernel by a weakly isomorphic one preserves its distance to
 a standard Borel measured kernel. The comparison measure need not be finite. -/
-theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_left
+theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_left [StandardBorelSpace W]
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ))
     (hωY : AEStronglyMeasurable ωY (ν.prod ν))
@@ -107,15 +148,17 @@ theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_left
     gromovWassersteinEDist p μ ωX ρ ωW = gromovWassersteinEDist p ν ωY ρ ωW := by
   obtain ⟨π, hπ, -⟩ := h.exists_isCoupling
   have : IsFiniteMeasure ν := ⟨hπ.measure_univ_eq ▸ measure_lt_top μ _⟩
-  apply le_antisymm
-  · simpa only [h.gromovWassersteinEDist_eq_zero edist_self p, zero_add] using
-      (gromovWassersteinEDist_triangle hp hωX hωY hωW)
-  · simpa only [h.symm.gromovWassersteinEDist_eq_zero edist_self p, zero_add] using
-      (gromovWassersteinEDist_triangle hp hωY hωX hωW)
+  exact h.gromovWassersteinEDist_congr_left_of_exists_glue hωX hωY hωW hp
+    (fun π σ hπ hσ ↦
+      have : IsFiniteMeasure σ := hσ.isFiniteMeasure
+      Measure.exists_glue_of_standardBorel_right π σ (hπ.snd_eq.trans hσ.fst_eq.symm))
+    (fun π σ hπ hσ ↦
+      have : IsFiniteMeasure σ := hσ.isFiniteMeasure
+      Measure.exists_glue_of_standardBorel_right π σ (hπ.snd_eq.trans hσ.fst_eq.symm))
 
 /-- Replacing the second measured kernel by a weakly isomorphic one preserves its distance
 from a standard Borel measured kernel. The comparison measure need not be finite. -/
-theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_right
+theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_right [StandardBorelSpace W]
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ))
     (hωY : AEStronglyMeasurable ωY (ν.prod ν))
@@ -123,9 +166,13 @@ theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_congr_right
     gromovWassersteinEDist p ρ ωW μ ωX = gromovWassersteinEDist p ρ ωW ν ωY := by
   obtain ⟨π, hπ, -⟩ := h.exists_isCoupling
   have : IsFiniteMeasure ν := ⟨hπ.measure_univ_eq ▸ measure_lt_top μ _⟩
-  rw [← gromovWassersteinEDist_comm p μ ωX ρ ωW,
-    ← gromovWassersteinEDist_comm p ν ωY ρ ωW]
-  exact h.gromovWassersteinEDist_congr_left hωX hωY hωW hp
+  exact h.gromovWassersteinEDist_congr_right_of_exists_glue hωX hωY hωW hp
+    (fun π σ hπ hσ ↦
+      have : IsFiniteMeasure σ := hσ.isFiniteMeasure
+      Measure.exists_glue_of_standardBorel_right π σ (hπ.snd_eq.trans hσ.fst_eq.symm))
+    (fun π σ hπ hσ ↦
+      have : IsFiniteMeasure σ := hσ.isFiniteMeasure
+      Measure.exists_glue_of_standardBorel_right π σ (hπ.snd_eq.trans hσ.fst_eq.symm))
 
 end Invariance
 
