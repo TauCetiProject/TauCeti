@@ -159,7 +159,8 @@ cuts out `K` itself, whose norm subgroup is all of `C_K`.
 
 /-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
 identifications of `C_K` with the ground levels of the layers of `W` and `V`. -/
-private theorem groundEquiv_groundEquivOfOpenNormal
+@[simp]
+theorem groundEquiv_groundEquivOfOpenNormal
     {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)} (h : V ≤ W)
     (c : Additive (IdeleClassGroup (𝓞 K) K)) :
     (LayerRefinement.ofOpenNormal h).groundEquiv (globalFormation K)
