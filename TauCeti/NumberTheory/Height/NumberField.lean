@@ -33,6 +33,7 @@ absolute height; in particular the absolute height is invariant under field embe
   `H_K(x) ^ (1 / [K : ℚ])`.
 * `NumberField.absMulHeight₁_eq_of_minpoly_eq`: equal rational minimal polynomials give equal
   absolute heights.
+* `NumberField.absMulHeight₁_pow`: `H(x ^ n) = H(x) ^ n`.
 
 ## References
 
@@ -238,6 +239,42 @@ theorem absLogHeight₁_map (f : F →+* F') (x : F) : absLogHeight₁ (f x) = a
   absLogHeight₁_eq_of_minpoly_eq (minpoly.algHom_eq f.toRatAlgHom f.injective x)
 
 end MinpolyEq
+
+section Pow
+
+variable {F : Type*} [Field F] [CharZero F]
+
+/-- The absolute height of `1` is `1`. -/
+@[simp]
+theorem absMulHeight₁_one : absMulHeight₁ (1 : F) = 1 := by
+  rw [← map_one (algebraMap ℚ F), absMulHeight₁_map, absMulHeight₁_eq_rpow, mulHeight₁_one,
+    Real.one_rpow]
+
+/-- The absolute logarithmic height of `1` is `0`. -/
+@[simp]
+theorem absLogHeight₁_one : absLogHeight₁ (1 : F) = 0 := by
+  rw [absLogHeight₁, absMulHeight₁_one, Real.log_one]
+
+/-- The absolute height of a power is the power of the absolute height. This includes
+transcendental elements, whose positive powers are transcendental and all have the junk
+height `1`. -/
+theorem absMulHeight₁_pow (x : F) (n : ℕ) : absMulHeight₁ (x ^ n) = absMulHeight₁ x ^ n := by
+  by_cases hx : IsIntegral ℚ x
+  · have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
+    have : NumberField ℚ⟮x⟯ := {}
+    rw [← AdjoinSimple.algebraMap_gen ℚ x, ← map_pow, absMulHeight₁_map, absMulHeight₁_map,
+      absMulHeight₁_eq_rpow, absMulHeight₁_eq_rpow, mulHeight₁_pow,
+      Real.rpow_pow_comm (mulHeight₁_nonneg _)]
+  · rcases n.eq_zero_or_pos with rfl | hn
+    · simp
+    · rw [absMulHeight₁, dite_eq_right fun h ↦ hx (h.of_pow hn), absMulHeight₁, dite_eq_right hx,
+        one_pow]
+
+/-- The absolute logarithmic height of `x ^ n` is `n` times that of `x`. -/
+theorem absLogHeight₁_pow (x : F) (n : ℕ) : absLogHeight₁ (x ^ n) = n * absLogHeight₁ x := by
+  rw [absLogHeight₁, absMulHeight₁_pow, Real.log_pow, absLogHeight₁]
+
+end Pow
 
 /-- The rational number `2` has relative height `2 ^ [K : ℚ]` over a number field `K`; for
 `K = ℚ(i)` this is `4`. Relative heights are not invariant under extension. -/
