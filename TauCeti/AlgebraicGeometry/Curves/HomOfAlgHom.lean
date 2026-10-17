@@ -64,10 +64,8 @@ theorem functionFieldAlgHom_homOfAlgHom
 @[simp]
 theorem homOfAlgHom_functionFieldAlgHom (f : X ⟶ Y) :
     homOfAlgHom (f.hom.functionFieldAlgHom k) = f := by
-  refine hom_ext (Scheme.Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_)
-  ext z
-  have h := DFunLike.congr_fun (functionFieldAlgHom_homOfAlgHom (f.hom.functionFieldAlgHom k)) z
-  rwa [Scheme.Hom.functionFieldAlgHom_apply, Scheme.Hom.functionFieldAlgHom_apply] at h
+  refine hom_ext ((Scheme.eq_homOfFunctionFieldAlgHom_iff _ _ f.hom).mpr fun z ↦ ?_).symm
+  rw [Scheme.Hom.functionFieldAlgHom_apply]
 
 /-- A dominant `k`-morphism of regular proper curves is determined by its pullback of rational
 functions. -/
