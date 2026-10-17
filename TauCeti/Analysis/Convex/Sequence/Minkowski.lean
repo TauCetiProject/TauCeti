@@ -67,6 +67,11 @@ theorem minkowskiSum_add_le (h g : ℕ → WithTop ℝ) (i j : ℕ) :
     minkowskiSum h g (i + j) ≤ h i + g j :=
   Finset.inf_le (f := fun p : ℕ × ℕ => h p.1 + g p.2) (b := (i, j)) (mem_antidiagonal.mpr rfl)
 
+/-- Every split `n = i + j` bounds the Minkowski sum at `n` from above. -/
+theorem minkowskiSum_le_add_of_add_eq {i j n : ℕ} (hij : i + j = n) :
+    minkowskiSum h g n ≤ h i + g j :=
+  hij ▸ minkowskiSum_add_le h g i j
+
 /-- A lower bound for the Minkowski sum is a lower bound for every split. -/
 theorem le_minkowskiSum_iff {n : ℕ} {r : WithTop ℝ} :
     r ≤ minkowskiSum h g n ↔ ∀ i j, i + j = n → r ≤ h i + g j := by
@@ -226,6 +231,22 @@ theorem ordConnected_minkowskiSum (hh : {n | h n ≠ ⊤}.OrdConnected)
     · exact ⟨i, t - i, by omega, hi, hg.out hj hj' ⟨by omega, by omega⟩⟩
     · exact ⟨t - j', j', by omega, hh.out hi' hi ⟨by omega, by omega⟩, hj'⟩
 
+/-- The exchange step for the second-difference inequality: if the first coordinate of a split
+of `n + 2` exceeds that of a split of `n` by at least two, convexity of `h` moves both splits one
+step towards each other. -/
+private theorem minkowskiSum_succ_add_succ_le_of_add_two_le (hh : IsConvexSeq h)
+    {i j i' j' : ℕ} (hi : i + 2 ≤ i') (hij' : i' + j' = i + j + 2) :
+    minkowskiSum h g (i + j + 1) + minkowskiSum h g (i + j + 1) ≤
+      (h i + g j) + (h i' + g j') := by
+  obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le hi
+  calc _ ≤ (h (i + 1) + g j) + (h (i + t + 1) + g j') :=
+        add_le_add (minkowskiSum_le_add_of_add_eq (by omega))
+          (minkowskiSum_le_add_of_add_eq (by omega))
+    _ = (h (i + 1) + h (i + t + 1)) + (g j + g j') := add_add_add_comm _ _ _ _
+    _ ≤ (h i + h (i + t + 2)) + (g j + g j') :=
+        add_le_add_left (hh.succ_add_succ_le_add (Nat.le_add_right i t)) _
+    _ = _ := by rw [add_add_add_comm, show i + 2 + t = i + t + 2 by omega]
+
 /-- The second-difference inequality for the Minkowski sum of convex sequences, in
 `WithTop ℝ`. -/
 theorem minkowskiSum_succ_add_succ_le (hh : IsConvexSeq h) (hg : IsConvexSeq g) (n : ℕ) :
@@ -238,35 +259,15 @@ theorem minkowskiSum_succ_add_succ_le (hh : IsConvexSeq h) (hg : IsConvexSeq g) 
   -- sequence lets both splits move one step towards each other, or both coordinates move by
   -- one and the two intermediate splits use exactly the same heights.
   by_cases hi : i + 2 ≤ i'
-  · obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le hi
-    have h₁ : minkowskiSum h g (i + j + 1) ≤ h (i + 1) + g j := by
-      simpa [add_right_comm] using minkowskiSum_add_le h g (i + 1) j
-    have h₂ : minkowskiSum h g (i + j + 1) ≤ h (i + t + 1) + g j' := by
-      convert minkowskiSum_add_le h g (i + t + 1) j' using 2
-      omega
-    calc _ ≤ (h (i + 1) + g j) + (h (i + t + 1) + g j') := add_le_add h₁ h₂
-      _ = (h (i + 1) + h (i + t + 1)) + (g j + g j') := add_add_add_comm _ _ _ _
-      _ ≤ (h i + h (i + t + 2)) + (g j + g j') :=
-        add_le_add_left (hh.succ_add_succ_le_add (Nat.le_add_right i t)) _
-      _ = _ := by rw [add_add_add_comm, show i + 2 + t = i + t + 2 by omega]
+  · exact minkowskiSum_succ_add_succ_le_of_add_two_le hh hi hij'
   by_cases hj : j + 2 ≤ j'
-  · obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le hj
-    have h₁ : minkowskiSum h g (i + j + 1) ≤ h i + g (j + 1) := by
-      simpa [add_assoc] using minkowskiSum_add_le h g i (j + 1)
-    have h₂ : minkowskiSum h g (i + j + 1) ≤ h i' + g (j + t + 1) := by
-      convert minkowskiSum_add_le h g i' (j + t + 1) using 2
-      omega
-    calc _ ≤ (h i + g (j + 1)) + (h i' + g (j + t + 1)) := add_le_add h₁ h₂
-      _ = (h i + h i') + (g (j + 1) + g (j + t + 1)) := add_add_add_comm _ _ _ _
-      _ ≤ (h i + h i') + (g j + g (j + t + 2)) :=
-        add_le_add_right (hg.succ_add_succ_le_add (Nat.le_add_right j t)) _
-      _ = _ := by rw [add_add_add_comm, show j + 2 + t = j + t + 2 by omega]
+  · have := minkowskiSum_succ_add_succ_le_of_add_two_le hg (g := h) hj
+      (show j' + i' = j + i + 2 by omega)
+    rwa [minkowskiSum_comm, add_comm j i, add_comm (g j), add_comm (g j')] at this
   obtain ⟨rfl, rfl⟩ : i' = i + 1 ∧ j' = j + 1 := by omega
-  have h₁ : minkowskiSum h g (i + j + 1) ≤ h (i + 1) + g j := by
-    simpa [add_right_comm] using minkowskiSum_add_le h g (i + 1) j
-  have h₂ : minkowskiSum h g (i + j + 1) ≤ h i + g (j + 1) := by
-    simpa [add_assoc] using minkowskiSum_add_le h g i (j + 1)
-  calc _ ≤ (h (i + 1) + g j) + (h i + g (j + 1)) := add_le_add h₁ h₂
+  calc _ ≤ (h (i + 1) + g j) + (h i + g (j + 1)) :=
+        add_le_add (minkowskiSum_le_add_of_add_eq (by omega))
+          (minkowskiSum_le_add_of_add_eq (by omega))
     _ = _ := by abel
 
 /-- The Minkowski sum of convex height sequences is convex. -/
@@ -282,30 +283,6 @@ theorem IsConvexSeq.minkowskiSum (hh : IsConvexSeq h) (hg : IsConvexSeq g) :
   linarith
 
 /-! ### Supporting values -/
-
-/-- The tilted height of a sum of two heights is the sum of the tilted heights. -/
-private theorem toEReal_add_sub (a b : WithTop ℝ) (σ : ℝ) (i j : ℕ) :
-    (a + b).toEReal - ((σ * ↑(i + j) : ℝ) : EReal) =
-      (a.toEReal - ((σ * i : ℝ) : EReal)) + (b.toEReal - ((σ * j : ℝ) : EReal)) := by
-  induction a using WithTop.recTopCoe with
-  | top =>
-    induction b using WithTop.recTopCoe with
-    | top =>
-      rw [top_add, WithTop.toEReal_top]
-      simp only [EReal.top_sub_coe, EReal.top_add_top]
-    | coe s =>
-      rw [top_add, WithTop.toEReal_top, WithTop.toEReal_coe, EReal.top_sub_coe,
-        EReal.top_sub_coe, ← EReal.coe_sub, EReal.top_add_coe]
-  | coe r =>
-    induction b using WithTop.recTopCoe with
-    | top =>
-      rw [add_top, WithTop.toEReal_top, WithTop.toEReal_coe, EReal.top_sub_coe,
-        EReal.top_sub_coe, ← EReal.coe_sub, EReal.coe_add_top]
-    | coe s =>
-      rw [← WithTop.coe_add, WithTop.toEReal_coe, WithTop.toEReal_coe, WithTop.toEReal_coe,
-        ← EReal.coe_sub, ← EReal.coe_sub, ← EReal.coe_sub, ← EReal.coe_add, EReal.coe_eq_coe_iff]
-      push_cast
-      ring
 
 /-- For nonempty height sequences, the supporting values of their Minkowski sum are the sums
 of their supporting values. The nonemptiness hypotheses are needed: if `h = ⊤` and the
@@ -323,11 +300,11 @@ theorem supportingValue_minkowskiSum (hh : h ≠ ⊤) (hg : g ≠ ⊤) (σ : ℝ
       _ ≤ (h i + g j).toEReal - ((σ * ↑(i + j) : ℝ) : EReal) :=
           EReal.sub_le_sub (WithTop.toEReal_le_toEReal_iff.mpr (minkowskiSum_add_le h g i j))
             le_rfl
-      _ = _ := toEReal_add_sub _ _ σ i j
+      _ = _ := by rw [Nat.cast_add, mul_add, WithTop.toEReal_add_sub_coe_add]
       _ ≤ a + b := add_le_add hi.le hj.le
   · refine le_supportingValue_iff.mpr fun n => ?_
     obtain ⟨i, j, rfl, hn⟩ := exists_minkowskiSum_eq h g n
-    rw [hn, toEReal_add_sub]
+    rw [hn, Nat.cast_add, mul_add, WithTop.toEReal_add_sub_coe_add]
     exact add_le_add (supportingValue_le h σ i) (supportingValue_le g σ j)
 
 /-! ### Minimising splits -/
@@ -349,6 +326,22 @@ theorem minkowskiSum_add_eq_of_mem_supportingFace {σ c d : ℝ} {i j : ℕ}
         rw [WithTop.coe_add]
         exact add_le_add (isSupportingLine_iff_forall.mp hc p) (isSupportingLine_iff_forall.mp hd q)
 
+/-- An affine minorant of the Minkowski sum that is tight at a finite split `i + j` restricts
+to a supporting line of `h` through `i`. -/
+private theorem isSupportingLine_of_affine_minorant_minkowskiSum {e σ : ℝ} {i j : ℕ}
+    (hline : ∀ n : ℕ, ((e + σ * n : ℝ) : WithTop ℝ) ≤ minkowskiSum h g n) (hj : g j ≠ ⊤)
+    (he : e + σ * ↑(i + j) = (h i).untop₀ + (g j).untop₀) :
+    IsSupportingLine h σ ((h i).untop₀ - σ * i) := by
+  refine isSupportingLine_iff_forall.mpr fun p => ?_
+  by_cases hp : h p = ⊤
+  · simp [hp]
+  have hle := (hline (p + j)).trans (minkowskiSum_add_le h g p j)
+  rw [← WithTop.coe_untop₀_of_ne_top hp, ← WithTop.coe_untop₀_of_ne_top hj,
+    ← WithTop.coe_add, WithTop.coe_le_coe] at hle
+  rw [← WithTop.coe_untop₀_of_ne_top hp, WithTop.coe_le_coe]
+  push_cast at hle he
+  linarith
+
 /-- For convex sequences with finite heights at `i` and `j`, the split `i + j` attains the
 Minkowski sum exactly when `i` and `j` lie on supporting faces of `h` and `g` of a common
 slope. -/
@@ -367,26 +360,13 @@ theorem minkowskiSum_add_eq_add_iff (hh : IsConvexSeq h) (hg : IsConvexSeq g) {i
   obtain ⟨e, σ, hline, he⟩ := (hh.minkowskiSum hg).exists_affine_minorant_eq hn
   rw [heq, ← WithTop.coe_untop₀_of_ne_top hi, ← WithTop.coe_untop₀_of_ne_top hj,
     ← WithTop.coe_add, WithTop.untop₀_coe] at he
-  refine ⟨σ, (h i).untop₀ - σ * i, (g j).untop₀ - σ * j,
-    isSupportingLine_iff_forall.mpr fun p => ?_, ?_,
-    isSupportingLine_iff_forall.mpr fun q => ?_, ?_⟩
-  · by_cases hp : h p = ⊤
-    · simp [hp]
-    have hle := (hline (p + j)).trans (minkowskiSum_add_le h g p j)
-    rw [← WithTop.coe_untop₀_of_ne_top hp, ← WithTop.coe_untop₀_of_ne_top hj,
-      ← WithTop.coe_add, WithTop.coe_le_coe] at hle
-    rw [← WithTop.coe_untop₀_of_ne_top hp, WithTop.coe_le_coe]
-    push_cast at hle he
+  have he' : e + σ * ↑(j + i) = (g j).untop₀ + (h i).untop₀ := by
+    push_cast at he ⊢
     linarith
+  refine ⟨σ, _, _, isSupportingLine_of_affine_minorant_minkowskiSum hline hj he, ?_,
+    isSupportingLine_of_affine_minorant_minkowskiSum (fun n => minkowskiSum_comm h g ▸ hline n)
+      hi he', ?_⟩
   · rw [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hi]
-  · by_cases hq : g q = ⊤
-    · simp [hq]
-    have hle := (hline (i + q)).trans (minkowskiSum_add_le h g i q)
-    rw [← WithTop.coe_untop₀_of_ne_top hi, ← WithTop.coe_untop₀_of_ne_top hq,
-      ← WithTop.coe_add, WithTop.coe_le_coe] at hle
-    rw [← WithTop.coe_untop₀_of_ne_top hq, WithTop.coe_le_coe]
-    push_cast at hle he
-    linarith
   · rw [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hj]
 
 end TauCeti
