@@ -276,7 +276,7 @@ lemma ιTotal_tensorHom_ιTotal_total_μ (X Y : GradedObject I C) (i j n : I) (h
   ιTotal_tensorHom_ιTotal_totalTensorDesc_ιTensorObj X Y i j n h
 
 /-- The unit of the total object is the inclusion of `𝟙_ C` as the summand of degree `0`. -/
-@[simp]
+@[simp, reassoc]
 lemma total_ε :
     Functor.LaxMonoidal.ε (total I C) =
       Monoidal.tensorUnit₀.inv ≫ ιTotal (𝟙_ (GradedObject I C)) 0 :=
