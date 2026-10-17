@@ -34,10 +34,11 @@ average displacement of the pairs whose interpolating point at time `t` is `w`. 
 at most the `p`-th moment of the displacement,
 `∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt ≤ ∫ ‖y - x‖ ^ p dπ` for every `p ≥ 1`.
 
-If moreover the segments of the pairs of a measurable set carrying `π` do not meet at a common
-intermediate time, so that every `Fₜ` with `0 < t < 1` is injective on that set, then no averaging
-takes place: `vₜ ((1 - t) • x + t • y) = y - x` for almost every `t ∈ (0, 1)` and `π`-almost every
-`(x, y)`, and the `p`-action of `v` equals the `p`-th moment of the displacement.
+If moreover no two pairs meet at the same time and place once a `dt ⊗ π`-null set of times and
+pairs is discarded (for instance if almost every `Fₜ` with `0 < t < 1` is injective on a measurable
+set carrying `π`), then no averaging takes place: `vₜ ((1 - t) • x + t • y) = y - x` for almost
+every `t ∈ (0, 1)` and `π`-almost every `(x, y)`, and the `p`-action of `v` equals the `p`-th
+moment of the displacement.
 
 For an optimal coupling of `μ` and `ν` at finite Wasserstein distance `W_p (μ, ν)`, with
 `1 ≤ p < ∞`, the `p`-th moment of the displacement is `W_p (μ, ν) ^ p`, so the displacement
@@ -56,10 +57,12 @@ here, this makes the displacement interpolation a minimiser in the Benamou–Bre
 * `TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd`: the displacement interpolation
   of a plan whose displacement has finite first moment solves the continuity equation with its
   barycentric velocity, whose `p`-action is at most the `p`-th moment of the displacement.
-* `TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn`: when every
-  intermediate interpolating map is injective on a measurable set carrying the plan, the velocity
-  field is the displacement read along the interpolation, and its `p`-action equals the `p`-th
-  moment of the displacement.
+* `TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn`: when for every `t`
+  the interpolating map `Fₜ` is injective on the fibre at `t` of a measurable set of full
+  `dt ⊗ π` measure, the velocity field is the displacement read along the interpolation, and its
+  `p`-action equals the `p`-th moment of the displacement.
+* `TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn`: the special case in
+  which almost every interpolating map is injective on one measurable set carrying the plan.
 * `TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupling_le`: for
   `1 ≤ p < ∞`, the displacement interpolation of an optimal coupling at finite Wasserstein
   distance solves the continuity equation with `p`-action at most `W_p (μ, ν) ^ p`.
@@ -116,17 +119,18 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd (π : Measure (E �
   exact ⟨v, hce, hv, fun p hp ↦ (hact p hp).trans_eq (by simp)⟩
 
 /-- **The velocity along a non-crossing displacement interpolation.** Let `π` be a finite measure
-on `E × E` whose displacement `y - x` has finite first moment, and let `S` be a measurable set
-carrying `π` on which every intermediate interpolating map `(x, y) ↦ (1 - t) • x + t • y`,
-`0 < t < 1`, is injective. Then the laws `μₜ` of `(1 - t) • x + t • y` under `π` solve the
-continuity equation on `(0, 1)` with a velocity field `v` equal to the displacement along the
-interpolation: `vₜ ((1 - t) • x + t • y) = y - x` for almost every `t ∈ (0, 1)` and `π`-almost
-every `(x, y)`. Consequently, for every exponent `p` the `p`-action of `v` is the `p`-th moment of
-the displacement: `∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt = ∫ ‖y - x‖ ^ p dπ`. -/
+on `E × E` whose displacement `y - x` has finite first moment, and let `A` be a measurable set of
+times and pairs carrying `dt ⊗ π` on `(0, 1) × (E × E)` such that for every `t` the interpolating
+map `(x, y) ↦ (1 - t) • x + t • y` is injective on the pairs `(x, y)` with `(t, (x, y)) ∈ A`. Then
+the laws `μₜ` of `(1 - t) • x + t • y` under `π` solve the continuity equation on `(0, 1)` with a
+velocity field `v` equal to the displacement along the interpolation:
+`vₜ ((1 - t) • x + t • y) = y - x` for almost every `t ∈ (0, 1)` and `π`-almost every `(x, y)`.
+Consequently, for every exponent `p` the `p`-action of `v` is the `p`-th moment of the
+displacement: `∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt = ∫ ‖y - x‖ ^ p dπ`. -/
 theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Measure (E × E))
-    [IsFiniteMeasure π] (hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞) {S : Set (E × E)}
-    (hS : MeasurableSet S) (hSπ : ∀ᵐ z ∂π, z ∈ S)
-    (hinj : ∀ t ∈ Ioo (0 : ℝ) 1, InjOn (fun z : E × E ↦ (1 - t) • z.1 + t • z.2) S) :
+    [IsFiniteMeasure π] (hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞) {A : Set (ℝ × (E × E))}
+    (hA : MeasurableSet A) (hAπ : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod π, q ∈ A)
+    (hinj : ∀ t, InjOn (fun z : E × E ↦ (1 - t) • z.1 + t • z.2) {z | (t, z) ∈ A}) :
     ∃ v : ℝ → E → E,
       IsContinuityEquation (fun t ↦ π.map fun z ↦ (1 - t) • z.1 + t • z.2) v 0 1 ∧
       (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ z ∂π, v t ((1 - t) • z.1 + t • z.2) = z.2 - z.1) ∧
@@ -134,24 +138,18 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
         ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
   obtain ⟨v, hce, hv, -⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd π hint
   have : IsFiniteMeasure (volume.restrict (Ioo (0 : ℝ) 1)) := ⟨by simp⟩
-  -- the time and position map `G` is injective on `A = (0, 1) × S`, so conditioning on it is
-  -- trivial
+  -- the time and position map `G` is injective on `A`, so conditioning on it is trivial
   set G : ℝ × (E × E) → ℝ × E := fun q ↦ (q.1, (1 - q.1) • q.2.1 + q.1 • q.2.2)
   have hG : Measurable G := by fun_prop
-  set A := Ioo (0 : ℝ) 1 ×ˢ S
-  have hA : MeasurableSet A := measurableSet_Ioo.prod hS
-  have hAν : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod π, q ∈ A :=
-    (Measure.ae_prod_mem_iff_ae_ae_mem hA).2 <|
-      (ae_restrict_mem measurableSet_Ioo).mono fun _ ht ↦ hSπ.mono fun _ hz ↦ ⟨ht, hz⟩
   have hGinj : InjOn G A := by
     rintro ⟨t, z⟩ hz ⟨t', z'⟩ hz' he
     obtain ⟨rfl, he⟩ := Prod.mk.inj he
-    exact Prod.ext rfl (hinj t hz.1 hz.2 hz'.2 he)
+    exact Prod.ext rfl (hinj t hz hz' he)
   have hW : Integrable (fun z : E × E ↦ z.2 - z.1) π :=
     ⟨by fun_prop, hasFiniteIntegral_iff_enorm.2 hint⟩
   have hae : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod π,
       v q.1 ((1 - q.1) • q.2.1 + q.1 • q.2.2) = q.2.2 - q.2.1 := by
-    filter_upwards [MeasureTheory.condExp_comap_ae_eq_of_injOn hG hA hAν hGinj
+    filter_upwards [MeasureTheory.condExp_comap_ae_eq_of_injOn hG hA hAπ hGinj
       (hW.comp_snd (volume.restrict (Ioo 0 1)))] with q hq
     rw [← hq]
     exact congrFun hv q
@@ -168,33 +166,38 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
         exact lintegral_congr_ae ((ht hmem).mono fun z hz ↦ by simp [hz])
     _ = ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by simp
 
-/-- The displacement of an optimal coupling of `μ` and `ν` for the cost `d(x, y) ^ p`, with
-`1 ≤ p < ∞` and at finite Wasserstein distance, has `p`-th moment `W_p (μ, ν) ^ p` and finite
-first moment. -/
-private lemma lintegral_enorm_sub_rpow_eq_and_lt_top {μ ν : Measure E} [IsFiniteMeasure μ]
-    {π : Measure (E × E)} {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞)
-    (hopt : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π μ ν)
-    (hfin : wassersteinEDist p μ ν ≠ ∞) :
-    ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p.toReal ∂π = wassersteinEDist p μ ν ^ p.toReal ∧
-      ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := by
-  have : IsFiniteMeasure π := hopt.toIsCoupling.isFiniteMeasure
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hedist (z : E × E) : edist z.1 z.2 = ‖z.2 - z.1‖ₑ := by
-    rw [edist_eq_enorm_sub, enorm_sub_rev]
-  refine ⟨?_, ?_⟩
-  · -- the `p`-th moment of the displacement is the optimal cost
-    rw [wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp_top, ← hopt.lintegral_eq]
-    simp only [hedist]
-  · -- the displacement lies in `Lᵖ`, hence in `L¹`
-    have hd : eLpNorm (fun z : E × E ↦ z.2 - z.1) p π =
-        eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
-      eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-        (.of_forall fun z ↦ (hedist z).symm)
-    have hmem : MemLp (fun z : E × E ↦ z.2 - z.1) p π := by
-      rw [memLp_iff, hd, ((isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp_top).1
-        hopt).2]
-      exact hfin.lt_top
-    exact hasFiniteIntegral_iff_enorm.1 (memLp_one_iff_integrable.1 (hmem.mono_exponent hp)).2
+/-- **The velocity along a displacement interpolation injective on a fixed set.** The special case
+of `exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn` in which, for almost every
+`t ∈ (0, 1)`, the map `(x, y) ↦ (1 - t) • x + t • y` is injective on one measurable set `S`
+carrying `π`: then `vₜ ((1 - t) • x + t • y) = y - x` for almost every `t ∈ (0, 1)` and `π`-almost
+every `(x, y)`, and for every exponent `p` the `p`-action of `v` is the `p`-th moment of the
+displacement. -/
+theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn (π : Measure (E × E))
+    [IsFiniteMeasure π] (hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞) {S : Set (E × E)}
+    (hS : MeasurableSet S) (hSπ : ∀ᵐ z ∂π, z ∈ S)
+    (hinj : ∀ᵐ t, t ∈ Ioo (0 : ℝ) 1 → InjOn (fun z : E × E ↦ (1 - t) • z.1 + t • z.2) S) :
+    ∃ v : ℝ → E → E,
+      IsContinuityEquation (fun t ↦ π.map fun z ↦ (1 - t) • z.1 + t • z.2) v 0 1 ∧
+      (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ z ∂π, v t ((1 - t) • z.1 + t • z.2) = z.2 - z.1) ∧
+      ∀ p : ℝ, ∫⁻ t in Ioo 0 1, ∫⁻ w, ‖v t w‖ₑ ^ p ∂π.map (fun z ↦ (1 - t) • z.1 + t • z.2) =
+        ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
+  -- `U` is a measurable set of full measure in `(0, 1)` of times at which the interpolation is
+  -- injective on `S`
+  set N := toMeasurable volume
+    {t | ¬(t ∈ Ioo (0 : ℝ) 1 → InjOn (fun z : E × E ↦ (1 - t) • z.1 + t • z.2) S)}
+  set U := Ioo (0 : ℝ) 1 \ N
+  have hU : MeasurableSet U := measurableSet_Ioo.diff (measurableSet_toMeasurable _ _)
+  have hUπ : ∀ᵐ t ∂volume.restrict (Ioo (0 : ℝ) 1), t ∈ U := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioo,
+      ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
+        ((measure_toMeasurable _).trans (ae_iff.1 hinj)))] with t ht htN using ⟨ht, htN⟩
+  have hUinj (t : ℝ) (ht : t ∈ U) : InjOn (fun z : E × E ↦ (1 - t) • z.1 + t • z.2) S := by
+    by_contra h
+    exact ht.2 (subset_toMeasurable _ _ fun h' ↦ h (h' ht.1))
+  exact exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn π hint (hU.prod hS)
+    ((Measure.ae_prod_mem_iff_ae_ae_mem (hU.prod hS)).2
+      (hUπ.mono fun _ ht ↦ hSπ.mono fun _ hz ↦ ⟨ht, hz⟩))
+    fun t _ hz _ hz' ↦ hUinj t hz.1 hz.2 hz'.2
 
 /-- **The Benamou–Brenier upper bound.** Let `1 ≤ p < ∞`, and let `π` be an optimal coupling of a
 finite measure `μ` and a measure `ν` on `E` for the cost `d(x, y) ^ p`, at finite Wasserstein
@@ -210,10 +213,12 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupli
       ∫⁻ t in Ioo 0 1, ∫⁻ w, ‖v t w‖ₑ ^ p.toReal ∂π.map (fun z ↦ (1 - t) • z.1 + t • z.2) ≤
         wassersteinEDist p μ ν ^ p.toReal := by
   have : IsFiniteMeasure π := hopt.toIsCoupling.isFiniteMeasure
-  obtain ⟨hmom, hint⟩ := lintegral_enorm_sub_rpow_eq_and_lt_top hp hp_top hopt hfin
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := hasFiniteIntegral_iff_enorm.1
+    (memLp_one_iff_integrable.1 ((hopt.memLp_sub hp0 hp_top hfin).mono_exponent hp)).2
   obtain ⟨v, hce, -, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd π hint
   have hp₁ : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
-  exact ⟨v, hce, (hact p.toReal hp₁).trans_eq hmom⟩
+  exact ⟨v, hce, (hact p.toReal hp₁).trans_eq (hopt.lintegral_enorm_sub_rpow_eq hp0 hp_top)⟩
 
 /-- **The velocity along an optimal displacement interpolation.** Let `E` be strictly convex, let
 `1 < p < ∞`, and let `π` be an optimal coupling of a finite measure `μ` and a measure `ν` on `E`
@@ -238,21 +243,20 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupli
       ∫⁻ t in Ioo 0 1, ∫⁻ w, ‖v t w‖ₑ ^ p.toReal ∂π.map (fun z ↦ (1 - t) • z.1 + t • z.2) =
         wassersteinEDist p μ ν ^ p.toReal := by
   have : IsFiniteMeasure π := hopt.toIsCoupling.isFiniteMeasure
+  have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hp₁ : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  obtain ⟨hmom, hint⟩ := lintegral_enorm_sub_rpow_eq_and_lt_top hp.le hp_top hopt hfin
+  have hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := hasFiniteIntegral_iff_enorm.1
+    (memLp_one_iff_integrable.1 ((hopt.memLp_sub hp0 hp_top hfin).mono_exponent hp.le)).2
   -- the optimal plan is concentrated on its support, which is cyclically monotone
   have hc : Continuous fun z : E × E ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.comp continuous_edist
   have hcost : transportCost (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) μ ν ≠ ∞ := by
-    rw [← wassersteinEDist_rpow_eq_transportCost measurable_edist (zero_lt_one.trans hp).ne'
-      hp_top]
+    rw [← wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp_top]
     exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hfin
-  have hSπ : ∀ᵐ z ∂π, z ∈ π.support :=
-    measure_eq_zero_iff_ae_notMem.1 Measure.measure_compl_support |>.mono fun _ hz ↦ not_not.1 hz
-  obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn π
-    hint Measure.isClosed_support.measurableSet hSπ
-    fun _ ht ↦ (hopt.isCyclicallyMonotone_support hc hcost).injOn_smul_add_smul hp₁ ht
-  exact ⟨v, hce, hv, (hact p.toReal).trans hmom⟩
+  obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn π
+    hint Measure.isClosed_support.measurableSet π.support_mem_ae
+    (.of_forall fun _ ht ↦ (hopt.isCyclicallyMonotone_support hc hcost).injOn_smul_add_smul hp₁ ht)
+  exact ⟨v, hce, hv, (hact p.toReal).trans (hopt.lintegral_enorm_sub_rpow_eq hp0 hp_top)⟩
 
 end TauCeti
