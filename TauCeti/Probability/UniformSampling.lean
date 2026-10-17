@@ -60,7 +60,11 @@ namespace TauCeti
 
 namespace Probability
 
-variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+variable {ι κ : Type*}
+
+section
+
+variable [Fintype ι] [Fintype κ]
 
 /-- The uniform-measure mass of injective maps is the number of ordered injections divided by
 the number of maps. This is an injectivity probability when the function space is nonempty;
@@ -149,7 +153,12 @@ private theorem card_eqAt (i j : ι) (hij : i ≠ j) :
       rw [Fintype.card_fun, Fintype.card_subtype_compl]
       simp
 
-omit [Fintype ι] in
+end
+
+section
+
+variable [Fintype κ]
+
 /-- Under uniform sampling with replacement, two distinct coordinates agree with probability
 `1 / Fintype.card κ`.
 
@@ -177,6 +186,12 @@ theorem uniformOn_apply_eq_apply [Finite ι] [MeasurableSpace κ]
   simpa [div_eq_mul_inv] using ENNReal.mul_div_mul_left (1 : ℝ≥0∞)
     (Fintype.card κ) hpow_zero hpow_top
 
+end
+
+section
+
+variable [Fintype ι]
+
 private def coordinatePairs (ι : Type*) [Fintype ι] [LinearOrder ι] : Finset (ι × ι) :=
   Finset.univ.filter fun p => p.1 < p.2
 
@@ -188,7 +203,6 @@ private theorem card_coordinatePairs [LinearOrder ι] :
     (coordinatePairs ι).card = (Fintype.card ι).choose 2 := by
   simpa [coordinatePairs] using Fintype.card_product_filter_lt (α := ι)
 
-omit [Fintype κ] in
 private theorem not_injective_set_eq_iUnion [LinearOrder ι] :
     {x : ι → κ | ¬Function.Injective x} =
       ⋃ p ∈ coordinatePairs ι, {x | x p.1 = x p.2} := by
@@ -203,6 +217,8 @@ private theorem not_injective_set_eq_iUnion [LinearOrder ι] :
     · exact ⟨(j, i), mem_coordinatePairs _ |>.2 hgt, hij.symm⟩
   · rintro ⟨⟨i, j⟩, hp, hij⟩ h_inj
     exact (mem_coordinatePairs _ |>.1 hp).ne (h_inj hij)
+
+variable [Fintype κ]
 
 /-- **Collision bound for uniform sampling.**  When the function space `ι → κ` is nonempty, a
 uniform map from `ι` to `κ` fails to be injective with probability at most
@@ -239,6 +255,8 @@ theorem uniformOn_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClas
         _ = (Fintype.card ι).choose 2 / Fintype.card κ := by
           rw [Finset.sum_const, nsmul_eq_mul, card_coordinatePairs]
           simp [div_eq_mul_inv]
+
+end
 
 /-- Conditioning a finite uniform sample on an event `E` can increase the probability of an event
 `A` by at most the original probability of `Eᶜ`, provided `E` is nonempty.  When `E` is empty,
@@ -284,7 +302,6 @@ theorem uniformOn_univ_le_add_compl {Ω : Type*} [Finite Ω] [MeasurableSpace Ω
   exact add_le_add (mul_le_of_le_one_right bot_le prob_le_one)
     (mul_le_of_le_one_left bot_le prob_le_one)
 
-omit [Fintype ι] [Fintype κ] in
 /-- The uniform measure on injective maps differs from the uniform measure on all maps only on the
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
 
@@ -299,7 +316,6 @@ theorem uniformOn_injective_le_add [Finite ι] [Finite κ] [MeasurableSpace κ]
   simpa only [Set.compl_ofPred] using
     uniformOn_le_univ_add_compl {x : ι → κ | Function.Injective x} A
 
-omit [Fintype ι] [Fintype κ] in
 /-- The uniform measure on all maps differs from the uniform measure on injective maps only on the
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
 
@@ -313,6 +329,8 @@ theorem uniformOn_univ_le_injective_add [Finite ι] [Finite κ] [MeasurableSpace
       uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
   simpa only [Set.compl_ofPred] using
     uniformOn_univ_le_add_compl {x : ι → κ | Function.Injective x} A
+
+variable [Fintype ι] [Fintype κ]
 
 /-- **Quantitative finite-sampling bound, injective maps to all maps.**  For every event `A`, its
 uniform measure among injective maps is at most its uniform measure among all maps plus
