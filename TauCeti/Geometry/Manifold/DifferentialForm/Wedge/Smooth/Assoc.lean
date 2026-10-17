@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Assoc
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 
 /-!
 # Associativity of smooth differential-form wedges
 
 The scalar wedge on smooth forms is associative after the canonical reassociation of its finite
-argument tuple.  The proof is the bundled specialization of the rough-form associativity theorem;
-no smoothness or coefficient data is reproved here.
-
-The statement is the pointwise API used when a product of smooth forms is reassociated, including
-products descended to de Rham cohomology.
+argument tuple.  This specializes rough-form associativity to the smooth scalar product and gives
+its pointwise reassociation law for products used in de Rham cohomology.
 -/
 
 public section
