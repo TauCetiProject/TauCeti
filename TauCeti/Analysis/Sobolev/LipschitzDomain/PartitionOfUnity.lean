@@ -24,15 +24,14 @@ chart and `L` is the Lipschitz constant of its graph. On this cylinder the refle
 values of a cutoff product never reach parts of `Ω` outside the chart. This is the support
 hypothesis of the extension through one chart in Evans–Gariepy §4.4.
 
-The charts come from `Set.IsLipschitzChartWith.exists_mono_radii_two_mul_lt`, and the cutoffs
+The charts come from
+`Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover`, and the cutoffs
 from Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`. Every cylinder is bounded, so each
 cutoff has compact support; its value and gradient are then bounded, as the localization
 operator `TauCeti.W1p.localizeL` requires, by `ContDiff.exists_abs_le_and_norm_gradient_le`.
 
 ## Main declarations
 
-* `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover`: the frontier of
-  a bounded Lipschitz domain is covered by finitely many shortened chart cylinders.
 * `Set.IsLipschitzDomainWith.exists_contDiff_partitionOfUnity`: a smooth partition of unity on
   the closure of a bounded Lipschitz domain, subordinate to the domain itself and to the
   shortened cylinders of finitely many boundary charts.
@@ -55,36 +54,6 @@ open scoped NNReal ContDiff Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
-
-/-- **Finite covers by shortened chart cylinders.** The frontier of a bounded Lipschitz domain
-with constant `L` is covered by finitely many shortened cylinders
-`normalCylinder (a x - 2 * L * b x) (b x)` of Lipschitz boundary charts, centred at frontier points,
-with the common constant `L` and radii satisfying `2 * L * b x < a x`. -/
-theorem IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover
-    [FiniteDimensional ℝ E] (h : Omega.IsLipschitzDomainWith L) (hb : Bornology.IsBounded Omega) :
-    ∃ (t : Finset (WithLp 2 (ℝ × E))) (e : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ]
-        WithLp 2 (ℝ × E)) (φ : WithLp 2 (ℝ × E) → E → ℝ) (a b : WithLp 2 (ℝ × E) → ℝ),
-      (∀ x ∈ t, x ∈ frontier Omega ∧ e x x = 0 ∧
-        Omega.IsLipschitzChartWith L (e x) (φ x) (a x) (b x) ∧ 2 * L * b x < a x) ∧
-        frontier Omega ⊆ ⋃ x ∈ t, e x ⁻¹' normalCylinder (a x - 2 * L * b x) (b x) := by
-  have hshort : ∀ x ∈ frontier Omega, ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-      (φ : E → ℝ) (a b : ℝ), e x = 0 ∧ Omega.IsLipschitzChartWith L e φ a b ∧ 2 * L * b < a := by
-    intro x hx
-    obtain ⟨e, φ, a, b, hex, hchart⟩ :=
-      (isLipschitzDomainAtWith_iff ..).1 (((isLipschitzDomainWith_iff ..).1 h).2 x hx)
-    obtain ⟨b', -, hchart', hlt⟩ := hchart.exists_mono_radii_two_mul_lt
-    exact ⟨e, φ, a, b', hex, hchart', hlt⟩
-  choose! e φ a b hex hchart hlt using hshort
-  have hnhds : ∀ x ∈ frontier Omega,
-      e x ⁻¹' normalCylinder (a x - 2 * L * b x) (b x) ∈ 𝓝 x := by
-    intro x hx
-    have hb0 := ((isLipschitzChartWith_iff ..).1 (hchart x hx)).2.1
-    exact ((hchart x hx).mono_radii (sub_pos.2 (hlt x hx)) hb0 (sub_le_self _ (by positivity))
-      le_rfl).preimage_normalCylinder_mem_nhds (hex x hx)
-  obtain ⟨t, htK, hcover⟩ := (isCompact_of_isClosed_isBounded isClosed_frontier
-    (hb.closure.subset frontier_subset_closure)).elim_nhds_subcover _ hnhds
-  exact ⟨t, e, φ, a, b, fun x hx ↦ ⟨htK x hx, hex x (htK x hx), hchart x (htK x hx),
-    hlt x (htK x hx)⟩, hcover⟩
 
 /-- **Partition of unity for a bounded Lipschitz domain.** For a bounded Lipschitz domain `Omega`
 with constant `L`, there are finitely many frontier points `x ∈ t` carrying Lipschitz boundary
