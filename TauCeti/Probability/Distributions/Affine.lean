@@ -137,16 +137,52 @@ theorem map_affine_withDensity_volume (f : ℝ → ℝ≥0∞) (hb : b ≠ 0) :
   simp only [affineDensity]
   rw [hAinv, hdet, abs_inv]
 
-/-- The Radon–Nikodym derivative of a nonconstant affine image of an absolutely continuous real
-measure is the affine transform of its Radon–Nikodym derivative. -/
-theorem rnDeriv_map_affine (hμ : μ ≪ volume) (hb : b ≠ 0) :
+/-- The Radon–Nikodym derivative of a nonconstant affine image of an s-finite real measure is the
+affine transform of its Radon–Nikodym derivative. -/
+theorem rnDeriv_map_affine [SFinite μ] (hb : b ≠ 0) :
     (μ.map fun x ↦ a + b * x).rnDeriv volume =ᵐ[volume]
       affineDensity a b (μ.rnDeriv volume) := by
-  let _ : SFinite μ := MeasureTheory.sfinite_of_absolutelyContinuous hμ
-  conv_lhs => rw [← Measure.withDensity_rnDeriv_eq μ volume hμ]
-  rw [map_affine_withDensity_volume (a := a) (b := b) _ hb]
-  exact Measure.rnDeriv_withDensity volume
-    (measurable_affineDensity (Measure.measurable_rnDeriv μ volume) a b)
+  let e : ℝ ≃ᵐ ℝ := (MeasurableEquiv.smul₀ b hb).trans (MeasurableEquiv.addLeft a)
+  have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
+    funext x
+    simp [e, smul_eq_mul]
+  have hemb : MeasurableEmbedding (fun x : ℝ ↦ a + b * x) := by
+    rw [← he]
+    exact e.measurableEmbedding
+  have hmapvol : volume.map (fun x : ℝ ↦ a + b * x) =
+      ENNReal.ofReal |b|⁻¹ • volume := by
+    calc
+      volume.map (fun x : ℝ ↦ a + b * x) =
+          (volume.withDensity (1 : ℝ → ℝ≥0∞)).map (fun x ↦ a + b * x) := by
+            rw [withDensity_one]
+      _ = volume.withDensity (affineDensity a b (1 : ℝ → ℝ≥0∞)) :=
+        map_affine_withDensity_volume (a := a) (b := b) _ hb
+      _ = volume.withDensity (fun _ ↦ ENNReal.ofReal |b|⁻¹) := by
+        refine withDensity_congr_ae (.of_forall fun y ↦ ?_)
+        rw [affineDensity_apply, Pi.one_apply, mul_one]
+      _ = ENNReal.ofReal |b|⁻¹ • volume := withDensity_const _
+  have hc : ENNReal.ofReal |b|⁻¹ ≠ 0 := by simp [hb]
+  have hsing : (μ.singularPart volume).map (fun x ↦ a + b * x) ⟂ₘ volume := by
+    have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart μ volume)
+    rw [hmapvol] at h
+    exact h.mono_ac Measure.AbsolutelyContinuous.rfl (Measure.absolutelyContinuous_smul hc)
+  have hadd : μ.map (fun x ↦ a + b * x) =
+      (μ.singularPart volume).map (fun x ↦ a + b * x) +
+        volume.withDensity (affineDensity a b (μ.rnDeriv volume)) := by
+    calc
+      μ.map (fun x ↦ a + b * x) =
+          (μ.singularPart volume + volume.withDensity (μ.rnDeriv volume)).map
+            (fun x ↦ a + b * x) := congrArg (fun ν : Measure ℝ ↦
+              ν.map (fun x ↦ a + b * x)) (Measure.haveLebesgueDecomposition_add μ volume)
+      _ = (μ.singularPart volume).map (fun x ↦ a + b * x) +
+          (volume.withDensity (μ.rnDeriv volume)).map (fun x ↦ a + b * x) := by
+            rw [Measure.map_add _ _ (by fun_prop)]
+      _ = (μ.singularPart volume).map (fun x ↦ a + b * x) +
+          volume.withDensity (affineDensity a b (μ.rnDeriv volume)) := by
+            rw [map_affine_withDensity_volume (a := a) (b := b) _ hb]
+  exact (Measure.eq_rnDeriv₀
+    (measurable_affineDensity (Measure.measurable_rnDeriv μ volume) a b).aemeasurable hsing
+    hadd).symm
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
@@ -182,11 +218,8 @@ theorem hasPDF_affine [HasPDF X P] (hb : b ≠ 0) :
 `|b|⁻¹ pdf X P ((y - a) / b)`. -/
 theorem pdf_affine [HasPDF X P] (hb : b ≠ 0) :
     pdf (fun ω ↦ a + b * X ω) P =ᵐ[volume] affineDensity a b (pdf X P) := by
-  have hcomp : (fun ω ↦ a + b * X ω) = (fun x ↦ a + b * x) ∘ X := rfl
-  rw [pdf_def, hcomp,
-    ← AEMeasurable.map_map_of_aemeasurable (measurable_affine a b).aemeasurable
-      (HasPDF.aemeasurable X P volume)]
-  exact rnDeriv_map_affine (HasPDF.absolutelyContinuous : P.map X ≪ volume) hb
+  exact pdf_eq_of_hasLaw_withDensity
+    (measurable_affineDensity (measurable_pdf X P) a b).aemeasurable (hasLaw_affine hb)
 
 /-! ### Cumulative distribution functions -/
 
