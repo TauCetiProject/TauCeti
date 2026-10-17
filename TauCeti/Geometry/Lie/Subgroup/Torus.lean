@@ -92,6 +92,20 @@ theorem IsMaximalTorus.eq_of_le {T T' : Subgroup G} (hT : IsMaximalTorus T) (hT'
 theorem IsTorus.isClosed [T2Space G] {T : Subgroup G} (hT : IsTorus T) : IsClosed (T : Set G) :=
   hT.isCompact.isClosed
 
+/-- The image of a torus under a continuous homomorphism is a torus. -/
+theorem IsTorus.map {G' : Type*} [TopologicalSpace G'] [Group G']
+    {T : Subgroup G} (hT : IsTorus T) (f : G →* G') (hf : Continuous f) :
+    IsTorus (T.map f) where
+  isCompact := by
+    rw [Subgroup.coe_map]
+    exact hT.isCompact.image hf
+  isConnected := by
+    rw [Subgroup.coe_map]
+    exact hT.isConnected.image f hf.continuousOn
+  isMulCommutative := by
+    have := hT.isMulCommutative
+    infer_instance
+
 /-- The trivial subgroup is a torus. -/
 theorem isTorus_bot : IsTorus (⊥ : Subgroup G) where
   isCompact := by

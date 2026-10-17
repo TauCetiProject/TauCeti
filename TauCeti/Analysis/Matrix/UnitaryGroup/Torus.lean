@@ -98,6 +98,12 @@ theorem unitaryTorusHom_injective : Function.Injective (unitaryTorusHom n) := fu
   have := congr_fun₂ (congrArg Subtype.val h) i i
   simpa only [coe_unitaryTorusHom, diagonal_apply_eq, Circle.coe_inj] using this
 
+/-- The diagonal parametrization of the unitary torus is continuous. -/
+@[fun_prop]
+theorem continuous_unitaryTorusHom : Continuous (unitaryTorusHom n) := by
+  exact ((continuous_pi fun i => continuous_subtype_val.comp
+    (continuous_apply i)).matrix_diagonal).subtype_mk _
+
 variable (n) in
 /-- The **diagonal torus** of the unitary group `U(n)`: the subgroup of diagonal unitary matrices,
 the image of `(n → Circle)` under `TauCeti.unitaryTorusHom n`. -/
