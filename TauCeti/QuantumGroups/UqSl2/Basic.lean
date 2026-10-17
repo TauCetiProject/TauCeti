@@ -236,6 +236,18 @@ def toFun (x : GeneratorTuple q A) : Generator → A
   | .k => x.k
   | .kInv => x.kInv
 
+/-- The function underlying a tuple takes the raising label to its raising element. -/
+@[simp] theorem toFun_e (x : GeneratorTuple q A) : x.toFun .e = x.e := (rfl)
+
+/-- The function underlying a tuple takes the lowering label to its lowering element. -/
+@[simp] theorem toFun_f (x : GeneratorTuple q A) : x.toFun .f = x.f := (rfl)
+
+/-- The function underlying a tuple takes the weight label to its weight element. -/
+@[simp] theorem toFun_k (x : GeneratorTuple q A) : x.toFun .k = x.k := (rfl)
+
+/-- The function underlying a tuple takes the inverse-weight label to its inverse-weight element. -/
+@[simp] theorem toFun_kInv (x : GeneratorTuple q A) : x.toFun .kInv = x.kInv := (rfl)
+
 end GeneratorTuple
 
 /-- The universal property of the presentation: a tuple satisfying the defining relations extends
@@ -271,6 +283,17 @@ theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
   apply FreeAlgebra.hom_ext
   funext g
   cases g <;> assumption
+
+/-- The four presentation generators generate the entire algebra. -/
+theorem adjoin_range_generator (q : ℂ) :
+    Algebra.adjoin ℂ (Set.range (generator q)) = ⊤ := by
+  rw [Algebra.adjoin_range_eq_range_freeAlgebra_lift]
+  have h : FreeAlgebra.lift ℂ (generator q) = mkAlgHom q := by
+    apply FreeAlgebra.hom_ext
+    funext g
+    simp
+  rw [h, AlgHom.range_eq_top]
+  exact RingQuot.mkAlgHom_surjective ℂ (Rel q)
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where

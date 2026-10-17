@@ -49,6 +49,8 @@ That classification is not proved here; the results below take `δ` as given.
 * `SimpleGraph.posSemidef_graphCartanMatrix`: `2I - A` is positive semidefinite.
 * `SimpleGraph.ker_mulVecLin_graphCartanMatrix`: on a preconnected graph the null space of
   `2I - A` is the span of the additive function.
+* `SimpleGraph.Connected.exists_pos_two_mul_le_sum`: on a connected graph, a nonzero nonnegative
+  superadditive weight, one with `2 δ i ≤ ∑_{j ∼ i} δ j`, can be replaced by a positive one.
 
 ## References
 
@@ -67,7 +69,8 @@ development of this file follows it declaration for declaration, with the additi
 and the walk induction in `SimpleGraph.ker_mulVecLin_graphCartanMatrix` are adapted from
 `SimpleGraph.posSemidef_lapMatrix`,
 `SimpleGraph.lapMatrix_mulVec_eq_zero_iff_forall_adj` and the walk induction inside
-`SimpleGraph.lapMatrix_toLinearMap₂'_apply'_eq_zero_iff_forall_reachable`.
+`SimpleGraph.lapMatrix_toLinearMap₂'_apply'_eq_zero_iff_forall_reachable`. The final section, on
+superadditive weights, is not adapted from it.
 -/
 
 public section
@@ -290,5 +293,49 @@ theorem ker_mulVecLin_graphCartanMatrix (hG : G.Preconnected) (hpos : ∀ i, 0 <
     exact graphCartanMatrix_mulVec_eq_zero G hδ
 
 end Ordered
+
+/-! ### Superadditive weights -/
+
+section Superadditive
+
+variable {G} {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+omit [DecidableEq V] in
+/-- **On a connected graph a superadditive weight can be made positive.** If a nonzero nonnegative
+weight `δ` satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex of a connected finite graph, then so
+does a weight which is positive at every vertex. -/
+theorem Connected.exists_pos_two_mul_le_sum (hG : G.Connected) {δ : V → R} (hδ0 : 0 ≤ δ)
+    (hδ : δ ≠ 0) (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j) :
+    ∃ δ' : V → R, (∀ i, 0 < δ' i) ∧ ∀ i, 2 * δ' i ≤ ∑ j ∈ G.neighborFinset i, δ' j := by
+  classical
+  -- The nonnegative weights satisfying the inequality are closed under sums and under adding to a
+  -- weight its neighbour sums, which spreads its support to the neighbouring vertices.
+  set P : (V → R) → Prop := fun x => 0 ≤ x ∧ ∀ i, 2 * x i ≤ ∑ j ∈ G.neighborFinset i, x j
+  have hstep (x : V → R) (hx : P x) : P fun i => x i + ∑ j ∈ G.neighborFinset i, x j := by
+    refine ⟨fun i => add_nonneg (hx.1 i) (sum_nonneg fun j _ => hx.1 j), fun i => ?_⟩
+    rw [sum_add_distrib, mul_add, mul_sum]
+    exact add_le_add (hx.2 i) (sum_le_sum fun j _ => hx.2 j)
+  have hwalk {u w : V} (p : G.Walk u w) : (∃ x, P x ∧ 0 < x u) → ∃ x, P x ∧ 0 < x w := by
+    induction p with
+    | nil => exact id
+    | @cons a b c h p ih =>
+      rintro ⟨x, hx, hxa⟩
+      refine ih ⟨_, hstep x hx, ?_⟩
+      calc 0 < x a := hxa
+        _ ≤ ∑ j ∈ G.neighborFinset b, x j :=
+          single_le_sum (fun j _ => hx.1 j) ((mem_neighborFinset _ _ _).2 h.symm)
+        _ ≤ x b + ∑ j ∈ G.neighborFinset b, x j := le_add_of_nonneg_left (hx.1 b)
+  obtain ⟨u, hu⟩ := Function.ne_iff.1 hδ
+  have hpos (w : V) : ∃ x, P x ∧ 0 < x w :=
+    hwalk (hG.preconnected u w).some ⟨δ, ⟨hδ0, hδle⟩, (hδ0 u).lt_of_ne' hu⟩
+  choose x hx hxw using hpos
+  refine ⟨∑ w, x w, fun i => ?_, fun i => ?_⟩
+  · rw [Finset.sum_apply]
+    exact (hxw i).trans_le (single_le_sum (fun w _ => (hx w).1 i) (mem_univ i))
+  · simp only [Finset.sum_apply, mul_sum]
+    rw [sum_comm]
+    exact sum_le_sum fun w _ => (hx w).2 i
+
+end Superadditive
 
 end SimpleGraph
