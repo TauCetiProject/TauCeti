@@ -226,6 +226,39 @@ private theorem toMul_ideleComponent_ideleCoeffOf (P : AdeleSemilocal K F)
       adeleComponent P τ E a := by
   simp [ideleComponent, IdeleCoeff.lift_ideleCoeffOf]
 
+private theorem toMul_ideleComponent_ideleCoeffOfIntermediateField (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
+    (hom : AdeleRing (𝓞 E) E →+* F ⊗[K] E)
+    (hom_adeleExtension : ∀ (M : Ω) [Algebra E M] [IsScalarTower K E M]
+      (a : AdeleRing (𝓞 E) E),
+        P.hom M (NumberField.adeleExtension (𝓞 E) E (𝓞 M) M a) =
+          Algebra.TensorProduct.map (AlgHom.id F F) (IsScalarTower.toAlgHom K E M) (hom a))
+    (a : IdeleGroup (𝓞 E) E) :
+    ((ideleComponent P τ (ideleCoeffOfIntermediateField K E (.ofMul a))).toMul :
+      SeparableClosure F) =
+      Algebra.TensorProduct.lift (Algebra.ofId _ _)
+        (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _)
+        (hom a) := by
+  let M := FiniteGaloisIntermediateField.normalClosure K E
+  have h : E ≤ M := FiniteGaloisIntermediateField.le_normalClosure K E
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  have : IsScalarTower K E M := .of_algebraMap_eq fun _ ↦ rfl
+  rw [← ideleCoeffOf_ideleExtension M h a]
+  refine (toMul_ideleComponent_ideleCoeffOf P τ M _).trans ?_
+  rw [adeleComponent_apply, GlobalNumberFields.coe_ideleExtension, hom_adeleExtension]
+  rw [← AlgHom.comp_apply]
+  congr 1
+  apply Algebra.TensorProduct.ext'
+  intro b x
+  simp only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    semilocalLift_tmul, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply]
+  -- Express the local algebra map as the inclusion so its ambient-field coercion is explicit.
+  change algebraMap F (SeparableClosure F) b *
+      τ (IntermediateField.inclusion h x : SeparableClosure K) = _
+  simp only [IntermediateField.coe_inclusion, IsScalarTower.coe_toAlgHom',
+    IntermediateField.algebraMap_apply]
+
 private theorem ideleComponent_comp (P : AdeleSemilocal K F)
     (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
     (h : AbsoluteGaloisGroup K) (x : IdeleCoeff K) :
@@ -364,24 +397,14 @@ theorem toMul_ideleCoeffComponent_ideleCoeffOfIntermediateField
       Algebra.TensorProduct.lift (Algebra.ofId _ _)
         (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _)
         (finiteAdeleSemilocalHom E v (a : AdeleRing (𝓞 E) E).2) := by
-  let M := FiniteGaloisIntermediateField.normalClosure K E
-  have h : E ≤ M := FiniteGaloisIntermediateField.le_normalClosure K E
-  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  have : IsScalarTower K E M := .of_algebraMap_eq fun _ ↦ rfl
-  rw [← ideleCoeffOf_ideleExtension M h a]
-  refine (toMul_ideleComponent_ideleCoeffOf (finiteAdeleSemilocal v) τ M _).trans ?_
-  -- Read the projection in the private semi-local package as the actual adele component.
-  change semilocalLift τ M (finiteAdeleSemilocalHom M v
-    (GlobalNumberFields.ideleExtension E M a : AdeleRing (𝓞 M) M).2) = _
-  rw [GlobalNumberFields.coe_ideleExtension, NumberField.adeleExtension_snd,
-    finiteAdeleSemilocalHom_finiteAdeleExtension]
-  rw [← AlgHom.comp_apply]
-  congr 1
-  apply Algebra.TensorProduct.ext'
-  intro b x
-  simp only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-    semilocalLift_tmul, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply]
-  rfl
+  refine toMul_ideleComponent_ideleCoeffOfIntermediateField (finiteAdeleSemilocal v) τ E
+    ((finiteAdeleSemilocalHom E v).comp (RingHom.snd (InfiniteAdeleRing E) _)) ?_ a
+  intro M _ _ b
+  -- Read the private package as the finite projection before applying naturality.
+  change finiteAdeleSemilocalHom M v
+    (NumberField.adeleExtension (𝓞 E) E (𝓞 M) M b).2 = _
+  rw [NumberField.adeleExtension_snd]
+  exact finiteAdeleSemilocalHom_finiteAdeleExtension (M := M) v b.2
 
 /-- **Changing the embedding by an automorphism** `h` of `Kˢ` precomposes the coordinate at `v`
 with the action of `h` on the ideles. -/
@@ -483,24 +506,43 @@ theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField
       Algebra.TensorProduct.lift (Algebra.ofId _ _)
         (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _)
         (GlobalNumberFields.infiniteAdeleSemilocalHom E w (a : AdeleRing (𝓞 E) E).1) := by
-  let M := FiniteGaloisIntermediateField.normalClosure K E
-  have h : E ≤ M := FiniteGaloisIntermediateField.le_normalClosure K E
-  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  have : IsScalarTower K E M := .of_algebraMap_eq fun _ ↦ rfl
-  rw [← ideleCoeffOf_ideleExtension M h a]
-  refine (toMul_ideleComponent_ideleCoeffOf (infiniteAdeleSemilocal w) τ M _).trans ?_
-  -- Read the projection in the private semi-local package as the actual adele component.
-  change semilocalLift τ M (GlobalNumberFields.infiniteAdeleSemilocalHom M w
-    (GlobalNumberFields.ideleExtension E M a : AdeleRing (𝓞 M) M).1) = _
-  rw [GlobalNumberFields.coe_ideleExtension, NumberField.adeleExtension_fst,
-    GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleExtension]
-  rw [← AlgHom.comp_apply]
-  congr 1
-  apply Algebra.TensorProduct.ext'
-  intro b x
-  simp only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-    semilocalLift_tmul, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply]
-  rfl
+  refine toMul_ideleComponent_ideleCoeffOfIntermediateField (infiniteAdeleSemilocal w) τ E
+    ((GlobalNumberFields.infiniteAdeleSemilocalHom E w).comp
+      (RingHom.fst _ (FiniteAdeleRing (𝓞 E) E))) ?_ a
+  intro M _ _ b
+  -- Read the private package as the infinite projection before applying naturality.
+  change GlobalNumberFields.infiniteAdeleSemilocalHom M w
+    (NumberField.adeleExtension (𝓞 E) E (𝓞 M) M b).1 = _
+  rw [NumberField.adeleExtension_fst]
+  exact GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleExtension (M := M) w b.1
+
+open scoped NumberField.LiesOver in
+/-- The coordinate at an infinite place through a completion of a finite subextension.
+If `τ` agrees on `E` with an embedding `τ'` of `E_u`, the coordinate is the component at `u`
+embedded by `τ'`. No normality of `E/K` is needed. -/
+theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq_map_ideleInfiniteCoord
+    {E : IntermediateField K (SeparableClosure K)} [NumberField E] {w : InfinitePlace K}
+    (u : InfinitePlace E) [u.LiesOver w]
+    (τ' : u.Completion →ₐ[w.Completion] SeparableClosure w.Completion)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (hτ : ∀ x : E, τ x = τ' (algebraMap E u.Completion x)) (a : IdeleGroup (𝓞 E) E) :
+    (ideleCoeffInfiniteComponent τ (ideleCoeffOfIntermediateField K E (.ofMul a))).toMul =
+      Units.map (τ' : u.Completion →* SeparableClosure w.Completion) (u.ideleInfiniteCoord a) := by
+  refine Units.ext ?_
+  rw [toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField, Units.coe_map,
+    MonoidHom.coe_ofClass, InfinitePlace.coe_ideleInfiniteCoord]
+  have h : Algebra.TensorProduct.lift (Algebra.ofId _ _)
+      (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _) =
+      τ'.comp ((Pi.evalAlgHom _ _ ⟨u, inferInstance⟩).comp
+        (GlobalNumberFields.infiniteSemilocalEquiv E w).toAlgHom) := by
+    refine Algebra.TensorProduct.ext' fun b x ↦ ?_
+    simp only [AlgHom.comp_apply, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply,
+      IsScalarTower.coe_toAlgHom', AlgEquiv.coe_toAlgHom,
+      GlobalNumberFields.infiniteSemilocalEquiv_tmul, Pi.evalAlgHom_apply,
+      map_mul, AlgHom.commutes, IntermediateField.algebraMap_apply, ← hτ]
+  rw [h]
+  simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
+    GlobalNumberFields.infiniteSemilocalEquiv_infiniteAdeleSemilocalHom, Pi.evalAlgHom_apply]
 
 /-- **Changing the embedding by an automorphism** `h` of `Kˢ` precomposes the coordinate at `w`
 with the action of `h` on the ideles. -/
@@ -597,34 +639,6 @@ theorem toMul_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq_map_ideleFini
   rw [h]
   simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
     semilocalEquiv_finiteAdeleSemilocalHom, Pi.evalAlgHom_apply]
-
-open scoped NumberField.LiesOver in
-/-- The coordinate at an infinite place through a completion of a finite subextension.
-If `τ` agrees on `E` with an embedding `τ'` of `E_u`, the coordinate is the component at `u`
-embedded by `τ'`. No normality of `E/K` is needed. -/
-theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq_map_ideleInfiniteCoord
-    {E : IntermediateField K (SeparableClosure K)} [NumberField E] {w : InfinitePlace K}
-    (u : InfinitePlace E) [u.LiesOver w]
-    (τ' : u.Completion →ₐ[w.Completion] SeparableClosure w.Completion)
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
-    (hτ : ∀ x : E, τ x = τ' (algebraMap E u.Completion x)) (a : IdeleGroup (𝓞 E) E) :
-    (ideleCoeffInfiniteComponent τ (ideleCoeffOfIntermediateField K E (.ofMul a))).toMul =
-      Units.map (τ' : u.Completion →* SeparableClosure w.Completion) (u.ideleInfiniteCoord a) := by
-  refine Units.ext ?_
-  rw [toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField, Units.coe_map,
-    MonoidHom.coe_ofClass, InfinitePlace.coe_ideleInfiniteCoord]
-  have h : Algebra.TensorProduct.lift (Algebra.ofId _ _)
-      (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _) =
-      τ'.comp ((Pi.evalAlgHom _ _ ⟨u, inferInstance⟩).comp
-        (GlobalNumberFields.infiniteSemilocalEquiv E w).toAlgHom) := by
-    refine Algebra.TensorProduct.ext' fun b x ↦ ?_
-    simp only [AlgHom.comp_apply, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply,
-      IsScalarTower.coe_toAlgHom', AlgEquiv.coe_toAlgHom,
-      GlobalNumberFields.infiniteSemilocalEquiv_tmul, Pi.evalAlgHom_apply,
-      map_mul, AlgHom.commutes, IntermediateField.algebraMap_apply, ← hτ]
-  rw [h]
-  simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
-    GlobalNumberFields.infiniteSemilocalEquiv_infiniteAdeleSemilocalHom, Pi.evalAlgHom_apply]
 
 /-- Every finite completion coordinate of an idele of a finite subextension is a coordinate
 of the corresponding idele of `Kˢ`, along suitable embeddings of separable closures. The
