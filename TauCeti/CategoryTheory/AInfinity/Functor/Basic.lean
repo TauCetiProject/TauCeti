@@ -324,6 +324,13 @@ theorem id_map (𝒞 : AInfinityCategory R C) (X Y : C) :
     (AInfinityFunctor.id 𝒞).map X Y = LinearMap.id :=
   (AInfinityStrictFunctor.id 𝒞).toAInfinityFunctor_map X Y
 
+/-- The identity `A∞` functor fixes every morphism.  Unlike `TauCeti.AInfinityFunctor.id_map`,
+this can be used to rewrite where the codomain of `LinearMap.id` is only definitionally its
+domain. -/
+theorem id_map_apply (𝒞 : AInfinityCategory R C) {X Y : C} (f : homModule (R := R) X Y) :
+    (AInfinityFunctor.id 𝒞).map X Y f = f :=
+  LinearMap.congr_fun (id_map 𝒞 X Y) f
+
 end AInfinityFunctor
 
 end TauCeti
