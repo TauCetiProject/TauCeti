@@ -31,6 +31,12 @@ open scoped NNReal Nat
 
 namespace TauCeti.Probability
 
+/-- The Poisson law of rate zero is the Dirac mass at `0`. -/
+@[simp]
+theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
+  refine Measure.ext_of_singleton fun n => ?_
+  rcases n with _ | n <;> simp [poissonMeasure_singleton]
+
 /-- The probability-generating function of a Poisson distribution. -/
 @[simp]
 theorem pgf_poissonMeasure (r : ℝ≥0) (t : ℝ) :
