@@ -18,10 +18,11 @@ that a chart `e` of the maximal atlas is an honest map `M → E`. If `f = h ∘ 
 for a map `f : M → F` into a normed space `F`, then the differential of `f` is the Fréchet
 derivative of `h` composed with the derivative of the chart, which is invertible, so the
 differential of `f` vanishes at a point in the source of `e` if and only if the Fréchet derivative
-of `h` vanishes at its image under `e`. This file records these facts and their consequences for a
-smooth map: its coordinate expression in the preferred chart is smooth, its differential vanishes at
-a point if and only if the Fréchet derivative of its coordinate expression vanishes there, and the
-points where its differential is nonzero form an open set.
+of `h` vanishes at its image under `e`. This file records these facts and their consequences in the
+preferred chart: the coordinate expression of a `C^n` map is `C^n`, the differential of a
+differentiable map vanishes at a point if and only if the Fréchet derivative of its coordinate
+expression vanishes there, and the points where the differential of a `C^1` map is nonzero form an
+open set.
 
 ## Main results
 
@@ -30,10 +31,10 @@ points where its differential is nonzero form an open set.
   invertible.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
-* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of a smooth `f`
-  vanishes at `x` if and only if the Fréchet derivative of its coordinate expression in the
+* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of a differentiable
+  `f` vanishes at `x` if and only if the Fréchet derivative of its coordinate expression in the
   preferred chart vanishes at `extChartAt 𝓘(𝕜, E) x x`.
-* `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a smooth map is
+* `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
 -/
 
@@ -105,38 +106,44 @@ theorem eqOn_comp_chartAt_symm {E M α : Type*} [TopologicalSpace E] [Topologica
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → F}
 
-/-- The coordinate expression of a smooth function is smooth on the chart target. -/
-theorem contDiffOn_comp_chartAt_symm (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) ∞ f) (p : M) :
-    ContDiffOn 𝕜 ∞ (f ∘ (chartAt E p).symm) (chartAt E p).target :=
+/-- The coordinate expression of a `C^n` function is `C^n` on the chart target. -/
+theorem contDiffOn_comp_chartAt_symm {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜, E) n M]
+    (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n f) (p : M) :
+    ContDiffOn 𝕜 n (f ∘ (chartAt E p).symm) (chartAt E p).target :=
   (hf.comp_contMDiffOn contMDiffOn_chart_symm).contDiffOn
 
-/-- The differential of a smooth `f` vanishes at `x` if and only if the Fréchet derivative of the
-coordinate expression of `f` in the preferred extended chart at `x` vanishes at
+variable [IsManifold 𝓘(𝕜, E) 1 M]
+
+/-- The differential of a differentiable `f` vanishes at `x` if and only if the Fréchet derivative
+of the coordinate expression of `f` in the preferred extended chart at `x` vanishes at
 `extChartAt 𝓘(𝕜, E) x x`. -/
-theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) ∞ f)
-    (x : M) : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f x = 0 ↔
+theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm {x : M}
+    (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f x) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt 𝓘(𝕜, E) x).symm) (extChartAt 𝓘(𝕜, E) x x) = 0 := by
   have hext : ((extChartAt 𝓘(𝕜, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
   have hext' : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
   rw [hext, hext']
+  have hsymm : (chartAt E x).symm (chartAt E x x) = x :=
+    (chartAt E x).left_inv (mem_chart_source E x)
   exact mfderiv_eq_zero_iff_of_eqOn (IsManifold.chart_mem_maximalAtlas x)
     (eqOn_comp_chartAt_symm x) (mem_chart_source E x)
-    (((contDiffOn_comp_chartAt_symm hf x).contDiffAt ((chartAt E x).open_target.mem_nhds
-      (mem_chart_target E x))).differentiableAt (by simp))
+    (((hsymm.symm ▸ hf).comp _
+      (mdifferentiableAt_atlas_symm (chart_mem_atlas E x) (mem_chart_target E x))).differentiableAt)
 
-/-- The points where the differential of a smooth function is nonzero form an open set. -/
-theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) ∞ f) :
+/-- The points where the differential of a `C^1` function is nonzero form an open set. -/
+theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) 1 f) :
     IsOpen {y : M | mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y ≠ 0} := by
   refine isOpen_iff_mem_nhds.2 fun y₀ hy₀ ↦ ?_
   set c := chartAt E y₀
   have hcont : ContinuousOn (fderiv 𝕜 (f ∘ c.symm)) c.target :=
-    (contDiffOn_comp_chartAt_symm hf y₀).continuousOn_fderiv_of_isOpen c.open_target (by simp)
+    (contDiffOn_comp_chartAt_symm hf y₀).continuousOn_fderiv_of_isOpen c.open_target le_rfl
   have hdiff : ∀ y ∈ c.source, DifferentiableAt 𝕜 (f ∘ c.symm) (c y) := fun y hy ↦
     ((contDiffOn_comp_chartAt_symm hf y₀).contDiffAt (c.open_target.mem_nhds
-      (c.map_source hy))).differentiableAt (by simp)
+      (c.map_source hy))).differentiableAt one_ne_zero
   have hmem : y₀ ∈ c.source := mem_chart_source E y₀
   have hiff : ∀ y ∈ c.source, mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y = 0 ↔ fderiv 𝕜 (f ∘ c.symm) (c y) = 0 :=
     fun y hy ↦ mfderiv_eq_zero_iff_of_eqOn (IsManifold.chart_mem_maximalAtlas y₀)

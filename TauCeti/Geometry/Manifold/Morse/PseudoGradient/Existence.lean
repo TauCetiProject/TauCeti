@@ -311,7 +311,7 @@ space is finite. -/
 theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse 𝓘(ℝ, E) f) :
     {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}.Finite := by
   have hclosed : IsClosed {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0} := by
-    have := (isOpen_setOf_mfderiv_ne_zero hf.contMDiff).isClosed_compl
+    have := (isOpen_setOf_mfderiv_ne_zero (hf.contMDiff.of_le (by simp))).isClosed_compl
     simpa only [compl_ofPred, ne_eq, not_not] using this
   refine hclosed.isCompact.finite (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_)
   obtain ⟨φ⟩ := hf.nonempty_morseChart hx
