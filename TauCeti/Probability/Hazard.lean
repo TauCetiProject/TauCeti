@@ -142,7 +142,8 @@ theorem one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity
     (hnn : 0 ≤ᵐ[volume] f) (h0 : μ (Iio 0) = 0) (hSx : cdf μ x < 1) :
     1 - cdf μ x = Real.exp (-∫ t in (0 : ℝ)..x, f t / (1 - cdf μ t)) := by
   have hac : μ ≪ volume := hμ ▸ withDensity_absolutelyContinuous volume _
-  have : NullSingletonClass μ := ⟨fun t => hac (measure_singleton t)⟩
+  have : NullSingletonClass μ :=
+    Measure.nullSingletonClass_of_absolutelyContinuous μ volume hac
   have hcdf0 : cdf μ 0 = 0 := Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0
   have hmax : cdf μ (max 0 x) < 1 := by
     rcases le_total 0 x with hx | hx
