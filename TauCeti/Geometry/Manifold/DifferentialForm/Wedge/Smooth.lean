@@ -72,10 +72,11 @@ end RoughForm
 
 /-- The paired wedge of two `C^n` sections of the alternating bundle is a `C^n` section,
 within an arbitrary subset. -/
-theorem _root_.ContMDiffWithinAt.wedgeWith_form (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem _root_.ContMDiffWithinAt.wedgeWith_form
     {φ : RoughForm I M F₁ k} {ψ : RoughForm I M F₂ l}
     (hφ : ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F₁)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F₁) y (φ y)) s x)
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hψ : ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s x) :
     ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
@@ -90,10 +91,11 @@ theorem _root_.ContMDiffWithinAt.wedgeWith_form (μ : F₁ →L[ℝ] F₂ →L[�
 
 /-- The paired wedge of two `C^n` sections of the alternating bundle is a `C^n` section on an
 arbitrary subset. -/
-theorem _root_.ContMDiffOn.wedgeWith_form (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem _root_.ContMDiffOn.wedgeWith_form
     {φ : RoughForm I M F₁ k} {ψ : RoughForm I M F₂ l}
     (hφ : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F₁)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F₁) y (φ y)) s)
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hψ : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s) :
     ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
@@ -102,15 +104,16 @@ theorem _root_.ContMDiffOn.wedgeWith_form (μ : F₁ →L[ℝ] F₂ →L[ℝ] F�
 
 /-- The paired wedge of two sections of the alternating bundle that are `C^n` at a point is
 `C^n` at that point. -/
-theorem _root_.ContMDiffAt.wedgeWith_form (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem _root_.ContMDiffAt.wedgeWith_form
     {φ : RoughForm I M F₁ k} {ψ : RoughForm I M F₂ l}
     (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F₁)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F₁) y (φ y)) x)
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hψ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) x) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y (φ.wedgeWith μ ψ y)) x :=
-  ContMDiffWithinAt.wedgeWith_form μ hφ hψ
+  ContMDiffWithinAt.wedgeWith_form hφ μ hψ
 
 /-- The paired wedge of two fixed-coefficient forms of class `C^n` is of class `C^n`. -/
 theorem IsSmoothForm.wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {φ : RoughForm I M F₁ k}
@@ -166,9 +169,24 @@ theorem coe_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm
       RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) := by
   rw [wedgeWith, LinearMap.mk₂_apply]
 
+/-- Evaluation of the smooth fixed-coefficient paired wedge. -/
+theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm I M F₁ k)
+    (ψ : SmoothForm I M F₂ l) (x : M) (v : Fin (k + l) → TangentSpace I x) :
+    (wedgeWith μ φ ψ).1 x v =
+      (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
+        ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
+          μ (φ.1 x (fun i ↦ v (σ (Fin.castAdd l i))))
+            (ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+  rw [coe_wedgeWith, RoughForm.wedgeWith_apply]
+
 /-- The real wedge of smooth real-valued forms, as a bilinear map. -/
 def wedge : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ l →ₗ[ℝ] SmoothForm I M ℝ (k + l) :=
   wedgeWith (ContinuousLinearMap.mul ℝ ℝ)
+
+/-- The smooth real wedge specializes the paired wedge to multiplication. -/
+theorem wedge_def (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
+    wedge φ ψ = wedgeWith (ContinuousLinearMap.mul ℝ ℝ) φ ψ := by
+  rw [wedge]
 
 /-- The underlying rough form of the smooth real wedge is the rough real wedge. -/
 @[simp]
@@ -176,6 +194,16 @@ theorem coe_wedge (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
     (wedge φ ψ : RoughForm I M ℝ (k + l)) =
       RoughForm.wedge (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) := by
   rw [wedge, coe_wedgeWith, RoughForm.wedge_def]
+
+/-- Evaluation of the smooth real-valued wedge in every degree. -/
+theorem wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
+    (x : M) (v : Fin (k + l) → TangentSpace I x) :
+    (wedge φ ψ).1 x v =
+      (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
+        ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
+          (φ.1 x (fun i ↦ v (σ (Fin.castAdd l i))) *
+            ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+  rw [coe_wedge, RoughForm.wedge_apply]
 
 end SmoothForm
 
