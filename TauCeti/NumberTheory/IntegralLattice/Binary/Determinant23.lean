@@ -267,20 +267,14 @@ theorem binaryDeterminant23_isometry_eq (e : Isometry binaryDeterminant23 binary
 /-- The full integral isometry group of the determinant-23 lattice has order two. -/
 theorem card_isometry_binaryDeterminant23 :
     Nat.card (Isometry binaryDeterminant23 binaryDeterminant23) = 2 := by
-  let f : Fin 2 → Isometry binaryDeterminant23 binaryDeterminant23 :=
-    ![1, Isometry.neg binaryDeterminant23]
-  have hf : Function.Bijective f := by
-    constructor
-    · intro i j hij
-      fin_cases i <;> fin_cases j <;> first | rfl |
-        (have h := congrArg (fun e : Isometry binaryDeterminant23 binaryDeterminant23 ↦
-           e (binaryDeterminant23Basis 0 : Fin 2 → ℚ) 0) hij
-         norm_num [f, coe_binaryDeterminant23Basis, Pi.single_apply] at h)
-    · intro e
-      rcases binaryDeterminant23_isometry_eq e with h | h
-      · exact ⟨0, h.symm⟩
-      · exact ⟨1, h.symm⟩
-  simpa using (Nat.card_eq_of_bijective f hf).symm
+  refine Nat.card_eq_two_iff.mpr ⟨1, Isometry.neg binaryDeterminant23, ?_, ?_⟩
+  · intro h
+    have h' := congrArg (fun e : Isometry binaryDeterminant23 binaryDeterminant23 ↦
+      e (binaryDeterminant23Basis 0 : Fin 2 → ℚ) 0) h
+    norm_num [coe_binaryDeterminant23Basis, Pi.single_apply] at h'
+  · ext e
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Set.mem_univ, iff_true]
+    exact binaryDeterminant23_isometry_eq e
 
 /-- All automorphisms of the determinant-23 lattice preserve orientation. -/
 theorem specialOrthogonalGroup_binaryDeterminant23_eq_top :
