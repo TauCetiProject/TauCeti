@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
+public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
 # Strict functoriality of Milnor's classifying spaces
@@ -20,6 +21,10 @@ The representative formula `MonoidHom.classifyingSpaceMap_proj` characterizes th
 without unfolding the orbit space. Together with `classifyingSpace_continuousMap_ext`, it
 also lets callers prove identities of induced maps on representatives.
 
+Under the identifications `classifyingSpaceFundamentalGroupMulEquiv` of the fundamental groups
+of the classifying spaces with the groups themselves, the map induced on fundamental groups is
+the original homomorphism.
+
 ## Main definitions
 
 * `MonoidHom.classifyingSpaceMap`: the continuous map induced by a group homomorphism.
@@ -29,6 +34,8 @@ also lets callers prove identities of induced maps on representatives.
 * `MonoidHom.classifyingSpaceMap_proj`: compatibility with the orbit projections.
 * `MonoidHom.classifyingSpaceMap_basepoint`: preservation of the chosen base points.
 * `MonoidHom.classifyingSpaceMap_id`, `MonoidHom.classifyingSpaceMap_comp`: strict functor laws.
+* `MonoidHom.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq`: the induced map on fundamental
+  groups is the original homomorphism.
 
 ## References
 
@@ -85,5 +92,26 @@ theorem classifyingSpaceMap_comp (ψ : H →* K) (φ : G →* H) :
   apply classifyingSpace_continuousMap_ext
   intro x
   simp
+
+/-- **The induced map on fundamental groups is the homomorphism itself.** Under the
+identifications `classifyingSpaceFundamentalGroupMulEquiv` of the fundamental groups of the
+classifying spaces with `G` and `H`, the map induced by `φ.classifyingSpaceMap` on fundamental
+groups at the base points is `φ`. -/
+@[simp]
+theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq (φ : G →* H)
+    (γ : FundamentalGroup (classifyingSpace G) (classifyingSpaceBasepoint G)) :
+    classifyingSpaceFundamentalGroupMulEquiv H
+        (FundamentalGroup.mapOfEq φ.classifyingSpaceMap φ.classifyingSpaceMap_basepoint γ) =
+      φ (classifyingSpaceFundamentalGroupMulEquiv G γ) := by
+  -- The lift of the image loop is the image of the lift: the total-space map lies over
+  -- `φ.classifyingSpaceMap`, so monodromy is natural for it.
+  rw [classifyingSpaceFundamentalGroupMulEquiv_apply_eq_iff,
+    IsCoveringMap.coe_monodromy_mapOfEq (isQuotientCoveringMap_classifyingSpaceProj G).isCoveringMap
+      (isQuotientCoveringMap_classifyingSpaceProj H).isCoveringMap
+      (g := φ.universalGSpaceMap) (funext fun x => (φ.classifyingSpaceMap_proj x).symm) _ γ
+      ⟨universalGSpaceBasepoint G, classifyingSpaceProj_universalGSpaceBasepoint G⟩ _
+      (universalGSpaceMap_basepoint φ),
+    classifyingSpaceFundamentalGroupMulEquiv_apply_eq_iff.mp rfl]
+  simp [← smul_universalGSpaceBasepoint]
 
 end MonoidHom
