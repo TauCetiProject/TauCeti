@@ -89,9 +89,7 @@ theorem exists_boundary_chart_circulation
     exact boundaryRestriction_mpullback hf (manifoldOneForm P Q)
   have hb := hφ.boundaryRestriction
   have hcb := isCompact_tsupport_boundaryRestriction hc
-  have hi := ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp
-      (isSmoothBundleForm_mextDeriv _ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
-        (n := 0) (by simp)))).integrableTopForm
+  have hi := hφ.continuous_mextDeriv.integrableTopForm
     (RoughForm.isCompact_tsupport_mextDeriv hc)
     (EuclideanSpace.basisFun (Fin (1 + 1)) ℝ).toBasis
   have hib := hb.integrableTopForm hcb (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis

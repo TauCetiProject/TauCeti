@@ -182,9 +182,7 @@ theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fi
   have hc : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin 2)) [⋀^Fin _]→L[ℝ] ℝ) φ) :=
     isCompact_univ.of_isClosed_subset
     (_root_.isClosed_tsupport (α := (EuclideanSpace ℝ (Fin 2)) [⋀^Fin _]→L[ℝ] ℝ) φ) (subset_univ _)
-  have hi := ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp
-      (isSmoothBundleForm_mextDeriv _ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
-        (n := 0) (by simp)))).integrableTopForm
+  have hi := hφ.continuous_mextDeriv.integrableTopForm
     (RoughForm.isCompact_tsupport_mextDeriv hc)
     (EuclideanSpace.basisFun (Fin (1 + 1)) ℝ).toBasis
   have hd := ContMDiff.mextDeriv_mpullback_manifoldOneForm hf
