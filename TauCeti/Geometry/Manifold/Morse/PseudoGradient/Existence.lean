@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
@@ -299,27 +300,21 @@ end IsManifold
 
 end MorseChart
 
+section Finite
+
+variable [IsManifold 𝓘(ℝ, E) 1 M]
+
+/-- **A Morse function on a compact manifold has finitely many critical points.** This is
+`TauCeti.IsMorse.finite_criticalPoints`, stated for the zero locus of `mfderiv`. -/
+theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse 𝓘(ℝ, E) f) :
+    {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}.Finite := by
+  simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints
+
+end Finite
+
 section Existence
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
-
-/-- **A Morse function on a compact manifold has finitely many critical points.** They form a
-closed set, each of them is isolated by its Morse chart, and a closed discrete subset of a compact
-space is finite. -/
-theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse 𝓘(ℝ, E) f) :
-    {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}.Finite := by
-  have hclosed : IsClosed {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0} := by
-    have := (isOpen_setOf_mfderiv_ne_zero hf.contMDiff).isClosed_compl
-    simpa only [compl_ofPred, ne_eq, not_not] using this
-  refine hclosed.isCompact.finite (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_)
-  obtain ⟨φ⟩ := hf.nonempty_morseChart hx
-  refine ⟨φ.toChart.source, φ.toChart.open_source, ?_⟩
-  ext y
-  constructor
-  · rintro ⟨hy, hyc⟩
-    exact (φ.mfderiv_eq_zero_iff hy).1 hyc
-  · rintro rfl
-    exact ⟨φ.mem_source, hx⟩
 
 /-- **Existence of adapted pseudo-gradients** (Audin--Damian, Proposition 2.2.3). Every Morse
 function on a compact manifold has a pseudo-gradient field adapted to it. -/
