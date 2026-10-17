@@ -21,8 +21,10 @@ subgroup of the source group. In defining ideals, this containment reverses dire
 criterion does not replace the scheme-theoretic kernel by the kernel on rational points, and
 requires neither smoothness nor finite type.
 
-The construction uses `CommHopfAlgCat.coinvariants`, its existing universal property, and
-`CommHopfAlgCat.derivedDefiningIdeal_map_le`. Over a field all required flatness assumptions
+The construction uses `TauCeti.CommHopfAlgCat.coinvariants` and its universal property
+`TauCeti.CommHopfAlgCat.liftCoinvariants`, together with
+`CommHopfAlgCat.Hom.kernelHopfIdeal_le_derivedDefiningIdeal`.
+Over a field all required flatness assumptions
 are automatic. Over a general base the coinvariant construction needs the explicitly stated
 flatness assumptions below.
 
