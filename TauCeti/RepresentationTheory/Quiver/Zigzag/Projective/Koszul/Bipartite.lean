@@ -40,8 +40,8 @@ a connected graph Koszulity of `Π_k(Q)` for one orientation implies Koszulity o
 * `TauCeti.exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_coloring`: for a
   two-coloured graph, if the left Koszul differentials of `Π_k(Q)` are injective, every graded
   zigzag simple has a linear resolution.
-* `TauCeti.exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_koszulLeft_injective`:
-  the same for every connected graph.
+The same result for every connected graph is
+`exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_preprojectiveKoszulLeft_injective`
 
 ## References
 
@@ -157,7 +157,8 @@ injective left Koszul differentials `y ↦ (b* y)_b` at every vertex. Then every
 module `S_v` of the zigzag algebra, concentrated in degree zero, has a linear graded projective
 resolution. An acyclic graph is two-coloured, and a graph which is not acyclic needs no hypothesis
 on `o`. -/
-theorem exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_koszulLeft_injective
+theorem
+exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_preprojectiveKoszulLeft_injective
     (hG : G.Preconnected) (o : Orientation G)
     (ho : ∀ v : OrientedQuiver G o, Function.Injective (preprojectiveKoszulLeft k v)) (v : V) :
     ∃ r : GradedProjectiveResolution.{w, max u w, max u w, max u w} (zigzagIntegerGrade k G)
