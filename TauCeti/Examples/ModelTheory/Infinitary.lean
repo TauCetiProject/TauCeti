@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.ModelTheory.Infinitary.Semantics
+import TauCeti.ModelTheory.Infinitary.FreeVariables
 import Mathlib.ModelTheory.Graph
 import Mathlib.Tactic.FinCases
 
@@ -19,7 +19,9 @@ through public statements only:
 * an `ℕ`-indexed conjunction is realized exactly when every conjunct is;
 * over the empty carrier, a conjunction is true and a disjunction is false;
 * a nullary relation on the empty structure takes the value the structure assigns it;
-* in nested quantifiers, each quantifier binds the last bound-variable slot.
+* in nested quantifiers, each quantifier binds the last bound-variable slot;
+* a countable conjunction can have infinite free-variable support;
+* changing a valuation outside support preserves truth, also under a quantifier.
 -/
 
 universe u v u' uι w
@@ -87,3 +89,52 @@ example {M : Type w} [Language.graph.Structure M] :
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all, realize_ex, realize_rel]
   refine forall_congr' fun x => exists_congr fun y => Iff.of_eq (congrArg _ (funext fun i => ?_))
   fin_cases i <;> simp [Fin.snoc]
+
+/-! ### Free-variable support -/
+
+namespace TauCeti
+
+open TauCeti.BoundedFormulaInf
+
+attribute [local instance] Language.emptyStructure
+
+-- Comparing every free coordinate to a bound variable gives infinite support,
+-- even after quantifying that bound variable.
+example : freeVarSupport
+    (all (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0) = Set.univ := by
+  ext i
+  simp [Term.varFinsetLeft]
+
+-- The conjunction is true of the zero valuation at zero.
+example : (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0)) :
+    Language.empty.BoundedFormulaω ℕ 1).Realize (M := ℕ) (fun _ => 0) (fun _ => 0) := by
+  simp
+
+-- It is false of the identity valuation at zero.
+example : ¬ (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0)) :
+    Language.empty.BoundedFormulaω ℕ 1).Realize (M := ℕ) id (fun _ => 0) := by
+  simp only [realize_iInf, realize_equal, Term.realize_var,
+    Sum.elim_inl, Sum.elim_inr, id_eq]
+  exact fun h => Nat.one_ne_zero (h 1)
+
+-- An empty branching carrier contributes no free variables.
+example {L : Language.{u, v}} {α : Type u'} {n : ℕ} :
+    freeVarSupport (iInf Empty.elim : L.BoundedFormulaInf Empty α n) = ∅ := by
+  simp
+
+-- Finitary support stays finite even when the unused branching carrier is large.
+example {L : Language.{u, v}} {α : Type u'} {n : ℕ} (φ : L.BoundedFormula α n) :
+    (freeVarSupport (φ.toInf (ι := Type))).Finite :=
+  finite_freeVarSupport_toInf φ
+
+-- The quantified equation uses only free variable zero. All other coordinates may change.
+example {v₁ v₂ : ℕ → ℕ} (h : v₁ 0 = v₂ 0) :
+    (all (equal (.var (.inl 0)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0).Realize v₁ Fin.elim0 ↔
+    (all (equal (.var (.inl 0)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0).Realize v₂ Fin.elim0 := by
+  apply realize_congr_freeVarSupport
+  simpa [Term.varFinsetLeft] using h
+
+end TauCeti
