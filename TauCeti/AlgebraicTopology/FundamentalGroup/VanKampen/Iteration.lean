@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
+public import TauCeti.Topology.Sets.PartialUnion
 
-import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+import TauCeti.AlgebraicTopology.FundamentalGroup.Category
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 /-!
@@ -34,70 +35,7 @@ open CategoryTheory Limits Set Topology
 
 namespace TauCeti
 
-universe u
-
 variable {X : Type*}
-
-private theorem fundamentalGroup_mapOfEq_square
-    {X Y Z W : Type u}
-    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] [TopologicalSpace W]
-    {x : X} {y : Y} {z : Z} {w : W}
-    (f : C(X, Y)) (g : C(Y, W)) (j : C(X, Z)) (k : C(Z, W))
-    (hf : f x = y) (hg : g y = w) (hj : j x = z) (hk : k z = w)
-    (h : g.comp f = k.comp j) :
-    GrpCat.ofHom (FundamentalGroup.mapOfEq f hf) ≫
-        GrpCat.ofHom (FundamentalGroup.mapOfEq g hg) =
-      GrpCat.ofHom (FundamentalGroup.mapOfEq j hj) ≫
-        GrpCat.ofHom (FundamentalGroup.mapOfEq k hk) := by
-  apply GrpCat.hom_ext
-  apply MonoidHom.ext
-  intro p
-  -- Expose the concrete homomorphisms hidden by the categorical composition coercions.
-  change FundamentalGroup.mapOfEq g hg (FundamentalGroup.mapOfEq f hf p) =
-    FundamentalGroup.mapOfEq k hk (FundamentalGroup.mapOfEq j hj p)
-  rw [FundamentalGroup.mapOfEq_comp, FundamentalGroup.mapOfEq_comp]
-  exact FundamentalGroup.mapOfEq_congr h _ _ p
-
-/-- The union of the first `n + 1` members of an ordered family of sets. -/
-def partialUnion (U : ℕ → Set X) : ℕ → Set X
-  | 0 => U 0
-  | n + 1 => partialUnion U n ∪ U (n + 1)
-
-@[simp]
-lemma mem_partialUnion {U : ℕ → Set X} {n : ℕ} {x : X} :
-    x ∈ partialUnion U n ↔ ∃ i : Fin (n + 1), x ∈ U i := by
-  induction n with
-  | zero => simp [partialUnion]
-  | succ n ih =>
-    rw [partialUnion, mem_union, ih]
-    constructor
-    · rintro (⟨i, hi⟩ | hi)
-      · exact ⟨i.castSucc, hi⟩
-      · exact ⟨Fin.last (n + 1), hi⟩
-    · rintro ⟨i, hi⟩
-      refine Fin.lastCases (motive := fun i ↦ x ∈ U i →
-        (∃ j : Fin (n + 1), x ∈ U j) ∨ x ∈ U (n + 1)) ?_ (fun j ↦ ?_) i hi
-      · exact Or.inr
-      · exact fun hj ↦ Or.inl ⟨j, hj⟩
-
-/-- The first partial union is the first member of the family. -/
-@[simp]
-lemma partialUnion_zero (U : ℕ → Set X) : partialUnion U 0 = U 0 := by
-  rfl
-
-/-- A partial union grows by adjoining the next member. -/
-@[simp]
-lemma partialUnion_succ (U : ℕ → Set X) (n : ℕ) :
-    partialUnion U (n + 1) = partialUnion U n ∪ U (n + 1) := by
-  rfl
-
-/-- A partial union is open when each set occurring in it is open. -/
-lemma isOpen_partialUnion [TopologicalSpace X] {U : ℕ → Set X} {n : ℕ}
-    (hU : ∀ i ≤ n, IsOpen (U i)) : IsOpen (partialUnion U n) := by
-  induction n with
-  | zero => exact hU 0 le_rfl
-  | succ n ih =>
-    exact (ih fun i hi ↦ hU i (hi.trans n.le_succ)).union (hU (n + 1) le_rfl)
 
 section Union
 
@@ -142,83 +80,100 @@ theorem isPushout_fundamentalGroup_union (hAopen : IsOpen A) (hBopen : IsOpen B)
   have hAB' : IsPathConnected (A' ∩ B') := by
     simpa only [A', B', preimage_inter, Set.mem_inter_iff] using
       hAB.preimage_coe (inter_subset_left.trans subset_union_left)
+  have hrange {s : Set X} (hs : s ⊆ A ∪ B) :
+      s ⊆ range (Subtype.val : P → X) := by
+    rwa [Subtype.range_coe]
   let eA : A ≃ₜ A' :=
-    { toFun := fun y ↦ ⟨⟨y, Or.inl y.2⟩, y.2⟩
-      invFun := fun y ↦ ⟨y.1.1, y.2⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
+    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (hrange subset_union_left)).symm
   let eB : B ≃ₜ B' :=
-    { toFun := fun y ↦ ⟨⟨y, Or.inr y.2⟩, y.2⟩
-      invFun := fun y ↦ ⟨y.1.1, y.2⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
+    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (hrange subset_union_right)).symm
   let eAB : ↥(A ∩ B) ≃ₜ ↥(A' ∩ B') :=
-    { toFun := fun y ↦ ⟨⟨y, Or.inl y.2.1⟩, y.2⟩
-      invFun := fun y ↦ ⟨y.1.1, y.2⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
+    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (hrange (inter_subset_left.trans subset_union_left))).symm
   let eP : P ≃ₜ P := Homeomorph.refl P
+  have eA_coe (y : A) : ((((eA y : A') : P) : X)) = y := by
+    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
+      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
+      (hrange subset_union_left) (eA y)
+    change ((eA.symm (eA y) : A) : X) = (((eA y : A') : P) : X) at h
+    simpa only [eA.symm_apply_apply] using h.symm
+  have eB_coe (y : B) : ((((eB y : B') : P) : X)) = y := by
+    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
+      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
+      (hrange subset_union_right) (eB y)
+    change ((eB.symm (eB y) : B) : X) = (((eB y : B') : P) : X) at h
+    simpa only [eB.symm_apply_apply] using h.symm
+  have eAB_coe (y : ↥(A ∩ B)) : ((((eAB y : ↥(A' ∩ B')) : P) : X)) = y := by
+    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
+      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
+      (hrange (inter_subset_left.trans subset_union_left)) (eAB y)
+    change ((eAB.symm (eAB y) : ↥(A ∩ B)) : X) =
+      (((eAB y : ↥(A' ∩ B')) : P) : X) at h
+    simpa only [eAB.symm_apply_apply] using h.symm
+  have heA : eA ⟨x, hxA⟩ = ⟨p, hpA⟩ := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact eA_coe ⟨x, hxA⟩
+  have heB : eB ⟨x, hxB⟩ = ⟨p, hpB⟩ := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact eB_coe ⟨x, hxB⟩
+  have heAB : eAB ⟨x, hxA, hxB⟩ =
+      ⟨p, show p ∈ A' ∩ B' from ⟨hpA, hpB⟩⟩ := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact eAB_coe ⟨x, hxA, hxB⟩
+  have heP : eP ⟨x, Or.inl hxA⟩ = p := rfl
   let iA : GrpCat.of (FundamentalGroup A ⟨x, hxA⟩) ≅
       GrpCat.of (FundamentalGroup A' ⟨p, hpA⟩) :=
-    (FundamentalGroup.homeomorphMulEquivOfEq eA rfl).toGrpIso
+    (FundamentalGroup.homeomorphMulEquivOfEq eA heA).toGrpIso
   let iB : GrpCat.of (FundamentalGroup B ⟨x, hxB⟩) ≅
       GrpCat.of (FundamentalGroup B' ⟨p, hpB⟩) :=
-    (FundamentalGroup.homeomorphMulEquivOfEq eB rfl).toGrpIso
+    (FundamentalGroup.homeomorphMulEquivOfEq eB heB).toGrpIso
   let iAB : GrpCat.of (FundamentalGroup ↥(A ∩ B) ⟨x, hxA, hxB⟩) ≅
       GrpCat.of (FundamentalGroup ↥(A' ∩ B')
         ⟨p, show p ∈ A' ∩ B' from ⟨hpA, hpB⟩⟩) :=
-    (FundamentalGroup.homeomorphMulEquivOfEq eAB rfl).toGrpIso
+    (FundamentalGroup.homeomorphMulEquivOfEq eAB heAB).toGrpIso
   let iP : GrpCat.of (FundamentalGroup P ⟨x, Or.inl hxA⟩) ≅
       GrpCat.of (FundamentalGroup P p) :=
-    (FundamentalGroup.homeomorphMulEquivOfEq eP rfl).toGrpIso
+    (FundamentalGroup.homeomorphMulEquivOfEq eP heP).toGrpIso
   have iA_hom : iA.hom = GrpCat.ofHom
-      (FundamentalGroup.mapOfEq ⟨eA, eA.continuous⟩ rfl) := by
-    apply GrpCat.hom_ext
-    ext g
-    exact FundamentalGroup.homeomorphMulEquivOfEq_apply eA rfl g
+      (FundamentalGroup.mapOfEq ⟨eA, eA.continuous⟩ heA) := by
+    simpa only [iA] using FundamentalGroup.homeomorphMulEquivOfEq_toGrpIso_hom eA heA
   have iB_hom : iB.hom = GrpCat.ofHom
-      (FundamentalGroup.mapOfEq ⟨eB, eB.continuous⟩ rfl) := by
-    apply GrpCat.hom_ext
-    ext g
-    exact FundamentalGroup.homeomorphMulEquivOfEq_apply eB rfl g
+      (FundamentalGroup.mapOfEq ⟨eB, eB.continuous⟩ heB) := by
+    simpa only [iB] using FundamentalGroup.homeomorphMulEquivOfEq_toGrpIso_hom eB heB
   have iAB_hom : iAB.hom = GrpCat.ofHom
-      (FundamentalGroup.mapOfEq ⟨eAB, eAB.continuous⟩ rfl) := by
-    apply GrpCat.hom_ext
-    ext g
-    exact FundamentalGroup.homeomorphMulEquivOfEq_apply eAB rfl g
+      (FundamentalGroup.mapOfEq ⟨eAB, eAB.continuous⟩ heAB) := by
+    simpa only [iAB] using FundamentalGroup.homeomorphMulEquivOfEq_toGrpIso_hom eAB heAB
   have iP_hom : iP.hom = GrpCat.ofHom
-      (FundamentalGroup.mapOfEq ⟨eP, eP.continuous⟩ rfl) := by
-    apply GrpCat.hom_ext
-    ext g
-    exact FundamentalGroup.homeomorphMulEquivOfEq_apply eP rfl g
+      (FundamentalGroup.mapOfEq ⟨eP, eP.continuous⟩ heP) := by
+    simpa only [iP] using
+      FundamentalGroup.homeomorphMulEquivOfEq_toGrpIso_hom eP heP
   apply (isPushout_fundamentalGroup hCover hA' hB' hAB' hpA hpB).of_iso'
     iAB iA iB iP
   · rw [iAB_hom, iA_hom]
     simp only [← FundamentalGroup.mapOfEq_rfl]
-    apply fundamentalGroup_mapOfEq_square
+    apply FundamentalGroup.mapOfEq_square
     ext y
-    rfl
+    exact (eAB_coe y).trans (eA_coe ⟨y, y.2.1⟩).symm
   · rw [iAB_hom, iB_hom]
     simp only [← FundamentalGroup.mapOfEq_rfl]
-    apply fundamentalGroup_mapOfEq_square
+    apply FundamentalGroup.mapOfEq_square
     ext y
-    rfl
+    exact (eAB_coe y).trans (eB_coe ⟨y, y.2.2⟩).symm
   · rw [iA_hom, iP_hom]
     simp only [← FundamentalGroup.mapOfEq_rfl]
-    apply fundamentalGroup_mapOfEq_square
+    apply FundamentalGroup.mapOfEq_square
     ext y
-    rfl
+    exact eA_coe y
   · rw [iB_hom, iP_hom]
     simp only [← FundamentalGroup.mapOfEq_rfl]
-    apply fundamentalGroup_mapOfEq_square
+    apply FundamentalGroup.mapOfEq_square
     ext y
-    rfl
+    exact eB_coe y
 
 end Union
 
