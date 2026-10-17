@@ -11,9 +11,6 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 /-!
 # Finite-index modular groups as cofinite Fuchsian groups
 
-The image in `PSL(2, ℝ)` of a subgroup `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the
-image of the full modular group, since `{±I}` acts trivially.
-
 Every finite-index subgroup of `SL(2, ℤ)` gives a cofinite subgroup of `PSL(2, ℝ)`.
 Its parabolic fixed points are exactly the rational boundary points: equivalently, the
 orbit of infinity under the full modular group. The subgroup can split this one modular
@@ -33,19 +30,6 @@ open scoped MatrixGroups
 namespace Subgroup
 
 variable (H : Subgroup SL(2, ℤ)) [H.FiniteIndex]
-
-omit [H.FiniteIndex] in
-/-- **The arithmetic index of a modular subgroup.** The image of `H ≤ SL(2, ℤ)` in `PSL(2, ℝ)`
-has index `[SL(2, ℤ) : ±H]` in the image of `SL(2, ℤ)`, since `sl2zToPSL2R` has kernel `{±I}`. -/
-theorem relIndex_map_sl2zToPSL2R :
-    (H.map sl2zToPSL2R).relIndex psl2zToPSL2R.range = H.withCenter.index := by
-  rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R, ← index_comap, comap_map_eq,
-    sl2zToPSL2R_ker, withCenter_def]
-
-/-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
-instance isFiniteRelIndex_map_sl2zToPSL2R :
-    (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
-  ⟨H.relIndex_map_sl2zToPSL2R ▸ FiniteIndex.index_ne_zero⟩
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has cofinite effective image in `PSL(2, ℝ)`.
 This formulation applies directly to `Γ(N)`, `Γ₀(N)`, and `Γ₁(N)`. -/
