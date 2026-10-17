@@ -526,21 +526,13 @@ def IsPLHomeomorphPackage (A B : PreAbstractSimplicialComplex ι) : Prop :=
       (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1)
 
 omit [DecidableEq ι] in
-/-- Characterization of a piecewise-linear homeomorphism package by its witness data. -/
-theorem isPLHomeomorphPackage_iff {A B : PreAbstractSimplicialComplex ι} :
-    IsPLHomeomorphPackage A B ↔
-      ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
-      ∃ f g : (ι → ℝ) → (ι → ℝ),
-        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-          x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ∧
-        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-          x.1.support ∈ B} => (x.1.1 : ι → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := Iff.rfl
+/-- Reflexivity of piecewise-linear homeomorphism packages. -/
+theorem IsPLHomeomorphPackage.refl (A : PreAbstractSimplicialComplex ι) :
+    IsPLHomeomorphPackage A A :=
+  ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _, (fun _ => rfl), (fun _ => rfl)⟩
 
 /-- The PL package for one stellar move, using the inverse and forward coordinate extensions. -/
-theorem IsStellarMove.exists_homeomorph_isPLOn
+theorem IsStellarMove.isPLHomeomorphPackage
     {A B : PreAbstractSimplicialComplex ι} (h : IsStellarMove A B)
     (hfin : A.faces.Finite) : IsPLHomeomorphPackage A B := by
   obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
@@ -596,7 +588,7 @@ theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
 /-- A finite stellar equivalence identifies its weak polyhedra by maps that are piecewise linear
 in their ambient barycentric coordinates. The two `IsPLOn` statements are the coordinate formulas
 needed to transport local PL charts across a sequence of stellar moves. -/
-theorem StellarEquivalent.exists_homeomorph_isPLOn
+theorem StellarEquivalent.isPLHomeomorphPackage
     (h : StellarEquivalent K L) (hfin : K.faces.Finite) :
     IsPLHomeomorphPackage K L := by
   have hQ : (K.faces.Finite ↔ L.faces.Finite) ∧
@@ -605,10 +597,9 @@ theorem StellarEquivalent.exists_homeomorph_isPLOn
       (P := fun A B => (A.faces.Finite ↔ B.faces.Finite) ∧
         (∀ hfin : A.faces.Finite, IsPLHomeomorphPackage A B)) ?_ ?_ ?_ ?_
     · intro A B hmove
-      exact ⟨hmove.finite_faces_iff, fun hA => hmove.exists_homeomorph_isPLOn hA⟩
+      exact ⟨hmove.finite_faces_iff, fun hA => hmove.isPLHomeomorphPackage hA⟩
     · intro A
-      exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _, id, id, isPLOn_id _, isPLOn_id _,
-        (fun _ => rfl), (fun _ => rfl)⟩⟩
+      exact ⟨Iff.rfl, fun _ => IsPLHomeomorphPackage.refl A⟩
     · intro A B ih
       exact ⟨ih.1.symm, fun hB => (ih.2 (ih.1.mpr hB)).symm⟩
     · intro A B C ihAB ihBC
