@@ -28,6 +28,11 @@ The descent and density of cylinder functions are supplied by
 coordinate families; reconstructed measures use Mathlib's `AbstractMeasure` carrier and the
 existing `AbstractMeasure.finiteProjection`.
 
+The reconstruction API is in `TauCeti.AbstractMeasure`. In particular,
+`TauCeti.AbstractMeasure.unitCoordinates_ext μ ν h` proves uniqueness,
+`TauCeti.AbstractMeasure.unitCoordinates_compatible μ` supplies compatibility, and
+`TauCeti.AbstractMeasure.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
+
 ## References
 
 J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*,
