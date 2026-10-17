@@ -39,10 +39,14 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `TauCeti.fderiv_comp_extChartAt_symm_injective`: for a map into a normed space, the manifold
   derivative at any point of a chart's source, in terms of the Fréchet derivative of the
   coordinate expression, and the resulting transfer of injectivity.
+* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
+  derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
+* `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: conversely, a map into a
+  normed space is differentiable whenever its preferred coordinate expression is.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
 * `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm` and
@@ -170,6 +174,22 @@ theorem fderiv_comp_extChartAt_symm_injective (hy : y ∈ (extChartAt I x).sourc
   rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL] at hf
   exact Function.Injective.of_comp_right (g := L) hf L.surjective
 
+/-- Read in a chart whose source contains `y`, a map into a normed space with differentiable
+coordinate expression has zero manifold derivative at `y` exactly when that coordinate expression
+has zero Fréchet derivative at the chart image of `y`. -/
+theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
+    (hy : y ∈ (extChartAt I x).source)
+    (hg : DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)) :
+    mfderiv I 𝓘(𝕜, F) f y = 0 ↔
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 := by
+  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
+  rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
+  -- Precomposition with the invertible chart derivative `L` detects the zero map.
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
+  · obtain ⟨w, rfl⟩ := L.surjective v
+    exact DFunLike.congr_fun h w
+  · exact DFunLike.congr_fun h (L w)
+
 end TauCeti
 
 /-! ### Maps into a normed space on a boundaryless manifold -/
@@ -259,6 +279,25 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
     mvfderiv I f x = fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, a map into a normed space is differentiable at `x` exactly when
+its coordinate expression in the preferred extended chart is differentiable at the chart image
+of `x`. -/
+theorem TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm :
+    MDifferentiableAt I 𝓘(𝕜, F) f x ↔
+      DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  refine ⟨MDifferentiableAt.differentiableAt_comp_extChartAt_symm, fun h ↦ ?_⟩
+  rw [mdifferentiableAt_iff]
+  refine ⟨?_, ?_⟩
+  · -- Near `x`, the map is its coordinate expression composed with the chart.
+    have hfeq : (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
+      filter_upwards [extChartAt_source_mem_nhds (I := I) x] with z hz
+      rw [Function.comp_apply, Function.comp_apply, (extChartAt I x).left_inv hz]
+    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr hfeq
+  · rwa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ,
+      writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      Function.id_comp]
 
 end Boundaryless
 
