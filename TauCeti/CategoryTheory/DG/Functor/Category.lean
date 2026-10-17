@@ -361,7 +361,8 @@ theorem dgApp_dgId (F : DGFunctor R C D) (X : C) :
 /-- **Evaluation at an object** `X` of `C` is a DG functor from DG functors `C ⥤ D` to `D`:
 it sends `F` to `F X` and a morphism `η` to its component `η X`. -/
 -- The body is exposed so that `(evaluation R X).obj F` is definitionally `F X`, as for
--- `CategoryTheory.EnrichedFunctor.ofDGMap`.
+-- `CategoryTheory.EnrichedFunctor.ofDGMap`; otherwise the homogeneous morphisms of the two sides
+-- of `dgMap_evaluation` would have different types, and that lemma could not be stated.
 @[expose]
 noncomputable def evaluation (X : C) :
     EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGFunctor R C D) D :=
