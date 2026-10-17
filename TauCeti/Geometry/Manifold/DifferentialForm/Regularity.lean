@@ -310,6 +310,19 @@ theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
   rw [isSmoothForm_def]
   exact fun x ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self (hφ x)
 
+/-- The `0`-form of a function is a `C^n` form exactly when the function is `C^n`. -/
+@[simp]
+theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → F} :
+    IsSmoothForm I n (RoughForm.ofFunction I f) ↔ ContMDiff I 𝓘(ℝ, F) n f := by
+  have key : ∀ x, ContDiffWithinAt ℝ n ((RoughForm.ofFunction I f).inChartAt x) (range I)
+      (extChartAt I x x) ↔ ContMDiffAt I 𝓘(ℝ, F) n f x := fun x ↦ by
+    rw [RoughForm.inChartAt_ofFunction, contMDiffAt_iff_source,
+      contMDiffWithinAt_iff_contDiffWithinAt]
+    exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
+      |>.comp_contDiffWithinAt_iff
+  exact ⟨fun h x ↦ (key x).1 (h.contDiffWithinAt_inChartAt_self x),
+    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).2 (h x)⟩
+
 end Regularity
 
 /-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/

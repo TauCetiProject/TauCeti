@@ -37,6 +37,7 @@ The absolute height of an element `x` is that of the pair `(x, 1)`.
 * `TauCeti.absoluteProjectiveTupleHeight_comp`: invariance under homomorphisms of fields of
   characteristic zero.
 * `TauCeti.absoluteProjectiveTupleHeight_smul`: invariance under nonzero algebraic scalars.
+* `TauCeti.absoluteProjectiveTupleHeight_pow`: `H(x ^ n) = H(x) ^ n`, coordinatewise.
 * `TauCeti.absMulHeight₁_eq_absoluteProjectiveTupleHeight`: `H(x) = H(x, 1)`.
 
 ## References
@@ -155,6 +156,45 @@ theorem absoluteProjectiveTupleHeight_comp_equiv {ι' : Type*} [Finite ι'] (e :
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     rw [absoluteProjectiveTupleHeight_of_not_isIntegral hi,
       absoluteProjectiveTupleHeight_of_not_isIntegral (i := e.symm i) (by simpa using hi)]
+
+/-- The constant tuple `1` has absolute height `1`. -/
+@[simp]
+theorem absoluteProjectiveTupleHeight_one : absoluteProjectiveTupleHeight (1 : ι → F) = 1 := by
+  have h : (1 : ι → F) = algebraMap ℚ F ∘ (1 : ι → ℚ) := by
+    ext
+    simp
+  rw [h, absoluteProjectiveTupleHeight_comp,
+    absoluteProjectiveTupleHeight_eq, mulHeight_one, Real.one_rpow]
+
+/-- Restricting or repeating the coordinates of a tuple with algebraic coordinates along any map
+does not increase its absolute height. The algebraicity hypothesis is needed because a tuple with
+a transcendental coordinate has the junk height `1`. -/
+theorem absoluteProjectiveTupleHeight_comp_le {ι' : Type*} [Finite ι'] {x : ι → F}
+    (hx : ∀ i, IsAlgebraic ℚ (x i)) (f : ι' → ι) :
+    absoluteProjectiveTupleHeight (x ∘ f) ≤ absoluteProjectiveTupleHeight x := by
+  obtain ⟨E, _, y, rfl⟩ := exists_numberField_comp hx
+  rw [Function.comp_assoc, absoluteProjectiveTupleHeight_comp, absoluteProjectiveTupleHeight_comp,
+    absoluteProjectiveTupleHeight_eq, absoluteProjectiveTupleHeight_eq]
+  exact Real.rpow_le_rpow (mulHeight_pos _).le (mulHeight_comp_le f y) (by positivity)
+
+/-- The absolute height of the coordinatewise `n`-th power of a tuple is the `n`-th power of its
+absolute height. -/
+theorem absoluteProjectiveTupleHeight_pow (x : ι → F) (n : ℕ) :
+    absoluteProjectiveTupleHeight (x ^ n) = absoluteProjectiveTupleHeight x ^ n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  by_cases hx : ∀ i, IsIntegral ℚ (x i)
+  · obtain ⟨E, _, y, rfl⟩ := exists_numberField_comp fun i ↦ (hx i).isAlgebraic
+    have h : (algebraMap E F ∘ y) ^ n = algebraMap E F ∘ (y ^ n) := by
+      ext
+      simp
+    rw [h, absoluteProjectiveTupleHeight_comp, absoluteProjectiveTupleHeight_comp,
+      absoluteProjectiveTupleHeight_eq, absoluteProjectiveTupleHeight_eq, mulHeight_pow,
+      Real.rpow_pow_comm (mulHeight_pos _).le]
+  · -- A positive power of a transcendental coordinate is transcendental.
+    obtain ⟨i, hi⟩ := not_forall.mp hx
+    rw [absoluteProjectiveTupleHeight_of_not_isIntegral hi,
+      absoluteProjectiveTupleHeight_of_not_isIntegral (i := i) fun h ↦ hi (h.of_pow hn), one_pow]
 
 /-- A nonzero algebraic scalar does not change the absolute height of a tuple. -/
 theorem absoluteProjectiveTupleHeight_smul (x : ι → F) {c : F} (hc : c ≠ 0)

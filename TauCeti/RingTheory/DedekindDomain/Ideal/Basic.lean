@@ -184,7 +184,7 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 section Comap
 
-variable {B C : Type*} [CommRing B] [IsDedekindDomain B] [CommRing C] [IsDedekindDomain C]
+variable {B C : Type*} [CommRing B] [CommRing C]
 
 /-- The height-one prime of `B` obtained by contracting a height-one prime of `C` along a ring
 homomorphism `ψ : B →+* C`, given that the contraction is nonzero.
@@ -208,7 +208,6 @@ def comapOfNeBot (ψ : B →+* C) (w : HeightOneSpectrum C) (hne : w.asIdeal.com
   isPrime := w.isPrime.comap ψ
   ne_bot := hne
 
-omit [IsDedekindDomain B] [IsDedekindDomain C] in
 -- `(rfl)` elaborates here, where the definition is visible.
 /-- The underlying ideal of `comapOfNeBot` is the contracted ideal. -/
 @[simp]
@@ -263,7 +262,7 @@ namespace Ideal
 -- `Factorization` import above makes visible here.
 open _root_.IsDedekindDomain
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+variable {R : Type*} [CommRing R]
 
 /-- An ideal of a Dedekind domain is **prime to** a set `S` of height-one primes when it is
 nonzero and no prime of `S` divides it. Nonzeroness is part of the definition, so `⊥` is prime
@@ -273,37 +272,25 @@ def IsPrimeTo (I : Ideal R) (S : Set (HeightOneSpectrum R)) : Prop :=
 
 variable {I J : Ideal R} {S T : Set (HeightOneSpectrum R)}
 
-omit [IsDedekindDomain R] in
 theorem isPrimeTo_iff : IsPrimeTo I S ↔ I ≠ ⊥ ∧ ∀ 𝔭 ∈ S, ¬ 𝔭.asIdeal ∣ I := Iff.rfl
 
-omit [IsDedekindDomain R] in
 theorem IsPrimeTo.ne_bot (h : IsPrimeTo I S) : I ≠ ⊥ := h.1
 
-omit [IsDedekindDomain R] in
 theorem IsPrimeTo.not_dvd (h : IsPrimeTo I S) {𝔭 : HeightOneSpectrum R} (h𝔭 : 𝔭 ∈ S) :
     ¬ 𝔭.asIdeal ∣ I := h.2 𝔭 h𝔭
 
-omit [IsDedekindDomain R] in
 /-- The zero ideal is prime to no set of primes, not even to the empty set. -/
 @[simp]
 theorem not_isPrimeTo_bot : ¬ IsPrimeTo (⊥ : Ideal R) S := fun h ↦ h.ne_bot rfl
 
-omit [IsDedekindDomain R] in
 @[simp]
 theorem isPrimeTo_empty : IsPrimeTo I ∅ ↔ I ≠ ⊥ := by
   rw [isPrimeTo_iff]
   simp
 
-@[simp]
-theorem isPrimeTo_top : IsPrimeTo (⊤ : Ideal R) S := by
-  refine ⟨top_ne_bot, fun 𝔭 _ hdvd ↦ 𝔭.prime.not_isUnit ?_⟩
-  exact isUnit_of_dvd_one (by simpa [Ideal.one_eq_top] using hdvd)
-
-omit [IsDedekindDomain R] in
 theorem IsPrimeTo.mono (hST : S ⊆ T) (h : IsPrimeTo I T) : IsPrimeTo I S :=
   ⟨h.ne_bot, fun _𝔭 h𝔭 ↦ h.not_dvd (hST h𝔭)⟩
 
-omit [IsDedekindDomain R] in
 /-- **Enlarging the set of forbidden primes by one.** An ideal is prime to `insert 𝔭 S` exactly
 when it is prime to `S` and not divisible by `𝔭`. -/
 @[simp]
@@ -311,6 +298,13 @@ theorem isPrimeTo_insert_iff {𝔭 : HeightOneSpectrum R} :
     IsPrimeTo I (insert 𝔭 S) ↔ IsPrimeTo I S ∧ ¬ 𝔭.asIdeal ∣ I := by
   simp only [isPrimeTo_iff, Set.forall_mem_insert]
   tauto
+
+variable [IsDedekindDomain R]
+
+@[simp]
+theorem isPrimeTo_top : IsPrimeTo (⊤ : Ideal R) S := by
+  refine ⟨top_ne_bot, fun 𝔭 _ hdvd ↦ 𝔭.prime.not_isUnit ?_⟩
+  exact isUnit_of_dvd_one (by simpa [Ideal.one_eq_top] using hdvd)
 
 /-- **Being prime to `S` is multiplicative.** A product of ideals is prime to `S` exactly when
 both factors are: neither factor may vanish, and a prime of `S` divides the product exactly when

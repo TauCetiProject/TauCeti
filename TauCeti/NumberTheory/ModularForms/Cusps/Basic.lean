@@ -87,7 +87,7 @@ lemma ModularForm.slash_T_zpow_apply (k j : ℤ) (g : ℍ → ℂ) (τ : ℍ) :
 
 section IntegerCuspWidth
 
-variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex 𝒮ℒ]
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)}
 
 /-- The left-multiplication action of `𝒮ℒ` on the coset space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`,
 constructed explicitly: instance synthesis for this action is unstable at use sites, so
@@ -98,7 +98,6 @@ private noncomputable def quotientTAction :
   letI : MulAction 𝒮ℒ 𝒮ℒ := Monoid.toMulAction _
   .quotient ..
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The coset of a power of `T` is the base coset exactly when the exponent is a strict
 period of `𝒢`: the bridge between the coset space and the strict periods, stated without
 reference to the group action. -/
@@ -124,7 +123,6 @@ lemma Subgroup.exists_pos_nat_mem_strictPeriods (𝒢 : Subgroup (GL (Fin 2) ℝ
   rw [QuotientGroup.eq]
   simpa using inv_mem hn_mem
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The powers of the coset of `T` acting on the base coset, as statements about
 cosets: `t ^ n • ⟦1⟧ = ⟦t ^ n⟧` under the explicit action. -/
 private lemma quotientTAction_pow_smul_mk_one (n : ℕ) :
@@ -146,13 +144,12 @@ noncomputable def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) :
     (⟦1⟧ : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ))
 
 /-- The integer cusp width is positive. -/
-lemma Subgroup.integerCuspWidth_pos : 0 < Subgroup.integerCuspWidth 𝒢 := by
+lemma Subgroup.integerCuspWidth_pos [𝒢.IsFiniteRelIndex 𝒮ℒ] : 0 < Subgroup.integerCuspWidth 𝒢 := by
   obtain ⟨n, hn_pos, hn_mem⟩ := Subgroup.exists_pos_nat_mem_strictPeriods 𝒢
   let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
   exact MulAction.period_pos_of_fixed hn_pos
     ((quotientTAction_pow_smul_mk_one n).trans (Subgroup.mk_T_pow_eq_iff.mpr hn_mem))
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The integer cusp width is a strict period. -/
 lemma Subgroup.integerCuspWidth_mem_strictPeriods :
     (Subgroup.integerCuspWidth 𝒢 : ℝ) ∈ 𝒢.strictPeriods := by
@@ -165,13 +162,13 @@ a positive strict period, which is exactly the criterion.
 
 This is the group-theoretic half of every "a form for `𝒢` is bounded at `∞`" argument; the
 form-theoretic half is one application of `ModularFormClass.bdd_at_cusps` on top of it. -/
-lemma Subgroup.isCusp_infty_of_finiteRelIndex : IsCusp OnePoint.infty 𝒢 :=
+lemma Subgroup.isCusp_infty_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ] :
+    IsCusp OnePoint.infty 𝒢 :=
   Subgroup.isCusp_of_mem_strictPeriods
     (by exact_mod_cast Subgroup.integerCuspWidth_pos (𝒢 := 𝒢) :
       (0 : ℝ) < Subgroup.integerCuspWidth 𝒢)
     Subgroup.integerCuspWidth_mem_strictPeriods
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The integer cusp width is minimal among positive integer strict periods. -/
 lemma Subgroup.integerCuspWidth_le {n : ℕ} (hpos : 0 < n)
     (hmem : (n : ℝ) ∈ 𝒢.strictPeriods) : Subgroup.integerCuspWidth 𝒢 ≤ n := by
@@ -179,7 +176,6 @@ lemma Subgroup.integerCuspWidth_le {n : ℕ} (hpos : 0 < n)
   exact MulAction.period_le_of_fixed hpos
     ((quotientTAction_pow_smul_mk_one n).trans (Subgroup.mk_T_pow_eq_iff.mpr hmem))
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The `integerCuspWidth 𝒢`-th power of `T` lies in `𝒢`. -/
 lemma Subgroup.T_pow_integerCuspWidth_mem :
     ((ModularGroup.T : SL(2, ℤ))^(Subgroup.integerCuspWidth 𝒢 : ℕ) : GL (Fin 2) ℝ) ∈ 𝒢 := by
@@ -187,7 +183,6 @@ lemma Subgroup.T_pow_integerCuspWidth_mem :
     ModularGroup.mapGL_T_pow_eq_upperRightHom, ← mem_strictPeriods_iff]
   exact Subgroup.integerCuspWidth_mem_strictPeriods
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The natural numbers among the strict periods are exactly the multiples of the
 integer cusp width. -/
 -- Not a `simp` lemma: `simpNF` rejects it because the left-hand side already simplifies
@@ -198,7 +193,6 @@ lemma Subgroup.natCast_mem_strictPeriods_iff {n : ℕ} :
   rw [← Subgroup.mk_T_pow_eq_iff, ← quotientTAction_pow_smul_mk_one n,
     Subgroup.integerCuspWidth, MulAction.pow_smul_eq_iff_period_dvd]
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The powers of `T` lying in `𝒢` are exactly those with exponent divisible by the
 integer cusp width. -/
 @[simp]
@@ -209,7 +203,6 @@ lemma Subgroup.T_pow_mem_iff {n : ℕ} :
     ModularGroup.mapGL_T_pow_eq_upperRightHom, ← mem_strictPeriods_iff,
     Subgroup.natCast_mem_strictPeriods_iff]
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The cosets `T ^ j • (𝒢 ⊓ 𝒮ℒ)` for `j < integerCuspWidth 𝒢` are pairwise distinct in
 `𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ`. -/
 lemma Subgroup.quotient_T_pow_integerCuspWidth_injective :
@@ -233,7 +226,7 @@ lemma Subgroup.quotient_T_pow_integerCuspWidth_injective :
 
 /-- The integer cusp width is a positive integer multiple of the strict width at `∞`. -/
 lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
-    [DiscreteTopology 𝒢.strictPeriods] :
+    [𝒢.IsFiniteRelIndex 𝒮ℒ] [DiscreteTopology 𝒢.strictPeriods] :
     ∃ m : ℕ, 0 < m ∧ (Subgroup.integerCuspWidth 𝒢 : ℝ) = m * 𝒢.strictWidthInfty := by
   obtain ⟨m, hm⟩ := AddSubgroup.mem_zmultiples_iff.mp <|
     Subgroup.strictPeriods_eq_zmultiples_strictWidthInfty (𝒢 := 𝒢) ▸

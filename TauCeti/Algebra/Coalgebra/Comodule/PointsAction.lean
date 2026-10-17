@@ -86,6 +86,13 @@ lemma endOfPoint_tmul (g : H →ₐ[R] A) (a : A) (v : V) :
       a • TensorProduct.comm R V A (LinearMap.lTensor V g.toLinearMap (coact v)) := by
   simp [endOfPoint]
 
+/-- Every algebra-valued point fixes the scalar extension of a rationally fixed vector. -/
+lemma endOfPoint_tmul_of_coact_eq_tmul_one {v : V}
+    (hv : coact (R := R) (C := H) v = v ⊗ₜ[R] (1 : H))
+    (g : H →ₐ[R] A) (a : A) :
+    endOfPoint V g (a ⊗ₜ[R] v) = a ⊗ₜ[R] v := by
+  simp [endOfPoint_tmul, hv, TensorProduct.smul_tmul']
+
 section BaseChange
 
 variable {A' : Type*} [CommSemiring A'] [Algebra R A']
