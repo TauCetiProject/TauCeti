@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
+import TauCeti.Analysis.Normed.Affine.Isometry
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
@@ -244,12 +245,6 @@ section AffineIsometry
 variable {F F' : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] [NormedAddCommGroup F'] [InnerProductSpace ℝ F']
   [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] {U : Opens F} {V : Opens F'}
-
-omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] [FiniteDimensional ℝ F']
-  [MeasurableSpace F'] [BorelSpace F'] in
-private theorem norm_fderiv_affineIsometryEquiv_le (g : F ≃ᵃⁱ[ℝ] F') (x : F) :
-    ‖fderiv ℝ g x‖ ≤ 1 := by
-  simpa using norm_fderiv_le_of_lipschitz ℝ g.lipschitzWith (x₀ := x)
 
 /-- **Rigid changes of variables in `W^{1,p}`.** Precomposition with an affine isometry `g` is a
 bounded operator from `W^{1,p}(V)` to `W^{1,p}(U)` for `U = g⁻¹(V)`, of norm at most one

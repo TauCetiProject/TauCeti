@@ -6,19 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Affine.Isometry
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 
 /-!
-# Conjugating affine isometries by dilations
+# Affine isometries
 
 For a scalar `c` and an affine isometry `e : V ≃ᵃⁱ[𝕜] V₂` between normed spaces, the affine
 isometry `TauCeti.dilateConj c e` has the linear part of `e` and translation part `c • e 0`. For
 `c ≠ 0` it is the conjugate `y ↦ c • e (c⁻¹ • y)` of `e` by the dilations by `c`.
+
+The derivative of an affine isometry equivalence has norm at most one.
 
 ## Main declarations
 
 * `TauCeti.dilateConj`: the dilation conjugate of an affine isometry.
 * `TauCeti.dilateConj_smul`: `dilateConj c e (c • y) = c • e y`.
 * `TauCeti.dilateConj_symm_apply`: the inverse of `dilateConj c e`, written out pointwise.
+* `TauCeti.norm_fderiv_affineIsometryEquiv_le`: the derivative of an affine isometry equivalence
+  has norm at most one.
 -/
 
 public section
@@ -29,6 +34,14 @@ namespace TauCeti
 
 variable {𝕜 V V₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
+
+/-- The Fréchet derivative of an affine isometry equivalence has norm at most one. -/
+theorem norm_fderiv_affineIsometryEquiv_le
+    {𝕜' W W₂ : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAddCommGroup W] [NormedSpace 𝕜' W]
+    [NormedAddCommGroup W₂] [NormedSpace 𝕜' W₂]
+    (e : W ≃ᵃⁱ[𝕜'] W₂) (x : W) : ‖fderiv 𝕜' e x‖ ≤ 1 := by
+  simpa using norm_fderiv_le_of_lipschitz 𝕜' e.lipschitzWith (x₀ := x)
 
 /-- The affine isometry with the linear part of `e` and translation part `c • e 0`. For `c ≠ 0`
 it is the conjugate `y ↦ c • e (c⁻¹ • y)` of `e` by the dilation by `c`; for `c = 0` it is the
