@@ -222,7 +222,9 @@ private theorem zpow_neg_mul_mem_of_le {x : A} {m n : ℤ} (hmn : m ≤ n)
   obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 hmn)
   have h : ((ϖ ^ (-m) : Aˣ) : A) * x = (ϖ : A) ^ k * (((ϖ ^ (-n) : Aˣ) : A) * x) := by
     rw [← Units.val_pow_eq_pow_val, ← zpow_natCast, ← hk, ← mul_assoc,
-      coe_zpow_mul_coe_zpow, show n - m + -n = -m by omega]
+      coe_zpow_mul_coe_zpow]
+    congr 3
+    omega
   rw [h]
   exact A₀.mul_mem (A₀.pow_mem hϖ k) hn
 
