@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.PowerSeries.Derivative
+public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
 # Scalar towers, the product rule, and residues of `φⁿ dφ` for Laurent series
@@ -48,7 +49,8 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 * `TauCeti.LaurentSeries.valuation_eq_exp_neg_order`: a nonzero Laurent series `f` has valuation
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
-* `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
+* `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
+  derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
   `m`, so does `f' - m X⁻¹ f`.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
@@ -152,6 +154,24 @@ theorem coe_derivative {R : Type*} [CommRing R] (f : R⟦X⟧) :
   · rcases m with _ | m
     · simp
     · simp [Int.negSucc_lt_zero, show Int.negSucc (m + 1) + 1 < 0 by omega]
+
+/-- The Hasse derivatives of Laurent series extend the Hasse derivatives of power series. -/
+@[simp]
+theorem coe_hasseDeriv {R : Type*} [Ring R] (k : ℕ) (f : R⟦X⟧) :
+    ((PowerSeries.hasseDeriv k f : R⟦X⟧) : R⸨X⸩) = LaurentSeries.hasseDeriv R k (f : R⸨X⸩) := by
+  ext i
+  rw [LaurentSeries.hasseDeriv_coeff, coeff_coe, coeff_coe]
+  rcases i with m | m
+  · rw [Int.ofNat_eq_natCast, ← Nat.cast_add, Ring.choose_natCast]
+    simp [show ¬(m : ℤ) < 0 by omega, show ¬(m : ℤ) + k < 0 by omega,
+      show ((m : ℤ) + k).natAbs = m + k by omega]
+  · simp only [Int.negSucc_lt_zero, ite_true]
+    split_ifs with h
+    · rw [smul_zero]
+    · -- Here `0 ≤ i + k < k`, so the binomial coefficient vanishes.
+      obtain ⟨j, hj⟩ : ∃ j : ℕ, Int.negSucc m + k = j :=
+        ⟨_, (Int.toNat_of_nonneg (by omega)).symm⟩
+      rw [hj, Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, zero_smul]
 
 end PowerSeries
 
