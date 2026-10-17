@@ -245,6 +245,36 @@ variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module 
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommMonoid M] [Module R M]
 
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
+/-- Inserting an intermediate index `k` at position `i + 1` of a closed path `p`: the entries of
+the contracted matrices along `p`, with the product entry at `i` replaced by its `k`-th summand,
+are the contracted entries along the lengthened path. -/
+private theorem update_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype ι] {n : ℕ}
+    (a : Fin (n + 2) → Matrix ι ι A) (i : Fin (n + 1)) (p : Fin (n + 1) → ι) (k : ι) :
+    Function.update (pathEntries (hochschildFace i.castSucc a) p) i
+        (a i.castSucc (p i) k * a i.succ k (p (finRotate (n + 1) i))) =
+      hochschildFace i.castSucc (pathEntries a (Fin.insertNth i.succ k p)) := by
+  have hrot : finRotate (n + 2) i.castSucc = i.succ := by
+    ext
+    simp
+  have hsA (m : Fin (n + 1)) (hm : m ≠ i) : i.castSucc.succAbove m = i.succ.succAbove m := by
+    rw [Ne, Fin.ext_iff] at hm
+    ext
+    simp only [Fin.val_succAbove, Fin.val_castSucc, Fin.val_succ]
+    split_ifs <;> omega
+  have hself : Fin.insertNth (α := fun _ => ι) i.succ k p i.castSucc = p i := by
+    rw [← Fin.succAbove_succ_self, Fin.insertNth_apply_succAbove]
+  funext m
+  simp only [hochschildFace_castSucc]
+  rcases eq_or_ne m i with rfl | hm
+  · simp only [Function.update_self, Fin.contractNth_apply_of_eq m.castSucc _ _ m rfl,
+      pathEntries_apply, hrot, hself, Fin.insertNth_apply_same,
+      Fin.finRotate_succ_eq_succ_succAbove, Fin.insertNth_apply_succAbove]
+  · have hm' : (i.castSucc : ℕ) ≠ m := by simpa [Fin.ext_iff, eq_comm] using hm
+    simp only [Function.update_of_ne hm, Fin.contractNth_apply_of_ne _ _ _ _ hm',
+      pathEntries_apply, hsA m hm, Fin.finRotate_succ_succAbove_of_ne hm,
+      Fin.insertNth_apply_succAbove]
+
+omit [IsScalarTower R A A] [SMulCommClass R A A] in
 /-- Matrix extension commutes with a face multiplying adjacent entries. Expanding the matrix
 product `(aᵢaᵢ₊₁)(pᵢ, pᵢ₊₁)` over the intermediate index `k` turns a closed path `p` of length
 `n + 1` into the closed path of length `n + 2` obtained by inserting `k` at position `i + 1`. -/
@@ -254,15 +284,6 @@ private theorem sum_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype ι
     ∑ p, φ (pathEntries (hochschildFace i.castSucc a) p) =
       ∑ q, φ (hochschildFace i.castSucc (pathEntries a q)) := by
   classical
-  have hrot : finRotate (n + 2) i.castSucc = i.succ := by
-    ext
-    rw [coe_finRotate_of_ne_last (Fin.castSucc_lt_last i).ne]
-    simp
-  have hsA (m : Fin (n + 1)) (hm : m ≠ i) : i.castSucc.succAbove m = i.succ.succAbove m := by
-    rw [Ne, Fin.ext_iff] at hm
-    ext
-    simp only [Fin.val_succAbove, Fin.val_castSucc, Fin.val_succ]
-    split_ifs <;> omega
   rw [← (Fin.insertNthEquiv (fun _ => ι) i.succ).sum_comp, Fintype.sum_prod_type, Finset.sum_comm]
   refine Finset.sum_congr rfl fun p _ => ?_
   have hx : pathEntries (hochschildFace i.castSucc a) p = Function.update
@@ -271,20 +292,7 @@ private theorem sum_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype ι
     rw [eq_comm, Function.update_eq_self_iff, pathEntries_apply, hochschildFace_castSucc,
       Fin.contractNth_apply_of_eq _ _ _ _ rfl, Matrix.mul_apply]
   rw [hx, φ.map_update_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  congr 1
-  funext m
-  simp only [Fin.insertNthEquiv_apply, hochschildFace_castSucc]
-  rcases eq_or_ne m i with rfl | hm
-  · rw [Function.update_self, Fin.contractNth_apply_of_eq _ _ _ _ rfl, pathEntries_apply,
-      pathEntries_apply, hrot, ← Fin.succAbove_succ_self, Fin.insertNth_apply_succAbove,
-      Fin.insertNth_apply_same, Fin.finRotate_succ_eq_succ_succAbove,
-      Fin.insertNth_apply_succAbove]
-  · have hm' : (i.castSucc : ℕ) ≠ m := by simpa [Fin.ext_iff, eq_comm] using hm
-    rw [Function.update_of_ne hm, pathEntries_apply, Fin.contractNth_apply_of_ne _ _ _ _ hm',
-      Fin.contractNth_apply_of_ne _ _ _ _ hm', hsA m hm, pathEntries_apply,
-      Fin.finRotate_succ_succAbove_of_ne hm, Fin.insertNth_apply_succAbove,
-      Fin.insertNth_apply_succAbove]
+  simp only [update_pathEntries_hochschildFace_castSucc, Fin.insertNthEquiv_apply]
 
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
 /-- Matrix extension commutes with the last face, which is the zeroth face of the rotated
