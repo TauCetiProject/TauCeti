@@ -135,7 +135,11 @@ private noncomputable def coinvariantsComoduleHom (hI : I.IsNormal) {V' : Type w
           TensorProduct.map f.toLinearMap LinearMap.id =
             TensorProduct.map f.toLinearMap LinearMap.id ∘ₗ
               TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-        ext a b
+        change (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.lTensor _ ∘ₗ
+            TensorProduct.map f.toLinearMap LinearMap.id =
+          TensorProduct.map f.toLinearMap LinearMap.id ∘ₗ
+            (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.lTensor _
+        rw [LinearMap.lTensor_comp_map, LinearMap.map_comp_lTensor]
         simp
       rw [HopfIdeal.IsNormal.mem_weightSpaceOneSubcomodule, Comodule.Hom.comp_apply,
         Subcomodule.subtype_apply, ← Comodule.Hom.map_coact_apply, ← LinearMap.comp_apply, hcomm,

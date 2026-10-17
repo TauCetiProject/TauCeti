@@ -346,10 +346,19 @@ theorem IsNormal.rTensor_mkₐ_comul_of_mem_coinvariants [Module.Flat R H] (hI :
       Algebra.linearMap R (H ⧸ I.toIdeal) ∘ₗ Coalgebra.counit ∘ₗ B.subtype := by
     ext ⟨x, hx⟩
     simpa [π] using mk_eq_algebraMap_counit_of_mem_coinvariants hx
-  rw [← hy, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hπ, LinearMap.rTensor_comp,
-    LinearMap.rTensor_comp, LinearMap.comp_apply, LinearMap.comp_apply, hy,
-    Coalgebra.rTensor_counit_comul]
-  simp
+  calc
+    π.rTensor H (Coalgebra.comul (R := R) h) =
+        (π ∘ₗ B.subtype).rTensor H y := by rw [← hy, LinearMap.rTensor_comp_apply]
+    _ = (Algebra.linearMap R (H ⧸ I.toIdeal) ∘ₗ Coalgebra.counit ∘ₗ B.subtype).rTensor H y :=
+      by rw [hπ]
+    _ = (Algebra.linearMap R (H ⧸ I.toIdeal)).rTensor H
+        (Coalgebra.counit.rTensor H (B.subtype.rTensor H y)) := by
+      rw [LinearMap.rTensor_comp_apply, LinearMap.rTensor_comp_apply]
+    _ = (Algebra.linearMap R (H ⧸ I.toIdeal)).rTensor H
+        (Coalgebra.counit.rTensor H (Coalgebra.comul (R := R) h)) := by rw [hy]
+    _ = (1 : H ⧸ I.toIdeal) ⊗ₜ[R] h := by
+      rw [Coalgebra.rTensor_counit_comul]
+      simp
 
 /-- **The coinvariants of a normal Hopf ideal form a subcoalgebra**, when `H` and
 `H ⧸ H^{co H/I}` are flat, for instance over a field. Together with

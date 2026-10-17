@@ -199,6 +199,47 @@ variable [Field k] [CommRing A] [HopfAlgebra k A]
 variable [AddCommMonoid V] [Module k V] [Comodule k A V]
 variable {I : HopfIdeal k A}
 
+omit [Comodule k A V] in
+private theorem lTensor_assoc_rTensor_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
+    (π : A →ₗ[k] Q) (ρ : V →ₗ[k] V ⊗[k] A) (t : V ⊗[k] A) :
+    (π.lTensor A).lTensor V (TensorProduct.assoc k V A A (ρ.rTensor A t)) =
+      TensorProduct.assoc k V A Q (ρ.rTensor Q (π.lTensor V t)) := by
+  rw [LinearMap.lTensor, LinearMap.lTensor, LinearMap.rTensor, LinearMap.rTensor,
+    TensorProduct.map_map_assoc]
+  congr 1
+  rw [LinearMap.lTensor, TensorProduct.map_map, TensorProduct.map_map]
+  simp
+
+omit [Comodule k A V] in
+private theorem assoc_rTensor_lTensor_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
+    (π : A →ₗ[k] Q) (ρ : V →ₗ[k] V ⊗[k] A) (t : V ⊗[k] A) :
+    TensorProduct.assoc k V Q A ((π.lTensor V ∘ₗ ρ).rTensor A t) =
+      (π.rTensor A).lTensor V (TensorProduct.assoc k V A A (ρ.rTensor A t)) := by
+  rw [LinearMap.rTensor_comp_apply]
+  exact (LinearMap.congr_fun (LinearMap.lTensor_rTensor_comp_assoc A (P := V) (Q := A) π)
+    (ρ.rTensor A t)).symm
+
+private theorem lTensor_coassoc_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
+    (π : A →ₗ[k] Q) (v : V) :
+    (π.lTensor A ∘ₗ Coalgebra.comul).lTensor V (Comodule.coact (R := k) (C := A) v) =
+      TensorProduct.assoc k V A Q
+        ((Comodule.coact (R := k) (C := A)).rTensor Q
+          (π.lTensor V (Comodule.coact (R := k) (C := A) v))) := by
+  rw [LinearMap.lTensor_comp_apply, ← Comodule.coassoc_apply]
+  exact lTensor_assoc_rTensor_natural π (Comodule.coact (R := k) (C := A))
+    (Comodule.coact (R := k) (C := A) v)
+
+private theorem assoc_rTensor_coact_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
+    (π : A →ₗ[k] Q) (v : V) :
+    TensorProduct.assoc k V Q A
+        ((π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
+          (Comodule.coact (R := k) (C := A) v)) =
+      (π.rTensor A).lTensor V
+        (Coalgebra.comul.lTensor V (Comodule.coact (R := k) (C := A) v)) := by
+  rw [← Comodule.coassoc_apply]
+  exact assoc_rTensor_lTensor_natural π (Comodule.coact (R := k) (C := A))
+    (Comodule.coact (R := k) (C := A) v)
+
 /-- **Invariant vectors have invariant matrix coefficients.** Over a field, a vector is fixed by
 the closed subgroup cut out by `I` exactly when its coaction has coefficients in the coinvariants
 of `I`, the functions invariant under right translation by that subgroup. -/
@@ -229,10 +270,7 @@ theorem mem_weightSpace_one_iff_coact_mem_range {v : V} :
     have hf : f.lTensor V (Comodule.coact (R := k) (C := A) v) =
         TensorProduct.assoc k V A Q (Comodule.coact (R := k) (C := A) v ⊗ₜ[k] 1) := by
       have hv' : π.lTensor V (Comodule.coact (R := k) (C := A) v) = v ⊗ₜ[k] 1 := hv
-      rw [LinearMap.lTensor_comp_apply, ← Comodule.coassoc_apply, LinearMap.lTensor,
-        LinearMap.lTensor, TensorProduct.map_map_assoc, TensorProduct.map_id, LinearMap.rTensor,
-        TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id,
-        ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply, hv', LinearMap.rTensor_tmul]
+      rw [lTensor_coassoc_natural, hv', LinearMap.rTensor_tmul]
     have hg (y : V ⊗[k] A) : g.lTensor V y = TensorProduct.assoc k V A Q (y ⊗ₜ[k] 1) := by
       induction y with
       | tmul a b => simp [g]
@@ -252,10 +290,16 @@ theorem mem_weightSpace_one_iff_coact_mem_range {v : V} :
         Algebra.linearMap k Q ∘ₗ Coalgebra.counit ∘ₗ B.subtype := by
       ext ⟨a, ha⟩
       simpa [π] using mk_eq_algebraMap_counit_of_mem_coinvariants ha
-    rw [← LinearMap.lTensor, ← hx, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hπ,
-      LinearMap.lTensor_comp, LinearMap.lTensor_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-      hx, Comodule.lTensor_counit_coact]
-    simp
+    calc
+      π.lTensor V (Comodule.coact (R := k) (C := A) v) =
+          (π ∘ₗ B.subtype).lTensor V x := by rw [← hx, LinearMap.lTensor_comp_apply]
+      _ = (Algebra.linearMap k Q ∘ₗ Coalgebra.counit ∘ₗ B.subtype).lTensor V x := by rw [hπ]
+      _ = (Algebra.linearMap k Q).lTensor V
+          (Coalgebra.counit.lTensor V (B.subtype.lTensor V x)) := by
+            rw [LinearMap.lTensor_comp_apply, LinearMap.lTensor_comp_apply]
+      _ = (Algebra.linearMap k Q).lTensor V
+          (Coalgebra.counit.lTensor V (Comodule.coact (R := k) (C := A) v)) := by rw [hx]
+      _ = v ⊗ₜ[k] (1 : Q) := by rw [Comodule.lTensor_counit_coact]; simp
 
 /-- **Invariants of a normal subgroup are stable under the ambient group.** Over a field, the
 coaction maps a vector fixed by the normal closed subgroup cut out by `I` into the tensor product
@@ -292,11 +336,22 @@ theorem IsNormal.coact_mem_range_rTensor_weightSpace_one (hI : I.IsNormal) {v : 
         ((π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
           (Comodule.coact (R := k) (C := A) v)) =
         (TensorProduct.mk k Q A 1).lTensor V (Comodule.coact (R := k) (C := A) v) := by
-      rw [LinearMap.rTensor_comp_apply, LinearMap.lTensor, LinearMap.rTensor,
-        ← TensorProduct.map_map_assoc, ← LinearMap.rTensor, ← LinearMap.lTensor,
-        Comodule.coassoc_apply, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, ← hx,
-        ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, LinearMap.comp_assoc, hleft,
-        LinearMap.lTensor_comp, LinearMap.comp_apply]
+      calc
+        _ = (π.rTensor A).lTensor V
+            (Coalgebra.comul.lTensor V (Comodule.coact (R := k) (C := A) v)) :=
+          assoc_rTensor_coact_natural π v
+        _ = (π.rTensor A ∘ₗ Coalgebra.comul).lTensor V
+            (Comodule.coact (R := k) (C := A) v) := by
+          rw [LinearMap.lTensor_comp_apply]
+        _ = (π.rTensor A ∘ₗ Coalgebra.comul).lTensor V (B.subtype.lTensor V x) := by rw [hx]
+        _ = ((π.rTensor A ∘ₗ Coalgebra.comul) ∘ₗ B.subtype).lTensor V x := by
+          exact (LinearMap.lTensor_comp_apply V (f := B.subtype)
+            (g := π.rTensor A ∘ₗ Coalgebra.comul) x).symm
+        _ = (TensorProduct.mk k Q A 1 ∘ₗ B.subtype).lTensor V x := by
+          rw [LinearMap.comp_assoc, hleft]
+        _ = (TensorProduct.mk k Q A 1).lTensor V
+            (B.subtype.lTensor V x) := by rw [LinearMap.lTensor_comp_apply]
+        _ = _ := by rw [hx]
     have hsub : F.rTensor A (Comodule.coact (R := k) (C := A) v) =
         (π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
             (Comodule.coact (R := k) (C := A) v) -
