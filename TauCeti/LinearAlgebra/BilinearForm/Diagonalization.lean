@@ -263,14 +263,14 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     obtain ⟨hfinite, hfree⟩ := N.finite_free_of_isCompl hc.symm
     have hn : finrank R N = n := by
       have h : finrank R N + 1 = finrank R M :=
-        TauCeti.BilinForm.finrank_orthogonal_span_singleton_add_one_of_dvd B
+        TauCeti.finrank_orthogonal_span_singleton_add_one_of_dvd B
           hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd)
       have hb := Module.finrank_eq_card_basis b
       simp only [Fintype.card_fin] at hb
       omega
     let v := Module.finBasisOfFinrankEq R N hn
     obtain ⟨c₁, hc₁zero, hc₁succ⟩ :=
-      TauCeti.BilinForm.exists_basis_of_orthogonal_span_singleton B
+      TauCeti.exists_basis_of_orthogonal_span_singleton B
         hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd) v
     have hsplit : (B.toMatrix c₁).det = B x x * ((B.restrict N).toMatrix v).det := by
       rw [Matrix.det_succ_row_zero, Fin.sum_univ_succ]

@@ -39,10 +39,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
-* `TauCeti.BilinForm.exists_basis_of_orthogonal_span_singleton`: adjoin a vector to any finite
+* `TauCeti.exists_basis_of_orthogonal_span_singleton`: adjoin a vector to any finite
   basis of its orthogonal complement when its self-pairing is a non-zero-divisor dividing all
   its pairings.
-* `TauCeti.BilinForm.finrank_orthogonal_span_singleton_add_one_of_dvd`: compute the rank of
+* `TauCeti.finrank_orthogonal_span_singleton_add_one_of_dvd`: compute the rank of
   that complement when it is finite free.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
@@ -412,7 +412,7 @@ theorem isCompl_span_singleton_orthogonal_of_dvd (B : LinearMap.BilinForm R M) {
 
 end LinearMap.BilinForm
 
-namespace TauCeti.BilinForm
+namespace TauCeti
 
 open Module LinearMap.BilinForm
 
@@ -457,7 +457,7 @@ theorem finrank_orthogonal_span_singleton_add_one_of_dvd [StrongRankCondition R]
     (Module.finBasis R (B.orthogonal (R ∙ x)))
   simpa only [Fintype.card_fin] using (Module.finrank_eq_card_basis b).symm
 
-end TauCeti.BilinForm
+end TauCeti
 
 namespace LinearMap.BilinForm
 
@@ -476,7 +476,7 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
     ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b ∧
       b 0 = x ∧ ∀ i, b i.succ = (v i : M) := by
   obtain ⟨b, hzero, hsucc⟩ :=
-    TauCeti.BilinForm.exists_basis_of_orthogonal_span_singleton B hx hdvd v
+    TauCeti.exists_basis_of_orthogonal_span_singleton B hx hdvd v
   refine ⟨b, ?_, hzero, hsucc⟩
   rw [iIsOrtho_def]
   intro i j
