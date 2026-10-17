@@ -501,3 +501,143 @@ theorem exists_homeomorph_stellarSubdivision_with_inverse
 end
 
 end PreAbstractSimplicialComplex
+
+public section
+
+open Set TauCeti AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι]
+  {K L : PreAbstractSimplicialComplex ι}
+
+/-! ### PL formulas along a stellar equivalence -/
+
+/-- A homeomorphism package whose two ambient coordinate formulas are piecewise linear. -/
+def IsPLHomeomorphPackage (A B : PreAbstractSimplicialComplex ι) : Prop :=
+  ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
+    ∃ f g : (ι → ℝ) → (ι → ℝ),
+      IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+        x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ∧
+      IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+        x.1.support ∈ B} => (x.1.1 : ι → ℝ)) ∧
+      (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
+      (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1)
+
+omit [DecidableEq ι] in
+/-- Construct a piecewise-linear homeomorphism package from its witness data. -/
+theorem IsPLHomeomorphPackage.intro {A B : PreAbstractSimplicialComplex ι}
+    (e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B})
+    (f g : (ι → ℝ) → (ι → ℝ))
+    (hf : IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ A} => (x.1.1 : ι → ℝ)))
+    (hg : IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ B} => (x.1.1 : ι → ℝ)))
+    (he : ∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1)
+    (heinv : ∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) :
+    IsPLHomeomorphPackage A B :=
+  ⟨e, f, g, hf, hg, he, heinv⟩
+
+omit [DecidableEq ι] in
+/-- Extract the homeomorphism and its two ambient piecewise-linear formulas. -/
+theorem IsPLHomeomorphPackage.elim {A B : PreAbstractSimplicialComplex ι}
+    (h : IsPLHomeomorphPackage A B) :
+    ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
+      ∃ f g : (ι → ℝ) → (ι → ℝ),
+        IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+          x.1.support ∈ B} => (x.1.1 : ι → ℝ)) ∧
+        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
+        (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := by
+  simpa only [IsPLHomeomorphPackage] using h
+
+omit [DecidableEq ι] in
+/-- Reflexivity of piecewise-linear homeomorphism packages. -/
+theorem IsPLHomeomorphPackage.refl (A : PreAbstractSimplicialComplex ι) :
+    IsPLHomeomorphPackage A A :=
+  IsPLHomeomorphPackage.intro (Homeomorph.refl _) id id (isPLOn_id _) (isPLOn_id _)
+    (fun _ => rfl) (fun _ => rfl)
+
+/-- The PL package for one stellar move, using the inverse and forward coordinate extensions. -/
+theorem IsStellarMove.isPLHomeomorphPackage
+    {A B : PreAbstractSimplicialComplex ι} (h : IsStellarMove A B)
+    (hfin : A.faces.Finite) : IsPLHomeomorphPackage A B := by
+  obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
+  obtain ⟨e, he, heinv⟩ := exists_homeomorph_stellarSubdivision_with_inverse
+    hσ hv hfin (le_top _) (le_top _)
+  let f : (ι → ℝ) → (ι → ℝ) :=
+    Finset.stellarSubdivisionInverseExtension σ (A.isRelLowerSet_faces hσ).1 v
+  let g : (ι → ℝ) → (ι → ℝ) := Finset.stellarSubdivisionCoordinateMap σ v
+  have hf : IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ A} => (x.1.1 : ι → ℝ)) := by
+    exact (Finset.isPiecewiseAffineOn_stellarSubdivisionInverseExtension σ
+      (A.isRelLowerSet_faces hσ).1 v).isPLOn.mono (subset_univ _)
+  have hg : IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ stellarSubdivision A σ v} => (x.1.1 : ι → ℝ)) := by
+    exact isPLOn_continuousAffineMap
+      (Finset.stellarSubdivisionCoordinateMap σ v).toContinuousAffineMap _
+  exact IsPLHomeomorphPackage.intro e.symm f g hf hg
+    (fun x => by simpa only [f] using (heinv x).symm)
+    (fun y => by simpa only [g, Homeomorph.symm_symm] using (he y).symm)
+
+omit [DecidableEq ι] in
+/-- Symmetry swaps the forward and inverse maps in a PL homeomorphism package. -/
+theorem IsPLHomeomorphPackage.symm {A B : PreAbstractSimplicialComplex ι}
+    (h : IsPLHomeomorphPackage A B) : IsPLHomeomorphPackage B A := by
+  rcases h.elim with ⟨e, f, g, hf, hg, he, heinv⟩
+  exact IsPLHomeomorphPackage.intro e.symm g f hg hf heinv he
+
+omit [DecidableEq ι] in
+/-- Composition of PL homeomorph packages composes their ambient coordinate formulas. -/
+theorem IsPLHomeomorphPackage.trans {A B C : PreAbstractSimplicialComplex ι}
+    (hAB : IsPLHomeomorphPackage A B) (hBC : IsPLHomeomorphPackage B C) :
+    IsPLHomeomorphPackage A C := by
+  rcases hAB.elim with ⟨e₁, f₁, g₁, hf₁, hg₁, he₁, he₁inv⟩
+  rcases hBC.elim with ⟨e₂, f₂, g₂, hf₂, hg₂, he₂, he₂inv⟩
+  have hmap₁ : (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ A} => (x.1.1 : ι → ℝ)) ⊆ f₁ ⁻¹'
+      (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+        x.1.support ∈ B} => (x.1.1 : ι → ℝ)) := by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨e₁ x, (he₁ x).symm⟩
+  have hmap₂ : (range fun y : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ C} => (y.1.1 : ι → ℝ)) ⊆ g₂ ⁻¹'
+      (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+        x.1.support ∈ B} => (x.1.1 : ι → ℝ)) := by
+    rintro _ ⟨y, rfl⟩
+    exact ⟨e₂.symm y, (he₂inv y).symm⟩
+  refine IsPLHomeomorphPackage.intro (e₁.trans e₂) (f₂ ∘ f₁) (g₁ ∘ g₂)
+    (hf₂.comp hf₁ hmap₁) (hg₁.comp hg₂ hmap₂) ?_ ?_
+  · intro x
+    simp only [Function.comp_apply, he₁ x, he₂ (e₁ x), Homeomorph.trans_apply]
+  · intro y
+    simp only [Function.comp_apply, he₂inv y, he₁inv (e₂.symm y), Homeomorph.symm_trans_apply]
+
+/-- A finite stellar equivalence identifies its weak polyhedra by maps that are piecewise linear
+in their ambient barycentric coordinates. The two `IsPLOn` statements are the coordinate formulas
+needed to transport local PL charts across a sequence of stellar moves. -/
+theorem StellarEquivalent.isPLHomeomorphPackage
+    (h : StellarEquivalent K L) (hfin : K.faces.Finite) :
+    IsPLHomeomorphPackage K L := by
+  have hQ : (K.faces.Finite ↔ L.faces.Finite) ∧
+      ∀ hfin : K.faces.Finite, IsPLHomeomorphPackage K L := by
+    refine StellarEquivalent.induction_on h
+      (P := fun A B => (A.faces.Finite ↔ B.faces.Finite) ∧
+        (∀ hfin : A.faces.Finite, IsPLHomeomorphPackage A B)) ?_ ?_ ?_ ?_
+    · intro A B hmove
+      exact ⟨hmove.finite_faces_iff, fun hA => hmove.isPLHomeomorphPackage hA⟩
+    · intro A
+      exact ⟨Iff.rfl, fun _ => IsPLHomeomorphPackage.refl A⟩
+    · intro A B ih
+      exact ⟨ih.1.symm, fun hB => (ih.2 (ih.1.mpr hB)).symm⟩
+    · intro A B C ihAB ihBC
+      exact ⟨ihAB.1.trans ihBC.1, fun hA =>
+        (ihAB.2 hA).trans (ihBC.2 (ihAB.1.mp hA))⟩
+  exact hQ.2 hfin
+
+
+end PreAbstractSimplicialComplex
