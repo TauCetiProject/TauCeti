@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Density
+public import Mathlib.Basic.Real.Basic
 public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Algebra.BigOperators.Field
 

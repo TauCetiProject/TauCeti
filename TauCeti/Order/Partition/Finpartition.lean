@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Data.Set.Finite.Range
@@ -193,14 +193,15 @@ open scoped Finset
 variable {α : Type*} [DecidableEq α] {s : Finset α} {P Q : Finpartition s}
 
 /-- The sizes of the parts of a finite partition add up to the size of its support. -/
-theorem sum_card_subtype (P : Finpartition s) :
-    ∑ A : P.parts, (#A.1 : ℝ) = #s := by
-  rw [Finset.sum_coe_sort P.parts fun A => (#A : ℝ)]
-  exact_mod_cast P.sum_card_parts
+theorem sum_card_subtype {R : Type*} [AddCommMonoidWithOne R] (P : Finpartition s) :
+    ∑ A : P.parts, (#A.1 : R) = #s := by
+  rw [Finset.sum_coe_sort P.parts fun A => (#A : R)]
+  rw [← Nat.cast_sum, P.sum_card_parts]
 
 /-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one. -/
-theorem sum_sum_weight_le_one (P : Finpartition s) :
-    ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : ℝ) ^ 2) ≤ 1 := by
+theorem sum_sum_weight_le_one {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    (P : Finpartition s) :
+    ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : K) ^ 2) ≤ 1 := by
   simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]
   exact div_self_le_one _
 
