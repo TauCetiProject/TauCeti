@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
-# Continuity of the Jacobian `normDet`
+# Continuity and adjoints of the Jacobian `normDet`
 
 For finite-dimensional real inner product spaces `U` and `V`, the `m`-dimensional Jacobian
 `LinearMap.normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends continuously on the map.
@@ -22,6 +22,8 @@ antilipschitz constant.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
+* `TauCeti.normDet_adjoint_of_finrank_eq`: between spaces of equal dimension, a map and its
+  adjoint have the same norm determinant.
 -/
 
 public section
@@ -82,3 +84,21 @@ theorem exists_ball_antilipschitzWith_normDet_le (B : U →L[ℝ] V)
     linarith
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+/-- Between spaces of equal dimension, a linear map and its adjoint have the same norm
+determinant. This compares the area and coarea factors for an invertible linear map. -/
+theorem normDet_adjoint_of_finrank_eq {𝕜 U V : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup U] [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+    [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+    {f : U →ₗ[𝕜] V} (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+    f.adjoint.normDet = f.normDet := by
+  let bU := stdOrthonormalBasis 𝕜 U
+  let bV := (stdOrthonormalBasis 𝕜 V).reindex (finCongr h.symm)
+  rw [LinearMap.normDet_eq_norm_det_toMatrix _ bV bU,
+    LinearMap.toMatrix_adjoint, Matrix.det_conjTranspose,
+    LinearMap.normDet_eq_norm_det_toMatrix _ bU bV]
+  simp
+
+end TauCeti
