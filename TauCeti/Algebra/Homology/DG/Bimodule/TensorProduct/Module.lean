@@ -160,7 +160,9 @@ theorem tensorBimoduleMap_zero_right (f : M ⟶ M') :
 
 /-- The ordinary balanced tensor product as a bifunctor from DG right modules and DG bimodules to
 DG right modules: the composite of the scalar-left embedding, the DG bimodule tensor bifunctor,
-and forgetting the left scalar action. -/
+and forgetting the left scalar action. The definition is exposed so that its objects and
+morphisms remain definitionally `tensorBimoduleObj` and `tensorBimoduleMap`; the public statements
+of `tensorBimoduleFunctor_obj_map` and `tensorBimoduleFunctor_map_app` depend on this. -/
 @[expose]
 def tensorBimoduleFunctor :
     CategoryTheory.Functor (DGRightModuleCat.{uR, uB, uM} hB)
