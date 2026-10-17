@@ -41,9 +41,7 @@ universe u v
 
 namespace TauCeti
 
-namespace Matrix.GeneralLinearGroup
-
-section CommSemiring
+section BlockSuccPolynomial
 
 variable {k : Type u} [CommSemiring k] {n : ℕ}
 
@@ -78,6 +76,14 @@ private theorem eval_blockSuccPolynomial
       induction p.2 using Fin.lastCases with
       | last => simp
       | cast j => simp
+
+end BlockSuccPolynomial
+
+namespace Matrix.GeneralLinearGroup
+
+section CommSemiring
+
+variable {k : Type u} [CommSemiring k] {n : ℕ}
 
 /-- **A polynomial function pulls back to a polynomial function along the block inclusion.** -/
 theorem mem_polynomialFunctions_comp_glBlockSucc
