@@ -217,38 +217,6 @@ theorem integrableExpSet_id_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n) :
   simpa [integrableExpSet, id_eq] using
     integrable_exp_mul_id_fisherSnedecorMeasure_iff hm hn t
 
-private lemma betaMomentIntegrand_eq (q : ℕ) {u : ℝ}
-    (hu : u ∈ Ioo (0 : ℝ) 1) :
-    betaPDFReal (m / 2) (n / 2) u * fisherSnedecorMap m n u ^ q =
-      (n / m) ^ q / beta (m / 2) (n / 2) *
-        (u ^ (m / 2 + q - 1) * (1 - u) ^ (n / 2 - q - 1)) := by
-  rw [betaPDFReal, ite_eq_left ⟨hu.1, hu.2⟩, fisherSnedecorMap_def]
-  have hu0 : 0 < u := hu.1
-  have h1u : 0 < 1 - u := sub_pos.mpr hu.2
-  have hratio : ((n / m) * u / (1 - u)) ^ q =
-      (n / m) ^ q * u ^ q * ((1 - u) ^ q)⁻¹ := by
-    rw [div_pow, mul_pow, div_eq_mul_inv]
-  have hpowu : u ^ (m / 2 - 1) * u ^ (q : ℝ) = u ^ (m / 2 + q - 1) := by
-    rw [← Real.rpow_add hu0]
-    congr 1
-    ring
-  have hpowv : (1 - u) ^ (n / 2 - 1) * (1 - u) ^ (-(q : ℝ)) =
-      (1 - u) ^ (n / 2 - q - 1) := by
-    rw [← Real.rpow_add h1u]
-    congr 1
-    ring
-  rw [hratio, ← Real.rpow_natCast u q, ← Real.rpow_natCast (1 - u) q,
-    ← Real.rpow_neg h1u.le]
-  calc
-    1 / beta (m / 2) (n / 2) * u ^ (m / 2 - 1) * (1 - u) ^ (n / 2 - 1) *
-          ((n / m) ^ q * u ^ (q : ℝ) * (1 - u) ^ (-(q : ℝ))) =
-        (n / m) ^ q / beta (m / 2) (n / 2) *
-          ((u ^ (m / 2 - 1) * u ^ (q : ℝ)) *
-            ((1 - u) ^ (n / 2 - 1) * (1 - u) ^ (-(q : ℝ)))) := by ring
-    _ = (n / m) ^ q / beta (m / 2) (n / 2) *
-        (u ^ (m / 2 + q - 1) * (1 - u) ^ (n / 2 - q - 1)) := by
-      rw [hpowu, hpowv]
-
 /-- The `q`th natural moment of a Fisher--Snedecor law, in beta-function form. -/
 @[simp]
 theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
@@ -257,18 +225,23 @@ theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
       (n / m) ^ q * beta (m / 2 + q) (n / 2 - q) / beta (m / 2) (n / 2) := by
   have hn : 0 < n := lt_of_le_of_lt (mul_nonneg (by norm_num) (Nat.cast_nonneg q)) hq
   rw [fisherSnedecorMeasure_eq_map hm hn,
-    integral_map (measurable_fisherSnedecorMap m n).aemeasurable (by fun_prop),
-    TauCeti.Probability.integral_betaMeasure_eq (by linarith) (by linarith)]
-  simp_rw [smul_eq_mul]
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioo (0 : ℝ) 1)]
-  · rw [setIntegral_congr_fun measurableSet_Ioo
-      (fun u hu ↦ betaMomentIntegrand_eq q hu), integral_const_mul,
-      ← integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1),
-      integral_rpow_mul_one_sub_rpow (by positivity) (by norm_num at hq ⊢; linarith)]
-    ring_nf
-  · intro u hu
-    rw [betaPDFReal, ite_eq_right (by simpa only [mem_Ioo] using hu), zero_mul]
+    integral_map (measurable_fisherSnedecorMap m n).aemeasurable (by fun_prop)]
+  have hfun : (fun u : ℝ => fisherSnedecorMap m n u ^ q) =ᵐ[
+      betaMeasure (m / 2) (n / 2)]
+      fun u ↦ (n / m) ^ q * (u ^ (q : ℝ) * (1 - u) ^ (-(q : ℝ))) := by
+    filter_upwards [ae_mem_Ioo_betaMeasure (m / 2) (n / 2)] with u hu
+    rw [fisherSnedecorMap_def]
+    have h1u : 0 < 1 - u := sub_pos.mpr hu.2
+    have hratio : ((n / m) * u / (1 - u)) ^ q =
+        (n / m) ^ q * u ^ q * ((1 - u) ^ q)⁻¹ := by
+      rw [div_pow, mul_pow, div_eq_mul_inv]
+    rw [hratio, ← Real.rpow_natCast u q, ← Real.rpow_natCast (1 - u) q,
+      ← Real.rpow_neg h1u.le]
+    ring
+  rw [integral_congr_ae hfun, integral_const_mul,
+    integral_rpow_mul_one_sub_rpow_betaMeasure (hα := by linarith) (hβ := by linarith)
+      (hq := by positivity) (hs := by norm_num at hq ⊢; linarith)]
+  ring_nf
 
 private lemma beta_add_one_sub_one_div {a b : ℝ} (ha : 0 < a) (hb : 1 < b) :
     beta (a + 1) (b - 1) / beta a b = a / (b - 1) := by
