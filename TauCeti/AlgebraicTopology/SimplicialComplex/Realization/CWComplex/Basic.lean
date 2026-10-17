@@ -55,6 +55,12 @@ def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
 theorem strictMono_vertexEmbedding (c : RealizationCell K n) : StrictMono c.vertexEmbedding :=
   (c.1.1.orderEmbOfFin c.2).strictMono
 
+/-- Every enumerated vertex belongs to the cell's face. -/
+@[simp]
+theorem vertexEmbedding_mem (c : RealizationCell K n) (i : Fin (n + 1)) :
+    c.vertexEmbedding i ∈ c.1.1 :=
+  Finset.orderEmbOfFin_mem c.1.1 c.2 i
+
 /-- The increasing enumeration has the cell's face as its image. -/
 @[simp]
 theorem image_vertexEmbedding (c : RealizationCell K n) :

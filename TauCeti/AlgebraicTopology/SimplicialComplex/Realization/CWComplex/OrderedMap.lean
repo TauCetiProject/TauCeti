@@ -92,11 +92,8 @@ theorem vertexEmbedding_map (c : RealizationCell K n)
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
     (hf : StrictMonoOn f (↑c.1.1 : Set α)) :
     ⇑(c.map f hf.injOn).vertexEmbedding = f ∘ c.vertexEmbedding := by
-  have hmem (i : Fin (n + 1)) : c.vertexEmbedding i ∈ c.1.1 := by
-    rw [← c.image_vertexEmbedding]
-    exact Finset.mem_image_of_mem _ (Finset.mem_univ i)
   have hmono : StrictMono (f ∘ c.vertexEmbedding) := fun i j hij =>
-    hf (hmem i) (hmem j) (c.strictMono_vertexEmbedding hij)
+    hf (c.vertexEmbedding_mem i) (c.vertexEmbedding_mem j) (c.strictMono_vertexEmbedding hij)
   symm
   apply (hmono.range_inj_of_wellFoundedLT
     (c.map f hf.injOn).strictMono_vertexEmbedding).mp
@@ -124,11 +121,9 @@ theorem realizationMap_characteristicMap
     f.realizationMap (c.characteristicMap x) = (c.map f hf.injOn).characteristicMap x := by
   rw [c.characteristicMap_def, (c.map f hf.injOn).characteristicMap_def]
   apply Subtype.ext
-  by_cases hx : x ∈ closedBall 0 1
-  · simp only [realizationMap_val, simplexCharacteristicMap_apply _ _ _ hx,
-      simplexClosedBallHomeomorph_val, ← Finsupp.mapDomain_comp, c.vertexEmbedding_map f hf]
-  · simp only [realizationMap_val,
-      simplexCharacteristicMap_apply_of_notMem_closedBall _ _ _ hx,
+  by_cases hx : x ∈ closedBall 0 1 <;>
+    simp only [realizationMap_val, simplexCharacteristicMap_apply,
+      simplexCharacteristicMap_apply_of_notMem_closedBall, hx, not_false_eq_true,
       simplexClosedBallHomeomorph_val, ← Finsupp.mapDomain_comp, c.vertexEmbedding_map f hf]
 
 end PreAbstractSimplicialComplex.SimplicialMap
