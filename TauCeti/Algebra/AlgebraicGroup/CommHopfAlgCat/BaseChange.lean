@@ -31,6 +31,9 @@ evaluated on `K`-algebras.
 * `CommHopfAlgCat.baseChangeAlgEquiv`: the underlying algebra of base change, available as
   `H.baseChangeAlgEquiv`.
 * `CommHopfAlgCat.baseChangeMap`: scalar extension of a coordinate morphism.
+* `CommHopfAlgCat.baseChangeMap_injective_hom`: scalar extension along an injective algebra map
+  distinguishes coordinate morphisms whose target is flat over the ground ring.
+* `CommHopfAlgCat.baseChangeMap_unit_comp_counit`: base change preserves the trivial morphism.
 * `CommHopfAlgCat.baseChangeMap_surjective`: base change preserves surjectivity.
 * `CommHopfAlgCat.baseChangeMap_surjective_of_iso`: surjectivity in isomorphic presentations.
 * `CommHopfAlgCat.baseChangeMap_injective`: flat base change preserves injectivity.
