@@ -45,6 +45,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   differentiable) at the chart image of the point.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm` and
+  `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`: on a boundaryless manifold, a map into a
+  normed space is `C^n` at a point exactly when its coordinate expression in the preferred chart,
+  or in any chart of the `C^n` maximal atlas, is `C^n` there.
 * `MDifferentiableAt.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
   derivative after an inverse chart, including derivatives within the model range.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
@@ -200,6 +204,31 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
     mvfderiv I f x = fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
+
+namespace TauCeti
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, a map into a normed space is `C^n` at `x` exactly when its
+coordinate expression in the preferred extended chart at `x` is `C^n` at the chart image of `x`. -/
+theorem contMDiffAt_iff_contDiffAt_comp_extChartAt_symm {n : WithTop ℕ∞} :
+    ContMDiffAt I 𝓘(𝕜, F) n f x ↔
+      ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  rw [contMDiffAt_iff_source, ModelWithCorners.Boundaryless.range_eq_univ,
+    contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt]
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, a map into a normed space is `C^n` at `x` exactly when its
+coordinate expression in a chart of the `C^n` maximal atlas containing `x` is `C^n` at the chart
+image of `x`. -/
+theorem contMDiffAt_iff_contDiffAt_comp_extend_symm {n : WithTop ℕ∞}
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I n M)
+    (hx : x ∈ e.source) :
+    ContMDiffAt I 𝓘(𝕜, F) n f x ↔ ContDiffAt 𝕜 n (f ∘ (e.extend I).symm) (e.extend I x) := by
+  rw [← contMDiffWithinAt_univ, contMDiffWithinAt_iff_source_of_mem_maximalAtlas he hx,
+    preimage_univ, univ_inter, ModelWithCorners.Boundaryless.range_eq_univ,
+    contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt]
+
+end TauCeti
 
 end Boundaryless
 
