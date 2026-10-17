@@ -70,12 +70,17 @@ theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMa
     (eqToHom (coneIdentityInjectivePresentation_K M) ≫
       (closedShiftFunctor 1).map f ≫ eqToHom (coneIdentityInjectivePresentation_K N).symm)
   · apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_I N))).mp
-    simpa [Category.assoc] using
-      coneInclusion_comp_coneMap _ _ f f k hsq
+    simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id,
+      coneIdentityInjectivePresentation_i]
+    rw [← Category.assoc, coneIdentityInjectivePresentation_i]
+    exact coneInclusion_comp_coneMap _ _ f f k hsq
   · apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_K N))).mp
     apply (cancel_epi (eqToHom (coneIdentityInjectivePresentation_I M).symm)).mp
-    simpa [Category.assoc] using
-      (coneMap_comp_coneProjection _ _ f f k hsq).symm
+    simpa only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+      Category.id_comp, Category.comp_id, coneIdentityInjectivePresentation_p] using
+      (congrArg (fun e ↦ e ≫ (closedShiftFunctor 1).map f)
+        (coneIdentityInjectivePresentation_p M)).trans
+          (coneMap_comp_coneProjection _ _ f f k hsq).symm
 
 /-- Under the stable quotient, stable suspension is naturally cohomological shift by one. -/
 noncomputable def gradedSplitStableSuspensionIsoShift :
@@ -108,8 +113,8 @@ noncomputable def gradedSplitStableSuspensionIsoShift :
     simpa only [Functor.map_comp, eqToIso.hom, eqToIso.inv, ForgetEnrichment.of_to,
       eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
       Category.id_comp, Category.comp_id] using (reassoc_of% hnat)
-        (eqToHom ((gradedSplitExact_isFrobenius (h := h)).
-          stableSuspension_obj_projectiveStableFunctor_obj Y).symm))).symm
+        (eqToHom ((gradedSplitExact_isFrobenius (h := h)).stableSuspension_obj_projectiveStableFunctor_obj
+          Y).symm))).symm
 
 /-- The suspension comparison is the stable map on cokernels induced by the identity. -/
 @[simp]
@@ -127,7 +132,10 @@ theorem gradedSplitStableSuspensionIsoShift_hom_app
   erw [Iso.trans_inv]
   simp only [Iso.trans_inv, Functor.mapIso_inv, eqToIso.inv,
     ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv, Functor.map_comp]
-  simp only [eqToIso.inv, ForgetEnrichment.of_to]
+  simp only [ForgetEnrichment.of_to]
+  -- After the public object identifications, the inverse of this equality isomorphism
+  -- is its defining equality transport. Proof irrelevance identifies the two proofs.
+  rfl
 
 /-- The stable comparison intertwines stable suspension with cohomological shift, with the
 negative sign that gives the cone triangle its positive projection as third arrow. -/
@@ -174,9 +182,8 @@ private theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux
     Functor.associator_hom_app, EnrichedFunctor.forgetCompDgClosedToHomotopyIso_hom_app,
     EnrichedFunctor.forget_obj, Category.id_comp, neg_inj]
   simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, eqToIso.hom,
-    eqToHom_app, eqToHom_map, Functor.comp_obj,
-    gradedSplitStableToHomotopy_obj_projectiveStableFunctor_obj,
-    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.comp_id]
+    eqToHom_app, eqToHom_map, Functor.comp_obj]
+  erw [Category.id_comp, eqToHom_trans]
 
 /-- The stable comparison commutes coherently with the stable and cohomological integer shifts. -/
 @[instance_reducible]
@@ -216,7 +223,7 @@ theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app
           simp only [Functor.comp_obj,
             gradedSplitStableToHomotopy_obj_projectiveStableFunctor_obj,
             coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
-            homotopyShiftFunctor_obj_of])) := by
+            homotopyShiftFunctor_obj_of, ForgetEnrichment.to_of])) := by
   rw [stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux,
     gradedSplitStableSuspensionIsoShift_hom_app]
   -- The public cokernel equation supplies the transport to the shifted module; functoriality
