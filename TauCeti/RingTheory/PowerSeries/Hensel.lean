@@ -36,8 +36,6 @@ each step gives uniqueness of the factorization.
 
 ## Main results
 
-* `Polynomial.coeff_swapPowerSeries_mem_degreeLT`: `swapPowerSeries` preserves degree bounds
-  coefficientwise.
 * `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`: existence of the lifted factorization.
 * `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`: uniqueness of the lifted
   factorization.
@@ -58,53 +56,9 @@ open scoped Polynomial PowerSeries
 
 namespace Polynomial
 
-/-- If `Q` has degree `< n`, then so does every coefficient of `swapPowerSeries Q`. -/
-theorem coeff_swapPowerSeries_mem_degreeLT {R : Type*} [CommSemiring R] {Q : R⟦X⟧[X]} {n : ℕ}
-    (hQ : Q ∈ degreeLT R⟦X⟧ n) (k : ℕ) :
-    PowerSeries.coeff k (swapPowerSeries Q) ∈ degreeLT R n := by
-  rw [mem_degreeLT, degree_lt_iff_coeff_zero] at hQ ⊢
-  intro i hi
-  simp [hQ i hi]
-
 section Hensel
 
 variable {R : Type*} [CommRing R]
-
-/-- A power series `F` over `R[X]` whose constant coefficient is monic of degree `d` and whose
-other coefficients have degree `< d` comes from a monic polynomial over `R⟦X⟧` of degree `d`
-reducing to `g` modulo `t`. -/
-private theorem exists_monic_swapPowerSeries_eq [Nontrivial R] {g : R[X]} (hg : g.Monic)
-    {F : R[X]⟦X⟧} (hF₀ : PowerSeries.constantCoeff F = g)
-    (hF : ∀ k, 1 ≤ k → PowerSeries.coeff k F ∈ degreeLT R g.natDegree) :
-    ∃ G : R⟦X⟧[X], G.Monic ∧ G.natDegree = g.natDegree ∧
-      G.map PowerSeries.constantCoeff = g ∧ swapPowerSeries G = F := by
-  suffices ∃ G : R⟦X⟧[X], G.Monic ∧ swapPowerSeries G = F by
-    obtain ⟨G, hG, rfl⟩ := this
-    rw [constantCoeff_swapPowerSeries] at hF₀
-    exact ⟨G, hG, by rw [← hF₀, hG.natDegree_map], hF₀, rfl⟩
-  let a : ℕ → R⟦X⟧ := fun i ↦ PowerSeries.mk fun k ↦ (PowerSeries.coeff k F).coeff i
-  have hdeg : (∑ i : Fin g.natDegree, C (a i) * X ^ (i : ℕ)).degree < (g.natDegree : WithBot ℕ) :=
-    degree_sum_fin_lt _
-  refine ⟨X ^ g.natDegree + ∑ i : Fin g.natDegree, C (a i) * X ^ (i : ℕ),
-    monic_X_pow_add hdeg, ?_⟩
-  ext k i
-  rw [coeff_coeff_swapPowerSeries, coeff_add, coeff_X_pow]
-  have hFk : (PowerSeries.coeff k F).coeff g.natDegree = if k = 0 then 1 else 0 := by
-    split_ifs with hk
-    · rw [hk, PowerSeries.coeff_zero_eq_constantCoeff_apply, hF₀, hg.coeff_natDegree]
-    · exact coeff_eq_zero_of_degree_lt (mem_degreeLT.mp (hF k (Nat.one_le_iff_ne_zero.mpr hk)))
-  rcases lt_trichotomy i g.natDegree with hi | rfl | hi
-  · rw [ite_eq_right hi.ne, zero_add, finsetSum_coeff,
-      Finset.sum_eq_single ⟨i, hi⟩ (fun j _ hj ↦ ?_) (by simp)]
-    · simp [a]
-    · rw [coeff_C_mul_X_pow, ite_eq_right (fun h ↦ hj (Fin.ext h.symm))]
-  · rw [ite_eq_left rfl, coeff_eq_zero_of_degree_lt hdeg, add_zero, hFk, PowerSeries.coeff_one]
-  · rw [ite_eq_right hi.ne', zero_add,
-      coeff_eq_zero_of_degree_lt (hdeg.trans (by exact_mod_cast hi)), map_zero]
-    rcases eq_or_ne k 0 with rfl | hk
-    · rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, hF₀, coeff_eq_zero_of_natDegree_lt hi]
-    · exact (coeff_eq_zero_of_degree_lt ((mem_degreeLT.mp
-        (hF k (Nat.one_le_iff_ne_zero.mpr hk))).trans (by exact_mod_cast hi))).symm
 
 /-- If `F₂ * B + F₁ * A = 0` for power series over `R[X]`, where the constant coefficient `g` of
 `F₂` is monic and coprime to that of `F₁` and every coefficient of `A` has degree `< deg g`, then
