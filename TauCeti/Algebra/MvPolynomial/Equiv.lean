@@ -225,6 +225,27 @@ theorem eval₂Hom_optionEquivRight_optionEquivLeft_symm {σ S : Type*} [CommSem
     · simp
   exact RingHom.congr_fun h p
 
+/-- Moving the univariate variable into the coefficient ring and then taking constant
+coefficients of all coefficients recovers the constant coefficient in the univariate
+variable. -/
+theorem map_constantCoeff_optionEquivRight_optionEquivLeft_symm {σ : Type*}
+    (p : Polynomial (MvPolynomial σ R)) :
+    map Polynomial.constantCoeff (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) p) =
+      p.coeff 0 := by
+  have hC : Polynomial.constantCoeff.comp (Polynomial.C : R →+* Polynomial R) = RingHom.id R := by
+    ext
+    simp
+  have h : (map (Polynomial.constantCoeff (R := R))).comp
+      ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ) :
+        Polynomial (MvPolynomial σ R) →+* MvPolynomial σ (Polynomial R)) =
+        Polynomial.constantCoeff := by
+    apply Polynomial.ringHom_ext
+    · intro g
+      rw [RingHom.comp_apply, RingHom.coe_coe, optionEquivRight_optionEquivLeft_symm_C, map_map,
+        hC, map_id, Polynomial.constantCoeff_apply, Polynomial.coeff_C_zero]
+    · simp
+  exact RingHom.congr_fun h p
+
 section Last
 
 open Finsupp
