@@ -357,7 +357,7 @@ theorem laplaceBeltrami_eq_laplacian
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
 
 /-- The squared norm has constant flat Laplace--Beltrami operator. -/
-theorem laplaceBeltrami_norm_sq
+@[simp] theorem laplaceBeltrami_norm_sq
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
