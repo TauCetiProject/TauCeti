@@ -51,7 +51,8 @@ bound on `ε` is needed.
 * L. Pottmeyer, [*Diophantine Approximation*](https://esaga.uni-due.de/f/lukas.pottmeyer/DioApp.pdf)
   (2022), §2.6, Theorem 2.6.5.
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 3, Theorem 3.20 (Siegel's
-  lemma) and ch. 6, Lemma 6.10.
+  lemma), and ch. 6, Lemma 6.10 (Thue's one-variable auxiliary polynomials, whose reduction to
+  `ℚ(α)` is followed here).
 -/
 
 public section

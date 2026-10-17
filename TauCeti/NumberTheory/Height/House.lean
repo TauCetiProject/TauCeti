@@ -301,9 +301,9 @@ theorem naiveHeight_le_two_mul_house_pow {x : F} (hx : IsIntegral ℤ x) (h0 : x
   naiveHeight_le_two_mul_pow_of_house_le hx (one_le_house hx h0) le_rfl
 
 /-- An element `α` of `F` such that `b α` is integral over `ℤ` for some `b ≠ 0` lies in an
-intermediate number field `K` of degree `deg α`, namely `ℚ(α)`, in which `b α` is integral and
-whose house of `α` is the house of `α`. This reduces the construction of auxiliary polynomials
-for such `α` to Siegel's lemma over a number field. -/
+intermediate number field `K` of degree `deg α`, namely `ℚ(α)`: there is `α' ∈ K` mapping to
+`α` such that `b α'` is integral and `house α' = house α`. This reduces the construction of
+auxiliary polynomials for such `α` to Siegel's lemma over a number field. -/
 theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b ≠ 0)
     (hbα : IsIntegral ℤ ((b : F) * α)) :
     ∃ (K : IntermediateField ℚ F) (_ : NumberField K) (α' : K), algebraMap K F α' = α ∧
