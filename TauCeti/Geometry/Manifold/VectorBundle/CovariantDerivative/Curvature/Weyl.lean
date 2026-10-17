@@ -81,6 +81,7 @@ def weylTensor (x : M) :
       ext w z; simp only [map_smul, LinearMap.smul_apply, LinearMap.sub_apply, smul_eq_mul]; ring)
 
 /-- Evaluation of the Weyl curvature tensor. -/
+@[simp]
 theorem weylTensor_apply (x : M) (u v w z : TangentSpace I x) :
     cov.weylTensor x u v w z =
       cov.riemannCurvatureTensor x u v w z -
@@ -118,7 +119,7 @@ theorem weylTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
     have hR := cov.curvatureTensor_eq_zero_of_finrank_le_one x h1
     have hs := cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x hR
     ext u v w z
-    simp [weylTensor_apply, schoutenTensor_apply, hR, hs]
+    simp [hR, hs]
   ext u v w z
   rw [weylTensor_apply,
     cov.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub x k (by omega) h,

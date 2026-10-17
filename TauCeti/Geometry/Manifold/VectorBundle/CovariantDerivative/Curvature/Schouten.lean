@@ -67,6 +67,7 @@ def schoutenTensor (x : M) : TangentSpace I x →ₗ[ℝ] TangentSpace I x →�
       (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1))) • innerₗ (TangentSpace I x))
 
 /-- Evaluation of the Schouten tensor. -/
+@[simp]
 theorem schoutenTensor_apply (x : M) (u v : TangentSpace I x) :
     cov.schoutenTensor x u v =
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2)⁻¹ *
@@ -133,17 +134,11 @@ theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
     (h : ∀ w u v, curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.schoutenTensor x = (k / 2) • innerₗ (TangentSpace I x) := by
-  have hmodel : ∀ w u v, curvature x w u v =
-      (k • innerₗ (TangentSpace I x)) u v • w -
-        (k • innerₗ (TangentSpace I x)) w v • u := by
-    intro w u v
-    rw [h w u v]
-    simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_sub, smul_smul, smul_eq_mul]
   have hn' : (3 : ℝ) ≤ Module.finrank ℝ (TangentSpace I x) := by exact_mod_cast hn
   have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 := by linarith
   have hn1 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 1 ≠ 0 := by linarith
   ext u v
-  rw [schoutenTensor_apply, cov.ricciTensor_eq_of_curvatureTensor_eq_smul_sub x _ hmodel,
+  rw [schoutenTensor_apply, cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x k h,
     cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x k h]
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
   field_simp
