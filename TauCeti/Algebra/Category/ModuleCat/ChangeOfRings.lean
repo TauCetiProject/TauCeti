@@ -36,14 +36,15 @@ namespace RingEquiv
 
 variable {R S : Type*} [Ring R] [Ring S]
 
+-- Simplify before Mathlib expands the counit into scalar-restriction comparison maps.
 /-- The counit of restriction of scalars along a ring equivalence keeps each element. -/
-@[simp]
+@[simp↓]
 theorem restrictScalarsEquivalence_counitIso_hom_app_apply (e : R ≃+* S)
     (M : ModuleCat.{v} R) (x : M) :
     (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app M x = x := (rfl)
 
 /-- The inverse counit of restriction of scalars along a ring equivalence keeps each element. -/
-@[simp]
+@[simp↓]
 theorem restrictScalarsEquivalence_counitIso_inv_app_apply (e : R ≃+* S)
     (M : ModuleCat.{v} R) (x : M) :
     (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
