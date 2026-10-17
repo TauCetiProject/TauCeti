@@ -82,7 +82,11 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
 
 end ExactRankFactorRange
 
-variable {K : Type*} [Field K] {m n : Type*} [Fintype m] [Fintype n]
+variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
+
+section
+
+variable [Fintype m]
 
 /-- A matrix has full row rank exactly when right multiplication by it is injective. -/
 theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
@@ -90,7 +94,8 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
   rw [vecMul_injective_iff, rank_eq_finrank_span_row,
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
-omit [Fintype m] in
+end
+
 /-- Every matrix with finitely many columns over a field factors through a space whose dimension
 is its rank. The factorization also applies to a rank-zero matrix, with inner index type `Fin 0`. -/
 theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
@@ -106,7 +111,6 @@ theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
   refine ⟨LinearMap.toMatrix' l, LinearMap.toMatrix' r, ?_⟩
   rw [← LinearMap.toMatrix'_comp, h, ← Matrix.toLin'_apply', LinearMap.toMatrix'_toLin']
 
-omit [Fintype m] in
 /-- A rank bound gives a factorization through `Fin r`, padding an exact-rank factorization
 with zero columns and rows when necessary. -/
 theorem exists_eq_mul_of_rank_le (A : Matrix m n K) {r : ℕ} (h : A.rank ≤ r) :
@@ -120,7 +124,6 @@ theorem exists_eq_mul_of_rank_le (A : Matrix m n K) {r : ℕ} (h : A.rank ≤ r)
   simpa only [submatrix_mul_equiv, fromCols_mul_fromRows, Matrix.zero_mul, add_zero,
     submatrix_id_id] using hA
 
-omit [Fintype m] in
 /-- Matrix rank is at most `r` if and only if the matrix is a product with inner index `Fin r`.
 In particular, rank is the least possible inner dimension of a factorization. -/
 theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
@@ -129,7 +132,6 @@ theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
   rintro ⟨L, R, rfl⟩
   exact (rank_mul_le_left L R).trans (by simpa using L.rank_le_card_width)
 
-omit [Fintype m] in
 /-- **Sylvester's rank inequality**: for an `m × n` matrix `A` and an `n × o` matrix `B` over a
 field, `rank A + rank B ≤ rank (A * B) + n`. Equivalently, multiplying by `A` lowers the rank of
 `B` by at most the nullity of `A`. -/

@@ -92,7 +92,7 @@ theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
   obtain ⟨i, hi⟩ := exists_isDistinguished hc x.2 hx0
   obtain ⟨j, hj⟩ := exists_isDistinguished hc y.2 hy0
   -- The dominant coefficient of the product `x * y = 1` sits in degree `i + j`.
-  have hdom := hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc
+  have hdom := hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc (norm_mul _ _)
   rw [hxy'] at hdom
   have hij : i + j = 0 := by
     by_contra hne
@@ -117,7 +117,7 @@ theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R :
   have hvg : (v : PowerSeries R)
       * (((w : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) * g) = g := by
     rw [← mul_assoc, hvu, one_mul]
-  have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc
+  have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hd
 
 end NormedRing
@@ -185,7 +185,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
   have hXnorm : (PowerSeries.X ^ s : PowerSeries R).gaussNorm norm c = c ^ s := by
     rw [gaussNorm_eq_of_forall_le hXle, PowerSeries.coeff_X_pow_self, norm_one, one_mul]
   have hrle : r.gaussNorm norm c ≤ c ^ s := by
-    have hmax := hf.gaussNorm_mul_add_eq_max hc hq hr
+    have hmax := hf.gaussNorm_mul_add_eq_max hc (fun _ ↦ norm_mul _ _) hq hr
     rw [hqr, hXnorm] at hmax
     rw [hmax]
     exact le_max_right _ _
@@ -236,7 +236,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
   obtain ⟨e, r', he, hr', her'⟩ := hωd.exists_mul_add_eq (by rw [hωs]; exact isUnit_one) hc hωr hfr
   have hself : e * q * f + r' = 1 * f + 0 := by
     rw [mul_assoc, ← hωq, her', one_mul, add_zero]
-  obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc
+  obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _)
     (he.mul hq) (PowerSeries.isRestricted_one c) hr'
     (fun m _ ↦ by simp) hself
   rw [hr0, add_zero] at her'
@@ -265,7 +265,7 @@ theorem IsDistinguished.eq_and_eq_of_mul_eq_mul (hf : IsDistinguished c s f) (hc
   have hdiff : ∀ m, s ≤ m → ((ω' : PowerSeries R) - (ω : PowerSeries R)).coeff m = 0 := by
     intro m hm
     rw [map_sub, Polynomial.coeff_coe, Polynomial.coeff_coe, hω'.coeff_eq hω hm, sub_self]
-  obtain ⟨hq1, hr1⟩ := hωd.eq_and_eq_of_mul_add_eq_mul_add hc
+  obtain ⟨hq1, hr1⟩ := hωd.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _)
     (q := ((v * e : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)) (r := 0)
     (q' := 1) (r' := (ω' : PowerSeries R) - (ω : PowerSeries R))
     (v * e).2 (PowerSeries.isRestricted_one c)

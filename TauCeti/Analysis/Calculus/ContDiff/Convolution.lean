@@ -34,15 +34,16 @@ which the derivative is a convolution with values in `F` rather than in a space 
 
 ## Main declarations
 
-* `TauCeti.convolutionExists_of_ae_norm_le_of_integrable`,
-  `TauCeti.convolutionExists_of_integrable_of_ae_norm_le`: an essentially bounded function
+* `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
+  `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`: an essentially bounded function
   convolves with an integrable one.
-* `TauCeti.continuous_convolution_right_of_dominated`: continuity of `f ⋆ g`.
-* `TauCeti.hasFDerivAt_convolution_right_of_dominated`: `D (f ⋆ g) = f ⋆ D g`.
-* `TauCeti.iteratedFDeriv_convolution_right_of_dominated`: `D^n (f ⋆ g) = f ⋆ D^n g`.
-* `TauCeti.contDiff_convolution_right_of_dominated`,
-  `TauCeti.contDiff_convolution_left_of_dominated`: `f ⋆ g` is `C^N` when the smooth factor is.
-* `TauCeti.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
+* `MeasureTheory.continuous_convolution_right_of_dominated`: continuity of `f ⋆ g`.
+* `MeasureTheory.hasFDerivAt_convolution_right_of_dominated`: `D (f ⋆ g) = f ⋆ D g`.
+* `MeasureTheory.iteratedFDeriv_convolution_right_of_dominated`: `D^n (f ⋆ g) = f ⋆ D^n g`.
+* `MeasureTheory.contDiff_convolution_right_of_dominated`,
+  `MeasureTheory.contDiff_convolution_left_of_dominated`: `f ⋆ g` is `C^N` when the smooth factor
+  is.
+* `MeasureTheory.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
 -/
@@ -51,19 +52,57 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace MeasureTheory
 
-open ContinuousLinearMap Filter Metric MeasureTheory Set
+open ContinuousLinearMap Filter Metric Set
 open scoped Convolution Topology
 
-variable {G E E' F : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-  [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant]
-  [μ.IsNegInvariant]
+variable {G E E' F : Type*} [NormedAddCommGroup G]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : G → E} {g : G → E'} {φ : G → ℝ} {M : ℝ}
 
 variable (L : E →L[ℝ] E' →L[ℝ] F)
+
+/-- If `g` is dominated by `φ` on unit translates and `‖L a b‖ ≤ C ‖a‖ ‖b‖`, then for `x` within
+distance one of `x₀`, the convolution integrand at `x` is dominated by `C M φ (x₀ - t)`. -/
+private theorem norm_convolution_integrand_le {C : ℝ} (hC : 0 ≤ C)
+    (hL : ∀ a b, ‖L a b‖ ≤ C * ‖a‖ * ‖b‖) (hgφ : ∀ z h, ‖h‖ ≤ 1 → ‖g (z + h)‖ ≤ φ z)
+    {x₀ x t : G} (hx : x ∈ ball x₀ 1) (ht : ‖f t‖ ≤ M) :
+    ‖L (f t) (g (x - t))‖ ≤ C * M * φ (x₀ - t) := by
+  have hxt : x - t = (x₀ - t) + (x - x₀) := by abel
+  have hφ := hgφ (x₀ - t) (x - x₀) (by rw [← dist_eq_norm]; exact (mem_ball.1 hx).le)
+  rw [hxt]
+  refine (hL _ _).trans ?_
+  have hM : 0 ≤ M := (norm_nonneg _).trans ht
+  gcongr
+
+variable [NormedSpace ℝ G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G} {N : ℕ∞}
+
+section
+
+variable [FiniteDimensional ℝ G]
+
+/-- If `g` is `C^N` with dominated derivatives and `n + 1 ≤ N`, then `D^n g` satisfies the
+hypotheses of `hasFDerivAt_convolution_right_of_dominated`. -/
+private theorem iteratedFDeriv_dominated (hg : ContDiff ℝ N g)
+    (hgφ : ∀ n : ℕ, n ≤ N → ∃ φ : G → ℝ, Integrable φ μ ∧
+      ∀ z h, ‖h‖ ≤ 1 → ‖iteratedFDeriv ℝ n g (z + h)‖ ≤ φ z) {n : ℕ} (hn : (n + 1 : ℕ) ≤ N) :
+    ContDiff ℝ 1 (iteratedFDeriv ℝ n g) ∧ Integrable (iteratedFDeriv ℝ n g) μ ∧
+      ∃ φ : G → ℝ, Integrable φ μ ∧
+        ∀ z h, ‖h‖ ≤ 1 → ‖fderiv ℝ (iteratedFDeriv ℝ n g) (z + h)‖ ≤ φ z := by
+  have hn' : (n : ℕ∞) ≤ N := le_trans (by exact_mod_cast n.le_succ) hn
+  obtain ⟨φ₀, hφ₀, hgφ₀⟩ := hgφ n hn'
+  obtain ⟨φ₁, hφ₁, hgφ₁⟩ := hgφ (n + 1) hn
+  have hgn : ContDiff ℝ 1 (iteratedFDeriv ℝ n g) :=
+    hg.iteratedFDeriv_right (by rw [add_comm]; exact_mod_cast hn)
+  refine ⟨hgn, hφ₀.mono' hgn.continuous.aestronglyMeasurable (ae_of_all _ fun z => ?_),
+    φ₁, hφ₁, fun z h hh => ?_⟩
+  · simpa using hgφ₀ z 0 (by simp)
+  · rw [norm_fderiv_iteratedFDeriv]
+    exact hgφ₁ z h hh
+
+variable [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
 
 /-- An essentially bounded function convolves with an integrable function at every point. -/
 theorem convolutionExists_of_ae_norm_le_of_integrable (hf : AEStronglyMeasurable f μ)
@@ -79,20 +118,6 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
     (hg : AEStronglyMeasurable g μ) (hgM : ∀ᵐ t ∂μ, ‖g t‖ ≤ M) : ConvolutionExists f g L μ :=
   fun x =>
     convolutionExistsAt_flip.1 (convolutionExists_of_ae_norm_le_of_integrable L.flip hg hgM hf x)
-
-omit [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G] in
-/-- If `g` is dominated by `φ` on unit translates and `‖L a b‖ ≤ C ‖a‖ ‖b‖`, then for `x` within
-distance one of `x₀`, the convolution integrand at `x` is dominated by `C M φ (x₀ - t)`. -/
-private theorem norm_convolution_integrand_le {C : ℝ} (hC : 0 ≤ C)
-    (hL : ∀ a b, ‖L a b‖ ≤ C * ‖a‖ * ‖b‖) (hgφ : ∀ z h, ‖h‖ ≤ 1 → ‖g (z + h)‖ ≤ φ z)
-    {x₀ x t : G} (hx : x ∈ ball x₀ 1) (ht : ‖f t‖ ≤ M) :
-    ‖L (f t) (g (x - t))‖ ≤ C * M * φ (x₀ - t) := by
-  have hxt : x - t = (x₀ - t) + (x - x₀) := by abel
-  have hφ := hgφ (x₀ - t) (x - x₀) (by rw [← dist_eq_norm]; exact (mem_ball.1 hx).le)
-  rw [hxt]
-  refine (hL _ _).trans ?_
-  have hM : 0 ≤ M := (norm_nonneg _).trans ht
-  gcongr
 
 /-- The convolution of an essentially bounded function with a continuous function that is
 dominated, uniformly on unit translates, by an integrable function is continuous. -/
@@ -129,39 +154,6 @@ theorem hasFDerivAt_convolution_right_of_dominated (hf : AEStronglyMeasurable f 
   refine norm_convolution_integrand_le (L.precompR G) (norm_nonneg L) (fun a B => ?_) hgφ hx ht
   exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right (L.le_opNorm a) (norm_nonneg _))
 
-variable {N : ℕ∞}
-
-omit [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [BorelSpace G] [SFinite μ]
-  [μ.IsAddLeftInvariant] [μ.IsNegInvariant] in
-/-- A linear isometric equivalence commutes with the Bochner integral. Stated with explicit source
-and target spaces, so that it applies to the currying equivalences of multilinear maps, whose
-normed-group instance paths differ from the ones `ContinuousLinearEquiv.integral_comp_comm`
-infers. -/
-private theorem integral_linearIsometryEquiv {X Y : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] (e : X ≃ₗᵢ[ℝ] Y) (u : G → X) :
-    ∫ t, e (u t) ∂μ = e (∫ t, u t ∂μ) :=
-  e.toContinuousLinearEquiv.integral_comp_comm u
-
-omit [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant] in
-/-- If `g` is `C^N` with dominated derivatives and `n + 1 ≤ N`, then `D^n g` satisfies the
-hypotheses of `hasFDerivAt_convolution_right_of_dominated`. -/
-private theorem iteratedFDeriv_dominated (hg : ContDiff ℝ N g)
-    (hgφ : ∀ n : ℕ, n ≤ N → ∃ φ : G → ℝ, Integrable φ μ ∧
-      ∀ z h, ‖h‖ ≤ 1 → ‖iteratedFDeriv ℝ n g (z + h)‖ ≤ φ z) {n : ℕ} (hn : (n + 1 : ℕ) ≤ N) :
-    ContDiff ℝ 1 (iteratedFDeriv ℝ n g) ∧ Integrable (iteratedFDeriv ℝ n g) μ ∧
-      ∃ φ : G → ℝ, Integrable φ μ ∧
-        ∀ z h, ‖h‖ ≤ 1 → ‖fderiv ℝ (iteratedFDeriv ℝ n g) (z + h)‖ ≤ φ z := by
-  have hn' : (n : ℕ∞) ≤ N := le_trans (by exact_mod_cast n.le_succ) hn
-  obtain ⟨φ₀, hφ₀, hgφ₀⟩ := hgφ n hn'
-  obtain ⟨φ₁, hφ₁, hgφ₁⟩ := hgφ (n + 1) hn
-  have hgn : ContDiff ℝ 1 (iteratedFDeriv ℝ n g) :=
-    hg.iteratedFDeriv_right (by rw [add_comm]; exact_mod_cast hn)
-  refine ⟨hgn, hφ₀.mono' hgn.continuous.aestronglyMeasurable (ae_of_all _ fun z => ?_),
-    φ₁, hφ₁, fun z h hh => ?_⟩
-  · simpa using hgφ₀ z 0 (by simp)
-  · rw [norm_fderiv_iteratedFDeriv]
-    exact hgφ₁ z h hh
-
 /-- **Iterated derivatives of a convolution.** Let `f` be essentially bounded and `g` be `C^N`,
 with each derivative of order at most `N` dominated, uniformly on unit translates, by an
 integrable function. Then for `n ≤ N`, `D^n (f ⋆[L] g) = f ⋆[L_n] D^n g`, where
@@ -177,8 +169,10 @@ theorem iteratedFDeriv_convolution_right_of_dominated (hf : AEStronglyMeasurable
   | zero =>
     funext x
     simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, convolution_def]
-    rw [← integral_linearIsometryEquiv]
-    congr 1 with t m
+    refine ((continuousMultilinearCurryFin0 ℝ G F).symm.toContinuousLinearEquiv.integral_comp_comm
+      _).symm.trans (integral_congr_ae (ae_of_all _ fun t => ?_))
+    ext m
+    rfl
   | succ n ih =>
     have hn' : (n : ℕ∞) ≤ N := le_trans (by exact_mod_cast n.le_succ) hn
     funext x
@@ -186,13 +180,15 @@ theorem iteratedFDeriv_convolution_right_of_dominated (hf : AEStronglyMeasurable
     rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, ih hn',
       (hasFDerivAt_convolution_right_of_dominated _ hf hfM hgn hgi hφ hgφn x).fderiv,
       convolution_def, convolution_def]
-    refine (integral_linearIsometryEquiv (μ := μ)
-      (X := G →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin n => G) F)
-      (Y := ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) => G) F)
-      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) => G) F).symm _).symm.trans
+    refine (ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (μ := μ)
+      (E := G →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin n => G) F)
+      (F := ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) => G) F)
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) => G)
+        F).symm.toContinuousLinearEquiv _).symm.trans
       (integral_congr_ae (ae_of_all _ fun t => ?_))
     ext m
     simp [iteratedFDeriv_succ_eq_comp_left]
+    rfl
 
 /-- **Smoothness of a convolution.** Let `f` be essentially bounded and `g` be `C^N`, with each
 derivative of order at most `N` dominated, uniformly on unit translates, by an integrable
@@ -233,7 +229,10 @@ theorem iteratedFDeriv_convolution_left_of_dominated (hf : ContDiff ℝ N f)
   rw [← convolution_flip, iteratedFDeriv_convolution_right_of_dominated L.flip hg hgM hf hfφ hn,
     ← convolution_flip]
 
-omit [FiniteDimensional ℝ G] [μ.IsNegInvariant] in
+end
+
+variable [SFinite μ] [μ.IsAddLeftInvariant]
+
 /-- **Directional derivatives of a convolution.** If `f` is locally integrable and `g` is `C¹`
 with compact support, then the derivative of `f ⋆ g` in a direction `v` is the convolution of `f`
 with the derivative of `g` in the direction `v`. -/
@@ -243,4 +242,4 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
 
-end TauCeti
+end MeasureTheory
