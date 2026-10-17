@@ -498,11 +498,6 @@ theorem X_mul_C (a : R) :
   rw [monomial_mul_apply, pow_zero, Module.End.one_apply, coeffLeft_monomial]
   simp
 
-/-- The defining Ore relation, stated using the coefficient ring homomorphism. -/
-theorem X_mul_CRingHom (a : R) :
-    X (σ := σ) (δ := δ) * CRingHom a = CRingHom (σ a) * X + CRingHom (δ a) := by
-  simpa only [CRingHom_eq_C] using X_mul_C a
-
 @[simp]
 theorem X_pow (n : ℕ) : X (σ := σ) (δ := δ) ^ n = monomial n 1 := by
   induction n with
