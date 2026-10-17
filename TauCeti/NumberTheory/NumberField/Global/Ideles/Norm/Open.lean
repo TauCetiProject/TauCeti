@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
-# Idele norm groups are open of finite index
+# Openness of idele norms and finite index of idele-class norms
 
 Let `L/K` be a finite extension of number fields. The idele norm group `N_{L/K}(I_L)` contains an
 idele congruence subgroup of `I_K` (`exists_ideleCongruenceSubgroup_le_range_ideleNormMap`), so it
@@ -87,7 +87,7 @@ theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
     exact ⟨m, hm⟩
   choose m hm using hdeep
   -- An `n`-th power of a local unit is a local norm.
-  have hpow := range_powMonoidHom_le_range_normUnits_baseChange K L
+  have hpow := Algebra.range_powMonoidHom_le_range_normUnits_baseChange K L
   -- The modulus `∏_{v ∈ S} v ^ m v`, divisible by every real place.
   let 𝔪 : Modulus K :=
     { finitePart := ∏ v ∈ S, v.asIdeal ^ m v
@@ -143,8 +143,6 @@ is the order of the finite ray class group. -/
 theorem finiteIndex_range_ideleClassNormMap :
     (ideleClassNormMap K L).toMonoidHom.range.FiniteIndex := by
   obtain ⟨𝔪, h𝔪⟩ := exists_raySubgroup_le_range_ideleClassNormMap K L
-  have : (raySubgroup 𝔪).FiniteIndex :=
-    ⟨by rw [IdeleClassGroup.index_raySubgroup]; exact Nat.card_pos.ne'⟩
   exact Subgroup.finiteIndex_of_le h𝔪
 
 end TauCeti.GlobalNumberFields

@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Open
 
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
-import TauCeti.NumberTheory.ClassFieldTheory.Formation.TrivialLayer
 
 /-!
 # Global norm subgroups
@@ -152,37 +151,15 @@ from every intermediate field, so `globalNormSubgroup K` is monotone in `V`. The
 cuts out `K` itself, whose norm subgroup is all of `C_K`.
 -/
 
--- The proofs in this section adapt those of `groundEquiv_localGroundEquiv`,
--- `localNormSubgroup_mono` and `localNormSubgroup_top` in
--- `TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup`, with `localGroundEquiv`
--- replaced by `globalGroundEquiv` followed by `NormalLayer.groundEquivOfOpenNormal`.
-
-/-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
-identifications of `C_K` with the ground levels of the layers of `W` and `V`. -/
-@[simp]
-theorem groundEquiv_groundEquivOfOpenNormal
-    {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)} (h : V ≤ W)
-    (c : Additive (IdeleClassGroup (𝓞 K) K)) :
-    (LayerRefinement.ofOpenNormal h).groundEquiv (globalFormation K)
-        (NormalLayer.groundEquivOfOpenNormal (globalFormation K) W (globalGroundEquiv K c)) =
-      NormalLayer.groundEquivOfOpenNormal (globalFormation K) V (globalGroundEquiv K c) := by
-  apply Subtype.ext
-  rw [LayerRefinement.groundEquiv_apply_coe, NormalLayer.groundEquivOfOpenNormal_apply_coe,
-    NormalLayer.groundEquivOfOpenNormal_apply_coe]
-
 variable (K) in
 /-- **Global norm subgroups are monotone in the layer subgroup.** If `V ≤ W`, then the class field
 of `W` is contained in that of `V`, and every norm from the larger field is a norm from the smaller
 field. -/
 theorem globalNormSubgroup_mono : Monotone (globalNormSubgroup K) := by
   intro V W h c hc
-  let T := LayerRefinement.ofOpenNormal h
-  obtain ⟨y, hy, hyc⟩ := T.normSubgroup_le_map (globalFormation K) (mem_globalNormSubgroup_iff.1 hc)
-  have hy' : y = NormalLayer.groundEquivOfOpenNormal (globalFormation K) W
-      (globalGroundEquiv K (.ofMul c)) :=
-    (T.groundEquiv (globalFormation K)).injective <|
-      hyc.trans (groundEquiv_groundEquivOfOpenNormal h (.ofMul c)).symm
-  exact mem_globalNormSubgroup_iff.2 (hy' ▸ hy)
+  apply mem_globalNormSubgroup_iff.2
+  exact Formation.mem_normSubgroup.1 ((globalFormation K).normSubgroup_mono h
+    (Formation.mem_normSubgroup.2 (mem_globalNormSubgroup_iff.1 hc)))
 
 variable (K) in
 /-- **The top layer has the whole idele class group as its norm subgroup.** It cuts out the ground
@@ -191,15 +168,11 @@ class-field correspondence. -/
 @[simp]
 theorem globalNormSubgroup_top :
     globalNormSubgroup K (openNormalSubgroupTop (AbsoluteGaloisGroup K)) = ⊤ := by
-  let V := openNormalSubgroupTop (AbsoluteGaloisGroup K)
-  have hV : (NormalLayer.ofOpenNormal V).top = (NormalLayer.ofOpenNormal V).ground := by
-    rw [NormalLayer.top_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
-    apply OpenSubgroup.toSubgroup_injective
-    exact openNormalSubgroupTop_toSubgroup _
   apply top_unique
   intro c _
-  rw [mem_globalNormSubgroup_iff,
-    (NormalLayer.ofOpenNormal V).normSubgroup_eq_top_of_top_eq_ground (globalFormation K) hV]
+  apply mem_globalNormSubgroup_iff.2
+  apply Formation.mem_normSubgroup.1
+  rw [Formation.normSubgroup_top]
   exact Submodule.mem_top
 
 end TauCeti.ClassFieldTheory
