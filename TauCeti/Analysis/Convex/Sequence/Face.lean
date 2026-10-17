@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Supporting
+public import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Order.Interval.Set.Nat
 import Mathlib.Order.Interval.Set.OrdConnectedLinear
 import Mathlib.Tactic.Linarith
 
@@ -25,8 +27,11 @@ intercept implicit. The intercept is nevertheless unique, and equals the support
 finite face at every real slope. A finite edge whose slope is strictly greater than `σ`
 also guarantees a finite face of slope `σ`, with both endpoints at or before that edge.
 Thus unbounded finite edge slopes guarantee finite faces at every real slope, even on an
-unbounded domain. These absolute endpoints are the geometric interface later used to identify
-extremal coefficients and count slope multiplicities.
+unbounded domain. Finite unit slopes before a finite face are strictly less than its slope,
+on the face they equal its slope, and after it they are strictly greater. Consequently, on a
+domain with a first finite index, a finite face's left and right endpoints count the unit
+slopes respectively below and at most the face slope. These absolute endpoints are the
+geometric interface later used to identify extremal coefficients and count slope multiplicities.
 
 ## References
 
@@ -163,6 +168,156 @@ theorem unique (hf : IsFiniteFace h σ l u) {l' u' : ℕ}
       (supportingValue_eq_coe_of_mem_supportingFace hd hl'd))
   subst d
   exact (Set.Icc_eq_Icc_iff hf.left_le_right).mp (hface.symm.trans hface')
+
+/-- The height at the left endpoint of a finite face is finite. -/
+theorem left_ne_top (hf : IsFiniteFace h σ l u) : h l ≠ ⊤ := by
+  obtain ⟨c, _, hface⟩ := hf.exists_intercept
+  have hl : l ∈ supportingFace h σ c :=
+    hface.symm.subset ⟨le_rfl, hf.left_le_right⟩
+  rw [mem_supportingFace] at hl
+  rw [hl]
+  exact WithTop.coe_ne_top
+
+/-- The height at the right endpoint of a finite face is finite. -/
+theorem right_ne_top (hf : IsFiniteFace h σ l u) : h u ≠ ⊤ := by
+  obtain ⟨c, _, hface⟩ := hf.exists_intercept
+  have hu : u ∈ supportingFace h σ c :=
+    hface.symm.subset ⟨hf.left_le_right, le_rfl⟩
+  rw [mem_supportingFace] at hu
+  rw [hu]
+  exact WithTop.coe_ne_top
+
+/-- A finite unit edge strictly before a finite face has slope strictly less than the
+face slope. -/
+theorem unitSlope_lt (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
+    {i : ℕ} (hi : i ∈ finiteEdges h) (hil : i < l) : unitSlope h i < σ := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hif := mem_finiteEdges.mp hi
+  have hl : l ∈ supportingFace h σ c :=
+    hface.symm.subset ⟨le_rfl, hf.left_le_right⟩
+  have hl_real : (h l).untop₀ = c + σ * l := by
+    rw [mem_supportingFace] at hl
+    rw [hl, WithTop.untop₀_coe]
+  have hi_lower := hc i
+  rw [← WithTop.coe_untop₀_of_ne_top hif.1, WithTop.coe_le_coe] at hi_lower
+  have hi_ne : (h i).untop₀ ≠ c + σ * i := by
+    intro hi_eq
+    have hi_mem : i ∈ supportingFace h σ c := by
+      rw [mem_supportingFace, ← WithTop.coe_untop₀_of_ne_top hif.1,
+        WithTop.coe_eq_coe, hi_eq]
+    have := Set.mem_Icc.mp (hface ▸ hi_mem)
+    omega
+  have hi_strict : c + σ * i < (h i).untop₀ :=
+    lt_of_le_of_ne hi_lower hi_ne.symm
+  have hs := hh.mul_slope_le_sub hif.1 hf.left_ne_top hif.1 hif.2 hil.le le_rfl
+  rw [hl_real, Nat.cast_sub hil.le] at hs
+  have hil_real : (i : ℝ) < l := Nat.cast_lt.mpr hil
+  nlinarith
+
+/-- Every unit edge contained in a finite face has slope equal to the face slope. -/
+theorem unitSlope_eq (hf : IsFiniteFace h σ l u) {i : ℕ}
+    (hli : l ≤ i) (hiu : i < u) : unitSlope h i = σ := by
+  obtain ⟨c, _, hface⟩ := hf.exists_intercept
+  have hi : i ∈ supportingFace h σ c := hface.symm.subset ⟨hli, hiu.le⟩
+  have hi' : i + 1 ∈ supportingFace h σ c :=
+    hface.symm.subset ⟨hli.trans (Nat.le_succ i), hiu⟩
+  rw [unitSlope_def]
+  rw [mem_supportingFace] at hi hi'
+  rw [hi, hi', WithTop.untop₀_coe, WithTop.untop₀_coe]
+  push_cast
+  ring
+
+/-- A finite unit edge at or after the right endpoint of a finite face has slope strictly
+greater than the face slope. -/
+theorem lt_unitSlope (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
+    {i : ℕ} (hi : i ∈ finiteEdges h) (hui : u ≤ i) : σ < unitSlope h i := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hif := mem_finiteEdges.mp hi
+  have hu : u ∈ supportingFace h σ c :=
+    hface.symm.subset ⟨hf.left_le_right, le_rfl⟩
+  have hu_real : (h u).untop₀ = c + σ * u := by
+    rw [mem_supportingFace] at hu
+    rw [hu, WithTop.untop₀_coe]
+  have hi_lower := hc (i + 1)
+  rw [← WithTop.coe_untop₀_of_ne_top hif.2, WithTop.coe_le_coe] at hi_lower
+  push_cast at hi_lower
+  have hi_ne : (h (i + 1)).untop₀ ≠ c + σ * (i + 1) := by
+    intro hi_eq
+    have hi_mem : i + 1 ∈ supportingFace h σ c := by
+      rw [mem_supportingFace, ← WithTop.coe_untop₀_of_ne_top hif.2,
+        WithTop.coe_eq_coe, hi_eq]
+      norm_num
+    have := Set.mem_Icc.mp (hface ▸ hi_mem)
+    omega
+  have hi_strict : c + σ * (i + 1) < (h (i + 1)).untop₀ :=
+    lt_of_le_of_ne hi_lower hi_ne.symm
+  have hs := hh.sub_le_mul_slope hf.right_ne_top hif.2 hif.1 hif.2
+    (hui.trans (Nat.le_succ i)) le_rfl
+  rw [hu_real, Nat.cast_sub (hui.trans (Nat.le_succ i))] at hs
+  push_cast at hs
+  have hui_real : (u : ℝ) ≤ i := Nat.cast_le.mpr hui
+  have hui_succ_real : (u : ℝ) < i + 1 := by
+    exact_mod_cast (lt_of_le_of_lt hui (Nat.lt_succ_self i))
+  nlinarith
+
+/-- A finite face's left endpoint is the first finite index plus the number of finite unit
+slopes strictly below the face slope. The finite domain may be bounded or unbounded. -/
+theorem left_eq_start_add_ncard_unitSlope_lt (hf : IsFiniteFace h σ l u)
+    (hh : IsConvexSeq h) {a : ℕ} (ha : h a ≠ ⊤)
+    (hfirst : ∀ n, h n ≠ ⊤ → a ≤ n) :
+    l = a + {i | i ∈ finiteEdges h ∧ unitSlope h i < σ}.ncard := by
+  have hal : a ≤ l := hfirst l hf.left_ne_top
+  have hset : {i | i ∈ finiteEdges h ∧ unitSlope h i < σ} = Set.Ico a l := by
+    ext i
+    simp only [Set.mem_ofPred_eq, Set.mem_Ico]
+    constructor
+    · rintro ⟨hi_edge, hslope⟩
+      have hif := mem_finiteEdges.mp hi_edge
+      refine ⟨hfirst i hif.1, ?_⟩
+      by_contra hil
+      have hli : l ≤ i := le_of_not_gt hil
+      by_cases hiu : i < u
+      · have heq := hf.unitSlope_eq hli hiu
+        linarith
+      · have hgt := hf.lt_unitSlope hh hi_edge (le_of_not_gt hiu)
+        linarith
+    · rintro ⟨hai, hil⟩
+      have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le ha hf.left_ne_top hai hil.le
+      have hi' : h (i + 1) ≠ ⊤ := hh.ne_top_of_le_of_le ha hf.left_ne_top
+        (hai.trans (Nat.le_succ i)) (Nat.succ_le_iff.mpr hil)
+      have hi_edge : i ∈ finiteEdges h := mem_finiteEdges.mpr ⟨hi, hi'⟩
+      exact ⟨hi_edge, hf.unitSlope_lt hh hi_edge hil⟩
+  rw [hset, Set.ncard_Ico_nat]
+  omega
+
+/-- A finite face's right endpoint is the first finite index plus the number of finite unit
+slopes at most the face slope. The finite domain may be bounded or unbounded. -/
+theorem right_eq_start_add_ncard_unitSlope_le (hf : IsFiniteFace h σ l u)
+    (hh : IsConvexSeq h) {a : ℕ} (ha : h a ≠ ⊤)
+    (hfirst : ∀ n, h n ≠ ⊤ → a ≤ n) :
+    u = a + {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.ncard := by
+  have hau : a ≤ u := hfirst u hf.right_ne_top
+  have hset : {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ} = Set.Ico a u := by
+    ext i
+    simp only [Set.mem_ofPred_eq, Set.mem_Ico]
+    constructor
+    · rintro ⟨hi_edge, hslope⟩
+      have hif := mem_finiteEdges.mp hi_edge
+      refine ⟨hfirst i hif.1, ?_⟩
+      by_contra hiu
+      have hgt := hf.lt_unitSlope hh hi_edge (le_of_not_gt hiu)
+      linarith
+    · rintro ⟨hai, hiu⟩
+      have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le ha hf.right_ne_top hai hiu.le
+      have hi' : h (i + 1) ≠ ⊤ := hh.ne_top_of_le_of_le ha hf.right_ne_top
+        (hai.trans (Nat.le_succ i)) (Nat.succ_le_iff.mpr hiu)
+      have hi_edge : i ∈ finiteEdges h := mem_finiteEdges.mpr ⟨hi, hi'⟩
+      refine ⟨hi_edge, ?_⟩
+      by_cases hil : i < l
+      · exact (hf.unitSlope_lt hh hi_edge hil).le
+      · exact (hf.unitSlope_eq (le_of_not_gt hil) hiu).le
+  rw [hset, Set.ncard_Ico_nat]
+  omega
 
 end IsFiniteFace
 
