@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Operator
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalizer
 public import TauCeti.NumberTheory.ModularForms.Fricke.Operator
 import Mathlib.LinearAlgebra.Matrix.Integer
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
@@ -41,7 +42,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
 ## Main definitions
 
 * `TauCeti.atkinLehnerOperatorGamma1`, `TauCeti.atkinLehnerOperatorGamma1Cusp`: the slash by an
-  Atkin–Lehner matrix on `M_k(Γ₁(N))` and on `S_k(Γ₁(N))`.
+  Atkin–Lehner matrix on `M_k(Γ₁(N))` and on `S_k(Γ₁(N))`, and their normalized
+  counterparts `TauCeti.normalizedAtkinLehnerOperatorGamma1` and
+  `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp`.
 * `TauCeti.atkinLehnerGamma1CharRestrict`, `TauCeti.atkinLehnerGamma1CharCuspRestrict`: those
   operators restricted to linear maps `M_k(N, χ) → M_k(N, χ ∘ ι_Q)` and
   `S_k(N, χ) → S_k(N, χ ∘ ι_Q)`.
@@ -208,6 +211,68 @@ theorem atkinLehnerOperatorGamma1_coe_cuspForm (hQ : 0 < Q) (hQN : Q ∣ N)
     rw [coe_atkinLehnerOperatorGamma1, ModularFormClass.coe_modularForm,
       ModularFormClass.coe_modularForm, coe_atkinLehnerOperatorGamma1Cusp]
 
+/-! ### The arithmetic normalization -/
+
+/-- **The normalized Atkin–Lehner operator on `M_k(Γ₁(N))`**:
+`𝒲_Q = (√Q) ^ (2 - k) • W_Q`.  The matrix remains an argument because on `Γ₁(N)` two
+Atkin–Lehner matrices can differ by a nontrivial diamond operator. -/
+noncomputable def normalizedAtkinLehnerOperatorGamma1 (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Module.End ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+  atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1 hQ hQN h k
+
+/-- Defining equation for `normalizedAtkinLehnerOperatorGamma1`. -/
+theorem normalizedAtkinLehnerOperatorGamma1_def (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    normalizedAtkinLehnerOperatorGamma1 hQ hQN h k =
+      atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1 hQ hQN h k := (rfl)
+
+/-- On underlying functions, the normalized Atkin–Lehner operator is the normalized slash by
+the chosen matrix. -/
+@[simp]
+theorem coe_normalizedAtkinLehnerOperatorGamma1 (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    ⇑(normalizedAtkinLehnerOperatorGamma1 hQ hQN h k f) =
+      atkinLehnerNormalizer Q k • (⇑f ∣[k] atkinLehnerGL hQ h) := by
+  rw [normalizedAtkinLehnerOperatorGamma1, LinearMap.smul_apply, FunLike.coe_smul,
+    coe_atkinLehnerOperatorGamma1]
+
+/-- **The normalized Atkin–Lehner operator on `S_k(Γ₁(N))`**, the cusp-form counterpart of
+`normalizedAtkinLehnerOperatorGamma1`. -/
+noncomputable def normalizedAtkinLehnerOperatorGamma1Cusp (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+  atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1Cusp hQ hQN h k
+
+/-- Defining equation for `normalizedAtkinLehnerOperatorGamma1Cusp`. -/
+theorem normalizedAtkinLehnerOperatorGamma1Cusp_def (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN h k =
+      atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1Cusp hQ hQN h k := (rfl)
+
+/-- On underlying functions, the normalized cusp-form operator is the normalized slash by the
+chosen matrix. -/
+@[simp]
+theorem coe_normalizedAtkinLehnerOperatorGamma1Cusp (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    ⇑(normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
+      atkinLehnerNormalizer Q k • (⇑f ∣[k] atkinLehnerGL hQ h) := by
+  rw [normalizedAtkinLehnerOperatorGamma1Cusp, LinearMap.smul_apply, FunLike.coe_smul,
+    coe_atkinLehnerOperatorGamma1Cusp]
+
+/-- The normalized operators on modular and cusp forms agree under coercion. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorGamma1_coe_cuspForm (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ)
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    normalizedAtkinLehnerOperatorGamma1 hQ hQN h k
+        (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      (normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN h k f :
+        ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  rw [normalizedAtkinLehnerOperatorGamma1, normalizedAtkinLehnerOperatorGamma1Cusp,
+    LinearMap.smul_apply, LinearMap.smul_apply, atkinLehnerOperatorGamma1_coe_cuspForm]
+  rfl
+
 /-- **The Atkin–Lehner operator on `M_k(Γ₁(N))` is injective**: slashing by `W⁻¹` undoes it. -/
 theorem atkinLehnerOperatorGamma1_injective (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
@@ -227,6 +292,24 @@ theorem atkinLehnerOperatorGamma1Cusp_injective (hQ : 0 < Q) (hQN : Q ∣ N)
       SlashAction.slash_one] using
       congrArg (fun F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k ↦
         ⇑F ∣[k] (atkinLehnerGL hQ h)⁻¹) hfg
+
+/-- The normalized Atkin–Lehner operator on `M_k(Γ₁(N))` is injective. -/
+theorem normalizedAtkinLehnerOperatorGamma1_injective (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Function.Injective (normalizedAtkinLehnerOperatorGamma1 hQ hQN h k) := by
+  intro f g hfg
+  apply atkinLehnerOperatorGamma1_injective hQ hQN h k
+  apply (atkinLehnerNormalizer_ne_zero hQ.ne' k).isUnit.smul_left_cancel.mp
+  simpa only [normalizedAtkinLehnerOperatorGamma1, LinearMap.smul_apply] using hfg
+
+/-- The normalized Atkin–Lehner operator on `S_k(Γ₁(N))` is injective. -/
+theorem normalizedAtkinLehnerOperatorGamma1Cusp_injective (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Function.Injective (normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN h k) := by
+  intro f g hfg
+  apply atkinLehnerOperatorGamma1Cusp_injective hQ hQN h k
+  apply (atkinLehnerNormalizer_ne_zero hQ.ne' k).isUnit.smul_left_cancel.mp
+  simpa only [normalizedAtkinLehnerOperatorGamma1Cusp, LinearMap.smul_apply] using hfg
 
 /-- **The diamond shift** `W_Q ∘ ⟨d⟩ = ⟨ι_Q d⟩ ∘ W_Q` on `M_k(Γ₁(N))`, where `ι_Q` inverts the
 residue of `d` modulo `Q` and keeps its residue modulo `N / Q`. -/

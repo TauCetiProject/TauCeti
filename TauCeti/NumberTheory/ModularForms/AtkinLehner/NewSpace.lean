@@ -29,6 +29,9 @@ stability needed for Atkin and Li's pseudo-eigenvalues: `W_Q` carries the new pa
   `S_k(Γ₁(N))` preserves the new subspace.
 * `TauCeti.atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace`: on a
   nebentypus component it preserves newness and transports the character by `ι_Q`.
+* `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew` and
+  `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace`:
+  the corresponding statements for the normalized operator.
 
 ## References
 
@@ -96,5 +99,27 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace
         (χ.comp ((hW.isExactDivisor hQ.ne' hQN).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) :=
   ⟨atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew hQ hQN hW hf.1,
     atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace hQ hQN hW hf.2⟩
+
+/-- **A normalized Atkin–Lehner operator preserves the new subspace of `S_k(Γ₁(N))`.** -/
+theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
+    (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
+    normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f ∈ cuspFormsNew N k := by
+  rw [normalizedAtkinLehnerOperatorGamma1Cusp_def, LinearMap.smul_apply]
+  exact Submodule.smul_mem _ _
+    (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew h.pos h.dvd hW hf)
+
+/-- **A normalized Atkin–Lehner operator transports new nebentypus spaces.** -/
+theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace
+    (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W) {χ : (ZMod N)ˣ →* ℂˣ}
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormsNew N k ⊓ cuspFormCharSpace k χ) :
+    normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f ∈
+      cuspFormsNew N k ⊓ cuspFormCharSpace k
+        (χ.comp ((hW.isExactDivisor h.ne_zero h.dvd).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) := by
+  rw [normalizedAtkinLehnerOperatorGamma1Cusp_def, LinearMap.smul_apply]
+  exact Submodule.smul_mem _ _
+    (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace
+      h.pos h.dvd hW hf)
 
 end TauCeti
