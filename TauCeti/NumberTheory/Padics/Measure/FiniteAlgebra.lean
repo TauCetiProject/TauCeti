@@ -42,13 +42,11 @@ variable [Monoid A] [ContinuousMul A] [LocallyCompactSpace A]
 /-- Mathlib's algebra homomorphism is the finite Dirac expansion of the coefficients. -/
 theorem monoidAlgebraHom_eq_ofFiniteCoefficients (c : MonoidAlgebra R A) :
     monoidAlgebraHom c = ofFiniteCoefficients c.coeff := by
-  induction c using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add c d hc hd => simp [hc, hd]
-  | single a r =>
-    have h : MonoidAlgebra.single a r = r • MonoidAlgebra.single a (1 : R) := by simp
-    rw [h, map_smul, monoidAlgebraHom_single, MonoidAlgebra.coeff_smul, map_smul]
+  have h : (monoidAlgebraHom : MonoidAlgebra R A →ₐ[R] D(A, R)).toLinearMap =
+      ofFiniteCoefficients.comp (MonoidAlgebra.coeffLinearEquiv R).toLinearMap := by
+    ext a
     simp
+  exact LinearMap.congr_fun h c
 
 end Reconstruction
 
