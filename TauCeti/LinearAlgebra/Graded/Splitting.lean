@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
-public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 
 /-!
 # Homogeneous splittings of surjective linear maps
@@ -30,8 +30,6 @@ contract a complex of vector spaces onto its cohomology.
 
 public section
 
-open scoped DirectSum
-
 namespace TauCeti.LinearMap.IsHomogeneous
 
 universe uR uM uN
@@ -46,27 +44,7 @@ theorem exists_rightInverse [Module.Projective R N] (hf : IsHomogeneous f G.piec
     (hsurj : Function.Surjective f) :
     ∃ g : N →ₗ[R] M, f ∘ₗ g = LinearMap.id ∧ IsHomogeneous g H.piece G.piece (-r) := by
   obtain ⟨s, hs⟩ := f.exists_rightInverse_of_surjective (LinearMap.range_eq_top.mpr hsurj)
-  let gq (q : ℤ) : H.piece q →ₗ[R] G.piece (q - r) :=
-    DirectSum.component R ℤ (fun p ↦ G.piece p) (q - r) ∘ₗ
-      (DirectSum.decomposeLinearEquiv G.piece).toLinearMap ∘ₗ s ∘ₗ (H.piece q).subtype
-  let g : N →ₗ[R] M :=
-    DirectSum.toModule R ℤ M (fun q ↦ (G.piece (q - r)).subtype ∘ₗ gq q) ∘ₗ
-      (DirectSum.decomposeLinearEquiv H.piece).toLinearMap
-  have hg (q : ℤ) (y : H.piece q) :
-      g y = (DirectSum.decompose G.piece (s y) (q - r) : M) := by
-    simp only [g, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.toModule_lof]
-    rfl
-  refine ⟨g, ?_, ?_⟩
-  · apply H.linearMap_ext
-    intro q y hy
-    rw [LinearMap.comp_apply, hg q ⟨y, hy⟩, hf.map_decompose, sub_add_cancel]
-    have hsy : f (s y) = y := LinearMap.congr_fun hs y
-    rw [hsy]
-    exact DirectSum.decompose_of_mem_same (ℳ := H.piece) hy
-  · rw [isHomogeneous_def]
-    intro q y hy
-    rw [hg q ⟨y, hy⟩, ← sub_eq_add_neg]
-    exact (DirectSum.decompose G.piece (s y) (q - r)).2
+  refine ⟨H.homogeneousPart G s (-r), ?_, H.isHomogeneous_homogeneousPart G s (-r)⟩
+  simpa [hs] using H.comp_homogeneousPart G H s (-r) hf
 
 end TauCeti.LinearMap.IsHomogeneous

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.OpenImme
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyAffinoid
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 
 /-!
 # Rational subsets are open affinoid subspaces
@@ -54,7 +55,12 @@ rings determined by `j(y)` and by `y` (`comap_presentationLimitLocIso_rationalLo
   induced by the structure map `A → A⟨T/s⟩` is `presentationLimitPreAdicSpaceLocIso` followed by
   the inclusion of the restriction of `X` along `j`.
 * `TauCeti.ValuationSpectrum.isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc`:
-  that morphism is an open immersion.
+  that morphism is an open immersion, with image `R(T/s)`
+  (`TauCeti.ValuationSpectrum.range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base`).
+* `TauCeti.ValuationSpectrum.isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom`
+  and `TauCeti.ValuationSpectrum.range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base`:
+  the same for the structure morphism `(A, A⁺) → (A⟨T/s⟩, A_U⁺)` of the rational localisation
+  pair, the form in which it is composed with other morphisms of Huber pairs.
 * `TauCeti.ValuationSpectrum.isAffinoid_restrict_spaComapLocHom`: the restriction of `Spa(A, A⁺)`
   along `j` is an affinoid pre-adic space.
 * `TauCeti.ValuationSpectrum.spaBasicOpen_mem_affinoidOpens`,
@@ -721,6 +727,157 @@ theorem isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc
   have := PreAdicSpace.IsOpenImmersion.ofRestrict (presentationLimitPreAdicSpace P Aplus hAplus hP)
     (isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden)
   exact PreAdicSpace.IsOpenImmersion.comp _ _
+
+
+/-- **The image of the morphism induced by the structure map `A → A⟨T/s⟩` is `R(T/s)`**: on
+points, the morphism `Spa(A⟨T/s⟩, A_U⁺) ⟶ Spa(A, A⁺)` is `j`, whose image is the rational subset
+(`TauCeti.ValuationSpectrum.range_spaComapLoc`). -/
+theorem range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base
+    (hsheaf : letI := locUniformSpace P T s S hden
+      letI := isUniformAddGroup_locUniformSpace P T s S hden
+      letI := isTopologicalRing_locUniformSpace P T s S hden
+      Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (completedPlusSubring P Aplus T s S hden)))
+        (presentationLimitPresheaf (completionLocalization P T s S hden)
+          (completedPlusSubring P Aplus T s S hden))) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Set.range (presentationLimitPreAdicSpaceComap (toCompletionLoc P T s S hden)
+      (continuous_toCompletionLoc P T s S hden)
+      (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
+      (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) hAplus
+      (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hP
+      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden)
+      hsheaf).base = (spaBasicOpen Aplus T s : Set (spa Aplus)) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base,
+    spaComapTopHom_toCompletionLoc]
+  -- the source of `spaComapLocHom` is `Spa(A⟨T/s⟩, A_U⁺)` only up to unfolding, so the remaining
+  -- rewrites are applied as terms
+  exact (congrArg Set.range (coe_spaComapLocHom P Aplus T s S hden)).trans
+    (range_spaComapLoc P Aplus hP T s S hden)
+
+end TauCeti.ValuationSpectrum
+
+namespace TauCeti.ValuationSpectrum
+
+universe u
+
+/-! ### The structure morphism of a rational localisation pair -/
+
+variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  {U : Pair A} (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ U.plus)
+  (T : Finset A) (s : A) (L : Type u) [CommRing L] [Algebra A L] [IsLocalization.Away s L]
+  (hden : P.HasDenominatorPower T s L)
+
+-- The morphism induced by `A → A⟨T/s⟩`, for any ring map equal to the structure map and any plus
+-- ring equal to `A_U⁺`, has image `R(T/s)`, and is an open immersion when `T` spans an open
+-- ideal. The ring map and the plus ring are left variable because the structure morphism
+-- `toCompletionLocHom` of the rational localisation pair has them only up to the unfolding lemmas
+-- `toRingHom_toCompletionLocHom` and `rationalLocalizationPair_plus`.
+private theorem isOpenImmersion_and_range_comap_of_eq :
+    letI := P.locUniformSpace T s L hden
+    letI := P.isUniformAddGroup_locUniformSpace T s L hden
+    letI := P.isTopologicalRing_locUniformSpace T s L hden
+    ∀ (g : A →+* UniformSpace.Completion L) (_ : g = P.toCompletionLoc T s L hden)
+      (Bplus : Subring (UniformSpace.Completion L))
+      (_ : Bplus = P.completedPlusSubring U.plus T s L hden) (hg) (hopen) (hplus) (hBplus) (hPB)
+      (hsB),
+      (IsOpen (Ideal.span (T : Set A) : Set A) →
+        PreAdicSpace.IsOpenImmersion (presentationLimitPreAdicSpaceComap (Bplus := Bplus)
+          (P' := P.completionLocalization T s L hden) g hg hopen hplus
+          U.isRingOfIntegralElements.isPowerBounded_of_mem hBplus hP hPB hsB)) ∧
+      Set.range (presentationLimitPreAdicSpaceComap (Bplus := Bplus)
+        (P' := P.completionLocalization T s L hden) g hg hopen hplus
+        U.isRingOfIntegralElements.isPowerBounded_of_mem hBplus hP hPB hsB).base =
+        (spaBasicOpen U.plus T s : Set (spa U.plus)) := by
+  let _ := P.locUniformSpace T s L hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s L hden
+  have _ := P.isTopologicalRing_locUniformSpace T s L hden
+  rintro _ rfl _ rfl _ _ _ _ _ hsB
+  exact ⟨fun hT ↦ isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc P U.plus T s L
+    hden U.isRingOfIntegralElements.isPowerBounded_of_mem hP hT hsB,
+    range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base P U.plus T s L hden
+      U.isRingOfIntegralElements.isPowerBounded_of_mem hP hsB⟩
+
+/-- **The structure morphism of a rational localisation pair induces an open immersion**: the
+morphism `Spa(A⟨T/s⟩, A_U⁺) ⟶ Spa(A, A⁺)` induced by `(A, A⁺) → (A⟨T/s⟩, A_U⁺)` is an open
+immersion, when `T` spans an open ideal and the structure presheaf of `Spa(A⟨T/s⟩, A_U⁺)` is a
+sheaf. This is `isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc` for the
+morphism of Huber pairs `TauCeti.Huber.PairOfDefinition.toCompletionLocHom`. -/
+theorem isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hsheafU : letI := P.locUniformSpace T s L hden
+      letI := P.isUniformAddGroup_locUniformSpace T s L hden
+      letI := P.isTopologicalRing_locUniformSpace T s L hden
+      letI := P.isHuberRing_completion_locTopology T s L hden
+      Presheaf.IsSheaf
+        (Opens.grothendieckTopology ↥(spa (P.rationalLocalizationPair U hP T s L hden).plus))
+        (presentationLimitPresheaf (P.completionLocalization T s L hden)
+          (P.rationalLocalizationPair U hP T s L hden).plus)) :
+    letI := P.locUniformSpace T s L hden
+    letI := P.isUniformAddGroup_locUniformSpace T s L hden
+    letI := P.isTopologicalRing_locUniformSpace T s L hden
+    letI := P.isHuberRing_completion_locTopology T s L hden
+    PreAdicSpace.IsOpenImmersion (presentationLimitPreAdicSpaceComap
+      (P' := P.completionLocalization T s L hden) (P.toCompletionLocHom U hP T s L hden).toRingHom
+      (P.toCompletionLocHom U hP T s L hden).continuous_toRingHom
+      (fun _ hJ ↦ by
+        rw [toRingHom_toCompletionLocHom]
+        exact P.isOpen_map_toCompletionLoc T s L hden hJ)
+      (P.toCompletionLocHom U hP T s L hden).map_mem_plus
+      U.isRingOfIntegralElements.isPowerBounded_of_mem
+      (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
+      hP
+      (by rw [rationalLocalizationPair_plus]
+          exact P.completionLocalization_ringOfDefinition_le_completedPlusSubring U.plus hP T s
+            L hden)
+      hsheafU) :=
+  letI := P.locUniformSpace T s L hden
+  letI := P.isUniformAddGroup_locUniformSpace T s L hden
+  letI := P.isTopologicalRing_locUniformSpace T s L hden
+  letI := P.isHuberRing_completion_locTopology T s L hden
+  (isOpenImmersion_and_range_comap_of_eq P hP T s L hden _ (toRingHom_toCompletionLocHom ..) _
+    (rationalLocalizationPair_plus ..) _ _ _ _ _ _).1 hT
+
+/-- **The image of the morphism induced by the structure morphism of a rational localisation pair
+is `R(T/s)`**. This is `range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base` for the
+morphism of Huber pairs `TauCeti.Huber.PairOfDefinition.toCompletionLocHom`. -/
+theorem range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base
+    (hsheafU : letI := P.locUniformSpace T s L hden
+      letI := P.isUniformAddGroup_locUniformSpace T s L hden
+      letI := P.isTopologicalRing_locUniformSpace T s L hden
+      letI := P.isHuberRing_completion_locTopology T s L hden
+      Presheaf.IsSheaf
+        (Opens.grothendieckTopology ↥(spa (P.rationalLocalizationPair U hP T s L hden).plus))
+        (presentationLimitPresheaf (P.completionLocalization T s L hden)
+          (P.rationalLocalizationPair U hP T s L hden).plus)) :
+    letI := P.locUniformSpace T s L hden
+    letI := P.isUniformAddGroup_locUniformSpace T s L hden
+    letI := P.isTopologicalRing_locUniformSpace T s L hden
+    letI := P.isHuberRing_completion_locTopology T s L hden
+    Set.range (presentationLimitPreAdicSpaceComap (P' := P.completionLocalization T s L hden)
+      (P.toCompletionLocHom U hP T s L hden).toRingHom
+      (P.toCompletionLocHom U hP T s L hden).continuous_toRingHom
+      (fun _ hJ ↦ by
+        rw [toRingHom_toCompletionLocHom]
+        exact P.isOpen_map_toCompletionLoc T s L hden hJ)
+      (P.toCompletionLocHom U hP T s L hden).map_mem_plus
+      U.isRingOfIntegralElements.isPowerBounded_of_mem
+      (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
+      hP
+      (by rw [rationalLocalizationPair_plus]
+          exact P.completionLocalization_ringOfDefinition_le_completedPlusSubring U.plus hP T s
+            L hden)
+      hsheafU).base = (spaBasicOpen U.plus T s : Set (spa U.plus)) :=
+  letI := P.locUniformSpace T s L hden
+  letI := P.isUniformAddGroup_locUniformSpace T s L hden
+  letI := P.isTopologicalRing_locUniformSpace T s L hden
+  letI := P.isHuberRing_completion_locTopology T s L hden
+  (isOpenImmersion_and_range_comap_of_eq P hP T s L hden _ (toRingHom_toCompletionLocHom ..) _
+    (rationalLocalizationPair_plus ..) _ _ _ _ _ _).2
 
 end TauCeti.ValuationSpectrum
 

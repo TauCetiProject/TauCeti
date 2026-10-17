@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.IsTensorProduct
@@ -26,6 +27,8 @@ domain rationalizes to its ambient vector space over the fraction field.
   lattice.
 * `TauCeti.Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice`: the additive
   closure of an extended lattice basis is the lattice's underlying additive subgroup.
+* `TauCeti.Submodule.IsLattice.relIndex_ne_zero`: a full `ℤ`-lattice has finite index in every
+  full `ℤ`-lattice containing it.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
 * `TauCeti.Submodule.IsLattice.finrank_eq_finrank`: a full lattice and its ambient space have the
@@ -100,6 +103,21 @@ theorem Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice
   apply AddSubgroup.toIntSubmodule.injective
   rw [AddSubgroup.toIntSubmodule_closure, Module.Basis.span_range_extendOfIsLattice,
     Submodule.toIntSubmodule_toAddSubgroup, Submodule.restrictScalars_self]
+
+/-- A full `ℤ`-submodule contained in another full `ℤ`-submodule has finite index in it. -/
+theorem Submodule.IsLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsLattice ℚ]
+    [M.IsLattice ℚ] (hle : N ≤ M) : N.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
+  classical
+  let bM := Module.Free.chooseBasis ℤ M
+  let eM := bM.extendOfIsLattice ℚ
+  let bN := (Module.Free.chooseBasis ℤ N).reindex
+    (((Module.Free.chooseBasis ℤ N).extendOfIsLattice ℚ).indexEquiv eM)
+  have hidx := AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hle)
+    (bN.extendOfIsLattice ℚ) eM (toAddSubgroup_eq_closure_range_extendOfIsLattice bN)
+    (toAddSubgroup_eq_closure_range_extendOfIsLattice bM)
+  intro h
+  rw [h, Nat.cast_zero, eq_comm, abs_eq_zero] at hidx
+  exact (eM.isUnit_det _).ne_zero hidx
 
 end
 

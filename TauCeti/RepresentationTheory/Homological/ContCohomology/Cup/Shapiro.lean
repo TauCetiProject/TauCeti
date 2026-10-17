@@ -117,10 +117,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Co
     [DistribMulAction U C] [ContinuousSMul U C]
   (μ : A →+ B →+ C) (hμ : ∀ (u : U) (a : A) (b : B), μ (u • a) (u • b) = u • μ a b)
 
-/-- Multiplication on the subgroup `U` is continuous for the subspace topology. -/
-local instance instContinuousMulSubgroupMultiplicativity : ContinuousMul U :=
-  U.toSubmonoid.continuousMul
-
 omit [ContinuousSMul U A] in
 /-- **The Shapiro maps are multiplicative** for the `(0,1)` cup product. -/
 @[simp]
@@ -274,10 +270,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Co
   (P : Type uC) [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P]
     [DistribMulAction G P] [ContinuousSMul G P]
   (μ : M →+ N →+ P) (hμ : ∀ (u : U) (m : M) (n : N), μ (u • m) (u • n) = u • μ m n)
-
-/-- Multiplication on the subgroup `U` is continuous for the subspace topology. -/
-local instance instContinuousMulSubgroupCorestriction : ContinuousMul U :=
-  U.toSubmonoid.continuousMul
 
 omit [ContinuousSMul U M] in
 /-- **The corestriction of a `(0,1)` cup product of `U`** is the trace of the `(0,1)` cup product

@@ -44,16 +44,10 @@ theorem IsGorensteinProjective.nonempty_splitting_of_projective
     (hS : S.ShortExact) [Module.Finite A S.X₁] [Module.Projective A S.X₁] :
     Nonempty S.Splitting := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff S.X₃).mp hN
-  let T := ShortComplex.mk (P.iCycles (-1)) (P.toCycles (-1) 0) (by
-    rw [← cancel_mono (P.iCycles 0)]
-    simp)
+  let T := ShortComplex.mk (P.iCycles (-1)) (P.toCycles (-1) 0) (P.iCycles_toCycles (-1) 0)
   have hT : T.ShortExact := by
-    -- Transport the existing cycle presentation along its public carrier equations.
-    let E : P.cyclesShortComplex (-1) ≅ T := ShortComplex.isoMk
-      (eqToIso (by simp [T])) (eqToIso (by simp [T])) (eqToIso (by simp [T]))
-      (by simp [T]) (by simp [T])
-    exact ShortComplex.shortExact_of_iso E
-      (HomologicalComplex.cyclesShortComplex_shortExact (-1) (hP.acyclic 0))
+    simpa only [HomologicalComplex.cyclesShortComplex_def] using
+      P.cyclesShortComplex_shortExact (-1) 0 (by simp) (hP.acyclic 0)
   have := hS.mono_f
   have := hS.epi_g
   have := hT.epi_g

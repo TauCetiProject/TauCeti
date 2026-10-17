@@ -265,7 +265,7 @@ theorem commute_middle_ne (D : GridRectangleDecomposition x z) (h : D.HasDisjoin
 changes. -/
 theorem commute_ne (D : GridRectangleDecomposition x z) (h : D.HasDisjointSides) :
     D.commute h ≠ D :=
-  fun heq => D.commute_middle_ne h (congrArg GridRectangleDecomposition.middle heq)
+  fun heq => D.commute_middle_ne h (congrArg GridTwoStepDecomposition.middle heq)
 
 /-- The reordered intermediate state belongs to the endpoint pair's two-step intermediate set. -/
 theorem commute_middle_mem_twoStepColumnSwapIntermediates

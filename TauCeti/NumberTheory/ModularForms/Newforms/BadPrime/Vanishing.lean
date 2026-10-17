@@ -27,7 +27,7 @@ nebentypus `χ` span the new part of `S_k(N, χ)`, `U_p` is zero on that whole n
 
 ## Main results
 
-* `HeckeRing.GL2.heckeUCuspNat_eq_ofLe_descendCuspForm`: for `p² ∣ N` and `χ` pulled back from
+* `HeckeRing.GL2.heckeUCuspNat_eq_restrict_descendCuspForm`: for `p² ∣ N` and `χ` pulled back from
   `χ₀` modulo `N / p`, `U_p f` is the descent of `f`, a cusp form in `S_k(Γ₁(N / p), χ₀)`, read
   at level `N`.
 * `HeckeRing.GL2.heckeUCuspNat_mem_cuspFormsOld_of_sq_dvd`: in that situation `U_p f` is old.
@@ -61,19 +61,19 @@ variable (k) in
 `f ∈ S_k(Γ₁(N), χ)` with `χ` the pull-back of `χ₀` modulo `N / p`, the form `U_p f` is the descent
 `descendCuspForm` of `f`, a cusp form in `S_k(Γ₁(N / p), χ₀)`
 (`descendCuspForm_mem_cuspFormCharSpace`), read at level `N`. -/
-theorem heckeUCuspNat_eq_ofLe_descendCuspForm (hp : p.Prime) (hpsq : p ^ 2 ∣ N)
+theorem heckeUCuspNat_eq_restrict_descendCuspForm (hp : p.Prime) (hpsq : p ^ 2 ∣ N)
     {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
     (hcomp : χ = χ₀.comp
       (ZMod.unitsMap (Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq))))
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     heckeUCuspNat k p hp ((dvd_pow_self p two_ne_zero).trans hpsq) f =
-      _root_.CuspForm.ofLe
+      _root_.CuspForm.restrict
         (Gamma1_map_le_Gamma1_map_of_dvd
           (Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq)))
         (descendCuspForm k hp ((dvd_pow_self p two_ne_zero).trans hpsq) hcomp hf) := by
   have : NeZero p := ⟨hp.ne_zero⟩
   ext τ
-  rw [_root_.CuspForm.coe_ofLe, coe_descendCuspForm, descendSlash_eq_heckeSlashUpperTri k hpsq,
+  rw [_root_.CuspForm.coe_restrict, coe_descendCuspForm, descendSlash_eq_heckeSlashUpperTri k hpsq,
     heckeUCuspNat_eq_heckeTCuspNat,
     heckeTCuspNat_eq_upperTri k ((dvd_pow_self p two_ne_zero).trans hpsq),
     coe_heckeSlashUpperTriCuspFormEnd]
@@ -81,15 +81,15 @@ theorem heckeUCuspNat_eq_ofLe_descendCuspForm (hp : p.Prime) (hpsq : p ^ 2 ∣ N
 variable (k) in
 /-- **`U_p` maps into the old subspace when `p² ∣ N` and the nebentypus is defined modulo
 `N / p`**: `U_p f` comes from the proper divisor level `N / p`
-(`heckeUCuspNat_eq_ofLe_descendCuspForm`). -/
+(`heckeUCuspNat_eq_restrict_descendCuspForm`). -/
 theorem heckeUCuspNat_mem_cuspFormsOld_of_sq_dvd (hp : p.Prime) (hpsq : p ^ 2 ∣ N)
     {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
     (hcomp : χ = χ₀.comp
       (ZMod.unitsMap (Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq))))
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     heckeUCuspNat k p hp ((dvd_pow_self p two_ne_zero).trans hpsq) f ∈ cuspFormsOld N k := by
-  rw [heckeUCuspNat_eq_ofLe_descendCuspForm k hp hpsq hcomp hf]
-  exact ofLe_mem_cuspFormsOld (Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq))
+  rw [heckeUCuspNat_eq_restrict_descendCuspForm k hp hpsq hcomp hf]
+  exact restrict_mem_cuspFormsOld (Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq))
     (Nat.div_lt_self (NeZero.pos N) hp.one_lt).ne k _
 
 /-! ### The vanishing of `a_p` -/

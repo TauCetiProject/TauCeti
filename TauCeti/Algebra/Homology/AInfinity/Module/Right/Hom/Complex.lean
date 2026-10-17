@@ -158,6 +158,22 @@ theorem isHomogeneous (F : homCochains MM NN p) :
       (barGrading AA MM.grading).piece (barGrading AA NN.grading).piece p :=
   F.2.2
 
+/-- The Taylor map of a cochain of degree `p`, obtained by applying the coalgebra counit, has
+degree `p` from the suspended bar grading to the suspended grading of the target. -/
+theorem isHomogeneous_taylor (F : homCochains MM NN p) :
+    LinearMap.IsHomogeneous
+      ((TensorProduct.rid R N).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+          (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A))
+      (barGrading AA MM.grading).piece (NN.grading.shift 1).piece p := by
+  rw [LinearMap.isHomogeneous_def]
+  intro q x hx
+  have hz := (isHomogeneous F).map_mem hx
+  rw [barGrading_piece] at hz
+  simpa only [LinearMap.comp_apply, add_zero] using
+    (TensorWords.isHomogeneous_rid_comp_lTensor_counit (NN.grading.shift 1)
+      (AA.grading.shift 1)).map_mem hz
+
 /-- Cochains are determined by their Taylor maps, the components obtained by applying the
 coalgebra counit. -/
 theorem ext_taylor {F G : homCochains MM NN p}

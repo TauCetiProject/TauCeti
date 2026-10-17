@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Const
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -100,6 +100,13 @@ theorem inChartAt_neg (φ : RoughForm I M F k) (x₀ : M) :
 theorem inChartAt_sub (φ η : RoughForm I M F k) (x₀ : M) :
     (φ - η).inChartAt x₀ = φ.inChartAt x₀ - η.inChartAt x₀ := by
   rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, sub_eq_add_neg]
+
+/-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
+theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
+    inChartAt (I := I) (fun x ↦ f x • φ x) α y =
+      f ((extChartAt I α).symm y) • φ.inChartAt α y := by
+  ext v
+  simp only [inChartAt_apply, ContinuousAlternatingMap.smul_apply]
 
 /-- At the centre of its own chart, the coordinate expression of a form is its value there. -/
 theorem inChartAt_extChartAt_self [IsManifold I 1 M] (φ : RoughForm I M F k) (x : M) :

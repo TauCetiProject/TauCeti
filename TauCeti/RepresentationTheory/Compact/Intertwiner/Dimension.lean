@@ -60,7 +60,7 @@ public section
 
 open _root_.ContRepresentation
 
-open MeasureTheory TauCeti TauCeti.ContRepresentation
+open MeasureTheory TauCeti
 open scoped InnerProductSpace
 
 namespace ContRepresentation

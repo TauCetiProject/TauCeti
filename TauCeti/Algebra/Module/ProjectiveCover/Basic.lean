@@ -287,8 +287,8 @@ endomorphism ring `Module.End R T`, acting by postcomposition. The map is inject
 onto, and surjective by
 `TauCeti.IsProjectiveCover.exists_comp_eq`.
 
-Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:
-here the map on the source side is only a cover, and it is the semisimplicity of `T` that makes the
+Compare `LinearEquiv.homCongrRight`, which transports a hom space along an isomorphism of its
+target: here the map on the source side is only a cover. The semisimplicity of `T` makes the
 induced map on hom spaces invertible. -/
 noncomputable def IsProjectiveCover.homEquivOfIsSemisimpleModule {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) : (M →ₗ[R] T) ≃ₗ[k] (P →ₗ[R] T) :=

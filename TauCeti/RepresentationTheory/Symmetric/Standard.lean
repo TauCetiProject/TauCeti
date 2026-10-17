@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Augmentation
+public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -54,9 +54,9 @@ arbitrary `z` produces all the others, and those differences span.
   `1` being the character of the trivial quotient of `k[α]` by the standard subrepresentation.
 
 The two remaining halves of the picture hold for an arbitrary permutation representation and are
-proved there, in `TauCeti.RepresentationTheory.Augmentation`: that `k[α]` is the direct sum of the
-invariant line and the standard subrepresentation, again under `|α| ≠ 0` in `k` (or `α` empty), is
-`TauCeti.isCompl_invariantLine_augmentationSubrepresentation`, and that the standard
+proved there, in `TauCeti.RepresentationTheory.Augmentation.Basic`: that `k[α]` is the direct sum of
+the invariant line and the standard subrepresentation, again under `|α| ≠ 0` in `k` (or `α` empty),
+is `TauCeti.isCompl_invariantLine_augmentationSubrepresentation`, and that the standard
 subrepresentation has dimension `|α| - 1` is `TauCeti.finrank_augmentationSubrepresentation`.
 
 ## References

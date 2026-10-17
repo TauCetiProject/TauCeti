@@ -37,7 +37,8 @@ row lengths of its Young diagram.
 
 Reading the rows also describes containment: one diagram is contained in another exactly when
 each of its rows is shorter (`YoungDiagram.le_iff_forall_rowLen_le`), from which a diagram
-has only finitely many sub-diagrams (`YoungDiagram.finite_Iic`).
+has only finitely many sub-diagrams (`YoungDiagram.finite_Iic`).  Columns are monotone in
+containment as well (`YoungDiagram.colLen_le_of_le`).
 
 The file closes with the two degenerate shapes, at the bottom and at the top of the dominance
 order.  A diagram with at most one column has its cells described one row at a time by
@@ -286,6 +287,11 @@ theorem le_of_forall_rowLen_le {μ ν : YoungDiagram} (h : ∀ i, ν.rowLen i �
 /-- Containment of Young diagrams is containment of rows. -/
 theorem le_iff_forall_rowLen_le {μ ν : YoungDiagram} : ν ≤ μ ↔ ∀ i, ν.rowLen i ≤ μ.rowLen i :=
   ⟨fun h => rowLen_le_of_le h, le_of_forall_rowLen_le⟩
+
+/-- A column of a sub-diagram is no longer than the corresponding column. -/
+theorem colLen_le_of_le {μ ν : YoungDiagram} (h : ν ≤ μ) (j : ℕ) : ν.colLen j ≤ μ.colLen j := by
+  rw [← _root_.YoungDiagram.rowLen_transpose, ← _root_.YoungDiagram.rowLen_transpose]
+  exact rowLen_le_of_le (_root_.YoungDiagram.transpose_mono h) j
 
 /-- A row of a Young diagram is at least as long as any initial segment of cells it contains. -/
 theorem le_rowLen_of_forall_mem {ν : YoungDiagram} {i k : ℕ}

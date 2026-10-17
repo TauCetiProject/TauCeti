@@ -8,21 +8,22 @@ module
 public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import Mathlib.FieldTheory.Normal.Basic
+public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 
 /-!
 # Finite extensions of the constant field
 
 A finite extension of constants yields a finite compositum over the original field, and a
-separable extension of constants produces a separable compositum.  Exactness of the original
-constant field is needed for neither.  The function-field theorem for arbitrary algebraic
-extensions of constants is in `ConstantExtension.Algebraic`.
+separable or purely inseparable extension of constants produces a compositum of the same kind.
+Exactness of the original constant field is needed for none of these statements. The function-field
+theorem for arbitrary algebraic extensions of constants is in `ConstantExtension.Algebraic`.
 
 Under the hypotheses that make constant field extensions well behaved — the original constant
 field `k` is exact in `F` and `k' / k` is separable — the compositum acquires no new separable
-constants: no element of `F · k'` outside `k'` is separable over `k'`.  Perfectness of `k'` upgrades
-this to exactness: when `k'` is perfect — for instance when `k` is perfect and `k' / k` is
-algebraic — every algebraic element is separable over `k'`, so `k'` is the full field of constants
-of `F · k'`.  Perfectness cannot simply be dropped: over an imperfect `k` an inseparable constant
+constants: no element of `F · k'` outside `k'` is separable over `k'`.  Comparing coordinates in
+a basis of constants upgrades this to exactness of `k'` in `F · k'`
+(`IsIntegrallyClosedIn.of_constantCompositum_eq_top` in `ConstantExtension.Basis`).
+Separability of `k' / k` cannot simply be dropped: over an imperfect `k` an inseparable constant
 field extension can enlarge the field of constants beyond `k'`.  For instance,
 `k = 𝔽_p(t, u)` is exact in `F = k(x, y)` with `y ^ p = t * x ^ p + u`, but for `k' = k(t ^ (1/p))`
 the element `y - t ^ (1/p) * x` of `F · k'` is a `p`-th root of `u`, and `u ^ (1/p) ∉ k'`.
@@ -40,11 +41,10 @@ carried out after a finite constant field extension.
   separable `k' / k`, a compositum finite over the original field has finite constants.
 * `TauCeti.isSeparable_of_constantCompositum_eq_top`: the compositum of a separable constant
   field extension is separable over the original field.
+* `TauCeti.isPurelyInseparable_of_constantCompositum_eq_top`: the compositum of a purely
+  inseparable constant field extension is purely inseparable over the original field.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
-* `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`: for a separable constant field
-  extension by a perfect `k'`, in particular over a perfect `k`, `k'` is the exact constant field
-  of `F · k'` (Stichtenoth, Proposition 3.6.1(a)).
 * `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
   `F · k'` over `k'`.
 * `TauCeti.isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top`: if `F` is separable over
@@ -116,15 +116,29 @@ theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
     (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
       (algebraMap k' F').injective
 
+/-- Adjoining purely inseparable constants produces a purely inseparable extension of the
+original field, whether or not the constant extension is finite. -/
+theorem isPurelyInseparable_of_constantCompositum_eq_top [IsPurelyInseparable k k']
+    (h : constantCompositum F k' F' = ⊤) : IsPurelyInseparable F F' := by
+  obtain ⟨q, _⟩ := ExpChar.exists k
+  have := expChar_of_injective_algebraMap (algebraMap k F).injective q
+  rw [isPurelyInseparable_iff_perfectClosure_eq_top]
+  apply top_le_iff.mp
+  rw [← h, constantCompositum_def]
+  refine IntermediateField.adjoin_le_iff.mpr ?_
+  rintro _ ⟨c, rfl⟩
+  obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem k q c
+  exact (mem_perfectClosure_iff_pow_mem q).mpr ⟨n, algebraMap k F a, by
+    rw [← map_pow, ← ha, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]⟩
+
 /-! ### The constant field of the compositum -/
 
 /-- **The enlarged constant field is separably closed in the compositum**: if `k` is the exact
 constant field of `F` and `k' / k` is separable algebraic, then every element of `F · k'` that is
 separable over `k'` is already a constant of `k'`.
 
-This is Stichtenoth, Proposition 3.6.1(a), with perfectness of `k` replaced by the separability of
-the constant in question; `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top` recovers the
-statement of record over a perfect `k`. -/
+This is the separable half of Stichtenoth, Proposition 3.6.1(a);
+`IsIntegrallyClosedIn.of_constantCompositum_eq_top` upgrades it to exactness of `k'`. -/
 theorem separableClosure_eq_bot_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     separableClosure k' F' = ⊥ := by
@@ -133,23 +147,6 @@ theorem separableClosure_eq_bot_of_constantCompositum_eq_top [Algebra.IsSeparabl
     (mem_separableClosure_iff.1 hz)
   rw [← constantCompositum_def, h]
   exact IntermediateField.mem_top
-
-/-- **The constant field of a constant field extension** (Stichtenoth, Proposition 3.6.1(a)):
-if `k` is the exact constant field of `F`, `k' / k` is separable and `k'` is perfect, then the
-compositum `F · k'` has exact constant field `k'`.  Stichtenoth's hypotheses — `k` perfect and
-`k' / k` algebraic — are the special case in which `Algebra.IsSeparable k k'` is inferred and
-`PerfectField k'` is `Algebra.IsAlgebraic.perfectField k`.
-
-Together with `TauCeti.IsFunctionField.of_constantCompositum_eq_top` from
-`ConstantExtension.Algebraic`, this makes `F · k' / k'` a function field with exact constant field
-for an algebraic `k' / k`, so that its genus, its places and their degrees are the ones the theory
-of constant field extensions compares with those of `F / k`. -/
-theorem isIntegrallyClosedIn_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
-    [PerfectField k'] (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) : IsIntegrallyClosedIn k' F' := by
-  refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun z hz ↦ IntermediateField.mem_bot.1 ?_
-  rw [← separableClosure_eq_bot_of_constantCompositum_eq_top hex h]
-  exact PerfectField.separable_of_irreducible (minpoly.irreducible hz.isIntegral)
 
 /-- **Generators of `F` generate the compositum over `k'`**: if a set `S` generates `F` over `k`,
 then its image generates the compositum `F' = F · k'` over `k'`.  For instance, if

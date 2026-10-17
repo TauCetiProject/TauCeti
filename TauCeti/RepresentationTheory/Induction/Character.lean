@@ -90,13 +90,19 @@ private theorem trace_ind_eq_sum_rightCosets [S.FiniteIndex] [Fintype (RightCose
     rw [indSubtypeEquivPi_ρ_apply]
     exact congrArg (A.ρ (rightCosetFactor (S := S) (q.out * g)))
       (congrFun he (Quotient.mk'' (q.out * g)))
-  rw [LinearMap.trace_pi_of_apply_eq
-    (T := e.conj ((Rep.ind S.subtype A).ρ g))
-    (σ := fun q => Quotient.mk'' (q.out * g))
-    (f := fun q => A.ρ (rightCosetFactor (S := S) (q.out * g))) hT]
+  rw [LinearMap.trace_pi]
   apply Finset.sum_congr rfl
   intro q _
-  by_cases hq : Quotient.mk'' (q.out * g) = q <;> simp [hq]
+  have hblock :
+      LinearMap.proj q ∘ₗ e.conj ((Rep.ind S.subtype A).ρ g) ∘ₗ
+        LinearMap.single k (fun _ : RightCosets S => A) q =
+      if Quotient.mk'' (q.out * g) = q then
+        A.ρ (rightCosetFactor (S := S) (q.out * g)) else 0 := by
+    ext a
+    simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.single_apply, hT]
+    by_cases hq : Quotient.mk'' (q.out * g) = q <;> simp [hq]
+  rw [hblock]
+  split_ifs <;> simp
 
 open scoped Classical in
 /-- The trace computation expressed as the standard character summand, still indexed by right

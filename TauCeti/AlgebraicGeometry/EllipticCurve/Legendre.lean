@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 import Mathlib.FieldTheory.Galois.Basic

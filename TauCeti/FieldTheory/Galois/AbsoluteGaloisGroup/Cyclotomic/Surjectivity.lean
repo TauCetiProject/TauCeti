@@ -55,9 +55,9 @@ private theorem exists_localCyclotomicCharacter_toZModPow_eq
       PadicInt.toZModPow n (localCyclotomicCharacter p K σ : ℤ_[p]) =
         PadicInt.toZModPow n (u : ℤ_[p]) := by
   let ζ : AlgebraicClosure K :=
-    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose
+    HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose
   have hζ : IsPrimitiveRoot ζ (p ^ n) :=
-    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose_spec
+    HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose_spec
   let L := IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))
   let _ : IsCyclotomicExtension {p ^ n} K L :=
     hζ.intermediateField_adjoin_isCyclotomicExtension K
@@ -143,11 +143,8 @@ theorem range_localCyclotomicCharacter_ratPadic : (localCyclotomicCharacter p �
 automorphism of the `p^n`-th roots of unity, `ζ ↦ ζ^a` with `a` prime to `p`, is induced by an
 element of `G_{ℚ_p}`. -/
 theorem surjective_toZModPow_localCyclotomicCharacter_ratPadic (n : ℕ) :
-    Function.Surjective (PadicInt.unitsToZModPow n ∘ localCyclotomicCharacter p ℚ_[p]) := by
-  intro u
-  obtain ⟨σ, hσ⟩ := ((PadicInt.surjective_units_map_toZModPow n).comp
-    (surjective_localCyclotomicCharacter_ratPadic p)) u
-  exact ⟨σ, Units.ext (by simpa using congrArg Units.val hσ)⟩
+    Function.Surjective (PadicInt.unitsToZModPow n ∘ localCyclotomicCharacter p ℚ_[p]) :=
+  (PadicInt.unitsToZModPow_surjective n).comp (surjective_localCyclotomicCharacter_ratPadic p)
 
 end RatPadic
 

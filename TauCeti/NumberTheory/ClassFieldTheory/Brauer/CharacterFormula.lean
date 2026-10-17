@@ -81,25 +81,6 @@ section Layer
 
 variable (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
 
-/-- The carry of a character `χ` of the layer `V ◁ G_K` at the images of `g, h ∈ G_K` is the carry
-at `g, h` of a character `ψ` of `G_K` that reads `χ` through the projection `G_K → G_K ⧸ V`. -/
-private theorem characterCarry_galOfOpenNormalEquiv_symm
-    (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
-    (ψ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
-    (hχψ : ∀ g : AbsoluteGaloisGroup K, ψ (.ofMul g) =
-      χ (.ofMul (Abelianization.of
-        ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
-    (g h : AbsoluteGaloisGroup K) :
-    characterCarry (χ.comp Abelianization.of.toAdditive)
-        ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup))
-        ((galOfOpenNormalEquiv V).symm (h : AbsoluteGaloisGroup K ⧸ V.toSubgroup)) =
-      characterCarry ψ g h := by
-  have hψ' : ψ = (χ.comp Abelianization.of.toAdditive).comp (MonoidHom.toAdditive
-      ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp (QuotientGroup.mk' V.toSubgroup))) :=
-    AddMonoidHom.ext fun g ↦ hχψ g.toMul
-  simp only [hψ', characterCarry_comp, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    QuotientGroup.mk'_apply]
-
 /-- **The inflation of the Artin character cup is the carry class.** Let `χ` be a character of the
 abelianized Galois group of the layer `V ◁ G_K`, and let `ψ : G_K → ℚ/ℤ` be the same character read
 on `G_K`. Then for `a ∈ Kˣ` the inflation to `Br K` of the class `a₀ ∪ δχ` of the character formula
@@ -160,6 +141,9 @@ theorem apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
       χ (.ofMul (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K)) := by
   -- An open normal subgroup `V` of `G_K` on which `χ` vanishes, and the character `χbar` of the
   -- abelianized Galois group of the layer `V ◁ G_K` that `χ` induces.
+  have : T2Space (AbsoluteGaloisGroup K) := krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
   obtain ⟨V, hV⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (hχ.preimage continuous_ofMul) (by simp)
   let χm : AbsoluteGaloisGroup K →* Multiplicative (AddCircle (1 : ℚ)) :=

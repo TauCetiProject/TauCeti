@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Measure theory of the standard fundamental domain
@@ -143,14 +144,6 @@ theorem volume_fd_lt_top : (volume : Measure ℍ) fd < ⊤ := by
         setLIntegral_im_eq_prod (fun y ↦ ENNReal.ofReal (y ^ (-2 : ℤ))) T
     _ < ⊤ := strip_lintegral_lt_top (by positivity)
 
-private theorem volume_complex_re_eq (c : ℝ) : volume {z : ℂ | z.re = c} = 0 := by
-  have h_eq : {z : ℂ | z.re = c} = measurableEquivRealProd ⁻¹' ({c} ×ˢ univ) := by
-    ext z
-    simp [measurableEquivRealProd_apply]
-  rw [h_eq, volume_preserving_equiv_real_prod.measure_preimage
-    ((measurableSet_singleton c).prod MeasurableSet.univ).nullMeasurableSet,
-    volume_eq_prod, Measure.prod_prod, Real.volume_singleton, zero_mul]
-
 private theorem volume_complex_normSq_eq (c : ℝ) :
     volume {z : ℂ | Complex.normSq z = c} = 0 := by
   rcases le_or_gt 0 c with hc | hc
@@ -177,8 +170,8 @@ theorem volume_frontier_fd : (volume : Measure ℍ) (frontier (fd : Set ℍ)) = 
   rw [frontier, isClosed_fd.closure_eq, ← fdo_eq_interior_fd]
   apply measure_mono_null _ (volume_preimage_coe_null
     (measure_union_null
-      (measure_union_null (volume_complex_normSq_eq 1) (volume_complex_re_eq (1/2)))
-      (volume_complex_re_eq (-1/2))))
+      (measure_union_null (volume_complex_normSq_eq 1) (Complex.volume_setOf_re_eq (1/2)))
+      (Complex.volume_setOf_re_eq (-1/2))))
   intro τ ⟨hfd, hfdo⟩
   simp only [fd, fdo, mem_ofPred_eq, not_and, not_lt] at hfd hfdo
   obtain ⟨h1, h2⟩ := hfd

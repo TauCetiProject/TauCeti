@@ -279,6 +279,16 @@ theorem card_costar_eq_degree (v : V) [Fintype (G.neighborSet v)] :
   rw [Nat.card_congr (costarEquivNeighborSet G v)]
   simp
 
+/-- A sum over the doubled-quiver arrows entering `vertex G v` is a sum over the neighbours of
+`v`. -/
+theorem sum_sum_hom_eq_sum_neighborSet [Fintype V] [DecidableRel G.Adj] {M : Type*}
+    [AddCommMonoid M] (v : V) (F : ∀ i : DoubledQuiver G, (i ⟶ vertex G v) → M) :
+    ∑ i, ∑ b : i ⟶ vertex G v, F i b =
+      ∑ w : G.neighborSet v, F (vertex G w) (arrow G w.property.symm) := by
+  rw [← Fintype.sum_sigma (fun x : Quiver.Costar (vertex G v) => F x.1 x.2)]
+  exact (Fintype.sum_equiv (costarEquivNeighborSet G v).symm _ _ fun w => by
+    rw [costarEquivNeighborSet_symm_apply]).symm
+
 /-- The total number of doubled-quiver arrows is twice the number of graph edges. -/
 theorem card_totalArrow_eq_twice_card_edges [Fintype V] [DecidableRel G.Adj] :
     Fintype.card (TotalArrow G) = 2 * G.edgeFinset.card := by

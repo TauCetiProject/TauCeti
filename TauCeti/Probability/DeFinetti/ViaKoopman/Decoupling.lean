@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 import TauCeti.Probability.Exchangeability.PathSpace.Invariant.BlockTransport
 public import TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw
 import Mathlib.Dynamics.BirkhoffSum.Average
-import TauCeti.Probability.Process.BlockAverage
+import TauCeti.Probability.Process.BlockAverage.Basic
 import TauCeti.Probability.Ergodic.CondExpProjection
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
