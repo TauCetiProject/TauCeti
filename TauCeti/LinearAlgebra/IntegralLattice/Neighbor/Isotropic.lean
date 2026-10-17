@@ -37,15 +37,15 @@ and pairs coprimely to `p` with some lattice vector produces a `p`-neighbor of `
 
 ## Main results
 
-* `TauCeti.IntegralLattice.isNeighbor_neighbor`: `L.neighbor p v` is a `p`-neighbor of `L`.
+* `TauCeti.IntegralLattice.isNeighbor_neighbor`: `L.neighbor p v` is a `p`-neighbor of `L` when
+  `p²` divides the norm of `v` and some `w ∈ L` pairs with `v` coprimely to `p`.
 * `TauCeti.IntegralLattice.isEven_neighbor`: the neighbor of an even lattice is even when the
   norm of `v` is divisible by `2p²`.
 * `TauCeti.IntegralLattice.exists_dvd_integralNorm_add_smul`: for odd `p`, a vector isotropic
-  modulo `p` lifts to one isotropic modulo `p²`.
+  modulo `p` and pairing coprimely to `p` with some `w ∈ L` lifts to one isotropic modulo `p²`.
 * `TauCeti.IntegralLattice.exists_isNeighbor_of_dvd_integralNorm`: for odd `p`, a vector isotropic
-  modulo `p` gives a `p`-neighbor meeting `L` in `neighborKernel`.
-* `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
-  pairing into `pℤ` with all of `L` lies in `p L`.
+  modulo `p` and pairing coprimely to `p` with some `w ∈ L` gives a `p`-neighbor meeting `L` in
+  `neighborKernel`.
 * `TauCeti.IntegralLattice.exists_isNeighbor_of_not_dvd_discriminant`: for an odd prime `p ∤ det L`,
   every `v ∈ L ∖ p L` isotropic modulo `p` gives a `p`-neighbor.
 
@@ -88,31 +88,29 @@ theorem neighborKernel_le (v : L) : L.neighborKernel p v ≤ L.carrier := by
   rintro _ ⟨y, -, rfl⟩
   exact y.2
 
-variable {L p}
+/-- **Membership in the neighbor kernel**: its vectors are the lattice vectors whose pairing with
+`v` is divisible by `p`. -/
+theorem mem_neighborKernel_iff (v : L) (x : V) :
+    x ∈ L.neighborKernel p v ↔ ∃ y : L, (y : V) = x ∧ (p : ℤ) ∣ L.integralForm v y := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hx
+    exact ⟨y, rfl, (L.coe_mem_neighborKernel_iff p v y).mp (Submodule.mem_map_of_mem hy)⟩
+  · rintro ⟨y, rfl, hy⟩
+    exact (L.coe_mem_neighborKernel_iff p v y).mpr hy
 
-/-- Each vector of the neighbor kernel is a lattice vector whose pairing with `v` is divisible
-by `p`. -/
-theorem exists_of_mem_neighborKernel {v : L} {x : V} (hx : x ∈ L.neighborKernel p v) :
-    ∃ y : L, (y : V) = x ∧ (p : ℤ) ∣ L.integralForm v y := by
-  obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hx
-  exact ⟨y, rfl, (L.coe_mem_neighborKernel_iff p v y).mp (Submodule.mem_map_of_mem hy)⟩
+/-- Pairing with `v + p t w` differs from pairing with `v` by a multiple of `p`. -/
+private theorem integralForm_add_smul_apply (v w y : L) (t : ℤ) :
+    L.integralForm (v + ((p : ℤ) * t) • w) y =
+      L.integralForm v y + p * (t * L.integralForm w y) := by
+  rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, mul_assoc]
 
 /-- The kernels of two vectors agree when the vectors agree modulo `p L`. -/
 theorem neighborKernel_add_smul (v w : L) (t : ℤ) :
     L.neighborKernel p (v + ((p : ℤ) * t) • w) = L.neighborKernel p v := by
   ext x
-  constructor <;> intro hx
-  · obtain ⟨y, rfl, hy⟩ := exists_of_mem_neighborKernel hx
-    rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, mul_assoc,
-      dvd_add_left (dvd_mul_right _ _)] at hy
-    exact (L.coe_mem_neighborKernel_iff p v y).mpr hy
-  · obtain ⟨y, rfl, hy⟩ := exists_of_mem_neighborKernel hx
-    refine (L.coe_mem_neighborKernel_iff p _ y).mpr ?_
-    rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, mul_assoc,
-      dvd_add_left (dvd_mul_right _ _)]
-    exact hy
-
-variable (L p)
+  simp only [mem_neighborKernel_iff, integralForm_add_smul_apply,
+    dvd_add_left (dvd_mul_right _ _)]
 
 /-- The neighbor kernel contains `p L`. -/
 theorem smul_mem_neighborKernel (v x : L) : (p : ℤ) • (x : V) ∈ L.neighborKernel p v := by
@@ -162,7 +160,8 @@ private theorem natCast_zsmul_inv_smul (p : ℕ) [NeZero p] (x : V) :
   rw [← Int.cast_smul_eq_zsmul ℚ, smul_smul, Int.cast_natCast,
     mul_inv_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne p)), one_smul]
 
-private theorem isLattice_neighborKernel [NeZero p] (v : L) :
+/-- The neighbor kernel is a full lattice in the ambient space, since it contains `p L`. -/
+instance isLattice_neighborKernel [NeZero p] (v : L) :
     (L.neighborKernel p v).IsLattice ℚ where
   fg := by
     rw [neighborKernel]
@@ -173,11 +172,7 @@ private theorem isLattice_neighborKernel [NeZero p] (v : L) :
     intro x hx
     have h := (Submodule.span ℚ (L.neighborKernel p v : Set V)).smul_mem (p : ℚ)⁻¹
       (Submodule.subset_span (L.smul_mem_neighborKernel p v ⟨x, hx⟩))
-    rw [← Int.cast_smul_eq_zsmul ℚ, smul_smul, Int.cast_natCast,
-      inv_mul_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne p)), one_smul] at h
-    exact h
-
-attribute [local instance] isLattice_neighborKernel
+    rwa [smul_comm, natCast_zsmul_inv_smul] at h
 
 private theorem isLattice_neighborCarrier [NeZero p] (v : L) :
     (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsLattice ℚ :=
@@ -191,7 +186,7 @@ variable {L p}
 /-- The vector `v / p` pairs integrally with the neighbor kernel. -/
 private theorem exists_form_inv_smul_eq [NeZero p] {v : L} {x : V}
     (hx : x ∈ L.neighborKernel p v) : ∃ k : ℤ, L.form ((p : ℚ)⁻¹ • (v : V)) x = k := by
-  obtain ⟨y, rfl, k, hk⟩ := exists_of_mem_neighborKernel hx
+  obtain ⟨y, rfl, k, hk⟩ := (L.mem_neighborKernel_iff p v x).mp hx
   refine ⟨k, ?_⟩
   have hp : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
   rw [map_smul, LinearMap.smul_apply, smul_eq_mul, ← L.integralForm_cast, hk]
@@ -331,6 +326,13 @@ theorem zsmul_inv_smul_mem_carrier_iff {w : L} (hvw : IsCoprime (L.integralForm 
     rw [mul_comm, mul_smul, natCast_zsmul_inv_smul]
     exact L.carrier.smul_mem m v.2
 
+/-- The multiples of `p (v / p)` lie in the neighbor kernel. -/
+private theorem zsmul_inv_smul_mem_neighborKernel (m : ℤ) :
+    ((p : ℤ) * m) • ((p : ℚ)⁻¹ • (v : V)) ∈ L.neighborKernel p v := by
+  rw [mul_comm, mul_smul, natCast_zsmul_inv_smul]
+  exact Submodule.smul_mem _ m
+    (L.coe_mem_neighborKernel_self p (dvd_trans (dvd_pow_self _ two_ne_zero) hv))
+
 /-- With a pairing coprime to `p`, the neighbor meets `L` exactly in the neighbor kernel. -/
 theorem carrier_inf_neighbor_carrier {w : L} (hvw : IsCoprime (L.integralForm v w) p) :
     L.carrier ⊓ (L.neighbor p v hv).carrier = L.neighborKernel p v := by
@@ -340,9 +342,7 @@ theorem carrier_inf_neighbor_carrier {w : L} (hvw : IsCoprime (L.integralForm v 
   have hn : n • ((p : ℚ)⁻¹ • (v : V)) ∈ L.carrier := by
     simpa using L.carrier.sub_mem hxL (L.neighborKernel_le p v hy)
   obtain ⟨m, rfl⟩ := (zsmul_inv_smul_mem_carrier_iff hvw n).mp hn
-  rw [mul_comm, mul_smul, natCast_zsmul_inv_smul]
-  exact add_mem hy (Submodule.smul_mem _ m
-    (L.coe_mem_neighborKernel_self p (dvd_trans (dvd_pow_self _ two_ne_zero) hv)))
+  exact add_mem hy (L.zsmul_inv_smul_mem_neighborKernel hv m)
 
 /-- With a pairing coprime to `p`, the neighbor kernel has index `p` in the neighbor. -/
 theorem relIndex_neighborKernel_neighbor {w : L} (hvw : IsCoprime (L.integralForm v w) p) :
@@ -357,10 +357,8 @@ theorem relIndex_neighborKernel_neighbor {w : L} (hvw : IsCoprime (L.integralFor
   have hmem (k : ℤ) : k • u ∈ H ↔ (p : ℤ) ∣ k := by
     refine ⟨fun hk ↦ (zsmul_inv_smul_mem_carrier_iff hvw k).mp (L.neighborKernel_le p v hk), ?_⟩
     rintro ⟨m, rfl⟩
-    change ((p : ℤ) * m) • u ∈ L.neighborKernel p v
-    rw [mul_comm, mul_smul, natCast_zsmul_inv_smul]
-    exact Submodule.smul_mem _ m
-      (L.coe_mem_neighborKernel_self p (dvd_trans (dvd_pow_self _ two_ne_zero) hv))
+    rw [Submodule.mem_toAddSubgroup]
+    exact L.zsmul_inv_smul_mem_neighborKernel hv m
   -- The index of `H` in `H + ℤ u` is that of the multipliers of `u` landing in `H`.
   have hcomap : H.comap (zmultiplesHom V u) = AddSubgroup.zmultiples (p : ℤ) := by
     ext k
@@ -406,7 +404,7 @@ theorem exists_isNeighbor_of_dvd_integralNorm (hp : Odd p) {v w : L}
   obtain ⟨t, ht⟩ := L.exists_dvd_integralNorm_add_smul hp hv hvw
   set v' := v + ((p : ℤ) * t) • w
   have hvw' : IsCoprime (L.integralForm v' w) p := by
-    rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, mul_assoc]
+    rw [integralForm_add_smul_apply]
     exact hvw.add_mul_left_left _
   refine ⟨L.neighbor p v' ht, L.isNeighbor_neighbor ht hvw', ?_, fun hL ↦ ?_⟩
   · rw [L.carrier_inf_neighbor_carrier ht hvw', neighborKernel_add_smul]
@@ -414,30 +412,6 @@ theorem exists_isNeighbor_of_dvd_integralNorm (hp : Odd p) {v w : L}
     have h2 : (2 : ℤ) ∣ L.integralNorm v' := even_iff_two_dvd.mp
       ((L.even_integralNorm_iff v').mpr (hL.exists_norm_eq_two_mul v'))
     exact (Odd.isCoprime_two (by exact_mod_cast hp.natCast.pow)).symm.mul_dvd h2 ht
-
-
-/-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
-`p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. Indeed `v / p`
-lies in the dual lattice, and its class in the discriminant group has order dividing both `p` and
-the order `|det L|` of that group. -/
-theorem inv_smul_mem_carrier_of_forall_dvd [NeZero p] [L.IsNondegenerate]
-    (hp : p.Coprime L.discriminant) {v : L} (hv : ∀ w : L, (p : ℤ) ∣ L.integralForm v w) :
-    (p : ℚ)⁻¹ • (v : V) ∈ L.carrier := by
-  have hdual : (p : ℚ)⁻¹ • (v : V) ∈ L.dualCarrier := by
-    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
-    intro y hy
-    obtain ⟨k, hk⟩ := exists_form_inv_smul_eq
-      ((L.coe_mem_neighborKernel_iff p v ⟨y, hy⟩).mpr (hv ⟨y, hy⟩))
-    exact Submodule.mem_one.mpr ⟨k, by rw [hk, eq_intCast]⟩
-  set x : L.DiscriminantGroup := Submodule.Quotient.mk ⟨_, hdual⟩
-  have hpx : p • x = 0 := by
-    rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
-      Submodule.coe_smul_of_tower, ← natCast_zsmul, natCast_zsmul_inv_smul]
-    exact v.2
-  have horder : addOrderOf x = 1 := Nat.eq_one_of_dvd_coprimes hp
-    (addOrderOf_dvd_of_nsmul_eq_zero hpx)
-    ((addOrderOf_dvd_natCard x).trans (L.natCard_discriminantGroup).dvd)
-  exact (L.discriminantGroup_mk_eq_zero_iff _).mp (AddMonoid.addOrderOf_eq_one_iff.mp horder)
 
 /-- **Kneser neighbors at a prime not dividing the discriminant.** Let `p` be an odd prime not
 dividing the discriminant of a nondegenerate lattice `L`, and let `v ∈ L ∖ p L` be isotropic
@@ -451,7 +425,8 @@ theorem exists_isNeighbor_of_not_dvd_discriminant [L.IsNondegenerate] (hp : p.Pr
   have : NeZero p := ⟨hp.ne_zero⟩
   obtain ⟨w, hw⟩ : ∃ w : L, ¬(p : ℤ) ∣ L.integralForm v w := by
     by_contra! h
-    exact hv₀ (inv_smul_mem_carrier_of_forall_dvd ((Nat.Prime.coprime_iff_not_dvd hp).mpr hdisc) h)
+    exact hv₀
+      (L.inv_smul_mem_carrier_of_forall_dvd ((Nat.Prime.coprime_iff_not_dvd hp).mpr hdisc) h)
   exact exists_isNeighbor_of_dvd_integralNorm (hp.odd_of_ne_two hp₂) hv
     ((Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp hp)).mpr hw).symm
 
