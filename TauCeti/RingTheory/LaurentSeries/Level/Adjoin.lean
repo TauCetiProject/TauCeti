@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
-public import TauCeti.RingTheory.LaurentSeries.LevelBasis
+public import TauCeti.RingTheory.LaurentSeries.Level.Basis
 
 /-!
 # Ramified Laurent levels as radical extensions
@@ -42,6 +42,7 @@ namespace Level
 variable (K : Type*) [Field K] (d : ℕ+)
 
 /-- The minimal polynomial of the level parameter `u` is `T ^ d - X`. -/
+@[simp]
 theorem minpoly_parameter :
     minpoly K⸨X⸩ (parameter K d) = X ^ (d : ℕ) - C (HahnSeries.single 1 1) := by
   symm
@@ -52,6 +53,7 @@ theorem minpoly_parameter :
       (powerBasis K d).degree_minpoly, powerBasis_dim]
 
 /-- The wrapped ramified level is generated over the base Laurent field by its parameter. -/
+@[simp]
 theorem adjoin_parameter_eq_top :
     IntermediateField.adjoin K⸨X⸩ ({parameter K d} : Set (Level K d)) = ⊤ := by
   rw [← powerBasis_gen]
@@ -88,12 +90,8 @@ theorem levelParameter_pow :
 theorem minpoly_levelParameter :
     minpoly K⸨X⸩ (levelParameter K d) =
       X ^ (d : ℕ) - C (HahnSeries.single 1 1) := by
-  symm
-  apply minpoly.unique_of_degree_le_degree_minpoly
-    (A := K⸨X⸩) (x := levelParameter K d) (monic_X_pow_sub_C _ d.ne_zero)
-  · rw [map_sub, aeval_X_pow, aeval_C, sub_eq_zero, levelParameter_pow]
-  · rw [degree_X_pow_sub_C d.pos, (levelPowerBasis K d).degree_minpoly,
-      levelPowerBasis_dim]
+  rw [levelParameter, levelPowerBasis_gen, minpoly.algEquiv_eq,
+    LaurentSeries.Level.minpoly_parameter]
 
 /-- Internally, the actual level is generated over the base Laurent field by its parameter. -/
 theorem adjoin_levelParameter_eq_top :
@@ -107,20 +105,8 @@ distinguished parameter. -/
 theorem level_eq_adjoin :
     level K d = IntermediateField.adjoin K⸨X⸩
       {((levelParameter K d : level K d) : TauCeti.puiseuxField K)} := by
-  apply le_antisymm
-  · intro x hx
-    obtain ⟨p, hp⟩ := (levelPowerBasis K d).exists_eq_aeval' ⟨x, hx⟩
-    have hp' := congrArg (level K d).val hp
-    have hmem : (level K d).val ⟨x, hx⟩ ∈ IntermediateField.adjoin K⸨X⸩
-        {((levelParameter K d : level K d) : TauCeti.puiseuxField K)} := by
-      rw [hp', ← Polynomial.aeval_algHom_apply]
-      apply (Algebra.adjoin_le ?_)
-        (Polynomial.aeval_mem_adjoin_singleton K⸨X⸩
-          (((levelParameter K d : level K d) : TauCeti.puiseuxField K)))
-      exact Set.singleton_subset_iff.mpr
-        (IntermediateField.mem_adjoin_simple_self K⸨X⸩ _)
-    exact hmem
-  · exact IntermediateField.adjoin_le_iff.mpr
-      (Set.singleton_subset_iff.mpr (levelParameter K d).property)
+  have h := congrArg IntermediateField.lift (adjoin_levelParameter_eq_top K d)
+  rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top] at h
+  exact h.symm
 
 end TauCeti.puiseuxField
