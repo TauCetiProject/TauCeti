@@ -40,6 +40,9 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
+* `TauCeti.PopaZagier.abs_le_of_weight₁_ne_zero`, ...,
+  `TauCeti.PopaZagier.abs_le_of_weight₄_ne_zero`: the same bound for each of the four sums
+  `T₁`, ..., `T₄` separately.
 * `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
   `c = 0 < a`, the matrix `-M` has weight zero, so `simp` computes coefficients as `weight M / 12`.
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
@@ -126,15 +129,24 @@ theorem weight₂_eq_weight₁ (a b c d : ℤ) : weight₂ a b c d = weight₁ (
 
 /-! ### Finiteness -/
 
+/-- A matrix `(a b; c d)` of nonzero weight in one of the four sums of (15) satisfies the
+inequalities of that sum. -/
+private theorem cases_of_weightᵢ_ne_zero {a b c d : ℤ}
+    (h : weight₁ a b c d ≠ 0 ∨ weight₂ a b c d ≠ 0 ∨ weight₃ a b c d ≠ 0 ∨ weight₄ a b c d ≠ 0) :
+    0 ≤ c ∧ c < a ∧ a - d ≤ -b ∧ -b ≤ c ∨ b < d ∧ d ≤ 0 ∧ -b ≤ a - d ∧ a - d ≤ c ∨
+      a ≤ 0 ∧ 0 < c ∧ 0 ≤ a - d ∧ a - d ≤ c ∧ c ≤ -b ∨
+      d ≤ 0 ∧ 0 < -b ∧ 0 ≤ a - d ∧ a - d ≤ -b ∧ -b ≤ c := by
+  simp only [weight₁, weight₂, weight₃, weight₄] at h
+  split_ifs at h <;> grind [chainWeight₃, chainWeight₄]
+
 /-- A matrix `(a b; c d)` of nonzero weight satisfies the inequalities of one of the four sums of
 (15). -/
 private theorem cases_of_weight_ne_zero {a b c d : ℤ}
     (h : weight₁ a b c d - weight₂ a b c d - weight₃ a b c d - weight₄ a b c d ≠ 0) :
     0 ≤ c ∧ c < a ∧ a - d ≤ -b ∧ -b ≤ c ∨ b < d ∧ d ≤ 0 ∧ -b ≤ a - d ∧ a - d ≤ c ∨
       a ≤ 0 ∧ 0 < c ∧ 0 ≤ a - d ∧ a - d ≤ c ∧ c ≤ -b ∨
-      d ≤ 0 ∧ 0 < -b ∧ 0 ≤ a - d ∧ a - d ≤ -b ∧ -b ≤ c := by
-  simp only [weight₁, weight₂, weight₃, weight₄] at h
-  split_ifs at h <;> grind [chainWeight₃, chainWeight₄]
+      d ≤ 0 ∧ 0 < -b ∧ 0 ≤ a - d ∧ a - d ≤ -b ∧ -b ≤ c :=
+  cases_of_weightᵢ_ne_zero (by omega)
 
 /-- Every matrix `(a b; c d)` satisfying the inequalities of `T₁` has positive determinant
 `n = ad - bc` and entries at most `2n` in absolute value. -/
@@ -207,28 +219,68 @@ private theorem bounds_of_T₄ {a b c d : ℤ} (hd : d ≤ 0) (hb : 0 < -b) (had
       sq_nonneg (d - b) + mul_self_nonneg d + h₃
   omega
 
-/-- Every matrix `(a b; c d)` of nonzero weight has positive determinant `ad - bc` and entries at
-most twice its determinant in absolute value. -/
-private theorem bounds_of_weight_ne_zero {a b c d : ℤ}
-    (h : weight₁ a b c d - weight₂ a b c d - weight₃ a b c d - weight₄ a b c d ≠ 0) :
+/-- Every matrix `(a b; c d)` of nonzero weight in one of the four sums of (15) has positive
+determinant `ad - bc` and entries at most twice its determinant in absolute value. -/
+private theorem bounds_of_weightᵢ_ne_zero {a b c d : ℤ}
+    (h : weight₁ a b c d ≠ 0 ∨ weight₂ a b c d ≠ 0 ∨ weight₃ a b c d ≠ 0 ∨ weight₄ a b c d ≠ 0) :
     0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
       |c| ≤ 2 * (a * d - b * c) ∧ |d| ≤ 2 * (a * d - b * c) := by
-  rcases cases_of_weight_ne_zero h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ |
+  rcases cases_of_weightᵢ_ne_zero h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ |
     ⟨h₁, h₂, h₃, h₄, h₅⟩ | ⟨h₁, h₂, h₃, h₄, h₅⟩
   exacts [bounds_of_T₁ h₁ h₂ h₃ h₄, bounds_of_T₂ h₁ h₂ h₃ h₄, bounds_of_T₃ h₁ h₂ h₃ h₄ h₅,
     bounds_of_T₄ h₁ h₂ h₃ h₄ h₅]
 
+/-- A matrix of nonzero weight has nonzero weight in one of the four sums of (15). -/
+private theorem weightᵢ_ne_zero_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : weight M ≠ 0) :
+    weight₁ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨ weight₂ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨
+      weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨
+      weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 := by
+  simp only [weight] at h
+  omega
+
+/-- The entry bounds of `bounds_of_weightᵢ_ne_zero`, stated for the entries of a matrix. -/
+private theorem abs_le_of_weightᵢ_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : weight₁ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨ weight₂ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨
+      weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨ weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0)
+    (i j : Fin 2) : |M i j| ≤ 2 * M.det := by
+  obtain ⟨-, h⟩ := bounds_of_weightᵢ_ne_zero h
+  fin_cases i <;> fin_cases j <;> simp [Matrix.det_fin_two, h]
+
 /-- **Popa–Zagier, Lemma 4(a)**, positivity: every matrix of nonzero weight has positive
 determinant. -/
 theorem det_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) : 0 < M.det :=
-  M.det_fin_two ▸ (bounds_of_weight_ne_zero h).1
+  M.det_fin_two ▸ (bounds_of_weightᵢ_ne_zero (weightᵢ_ne_zero_of_weight_ne_zero h)).1
 
 /-- **Popa–Zagier, Lemma 4(a)**, finiteness: every matrix of nonzero weight has entries at most
 twice its determinant in absolute value. -/
 theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) (i j : Fin 2) :
-    |M i j| ≤ 2 * M.det := by
-  obtain ⟨-, h⟩ := bounds_of_weight_ne_zero h
-  fin_cases i <;> fin_cases j <;> simp [Matrix.det_fin_two, h]
+    |M i j| ≤ 2 * M.det :=
+  abs_le_of_weightᵢ_ne_zero (weightᵢ_ne_zero_of_weight_ne_zero h) i j
+
+/-- Every matrix of nonzero weight in `T₁` has entries at most twice its determinant in absolute
+value. -/
+theorem abs_le_of_weight₁_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : weight₁ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
+  abs_le_of_weightᵢ_ne_zero (.inl h) i j
+
+/-- Every matrix of nonzero weight in `T₂` has entries at most twice its determinant in absolute
+value. -/
+theorem abs_le_of_weight₂_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : weight₂ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
+  abs_le_of_weightᵢ_ne_zero (.inr (.inl h)) i j
+
+/-- Every matrix of nonzero weight in `T₃` has entries at most twice its determinant in absolute
+value. -/
+theorem abs_le_of_weight₃_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
+  abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inl h))) i j
+
+/-- Every matrix of nonzero weight in `T₄` has entries at most twice its determinant in absolute
+value. -/
+theorem abs_le_of_weight₄_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
+  abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inr h))) i j
 
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
