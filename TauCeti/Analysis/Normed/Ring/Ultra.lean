@@ -109,7 +109,7 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClas
     rcases s.eq_empty_or_nonempty with rfl | hs
     · simpa using hfg a (by simp)
     have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
-      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le s f
+      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le_prod_norm s f
         _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
           fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
         _ = M ^ s.card := Finset.prod_const _
