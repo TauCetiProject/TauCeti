@@ -57,23 +57,21 @@ theorem mem_linearFormApproximations {θ : ι → ℝ} {w : ℝ} {x : ℤ × (ι
       |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ ‖x‖ ^ (-w) :=
   Iff.rfl
 
-/-- A nonzero integer vector has sup norm at least one. -/
-private theorem one_le_norm_of_ne_zero {x : ℤ × (ι → ℤ)} (hx : x ≠ 0) : 1 ≤ ‖x‖ := by
+/-- Every solution has sup norm at least one, since its linear form does not vanish. -/
+private theorem one_le_norm_of_mem {θ : ι → ℝ} {w : ℝ} {x : ℤ × (ι → ℤ)}
+    (hx : x ∈ linearFormApproximations θ w) : 1 ≤ ‖x‖ := by
+  have hx₀ : x ≠ 0 := by
+    intro h
+    simp [h, mem_linearFormApproximations] at hx
   have hint {k : ℤ} (hk : k ≠ 0) : (1 : ℝ) ≤ ‖k‖ := by
     rw [Int.norm_eq_abs, ← Int.cast_abs]
     exact_mod_cast Int.one_le_abs hk
   by_cases h₁ : x.1 = 0
   · obtain ⟨i, hi⟩ : ∃ i, x.2 i ≠ 0 := by
       by_contra! h
-      exact hx (Prod.ext h₁ (funext h))
+      exact hx₀ (Prod.ext h₁ (funext h))
     exact (hint hi).trans ((norm_le_pi_norm x.2 i).trans (norm_snd_le x))
   · exact (hint h₁).trans (norm_fst_le x)
-
-/-- Every solution has sup norm at least one, since its linear form does not vanish. -/
-private theorem one_le_norm_of_mem {θ : ι → ℝ} {w : ℝ} {x : ℤ × (ι → ℤ)}
-    (hx : x ∈ linearFormApproximations θ w) : 1 ≤ ‖x‖ := by
-  refine one_le_norm_of_ne_zero fun h ↦ ?_
-  simp [h, mem_linearFormApproximations] at hx
 
 /-- For a nonnegative exponent, every solution has linear form of absolute value at most one. -/
 private theorem abs_le_one_of_mem {θ : ι → ℝ} {w : ℝ} (hw : 0 ≤ w) {x : ℤ × (ι → ℤ)}
@@ -174,15 +172,42 @@ theorem linearFormExponent_of_isEmpty [IsEmpty ι] (θ : ι → ℝ) : linearFor
 
 /-! ### Comparison with the irrationality exponent -/
 
-/-- A vector indexed by `Fin 1` has the norm of its only coordinate. -/
-private theorem norm_fin_one (y : Fin 1 → ℤ) : ‖y‖ = ‖y 0‖ :=
-  le_antisymm ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 (Fin.forall_fin_one.2 le_rfl))
-    (norm_le_pi_norm y 0)
-
 /-- For a single real number `ξ`, the linear form is `x₀ + x₁ ξ`. -/
 private theorem linearForm_fin_one (ξ : ℝ) (x : ℤ × (Fin 1 → ℤ)) :
     (x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * ![ξ] i = x.1 + x.2 0 * ξ := by
   simp
+
+/-- Rewriting a nondegenerate one-variable linear form as the error of its associated rational
+approximation. -/
+private theorem linearForm_fin_one_eq_mul_sub (ξ : ℝ) (x : ℤ × (Fin 1 → ℤ))
+    (hx : x.2 0 ≠ 0) :
+    (x.1 : ℝ) + x.2 0 * ξ = x.2 0 * (ξ - (-x.1 / x.2 0)) := by
+  have hx' : (x.2 0 : ℝ) ≠ 0 := by exact_mod_cast hx
+  field_simp
+  ring
+
+/-- If the value of a one-variable linear form is at most its nonnegative linear coefficient,
+then its full coefficient norm is controlled by that coefficient. -/
+private theorem norm_le_abs_add_one_mul_of_abs_linearForm_le (ξ : ℝ)
+    (x : ℤ × (Fin 1 → ℤ)) (hx₂ : 0 ≤ (x.2 0 : ℝ))
+    (hL : |(x.1 : ℝ) + x.2 0 * ξ| ≤ (x.2 0 : ℝ)) :
+    ‖x‖ ≤ (|ξ| + 1) * (x.2 0 : ℝ) := by
+  rw [Prod.norm_def]
+  refine max_le ?_ ?_
+  · rw [Int.norm_eq_abs]
+    have hx₁ : (x.1 : ℝ) = ((x.1 : ℝ) + x.2 0 * ξ) - x.2 0 * ξ := by ring
+    rw [hx₁]
+    calc
+      |(x.1 : ℝ) + x.2 0 * ξ - x.2 0 * ξ| ≤
+          |(x.1 : ℝ) + x.2 0 * ξ| + |(x.2 0 : ℝ) * ξ| := abs_sub _ _
+      _ ≤ (x.2 0 : ℝ) + (x.2 0 : ℝ) * |ξ| := by
+        rw [abs_mul, abs_of_nonneg hx₂]
+        gcongr
+      _ = (|ξ| + 1) * (x.2 0 : ℝ) := by ring
+  · rw [pi_norm_le_iff_of_nonneg (mul_nonneg (by positivity) hx₂)]
+    intro i
+    rw [Subsingleton.elim i 0, Int.norm_eq_abs, abs_of_nonneg hx₂]
+    exact le_mul_of_one_le_left hx₂ (by linarith [abs_nonneg ξ])
 
 /-- If a positive exponent `w` has infinitely many solutions for `![ξ]`, then `ξ` is a Liouville
 number with exponent `1 + w`: a solution `(x₀, x₁)` with `x₁ ≠ 0` gives
@@ -194,8 +219,13 @@ private theorem liouvilleWith_one_add_of_infinite {ξ w : ℝ} (hw : 0 < w)
   -- Every solution has `|x₁| ≤ N`, so the solutions lie in a finite set.
   refine (finite_setOf_abs_le_one_norm_snd_le ![ξ] N).subset fun x hx ↦
     ⟨abs_le_one_of_mem hw.le hx, ?_⟩
-  rw [norm_fin_one, Int.norm_eq_abs, ← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast,
-    Nat.cast_le]
+  suffices hnat : (x.2 0).natAbs ≤ N by
+    rw [pi_norm_le_iff_of_nonneg (Nat.cast_nonneg N)]
+    intro i
+    rw [Subsingleton.elim i 0, Int.norm_eq_abs]
+    have hz : |x.2 0| ≤ (N : ℤ) := by
+      simpa only [Int.abs_eq_natAbs, Int.ofNat_le] using hnat
+    exact_mod_cast hz
   by_cases h₀ : x.2 0 = 0
   · simp [h₀]
   obtain ⟨hpos, hle⟩ := hx
@@ -212,18 +242,18 @@ private theorem liouvilleWith_one_add_of_infinite {ξ w : ℝ} (hw : 0 < w)
       rw [habs, abs_of_pos (by exact_mod_cast hgt), Int.cast_neg]
   refine hN ⟨m, ?_⟩
   have hsub : ξ - (m : ℝ) / n = (x.1 + x.2 0 * ξ) / x.2 0 := by
-    have : (x.2 0 : ℝ) ≠ 0 := by exact_mod_cast h₀
-    rw [hm]
+    rw [hm, linearForm_fin_one_eq_mul_sub ξ x h₀]
     field_simp
-    ring
   refine ⟨fun h ↦ hpos.ne' ?_, ?_⟩
   · have := sub_eq_zero.2 h
     rw [hsub, div_eq_zero_iff] at this
     simpa using this.resolve_right (by exact_mod_cast h₀)
   -- `|x₀ + x₁ ξ| ≤ ‖x‖ ^ (-w) ≤ n ^ (-w)`, and dividing by `n` gives the Liouville bound.
   have hnorm : (n : ℝ) ≤ ‖x‖ := by
-    rw [habs, ← Int.norm_eq_abs, ← norm_fin_one]
-    exact norm_snd_le x
+    calc
+      (n : ℝ) = ‖x.2 0‖ := by rw [habs, Int.norm_eq_abs]
+      _ ≤ ‖x.2‖ := norm_le_pi_norm x.2 0
+      _ ≤ ‖x‖ := norm_snd_le x
   have hbound : |(x.1 : ℝ) + x.2 0 * ξ| ≤ (n : ℝ) ^ (-w) :=
     hle.trans (Real.rpow_le_rpow_of_nonpos hn hnorm (neg_nonpos.2 hw.le))
   rw [hsub, abs_div, ← habs]
@@ -259,9 +289,7 @@ private theorem infinite_linearFormApproximations_of_liouvilleWith {ξ p r : ℝ
     simp only [x] at this
     omega
   have hL : (x.1 : ℝ) + x.2 0 * ξ = n * (ξ - m / n) := by
-    simp only [x, Int.cast_neg, Int.cast_natCast]
-    field_simp
-    ring
+    simpa [x, hn.ne'] using linearForm_fin_one_eq_mul_sub ξ x (by simpa [x] using hn.ne')
   -- `|-m + n ξ| < n · n ^ (-q) = n ^ (1 - q) ≤ 1`.
   have hLlt : |(x.1 : ℝ) + x.2 0 * ξ| < (n : ℝ) ^ (1 - q) := by
     rw [hL, abs_mul, abs_of_pos hn]
@@ -270,18 +298,11 @@ private theorem infinite_linearFormApproximations_of_liouvilleWith {ξ p r : ℝ
   have hLle : |(x.1 : ℝ) + x.2 0 * ξ| ≤ 1 :=
     hLlt.le.trans (Real.rpow_le_one_of_one_le_of_nonpos hn₁' (by linarith))
   -- The sup norm of `x = (-m, n)` lies between `n` and `(|ξ| + 1) n`.
-  have hnorm : ‖x‖ = max |(m : ℝ)| n := by
+  have hlower : (n : ℝ) ≤ ‖x‖ := by
     simp [x, Prod.norm_def, Int.norm_eq_abs]
-  have hm : |(m : ℝ)| ≤ (|ξ| + 1) * n := by
-    have : (m : ℝ) = n * ξ - (x.1 + x.2 0 * ξ) := by simp [x]
-    rw [this]
-    calc |(n : ℝ) * ξ - (x.1 + x.2 0 * ξ)| ≤ |(n : ℝ) * ξ| + |(x.1 : ℝ) + x.2 0 * ξ| :=
-          abs_sub _ _
-      _ ≤ n * |ξ| + n := by rw [abs_mul, abs_of_pos hn]; linarith
-      _ = (|ξ| + 1) * n := by ring
   have hupper : ‖x‖ ≤ (|ξ| + 1) * n := by
-    rw [hnorm]
-    exact max_le hm (le_mul_of_one_le_left hn.le (by linarith [abs_nonneg ξ]))
+    simpa [x] using
+      norm_le_abs_add_one_mul_of_abs_linearForm_le ξ x hn.le (hLle.trans hn₁')
   rw [mem_linearFormApproximations, linearForm_fin_one, neg_sub]
   refine ⟨?_, hLlt.le.trans ?_⟩
   · rw [hL, abs_mul, abs_of_pos hn]
@@ -293,8 +314,7 @@ private theorem infinite_linearFormApproximations_of_liouvilleWith {ξ p r : ℝ
     _ = ((|ξ| + 1) * n) ^ (1 - r) := by
         rw [Real.mul_rpow (by positivity) hn.le, mul_comm]
     _ ≤ ‖x‖ ^ (1 - r) :=
-        Real.rpow_le_rpow_of_nonpos (by rw [hnorm]; exact hn.trans_le (le_max_right _ _)) hupper
-          (by linarith)
+        Real.rpow_le_rpow_of_nonpos (hn.trans_le hlower) hupper (by linarith)
 
 /-- The linear-form exponent of a single real number `ξ` is its irrationality exponent minus
 one: `w(ξ) + 1 = μ(ξ)`. Both sides equal `1` for rational `ξ`. -/
