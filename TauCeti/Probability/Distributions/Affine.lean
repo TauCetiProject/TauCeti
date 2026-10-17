@@ -26,6 +26,11 @@ pulled-back point: this left limit of the cdf cannot be replaced by the cdf itse
 an atom there. At slope zero the pushforward of a probability measure is the Dirac mass at `a`,
 which is Mathlib's `MeasureTheory.Measure.map_const`.
 
+The variance, moment-generating function and characteristic function computations follow
+Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const_add` and
+`ProbabilityTheory.variance_const_mul`, `ProbabilityTheory.mgf_const_add` and
+`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_apply_real`, which they reduce to.
+
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
