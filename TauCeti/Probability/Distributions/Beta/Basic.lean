@@ -15,10 +15,10 @@ import TauCeti.Probability.Density
 /-!
 # Elementary theory of the beta distribution
 
-This file completes the elementary moment theory of Mathlib's beta distribution. For positive
-shape parameters it computes every natural raw moment, and obtains the mean and variance as the
-first two cases. It also records that the beta law is carried by `[0, 1]`, so every exponential
-moment exists.
+This file develops the elementary moment theory of Mathlib's beta distribution. For positive
+shape parameters it computes mixed real-power moments, including their sharp integrability
+criterion, and obtains the natural moments, mean, and variance as special cases. It also records
+that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 
 ## Main results
 
@@ -29,6 +29,10 @@ moment exists.
 * `TauCeti.Probability.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against
   Lebesgue
   measure on the open unit interval;
+* `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff` — the exact integrability
+  criterion for mixed real powers;
+* `TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure` — the mixed real-power moments
+  as a quotient of beta values;
 * `TauCeti.Probability.integral_pow_betaMeasure` — the natural raw moments as a quotient of Gamma
   values;
 * `TauCeti.Probability.integral_id_betaMeasure` — the mean is `α / (α + β)`;
@@ -119,6 +123,68 @@ theorem ae_mem_Icc_betaMeasure (α β : ℝ) :
   filter_upwards [ae_mem_Ioo_betaMeasure α β] with x hx
   exact ⟨hx.1.le, hx.2.le⟩
 
+private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ}
+    (hx : x ∈ Ioo (0 : ℝ) 1) :
+    betaPDFReal α β x * (x ^ q * (1 - x) ^ s) =
+      (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
+  rw [betaPDFReal, ite_eq_left ⟨hx.1, hx.2⟩]
+  calc
+    (1 / beta α β) * x ^ (α - 1) * (1 - x) ^ (β - 1) *
+          (x ^ q * (1 - x) ^ s) =
+        (1 / beta α β) *
+          ((x ^ (α - 1) * x ^ q) * ((1 - x) ^ (β - 1) * (1 - x) ^ s)) := by ring
+    _ = (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
+      rw [← Real.rpow_add hx.1, ← Real.rpow_add (sub_pos.mpr hx.2)]
+      congr 3 <;> ring
+
+/-- Mixed real powers of a beta variable are integrable exactly when their exponents remain above
+the two endpoint singularity thresholds. -/
+theorem integrable_rpow_mul_one_sub_rpow_betaMeasure_iff {α β q s : ℝ}
+    (hα : 0 < α) (hβ : 0 < β) :
+    Integrable (fun x : ℝ => x ^ q * (1 - x) ^ s) (betaMeasure α β) ↔
+      0 < α + q ∧ 0 < β + s := by
+  rw [integrable_betaMeasure_iff hα hβ]
+  have hfun : (fun x : ℝ => betaPDFReal α β x * (x ^ q * (1 - x) ^ s)) =
+      (Ioo (0 : ℝ) 1).indicator fun x =>
+        (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
+    funext x
+    by_cases hx : x ∈ Ioo (0 : ℝ) 1
+    · rw [indicator_of_mem hx, betaPDFReal_mul_rpow_mul_one_sub_rpow hx]
+    · rw [indicator_of_notMem hx, betaPDFReal]
+      split_ifs with hx'
+      · exact (hx hx').elim
+      · simp
+  simp_rw [smul_eq_mul, hfun, integrable_indicator_iff measurableSet_Ioo, IntegrableOn]
+  rw [integrable_const_mul_iff
+    (isUnit_iff_ne_zero.mpr (one_div_ne_zero (beta_pos hα hβ).ne'))]
+  exact TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff
+
+/-- The mixed real-power moment of a beta variable is a quotient of beta values. -/
+@[simp]
+theorem integral_rpow_mul_one_sub_rpow_betaMeasure {α β q s : ℝ}
+    (hα : 0 < α) (hβ : 0 < β) (hq : 0 < α + q) (hs : 0 < β + s) :
+    ∫ x, x ^ q * (1 - x) ^ s ∂betaMeasure α β =
+      beta (α + q) (β + s) / beta α β := by
+  rw [integral_betaMeasure_eq hα hβ]
+  simp_rw [smul_eq_mul]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioo (0 : ℝ) 1)]
+  · calc
+      ∫ x in Ioo (0 : ℝ) 1, betaPDFReal α β x * (x ^ q * (1 - x) ^ s) =
+          ∫ x in Ioo (0 : ℝ) 1,
+            (1 / beta α β) * (x ^ (α + q - 1) * (1 - x) ^ (β + s - 1)) := by
+        refine setIntegral_congr_fun measurableSet_Ioo fun x hx => ?_
+        exact betaPDFReal_mul_rpow_mul_one_sub_rpow hx
+      _ = (1 / beta α β) * beta (α + q) (β + s) := by
+        rw [integral_const_mul, ← integral_Ioc_eq_integral_Ioo,
+          ← intervalIntegral.integral_of_le zero_le_one,
+          TauCeti.integral_rpow_mul_one_sub_rpow hq hs]
+      _ = beta (α + q) (β + s) / beta α β := by ring
+  · intro x hx
+    rw [betaPDFReal]
+    split_ifs with hx'
+    · exact (hx hx').elim
+    · simp
+
 /-- The `n`th raw moment of a beta distribution with positive shape parameters. -/
 @[simp]
 theorem integral_pow_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
@@ -126,42 +192,24 @@ theorem integral_pow_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n 
       Real.Gamma (α + n) * Real.Gamma (α + β) /
         (Real.Gamma α * Real.Gamma (α + β + n)) := by
   have hαn : 0 < α + (n : ℝ) := add_pos_of_pos_of_nonneg hα (Nat.cast_nonneg n)
-  rw [integral_betaMeasure_eq hα hβ]
-  simp_rw [smul_eq_mul]
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Set.Ioo (0 : ℝ) 1)]
-  · calc
-      ∫ x in Set.Ioo 0 1, betaPDFReal α β x * x ^ n =
-          ∫ x in Set.Ioo 0 1,
-            (1 / beta α β) * (x ^ (α + n - 1) * (1 - x) ^ (β - 1)) := by
-        refine setIntegral_congr_fun measurableSet_Ioo fun x hx ↦ ?_
-        rw [betaPDFReal, ite_eq_left ⟨hx.1, hx.2⟩]
-        calc
-          ((1 / beta α β) * x ^ (α - 1) * (1 - x) ^ (β - 1)) * x ^ n =
-              (1 / beta α β) *
-                ((x ^ n * x ^ (α - 1)) * (1 - x) ^ (β - 1)) := by ring_nf
-          _ = (1 / beta α β) *
-                (x ^ (α + n - 1) * (1 - x) ^ (β - 1)) := by
-            rw [← Real.rpow_natCast x n, ← Real.rpow_add hx.1]
-            congr 3
-            ring_nf
-      _ = (1 / beta α β) * beta (α + n) β := by
-        rw [integral_const_mul, ← integral_Ioc_eq_integral_Ioo,
-          ← intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1),
-          integral_rpow_mul_one_sub_rpow hαn hβ]
-      _ = Real.Gamma (α + n) * Real.Gamma (α + β) /
-            (Real.Gamma α * Real.Gamma (α + β + n)) := by
-        rw [beta, beta]
-        field_simp [ne_of_gt (Real.Gamma_pos_of_pos hα),
-          ne_of_gt (Real.Gamma_pos_of_pos hβ),
-          ne_of_gt (Real.Gamma_pos_of_pos hαn),
-          ne_of_gt (Real.Gamma_pos_of_pos (add_pos hα hβ)),
-          ne_of_gt (Real.Gamma_pos_of_pos (add_pos hαn hβ))]
-        ring_nf
-  · intro x hx
-    rw [betaPDFReal]
-    split_ifs with h
-    · exact (hx h).elim
-    · simp
+  calc
+    ∫ x, x ^ n ∂betaMeasure α β =
+        ∫ x, x ^ (n : ℝ) * (1 - x) ^ (0 : ℝ) ∂betaMeasure α β := by
+      congr with x
+      rw [Real.rpow_natCast, Real.rpow_zero, mul_one]
+    _ = beta (α + n) β / beta α β := by
+      have hβ0 : 0 < β + (0 : ℝ) := by simpa using hβ
+      simpa using integral_rpow_mul_one_sub_rpow_betaMeasure (q := (n : ℝ)) (s := 0)
+        hα hβ hαn hβ0
+    _ = Real.Gamma (α + n) * Real.Gamma (α + β) /
+          (Real.Gamma α * Real.Gamma (α + β + n)) := by
+      rw [beta, beta]
+      field_simp [ne_of_gt (Real.Gamma_pos_of_pos hα),
+        ne_of_gt (Real.Gamma_pos_of_pos hβ),
+        ne_of_gt (Real.Gamma_pos_of_pos hαn),
+        ne_of_gt (Real.Gamma_pos_of_pos (add_pos hα hβ)),
+        ne_of_gt (Real.Gamma_pos_of_pos (add_pos hαn hβ))]
+      ring_nf
 
 /-- `Real.Gamma` two steps up: `Γ (x + 2) = (x + 1) * x * Γ x`. The second raw moment of a beta
 law evaluates `Real.Gamma` at `α + 2` and at `α + β + 2`, and this is the shape in which those two

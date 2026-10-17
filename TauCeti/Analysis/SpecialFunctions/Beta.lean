@@ -38,6 +38,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
+  endpoints of the unit interval;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
   `∫ t in 0..1, t ^ (a - 1) * (1 - t) ^ (b - 1) = Β(a, b)`;
 * `TauCeti.hasDerivAt_rpow_mul_one_sub_rpow` — the derivative of `t ^ a * (1 - t) ^ b`;
@@ -119,6 +121,53 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- The beta integrand is integrable on the open unit interval exactly when both parameters are
+positive. This includes the sharp failure at either endpoint when the corresponding exponent is
+at most `-1`. -/
+theorem integrableOn_rpow_mul_one_sub_rpow_iff :
+    IntegrableOn (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 1) ↔
+      0 < a ∧ 0 < b := by
+  constructor
+  · intro h
+    have hI : IntervalIntegrable
+        (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1 :=
+      (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).2 h
+    have left_endpoint : ∀ p r : ℝ,
+        IntervalIntegrable (fun t : ℝ => t ^ (p - 1) * (1 - t) ^ (r - 1)) volume 0 1 →
+          0 < p := by
+      intro p r hpr
+      have hhalf : IntervalIntegrable
+          (fun t : ℝ => t ^ (p - 1) * (1 - t) ^ (r - 1)) volume 0 (1 / 2) :=
+        hpr.mono_set (by
+          rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2), uIcc_of_le zero_le_one]
+          exact Icc_subset_Icc_right (by norm_num))
+      have hg : ContinuousOn (fun t : ℝ => (1 - t) ^ (-(r - 1))) (uIcc 0 (1 / 2)) :=
+        (continuousOn_const.sub continuousOn_id).rpow_const fun t ht => Or.inl (by
+          rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
+          linarith [ht.2] : (1 : ℝ) - t ≠ 0)
+      have hcancel := hhalf.mul_continuousOn hg
+      have hpow : IntervalIntegrable (fun t : ℝ => t ^ (p - 1)) volume 0 (1 / 2) :=
+        hcancel.congr_uIoo fun t ht => by
+          rw [uIoo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
+          have h1t : 0 < 1 - t := by linarith [ht.2]
+          dsimp only
+          rw [mul_assoc, ← Real.rpow_add h1t]
+          ring_nf
+          simp
+      have hp := (intervalIntegral.integrableOn_Ioo_rpow_iff
+          (by norm_num : (0 : ℝ) < 1 / 2)).1
+        ((intervalIntegrable_iff_integrableOn_Ioo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)).1
+          hpow)
+      linarith
+    refine ⟨left_endpoint a b hI, ?_⟩
+    apply left_endpoint b a
+    have hreflected := (hI.comp_sub_left 1).symm
+    simpa [sub_sub_cancel, mul_comm] using hreflected
+  · rintro ⟨ha, hb⟩
+    exact (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).1
+      (intervalIntegrable_rpow_mul_one_sub_rpow ha hb
+        (mem_Icc.2 ⟨le_rfl, zero_le_one⟩) (mem_Icc.2 ⟨zero_le_one, le_rfl⟩))
 
 /-- Euler's beta integral, in real-valued interval form: for positive parameters the integral of
 `t ^ (a - 1) * (1 - t) ^ (b - 1)` over `[0, 1]` is `Β(a, b)`. -/
