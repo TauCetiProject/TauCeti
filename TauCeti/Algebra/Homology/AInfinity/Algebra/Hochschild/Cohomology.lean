@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hochschild.Complex
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
+public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
@@ -93,6 +94,44 @@ def cohomologyIso (p : ℤ) :
           exact (complex_d 𝒜 p (p + 1) rfl).symm) :
         (complex 𝒜).sc' (p - 1) p (p + 1) ≅ shortComplex 𝒜 p) ≪≫
       (shortComplex 𝒜 p).moduleCatHomologyIso
+
+/-- The inverse comparison sends the quotient class of a closed cochain to its categorical
+cohomology class. -/
+@[simp]
+theorem cohomologyIso_inv_mk (p : ℤ) (F : cycles 𝒜 p) :
+    (cohomologyIso 𝒜 p).inv (Submodule.Quotient.mk F) =
+      (complex 𝒜).homologyπ p ((complex 𝒜).cyclesMk F.val (p + 1) (by simp)
+        (by
+          -- The forgetful functor evaluates the same underlying module differential.
+          change (complex 𝒜).d p (p + 1) F.val = 0
+          rw [complex_d]
+          exact F.2)) := by
+  let e : (complex 𝒜).sc' (p - 1) p (p + 1) ≅ shortComplex 𝒜 p :=
+    ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      (by
+        simp only [Iso.refl_hom]
+        exact (complex_d 𝒜 (p - 1) p (by omega)).symm)
+      (by
+        simp only [Iso.refl_hom]
+        exact (complex_d 𝒜 p (p + 1) rfl).symm)
+  let F' : (shortComplex 𝒜 p).moduleCatLeftHomologyData.K := ⟨F.val, F.2⟩
+  -- Express the representative using the explicit homology data so naturality applies
+  -- without unfolding the chosen categorical kernels or quotient maps.
+  change ((shortComplex 𝒜 p).moduleCatLeftHomologyData.π ≫
+    (shortComplex 𝒜 p).moduleCatHomologyIso.inv ≫ ShortComplex.homologyMap e.inv ≫
+      ((complex 𝒜).homologyIsoSc' (p - 1) p (p + 1) (by simp) (by simp)).inv) F' = _
+  rw [← ShortComplex.moduleCatCyclesIso_inv_π_assoc,
+    ShortComplex.homologyπ_naturality_assoc, HomologicalComplex.π_homologyIsoSc'_inv]
+  simp only [ModuleCat.comp_apply]
+  congr 1
+  apply (ModuleCat.mono_iff_injective ((complex 𝒜).iCycles p)).mp inferInstance
+  -- Compose before evaluating: the kernel comparison lemmas are morphism equalities.
+  change ((shortComplex 𝒜 p).moduleCatCyclesIso.inv ≫ ShortComplex.cyclesMap e.inv ≫
+    ((complex 𝒜).cyclesIsoSc' (p - 1) p (p + 1) (by simp) (by simp)).inv ≫
+      (complex 𝒜).iCycles p) F' = _
+  rw [HomologicalComplex.cyclesIsoSc'_inv_iCycles, ShortComplex.cyclesMap_i,
+    ShortComplex.moduleCatCyclesIso_inv_iCycles_assoc]
+  exact (HomologicalComplex.i_cyclesMk (complex 𝒜) F.val (p + 1) (by simp) _).symm
 
 /-- A closed cochain is a boundary exactly when it is the differential of a cochain in the
 previous degree. -/
