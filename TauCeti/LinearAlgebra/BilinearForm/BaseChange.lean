@@ -15,6 +15,7 @@ public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.Algebra.Order.Algebra
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.Ring.Hom.InjSurj
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
 /-!
 # Bilinear forms and base change
@@ -481,18 +482,11 @@ theorem posDef_toQuadraticMap_baseChange_iff {B : LinearMap.BilinForm F V} (hB :
     (B.baseChange K).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
   have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
     simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
-  let _ : Invertible (2 : F) := invertibleOfNonzero two_ne_zero
-  obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp hB)
-  set w := v.baseChange K
-  have hw (i j) : B.baseChange K (w i) (w j) = algebraMap F K (B (v i) (v j)) := by
-    simp [w, Basis.baseChange_apply, baseChange_tmul, Algebra.algebraMap_eq_smul_one]
   constructor
   · -- Reflection: evaluate on the nonzero vector `1 ⊗ x`.
     intro h x hx
-    have h1 : (1 : K) ⊗ₜ[F] x ≠ 0 := by
-      intro h0
-      refine hx (v.repr.injective (Finsupp.ext fun i ↦ ?_))
-      simpa [w] using congrArg (fun z ↦ w.repr z i) h0
+    have h1 : (1 : K) ⊗ₜ[F] x ≠ 0 :=
+      fun h0 ↦ hx ((Module.FaithfullyFlat.one_tmul_eq_zero_iff F V x).mp h0)
     have := h _ h1
     rw [LinearMap.BilinMap.toQuadraticMap_apply, baseChange_tmul, one_mul,
       ← Algebra.algebraMap_eq_smul_one, hmap] at this
@@ -500,6 +494,11 @@ theorem posDef_toQuadraticMap_baseChange_iff {B : LinearMap.BilinForm F V} (hB :
   · -- The orthogonal basis `v` base-changes to an orthogonal basis `w` of `B.baseChange K`,
     -- whose diagonal values are the images of the positive diagonal values of `B`.
     intro h z hz
+    let _ : Invertible (2 : F) := invertibleOfNonzero two_ne_zero
+    obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp hB)
+    set w := v.baseChange K
+    have hw (i j) : B.baseChange K (w i) (w j) = algebraMap F K (B (v i) (v j)) := by
+      simp [w, Basis.baseChange_apply, baseChange_tmul, Algebra.algebraMap_eq_smul_one]
     have hpos (i) : 0 < algebraMap F K (B (v i) (v i)) := by
       rw [hmap, ← LinearMap.BilinMap.toQuadraticMap_apply]
       exact h _ (v.ne_zero i)
