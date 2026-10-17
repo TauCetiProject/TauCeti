@@ -61,12 +61,14 @@ theorem hamiltonianFlow_conserves (hX : LipschitzWith K (ω.hamiltonianVectorFie
     (fun s ↦ (hd s).deriv) t 0
   simpa using hc
 
-/-- The time maps of a globally Lipschitz Hamiltonian flow are continuously differentiable
-when the Hamiltonian is `C²`. -/
-theorem contDiff_hamiltonianFlow_apply
-    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H) (t : ℝ) :
-    ContDiff ℝ 1 (ω.hamiltonianFlow H hX t) :=
-  contDiff_flowOfLipschitz_apply 0 _ hX (ω.contDiff_hamiltonianVectorField hH) t
+/-- The time maps of a globally Lipschitz Hamiltonian flow are `C^(n+1)` when the
+Hamiltonian is `C^(n+2)`. -/
+theorem contDiff_hamiltonianFlow_apply (n : ℕ)
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ (n + 2) H)
+    (t : ℝ) : ContDiff ℝ (n + 1) (ω.hamiltonianFlow H hX t) :=
+  contDiff_flowOfLipschitz_apply n _ hX
+    (ω.contDiff_hamiltonianVectorField
+      (by simpa only [add_assoc, one_add_one_eq_two] using hH)) t
 
 /-- Each time map of a `C²` Hamiltonian flow preserves the symplectic form on tangent
 vectors. No nondegeneracy of the Hessian is required. -/
