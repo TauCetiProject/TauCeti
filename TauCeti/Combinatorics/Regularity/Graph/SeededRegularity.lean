@@ -27,11 +27,12 @@ strong regularity, need this control on the relation between successive partitio
 
 ## Main declarations
 
-* `TauCeti.szemeredi_regularity_le`: a uniform equipartition refining a given equipartition with
+* `SimpleGraph.szemeredi_regularity_le`: a uniform equipartition refining a given equipartition with
   enough parts, of size bounded in terms of `ε` and the starting size.
 * `TauCeti.refiningRegularityBound`: the complexity bound for almost-refining regularity.
-* `TauCeti.exists_regular_equipartition_almost_refining`: a uniform equipartition almost refining
-  a given equipartition `P₀` up to `ε`, with at most `refiningRegularityBound ε #P₀.parts` parts.
+* `SimpleGraph.exists_regular_equipartition_almost_refining`: a uniform equipartition almost
+  refining a given equipartition `P₀` up to `ε`, with at most
+  `refiningRegularityBound ε #P₀.parts` parts.
 
 ## References
 
@@ -45,7 +46,7 @@ public section
 
 open Finset Fintype Finpartition Function SzemerediRegularity
 
-namespace TauCeti
+namespace SimpleGraph
 
 variable {α : Type*} [Fintype α] [DecidableEq α] (G : SimpleGraph α) [DecidableRel G.Adj]
   {ε : ℝ}
@@ -117,11 +118,28 @@ theorem szemeredi_regularity_le {P₁ : Finpartition (univ : Finset α)} (hP₁ 
     · rw [Nat.cast_succ, mul_add, mul_one]
       gcongr
 
+end SimpleGraph
+
+namespace TauCeti
+
 /-- The complexity bound for `exists_regular_equipartition_almost_refining`: the bound of
 Szemerédi's regularity lemma with at least `⌈2 * l / ε⌉₊` initial parts. It depends only on `ε`
 and the number `l` of parts of the seed partition. -/
 noncomputable def refiningRegularityBound (ε : ℝ) (l : ℕ) : ℕ :=
   bound ε ⌈2 * l / ε⌉₊
+
+/-- The complexity bound is Szemerédi's bound with at least `⌈2 * l / ε⌉₊` initial parts. -/
+theorem refiningRegularityBound_def (ε : ℝ) (l : ℕ) :
+    refiningRegularityBound ε l = bound ε ⌈2 * l / ε⌉₊ := (rfl)
+
+end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti
+
+variable {α : Type*} [Fintype α] [DecidableEq α] (G : SimpleGraph α) [DecidableRel G.Adj]
+  {ε : ℝ}
 
 /-- **Szemerédi's regularity lemma relative to a seed.** Every equipartition `P₀` of a finite
 graph is almost refined, up to `ε`, by an `ε`-uniform equipartition with at most
@@ -155,4 +173,4 @@ theorem exists_regular_equipartition_almost_refining (P₀ : Finpartition (univ 
   gcongr
   simp
 
-end TauCeti
+end SimpleGraph
