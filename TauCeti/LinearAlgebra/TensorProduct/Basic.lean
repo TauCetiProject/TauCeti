@@ -24,6 +24,7 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
+* `LinearMap.lTensor_comp_map_id_comm`: maps on separate tensor factors commute.
 * `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
   reassociation.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
@@ -48,6 +49,20 @@ universe u v w x y
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
+
+/-- Applying a linear map to the right tensor factor commutes with applying one to the left
+factor. -/
+theorem lTensor_comp_map_id_comm {P : Type x} {Q : Type y}
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f : M →ₗ[R] N) (g : P →ₗ[R] Q) :
+    TensorProduct.map LinearMap.id g ∘ₗ TensorProduct.map f LinearMap.id =
+      TensorProduct.map f LinearMap.id ∘ₗ TensorProduct.map LinearMap.id g := by
+  apply LinearMap.ext
+  intro t
+  induction t with
+  | tmul m p => simp
+  | add x y hx hy =>
+      simpa only [LinearMap.comp_apply, map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
 
 /-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
 noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=
