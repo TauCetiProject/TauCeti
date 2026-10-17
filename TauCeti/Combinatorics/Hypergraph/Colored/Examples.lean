@@ -40,7 +40,7 @@ example : (const false : Colored3Graph Bool (Fin 3)).inducedCopyCount
 example : (const true : Colored3Graph Bool (Fin 3)).inducedCopyCount
     (FiniteColored3Pattern.const 3 false) = 0 := by
   apply inducedCopyCount_const_eq_zero
-  exact ⟨Set.powersetCard.ofCard (s := Finset.univ) (by decide), by decide⟩
+  exact ⟨Set.powersetCard.ofCard (s := Finset.univ) (by decide), by simp⟩
 
 -- No triples means no color constraints, even for an arbitrary palette and host coloring.
 example {κ : Type*} (H : Colored3Graph κ (Fin 3)) (F : FiniteColored3Pattern κ)
