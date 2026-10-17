@@ -68,7 +68,10 @@ private theorem integralSum_eq_sum_pieces {f : (ι → ℝ) → E} {vol : ι →
   intro K hK
   rw [ht J hJ K hK]
 
-private theorem infPrepartition_tag_of_mem {π : TaggedPrepartition I} {p : Prepartition I}
+/-- In the refinement `π.infPrepartition p`, any box `K ∈ p.restrict A` inherits the tag of the
+box `A ∈ π` containing it. -/
+theorem _root_.BoxIntegral.TaggedPrepartition.infPrepartition_tag_of_mem
+    {π : TaggedPrepartition I} {p : Prepartition I}
     {A : Box ι} (hA : A ∈ π) (hK : K ∈ p.restrict A) :
     (π.infPrepartition p).tag K = π.tag A := by
   simp [TaggedPrepartition.infPrepartition, π.toPrepartition.biUnionIndex_of_mem hA hK]
@@ -107,7 +110,7 @@ theorem _root_.BoxIntegral.Prepartition.infPrepartition_tag_mem_Icc_of_gauge (p 
   obtain ⟨A, hA, hKA⟩ := (Prepartition.mem_restrict _).mp hK
   have hKp : K ∈ p.restrict A := (Prepartition.mem_restrict _).mpr
     ⟨J, hJ, by simpa only [inf_comm] using hKA⟩
-  rw [infPrepartition_tag_of_mem hA hKp]
+  rw [π.infPrepartition_tag_of_mem hA hKp]
   have hleA : K ≤ A := (p.restrict A).le_of_mem hKp
   exact hr (π.tag A) K.upper
     (hπ A hA (Box.le_iff_Icc.mp hleA K.upper_mem_Icc)) J hJ
@@ -127,7 +130,7 @@ theorem _root_.BoxIntegral.Prepartition.isHenstock_infPrepartition_of_gauge (p :
   have hK' : K ∈ π.toPrepartition.restrict J := (Prepartition.mem_restrict _).mpr
     ⟨A, hA, by simpa only [inf_comm] using hKJ⟩
   exact Box.mem_Icc_of_coe_eq_inf hKJ
-    (by rw [infPrepartition_tag_of_mem hA hKA]; exact hH A hA)
+    (by rw [π.infPrepartition_tag_of_mem hA hKA]; exact hH A hA)
     (p.infPrepartition_tag_mem_Icc_of_gauge hr hπ hJ hK')
 
 /-- Genuine Henstock integrals on the members of a finite box partition glue to an integral
