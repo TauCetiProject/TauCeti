@@ -10,12 +10,14 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.RingTheory.Artinian.Module
 
 /-!
-# Module properties of dual numbers
+# Basic properties of dual numbers
 
 The coordinatewise scalar action on dual numbers commutes with multiplication. These
 instances make bilinear multiplication and convolution available with that module structure.
 Dual numbers over an Artinian ring are also Artinian, using their product module structure.
 Multiplication by `ε` is exact over a commutative ring.
+Algebra maps on dual numbers evaluate in terms of their restriction to constants and
+their value on `ε`.
 -/
 
 public section
@@ -62,3 +64,19 @@ theorem dualNumber_mul_eps_exact {R : Type*} [CommRing R] :
     simp [LinearMap.toSpanSingleton_apply, smul_eq_mul, mul_assoc]
 
 end TauCeti
+
+namespace AlgHom
+
+open TrivSqZeroExt
+
+/-- An algebra map on dual numbers is determined pointwise by its restriction to constants
+and its value on the infinitesimal parameter. -/
+theorem apply_dualNumber {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+    [Algebra R A] [Algebra R B] (χ : DualNumber A →ₐ[R] B) (z : DualNumber A) :
+    χ z = χ (inl z.fst) + χ (inl z.snd) * χ DualNumber.eps := by
+  have hz := congrArg (fun f : DualNumber A →ₐ[R] B ↦ f z)
+    (DualNumber.lift.apply_symm_apply χ)
+  simpa only [DualNumber.lift_apply_apply, DualNumber.coe_lift_symm_apply,
+    AlgHom.comp_apply, inlAlgHom_apply] using hz.symm
+
+end AlgHom
