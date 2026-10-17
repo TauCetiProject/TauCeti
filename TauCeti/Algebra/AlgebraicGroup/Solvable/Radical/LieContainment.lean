@@ -21,10 +21,8 @@ the subgroup's entire tangent Lie algebra lies in the tangent Lie algebra of the
 The subgroup itself can be disconnected, and need not lie in the radical.
 
 For a connected ambient group, the Lie algebra of its solvable radical is exactly the
-radical of its Lie algebra. The reverse containment uses
-`FiniteTypeCommHopfAlgCat.exists_isNormal_lieSubalgebra_eq_radical` to realize the Lie radical
-by a normal closed subgroup, then passes to its identity component. This comparison is the
-link between group-theoretic semisimplicity and Cartan's criterion.
+radical of its Lie algebra. This comparison links group-theoretic semisimplicity with
+Lie-algebra semisimplicity and Cartan's criterion.
 
 This is the passage from a normal subgroup realizing a solvable Lie ideal to containment
 of that ideal in `Lie(R(G))`. It uses the solvable-Lie-algebra criterion from `Solvable.Lie`,

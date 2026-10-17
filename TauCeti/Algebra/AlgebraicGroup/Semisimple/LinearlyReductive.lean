@@ -17,10 +17,9 @@ A semisimple affine group over a field of characteristic zero has semisimple Lie
 Consequently every finite-dimensional rational representation is completely reducible.
 Neither conclusion requires the ground field to be algebraically closed or the group to split.
 
-On the geometric fibre, comparison of group and Lie radicals identifies the Lie radical with
-the Lie algebra of the identity subgroup. Cartan's criterion gives a nondegenerate Killing
-form, which descends along the field extension. The complete-reducibility criterion in
-`Representation.CompleteReducibility` then applies to the group over its original field.
+The nondegenerate Killing form characterizes Lie-algebra semisimplicity in this setting.
+Linear reductivity supplies complete reducibility for rational representations of semisimple
+groups over the original field.
 
 ## Main declarations
 
@@ -33,9 +32,9 @@ form, which descends along the field extension. The complete-reducibility criter
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §13.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 22.
-
-The proof combines `FiniteTypeCommHopfAlgCat.lieIdeal_solvableRadicalDefiningIdeal_eq_radical`
-with Mathlib's Cartan criterion and the existing comodule form of Weyl's theorem.
+* `Solvable.Radical.LieContainment`: comparison of group and Lie radicals.
+* Mathlib's `Algebra.Lie.CartanCriterion`: Cartan's criterion.
+* `Representation.CompleteReducibility`: the comodule form of Weyl's theorem.
 -/
 
 public section
