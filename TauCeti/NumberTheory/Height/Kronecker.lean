@@ -44,6 +44,10 @@ form and the quantitative consequence at bounded degree.
   Corollary 1.6.15.
 * M. Hindry and J. H. Silverman, *Diophantine Geometry: An Introduction* (2000),
   Theorem B.2.3 and Corollary B.2.3.1.
+* A prior formalization of these results is Ralf Stephan's `ArithmeticHeights/Kronecker.lean`
+  and `ArithmeticHeights/LowerBound.lean` in
+  [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/tree/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights),
+  commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
 -/
 
 public section
@@ -151,10 +155,7 @@ theorem absLogHeight₁_two_rpow_inv (N : ℕ) :
   · simp
   have h := absLogHeight₁_pow ((2 : ℝ) ^ (N : ℝ)⁻¹) N
   rw [Real.rpow_inv_natCast_pow zero_le_two hN] at h
-  have h2 : absLogHeight₁ (2 : ℝ) = Real.log 2 := by
-    rw [← map_ofNat (algebraMap ℚ ℝ) 2, absLogHeight₁_map, absLogHeight₁_eq_div,
-      Module.finrank_self, Nat.cast_one, div_one]
-    exact_mod_cast Rat.logHeight₁_natCast 2
+  have h2 : absLogHeight₁ (2 : ℝ) = Real.log 2 := by exact_mod_cast absLogHeight₁_natCast 2
   rw [h2] at h
   rw [h, mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr hN)]
 
@@ -183,8 +184,7 @@ theorem exists_absLogHeight₁_lt {c : ℝ} (hc : 0 < c) :
 example : absMulHeight₁ (-1 : ℚ) = 1 ∧ absMulHeight₁ (2 : ℚ) = 2 := by
   refine ⟨(absMulHeight₁_eq_one_iff (.of_finite ℚ _)).mpr (.inr ?_), ?_⟩
   · exact isOfFinOrder_iff_pow_eq_one.mpr ⟨2, two_pos, by norm_num⟩
-  · rw [absMulHeight₁_eq_rpow, Rat.mulHeight₁_eq_max, Module.finrank_self]
-    norm_num
+  · exact_mod_cast absMulHeight₁_natCast 2
 
 /-- The rational tuples `(1, -1)` and `(1, 2)` have absolute heights `1` and `2`. -/
 example : absoluteProjectiveTupleHeight ![(1 : ℚ), -1] = 1 ∧

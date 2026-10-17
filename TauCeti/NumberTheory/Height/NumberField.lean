@@ -33,6 +33,8 @@ absolute height; in particular the absolute height is invariant under field embe
   `H_K(x) ^ (1 / [K : ℚ])`.
 * `NumberField.absMulHeight₁_eq_of_minpoly_eq`: equal rational minimal polynomials give equal
   absolute heights.
+* `NumberField.absMulHeight₁_ratCast`: the absolute height of a rational number is its height
+  over `ℚ`.
 * `NumberField.absMulHeight₁_pow`: `H(x ^ n) = H(x) ^ n`.
 
 ## References
@@ -240,20 +242,56 @@ theorem absLogHeight₁_map (f : F →+* F') (x : F) : absLogHeight₁ (f x) = a
 
 end MinpolyEq
 
-section Pow
+section Cast
 
 variable {F : Type*} [Field F] [CharZero F]
+
+/-- The absolute height of a rational number in a characteristic-zero field is its height
+over `ℚ`. -/
+@[simp]
+theorem absMulHeight₁_ratCast (q : ℚ) : absMulHeight₁ (q : F) = mulHeight₁ q := by
+  rw [← eq_ratCast (algebraMap ℚ F), absMulHeight₁_map, absMulHeight₁_eq_rpow, finrank_self,
+    Nat.cast_one, inv_one, Real.rpow_one]
+
+/-- The absolute logarithmic height of a rational number in a characteristic-zero field is its
+logarithmic height over `ℚ`. -/
+@[simp]
+theorem absLogHeight₁_ratCast (q : ℚ) : absLogHeight₁ (q : F) = logHeight₁ q := by
+  rw [absLogHeight₁, absMulHeight₁_ratCast, logHeight₁_eq_log_mulHeight₁]
+
+/-- The absolute height of `0` is `1`. -/
+@[simp]
+theorem absMulHeight₁_zero : absMulHeight₁ (0 : F) = 1 := by
+  rw [← Rat.cast_zero, absMulHeight₁_ratCast, mulHeight₁_zero]
+
+/-- The absolute logarithmic height of `0` is `0`. -/
+@[simp]
+theorem absLogHeight₁_zero : absLogHeight₁ (0 : F) = 0 := by
+  rw [absLogHeight₁, absMulHeight₁_zero, Real.log_one]
 
 /-- The absolute height of `1` is `1`. -/
 @[simp]
 theorem absMulHeight₁_one : absMulHeight₁ (1 : F) = 1 := by
-  rw [← map_one (algebraMap ℚ F), absMulHeight₁_map, absMulHeight₁_eq_rpow, mulHeight₁_one,
-    Real.one_rpow]
+  rw [← Rat.cast_one, absMulHeight₁_ratCast, mulHeight₁_one]
 
 /-- The absolute logarithmic height of `1` is `0`. -/
 @[simp]
 theorem absLogHeight₁_one : absLogHeight₁ (1 : F) = 0 := by
   rw [absLogHeight₁, absMulHeight₁_one, Real.log_one]
+
+/-- The absolute height of a positive natural number `n` is `n`. -/
+theorem absMulHeight₁_natCast (n : ℕ) [NeZero n] : absMulHeight₁ (n : F) = n := by
+  rw [← Rat.cast_natCast, absMulHeight₁_ratCast, Rat.mulHeight₁_natCast]
+
+/-- The absolute logarithmic height of a positive natural number `n` is `log n`. -/
+theorem absLogHeight₁_natCast (n : ℕ) [NeZero n] : absLogHeight₁ (n : F) = Real.log n := by
+  rw [absLogHeight₁, absMulHeight₁_natCast]
+
+end Cast
+
+section Pow
+
+variable {F : Type*} [Field F] [CharZero F]
 
 /-- The absolute height of a power is the power of the absolute height. This includes
 transcendental elements, whose positive powers are transcendental and all have the junk
