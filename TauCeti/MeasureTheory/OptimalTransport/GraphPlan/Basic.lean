@@ -275,6 +275,15 @@ theorem map_prodMap_id_graphPlan {R : Y → Z} (hR : AEMeasurable R (μ.map T))
   rw [graphPlan_def, AEMeasurable.map_map_of_aemeasurable hR' (aemeasurable_prodMk_self hT)]
   rfl
 
+/-- Pushing the graph plan of `T` forward along `f` is pushing `μ` forward along
+`x ↦ f (x, T x)`. -/
+theorem map_graphPlan (hT : AEMeasurable T μ) {f : X × Y → Z}
+    (hf : AEMeasurable f (graphPlan T μ)) :
+    (graphPlan T μ).map f = μ.map fun x ↦ f (x, T x) := by
+  rw [graphPlan_def] at hf ⊢
+  rw [AEMeasurable.map_map_of_aemeasurable hf (aemeasurable_prodMk_self hT)]
+  rfl
+
 /-- Reparametrizing the source measure pushes the graph plan through the first coordinate. -/
 theorem graphPlan_map {f : Z → X} {μ : Measure Z} (hf : AEMeasurable f μ)
     (hT : AEMeasurable T (μ.map f)) :
