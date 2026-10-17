@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
 
@@ -34,9 +35,9 @@ densities and quantiles are instances of these formulas.
 
 ## Main results
 
-* `TauCeti.Probability.map_abs_eq_restrict_add_restrict` — the decomposition of the folded law;
+* `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — the decomposition of the folded law;
 * `TauCeti.Probability.cdf_map_abs_of_nonneg`, `TauCeti.Probability.cdf_map_abs_of_neg` — its cdf;
-* `TauCeti.Probability.map_abs_apply_zero` — its atom at `0`;
+* `MeasureTheory.Measure.map_abs_apply_zero` — its atom at `0`;
 * `TauCeti.Probability.map_abs_withDensity` — its density;
 * `TauCeti.Probability.hasPDF_abs`, `TauCeti.Probability.pdf_abs` — the density of `|X|`;
 * `TauCeti.Probability.cdf_map_abs_of_isNegInvariant` — the cdf `2 F(x) - 1` of a symmetric fold;
@@ -50,11 +51,9 @@ public section
 open MeasureTheory ProbabilityTheory Set
 open scoped ENNReal
 
-namespace TauCeti.Probability
-
-variable {μ : Measure ℝ}
-
 private theorem measurable_abs : Measurable fun x : ℝ => |x| := continuous_abs.measurable
+
+namespace MeasureTheory.Measure
 
 /-- **The folded law.** Folding keeps the nonnegative half of `μ` in place and reflects its
 negative half onto the positive half-line. -/
@@ -72,6 +71,12 @@ theorem map_abs_eq_restrict_add_restrict (μ : Measure ℝ) :
     measure_union hdisj (hs.neg.inter measurableSet_Iio), Measure.add_apply,
     Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.neg_apply,
     (by ext x; simp : -(s ∩ Ioi (0 : ℝ)) = -s ∩ Iio 0)]
+
+end MeasureTheory.Measure
+
+namespace TauCeti.Probability
+
+variable {μ : Measure ℝ}
 
 /-- The cdf of the folded law at a nonnegative point `x` is the mass of `[-x, x]`, that is, the cdf
 of `μ` at `x` minus its left limit at `-x`. -/
@@ -92,6 +97,10 @@ theorem cdf_map_abs_of_neg [IsProbabilityMeasure μ] {x : ℝ} (hx : x < 0) :
   rw [cdf_eq_real, map_measureReal_apply measurable_abs measurableSet_Iic, hpre,
     measureReal_empty]
 
+end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
 /-- The atom of the folded law at `0` is the atom of `μ` at `0`. -/
 @[simp]
 theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
@@ -100,6 +109,12 @@ theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
   ext x
   simp
 
+end MeasureTheory.Measure
+
+namespace TauCeti.Probability
+
+variable {μ : Measure ℝ}
+
 /-- **The folded density.** If `μ` has density `f` with respect to Lebesgue measure, then the
 folded law has density `f x + f (-x)` on the positive half-line and `0` elsewhere. -/
 theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
@@ -107,7 +122,8 @@ theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
       volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
   have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
     simpa [Measure.neg_def] using MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
-  rw [map_abs_eq_restrict_add_restrict, hneg, restrict_withDensity measurableSet_Ici,
+  rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
+    restrict_withDensity measurableSet_Ici,
     restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
     ← withDensity_indicator measurableSet_Ioi, ← withDensity_indicator measurableSet_Ioi,
     ← withDensity_add_left (hf.indicator measurableSet_Ioi)]
@@ -145,16 +161,10 @@ theorem pdf_abs [HasPDF X P] :
 
 /-! ### Symmetric laws -/
 
-/-- For a symmetric law, the mass below `-x` is the mass above `x`, which is `1 - cdf μ x`. -/
-private theorem measureReal_Iio_neg [IsProbabilityMeasure μ] [μ.IsNegInvariant] (x : ℝ) :
-    μ.real (Iio (-x)) = 1 - cdf μ x := by
-  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
-    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
-
 /-- The cdf of a symmetric law folded at `x ≥ 0` is `2 * cdf μ x - 1`. -/
 theorem cdf_map_abs_of_isNegInvariant [IsProbabilityMeasure μ] [μ.IsNegInvariant] {x : ℝ}
     (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
-  rw [cdf_map_abs_of_nonneg hx, measureReal_Iio_neg]
+  rw [cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
   ring
 
 /-- **The quantile of a symmetric fold.** At a positive level `u`, the quantile of the folded law of
@@ -168,7 +178,7 @@ theorem quantile_map_abs [IsProbabilityMeasure μ] [μ.IsNegInvariant] {u : ℝ}
   · rw [cdf_map_abs_of_neg hx]
     -- Below `0`, the cdf of a symmetric law is at most `1 / 2`.
     have hle : cdf μ x ≤ 1 - cdf μ x := by
-      rw [← measureReal_Iio_neg, cdf_eq_real]
+      rw [← μ.measureReal_Iio_neg x, cdf_eq_real]
       exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
     constructor <;> intro h <;> linarith
 
@@ -185,7 +195,7 @@ theorem map_abs_eq_cond_Ici [IsProbabilityMeasure μ] [μ.IsNegInvariant] (h0 : 
       rw [← measure_congr (Ioi_ae_eq_Ici' h0), ← Measure.measure_neg, Set.neg_Iio, neg_zero]
     rw [hneg, ← mul_two] at hsum
     exact ENNReal.eq_inv_of_mul_eq_one_left hsum
-  rw [map_abs_eq_restrict_add_restrict, Measure.neg_eq_self, hIoi, ProbabilityTheory.cond, hhalf,
-    inv_inv, two_smul]
+  rw [μ.map_abs_eq_restrict_add_restrict, Measure.neg_eq_self, hIoi, ProbabilityTheory.cond,
+    hhalf, inv_inv, two_smul]
 
 end TauCeti.Probability

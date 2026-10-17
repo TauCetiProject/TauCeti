@@ -28,6 +28,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
+* `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
+  its cdf;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
 
@@ -52,6 +54,13 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
+`1 - cdf μ x`. -/
+theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
+    (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
+  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
+    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
