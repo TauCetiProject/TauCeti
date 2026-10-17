@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
-public import TauCeti.Analysis.Calculus.FDeriv.WithLp
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
@@ -22,20 +19,14 @@ Consequently, normalized Hausdorff measure on the graph is quantitatively equiva
 measure on the parameter space.
 
 The exact weighted surface-integration formula on such a graph is the area formula for injective
-Lipschitz maps, `LipschitzWith.lintegral_image_eq_lintegral_normDet_fderiv_mul`, applied to the
-graph parametrization: integration over the graph with normalized Euclidean Hausdorff measure is
-integration over the parameter space against the geometric Jacobian of the graph map, whose
-derivative is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`. The unweighted form computes
-the surface measure of every measurable graph patch. These results allow an `L²` trace
-constructed in graph coordinates to be interpreted as a trace with respect to Euclidean surface
-measure.
+Lipschitz maps, `LipschitzWith.lintegral_image_eq_lintegral_normDet_fderiv_mul` from
+`TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz`, applied to
+`hφ.normalGraphEmbedding` and `(injective_normalGraphEmbedding φ).injOn`; its density is the
+geometric Jacobian of the graph parametrization. These results allow an `L²` trace constructed
+in graph coordinates to be interpreted as a trace with respect to Euclidean surface measure.
 
 ## Main declarations
 
-* `LipschitzWith.lintegral_normalGraphEmbedding_image_eq_lintegral_normDet_fderiv_mul`: the
-  weighted graph area formula.
-* `LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_lintegral`: the
-  surface-measure formula for a graph patch.
 * `TauCeti.volume_le_euclideanHausdorffMeasure_normalGraphEmbedding_image`: surface measure on
   a graph dominates volume in the parameter space.
 * `LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_le`: the reverse bound for
@@ -48,7 +39,6 @@ measure.
 
 ## References
 
-* L. Simon, *Lectures on Geometric Measure Theory*, §8.
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   §3.3 (the area formula and Lipschitz graphs).
 -/
@@ -64,28 +54,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-/-- **Weighted area formula for a Lipschitz graph.** Integration over a measurable graph patch
-against normalized `dim E`-dimensional Hausdorff measure equals integration over its parameter
-set against the graph Jacobian. The weight need not be measurable. -/
-theorem _root_.LipschitzWith.lintegral_normalGraphEmbedding_image_eq_lintegral_normDet_fderiv_mul
-    {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ) {s : Set E} (hs : MeasurableSet s)
-    (g : WithLp 2 (ℝ × E) → ℝ≥0∞) :
-    ∫⁻ z in TauCeti.normalGraphEmbedding φ '' s, g z ∂μHE[finrank ℝ E] =
-      ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).normDet *
-        g (TauCeti.normalGraphEmbedding φ x) :=
-  hφ.normalGraphEmbedding.lintegral_image_eq_lintegral_normDet_fderiv_mul hs
-    (injective_normalGraphEmbedding φ).injOn g
-
-/-- **Surface measure of a Lipschitz graph.** The normalized `dim E`-dimensional Hausdorff
-measure of a measurable graph patch is the integral of the geometric Jacobian of its graph
-parametrization. -/
-theorem _root_.LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_lintegral
-    {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ) {s : Set E} (hs : MeasurableSet s) :
-    μHE[finrank ℝ E] (TauCeti.normalGraphEmbedding φ '' s) =
-      ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).normDet :=
-  (hφ.normalGraphEmbedding.lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs
-    (injective_normalGraphEmbedding φ).injOn).symm
 
 /-- Euclidean surface measure of a normal graph dominates volume of its parameter set. This
 lower bound uses only that the tangential projection is `1`-Lipschitz. -/
