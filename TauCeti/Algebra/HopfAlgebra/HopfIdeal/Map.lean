@@ -149,8 +149,10 @@ theorem map_le_iff {f : H →ₐc[R] K} {I : HopfIdeal R H} {J : HopfIdeal R K}
 of a member. -/
 @[simp]
 theorem mem_map_iff_of_surjective {f : H →ₐc[R] K} (hf : Function.Surjective f)
-    {I : HopfIdeal R H} [(Ideal.map (f : H →+* K) I.toIdeal).IsTwoSided]
-    {y : K} : y ∈ I.map f ↔ ∃ x ∈ I, f x = y := by
+    {I : HopfIdeal R H} {y : K} :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+    y ∈ I.map f ↔ ∃ x ∈ I, f x = y := by
+  have : RingHomSurjective (f : H →+* K) := ⟨hf⟩
   rw [← mem_toIdeal, map_toIdeal]
   simp only [Ideal.mem_map_iff_of_surjective (f : H →+* K) hf, mem_toIdeal]
   rfl
@@ -352,24 +354,9 @@ variable {H : Type v} [Ring H] [HopfAlgebra R H]
 when `I ≤ J`. -/
 @[simp]
 theorem comapOfSurjective_map_mkBialgHom {I J : HopfIdeal R H} (hIJ : I ≤ J) :
-    haveI : RingHomSurjective
-        (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal : H →+* H ⧸ I.toIdeal) :=
-      ⟨by
-        intro q
-        obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
-        exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply (R := R) I.toIdeal h⟩⟩
     (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).comapOfSurjective
         (Bialgebra.Quotient.mkBialgHom I.toIdeal)
-        (by
-          intro q
-          obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
-          exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply (R := R) I.toIdeal h⟩) = J := by
-  have : RingHomSurjective
-      (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal : H →+* H ⧸ I.toIdeal) :=
-    ⟨by
-      intro q
-      obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
-      exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply (R := R) I.toIdeal h⟩⟩
+        (Bialgebra.Quotient.mkBialgHom_surjective I.toIdeal) = J := by
   rw [comapOfSurjective_map, kerOfSurjective_mkBialgHom, sup_eq_left]
   exact hIJ
 
