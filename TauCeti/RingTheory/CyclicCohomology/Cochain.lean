@@ -266,6 +266,14 @@ theorem comp_hochschildFace {B F : Type*} [Mul B] [FunLike F A B] [MulHomClass F
 
 end Mul
 
+/-- Every Hochschild face of the constant tuple `(1, …, 1)` is the constant tuple `(1, …, 1)`. -/
+@[simp]
+theorem hochschildFace_const_one [MulOneClass A] (i : Fin (n + 2)) :
+    hochschildFace i (fun _ ↦ (1 : A)) = fun _ ↦ 1 := by
+  induction i using Fin.lastCases with
+  | last => funext k; cases k using Fin.cases <;> simp
+  | cast j => funext k; simp [Fin.contractNth]
+
 /-- The simplicial identity `dᵢ ∘ d_{j+1} = d_j ∘ dᵢ` for `i ≤ j` between Hochschild faces. -/
 theorem hochschildFace_hochschildFace [Semigroup A] {i j : Fin (n + 2)} (hij : i ≤ j)
     (a : Fin (n + 3) → A) :
