@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.DiamondCosets
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic
+public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Composition
 
 /-!
 # Diamond operators on modular symbols
@@ -36,12 +36,6 @@ integral Hecke algebra.
   translate by any lift.
 * `TauCeti.ModularSymbols.diamondSymbol_mul`: `⟨d₁d₂⟩ = ⟨d₁⟩ ∘ ⟨d₂⟩`.
 * `TauCeti.ModularSymbols.commute_diamondSymbol`: any two diamond operators commute.
-
-## Provenance
-
-No code is transcribed. The construction packages the existing Tau Ceti double-coset action and
-the normalizer calculation for `Γ₁(N) ⊴ Γ₀(N)` into the unit-indexed operator needed by the
-roadmap's symbol-side Hecke action.
 
 ## References
 
@@ -93,8 +87,6 @@ theorem diamondSymbol_eq_heckeSymbol {d : (ZMod N)ˣ} (g : ↥(Gamma0 N))
   have hD : diamondCosetGamma1 N g' = diamondCosetGamma1 N g :=
     diamondCosetGamma1_eq_iff.mpr
       ((Gamma0Map_toHomUnits_surjective d).choose_spec.trans hg.symm)
-  unfold diamondSymbol
-  change heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N g') _ = _
   exact congrArg
     (fun D ↦ heckeSymbol (Gamma1 N) (Gamma1 N) D
       (Delta0_le_intEntries N D.out.2)) hD
@@ -134,21 +126,20 @@ theorem diamondSymbol_mul (d₁ d₂ : (ZMod N)ˣ) :
   obtain ⟨g₁, hg₁⟩ := Gamma0Map_toHomUnits_surjective d₁
   obtain ⟨g₂, hg₂⟩ := Gamma0Map_toHomUnits_surjective d₂
   rw [diamondSymbol_eq_heckeSymbol (g₁ * g₂) (by rw [map_mul, hg₁, hg₂]),
-    diamondSymbol_eq_heckeSymbol g₁ hg₁, diamondSymbol_eq_heckeSymbol g₂ hg₂]
-  refine Coinvariants.hom_ext (LinearMap.ext fun x ↦ ?_)
-  simp only [LinearMap.comp_apply]
-  rw [Module.End.mul_apply, heckeSymbol_diamondCosetGamma1_mk,
-    heckeSymbol_diamondCosetGamma1_mk, heckeSymbol_diamondCosetGamma1_mk]
-  have hδ :
-      (⟨mapGL ℚ ((g₁ * g₂ : ↥(Gamma0 N)) : SL(2, ℤ)),
-          mapGL_mem_intEntries 2 (g₁ * g₂)⟩ : intEntries 2) =
-        ⟨mapGL ℚ (g₁ : SL(2, ℤ)), mapGL_mem_intEntries 2 g₁⟩ *
-          ⟨mapGL ℚ (g₂ : SL(2, ℤ)), mapGL_mem_intEntries 2 g₂⟩ := by
-    apply Subtype.ext
-    change mapGL ℚ ((g₁ * g₂ : ↥(Gamma0 N)) : SL(2, ℤ)) =
-      mapGL ℚ (g₁ : SL(2, ℤ)) * mapGL ℚ (g₂ : SL(2, ℤ))
-    rw [Subgroup.coe_mul, map_mul]
-  rw [hδ, map_mul, Module.End.mul_apply]
+    diamondSymbol_eq_heckeSymbol g₁ hg₁, diamondSymbol_eq_heckeSymbol g₂ hg₂,
+    Module.End.mul_eq_comp]
+  refine (heckeSymbol_comp_heckeSymbol_eq_heckeSymbol (Gamma1 N) (Gamma1 N) (Gamma1 N) _ _ _ _
+    (fun _ : Unit ↦ mapGL ℚ (g₁ : SL(2, ℤ))) (fun _ : Unit ↦ mapGL ℚ (g₂ : SL(2, ℤ)))
+    (doubleCoset_out_diamondCosetGamma1_eq_iUnion_rightCosets g₁)
+    (Function.injective_of_subsingleton _)
+    (doubleCoset_out_diamondCosetGamma1_eq_iUnion_rightCosets g₂)
+    (Function.injective_of_subsingleton _) (diamondCosetGamma1 N (g₁ * g₂)) ?_
+    (Function.injective_of_subsingleton _)).symm
+  rw [doubleCoset_mul_doubleCoset_eq_iUnion_rightCosets _ _
+      (doubleCoset_out_diamondCosetGamma1_eq_iUnion_rightCosets g₁)
+      (doubleCoset_out_diamondCosetGamma1_eq_iUnion_rightCosets g₂),
+    doubleCoset_out_diamondCosetGamma1_eq_iUnion_rightCosets, Set.iUnion_const, Set.iUnion_const,
+    Subgroup.coe_mul, map_mul]
 
 /-- Any two diamond operators on modular symbols commute. -/
 theorem commute_diamondSymbol (d₁ d₂ : (ZMod N)ˣ) :
@@ -157,7 +148,7 @@ theorem commute_diamondSymbol (d₁ d₂ : (ZMod N)ˣ) :
   exact congrArg (diamondSymbol R w N) (mul_comm d₁ d₂)
 
 /-- The diamond operators on modular symbols, as a monoid homomorphism from `(ZMod N)ˣ`. -/
-@[expose] noncomputable def diamondSymbolHom (R : Type*) [CommRing R] (w N : ℕ) [NeZero N] :
+noncomputable def diamondSymbolHom (R : Type*) [CommRing R] (w N : ℕ) [NeZero N] :
     (ZMod N)ˣ →* Module.End R (ModularSymbols R (Gamma1 N) w) where
   toFun := diamondSymbol R w N
   map_one' := diamondSymbol_one
@@ -165,7 +156,7 @@ theorem commute_diamondSymbol (d₁ d₂ : (ZMod N)ˣ) :
 
 @[simp] lemma diamondSymbolHom_apply (d : (ZMod N)ˣ) :
     diamondSymbolHom R w N d = diamondSymbol R w N d :=
-  rfl
+  (rfl)
 
 end TauCeti.ModularSymbols
 
