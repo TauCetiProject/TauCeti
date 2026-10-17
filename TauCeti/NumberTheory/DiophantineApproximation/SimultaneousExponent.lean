@@ -26,6 +26,13 @@ The main results identify the one-dimensional exponent of an irrational real num
 irrationality exponent, up to the expected shift by one, show that a rational family and an empty
 family have infinite exponent, and show that forgetting coordinates can only increase the
 exponent.
+
+## References
+
+* Y. Bugeaud, *Exponents of Diophantine approximation*, in *Dynamics and Analytic Number Theory*,
+  London Math. Soc. Lecture Note Ser. 437, Cambridge Univ. Press (2016), §2, Definition 2.2.
+  The exponent defined here is that simultaneous exponent, restated with positive denominators as
+  explained above.
 -/
 
 public section
