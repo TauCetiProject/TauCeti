@@ -257,6 +257,17 @@ private theorem mk_apply (n : ℕ) (φ : cyclicCocycles R A M n) :
     mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n (toCycles R A M n φ) :=
   (rfl)
 
+/-- The class of a cyclic cocycle `φ` is the homology class of any cycle of the cyclic cochain
+complex whose underlying cochain is `φ`. -/
+theorem mk_eq_homologyπ {n : ℕ} (φ : cyclicCocycles R A M n)
+    (z : (cyclicCochainComplex R A M).cycles n)
+    (hz : (cyclicCochainComplexXIso R A M n).hom ((cyclicCochainComplex R A M).iCycles n z) = φ) :
+    mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n z := by
+  rw [mk_apply]
+  congr 1
+  apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
+  rw [iCycles_toCycles, ← hz, Iso.hom_inv_id_apply]
+
 /-- Every cyclic cohomology class is the class of a cyclic cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
   intro z
