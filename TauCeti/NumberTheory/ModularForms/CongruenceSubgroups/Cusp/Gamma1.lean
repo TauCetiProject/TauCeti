@@ -151,6 +151,7 @@ theorem coe_gamma1CuspLabel_fst (γ : SL(2, ℤ)) :
 
 /-- The first unit in the label of `γ` is `c / g` modulo `N / g`, for `c` the lower-left entry
 of `γ` and `g = gcd(c, N)`. -/
+@[simp]
 theorem coe_gamma1CuspLabel_snd_fst (γ : SL(2, ℤ)) :
     ((gamma1CuspLabel N γ).2.1 : ZMod (N / (gamma1CuspLabel N γ).1)) =
       (γ 1 0 / Int.gcd (γ 1 0) N : ℤ) :=
@@ -158,6 +159,7 @@ theorem coe_gamma1CuspLabel_snd_fst (γ : SL(2, ℤ)) :
 
 /-- The second unit in the label of `γ` is `d` modulo `gcd(c, N)`, for `(c, d)` the bottom row
 of `γ`. -/
+@[simp]
 theorem coe_gamma1CuspLabel_snd_snd (γ : SL(2, ℤ)) :
     ((gamma1CuspLabel N γ).2.2 : ZMod (gamma1CuspLabel N γ).1) = (γ 1 1 : ℤ) :=
   ZMod.coe_unitOfIsCoprime _ (isCoprime_gcd γ)
