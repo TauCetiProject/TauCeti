@@ -138,7 +138,7 @@ private theorem normalCylinder_sub_subset
 private theorem inf_chartCylinder_le_chartEpigraph
     (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b) :
     Ω ⊓ chartCylinder e a b ≤ chartEpigraph e h.lipschitzWith.continuous := fun _ hx =>
-  mem_chartEpigraph.2 ((h.mem_iff hx.2).1 hx.1)
+  mem_chartEpigraph.2 ((h.toIsLipschitzChart.mem_iff hx.2).1 hx.1)
 
 /-- Inside the shorter cylinder carrying the support of the cutoff, the region above the graph
 lies in `Ω`. -/
@@ -149,7 +149,7 @@ private theorem chartEpigraph_inter_tsupport_subset
       (Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) := by
   rintro x ⟨hxG, hxs⟩
   have hxC : e x ∈ normalCylinder a b := normalCylinder_sub_subset h (hs hxs)
-  exact ⟨(h.mem_iff hxC).2 (mem_chartEpigraph.1 hxG), hxC⟩
+  exact ⟨(h.toIsLipschitzChart.mem_iff hxC).2 (mem_chartEpigraph.1 hxG), hxC⟩
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -317,7 +317,7 @@ theorem W1p.value_lipschitzChartExtensionL_ae
   by_cases hxC : e x ∈ normalCylinder a b
   · have hxU : x ∈ ((Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) : Set _) :=
       ⟨hxΩ, hxC⟩
-    rw [hx, ite_eq_left ((h.mem_iff hxC).1 hxΩ), indicator_of_mem hxU]
+    rw [hx, ite_eq_left ((h.toIsLipschitzChart.mem_iff hxC).1 hxΩ), indicator_of_mem hxU]
   · have hψx : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hxs =>
       hxC (normalCylinder_sub_subset h (hs hxs))
     rw [hzero hxC, hψx, zero_smul]
