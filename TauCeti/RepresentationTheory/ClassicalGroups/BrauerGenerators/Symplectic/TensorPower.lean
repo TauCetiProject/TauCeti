@@ -19,8 +19,8 @@ horizontal arcs are therefore all built from the *single-arc* diagrams: a cap on
 points `i` and `j`, closed off by a cup on the two top points `i` and `j`. This file builds that
 operator, `TauCeti.symplecticCupCapAt`, on the `d`-th tensor power of the symplectic standard
 module, and proves what an action of the Brauer algebra must respect of it: the loop rule, the
-commutation of arcs on disjoint pairs of strands, and the commutation with the diagonal action of
-the symplectic group.
+absorption of two arcs sharing a strand, the commutation of arcs on disjoint pairs of strands, and
+the commutation with the diagonal action of the symplectic group.
 
 The two-strand case is `TauCeti.symplecticCupCap` of
 `TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/Basic.lean`, which this
@@ -50,6 +50,7 @@ Writing `e i j` for the generator, the relations proved here are
 
 * `e i j * e i j = (-2n) • e i j`, the loop rule at the symplectic loop value `δ = -2n = -dim V`;
 * `e i j = e j i`, the cancellation of the two sign changes just described;
+* `e i j * e j l * e i j = e i j` for two arcs sharing the strand `j`;
 * `e i j * e a b = e a b * e i j` for two arcs on disjoint pairs of strands;
 * `e i j * ρ g = ρ g * e i j` for `g` in the symplectic group acting diagonally.
 
@@ -90,6 +91,8 @@ coincident strands too.
   `TauCeti.symplecticCupCap`.
 * `TauCeti.symplecticCupCapAt_mul_self`: **the loop rule** `e * e = (-2n) • e`.
 * `TauCeti.commute_symplecticCupCapAt_of_disjoint`: **disjoint arcs commute.**
+* `TauCeti.symplecticCupCapAt_mul_mul_self`: **two arcs sharing a strand absorb**,
+  `e i j * e j l * e i j = e i j`.
 * `TauCeti.commute_symplecticCupCapAt_piTensorProductMap`: the generator commutes with the
   diagonal action of every matrix `A` preserving the standard alternating form, `Aᵀ * J * A = J`.
 * `TauCeti.commute_symplecticCupCapAt_tensorPower`: **the generator commutes with the diagonal
@@ -141,6 +144,14 @@ noncomputable def symplecticCupCapAt (i j : Fin d) :
       PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y)
 
 variable {k n d}
+
+/-- The form on a pair of standard basis vectors reads off the matrix entry of `J`. This is the
+general-slot counterpart of `TauCeti.symplecticCap_tprod_single`, which reads the same entry off
+the cap on the tensor square. -/
+private theorem stdSymplecticBilinForm_single_single (x y : Fin n ⊕ Fin n) :
+    stdSymplecticBilinForm k n (Pi.single x (1 : k)) (Pi.single y (1 : k)) =
+      Matrix.J (Fin n) k x y := by
+  simp [stdSymplecticBilinForm_apply]
 
 /-! ### The value on a pure tensor -/
 
@@ -299,17 +310,12 @@ theorem symplecticCupCapAt_comm (i j : Fin d) :
       · subst hj
         simp [symplecticCupCapStrand, hi]
       · simp [symplecticCupCapStrand, hi, hj]
-  have hJ : ∀ p q : Fin n ⊕ Fin n,
-      Matrix.J (Fin n) k q p = -Matrix.J (Fin n) k p q := by
-    intro p q
-    have h := congrFun (congrFun (Matrix.J_transpose (Fin n) k) p) q
-    simpa only [Matrix.transpose_apply, Matrix.neg_apply] using h
   rw [symplecticCupCapAt, symplecticCupCapAt]
   conv_rhs => rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
   conv_rhs => rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
-  rw [hstrand a b x y, hJ a b, hJ x y]
+  rw [hstrand a b x y, J_apply_swap k n a b, J_apply_swap k n x y]
   congr 1
   ring
 
@@ -344,24 +350,6 @@ under a cap closes into a loop, which contracts the pairing `J` against the copa
 theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     symplecticCupCapAt k n d i j * symplecticCupCapAt k n d i j =
       -(2 * n : k) • symplecticCupCapAt k n d i j := by
-  have hJ : Matrix.J (Fin n) k * (Matrix.J (Fin n) k)ᵀ = 1 := by
-    rw [Matrix.J_transpose, Matrix.mul_neg, Matrix.J_squared, neg_neg]
-  have hrow : ∀ x : Fin n ⊕ Fin n,
-      ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y = 1 := by
-    intro x
-    have h := congrFun (congrFun hJ x) x
-    simpa only [Matrix.mul_apply, Matrix.one_apply_eq, Matrix.transpose_apply] using h
-  have hloop : ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
-      Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y = (2 * n : k) := by
-    rw [Finset.sum_congr rfl fun x _ => hrow x, Finset.sum_const, Finset.card_univ,
-      Fintype.card_sum, Fintype.card_fin, nsmul_eq_mul, mul_one]
-    push_cast
-    ring
-  have hform : ∀ x y : Fin n ⊕ Fin n,
-      stdSymplecticBilinForm k n (Pi.single x (1 : k)) (Pi.single y (1 : k)) =
-        Matrix.J (Fin n) k x y := by
-    intro x y
-    simp [stdSymplecticBilinForm_apply]
   refine PiTensorProduct.ext ?_
   ext v
   have hterm : ∀ x : Fin n ⊕ Fin n,
@@ -377,7 +365,8 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     rw [map_sum, Finset.sum_smul]
     refine Finset.sum_congr rfl fun y _ => ?_
     rw [map_smul, symplecticCupCapAt_tprod hij, Function.update_of_ne hij,
-      Function.update_self, Function.update_self, hform, smul_smul]
+      Function.update_self, Function.update_self, stdSymplecticBilinForm_single_single,
+      smul_smul]
     refine congrArg (fun z => (Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y) • -z) ?_
     exact Finset.sum_congr rfl fun x' _ => Finset.sum_congr rfl fun y' _ => by
       -- Plugging twice at the same pair of slots keeps only the second plug.
@@ -389,7 +378,8 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
       -(2 * n : k) • -∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
         PiTensorProduct.tprod k (Function.update
           (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
-    rw [map_neg, map_sum, Finset.sum_congr rfl fun x _ => hterm x, ← Finset.sum_smul, hloop]
+    rw [map_neg, map_sum, Finset.sum_congr rfl fun x _ => hterm x, ← Finset.sum_smul,
+      sum_sum_J_mul_J k n]
     exact (neg_smul _ _).symm
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     Module.End.mul_apply, LinearMap.smul_apply, symplecticCupCapAt_tprod hij, map_smul, hT]
@@ -440,12 +430,244 @@ theorem commute_symplecticCupCapAt_of_disjoint {i j p q : Fin d} (hip : i ≠ p)
           ((commute_map_symplecticCupCapStrand hip hiq hjp hjq a b x y a' b' x'
             y').smul_right _).smul_left _
 
+/-- **Two arcs sharing one strand**: `e i j * e j l * e i j = e i j`, the relation that makes two
+generators on overlapping pairs of strands absorb one another. The middle arc contracts the shared
+strand `j`, which the outer one has filled with a basis vector, against the strand `l`, and the
+outer arc then contracts the two slots it had filled against each other. Both contractions are the
+column pairing `Jᵀ * J = 1` of the alternating form, so the zigzag straightens and the three signs
+carried by the cups cancel against it. -/
+theorem symplecticCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j ≠ l)
+    (hil : i ≠ l) :
+    symplecticCupCapAt k n d i j * symplecticCupCapAt k n d j l * symplecticCupCapAt k n d i j =
+      symplecticCupCapAt k n d i j := by
+  -- the columns of `J` are orthonormal for the pairing by `J` itself, because `Jᵀ * J = 1`
+  have hcol : ∀ y p : Fin n ⊕ Fin n,
+      ∑ x : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x p =
+        if y = p then (1 : k) else 0 := by
+    have hJT : (Matrix.J (Fin n) k)ᵀ * Matrix.J (Fin n) k = 1 := by
+      rw [Matrix.J_transpose, Matrix.neg_mul, Matrix.J_squared, neg_neg]
+    intro y p
+    have h := congrFun (congrFun hJT y) p
+    simpa only [Matrix.mul_apply, Matrix.transpose_apply, Matrix.one_apply] using h
+  refine PiTensorProduct.ext ?_
+  ext v
+  -- the middle arc pairs the strand `j`, carrying the `y`-th basis vector, against the strand `l`
+  have hmid : ∀ x y : Fin n ⊕ Fin n,
+      symplecticCupCapAt k n d j l (PiTensorProduct.tprod k (Function.update
+          (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k)))) =
+        stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) •
+          -∑ p : Fin n ⊕ Fin n, ∑ q : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single x (1 : k))) j (Pi.single p (1 : k)))
+              l (Pi.single q (1 : k))) := by
+    intro x y
+    rw [symplecticCupCapAt_tprod hjl, Function.update_self, Function.update_of_ne hjl.symm,
+      Function.update_of_ne hil.symm]
+    simp only [Function.update_idem]
+  -- the outer arc then pairs the two slots it had filled against each other
+  have hout : ∀ x p q : Fin n ⊕ Fin n,
+      symplecticCupCapAt k n d i j (PiTensorProduct.tprod k (Function.update
+          (Function.update (Function.update v i (Pi.single x (1 : k))) j (Pi.single p (1 : k)))
+          l (Pi.single q (1 : k)))) =
+        Matrix.J (Fin n) k x p •
+          -∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+              l (Pi.single q (1 : k))) := by
+    intro x p q
+    have hplug : ∀ r s : Fin n ⊕ Fin n,
+        Function.update (Function.update (Function.update (Function.update
+            (Function.update v i (Pi.single x (1 : k))) j (Pi.single p (1 : k)))
+            l (Pi.single q (1 : k))) i (Pi.single r (1 : k))) j (Pi.single s (1 : k)) =
+          Function.update (Function.update (Function.update v i (Pi.single r (1 : k))) j
+            (Pi.single s (1 : k))) l (Pi.single q (1 : k)) := by
+      intro r s
+      funext t
+      rcases eq_or_ne t j with rfl | htj
+      · simp only [Function.update_self, Function.update_of_ne hjl]
+      rcases eq_or_ne t i with rfl | hti
+      · simp only [Function.update_self, Function.update_of_ne hij, Function.update_of_ne hil]
+      rcases eq_or_ne t l with rfl | htl
+      · simp only [Function.update_self, Function.update_of_ne hjl.symm,
+          Function.update_of_ne hil.symm]
+      simp only [Function.update_of_ne htj, Function.update_of_ne hti, Function.update_of_ne htl]
+    rw [symplecticCupCapAt_tprod hij, Function.update_of_ne hil, Function.update_of_ne hij,
+      Function.update_self, Function.update_of_ne hjl, Function.update_self,
+      stdSymplecticBilinForm_single_single]
+    simp only [hplug]
+  -- the two steps composed, with every scalar collected in front of the `q`-th cup
+  have hfull : ∀ x y : Fin n ⊕ Fin n,
+      symplecticCupCapAt k n d i j (symplecticCupCapAt k n d j l (PiTensorProduct.tprod k
+          (Function.update (Function.update v i (Pi.single x (1 : k))) j
+            (Pi.single y (1 : k))))) =
+        ∑ q : Fin n ⊕ Fin n, (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+            ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p) •
+          ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+              l (Pi.single q (1 : k))) := by
+    intro x y
+    have hinner : ∀ p : Fin n ⊕ Fin n, symplecticCupCapAt k n d i j
+        (∑ q : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q • PiTensorProduct.tprod k
+          (Function.update (Function.update (Function.update v i (Pi.single x (1 : k))) j
+            (Pi.single p (1 : k))) l (Pi.single q (1 : k)))) =
+        ∑ q : Fin n ⊕ Fin n, (Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p) •
+          -∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+              l (Pi.single q (1 : k))) := by
+      intro p
+      rw [map_sum]
+      refine Finset.sum_congr rfl fun q _ => ?_
+      rw [map_smul, hout x p q, smul_smul]
+    rw [hmid x y, map_smul, map_neg, map_sum, Finset.sum_congr rfl fun p _ => hinner p]
+    simp only [smul_neg, Finset.sum_neg_distrib, neg_neg]
+    rw [Finset.sum_comm, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun q _ => ?_
+    rw [← Finset.sum_smul, smul_smul]
+  -- the same, summed over the cup of the outer arc
+  have hrow : ∀ x : Fin n ⊕ Fin n,
+      symplecticCupCapAt k n d i j (symplecticCupCapAt k n d j l
+          (∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y • PiTensorProduct.tprod k
+            (Function.update (Function.update v i (Pi.single x (1 : k))) j
+              (Pi.single y (1 : k))))) =
+        ∑ y : Fin n ⊕ Fin n, ∑ q : Fin n ⊕ Fin n, (Matrix.J (Fin n) k x y *
+            (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+              ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p)) •
+          ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+              l (Pi.single q (1 : k))) := by
+    intro x
+    rw [map_sum, map_sum]
+    refine Finset.sum_congr rfl fun y _ => ?_
+    rw [map_smul, map_smul, hfull x y, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun q _ => smul_smul _ _ _
+  -- the scalars contract to the `q`-th coordinate of the strand `l`, by the column pairing twice
+  have hscalar : ∀ q : Fin n ⊕ Fin n,
+      ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, (Matrix.J (Fin n) k x y *
+          (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+            ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p)) = v l q := by
+    intro q
+    have hc : ∀ y : Fin n ⊕ Fin n,
+        stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) =
+          ∑ b : Fin n ⊕ Fin n, Matrix.J (Fin n) k y b * v l b := by
+      intro y
+      rw [stdSymplecticBilinForm_apply, single_dotProduct, one_mul]
+      simp [Matrix.mulVec, dotProduct]
+    have hre : ∀ y p x : Fin n ⊕ Fin n,
+        Matrix.J (Fin n) k x y * (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+            (Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p)) =
+          stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k p q *
+            (Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x p) := by
+      intro y p x
+      ring
+    have key : ∀ y : Fin n ⊕ Fin n,
+        ∑ x : Fin n ⊕ Fin n, (Matrix.J (Fin n) k x y *
+            (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+              ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p)) =
+          stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k y q := by
+      intro y
+      simp only [Finset.mul_sum]
+      calc ∑ x : Fin n ⊕ Fin n, ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y *
+            (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+              (Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p))
+          = ∑ p : Fin n ⊕ Fin n, ∑ x : Fin n ⊕ Fin n,
+              stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k p q *
+                (Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x p) := by
+            rw [Finset.sum_comm]
+            exact Finset.sum_congr rfl fun p _ => Finset.sum_congr rfl fun x _ => hre y p x
+        _ = ∑ p : Fin n ⊕ Fin n,
+              stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k p q *
+                (if y = p then (1 : k) else 0) := by
+            refine Finset.sum_congr rfl fun p _ => ?_
+            rw [← Finset.mul_sum, hcol y p]
+        _ = stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k y q := by
+            simp
+    rw [Finset.sum_comm, Finset.sum_congr rfl fun y _ => key y]
+    calc ∑ y : Fin n ⊕ Fin n, stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+          Matrix.J (Fin n) k y q
+        = ∑ y : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n,
+            v l b * (Matrix.J (Fin n) k y b * Matrix.J (Fin n) k y q) := by
+          refine Finset.sum_congr rfl fun y _ => ?_
+          rw [hc y, Finset.sum_mul]
+          exact Finset.sum_congr rfl fun b _ => by ring
+      _ = ∑ b : Fin n ⊕ Fin n, v l b *
+            ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k y b * Matrix.J (Fin n) k y q := by
+          rw [Finset.sum_comm]
+          exact Finset.sum_congr rfl fun b _ => (Finset.mul_sum _ _ _).symm
+      _ = v l q := by
+          simp only [hcol]
+          simp
+  -- summing the surviving coordinate over `q` rebuilds the strand `l`
+  have hrestore : ∀ r s : Fin n ⊕ Fin n,
+      ∑ q : Fin n ⊕ Fin n, v l q • PiTensorProduct.tprod k (Function.update
+          (Function.update (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+          l (Pi.single q (1 : k))) =
+        PiTensorProduct.tprod k (Function.update
+          (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k))) := by
+    intro r s
+    have hl : Function.update
+        (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)) l = v l := by
+      rw [Function.update_of_ne hjl.symm, Function.update_of_ne hil.symm]
+    rw [Finset.sum_congr rfl fun q _ => ((PiTensorProduct.tprod k).map_update_smul
+        (Function.update (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k))) l
+        (v l q) (Pi.single q (1 : k))).symm,
+      ← (PiTensorProduct.tprod k).map_update_sum, ← pi_eq_sum_univ' (v l), ← hl,
+      Function.update_eq_self]
+  rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
+    Module.End.mul_apply, Module.End.mul_apply, symplecticCupCapAt_tprod hij, map_smul, map_smul]
+  refine congrArg _ ?_
+  rw [map_neg, map_sum, map_neg, map_sum, Finset.sum_congr rfl fun x _ => hrow x, neg_inj]
+  calc ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, ∑ q : Fin n ⊕ Fin n, (Matrix.J (Fin n) k x y *
+          (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+            ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p)) •
+        ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+          PiTensorProduct.tprod k (Function.update (Function.update
+            (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+            l (Pi.single q (1 : k)))
+      = ∑ q : Fin n ⊕ Fin n, ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
+          (Matrix.J (Fin n) k x y *
+            (stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) *
+              ∑ p : Fin n ⊕ Fin n, Matrix.J (Fin n) k p q * Matrix.J (Fin n) k x p)) •
+          ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+              l (Pi.single q (1 : k))) := Finset.sum_comm_cycle
+    _ = ∑ q : Fin n ⊕ Fin n, v l q •
+          ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+            PiTensorProduct.tprod k (Function.update (Function.update
+              (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k)))
+              l (Pi.single q (1 : k))) := by
+        refine Finset.sum_congr rfl fun q _ => ?_
+        simp only [← Finset.sum_smul]
+        rw [hscalar q]
+    _ = ∑ q : Fin n ⊕ Fin n, ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n,
+          (v l q * Matrix.J (Fin n) k r s) • PiTensorProduct.tprod k (Function.update
+            (Function.update (Function.update v i (Pi.single r (1 : k))) j
+              (Pi.single s (1 : k))) l (Pi.single q (1 : k))) := by
+        simp only [Finset.smul_sum, smul_smul]
+    _ = ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, ∑ q : Fin n ⊕ Fin n,
+          (v l q * Matrix.J (Fin n) k r s) • PiTensorProduct.tprod k (Function.update
+            (Function.update (Function.update v i (Pi.single r (1 : k))) j
+              (Pi.single s (1 : k))) l (Pi.single q (1 : k))) := by
+        rw [Finset.sum_comm_cycle, Finset.sum_comm_cycle]
+    _ = ∑ r : Fin n ⊕ Fin n, ∑ s : Fin n ⊕ Fin n, Matrix.J (Fin n) k r s •
+          PiTensorProduct.tprod k (Function.update
+            (Function.update v i (Pi.single r (1 : k))) j (Pi.single s (1 : k))) := by
+        refine Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun s _ => ?_
+        rw [← hrestore r s, Finset.smul_sum]
+        exact Finset.sum_congr rfl fun q _ => by
+          rw [smul_smul, mul_comm (Matrix.J (Fin n) k r s) (v l q)]
+
 /-! ### The arc as an intertwiner -/
 
 /-- **The cup at two slots is invariant** under every matrix `A` with `A * J * Aᵀ = J`: expanding
 the two slots in the standard basis turns the bivector of `J` into the bivector of the congruate
 `A * J * Aᵀ`. This is the general-slot form of
-`TauCeti.piTensorProductMap_comp_symplecticCup`. -/
+`TauCeti.piTensorProductMap_comp_symplecticCup`, and it reads the same regrouping
+`Matrix.sum_sum_smul_congruence` off the two chosen slots that
+`Matrix.piTensorProductMap_bivector` reads off a tensor square. -/
 private theorem sum_sum_tprod_update_pair_mulVec
     {A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k}
     (hA : A * Matrix.J (Fin n) k * Aᵀ = Matrix.J (Fin n) k) {i j : Fin d} (hij : i ≠ j)
@@ -456,57 +678,19 @@ private theorem sum_sum_tprod_update_pair_mulVec
       ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
         PiTensorProduct.tprod k (Function.update
           (Function.update u i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
-  have hcoef : ∀ a b : Fin n ⊕ Fin n,
-      ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
-          Matrix.J (Fin n) k x y * (A a x * A b y) =
-        (A * Matrix.J (Fin n) k * Aᵀ) a b := by
-    intro a b
-    rw [Matrix.mul_apply, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun y _ => ?_
-    rw [Matrix.mul_apply, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    simp only [Matrix.transpose_apply]
-    ring
-  calc ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
-        PiTensorProduct.tprod k (Function.update
-          (Function.update u i (A *ᵥ Pi.single x (1 : k))) j (A *ᵥ Pi.single y (1 : k)))
-      = ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n,
-          (Matrix.J (Fin n) k x y * (A a x * A b y)) • PiTensorProduct.tprod k
-            (Function.update (Function.update u i (Pi.single a (1 : k))) j
-              (Pi.single b (1 : k))) := by
-        refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
-        rw [tprod_update_pair_expand hij u, Finset.smul_sum]
-        refine Finset.sum_congr rfl fun a _ => ?_
-        rw [Finset.smul_sum]
-        refine Finset.sum_congr rfl fun b _ => ?_
-        rw [smul_smul]
-        simp only [Matrix.mulVec_single_one, Matrix.col_apply]
-    -- move the two outer sums past the two inner ones, one adjacent swap at a time
-    _ = ∑ x : Fin n ⊕ Fin n, ∑ a : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n,
-          (Matrix.J (Fin n) k x y * (A a x * A b y)) • PiTensorProduct.tprod k
-            (Function.update (Function.update u i (Pi.single a (1 : k))) j
-              (Pi.single b (1 : k))) :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : Fin n ⊕ Fin n, ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n,
-          (Matrix.J (Fin n) k x y * (A a x * A b y)) • PiTensorProduct.tprod k
-            (Function.update (Function.update u i (Pi.single a (1 : k))) j
-              (Pi.single b (1 : k))) := Finset.sum_comm
-    _ = ∑ a : Fin n ⊕ Fin n, ∑ x : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
-          (Matrix.J (Fin n) k x y * (A a x * A b y)) • PiTensorProduct.tprod k
-            (Function.update (Function.update u i (Pi.single a (1 : k))) j
-              (Pi.single b (1 : k))) :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
-          (Matrix.J (Fin n) k x y * (A a x * A b y)) • PiTensorProduct.tprod k
-            (Function.update (Function.update u i (Pi.single a (1 : k))) j
-              (Pi.single b (1 : k))) :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, Matrix.J (Fin n) k a b •
+  have hexpand : ∀ x y : Fin n ⊕ Fin n,
+      PiTensorProduct.tprod k (Function.update
+          (Function.update u i (A *ᵥ Pi.single x (1 : k))) j (A *ᵥ Pi.single y (1 : k))) =
+        ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, (A a x * A b y) •
           PiTensorProduct.tprod k (Function.update
             (Function.update u i (Pi.single a (1 : k))) j (Pi.single b (1 : k))) := by
-        refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
-        simp only [← Finset.sum_smul]
-        rw [hcoef a b, hA]
+    intro x y
+    rw [tprod_update_pair_expand hij u]
+    simp only [Matrix.mulVec_single_one, Matrix.col_apply]
+  simp only [hexpand]
+  rw [Matrix.sum_sum_smul_congruence A (Matrix.J (Fin n) k) fun a b =>
+    PiTensorProduct.tprod k (Function.update
+      (Function.update u i (Pi.single a (1 : k))) j (Pi.single b (1 : k))), hA]
 
 /-- **The generator commutes with the diagonal action of a symplectic matrix**: the cap consumes
 `Aᵀ * J * A = J`, which is exactly preservation of the standard alternating form, and the cup the
