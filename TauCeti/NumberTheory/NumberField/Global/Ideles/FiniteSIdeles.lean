@@ -76,12 +76,22 @@ variable (S : Finset (HeightOneSpectrum (𝒪 K)))
 
 /-- **The finite `S`-ideles.** For a finite set `S` of finite places of `K`, the finite ideles of
 `L` whose semi-local component at every finite place `v ∉ S` of `K` is integral, that is, whose
-component at every place of `L` not above `S` is a unit of `𝒪_w`. -/
+component at every place of `L` not above `S` is a unit of `𝒪_w`. These are the `S'`-integral
+finite ideles `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits` of `L` for the set `S'` of places
+of `L` above `S`. -/
 def finiteSIdeles : Subgroup (FiniteAdeleRing (𝒪 L) L)ˣ :=
-  ⨅ (v : HeightOneSpectrum (𝒪 K)) (_ : v ∉ S),
-    (semilocalIntegralUnits L v).comap (finiteIdeleSemilocalHom L v)
+  FiniteAdeleRing.sIntegralUnits (𝒪 L) L {w | w.under (𝒪 K) ∈ S}
 
 variable {L S}
+
+omit [NumberField K] in
+/-- A finite idele is an `S`-idele exactly when its component at every place of `L` not above
+`S` has valuation one. -/
+theorem mem_finiteSIdeles_iff_valued_eq_one {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
+    a ∈ finiteSIdeles L S ↔
+      ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
+        Valued.v ((a : FiniteAdeleRing (𝒪 L) L) w) = 1 :=
+  FiniteAdeleRing.mem_sIntegralUnits
 
 /-- A finite idele is an `S`-idele exactly when its semi-local components outside `S` are
 integral. -/
@@ -89,19 +99,12 @@ integral. -/
 theorem mem_finiteSIdeles_iff {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
     a ∈ finiteSIdeles L S ↔
       ∀ v ∉ S, finiteIdeleSemilocalHom L v a ∈ semilocalIntegralUnits L v := by
-  simp [finiteSIdeles]
-
-/-- A finite idele is an `S`-idele exactly when its component at every place of `L` not above
-`S` has valuation one. -/
-theorem mem_finiteSIdeles_iff_valued_eq_one {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
-    a ∈ finiteSIdeles L S ↔
-      ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
-        Valued.v ((a : FiniteAdeleRing (𝒪 L) L) w) = 1 := by
-  simp only [mem_finiteSIdeles_iff, mem_semilocalIntegralUnits_iff,
+  simp only [mem_finiteSIdeles_iff_valued_eq_one, mem_semilocalIntegralUnits_iff,
     semilocalEquiv_finiteIdeleSemilocalHom]
-  refine ⟨fun h w hw ↦ h _ hw ⟨w, inferInstance⟩, fun h v hv w ↦ h w.1 ?_⟩
+  refine ⟨fun h v hv w ↦ h w.1 ?_, fun h w hw ↦ h _ hw ⟨w, inferInstance⟩⟩
   rwa [under_eq_of_liesOver w.2]
 
+omit [NumberField K] in
 /-- **An idele is an `S`-idele exactly when its finite part is a finite `S`-idele.** -/
 theorem toFiniteIdele_mem_finiteSIdeles_iff {x : NumberField.IdeleGroup (𝒪 L) L} :
     NumberField.IdeleGroup.toFiniteIdele (𝒪 L) L x ∈ finiteSIdeles L S ↔
