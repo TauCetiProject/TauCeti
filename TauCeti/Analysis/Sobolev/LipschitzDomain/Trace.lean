@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Localization
 public import TauCeti.Analysis.Sobolev.Trace.Epigraph.Basic
-public import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -49,94 +48,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {Ω : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
   {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Cut off a Sobolev function inside a Lipschitz boundary chart, extend by zero along the
-artificial chart boundary, and express it in the rigid chart coordinates. The resulting
-function is defined on the whole epigraph of the chart graph. -/
-def W1p.lipschitzChartLocalizeL
-    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
-    (ψ : WithLp 2 (ℝ × E) → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
-    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
-    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) :
-    W1p volume Ω p →L[ℝ] W1p volume (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩) p :=
-  let V := Opens.comap ⟨e, e.continuous⟩ (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩)
-  (W1p.compAffineIsometryEquivL e.symm (by ext z; simp [V])).comp <|
-    (W1p.localizeL (inf_le_right : Ω ⊓ V ≤ V) ψ hψ hM
-      (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
-      (fun _ hx => ⟨(h.mem_iff (hs hx.2)).2 ((mem_normalEpigraph ..).1 hx.1),
-        hx.1⟩)).comp
-      (W1p.restrictL inf_le_left)
-
-/-- In chart coordinates, localization is the cutoff product, set to zero outside the original
-domain. This formula characterizes the localized Sobolev function by its value. -/
-theorem W1p.value_lipschitzChartLocalizeL_ae
-    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
-    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
-    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
-    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) (u : W1p volume Ω p) :
-    W1p.value (W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u) =ᵐ[
-      volume.restrict (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩)] fun z =>
-        (Ω : Set _).indicator (fun x => ψ x • W1p.value u x) (e.symm z) := by
-  let V := Opens.comap ⟨e, e.continuous⟩ (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩)
-  have hsub : (V : Set _) ∩ tsupport ψ ⊆ (Ω ⊓ V : Opens _) :=
-    fun _ hx => ⟨(h.mem_iff (hs hx.2)).2 ((mem_normalEpigraph ..).1 hx.1), hx.1⟩
-  let v := W1p.localizeL (inf_le_right : Ω ⊓ V ≤ V) ψ hψ hM
-    (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1) hsub
-    (W1p.restrictL (p := p) inf_le_left u)
-  have hv := (ae_restrict_iff' V.isOpen.measurableSet).1
-    (W1p.value_localizeL_ae (μ := volume) inf_le_right hψ hM
-      (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1) hsub
-      (W1p.restrictL (p := p) inf_le_left u))
-  have hu := (ae_restrict_iff' (Ω ⊓ V).isOpen.measurableSet).1
-    (W1p.value_restrictL_ae (p := p) (inf_le_left : Ω ⊓ V ≤ Ω) u)
-  have hcoord : ((normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩ : Opens _) : Set _) =
-      e.symm ⁻¹' V := by ext z; simp [V]
-  rw [W1p.lipschitzChartLocalizeL, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply]
-  filter_upwards [W1p.value_compAffineIsometryEquivL_ae e.symm hcoord v,
-    ae_restrict_of_ae (e.symm.measurePreserving.quasiMeasurePreserving.ae hv),
-    ae_restrict_of_ae (e.symm.measurePreserving.quasiMeasurePreserving.ae hu),
-    ae_restrict_mem (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩).isOpen.measurableSet]
-    with z hz hvz huz hzG
-  have hzV : e.symm z ∈ V := by simpa [V] using hzG
-  rw [hz, hvz hzV]
-  by_cases hzΩ : e.symm z ∈ Ω
-  · have hzU : e.symm z ∈ (Ω ⊓ V : Opens (WithLp 2 (ℝ × E))) := ⟨hzΩ, hzV⟩
-    rw [indicator_of_mem hzU, indicator_of_mem hzΩ, huz hzU]
-  · have hzU : e.symm z ∉ (Ω ⊓ V : Opens (WithLp 2 (ℝ × E))) := fun hx => hzΩ hx.1
-    rw [indicator_of_notMem hzU, indicator_of_notMem hzΩ]
-
-/-- Chart localization multiplies the Sobolev norm by at most `2 M`, independently of the
-Lipschitz constant of the graph. -/
-theorem W1p.norm_lipschitzChartLocalizeL_le
-    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
-    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
-    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
-    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) (u : W1p volume Ω p) :
-    ‖W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u‖ ≤ 2 * M * ‖u‖ := by
-  rw [W1p.lipschitzChartLocalizeL, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply]
-  exact (W1p.norm_compAffineIsometryEquivL_le _ _ _).trans
-    ((W1p.norm_localizeL_le _ _ _ _ _ _ _).trans
-      (mul_le_mul_of_nonneg_left (W1p.norm_restrictL_le inf_le_left u) (by positivity)))
-
-/-- Chart localization preserves zero boundary values for finite Sobolev exponent. -/
-theorem W1p.lipschitzChartLocalizeL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0∞))
-    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
-    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
-    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
-    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
-    (hu : u ∈ w1p0Submodule volume Ω p) :
-    W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u ∈
-      w1p0Submodule volume (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩) p := by
-  simp only [W1p.lipschitzChartLocalizeL, ContinuousLinearMap.comp_apply]
-  apply W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp
-  exact W1p.localizeL_restrictL_mem_w1p0Submodule
-    (V := Opens.comap ⟨e, e.continuous⟩ (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩))
-    hp hψ hM hψM hgM
-    (fun _ hx => (h.mem_iff (hs hx.2)).2 ((mem_normalEpigraph ..).1 hx.1))
-    (fun x hx => (mem_normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩ (e x)).2
-      ((h.mem_iff (hs hx.2)).1 hx.1)) hu
 
 /-- The localized `H¹` trace through a Lipschitz boundary chart. The result is in `L²(E)`
 with respect to tangential Lebesgue measure, not surface measure on `frontier Ω`. -/

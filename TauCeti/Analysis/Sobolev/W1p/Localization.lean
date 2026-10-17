@@ -21,7 +21,9 @@ support condition avoids the artificial boundary of the chart, while allowing no
 values at the physical boundary of `Ω`. Restricting the result to `U` recovers `ψ u`,
 and localizing the restriction of a function on `Ω` equals multiplication by `ψ` there.
 These identities allow local boundary constructions to be assembled with a partition of
-unity.
+unity. For `p < ∞`, localizing the restriction of a `W^{1,p}_0(Ω)` function to an open set
+`V` lands in `W^{1,p}_0(V)` when `V ∩ tsupport ψ ⊆ Ω` and `Ω ∩ tsupport ψ ⊆ V`
+(`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`).
 
 The construction reuses `TauCeti.W1p.contDiffSMulL` and zero extension of the ambient
 value-gradient jet; admissibility follows from
