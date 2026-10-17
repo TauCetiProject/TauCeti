@@ -94,14 +94,15 @@ theorem tateGauge_nonneg (ha : 0 ≤ a) (x : A) : 0 ≤ tateGauge A₀ ϖ a x :=
     rintro _ ⟨n, -, rfl⟩
     exact zpow_nonneg ha _
 
-private theorem bddBelow_image (ha : 0 ≤ a) (s : Set ℤ) :
-    BddBelow ((fun n : ℤ ↦ a ^ (-n)) '' s) :=
+/-- The radii `a ^ (-n)` whose infimum defines the Tate gauge of `B₀` at `x` are bounded below. -/
+private theorem bddBelow_tateGauge_radii (ha : 0 ≤ a) (B₀ : Subring A) (x : A) :
+    BddBelow ((fun n : ℤ ↦ a ^ (-n)) '' {n | ((ϖ ^ (-n) : Aˣ) : A) * x ∈ B₀}) :=
   ⟨0, by rintro _ ⟨n, -, rfl⟩; exact zpow_nonneg ha _⟩
 
 /-- An element of `ϖ ^ n A₀` has Tate gauge at most `a ^ (-n)`. -/
 theorem tateGauge_le_zpow (ha : 0 ≤ a) {x : A} {n : ℤ}
     (hn : ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀) : tateGauge A₀ ϖ a x ≤ a ^ (-n) :=
-  csInf_le (bddBelow_image ha _) ⟨n, hn, rfl⟩
+  csInf_le (bddBelow_tateGauge_radii ha _ _) ⟨n, hn, rfl⟩
 
 /-- An element of `A₀` has Tate gauge at most one. -/
 theorem tateGauge_le_one (ha : 0 ≤ a) {x : A} (hx : x ∈ A₀) : tateGauge A₀ ϖ a x ≤ 1 := by
@@ -113,7 +114,8 @@ theorem tateGauge_lt_iff (ha : 0 ≤ a) {x : A} (hx : ∃ n : ℤ, ((ϖ ^ n : A�
     {r : ℝ} :
     tateGauge A₀ ϖ a x < r ↔ ∃ n : ℤ, ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀ ∧ a ^ (-n) < r := by
   obtain ⟨n, hn⟩ := hx
-  rw [tateGauge_def, csInf_lt_iff (bddBelow_image ha _) ⟨_, -n, by simpa using hn, rfl⟩]
+  rw [tateGauge_def,
+    csInf_lt_iff (bddBelow_tateGauge_radii ha _ _) ⟨_, -n, by simpa using hn, rfl⟩]
   simp
 
 @[simp]
@@ -154,7 +156,7 @@ private theorem tateGauge_le_tateGauge (ha : 0 ≤ a) {B₀ : Subring A} {x y : 
     (h : ∀ n : ℤ, ((ϖ ^ (-n) : Aˣ) : A) * y ∈ B₀ → ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀) :
     tateGauge A₀ ϖ a x ≤ tateGauge B₀ ϖ a y := by
   obtain ⟨n, hn⟩ := hy
-  exact csInf_le_csInf (bddBelow_image ha _) ⟨_, -n, by simpa using hn, rfl⟩ <|
+  exact csInf_le_csInf (bddBelow_tateGauge_radii ha _ _) ⟨_, -n, by simpa using hn, rfl⟩ <|
     Set.image_mono fun m hm ↦ h m hm
 
 private theorem tateGauge_eq_zero_of_forall (ha : 1 < a) {x : A}
@@ -202,7 +204,7 @@ theorem tateGauge_rpow (ha : 1 < a) {b : ℝ} (hb : 1 < b) (x : A) :
   have h := MonotoneOn.map_csInf_of_continuousWithinAt
     (f := fun y : ℝ ↦ y ^ (Real.log b / Real.log a))
     (Real.continuousAt_rpow_const _ _ (Or.inr ht.le)).continuousWithinAt ?_ (hS.image _)
-    (bddBelow_image ha₀.le _)
+    (bddBelow_tateGauge_radii ha₀.le _ _)
   · rw [h, Set.image_image]
     simp_rw [hpow]
   · rintro _ ⟨m, -, rfl⟩ _ ⟨m', -, rfl⟩ h
@@ -217,7 +219,9 @@ section Seminorm
 variable (hϖ : (ϖ : A) ∈ A₀) (hA : ∀ x : A, ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * x ∈ A₀)
 include hϖ
 
-private theorem zpow_neg_mul_mem_of_le {x : A} {m n : ℤ} (hmn : m ≤ n)
+/-- If `ϖ ∈ A₀`, the sets `ϖ ^ n A₀` decrease in `n`: an element of `ϖ ^ n A₀` lies in `ϖ ^ m A₀`
+for every `m ≤ n`. -/
+theorem zpow_neg_mul_mem_of_le {x : A} {m n : ℤ} (hmn : m ≤ n)
     (hn : ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀) : ((ϖ ^ (-m) : Aˣ) : A) * x ∈ A₀ := by
   obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 hmn)
   have h : ((ϖ ^ (-m) : Aˣ) : A) * x = (ϖ : A) ^ k * (((ϖ ^ (-n) : Aˣ) : A) * x) := by
