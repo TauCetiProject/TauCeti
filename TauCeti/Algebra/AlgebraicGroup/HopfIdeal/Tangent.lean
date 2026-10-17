@@ -267,7 +267,10 @@ theorem mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff
   · intro h x hx
     apply TrivSqZeroExt.ext
     · rw [derivationMulEquivTangentKer_apply_fst]
-      simp [I.counit_eq_zero hx]
+      simp only [Bialgebra.CounitAlgebra.algebraMap_apply, I.counit_eq_zero hx,
+        map_zero, TrivSqZeroExt.fst_zero]
+      -- The two zeros use the inherited ring structure on the CounitAlgebra synonym
+      -- and the original coefficient ring, respectively; they agree definitionally.
       rfl
     · rw [derivationMulEquivTangentKer_apply_snd]
       exact h x (mem_toIdeal.mpr hx)

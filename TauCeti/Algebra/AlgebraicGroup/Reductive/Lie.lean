@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Reductive
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.LieContainment
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Tangent
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 
 /-!
