@@ -63,7 +63,11 @@ and the angle sum needs the polygon to be a fundamental domain, and is proved in
 * `ConvexPolygon.SidePairing.sum_range_mul_cycleLength_interiorAngle`: `t` circuits of a cycle
   have total angle `t` times the angle sum.
 * `ConvexPolygon.SidePairing.finsum_eq_sum_div_cycleLength`: a sum over vertex cycles as a sum
-  over vertices, each weighted by the inverse length of its cycle.
+  over vertices, each weighted by the inverse length of its cycle;
+  `finsum_eq_sum_ite_div_cycleLength` is the same over all vertices, for a function given
+  vertex by vertex.
+* `ConvexPolygon.SidePairing.sum_sum_cycle_div_cycleLength`: summing a function over each
+  cycle, weighted by the inverse cycle length, recovers its sum over all vertices.
 * `ConvexPolygon.SidePairing.sum_cycleAngleSum_div_cycleLength`: the angle sum of the polygon is
   the sum of the angle sums of its vertex cycles.
 
@@ -380,7 +384,7 @@ theorem cycleLength_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
   exact Function.minimalPeriod_apply_iterate (σ.mem_periodicPts_next j) m
 
 /-- The cycle transformations at the vertices of one cycle have the same order. -/
-theorem orderOf_cycleMap_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
+theorem orderOf_cycleMap_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
     orderOf (σ.cycleMap i) = orderOf (σ.cycleMap j) := by
   obtain ⟨m, rfl⟩ := (σ.mem_cycle_iff j i).mp hi
   clear hi
@@ -424,6 +428,30 @@ theorem finsum_eq_sum_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
         rw [σ.cycleLength_eq_of_mem_cycle (hmem i.1 i.2)]
         exact congrArg (· / (σ.cycleLength a : K)) (congrArg g i.2),
     Finset.sum_const, Finset.card_univ, hcard, nsmul_eq_mul, mul_div_cancel₀ _ hL]
+
+/-- **Summing over vertex cycles, vertex by vertex.** If a function on the cycles of the vertices
+satisfying `p` is given at the cycle through `i` by `f i`, its sum is the sum over all vertices `i`
+satisfying `p` of `f i` divided by the length of the cycle through `i`. -/
+theorem finsum_eq_sum_ite_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
+    {p : Fin n → Prop} [DecidablePred p] (hp : ∀ {j i}, i ∈ σ.cycle j → (p i ↔ p j))
+    (g : Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+      Setoid {i : Fin n // p i}) → K) (f : Fin n → K) (hg : ∀ i, g (Quotient.mk'' i) = f i) :
+    ∑ᶠ c, g c = ∑ i, if p i then f i / σ.cycleLength i else 0 := by
+  simp only [σ.finsum_eq_sum_div_cycleLength hp, hg, ← Finset.sum_filter]
+  exact (Finset.sum_subtype (p := p) _ (fun _ ↦ by simp) fun i ↦ f i / σ.cycleLength i).symm
+
+/-- Summing a function over the vertices of each cycle and dividing by the cycle length, then
+summing over all vertices, counts each cycle once and so recovers the sum over all vertices. -/
+theorem sum_sum_cycle_div_cycleLength {K : Type*} [DivisionSemiring K] [CharZero K]
+    (f : Fin n → K) : ∑ j, (∑ i ∈ σ.cycle j, f i) / σ.cycleLength j = ∑ i, f i := by
+  simp_rw [Finset.sum_div]
+  -- exchange the order of summation: `i ∈ cycle j` exactly when `j ∈ cycle i`
+  rw [Finset.sum_comm' (t' := Finset.univ) (s' := σ.cycle)
+    (fun j i ↦ by simpa only [Finset.mem_univ, true_and, and_true] using σ.mem_cycle_comm)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hL : (σ.cycleLength i : K) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos i).ne'
+  rw [Finset.sum_congr rfl fun j hj ↦ by rw [σ.cycleLength_eq_of_mem_cycle hj], Finset.sum_const,
+    card_cycle, nsmul_eq_mul, Nat.cast_comm, div_mul_cancel₀ _ hL]
 
 /-- The angle sum along the vertex cycle through `j`: the sum of the interior angles of `P` at
 the vertices of the cycle. -/
@@ -485,14 +513,8 @@ the term at a vertex `j` is the cycle angle sum divided by the number `cycleLeng
 vertices on that cycle. -/
 theorem sum_cycleAngleSum_div_cycleLength :
     ∑ j, σ.cycleAngleSum j / σ.cycleLength j = ∑ i, P.interiorAngle i := by
-  simp_rw [cycleAngleSum_def, Finset.sum_div]
-  -- exchange the order of summation: `i ∈ cycle j` exactly when `j ∈ cycle i`
-  rw [Finset.sum_comm' (t' := Finset.univ) (s' := σ.cycle)
-    (fun j i ↦ by simpa only [Finset.mem_univ, true_and, and_true] using σ.mem_cycle_comm)]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hL : (σ.cycleLength i : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos i).ne'
-  rw [Finset.sum_congr rfl fun j hj ↦ by rw [σ.cycleLength_eq_of_mem_cycle hj], Finset.sum_const,
-    card_cycle, nsmul_eq_mul, mul_div_cancel₀ _ hL]
+  simp_rw [cycleAngleSum_def]
+  exact σ.sum_sum_cycle_div_cycleLength _
 
 end SidePairing
 

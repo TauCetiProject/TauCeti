@@ -37,6 +37,10 @@ That identification of the polygon count is not proved here.
 
 ## Main results
 
+* `ConvexPolygon.SidePairing.natCard_finiteVertexCycle_eq_sum`: the number of finite vertex
+  cycles as a sum over the finite vertices.
+* `ConvexPolygon.SidePairing.finsum_mem_ellipticOrbits_one_sub_inv_eq`: the sum of `1 - 1 / mₑ`
+  over the elliptic orbits as a sum over the vertices plus a term for the self-paired sides.
 * `ConvexPolygon.SidePairing.sum_interiorAngle_eq_two_pi_mul`: the angle sum of a fundamental
   polygon in terms of its finite vertex cycles, self-paired sides, and the elliptic orbits.
 * `ConvexPolygon.SidePairing.covolume_eq_two_pi_mul`: the covolume of `Γ` in the same terms.
@@ -59,20 +63,47 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing) {Γ : Subgroup PSL(2, ℝ)}
 
-/-- At a finite vertex of a polygon with disjoint translated interiors, the cycle angle sum is
-`2π` divided by the order of the cycle transformation, which is not zero. -/
-private theorem cycleAngleSum_eq_two_pi_div_of_isLeft {j : Fin n} (hj : (P.vertex j).isLeft)
-    (hmap : ∀ i, σ.map i ∈ Γ)
+/-- The number of finite vertex cycles is the sum, over the finite vertices, of the inverse
+lengths of their cycles. -/
+theorem natCard_finiteVertexCycle_eq_sum {K : Type*} [Semifield K] [CharZero K] :
+    (Nat.card σ.FiniteVertexCycle : K) =
+      ∑ i, if (P.vertex i).isLeft then (1 : K) / σ.cycleLength i else 0 := by
+  classical
+  rw [← σ.finsum_eq_sum_ite_div_cycleLength (fun hi ↦ ?_) (fun _ ↦ 1) _ fun _ ↦ rfl,
+    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
+    Nat.card_eq_fintype_card]
+  rw [← Sum.not_isRight, ← Sum.not_isRight, σ.isRight_vertex_of_mem_cycle hi]
+
+open scoped Classical in
+/-- **The elliptic orbits read off a fundamental polygon.** If the translates of `P` by a group
+`Γ` containing the side-pairing maps cover `ℍ` and have disjoint interiors, the sum of
+`1 - 1 / mₑ` over the elliptic orbits `e` of `Γ`, with stabilizer orders `mₑ`, is `k / 2` for the
+`k` self-paired sides plus the sum over the finite vertices `i` with nonidentity cycle
+transformation of `(1 - 1 / mᵢ) / Lᵢ`. Here `mᵢ` is the order of the cycle transformation at `i`
+and `Lᵢ` the length of the cycle through `i`. -/
+theorem finsum_mem_ellipticOrbits_one_sub_inv_eq (hmap : ∀ i, σ.map i ∈ Γ)
+    (hcover : ⋃ γ : Γ, (γ : PSL(2, ℝ)) • P.carrier = univ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
-    (orderOf (σ.cycleMap j) : ℝ) ≠ 0 ∧
-      σ.cycleAngleSum j = 2 * π / orderOf (σ.cycleMap j) := by
-  have h := σ.orderOf_cycleMap_mul_cycleAngleSum (Sum.inl_getLeft _ hj).symm hmap hdisj
-  have hm : (orderOf (σ.cycleMap j) : ℝ) ≠ 0 := by
-    rintro h0
-    rw [h0, zero_mul] at h
-    exact Real.two_pi_pos.ne h
-  exact ⟨hm, by rw [eq_div_iff hm, mul_comm, h]⟩
+    ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) =
+      (∑ i, if (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1 then
+        (1 - (orderOf (σ.cycleMap i) : ℝ)⁻¹) / σ.cycleLength i else 0) +
+        Nat.card {i : Fin n // σ.pair i = i} / 2 := by
+  classical
+  rw [← finsum_set_coe_eq_finsum_mem,
+    ← finsum_comp_equiv (σ.ellipticOrbitEquiv hmap hcover hdisj), finsum_eq_sum_of_fintype,
+    Fintype.sum_sum_type]
+  congr 1
+  · rw [← finsum_eq_sum_of_fintype,
+      σ.finsum_eq_sum_ite_div_cycleLength (fun hi ↦ ?_) _
+        (fun i ↦ 1 - (orderOf (σ.cycleMap i) : ℝ)⁻¹) fun i ↦ by
+        rw [σ.cardStabilizerOnOrbit_ellipticOrbitEquiv_inl_mk]]
+    rw [← Sum.not_isRight, ← Sum.not_isRight, σ.isRight_vertex_of_mem_cycle hi, ne_eq, ne_eq,
+      ← orderOf_eq_one_iff, ← orderOf_eq_one_iff (x := σ.cycleMap _),
+      σ.orderOf_cycleMap_eq_of_mem_cycle hi]
+  · simp_rw [σ.cardStabilizerOnOrbit_ellipticOrbitEquiv_inr]
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.card_eq_fintype_card]
+    norm_num [div_eq_mul_inv]
 
 /-- **The angle sum of a fundamental polygon.** If the translates of `P` by a group `Γ` containing
 the side-pairing maps cover `ℍ` and have disjoint interiors, the interior angles of `P` add up to
@@ -86,66 +117,23 @@ theorem sum_interiorAngle_eq_two_pi_mul (hmap : ∀ i, σ.map i ∈ Γ)
     ∑ i, P.interiorAngle i = 2 * π * (Nat.card σ.FiniteVertexCycle +
       Nat.card {i : Fin n // σ.pair i = i} / 2 -
         ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹)) := by
-  classical
-  let m : Fin n → ℝ := fun i ↦ orderOf (σ.cycleMap i)
-  let L : Fin n → ℝ := fun i ↦ σ.cycleLength i
-  have hleft {j i : Fin n} (hi : i ∈ σ.cycle j) :
-      (P.vertex i).isLeft = true ↔ (P.vertex j).isLeft = true := by
-    rw [← Sum.not_isRight, ← Sum.not_isRight, σ.isRight_vertex_of_mem_cycle hi]
-  -- the angle sum, grouped by cycles
-  have hA : ∑ i, P.interiorAngle i =
-      ∑ i, if (P.vertex i).isLeft then 2 * π / (m i * L i) else 0 := by
-    rw [← σ.sum_cycleAngleSum_div_cycleLength]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    split_ifs with hi
-    · rw [(σ.cycleAngleSum_eq_two_pi_div_of_isLeft hi hmap hdisj).2, div_div]
-    · rw [σ.cycleAngleSum_eq_zero_of_isRight_vertex (Sum.not_isLeft.1 hi), zero_div]
-  -- the number of finite vertex cycles
-  have hV : (Nat.card σ.FiniteVertexCycle : ℝ) =
-      ∑ i, if (P.vertex i).isLeft then 1 / L i else 0 := by
-    have h := σ.finsum_eq_sum_div_cycleLength hleft fun _ ↦ (1 : ℝ)
-    rw [finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
-      ← Nat.card_eq_fintype_card] at h
-    rw [h, ← Finset.sum_subtype (Finset.univ.filter fun i ↦ (P.vertex i).isLeft)
-      (fun _ ↦ by simp) fun i ↦ 1 / L i, Finset.sum_filter]
-  -- the elliptic orbits: nontrivial finite vertex cycles and self-paired sides
-  have hE : ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) =
-      (∑ i, if (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1 then (1 - (m i)⁻¹) / L i else 0) +
-        Nat.card {i : Fin n // σ.pair i = i} / 2 := by
-    have hp {j i : Fin n} (hi : i ∈ σ.cycle j) :
-        ((P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1) ↔ ((P.vertex j).isLeft ∧ σ.cycleMap j ≠ 1) := by
-      rw [hleft hi, ne_eq, ne_eq, ← orderOf_eq_one_iff, ← orderOf_eq_one_iff (x := σ.cycleMap j),
-        σ.orderOf_cycleMap_of_mem_cycle hi]
-    rw [← finsum_set_coe_eq_finsum_mem,
-      ← finsum_comp_equiv (σ.ellipticOrbitEquiv hmap hcover hdisj), finsum_eq_sum_of_fintype,
-      Fintype.sum_sum_type]
-    congr 1
-    · rw [← finsum_eq_sum_of_fintype, σ.finsum_eq_sum_div_cycleLength hp,
-        Fintype.sum_congr _ (fun i ↦ (1 - (m i.1)⁻¹) / L i.1) fun i ↦ by
-          rw [σ.cardStabilizerOnOrbit_ellipticOrbitEquiv_inl_mk],
-        ← Finset.sum_subtype (Finset.univ.filter fun i ↦ (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1)
-          (fun _ ↦ by simp) fun i ↦ (1 - (m i)⁻¹) / L i, Finset.sum_filter]
-    · simp_rw [σ.cardStabilizerOnOrbit_ellipticOrbitEquiv_inr]
-      rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.card_eq_fintype_card]
-      norm_num
+  rw [σ.natCard_finiteVertexCycle_eq_sum,
+    σ.finsum_mem_ellipticOrbits_one_sub_inv_eq hmap hcover hdisj,
+    ← σ.sum_cycleAngleSum_div_cycleLength, add_sub_add_right_eq_sub, ← Finset.sum_sub_distrib,
+    Finset.mul_sum]
+  -- compare the sums vertex by vertex
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hl : (P.vertex i).isLeft
+  · have hz := (Sum.inl_getLeft _ hl).symm
+    have hm := Nat.cast_ne_zero (R := ℝ) |>.2 (σ.orderOf_cycleMap_ne_zero hz hmap hdisj)
+    have hL : (σ.cycleLength i : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos i).ne'
+    rw [σ.cycleAngleSum_eq_two_pi_div hz hmap hdisj]
+    by_cases hc : σ.cycleMap i = 1
+    · simp [hl, hc, div_eq_mul_inv]
+    · simp only [hl, hc, ne_eq, not_false_eq_true, and_self, ↓reduceIte]
+      field_simp
       ring
-  -- compare the three sums vertex by vertex
-  have hpt (i : Fin n) : (if (P.vertex i).isLeft then 2 * π / (m i * L i) else 0) =
-      2 * π * ((if (P.vertex i).isLeft then 1 / L i else 0) -
-        if (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1 then (1 - (m i)⁻¹) / L i else 0) := by
-    by_cases hl : (P.vertex i).isLeft
-    · have hm := (σ.cycleAngleSum_eq_two_pi_div_of_isLeft hl hmap hdisj).1
-      have hL : L i ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos i).ne'
-      by_cases hc : σ.cycleMap i = 1
-      · have hm1 : m i = 1 := by simp [m, hc]
-        simp only [hl, hc, hm1, ne_eq, not_true_eq_false, and_false, ↓reduceIte, sub_zero, one_mul,
-          mul_one_div]
-      · simp only [hl, hc, ne_eq, not_false_eq_true, and_self, ↓reduceIte]
-        field_simp
-        ring
-    · simp [hl]
-  rw [hA, hV, hE, Finset.sum_congr rfl fun i _ ↦ hpt i, ← Finset.mul_sum, Finset.sum_sub_distrib]
-  ring
+  · simp [hl, σ.cycleAngleSum_eq_zero_of_isRight_vertex (Sum.not_isLeft.1 hl)]
 
 /-- **The orbifold area formula for a fundamental polygon.** Let the translates of a side-paired
 convex `n`-gon `P` by a group `Γ` containing the side-pairing maps be locally finite, with disjoint
