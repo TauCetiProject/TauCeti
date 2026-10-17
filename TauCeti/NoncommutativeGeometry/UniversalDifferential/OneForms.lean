@@ -260,13 +260,15 @@ variable {M : Type w} [AddCommGroup M] [Module k M]
 
 attribute [local instance] TensorProduct.Algebra.module
 
-private def tensorLift (D : BimoduleDerivation k (Unitization k A) M) :
+/-- The linear map on tensors induced by the bilinear map `x, y ↦ x • D y`. -/
+def tensorLift (D : BimoduleDerivation k (Unitization k A) M) :
     Unitization k A ⊗[k] Unitization k A →ₗ[k] M :=
   TensorProduct.lift ((Algebra.lsmul k k M).toLinearMap.compl₂ D.toLinearMap)
 
+/-- The tensor lift sends a pure tensor `x ⊗ y` to `x • D y`. -/
 @[simp]
-private theorem tensorLift_tmul (D : BimoduleDerivation k (Unitization k A) M)
-    (x y : Unitization k A) : tensorLift k A D (x ⊗ₜ[k] y) = x • D y := rfl
+theorem tensorLift_tmul (D : BimoduleDerivation k (Unitization k A) M)
+    (x y : Unitization k A) : tensorLift k A D (x ⊗ₜ[k] y) = x • D y := (rfl)
 
 private theorem tensorLift_leftAction (D : BimoduleDerivation k (Unitization k A) M)
     (a : Unitization k A) (t : Unitization k A ⊗[k] Unitization k A) :
@@ -330,7 +332,8 @@ private theorem coe_tensorLift_derivation (t : Unitization k A ⊗[k] Unitizatio
       simp only [map_add, Submodule.coe_add, hx, hy, add_tmul]
       abel
 
-private theorem tensorLift_derivation_coe (ω : UniversalOneForms k A) :
+/-- Lifting the universal derivation recovers a one-form from its underlying tensor. -/
+theorem tensorLift_derivation_coe (ω : UniversalOneForms k A) :
     tensorLift k A (derivation k A) ω.1 = ω := by
   apply Subtype.ext
   rw [coe_tensorLift_derivation, (mem_universalOneForms k A).1 ω.2, zero_tmul, sub_zero]

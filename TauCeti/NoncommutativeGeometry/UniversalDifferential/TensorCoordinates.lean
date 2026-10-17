@@ -48,24 +48,20 @@ private theorem fromTensor_tmul (x : Unitization k A) (a : A) :
 private def toTensor : UniversalOneForms k A →ₗ[k] Unitization k A ⊗[k] A :=
   ((Unitization.sndHom k k A).lTensor (Unitization k A)).comp (UniversalOneForms k A).subtype
 
-private theorem coe_fromTensor_snd (t : Unitization k A ⊗[k] Unitization k A) :
-    ((fromTensor k A ((Unitization.sndHom k k A).lTensor (Unitization k A) t) :
-      UniversalOneForms k A) : Unitization k A ⊗[k] Unitization k A) =
-      t - LinearMap.mul' k (Unitization k A) t ⊗ₜ[k] 1 := by
+private theorem fromTensor_snd (t : Unitization k A ⊗[k] Unitization k A) :
+    fromTensor k A ((Unitization.sndHom k k A).lTensor (Unitization k A) t) =
+      tensorLift k A (derivation k A) t := by
   induction t using TensorProduct.inductionOn with
   | tmul x y =>
     simp only [LinearMap.lTensor_tmul, Unitization.sndHom_apply, fromTensor_tmul, d_snd,
-      coe_smul_left, coe_derivation, map_sub, leftAction_tmul, mul_one,
-      LinearMap.mul'_apply]
+      tensorLift_tmul]
   | add t s ht hs =>
-    simp only [map_add, Submodule.coe_add, ht, hs, add_tmul]
-    abel
+    simp only [map_add, ht, hs]
 
 private theorem fromTensor_toTensor (ω : UniversalOneForms k A) :
     fromTensor k A (toTensor k A ω) = ω := by
-  apply Subtype.ext
-  rw [toTensor, LinearMap.comp_apply, Submodule.subtype_apply, coe_fromTensor_snd,
-    (mem_universalOneForms k A).1 ω.2, zero_tmul, sub_zero]
+  rw [toTensor, LinearMap.comp_apply, Submodule.subtype_apply, fromTensor_snd,
+    tensorLift_derivation_coe]
 
 private theorem toTensor_fromTensor (t : Unitization k A ⊗[k] A) :
     toTensor k A (fromTensor k A t) = t := by
