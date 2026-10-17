@@ -45,20 +45,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
 
-/-- A graph that is Lipschitz only on the tangential ball of a boundary chart can be extended
-to a global Lipschitz graph defining the same chart, with the same constant and radii. -/
-theorem exists_isLipschitzChartWith_of_lipschitzOnWith (ha : 0 < a) (hb : 0 < b)
-    (hφ0 : φ 0 = 0) (hφ : LipschitzOnWith L φ (ball 0 b))
-    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
-    ∃ ψ : E → ℝ, EqOn φ ψ (ball 0 b) ∧ Omega.IsLipschitzChartWith L e ψ a b := by
-  obtain ⟨ψ, hψ, heq⟩ := hφ.extend_real
-  refine ⟨ψ, heq, (isLipschitzChartWith_iff ..).mpr ⟨ha, hb, ?_, hψ, ?_⟩⟩
-  · rw [← heq (mem_ball_self hb), hφ0]
-  · intro z hz
-    rw [← heq (by simpa only [mem_ball, dist_zero_right] using
-      (mem_normalCylinder.mp hz).2.2)]
-    exact hgraph z hz
-
 /-- A `C¹` boundary graph becomes a Lipschitz chart on a smaller tangential ball. Any constant
 strictly exceeding the derivative norm at the centre is allowed. The extended graph agrees
 with the original one throughout the smaller ball, and the normal radius stays unchanged. -/
