@@ -29,8 +29,9 @@ The analytic input is `exists_dual_vector''`, the norming-functional form of Hah
 applied to the seminormed quotient. In particular, the results also apply to seminormed
 spaces and nonclosed subspaces.
 
-The theorems are in the `TauCeti` namespace. For example, apply the double-annihilator
-theorem as `TauCeti.doubleAnnihilator_eq_topologicalClosure 𝕜 S` for `S : Submodule 𝕜 E`.
+Apply the norm-closure identity as
+`TauCeti.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S`
+for `S : Submodule 𝕜 E`.
 
 ## References
 
@@ -43,7 +44,7 @@ namespace TauCeti
 
 open Set Metric
 
-variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A preannihilator is norm closed in the original space. -/
@@ -74,7 +75,7 @@ theorem orthogonalBilin_topologicalClosure_topDualPairing_flip (S : Submodule �
 
 section RCLike
 
-variable (𝕜 : Type*) [RCLike 𝕜]
+variable {𝕜 : Type*} [RCLike 𝕜]
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A functional of norm at most one annihilating a subspace can attain the distance to
@@ -100,15 +101,16 @@ theorem exists_dual_eq_infDist (S : Submodule 𝕜 E) (x : E) :
 /-- **Norm double-annihilator theorem.** The preannihilator of the continuous annihilator
 of a subspace is its norm closure. -/
 @[simp]
-theorem doubleAnnihilator_eq_topologicalClosure (S : Submodule 𝕜 E) :
+theorem orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure
+    (S : Submodule 𝕜 E) :
     (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin (topDualPairing 𝕜 E) =
       S.topologicalClosure := by
   apply le_antisymm
   · intro x hx
-    obtain ⟨f, hf, _, hfx⟩ := exists_dual_eq_infDist 𝕜 S x
+    obtain ⟨f, hf, _, hfx⟩ := exists_dual_eq_infDist S x
     have hzero : (infDist x (S : Set E) : 𝕜) = 0 := hfx.symm.trans (hx f hf)
     exact (mem_closure_iff_infDist_zero S.nonempty).mpr (by exact_mod_cast hzero)
-  · refine S.topologicalClosure_minimal ?_ (isClosed_orthogonalBilin_topDualPairing 𝕜 _)
+  · refine S.topologicalClosure_minimal ?_ (isClosed_orthogonalBilin_topDualPairing _)
     intro x hx f hf
     exact hf x hx
 
@@ -116,24 +118,25 @@ theorem doubleAnnihilator_eq_topologicalClosure (S : Submodule 𝕜 E) :
 theorem mem_topologicalClosure_iff_forall_dual_eq_zero (S : Submodule 𝕜 E) (x : E) :
     x ∈ S.topologicalClosure ↔
       ∀ f : StrongDual 𝕜 E, (∀ y ∈ S, f y = 0) → f x = 0 := by
-  rw [← doubleAnnihilator_eq_topologicalClosure 𝕜 S]
+  rw [← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S]
   simp only [Submodule.mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply]
 
 /-- Two subspaces have the same continuous annihilator exactly when their norm closures agree. -/
-theorem annihilator_eq_iff_topologicalClosure_eq (S T : Submodule 𝕜 E) :
+theorem orthogonalBilin_topDualPairing_flip_eq_iff_topologicalClosure_eq
+    (S T : Submodule 𝕜 E) :
     S.orthogonalBilin (topDualPairing 𝕜 E).flip =
       T.orthogonalBilin (topDualPairing 𝕜 E).flip ↔
         S.topologicalClosure = T.topologicalClosure := by
   constructor
   · intro h
-    rw [← doubleAnnihilator_eq_topologicalClosure 𝕜 S,
-      ← doubleAnnihilator_eq_topologicalClosure 𝕜 T, h]
+    rw [← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S,
+      ← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure T, h]
   · intro h
-    rw [← orthogonalBilin_topologicalClosure_topDualPairing_flip 𝕜 S,
-      ← orthogonalBilin_topologicalClosure_topDualPairing_flip 𝕜 T, h]
+    rw [← orthogonalBilin_topologicalClosure_topDualPairing_flip S,
+      ← orthogonalBilin_topologicalClosure_topDualPairing_flip T, h]
 
 /-- A subspace is norm dense exactly when its continuous annihilator is zero. -/
-theorem dense_iff_annihilator_eq_bot (S : Submodule 𝕜 E) :
+theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜 E) :
     Dense (S : Set E) ↔ S.orthogonalBilin (topDualPairing 𝕜 E).flip = ⊥ := by
   rw [Submodule.dense_iff_topologicalClosure_eq_top]
   constructor
@@ -149,7 +152,8 @@ theorem dense_iff_annihilator_eq_bot (S : Submodule 𝕜 E) :
     · rintro rfl
       simp
   · intro h
-    rw [← doubleAnnihilator_eq_topologicalClosure 𝕜 S, h, Submodule.orthogonalBilin_bot]
+    rw [← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S, h,
+      Submodule.orthogonalBilin_bot]
 
 end RCLike
 
