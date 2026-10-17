@@ -276,3 +276,19 @@ theorem realizationHomeomorph_symm_apply
     (f.realizationHomeomorph g hgf hfg).symm x = g.realizationMap x := (rfl)
 
 end PreAbstractSimplicialComplex.SimplicialMap
+
+namespace TauCeti.PreAbstractSimplicialComplex.SimplicialMap
+
+open _root_.AbstractSimplicialComplex
+
+/-- Injectivity on a point's support makes realization carry its support to the vertex image. -/
+theorem support_realizationMap_of_injOn {α β : Type*} [DecidableEq β]
+    {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β}
+    (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (x : Realization K) (hf : InjOn f (x.1.support : Set α)) :
+    (f.realizationMap x).1.support = x.1.support.image f := by
+  rw [_root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
+    Finsupp.mapDomain_support_of_injOn x.1 hf]
+
+end TauCeti.PreAbstractSimplicialComplex.SimplicialMap

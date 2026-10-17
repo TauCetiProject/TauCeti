@@ -46,21 +46,17 @@ variable {α β γ : Type*} [DecidableEq α] [DecidableEq β] [DecidableEq γ]
 /-- Inverse simplicial maps give a dimension-preserving equivalence of simplicial CW cells.
 The equivalence takes the image of the underlying face and does not use a vertex order. -/
 def cellEquiv (n : ℕ) : RealizationCell K n ≃ RealizationCell L n := by
-  have hf : Function.Injective f := Function.LeftInverse.injective (g := g)
-    (fun x => by simpa using congrArg (fun k => k x) hgf)
-  have hg : Function.Injective g := Function.LeftInverse.injective (g := f)
-    (fun x => by simpa using congrArg (fun k => k x) hfg)
+  have hf := injective_of_comp_eq_id f g hgf
+  have hg := injective_of_comp_eq_id g f hfg
   exact
     { toFun := fun c => ⟨faceOrderHom f c.1, by
         rw [coe_faceOrderHom_apply, Finset.card_image_of_injective _ hf, c.2]⟩
       invFun := fun c => ⟨faceOrderHom g c.1, by
         rw [coe_faceOrderHom_apply, Finset.card_image_of_injective _ hg, c.2]⟩
-      left_inv := fun c => Subtype.ext (Subtype.ext (by
-        simp only [coe_faceOrderHom_apply, ← Finset.image_comp, ← coe_comp, hgf,
-          coe_id, Finset.image_id]))
-      right_inv := fun c => Subtype.ext (Subtype.ext (by
-        simp only [coe_faceOrderHom_apply, ← Finset.image_comp, ← coe_comp, hfg,
-          coe_id, Finset.image_id])) }
+      left_inv := fun c => Subtype.ext (congrArg (fun m => m c.1)
+        ((faceOrderHom_comp g f).symm.trans (by rw [hgf, faceOrderHom_id])))
+      right_inv := fun c => Subtype.ext (congrArg (fun m => m c.1)
+        ((faceOrderHom_comp f g).symm.trans (by rw [hfg, faceOrderHom_id]))) }
 
 /-- The face of the image cell is the image of its vertices. -/
 @[simp]
@@ -122,13 +118,12 @@ theorem image_realizationMap_openCell {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.openCell n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [openCell_realizationCellEquiv_symm, openCell_realizationCellEquiv_symm]
-  have hf : Function.Injective f := Function.LeftInverse.injective
-    (fun x => by simpa using congrArg (fun k => k x) hgf)
+  have hf := injective_of_comp_eq_id f g hgf
   ext y
   obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
   rw [realizationHomeomorph_apply, (f.realizationMap_injective_iff.mpr hf).mem_set_image]
-  simp only [mem_ofPred_eq, SimplicialMap.realizationMap_val,
-    Finsupp.mapDomain_support_of_injective hf, cellEquiv_face, Finset.image_inj hf]
+  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn,
+    cellEquiv_face, Finset.image_inj hf]
 
 /-- A simplicial isomorphism carries a closed CW cell onto the closed cell of the image face. -/
 theorem image_realizationMap_closedCell {n : ℕ} (c : RealizationCell K n) :
@@ -138,13 +133,12 @@ theorem image_realizationMap_closedCell {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.closedCell n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [closedCell_realizationCellEquiv_symm, closedCell_realizationCellEquiv_symm]
-  have hf : Function.Injective f := Function.LeftInverse.injective
-    (fun x => by simpa using congrArg (fun k => k x) hgf)
+  have hf := injective_of_comp_eq_id f g hgf
   ext y
   obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
   rw [realizationHomeomorph_apply, (f.realizationMap_injective_iff.mpr hf).mem_set_image]
-  simp only [mem_ofPred_eq, SimplicialMap.realizationMap_val,
-    Finsupp.mapDomain_support_of_injective hf, cellEquiv_face, Finset.image_subset_image_iff hf]
+  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn,
+    cellEquiv_face, Finset.image_subset_image_iff hf]
 
 /-- A simplicial isomorphism carries a cell frontier onto the frontier of its image cell. -/
 theorem image_realizationMap_cellFrontier {n : ℕ} (c : RealizationCell K n) :
@@ -154,13 +148,12 @@ theorem image_realizationMap_cellFrontier {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.cellFrontier n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [cellFrontier_realizationCellEquiv_symm, cellFrontier_realizationCellEquiv_symm]
-  have hf : Function.Injective f := Function.LeftInverse.injective
-    (fun x => by simpa using congrArg (fun k => k x) hgf)
+  have hf := injective_of_comp_eq_id f g hgf
   ext y
   obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
   rw [realizationHomeomorph_apply, (f.realizationMap_injective_iff.mpr hf).mem_set_image]
-  simp only [mem_ofPred_eq, SimplicialMap.realizationMap_val,
-    Finsupp.mapDomain_support_of_injective hf, cellEquiv_face, Finset.image_ssubset_image hf]
+  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn,
+    cellEquiv_face, Finset.image_ssubset_image hf]
 
 end Realization
 
