@@ -70,6 +70,7 @@ theorem add_one (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
   simp [BFEquiv]
 
 /-- At a limit ordinal, equivalence means equivalence at every smaller ordinal. -/
+@[simp]
 theorem limit {α : Ordinal.{o}} (hα : Order.IsSuccLimit α)
     (a : Fin n → M) (b : Fin n → N) :
     BFEquiv (L := L) α n a b ↔ ∀ β < α, BFEquiv (L := L) β n a b := by
