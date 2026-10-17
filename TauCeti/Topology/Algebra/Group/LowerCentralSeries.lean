@@ -424,8 +424,10 @@ instance pLowerCentralSeries_normal (k : ℕ) : (pLowerCentralSeries p G k).Norm
   | zero => rw [pLowerCentralSeries_zero]; infer_instance
   | succ k _ => rw [pLowerCentralSeries_succ]; infer_instance
 
-/-- Every term of the lower `p`-series is closed. -/
-theorem isClosed_pLowerCentralSeries (k : ℕ) : IsClosed (pLowerCentralSeries p G k : Set G) := by
+/-- Every term of the lower `p`-series is closed. This is an instance, so that together with
+`Subgroup.isClosed_subgroupOf` instance search finds every graded piece `λ_k ⧸ λ_{k+1}` to be
+Hausdorff, compact when `G` is, and so a profinite abelian group when `G` is profinite. -/
+instance isClosed_pLowerCentralSeries (k : ℕ) : IsClosed (pLowerCentralSeries p G k : Set G) := by
   cases k with
   | zero => rw [pLowerCentralSeries_zero, coe_top]; exact isClosed_univ
   | succ k => rw [pLowerCentralSeries_succ]; exact isClosed_pLowerCentralStep _
