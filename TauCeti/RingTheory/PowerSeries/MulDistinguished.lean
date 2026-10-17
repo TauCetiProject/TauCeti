@@ -89,6 +89,13 @@ theorem IsMulDistinguished.trunc (hg : IsMulDistinguished c s g) :
   rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_left (Nat.lt_succ_self s)]
   exact hg.isNormMulUnit_coeff
 
+/-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
+multiplicatively distinguished of degree `1` at `c`, over a norm-one ring. The constant term may
+have the same weighted norm as the leading one. -/
+theorem isMulDistinguished_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ ≤ c) :
+    IsMulDistinguished c 1 (PowerSeries.X - PowerSeries.C b) :=
+  ⟨isDistinguished_X_sub_C hc hb, by simp⟩
+
 variable [IsUltrametricDist R]
 
 /-- **Distinguished degrees under multiplication by a multiplicatively distinguished series.**
@@ -110,13 +117,6 @@ theorem isMulDistinguished_monomial [Nontrivial R] (hc : 0 < c) {a : R} (ha : Is
     (n : ℕ) : IsMulDistinguished c n (PowerSeries.monomial n a) :=
   ⟨isDistinguished_monomial hc ha.isUnit.ne_zero n, by
     rwa [PowerSeries.coeff_monomial_same]⟩
-
-/-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
-multiplicatively distinguished of degree `1` at `c`, over a norm-one ring. The constant term may
-have the same weighted norm as the leading one. -/
-theorem isMulDistinguished_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ ≤ c) :
-    IsMulDistinguished c 1 (PowerSeries.X - PowerSeries.C b) :=
-  ⟨isDistinguished_X_sub_C hc hb, by simp⟩
 
 variable [IsUltrametricDist R]
 
