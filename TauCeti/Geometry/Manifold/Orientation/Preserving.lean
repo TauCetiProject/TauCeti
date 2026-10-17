@@ -42,6 +42,16 @@ def IsOrientationPreservingAt [IsManifold I 1 M] [IsManifold I' 1 M']
     (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
       _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = o'.orientationAt (f x)
 
+/-- Unfold `IsOrientationPreservingAt` into its derivative witness and orientation equation. -/
+theorem isOrientationPreservingAt_iff [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) :
+    IsOrientationPreservingAt o o' f x ↔
+      ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x),
+        (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
+          _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = o'.orientationAt (f x) :=
+  Iff.rfl
+
 /-- A map reverses orientations at `x` when its manifold derivative is an equivalence that maps
 `o`'s tangent orientation at `x` to the opposite of `o'`'s tangent orientation at `f x`. -/
 def IsOrientationReversingAt [IsManifold I 1 M] [IsManifold I' 1 M']
@@ -50,6 +60,82 @@ def IsOrientationReversingAt [IsManifold I 1 M] [IsManifold I' 1 M']
   ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x),
     (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
       _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = -(o'.orientationAt (f x))
+
+/-- Unfold `IsOrientationReversingAt` into its derivative witness and orientation equation. -/
+theorem isOrientationReversingAt_iff [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) :
+    IsOrientationReversingAt o o' f x ↔
+      ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x),
+        (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
+          _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) =
+            -(o'.orientationAt (f x)) :=
+  Iff.rfl
+
+/-- Negating the source orientation exchanges preservation and reversal. -/
+@[simp] theorem isOrientationPreservingAt_neg_left
+    [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) :
+    IsOrientationPreservingAt (-o) o' f x ↔ IsOrientationReversingAt o o' f x := by
+  constructor
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg, _root_.Orientation.map_neg] at h
+    have hh := congrArg Neg.neg h
+    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg, _root_.Orientation.map_neg]
+    have hh := congrArg Neg.neg h
+    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
+
+/-- Negating the target orientation exchanges preservation and reversal. -/
+@[simp] theorem isOrientationPreservingAt_neg_right [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) :
+    IsOrientationPreservingAt o (-o') f x ↔ IsOrientationReversingAt o o' f x := by
+  constructor
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg] at h
+    exact h
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg]
+    exact h
+
+/-- Negating the source orientation exchanges reversal and preservation. -/
+@[simp] theorem isOrientationReversingAt_neg_left [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) :
+    IsOrientationReversingAt (-o) o' f x ↔ IsOrientationPreservingAt o o' f x := by
+  constructor
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg, _root_.Orientation.map_neg] at h
+    have hh := congrArg Neg.neg h
+    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg, _root_.Orientation.map_neg]
+    have hh := congrArg Neg.neg h
+    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
+
+/-- Negating the target orientation exchanges reversal and preservation. -/
+theorem isOrientationReversingAt_neg_right [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) :
+    IsOrientationReversingAt o (-o') f x ↔ IsOrientationPreservingAt o o' f x := by
+  constructor
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg] at h
+    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using h
+  · rintro ⟨e, he, h⟩
+    refine ⟨e, he, ?_⟩
+    rw [orientationAt_neg]
+    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using h
 
 /-- A map cannot preserve and reverse the same pair of orientations at one point. -/
 theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
@@ -67,27 +153,28 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
   exact (Module.Ray.ne_neg_self _ h)
 
 /-- The identity map preserves every manifold orientation. -/
-theorem isOrientationPreservingAt_id [IsManifold I 1 M]
+@[simp] theorem isOrientationPreservingAt_id [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (x : M) :
     IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x := by
   refine ⟨ContinuousLinearEquiv.refl ℝ _, ?_, ?_⟩
   · rw [ContinuousLinearEquiv.coe_refl, mfderiv_id]
-  · change _root_.Orientation.map ι (LinearEquiv.refl ℝ (TangentSpace I x))
-      (o.orientationAt x) = o.orientationAt x
-    rw [_root_.Orientation.map_refl]
-    rfl
+  · have h_refl :
+        (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
+          LinearEquiv.refl ℝ (TangentSpace I x) := rfl
+    rw [h_refl, _root_.Orientation.map_refl]
+    simp only [Equiv.refl_apply, id_eq]
 
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
-theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
+@[simp] theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (x : M) :
     IsOrientationReversingAt (I := I) (I' := I) (M' := M) o (-o) id x := by
   refine ⟨ContinuousLinearEquiv.refl ℝ _, ?_, ?_⟩
   · rw [ContinuousLinearEquiv.coe_refl, mfderiv_id]
-  · change _root_.Orientation.map ι (LinearEquiv.refl ℝ (TangentSpace I x))
-      (o.orientationAt x) = -(-o).orientationAt x
-    rw [_root_.Orientation.map_refl]
-    simp only [Equiv.refl_apply]
+  · have h_refl :
+        (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
+          LinearEquiv.refl ℝ (TangentSpace I x) := rfl
+    rw [h_refl, _root_.Orientation.map_refl]
     rw [orientationAt_neg]
-    exact (InvolutiveNeg.neg_neg (o.orientationAt x)).symm
+    exact (Module.Ray.instInvolutiveNeg.neg_neg (o.orientationAt x)).symm
 
 end TauCeti.Manifold.Orientation
