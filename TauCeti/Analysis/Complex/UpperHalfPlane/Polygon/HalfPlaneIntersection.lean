@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Basic
 import Mathlib.Dynamics.PeriodicPts.Lemmas
 import Mathlib.Order.Minimal
-import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 
@@ -55,36 +54,6 @@ section Essential
 
 variable {ι : Type*} {t : Finset ι} {L : ι → PSL(2, ℝ)}
 
-/-- Crossing the line of `L k` on the segment from a point strictly inside every half-plane to a
-point violating only the half-plane of `L k` gives a point of that line strictly inside the other
-half-planes. -/
-private theorem exists_geodesicLine_mem_leftHalfPlane_of_notMem {p x : ℍ}
-    (hp : ∀ j ∈ t, p ∈ leftHalfPlane (L j)) {k : ι} (hk : k ∈ t)
-    (hx : ∀ j ∈ t, j ≠ k → x ∈ closure (leftHalfPlane (L j)))
-    (hxk : x ∉ closure (leftHalfPlane (L k))) :
-    ∃ u : ℝ, ∀ j ∈ t, j ≠ k → geodesicLine (L k) u ∈ leftHalfPlane (L j) := by
-  let m := geodesicBetween p x
-  let f : ℝ → ℝ := fun τ ↦ (geodesicLine ((L k)⁻¹ * m) τ).re
-  have hf : Continuous f := UpperHalfPlane.continuous_re.comp (isometry_geodesicLine _).continuous
-  have hf0 : f 0 < 0 := by
-    simpa only [f, ← smul_geodesicLine, m, geodesicLine_geodesicBetween_zero,
-      mem_leftHalfPlane_iff] using hp k hk
-  have hfx : 0 < f (dist p x) := by
-    simpa only [f, ← smul_geodesicLine, m, geodesicLine_geodesicBetween_dist,
-      mem_closure_leftHalfPlane_iff, not_le] using hxk
-  obtain ⟨u, hu, hfu⟩ := intermediate_value_Ioo dist_nonneg hf.continuousOn ⟨hf0, hfx⟩
-  obtain ⟨v, hv⟩ : geodesicLine m u ∈ range (geodesicLine (L k)) := by
-    rw [mem_range_geodesicLine_iff, smul_geodesicLine]
-    exact hfu
-  refine ⟨v, fun j hj hjk ↦ hv ▸ geodesicLine_mem_leftHalfPlane_of_mem_closure hu.1 hu.2 ?_ ?_ ?_⟩
-  · rw [geodesicLine_geodesicBetween_zero]
-    exact subset_closure (hp j hj)
-  · rw [geodesicLine_geodesicBetween_dist]
-    exact hx j hj hjk
-  · intro heq
-    exact notMem_range_geodesicLine_of_mem_leftHalfPlane (hp j hj)
-      (heq ▸ mem_range_geodesicLine_geodesicBetween_left p x)
-
 /-- A finite family of half-planes containing a common point in all its open half-planes has a
 subfamily with the same closed intersection in which every line carries a point strictly inside
 all the other half-planes. -/
@@ -103,7 +72,7 @@ private theorem exists_subset_iInter_eq_and_essential {p : ℍ}
     biInter_mono (Finset.erase_subset k s) fun _ _ ↦ Subset.rfl
   obtain ⟨x, hx, hxs⟩ := exists_of_ssubset (hsub.ssubset_of_ne fun heq ↦
     Finset.notMem_erase k s (hmin (heq.symm.trans hs) (Finset.erase_subset k s) hk))
-  refine exists_geodesicLine_mem_leftHalfPlane_of_notMem (fun j hj ↦ hp j (hst hj)) hk
+  refine exists_geodesicLine_mem_leftHalfPlane_of_notMem (t := s) (fun j hj ↦ hp j (hst hj)) hk
     (fun j hj hjk ↦ mem_iInter₂.1 hx j (Finset.mem_erase.2 ⟨hjk, hj⟩)) fun hxk ↦ hxs ?_
   refine mem_iInter₂.2 fun j hj ↦ ?_
   by_cases hjk : j = k
@@ -121,14 +90,6 @@ have distinct lines. -/
 section Faces
 
 variable {κ : Type*} {L : κ → PSL(2, ℝ)} {K : Set ℍ} {a b : κ → ℝ}
-
-/-- Two geodesic lines through two distinct common points have the same image. -/
-private theorem range_geodesicLine_eq_of_mem {g h : PSL(2, ℝ)} {z w : ℍ} (hzw : z ≠ w)
-    (hz : z ∈ range (geodesicLine g)) (hw : w ∈ range (geodesicLine g))
-    (hz' : z ∈ range (geodesicLine h)) (hw' : w ∈ range (geodesicLine h)) :
-    range (geodesicLine g) = range (geodesicLine h) :=
-  (range_geodesicLine_geodesicBetween_of_mem hz hw hzw).symm.trans
-    (range_geodesicLine_geodesicBetween_of_mem hz' hw' hzw)
 
 /-- A point of `K` lies in each of the closed half-planes. -/
 private theorem mem_closure_leftHalfPlane_of_mem (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
@@ -225,31 +186,6 @@ private theorem exists_ne_geodesicLine_mem_range [Finite κ] (k : κ) :
   have := ((geodesicLine_mem_iff hS k _).1 hK').2
   linarith
 
-/-- Two points cannot each lie to the left of the geodesic from a third point towards the other. -/
-private theorem false_of_mem_leftHalfPlane_geodesicBetween {v x y : ℍ} (hvx : v ≠ x)
-    (hvy : v ≠ y) (hy : y ∈ leftHalfPlane (geodesicBetween v x))
-    (hx : x ∈ leftHalfPlane (geodesicBetween v y)) : False := by
-  have h := (orientedAngle_sign_eq_one_iff hvx).2 hx
-  rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_one_iff hvy).2 hy] at h
-  exact absurd h (by decide)
-
-/-- Two points cannot each lie to the right of the geodesic from a third point towards the
-other. -/
-private theorem false_of_mem_rightHalfPlane_geodesicBetween {v x y : ℍ} (hvx : v ≠ x)
-    (hvy : v ≠ y) (hy : y ∈ rightHalfPlane (geodesicBetween v x))
-    (hx : x ∈ rightHalfPlane (geodesicBetween v y)) : False := by
-  have h := (orientedAngle_sign_eq_neg_one_iff hvx).2 hx
-  rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_neg_one_iff hvy).2 hy] at h
-  exact absurd h (by decide)
-
-include hab in
-/-- The left half-plane of a line is that of the geodesic from the initial to the terminal point
-of its face. -/
-private theorem leftHalfPlane_geodesicBetween_eq (k : κ) :
-    leftHalfPlane (geodesicBetween (geodesicLine (L k) (a k)) (geodesicLine (L k) (b k))) =
-      leftHalfPlane (L k) := by
-  rw [geodesicBetween_geodesicLine_of_lt _ (hab k), leftHalfPlane_mul_dilation]
-
 include hab in
 /-- The initial and terminal points of a face are distinct. -/
 private theorem geodesicLine_left_ne_right (k : κ) :
@@ -270,10 +206,12 @@ private theorem geodesicLine_right_ne_right {j k : κ} (hjk : j ≠ k) :
     ((geodesicLine_mem_iff hS j _).2 (left_mem_Icc.2 (hab j).le)) (mem_range_self _)
     (mem_range_self (b j)) ⟨b k, hv.symm⟩ hjab
   -- both faces arrive at the common point, so each is on the right of the other seen from it
-  rw [← leftHalfPlane_geodesicBetween_eq hab k, leftHalfPlane_geodesicBetween_swap hkab.symm] at hy
-  rw [← leftHalfPlane_geodesicBetween_eq hab j, leftHalfPlane_geodesicBetween_swap hjab.symm,
-    hv] at hx
-  exact false_of_mem_rightHalfPlane_geodesicBetween hkab.symm (hv ▸ hjab.symm) hy hx
+  rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ (hab k),
+    leftHalfPlane_geodesicBetween_swap hkab.symm] at hy
+  rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ (hab j),
+    leftHalfPlane_geodesicBetween_swap hjab.symm, hv] at hx
+  exact notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane hkab.symm (hv ▸ hjab.symm) hy
+    hx
 
 include hK hS hab hne in
 /-- Two faces do not start at the same point. -/
@@ -289,9 +227,9 @@ private theorem geodesicLine_left_ne_left {j k : κ} (hjk : j ≠ k) :
     ((geodesicLine_mem_iff hS j _).2 (right_mem_Icc.2 (hab j).le)) (mem_range_self _)
     (mem_range_self (a j)) ⟨a k, hv.symm⟩ hjab.symm
   -- both faces leave the common point, so each is on the left of the other seen from it
-  rw [← leftHalfPlane_geodesicBetween_eq hab k] at hy
-  rw [← leftHalfPlane_geodesicBetween_eq hab j, hv] at hx
-  exact false_of_mem_leftHalfPlane_geodesicBetween hkab (hv ▸ hjab) hy hx
+  rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ (hab k)] at hy
+  rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ (hab j), hv] at hx
+  exact notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hkab (hv ▸ hjab) hy hx
 
 include hK hS hab hne in
 /-- The terminal point of each face is the initial point of the face of another line. -/
@@ -373,7 +311,7 @@ private theorem exists_compactConvexPolygon_of_faces [Finite κ] [Nonempty κ] :
     { vertex := fun i ↦ geodesicLine (L (c i)) (a (c i))
       three_le := hn3
       vertex_mem_leftHalfPlane := fun i j hji hji' ↦ by
-        rw [hsucc, ← hf, leftHalfPlane_geodesicBetween_eq hab]
+        rw [hsucc, ← hf, leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ (hab _)]
         have hji₀ : c j ≠ c i := fun h ↦ hji (Fin.ext (hcinj j.isLt i.isLt h))
         refine geodesicLine_left_mem_leftHalfPlane hK hS hab hne hji₀ ?_ ?_
         -- the vertex `j` is neither endpoint of the face of `c i`
@@ -386,7 +324,7 @@ private theorem exists_compactConvexPolygon_of_faces [Finite κ] [Nonempty κ] :
     rw [hPv, hsucc, ← hf]
   have hside (i : Fin n) : leftHalfPlane (geodesicBetween (P.vertex i) (P.vertex (i + 1))) =
       leftHalfPlane (L (c i)) := by
-    rw [hPv, hPv', leftHalfPlane_geodesicBetween_eq hab]
+    rw [hPv, hPv', leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ (hab _)]
   refine ⟨n, inferInstance, P, (subset_antisymm ?_ ?_), fun i ↦ ⟨c i, hside i, ?_⟩⟩
   · -- the hull property: every vertex lies in `K`
     rw [hK]
