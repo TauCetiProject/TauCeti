@@ -34,6 +34,8 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
+* `Finsupp.weight_inv_natCast_eq_ofReal_sum_div`: for `d ≤ r`, the reciprocal weight of `d`
+  is the real sum `∑ j, d j / r j`.
 * `MvPolynomial.ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero`: for a polynomial with
   partial degrees at most `r`, the index is at least a real threshold `t` once the jets `∂^d P`
   with `d ≤ r` and `∑ j, d j / r j < t` vanish.
@@ -86,6 +88,19 @@ theorem weightedIndex_le {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
     weightedIndex r a P ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
   iInf_le_of_le d (iInf_le_of_le hd le_rfl)
 
+/-- For `d ≤ r`, the reciprocal weight of `d` defining the index is the real sum
+`∑ᵢ dᵢ / rᵢ`. -/
+theorem _root_.Finsupp.weight_inv_natCast_eq_ofReal_sum_div [Fintype σ] {r : σ → ℕ}
+    {d : σ →₀ ℕ} (hdr : ∀ i, d i ≤ r i) :
+    d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) = ENNReal.ofReal (∑ i, (d i : ℝ) / r i) := by
+  rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity, Finsupp.weight_apply,
+    Finsupp.sum_fintype _ _ (by simp)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rcases Nat.eq_zero_or_pos (d i) with h | h
+  · simp [h]
+  · rw [ENNReal.ofReal_div_of_pos (Nat.cast_pos.2 (h.trans_le (hdr i))),
+      ENNReal.ofReal_natCast, ENNReal.ofReal_natCast, nsmul_eq_mul, div_eq_mul_inv]
+
 /-- A nonzero jet of a polynomial with partial degrees `degreeOf i P ≤ r i` and index at least
 `t` satisfies `d ≤ r` and has weight `t ≤ ∑ᵢ dᵢ / rᵢ`, computed in `ℝ`. -/
 theorem le_sum_div_of_le_weightedIndex [Fintype σ] {P : MvPolynomial σ R} {r : σ → ℕ}
@@ -98,16 +113,8 @@ theorem le_sum_div_of_le_weightedIndex [Fintype σ] {P : MvPolynomial σ R} {r :
     exact hd (by rw [hasseDeriv_eq_zero_of_degreeOf_lt (i := i) (by have := hdeg i; omega),
       map_zero])
   refine ⟨hdr, ?_⟩
-  have hw : d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) = ENNReal.ofReal (∑ i, (d i : ℝ) / r i) := by
-    rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity, Finsupp.weight_apply,
-      Finsupp.sum_fintype _ _ (by simp)]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rcases Nat.eq_zero_or_pos (d i) with h | h
-    · simp [h]
-    · rw [ENNReal.ofReal_div_of_pos (Nat.cast_pos.2 (h.trans_le (hdr i))),
-        ENNReal.ofReal_natCast, ENNReal.ofReal_natCast, nsmul_eq_mul, div_eq_mul_inv]
   exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ ↦ by positivity)).1
-    (ht.trans ((weightedIndex_le hd).trans_eq hw))
+    (ht.trans ((weightedIndex_le hd).trans_eq (Finsupp.weight_inv_natCast_eq_ofReal_sum_div hdr)))
 
 /-- An index lower bound is equivalent to the vanishing of all jets of strictly smaller
 weight. The strict inequality also covers the threshold `⊤`. -/
@@ -133,22 +140,10 @@ theorem ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero [Fintype σ] {P : MvP
     (h : ∀ d : σ →₀ ℕ, (∀ i, d i ≤ r i) → ∑ i, (d i : ℝ) / r i < t →
       eval a (hasseDeriv d P) = 0) :
     ENNReal.ofReal t ≤ weightedIndex r a P := by
-  rw [le_weightedIndex_iff]
-  intro d hd
+  refine le_iInf fun d ↦ le_iInf fun hd ↦ le_of_not_gt fun hlt ↦ hd ?_
   by_cases hdr : ∀ i, d i ≤ r i
-  · refine h d hdr ?_
-    have hw : ∑ j ∈ d.support, (d j : ℝ≥0∞) / (r j : ℝ≥0∞) =
-        ENNReal.ofReal (∑ i, (d i : ℝ) / r i) := by
-      rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity]
-      refine (Finset.sum_subset (Finset.subset_univ _) fun i _ hi ↦ ?_).trans
-        (Finset.sum_congr rfl fun i _ ↦ ?_)
-      · simp [Finsupp.notMem_support_iff.mp hi]
-      · rcases Nat.eq_zero_or_pos (d i) with h | h
-        · simp [h]
-        · rw [ENNReal.ofReal_div_of_pos (Nat.cast_pos.2 (h.trans_le (hdr i))),
-            ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
-    rw [hw] at hd
-    exact (ENNReal.ofReal_lt_ofReal_iff'.mp hd).1
+  · rw [Finsupp.weight_inv_natCast_eq_ofReal_sum_div hdr] at hlt
+    exact h d hdr (ENNReal.ofReal_lt_ofReal_iff'.mp hlt).1
   · push Not at hdr
     obtain ⟨j, hj⟩ := hdr
     rw [hasseDeriv_eq_zero_of_degreeOf_lt ((hdeg j).trans_lt hj), map_zero]
