@@ -131,7 +131,6 @@ theorem lambdaInvariant_eq_iff {f : O⟦X⟧} {n : ℕ} :
     exact ⟨f.addVal_coeff_lambdaInvariant, fun i hi ↦ muInvariant_lt_addVal_coeff hi⟩
   · exact (hlt _ h).ne' f.addVal_coeff_lambdaInvariant
 
-@[simp]
 theorem muInvariant_C_mul (a : O) (f : O⟦X⟧) :
     (C a * f).muInvariant = addVal O a + f.muInvariant := by
   simp only [muInvariant_def, coeff_C_mul, addVal_mul, ENat.add_iInf]
@@ -146,12 +145,40 @@ theorem lambdaInvariant_C_mul {a : O} (ha : a ≠ 0) (f : O⟦X⟧) :
   rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, coeff_C_mul, addVal_mul]
   exact (ENat.add_right_injective_of_ne_top hv).eq_iff
 
+@[simp]
+theorem muInvariant_C (a : O) : (C a).muInvariant = addVal O a := by
+  refine le_antisymm (by simpa using (C a).muInvariant_le_addVal_coeff 0)
+    (le_muInvariant_iff.2 fun n ↦ ?_)
+  rw [coeff_C]
+  split_ifs <;> simp
+
+@[simp]
+theorem lambdaInvariant_C (a : O) : (C a).lambdaInvariant = 0 :=
+  lambdaInvariant_eq_iff.2
+    ⟨by rw [coeff_zero_C, muInvariant_C], fun _ h ↦ absurd h (Nat.not_lt_zero _)⟩
+
+@[simp]
+theorem lambdaInvariant_zero : (0 : O⟦X⟧).lambdaInvariant = 0 := by
+  simpa using lambdaInvariant_C (0 : O)
+
 /-- The μ-invariant vanishes exactly when the reduction modulo the maximal ideal is nonzero. -/
 theorem muInvariant_eq_zero_iff {f : O⟦X⟧} : f.muInvariant = 0 ↔ f.map (residue O) ≠ 0 := by
   have : f.muInvariant = 0 ↔ ∃ n, addVal O (coeff n f) = 0 :=
     ⟨fun h ↦ ⟨_, f.addVal_coeff_lambdaInvariant.trans h⟩,
       fun ⟨n, hn⟩ ↦ nonpos_iff_eq_zero.1 (hn ▸ f.muInvariant_le_addVal_coeff n)⟩
   simp [this, PowerSeries.ext_iff, addVal_eq_zero_iff]
+
+/-- A unit has μ-invariant zero. -/
+@[simp]
+theorem muInvariant_of_isUnit {f : O⟦X⟧} (hf : IsUnit f) : f.muInvariant = 0 :=
+  muInvariant_eq_zero_iff.2 (hf.map (map (residue O))).ne_zero
+
+/-- A unit has λ-invariant zero. -/
+@[simp]
+theorem lambdaInvariant_of_isUnit {f : O⟦X⟧} (hf : IsUnit f) : f.lambdaInvariant = 0 := by
+  refine lambdaInvariant_eq_iff.2 ⟨?_, fun _ h ↦ absurd h (Nat.not_lt_zero _)⟩
+  rw [muInvariant_of_isUnit hf, addVal_eq_zero_iff, coeff_zero_eq_constantCoeff_apply]
+  exact isUnit_iff_constantCoeff.1 hf
 
 /-- If `μ(f) = 0`, the reduction of `f` modulo the maximal ideal has order `λ(f)`. -/
 theorem order_map_residue_eq_lambdaInvariant {f : O⟦X⟧} (hf : f.muInvariant = 0) :
@@ -227,6 +254,7 @@ theorem C_pow_mul_unit_mul_inj [IsHausdorff (maximalIdeal O) O] {π : O} (hπ : 
   exact ⟨rfl, Units.ext huu', rfl⟩
 
 /-- The μ-invariant is additive on products. -/
+@[simp]
 theorem muInvariant_mul (f g : O⟦X⟧) : (f * g).muInvariant = f.muInvariant + g.muInvariant := by
   rcases eq_or_ne f 0 with rfl | hf
   · simp
@@ -243,6 +271,7 @@ theorem muInvariant_mul (f g : O⟦X⟧) : (f * g).muInvariant = f.muInvariant +
   simp only [add_zero]
 
 /-- The λ-invariant is additive on products of nonzero series. -/
+@[simp]
 theorem lambdaInvariant_mul {f g : O⟦X⟧} (hf : f ≠ 0) (hg : g ≠ 0) :
     (f * g).lambdaInvariant = f.lambdaInvariant + g.lambdaInvariant := by
   obtain ⟨π, hπ⟩ := exists_irreducible O

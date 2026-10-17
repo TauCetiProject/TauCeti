@@ -27,7 +27,7 @@ public section
 
 namespace PowerSeries
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- A constant power series `C r` divides `f` if and only if `r` divides every coefficient
 of `f`. -/
