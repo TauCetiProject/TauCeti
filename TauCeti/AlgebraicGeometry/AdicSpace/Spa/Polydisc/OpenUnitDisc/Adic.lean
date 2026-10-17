@@ -89,6 +89,14 @@ noncomputable def discExhaustionOpen (n : ℕ) :
   exact closedPolydiscBasicOpen 1 P {X ^ (n + 1), C c} (C c)
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+open scoped Classical in
+/-- The exhaustion open is the basic rational open with numerators `T^(n+1), c` and
+denominator `c`. -/
+theorem discExhaustionOpen_def (n : ℕ) :
+    discExhaustionOpen c P n = closedPolydiscBasicOpen 1 P {X ^ (n + 1), C c} (C c) :=
+  (rfl)
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- Under the identification of points with the closed unit disc, the `n`-th exhaustion open is
 the rational subset `discExhaustion c n`. -/
 theorem coe_discExhaustionOpen (n : ℕ) :

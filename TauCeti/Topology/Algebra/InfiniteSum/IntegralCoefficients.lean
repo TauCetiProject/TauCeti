@@ -159,6 +159,23 @@ theorem summable_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
     Summable (fun n : ℕ ↦ (a n : K) * q ^ n) :=
   (summable_norm_intCast_mul_pow a hq).of_norm
 
+/-- A bivariate family with arbitrary integer coefficients is absolutely summable when both
+parameters have norm below one in a non-archimedean normed ring. -/
+theorem summable_norm_intCast_mul_pow_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
+    [IsUltrametricDist K] (c : ℕ × ℕ → ℤ) {u v : K} (hu : ‖u‖ < 1) (hv : ‖v‖ < 1) :
+    Summable (fun p : ℕ × ℕ ↦ ‖(c p : K) * u ^ p.1 * v ^ p.2‖) := by
+  have hs := (summable_norm_geometric_of_norm_lt_one hu).mul_of_nonneg
+    (summable_norm_geometric_of_norm_lt_one hv) (fun _ ↦ norm_nonneg _)
+    (fun _ ↦ norm_nonneg _)
+  apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) hs
+  calc
+    ‖(c p : K) * u ^ p.1 * v ^ p.2‖ ≤ ‖(c p : K) * u ^ p.1‖ * ‖v ^ p.2‖ := norm_mul_le _ _
+    _ ≤ (1 * ‖u ^ p.1‖) * ‖v ^ p.2‖ := by
+      gcongr
+      exact (norm_mul_le _ _).trans
+        (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_intCast_le_one K _) (norm_nonneg _))
+    _ = ‖u ^ p.1‖ * ‖v ^ p.2‖ := by rw [one_mul]
+
 /-- Evaluation of an integral formal power series at a parameter of norm below one in a complete
 non-archimedean normed commutative ring. Integer coefficients are bounded in norm, so the defining
 sum converges without requiring a linear topology on the target. -/
@@ -240,6 +257,24 @@ theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClas
   apply tsum_congr
   intro b
   rw [evalIntSeries_apply]
+
+/-- Bivariate evaluation is also the joint sum over the two coefficient indices. Absolute
+summability permits reindexing this family without retaining the order of evaluation. -/
+theorem evalIntBivariateSeries_eq_tsum {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K]
+    (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧⟦X⟧) :
+    evalIntBivariateSeries u hu v hv f =
+      ∑' p : ℕ × ℕ, ((coeff p.1 (coeff p.2 f) : ℤ) : K) * u ^ p.1 * v ^ p.2 := by
+  have hs := (summable_norm_intCast_mul_pow_mul_pow (K := K)
+    (fun p ↦ coeff p.1 (coeff p.2 f)) hu hv).of_norm
+  rw [evalIntBivariateSeries_apply]
+  calc
+    _ = ∑' b : ℕ, ∑' a : ℕ, ((coeff a (coeff b f) : ℤ) : K) * u ^ a * v ^ b := by
+      apply tsum_congr
+      intro b
+      exact ((summable_intCast_mul_pow (fun a ↦ coeff a (coeff b f)) hu).tsum_mul_right
+        (v ^ b)).symm
+    _ = _ := hs.tsum_comm.trans hs.tsum_prod.symm
 
 /-- Bivariate evaluation of a series constant in the outer variable is its evaluation at the
 inner parameter. -/

@@ -18,8 +18,9 @@ expanding the polynomial.
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
 notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
-vector, and `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
-positive degree.
+vector, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
+positive degree, and `hp.homogeneousComponent_mul_right` records that multiplying on the right by
+a homogeneous polynomial of degree `d` shifts homogeneous components by `d`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
@@ -97,6 +98,21 @@ theorem constantCoeff_eq_zero {σ R : Type*} [CommSemiring R]
     _root_.MvPolynomial.constantCoeff p = 0 := by
   rw [_root_.MvPolynomial.constantCoeff_eq]
   exact hp.coeff_eq_zero (by simpa using hn.symm)
+
+attribute [local instance] gradedAlgebra in
+/-- Multiplying by a polynomial homogeneous of degree `d` shifts homogeneous components by `d`:
+the degree-`n` component of `a * t` is `homogeneousComponent (n - d) a * t` when `d ≤ n`, and
+vanishes otherwise. -/
+theorem homogeneousComponent_mul_right {σ R : Type*} [CommSemiring R]
+    {t : MvPolynomial σ R} {d : ℕ} (ht : t.IsHomogeneous d) (a : MvPolynomial σ R) (n : ℕ) :
+    homogeneousComponent n (a * t) =
+      if d ≤ n then homogeneousComponent (n - d) a * t else 0 := by
+  have key (φ : MvPolynomial σ R) (i : ℕ) :
+      (DirectSum.decompose (homogeneousSubmodule σ R) φ i : MvPolynomial σ R) =
+        homogeneousComponent i φ :=
+    decomposition.decompose'_apply φ i
+  simpa only [key] using DirectSum.coe_decompose_mul_of_right_mem (homogeneousSubmodule σ R) n
+    (a := a) ((mem_homogeneousSubmodule d t).mpr ht)
 
 end MvPolynomial.IsHomogeneous
 

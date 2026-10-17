@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
@@ -247,6 +249,56 @@ theorem mem_lieSubalgebra_iff (I : HopfIdeal R H)
     rw [quotientLieHom_apply_apply]
     exact (descendDerivation_mk I d hd x).trans
       (Bialgebra.CounitAlgebra.algEquivSelf_apply R H B (d x))
+
+/-- Changing coefficients preserves the tangent Lie algebra of a closed subgroup. -/
+theorem mapValue_mem_lieSubalgebra (I : HopfIdeal R H)
+    {C : Type*} [CommRing C] [Algebra R C] (φ : B →ₐ[R] C)
+    {d : Derivation R H (Bialgebra.CounitAlgebra R H B)}
+    (hd : d ∈ I.lieSubalgebra (B := B)) :
+    Derivation.mapValue φ d ∈ I.lieSubalgebra (B := C) := by
+  rw [mem_lieSubalgebra_iff] at hd ⊢
+  intro x hx
+  rw [Derivation.mapValue_apply, hd x hx]
+  exact map_zero φ
+
+/-- The dual-number point of a tangent vector lies in a closed subgroup exactly when the
+vector lies in that subgroup's Lie algebra. -/
+theorem mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff
+    (I : HopfIdeal R H) (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val ∈
+        CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I
+          (CommAlgCat.of R (DualNumber (Bialgebra.CounitAlgebra R H B))) ↔
+      d ∈ I.lieSubalgebra (B := B) := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_lieSubalgebra_iff]
+  constructor
+  · intro h x hx
+    have hz := congrArg TrivSqZeroExt.snd (h x (mem_toIdeal.mp hx))
+    simpa only [derivationMulEquivTangentKer_apply_snd,
+      toAdd_ofAdd, TrivSqZeroExt.snd_zero] using hz
+  · intro h x hx
+    apply TrivSqZeroExt.ext
+    · rw [derivationMulEquivTangentKer_apply_fst]
+      simp only [Bialgebra.CounitAlgebra.algebraMap_apply, I.counit_eq_zero hx,
+        map_zero, TrivSqZeroExt.fst_zero]
+      -- The two zeros use the inherited ring structure on the CounitAlgebra synonym
+      -- and the original coefficient ring, respectively; they agree definitionally.
+      rfl
+    · rw [derivationMulEquivTangentKer_apply_snd]
+      exact h x (mem_toIdeal.mpr hx)
+
+/-- The identity subgroup has zero Lie algebra, over any commutative base ring. -/
+@[simp]
+theorem lieSubalgebra_augmentation :
+    (augmentation R H).lieSubalgebra (B := B) = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro d hd
+  rw [mem_lieSubalgebra_iff] at hd
+  rw [LieSubalgebra.mem_bot]
+  ext x
+  have hx := hd (x - algebraMap R H (Coalgebra.counit (R := R) x)) (by
+    rw [mem_toIdeal, mem_augmentation]
+    simp)
+  simpa only [map_sub, d.map_algebraMap, sub_zero, Derivation.zero_apply] using hx
 
 /-- The tangent Lie algebra cut out by a join of Hopf ideals consists of the derivations
 belonging to both tangent Lie algebras. -/

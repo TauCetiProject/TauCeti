@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
 
 /-!
@@ -65,6 +66,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   Fourier monomial.**
 * `AddChar.norm_apply_eq_one_of_continuous`: consequently a continuous additive character of the
   circle takes values of modulus one.
+* `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
+  essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 
 ## Tags
 
@@ -74,6 +77,7 @@ Fourier, additive circle, character, Pontryagin dual
 public section
 
 open MeasureTheory AddCircle
+open scoped ENNReal
 
 variable {T : ℝ}
 
@@ -196,6 +200,27 @@ theorem eq_zero_of_forall_fourierCoeff_eq_zero (F : C(AddCircle T, ℂ))
   rfl
 
 end ContinuousMap
+
+namespace TauCeti
+
+/-- Multiplying an `L²` Fourier mode `e_m` by an essentially bounded function `a` shifts the
+Fourier coefficients of `a` by `m`. -/
+theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T))) (m n : ℤ) :
+    fourierCoeff (a • fourierBasis (T := T) m : Lp ℂ 2 (haarAddCircle (T := T))) n =
+      fourierCoeff a (n - m) := by
+  have hae : (a • fourierBasis (T := T) m : Lp ℂ 2 (haarAddCircle (T := T))) =ᵐ[haarAddCircle]
+      fun x ↦ fourier m x * a x := by
+    filter_upwards [Lp.coeFn_lpSMul (r := 2) a (fourierBasis (T := T) m),
+      coeFn_fourierLp (T := T) 2 m] with x hx hm
+    rw [hx, Pi.smul_apply', coe_fourierBasis, hm, smul_eq_mul, mul_comm]
+  rw [fourierCoeff_congr_ae hae, fourierCoeff, fourierCoeff]
+  congr 1
+  funext x
+  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, ← fourier_add]
+  congr 3
+  ring
+
+end TauCeti
 
 namespace AddChar
 

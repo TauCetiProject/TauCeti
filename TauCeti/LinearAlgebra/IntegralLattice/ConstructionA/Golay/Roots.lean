@@ -34,17 +34,6 @@ namespace TauCeti.BinaryGolay
 
 open Finset Matrix
 
-private theorem golay_carrier :
-    constructionALattice.carrier = ConstructionA.lattice 2 code.toAddSubgroup :=
-  (congrArg IntegralLattice.carrier constructionALattice_eq_integralLattice).trans
-    (ConstructionA.integralLattice_carrier 2 code.toAddSubgroup
-      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
-
-private theorem golay_form : constructionALattice.form = ConstructionA.form 2 :=
-  (congrArg IntegralLattice.form constructionALattice_eq_integralLattice).trans
-    (ConstructionA.integralLattice_form 2 code.toAddSubgroup
-      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
-
 private theorem golay_norm_intCast (z : Fin 24 → ℤ) :
     constructionALattice.norm (fun i ↦ (z i : ℚ)) = ((∑ i, z i ^ 2 : ℤ) : ℚ) / 2 := by
   rw [constructionALattice_eq_integralLattice]
@@ -53,7 +42,7 @@ private theorem golay_norm_intCast (z : Fin 24 → ℤ) :
 /-- The positive coordinate root `2 eᵢ` of the Golay Construction A lattice. -/
 def coordinateRoot (i : Fin 24) : constructionALattice :=
   ⟨Pi.single i 2, by
-    rw [golay_carrier]
+    rw [constructionALattice_carrier]
     exact ConstructionA.single_mem_lattice 2 code.toAddSubgroup i⟩
 
 /-- The coordinates of a positive Golay lattice root. -/
@@ -67,7 +56,7 @@ orthogonal copies of the root system `A₁`. -/
 theorem form_coordinateRoot_coordinateRoot (i j : Fin 24) :
     constructionALattice.form (coordinateRoot i) (coordinateRoot j) =
       if i = j then 2 else 0 := by
-  rw [coe_coordinateRoot, coe_coordinateRoot, golay_form, ConstructionA.form_apply]
+  rw [coe_coordinateRoot, coe_coordinateRoot, constructionALattice_form, ConstructionA.form_apply]
   by_cases h : i = j <;> simp [h, dotProduct_single]
 
 /-- Every positive coordinate root has norm two. -/
@@ -91,7 +80,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
       ∃ i : Fin 24, x = Pi.single i 2 ∨ x = -Pi.single i 2 := by
   constructor
   · intro hnorm
-    have hx' : x ∈ ConstructionA.lattice 2 code.toAddSubgroup := golay_carrier ▸ hx
+    have hx' : x ∈ ConstructionA.lattice 2 code.toAddSubgroup := constructionALattice_carrier ▸ hx
     obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx'
     have hsum : ∑ i, z i ^ 2 = 4 := by
       rw [golay_norm_intCast] at hnorm

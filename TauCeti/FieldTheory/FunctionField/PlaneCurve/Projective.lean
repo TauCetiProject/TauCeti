@@ -809,7 +809,7 @@ private theorem pos_and_linearIndepOn_and_degree_sup_poles (hF : IsFunctionField
         simp only [Divisor.coeff_conorm, WeilDivisor.coeff_sup,
           Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) hc P', Nat.cast_one,
           one_mul]
-      rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hex hc, hcon,
+      rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hF hex hc, hcon,
         hdeg' _ _ (by simp [hx₀]) (by simp [hy₀])]
   · exact pos_and_linearIndepOn_and_degree_sup_poles_of_lt_card hF hG hsm (by simp) hx hgen h
 

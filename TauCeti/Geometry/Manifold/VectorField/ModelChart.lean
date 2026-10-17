@@ -90,6 +90,20 @@ variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 /-- The constant vector field with value `v` on the model space. -/
 noncomputable def constVectorField (v : E) : (z : E) → TangentSpace 𝓘(ℝ, E) z := fun _ ↦ v
 
+omit [FiniteDimensional ℝ E] in
+/-- The constant vector field takes the value `v` at every point, under the canonical
+identification `NormedSpace.fromTangentSpace` of each tangent space of `E` with `E`. -/
+theorem constVectorField_apply (v z : E) :
+    constVectorField v z = (NormedSpace.fromTangentSpace z).symm v :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+/-- The constant vector field is smooth. -/
+theorem contMDiff_constVectorField (v : E) {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n
+      (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
+  contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+
 variable (E) in
 /-- The constant vector field with value `v` in the preferred chart at `p`, pulled back to the
 manifold. -/
