@@ -154,6 +154,25 @@ theorem quantumInteger_add_one (q : K) (r : ℤ) :
   field_simp [hq0, hq]
   ring
 
+/-- The difference of two quantum integers as a determinant of neighbouring quantum integers:
+`[a - b]_q = [a]_q [b + 1]_q - [a + 1]_q [b]_q`. -/
+theorem quantumInteger_sub (q : K) (a b : ℤ) :
+    quantumInteger q (a - b) =
+      quantumInteger q a * quantumInteger q (b + 1) -
+        quantumInteger q (a + 1) * quantumInteger q b := by
+  by_cases hq : q - q⁻¹ = 0
+  · simp [quantumInteger, hq]
+  have hq0 : q ≠ 0 := by
+    rintro rfl
+    simp at hq
+  have h2 : q ^ 2 - 1 ≠ 0 := by
+    contrapose! hq
+    field_simp
+    linear_combination hq
+  simp only [quantumInteger, zpow_sub₀ hq0, zpow_add₀ hq0, zpow_neg, neg_add, zpow_one]
+  field_simp
+  ring
+
 /-- Every nonzero-index quantum integer is nonzero at a generic parameter. -/
 theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : ℤ}
     (hr : r ≠ 0) : quantumInteger q r ≠ 0 := by
