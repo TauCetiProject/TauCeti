@@ -245,8 +245,9 @@ noncomputable def stableSuspensionIsoOfPresentations (G : C ⥤ C)
       Iso.symm_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
     rw [← he, reassoc_of% h])
 
-/-- The component of `stableSuspensionIsoOfPresentations` at `X` is induced by the identity of
-`X`, from the chosen suspension presentation to the presentation `P X`. -/
+/-- The component of `stableSuspensionIsoOfPresentations` at `X` is the cokernel map induced by
+the identity of `X`, from the chosen suspension presentation to the presentation `P X`, followed
+by the comparison `e X` from `(P X).K` to `G.obj X`. -/
 @[simp]
 theorem stableSuspensionIsoOfPresentations_hom_app (G : C ⥤ C)
     (P : ∀ X, E.InjectivePresentation X)
@@ -260,8 +261,9 @@ theorem stableSuspensionIsoOfPresentations_hom_app (G : C ⥤ C)
           ((hE.suspensionPresentation X).cokernelMap (P X) (𝟙 X)) ≫ (e X).hom := by
   simp [stableSuspensionIsoOfPresentations]
 
-/-- The inverse component of `stableSuspensionIsoOfPresentations` at `X` is induced by the
-identity of `X`, from the presentation `P X` to the chosen suspension presentation. -/
+/-- The inverse component of `stableSuspensionIsoOfPresentations` at `X` is the inverse of the
+comparison `e X`, followed by the cokernel map induced by the identity of `X`, from the
+presentation `P X` to the chosen suspension presentation. -/
 @[simp]
 theorem stableSuspensionIsoOfPresentations_inv_app (G : C ⥤ C)
     (P : ∀ X, E.InjectivePresentation X)
