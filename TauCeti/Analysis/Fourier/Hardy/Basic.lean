@@ -145,6 +145,12 @@ theorem HardySpace.fourierCoeff_eq_zero (f : HardySpace) {n : ℤ} (hn : n < 0) 
     fourierCoeff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) n = 0 :=
   (mem_hardySubmodule_iff _).mp f.property n hn
 
+/-- Each Hardy coefficient is bounded by the norm of the Hardy function. -/
+theorem HardySpace.norm_fourierCoeff_le (x : HardySpace) (n : ℕ) :
+    ‖fourierCoeff (x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) n‖ ≤ ‖x‖ := by
+  rw [← hardyBasis_repr, ← hardyBasis.repr.norm_map x]
+  exact lp.norm_apply_le_norm two_ne_zero _ n
+
 /-- Projection retains every nonnegative Fourier coefficient. -/
 theorem hardyBasis_repr_orthogonalProjectionOnto
     (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) (n : ℕ) :

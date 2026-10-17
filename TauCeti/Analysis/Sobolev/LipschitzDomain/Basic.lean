@@ -26,12 +26,17 @@ positive dilations, and on a compact part of the frontier finitely many charts s
 the geometric hypotheses used to transport Sobolev trace and extension operators from a flat
 half-space through boundary charts and to patch them with a partition of unity.
 
+Locally Lipschitz boundary graphs extend to global graphs with the same constant and radii,
+using Mathlib's `LipschitzOnWith.extend_real`.
+
 ## Main declarations
 
 * `TauCeti.normalCylinder`: the product cylinder used by boundary charts.
 * `Set.IsLipschitzChartWith`: a Lipschitz boundary chart with given coordinates, graph and radii.
 * `Set.IsLipschitzDomainAtWith`: the existence of a Lipschitz boundary chart centred at one point.
 * `Set.IsLipschitzDomainWith`: an open set with the local graph condition at every frontier point.
+* `TauCeti.exists_isLipschitzChartWith_of_lipschitzOnWith`: extension of a local Lipschitz graph
+  to a global graph defining the same boundary chart.
 * `Set.IsLipschitzChartWith.mono_radii`: restriction of a chart to a smaller cylinder.
 * `Set.IsLipschitzChartWith.smul`: positive dilation of a chart, with explicit coordinates
   `TauCeti.dilateConj`, graph and radii.
@@ -339,5 +344,30 @@ theorem IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_cover [FiniteDi
 end Cover
 
 end Set
+
+namespace TauCeti
+
+open Metric Set
+open scoped NNReal
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
+  {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
+
+/-- A graph that is Lipschitz only on the tangential ball of a boundary chart can be extended
+to a global Lipschitz graph defining the same chart, with the same constant and radii. -/
+theorem exists_isLipschitzChartWith_of_lipschitzOnWith (ha : 0 < a) (hb : 0 < b)
+    (hφ0 : φ 0 = 0) (hφ : LipschitzOnWith L φ (ball 0 b))
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
+    ∃ ψ : E → ℝ, EqOn φ ψ (ball 0 b) ∧ Omega.IsLipschitzChartWith L e ψ a b := by
+  obtain ⟨ψ, hψ, heq⟩ := hφ.extend_real
+  refine ⟨ψ, heq, (isLipschitzChartWith_iff ..).mpr ⟨ha, hb, ?_, hψ, ?_⟩⟩
+  · rw [← heq (mem_ball_self hb), hφ0]
+  · intro z hz
+    rw [← heq (by simpa only [mem_ball, dist_zero_right] using
+      (mem_normalCylinder.mp hz).2.2)]
+    exact hgraph z hz
+
+end TauCeti
 
 end
