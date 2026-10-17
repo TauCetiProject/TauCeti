@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Isotropic
 
 import Mathlib.Tactic.FinCases
 
@@ -22,7 +23,8 @@ lattice vector pairs oddly with `v`, the result is an even unimodular two-neighb
 
 The carrier is the union of the even-pairing kernel and its half-vector translate. An odd
 pairing makes this kernel the intersection with the original lattice, of index two in each, so
-the result is a Kneser two-neighbor in the sense of `TauCeti.IntegralLattice.IsNeighbor`.
+the result is a Kneser two-neighbor in the sense of `TauCeti.IntegralLattice.IsNeighbor`. It is
+the general neighbor `TauCeti.IntegralLattice.neighbor` at `p = 2`, by `twoNeighbor_eq_neighbor`.
 
 ## References
 
@@ -472,5 +474,26 @@ theorem isUnimodular_twoNeighbor (he : L.IsEven) (hL : L.IsUnimodular) (v : L)
       hLag.toFiniteBilinearModule
   rw [twoNeighbor]
   exact (isUnimodular_ofIsotropicSubgroup_iff_isLagrangian _ _ _ _).mpr hLagB
+
+omit [L.IsNondegenerate] in
+/-- The parity kernel is the neighbor kernel at `p = 2`. -/
+theorem twoNeighborKernel_eq_neighborKernel (v : L) :
+    L.twoNeighborKernel v = L.neighborKernel 2 v := by
+  ext x
+  constructor <;> intro hx
+  · lift x to L using L.twoNeighborKernel_le v hx
+    rw [coe_mem_twoNeighborKernel_iff, even_iff_two_dvd] at hx
+    exact (L.coe_mem_neighborKernel_iff 2 v x).mpr (by exact_mod_cast hx)
+  · lift x to L using L.neighborKernel_le 2 v hx
+    rw [coe_mem_neighborKernel_iff] at hx
+    exact (L.coe_mem_twoNeighborKernel_iff v x).mpr (even_iff_two_dvd.mpr (by exact_mod_cast hx))
+
+/-- **The even two-neighbor is the neighbor at `p = 2`.** -/
+theorem twoNeighbor_eq_neighbor (he : L.IsEven) (v : L) (hn : (8 : ℤ) ∣ L.integralNorm v) :
+    L.twoNeighbor he v hn = L.neighbor 2 v (dvd_trans (by norm_num) hn) := by
+  refine ext ?_ (by rw [twoNeighbor_form, neighbor_form])
+  ext x
+  rw [mem_twoNeighbor_carrier_iff, mem_neighbor_carrier_iff, twoNeighborKernel_eq_neighborKernel]
+  simp only [one_div, Nat.cast_ofNat]
 
 end TauCeti.IntegralLattice
