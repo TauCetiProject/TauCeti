@@ -51,7 +51,8 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
   at `III*` it has `ϖ² ∣ x` and `ϖ³ ∣ y` (`WeierstrassCurve.sq_dvd_and_pow_three_dvd_of_equation`).
 * `WeierstrassCurve.dvd_quadratic_of_equation_odd`: on the normal form of an odd stage `k` of the
   `Iₙ*` subprocedure of Step 7, a solution `(ϖ^(k+2) X, ϖ^(k+2) Y)` makes `Y` a root of the residue
-  quadratic modulo `ϖ`.
+  quadratic modulo `ϖ`. `WeierstrassCurve.dvd_quadratic_of_equation_even` is the analogue at an
+  even stage, where `X` is a root of the residue quadratic modulo `ϖ`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal`: at an additive symbol,
   if no integral solution has both coordinates divisible by `ϖ`, then `E₀(F) = W(F)`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero`: at `I₀*`, if
@@ -119,6 +120,26 @@ theorem dvd_quadratic_of_equation_odd (hϖ : ϖ ≠ 0) {k : ℕ} (h₁ : ϖ ∣ 
   -- `ϖ^(2k+4) (Y² + A₃ Y − A₆) ≡ 0` modulo `ϖ^(2k+5)`
   exact ⟨ϖ ^ (k + 1) * X ^ 3 + α₂ * X ^ 2 + α₄ * X - α₁ * X * Y,
     mul_left_cancel₀ (pow_ne_zero (2 * k + 4) hϖ) (by linear_combination h)⟩
+
+/-- **On the normal form of an even stage of the `Iₙ*` subprocedure of Step 7 of Tate's
+algorithm, a solution `(ϖ^(k+2) X, ϖ^(k+2) Y)` makes `X` a root of the residue quadratic modulo
+`ϖ`.** Over a domain with a prime `ϖ`, suppose that `ϖ ∣ a₁`, `a₂ = ϖ A₂`, `ϖ^(k+3) ∣ a₃`,
+`a₄ = ϖ^(k+3) A₄` and `a₆ = ϖ^(2k+5) A₆`. Then `ϖ ∣ A₂ X² + A₄ X + A₆`. -/
+theorem dvd_quadratic_of_equation_even (hϖ : Prime ϖ) {k : ℕ} (h₁ : ϖ ∣ W.a₁)
+    {A₂ A₄ A₆ : R} (h₂ : W.a₂ = ϖ * A₂) (h₃ : ϖ ^ (k + 3) ∣ W.a₃)
+    (h₄ : W.a₄ = ϖ ^ (k + 3) * A₄) (h₆ : W.a₆ = ϖ ^ (2 * k + 5) * A₆) {X Y : R}
+    (h : W.toAffine.Equation (ϖ ^ (k + 2) * X) (ϖ ^ (k + 2) * Y)) :
+    ϖ ∣ A₂ * X ^ 2 + A₄ * X + A₆ := by
+  obtain ⟨α₁, hα₁⟩ := h₁
+  obtain ⟨α₃, hα₃⟩ := h₃
+  rw [Affine.equation_iff, hα₁, h₂, hα₃, h₄, h₆] at h
+  -- the equation divided by `ϖ^(2k+4)` gives `ϖ ∣ Y²`
+  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
+    ⟨ϖ ^ (k + 1) * X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ - α₁ * X * Y - α₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero (2 * k + 4) hϖ.ne_zero) (by linear_combination h)⟩
+  -- then the equation divided by `ϖ^(2k+5)` gives `ϖ ∣ A₂ X² + A₄ X + A₆`
+  exact ⟨Y ^ 2 + α₁ * X * Y + α₃ * Y - ϖ ^ k * X ^ 3,
+    mul_left_cancel₀ (pow_ne_zero (2 * k + 5) hϖ.ne_zero) (by linear_combination -h)⟩
 
 /-- On the normal form of Tate's algorithm at the symbol `IV*`, where `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
 `a₃ = ϖ² A₃`, `ϖ³ ∣ a₄` and `a₆ = ϖ⁴ A₆`, a solution with both coordinates divisible by the prime

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
--- Proof-only: the residue quadratic at an odd stage of the `Iₙ*` subprocedure.
+-- Proof-only: the residue quadratic at the last stage of the `Iₙ*` subprocedure.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: index two from sums of outside elements.
 import TauCeti.GroupTheory.Index.Two
@@ -166,23 +166,6 @@ private theorem pow_dvd_and_pow_dvd_of_equation (hπ : Prime π) {k : ℕ} (h₁
       ((pow_dvd_pow π (by omega)).trans h₃) ((pow_dvd_pow π (by omega)).trans h₄)
       ((pow_dvd_pow π (by omega)).trans h₆) h
     exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
-
-/-- **The last stage `n = 2k + 2` of the `Iₙ*` subprocedure, on points.** With `π ∣ a₁`,
-`a₂ = π A₂`, `π^(k+3) ∣ a₃`, `a₄ = π^(k+3) A₄` and `a₆ = π^(2k+5) A₆`, a solution
-`(π^(k+2) X, π^(k+2) Y)` makes `X` a root of `A₂ T² + A₄ T + A₆` modulo `π`. -/
-private theorem dvd_quadratic_of_equation_even (hπ : Prime π) {k : ℕ} (h₁ : π ∣ W.a₁)
-    {A₂ A₄ A₆ : R} (h₂ : W.a₂ = π * A₂) (h₃ : π ^ (k + 3) ∣ W.a₃)
-    (h₄ : W.a₄ = π ^ (k + 3) * A₄) (h₆ : W.a₆ = π ^ (2 * k + 5) * A₆) {X Y : R}
-    (h : W.toAffine.Equation (π ^ (k + 2) * X) (π ^ (k + 2) * Y)) :
-    π ∣ A₂ * X ^ 2 + A₄ * X + A₆ := by
-  obtain ⟨α₁, hα₁⟩ := h₁
-  obtain ⟨α₃, hα₃⟩ := h₃
-  rw [Affine.equation_iff, hα₁, h₂, hα₃, h₄, h₆] at h
-  obtain ⟨Y, rfl⟩ : π ∣ Y := hπ.dvd_of_dvd_pow (n := 2)
-    ⟨π ^ (k + 1) * X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ - α₁ * X * Y - α₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero (2 * k + 4) hπ.ne_zero) (by linear_combination h)⟩
-  exact ⟨Y ^ 2 + α₁ * X * Y + α₃ * Y - π ^ k * X ^ 3,
-    mul_left_cancel₀ (pow_ne_zero (2 * k + 5) hπ.ne_zero) (by linear_combination -h)⟩
 
 namespace Affine
 
@@ -759,9 +742,7 @@ private theorem relIndex_nearSubgroup_eq_two [HenselianLocalRing v.valuationSubr
 /-! ### The index at the symbol `Iₙ*` -/
 
 /-- **At the symbol `Iₙ*`, `[E(F) : E₀(F)]` divides `4`.** Here `ϖ` generates the maximal ideal and
-Tate's algorithm stops at `Iₙ*` with `n ≥ 1` on the integral model. The points not of the form
-`(ϖ² X, ϖ² Y)` form a subgroup containing `E₀(F)` with index dividing `2`, and of index dividing
-`2` in `W(F)`. -/
+Tate's algorithm stops at `Iₙ*` with `n ≥ 1` on the integral model. -/
 theorem index_nonsingularReduction_dvd_four_of_isTateTerminal_IStar {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {n : ℕ}
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (n + 1))) :
