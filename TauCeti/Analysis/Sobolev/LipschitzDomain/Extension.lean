@@ -262,7 +262,7 @@ theorem W1p.value_lipschitzChartExtensionL_ae
   by_cases hxC : e x ∈ normalCylinder a b
   · have hxU : x ∈ ((Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) : Set _) :=
       ⟨hxΩ, hxC⟩
-    rw [hx, ite_eq_left ((h.mem_iff hxC).1 hxΩ), indicator_of_mem hxU]
+    rw [hx, ite_eq_left ((h.toIsLipschitzChart.mem_iff hxC).1 hxΩ), indicator_of_mem hxU]
   · have hψx : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hxs =>
       hxC (normalCylinder_sub_subset h (hs hxs))
     rw [hzero hxC, hψx, zero_smul]

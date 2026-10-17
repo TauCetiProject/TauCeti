@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.ModelTheory.Infinitary.Semantics
+import TauCeti.ModelTheory.Infinitary.CodedConnectives
 import Mathlib.ModelTheory.Graph
 import Mathlib.Tactic.FinCases
 
@@ -19,7 +19,10 @@ through public statements only:
 * an `ℕ`-indexed conjunction is realized exactly when every conjunct is;
 * over the empty carrier, a conjunction is true and a disjunction is false;
 * a nullary relation on the empty structure takes the value the structure assigns it;
-* in nested quantifiers, each quantifier binds the last bound-variable slot.
+* in nested quantifiers, each quantifier binds the last bound-variable slot;
+* coded conjunctions and disjunctions realize as the conjunction and disjunction of their branches,
+  for an empty source carrier, with unused target indices, and with a decoder that sends several
+  target indices to the same branch.
 -/
 
 universe u v u' uι w
@@ -87,3 +90,43 @@ example {M : Type w} [Language.graph.Structure M] :
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all, realize_ex, realize_rel]
   refine forall_congr' fun x => exists_congr fun y => Iff.of_eq (congrArg _ (funext fun i => ?_))
   fin_cases i <;> simp [Fin.snoc]
+
+/-! ### Coded connectives -/
+
+-- Over an empty source carrier, the coded conjunction is true and the coded disjunction is false,
+-- although the target carrier `ℕ` is not empty.
+example {L : Language.{u, v}} {α : Type u'} {M : Type w} [L.Structure M] {n : ℕ}
+    (v : α → M) (xs : Fin n → M) :
+    (iInfAlong (TauCeti.IndexCoding.ofEncodable Empty) Empty.elim :
+      L.BoundedFormulaInf ℕ α n).Realize v xs := by
+  simp
+
+example {L : Language.{u, v}} {α : Type u'} {M : Type w} [L.Structure M] {n : ℕ}
+    (v : α → M) (xs : Fin n → M) :
+    ¬(iSupAlong (TauCeti.IndexCoding.ofEncodable Empty) Empty.elim :
+      L.BoundedFormulaInf ℕ α n).Realize v xs := by
+  simp
+
+-- The target indices `Sum.inr k` decode to nothing; their padding branches do not change the
+-- realization of a single coded branch.
+example {L : Language.{u, v}} {α : Type u'} {M : Type w} [L.Structure M] {n : ℕ}
+    (φ : L.BoundedFormulaInf (Unit ⊕ ℕ) α n) (v : α → M) (xs : Fin n → M) :
+    (iInfAlong (TauCeti.IndexCoding.sumInl Unit ℕ) fun _ => φ).Realize v xs ↔ φ.Realize v xs := by
+  simp
+
+example {L : Language.{u, v}} {α : Type u'} {M : Type w} [L.Structure M] {n : ℕ}
+    (φ : L.BoundedFormulaInf (Unit ⊕ ℕ) α n) (v : α → M) (xs : Fin n → M) :
+    (iSupAlong (TauCeti.IndexCoding.sumInl Unit ℕ) fun _ => φ).Realize v xs ↔ φ.Realize v xs := by
+  simp
+
+-- A decoder may send several target indices to the same branch: here every even index decodes to
+-- `false` and every odd index to `true`. The coded connectives still realize as the conjunction and
+-- disjunction over `Bool`.
+example {L : Language.{u, v}} {α : Type u'} {M : Type w} [L.Structure M] {n : ℕ}
+    (φs : Bool → L.BoundedFormulaInf ℕ α n) (v : α → M) (xs : Fin n → M) :
+    letI c : TauCeti.IndexCoding Bool ℕ :=
+      ⟨fun b => if b then 1 else 0, fun k => some (k % 2 == 1), by decide⟩
+    ((iInfAlong c φs).Realize v xs ↔ (φs false).Realize v xs ∧ (φs true).Realize v xs) ∧
+      ((iSupAlong c φs).Realize v xs ↔ (φs false).Realize v xs ∨ (φs true).Realize v xs) := by
+  simp [Bool.forall_bool, Bool.exists_bool]
+
