@@ -41,7 +41,8 @@ with a function of one real variable, and invariance under holomorphic maps.
 * `TauCeti.leviForm_apply_self`: the diagonal of the Levi form is one quarter of
   `Hess f(v, v) + Hess f(I • v, I • v)`.
 * `TauCeti.isSymm_leviForm`: the Levi form of a `C²` function is Hermitian.
-* `TauCeti.leviForm_add`, `TauCeti.leviForm_neg`: the Levi form is additive.
+* `TauCeti.leviForm_add`, `TauCeti.leviForm_neg`, `TauCeti.leviForm_smul`: the Levi form is
+  real linear in the function.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
 * `TauCeti.leviForm_scalar_comp_apply`: the composition rule
@@ -131,6 +132,16 @@ theorem leviForm_neg (f : V → ℝ) (x : V) : leviForm (-f) x = -leviForm f x :
   have hfd : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
   have h2 : fderiv ℝ (fderiv ℝ (-f)) x = -fderiv ℝ (fderiv ℝ f) x := by
     rw [hfd, fderiv_neg]
+  ext v w
+  apply Complex.ext <;> simp [h2] <;> ring
+
+/-- The Levi form is real homogeneous in the function. -/
+@[simp]
+theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
+    leviForm (a • f) x = (a : ℂ) • leviForm f x := by
+  have h2 : fderiv ℝ (fderiv ℝ (a • f)) x = a • fderiv ℝ (fderiv ℝ f) x := by
+    rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ f),
+      Pi.smul_apply]
   ext v w
   apply Complex.ext <;> simp [h2] <;> ring
 
