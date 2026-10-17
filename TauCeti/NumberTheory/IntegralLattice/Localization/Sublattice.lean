@@ -40,20 +40,13 @@ namespace TauCeti.IntegralLattice
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (L M : IntegralLattice V) (p : ℕ) [Fact p.Prime]
 
-/-- Multiplication by the index `[M : L]` maps the carrier of `M` into the carrier of `L`. -/
-private theorem relIndex_smul_mem (x : M) :
-    L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup • (x : V) ∈ L.carrier := by
-  have h := AddSubgroup.nsmul_index_mem
-    (L.carrier.toAddSubgroup.addSubgroupOf M.carrier.toAddSubgroup) x
-  rw [AddSubgroup.mem_addSubgroupOf] at h
-  exact h
-
 /-- Multiplication by the index `[M : L]`, as a map from the carrier of `M` to that of `L`. -/
 private noncomputable def relIndexSMul : M →ₗ[ℤ] L :=
   ((L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup : ℤ) •
     M.carrier.subtype).codRestrict L.carrier fun x ↦ by
-      simpa only [LinearMap.smul_apply, Submodule.subtype_apply, natCast_zsmul] using
-        relIndex_smul_mem L M x
+      simpa only [LinearMap.smul_apply, Submodule.subtype_apply, natCast_zsmul,
+        Submodule.mem_toAddSubgroup] using
+        L.carrier.toAddSubgroup.nsmul_relIndex_mem x.property
 
 private theorem inclusion_comp_relIndexSMul (hle : L.carrier ≤ M.carrier) :
     Submodule.inclusion hle ∘ₗ relIndexSMul L M =
