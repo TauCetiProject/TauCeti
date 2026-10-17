@@ -70,7 +70,7 @@ variable (hcell : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
 
 include hcell in
 /-- Translation by a group element that permutes the open cells preserves every skeleton. -/
-private lemma smul_mem_skeletonLT [T2Space E] (g : G) {n : ℕ∞} {z : E}
+lemma smul_mem_skeletonLT [T2Space E] (g : G) {n : ℕ∞} {z : E}
     (hz : z ∈ (skeletonLT (univ : Set E) n : Set E)) :
     g • z ∈ (skeletonLT (univ : Set E) n : Set E) := by
   rw [← CWComplex.iUnion_openCell_eq_skeletonLT] at hz ⊢
@@ -81,7 +81,7 @@ private lemma smul_mem_skeletonLT [T2Space E] (g : G) {n : ℕ∞} {z : E}
 
 include hcell hfree in
 /-- Only the identity carries a point of an open cell into the same open cell. -/
-private lemma eq_one_of_mem_openCell_of_smul_mem {n : ℕ} {i : cell (univ : Set E) n} {g : G}
+lemma eq_one_of_mem_openCell_of_smul_mem {n : ℕ} {i : cell (univ : Set E) n} {g : G}
     {z : E} (hz : z ∈ openCell n i) (hgz : g • z ∈ openCell n i) : g = 1 := by
   obtain ⟨j, hj⟩ := hcell g n i
   have hji : (⟨n, j⟩ : Σ m, cell (univ : Set E) m) = ⟨n, i⟩ :=
@@ -92,7 +92,7 @@ private lemma eq_one_of_mem_openCell_of_smul_mem {n : ℕ} {i : cell (univ : Set
 variable (G) in
 /-- Two `n`-cells are related when a group element carries the open cell of one onto the open
 cell of the other. -/
-private def cellOrbitSetoid (n : ℕ) : Setoid (cell (univ : Set E) n) where
+def cellOrbitSetoid (n : ℕ) : Setoid (cell (univ : Set E) n) where
   r i j := ∃ g : G, g • openCell n i = openCell n j
   iseqv :=
     { refl _ := ⟨1, one_smul G _⟩
@@ -101,29 +101,29 @@ private def cellOrbitSetoid (n : ℕ) : Setoid (cell (univ : Set E) n) where
 
 variable (G) in
 /-- The chosen representative of the orbit of an `n`-cell. -/
-private def cellRep {n : ℕ} (j : cell (univ : Set E) n) : cell (univ : Set E) n :=
+def cellRep {n : ℕ} (j : cell (univ : Set E) n) : cell (univ : Set E) n :=
   (Quotient.mk (cellOrbitSetoid G n) j).out
 
-private lemma exists_smul_openCell_cellRep {n : ℕ} (j : cell (univ : Set E) n) :
+lemma exists_smul_openCell_cellRep {n : ℕ} (j : cell (univ : Set E) n) :
     ∃ g : G, g • openCell n (cellRep G j) = openCell n j :=
   Quotient.mk_out (s := cellOrbitSetoid G n) j
 
 variable (G) in
 /-- A group element carrying the representative of the orbit of `j` onto `j`. -/
-private def cellElt {n : ℕ} (j : cell (univ : Set E) n) : G :=
+def cellElt {n : ℕ} (j : cell (univ : Set E) n) : G :=
   (exists_smul_openCell_cellRep j).choose
 
-private lemma cellElt_smul_openCell {n : ℕ} (j : cell (univ : Set E) n) :
+lemma cellElt_smul_openCell {n : ℕ} (j : cell (univ : Set E) n) :
     cellElt G j • openCell n (cellRep G j) = openCell n j :=
   (exists_smul_openCell_cellRep j).choose_spec
 
-private lemma cellRep_eq_of_smul_openCell {n : ℕ} {g : G} {i j : cell (univ : Set E) n}
+lemma cellRep_eq_of_smul_openCell {n : ℕ} {g : G} {i j : cell (univ : Set E) n}
     (h : g • openCell n i = openCell n j) : cellRep G i = cellRep G j :=
   congrArg Quotient.out (Quotient.sound (s := cellOrbitSetoid G n) ⟨g, h⟩)
 
 include hfree in
 /-- The element carrying the representative onto a cell is the only one doing so. -/
-private lemma eq_cellElt_of_smul_openCell {n : ℕ} {g : G} {j : cell (univ : Set E) n}
+lemma eq_cellElt_of_smul_openCell {n : ℕ} {g : G} {j : cell (univ : Set E) n}
     (h : g • openCell n (cellRep G j) = openCell n j) : g = cellElt G j := by
   have : ((cellElt G j)⁻¹ * g) • openCell n (cellRep G j) = openCell n (cellRep G j) := by
     rw [mul_smul, h, inv_smul_eq_iff, cellElt_smul_openCell]
@@ -131,21 +131,70 @@ private lemma eq_cellElt_of_smul_openCell {n : ℕ} {g : G} {j : cell (univ : Se
 
 /-- A point of an open `n`-cell is the translate, by the chosen element, of a point of the open
 cell of the representative. -/
-private lemma exists_cellElt_smul_map {n : ℕ} {z : E} {j : cell (univ : Set E) n}
+lemma exists_cellElt_smul_map {n : ℕ} {z : E} {j : cell (univ : Set E) n}
     (hz : z ∈ openCell n j) :
     ∃ u : Fin n → ℝ, ‖u‖ < 1 ∧ cellElt G j • map n (cellRep G j) u = z := by
   rw [← cellElt_smul_openCell (G := G) j] at hz
   obtain ⟨w, ⟨u, hu, rfl⟩, rfl⟩ := hz
   exact ⟨u, mem_ball_zero_iff.1 hu, rfl⟩
 
+include hcell hfree in
+/-- The preimage in an open cell of any orbit contains at most one point. -/
+private lemma subsingleton_openCell_inter_orbit {n : ℕ} (r : cell (univ : Set E) n) (a : E) :
+    {v : Fin n → ℝ | ‖v‖ < 1 ∧ map n r v ∈ MulAction.orbit G a}.Subsingleton := by
+  rintro v ⟨hv, hvo⟩ w ⟨hw, hwo⟩
+  obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 hvo
+  obtain ⟨g', hg'⟩ := MulAction.mem_orbit_iff.1 hwo
+  have h1 : (g' * g⁻¹) • map n r v = map n r w := by rw [← hg, ← hg', mul_smul, inv_smul_smul]
+  have hw' : (g' * g⁻¹) • map n r v ∈ openCell n r := by
+    rw [h1]
+    exact ⟨w, mem_ball_zero_iff.2 hw, rfl⟩
+  have h2 : g' * g⁻¹ = 1 :=
+    eq_one_of_mem_openCell_of_smul_mem hcell hfree ⟨v, mem_ball_zero_iff.2 hv, rfl⟩ hw'
+  rw [h2, one_smul] at h1
+  exact ((map_eq_map_iff hv hw).1 h1).2
+
 variable [T2Space E]
 
 /-- A translation carrying an open cell onto an open cell carries the closed cell onto the
 closed cell. -/
-private lemma smul_closedCell_of_smul_openCell [ContinuousConstSMul G E] {n : ℕ} {g : G}
+lemma smul_closedCell_of_smul_openCell [ContinuousConstSMul G E] {n : ℕ} {g : G}
     {i j : cell (univ : Set E) n} (h : g • openCell n i = openCell n j) :
     g • closedCell n i = closedCell n j := by
   rw [← closure_openCell_eq_closedCell, ← closure_openCell_eq_closedCell, ← closure_smul, h]
+
+/-- A map on a closed ball that agrees on its boundary with a map on the preceding skeleton
+descends along the characteristic map to the closed cell. -/
+private lemma exists_continuousMap_closedCell_comp_map {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    (r : cell (univ : Set E) n) (ψ : C(Fin n → ℝ, Y))
+    (f : C((skeletonLT (univ : Set E) n : Set E), Y))
+    (hψ : ∀ v (hv : v ∈ sphere (0 : Fin n → ℝ) 1),
+      ψ v = f ⟨map n r v, cellFrontier_subset_skeletonLT n r ⟨v, hv, rfl⟩⟩) :
+    ∃ L : C(closedCell n r, Y), ∀ v : closedBall (0 : Fin n → ℝ) 1,
+      L ⟨map n r v, v, v.2, rfl⟩ = ψ v := by
+  let q : C(closedBall (0 : Fin n → ℝ) 1, closedCell n r) :=
+    ⟨fun v ↦ ⟨map n r v, v, v.2, rfl⟩, (continuous_map_closedBall r).subtype_mk _⟩
+  have hq : IsQuotientMap q :=
+    .of_surjective_continuous (fun ⟨_, v, hv, hvz⟩ ↦ ⟨⟨v, hv⟩, Subtype.ext hvz⟩) q.continuous
+  have hwd : Function.FactorsThrough (fun v : closedBall (0 : Fin n → ℝ) 1 ↦ ψ v) q := by
+    intro a b hab
+    have hab' : map n r a = map n r b := congrArg Subtype.val hab
+    have hsph (c : closedBall (0 : Fin n → ℝ) 1) :
+        ‖(c : Fin n → ℝ)‖ < 1 ∨ (c : Fin n → ℝ) ∈ sphere (0 : Fin n → ℝ) 1 :=
+      (mem_closedBall_zero_iff.1 c.2).lt_or_eq.imp_right mem_sphere_zero_iff_norm.2
+    rcases hsph a with ha | ha <;> rcases hsph b with hb | hb
+    · simp only [((map_eq_map_iff ha hb).1 hab').2]
+    · exact absurd (hab' ▸ cellFrontier_subset_skeletonLT n r ⟨b, hb, rfl⟩)
+        (map_notMem_skeletonLT r ha)
+    · exact absurd (hab'.symm ▸ cellFrontier_subset_skeletonLT n r ⟨a, ha, rfl⟩)
+        (map_notMem_skeletonLT r hb)
+    · change ψ (a : Fin n → ℝ) = ψ (b : Fin n → ℝ)
+      rw [hψ a ha, hψ b hb]
+      exact congrArg f (Subtype.ext hab')
+  let L : C(closedCell n r, Y) :=
+    hq.lift ⟨fun v ↦ ψ v, by fun_prop⟩ hwd
+  refine ⟨L, fun v ↦ ?_⟩
+  exact DFunLike.congr_fun (hq.lift_comp ⟨fun v ↦ ψ v, by fun_prop⟩ hwd) v
 
 variable (G) in
 /-- A stage of the construction of a separating invariant function: a continuous function on the
@@ -181,19 +230,6 @@ private lemma SepStage.exists_extension (hxy : y ∉ MulAction.orbit G x) {n : �
       (∀ v, ‖v‖ < 1 → map n r v ∈ MulAction.orbit G x → ψ v = 1) ∧
       (∀ v, ‖v‖ < 1 → map n r v ∈ MulAction.orbit G y → ψ v = 0) := by
   classical
-  -- Within an open cell each orbit has at most one point.
-  have hsub (a : E) :
-      {v : Fin n → ℝ | ‖v‖ < 1 ∧ map n r v ∈ MulAction.orbit G a}.Subsingleton := by
-    rintro v ⟨hv, hvo⟩ w ⟨hw, hwo⟩
-    obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 hvo
-    obtain ⟨g', hg'⟩ := MulAction.mem_orbit_iff.1 hwo
-    have h1 : (g' * g⁻¹) • map n r v = map n r w := by rw [← hg, ← hg', mul_smul, inv_smul_smul]
-    have hw' : (g' * g⁻¹) • map n r v ∈ openCell n r := by
-      rw [h1]; exact ⟨w, mem_ball_zero_iff.2 hw, rfl⟩
-    have h2 : g' * g⁻¹ = 1 :=
-      eq_one_of_mem_openCell_of_smul_mem hcell hfree ⟨v, mem_ball_zero_iff.2 hv, rfl⟩ hw'
-    rw [h2, one_smul] at h1
-    exact ((map_eq_map_iff hv hw).1 h1).2
   set A := {v : Fin n → ℝ | ‖v‖ < 1 ∧ map n r v ∈ MulAction.orbit G x}
   set B := {v : Fin n → ℝ | ‖v‖ < 1 ∧ map n r v ∈ MulAction.orbit G y}
   -- The prescribed values on the closed set `sphere 0 1 ∪ (A ∪ B)`.
@@ -209,10 +245,12 @@ private lemma SepStage.exists_extension (hxy : y ∉ MulAction.orbit G x) {n : �
   have hsph : ContinuousOn h (sphere 0 1) :=
     (hfn.comp ((continuousOn n r).mono sphere_subset_closedBall)
       fun v hv ↦ cellFrontier_subset_skeletonLT n r ⟨v, hv, rfl⟩).congr fun v hv ↦ ite_eq_left hv
-  have hAB : IsClosed (A ∪ B) := (hsub x).isClosed.union (hsub y).isClosed
+  have hA : A.Subsingleton := subsingleton_openCell_inter_orbit hcell hfree r x
+  have hB : B.Subsingleton := subsingleton_openCell_inter_orbit hcell hfree r y
+  have hAB : IsClosed (A ∪ B) := hA.isClosed.union hB.isClosed
   have hcont : ContinuousOn h (sphere 0 1 ∪ (A ∪ B)) :=
-    hsph.union_of_isClosed (((hsub x).continuousOn h).union_of_isClosed
-      ((hsub y).continuousOn h) (hsub x).isClosed (hsub y).isClosed) isClosed_sphere hAB
+    hsph.union_of_isClosed ((hA.continuousOn h).union_of_isClosed
+      (hB.continuousOn h) hA.isClosed hB.isClosed) isClosed_sphere hAB
   obtain ⟨ψ, hψ⟩ := ContinuousMap.exists_restrict_eq (isClosed_sphere.union hAB)
     ⟨_, hcont.domRestrict⟩
   have hψh (v) (hv : v ∈ sphere (0 : Fin n → ℝ) 1 ∪ (A ∪ B)) : ψ v = h v :=
@@ -234,6 +272,38 @@ private lemma SepStage.exists_extension (hxy : y ∉ MulAction.orbit G x) {n : �
     rw [hψh v (.inr (.inr ⟨hv, hvy⟩))]
     simp only [h, ite_eq_right (hns hv), ite_eq_right hvA]
 
+include hfree in
+/-- On an open cell, the glued successor map is the extension on the representative cell. -/
+private lemma apply_gluedMap_openCell {n : ℕ}
+    (ψ : cell (univ : Set E) n → C(Fin n → ℝ, ℝ))
+    (L : (r : cell (univ : Set E) n) → C(closedCell n r, ℝ))
+    (hL : ∀ (r : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
+      L r ⟨map n r v, v, v.2, rfl⟩ = ψ r v)
+    (hmem : ∀ (j : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
+      (cellElt G j)⁻¹ • map n j v ∈ closedCell n (cellRep G j))
+    (F : C(Unit × (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E), ℝ))
+    (hFK : ∀ (j : cell (univ : Set E) n) (z : Unit)
+      (v : closedBall (0 : Fin n → ℝ) 1),
+      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.2)⟩) =
+        L (cellRep G j) ⟨(cellElt G j)⁻¹ • map n j v, hmem j v⟩)
+    (j r : cell (univ : Set E) n) (hr : cellRep G j = r) (g : G)
+    (hg : g • openCell n r = openCell n j) (u : Fin n → ℝ) (hu : ‖u‖ < 1)
+    (hu' : g • map n r u ∈ (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E)) :
+    F ((), ⟨g • map n r u, hu'⟩) = ψ r u := by
+  subst hr
+  obtain rfl := eq_cellElt_of_smul_openCell hfree hg
+  have hw : cellElt G j • map n (cellRep G j) u ∈ openCell n j :=
+    hg ▸ smul_mem_smul_set ⟨u, mem_ball_zero_iff.2 hu, rfl⟩
+  have hv := ball_subset_closedBall (map_symm_mem_ball n hw)
+  have hF_eq :
+      F ((), ⟨cellElt G j • map n (cellRep G j) u, hu'⟩) =
+        F ((), ⟨map n j ((map n j).symm (cellElt G j • map n (cellRep G j) u)),
+          map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 hv)⟩) :=
+    congrArg F (Prod.ext rfl (Subtype.ext (map_map_symm n hw).symm))
+  rw [hF_eq, hFK j () ⟨_, hv⟩,
+    ← hL (cellRep G j) ⟨u, ball_subset_closedBall (mem_ball_zero_iff.2 hu)⟩]
+  exact congrArg (L _) (Subtype.ext (by simp [map_map_symm n hw]))
+
 include hcell hfree in
 /-- **The inductive step.** A stage on the `n`-skeleton extends to a stage on the
 `(n + 1)`-skeleton. -/
@@ -247,29 +317,10 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
   -- translating an open `n`-cell does not change the representative and composes the elements.
   choose ψ hψs hψx hψy using S.exists_extension hcell hfree hxy
   -- The extension `ψ r` descends to the closed cell of `r` along its characteristic map.
-  let q (r : cell (univ : Set E) n) : C(closedBall (0 : Fin n → ℝ) 1, closedCell n r) :=
-    ⟨fun v ↦ ⟨map n r v, v, v.2, rfl⟩, (continuous_map_closedBall r).subtype_mk _⟩
-  have hq (r : cell (univ : Set E) n) : IsQuotientMap (q r) :=
-    .of_surjective_continuous (fun ⟨_, v, hv, hvz⟩ ↦ ⟨⟨v, hv⟩, Subtype.ext hvz⟩) (q r).continuous
-  have hwd (r : cell (univ : Set E) n) :
-      Function.FactorsThrough (fun v : closedBall (0 : Fin n → ℝ) 1 ↦ ψ r v) (q r) := by
-    intro a b hab
-    have hab' : map n r a = map n r b := congrArg Subtype.val hab
-    have hsph (c : closedBall (0 : Fin n → ℝ) 1) :
-        ‖(c : Fin n → ℝ)‖ < 1 ∨ (c : Fin n → ℝ) ∈ sphere (0 : Fin n → ℝ) 1 :=
-      (mem_closedBall_zero_iff.1 c.2).lt_or_eq.imp_right mem_sphere_zero_iff_norm.2
-    rcases hsph a with ha | ha <;> rcases hsph b with hb | hb
-    · simp only [((map_eq_map_iff ha hb).1 hab').2]
-    · exact absurd (hab' ▸ cellFrontier_subset_skeletonLT n r ⟨b, hb, rfl⟩)
-        (map_notMem_skeletonLT r ha)
-    · exact absurd (hab'.symm ▸ cellFrontier_subset_skeletonLT n r ⟨a, ha, rfl⟩)
-        (map_notMem_skeletonLT r hb)
-    · simp only [hψs r a ha, hψs r b hb, hab']
-  let L (r : cell (univ : Set E) n) : C(closedCell n r, ℝ) :=
-    (hq r).lift ⟨fun v ↦ ψ r v, by fun_prop⟩ (hwd r)
-  have hL (r : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1) :
-      L r (q r v) = ψ r v :=
-    DFunLike.congr_fun ((hq r).lift_comp ⟨fun v ↦ ψ r v, by fun_prop⟩ (hwd r)) v
+  let f : C((skeletonLT (univ : Set E) n : Set E), ℝ) :=
+    S.toFun.comp ⟨fun z ↦ ((), z), by fun_prop⟩
+  choose L hL using fun r ↦ exists_continuousMap_closedCell_comp_map r (ψ r) f
+    fun v hv ↦ hψs r v hv
   -- On the closed cell of `j`, read the descended extension of the representative.
   have hmem (j : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1) :
       (cellElt G j)⁻¹ • map n j v ∈ closedCell n (cellRep G j) := by
@@ -293,32 +344,26 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
         rw [hu']
         exact smul_mem_skeletonLT hcell _ hz
       · exact mem_sphere_zero_iff_norm.2 hu1
-    have hKL : K j (z, v) = L (cellRep G j) (q (cellRep G j) ⟨u, hu⟩) :=
+    let vu : closedBall (0 : Fin n → ℝ) 1 := ⟨u, hu⟩
+    have hKL : K j (z, v) =
+        L (cellRep G j) ⟨map n (cellRep G j) vu, vu, vu.2, rfl⟩ :=
       congrArg (L _) (Subtype.ext hu'.symm)
     cases z
     rw [hKL, hL, hψs _ u hus,
       ← S.apply_smul (cellElt G j)⁻¹ _ hz (smul_mem_skeletonLT hcell _ hz)]
     simp only [hu']
   obtain ⟨F, hF, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ S.toFun K hK
+  have hFKL (j : cell (univ : Set E) n) (z : Unit)
+      (v : closedBall (0 : Fin n → ℝ) 1) :
+      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.2)⟩) =
+        L (cellRep G j) ⟨(cellElt G j)⁻¹ • map n j v, hmem j v⟩ := by
+    rw [hFK]
+    rfl
   have hFeq {a b : E} (ha : a ∈ (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E))
       (hb : b ∈ (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E)) (hab : a = b) :
       F ((), ⟨a, ha⟩) = F ((), ⟨b, hb⟩) := by
     subst hab; rfl
-  -- On the open cell of `j`, the new function is the extension of the representative read
-  -- through the element carrying the representative to `j`.
-  have hFopen (j r : cell (univ : Set E) n) (hr : cellRep G j = r) (g : G)
-      (hg : g • openCell n r = openCell n j) (u : Fin n → ℝ) (hu : ‖u‖ < 1)
-      (hmem' : g • map n r u ∈ (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E)) :
-      F ((), ⟨g • map n r u, hmem'⟩) = ψ r u := by
-    subst hr
-    obtain rfl := eq_cellElt_of_smul_openCell hfree hg
-    have hw : cellElt G j • map n (cellRep G j) u ∈ openCell n j :=
-      hg ▸ smul_mem_smul_set ⟨u, mem_ball_zero_iff.2 hu, rfl⟩
-    have hv := ball_subset_closedBall (map_symm_mem_ball n hw)
-    rw [hFeq hmem' (map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 hv))
-      (map_map_symm n hw).symm, hFK j () ⟨_, hv⟩,
-      ← hL (cellRep G j) ⟨u, ball_subset_closedBall (mem_ball_zero_iff.2 hu)⟩]
-    exact congrArg (L _) (Subtype.ext (by simp [q, map_map_symm n hw]))
+  have hFopen := apply_gluedMap_openCell hfree ψ L hL hmem F hFKL
   -- A point of the `(n + 1)`-skeleton outside the `n`-skeleton is in an open `n`-cell.
   have hcases {z : E} (hz : z ∈ (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E)) :
       z ∈ (skeletonLT (univ : Set E) n : Set E) ∨ ∃ j : cell (univ : Set E) n, ∃ u, ‖u‖ < 1 ∧
@@ -355,9 +400,9 @@ private def sepSeq (hxy : y ∉ MulAction.orbit G x) : (n : ℕ) → SepStage G 
   | n + 1 => ((sepSeq hxy n).exists_succ hcell hfree hxy).choose
 
 include hcell hfree in
-/-- **Invariant separating functions.** Let `G` act on a Hausdorff CW complex `E` so that every
-element carries each open `n`-cell onto an open `n`-cell, and only `1` carries an open cell onto
-itself. Then two points `x` and `y` in different orbits are separated by a continuous
+/-- **Invariant separating functions.** Let `G` act on a Hausdorff CW complex `E` by homeomorphisms
+so that every element carries each open `n`-cell onto an open `n`-cell, and only `1` carries an open
+cell onto itself. Then two points `x` and `y` in different orbits are separated by a continuous
 `G`-invariant function `f : E → ℝ` with `f x = 1` and `f y = 0`. -/
 theorem exists_invariant_continuousMap_one_zero (hxy : y ∉ MulAction.orbit G x) :
     ∃ f : C(E, ℝ), (∀ (g : G) (z : E), f (g • z) = f z) ∧ f x = 1 ∧ f y = 0 := by
