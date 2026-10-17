@@ -72,10 +72,11 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
     mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x = 2 • x := by
   dsimp only
   have hx : (InnerProductSpace.toDual ℝ F).symm ((innerSL ℝ) x) = x := by
-    apply (InnerProductSpace.toDual ℝ F).injective
-    rw [(InnerProductSpace.toDual ℝ F).apply_symm_apply]
-    ext y
-    rw [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+    have hdual : (innerSL ℝ) x = (InnerProductSpace.toDual ℝ F) x := by
+      ext y
+      rw [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+    rw [hdual]
+    exact (InnerProductSpace.toDual ℝ F).symm_apply_apply x
   rw [mgradient_eq_gradient]
   simp [gradient, fderiv_norm_sq_apply, hx]
   rfl
