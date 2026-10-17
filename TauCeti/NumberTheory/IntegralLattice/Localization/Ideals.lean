@@ -68,4 +68,14 @@ theorem isEven_iff_localNormIdeal_le_span_two :
   rw [L.isEven_iff_normIdeal_le_span_singleton_two, L.localNormIdeal_eq_map 2,
     Ideal.map_le_iff_le_comap, hcomap]
 
+/-- An integral lattice is odd exactly when its dyadic integral form represents a unit.
+No nondegeneracy or unimodularity assumption is required. -/
+theorem not_isEven_iff_exists_isUnit_localIntegralForm_two :
+    ¬ L.IsEven ↔ ∃ x : L.LocalCarrier 2, IsUnit (L.localIntegralForm 2 x x) := by
+  have hmax : IsLocalRing.maximalIdeal ℤ_[2] = Ideal.span {(2 : ℤ_[2])} := by
+    simpa using PadicInt.maximalIdeal_eq_span_p (p := 2)
+  rw [L.isEven_iff_localNormIdeal_le_span_two, ← hmax]
+  simp only [localNormIdeal, LinearMap.BilinForm.normIdeal_le_iff,
+    IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, not_forall, not_not]
+
 end TauCeti.IntegralLattice
