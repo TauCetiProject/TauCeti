@@ -95,9 +95,9 @@ private noncomputable def mapStableConflationTriangleIso
     letI := gradedSplitStableToHomotopyCommShift (h := h)
     Triangle.mk ((dgClosedToHomotopy R).map S.f) ((dgClosedToHomotopy R).map S.g)
         (-((dgClosedToHomotopy R).map δ ≫ eqToHom (by
-          simpa only [coneIdentityInjectivePresentation_K] using
-            congrArg (dgClosedToHomotopy R).obj
-              (closedShiftFunctor_obj_of 1 (ForgetEnrichment.to _ S.X₁))))) ≅
+          simp only [coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
+            shiftFunctor_eq_homotopyShiftFunctor, homotopyShiftFunctor_obj_of,
+            ForgetEnrichment.to_of]))) ≅
       (gradedSplitStableToHomotopy (h := h)).mapTriangle.obj
         ((gradedSplitExact_isFrobenius (h := h)).stableConflationTriangle S hS) := by
   letI := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
@@ -131,7 +131,8 @@ private noncomputable def mapStableConflationTriangleIso
       Category.assoc]
 
 /-- Graded-split conflations give distinguished triangles. The third arrow is the negative
-class of the cokernel map induced by an extension to the first object's identity cone. -/
+class of the cokernel map induced by an extension to the first object's identity cone.
+The public cokernel equation identifies its endpoint with the cohomological shift. -/
 theorem mk_distinguished_of_conflation
     (hS : (gradedSplitExact (h := h)).Conflation S)
     (a : S.X₂ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).I)
@@ -140,9 +141,9 @@ theorem mk_distinguished_of_conflation
     (hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).p) :
     Triangle.mk ((dgClosedToHomotopy R).map S.f) ((dgClosedToHomotopy R).map S.g)
         (-((dgClosedToHomotopy R).map δ ≫ eqToHom (by
-          simpa only [coneIdentityInjectivePresentation_K] using
-            congrArg (dgClosedToHomotopy R).obj
-              (closedShiftFunctor_obj_of 1 (ForgetEnrichment.to _ S.X₁))))) ∈
+          simp only [coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
+            shiftFunctor_eq_homotopyShiftFunctor, homotopyShiftFunctor_obj_of,
+            ForgetEnrichment.to_of]))) ∈
       distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
   let := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
   let := (gradedSplitExact_isFrobenius (h := h)).stableShiftFunctor_additive
@@ -187,12 +188,10 @@ theorem coneTriangle_distinguished {M N : CurvedDGRightModuleCat.{u, u, u} h}
     eqToHom (coneIdentityInjectivePresentation_K N).symm
   have ha : S.f ≫ a = (coneIdentityInjectivePresentation N).i := by
     apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_I N))).mp
-    simpa [S, a, Category.assoc] using
-      coneInclusion_comp_coneMap f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) k hsq
+    simp [S, a, Category.assoc]
   have hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation N).p := by
     apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_K N))).mp
-    simpa [S, a, δ, Category.assoc] using
-      (coneMap_comp_coneProjection f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) k hsq).symm
+    simp [S, a, δ, Category.assoc]
   have hT := mk_distinguished_of_conflation hS a δ ha hδ
   apply (rotate_distinguished_triangle (coneTriangle f)).mpr
   simpa only [S, δ, coneTriangle_rotate, Functor.map_comp, eqToHom_map,
