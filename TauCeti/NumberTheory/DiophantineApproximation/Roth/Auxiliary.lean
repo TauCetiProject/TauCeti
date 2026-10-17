@@ -58,21 +58,65 @@ public section
 
 open Finset Module NumberField MvPolynomial Real
 
-open scoped IntermediateField ENNReal
+open scoped ENNReal
 
 namespace TauCeti
 
 variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
 
-/-- The jet `∂^d (a X^m)` at the diagonal point `(α, …, α)` is
-`(∏ⱼ (mⱼ choose dⱼ)) a α ^ (∑ⱼ (mⱼ - dⱼ))`. -/
-private theorem eval_const_hasseDeriv_monomial (α : K) (d m : ι →₀ ℕ) (a : K) :
-    eval (fun _ ↦ α) (hasseDeriv d (monomial m a)) =
-      ((∏ j, (m j).choose (d j) : ℕ) : K) * (a * α ^ ∑ j, (m j - d j)) := by
-  simp only [hasseDeriv_monomial, eval_monomial, Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero α),
-    Finsupp.prod_fintype _ _ (fun j ↦ Nat.choose_zero_right (m j)), prod_pow_eq_pow_sum,
-    Finsupp.tsub_apply]
-  ring
+/-- The coefficients of the polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is
+indexed by a finite set `s` of exponents. -/
+private theorem coeff_sum_monomial {A : Type*} [CommSemiring A] {s : Finset (ι → ℕ)}
+    (x : s → A) (m : ι →₀ ℕ) :
+    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).coeff m =
+      if h : ⇑m ∈ s then x ⟨m, h⟩ else 0 := by
+  classical
+  simp only [coeff_sum, coeff_monomial]
+  split_ifs with h
+  · rw [sum_eq_single ⟨m, h⟩]
+    · simp
+    · intro μ _ hμ
+      refine ite_eq_right_iff.mpr fun h' ↦ absurd (Subtype.ext ?_) hμ
+      simpa using congrArg DFunLike.coe h'
+    · simp
+  · refine sum_eq_zero fun μ _ ↦ ite_eq_right_iff.mpr fun h' ↦ absurd ?_ h
+    simp [← h']
+
+omit [Fintype ι] in
+/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` has degree at most `rᵢ` in `Xᵢ` when every exponent
+`μ ∈ s` satisfies `μᵢ ≤ rᵢ`. -/
+private theorem degreeOf_sum_monomial_le [Finite ι] {A : Type*} [CommSemiring A]
+    {s : Finset (ι → ℕ)} {r : ι → ℕ} (hs : ∀ μ ∈ s, ∀ i, μ i ≤ r i) (x : s → A) (i : ι) :
+    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).degreeOf i ≤ r i := by
+  have := Fintype.ofFinite ι
+  refine degreeOf_le_iff.mpr fun m hm ↦ ?_
+  rw [MvPolynomial.mem_support_iff, coeff_sum_monomial] at hm
+  split_ifs at hm with h
+  · exact hs _ h i
+  · exact absurd rfl hm
+
+omit [Fintype ι] in
+/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` is nonzero when its coefficient vector `x` is. -/
+private theorem sum_monomial_ne_zero [Finite ι] {A : Type*} [CommSemiring A]
+    {s : Finset (ι → ℕ)} {x : s → A} (hx : x ≠ 0) :
+    ∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ) ≠ 0 := by
+  have := Fintype.ofFinite ι
+  obtain ⟨μ, hμ⟩ := Function.ne_iff.mp hx
+  refine ne_of_apply_ne (fun Q : MvPolynomial ι A ↦ Q.coeff (Finsupp.equivFunOnFinite.symm μ.1)) ?_
+  rw [coeff_sum_monomial]
+  simpa [μ.2] using hμ
+
+/-- The box `∏ᵢ {0, …, rᵢ}` has `∏ᵢ (rᵢ + 1)` points. -/
+private theorem card_piFinset_range [DecidableEq ι] (r : ι → ℕ) :
+    (#(Fintype.piFinset fun i ↦ range (r i + 1)) : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
+  simp [Fintype.card_piFinset]
+
+/-- The box `∏ᵢ {0, …, rᵢ}` has at most `2 ^ (∑ᵢ rᵢ)` points. -/
+private theorem card_piFinset_range_le_two_pow [DecidableEq ι] (r : ι → ℕ) :
+    #(Fintype.piFinset fun i ↦ range (r i + 1)) ≤ 2 ^ ∑ i, r i := by
+  rw [Fintype.card_piFinset, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  simpa using Nat.lt_two_pow_self
 
 /-- Counting the equations: if `2 D ≤ exp (ε² n / 2)`, then `2 D` times the number of points `d`
 of the box `∏ᵢ {0, …, rᵢ}` with `∑ᵢ dᵢ / rᵢ ≤ (n / 2) (1 - ε)` is at most the number
@@ -133,17 +177,16 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
   -- with `∑ᵢ dᵢ / rᵢ ≤ t`.
   set box : Finset (ι → ℕ) := Fintype.piFinset fun i ↦ range (r i + 1)
   set rows : Finset (ι → ℕ) := {d ∈ box | ∑ i, (d i : ℝ) / r i ≤ t}
-  let toF : (ι → ℕ) → ι →₀ ℕ := Finsupp.equivFunOnFinite.symm
-  have htoF (f : ι → ℕ) (j : ι) : toF f j = f j := rfl
   have hbox {μ : ι → ℕ} : μ ∈ box ↔ ∀ i, μ i ≤ r i := by
     simp [box]
   -- The equation for `d`, multiplied by `b ^ R`, has coefficient `e d μ` at the unknown
   -- coefficient of `X ^ μ`.
   let e : rows → box → K := fun d μ ↦
-    eval (fun _ ↦ α) (hasseDeriv (toF d) (monomial (toF μ) ((b : K) ^ R)))
+    eval (fun _ ↦ α) (hasseDeriv (Finsupp.equivFunOnFinite.symm d.1)
+      (monomial (Finsupp.equivFunOnFinite.symm μ.1) ((b : K) ^ R)))
   have he_eq (d : rows) (μ : box) : e d μ =
-      ((∏ j, (μ.1 j).choose (d.1 j) : ℕ) : K) * ((b : K) ^ R * α ^ ∑ j, (μ.1 j - d.1 j)) :=
-    eval_const_hasseDeriv_monomial α _ _ _
+      ((∏ j, (μ.1 j).choose (d.1 j) : ℕ) : K) * ((b : K) ^ R * α ^ ∑ j, (μ.1 j - d.1 j)) := by
+    simp only [e, eval_const_hasseDeriv_monomial, Finsupp.coe_equivFunOnFinite_symm]
   have hdeg (d : rows) (μ : box) : ∑ j, (μ.1 j - d.1 j) ≤ R :=
     sum_le_sum fun j _ ↦ (Nat.sub_le _ _).trans (hbox.mp μ.2 j)
   have hchoose (d : rows) (μ : box) : ∏ j, (μ.1 j).choose (d.1 j) ≤ 2 ^ R :=
@@ -164,7 +207,7 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
     rw [hae, he_eq]
     exact house_natCast_mul_pow_mul_pow_le α (hchoose d μ) (hdeg d μ)
   have hN : (Fintype.card box : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
-    simp [box, Fintype.card_piFinset]
+    rw [Fintype.card_coe, card_piFinset_range]
   have hM : 2 * (finrank ℚ K * Fintype.card rows : ℝ) ≤ Fintype.card box := by
     rw [hN, Fintype.card_coe]
     exact two_mul_mul_card_filter_le hr hε (Nat.cast_nonneg _) hn
@@ -185,57 +228,30 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
     obtain ⟨i⟩ := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hι)
     exact (Nat.one_le_iff_ne_zero.mpr (hr i)).trans (single_le_sum (by simp) (mem_univ i))
   have hNR : Fintype.card box ≤ 2 ^ R := by
-    have : (Fintype.card box : ℝ) ≤ 2 ^ R := by
-      rw [hN, ← prod_pow_eq_pow_sum]
-      gcongr with i
-      exact_mod_cast Nat.lt_two_pow_self
-    exact_mod_cast this
+    rw [Fintype.card_coe]
+    exact card_piFinset_range_le_two_pow r
   -- The polynomial with coefficient vector `x`.
-  set P : MvPolynomial ι ℤ := ∑ μ : box, monomial (toF μ) (x μ)
-  have hcoeff (m : ι →₀ ℕ) : P.coeff m = if h : ⇑m ∈ box then x ⟨m, h⟩ else 0 := by
-    simp only [P, coeff_sum, coeff_monomial]
-    split_ifs with h
-    · rw [sum_eq_single ⟨m, h⟩]
-      · simp [toF]
-      · intro μ _ hμ
-        refine ite_eq_right_iff.mpr fun h' ↦ absurd (Subtype.ext ?_) hμ
-        simpa [toF] using congrArg DFunLike.coe h'
-      · simp
-    · refine sum_eq_zero fun μ _ ↦ ite_eq_right_iff.mpr fun h' ↦ absurd ?_ h
-      simp [toF, ← h']
-  have hPdeg (i : ι) : P.degreeOf i ≤ r i := by
-    refine MvPolynomial.degreeOf_le_iff.mpr fun m hm ↦ ?_
-    rw [MvPolynomial.mem_support_iff, hcoeff] at hm
-    split_ifs at hm with h
-    · exact hbox.mp h i
-    · exact absurd rfl hm
-  refine ⟨P, ?_, hPdeg, ?_, fun m ↦ ?_⟩
-  · obtain ⟨μ, hμ⟩ := Function.ne_iff.mp hx0
-    refine ne_of_apply_ne (fun Q : MvPolynomial ι ℤ ↦ Q.coeff (toF μ)) ?_
-    simpa [hcoeff, μ.2, toF] using hμ
+  set P : MvPolynomial ι ℤ := ∑ μ : box, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)
+  have hPdeg (i : ι) : P.degreeOf i ≤ r i := degreeOf_sum_monomial_le (fun _ ↦ hbox.mp) x i
+  refine ⟨P, sum_monomial_ne_zero hx0, hPdeg, ?_, fun m ↦ ?_⟩
   · -- A jet of order `d ≤ r` and weight `< t` is, up to the factor `b ^ R`, the equation `d`.
     refine ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero
       (fun i ↦ MvPolynomial.degreeOf_le_iff.mpr fun m hm ↦
         MvPolynomial.degreeOf_le_iff.mp (hPdeg i) m (support_map_subset _ _ hm))
       fun d hdr hdt ↦ ?_
     have hdrow : ⇑d ∈ rows := mem_filter.mpr ⟨hbox.mpr hdr, hdt.le⟩
-    have hrow : ∑ μ : box, e ⟨d, hdrow⟩ μ * (x μ : K) = 0 := by
-      have := RingHom.map_mulVec (algebraMap (𝓞 K) K) a (fun μ ↦ (x μ : 𝓞 K)) ⟨d, hdrow⟩
-      rw [hax, Pi.zero_apply, map_zero] at this
-      simp only [Matrix.mulVec, dotProduct, Matrix.map_apply, Function.comp_apply,
-        map_intCast] at this
-      -- `algebraMap (𝓞 K) K (a d μ)` is `e d μ` by `RingOfIntegers.map_mk`, which holds by
-      -- `rfl`.
-      exact this.symm
+    -- `(a d μ : K)` is `e d μ` by `hae`.
+    have hrow : ∑ μ : box, e ⟨d, hdrow⟩ μ * (x μ : K) = 0 :=
+      sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax ⟨d, hdrow⟩
     have hb' : (b : K) ^ R ≠ 0 := pow_ne_zero _ (by exact_mod_cast hb.ne')
     refine (mul_eq_zero.mp ?_).resolve_left hb'
     rw [← hrow]
     simp only [P, map_sum, map_monomial, eq_intCast, mul_sum]
     refine sum_congr rfl fun μ _ ↦ ?_
     rw [he_eq, eval_const_hasseDeriv_monomial]
-    simp only [htoF]
+    simp only [Finsupp.coe_equivFunOnFinite_symm]
     ring
-  · rw [hcoeff]
+  · rw [show P.coeff m = _ from coeff_sum_monomial x m]
     split_ifs with h
     · exact (hxle _).trans (rpow_div_sub_le hb hH hN₀ (by linarith) hNR hR)
     · simp
@@ -255,27 +271,12 @@ theorem exists_roth_auxiliary_polynomial {F : Type*} [Field F] [CharZero F] {α 
       ENNReal.ofReal (Fintype.card ι / 2 * (1 - ε)) ≤
         weightedIndex r (fun _ ↦ α) (P.map (Int.castRingHom F)) ∧
       ∀ m, |(P.coeff m : ℝ)| ≤ (12 * b * max 1 (house α)) ^ ∑ i, r i := by
-  have hb₀ : (b : F) ≠ 0 := by exact_mod_cast hb.ne'
-  have hα : IsIntegral ℚ α := by
-    have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul
-      (hbα.tower_top (A := ℚ))
-    rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ hb₀, one_mul] at h
   -- Work in the number field `K = ℚ(α)`, of degree `d`.
-  let K := ℚ⟮α⟯
-  have : FiniteDimensional ℚ K := IntermediateField.adjoin.finiteDimensional hα
-  have : NumberField K := ⟨⟩
-  have hdK : finrank ℚ K = (minpoly ℚ α).natDegree := IntermediateField.adjoin.finrank hα
-  set α' := IntermediateField.AdjoinSimple.gen ℚ α
-  have hα' : algebraMap K F α' = α := IntermediateField.AdjoinSimple.algebraMap_gen ℚ α
-  have hbα' : IsIntegral ℤ ((b : K) * α') := by
-    rw [← isIntegral_algHom_iff ((IsScalarTower.toAlgHom ℚ K F).restrictScalars ℤ)
-      (algebraMap K F).injective]
-    simpa [α', IntermediateField.AdjoinSimple.coe_gen] using hbα
+  obtain ⟨K, _, α', hα', hdK, hbα', hhouse⟩ :=
+    exists_numberField_of_isIntegral_natCast_mul hb.ne' hbα
   rw [← hdK] at hn
   obtain ⟨P, hP0, hPdeg, hPind, hPcoeff⟩ :=
     exists_roth_auxiliary_polynomial_of_numberField α' hb hbα' hε hn hr
-  have hhouse : NumberField.house α' = house α := by
-    rw [← house_eq_numberField_house, ← house_map (algebraMap K F), hα']
   refine ⟨P, hP0, hPdeg, ?_, by rwa [hhouse] at hPcoeff⟩
   -- Transport the index from `K` to `F`; both integer casts into `F` agree.
   rw [← weightedIndex_map (algebraMap K F) (algebraMap K F).injective, MvPolynomial.map_map,

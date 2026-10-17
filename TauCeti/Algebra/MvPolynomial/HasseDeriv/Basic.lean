@@ -33,6 +33,8 @@ Roth's theorem.
 
 * `MvPolynomial.hasseDeriv_monomial`, `MvPolynomial.hasseDeriv_coeff`: the values on monomials
   and the coefficients `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`.
+* `MvPolynomial.eval_const_hasseDeriv_monomial`: the jet `∂^d (a X^m)` at a diagonal point
+  `(x, …, x)`.
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
   `∂^0` is the identity and every other Hasse derivative kills constants.
 * `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
@@ -79,6 +81,16 @@ theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
     hasseDeriv d (monomial m a) =
       monomial (m - d) (((d.prod fun j k ↦ (m j).choose k : ℕ) : R) * a) := by
   simp [hasseDeriv]
+
+/-- The jet `∂^d (a X^m)` at the diagonal point `(x, …, x)` is
+`(∏ⱼ (mⱼ choose dⱼ)) a x ^ (∑ⱼ (mⱼ - dⱼ))`. -/
+theorem eval_const_hasseDeriv_monomial [Fintype σ] (x : R) (d m : σ →₀ ℕ) (a : R) :
+    eval (fun _ ↦ x) (hasseDeriv d (monomial m a)) =
+      ((∏ j, (m j).choose (d j) : ℕ) : R) * (a * x ^ ∑ j, (m j - d j)) := by
+  simp only [hasseDeriv_monomial, eval_monomial, prod_fintype _ _ (fun _ ↦ pow_zero x),
+    prod_fintype _ _ (fun j ↦ Nat.choose_zero_right (m j)), Finset.prod_pow_eq_pow_sum,
+    tsub_apply]
+  ring
 
 /-- The coefficients of a Hasse derivative:
 `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`. -/

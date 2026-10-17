@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Height.Naive
 import Mathlib.Analysis.Complex.IsIntegral
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.NumberTheory.NumberField.AdjoinPair
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The house of an algebraic number
@@ -57,6 +58,8 @@ of bounded degree and bounded house.
   an algebraic integer of degree `d` has naive height at most `(2B)ᵈ` whenever its house is at
   most `B` with `1 ≤ B`; in particular a nonzero algebraic integer satisfies
   `H(x) ≤ (2 ⌈x⌉)ᵈ`.
+* `TauCeti.exists_numberField_of_isIntegral_natCast_mul`: an element `α` with `b α` integral
+  lies in the number field `ℚ(α)` of degree `deg α`, with the same house.
 * `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
   at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
 
@@ -70,6 +73,8 @@ of bounded degree and bounded house.
 public section
 
 open Polynomial
+
+open scoped IntermediateField
 
 namespace TauCeti
 
@@ -294,6 +299,26 @@ theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {
 theorem naiveHeight_le_two_mul_house_pow {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
     naiveHeight x ≤ (2 * house x) ^ (minpoly ℚ x).natDegree :=
   naiveHeight_le_two_mul_pow_of_house_le hx (one_le_house hx h0) le_rfl
+
+/-- An element `α` of `F` such that `b α` is integral over `ℤ` for some `b ≠ 0` lies in an
+intermediate number field `K` of degree `deg α`, namely `ℚ(α)`, in which `b α` is integral and
+whose house of `α` is the house of `α`. This reduces the construction of auxiliary polynomials
+for such `α` to Siegel's lemma over a number field. -/
+theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b ≠ 0)
+    (hbα : IsIntegral ℤ ((b : F) * α)) :
+    ∃ (K : IntermediateField ℚ F) (_ : NumberField K) (α' : K), algebraMap K F α' = α ∧
+      Module.finrank ℚ K = (minpoly ℚ α).natDegree ∧ IsIntegral ℤ ((b : K) * α') ∧
+      NumberField.house α' = house α := by
+  have hα := isIntegral_rat_of_isIntegral_natCast_mul hb hbα
+  have : FiniteDimensional ℚ ℚ⟮α⟯ := IntermediateField.adjoin.finiteDimensional hα
+  have : NumberField ℚ⟮α⟯ := {}
+  have hα' := IntermediateField.AdjoinSimple.algebraMap_gen ℚ α
+  refine ⟨ℚ⟮α⟯, this, IntermediateField.AdjoinSimple.gen ℚ α, hα',
+    IntermediateField.adjoin.finrank hα, ?_, ?_⟩
+  · rw [← isIntegral_algHom_iff ((IsScalarTower.toAlgHom ℚ ℚ⟮α⟯ F).restrictScalars ℤ)
+      (algebraMap ℚ⟮α⟯ F).injective]
+    simpa [IntermediateField.AdjoinSimple.coe_gen] using hbα
+  · rw [← house_coe, ← IntermediateField.algebraMap_apply, hα']
 
 /-- In a number field, the house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when
 `c ≤ 2 ^ n` and `j ≤ n`. -/
