@@ -19,9 +19,10 @@ import TauCeti.Probability.Distributions.Poisson.Basic
 /-!
 # Exponential tilts of the Gaussian, gamma, Poisson, and binomial laws
 
-Tilting a law `μ` on `ℝ` or `ℕ` by `exp (t * x)` gives the probability law
-`exp (t * x) / mgf id μ t • μ`. Each of the four families below is closed under this operation,
-and the tilt acts on the parameters as follows.
+When `exp (t * x)` is `μ`-integrable, tilting a law `μ` on `ℝ` or `ℕ` by `exp (t * x)` gives the
+probability law with density `exp (t * x) / ∫ exp (t * y) ∂μ` with respect to `μ`; otherwise
+`Measure.tilted` returns the zero measure. Each of the four families below is closed under this
+operation, and the tilt acts on the parameters as follows.
 
 * `TauCeti.Probability.gaussianReal_tilted_mul`: the Gaussian `N(m, v)` tilts to
   `N(m + v t, v)`, including the point mass at variance zero;
@@ -33,7 +34,7 @@ and the tilt acts on the parameters as follows.
   tilts to success probability `p * exp t / (1 - p + p * exp t)`, including the point masses at
   `p = 0` and `p = 1`.
 
-The continuous identities compare densities through `TauCeti.withDensity_tilted`, and the discrete
+The continuous identities compare densities through `TauCeti.tilted_withDensity`, and the discrete
 ones compare singleton masses through `TauCeti.tilted_singleton`; in each case the normalizing
 constant is the family's known moment-generating function.
 
@@ -63,7 +64,7 @@ theorem gaussianReal_tilted_mul (m : ℝ) (v : ℝ≥0) (t : ℝ) :
   have hZ : ∫ x, exp (t * x) ∂gaussianReal m v = exp (m * t + v * t ^ 2 / 2) := by
     simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := m) (v := v)) t
   rw [gaussianReal_of_var_ne_zero _ hv, gaussianReal_of_var_ne_zero _ hv,
-    withDensity_tilted (measurable_gaussianPDF _ _).aemeasurable (by fun_prop),
+    tilted_withDensity (measurable_gaussianPDF _ _).aemeasurable (by fun_prop),
     ← gaussianReal_of_var_ne_zero _ hv, hZ]
   congr with x
   rw [gaussianPDF, gaussianPDF, ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _)]
@@ -79,7 +80,7 @@ theorem gammaMeasure_tilted_mul {a r t : ℝ} (ha : 0 < a) (hr : 0 < r) (ht : t 
     (gammaMeasure a r).tilted (t * ·) = gammaMeasure a (r - t) := by
   have hZ : ∫ x, exp (t * x) ∂gammaMeasure a r = (1 - t / r) ^ (-a) := by
     simpa [mgf] using mgf_id_gammaMeasure ha hr ht
-  rw [gammaMeasure, withDensity_tilted (g := gammaPDF a r)
+  rw [gammaMeasure, tilted_withDensity (g := gammaPDF a r)
     (measurable_gammaPDFReal a r).ennreal_ofReal.aemeasurable (by fun_prop), ← gammaMeasure, hZ,
     gammaMeasure]
   congr with x

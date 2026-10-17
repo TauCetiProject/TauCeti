@@ -17,7 +17,7 @@ Mathlib's `MeasureTheory.Measure.tilted` sends a measure `μ` and a potential `f
 measure `(∫ exp f ∂μ)⁻¹ • exp f • μ`. This file adds the facts used to identify tilted
 members of concrete families of distributions.
 
-* `TauCeti.withDensity_tilted`: tilting a measure with density `g` multiplies `g` by the
+* `TauCeti.tilted_withDensity`: tilting a measure with density `g` multiplies `g` by the
   normalized weight, so a tilted law with a density again has an explicit density.
 * `TauCeti.tilted_singleton`: the mass of a singleton under a tilted measure, which identifies
   tilted laws on countable spaces; `TauCeti.tilted_dirac` records that point masses are fixed.
@@ -38,7 +38,7 @@ variable {α β : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
 
 /-- Tilting a measure with density `g` multiplies the density by the normalized exponential
 weight. -/
-theorem withDensity_tilted {μ : Measure α} {g : α → ℝ≥0∞} (hg : AEMeasurable g μ) {f : α → ℝ}
+theorem tilted_withDensity {μ : Measure α} {g : α → ℝ≥0∞} (hg : AEMeasurable g μ) {f : α → ℝ}
     (hf : AEMeasurable f μ) :
     (μ.withDensity g).tilted f = μ.withDensity
       (fun x ↦ g x * ENNReal.ofReal (exp (f x) / ∫ y, exp (f y) ∂μ.withDensity g)) := by
