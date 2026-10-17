@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZLattice.Basic
-public import Mathlib.Analysis.Convex.Gauge
-import Mathlib.Algebra.Order.Round
-import Mathlib.Analysis.LocallyConvex.Basic
+public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
-# Lattice bases adapted to a flag, and their gauge bounds
+# Lattice bases adapted to a flag
 
 Let `L` be a discrete subgroup of a finite-dimensional real normed space `E`, and let
 `a 0, …, a (n - 1)` be lattice vectors forming an `ℝ`-basis of `E`. They need not span `L`: they
@@ -21,21 +18,15 @@ flag of subspaces `span ℝ {a i | i ≤ j}`: each `b j` is a combination of `a 
 reduced, being either `a j` itself or a combination all of whose coefficients have absolute value
 at most `1 / 2` (`ZLattice.exists_basis_triangular`).
 
-For a convex symmetric absorbent set `B`, the gauge is a seminorm, so the reduction bounds the size
-of the basis vectors by that of the given vectors (`ZLattice.exists_basis_gauge_le`):
-
-`gauge B (b j) ≤ max (gauge B (a j)) ((∑ i ≤ j, gauge B (a i)) / 2)`.
-
-Applied to linearly independent lattice vectors realising the successive minima of `B`, this
-turns them into a basis of `L` whose vectors are controlled by the minima, at the cost of the
-factor `max 1 ((j + 1) / 2)` in the `j`-th vector. The lattice is not assumed to be a full lattice:
-that it is one follows from the existence of the vectors `a`.
+The gauge bound for an independent family of lattice vectors is already provided by
+`ZLattice.exists_basis_gauge_le` in `TauCeti.Algebra.Module.ZLattice.GaugeBasis`.
+This file adds the coordinate-level triangular and reduced basis statement, without redeclaring
+that gauge estimate. The lattice is not assumed to be full: this follows from the given basis.
 
 ## Main results
 
 * `ZLattice.exists_basis_triangular`: a reduced basis of `L` that is triangular with respect to an
   `ℝ`-basis of `E` consisting of lattice vectors.
-* `ZLattice.exists_basis_gauge_le`: the gauge bound for that basis.
 
 ## References
 
@@ -180,40 +171,5 @@ theorem exists_basis_triangular (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L
       v j := by
     simp
   exact hb ▸ ⟨htri j, hred j⟩
-
-/-- **A lattice basis controlled by independent lattice vectors.** Let `L` be a discrete subgroup
-of a finite-dimensional real normed space `E`, let `a 0, …, a (n - 1)` be `ℝ`-linearly independent
-vectors of `L` with `n = finrank ℝ E`, and let `B` be a convex, symmetric, absorbent set. Then `L`
-has a `ℤ`-basis `b` with
-`gauge B (b j) ≤ max (gauge B (a j)) ((∑ i ≤ j, gauge B (a i)) / 2)` for every `j`. -/
-theorem exists_basis_gauge_le [FiniteDimensional ℝ E] {a : Fin n → E}
-    (ha : LinearIndependent ℝ a) (haL : ∀ i, a i ∈ L) (hn : n = finrank ℝ E) {B : Set E}
-    (hBc : Convex ℝ B) (hBs : ∀ x ∈ B, -x ∈ B) (hBa : Absorbent ℝ B) :
-    ∃ b : Basis (Fin n) ℤ L, ∀ j,
-      gauge B (b j) ≤ max (gauge B (a j)) ((∑ i ∈ Finset.Iic j, gauge B (a i)) / 2) := by
-  set e := basisOfLinearIndependentOfCardEqFinrank' a ha (by simp [hn])
-  have he : ⇑e = a := coe_basisOfLinearIndependentOfCardEqFinrank' ..
-  obtain ⟨b, hb⟩ := exists_basis_triangular e (by simpa [he] using haL)
-  refine ⟨b, fun j ↦ ?_⟩
-  obtain ⟨htri, h | h⟩ := hb j
-  · rw [h, he]
-    exact le_max_left _ _
-  refine le_max_of_le_right ?_
-  have hbal : Balanced ℝ B := (balanced_iff_neg_mem hBc).2 hBs
-  -- Expand `b j` in the basis `a`; only the coordinates `i ≤ j` are nonzero.
-  have hexp : (b j : E) = ∑ i ∈ Finset.Iic j, e.repr (b j) i • a i := by
-    conv_lhs => rw [← e.sum_repr (b j)]
-    rw [he]
-    refine (Finset.sum_subset (Finset.subset_univ _) fun i _ hi ↦ ?_).symm
-    rw [htri i (by simpa using hi), zero_smul]
-  calc gauge B (b j) = gauge B (∑ i ∈ Finset.Iic j, e.repr (b j) i • a i) := congrArg _ hexp
-    _ ≤ ∑ i ∈ Finset.Iic j, gauge B (e.repr (b j) i • a i) := gauge_sum_le hBc hBa _ _
-    _ = ∑ i ∈ Finset.Iic j, |e.repr (b j) i| * gauge B (a i) := by
-        simp [gauge_smul hbal, Real.norm_eq_abs]
-    _ ≤ ∑ i ∈ Finset.Iic j, 1 / 2 * gauge B (a i) :=
-        Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (h i) (gauge_nonneg _)
-    _ = (∑ i ∈ Finset.Iic j, gauge B (a i)) / 2 := by
-        rw [← Finset.mul_sum]
-        ring
 
 end ZLattice
