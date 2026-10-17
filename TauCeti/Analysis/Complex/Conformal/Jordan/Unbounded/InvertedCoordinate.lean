@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocallyConnectedBoundary
+public import Mathlib.Analysis.Calculus.Deriv.Inv
+public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 
 /-!
 # Changing the centre of an inverted boundary coordinate
 
 A conformal map onto an unbounded domain can be controlled at all of its accesses to infinity by
-a bounded coordinate `g = (f - q)⁻¹`, where `q` is any point outside the domain.  Local geometry at
-one access, however, is naturally expressed by inversion about a geometric centre `c`, followed by
-a nonzero scale `b`.
+a bounded coordinate `g = (f - q)⁻¹`, where `q` is any point outside the closure of the domain.
+Local geometry at one access, however, is naturally expressed by inversion about a geometric
+centre `c`, followed by a nonzero scale `b`.
 
 The linear fractional change
 
@@ -116,12 +118,13 @@ theorem exists_ball_recenterInvertedCoordinate_denominator_ne {S : Set ℂ} {g :
 /-- **A recentered coordinate near a boundary prevertex.** Suppose `g = (f - q)⁻¹` in the upper
 half-plane, is continuous on the closed upper half-plane and holomorphic and nonzero in its
 interior, and vanishes at a real boundary point `x`. For every new centre `c` and nonzero scale
-`b`, on some closed upper half-disc about `x` the recentered coordinate
+`b`, there is a radius `r > 0` such that on the open disc of radius `r` about `x` intersected
+with the closed upper half-plane the recentered coordinate
 
 `b * g / (1 + (q - c) * g)`
 
-has no pole, is continuous up to the boundary, holomorphic and nonzero in the interior, vanishes
-at `x`, and agrees there with `b / (f - c)`. -/
+has no pole, is continuous, and vanishes at `x`; on the part of that disc inside the open upper
+half-plane it is holomorphic and nonzero and agrees with `b / (f - c)`. -/
 theorem exists_ball_recenterInvertedCoordinate {f g : ℂ → ℂ} {q c b : ℂ} {x : ℝ}
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
     (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
