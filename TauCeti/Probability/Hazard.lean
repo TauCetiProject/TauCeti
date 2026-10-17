@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import TauCeti.Probability.Cdf.Density
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
 # Survival functions and hazard rates

@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
-public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
 # Cumulative distribution functions
