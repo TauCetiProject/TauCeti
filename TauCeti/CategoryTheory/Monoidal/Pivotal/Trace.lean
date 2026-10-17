@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Basic
+public import TauCeti.CategoryTheory.Monoidal.Scalar
 
 /-!
 # Left and right traces in a pivotal category
@@ -35,7 +36,8 @@ additive, and `R`-linear in an `R`-linear monoidal category.
 ## Main declarations
 
 * `TauCeti.leftTrace` and `TauCeti.rightTrace`: the two traces of an endomorphism, with their
-  unfolded forms `TauCeti.leftTrace_eq_pivotalIsoApp` and `TauCeti.rightTrace_eq_pivotalIsoApp`;
+  defining formulas `TauCeti.leftTrace_def` and `TauCeti.rightTrace_def` and their unfolded
+  forms `TauCeti.leftTrace_eq_pivotalIsoApp` and `TauCeti.rightTrace_eq_pivotalIsoApp`;
 * `TauCeti.leftDim` and `TauCeti.rightDim`: the two dimensions of an object, the traces of its
   identity, and invariant under isomorphism by `TauCeti.leftDim_congr` and
   `TauCeti.rightDim_congr`;
@@ -85,6 +87,16 @@ noncomputable def leftDim (X : C) : 𝟙_ C ⟶ 𝟙_ C :=
 noncomputable def rightDim (X : C) : 𝟙_ C ⟶ 𝟙_ C :=
   rightTrace (𝟙 X)
 
+/-- The defining formula of the left trace, with the coevaluation of `pivotalExactPairing X`. -/
+theorem leftTrace_def {X : C} (f : X ⟶ X) :
+    leftTrace f = @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) ≫ Xᘁ ◁ f ≫ ε_ X Xᘁ :=
+  (rfl)
+
+/-- The defining formula of the right trace, with the evaluation of `pivotalExactPairing X`. -/
+theorem rightTrace_def {X : C} (f : X ⟶ X) :
+    rightTrace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ @evaluation C _ _ Xᘁ X (pivotalExactPairing X) :=
+  (rfl)
+
 /-- The left trace of an identity is the left dimension. -/
 @[simp]
 theorem leftTrace_id (X : C) : leftTrace (𝟙 X) = leftDim X :=
@@ -100,22 +112,26 @@ theorem rightTrace_id (X : C) : rightTrace (𝟙 X) = rightDim X :=
 theorem leftTrace_eq_pivotalIsoApp {X : C} (f : X ⟶ X) :
     leftTrace f =
       η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (pivotalIsoApp X).inv ≫ Xᘁ ◁ f ≫ ε_ X Xᘁ := by
-  rw [leftTrace, pivotalExactPairing_coevaluation, Category.assoc]
+  rw [leftTrace_def, pivotalExactPairing_coevaluation, Category.assoc]
 
 /-- The right trace with the pivotal isomorphism written out:
 `rightTrace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ φ_X ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ`. -/
 theorem rightTrace_eq_pivotalIsoApp {X : C} (f : X ⟶ X) :
     rightTrace f =
       η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (pivotalIsoApp X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by
-  rw [rightTrace, pivotalExactPairing_evaluation]
+  rw [rightTrace_def, pivotalExactPairing_evaluation]
 
 /-- **Cyclicity of the left trace**: `leftTrace (f ≫ g) = leftTrace (g ≫ f)`. -/
 theorem leftTrace_comm {X Y : C} (f : X ⟶ Y) (g : Y ⟶ X) :
     leftTrace (f ≫ g) = leftTrace (g ≫ f) := by
   rw [leftTrace_eq_pivotalIsoApp, leftTrace_eq_pivotalIsoApp, MonoidalCategory.whiskerLeft_comp,
-    Category.assoc, ← rightAdjointMate_comp_evaluation g, whisker_exchange_assoc,
-    whisker_exchange_assoc, ← coevaluation_comp_rightAdjointMate_assoc (gᘁ),
-    ← MonoidalCategory.whiskerLeft_comp_assoc, pivotalIsoApp_inv_naturality,
+    Category.assoc]
+  -- Slide `g` around the loop: at the evaluation `Xᘁ ◁ g` becomes its mate `gᘁ ▷ Y`, which
+  -- passes the whiskerings by `Xᘁ` and reaches the coevaluation as `Yᘁ ◁ gᘁᘁ`.
+  rw [← rightAdjointMate_comp_evaluation g, whisker_exchange_assoc, whisker_exchange_assoc,
+    ← coevaluation_comp_rightAdjointMate_assoc (gᘁ)]
+  -- Naturality of `φ⁻¹` turns `gᘁᘁ ≫ φ_X⁻¹` into `φ_Y⁻¹ ≫ g`.
+  rw [← MonoidalCategory.whiskerLeft_comp_assoc, pivotalIsoApp_inv_naturality,
     MonoidalCategory.whiskerLeft_comp_assoc, MonoidalCategory.whiskerLeft_comp, Category.assoc]
 
 /-- **The mate exchanges the two traces**: the left trace of `fᘁ` is the right trace of `f`. -/
@@ -172,12 +188,8 @@ open Functor.LaxMonoidal Functor.OplaxMonoidal
 /-- The left dimension of the unit is `𝟙`. -/
 @[simp]
 theorem leftDim_unit : leftDim (𝟙_ C) = 𝟙 (𝟙_ C) := by
-  -- `φ_𝟙⁻¹` is the inverse unit comparison of the double right dual functor, whose source
-  -- `(doubleRightDualFunctor C).obj (𝟙_ C)` is `(𝟙_ C)ᘁᘁ` by `doubleRightDualFunctor_obj`.
-  have h : (pivotalIsoApp (𝟙_ C)).inv = η (doubleRightDualFunctor C) :=
-    Iso.inv_ext ((congrArg (· ≫ η (doubleRightDualFunctor C))
-      pivotalIsoApp_unit_hom).trans (Functor.Monoidal.ε_η _))
-  rw [leftDim, leftTrace_eq_pivotalIsoApp, h, doubleRightDualFunctor_η]
+  -- `φ_𝟙⁻¹` is the inverse unit comparison of the double right dual functor.
+  rw [leftDim, leftTrace_eq_pivotalIsoApp, pivotalIsoApp_unit_inv, doubleRightDualFunctor_η]
   simp only [MonoidalCategory.whiskerLeft_id, Category.id_comp, MonoidalCategory.whiskerLeft_comp,
     Category.assoc, coevaluation_comp_rightMate_assoc]
   rw [← whisker_exchange_assoc, rightDualIso_hom, rightDualIso_inv,
@@ -194,31 +206,17 @@ theorem rightDim_unit : rightDim (𝟙_ C) = 𝟙 (𝟙_ C) := by
 /-- **The left trace of a scalar is itself**: for `a : 𝟙_ C ⟶ 𝟙_ C`, `leftTrace a = a`. -/
 @[simp]
 theorem leftTrace_unit (a : 𝟙_ C ⟶ 𝟙_ C) : leftTrace a = a := by
-  -- A scalar acting on the right of `Y ⊗ 𝟙_ C` can be moved past any morphism to the unit.
-  have key {Y : C} (e : Y ⊗ 𝟙_ C ⟶ 𝟙_ C) : Y ◁ a ≫ e = e ≫ a := by
-    have ha : a = (ρ_ (𝟙_ C)).inv ≫ 𝟙_ C ◁ a ≫ (ρ_ (𝟙_ C)).hom := by
-      rw [← unitors_equal, ← unitors_inv_equal, leftUnitor_naturality, Iso.inv_hom_id_assoc]
-    conv_rhs => rw [ha, rightUnitor_inv_naturality_assoc, ← whisker_exchange_assoc,
-      rightUnitor_naturality]
-    simp
   calc leftTrace a = leftDim (𝟙_ C) ≫ a := by
-        rw [leftDim, leftTrace, leftTrace, MonoidalCategory.whiskerLeft_id, Category.id_comp, key,
-          Category.assoc]
+        rw [leftDim, leftTrace_def, leftTrace_def, MonoidalCategory.whiskerLeft_id,
+          Category.id_comp, whiskerLeft_scalar_comp, Category.assoc]
     _ = a := by rw [leftDim_unit, Category.id_comp]
 
 /-- **The right trace of a scalar is itself**: for `a : 𝟙_ C ⟶ 𝟙_ C`, `rightTrace a = a`. -/
 @[simp]
 theorem rightTrace_unit (a : 𝟙_ C ⟶ 𝟙_ C) : rightTrace a = a := by
-  -- A scalar acting on the left of `𝟙_ C ⊗ Y` can be moved past any morphism from the unit.
-  have key {Y : C} (e : 𝟙_ C ⟶ 𝟙_ C ⊗ Y) : e ≫ a ▷ Y = a ≫ e := by
-    have ha : a = (λ_ (𝟙_ C)).inv ≫ a ▷ 𝟙_ C ≫ (λ_ (𝟙_ C)).hom := by
-      rw [unitors_equal, unitors_inv_equal, rightUnitor_naturality, Iso.inv_hom_id_assoc]
-    conv_rhs => rw [ha, Category.assoc, Category.assoc, ← leftUnitor_naturality,
-      ← whisker_exchange_assoc, ← leftUnitor_inv_naturality_assoc]
-    simp
   calc rightTrace a = a ≫ rightDim (𝟙_ C) := by
-        rw [rightDim, rightTrace, rightTrace, MonoidalCategory.id_whiskerRight, Category.id_comp,
-          ← Category.assoc, key, Category.assoc]
+        rw [rightDim, rightTrace_def, rightTrace_def, MonoidalCategory.id_whiskerRight,
+          Category.id_comp, comp_scalar_whiskerRight_assoc]
     _ = a := by rw [rightDim_unit, Category.comp_id]
 
 end Unit
@@ -230,12 +228,12 @@ variable [Preadditive C] [MonoidalPreadditive C]
 /-- The left trace is additive. -/
 @[simp]
 theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
-  simp [leftTrace]
+  simp [leftTrace_def]
 
 /-- The left trace of zero is zero. -/
 @[simp]
 theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
-  simp [leftTrace]
+  simp [leftTrace_def]
 
 /-- The left trace commutes with negation. -/
 @[simp]
@@ -251,12 +249,12 @@ theorem leftTrace_sub {X : C} (f g : X ⟶ X) : leftTrace (f - g) = leftTrace f 
 @[simp]
 theorem rightTrace_add {X : C} (f g : X ⟶ X) :
     rightTrace (f + g) = rightTrace f + rightTrace g := by
-  simp [rightTrace]
+  simp [rightTrace_def]
 
 /-- The right trace of zero is zero. -/
 @[simp]
 theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
-  simp [rightTrace]
+  simp [rightTrace_def]
 
 /-- The right trace commutes with negation. -/
 @[simp]
@@ -274,12 +272,12 @@ variable {R : Type*} [Semiring R] [Linear R C] [MonoidalLinear R C]
 /-- The left trace is `R`-linear in an `R`-linear monoidal category. -/
 @[simp]
 theorem leftTrace_smul {X : C} (r : R) (f : X ⟶ X) : leftTrace (r • f) = r • leftTrace f := by
-  simp [leftTrace]
+  simp [leftTrace_def]
 
 /-- The right trace is `R`-linear in an `R`-linear monoidal category. -/
 @[simp]
 theorem rightTrace_smul {X : C} (r : R) (f : X ⟶ X) : rightTrace (r • f) = r • rightTrace f := by
-  simp [rightTrace]
+  simp [rightTrace_def]
 
 end Linear
 
