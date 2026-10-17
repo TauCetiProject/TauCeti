@@ -107,6 +107,15 @@ theorem IsRepresentedBy.represents
   obtain ⟨x, hx⟩ := ha
   exact ⟨f x, (f.map_app x).trans hx⟩
 
+/-- An isometry carries the existence of a vector of unit quadratic value to its target. -/
+theorem Isometry.exists_isUnit_apply
+    {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂]
+    {Q₁ : QuadraticMap R M₁ R} {Q₂ : QuadraticMap R M₂ R}
+    (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, IsUnit (Q₁ v)) : ∃ w, IsUnit (Q₂ w) := by
+  obtain ⟨v, hv⟩ := hQ₁
+  exact ⟨f v, by simpa only [f.map_app] using hv⟩
+
 /-- An ambient quadratic map is isotropic when it represents an isotropic quadratic map. -/
 theorem IsRepresentedBy.not_anisotropic
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
