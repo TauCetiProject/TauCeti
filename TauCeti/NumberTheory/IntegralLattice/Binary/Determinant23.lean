@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.IntegralLattice.Binary.NormForm
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
-public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 
@@ -48,8 +47,6 @@ noncomputable def binaryDeterminant23Basis : Basis (Fin 2) ℤ binaryDeterminant
 /-- The carrier basis is the standard coordinate basis. -/
 @[simp] theorem coe_binaryDeterminant23Basis (i : Fin 2) :
     (binaryDeterminant23Basis i : Fin 2 → ℚ) = Pi.single i 1 := by
-  change (ofGramMatrix.basis (Pi.basisFun ℚ (Fin 2)) determinant23Matrix
-    determinant23Matrix_isSymm i : Fin 2 → ℚ) = Pi.single i 1
   exact (ofGramMatrix.coe_basis (Pi.basisFun ℚ (Fin 2)) determinant23Matrix
     determinant23Matrix_isSymm i).trans (Pi.basisFun_apply ℚ (Fin 2) i)
 
@@ -174,6 +171,7 @@ theorem binaryDeterminant23_four_le_integralNorm {x : binaryDeterminant23} (hx :
   rw [binaryDeterminant23_integralNorm]
   let m := binaryDeterminant23Basis.repr x 0
   let n := binaryDeterminant23Basis.repr x 1
+  -- Fold the carrier coordinates into the local names used by the case split.
   change 4 ≤ 4 * m ^ 2 + 2 * m * n + 6 * n ^ 2
   by_cases hn : n = 0
   · have hm : m ≠ 0 := by
@@ -264,14 +262,7 @@ theorem binaryDeterminant23_isometry_eq (e : Isometry binaryDeterminant23 binary
       apply isometry_eq_one_of_first_basis
       simp only [Isometry.mul_def, Isometry.carrierEquiv_trans, LinearEquiv.trans_apply,
         Isometry.carrierEquiv_neg, LinearEquiv.neg_apply, h, neg_neg]
-    apply Isometry.carrierEquiv_injective
-    have := congrArg Isometry.carrierEquiv he
-    apply binaryDeterminant23Basis.ext'
-    intro i
-    have hi := LinearEquiv.congr_fun this (binaryDeterminant23Basis i)
-    simpa only [Isometry.mul_def, Isometry.carrierEquiv_trans, LinearEquiv.trans_apply,
-      Isometry.carrierEquiv_neg, LinearEquiv.neg_apply, Isometry.one_def,
-      Isometry.carrierEquiv_refl, LinearEquiv.refl_apply, neg_neg] using congrArg Neg.neg hi
+    exact mul_left_cancel (he.trans (Isometry.neg_mul_neg binaryDeterminant23).symm)
 
 /-- The full integral isometry group of the determinant-23 lattice has order two. -/
 theorem card_isometry_binaryDeterminant23 :
