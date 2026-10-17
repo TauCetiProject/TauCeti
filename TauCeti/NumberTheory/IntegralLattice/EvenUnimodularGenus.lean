@@ -8,18 +8,17 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.EvenUnimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Plus
 public import TauCeti.NumberTheory.IntegralLattice.Genus
-import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Covolume
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.RepresentationNumber
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
 
 /-!
 # The genus of even unimodular lattices
 
-Two even unimodular lattices with equal signatures and equal determinants lie in one genus. Their
-determinants are units, so only the prime `2` needs a local comparison, and there the even
-unimodular forms over `ℤ_[2]` are classified by rank and determinant square class. A positive
-definite unimodular lattice has determinant `1`, so the positive definite even unimodular lattices
-of a given rank form a single genus.
+Two even unimodular lattices with equal signatures lie in one genus. The determinant of a
+unimodular lattice is `(-1) ^ n₋`, a unit determined by the signature, so only the prime `2` needs
+a local comparison, and there the even unimodular forms over `ℤ_[2]` are classified by rank and
+determinant square class. In particular, the positive definite even unimodular lattices of a given
+rank form a single genus.
 
 From rank sixteen on, this genus has more than one class. For `k ≥ 2` the lattices `E₈^k` and
 `D_{8k}⁺` are both positive definite, even and unimodular of rank `8k`, hence in one genus, but they
@@ -31,7 +30,7 @@ same construction gives no second class: `D₈⁺` is isometric to `E₈`.
 ## Main results
 
 * `TauCeti.IntegralLattice.sameGenus_of_isEven_of_isUnimodular`: even unimodular lattices with
-  equal signatures and determinants lie in one genus.
+  equal signatures lie in one genus.
 * `TauCeti.IntegralLattice.IsPosDef.sameGenus_of_isEven_of_isUnimodular`: positive definite even
   unimodular lattices of equal rank lie in one genus.
 * `TauCeti.IntegralLattice.sameGenus_e8PowLattice_checkerboardPlusLattice`: `E₈^k` and `D_{8k}⁺`
@@ -55,14 +54,20 @@ open Module
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
   {L : IntegralLattice V} {M : IntegralLattice W}
 
-/-- **Even unimodular lattices with equal signatures and determinants lie in one genus.** Away
-from `2` both localizations are unimodular of equal rank and determinant, and at `2` even
-unimodular forms over `ℤ_[2]` are classified by rank and determinant square class. -/
+/-- **Even unimodular lattices with equal signatures lie in one genus.** Both determinants equal
+`(-1) ^ n₋`. Away from `2` both localizations are unimodular of equal rank and determinant, and at
+`2` even unimodular forms over `ℤ_[2]` are classified by rank and determinant square class. -/
 theorem sameGenus_of_isEven_of_isUnimodular (hLe : L.IsEven) (hMe : M.IsEven)
-    (hLu : L.IsUnimodular) (hMu : M.IsUnimodular) (hsig : L.signature = M.signature)
-    (hdet : L.determinant = M.determinant) : L.SameGenus M := by
+    (hLu : L.IsUnimodular) (hMu : M.IsUnimodular) (hsig : L.signature = M.signature) :
+    L.SameGenus M := by
   have : L.IsNondegenerate := ⟨hLu.nondegenerate⟩
   have : M.IsNondegenerate := ⟨hMu.nondegenerate⟩
+  -- Both determinants are `(-1) ^ n₋`, since both discriminants are `1`.
+  have hdet : L.determinant = M.determinant := by
+    rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+      M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+      L.isUnimodular_iff_discriminant_eq_one.mp hLu, M.isUnimodular_iff_discriminant_eq_one.mp hMu,
+      show L.sigNeg = M.sigNeg from congrArg (·.2.2) hsig]
   have hL := L.isUnimodular_iff_isUnit_determinant.mp hLu
   have hM := M.isUnimodular_iff_isUnit_determinant.mp hMu
   refine (L.sameGenus_iff_localIntegralForm_equivalent_primeFactors M hdet hL.ne_zero).mpr
@@ -83,8 +88,6 @@ theorem IsPosDef.sameGenus_of_isEven_of_isUnimodular (hLp : L.IsPosDef) (hMp : M
     (hrank : finrank ℤ L = finrank ℤ M) : L.SameGenus M :=
   IntegralLattice.sameGenus_of_isEven_of_isUnimodular hLe hMe hLu hMu
     (by rw [hLp.signature_eq, hMp.signature_eq, hrank])
-    (by rw [hLp.determinant_eq_one_of_isUnimodular hLu,
-      hMp.determinant_eq_one_of_isUnimodular hMu])
 
 /-- **`E₈^k` and `D_{8k}⁺` lie in one genus**: both are positive definite, even and unimodular of
 rank `8k`. -/
