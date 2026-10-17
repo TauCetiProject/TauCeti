@@ -953,7 +953,9 @@ theorem Gamma0_index_mul_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
     Gamma0_relIndex_Gamma0_of_coprime hab]
 
 /-- **The index of `Γ₀(N)`**, as a product over the prime factorization of the level:
-`[SL₂(ℤ) : Γ₀(N)] = ∏_{pᵏ ∥ N} p^(k-1) (p + 1)` for `N ≠ 0`. -/
+`[SL₂(ℤ) : Γ₀(N)] = ∏_{pᵏ ∥ N} p^(k-1) (p + 1)` for `N ≠ 0`.
+
+The proof is adapted from Mathlib's `Nat.totient_eq_prod_factorization`. -/
 theorem Gamma0_index_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
     (Gamma0 N).index = N.factorization.prod fun p k ↦ p ^ (k - 1) * (p + 1) := by
   rw [Nat.multiplicative_factorization (fun n ↦ (Gamma0 n).index)
@@ -963,11 +965,13 @@ theorem Gamma0_index_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
     (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hp))
 
 /-- **Dedekind's formula for the index of `Γ₀(N)`**:
-`[SL₂(ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)`, with the denominators cleared. -/
+`[SL₂(ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)`, with the denominators cleared.
+
+The proof is adapted from Mathlib's `Nat.totient_mul_prod_primeFactors`. -/
 theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} (hN : N ≠ 0) :
     (Gamma0 N).index * ∏ p ∈ N.primeFactors, p = N * ∏ p ∈ N.primeFactors, (p + 1) := by
   rw [Gamma0_index_eq_prod_factorization hN]
-  nth_rw 3 [← Nat.prod_factorization_pow_eq_self hN]
+  conv_rhs => arg 1; rw [← Nat.prod_factorization_pow_eq_self hN]
   simp only [Nat.prod_primeFactors_prod_factorization, ← Finsupp.prod_mul]
   refine Finsupp.prod_congr (M := ℕ) (N := ℕ) fun p hp ↦ ?_
   rw [Finsupp.mem_support_iff, ← zero_lt_iff] at hp
