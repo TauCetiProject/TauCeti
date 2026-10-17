@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
--- Proof-only: the points with singular reduction when the reduction is singular at the origin, and
--- the solutions divisible by `ϖ` on the normal form of `I₀*`.
+-- Proof-only: the points with singular reduction when the reduction is singular at the origin, the
+-- chord through two of them, and the solutions divisible by `ϖ` on the normal form of `I₀*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: a common root of a cubic and its derivative divides the discriminant.
 import TauCeti.Algebra.CubicDiscriminant
@@ -211,74 +211,44 @@ private theorem exists_dvd_of_add_notMem_nonsingularReduction {ϖ : v.valuationS
       ϖ ∣ X₁ * X₂ + X₁ * X₃ + X₂ * X₃ - A₄ ∧ ϖ ∣ X₁ * X₂ * X₃ + A₆ := by
   obtain ⟨hp, ⟨A₁, hA₁⟩, ⟨A₃, hA₃⟩, -⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
-  have hϖF : (ϖ : F) ≠ 0 := by simpa using hp.ne_zero
+  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
+    rw [hϖ, Ideal.mem_span_singleton]
+  have m₃ := (hmem (integralModel v.valuationSubring W).a₃).2 ⟨ϖ * A₃, by rw [hA₃]; ring⟩
+  have m₄ := (hmem (integralModel v.valuationSubring W).a₄).2 ⟨ϖ * A₄, by rw [h₄]; ring⟩
+  have m₆ := (hmem (integralModel v.valuationSubring W).a₆).2 ⟨ϖ ^ 2 * A₆, by rw [h₆]; ring⟩
   obtain ⟨Y₁, hY₁, -⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP hX₁
-  obtain ⟨X₃, hX₃, -⟩ :=
-    exists_xCoord_eq_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆ hPQ
-  rcases P with _ | ⟨x₁, y₁, h₁⟩
-  · exact absurd (zero_mem _) hP
-  rcases Q with _ | ⟨x₂, y₂, h₂'⟩
-  · exact absurd (zero_mem _) hQ
-  have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := by
-    rintro ⟨rfl, rfl⟩
-    exact hPQ (by rw [Point.add_of_Y_eq rfl rfl]; exact zero_mem _)
-  rw [Point.add_some hxy, Point.xCoord_some] at hX₃
+  obtain ⟨x₁, y₁, h₁, rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
+  obtain ⟨x₂, y₂, h₂', rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hQ
+  -- the chord through `P` and `Q`, with slope `ℓ` and third point `(x₃, y₃)`
+  obtain ⟨x₃, y₃, ℓ, -, -, -, hx₃, -, hb, -, hc⟩ :=
+    exists_chord_of_add_notMem_nonsingularReduction v m₃ m₄ m₆ hPQ
+  obtain ⟨X₃, rfl⟩ := (hmem x₃).1 hx₃
   rw [Point.xCoord_some] at hX₁ hX₂
   rw [Point.yCoord_some] at hY₁
-  -- the coefficients of `W`, in terms of those of the normal form
-  have ha₁ : W.a₁ = ϖ * A₁ := by
-    rw [← integralModel_a₁_eq v.valuationSubring W, hA₁]; simp
-  have ha₂ : W.a₂ = ϖ * A₂ := by
-    rw [← integralModel_a₂_eq v.valuationSubring W, h₂]; simp
-  have ha₃ : W.a₃ = ϖ ^ 2 * A₃ := by
-    rw [← integralModel_a₃_eq v.valuationSubring W, hA₃]; simp
-  have ha₄ : W.a₄ = ϖ ^ 2 * A₄ := by
-    rw [← integralModel_a₄_eq v.valuationSubring W, h₄]; simp
-  have ha₆ : W.a₆ = ϖ ^ 3 * A₆ := by
-    rw [← integralModel_a₆_eq v.valuationSubring W, h₆]; simp
-  -- the Weierstrass cubic along the line through `P` and `Q` is `−(X − x₁) (X − x₂) (X − x₃)`
-  set ℓ := W.slope x₁ x₂ y₁ y₂
-  have key := W.addPolynomial_slope h₁.left h₂'.left hxy
-  rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj, Cubic.toPoly_injective] at key
-  have hb : -ℓ ^ 2 - W.a₁ * ℓ + W.a₂ = -(x₁ + x₂ + W.addX x₁ x₂ ℓ) := congrArg Cubic.b key
-  have hc : 2 * x₁ * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
-      x₁ * x₂ + x₁ * W.addX x₁ x₂ ℓ + x₂ * W.addX x₁ x₂ ℓ := congrArg Cubic.c key
-  have hd : -x₁ ^ 2 * ℓ ^ 2 + (2 * x₁ * y₁ + W.a₃ * x₁) * ℓ - (y₁ ^ 2 + W.a₃ * y₁ - W.a₆) =
-      -(x₁ * x₂ * W.addX x₁ x₂ ℓ) := congrArg Cubic.d key
-  -- the slope lies in `𝔪`: `ℓ (ℓ + a₁) = x₁ + x₂ + x₃ + a₂`
-  have hℓO : ℓ ∈ v.valuationSubring := (v.mem_valuationSubring_iff ℓ).2
-    (valuation_le_one_of_valuation_addX_le_one v (x₁ := x₁) (x₂ := x₂)
-      (hX₁ ▸ (v.mem_valuationSubring_iff _).1 (ϖ * X₁).2)
-      (hX₂ ▸ (v.mem_valuationSubring_iff _).1 (ϖ * X₂).2)
-      (hX₃ ▸ (v.mem_valuationSubring_iff _).1 (ϖ * X₃).2))
-  obtain ⟨L, hL⟩ : ϖ ∣ (⟨ℓ, hℓO⟩ : v.valuationSubring) := by
-    have hprod : (⟨ℓ, hℓO⟩ : v.valuationSubring) * (⟨ℓ, hℓO⟩ + ϖ * A₁) =
-        ϖ * (X₁ + X₂ + X₃ + A₂) := by
-      have h₃ := hX₃
-      rw [addX, ha₁, ha₂, hX₁, hX₂] at h₃
-      apply Subtype.val_injective
-      push_cast at h₃ ⊢
-      linear_combination h₃
-    rcases hp.dvd_or_dvd ⟨_, hprod⟩ with hℓ | hℓ
+  obtain rfl := Subtype.val_injective hX₁
+  obtain rfl := Subtype.val_injective hX₂
+  obtain rfl := Subtype.val_injective hY₁
+  have hE := (equation_integralModel_iff v).2 h₁.left
+  rw [equation_iff, hA₁, h₂, hA₃, h₄, h₆] at hE
+  rw [hA₁, h₂] at hb
+  rw [hA₁, hA₃, h₄] at hc
+  -- the slope lies in `𝔪`: `ℓ (ℓ + ϖ A₁) = ϖ (X₁ + X₂ + X₃ + A₂)`
+  obtain ⟨L, rfl⟩ : ϖ ∣ ℓ := by
+    have hprod : ϖ ∣ ℓ * (ℓ + ϖ * A₁) := ⟨X₁ + X₂ + X₃ + A₂, by linear_combination hb⟩
+    rcases hp.dvd_or_dvd hprod with hℓ | hℓ
     · exact hℓ
     · simpa using (dvd_add_left (dvd_mul_right ϖ A₁)).1 hℓ
-  replace hL : ℓ = ((ϖ * L : v.valuationSubring) : F) := congrArg Subtype.val hL
-  rw [hX₃] at hb hc hd
-  simp only [hL, ha₁, ha₂, ha₃, ha₄, ha₆, hX₁, hX₂, hY₁] at hb hc hd
-  push_cast at hb hc hd
-  have h2 : ((2 : v.valuationSubring) : F) = 2 := by
-    simpa using map_ofNat (algebraMap v.valuationSubring F) 2
-  -- divide the three coefficient identities by `ϖ`, `ϖ²` and `ϖ³`
+  -- divide the coefficients of `X²` and `X` along the chord by `ϖ` and `ϖ²`, and the constant
+  -- coefficient, which the equation at `P` determines from the other two, by `ϖ³`
   refine ⟨X₃, ⟨L ^ 2 + A₁ * L, ?_⟩,
     ⟨2 * X₁ * L ^ 2 + (A₁ * X₁ - 2 * Y₁ - A₃) * L - A₁ * Y₁, ?_⟩,
-    ⟨X₁ ^ 2 * L ^ 2 - (2 * X₁ * Y₁ + A₃ * X₁) * L + Y₁ ^ 2 + A₃ * Y₁, ?_⟩⟩ <;>
-    apply Subtype.val_injective <;> push_cast [h2]
-  · apply mul_left_cancel₀ hϖF
-    linear_combination hb
-  · apply mul_left_cancel₀ (pow_ne_zero 2 hϖF)
+    ⟨X₁ ^ 2 * L ^ 2 - (2 * X₁ * Y₁ + A₃ * X₁) * L + Y₁ ^ 2 + A₃ * Y₁, ?_⟩⟩
+  · apply mul_left_cancel₀ hp.ne_zero
+    linear_combination -hb
+  · apply mul_left_cancel₀ (pow_ne_zero 2 hp.ne_zero)
     linear_combination -hc
-  · apply mul_left_cancel₀ (pow_ne_zero 3 hϖF)
-    linear_combination hd
+  · apply mul_left_cancel₀ (pow_ne_zero 3 hp.ne_zero)
+    linear_combination -hE + ϖ ^ 2 * X₁ ^ 2 * hb - ϖ * X₁ * hc
 
 /-- **At `I₀*`, two points with singular reduction whose `x / ϖ` have different residues add up
 to a point with singular reduction.** The line through `P = (ϖ X₁, ϖ² Y₁)` and
