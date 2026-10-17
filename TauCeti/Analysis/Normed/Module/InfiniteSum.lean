@@ -16,9 +16,10 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Module
 Under a bounded scalar action, the pointwise scalar multiples `f i • g j` of two cofinite-null
 families form a cofinite-null family on the product index. Consequently, over a complete ultrametric
 module this family is summable whenever `f` and `g` are, and so is the Cauchy product induced by
-the scalar action. If the action is moreover a module structure and the module is Hausdorff, the
-double sum is the scalar multiple of the two sums, and grouping it by the antidiagonals of an
-additive index monoid gives the corresponding Cauchy-product formula.
+the scalar action. If the action is moreover a module structure and the module is Hausdorff
+(stated as `T0Space`, which is equivalent for seminormed groups), the double sum is the scalar
+multiple of the two sums, and grouping it by the antidiagonals of an additive index monoid gives
+the corresponding Cauchy-product formula.
 
 The joint-decay statement is stronger than continuity of scalar multiplication at zero: cofinite
 decay on a product index requires all but finitely many pairs to be small.
@@ -96,14 +97,14 @@ variable [SeminormedRing R] [Module R M] [IsBoundedSMul R M]
 
 /-- Scalar multiplication distributes over two infinite sums in a complete Hausdorff ultrametric
 normed module. -/
-theorem _root_.HasSum.smul_of_nonarchimedean [T2Space M] {α β : Type*} {f : α → R}
+theorem _root_.HasSum.smul_of_nonarchimedean [T0Space M] {α β : Type*} {f : α → R}
     {g : β → M} {a : R} {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) :=
   hf.smul hg (hf.summable.smul_of_nonarchimedean hg.summable)
 
 /-- The scalar multiple of two infinite sums in a complete Hausdorff ultrametric normed module is
 their double sum. -/
-protected theorem _root_.Summable.tsum_smul_tsum_of_nonarchimedean [T2Space M] {α β : Type*}
+protected theorem _root_.Summable.tsum_smul_tsum_of_nonarchimedean [T0Space M] {α β : Type*}
     {f : α → R} {g : β → M} (hf : Summable f) (hg : Summable g) :
     (∑' i, f i) • (∑' j, g j) = ∑' ij : α × β, f ij.1 • g ij.2 :=
   (hf.hasSum.smul_of_nonarchimedean hg.hasSum).tsum_eq.symm
@@ -115,7 +116,7 @@ variable {A : Type*} [AddCommMonoid A] [Finset.HasAntidiagonal A]
 /-- The Cauchy-product formula for the scalar multiple of two infinite sums, grouped over the
 antidiagonals of an additive index monoid, in a complete Hausdorff ultrametric normed module. -/
 protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
-    [T2Space M] {f : A → R} {g : A → M} (hf : Summable f) (hg : Summable g) :
+    [T0Space M] {f : A → R} {g : A → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 := by
   simp_rw [← Finset.tsum_subtype]
@@ -126,7 +127,7 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_non
 
 /-- In a complete Hausdorff ultrametric normed module, the antidiagonal Cauchy product sums to the
 scalar multiple of the original two sums. -/
-theorem _root_.HasSum.sum_smul_antidiagonal_of_nonarchimedean [T2Space M] {f : A → R}
+theorem _root_.HasSum.sum_smul_antidiagonal_of_nonarchimedean [T0Space M] {f : A → R}
     {g : A → M} {a : R} {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2) (a • b) := by
   have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
@@ -140,7 +141,7 @@ section Nat
 /-- The natural-number Cauchy-product formula for the scalar multiple of two infinite sums, in a
 complete Hausdorff ultrametric normed module. -/
 protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchimedean
-    [T2Space M] {f : ℕ → R} {g : ℕ → M} (hf : Summable f) (hg : Summable g) :
+    [T0Space M] {f : ℕ → R} {g : ℕ → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ k ∈ Finset.range (n + 1), f k • g (n - k) := by
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ f k • g l]
@@ -148,7 +149,7 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchime
 
 /-- In a complete Hausdorff ultrametric normed module, the natural-number Cauchy product sums to
 the scalar multiple of the original two sums. -/
-theorem _root_.HasSum.sum_smul_range_of_nonarchimedean [T2Space M] {f : ℕ → R} {g : ℕ → M}
+theorem _root_.HasSum.sum_smul_range_of_nonarchimedean [T0Space M] {f : ℕ → R} {g : ℕ → M}
     {a : R} {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f k • g (n - k)) (a • b) := by
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ f k • g l]
