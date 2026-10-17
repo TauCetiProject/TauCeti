@@ -240,8 +240,10 @@ theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx
 /-- The centre is the only critical point of `f` in the source of a Morse chart. -/
 theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 ↔ y = x := by
-  rw [mfderiv_eq_zero_iff_of_eqOn φ.mem_maximalAtlas φ.eqOn_quadratic hy
-    (φ.differentiableAt_quadratic _), φ.fderiv_quadratic_eq_zero_iff, φ.toChart_eq_zero_iff hy]
+  rw [mfderiv_eq_zero_iff_of_eqOn
+      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy
+      (φ.differentiableAt_quadratic _),
+    φ.fderiv_quadratic_eq_zero_iff, φ.toChart_eq_zero_iff hy]
 
 end FiniteDimensional
 

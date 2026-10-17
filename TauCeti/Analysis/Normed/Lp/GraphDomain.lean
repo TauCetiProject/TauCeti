@@ -38,7 +38,7 @@ variable {E : Type*}
 
 section
 
-variable [NormedAddCommGroup E]
+variable [TopologicalSpace E]
 
 /-- The open half-space to the right of the normal coordinate `a` in the ℓ² product `ℝ × E`. -/
 def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
@@ -80,7 +80,7 @@ theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0
 
 end
 
-/-- The normal graph parametrization `y ↦ (φ y, y)` in the Euclidean product `ℝ × E`. -/
+/-- The normal graph parametrization `y ↦ (φ y, y)` in `WithLp 2 (ℝ × E)`. -/
 def normalGraphEmbedding (φ : E → ℝ) (y : E) : WithLp 2 (ℝ × E) :=
   WithLp.toLp 2 (φ y, y)
 
@@ -88,13 +88,13 @@ def normalGraphEmbedding (φ : E → ℝ) (y : E) : WithLp 2 (ℝ × E) :=
 @[simp]
 theorem normalGraphEmbedding_fst (φ : E → ℝ) (y : E) :
     (normalGraphEmbedding φ y).fst = φ y :=
-  (rfl)
+  WithLp.toLp_fst _
 
 /-- The tangential coordinate of the graph parametrization is its argument. -/
 @[simp]
 theorem normalGraphEmbedding_snd (φ : E → ℝ) (y : E) :
     (normalGraphEmbedding φ y).snd = y :=
-  (rfl)
+  WithLp.toLp_snd _
 
 /-- The normal graph parametrization is injective. -/
 theorem injective_normalGraphEmbedding (φ : E → ℝ) :
@@ -112,17 +112,15 @@ theorem range_normalGraphEmbedding (φ : E → ℝ) :
     refine ⟨x.snd, (WithLp.ext_iff 2).2 ?_⟩
     exact Prod.ext hx.symm rfl
 
-variable [NormedAddCommGroup E]
-
 /-- The second projection is a `1`-Lipschitz inverse to the graph parametrization on its range. -/
-theorem antilipschitzWith_normalGraphEmbedding (φ : E → ℝ) :
+theorem antilipschitzWith_normalGraphEmbedding [PseudoMetricSpace E] (φ : E → ℝ) :
     AntilipschitzWith 1 (normalGraphEmbedding φ) := by
   refine AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_
   simpa only [NNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.dist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
 /-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding {K : ℝ≥0} {φ : E → ℝ}
+theorem _root_.LipschitzWith.normalGraphEmbedding [SeminormedAddCommGroup E] {K : ℝ≥0} {φ : E → ℝ}
     (hφ : LipschitzWith K φ) :
     LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
   refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
@@ -136,7 +134,11 @@ theorem _root_.LipschitzWith.normalGraphEmbedding {K : ℝ≥0} {φ : E → ℝ}
     _ ≤ K * dist x y + dist x y := add_le_add (hφ.dist_le_mul x y) le_rfl
     _ = (K + 1) * dist x y := by ring
 
-/-- A continuous normal graph is closed in the Euclidean product. -/
+section
+
+variable [TopologicalSpace E]
+
+/-- A continuous normal graph is closed in the product `ℝ × E`, represented by `WithLp 2`. -/
 theorem _root_.Continuous.isClosed_range_normalGraphEmbedding {φ : E → ℝ} (hφ : Continuous φ) :
     IsClosed (range (TauCeti.normalGraphEmbedding φ)) := by
   rw [range_normalGraphEmbedding]
@@ -154,20 +156,21 @@ theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
   rw [mem_ofPred_eq] at hx
   rw [hopen.frontier_eq, Set.mem_sdiff, mem_ofPred_eq]
   refine ⟨?_, fun h => h.ne' hx⟩
-  -- A graph point is the limit of the points `x + (t, 0)` above it, as `t → 0⁺`.
-  have hlim : Tendsto (fun t : ℝ => x + WithLp.toLp 2 (t, (0 : E))) (𝓝[>] 0) (𝓝 x) := by
-    have hcont : Continuous fun t : ℝ => x + WithLp.toLp 2 (t, (0 : E)) := by fun_prop
+  -- A graph point is the limit of the points `(x.fst + t, x.snd)` above it, as `t → 0⁺`.
+  have hlim : Tendsto (fun t : ℝ => WithLp.toLp 2 (x.fst + t, x.snd)) (𝓝[>] 0) (𝓝 x) := by
+    have hcont : Continuous fun t : ℝ => WithLp.toLp 2 (x.fst + t, x.snd) := by fun_prop
     have h0 := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-    rwa [Prod.mk_zero_zero, WithLp.toLp_zero, add_zero] at h0
+    rwa [add_zero, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd, Prod.mk.eta, WithLp.toLp_ofLp] at h0
   refine mem_closure_of_tendsto hlim ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-  simp only [WithLp.add_fst, WithLp.add_snd, WithLp.toLp_fst, WithLp.toLp_snd, add_zero, ← hx]
+  simp only [WithLp.toLp_fst, WithLp.toLp_snd, ← hx]
   linarith
 
+end
 
 section Linear
 
-variable [NormedSpace ℝ E]
+variable [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The continuous linear graph map `x ↦ (A x, x)` associated to `A : E →L[ℝ] ℝ`. -/
 def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
