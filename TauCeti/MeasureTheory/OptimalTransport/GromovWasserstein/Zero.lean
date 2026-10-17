@@ -17,6 +17,8 @@ holds at every nonzero exponent, including infinity, without moment bounds or se
 the target. More generally, tight Borel probability measures on second-countable metrizable
 carriers suffice. A compatible Polish topology on each standard Borel carrier recovers the
 standard Borel result from this tight-measure criterion.
+At the measurable root, the criterion needs only an optimal coupling, with no topology,
+finiteness, or measurability assumptions on the kernels.
 
 For exponents at least one, weak isomorphisms preserve distance to a third measured kernel.
 These invariance statements need only an extended pseudometric target and finite measures on
@@ -44,6 +46,22 @@ variable {X Y W Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSp
   {μ : Measure X} {ν : Measure Y} {ρ : Measure W}
   {ωX : X × X → Z} {ωY : Y × Y → Z} {ωW : W × W → Z} {p : ℝ≥0∞}
 
+/-- When an optimal coupling exists, zero Gromov–Wasserstein distance is exactly weak
+isomorphism at every nonzero exponent. The carriers need only measurable structures;
+the measures need not be finite and the kernels need not be measurable. -/
+theorem gromovWassersteinEDist_eq_zero_iff_of_exists_optimal_coupling [EMetricSpace Z]
+    (hopt : ∃ π, IsCoupling π μ ν ∧
+      gromovWassersteinDistortion p ωX ωY π = gromovWassersteinEDist p μ ωX ν ωY)
+    (hp : p ≠ 0) :
+    gromovWassersteinEDist p μ ωX ν ωY = 0 ↔ AreWeaklyIsomorphicKernels μ ωX ν ωY := by
+  constructor
+  · intro hzero
+    obtain ⟨π, hπ, hdist⟩ := hopt
+    exact (areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero hp).mpr
+      ⟨π, hπ, hdist.trans hzero⟩
+  · intro h
+    exact h.gromovWassersteinEDist_eq_zero edist_self p
+
 /-- For a.e. strongly measurable kernels with tight Borel probability measures on
 second-countable metrizable spaces, zero Gromov–Wasserstein distance is exactly weak isomorphism
 at every nonzero exponent. The target needs neither a measurable structure nor separability,
@@ -56,15 +74,9 @@ theorem gromovWassersteinEDist_eq_zero_iff_of_isTightMeasureSet [EMetricSpace Z]
     (hμ : IsTightMeasureSet {μ}) (hν : IsTightMeasureSet {ν})
     (hωX : AEStronglyMeasurable ωX (μ.prod μ))
     (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (hp : p ≠ 0) :
-    gromovWassersteinEDist p μ ωX ν ωY = 0 ↔ AreWeaklyIsomorphicKernels μ ωX ν ωY := by
-  constructor
-  · intro hzero
-    obtain ⟨π, hπ, hdist⟩ :=
-      exists_isCoupling_gromovWassersteinDistortion_eq_of_isTightMeasureSet hμ hν hωX hωY p
-    exact (areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero hp).mpr
-      ⟨π, hπ, hdist.trans hzero⟩
-  · intro h
-    exact h.gromovWassersteinEDist_eq_zero edist_self p
+    gromovWassersteinEDist p μ ωX ν ωY = 0 ↔ AreWeaklyIsomorphicKernels μ ωX ν ωY :=
+  gromovWassersteinEDist_eq_zero_iff_of_exists_optimal_coupling
+    (exists_isCoupling_gromovWassersteinDistortion_eq_of_isTightMeasureSet hμ hν hωX hωY p) hp
 
 /-- For a.e. strongly measurable kernels on standard Borel probability spaces, zero
 Gromov–Wasserstein distance is exactly weak isomorphism, at every nonzero exponent. The target
