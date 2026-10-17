@@ -105,6 +105,16 @@ theorem differential_corestrict {K : Type*} [CommRing K] [Bialgebra R K]
   simp only [differential_apply, corestrict_coact_apply, LinearMap.tensorComponent_map,
     LinearMap.id_apply, hcomp]
 
+/-- A rationally fixed vector is killed by the differentiated representation over any
+commutative base ring. -/
+theorem differential_eq_zero_of_coact_eq_tmul_one {m : M}
+    (hm : coact (R := R) (C := H) m = m ⊗ₜ[R] (1 : H))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
+    differential (R := R) (H := H) d m = 0 := by
+  rw [differential_apply, hm, LinearMap.tensorComponent_tmul, LinearMap.comp_apply]
+  rw [Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero]
+  exact zero_smul R m
+
 /-- Every comodule morphism intertwines the differentiated representations. -/
 @[simp↓]
 theorem Hom.map_differential (f : Hom R H M N)
