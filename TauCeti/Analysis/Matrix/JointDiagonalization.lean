@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Normal
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.JointEigenbasis
 
 /-!
@@ -26,6 +26,14 @@ namespace TauCeti
 open Matrix Module
 
 variable {n ι : Type*} [Fintype n] [DecidableEq n]
+
+/-- The operator of a normal matrix on `EuclideanSpace 𝕜 n` is normal. -/
+instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n n 𝕜) [IsStarNormal A] :
+    IsStarNormal (toEuclideanLin A) where
+  star_comm_self := by
+    have h : Aᴴ * A = A * Aᴴ := star_comm_self' A
+    rw [commute_iff_eq, LinearMap.star_eq_adjoint, ← toEuclideanLin_conjTranspose_eq_adjoint,
+      Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
 
 /-- A commuting family of complex normal matrices has a common unitary diagonalizer.
 The index type of the family need not be finite. -/

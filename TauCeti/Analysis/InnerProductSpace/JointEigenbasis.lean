@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.NormalOperator
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
+public import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Analysis.CStarAlgebra.Fuglede
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 
@@ -32,6 +34,19 @@ open Module Module.End ComplexStarModule LinearMap
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [FiniteDimensional ℂ E]
+
+/-- On a joint eigenspace of the real and imaginary parts of `T`, where `ℜ T` acts by `a` and
+`ℑ T` by `b`, the operator `T` acts by `a + i b`. Normality is not needed here; finite
+dimensionality only enters because the adjoint, hence `ℜ T` and `ℑ T`, is defined on
+finite-dimensional spaces. -/
+theorem apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T : E →ₗ[ℂ] E)
+    {a b : ℂ} {v : E} (ha : v ∈ eigenspace (ℜ T : E →ₗ[ℂ] E) a)
+    (hb : v ∈ eigenspace (ℑ T : E →ₗ[ℂ] E) b) :
+    T v = (a + Complex.I * b) • v := by
+  conv_lhs => rw [← realPart_add_I_smul_imaginaryPart T]
+  rw [LinearMap.add_apply, LinearMap.smul_apply, mem_eigenspace_iff.mp ha,
+    mem_eigenspace_iff.mp hb, add_smul,
+    mul_smul]
 
 /-- A commuting family of normal operators has a common orthonormal eigenbasis, indexed by
 any finite type of cardinality equal to the dimension. No finiteness of the family is needed. -/
