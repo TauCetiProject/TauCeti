@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Cdf
 
@@ -446,44 +447,16 @@ theorem continuousWithinAt_Ioi_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1
     filter_upwards [Ioo_mem_nhdsGT hy] with s hs
     exact (upperQuantile_le_of_lt_cdf μ (h0.trans hs.1) hs.2).trans_lt hyb
 
-/-- A function on `ℝ` that is monotone on the open unit interval and vanishes at every level
-below `0` and above `1` is measurable: on the open unit interval its sublevel sets are order
-connected, and off it they consist of all or none of the levels below `0` and above `1` together
-with some of the two endpoint levels. -/
-private theorem measurable_of_monotoneOn_Ioo {f : ℝ → ℝ} (hf : MonotoneOn f (Ioo 0 1))
-    (hzero : ∀ s : ℝ, s < 0 ∨ 1 < s → f s = 0) : Measurable f := by
-  refine measurable_of_Iic fun x ↦ ?_
-  have hcover : f ⁻¹' Iic x = (f ⁻¹' Iic x ∩ Ioo 0 1) ∪ (f ⁻¹' Iic x ∩ {0, 1}) ∪
-      (f ⁻¹' Iic x ∩ (Iio 0 ∪ Ioi 1)) := by
-    rw [← inter_union_distrib_left, ← inter_union_distrib_left, left_eq_inter]
-    intro s _
-    simp only [mem_union, mem_Ioo, mem_insert_iff, mem_singleton_iff, mem_Iio, mem_Ioi]
-    grind
-  have hconn : (f ⁻¹' Iic x ∩ Ioo 0 1).OrdConnected := by
-    refine ⟨fun a ha b hb c hc ↦ ?_⟩
-    have hc' : c ∈ Ioo (0 : ℝ) 1 := ⟨ha.2.1.trans_le hc.1, hc.2.trans_lt hb.2.2⟩
-    exact ⟨(hf hc' hb.2 hc.2).trans hb.1, hc'⟩
-  have hjunk : MeasurableSet (f ⁻¹' Iic x ∩ (Iio 0 ∪ Ioi 1)) := by
-    by_cases hx : 0 ≤ x
-    · rw [inter_eq_right.mpr fun s hs ↦ by simpa [hzero s hs] using hx]
-      exact measurableSet_Iio.union measurableSet_Ioi
-    · rw [eq_empty_of_forall_notMem (s := f ⁻¹' Iic x ∩ (Iio 0 ∪ Ioi 1)) fun s hs ↦
-        hx (by simpa [hzero s hs.2] using hs.1)]
-      exact MeasurableSet.empty
-  rw [hcover]
-  exact (hconn.measurableSet.union ((toFinite _).subset inter_subset_right).measurableSet).union
-    hjunk
-
 /-- The quantile function is measurable. -/
 @[fun_prop]
 theorem measurable_quantile (μ : Measure ℝ) : Measurable μ.quantile :=
-  measurable_of_monotoneOn_Ioo (monotoneOn_quantile μ) fun _ hs ↦
+  TauCeti.measurable_of_monotoneOn_Ioo_of_eq_const (monotoneOn_quantile μ) fun _ hs ↦
     hs.elim (fun h ↦ quantile_of_nonpos μ h.le) (quantile_of_one_lt μ)
 
 /-- The upper quantile function is measurable. -/
 @[fun_prop]
 theorem measurable_upperQuantile (μ : Measure ℝ) : Measurable μ.upperQuantile :=
-  measurable_of_monotoneOn_Ioo (monotoneOn_upperQuantile μ) fun _ hs ↦
+  TauCeti.measurable_of_monotoneOn_Ioo_of_eq_const (monotoneOn_upperQuantile μ) fun _ hs ↦
     hs.elim (upperQuantile_of_neg μ) fun h ↦ upperQuantile_of_one_le μ h.le
 
 /-- **Inverse transform sampling.** The quantile function of a probability law on `ℝ` pushes the
