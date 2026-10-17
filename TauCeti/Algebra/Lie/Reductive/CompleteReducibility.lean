@@ -64,8 +64,10 @@ theorem exists_isCompl_of_forall_center_lie_eq_smul
         obtain ⟨c, hc⟩ := hZ z hz
         rw [add_lie, hc]
         exact P.add_mem (P.smul_mem c hm) (P.lie_mem (x := ⟨d, hd⟩) hm) }
-  have hPQ : IsCompl N'.toSubmodule P.toSubmodule :=
-    LieSubmodule.isCompl_toSubmodule.mpr hP
+  have hPQ : IsCompl N.toSubmodule Q.toSubmodule := by
+    -- Q was built from P.toSubmodule, so their underlying submodules are definitionally equal.
+    simpa only [N', LieSubmodule.restr_toSubmodule] using
+      LieSubmodule.isCompl_toSubmodule.mpr hP
   exact ⟨Q, LieSubmodule.isCompl_toSubmodule.mp hPQ⟩
 
 /-- A finite-dimensional module of a reductive Lie algebra is completely reducible whenever
@@ -75,20 +77,29 @@ theorem complementedLattice_lieSubmodule_of_iSup_weightSpace_center_eq_top
       (weightSpace M χ).toSubmodule = ⊤) :
     ComplementedLattice (LieSubmodule K L M) := by
   let W (χ : center K L → K) : LieSubmodule K L M := weightSpaceOfIsLieTower K M χ
+  -- The tower construction changes only the Lie action, retaining the underlying weight space.
+  -- Mathlib provides no named equality for this projection.
+  have hW_toSubmodule (χ : center K L → K) :
+      (W χ).toSubmodule = (weightSpace M χ).toSubmodule := rfl
   have hW (χ : center K L → K) : ComplementedLattice (LieSubmodule K L (W χ)) := by
     refine ⟨exists_isCompl_of_forall_center_lie_eq_smul ?_⟩
     intro z hz
     refine ⟨χ ⟨z, hz⟩, fun m ↦ ?_⟩
+    have hm : (m : M) ∈ (weightSpace M χ).toSubmodule := by
+      rw [← hW_toSubmodule]
+      exact m.property
     apply Subtype.ext
-    exact (mem_weightSpace χ (m : M)).mp m.property ⟨z, hz⟩
+    simpa only [LieSubmodule.coe_bracket, LieSubmodule.coe_smul,
+      LieIdeal.coe_bracket_of_module] using
+      (mem_weightSpace χ (m : M)).mp hm ⟨z, hz⟩
   refine complementedLattice_of_complementedLattice_Iic
     (s := Set.univ) (f := W) ?_ ?_
   · intro χ _
     have := hW χ
-    exact (W χ).mapInclOrderIso.complementedLattice
+    exact (W χ).mapIic.complementedLattice
   · apply LieSubmodule.toSubmodule_injective
     simpa only [iSup_univ, LieSubmodule.iSup_toSubmodule,
-      LieSubmodule.top_toSubmodule, W, weightSpaceOfIsLieTower] using hZ
+      LieSubmodule.top_toSubmodule, hW_toSubmodule] using hZ
 
 /-- Over a splitting field for the central action, semisimplicity of each central operator
 implies complete reducibility of a finite-dimensional module of a reductive Lie algebra. -/

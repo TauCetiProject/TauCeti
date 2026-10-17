@@ -29,7 +29,7 @@ variable {R L M : Type*} [CommRing R] [LieRing L]
 
 /-- Inclusion identifies the submodules of a Lie submodule with the ambient submodules
 contained in it. -/
-def mapInclOrderIso (N : LieSubmodule R L M) :
+def mapIic (N : LieSubmodule R L M) :
     LieSubmodule R L N ≃o Set.Iic N where
   toFun P := ⟨P.map N.incl, by rintro _ ⟨x, _, rfl⟩; exact x.property⟩
   invFun P := P.val.comap N.incl
@@ -48,14 +48,27 @@ def mapInclOrderIso (N : LieSubmodule R L M) :
 
 /-- The ambient submodule corresponding to a submodule of `N` is its image under inclusion. -/
 @[simp]
-theorem mapInclOrderIso_apply (N : LieSubmodule R L M) (P : LieSubmodule R L N) :
-    (N.mapInclOrderIso P).val = P.map N.incl := (rfl)
+theorem coe_mapIic_apply (N : LieSubmodule R L M) (P : LieSubmodule R L N) :
+    (N.mapIic P).val = P.map N.incl := (rfl)
 
 /-- The submodule of `N` corresponding to an ambient submodule is its inverse image.
 
 This is not a simp lemma: unfolding the inverse prevents simplification by the order
 isomorphism's round-trip laws. -/
-theorem mapInclOrderIso_symm_apply (N : LieSubmodule R L M) (P : Set.Iic N) :
-    N.mapInclOrderIso.symm P = P.val.comap N.incl := (rfl)
+theorem mapIic_symm_apply (N : LieSubmodule R L M) (P : Set.Iic N) :
+    N.mapIic.symm P = P.val.comap N.incl := (rfl)
+
+/-- Membership in the ambient image amounts to membership in the original submodule of `N`.
+
+This is not a simp lemma: the existing simp lemmas for the image under inclusion already
+reduce its left-hand side to its right-hand side. -/
+theorem mem_mapIic_apply (N : LieSubmodule R L M) {P : LieSubmodule R L N} {x : M} :
+    x ∈ (N.mapIic P).val ↔ ∃ h : x ∈ N, ⟨x, h⟩ ∈ P := by
+  simp
+
+/-- Membership in the inverse image is ambient membership after inclusion. -/
+@[simp]
+theorem mem_mapIic_symm_apply (N : LieSubmodule R L M) {P : Set.Iic N} {x : N} :
+    x ∈ N.mapIic.symm P ↔ (x : M) ∈ P.val := (Iff.rfl)
 
 end LieSubmodule
