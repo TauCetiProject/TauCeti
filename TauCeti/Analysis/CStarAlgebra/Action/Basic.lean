@@ -79,6 +79,11 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
   rw [← mul_apply]
   simp
 
+/-- Each automorphism of the action is isometric. -/
+@[simp]
+theorem norm_apply (α : CStarAction G A) (g : G) (a : A) : ‖α g a‖ = ‖a‖ :=
+  (StarAlgEquiv.isometry (α g)).norm_map_of_map_zero (map_zero _) a
+
 /-- Point-norm continuity implies joint continuity of the action. -/
 @[fun_prop]
 theorem continuous (α : CStarAction G A) : Continuous fun p : G × A => α p.1 p.2 :=
