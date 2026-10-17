@@ -162,7 +162,10 @@ end PathTail
 `processCons` / `processTail` prepend / drop the leading coordinate of a sequence-valued random
 variable `t : Ω → ℕ → α`. The `comap` contraction lemmas (`comap_processTail_le`,
 `comap_le_comap_processCons`) record that the tail generates a coarser σ-algebra and that consing
-refines it. -/
+refines it.
+
+Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/ShiftOperations.lean`, commit
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`). -/
 
 section ProcessConsTail
 
