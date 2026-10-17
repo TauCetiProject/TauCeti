@@ -85,7 +85,7 @@ namespace SpecialOrthogonalGroup
 
 /-- In dimension at least three, the center consists precisely of the scalar orthogonal
 matrices of determinant one. This includes coefficients with nilpotents. -/
-theorem mem_center_iff [Invertible (2 : R)] (g : specialOrthogonalGroup n R)
+@[simp] theorem mem_center_iff [Invertible (2 : R)] (g : specialOrthogonalGroup n R)
     (hn : 3 ≤ Fintype.card n) :
     g ∈ Subgroup.center (specialOrthogonalGroup n R) ↔
       ∃ c : R, (g : Matrix n n R) = scalar n c ∧ c ^ 2 = 1 ∧ c ^ Fintype.card n = 1 := by
