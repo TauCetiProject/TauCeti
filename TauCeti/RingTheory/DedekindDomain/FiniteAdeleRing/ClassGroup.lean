@@ -110,6 +110,18 @@ theorem eventually_valued_coe_units_apply_eq_one (x : 𝔸ᶠ[R, K]ˣ) :
     rw [← map_mul, ← mul_apply, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_apply,
       map_one])).symm
 
+/-- A component of a finite idele has valuation one exactly when both it and the corresponding
+component of the inverse are integral, that is, when it is a unit of the local integers. -/
+theorem valued_coe_units_apply_eq_one_iff (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
+    Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 ↔
+      (x : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K ∧
+        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K := by
+  rw [mem_adicCompletionIntegers, mem_adicCompletionIntegers, valued_coe_units_inv_apply]
+  have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
+    zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
+  exact ⟨fun h ↦ ⟨h.le, by rw [h, inv_one]⟩,
+    fun ⟨h₁, h₂⟩ ↦ le_antisymm h₁ ((inv_le_one₀ hpos).mp h₂)⟩
+
 /-- The `v`-adic order of a finite idele `x`, that is, the exponent of `v` in the fractional
 ideal that `x` defines.  The sign is chosen so that a uniformizer at `v` has order `1`. -/
 noncomputable def adicOrd (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) : ℤ :=
@@ -260,13 +272,8 @@ integral at every place. -/
 theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, K]ˣ} :
     x ∈ integralUnits R K ↔ ∀ v : HeightOneSpectrum R,
       (x : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K ∧
-        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K := by
-  simp only [mem_integralUnits_iff, mem_adicCompletionIntegers, valued_coe_units_inv_apply]
-  refine forall_congr' fun v ↦ ?_
-  have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
-    zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
-  exact ⟨fun h ↦ ⟨h.le, by rw [h, inv_one]⟩,
-    fun ⟨h₁, h₂⟩ ↦ le_antisymm h₁ ((inv_le_one₀ hpos).mp h₂)⟩
+        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K :=
+  forall_congr' (valued_coe_units_apply_eq_one_iff x)
 
 variable (R K) in
 /-- The everywhere-integral units are the unit group of the integral finite adeles `∏_v 𝒪_v`: a
