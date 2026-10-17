@@ -44,7 +44,7 @@ of `d` i.i.d. exponentials of rate `r` is exponential of rate `d * r`.
   the laws of the two extremes.
 
 The other order statistics are in `TauCeti.Probability.Distributions.OrderStatistic`, where
-`TauCeti.Probability.orderStatistic_zero` and `TauCeti.Probability.orderStatistic_last` identify
+`TauCeti.orderStatistic_zero` and `TauCeti.orderStatistic_last` identify
 the minimum and the maximum as the extreme order statistics.
 -/
 

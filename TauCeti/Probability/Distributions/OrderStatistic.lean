@@ -5,32 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.Tuple.Sort
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Data.Fin.Tuple.OrderStatistic
 public import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Distributions.Beta.Cdf
 import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Binomial.Tail
 
 /-!
-# Order statistics
+# Laws of order statistics
 
-The `k`-th order statistic of a tuple `x : Fin n → α` in a linear order is the entry in
-position `k` once the entries of `x` are sorted increasingly, keeping repeated values with their
-multiplicity. Positions are counted from `0`, so position `0` holds the minimum and position
-`Fin.last _` the maximum. The sort is `Tuple.sort`, and the order statistics of `x` are the
-entries of the sorted tuple `x ∘ Tuple.sort x`.
-
-The order statistics are characterized by counting: `orderStatistic k x ≤ t` exactly
-when more than `k` entries of `x` are at most `t`. This makes the order statistics measurable,
-and it reduces their laws to binomial tails. If the entries are independent with common law `μ`,
-the number of entries at most `t` is binomial with success probability `F(t) = cdf μ t`, so the
-`k`-th order statistic has cumulative distribution function
+The generic finite-tuple order-statistic API is in `TauCeti.Data.Fin.Tuple.OrderStatistic`.
+This file uses its counting characterization and measurability to reduce order-statistic laws to
+binomial tails. If the entries are independent with common law `μ`, the number of entries at most
+`t` is binomial with success probability `F(t) = cdf μ t`, so the `k`-th order statistic has
+cumulative distribution function
 
 `∑ j ∈ Finset.Icc (k + 1) n, n.choose j * F(t) ^ j * (1 - F(t)) ^ (n - j)`,
 
@@ -43,17 +36,8 @@ The laws are stated for the product measure `Measure.pi fun _ => μ`, the law of
 independent `μ`-distributed entries, with random-variable forms for an independent family
 `X : Fin n → Ω → ℝ`.
 
-## Main definitions
-
-* `TauCeti.Probability.orderStatistic` — the `k`-th order statistic of a finite tuple.
-
 ## Main results
 
-* `TauCeti.Probability.orderStatistic_le_iff` — the counting characterization, with
-  `TauCeti.Probability.orderStatistic_lt_iff` its strict form;
-* `TauCeti.Probability.orderStatistic_zero`, `TauCeti.Probability.orderStatistic_last` — the
-  extreme order statistics are the minimum and the maximum;
-* `TauCeti.Probability.measurable_orderStatistic` — measurability;
 * `TauCeti.Probability.cdf_map_orderStatistic_pi` — the cumulative distribution function of an
   order statistic of independent entries with a common law, as a binomial tail sum, and
   `TauCeti.Probability.cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta` the same as an
@@ -76,89 +60,6 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Finset
 
 namespace TauCeti.Probability
-
-section Order
-
-variable {α : Type*} [LinearOrder α] {n : ℕ}
-
-/-- The `k`-th **order statistic** of a tuple `x : Fin n → α`: the entry in position `k` once the
-entries of `x` are sorted increasingly, repeated values kept with their multiplicity. Positions
-are counted from `0`, so `orderStatistic 0 x` is the least entry of `x` and
-`orderStatistic (Fin.last _) x` the greatest. -/
-def orderStatistic (k : Fin n) (x : Fin n → α) : α :=
-  x (Tuple.sort x k)
-
-theorem orderStatistic_def (k : Fin n) (x : Fin n → α) :
-    orderStatistic k x = x (Tuple.sort x k) := (rfl)
-
-/-- The order statistics of a tuple do not depend on the order in which its entries are
-listed. -/
-@[simp]
-theorem orderStatistic_comp_perm (k : Fin n) (x : Fin n → α) (σ : Equiv.Perm (Fin n)) :
-    orderStatistic k (x ∘ σ) = orderStatistic k x := by
-  simpa only [orderStatistic_def, Function.comp_apply] using
-    congrFun (Tuple.comp_perm_comp_sort_eq_comp_sort (f := x) (σ := σ)) k
-
-/-- **The counting characterization of order statistics.** The `k`-th order statistic of `x` is
-at most `t` exactly when more than `k` entries of `x` are at most `t`. -/
-theorem orderStatistic_le_iff (k : Fin n) (x : Fin n → α) (t : α) :
-    orderStatistic k x ≤ t ↔ (k : ℕ) < #{i | x i ≤ t} := by
-  have hcard : #{i | x (Tuple.sort x i) ≤ t} = #{i | x i ≤ t} :=
-    Finset.card_equiv (Tuple.sort x) (by simp)
-  rw [← hcard]
-  exact (Tuple.lt_card_le_iff_apply_le_of_monotone (Tuple.monotone_sort x)).symm
-
-/-- The strict form of `TauCeti.Probability.orderStatistic_le_iff`: the `k`-th order statistic of
-`x` is below `t` exactly when more than `k` entries of `x` are below `t`. -/
-theorem orderStatistic_lt_iff (k : Fin n) (x : Fin n → α) (t : α) :
-    orderStatistic k x < t ↔ (k : ℕ) < #{i | x i < t} := by
-  have hcard : #{i | x (Tuple.sort x i) < t} = #{i | x i < t} :=
-    Finset.card_equiv (Tuple.sort x) (by simp)
-  rw [← hcard]
-  exact (Tuple.lt_card_lt_iff_apply_lt_of_monotone (Tuple.monotone_sort x)).symm
-
-/-- The least order statistic is the minimum of the entries. -/
-@[simp]
-theorem orderStatistic_zero (x : Fin (n + 1) → α) :
-    orderStatistic 0 x = Finset.univ.inf' Finset.univ_nonempty x := by
-  refine eq_of_forall_ge_iff fun t => ?_
-  simp [orderStatistic_le_iff, Finset.card_pos, Finset.filter_nonempty_iff]
-
-/-- The greatest order statistic is the maximum of the entries. -/
-@[simp]
-theorem orderStatistic_last (x : Fin (n + 1) → α) :
-    orderStatistic (Fin.last n) x = Finset.univ.sup' Finset.univ_nonempty x := by
-  refine eq_of_forall_ge_iff fun t => ?_
-  have hcard : n < #{i | x i ≤ t} ↔ ({i | x i ≤ t} : Finset _) = Finset.univ := by
-    have := Finset.card_le_univ (Finset.univ.filter fun i => x i ≤ t)
-    rw [← Finset.card_eq_iff_eq_univ, Fintype.card_fin] at *
-    omega
-  simp [orderStatistic_le_iff, hcard, Finset.filter_eq_self]
-
-/-- The sublevel sets of an order statistic, by the counting characterization
-`TauCeti.Probability.orderStatistic_le_iff`. -/
-theorem preimage_orderStatistic_Iic (k : Fin n) (t : α) :
-    orderStatistic k ⁻¹' Iic t = {x | (k : ℕ) < #{i | x i ≤ t}} := by
-  ext x
-  simp [orderStatistic_le_iff]
-
-variable [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [OrderTopology α]
-  [SecondCountableTopology α]
-
-/-- Each order statistic is a measurable function of the tuple. -/
-@[fun_prop]
-theorem measurable_orderStatistic (k : Fin n) :
-    Measurable (orderStatistic k : (Fin n → α) → α) := by
-  refine measurable_of_Iic fun t => ?_
-  have hcount : Measurable fun x : Fin n → α => #{i | x i ≤ t} := by
-    simp_rw [Finset.card_filter]
-    exact Finset.measurable_sum _ fun i _ =>
-      Measurable.ite (measurableSet_le (measurable_pi_apply i) measurable_const) measurable_const
-        measurable_const
-  rw [preimage_orderStatistic_Iic]
-  exact hcount measurableSet_Ioi
-
-end Order
 
 section Law
 
