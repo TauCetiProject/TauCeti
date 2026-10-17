@@ -114,7 +114,6 @@ theorem measurableSet_positiveSingletons (μ : Measure X) [SFinite μ] :
   (countable_positiveSingletons μ).measurableSet
 
 /-- The atomic part preserves the mass of every singleton. -/
-@[simp]
 theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
     atomicPart μ {x} = μ {x} := by
   rw [atomicPart, restrict_apply (measurableSet_singleton x)]
@@ -148,7 +147,6 @@ theorem atomicPart_eq_sum_dirac (μ : Measure X) [SFinite μ] :
   exact atomicPart_eq_sum_dirac_of_countable μ
 
 /-- The diffuse part gives zero mass to every singleton. -/
-@[simp]
 theorem diffusePart_apply_singleton (μ : Measure X) (x : X) :
     diffusePart μ {x} = 0 := by
   rw [diffusePart, restrict_apply (measurableSet_singleton x)]
