@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
+public import TauCeti.Algebra.Category.GradedModuleCat.Ideal
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Converse
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Simple
 public import TauCeti.Algebra.Module.GradedModule.Nakayama
