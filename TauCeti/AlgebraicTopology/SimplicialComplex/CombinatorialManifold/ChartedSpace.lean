@@ -51,7 +51,7 @@ theorem IsCombinatorialManifold.exists_openPartialHomeomorph_openStar_halfSpace
     ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanHalfSpace (n + 1)),
       c.source = openStarRealization K v := by
   rcases (isCombinatorialManifold_succ_iff.mp h) hv with hsphere | hball
-  · obtain ⟨c, hc⟩ := hsphere.exists_openPartialHomeomorph_openStar_ball
+  · obtain ⟨c, hc, -, -, -⟩ := hsphere.exists_openPartialHomeomorph_openStar_ball
     let j : OpenPartialHomeomorph (EuclideanSpace ℝ (Fin (n + 1)))
         (EuclideanHalfSpace (n + 1)) :=
       (TauCeti.EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph
