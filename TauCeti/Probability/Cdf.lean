@@ -92,10 +92,6 @@ theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
     ((cdf ν).right_continuous x).rightLim_eq]
 
-/-- A strict increase of a cdf can only occur across a nontrivial interval. -/
-theorem lt_of_cdf_lt_cdf (ν : Measure ℝ) {a b : ℝ} (h : cdf ν a < cdf ν b) : a < b :=
-  (monotone_cdf ν).reflect_lt h
-
 /-- The mass of a bounded interval `Ioc a b` is the increment of the cumulative distribution
 function between its endpoints. -/
 theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ}
@@ -107,19 +103,10 @@ theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] 
 endpoints. -/
 theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ} :
     0 < ν (Ioc a b) ↔ cdf ν a < cdf ν b := by
-  constructor
-  · intro h
-    obtain ⟨x, hax, hxb⟩ := nonempty_of_measure_ne_zero h.ne'
-    have hab : a < b := hax.trans_le hxb
-    rw [← sub_pos, ← measureReal_Ioc_eq_cdf_sub ν hab.le]
-    exact lt_of_le_of_ne measureReal_nonneg
-      (Ne.symm ((measureReal_ne_zero_iff (measure_ne_top ν _)).2 h.ne'))
-  · intro h
-    have hab : a < b := lt_of_cdf_lt_cdf ν h
-    apply pos_iff_ne_zero.mpr
-    exact (measureReal_ne_zero_iff (measure_ne_top ν _)).1 <| by
-      rw [measureReal_Ioc_eq_cdf_sub ν hab.le]
-      exact (sub_pos.mpr h).ne'
+  calc
+    0 < ν (Ioc a b) ↔ 0 < (cdf ν).measure (Ioc a b) := by rw [measure_cdf]
+    _ ↔ cdf ν a < cdf ν b := by
+      rw [StieltjesFunction.measure_Ioc, ENNReal.ofReal_pos, sub_pos]
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/

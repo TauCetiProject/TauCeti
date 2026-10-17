@@ -39,15 +39,17 @@ open ProbabilityTheory Set
 
 namespace MeasureTheory.Measure
 
-variable (μ : Measure ℝ) [IsProbabilityMeasure μ]
+variable (μ : Measure ℝ)
 
 /-- The cdf of `μ` conditioned on a measurable event is the proportion of that event lying below
 the cdf argument. -/
-theorem cdf_cond {A : Set ℝ} (hA : MeasurableSet A) (hμA : μ A ≠ 0) (x : ℝ) :
+theorem cdf_cond [IsFiniteMeasure μ] {A : Set ℝ} (hA : MeasurableSet A) (hμA : μ A ≠ 0)
+    (x : ℝ) :
     cdf (ProbabilityTheory.cond μ A) x = μ.real (A ∩ Iic x) / μ.real A := by
-  let _ := ProbabilityTheory.cond_isProbabilityMeasure hμA
-  rw [cdf_eq_real, measureReal_def, ProbabilityTheory.cond_apply hA, ENNReal.toReal_mul,
-    ENNReal.toReal_inv, ← div_eq_inv_mul, ← measureReal_def, ← measureReal_def]
+  have := ProbabilityTheory.cond_isProbabilityMeasure hμA
+  simp [cdf_eq_real, measureReal_def, ProbabilityTheory.cond_apply hA, div_eq_inv_mul]
+
+variable [IsProbabilityMeasure μ]
 
 /-- The cdf of `μ` conditioned on `(l, r]` is the increment of the original cdf above `cdf μ l`,
 clipped between the endpoint masses and normalized by `cdf μ r - cdf μ l`. -/
@@ -55,7 +57,7 @@ theorem cdf_cond_Ioc {l r : ℝ} (hLR : cdf μ l < cdf μ r) (x : ℝ) :
     cdf (ProbabilityTheory.cond μ (Ioc l r)) x =
       (min (cdf μ r) (max (cdf μ l) (cdf μ x)) - cdf μ l) /
         (cdf μ r - cdf μ l) := by
-  have hlr : l < r := lt_of_cdf_lt_cdf μ hLR
+  have hlr : l < r := (monotone_cdf μ).reflect_lt hLR
   have hmass : μ (Ioc l r) ≠ 0 := (measure_Ioc_pos_iff_cdf_lt μ).2 hLR |>.ne'
   rw [cdf_cond μ measurableSet_Ioc hmass, measureReal_Ioc_eq_cdf_sub μ hlr.le]
   by_cases hxl : x ≤ l
