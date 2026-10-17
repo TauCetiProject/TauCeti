@@ -151,6 +151,15 @@ theorem levelEmbedding_comp_expand (n d : ℕ+) :
     (levelEmbedding K (n * d)).comp (expand K d) = levelEmbedding K n :=
   AlgHom.ext (levelEmbedding_expand n d)
 
+/-- Raising the parameter of level `n * d` to the `d`-th power gives the parameter of level
+`n`. -/
+@[simp]
+theorem levelEmbedding_single_one_pow (n d : ℕ+) :
+    levelEmbedding K (n * d) (single 1 1) ^ (d : ℕ) = levelEmbedding K n (single 1 1) := by
+  rw [← map_pow (levelEmbedding K (n * d)) (single (1 : ℤ) (1 : K))]
+  convert levelEmbedding_expand n d (single (1 : ℤ) (1 : K)) using 1
+  simp only [HahnSeries.single_pow, LaurentSeries.expand_single, nsmul_eq_mul, mul_one, one_pow]
+
 /-- A Puiseux series lies in the image of the level-`n` embedding exactly when, as a Hahn series,
 it lies in the level-`n` image `K⸨t ^ (1 / n)⸩`. -/
 theorem mem_range_levelEmbedding_iff {n : ℕ+} {x : puiseuxField K} :

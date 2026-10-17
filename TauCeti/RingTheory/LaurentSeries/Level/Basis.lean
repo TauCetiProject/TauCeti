@@ -305,6 +305,13 @@ theorem mem_level_iff (K : Type*) [Field K] (d : ℕ+) (x : TauCeti.puiseuxField
     refine ⟨(LaurentSeries.Level.ringEquivLaurentSeries K d).symm f, ?_⟩
     simp
 
+/-- Every element in the image of a level embedding belongs to that level. -/
+@[simp]
+theorem levelEmbedding_mem_level (K : Type*) [Field K] (d : ℕ+) (f : K⸨X⸩) :
+    levelEmbedding K d f ∈ level K d := by
+  rw [mem_level_iff]
+  exact ⟨f, rfl⟩
+
 /-- The abstract ramified Laurent-series level is equivalent to its image in the Puiseux field. -/
 noncomputable def levelEquiv (K : Type*) [Field K] (d : ℕ+) :
     LaurentSeries.Level K d ≃ₐ[K⸨X⸩] level K d :=
@@ -330,6 +337,22 @@ theorem levelPowerBasis_gen (K : Type*) [Field K] (d : ℕ+) :
     (levelPowerBasis K d).gen =
       levelEquiv K d (LaurentSeries.Level.parameter K d) := by
   rw [levelPowerBasis, PowerBasis.map_gen, LaurentSeries.Level.powerBasis_gen]
+
+/-- A level is contained in an intermediate field exactly when that field contains the level
+parameter. -/
+theorem level_le_iff_levelEmbedding_single_one_mem (K : Type*) [Field K] (d : ℕ+)
+    (E : IntermediateField K⸨X⸩ (TauCeti.puiseuxField K)) :
+    level K d ≤ E ↔ levelEmbedding K d (single 1 1) ∈ E := by
+  refine ⟨fun h ↦ h (levelEmbedding_mem_level K d (single 1 1)), fun hgen x hx ↦ ?_⟩
+  have hgen' : (level K d).val (levelPowerBasis K d).gen ∈ E := by
+    simpa only [IntermediateField.coe_val, levelPowerBasis_gen, coe_levelEquiv_apply,
+      LaurentSeries.Level.toPuiseux_apply, LaurentSeries.Level.ringEquiv_parameter] using hgen
+  have hxmap : x ∈ (⊤ : Subalgebra K⸨X⸩ (level K d)).map (level K d).val := by
+    rw [Subalgebra.mem_map]
+    exact ⟨⟨x, hx⟩, by simp, rfl⟩
+  rw [← (levelPowerBasis K d).adjoin_gen_eq_top, AlgHom.map_adjoin,
+    Set.image_singleton] at hxmap
+  exact Algebra.adjoin_le (Set.singleton_subset_iff.mpr hgen') hxmap
 
 /-- The dimension of the actual level power basis is `d`. -/
 @[simp]
