@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux
+public import TauCeti.RingTheory.LaurentSeries.RamificationIndex
 
 /-!
 # Puiseux series as a colimit of ramified Laurent fields
 
-Ramified Laurent levels are indexed by positive natural numbers ordered by divisibility. The
-transition from level `n` to level `m`, for `n ∣ m`, substitutes `X ^ (m / n)` for `X`. These
-transitions form a filtered diagram of commutative algebras over the coefficient field.
+Ramified Laurent levels are indexed by `TauCeti.RamificationIndex`, the positive natural numbers
+ordered by divisibility. The transition from level `n` to level `m`, for `n ∣ m`, substitutes
+`X ^ (m / n)` for `X`. These transitions form a filtered diagram of commutative algebras over the
+coefficient field.
 
 The level embeddings into the Puiseux series field form a cocone on this diagram. This file
 proves its universal property: a compatible family of algebra maps out of all ramified levels
@@ -22,7 +24,6 @@ series is not merely the union of the levels; it is their colimit in commutative
 
 ## Main definitions
 
-* `TauCeti.RamificationIndex`: positive natural numbers ordered by divisibility.
 * `TauCeti.puiseuxField.levelDiagram`: the diagram whose transition maps are ramified
   substitutions.
 * `TauCeti.puiseuxField.levelCocone`: the level embeddings into the Puiseux field.
@@ -35,59 +36,6 @@ open CategoryTheory CategoryTheory.Limits
 open scoped LaurentSeries
 
 namespace TauCeti
-
-/-- Positive ramification indices, ordered by divisibility rather than by their usual order. -/
-@[ext]
-structure RamificationIndex where
-  /-- The positive natural number underlying a ramification index. -/
-  toPNat : ℕ+
-
-namespace RamificationIndex
-
-instance : LE RamificationIndex := ⟨fun n m ↦ n.toPNat ∣ m.toPNat⟩
-
-/-- Comparison of ramification indices is divisibility of the underlying positive integers. -/
-@[simp]
-theorem le_iff_dvd {n m : RamificationIndex} : n ≤ m ↔ n.toPNat ∣ m.toPNat := Iff.rfl
-
-instance : PartialOrder RamificationIndex where
-  le := (· ≤ ·)
-  le_refl n := dvd_refl n.toPNat
-  le_trans _ _ _ := dvd_trans
-  le_antisymm _ _ hnm hmn := RamificationIndex.ext (PNat.dvd_antisymm hnm hmn)
-
-instance : IsDirectedOrder RamificationIndex where
-  directed n m := ⟨⟨n.toPNat * m.toPNat⟩, ⟨m.toPNat, rfl⟩,
-    ⟨n.toPNat, mul_comm _ _⟩⟩
-
-/-- The quotient `m / n` attached to a divisibility relation `n ≤ m`. -/
-def transitionDegree {n m : RamificationIndex} (_h : n ≤ m) : ℕ+ :=
-  PNat.divExact m.toPNat n.toPNat
-
-/-- Multiplying an index by its transition degree recovers the target index. -/
-theorem mul_transitionDegree {n m : RamificationIndex} (h : n ≤ m) :
-    n.toPNat * transitionDegree h = m.toPNat :=
-  PNat.mul_div_exact h
-
-@[simp]
-theorem transitionDegree_refl (n : RamificationIndex) :
-    transitionDegree (le_refl n) = 1 := by
-  apply mul_left_cancel (a := n.toPNat)
-  rw [mul_transitionDegree, mul_one]
-
-/-- Transition degrees multiply along a chain of ramification indices. -/
-theorem transitionDegree_trans {n m l : RamificationIndex} (hnm : n ≤ m) (hml : m ≤ l) :
-    transitionDegree hnm * transitionDegree hml = transitionDegree (hnm.trans hml) := by
-  apply mul_left_cancel (a := n.toPNat)
-  calc
-    n.toPNat * (transitionDegree hnm * transitionDegree hml) =
-        (n.toPNat * transitionDegree hnm) * transitionDegree hml := (mul_assoc _ _ _).symm
-    _ = m.toPNat * transitionDegree hml := by rw [mul_transitionDegree hnm]
-    _ = l.toPNat := mul_transitionDegree hml
-    _ = n.toPNat * transitionDegree (hnm.trans hml) :=
-      (mul_transitionDegree (hnm.trans hml)).symm
-
-end RamificationIndex
 
 namespace puiseuxField
 
@@ -141,8 +89,11 @@ noncomputable def levelCocone : Cocone (levelDiagram K) where
     { app := fun n ↦ CommAlgCat.ofHom (levelEmbedding K n.toPNat)
       naturality := fun {n m} f ↦ by
         apply CommAlgCat.hom_ext
-        ext x
-        exact levelEmbedding_expand_transitionDegree f.le x }
+        -- Unfold the objects to their carriers so that the `CommAlgCat` hom lemmas typecheck.
+        dsimp only [levelDiagram, Functor.const_obj_obj]
+        simp only [CommAlgCat.hom_comp, CommAlgCat.hom_ofHom, Functor.const_obj_map,
+          CommAlgCat.hom_id, AlgHom.id_comp]
+        exact AlgHom.ext (levelEmbedding_expand_transitionDegree f.le) }
 
 /-- The point of the level cocone is the Puiseux field. -/
 @[simp]
@@ -155,13 +106,6 @@ theorem levelCocone_ι_app_hom (n : RamificationIndex) :
 
 variable {K}
 
-private theorem cocone_app_transition (s : Cocone (levelDiagram K))
-    {n m : RamificationIndex} (h : n ≤ m) (f : LaurentSeries K) :
-    s.ι.app n f =
-      s.ι.app m (LaurentSeries.expand K (RamificationIndex.transitionDegree h) f) := by
-  have hw := congrArg CommAlgCat.Hom.hom (s.w (homOfLE h))
-  exact (DFunLike.congr_fun hw f).symm
-
 private theorem cocone_app_eq_of_levelEmbedding_eq (s : Cocone (levelDiagram K))
     {n m : RamificationIndex} {f g : LaurentSeries K}
     (hfg : levelEmbedding K n.toPNat f = levelEmbedding K m.toPNat g) :
@@ -172,7 +116,10 @@ private theorem cocone_app_eq_of_levelEmbedding_eq (s : Cocone (levelDiagram K))
     apply (levelEmbedding K l.toPNat).injective
     exact (levelEmbedding_expand_transitionDegree hnl f).trans
       (hfg.trans (levelEmbedding_expand_transitionDegree hml g).symm)
-  rw [cocone_app_transition s hnl f, cocone_app_transition s hml g, heq]
+  rw [← s.w_apply (homOfLE hnl) f, ← s.w_apply (homOfLE hml) g]
+  dsimp only [levelDiagram]
+  simp only [ConcreteCategory.hom_ofHom]
+  exact congrArg (s.ι.app l) heq
 
 private noncomputable def chosenIndex (x : puiseuxField K) : RamificationIndex :=
   ⟨Classical.choose (exists_mem_range_levelEmbedding x)⟩
@@ -253,17 +200,17 @@ noncomputable def levelCoconeIsColimit : IsColimit (levelCocone K) where
   desc s := CommAlgCat.ofHom (levelDesc s)
   fac s n := by
     apply CommAlgCat.hom_ext
-    ext f
-    exact levelDesc_levelEmbedding s n f
+    dsimp only [levelCocone, levelDiagram, Functor.const_obj_obj]
+    rw [CommAlgCat.hom_comp, CommAlgCat.hom_ofHom, CommAlgCat.hom_ofHom]
+    exact AlgHom.ext (levelDesc_levelEmbedding s n)
   uniq s g hg := by
     apply CommAlgCat.hom_ext
     ext x
     obtain ⟨n, f, rfl⟩ := exists_mem_range_levelEmbedding x
     let ri : RamificationIndex := ⟨n⟩
     calc
-      g (levelEmbedding K n f) = s.ι.app ri f := by
-        have h := congrArg CommAlgCat.Hom.hom (hg ri)
-        exact DFunLike.congr_fun h f
+      -- The left side is `((levelCocone K).ι.app ri ≫ g) f` with the cocone leg unfolded.
+      g (levelEmbedding K n f) = s.ι.app ri f := ConcreteCategory.congr_hom (hg ri) f
       _ = levelDesc s (levelEmbedding K n f) := (levelDesc_levelEmbedding s ri f).symm
 
 end puiseuxField
