@@ -48,7 +48,7 @@ universe u
 
 section Cochains
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+variable (R : Type*) (A : Type u) (M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- Restriction of cyclic cochains on the forced unitization to its scalar subalgebra. -/
@@ -88,6 +88,7 @@ theorem unitizationAugmentationPullback_apply (n : ℕ) (phi : cyclicCochains R 
   rfl
 
 /-- Pullback along the augmentation is a right inverse to scalar restriction. -/
+@[simp]
 theorem unitizationScalarRestriction_comp_unitizationAugmentationPullback (n : ℕ) :
     unitizationScalarRestriction R A M n ∘ₗ unitizationAugmentationPullback R A M n =
       LinearMap.id := by
@@ -123,13 +124,15 @@ theorem cyclicHochschildCoboundary_mem_relativeCyclicCochains {n : ℕ}
     (phi : relativeCyclicCochains R A M n) :
     cyclicHochschildCoboundary R (Unitization R A) M n phi ∈
       relativeCyclicCochains R A M (n + 1) := by
-  rw [mem_relativeCyclicCochains_iff, unitizationScalarRestriction]
-  rw [← cyclicHochschildCoboundary_cyclicCochainsMap
-    (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom]
-  change cyclicHochschildCoboundary R R M n
-    (unitizationScalarRestriction R A M n (phi :
-      cyclicCochains R (Unitization R A) M n)) = 0
-  rw [phi.property, map_zero]
+  rw [mem_relativeCyclicCochains_iff]
+  have hphi : cyclicCochainsMap M
+      ((Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom :
+        R →ₗ[R] Unitization R A) n phi = 0 := by
+    simpa only [unitizationScalarRestriction] using
+      (mem_relativeCyclicCochains_iff (R := R) (A := A) (M := M)).mp phi.property
+  rw [unitizationScalarRestriction,
+    ← cyclicHochschildCoboundary_cyclicCochainsMap
+    (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom, hphi, map_zero]
 
 /-- The Hochschild coboundary restricted to relative cyclic cochains. -/
 def relativeCyclicHochschildCoboundary (n : ℕ) :
@@ -230,9 +233,12 @@ theorem unitizationAugmentationPullbackComplexMap_comp_unitizationScalarRestrict
   simp only [unitizationAugmentationPullbackComplexMap,
     unitizationScalarRestrictionComplexMap]
   rw [← cyclicCochainComplexMap_comp]
-  convert cyclicCochainComplexMap_id (A := R) (M := M) using 1
-  ext r
-  rfl
+  have h : (Unitization.fstHom R A).toNonUnitalAlgHom.comp
+      (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom = NonUnitalAlgHom.id R R := by
+    ext r
+    change (algebraMap R (Unitization R A) r).fst = r
+    simp only [Unitization.algebraMap_eq_inl, Unitization.fst_inl]
+  rw [h, cyclicCochainComplexMap_id]
 
 end ComplexSplitting
 
