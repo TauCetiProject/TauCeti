@@ -101,7 +101,6 @@ instance (m : Ideal R) (hm : m ≠ ⊥) : CommGroup (FiniteRayClassGroup m hm K)
 instance (m : Ideal R) (hm : m ≠ ⊥) : Inhabited (FiniteRayClassGroup m hm K) := ⟨1⟩
 
 /-- The finite ray class of an invertible fractional ideal prime to the modulus. -/
-@[expose]
 def finiteRayClassMk (m : Ideal R) (hm : m ≠ ⊥) :
     idealsAway K (finiteRaySupport m hm) →* FiniteRayClassGroup m hm K :=
   QuotientGroup.mk' (finiteRay m hm)
