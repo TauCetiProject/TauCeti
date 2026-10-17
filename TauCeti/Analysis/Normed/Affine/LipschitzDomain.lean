@@ -41,9 +41,10 @@ Charts restrict to smaller cylinders (`TauCeti.IsLipschitzChart.mono`) and can b
 any point of their cylinder (`TauCeti.IsLipschitzChart.exists_isLipschitzChart_eq_zero`), so a
 chart around one boundary point serves every nearby one. Lipschitz domains are preserved by
 affine isometries (`TauCeti.IsLipschitzDomain.image`) and by positive dilations
-(`TauCeti.IsLipschitzDomain.smul`), with the Lipschitz constant unchanged. A bounded Lipschitz
-domain in a proper space has a finite cover of its frontier by charts with a common Lipschitz
-constant (`TauCeti.IsLipschitzDomain.exists_finite_cover`). The region above the graph of any
+(`TauCeti.IsLipschitzDomain.smul`), with the Lipschitz constant unchanged. A Lipschitz domain
+with compact frontier, such as a bounded one in a proper space, has a finite cover of its
+frontier by charts with a common Lipschitz constant
+(`TauCeti.IsLipschitzDomain.exists_finite_cover`). The region above the graph of any
 Lipschitz function is a Lipschitz domain (`TauCeti.isLipschitzDomain_setOf_lt_fst`).
 
 ## References
@@ -157,6 +158,14 @@ theorem image_frontier_inter_normalCylinder (hc : IsLipschitzChart Ω e γ K h r
   rw [← e.coe_toHomeomorph, e.toHomeomorph.image_frontier, e.coe_toHomeomorph,
     ← frontier_inter_open_inter hC, hc.image_inter_normalCylinder, frontier_inter_open_inter hC,
     frontier_setOf_lt_fst hc.lipschitzWith.continuous]
+
+/-- A point whose image lies in the cylinder of a Lipschitz chart belongs to `Ω` exactly when
+its image lies above the graph. -/
+theorem mem_iff (hc : IsLipschitzChart Ω e γ K h r) {x : F} (hxC : e x ∈ normalCylinder h r) :
+    x ∈ Ω ↔ γ (e x).snd < (e x).fst := by
+  rw [← e.injective.mem_set_image]
+  exact ⟨fun hx => (hc.image_inter_normalCylinder.subset ⟨hx, hxC⟩).1,
+    fun hx => (hc.image_inter_normalCylinder.superset ⟨hx, hxC⟩).1⟩
 
 /-- A frontier point of `Ω` inside the cylinder of a Lipschitz chart lies on the graph. -/
 theorem fst_apply_eq_of_mem_frontier (hc : IsLipschitzChart Ω e γ K h r) {x : F}
@@ -279,12 +288,6 @@ def IsLipschitzDomain (Ω : Set F) : Prop :=
   ∀ x ∈ frontier Ω, ∃ (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (K : ℝ≥0) (h r : ℝ),
     IsLipschitzChart Ω e γ K h r ∧ e x = 0
 
-/-- Unfolding `TauCeti.IsLipschitzDomain`. -/
-theorem isLipschitzDomain_iff {Ω : Set F} :
-    IsLipschitzDomain E Ω ↔ ∀ x ∈ frontier Ω, ∃ (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ)
-      (K : ℝ≥0) (h r : ℝ), IsLipschitzChart Ω e γ K h r ∧ e x = 0 :=
-  Iff.rfl
-
 /-- A set is a Lipschitz domain if and only if every frontier point lies in the cylinder of
 some Lipschitz chart, not necessarily centred at it. -/
 theorem isLipschitzDomain_iff_exists_mem_normalCylinder {Ω : Set F} :
@@ -310,9 +313,7 @@ theorem isOpen (hΩ : IsLipschitzDomain E Ω) : IsOpen Ω := by
   · exact hx
   obtain ⟨e, γ, K, h, r, hc, hex⟩ := hΩ x hx
   have hxC : e x ∈ normalCylinder h r := hex ▸ zero_mem_normalCylinder hc.height_pos hc.radius_pos
-  have habove : γ (e x).snd < (e x).fst :=
-    (hc.image_inter_normalCylinder.subset ⟨mem_image_of_mem e hxΩ, hxC⟩).1
-  exact absurd (hc.fst_apply_eq_of_mem_frontier hx hxC) habove.ne'
+  exact absurd (hc.fst_apply_eq_of_mem_frontier hx hxC) ((hc.mem_iff hxC).1 hxΩ).ne'
 
 /-- The image of a Lipschitz domain under an affine isometry is a Lipschitz domain. -/
 theorem image (hΩ : IsLipschitzDomain E Ω) (g : F ≃ᵃⁱ[ℝ] G) : IsLipschitzDomain E (g '' Ω) := by
@@ -332,17 +333,13 @@ theorem smul (hΩ : IsLipschitzDomain E Ω) {c : ℝ} (hc : 0 < c) :
   obtain ⟨e', he', hc'⟩ := hce.exists_isLipschitzChart_smul hc
   exact ⟨e', _, K, _, _, hc', by simp [he', hex]⟩
 
-/-- A bounded Lipschitz domain in a proper space has a finite cover of its frontier by the
+/-- A Lipschitz domain with compact frontier has a finite cover of its frontier by the
 cylinders of Lipschitz charts sharing a common Lipschitz constant. -/
-theorem exists_finite_cover [ProperSpace F] (hΩ : IsLipschitzDomain E Ω)
-    (hb : Bornology.IsBounded Ω) :
+theorem exists_finite_cover (hΩ : IsLipschitzDomain E Ω) (hcompact : IsCompact (frontier Ω)) :
     ∃ (K : ℝ≥0) (m : ℕ) (e : Fin m → F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : Fin m → E → ℝ)
       (h r : Fin m → ℝ), (∀ i, IsLipschitzChart Ω (e i) (γ i) K (h i) (r i)) ∧
         frontier Ω ⊆ ⋃ i, e i ⁻¹' normalCylinder (h i) (r i) := by
   choose e γ K h r hc hex using fun x : frontier Ω => hΩ x x.2
-  have hcompact : IsCompact (frontier Ω) :=
-    Metric.isCompact_of_isClosed_isBounded isClosed_frontier
-      (hb.closure.subset frontier_subset_closure)
   obtain ⟨t, ht⟩ := hcompact.elim_finite_subcover
     (fun x : frontier Ω => e x ⁻¹' normalCylinder (h x) (r x))
     (fun x => (isOpen_normalCylinder _ _).preimage (e x).continuous)
@@ -356,6 +353,16 @@ theorem exists_finite_cover [ProperSpace F] (hΩ : IsLipschitzDomain E Ω)
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (ht hx)
   exact mem_iUnion.2 ⟨t.equivFin ⟨y, hy⟩, by simpa [f] using hxy⟩
 
+/-- A bounded Lipschitz domain in a proper space has a finite cover of its frontier by the
+cylinders of Lipschitz charts sharing a common Lipschitz constant. -/
+theorem exists_finite_cover_of_isBounded [ProperSpace F] (hΩ : IsLipschitzDomain E Ω)
+    (hb : Bornology.IsBounded Ω) :
+    ∃ (K : ℝ≥0) (m : ℕ) (e : Fin m → F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : Fin m → E → ℝ)
+      (h r : Fin m → ℝ), (∀ i, IsLipschitzChart Ω (e i) (γ i) K (h i) (r i)) ∧
+        frontier Ω ⊆ ⋃ i, e i ⁻¹' normalCylinder (h i) (r i) :=
+  hΩ.exists_finite_cover <| Metric.isCompact_of_isClosed_isBounded isClosed_frontier
+    (hb.closure.subset frontier_subset_closure)
+
 end IsLipschitzDomain
 
 /-- Being a Lipschitz domain is invariant under affine isometries. -/
@@ -363,6 +370,12 @@ end IsLipschitzDomain
 theorem isLipschitzDomain_image_iff {Ω : Set F} (g : F ≃ᵃⁱ[ℝ] G) :
     IsLipschitzDomain E (g '' Ω) ↔ IsLipschitzDomain E Ω :=
   ⟨fun hΩ => by simpa [image_image] using hΩ.image g.symm, fun hΩ => hΩ.image g⟩
+
+/-- Being a Lipschitz domain is invariant under positive dilations. -/
+@[simp]
+theorem isLipschitzDomain_smul_iff {Ω : Set F} {c : ℝ} (hc : 0 < c) :
+    IsLipschitzDomain E (c • Ω) ↔ IsLipschitzDomain E Ω :=
+  ⟨fun hΩ => by simpa [smul_smul, hc.ne'] using hΩ.smul (inv_pos.2 hc), fun hΩ => hΩ.smul hc⟩
 
 /-! ### The region above a Lipschitz graph -/
 
