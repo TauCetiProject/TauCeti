@@ -38,6 +38,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion for the
+  beta integrand on `(0, 1)`;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
   `∫ t in 0..1, t ^ (a - 1) * (1 - t) ^ (b - 1) = Β(a, b)`;
 * `TauCeti.hasDerivAt_rpow_mul_one_sub_rpow` — the derivative of `t ^ a * (1 - t) ^ b`;
@@ -119,6 +121,68 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- The beta integrand is integrable on `(0, 1)` exactly when both parameters are positive. -/
+theorem integrableOn_rpow_mul_one_sub_rpow_iff :
+    IntegrableOn (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 1) ↔
+      0 < a ∧ 0 < b := by
+  constructor
+  · intro h
+    constructor
+    · have hleft : IntegrableOn
+          (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 (1 / 2)) :=
+        h.mono_set fun _ hx ↦
+          ⟨hx.1, lt_of_lt_of_le hx.2 (by norm_num : (1 / 2 : ℝ) ≤ 1)⟩
+      have hcont : ContinuousOn (fun x : ℝ ↦ (1 - x) ^ (1 - b)) (Icc 0 (1 / 2)) := by
+        refine ContinuousOn.rpow_const (by fun_prop) fun x hx ↦ Or.inl ?_
+        exact ne_of_gt (by linarith [hx.2])
+      have hmul := hleft.mul_continuousOn_of_subset hcont measurableSet_Ioo isCompact_Icc
+        Ioo_subset_Icc_self
+      have hpow : IntegrableOn (fun x : ℝ ↦ x ^ (a - 1)) (Ioo 0 (1 / 2)) := by
+        refine hmul.congr_fun (fun x hx ↦ ?_) measurableSet_Ioo
+        have h1x : 0 < 1 - x := by linarith [hx.2]
+        have hsum : b - 1 + (1 - b) = 0 := by ring
+        dsimp only
+        rw [mul_assoc, ← Real.rpow_add h1x, hsum, Real.rpow_zero, mul_one]
+      rw [intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num : (0 : ℝ) < 1 / 2)] at hpow
+      linarith
+    · have hright : IntegrableOn
+          (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo (1 / 2) 1) :=
+        h.mono_set fun _ hx ↦
+          ⟨lt_of_le_of_lt (by norm_num : (0 : ℝ) ≤ 1 / 2) hx.1, hx.2⟩
+      have hcont : ContinuousOn (fun x : ℝ ↦ x ^ (1 - a)) (Icc (1 / 2) 1) := by
+        refine ContinuousOn.rpow_const continuousOn_id fun x hx ↦ Or.inl ?_
+        exact ne_of_gt (by linarith [hx.1])
+      have hmul := hright.mul_continuousOn_of_subset hcont measurableSet_Ioo isCompact_Icc
+        Ioo_subset_Icc_self
+      have honeSub : IntegrableOn (fun x : ℝ ↦ (1 - x) ^ (b - 1)) (Ioo (1 / 2) 1) := by
+        refine hmul.congr_fun (fun x hx ↦ ?_) measurableSet_Ioo
+        have hx0 : 0 < x := by linarith [hx.1]
+        have hsum : a - 1 + (1 - a) = 0 := by ring
+        dsimp only
+        calc
+          x ^ (a - 1) * (1 - x) ^ (b - 1) * x ^ (1 - a) =
+              (x ^ (a - 1) * x ^ (1 - a)) * (1 - x) ^ (b - 1) := by ring
+          _ = x ^ (a - 1 + (1 - a)) * (1 - x) ^ (b - 1) := by
+            rw [Real.rpow_add hx0]
+          _ = (1 - x) ^ (b - 1) := by
+            rw [hsum, Real.rpow_zero, one_mul]
+      have hint : IntervalIntegrable (fun x : ℝ ↦ (1 - x) ^ (b - 1)) volume (1 / 2) 1 :=
+        (intervalIntegrable_iff_integrableOn_Ioo_of_le (by norm_num)).mpr honeSub
+      have hreflected : IntervalIntegrable (fun x : ℝ ↦ x ^ (b - 1)) volume 0 (1 / 2) := by
+        have hreflected' := (hint.comp_sub_left 1).symm
+        have hzero : (1 : ℝ) - 1 = 0 := by norm_num
+        have hhalf : (1 : ℝ) - 1 / 2 = 1 / 2 := by norm_num
+        rw [hzero, hhalf] at hreflected'
+        simpa only [sub_sub_cancel] using hreflected'
+      have hpow : IntegrableOn (fun x : ℝ ↦ x ^ (b - 1)) (Ioo 0 (1 / 2)) :=
+        (intervalIntegrable_iff_integrableOn_Ioo_of_le (by norm_num)).mp hreflected
+      rw [intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num : (0 : ℝ) < 1 / 2)] at hpow
+      linarith
+  · rintro ⟨ha, hb⟩
+    rw [← intervalIntegrable_iff_integrableOn_Ioo_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
+    exact intervalIntegrable_rpow_mul_one_sub_rpow ha hb ⟨le_rfl, zero_le_one⟩
+      ⟨zero_le_one, le_rfl⟩
 
 /-- Euler's beta integral, in real-valued interval form: for positive parameters the integral of
 `t ^ (a - 1) * (1 - t) ^ (b - 1)` over `[0, 1]` is `Β(a, b)`. -/
