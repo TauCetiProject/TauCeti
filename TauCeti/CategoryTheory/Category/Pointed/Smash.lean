@@ -143,38 +143,37 @@ def associator (X Y Z : Pointed.{u}) : smash (smash X Y) Z ≅ smash X (smash Y 
   hom_inv_id := by
     ext a z
     induction a using smash.ind
-    rfl
+    simp
   inv_hom_id := by
     ext x b
     induction b using smash.ind
-    rfl
+    simp
 
 /-- The left unit isomorphism `S⁰ ∧ X ≅ X`, where `S⁰ = PUnit₊`. -/
 def leftUnitor (X : Pointed.{u}) : smash (of (none : Option PUnit.{u + 1})) X ≅ X where
-  hom := lift (fun o x ↦ o.elim X.point fun _ ↦ x) (fun _ ↦ rfl) (by rintro (_ | _) <;> rfl)
+  hom := lift (fun o x ↦ o.elim X.point fun _ ↦ x) (fun _ ↦ Option.elim_none _ _)
+    (by rintro (_ | _) <;> rfl)
   inv := ⟨fun x ↦ mk (some PUnit.unit) x, mk_point_right _⟩
   hom_inv_id := by
-    ext (_ | _) x
-    exacts [(mk_point_right _).trans (mk_point_left x).symm, rfl]
+    ext (_ | _) x <;> simp [eq_comm (b := mk _ _)]
 
 /-- The right unit isomorphism `X ∧ S⁰ ≅ X`, where `S⁰ = PUnit₊`. -/
 def rightUnitor (X : Pointed.{u}) : smash X (of (none : Option PUnit.{u + 1})) ≅ X where
-  hom := lift (fun x o ↦ o.elim X.point fun _ ↦ x) (by rintro (_ | _) <;> rfl) (fun _ ↦ rfl)
+  hom := lift (fun x o ↦ o.elim X.point fun _ ↦ x) (by rintro (_ | _) <;> rfl)
+    (fun _ ↦ Option.elim_none _ _)
   inv := ⟨fun x ↦ mk x (some PUnit.unit), mk_point_left _⟩
   hom_inv_id := by
-    ext x (_ | _)
-    exacts [(mk_point_left _).trans (mk_point_right x).symm, rfl]
+    ext x (_ | _) <;> simp [eq_comm (b := mk _ _)]
 
 /-- The isomorphism `X ∧ Y ≅ Y ∧ X` swapping the two factors. -/
 def braiding (X Y : Pointed.{u}) : smash X Y ≅ smash Y X where
   hom := lift (fun x y ↦ mk y x) (fun _ ↦ mk_point_right _) (fun _ ↦ mk_point_left _)
   inv := lift (fun y x ↦ mk x y) (fun _ ↦ mk_point_right _) (fun _ ↦ mk_point_left _)
 
-@[simp]
-lemma braiding_hom_mk (x : X) (y : Y) : (braiding X Y).hom.toFun (mk x y) = mk y x := (rfl)
-
-@[simp]
-lemma braiding_inv_mk (x : X) (y : Y) : (braiding X Y).inv.toFun (mk y x) = mk x y := (rfl)
+/- The braiding laws are proved before `β_` exists, so they use this private form; the public
+API is `Pointed.braiding_hom_mk` and `Pointed.braiding_inv_mk`. -/
+private lemma braiding_hom_mk (x : X) (y : Y) :
+    (braiding X Y).hom.toFun (mk x y) = mk y x := (rfl)
 
 end smash
 
@@ -283,11 +282,11 @@ instance monoidalCategory : MonoidalCategory Pointed.{u} where
 /-- The swap of factors makes the smash product symmetric monoidal. -/
 instance symmetricCategory : SymmetricCategory Pointed.{u} where
   braiding := smash.braiding
-  braiding_naturality_right _ _ _ _ := by ext; simp
-  braiding_naturality_left _ _ := by ext; simp
-  hexagon_forward _ _ _ := tensor_ext₃' fun _ _ _ ↦ by simp
-  hexagon_reverse _ _ _ := tensor_ext₃ fun _ _ _ ↦ by simp
-  symmetry _ _ := by ext; simp
+  braiding_naturality_right _ _ _ _ := by ext; simp [smash.braiding_hom_mk]
+  braiding_naturality_left _ _ := by ext; simp [smash.braiding_hom_mk]
+  hexagon_forward _ _ _ := tensor_ext₃' fun _ _ _ ↦ by simp [smash.braiding_hom_mk]
+  hexagon_reverse _ _ _ := tensor_ext₃ fun _ _ _ ↦ by simp [smash.braiding_hom_mk]
+  symmetry _ _ := by ext; simp [smash.braiding_hom_mk]
 
 @[simp]
 lemma braiding_hom_mk (x : X) (y : Y) :
