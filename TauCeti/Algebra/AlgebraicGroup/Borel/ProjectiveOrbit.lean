@@ -25,7 +25,7 @@ The proof combines `HopfIdeal.exists_conjugate_le_of_isClosed_projectiveOrbit` w
 `HopfIdeal.isBorelOverAlgClosed_iff_exists_eq_conjugate`.
 
 Without a closed orbit with solvable stabilizer, a group that is not solvable still has a closed
-orbit with nontrivial stabilizer. Every Borel candidate then lies in a conjugate of that proper
+orbit with proper stabilizer. Every Borel candidate then lies in a conjugate of that proper
 closed subgroup, which reduces the conjugacy of Borel subgroups to a group of smaller dimension.
 
 ## Main declarations

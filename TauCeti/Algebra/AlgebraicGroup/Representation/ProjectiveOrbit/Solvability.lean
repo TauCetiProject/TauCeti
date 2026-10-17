@@ -31,9 +31,9 @@ fixed-point theorem makes every closed orbit a single point, so its line is stab
 rational points, and reducedness promotes this to a subrepresentation.
 
 The first direction is the input for an induction on dimension in the conjugacy of Borel
-subgroups. A group that is not solvable has a closed projective orbit with nontrivial stabilizer,
-so a proper closed subgroup, and every reduced connected solvable closed subgroup is contained in
-a conjugate of that proper subgroup.
+subgroups. A group that is not solvable has a closed projective orbit whose stabilizer is a
+proper closed subgroup, and every reduced connected solvable closed subgroup is contained in a
+conjugate of that proper subgroup.
 
 ## Main declarations
 
