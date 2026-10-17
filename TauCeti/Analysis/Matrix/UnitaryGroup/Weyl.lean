@@ -233,6 +233,8 @@ theorem unitaryTorusNormalizerPerm_eq_of_eq_unitaryTorusHom_mul_permutationUnita
   rw [unitaryTorusNormalizerPerm_apply]
   refine diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _
     (fun i => Circle.toUnits (z i)) σ ?_
+  -- Reduce the GL-normalizer subtype's value projection to `Unitary.toUnits ↑g` so rewriting
+  -- `h` does not also change the constructor's dependent normalizer-membership proof.
   change Unitary.toUnits (g : unitaryGroup (Fin n) ℂ) = _
   rw [h, map_mul, toUnits_unitaryTorusHom, toUnits_permutationUnitary]
 
