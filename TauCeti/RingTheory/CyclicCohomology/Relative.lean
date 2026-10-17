@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 public import Mathlib.Algebra.Algebra.Unitization
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Relative cyclic cohomology of a nonunital algebra
@@ -28,7 +29,13 @@ contravariant splitting used by the relative theory.
 * `TauCeti.relativeCyclicCochains`: the kernel of scalar restriction.
 * `TauCeti.relativeCyclicHochschildCoboundary`: the Hochschild coboundary on relative cochains.
 * `TauCeti.relativeCyclicCochainComplex`: the relative cyclic cochain complex.
+* `TauCeti.relativeCyclicCochainComplexι`: its inclusion as the kernel of scalar restriction.
+* `TauCeti.relativeCyclicCocycles`, `TauCeti.relativeCyclicCoboundaries`: concrete cocycles and
+  coboundaries.
 * `TauCeti.relativeCyclicCohomology`: the relative cyclic cohomology of a nonunital algebra.
+* `TauCeti.relativeCyclicCohomology.mk`: the class of a relative cyclic cocycle.
+* `TauCeti.relativeCyclicCochainComplexMap`, `TauCeti.relativeCyclicCohomology.map`: pullback along
+  a homomorphism of nonunital algebras.
 
 ## References
 
@@ -40,7 +47,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace TauCeti
 
@@ -201,12 +208,353 @@ theorem relativeCyclicCochainComplex_d (n : ℕ) :
         ModuleCat.ofHom (relativeCyclicHochschildCoboundary R A M n) := by
   simp [relativeCyclicCochainComplex, relativeCyclicCochainComplexXIso]
 
+/-- Relative cyclic cochains inherit their additive group structure from cyclic cochains. -/
+instance relativeCyclicCochainsAddCommGroup (n : ℕ) :
+    AddCommGroup (relativeCyclicCochains R A M n) :=
+  (relativeCyclicCochains R A M n).addCommGroup
+
+/-- The relative cyclic `n`-cocycles: relative cochains annihilated by the relative Hochschild
+coboundary. -/
+def relativeCyclicCocycles (n : ℕ) : Submodule R (relativeCyclicCochains R A M n) :=
+  LinearMap.ker (relativeCyclicHochschildCoboundary R A M n)
+
+/-- A relative cyclic cochain is a cocycle exactly when its relative Hochschild coboundary
+vanishes. -/
+@[simp]
+theorem mem_relativeCyclicCocycles_iff {n : ℕ} {φ : relativeCyclicCochains R A M n} :
+    φ ∈ relativeCyclicCocycles R A M n ↔
+      relativeCyclicHochschildCoboundary R A M n φ = 0 :=
+  LinearMap.mem_ker
+
+/-- The relative cyclic coboundaries: zero in degree zero, and in positive degree the image of the
+relative Hochschild coboundary. -/
+def relativeCyclicCoboundaries : (n : ℕ) → Submodule R (relativeCyclicCochains R A M n)
+  | 0 => ⊥
+  | n + 1 => LinearMap.range (relativeCyclicHochschildCoboundary R A M n)
+
+/-- There are no nonzero relative cyclic coboundaries in degree zero. -/
+@[simp]
+theorem relativeCyclicCoboundaries_zero : relativeCyclicCoboundaries R A M 0 = ⊥ := (rfl)
+
+/-- In positive degree the relative cyclic coboundaries are the image of the relative Hochschild
+coboundary. -/
+theorem relativeCyclicCoboundaries_succ (n : ℕ) :
+    relativeCyclicCoboundaries R A M (n + 1) =
+      LinearMap.range (relativeCyclicHochschildCoboundary R A M n) :=
+  (rfl)
+
+/-- A relative cyclic cochain in positive degree is a coboundary exactly when it is the relative
+Hochschild coboundary of a cochain in the preceding degree. -/
+@[simp]
+theorem mem_relativeCyclicCoboundaries_succ_iff {n : ℕ}
+    {φ : relativeCyclicCochains R A M (n + 1)} :
+    φ ∈ relativeCyclicCoboundaries R A M (n + 1) ↔
+      ∃ ψ : relativeCyclicCochains R A M n,
+        relativeCyclicHochschildCoboundary R A M n ψ = φ := by
+  rw [relativeCyclicCoboundaries_succ, LinearMap.mem_range]
+
+/-- Every relative cyclic coboundary is a relative cyclic cocycle. -/
+theorem relativeCyclicCoboundaries_le_relativeCyclicCocycles (n : ℕ) :
+    relativeCyclicCoboundaries R A M n ≤ relativeCyclicCocycles R A M n := by
+  cases n with
+  | zero => simp
+  | succ n =>
+    exact LinearMap.range_le_ker_iff.2
+      (relativeCyclicHochschildCoboundary_comp_relativeCyclicHochschildCoboundary R A M n)
+
 /-- The relative cyclic cohomology of a nonunital algebra, defined as the cohomology of the
 kernel of scalar restriction on the cyclic cochain complex of its forced unitization. -/
 abbrev relativeCyclicCohomology (n : ℕ) : ModuleCat R :=
   (relativeCyclicCochainComplex R A M).homology n
 
+/-- A relative cyclic cocycle, viewed as a cycle of the relative cyclic cochain complex. -/
+private def relativeToCycles (n : ℕ) :
+    ModuleCat.of R (relativeCyclicCocycles R A M n) ⟶
+      (relativeCyclicCochainComplex R A M).cycles n :=
+  (relativeCyclicCochainComplex R A M).liftCycles
+    (ModuleCat.ofHom (relativeCyclicCocycles R A M n).subtype ≫
+      (relativeCyclicCochainComplexXIso R A M n).inv)
+    (n + 1) (by simp) (by
+      rw [← cancel_mono (relativeCyclicCochainComplexXIso R A M (n + 1)).hom,
+        Category.assoc, Category.assoc, relativeCyclicCochainComplex_d,
+        Iso.inv_hom_id_assoc, Limits.zero_comp]
+      exact ModuleCat.hom_ext (LinearMap.ext fun φ ↦ φ.2))
+
+private theorem relative_iCycles_toCycles (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
+    (relativeCyclicCochainComplex R A M).iCycles n (relativeToCycles R A M n φ) =
+      (relativeCyclicCochainComplexXIso R A M n).inv φ.1 := by
+  rw [relativeToCycles, ← ConcreteCategory.comp_apply, HomologicalComplex.liftCycles_i]
+  rfl
+
+private theorem relative_homologyπ_toCycles_eq_zero_iff {n m : ℕ}
+    (hm : (ComplexShape.up ℕ).prev n = m) (φ : relativeCyclicCocycles R A M n) :
+    (relativeCyclicCochainComplex R A M).homologyπ n (relativeToCycles R A M n φ) = 0 ↔
+      ∃ y, (relativeCyclicCochainComplex R A M).d m n y =
+        (relativeCyclicCochainComplexXIso R A M n).inv φ.1 := by
+  let K := relativeCyclicCochainComplex R A M
+  rw [K.moduleCat_homologyπ_eq_zero_iff hm]
+  refine exists_congr fun y ↦ ?_
+  rw [← (K.moduleCat_iCycles_injective n).eq_iff, relative_iCycles_toCycles,
+    ← ModuleCat.comp_apply, HomologicalComplex.toCycles_i]
+
+namespace relativeCyclicCohomology
+
+/-- The relative cyclic cohomology class of a relative cyclic cocycle. -/
+def mk (n : ℕ) :
+    relativeCyclicCocycles R A M n →ₗ[R] relativeCyclicCohomology R A M n :=
+  (relativeToCycles R A M n ≫ (relativeCyclicCochainComplex R A M).homologyπ n).hom
+
+private theorem mk_apply (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
+    mk R A M n φ =
+      (relativeCyclicCochainComplex R A M).homologyπ n (relativeToCycles R A M n φ) :=
+  (rfl)
+
+/-- Every relative cyclic cohomology class is represented by a relative cyclic cocycle. -/
+theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
+  intro z
+  let K := relativeCyclicCochainComplex R A M
+  obtain ⟨c, rfl⟩ := K.moduleCat_homologyπ_surjective n z
+  have hc : (relativeCyclicCochainComplexXIso R A M n).hom (K.iCycles n c) ∈
+      relativeCyclicCocycles R A M n := by
+    have h : K.d n (n + 1) (K.iCycles n c) = 0 := by
+      rw [← ConcreteCategory.comp_apply, K.iCycles_d]
+      rfl
+    rw [relativeCyclicCocycles, LinearMap.mem_ker,
+      ← relativeCyclicCochainComplex_d_apply, h, map_zero]
+  refine ⟨⟨_, hc⟩, ?_⟩
+  rw [mk_apply]
+  congr 1
+  apply K.moduleCat_iCycles_injective n
+  rw [relative_iCycles_toCycles, Iso.hom_inv_id_apply]
+
+/-- A relative cyclic cocycle has zero cohomology class exactly when it is a relative cyclic
+coboundary. -/
+@[simp]
+theorem mk_eq_zero_iff (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
+    mk R A M n φ = 0 ↔
+      (φ : relativeCyclicCochains R A M n) ∈ relativeCyclicCoboundaries R A M n := by
+  let K := relativeCyclicCochainComplex R A M
+  cases n with
+  | zero =>
+    rw [mk_apply, relative_homologyπ_toCycles_eq_zero_iff R A M CochainComplex.prev_nat_zero,
+      K.shape 0 0 (by simp), relativeCyclicCoboundaries_zero, Submodule.mem_bot]
+    refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun h ↦ ⟨0, by rw [h, map_zero, map_zero]⟩⟩
+    rw [← Iso.inv_hom_id_apply (relativeCyclicCochainComplexXIso R A M 0) φ.1, ← hy]
+    simp
+  | succ n =>
+    rw [mk_apply, relative_homologyπ_toCycles_eq_zero_iff R A M
+      (CochainComplex.prev_nat_succ n), mem_relativeCyclicCoboundaries_succ_iff]
+    constructor
+    · rintro ⟨y, hy⟩
+      refine ⟨(relativeCyclicCochainComplexXIso R A M n).hom y, ?_⟩
+      rw [← relativeCyclicCochainComplex_d_apply, hy, Iso.inv_hom_id_apply]
+    · rintro ⟨ψ, hψ⟩
+      refine ⟨(relativeCyclicCochainComplexXIso R A M n).inv ψ, ?_⟩
+      apply (ModuleCat.mono_iff_injective
+        (relativeCyclicCochainComplexXIso R A M (n + 1)).hom).1 inferInstance
+      rw [relativeCyclicCochainComplex_d_apply, Iso.inv_hom_id_apply,
+        Iso.inv_hom_id_apply, hψ]
+
+end relativeCyclicCohomology
+
 end Complex
+
+section Map
+
+variable {R : Type*} {A B C : Type u} {M : Type*} [CommRing R]
+  [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
+  [NonUnitalSemiring C] [Module R C] [IsScalarTower R C C] [SMulCommClass R C C]
+  [AddCommGroup M] [Module R M]
+
+/-- The unital algebra homomorphism between forced unitizations induced by a homomorphism of
+nonunital algebras. -/
+def unitizationMap (f : A →ₙₐ[R] B) : Unitization R A →ₐ[R] Unitization R B :=
+  Unitization.lift ((Unitization.inrNonUnitalAlgHom R B).comp f)
+
+/-- The induced map of unitizations restricts to the original nonunital algebra homomorphism. -/
+@[simp]
+theorem unitizationMap_inr (f : A →ₙₐ[R] B) (a : A) :
+    unitizationMap (R := R) f (Unitization.inr a) = Unitization.inr (f a) := by
+  simp [unitizationMap]
+
+/-- The identity homomorphism induces the identity homomorphism of forced unitizations. -/
+@[simp]
+theorem unitizationMap_id :
+    unitizationMap (R := R) (NonUnitalAlgHom.id R A) = AlgHom.id R (Unitization R A) := by
+  apply Unitization.algHom_ext''
+  intro a
+  simp
+
+/-- Unitization preserves composition of nonunital algebra homomorphisms. -/
+theorem unitizationMap_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) :
+    unitizationMap (R := R) (g.comp f) =
+      (unitizationMap (R := R) g).comp (unitizationMap (R := R) f) := by
+  apply Unitization.algHom_ext''
+  intro a
+  simp
+
+/-- Pullback along the induced map of unitizations preserves relative cyclic cochains. -/
+theorem cyclicCochainsMap_mem_relativeCyclicCochains (f : A →ₙₐ[R] B) {n : ℕ}
+    (φ : relativeCyclicCochains R B M n) :
+    cyclicCochainsMap M ((unitizationMap (R := R) f).toLinearMap) n φ ∈
+      relativeCyclicCochains R A M n := by
+  rw [mem_relativeCyclicCochains_iff]
+  apply Subtype.ext
+  apply MultilinearMap.ext
+  intro a
+  rw [unitizationScalarRestriction_apply]
+  simp only [coe_cyclicCochainsMap_apply, MultilinearMap.compLinearMap_apply]
+  rw [show (fun i ↦ (unitizationMap (R := R) f).toLinearMap
+      (algebraMap R (Unitization R A) (a i))) =
+    (fun i ↦ algebraMap R (Unitization R B) (a i)) by
+      funext i
+      exact (unitizationMap (R := R) f).commutes (a i)]
+  have hφ := (mem_relativeCyclicCochains_iff (R := R) (A := B) (M := M)).mp φ.2
+  simpa only [unitizationScalarRestriction_apply, ZeroMemClass.coe_zero, zero_apply] using congrArg
+      (fun ψ : cyclicCochains R R M n ↦
+        (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) a) hφ
+
+variable (M) in
+/-- Pullback of relative cyclic cochains along a homomorphism of nonunital algebras. -/
+def relativeCyclicCochainsMap (f : A →ₙₐ[R] B) (n : ℕ) :
+    relativeCyclicCochains R B M n →ₗ[R] relativeCyclicCochains R A M n :=
+  LinearMap.codRestrict (relativeCyclicCochains R A M n)
+    ((cyclicCochainsMap M ((unitizationMap (R := R) f).toLinearMap) n).comp
+      (relativeCyclicCochains R B M n).subtype)
+    (cyclicCochainsMap_mem_relativeCyclicCochains (R := R) (M := M) f)
+
+/-- The underlying cyclic cochain of a relative pullback is the ordinary pullback along the
+induced map of unitizations. -/
+@[simp]
+theorem coe_relativeCyclicCochainsMap_apply (f : A →ₙₐ[R] B) (n : ℕ)
+    (φ : relativeCyclicCochains R B M n) :
+    (relativeCyclicCochainsMap M f n φ : cyclicCochains R (Unitization R A) M n) =
+      cyclicCochainsMap M ((unitizationMap (R := R) f).toLinearMap) n φ :=
+  (rfl)
+
+/-- Pullback along the identity is the identity on relative cyclic cochains. -/
+@[simp]
+theorem relativeCyclicCochainsMap_id (n : ℕ) :
+    relativeCyclicCochainsMap M (NonUnitalAlgHom.id R A) n = LinearMap.id := by
+  apply LinearMap.ext
+  intro φ
+  apply Subtype.ext
+  simp [relativeCyclicCochainsMap]
+
+/-- Pullback of relative cyclic cochains is contravariantly functorial. -/
+theorem relativeCyclicCochainsMap_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
+    relativeCyclicCochainsMap M (g.comp f) n =
+      relativeCyclicCochainsMap M f n ∘ₗ relativeCyclicCochainsMap M g n := by
+  apply LinearMap.ext
+  intro φ
+  apply Subtype.ext
+  simp only [coe_relativeCyclicCochainsMap_apply, LinearMap.coe_comp, Function.comp_apply]
+  rw [unitizationMap_comp]
+  exact LinearMap.congr_fun
+    (cyclicCochainsMap_comp M (unitizationMap (R := R) f).toLinearMap
+      (unitizationMap (R := R) g).toLinearMap n) φ
+
+/-- Relative pullback commutes with the relative Hochschild coboundary. -/
+theorem relativeCyclicHochschildCoboundary_relativeCyclicCochainsMap
+    (f : A →ₙₐ[R] B) (n : ℕ) (φ : relativeCyclicCochains R B M n) :
+    relativeCyclicHochschildCoboundary R A M n (relativeCyclicCochainsMap M f n φ) =
+      relativeCyclicCochainsMap M f (n + 1)
+        (relativeCyclicHochschildCoboundary R B M n φ) := by
+  apply Subtype.ext
+  exact cyclicHochschildCoboundary_cyclicCochainsMap
+    (unitizationMap (R := R) f).toNonUnitalAlgHom
+    (φ : cyclicCochains R (Unitization R B) M n)
+
+variable (M) in
+/-- The cochain map between relative cyclic cochain complexes induced contravariantly by a
+homomorphism of nonunital algebras. -/
+def relativeCyclicCochainComplexMap (f : A →ₙₐ[R] B) :
+    relativeCyclicCochainComplex R B M ⟶ relativeCyclicCochainComplex R A M where
+  f n := ModuleCat.ofHom (relativeCyclicCochainsMap M f n)
+  comm' := by
+    rintro n _ rfl
+    ext φ : 2
+    simp only [relativeCyclicCochainComplex, CochainComplex.of_d, ModuleCat.hom_comp,
+      ModuleCat.hom_ofHom]
+    exact relativeCyclicHochschildCoboundary_relativeCyclicCochainsMap
+      (R := R) (M := M) f n φ
+
+/-- The components of the relative cochain-complex map are the pullback maps on relative
+cochains. -/
+@[reassoc, elementwise]
+theorem relativeCyclicCochainComplexMap_f (f : A →ₙₐ[R] B) (n : ℕ) :
+    (relativeCyclicCochainComplexMap M f).f n ≫
+        (relativeCyclicCochainComplexXIso R A M n).hom =
+      (relativeCyclicCochainComplexXIso R B M n).hom ≫
+        ModuleCat.ofHom (relativeCyclicCochainsMap M f n) :=
+  (rfl)
+
+/-- The identity homomorphism induces the identity relative cochain map. -/
+@[simp]
+theorem relativeCyclicCochainComplexMap_id :
+    relativeCyclicCochainComplexMap M (NonUnitalAlgHom.id R A) =
+      𝟙 (relativeCyclicCochainComplex R A M) := by
+  ext n : 1
+  dsimp only [relativeCyclicCochainComplexMap, HomologicalComplex.id_f]
+  exact (congrArg ModuleCat.ofHom (relativeCyclicCochainsMap_id (M := M) n)).trans
+    ModuleCat.ofHom_id
+
+/-- Relative cochain-complex pullback is contravariantly functorial. -/
+theorem relativeCyclicCochainComplexMap_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) :
+    relativeCyclicCochainComplexMap M (g.comp f) =
+      relativeCyclicCochainComplexMap M g ≫ relativeCyclicCochainComplexMap M f := by
+  ext n : 1
+  dsimp only [relativeCyclicCochainComplexMap, HomologicalComplex.comp_f]
+  exact (congrArg ModuleCat.ofHom
+    (relativeCyclicCochainsMap_comp (M := M) f g n)).trans
+    (ModuleCat.ofHom_comp _ _)
+
+/-- Pullback of a relative cyclic cocycle is a relative cyclic cocycle. -/
+theorem relativeCyclicCochainsMap_mem_relativeCyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
+    (φ : relativeCyclicCocycles R B M n) :
+    relativeCyclicCochainsMap M f n φ ∈ relativeCyclicCocycles R A M n := by
+  rw [mem_relativeCyclicCocycles_iff,
+    relativeCyclicHochschildCoboundary_relativeCyclicCochainsMap, φ.2, map_zero]
+
+namespace relativeCyclicCohomology
+
+variable (M) in
+/-- The map on relative cyclic cohomology induced contravariantly by a homomorphism of nonunital
+algebras. -/
+def map (f : A →ₙₐ[R] B) (n : ℕ) :
+    relativeCyclicCohomology R B M n ⟶ relativeCyclicCohomology R A M n :=
+  HomologicalComplex.homologyMap (relativeCyclicCochainComplexMap M f) n
+
+/-- The induced map sends the class of a relative cocycle to the class of its pullback. -/
+@[simp]
+theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : relativeCyclicCocycles R B M n) :
+    map M f n (mk R B M n φ) =
+      mk R A M n
+        ⟨relativeCyclicCochainsMap M f n φ,
+          relativeCyclicCochainsMap_mem_relativeCyclicCocycles (R := R) (M := M) f φ⟩ := by
+  rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
+    HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
+  congr 1
+  apply (relativeCyclicCochainComplex R A M).moduleCat_iCycles_injective n
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
+    ConcreteCategory.comp_apply, relative_iCycles_toCycles, relative_iCycles_toCycles]
+  rfl
+
+/-- The identity homomorphism induces the identity on relative cyclic cohomology. -/
+@[simp]
+theorem map_id (n : ℕ) : map M (NonUnitalAlgHom.id R A) n = 𝟙 _ := by
+  rw [map, relativeCyclicCochainComplexMap_id, HomologicalComplex.homologyMap_id]
+
+/-- Relative cyclic cohomology is contravariantly functorial. -/
+theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
+    map M (g.comp f) n = map M g n ≫ map M f n := by
+  rw [map, map, map, relativeCyclicCochainComplexMap_comp,
+    HomologicalComplex.homologyMap_comp]
+
+end relativeCyclicCohomology
+
+end Map
 
 
 section ComplexSplitting
@@ -218,6 +566,126 @@ variable (R A M : Type u) [CommRing R] [NonUnitalSemiring A] [Module R A]
 def unitizationScalarRestrictionComplexMap :
     cyclicCochainComplex R (Unitization R A) M ⟶ cyclicCochainComplex R R M :=
   cyclicCochainComplexMap M (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom
+
+/-- The inclusion of the relative cyclic cochain complex into the cyclic cochain complex of the
+forced unitization. -/
+def relativeCyclicCochainComplexι :
+    relativeCyclicCochainComplex R A M ⟶ cyclicCochainComplex R (Unitization R A) M where
+  f n := (relativeCyclicCochainComplexXIso R A M n).hom ≫
+    ModuleCat.ofHom (relativeCyclicCochains R A M n).subtype ≫
+    (cyclicCochainComplexXIso R (Unitization R A) M n).inv
+  comm' := by
+    rintro n _ rfl
+    rw [← cancel_mono (cyclicCochainComplexXIso R (Unitization R A) M (n + 1)).hom]
+    simp only [Category.assoc, cyclicCochainComplex_d, Iso.inv_hom_id_assoc,
+      relativeCyclicCochainComplex_d_assoc, Iso.inv_hom_id, Category.comp_id]
+    apply (cancel_epi (relativeCyclicCochainComplexXIso R A M n).hom).1
+    exact ModuleCat.hom_ext (LinearMap.ext fun φ ↦
+      (coe_relativeCyclicHochschildCoboundary_apply R A M n φ).symm)
+
+/-- The components of the relative-complex inclusion are the inclusions of relative cochains. -/
+@[reassoc, elementwise]
+theorem relativeCyclicCochainComplexι_f (n : ℕ) :
+    (relativeCyclicCochainComplexι R A M).f n ≫
+        (cyclicCochainComplexXIso R (Unitization R A) M n).hom =
+      (relativeCyclicCochainComplexXIso R A M n).hom ≫
+        ModuleCat.ofHom (relativeCyclicCochains R A M n).subtype :=
+  by simp [relativeCyclicCochainComplexι, Category.assoc]
+
+/-- The relative-complex inclusion followed by scalar restriction is zero. -/
+@[reassoc (attr := simp)]
+theorem relativeCyclicCochainComplexι_comp_unitizationScalarRestrictionComplexMap :
+    relativeCyclicCochainComplexι R A M ≫ unitizationScalarRestrictionComplexMap R A M = 0 := by
+  apply HomologicalComplex.hom_ext _ _
+  intro n
+  rw [HomologicalComplex.comp_f, HomologicalComplex.zero_f,
+    ← cancel_mono (cyclicCochainComplexXIso R R M n).hom, Category.assoc,
+    unitizationScalarRestrictionComplexMap, cyclicCochainComplexMap_f, zero_comp]
+  simp only [relativeCyclicCochainComplexι, Category.assoc, Iso.inv_hom_id_assoc]
+  exact ModuleCat.hom_ext (LinearMap.ext fun φ ↦ φ.2)
+
+private def relativeCyclicCochainComplexLift
+    {K : CochainComplex (ModuleCat R) ℕ}
+    (e : K ⟶ cyclicCochainComplex R (Unitization R A) M)
+    (he : e ≫ unitizationScalarRestrictionComplexMap R A M = 0) :
+    K ⟶ relativeCyclicCochainComplex R A M where
+  f n := ModuleCat.ofHom (LinearMap.codRestrict (relativeCyclicCochains R A M n)
+    (e.f n ≫ (cyclicCochainComplexXIso R (Unitization R A) M n).hom).hom fun x ↦ by
+      rw [mem_relativeCyclicCochains_iff]
+      have hn : e.f n ≫ (unitizationScalarRestrictionComplexMap R A M).f n = 0 := by
+        simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
+          congrArg (fun q ↦ q.f n) he
+      have hmap : e.f n ≫ (cyclicCochainComplexXIso R (Unitization R A) M n).hom ≫
+          ModuleCat.ofHom (unitizationScalarRestriction R A M n) = 0 := by
+        rw [unitizationScalarRestriction, ← cyclicCochainComplexMap_f,
+          show cyclicCochainComplexMap M
+            (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom =
+              unitizationScalarRestrictionComplexMap R A M from rfl,
+          ← Category.assoc, hn, zero_comp]
+      exact ConcreteCategory.congr_hom hmap x) ≫
+        (relativeCyclicCochainComplexXIso R A M n).inv
+  comm' := by
+    rintro n _ rfl
+    rw [← cancel_mono (relativeCyclicCochainComplexXIso R A M (n + 1)).hom]
+    simp only [Category.assoc, relativeCyclicCochainComplex_d, Iso.inv_hom_id_assoc,
+      Iso.inv_hom_id, Category.comp_id]
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro x
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp,
+      Function.comp_apply]
+    apply Subtype.ext
+    rw [coe_relativeCyclicHochschildCoboundary_apply]
+    change cyclicHochschildCoboundary R (Unitization R A) M n
+        ((cyclicCochainComplexXIso R (Unitization R A) M n).hom (e.f n x)) =
+      (cyclicCochainComplexXIso R (Unitization R A) M (n + 1)).hom
+        (e.f (n + 1) (K.d n (n + 1) x))
+    rw [← cyclicCochainComplex_d_apply]
+    exact congrArg
+      (fun y ↦ (cyclicCochainComplexXIso R (Unitization R A) M (n + 1)).hom y)
+      (HomologicalComplex.Hom.comm_apply e n (n + 1) x)
+
+/-- The relative cyclic cochain complex is the kernel of scalar restriction on the cyclic cochain
+complex of the forced unitization. -/
+def relativeCyclicCochainComplexIsKernel :
+    IsLimit (KernelFork.ofι (relativeCyclicCochainComplexι R A M)
+      (relativeCyclicCochainComplexι_comp_unitizationScalarRestrictionComplexMap R A M)) :=
+  KernelFork.IsLimit.ofι _ _
+    (fun e he ↦ relativeCyclicCochainComplexLift R A M e he)
+    (fun e he ↦ by
+      apply HomologicalComplex.hom_ext _ _
+      intro n
+      rw [← cancel_mono (cyclicCochainComplexXIso R (Unitization R A) M n).hom]
+      simp only [relativeCyclicCochainComplexLift, relativeCyclicCochainComplexι,
+        HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id,
+        Category.comp_id]
+      exact ModuleCat.hom_ext (LinearMap.ext fun x ↦ by
+        simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp,
+          Function.comp_apply]
+        rfl))
+    (fun e he m hm ↦ by
+      apply HomologicalComplex.hom_ext _ _
+      intro n
+      apply (cancel_mono (relativeCyclicCochainComplexXIso R A M n).hom).1
+      let _ : Mono (ModuleCat.ofHom (relativeCyclicCochains R A M n).subtype) :=
+        (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
+      apply (cancel_mono (ModuleCat.ofHom
+        (relativeCyclicCochains R A M n).subtype)).1
+      have hn := congrArg (fun q ↦ q.f n) hm
+      calc
+        m.f n ≫ (relativeCyclicCochainComplexXIso R A M n).hom ≫
+            ModuleCat.ofHom (relativeCyclicCochains R A M n).subtype =
+            e.f n ≫ (cyclicCochainComplexXIso R (Unitization R A) M n).hom := by
+          simpa [HomologicalComplex.comp_f, relativeCyclicCochainComplexι,
+            Category.assoc] using congrArg
+              (fun q ↦ q ≫ (cyclicCochainComplexXIso R (Unitization R A) M n).hom) hn
+        _ = (relativeCyclicCochainComplexLift R A M e he).f n ≫
+            (relativeCyclicCochainComplexXIso R A M n).hom ≫
+              ModuleCat.ofHom (relativeCyclicCochains R A M n).subtype := by
+          symm
+          simp only [relativeCyclicCochainComplexLift, Category.assoc,
+            Iso.inv_hom_id_assoc]
+          exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl))
 
 /-- Pullback of cyclic cochain complexes along the augmentation. -/
 def unitizationAugmentationPullbackComplexMap :
@@ -236,6 +704,8 @@ theorem unitizationAugmentationPullbackComplexMap_comp_unitizationScalarRestrict
   have h : (Unitization.fstHom R A).toNonUnitalAlgHom.comp
       (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom = NonUnitalAlgHom.id R R := by
     ext r
+    -- The available computation lemmas concern the underlying unitization element, so expose
+    -- that element after extensionality has reduced the composite homomorphism equality.
     change (algebraMap R (Unitization R A) r).fst = r
     simp only [Unitization.algebraMap_eq_inl, Unitization.fst_inl]
   rw [h, cyclicCochainComplexMap_id]
