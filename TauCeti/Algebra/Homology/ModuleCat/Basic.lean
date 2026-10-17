@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Homology.ConcreteCategory
 
 /-!
 # Cycles and homology of homological complexes of modules
@@ -39,6 +40,12 @@ theorem Hom.comm_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
     {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i j : ι) (x : K.X i) :
     L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
   rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
+
+/-- A chain map of complexes of modules sends cycles to cycles, on elements. -/
+theorem Hom.d_apply_eq_zero_of_d_apply_eq_zero {R : Type*} [Ring R] {ι : Type*}
+    {c : ComplexShape ι} {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i j : ι)
+    (x : K.X i) (hx : (K.d i j).hom x = 0) : (L.d i j).hom ((φ.f i).hom x) = 0 :=
+  (Hom.comm_apply φ i j x).trans ((congrArg _ hx).trans (map_zero _))
 
 /-- In a complex of modules the differential of a differential vanishes, on elements. -/
 theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
@@ -116,4 +123,49 @@ theorem exists_homologyMap_eq_of_injective {κ : Type*}
   apply K.moduleCat_iCycles_injective
   rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk, hy]
 
+variable {K} in
+/-- A chain map of complexes of modules sends the class of a cycle to the class of its image. -/
+lemma homologyMap_homologyπ_moduleCatCyclesMk {L : HomologicalComplex (ModuleCat R) c}
+    (φ : K ⟶ L) {n : ι} (x : K.X n) (m : ι) (hm : c.next n = m) (hx : K.d n m x = 0) :
+    (homologyMap φ n).hom ((K.homologyπ n).hom (K.moduleCatCyclesMk x m hm hx)) =
+      (L.homologyπ n).hom (L.moduleCatCyclesMk ((φ.f n).hom x) m hm
+        (by rw [Hom.comm_apply, hx, map_zero])) := by
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, homologyπ_naturality, ModuleCat.hom_comp,
+    LinearMap.comp_apply]
+  congr 1
+  apply L.moduleCat_iCycles_injective
+  rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk,
+    iCycles_moduleCatCyclesMk]
+
 end HomologicalComplex
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+  {S : ShortComplex (HomologicalComplex (ModuleCat R) c)} (hS : S.ShortExact)
+
+/-- **The connecting map of a short exact sequence of complexes of modules, on classes.** Let `z₃`
+be a cycle of `S.X₃` in degree `i`, `x₂` an element of `S.X₂` in degree `i` lifting it, and `z₁` a
+cycle of `S.X₁` in degree `j` whose image in `S.X₂` is the differential of `x₂`.  Then the
+connecting map sends the class of `z₃` to the class of `z₁`. -/
+theorem moduleCat_δ_homologyπ (i j : ι) (hij : c.Rel i j) (z₃ : S.X₃.cycles i) (x₂ : S.X₂.X i)
+    (hx₂ : (S.g.f i).hom x₂ = (S.X₃.iCycles i).hom z₃) (z₁ : S.X₁.cycles j)
+    (hz₁ : (S.f.f j).hom ((S.X₁.iCycles j).hom z₁) = (S.X₂.d i j).hom x₂) :
+    (hS.δ i j hij).hom ((S.X₃.homologyπ i).hom z₃) = (S.X₁.homologyπ j).hom z₁ := by
+  refine hS.δ_apply' i j hij _ ((S.X₂.pOpcycles i).hom x₂) z₁ ?_ ?_
+  · -- The goal is stated through the forgetful functor to `Ab`, whose action on morphisms is
+    -- definitionally the underlying linear map; `rw` does not see through `forget₂`, so we
+    -- restate it with composites of module morphisms.
+    change (S.X₂.pOpcycles i ≫ HomologicalComplex.opcyclesMap S.g i).hom x₂ =
+      (S.X₃.homologyπ i ≫ S.X₃.homologyι i).hom z₃
+    rw [HomologicalComplex.p_opcyclesMap, HomologicalComplex.homology_π_ι, ModuleCat.hom_comp,
+      ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hx₂]
+  · -- Same as above: restate the goal, which goes through `forget₂`, as a composite.
+    change (HomologicalComplex.cyclesMap S.f j).hom z₁ =
+      (S.X₂.pOpcycles i ≫ S.X₂.opcyclesToCycles i j).hom x₂
+    rw [HomologicalComplex.pOpcycles_opcyclesToCycles]
+    apply S.X₂.moduleCat_iCycles_injective j
+    rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hz₁,
+      ← ModuleCat.comp_apply, HomologicalComplex.toCycles_i]
+
+end CategoryTheory.ShortComplex.ShortExact
