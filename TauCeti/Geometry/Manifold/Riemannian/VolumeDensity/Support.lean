@@ -12,8 +12,8 @@ public import Mathlib.MeasureTheory.Measure.Support
 # Full support of Riemannian volume
 
 The Riemannian volume measure of a continuous finite-dimensional Riemannian manifold is positive on
-nonempty open sets in the boundaryless case. This gives the full-support interface used by later
-integration and positivity arguments.
+nonempty open sets. This gives the full-support interface used by later integration and positivity
+arguments.
 -/
 
 public section
@@ -32,8 +32,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-/-- Riemannian volume is positive on every nonempty open set of a boundaryless manifold. -/
-instance isOpenPosMeasure_riemannianVolume [I.Boundaryless] :
+/-- Riemannian volume is positive on every nonempty open set. -/
+instance isOpenPosMeasure_riemannianVolume :
     Measure.IsOpenPosMeasure (riemannianVolume I M) where
   open_pos U hU hne := by
     obtain ⟨x, hx⟩ := hne
@@ -46,12 +46,6 @@ instance isOpenPosMeasure_riemannianVolume [I.Boundaryless] :
       rw [riemannianVolume_apply_of_subset inter_subset_right]
       exact hpos_chart
     exact (lt_of_lt_of_le hpos (measure_mono inter_subset_left)).ne'
-
-/-- The Riemannian volume measure of a boundaryless manifold has full support. -/
-@[simp]
-theorem riemannianVolume_support [I.Boundaryless] :
-    (riemannianVolume I M).support = (Set.univ : Set M) := by
-  exact Measure.support_eq_univ
 
 end TauCeti
 
