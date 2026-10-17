@@ -15,11 +15,10 @@ import Mathlib.Tactic.Module
 For a nonzero parameter, the presentation of `UqSl2 q` carries the coproduct
 `ΔE = E ⊗ 1 + K ⊗ E`, `ΔF = F ⊗ K⁻¹ + 1 ⊗ F`, and `ΔK = K ⊗ K`.
 The counit and antipode have their standard rank-one values. These maps descend through the
-presentation's universal property, and the Hopf identities are checked on its four generators.
+presentation's universal property. The coproduct supplies actions on tensor products of
+representations, while the antipode supplies the corresponding dual actions.
 
 The conventions follow A. Virelizier, *Quantum groups*, Sections 2.3--2.4.
-The extension of the antipode identities from generators uses Mathlib's
-`HopfAlgebra.ofAntipodeOfAdjoin`.
 -/
 
 public section
@@ -85,15 +84,17 @@ private def counitTuple (q : ℂ) : GeneratorTuple q ℂ where
   k_mul_f := by simp
   e_mul_f_sub_f_mul_e := by simp
 
-/-- The counit, taking both weight generators to one and both root generators to zero.
+/-- The unconditional augmentation, taking both weight generators to one and both root
+generators to zero. -/
+def counit (q : ℂ) : UqSl2 q →ₐ[ℂ] ℂ := lift (counitTuple q)
 
-Its nonzero-parameter hypothesis keeps the structural maps on the same parameter domain;
-the counit formula alone does not require it. -/
-def counit (q : ℂ) [_hq : Fact (q ≠ 0)] : UqSl2 q →ₐ[ℂ] ℂ := lift (counitTuple q)
-
+omit [Fact (q ≠ 0)] in
 @[local simp] private theorem counit_eAux : counit q (e q) = 0 := by simp [counit, counitTuple]
+omit [Fact (q ≠ 0)] in
 @[local simp] private theorem counit_fAux : counit q (f q) = 0 := by simp [counit, counitTuple]
+omit [Fact (q ≠ 0)] in
 @[local simp] private theorem counit_kAux : counit q (k q) = 1 := by simp [counit, counitTuple]
+omit [Fact (q ≠ 0)] in
 @[local simp] private theorem counit_kInvAux :
     counit q (kInv q) = 1 := by simp [counit, counitTuple]
 
@@ -157,6 +158,7 @@ def antipodeOp : UqSl2 q →ₐ[ℂ] (UqSl2 q)ᵐᵒᵖ := lift (antipodeTuple q
 
 /-- The Hopf algebra structure of the rank-one quantized enveloping algebra. -/
 noncomputable instance instHopfAlgebra : HopfAlgebra ℂ (UqSl2 q) := by
+  -- Mathlib's constructor extends the antipode identities from the generators.
   exact HopfAlgebra.ofAntipodeOfAdjoin (antipodeOp q) (adjoin_range_generator q)
     (by
       rintro _ ⟨g, rfl⟩
