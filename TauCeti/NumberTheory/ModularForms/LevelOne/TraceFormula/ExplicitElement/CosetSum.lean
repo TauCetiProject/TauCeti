@@ -13,14 +13,14 @@ import Mathlib.Tactic.LinearCombination
 # The right coset sums of Popa–Zagier's explicit element
 
 For `ξ = ∑ c_M M ∈ k[ℳₙ]` and a right coset `K = M Γ` of `Γ = PSL(2, ℤ)` in `ℳₙ`, write
-`⟨ξ, K⟩ = ∑_{M ∈ K} c_M`. Popa and Zagier's explicit Hecke element `T̃ₙ` (their eq. (15)) has
-`⟨T̃ₙ, K⟩ = -1` for every right coset `K` and every `n > 0` (their Theorem 4(b), first part).
-Together with the exchange relations (B), this coset identity is the input from which they deduce
-that `T̃ₙ` satisfies the period relation (A).
+`⟨ξ, K⟩ = ∑_{M ∈ K} c_M`. Popa and Zagier's explicit Hecke element `Tₙ` (written with a tilde
+in their paper, their eq. (15)) has `⟨Tₙ, K⟩ = -1` for every right coset `K` and every `n > 0`
+(their Theorem 4(b), first part). Together with the exchange relations (B), this coset identity
+is the input from which they deduce that `Tₙ` satisfies the period relation (A).
 
-The proof reduces to a single coset in each double coset. Since `T̃ₙ` satisfies (B), its coset
+The proof reduces to a single coset in each double coset. Since `Tₙ` satisfies (B), its coset
 sums are constant on double cosets (Popa–Zagier, Theorem 2(a)), and every double coset contains
-a coset `diag(d₀, d₁) Γ` with `0 < d₀ ∣ d₁`. On such a coset, write `T̃ₙ = T₁ - T₂ - T₃ - T₄` as
+a coset `diag(d₀, d₁) Γ` with `0 < d₀ ∣ d₁`. On such a coset, write `Tₙ = T₁ - T₂ - T₃ - T₄` as
 in eq. (15).
 * `T₂ = T₁ U` with `U = T S`, and right multiplication by `U` permutes each right coset, so the
   contributions of `T₁` and `T₂` cancel.
@@ -37,7 +37,7 @@ in eq. (15).
 * `TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`: the right coset sums
   of the element given by a weight are the sums of the weight over the matrices in the coset.
 * `TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_popaZagierElement`:
-  `⟨T̃ₙ, K⟩ = -1` for every right coset `K` of `ℳₙ`, `n > 0`.
+  `⟨Tₙ, K⟩ = -1` for every right coset `K` of `ℳₙ`, `n > 0`.
 
 ## References
 
@@ -370,7 +370,7 @@ private theorem finsum_weight_cosetMatrices {d₀ m : ℤ} (hd₀ : 0 < d₀) (h
     (hw.union h₂).subset fun M ⟨hM, h⟩ ↦ by
       by_contra! h'
       simp_all
-  -- `T₁ = T̃ₙ + T₂ + T₃ + T₄`, and `T₁`, `T₂` have the same coset sums
+  -- `T₁ = Tₙ + T₂ + T₃ + T₄`, and `T₁`, `T₂` have the same coset sums
   have key : ∑ᶠ M ∈ s, (weight M + w₂ M + weight₃₄ M) =
       ∑ᶠ M ∈ s, weight₁ (M 0 0) (M 0 1) (M 1 0) (M 1 1) :=
     finsum_mem_congr rfl fun M _ ↦ by
@@ -456,8 +456,8 @@ private theorem finsum_mem_orbit_mk_diagonal_weight [Ring k] {d₀ m : ℤ} (hd�
   simp
 
 /-- **Popa–Zagier, Theorem 4(b), the coset identity**: for `n > 0`, the coefficients of
-Popa–Zagier's explicit element `T̃ₙ` sum to `-1` over every right coset `K` of `PSL(2, ℤ)` in
-`ℳₙ`, that is, `⟨T̃ₙ, K⟩ = -1`. This needs `12 ≠ 0` in `k`, as `T̃ₙ` is defined with
+Popa–Zagier's explicit element `Tₙ` sum to `-1` over every right coset `K` of `PSL(2, ℤ)` in
+`ℳₙ`, that is, `⟨Tₙ, K⟩ = -1`. This needs `12 ≠ 0` in `k`, as `Tₙ` is defined with
 denominators dividing `12`. -/
 theorem mapDomain_orbitRel_mk_coeff_popaZagierElement [DivisionRing k] (h12 : (12 : k) ≠ 0)
     (hn : 0 < n) (x : ℳ n) :
