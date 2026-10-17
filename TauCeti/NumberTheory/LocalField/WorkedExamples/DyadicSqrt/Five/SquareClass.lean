@@ -253,6 +253,56 @@ theorem existsUnique_unitSquareClassRep_iff_even (a : DyadicSqrtFiveˣ) :
     exact ⟨fun i => c i.castSucc, hc'.symm,
       fun d hd => squareClass_unitSquareClassRep_injective (hd.symm.trans hc'.symm)⟩
 
+private theorem snoc_one_three (c : Fin 3 → ZMod 2) : (Fin.snoc c 1 : Fin 4 → ZMod 2) 3 = 1 :=
+  Fin.snoc_last (α := fun _ => ZMod 2) (p := c) (x := 1)
+
+private theorem two_mul_unitSquareClassRep (c : Fin 3 → ZMod 2) :
+    Units.mk0 (2 : DyadicSqrtFive) (by norm_num) * unitSquareClassRep c =
+      fullRep (Fin.snoc c 1) := by
+  simp only [fullRep, Fin.snoc_castSucc, snoc_one_three, ZMod.val_one, pow_one]
+  exact mul_comm _ _
+
+/-- A nonzero element is `2` times one of the eight unit representatives modulo squares, and then
+for a unique one, exactly when its normalized valuation is odd. With
+`existsUnique_unitSquareClassRep_iff_even`, these sixteen products exhaust the square classes. -/
+theorem existsUnique_two_mul_unitSquareClassRep_iff_odd (a : DyadicSqrtFiveˣ) :
+    (∃! c : Fin 3 → ZMod 2, squareClass a =
+        squareClass (Units.mk0 (2 : DyadicSqrtFive) (by norm_num) * unitSquareClassRep c)) ↔
+      Odd (normalizedValuation DyadicSqrtFive a).toAdd := by
+  simp only [two_mul_unitSquareClassRep]
+  constructor
+  · rintro ⟨c, hc, _⟩
+    have hev := even_toAdd_normalizedValuation_of_isSquare
+      ((squareClass_eq_iff_isSquare_mul _ _).mp hc)
+    simp only [map_mul, toAdd_mul, valuation_fullRep, snoc_one_three, ZMod.val_one] at hev
+    rcases hev with ⟨n, hn⟩
+    exact ⟨n - 1, by omega⟩
+  · intro ha
+    obtain ⟨c, hc⟩ := fullRep_bijective.surjective (squareClass a)
+    have hev := even_toAdd_normalizedValuation_of_isSquare
+      ((squareClass_eq_iff_isSquare_mul _ _).mp hc.symm)
+    simp only [map_mul, toAdd_mul, valuation_fullRep] at hev
+    have h3 : c 3 = 1 := by
+      have hb := ZMod.val_lt (c 3)
+      have hc1 : (c 3).val = 1 := by
+        rcases ha with ⟨n, hn⟩
+        rcases hev with ⟨m, hm⟩
+        omega
+      exact (ZMod.val_eq_one (by norm_num) _).mp hc1
+    have hsnoc : Fin.snoc (fun i : Fin 3 => c i.castSucc) 1 = c := by
+      funext i
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · rw [Fin.snoc_last]
+        exact h3.symm
+      · simp
+    refine ⟨fun i => c i.castSucc, ?_, fun d hd => ?_⟩
+    · beta_reduce
+      rw [hsnoc]
+      exact hc.symm
+    have hd' : Fin.snoc d 1 = c := fullRep_bijective.injective (hd.symm.trans hc.symm)
+    funext i
+    simpa using congrFun hd' i.castSucc
+
 /-- Every unit of the integer ring of `ℚ₂(√5)` is represented by exactly one of the eight
 products of `-1`, `2 + √5`, and `3 + 2√5`, modulo squares in the field. -/
 theorem existsUnique_unitSquareClassRep (a : 𝒪[DyadicSqrtFive]ˣ) :
