@@ -30,12 +30,15 @@ dimensionality.
   integral curves through every point.
 * `TauCeti.isCompleteVectorField_of_exists_isMIntegralCurveOn`: the uniform-time completeness
   criterion.
-* `TauCeti.isCompleteVectorField_of_isCompact`: compactly supported fields are complete.
+* `TauCeti.isCompleteVectorField_of_isCompact_of_eq_zero_off`: compactly supported fields are
+  complete.
 * `TauCeti.isCompleteVectorField_of_compactSpace`: fields on compact manifolds are complete.
 
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Theorem 9.16.
+* Winston Yin, `Mathlib.Geometry.Manifold.IntegralCurve.UniformTime`, whose
+  `exists_isMIntegralCurve_of_isMIntegralCurveOn` supplies the uniform-time criterion.
 -/
 
 public section
@@ -113,7 +116,7 @@ end IsCompleteVectorField
 variable [CompleteSpace E]
 
 /-- A `C¹` vector field that vanishes outside a compact set is complete. -/
-theorem isCompleteVectorField_of_isCompact {v : (x : M) → TangentSpace I x}
+theorem isCompleteVectorField_of_isCompact_of_eq_zero_off {v : (x : M) → TangentSpace I x}
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
     {K : Set M} (hK : IsCompact K) (hvK : ∀ x ∉ K, v x = 0) :
     IsCompleteVectorField v := by
