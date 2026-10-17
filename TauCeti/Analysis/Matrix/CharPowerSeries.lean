@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Restricted
-public import Mathlib.Analysis.SpecificLimits.Basic
+public import TauCeti.Analysis.SpecificLimits.Cofinite
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Analysis.Matrix.Ultra
 public import TauCeti.LinearAlgebra.Matrix.Minor
@@ -246,21 +246,11 @@ theorem isRestricted_charPowerSeries {A : Matrix ι ι R} {r : ι → ℝ}
   rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff']
   set ρ := |c| + 1
   have hρ : 0 < ρ := by positivity
-  obtain ⟨M, hM⟩ := hr.bddAbove_range_of_cofinite
-  -- Off the finite set `T`, the rescaled row bounds are at most `1 / 2`.
-  have hT : {i | ¬ρ * r i ≤ 1 / 2}.Finite := by
-    refine eventually_cofinite.mp ?_
-    have h := (hr.const_mul ρ).eventually (gt_mem_nhds (by norm_num : ρ * 0 < 1 / 2))
-    exact h.mono fun _ hi ↦ hi.le
-  set T := hT.toFinset
-  set B := max 1 (ρ * M)
+  obtain ⟨T, B, hB, hT, hrB, hlim⟩ :=
+    TauCeti.exists_geometric_bound_of_tendsto_cofinite hr hρ.le
+      (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
   have hbound (n : ℕ) : ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * (1 / 2) ^ (n - T.card) :=
-    norm_charCoeff_mul_pow_le hA hρ (by norm_num) (by norm_num) (le_max_left _ _) T
-      (fun i hi ↦ by simpa [T] using hi)
-      (fun i ↦ (mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) hρ.le).trans (le_max_right _ _)) n
-  have hlim : Tendsto (fun n : ℕ ↦ B ^ T.card * (1 / 2 : ℝ) ^ (n - T.card)) atTop (𝓝 0) := by
-    simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one (r := (1 / 2 : ℝ)) (by norm_num)
-      (by norm_num)).comp (tendsto_sub_atTop_nat T.card)).const_mul (B ^ T.card)
+    norm_charCoeff_mul_pow_le hA hρ (by norm_num) (by norm_num) hB T hT hrB n
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hlim
   rw [coeff_charPowerSeries]
   refine le_trans ?_ (hbound n)
