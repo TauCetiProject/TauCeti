@@ -32,8 +32,9 @@ degenerate submodule, so it descends to normalized chains.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_ofCube` and
   `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainConstantEquiv_ofCube`: both
   equivalences send a cube with a coefficient to the corresponding singleton chain.
-* `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_boundary`: the equivalence
-  commutes with boundaries.
+* `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_boundary` and
+  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainConstantEquiv_boundary`: both
+  equivalences commute with boundaries.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_degenerate`: it identifies the
   degenerate submodules.
 
@@ -164,6 +165,19 @@ theorem normalizedTwistedCubicalChainConstantEquiv_ofCube {n : ℕ} (c : Singula
         (FundamentalGroupoid.mk (c 0)))).hom a)) := by
   rw [NormalizedTwistedCubicalChain.ofCube_apply, normalizedTwistedCubicalChainConstantEquiv_mk,
     twistedCubicalChainConstantEquiv_ofCube]
+
+/-- The normalized constant-coefficient equivalence commutes with normalized cubical boundaries. -/
+theorem normalizedTwistedCubicalChainConstantEquiv_boundary (n : ℕ) :
+    (normalizedTwistedCubicalChainConstantEquiv R X n).toLinearMap ∘ₗ
+        NormalizedTwistedCubicalChain.boundary ((constantFunctor X).obj (ModuleCat.of R R)) n =
+      NormalizedCubicalChain.boundary X R n ∘ₗ
+        (normalizedTwistedCubicalChainConstantEquiv R X (n + 1)).toLinearMap := by
+  refine Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)
+  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    Submodule.mkQ_apply, NormalizedTwistedCubicalChain.boundary_mk,
+    normalizedTwistedCubicalChainConstantEquiv_mk, NormalizedCubicalChain.boundary_mk] using
+    congrArg Submodule.Quotient.mk (LinearMap.congr_fun (twistedCubicalChainConstantEquiv_boundary
+      (R := R) (X := X) n) x)
 
 end LocalCoefficientSystem
 
