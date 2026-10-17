@@ -14,11 +14,11 @@ import Mathlib.MeasureTheory.Measure.Real
 In a finite-dimensional real normed space, the real measure of a positive-radius ball is its
 radius raised to the dimension times the real measure of the unit ball, independently of its
 centre. It agrees with the measure of the closed ball, which therefore differs from the open ball
-by a null set. Concentric balls are ordered by measure as by radius, so the points `x` whose
-centered ball of radius `‖x‖` has measure below `m` form a set of measure `m`. The ratio of the
-measures of two closed balls is controlled by the ratio of their radii raised to the dimension,
-and the part of a ball outside a translate of itself is controlled by the distance between the
-centres. The measure of an affine image
+by a null set. In a nontrivial space, concentric balls are ordered by measure as by radius, so the
+points `x` whose centered ball of radius `‖x‖` has measure below `m` form a set of measure `m`.
+The ratio of the measures of two closed balls is controlled by the ratio of their radii raised to
+the dimension, and the part of a ball outside a translate of itself is controlled by the distance
+between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing
 the measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
@@ -33,8 +33,8 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
   radius, including trivial spaces.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
   measure as by radius.
-* `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: the set where the centered ball has
-  measure below `m` has measure `m`.
+* `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: in a nontrivial space, the set where
+  the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the

@@ -22,9 +22,10 @@ For a measure `μ` on a normed space and `f : E → ℝ≥0∞`, the Schwarz rea
 
 `schwarzRearrangement μ f x = ⨆ {t | μ (ball 0 ‖x‖) < μ {f > t}}, t`.
 
-For an additive Haar measure on a finite-dimensional real normed space these superlevel sets are
-the centered open balls with the same measure as those of `f`, and for Lebesgue measure on a
-Euclidean space this is the symmetric decreasing rearrangement.
+For an additive Haar measure on a nontrivial finite-dimensional real normed space, a superlevel
+set of finite measure is the centered open ball with the same measure, while one of infinite
+measure is the whole space. Equimeasurability also holds in dimension zero. For Lebesgue measure
+on a Euclidean space this is the symmetric decreasing rearrangement.
 The definition is made directly from the distribution function `t ↦ μ {f > t}`, with no
 measurability, integrability or finiteness hypotheses. For an additive Haar measure, a superlevel
 set of infinite measure is replaced by the whole space, and one of measure zero by the empty set.
@@ -38,8 +39,9 @@ the rearrangement is **equimeasurable** with `f` (`TauCeti.addHaar_setOf_lt_schw
 For a.e.-measurable `f`, the layer-cake formula then gives equality of all `∫⁻ f ^ p` for
 `0 < p`, hence of every `eLpNorm` with finite exponent, while equality of essential suprema gives
 the case `p = ∞`. Rearrangement is monotone under a.e. inequality, idempotent, and it sends the
-indicator of a set `s` to the indicator of `{x | μ (ball 0 ‖x‖) < μ s}`, the centered open ball
-of the same measure for an additive Haar measure.
+indicator of a set `s` to the indicator of `{x | μ (ball 0 ‖x‖) < μ s}`. In a nontrivial
+finite-dimensional real normed space with additive Haar measure, this set is the centered open
+ball of measure `μ s` when that measure is finite, and the whole space when it is infinite.
 
 ## Main definitions and results
 
@@ -98,8 +100,10 @@ variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] (μ : Measure E)
   {f g : E → ℝ≥0∞}
 
 /-- The **Schwarz rearrangement** of `f : E → ℝ≥0∞` with respect to `μ`: the radially
-nonincreasing function whose superlevel set `{t < f*}` is `{x | μ (ball 0 ‖x‖) < μ {t < f}}`,
-the centered open ball of the same measure as `{t < f}` for an additive Haar measure. -/
+nonincreasing function whose superlevel set `{t < f*}` is `{x | μ (ball 0 ‖x‖) < μ {t < f}}`.
+For an additive Haar measure on a nontrivial finite-dimensional real normed space, this is the
+centered open ball of the same measure when `μ {t < f}` is finite, and the whole space when it is
+infinite. -/
 def schwarzRearrangement (f : E → ℝ≥0∞) (x : E) : ℝ≥0∞ :=
   ⨆ (t : ℝ≥0∞) (_ : μ (ball (0 : E) ‖x‖) < μ {y | t < f y}), t
 
@@ -174,8 +178,9 @@ theorem schwarzRearrangement_congr_ae (h : f =ᵐ[μ] g) :
   le_antisymm (schwarzRearrangement_mono_ae μ h.le) (schwarzRearrangement_mono_ae μ h.symm.le)
 
 /-- The Schwarz rearrangement of the indicator of a set is the indicator of
-`{x | μ (ball 0 ‖x‖) < μ s}`, the centered open ball of the same measure for an additive Haar
-measure. -/
+`{x | μ (ball 0 ‖x‖) < μ s}`. For an additive Haar measure on a nontrivial finite-dimensional real
+normed space, this is the centered open ball of measure `μ s` when that measure is finite, and the
+whole space when it is infinite. -/
 theorem schwarzRearrangement_indicator (s : Set E) (c : ℝ≥0∞) :
     schwarzRearrangement μ (s.indicator fun _ ↦ c) =
       {x | μ (ball (0 : E) ‖x‖) < μ s}.indicator fun _ ↦ c := by
