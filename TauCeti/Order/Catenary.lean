@@ -34,6 +34,8 @@ Saturated chains are Mathlib's `RelSeries {(a, b) : α × α | a ⋖ b}`, the ta
 * An order of Krull dimension at most one is catenary.
 * `TauCeti.Order.IsCatenary.krullDim_Icc_eq_length`: in a catenary partial order every saturated
   chain from `a` to `b` has length the Krull dimension of the interval `[a, b]`.
+* `TauCeti.Order.krullDim_Icc_eq_length_of_add`: the same conclusion in any partial order where
+  Krull dimension is additive on intervals.
 * `TauCeti.Order.isCatenary_iff_krullDim_Icc_add`: a partial order is catenary if and only if its
   intervals have finite Krull dimension and Krull dimension is additive on intervals,
   `dim [a, c] = dim [a, b] + dim [b, c]` for `a ≤ b ≤ c`. This is the form in which catenarity is
@@ -253,7 +255,7 @@ variable {α : Type*} [PartialOrder α]
 /-- If Krull dimension is additive on intervals, then the interval between the endpoints of a
 saturated chain has Krull dimension the length of the chain: additivity computes it one covering
 pair at a time. -/
-private theorem krullDim_Icc_eq_length_of_add
+theorem krullDim_Icc_eq_length_of_add
     (hadd : ∀ a b c : α, a ≤ b → b ≤ c →
       krullDim (Set.Icc a c) = krullDim (Set.Icc a b) + krullDim (Set.Icc b c))
     (s : RelSeries {(x, y) : α × α | x ⋖ y}) : krullDim (Set.Icc s.head s.last) = s.length := by
