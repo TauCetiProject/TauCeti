@@ -59,6 +59,7 @@ theorem cellContext_colStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × �
   (rfl)
 
 /-- Reading a cell context from an array is measurable. -/
+@[fun_prop]
 theorem measurable_cellContext [MeasurableSpace α] (e f : ℕ → ℕ) (i j : ℕ) :
     Measurable (cellContext (α := α) e f i j) :=
   ((Measurable.of_eval fun p => measurable_pi_apply (e p.1, f p.2)).prodMk
@@ -94,14 +95,14 @@ def offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α)
 /-- The first component is the context of the forward directed cell. -/
 @[simp]
 theorem offDiagonalPairContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairContext e i j x).1 = cellContext e e i j x := by
-  simp only [offDiagonalPairContext]
+    (offDiagonalPairContext e i j x).1 = cellContext e e i j x :=
+  (rfl)
 
 /-- The second component is the context of the reverse directed cell. -/
 @[simp]
 theorem offDiagonalPairContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairContext e i j x).2 = cellContext e e j i x := by
-  simp only [offDiagonalPairContext]
+    (offDiagonalPairContext e i j x).2 = cellContext e e j i x :=
+  (rfl)
 
 /-- Reversing the visible vertices swaps their two directed contexts. -/
 theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
@@ -109,6 +110,7 @@ theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × �
   simp only [offDiagonalPairContext, Prod.swap]
 
 /-- Reading the context of an off-diagonal pair is measurable. -/
+@[fun_prop]
 theorem measurable_offDiagonalPairContext [MeasurableSpace α] (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairContext (α := α) e i j) :=
   (measurable_cellContext e e i j).prodMk (measurable_cellContext e e j i)
@@ -152,6 +154,7 @@ theorem offDiagonalPairSquareContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ
   simp only [offDiagonalPairSquareContext, offDiagonalPairContext_swap e i j, Prod.map, Prod.swap]
 
 /-- Reading the square context of an off-diagonal pair is measurable. -/
+@[fun_prop]
 theorem measurable_offDiagonalPairSquareContext [MeasurableSpace α] (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairSquareContext (α := α) e i j) :=
   (measurable_offDiagonalPairContext e i j).prodMk

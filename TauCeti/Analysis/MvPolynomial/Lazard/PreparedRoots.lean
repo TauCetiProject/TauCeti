@@ -40,7 +40,8 @@ whose finite limits give the complete complex root multiset of the Lazard evalua
 center. The leading and formal-discriminant units and all branch data belong to the same
 monomial deformation. The local branch-unit family is fixed at the central parameter and
 works for every nearby real parameter. Poles contribute no finite root and positive branch
-exponents contribute zero. -/
+exponents contribute zero. The same Laurent exponents force the removed Lazard exponent to be
+locally constant. -/
 theorem exists_complexification_isLazardEvaluator_lazardEval_roots
     (p : Polynomial (MvPolynomial (Fin n) ℝ)) {φ : (ι → ℝ) → Fin n → ℝ} {a : ι → ℝ}
     (hφ : AnalyticAt ℝ φ a) (vLead vConst vDiscr : Fin n →₀ ℕ)
@@ -89,8 +90,10 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
               (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w i b)) ∧
             ∀ᶠ x in 𝓝 a,
               ((q.lazardEval (Polynomial.C ∘ φ x)).map Complex.ofRealHom).roots =
-                (Finset.univ.filter (fun i ↦ 0 ≤ e i)).val.map
-                  (fun i ↦ if e i = 0 then w i ((fun j ↦ (x j : ℂ)), 0) else 0) := by
+                  (Finset.univ.filter (fun i ↦ 0 ≤ e i)).val.map
+                    (fun i ↦ if e i = 0 then w i ((fun j ↦ (x j : ℂ)), 0) else 0) ∧
+                q.lazardExponent (Polynomial.C ∘ φ x) =
+                  q.lazardExponent (Polynomial.C ∘ φ a) := by
   classical
   let q := MvPolynomial.optionEquivRight ℝ (Fin n)
     ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm p)
@@ -128,87 +131,106 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
         (y ≠ 0 → ∀ i, r i (z, y) = y ^ e i * w i (z, y)) := by
     rw [nhds_prod_eq] at hlocal
     exact hlocal.curry
-  filter_upwards [ball_mem_nhds a hρ, hcenters.eventually hregular0,
-    hcenters.eventually hcurried] with x hx hxregular hxlocal
-  let z : ι → ℂ := fun j ↦ (x j : ℂ)
-  have hz : z ∈ ball (fun j ↦ (a j : ℂ)) ρ := by
-    have hdist : dist z (fun j ↦ (a j : ℂ)) = dist x a := by
-      simpa only [z, Function.comp_def] using
-        (Complex.isometry_ofReal.postcomp_pi).dist_eq x a
-    exact hdist.trans_lt hx
-  let d := p.natDegree.factorial
-  have hd : 0 < d := Nat.factorial_pos _
-  let U : ℂ → ℂ := fun y ↦ u (z, y ^ d)
-  have hU : AnalyticAt ℂ U 0 := by
-    exact (hu (z, 0) ⟨hz, mem_ball_self hρ⟩).comp_of_eq
-      (analyticAt_const.prod (analyticAt_id.pow d)) (by simp only [zero_pow hd.ne'])
-  have hU0 : U 0 ≠ 0 := by
-    simpa only [U, zero_pow hd.ne'] using (hunit (z, 0) ⟨hz, mem_ball_self hρ⟩).1
-  -- Injective coefficient transport preserves the actual Lazard exponents and evaluation.
-  have hexp : qC.lazardExponent (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) =
-      q.lazardExponent (Polynomial.C ∘ φ x) := by
-    simpa only [qC, Function.comp_def, f, Polynomial.coe_mapRingHom,
-      Polynomial.map_C, Complex.ofRealHom_eq_coe] using
-      MvPolynomial.lazardExponent_map f hf q (Polynomial.C ∘ φ x)
-  have heval : qC.lazardEval (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) =
-      (q.lazardEval (Polynomial.C ∘ φ x)).map Complex.ofRealHom := by
-    simpa only [qC, Function.comp_def, f, Polynomial.coe_mapRingHom,
-      Polynomial.map_C, Complex.ofRealHom_eq_coe] using
-      MvPolynomial.lazardEval_map f hf q (Polynomial.C ∘ φ x)
-  have hcx : TauCeti.IsLazardEvaluator
-      {qC.lazardExponent (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ)))} (d • c) := by
-    apply (hc.mono ?_).smul hd
-    intro v hv
-    rcases Set.mem_singleton_iff.1 hv with rfl
-    exact Set.mem_union_right _ (hexp ▸ Set.mem_range_self _)
-  -- The factorial substitution retains the prepared scalar unit in the same factorization.
-  have hsplit : ∀ᶠ y in 𝓝[≠] (0 : ℂ),
-      (MvPolynomial.aeval (MvPolynomial.monomialCurve
-        (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) (d • c)) qC).eval (Polynomial.C y) =
-          C (y ^ (d * Finsupp.weight c vLead : ℤ) * U y) *
-            ∏ i, (X - C (y ^ e i * w i (z, y))) := by
-    have hball : ∀ᶠ y in 𝓝 (0 : ℂ), y ∈ ball 0 R := ball_mem_nhds 0 hR
-    have hpower : ∀ᶠ y in 𝓝 (0 : ℂ), (z, y ^ d) ∈
-        ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ := by
-      apply (tendsto_const_nhds.prodMk_nhds ?_).eventually
-        ((isOpen_ball.prod isOpen_ball).mem_nhds ⟨hz, mem_ball_self hρ⟩)
-      simpa only [zero_pow hd.ne'] using (continuous_pow d).tendsto (0 : ℂ)
-    filter_upwards [hball.filter_mono nhdsWithin_le_nhds,
-      hpower.filter_mono nhdsWithin_le_nhds, hxlocal.filter_mono nhdsWithin_le_nhds,
-      self_mem_nhdsWithin] with y hy hyp hyw hy0
-    have hy0' : y ≠ 0 := by simpa using hy0
-    have hsplit := (hfac (z, y) ⟨hz, hy, hy0'⟩).2
-    have hlead' := (hunit (z, y ^ d) hyp).2
-    simp only [← pow_mul] at hlead'
-    have hcenter : Φ z = fun j ↦ (φ x j : ℂ) := hreal x hx
-    rw [hcenter] at hsplit hlead'
-    -- The two presentations retain the distinguished variable through coefficient evaluation.
-    have hcurve :
+  have hdata : ∀ᶠ x in 𝓝 a,
+      ((q.lazardEval (Polynomial.C ∘ φ x)).map Complex.ofRealHom).roots =
+          (Finset.univ.filter (fun i ↦ 0 ≤ e i)).val.map
+            (fun i ↦ if e i = 0 then w i ((fun j ↦ (x j : ℂ)), 0) else 0) ∧
+        (Finsupp.weight (p.natDegree.factorial • c)
+          (q.lazardExponent (Polynomial.C ∘ φ x)) : ℤ) =
+            p.natDegree.factorial * Finsupp.weight c vLead + ∑ i, min (e i) 0 := by
+    filter_upwards [ball_mem_nhds a hρ, hcenters.eventually hregular0,
+      hcenters.eventually hcurried] with x hx hxregular hxlocal
+    let z : ι → ℂ := fun j ↦ (x j : ℂ)
+    have hz : z ∈ ball (fun j ↦ (a j : ℂ)) ρ := by
+      have hdist : dist z (fun j ↦ (a j : ℂ)) = dist x a := by
+        simpa only [z, Function.comp_def] using
+          (Complex.isometry_ofReal.postcomp_pi).dist_eq x a
+      exact hdist.trans_lt hx
+    let d := p.natDegree.factorial
+    have hd : 0 < d := Nat.factorial_pos _
+    let U : ℂ → ℂ := fun y ↦ u (z, y ^ d)
+    have hU : AnalyticAt ℂ U 0 := by
+      exact (hu (z, 0) ⟨hz, mem_ball_self hρ⟩).comp_of_eq
+        (analyticAt_const.prod (analyticAt_id.pow d)) (by simp only [zero_pow hd.ne'])
+    have hU0 : U 0 ≠ 0 := by
+      simpa only [U, zero_pow hd.ne'] using (hunit (z, 0) ⟨hz, mem_ball_self hρ⟩).1
+    -- Injective coefficient transport preserves the actual Lazard exponents and evaluation.
+    have hexp : qC.lazardExponent (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) =
+        q.lazardExponent (Polynomial.C ∘ φ x) := by
+      simpa only [qC, Function.comp_def, f, Polynomial.coe_mapRingHom,
+        Polynomial.map_C, Complex.ofRealHom_eq_coe] using
+        MvPolynomial.lazardExponent_map f hf q (Polynomial.C ∘ φ x)
+    have heval : qC.lazardEval (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) =
+        (q.lazardEval (Polynomial.C ∘ φ x)).map Complex.ofRealHom := by
+      simpa only [qC, Function.comp_def, f, Polynomial.coe_mapRingHom,
+        Polynomial.map_C, Complex.ofRealHom_eq_coe] using
+        MvPolynomial.lazardEval_map f hf q (Polynomial.C ∘ φ x)
+    have hcx : TauCeti.IsLazardEvaluator
+        {qC.lazardExponent (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ)))} (d • c) := by
+      apply (hc.mono ?_).smul hd
+      intro v hv
+      rcases Set.mem_singleton_iff.1 hv with rfl
+      exact Set.mem_union_right _ (hexp ▸ Set.mem_range_self _)
+    -- The factorial substitution retains the prepared scalar unit in the same factorization.
+    have hsplit : ∀ᶠ y in 𝓝[≠] (0 : ℂ),
         (MvPolynomial.aeval (MvPolynomial.monomialCurve
           (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) (d • c)) qC).eval (Polynomial.C y) =
-            p.map (MvPolynomial.eval₂Hom Complex.ofRealHom
-              (fun j ↦ (φ x j : ℂ) + y ^ (d * c j))) := by
-      simp only [MvPolynomial.aeval_def, Polynomial.algebraMap_eq,
-        MvPolynomial.polynomial_eval_eval₂, MvPolynomial.monomialCurve_apply,
-        Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X,
-        Function.comp_apply, Pi.smul_apply, smul_eq_mul, ← Polynomial.C_pow,
-        ← Polynomial.C_add]
-      rw [← MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂Hom_map_hom]
-      have hcoeff : ((evalRingHom (C y)).comp C).comp f = f := by
-        apply RingHom.ext
-        intro b
-        simp only [RingHom.comp_apply, coe_evalRingHom, eval_C]
-      rw [hcoeff]
-      simpa only [q, f, AlgEquiv.trans_apply, Function.comp_def] using
-        MvPolynomial.eval₂Hom_optionEquivRight_optionEquivLeft_symm
-          Complex.ofRealHom (fun j ↦ (φ x j : ℂ) + y ^ (d * c j)) p
-    rw [hcurve]
-    have hrw (i) : r i (z, y) = y ^ e i * w i (z, y) := hyw.2 hy0' i
-    simpa only [qC, q, f, Function.comp_def, Pi.smul_apply, smul_eq_mul,
-      ← pow_mul, hlead', U, ← Int.natCast_mul, zpow_natCast, hrw, d] using hsplit
-  rw [← heval]
-  exact MvPolynomial.roots_lazardEval_eq_map_of_laurent qC hqC _ _ hcx hU hU0
-    (fun i ↦ (hxregular i).1.comp (analyticAt_const.prod analyticAt_id))
-    (fun i _ ↦ (hxregular i).2) hsplit
+            C (y ^ (d * Finsupp.weight c vLead : ℤ) * U y) *
+              ∏ i, (X - C (y ^ e i * w i (z, y))) := by
+      have hball : ∀ᶠ y in 𝓝 (0 : ℂ), y ∈ ball 0 R := ball_mem_nhds 0 hR
+      have hpower : ∀ᶠ y in 𝓝 (0 : ℂ), (z, y ^ d) ∈
+          ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ := by
+        apply (tendsto_const_nhds.prodMk_nhds ?_).eventually
+          ((isOpen_ball.prod isOpen_ball).mem_nhds ⟨hz, mem_ball_self hρ⟩)
+        simpa only [zero_pow hd.ne'] using (continuous_pow d).tendsto (0 : ℂ)
+      filter_upwards [hball.filter_mono nhdsWithin_le_nhds,
+        hpower.filter_mono nhdsWithin_le_nhds, hxlocal.filter_mono nhdsWithin_le_nhds,
+        self_mem_nhdsWithin] with y hy hyp hyw hy0
+      have hy0' : y ≠ 0 := by simpa using hy0
+      have hsplit := (hfac (z, y) ⟨hz, hy, hy0'⟩).2
+      have hlead' := (hunit (z, y ^ d) hyp).2
+      simp only [← pow_mul] at hlead'
+      have hcenter : Φ z = fun j ↦ (φ x j : ℂ) := hreal x hx
+      rw [hcenter] at hsplit hlead'
+      -- The two presentations retain the distinguished variable through coefficient evaluation.
+      have hcurve :
+          (MvPolynomial.aeval (MvPolynomial.monomialCurve
+            (Polynomial.C ∘ (fun j ↦ (φ x j : ℂ))) (d • c)) qC).eval (Polynomial.C y) =
+              p.map (MvPolynomial.eval₂Hom Complex.ofRealHom
+                (fun j ↦ (φ x j : ℂ) + y ^ (d * c j))) := by
+        simp only [MvPolynomial.aeval_def, Polynomial.algebraMap_eq,
+          MvPolynomial.polynomial_eval_eval₂, MvPolynomial.monomialCurve_apply,
+          Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X,
+          Function.comp_apply, Pi.smul_apply, smul_eq_mul, ← Polynomial.C_pow,
+          ← Polynomial.C_add]
+        rw [← MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂Hom_map_hom]
+        have hcoeff : ((evalRingHom (C y)).comp C).comp f = f := by
+          apply RingHom.ext
+          intro b
+          simp only [RingHom.comp_apply, coe_evalRingHom, eval_C]
+        rw [hcoeff]
+        simpa only [q, f, AlgEquiv.trans_apply, Function.comp_def] using
+          MvPolynomial.eval₂Hom_optionEquivRight_optionEquivLeft_symm
+            Complex.ofRealHom (fun j ↦ (φ x j : ℂ) + y ^ (d * c j)) p
+      rw [hcurve]
+      have hrw (i) : r i (z, y) = y ^ e i * w i (z, y) := hyw.2 hy0' i
+      simpa only [qC, q, f, Function.comp_def, Pi.smul_apply, smul_eq_mul,
+        ← pow_mul, hlead', U, ← Int.natCast_mul, zpow_natCast, hrw, d] using hsplit
+    have hw' (i) : AnalyticAt ℂ (fun y ↦ w i (z, y)) 0 :=
+      (hxregular i).1.comp (analyticAt_const.prod analyticAt_id)
+    have hw0' (i) (_ : e i < 0) : w i (z, 0) ≠ 0 := (hxregular i).2
+    rw [← heval]
+    refine ⟨MvPolynomial.roots_lazardEval_eq_map_of_laurent qC hqC _ _ hcx hU hU0
+        hw' hw0' hsplit, ?_⟩
+    rw [← hexp]
+    exact MvPolynomial.weight_lazardExponent_eq_of_laurent qC hqC _ _ hcx hU hU0
+      hw' hw0' hsplit
+  have haweight := hdata.self_of_nhds.2
+  filter_upwards [hdata] with x hx
+  refine ⟨hx.1, ?_⟩
+  apply (hc.smul (Nat.factorial_pos _)).weight_injOn
+    (Set.mem_union_right _ (Set.mem_range_self _))
+    (Set.mem_union_right _ (Set.mem_range_self _))
+  exact Int.ofNat_injective (hx.2.trans haweight.symm)
 
 end Polynomial

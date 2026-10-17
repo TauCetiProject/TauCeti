@@ -44,6 +44,8 @@ kernel of restriction to `L` (Silverman, the proof of X.4.2).
 * `WeierstrassCurve.pointRes_mem_shafarevichTateGroup`: restriction maps `Sha(E/K)` into
   `Sha(E/L)`.
 * `WeierstrassCurve.torsionRes_mem_selmerGroup`: restriction maps `Sel_m(E/K)` into `Sel_m(E/L)`.
+* `WeierstrassCurve.finite_selmerGroup_of_finite_ker_torsionRes`: `Sel_m(E/K)` is finite if
+  `Sel_m(E/L)` is and restriction to `L` has finite kernel.
 
 ## Implementation notes
 
@@ -193,6 +195,23 @@ theorem torsionRes_mem_selmerGroup {m : ℕ} {c : H1 (AbsoluteGaloisGroup K) (W.
   rw [mem_selmerGroup_iff] at hc ⊢
   rw [← pointRes_torsionCoeffIncl]
   exact W.pointRes_mem_shafarevichTateGroup τ τK τL σ hc
+
+include σ in
+/-- **Finiteness of `Sel_m(E/L)` gives finiteness of `Sel_m(E/K)`** when restriction of
+`H¹(G_K, E(Kˢ)[m])` to `L` has finite kernel, under the compatibility of the defining fields of
+`WeierstrassCurve.pointRes_mem_shafarevichTateGroup`: restriction maps `Sel_m(E/K)` into the
+finite group `Sel_m(E/L)` with finite kernel. -/
+theorem finite_selmerGroup_of_finite_ker_torsionRes {m : ℕ} (hker : Finite (W.torsionRes τ m).ker)
+    (hL : Finite ((W⁄L).selmerGroup τL m)) : Finite (W.selmerGroup τK m) := by
+  let f := (W.torsionRes τ m).comp (W.selmerGroup τK m).subtype
+  rw [f.finite_iff_finite_ker_range]
+  refine ⟨Finite.of_injective (β := (W.torsionRes τ m).ker) (fun c ↦ ⟨c.1.1, c.2⟩)
+    fun c d h ↦ by rw [Subtype.ext_iff, Subtype.ext_iff]; exact (congrArg Subtype.val h :),
+    Finite.of_injective (β := (W⁄L).selmerGroup τL m) (fun c ↦ ⟨c.1, ?_⟩)
+      fun c d h ↦ by rw [Subtype.ext_iff]; exact (congrArg Subtype.val h :)⟩
+  obtain ⟨d, hd⟩ := c.2
+  rw [← hd]
+  exact W.torsionRes_mem_selmerGroup τ τK τL σ d.2
 
 end Selmer
 

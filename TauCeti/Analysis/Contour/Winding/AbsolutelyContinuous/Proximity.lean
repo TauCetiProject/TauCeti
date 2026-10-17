@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 import TauCeti.Analysis.Complex.SlitPlane
+import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -22,7 +24,8 @@ theorem for its absolutely continuous logarithm evaluates the difference of thei
 
 public section
 
-open Complex MeasureTheory Set
+open Complex MeasureTheory Set Filter Metric
+open scoped Topology
 
 namespace TauCeti.Contour
 
@@ -118,5 +121,56 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_o
     sub_ne_zero.mpr (dist_pos.mp (lt_of_le_of_lt dist_nonneg (hlt t ht)))
   exact h₀.windingNumber_eq_of_dist_lt_dist_of_eq_endpoint_ratios h₁
     (by rw [← ha, ← hb, div_self (hne a left_mem_uIcc), div_self (hne b right_mem_uIcc)]) hlt
+
+/-- Uniform approximation of closed AC curves preserves the trace domain and every index outside
+that domain once the approximation is sufficiently close. -/
+theorem _root_.AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl
+    {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {γn : ℕ → ℝ → ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγn : ∀ n, AbsolutelyContinuousOnInterval (γn n) a b)
+    (hclosed : γ a = γ b) (hclosedn : ∀ n, γn n a = γn n b)
+    (hconv : TendstoUniformlyOn γn γ atTop (uIcc a b))
+    (hU : IsOpen U) (htrace : γ '' uIcc a b ⊆ U) :
+    ∀ᶠ n in atTop, γn n '' uIcc a b ⊆ U ∧
+      ∀ z ∉ U, windingNumber (γn n) a b z = windingNumber γ a b z := by
+  obtain ⟨ε, hε, hεU⟩ :=
+    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).exists_thickening_subset_open hU htrace
+  filter_upwards [Metric.tendstoUniformlyOn_iff.mp hconv ε hε] with n hn
+  have hnear (t) (ht : t ∈ uIcc a b) : dist (γn n t) (γ t) < ε := by
+    simpa only [dist_comm] using hn t ht
+  constructor
+  · rintro z ⟨t, ht, rfl⟩
+    exact hεU (mem_thickening_iff.mpr ⟨γ t, ⟨t, ht, rfl⟩, hnear t ht⟩)
+  · intro z hz
+    apply AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
+      hγ (hγn n) hclosed (hclosedn n)
+    intro t ht
+    have hdist : ε ≤ dist (γ t) z := by
+      by_contra h
+      exact hz (hεU (mem_thickening_iff.mpr ⟨γ t, ⟨t, ht, rfl⟩,
+        by simpa only [dist_comm] using lt_of_not_ge h⟩))
+    exact (hnear t ht).trans_le hdist
+
+variable {ι : Type*} {s : Finset ι} {γ : ι → ℝ → ℂ} {γn : ℕ → ι → ℝ → ℂ}
+  {a b : ι → ℝ} {w : ι → ℤ} {U : Set ℂ}
+
+/-- Joint uniform approximation preserves every off-domain index eventually, so it preserves
+the total integer-weighted index without any individual index-vanishing assumption. -/
+theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
+    (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
+    (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
+    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
+    (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
+    (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)))
+    (hU : IsOpen U) (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U) :
+    ∀ᶠ n in atTop, (∀ i ∈ s, γn n i '' uIcc (a i) (b i) ⊆ U) ∧
+      ∀ z ∉ U, (∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γn n i) (a i) (b i) z) =
+        ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z := by
+  have he := (Filter.eventually_all_finset s).mpr fun i hi ↦
+    AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl (hγ i hi)
+      (fun n ↦ hγn n i hi) (hclosed i hi) (fun n ↦ hclosedn n i hi)
+      (hconv i hi) hU (htrace i hi)
+  filter_upwards [he] with n hn
+  refine ⟨fun i hi ↦ (hn i hi).1, fun z hz ↦ ?_⟩
+  exact Finset.sum_congr rfl fun i hi ↦ congrArg ((w i : ℂ) * ·) ((hn i hi).2 z hz)
 
 end TauCeti.Contour
