@@ -138,12 +138,14 @@ private theorem mulLeftCLE_symm_apply (b : ℝ) (hb : b ≠ 0) (x : ℝ) :
   rw [ContinuousLinearEquiv.apply_symm_apply, mulLeftCLE_apply]
   exact (mul_div_cancel₀ x hb).symm
 
+private theorem coe_mulLeftCLE (b : ℝ) (hb : b ≠ 0) :
+    (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id := by
+  ext
+  simp
+
 private theorem det_mulLeftCLE (b : ℝ) (hb : b ≠ 0) :
     LinearMap.det (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b := by
-  rw [show (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id by
-    apply LinearMap.ext
-    intro x
-    simp, LinearMap.det_smul]
+  rw [coe_mulLeftCLE, LinearMap.det_smul]
   simp
 
 /-- **Affine change of variables for a real density.** If `b ≠ 0`, pushing a Lebesgue density
@@ -168,12 +170,9 @@ theorem rnDeriv_map_affine [SFinite μ] (hb : b ≠ 0) :
     ext x
     rw [mulLeftCLE_apply]
   rw [hmap]
-  rw [show affineDensity a b (μ.rnDeriv volume) =
-      fun y ↦ ENNReal.ofReal |b|⁻¹ * μ.rnDeriv volume ((y - a) / b) by
-    funext y
-    rw [affineDensity_apply]]
-  simpa only [mulLeftCLE_symm_apply, det_mulLeftCLE, abs_inv] using
-    Measure.rnDeriv_map_affine volume (mulLeftCLE b hb) a μ
+  refine (Measure.rnDeriv_map_affine volume (mulLeftCLE b hb) a μ).trans
+    (.of_forall fun y ↦ ?_)
+  simp only [affineDensity_apply, mulLeftCLE_symm_apply, det_mulLeftCLE, abs_inv]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
