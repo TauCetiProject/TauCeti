@@ -131,13 +131,12 @@ private theorem exists_lt_and_preimage_eq_Icc [Finite κ]
   have hoc : S.OrdConnected := by
     simp only [S, hK, preimage_iInter]
     exact ordConnected_iInter fun j ↦ ordConnected_preimage_geodesicLine_closure_leftHalfPlane _ _
-  have hbd : Bornology.IsBounded S :=
-    (isometry_geodesicLine _).antilipschitzWith.isBounded_preimage hb
+  have hc : IsCompact S := Metric.isCompact_of_isClosed_isBounded hcl
+    ((isometry_geodesicLine _).antilipschitzWith.isBounded_preimage hb)
   obtain ⟨huS, ε, hε, huS'⟩ := exists_pos_geodesicLine_add_mem hK hu
-  refine ⟨sInf S, sSup S, (csInf_le hbd.bddBelow huS).trans_lt ((lt_add_of_pos_right u
-    hε).trans_le (le_csSup hbd.bddAbove huS')), ?_⟩
-  exact eq_Icc_csInf_csSup_of_connected_bdd_closed ⟨⟨u, huS⟩, hoc.isPreconnected⟩ hbd.bddBelow
-    hbd.bddAbove hcl
+  refine ⟨sInf S, sSup S, (csInf_le hc.bddBelow huS).trans_lt ((lt_add_of_pos_right u
+    hε).trans_le (le_csSup hc.bddAbove huS')), ?_⟩
+  exact eq_Icc_of_connected_compact ⟨⟨u, huS⟩, hoc.isPreconnected⟩ hc
 
 variable (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
   (hS : ∀ k, geodesicLine (L k) ⁻¹' K = Icc (a k) (b k)) (hab : ∀ k, a k < b k)
