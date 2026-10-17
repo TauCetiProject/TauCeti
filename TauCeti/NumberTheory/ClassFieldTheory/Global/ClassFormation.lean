@@ -134,10 +134,10 @@ theorem ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree
       (hy : groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (ideleClassHom K)) 2 y = 0) :
       ideleSumLocalInv K L y = 0 :=
     ideleSumLocalInv_eq_zero_of_ideleToClassH2_eq_zero_of_forall_index_le hK
-      ((ideleToClassH2_apply K L y).trans hy)
+      (by rw [ideleToClassH2_def]; exact hy)
   -- On a layer of prime degree the image of the given class generates `H²(Gal(L/F), C_L)`; the
   -- Sylow and tower reduction carries the statement to every layer.
-  rw [ideleToClassH2_apply]
+  rw [ideleToClassH2_def]
   refine NormalLayer.map_eq_zero_of_prime_degree (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L)
     (fun T y ↦ ideleSumLocalInv_infl K T y) (fun R y ↦ ideleSumLocalInv_res K R y) hker
     (subsingleton_h1_globalFormation_of_forall_index_le hK) (fun L hp x ↦ ?_)
@@ -145,7 +145,7 @@ theorem ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree
       (natCard_H2_globalFormation_dvd_degree_of_forall_index_le hK L) (hgen L hp) hy) L hy
   have := NormalLayer.isCyclic_gal_of_prime_degree hp
   exact (surjective_ideleToClassH2_of_isCyclic K L x).imp fun y hy ↦
-    (ideleToClassH2_apply K L y).symm.trans hy
+    by rw [ideleToClassH2_def] at hy; exact hy
 
 include hK hgen in
 /-- `ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree`, for the cohomology map that
@@ -154,8 +154,9 @@ private theorem map_ideleClassHom_eq_zero_iff {L : NormalLayer (AbsoluteGaloisGr
     {y : L.H (ideleFormation K) 2} :
     groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (ideleClassHom K)) 2 y = 0 ↔
       ideleSumLocalInv K L y = 0 := by
-  rw [← ideleToClassH2_apply]
-  exact ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree hK hgen
+  have h := ideleToClassH2_eq_zero_iff_of_forall_index_le_of_prime_degree hK hgen (L := L) (y := y)
+  rw [ideleToClassH2_def] at h
+  exact h
 
 include hK hgen in
 /-- **Killing the obstruction**, if the Kummer case of the second inequality holds and every layer
@@ -174,6 +175,6 @@ theorem exists_refinement_mem_range_ideleToClassH2_of_forall_index_le_of_prime_d
     (subsingleton_h1_globalFormation_of_forall_index_le hK)
     (natCard_H2_globalFormation_dvd_degree_of_forall_index_le hK Lay)
     (exists_refinement_ideleSumLocalInv_eq Lay)
-  exact ⟨Lay', T, fun x ↦ (hT x).imp fun y hy ↦ (ideleToClassH2_apply K Lay' y).trans hy⟩
+  exact ⟨Lay', T, fun x ↦ (hT x).imp fun y hy ↦ by rw [ideleToClassH2_def]; exact hy⟩
 
 end TauCeti.ClassFieldTheory
