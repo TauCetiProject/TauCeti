@@ -180,8 +180,9 @@ theorem isoOfAlgEquiv_hom (e : F ≃ₐ[k] F') :
   have := isProper (hF := hF) (hx := hx) hxt
   have := isProper (hF := hF') (hx := hx') hx't
   rw [isoOfAlgEquiv, Scheme.isoOfFunctionFieldAlgEquiv_hom, homOfAlgHom]
-  -- The two maps of function fields are the same composite of `functionFieldEquiv`s with `e`.
-  rfl
+  refine congrArg (Scheme.homOfFunctionFieldAlgHom _) ?_
+  ext a
+  simp [functionFieldAlgHom]
 
 /-- The inverse morphism of `isoOfAlgEquiv e` is the morphism induced by `e.symm`. -/
 @[simp]
@@ -191,8 +192,9 @@ theorem isoOfAlgEquiv_inv (e : F ≃ₐ[k] F') :
   have := isProper (hF := hF) (hx := hx) hxt
   have := isProper (hF := hF') (hx := hx') hx't
   rw [isoOfAlgEquiv, Scheme.isoOfFunctionFieldAlgEquiv_inv, homOfAlgHom]
-  -- The two maps of function fields are the same composite of `functionFieldEquiv`s with `e`.
-  rfl
+  refine congrArg (Scheme.homOfFunctionFieldAlgHom _) ?_
+  ext a
+  simp [functionFieldAlgHom]
 
 /-! ### Comparison with the morphism glued from the chart maps -/
 

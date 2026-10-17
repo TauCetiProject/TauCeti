@@ -38,6 +38,9 @@ are birational are isomorphic.
   functions along `homOfFunctionFieldAlgHom hX ψ` is `ψ`.
 * `AlgebraicGeometry.Scheme.eq_homOfFunctionFieldAlgHom_iff`: a dominant `k`-morphism is
   `homOfFunctionFieldAlgHom hX ψ` exactly when its pullback of rational functions is `ψ`.
+* `AlgebraicGeometry.Scheme.functionFieldAlgHom_homOfFunctionFieldAlgHom` and
+  `AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom_functionFieldAlgHom`: the construction is
+  inverse to the pullback of rational functions `AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom`.
 * `AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom_id` and
   `AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom_comp`: functoriality.
 
@@ -108,6 +111,22 @@ theorem eq_homOfFunctionFieldAlgHom_iff (f : X ⟶ Y) [f.IsOver (Spec (.of k))] 
   rw [functionFieldMap_homOfFunctionFieldAlgHom]
   ext a
   exact h a
+
+/-- **The pullback of rational functions along `homOfFunctionFieldAlgHom hX ψ` is `ψ`**, as a
+`k`-algebra map. -/
+@[simp]
+theorem functionFieldAlgHom_homOfFunctionFieldAlgHom :
+    (homOfFunctionFieldAlgHom hX ψ).functionFieldAlgHom k = ψ := by
+  ext a
+  simp
+
+/-- **A dominant morphism into a proper scheme is induced by its pullback of rational
+functions**: a dominant `k`-morphism `f : X ⟶ Y` is `homOfFunctionFieldAlgHom` of
+`f^* : k(Y) → k(X)`. -/
+@[simp]
+theorem homOfFunctionFieldAlgHom_functionFieldAlgHom (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+    [IsDominant f] : homOfFunctionFieldAlgHom hX (f.functionFieldAlgHom k) = f :=
+  ((eq_homOfFunctionFieldAlgHom_iff hX _ f).mpr fun a ↦ by simp).symm
 
 /-! ### Functoriality -/
 

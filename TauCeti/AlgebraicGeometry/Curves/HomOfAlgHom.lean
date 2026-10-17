@@ -55,17 +55,15 @@ noncomputable def homOfAlgHom (φ : Y.toScheme.functionField →ₐ[k] X.toSchem
 @[simp]
 theorem functionFieldAlgHom_homOfAlgHom
     (φ : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField) :
-    (homOfAlgHom φ).hom.functionFieldAlgHom k = φ := by
-  ext x
-  simp [homOfAlgHom, Scheme.Hom.functionFieldAlgHom_apply]
+    (homOfAlgHom φ).hom.functionFieldAlgHom k = φ :=
+  Scheme.functionFieldAlgHom_homOfFunctionFieldAlgHom ..
 
 /-- **A dominant `k`-morphism is induced by its pullback of rational functions**: `f : X ⟶ Y` is
 `homOfAlgHom` of `f^* : k(Y) → k(X)`. -/
 @[simp]
 theorem homOfAlgHom_functionFieldAlgHom (f : X ⟶ Y) :
-    homOfAlgHom (f.hom.functionFieldAlgHom k) = f := by
-  refine hom_ext ((Scheme.eq_homOfFunctionFieldAlgHom_iff _ _ f.hom).mpr fun z ↦ ?_).symm
-  rw [Scheme.Hom.functionFieldAlgHom_apply]
+    homOfAlgHom (f.hom.functionFieldAlgHom k) = f :=
+  hom_ext (Scheme.homOfFunctionFieldAlgHom_functionFieldAlgHom ..)
 
 /-- A dominant `k`-morphism of regular proper curves is determined by its pullback of rational
 functions. -/
