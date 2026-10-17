@@ -179,19 +179,23 @@ theorem mgradientWithin_of_mem_nhds (hs : s ∈ 𝓝 x) :
   simp only [inner_mgradientWithin_left, inner_mgradient,
     mvfderivWithin, mvfderiv, mfderivWithin_of_mem_nhds hs]
 
+/-- For a `C^n` metric, a function which is `C^{n+1}` at a point has a `C^n` gradient there. -/
+theorem contMDiffAt_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    {x : M} (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x) :
+    ContMDiffAt I I.tangent n (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
+  have hframe := contMDiffOn_chartLocalFrame (I := I) (n := n) x j
+  rw [TangentBundle.trivializationAt_baseSet] at hframe
+  exact (hf.contMDiffAt_mvfderiv_apply le_rfl).comp x
+    (hframe.contMDiffAt ((chartAt H x).open_source.mem_nhds (mem_chart_source H x)))
+
 /-- **The gradient is smooth.** For a `C^n` Riemannian metric, the gradient of a `C^{n+1}`
 function is a `C^n` vector field. -/
 theorem contMDiff_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
     ContMDiff I I.tangent n (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) :=
-  fun x ↦ by
-  -- `df` evaluated on the chart-local frame at `x` is `C^n` on the chart source.
-  have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
-  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
-  have hframe := contMDiffOn_chartLocalFrame (I := I) (n := n) x j
-  rw [TangentBundle.trivializationAt_baseSet] at hframe
-  exact (hf.contMDiffOn.contMDiffOn_mvfderiv_apply hopen hframe le_rfl).contMDiffAt
-    (hopen.mem_nhds (mem_chart_source H x))
+  fun x ↦ contMDiffAt_mgradient (hf x)
 
 end TauCeti.Manifold

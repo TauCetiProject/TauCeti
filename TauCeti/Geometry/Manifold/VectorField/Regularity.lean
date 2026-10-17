@@ -110,28 +110,25 @@ canonical one, so evaluating it agrees with evaluating `mfderiv`. -/
   -- `fromTangentSpace` is Mathlib's explicit interface for this canonical identification.
   rfl
 
+/-- If `f` is `C^n` at a point, its differential evaluated on tangent vectors is `C^m` at
+every vector over that point, provided `m + 1 ≤ n`. -/
+theorem ContMDiffAt.contMDiffAt_mvfderiv_apply {f : M → F} {p : TangentBundle I M}
+    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.1) (hmn : m + 1 ≤ n) :
+    ContMDiffAt I.tangent 𝓘(𝕜, F) m
+      (fun q : TangentBundle I M ↦ mvfderiv I f q.1 q.2) p := by
+  have h := (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F) (n := m)).contMDiffAt.comp p
+    (hf.contMDiffAt_tangentMap hmn)
+  exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦
+    (mvfderiv_apply_eq_mfderiv_apply f q.1 q.2).trans tangentMap_snd.symm)
+
 /-- The map that applies the differential of a `C^n` function to tangent vectors is `C^m` on the
 tangent bundle when `m + 1 ≤ n`. -/
 theorem ContMDiff.contMDiff_mvfderiv_apply {f : M → F}
     (hf : ContMDiff I 𝓘(𝕜, F) n f)
     (hmn : m + 1 ≤ n) :
     ContMDiff I.tangent 𝓘(𝕜, F) m
-      (fun p : TangentBundle I M => mvfderiv I f p.1 p.2) := by
-  let df : TangentBundle I M → TangentBundle 𝓘(𝕜, F) F := tangentMap% f
-  have hdf : ContMDiff I.tangent 𝓘(𝕜, F).tangent m df :=
-    hf.contMDiff_tangentMap hmn
-  have hsnd : ContMDiff 𝓘(𝕜, F).tangent 𝓘(𝕜, F) m
-      (fun p : TangentBundle 𝓘(𝕜, F) F => p.2) :=
-    contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F)
-  have h := hsnd.comp hdf
-  have htangent (p : TangentBundle I M) :
-      NormedSpace.fromTangentSpace (f p.1) ((tangentMap% f p).2) =
-        mvfderiv I f p.1 p.2 := by
-    rw [mvfderiv, ContinuousLinearMap.comp_apply, tangentMap_snd]
-    rfl
-  -- On a model vector space, `NormedSpace.fromTangentSpace` is the identity on the underlying
-  -- type, so the second projection computed by `h` agrees definitionally with `mvfderiv`.
-  exact h.congr fun p => (htangent p).symm
+      (fun p : TangentBundle I M => mvfderiv I f p.1 p.2) :=
+  fun p ↦ (hf p.1).contMDiffAt_mvfderiv_apply hmn
 
 /-- The derivative of a `C^n` function along a `C^m` vector field is `C^m` on an open set, when
 `m + 1 ≤ n`. This is the set-local form of `ContMDiff.contMDiff_mvfderiv_apply`: only the germ of
