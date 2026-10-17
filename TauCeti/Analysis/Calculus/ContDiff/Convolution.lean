@@ -34,15 +34,16 @@ which the derivative is a convolution with values in `F` rather than in a space 
 
 ## Main declarations
 
-* `TauCeti.convolutionExists_of_ae_norm_le_of_integrable`,
-  `TauCeti.convolutionExists_of_integrable_of_ae_norm_le`: an essentially bounded function
+* `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
+  `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`: an essentially bounded function
   convolves with an integrable one.
-* `TauCeti.continuous_convolution_right_of_dominated`: continuity of `f ⋆ g`.
-* `TauCeti.hasFDerivAt_convolution_right_of_dominated`: `D (f ⋆ g) = f ⋆ D g`.
-* `TauCeti.iteratedFDeriv_convolution_right_of_dominated`: `D^n (f ⋆ g) = f ⋆ D^n g`.
-* `TauCeti.contDiff_convolution_right_of_dominated`,
-  `TauCeti.contDiff_convolution_left_of_dominated`: `f ⋆ g` is `C^N` when the smooth factor is.
-* `TauCeti.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
+* `MeasureTheory.continuous_convolution_right_of_dominated`: continuity of `f ⋆ g`.
+* `MeasureTheory.hasFDerivAt_convolution_right_of_dominated`: `D (f ⋆ g) = f ⋆ D g`.
+* `MeasureTheory.iteratedFDeriv_convolution_right_of_dominated`: `D^n (f ⋆ g) = f ⋆ D^n g`.
+* `MeasureTheory.contDiff_convolution_right_of_dominated`,
+  `MeasureTheory.contDiff_convolution_left_of_dominated`: `f ⋆ g` is `C^N` when the smooth factor
+  is.
+* `MeasureTheory.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
 -/
@@ -51,20 +52,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace MeasureTheory
 
-open ContinuousLinearMap Filter Metric MeasureTheory Set
+open ContinuousLinearMap Filter Metric Set
 open scoped Convolution Topology
-
-/-- A linear isometric equivalence commutes with the Bochner integral. Stated with explicit source
-and target spaces, so that it applies to the currying equivalences of multilinear maps, whose
-normed-group instance paths differ from the ones `ContinuousLinearEquiv.integral_comp_comm`
-infers. -/
-private theorem integral_linearIsometryEquiv {G X Y : Type*} [MeasurableSpace G] {μ : Measure G}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (e : X ≃ₗᵢ[ℝ] Y) (u : G → X) :
-    ∫ t, e (u t) ∂μ = e (∫ t, u t ∂μ) :=
-  e.toContinuousLinearEquiv.integral_comp_comm u
 
 variable {G E E' F : Type*} [NormedAddCommGroup G]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -178,8 +169,10 @@ theorem iteratedFDeriv_convolution_right_of_dominated (hf : AEStronglyMeasurable
   | zero =>
     funext x
     simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, convolution_def]
-    rw [← integral_linearIsometryEquiv]
-    congr 1 with t m
+    refine ((continuousMultilinearCurryFin0 ℝ G F).symm.toContinuousLinearEquiv.integral_comp_comm
+      _).symm.trans (integral_congr_ae (ae_of_all _ fun t => ?_))
+    ext m
+    rfl
   | succ n ih =>
     have hn' : (n : ℕ∞) ≤ N := le_trans (by exact_mod_cast n.le_succ) hn
     funext x
@@ -187,13 +180,15 @@ theorem iteratedFDeriv_convolution_right_of_dominated (hf : AEStronglyMeasurable
     rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, ih hn',
       (hasFDerivAt_convolution_right_of_dominated _ hf hfM hgn hgi hφ hgφn x).fderiv,
       convolution_def, convolution_def]
-    refine (integral_linearIsometryEquiv (μ := μ)
-      (X := G →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin n => G) F)
-      (Y := ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) => G) F)
-      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) => G) F).symm _).symm.trans
+    refine (ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (μ := μ)
+      (E := G →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin n => G) F)
+      (F := ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) => G) F)
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) => G)
+        F).symm.toContinuousLinearEquiv _).symm.trans
       (integral_congr_ae (ae_of_all _ fun t => ?_))
     ext m
     simp [iteratedFDeriv_succ_eq_comp_left]
+    rfl
 
 /-- **Smoothness of a convolution.** Let `f` be essentially bounded and `g` be `C^N`, with each
 derivative of order at most `N` dominated, uniformly on unit translates, by an integrable
@@ -247,4 +242,4 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
 
-end TauCeti
+end MeasureTheory
