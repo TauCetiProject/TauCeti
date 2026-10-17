@@ -25,6 +25,9 @@ elements of nonzero degree and boundaries of the algebra act on it by zero.
 This is the ordinary category of DG modules, before taking chain-homotopy classes or
 inverting quasi-isomorphisms.
 
+`forgetToRightModuleCat` retains the right algebra action and forgets the grading and
+differential.
+
 The bundling constructor `of` and the forgetful functor expose their bodies so that their
 underlying carriers remain definitionally the supplied module types.
 
@@ -241,6 +244,25 @@ instance : (forgetToModuleCat.{uR, uA, uM} (h := h)).Linear R where
     apply LinearMap.ext
     intro x
     exact smul_apply r f x
+
+/-- Forget the grading and differential of a DG right module, retaining the right action. -/
+-- Expose the carrier so scalar-restriction comparisons can use the underlying module type.
+@[expose]
+def forgetToRightModuleCat : DGRightModuleCat.{uR, uA, uM} h ⥤ ModuleCat.{uM} Aᵐᵒᵖ where
+  obj M := ModuleCat.of Aᵐᵒᵖ M
+  map f := ModuleCat.ofHom f.toLinearMap
+  map_id M := ModuleCat.hom_ext (LinearMap.ext fun x ↦ id_apply M x)
+  map_comp f g := ModuleCat.hom_ext (LinearMap.ext fun x ↦ comp_apply f g x)
+
+@[simp]
+theorem forgetToRightModuleCat_map_hom (f : M ⟶ N) :
+    ((forgetToRightModuleCat (h := h)).map f).hom = f.toLinearMap := (rfl)
+
+instance : (forgetToRightModuleCat.{uR, uA, uM} (h := h)).Faithful where
+  map_injective hfg := hom_ext fun x ↦ congrArg (fun f ↦ (ModuleCat.Hom.hom f) x) hfg
+
+instance : (forgetToRightModuleCat.{uR, uA, uM} (h := h)).Additive where
+  map_add := ModuleCat.hom_ext (LinearMap.ext fun x ↦ add_apply _ _ x)
 
 section DegreeZero
 
