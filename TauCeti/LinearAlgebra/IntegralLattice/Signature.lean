@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Star.Rat
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -21,9 +22,10 @@ and `sigNeg`; the null index is the dimension of the kernel of the bilinear form
 Positive- and negative-semidefiniteness are expressed using Mathlib's bilinear-form predicates.
 The characteristic theorems relate every predicate both to the signature and to the usual
 elementwise inequalities. In particular, an indefinite lattice has vectors of both signs, and a
-degenerate lattice has a nonzero vector in its radical. The final section proves that an
-integral-lattice isometry transports the radical and preserves all three inertia indices and every
-definiteness predicate.
+degenerate lattice has a nonzero vector in its radical. The signed determinant vanishes exactly
+when the null index is positive, and otherwise has sign `(-1)^{n₋}`. The final section proves that
+an integral-lattice isometry transports the radical and preserves all three inertia indices and
+every definiteness predicate.
 
 ## References
 
@@ -37,6 +39,8 @@ definiteness predicate.
 * `TauCeti.IntegralLattice.IsPosSemidef` and related definiteness predicates.
 * `TauCeti.IntegralLattice.isPosDef_ofGramMatrix_iff`: a lattice presented by a Gram matrix is
   positive definite exactly when the matrix is, read over `ℚ`.
+* `TauCeti.IntegralLattice.sign_determinant`: the determinant-sign formula
+  `sign (det L) = (-1)^{n₋}` for a nondegenerate lattice.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -247,6 +251,21 @@ theorem isIndefinite_iff_exists_pos_and_exists_neg :
     L.isNegSemidef_iff]
   simp only [not_forall, not_le]
   exact and_comm
+
+/-- The signed determinant of a lattice is nonzero exactly when its null index vanishes. -/
+theorem determinant_ne_zero_iff_sigNull_eq_zero : L.determinant ≠ 0 ↔ L.sigNull = 0 := by
+  rw [L.determinant_ne_zero_iff, ← not_iff_not, ← L.isDegenerate_iff_not_nondegenerate,
+    L.isDegenerate_iff_sigNull_pos, Nat.pos_iff_ne_zero]
+
+/-- **The determinant-sign formula.** The signed determinant of a nondegenerate lattice has sign
+`(-1)^{n₋}`, where `n₋` is its negative index of inertia. -/
+theorem sign_determinant (hL : L.form.Nondegenerate) :
+    SignType.sign L.determinant = (-1) ^ L.sigNeg := by
+  classical
+  have := L.finiteDimensional
+  let e := Module.Free.chooseBasis ℤ L
+  rw [← sign_intCast (α := ℚ), L.determinant_eq_gramDet e, intCast_gramDet,
+    LinearMap.BilinForm.sign_det_toMatrix L.form L.isSymm hL]
 
 namespace Isometry
 
