@@ -363,7 +363,8 @@ theorem leftDegreeZeroEquivalence_counitIso_inv_app
   rfl
 
 /-- The counit of the left-module equivalence acts identically on elements. -/
-@[simp]
+-- Evaluate before expanding the counit into scalar-restriction comparison morphisms.
+@[simp↓]
 theorem leftDegreeZeroEquivalence_counitIso_hom_app_apply
     (M : ObjectProperty.FullSubcategory (IsConcentratedInDegreeZero
       (h := isDGAlgebra_zero (trivialGrading R Aᵐᵒᵖ))))
@@ -380,7 +381,7 @@ theorem leftDegreeZeroEquivalence_counitIso_hom_app_apply
         (ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply _ _ x)))
 
 /-- The inverse counit of the left-module equivalence acts identically on elements. -/
-@[simp]
+@[simp↓]
 theorem leftDegreeZeroEquivalence_counitIso_inv_app_apply
     (M : ObjectProperty.FullSubcategory (IsConcentratedInDegreeZero
       (h := isDGAlgebra_zero (trivialGrading R Aᵐᵒᵖ)))) (x : M.obj) :
