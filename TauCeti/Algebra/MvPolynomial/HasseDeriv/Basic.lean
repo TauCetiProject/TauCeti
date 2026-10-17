@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Algebra.MvPolynomial.Monomial
@@ -33,6 +34,8 @@ Roth's theorem.
 
 * `MvPolynomial.hasseDeriv_monomial`, `MvPolynomial.hasseDeriv_coeff`: the values on monomials
   and the coefficients `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`.
+* `MvPolynomial.abv_coeff_hasseDeriv_le`: for an absolute value `v`,
+  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`.
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
   `∂^0` is the identity and every other Hasse derivative kills constants.
 * `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
@@ -101,6 +104,21 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
       · exact absurd ((tsub_eq_iff_eq_add_of_le hdn).1 h') h
       · simp [prod_choose_eq_zero hdn]
   | add p q hp hq => simp [hp, hq, mul_add]
+
+/-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
+of the coefficient it comes from: `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`. -/
+theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
+    [IsDomain S] (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (m + d).degree * abv (P.coeff (m + d)) := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · rw [Subsingleton.elim ((hasseDeriv d P).coeff m) 0, abv.map_zero]
+    exact mul_nonneg (pow_nonneg zero_le_two _) (abv.nonneg _)
+  rw [hasseDeriv_coeff, abv.map_mul]
+  refine mul_le_mul_of_nonneg_right ((abv.apply_nat_le_self _).trans ?_) (abv.nonneg _)
+  have h : (d.prod fun j k ↦ (m j + k).choose k) = d.prod fun j k ↦ ((m + d) j).choose k :=
+    Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
+  rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
+  exact Nat.mono_cast (Finsupp.prod_choose_le_two_pow_degree d (m + d))
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]
