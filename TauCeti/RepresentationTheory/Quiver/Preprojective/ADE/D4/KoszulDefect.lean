@@ -117,7 +117,11 @@ private theorem exists_ne_zero_mem_preprojectiveCorner_D4_four (v : Q) :
   let y : Π := π (ofPath ⟨φ.obj (vertex zigzagD4Graph a),
     φ.obj (vertex zigzagD4Graph a), q⟩)
   have hq_length : q.length = 4 := by
-    simpa [q, φ] using hlength
+    simpa only [q] using (φ.length_mapPath p).trans hlength
+  have horientation :
+      π (orientationPathAlgebraEquiv zigzagD4Coloring.sourceSink k
+        (ofPath ⟨vertex zigzagD4Graph a, vertex zigzagD4Graph a, p⟩)) = y := by
+    rw [orientationPathAlgebraEquiv_ofPath, Prefunctor.mapTotalPath_mk]
   have hycorner : y ∈
       preprojectiveCorner k Q 4 (φ.obj (vertex zigzagD4Graph a))
         (φ.obj (vertex zigzagD4Graph a)) := by
@@ -132,8 +136,8 @@ private theorem exists_ne_zero_mem_preprojectiveCorner_D4_four (v : Q) :
     apply signlessWord_d4SocleWalk_ne_zero k a
     rw [← hp]
     apply (zigzagD4SignlessEquivPreprojective k).injective
-    rw [zigzagD4SignlessEquivPreprojective_mk, orientationPathAlgebraEquiv_ofPath, map_zero]
-    simpa [y, q, φ] using hy
+    rw [zigzagD4SignlessEquivPreprojective_mk, horientation, map_zero]
+    exact hy
   refine ⟨y, hycorner, hy0, fun w b => ?_⟩
   dsimp only [y]
   rw [← map_mul, ofArrow_mul_ofPath]
