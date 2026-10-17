@@ -6,10 +6,112 @@ from __future__ import annotations
 import contextlib
 import io
 import pathlib
+import re
 import tempfile
 import unittest
 
 import lean_source as lint
+
+
+# Standard hom families: spelling, canonical receiver, and distinct related receiver types.
+STANDARD_HOM_NOTATIONS = (
+    ("→ₙ+", "AddHom", ("AddMonoidHom",)),
+    ("→ₙ*", "MulHom", ("MonoidHom",)),
+    ("→ₙ+*", "NonUnitalRingHom", ("AddHom", "RingHom")),
+    ("→⋆*", "StarMonoidHom", ("MonoidHom",)),
+    ("→⋆ₙ+*", "NonUnitalStarRingHom", ("NonUnitalRingHom", "StarMonoidHom")),
+    ("→ₜ+", "ContinuousAddMonoidHom", ("AddMonoidHom",)),
+    ("→ₜ*", "ContinuousMonoidHom", ("MonoidHom",)),
+    ("→ₑ+[φ]", "DistribMulActionHom", ("AddMonoidHom", "MulActionHom")),
+    ("→+[M]", "DistribMulActionHom", ("AddMonoidHom", "MulActionHom")),
+    ("→ₑ*[φ]", "MulDistribMulActionHom", ("MonoidHom", "MulActionHom")),
+    ("→*[M]", "MulDistribMulActionHom", ("MonoidHom", "MulActionHom")),
+    ("→ₑ+*[φ]", "MulSemiringActionHom", ("RingHom", "DistribMulActionHom")),
+    ("→+*[M]", "MulSemiringActionHom", ("RingHom", "DistribMulActionHom")),
+    ("→ₐ", "AlgHom", ("BialgHom", "GradedAlgHom")),
+    ("→ₙₐ", "NonUnitalAlgHom", ("AlgHom", "NonUnitalRingHom")),
+    ("→ₙₐ[R]", "NonUnitalAlgHom", ("AlgHom", "NonUnitalRingHom")),
+    ("→ₛₙₐ[φ]", "NonUnitalAlgHom", ("AlgHom", "NonUnitalRingHom")),
+    ("→⋆ₐ", "StarAlgHom", ("AlgHom", "NonUnitalStarAlgHom")),
+    ("→⋆ₐ[R]", "StarAlgHom", ("AlgHom", "NonUnitalStarAlgHom")),
+    ("→⋆ₙₐ", "NonUnitalStarAlgHom", ("NonUnitalAlgHom", "StarAlgHom")),
+    ("→⋆ₙₐ[R]", "NonUnitalStarAlgHom", ("NonUnitalAlgHom", "StarAlgHom")),
+    ("→ₐᵍ[R]", "GradedAlgHom", ("AlgHom", "GradedRingHom")),
+)
+
+
+# Complete remaining unambiguous arrow notation in the pinned Mathlib source inventory.
+OTHER_ARROW_NOTATIONS = (
+    ("→+c[a,b]", "AddConstMap", "AddMonoidHom"),
+    ("→.", "PFun", "Foo"),
+    ("→CO", "ContinuousOpenMap", "Foo"),
+    ("→CP", "CompletelyPositiveMap", "ContinuousMap"),
+    ("→C_c", "CompactlySupportedContinuousMap", "Foo"),
+    ("→Co", "ContinuousOrderHom", "Foo"),
+    ("→C₀", "ZeroAtInftyContinuousMap", "Foo"),
+    ("→L_c[R]", "CompactConvergenceCLM", "ContinuousLinearMap"),
+    ("→Lᵤ[R,S]", "UniformConvergenceCLM", "ContinuousLinearMap"),
+    ("→Lₚₜ[R]", "PointwiseConvergenceCLM", "ContinuousLinearMap"),
+    ("→P[R]", "PositiveContinuousLinearMap", "PositiveLinearMap"),
+    ("→SL_c[σ]", "CompactConvergenceCLM", "ContinuousLinearMap"),
+    ("→SLᵤ[σ,S]", "UniformConvergenceCLM", "ContinuousLinearMap"),
+    ("→SLₚₜ[σ]", "PointwiseConvergenceCLM", "ContinuousLinearMap"),
+    ("→SWOT[σ]", "ContinuousLinearMapWOT", "ContinuousLinearMap"),
+    ("→WOT[R]", "ContinuousLinearMapWOT", "ContinuousLinearMap"),
+    ("→bᵢ", "Isometry", "LinearIsometry"),
+    ("→co", "CocompactMap", "Foo"),
+    ("→fg", "FinsubgraphHom", "Foo"),
+    ("→g", "Hom", "Foo"),
+    ("→qᵢ", "Isometry", "LinearIsometry"),
+    ("→r", "RelHom", "Foo"),
+    ("→ᴬ[R]", "ContinuousAffineMap", "Foo"),
+    ("→ᴸ", "LHom", "Foo"),
+    ("→ᵃ[R]", "AffineMap", "Foo"),
+    ("→ᵃⁱ[R]", "AffineIsometry", "Foo"),
+    ("→ᵇ", "BoundedContinuousFunction", "Foo"),
+    ("→ᵇᵃ", "BoxAdditiveMap", "BoundedContinuousFunction"),
+    ("→ᵇᵃ[I]", "BoxAdditiveMap", "BoundedContinuousFunction"),
+    ("→ᵈ", "Dilation", "Foo"),
+    ("→ᵤ", "UniformFun", "Foo"),
+    ("→ᵤ[S]", "UniformOnFun", "UniformFun"),
+    ("→ᶠˡ[p,k]", "LinearMap", "Foo"),
+    ("→ᶠⁱ[p,k]", "IsocrystalHom", "Foo"),
+    ("→ⁱL", "ContIntertwiningMap", "Foo"),
+    ("→₀", "Finsupp", "Foo"),
+    ("→₁[μ]", "Lp", "Foo"),
+    ("→₁ₛ[μ]", "simpleFunc", "Lp"),
+    ("→₂[μ]", "Lp", "Foo"),
+    ("→ₘ[μ]", "AEEqFun", "Foo"),
+    ("→ₚ[R]", "PositiveLinearMap", "Foo"),
+    ("→ₚₗ[R]", "PolynomialLaw", "PositiveLinearMap"),
+    ("→ₛ", "SimpleFunc", "Foo"),
+    ("→◃", "ShelfHom", "Foo"),
+    ("→𝒄", "ContinuousHom", "Foo"),
+)
+
+
+def arrow_context(arrow: str) -> str:
+    """The actual Lean setup for the scoped and local cases in the inventory fixtures."""
+    scopes = {
+        "→+c[": "AddConstMap", "→CP": "CStarAlgebra", "→C_c": "CompactlySupported",
+        "→C₀": "ZeroAtInfty", "→L_c[": "CompactConvergenceCLM",
+        "→SL_c[": "CompactConvergenceCLM", "→Lᵤ[": "UniformConvergenceCLM",
+        "→SLᵤ[": "UniformConvergenceCLM", "→ᵇ": "BoundedContinuousFunction",
+        "→ᵇᵃ": "BoxIntegral", "→ᵇᵃ[": "BoxIntegral", "→ᵤ": "UniformConvergence",
+        "→ᵤ[": "UniformConvergence", "→ᶠˡ[": "Isocrystal", "→ᶠⁱ[": "Isocrystal",
+        "→ⁱL": "ContRepresentation", "→₁[": "MeasureTheory", "→₂[": "MeasureTheory",
+        "→◃": "Quandles",
+    }
+    for token in sorted(scopes, key=len, reverse=True):
+        if arrow.startswith(token):
+            return f"open scoped {scopes[token]}\n"
+    locals_ = {
+        "→co": "CocompactMap", "→fg": "SimpleGraph.FinsubgraphHom",
+        "→ₛ": "MeasureTheory.SimpleFunc",
+    }
+    if arrow in locals_:
+        return f'local infixr:25 " {arrow} " => _root_.{locals_[arrow]}\n'
+    return ""
 
 
 def findings(source: str, namespaces: set[str] | None = None):
@@ -98,6 +200,379 @@ end TauCeti
         self.assertEqual([finding.declaration for finding in findings(source)],
                          ["TauCeti.Foo.takesFoo"])
 
+    def test_returned_bundled_tensor_map_is_not_a_receiver(self):
+        source = """\
+namespace TauCeti.Algebra.TensorProduct
+variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
+  [Semiring A] [Algebra K A] [Semiring B] [Algebra K B]
+noncomputable def mulBaseChange :
+    (L ⊗[K] A) ⊗[K] (L ⊗[K] B) →ₐ[L] L ⊗[K] (A ⊗[K] B) :=
+  (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+    (Algebra.TensorProduct.mapOfCompatibleSMul L K L _ _)
+def tensorReceiver (x : L ⊗[K] A) := x
+def functionReceiver : L ⊗[K] A → M := f
+def asciiFunctionReceiver : L ⊗[K] A -> M := f
+end TauCeti.Algebra.TensorProduct
+"""
+        self.assertEqual([finding.declaration for finding in findings(source, {"TensorProduct"})],
+                         ["TauCeti.Algebra.TensorProduct." + name for name in
+                          ("tensorReceiver", "functionReceiver", "asciiFunctionReceiver")])
+
+    def test_returned_bundled_map_arrows_are_not_function_arrows(self):
+        for arrow in ("→ₐ[R]", "→ₐc[R]", "→ₗ[R]", "→ₗc[R]", "→ₛₗ[σ]", "→L[𝕜]",
+                      "→SL[σ]", "→L⋆[𝕜]", "→ₗ⋆[R]", "→ₛₗᵢ[σ]", "→ₗ.[R]",
+                      "→ₗ⁅R⁆", "→+*", "→*", "→+", "→o", "→ₐc", "→ₗc",
+                      "→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ"):
+            source = f"""\
+namespace TauCeti.Foo
+def returnedMap : Foo {arrow} B := f
+def compactReturnedMap : Foo{arrow}B := f
+def outerFunction : Foo → A {arrow} B := f
+def outerAsciiFunction : Foo -> A {arrow} B := f
+end TauCeti.Foo
+"""
+            with self.subTest(arrow=arrow):
+                self.assertEqual([finding.declaration for finding in findings(source)],
+                                 ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction"])
+
+    def test_standard_hom_families_are_maps_with_their_canonical_receiver(self):
+        for arrow, owner, other_owners in STANDARD_HOM_NOTATIONS:
+            for separator in (" ", ""):
+                source = f"""\
+namespace TauCeti.Foo
+def returnedMap : Foo{separator}{arrow}{separator}B := f
+def outerFunction : Foo → A{separator}{arrow}{separator}B := f
+def outerAsciiFunction : Foo -> A{separator}{arrow}{separator}B := f
+end TauCeti.Foo
+namespace TauCeti.{owner}
+def actualReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{owner}
+"""
+                for other in other_owners:
+                    source += f"""\
+namespace TauCeti.{other}
+def differentReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{other}
+"""
+                with self.subTest(arrow=arrow, separator=separator):
+                    self.assertEqual(
+                        [finding.declaration for finding in
+                         findings(source, {"Foo", owner, *other_owners})],
+                        ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction",
+                         f"TauCeti.{owner}.actualReceiver"],
+                    )
+
+    def test_other_arrow_types_are_bundled_with_their_canonical_receiver(self):
+        for arrow, owner, other_owner in OTHER_ARROW_NOTATIONS:
+            for separator in (" ", ""):
+                source = arrow_context(arrow) + f"""\
+namespace TauCeti.Foo
+def returnedValue : Foo{separator}{arrow}{separator}B := f
+def outerFunction : Foo → A{separator}{arrow}{separator}B := f
+def outerAsciiFunction : Foo -> A{separator}{arrow}{separator}B := f
+end TauCeti.Foo
+namespace TauCeti.{owner}
+def actualReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{owner}
+namespace TauCeti.{other_owner}
+def differentReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{other_owner}
+"""
+                with self.subTest(arrow=arrow, separator=separator):
+                    self.assertEqual(
+                        [finding.declaration for finding in
+                         findings(source, {"Foo", owner, other_owner})],
+                        ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction",
+                         f"TauCeti.{owner}.actualReceiver"],
+                    )
+
+    def test_pinned_mathlib_arrow_notation_inventory_is_covered(self):
+        root = pathlib.Path(".lake/packages/mathlib/Mathlib")
+        if not root.is_dir():
+            self.skipTest("Mathlib source is not available")
+        # Include inline attributes, named scopes, indentation, and multiline notation bodies.
+        command = re.compile(
+            r'(?m)^[ \t]*(?:@\[[^\n]*?\]\s*)?'
+            r'(?:(?P<modifier>scoped(?:\[[^]\n]*\])?|local)\s+)?'
+            r'(?:notation3?|infix[lr]?)(?::[\w]+)?\s+(?P<body>.*?)=>',
+            re.S,
+        )
+        supported = {token for token, _ in lint.NOTATION_RECEIVERS}
+        modes: dict[str, set[str]] = {}
+        for path in root.rglob("*.lean"):
+            text = lint.strip_comments_and_strings(path.read_text(errors="ignore"),
+                                                   mask_strings=False)
+            for match in command.finditer(text):
+                for token in re.findall(r'"([^"\n]*)"', match.group("body")):
+                    token = token.strip()
+                    if token.startswith("→"):
+                        self.assertIn(token, supported, f"{path}: {token}")
+                        modifier = match.group("modifier") or "global"
+                        modes.setdefault(token, set()).add(modifier)
+                        scope = re.fullmatch(r"scoped\[([^]]+)\]", modifier)
+                        if scope and dict(lint.NOTATION_RECEIVERS)[token] is not None:
+                            self.assertIn(token, lint.SCOPED_ARROW_NOTATIONS[scope.group(1)])
+        for token, token_modes in modes.items():
+            self.assertEqual(token in lint.CONDITIONAL_ARROW_NOTATIONS,
+                             "global" not in token_modes, f"{token}: {token_modes}")
+
+    def test_inactive_scoped_and_local_tokens_are_ordinary_compact_arrows(self):
+        source = "namespace TauCeti.Foo\n"
+        for target in ("CP", "C₀", "C_c", "co", "fg"):
+            source += f"def to{target} : Foo→{target} := f\n"
+        source += "end TauCeti.Foo\n"
+        self.assertEqual(len(findings(source)), 5)
+
+    def test_scoped_open_activation_lifetime_and_one_command_opens(self):
+        source = """\
+namespace TauCeti.Foo
+def inactive : Foo→CP := f
+  section Scoped
+  open scoped CStarAlgebra
+def active : Foo→CP B := f
+  end Scoped
+def afterSection : Foo→CP := f
+section Ordinary
+open CStarAlgebra
+def ordinaryOpen : Foo→CP B := f
+end Ordinary
+section Selective
+open CStarAlgebra (marker)
+def selectiveOpen : Foo→CP := f
+end Selective
+section Hiding
+open CStarAlgebra hiding marker
+def hidingOpen : Foo→CP B := f
+end Hiding
+section Renaming
+open CStarAlgebra renaming marker -> renamedMarker
+def renamingOpen : Foo→CP := f
+end Renaming
+open scoped CStarAlgebra in
+def oneCommand : Foo→CP B := f
+def afterOneCommand : Foo→CP := f
+open scoped CStarAlgebra in def sameLine : Foo→CP B := f
+def afterSameLine : Foo→CP := f
+open scoped CStarAlgebra in
+#check A→CP B
+def afterCheck : Foo→CP := f
+open scoped CStarAlgebra in #check A→CP B
+def afterInlineCheck : Foo→CP := f
+end TauCeti.Foo
+"""
+        self.assertEqual([finding.declaration for finding in findings(source)],
+                         ["TauCeti.Foo." + name for name in (
+                             "inactive", "afterSection", "selectiveOpen", "renamingOpen",
+                             "afterOneCommand", "afterSameLine", "afterCheck",
+                             "afterInlineCheck")])
+
+    def test_namespace_activates_only_its_actual_scoped_notation(self):
+        for namespace, active in (("CStarAlgebra", True), ("CStarAlgebra.Nested", True),
+                                  ("TauCeti.CStarAlgebra", False)):
+            source = f"""\
+namespace {namespace}
+def _root_.TauCeti.Foo.ignored : Foo→CP B := f
+namespace TauCeti.Foo
+def underNamespace : Foo→CP B := f
+end TauCeti.Foo
+end {namespace}
+namespace TauCeti.Foo
+def afterNamespace : Foo→CP := f
+end TauCeti.Foo
+"""
+            contexts = lint._notation_contexts(source)
+            decl = next(decl for decl in lint.declarations(source)
+                        if decl.name == "underNamespace")
+            with self.subTest(namespace=namespace):
+                self.assertEqual("→CP" in contexts[decl.position], active)
+                self.assertEqual(findings(source)[-1].declaration, "TauCeti.Foo.afterNamespace")
+
+    def test_scope_commands_in_literals_comments_and_quoted_names_are_masked(self):
+        source = '''\
+-- open scoped CStarAlgebra
+/- "open scoped CStarAlgebra" -/
+def text := "open scoped CStarAlgebra"
+def «open scoped CStarAlgebra» := 1
+-- local notation A " →CP " B => Prod A B
+/- local notation A " →CP " B => Prod A B -/
+local notation A " →CUSTOM " /- " →CP " -/ B => Prod A B
+namespace TauCeti.Foo
+def ordinary : Foo→CP := f
+end TauCeti.Foo
+'''
+        self.assertEqual([finding.declaration for finding in findings(source)],
+                         ["TauCeti.Foo.ordinary"])
+
+    def test_local_overrides_are_bundled_but_do_not_invent_receiver_owners(self):
+        source = '''\
+namespace TauCeti.Foo
+section Local
+local notation:25 A " →CP " B => Prod A B
+def locallyBundled : Foo→CP B := f
+end Local
+def ordinaryAgain : Foo→CP := f
+end TauCeti.Foo
+namespace TauCeti.CompletelyPositiveMap
+section Local
+open scoped CStarAlgebra
+local notation:25 A " →CP " B => Prod A B
+def uncertainOwner (f : A→CP B) := f
+end Local
+open scoped CStarAlgebra
+def actualOwner (f : A→CP B) := f
+end TauCeti.CompletelyPositiveMap
+'''
+        self.assertEqual([finding.declaration for finding in
+                          findings(source, {"Foo", "CompletelyPositiveMap"})],
+                         ["TauCeti.Foo.ordinaryAgain", "TauCeti.CompletelyPositiveMap.actualOwner"])
+
+    def test_section_variable_notation_is_interpreted_at_its_binding(self):
+        source = '''\
+open scoped CStarAlgebra
+namespace TauCeti.CompletelyPositiveMap
+variable (f : A→CP B)
+section Local
+local notation:25 A " →CP " B => Prod A B
+def stillOriginalReceiver (h : f = f) : f = f := h
+end Local
+end TauCeti.CompletelyPositiveMap
+'''
+        self.assertEqual([finding.declaration for finding in
+                          findings(source, {"CompletelyPositiveMap"})],
+                         ["TauCeti.CompletelyPositiveMap.stillOriginalReceiver"])
+
+    def test_multiline_opens_and_scoped_custom_overrides_keep_unknown_ownership(self):
+        source = '''\
+namespace Registration
+@[inherit_doc Prod] scoped[FreshArrowScope]
+  notation:25 A " →CPextra " B => Prod A B
+end Registration
+namespace TauCeti.Foo
+def inactiveCustom : Foo→CPextra := f
+section Active
+open scoped
+  FreshArrowScope
+  CStarAlgebra
+def activeCustom : Foo→CPextra B := f
+def activeStandard : Foo→CP B := f
+end Active
+def restoredCustom : Foo→CPextra := f
+end TauCeti.Foo
+namespace TauCeti.CompletelyPositiveMap
+open scoped CStarAlgebra FreshArrowScope
+def customOwnerIsUnknown (f : A→CPextra B) := f
+def standardOwner (f : A→CP B) := f
+end TauCeti.CompletelyPositiveMap
+'''
+        self.assertEqual([finding.declaration for finding in
+                          findings(source, {"Foo", "CompletelyPositiveMap"})],
+                         ["TauCeti.Foo.inactiveCustom", "TauCeti.Foo.restoredCustom",
+                          "TauCeti.CompletelyPositiveMap.standardOwner"])
+
+    def test_ambiguous_arrows_are_bundled_without_inventing_receiver_ownership(self):
+        for arrow in ("→[M]", "→ₑ[φ]", "→ₗ⁅R⁆", "→ₗ⁅R,L⁆"):
+            source = f"""\
+namespace TauCeti
+def Foo : Type u {arrow} A := f
+namespace Foo
+def namedReceiver (x : _root_.Foo) := x
+def returnedValue : Foo{arrow}B := f
+def outerFunction : Foo → A{arrow}B := f
+end Foo
+end TauCeti
+"""
+            owners = {"Foo", "AddActionHom", "MulActionHom", "Hom", "LieHom", "LieModuleHom"}
+            for owner in owners - {"Foo"}:
+                source += f"""\
+namespace TauCeti.{owner}
+def ambiguousReceiver (f : A {arrow} B) := f
+end TauCeti.{owner}
+"""
+            with self.subTest(arrow=arrow):
+                self.assertEqual([finding.declaration for finding in findings(source, owners)],
+                                 ["TauCeti.Foo.namedReceiver", "TauCeti.Foo.outerFunction"])
+
+    def test_longer_bundled_arrows_use_their_own_receiver_namespace(self):
+        cases = (
+            ("→+o", "OrderAddMonoidHom", ("AddMonoidHom",)),
+            ("→*o", "OrderMonoidHom", ("MonoidHom",)),
+            ("→*₀", "MonoidWithZeroHom", ("MonoidHom",)),
+            ("→*₀o", "OrderMonoidWithZeroHom", ("MonoidHom", "MonoidWithZeroHom")),
+            ("→+*o", "OrderRingHom", ("AddMonoidHom", "RingHom")),
+            ("→+*ᵍ", "GradedRingHom", ("AddMonoidHom", "RingHom")),
+            ("→ₐc", "BialgHom", ("AlgHom",)),
+            ("→ₐc[R]", "BialgHom", ("AlgHom",)),
+        )
+        for arrow, owner, shorter_owners in cases:
+            for separator in (" ", ""):
+                # A compact target can begin with the suffix of a longer registered token:
+                # for example, A→+other lexes as A →+o ther, not A →+ other.
+                binder_type = f"A{separator}{arrow}{separator}ther"
+                source = f"""\
+namespace TauCeti.{owner}
+def actualReceiver (f : {binder_type}) := f
+end TauCeti.{owner}
+"""
+                for shorter in shorter_owners:
+                    source += f"""\
+namespace TauCeti.{shorter}
+def differentReceiver (f : {binder_type}) := f
+end TauCeti.{shorter}
+"""
+                with self.subTest(arrow=arrow, separator=separator):
+                    self.assertEqual(
+                        [finding.declaration for finding in
+                         findings(source, {owner, *shorter_owners})],
+                        [f"TauCeti.{owner}.actualReceiver"],
+                    )
+
+    def test_longer_bundled_maps_do_not_claim_sort_ownership(self):
+        arrows = ("→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ")
+        for arrow in (*arrows, *(case[0] for case in STANDARD_HOM_NOTATIONS),
+                      *(case[0] for case in OTHER_ARROW_NOTATIONS)):
+            source = arrow_context(arrow) + f"""\
+namespace TauCeti
+def Foo : Type u {arrow} A := f
+namespace Foo
+def stillMisplaced (x : _root_.Foo) := x
+end Foo
+end TauCeti
+"""
+            with self.subTest(arrow=arrow):
+                self.assertEqual([finding.declaration for finding in findings(source)],
+                                 ["TauCeti.Foo.stillMisplaced"])
+
+    def test_plain_arrows_next_to_identifier_prefixes_remain_function_arrows(self):
+        source = """\
+namespace TauCeti.Foo
+def noSpaces : Foo→Foo := f
+def asciiNoSpaces : Foo->Foo := f
+def linearPrefix : Foo →LinearMap := f
+def scalarPrefix : Foo →Scalar := f
+def orderTypePrefix : Foo →OrderHom := f
+def nonUnitalTypePrefix : Foo →NonUnitalAlgHom := f
+def starTypePrefix : Foo →StarAlgHom := f
+def continuousTypePrefix : Foo → ContinuousMonoidHom := f
+end TauCeti.Foo
+"""
+        self.assertEqual([finding.declaration for finding in findings(source)],
+                         ["TauCeti.Foo." + name for name in
+                          ("noSpaces", "asciiNoSpaces", "linearPrefix", "scalarPrefix",
+                           "orderTypePrefix", "nonUnitalTypePrefix", "starTypePrefix",
+                           "continuousTypePrefix")])
+
+    def test_returned_bundled_map_does_not_claim_sort_ownership(self):
+        source = """\
+namespace TauCeti
+def Foo : Type u →ₐ[R] A := f
+namespace Foo
+def stillMisplaced (x : _root_.Foo) := x
+end Foo
+end TauCeti
+"""
+        self.assertEqual([finding.declaration for finding in findings(source)],
+                         ["TauCeti.Foo.stillMisplaced"])
+
     def test_notation_receivers_and_dotted_subtypes(self):
         source = """\
 namespace TauCeti
@@ -156,7 +631,7 @@ namespace TensorProduct
 def tensorProductReceiver (x : M ⊗[R] N) := x
 end TensorProduct
 namespace LieHom
-def lieHomReceiver (f : L →ₗ⁅R⁆ L') := f
+def lieHomReceiver (f : LieHom R L L') := f
 end LieHom
 end TauCeti
 """
