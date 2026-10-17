@@ -33,7 +33,7 @@ family can import it without acquiring the others.
 * `pdf_eq_of_hasLaw_withDensity` — and its density is `f`;
 * `integrable_withDensity_ofReal_iff` — under a law `μ.withDensity (ENNReal.ofReal ∘ f)`, a
   function is integrable iff `f`-weighted against the reference measure it is;
-* `integrable_of_eq_withDensity` — a real density presenting a probability measure is integrable
+* `integrable_of_eq_withDensity` — a real density presenting a finite measure is integrable
   against the reference measure;
 * `integral_withDensity_ofReal` — and its integral is the integral of the `f`-weighted integrand;
 * `measureReal_withDensity_ofReal` — the real mass of a measurable set on which the density `f` is
@@ -91,9 +91,9 @@ theorem integrable_withDensity_ofReal_iff (hρ : AEMeasurable ρ μ) (hnn : 0 �
   filter_upwards [hnn] with x hx
   rw [ENNReal.toReal_ofReal hx]
 
-/-- A nonnegative real density presenting a probability measure is integrable against the
+/-- A nonnegative real density presenting a finite measure is integrable against the
 reference measure. -/
-theorem integrable_of_eq_withDensity {ν : Measure α} [IsProbabilityMeasure ν]
+theorem integrable_of_eq_withDensity {ν : Measure α} [IsFiniteMeasure ν]
     (hν : ν = μ.withDensity fun x => ENNReal.ofReal (ρ x)) (hρ : AEMeasurable ρ μ)
     (hnn : 0 ≤ᵐ[μ] ρ) : Integrable ρ μ := by
   have h1 : Integrable (fun _ => (1 : ℝ)) ν := integrable_const 1

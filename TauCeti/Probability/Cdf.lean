@@ -8,17 +8,12 @@ module
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
-public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
-import TauCeti.Probability.Density
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
 /-!
 # Cumulative distribution functions
 
 This file records basic properties of cumulative distribution functions. In particular, the cdf
-of an atomless real probability measure is continuous, and the cdf of a law presented by a density
-is an indefinite integral of that density.
+of an atomless real probability measure is continuous.
 
 A probability measure `μ` on `ℕ` becomes a real law by pushing it forward along the cast
 `ℕ → ℝ`. The resulting cumulative distribution function is determined by the cumulative masses of
@@ -31,11 +26,6 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
-* `TauCeti.Probability.cdf_sub_cdf_eq_integral_of_eq_withDensity` identifies cdf increments with
-  density integrals;
-* `TauCeti.Probability.absolutelyContinuousOnInterval_cdf_of_eq_withDensity` and
-  `TauCeti.Probability.ae_hasDerivAt_cdf_of_eq_withDensity` give absolute continuity and almost
-  everywhere differentiability of the cdf of a law with a density;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
@@ -160,71 +150,3 @@ theorem cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullS
     exact hνS
 
 end MeasureTheory.Measure
-
-namespace TauCeti.Probability
-
-variable {μ : Measure ℝ} {f : ℝ → ℝ}
-
-section Density
-
-variable [IsProbabilityMeasure μ]
-
-/-! ### Cdfs of laws with a density -/
-
-/-- **The cdf increment of a law with a density.** For a law with nonnegative density `f`, the
-increment of the cdf over `a..b` is the integral of the density over `a..b`. -/
-theorem cdf_sub_cdf_eq_integral_of_eq_withDensity
-    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
-    (hnn : 0 ≤ᵐ[volume] f) (a b : ℝ) :
-    cdf μ b - cdf μ a = ∫ t in a..b, f t := by
-  wlog hab : a ≤ b generalizing a b
-  · rw [intervalIntegral.integral_symm, ← this b a (le_of_not_ge hab), neg_sub]
-  rw [← Measure.measureReal_Ioc_eq_cdf_sub μ hab, intervalIntegral.integral_of_le hab, hμ]
-  exact measureReal_withDensity_ofReal (ae_restrict_of_ae hnn) measurableSet_Ioc
-    (integrable_of_eq_withDensity hμ hfm hnn).integrableOn
-
-private theorem cdf_eq_add_integral_of_eq_withDensity
-    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
-    (hnn : 0 ≤ᵐ[volume] f) (c : ℝ) :
-    ⇑(cdf μ) = fun s => cdf μ c + ∫ t in c..s, f t := by
-  ext s
-  rw [← cdf_sub_cdf_eq_integral_of_eq_withDensity hμ hfm hnn c s]
-  ring
-
-/-- The cdf of a law with a nonnegative density is absolutely continuous on every compact
-interval. -/
-theorem absolutelyContinuousOnInterval_cdf_of_eq_withDensity
-    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
-    (hnn : 0 ≤ᵐ[volume] f) (a b : ℝ) :
-    AbsolutelyContinuousOnInterval (cdf μ) a b := by
-  have hc : AbsolutelyContinuousOnInterval (fun _ : ℝ => cdf μ a) a b :=
-    (LipschitzWith.const (cdf μ a)).lipschitzOnWith.absolutelyContinuousOnInterval
-  rw [cdf_eq_add_integral_of_eq_withDensity hμ hfm hnn a]
-  exact hc.add ((integrable_of_eq_withDensity hμ hfm hnn).intervalIntegrable
-    |>.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)
-
-/-- **Lebesgue differentiation of the cdf.** The cdf of a law with a nonnegative density `f` has
-derivative `f t` at almost every point `t`. -/
-theorem ae_hasDerivAt_cdf_of_eq_withDensity
-    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
-    (hnn : 0 ≤ᵐ[volume] f) :
-    ∀ᵐ t, HasDerivAt (cdf μ) (f t) t := by
-  filter_upwards [LocallyIntegrable.ae_hasDerivAt_integral
-    (integrable_of_eq_withDensity hμ hfm hnn).locallyIntegrable] with t ht
-  rw [cdf_eq_add_integral_of_eq_withDensity hμ hfm hnn 0]
-  exact (ht 0).const_add _
-
-/-- The cdf of a law with a nonnegative density `f` has derivative `f t` at every point `t` where
-the density is continuous. -/
-theorem hasDerivAt_cdf_of_eq_withDensity
-    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
-    (hnn : 0 ≤ᵐ[volume] f) {t : ℝ} (hft : ContinuousAt f t) :
-    HasDerivAt (cdf μ) (f t) t := by
-  have hfi := integrable_of_eq_withDensity hμ hfm hnn
-  rw [cdf_eq_add_integral_of_eq_withDensity hμ hfm hnn 0]
-  exact (intervalIntegral.integral_hasDerivAt_right hfi.intervalIntegrable
-    hfi.aestronglyMeasurable.stronglyMeasurableAtFilter hft).const_add _
-
-end Density
-
-end TauCeti.Probability

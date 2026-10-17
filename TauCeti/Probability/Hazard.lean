@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
-public import TauCeti.Probability.Cdf
+public import TauCeti.Probability.Cdf.Density
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -39,6 +39,8 @@ determines it: `S x = exp (-∫ t in 0..x, f t / S t)`.
   survival function;
 * `TauCeti.Probability.hasDerivAt_neg_log_one_sub_cdf` — the cumulative hazard has the hazard rate
   as its derivative wherever the cdf is differentiable and survival is positive;
+* `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` — survival starts at one
+  for an absolutely continuous law carried by the nonnegative half-line;
 * `TauCeti.Probability.one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity` and
   `TauCeti.Probability.one_sub_cdf_eq_exp_neg_integral_rnDeriv` — survival is the exponential of
   minus the cumulative hazard for a law on `[0, ∞)` with a density, or absolutely continuous with
@@ -119,6 +121,14 @@ theorem one_sub_cdf_eq_mul_exp_neg_integral (hac : AbsolutelyContinuousOnInterva
   exact (survival_eq_exp_integral_hazard (absolutelyContinuousOnInterval_one_sub_cdf hac)
     (fun t ht => sub_pos.2 (hS t ht)) (ae_hasDerivAt_one_sub_cdf hf)).2
 
+/-- **Survival starts at one.** An absolutely continuous probability law carried by the
+nonnegative half-line has survival probability one at zero. -/
+theorem one_sub_cdf_zero_eq_one_of_absolutelyContinuous [IsProbabilityMeasure μ]
+    (hac : μ ≪ volume) (h0 : μ (Iio 0) = 0) :
+    1 - cdf μ 0 = 1 := by
+  have : NullSingletonClass μ := ⟨fun t => hac (measure_singleton t)⟩
+  rw [Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0, sub_zero]
+
 /-! ### Laws with a density -/
 
 section Density
@@ -132,13 +142,13 @@ theorem one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity
     (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
     (hnn : 0 ≤ᵐ[volume] f) (h0 : μ (Iio 0) = 0) (hx : 0 ≤ x) (hSx : cdf μ x < 1) :
     1 - cdf μ x = Real.exp (-∫ t in (0 : ℝ)..x, f t / (1 - cdf μ t)) := by
-  have : NullSingletonClass μ := hμ ▸ inferInstance
   have hS : ∀ t ∈ uIcc 0 x, cdf μ t < 1 := fun t ht =>
     ((cdf μ).mono (uIcc_of_le hx ▸ ht).2).trans_lt hSx
   rw [one_sub_cdf_eq_mul_exp_neg_integral
     (absolutelyContinuousOnInterval_cdf_of_eq_withDensity hμ hfm hnn 0 x) hS
     ((ae_hasDerivAt_cdf_of_eq_withDensity hμ hfm hnn).mono fun _ ht _ => ht),
-    Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0, sub_zero, one_mul]
+    one_sub_cdf_zero_eq_one_of_absolutelyContinuous
+      (hμ ▸ withDensity_absolutelyContinuous volume _) h0, one_mul]
 
 /-- **Survival on the half-line for an absolutely continuous law.** For a law that is absolutely
 continuous with respect to Lebesgue measure and carried by `[0, ∞)`, survival at `x ≥ 0` is
