@@ -35,6 +35,8 @@ using Mathlib's `LipschitzOnWith.extend_real`.
 * `Set.IsLipschitzChartWith`: a Lipschitz boundary chart with given coordinates, graph and radii.
 * `Set.IsLipschitzDomainAtWith`: the existence of a Lipschitz boundary chart centred at one point.
 * `Set.IsLipschitzDomainWith`: an open set with the local graph condition at every frontier point.
+* `Set.IsLipschitzChartWith.lipschitzWith`, `Set.IsLipschitzChartWith.apply_zero`: the graph of a
+  chart is `L`-Lipschitz and passes through the centre.
 * `TauCeti.exists_isLipschitzChartWith_of_lipschitzOnWith`: extension of a local Lipschitz graph
   to a global graph defining the same boundary chart.
 * `Set.IsLipschitzChartWith.mono_radii`: restriction of a chart to a smaller cylinder.
@@ -161,6 +163,15 @@ section Chart
 
 variable {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
+
+/-- The graph function of a Lipschitz boundary chart is `L`-Lipschitz. -/
+theorem IsLipschitzChartWith.lipschitzWith (h : Omega.IsLipschitzChartWith L e φ a b) :
+    LipschitzWith L φ :=
+  h.2.2.2.1
+
+/-- The graph of a Lipschitz boundary chart passes through the centre of the chart. -/
+theorem IsLipschitzChartWith.apply_zero (h : Omega.IsLipschitzChartWith L e φ a b) : φ 0 = 0 :=
+  h.2.2.1
 
 /-- **Membership in chart coordinates.** A point `z` of the chart cylinder corresponds to a point
 of `Omega` exactly when it lies strictly above the graph of `φ`. -/

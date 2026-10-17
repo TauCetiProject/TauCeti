@@ -84,7 +84,7 @@ noncomputable def tensorInducedTransitivity (t : (V.subgroupOf U).LeftTransversa
       (ρ.comp (subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)))).Equiv
       (V.tensorInducedRepresentation (compositeLeftTransversal hVU s t) ρ) :=
   Representation.Equiv.mk (tensorInducedTransitivityLinearEquiv hVU s) (fun g ↦ by
-    apply PiTensorProduct.ext_tprod_tprod
+    apply PiTensorProduct.ext_sigma_tprod
     intro m
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
       tensorInducedRepresentation_apply_tprod, tensorInducedTransitivityLinearEquiv_tprod]
@@ -109,7 +109,8 @@ noncomputable def tensorInducedTransitivity (t : (V.subgroupOf U).LeftTransversa
         (m (e (g⁻¹ • q)).1 (e (g⁻¹ • q)).2)
     rw [hword]
     congr 1
-    simpa only [monomialHom_left] using congrArg (fun p ↦ m p.1 p.2) hcoords.symm)
+    rw [monomialHom_left]
+    exact congrArg (fun p ↦ m p.1 p.2) hcoords.symm)
 
 /-- The transitivity equivalence is the flattening and coset-reindexing linear equivalence. -/
 theorem tensorInducedTransitivity_toLinearEquiv (t : (V.subgroupOf U).LeftTransversal)
