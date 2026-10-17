@@ -28,8 +28,11 @@ the everywhere-integral units together with the principal finite ideles.
   that a uniformizer at `v` has order `1`.
 * `IsDedekindDomain.FiniteAdeleRing.toFractionalIdeal`: the homomorphism from the finite ideles to
   the invertible fractional ideals whose multiplicity at `v` is the `v`-adic order.
+* `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits`: the `S`-integral finite ideles, whose
+  components are units of the local integers at every place outside a set `S` of places.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits`: the finite ideles whose components are units of
-  the local integers at every place, that is, the unit group of the integral finite adeles.
+  the local integers at every place, that is, the unit group of the integral finite adeles. It is
+  the case `S = ∅` of `sIntegralUnits`.
 * `IsDedekindDomain.FiniteAdeleRing.toClassGroup`: the induced homomorphism to `ClassGroup R`.
 
 ## Main results
@@ -251,21 +254,40 @@ theorem exists_forall_adicOrd_eq_count (I : (FractionalIdeal R⁰ K)ˣ) :
   refine ⟨x, fun v ↦ ?_⟩
   rw [← count_coe_toFractionalIdeal x v, hx]
 
-/-! ### The everywhere-integral units -/
+/-! ### The `S`-integral and everywhere-integral units -/
+
+variable (R K) in
+/-- The **`S`-integral finite ideles** `∏_{v ∈ S} K_vˣ × ∏_{v ∉ S} 𝒪_vˣ`: the finite ideles whose
+component at every finite place outside `S` is a unit of the local integers. For `S = ∅` these are
+the everywhere-integral units `integralUnits R K`. -/
+def sIntegralUnits (S : Set (HeightOneSpectrum R)) : Subgroup 𝔸ᶠ[R, K]ˣ where
+  carrier := {x | ∀ v ∉ S, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1}
+  one_mem' v _ := by rw [Units.val_one, one_apply, map_one]
+  mul_mem' hx hy v hv := by rw [Units.val_mul, mul_apply, map_mul, hx v hv, hy v hv, one_mul]
+  inv_mem' {x} hx v hv := by rw [valued_coe_units_inv_apply, hx v hv, inv_one]
+
+/-- A finite idele is `S`-integral exactly when its components outside `S` have valuation one. -/
+@[simp]
+theorem mem_sIntegralUnits {S : Set (HeightOneSpectrum R)} {x : 𝔸ᶠ[R, K]ˣ} :
+    x ∈ sIntegralUnits R K S ↔ ∀ v ∉ S, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 :=
+  Iff.rfl
 
 variable (R K) in
 /-- The finite ideles that are units of the local integers at every place: the unit group of the
-integral finite adeles `∏_v 𝒪_v`. -/
-def integralUnits : Subgroup 𝔸ᶠ[R, K]ˣ where
-  carrier := {x | ∀ v : HeightOneSpectrum R, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1}
-  one_mem' v := by rw [Units.val_one, one_apply, map_one]
-  mul_mem' hx hy v := by rw [Units.val_mul, mul_apply, map_mul, hx v, hy v, one_mul]
-  inv_mem' {x} hx v := by rw [valued_coe_units_inv_apply, hx v, inv_one]
+integral finite adeles `∏_v 𝒪_v`. These are the `∅`-integral finite ideles. -/
+def integralUnits : Subgroup 𝔸ᶠ[R, K]ˣ :=
+  sIntegralUnits R K ∅
+
+variable (R K) in
+/-- The `∅`-integral finite ideles are the everywhere-integral units. -/
+@[simp]
+theorem sIntegralUnits_empty : sIntegralUnits R K ∅ = integralUnits R K := by
+  rw [integralUnits]
 
 /-- Membership in `integralUnits`, unfolded. -/
 @[simp] theorem mem_integralUnits_iff {x : 𝔸ᶠ[R, K]ˣ} :
-    x ∈ integralUnits R K ↔ ∀ v : HeightOneSpectrum R, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 :=
-  Iff.rfl
+    x ∈ integralUnits R K ↔ ∀ v : HeightOneSpectrum R, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 := by
+  simp [← sIntegralUnits_empty]
 
 /-- A finite idele is an everywhere-integral unit exactly when both it and its inverse are
 integral at every place. -/
@@ -273,7 +295,7 @@ theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, 
     x ∈ integralUnits R K ↔ ∀ v : HeightOneSpectrum R,
       (x : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K ∧
         ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K :=
-  forall_congr' (valued_coe_units_apply_eq_one_iff x)
+  mem_integralUnits_iff.trans (forall_congr' (valued_coe_units_apply_eq_one_iff x))
 
 variable (R K) in
 /-- The everywhere-integral units are the unit group of the integral finite adeles `∏_v 𝒪_v`: a
