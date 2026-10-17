@@ -19,6 +19,7 @@ for lattice covolumes. This is the `S`-analogue of Mathlib's `NumberField.Units.
 ## Main definitions and results
 
 * `TauCeti.NumberField.SUnit.regulator`: the covolume of the `S`-unit lattice.
+* `TauCeti.NumberField.SUnit.regulator_def`: its defining covolume formula.
 * `TauCeti.NumberField.SUnit.regulator_pos`: the `S`-regulator is positive.
 * `TauCeti.NumberField.SUnit.regulator_ne_zero`: the `S`-regulator is nonzero.
 
@@ -39,6 +40,11 @@ variable {K : Type*} [Field K] [NumberField K] (S : Finset (HeightOneSpectrum (
 open Classical in
 /-- The `S`-regulator is the covolume of the `S`-unit lattice. -/
 def regulator : ‚Ñù := ZLattice.covolume (unitLattice S)
+
+open Classical in
+/-- The defining covolume formula for the `S`-regulator. -/
+theorem regulator_def : regulator S = ZLattice.covolume (unitLattice S) :=
+  rfl
 
 /-- The `S`-regulator is positive. -/
 theorem regulator_pos : 0 < regulator S := by
