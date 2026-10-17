@@ -42,6 +42,10 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   along `d ∣ N` have representatives congruent modulo `d`, as integers.
 * `ZMod.intCast_lcm_eq_of_eq_of_eq`: one residue modulo `lcm a b` from the residues modulo `a`
   and `b` — the Chinese remainder theorem for a single integer.
+* `ZMod.gcd_val_intCast`: the representative of the residue of `c` modulo `n` has the same gcd
+  with `n` as `c`.
+* `ZMod.gcd_dvd_iff_exists_intCast_eq_mul`: `gcd(c, n)` divides `e` exactly when `e` is a multiple
+  of `c` modulo `n`.
 * `ZMod.natCast_natAbs_eq_of_mul_nonneg`: congruent integers with nonnegative product have
   congruent absolute values.
 * `ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd`: a residue modulo `n` is determined by its
@@ -112,6 +116,26 @@ theorem intCast_lcm_eq_of_eq_of_eq {a b : ℕ} {x y : ℤ} (ha : (x : ZMod a) = 
   have hlcm : (↑(Nat.lcm a b) : ℤ) = ↑(Int.lcm (a : ℤ) (b : ℤ)) := by simp [Int.lcm, Nat.lcm]
   rw [hlcm, ← Int.modEq_and_modEq_iff_modEq_lcm]
   exact ⟨ha, hb⟩
+
+/-- The representative of the residue of `c` modulo `n` has the same gcd with `n` as `c`. -/
+theorem gcd_val_intCast {n : ℕ} [NeZero n] (c : ℤ) : (c : ZMod n).val.gcd n = Int.gcd c n := by
+  rw [← Int.gcd_natCast_natCast, val_intCast, Int.gcd_emod]
+
+/-- `gcd(c, n)` divides `e` exactly when `e ≡ j c (mod n)` for some integer `j`: the multiples of
+`c` modulo `n` are the multiples of `gcd(c, n)`. -/
+theorem gcd_dvd_iff_exists_intCast_eq_mul {n : ℕ} (c e : ℤ) :
+    (Int.gcd c n : ℤ) ∣ e ↔ ∃ j : ℤ, (e : ZMod n) = j * c := by
+  constructor
+  · rintro ⟨m, rfl⟩
+    refine ⟨Int.gcdA c n * m, ?_⟩
+    rw [Int.gcd_eq_gcd_ab]
+    push_cast
+    rw [natCast_self]
+    ring
+  · rintro ⟨j, hj⟩
+    rw [← Int.cast_mul, intCast_eq_intCast_iff_dvd_sub] at hj
+    have := dvd_sub ((Int.gcd_dvd_left c n).mul_left j) ((Int.gcd_dvd_right c n).trans hj)
+    rwa [sub_sub_cancel] at this
 
 /-- **Congruent integers with nonnegative product have congruent absolute values.** If
 `z * w ≥ 0` and `z ≡ w` modulo `m`, then `|z| ≡ |w|` modulo `m`. -/

@@ -134,4 +134,10 @@ theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
   · rintro ⟨h, hh, hγ⟩
     exact ⟨_, ⟨h, hh, rfl⟩, (key h).mpr hγ⟩
 
+/-- The matrices `-γ` and `γ` give the same cusp orbit, since `-1` acts trivially on the
+projective boundary. -/
+@[simp]
+theorem cuspOrbitOfSL2Z_neg (γ : SL(2, ℤ)) : H.cuspOrbitOfSL2Z (-γ) = H.cuspOrbitOfSL2Z γ :=
+  (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨1, H.one_mem, by simp⟩
+
 end Subgroup
