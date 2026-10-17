@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Topology.CWComplex.Classical.OpenCells
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # The CW structure on the orbit space of a free cellular action
@@ -16,16 +16,16 @@ Let `G` act on a Hausdorff CW complex `E`, and let `p : E → B` be the quotient
 the action (`IsQuotientCoveringMap p G`). Suppose that each element of `G` carries every open
 `n`-cell of `E` onto an open `n`-cell, and that `G` acts freely on the set of cells: `g` carries
 an open cell onto itself only when `g = 1`. Then `B` is a CW complex
-(`TauCeti.cwComplexQuotient`):
+(`IsQuotientCoveringMap.cwComplexQuotient`):
 
 * the translation of open cells is an action of `G` on the `n`-cells of `E`
   (`TauCeti.cellMulAction`, characterised by `TauCeti.smul_openCell`), free by hypothesis
   (`TauCeti.isCancelSMul_cell`), and the `n`-cells of `B` are its orbits
-  (`TauCeti.cellQuotientEquiv`);
+  (`IsQuotientCoveringMap.cellQuotientEquiv`);
 * the characteristic map of an orbit is `p ∘ φ` for the characteristic map `φ` of its chosen
-  representative (`TauCeti.map_cellQuotientEquiv_symm`);
+  representative (`IsQuotientCoveringMap.map_cellQuotientEquiv_symm`);
 * the covering map carries each open and each closed cell of `E` onto the open and closed cell of
-  its orbit (`TauCeti.image_openCell` and `TauCeti.image_closedCell`).
+  its orbit (`IsQuotientCoveringMap.image_openCell` and `IsQuotientCoveringMap.image_closedCell`).
 
 Only the characteristic maps of the representatives are used, and the hypotheses on the action
 concern open cells rather than characteristic maps: a translation need not carry the
@@ -34,8 +34,9 @@ situation of a group acting by simplicial automorphisms on a realization, whose 
 parametrized through an order on the vertices that the action need not preserve.
 
 The key point is that `p` restricts to a homeomorphism from each open cell onto its image
-(`TauCeti.injOn_openCell` and `TauCeti.continuousOn_invFunOn_openCell`). It is injective there,
-since a translate of an open cell meeting it is the cell itself, and hence translation by `1`.
+(`IsQuotientCoveringMap.injOn_openCell` and `IsQuotientCoveringMap.continuousOn_invFunOn_openCell`).
+It is injective there, since a translate of an open cell meeting it is the cell itself, and hence
+translation by `1`.
 Its inverse is continuous because near a point `y` of an open `n`-cell `c` there is an open set
 that misses every other closed `n`-cell and the `(n - 1)`-skeleton, so a point of the image of
 `c` close to `p y` has exactly one preimage close to `y`, the one in `c`, and it is given by a
@@ -98,6 +99,13 @@ theorem smul_openCell {n : ℕ} (g : G) (i : cell (univ : Set E) n) :
     g • openCell n i = openCell n (g • i) :=
   (openCell_cellSMul hcell g i).symm
 
+/-- The translate by `g` of a point of the open cell of `i` lies in the open cell of `g • i`. -/
+theorem smul_mem_openCell_smul {n : ℕ} (g : G) {i : cell (univ : Set E) n} {y : E}
+    (hy : y ∈ openCell n i) :
+    letI := cellMulAction hcell n
+    g • y ∈ openCell n (g • i) :=
+  smul_openCell hcell g i ▸ smul_mem_smul_set hy
+
 /-- The action on cells translates closed cells. -/
 theorem smul_closedCell [T2Space E] [ContinuousConstSMul G E] {n : ℕ} (g : G)
     (i : cell (univ : Set E) n) :
@@ -136,38 +144,28 @@ private theorem eq_one_of_smul_mem_openCell {n : ℕ} {i : cell (univ : Set E) n
     (hgy : g • y ∉ (skeletonLT (univ : Set E) (n : ℕ∞) : Set E) ∪
       ⋃ j ∈ ({i}ᶜ : Set (cell (univ : Set E) n)), closedCell n j) : g = 1 := by
   let := cellMulAction hcell n
-  have hmem : g • y ∈ openCell n (g • i) := smul_openCell hcell g i ▸ smul_mem_smul_set hy
+  have hmem : g • y ∈ openCell n (g • i) := smul_mem_openCell_smul hcell g hy
   have hgi : g • i = i := by
     by_contra hne
     exact hgy (subset_union_right (mem_biUnion (mem_compl_singleton_iff.2 hne)
       (openCell_subset_closedCell n _ hmem)))
   exact hfree g n i (by rw [smul_openCell hcell, hgi])
 
-/-- A point of an open `n`-cell lies outside the `(n - 1)`-skeleton and every other closed
-`n`-cell. -/
-private theorem notMem_skeletonLT_union_of_mem_openCell {n : ℕ} {i : cell (univ : Set E) n} {y : E}
-    (hy : y ∈ openCell n i) :
-    y ∉ (skeletonLT (univ : Set E) (n : ℕ∞) : Set E) ∪
-      ⋃ j ∈ ({i}ᶜ : Set (cell (univ : Set E) n)), closedCell n j := by
-  rintro (hy' | hy')
-  · exact notMem_skeletonLT_of_mem_openCell n hy hy'
-  · obtain ⟨j, hj, hyj⟩ := mem_iUnion₂.1 hy'
-    exact (disjoint_closedCell_openCell_of_ne n le_rfl fun h ↦
-      hj (eq_of_heq (Sigma.mk.inj_iff.1 h).2)).notMem_of_mem_left hyj hy
-
 include hp hcell hfree in
 /-- The covering map is injective on every open cell. -/
-theorem injOn_openCell {n : ℕ} (i : cell (univ : Set E) n) : InjOn p (openCell n i) := by
+theorem _root_.IsQuotientCoveringMap.injOn_openCell {n : ℕ} (i : cell (univ : Set E) n) :
+    InjOn p (openCell n i) := by
   intro x hx y hy hxy
   obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (hp.apply_eq_iff_mem_orbit.1 hxy)
-  rw [eq_one_of_smul_mem_openCell hcell hfree hy (notMem_skeletonLT_union_of_mem_openCell hx),
+  rw [eq_one_of_smul_mem_openCell hcell hfree hy (notMem_skeletonLT_union_of_mem_openCell n hx),
     one_smul]
 
 include hp hcell hfree in
 /-- The inverse of the restriction of the covering map to an open cell is continuous on the
-image: together with `TauCeti.injOn_openCell`, `p` maps each open cell homeomorphically onto its
-image. -/
-theorem continuousOn_invFunOn_openCell [Nonempty E] {n : ℕ} (i : cell (univ : Set E) n) :
+image: together with `IsQuotientCoveringMap.injOn_openCell`, `p` maps each open cell
+homeomorphically onto its image. -/
+theorem _root_.IsQuotientCoveringMap.continuousOn_invFunOn_openCell [Nonempty E] {n : ℕ}
+    (i : cell (univ : Set E) n) :
     ContinuousOn (invFunOn p (openCell n i)) (p '' openCell n i) := by
   rintro _ ⟨y, hy, rfl⟩
   obtain ⟨e, hye, hpe⟩ := hp.isCoveringMap.isLocalHomeomorph y
@@ -178,16 +176,16 @@ theorem continuousOn_invFunOn_openCell [Nonempty E] {n : ℕ} (i : cell (univ : 
   set V := e.source ∩ Tᶜ
   have hV : IsOpen V :=
     e.open_source.inter (isClosed_skeletonLT_union_iUnion_closedCell n _).isOpen_compl
-  have hyV : y ∈ V := ⟨hye, notMem_skeletonLT_union_of_mem_openCell hy⟩
+  have hyV : y ∈ V := ⟨hye, notMem_skeletonLT_union_of_mem_openCell n hy⟩
   have hinv : invFunOn p (openCell n i) (p y) = y :=
-    (injOn_openCell hp hcell hfree i).leftInvOn_invFunOn hy
+    (hp.injOn_openCell hcell hfree i).leftInvOn_invFunOn hy
   -- On the image of `V`, the inverse of the restriction of `p` to the open cell is `e.symm`.
   have heq : EqOn (invFunOn p (openCell n i)) e.symm (p '' V ∩ p '' openCell n i) := by
     rintro _ ⟨⟨v, hv, rfl⟩, y', hy', hvy'⟩
     obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (hp.apply_eq_iff_mem_orbit.1 hvy'.symm)
     obtain rfl := eq_one_of_smul_mem_openCell hcell hfree hy' hv.2
     rw [one_smul] at hv ⊢
-    rw [(injOn_openCell hp hcell hfree i).leftInvOn_invFunOn hy', hpe]
+    rw [(hp.injOn_openCell hcell hfree i).leftInvOn_invFunOn hy', hpe]
     exact (e.left_inv hv.1).symm
   have hcont : ContinuousAt e.symm (p y) := by
     rw [hpe]
@@ -206,12 +204,7 @@ private def quotientCellMap (n : ℕ)
     PartialEquiv (Fin n → ℝ) B :=
   haveI : Nonempty E := ⟨map n o.out 0⟩
   (map n o.out).trans <|
-    Set.InjOn.toPartialEquiv p (openCell n o.out) (injOn_openCell hp hcell hfree o.out)
-
-private theorem quotientCellMap_apply {n : ℕ}
-    (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n))
-    (x : Fin n → ℝ) : quotientCellMap hp hcell hfree n o x = p (map n o.out x) :=
-  (rfl)
+    Set.InjOn.toPartialEquiv p (openCell n o.out) (hp.injOn_openCell hcell hfree o.out)
 
 private theorem image_quotientCellMap {n : ℕ}
     (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n))
@@ -235,8 +228,7 @@ private theorem image_openCell_out {n : ℕ} (i : cell (univ : Set E) n) :
       p '' openCell n i := by
   let := cellMulAction hcell n
   obtain ⟨g, hg⟩ := exists_smul_eq_out hcell i
-  rw [← hg, ← smul_openCell, ← image_smul, image_image]
-  simp_rw [hp.map_smul]
+  rw [← hg, ← smul_openCell, hp.image_smul_set]
 
 include hp in
 private theorem image_closedCell_out {n : ℕ} (i : cell (univ : Set E) n) :
@@ -246,8 +238,7 @@ private theorem image_closedCell_out {n : ℕ} (i : cell (univ : Set E) n) :
   let := cellMulAction hcell n
   have := hp.toContinuousConstSMul
   obtain ⟨g, hg⟩ := exists_smul_eq_out hcell i
-  rw [← hg, ← smul_closedCell, ← image_smul, image_image]
-  simp_rw [hp.map_smul]
+  rw [← hg, ← smul_closedCell, hp.image_smul_set]
 
 private theorem source_quotientCellMap {n : ℕ}
     (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n)) :
@@ -261,7 +252,7 @@ private theorem continuousOn_symm_quotientCellMap {n : ℕ}
     ContinuousOn (quotientCellMap hp hcell hfree n o).symm
       (quotientCellMap hp hcell hfree n o).target := by
   have : Nonempty E := ⟨map n o.out 0⟩
-  have hinv := continuousOn_invFunOn_openCell hp hcell hfree o.out
+  have hinv := hp.continuousOn_invFunOn_openCell hcell hfree o.out
   have hmaps : MapsTo (invFunOn p (openCell n o.out)) (p '' openCell n o.out)
       (map n o.out).target := by
     rw [target_map_eq_openCell]
@@ -279,7 +270,7 @@ private theorem pairwiseDisjoint_quotientCellMap :
   rintro _ ⟨x, hx, rfl⟩ ⟨y, hy, hxy⟩
   let := cellMulAction hcell m
   obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (hp.apply_eq_iff_mem_orbit.1 hxy.symm)
-  have hgy : g • y ∈ openCell m (g • o'.out) := smul_openCell hcell g _ ▸ smul_mem_smul_set hy
+  have hgy : g • y ∈ openCell m (g • o'.out) := smul_mem_openCell_smul hcell g hy
   obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 <| eq_of_not_disjoint_openCell <|
     not_disjoint_iff.2 ⟨g • y, hx, hgy⟩
   refine hne (Sigma.ext rfl (heq_of_eq ?_))
@@ -344,11 +335,12 @@ private theorem iUnion_quotientCellMap :
 /-- **The orbit space of a free cellular action is a CW complex.** Let `p : E → B` be the quotient
 covering map of an action of `G` on the Hausdorff CW complex `E` that carries every open `n`-cell
 onto an open `n`-cell, and carries an open cell onto itself only by `1`. Then `B` is a CW complex
-whose `n`-cells are the `G`-orbits of `n`-cells of `E` (`TauCeti.cellQuotientEquiv`). The
-characteristic map of an orbit is `p ∘ φ`, for `φ` the characteristic map of the chosen
-representative of the orbit (`TauCeti.map_cellQuotientEquiv_symm`). -/
+whose `n`-cells are the `G`-orbits of `n`-cells of `E`
+(`IsQuotientCoveringMap.cellQuotientEquiv`). The characteristic map of an orbit is `p ∘ φ`, for
+`φ` the characteristic map of the chosen representative of the orbit
+(`IsQuotientCoveringMap.map_cellQuotientEquiv_symm`). -/
 @[instance_reducible]
-def cwComplexQuotient : CWComplex (univ : Set B) where
+def _root_.IsQuotientCoveringMap.cwComplexQuotient : CWComplex (univ : Set B) where
   cell n := letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n)
   map := quotientCellMap hp hcell hfree
   source_eq _ := source_quotientCellMap hp hcell hfree
@@ -360,34 +352,34 @@ def cwComplexQuotient : CWComplex (univ : Set B) where
   union' := iUnion_quotientCellMap hp hcell hfree
 
 /-- The `n`-cells of the orbit space are the `G`-orbits of `n`-cells of `E`. -/
-def cellQuotientEquiv (n : ℕ) :
-    letI := cwComplexQuotient hp hcell hfree
+def _root_.IsQuotientCoveringMap.cellQuotientEquiv (n : ℕ) :
+    letI := hp.cwComplexQuotient hcell hfree
     letI := cellMulAction hcell n
     cell (univ : Set B) n ≃ MulAction.orbitRel.Quotient G (cell (univ : Set E) n) :=
   Equiv.refl _
 
 /-- The characteristic map of an orbit of cells is the covering map composed with the
 characteristic map of the chosen representative. -/
-theorem map_cellQuotientEquiv_symm {n : ℕ}
+theorem _root_.IsQuotientCoveringMap.map_cellQuotientEquiv_symm {n : ℕ}
     (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n))
     (x : Fin n → ℝ) :
-    letI := cwComplexQuotient hp hcell hfree
-    map n ((cellQuotientEquiv hp hcell hfree n).symm o) x = p (map n o.out x) :=
+    letI := hp.cwComplexQuotient hcell hfree
+    map n ((hp.cellQuotientEquiv hcell hfree n).symm o) x = p (map n o.out x) :=
   (rfl)
 
 /-- The covering map carries an open cell onto the open cell of its orbit. -/
-theorem image_openCell {n : ℕ} (i : cell (univ : Set E) n) :
-    letI := cwComplexQuotient hp hcell hfree
+theorem _root_.IsQuotientCoveringMap.image_openCell {n : ℕ} (i : cell (univ : Set E) n) :
+    letI := hp.cwComplexQuotient hcell hfree
     letI := cellMulAction hcell n
-    p '' openCell n i = openCell n ((cellQuotientEquiv hp hcell hfree n).symm (Quotient.mk'' i)) :=
+    p '' openCell n i = openCell n ((hp.cellQuotientEquiv hcell hfree n).symm (Quotient.mk'' i)) :=
   (image_quotientCellMap_mk_ball hp hcell hfree i).symm
 
 /-- The covering map carries a closed cell onto the closed cell of its orbit. -/
-theorem image_closedCell {n : ℕ} (i : cell (univ : Set E) n) :
-    letI := cwComplexQuotient hp hcell hfree
+theorem _root_.IsQuotientCoveringMap.image_closedCell {n : ℕ} (i : cell (univ : Set E) n) :
+    letI := hp.cwComplexQuotient hcell hfree
     letI := cellMulAction hcell n
     p '' closedCell n i =
-      closedCell n ((cellQuotientEquiv hp hcell hfree n).symm (Quotient.mk'' i)) :=
+      closedCell n ((hp.cellQuotientEquiv hcell hfree n).symm (Quotient.mk'' i)) :=
   (image_quotientCellMap_mk_closedBall hp hcell hfree i).symm
 
 end Quotient
