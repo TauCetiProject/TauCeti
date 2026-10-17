@@ -26,10 +26,6 @@ Hausdorff hypothesis is needed.
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, §§1, 6 and 16.
-
-The construction uses `OpenPartialHomeomorph.ker_eval_eq_span_holomorphicCoordinateGerm`
-and `TauCeti.holomorphicStructureSheaf.existsUnique_mem_pow_ker_eval_notMem_succ`, then
-Mathlib's `IsDiscreteValuationRing.ofHasUnitMulPowIrreducibleFactorization`.
 -/
 
 public noncomputable section
@@ -60,6 +56,9 @@ variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(�
 ring, with any centered local coordinate as uniformizer. -/
 instance instIsDiscreteValuationRingStalk (x : X) :
     IsDiscreteValuationRing ((holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x) := by
+  -- The construction uses `OpenPartialHomeomorph.ker_eval_eq_span_holomorphicCoordinateGerm`
+  -- and `TauCeti.holomorphicStructureSheaf.existsUnique_mem_pow_ker_eval_notMem_succ`, then
+  -- Mathlib's `IsDiscreteValuationRing.ofHasUnitMulPowIrreducibleFactorization`.
   let e := chartAt ℂ x
   let he := chart_mem_maximalAtlas x (I := 𝓘(ℂ)) (n := 1)
   let c := e.holomorphicCoordinateGerm he x (mem_chart_source ℂ x)
