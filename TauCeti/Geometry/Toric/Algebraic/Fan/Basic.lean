@@ -36,13 +36,18 @@ every affine chart of a fan contains the dense torus.
   face of each, form a fan, whose support is the union of those cones.
 * `TauCeti.Toric.Fan.subfan`: a subset of the cones of a fan which is closed under faces is a fan,
   and `TauCeti.Toric.Fan.ofCone_eq_subfan` identifies the subfan of the faces of a cone of a fan
-  with the fan of that cone.
+  with the fan of that cone. A subfan of a subfan is a subfan of the ambient fan,
+  `TauCeti.Toric.Fan.subfan_subfan`.
 * `TauCeti.Toric.FanHom`: a morphism of fans, namely a map of the integral vectors, a compatible
   real-linear map, and the condition that every source cone lands in some target cone.
 * `TauCeti.Toric.FanHom.realMap_eq`: the real-linear part of a fan morphism is determined by its
   integral part, so `TauCeti.Toric.FanHom.ext` needs only the latter.
 * `TauCeti.Toric.FanHom.id`, `TauCeti.Toric.FanHom.comp` and the identity, unit and associativity
   laws they satisfy.
+* `TauCeti.Toric.Fan.subfanInclusion`: the inclusion of a subfan, with
+  `TauCeti.Toric.Fan.subfanInclusion_self` and
+  `TauCeti.Toric.Fan.subfanInclusion_comp_subfanInclusion` making these inclusions functorial for
+  nested subfans.
 * `TauCeti.Toric.FanHom.mapsTo_support`: a fan morphism maps the support of its source into the
   support of its target.
 * `TauCeti.Toric.FanHom.exists_isLeast_cone`: the target cones containing the image of a given
@@ -60,6 +65,12 @@ coercion at every use site.
 Only the left half `(σ ⊓ τ).IsFaceOf σ` of the intersection axiom is a field: its right half is
 the same statement with the two cones exchanged, and `TauCeti.Toric.Fan.inf_isFaceOf_right`
 derives it.
+
+The body of `TauCeti.Toric.Fan.subfan` is exposed, so that a subfan of a subfan is by definition
+the subfan of the ambient fan on the same cones (`TauCeti.Toric.Fan.subfan_subfan`), and the
+subfan of a fan on all of its cones is the fan itself (`TauCeti.Toric.Fan.subfan_self`). The
+functoriality of subfan inclusions and of the maps they induce is stated across these definitional
+equalities of fans.
 
 A `Fan` carries the proof that its ambient lattice map is an integral lattice. This makes the
 real-linear extension of a map of integral vectors exist and be unique, so the real-linear part of
@@ -265,7 +276,7 @@ variable (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
   (hface : ∀ ⦃σ τ⦄, σ ∈ S → τ.IsFaceOf σ → τ ∈ S)
 
 /-- A subset of the cones of a fan which is itself closed under passing to faces is a fan. -/
-def subfan : Fan i where
+@[expose] def subfan : Fan i where
   lattice := Φ.lattice
   cones := S
   finite_cones := Φ.finite_cones.subset hS
@@ -286,6 +297,18 @@ theorem support_subfan_subset : (Φ.subfan S hS hface).support ⊆ Φ.support :=
   intro x hx
   obtain ⟨σ, hσ, hxσ⟩ := (Φ.subfan S hS hface).mem_support.1 hx
   exact Φ.subset_support (hS hσ) hxσ
+
+/-- The subfan of a fan on all of its cones is the fan itself. -/
+@[simp]
+theorem subfan_self : Φ.subfan Φ.cones subset_rfl Φ.mem_of_isFaceOf = Φ := (rfl)
+
+/-- A subfan of a subfan is the subfan of the ambient fan on the same cones. -/
+@[simp]
+theorem subfan_subfan (T : Set (PointedCone ℝ V)) (hT : T ⊆ (Φ.subfan S hS hface).cones)
+    (hfaceT : ∀ ⦃σ τ⦄, σ ∈ T → τ.IsFaceOf σ → τ ∈ T) :
+    (Φ.subfan S hS hface).subfan T hT hfaceT =
+      Φ.subfan T ((hT.trans (Φ.subfan_cones S hS hface).subset).trans hS) hfaceT :=
+  (rfl)
 
 /-- The faces of a cone of a fan are again cones of the fan, so they form a subfan of it. -/
 theorem isFaceOf_subset_cones (hσ : σ ∈ Φ.cones) :
@@ -521,6 +544,21 @@ theorem subfanInclusion_leastCone (σ : (Φ.subfan S hS hface).cones) :
     simp [subfanInclusion_realMap]
   · simpa only [subfanInclusion_realMap, PointedCone.map_id] using
       (Φ.subfanInclusion S hS hface).map_le_leastCone σ.2
+
+/-- The inclusion of a fan in itself, as the subfan on all of its cones, is the identity. -/
+@[simp]
+theorem subfanInclusion_self :
+    Φ.subfanInclusion Φ.cones subset_rfl Φ.mem_of_isFaceOf = FanHom.id Φ :=
+  FanHom.ext (by simp)
+
+/-- The inclusions of open subfans compose: including a subfan of a subfan in the subfan and then
+the subfan in the ambient fan is including it directly in the ambient fan. -/
+@[simp]
+theorem subfanInclusion_comp_subfanInclusion (T : Set (PointedCone ℝ V))
+    (hT : T ⊆ (Φ.subfan S hS hface).cones) (hfaceT : ∀ ⦃σ τ⦄, σ ∈ T → τ.IsFaceOf σ → τ ∈ T) :
+    (Φ.subfanInclusion S hS hface).comp ((Φ.subfan S hS hface).subfanInclusion T hT hfaceT) =
+      Φ.subfanInclusion T ((hT.trans (Φ.subfan_cones S hS hface).subset).trans hS) hfaceT :=
+  FanHom.ext (by simp)
 
 end Fan
 
