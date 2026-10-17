@@ -93,6 +93,16 @@ open Filter MeasureTheory ProbabilityTheory Set
 
 variable {a b x : ℝ}
 
+private lemma IntervalIntegrable.rpow_mul_one_sub_rpow_reflect {u v : ℝ}
+    (h : IntervalIntegrable (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume u v) :
+    IntervalIntegrable (fun t : ℝ => t ^ (b - 1) * (1 - t) ^ (a - 1)) volume
+      (1 - v) (1 - u) := by
+  have hreflected := (h.comp_sub_left 1).symm
+  simp only [sub_sub_cancel] at hreflected
+  convert hreflected using 1
+  funext t
+  rw [mul_comm]
+
 /-- The integrand `t ^ (a - 1) * (1 - t) ^ (b - 1)` of Euler's beta integral is interval
 integrable between any two points of `[0, 1]`. Both endpoint singularities are integrable
 precisely because the exponents exceed `-1`. -/
@@ -109,18 +119,35 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
     have ht1 : t < 1 := by linarith [ht.2]
     exact sub_ne_zero_of_ne ht1.ne'
   have key : IntervalIntegrable (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1 := by
-    have hhalf : (1 : ℝ) - 1 / 2 = 1 / 2 := by norm_num
-    have hright := (half b a hb).comp_sub_left 1
-    simp only [sub_zero, sub_sub_cancel] at hright
-    have hmul : (fun t : ℝ => (1 - t) ^ (b - 1) * t ^ (a - 1)) =
-        fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1) := by
-      ext t
-      rw [mul_comm]
-    rw [hhalf, hmul] at hright
-    exact (half a b ha).trans hright.symm
+    have hright : IntervalIntegrable
+        (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume (1 / 2) 1 := by
+      convert (IntervalIntegrable.rpow_mul_one_sub_rpow_reflect
+        (a := b) (b := a) (half b a hb)) using 1 <;> norm_num
+    exact (half a b ha).trans hright
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+private lemma pos_of_integrableOn_rpow_mul_one_sub_rpow
+    (h : IntegrableOn (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 1)) :
+    0 < a := by
+  have hleft : IntegrableOn
+      (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 (1 / 2)) :=
+    h.mono_set fun _ hx ↦
+      ⟨hx.1, lt_of_lt_of_le hx.2 (by norm_num : (1 / 2 : ℝ) ≤ 1)⟩
+  have hcont : ContinuousOn (fun x : ℝ ↦ (1 - x) ^ (1 - b)) (Icc 0 (1 / 2)) := by
+    refine ContinuousOn.rpow_const (by fun_prop) fun x hx ↦ Or.inl ?_
+    exact ne_of_gt (by linarith [hx.2])
+  have hmul := hleft.mul_continuousOn_of_subset hcont measurableSet_Ioo isCompact_Icc
+    Ioo_subset_Icc_self
+  have hpow : IntegrableOn (fun x : ℝ ↦ x ^ (a - 1)) (Ioo 0 (1 / 2)) := by
+    refine hmul.congr_fun (fun x hx ↦ ?_) measurableSet_Ioo
+    have h1x : 0 < 1 - x := by linarith [hx.2]
+    have hsum : b - 1 + (1 - b) = 0 := by ring
+    dsimp only
+    rw [mul_assoc, ← Real.rpow_add h1x, hsum, Real.rpow_zero, mul_one]
+  rw [intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num : (0 : ℝ) < 1 / 2)] at hpow
+  linarith
 
 /-- The beta integrand is integrable on `(0, 1)` exactly when both parameters are positive. -/
 theorem integrableOn_rpow_mul_one_sub_rpow_iff :
@@ -128,34 +155,12 @@ theorem integrableOn_rpow_mul_one_sub_rpow_iff :
       0 < a ∧ 0 < b := by
   constructor
   · intro h
-    have half : ∀ p q : ℝ,
-        IntegrableOn (fun t : ℝ => t ^ (p - 1) * (1 - t) ^ (q - 1)) (Ioo 0 1) →
-          0 < p := by
-      intro p q hpq
-      have hleft : IntegrableOn
-          (fun t : ℝ => t ^ (p - 1) * (1 - t) ^ (q - 1)) (Ioo 0 (1 / 2)) :=
-        hpq.mono_set fun _ hx ↦
-          ⟨hx.1, lt_of_lt_of_le hx.2 (by norm_num : (1 / 2 : ℝ) ≤ 1)⟩
-      have hcont : ContinuousOn (fun x : ℝ ↦ (1 - x) ^ (1 - q)) (Icc 0 (1 / 2)) := by
-        refine ContinuousOn.rpow_const (by fun_prop) fun x hx ↦ Or.inl ?_
-        exact ne_of_gt (by linarith [hx.2])
-      have hmul := hleft.mul_continuousOn_of_subset hcont measurableSet_Ioo isCompact_Icc
-        Ioo_subset_Icc_self
-      have hpow : IntegrableOn (fun x : ℝ ↦ x ^ (p - 1)) (Ioo 0 (1 / 2)) := by
-        refine hmul.congr_fun (fun x hx ↦ ?_) measurableSet_Ioo
-        have h1x : 0 < 1 - x := by linarith [hx.2]
-        have hsum : q - 1 + (1 - q) = 0 := by ring
-        dsimp only
-        rw [mul_assoc, ← Real.rpow_add h1x, hsum, Real.rpow_zero, mul_one]
-      rw [intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num : (0 : ℝ) < 1 / 2)] at hpow
-      linarith
-    refine ⟨half a b h, half b a ?_⟩
+    refine ⟨pos_of_integrableOn_rpow_mul_one_sub_rpow h,
+      pos_of_integrableOn_rpow_mul_one_sub_rpow (a := b) (b := a) ?_⟩
     rw [← intervalIntegrable_iff_integrableOn_Ioo_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
-    have hint : IntervalIntegrable
-        (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1 :=
-      (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).mpr h
-    simpa only [sub_sub_cancel, mul_comm, sub_self, sub_zero] using
-      (hint.comp_sub_left 1).symm
+    simpa only [sub_self, sub_zero] using
+      (IntervalIntegrable.rpow_mul_one_sub_rpow_reflect
+        ((intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).mpr h))
   · rintro ⟨ha, hb⟩
     rw [← intervalIntegrable_iff_integrableOn_Ioo_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
     exact intervalIntegrable_rpow_mul_one_sub_rpow ha hb ⟨le_rfl, zero_le_one⟩
@@ -253,11 +258,7 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u ∈ Ioo (0 : ℝ
 whenever both parameters are positive. -/
 theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     IntegrableOn (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (Ioi 0) := by
-  have hIoo : IntegrableOn (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 1) := by
-    refine IntegrableOn.mono_set ?_ Ioo_subset_Ioc_self
-    exact (intervalIntegrable_iff_integrableOn_Ioc_of_le (zero_le_one : (0 : ℝ) ≤ 1)).mp
-      (intervalIntegrable_rpow_mul_one_sub_rpow ha hb ⟨le_rfl, zero_le_one⟩
-        ⟨zero_le_one, le_rfl⟩)
+  have hIoo := integrableOn_rpow_mul_one_sub_rpow_iff.mpr ⟨ha, hb⟩
   have hchart : (fun u : ℝ => u / (1 - u)) '' Ioo (0 : ℝ) 1 = Ioi (0 : ℝ) := by
     rw [image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
     norm_num
