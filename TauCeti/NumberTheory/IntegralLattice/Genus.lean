@@ -101,15 +101,12 @@ theorem sameGenus_iff_localIntegralForm_equivalent_primeFactors
   · intro h
     exact ⟨h.signature_eq, fun p _ _ ↦ h.localIntegralForm_equivalent p⟩
   · rintro ⟨hsig, hlocal⟩
-    have hrank : Module.finrank ℤ L = Module.finrank ℤ M := by
-      rw [L.finrank_carrier, M.finrank_carrier,
-        ← L.signature_sum_eq_finrank, ← M.signature_sum_eq_finrank]
-      exact congrArg (fun s : ℕ × ℕ × ℕ ↦ s.1 + s.2.1 + s.2.2) hsig
     have hn : 2 * L.determinant.natAbs ≠ 0 :=
       mul_ne_zero (by decide) (Int.natAbs_ne_zero.mpr hdet0)
     refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ ?_⟩
     by_cases hp : p ∣ 2 * L.determinant.natAbs
     · exact hlocal p ((Fact.out : p.Prime).mem_primeFactors hp hn)
-    · exact L.localIntegralForm_equivalent_of_not_dvd M hrank hdet hp
+    · exact L.localIntegralForm_equivalent_of_not_dvd M (L.finrank_eq_of_signature_eq hsig)
+        hdet hp
 
 end TauCeti.IntegralLattice

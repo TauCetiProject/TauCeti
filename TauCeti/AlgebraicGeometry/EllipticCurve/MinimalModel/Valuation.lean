@@ -175,6 +175,15 @@ theorem localMinimalDiscriminantValuation_pos_iff (W : WeierstrassCurve K) [W.Is
       ¬(W.minimal R).HasGoodReduction R := by
   rw [Nat.pos_iff_ne_zero, ne_eq, localMinimalDiscriminantValuation_eq_zero_iff]
 
+/-- The local minimal-discriminant valuation is positive for a curve with multiplicative
+reduction. -/
+theorem localMinimalDiscriminantValuation_pos_of_hasMultiplicativeReduction
+    (W : WeierstrassCurve K) [W.IsElliptic]
+    [WeierstrassCurve.HasMultiplicativeReduction R W] :
+    0 < W.localMinimalDiscriminantValuation R :=
+  (W.localMinimalDiscriminantValuation_pos_iff R).2
+    (WeierstrassCurve.HasMultiplicativeReduction.not_hasGoodReduction_minimal (R := R))
+
 section HeightOneSpectrum
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum

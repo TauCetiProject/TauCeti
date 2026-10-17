@@ -103,6 +103,13 @@ theorem normalizedCubicalChainComplexXEquiv_d_apply (X : TopCat.{u}) (n : ℕ)
         (normalizedCubicalChainComplexXEquiv X (n + 1) g) :=
   normalizedCubicalChainComplex_obj_d_apply X n g
 
+/-- In each degree, the map of normalized cubical chain complexes induced by a map of spaces is
+the push-forward of normalized cubical chains. -/
+theorem normalizedCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    ((normalizedCubicalChainComplex R).map f).f n =
+      ModuleCat.ofHom (NormalizedCubicalChain.map R f.hom n) :=
+  (rfl)
+
 @[simp]
 theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
     (x : NormalizedCubicalChain X R n) :

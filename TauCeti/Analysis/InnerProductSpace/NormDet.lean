@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Continuity of the Jacobian `normDet`
+# Continuity and orthogonal extensions of the Jacobian `normDet`
 
 For finite-dimensional real inner product spaces `U` and `V`, the `m`-dimensional Jacobian
 `LinearMap.normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends continuously on the map.
@@ -16,12 +17,19 @@ This follows from `normDet² = det (A† A)` (`ContinuousLinearMap.normDet_sq`).
 injective linear map the Jacobian is controlled up to any factor `τ > 1`, uniformly with the
 antilipschitz constant.
 
+Extending a linear map `T : U → V` to the Euclidean product `ℝ × U` by sending the new direction
+to a unit vector orthogonal to the range of `T` does not change the Jacobian. This is the linear
+algebra behind cones: for `t > 0`, the Jacobian of `(t, u) ↦ t • ψ u` for a parametrization `ψ`
+of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
+
 ## Main declarations
 
 * `ContinuousLinearMap.continuous_normDet`: the Jacobian `normDet` is continuous.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
+* `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
+  same Jacobian.
 -/
 
 public section
@@ -82,3 +90,30 @@ theorem exists_ball_antilipschitzWith_normDet_le (B : U →L[ℝ] V)
     linarith
 
 end ContinuousLinearMap
+
+namespace LinearMap
+
+open scoped RealInnerProductSpace
+
+/-- Extending `T : U →ₗ[ℝ] V` to the Euclidean product `WithLp 2 (ℝ × U)` by a unit vector `e`
+orthogonal to the range of `T`, `(a, u) ↦ a • e + T u`, does not change the Jacobian `normDet`. -/
+theorem normDet_toSpanSingleton_coprod {e : V} (he : ‖e‖ = 1) {T : U →ₗ[ℝ] V}
+    (hT : ∀ u, ⟪e, T u⟫ = 0) :
+    ((toSpanSingleton ℝ V e).coprod T ∘ₗ (WithLp.linearEquiv 2 ℝ (ℝ × U)).toLinearMap).normDet =
+      T.normDet := by
+  set P := WithLp.linearEquiv 2 ℝ (ℝ × U)
+  set L := (toSpanSingleton ℝ V e).coprod T ∘ₗ P.toLinearMap
+  -- The Gram operator of `L` is block diagonal: `1` on `ℝ` and `T† T` on `U`.
+  have hL : L.adjoint ∘ₗ L = P.symm.conj ((LinearMap.id : ℝ →ₗ[ℝ] ℝ).prodMap (T.adjoint ∘ₗ T)) := by
+    refine LinearMap.ext fun x => ext_inner_right ℝ fun y => ?_
+    rw [LinearMap.comp_apply, LinearMap.adjoint_inner_left]
+    simp [L, P, LinearEquiv.conj_apply, WithLp.prod_inner_apply, inner_add_left, inner_add_right,
+      inner_smul_left, inner_smul_right, hT, he, LinearMap.adjoint_inner_left, real_inner_comm e]
+  have h₁ := L.normDet_sq
+  have h₂ := T.normDet_sq
+  simp only [RCLike.ofReal_real_eq_id, id_eq] at h₁ h₂
+  refine (sq_eq_sq₀ L.normDet_nonneg T.normDet_nonneg).1 ?_
+  rw [h₁, h₂, hL, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj,
+    LinearMap.det_prodMap, LinearMap.det_id, one_mul]
+
+end LinearMap

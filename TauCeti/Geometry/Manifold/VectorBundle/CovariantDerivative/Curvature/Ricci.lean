@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 public import Mathlib.Analysis.InnerProductSpace.Trace
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -25,7 +25,8 @@ and the metric need not vary smoothly. Compactness and absence of boundary are n
 We give the coordinate formula in any basis and the inner-product formula in an
 orthonormal basis. The constant-curvature calculation fixes the sign convention:
 `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` gives `Ric = (dim - 1) κ g`.
-Here the calculation is stated for any bilinear form in place of `κ g`.
+The calculation is stated for any bilinear form in place of `κ g`, and then specialised
+to `κ g`.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
@@ -85,6 +86,38 @@ theorem ricciTensor_eq_sum_inner {ι : Type*} [Fintype ι]
   rw [ricciTensor_apply, LinearMap.trace_eq_sum_inner _ b]
   rfl
 
+/-- The Ricci tensor of a metric-compatible torsion-free connection is symmetric. -/
+theorem IsMetricCompatible.ricciTensor_comm
+    [RiemannianBundle (TangentSpace I : M → Type _)]
+    [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
+    (x : M) (u v : TangentSpace I x) :
+    cov.ricciTensor x u v = cov.ricciTensor x v u := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [cov.ricciTensor_eq_sum_inner x b u v, cov.ricciTensor_eq_sum_inner x b v u]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  calc
+    inner ℝ (b i) (curvature x (b i) u v) =
+        inner ℝ (curvature x (b i) u v) (b i) := real_inner_comm _ _
+    _ = inner ℝ (curvature x v (b i) (b i)) u :=
+      hcov.inner_curvatureTensor_swap_pairs ht x (b i) u v (b i)
+    _ = -inner ℝ (curvature x (b i) v (b i)) u := by
+      rw [cov.curvatureTensor_antisymm x v (b i), LinearMap.neg_apply, inner_neg_left]
+    _ = inner ℝ (b i) (curvature x (b i) v u) := by
+      rw [hcov.inner_curvatureTensor_eq_neg x (b i) v (b i) u]
+      ring
+
+/-- The Ricci tensor of a metric-compatible torsion-free connection is a symmetric bilinear
+form. -/
+theorem IsMetricCompatible.ricciTensor_isSymm
+    [RiemannianBundle (TangentSpace I : M → Type _)]
+    [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
+    (cov.ricciTensor x).IsSymm :=
+  ⟨IsMetricCompatible.ricciTensor_comm (cov := cov) hcov ht x⟩
+
 /-- A point with zero curvature tensor has zero Ricci tensor. -/
 @[simp]
 theorem ricciTensor_eq_zero_of_curvatureTensor_eq_zero (x : M)
@@ -120,5 +153,19 @@ theorem ricciTensor_eq_of_curvatureTensor_eq_smul_sub (x : M)
     LinearMap.trace_smulRight]
   simp only [LinearMap.smul_apply, LinearMap.flip_apply, smul_eq_mul]
   ring
+
+/-- The Ricci tensor of the constant-curvature model `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` is
+`(dim - 1) κ g`. -/
+theorem ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub
+    [RiemannianBundle (TangentSpace I : M → Type _)] (x : M) (k : ℝ)
+    (h : ∀ w u v, curvature x w u v =
+      k • (inner ℝ u v • w - inner ℝ w v • u)) :
+    cov.ricciTensor x =
+      ((Module.finrank ℝ (TangentSpace I x) - 1 : ℝ) * k) • innerₗ (TangentSpace I x) := by
+  rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_sub x (k • innerₗ (TangentSpace I x)),
+    smul_smul]
+  intro w u v
+  rw [h w u v]
+  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_sub, smul_smul, smul_eq_mul]
 
 end CovariantDerivative

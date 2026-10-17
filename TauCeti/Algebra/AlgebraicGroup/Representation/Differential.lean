@@ -10,6 +10,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 
 /-!
 # Differentiating a comodule representation
@@ -18,6 +20,7 @@ A right comodule over a commutative bialgebra carries a representation of its ta
 Lie algebra at the identity. A counit-valued derivation acts by contraction of the coaction.
 This is the infinitesimal part of the existing action on dual-number points, and comodule
 morphisms intertwine the differentiated actions, and subcomodules are stable under them.
+Restriction along a group morphism commutes with differentiation.
 Pairing the differentiated action with a functional recovers the tangent vector applied to the
 corresponding matrix coefficient.
 
@@ -82,6 +85,25 @@ theorem differential_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) 
       ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap)
       (coact (R := R) (C := H) m) := by
   simp [differential]
+
+variable (M) in
+/-- Differentiating a representation restricted along a bialgebra morphism agrees with
+precomposing its differentiated representation with the tangent map. -/
+theorem differential_corestrict {K : Type*} [CommRing K] [Bialgebra R K]
+    (f : H →ₐc[R] K) (d : Derivation R K (Bialgebra.CounitAlgebra R K R)) (m : M) :
+    letI : Comodule R K M := Corestrict f.toCoalgHom
+    differential (R := R) (H := K) (M := M) d m =
+      differential (R := R) (H := H) (M := M) (derivationComp f d) m := by
+  let _ : Comodule R K M := Corestrict f.toCoalgHom
+  have hcomp :
+      (((Bialgebra.CounitAlgebra.algEquivSelf R K R).toLinearMap ∘ₗ d.toLinearMap).comp
+        f.toCoalgHom.toLinearMap) =
+      (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
+        (derivationComp f d).toLinearMap := by
+    ext h
+    exact (algEquivSelf_derivationComp_apply f d h).symm
+  simp only [differential_apply, corestrict_coact_apply, LinearMap.tensorComponent_map,
+    LinearMap.id_apply, hcomp]
 
 /-- Every comodule morphism intertwines the differentiated representations. -/
 @[simp↓]
