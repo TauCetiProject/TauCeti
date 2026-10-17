@@ -131,7 +131,7 @@ theorem coe_restrictLie [LieAlgebra R L] (e : M ≃ₗ⁅R,L⁆ N) (L' : LieSuba
 section CongrRight
 
 variable {P : Type w₂} [AddCommGroup P] [Module R P] [LieRingModule L P]
-variable [LieAlgebra R L] [LieModule R L M] [LieModule R L N] [LieModule R L P]
+variable [LieAlgebra R L] [LieModule R L N] [LieModule R L P]
 
 /-- **Postcomposition with an equivalence of Lie modules**, as an `R`-linear equivalence
 `(M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M →ₗ⁅R,L⁆ P)` of morphism spaces. This is the Lie-module analogue of
@@ -145,13 +145,11 @@ def congrRight (e : N ≃ₗ⁅R,L⁆ P) : (M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M �
   left_inv f := by ext m; simp
   right_inv g := by ext m; simp
 
-omit [LieModule R L M] in
 @[simp]
 theorem congrRight_apply (e : N ≃ₗ⁅R,L⁆ P) (f : M →ₗ⁅R,L⁆ N) (m : M) :
     congrRight (M := M) e f m = e (f m) :=
   (rfl)
 
-omit [LieModule R L M] in
 @[simp]
 theorem congrRight_symm_apply (e : N ≃ₗ⁅R,L⁆ P) (g : M →ₗ⁅R,L⁆ P) (m : M) :
     (congrRight (M := M) e).symm g m = e.symm (g m) :=
@@ -162,9 +160,8 @@ end CongrRight
 section CongrLeft
 
 variable {P : Type w₂} [AddCommGroup P] [Module R P] [LieRingModule L P]
-variable [LieAlgebra R L] [LieModule R L M] [LieModule R L N] [LieModule R L P]
+variable [LieAlgebra R L] [LieModule R L P]
 
-omit [LieModule R L M] [LieModule R L N] in
 /-- **Precomposition with an equivalence of Lie modules**, as an `R`-linear equivalence
 `(M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →ₗ⁅R,L⁆ P)` of morphism spaces. This is the source-variable companion of
 `TauCeti.LieModuleEquiv.congrRight`. -/
@@ -176,13 +173,11 @@ def congrLeft (e : M ≃ₗ⁅R,L⁆ N) : (M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →
   left_inv f := by ext m; simp
   right_inv g := by ext n; simp
 
-omit [LieModule R L M] [LieModule R L N] in
 @[simp]
 theorem congrLeft_apply (e : M ≃ₗ⁅R,L⁆ N) (f : M →ₗ⁅R,L⁆ P) (n : N) :
     congrLeft (P := P) e f n = f (e.symm n) :=
   (rfl)
 
-omit [LieModule R L M] [LieModule R L N] in
 @[simp]
 theorem congrLeft_symm_apply (e : M ≃ₗ⁅R,L⁆ N) (g : N →ₗ⁅R,L⁆ P) (m : M) :
     (congrLeft (P := P) e).symm g m = g (e m) :=
@@ -210,9 +205,8 @@ instance instFiniteDimensional {K : Type u} {L : Type v} {M : Type w} {N : Type 
 
 end LieModuleHom
 
-variable [LieAlgebra R L] [LieModule R L M]
+variable [LieAlgebra R L]
 
-omit [LieModule R L M] in
 /-- Bracketing with a Lie ideal distributes over suprema of Lie submodules. -/
 theorem _root_.LieSubmodule.lie_iSup {ι : Type*} (I : LieIdeal R L)
     (N : ι → LieSubmodule R L M) : ⁅I, ⨆ i, N i⁆ = ⨆ i, ⁅I, N i⁆ := by
@@ -224,6 +218,8 @@ theorem _root_.LieSubmodule.lie_iSup {ι : Type*} (I : LieIdeal R L)
   · exact LieSubmodule.mem_iSup_of_mem i (LieSubmodule.lie_mem_lie hx hy)
   · rw [lie_add]
     exact add_mem hy hz
+
+variable [LieModule R L M]
 
 section Annihilator
 
