@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Polynomial.L1Norm
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Values of Thue's auxiliary polynomials near `α`
@@ -43,19 +43,13 @@ namespace TauCeti
 
 variable {R : Type*} [SeminormedCommRing R] [NormOneClass R]
 
-/-- A power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`. -/
-private theorem pow_le_rpow_pow {b δ : ℝ} (hb : 1 ≤ b) {n r : ℕ} (hn : (n : ℝ) ≤ δ * r) :
-    b ^ n ≤ (b ^ δ) ^ r := by
-  rw [← Real.rpow_mul_natCast (by linarith), ← Real.rpow_natCast]
-  exact Real.rpow_le_rpow_of_exponent_le hb hn
-
 /-- The coefficient length of a Hasse derivative of `P` is at most `(2 ^ δ) ^ r C₁ ^ r` when
 `P` has degree at most `δ r` and coefficient length at most `C₁ ^ r`. -/
 private theorem l1Norm_hasseDeriv_le_pow {P : R[X]} {k r : ℕ} {δ C₁ : ℝ}
     (hP : (P.natDegree : ℝ) ≤ δ * r) (hPC : P.l1Norm ≤ C₁ ^ r) :
     (hasseDeriv k P).l1Norm ≤ (2 ^ δ) ^ r * C₁ ^ r :=
   (P.l1Norm_hasseDeriv_le k).trans <|
-    mul_le_mul (pow_le_rpow_pow one_le_two hP) hPC P.l1Norm_nonneg (by positivity)
+    mul_le_mul (Real.pow_le_rpow_pow_of_le_mul one_le_two hP) hPC P.l1Norm_nonneg (by positivity)
 
 /-- **Values of Hasse derivatives near `α`** (Evertse, Lemma 6.13). Let `Q` have degree at most
 `δ r` and coefficient length at most `C₁ ^ r`. Then every Hasse derivative `Dᵏ Q` is bounded by
@@ -80,7 +74,7 @@ theorem norm_eval_hasseDeriv_le_pow_of_norm_sub_le_one {Q : R[X]} {α z : R} {k 
         (by positivity) (by positivity)
     _ ≤ (2 ^ δ) ^ r * C₁ ^ r * ((1 + ‖α‖) ^ (1 + δ)) ^ r := by
       gcongr
-      exact (pow_le_rpow_pow hα hQ).trans <| by
+      exact (Real.pow_le_rpow_pow_of_le_mul hα hQ).trans <| by
         gcongr
         linarith
     _ = (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r := by ring
@@ -116,7 +110,7 @@ theorem norm_eval_le_pow_of_hasseDeriv_sub_eq_mul {P Q V : R[X]} {α z : R} {k m
       norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq hV.symm hz
     _ ≤ (2 ^ δ) ^ r * C₁ ^ r * (1 + ‖α‖) * ((1 + ‖α‖) ^ δ) ^ r := by
       gcongr
-      exact pow_le_rpow_pow hα hWdeg
+      exact Real.pow_le_rpow_pow_of_le_mul hα hWdeg
     _ ≤ (2 ^ δ) ^ r * C₁ ^ r * (1 + ‖α‖) ^ r * ((1 + ‖α‖) ^ δ) ^ r := by
       gcongr
       exact le_self_pow₀ hα hr.ne'
