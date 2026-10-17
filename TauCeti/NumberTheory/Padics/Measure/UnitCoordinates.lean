@@ -24,8 +24,9 @@ has exactly the prescribed coordinates and is unique. This gives a finite-coordi
 of measures without using compactness of a space of measures.
 
 The descent and density of cylinder functions are supplied by
-`TauCeti.NumberTheory.Padics.CongruenceQuotients`; finite coefficients use Mathlib's
-`AbstractMeasure` carrier and the existing `AbstractMeasure.finiteProjection`.
+`TauCeti.NumberTheory.Padics.CongruenceQuotients`. Finite coefficients form `Finsupp`-valued
+coordinate families; reconstructed measures use Mathlib's `AbstractMeasure` carrier and the
+existing `AbstractMeasure.finiteProjection`.
 
 ## References
 
@@ -121,6 +122,21 @@ def unitCoordinateIntegral : LocallyConstant ℤ_[p]ˣ ℤ_[p] →ₗ[ℤ_[p]] �
         exact funext fun u ↦ congrArg (r • ·) (congrFun hg u))]
     simp [Finset.mul_sum, mul_assoc]
 
+/-- Integration sends the zero locally constant test to zero. -/
+theorem unitCoordinateIntegral_zero : unitCoordinateIntegral c hc 0 = 0 :=
+  map_zero _
+
+/-- Integration preserves addition of locally constant tests. -/
+theorem unitCoordinateIntegral_add (f g : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
+    unitCoordinateIntegral c hc (f + g) =
+      unitCoordinateIntegral c hc f + unitCoordinateIntegral c hc g :=
+  map_add _ _ _
+
+/-- Integration preserves scalar multiplication of locally constant tests. -/
+theorem unitCoordinateIntegral_smul (a : ℤ_[p]) (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
+    unitCoordinateIntegral c hc (a • f) = a • unitCoordinateIntegral c hc f :=
+  map_smul _ _ _
+
 /-- Every finite-level presentation gives the same integral. -/
 theorem unitCoordinateIntegral_factor (f : LocallyConstant ℤ_[p]ˣ ℤ_[p])
     (n : ℕ) (g : (ZMod (p ^ n))ˣ → ℤ_[p])
@@ -173,7 +189,11 @@ private theorem integralOnUnitTests_apply (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]
     integralOnUnitTests c hc ⟨f.toContinuousMap, ⟨f, rfl⟩⟩ = unitCoordinateIntegral c hc f := by
   let e := LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
     (X := ℤ_[p]ˣ) (Y := ℤ_[p])) LocallyConstant.toContinuousMap_injective
-  have he : (⟨f.toContinuousMap, ⟨f, rfl⟩⟩ : unitTests (p := p)) = e f := rfl
+  -- Compare the underlying continuous maps using the public evaluation lemma;
+  -- subtype extensionality discards the choice of range-membership witness.
+  have he : (⟨f.toContinuousMap, ⟨f, rfl⟩⟩ : unitTests (p := p)) = e f := by
+    apply Subtype.ext
+    exact (LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f).symm
   simp only [integralOnUnitTests, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
     LinearEquiv.coe_toLinearMap]
   exact congrArg (unitCoordinateIntegral c hc) (he ▸ e.symm_apply_apply f)
@@ -185,7 +205,7 @@ def ofUnitCoordinates : D(ℤ_[p]ˣ, ℤ_[p]) :=
 
 /-- Reconstruction extends integration of locally constant tests. -/
 @[simp]
-theorem ofUnitCoordinates_locallyConstant (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
+theorem ofUnitCoordinates_apply_locallyConstant (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
     ofUnitCoordinates c hc f.toContinuousMap = unitCoordinateIntegral c hc f := by
   have he := (integralOnUnitTests c hc).extend_eq
     (e := (unitTests (p := p)).subtypeL) dense_unitTests
@@ -217,7 +237,7 @@ theorem finiteProjection_ofUnitCoordinates (n : ℕ) :
   have hf : fiberIndicator (↑(PadicInt.unitsToZModPow (p := p) n)) a = f.toContinuousMap := by
     ext u
     simp [fiberIndicator_apply, f, g, Pi.single_apply]
-  rw [finiteProjection_apply, hf, ofUnitCoordinates_locallyConstant,
+  rw [finiteProjection_apply, hf, ofUnitCoordinates_apply_locallyConstant,
     unitCoordinateIntegral_factor c hc f n g rfl]
   simp [g, Pi.single_apply]
 
