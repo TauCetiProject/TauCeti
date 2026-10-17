@@ -231,6 +231,23 @@ private theorem re_leviForm_toBilinForm_apply_self_sub (B B' : V →L[ℝ] V →
     sub_apply]
   ring
 
+/-- A lower bound `c ‖v‖²` for the Levi diagonal of `B₀` gives the lower bound
+`(c - ‖B - B₀‖ / 2) ‖v‖²` for that of `B`. -/
+private theorem sub_mul_sq_norm_le_re_leviForm_toBilinForm_apply_self
+    {B B₀ : V →L[ℝ] V →L[ℝ] ℝ} {c : ℝ} {v : V}
+    (h : c * ‖v‖ ^ 2 ≤ (B₀.toBilinForm.leviForm v v).re) :
+    (c - ‖B - B₀‖ / 2) * ‖v‖ ^ 2 ≤ (B.toBilinForm.leviForm v v).re := by
+  have h₂ := (abs_le.1 (ContinuousLinearMap.abs_re_leviForm_toBilinForm_apply_self_le
+    (B - B₀) v)).1
+  rw [← re_leviForm_toBilinForm_apply_self_sub] at h₂
+  linarith
+
+-- The metric on continuous bilinear forms is the operator norm metric. This is stated as a term
+-- because the nested operator-norm instances are not reducibly equal, so rewriting with the
+-- generic group lemmas fails.
+private theorem dist_eq_norm_sub_bilin (B B' : V →L[ℝ] V →L[ℝ] ℝ) : dist B B' = ‖B - B'‖ :=
+  dist_eq_norm B B'
+
 /-- **The Levi diagonal is Lipschitz in the second derivative.** Replacing `f` at `x` by `g` at
 `y` changes the real part of the Levi diagonal by at most `‖D²g(y) - D²f(x)‖ ‖v‖² / 2`. -/
 theorem abs_re_leviForm_apply_self_sub_le (f g : V → ℝ) (x y v : V) :
@@ -294,10 +311,7 @@ theorem _root_.IsCompact.exists_pos_forall_sub_mul_sq_norm_le_re_leviForm
       (c - ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ / 2) * ‖v‖ ^ 2 ≤
         (leviForm g x v v).re := by
   obtain ⟨c, hc, hle⟩ := hK.exists_pos_mul_sq_norm_le_re_leviForm hf hpos
-  refine ⟨c, hc, fun g x hx v ↦ ?_⟩
-  have h₁ : c * ‖v‖ ^ 2 ≤ (leviForm f x v v).re := hle x hx v
-  have h₂ := (abs_le.1 (abs_re_leviForm_apply_self_sub_le f g x x v)).1
-  linarith
+  exact ⟨c, hc, fun g x hx v ↦ sub_mul_sq_norm_le_re_leviForm_toBilinForm_apply_self (hle x hx v)⟩
 
 /-- **Positivity of the Levi form is an open condition.** On a finite-dimensional complex space,
 the continuous real bilinear forms whose Levi form is positive definite form an open set. -/
@@ -307,17 +321,10 @@ theorem isOpen_setOf_forall_re_leviForm_toBilinForm_pos [FiniteDimensional ℂ V
   obtain ⟨c, hc, hle⟩ := isCompact_singleton.exists_pos_mul_sq_norm_le_re_leviForm
     continuousOn_id fun B hB ↦ by rw [mem_singleton_iff.1 hB]; exact hB₀
   refine ⟨2 * c, by positivity, fun B hB v hv ↦ ?_⟩
-  -- The metric on continuous bilinear forms is the operator norm metric; the bridging step is
-  -- stated as a term because the nested operator-norm instances are not reducibly equal.
-  have hB' : ‖B - B₀‖ < 2 * c :=
-    calc ‖B - B₀‖ = dist B B₀ := (dist_eq_norm B B₀).symm
-      _ < 2 * c := hB
-  have h₁ : c * ‖v‖ ^ 2 ≤ (B₀.toBilinForm.leviForm v v).re := hle B₀ rfl v
-  have h₂ := (abs_le.1 (ContinuousLinearMap.abs_re_leviForm_toBilinForm_apply_self_le
-    (B - B₀) v)).1
-  rw [← re_leviForm_toBilinForm_apply_self_sub] at h₂
-  have : 0 < ‖v‖ ^ 2 := by positivity
-  nlinarith
+  have hB' : ‖B - B₀‖ < 2 * c := (dist_eq_norm_sub_bilin B B₀).symm.trans_lt hB
+  have h := sub_mul_sq_norm_le_re_leviForm_toBilinForm_apply_self (B := B) (B₀ := B₀) (hle B₀ rfl v)
+  have : 0 < (c - ‖B - B₀‖ / 2) * ‖v‖ ^ 2 := mul_pos (by linarith) (by positivity)
+  linarith
 
 /-- **Strict Levi positivity is open in the fine `C²` topology.** Let `f` have second derivative
 continuous on a set `U` of a finite-dimensional complex space, with positive definite Levi form at
@@ -346,11 +353,7 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
     fun g x _ hlt ↦ ?_⟩
   have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
       infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
-    calc dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x)
-        = ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ :=
-          (dist_comm _ _).trans
-            (dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x))
-      _ < _ := hlt
+    (dist_comm _ _).trans_lt ((dist_eq_norm_sub_bilin _ _).trans_lt hlt)
   exact not_not.1 (notMem_of_dist_lt_infDist hdist)
 
 end TauCeti
