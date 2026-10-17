@@ -16,9 +16,11 @@ De Giorgi's extended perimeter
 
 `P(s; Ω) = ⨆ { ∫_s div φ | φ ∈ 𝓓(Ω, E), ‖φ x‖ ≤ 1 for all x }`
 
-(`TauCeti.perimeter_eq_iSup`), defined for every set without any regularity of its topological
-boundary. It is the measure-theoretic notion of boundary area: a set has finite perimeter in `Ω`
-exactly when `P(s; Ω) < ∞`, which does not require `s` to have finite volume.
+(`TauCeti.perimeter_eq_iSup`), defined without any regularity of its topological boundary. It is
+the measure-theoretic notion of boundary area: a measurable set has finite perimeter in `Ω`
+exactly when `P(s; Ω) < ∞`, which does not require `s` to have finite volume. For a set that is
+not null-measurable the integrals in the supremum are Mathlib's junk value `0` for
+non-integrable functions, so its perimeter is a junk value carrying no geometric meaning.
 
 The perimeter only sees `s` up to null sets (`TauCeti.perimeter_congr_ae`), so topological
 frontier and perimeter can differ. Against an additive Haar measure, complements have the same

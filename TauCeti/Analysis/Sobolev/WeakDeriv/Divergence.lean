@@ -34,8 +34,10 @@ divergence of a test vector field `φ` as `∫ div φ * u = -∫ U φ`. This is 
 total variation of `u`, a supremum of the left-hand side over `‖φ‖ ≤ 1`. Against an additive Haar
 measure, taking `u = 1` gives `∫ div φ = 0`.
 
-No boundedness or boundary regularity of `Ω` is used, and the measure need not be a Haar measure:
-both identities come from the defining integration-by-parts identities of weak derivatives.
+No boundedness or boundary regularity of `Ω` is used. Except for `∫ div φ = 0`, which needs an
+additive Haar measure, the measure need not be a Haar measure: the trace identity, the Laplacian
+identity and the pairing `∫ div φ * u = -∫ U φ` all come from the defining integration-by-parts
+identities of weak derivatives.
 
 ## Main declarations
 

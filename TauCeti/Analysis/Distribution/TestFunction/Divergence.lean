@@ -13,10 +13,11 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 /-!
 # The divergence of a test vector field
 
-For an open set `Ω` of a finite-dimensional real inner product space `E`, a test vector field
+For an open set `Ω` of a finite-dimensional real normed space `E`, a test vector field
 `φ ∈ 𝓓(Ω, E)` has divergence `div φ = tr (Dφ)`, which is again a test function on `Ω`. This file
 packages the divergence as a continuous linear map `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`, in the style of
-Mathlib's `TestFunction.fderivCLM`, and expands it in an orthonormal basis.
+Mathlib's `TestFunction.fderivCLM`, and, when `E` is an inner product space, expands it in an
+orthonormal basis.
 
 The divergence of test vector fields is the operator dual to the distributional gradient: the
 total variation of a function and the perimeter of a set are suprema of the pairings
@@ -26,6 +27,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 
 * `TestFunction.divergenceCLM`: the divergence `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`.
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
+* `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
+  field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in an orthonormal basis `b`, it is the sum of the
   derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
 -/
@@ -37,8 +40,8 @@ namespace TestFunction
 open TopologicalSpace
 open scoped ContDiff Distributions InnerProductSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {Ω : Opens E}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω Ω' : Opens E}
 
 /-- The **divergence** `div φ = tr (Dφ)` of a test vector field `φ ∈ 𝓓(Ω, E)`, as a continuous
 linear map into the scalar test functions `𝓓(Ω, ℝ)`. It is the composite of the Fréchet
@@ -52,6 +55,19 @@ theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
     divergenceCLM φ x = LinearMap.trace ℝ E (fderiv ℝ (φ : E → E) x : E →ₗ[ℝ] E) := by
   simp [divergenceCLM]
 
+/-- The divergence of a test vector field extended from `Ω'` to a larger open set `Ω` is the
+divergence of the original field. -/
+@[simp]
+theorem divergenceCLM_monoCLM (h : Ω' ≤ Ω) (φ : 𝓓(Ω', E)) :
+    (divergenceCLM (monoCLM ℝ φ : 𝓓(Ω, E)) : E → ℝ) = divergenceCLM φ := by
+  ext x
+  simp [monoCLM_apply, h]
+
+section InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E}
+
 /-- **The divergence in an orthonormal basis**: `div φ = ∑ i, ∂_{b i} ⟪b i, φ⟫`. -/
 theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
     (φ : 𝓓(Ω, E)) (x : E) :
@@ -63,5 +79,7 @@ theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBas
     (innerSL ℝ (b i)).hasFDerivAt.comp x hφ.hasFDerivAt
   rw [hd.hasLineDerivAt (b i) |>.lineDeriv]
   simp
+
+end InnerProductSpace
 
 end TestFunction

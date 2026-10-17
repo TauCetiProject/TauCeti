@@ -18,12 +18,12 @@ Let `Ω` be an open set of a finite-dimensional real inner product space `E`. Th
 `|Du|(Ω) = ⨆ { ∫ u div φ | φ ∈ 𝓓(Ω, E), ‖φ x‖ ≤ 1 for all x }`
 
 over smooth vector fields compactly supported in `Ω` with pointwise norm at most one
-(`TauCeti.totalVariationOn`). The functions of bounded variation on `Ω` are the locally
-integrable functions for which it is finite, and the perimeter of a set is the total variation of
-its indicator. When the distributional derivative `Du` is a vector-valued Radon measure, this
+(`TauCeti.totalVariationOn`). The functions of bounded variation on `Ω` are the
+`u ∈ L¹(Ω)` for which it is finite, and the perimeter of a set is the total variation of its
+indicator. When the distributional derivative `Du` is a vector-valued Radon measure, this
 supremum is the total variation measure `|Du|` evaluated on `Ω`; that comparison is not proved
-here. The definition by duality makes sense for every function, which is what lower
-semicontinuity and compactness arguments need.
+here. The definition by duality is meaningful for every locally integrable function, with no
+differentiability assumption, which is what lower semicontinuity and compactness arguments need.
 
 The measure `μ` is a parameter, as in `TauCeti.HasWeakFDerivOn`. The pairing `∫ u div φ ∂μ` is
 the distributional pairing for an additive Haar measure `μ`, and that hypothesis is carried by
@@ -127,9 +127,7 @@ theorem totalVariationOn_mono (h : Ω' ≤ Ω) :
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
   have hcoe : ((monoCLM ℝ φ : 𝓓(Ω, E)) : E → E) = φ := by
     simp [monoCLM_apply, h]
-  have hdiv : ∀ x, divergenceCLM (monoCLM ℝ φ : 𝓓(Ω, E)) x = divergenceCLM φ x := fun x => by
-    rw [divergenceCLM_apply, divergenceCLM_apply, hcoe]
-  simpa only [hdiv] using
+  simpa only [divergenceCLM_monoCLM h] using
     ofReal_integral_le_totalVariationOn (μ := μ) (u := u) (monoCLM ℝ φ : 𝓓(Ω, E))
       fun x => by simpa only [hcoe] using hφ x
 
