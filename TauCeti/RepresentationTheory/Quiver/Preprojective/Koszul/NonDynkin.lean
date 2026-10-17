@@ -330,22 +330,6 @@ private theorem LayersIndecomposable.succ {m : ℕ} {i : Symmetrify Q}
   · exact Or.inl fun w => ⟨(h' w).2, h.symm.upper_eq_bot (fun w => (h' w).2) w⟩
   · exact Or.inr fun w => ⟨(h' w).2, h.upper_eq_bot (fun w => (h' w).2) w⟩
 
-/-- A sequence with `2 s_{j+1} ≤ s_{j+2} + s_j` up to `n`, starting with `0 < s_0` and
-`2 s_0 ≤ s_1`, has increments at least `s_0` up to `n`, so it is positive at `n`. -/
-private theorem pos_of_two_mul_le_add {S : Type*} [CommRing S] [LinearOrder S]
-    [IsStrictOrderedRing S] {s : ℕ → S} {n : ℕ} (h0 : 0 < s 0) (h1 : 2 * s 0 ≤ s 1)
-    (h : ∀ j, j + 2 ≤ n → 2 * s (j + 1) ≤ s (j + 2) + s j) : 0 < s n := by
-  have hinc (j : ℕ) (hj : j + 1 ≤ n) : s 0 ≤ s (j + 1) - s j ∧ 0 < s (j + 1) := by
-    induction j with
-    | zero => constructor <;> linarith
-    | succ j ih =>
-      obtain ⟨h₁, h₂⟩ := ih (by omega)
-      have h₃ := h j (by omega)
-      constructor <;> linarith
-  cases n with
-  | zero => exact h0
-  | succ n => exact (hinc n le_rfl).2
-
 /-- Exactness of the Koszul complex at its left end in every degree and on every graded corner, for
 a quiver whose underlying multigraph carries a positive superadditive weight. -/
 private theorem eq_zero_of_mem_preprojectiveCorner_of_two_mul_le_sum {S : Type*} [CommRing S]
@@ -416,7 +400,8 @@ private theorem eq_zero_of_mem_preprojectiveCorner_of_two_mul_le_sum {S : Type*}
   -- But the layer `m + 1` vanishes, while the weighted dimensions stay positive.
   have hz : s (m + 1) = 0 :=
     Finset.sum_eq_zero fun w _ => by rw [hE, finrank_bot, Nat.cast_zero, mul_zero]
-  exact (pos_of_two_mul_le_add (hs0 ▸ hδ i) hs1 hrec).ne' hz
+  exact ((mul_pos (Nat.cast_add_one_pos _) (hs0 ▸ hδ i)).trans_le
+    (add_one_mul_le_of_two_mul_le_add hs1 hrec)).ne' hz
 
 variable (k)
 
