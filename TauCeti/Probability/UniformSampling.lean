@@ -60,6 +60,27 @@ namespace TauCeti
 
 namespace Probability
 
+/-- The real-valued mass of an event under a finite uniform measure is the ratio of its
+cardinality to the cardinality of the sampling set. This also covers the zero measure when
+the sampling set is empty. -/
+theorem uniformOn_toReal {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
+    [MeasurableSingletonClass Ω] (S T : Set Ω) :
+    (uniformOn S T).toReal =
+      (Nat.card {x : Ω // x ∈ S ∩ T} : ℝ) /
+        (Nat.card {x : Ω // x ∈ S} : ℝ) := by
+  classical
+  cases nonempty_fintype Ω
+  let s : Finset Ω := S.toFinite.toFinset
+  let t : Finset Ω := T.toFinite.toFinset
+  have hs : (s : Set Ω) = S := by simp [s]
+  have ht : (t : Set Ω) = T := by simp [t]
+  rw [← hs, ← ht, uniformOn_apply_finset, ENNReal.toReal_div]
+  have hcard (U : Set Ω) : Nat.card {x : Ω // x ∈ U} = U.ncard := by
+    rw [Nat.card_eq_fintype_card, Set.fintypeCard_eq_ncard]
+  rw [hcard, hcard, ← Finset.coe_inter, Set.ncard_coe_finset,
+    Set.ncard_coe_finset]
+  simp only [ENNReal.toReal_natCast]
+
 variable {ι κ : Type*}
 
 section
@@ -96,28 +117,6 @@ theorem uniformOn_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSinglet
     isProbabilityMeasure_uniformOn Set.finite_univ Set.univ_nonempty
   rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_injective_apply_eq]
-
-/-- The real-valued mass of an event under a finite uniform measure is the ratio of its
-cardinality to the cardinality of the sampling set. This also covers the zero measure when
-the sampling set is empty. -/
-theorem uniformOn_toReal {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
-    [MeasurableSingletonClass Ω] (S T : Set Ω) :
-    (uniformOn S T).toReal =
-      (Nat.card {x : Ω // x ∈ S ∩ T} : ℝ) /
-        (Nat.card {x : Ω // x ∈ S} : ℝ) := by
-  classical
-  let fintypeΩ : Fintype Ω := Fintype.ofFinite Ω
-  let _ := fintypeΩ
-  let s : Finset Ω := S.toFinite.toFinset
-  let t : Finset Ω := T.toFinite.toFinset
-  have hs : (s : Set Ω) = S := by simp [s]
-  have ht : (t : Set Ω) = T := by simp [t]
-  rw [← hs, ← ht, uniformOn_apply_finset, ENNReal.toReal_div]
-  have hcard (U : Set Ω) : Nat.card {x : Ω // x ∈ U} = U.ncard := by
-    rw [Nat.card_eq_fintype_card, Set.fintypeCard_eq_ncard]
-  rw [hcard, hcard, ← Finset.coe_inter, Set.ncard_coe_finset,
-    Set.ncard_coe_finset]
-  simp only [ENNReal.toReal_natCast]
 
 private noncomputable def eqAtEquiv (i j : ι) (hij : i ≠ j) :
     {x : ι → κ // x i = x j} ≃ ({a : ι // a ≠ j} → κ) := by
@@ -171,8 +170,7 @@ theorem uniformOn_apply_eq_apply [Finite ι] [MeasurableSpace κ]
     uniformOn (Set.univ : Set (ι → κ)) {x | x i = x j} =
       1 / (Fintype.card κ : ℝ≥0∞) := by
   classical
-  let finiteIota : Fintype ι := Fintype.ofFinite ι
-  let _ := finiteIota
+  cases nonempty_fintype ι
   let hfinite : Set.Finite {x : ι → κ | x i = x j} := Set.toFinite _
   rw [uniformOn_univ, Measure.count_apply_finite _ hfinite,
     ← Set.ncard_eq_toFinset_card _ hfinite, card_eqAt i j hij, Fintype.card_fun]
@@ -192,7 +190,8 @@ section
 
 variable [Fintype ι]
 
-private def coordinatePairs (ι : Type*) [Fintype ι] [LinearOrder ι] : Finset (ι × ι) :=
+variable (ι) in
+private def coordinatePairs [LinearOrder ι] : Finset (ι × ι) :=
   Finset.univ.filter fun p => p.1 < p.2
 
 private theorem mem_coordinatePairs [LinearOrder ι] (p : ι × ι) :
