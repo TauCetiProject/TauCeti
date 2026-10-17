@@ -173,12 +173,12 @@ theorem reindex_exs (c : IndexCoding ι κ) :
   | 0, φ => by rw [exs_zero, exs_zero]
   | _ + 1, φ => by rw [exs_succ, exs_succ, reindex_exs c φ.ex, reindex_ex]
 
-/-- **Transport along a composite coding is the composite of the transports**, syntactically. The
-padding of the composite coding is iterated padding (`IndexCoding.pad_trans`), and transport
-commutes with padding because it fixes `⊤` and `⊥` (`IndexCoding.comp_pad`). -/
+/-- **Transport along a composite coding is the composite of the transports**, syntactically. -/
 theorem reindex_trans (c₁ : IndexCoding ι κ) (c₂ : IndexCoding κ μ) :
     ∀ {n} (φ : L.BoundedFormulaInf ι α n),
       reindex (c₁.trans c₂) φ = reindex c₂ (reindex c₁ φ) := by
+  -- The padding of the composite coding is iterated padding (`IndexCoding.pad_trans`), and
+  -- transport commutes with padding because it fixes `⊤` and `⊥` (`IndexCoding.comp_pad`).
   intro n φ
   induction φ with
   | falsum => rfl
