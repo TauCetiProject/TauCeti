@@ -112,14 +112,17 @@ The representative is normalized only to meet the unit-sphere carrier. -/
 def affineParam (k : Fin (n + 1)) (z : Fin n → ℂ) : ComplexProjectiveSpace n :=
   mk n (affineSphere k z)
 
-/-- The homogeneous ratios of a standard affine parametrization are its inserted coordinates. -/
+/-- The homogeneous ratios of a standard affine parametrization are ratios of its inserted
+coordinates. -/
 @[simp]
-theorem ratio_affineParam (k j : Fin (n + 1)) (z : Fin n → ℂ) :
-    ratio k j (affineParam k z) = Fin.insertNth (α := fun _ ↦ ℂ) k 1 z j := by
+theorem ratio_affineParam (k l j : Fin (n + 1)) (z : Fin n → ℂ) :
+    ratio l j (affineParam k z) =
+      Fin.insertNth (α := fun _ ↦ ℂ) k 1 z j /
+        Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l := by
   have hn := norm_ne_zero_iff.2 (affineVector_ne_zero k z)
-  dsimp only [affineVector] at hn
-  simp [affineParam, affineSphere, NormedSpace.normalize, PiLp.smul_apply, affineVector]
-  field_simp [Complex.ofReal_ne_zero.mpr hn]
+  simp only [affineParam, ratio_mk, affineSphere, coe_normalizeToSphere_apply,
+    NormedSpace.normalize, PiLp.smul_apply, affineVector, Complex.real_smul]
+  exact mul_div_mul_left _ _ (Complex.ofReal_ne_zero.mpr (inv_ne_zero hn))
 
 /-- Standard affine parametrizations are continuous, including on all coordinate hyperplanes. -/
 @[fun_prop]
@@ -189,23 +192,14 @@ theorem affineChart_symm_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
 @[simp↓]
 theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
     affineParam k z ∈ affineOpen l ↔ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
-  unfold affineParam
-  simp only [mem_affineOpen_iff, ratio_mk, ne_eq, div_eq_zero_iff, or_self]
-  have hn := norm_ne_zero_iff.2 (affineVector_ne_zero k z)
-  dsimp only [affineVector] at hn
-  simp [affineSphere, NormedSpace.normalize, PiLp.smul_apply, affineVector, hn]
+  simp [mem_affineOpen_iff]
 
 /-- The transition between standard affine charts is the usual homogeneous-ratio formula. -/
 theorem affineChart_transition (k l : Fin (n + 1)) (z : Fin n → ℂ) (j : Fin n) :
     affineChart l ((affineChart k).symm z) j =
       Fin.insertNth (α := fun _ ↦ ℂ) k 1 z (l.succAbove j) /
         Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l := by
-  have hn := norm_ne_zero_iff.2 (affineVector_ne_zero k z)
-  dsimp only [affineVector] at hn
-  simp only [affineChart_symm_apply, affineChart_apply, affineParam, ratio_mk, affineSphere,
-    coe_normalizeToSphere_apply, NormedSpace.normalize, PiLp.smul_apply, affineVector,
-    Complex.real_smul]
-  exact mul_div_mul_left _ _ (Complex.ofReal_ne_zero.mpr (inv_ne_zero hn))
+  simp only [affineChart_symm_apply, affineChart_apply, ratio_affineParam]
 
 end
 
