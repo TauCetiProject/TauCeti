@@ -19,8 +19,9 @@ one full turn about the first vertex.
 Together with the vertex stabilizer theorem, this identifies the finite vertex cycles and their
 cycle orders with the corresponding orbits and stabilizer orders in the coarse quotient. It does
 not assert that every elliptic orbit meets a vertex: a self-paired side can also have an elliptic
-midpoint. `EllipticVertexCycle` restricts the finite cycles to those with nonidentity cycle
-transformation. Neither discreteness nor local finiteness is needed for the finite vertex result.
+midpoint. `FiniteVertexCycle` is the type of finite vertex cycles, and `EllipticVertexCycle`
+restricts the finite cycles to those with nonidentity cycle transformation. Neither discreteness
+nor local finiteness is needed for the finite vertex result.
 
 ## References
 
@@ -75,6 +76,13 @@ theorem finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle
   exact ⟨fun ⟨m, hm⟩ ↦ hm ▸ Equiv.Perm.sameCycle_pow_right.2 (.refl _ _),
     Equiv.Perm.SameCycle.exists_nat_pow_eq⟩
 
+/-- The same-cycle quotient of the finite vertices: the finite vertex cycles of `σ`, including
+those whose cycle transformation is the identity. It is independent of the ambient subgroup and
+of the fundamental-polygon hypotheses. -/
+abbrev FiniteVertexCycle : Type :=
+  Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+    Setoid {i : Fin n // (P.vertex i).isLeft})
+
 /-- The same-cycle quotient of the finite vertices whose cycle transformation is nonidentity.
 It is independent of the ambient subgroup and of the fundamental-polygon hypotheses. -/
 abbrev EllipticVertexCycle : Type :=
@@ -90,9 +98,7 @@ noncomputable def finiteVertexCycleEquiv
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
-    Quotient (Setoid.comap Subtype.val
-      (Equiv.Perm.SameCycle.setoid σ.next) : Setoid {i : Fin n // (P.vertex i).isLeft}) ≃
-      Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
+    σ.FiniteVertexCycle ≃ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
         (Quotient.mk'' ((P.vertex j).getLeft j.2) : MulAction.orbitRel.Quotient Γ ℍ)) := by
   let f : {i : Fin n // (P.vertex i).isLeft} → MulAction.orbitRel.Quotient Γ ℍ :=
     fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.2)
