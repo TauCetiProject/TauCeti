@@ -40,6 +40,7 @@ theorem Manifold.Orientation.map_orientationAt_interval_prod (x : Icc a b × Icc
         (subtypeValIccTangentEquiv x.2).toLinearEquiv := by
     apply LinearEquiv.ext
     intro v
+    -- Normalize the linear-equivalence coercions to the public continuous-map evaluation API.
     change subtypeValRectangleTangentEquiv x v =
       (subtypeValIccTangentEquiv x.1 v.1, subtypeValIccTangentEquiv x.2 v.2)
     simpa only [subtypeValIccTangentEquiv_apply, PiLp.proj_apply] using

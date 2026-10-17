@@ -127,5 +127,6 @@ theorem Orientation.signBasis_mul_units_mul_det_pos
   rw [← hb] at h
   have hp := (Orientation.map_units_smul_eq_iff_det_mul_pos o A _ _
     (Module.finrank_eq_card_basis b).symm).mp h
+  -- Units.map along the integer cast has the same underlying scalar as the integer-unit cast.
   change 0 < (u : R) * (signBasis o b : R) * A.toLinearMap.det at hp
   simpa only [mul_comm] using hp

@@ -107,6 +107,7 @@ theorem subtypeValRectangleTangentEquiv_apply (x : Icc a b × Icc c d)
     subtypeValRectangleTangentEquiv x v =
       ((if (x.1 : ℝ) < b then (1 : ℝ) else -1) * v.1 0,
         (if (x.2 : ℝ) < d then (1 : ℝ) else -1) * v.2 0) := by
+  -- Evaluate prodCongr as a pair before applying the two interval evaluation lemmas.
   change (subtypeValIccTangentEquiv x.1 v.1, subtypeValIccTangentEquiv x.2 v.2) = _
   simp only [subtypeValIccTangentEquiv_apply, PiLp.proj_apply]
 
@@ -116,6 +117,7 @@ theorem subtypeValRectangleTangentEquiv_symm_apply (x : Icc a b × Icc c d) (v :
     (subtypeValRectangleTangentEquiv x).symm v =
       (WithLp.toLp 2 (fun _ : Fin 1 ↦ (if (x.1 : ℝ) < b then (1 : ℝ) else -1) * v.1),
         WithLp.toLp 2 (fun _ : Fin 1 ↦ (if (x.2 : ℝ) < d then (1 : ℝ) else -1) * v.2)) := by
+  -- The inverse of prodCongr acts independently on the two tangent model fibers.
   change ((subtypeValIccTangentEquiv x.1).symm v.1,
     (subtypeValIccTangentEquiv x.2).symm v.2) = _
   ext <;> simp only [subtypeValIccTangentEquiv_symm_apply]

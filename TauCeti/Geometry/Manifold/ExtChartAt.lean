@@ -199,6 +199,7 @@ theorem IsChartMeasurable.measurableSet_inter_preimage [MeasurableSpace E] [Bore
       rw [Set.mem_preimage, Set.piecewise_eq_of_mem U _ _ hu] at hz
       obtain ⟨y, hy, heq⟩ := hz
       have hxy : y = q x := (extChartAt I α).injOn (hsource hy) hu heq
+      -- Expose membership in the preimage so the chart injectivity equality rewrites its point.
       change q x ∈ s
       rwa [← hxy]
   have hpre : MeasurableSet (q ⁻¹' s) := by

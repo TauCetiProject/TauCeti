@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.Rectangle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Interior
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
