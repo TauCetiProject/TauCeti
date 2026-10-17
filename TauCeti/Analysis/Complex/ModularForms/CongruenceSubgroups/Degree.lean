@@ -19,8 +19,8 @@ A subgroup `H ≤ SL(2, ℤ)` acts on the upper half-plane through its image `H.
 `X(H) → X(1)` of compactified quotients, whose degree is the index of the inclusion
 (`Subgroup.degree_compactifiedQuotientMap`), and that index is `[SL(2, ℤ) : ±H]`
 (`Subgroup.relIndex_map_sl2zToPSL2R`), equivalently the index in `PSL(2, ℤ)` of the image of
-`H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_center`). It is not `[SL(2, ℤ) : H]` in general: the
-two differ by a factor `2` exactly when `-I ∉ H`.
+`H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_eq_index_sup`). It is not `[SL(2, ℤ) : H]` in
+general: the two differ by a factor `2` exactly when `-I ∉ H`.
 
 For `Γ₀(N)`, which contains `-I`, the degree is `[SL(2, ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)`;
 for `Γ₁(N)` with `N ≥ 3`, which does not, it is half of `[SL(2, ℤ) : Γ₁(N)]`. This degree is
@@ -52,7 +52,7 @@ variable (H : Subgroup SL(2, ℤ))
 
 /-- **The degree of `X(H) → X(1)`.** For a finite-index subgroup `H ≤ SL(2, ℤ)`, the map of
 compactified modular curves induced by `H ≤ SL(2, ℤ)` has degree `[SL(2, ℤ) : ±H]`, which is the
-index of the image of `H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_center`). -/
+index of the image of `H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_eq_index_sup`). -/
 theorem degree_compactifiedQuotientMap_map_sl2zToPSL2R [H.FiniteIndex] :
     degree (compactifiedQuotientMap H.map_sl2zToPSL2R_le_range) = H.withCenter.index := by
   rw [degree_compactifiedQuotientMap, ← relIndex, relIndex_map_sl2zToPSL2R]

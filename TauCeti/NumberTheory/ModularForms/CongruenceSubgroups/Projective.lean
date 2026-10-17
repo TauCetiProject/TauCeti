@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
 # The projective image of `Γ₀(N)`
@@ -73,7 +74,7 @@ theorem mem_Gamma0Projective_iff (N : ℕ) (g : PSL(2, ℤ)) :
 the center of `SL₂(ℤ)`, is already contained in `Γ₀(N)`. -/
 theorem Gamma0Projective_index (N : ℕ) :
     (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index := by
-  rw [Gamma0Projective_def, Subgroup.index_map_mk'_center,
-    Subgroup.withCenter_eq_self_iff.mpr (center_le_Gamma0 N)]
+  rw [Gamma0Projective_def, Subgroup.index_map_mk'_eq_index_sup,
+    sup_eq_left.mpr (center_le_Gamma0 N)]
 
 end TauCeti.CongruenceSubgroup
