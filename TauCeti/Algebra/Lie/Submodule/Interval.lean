@@ -58,10 +58,11 @@ isomorphism's round-trip laws. -/
 theorem mapIic_symm_apply (N : LieSubmodule R L M) (P : Set.Iic N) :
     N.mapIic.symm P = P.val.comap N.incl := (rfl)
 
-/-- Membership in the ambient image amounts to membership in the original submodule of `N`.
+/-- An ambient vector belongs to the image exactly when it lifts to the original submodule of `N`.
 
-This is not a simp lemma: the existing simp lemmas for the image under inclusion already
-reduce its left-hand side to its right-hand side. -/
+Together with `mem_mapIic_symm_apply`, this characterizes membership in both directions of
+`mapIic` without unfolding its construction. It is available for explicit rewriting; it is
+not tagged `simp` because the image-under-inclusion simp lemmas already give this normal form. -/
 theorem mem_mapIic_apply (N : LieSubmodule R L M) {P : LieSubmodule R L N} {x : M} :
     x ∈ (N.mapIic P).val ↔ ∃ h : x ∈ N, ⟨x, h⟩ ∈ P := by
   simp
