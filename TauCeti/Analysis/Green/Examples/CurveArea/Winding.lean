@@ -64,10 +64,6 @@ theorem signedArea_eq_intCast_mul_volume_real_of_windingNumber_eq (hab : a < b)
     isCompact_uIcc.image_of_continuousOn hγ.continuousOn
   have hD : MeasurableSet D :=
     (IsClosed.isOpen_filledHull_sdiff hK.isClosed).measurableSet
-  have hDfin : volume D ≠ ⊤ :=
-    ((measure_mono sdiff_subset).trans_lt
-      (isBounded_filledHull.mpr hK.isBounded).measure_lt_top).ne
-  let _ : IsFiniteMeasure (volume.restrict D) := isFiniteMeasure_restrict.2 hDfin
   rw [signedArea_eq_integral_windingWeight hab hγ hclosed,
     hγ.windingWeight_eq_indicator_of_index hclosed n hindex,
     integral_indicator_const (n : ℝ) hD]
