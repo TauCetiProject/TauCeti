@@ -203,8 +203,7 @@ variable [CommRing R] [CommRing C] [Bialgebra R C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M] [Fintype ι] [DecidableEq ι]
 
 /-- **The determinant of a finite free comodule is a character.** The determinant of its
-coefficient matrix is group-like: comultiplication splits the coefficient matrix as a product
-of its two tensor-factor images, and the counit sends it to the identity matrix. -/
+coefficient matrix is group-like. -/
 theorem isGroupLikeElem_det_coefficientMatrix (b : Basis ι R M) :
     IsGroupLikeElem R (Matrix.det (coefficientMatrix (C := C) b)) := by
   constructor
@@ -220,11 +219,11 @@ theorem isGroupLikeElem_det_coefficientMatrix (b : Basis ι R M) :
             (Algebra.TensorProduct.includeRight : C →ₐ[R] C ⊗[R] C) := by
       ext i j
       simp [Matrix.mul_apply, Algebra.TensorProduct.tmul_mul_tmul]
-    rw [← Bialgebra.comulAlgHom_apply, AlgHom.map_det, AlgHom.mapMatrix_apply, hmap,
-      Matrix.det_mul, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det, ← AlgHom.mapMatrix_apply,
-      ← AlgHom.map_det, Algebra.TensorProduct.includeLeft_apply,
-      Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
-      one_mul]
+    have hdet (f : C →ₐ[R] C ⊗[R] C) :
+        ((coefficientMatrix (C := C) b).map f).det = f (coefficientMatrix (C := C) b).det :=
+      (f.map_det _).symm
+    simpa [hdet, Matrix.det_mul, Algebra.TensorProduct.tmul_mul_tmul] using
+      congrArg Matrix.det hmap
 
 end CommBialgebra
 

@@ -115,14 +115,15 @@ private theorem rTensor_comp_coact_of_mem_weightSpace (π : C →ₗc[R] MonoidA
     rw [← Comodule.coassoc_apply, LinearEquiv.symm_apply_apply]
   have hassoc : (TensorProduct.map LinearMap.id P).lTensor V (Coalgebra.comul.lTensor V (ρ v)) =
       TensorProduct.assoc R V C (MonoidAlgebra R X) (ρ v ⊗ₜ s) := by
-    rw [← Comodule.coassoc_apply, LinearMap.lTensor_def, TensorProduct.map_map_assoc,
-      LinearMap.rTensor_def, TensorProduct.map_map, TensorProduct.map_id, LinearMap.id_comp,
-      LinearMap.comp_id]
-    congr 1
-    have h := LinearMap.congr_fun
-      (LinearMap.rTensor_comp_map (f' := ρ) (f := LinearMap.id) (g := P)) (ρ v)
-    rw [LinearMap.comp_id] at h
-    rw [← h, LinearMap.comp_apply, hv, LinearMap.rTensor_tmul]
+    rw [← Comodule.coassoc_apply, ← LinearMap.rTensor_tmul (M := MonoidAlgebra R X) ρ, ← hv]
+    generalize ρ v = t
+    induction t using TensorProduct.inductionOn with
+    | add y z hy hz => simp only [map_add, hy, hz]
+    | tmul w c =>
+      simp only [LinearMap.rTensor_tmul, TensorProduct.map_tmul, LinearMap.id_apply]
+      induction ρ w using TensorProduct.inductionOn with
+      | add y z hy hz => simp only [TensorProduct.add_tmul, map_add, hy, hz]
+      | tmul u d => simp
   have hswap : TensorProduct.map LinearMap.id (TensorProduct.map P LinearMap.id)
       (Coalgebra.comul.lTensor V (ρ v)) =
       (TensorProduct.comm R C (MonoidAlgebra R X)).toLinearMap.lTensor V
@@ -131,8 +132,17 @@ private theorem rTensor_comp_coact_of_mem_weightSpace (π : C →ₗc[R] MonoidA
     induction t using TensorProduct.inductionOn with
     | add y z hy hz => simp only [map_add, hy, hz]
     | tmul w c => simp [hcomul]
-  rw [LinearMap.rTensor_comp_apply, hcoassoc, LinearMap.rTensor_def,
-    TensorProduct.map_map_assoc_symm, hswap, hassoc]
+  have hsymm (t : V ⊗[R] (C ⊗[R] C)) :
+      (TensorProduct.map LinearMap.id P).rTensor C ((TensorProduct.assoc R V C C).symm t) =
+        (TensorProduct.assoc R V (MonoidAlgebra R X) C).symm
+          (TensorProduct.map LinearMap.id (TensorProduct.map P LinearMap.id) t) := by
+    induction t using TensorProduct.inductionOn with
+    | add y z hy hz => simp only [map_add, hy, hz]
+    | tmul w c =>
+      induction c using TensorProduct.inductionOn with
+      | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
+      | tmul c d => simp
+  rw [LinearMap.rTensor_comp_apply, hcoassoc, hsymm, hswap, hassoc]
   generalize ρ v = t
   induction t using TensorProduct.inductionOn with
   | add y z hy hz => simp only [TensorProduct.add_tmul, map_add, hy, hz]
@@ -204,8 +214,7 @@ variable {k H X : Type*} [Field k] [CommRing H] [HopfAlgebra k H] [CommGroup X]
 
 /-- **A weight of a central diagonalizable subgroup has a power extending to a character.** If
 `D(X)` is central in `G` and `x` occurs as a weight of a finite-dimensional representation `V`,
-then for `d` the dimension of the `x`-weight space, `x ^ d` is the restriction to `D(X)` of a
-character of `G`, namely the determinant of `G` acting on that weight space. -/
+then some positive power `x ^ n` is the restriction to `D(X)` of a character of `G`. -/
 theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
     (π : H →ₐc[k] MonoidAlgebra k X) (hπ : centralizerHopfIdeal π = ⊥)
     {V : Type*} [AddCommMonoid V] [Module k V] [Comodule k H V] [Module.Finite k V] {x : X}
@@ -228,12 +237,8 @@ theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
 
 /-- **A central diagonalizable subgroup meets the derived subgroup in a finite subgroup**, given
 a finite-dimensional representation whose matrix coefficients generate the coordinate algebra.
-
-Restriction to `D(X) ∩ [G, G]` factors through `k[X]`. The occurring weights of the
-representation generate the coordinate algebra of the intersection, and each of them has finite
-order there, because a positive power of it is a character of `G`
-(`exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot`), and characters are trivial on the
-derived subgroup. -/
+Assuming such a representation in place of `Algebra.FiniteType k H`, the coordinate algebra of
+`D(X) ∩ [G, G]` is finite-dimensional. -/
 theorem moduleFinite_quotient_sup_derivedDefiningIdeal_of_matrixCoefficientSubalgebra_eq_top
     (π : H →ₐc[k] MonoidAlgebra k X) (hπ : Function.Surjective π)
     (hcentral : (HopfIdeal.kerOfSurjective π hπ).IsCentral)
@@ -245,10 +250,10 @@ theorem moduleFinite_quotient_sup_derivedDefiningIdeal_of_matrixCoefficientSubal
   set L := HopfIdeal.kerOfSurjective π hπ ⊔ CommHopfAlgCat.derivedDefiningIdeal (R := k) H
   set q := Ideal.Quotient.mkₐ k L.toIdeal
   -- Restriction to `D(X) ∩ [G, G]` factors through restriction to `D(X)`.
-  have hker : RingHom.ker π.toAlgHom.toRingHom ≤ RingHom.ker q.toRingHom := fun h hh ↦ by
-    rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-      Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, HopfIdeal.sup_toIdeal]
-    exact Ideal.mem_sup_left (by rwa [HopfIdeal.kerOfSurjective_toIdeal])
+  have hker : RingHom.ker π.toAlgHom.toRingHom ≤ RingHom.ker q.toRingHom := fun h hh ↦
+    Ideal.Quotient.eq_zero_iff_mem.mpr (by
+      rw [HopfIdeal.sup_toIdeal]
+      exact Ideal.mem_sup_left (by rwa [HopfIdeal.kerOfSurjective_toIdeal]))
   let ψ := AlgHom.liftOfSurjective π.toAlgHom hπ q hker
   have hψ (h : H) : ψ (π h) = q h := AlgHom.liftOfSurjective_apply π.toAlgHom hπ q hker h
   set W := {x : X | weightSpace V π.toCoalgHom x ≠ ⊥}
@@ -259,10 +264,10 @@ theorem moduleFinite_quotient_sup_derivedDefiningIdeal_of_matrixCoefficientSubal
     obtain ⟨n, hn, g, hg⟩ := exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot π
       ((centralizerHopfIdeal_eq_bot_iff_isCentral π hπ).mpr hcentral) hx
     have hpow : ψ (MonoidAlgebra.single x 1) ^ n = 1 := by
-      rw [← map_pow, MonoidAlgebra.single_pow, one_pow, ← hg, hψ, ← map_one q,
-        Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq,
-        HopfIdeal.sup_toIdeal]
-      exact Ideal.mem_sup_right (GroupLike.sub_one_mem_derivedDefiningIdeal g)
+      rw [← map_pow, MonoidAlgebra.single_pow, one_pow, ← hg, hψ, ← map_one q]
+      exact Ideal.Quotient.eq.mpr (by
+        rw [HopfIdeal.sup_toIdeal]
+        exact Ideal.mem_sup_right (GroupLike.sub_one_mem_derivedDefiningIdeal g))
     exact IsIntegral.of_pow hn (hpow ▸ isIntegral_one)
   -- The matrix coefficients generate `H`, and they restrict into the span of the weights.
   have htop : Algebra.adjoin k S = ⊤ := by
