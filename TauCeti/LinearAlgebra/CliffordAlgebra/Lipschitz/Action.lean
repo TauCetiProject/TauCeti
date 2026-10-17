@@ -52,7 +52,7 @@ surjectivity results.
 * `CliffordAlgebra.involute_mul_mul_inv_eq_neg_one_pow_smul`: on a product of `r` vectors,
   twisted conjugation is `(-1) ^ r` times ordinary conjugation.
 * `CliffordAlgebra.unitι_mul_ι_mul_inv_eq_neg_ι_reflection`: ordinary conjugation by a vector is
-  the negative of its orthogonal reflection.
+  the negative of the reflection in its orthogonal hyperplane.
 * `CliffordAlgebra.lipschitzVectorAction_unitι`: **a vector acts by the reflection in its
   orthogonal hyperplane.** This is the identification of the generators referred to above.
 * `CliffordAlgebra.lipschitzVectorAction_map_app`: twisted conjugation by a Lipschitz
@@ -231,9 +231,9 @@ private theorem twistedConj_ι_eq_reflection (v : M) [Invertible (Q v)]
   rw [← map_neg, neg_sub]
 
 omit [Invertible (2 : R)] in
-/-- Ordinary Clifford conjugation by a vector of invertible norm is the negative of the
-reflection in that vector. This is the one-vector case of the sign comparison between ordinary
-and twisted conjugation. -/
+/-- Ordinary Clifford conjugation by a vector `v` of invertible norm is the negative of the
+reflection in the hyperplane orthogonal to `v`. This is the one-vector case of the sign
+comparison between ordinary and twisted conjugation. -/
 theorem unitι_mul_ι_mul_inv_eq_neg_ι_reflection (v m : M) [Invertible (Q v)] :
     (unitι Q v : CliffordAlgebra Q) * ι Q m *
         (((unitι Q v)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
