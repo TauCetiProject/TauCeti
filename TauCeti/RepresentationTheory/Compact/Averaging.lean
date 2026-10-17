@@ -128,7 +128,7 @@ theorem haarAverage_comp_inv (f : C(G, V)) :
     haarAverage G (𝕜 := 𝕜) (f.comp (Homeomorph.inv G : C(G, G))) =
       haarAverage G (𝕜 := 𝕜) f := by
   simp only [haarAverage_apply, ContinuousMap.coe_comp, Function.comp_apply,
-    ContinuousMap.coe_coe, Homeomorph.coe_inv]
+    ContinuousMap.coe_ofClass, Homeomorph.coe_inv]
   exact integral_inv_eq_self f (haarProb G)
 
 end NormedFieldScalars
@@ -147,7 +147,7 @@ theorem _root_.ContinuousLinearMap.haarAverage_comp_comm {W : Type*} [NormedAddC
     (L : V →L[𝕜] W) (f : C(G, V)) :
     haarAverage G (𝕜 := 𝕜) ((L : C(V, W)).comp f) = L (haarAverage G (𝕜 := 𝕜) f) := by
   simp only [haarAverage_apply, ContinuousMap.coe_comp, Function.comp_apply,
-    ContinuousMap.coe_coe]
+    ContinuousMap.coe_ofClass]
   exact L.integral_comp_comm (integrable_continuousMap G f)
 
 end RCLikeScalars
