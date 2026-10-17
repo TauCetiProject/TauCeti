@@ -37,18 +37,19 @@ noncomputable def pairColorDensity (S : PairColorSystem κ V) (c : κ) (s t : Fi
   exact (#((s ×ˢ t).filter fun p => S.colorOfPair p.1 p.2 = some c) : ℚ) /
     #((s ×ˢ t).filter fun p => p.1 ≠ p.2)
 
-open scoped Classical in
 /-- Pair-color density is the color count divided by the distinct-pair count. -/
-theorem pairColorDensity_def (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
+theorem pairColorDensity_def [DecidableEq κ] [DecidableEq V]
+    (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
     pairColorDensity S c s t =
       (#((s ×ˢ t).filter fun p => S.colorOfPair p.1 p.2 = some c) : ℚ) /
         #((s ×ˢ t).filter fun p => p.1 ≠ p.2) := by
-  classical
-  rfl
+  unfold pairColorDensity
+  congr
 
 /-- Pair-color densities are nonnegative. -/
 theorem pairColorDensity_nonneg (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
     0 ≤ pairColorDensity S c s t := by
+  classical
   rw [pairColorDensity_def]
   positivity
 
@@ -65,10 +66,10 @@ theorem pairColorDensity_le_one (S : PairColorSystem κ V) (c : κ) (s t : Finse
     exact mem_filter.mpr ⟨hp, (S.colorOfPair_eq_some_iff _ _ _).mp hc |>.choose⟩
   exact_mod_cast card_le_card hsub
 
-open scoped Classical in
 /-- With no distinct pairs, every color has density zero. -/
-theorem pairColorDensity_eq_zero_of_support_eq_empty (S : PairColorSystem κ V) (c : κ)
-    (s t : Finset V) (h : (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = ∅) :
+theorem pairColorDensity_eq_zero_of_support_eq_empty [DecidableEq V]
+    (S : PairColorSystem κ V) (c : κ) (s t : Finset V)
+    (h : (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = ∅) :
     pairColorDensity S c s t = 0 := by
   classical
   simp [pairColorDensity_def, h]
@@ -76,11 +77,13 @@ theorem pairColorDensity_eq_zero_of_support_eq_empty (S : PairColorSystem κ V) 
 @[simp]
 theorem pairColorDensity_empty_left (S : PairColorSystem κ V) (c : κ) (t : Finset V) :
     pairColorDensity S c ∅ t = 0 := by
+  classical
   simp [pairColorDensity_def]
 
 @[simp]
 theorem pairColorDensity_empty_right (S : PairColorSystem κ V) (c : κ) (s : Finset V) :
     pairColorDensity S c s ∅ = 0 := by
+  classical
   simp [pairColorDensity_def]
 
 @[simp]
@@ -89,10 +92,10 @@ theorem pairColorDensity_singleton_self (S : PairColorSystem κ V) (c : κ) (v :
   classical
   simp [pairColorDensity_def]
 
-open scoped Classical in
 /-- Palette densities sum to one on nonempty distinct-pair support.
 Nonempty cells alone do not suffice, as the coincident-singleton case shows. -/
-theorem sum_pairColorDensity [Fintype κ] (S : PairColorSystem κ V) (s t : Finset V)
+theorem sum_pairColorDensity [Fintype κ] [DecidableEq V]
+    (S : PairColorSystem κ V) (s t : Finset V)
     (h : ((s ×ˢ t).filter fun p => p.1 ≠ p.2).Nonempty) :
     ∑ c, pairColorDensity S c s t = 1 := by
   classical

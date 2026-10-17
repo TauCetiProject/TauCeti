@@ -49,7 +49,7 @@ public theorem pairColorDensity_ofRaw_fst_fin_two :
       (fun p : {p : Fin 2 × Fin 2 // p.1 ≠ p.2} => p.val.1)) (0, 1) univ univ = 1 / 2 := by
   classical
   simp only [pairColorDensity_def, card_eq_sum_ones, sum_filter, sum_product]
-  norm_num [Fin.univ_succ]
+  norm_num [Fin.univ_succ, filter_insert, filter_singleton]
 
 example : pairColorDensity directedTwo (1, 0) univ univ = 1 / 2 := by
   have h := pairColorDensity_swap directedTwo (0, 1) univ univ
