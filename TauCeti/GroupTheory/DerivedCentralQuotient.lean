@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Subgroup.Map
+public import TauCeti.GroupTheory.QuotientGroup.Center
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.IsPerfect
 public import Mathlib.GroupTheory.QuotientGroup.Basic
@@ -35,7 +36,8 @@ nonabelian simple group — it returns the group itself, and by Grün's lemma it
 as soon as `[G, G]` is perfect, so a second application changes nothing.
 
 Transport says that isomorphic groups have isomorphic derived central quotients, so the output
-depends only on the isomorphism class of `G`.
+depends only on the isomorphism class of `G`. More generally, a surjection with central kernel
+induces an isomorphism of derived central quotients when `[G, G]` is perfect.
 
 ## Main definitions
 
@@ -44,6 +46,8 @@ depends only on the isomorphism class of `G`.
 * `TauCeti.DerivedCentralQuotient.congr`: transport of the derived central quotient along an
   isomorphism of groups, built from the transport `MulEquiv.commutatorCongr` of the derived
   subgroup.
+* `TauCeti.DerivedCentralQuotient.congrOfSurjective`: transport along a central surjection
+  when the source has perfect derived subgroup.
 
 ## Main results
 
@@ -241,6 +245,38 @@ theorem congr_symm (ψ : G ≃* G') :
   MulEquiv.ext fun x => QuotientGroup.induction_on x fun y => by
     simp only [DerivedCentralQuotient.congr, QuotientGroup.congr_symm, QuotientGroup.congr_mk,
       MulEquiv.commutatorCongr_symm]
+
+/-! ### Transport along a central surjection -/
+
+/-- A central surjection induces an isomorphism of derived central quotients when the source's
+commutator subgroup is perfect. The induced map sends the class of `x` to the class of `f x`.
+
+The restricted homomorphism has central kernel inside the derived subgroup, so Grün's lemma
+and the quotient isomorphism for perfect groups apply. -/
+noncomputable def congrOfSurjective [Group.IsPerfect ↥(commutator G)] (f : G →* G')
+    (hf : Function.Surjective f) (hker : f.ker ≤ center G) :
+    DerivedCentralQuotient G ≃* DerivedCentralQuotient G' := by
+  let e := MulEquiv.subgroupCongr (Subgroup.map_commutator_eq_commutator hf)
+  let φ : ↥(commutator G) →* ↥(commutator G') :=
+    e.toMonoidHom.comp (f.subgroupMap (commutator G))
+  have hφ : Function.Surjective φ := e.surjective.comp (f.subgroupMap_surjective _)
+  have hφker : φ.ker ≤ center ↥(commutator G) := by
+    intro x hx
+    have hx' : f (x : G) = 1 := by
+      simpa [φ, e] using congrArg Subtype.val (MonoidHom.mem_ker.mp hx)
+    apply mem_center_iff.mpr
+    intro y
+    exact Subtype.ext (mem_center_iff.mp (hker hx') (y : G))
+  exact φ.quotientCenterCongrOfSurjective hφ hφker
+
+@[simp]
+theorem congrOfSurjective_mk [Group.IsPerfect ↥(commutator G)] (f : G →* G')
+    (hf : Function.Surjective f) (hker : f.ker ≤ center G) (x : ↥(commutator G)) :
+    congrOfSurjective f hf hker (x : DerivedCentralQuotient G) =
+      (MulEquiv.subgroupCongr (Subgroup.map_commutator_eq_commutator hf)
+        (f.subgroupMap (commutator G) x) : DerivedCentralQuotient G') := by
+  unfold congrOfSurjective
+  exact MonoidHom.quotientCenterCongrOfSurjective_mk _ _ _ x
 
 end DerivedCentralQuotient
 
