@@ -43,9 +43,11 @@ places; at the nonarchimedean places the ultrametric inequality makes it disappe
 ## Implementation notes
 
 The global step needs the finiteness of the multiplicative support of the nonarchimedean local
-factors, `Height.hasFiniteMulSupport_iSup_nonarchAbsVal`, which is `private` in
+factors `max (v x) 1` of `Height.mulHeight₁`, which Mathlib proves by the `private`
+`fun_prop` lemma `Height.hasFiniteMulSupport_max_nonarchAbsVal` in
 `Mathlib/NumberTheory/Height/Basic.lean`; it is reached by `import all`, as Mathlib's own
-`Mathlib/NumberTheory/Height/MvPolynomial.lean` does.
+`Mathlib/NumberTheory/Height/MvPolynomial.lean` does. The affine counterpart is the public
+`Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`.
 
 ## References
 
@@ -65,16 +67,6 @@ namespace Height
 open AdmissibleAbsValues
 
 variable {K : Type*} [Field K] [AdmissibleAbsValues K] {ι : Type*}
-
-/-- The nonarchimedean local factor `max (⨆ i, v (x i)) 1` of the affine height is `1` at all
-but finitely many places. Like its projective counterpart
-`Height.hasFiniteMulSupport_iSup_nonarchAbsVal`, which Mathlib keeps `private`, it is a step of
-the passage from local to global bounds only. -/
-private lemma hasFiniteMulSupport_max_iSup_nonarchAbsVal [Finite ι] (x : ι → K) :
-    (fun v : nonarchAbsVal ↦ max (⨆ i, v.val (x i)) 1).HasFiniteMulSupport := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [Function.HasFiniteMulSupport]
-  fun_prop (disch := exact hx)
 
 /-- **Local-to-global bound for sums.** Let `y : κ → ι → K` be a finite family of tuples, and let
 every term `t a`, `a ∈ s`, of a nonempty finite sum satisfy `v (t a) ≤ ∏ k, max (⨆ i, v (y k i)) 1`
@@ -99,10 +91,10 @@ theorem mulHeight₁_sum_le_prod_mulHeightAff {α κ : Type*} [Fintype κ] [Fini
   have hnonarch {v : AbsoluteValue K ℝ} (hv : IsNonarchimedean v) :
       max (v (∑ a ∈ s, t a)) 1 ≤ M v :=
     max_le ((hv.apply_sum_le_sup hs).trans (sup'_le hs _ (ht v))) (hM1 v)
-  simp only [mulHeight₁_eq, mulHeightAff_eq, totalWeight]
-  rw [prod_mul_distrib, ← Multiset.prod_replicate, ← Multiset.map_const,
-    ← finprod_prod_comm _ _ fun k _ ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k),
-    ← Multiset.prod_map_prod, ← mul_assoc, ← Multiset.prod_map_mul]
+  -- Split both sides place by place, and absorb `#s ^ totalWeight K` into the archimedean product
+  -- as one factor `#s` per archimedean place.
+  simp only [mulHeight₁_eq, prod_mulHeightAff_eq, totalWeight]
+  rw [← Multiset.prod_replicate, ← Multiset.map_const, ← mul_assoc, ← Multiset.prod_map_mul]
   simp only [Function.const_apply]
   gcongr
   · exact finprod_nonneg fun _ ↦ by positivity
@@ -110,7 +102,8 @@ theorem mulHeight₁_sum_le_prod_mulHeightAff {α κ : Type*} [Fintype κ] [Fini
   · exact Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ zero_le_one.trans (le_max_right _ _))
       fun v _ ↦ harch v
   · exact finprod_le_finprod₀ (by fun_prop) (fun _ ↦ zero_le_one.trans (le_max_right _ _))
-      (.prod (fun k ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k)) univ)
+      (Function.HasFiniteMulSupport.prod (fun k ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k))
+        univ)
       fun v ↦ hnonarch (isNonarchimedean _ v.prop)
 
 /-! ### The value of a linear form -/
@@ -129,8 +122,8 @@ theorem mulHeight₁_sum_mul_le [Fintype ι] [Nonempty ι] (a x : ι → K) :
     fun v i _ ↦ by
       simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, map_mul]
       gcongr
-      · exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
-      · exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
+      · exact le_max_iSup_one v a i
+      · exact le_max_iSup_one v x i
   simpa [Fin.prod_univ_two, Nat.card_eq_fintype_card] using key
 
 /-- The logarithmic form of `Height.mulHeight₁_sum_mul_le`. It needs no nonemptiness hypothesis,
@@ -187,7 +180,7 @@ theorem mulHeight₁_det_le (A : Matrix n n K) :
     fun v σ _ ↦ by
       rw [v.map_units_int_smul, map_prod]
       gcongr with j
-      exact le_max_of_le_left (Finite.le_ciSup_of_le (σ j) le_rfl)
+      exact le_max_iSup_one v (fun i ↦ A i j) (σ j)
   simpa [Fintype.card_perm, Nat.card_eq_fintype_card] using key
 
 /-- The logarithmic form of `Matrix.mulHeight₁_det_le`. -/

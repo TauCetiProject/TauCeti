@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.Height.NumberField
 
+import all Mathlib.NumberTheory.Height.Basic
+
 /-!
 # The affine height of a tuple
 
@@ -39,7 +41,11 @@ drop under re-indexing.
 ## Main results
 
 * `Height.mulHeightAff_eq`: for finite `ι`, the affine height as a product of the local factors
-  `max (⨆ i, v (x i)) 1`.
+  `max (⨆ i, v (x i)) 1`; `Height.prod_mulHeightAff_eq` splits a finite product of affine heights
+  into the products of these local factors place by place.
+* `Height.le_max_iSup_one`: each coordinate is bounded by the local factor of its tuple, and
+  `Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`: the nonarchimedean local factors are `1`
+  at all but finitely many places.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
   affine height dominates the projective height of the tuple and the height of each coordinate.
   The second fails for `Height.mulHeight`.
@@ -55,6 +61,11 @@ drop under re-indexing.
 
 The appended coordinate is indexed by `none : Option ι`. The type `Option ι` is finite when `ι`
 is, and re-indexing along `f : ι → ι'` becomes re-indexing along `Option.map f`.
+
+The finiteness of the multiplicative support of the nonarchimedean local factors rests on
+`Height.hasFiniteMulSupport_iSup_nonarchAbsVal`, which is `private` in
+`Mathlib/NumberTheory/Height/Basic.lean`; it is reached by `import all`, as Mathlib's own
+`Mathlib/NumberTheory/Height/MvPolynomial.lean` does.
 
 ## References
 
@@ -130,6 +141,13 @@ section Finite
 
 variable [Finite ι] [Finite ι']
 
+omit [AdmissibleAbsValues K] in
+/-- Each coordinate is bounded, at every absolute value, by the local factor
+`max (⨆ i, v (x i)) 1` of the affine height of its tuple. -/
+lemma le_max_iSup_one (v : AbsoluteValue K ℝ) (x : ι → K) (i : ι) :
+    v (x i) ≤ max (⨆ i, v (x i)) 1 :=
+  le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
+
 /-- The affine height as a product of local factors: at each place `v` the factor is
 `max (⨆ i, v (x i)) 1`, the tuple analogue of the local factor `max (v x) 1` of
 `Height.mulHeight₁`. -/
@@ -141,12 +159,29 @@ lemma mulHeightAff_eq (x : ι → K) :
     refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ ?_)
     · cases o with
       | none => simp
-      | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
+      | some i => exact le_max_iSup_one v x i
     · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
         (Real.iSup_nonneg_of_nonnegHomClass v _)
     · exact Finite.le_ciSup_of_le none (by simp)
   have hx : (fun o : Option ι ↦ o.elim 1 x) ≠ 0 := fun h ↦ one_ne_zero (congrFun h none)
   simp only [mulHeightAff_def, mulHeight_eq hx, key]
+
+/-- The nonarchimedean local factor `max (⨆ i, v (x i)) 1` of the affine height is `1` at all
+but finitely many places. -/
+lemma hasFiniteMulSupport_max_iSup_nonarchAbsVal (x : ι → K) :
+    (fun v : nonarchAbsVal ↦ max (⨆ i, v.val (x i)) 1).HasFiniteMulSupport := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Function.HasFiniteMulSupport]
+  fun_prop (disch := exact hx)
+
+/-- A finite product of affine heights, split place by place: the local factor at `v` is the
+product `∏ k, max (⨆ i, v (y k i)) 1` of the local factors of the tuples `y k`. -/
+lemma prod_mulHeightAff_eq {κ : Type*} [Fintype κ] (y : κ → ι → K) :
+    ∏ k, mulHeightAff (y k) = (archAbsVal.map fun v ↦ ∏ k, max (⨆ i, v (y k i)) 1).prod *
+      ∏ᶠ v : nonarchAbsVal, ∏ k, max (⨆ i, v.val (y k i)) 1 := by
+  simp only [mulHeightAff_eq]
+  rw [Finset.prod_mul_distrib, Multiset.prod_map_prod,
+    finprod_prod_comm _ _ fun k _ ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k)]
 
 /-- The affine height of a tuple is at least `1`. -/
 lemma one_le_mulHeightAff (x : ι → K) : 1 ≤ mulHeightAff x :=
