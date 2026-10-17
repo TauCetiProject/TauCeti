@@ -318,21 +318,19 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
 /-- **At `I₀*`, two points with singular reduction add up to a point with nonsingular reduction
 exactly when their values of `x / ϖ` have the same residue.** Here `P = (ϖ X₁, y₁)` and
 `Q = (ϖ X₂, y₂)` have singular reduction, `ϖ` generates the maximal ideal of the valuation ring,
-Tate's algorithm stops at `I₀*` on the integral model, and `a₂ = ϖ A₂`, `a₄ = ϖ² A₄`,
-`a₆ = ϖ³ A₆`. Since `-Q = (ϖ X₂, -y₂ - a₁ x₂ - a₃)`, this assigns to each coset of `E₀(F)` other
-than `E₀(F)` itself a root of the residue cubic `T³ + A₂ T² + A₄ T + A₆`, distinct cosets getting
-distinct roots. That every root arises needs the Henselian hypothesis of
+and Tate's algorithm stops at `I₀*` on the integral model. Since `-Q = (ϖ X₂, -y₂ - a₁ x₂ - a₃)`,
+this assigns to each coset of `E₀(F)` other than `E₀(F)` itself a root of the residue cubic
+(`exists_xCoord_eq_of_isTateTerminal_IStar_zero`), distinct cosets getting distinct roots. That
+every root arises needs the Henselian hypothesis of
 `exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero`. -/
 theorem add_mem_nonsingularReduction_iff_of_isTateTerminal_IStar_zero {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
-    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar 0))
-    {A₂ A₄ A₆ : v.valuationSubring} (h₂ : (integralModel v.valuationSubring W).a₂ = ϖ * A₂)
-    (h₄ : (integralModel v.valuationSubring W).a₄ = ϖ ^ 2 * A₄)
-    (h₆ : (integralModel v.valuationSubring W).a₆ = ϖ ^ 3 * A₆) {P Q : W.Point}
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar 0)) {P Q : W.Point}
     (hP : P ∉ W.nonsingularReduction v) (hQ : Q ∉ W.nonsingularReduction v)
     {X₁ X₂ : v.valuationSubring} (hX₁ : P.xCoord = ((ϖ * X₁ : v.valuationSubring) : F))
     (hX₂ : Q.xCoord = ((ϖ * X₂ : v.valuationSubring) : F)) :
     P + Q ∈ W.nonsingularReduction v ↔ residue _ X₁ = residue _ X₂ := by
+  obtain ⟨-, ⟨A₂, h₂⟩, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IStar_zero.1 h
   have hres : residue _ X₁ = residue _ X₂ ↔ ϖ ∣ X₁ - X₂ := by
     rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff, v.mem_maximalIdeal_iff_dvd hϖ]
   rw [hres]
@@ -441,7 +439,7 @@ theorem index_nonsingularReduction_eq_of_isTateTerminal_IStar_zero
     · simp only [g, hP, hQ, dite_true, dite_false, reduceCtorEq, false_iff]
       exact fun hPQ ↦ hP (by simpa using neg_mem (sub_mem hPQ hQ))
     · simp only [g, hP, hQ, dite_false, Option.some.injEq, Subtype.mk.injEq]
-      rw [add_mem_nonsingularReduction_iff_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
+      rw [add_mem_nonsingularReduction_iff_of_isTateTerminal_IStar_zero v hϖ h
         ((neg_mem_iff (H := W.nonsingularReduction v)).not.2 hP) hQ
         (by rw [Point.xCoord_neg]; exact hX P hP) (hX Q hQ)]
   -- so `g` induces a bijection from `W(F) ⧸ E₀(F)` onto `Option S`
