@@ -193,6 +193,12 @@ theorem ncard_preimage_singleton {y : OnePoint ℂ}
 
 /-! ### The underlying topological branched cover -/
 
+/-- A Belyi map is locally the power map whose exponent is its analytic local multiplicity. -/
+theorem isLocalPowerAt_localMultiplicity (P : AnalyticBelyiPair.{u}) (z : P.X) :
+    IsLocalPowerAt P.β z (localMultiplicity P.β z) :=
+  RiemannSurface.isLocalPowerAt_localMultiplicity
+    (.of_forall fun y ↦ P.β.holomorphic y) (P.β.not_eventuallyConst z)
+
 /-- **The topological branched cover underlying an analytic Belyi pair.** The supplied equality
 records the degree in the index. Its local power models are the holomorphic local normal forms,
 and its topological local degree agrees with analytic local multiplicity
@@ -217,9 +223,7 @@ def toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
     rw [mem_marked]
     simpa only [mem_insert_iff, mem_singleton_iff] using hy'
   exists_isLocalPowerAt_of_mem_marked z _ :=
-    ⟨localMultiplicity P.β z,
-      RiemannSurface.isLocalPowerAt_localMultiplicity
-        (.of_forall fun y ↦ P.β.holomorphic y) (P.β.not_eventuallyConst z)⟩
+    ⟨localMultiplicity P.β z, P.isLocalPowerAt_localMultiplicity z⟩
 
 /-- The projection of the topological branched cover underlying a pair is its Belyi map. -/
 @[simp]
@@ -234,11 +238,7 @@ multiplicity of its Belyi map. -/
 theorem localDegree_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
     (hdegree : degree P.β = n) (z : P.X) :
     (P.toTopBranchedCover hdegree).localDegree z = localMultiplicity P.β z :=
-  by
-    have hlocal : IsLocalPowerAt P.β z (localMultiplicity P.β z) :=
-      RiemannSurface.isLocalPowerAt_localMultiplicity
-      (.of_forall fun y ↦ P.β.holomorphic y) (P.β.not_eventuallyConst z)
-    exact (P.toTopBranchedCover hdegree).localDegree_eq_iff.2 hlocal
+  (P.toTopBranchedCover hdegree).localDegree_eq_iff.2 (P.isLocalPowerAt_localMultiplicity z)
 
 /-! ### The cover of the thrice-punctured sphere -/
 
