@@ -18,15 +18,18 @@ series, becomes a power series `∑_n (∑_{c m = n} a(c) b(m)) q^n`.
 
 Mathlib's `tsum_prod_pow_eq_tsum_sigma` proves one instance of this regrouping, for the terms
 `m^k r^{c m}`; this file states the regrouping for an arbitrary summable family, through the
-same equivalence `sigmaAntidiagonalEquivProd`.
+same equivalence `sigmaAntidiagonalEquivProd`. For weights of polynomial growth and `‖q‖ < 1`,
+the Lambert double series converges absolutely and regroups into a divisor-sum power series.
+An extra parameter `u` with `‖u‖ ≤ 1` gives coefficients `∑_{d ∣ n} a d u^d`.
 
 ## Main results
 
 * `HasSum.sum_divisorsAntidiagonal`: regrouping a convergent double series by the product of
   the indices.
-* `TauCeti.hasSum_bounded_sum_divisors_mul_pow`: convergence and regrouping for bounded weights.
-* `TauCeti.tsum_bounded_mul_pow_mul_eq_tsum_sum_divisors`: a second parameter in the closed unit
-  ball produces weighted divisor-sum coefficients.
+* `TauCeti.hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow`: convergence and regrouping
+  for weights of polynomial growth.
+* `TauCeti.tsum_tsum_mul_pow_eq_tsum_sum_divisors_of_norm_le_mul_pow`: a second parameter
+  in the closed unit ball produces weighted divisor-sum coefficients.
 -/
 
 public section
@@ -49,26 +52,28 @@ namespace TauCeti
 variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
 
 omit [CompleteSpace K] in
-/-- A Lambert-series family with bounded weights is absolutely summable inside the unit disc. -/
-theorem summable_norm_bounded_mul_pow_prod (a : ℕ → K) (ha : ∀ d, ‖a d‖ ≤ 1)
-    {q : K} (hq : ‖q‖ < 1) :
+/-- A Lambert-series family with weights of polynomial growth is absolutely summable
+inside the unit disc. -/
+theorem summable_norm_mul_pow_prod_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
+    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun p : ℕ+ × ℕ+ ↦ ‖a p.2 * q ^ (p.1 * p.2 : ℕ)‖) := by
-  have hs : Summable (fun p : ℕ+ × ℕ+ ↦ ‖q‖ ^ (p.1 * p.2 : ℕ)) := by
-    simpa using summable_prod_mul_pow 0 (r := ‖q‖) (by simpa using hq)
+  have hs := (summable_prod_mul_pow k (r := ‖q‖) (by simpa using hq)).mul_left C
   apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) hs
   calc
     ‖a p.2 * q ^ (p.1 * p.2 : ℕ)‖ ≤ ‖a p.2‖ * ‖q ^ (p.1 * p.2 : ℕ)‖ := norm_mul_le _ _
-    _ ≤ 1 * ‖q‖ ^ (p.1 * p.2 : ℕ) :=
-      mul_le_mul (ha _) (norm_pow_le _ _) (norm_nonneg _) zero_le_one
-    _ = ‖q‖ ^ (p.1 * p.2 : ℕ) := one_mul _
+    _ ≤ (C * (p.2 : ℝ) ^ k) * ‖q‖ ^ (p.1 * p.2 : ℕ) :=
+      mul_le_mul (ha _) (norm_pow_le _ _) (norm_nonneg _)
+        ((norm_nonneg _).trans (ha _))
+    _ = C * ((p.2 : ℝ) ^ k * ‖q‖ ^ (p.1 * p.2 : ℕ)) := mul_assoc _ _ _
 
-/-- Regrouping a Lambert series with bounded weights gives a convergent divisor-sum expansion.
-The term at index zero vanishes because `Nat.divisors 0` is empty. -/
-theorem hasSum_bounded_sum_divisors_mul_pow (a : ℕ → K) (ha : ∀ d, ‖a d‖ ≤ 1)
+/-- Regrouping a Lambert series with weights of polynomial growth gives a convergent
+divisor-sum expansion. The term at index zero vanishes because `Nat.divisors 0` is empty. -/
+theorem hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
+    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k)
     {q : K} (hq : ‖q‖ < 1) :
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors, a d) * q ^ n)
       (∑' n : ℕ+, ∑' d : ℕ+, a d * q ^ (n * d : ℕ)) := by
-  have hs := (summable_norm_bounded_mul_pow_prod a ha hq).of_norm
+  have hs := (summable_norm_mul_pow_prod_of_norm_le_mul_pow a ha hq).of_norm
   have h := HasSum.sum_divisorsAntidiagonal
     (f := fun n d : ℕ ↦ a d * q ^ (n * d)) hs.hasSum
   have he (n : ℕ+) :
@@ -81,16 +86,21 @@ theorem hasSum_bounded_sum_divisors_mul_pow (a : ℕ → K) (ha : ∀ d, ‖a d�
   simpa using (hasSum_pnat_iff (f := fun n : ℕ ↦
     (∑ d ∈ n.divisors, a d) * q ^ n)).mp h
 
-/-- A bounded weighted Lambert series, with an additional parameter in the closed unit ball,
+/-- A Lambert series with weights of polynomial growth and a parameter in the closed unit ball
 expands as a power series whose coefficients are finite divisor sums. -/
-theorem tsum_bounded_mul_pow_mul_eq_tsum_sum_divisors (a : ℕ → K) (ha : ∀ d, ‖a d‖ ≤ 1)
+theorem tsum_tsum_mul_pow_eq_tsum_sum_divisors_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
+    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k)
     {q u : K} (hq : ‖q‖ < 1) (hu : ‖u‖ ≤ 1) :
     (∑' n : ℕ+, ∑' d : ℕ, a (d + 1) * (q ^ (n : ℕ) * u) ^ (d + 1)) =
       ∑' n : ℕ, (∑ d ∈ n.divisors, a d * u ^ d) * q ^ n := by
-  have hau (d : ℕ) : ‖a d * u ^ d‖ ≤ 1 :=
-    (norm_mul_le_of_le (ha d)
-      ((norm_pow_le u d).trans (pow_le_one₀ (norm_nonneg u) hu))).trans_eq (one_mul _)
-  rw [(hasSum_bounded_sum_divisors_mul_pow _ hau hq).tsum_eq]
+  have hau (d : ℕ) : ‖a d * u ^ d‖ ≤ C * (d : ℝ) ^ k := by
+    calc
+      ‖a d * u ^ d‖ ≤ ‖a d‖ * ‖u ^ d‖ := norm_mul_le _ _
+      _ ≤ (C * (d : ℝ) ^ k) * 1 :=
+        mul_le_mul (ha d) ((norm_pow_le u d).trans (pow_le_one₀ (norm_nonneg u) hu))
+          (norm_nonneg _) ((norm_nonneg _).trans (ha d))
+      _ = C * (d : ℝ) ^ k := mul_one _
+  rw [(hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow _ hau hq).tsum_eq]
   apply tsum_congr
   intro n
   rw [tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * u ^ d * q ^ ((n : ℕ) * d))]
