@@ -45,12 +45,11 @@ open Function Filter Topology
 
 namespace ContinuousLinearMap
 
-variable {𝕜 F V : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+variable {𝕜 F V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
-section CompleteSpace
+section Adjoint
 
-variable [CompleteSpace F] [CompleteSpace V]
+variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
 
 /-- The Gram operator `B† B` of an operator out of a finite-dimensional space is invertible
 exactly when `B` is injective. -/
@@ -82,7 +81,11 @@ theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry
   have h := (isometry_iff_adjoint_comp_self B).1 hB
   rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
 
-end CompleteSpace
+end Adjoint
+
+section Range
+
+variable [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
 
 /-- The orthogonal projection onto the range of `B` fixes every value of `B`. -/
 @[simp]
@@ -91,6 +94,7 @@ theorem starProjection_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalPr
   Submodule.starProjection_eq_self_iff.2 (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
 
 /-- The orthogonal projection onto the complement of the range of `B` kills every value of `B`. -/
+@[simp]
 theorem starProjection_orthogonal_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection]
     (x : F) : B.rangeᗮ.starProjection (B x) = 0 :=
   Submodule.starProjection_orthogonal_apply_eq_zero (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
@@ -109,6 +113,8 @@ theorem starProjection_orthogonal_range_comp (B : F →L[𝕜] V) [B.range.HasOr
   ext x
   simp
 
+end Range
+
 end ContinuousLinearMap
 
 section LinearMap
@@ -126,6 +132,8 @@ theorem LinearMap.finrank_orthogonal_range_of_injective {A : E →ₗ[𝕜] V}
   omega
 
 end LinearMap
+
+section Submodule
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
@@ -158,6 +166,10 @@ theorem Submodule.starProjection_inverse_apply {K W : Submodule 𝕜 V}
   have hinv : Ring.inverse R (R w) = w := by
     rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hR, one_apply_eq_self]
   rw [← hRw, hinv, hw']
+
+end Submodule
+
+section ContDiffAt
 
 variable {X E V : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -203,3 +215,5 @@ theorem ContDiffAt.starProjection_orthogonal_range {A : X → E →L[ℝ] V} {u�
   refine (contDiffAt_const (c := (1 : V →L[ℝ] V))).sub (hA.starProjection_range hinj)
     |>.congr_of_eventuallyEq ?_
   exact Eventually.of_forall fun u => Submodule.starProjection_orthogonal' _
+
+end ContDiffAt
