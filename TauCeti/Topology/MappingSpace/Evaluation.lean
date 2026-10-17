@@ -18,14 +18,14 @@ mapping space. This gives the split sequence
 `Map_*(B, X) → Map(B, X) → X`
 
 used for mapping spaces out of spheres. No compactness or separation hypothesis is needed on
-either space.
+either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` is
+`ContinuousMap.isEmbedding_const`.
 
 ## Main declarations
 
 * `TauCeti.mappingSpaceEval`: evaluation `Map(B, X) → X` at a chosen point of `B`.
 * `TauCeti.mappingSpaceEval_comp_const'`: constant maps form a continuous section.
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
-* `TauCeti.ContinuousMap.isEmbedding_const`: constant maps embed `X` into `Map(B, X)`.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
 
@@ -55,7 +55,7 @@ theorem mappingSpaceEval_apply (b : B) (f : C(B, X)) :
   (rfl)
 
 /-- Evaluation at any point is a left inverse of the constant maps. -/
-theorem mappingSpaceEval_leftInverse_const (b : B) :
+theorem leftInverse_mappingSpaceEval_const (b : B) :
     Function.LeftInverse (mappingSpaceEval (X := X) b) (ContinuousMap.const B) := fun _ ↦ by
   simp
 
@@ -63,21 +63,14 @@ theorem mappingSpaceEval_leftInverse_const (b : B) :
 @[simp]
 theorem mappingSpaceEval_comp_const' (b : B) :
     (mappingSpaceEval (X := X) b).comp ContinuousMap.const' = ContinuousMap.id X :=
-  ContinuousMap.ext (mappingSpaceEval_leftInverse_const b)
+  ContinuousMap.ext (leftInverse_mappingSpaceEval_const b)
 
 /-- Evaluation at a point is a quotient map. Its continuous section by constant maps detects
 openness in the target. -/
 theorem isQuotientMap_mappingSpaceEval (b : B) :
     IsQuotientMap (mappingSpaceEval (X := X) b) :=
   .of_inverse ContinuousMap.continuous_const' (mappingSpaceEval b).continuous
-    (mappingSpaceEval_leftInverse_const b)
-
-/-- Constant maps embed the target in its mapping space whenever the source is nonempty.
-Evaluation at any point is a continuous left inverse. -/
-theorem ContinuousMap.isEmbedding_const [Nonempty B] :
-    IsEmbedding (ContinuousMap.const B : X → C(B, X)) :=
-  (mappingSpaceEval_leftInverse_const (Classical.arbitrary B)).isEmbedding
-    (mappingSpaceEval _).continuous ContinuousMap.continuous_const'
+    (leftInverse_mappingSpaceEval_const b)
 
 /-- Evaluation at `b` is constant with value `x` on the based mapping space, the subspace of maps
 sending `b` to `x`. -/
