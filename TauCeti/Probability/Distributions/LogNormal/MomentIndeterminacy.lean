@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.LogNormal.Basic
+import TauCeti.Probability.Distributions.Gaussian.Transforms
 
 /-!
 # Moment-indeterminate perturbations of the log-normal distribution
@@ -62,17 +63,16 @@ private theorem logNormalMomentOscillation_abs_le_one (x : ℝ) :
   simpa [logNormalMomentOscillation] using Real.abs_sin_le_one (2 * Real.pi * Real.log x)
 
 /-- The real-valued density in the log-normal Stieltjes family. -/
-@[expose]
 def logNormalMomentPerturbationPDFReal (ε x : ℝ) : ℝ :=
-  logNormalPDFReal 0 1 x * (1 + ε * Real.sin (2 * Real.pi * Real.log x))
+  logNormalPDFReal 0 1 x * (1 + ε * logNormalMomentOscillation x)
 
 @[simp]
 theorem logNormalMomentPerturbationPDFReal_apply (ε x : ℝ) :
     logNormalMomentPerturbationPDFReal ε x =
-      logNormalPDFReal 0 1 x * (1 + ε * Real.sin (2 * Real.pi * Real.log x)) := rfl
+      logNormalPDFReal 0 1 x * (1 + ε * Real.sin (2 * Real.pi * Real.log x)) := by
+  rw [logNormalMomentPerturbationPDFReal, logNormalMomentOscillation]
 
 /-- The `ℝ≥0∞`-valued density in the log-normal Stieltjes family. -/
-@[expose]
 def logNormalMomentPerturbationPDF (ε x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (logNormalMomentPerturbationPDFReal ε x)
 
@@ -80,20 +80,23 @@ def logNormalMomentPerturbationPDF (ε x : ℝ) : ℝ≥0∞ :=
 theorem logNormalMomentPerturbationPDF_apply (ε x : ℝ) :
     logNormalMomentPerturbationPDF ε x =
       ENNReal.ofReal
-        (logNormalPDFReal 0 1 x * (1 + ε * Real.sin (2 * Real.pi * Real.log x))) := rfl
+        (logNormalPDFReal 0 1 x * (1 + ε * Real.sin (2 * Real.pi * Real.log x))) := by
+  rw [logNormalMomentPerturbationPDF, logNormalMomentPerturbationPDFReal,
+    logNormalMomentOscillation]
 
 /-- The log-normal Stieltjes family, obtained by weighting the standard log-normal law by
 `1 + ε sin (2π log x)`.  The `ENNReal.ofReal` totalization makes this a measure for every real
 `ε`; it is a probability measure when `|ε| ≤ 1`. -/
-@[expose]
 def logNormalMomentPerturbation (ε : ℝ) : Measure ℝ :=
   (logNormalMeasure 0 1).withDensity fun x =>
-    ENNReal.ofReal (1 + ε * Real.sin (2 * Real.pi * Real.log x))
+    ENNReal.ofReal (1 + ε * logNormalMomentOscillation x)
 
 theorem logNormalMomentPerturbation_eq_withDensity_logNormal (ε : ℝ) :
     logNormalMomentPerturbation ε =
       (logNormalMeasure 0 1).withDensity fun x =>
-        ENNReal.ofReal (1 + ε * Real.sin (2 * Real.pi * Real.log x)) := rfl
+        ENNReal.ofReal (1 + ε * Real.sin (2 * Real.pi * Real.log x)) := by
+  rw [logNormalMomentPerturbation]
+  simp only [logNormalMomentOscillation]
 
 private theorem logNormalMomentPerturbation_mul_abs_le_one {ε : ℝ} (hε : |ε| ≤ 1) (x : ℝ) :
     |ε * logNormalMomentOscillation x| ≤ 1 := by
@@ -132,8 +135,6 @@ theorem logNormalMomentPerturbation_eq_withDensity (ε : ℝ) :
     logNormalMomentPerturbation ε =
       volume.withDensity (logNormalMomentPerturbationPDF ε) := by
   rw [logNormalMomentPerturbation, logNormalMeasure_eq_withDensity (v := 1) 0 one_ne_zero]
-  change ((volume.withDensity (logNormalPDF 0 1)).withDensity fun x =>
-    ENNReal.ofReal (1 + ε * logNormalMomentOscillation x)) = _
   rw [← MeasureTheory.withDensity_mul volume (measurable_logNormalPDF 0 1)
     (measurable_logNormalMomentOscillation.const_mul ε |>.const_add 1 |>.ennreal_ofReal)]
   congr with x
@@ -143,46 +144,6 @@ theorem logNormalMomentPerturbation_eq_withDensity (ε : ℝ) :
     · rw [logNormalPDF_of_pos (lt_of_not_ge hx), logNormalPDFReal_of_pos (lt_of_not_ge hx)]
   rw [Pi.mul_apply, logNormalMomentPerturbationPDF, logNormalMomentPerturbationPDFReal, hpdf,
     ENNReal.ofReal_mul (logNormalPDFReal_nonneg 0 1 x)]
-  rfl
-
-private theorem integral_exp_nat_mul_sin_gaussianReal (n : ℕ) :
-    ∫ y, Real.exp ((n : ℝ) * y) * Real.sin (2 * Real.pi * y) ∂gaussianReal 0 1 = 0 := by
-  let z : ℂ := (n : ℝ) + (2 * Real.pi : ℝ) * Complex.I
-  have hzint : Integrable (fun y : ℝ => Complex.exp (z * y)) (gaussianReal 0 1) := by
-    apply integrable_cexp_mul_of_re_mem_integrableExpSet measurable_id.aemeasurable
-    simp [z]
-  calc
-    _ = ∫ y, (Complex.exp (z * y)).im ∂gaussianReal 0 1 := by
-      congr with y
-      rw [Complex.exp_im]
-      simp only [z, Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re,
-        Complex.I_im, mul_zero, sub_zero, Complex.add_im, Complex.ofReal_im, zero_add,
-        Complex.mul_im, zero_mul, add_zero]
-      congr 2
-      ring_nf
-    _ = (∫ y, Complex.exp (z * y) ∂gaussianReal 0 1).im := integral_im hzint
-    _ = (complexMGF id (gaussianReal 0 1) z).im := by rfl
-    _ = (Complex.exp (z * 0 + (1 : ℂ) * z ^ 2 / 2)).im := by
-      convert congrArg Complex.im (complexMGF_id_gaussianReal (μ := 0) (v := 1) z) using 1
-      norm_num
-    _ = 0 := by
-      rw [Complex.exp_im]
-      have harg : z * 0 + (1 : ℂ) * z ^ 2 / 2 =
-          (((n : ℝ) ^ 2 - (2 * Real.pi) ^ 2) / 2 : ℝ) +
-            ((n : ℝ) * (2 * Real.pi) : ℝ) * Complex.I := by
-        apply Complex.ext
-        · simp [z, pow_two]
-        · simp [z, pow_two]
-          ring_nf
-      rw [harg]
-      simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
-        Complex.I_im, Complex.I_re, mul_one, mul_zero, zero_add]
-      have hsin : Real.sin ((n : ℝ) * (2 * Real.pi)) = 0 := by
-        convert Real.sin_nat_mul_pi (2 * n) using 1
-        push_cast
-        ring_nf
-      simp only [add_zero]
-      rw [hsin, mul_zero]
 
 private theorem integral_pow_mul_oscillation_logNormalMeasure (n : ℕ) :
     ∫ x, x ^ n * logNormalMomentOscillation x ∂logNormalMeasure 0 1 = 0 := by
@@ -194,8 +155,6 @@ private theorem integral_pow_mul_oscillation_logNormalMeasure (n : ℕ) :
 theorem integrable_pow_logNormalMomentPerturbation {ε : ℝ} (hε : |ε| ≤ 1) (n : ℕ) :
     Integrable (fun x => x ^ n) (logNormalMomentPerturbation ε) := by
   rw [logNormalMomentPerturbation]
-  change Integrable (fun x => x ^ n) ((logNormalMeasure 0 1).withDensity fun x =>
-    ENNReal.ofReal (1 + ε * logNormalMomentOscillation x))
   rw [integrable_withDensity_ofReal_iff
       (ρ := fun x => 1 + ε * logNormalMomentOscillation x)
       ((measurable_const.add (measurable_logNormalMomentOscillation.const_mul ε)).aemeasurable)
@@ -219,8 +178,6 @@ theorem integral_pow_logNormalMomentPerturbation {ε : ℝ} (hε : |ε| ≤ 1) (
     ∫ x, x ^ n ∂logNormalMomentPerturbation ε =
       Real.exp ((n : ℝ) ^ 2 / 2) := by
   rw [logNormalMomentPerturbation]
-  change (∫ x, x ^ n ∂(logNormalMeasure 0 1).withDensity fun x =>
-    ENNReal.ofReal (1 + ε * logNormalMomentOscillation x)) = _
   rw [integral_withDensity_ofReal
       (ρ := fun x => 1 + ε * logNormalMomentOscillation x)
       ((measurable_const.add (measurable_logNormalMomentOscillation.const_mul ε)).aemeasurable)
@@ -251,33 +208,6 @@ theorem isProbabilityMeasure_logNormalMomentPerturbation {ε : ℝ} (hε : |ε| 
   have h := integral_pow_logNormalMomentPerturbation hε 0
   simpa [integral_const] using h
 
-private theorem integral_cos_gaussianReal (t : ℝ) :
-    ∫ y, Real.cos (t * y) ∂gaussianReal 0 1 = Real.exp (-(t ^ 2) / 2) := by
-  have hint : Integrable (fun y : ℝ => Complex.exp (t * y * Complex.I))
-      (gaussianReal 0 1) := by
-    have hone : Integrable (fun _ : ℝ => (1 : ℝ)) (gaussianReal 0 1) := integrable_const 1
-    refine Integrable.mono' (f := fun y : ℝ => Complex.exp (t * y * Complex.I)) hone
-      (by fun_prop) (ae_of_all _ fun y => ?_)
-    rw [Complex.norm_exp]
-    simp
-  calc
-    _ = ∫ y, (Complex.exp (t * y * Complex.I)).re ∂gaussianReal 0 1 := by
-      congr with y
-      rw [Complex.exp_re]
-      simp
-    _ = (∫ y, Complex.exp (t * y * Complex.I) ∂gaussianReal 0 1).re := integral_re hint
-    _ = (charFun (gaussianReal 0 1) t).re := by rw [charFun_apply_real]
-    _ = (Complex.exp (t * 0 * Complex.I - (1 : ℂ) * t ^ 2 / 2)).re := by
-      convert congrArg Complex.re (charFun_gaussianReal (μ := 0) (v := 1) t) using 1
-      norm_num
-    _ = Real.exp (-(t ^ 2) / 2) := by
-      have harg : (t : ℂ) * 0 * Complex.I - (1 : ℂ) * t ^ 2 / 2 =
-          ((-(t ^ 2) / 2 : ℝ) : ℂ) := by
-        push_cast
-        ring_nf
-      rw [harg]
-      exact Complex.exp_ofReal_re _
-
 private theorem integral_sq_oscillation_logNormalMeasure_pos :
     0 < ∫ x, logNormalMomentOscillation x ^ 2 ∂logNormalMeasure 0 1 := by
   rw [logNormalMeasure_map_exp, integral_map measurable_exp.aemeasurable (by fun_prop)]
@@ -301,7 +231,8 @@ private theorem integral_sq_oscillation_logNormalMeasure_pos :
           norm_num
         _ = _ := by
           congr with y
-          rw [show 4 * Real.pi * y = 2 * (2 * Real.pi * y) by ring_nf]
+          have hangle : 4 * Real.pi * y = 2 * (2 * Real.pi * y) := by ring
+          rw [hangle]
           rw [Real.cos_two_mul_eq_one_sub]
           ring_nf
 
@@ -309,8 +240,6 @@ private theorem integral_oscillation_logNormalMomentPerturbation {ε : ℝ} (hε
     ∫ x, logNormalMomentOscillation x ∂logNormalMomentPerturbation ε =
       ε * ∫ x, logNormalMomentOscillation x ^ 2 ∂logNormalMeasure 0 1 := by
   rw [logNormalMomentPerturbation]
-  change (∫ x, logNormalMomentOscillation x ∂(logNormalMeasure 0 1).withDensity fun x =>
-    ENNReal.ofReal (1 + ε * logNormalMomentOscillation x)) = _
   rw [integral_withDensity_ofReal
       (ρ := fun x => 1 + ε * logNormalMomentOscillation x)
       ((measurable_const.add (measurable_logNormalMomentOscillation.const_mul ε)).aemeasurable)
@@ -336,8 +265,9 @@ private theorem integral_oscillation_logNormalMomentPerturbation {ε : ℝ} (hε
         ε * ∫ x, logNormalMomentOscillation x ^ 2 ∂logNormalMeasure 0 1 := by
       rw [integral_add hosc (hsq.const_mul ε), integral_const_mul]
     _ = _ := by
-      rw [show (∫ x, logNormalMomentOscillation x ∂logNormalMeasure 0 1) = 0 by
-        simpa using integral_pow_mul_oscillation_logNormalMeasure 0, zero_add]
+      have hmean : ∫ x, logNormalMomentOscillation x ∂logNormalMeasure 0 1 = 0 := by
+        simpa using integral_pow_mul_oscillation_logNormalMeasure 0
+      rw [hmean, zero_add]
 
 /-- Distinct valid perturbation parameters give distinct probability measures. -/
 theorem injOn_logNormalMomentPerturbation :
