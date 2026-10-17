@@ -253,7 +253,7 @@ def W1p.compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = 
     W1p volume V p →L[ℝ] W1p volume U p :=
   W1p.compMeasurePreservingL (M := 1) g.measurePreserving hUV
     g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
-    fun x _ => norm_fderiv_affineIsometryEquiv_le g x
+    fun x _ => g.norm_fderiv_le x
 
 /-- The value of `u ∘ g` is the composition of the value of `u` with `g`. -/
 theorem W1p.value_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V)
@@ -270,7 +270,7 @@ theorem W1p.gradient_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F')
       fun x => g.linearIsometryEquiv.symm (W1p.gradient u (g x)) := by
   filter_upwards [W1p.gradient_compMeasurePreservingL_ae (p := p) (M := 1) g.measurePreserving hUV
     g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
-    (fun x _ => norm_fderiv_affineIsometryEquiv_le g x) u] with x hx
+    (fun x _ => g.norm_fderiv_le x) u] with x hx
   -- The derivative of `g` is its linear part, whose adjoint is its inverse.
   have hg : ⇑g = fun y => g.linearIsometryEquiv y + g 0 := funext fun y => by
     simpa using g.map_vadd 0 y
@@ -287,7 +287,7 @@ theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U
   refine (ContinuousLinearMap.le_of_opNorm_le _ ?_ u).trans_eq (one_mul _)
   simpa using W1p.norm_compMeasurePreservingL_le (p := p) (M := 1) g.measurePreserving hUV
     g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
-    fun x _ => norm_fderiv_affineIsometryEquiv_le g x
+    fun x _ => g.norm_fderiv_le x
 
 end AffineIsometry
 
