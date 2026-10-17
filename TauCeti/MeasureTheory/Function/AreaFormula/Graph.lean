@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
-public import Mathlib.Analysis.Calculus.FDeriv.Prod
+public import TauCeti.Analysis.Calculus.FDeriv.WithLp
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
@@ -32,9 +32,6 @@ measure.
 
 ## Main declarations
 
-* `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
-* `HasFDerivAt.normalGraphEmbedding`: the derivative of a graph parametrization is the graph of
-  the derivative.
 * `LipschitzWith.lintegral_normalGraphEmbedding_image_eq_lintegral_normDet_fderiv_mul`: the
   weighted graph area formula.
 * `LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_lintegral`: the
@@ -64,44 +61,6 @@ open MeasureTheory Set Module
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-section Linear
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The continuous linear graph map `x ↦ (A x, x)` associated to `A : E →L[ℝ] ℝ`. -/
-def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
-    E →L[ℝ] WithLp 2 (ℝ × E) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap ∘L
-    A.prod (ContinuousLinearMap.id ℝ E)
-
-/-- The continuous linear graph map is the normal graph parametrization of `A`. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.normalGraphL_apply (A : E →L[ℝ] ℝ) (x : E) :
-    A.normalGraphL x = normalGraphEmbedding A x :=
-  (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst A x).symm
-    (normalGraphEmbedding_snd A x).symm
-
-/-- The derivative of a graph parametrization is the graph of the derivative. -/
-theorem _root_.HasFDerivAt.normalGraphEmbedding {φ : E → ℝ} {φ' : E →L[ℝ] ℝ} {x : E}
-    (hφ : HasFDerivAt φ φ' x) :
-    HasFDerivAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL x := by
-  have h : TauCeti.normalGraphEmbedding φ =
-      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘ fun y ↦ (φ y, y) :=
-    funext fun y ↦ (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ y)
-      (normalGraphEmbedding_snd φ y)
-  rw [h]
-  exact ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm :
-    (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).hasFDerivAt.comp x (hφ.prodMk (hasFDerivAt_id x))
-
-/-- At a differentiability point, the Fréchet derivative of a graph parametrization is the
-continuous linear graph of the derivative. -/
-theorem _root_.DifferentiableAt.fderiv_normalGraphEmbedding {φ : E → ℝ} {x : E}
-    (hφ : DifferentiableAt ℝ φ x) :
-    fderiv ℝ (TauCeti.normalGraphEmbedding φ) x = (fderiv ℝ φ x).normalGraphL :=
-  hφ.hasFDerivAt.normalGraphEmbedding.fderiv
-
-end Linear
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
