@@ -42,6 +42,15 @@ namespace TauCeti
 
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 
+-- Subtype restrictions and `Opens.toTopCat` have different morphism presentations.
+-- Compare their composites pointwise before applying the chain functor.
+private lemma map_comp_eq_of_apply_eq {D : Type u} [Category.{v} D]
+    (F : TopCat.{w} ⥤ D) {A B E : TopCat.{w}}
+    (f : A ⟶ B) (g : B ⟶ E) (h : A ⟶ E) (hfg : ∀ x, g (f x) = h x) :
+    F.map f ≫ F.map g = F.map h := by
+  rw [← F.map_comp]
+  exact congrArg F.map (TopCat.ext hfg)
+
 variable {X Y Z : TopCat.{w}} {ι : Type w}
   (U : ι → Opens X) (V : ι → Opens Y) (f : X ⟶ Y)
   (hf : ∀ i, Set.MapsTo f (U i) (V i))
@@ -64,11 +73,8 @@ def cechSingularChainsMap : cechSingularChains U R ⟶ cechSingularChains V R wh
       ⟨hmaps.restrict f _ _, f.hom.continuous.continuousOn.mapsToRestrict hmaps⟩)
   naturality s t a := by
     dsimp only [cechSingularChains_map]
-    -- The restriction is presented as a subtype map, while the functor uses `Opens.toTopCat`.
-    erw [← ((singularChainComplexFunctor C).obj R).map_comp,
-      ← ((singularChainComplexFunctor C).obj R).map_comp]
-    apply congrArg ((singularChainComplexFunctor C).obj R).map
-    exact TopCat.ext fun _ ↦ rfl
+    exact (map_comp_eq_of_apply_eq ((singularChainComplexFunctor C).obj R)
+      _ _ _ (fun _ ↦ rfl)).trans (((singularChainComplexFunctor C).obj R).map_comp _ _)
 
 /-- The map on an intersection is induced by any restriction of `f` to that intersection.
 The equation with the ambient inclusions specifies the restriction without choosing a
@@ -90,11 +96,8 @@ lemma cechSingularChainsMap_app_comp_inclusion (s : Finset ι) :
       ((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.inf U)) ≫
         ((singularChainComplexFunctor C).obj R).map f := by
   dsimp only [cechSingularChainsMap]
-  -- The restriction is presented as a subtype map, while the functor uses `Opens.toTopCat`.
-  erw [← ((singularChainComplexFunctor C).obj R).map_comp,
-    ← ((singularChainComplexFunctor C).obj R).map_comp]
-  apply congrArg ((singularChainComplexFunctor C).obj R).map
-  exact TopCat.ext fun _ ↦ rfl
+  exact (map_comp_eq_of_apply_eq ((singularChainComplexFunctor C).obj R)
+    _ _ _ (fun _ ↦ rfl)).trans (((singularChainComplexFunctor C).obj R).map_comp _ _)
 
 /-- Identity maps act identically on singular chains of finite intersections. -/
 @[simp]
@@ -115,10 +118,8 @@ lemma cechSingularChainsMap_comp :
   apply NatTrans.ext
   funext s
   dsimp only [cechSingularChainsMap, NatTrans.comp_app]
-  -- The restriction is presented as a subtype map, while the functor uses `Opens.toTopCat`.
-  erw [← ((singularChainComplexFunctor C).obj R).map_comp]
-  apply congrArg ((singularChainComplexFunctor C).obj R).map
-  exact TopCat.ext fun _ ↦ rfl
+  exact (map_comp_eq_of_apply_eq ((singularChainComplexFunctor C).obj R)
+    _ _ _ (fun _ ↦ rfl)).symm
 
 variable [LinearOrder ι]
 
