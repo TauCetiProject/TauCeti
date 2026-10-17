@@ -60,9 +60,13 @@ variable
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V] [ContMDiffVectorBundle 1 F V I]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
   {x : M} {ι : Type*} (b : Basis ι 𝕜 F)
   {e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)} [MemTrivializationAtlas e]
+
+section
+
+variable [ContMDiffVectorBundle 1 F V I]
 
 /-- A local frame is dual to its own coefficient functionals on the basis sections at `x`. -/
 @[simp]
@@ -78,6 +82,8 @@ theorem localFrameCoeff_localFrame [DecidableEq ι] (hx : x ∈ e.baseSet) (i j 
     e.localFrameCoeff I b i x (e.localFrame b j x) = if i = j then 1 else 0 := by
   rw [e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_basisAt b hx]
 
+end
+
 /-- The continuous inverse of a trivialization transports a model-fibre basis vector to the
 corresponding local-frame vector. -/
 theorem symmL_basis_eq_localFrame (hx : x ∈ e.baseSet) (i : ι) :
@@ -92,7 +98,6 @@ theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
 
-omit [ContMDiffVectorBundle 1 F V I] in
 /-- The matrix of a coordinate change between two vector-bundle trivializations is the
 change-of-basis matrix between the corresponding local frames. -/
 theorem coordChangeL_toMatrix [Fintype ι] [DecidableEq ι]
@@ -111,7 +116,7 @@ theorem coordChangeL_toMatrix [Fintype ι] [DecidableEq ι]
 
 section Hom
 
-variable [Finite ι] [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
   [∀ x, AddCommGroup (V' x)] [∀ x, Module 𝕜 (V' x)] [∀ x, TopologicalSpace (V' x)]
@@ -119,7 +124,6 @@ variable [Finite ι] [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   {e' : Trivialization F' (TotalSpace.proj : TotalSpace F' V' → M)} [MemTrivializationAtlas e']
   {n : ℕ∞ω} {u : Set M}
 
-omit [ContMDiffVectorBundle 1 F V I] [Finite ι] in
 /-- A continuous linear map out of a finite-dimensional space is the sum, over a basis of the
 source, of the `smulRight`s of its values on that basis. -/
 private theorem eq_sum_coord_smulRight [Fintype ι] (T : F →L[𝕜] F') :
@@ -128,10 +132,9 @@ private theorem eq_sum_coord_smulRight [Fintype ι] (T : F →L[𝕜] F') :
   refine ContinuousLinearMap.coe_injective (b.ext fun j ↦ ?_)
   simp [Basis.coord_apply, Finsupp.single_apply]
 
-variable [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul 𝕜 (V' x)]
+variable [Finite ι] [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul 𝕜 (V' x)]
   [ContMDiffVectorBundle n F V I] [ContMDiffVectorBundle n F' V' I]
 
-omit [ContMDiffVectorBundle 1 F V I] in
 /-- **A hom-bundle section is tested on a local frame.** A section `A` of the bundle of continuous
 linear maps from `V` to `V'` is `C^n` on an open subset of `e.baseSet ∩ e'.baseSet` as soon as each
 of its evaluations `A (e.localFrame b j)` on the local frame of the source bundle is. -/

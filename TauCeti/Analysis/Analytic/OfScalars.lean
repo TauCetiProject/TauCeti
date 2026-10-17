@@ -24,10 +24,12 @@ open scoped BigOperators
 
 namespace FormalMultilinearSeries
 
-variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E]
-  [IsTopologicalRing E]
+variable {𝕜 E : Type*}
 
-omit [TopologicalSpace E] [IsTopologicalRing E] in
+section
+
+variable [Field 𝕜] [Ring E] [Algebra 𝕜 E]
+
 private theorem prod_ofFn_smul {n : ℕ} (a : Fin n → 𝕜) (b : Fin n → E) :
     (List.ofFn fun i ↦ a i • b i).prod = (∏ i, a i) • (List.ofFn b).prod := by
   induction n with
@@ -37,7 +39,8 @@ private theorem prod_ofFn_smul {n : ℕ} (a : Fin n → 𝕜) (b : Fin n → E) 
     simp only [List.prod_cons, ih]
     exact smul_mul_smul_comm _ _ _ _
 
-omit [Ring E] [TopologicalSpace E] [IsTopologicalRing E] in
+end
+
 private theorem ofFn_embedding_eq_block {n : ℕ} (p : Composition n) (v : Fin n → E)
     (i : Fin p.length) :
     List.ofFn (fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)) =
@@ -79,7 +82,8 @@ private theorem ofFn_embedding_eq_block {n : ℕ} (p : Composition n) (v : Fin n
     apply Fin.ext
     rfl
 
-omit [TopologicalSpace E] [IsTopologicalRing E] in
+variable [Field 𝕜] [Ring E] [Algebra 𝕜 E]
+
 private theorem prod_blocks {n : ℕ} (p : Composition n) (v : Fin n → E) :
     (List.ofFn fun i : Fin p.length ↦
         (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).prod).prod =
@@ -98,6 +102,8 @@ private theorem prod_blocks {n : ℕ} (p : Composition n) (v : Fin n → E) :
   have hsplit : (List.ofFn v).splitWrtComposition p' =
       (List.ofFn v).splitWrtComposition p := by rfl
   rw [← hsplit, List.flatten_splitWrtComposition]
+
+variable [TopologicalSpace E] [IsTopologicalRing E]
 
 private theorem prod_applyComposition_ofScalars {n : ℕ} (d : ℕ → 𝕜) (p : Composition n)
     (v : Fin n → E) :

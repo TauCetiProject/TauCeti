@@ -29,29 +29,35 @@ public section
 
 namespace Finset
 
-variable {α β γ δ : Type*} [DecidableEq α] [DecidableEq β]
-  [DecidableEq γ] [DecidableEq δ]
+variable {α β γ δ : Type*}
 
-omit [DecidableEq α] [DecidableEq β] in
+section
+
+variable [DecidableEq γ] [DecidableEq δ]
+
 /-- Mapping the two summands commutes with disjoint union. -/
 @[simp] theorem image_sumMap_disjSum (s : Finset α) (t : Finset β)
     (f : α → γ) (g : β → δ) :
     (s.disjSum t).image (Sum.map f g) = (s.image f).disjSum (t.image g) := by
   ext (x | x) <;> simp [mem_image, mem_disjSum, Sum.exists]
 
-omit [DecidableEq α] [DecidableEq β] in
 /-- The left projection of the image under a map of summands. -/
 @[simp] theorem toLeft_image_sumMap (s : Finset (α ⊕ β)) (f : α → γ) (g : β → δ) :
     (s.image (Sum.map f g)).toLeft = s.toLeft.image f := by
   conv_lhs => rw [← toLeft_disjSum_toRight (u := s), image_sumMap_disjSum]
   simp
 
-omit [DecidableEq α] [DecidableEq β] in
 /-- The right projection of the image under a map of summands. -/
 @[simp] theorem toRight_image_sumMap (s : Finset (α ⊕ β)) (f : α → γ) (g : β → δ) :
     (s.image (Sum.map f g)).toRight = s.toRight.image g := by
   conv_lhs => rw [← toLeft_disjSum_toRight (u := s), image_sumMap_disjSum]
   simp
+
+end
+
+section
+
+variable [DecidableEq α] [DecidableEq β]
 
 /-- Erasing a left-tagged element erases it from the left projection. -/
 @[simp] theorem toLeft_erase_inl (s : Finset (α ⊕ β)) (a : α) :
@@ -65,7 +71,8 @@ omit [DecidableEq α] [DecidableEq β] in
   ext x
   simp
 
-omit [DecidableEq α] [DecidableEq β] in
+end
+
 /-- Disjointness from a disjoint sum is equivalent to disjointness from its two projections. -/
 @[simp]
 theorem disjoint_disjSum_iff {ρ : Finset (α ⊕ β)} {s : Finset α} {t : Finset β} :
