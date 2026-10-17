@@ -554,7 +554,7 @@ theorem isPretransitive_iff_exists_associated_pow (hp : p ≠ 0) :
     MulAction.IsPretransitive p.Gal (p.rootSet E) ↔
       ∃ q : F[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) p :=
   (isPretransitive_iff_subsingleton_factors E hp).trans
-    (Factors.subsingleton_iff_exists_associated_pow hp)
+    Factors.subsingleton_iff_exists_associated_pow
 
 /-- For nonzero `p`, the intrinsic Galois action on the roots in the splitting field is transitive
 exactly when `p` has at most one monic irreducible factor.
@@ -573,7 +573,7 @@ theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_iff_subsingleton_fact
     obtain ⟨g, hg⟩ := h.exists_smul_eq y x
     exact Subtype.ext (hx.symm.trans
       ((mem_orbit_iff_minpoly_eq_splittingField.mp ⟨g, hg⟩).trans hy))
-  · obtain ⟨q, hq, n, hqp⟩ := (Factors.subsingleton_iff_exists_associated_pow hp).mp h
+  · obtain ⟨q, hq, n, hqp⟩ := Factors.subsingleton_iff_exists_associated_pow.mp h
     exact Gal.galActionAux_isPretransitive_of_dvd_pow hq hqp.symm.dvd
 
 /-- **Transitivity without separability, inside the splitting field.** For nonzero `p`, the
@@ -586,6 +586,6 @@ theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_iff_exists_associated
     MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) ↔
       ∃ q : F[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) p :=
   (Gal.galActionAux_isPretransitive_iff_subsingleton_factors hp).trans
-    (Factors.subsingleton_iff_exists_associated_pow hp)
+    Factors.subsingleton_iff_exists_associated_pow
 
 end TauCeti
