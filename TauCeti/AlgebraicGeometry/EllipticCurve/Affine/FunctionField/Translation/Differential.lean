@@ -52,9 +52,9 @@ private theorem D_translation_genericX_some {x y : F} (h : (W⁄F).toAffine.Nons
   rw [translation_apply_genericX_some W h]
   rw [hd, invariantDifferential_def, invariantDifferentialDenom_eq_evalEval_polynomialY]
   congr 1
-  simp only [map_add, map_mul, map_ofNat, AlgEquiv.commutes, translation_apply_genericX_some,
-    translation_apply_genericY_some, evalEval_polynomialY, WeierstrassCurve.baseChange,
-    WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
+  rw [← translation_apply_genericX_some W h, ← translation_apply_genericY_some W h]
+  nth_rw 1 [baseChange_polynomialY W (translation W (.some x y h)).toAlgHom]
+  exact Polynomial.map_mapRingHom_evalEval (translation W (.some x y h)).toAlgHom.toRingHom _ _ _
 
 /-- **Every translation fixes the invariant differential** `ω = dx / (2y + a₁x + a₃)`
 (Silverman III.5.1). This holds over any field, including for translating points of order two. -/
@@ -70,14 +70,13 @@ theorem mapSemilinear_translation_invariantDifferential (P : (W⁄F).toAffine.Po
     rw [← Point.zero_def, translation_zero]
     exact KaehlerDifferential.mapSemilinear_id_apply _
   | some x y h =>
-    have hdenom : translation W (.some x y h) (invariantDifferentialDenom W) ≠ 0 := by
-      simpa only [map_zero] using
-        (translation W (.some x y h)).injective.ne (invariantDifferentialDenom_ne_zero W)
-    rw [invariantDifferential_def, KaehlerDifferential.mapSemilinear_smul,
+    have hdenom : translation W (.some x y h) (invariantDifferentialDenom W) ≠ 0 :=
+      (map_ne_zero _).mpr (invariantDifferentialDenom_ne_zero W)
+    nth_rw 1 [invariantDifferential_def]
+    rw [KaehlerDifferential.mapSemilinear_smul,
       KaehlerDifferential.mapSemilinear_D, map_inv₀, AlgEquiv.toAlgHom_apply,
       AlgEquiv.toAlgHom_apply, D_translation_genericX_some W h,
       smul_smul, inv_mul_cancel₀ hdenom, one_smul]
-    exact invariantDifferential_def W
 
 end WeierstrassCurve.Affine
 
