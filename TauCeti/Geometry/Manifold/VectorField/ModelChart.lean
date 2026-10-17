@@ -47,7 +47,8 @@ theorem mfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E)
     (V : (z : E) → TangentSpace 𝓘(ℝ, E) z) {y : M} (hy : y ∈ e.source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) = V (e y) := by
   rw [VectorField.mpullback_apply]
-  exact (isInvertible_mfderiv_chart he hy).self_apply_inverse _
+  exact (isInvertible_mfderiv_chart
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy).self_apply_inverse _
 
 /-- The derivative of `f` along the pullback of a vector field `V` by a chart `e`, where
 `f = h ∘ e` on the source of `e`. -/
@@ -60,7 +61,7 @@ theorem mvfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E
   -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity of
   -- `ℝ`, so the two agree definitionally; Mathlib has no rewrite lemma between them.
   change mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) = _
-  rw [mfderiv_eq_fderiv_comp_of_eqOn he hfh hy hh]
+  rw [mfderiv_eq_fderiv_comp_of_eqOn (IsManifold.maximalAtlas_subset_of_le (by simp) he) hfh hy hh]
   exact congrArg (fderiv ℝ h (e y)) (mfderiv_mpullback_apply he V hy)
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -79,7 +80,8 @@ theorem contMDiffOn_mpullback (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) �
     contMDiffAt_vectorSpace_iff_contDiffAt.2
       ((hV (e y) (e.map_source hy)).contDiffAt (e.open_target.mem_nhds (e.map_source hy)))
   exact (ContMDiffAt.mpullback_vectorField_preimage hVy (contMDiffAt_of_mem_maximalAtlas he hy)
-    (isInvertible_mfderiv_chart he hy) (by simp)).contMDiffWithinAt
+    (isInvertible_mfderiv_chart (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy)
+    (by simp)).contMDiffWithinAt
 
 end Pullback
 

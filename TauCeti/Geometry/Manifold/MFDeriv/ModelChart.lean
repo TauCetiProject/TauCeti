@@ -16,21 +16,23 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 Let `M` be a manifold modelled on a normed space `E` over `𝕜` with the trivial model `𝓘(𝕜, E)`, so
 that a chart `e` of the maximal atlas is an honest map `M → E`. If `f = h ∘ e` on the source of `e`
 for a map `f : M → F` into a normed space `F`, then the differential of `f` is the Fréchet
-derivative of `h` composed with the derivative of the chart, which is invertible, so the critical
-points of `f` in the source of `e` are the preimages of the critical points of `h`. This file
-records these facts and their consequences for a smooth map: its coordinate expression in the
-preferred chart is smooth, it has the same critical points, and the points where its differential is
-nonzero form an open set.
+derivative of `h` composed with the derivative of the chart, which is invertible, so the
+differential of `f` vanishes at a point in the source of `e` if and only if the Fréchet derivative
+of `h` vanishes at its image under `e`. This file records these facts and their consequences for a
+smooth map: its coordinate expression in the preferred chart is smooth, its differential vanishes at
+a point if and only if the Fréchet derivative of its coordinate expression vanishes there, and the
+points where its differential is nonzero form an open set.
 
 ## Main results
 
 * `TauCeti.mfderiv_eq_fderiv_comp_of_eqOn`: `df_y = dh_{e y} ∘ de_y` where `f = h ∘ e`.
-* `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the maximal atlas is
+* `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
   invertible.
-* `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: the critical points of `f` in the source of `e` are the
-  preimages of the critical points of `h`.
-* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: a point is critical for a smooth `f`
-  exactly when it is critical for the coordinate expression of `f` in the preferred chart.
+* `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
+  `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
+* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of a smooth `f`
+  vanishes at `x` if and only if the Fréchet derivative of its coordinate expression in the
+  preferred chart vanishes at `extChartAt 𝓘(𝕜, E) x x`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a smooth map is
   nonzero form an open set.
 -/
@@ -50,32 +52,30 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → F} {e : OpenPartialHomeomorph M E} {h : E → F}
 
-/-- If `f = h ∘ e` on the source of a chart `e` of the maximal atlas, with `h` differentiable,
+/-- If `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, with `h` differentiable,
 then `df_y = dh_{e y} ∘ de_y`. -/
-theorem mfderiv_eq_fderiv_comp_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) ∞ M)
+theorem mfderiv_eq_fderiv_comp_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
     (hfh : EqOn f (h ∘ e) e.source) {y : M} (hy : y ∈ e.source)
     (hh : DifferentiableAt 𝕜 h (e y)) :
     mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y =
       (fderiv 𝕜 h (e y) : E →L[𝕜] F).comp (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e y) := by
   have hev : f =ᶠ[𝓝 y] h ∘ e := Filter.eventuallyEq_of_mem (e.open_source.mem_nhds hy) hfh
-  rw [hev.mfderiv_eq]
-  have he1 : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp) he
-  rw [mfderiv_comp y (hh.mdifferentiableAt) (mdifferentiableAt_of_mem_maximalAtlas he1 hy),
+  rw [hev.mfderiv_eq,
+    mfderiv_comp y hh.mdifferentiableAt (mdifferentiableAt_of_mem_maximalAtlas he hy),
     mfderiv_eq_fderiv]
   rfl
 
-/-- `isInvertible_mfderiv_extend` for a chart of the maximal atlas of a manifold modelled on its
-own model space, where the extended chart is the chart itself. -/
-theorem isInvertible_mfderiv_chart (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) ∞ M)
+/-- `isInvertible_mfderiv_extend` for a chart of the `C^1` maximal atlas of a manifold modelled on
+its own model space, where the extended chart is the chart itself. -/
+theorem isInvertible_mfderiv_chart (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
     {y : M} (hy : y ∈ e.source) : (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e y).IsInvertible := by
-  have := isInvertible_mfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy
+  have := isInvertible_mfderiv_extend he hy
   have hext : (e.extend 𝓘(𝕜, E) : M → E) = e := by ext z; simp
   rwa [hext] at this
 
-/-- Where `f = h ∘ e` on the source of a chart `e`, the critical points of `f` in the source are the
-preimages of the critical points of `h`. -/
-theorem mfderiv_eq_zero_iff_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) ∞ M)
+/-- Where `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, the differential of
+`f` vanishes at `y` in the source if and only if the Fréchet derivative of `h` vanishes at `e y`. -/
+theorem mfderiv_eq_zero_iff_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
     (hfh : EqOn f (h ∘ e) e.source) {y : M} (hy : y ∈ e.source)
     (hh : DifferentiableAt 𝕜 h (e y)) :
     mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y = 0 ↔ fderiv 𝕜 h (e y) = 0 := by
@@ -113,8 +113,9 @@ theorem contDiffOn_comp_chartAt_symm (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F)
     ContDiffOn 𝕜 ∞ (f ∘ (chartAt E p).symm) (chartAt E p).target :=
   (hf.comp_contMDiffOn contMDiffOn_chart_symm).contDiffOn
 
-/-- A point is critical for a smooth `f` exactly when it is critical for the coordinate expression
-of `f` in the preferred extended chart at that point. -/
+/-- The differential of a smooth `f` vanishes at `x` if and only if the Fréchet derivative of the
+coordinate expression of `f` in the preferred extended chart at `x` vanishes at
+`extChartAt 𝓘(𝕜, E) x x`. -/
 theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) ∞ f)
     (x : M) : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt 𝓘(𝕜, E) x).symm) (extChartAt 𝓘(𝕜, E) x x) = 0 := by
