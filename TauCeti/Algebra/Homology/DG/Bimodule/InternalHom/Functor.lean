@@ -59,8 +59,14 @@ private theorem comp_mem_cochains (u : M' ⟶ M) (v : N ⟶ N') {p : ℤ}
     (hf : f ∈ dgRightModuleCochains (R := R) (ℳ := M.grading) (ℳN := N.grading) p) :
     v.toLinearMap ∘ₗ f ∘ₗ u.val.toLinearMap ∈
       dgRightModuleCochains (R := R) (ℳ := M'.grading) (ℳN := N'.grading) p := by
-  refine dgRightModuleCochains.mem_iff.2 (LinearMap.isHomogeneous_def.2 fun q x hx ↦ ?_)
-  exact v.map_mem' ((dgRightModuleCochains.mem_iff.1 hf).map_mem (GradedFunLike.map_mem u hx))
+  let u₀ := (dgRightModuleHomEquivZeroCocycles M'.isDGRightModule M.isDGRightModule u.val).1
+  let v₀ := (dgRightModuleHomEquivZeroCocycles N.isDGRightModule N'.isDGRightModule v).1
+  let c := dgRightModuleCochains.comp v₀
+    (dgRightModuleCochains.comp ⟨f, hf⟩ u₀ (add_zero p)) (zero_add p)
+  convert c.2 using 1
+  ext x
+  simp only [c, dgRightModuleCochains.comp_apply, LinearMap.comp_apply,
+    u₀, v₀, dgRightModuleHomEquivZeroCocycles_apply, DGRightModuleHom.coe_toLinearMap]
 
 private def mapLinearMap (u : M' ⟶ M) (v : N ⟶ N') :
     InternalHom 𝒜 B M.grading N.grading →ₗ[Aᵐᵒᵖ] InternalHom 𝒜 B M'.grading N'.grading where
