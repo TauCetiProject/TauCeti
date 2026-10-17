@@ -152,8 +152,9 @@ theorem intervalIntegralOperator_apply (a b : ℝ) (hab : a ≤ b)
     intervalIntegralOperator a b hab f t =
       ∫ s in a..t, f (Set.projIcc a b hab s) := by
   let _ : Fact (a ≤ b) := ⟨hab⟩
-  rw [intervalIntegralOperator]
-  exact intervalPrimitive_apply a b f t
+  rw [intervalIntegralOperator, LinearMap.mkContinuous_apply]
+  simpa only [LinearMap.coe_mk, AddHom.coe_mk, intervalExtension_apply] using
+    intervalPrimitive_apply a b f t
 
 /-- Volterra integration on the unit interval, obtained from the general compact-interval
 operator. -/
