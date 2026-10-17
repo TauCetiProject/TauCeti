@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Reductive.Basic
 import TauCeti.Algebra.Lie.Submodule.Interval
-import TauCeti.Algebra.Lie.Weights.Diagonalizable
+import TauCeti.Algebra.Lie.Weights.Semisimple
 import Mathlib.Algebra.Lie.LieTheorem
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Order.CompactlyGenerated.Intervals

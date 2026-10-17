@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
+public import TauCeti.Algebra.Lie.Weights.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
@@ -46,8 +47,6 @@ to honest.
   the dimension counts consume; the honest-weight-space refinement is below.
 * `TauCeti.eq_zero_of_forall_genWeightSpace`: a linear functional vanishing on every generalized
   weight space is zero.
-* `TauCeti.genWeightSpace_eq_weightSpace_of_isSemisimple`: generalized and honest weight spaces
-  agree whenever every acting endomorphism is semisimple.
 * `TauCeti.isSemisimple_toEnd_coroot`: a coroot acts semisimply on a finite-dimensional module.
 * `TauCeti.isSemisimple_toEnd_cartan`: **every element of the Cartan subalgebra acts semisimply.**
 * `TauCeti.genWeightSpace_eq_weightSpace`: **the generalized weight spaces are honest weight
@@ -146,28 +145,6 @@ theorem eq_zero_of_genWeightSpace_ne_bot_of_isTrivial {chi : L → K}
   · exact absurd h hmne
 
 end Trivial
-
-/-! ### Honest weight spaces for semisimple actions -/
-
-section Semisimple
-
-variable {K : Type u} {L : Type v} {M : Type w} [Field K] [LieRing L] [LieAlgebra K L]
-  [LieRing.IsNilpotent L]
-  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-
-/-- Generalized and honest weight spaces of a nilpotent Lie algebra agree when every acting
-endomorphism is semisimple. No splitting or finite-dimensionality hypothesis is needed. -/
-theorem genWeightSpace_eq_weightSpace_of_isSemisimple
-    (h : ∀ x : L, (toEnd K L M x).IsSemisimple) (χ : L → K) :
-    genWeightSpace M χ = weightSpace M χ := by
-  ext m
-  rw [mem_genWeightSpace, mem_weightSpace]
-  refine forall_congr' fun x ↦ ?_
-  rw [← Module.End.mem_maxGenEigenspace,
-    (h x).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace,
-    Module.End.mem_eigenspace_iff, toEnd_apply_apply]
-
-end Semisimple
 
 /-! ### Semisimplicity of the Cartan action -/
 
