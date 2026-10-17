@@ -8,10 +8,12 @@ module
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Affine images of real laws
@@ -42,6 +44,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
+* `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
+  probability law, intercept, and slope;
 * `TauCeti.Probability.affineDensity`,
   `TauCeti.Probability.map_affine_withDensity_volume` — the transformed density and the
   measure-level change of variables;
@@ -85,6 +89,15 @@ theorem map_affine_map_affine (a b c d : ℝ) :
   ext x
   simp only [Function.comp_apply]
   ring
+
+/-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
+@[fun_prop]
+theorem measurable_map_affine :
+    Measurable fun p : ProbabilityMeasure ℝ × ℝ × ℝ =>
+      (p.1 : Measure ℝ).map fun x => p.2.1 + p.2.2 * x := by
+  exact measurable_subtype_coe.comp
+    (TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
+      (f := fun p : ℝ × ℝ => fun x => p.1 + p.2 * x) (by fun_prop))
 
 /-! ### Densities -/
 

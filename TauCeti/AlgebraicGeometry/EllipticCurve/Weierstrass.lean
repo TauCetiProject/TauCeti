@@ -57,9 +57,8 @@ public section
 
 namespace WeierstrassCurve
 
-variable {R : Type*} [CommRing R] (E : WeierstrassCurve R) [E.IsElliptic]
+variable {R : Type*} [CommRing R] (E : WeierstrassCurve R)
 
-omit [E.IsElliptic] in
 /-- Where `2 = 0`, a curve with nonzero discriminant has `a₁ ≠ 0` or `a₃ ≠ 0`: otherwise
 `a₁ = a₃ = 0` makes the partial derivative `∂/∂y = 2y + a₁x + a₃` vanish identically, so
 `Δ = 0`. -/
@@ -75,6 +74,10 @@ lemma Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : Weierst
   have h : (1728 : R) * W.Δ = 1728 * W'.Δ := by rw [c_relation, c_relation, h₄, h₆]
   exact h1728.left h
 
+section
+
+variable [E.IsElliptic]
+
 /-- `j(E) = 1728` if and only if `c₆(E)² = 0`, by the relation `1728·Δ = c₄³ - c₆²`. This is the
 analogue for `j = 1728` of `WeierstrassCurve.j_eq_zero_iff'` (`j = 0 ↔ c₄³ = 0`). -/
 lemma j_eq_1728_iff' : E.j = 1728 ↔ E.c₆ ^ 2 = 0 := by
@@ -86,6 +89,8 @@ analogue for `j = 1728` of `WeierstrassCurve.j_eq_zero_iff` (`j = 0 ↔ c₄ = 0
 lemma j_eq_1728_iff [IsReduced R] : E.j = 1728 ↔ E.c₆ = 0 := by
   rw [j_eq_1728_iff', pow_eq_zero_iff two_ne_zero]
 
+end
+
 section BaseChange
 
 variable {A : Type*} [CommRing A] [Algebra R A]
@@ -93,30 +98,24 @@ variable {A : Type*} [CommRing A] [Algebra R A]
 /-- **Base change preserves ellipticity.** Mathlib's instance is stated for
 `WeierstrassCurve.map`, which instance search does not see through the plain `def`
 `WeierstrassCurve.baseChange`. -/
-instance isElliptic_baseChange : (E.baseChange A).IsElliptic :=
+instance isElliptic_baseChange [E.IsElliptic] : (E.baseChange A).IsElliptic :=
   inferInstanceAs (E.map _).IsElliptic
 
-variable (hRA : Function.Injective (algebraMap R A))
-
-include hRA
-
-omit [E.IsElliptic] in
 /-- **`c₄ ≠ 0` survives base change** along an injection, since `c₄` of the base change is the
 image of `c₄`. Stated on `c₄` rather than on `j`: nothing here needs `[IsReduced R]` or the
 `j`-criterion — nor even that `E` be elliptic — and a caller with `j ≠ 0` gets the hypothesis from
 `j_eq_zero_iff`. -/
-lemma baseChange_c₄_ne_zero (hc₄ : E.c₄ ≠ 0) : (E.baseChange A).c₄ ≠ 0 := by
+lemma baseChange_c₄_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc₄ : E.c₄ ≠ 0) :
+    (E.baseChange A).c₄ ≠ 0 := by
   simp only [baseChange, map_c₄]
   exact (map_ne_zero_iff _ hRA).mpr hc₄
 
-omit [E.IsElliptic] in
 /-- **`c₆ ≠ 0` survives base change** along an injection. The companion of
 `baseChange_c₄_ne_zero`; a caller with `j ≠ 1728` gets the hypothesis from `j_eq_1728_iff`. -/
-lemma baseChange_c₆_ne_zero (hc₆ : E.c₆ ≠ 0) : (E.baseChange A).c₆ ≠ 0 := by
+lemma baseChange_c₆_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc₆ : E.c₆ ≠ 0) :
+    (E.baseChange A).c₆ ≠ 0 := by
   simp only [baseChange, map_c₆]
   exact (map_ne_zero_iff _ hRA).mpr hc₆
-
-omit hRA
 
 /-- **The discriminant of a base change is the image of the discriminant**, stated against an
 equation `W` known to be the base change of `W₀`. -/

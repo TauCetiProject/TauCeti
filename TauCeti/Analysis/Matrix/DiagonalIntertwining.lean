@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.CharPowerSeries
+public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
 
 /-!
 # Principal-minor series under diagonal intertwining

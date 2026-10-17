@@ -50,7 +50,11 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω α β ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+variable {Ω α β ι : Type*}
+
+section
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The finite-dimensional law of a family along a coordinate selection `k`.
 
@@ -172,30 +176,30 @@ theorem pathLaw_congr {μ : Measure Ω} {X Y : ℕ → Ω → α} (h : ∀ i, X 
 theorem pathLaw_coord (ρ : Measure (ℕ → α)) : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ := by
   rw [pathLaw_def]; exact Measure.map_id'
 
-omit [MeasurableSpace α] in
+end
+
 @[simp]
 theorem prefixProj_apply (n : ℕ) (x : ℕ → α) (i : Fin n) :
     prefixProj α n x i = x i.val :=
   rfl
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem shift_apply (x : ℕ → α) (n : ℕ) : shift α x n = x (n + 1) :=
   rfl
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
     permReindex π x n = x (π n) :=
   rfl
 
-omit [MeasurableSpace α] in
 /-- Composing `permReindex π` after `permReindex σ` reindexes by `σ * π`. -/
 @[simp]
 theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
     permReindex (α := α) π (permReindex (α := α) σ x) =
       permReindex (α := α) (σ * π) x := by
   rfl
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The prefix projection is measurable. -/
 theorem measurable_prefixProj (n : ℕ) : Measurable (prefixProj α n) := by
@@ -299,7 +303,6 @@ theorem map_blockLaw_reindex (μ : Measure Ω) {X : ι → Ω → α} {n p : ℕ
       (AEMeasurable.of_eval hXk)]
   rfl
 
-omit [MeasurableSpace Ω] in
 /-- Reindexing the coordinates of path space along `φ` is measurable. -/
 theorem measurable_reindex (φ : ℕ → ℕ) :
     Measurable (fun x : ℕ → α => fun k => x (φ k)) :=

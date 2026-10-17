@@ -257,11 +257,9 @@ end Submodule
 namespace TensorProduct
 
 variable {R : Type u} {K : Type v} {M : Type w}
-variable [CommRing R] [IsDomain R]
-variable [Field K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+variable [CommRing R] [Field K] [Algebra R K]
+variable [AddCommGroup M] [Module R M]
 
-omit [IsDomain R] [IsFractionRing R K] [Module.Free R M] [Module.Finite R M] in
 /-- The unit pure tensors are the `R`-span of the base change of any basis. -/
 theorem range_mk_one_eq_span {ι : Type*} (b : Basis ι R M) :
     LinearMap.range (TensorProduct.mk R K M 1) =
@@ -293,6 +291,8 @@ instance isLattice_range_mk_one :
 
 end UnitTensorLattice
 
+variable [IsFractionRing R K] [Module.Free R M]
+
 variable (R K M) in
 /-- A finite free module is canonically isomorphic to the lattice of unit pure tensors in its
 scalar extension. -/
@@ -304,7 +304,6 @@ instance free_range_mk_one :
     Module.Free R (LinearMap.range (TensorProduct.mk R K M 1)) :=
   Module.Free.of_equiv (unitTmulEquiv R K M)
 
-omit [IsDomain R] [Module.Finite R M] in
 /-- The unit-tensor equivalence sends a vector to its unit pure tensor. This equation
 characterizes the equivalence. -/
 @[simp]
@@ -312,7 +311,6 @@ theorem coe_unitTmulEquiv_apply (m : M) :
     (unitTmulEquiv R K M m : K ⊗[R] M) = 1 ⊗ₜ[R] m := by
   rw [unitTmulEquiv, LinearEquiv.ofInjective_apply, TensorProduct.mk_apply]
 
-omit [IsDomain R] [Module.Finite R M] in
 /-- The inverse unit-tensor equivalence recovers a vector from its unit pure tensor. -/
 @[simp]
 theorem unitTmulEquiv_symm_tmul (m : M)
@@ -321,6 +319,8 @@ theorem unitTmulEquiv_symm_tmul (m : M)
   apply (unitTmulEquiv R K M).injective
   rw [LinearEquiv.apply_symm_apply]
   exact Subtype.ext (coe_unitTmulEquiv_apply m).symm
+
+variable [IsDomain R] [Module.Finite R M]
 
 /-- Rationalizing the unit-tensor lattice recovers the scalar extension it sits in: base-changing
 the unit-tensor equivalence and then rationalizing is the identity. -/

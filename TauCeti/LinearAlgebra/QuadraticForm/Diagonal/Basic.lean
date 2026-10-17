@@ -43,24 +43,22 @@ open QuadraticMap
 
 section PairExtension
 
-variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι] [DecidableEq ι]
-variable {w w' : ι → R} {i j : ι}
+section
+
+variable {R : Type u} {ι : Type v} [DecidableEq ι] {i j : ι}
 
 private def replacePair (f : (Fin 2 → R) → (Fin 2 → R)) (i j : ι)
     (x : ι → R) (k : ι) : R :=
   if k = i then f ![x i, x j] 0 else if k = j then f ![x i, x j] 1 else x k
 
-omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_apply_left (f : (Fin 2 → R) → (Fin 2 → R))
     (i j : ι) (x : ι → R) : replacePair f i j x i = f ![x i, x j] 0 := by
   simp [replacePair]
 
-omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_apply_right (f : (Fin 2 → R) → (Fin 2 → R))
     (hij : i ≠ j) (x : ι → R) : replacePair f i j x j = f ![x i, x j] 1 := by
   simp [replacePair, hij.symm]
 
-omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
     (hfg : Function.LeftInverse f g) (hij : i ≠ j) (x : ι → R) :
     replacePair f i j (replacePair g i j x) = x := by
@@ -79,6 +77,8 @@ private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
     rw [finTwo_eta, hfg]
     rfl
   · simp [replacePair, hki, hkj]
+
+variable [CommSemiring R] [Fintype ι] {w w' : ι → R}
 
 private def pairLinearEquiv (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
@@ -139,7 +139,10 @@ private def pairIsometryEquiv (hij : i ≠ j)
     have hkj : k ≠ j := (Finset.mem_erase.mp hk).1
     simp [replacePair, hki, hkj, hrest k hki hkj]
 
-omit [DecidableEq ι] in
+end
+
+variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι] {w w' : ι → R} {i j : ι}
+
 /-- Replacing two distinct coefficients by an equivalent binary form, while fixing all other
 coefficients, produces an equivalent diagonal form. -/
 theorem equivalent_weightedSumSquares_of_pair (hij : i ≠ j)
