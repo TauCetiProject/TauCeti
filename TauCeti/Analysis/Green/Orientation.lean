@@ -88,12 +88,6 @@ theorem oneForm_flux_eq_inner (X Y : ℂ → ℝ) (z v : ℂ) :
     neg_re, neg_mul, I_re, I_im]
   ring
 
-/-- The rotated velocity is orthogonal to the boundary velocity. -/
-theorem inner_outwardFirst (v : ℂ) : ⟪-I * v, v⟫_ℝ = 0 := by
-  simp only [Complex.inner, mul_re, mul_im, conj_re, conj_im,
-    neg_re, neg_im, neg_mul, I_re, I_im]
-  ring
-
 /-- Rotation to the outward normal preserves speed. -/
 theorem norm_outwardFirst (v : ℂ) : ‖-I * v‖ = ‖v‖ := by
   rw [norm_mul, norm_neg, Complex.norm_I, one_mul]
