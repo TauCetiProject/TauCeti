@@ -464,16 +464,15 @@ theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
         simp [χ, (QuotientGroup.eq_one_iff g.toMul).2 hg])
       (V.isOpen.preimage continuous_toMul)
   obtain ⟨a, ha⟩ := exists_sumLocalInv_ideleLocalization_characterCarryCocycle_eq χ hχ τ g
-  -- The invariant idele `a`, as an element of the ground level of the layer.
-  let a' : (ideleFormation K).level (ofOpenNormal V).ground :=
-    ⟨ideleCoeffEquivIdeleFormation K a, (Formation.mem_level _).2 fun u _ ↦ by
+  -- The invariant idele `a` lies in the ground level of the layer.
+  have hmem : ideleCoeffEquivIdeleFormation K (a : IdeleCoeff K) ∈
+      (ideleFormation K).level (ofOpenNormal V).ground :=
+    (Formation.mem_level _).2 fun u _ ↦ by
       rw [← ideleCoeffEquivIdeleFormation_smul]
-      exact congrArg _ ((FixedPoints.mem_addSubgroup _ _ _).1 a.2 u)⟩
-  have ha' : ideleCoeffEquivIdeleFormation K (a : IdeleCoeff K) = a' := by
-    dsimp only [a']
-  refine ⟨(ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ', ?_⟩
-  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχχ' a' hχ a ha', ha,
-    hχχ']
+      exact congrArg _ ((FixedPoints.mem_addSubgroup _ _ _).1 a.2 u)
+  refine ⟨(ofOpenNormal V).artinCharacterCup (ideleFormation K) ⟨_, hmem⟩ χ', ?_⟩
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχχ' _ hχ a
+    (Subtype.coe_mk _ hmem).symm, ha, hχχ']
 
 open NormalLayer in
 /-- **A cyclic layer over `K` with a place of full local degree carries a class of invariant
