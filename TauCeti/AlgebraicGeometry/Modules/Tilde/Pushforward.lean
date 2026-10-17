@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
@@ -32,32 +33,6 @@ open CategoryTheory AlgebraicGeometry
 namespace TauCeti.AlgebraicGeometry
 
 universe u
-
-/-- Composition of scheme-module morphisms acts sectionwise by composition. -/
-@[simp]
-theorem modules_comp_val_app_apply {X : Scheme.{u}} {M N P : X.Modules}
-    (f : M ⟶ N) (g : N ⟶ P) (U : X.Opens) (m : M.val.obj (.op U)) :
-    (f ≫ g).val.app (.op U) m = g.val.app (.op U) (f.val.app (.op U) m) := rfl
-
-/-- A mapped associated-sheaf morphism sends the section of an element to the
-section of its image. -/
-@[simp]
-theorem tilde_map_val_app_toOpen {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
-    (f : M ⟶ N) (U : (Spec R).Opens) (m : M) :
-    (tilde.map f).val.app (.op U) (tilde.toOpen M U m) = tilde.toOpen N U (f m) :=
-  ConcreteCategory.congr_hom (tilde.toOpen_map_app f U) m
-
-/-- The associated-sheaf counit recovers a global section from its associated section. -/
-@[simp]
-theorem fromTildeΓ_val_app_toOpen_top {R : CommRingCat.{u}} (N : (Spec R).Modules)
-    (m : (moduleSpecΓFunctor (R := R)).obj N) :
-    N.fromTildeΓ.val.app (.op ⊤)
-        (tilde.toOpen ((moduleSpecΓFunctor (R := R)).obj N) ⊤ m) = m := by
-  have h := ConcreteCategory.congr_hom (Scheme.Modules.toOpen_fromTildeΓ_app N ⊤) m
-  erw [ConcreteCategory.comp_apply] at h
-  erw [h]
-  simp only [homOfLE_refl, op_id]
-  exact ConcreteCategory.congr_hom ((modulesSpecToSheaf.obj N).obj.map_id (.op ⊤)) m
 
 variable {R S : CommRingCat.{u}} (φ : R ⟶ S) (M : ModuleCat.{u} S)
 
