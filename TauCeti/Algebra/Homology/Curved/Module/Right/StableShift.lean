@@ -58,11 +58,13 @@ theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMa
         N.differential (k.1 x) + k.1 (M.differential x) := by
     intro x
     simp [k]
+  have hN : (gradedSplitExact (h := h)).isProjective
+      (coneIdentityInjectivePresentation N).I := by
+    rw [coneIdentityInjectivePresentation_I]
+    exact gradedSplitExact_isProjective_of_isZero_homotopy
+      (isZero_homotopy_cone_isIso (𝟙 (ForgetEnrichment.of _ N)))
   apply ExactStructure.projectiveStableFunctor_map_cokernelMap_eq
-    (coneIdentityInjectivePresentation M) (coneIdentityInjectivePresentation N)
-    (by simpa only [coneIdentityInjectivePresentation_I] using
-      gradedSplitExact_isProjective_of_isZero_homotopy
-        (isZero_homotopy_cone_isIso (𝟙 (ForgetEnrichment.of _ N)))) f
+    (coneIdentityInjectivePresentation M) (coneIdentityInjectivePresentation N) hN f
     (eqToHom (coneIdentityInjectivePresentation_I M) ≫
       coneMap _ _ f f k hsq ≫ eqToHom (coneIdentityInjectivePresentation_I N).symm)
     (eqToHom (coneIdentityInjectivePresentation_K M) ≫
@@ -103,8 +105,11 @@ noncomputable def gradedSplitStableSuspensionIsoShift :
     simp only [Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom]
     apply (cancel_epi ((gradedSplitExact (h := h)).projectiveStableFunctor.map
       (eqToHom (coneIdentityInjectivePresentation_K (ForgetEnrichment.to _ X))))).mp
-    simpa only [Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc,
-      eqToHom_refl, Category.id_comp, Category.comp_id] using (reassoc_of% hnat) _)).symm
+    simpa only [Functor.map_comp, eqToIso.hom, eqToIso.inv, ForgetEnrichment.of_to,
+      eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+      Category.id_comp, Category.comp_id] using (reassoc_of% hnat)
+        (eqToHom ((gradedSplitExact_isFrobenius (h := h)).
+          stableSuspension_obj_projectiveStableFunctor_obj Y).symm))).symm
 
 /-- The suspension comparison is the stable map on cokernels induced by the identity. -/
 @[simp]
@@ -121,8 +126,8 @@ theorem gradedSplitStableSuspensionIsoShift_hom_app
   simp only [gradedSplitStableSuspensionIsoShift, Iso.symm_hom, NatIso.ofComponents_inv_app]
   erw [Iso.trans_inv]
   simp only [Iso.trans_inv, Functor.mapIso_inv, eqToIso.inv,
-    ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv, Functor.map_comp,
-    Category.assoc]
+    ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv, Functor.map_comp]
+  simp only [eqToIso.inv, ForgetEnrichment.of_to]
 
 /-- The stable comparison intertwines stable suspension with cohomological shift, with the
 negative sign that gives the cone triangle its positive projection as third arrow. -/
@@ -162,14 +167,16 @@ private theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux
             simpa using congrArg (dgClosedToHomotopy R).obj
               (closedShiftFunctor_obj_of 1 (ForgetEnrichment.to _ X)))) := by
   simp only [Functor.comp_obj, stableSuspensionCompGradedSplitStableToHomotopyIso,
-    eqToIso_refl, Functor.isoWhiskerLeft_refl, Functor.isoWhiskerRight_refl, Iso.refl_trans,
     Quotient.natIsoLift_hom, Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom,
     Quotient.natIsoLift_inv, Iso.trans_inv, Category.assoc, Functor.isoWhiskerRight_inv,
     Iso.symm_inv, NatTrans.app_neg, Quotient.natTransLift_app, NatTrans.comp_app,
     Functor.associator_inv_app, Functor.whiskerRight_app,
     Functor.associator_hom_app, EnrichedFunctor.forgetCompDgClosedToHomotopyIso_hom_app,
     EnrichedFunctor.forget_obj, Category.id_comp, neg_inj]
-  erw [Category.comp_id, eqToHom_refl, Category.comp_id]
+  simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, eqToIso.hom,
+    eqToHom_app, eqToHom_map, Functor.comp_obj,
+    gradedSplitStableToHomotopy_obj_projectiveStableFunctor_obj,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.comp_id]
 
 /-- The stable comparison commutes coherently with the stable and cohomological integer shifts. -/
 @[instance_reducible]
@@ -206,9 +213,10 @@ theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app
           (((gradedSplitExact_isFrobenius (h := h)).suspensionPresentation X).cokernelMap
             (coneIdentityInjectivePresentation (ForgetEnrichment.to _ X)) (𝟙 X)) ≫
         eqToHom (by
-          simpa only [coneIdentityInjectivePresentation_K] using
-            congrArg (dgClosedToHomotopy R).obj
-              (closedShiftFunctor_obj_of 1 (ForgetEnrichment.to _ X)))) := by
+          simp only [Functor.comp_obj,
+            gradedSplitStableToHomotopy_obj_projectiveStableFunctor_obj,
+            coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
+            homotopyShiftFunctor_obj_of])) := by
   rw [stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app_aux,
     gradedSplitStableSuspensionIsoShift_hom_app]
   -- The public cokernel equation supplies the transport to the shifted module; functoriality
