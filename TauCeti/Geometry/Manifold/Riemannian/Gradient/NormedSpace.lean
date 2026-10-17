@@ -60,7 +60,11 @@ theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSp
       rw [mvfderiv_eq_fderiv]
       simp
 
-/-- The gradient of the squared norm in the standard flat metric is the radial vector field. -/
+/-- The gradient of the squared norm in the standard flat metric is the radial vector field.
+
+Source: `Mathlib.Analysis.InnerProductSpace.Calculus.fderiv_norm_sq_apply`.
+-/
+@[simp]
 theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
     let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
@@ -70,7 +74,8 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
   have hx : (InnerProductSpace.toDual ℝ F).symm ((innerSL ℝ) x) = x := by
     apply (InnerProductSpace.toDual ℝ F).injective
     rw [(InnerProductSpace.toDual ℝ F).apply_symm_apply]
-    rfl
+    ext y
+    rw [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
   rw [mgradient_eq_gradient]
   simp [gradient, fderiv_norm_sq_apply, hx]
   rfl
