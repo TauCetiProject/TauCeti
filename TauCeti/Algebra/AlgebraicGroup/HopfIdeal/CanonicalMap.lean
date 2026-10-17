@@ -167,7 +167,9 @@ private theorem le_span_of_canonicalMap_injective (I : HopfIdeal R H)
         exact hβ.symm }
   let ν := lift ε (Ideal.Quotient.mkₐ B J) (fun _ _ ↦ .all _ _)
   have hν_tmul (a b : H) : ν (a ⊗ₜ[B] b) =
-      algebraMap R (H ⧸ J) (Coalgebra.counit (R := R) a) * Ideal.Quotient.mk J b := rfl
+      algebraMap R (H ⧸ J) (Coalgebra.counit (R := R) a) * Ideal.Quotient.mk J b := by
+    simp only [ν, lift_tmul, Ideal.Quotient.mkₐ_eq_mk, ε, AlgHom.coe_mk, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, AlgHom.comp_apply, Bialgebra.counitAlgHom_apply, Algebra.ofId_apply]
   intro x hx
   have hν (y : H ⊗[R] H) : ν (q (TensorProduct.map (HopfAlgebra.antipode R) LinearMap.id y)) =
       Ideal.Quotient.mk J (TensorProduct.lid R H ((Coalgebra.counit (R := R)).rTensor H y)) := by
