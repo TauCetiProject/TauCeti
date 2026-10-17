@@ -42,10 +42,10 @@ induction (`TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_quasiIso_pro
 
 ## Main results
 
-* `TauCeti.Topology.quasiIso_cechAugmentation_prod_of_isFlasque`: for a flasque sheaf `F`, a
+* `TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque`: for a flasque sheaf `F`, a
   finite family of opens `U i` and an open `Y` contained in their union, the augmented Čech
   complex of `V ↦ F(Y ∩ V)` for `U` is exact.
-* `TauCeti.Topology.quasiIso_cechAugmentation_of_isFlasque`: a flasque sheaf has an exact
+* `TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque`: a flasque sheaf has an exact
   augmented Čech complex for every finite open cover.
 
 ## References
@@ -62,7 +62,7 @@ open CategoryTheory Limits TopologicalSpace Opposite TauCeti.CategoryTheory
 
 universe u
 
-namespace TauCeti.Topology
+namespace TopCat.Sheaf
 
 variable {X : TopCat.{u}} (F : X.Sheaf AddCommGrpCat.{u}) [F.presheaf.IsFlasque]
 
@@ -174,4 +174,4 @@ theorem quasiIso_cechAugmentation_of_isFlasque {ι : Type u} [Finite ι] (U : ι
     (Functor.isoWhiskerRight (NatIso.op isTerminalTop.prodLeftUnitor) F.presheaf)).2
     (quasiIso_cechAugmentation_prod_of_isFlasque F U ⊤ hU.ge)
 
-end TauCeti.Topology
+end TopCat.Sheaf
