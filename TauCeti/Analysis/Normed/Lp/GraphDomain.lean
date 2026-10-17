@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.ContinuousMap.Algebra
-public import Mathlib.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Half-spaces, epigraphs, and graphs in an ℓ² product
