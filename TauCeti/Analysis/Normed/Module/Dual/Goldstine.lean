@@ -19,11 +19,6 @@ bidual. We prove it for every closed ball: the weak-star closure of the image of
 `closedBall x r` under `NormedSpace.inclusionInDoubleDualWeak` is the closed ball of radius `r`
 about the image of `x`. In particular `E` is weak-star dense in its bidual.
 
-A point of the bidual outside that weak-star closure is separated from it by Hahn–Banach, and a
-weak-star continuous functional on the bidual is evaluation at an element `f` of the dual. The
-needed estimate is that every upper bound of `re ∘ f` on `closedBall x r` is at least
-`re (f x) + r * ‖f‖`; this is `StrongDual.re_apply_add_mul_norm_le`.
-
 No completeness or separability is assumed, and seminormed spaces are allowed. Together with
 Banach–Alaoglu (`WeakDual.isCompact_closedBall`), Goldstine's theorem relates weak compactness
 of the unit ball of `E` to reflexivity of `E`.
@@ -74,6 +69,11 @@ theorem closure_image_inclusionInDoubleDualWeak_closedBall (x : E) (r : ℝ) :
       ← map_sub (inclusionInDoubleDual 𝕜 E) y x]
     exact (double_dual_bound 𝕜 E _).trans (mem_closedBall_iff_norm.1 hy)
   refine (closure_minimal hS (WeakDual.isClosed_closedBall _ _)).antisymm fun φ hφ ↦ ?_
+  -- A point `φ` of the bidual ball outside the weak-star closure is separated from it by
+  -- Hahn–Banach, through a weak-star continuous functional, which is evaluation at some `f` in
+  -- the dual. `StrongDual.re_apply_add_mul_norm_le` bounds `re (f x) + r * ‖f‖` by the separating
+  -- constant, while `φ` lying in the ball bounds `re (φ f)` by `re (f x) + r * ‖f‖`, which
+  -- contradicts the separation.
   by_contra hφS
   have hconv : Convex ℝ S := by
     simp only [S, Set.image_image]

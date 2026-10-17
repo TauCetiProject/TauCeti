@@ -11,15 +11,15 @@ public import Mathlib.Analysis.RCLike.Basic
 /-!
 # Real parts of continuous linear functionals on balls
 
-For a continuous linear functional `f` on a seminormed space over `RCLike` scalars, every upper
-bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`. Hahn–Banach separation
-arguments use this to turn a separating real-part bound on a ball into a bound on the norm of the
-separating functional.
+For a continuous linear functional `f` on a seminormed space over `RCLike` scalars and a radius
+`0 ≤ r`, every upper bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`.
+Hahn–Banach separation arguments use this to turn a separating real-part bound on a ball into a
+bound on the norm of the separating functional.
 
 ## Main results
 
 * `StrongDual.re_apply_add_mul_norm_le`: a bound for the real part of a functional on a closed
-  ball bounds its value at the centre plus the radius times its norm.
+  ball of nonnegative radius bounds its value at the centre plus the radius times its norm.
 -/
 
 public section
