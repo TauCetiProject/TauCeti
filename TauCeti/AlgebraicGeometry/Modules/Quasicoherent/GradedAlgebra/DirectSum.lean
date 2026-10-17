@@ -70,9 +70,7 @@ def toQuasicoherentAlgebra : GradedQuasicoherentAlgebra X ⥤ QuasicoherentAlgeb
     ((isGradedQuasicoherentAlgebra X).ι ⋙ (GradedObject.total ℕ X.Modules).mapCommMon)
     fun A ↦ inferInstanceAs (∐ fun n ↦ A.obj.X n).IsQuasicoherent
 
-/-- The algebra object underlying the direct-sum algebra is the image under the total-object
-functor. -/
-theorem toQuasicoherentAlgebra_obj_obj (A : GradedQuasicoherentAlgebra X) :
+private theorem toQuasicoherentAlgebra_obj_obj (A : GradedQuasicoherentAlgebra X) :
     (toQuasicoherentAlgebra.obj A).obj =
       ((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj) :=
   (rfl)
@@ -83,6 +81,51 @@ components. -/
 theorem toQuasicoherentAlgebra_obj_obj_X (A : GradedQuasicoherentAlgebra X) :
     (toQuasicoherentAlgebra.obj A).obj.X = (GradedObject.total ℕ X.Modules).obj A.obj.X :=
   congrArg (fun B : CommMon X.Modules ↦ B.X) (toQuasicoherentAlgebra_obj_obj A)
+
+private theorem toQuasicoherentAlgebra_map_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) :
+    (toQuasicoherentAlgebra.map f).hom =
+      eqToHom (toQuasicoherentAlgebra_obj_obj A) ≫
+        (GradedObject.total ℕ X.Modules).mapCommMon.map f.hom ≫
+          eqToHom (toQuasicoherentAlgebra_obj_obj B).symm := by
+  convert ObjectProperty.ι_obj_lift_map
+    (show ObjectProperty (CommMon X.Modules) from fun A ↦ A.X.IsQuasicoherent)
+    ((isGradedQuasicoherentAlgebra X).ι ⋙
+      (GradedObject.total ℕ X.Modules).mapCommMon)
+    (fun A ↦ inferInstanceAs (∐ fun n ↦ A.obj.X n).IsQuasicoherent) f using 1 <;> rfl
+
+private theorem toQuasicoherentAlgebra_map_naturality
+    {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) :
+    eqToHom (toQuasicoherentAlgebra_obj_obj A).symm ≫
+        (toQuasicoherentAlgebra.map f).hom =
+      (GradedObject.total ℕ X.Modules).mapCommMon.map f.hom ≫
+        eqToHom (toQuasicoherentAlgebra_obj_obj B).symm := by
+  rw [toQuasicoherentAlgebra_map_hom]
+  exact (eqToIso (toQuasicoherentAlgebra_obj_obj A)).inv_hom_id_assoc _
+
+private theorem toQuasicoherentAlgebra_map_naturality_hom_hom
+    {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) :
+    (eqToHom (toQuasicoherentAlgebra_obj_obj A).symm).hom.hom ≫
+        (toQuasicoherentAlgebra.map f).hom.hom.hom =
+      (GradedObject.total ℕ X.Modules).map f.hom.hom.hom ≫
+        (eqToHom (toQuasicoherentAlgebra_obj_obj B).symm).hom.hom := by
+  have h := congrArg (fun g :
+      ((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj) ⟶
+        (toQuasicoherentAlgebra.obj B).obj ↦ g.hom.hom)
+    (toQuasicoherentAlgebra_map_naturality f)
+  simp only [CommMon.comp_hom, Functor.mapCommMon_map_hom_hom] at h
+  convert h using 1; rfl
+
+private theorem total_mapCommMon_mul (A : GradedQuasicoherentAlgebra X) :
+    μ[((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj).X] =
+      Functor.LaxMonoidal.μ (GradedObject.total ℕ X.Modules) A.obj.X A.obj.X ≫
+        (GradedObject.total ℕ X.Modules).map μ[A.obj.X] :=
+  Functor.obj.μ_def A.obj.X
+
+private theorem total_mapCommMon_one (A : GradedQuasicoherentAlgebra X) :
+    η[((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj).X] =
+      Functor.LaxMonoidal.ε (GradedObject.total ℕ X.Modules) ≫
+        (GradedObject.total ℕ X.Modules).map η[A.obj.X] :=
+  Functor.obj.η_def A.obj.X
 
 /-- The inclusion of the degree-`n` homogeneous component into the direct-sum algebra. -/
 def ιTotal (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
@@ -116,7 +159,7 @@ theorem toQuasicoherentAlgebra_hom_ext {A : GradedQuasicoherentAlgebra X} {M : X
 
 /-- On the summand `Aᵢ ⊗ Aⱼ`, the multiplication of the direct-sum algebra is the homogeneous
 multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` followed by the inclusion of the summand of degree `i + j`. -/
-@[reassoc]
+@[simp, reassoc (attr := simp)]
 theorem ιTotal_tensorHom_ιTotal_mul (A : GradedQuasicoherentAlgebra X) (i j : ℕ) :
     (ιTotal A i ⊗ₘ ιTotal A j) ≫
         μ[(toQuasicoherentAlgebra.obj A).obj.X] =
@@ -134,11 +177,12 @@ theorem ιTotal_tensorHom_ιTotal_mul (A : GradedQuasicoherentAlgebra X) (i j : 
       (GradedObject.ιTotal A.obj.X i ⊗ₘ GradedObject.ιTotal A.obj.X j) ≫
           μ[((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj).X] =
         A.mul i j ≫ GradedObject.ιTotal A.obj.X (i + j) := by
-    -- The multiplication of the image of a monoid object under a lax monoidal functor is the
-    -- tensor map followed by the image of the multiplication (`Functor.obj.μ_def`).
+    rw [total_mapCommMon_mul]
+    -- The preceding computation lemma exposes the multiplication; this goal normalization only
+    -- identifies `mapCommMon`'s carrier with the total object (`mapCommMon_obj_X`).
     change (GradedObject.ιTotal A.obj.X i ⊗ₘ GradedObject.ιTotal A.obj.X j) ≫
-        Functor.LaxMonoidal.μ (GradedObject.total ℕ X.Modules) A.obj.X A.obj.X ≫
-          (GradedObject.total ℕ X.Modules).map μ[A.obj.X] = _
+      Functor.LaxMonoidal.μ (GradedObject.total ℕ X.Modules) A.obj.X A.obj.X ≫
+        (GradedObject.total ℕ X.Modules).map μ[A.obj.X] = _
     rw [GradedObject.ιTotal_tensorHom_ιTotal_total_μ_assoc _ _ i j _ rfl,
       GradedObject.ιTotal_total_map, mul_def, Category.assoc]
   -- The morphism underlying the identification `e` of monoid objects is the identification of
@@ -170,11 +214,12 @@ theorem one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X) :
     IsMonHom.one_hom φ
   have htotal : η[((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj).X] =
       A.one ≫ GradedObject.ιTotal A.obj.X 0 := by
-    -- The unit of the image of a monoid object under a lax monoidal functor is the unit of the
-    -- functor followed by the image of the unit (`Functor.obj.η_def`).
+    rw [total_mapCommMon_one]
+    -- As above, normalize only the carrier after applying the explicit unit computation lemma.
     change Functor.LaxMonoidal.ε (GradedObject.total ℕ X.Modules) ≫
-        (GradedObject.total ℕ X.Modules).map η[A.obj.X] = _
-    rw [GradedObject.total_ε, Category.assoc, GradedObject.ιTotal_total_map,
+      (GradedObject.total ℕ X.Modules).map η[A.obj.X] = _
+    rw [GradedObject.total_ε, Category.assoc,
+      GradedObject.ιTotal_total_map,
       one_def, Category.assoc]
   -- As in `ιTotal_tensorHom_ιTotal_mul`, `φ` is the identification occurring in `ιTotal_def`.
   have hφX : eqToHom (toQuasicoherentAlgebra_obj_obj_X A).symm = φ := rfl
@@ -188,11 +233,12 @@ theorem ιTotal_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X} 
     (n : ℕ) :
     ιTotal A n ≫ (toQuasicoherentAlgebra.map f).hom.hom.hom =
       f.hom.hom.hom n ≫ ιTotal B n := by
+  have h := congrArg (GradedObject.ιTotal A.obj.X n ≫ ·)
+    (toQuasicoherentAlgebra_map_naturality_hom_hom f)
   unfold ιTotal
-  cases toQuasicoherentAlgebra_obj_obj A
-  cases toQuasicoherentAlgebra_obj_obj B
-  simp only
-  exact GradedObject.ιTotal_total_map _ n
+  exact (Category.assoc _ _ _).trans (h.trans ((Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ (eqToHom (toQuasicoherentAlgebra_obj_obj B).symm).hom.hom)
+      (GradedObject.ιTotal_total_map f.hom.hom.hom n))))
 
 end GradedQuasicoherentAlgebra
 
