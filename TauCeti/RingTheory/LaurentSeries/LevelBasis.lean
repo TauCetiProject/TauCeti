@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerBasis
+public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.RingTheory.LaurentSeries.Puiseux
 
 /-!
@@ -453,18 +454,6 @@ theorem level_inf_level (K : Type*) [Field K] (n m : ℕ+) :
   simp only [mem_level_iff, mem_range_levelEmbedding_iff]
   rw [← Algebra.mem_inf, range_ramifiedEmbedding_inf]
 
-/-- Bézout for powers: if `a` and `b` are coprime and `u ≠ 0`, then `u` is a product of integer
-powers of `u ^ a` and `u ^ b`. -/
-private theorem zpow_gcdA_mul_zpow_gcdB {G : Type*} [GroupWithZero G] {u : G} (hu : u ≠ 0)
-    {a b : ℕ} (hab : a.Coprime b) : (u ^ a) ^ a.gcdA b * (u ^ b) ^ a.gcdB b = u := by
-  have hexp : (a : ℤ) * a.gcdA b + b * a.gcdB b = 1 := by
-    rw [← Nat.gcd_eq_gcd_ab, hab, Nat.cast_one]
-  calc (u ^ a) ^ a.gcdA b * (u ^ b) ^ a.gcdB b
-      = u ^ ((a : ℤ) * a.gcdA b) * u ^ ((b : ℤ) * a.gcdB b) := by
-        simp only [zpow_mul, zpow_natCast]
-    _ = u ^ ((a : ℤ) * a.gcdA b + b * a.gcdB b) := (zpow_add₀ hu _ _).symm
-    _ = u := by rw [hexp, zpow_one]
-
 /-- The compositum of levels `n` and `m` is level `lcm n m`. -/
 @[simp]
 theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
@@ -479,8 +468,11 @@ theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
     rw [PNat.lcm_coe, ← hab.lcm_eq_mul, ← Nat.lcm_mul_right, ← hn, ← hm]
   have hLn : ((n.lcm m : ℕ+) : ℕ) = n * b := by rw [hL, mul_right_comm, ← hn]
   have hLm : ((n.lcm m : ℕ+) : ℕ) = m * a := by rw [hL, mul_comm a, mul_right_comm, ← hm]
-  rw [← zpow_gcdA_mul_zpow_gcdB (levelPowerBasis_gen_ne_zero K _) hab,
-    coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := (TauCeti.puiseuxField K)ˣ) hab
+  have hu := congrArg Units.val (hij (.mk0 _ (levelPowerBasis_gen_ne_zero K (n.lcm m))))
+  simp only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val,
+    Units.val_mk0] at hu
+  rw [← hu, coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
   exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
     (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
 
