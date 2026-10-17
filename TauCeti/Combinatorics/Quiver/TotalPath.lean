@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Symmetric
+public import TauCeti.Combinatorics.Quiver.Symmetric
+public import Mathlib.Data.Fintype.EquivFin
 
 /-!
 # Indexed quiver paths, concatenation, and reversal
@@ -33,6 +34,8 @@ reversal involutive.
 
 ## Main results
 
+* `TauCeti.Quiver.finite_of_finite_totalPath`: a quiver with finitely many indexed paths has
+  finitely many vertices.
 * `TauCeti.Quiver.TotalPath.eq_nil_iff`: a path is trivial at a vertex exactly when it starts
   there and has length zero.
 * `TauCeti.Quiver.TotalPath.mul?_eq_none_iff`: concatenation is undefined exactly when the
@@ -67,6 +70,12 @@ the index type of the path basis of the path algebra. -/
 abbrev Quiver.TotalPath (Q : Type u) [Quiver.{v} Q] : Type _ :=
   Σ a b : Q, _root_.Quiver.Path a b
 
+/-- A quiver with finitely many total paths has finitely many vertices. -/
+instance Quiver.finite_of_finite_totalPath (Q : Type u) [Quiver.{v} Q]
+    [Finite (Quiver.TotalPath Q)] : Finite Q :=
+  Finite.of_injective (fun q : Q ↦ (⟨q, q, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q))
+    (fun _ _ h ↦ congrArg Sigma.fst h)
+
 namespace Quiver.TotalPath
 
 variable {Q : Type u} [Quiver.{v} Q]
@@ -80,6 +89,12 @@ def reverse [HasReverse Q] (x : TotalPath Q) : TotalPath Q :=
 theorem reverse_mk [HasReverse Q] {a b : Q} (p : Path a b) :
     reverse (⟨a, b, p⟩ : TotalPath Q) = ⟨b, a, p.reverse⟩ :=
   (rfl)
+
+/-- Reversing an indexed path preserves its length. -/
+@[simp]
+theorem length_reverse [HasReverse Q] (x : TotalPath Q) :
+    x.reverse.2.2.length = x.2.2.length := by
+  simp only [reverse, _root_.Quiver.Path.length_reverse]
 
 /-- Reversing an indexed path twice returns the original path. -/
 @[simp]

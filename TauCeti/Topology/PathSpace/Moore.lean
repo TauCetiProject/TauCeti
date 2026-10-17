@@ -411,6 +411,15 @@ theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
       add_comm γ.length, add_tsub_add_eq_tsub_left]
     exact trans_apply_of_le _ _ _ tsub_le_self
 
+/-- Reversing a continuous family of Moore paths is continuous. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_symm {f : Y → MoorePath X} (hf : Continuous f) :
+    Continuous fun y ↦ (f y).symm := by
+  refine continuous_iff.2 ⟨by simp only [length_symm]; fun_prop, ?_⟩
+  simp only [symm_apply]
+  exact (hf.comp continuous_fst).moorePath_eval
+    (((continuous_length.comp hf).comp continuous_fst).sub continuous_snd)
+
 /-! ### Reparametrization to a given length -/
 
 /-- The Moore path `γ` reparametrized to the length `ℓ`: the path `t ↦ γ (γ.length * t / ℓ)`.

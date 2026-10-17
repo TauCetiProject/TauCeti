@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.JInvariant
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 
 /-!
@@ -51,6 +52,8 @@ itself: `toEllipticCurveGeomIso` is an isomorphism of group schemes over `Spec R
   `toEllipticCurveGeom W` are those of the projective model of `W`.
 * `WeierstrassCurve.isMonHom_toEllipticCurveGeomOverIso_hom`: `toEllipticCurveGeomOverIso W` is an
   isomorphism of group schemes over `Spec R`.
+* `WeierstrassCurve.j_toEllipticCurveGeom`: the `j`-invariant of `toEllipticCurveGeom W` is the
+  `j`-invariant `W.j` of the equation.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_iso_toEllipticCurveGeom`: every elliptic curve
   over a local ring `R` is isomorphic, over `Spec R` and compatibly with the zero sections, to
   `toEllipticCurveGeom W` for an elliptic Weierstrass curve `W` over `R`.
@@ -217,6 +220,21 @@ instance isMonHom_toEllipticCurveGeomOverIso_hom : IsMonHom (toEllipticCurveGeom
   mul_hom := by
     ext1
     simp [Over.tensorHom_left]
+
+/-! ### The `j`-invariant -/
+
+/-- **The `j`-invariant of a Weierstrass model.** The `j`-invariant of the elliptic curve
+`toEllipticCurveGeom W` over `Spec R` is the `j`-invariant `W.j` of the equation, as a global
+function on `Spec R`. -/
+@[simp]
+theorem j_toEllipticCurveGeom :
+    (toEllipticCurveGeom W).j = (Scheme.ΓSpecIso (.of R)).inv W.j := by
+  -- on the chart `chart W` over the whole base, whose inclusion into `Spec R` and identification
+  -- with `Spec R` are identities, the `j`-invariant is that of `W`
+  have h : Scheme.Hom.appTop (𝟙 (Spec (.of R))) (toEllipticCurveGeom W).j =
+      Scheme.Hom.appTop (Iso.refl (Spec (.of R))).hom ((Scheme.ΓSpecIso (.of R)).inv W.j) :=
+    (toEllipticCurveGeom W).baseMap_appTop_j (chart W)
+  simpa using h
 
 /-! ### Base change along a ring homomorphism -/
 

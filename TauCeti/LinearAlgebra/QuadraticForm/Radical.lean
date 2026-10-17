@@ -23,6 +23,13 @@ general consequences of nondegeneracy, together with the two facts about the
 quadratic form `x ↦ B x x` of a *symmetric* bilinear form `B` that a Clifford construction consumes:
 its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as `2` is invertible.
 
+It also splits off the radical. The *regular part* of a quadratic map `Q` is the map
+`Q.lift Q.radical le_rfl` that `Q` induces on the quotient by its radical. Over a field, `Q` is
+isometric to the orthogonal sum of the zero form on its radical and its regular part, and any
+splitting of `Q` as a zero form plus a map with trivial radical recovers both summands up to
+isometry. This is the step that reduces the Witt decomposition of a possibly degenerate form to the
+regular case.
+
 ## Main results
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
@@ -77,6 +84,14 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   bilinear form `B` equals the kernel of `B`.
 * `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, the
   quadratic form of a nondegenerate symmetric bilinear form is nondegenerate.
+* `QuadraticMap.radical_zero_prod`: the radical of the orthogonal sum of a zero form with `Q`.
+* `QuadraticMap.radical_lift_radical`, `QuadraticMap.nondegenerate_lift_radical`: the regular
+  part has trivial radical, so it is nondegenerate when `2` is invertible.
+* `QuadraticMap.Equivalent.lift_radical`: isometric maps have isometric regular parts.
+* `QuadraticMap.equivalent_lift_radical_of_equivalent_zero_prod`,
+  `QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`: in any splitting
+  `Q ≅ 0 ⊥ Q'` with `Q'` of trivial radical, `Q'` is the regular part and the zero summand lives
+  on a copy of the radical.
 -/
 
 public section
@@ -187,35 +202,24 @@ theorem nondegenerate_restrict_of_isCompl_radical [Invertible (2 : R)]
     (LinearMap.BilinForm.isSymm_iff.mp Q.isSymm_polarBilin)
   simpa only [← radical_eq_ker_polarBilin] using hC.symm
 
+/-- The quadratic map that `Q` induces on the quotient by its radical has trivial radical. -/
+@[simp]
+theorem radical_lift_radical (Q : QuadraticMap R M P) :
+    (Q.lift Q.radical le_rfl).radical = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr fun x hx => ?_
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    obtain ⟨h0, hadd⟩ := mem_radical_iff'.mp hx
+    refine (Submodule.Quotient.mk_eq_zero _).mpr (mem_radical_iff'.mpr ⟨h0, fun n => ?_⟩)
+    simpa only [← Submodule.Quotient.mk_add, lift_mk] using hadd (Submodule.Quotient.mk n)
+
 /-- **The quotient by the radical is nondegenerate.** When two is invertible, the form induced
 on `M ⧸ Q.radical` has no radical: a class orthogonal to every class is represented by a vector
 in `Q.radical`, hence is zero. This is the regular quotient used in the Witt decomposition of a
 possibly degenerate form. -/
 theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticForm R M) :
     (Q.lift Q.radical le_rfl).Nondegenerate := by
-  rw [nondegenerate_iff_radical_eq_bot]
-  ext x
-  obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective Q.radical x
-  rw [Submodule.mem_bot]
-  constructor
-  · intro hx
-    have hxker : Submodule.Quotient.mk v ∈
-        (Q.lift Q.radical le_rfl).polarBilin.ker := by
-      rw [← radical_eq_ker_polarBilin]
-      exact hx
-    have hvker : v ∈ Q.polarBilin.ker := by
-      rw [LinearMap.mem_ker]
-      ext w
-      have h := congrArg (fun f => f (Submodule.Quotient.mk w))
-        (LinearMap.mem_ker.mp hxker)
-      simpa [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar, lift_mk,
-        ← Submodule.Quotient.mk_add] using h
-    have hv : v ∈ Q.radical := by
-      rw [radical_eq_ker_polarBilin]
-      exact hvker
-    exact (Submodule.Quotient.mk_eq_zero _).2 hv
-  · intro hzero
-    simp [hzero]
+  rw [nondegenerate_iff_radical_eq_bot, radical_lift_radical]
 
 /-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
 radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/
@@ -229,10 +233,10 @@ theorem Isometry.injective_of_radical_eq_bot {Q₁ : QuadraticMap R M P} {Q₂ :
 
 section QuotientRadicalIsometry
 
-variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
-  [AddCommGroup W] [Module K W] {Q : QuadraticForm K V} {S : QuadraticForm K W}
+variable {N : Type*} [AddCommGroup N] [Module R N] {Q : QuadraticMap R M P}
+  {S : QuadraticMap R N P}
 
-/-- An isometry of quadratic forms descends to an isometry of their quotients by the radical. -/
+/-- An isometry of quadratic maps descends to an isometry of their quotients by the radical. -/
 noncomputable def IsometryEquiv.quotientRadical (e : Q.IsometryEquiv S) :
     (Q.lift Q.radical le_rfl).IsometryEquiv (S.lift S.radical le_rfl) where
   __ := Submodule.Quotient.equiv Q.radical S.radical e.toLinearEquiv e.map_radical
@@ -242,13 +246,13 @@ noncomputable def IsometryEquiv.quotientRadical (e : Q.IsometryEquiv S) :
 
 /-- The quotient isometry sends the class of a vector to the class of its image. -/
 @[simp]
-theorem IsometryEquiv.quotientRadical_mk (e : Q.IsometryEquiv S) (x : V) :
-    e.quotientRadical (Submodule.Quotient.mk x : V ⧸ Q.radical) =
-      (Submodule.Quotient.mk (e x) : W ⧸ S.radical) := by
+theorem IsometryEquiv.quotientRadical_mk (e : Q.IsometryEquiv S) (x : M) :
+    e.quotientRadical (Submodule.Quotient.mk x : M ⧸ Q.radical) =
+      (Submodule.Quotient.mk (e x) : N ⧸ S.radical) := by
   dsimp [IsometryEquiv.quotientRadical]
   rfl
 
-/-- Equivalent quadratic forms have equivalent quotients by their radicals. -/
+/-- Equivalent quadratic maps have equivalent quotients by their radicals. -/
 theorem Equivalent.lift_radical (h : Q.Equivalent S) :
     (Q.lift Q.radical le_rfl).Equivalent (S.lift S.radical le_rfl) := by
   obtain ⟨e⟩ := h
@@ -657,6 +661,64 @@ theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
 
 end TauCeti
 
+/-! ### The regular part of a quadratic map -/
+
+namespace QuadraticMap
+
+section RegularPart
+
+variable {R M N T P : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] [AddCommGroup T] [Module R T] [AddCommGroup P] [Module R P]
+
+/-- The radical of the orthogonal sum of a zero form with `Q` consists of the pairs whose second
+component lies in the radical of `Q`. Unlike `QuadraticMap.radical_prod`, this needs no hypothesis
+on `2`. -/
+@[simp]
+theorem radical_zero_prod (Q : QuadraticMap R N P) :
+    ((0 : QuadraticMap R T P).prod Q).radical = (⊤ : Submodule R T).prod Q.radical := by
+  ext ⟨t, x⟩
+  simp [mem_radical_iff', Prod.forall]
+
+/-- The regular part of `Q` is computed by any surjection `f` whose kernel is the radical of `Q` and
+through which `Q` factors. -/
+theorem equivalent_lift_radical_of_comp_eq (Q : QuadraticMap R M P) {Q' : QuadraticMap R N P}
+    (f : M →ₗ[R] N) (hf : Function.Surjective f) (hker : LinearMap.ker f = Q.radical)
+    (hQ : Q'.comp f = Q) : (Q.lift Q.radical le_rfl).Equivalent Q' := by
+  refine ⟨{ toLinearEquiv :=
+              (Submodule.quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
+            map_app' := fun x => ?_ }⟩
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    simpa [LinearMap.quotKerEquivOfSurjective_apply_mk] using DFunLike.congr_fun hQ m
+
+/-- **Uniqueness of the regular part.** If `Q` is isometric to the orthogonal sum of a zero form and
+a quadratic map `Q'` with trivial radical, then `Q'` is isometric to the regular part of `Q`. -/
+theorem equivalent_lift_radical_of_equivalent_zero_prod (Q : QuadraticMap R M P)
+    {Q' : QuadraticMap R N P} (h : Q.Equivalent ((0 : QuadraticMap R T P).prod Q'))
+    (hQ' : Q'.radical = ⊥) : (Q.lift Q.radical le_rfl).Equivalent Q' :=
+  h.lift_radical.trans <| ((0 : QuadraticMap R T P).prod Q').equivalent_lift_radical_of_comp_eq
+    (LinearMap.snd R T N) LinearMap.snd_surjective
+    (by rw [radical_zero_prod, hQ', ← Submodule.comap_snd, Submodule.comap_bot])
+    (by ext; simp)
+
+/-- **Uniqueness of the totally isotropic part.** If `Q` is isometric to the orthogonal sum of the
+zero form on `T` and a quadratic map with trivial radical, then `T` is linearly equivalent to the
+radical of `Q`. -/
+theorem nonempty_linearEquiv_radical_of_equivalent_zero_prod (Q : QuadraticMap R M P)
+    {Q' : QuadraticMap R N P} (h : Q.Equivalent ((0 : QuadraticMap R T P).prod Q'))
+    (hQ' : Q'.radical = ⊥) : Nonempty (T ≃ₗ[R] Q.radical) := by
+  obtain ⟨e⟩ := h
+  have hrad :
+      LinearMap.range (LinearMap.inl R T N) = Q.radical.map e.toLinearEquiv.toLinearMap := by
+    rw [← LinearMap.ker_snd, ← Submodule.comap_bot, Submodule.comap_snd, ← hQ', ← radical_zero_prod]
+    exact e.map_radical.symm
+  exact ⟨((LinearEquiv.ofInjective _ LinearMap.inl_injective).trans
+    (LinearEquiv.ofEq _ _ hrad)).trans (e.toLinearEquiv.submoduleMap Q.radical).symm⟩
+
+end RegularPart
+
+end QuadraticMap
+
 namespace QuadraticForm
 
 universe u
@@ -695,6 +757,7 @@ theorem exists_equivalent_zero_radical_prod
   rw [hradZero] at heq
   exact ⟨heq.symm.trans (QuadraticMap.IsometryEquiv.prodComm _ _)⟩
 
+omit [Invertible (2 : K)] in
 /-- If a quadratic form is isometric to a zero form orthogonally summed with a regular form, the
 dimension of its radical is the dimension of the zero summand. -/
 theorem finrank_radical_eq_of_equivalent_zero_prod
@@ -704,12 +767,9 @@ theorem finrank_radical_eq_of_equivalent_zero_prod
     (Q : QuadraticForm K V) (A : QuadraticForm K W) (hA : A.Nondegenerate)
     (e : Q.Equivalent ((0 : QuadraticForm K R).prod A)) :
     Module.finrank K Q.radical = Module.finrank K R := by
-  have hzeroR : (0 : QuadraticForm K R).radical = ⊤ := by
-    ext x
-    simp [QuadraticMap.mem_radical_iff']
   have hradA : ((0 : QuadraticForm K R).prod A).radical =
       (⊤ : Submodule K R).prod (⊥ : Submodule K W) := by
-    rw [QuadraticMap.radical_prod, hzeroR, hA.radical_eq_bot]
+    rw [QuadraticMap.radical_zero_prod, hA.radical_eq_bot]
   have hdimA : Module.finrank K R = Module.finrank K ((0 : QuadraticForm K R).prod A).radical := by
     rw [hradA]
     calc
@@ -720,6 +780,7 @@ theorem finrank_radical_eq_of_equivalent_zero_prod
         (Submodule.prodEquiv _ _).finrank_eq.symm
   exact (QuadraticMap.Equivalent.rank_radical_eq e).trans hdimA.symm
 
+omit [Invertible (2 : K)] in
 /-- The dimensions of the zero summands agree whenever one quadratic form is isometric to two
 orthogonal sums of a zero form and a regular form. -/
 theorem finrank_zeroPart_eq_of_equivalent_zero_prod

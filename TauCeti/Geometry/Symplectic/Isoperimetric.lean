@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Fourier.Wirtinger
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
-public import TauCeti.Geometry.Symplectic.Area
+public import TauCeti.Geometry.Symplectic.Area.Basic
+import TauCeti.MeasureTheory.Integral.CircleLIntegral
 
 /-!
 # The isoperimetric inequality in a symplectic vector space
@@ -47,7 +48,7 @@ in `CompatibleMetric.lean`).
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set TauCeti
 open scoped Real Interval RealInnerProductSpace
 
 namespace TauCeti
@@ -88,6 +89,10 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
       (1 / 2 : ℝ) * ((∫ θ in -π..π,
         ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) +
         ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ a θ)) θ‖ ^ 2) := by
+  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.mkContinuous₂ ω.toBilinForm 1 fun v w ↦ by
+    rw [one_mul, Real.norm_eq_abs]
+    exact abs_apply_le_norm_mul_norm hg v w
+  have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
   have hloop (r : ℝ) (hr : r ∈ Icc a b) :
       |∫ θ in -π..π, ω (u (circleMap z₀ r θ))
         (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)| ≤
@@ -96,25 +101,12 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
         circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
         abs_of_nonneg (ha.le.trans hr.1)] using (mem_Icc.mp hr)
-    have hc (θ : ℝ) : ContDiffAt ℝ 2 (fun θ ↦ u (circleMap z₀ r θ)) θ :=
-      (hu _ (hmem θ)).comp θ (contDiff_circleMap z₀ r).contDiffAt
-    have hd : Continuous (deriv (fun θ ↦ u (circleMap z₀ r θ))) :=
-      (contDiff_iff_contDiffAt.mpr hc).continuous_deriv (by norm_num)
-    have hLp : MemLp (deriv (fun θ ↦ u (circleMap z₀ r θ))) 2
-        (volume.restrict (Ioc (-π) π)) :=
-      (memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).mpr
-        (hd.norm.pow 2).integrableOn_Ioc
-    have hends : circleMap z₀ r (-π) = circleMap z₀ r π := by
-      convert (periodic_circleMap z₀ r (-π)).symm using 1
-      congr 1
-      ring
-    have h := ω.abs_integral_apply_le hg (by linarith [Real.pi_pos])
-      (fun θ _ ↦ ((hc θ).differentiableAt (by norm_num)).hasDerivAt)
-      (congrArg u hends) hLp
-    have hfactor : (π - -π) / (2 * π) = (1 : ℝ) := by
-      field_simp
-      ring
-    simpa only [hfactor, one_mul] using h
+    have hE : 0 ≤ ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 :=
+      intervalIntegral.integral_nonneg (by linarith [Real.pi_pos]) fun θ _ ↦ sq_nonneg _
+    have h := norm_integral_apply_apply_circleMap_le u (B := B) z₀ r
+      (fun θ ↦ (hu _ (hmem θ)).of_le one_le_two)
+    simpa only [B, LinearMap.mkContinuous₂_apply, Real.norm_eq_abs, one_mul] using
+      h.trans (mul_le_mul_of_nonneg_right hB hE)
   rw [ω.integral_fderiv_apply_annulus z₀ ha hab hu, abs_mul,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
   gcongr

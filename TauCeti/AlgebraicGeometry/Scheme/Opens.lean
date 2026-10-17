@@ -20,6 +20,9 @@ This file records general-purpose facts about open subsets of schemes.
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
+  section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
+  open.
 * `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
   compatible with restriction, glue to a unique global section.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
@@ -50,6 +53,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
   subst hf
   rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
   exact (Category.id_comp _).trans (X.presheaf.map_id _)
+
+/-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
+is inherited by the restriction of `b` to any smaller open `V'`. -/
+theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.Opens}
+    (hV'V : V' ≤ V) {b : Γ(X, V)} {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
+    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
+    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
+    P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
+  exact h W (hWV'.trans hV'V)
 
 /-- **Sections glue along the affine opens.** A family of sections `s U ∈ Γ(X, U)`, one over each
 affine open `U` of `X`, compatible with restriction from an affine open to a smaller one, consists

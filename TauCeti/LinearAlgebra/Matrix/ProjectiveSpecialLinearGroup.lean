@@ -21,7 +21,8 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   scalar matrix iff it is itself scalar.
 * `psl2zToPSL2R : PSL(2, ℤ) →* PSL(2, ℝ)` — the injective descent
   (`psl2zToPSL2R_injective`); both maps have the same range
-  (`TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R`).
+  (`TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R`), so the image of every subgroup of
+  `SL(2, ℤ)` lies in that range (`Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
@@ -152,6 +153,12 @@ theorem range_sl2zToPSL2R_eq_range_psl2zToPSL2R :
   · rintro ⟨g, rfl⟩
     induction g using QuotientGroup.induction_on with
     | H g => exact ⟨g, by simp⟩
+
+/-- The image in `PSL(2, ℝ)` of a subgroup of `SL(2, ℤ)` lies in the effective level-one
+group `psl2zToPSL2R.range`. -/
+theorem _root_.Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R (Γ : Subgroup SL(2, ℤ)) :
+    Γ.map sl2zToPSL2R ≤ psl2zToPSL2R.range :=
+  range_sl2zToPSL2R_eq_range_psl2zToPSL2R ▸ Γ.map_le_range sl2zToPSL2R
 
 end TauCeti
 

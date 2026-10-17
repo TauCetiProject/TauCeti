@@ -102,7 +102,7 @@ theorem IsNormal.isCentral_of_finite_of_isReduced [IsReduced (CommHopfAlgCat.quo
     (hI : I.IsNormal) : I.IsCentral := by
   rw [isCentral_iff_conjugation_sub_mem]
   intro x
-  rw [← ker_tensorProduct_map_quotient_id I.toIdeal, RingHom.mem_ker, map_sub, sub_eq_zero]
+  rw [← Ideal.ker_tensorProduct_map_quotient_id I.toIdeal, RingHom.mem_ker, map_sub, sub_eq_zero]
   apply tensor_eq_of_forall_map_algHom_eq (K := k)
   intro t
   apply (TensorProduct.lid k H).injective

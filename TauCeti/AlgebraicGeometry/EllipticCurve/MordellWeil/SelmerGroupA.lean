@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.BadPrimes
 public import TauCeti.RingTheory.DedekindDomain.SelmerGroup
+public import TauCeti.RingTheory.DedekindDomain.SInteger.SelmerGroup.Card
 public import TauCeti.RingTheory.DedekindDomain.SInteger.SelmerGroup.Etale
 import TauCeti.RingTheory.Valuation.RootMonic
 
@@ -51,6 +52,12 @@ componentwise statement into one about `W.M` along the decomposition `modPowEqui
 
 * `WeierstrassCurve.Affine.selmerGroupA_mono`: `A(S,2)` is monotone in `S`.
 * `WeierstrassCurve.Affine.finite_selmerGroupA`: `A(S,2)` is finite when `S` is.
+* `WeierstrassCurve.Affine.neg_one_mem_selmerGroupA`: the class of `-1` lies in `A(S,2)`.
+* `WeierstrassCurve.Affine.card_selmerGroupA`: `#A(S,2)` is the product of the orders of the
+  Selmer groups of the factors.
+* `WeierstrassCurve.Affine.card_selmerGroupFactor_empty`: for `S = ∅`, the Selmer group of a factor
+  has order `2 ^ (r + 1) * #Cl[2]`, with `r` the unit rank and `Cl` the class group of its ring of
+  integers.
 * `WeierstrassCurve.Affine.mem_selmerGroupFactor_unit_iff`: a class of units lies in the Selmer
   group of a factor exactly when its valuation is even at every prime not above `S`.
 * `WeierstrassCurve.Affine.μX_component_mem_selmerGroupFactor`: each component of `μX x` lies in
@@ -73,7 +80,8 @@ spelling of square classes, `Mˣ ⧸ (powMonoidHom n).range`, so the statements 
 (see `TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT` for that decision). The source is
 written against Lean `v4.32.0`; this is a forward port. The hypotheses of Step 6 on `S` (integral
 `a₂`, `a₄`, `a₆` and a unit `disc f` outside `S`) follow the later revision `3bfe124` of the same
-project.
+project. `neg_one_mem_selmerGroupA` is that revision's lemma of the same name, and
+`card_selmerGroupA` sharpens its `card_selmerGroupA_le_prod` (`SelmerGroup.lean`) to an equality.
 -/
 
 public section
@@ -185,6 +193,42 @@ lemma mem_selmerGroupFactor_unit_iff (p : W.f.Factors) (u : (𝕃 p)ˣ) :
   -- `@[expose]`, so only its characterising lemma is available here.
   rw [selmerGroupFactor, mem_selmerGroupAbove_iff]
   exact forall₂_congr fun w _ ↦ HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff w 2 u
+
+/-- The class of `-1` lies in `A(S,2)` for every `S`: its image in each field factor is a square
+root of unity, so has valuation zero at every prime. -/
+lemma neg_one_mem_selmerGroupA : (QuotientGroup.mk (-1 : W.Aˣ) : W.M) ∈ W.selmerGroupA R S := by
+  refine (W.mem_selmerGroupA_iff R S _).mpr fun p ↦ ?_
+  rw [AdjoinRoot.modPowEquivPiFactors_mk, mem_selmerGroupFactor_unit_iff]
+  intro w _
+  have hu : w.valuationOfNeZero (Units.map
+      (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p).toRingHom.toMonoidHom (-1)) ^ 2 = 1 := by
+    rw [← map_pow, ← map_pow, neg_one_sq, map_one, map_one]
+  rw [(pow_eq_one_iff_left two_ne_zero).mp hu, toAdd_one]
+  exact dvd_zero 2
+
+/-- The order of `A(S,2)` is the product of the orders of the Selmer groups of the field factors
+of `W.A`. -/
+theorem card_selmerGroupA [Fintype W.f.Factors] :
+    Nat.card (W.selmerGroupA R S) = ∏ p : W.f.Factors, Nat.card (W.selmerGroupFactor R S p) := by
+  simp only [selmerGroupA, card_selmerGroupOfEquiv, selmerGroupFactor, selmerGroupAbove_def]
+
+/-- **The unramified square classes of a field factor.** The `2`-Selmer group of the field factor
+`K[X] ⧸ (p)` relative to `S = ∅` has order `2 ^ (r + 1) · #Cl[2]`, where `r` is the rank of the
+unit group of the factor's ring of integers and `Cl` is its class group. -/
+theorem card_selmerGroupFactor_empty (p : W.f.Factors)
+    [Monoid.FG (W.ringOfIntegersFactor R p)ˣ] :
+    Nat.card (W.selmerGroupFactor R ∅ p) =
+      2 ^ (Module.finrank ℤ (Additive (W.ringOfIntegersFactor R p)ˣ) + 1) *
+        Nat.card (powMonoidHom 2 : ClassGroup (W.ringOfIntegersFactor R p) →*
+          ClassGroup (W.ringOfIntegersFactor R p)).ker := by
+  have h2 : (2 : W.ringOfIntegersFactor R p) ≠ 0 := by
+    intro h
+    have h' := congrArg (algebraMap (W.ringOfIntegersFactor R p) (𝕃 p)) h
+    rw [map_ofNat, map_zero, ← map_ofNat (ι p) 2] at h'
+    exact Ring.two_ne_zero W.ringChar_ne_two ((map_eq_zero_iff _ (ι p).injective).mp h')
+  have : Group.FG (W.ringOfIntegersFactor R p)ˣ := Group.fg_iff_monoid_fg.mpr ‹_›
+  rw [selmerGroupFactor, selmerGroupAbove_def, HeightOneSpectrum.primesAbove_empty]
+  exact selmerGroup.card_empty_two_eq (𝕃 p) h2
 
 /-! The arithmetic input to Step 6 holds at every prime outside `S` once `a₂`, `a₄` and `a₆` are
 integral and `disc f` is a unit there. Since `disc f` can be a unit at a prime above `2`, where,

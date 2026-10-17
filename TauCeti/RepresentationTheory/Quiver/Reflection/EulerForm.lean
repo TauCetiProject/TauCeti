@@ -31,11 +31,9 @@ Euler form of the original quiver evaluated at `d` and `e`.
 
 ## References
 
-This is the dimension-vector shadow of the Layer 4 reflection-functor target
-`dim (C⁺ᵢ M) = sᵢ · dim M` of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Derksen--Weyman,
-*An Introduction to Quiver Representations*, and Bernstein--Gelfand--Ponomarev, *Coxeter functors
-and Gabriel's theorem*.
+This is the dimension-vector shadow of the reflection-functor identity `dim (C⁺ᵢ M) = sᵢ · dim M`.
+See Derksen--Weyman, *An Introduction to Quiver Representations*, and Bernstein--Gelfand--Ponomarev,
+*Coxeter functors and Gabriel's theorem*.
 -/
 
 public section

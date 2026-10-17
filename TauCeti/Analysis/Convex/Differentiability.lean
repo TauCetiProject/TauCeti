@@ -58,6 +58,8 @@ semicontinuous at points of differentiability, again with no convexity assumptio
   differentiability in the effective domain is a subgradient.
 * `TauCeti.eventually_forall_mem_subdifferential_norm_sub_le` — near a point where `f` is finite
   nearby and differentiable, every subgradient is close to the gradient.
+* `TauCeti.hasGradientAt_toReal_of_continuousAt_subgradient` — a continuous local selection
+  of subgradients is the gradient, without a convexity assumption.
 
 ## References
 
@@ -252,6 +254,34 @@ theorem eventually_forall_mem_subdifferential_norm_sub_le
     rw [← ht, ← hw, mul_sub]
     linarith
   exact le_of_mul_le_mul_left this (by positivity)
+
+/-- A subgradient selection continuous at `x` is the gradient at `x`. Only local existence
+of the selection is needed; the function need not be convex. -/
+theorem hasGradientAt_toReal_of_continuousAt_subgradient
+    {T : E → E} (hT : ContinuousAt T x)
+    (hmem : ∀ᶠ z in 𝓝 x, T z ∈ subdifferential (innerₗ E) f z) :
+    HasGradientAt (fun z => (f z).toReal) (T x) x := by
+  have hx := hmem.self_of_nhds
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine HasFDerivAt.of_isLittleO (Asymptotics.IsLittleO.of_bound fun ε hε => ?_)
+  have hclose : ∀ᶠ z in 𝓝 x, ‖T z - T x‖ < ε :=
+    (hT.sub continuousAt_const).norm.tendsto.eventually
+      (gt_mem_nhds (by simpa using hε))
+  filter_upwards [hmem, hclose] with z hz hεz
+  have hlo := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hx
+    (ne_top_of_mem_subdifferential _ hz)
+  have hhi := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hz
+    (ne_top_of_mem_subdifferential _ hx)
+  have hb := norm_inner_le_norm (𝕜 := ℝ) (z - x) (T z - T x)
+  have hb' : inner ℝ (z - x) (T z - T x) ≤ ε * ‖z - x‖ := by
+    calc
+      inner ℝ (z - x) (T z - T x) ≤ ‖inner ℝ (z - x) (T z - T x)‖ := le_abs_self _
+      _ ≤ ‖z - x‖ * ‖T z - T x‖ := hb
+      _ ≤ ε * ‖z - x‖ := by nlinarith [norm_nonneg (z - x)]
+  simp only [innerₗ_apply_apply, inner_sub_left, inner_sub_right] at hlo hhi hb'
+  rw [InnerProductSpace.toDual_apply_apply, real_inner_comm (z - x) (T x),
+    inner_sub_left, Real.norm_eq_abs]
+  exact abs_le.2 ⟨by linarith [norm_nonneg (z - x)], by linarith⟩
 
 end InnerProduct
 

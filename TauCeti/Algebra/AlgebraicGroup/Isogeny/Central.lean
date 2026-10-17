@@ -31,6 +31,8 @@ No smoothness assumption is made on the target.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat
