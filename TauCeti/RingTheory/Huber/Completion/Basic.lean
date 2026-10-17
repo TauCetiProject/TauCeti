@@ -116,6 +116,15 @@ theorem mem_completionRingOfDefinition_iff (P : PairOfDefinition A) {x : Complet
     x ∈ P.completionRingOfDefinition
       ↔ x ∈ closure (((↑) : A → Completion A) '' (P.ringOfDefinition : Set A)) := (Iff.rfl)
 
+/-- An element of `A` whose image in `Â` lies in `Â₀` already lies in `A₀`. There is no
+separation hypothesis on `A`: `A₀` is open, hence closed, in `A`, so it is the preimage of the
+closure of its image in `Â`. -/
+theorem coe_mem_completionRingOfDefinition_iff (P : PairOfDefinition A) {a : A} :
+    (a : Completion A) ∈ P.completionRingOfDefinition ↔ a ∈ P.ringOfDefinition := by
+  rw [mem_completionRingOfDefinition_iff, ← Set.mem_preimage]
+  exact Set.ext_iff.mp (UniformSpace.Completion.preimage_closure_image_coe
+    (G := P.ringOfDefinition.toAddSubgroup) P.isOpen_ringOfDefinition) a
+
 /-- The ring of definition of the completion is open. -/
 theorem isOpen_completionRingOfDefinition (P : PairOfDefinition A) :
     IsOpen (P.completionRingOfDefinition : Set (Completion A)) :=
