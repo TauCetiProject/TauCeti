@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Closure
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Perm
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -15,11 +15,12 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 The roots of the pinned type `Aₙ` datum `TauCeti.DynkinType.typeASimplyConnectedRootDatum` are the
 `n * (n + 1)` vectors `e_a - e_b` with `a ≠ b` in `Fin (n + 1)`, and reflecting in `e_a - e_b`
 transposes the two entries of such an ordered pair
-(`TauCeti.DynkinType.typeAIndexEquiv_symm_reflectionPerm`). So the permutations of `Fin (n + 1)`
-act on the root indices, the reflections are exactly the images of the transpositions, and the two
-subgroups of `Equiv.Perm (Fin (n * (n + 1)))` those two families generate coincide. Since the
-transpositions generate `Equiv.Perm (Fin (n + 1))` and both actions are faithful, the Weyl group of
-the datum *is* the symmetric group on `n + 1` letters.
+(`TauCeti.DynkinType.typeAIndexEquiv_symm_reflectionPerm`). So in the action of
+`Equiv.Perm (Fin (n + 1))` on the root indices (`TauCeti.DynkinType.typeAIndexPermHom`) the
+reflections are exactly the images of the transpositions, and the two subgroups of
+`Equiv.Perm (Fin (n * (n + 1)))` those two families generate coincide. Since the transpositions
+generate `Equiv.Perm (Fin (n + 1))` and both actions are faithful, the Weyl group of the datum *is*
+the symmetric group on `n + 1` letters.
 
 Faithfulness on the Weyl-group side is the coroot-span form
 `RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top`: the roots of a *simply connected*
@@ -34,10 +35,6 @@ permutations of the root indices.
 
 ## Main definitions
 
-* `TauCeti.DynkinType.typeAPairPermHom`: the action of `Equiv.Perm (Fin (n + 1))` on the ordered
-  pairs of distinct elements indexing the roots.
-* `TauCeti.DynkinType.typeAIndexPermHom`: the same action read through the Bourbaki enumeration of
-  the roots by `Fin (n * (n + 1))`.
 * `TauCeti.DynkinType.typeAWeylGroupEquivPerm`: **the Weyl group of the pinned type `Aₙ` datum is
   the symmetric group on `n + 1` letters**. The uniform pinned datum
   `DynkinType.simplyConnectedRootDatum (.A n)` is this one by the `simp` lemma
@@ -59,25 +56,10 @@ permutations of the root indices.
 * `TauCeti.DynkinType.card_weylGroup_typeASimplyConnectedRootDatum`: the Weyl group of type `Aₙ`
   has order `(n + 1)!`.
 
-## Implementation notes
-
-`TauCeti.DynkinType.typeAWeylGroupEquivPerm` is characterized by
-`TauCeti.DynkinType.typeAIndexPermHom_typeAWeylGroupEquivPerm`, and every later evaluation of it
-goes through that lemma rather than through its definition. Proving it needs the definition
-unfolded, which an exported theorem may not do, so the body is restated once as a `private`
-equation and the public lemma rewrites with that; this is the standard indirection for a
-non-exposed definition and not a duplicated definition.
-
 ## References
 
-This is the type `Aₙ` half of "the identification of the classical Weyl groups (`Aₙ ↦ Sₙ₊₁`,
-`G₂ ↦ DihedralGroup 6`)" listed in the "What is missing (build here)" section of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, and the Weyl-group clause of that
-roadmap's `Aₙ` worked example. Its `G₂` companion is
-`TauCeti.nonempty_dihedralGroup_mulEquiv_weylGroup_of_hasCartanType_G2` in
-`TauCeti/LinearAlgebra/RootSystem/Weyl/Dihedral.lean`. See N. Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4--6*, Ch. VI §4.7, and J. E. Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, GTM 9, §12.1.
+See N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI §4.7, and J. E. Humphreys,
+*Introduction to Lie Algebras and Representation Theory*, GTM 9, §12.1.
 -/
 
 public section
@@ -92,62 +74,7 @@ namespace DynkinType
 
 variable {n : ℕ}
 
-/-! ## Permuting the ordered pairs -/
-
-/-- A permutation of `Fin (n + 1)` acts entrywise on the ordered pairs of distinct entries that
-index the roots of type `Aₙ`. -/
-def typeAPairPerm (σ : Equiv.Perm (Fin (n + 1))) : Equiv.Perm (TypeAIndex n) :=
-  Equiv.subtypeEquiv (σ.prodCongr σ) fun _ ↦ by simp
-
-@[simp]
-theorem coe_typeAPairPerm (σ : Equiv.Perm (Fin (n + 1))) (p : TypeAIndex n) :
-    ((typeAPairPerm σ p : TypeAIndex n) : Fin (n + 1) × Fin (n + 1)) =
-      (σ p.val.1, σ p.val.2) :=
-  (rfl)
-
-/-- The entrywise action of `Equiv.Perm (Fin (n + 1))` on the ordered pairs indexing the roots of
-type `Aₙ`, as a group homomorphism. -/
-def typeAPairPermHom (n : ℕ) : Equiv.Perm (Fin (n + 1)) →* Equiv.Perm (TypeAIndex n) where
-  toFun := typeAPairPerm
-  map_one' := Equiv.ext fun _ ↦ Subtype.ext (rfl)
-  map_mul' _ _ := Equiv.ext fun _ ↦ Subtype.ext (rfl)
-
-@[simp]
-theorem typeAPairPermHom_apply (σ : Equiv.Perm (Fin (n + 1))) :
-    typeAPairPermHom n σ = typeAPairPerm σ :=
-  (rfl)
-
-/-- **The entrywise action on ordered pairs is faithful.** A permutation of `Fin (n + 1)` is
-recovered from its action on pairs by reading off the first entry, there being a pair with any
-prescribed first entry unless `n = 0`, where the permutation group is trivial anyway. -/
-theorem typeAPairPermHom_injective : Injective (typeAPairPermHom (n := n)) := by
-  intro σ τ hστ
-  refine Equiv.ext fun a ↦ ?_
-  obtain _ | m := n
-  · have h₁ := (σ a).isLt
-    have h₂ := (τ a).isLt
-    exact Fin.ext (by omega)
-  · obtain ⟨b, hb⟩ := exists_ne a
-    have h : typeAPairPerm σ ⟨(a, b), Ne.symm hb⟩ = typeAPairPerm τ ⟨(a, b), Ne.symm hb⟩ := by
-      rw [← typeAPairPermHom_apply, ← typeAPairPermHom_apply, hστ]
-    simpa using congrArg (fun p : TypeAIndex (m + 1) ↦ (p : Fin (m + 2) × Fin (m + 2)).1) h
-
-/-! ## Permuting the root indices -/
-
-/-- The entrywise action of `Equiv.Perm (Fin (n + 1))` on the roots of type `Aₙ`, read through the
-Bourbaki enumeration of the roots by `Fin (n * (n + 1))`. -/
-def typeAIndexPermHom (n : ℕ) :
-    Equiv.Perm (Fin (n + 1)) →* Equiv.Perm (Fin (n * (n + 1))) :=
-  (Equiv.permCongrHom (typeAIndexEquiv n)).toMonoidHom.comp (typeAPairPermHom n)
-
-theorem typeAIndexPermHom_apply (σ : Equiv.Perm (Fin (n + 1))) (k : Fin (n * (n + 1))) :
-    typeAIndexPermHom n σ k =
-      typeAIndexEquiv n (typeAPairPerm σ ((typeAIndexEquiv n).symm k)) :=
-  (rfl)
-
-/-- The action on root indices is faithful, the Bourbaki enumeration being a bijection. -/
-theorem typeAIndexPermHom_injective : Injective (typeAIndexPermHom (n := n)) :=
-  (Equiv.permCongrHom (typeAIndexEquiv n)).injective.comp typeAPairPermHom_injective
+/-! ## Reflections as transpositions -/
 
 /-- **A type `Aₙ` reflection permutes the roots by a transposition.** Reflecting in the root
 `e_a - e_b` sends `e_c - e_d` to `e_{s c} - e_{s d}`, where `s` transposes `a` and `b`, so on root
@@ -160,7 +87,7 @@ theorem reflectionPerm_typeAIndexEquiv (p : TypeAIndex n) :
   refine (typeAIndexEquiv n).symm_apply_eq.mp (Subtype.ext ?_)
   have h := typeAIndexEquiv_symm_reflectionPerm p ((typeAIndexEquiv n).symm l)
   rw [Equiv.apply_symm_apply] at h
-  rw [h, coe_typeAPairPerm]
+  rw [h, coe_typeAPairPermHom]
 
 /-- The reflection in an arbitrary root index, in terms of the pair it enumerates. -/
 theorem reflectionPerm_typeASimplyConnectedRootDatum (k : Fin (n * (n + 1))) :
@@ -199,6 +126,9 @@ noncomputable def typeAWeylGroupEquivPerm (n : ℕ) :
     ((MulEquiv.subgroupCongr range_typeAIndexPermHom.symm).trans
       (MonoidHom.ofInjective typeAIndexPermHom_injective).symm)
 
+/-- The defining expression for `typeAWeylGroupEquivPerm`, restated so that
+`typeAIndexPermHom_typeAWeylGroupEquivPerm` can rewrite with it; every later evaluation goes
+through that characterization rather than through the definition. -/
 private theorem typeAWeylGroupEquivPerm_eq (n : ℕ) :
     typeAWeylGroupEquivPerm n =
       (MonoidHom.ofInjective (RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top
@@ -220,6 +150,7 @@ theorem typeAIndexPermHom_typeAWeylGroupEquivPerm
 
 /-- The isomorphism takes the reflection in the root indexed by `(a, b)` to the transposition of
 `a` and `b`. -/
+@[simp]
 theorem typeAWeylGroupEquivPerm_ofIdx (p : TypeAIndex n) :
     typeAWeylGroupEquivPerm n
         (RootPairing.weylGroup.ofIdx (typeASimplyConnectedRootDatum n) (typeAIndexEquiv n p)) =
@@ -230,6 +161,7 @@ theorem typeAWeylGroupEquivPerm_ofIdx (p : TypeAIndex n) :
 
 /-- The inverse isomorphism takes the transposition of `a` and `b` back to the reflection in the
 root `e_a - e_b`. -/
+@[simp]
 theorem typeAWeylGroupEquivPerm_symm_swap (p : TypeAIndex n) :
     (typeAWeylGroupEquivPerm n).symm (Equiv.swap p.val.1 p.val.2) =
       RootPairing.weylGroup.ofIdx (typeASimplyConnectedRootDatum n) (typeAIndexEquiv n p) :=
@@ -237,6 +169,7 @@ theorem typeAWeylGroupEquivPerm_symm_swap (p : TypeAIndex n) :
 
 /-- **The simple reflections are the adjacent transpositions.** In Bourbaki order the `i`-th simple
 reflection of type `Aₙ` transposes `i` and `i + 1`. -/
+@[simp]
 theorem typeAWeylGroupEquivPerm_ofIdx_typeASimpleIndex (i : Fin n) :
     typeAWeylGroupEquivPerm n
         (RootPairing.weylGroup.ofIdx (typeASimplyConnectedRootDatum n) (typeASimpleIndex n i)) =
