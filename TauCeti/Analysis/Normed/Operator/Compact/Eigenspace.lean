@@ -45,27 +45,12 @@ namespace TauCeti
 
 open Module End
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable {T : E →L[𝕜] E} {μ : 𝕜}
 
 namespace IsCompactOperator
 
-/-- A nonzero eigenspace of a compact operator on a normed space is finite dimensional.
-
-Unlike Mathlib's `ContinuousLinearMap.finite_dimensional_eigenspace`, this needs no inner product
-and works over any complete nontrivially normed field. -/
-theorem _root_.IsCompactOperator.finiteDimensional_eigenspace (hT : IsCompactOperator T)
-    (hμ : μ ≠ 0) :
-    FiniteDimensional 𝕜 (eigenspace T.toLinearMap μ) := by
-  have hT' := hT.restrict
-    ((mem_invtSubmodule_iff_forall_mem_of_mem _).mp
-      (eigenspace_mem_invtSubmodule T.toLinearMap μ))
-    (ContinuousLinearMap.isClosed_eigenspace T μ)
-  rw [restrict_eigenspace, LinearMap.coe_smul, IsCompactOperator.smul_iff₀ hμ] at hT'
-  exact FiniteDimensional.of_isCompactOperator_id hT'
-
-omit [CompleteSpace 𝕜] in
 /-- The difference operator sends generalized eigenspace stage `n + 1` to stage `n`. -/
 private def genEigenspaceSuccMap (f : Module.End 𝕜 E) (μ : 𝕜) (n : ℕ) :
     genEigenspace f μ ((n + 1 : ℕ) : ℕ∞) →ₗ[𝕜] genEigenspace f μ n :=
@@ -77,7 +62,6 @@ private def genEigenspaceSuccMap (f : Module.End 𝕜 E) (μ : 𝕜) (n : ℕ) :
     rw [LinearMap.mem_ker]
     simpa only [pow_succ, Module.End.mul_apply] using hx'
 
-omit [CompleteSpace 𝕜] in
 /-- One step of the generalized-eigenspace filtration preserves finite dimensionality once the
 ordinary eigenspace is finite dimensional. -/
 private theorem finiteDimensional_genEigenspace_succ
@@ -111,7 +95,6 @@ private theorem finiteDimensional_genEigenspace_succ
   · rw [top_inf_eq]
     exact (Submodule.fg_iff_finiteDimensional _).mpr hker
 
-omit [CompleteSpace 𝕜] in
 /-- If the ordinary `μ`-eigenspace is finite dimensional, then so is every finite stage of the
 generalized `μ`-eigenspace filtration. -/
 private theorem finiteDimensional_genEigenspace_nat_of_eigenspace
@@ -125,6 +108,22 @@ private theorem finiteDimensional_genEigenspace_nat_of_eigenspace
       infer_instance
   | succ n ih =>
       exact finiteDimensional_genEigenspace_succ hfinite n ih
+
+variable [CompleteSpace 𝕜]
+
+/-- A nonzero eigenspace of a compact operator on a normed space is finite dimensional.
+
+Unlike Mathlib's `ContinuousLinearMap.finite_dimensional_eigenspace`, this needs no inner product
+and works over any complete nontrivially normed field. -/
+theorem _root_.IsCompactOperator.finiteDimensional_eigenspace (hT : IsCompactOperator T)
+    (hμ : μ ≠ 0) :
+    FiniteDimensional 𝕜 (eigenspace T.toLinearMap μ) := by
+  have hT' := hT.restrict
+    ((mem_invtSubmodule_iff_forall_mem_of_mem _).mp
+      (eigenspace_mem_invtSubmodule T.toLinearMap μ))
+    (ContinuousLinearMap.isClosed_eigenspace T μ)
+  rw [restrict_eigenspace, LinearMap.coe_smul, IsCompactOperator.smul_iff₀ hμ] at hT'
+  exact FiniteDimensional.of_isCompactOperator_id hT'
 
 /-- Every finite stage of the generalized eigenspace of a compact operator at a nonzero scalar is
 finite dimensional. In particular, compact operators have no infinite-dimensional finite-order
