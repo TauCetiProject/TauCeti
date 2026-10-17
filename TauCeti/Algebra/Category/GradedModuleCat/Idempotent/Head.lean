@@ -54,9 +54,6 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.simple_gradedIdempotentHead`: each graded head `Sᵢ` is a simple graded module.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedIdempotentHead`: every simple finite graded module
   is isomorphic to a shift of some `Sᵢ`.
-* `TauCeti.isSemisimpleRing_gradeZero_of_completeOrthogonalIdempotents`: a degree-zero piece
-  spanned by a complete family of orthogonal idempotents is a semisimple ring.
-
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded modules
@@ -515,27 +512,6 @@ theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Module.Finite k A] 
     rw [← hφg, h, GradedModuleCat.hom_zero, LinearMap.zero_apply]
   have : IsIso φ := isIso_of_mono_of_epi φ
   exact ⟨i, p, ⟨(asIso φ).symm⟩⟩
-
-omit [GradedAlgebra 𝒜] in
-include hcomplete he₀ hspan in
-/-- A degree-zero piece spanned by a complete family of orthogonal idempotents is a semisimple
-ring: `c ↦ ∑ cᵢ eᵢ` is a surjective ring homomorphism from `I → k` onto `𝒜 0`. Thus split
-degree-zero parts satisfy the semisimplicity hypothesis of the minimal-resolution theory. -/
-theorem isSemisimpleRing_gradeZero_of_completeOrthogonalIdempotents [SetLike.GradedMonoid 𝒜] :
-    IsSemisimpleRing (𝒜 0) := by
-  let f : (I → k) →+* 𝒜 0 :=
-    { toFun c := ⟨∑ i, c i • e i, Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _ (he₀ i)⟩
-      map_one' := Subtype.ext <| by simpa using hcomplete.complete
-      map_mul' c c' := Subtype.ext <| by
-        simp only [SetLike.GradeZero.coe_mul, Pi.mul_apply, Finset.sum_mul_sum, smul_mul_smul]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        rw [Finset.sum_eq_single i (fun j _ hj => by rw [hcomplete.ortho (Ne.symm hj), smul_zero])
-          (by simp), (hcomplete.idem i).eq]
-      map_zero' := Subtype.ext <| by simp
-      map_add' c c' := Subtype.ext <| by simp [add_smul, Finset.sum_add_distrib] }
-  refine RingHom.isSemisimpleRing_of_surjective f fun x => ?_
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp (hspan x.2)
-  exact ⟨c, Subtype.ext hc⟩
 
 end Field
 
