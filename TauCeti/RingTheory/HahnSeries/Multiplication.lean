@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.HahnSeries.Multiplication
 
 /-!
-# Orders and leading coefficients of powers of Hahn series
+# Powers of Hahn series and compatibility with coefficient scalars
 
 Over a domain, taking a power multiplies the order and raises the leading coefficient to that
 power. These formulas detect whether a leading pole term can be cancelled by a power.
@@ -31,11 +31,33 @@ example [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).orderTop = n • f.orderTop :=
   TauCeti.hahnSeries_orderTop_pow n (f := f)
 ```
+
+This file also records that coefficientwise scalar multiplication associates and commutes with
+multiplication of Hahn series (`TauCeti.hahnSeries_isScalarTower` and
+`TauCeti.hahnSeries_smulCommClass`). Mathlib provides this for the action of Hahn
+series on Hahn modules, and for Hahn series through their algebra structure; but the default
+algebra structure on Laurent series `R⸨X⸩` comes from `R⟦X⟧` and is not definitionally the
+coefficientwise one, so for instance the `R⸨X⸩`-module structure on `R`-derivations of `R⸨X⸩`
+needs this instance.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Coefficientwise scalar multiplication commutes with multiplication of Hahn series. -/
+instance hahnSeries_smulCommClass {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+    [IsOrderedCancelAddMonoid Γ] [CommSemiring R] :
+    SMulCommClass R (HahnSeries Γ R) (HahnSeries Γ R) where
+  smul_comm r x y := by
+    simp only [← HahnSeries.C_mul_eq_smul, smul_eq_mul, mul_left_comm]
+
+/-- Coefficientwise scalar multiplication associates with multiplication of Hahn series. -/
+instance hahnSeries_isScalarTower {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+    [IsOrderedCancelAddMonoid Γ] [Semiring R] :
+    IsScalarTower R (HahnSeries Γ R) (HahnSeries Γ R) where
+  smul_assoc r x y := by
+    simp only [← HahnSeries.C_mul_eq_smul, smul_eq_mul, mul_assoc]
 
 variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ]
   [Semiring R] [NoZeroDivisors R]

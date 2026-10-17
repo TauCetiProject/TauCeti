@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # The normalizer quotient of a subgroup
@@ -30,6 +31,8 @@ in the normal case.
   the natural map `N(H) / H →* G / H`.
 * `Subgroup.normalizerQuotientEquivQuotientOfNormal`: when `H` is normal in `G`,
   the normalizer quotient is canonically isomorphic to `G / H`.
+* `Subgroup.normalizerQuotientMulAut`: for a commutative `H`, conjugation by the normalizer
+  descends to an action of `N(H) / H` on `H` by automorphisms.
 
 -/
 
@@ -249,5 +252,26 @@ lemma normalizerQuotientEquivQuotientOfNormal_symm_mk (g : G) :
   rfl
 
 end Normal
+
+section MulAut
+
+variable (H : Subgroup G) [IsMulCommutative H]
+
+/-- **Conjugation of a commutative subgroup by its normalizer quotient.** `H` acts trivially on
+itself by conjugation, so `Subgroup.normalizerMonoidHom` descends to `N(H) / H`. -/
+def normalizerQuotientMulAut : H.normalizerQuotient →* MulAut H :=
+  H.normalizerQuotientLift (normalizerMonoidHom H) fun g hg => by
+    ext k
+    have hcomm : (g : G) * k = k * g := congrArg Subtype.val (mul_comm' (⟨(g : G), hg⟩ : H) k)
+    rw [normalizerMonoidHom_apply_apply_coe, MulAut.one_apply, hcomm, mul_inv_cancel_right]
+
+/-- The class of `g ∈ N(H)` acts on `H` by conjugation by `g`. -/
+@[simp]
+lemma coe_normalizerQuotientMulAut_mk_apply (g : normalizer (H : Set G)) (k : H) :
+    ((H.normalizerQuotientMulAut (g : H.normalizerQuotient) k : H) : G) = g * k * (g : G)⁻¹ := by
+  simp only [normalizerQuotientMulAut, normalizerQuotientLift, QuotientGroup.lift_mk,
+    normalizerMonoidHom_apply_apply_coe]
+
+end MulAut
 
 end Subgroup

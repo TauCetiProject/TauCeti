@@ -215,6 +215,67 @@ end SmoothBundleForm
 
 section FixedCoefficients
 
+/-- A fixed-coefficient rough form is `C^n` when it is a `C^n` section of the existing
+alternating tangent bundle. Degree and coefficient space are inferred from the form. -/
+def IsSmoothForm (I : ModelWithCorners ℝ E H) [IsManifold I 1 M]
+    (n : WithTop ℕ∞) (φ : RoughForm I M F k) : Prop :=
+  IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) n φ
+
+/-- The fixed-coefficient regularity predicate is the existing section regularity predicate. -/
+theorem isSmoothForm_def [IsManifold I 1 M] (n : WithTop ℕ∞) (φ : RoughForm I M F k) :
+    IsSmoothForm I n φ ↔
+      ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+        (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  Iff.rfl
+
+/-- A regular fixed-coefficient form is a regular section of the alternating bundle. -/
+theorem IsSmoothForm.contMDiff [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  (isSmoothForm_def n φ).mp hφ
+
+/-- Addition preserves regularity of the actual fixed-coefficient bundle sections. -/
+theorem IsSmoothForm.add [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ ψ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (hψ : IsSmoothForm I n ψ) :
+    IsSmoothForm I n (φ + ψ) := by
+  rw [isSmoothForm_def]
+  exact hφ.contMDiff.add_section hψ.contMDiff
+
+/-- The zero differential form has every section regularity. -/
+theorem IsSmoothForm.zero [IsManifold I 1 M] (n : WithTop ℕ∞) :
+    IsSmoothForm I n (0 : RoughForm I M F k) := by
+  rw [isSmoothForm_def]
+  exact contMDiff_zeroSection ℝ (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)
+
+/-- Finite sums preserve section regularity of differential forms. -/
+theorem IsSmoothForm.sum [IsManifold I 1 M] {n : WithTop ℕ∞} {ι : Type*}
+    (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I n (φ i)) :
+    IsSmoothForm I n (∑ i ∈ s, φ i) := by
+  rw [isSmoothForm_def]
+  simpa only [Finset.sum_apply] using
+    ContMDiff.sum_section (fun i hi ↦ (hφ i hi).contMDiff)
+
+/-- Negation preserves regularity of the actual fixed-coefficient bundle section. -/
+theorem IsSmoothForm.neg [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) : IsSmoothForm I n (-φ) := by
+  rw [isSmoothForm_def]
+  exact hφ.contMDiff.neg_section
+
+/-- Constant scalar multiplication preserves regularity of the actual bundle section. -/
+theorem IsSmoothForm.smul [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (c : ℝ) :
+    IsSmoothForm I n (c • φ) := by
+  rw [isSmoothForm_def]
+  exact hφ.contMDiff.const_smul_section
+
+/-- Multiplication by a scalar `C^n` function preserves the regularity of a rough form. -/
+theorem IsSmoothForm.fun_smul [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ, ℝ) n f) : IsSmoothForm I n (fun x ↦ f x • φ x) := by
+  rw [isSmoothForm_def]
+  exact hf.smul_section hφ.contMDiff
+
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)

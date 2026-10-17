@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.GaloisModule
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.RelativeBrauerLocalization
 
 /-!
@@ -36,7 +37,10 @@ Brauer classes split by `L` (`subsingleton_groupCohomology_one_ideleClassRep_iff
 Brauer class is split by some finite Galois extension, the injectivity of `Br K → ⨁_v Br K_v`
 (Albert–Brauer–Hasse–Noether) follows from the vanishing of `H¹(Gal(L/K), C_L)` for all finite
 Galois `L/K` (`brLocalization_injective_of_subsingleton_groupCohomology_one`), which comes from
-the fundamental inequalities.
+the fundamental inequalities. Equivalently, it follows from the vanishing of `H¹` on the layers
+`V ◁ G_K` of the idele-class formation `globalFormation K`
+(`brLocalization_injective_of_subsingleton_h1_globalFormation`), the form in which the fundamental
+inequalities give it.
 
 ## Main definitions
 
@@ -55,6 +59,8 @@ the fundamental inequalities.
 * `TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_groupCohomology_one`: the
   Hasse principle `Br K ↪ ⨁_v Br K_v`, if idele-class `H¹` vanishes for every finite Galois
   extension of `K`.
+* `TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_h1_globalFormation`: the
+  Hasse principle, if `H¹` vanishes on every layer `V ◁ G_K` of the idele-class formation.
 
 ## References
 
@@ -140,5 +146,16 @@ theorem brLocalization_injective_of_subsingleton_groupCohomology_one
   have : NumberField E := NumberField.of_module_finite K E
   have : IsGalois K E := {}
   rw [(subsingleton_groupCohomology_one_ideleClassRep_iff E.val).1 (h E) y hx, map_zero]
+
+variable (K) in
+/-- **The Hasse principle from the vanishing of `H¹` on the idele-class formation**: if `H¹`
+vanishes on every layer `V ◁ G_K` of `globalFormation K`, then a Brauer class of `K` whose
+localizations all vanish is zero: `Br K → ⨁_v Br K_v` is injective. -/
+theorem brLocalization_injective_of_subsingleton_h1_globalFormation
+    (h : ∀ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
+      Subsingleton ((NormalLayer.ofOpenNormal V).H (globalFormation K) 1)) :
+    Function.Injective (brLocalization K) :=
+  brLocalization_injective_of_subsingleton_groupCohomology_one K fun _ _ _ _ _ ↦
+    (subsingleton_groupCohomology_ideleClassRep_iff_subsingleton_H 1).2 (h _)
 
 end TauCeti.ClassFieldTheory

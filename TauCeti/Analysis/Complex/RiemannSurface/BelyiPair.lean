@@ -7,8 +7,12 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
+public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.Data.Set.Restrict
+import TauCeti.Geometry.Manifold.Connected
+import TauCeti.GroupTheory.GroupAction.Free
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Analytic Belyi pairs
@@ -21,9 +25,11 @@ complement of `{0, 1, ∞}` (`TauCeti.AnalyticBelyiPair.isCoveringMapOn`, and th
 surface is a covering exactly away from its branch values.
 
 Restricting `β` over the thrice-punctured sphere `ℂ ∖ {0, 1}` gives a finite covering map
-`TauCeti.AnalyticBelyiPair.restrict`, of degree the degree of `β`. Its monodromy triple, for any
-numbering of the fibre over the basepoint `1/2`, is a permutation triple of that degree, and its
-isomorphism class `TauCeti.AnalyticBelyiPair.isoClass` does not depend on the numbering. This is
+`TauCeti.AnalyticBelyiPair.restrict`, of degree the degree of `β`. Its total space, the surface
+`X` with the finitely many points over `0`, `1` and `∞` removed, is path connected. Its monodromy
+triple, for any numbering of the fibre over the basepoint `1/2`, is therefore a connected
+permutation triple of that degree, and its isomorphism class
+`TauCeti.AnalyticBelyiPair.connectedIsoClass` does not depend on the numbering. This is
 the combinatorial datum attached to the pair, the one through which analytic Belyi pairs are
 compared with permutation triples and dessins d'enfants.
 
@@ -34,6 +40,12 @@ permutation triple is a well-defined function of the isomorphism class of a pair
 (`TauCeti.AnalyticBelyiPair.toIsoClass`). This is the map from analytic Belyi pairs to permutation
 triples through which the analytic Riemann existence theorem for three-point covers compares the
 two classifications.
+
+An isomorphism of pairs is determined by the image of a single point over `ℂ ∖ {0, 1}`
+(`TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`): its restriction is a lift through the connected
+cover attached to the target, and the points over `ℂ ∖ {0, 1}` are dense in the surface. Hence
+there are at most as many isomorphisms `P ≅ Q` as the degree of `Q`, and the automorphisms of a
+pair form a finite group whose order divides its degree.
 
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
@@ -51,8 +63,12 @@ sphere.
 * `TauCeti.AnalyticBelyiPair.restrict`, `TauCeti.AnalyticBelyiPair.isCoveringMap_restrict`: the
   restriction of `β` over `ℂ ∖ {0, 1}` is a covering map, with
   `TauCeti.AnalyticBelyiPair.ncard_restrict_preimage_singleton` points in each fibre.
+* `TauCeti.AnalyticBelyiPair.instPathConnectedSpacePreimageRange`: the total space of this cover
+  is path connected.
 * `TauCeti.AnalyticBelyiPair.isoClass`, `TauCeti.AnalyticBelyiPair.isoClass_eq`: the isomorphism
   class of the monodromy triple, computed by any numbering of the fibre over `1/2`.
+* `TauCeti.AnalyticBelyiPair.connectedIsoClass`, `TauCeti.AnalyticBelyiPair.connectedIsoClass_eq`:
+  the same class among connected triples (`TauCeti.AnalyticBelyiPair.isConnected_isoClass`).
 * `TauCeti.AnalyticBelyiPair.Iso`: isomorphisms of analytic Belyi pairs, with
   `TauCeti.AnalyticBelyiPair.Iso.restrict` the isomorphism of the attached covers of `ℂ ∖ {0, 1}`.
 * `TauCeti.AnalyticBelyiPair.Iso.degree_eq` and
@@ -60,6 +76,13 @@ sphere.
   degree and isomorphic monodromy triples.
 * `TauCeti.AnalyticBelyiPair.isoSetoid`, `TauCeti.AnalyticBelyiPair.toIsoClass`: isomorphism of
   pairs of degree `n`, and the permutation triple of an isomorphism class of such pairs.
+* `TauCeti.AnalyticBelyiPair.dense_preimage_range`: the points over `ℂ ∖ {0, 1}` are dense.
+* `TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`: an isomorphism of pairs is determined by the
+  image of one point over `ℂ ∖ {0, 1}`.
+* `TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`: there are finitely many isomorphisms of
+  pairs `P ≅ Q`, at most the degree of `Q`.
+* `TauCeti.AnalyticBelyiPair.Iso.natCard_dvd_degree`: the order of the automorphism group
+  `P.Iso P` divides the degree of `P`.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
 
@@ -180,7 +203,11 @@ theorem coe_restrict_apply (x : P.β ⁻¹' range toOnePoint) :
 /-- **The cover attached to an analytic Belyi pair.** The Belyi map restricted over the
 thrice-punctured sphere `ℂ ∖ {0, 1}` is a covering map. -/
 theorem isCoveringMap_restrict : IsCoveringMap P.restrict :=
-  have h : IsCoveringMapOn P.β (range toOnePoint) := range_toOnePoint ▸ P.isCoveringMapOn
+  have h : IsCoveringMapOn P.β (range toOnePoint) := by
+    rw [range_toOnePoint]
+    convert P.isCoveringMapOn using 1
+    ext w
+    simp only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff]
   h.isCoveringMap_restrictPreimage.homeomorph_comp _
 
 /-- The points of `X` over a point `z` of `ℂ ∖ {0, 1}` are the fibre of the Belyi map over `z`. -/
@@ -203,8 +230,10 @@ theorem ncard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
   rw [restrict, preimage_comp, Homeomorph.preimage_symm, image_singleton,
     TauCeti.ncard_fiber_restrictPreimage, Topology.IsEmbedding.toHomeomorph_apply_coe]
   refine P.ncard_preimage_singleton ?_
-  rw [← mem_compl_iff, ← range_toOnePoint]
-  exact mem_range_self z
+  have hz : toOnePoint z ∈ markedᶜ := by
+    rw [← range_toOnePoint]
+    exact mem_range_self z
+  simpa only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff] using hz
 
 /-- Every fibre of the cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair can be numbered by
 `Fin (degree P.β)`. -/
@@ -228,6 +257,60 @@ numbering of the fibre over `1/2`. -/
 theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
     P.isoClass = .mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
   P.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
+
+/-! ### Connectedness of the cover -/
+
+/-- **The cover attached to an analytic Belyi pair is path connected.** Its total space is the
+connected surface `X` with the finitely many points over `0`, `1` and `∞` removed. -/
+instance instPathConnectedSpacePreimageRange :
+    PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
+  have hfin : (P.β ⁻¹' marked).Finite :=
+    finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
+  have hconn := isConnected_compl_of_finite_of_one_lt_rank
+    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) hfin
+  rw [← preimage_compl, ← range_toOnePoint] at hconn
+  have := ChartedSpace.locallyPathConnectedSpace ℂ P.X
+  have := (isOpenEmbedding_toOnePoint.isOpen_range.preimage
+    P.β.holomorphic.continuous).locallyPathConnectedSpace
+  have := isConnected_iff_connectedSpace.1 hconn
+  exact pathConnectedSpace_iff_connectedSpace.2 this
+
+/-- **The cover attached to an analytic Belyi pair is dense in its surface**: the points of `X`
+over `ℂ ∖ {0, 1}` are the complement of the finitely many points over `0`, `1` and `∞`, none of
+which is isolated. -/
+theorem dense_preimage_range : Dense (P.β ⁻¹' range toOnePoint) := by
+  have : ∀ x : P.X, (𝓝[≠] x).NeBot := fun x ↦
+    (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
+  rw [range_toOnePoint, preimage_compl, compl_eq_univ_sdiff]
+  exact dense_univ.sdiff_finite <| finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
+
+/-- The permutation triple of an analytic Belyi pair is connected. -/
+theorem isConnected_isoClass : P.isoClass.IsConnected := by
+  rw [P.isoClass_eq (P.nonempty_restrict_preimage_singleton_equiv basePt).some,
+    PermutationTriple.IsoClass.isConnected_mk]
+  exact P.isCoveringMap_restrict.isConnected_monodromyTriple _
+
+/-- **The connected permutation triple of an analytic Belyi pair**, up to isomorphism: the class
+`TauCeti.AnalyticBelyiPair.isoClass`, as a class of connected triples. It is computed by any
+numbering of the fibre over `1/2` (`TauCeti.AnalyticBelyiPair.connectedIsoClass_eq`). -/
+def connectedIsoClass : ConnectedIsoClass (degree P.β) :=
+  .mk ⟨P.isCoveringMap_restrict.monodromyTriple
+      (P.nonempty_restrict_preimage_singleton_equiv basePt).some,
+    P.isCoveringMap_restrict.isConnected_monodromyTriple _⟩
+
+/-- Forgetting connectedness, the connected permutation triple of a pair is its permutation
+triple. -/
+@[simp]
+theorem forget_connectedIsoClass : P.connectedIsoClass.forget = P.isoClass := by
+  rw [connectedIsoClass, ConnectedIsoClass.forget_mk, P.isoClass_eq]
+
+/-- The connected permutation triple of an analytic Belyi pair is the class of the monodromy
+triple for any numbering of the fibre over `1/2`. -/
+theorem connectedIsoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
+    P.connectedIsoClass = .mk ⟨P.isCoveringMap_restrict.monodromyTriple ν,
+      P.isCoveringMap_restrict.isConnected_monodromyTriple ν⟩ :=
+  ConnectedIsoClass.forget_injective <| by
+    rw [forget_connectedIsoClass, ConnectedIsoClass.forget_mk, P.isoClass_eq ν]
 
 /-! ### The power maps -/
 
@@ -332,6 +415,26 @@ theorem apply_symm_apply (e : P.Iso Q) (y : Q.X) : e (e.symm y) = y :=
 theorem symm_symm (e : P.Iso Q) : e.symm.symm = e :=
   ext fun _ ↦ rfl
 
+theorem trans_assoc (e : P.Iso Q) (e' : Q.Iso R) {S : AnalyticBelyiPair.{u}} (e'' : R.Iso S) :
+    (e.trans e').trans e'' = e.trans (e'.trans e'') :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem trans_refl (e : P.Iso Q) : e.trans (.refl Q) = e :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem refl_trans (e : P.Iso Q) : (Iso.refl P).trans e = e :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem self_trans_symm (e : P.Iso Q) : e.trans e.symm = .refl P :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem symm_trans_self (e : P.Iso Q) : e.symm.trans e = .refl Q :=
+  ext fun _ ↦ by simp
+
 /-- The homeomorphism of Riemann surfaces underlying an isomorphism of analytic Belyi pairs. -/
 def toHomeomorph (e : P.Iso Q) : P.X ≃ₜ Q.X :=
   e.toDiffeomorph.toHomeomorph
@@ -378,6 +481,118 @@ theorem isoClass_monodromyTriple_eq {n : ℕ} (e : P.Iso Q) (ν : P.restrict ⁻
       PermutationTriple.IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
   P.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
     Q.isCoveringMap_restrict ν' e.restrict e.restrict_comp_restrict
+
+/-! ### Rigidity and finiteness of isomorphisms -/
+
+/-- **An isomorphism of analytic Belyi pairs is determined by the image of one point** over
+`ℂ ∖ {0, 1}`. -/
+theorem eq_of_apply_eq {e e' : P.Iso Q} (x : P.β ⁻¹' range toOnePoint) (h : e x = e' x) :
+    e = e' := by
+  -- The restrictions are lifts of the same map through the connected cover attached to `Q`, and
+  -- the points over `ℂ ∖ {0, 1}` are dense in `P.X`.
+  have hres : ⇑e.restrict = e'.restrict :=
+    Q.isCoveringMap_restrict.eq_of_comp_eq e.restrict.continuous e'.restrict.continuous
+      (by rw [e.restrict_comp_restrict, e'.restrict_comp_restrict]) x (Subtype.ext h)
+  apply DFunLike.coe_injective
+  rw [← coe_toHomeomorph e, ← coe_toHomeomorph e']
+  refine Continuous.ext_on P.dense_preimage_range
+    e.toHomeomorph.continuous e'.toHomeomorph.continuous fun y hy ↦ ?_
+  simpa using congrArg Subtype.val (congrFun hres ⟨y, hy⟩)
+
+/-- Evaluation at a point of the fibre over `1/2` embeds the isomorphisms `P ≅ Q` into the fibre
+of `Q` over `1/2`. -/
+private theorem exists_injective_restrict_preimage_basePt :
+    ∃ f : P.Iso Q → Q.restrict ⁻¹' {basePt}, Injective f := by
+  obtain ⟨x, hx⟩ : (P.restrict ⁻¹' {basePt}).Nonempty := by
+    rw [← ncard_pos (P.finite_restrict_preimage_singleton basePt),
+      P.ncard_restrict_preimage_singleton]
+    exact degree_pos (f := P.β)
+  refine ⟨fun e ↦ ⟨e.restrict x, by simpa using hx⟩, fun e e' h ↦ eq_of_apply_eq x ?_⟩
+  simpa using congrArg (fun y : Q.restrict ⁻¹' {basePt} ↦ (y : Q.X)) h
+
+/-- There are only finitely many isomorphisms between two analytic Belyi pairs. -/
+instance : Finite (P.Iso Q) :=
+  have := (Q.finite_restrict_preimage_singleton basePt).to_subtype
+  let ⟨_, hf⟩ := exists_injective_restrict_preimage_basePt (P := P) (Q := Q)
+  .of_injective _ hf
+
+/-- **There are at most as many isomorphisms between two analytic Belyi pairs as the degree.** -/
+theorem natCard_le_degree : Nat.card (P.Iso Q) ≤ degree Q.β := by
+  have := (Q.finite_restrict_preimage_singleton basePt).to_subtype
+  obtain ⟨f, hf⟩ := exists_injective_restrict_preimage_basePt (P := P) (Q := Q)
+  rw [← Q.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
+  exact Nat.card_le_card_of_injective f hf
+
+/-! ### The automorphism group -/
+
+/-- **The automorphism group of an analytic Belyi pair**: its automorphisms form a group under
+composition, `e * e'` being `e'` followed by `e`. It is finite, with order dividing the degree
+(`TauCeti.AnalyticBelyiPair.Iso.natCard_dvd_degree`). -/
+instance : Group (P.Iso P) where
+  mul e e' := e'.trans e
+  one := .refl P
+  inv := Iso.symm
+  mul_assoc e e' e'' := (trans_assoc e'' e' e).symm
+  one_mul := trans_refl
+  mul_one := refl_trans
+  inv_mul_cancel := self_trans_symm
+
+theorem one_def : (1 : P.Iso P) = .refl P :=
+  (rfl)
+
+theorem mul_def (e e' : P.Iso P) : e * e' = e'.trans e :=
+  (rfl)
+
+theorem inv_def (e : P.Iso P) : e⁻¹ = e.symm :=
+  (rfl)
+
+@[simp]
+theorem one_apply (x : P.X) : (1 : P.Iso P) x = x :=
+  (rfl)
+
+@[simp]
+theorem mul_apply (e e' : P.Iso P) (x : P.X) : (e * e') x = e (e' x) :=
+  (rfl)
+
+@[simp]
+theorem inv_apply (e : P.Iso P) (x : P.X) : e⁻¹ x = e.symm x :=
+  (rfl)
+
+/-- Automorphisms of an analytic Belyi pair act on every fibre of its restricted cover by
+evaluation. -/
+instance instMulActionRestrictFiber (P : AnalyticBelyiPair.{u}) (b : ThricePuncturedSphere) :
+    MulAction (P.Iso P) (P.restrict ⁻¹' {b}) where
+  smul e x := ⟨e.restrict x, by simpa only [Set.mem_preimage, Set.mem_singleton_iff,
+    restrict_restrict] using x.2⟩
+  one_smul x := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact (coe_restrict_apply (1 : P.Iso P) x).trans (one_apply (P := P) (x : P.X))
+  mul_smul e e' x := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact (coe_restrict_apply (e * e') x).trans <| (mul_apply e e' x).trans <|
+      (congrArg e (coe_restrict_apply e' x).symm).trans (coe_restrict_apply e (e'.restrict x)).symm
+
+/-- On underlying points, the action on a fibre of the restricted cover is evaluation of the
+automorphism. -/
+@[simp]
+theorem coe_smul (b : ThricePuncturedSphere) (e : P.Iso P) (x : P.restrict ⁻¹' {b}) :
+    ((e • x : P.restrict ⁻¹' {b}) : P.X) = e x :=
+  coe_restrict_apply e x
+
+/-- The action of the automorphism group of an analytic Belyi pair on every fibre of its
+restricted cover is free. -/
+instance instIsCancelSMulRestrictFiber (P : AnalyticBelyiPair.{u}) (b : ThricePuncturedSphere) :
+    IsCancelSMul (P.Iso P) (P.restrict ⁻¹' {b}) where
+  right_cancel' e e' x h := eq_of_apply_eq x <| by
+    simpa only [coe_smul] using congrArg (fun y : P.restrict ⁻¹' {b} ↦ (y : P.X)) h
+
+/-- **The order of the automorphism group of an analytic Belyi pair divides its degree.** -/
+theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
+  have := (P.finite_restrict_preimage_singleton basePt).to_subtype
+  rw [← P.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
+  exact MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end AnalyticBelyiPair.Iso
 

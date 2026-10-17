@@ -14,7 +14,8 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 A map into an injective module factors through `f` exactly when it vanishes on
 `ker f`. In particular, precomposition with `f` has image the kernel of restriction
 to `ker f`. This applies to presenting maps that are not monomorphisms, as occur in
-projective presentations over non-hereditary algebras.
+projective presentations over non-hereditary algebras. As a further consequence, an
+annihilator inclusion gives a linear map with one prescribed value.
 -/
 
 public section
@@ -77,3 +78,24 @@ theorem comap_range_lcomp_compRight (f : P →ₗ[R] Q) (j : N →ₗ[R] I)
     simpa only [comp_apply, Submodule.subtype_apply, zero_apply, map_zero] using congrArg j hx
 
 end LinearMap
+
+namespace TauCeti
+
+universe u v w
+
+/-- If every scalar killing each `a i` also kills `x`, then some linear map `Q^ι → Q` sends the
+family `a` to `x`. -/
+theorem exists_linearMap_apply_eq_of_forall_smul_eq_zero {S : Type u} [Ring S] {Q : Type v}
+    [AddCommGroup Q] [Module S Q] [Small.{v} S] [Module.Injective S Q] {ι : Type w}
+    {a : ι → Q} {x : Q} (h : ∀ s : S, (∀ i, s • a i = 0) → s • x = 0) :
+    ∃ f : (ι → Q) →ₗ[S] Q, f a = x := by
+  let φ : S →ₗ[S] ι → Q := LinearMap.toSpanSingleton S (ι → Q) a
+  have hker : LinearMap.ker φ ≤ LinearMap.ker (LinearMap.toSpanSingleton S Q x) :=
+    fun s hs => h s fun i => congr_fun (LinearMap.mem_ker.1 hs) i
+  obtain ⟨f, hf⟩ :=
+    (LinearMap.exists_comp_eq_iff_ker_le φ (LinearMap.toSpanSingleton S Q x)).2 hker
+  refine ⟨f, ?_⟩
+  have := LinearMap.congr_fun hf 1
+  simpa [φ] using this
+
+end TauCeti

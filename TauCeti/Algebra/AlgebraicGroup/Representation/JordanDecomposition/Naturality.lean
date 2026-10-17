@@ -14,7 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
 
 A bialgebra morphism `φ : H₁ →ₐc[k] H₂` between coordinate Hopf algebras represents a
 homomorphism in the opposite direction between the corresponding affine groups. On points this
-homomorphism is precomposition, `TauCeti.AlgHom.mapDomain φ`.
+homomorphism is precomposition, `BialgHom.mapDomain φ`.
 
 This file proves that point-level Jordan decomposition is natural under these homomorphisms. The
 key compatibility is representation-theoretic: acting by the precomposed point on an
@@ -63,11 +63,11 @@ variable [PerfectField K]
 groups. The coordinate-algebra morphism points in the opposite direction. -/
 theorem jordanDecomposition_mapDomain (φ : H₁ →ₐc[k] H₂)
     (g : WithConv (H₂ →ₐ[k] K)) :
-    jordanDecomposition k H₁ K (AlgHom.mapDomain φ g) =
-      (AlgHom.mapDomain φ (semisimplePart k H₂ K g),
-        AlgHom.mapDomain φ (unipotentPart k H₂ K g)) := by
+    jordanDecomposition k H₁ K (BialgHom.mapDomain φ g) =
+      (BialgHom.mapDomain φ (semisimplePart k H₂ K g),
+        BialgHom.mapDomain φ (unipotentPart k H₂ K g)) := by
   symm
-  apply (eq_jordanDecomposition_iff k H₁ K (AlgHom.mapDomain φ g) _ _).2
+  apply (eq_jordanDecomposition_iff k H₁ K (BialgHom.mapDomain φ g) _ _).2
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [← isSemisimplePoint_def]
     apply IsSemisimplePoint.mapDomain ?_ φ
@@ -78,25 +78,25 @@ theorem jordanDecomposition_mapDomain (φ : H₁ →ₐc[k] H₂)
     rw [← Comodule.pointsAction_corestrict_obj φ M]
     exact isUnipotent_pointsAction_unipotentPart k H₂ K g
       ((FGComoduleCat.corestrict φ.toCoalgHom).obj M)
-  · exact (commute_semisimplePart_unipotentPart k H₂ K g).map (AlgHom.mapDomain φ)
+  · exact (commute_semisimplePart_unipotentPart k H₂ K g).map (BialgHom.mapDomain φ)
   · rw [← map_mul, semisimplePart_mul_unipotentPart]
 
 /-- Simp-normal form of `jordanDecomposition_mapDomain`, with each precomposed point written
-after normalization by `AlgHom.mapDomain_apply`. -/
+after normalization by `BialgHom.mapDomain_apply`. -/
 @[simp]
 theorem jordanDecomposition_toConv_comp (φ : H₁ →ₐc[k] H₂)
     (g : WithConv (H₂ →ₐ[k] K)) :
     jordanDecomposition k H₁ K (toConv (g.ofConv.comp (φ : H₁ →ₐ[k] H₂))) =
       (toConv ((semisimplePart k H₂ K g).ofConv.comp (φ : H₁ →ₐ[k] H₂)),
         toConv ((unipotentPart k H₂ K g).ofConv.comp (φ : H₁ →ₐ[k] H₂))) := by
-  simpa only [AlgHom.mapDomain_apply] using jordanDecomposition_mapDomain φ g
+  simpa only [BialgHom.mapDomain_apply] using jordanDecomposition_mapDomain φ g
 
 /-- Taking the semisimple part commutes with precomposition by a bialgebra morphism, the
 contravariant coordinate-algebra form of an affine-group homomorphism. -/
 theorem semisimplePart_mapDomain (φ : H₁ →ₐc[k] H₂)
     (g : WithConv (H₂ →ₐ[k] K)) :
-    semisimplePart k H₁ K (AlgHom.mapDomain φ g) =
-      AlgHom.mapDomain φ (semisimplePart k H₂ K g) := by
+    semisimplePart k H₁ K (BialgHom.mapDomain φ g) =
+      BialgHom.mapDomain φ (semisimplePart k H₂ K g) := by
   simpa only [jordanDecomposition_fst] using
       congrArg Prod.fst (jordanDecomposition_mapDomain φ g)
 
@@ -104,28 +104,28 @@ theorem semisimplePart_mapDomain (φ : H₁ →ₐc[k] H₂)
 contravariant coordinate-algebra form of an affine-group homomorphism. -/
 theorem unipotentPart_mapDomain (φ : H₁ →ₐc[k] H₂)
     (g : WithConv (H₂ →ₐ[k] K)) :
-    unipotentPart k H₁ K (AlgHom.mapDomain φ g) =
-      AlgHom.mapDomain φ (unipotentPart k H₂ K g) := by
+    unipotentPart k H₁ K (BialgHom.mapDomain φ g) =
+      BialgHom.mapDomain φ (unipotentPart k H₂ K g) := by
   simpa only [jordanDecomposition_snd] using
       congrArg Prod.snd (jordanDecomposition_mapDomain φ g)
 
 /-- Simp-normal form of `semisimplePart_mapDomain`: taking the semisimple part commutes
-with `AlgHom.mapDomain φ`, written after normalization by `AlgHom.mapDomain_apply`. -/
+with `BialgHom.mapDomain φ`, written after normalization by `BialgHom.mapDomain_apply`. -/
 @[simp]
 theorem semisimplePart_toConv_comp (φ : H₁ →ₐc[k] H₂)
     (g : WithConv (H₂ →ₐ[k] K)) :
     semisimplePart k H₁ K (toConv (g.ofConv.comp (φ : H₁ →ₐ[k] H₂))) =
       toConv ((semisimplePart k H₂ K g).ofConv.comp (φ : H₁ →ₐ[k] H₂)) := by
-  simpa only [AlgHom.mapDomain_apply] using semisimplePart_mapDomain φ g
+  simpa only [BialgHom.mapDomain_apply] using semisimplePart_mapDomain φ g
 
 /-- Simp-normal form of `unipotentPart_mapDomain`: taking the unipotent part commutes
-with `AlgHom.mapDomain φ`, written after normalization by `AlgHom.mapDomain_apply`. -/
+with `BialgHom.mapDomain φ`, written after normalization by `BialgHom.mapDomain_apply`. -/
 @[simp]
 theorem unipotentPart_toConv_comp (φ : H₁ →ₐc[k] H₂)
     (g : WithConv (H₂ →ₐ[k] K)) :
     unipotentPart k H₁ K (toConv (g.ofConv.comp (φ : H₁ →ₐ[k] H₂))) =
       toConv ((unipotentPart k H₂ K g).ofConv.comp (φ : H₁ →ₐ[k] H₂)) := by
-  simpa only [AlgHom.mapDomain_apply] using unipotentPart_mapDomain φ g
+  simpa only [BialgHom.mapDomain_apply] using unipotentPart_mapDomain φ g
 
 end Point
 
@@ -161,7 +161,7 @@ theorem isSemisimplePoint_mapDomain_iff_of_surjective
   constructor
   · intro hg
     rw [isSemisimplePoint_iff_unipotentPart_eq_one] at hg ⊢
-    rw [Point.unipotentPart_toConv_comp, ← AlgHom.mapDomain_apply] at hg
+    rw [Point.unipotentPart_toConv_comp, ← BialgHom.mapDomain_apply] at hg
     let f' : CommHopfAlgCat.of k H₁ ⟶ CommHopfAlgCat.of k H₂ := CommHopfAlgCat.ofHom f
     apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f' hf
       (CommAlgCat.of k K)
@@ -171,11 +171,11 @@ theorem isSemisimplePoint_mapDomain_iff_of_surjective
       rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       simp only [pointsFunctor_obj]
       dsimp [f']
-      rw [← AlgHom.mapDomain_apply]
+      rw [← BialgHom.mapDomain_apply]
       exact hg
     exact hmap.trans (map_one _).symm
   · intro hg
-    exact hg.mapDomain f
+    simpa only [BialgHom.mapDomain_apply] using hg.mapDomain f
 
 end HopfAlgebra
 end TauCeti

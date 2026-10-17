@@ -309,6 +309,36 @@ lemma π_cokernelFiltrationFunctorMapIso_hom {a b : EInt} (f : a ⟶ b) :
       (filtrationFunctorObjIso F hF b).hom ≫ cokernel.π _ := by
   simp [cokernelFiltrationFunctorMapIso]
 
+/-- The inclusion of the object at `a : EInt` of the functor of a filtration into the filtered
+complex. -/
+noncomputable abbrev filtrationFunctorArrow (a : EInt) : (filtrationFunctor F hF).obj a ⟶ K :=
+  (filtrationFunctorObjIso F hF a).hom ≫ (filtrationEInt F a).arrow
+
+/-- The inclusions into the filtered complex are natural in the object of the functor of a
+filtration. -/
+@[reassoc (attr := simp)]
+lemma filtrationFunctor_map_comp_arrow {a b : EInt} (f : a ⟶ b) :
+    (filtrationFunctor F hF).map f ≫ filtrationFunctorArrow F hF b =
+      filtrationFunctorArrow F hF a := by
+  rw [← Category.assoc, filtrationFunctor_map_comp_objIso_hom, Category.assoc,
+    Subobject.ofLE_arrow]
+
+/-- A morphism of complexes sending each piece of a filtration into the corresponding piece of
+another one does so for the extensions of the filtrations to `EInt`. -/
+lemma factors_filtrationEInt {F : ℤ → Subobject K} {L : CochainComplex C ℤ}
+    {G : ℤ → Subobject L} (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (a : EInt) :
+    (filtrationEInt G a).Factors ((filtrationEInt F a).arrow ≫ f) := by
+  induction a using WithBotTop.rec with
+  | bot =>
+    rw [filtrationEInt_bot, filtrationEInt_bot, Subobject.bot_factors_iff_zero,
+      Subobject.bot_arrow, zero_comp]
+  | coe n =>
+    rw [filtrationEInt_coe G n, filtrationEInt_coe F n]
+    exact hf n
+  | top =>
+    simpa only [filtrationEInt_top] using
+      Subobject.top_factors ((filtrationEInt F (⊤ : EInt)).arrow ≫ f)
+
 end Filtration
 
 section SpectralSequence

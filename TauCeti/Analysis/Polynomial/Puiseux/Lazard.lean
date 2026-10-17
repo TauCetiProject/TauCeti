@@ -52,8 +52,9 @@ of the monomial deformation. The centers have one conjugation-compatible complex
 and the evaluator also separates the prescribed finite set `V`. After the factorial power
 substitution, the same distinct root labels have analytic pole-removed extensions and
 Laurent-power forms whose exponents are constant on the parameter ball and bounded below by the
-negative substituted leading-coefficient weight. Nullified ordinary fibers are allowed; degree
-zero is included. -/
+negative substituted leading-coefficient weight. The analytic leading-coefficient and
+formal-discriminant units are retained for the same deformation, before the factorial
+substitution. Nullified ordinary fibers are allowed; degree zero is included. -/
 theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     (p : Polynomial (MvPolynomial σ ℝ)) {φ : (ι → ℝ) → σ → ℝ} {a : ι → ℝ}
     (hφ : AnalyticAt ℝ φ a) (vLead vConst vDiscr : σ →₀ ℕ)
@@ -66,6 +67,17 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
       AnalyticOnNhd ℂ Φ (ball (fun j ↦ (a j : ℂ)) ρ) ∧
       (∀ x ∈ ball a ρ, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ)) ∧
       (∀ z, Φ (star z) = star (Φ z)) ∧
+      ∃ u v : (ι → ℂ) × ℂ → ℂ,
+        AnalyticOnNhd ℂ u (ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) ∧
+        (∀ b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ, u b ≠ 0 ∧
+          MvPolynomial.eval₂ Complex.ofRealHom
+            (fun j ↦ Φ b.1 j + b.2 ^ c j) p.leadingCoeff =
+              b.2 ^ Finsupp.weight c vLead * u b) ∧
+        AnalyticOnNhd ℂ v (ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) ∧
+        (∀ b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ, v b ≠ 0 ∧
+          MvPolynomial.eval₂ Complex.ofRealHom
+            (fun j ↦ Φ b.1 j + b.2 ^ c j) p.discr =
+              b.2 ^ Finsupp.weight c vDiscr * v b) ∧
       ∃ R > (0 : ℝ), R ^ p.natDegree.factorial ≤ ρ ∧
         ∃ r g : Fin p.natDegree → (ι → ℂ) × ℂ → ℂ,
           (∀ i, AnalyticOnNhd ℂ (r i)
@@ -150,8 +162,13 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     TauCeti.Polynomial.exists_analyticOnNhd_nonmonic_laurent isOpen_ball hρ
       (fun i _ ↦ hFA i) hdeg hD (hu 0) (fun b hb ↦ (hforms b hb 0).1)
       (hu 1) (fun b hb ↦ (hforms b hb 1).1) hL hC
-  refine ⟨ρ, hρ, Φ, c, hrange ▸ hc, hΦ, hreal, hstar, R, hR, hfit,
-    r, g, hr, hg, ?_, hLaurent⟩
+  refine ⟨ρ, hρ, Φ, c, hrange ▸ hc, hΦ, hreal, hstar,
+    u 0, u 2, hu 0, ?_, hu 2, ?_, R, hR, hfit, r, g, hr, hg, ?_, hLaurent⟩
+  · intro b hb
+    simpa only [P, v, Matrix.cons_val_zero, MvPolynomial.eval₂_eq_eval_map] using hforms b hb 0
+  · intro b hb
+    simpa only [P, v, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons,
+      MvPolynomial.eval₂_eq_eval_map] using hforms b hb 2
   intro b hb
   refine ⟨(hfac b hb).1, ?_⟩
   simpa only [F, coeff_map, MvPolynomial.coe_eval₂Hom, coeff_natDegree, ← pow_mul]

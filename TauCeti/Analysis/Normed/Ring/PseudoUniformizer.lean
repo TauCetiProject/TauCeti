@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Normed
+public import TauCeti.Analysis.Normed.Ring.MulUnit
 
 /-!
 # Multiplicative pseudo-uniformisers of seminormed rings
@@ -71,18 +72,6 @@ section Units
 variable {R : Type*} [SeminormedRing R] {u : Rˣ} (hu0 : 0 < ‖(u : R)‖)
   (hu : ∀ x : R, ‖(u : R) * x‖ = ‖(u : R)‖ * ‖x‖)
 include hu0 hu
-
-/-- A unit of positive norm by which left multiplication scales the norm exactly forces
-`‖1‖ = 1`. -/
-theorem norm_one_of_norm_units_mul : ‖(1 : R)‖ = 1 :=
-  (mul_eq_left₀ hu0.ne').mp (by simpa using (hu 1).symm)
-
-/-- A unit of positive norm by which left multiplication scales the norm exactly has inverse
-of norm `‖u‖⁻¹`. -/
-theorem norm_units_inv_of_norm_mul : ‖((u⁻¹ : Rˣ) : R)‖ = ‖(u : R)‖⁻¹ := by
-  have h := hu ((u⁻¹ : Rˣ) : R)
-  rw [Units.mul_inv, norm_one_of_norm_units_mul hu0 hu] at h
-  exact eq_inv_of_mul_eq_one_right h.symm
 
 section Module
 

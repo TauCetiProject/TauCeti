@@ -22,8 +22,8 @@ this specializes to the diagonalizable group statement
 `D(G × H)(A) ≃* D(G)(A) × D(H)(A)`.
 
 On points this composes with `TauCeti.AffineGroup.Product.pointsMulEquiv`, the tensor-product
-points calculation, through the equiv-version `AlgHom.mapDomainMulEquiv` of the contravariant
-functoriality `AlgHom.mapDomain`. When `G` and `H` are commutative groups the group algebras
+points calculation, through the equiv-version `BialgEquiv.mapDomainMulEquiv` of the contravariant
+functoriality `BialgHom.mapDomain`. When `G` and `H` are commutative groups the group algebras
 are Hopf algebras and these convolution monoids are the convolution groups of points
 (`AlgHom.convGroupOfSemiring`), so the points equivalence is automatically an isomorphism of
 groups: `D(G × H)(A) ≅ D(G)(A) × D(H)(A)`.
@@ -39,7 +39,7 @@ groups: `D(G × H)(A) ≅ D(G)(A) × D(H)(A)`.
 
 The tensor-product points calculation `TauCeti.AffineGroup.Product.pointsMulEquiv`, the generic
 monoid-algebra bialgebra product `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`, and the
-contravariant functoriality `TauCeti.AlgHom.mapDomain` are Tau Ceti's existing
+contravariant functoriality `BialgHom.mapDomain` are Tau Ceti's existing
 functor-of-points infrastructure, built on Mathlib's tensor-product and monoid-algebra
 bialgebra structures and the Mathlib convolution monoid of Yaël Dillies, Michał Mrugała and
 Yunzhou Xie.
@@ -66,7 +66,7 @@ monoid of `A`-points of `Spec R[G × H]` is the product of the convolution monoi
 noncomputable def prodPointsMulEquiv :
     WithConv (MonoidAlgebra R (G × H) →ₐ[R] A) ≃*
       WithConv (MonoidAlgebra R G →ₐ[R] A) × WithConv (MonoidAlgebra R H →ₐ[R] A) :=
-  (AlgHom.mapDomainMulEquiv (A := A) (MonoidAlgebra.prodTensorBialgEquiv R)).symm.trans
+  (BialgEquiv.mapDomainMulEquiv (A := A) (MonoidAlgebra.prodTensorBialgEquiv R)).symm.trans
     AffineGroup.Product.pointsMulEquiv
 
 /-- The first component of `prodPointsMulEquiv` restricts an `A`-point of `Spec R[G × H]` to
@@ -78,8 +78,8 @@ theorem prodPointsMulEquiv_fst_ofConv_single
     (prodPointsMulEquiv f).1.ofConv (single g (1 : R)) =
       f.ofConv (single (g, (1 : H)) 1) := by
   rw [prodPointsMulEquiv, MulEquiv.trans_apply, AffineGroup.Product.pointsMulEquiv_apply,
-    AlgHom.mapDomainMulEquiv_symm_apply]
-  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
+    BialgEquiv.mapDomainMulEquiv_symm_apply]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeLeft_apply, BialgEquiv.coe_toBialgHom]
   rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
 
@@ -92,8 +92,8 @@ theorem prodPointsMulEquiv_snd_ofConv_single
     (prodPointsMulEquiv f).2.ofConv (single h (1 : R)) =
       f.ofConv (single ((1 : G), h) 1) := by
   rw [prodPointsMulEquiv, MulEquiv.trans_apply, AffineGroup.Product.pointsMulEquiv_apply,
-    AlgHom.mapDomainMulEquiv_symm_apply]
-  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
+    BialgEquiv.mapDomainMulEquiv_symm_apply]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeRight_apply, BialgEquiv.coe_toBialgHom]
   rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
 
@@ -107,8 +107,8 @@ theorem prodPointsMulEquiv_symm_ofConv_single
     (prodPointsMulEquiv.symm (f₁, f₂)).ofConv (single (g, h) (1 : R)) =
       f₁.ofConv (single g 1) * f₂.ofConv (single h 1) := by
   rw [prodPointsMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
-    AlgHom.mapDomainMulEquiv_apply]
-  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    BialgEquiv.mapDomainMulEquiv_apply]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     BialgEquiv.coe_toBialgHom, MonoidAlgebra.prodTensorBialgEquiv_single,
     AffineGroup.Product.pointsMulEquiv_symm_apply, Algebra.TensorProduct.productMap_apply_tmul]
 

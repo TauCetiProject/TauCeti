@@ -59,17 +59,51 @@ theorem isNeighbourhood_iff (B : CommAlgCat.{v} R) :
     IsNeighbourhood I B ↔ Algebra.Etale R B ∧ Function.Bijective (reducedMap I B) :=
   (Iff.rfl)
 
+/-- An algebra isomorphic to the base ring is an étale neighbourhood of every ideal. -/
+theorem isNeighbourhood_of_algEquiv {B : Type v} [CommRing B] [Algebra R B]
+    (e : R ≃ₐ[R] B) : IsNeighbourhood I (CommAlgCat.of R B) := by
+  refine ⟨Algebra.Etale.of_equiv e, ?_⟩
+  have hmap : I.map (algebraMap R B) = I.map e.toRingHom := by
+    congr 1
+    exact RingHom.ext fun r ↦ by simp
+  let q := Ideal.quotientEquiv I (I.map (algebraMap R B)) e.toRingEquiv hmap
+  have hq : reducedMap I B = q.toRingHom := by
+    apply Ideal.Quotient.ringHom_ext
+    apply RingHom.ext
+    intro r
+    simp only [RingHom.comp_apply]
+    calc
+      reducedMap I B (Ideal.Quotient.mk I r) =
+          Ideal.Quotient.mk (I.map (algebraMap R B)) (algebraMap R B r) := reducedMap_mk I B r
+      _ = Ideal.Quotient.mk (I.map (algebraMap R B)) (e r) := by
+        congr 1
+        simp
+      _ = q (Ideal.Quotient.mk I r) :=
+        (Ideal.quotientEquiv_mk I (I.map (algebraMap R B)) e.toRingEquiv hmap r).symm
+  rw [hq]
+  exact q.bijective
+
 /-- The identity algebra is an étale neighbourhood. -/
-theorem isNeighbourhood_self : IsNeighbourhood I (CommAlgCat.of R R) := by
-  refine ⟨inferInstance, ?_⟩
-  let e := Ideal.quotientEquiv I (I.map (algebraMap R R)) (RingEquiv.refl R)
-    (by simp)
-  have he : reducedMap I R = e.toRingHom := by
-    ext r
-    simp only [RingHom.comp_apply, reducedMap_mk]
-    exact (Ideal.quotientEquiv_mk I (I.map (algebraMap R R)) (RingEquiv.refl R) (by simp) r).symm
-  rw [he]
-  exact e.bijective
+theorem isNeighbourhood_self : IsNeighbourhood I (CommAlgCat.of R R) :=
+  isNeighbourhood_of_algEquiv I AlgEquiv.refl
+
+/-- Two maps out of an algebra whose reduced map is surjective (for instance, a neighbourhood)
+agree after quotienting their target by the extended ideal. -/
+theorem quotient_mk_eq_of_reducedMap_surjective {B C : Type v} [CommRing B] [CommRing C]
+    [Algebra R B] [Algebra R C] (hB : Function.Surjective (reducedMap I B))
+    (f g : B →ₐ[R] C) (b : B) :
+    Ideal.Quotient.mk (I.map (algebraMap R C)) (f b) =
+      Ideal.Quotient.mk (I.map (algebraMap R C)) (g b) := by
+  -- Modulo `I`, the element `b` is the image of some `r : R`, which every algebra map preserves.
+  obtain ⟨r, hr⟩ := hB (Ideal.Quotient.mk (I.map (algebraMap R B)) b)
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+  rw [reducedMap_mk, Ideal.Quotient.eq] at hr
+  have key (h : B →ₐ[R] C) : Ideal.Quotient.mk (I.map (algebraMap R C)) (h b) =
+      Ideal.Quotient.mk (I.map (algebraMap R C)) (algebraMap R C r) := by
+    rw [eq_comm, Ideal.Quotient.eq, ← h.commutes, ← map_sub, ← h.comp_algebraMap,
+      ← Ideal.map_map]
+    exact Ideal.mem_map_of_mem _ hr
+  rw [key f, key g]
 
 /-- Localization at elements which are units modulo `I` preserves the quotient by `I`. -/
 theorem reducedMap_bijective_of_isLocalization (M : Submonoid R)

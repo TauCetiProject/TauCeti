@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
+public import Mathlib.RingTheory.Invariant.Galois
 
 /-!
 # Galois groups of integral closures
@@ -32,9 +33,23 @@ extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral closur
   base `A` in `L` and in `M`.
 * `IsGaloisGroup.of_isIntegralClosure_fixedField`: a subgroup `H` of `Gal(M/K)` is a Galois group
   of the integral closures of a common base in `M ^ H` and in `M`.
+* `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`: the same, bundled with
+  the injectivity of `C → B`, as used to set up instances for the fixed-field integral closure.
 -/
 
 public section
+
+/-- The action of `Gal(L/K)` on an integral closure `B` of `A` in `L` commutes with the action of
+`A`, since it is the restriction of the action by `K`-algebra automorphisms of `L`. -/
+theorem IsIntegralClosure.smulCommClass (A K L B : Type*)
+    [CommRing A] [CommRing B] [Field K] [Field L]
+    [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+    [Algebra A B] [Algebra B L] [IsScalarTower A B L]
+    [IsFractionRing A K] [IsIntegralClosure B A L] [Algebra.IsAlgebraic K L] :
+    letI := IsIntegralClosure.MulSemiringAction A K L B
+    SMulCommClass (L ≃ₐ[K] L) A B :=
+  letI := IsIntegralClosure.MulSemiringAction A K L B
+  ⟨fun σ a b ↦ map_smul (galRestrict A K L B σ) a b⟩
 
 namespace IsGaloisGroup
 
@@ -111,6 +126,14 @@ theorem of_isIntegralClosure_fixedField : IsGaloisGroup H C B :=
   have : IsGaloisGroup H (fixedField H) M :=
     of_mulEquiv_algEquiv (subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
   of_isIntegralClosure_tower H A K (fixedField H) M C B
+
+include A in
+/-- The subgroup `H` is a Galois group of `B` over `C`, and `C` embeds in `B`. -/
+theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul :
+    IsGaloisGroup H C B ∧ FaithfulSMul C B := by
+  have : FaithfulSMul C (fixedField H) := IsIntegralClosure.faithfulSMul A C (fixedField H)
+  have : FaithfulSMul C M := .trans C (fixedField H) M
+  exact ⟨IsGaloisGroup.of_isIntegralClosure_fixedField A H C B, .tower_bot C B M⟩
 
 end FixedField
 

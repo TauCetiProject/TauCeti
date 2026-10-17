@@ -8,10 +8,11 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.Padics.SerreSigns
 public import TauCeti.NumberTheory.Padics.Basic
-import Mathlib.NumberTheory.Padics.LocalField
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.NumberTheory.Padics.LocalField
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.HilbertSymbolForm
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.Padic
-import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -50,7 +51,9 @@ full `8 × 8` table of the symbol over `ℚ_2`, the check that pins the dyadic s
 * `TauCeti.padicTwoSquareClassBasis`: the classes of `-1`, `2`, `5` as a `ZMod 2`-basis of the
   square-class group of `ℚ_2`.
 * `TauCeti.hilbertSymbolOnSquareClasses_padicTwo`: the symbol on square classes in the coordinates
-  of that basis, that is its Gram matrix.
+  of that basis.
+* `TauCeti.toMatrix_hilbertSymbolForm_padicTwo`: the Gram matrix of the `ZMod 2`-bilinear Hilbert
+  symbol form `TauCeti.hilbertSymbolForm` in that basis.
 * `TauCeti.squareClass_padicTwoSquareClassRep_bijective`: `1, -1, 5, -5, 2, -2, 10, -10` represent
   each square class of `ℚ_2` exactly once.
 * `TauCeti.hilbertSymbol_padicTwoSquareClassRep`: the `8 × 8` table of the symbol on these
@@ -333,6 +336,35 @@ theorem hilbertSymbolOnSquareClasses_padicTwo (x y : SquareClassGroup ℚ_[2]) :
         padicTwoSquareClassBasis.repr x 2 * padicTwoSquareClassBasis.repr y 1) := by
   conv_lhs => rw [← squareClass_basisProd_repr x, ← squareClass_basisProd_repr y]
   rw [hilbertSymbolOnSquareClasses_squareClass, hilbertSymbol_basisProd]
+
+/-- **The Gram matrix of the Hilbert symbol form over `ℚ_2`.** In the basis `-1`, `2`, `5` of the
+square classes (`TauCeti.padicTwoSquareClassBasis`), the `ZMod 2`-bilinear Hilbert symbol form
+`TauCeti.hilbertSymbolForm` has the invertible Gram matrix
+
+```text
+        −1   2   5
+  −1     1   0   0
+   2     0   0   1
+   5     0   1   0
+```
+
+that is `(-1, -1) = (2, 5) = (5, 2) = −1`, and every other pairing of basis vectors is `+1`. -/
+theorem toMatrix_hilbertSymbolForm_padicTwo :
+    LinearMap.BilinForm.toMatrix padicTwoSquareClassBasis (hilbertSymbolForm ℚ_[2]) =
+      !![1, 0, 0; 0, 0, 1; 0, 1, 0] := by
+  -- An element of `ZMod 2` is determined by whether it vanishes, and the form vanishes exactly
+  -- where the symbol, computed by `hilbertSymbolOnSquareClasses_padicTwo`, is `+1`.
+  have hcases : ∀ c : ZMod 2, c = 0 ∨ c = 1 := by decide
+  have key (x y : SquareClassGroup ℚ_[2]) (e : ZMod 2)
+      (h : hilbertSymbolOnSquareClasses x y = (-1 : ℤˣ) ^ e) : hilbertSymbolForm ℚ_[2] x y = e := by
+    rw [← hilbertSign_hilbertSymbolForm] at h
+    rcases hcases (hilbertSymbolForm ℚ_[2] x y) with h₁ | h₁ <;>
+      rcases hcases e with rfl | rfl <;> simp_all
+  ext i j
+  rw [LinearMap.BilinForm.toMatrix_apply]
+  refine key _ _ _ ((hilbertSymbolOnSquareClasses_padicTwo _ _).trans ?_)
+  fin_cases i <;> fin_cases j <;>
+    simp [-coe_padicTwoSquareClassBasis, Module.Basis.repr_self]
 
 /-- The eight representatives `1, -1, 5, -5, 2, -2, 10, -10` of the square classes of `ℚ_2`, in
 this order. -/

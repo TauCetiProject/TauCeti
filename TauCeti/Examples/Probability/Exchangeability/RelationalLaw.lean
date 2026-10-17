@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Relational
+import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Relational.Basic
 import TauCeti.MeasureTheory.Measure.RelationalConfiguration
 import Mathlib.Logic.Equiv.Fintype
 
@@ -23,7 +23,10 @@ public statements only:
 * both round trips of the correspondence;
 * a law on `ℕ` is determined by its windows without any countability assumption on the language;
 * for the language of graphs, the windows of the encoded extension of an exchangeable graph law
-  are its encoded marginals.
+  are its encoded marginals;
+* decoding a relational law carried by simple graphs and re-encoding it recovers each marginal;
+* decoding an invariant law carried by simple graphs and taking a window agrees with decoding the
+  corresponding finite law.
 -/
 
 open MeasureTheory TauCeti TauCeti.RelationalConfiguration TauCeti.Probability
@@ -81,3 +84,43 @@ example (L : ExchangeableGraphLaw) (n : ℕ) :
   rw [← ExchangeableGraphLaw.exchangeableRelationalLawEquivInfinite_toRelationalLaw,
     exchangeableRelationalLawEquivInfinite_law_map_restrict,
     ExchangeableGraphLaw.toRelationalLaw_law]
+
+/-! ### Decoding relational laws carried by simple graphs -/
+
+-- Decoding a relational law carried by simple graphs and re-encoding it recovers each marginal.
+example
+    (μ : {μ : ExchangeableRelationalLaw Language.graph //
+      ∀ n, ∀ᵐ c ∂μ.law n, IsSimpleGraph c})
+    (n : ℕ) :
+    ((ExchangeableGraphLaw.relationalLawEquiv.symm μ).law n).map
+        SimpleGraph.toRelationalConfiguration =
+      μ.1.law n := by
+  rw [ExchangeableGraphLaw.relationalLawEquiv_symm_law,
+    SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_comap,
+    SimpleGraph.range_toRelationalConfiguration]
+  exact Measure.restrict_eq_self_of_ae_mem (μ.2 n)
+
+-- Decoding an invariant law carried by simple graphs and taking a window agrees with decoding the
+-- corresponding finite law.
+example
+    (μ : {μ : InfiniteExchangeableRelationalLaw Language.graph //
+      ∀ᵐ c ∂μ.law, IsSimpleGraph c})
+    (n : ℕ) :
+    (InfiniteExchangeableGraphLaw.relationalLawEquiv.symm μ).law.map (·.restrictFin n) =
+      (ExchangeableGraphLaw.relationalLawEquiv.symm
+        ⟨(exchangeableRelationalLawEquivInfinite Language.graph).symm μ.1,
+          (ae_isSimpleGraph_exchangeableRelationalLawEquivInfinite_law_iff _).1 (by
+            rw [Equiv.apply_symm_apply]; exact μ.2)⟩).law n := by
+  set F := ExchangeableGraphLaw.relationalLawEquiv.symm
+    ⟨(exchangeableRelationalLawEquivInfinite Language.graph).symm μ.1,
+      (ae_isSimpleGraph_exchangeableRelationalLawEquivInfinite_law_iff _).1 (by
+        rw [Equiv.apply_symm_apply]; exact μ.2)⟩ with hF
+  -- The decoded infinite law is the graph extension of the decoded finite law.
+  have hext : exchangeableGraphLawEquivInfinite F =
+      InfiniteExchangeableGraphLaw.relationalLawEquiv.symm μ := by
+    apply InfiniteExchangeableGraphLaw.toRelationalLaw_injective
+    rw [← ExchangeableGraphLaw.exchangeableRelationalLawEquivInfinite_toRelationalLaw,
+      ← ExchangeableGraphLaw.coe_relationalLawEquiv, hF, Equiv.apply_symm_apply,
+      Equiv.apply_symm_apply, ← InfiniteExchangeableGraphLaw.coe_relationalLawEquiv,
+      Equiv.apply_symm_apply]
+  rw [← hext, exchangeableGraphLawEquivInfinite_law_map_restrictFin]

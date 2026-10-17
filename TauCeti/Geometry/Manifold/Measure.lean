@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.Boundary.Basic
+import Mathlib.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
@@ -63,5 +65,18 @@ theorem IsNullSet.union {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE :
   intro x μ hμ
   rw [union_inter_distrib_right, image_union]
   exact measure_union_null (hs x μ) (ht x μ)
+
+/-- The intrinsic boundary of any finite-dimensional real manifold is chartwise null.
+No measurable structure on the manifold itself is required. -/
+theorem isNullSet_boundary {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M] : IsNullSet I (I.boundary M) := by
+  rw [isNullSet_iff]
+  intro x μ hμ
+  refine measure_mono_null ?_ (I.convex_range.addHaar_frontier μ)
+  rintro y ⟨z, hz, rfl⟩
+  have hsource : z ∈ (chartAt H x).source := by
+    simpa only [extChartAt_source] using hz.2
+  exact (ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range one_ne_zero
+    (IsManifold.chart_mem_maximalAtlas x) hsource).mp hz.1
 
 end TauCeti

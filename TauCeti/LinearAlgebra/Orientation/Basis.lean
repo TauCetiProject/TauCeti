@@ -17,6 +17,21 @@ basis. Empty index types are included, so both zero-dimensional orientations ret
 public section
 noncomputable section
 
+namespace Module.Basis
+
+variable {R E ι : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
+
+/-- Two bases have opposite orientations exactly when their change-of-basis determinant is
+negative. -/
+theorem orientation_eq_neg_iff_det_neg (b c : Basis ι R E) :
+    b.orientation = -c.orientation ↔ b.det c < 0 := by
+  rw [← c.orientation_ne_iff_eq_neg, ne_eq, b.orientation_eq_iff_det_pos,
+    not_lt, le_iff_lt_or_eq]
+  simp only [(b.isUnit_det c).ne_zero, or_false]
+
+end Module.Basis
+
 namespace Orientation
 
 section CommRing
@@ -94,3 +109,24 @@ theorem signBasis_mul_det_div_abs (o : Orientation R E ι) (b b' : Module.Basis 
 end Field
 
 end Orientation
+
+/-- If a linear equivalence sends a signed model orientation to a basis orientation, its
+Jacobian multiplied by the two relative signs is positive. -/
+theorem Orientation.signBasis_mul_units_mul_det_pos
+    {R E ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [AddCommGroup E] [Module R E] [FiniteDimensional R E] [Fintype ι] [DecidableEq ι]
+    (o : Orientation R E ι) (b : Module.Basis ι R E) (A : E ≃ₗ[R] E) (u : ℤˣ)
+    (h : Orientation.map ι A ((Units.map (Int.castRingHom R).toMonoidHom u) • o) =
+      b.orientation) :
+    0 < (Orientation.signBasis o b : R) * (u : R) * A.toLinearMap.det := by
+  classical
+  have hb : (Units.map (Int.castRingHom R).toMonoidHom (signBasis o b)) • o =
+      b.orientation := by
+    simpa only [signBasis, eq_comm] using
+      Orientation.intCast_units_smul_ite_eq o b.orientation (Module.finrank_eq_card_basis b).symm
+  rw [← hb] at h
+  have hp := (Orientation.map_units_smul_eq_iff_det_mul_pos o A _ _
+    (Module.finrank_eq_card_basis b).symm).mp h
+  -- Units.map along the integer cast has the same underlying scalar as the integer-unit cast.
+  change 0 < (u : R) * (signBasis o b : R) * A.toLinearMap.det at hp
+  simpa only [mul_comm] using hp
