@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
+import TauCeti.Geometry.RealAlgebraic.Stack.Sign
 
 /-!
 # Lazard delineation of the distinguished coordinate
@@ -168,51 +169,6 @@ private theorem rootMultiplicity_eq_of_eq_C_mul_lastCoordinate
   rw [rootMultiplicity_lazardEval_C_mul_lastCoordinate ha,
     rootMultiplicity_lazardEval_C_mul_lastCoordinate ha]
   simp only [h]
-
-/-- Continuous strictly increasing root functions over a preconnected base, such that whether
-`0` is one of their values does not depend on the base point: either one of them vanishes
-identically, or `0` lies in one fixed sector over every base point. -/
-private theorem exists_forall_eq_zero_or_exists_forall_mem_sectorSet {X : Type*}
-    [TopologicalSpace X] [PreconnectedSpace X] {k : ℕ} {θ : Fin k → X → ℝ}
-    (hθc : ∀ i, Continuous (θ i)) (hθ : ∀ x, StrictMono fun i ↦ θ i x)
-    (h : ∀ x y, (∃ i, θ i x = 0) → ∃ i, θ i y = 0) (x₀ : X) :
-    (∃ i, ∀ x, θ i x = 0) ∨ ∃ j, ∀ x, (x, (0 : ℝ)) ∈ sectorSet θ j := by
-  by_cases hz : ∃ i, θ i x₀ = 0
-  · obtain ⟨i₀, hi₀⟩ := hz
-    -- The zero set of `θ i₀` is closed, and so is its complement: the union of the zero sets
-    -- of the other root functions.
-    have hcompl : {x | θ i₀ x = 0}ᶜ = ⋃ i ∈ ({i₀}ᶜ : Set (Fin k)), {x | θ i x = 0} := by
-      ext y
-      simp only [mem_compl_iff, mem_ofPred_eq, mem_iUnion, mem_singleton_iff, exists_prop]
-      refine ⟨fun hy ↦ ?_, fun ⟨i, hii, hi⟩ hy ↦ hii ((hθ y).injective (hi.trans hy.symm))⟩
-      obtain ⟨i, hi⟩ := h x₀ y ⟨i₀, hi₀⟩
-      exact ⟨i, fun hii ↦ hy (hii ▸ hi), hi⟩
-    have hclopen : IsClopen {x | θ i₀ x = 0} := by
-      refine ⟨isClosed_eq (hθc i₀) continuous_const, ?_⟩
-      rw [← isClosed_compl_iff, hcompl]
-      exact (Set.toFinite _).isClosed_biUnion fun i _ ↦ isClosed_eq (hθc i) continuous_const
-    exact Or.inl ⟨i₀, fun x ↦ (hclopen.eq_univ ⟨x₀, hi₀⟩).ge (mem_univ x)⟩
-  · push Not at hz
-    have hne (x : X) (i : Fin k) : θ i x ≠ 0 := fun hx ↦ by
-      obtain ⟨i', hi'⟩ := h x x₀ ⟨i, hx⟩
-      exact hz i' hi'
-    -- No root function changes sign.
-    have hsign (i : Fin k) (x : X) : SignType.sign (θ i x) = SignType.sign (θ i x₀) :=
-      signInvariant_def.1 (isPreconnected_univ.signInvariant (hθc i).continuousOn
-        fun z _ ↦ hne z i) x (mem_univ x) x₀ (mem_univ x₀)
-    obtain ⟨j, hj⟩ : ∃ j, (x₀, (0 : ℝ)) ∈ sectorSet θ j := by
-      have hmem := (iUnion_sectionSet_union_iUnion_sectorSet (fun x ↦ (hθ x).monotone)).symm ▸
-        mem_univ (x₀, (0 : ℝ))
-      rcases hmem with hs | hs
-      · obtain ⟨i, hi⟩ := mem_iUnion.1 hs
-        exact absurd (mem_sectionSet.1 hi) (hz i)
-      · exact mem_iUnion.1 hs
-    rw [mem_sectorSet] at hj
-    refine Or.inr ⟨j, fun x ↦ mem_sectorSet.2 ⟨fun i hi ↦ ?_, fun i hi ↦ ?_⟩⟩
-    · rw [← sign_eq_neg_one_iff, hsign, sign_eq_neg_one_iff]
-      exact hj.1 i hi
-    · rw [← sign_eq_one_iff, hsign, sign_eq_one_iff]
-      exact hj.2 i hi
 
 /-- Adjoining coordinate members when each of them has `0` as a root function of `D`, which then
 already delineates the whole family. -/
