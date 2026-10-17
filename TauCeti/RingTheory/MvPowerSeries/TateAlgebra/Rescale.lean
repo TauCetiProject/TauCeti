@@ -29,10 +29,9 @@ and compatibility with constants are inherited without introducing another serie
 
 public section
 
-namespace TauCeti.MvPowerSeries
+namespace MvPowerSeries
 
-open Filter
-open _root_.MvPowerSeries
+open Filter TauCeti
 
 variable {σ R : Type*} [NormedCommRing R] [NormOneClass R] {r s : σ → ℝ}
 
@@ -83,6 +82,14 @@ theorem isRestricted_rescale_iff (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u 
   unfold IsRestricted
   apply tendsto_congr'
   exact .of_forall (weighted_norm_coeff_rescale u hu hrs f)
+
+end MvPowerSeries
+
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries
+
+variable {σ R : Type*} [NormedCommRing R] [NormOneClass R] {r s : σ → ℝ}
 
 section Equiv
 
