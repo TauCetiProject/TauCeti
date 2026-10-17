@@ -68,6 +68,14 @@ noncomputable def wreathTensor (ρ : Representation R D M) (ι : Type x) :
     simp [TauCeti.PermutationWreathProduct.mul_left]
     congr 1
 
+/-- The wreath tensor action applies the base action factorwise after reindexing by the
+top permutation. -/
+theorem _root_.TauCeti.wreathTensor_apply (ρ : Representation R D M) (ι : Type x)
+    (a : TauCeti.WreathProduct D ι) :
+    ρ.wreathTensor ι a = PiTensorProduct.map (fun i ↦ ρ (a.left i)) ∘ₗ
+      (PiTensorProduct.reindex R (fun _ : ι ↦ M) a.right).toLinearMap :=
+  (rfl)
+
 /-- The wreath-product action on a pure tensor applies the base coordinate after reindexing by
 the inverse of the top permutation. -/
 @[simp]
