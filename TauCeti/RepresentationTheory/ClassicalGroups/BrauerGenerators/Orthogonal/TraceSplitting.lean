@@ -44,7 +44,12 @@ for `n ≠ 0` the trace line then lies **inside** the harmonic tensors instead o
 them. Both dimension counts survive there, because the cap is surjective and the cup injective for
 purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to `1`, and the `e₀ ⊗ e₀` coordinate of
 `cup c` is `c`. Neither needs the trace splitting, so both are proved beside the cap and the cup,
-as `TauCeti.orthogonalCap_surjective` and `TauCeti.orthogonalCup_injective`.
+as `TauCeti.orthogonalCap_surjective` and `TauCeti.orthogonalCup_injective`; so are the two
+identities they give for the Brauer generator `e = cup ∘ cap`, that `e` has the same kernel as the
+cap and the same image as the cup (`TauCeti.ker_orthogonalCupCap` and
+`TauCeti.range_orthogonalCupCap`). Read here, through
+`TauCeti.harmonicTensors_two_eq_ker_orthogonalCap`, they say that the kernel of `e` is the harmonic
+tensors and its image is the trace line.
 
 ## Main definitions
 
@@ -64,8 +69,6 @@ as `TauCeti.orthogonalCap_surjective` and `TauCeti.orthogonalCup_injective`.
   representation.
 * `TauCeti.tensorPower_apply_of_mem_orthogonalTraceLine`: **the orthogonal group fixes the trace
   line pointwise**, so that summand is the trivial representation.
-* `TauCeti.ker_orthogonalCupCap` and `TauCeti.range_orthogonalCupCap`: the Brauer generator
-  `e = cup ∘ cap` has the harmonic tensors as its kernel and the trace line as its image.
 * `TauCeti.orthogonalTraceProjection_apply_of_mem_harmonicTensors`,
   `TauCeti.orthogonalTraceProjection_apply_of_mem_orthogonalTraceLine` and
   `TauCeti.isIdempotentElem_orthogonalTraceProjection`: **`n⁻¹ • e` is the projection onto the
@@ -101,28 +104,6 @@ variable (k : Type u) (n : ℕ)
 section CommSemiring
 
 variable [CommSemiring k]
-
-/-! ### The Brauer generator as a projection -/
-
-/-- The kernel of the Brauer generator `e = cup ∘ cap` is the kernel of the cap alone: both are
-the two-strand harmonic tensors, so this is the composite of
-`TauCeti.harmonicTensors_two_eq_ker_orthogonalCupCap` with
-`TauCeti.harmonicTensors_two_eq_ker_orthogonalCap`, stated without reference to `harmonicTensors`
-for the kernel calculus of the normalized generator below. -/
-theorem ker_orthogonalCupCap :
-    LinearMap.ker (orthogonalCupCap k n) = LinearMap.ker (orthogonalCap k n) := by
-  rw [← harmonicTensors_two_eq_ker_orthogonalCupCap, harmonicTensors_two_eq_ker_orthogonalCap]
-
-/-- The image of the Brauer generator `e = cup ∘ cap` is the trace line, the cap being
-surjective. For `n = 0` the cup is the zero map and both images are `⊥`. -/
-theorem range_orthogonalCupCap :
-    LinearMap.range (orthogonalCupCap k n) = LinearMap.range (orthogonalCup k n) := by
-  rw [orthogonalCupCap_eq_comp]
-  obtain _ | m := n
-  · have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
-    rw [hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
-  · rw [LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top_of_surjective _ (orthogonalCap_surjective k (m + 1)))]
 
 /-! ### The projection onto the trace line -/
 
@@ -178,24 +159,6 @@ section CommRing
 
 variable [CommRing k]
 
-/-! ### The trace splitting -/
-
-/-- **The harmonic tensors and the trace line are complementary** when the loop value `n` is
-invertible in `k`. The splitting map is `n⁻¹ • (cup ∘ cap)`, the normalized Brauer generator. -/
-theorem isCompl_ker_orthogonalCap_range_orthogonalCup (hn : IsUnit (n : k)) :
-    IsCompl (LinearMap.ker (orthogonalCap k n)) (LinearMap.range (orthogonalCup k n)) := by
-  obtain ⟨b, hb⟩ := isUnit_iff_exists_inv.mp hn
-  refine ⟨Submodule.disjoint_def.2 fun x hx hx' => ?_, codisjoint_iff.2 (eq_top_iff.2 ?_)⟩
-  · obtain ⟨c, rfl⟩ := hx'
-    rw [LinearMap.mem_ker, orthogonalCap_comp_orthogonalCup_apply] at hx
-    rw [hn.mul_right_eq_zero.mp hx, map_zero]
-  · intro x _
-    refine Submodule.mem_sup.2
-      ⟨x - orthogonalCup k n (b * orthogonalCap k n x), ?_,
-        orthogonalCup k n (b * orthogonalCap k n x), ⟨_, rfl⟩, by abel⟩
-    rw [LinearMap.mem_ker, map_sub, orthogonalCap_comp_orthogonalCup_apply, ← mul_assoc, hb,
-      one_mul, sub_self]
-
 /-! ### The trace line as a subrepresentation -/
 
 /-- **The trace subrepresentation** of the tensor square of the standard orthogonal
@@ -229,16 +192,6 @@ theorem tensorPower_apply_of_mem_orthogonalTraceLine (g : Matrix.orthogonalGroup
     (stdOrthogonalRep k n).tensorPower 2 g x = x := by
   obtain ⟨c, rfl⟩ := (mem_orthogonalTraceLine_iff k n).mp hx
   exact LinearMap.congr_fun (tensorPower_comp_orthogonalCup k n g) c
-
-/-- **The trace splitting of the orthogonal tensor square.** When the loop value `n` is
-invertible in `k`, the harmonic tensors and the trace line are complementary subrepresentations,
-so `Subrepresentation.equivProdOfIsCompl` presents `V ⊗ V` as their direct sum. -/
-theorem isCompl_harmonicTensorsSubrep_orthogonalTraceLine (hn : IsUnit (n : k)) :
-    IsCompl (harmonicTensorsSubrep k n 2) (orthogonalTraceLine k n) :=
-  Subrepresentation.isCompl_toSubmodule.mp <| by
-    rw [harmonicTensorsSubrep_toSubmodule, harmonicTensors_two_eq_ker_orthogonalCap,
-      orthogonalTraceLine_toSubmodule]
-    exact isCompl_ker_orthogonalCap_range_orthogonalCup k n hn
 
 /-! ### The projection and the trace line -/
 
@@ -274,6 +227,30 @@ theorem range_orthogonalTraceProjection (hn : IsUnit (n : k)) :
     exact ⟨(n : k) • x, by
       rw [orthogonalTraceProjection_apply, map_smul, map_smul, smul_smul, hn.val_inv_mul, one_smul,
         orthogonalCupCap_apply]⟩
+
+/-! ### The trace splitting -/
+
+/-- **The harmonic tensors and the trace line are complementary** when the loop value `n` is
+invertible in `k`: the normalized Brauer generator `n⁻¹ • (cup ∘ cap)` is an idempotent with the
+trace line as its image and the harmonic tensors as its kernel, so the two are complementary by
+`LinearMap.IsIdempotentElem.isCompl`. -/
+theorem isCompl_ker_orthogonalCap_range_orthogonalCup (hn : IsUnit (n : k)) :
+    IsCompl (LinearMap.ker (orthogonalCap k n)) (LinearMap.range (orthogonalCup k n)) := by
+  -- `IsIdempotentElem` unfolds to an `Eq`, so the projection cannot be named by dot notation.
+  have h :=
+    (LinearMap.IsIdempotentElem.isCompl (isIdempotentElem_orthogonalTraceProjection k n hn)).symm
+  rwa [ker_orthogonalTraceProjection, harmonicTensors_two_eq_ker_orthogonalCap,
+    range_orthogonalTraceProjection, orthogonalTraceLine_toSubmodule] at h
+
+/-- **The trace splitting of the orthogonal tensor square.** When the loop value `n` is
+invertible in `k`, the harmonic tensors and the trace line are complementary subrepresentations,
+so `Subrepresentation.equivProdOfIsCompl` presents `V ⊗ V` as their direct sum. -/
+theorem isCompl_harmonicTensorsSubrep_orthogonalTraceLine (hn : IsUnit (n : k)) :
+    IsCompl (harmonicTensorsSubrep k n 2) (orthogonalTraceLine k n) :=
+  Subrepresentation.isCompl_toSubmodule.mp <| by
+    rw [harmonicTensorsSubrep_toSubmodule, harmonicTensors_two_eq_ker_orthogonalCap,
+      orthogonalTraceLine_toSubmodule]
+    exact isCompl_ker_orthogonalCap_range_orthogonalCup k n hn
 
 /-- **The projection commutes with the orthogonal action**, being a scalar multiple of the Brauer
 generator `e`, which centralizes that action. So the splitting it effects is a splitting of

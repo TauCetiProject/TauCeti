@@ -63,6 +63,9 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
   of any tensor is killed by the cap, and so is every antisymmetric tensor once `2` is regular,
   the cap being symmetric.
 * `TauCeti.orthogonalCupCap_mul_self`: `e * e = n • e`.
+* `TauCeti.ker_orthogonalCupCap` and `TauCeti.range_orthogonalCupCap`: the generator `e` has the
+  same kernel as the cap and the same image as the cup, so the kernel and image calculus of `e`
+  never leaves the cap/cup level.
 * `TauCeti.permTensorAction_swap_mul_orthogonalCupCap` and
   `TauCeti.orthogonalCupCap_mul_permTensorAction_swap`: `s * e = e` and `e * s = e`.
 * `TauCeti.permTensorAction_swap_mul_self`: `s * s = 1`.
@@ -238,6 +241,32 @@ theorem orthogonalCupCap_eq_comp :
 theorem orthogonalCupCap_apply (x : ⨂[k]^2 (Fin n → k)) :
     orthogonalCupCap k n x = orthogonalCup k n (orthogonalCap k n x) :=
   (rfl)
+
+/-- **The kernel of the Brauer generator `e = cup ∘ cap` is the kernel of the cap alone**: the cup
+may be cancelled from the top of the diagram, being injective once `V ≠ 0`; and in dimension zero
+the cap is itself the zero map, so both kernels are everything. -/
+theorem ker_orthogonalCupCap :
+    LinearMap.ker (orthogonalCupCap k n) = LinearMap.ker (orthogonalCap k n) := by
+  ext x
+  simp only [LinearMap.mem_ker, orthogonalCupCap_apply]
+  refine ⟨fun h => ?_, fun h => by rw [h, map_zero]⟩
+  rcases eq_zero_or_neZero n with rfl | hn
+  · have hcap : orthogonalCap k 0 = 0 := by
+      ext v
+      simp
+    simp [hcap]
+  · exact orthogonalCup_injective k n (by rw [h, map_zero])
+
+/-- **The image of the Brauer generator `e = cup ∘ cap` is the image of the cup alone**, the cap
+being surjective once `V ≠ 0`. For `n = 0` the cup is the zero map and both images are `⊥`. -/
+theorem range_orthogonalCupCap :
+    LinearMap.range (orthogonalCupCap k n) = LinearMap.range (orthogonalCup k n) := by
+  rw [orthogonalCupCap_eq_comp]
+  obtain _ | m := n
+  · have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
+    rw [hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
+  · rw [LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top_of_surjective _ (orthogonalCap_surjective k (m + 1)))]
 
 /-- **The relation `e² = δ e`** at the loop value `δ = n`: the middle of `e * e` is a closed
 loop. -/
