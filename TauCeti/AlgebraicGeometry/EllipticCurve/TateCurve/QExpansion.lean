@@ -1,0 +1,148 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Coordinates
+import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
+import Mathlib.Data.Nat.Choose.Bounds
+import Mathlib.Tactic.LinearCombination
+
+/-!
+# Tate coordinates on the unit circle
+
+Over any complete normed field, for a multiplicative parameter `u` of norm one, the Tate
+coordinates have convergent expansions in `q`, with Laurent-polynomial coefficients in `u`.
+Their constant terms are the rational parametrization `u / (1 - u)²`, `u² / (1 - u)³`
+of the nodal cubic. All remaining coefficients are finite divisor sums.
+
+These expansions cover the boundary of the fundamental annulus, which is not covered by
+geometric expansion in `u` and `q / u`: when `‖u‖ = 1`, the term at index zero must instead be
+kept as a rational function. They supply the analytic comparison needed to specialize formal
+identities in `q` at such parameters. No curve equation or uniformisation homomorphism is
+asserted here. At `u = 1` the rational terms retain the totalized field values.
+
+## Main results
+
+* `hasSum_tateUniformizationX_sub_of_norm_eq_one` and
+  `hasSum_tateUniformizationY_sub_of_norm_eq_one` give convergence and values of the
+  divisor-sum series after removing the rational constant terms.
+* `tateUniformizationX_eq_add_tsum_sum_divisors_of_norm_eq_one` and
+  `tateUniformizationY_eq_add_tsum_sum_divisors_of_norm_eq_one` give the corresponding
+  coordinate identities.
+
+## References
+
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, §V.3.
+* J. Tate, *A review of non-Archimedean elliptic functions* (1995).
+-/
+
+public section
+
+open ArithmeticFunction
+open scoped ArithmeticFunction.sigma
+
+namespace TauCeti
+
+variable {K : Type*} [NormedField K] [CompleteSpace K]
+
+/-- On the unit circle, the first Tate coordinate is a convergent `q`-expansion with finite
+Laurent-polynomial coefficients. Its constant term is `u / (1 - u)²`. -/
+theorem hasSum_tateUniformizationX_sub_of_norm_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) :
+    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
+        (d : K) * ((u : K) ^ d + (u : K)⁻¹ ^ d - 2)) * (q : K) ^ n)
+      (tateUniformizationX q u - (u : K) / (1 - (u : K)) ^ 2) := by
+  have ha (d : ℕ) : ‖(d : K)‖ ≤ 1 * (d : ℝ) ^ 1 := by
+    simpa using (Nat.norm_cast_le (α := K) d)
+  have ht := hasSum_sum_divisors_mul_pow_sub_of_norm_eq_one
+    (fun d ↦ (d : K)) (fun d ↦ (d : K)) ha ha
+    (fun r ↦ r / (1 - r) ^ 2) (fun r ↦ r / (1 - r) ^ 2)
+    tsum_natCast_succ_mul_pow_succ tsum_natCast_succ_mul_pow_succ
+    (fun r ↦ inv_div_one_sub_inv_sq r) q u hq hu (summable_tateUniformizationX q hq u)
+  have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
+    (fun d ↦ (d : K)) ha hq).summable.hasSum
+  convert ht.sub (hs.mul_left 2) using 1
+  · funext n
+    simp only [Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro d _
+    ring
+  · simp only [tateUniformizationX_def, divisorSumAt_def, sigma_one_apply]
+    push_cast
+    ring
+
+/-- The first Tate coordinate equals its unit-circle divisor-sum expansion.
+Convergence is given by `hasSum_tateUniformizationX_sub_of_norm_eq_one`. -/
+theorem tateUniformizationX_eq_add_tsum_sum_divisors_of_norm_eq_one
+    (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1) :
+    tateUniformizationX q u = (u : K) / (1 - (u : K)) ^ 2 +
+      ∑' n : ℕ, (∑ d ∈ n.divisors,
+        (d : K) * ((u : K) ^ d + (u : K)⁻¹ ^ d - 2)) * (q : K) ^ n := by
+  have h := (hasSum_tateUniformizationX_sub_of_norm_eq_one q u hq hu).tsum_eq
+  linear_combination -h
+
+/-- On the unit circle, the second Tate coordinate is a convergent `q`-expansion with finite
+Laurent-polynomial coefficients. Its constant term is `u² / (1 - u)³`; the binomial coefficients
+are integers before specialization, so the formula also applies in characteristics two and three. -/
+theorem hasSum_tateUniformizationY_sub_of_norm_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) :
+    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
+        ((d.choose 2 : K) * (u : K) ^ d - ((d + 1).choose 2 : K) * (u : K)⁻¹ ^ d +
+          (d : K))) *
+          (q : K) ^ n)
+      (tateUniformizationY q u - (u : K) ^ 2 / (1 - (u : K)) ^ 3) := by
+  have ha (d : ℕ) : ‖(d : K)‖ ≤ 1 * (d : ℝ) ^ 1 := by
+    simpa using (Nat.norm_cast_le (α := K) d)
+  have hp (d : ℕ) : ‖(d.choose 2 : K)‖ ≤ 1 * (d : ℝ) ^ 2 := by
+    calc
+      _ ≤ (d.choose 2 : ℝ) := by simpa using (Nat.norm_cast_le (α := K) (d.choose 2))
+      _ ≤ 1 * (d : ℝ) ^ 2 := by
+        rw [one_mul]
+        exact_mod_cast Nat.choose_le_pow d 2
+  have hm (d : ℕ) : ‖-((d + 1).choose 2 : K)‖ ≤ 2 * (d : ℝ) ^ 2 := by
+    rw [norm_neg]
+    calc
+      _ ≤ ((d + 1).choose 2 : ℝ) := by
+        simpa using (Nat.norm_cast_le (α := K) ((d + 1).choose 2))
+      _ ≤ 2 * (d : ℝ) ^ 2 := by
+        rw [Nat.choose_succ_succ' d 1, Nat.choose_one_right, Nat.cast_add]
+        have hd : (d : ℝ) ≤ (d : ℝ) ^ 2 := by exact_mod_cast Nat.le_self_pow (by decide) d
+        have hc : (d.choose 2 : ℝ) ≤ (d : ℝ) ^ 2 := by
+          exact_mod_cast Nat.choose_le_pow d 2
+        linarith
+  have ht := hasSum_sum_divisors_mul_pow_sub_of_norm_eq_one (fun d ↦ (d.choose 2 : K))
+    (fun d ↦ -((d + 1).choose 2 : K)) hp hm
+    (fun r ↦ r ^ 2 / (1 - r) ^ 3) (fun r ↦ -r / (1 - r) ^ 3)
+    tsum_choose_two_mul_pow_succ tsum_neg_choose_two_mul_pow_succ
+    (fun r ↦ inv_sq_div_one_sub_inv_cube r) q u hq hu (summable_tateUniformizationY q hq u)
+  have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
+    (fun d ↦ (d : K)) ha hq).summable.hasSum
+  convert ht.add hs using 1
+  · funext n
+    simp only [Finset.sum_mul, ← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro d _
+    ring
+  · simp only [tateUniformizationY_def, divisorSumAt_def, sigma_one_apply]
+    push_cast
+    ring
+
+/-- The second Tate coordinate equals its unit-circle divisor-sum expansion.
+Convergence is given by `hasSum_tateUniformizationY_sub_of_norm_eq_one`. -/
+theorem tateUniformizationY_eq_add_tsum_sum_divisors_of_norm_eq_one
+    (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1) :
+    tateUniformizationY q u = (u : K) ^ 2 / (1 - (u : K)) ^ 3 +
+      ∑' n : ℕ, (∑ d ∈ n.divisors,
+        ((d.choose 2 : K) * (u : K) ^ d - ((d + 1).choose 2 : K) * (u : K)⁻¹ ^ d +
+          (d : K))) *
+          (q : K) ^ n := by
+  have h := (hasSum_tateUniformizationY_sub_of_norm_eq_one q u hq hu).tsum_eq
+  linear_combination -h
+
+end TauCeti
+
+end
