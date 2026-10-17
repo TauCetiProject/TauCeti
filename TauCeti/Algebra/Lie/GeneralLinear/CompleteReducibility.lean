@@ -18,9 +18,9 @@ theorem does not apply to it directly. The reductive Lie algebra theorem supplie
 when the centre acts by scalars. For `gl n`, this holds whenever the identity matrix acts by
 a scalar.
 
-The final section applies this transfer to the left-regular CAR module. The normal-ordered lift
-sends the identity matrix to the scalar `(card n) ^ 2 / 2`; hence the centre preserves every
-`sl n`-submodule, and the CAR module is completely reducible.
+The final section establishes complete reducibility of the left-regular CAR module. The
+normal-ordered lift sends the identity matrix to the scalar `(card n) ^ 2 / 2`; hence the centre
+acts by scalars, and the CAR module is completely reducible.
 
 ## Main results
 
@@ -58,9 +58,7 @@ variable {M : Type w} [AddCommGroup M] [Module K M]
 variable [LieRingModule (Matrix n n K) M] [LieModule K (Matrix n n K) M]
 
 /-- **Complete reducibility for a general-linear module with scalar centre.** Every Lie submodule
-has a complement when the identity matrix acts by a scalar. Restriction to `sl n` supplies a
-complement by Weyl's theorem, and the scalar action makes that complement stable under all of
-`gl n`. -/
+has a complement when the identity matrix acts by a scalar. -/
 theorem exists_isCompl_gl_of_forall_one_lie_eq_smul [FiniteDimensional K M] {c : K}
     (hc : ∀ m : M, ⁅(1 : Matrix n n K), m⁆ = c • m)
     (N : LieSubmodule K (Matrix n n K) M) :
