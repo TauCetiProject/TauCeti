@@ -193,17 +193,11 @@ private def tuple (q : ℂ) [Fact (q ≠ 0)] (m : ℕ) (ε : ℤˣ) :
   k := kOp q m ε
   kInv := kInvOp q m ε
   k_mul_kInv := end_ext fun j => by
-    simp only [Module.End.mul_apply, Module.End.one_apply, kOp_vec, kInvOp_vec, map_smul,
-      smul_smul]
-    rw [mul_mul_mul_comm, ← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one,
+    simp [kOp_vec, kInvOp_vec, smul_smul, mul_mul_mul_comm, ← Int.cast_mul,
       ← zpow_add₀ (Fact.out : q ≠ 0)]
-    simp
   kInv_mul_k := end_ext fun j => by
-    simp only [Module.End.mul_apply, Module.End.one_apply, kOp_vec, kInvOp_vec, map_smul,
-      smul_smul]
-    rw [mul_mul_mul_comm, ← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one,
+    simp [kOp_vec, kInvOp_vec, smul_smul, mul_mul_mul_comm, ← Int.cast_mul,
       ← zpow_add₀ (Fact.out : q ≠ 0)]
-    simp
   k_mul_e := end_ext fun j => by
     simp only [LinearMap.smul_apply, Module.End.mul_apply, kOp_vec, eOp_vec, map_smul, smul_smul]
     congr 1
@@ -249,6 +243,10 @@ instance instModule : Module (UqSl2 q) (LadderModule q m ε) :=
 /-- An element of `UqSl2 q` acts on `L_m^ε` through `LadderModule.rep`. -/
 theorem smul_def (a : UqSl2 q) (x : LadderModule q m ε) : a • x = rep q m ε a x := (rfl)
 
+/-- The generator tuple of `LadderModule.rep` is the tuple of generator operators. -/
+private theorem liftEquiv_rep : liftEquiv (rep q m ε) = tuple q m ε := by
+  rw [rep, ← liftEquiv_symm_apply, Equiv.apply_symm_apply]
+
 instance : IsScalarTower ℂ (UqSl2 q) (LadderModule q m ε) where
   smul_assoc c a x := by
     rw [smul_def, smul_def, map_smul, LinearMap.smul_apply]
@@ -257,28 +255,28 @@ instance : IsScalarTower ℂ (UqSl2 q) (LadderModule q m ε) where
 @[simp]
 theorem e_smul_vec (j : ℤ) :
     e q • vec q m ε j = (ε * quantumInteger q (m - j + 1)) • vec q m ε (j - 1) := by
-  rw [smul_def, rep, ← liftEquiv_symm_apply, ← liftEquiv_apply_e, Equiv.apply_symm_apply]
+  rw [smul_def, ← liftEquiv_apply_e, liftEquiv_rep]
   exact eOp_vec j
 
 /-- The action of `F` on the ladder vectors: `F v_j = [j + 1]_q v_(j + 1)`. -/
 @[simp]
 theorem f_smul_vec (j : ℤ) :
     f q • vec q m ε j = quantumInteger q (j + 1) • vec q m ε (j + 1) := by
-  rw [smul_def, rep, ← liftEquiv_symm_apply, ← liftEquiv_apply_f, Equiv.apply_symm_apply]
+  rw [smul_def, ← liftEquiv_apply_f, liftEquiv_rep]
   exact fOp_vec j
 
 /-- The action of `K` on the ladder vectors: `K v_j = ε q^(m - 2j) v_j`. -/
 @[simp]
 theorem k_smul_vec (j : ℤ) :
     k q • vec q m ε j = (ε * q ^ ((m : ℤ) - 2 * j)) • vec q m ε j := by
-  rw [smul_def, rep, ← liftEquiv_symm_apply, ← liftEquiv_apply_k, Equiv.apply_symm_apply]
+  rw [smul_def, ← liftEquiv_apply_k, liftEquiv_rep]
   exact kOp_vec j
 
 /-- The action of `K⁻¹` on the ladder vectors: `K⁻¹ v_j = ε q^(2j - m) v_j`. -/
 @[simp]
 theorem kInv_smul_vec (j : ℤ) :
     kInv q • vec q m ε j = (ε * q ^ (2 * j - m)) • vec q m ε j := by
-  rw [smul_def, rep, ← liftEquiv_symm_apply, ← liftEquiv_apply_kInv, Equiv.apply_symm_apply]
+  rw [smul_def, ← liftEquiv_apply_kInv, liftEquiv_rep]
   exact kInvOp_vec j
 
 /-- The action of the powers of `E` on the ladder vectors. -/
@@ -288,17 +286,10 @@ theorem e_pow_smul_vec (n : ℕ) (j : ℤ) :
   induction n generalizing j with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, mul_smul, e_smul_vec, smul_comm, ih, smul_smul, Finset.prod_range_succ']
-    congr 1
-    · rw [mul_comm]
-      congr 1
-      · refine Finset.prod_congr rfl fun i _ => ?_
-        push_cast
-        ring_nf
-      · ring_nf
-    · congr 1
-      push_cast
-      ring
+    rw [pow_succ', mul_smul, ih, smul_comm, e_smul_vec, smul_smul, Finset.prod_range_succ,
+      Nat.cast_succ, sub_add_eq_sub_sub]
+    -- The new factor `ε [m - (j - n) + 1]_q` is the factor of index `n` of the product.
+    rw [show (m : ℤ) - (j - n) + 1 = m - j + n + 1 by ring]
 
 /-- The action of the powers of `F` on the ladder vectors. -/
 theorem f_pow_smul_vec (n : ℕ) (j : ℤ) :
@@ -307,17 +298,8 @@ theorem f_pow_smul_vec (n : ℕ) (j : ℤ) :
   induction n generalizing j with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, mul_smul, f_smul_vec, smul_comm, ih, smul_smul, Finset.prod_range_succ']
-    congr 1
-    · rw [mul_comm]
-      congr 1
-      · refine Finset.prod_congr rfl fun i _ => ?_
-        push_cast
-        ring_nf
-      · ring_nf
-    · congr 1
-      push_cast
-      ring
+    rw [pow_succ', mul_smul, ih, smul_comm, f_smul_vec, smul_smul, Finset.prod_range_succ,
+      Nat.cast_succ, add_assoc]
 
 /-! ### Simplicity -/
 
