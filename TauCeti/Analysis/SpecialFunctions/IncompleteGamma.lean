@@ -24,17 +24,10 @@ distribution function of a Gamma law, which is where this file is headed; the tw
 above make that cdf agree with the clamping conventions a cdf needs, below the support and outside
 the parameter range.
 
-Since `P(s, ·)` increases strictly and continuously from `0` to `1` on `[0, ∞)`, it has an inverse
-`TauCeti.inverseRegularizedGamma s` on the levels `0 < u < 1`, written `P⁻¹(s, u)`. This inverse
-is the quantile function of the Gamma law of shape `s` and rate `1`, so the quantiles of the laws
-whose cumulative distribution functions are built from `P` are expressed through it.
-
 ## Main definitions
 
 * `TauCeti.lowerIncompleteGamma` — the lower incomplete gamma function `γ(s, x)`;
-* `TauCeti.regularizedGamma` — the regularized lower incomplete gamma function `P(s, x)`;
-* `TauCeti.inverseRegularizedGamma` — its inverse `P⁻¹(s, u)` in the argument, extended by `0`
-  outside `0 < s` and `0 < u < 1`.
+* `TauCeti.regularizedGamma` — the regularized lower incomplete gamma function `P(s, x)`.
 
 ## Main results
 
@@ -61,18 +54,7 @@ whose cumulative distribution functions are built from `P` are expressed through
 * `TauCeti.strictMonoOn_regularizedGamma`, `TauCeti.regularizedGamma_pos_iff`,
   `TauCeti.regularizedGamma_lt_one` — strict monotonicity on `[0, ∞)` and the exact range;
 * `TauCeti.measurable_lowerIncompleteGamma`, `TauCeti.measurable_regularizedGamma` — joint
-  measurability in the shape parameter and the argument;
-* `TauCeti.inverseRegularizedGamma_le_iff` — the Galois characterization
-  `P⁻¹(s, u) ≤ x ↔ u ≤ P(s, x)` of the inverse, with the two inverse identities
-  `TauCeti.regularizedGamma_inverseRegularizedGamma` and
-  `TauCeti.inverseRegularizedGamma_regularizedGamma` and the uniqueness statement
-  `TauCeti.inverseRegularizedGamma_eq_iff`;
-* `TauCeti.strictMonoOn_inverseRegularizedGamma`, `TauCeti.continuousOn_inverseRegularizedGamma`,
-  `TauCeti.tendsto_inverseRegularizedGamma_nhdsGT_zero`,
-  `TauCeti.tendsto_inverseRegularizedGamma_nhdsLT_one` and
-  `TauCeti.measurable_inverseRegularizedGamma` — regularity of the inverse, its limits `0` and `∞`
-  at the ends of `(0, 1)`, and joint measurability of the totalized function;
-* `TauCeti.inverseRegularizedGamma_one` — `P⁻¹(1, u) = -log (1 - u)`, the exponential quantile.
+  measurability in the shape parameter and the argument.
 
 ## Implementation
 
@@ -525,189 +507,6 @@ theorem measurable_regularizedGamma :
     Measurable fun p : ℝ × ℝ => regularizedGamma p.1 p.2 := by
   simp only [regularizedGamma_eq_div]
   exact measurable_lowerIncompleteGamma.div (Real.measurable_Gamma.comp measurable_fst)
-
-/-! ### The inverse of the regularized function -/
-
-variable {u : ℝ}
-
-/-- The inverse `P⁻¹(s, u)` of the regularized lower incomplete gamma function in its argument.
-
-For `0 < s` and `0 < u < 1` it is the unique `x` with `P(s, x) = u`
-(`TauCeti.inverseRegularizedGamma_eq_iff`), which is positive. It is the least point at which
-`P(s, ·)` reaches `u`, the form in which the definition is stated. Outside this parameter range it
-is `0`. -/
-def inverseRegularizedGamma (s u : ℝ) : ℝ :=
-  if 0 < s ∧ u ∈ Ioo 0 1 then sInf {x | u ≤ regularizedGamma s x} else 0
-
-/-- In the valid range, `P⁻¹(s, u)` is the least point at which `P(s, ·)` reaches `u`. -/
-theorem inverseRegularizedGamma_eq_sInf (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    inverseRegularizedGamma s u = sInf {x | u ≤ regularizedGamma s x} :=
-  ite_eq_left ⟨hs, hu⟩
-
-/-- Outside the valid range of the shape parameter, `P⁻¹(s, u)` is `0`. -/
-@[simp]
-theorem inverseRegularizedGamma_of_nonpos_left (hs : s ≤ 0) (u : ℝ) :
-    inverseRegularizedGamma s u = 0 :=
-  ite_eq_right fun h => (not_lt.2 hs) h.1
-
-/-- At levels `u ≤ 0`, `P⁻¹(s, u)` is `0`. -/
-@[simp]
-theorem inverseRegularizedGamma_of_nonpos_right (s : ℝ) (hu : u ≤ 0) :
-    inverseRegularizedGamma s u = 0 :=
-  ite_eq_right fun h => (not_lt.2 hu) h.2.1
-
-/-- At levels `1 ≤ u`, `P⁻¹(s, u)` is `0`. -/
-@[simp]
-theorem inverseRegularizedGamma_of_one_le (s : ℝ) (hu : 1 ≤ u) :
-    inverseRegularizedGamma s u = 0 :=
-  ite_eq_right fun h => (not_lt.2 hu) h.2.2
-
-/-- The points at which `P(s, ·)` reaches a level `u ∈ (0, 1)` form the closed ray starting at
-`P⁻¹(s, u)`. -/
-theorem setOf_le_regularizedGamma_eq_Ici (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    {x | u ≤ regularizedGamma s x} = Ici (inverseRegularizedGamma s u) := by
-  set S := {x | u ≤ regularizedGamma s x}
-  have hne : S.Nonempty :=
-    ((tendsto_regularizedGamma_atTop hs).eventually (eventually_gt_nhds hu.2)).exists.imp
-      fun _ h => h.le
-  have hbdd : BddBelow S := ⟨0, fun x hx => not_lt.1 fun h =>
-    (hu.1.trans_le hx).ne' (regularizedGamma_eq_zero_of_nonpos_right s h.le)⟩
-  have hmem : sInf S ∈ S :=
-    (isClosed_le continuous_const (continuous_regularizedGamma s)).csInf_mem hne hbdd
-  rw [inverseRegularizedGamma_eq_sInf hs hu]
-  ext x
-  exact ⟨fun hx => csInf_le hbdd hx,
-    fun hx => le_trans hmem (regularizedGamma_monotone s (mem_Ici.1 hx))⟩
-
-/-- The Galois characterization of `P⁻¹(s, ·)`: for a level `u ∈ (0, 1)`, `P⁻¹(s, u) ≤ x` exactly
-when `u ≤ P(s, x)`. -/
-theorem inverseRegularizedGamma_le_iff (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    inverseRegularizedGamma s u ≤ x ↔ u ≤ regularizedGamma s x := by
-  rw [← mem_Ici, ← setOf_le_regularizedGamma_eq_Ici hs hu, mem_ofPred_eq]
-
-/-- The negation of `TauCeti.inverseRegularizedGamma_le_iff`. -/
-theorem lt_inverseRegularizedGamma_iff (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    x < inverseRegularizedGamma s u ↔ regularizedGamma s x < u := by
-  simpa only [not_le] using (inverseRegularizedGamma_le_iff hs hu).not
-
-/-- `P⁻¹(s, u)` is positive, for `0 < s` and `0 < u < 1`. -/
-theorem inverseRegularizedGamma_pos (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    0 < inverseRegularizedGamma s u := by
-  rw [lt_inverseRegularizedGamma_iff hs hu, regularizedGamma_eq_zero_of_nonpos_right s le_rfl]
-  exact hu.1
-
-/-- `P⁻¹(s, u)` is nonnegative, for every parameter value. -/
-theorem inverseRegularizedGamma_nonneg (s u : ℝ) : 0 ≤ inverseRegularizedGamma s u := by
-  by_cases h : 0 < s ∧ u ∈ Ioo 0 1
-  · exact (inverseRegularizedGamma_pos h.1 h.2).le
-  · rw [inverseRegularizedGamma, ite_eq_right h]
-
-/-- `P⁻¹(s, ·)` is a right inverse of `P(s, ·)` on the levels `0 < u < 1`. -/
-theorem regularizedGamma_inverseRegularizedGamma (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    regularizedGamma s (inverseRegularizedGamma s u) = u := by
-  refine le_antisymm ?_ ((inverseRegularizedGamma_le_iff hs hu).1 le_rfl)
-  -- To the left of `P⁻¹(s, u)` the function stays below `u`, so by continuity it is at most `u`
-  -- at `P⁻¹(s, u)` itself.
-  refine le_of_tendsto (((continuous_regularizedGamma s).tendsto _).mono_left
-    (nhdsWithin_le_nhds (s := Iio (inverseRegularizedGamma s u)))) ?_
-  filter_upwards [self_mem_nhdsWithin] with y hy
-  exact ((lt_inverseRegularizedGamma_iff hs hu).1 hy).le
-
-/-- The strict form of `TauCeti.inverseRegularizedGamma_le_iff`. -/
-theorem inverseRegularizedGamma_lt_iff (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    inverseRegularizedGamma s u < x ↔ u < regularizedGamma s x := by
-  refine ⟨fun h => ?_, fun h => not_le.1 fun hx => ?_⟩
-  · have hpos := inverseRegularizedGamma_pos hs hu
-    rw [← regularizedGamma_inverseRegularizedGamma hs hu]
-    exact strictMonoOn_regularizedGamma hs hpos.le (hpos.trans h).le h
-  · have := regularizedGamma_monotone s hx
-    rw [regularizedGamma_inverseRegularizedGamma hs hu] at this
-    exact not_lt.2 this h
-
-/-- Uniqueness: for `0 < s` and `0 < u < 1`, the only solution of `P(s, x) = u` is
-`x = P⁻¹(s, u)`. -/
-theorem inverseRegularizedGamma_eq_iff (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    inverseRegularizedGamma s u = x ↔ regularizedGamma s x = u := by
-  refine ⟨fun h => h ▸ regularizedGamma_inverseRegularizedGamma hs hu, fun hx => ?_⟩
-  have hx0 : 0 < x := (regularizedGamma_pos_iff hs).1 (hx ▸ hu.1)
-  refine (strictMonoOn_regularizedGamma hs).injOn (inverseRegularizedGamma_pos hs hu).le
-    (mem_Ici.2 hx0.le) ?_
-  rw [regularizedGamma_inverseRegularizedGamma hs hu, hx]
-
-/-- `P⁻¹(s, ·)` is a left inverse of `P(s, ·)` on the open half-line `0 < x`. -/
-theorem inverseRegularizedGamma_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
-    inverseRegularizedGamma s (regularizedGamma s x) = x :=
-  (inverseRegularizedGamma_eq_iff hs ⟨regularizedGamma_pos hs hx, regularizedGamma_lt_one s x⟩).2
-    rfl
-
-/-- `P⁻¹(s, ·)` is strictly increasing on the levels `0 < u < 1`. -/
-theorem strictMonoOn_inverseRegularizedGamma (hs : 0 < s) :
-    StrictMonoOn (inverseRegularizedGamma s) (Ioo 0 1) := fun u hu v hv huv => by
-  rwa [lt_inverseRegularizedGamma_iff hs hv, regularizedGamma_inverseRegularizedGamma hs hu]
-
-/-- `P⁻¹(s, ·)` is continuous on the levels `0 < u < 1`. -/
-theorem continuousOn_inverseRegularizedGamma (hs : 0 < s) :
-    ContinuousOn (inverseRegularizedGamma s) (Ioo 0 1) := fun u hu => by
-  -- A monotone function whose image of a neighbourhood is a neighbourhood is continuous; here the
-  -- image of `(0, 1)` is all of `(0, ∞)`.
-  refine (continuousAt_of_monotoneOn_of_image_mem_nhds
-    (strictMonoOn_inverseRegularizedGamma hs).monotoneOn (isOpen_Ioo.mem_nhds hu)
-    (mem_of_superset (Ioi_mem_nhds (inverseRegularizedGamma_pos hs hu)) fun y hy => ?_))
-    |>.continuousWithinAt
-  exact ⟨regularizedGamma s y, ⟨regularizedGamma_pos hs hy, regularizedGamma_lt_one s y⟩,
-    inverseRegularizedGamma_regularizedGamma hs hy⟩
-
-/-- `P⁻¹(s, u)` tends to `0` from above as the level `u` decreases to `0`. -/
-theorem tendsto_inverseRegularizedGamma_nhdsGT_zero (hs : 0 < s) :
-    Tendsto (inverseRegularizedGamma s) (𝓝[>] 0) (𝓝[>] 0) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨tendsto_order.2 ⟨fun a ha => Eventually.of_forall fun u =>
-    ha.trans_le (inverseRegularizedGamma_nonneg s u), fun b hb => ?_⟩, ?_⟩
-  · filter_upwards [Ioo_mem_nhdsGT (regularizedGamma_pos hs hb)] with u hu
-    exact (inverseRegularizedGamma_lt_iff hs
-      ⟨hu.1, hu.2.trans (regularizedGamma_lt_one s b)⟩).2 hu.2
-  · filter_upwards [Ioo_mem_nhdsGT one_pos] with u hu
-    exact inverseRegularizedGamma_pos hs hu
-
-/-- `P⁻¹(s, u)` tends to `∞` as the level `u` increases to `1`. -/
-theorem tendsto_inverseRegularizedGamma_nhdsLT_one (hs : 0 < s) :
-    Tendsto (inverseRegularizedGamma s) (𝓝[<] 1) atTop := by
-  refine tendsto_atTop.2 fun b => ?_
-  filter_upwards [Ioo_mem_nhdsLT (regularizedGamma_lt_one s b)] with u hu
-  refine not_lt.1 fun h => lt_asymm hu.1 ?_
-  exact (inverseRegularizedGamma_lt_iff hs
-    ⟨(regularizedGamma_nonneg s b).trans_lt hu.1, hu.2⟩).1 h
-
-/-- `P⁻¹(s, u)` is jointly measurable in the shape parameter and the level, including outside
-the valid parameter range. -/
-@[fun_prop]
-theorem measurable_inverseRegularizedGamma :
-    Measurable fun p : ℝ × ℝ => inverseRegularizedGamma p.1 p.2 := by
-  have hV : MeasurableSet {p : ℝ × ℝ | 0 < p.1 ∧ p.2 ∈ Ioo 0 1} :=
-    (measurableSet_lt measurable_const measurable_fst).inter (measurable_snd measurableSet_Ioo)
-  refine measurable_of_Iic fun x => ?_
-  -- On the valid range the sublevel sets come from the Galois characterization; off it the
-  -- function is the constant `0`.
-  have hpre : (fun p : ℝ × ℝ => inverseRegularizedGamma p.1 p.2) ⁻¹' Iic x =
-      ({p | 0 < p.1 ∧ p.2 ∈ Ioo 0 1} ∩ {p | p.2 ≤ regularizedGamma p.1 x}) ∪
-        ({p | 0 < p.1 ∧ p.2 ∈ Ioo 0 1}ᶜ ∩ {_p | 0 ≤ x}) := by
-    ext ⟨s, u⟩
-    simp only [mem_preimage, mem_Iic, mem_union, mem_inter_iff, mem_compl_iff, mem_ofPred_eq]
-    by_cases h : 0 < s ∧ u ∈ Ioo 0 1
-    · rw [inverseRegularizedGamma_le_iff h.1 h.2]
-      tauto
-    · rw [inverseRegularizedGamma, ite_eq_right h]
-      tauto
-  rw [hpre]
-  exact (hV.inter (measurableSet_le measurable_snd (by fun_prop))).union
-    (hV.compl.inter (MeasurableSet.const _))
-
-/-- At shape `1`, `P⁻¹(1, u) = -log (1 - u)`: the inverse of the standard exponential cdf. -/
-theorem inverseRegularizedGamma_one (hu : u ∈ Ioo 0 1) :
-    inverseRegularizedGamma 1 u = -Real.log (1 - u) := by
-  have h1u : 0 < 1 - u := sub_pos.2 hu.2
-  rw [inverseRegularizedGamma_eq_iff one_pos hu,
-    regularizedGamma_one (neg_nonneg.2 (Real.log_nonpos h1u.le (by linarith [hu.1]))),
-    neg_neg, Real.exp_log h1u, sub_sub_cancel]
 end TauCeti
 
 end
