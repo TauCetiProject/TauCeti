@@ -113,7 +113,6 @@ noncomputable def quotientEquivQuotientSpan {Q : R[X]}
       normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) :
     (R ⧸ p)[X] ⧸ span {Q.map (Ideal.Quotient.mk p)} ≃+*
       S ⧸ span (p.map (algebraMap R S) ∪ {aeval x Q}) :=
-  have : p.IsMaximal := hp
   have h0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
     map_monic_ne_zero (minpoly.monic hx')
   have h₁ : span {Q.map (Ideal.Quotient.mk p)} =
@@ -163,7 +162,6 @@ theorem inertiaDeg_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d : (R 
   have hmax : (span (p.map (algebraMap R S) ∪ {aeval x Q})).IsMaximal :=
     hspan ▸ hmem.1.isMaximal (Ideal.ne_bot_of_mem_primesOver hp0 hmem)
   have hlies : (span (p.map (algebraMap R S) ∪ {aeval x Q})).LiesOver p := hspan ▸ hmem.2
-  have : p.IsMaximal := hp
   rw [hspan, Ideal.inertiaDeg_eq_of_isMaximal p _, ← finrank_quotient_span_eq_natDegree
     (K := R ⧸ p) (f := Q.map (Ideal.Quotient.mk p))]
   refine (Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl (R ⧸ p))
