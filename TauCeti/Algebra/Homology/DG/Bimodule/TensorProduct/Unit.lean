@@ -141,7 +141,6 @@ theorem mem_tensorUnit_grading_iff (p : ℤ) (x : tensorUnit.{v} hA) :
 theorem tensorUnit_differential_apply (x : tensorUnit.{v} hA) :
     (tensorUnit.{v} hA).differential x = ULift.up (dA x.down) := rfl
 
-@[simp]
 theorem tensorUnitEquiv_smul (a b x : A) :
     a • (op b • tensorUnitEquiv.{v} hA x) = tensorUnitEquiv.{v} hA (a * x * b) := by
   apply ULift.ext
