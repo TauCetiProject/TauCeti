@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
-import TauCeti.Algebra.Coalgebra.Comodule.Product
 import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
@@ -44,8 +43,9 @@ variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum 
 variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 variable {N : Type x} [AddCommGroup N] [Module k N] [Comodule k H N]
 
-/-- For a connected affine group in characteristic zero, a linear map is a rational
-representation morphism exactly when it intertwines the differentiated actions. -/
+/-- For a connected affine group over an algebraically closed field of characteristic zero,
+a linear map is a rational representation morphism exactly when it intertwines the
+differentiated actions. -/
 theorem map_coact_iff_map_differential (f : M →ₗ[k] N) :
     TensorProduct.map f LinearMap.id ∘ₗ Comodule.coact (R := k) (C := H) =
         Comodule.coact (R := k) (C := H) ∘ₗ f ↔
@@ -57,41 +57,29 @@ theorem map_coact_iff_map_differential (f : M →ₗ[k] N) :
     exact (Comodule.Hom.map_differential ⟨f, hf⟩)
   · intro hf
     let : Comodule k H (M × N) := Comodule.Prod
-    have hgraph : ∀ (d : Derivation k H (Bialgebra.CounitAlgebra k H k)), ∀ z ∈ f.graph,
-        Comodule.differential (R := k) (H := H) d z ∈ f.graph := by
-      intro d z hz
-      have hfst := (Comodule.prodFst (R := k) (C := H) (M := M) (N := N)).map_differential d z
-      have hsnd := (Comodule.prodSnd (R := k) (C := H) (M := M) (N := N)).map_differential d z
-      simp only [Comodule.prodFst_apply] at hfst
-      simp only [Comodule.prodSnd_apply] at hsnd
-      rw [mem_graph_iff] at hz ⊢
-      rw [hsnd, hfst, hz, hf]
     let q : M × N →ₗ[k] N := LinearMap.snd k M N - f.comp (LinearMap.fst k M N)
     have hq : q.comp f.graph.subtype = 0 := by
       ext z
       exact sub_eq_zero.mpr ((mem_graph_iff f z).mp z.2)
     ext m
-    obtain ⟨t, ht⟩ := f.graph.coact_mem_range_of_forall_differential_mem hgraph
+    obtain ⟨t, ht⟩ := f.graph.coact_mem_range_of_forall_differential_mem
+      (fun d _ hz ↦ f.differential_mem_graph d (hf d) hz)
       ((mem_graph_iff f (m, f m)).mpr rfl)
     have hzero : q.rTensor H (Comodule.coact (R := k) (C := H) (m, f m)) = 0 := by
-      rw [← ht, ← rTensor_def, ← rTensor_comp_apply, hq, rTensor_zero, zero_apply]
-    have hfst := (Comodule.prodFst (R := k) (C := H) (M := M) (N := N)).map_coact_apply
-      (m, f m)
-    have hsnd := (Comodule.prodSnd (R := k) (C := H) (M := M) (N := N)).map_coact_apply
-      (m, f m)
-    simp only [Comodule.prodFst_toLinearMap, Comodule.prodFst_apply] at hfst
-    simp only [Comodule.prodSnd_toLinearMap, Comodule.prodSnd_apply] at hsnd
-    rw [rTensor_sub, LinearMap.sub_apply, rTensor_comp_apply] at hzero
-    simp only [rTensor_def] at hzero
-    rw [hsnd, hfst] at hzero
-    exact (sub_eq_zero.mp hzero).symm
+      simpa [← rTensor_def, ← rTensor_comp_apply, hq] using
+        (congrArg (q.rTensor H) ht).symm
+    suffices Comodule.coact (R := k) (C := H) (f m) -
+        f.rTensor H (Comodule.coact (R := k) (C := H) m) = 0 from
+      (sub_eq_zero.mp this).symm
+    simpa [q, rTensor_sub, rTensor_comp_apply] using hzero
 
 end LinearMap
 
 namespace TauCeti.Comodule
 
-/-- For a connected affine group in characteristic zero, rational invariants are exactly
-the vectors killed by every tangent vector. No dimension assumption is needed. -/
+/-- For a connected affine group over an algebraically closed field of characteristic zero,
+rational invariants are exactly the vectors killed by every tangent vector.
+No dimension assumption is needed. -/
 theorem coact_eq_tmul_one_iff_forall_differential_eq_zero
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]

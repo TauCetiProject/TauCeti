@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Convolution
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
+public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
@@ -111,9 +112,8 @@ theorem differential_eq_zero_of_coact_eq_tmul_one {m : M}
     (hm : coact (R := R) (C := H) m = m ⊗ₜ[R] (1 : H))
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
     differential (R := R) (H := H) d m = 0 := by
-  rw [differential_apply, hm, LinearMap.tensorComponent_tmul, LinearMap.comp_apply]
-  rw [Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero]
-  exact zero_smul R m
+  simp only [differential_apply, hm, LinearMap.tensorComponent_tmul, LinearMap.comp_apply,
+    Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero, zero_smul]
 
 /-- Every comodule morphism intertwines the differentiated representations. -/
 @[simp↓]
@@ -192,3 +192,31 @@ theorem differential_mem (N : Subcomodule R H M)
   exact N.rid_lTensor_coact_mem _ hm
 
 end TauCeti.Subcomodule
+
+namespace LinearMap
+
+open TauCeti
+
+/-- The graph of a linear map intertwining differentiated actions is stable under
+those actions, over any commutative base ring. -/
+theorem differential_mem_graph
+    {R : Type*} [CommRing R] {H : Type*} [CommRing H] [Bialgebra R H]
+    {M : Type*} [AddCommGroup M] [Module R M] [Comodule R H M]
+    {N : Type*} [AddCommGroup N] [Module R N] [Comodule R H N]
+    (f : M →ₗ[R] N)
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (hf : ∀ m : M, f (Comodule.differential (R := R) (H := H) d m) =
+      Comodule.differential (R := R) (H := H) d (f m))
+    {z : M × N}
+    (hz : z ∈ f.graph) :
+    let : Comodule R H (M × N) := Comodule.Prod
+    Comodule.differential (R := R) (H := H) d z ∈ f.graph := by
+  let : Comodule R H (M × N) := Comodule.Prod
+  have hfst := (Comodule.prodFst (R := R) (C := H) (M := M) (N := N)).map_differential d z
+  have hsnd := (Comodule.prodSnd (R := R) (C := H) (M := M) (N := N)).map_differential d z
+  simp only [Comodule.prodFst_apply] at hfst
+  simp only [Comodule.prodSnd_apply] at hsnd
+  rw [mem_graph_iff] at hz ⊢
+  rw [hsnd, hfst, hz, hf]
+
+end LinearMap

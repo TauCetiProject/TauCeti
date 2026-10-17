@@ -17,9 +17,8 @@ the invariant vectors of its rational adjoint representation are exactly the cen
 its tangent Lie algebra. Thus the entire group fixes each central tangent vector after
 extension to any commutative value algebra, even one with nilpotents.
 
-This is the invariant-vector comparison used when relating the scheme-theoretic center
-to the Lie center. It is stronger than stability of the center as a subrepresentation:
-the action on that subrepresentation is trivial.
+This is the comparison needed to show that Lie-central tangent vectors give central
+dual-number points. The action on the center as a subrepresentation is trivial.
 
 ## References
 
@@ -41,8 +40,9 @@ variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [ConnectedSpace (PrimeSpectrum 
 
 attribute [local instance] Derivation.adjointComodule
 
-/-- For a connected group in characteristic zero, a tangent vector is rationally fixed
-under the adjoint action exactly when it lies in the center of the tangent Lie algebra. -/
+/-- For a connected group over an algebraically closed field of characteristic zero,
+a tangent vector is rationally fixed under the adjoint action exactly when it lies in the
+center of the tangent Lie algebra. -/
 theorem coact_adjointComodule_eq_tmul_one_iff_mem_center
     (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
     Comodule.coact (R := k) (C := H) x = x ⊗ₜ[k] (1 : H) ↔
@@ -57,15 +57,15 @@ theorem coact_adjointComodule_eq_tmul_one_iff_mem_center
     exact hx _
 
 /-- Every algebra-valued point fixes the scalar extension of each central tangent vector
-of a connected affine group in characteristic zero. The value algebra may be nonreduced. -/
-theorem endOfPoint_adjointComodule_of_mem_center
+of a connected affine group over an algebraically closed field of characteristic zero.
+The value algebra may be nonreduced. -/
+theorem endOfPoint_tmul_of_mem_center
     (x : Module.Dual k (Bialgebra.CotangentSpace k H))
     (hx : x ∈ LieAlgebra.center k (Module.Dual k (Bialgebra.CotangentSpace k H)))
     {A : Type*} [CommSemiring A] [Algebra k A] (g : H →ₐ[k] A) (a : A) :
     Comodule.endOfPoint (Module.Dual k (Bialgebra.CotangentSpace k H)) g (a ⊗ₜ[k] x) =
-      a ⊗ₜ[k] x := by
-  rw [Comodule.endOfPoint_tmul, (coact_adjointComodule_eq_tmul_one_iff_mem_center H x).mpr hx]
-  simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, map_one,
-    TensorProduct.comm_tmul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+      a ⊗ₜ[k] x :=
+  Comodule.endOfPoint_tmul_of_coact_eq_tmul_one
+    ((coact_adjointComodule_eq_tmul_one_iff_mem_center H x).mpr hx) g a
 
 end TauCeti.FiniteTypeCommHopfAlgCat
