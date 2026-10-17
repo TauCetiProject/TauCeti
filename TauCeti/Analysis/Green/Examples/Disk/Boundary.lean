@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Outward
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Boundary
 public import Mathlib.Topology.Path
 public import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Topology.Circle.Arc
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -92,48 +93,31 @@ theorem unitDiskBoundaryLoop_injOn : InjOn unitDiskBoundaryLoop.extend (Ioo (0 :
 /-- The open parameter interval covers the actual disk boundary minus the single seam point. -/
 theorem unitDiskBoundaryLoop_image :
     unitDiskBoundaryLoop.extend '' Ioo (0 : ℝ) 1 = {S (Circle.exp (-π))}ᶜ := by
-  ext x
-  constructor
-  · rintro ⟨t, ht, rfl⟩
-    have ht0 := ht.1
-    have ht1 := ht.2
-    rw [unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self ht)]
-    intro he
-    have htangle : 2 * π * t - π ∈ Ico (-π) π := by constructor <;> nlinarith [pi_pos]
-    have hseam : -π ∈ Ico (-π) π := by constructor <;> linarith [pi_pos]
-    have h := Circle.exp_injOn_Ico (a := -π) (b := π) (by linarith) htangle hseam
-      ((S).injective he)
-    nlinarith [pi_pos]
-  · intro hx
-    have hx' : (S).symm x ≠ Circle.exp (-π) := by
-      intro he
-      apply hx
-      -- Expose the complement of the singleton seam after applying the diffeomorphism inverse.
-      change x = S (Circle.exp (-π))
-      rw [← (S).apply_symm_apply x, he]
-    let θ := Complex.arg (((S).symm x : Circle) : ℂ)
-    have hlo : -π < θ := Complex.neg_pi_lt_arg _
-    have hhi : θ < π := lt_of_le_of_ne (Complex.arg_le_pi _) (by
-      intro he
-      apply hx'
-      rw [← Circle.exp_arg ((S).symm x)]
-      -- The named angle is the principal argument of the inverse boundary point.
-      change Circle.exp θ = Circle.exp (-π)
-      rw [he, exp_pi_eq_exp_neg_pi])
-    let t := (θ + π) / (2 * π)
-    have ht : t ∈ Ioo (0 : ℝ) 1 := by
-      constructor
-      · exact div_pos (by linarith) (by positivity)
-      · exact (div_lt_one (by positivity)).mpr (by linarith)
-    refine ⟨t, ht, ?_⟩
-    rw [unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self ht)]
-    have he : 2 * π * t - π = θ := by dsimp [t]; field_simp; ring
-    rw [he]
-    -- Evaluate the path endpoint on its subtype parameter before reducing the endpoint angle.
-    -- Expose the principal argument and inverse diffeomorphism before using their inverse laws.
-    change S (Circle.exp (Complex.arg ((S).symm x))) = x
-    exact (congrArg (fun z : Circle ↦ S z) (Circle.exp_arg ((S).symm x))).trans
-      ((S).apply_symm_apply x)
+  let e : Circle ≃ B := (S).toEquiv
+  change unitDiskBoundaryLoop.extend '' Ioo (0 : ℝ) 1 = {e (Circle.exp (-π))}ᶜ
+  have hangle : -π + 2 * π = π := by ring
+  have harc : Circle.exp '' Ioo (-π) π = {Circle.exp (-π)}ᶜ := by
+    have h := compl_circleExp_image_Icc (a := -π) (b := -π) le_rfl
+      (by linarith [pi_pos])
+    simpa only [Icc_self, image_singleton, hangle] using h.symm
+  have hparam : (fun t : ℝ ↦ 2 * π * t - π) '' Ioo (0 : ℝ) 1 = Ioo (-π) π := by
+    ext θ
+    constructor
+    · rintro ⟨t, ht, rfl⟩
+      constructor <;> nlinarith [pi_pos, ht.1, ht.2]
+    · intro hθ
+      refine ⟨(θ + π) / (2 * π), ?_, ?_⟩
+      · constructor
+        · exact div_pos (by linarith [hθ.1]) (by positivity)
+        · exact (div_lt_one (by positivity)).mpr (by linarith [hθ.2])
+      · field_simp
+        ring
+  have hloop : unitDiskBoundaryLoop.extend '' Ioo (0 : ℝ) 1 =
+      e '' (Circle.exp '' Ioo (-π) π) := by
+    rw [← hparam, image_image, image_image]
+    exact image_congr fun t ht ↦ unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self ht)
+  rw [hloop, harc]
+  exact (e.image_compl _).trans (congrArg compl image_singleton)
 
 /-- Away from the seam, the actual ambient velocity of the boundary loop is counterclockwise
 and nonzero. -/
