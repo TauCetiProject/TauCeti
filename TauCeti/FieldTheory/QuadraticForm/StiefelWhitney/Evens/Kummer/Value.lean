@@ -329,8 +329,11 @@ theorem galoisEvens2_kummerClass_algebraMap_mul (σ : L →ₐ[K] SeparableClosu
     have hsq : kummerClass (-(d * (c ^ 2 * N))) = kummerClass (-(d * N)) := by
       have hc2 : kummerClass (c ^ 2) = 0 :=
         (kummerClass_eq_zero_iff_square K).2 (Subgroup.mem_square.2 ⟨c, sq _⟩)
-      rw [show -(d * (c ^ 2 * N)) = -(d * N) * c ^ 2 by ext; simp; ring, kummerClass_mul, hc2,
-        add_zero]
+      have hfac : -(d * (c ^ 2 * N)) = -(d * N) * c ^ 2 := by
+        ext
+        simp only [Units.val_neg, Units.val_mul, Units.val_pow_eq_pow_val]
+        ring
+      rw [hfac, kummerClass_mul, hc2, add_zero]
     rw [galoisEvens2_kummerClass σ hdeg d hx hx2 _ (c * Units.mk0 _ ht) (by simp [htr]),
       galoisEvens2_kummerClass σ hdeg d hx hx2 a (Units.mk0 _ ht) rfl, hNc, hsq, kummerClass_mul,
       map_add, LinearMap.add_apply]
