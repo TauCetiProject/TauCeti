@@ -54,7 +54,7 @@ theorem exists_isCompl_of_forall_center_lie_eq_smul
     (hZ : ∀ z ∈ center K L, ∃ c : K, ∀ m : M, ⁅z, m⁆ = c • m)
     (N : LieSubmodule K L M) : ∃ P : LieSubmodule K L M, IsCompl N P := by
   let N' : LieSubmodule K (derivedSeries K L 1) M :=
-    { N.toSubmodule with lie_mem := fun {x _} hm ↦ N.lie_mem (x := x.val) hm }
+    N.restr (derivedSeries K L 1).toLieSubalgebra
   obtain ⟨P, hP⟩ := exists_isCompl_of_isKilling N'
   let Q : LieSubmodule K L M :=
     { P.toSubmodule with

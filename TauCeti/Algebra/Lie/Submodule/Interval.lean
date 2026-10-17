@@ -13,6 +13,11 @@ public import Mathlib.Algebra.Lie.Submodule
 Inclusion identifies the Lie submodules of `N` with the interval of ambient Lie submodules
 contained in `N`. This transports lattice properties, such as complete reducibility, between
 the two descriptions.
+
+## References
+
+The interval order isomorphism adapts Mathlib's `Submodule.MapSubtype.orderIso` and
+`Submodule.mapIic` from `Mathlib.Algebra.Module.Submodule.Range` to Lie submodules.
 -/
 
 public section
