@@ -60,15 +60,14 @@ theorem isCentralPoint_iff_mem_center_pointsMulEquiv
     intro B _ _ φ h
     apply (pointsMulEquiv R n (A := B)).injective
     rw [map_mul, map_mul]
-    apply Subtype.ext
     have hscalar : (pointsMulEquiv R n (A := B) (AlgHom.mapValue φ g) :
         Matrix (Fin n) (Fin n) B) = Matrix.scalar (Fin n) (φ c) := by
       rw [pointsMulEquiv_mapValue, Matrix.SpecialOrthogonalGroup.coe_map, hc]
       ext i j
       by_cases hij : i = j <;> simp [Matrix.scalar_apply, Matrix.map_apply, hij]
-    simpa only [Submonoid.coe_mul, hscalar] using
-      (Matrix.scalar_commute (φ c) (Commute.all _)
-        (pointsMulEquiv R n (A := B) h : Matrix (Fin n) (Fin n) B)).eq
+    exact (Subgroup.mem_center_iff.mp
+      (Matrix.SpecialOrthogonalGroup.mem_center_of_coe_eq_scalar _ (φ c) hscalar)
+        (pointsMulEquiv R n (A := B) h)).symm
 
 include hn h2 in
 /-- Every universally central point of an odd-dimensional special orthogonal group is the
