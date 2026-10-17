@@ -10,10 +10,8 @@ public import Mathlib.Analysis.Convex.Gauge
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.LocallyConvex.Basic
 import Mathlib.LinearAlgebra.Basis.Fin
-import Mathlib.LinearAlgebra.Dimension.Localization
-import Mathlib.LinearAlgebra.Dimension.RankNullity
-import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.Algebra.Module.ZLattice.Rank
+import TauCeti.LinearAlgebra.FreeModule.RankOneExtension
 
 /-!
 # A lattice basis of controlled gauge from an independent family
@@ -40,11 +38,11 @@ The basis is built one vector at a time along the flag
 `L ∩ span ℝ {a i | i < j}`, `j = 0, …, n`. Each step of the flag is saturated in the next, and its
 `ℤ`-rank is `j` because `L` is discrete (`TauCeti.discreteTopology_iff_finrank_eq_finrank_span`),
 so a single vector `y` extends a basis of one step to a basis of the next
-(`Module.Basis.mkFinSnocOfLE`). The vector `y` matters only modulo the smaller step, and
-`a j + c • y` lies in the smaller step for a nonzero integer `c`. If `|c| = 1`, take `-c • a j`.
-If `|c| ≥ 2`, then `y = -c⁻¹ • a j + ∑ i < j, t i • a i` for real `t i`, and rounding each `t i`
-to an integer moves `y` within its class to a vector of gauge at most
-`(∑ i ≤ j, gauge B (a i)) / 2`.
+(`Submodule.exists_extending_of_finrank_eq_add_one`, `Module.Basis.mkFinSnocOfLE`). The vector
+`y` matters only modulo the smaller step, and `a j + c • y` lies in the smaller step for a
+nonzero integer `c`. If `|c| = 1`, take `-c • a j`. If `|c| ≥ 2`, then
+`y = -c⁻¹ • a j + ∑ i < j, t i • a i` for real `t i`, and rounding each `t i` to an integer moves
+`y` within its class to a vector of gauge at most `(∑ i ≤ j, gauge B (a i)) / 2`.
 
 The body enters only through its gauge, which is subadditive for a convex absorbent set
 (`gauge_add_le`) and absolutely homogeneous for a balanced one (`gauge_smul`); a convex set is
@@ -69,53 +67,6 @@ public section
 open Module Submodule
 
 namespace ZLattice
-
-/-- Across a saturated step of rank one, `N ≤ N'` with `finrank ℤ N' = finrank ℤ N + 1`, some
-`y ∈ N'` extends `N` to `N'`, and so does every translate of `y` by an element of `N`. The two
-extension clauses are the hypotheses of `Module.Basis.mkFinSnocOfLE`. -/
-private theorem exists_extending {M : Type*} [AddCommGroup M] {N N' : Submodule ℤ M}
-    (hle : N ≤ N') [Module.Finite ℤ N'] (hsat : ∀ c : ℤ, c ≠ 0 → ∀ z ∈ N', c • z ∈ N → z ∈ N)
-    (hrank : finrank ℤ N' = finrank ℤ N + 1) :
-    ∃ y ∈ N', ∀ y' : M, y' - y ∈ N →
-      (∀ c : ℤ, ∀ x ∈ N, c • y' + x = 0 → c = 0) ∧ ∀ z ∈ N', ∃ c : ℤ, z + c • y' ∈ N := by
-  set P : Submodule ℤ N' := N.comap N'.subtype with hP
-  have hmemP : ∀ z : N', z ∈ P ↔ (z : M) ∈ N := fun _ ↦ Iff.rfl
-  have hQrank : finrank ℤ (N' ⧸ P) = 1 := by
-    have h := P.finrank_quotient_add_finrank
-    have hPN : finrank ℤ P = finrank ℤ N := (comapSubtypeEquivOfLe hle).finrank_eq
-    omega
-  have : IsTorsionFree ℤ (N' ⧸ P) := by
-    refine .of_smul_eq_zero fun c q hq ↦ or_iff_not_imp_left.2 fun hc ↦ ?_
-    obtain ⟨z, rfl⟩ := P.mkQ_surjective q
-    rw [← map_zsmul, mkQ_apply, Quotient.mk_eq_zero, hmemP] at hq
-    rw [mkQ_apply, Quotient.mk_eq_zero, hmemP]
-    exact hsat c hc z z.2 (by simpa using hq)
-  let e := Module.finBasisOfFinrankEq ℤ (N' ⧸ P) hQrank
-  obtain ⟨y, hy⟩ := P.mkQ_surjective (e 0)
-  refine ⟨y, y.2, fun y' hy' ↦ ⟨fun c x hx hcx ↦ ?_, fun z hz ↦ ?_⟩⟩
-  · by_contra hc
-    refine e.ne_zero 0 ?_
-    rw [← hy, mkQ_apply, Quotient.mk_eq_zero, hmemP]
-    refine hsat c hc y y.2 ?_
-    have : c • (y : M) = -x - c • (y' - y) := by
-      rw [smul_sub, eq_neg_of_add_eq_zero_left hcx]
-      abel
-    rw [this]
-    exact N.sub_mem (N.neg_mem hx) (N.smul_mem c hy')
-  · set r := e.repr (P.mkQ ⟨z, hz⟩) 0
-    have hz' : P.mkQ ⟨z, hz⟩ = r • P.mkQ y := by
-      rw [hy]
-      conv_lhs => rw [← e.sum_repr (P.mkQ ⟨z, hz⟩)]
-      simp [r]
-    refine ⟨-r, ?_⟩
-    have hzy : ⟨z, hz⟩ - r • y ∈ P := by
-      rw [← Quotient.mk_eq_zero, ← mkQ_apply, map_sub, map_zsmul, hz', sub_self]
-    rw [hmemP] at hzy
-    have : z + (-r) • y' = (z - r • (y : M)) - r • (y' - y) := by
-      rw [smul_sub, neg_smul]
-      abel
-    rw [this]
-    exact N.sub_mem (by simpa using hzy) (N.smul_mem r hy')
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -280,7 +231,7 @@ theorem exists_basis_gauge_le [FiniteDimensional ℝ E] (L : Submodule ℤ E) [D
       obtain ⟨b, hb⟩ := ih (Nat.le_of_succ_le hj)
       have hmono := flag_mono L a (Nat.le_succ j)
       have := discreteTopology_flag L a (j + 1)
-      obtain ⟨y, hyN, hy⟩ := exists_extending hmono
+      obtain ⟨y, hyN, hy⟩ := exists_extending_of_finrank_eq_add_one hmono
         (fun c hc z hz hcz ↦ mem_flag_of_smul_mem hc hz.1 hcz)
         (by rw [finrank_flag L haL ha hj, finrank_flag L haL ha (Nat.le_of_succ_le hj)])
       set k : Fin n := ⟨j, hj⟩
