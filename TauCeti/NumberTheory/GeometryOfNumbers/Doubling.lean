@@ -81,8 +81,6 @@ theorem box_mono {r : ι → ℝ} (hr : ∀ i, 0 ≤ r i) {c c' : ℝ} (h : c �
 
 section Packing
 
-variable [Fintype ι]
-
 /-- Grid pigeonhole, axis bound: the cell index of a coordinate lying in the box is one of
 the `⌊2√2·c/ε⌋ + 1` admissible values. -/
 private theorem cell_index_mem {c ε : ℝ} (hε : 0 < ε) {ri : ℝ} (hri : 0 < ri)
@@ -158,7 +156,6 @@ private noncomputable def cellIndexMap (r : ι → ℝ) (c ε : ℝ) : (ι → �
   fun x i => (⌊((x i).re + c * r i) / (ε * r i / Real.sqrt 2)⌋,
     ⌊((x i).im + c * r i) / (ε * r i / Real.sqrt 2)⌋)
 
-omit [Fintype ι] in
 /-- The cell-index map is injective on a set whose distinct points are `ε`-separated in some
 coordinate: two points sharing every cell index would differ by less than the cell diameter
 `ε·rᵢ` in that coordinate, contradicting the separation. -/
@@ -179,6 +176,8 @@ private theorem injOn_cellIndexMap_of_separated (r : ι → ℝ) (hr : ∀ i, 0 
     norm_lt_of_re_im_bound hdnn (by rwa [Complex.sub_re]) (by rwa [Complex.sub_im])
   rw [div_mul_cancel₀ _ (by positivity : Real.sqrt 2 ≠ 0)] at hlt
   linarith
+
+variable [Fintype ι]
 
 /-- **Grid pigeonhole / packing.** A subset of the polydisc `box r c` whose distinct points
 are `ε`-separated in some coordinate (relative to `r`) is finite, of cardinality at most
@@ -247,8 +246,6 @@ end Packing
 
 section Doubling
 
-variable [Fintype ι]
-
 /-- Two reals lying in the same half-open floor-cell of positive width `q` (i.e.
 `⌊a / q⌋ = ⌊b / q⌋`) differ by at most `q`. -/
 private theorem abs_sub_le_of_floor_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q⌋ = ⌊b / q⌋) :
@@ -283,13 +280,11 @@ private theorem coarseCell_mem_Icc {ri : ℝ} (hri : 0 < ri) {t : ℝ} (ht : |t|
   · rw [le_div_iff₀ hpos]; push_cast; nlinarith [abs_le.mp ht]
   · rw [div_lt_iff₀ hpos]; push_cast; nlinarith [abs_le.mp ht]
 
-omit [Fintype ι] in
 /-- The coarse cell index of `x` for the grid of side `2·r i/3`: per coordinate, the pair of
 floor indices of the real and imaginary parts. -/
 private noncomputable def coarseCellMap (r : ι → ℝ) (x : ι → ℂ) : ι → ℤ × ℤ :=
   fun i => (⌊(x i).re / (2 * r i / 3)⌋, ⌊(x i).im / (2 * r i / 3)⌋)
 
-omit [Fintype ι] in
 /-- Two points sharing every coarse cell `coarseCellMap r` differ by at most `r i` in each
 coordinate, so their difference lies in `box r 1`. -/
 private theorem sub_mem_box_one_of_coarseCellMap_eq {r : ι → ℝ} (hr : ∀ i, 0 < r i) {y x : ι → ℂ}
@@ -313,6 +308,8 @@ private theorem card_filter_le_of_sub_mem {G : Type*} [AddGroup G] {σ : Type*} 
       (fun y hy => h y (Finset.mem_filter.1 (Finset.mem_coe.1 hy)).1 x₀ hx₀.1
         ((Finset.mem_filter.1 (Finset.mem_coe.1 hy)).2.trans hx₀.2.symm))
       (fun a _ c _ hac => by simpa using congrArg (· + x₀) hac)
+
+variable [Fintype ι]
 
 /-- If `s` is contained in `box r 2`, its image under `coarseCellMap r` has at most `49 ^ #ι`
 elements: each coordinate part lands in the 7 cells `Icc (-3) 3`, so `7² = 49` cells per

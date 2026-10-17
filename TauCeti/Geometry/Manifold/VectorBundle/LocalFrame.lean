@@ -68,19 +68,18 @@ section
 
 variable [ContMDiffVectorBundle 1 F V I]
 
+/-- A local frame is dual to its own coefficient functionals. -/
+theorem localFrameCoeff_localFrame [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : ι) :
+    e.localFrameCoeff I b i x (e.localFrame b j x) = if i = j then 1 else 0 := by
+  rw [e.localFrameCoeff_apply_of_mem_baseSet b hx, e.localFrame_apply_of_mem_baseSet b hx,
+    Basis.repr_self, Finsupp.single_apply]
+  simp [eq_comm]
+
 /-- A local frame is dual to its own coefficient functionals on the basis sections at `x`. -/
 @[simp]
 theorem localFrameCoeff_basisAt [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : ι) :
     e.localFrameCoeff I b i x (e.basisAt b hx j) = if i = j then 1 else 0 := by
-  rw [← e.localFrame_apply_of_mem_baseSet b hx,
-    e.localFrameCoeff_apply_of_mem_baseSet b hx (e.localFrame b j) i,
-    e.localFrame_apply_of_mem_baseSet b hx, Basis.repr_self, Finsupp.single_apply]
-  simp [eq_comm]
-
-/-- A local frame is dual to its own coefficient functionals. -/
-theorem localFrameCoeff_localFrame [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : ι) :
-    e.localFrameCoeff I b i x (e.localFrame b j x) = if i = j then 1 else 0 := by
-  rw [e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_basisAt b hx]
+  rw [← e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_localFrame b hx]
 
 end
 
@@ -144,16 +143,14 @@ theorem contMDiffOn_hom_of_localFrame (hu : IsOpen u)
       (fun y ↦ TotalSpace.mk' F' y (A y (e.localFrame b j y))) u) :
     ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] F')) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F') y (A y)) u := by
-  have : Fintype ι := Fintype.ofFinite ι
+  cases nonempty_fintype ι
   set eh := e.continuousLinearMap (RingHom.id 𝕜) e' with heh
   rw [eh.contMDiffOn_section_iff hu hu']
   -- The `j`-th coordinate of the trivialized section is the trivialized evaluation on the frame.
   have key {y : M} (hy : y ∈ u) (j : ι) :
       (eh ⟨y, A y⟩).2 (b j) = (e' ⟨y, A y (e.localFrame b j y)⟩).2 := by
-    rw [heh, Bundle.Trivialization.continuousLinearMap_apply]
-    simp only [ContinuousLinearMap.comp_apply]
-    rw [e.symmL_apply (hu' hy).1]
-    rw [← e.symmL_apply (R := 𝕜) (hu' hy).1, symmL_basis_eq_localFrame b (hu' hy).1,
+    simp [heh, Bundle.Trivialization.continuousLinearMap_apply,
+      symmL_basis_eq_localFrame b (hu' hy).1,
       Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e' (hu' hy).2]
   have hcoord (j : ι) : ContMDiffOn I 𝓘(𝕜, F') n (fun y ↦ (eh ⟨y, A y⟩).2 (b j)) u := by
     refine ContMDiffOn.congr ?_ fun y hy ↦ key hy j

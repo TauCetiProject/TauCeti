@@ -53,6 +53,11 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.quantile_le_iff` — the Galois characterization of the quantile, with
   `MeasureTheory.Measure.setOf_le_cdf_eq_Ici` its set-level form and
   `MeasureTheory.Measure.lt_quantile_iff` its negation;
+* `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
+  inverse laws, when the cumulative distribution function is continuous, respectively strictly
+  increasing where its values lie strictly between `0` and `1`; together they give
+  `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
+  `MeasureTheory.Measure.continuousOn_quantile`;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -226,12 +231,66 @@ theorem cdf_quantile' (μ : Measure ℝ) [IsProbabilityMeasure μ] (h0 : 0 < t) 
   rw [cdf_eq_real, ← measureReal_congr (Iio_ae_eq_Iic' h)]
   exact measureReal_Iio_quantile_le μ h0 h1
 
-/-- For an atomless law, whose cumulative distribution function is continuous, the cumulative
-distribution function at the quantile is exactly the level. -/
+/-- For a law with continuous cumulative distribution function, the quantile is an exact right
+inverse of the cumulative distribution function at every level strictly between `0` and `1`. -/
 @[simp]
-theorem cdf_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSingletonClass μ] (h0 : 0 < t)
-    (h1 : t < 1) : cdf μ (μ.quantile t) = t :=
-  cdf_quantile' μ h0 h1 (measure_singleton _)
+theorem cdf_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ)) (h0 : 0 < t) (h1 : t < 1) :
+    cdf μ (μ.quantile t) = t := by
+  refine le_antisymm ?_ (le_cdf_quantile μ h1)
+  -- To the left of the quantile the cumulative distribution function stays below `t`, so by
+  -- continuity it is at most `t` at the quantile itself.
+  refine le_of_tendsto ((hμ.tendsto _).mono_left (nhdsWithin_le_nhds (s := Iio (μ.quantile t))))
+    ?_
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  exact ((lt_quantile_iff μ h0 h1).1 hy).le
+
+/-- For a law with continuous cumulative distribution function, the quantile function is strictly
+increasing on the levels strictly between `0` and `1`. -/
+theorem strictMonoOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ)) :
+    StrictMonoOn μ.quantile (Ioo 0 1) := fun s hs t ht hst => by
+  rwa [lt_quantile_iff μ ht.1 ht.2, cdf_quantile μ hμ hs.1 hs.2]
+
+/-- If the cumulative distribution function is strictly increasing where its values lie strictly
+between `0` and `1`, the quantile is a left inverse of it there. -/
+@[simp]
+theorem quantile_cdf (μ : Measure ℝ) (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x ∈ Ioo 0 1) : μ.quantile (cdf μ x) = x := by
+  refine le_antisymm ((quantile_le_iff μ hx.1 hx.2).2 le_rfl) (not_lt.1 fun h => ?_)
+  have hle := le_cdf_quantile μ hx.2
+  have hq : cdf μ (μ.quantile (cdf μ x)) ∈ Ioo 0 1 :=
+    ⟨hx.1.trans_le hle, (monotone_cdf μ h.le).trans_lt hx.2⟩
+  exact (hmono hq hx h).not_ge hle
+
+/-- The strict form of `MeasureTheory.Measure.quantile_le_iff`, for a law whose cumulative
+distribution function is continuous, and strictly increasing where its values lie strictly between
+`0` and `1`. -/
+theorem quantile_lt_iff (μ : Measure ℝ) (hμ : Continuous (cdf μ))
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1)) (h0 : 0 < t) (h1 : t < 1) :
+    μ.quantile t < x ↔ t < cdf μ x := by
+  have hq := cdf_quantile μ hμ h0 h1
+  refine ⟨fun h => ?_, fun h => not_le.1 fun hx => ?_⟩
+  · rcases lt_or_ge (cdf μ x) 1 with hx1 | hx1
+    · have hle : t ≤ cdf μ x := hq ▸ monotone_cdf μ h.le
+      rw [← hq]
+      exact hmono (by rw [mem_preimage, hq]; exact ⟨h0, h1⟩) ⟨h0.trans_le hle, hx1⟩ h
+    · exact h1.trans_le hx1
+  · exact (hq ▸ monotone_cdf μ hx).not_gt h
+
+/-- For a law whose cumulative distribution function is continuous, and strictly increasing where
+its values lie strictly between `0` and `1`, the quantile function is continuous on the levels
+strictly between `0` and `1`. -/
+theorem continuousOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ))
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1)) :
+    ContinuousOn μ.quantile (Ioo 0 1) := fun t ht => by
+  -- A monotone function whose image of a neighbourhood is a neighbourhood is continuous; here the
+  -- image of `Ioo 0 1` is the open set where the cumulative distribution function lies in
+  -- `Ioo 0 1`.
+  have hmem : μ.quantile t ∈ cdf μ ⁻¹' Ioo 0 1 := by
+    rw [mem_preimage, cdf_quantile μ hμ ht.1 ht.2]
+    exact ht
+  exact (continuousAt_of_monotoneOn_of_image_mem_nhds (monotoneOn_quantile μ)
+    (isOpen_Ioo.mem_nhds ht) (mem_of_superset ((isOpen_Ioo.preimage hμ).mem_nhds hmem)
+      fun y hy => ⟨cdf μ y, hy, quantile_cdf μ hmono hy⟩)).continuousWithinAt
 
 /-- The quantile function is left continuous at every level strictly between `0` and `1`. -/
 theorem continuousWithinAt_Iio_quantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
@@ -522,9 +581,11 @@ theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
   refine (ae_restrict_iff' measurableSet_Icc).mpr ?_
   filter_upwards [Set.Countable.ae_notMem
       ((Set.countable_singleton (1 : ℝ)).insert 0) volume] with u hu huIcc
-  have h0 : 0 < u := lt_of_le_of_ne huIcc.1 fun h ↦ hu (by simp [← h])
-  have h1 : u < 1 := lt_of_le_of_ne huIcc.2 fun h ↦ hu (by simp [h])
-  exact cdf_quantile ν h0 h1
+  have hu0 : u ≠ 0 := fun h => hu (by simp [h])
+  have hu1 : u ≠ 1 := fun h => hu (by simp [h])
+  have h0 : 0 < u := lt_of_le_of_ne huIcc.1 (Ne.symm hu0)
+  have h1 : u < 1 := lt_of_le_of_ne huIcc.2 hu1
+  exact cdf_quantile ν (continuous_cdf_of_noAtoms ν) h0 h1
 
 /-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` whose
 level `cdf ν y` is still below `1` is null. Equivalently: the atom of a real law sits at the *left*
