@@ -144,39 +144,6 @@ variable {k n d}
 
 /-! ### The value on a pure tensor -/
 
-section Plug
-
-variable {i j : Fin d} {x y x' y' : Fin n ⊕ Fin n} (v : Fin d → ((Fin n ⊕ Fin n) → k))
-
-/-- The first of the two plugged slots. -/
-private theorem update_pair_apply_left (hij : i ≠ j) :
-    Function.update (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k)) i =
-      Pi.single x (1 : k) := by
-  rw [Function.update_of_ne hij, Function.update_self]
-
-/-- The second of the two plugged slots. -/
-private theorem update_pair_apply_right :
-    Function.update (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k)) j =
-      Pi.single y (1 : k) :=
-  Function.update_self _ _ _
-
-/-- Plugging twice at the same pair of slots keeps only the second plug. -/
-private theorem update_pair_update_pair (hij : i ≠ j) :
-    Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k)))
-        i (Pi.single x' (1 : k))) j (Pi.single y' (1 : k)) =
-      Function.update (Function.update v i (Pi.single x' (1 : k))) j (Pi.single y' (1 : k)) := by
-  funext t
-  rcases eq_or_ne t j with hj | hj
-  · subst hj
-    simp
-  · rcases eq_or_ne t i with hi | hi
-    · subst hi
-      simp [hij]
-    · simp [hi, hj]
-
-end Plug
-
 /-- One summand of `TauCeti.symplecticCupCapAt` on a pure tensor. -/
 private theorem symplecticCupCapAt_map_tprod {i j : Fin d} (hij : i ≠ j)
     (a b x y : Fin n ⊕ Fin n) (v : Fin d → ((Fin n ⊕ Fin n) → k)) :
@@ -409,11 +376,12 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     intro x
     rw [map_sum, Finset.sum_smul]
     refine Finset.sum_congr rfl fun y _ => ?_
-    rw [map_smul, symplecticCupCapAt_tprod hij, update_pair_apply_left v hij,
-      update_pair_apply_right v, hform, smul_smul]
+    rw [map_smul, symplecticCupCapAt_tprod hij, Function.update_of_ne hij,
+      Function.update_self, Function.update_self, hform, smul_smul]
     refine congrArg (fun z => (Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y) • -z) ?_
     exact Finset.sum_congr rfl fun x' _ => Finset.sum_congr rfl fun y' _ => by
-      rw [update_pair_update_pair v hij]
+      -- Plugging twice at the same pair of slots keeps only the second plug.
+      rw [Function.update_comm hij.symm, Function.update_idem, Function.update_idem]
   have hT : symplecticCupCapAt k n d i j
         (-∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
           PiTensorProduct.tprod k (Function.update
