@@ -51,6 +51,26 @@ namespace DenseGraphLimits
 
 namespace ExchangeableGraphLaw
 
+/-- Reading the two windows of the encoded level-`(k + l)` marginal is encoding the two windows
+of the graph marginal. -/
+private theorem toRelationalLaw_law_map_restrict_pair (L : ExchangeableGraphLaw) (k l : ℕ) :
+    (L.toRelationalLaw.law (k + l)).map
+        (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) =
+      ((L.law (k + l)).map fun G => (G.comap (Fin.castAdd l), G.comap (Fin.natAdd k))).map
+        (Prod.map SimpleGraph.toRelationalConfiguration SimpleGraph.toRelationalConfiguration) := by
+  have hpair : (fun c : RelationalConfiguration Language.graph (Fin (k + l)) =>
+        (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) ∘
+          SimpleGraph.toRelationalConfiguration =
+      Prod.map SimpleGraph.toRelationalConfiguration SimpleGraph.toRelationalConfiguration ∘
+        fun G => (G.comap (Fin.castAdd l), G.comap (Fin.natAdd k)) := by
+    funext G
+    simp only [Function.comp_apply, Prod.map_apply, SimpleGraph.toRelationalConfiguration_comap]
+  rw [toRelationalLaw_law, Measure.map_map ((measurable_restrict _).prodMk (measurable_restrict _))
+      SimpleGraph.measurable_toRelationalConfiguration, hpair,
+    Measure.map_map (SimpleGraph.measurable_toRelationalConfiguration.prodMap
+      SimpleGraph.measurable_toRelationalConfiguration)
+      ((SimpleGraph.measurable_comap _).prodMk (SimpleGraph.measurable_comap _))]
+
 /-- **A graph law is dissociated exactly when its relational law is**: encoding graphs as
 configurations of the language of graphs neither creates nor destroys independence of disjoint
 windows. -/
@@ -59,21 +79,10 @@ theorem isDissociated_toRelationalLaw_iff (L : ExchangeableGraphLaw) :
     L.toRelationalLaw.IsDissociated ↔ L.IsDissociated := by
   rw [ExchangeableRelationalLaw.isDissociated_iff, isDissociated_iff]
   refine forall₂_congr fun k l => ?_
-  -- Reading the two windows of an encoded graph is encoding the two windows of the graph, and
-  -- encoding pairs of graphs is a measurable embedding, so pushing forward along it is injective.
-  have hpair : (fun c : RelationalConfiguration Language.graph (Fin (k + l)) =>
-        (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) ∘
-          SimpleGraph.toRelationalConfiguration =
-      Prod.map SimpleGraph.toRelationalConfiguration SimpleGraph.toRelationalConfiguration ∘
-        fun G => (G.comap (Fin.castAdd l), G.comap (Fin.natAdd k)) := by
-    funext G
-    simp only [Function.comp_apply, Prod.map_apply, SimpleGraph.toRelationalConfiguration_comap]
-  rw [toRelationalLaw_law, toRelationalLaw_law, toRelationalLaw_law,
-    Measure.map_map ((measurable_restrict _).prodMk (measurable_restrict _))
-      SimpleGraph.measurable_toRelationalConfiguration, hpair,
-    ← Measure.map_map (SimpleGraph.measurable_toRelationalConfiguration.prodMap
-      SimpleGraph.measurable_toRelationalConfiguration)
-      ((SimpleGraph.measurable_comap _).prodMk (SimpleGraph.measurable_comap _)),
+  -- Both sides of the relational identity are encodings of the two sides of the graph identity,
+  -- and encoding pairs of graphs is a measurable embedding, so pushing forward along it is
+  -- injective.
+  rw [L.toRelationalLaw_law_map_restrict_pair k l, toRelationalLaw_law, toRelationalLaw_law,
     Measure.map_prod_map _ _ SimpleGraph.measurable_toRelationalConfiguration
       SimpleGraph.measurable_toRelationalConfiguration]
   exact (SimpleGraph.measurableEmbedding_toRelationalConfiguration.prodMap
