@@ -15,9 +15,10 @@ import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.KrullDimension.PID
 import Mathlib.RingTheory.LocalRing.Quotient
-import Mathlib.RingTheory.MvPowerSeries.Ideal
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.Finiteness.Cardinality
+import TauCeti.RingTheory.Ideal.Height
+import TauCeti.RingTheory.PowerSeries.Ideal
 
 /-!
 # Pseudo-null modules
@@ -43,8 +44,8 @@ dimension two with finite residue field.
 
 * `TauCeti.Iwasawa.isPseudoNull_iff_support`: `M` is pseudo-null iff it is finitely generated and
   every prime of its support has height at least two.
-* `TauCeti.Iwasawa.isPseudoNull_iff_one_lt_height_of_annihilator_le`: the annihilator criterion,
-  every prime containing `ann_A M` has height at least two; for a quotient `A ⧸ I` this is
+* `TauCeti.Iwasawa.isPseudoNull_iff_annihilator`: the annihilator criterion, every prime
+  containing `ann_A M` has height at least two; for a quotient `A ⧸ I` this is
   `TauCeti.Iwasawa.isPseudoNull_quotient_iff`.
 * `TauCeti.Iwasawa.IsPseudoNull.isTorsion`: over a domain, pseudo-null modules are torsion.
 * `TauCeti.Iwasawa.isPseudoNull_iff_subsingleton`: over a ring of dimension at most one, such as a
@@ -101,7 +102,7 @@ theorem IsPseudoNull.one_lt_height (h : IsPseudoNull A M) {𝔭 : PrimeSpectrum 
 
 /-- The annihilator criterion: a finitely generated module is pseudo-null iff every prime
 containing its annihilator has height at least two. -/
-theorem isPseudoNull_iff_one_lt_height_of_annihilator_le [Module.Finite A M] :
+theorem isPseudoNull_iff_annihilator [Module.Finite A M] :
     IsPseudoNull A M ↔
       ∀ 𝔭 : PrimeSpectrum A, Module.annihilator A M ≤ 𝔭.asIdeal → 1 < 𝔭.asIdeal.height := by
   simp [isPseudoNull_iff_support, Module.mem_support_iff_of_finite, ‹Module.Finite A M›]
@@ -109,7 +110,7 @@ theorem isPseudoNull_iff_one_lt_height_of_annihilator_le [Module.Finite A M] :
 /-- The quotient `A ⧸ I` is pseudo-null iff every prime containing `I` has height at least two. -/
 theorem isPseudoNull_quotient_iff (I : Ideal A) :
     IsPseudoNull A (A ⧸ I) ↔ ∀ 𝔭 : PrimeSpectrum A, I ≤ 𝔭.asIdeal → 1 < 𝔭.asIdeal.height := by
-  rw [isPseudoNull_iff_one_lt_height_of_annihilator_le, Ideal.annihilator_quotient]
+  rw [isPseudoNull_iff_annihilator, Ideal.annihilator_quotient]
 
 /-- The zero module is pseudo-null. -/
 theorem IsPseudoNull.of_subsingleton [Subsingleton M] : IsPseudoNull A M :=
@@ -181,19 +182,10 @@ finitely generated module is pseudo-null iff it is finite. -/
 theorem isPseudoNull_iff_finite [IsNoetherianRing A] [Finite (ResidueField A)]
     (hdim : ringKrullDim A = 2) [Module.Finite A M] : IsPseudoNull A M ↔ Finite M := by
   -- In dimension two the maximal ideal is the only prime of height at least two.
-  have key (𝔭 : Ideal A) [𝔭.IsPrime] : 1 < 𝔭.height ↔ 𝔭 = maximalIdeal A := by
-    have hmax : (maximalIdeal A).height = 2 := by
-      have h := maximalIdeal_height_eq_ringKrullDim (R := A)
-      rw [hdim] at h
-      exact WithBot.coe_inj.mp h
-    refine ⟨fun h ↦ ?_, fun h ↦ by simp [h, hmax]⟩
-    by_contra hne
-    have hlt := Ideal.height_strict_mono_of_isPrime
-      (lt_of_le_of_ne (le_maximalIdeal Ideal.IsPrime.ne_top') hne)
-    rw [hmax] at hlt
-    exact (Order.add_one_le_of_lt h).not_gt hlt
+  have key (𝔭 : Ideal A) [𝔭.IsPrime] : 1 < 𝔭.height ↔ 𝔭 = maximalIdeal A :=
+    Ideal.lt_height_iff_eq_maximalIdeal (n := 1) hdim
   -- Both sides say that the annihilator contains a power of the maximal ideal.
-  rw [isPseudoNull_iff_one_lt_height_of_annihilator_le,
+  rw [isPseudoNull_iff_annihilator,
     Module.finite_iff_finite_quotient_annihilator (A := A), finite_quotient_iff]
   refine ⟨fun h ↦ Ideal.exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _),
     fun ⟨n, hn⟩ 𝔭 h𝔭 ↦ ?_⟩
@@ -214,10 +206,8 @@ example (p : ℕ) [Fact p.Prime] :
     IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p]), X}) ∧
       ¬ IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) := by
   have hker : RingHom.ker (map (PadicInt.toZMod (p := p))) = Ideal.span {C (p : ℤ_[p])} := by
-    have hfg : (RingHom.ker (PadicInt.toZMod (p := p))).FG := IsNoetherian.noetherian _
-    -- `PowerSeries.map` is `MvPowerSeries.map` over `Unit`, whose kernel Mathlib computes.
-    rw [map, MvPowerSeries.ker_map_of_fg _ hfg, PadicInt.ker_toZMod,
-      PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton, C_apply]
+    rw [ker_map_of_fg _ (IsNoetherian.noetherian _), PadicInt.ker_toZMod,
+      PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton]
   have hP : (Ideal.span {C (p : ℤ_[p])}).IsPrime := hker ▸ RingHom.ker_isPrime _
   refine ⟨(isPseudoNull_quotient_iff _).mpr fun 𝔮 h𝔮 ↦ ?_, fun h ↦ ?_⟩
   · have hX : X ∉ Ideal.span {C (p : ℤ_[p])} := by

@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Finiteness.Cardinality
 
+import Mathlib.RingTheory.Ideal.Quotient.Operations
+
 /-!
 # Finitely generated modules with finitely many elements
 
@@ -32,17 +34,9 @@ variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
 
 /-- The quotient of the ring by the annihilator of a finite module is finite: it embeds into the
 additive endomorphisms of the module. -/
-theorem finite_quotient_annihilator [Finite M] : Finite (A ⧸ annihilator A M) := by
-  let φ : A ⧸ annihilator A M → AddMonoid.End M :=
-    Ideal.Quotient.lift _ (toAddMonoidEnd A M) fun a ha ↦ by
-      ext m
-      exact mem_annihilator.mp ha m
-  refine Finite.of_injective (fun x ↦ ⇑(φ x)) fun x y hxy ↦ ?_
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
-  refine Ideal.Quotient.eq.mpr (mem_annihilator.mpr fun m ↦ ?_)
-  rw [sub_smul, sub_eq_zero]
-  exact congr_fun hxy m
+theorem finite_quotient_annihilator [Finite M] : Finite (A ⧸ annihilator A M) :=
+  Finite.of_injective (fun x ↦ ⇑(RingHom.kerLift (toAddMonoidEnd A M) x))
+    (DFunLike.coe_injective.comp (RingHom.kerLift_injective _))
 
 /-- A finitely generated module is finite iff the quotient of the ring by its annihilator is
 finite. -/
