@@ -110,60 +110,58 @@ theorem measurable_affineDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) (a
   unfold affineDensity
   fun_prop
 
+private noncomputable def mulLeftCLE (b : ℝ) (hb : b ≠ 0) : ℝ ≃L[ℝ] ℝ :=
+  ContinuousLinearEquiv.smulLeft (Units.mk0 b hb)
+
+@[simp]
+private theorem mulLeftCLE_apply (b : ℝ) (hb : b ≠ 0) (x : ℝ) :
+    mulLeftCLE b hb x = b * x := by
+  simp [mulLeftCLE, Units.smul_def, smul_eq_mul]
+
+@[simp]
+private theorem mulLeftCLE_symm_apply (b : ℝ) (hb : b ≠ 0) (x : ℝ) :
+    (mulLeftCLE b hb).symm x = x / b := by
+  apply (mulLeftCLE b hb).injective
+  rw [ContinuousLinearEquiv.apply_symm_apply, mulLeftCLE_apply]
+  exact (mul_div_cancel₀ x hb).symm
+
+@[simp]
+private theorem det_mulLeftCLE (b : ℝ) (hb : b ≠ 0) :
+    LinearMap.det (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b := by
+  rw [show (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id by
+    apply LinearMap.ext
+    intro x
+    simp, LinearMap.det_smul]
+  simp
+
 /-- **Affine change of variables for a real density.** If `b ≠ 0`, pushing a Lebesgue density
 `f` forward by `x ↦ a + b * x` gives the density `|b|⁻¹ f ((y - a) / b)`. -/
 theorem map_affine_withDensity_volume (f : ℝ → ℝ≥0∞) (hb : b ≠ 0) :
     (volume.withDensity f).map (fun x ↦ a + b * x) =
       volume.withDensity (affineDensity a b f) := by
-  let A : ℝ ≃L[ℝ] ℝ := ContinuousLinearEquiv.smulLeft (Units.mk0 b hb)
-  have hA (x : ℝ) : A x = b * x := by
-    simp [A, Units.smul_def, smul_eq_mul]
-  have hAinv (x : ℝ) : A.symm x = x / b := by
-    apply A.injective
-    rw [A.apply_symm_apply, hA]
-    exact (mul_div_cancel₀ x hb).symm
-  have hlin : (A : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id := by
-    apply LinearMap.ext
-    intro x
-    simpa using hA x
-  have hdet : LinearMap.det (A : ℝ →ₗ[ℝ] ℝ) = b := by
-    rw [hlin, LinearMap.det_smul]
-    simp
-  have hmap : (fun x : ℝ ↦ a + b * x) = fun x ↦ a + A x := by
+  have hmap : (fun x : ℝ ↦ a + b * x) = fun x ↦ a + mulLeftCLE b hb x := by
     ext x
-    rw [hA]
+    rw [mulLeftCLE_apply]
   rw [hmap, Measure.map_affine_withDensity]
   refine withDensity_congr_ae (.of_forall fun y ↦ ?_)
   simp only [affineDensity]
-  rw [hAinv, hdet, abs_inv]
+  rw [mulLeftCLE_symm_apply, det_mulLeftCLE, abs_inv]
 
 /-- The Radon–Nikodym derivative of a nonconstant affine image of an s-finite real measure is the
 affine transform of its Radon–Nikodym derivative. -/
 theorem rnDeriv_map_affine [SFinite μ] (hb : b ≠ 0) :
     (μ.map fun x ↦ a + b * x).rnDeriv volume =ᵐ[volume]
       affineDensity a b (μ.rnDeriv volume) := by
-  let A : ℝ ≃L[ℝ] ℝ := ContinuousLinearEquiv.smulLeft (Units.mk0 b hb)
-  have hA (x : ℝ) : A x = b * x := by
-    simp [A, Units.smul_def, smul_eq_mul]
-  have hAinv (x : ℝ) : A.symm x = x / b := by
-    apply A.injective
-    rw [A.apply_symm_apply, hA]
-    exact (mul_div_cancel₀ x hb).symm
-  have hlin : (A : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id := by
-    apply LinearMap.ext
-    intro x
-    simpa using hA x
-  have hdet : LinearMap.det (A : ℝ →ₗ[ℝ] ℝ) = b := by
-    rw [hlin, LinearMap.det_smul]
-    simp
-  have hmap : (fun x : ℝ ↦ a + b * x) = fun x ↦ a + A x := by
+  have hmap : (fun x : ℝ ↦ a + b * x) = fun x ↦ a + mulLeftCLE b hb x := by
     ext x
-    rw [hA]
+    rw [mulLeftCLE_apply]
   rw [hmap]
-  change (μ.map fun x ↦ a + A x).rnDeriv volume =ᵐ[volume]
-    fun y ↦ ENNReal.ofReal |b|⁻¹ * μ.rnDeriv volume ((y - a) / b)
-  simpa only [hAinv, hdet, abs_inv] using
-    Measure.rnDeriv_map_affine volume A a μ
+  rw [show affineDensity a b (μ.rnDeriv volume) =
+      fun y ↦ ENNReal.ofReal |b|⁻¹ * μ.rnDeriv volume ((y - a) / b) by
+    funext y
+    rw [affineDensity_apply]]
+  simpa only [mulLeftCLE_symm_apply, det_mulLeftCLE, abs_inv] using
+    Measure.rnDeriv_map_affine volume (mulLeftCLE b hb) a μ
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
