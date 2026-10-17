@@ -62,8 +62,9 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
 
-/-- The curved homotopy category is pretriangulated: its distinguished triangles are the images of
-Happel's distinguished triangles under the equivalence with the graded-split stable category. -/
+/-- The curved homotopy category is pretriangulated: its distinguished triangles are the triangles
+isomorphic to images of Happel's distinguished triangles under the equivalence with the
+graded-split stable category. -/
 noncomputable instance homotopyPretriangulated :
     Pretriangulated (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
   gradedSplitExact_isFrobenius.pretriangulatedOfCommShiftEquivalence

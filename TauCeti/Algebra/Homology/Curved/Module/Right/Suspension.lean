@@ -81,6 +81,24 @@ theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMa
   · -- The shift by one on the closed category is `closedShiftFunctor 1` by construction.
     exact (coneMap_comp_coneProjection _ _ _ _ _ _).symm
 
+/-- The identity comparison of the cokernel terms of identity-cone presentations with the
+shifted modules is natural in the projective stable category. -/
+private theorem projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMap_comp
+    {X Y : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} h)} (f : X ⟶ Y) :
+    (gradedSplitExact (h := h)).projectiveStableFunctor.map
+        ((coneIdentityInjectivePresentation (ForgetEnrichment.to _ X)).cokernelMap
+          (coneIdentityInjectivePresentation (ForgetEnrichment.to _ Y)) f) ≫
+        (Iso.refl ((gradedSplitExact (h := h)).projectiveStableFunctor.obj
+          ((shiftFunctor _ (1 : ℤ)).obj Y))).hom =
+      (Iso.refl ((gradedSplitExact (h := h)).projectiveStableFunctor.obj
+          ((shiftFunctor _ (1 : ℤ)).obj X))).hom ≫
+        (gradedSplitExact (h := h)).projectiveStableFunctor.map ((shiftFunctor _ (1 : ℤ)).map f) :=
+  -- The cokernel terms are the shifted modules only definitionally, beyond the reach of `simp`.
+  (Category.comp_id _).trans
+    ((projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMap f).trans
+      (Category.id_comp _).symm)
+
 /-- **Stable suspension of curved right modules is the cohomological shift.** For the
 graded-split exact structure, the stable suspension of (the image of) a curved module is (the
 image of) its shift by one, naturally. -/
@@ -88,27 +106,9 @@ noncomputable def gradedSplitStableSuspensionIsoShift :
     (gradedSplitExact (h := h)).projectiveStableFunctor ⋙
         gradedSplitExact_isFrobenius.stableSuspension ≅
       shiftFunctor _ (1 : ℤ) ⋙ (gradedSplitExact (h := h)).projectiveStableFunctor :=
-  -- The implicit endpoints are given so that they are syntactically those of the two functors.
-  (NatIso.ofComponents (fun X ↦ Iso.trans
-    (X := (shiftFunctor _ (1 : ℤ) ⋙ (gradedSplitExact (h := h)).projectiveStableFunctor).obj X)
-    (Z := ((gradedSplitExact (h := h)).projectiveStableFunctor ⋙
-      gradedSplitExact_isFrobenius.stableSuspension).obj X)
-    (gradedSplitExact_isFrobenius.projectiveStableIsoSuspensionObj
-      (coneIdentityInjectivePresentation (ForgetEnrichment.to _ X)))
-    (eqToIso (gradedSplitExact_isFrobenius.stableSuspension_obj_projectiveStableFunctor_obj
-      X).symm)) (fun {X Y} f ↦ by
-    have h := gradedSplitExact_isFrobenius.projectiveStableIsoSuspensionObj_hom_naturality
-      (coneIdentityInjectivePresentation (ForgetEnrichment.to _ X))
-      (coneIdentityInjectivePresentation (ForgetEnrichment.to _ Y)) f
-    rw [projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMap] at h
-    rw [Functor.comp_map, Functor.comp_map,
-      ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map]
-    -- The endpoints of `Iso.trans` are the functor composites, which are only definitionally
-    -- equal to the endpoints of the presentation comparison; `rw` cannot see through them.
-    erw [Iso.trans_hom, Iso.trans_hom]
-    rw [eqToIso.hom, eqToIso.hom]
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    exact (Category.assoc _ _ _).symm.trans ((reassoc_of% h) _))).symm
+  gradedSplitExact_isFrobenius.stableSuspensionIsoOfPresentations _
+    (fun X ↦ coneIdentityInjectivePresentation (ForgetEnrichment.to _ X)) (fun _ ↦ Iso.refl _)
+    projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMap_comp
 
 /-- The component of `gradedSplitStableSuspensionIsoShift` at `X` is induced by the identity of
 `X`, from the chosen suspension presentation to the identity-cone presentation. -/
@@ -120,12 +120,10 @@ theorem gradedSplitStableSuspensionIsoShift_hom_app
       eqToHom (gradedSplitExact_isFrobenius.stableSuspension_obj_projectiveStableFunctor_obj X) ≫
         (gradedSplitExact (h := h)).projectiveStableFunctor.map
           ((gradedSplitExact_isFrobenius.suspensionPresentation X).cokernelMap
-            (coneIdentityInjectivePresentation (ForgetEnrichment.to _ X)) (𝟙 X)) := by
-  simp only [gradedSplitStableSuspensionIsoShift, Iso.symm_hom, NatIso.ofComponents_inv_app]
-  -- As in the definition, the endpoints agree with those of the composite only definitionally.
-  erw [Iso.trans_inv]
-  rw [eqToIso.inv, ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv]
-  rfl
+            (coneIdentityInjectivePresentation (ForgetEnrichment.to _ X)) (𝟙 X)) :=
+  (gradedSplitExact_isFrobenius.stableSuspensionIsoOfPresentations_hom_app _ _ _
+    projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMap_comp X).trans
+    (congrArg (_ ≫ ·) (Category.comp_id _))
 
 /-- The inverse component of `gradedSplitStableSuspensionIsoShift` at `X` is induced by the
 identity of `X`, from the identity-cone presentation to the chosen suspension presentation. -/
@@ -139,12 +137,10 @@ theorem gradedSplitStableSuspensionIsoShift_inv_app
             (gradedSplitExact_isFrobenius.suspensionPresentation X) (𝟙 X)) ≫
         eqToHom
           (gradedSplitExact_isFrobenius.stableSuspension_obj_projectiveStableFunctor_obj
-            X).symm := by
-  simp only [gradedSplitStableSuspensionIsoShift, Iso.symm_inv, NatIso.ofComponents_hom_app]
-  -- As in the definition, the endpoints agree with those of the composite only definitionally.
-  erw [Iso.trans_hom]
-  rw [eqToIso.hom, ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_hom]
-  rfl
+            X).symm :=
+  (gradedSplitExact_isFrobenius.stableSuspensionIsoOfPresentations_inv_app _ _ _
+    projectiveStableFunctor_map_coneIdentityInjectivePresentation_cokernelMap_comp X).trans
+    (Category.id_comp _)
 
 /-- The stable-to-homotopy comparison intertwines stable suspension with the shift by one on the
 curved homotopy category. -/
@@ -152,16 +148,9 @@ noncomputable def stableSuspensionCompGradedSplitStableToHomotopyIso :
     gradedSplitExact_isFrobenius.stableSuspension ⋙ gradedSplitStableToHomotopy ≅
       gradedSplitStableToHomotopy ⋙
         shiftFunctor (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) (1 : ℤ) :=
-  Quotient.natIsoLift _ <|
-    (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight gradedSplitStableSuspensionIsoShift _ ≪≫
-      Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _
-        (eqToIso projectiveStableFunctor_comp_gradedSplitStableToHomotopy) ≪≫
-      (dgClosedToHomotopy R).commShiftIso (1 : ℤ) ≪≫
-      Functor.isoWhiskerRight
-        (eqToIso projectiveStableFunctor_comp_gradedSplitStableToHomotopy.symm) _ ≪≫
-      Functor.associator _ _ _
+  gradedSplitExact_isFrobenius.stableSuspensionCompIsoOfFactorization
+    projectiveStableFunctor_comp_gradedSplitStableToHomotopy gradedSplitStableSuspensionIsoShift
+    ((dgClosedToHomotopy R).commShiftIso (1 : ℤ))
 
 /-- On the stable image of a curved module, the intertwining isomorphism is the image of the
 suspension comparison, followed by the quotient's shift comparison. -/
@@ -174,7 +163,7 @@ theorem stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app
       gradedSplitStableToHomotopy.map (gradedSplitStableSuspensionIsoShift.hom.app X) ≫
         eqToHom (by simp) ≫ ((dgClosedToHomotopy R).commShiftIso (1 : ℤ)).hom.app X ≫
           eqToHom (by simp) := by
-  simp [stableSuspensionCompGradedSplitStableToHomotopyIso, eqToHom_map]
+  simp [stableSuspensionCompGradedSplitStableToHomotopyIso]
 
 /-- The comparison from the graded-split stable category to the curved homotopy category
 commutes with the shifts by `ℤ`: the one generated by stable suspension and the coherent
