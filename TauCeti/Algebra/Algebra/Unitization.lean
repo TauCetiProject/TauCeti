@@ -16,17 +16,13 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 
 ## Main declarations
 
-* `TauCeti.Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
-* `TauCeti.Unitization.map_id`, `TauCeti.Unitization.map_comp`: functoriality.
+* `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
+* `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 -/
 
 public section
 
-namespace TauCeti
-
 namespace Unitization
-
-open _root_.Unitization
 
 variable {R A B C : Type*} [CommSemiring R]
   [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
@@ -64,5 +60,3 @@ theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) :
   simp
 
 end Unitization
-
-end TauCeti
