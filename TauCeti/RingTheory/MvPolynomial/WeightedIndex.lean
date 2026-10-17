@@ -44,6 +44,10 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 * `MvPolynomial.weightedIndex_rename`: renaming along an injective map preserves the index.
 * `MvPolynomial.weightedIndex_toMvPolynomial`: a univariate polynomial placed in the
   coordinate `i` has index `rootMultiplicity / r i`.
+* `MvPolynomial.exists_hasseDeriv_eval_ne_zero`: if an integer polynomial `P` has finite index
+  at `b`, some Hasse derivative `Q = ∂^d P` satisfies `Q(b) ≠ 0` and
+  `Ind_a(P) - Ind_b(P) ≤ Ind_a(Q)` at every other point `a`, and has the same partial degree
+  bounds and coefficients at most `2 ^ ∑ᵢ rᵢ` times as large.
 
 ## References
 
@@ -461,5 +465,49 @@ theorem weightedIndex_le_sum_degreeOf [Fintype σ] (r : σ → ℕ) (a : σ → 
     ENNReal.div_le_div_right (by exact_mod_cast hj) (r j)
 
 end Ring
+
+section Int
+
+variable {F K : Type*} [Fintype σ] [CommRing F] [CommRing K]
+
+/-- **Choice of a nonvanishing Hasse derivative.** Let `P` be an integer polynomial with partial
+degrees `degreeOf i P ≤ r i` and coefficients of absolute value at most `B`. If the index of `P`
+at a point `b` is finite, then some Hasse derivative `Q = ∂^d P` does not vanish at `b`, loses at
+most the index of `P` at `b` from its index at every other point `a`, still has partial degrees at
+most `r i`, and has coefficients of absolute value at most `2 ^ ∑ᵢ rᵢ * B`. -/
+theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ ℤ} {r : σ → ℕ}
+    (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : ℝ} (hB : ∀ μ, |(P.coeff μ : ℝ)| ≤ B) (a : σ → F)
+    {b : σ → K} (hb : weightedIndex r b (P.map (Int.castRingHom K)) ≠ ⊤) :
+    ∃ d : σ →₀ ℕ, eval b ((hasseDeriv d P).map (Int.castRingHom K)) ≠ 0 ∧
+      weightedIndex r a (P.map (Int.castRingHom F)) -
+          weightedIndex r b (P.map (Int.castRingHom K)) ≤
+        weightedIndex r a ((hasseDeriv d P).map (Int.castRingHom F)) ∧
+      (∀ i, (hasseDeriv d P).degreeOf i ≤ r i) ∧
+      ∀ μ, |((hasseDeriv d P).coeff μ : ℝ)| ≤ 2 ^ (∑ i, r i) * B := by
+  -- A jet of minimal weight at `b` is nonzero, and its weight is the index at `b`.
+  obtain ⟨d, hd, hbd⟩ := exists_weightedIndex_eq_weight (r := r)
+    (mt (weightedIndex_eq_top_of_taylor_eq_zero r) hb)
+  rw [hasseDeriv_map] at hd
+  refine ⟨d, hd, ?_, fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hdeg i)),
+    fun μ ↦ ?_⟩
+  · rw [hbd, tsub_le_iff_right, ← hasseDeriv_map]
+    exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _
+  -- `|[X^μ] ∂^d P| ≤ 2 ^ |μ + d| |[X^(μ + d)] P|`, and `|μ + d| ≤ ∑ᵢ rᵢ` when
+  -- `[X^(μ + d)] P ≠ 0`.
+  have hcoeff : |((hasseDeriv d P).coeff μ : ℝ)| ≤
+      2 ^ (μ + d).degree * |(P.coeff (μ + d) : ℝ)| := by
+    exact_mod_cast abv_coeff_hasseDeriv_le AbsoluteValue.abs d μ P
+  refine hcoeff.trans ?_
+  by_cases hμ : P.coeff (μ + d) = 0
+  · simpa [hμ] using
+      mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abs_nonneg _).trans (hB 0))
+  gcongr
+  · exact one_le_two
+  · rw [Finsupp.degree_eq_sum]
+    exact Finset.sum_le_sum fun j _ ↦
+      (monomial_le_degreeOf j (mem_support_iff.2 hμ)).trans (hdeg j)
+  · exact hB _
+
+end Int
 
 end MvPolynomial

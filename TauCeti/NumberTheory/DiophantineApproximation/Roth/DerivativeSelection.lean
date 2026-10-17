@@ -25,11 +25,8 @@ bounds yields the contradiction which proves Roth's theorem.
 
 ## Main results
 
-* `TauCeti.exists_hasseDeriv_eval_ne_zero`: if `P` has finite index at `b`, some Hasse
-  derivative `Q = ∂^d P` satisfies `Q(b) ≠ 0` and `Ind_a(P) - Ind_b(P) ≤ Ind_a(Q)` at every
-  other point `a`, and has the same partial degree bounds and coefficients at most
-  `2 ^ ∑ᵢ rᵢ` times as large.
-* `TauCeti.exists_roth_hasseDeriv`: the same choice with the parameters of the proof of Roth's
+* `TauCeti.exists_roth_hasseDeriv`: the choice of `Q` made by
+  `MvPolynomial.exists_hasseDeriv_eval_ne_zero`, with the parameters of the proof of Roth's
   theorem. An index at least `(n / 2) (1 - ε)` at `a` and an index at most `5 n ε / 2` at `b`
   leave the derivative an index at least `(1 / 2 - 3 ε) n` at `a`, and coefficients at most
   `exp (C₁ ∑ᵢ rᵢ)` with `∑ᵢ rᵢ ≤ 2 D / L` become coefficients at most `exp (4 C₁ D / L)`.
@@ -48,45 +45,6 @@ open MvPolynomial Finset
 open scoped ENNReal
 
 variable {σ F K : Type*} [Fintype σ] [CommRing F] [CommRing K]
-
-/-- **Choice of a nonvanishing Hasse derivative.** Let `P` be an integer polynomial with partial
-degrees `degreeOf i P ≤ r i` and coefficients of absolute value at most `B`. If the index of `P`
-at a point `b` is finite, then some Hasse derivative `Q = ∂^d P` does not vanish at `b`, loses at
-most the index of `P` at `b` from its index at every other point `a`, still has partial degrees at
-most `r i`, and has coefficients of absolute value at most `2 ^ ∑ᵢ rᵢ * B`. -/
-theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ ℤ} {r : σ → ℕ}
-    (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : ℝ} (hB : ∀ μ, |(P.coeff μ : ℝ)| ≤ B) (a : σ → F)
-    {b : σ → K} (hb : weightedIndex r b (P.map (Int.castRingHom K)) ≠ ⊤) :
-    ∃ d : σ →₀ ℕ, eval b ((hasseDeriv d P).map (Int.castRingHom K)) ≠ 0 ∧
-      weightedIndex r a (P.map (Int.castRingHom F)) -
-          weightedIndex r b (P.map (Int.castRingHom K)) ≤
-        weightedIndex r a ((hasseDeriv d P).map (Int.castRingHom F)) ∧
-      (∀ i, (hasseDeriv d P).degreeOf i ≤ r i) ∧
-      ∀ μ, |((hasseDeriv d P).coeff μ : ℝ)| ≤ 2 ^ (∑ i, r i) * B := by
-  -- A jet of minimal weight at `b` is nonzero, and its weight is the index at `b`.
-  obtain ⟨d, hd, hbd⟩ := exists_weightedIndex_eq_weight (r := r)
-    (mt (weightedIndex_eq_top_of_taylor_eq_zero r) hb)
-  rw [hasseDeriv_map] at hd
-  refine ⟨d, hd, ?_, fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hdeg i)),
-    fun μ ↦ ?_⟩
-  · rw [hbd, tsub_le_iff_right, ← hasseDeriv_map]
-    exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _
-  -- The coefficient `[X^μ] ∂^d P` is `∏ⱼ (μⱼ + dⱼ choose dⱼ) [X^(μ + d)] P`, and each binomial
-  -- coefficient is at most `2 ^ (μⱼ + dⱼ) ≤ 2 ^ rⱼ` when `[X^(μ + d)] P ≠ 0`.
-  have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  rw [hasseDeriv_coeff, Int.cast_mul, abs_mul, Int.cast_natCast, Nat.abs_cast]
-  by_cases hμ : P.coeff (μ + d) = 0
-  · simp [hμ, hB₀]
-  have hle (j : σ) : μ j + d j ≤ r j := by
-    simpa using (monomial_le_degreeOf j (mem_support_iff.2 hμ)).trans (hdeg j)
-  have hprod : (d.prod fun j k ↦ (μ j + k).choose k) ≤ 2 ^ ∑ i, r i := calc
-    (d.prod fun j k ↦ (μ j + k).choose k) ≤ ∏ j ∈ d.support, 2 ^ r j :=
-      prod_le_prod fun j _ ↦
-        (Nat.choose_le_two_pow _ _).trans (Nat.pow_le_pow_right two_pos (hle j))
-    _ ≤ ∏ j, 2 ^ r j :=
-      prod_le_prod_of_subset_of_one_le (subset_univ _) fun _ _ _ ↦ Nat.one_le_two_pow
-    _ = 2 ^ ∑ i, r i := prod_pow_eq_pow_sum _ _ _
-  exact mul_le_mul (by exact_mod_cast hprod) (hB _) (abs_nonneg _) (by positivity)
 
 /-- **Pottmeyer, Lemma 3.5.7.** The choice of a nonvanishing Hasse derivative of Roth's
 auxiliary polynomial. Let `P` be an integer polynomial in `n` variables with partial degrees
