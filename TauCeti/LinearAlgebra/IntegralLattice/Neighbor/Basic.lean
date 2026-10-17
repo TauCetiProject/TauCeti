@@ -17,12 +17,11 @@ Kneser's method for exploring a genus. This file defines the relation, proves th
 symmetric, that `1`-neighbors are equal, and that neighbors have equal determinants: the
 determinant of `L ∩ M` is both `p² det L` and `p² det M`.
 
-The intersection of two lattices on the same rational space is again a full lattice, and
-`TauCeti.IntegralLattice.inf` packages it as an integral lattice with the form of the first.
+The intersection `L ∩ M` is the integral lattice `TauCeti.IntegralLattice.inf` from
+`TauCeti.LinearAlgebra.IntegralLattice.Restriction`, carrying the form of `L`.
 
 ## Main definitions
 
-* `TauCeti.IntegralLattice.inf`: the integral lattice on the intersection of two carriers.
 * `TauCeti.IntegralLattice.IsNeighbor`: Kneser's `p`-neighbor relation.
 
 ## Main results
@@ -43,27 +42,6 @@ public section
 namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L M : IntegralLattice V)
-
-/-- The intersection of the carriers of two integral lattices on the same rational space is a
-full lattice. -/
-instance isLattice_carrier_inf : (L.carrier ⊓ M.carrier).IsLattice ℚ :=
-  have := L.finiteDimensional
-  inferInstance
-
-/-- The integral lattice on the intersection of the carriers of `L` and `M`, with the form of
-`L`. -/
-noncomputable def inf : IntegralLattice V :=
-  L.restrictFull (L.carrier ⊓ M.carrier) inf_le_left
-
-/-- The carrier of `L.inf M` is the intersection of the two carriers. -/
-@[simp]
-theorem inf_carrier : (L.inf M).carrier = L.carrier ⊓ M.carrier :=
-  restrictFull_carrier ..
-
-/-- The lattice `L.inf M` carries the form of `L`. -/
-@[simp]
-theorem inf_form : (L.inf M).form = L.form :=
-  restrictFull_form ..
 
 /-- **Kneser neighbors.** Integral lattices `L` and `M` on the same rational quadratic space are
 `p`-neighbors when their intersection has index `p` in each of them, that is
@@ -95,6 +73,7 @@ theorem IsNeighbor.ne_zero (h : L.IsNeighbor M p) : p ≠ 0 :=
   h.relIndex_inf_left ▸ Submodule.IsLattice.relIndex_ne_zero inf_le_left
 
 /-- Two integral lattices are `1`-neighbors exactly when they are equal. -/
+@[simp]
 theorem isNeighbor_one_iff : L.IsNeighbor M 1 ↔ L = M := by
   constructor
   · intro h
