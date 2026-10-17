@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Matrix.Scaling.Basic
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
 
@@ -114,6 +115,50 @@ omit [MeasurableSpace X] [MeasurableSpace Y] in
 theorem entropicGibbsFactor_of_ne_top {z : X × Y} (hz : c z ≠ ∞) :
     entropicGibbsFactor c ε φ ψ z = Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
   Set.indicator_of_mem hz _
+
+end TauCeti
+
+namespace Matrix
+
+variable {X Y : Type*}
+
+/-- At a nonnegative entry of a real-valued matrix cost, the generic Gibbs factor splits into its
+row potential, Gibbs kernel, and column potential factors. -/
+theorem entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp (C : Matrix X Y ℝ) (ε : ℝ≥0)
+    (φ : X → ℝ) (ψ : Y → ℝ) (i : X) (j : Y) (hC : 0 ≤ C i j) :
+    TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) =
+      Real.exp (φ i / ε) * Real.exp (-C i j / ε) * Real.exp (ψ j / ε) := by
+  rw [TauCeti.entropicGibbsFactor_of_ne_top ENNReal.ofReal_ne_top,
+    ENNReal.toReal_ofReal hC, ← Real.exp_add, ← Real.exp_add]
+  congr 1
+  ring
+
+/-- For a pointwise nonnegative real cost, a matrix is a diagonal scaling of the product-weighted
+Gibbs kernel exactly when its entries are the product of the row and column weights multiplied by
+the generic Gibbs factor. -/
+theorem isDiagonalScaling_gibbs_iff (P C : Matrix X Y ℝ) (a : X → ℝ) (b : Y → ℝ)
+    (ε : ℝ≥0) (φ : X → ℝ) (ψ : Y → ℝ) (hC : ∀ i j, 0 ≤ C i j) :
+    IsDiagonalScaling P
+        (of fun i j ↦ a i * b j * Real.exp (-C i j / ε))
+        (fun i ↦ Real.exp (φ i / ε)) (fun j ↦ Real.exp (ψ j / ε)) ↔
+      ∀ i j, P i j = a i * b j *
+        TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) := by
+  rw [isDiagonalScaling_def]
+  constructor <;> intro h i j
+  · rw [h i j, of_apply,
+      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
+    ring
+  · rw [h i j, of_apply,
+      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
+    ring
+
+end Matrix
+
+namespace TauCeti
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+  {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} {π : Measure (X × Y)} {μ : Measure X} {ν : Measure Y}
+  {φ φ' : X → ℝ} {ψ ψ' : Y → ℝ}
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- Where the cost is infinite, the Gibbs factor vanishes. -/

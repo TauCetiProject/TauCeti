@@ -94,7 +94,11 @@ namespace Equiv.Perm
 
 open Equiv Equiv.Perm
 
-variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
+variable {α β : Type*}
+
+section
+
+variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
 /-- The cycle lengths of `σ`, including one part for each fixed point.
 
@@ -234,7 +238,23 @@ theorem dvd_of_mem_parts_partition {σ : Equiv.Perm α} {n : ℕ}
   rw [← lcm_parts_partition]
   exact Multiset.dvd_lcm hn
 
-omit [Fintype α] [DecidableEq α] in
+/-- The sign of a permutation, read off the parts of `Equiv.Perm.partition`: it is the parity of
+the number of parts, corrected by the ambient cardinality. This is `Equiv.Perm.sign_of_cycleType`
+in the convention that keeps the fixed points, and the parity invariant of a Galois image is
+computed from it. -/
+theorem sign_of_parts_partition (σ : Equiv.Perm α) :
+    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α + Multiset.card σ.partition.parts) := by
+  have hle : σ.support.card ≤ Fintype.card α := by
+    simpa using σ.support.card_le_univ
+  have h : Fintype.card α + Multiset.card σ.partition.parts =
+      σ.cycleType.sum + Multiset.card σ.cycleType + 2 * (Fintype.card α - σ.support.card) := by
+    rw [card_parts_partition, sum_cycleType]
+    omega
+  rw [h, pow_add, pow_mul, sign_of_cycleType]
+  simp
+
+end
+
 /-- A finite type carries a permutation of order `k` exactly when `k` is the least common multiple
 of the parts of some partition of its cardinality. A partition is realized by a permutation whose
 cycles have its parts of size at least two as lengths, by `Equiv.Perm.exists_with_cycleType_iff`;
@@ -264,20 +284,9 @@ theorem exists_orderOf_eq_iff [Finite α] {k : ℕ} :
     ⟨hsum, fun i hi ↦ (Multiset.mem_filter.1 hi).2⟩
   exact ⟨σ, by rw [← lcm_cycleType, hσ, ← hlcm, hp]⟩
 
-/-- The sign of a permutation, read off the parts of `Equiv.Perm.partition`: it is the parity of
-the number of parts, corrected by the ambient cardinality. This is `Equiv.Perm.sign_of_cycleType`
-in the convention that keeps the fixed points, and the parity invariant of a Galois image is
-computed from it. -/
-theorem sign_of_parts_partition (σ : Equiv.Perm α) :
-    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α + Multiset.card σ.partition.parts) := by
-  have hle : σ.support.card ≤ Fintype.card α := by
-    simpa using σ.support.card_le_univ
-  have h : Fintype.card α + Multiset.card σ.partition.parts =
-      σ.cycleType.sum + Multiset.card σ.cycleType + 2 * (Fintype.card α - σ.support.card) := by
-    rw [card_parts_partition, sum_cycleType]
-    omega
-  rw [h, pow_add, pow_mul, sign_of_cycleType]
-  simp
+section
+
+variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
 /-! ### Transport along an equivalence of the underlying types -/
 
@@ -556,15 +565,18 @@ theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι]
   simp only [Finset.mem_disjiUnion, Finset.mem_univ, true_and, Finset.mem_image]
   exact ⟨fun ⟨x, hx⟩ => ⟨π x, ⟨x, rfl⟩, hx⟩, fun ⟨_, x, hx⟩ => ⟨x, hx⟩⟩
 
+end
+
 /-! ### Orbit sizes -/
 
 section OrbitSizes
 
 open MulAction
 
+section
+
 variable (σ : Equiv.Perm α)
 
-omit [Fintype α] [DecidableEq α] in
 /-- Two points lie on the same cycle of `σ` exactly when one is a `⟨σ⟩`-translate of the
 other. -/
 theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
@@ -576,21 +588,12 @@ theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
     obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
     exact ⟨i, by rw [hi]; exact hg⟩
 
-omit [Fintype α] [DecidableEq α] in
 /-- The orbit relation of `⟨σ⟩` is the same-cycle relation of `σ`. -/
 theorem orbitRel_zpowers_apply {x y : α} :
     orbitRel (Subgroup.zpowers σ) α x y ↔ σ.SameCycle x y := by
   rw [orbitRel_apply, ← sameCycle_iff_mem_orbit_zpowers]
   exact ⟨SameCycle.symm, SameCycle.symm⟩
 
-/-- The `⟨σ⟩`-orbit of a moved point is the support of its cycle. -/
-theorem coe_support_cycleOf_eq_orbit_zpowers {x : α} (hx : x ∈ σ.support) :
-    ((σ.cycleOf x).support : Set α) = orbit (Subgroup.zpowers σ) x := by
-  ext y
-  rw [Finset.mem_coe, mem_support_cycleOf_iff, ← sameCycle_iff_mem_orbit_zpowers]
-  exact and_iff_left hx
-
-omit [Fintype α] [DecidableEq α] in
 /-- The `⟨σ⟩`-orbit of a fixed point is a singleton. -/
 theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
     orbit (Subgroup.zpowers σ) x = {x} := by
@@ -602,7 +605,6 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
   · rintro rfl
     exact SameCycle.refl σ y
 
-omit [Fintype α] [DecidableEq α] in
 /-- **The length of a cycle is the minimal period of its points.** The cycle of `σ` through `x`
 has `Function.minimalPeriod σ x` points; a fixed point is a cycle of length one. -/
 theorem ncard_setOf_sameCycle [Finite α] (x : α) :
@@ -612,6 +614,17 @@ theorem ncard_setOf_sameCycle [Finite α] (x : α) :
   simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
     Nat.card_eq_fintype_card]
   exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
+
+end
+
+variable [Fintype α] [DecidableEq α] (σ : Equiv.Perm α)
+
+/-- The `⟨σ⟩`-orbit of a moved point is the support of its cycle. -/
+theorem coe_support_cycleOf_eq_orbit_zpowers {x : α} (hx : x ∈ σ.support) :
+    ((σ.cycleOf x).support : Set α) = orbit (Subgroup.zpowers σ) x := by
+  ext y
+  rw [Finset.mem_coe, mem_support_cycleOf_iff, ← sameCycle_iff_mem_orbit_zpowers]
+  exact and_iff_left hx
 
 open scoped Classical in
 /-- **The full cycle type lists the cycle lengths, one for each cycle.** If the cycles of `σ` are

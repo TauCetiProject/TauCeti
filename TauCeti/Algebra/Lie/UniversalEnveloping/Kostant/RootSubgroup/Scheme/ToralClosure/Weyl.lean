@@ -115,6 +115,17 @@ noncomputable def kostantToralWeylPoint (i j : I) (A : Type v) [CommRing A] :
     kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
       (Multiplicative.ofAdd (1 : A))
 
+/-- The Weyl representative is the pinned word in its two root-subgroup points. -/
+theorem kostantToralWeylPoint_def (i j : I) (A : Type v) [CommRing A] :
+    kostantToralWeylPoint e h ρ M hM hnil b wt i j A =
+      kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt j A
+          (Multiplicative.ofAdd (-1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (1 : A)) :=
+  (rfl)
+
 /-- The carrier's Weyl representative is natural in the value ring. Applying a ring homomorphism
 entrywise sends the representative over the source ring to the representative over the target
 ring. -/

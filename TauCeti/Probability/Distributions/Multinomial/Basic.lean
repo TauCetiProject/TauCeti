@@ -55,7 +55,11 @@ namespace TauCeti
 
 namespace Probability
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+section
+
+variable [Fintype ι]
 
 /-- The real-valued multinomial weight associated to nonnegative cell weights.
 
@@ -271,17 +275,17 @@ theorem integral_multinomialMeasure {E : Type*} [NormedAddCommGroup E] [NormedSp
   · exact fun k _ ↦
       (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p.weights k)
 
+end
+
 /-- The count vector cast into Euclidean space. -/
 def multinomialToEuclidean (k : ι → ℕ) : EuclideanSpace ℝ ι :=
   (EuclideanSpace.equiv ι ℝ).symm fun i => (k i : ℝ)
 
-omit [Fintype ι] in
 /-- The coordinates of the cast are the counts, as reals. -/
 @[simp]
 theorem multinomialToEuclidean_apply (k : ι → ℕ) (i : ι) :
     multinomialToEuclidean k i = (k i : ℝ) := (rfl)
 
-omit [Fintype ι] in
 /-- The cast of count vectors into Euclidean space is measurable. -/
 theorem measurable_multinomialToEuclidean [Finite ι] :
     Measurable (multinomialToEuclidean (ι := ι)) := by
@@ -289,7 +293,6 @@ theorem measurable_multinomialToEuclidean [Finite ι] :
   refine (EuclideanSpace.equiv ι ℝ).symm.continuous.measurable.comp ?_
   exact Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i)
 
-omit [Fintype ι] in
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :
     MeasurableEmbedding (multinomialToEuclidean (ι := ι)) := by

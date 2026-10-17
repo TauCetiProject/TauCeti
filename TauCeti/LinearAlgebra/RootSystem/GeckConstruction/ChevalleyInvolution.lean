@@ -76,9 +76,9 @@ noncomputable section
 universe u v w
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type*}
-  [Fintype ι] [CommRing R] [IsDomain R] [CharZero R]
+  [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} [P.IsCrystallographic] (b : P.Base)
+  {P : RootPairing ι R M N} (b : P.Base)
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 /-- Classical decidable equality on the index type, used only inside this file to form the
@@ -98,7 +98,6 @@ private def geckHeightSign : b.support ⊕ ι → R
 private def geckHeightMatrix : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R :=
   diagonal (geckHeightSign b)
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_mul_self (i : b.support ⊕ ι) :
     geckHeightSign b i * geckHeightSign b i = 1 := by
   cases i with
@@ -111,12 +110,10 @@ private theorem geckHeightSign_mul_self (i : b.support ⊕ ι) :
       · rw [Int.negOnePow_odd _ hi]
         simp
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_simple (i : b.support) :
     geckHeightSign b (.inr i) = -1 := by
   simp [geckHeightSign, b.height_one_of_mem_support i.property]
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_neg_simple (i : b.support) :
     let _ := P.indexNeg
     geckHeightSign b (.inr (-i : ι)) = -1 := by
@@ -125,7 +122,6 @@ private theorem geckHeightSign_neg_simple (i : b.support) :
   rw [b.height_reflectionPerm_self, b.height_one_of_mem_support i.property]
   norm_num
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_mul_eq_neg_one_of_add {i : b.support} {j k : ι}
     (hjk : P.root j = P.root i + P.root k) :
     geckHeightSign b (.inr j) * geckHeightSign b (.inr k) = -1 := by
@@ -134,7 +130,6 @@ private theorem geckHeightSign_mul_eq_neg_one_of_add {i : b.support} {j k : ι}
   norm_num [Int.coe_negOnePow]
   simpa [geckHeightSign] using geckHeightSign_mul_self b (.inr k)
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_mul_eq_neg_one_of_sub {i : b.support} {j k : ι}
     (hjk : P.root j = P.root k - P.root i) :
     geckHeightSign b (.inr j) * geckHeightSign b (.inr k) = -1 := by
@@ -143,7 +138,8 @@ private theorem geckHeightSign_mul_eq_neg_one_of_sub {i : b.support} {j k : ι}
   norm_num [Int.coe_negOnePow]
   simpa [geckHeightSign] using geckHeightSign_mul_self b (.inr k)
 
-omit [IsDomain R] [P.IsCrystallographic] in
+variable [Fintype ι]
+
 private theorem geckHeightMatrix_mul_self :
     geckHeightMatrix b * geckHeightMatrix b = 1 := by
   rw [geckHeightMatrix, diagonal_mul_diagonal]
@@ -180,7 +176,6 @@ private def geckHeightConj :
             (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
       _ = x := by rw [geckHeightMatrix_mul_self]; simp
 
-omit [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightConj_apply (A : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R)
     (i j : b.support ⊕ ι) :
     geckHeightConj b A i j = geckHeightSign b i * A i j * geckHeightSign b j := by
@@ -190,7 +185,8 @@ private theorem geckHeightConj_apply (A : Matrix (b.support ⊕ ι) (b.support �
     _ = geckHeightSign b i * A i j * geckHeightSign b j := by
       simp [geckHeightMatrix]
 
-omit [IsDomain R] in
+variable [P.IsCrystallographic]
+
 private theorem geckHeightConj_h (i : b.support) :
     geckHeightConj b (h i) = h i := by
   let d : b.support ⊕ ι → R :=
@@ -209,6 +205,8 @@ private theorem geckHeightConj_h (i : b.support) :
       _ = d j := by rw [geckHeightSign_mul_self]; simp
   · rw [Matrix.diagonal_apply_ne _ hjk]
     simp
+
+variable [IsDomain R]
 
 private theorem geckHeightConj_e (i : b.support) :
     geckHeightConj b (e i) = -e i := by

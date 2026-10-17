@@ -166,9 +166,10 @@ theorem quantumInteger_sub (q : K) (a b : ℤ) :
     rintro rfl
     simp at hq
   have h2 : q ^ 2 - 1 ≠ 0 := by
-    contrapose! hq
+    intro h
+    apply hq
     field_simp
-    linear_combination hq
+    linear_combination h
   simp only [quantumInteger, zpow_sub₀ hq0, zpow_add₀ hq0, zpow_neg, neg_add, zpow_one]
   field_simp
   ring
