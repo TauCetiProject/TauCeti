@@ -73,13 +73,46 @@ variable {C J : Type*} [Category* C] [Limits.HasZeroMorphisms C] [Category* J]
 
 /-- Evaluating the short complex of diagrams attached to `F : J ⥤ ShortComplex C` at `j` gives
 back `F.obj j`. This is the component at `j` of the counit of `ShortComplex.functorEquivalence`,
-stated with the evaluated short complex as its source so that later composites are well typed.
-The definition is `@[expose]`d so that its object components are definitionally identities in
-downstream modules. -/
-@[expose]
+stated with the evaluated short complex as its source so that later composites are well typed. -/
 def diagramEvaluationIso (F : J ⥤ ShortComplex C) (j : J) :
     ((functorEquivalence J C).inverse.obj F).map ((evaluation J C).obj j) ≅ F.obj j :=
   ((functorEquivalence J C).counitIso.app F).app j
+
+/-- The first component of the forward morphism of `ShortComplex.diagramEvaluationIso` is the
+identity. -/
+@[simp]
+theorem diagramEvaluationIso_hom_τ₁ (F : J ⥤ ShortComplex C) (j : J) :
+    (diagramEvaluationIso F j).hom.τ₁ = 𝟙 (F.obj j).X₁ := by rfl
+
+/-- The second component of the forward morphism of `ShortComplex.diagramEvaluationIso` is the
+identity. -/
+@[simp]
+theorem diagramEvaluationIso_hom_τ₂ (F : J ⥤ ShortComplex C) (j : J) :
+    (diagramEvaluationIso F j).hom.τ₂ = 𝟙 (F.obj j).X₂ := by rfl
+
+/-- The third component of the forward morphism of `ShortComplex.diagramEvaluationIso` is the
+identity. -/
+@[simp]
+theorem diagramEvaluationIso_hom_τ₃ (F : J ⥤ ShortComplex C) (j : J) :
+    (diagramEvaluationIso F j).hom.τ₃ = 𝟙 (F.obj j).X₃ := by rfl
+
+/-- The first component of the inverse morphism of `ShortComplex.diagramEvaluationIso` is the
+identity. -/
+@[simp]
+theorem diagramEvaluationIso_inv_τ₁ (F : J ⥤ ShortComplex C) (j : J) :
+    (diagramEvaluationIso F j).inv.τ₁ = 𝟙 (F.obj j).X₁ := by rfl
+
+/-- The second component of the inverse morphism of `ShortComplex.diagramEvaluationIso` is the
+identity. -/
+@[simp]
+theorem diagramEvaluationIso_inv_τ₂ (F : J ⥤ ShortComplex C) (j : J) :
+    (diagramEvaluationIso F j).inv.τ₂ = 𝟙 (F.obj j).X₂ := by rfl
+
+/-- The third component of the inverse morphism of `ShortComplex.diagramEvaluationIso` is the
+identity. -/
+@[simp]
+theorem diagramEvaluationIso_inv_τ₃ (F : J ⥤ ShortComplex C) (j : J) :
+    (diagramEvaluationIso F j).inv.τ₃ = 𝟙 (F.obj j).X₃ := by rfl
 
 /-- Naturality of the forward morphism of `ShortComplex.diagramEvaluationIso`. -/
 @[reassoc]
@@ -97,13 +130,40 @@ theorem diagramEvaluationIso_inv_naturality (F : J ⥤ ShortComplex C) {X Y : J}
         ((functorEquivalence J C).inverse.obj F).mapNatTrans ((evaluation J C).map f) := by
   rw [Iso.comp_inv_eq, Category.assoc, diagramEvaluationIso_hom_naturality, Iso.inv_hom_id_assoc]
 
-variable [CategoryWithHomology C] [CategoryWithHomology (J ⥤ C)]
+/-- Evaluating the homology of the short complex of diagrams attached to `F : J ⥤ ShortComplex C`
+along a morphism `f : X ⟶ Y` commutes with `ShortComplex.mapHomologyIso`. -/
+@[reassoc]
+theorem mapHomologyIso_evaluation_naturality (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
+    {X Y : J} (f : X ⟶ Y)
+    [((evaluation J C).obj X).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [((evaluation J C).obj X).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [((evaluation J C).obj Y).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [((evaluation J C).obj Y).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)] :
+    homologyMap
+        (((functorEquivalence J C).inverse.obj F).mapNatTrans ((evaluation J C).map f)) ≫
+      (((functorEquivalence J C).inverse.obj F).mapHomologyIso
+        ((evaluation J C).obj Y)).hom =
+    (((functorEquivalence J C).inverse.obj F).mapHomologyIso
+        ((evaluation J C).obj X)).hom ≫
+      ((functorEquivalence J C).inverse.obj F).homology.map f := by
+  -- Since `((evaluation J C).map f).app G = G.map f`, the right-hand factor is the component of
+  -- `NatTrans.app_homology ((evaluation J C).map f)` on `(functorEquivalence J C).inverse.obj F`.
+  rw [← Iso.inv_comp_eq]
+  exact (NatTrans.app_homology ((evaluation J C).map f)
+    ((functorEquivalence J C).inverse.obj F)).symm
+
+variable [CategoryWithHomology C]
 
 /-- The pointwise homology diagram of `F : J ⥤ ShortComplex C` is naturally isomorphic to the
 homology of the associated short complex of diagrams when evaluation at each object preserves
 homology. -/
-@[expose]
 noncomputable def homologyDiagramIso (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
     [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
       ((functorEquivalence J C).inverse.obj F)]
     [∀ j : J, ((evaluation J C).obj j).PreservesRightHomologyOf
@@ -113,33 +173,15 @@ noncomputable def homologyDiagramIso (F : J ⥤ ShortComplex C)
     (fun j ↦ homologyMapIso (diagramEvaluationIso F j).symm ≪≫
       ((functorEquivalence J C).inverse.obj F).mapHomologyIso ((evaluation J C).obj j))
     (fun {X Y} f ↦ by
-      have h_eval :
-          homologyMap
-              (((functorEquivalence J C).inverse.obj F).mapNatTrans ((evaluation J C).map f)) ≫
-            (((functorEquivalence J C).inverse.obj F).mapHomologyIso
-              ((evaluation J C).obj Y)).hom =
-          (((functorEquivalence J C).inverse.obj F).mapHomologyIso
-              ((evaluation J C).obj X)).hom ≫
-            ((functorEquivalence J C).inverse.obj F).homology.map f := by
-        rw [← Iso.inv_comp_eq]
-        exact (NatTrans.app_homology ((evaluation J C).map f)
-          ((functorEquivalence J C).inverse.obj F)).symm
-      have h : homologyMap (F.map f) ≫
-            (homologyMap (diagramEvaluationIso F Y).inv ≫
-              (((functorEquivalence J C).inverse.obj F).mapHomologyIso
-                ((evaluation J C).obj Y)).hom) =
-          (homologyMap (diagramEvaluationIso F X).inv ≫
-              (((functorEquivalence J C).inverse.obj F).mapHomologyIso
-                ((evaluation J C).obj X)).hom) ≫
-            ((functorEquivalence J C).inverse.obj F).homology.map f := by
-        rw [Category.assoc, ← h_eval, ← Category.assoc,
-          ← Category.assoc, ← homologyMap_comp, ← homologyMap_comp,
-          diagramEvaluationIso_inv_naturality]
-      exact h)
+      dsimp [homologyFunctor, homologyMapIso]
+      rw [Category.assoc, ← mapHomologyIso_evaluation_naturality F f, ← Category.assoc,
+        ← Category.assoc, ← homologyMap_comp, ← homologyMap_comp,
+        diagramEvaluationIso_inv_naturality])
 
 /-- The forward component of `ShortComplex.homologyDiagramIso` at `j`. -/
 @[simp]
 theorem homologyDiagramIso_hom_app (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
     [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
       ((functorEquivalence J C).inverse.obj F)]
     [∀ j : J, ((evaluation J C).obj j).PreservesRightHomologyOf
@@ -147,12 +189,12 @@ theorem homologyDiagramIso_hom_app (F : J ⥤ ShortComplex C)
     (homologyDiagramIso F).hom.app j =
       homologyMap (diagramEvaluationIso F j).inv ≫
         (((functorEquivalence J C).inverse.obj F).mapHomologyIso
-          ((evaluation J C).obj j)).hom :=
-  (rfl)
+          ((evaluation J C).obj j)).hom := by rfl
 
 /-- The inverse component of `ShortComplex.homologyDiagramIso` at `j`. -/
 @[simp]
 theorem homologyDiagramIso_inv_app (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
     [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
       ((functorEquivalence J C).inverse.obj F)]
     [∀ j : J, ((evaluation J C).obj j).PreservesRightHomologyOf
@@ -160,8 +202,7 @@ theorem homologyDiagramIso_inv_app (F : J ⥤ ShortComplex C)
     (homologyDiagramIso F).inv.app j =
       (((functorEquivalence J C).inverse.obj F).mapHomologyIso
           ((evaluation J C).obj j)).inv ≫
-        homologyMap (diagramEvaluationIso F j).hom :=
-  (rfl)
+        homologyMap (diagramEvaluationIso F j).hom := by rfl
 
 end Diagram
 

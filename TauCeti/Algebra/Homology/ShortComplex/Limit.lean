@@ -103,11 +103,20 @@ private noncomputable def isLimitShortComplexLimCone (F : J ⥤ ShortComplex C) 
     IsLimit (shortComplexLimCone F) :=
   ShortComplex.isLimitOfIsLimitπ _
     (IsLimit.ofIsoLimit (limit.isLimit (F ⋙ ShortComplex.π₁))
-      (Cone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).symm.trans (Category.id_comp _).symm))
+      (Cone.ext (Iso.refl _) fun _ ↦ by
+        dsimp [shortComplexLimCone, ShortComplex.π₁]
+        rw [ShortComplex.diagramEvaluationIso_hom_τ₁]
+        exact (Category.comp_id _).symm.trans (Category.id_comp _).symm))
     (IsLimit.ofIsoLimit (limit.isLimit (F ⋙ ShortComplex.π₂))
-      (Cone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).symm.trans (Category.id_comp _).symm))
+      (Cone.ext (Iso.refl _) fun _ ↦ by
+        dsimp [shortComplexLimCone, ShortComplex.π₂]
+        rw [ShortComplex.diagramEvaluationIso_hom_τ₂]
+        exact (Category.comp_id _).symm.trans (Category.id_comp _).symm))
     (IsLimit.ofIsoLimit (limit.isLimit (F ⋙ ShortComplex.π₃))
-      (Cone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).symm.trans (Category.id_comp _).symm))
+      (Cone.ext (Iso.refl _) fun _ ↦ by
+        dsimp [shortComplexLimCone, ShortComplex.π₃]
+        rw [ShortComplex.diagramEvaluationIso_hom_τ₃]
+        exact (Category.comp_id _).symm.trans (Category.id_comp _).symm))
 
 variable [HasExactLimitsOfShape J C]
 
@@ -118,6 +127,8 @@ private theorem shortComplex_mapHomologyIso_limit (F : J ⥤ ShortComplex C) (j 
       limit.π ((ShortComplex.functorEquivalence J C).inverse.obj F).homology j ≫
         (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso
           ((evaluation J C).obj j)).inv := by
+  -- Since `(lim.π j).app G = limit.π G j`, the projection on the right is the component of
+  -- `NatTrans.app_homology (lim.π j)` on `(ShortComplex.functorEquivalence J C).inverse.obj F`.
   rw [Iso.eq_comp_inv, Category.assoc]
   exact (NatTrans.app_homology (lim.π j)
     ((ShortComplex.functorEquivalence J C).inverse.obj F)).symm
@@ -126,7 +137,7 @@ private theorem shortComplexHomologyLimit_compatibility
     (F : J ⥤ ShortComplex C) (j : J) :
     limit.π ((ShortComplex.functorEquivalence J C).inverse.obj F).homology j ≫
         ((((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso
-            ((evaluation J C).obj j)).inv ≫
+             ((evaluation J C).obj j)).inv ≫
           ShortComplex.homologyMap (ShortComplex.diagramEvaluationIso F j).hom) =
       (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso lim).inv ≫
         ShortComplex.homologyMap
@@ -142,7 +153,9 @@ private noncomputable def shortComplexHomologyLimitConeIso (F : J ⥤ ShortCompl
         (limit.cone ((ShortComplex.functorEquivalence J C).inverse.obj F).homology) ≅
       (ShortComplex.homologyFunctor C).mapCone (shortComplexLimCone F) :=
   Cone.ext (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso lim).symm
-    (fun j ↦ shortComplexHomologyLimit_compatibility F j)
+    (fun j ↦ by
+      dsimp [shortComplexLimCone, ShortComplex.homologyFunctor]
+      rw [ShortComplex.homologyDiagramIso_inv_app, shortComplexHomologyLimit_compatibility])
 
 /-- Homology of short complexes preserves limits of any exact shape. -/
 instance shortComplexHomologyFunctor_preservesLimitsOfShape :

@@ -102,11 +102,20 @@ private noncomputable def isColimitShortComplexColimCocone (F : J ⥤ ShortCompl
     IsColimit (shortComplexColimCocone F) :=
   ShortComplex.isColimitOfIsColimitπ _
     (IsColimit.ofIsoColimit (colimit.isColimit (F ⋙ ShortComplex.π₁))
-      (Cocone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm))
+      (Cocone.ext (Iso.refl _) fun _ ↦ by
+        dsimp [shortComplexColimCocone, ShortComplex.π₁]
+        rw [ShortComplex.diagramEvaluationIso_inv_τ₁]
+        exact (Category.comp_id _).trans (Category.id_comp _).symm))
     (IsColimit.ofIsoColimit (colimit.isColimit (F ⋙ ShortComplex.π₂))
-      (Cocone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm))
+      (Cocone.ext (Iso.refl _) fun _ ↦ by
+        dsimp [shortComplexColimCocone, ShortComplex.π₂]
+        rw [ShortComplex.diagramEvaluationIso_inv_τ₂]
+        exact (Category.comp_id _).trans (Category.id_comp _).symm))
     (IsColimit.ofIsoColimit (colimit.isColimit (F ⋙ ShortComplex.π₃))
-      (Cocone.ext (Iso.refl _) fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm))
+      (Cocone.ext (Iso.refl _) fun _ ↦ by
+        dsimp [shortComplexColimCocone, ShortComplex.π₃]
+        rw [ShortComplex.diagramEvaluationIso_inv_τ₃]
+        exact (Category.comp_id _).trans (Category.id_comp _).symm))
 
 variable [HasExactColimitsOfShape J C]
 
@@ -117,6 +126,8 @@ private theorem shortComplex_mapHomologyIso_colimit (F : J ⥤ ShortComplex C) (
           (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso colim).inv =
       ShortComplex.homologyMap
         (((ShortComplex.functorEquivalence J C).inverse.obj F).mapNatTrans (colim.ι j)) := by
+  -- Since `(colim.ι j).app G = colimit.ι G j`, the coprojection on the left is the component of
+  -- `NatTrans.app_homology (colim.ι j)` on `(ShortComplex.functorEquivalence J C).inverse.obj F`.
   rw [← Iso.eq_inv_comp, Iso.comp_inv_eq, Category.assoc]
   exact NatTrans.app_homology (colim.ι j)
     ((ShortComplex.functorEquivalence J C).inverse.obj F)
@@ -140,7 +151,9 @@ private noncomputable def shortComplexHomologyColimitCoconeIso (F : J ⥤ ShortC
         (colimit.cocone ((ShortComplex.functorEquivalence J C).inverse.obj F).homology) ≅
       (ShortComplex.homologyFunctor C).mapCocone (shortComplexColimCocone F) :=
   Cocone.ext (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso colim).symm
-    (fun j ↦ shortComplexHomologyColimit_compatibility F j)
+    (fun j ↦ by
+      dsimp [shortComplexColimCocone, ShortComplex.homologyFunctor]
+      rw [ShortComplex.homologyDiagramIso_hom_app, shortComplexHomologyColimit_compatibility])
 
 /-- Homology of short complexes preserves colimits of any exact shape. -/
 instance shortComplexHomologyFunctor_preservesColimitsOfShape :
