@@ -9,9 +9,7 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 public import Mathlib.RingTheory.ClassGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # Form ideals under proper changes of variables
