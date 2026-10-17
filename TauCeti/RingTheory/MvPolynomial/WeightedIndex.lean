@@ -34,6 +34,8 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
+* `MvPolynomial.le_sum_div_of_le_weightedIndex`: a nonzero jet `∂^d P` at a point where the
+  index is at least `t` has `d ≤ r` and real weight `t ≤ ∑ j, d j / r j`.
 * `MvPolynomial.weightedIndex_mul`: `Ind(P Q) = Ind(P) + Ind(Q)` without zero divisors.
 * `MvPolynomial.weightedIndex_le_weightedIndex_hasseDeriv_add`:
   `Ind(P) ≤ Ind(∂^d P) + ∑ j, d j / r j`.
@@ -80,6 +82,29 @@ theorem weightedIndex_le {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
     {d : σ →₀ ℕ} (hd : eval a (hasseDeriv d P) ≠ 0) :
     weightedIndex r a P ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
   iInf_le_of_le d (iInf_le_of_le hd le_rfl)
+
+/-- A nonzero jet of a polynomial with partial degrees `degreeOf i P ≤ r i` and index at least
+`t` satisfies `d ≤ r` and has weight `t ≤ ∑ᵢ dᵢ / rᵢ`, computed in `ℝ`. -/
+theorem le_sum_div_of_le_weightedIndex [Fintype σ] {P : MvPolynomial σ R} {r : σ → ℕ}
+    (hdeg : ∀ i, P.degreeOf i ≤ r i) {a : σ → R} {t : ℝ}
+    (ht : ENNReal.ofReal t ≤ weightedIndex r a P) {d : σ →₀ ℕ}
+    (hd : eval a (hasseDeriv d P) ≠ 0) :
+    (∀ i, d i ≤ r i) ∧ t ≤ ∑ i, (d i : ℝ) / r i := by
+  have hdr (i : σ) : d i ≤ r i := by
+    by_contra h
+    exact hd (by rw [hasseDeriv_eq_zero_of_degreeOf_lt (i := i) (by have := hdeg i; omega),
+      map_zero])
+  refine ⟨hdr, ?_⟩
+  have hw : d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) = ENNReal.ofReal (∑ i, (d i : ℝ) / r i) := by
+    rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity, Finsupp.weight_apply,
+      Finsupp.sum_fintype _ _ (by simp)]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rcases Nat.eq_zero_or_pos (d i) with h | h
+    · simp [h]
+    · rw [ENNReal.ofReal_div_of_pos (Nat.cast_pos.2 (h.trans_le (hdr i))),
+        ENNReal.ofReal_natCast, ENNReal.ofReal_natCast, nsmul_eq_mul, div_eq_mul_inv]
+  exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ ↦ by positivity)).1
+    (ht.trans ((weightedIndex_le hd).trans_eq hw))
 
 /-- An index lower bound is equivalent to the vanishing of all jets of strictly smaller
 weight. The strict inequality also covers the threshold `⊤`. -/
