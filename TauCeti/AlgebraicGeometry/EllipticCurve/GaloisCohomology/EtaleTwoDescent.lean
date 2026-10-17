@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.TwoDescen
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.RingTheory.AdjoinRoot.Factors
 import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
-import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 
 /-!
 # The cohomological and étale-algebra `2`-descent maps
