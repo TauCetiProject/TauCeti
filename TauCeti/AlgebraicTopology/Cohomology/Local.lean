@@ -118,8 +118,9 @@ def singularCohomologyComplSingletonFinrankEquiv :
   singularCohomologyComplSingletonKroneckerEquiv R N φ hx (finrank ℝ E) ≪≫ₗ
     Linear.homCongr k (singularHomologyComplSingletonFinrankIso R φ hx) (Iso.refl N)
 
-/-- `TauCeti.singularCohomologyComplSingletonFinrankEquiv` evaluates the relative Kronecker map
-of a class on the generator of local homology. -/
+/-- `TauCeti.singularCohomologyComplSingletonFinrankEquiv` sends a class to its relative Kronecker
+map precomposed with the inverse of the local-homology isomorphism
+`TauCeti.singularHomologyComplSingletonFinrankIso`. -/
 lemma singularCohomologyComplSingletonFinrankEquiv_apply
     (α : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N (finrank ℝ E)) :
     singularCohomologyComplSingletonFinrankEquiv R N φ hx α =
