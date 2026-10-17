@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Vector fields read in the charts of a manifold modelled on its own model space
@@ -26,6 +28,8 @@ of a smooth function, a smooth field along which the function strictly decreases
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
 * `TauCeti.exists_mem_nhds_mvfderiv_chartConstField_lt_zero`: near a regular point of a smooth
   function, some constant field in the preferred chart is a direction of strict decrease.
+* `TauCeti.exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one`: near a regular point of a smooth
+  function, a rescaled constant chart field is a smooth direction of unit-speed decrease.
 -/
 
 public section
@@ -152,6 +156,37 @@ theorem exists_mem_nhds_mvfderiv_chartConstField_lt_zero (hf : ContMDiff 𝓘(�
   rw [chartConstField, mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀)
     (eqOn_comp_chartAt_symm y₀) _ hy.1 (hdiff y hy.1)]
   exact hy.2
+
+/-- Near a regular point of a smooth function `f`, there is a smooth local vector field along which
+`f` decreases at unit speed, `df(s) = -1`. -/
+theorem exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
+    {y₀ : M} (hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y₀ ≠ 0) :
+    ∃ U ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
+      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) U ∧
+      ∀ y ∈ U, mvfderiv 𝓘(ℝ, E) f y (s y) = -1 := by
+  -- Divide a constant chart field `w` of strict decrease by `-df(w)`; read in the chart, `df(w)`
+  -- is the smooth nonvanishing function `y ↦ fderiv h (c y) v`.
+  obtain ⟨v, U, hU, hUc, hneg⟩ := exists_mem_nhds_mvfderiv_chartConstField_lt_zero hf hcrit
+  set c := chartAt E y₀
+  set h := f ∘ c.symm
+  have hh := contDiffOn_comp_chartAt_symm hf y₀
+  have hdf : ∀ y ∈ c.source,
+      mvfderiv 𝓘(ℝ, E) f y (chartConstField E y₀ v y) = fderiv ℝ h (c y) v := fun y hy ↦
+    mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀) (eqOn_comp_chartAt_symm y₀)
+      _ hy ((hh.contDiffAt (c.open_target.mem_nhds (c.map_source hy))).differentiableAt
+        (by simp))
+  have hg : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ (fun y ↦ fderiv ℝ h (c y) v) U := by
+    have h' : ContDiffOn ℝ ∞ (fun z ↦ fderiv ℝ h z v) c.target :=
+      (hh.fderiv_of_isOpen c.open_target (by simp)).clm_apply contDiffOn_const
+    exact (h'.contMDiffOn.comp contMDiffOn_chart fun y hy ↦ c.map_source hy).mono hUc
+  have hne : ∀ y ∈ U, fderiv ℝ h (c y) v ≠ 0 := fun y hy ↦ by
+    rw [← hdf y (hUc hy)]
+    exact (hneg y hy).ne
+  refine ⟨U, hU, fun y ↦ (-(fderiv ℝ h (c y) v)⁻¹) • chartConstField E y₀ v y,
+    (hg.inv₀ hne).neg.smul_section ((contMDiffOn_chartConstField y₀ v).mono hUc),
+    fun y hy ↦ ?_⟩
+  rw [map_smul, hdf y (hUc hy), smul_eq_mul, neg_mul, inv_mul_cancel₀ (hne y hy)]
 
 end ConstField
 
