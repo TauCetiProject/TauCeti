@@ -35,6 +35,7 @@ universe u
 
 attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
   DGHomotopyCategory.of DGHomotopyCategory.underlying
+  EnrichedFunctor.ofDGMap EnrichedFunctor.mapDGHomotopyCategory
 
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
@@ -218,8 +219,6 @@ theorem gradedSplitStableToHomotopyCommShift_iso_one :
   exact
     (gradedSplitExact_isFrobenius (h := h)).commShiftOfIntertwiningStableSuspensionShift_iso_one
     gradedSplitStableToHomotopy stableSuspensionCompGradedSplitStableToHomotopyIso
-
-attribute [local implicit_reducible] EnrichedFunctor.ofDGMap EnrichedFunctor.mapDGHomotopyCategory
 
 /-- The signed suspension component is the negative homotopy class of the identity-induced
 map from the chosen suspension presentation to the identity-cone presentation. -/
