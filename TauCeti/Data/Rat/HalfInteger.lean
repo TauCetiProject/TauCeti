@@ -18,10 +18,10 @@ coordinatewise to rational vectors whose coordinates are half-integers.
 
 public section
 
-namespace TauCeti
+namespace Int
 
 /-- The square of an integer translated by one half is at least one quarter. -/
-theorem quarter_le_add_half_sq (z : ℤ) : (1 / 4 : ℚ) ≤ ((z : ℚ) + 1 / 2) ^ 2 := by
+theorem quarter_le_cast_add_half_sq (z : ℤ) : (1 / 4 : ℚ) ≤ ((z : ℚ) + 1 / 2) ^ 2 := by
   have hz : z ≤ -1 ∨ 0 ≤ z := by omega
   rcases hz with hz | hz
   · have hq : (z : ℚ) ≤ -1 := by exact_mod_cast hz
@@ -29,4 +29,4 @@ theorem quarter_le_add_half_sq (z : ℤ) : (1 / 4 : ℚ) ≤ ((z : ℚ) + 1 / 2)
   · have hq : (0 : ℚ) ≤ z := by exact_mod_cast hz
     nlinarith
 
-end TauCeti
+end Int
