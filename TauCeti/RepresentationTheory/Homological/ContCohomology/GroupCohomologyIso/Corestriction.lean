@@ -152,31 +152,35 @@ theorem explicitH2IsoGroupCohomology_explicitCor2 (x : H2 U M) :
       TauCeti.groupCohomology.corestriction U (Rep.ofDistribMulAction ℤ G M) 2
         (explicitH2IsoGroupCohomology U M x) := by
   classical
+  have hres : Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M) =
+      Rep.ofDistribMulAction ℤ U M := rfl
+  -- Keep the cohomology carrier in the restricted presentation used by corestriction.
+  let e : H2 G (DiscreteCoind G U M) ≃+
+      groupCohomology
+        (Rep.coind U.subtype (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M))) 2 := by
+    rw [hres]
+    exact coindH2Equiv G M U
   let y := (explicitShapiro2 G U M (isClosed_discrete _)).symm x
+  have he :
+      (groupCohomology.coindIso
+        (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M)) 2).hom (e y) =
+      (groupCohomology.coindIso (Rep.ofDistribMulAction ℤ U M) 2).hom
+        (coindH2Equiv G M U y) := rfl
   have hsh : explicitH2IsoGroupCohomology U M x =
       (groupCohomology.coindIso
-        (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M)) 2).hom (coindH2Equiv G M U y) := by
+        (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M)) 2).hom (e y) := by
     have hs := (coindH2Equiv_shapiro G M U y).symm
     rw [← explicitShapiro2_apply G U M (isClosed_discrete _),
       AddEquiv.apply_symm_apply] at hs
-    exact hs
+    exact hs.trans he.symm
   have hcor :
       TauCeti.groupCohomology.corestriction U (Rep.ofDistribMulAction ℤ G M) 2
           (explicitH2IsoGroupCohomology U M x) =
         groupCohomology.map (MonoidHom.id G)
           ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)) 2
-            (coindH2Equiv G M U y) := by
-    -- Pin the restricted representation before rewriting through the cohomology carrier.
-    let z : groupCohomology
-        (Rep.coind U.subtype (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M))) 2 :=
-      coindH2Equiv G M U y
-    rw [hsh]
-    change TauCeti.groupCohomology.corestriction U (Rep.ofDistribMulAction ℤ G M) 2
-        ((groupCohomology.coindIso
-          (Rep.res U.subtype (Rep.ofDistribMulAction ℤ G M)) 2).hom z) = _
-    rw [← ConcreteCategory.comp_apply,
+            (e y) := by
+    rw [hsh, ← ConcreteCategory.comp_apply,
       TauCeti.groupCohomology.coindIso_hom_comp_corestriction]
-    rfl
   have hformula : explicitCor2 G M U (isOpen_discrete _) x =
       explicitCoeff2 G (DiscreteCoind G U M) (DiscreteCoind.trace G U M)
         DiscreteCoind.continuous_trace y :=

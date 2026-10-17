@@ -620,7 +620,16 @@ theorem discreteCoindAddEquivAlgebraic_apply (f : DiscreteCoind G U M) (g : G) :
   discreteCoindEquivAlgebraic_apply ℤ G ⟨U, isOpen_discrete _⟩
     ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ f g
 
+/-- The inverse additive coinduction comparison preserves every value of the underlying
+algebraically coinduced function. -/
+theorem discreteCoindAddEquivAlgebraic_symm_apply
+    (f : Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U).symm f g = f.1 g :=
+  discreteCoindEquivAlgebraic_symm_apply ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ f g
+
 /-- The additive coinduction comparison intertwines right translation. -/
+@[simp↓]
 theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
     discreteCoindAddEquivAlgebraic G M U (g • f) =
       (Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)).ρ g
