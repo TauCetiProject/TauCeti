@@ -72,6 +72,7 @@ theorem bimoduleModuleCochainTensorι_d (p q j : ℤ) (h : p + q = j) :
   simp only [show ComplexShape.ε₁ (.up ℤ) (.up ℤ) (.up ℤ) (p, q) = 1 from rfl,
     show ComplexShape.ε₂ (.up ℤ) (.up ℤ) (.up ℤ) (p, q) = p.negOnePow from rfl,
     one_smul, bimoduleModuleTensor]
+  rfl
 
 variable {M N}
   {M' : CochainComplex (GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) ℤ}
