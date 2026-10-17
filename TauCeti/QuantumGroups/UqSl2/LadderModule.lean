@@ -66,7 +66,6 @@ namespace UqSl2
 /-- The underlying complex vector space `ℂ^(m + 1)` of the signed ladder module `L_m^ε` of
 `UqSl2 q`. Its `UqSl2 q`-module structure, defined for nonzero `q`, is
 `LadderModule.instModule`. -/
-@[expose]
 def LadderModule (_q : ℂ) (m : ℕ) (_ε : ℤˣ) : Type := Fin (m + 1) → ℂ
 
 namespace LadderModule
