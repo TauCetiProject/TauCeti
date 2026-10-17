@@ -10,8 +10,6 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Topology.MetricSpace.ProperSpace
-import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
 # Domains with Lipschitz boundary
@@ -26,11 +24,11 @@ Charts can be recentred and transported by affine isometries or positive dilatio
 with compact frontier have finite chart covers with a common bound; epigraphs of globally
 Lipschitz functions are examples.
 
-This file defines the local graph condition for a Lipschitz domain in a Euclidean product
-`WithLp 2 (ℝ × E)`. A Lipschitz boundary chart is a rigid change of coordinates identifying the
-domain inside a product cylinder with the region above the graph of a Lipschitz function. The
-graph passes through the centre of the chart, so the normal and tangential radii can be reduced
-without changing the coordinates or the graph.
+A shared chart identifies a set in a real normed ambient space with an epigraph inside
+a cylinder in the real normed model space `WithLp 2 (ℝ × E)`. The centered predicate
+`Set.IsLipschitzChartWith` additionally requires that the graph pass through the chart centre.
+For centered charts the normal and tangential radii can be reduced without changing the
+coordinates or the graph. Shared charts have no normalization requirement on the graph.
 
 The global predicate `Set.IsLipschitzDomainWith` requires a chart centred at every frontier point,
 with a single Lipschitz bound for all local graphs. It is invariant under affine isometries and
@@ -688,7 +686,7 @@ theorem IsLipschitzDomainWith.isLipschitzDomain
 
 /-- Pointwise Lipschitz domains allow the graph bound to vary with the frontier point. -/
 theorem isLipschitzDomain_iff_forall_exists_isLipschitzDomainAtWith
-    {Omega : Set (WithLp 2 (ℝ × E))} :
+    {Omega : Set F} :
     Omega.IsLipschitzDomain E ↔
       ∀ x ∈ frontier Omega, ∃ L, Omega.IsLipschitzDomainAtWith (E := E) L x := by
   constructor
