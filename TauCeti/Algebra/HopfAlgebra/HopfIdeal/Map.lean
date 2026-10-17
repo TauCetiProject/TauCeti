@@ -235,7 +235,13 @@ end Semiring
 section Id
 
 variable {R : Type u} [CommSemiring R]
-variable {H : Type v} [CommSemiring H] [HopfAlgebra R H]
+variable {H : Type v} [Semiring H] [HopfAlgebra R H]
+
+/-- The ideal-theoretic image under the identity is two-sided. -/
+instance instIsTwoSidedMapId (I : HopfIdeal R H) :
+    (Ideal.map (BialgHom.id R H : H →+* H) I.toIdeal).IsTwoSided := by
+  rw [BialgHom.id_toRingHom, Ideal.map_id]
+  infer_instance
 
 /-- The image of a Hopf ideal under the identity morphism. -/
 @[simp]
@@ -249,16 +255,25 @@ section Comp
 
 variable {R : Type u} [CommSemiring R]
 variable {H : Type v} {K : Type w} {L : Type x}
-variable [Semiring H] [CommSemiring K] [CommSemiring L]
+variable [Semiring H] [Semiring K] [Semiring L]
 variable [HopfAlgebra R H] [HopfAlgebra R K] [HopfAlgebra R L]
 
-/-- Image of Hopf ideals is functorial. -/
+/-- A composite has two-sided image whenever the successive images are two-sided. -/
+instance instIsTwoSidedMapComp (I : HopfIdeal R H) (f : H →ₐc[R] K) (g : K →ₐc[R] L)
+    [(Ideal.map (f : H →+* K) I.toIdeal).IsTwoSided]
+    [(Ideal.map (g : K →+* L) (I.map f).toIdeal).IsTwoSided] :
+    (Ideal.map (g.comp f : H →+* L) I.toIdeal).IsTwoSided := by
+  have hcomp : (g.comp f : H →+* L) = (g : K →+* L).comp (f : H →+* K) := rfl
+  rw [hcomp, ← Ideal.map_map, ← map_toIdeal I f]
+  infer_instance
+
+/-- Image of Hopf ideals is functorial when the successive images are two-sided. -/
 @[simp]
-theorem map_map (I : HopfIdeal R H) (f : H →ₐc[R] K) (g : K →ₐc[R] L) :
+theorem map_map (I : HopfIdeal R H) (f : H →ₐc[R] K) (g : K →ₐc[R] L)
+    [(Ideal.map (f : H →+* K) I.toIdeal).IsTwoSided]
+    [(Ideal.map (g : K →+* L) (I.map f).toIdeal).IsTwoSided] :
     (I.map f).map g = I.map (g.comp f) := by
-  have hcomp : (g.comp f : H →+* L) = (g : K →+* L).comp (f : H →+* K) := by
-    ext x
-    simp only [RingHom.coe_coe, BialgHom.coe_comp, RingHom.coe_comp, Function.comp_apply]
+  have hcomp : (g.comp f : H →+* L) = (g : K →+* L).comp (f : H →+* K) := rfl
   ext x
   simp only [← mem_toIdeal, map_toIdeal, Ideal.map_map, hcomp]
 
@@ -267,14 +282,16 @@ end Comp
 section Adjunction
 
 variable {R : Type u} [CommRing R]
-variable {H : Type v} {K : Type w} [Ring H] [CommRing K]
+variable {H : Type v} {K : Type w} [Ring H] [Ring K]
 variable [HopfAlgebra R H] [HopfAlgebra R K]
 
 /-- Along a surjective morphism, the image of Hopf ideals is left adjoint to the inverse
 image. -/
 theorem map_le_iff_le_comapOfSurjective {f : H →ₐc[R] K} (hf : Function.Surjective f)
     {I : HopfIdeal R H} {J : HopfIdeal R K} :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
     I.map f ≤ J ↔ I ≤ J.comapOfSurjective f hf := by
+  have : RingHomSurjective (f : H →+* K) := ⟨hf⟩
   rw [map_le_iff, le_def]
   exact ⟨fun h x hx => mem_comapOfSurjective.mpr (h hx),
     fun h x hx => mem_comapOfSurjective.mp (h hx)⟩
@@ -282,29 +299,41 @@ theorem map_le_iff_le_comapOfSurjective {f : H →ₐc[R] K} (hf : Function.Surj
 /-- Along a surjective morphism, image after inverse image recovers the Hopf ideal. -/
 @[simp]
 theorem map_comapOfSurjective (J : HopfIdeal R K) (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) : (J.comapOfSurjective f hf).map f = J :=
-  ext fun _ => by
-    rw [← mem_toIdeal, map_toIdeal, comapOfSurjective_toIdeal,
-      Ideal.map_comap_of_surjective (f : H →+* K) hf, mem_toIdeal]
+    (hf : Function.Surjective f) :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+    (J.comapOfSurjective f hf).map f = J := by
+  have : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+  ext x
+  rw [← mem_toIdeal, map_toIdeal, comapOfSurjective_toIdeal,
+    Ideal.map_comap_of_surjective (f : H →+* K) hf, mem_toIdeal]
 
 /-- Along a surjective morphism, inverse image after image is the join with the kernel. -/
 theorem comapOfSurjective_map (I : HopfIdeal R H) (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) : (I.map f).comapOfSurjective f hf = I ⊔ kerOfSurjective f hf :=
-  ext fun x => by
-    rw [← mem_toIdeal, comapOfSurjective_toIdeal, map_toIdeal,
-      Ideal.comap_map_of_surjective (f : H →+* K) hf, ← mem_toIdeal, sup_toIdeal,
-      kerOfSurjective_toIdeal, RingHom.ker_eq_comap_bot]
-    exact Iff.rfl
+    (hf : Function.Surjective f) :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+    (I.map f).comapOfSurjective f hf = I ⊔ kerOfSurjective f hf := by
+  have : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+  ext x
+  rw [← mem_toIdeal, comapOfSurjective_toIdeal, map_toIdeal,
+    Ideal.comap_map_of_surjective (f : H →+* K) hf, ← mem_toIdeal, sup_toIdeal,
+    kerOfSurjective_toIdeal, RingHom.ker_eq_comap_bot]
+  exact Iff.rfl
 
 /-- Along a bijective morphism, inverse image after image recovers the Hopf ideal. -/
 theorem comapOfSurjective_map_of_bijective (I : HopfIdeal R H) (f : H →ₐc[R] K)
-    (hf : Function.Bijective f) : (I.map f).comapOfSurjective f hf.2 = I := by
+    (hf : Function.Bijective f) :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf.surjective⟩
+    (I.map f).comapOfSurjective f hf.2 = I := by
+  have : RingHomSurjective (f : H →+* K) := ⟨hf.surjective⟩
   rw [comapOfSurjective_map, (kerOfSurjective_eq_bot_iff f hf.2).2 hf.1, sup_bot_eq]
 
 /-- The image vanishes exactly on Hopf ideals contained in the kernel Hopf ideal: the
 surjective bundled form of `TauCeti.HopfIdeal.map_eq_bot_iff`. -/
 theorem map_eq_bot_iff_le_ker (I : HopfIdeal R H) (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) : I.map f = ⊥ ↔ I ≤ kerOfSurjective f hf := by
+    (hf : Function.Surjective f) :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+    I.map f = ⊥ ↔ I ≤ kerOfSurjective f hf := by
+  have : RingHomSurjective (f : H →+* K) := ⟨hf⟩
   rw [map_eq_bot_iff]
   constructor
   · intro h x hx
@@ -317,18 +346,30 @@ end Adjunction
 section Quotient
 
 variable {R : Type u} [CommRing R]
-variable {H : Type v} [CommRing H] [HopfAlgebra R H]
+variable {H : Type v} [Ring H] [HopfAlgebra R H]
 
 /-- Pulling the image of `J` in `H ⧸ I` back along the quotient morphism recovers `J`
 when `I ≤ J`. -/
 @[simp]
 theorem comapOfSurjective_map_mkBialgHom {I J : HopfIdeal R H} (hIJ : I ≤ J) :
+    haveI : RingHomSurjective
+        (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal : H →+* H ⧸ I.toIdeal) :=
+      ⟨by
+        intro q
+        obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
+        exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply (R := R) I.toIdeal h⟩⟩
     (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).comapOfSurjective
         (Bialgebra.Quotient.mkBialgHom I.toIdeal)
         (by
           intro q
           obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
-          exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply I.toIdeal h⟩) = J := by
+          exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply (R := R) I.toIdeal h⟩) = J := by
+  have : RingHomSurjective
+      (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal : H →+* H ⧸ I.toIdeal) :=
+    ⟨by
+      intro q
+      obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
+      exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply (R := R) I.toIdeal h⟩⟩
   rw [comapOfSurjective_map, kerOfSurjective_mkBialgHom, sup_eq_left]
   exact hIJ
 
