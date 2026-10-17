@@ -76,8 +76,7 @@ theorem Smooth.of_retract_of_comp_eq (f : X ⟶ S) (g : Y ⟶ S) (i : X ⟶ Y) (
   exact Scheme.Hom.mem_smoothLocus.mpr (hx ▸ key)
 
 /-- **Smooth morphisms are stable under retracts.** If `f` is a retract of a smooth morphism `g`
-in the arrow category, then `f` is smooth. The base change of `g` along the retraction of bases
-reduces this to `Smooth.of_retract_of_comp_eq`. -/
+in the arrow category, then `f` is smooth. -/
 theorem Smooth.of_retract {X S Y T : Scheme.{u}} {f : X ⟶ S} {g : Y ⟶ T} (h : RetractArrow f g)
     [Smooth g] : Smooth f := by
   have hw : h.i.left ≫ g = f ≫ h.i.right := h.i_w
