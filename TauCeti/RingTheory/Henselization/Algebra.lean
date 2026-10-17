@@ -75,6 +75,8 @@ theorem stage_naturality (I : Ideal R) {B C : Neighbourhood.{u, u} I} (f : B ⟶
       (IsNeighbourhood I).ι.map (E.unitIso.hom.app B) ≫
         colimit.ι (diagram I) (E.functor.obj B) := by
     rw [← Category.assoc, hunit, Category.assoc, hw]
+  -- The goal uses algebra-hom composition, while `h'` is an equality in `CommAlgCat`.
+  -- Unfold their concrete morphisms so the underlying algebra homomorphisms can be compared.
   change CommAlgCat.Hom.hom ((IsNeighbourhood I).ι.map f ≫
       (IsNeighbourhood I).ι.map (E.unitIso.hom.app C) ≫
         colimit.ι (diagram I) (E.functor.obj C)) =
@@ -101,6 +103,8 @@ theorem desc_comp_stage (I : Ideal R) (s : Cocone ((IsNeighbourhood I).ι))
     (desc I s).comp (stage I B) = (s.ι.app B).hom := by
   apply AlgHom.ext
   intro b
+  -- The colimit equation is categorical, so expose `desc`, `stage`, and algebra-hom composition
+  -- as the corresponding composite before evaluating it at `b`.
   change ((IsNeighbourhood I).ι.map
       ((equivSmallModel (Neighbourhood.{u, u} I)).unitIso.hom.app B) ≫
     colimit.ι (diagram I)
@@ -118,15 +122,20 @@ theorem exists_stage_eq (I : Ideal R) (x : algebra I) :
   let _ : IsFiltered (SmallModel (Neighbourhood.{u, u} I)) :=
     IsFiltered.of_equivalence E
   let _ : PreservesColimit (diagram I) (forget (CommAlgCat R)) := by
+    -- The concrete forgetful functor from `CommAlgCat` is definitionally this composite through
+    -- the under category, where the preservation instances are available.
     change PreservesColimit (diagram I)
       ((commAlgCatEquivUnder (CommRingCat.of R)).functor ⋙ Under.forget (CommRingCat.of R) ⋙
         forget CommRingCat.{u})
     exact Limits.comp_preservesColimit _ _
   obtain ⟨j, b, rfl⟩ := Concrete.colimit_exists_rep (diagram I) x
   refine ⟨E.inverse.obj j, b, ?_⟩
+  -- Expose `stage` as the equivalence unit followed by the colimit inclusion, so the unit
+  -- equation can rewrite the composite.
   change ((IsNeighbourhood I).ι.map (E.unitIso.hom.app (E.inverse.obj j)) ≫
     colimit.ι (diagram I) (E.functor.obj (E.inverse.obj j))) b = _
   rw [E.unit_app_inverse]
+  -- After the unit rewrite, the goal is definitionally the elementwise colimit cocone equation.
   change (colimit.ι (diagram I) _)
       ((diagram I).map (E.counitIso.inv.app j) b) = _
   exact colimit.w_apply (diagram I) (E.counitIso.inv.app j) b
