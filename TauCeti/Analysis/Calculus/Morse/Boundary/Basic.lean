@@ -70,6 +70,19 @@ theorem isNondegenerate (p : MorseCriticalPoint f) :
 
 end MorseCriticalPoint
 
+omit [FiniteDimensional ℝ E] in
+/-- Under compact sublevels, only finitely many critical points have critical value at most
+`c`. -/
+theorem finite_setOf_value_le_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
+    (hM : HasNondegenerateCriticalPointsOn f univ)
+    (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) (c : ℝ) :
+    {q : MorseCriticalPoint f | f q ≤ c}.Finite := by
+  have hcrit : {x ∈ {x | f x ≤ c} | fderiv ℝ f x = 0}.Finite :=
+    (hM.mono (subset_univ _)).finite_setOfPred_fderiv_eq_zero (hcompact c)
+      (hfs.continuous_fderiv (by norm_num)).continuousOn
+  exact (hcrit.preimage Subtype.val_injective.injOn).subset fun q hq ↦
+    ⟨hq, q.property.fderiv_eq_zero⟩
+
 /-- Mod-two Morse chains are finitely supported functions on the critical points. -/
 abbrev MorseChain (f : E → ℝ) := MorseCriticalPoint f →₀ ZMod 2
 
@@ -193,14 +206,9 @@ theorem value_lt_of_morseBoundaryCoeff_ne_zero {p q : MorseCriticalPoint f}
 
 /-- Only finitely many critical points have a nonzero coefficient in the boundary of `p`. -/
 private theorem finite_support_morseBoundaryCoeff (p : MorseCriticalPoint f) :
-    (Function.support (morseBoundaryCoeff hfs hf hM hcompact htr p)).Finite := by
-  have hcrit : {x ∈ {x | f x ≤ f p} | fderiv ℝ f x = 0}.Finite :=
-    (hM.mono (subset_univ _)).finite_setOfPred_fderiv_eq_zero (hcompact (f p))
-      (hfs.continuous_fderiv (by norm_num)).continuousOn
-  apply (hcrit.preimage Subtype.val_injective.injOn).subset
-  intro q hq
-  exact ⟨(value_lt_of_morseBoundaryCoeff_ne_zero hfs hf hM hcompact htr hq).le,
-    q.property.fderiv_eq_zero⟩
+    (Function.support (morseBoundaryCoeff hfs hf hM hcompact htr p)).Finite :=
+  (finite_setOf_value_le_of_isCompact_sublevel hfs hM hcompact (f p)).subset fun _ hq ↦
+    (value_lt_of_morseBoundaryCoeff_ne_zero hfs hf hM hcompact htr hq).le
 
 /-- The mod-two Morse boundary of one critical point, as a finitely supported sum of critical
 points. -/
