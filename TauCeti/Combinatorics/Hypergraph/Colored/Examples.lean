@@ -11,8 +11,8 @@ import TauCeti.Combinatorics.Hypergraph.Colored.Counting
 # Small induced colored-copy counts
 
 Use `true` for an edge and `false` for a nonedge. A three-vertex edge has six labeled
-copies in itself, but no copies in the empty three-graph. The empty vertex pattern has
-one copy even in an empty host, and oversized patterns have none.
+copies in itself, while a nonedge triple has no copies in the complete three-graph. The empty
+vertex pattern has one copy even in an empty host, and oversized patterns have none.
 -/
 
 namespace TauCeti

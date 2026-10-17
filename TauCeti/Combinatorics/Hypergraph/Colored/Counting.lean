@@ -17,8 +17,8 @@ color. `Colored3Graph.inducedCopyCount` counts these labeled maps without dividi
 automorphisms. It is bounded by the falling factorial of the host size.
 
 Patterns with fewer than three vertices impose no color conditions. Constant patterns in
-constant hosts attain the falling-factorial bound, whereas a conflicting pattern color
-forces the count to vanish.
+constant hosts of the same color attain the falling-factorial bound, whereas a conflicting
+pattern color forces the count to vanish.
 -/
 
 public section
