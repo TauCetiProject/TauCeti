@@ -558,22 +558,38 @@ theorem mul_apply (e e' : P.Iso P) (x : P.X) : (e * e') x = e (e' x) :=
 theorem inv_apply (e : P.Iso P) (x : P.X) : e⁻¹ x = e.symm x :=
   (rfl)
 
+/-- Automorphisms of an analytic Belyi pair act on every fibre of its restricted cover by
+evaluation. -/
+instance instMulActionRestrictFiber (P : AnalyticBelyiPair.{u}) (b : ThricePuncturedSphere) :
+    MulAction (P.Iso P) (P.restrict ⁻¹' {b}) where
+  smul e x := ⟨e.restrict x, by simpa only [Set.mem_preimage, Set.mem_singleton_iff,
+    restrict_restrict] using x.2⟩
+  one_smul x := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact (coe_restrict_apply (1 : P.Iso P) x).trans (one_apply (P := P) (x : P.X))
+  mul_smul e e' x := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact (coe_restrict_apply (e * e') x).trans <| (mul_apply e e' x).trans <|
+      (congrArg e (coe_restrict_apply e' x).symm).trans (coe_restrict_apply e (e'.restrict x)).symm
+
+/-- On underlying points, the action on a fibre of the restricted cover is evaluation of the
+automorphism. -/
+@[simp]
+theorem coe_smul (b : ThricePuncturedSphere) (e : P.Iso P) (x : P.restrict ⁻¹' {b}) :
+    ((e • x : P.restrict ⁻¹' {b}) : P.X) = e x :=
+  coe_restrict_apply e x
+
+/-- The action of the automorphism group of an analytic Belyi pair on every fibre of its
+restricted cover is free. -/
+instance instIsCancelSMulRestrictFiber (P : AnalyticBelyiPair.{u}) (b : ThricePuncturedSphere) :
+    IsCancelSMul (P.Iso P) (P.restrict ⁻¹' {b}) where
+  right_cancel' e e' x h := eq_of_apply_eq x <| by
+    simpa only [coe_smul] using congrArg (fun y : P.restrict ⁻¹' {b} ↦ (y : P.X)) h
+
 /-- **The order of the automorphism group of an analytic Belyi pair divides its degree.** -/
 theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
-  let action : MulAction (P.Iso P) (P.restrict ⁻¹' {basePt}) := {
-    smul e x := ⟨e.restrict x, by simpa only [Set.mem_preimage, Set.mem_singleton_iff,
-      restrict_restrict] using x.2⟩
-    one_smul _ := rfl
-    mul_smul _ _ _ := rfl }
-  let _ := action
-  -- The action is evaluation, read through the coercion to `P.X`.
-  have coe_smul (e : P.Iso P) (x : P.restrict ⁻¹' {basePt}) :
-      ((e • x : P.restrict ⁻¹' {basePt}) : P.X) = e x :=
-    rfl
-  let _ : IsCancelSMul (P.Iso P) (P.restrict ⁻¹' {basePt}) :=
-    isCancelSMul_iff_eq_one_of_smul_eq.mpr fun e x h ↦ by
-      apply eq_of_apply_eq x
-      rw [one_apply, ← coe_smul, h]
   have := (P.finite_restrict_preimage_singleton basePt).to_subtype
   rw [← P.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq]
   exact MulAction.natCard_dvd_natCard_of_isCancelSMul
