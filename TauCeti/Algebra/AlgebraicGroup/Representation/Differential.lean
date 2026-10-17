@@ -102,8 +102,8 @@ theorem differential_corestrict {K : Type*} [CommRing K] [Bialgebra R K]
         (derivationComp f d).toLinearMap := by
     ext h
     exact (algEquivSelf_derivationComp_apply f d h).symm
-  rw [differential_apply, differential_apply, corestrict_coact_apply,
-    LinearMap.tensorComponent_map, LinearMap.id_apply, hcomp]
+  simp only [differential_apply, corestrict_coact_apply, LinearMap.tensorComponent_map,
+    LinearMap.id_apply, hcomp]
 
 /-- Every comodule morphism intertwines the differentiated representations. -/
 @[simp↓]

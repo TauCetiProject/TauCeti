@@ -52,9 +52,8 @@ theorem differential_of_mem_weightSpace (π : H →ₐc[R] MonoidAlgebra R X)
         (d (MonoidAlgebra.single x 1)) • v := by
   rw [← Comodule.differential_corestrict V π d v]
   let _ : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict π.toCoalgHom
-  rw [Comodule.differential_apply, Comodule.corestrict_coact_apply,
-    mem_weightSpace.mp hv, LinearMap.tensorComponent_tmul, LinearMap.comp_apply,
-    AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe]
+  simp only [Comodule.differential_apply, Comodule.corestrict_coact_apply, mem_weightSpace.mp hv]
+  simp
 
 /-- Character spaces lie in the corresponding eigenspaces of the differentiated action.
 Different character spaces may have the same eigenvalue. -/
