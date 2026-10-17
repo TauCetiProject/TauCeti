@@ -334,9 +334,10 @@ theorem isElliptic_of_cycleMap_eq {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl 
 def cycle (j : Fin n) : Finset (Fin n) :=
   Finset.univ.filter fun i ↦ σ.next.SameCycle j i
 
-/-- A vertex `i` is on the cycle through `j` if and only if `i` and `j` lie in the same cycle of
-the successor permutation. -/
-theorem mem_cycle_iff_sameCycle {j i : Fin n} : i ∈ σ.cycle j ↔ σ.next.SameCycle j i := by
+/-- A vertex `i` is on the cycle through `j` if and only if it is in the same cycle of the
+successor permutation. -/
+@[simp]
+theorem mem_cycle_iff_sameCycle (j i : Fin n) : i ∈ σ.cycle j ↔ σ.next.SameCycle j i := by
   simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
 
 /-- A vertex `i` is on the cycle through `j` if and only if it is an iterated successor of `j`. -/
@@ -430,7 +431,7 @@ theorem finsum_eq_sum_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
         invFun := fun k ↦ ⟨⟨k.1, (hp k.2).2 a.2⟩, Quotient.sound' ?_⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
-    exact (σ.mem_cycle_iff_sameCycle.1 k.2).symm
+    exact ((σ.mem_cycle_iff_sameCycle _ _).1 k.2).symm
   have hL : (σ.cycleLength a : K) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos a).ne'
   rw [Fintype.sum_congr _ (fun _ ↦ g (mk a) / σ.cycleLength a)
       fun i ↦ by

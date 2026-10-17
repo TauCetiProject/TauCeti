@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient
-public import TauCeti.Analysis.Sobolev.GraphStep
+public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 
 /-!
@@ -252,6 +252,14 @@ theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
 theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
     value k (c • u) = c • value k u :=
   map_smul (valueL k) c u
+
+/-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
+theorem value_finsetSum_ae {κ : Type*} (k : ℕ) (s : Finset κ) (u : κ → Wkp mu Omega p k) :
+    ∀ᵐ x ∂mu.restrict Omega, value k (∑ j ∈ s, u j) x = ∑ j ∈ s, value k (u j) x := by
+  have h : value k (∑ j ∈ s, u j) = ∑ j ∈ s, value k (u j) := by
+    simp only [← valueL_apply, map_sum]
+  filter_upwards [Lp.coeFn_fun_finsetSum s fun j => value k (u j)] with x hx
+  rw [h, hx]
 
 /-- At order zero, the value component of a Sobolev function is the function itself. -/
 @[simp]

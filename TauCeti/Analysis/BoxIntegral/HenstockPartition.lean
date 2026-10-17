@@ -25,8 +25,51 @@ open BoxIntegral
 
 namespace TauCeti.BoxIntegral
 
-variable {ι E F : Type*} [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {ι E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {I J K : Box ι}
+
+/-- A point in both closed boxes lies in the closed box representing their intersection. -/
+theorem _root_.BoxIntegral.Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
+    (h : (C : WithBot (Box ι)) = (A : WithBot (Box ι)) ⊓ B)
+    (hxA : x ∈ Box.Icc A) (hxB : x ∈ Box.Icc B) : x ∈ Box.Icc C := by
+  have hh : A.lower ⊔ B.lower = C.lower ∧ A.upper ⊓ B.upper = C.upper :=
+    Box.mk'_eq_coe.mp h.symm
+  rw [Box.Icc_def, mem_Icc, ← hh.1, ← hh.2]
+  exact ⟨sup_le hxA.1 hxB.1, le_inf hxA.2 hxB.2⟩
+
+open scoped Classical in
+private def taggedPiece (p : Prepartition I) (π : TaggedPrepartition I) (J : Box ι)
+    (h : ∀ K ∈ π.toPrepartition.restrict J, (π.infPrepartition p).tag K ∈ Box.Icc J) :
+    TaggedPrepartition J where
+  toPrepartition := π.toPrepartition.restrict J
+  tag K := if K ∈ π.toPrepartition.restrict J then (π.infPrepartition p).tag K else J.upper
+  tag_mem_Icc K := by
+    split_ifs with hK
+    · exact h K hK
+    · exact J.upper_mem_Icc
+
+private theorem integralSum_eq_sum_pieces {f : (ι → ℝ) → E} {vol : ι →ᵇᵃ E →L[ℝ] F}
+    (p : Prepartition I) (hp : p.IsPartition) (π : TaggedPrepartition I)
+    (πi : ∀ J, TaggedPrepartition J)
+    (hi : ∀ J ∈ p, (πi J).toPrepartition = π.toPrepartition.restrict J)
+    (ht : ∀ J ∈ p, ∀ K ∈ πi J, (πi J).tag K = (π.infPrepartition p).tag K) :
+    integralSum f vol π = ∑ J ∈ p.boxes, integralSum f vol (πi J) := by
+  classical
+  rw [← integralSum_inf_partition f vol π hp]
+  have hboxes : (π.infPrepartition p).boxes = p.boxes.biUnion
+      (fun J ↦ (π.toPrepartition.restrict J).boxes) := by
+    -- infPrepartition has the underlying infimum boxes by definition.
+    change (π.toPrepartition ⊓ p).boxes = (p ⊓ π.toPrepartition).boxes
+    rw [inf_comm]
+  rw [integralSum, hboxes, p.sum_biUnion_boxes]
+  apply Finset.sum_congr rfl
+  intro J hJ
+  rw [integralSum, ← hi J hJ]
+  apply Finset.sum_congr rfl
+  intro K hK
+  rw [ht J hJ K hK]
+
+variable [Fintype ι]
 
 /-- A finite box prepartition admits a gauge preventing tags from crossing its faces. -/
 theorem _root_.BoxIntegral.Prepartition.exists_gauge_tag_mem_Icc (p : Prepartition I) :
@@ -47,16 +90,6 @@ theorem _root_.BoxIntegral.Prepartition.exists_gauge_tag_mem_Icc (p : Prepartiti
       exact hball hz J hJ hxi hzi⟩
   choose r hr h using h
   exact ⟨fun x ↦ ⟨r x, hr x⟩, h⟩
-
-omit [Fintype ι] in
-/-- A point in both closed boxes lies in the closed box representing their intersection. -/
-theorem _root_.BoxIntegral.Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
-    (h : (C : WithBot (Box ι)) = (A : WithBot (Box ι)) ⊓ B)
-    (hxA : x ∈ Box.Icc A) (hxB : x ∈ Box.Icc B) : x ∈ Box.Icc C := by
-  have hh : A.lower ⊔ B.lower = C.lower ∧ A.upper ⊓ B.upper = C.upper :=
-    Box.mk'_eq_coe.mp h.symm
-  rw [Box.Icc_def, mem_Icc, ← hh.1, ← hh.2]
-  exact ⟨sup_le hxA.1 hxB.1, le_inf hxA.2 hxB.2⟩
 
 /-- Refinement tags remain in the fixed piece when its gauge prevents face crossing. -/
 theorem _root_.BoxIntegral.Prepartition.infPrepartition_tag_mem_Icc_of_gauge (p : Prepartition I)
@@ -99,40 +132,6 @@ theorem _root_.BoxIntegral.Prepartition.isHenstock_infPrepartition_of_gauge (p :
     rw [π.toPrepartition.biUnionIndex_of_mem hA hKA]
   exact Box.mem_Icc_of_coe_eq_inf hKJ (by simpa only [htag] using hH A hA)
     (p.infPrepartition_tag_mem_Icc_of_gauge hr hπ hJ hK')
-
-omit [Fintype ι] in
-open scoped Classical in
-private def taggedPiece (p : Prepartition I) (π : TaggedPrepartition I) (J : Box ι)
-    (h : ∀ K ∈ π.toPrepartition.restrict J, (π.infPrepartition p).tag K ∈ Box.Icc J) :
-    TaggedPrepartition J where
-  toPrepartition := π.toPrepartition.restrict J
-  tag K := if K ∈ π.toPrepartition.restrict J then (π.infPrepartition p).tag K else J.upper
-  tag_mem_Icc K := by
-    split_ifs with hK
-    · exact h K hK
-    · exact J.upper_mem_Icc
-
-omit [Fintype ι] in
-private theorem integralSum_eq_sum_pieces {f : (ι → ℝ) → E} {vol : ι →ᵇᵃ E →L[ℝ] F}
-    (p : Prepartition I) (hp : p.IsPartition) (π : TaggedPrepartition I)
-    (πi : ∀ J, TaggedPrepartition J)
-    (hi : ∀ J ∈ p, (πi J).toPrepartition = π.toPrepartition.restrict J)
-    (ht : ∀ J ∈ p, ∀ K ∈ πi J, (πi J).tag K = (π.infPrepartition p).tag K) :
-    integralSum f vol π = ∑ J ∈ p.boxes, integralSum f vol (πi J) := by
-  classical
-  rw [← integralSum_inf_partition f vol π hp]
-  have hboxes : (π.infPrepartition p).boxes = p.boxes.biUnion
-      (fun J ↦ (π.toPrepartition.restrict J).boxes) := by
-    -- infPrepartition has the underlying infimum boxes by definition.
-    change (π.toPrepartition ⊓ p).boxes = (p ⊓ π.toPrepartition).boxes
-    rw [inf_comm]
-  rw [integralSum, hboxes, p.sum_biUnion_boxes]
-  apply Finset.sum_congr rfl
-  intro J hJ
-  rw [integralSum, ← hi J hJ]
-  apply Finset.sum_congr rfl
-  intro K hK
-  rw [ht J hJ K hK]
 
 /-- Genuine Henstock integrals on the members of a finite box partition glue to an integral
 on the entire box. No absolute-integrability or primitive hypothesis is used. -/
