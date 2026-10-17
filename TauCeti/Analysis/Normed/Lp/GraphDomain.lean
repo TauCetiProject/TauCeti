@@ -33,7 +33,11 @@ namespace TauCeti
 open Set TopologicalSpace Filter Topology
 open scoped NNReal
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*}
+
+section
+
+variable [NormedAddCommGroup E]
 
 /-- The open half-space to the right of the normal coordinate `a` in the ℓ² product `ℝ × E`. -/
 def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
@@ -73,31 +77,29 @@ theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0
   ext x
   simp
 
+end
+
 /-- The normal graph parametrization `y ↦ (φ y, y)` in the Euclidean product `ℝ × E`. -/
 def normalGraphEmbedding (φ : E → ℝ) (y : E) : WithLp 2 (ℝ × E) :=
   WithLp.toLp 2 (φ y, y)
 
-omit [NormedAddCommGroup E] in
 /-- The normal coordinate of the graph parametrization is the graphing function. -/
 @[simp]
 theorem normalGraphEmbedding_fst (φ : E → ℝ) (y : E) :
     (normalGraphEmbedding φ y).fst = φ y :=
   (rfl)
 
-omit [NormedAddCommGroup E] in
 /-- The tangential coordinate of the graph parametrization is its argument. -/
 @[simp]
 theorem normalGraphEmbedding_snd (φ : E → ℝ) (y : E) :
     (normalGraphEmbedding φ y).snd = y :=
   (rfl)
 
-omit [NormedAddCommGroup E] in
 /-- The normal graph parametrization is injective. -/
 theorem injective_normalGraphEmbedding (φ : E → ℝ) :
     Function.Injective (normalGraphEmbedding φ) := fun _ _ h ↦ by
   simpa using congrArg WithLp.snd h
 
-omit [NormedAddCommGroup E] in
 /-- The range of the normal graph parametrization is the graph equation `t = φ y`. -/
 theorem range_normalGraphEmbedding (φ : E → ℝ) :
     range (normalGraphEmbedding φ) = {x | x.fst = φ x.snd} := by
@@ -108,6 +110,8 @@ theorem range_normalGraphEmbedding (φ : E → ℝ) :
   · intro hx
     refine ⟨x.snd, (WithLp.ext_iff 2).2 ?_⟩
     exact Prod.ext hx.symm rfl
+
+variable [NormedAddCommGroup E]
 
 /-- The second projection is a `1`-Lipschitz inverse to the graph parametrization on its range. -/
 theorem antilipschitzWith_normalGraphEmbedding (φ : E → ℝ) :
