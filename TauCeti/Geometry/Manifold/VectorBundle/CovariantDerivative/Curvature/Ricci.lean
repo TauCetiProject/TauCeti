@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 public import Mathlib.Analysis.InnerProductSpace.Trace
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -84,6 +84,38 @@ theorem ricciTensor_eq_sum_inner {ι : Type*} [Fintype ι]
     cov.ricciTensor x u v = ∑ i, inner ℝ (b i) (curvature x (b i) u v) := by
   rw [ricciTensor_apply, LinearMap.trace_eq_sum_inner _ b]
   rfl
+
+/-- The Ricci tensor of a metric-compatible torsion-free connection is symmetric. -/
+theorem IsMetricCompatible.ricciTensor_comm
+    [RiemannianBundle (TangentSpace I : M → Type _)]
+    [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
+    (x : M) (u v : TangentSpace I x) :
+    cov.ricciTensor x u v = cov.ricciTensor x v u := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [cov.ricciTensor_eq_sum_inner x b u v, cov.ricciTensor_eq_sum_inner x b v u]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  calc
+    inner ℝ (b i) (curvature x (b i) u v) =
+        inner ℝ (curvature x (b i) u v) (b i) := real_inner_comm _ _
+    _ = inner ℝ (curvature x v (b i) (b i)) u :=
+      hcov.inner_curvatureTensor_swap_pairs ht x (b i) u v (b i)
+    _ = -inner ℝ (curvature x (b i) v (b i)) u := by
+      rw [cov.curvatureTensor_antisymm x v (b i), LinearMap.neg_apply, inner_neg_left]
+    _ = inner ℝ (b i) (curvature x (b i) v u) := by
+      rw [hcov.inner_curvatureTensor_eq_neg x (b i) v (b i) u]
+      ring
+
+/-- The Ricci tensor of a metric-compatible torsion-free connection is a symmetric bilinear
+form. -/
+theorem IsMetricCompatible.ricciTensor_isSymm
+    [RiemannianBundle (TangentSpace I : M → Type _)]
+    [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
+    (cov.ricciTensor x).IsSymm :=
+  ⟨IsMetricCompatible.ricciTensor_comm (cov := cov) hcov ht x⟩
 
 /-- A point with zero curvature tensor has zero Ricci tensor. -/
 @[simp]
