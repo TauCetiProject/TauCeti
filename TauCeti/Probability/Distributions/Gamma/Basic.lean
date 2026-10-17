@@ -29,14 +29,14 @@ The moment and transform computations go through the same two reductions. The me
 `gammaMeasure a r` is
 `volume.withDensity` of a density carried by `[0, ∞)`, so an integral against it is a set integral
 of the weighted integrand over `(0, ∞)`, and integrability against it is integrability of that same
-weighted integrand over `(0, ∞)`. Raw moments and exponential moments then both reduce to Euler's
+weighted integrand over `(0, ∞)`. Real-power and exponential moments then both reduce to Euler's
 integral through `Real.integral_rpow_mul_exp_neg_mul_Ioi`, whose shape
-`x ^ (s - 1) * exp (-(b * x))` they match after collecting exponents: a factor `x ^ n` shifts the
-shape from `a` to `a + n`, and a factor `exp (t * x)` shifts the rate from `r` to `r - t`. The
-second shift explains the exponential moment domain: it is exactly the half-line on which the
-shifted rate is still positive. A factor `(x ^ n)⁻¹` shifts the shape the other way, from `a` to
-`a - n`, and Euler's integral converges exactly when that shifted shape is still positive, which is
-the inverse-moment threshold `n < a`.
+`x ^ (s - 1) * exp (-(b * x))` they match after collecting exponents. A factor `x ^ q` shifts the
+shape from `a` to `a + q`; Euler's integral gives the moment formula when `a + q > 0`, while the
+near-zero real-power integrability test gives the converse, so the exact threshold is `-a < q`.
+The natural moments specialize this at `q = n`, and the inverse moments at `q = -n`. A factor
+`exp (t * x)` shifts the rate from `r` to `r - t`, explaining why the exponential moment domain is
+exactly the half-line on which the shifted rate is still positive.
 
 ## Main results
 
