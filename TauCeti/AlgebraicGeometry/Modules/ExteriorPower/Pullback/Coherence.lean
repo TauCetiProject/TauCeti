@@ -132,14 +132,25 @@ theorem pullbackExteriorPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
   change c.app M ≫ W.map (a.hom.app M) = a.hom.app (W.obj M)
   apply (adj.homEquiv _ _).injective
-  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp,
-    ← Category.assoc, hc, Category.assoc, ← hn,
-    ← W.map_comp_assoc, hu M, hu]
-  dsimp only [Functor.id_obj]
-  rw [(Iso.eq_comp_inv (b.app (W.obj M))).mpr hq, ← W.map_comp_assoc]
-  simp only [Iso.inv_hom_id_app, Functor.id_obj, Iso.app_inv]
-  rw [W.map_id M]
-  exact Category.id_comp _
+  simp only [Adjunction.homEquiv_unit]
+  -- Take the adjoint transpose, use naturality, then cancel the identity comparison.
+  calc
+    _ = (W.map (adj.unit.app M) ≫ q.app (P.obj M)) ≫
+        Q.map (W.map (a.hom.app M)) := by
+      simpa only [Functor.map_comp, Category.assoc] using
+        congrArg (fun k ↦ k ≫ Q.map (W.map (a.hom.app M))) hc
+    _ = W.map (adj.unit.app M) ≫ W.map (Q.map (a.hom.app M)) ≫ q.app M := by
+      rw [Category.assoc, ← hn]
+      simp only [Functor.id_obj]
+    _ = W.map (b.inv.app M) ≫ q.app M := by
+      rw [← W.map_comp_assoc, hu M]
+    _ = W.map (b.inv.app M) ≫ W.map (b.hom.app M) ≫ b.inv.app (W.obj M) := by
+      rw [(Iso.eq_comp_inv (b.app (W.obj M))).mpr hq]
+      simp only [Iso.app_inv]
+    _ = b.inv.app (W.obj M) := by
+      simp only [← W.map_comp_assoc, Iso.inv_hom_id_app, Functor.id_obj, W.map_id,
+        Category.id_comp]
+    _ = _ := (hu (W.obj M)).symm
 
 /-- The exterior-power comparison for a composite agrees with the two successive comparisons,
 using the canonical composition isomorphism of module pullback. -/
