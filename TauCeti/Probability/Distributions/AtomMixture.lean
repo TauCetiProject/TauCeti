@@ -137,6 +137,8 @@ theorem cdf_atomMixture (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
   · split_ifs <;> simp
   all_goals finiteness
 
+end TauCeti.Probability
+
 /-- Integrability is preserved when a point mass is mixed into a measure. -/
 theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [NormedAddCommGroup E] {f : α → E} {μ : Measure α} (hf : Integrable f μ)
@@ -144,6 +146,8 @@ theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSi
   rw [Measure.atomMixture]
   exact (integrable_dirac (by simp)).smul_measure (by simp) |>.add_measure
     (hf.smul_measure (by simp))
+
+namespace TauCeti.Probability
 
 /-- The mean of an atom mixture is the convex combination of the component means. -/
 theorem integral_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
