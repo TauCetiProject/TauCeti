@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
+public import Mathlib.Algebra.Module.ZLattice.Basic
+import Mathlib.Algebra.Order.Round
+import Mathlib.Analysis.LocallyConvex.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -18,10 +20,9 @@ flag of subspaces `span ℝ {a i | i ≤ j}`: each `b j` is a combination of `a 
 reduced, being either `a j` itself or a combination all of whose coefficients have absolute value
 at most `1 / 2` (`ZLattice.exists_basis_triangular`).
 
-The gauge bound for an independent family of lattice vectors is already provided by
-`ZLattice.exists_basis_gauge_le` in `TauCeti.Algebra.Module.ZLattice.GaugeBasis`.
-This file adds the coordinate-level triangular and reduced basis statement, without redeclaring
-that gauge estimate. The lattice is not assumed to be full: this follows from the given basis.
+The coordinate-level triangular basis is used by
+`TauCeti.Algebra.Module.ZLattice.GaugeBasis` to prove the canonical gauge estimate.
+The lattice is not assumed to be full: this follows from the given basis.
 
 ## Main results
 
@@ -40,90 +41,13 @@ open Module Submodule ZSpan
 
 namespace ZLattice
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {L : Submodule ℤ E}
-  [DiscreteTopology L] {n : ℕ}
+section Algebraic
 
-private theorem repr_self_eq_zero_of_lt (e : Basis (Fin n) ℝ E) {i j : Fin n} (h : j < i) :
-    e.repr (e j) i = 0 := by
-  simp [h.ne]
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {L : Submodule ℤ E} {n : ℕ}
 
-/-- Among the lattice vectors in `span ℝ {e i | i ≤ j}`, some vector has the least positive
-`j`-th coordinate, and the `j`-th coordinate of every such vector is an integer multiple of it. -/
-private theorem exists_repr_generator (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L) (j : Fin n) :
-    ∃ y ∈ L, (∀ i, j < i → e.repr y i = 0) ∧ 0 < e.repr y j ∧ e.repr y j ≤ 1 ∧
-      ∀ x ∈ L, (∀ i, j < i → e.repr x i = 0) → ∃ m : ℤ, e.repr x j = m * e.repr y j := by
-  have := e.finiteDimensional_of_finite
-  have hspan : span ℤ (Set.range e) ≤ L := span_le.2 (Set.range_subset_iff.2 he)
-  -- A bounded subset of a discrete (hence closed) subgroup is finite.
-  have hfin : (fundamentalDomain e ∩ L).Finite :=
-    Metric.finite_isBounded_inter_isClosed DiscreteTopology.isDiscrete
-      (fundamentalDomain_isBounded e) L.toAddSubgroup.isClosed_of_discreteTopology
-  -- So the attained coordinates in `(0, 1]` form a finite set, which contains `1`.
-  set T : Set ℝ :=
-    {t | t ∈ Set.Ioc 0 1 ∧ ∃ x ∈ L, (∀ i, j < i → e.repr x i = 0) ∧ e.repr x j = t}
-  have hT : T.Finite := by
-    refine ((hfin.image fun x ↦ e.repr x j).insert 1).subset ?_
-    rintro t ⟨⟨ht0, ht1⟩, x, hx, -, rfl⟩
-    rcases ht1.eq_or_lt with h | h
-    · exact Or.inl h
-    · refine Or.inr ⟨fract e x, ⟨fract_mem_fundamentalDomain e x, ?_⟩, ?_⟩
-      · exact L.sub_mem hx (hspan (floor e x).2)
-      · dsimp only
-        rw [repr_fract_apply, Int.fract_eq_self.2 ⟨ht0.le, h⟩]
-  have h1 : (1 : ℝ) ∈ T :=
-    ⟨⟨one_pos, le_rfl⟩, e j, he j, fun i hi ↦ repr_self_eq_zero_of_lt e hi, by simp⟩
-  obtain ⟨_, ⟨⟨hd0, hd1⟩, y, hy, hyj, rfl⟩, hmin⟩ := Set.exists_min_image T id hT ⟨1, h1⟩
-  refine ⟨y, hy, hyj, hd0, hd1, fun x hx hxj ↦ ⟨⌊e.repr x j / e.repr y j⌋, ?_⟩⟩
-  -- Subtracting the right multiple of `y` leaves a coordinate in `[0, e.repr y j)`.
-  set m := ⌊e.repr x j / e.repr y j⌋
-  have hlo : m * e.repr y j ≤ e.repr x j := (le_div_iff₀ hd0).1 (Int.floor_le _)
-  have hhi : e.repr x j < (m + 1) * e.repr y j := (div_lt_iff₀ hd0).1 (Int.lt_floor_add_one _)
-  by_contra hne
-  have hz : e.repr x j - m * e.repr y j ∈ T := by
-    refine ⟨⟨by grind, by linarith⟩, x - m • y, L.sub_mem hx (zsmul_mem hy m),
-      fun i hi ↦ ?_, ?_⟩
-    · simp [hxj i hi, hyj i hi]
-    · simp
-  have := hmin _ hz
-  simp only [id] at this
-  linarith
-
-/-- For each `j`, a lattice vector in `span ℝ {e i | i ≤ j}` whose `j`-th coordinate generates
-the `j`-th coordinates of all such lattice vectors, and which is either `e j` or has all its
-coordinates of absolute value at most `1 / 2`. -/
-private theorem exists_reduced (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L) (j : Fin n) :
-    ∃ v ∈ L, (∀ i, j < i → e.repr v i = 0) ∧
-      (∀ x ∈ L, (∀ i, j < i → e.repr x i = 0) → ∃ m : ℤ, e.repr x j = m * e.repr v j) ∧
-      (v = e j ∨ ∀ i, |e.repr v i| ≤ 1 / 2) := by
-  obtain ⟨y, hy, hyj, hy0, hy1, hgen⟩ := exists_repr_generator e he j
-  rcases hy1.eq_or_lt with h | h
-  · exact ⟨e j, he j, fun i hi ↦ repr_self_eq_zero_of_lt e hi, by simpa [h] using hgen,
-      Or.inl rfl⟩
-  -- `1` is an integer multiple `m * d` of `d = e.repr y j < 1`, so `2 ≤ m` and `d ≤ 1 / 2`.
-  obtain ⟨m, hm⟩ := hgen (e j) (he j) fun i hi ↦ repr_self_eq_zero_of_lt e hi
-  simp only [Basis.repr_self, Finsupp.single_eq_same] at hm
-  have hm1 : (1 : ℝ) < m := by nlinarith
-  have hm2 : (2 : ℝ) ≤ m := by exact_mod_cast (by exact_mod_cast hm1 : (1 : ℤ) < m)
-  have hd : e.repr y j ≤ 1 / 2 := by nlinarith
-  -- Reduce the coordinates below `j` modulo the lattice vectors `e i`.
-  set v := y - ∑ i ∈ Finset.Iio j, round (e.repr y i) • e i
-  have hv (k : Fin n) :
-      e.repr v k = e.repr y k - if k < j then (round (e.repr y k) : ℝ) else 0 := by
-    simp [v, map_sum, Finsupp.single_apply, Finset.sum_ite_eq', zsmul_eq_mul]
-  have hvj : e.repr v j = e.repr y j := by simp [hv]
-  refine ⟨v, L.sub_mem hy (L.sum_mem fun i _ ↦ zsmul_mem (he i) _), fun i hi ↦ ?_,
-    fun x hx hxj ↦ hvj ▸ hgen x hx hxj, Or.inr fun i ↦ ?_⟩
-  · simp [hv, hyj i hi, hi.not_gt]
-  · rw [hv]
-    rcases lt_trichotomy i j with hij | rfl | hij
-    · simpa [hij] using abs_sub_round (e.repr y i)
-    · simpa [abs_of_pos hy0] using hd
-    · simp [hyj i hij, hij.not_gt]
-
-omit [DiscreteTopology L] in
 /-- A family of lattice vectors, triangular with respect to `e`, whose diagonal coordinates
 generate the corresponding coordinates of the lattice, spans the lattice. -/
-private theorem le_span_of_triangular (e : Basis (Fin n) ℝ E) {v : Fin n → E}
+theorem le_span_of_triangular (e : Basis (Fin n) ℝ E) {v : Fin n → E}
     (hv : ∀ j, v j ∈ L) (htri : ∀ j i, j < i → e.repr (v j) i = 0)
     (hgen : ∀ j, ∀ x ∈ L, (∀ i, j < i → e.repr x i = 0) →
       ∃ m : ℤ, e.repr x j = m * e.repr (v j) j) :
@@ -149,6 +73,85 @@ private theorem le_span_of_triangular (e : Basis (Fin n) ℝ E) {v : Fin n → E
         simp [hm]
       · simp [hxk i hi, htri j i hi]
     simpa using add_mem hx' (zsmul_mem (subset_span (Set.mem_range_self j)) m)
+
+end Algebraic
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {L : Submodule ℤ E}
+  [DiscreteTopology L] {n : ℕ}
+
+/-- Among the lattice vectors in `span ℝ {e i | i ≤ j}`, some vector has the least positive
+`j`-th coordinate, and the `j`-th coordinate of every such vector is an integer multiple of it. -/
+private theorem exists_repr_generator (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L) (j : Fin n) :
+    ∃ y ∈ L, (∀ i, j < i → e.repr y i = 0) ∧ 0 < e.repr y j ∧ e.repr y j ≤ 1 ∧
+      ∀ x ∈ L, (∀ i, j < i → e.repr x i = 0) → ∃ m : ℤ, e.repr x j = m * e.repr y j := by
+  have := e.finiteDimensional_of_finite
+  have hspan : span ℤ (Set.range e) ≤ L := span_le.2 (Set.range_subset_iff.2 he)
+  -- This finite fundamental-domain argument follows Mathlib's `ZLattice.FG`.
+  -- A bounded subset of a discrete (hence closed) subgroup is finite.
+  have hfin : (fundamentalDomain e ∩ L).Finite :=
+    Metric.finite_isBounded_inter_isClosed DiscreteTopology.isDiscrete
+      (fundamentalDomain_isBounded e) L.toAddSubgroup.isClosed_of_discreteTopology
+  -- So the attained coordinates in `(0, 1]` form a finite set, which contains `1`.
+  set T : Set ℝ :=
+    {t | t ∈ Set.Ioc 0 1 ∧ ∃ x ∈ L, (∀ i, j < i → e.repr x i = 0) ∧ e.repr x j = t}
+  have hT : T.Finite := by
+    refine ((hfin.image fun x ↦ e.repr x j).insert 1).subset ?_
+    rintro t ⟨⟨ht0, ht1⟩, x, hx, -, rfl⟩
+    rcases ht1.eq_or_lt with h | h
+    · exact Or.inl h
+    · refine Or.inr ⟨fract e x, ⟨fract_mem_fundamentalDomain e x, ?_⟩, ?_⟩
+      · exact L.sub_mem hx (hspan (floor e x).2)
+      · dsimp only
+        rw [repr_fract_apply, Int.fract_eq_self.2 ⟨ht0.le, h⟩]
+  have h1 : (1 : ℝ) ∈ T :=
+    ⟨⟨one_pos, le_rfl⟩, e j, he j, fun i hi ↦ by simp [hi.ne], by simp⟩
+  obtain ⟨_, ⟨⟨hd0, hd1⟩, y, hy, hyj, rfl⟩, hmin⟩ := Set.exists_min_image T id hT ⟨1, h1⟩
+  refine ⟨y, hy, hyj, hd0, hd1, fun x hx hxj ↦ ⟨⌊e.repr x j / e.repr y j⌋, ?_⟩⟩
+  -- Subtracting the right multiple of `y` leaves a coordinate in `[0, e.repr y j)`.
+  set m := ⌊e.repr x j / e.repr y j⌋
+  have hlo : m * e.repr y j ≤ e.repr x j := (le_div_iff₀ hd0).1 (Int.floor_le _)
+  have hhi : e.repr x j < (m + 1) * e.repr y j := (div_lt_iff₀ hd0).1 (Int.lt_floor_add_one _)
+  by_contra hne
+  have hz : e.repr x j - m * e.repr y j ∈ T := by
+    refine ⟨⟨by grind, by linarith⟩, x - m • y, L.sub_mem hx (zsmul_mem hy m),
+      fun i hi ↦ ?_, ?_⟩
+    · simp [hxj i hi, hyj i hi]
+    · simp
+  have := hmin _ hz
+  simp only [id] at this
+  linarith
+
+/-- For each `j`, a lattice vector in `span ℝ {e i | i ≤ j}` whose `j`-th coordinate generates
+the `j`-th coordinates of all such lattice vectors, and which is either `e j` or has all its
+coordinates of absolute value at most `1 / 2`. -/
+private theorem exists_reduced (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L) (j : Fin n) :
+    ∃ v ∈ L, (∀ i, j < i → e.repr v i = 0) ∧
+      (∀ x ∈ L, (∀ i, j < i → e.repr x i = 0) → ∃ m : ℤ, e.repr x j = m * e.repr v j) ∧
+      (v = e j ∨ ∀ i, |e.repr v i| ≤ 1 / 2) := by
+  obtain ⟨y, hy, hyj, hy0, hy1, hgen⟩ := exists_repr_generator e he j
+  rcases hy1.eq_or_lt with h | h
+  · exact ⟨e j, he j, fun i hi ↦ by simp [hi.ne], by simpa [h] using hgen,
+      Or.inl rfl⟩
+  -- `1` is an integer multiple `m * d` of `d = e.repr y j < 1`, so `2 ≤ m` and `d ≤ 1 / 2`.
+  obtain ⟨m, hm⟩ := hgen (e j) (he j) fun i hi ↦ by simp [hi.ne]
+  simp only [Basis.repr_self, Finsupp.single_eq_same] at hm
+  have hm1 : (1 : ℝ) < m := by nlinarith
+  have hm2 : (2 : ℝ) ≤ m := by exact_mod_cast (by exact_mod_cast hm1 : (1 : ℤ) < m)
+  have hd : e.repr y j ≤ 1 / 2 := by nlinarith
+  -- Reduce the coordinates below `j` modulo the lattice vectors `e i`.
+  set v := y - ∑ i ∈ Finset.Iio j, round (e.repr y i) • e i
+  have hv (k : Fin n) :
+      e.repr v k = e.repr y k - if k < j then (round (e.repr y k) : ℝ) else 0 := by
+    simp [v, map_sum, Finsupp.single_apply, Finset.sum_ite_eq', zsmul_eq_mul]
+  have hvj : e.repr v j = e.repr y j := by simp [hv]
+  refine ⟨v, L.sub_mem hy (L.sum_mem fun i _ ↦ zsmul_mem (he i) _), fun i hi ↦ ?_,
+    fun x hx hxj ↦ hvj ▸ hgen x hx hxj, Or.inr fun i ↦ ?_⟩
+  · simp [hv, hyj i hi, hi.not_gt]
+  · rw [hv]
+    rcases lt_trichotomy i j with hij | rfl | hij
+    · simpa [hij] using abs_sub_round (e.repr y i)
+    · simpa [abs_of_pos hy0] using hd
+    · simp [hyj i hij, hij.not_gt]
 
 /-- **Adapted basis.** Let `e` be an `ℝ`-basis of `E` consisting of vectors of a discrete
 subgroup `L`. Then `L` has a `ℤ`-basis `b` that is triangular with respect to `e`, in that
