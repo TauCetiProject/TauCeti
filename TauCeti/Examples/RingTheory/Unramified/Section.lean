@@ -23,25 +23,31 @@ namespace TauCeti
 
 variable (R : Type*) [CommRing R]
 
--- A two-sheet split algebra has a section selecting its first sheet.
-example : ∃ (e : Fin 2 → R) (_ : IsIdempotentElem e)
-    (E : (Fin 2 → R) ≃ₐ[R] R × ((Fin 2 → R) ⧸ Ideal.span {e})),
-    ∀ s, E s = (s 0, Ideal.Quotient.mk _ s) :=
-  exists_algEquiv_prod_of_section R _ (Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0)
+-- One selector for a two-sheet algebra gives its kernel, localization, and product split.
+example : ∃ e : Fin 2 → R, IsIdempotentElem e ∧
+    RingHom.ker (Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0) = Ideal.span {1 - e} ∧
+    (let _ := (Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0).toRingHom.toAlgebra;
+      IsLocalization.Away e R) ∧
+    ∃ E : (Fin 2 → R) ≃ₐ[R] R × ((Fin 2 → R) ⧸ Ideal.span {e}),
+      ∀ s, E s = (s 0, Ideal.Quotient.mk _ s) := by
+  let σ := Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0
+  obtain ⟨e, he, _, hker⟩ := exists_isIdempotentElem_ker_eq_span R _ σ
+  exact ⟨e, he, hker, isLocalizationAway_of_ker_eq_span σ he hker,
+    prodOfKerEqSpan σ he hker, fun s ↦ prodOfKerEqSpan_apply σ he hker s⟩
 
 -- The identity section has zero kernel, so its complementary component is empty.
 example : ∃ e : R, IsIdempotentElem e ∧ e = 1 ∧ Ideal.span {1 - e} = ⊥ := by
   obtain ⟨e, he, hσe, _⟩ := exists_isIdempotentElem_ker_eq_span R R (AlgHom.id R R)
-  have heq : e = 1 := hσe
+  have heq : e = 1 := by simpa using hσe
   exact ⟨e, he, heq, by simp [heq]⟩
 
 -- In particular, the zero ring is allowed as a base and as a section component.
 example : ∃ e : Fin 2 → ZMod 1, IsIdempotentElem e ∧
     let _ := (Pi.evalAlgHom (ZMod 1) (fun _ : Fin 2 ↦ ZMod 1) 0).toRingHom.toAlgebra
-    IsLocalization.Away e (ZMod 1) :=
-  (exists_isIdempotentElem_isLocalizationAway (ZMod 1) _
-    (Pi.evalAlgHom (ZMod 1) (fun _ : Fin 2 ↦ ZMod 1) 0)).imp
-      (fun _ h ↦ ⟨h.1, h.2.2⟩)
+    IsLocalization.Away e (ZMod 1) := by
+  let σ := Pi.evalAlgHom (ZMod 1) (fun _ : Fin 2 ↦ ZMod 1) 0
+  obtain ⟨e, he, _, hker⟩ := exists_isIdempotentElem_ker_eq_span (ZMod 1) _ σ
+  exact ⟨e, he, isLocalizationAway_of_ker_eq_span σ he hker⟩
 
 -- Residue sections over a henselian pair have unique lifts, with no adic separation assumption.
 example (J : Ideal R) [HenselianRing R J] {S : Type*} [CommRing S] [Algebra R S]
