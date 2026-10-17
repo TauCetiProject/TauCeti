@@ -50,7 +50,6 @@ open scoped ENNReal
 namespace TauCeti.DenseGraphLimits
 
 /-- Encoding a graph measure preserves and reflects exchangeability and total mass one. -/
-@[simp]
 theorem map_toRelationalConfiguration_mem_iff {μ : Measure (SimpleGraph ℕ)} :
     μ.map SimpleGraph.toRelationalConfiguration ∈
         exchangeableRelationalProbabilityMeasures Language.graph ↔
@@ -134,7 +133,6 @@ theorem mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints
 
 /-- An encoded exchangeable graph law is extreme among all exchangeable relational probability
 measures exactly when its finite graph law is dissociated. -/
-@[simp]
 theorem InfiniteExchangeableGraphLaw.mem_extremePoints_toRelationalLaw_iff
     (L : InfiniteExchangeableGraphLaw) :
     L.toRelationalLaw.law ∈
