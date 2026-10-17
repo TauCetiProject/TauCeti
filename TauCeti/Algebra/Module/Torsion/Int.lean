@@ -24,6 +24,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.subsingleton_quotSMulTop_of_surjective_zsmul`,
   `TauCeti.subsingleton_torsionBy_of_injective_zsmul`: if multiplication by `ℓ` on `V` is
   surjective, respectively injective, then `V ⧸ ℓV`, respectively `V[ℓ]`, is zero.
+* `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
+  exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
 
 public section
@@ -71,5 +73,24 @@ theorem ofMul_mem_torsion_int_iff {G : Type*} [CommGroup G] {x : G} :
     Additive.ofMul x ∈ Submodule.torsion ℤ (Additive G) ↔ x ∈ CommGroup.torsion G := by
   rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_int, AddCommGroup.mem_torsion,
     isOfFinAddOrder_ofMul_iff, CommGroup.mem_torsion]
+
+/-- A family `ε` in a commutative group `G` generates `G` together with the torsion subgroup
+exactly when its classes span the `ℤ`-module `Additive G` modulo its torsion submodule. -/
+theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι → G) :
+    Submodule.span ℤ (Set.range fun i ↦
+        (Submodule.Quotient.mk (Additive.ofMul (ε i)) :
+          Additive G ⧸ Submodule.torsion ℤ (Additive G))) = ⊤ ↔
+      Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion G = ⊤ := by
+  have htors : Subgroup.toAddSubgroup (CommGroup.torsion G) =
+      (Submodule.torsion ℤ (Additive G)).toAddSubgroup := by
+    ext x
+    rw [Submodule.mem_toAddSubgroup, ← ofMul_toMul x, ofMul_mem_torsion_int_iff,
+      Additive.mem_toAddSubgroup, toMul_ofMul]
+  rw [← Subgroup.toAddSubgroup.injective.eq_iff, map_sup, map_top, Subgroup.toAddSubgroup_closure,
+    ← Submodule.span_int_eq_addSubgroupClosure, htors, ← Submodule.sup_toAddSubgroup (R := ℤ),
+    ← Submodule.top_toAddSubgroup (R := ℤ), Submodule.toAddSubgroup_inj, sup_comm,
+    ← Submodule.map_mkQ_eq_top, Submodule.map_span, ← Equiv.image_symm_eq_preimage,
+    Additive.toMul_symm_eq, ← Set.range_comp, ← Set.range_comp]
+  simp only [Function.comp_def, Submodule.mkQ_apply]
 
 end TauCeti
