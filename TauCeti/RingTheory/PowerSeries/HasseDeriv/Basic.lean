@@ -133,15 +133,14 @@ theorem hasseDeriv_comp (l : ℕ) :
   ext f n
   -- both sides are multiples of `coeff (n + k + l) f`, by the multinomial coefficient
   -- `(n + k + l)! / (n! k! l!)`, computed in two ways by `Nat.choose_mul`
-  have key : (n + k).choose k * (n + k + l).choose l =
+  have key : (n + k).choose k * (n + (k + l)).choose l =
       (k + l).choose k * (n + (k + l)).choose (k + l) := by
     have h := Nat.choose_mul (n := n + k + l) (k := k + l) (s := l) (by omega)
     rw [show n + k + l - l = n + k by omega, show k + l - l = k by omega] at h
     rw [← add_assoc, Nat.choose_symm_add]
     linarith
-  rw [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, coeff_hasseDeriv,
-    coeff_hasseDeriv, nsmul_eq_mul, ← mul_assoc, ← mul_assoc, ← Nat.cast_mul, ← Nat.cast_mul, key,
-    add_assoc]
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, add_assoc]
+  simp only [nsmul_eq_mul, ← mul_assoc, ← Nat.cast_mul, key]
 
 /-- The **Leibniz rule** for Hasse derivatives:
 `D⁽ᵏ⁾ (f * g) = ∑_{i + j = k} D⁽ⁱ⁾ f * D⁽ʲ⁾ g`. The coefficients need not commute. -/
@@ -189,13 +188,12 @@ theorem hasseDeriv_one_apply (f : R⟦X⟧) : hasseDeriv 1 f = d⁄dX f := by
   ext n
   simp [coeff_derivative, mul_comm]
 
-/-- The `k`th Hasse derivative is the `k`th iterated derivative divided by `k!`:
+/-- `k!` times the `k`th Hasse derivative is the `k`th iterated derivative:
 `k! • D⁽ᵏ⁾ f = (d/dX)^[k] f`. -/
 theorem factorial_smul_hasseDeriv (k : ℕ) (f : R⟦X⟧) :
     k ! • hasseDeriv k f = d⁄dX^[k] f := by
   ext n
-  rw [map_nsmul, coeff_hasseDeriv, coeff_iterate_derivative,
-    Nat.ascFactorial_eq_factorial_mul_choose, nsmul_eq_mul, ← mul_assoc, Nat.cast_mul]
+  simp [coeff_iterate_derivative, Nat.ascFactorial_eq_factorial_mul_choose, nsmul_eq_mul, mul_assoc]
 
 end CommSemiring
 

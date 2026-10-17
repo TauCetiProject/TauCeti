@@ -67,21 +67,25 @@ theorem norm_coeff_hasseDeriv_mul_pow_le (hc : 0 < c) (k n : ℕ) :
   rw [hk]
   exact mul_le_mul_of_nonneg_right (norm_coeff_hasseDeriv_le f k n) (pow_nonneg hc.le n)
 
+/-- At a positive radius `c`, the weighted coefficient norms of `D⁽ᵏ⁾ f` are bounded by `c⁻ᵏ`
+times the Gauss norm of `f`, whenever `f` has bounded weighted coefficient norms. -/
+theorem norm_coeff_hasseDeriv_mul_pow_le_gaussNorm (hc : 0 < c) (hf : f.HasGaussNorm norm c)
+    (k n : ℕ) : ‖coeff n (hasseDeriv k f)‖ * c ^ n ≤ c⁻¹ ^ k * f.gaussNorm norm c :=
+  (norm_coeff_hasseDeriv_mul_pow_le f hc k n).trans <|
+    mul_le_mul_of_nonneg_left (le_gaussNorm norm c f hf (n + k)) (by positivity)
+
 /-- At a positive radius, Hasse derivatives preserve boundedness of the weighted coefficient
 norms. -/
 theorem HasGaussNorm.hasseDeriv (hc : 0 < c) (hf : f.HasGaussNorm norm c) (k : ℕ) :
     (hasseDeriv k f).HasGaussNorm norm c :=
-  ⟨c⁻¹ ^ k * f.gaussNorm norm c, Set.forall_mem_range.mpr fun n ↦
-    (norm_coeff_hasseDeriv_mul_pow_le f hc k n).trans <|
-      mul_le_mul_of_nonneg_left (le_gaussNorm norm c f hf (n + k)) (by positivity)⟩
+  ⟨c⁻¹ ^ k * f.gaussNorm norm c, Set.forall_mem_range.mpr
+    (norm_coeff_hasseDeriv_mul_pow_le_gaussNorm hc hf k)⟩
 
 /-- **The Gauss-norm estimate for Hasse derivatives**: at a radius `c > 0`,
 `‖D⁽ᵏ⁾ f‖_c ≤ c⁻ᵏ ‖f‖_c` whenever `f` has bounded weighted coefficient norms. -/
 theorem gaussNorm_hasseDeriv_le (hc : 0 < c) (hf : f.HasGaussNorm norm c) (k : ℕ) :
     (hasseDeriv k f).gaussNorm norm c ≤ c⁻¹ ^ k * f.gaussNorm norm c :=
-  (gaussNorm_eq norm c _).trans_le <| ciSup_le fun n ↦
-    (norm_coeff_hasseDeriv_mul_pow_le f hc k n).trans <|
-      mul_le_mul_of_nonneg_left (le_gaussNorm norm c f hf (n + k)) (by positivity)
+  (gaussNorm_eq norm c _).trans_le <| ciSup_le (norm_coeff_hasseDeriv_mul_pow_le_gaussNorm hc hf k)
 
 end SeminormedRing
 
