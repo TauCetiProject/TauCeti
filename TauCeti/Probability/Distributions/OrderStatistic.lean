@@ -177,8 +177,9 @@ theorem cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta [IsProbabilityMea
     cdf ((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)) t =
       regularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k) (cdf μ t) := by
   have hset : orderStatistic k ⁻¹' Iic t =
-      {x : Fin n → ℝ | (k : ℕ) + 1 ≤ #{i | x i ∈ Iic t}} :=
-    preimage_orderStatistic_Iic k t
+      {x : Fin n → ℝ | (k : ℕ) + 1 ≤ #{i | x i ∈ Iic t}} := by
+    rw [preimage_orderStatistic_Iic]
+    simp_rw [Set.mem_Iic, Nat.lt_iff_add_one_le]
   rw [cdf_eq_real, map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic, hset,
     (hasLaw_card_filter_mem_pi (s := Iic t) measurableSet_Iic).measureReal_eq
       (p := fun j => (k : ℕ) + 1 ≤ j) .of_discrete, Fintype.card_fin,
