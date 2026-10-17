@@ -67,7 +67,8 @@ def cechSingularChainsMap : cechSingularChains U R ⟶ cechSingularChains V R wh
     -- The restriction is presented as a subtype map, while the functor uses `Opens.toTopCat`.
     erw [← ((singularChainComplexFunctor C).obj R).map_comp,
       ← ((singularChainComplexFunctor C).obj R).map_comp]
-    congr 1
+    apply congrArg ((singularChainComplexFunctor C).obj R).map
+    exact TopCat.ext fun _ ↦ rfl
 
 /-- The map on an intersection is induced by any restriction of `f` to that intersection.
 The equation with the ambient inclusions specifies the restriction without choosing a
@@ -92,7 +93,8 @@ lemma cechSingularChainsMap_app_comp_inclusion (s : Finset ι) :
   -- The restriction is presented as a subtype map, while the functor uses `Opens.toTopCat`.
   erw [← ((singularChainComplexFunctor C).obj R).map_comp,
     ← ((singularChainComplexFunctor C).obj R).map_comp]
-  congr 1
+  apply congrArg ((singularChainComplexFunctor C).obj R).map
+  exact TopCat.ext fun _ ↦ rfl
 
 /-- Identity maps act identically on singular chains of finite intersections. -/
 @[simp]
@@ -115,7 +117,8 @@ lemma cechSingularChainsMap_comp :
   dsimp only [cechSingularChainsMap, NatTrans.comp_app]
   -- The restriction is presented as a subtype map, while the functor uses `Opens.toTopCat`.
   erw [← ((singularChainComplexFunctor C).obj R).map_comp]
-  congr 1
+  apply congrArg ((singularChainComplexFunctor C).obj R).map
+  exact TopCat.ext fun _ ↦ rfl
 
 variable [LinearOrder ι]
 
