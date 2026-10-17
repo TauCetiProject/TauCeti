@@ -84,7 +84,8 @@ end TauCeti
 discrete image of `PSL(2, ℤ)`. -/
 instance Subgroup.discreteTopology_map_sl2zToPSL2R (H : Subgroup SL(2, ℤ)) :
     DiscreteTopology (H.map sl2zToPSL2R) :=
-  .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range) H.map_sl2zToPSL2R_le_range
+  .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range)
+    H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 

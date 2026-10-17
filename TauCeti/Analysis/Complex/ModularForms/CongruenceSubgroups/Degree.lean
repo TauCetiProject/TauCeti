@@ -54,7 +54,8 @@ variable (H : Subgroup SL(2, ℤ))
 compactified modular curves induced by `H ≤ SL(2, ℤ)` has degree `[SL(2, ℤ) : ±H]`, which is the
 index of the image of `H` in `PSL(2, ℤ)` (`Subgroup.index_map_mk'_eq_index_sup`). -/
 theorem degree_compactifiedQuotientMap_map_sl2zToPSL2R [H.FiniteIndex] :
-    degree (compactifiedQuotientMap H.map_sl2zToPSL2R_le_range) = H.withCenter.index := by
+    degree (compactifiedQuotientMap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R) =
+      H.withCenter.index := by
   rw [degree_compactifiedQuotientMap, ← relIndex, relIndex_map_sl2zToPSL2R]
 
 end Subgroup
@@ -66,15 +67,16 @@ variable (N : ℕ) [NeZero N]
 /-- **The degree of `X₀(N) → X(1)`** is `[SL(2, ℤ) : Γ₀(N)]`: as `-I ∈ Γ₀(N)`, no factor `2`
 is lost on passing to `PSL(2, ℤ)`. -/
 theorem degree_compactifiedQuotientMap_Gamma0 :
-    degree (Subgroup.compactifiedQuotientMap (Gamma0 N).map_sl2zToPSL2R_le_range) =
-      (Gamma0 N).index := by
+    degree (Subgroup.compactifiedQuotientMap
+      (Gamma0 N).map_sl2zToPSL2R_le_range_psl2zToPSL2R) = (Gamma0 N).index := by
   rw [Subgroup.degree_compactifiedQuotientMap_map_sl2zToPSL2R,
     le_antisymm (withCenter_le_Gamma0 le_rfl) (Gamma0 N).le_withCenter]
 
 /-- **The degree of `X₀(N) → X(1)` is `N ∏_{p ∣ N} (1 + 1/p)`**, with the denominators
 cleared. -/
 theorem degree_compactifiedQuotientMap_Gamma0_mul_prod_primeFactors :
-    degree (Subgroup.compactifiedQuotientMap (Gamma0 N).map_sl2zToPSL2R_le_range) *
+    degree (Subgroup.compactifiedQuotientMap
+      (Gamma0 N).map_sl2zToPSL2R_le_range_psl2zToPSL2R) *
         ∏ p ∈ N.primeFactors, p = N * ∏ p ∈ N.primeFactors, (p + 1) := by
   rw [degree_compactifiedQuotientMap_Gamma0, Gamma0_index_mul_prod_primeFactors (NeZero.ne N)]
 
@@ -82,8 +84,8 @@ theorem degree_compactifiedQuotientMap_Gamma0_mul_prod_primeFactors :
 `-I ∉ Γ₁(N)`, so each coset by the image of `Γ₁(N)` in `PSL(2, ℤ)` comes from two cosets of
 `Γ₁(N)`. -/
 theorem two_mul_degree_compactifiedQuotientMap_Gamma1 (hN : 3 ≤ N) :
-    2 * degree (Subgroup.compactifiedQuotientMap (Gamma1 N).map_sl2zToPSL2R_le_range) =
-      (Gamma1 N).index := by
+    2 * degree (Subgroup.compactifiedQuotientMap
+      (Gamma1 N).map_sl2zToPSL2R_le_range_psl2zToPSL2R) = (Gamma1 N).index := by
   have h : (-1 : SL(2, ℤ)) ∉ Gamma1 N := fun h ↦ by
     have := Nat.le_of_dvd two_pos (neg_one_mem_Gamma1_iff.mp h)
     omega

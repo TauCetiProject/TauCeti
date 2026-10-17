@@ -25,9 +25,6 @@ the Kullback–Leibler divergence of the plan from the independent plan. It equa
   the product of its marginals is `H(μ) + H(ν) - H(f)`.
 * `TauCeti.relEntropy_vecMulVec_nonneg_of_mem_realPlans` and
   `TauCeti.relEntropy_vecMulVec_le_of_mem_realPlans`: it lies between `0` and `H(μ) + H(ν)`.
-
-The finite measure KL divergence is also identified with matrix relative entropy,
-including Mathlib's finite-measure mass correction.
 -/
 
 public section
@@ -91,44 +88,3 @@ theorem relEntropy_vecMulVec_le_of_mem_realPlans (hf : f ∈ RealPlans μ ν) :
     _ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using μ.coe_le_one q.1)
 
 end TauCeti
-
-open MeasureTheory InformationTheory Matrix
-
-namespace MeasureTheory.Measure
-
-variable {ι κ : Type*} [Fintype ι] [Fintype κ]
-  [MeasurableSpace ι] [MeasurableSingletonClass ι]
-  [MeasurableSpace κ] [MeasurableSingletonClass κ]
-
-/-- For finite measures on a finite product with strictly positive reference masses,
-KL divergence is matrix entropy plus Mathlib's finite-measure mass correction.
-The plan is encoded by its singleton masses; no separate nonnegativity assumption on
-`P` is needed. -/
-theorem klDiv_eq_ofReal_relEntropy_add_mass_correction_of_real_singleton
-    (π R : Measure (ι × κ)) [IsFiniteMeasure π] [IsFiniteMeasure R]
-    (P K : Matrix ι κ ℝ)
-    (hπ : ∀ i j, π.real {(i, j)} = P i j)
-    (hR : ∀ i j, R.real {(i, j)} = K i j)
-    (hK : ∀ i j, 0 < K i j) :
-    klDiv π R = ENNReal.ofReal
-      (Matrix.relEntropy P K + R.real Set.univ - π.real Set.univ) := by
-  have hRpos : ∀ q : ι × κ, R {q} ≠ 0 := by
-    rintro ⟨i, j⟩ hzero
-    have h := hK i j
-    rw [← hR i j] at h
-    simp [Measure.real, hzero] at h
-  rw [TauCeti.klDiv_eq_ofReal_sum_log_singleton hRpos]
-  have hsum :
-      (∑ q : ι × κ, π.real {q} * Real.log (π.real {q} / R.real {q})) =
-        Matrix.relEntropy P K := by
-    rw [Matrix.relEntropy_def, Fintype.sum_prod_type]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hπ i j, hR i j]
-    by_cases hP : P i j = 0
-    · simp [hP]
-    · rw [Real.log_div hP (ne_of_gt (hK i j))]
-      ring
-  rw [hsum]
-
-end MeasureTheory.Measure

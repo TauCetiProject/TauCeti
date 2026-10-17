@@ -182,9 +182,8 @@ Herbrand quotient `h(C_E)`, computed for the action of `Gal(E/F)`. -/
 theorem herbrandQuotient_rep_globalFormation :
     TateCohomology.herbrandQuotient (L.rep (globalFormation K)) =
       TateCohomology.herbrandQuotient (ideleClassRep F E) := by
-  have h :=
-    TateCohomology.natCard_tateCohomology_eq (L.isIntertwiningMap_ideleClassLevelEquiv hE he)
-  rw [TateCohomology.herbrandQuotient_def, TateCohomology.herbrandQuotient_def, h 0, h (-1)]
+  exact (TateCohomology.herbrandQuotient_eq_of_isIntertwiningMap
+    (L.isIntertwiningMap_ideleClassLevelEquiv hE he)).symm
 
 end TauCeti.ClassFieldTheory.NormalLayer
 

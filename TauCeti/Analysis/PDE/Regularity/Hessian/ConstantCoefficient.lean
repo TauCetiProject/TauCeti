@@ -128,8 +128,7 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
 
 end Transfer
 
-variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-  {p : ℝ≥0∞}
+variable {n : ℕ} {p : ℝ≥0∞}
 
 /-- **The Calderón–Zygmund estimate for constant-coefficient operators.** Let `1 < p < ∞`, and let
 `F` be a complex Hilbert space. There is a constant `C`, depending only on `n`,
@@ -139,6 +138,7 @@ variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] 
 
 for every Schwartz function `u` on `ℝⁿ` with values in `F`. -/
 theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -150,7 +150,6 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv
   exact ⟨C, fun hlam hA u =>
     eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian hlam hA hC u⟩
 
-omit [InnerProductSpace ℂ F] [CompleteSpace F] in
 /-- **The Calderón–Zygmund estimate for constant-coefficient operators, real-valued form.** Let
 `1 < p < ∞`, in any dimension `n`. There is a constant `C`, depending only on `n` and `p`, such
 that for every

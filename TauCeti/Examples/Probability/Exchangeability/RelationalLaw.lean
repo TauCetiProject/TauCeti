@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Relational
+import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Relational.Basic
 import TauCeti.MeasureTheory.Measure.RelationalConfiguration
 import Mathlib.Logic.Equiv.Fintype
 

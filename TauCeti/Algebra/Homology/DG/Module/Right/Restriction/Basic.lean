@@ -109,11 +109,11 @@ def linearEquiv : RestrictScalars f M ≃ₗ[R] M where
 theorem val_smul (r : R) (x : RestrictScalars f M) : (r • x).val = r • x.val := rfl
 
 @[simp]
-theorem linearEquiv_apply (x : RestrictScalars f M) : linearEquiv f M x = x.val := by rfl
+theorem linearEquiv_apply (x : RestrictScalars f M) : linearEquiv f M x = x.val := (rfl)
 
 @[simp]
 theorem linearEquiv_symm_apply (x : M) :
-    (linearEquiv f M).symm x = RestrictScalars.mk x := by rfl
+    (linearEquiv f M).symm x = RestrictScalars.mk x := (rfl)
 
 end ModuleR
 
@@ -197,7 +197,7 @@ def restrictScalarsDifferential :
 
 @[simp]
 theorem val_restrictScalarsDifferential (x : DGRightModule.RestrictScalars f M) :
-    (restrictScalarsDifferential (dM := dM) f x).val = dM x.val := by rfl
+    (restrictScalarsDifferential (dM := dM) f x).val = dM x.val := (rfl)
 
 end Differential
 
@@ -298,7 +298,7 @@ noncomputable def restrictScalars (g : DGRightModuleHom hM hN) :
 @[simp]
 theorem val_restrictScalars (g : DGRightModuleHom hM hN)
     (x : DGRightModule.RestrictScalars f M) :
-    (g.restrictScalars f x).val = g x.val := by rfl
+    (g.restrictScalars f x).val = g x.val := (rfl)
 
 /-- Restriction of scalars preserves identity morphisms. -/
 @[simp]

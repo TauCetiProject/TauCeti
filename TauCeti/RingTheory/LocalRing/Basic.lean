@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.RingTheory.Coprime.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Data.Int.GCD
 
 /-!
@@ -29,6 +30,9 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   number is a unit.
 * `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local semiring, one is a
   unit.
+* `IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two`: when the residue field has
+  two elements, every unit is congruent to `1` modulo the maximal ideal, and
+  `IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two`: `2` lies in the maximal ideal.
 -/
 
 public section
@@ -89,3 +93,21 @@ theorem Nat.Coprime.isUnit_natCast {R : Type*} [Ring R] [IsLocalRing R] {m n : �
     exact_mod_cast congrArg (Int.cast : ℤ → R) hab.symm
   exact ((IsLocalRing.isUnit_or_isUnit_of_add_one hab').imp isUnit_of_mul_isUnit_left
     isUnit_of_mul_isUnit_left).resolve_right hn
+
+/-- When the residue field of a commutative local ring has two elements, every unit is congruent
+to `1` modulo the maximal ideal: its residue is a nonzero element of `𝔽₂`. -/
+theorem IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two {R : Type*} [CommRing R]
+    [IsLocalRing R] (hR : Nat.card (IsLocalRing.ResidueField R) = 2) {u : R} (hu : IsUnit u) :
+    u - 1 ∈ IsLocalRing.maximalIdeal R := by
+  rw [← IsLocalRing.residue_eq_zero_iff, map_sub, map_one, sub_eq_zero]
+  obtain ⟨y, -, hy⟩ := (Nat.card_eq_two_iff' (0 : IsLocalRing.ResidueField R)).mp hR
+  rw [hy _ ((IsLocalRing.residue_ne_zero_iff_isUnit u).mpr hu), hy 1 one_ne_zero]
+
+/-- When the residue field of a commutative local ring has two elements, `2` lies in the maximal
+ideal: the residue field has characteristic two. -/
+theorem IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two {R : Type*} [CommRing R]
+    [IsLocalRing R] (hR : Nat.card (IsLocalRing.ResidueField R) = 2) :
+    (2 : R) ∈ IsLocalRing.maximalIdeal R := by
+  have h := (IsLocalRing.maximalIdeal R).neg_mem
+    (IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two hR isUnit_one.neg)
+  rwa [show -(-1 - 1 : R) = 2 by ring] at h

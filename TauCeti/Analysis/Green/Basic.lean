@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Analysis.Calculus.Deriv.Complex
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.FDeriv.Const
 
 /-!
 # Planar circulation and curl
@@ -37,6 +39,33 @@ theorem oneForm_apply (P Q : ℂ → ℝ) (z v : ℂ) :
     oneForm P Q z v = P z * v.re + Q z * v.im := by
   simp [oneForm]
 
+/-- The planar 1-form as a field of continuous linear maps in the coordinate projections. -/
+theorem oneForm_eq_clm (P Q : ℂ → ℝ) :
+    oneForm P Q = fun z ↦ P z • Complex.reCLM + Q z • Complex.imCLM := by
+  ext z v
+  simp [oneForm_apply]
+
+/-- A continuous planar field gives a continuous field of real linear 1-forms. -/
+theorem _root_.Continuous.oneForm {P Q : ℂ → ℝ} (hP : Continuous P) (hQ : Continuous Q) :
+    Continuous (oneForm P Q) := by
+  rw [oneForm_eq_clm]
+  exact (hP.smul continuous_const).add (hQ.smul continuous_const)
+
+/-- A continuous compactly supported planar field has uniformly bounded 1-form operator norm. -/
+theorem exists_bound_oneForm {P Q : ℂ → ℝ}
+    (hP : Continuous P) (hQ : Continuous Q)
+    (hcP : HasCompactSupport P) (hcQ : HasCompactSupport Q) :
+    ∃ C, ∀ z, ‖oneForm P Q z‖ ≤ C := by
+  obtain ⟨CP, hCP⟩ := hcP.exists_bound_of_continuous hP
+  obtain ⟨CQ, hCQ⟩ := hcQ.exists_bound_of_continuous hQ
+  refine ⟨CP * ‖Complex.reCLM‖ + CQ * ‖Complex.imCLM‖, fun z ↦ ?_⟩
+  rw [oneForm_eq_clm]
+  exact (norm_add_le _ _).trans (by
+    simp only [norm_smul]
+    gcongr
+    · exact hCP z
+    · exact hCQ z)
+
 /-- The integrand of circulation along a raw curve on an oriented real interval. -/
 @[expose]
 def circulationFun (P Q : ℂ → ℝ) (γ : ℝ → ℂ) (t : ℝ) : ℝ :=
@@ -53,6 +82,26 @@ their slice derivatives separately. -/
 @[expose]
 def curl (P Q : ℂ → ℝ) (z : ℂ) : ℝ :=
   fderiv ℝ Q z (1 : ℂ) - fderiv ℝ P z Complex.I
+
+/-- Globally real `C¹` fields have continuous curl. -/
+theorem _root_.ContDiff.continuous_curl {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
+    Continuous (curl P Q) := by
+  have heq : curl P Q = fun z ↦ fderiv ℝ Q z 1 - fderiv ℝ P z Complex.I :=
+    rfl
+  rw [heq]
+  exact ((ContinuousLinearMap.apply ℝ ℝ 1).continuous.comp
+    (hQ.continuous_fderiv (by simp))).sub
+      ((ContinuousLinearMap.apply ℝ ℝ Complex.I).continuous.comp
+        (hP.continuous_fderiv (by simp)))
+
+/-- Compact support of the field implies compact support of its curl. -/
+theorem _root_.HasCompactSupport.curl {P Q : ℂ → ℝ}
+    (hcP : HasCompactSupport P) (hcQ : HasCompactSupport Q) : HasCompactSupport (curl P Q) := by
+  have hQ := (hcQ.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] ℝ ↦ L 1) (by simp)
+  have hP := (hcP.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] ℝ ↦ L Complex.I) (by simp)
+  convert hQ.sub hP using 1
+  ext z
+  rfl
 
 /-- For differentiable fields the curl agrees with the difference of the directional slice
 derivatives used in the graph-cell identities. -/
