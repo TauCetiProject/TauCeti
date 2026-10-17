@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Card
 public import TauCeti.Analysis.Convex.Sequence.Supporting
 import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Order.Interval.Set.Nat
 import Mathlib.Order.Interval.Set.OrdConnectedLinear
 import Mathlib.Tactic.Linarith
 
@@ -25,8 +27,35 @@ intercept implicit. The intercept is nevertheless unique, and equals the support
 finite face at every real slope. A finite edge whose slope is strictly greater than `σ`
 also guarantees a finite face of slope `σ`, with both endpoints at or before that edge.
 Thus unbounded finite edge slopes guarantee finite faces at every real slope, even on an
-unbounded domain. These absolute endpoints are the geometric interface later used to identify
-extremal coefficients and count slope multiplicities.
+unbounded domain.
+
+The endpoints of a finite face of slope `σ` are read off from the finite unit slopes: the
+finite edges before `l` are exactly those of slope less than `σ`, the edges inside the face
+have slope `σ`, and the edges from `u` onwards have slope greater than `σ`. Hence, for a
+sequence whose finite domain starts at `a`, the left endpoint is `a` plus the number of finite
+unit slopes less than `σ`, the right endpoint is `a` plus the number at most `σ`, and the
+multiplicity of `σ` is `u - l`. Conversely, these slope conditions characterise the face.
+These absolute endpoints are the geometric interface later used to identify extremal
+coefficients and count slope multiplicities.
+
+## Main results
+
+* `IsConvexSeq.ordConnected_supportingFace`: supporting faces of convex sequences are order
+  connected.
+* `IsFiniteFace.existsUnique_intercept`, `IsFiniteFace.unique`: a finite face determines its
+  supporting intercept and its endpoints.
+* `IsConvexSeq.exists_isFiniteFace_of_finiteDomain`,
+  `IsConvexSeq.exists_isFiniteFace_of_lt_unitSlope`: existence of finite faces for bounded
+  finite domains and below any strictly larger finite slope.
+* `IsFiniteFace.unitSlope_lt_iff`, `IsFiniteFace.unitSlope_le_iff`,
+  `IsFiniteFace.unitSlope_eq_iff`: the position of a finite edge relative to a finite face is
+  determined by comparing its slope with `σ`.
+* `IsFiniteFace.left_eq_add_ncard`, `IsFiniteFace.right_eq_add_ncard`: the face endpoints count
+  the finite unit slopes less than, respectively at most, `σ`.
+* `IsFiniteFace.ncard_setOf_unitSlope_eq`: the multiplicity of the slope `σ` is the horizontal
+  length of the face.
+* `IsConvexSeq.isFiniteFace_iff_unitSlope`: finite faces are characterised by these slope
+  conditions.
 
 ## References
 
@@ -307,5 +336,245 @@ theorem IsConvexSeq.exists_isFiniteFace_of_unbounded_unitSlope {h : ℕ → With
   obtain ⟨s, ⟨m, hm, rfl⟩, hσ⟩ := not_bddAbove_iff.mp hunbounded σ
   obtain ⟨l, u, hf, _⟩ := hh.exists_isFiniteFace_of_lt_unitSlope hm hσ
   exact ⟨l, u, hf⟩
+
+/-! ### Face endpoints and unit slopes -/
+
+namespace IsFiniteFace
+
+variable {h : ℕ → WithTop ℝ} {σ : ℝ} {l u n : ℕ}
+
+/-- The heights of a finite face lie on a line of slope `σ`, and every other finite height
+lies strictly above that line. -/
+private theorem exists_line (hf : IsFiniteFace h σ l u) :
+    ∃ c : ℝ, (∀ n, l ≤ n → n ≤ u → h n ≠ ⊤ ∧ (h n).untop₀ = c + σ * n) ∧
+      ∀ n, h n ≠ ⊤ → n < l ∨ u < n → c + σ * n < (h n).untop₀ := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  refine ⟨c, fun n hln hnu ↦ ?_, fun n hn hout ↦ ?_⟩
+  · have hmem : n ∈ supportingFace h σ c := hface.symm.subset ⟨hln, hnu⟩
+    rw [mem_supportingFace] at hmem
+    rw [hmem, WithTop.untop₀_coe]
+    exact ⟨WithTop.coe_ne_top, rfl⟩
+  · have hle := hc n
+    rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe] at hle
+    refine hle.lt_of_ne fun heq ↦ ?_
+    have hmem : n ∈ supportingFace h σ c := by
+      rw [mem_supportingFace, ← WithTop.coe_untop₀_of_ne_top hn, heq]
+    rw [hface, Set.mem_Icc] at hmem
+    omega
+
+/-- Every unit edge inside a finite face of slope `σ` has slope `σ`. -/
+theorem unitSlope_eq (hf : IsFiniteFace h σ l u) (hln : l ≤ n) (hnu : n < u) :
+    unitSlope h n = σ := by
+  obtain ⟨c, hon, -⟩ := hf.exists_line
+  rw [unitSlope_def, (hon (n + 1) (by omega) hnu).2, (hon n hln hnu.le).2]
+  push_cast
+  ring
+
+/-- Every finite edge of a convex height sequence before a finite face of slope `σ` has slope
+strictly less than `σ`. -/
+theorem unitSlope_lt (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (hn : n ∈ finiteEdges h) (hnl : n < l) : unitSlope h n < σ := by
+  obtain ⟨c, hon, habove⟩ := hf.exists_line
+  have hn' := mem_finiteEdges.mp hn
+  obtain ⟨hl, hl_eq⟩ := hon l le_rfl hf.left_le_right
+  have hs := hh.mul_slope_le_sub hn'.1 hl hn'.1 hn'.2 hnl.le le_rfl
+  rw [Nat.cast_sub hnl.le, hl_eq] at hs
+  have hlt := habove n hn'.1 (.inl hnl)
+  by_contra hσ
+  nlinarith [mul_le_mul_of_nonneg_left (le_of_not_gt hσ)
+    (sub_nonneg.mpr (Nat.cast_le.mpr hnl.le) : (0 : ℝ) ≤ l - n)]
+
+/-- Every finite edge of a convex height sequence starting at or after the right endpoint of a
+finite face of slope `σ` has slope strictly greater than `σ`. -/
+theorem lt_unitSlope (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (hn : n ∈ finiteEdges h) (hun : u ≤ n) : σ < unitSlope h n := by
+  obtain ⟨c, hon, habove⟩ := hf.exists_line
+  have hn' := mem_finiteEdges.mp hn
+  obtain ⟨hu, hu_eq⟩ := hon u hf.left_le_right le_rfl
+  have hs := hh.sub_le_mul_slope hu hn'.2 hn'.1 hn'.2 (by omega) le_rfl
+  rw [Nat.cast_sub (by omega), hu_eq] at hs
+  have hlt := habove (n + 1) hn'.2 (.inr (by omega))
+  push_cast at hs hlt
+  by_contra hσ
+  nlinarith [mul_le_mul_of_nonneg_left (le_of_not_gt hσ)
+    (sub_nonneg.mpr (by exact_mod_cast (by omega : u ≤ n + 1)) : (0 : ℝ) ≤ n + 1 - u)]
+
+/-- A finite edge of a convex height sequence has slope less than `σ` exactly when it lies
+before the finite face of slope `σ`. -/
+theorem unitSlope_lt_iff (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (hn : n ∈ finiteEdges h) : unitSlope h n < σ ↔ n < l := by
+  refine ⟨fun hlt ↦ ?_, hf.unitSlope_lt hh hn⟩
+  by_contra hln
+  rcases lt_or_ge n u with hnu | hun
+  · exact hlt.ne (hf.unitSlope_eq (le_of_not_gt hln) hnu)
+  · exact (hf.lt_unitSlope hh hn hun).not_gt hlt
+
+/-- A finite edge of a convex height sequence has slope at most `σ` exactly when it starts
+before the right endpoint of the finite face of slope `σ`. -/
+theorem unitSlope_le_iff (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (hn : n ∈ finiteEdges h) : unitSlope h n ≤ σ ↔ n < u := by
+  refine ⟨fun hle ↦ ?_, fun hnu ↦ ?_⟩
+  · by_contra hun
+    exact (hf.lt_unitSlope hh hn (le_of_not_gt hun)).not_ge hle
+  · rcases lt_or_ge n l with hnl | hln
+    · exact (hf.unitSlope_lt hh hn hnl).le
+    · exact (hf.unitSlope_eq hln hnu).le
+
+/-- A finite edge of a convex height sequence has slope `σ` exactly when it lies inside the
+finite face of slope `σ`. -/
+theorem unitSlope_eq_iff (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (hn : n ∈ finiteEdges h) : unitSlope h n = σ ↔ l ≤ n ∧ n < u := by
+  rw [le_antisymm_iff, hf.unitSlope_le_iff hh hn, ← not_lt, hf.unitSlope_lt_iff hh hn, not_lt,
+    and_comm]
+
+/-- The finite edges of slope `σ` of a convex height sequence are exactly the unit edges of its
+finite face of slope `σ`. In particular, a singleton face carries no edge of slope `σ`. -/
+theorem setOf_unitSlope_eq (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u) :
+    {n ∈ finiteEdges h | unitSlope h n = σ} = Set.Ico l u := by
+  ext n
+  refine ⟨fun ⟨hn, heq⟩ ↦ (hf.unitSlope_eq_iff hh hn).mp heq, fun ⟨hln, hnu⟩ ↦ ?_⟩
+  obtain ⟨c, hon, -⟩ := hf.exists_line
+  exact ⟨mem_finiteEdges.mpr ⟨(hon n hln hnu.le).1, (hon (n + 1) (by omega) hnu).1⟩,
+    hf.unitSlope_eq hln hnu⟩
+
+/-- The multiplicity of the slope `σ` among the finite unit slopes of a convex height sequence
+is the horizontal length `u - l` of its finite face of slope `σ`. -/
+theorem ncard_setOf_unitSlope_eq (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u) :
+    {n ∈ finiteEdges h | unitSlope h n = σ}.ncard = u - l := by
+  rw [hf.setOf_unitSlope_eq hh, Set.ncard_Ico_nat]
+
+variable {a : ℕ}
+
+/-- For a convex height sequence whose finite domain starts at `a`, the finite edges of slope
+less than `σ` are the unit edges from `a` to the left endpoint of the face of slope `σ`. -/
+theorem setOf_unitSlope_lt (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (ha : IsLeast {n | h n ≠ ⊤} a) :
+    {n ∈ finiteEdges h | unitSlope h n < σ} = Set.Ico a l := by
+  ext n
+  refine ⟨fun ⟨hn, hlt⟩ ↦ ⟨ha.2 (mem_finiteEdges.mp hn).1,
+    (hf.unitSlope_lt_iff hh hn).mp hlt⟩, fun ⟨han, hnl⟩ ↦ ?_⟩
+  obtain ⟨c, hon, -⟩ := hf.exists_line
+  have hl := (hon l le_rfl hf.left_le_right).1
+  have hn : n ∈ finiteEdges h := mem_finiteEdges.mpr
+    ⟨hh.ne_top_of_le_of_le ha.1 hl han hnl.le, hh.ne_top_of_le_of_le ha.1 hl (by omega) hnl⟩
+  exact ⟨hn, hf.unitSlope_lt hh hn hnl⟩
+
+/-- For a convex height sequence whose finite domain starts at `a`, the finite edges of slope at
+most `σ` are the unit edges from `a` to the right endpoint of the face of slope `σ`. -/
+theorem setOf_unitSlope_le (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (ha : IsLeast {n | h n ≠ ⊤} a) :
+    {n ∈ finiteEdges h | unitSlope h n ≤ σ} = Set.Ico a u := by
+  ext n
+  refine ⟨fun ⟨hn, hle⟩ ↦ ⟨ha.2 (mem_finiteEdges.mp hn).1,
+    (hf.unitSlope_le_iff hh hn).mp hle⟩, fun ⟨han, hnu⟩ ↦ ?_⟩
+  obtain ⟨c, hon, -⟩ := hf.exists_line
+  have hu := (hon u hf.left_le_right le_rfl).1
+  have hn : n ∈ finiteEdges h := mem_finiteEdges.mpr
+    ⟨hh.ne_top_of_le_of_le ha.1 hu han hnu.le, hh.ne_top_of_le_of_le ha.1 hu (by omega) hnu⟩
+  exact ⟨hn, (hf.unitSlope_le_iff hh hn).mpr hnu⟩
+
+/-- The left endpoint of the finite face of slope `σ` of a convex height sequence whose finite
+domain starts at `a` is `a` plus the number of finite unit slopes less than `σ`. -/
+theorem left_eq_add_ncard (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (ha : IsLeast {n | h n ≠ ⊤} a) :
+    l = a + {n ∈ finiteEdges h | unitSlope h n < σ}.ncard := by
+  obtain ⟨c, hon, -⟩ := hf.exists_line
+  have hal := ha.2 (hon l le_rfl hf.left_le_right).1
+  rw [hf.setOf_unitSlope_lt hh ha, Set.ncard_Ico_nat]
+  omega
+
+/-- The right endpoint of the finite face of slope `σ` of a convex height sequence whose finite
+domain starts at `a` is `a` plus the number of finite unit slopes at most `σ`. -/
+theorem right_eq_add_ncard (hh : IsConvexSeq h) (hf : IsFiniteFace h σ l u)
+    (ha : IsLeast {n | h n ≠ ⊤} a) :
+    u = a + {n ∈ finiteEdges h | unitSlope h n ≤ σ}.ncard := by
+  obtain ⟨c, hon, -⟩ := hf.exists_line
+  have hau := ha.2 (hon u hf.left_le_right le_rfl).1
+  rw [hf.setOf_unitSlope_le hh ha, Set.ncard_Ico_nat]
+  omega
+
+end IsFiniteFace
+
+/-- Under the slope conditions characterising a finite face of slope `σ` with endpoints
+`l ≤ u`, finite heights on `[l, u]` lie on the line of slope `σ` through `(l, h l)`, and all
+other finite heights lie strictly above it. -/
+private theorem IsConvexSeq.untop₀_cmp_of_unitSlope {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h)
+    {σ : ℝ} {l u : ℕ} (hl : h l ≠ ⊤) (hu : h u ≠ ⊤) (hlu : l ≤ u)
+    (H : ∀ n ∈ finiteEdges h, (unitSlope h n < σ ↔ n < l) ∧ (unitSlope h n ≤ σ ↔ n < u))
+    {n : ℕ} (hn : h n ≠ ⊤) :
+    (n < l → (h l).untop₀ - σ * l + σ * n < (h n).untop₀) ∧
+      (l ≤ n → n ≤ u → (h n).untop₀ = (h l).untop₀ - σ * l + σ * n) ∧
+      (u < n → (h l).untop₀ - σ * l + σ * n < (h n).untop₀) := by
+  -- Edges between two finite heights are finite.
+  have hedge {i j k : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤) (hik : i ≤ k) (hkj : k < j) :
+      k ∈ finiteEdges h := mem_finiteEdges.mpr
+    ⟨hh.ne_top_of_le_of_le hi hj hik hkj.le, hh.ne_top_of_le_of_le hi hj (by omega) hkj⟩
+  -- On `[l, u]` the heights are affine of slope `σ`: the edge at `l` has slope at least `σ`
+  -- and the edge ending at `k` has slope at most `σ`.
+  have hon : ∀ k, l ≤ k → k ≤ u → (h k).untop₀ = (h l).untop₀ - σ * l + σ * k := by
+    intro k hlk hku
+    rcases eq_or_lt_of_le hlk with rfl | hlk'
+    · ring
+    have hk := hh.ne_top_of_le_of_le hl hu hlk hku
+    have hel := hedge hl hu le_rfl (by omega : l < u)
+    have hek := hedge hl hu (by omega : l ≤ k - 1) (by omega : k - 1 < u)
+    have hlo := hh.mul_slope_le_sub hl hk (mem_finiteEdges.mp hel).1
+      (mem_finiteEdges.mp hel).2 hlk le_rfl
+    have hhi := hh.sub_le_mul_slope hl hk (mem_finiteEdges.mp hek).1
+      (mem_finiteEdges.mp hek).2 hlk (by omega : k ≤ k - 1 + 1)
+    have hsl : σ ≤ unitSlope h l :=
+      le_of_not_gt fun h' ↦ absurd ((H l hel).1.mp h') (lt_irrefl l)
+    have hsk : unitSlope h (k - 1) ≤ σ := (H (k - 1) hek).2.mpr (by omega)
+    rw [Nat.cast_sub hlk] at hlo hhi
+    have hpos : (0 : ℝ) ≤ k - l := sub_nonneg.mpr (Nat.cast_le.mpr hlk)
+    nlinarith [mul_le_mul_of_nonneg_left hsl hpos, mul_le_mul_of_nonneg_left hsk hpos]
+  refine ⟨fun hnl ↦ ?_, hon n, fun hun ↦ ?_⟩
+  -- Before `l`, compare with the edge ending at `l`, of slope less than `σ`.
+  · have he := hedge hn hl (by omega : n ≤ l - 1) (by omega : l - 1 < l)
+    have hs := hh.sub_le_mul_slope hn hl (mem_finiteEdges.mp he).1 (mem_finiteEdges.mp he).2
+      hnl.le (by omega : l ≤ l - 1 + 1)
+    have hσ : unitSlope h (l - 1) < σ := (H (l - 1) he).1.mpr (by omega)
+    rw [Nat.cast_sub hnl.le] at hs
+    have hpos : (0 : ℝ) < l - n := sub_pos.mpr (Nat.cast_lt.mpr hnl)
+    nlinarith [mul_lt_mul_of_pos_left hσ hpos]
+  -- After `u`, compare with the edge starting at `u`, of slope greater than `σ`.
+  · have he := hedge hu hn le_rfl hun
+    have hs := hh.mul_slope_le_sub hu hn hu (mem_finiteEdges.mp he).2 hun.le le_rfl
+    have hσ : σ < unitSlope h u :=
+      lt_of_not_ge fun h' ↦ absurd ((H u he).2.mp h') (lt_irrefl u)
+    rw [Nat.cast_sub hun.le, hon u hlu le_rfl] at hs
+    have hpos : (0 : ℝ) < n - u := sub_pos.mpr (Nat.cast_lt.mpr hun)
+    nlinarith [mul_lt_mul_of_pos_left hσ hpos]
+
+/-- Two finite indices `l ≤ u` of a convex height sequence are the endpoints of its finite face
+of slope `σ` exactly when the finite edges of slope less than `σ` are those before `l`, and the
+finite edges of slope at most `σ` are those before `u`. -/
+theorem IsConvexSeq.isFiniteFace_iff_unitSlope {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h)
+    {σ : ℝ} {l u : ℕ} (hl : h l ≠ ⊤) (hu : h u ≠ ⊤) (hlu : l ≤ u) :
+    IsFiniteFace h σ l u ↔ ∀ n ∈ finiteEdges h,
+      (unitSlope h n < σ ↔ n < l) ∧ (unitSlope h n ≤ σ ↔ n < u) := by
+  refine ⟨fun hf n hn ↦ ⟨hf.unitSlope_lt_iff hh hn, hf.unitSlope_le_iff hh hn⟩,
+    fun H ↦ ⟨hlu, (h l).untop₀ - σ * l, fun n ↦ ?_, Set.ext fun n ↦ ?_⟩⟩
+  · by_cases hn : h n = ⊤
+    · simp [hn]
+    rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe]
+    obtain ⟨hlt, heq, hgt⟩ := hh.untop₀_cmp_of_unitSlope hl hu hlu H hn
+    rcases lt_or_ge n l with hnl | hln
+    · exact (hlt hnl).le
+    rcases le_or_gt n u with hnu | hun
+    · exact (heq hln hnu).ge
+    · exact (hgt hun).le
+  · rw [mem_supportingFace, Set.mem_Icc]
+    refine ⟨fun hmem ↦ ?_, fun ⟨hln, hnu⟩ ↦ ?_⟩
+    · have hn : h n ≠ ⊤ := by rw [hmem]; exact WithTop.coe_ne_top
+      rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_eq_coe] at hmem
+      obtain ⟨hlt, -, hgt⟩ := hh.untop₀_cmp_of_unitSlope hl hu hlu H hn
+      by_contra hout
+      rcases lt_or_ge n l with hnl | hln
+      · exact (hlt hnl).ne' hmem
+      · exact (hgt (by omega)).ne' hmem
+    · have hn := hh.ne_top_of_le_of_le hl hu hln hnu
+      rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_eq_coe]
+      exact (hh.untop₀_cmp_of_unitSlope hl hu hlu H hn).2.1 hln hnu
 
 end TauCeti
