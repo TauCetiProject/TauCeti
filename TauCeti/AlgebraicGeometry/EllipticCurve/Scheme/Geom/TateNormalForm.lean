@@ -130,14 +130,6 @@ theorem point_projModelMulBy_three_ne_projModelZero (s) :
 
 /-! ### Smoothness of the base -/
 
-/-- The ring `ℤ[A, B][Δ⁻¹]` is smooth over `ℤ`: it is a localisation of a polynomial ring in two
-variables. -/
-instance : Algebra.Smooth ℤ Ring :=
-  haveI : Algebra.Smooth ℤ (MvPolynomial (Fin 2) ℤ) := ⟨inferInstance, inferInstance⟩
-  haveI : Algebra.Smooth (MvPolynomial (Fin 2) ℤ) Ring :=
-    Algebra.Smooth.of_isLocalization_Away polyCurve.Δ
-  Algebra.Smooth.comp ℤ (MvPolynomial (Fin 2) ℤ) Ring
-
 /-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth over `Spec ℤ`, the
 terminal scheme. -/
 instance smooth_terminal_from : Smooth (terminal.from (Spec (.of (ULift.{u} Ring)))) := by

@@ -55,6 +55,11 @@ The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`
   form to the locus `Y₁(N)` where `(0, 0)` has naive exact order `N`.
 * `TauCeti.AlgebraicGeometry.EllObj.yOnePoint`: the point `(0, 0)` of the universal elliptic curve
   over `Y₁(N)`, which has naive exact order `N` (`EllObj.isOfNaiveExactOrder_yOnePoint`).
+* `TauCeti.AlgebraicGeometry.EllObj.naiveExactOrderOver X hN`,
+  `TauCeti.AlgebraicGeometry.EllObj.naiveExactOrderPoint X hN`: the scheme `Z` of points of naive
+  exact order `N` of an object `X = (E/S)` of `Ell/B`, as a scheme over `S`, and the tautological
+  point of `E_Z`, which has naive exact order `N`
+  (`EllObj.isOfNaiveExactOrder_naiveExactOrderPoint`).
 
 ## Main results
 
@@ -67,9 +72,7 @@ The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`
   of naive exact order `N` on an object of `Ell/B` is the pullback of `(0, 0)` along exactly one
   arrow to `EllObj.yOne B N hN`.
 * `TauCeti.AlgebraicGeometry.EllObj.smooth_yOne_structureMap`: for `N ≥ 4` invertible on `B`,
-  `Y₁(N)` is smooth over `B`. It is a retract over `B` of the finite étale scheme of points of naive
-  exact order `N` on the universal Tate normal form, whose base `B × Spec ℤ[A, B][Δ⁻¹]` is smooth
-  over `B`.
+  `Y₁(N)` is smooth over `B`.
 
 ## References
 
@@ -624,17 +627,28 @@ theorem isOfNaiveExactOrder_yOnePoint :
 
 variable [NeZero N]
 
+-- The naive `[Γ₁(N)]`-structure on an object `X = (E/S)` of `Ell/B` sending `1` to an `S`-point
+-- `P` of `E` of naive exact order `N`.
+private noncomputable def structureOfPoint {X : EllObj B}
+    {P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap} (hP : X.curve.IsOfNaiveExactOrder P N) :
+    (ModuliProblem.gammaOneNaive B N).obj (op X) :=
+  (ModuliProblem.naiveLevelEquiv X).symm
+    ⟨(zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩,
+      EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mpr (by
+        rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+        exact hP)⟩
+
+private theorem naiveLevelEquiv_structureOfPoint {X : EllObj B}
+    {P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap} (hP : X.curve.IsOfNaiveExactOrder P N) :
+    (ModuliProblem.naiveLevelEquiv X (structureOfPoint hP)).1 (.ofAdd 1) = P := by
+  rw [structureOfPoint, Equiv.apply_symm_apply, ← coe_zmodMonoidHomEquiv_apply,
+    Equiv.apply_symm_apply]
+
 -- The universal naive `[Γ₁(N)]`-structure on the universal elliptic curve over `Y₁(N)`: the point
 -- `(0, 0)`.
 private noncomputable def yOneStructure :
     (ModuliProblem.gammaOneNaive B N).obj (op (yOne B N hN)) :=
-  (ModuliProblem.naiveLevelEquiv _).symm
-    ⟨(zmodMonoidHomEquiv N
-        (𝟙_ (Over (yOne B N hN).base) ⟶ Over.mk (yOne B N hN).curve.structureMap)).symm
-        ⟨yOnePoint, isOfNaiveExactOrder_yOnePoint.pow_eq_one⟩,
-      EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mpr (by
-        rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
-        exact isOfNaiveExactOrder_yOnePoint)⟩
+  structureOfPoint isOfNaiveExactOrder_yOnePoint
 
 private theorem naiveLevelEquiv_map_yOneStructure {X : EllObj B} (k : X ⟶ yOne B N hN) :
     (ModuliProblem.naiveLevelEquiv X ((ModuliProblem.gammaOneNaive B N).map k.op
@@ -642,7 +656,7 @@ private theorem naiveLevelEquiv_map_yOneStructure {X : EllObj B} (k : X ⟶ yOne
       EllipticCurveGeom.pointsPullback (k ≫ yOneι B N hN).isPullback
         (k ≫ yOneι B N hN).zero_total (universalTatePoint B) := by
   rw [ModuliProblem.naiveLevelEquiv_map, MonoidHom.comp_apply, yOneStructure,
-    Equiv.apply_symm_apply, ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+    naiveLevelEquiv_structureOfPoint]
   exact (EllipticCurveGeom.pointsPullback_comp _ _ _ _ _).symm
 
 -- For `N ≥ 4`, the point `P` of a naive `[Γ₁(N)]`-structure satisfies the three conditions of the
@@ -740,8 +754,7 @@ theorem naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv_id :
       EllObj.yOnePoint := by
   have : NeZero N := ⟨by omega⟩
   rw [gammaOneNaiveRepresentableBy, Equiv.ofBijective_apply, op_id, CategoryTheory.Functor.map_id,
-    ConcreteCategory.id_apply, EllObj.yOneStructure, Equiv.apply_symm_apply,
-    ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+    ConcreteCategory.id_apply, EllObj.yOneStructure, EllObj.naiveLevelEquiv_structureOfPoint]
 
 end ModuliProblem
 
@@ -761,16 +774,8 @@ theorem existsUnique_hom_yOne (h4 : 4 ≤ N) {X : EllObj B}
       (k ≫ yOneι B N hN).zero_total (universalTatePoint B) = P := by
   have : NeZero N := ⟨by omega⟩
   let R := ModuliProblem.gammaOneNaiveRepresentableBy hN h4
-  -- the naive `[Γ₁(N)]`-structure on `X` sending `1` to `P`
-  let α : (ModuliProblem.gammaOneNaive B N).obj (op X) :=
-    (ModuliProblem.naiveLevelEquiv X).symm
-      ⟨(zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩,
-        EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mpr (by
-          rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
-          exact hP)⟩
-  have hα : (ModuliProblem.naiveLevelEquiv X α).1 (.ofAdd 1) = P := by
-    rw [Equiv.apply_symm_apply, ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
-  refine ⟨R.homEquiv.symm α, ?_, fun k hk ↦ R.homEquiv.injective ?_⟩
+  have hα := naiveLevelEquiv_structureOfPoint hP
+  refine ⟨R.homEquiv.symm (structureOfPoint hP), ?_, fun k hk ↦ R.homEquiv.injective ?_⟩
   · beta_reduce
     rw [← ModuliProblem.naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv hN h4,
       Equiv.apply_symm_apply, hα]
@@ -781,44 +786,62 @@ theorem existsUnique_hom_yOne (h4 : 4 ≤ N) {X : EllObj B}
     rw [coe_zmodMonoidHomEquiv_apply, coe_zmodMonoidHomEquiv_apply,
       ModuliProblem.naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv, hk, hα]
 
--- The tautological point of the scheme `Z` of points of naive exact order `N` of an object
--- `X = (E/S)` of `Ell/B`: the `Z`-point of the base change `E_Z` given by the inclusion
--- `Z ⟶ E[N] ⟶ E`. It has naive exact order `N`.
-private theorem exists_isOfNaiveExactOrder_naiveExactOrderOpens (X : EllObj B)
+/-- The scheme `Z` of points of naive exact order `N` of an object `X = (E/S)` of `Ell/B`, as a
+scheme over `S`: the open subscheme `naiveExactOrderOpens` of the `N`-torsion `E[N]`. It is finite
+étale over `S`. -/
+noncomputable abbrev naiveExactOrderOver (X : EllObj B)
+    (hN : ∀ s : X.base, (N : X.base.residueField s) ≠ 0) : Over X.base :=
+  Over.mk ((X.curve.naiveExactOrderOpens hN).ι ≫ (X.curve.torsion N).X.hom)
+
+/-- The tautological point of the scheme `Z` of points of naive exact order `N` of an object
+`X = (E/S)` of `Ell/B`: the `Z`-point of the base change `E_Z` given by the inclusion
+`Z ⟶ E[N] ⟶ E`. -/
+noncomputable def naiveExactOrderPoint (X : EllObj B)
     (hN : ∀ s : X.base, (N : X.base.residueField s) ≠ 0) :
-    ∃ P : 𝟙_ (Over (X.baseChangeFunctor.obj (Over.mk ((X.curve.naiveExactOrderOpens hN).ι ≫
-        (X.curve.torsion N).X.hom))).base) ⟶ Over.mk (X.baseChangeFunctor.obj (Over.mk
-          ((X.curve.naiveExactOrderOpens hN).ι ≫ (X.curve.torsion N).X.hom))).curve.structureMap,
-      (X.baseChangeFunctor.obj (Over.mk ((X.curve.naiveExactOrderOpens hN).ι ≫
-          (X.curve.torsion N).X.hom))).curve.IsOfNaiveExactOrder P N ∧
-        P.left ≫ (X.baseChangeFunctorHom (Over.mk ((X.curve.naiveExactOrderOpens hN).ι ≫
-          (X.curve.torsion N).X.hom))).total =
-          (X.curve.naiveExactOrderOpens hN).ι ≫ (X.curve.torsionι N).left := by
-  set T : Over X.base := Over.mk ((X.curve.naiveExactOrderOpens hN).ι ≫ (X.curve.torsion N).X.hom)
-  let x := (X.curve.naiveExactOrderRepresentableBy hN).homEquiv (𝟙 T)
-  let P := (X.baseChangePointsEquiv T).symm x.1
-  have hPx : P.left ≫ (X.baseChangeFunctorHom T).total =
+    𝟙_ (Over (X.baseChangeFunctor.obj (X.naiveExactOrderOver hN)).base) ⟶
+      Over.mk (X.baseChangeFunctor.obj (X.naiveExactOrderOver hN)).curve.structureMap :=
+  (X.baseChangePointsEquiv _).symm
+    ((X.curve.naiveExactOrderRepresentableBy hN).homEquiv (𝟙 _)).1
+
+/-- The tautological point of the scheme `Z` of points of naive exact order `N`, followed by the
+projection `E_Z ⟶ E`, is the inclusion `Z ⟶ E[N] ⟶ E`. -/
+theorem naiveExactOrderPoint_left_comp_total (X : EllObj B)
+    (hN : ∀ s : X.base, (N : X.base.residueField s) ≠ 0) :
+    (X.naiveExactOrderPoint hN).left ≫ (X.baseChangeFunctorHom (X.naiveExactOrderOver hN)).total =
       (X.curve.naiveExactOrderOpens hN).ι ≫ (X.curve.torsionι N).left := by
-    have h := congrArg Over.Hom.left ((X.baseChangePointsEquiv T).apply_symm_apply x.1)
-    rw [baseChangePointsEquiv_apply_left] at h
-    refine h.trans ?_
-    rw [EllipticCurveGeom.coe_naiveExactOrderRepresentableBy_homEquiv]
-    simp
-  refine ⟨P, (EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
-    (X.baseChangeFunctorHom T).isPullback (X.baseChangeFunctorHom T).zero_total).mp ?_, hPx⟩
-  -- the base of `X.baseChangeFunctorHom T` is only propositionally the structure morphism of `T`
-  let e : Over.mk (X.baseChangeFunctorHom T).base ⟶ T :=
+  have h := congrArg Over.Hom.left ((X.baseChangePointsEquiv _).apply_symm_apply
+    ((X.curve.naiveExactOrderRepresentableBy hN).homEquiv (𝟙 (X.naiveExactOrderOver hN))).1)
+  rw [baseChangePointsEquiv_apply_left] at h
+  refine h.trans ?_
+  rw [EllipticCurveGeom.coe_naiveExactOrderRepresentableBy_homEquiv]
+  simp
+
+/-- The tautological point of the scheme of points of naive exact order `N` has naive exact
+order `N`. -/
+theorem isOfNaiveExactOrder_naiveExactOrderPoint (X : EllObj B)
+    (hN : ∀ s : X.base, (N : X.base.residueField s) ≠ 0) :
+    (X.baseChangeFunctor.obj (X.naiveExactOrderOver hN)).curve.IsOfNaiveExactOrder
+      (X.naiveExactOrderPoint hN) N := by
+  let x := (X.curve.naiveExactOrderRepresentableBy hN).homEquiv (𝟙 (X.naiveExactOrderOver hN))
+  refine (EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
+    (X.baseChangeFunctorHom (X.naiveExactOrderOver hN)).isPullback
+    (X.baseChangeFunctorHom (X.naiveExactOrderOver hN)).zero_total).mp ?_
+  -- the base of `X.baseChangeFunctorHom _` is only propositionally the structure morphism of `Z`;
+  -- its source is only definitionally `Z`, so `simp` cannot use `Category.id_comp` on `𝟙 _ ≫ _`
+  let e : Over.mk (X.baseChangeFunctorHom (X.naiveExactOrderOver hN)).base ⟶
+      X.naiveExactOrderOver hN :=
     Over.homMk (𝟙 _) (by
       simp only [Over.mk_hom, baseChangeFunctorHom_base]
       exact Category.id_comp _)
-  have key : EllipticCurveGeom.pointsBaseChangeEquiv (X.baseChangeFunctorHom T).isPullback
-      (X.baseChangeFunctorHom T).zero_total P = e ≫ x.1 := by
+  have key : EllipticCurveGeom.pointsBaseChangeEquiv
+      (X.baseChangeFunctorHom (X.naiveExactOrderOver hN)).isPullback
+      (X.baseChangeFunctorHom (X.naiveExactOrderOver hN)).zero_total (X.naiveExactOrderPoint hN) =
+        e ≫ x.1 := by
     ext1
-    refine (EllipticCurveGeom.pointsBaseChangeEquiv_left (X.baseChangeFunctorHom T).isPullback
-      (X.baseChangeFunctorHom T).zero_total P).trans (hPx.trans ?_)
-    rw [EllipticCurveGeom.coe_naiveExactOrderRepresentableBy_homEquiv]
-    simp only [e, Over.comp_left, Over.id_left, EllipticCurveGeom.naiveExactOrderι_left]
-    exact (Category.id_comp _).symm.trans (Category.id_comp _).symm
+    rw [EllipticCurveGeom.pointsBaseChangeEquiv_left, naiveExactOrderPoint_left_comp_total,
+      EllipticCurveGeom.coe_naiveExactOrderRepresentableBy_homEquiv]
+    simp only [e, Over.comp_left, EllipticCurveGeom.naiveExactOrderι_left]
+    exact (Category.id_comp _).symm
   rw [key]
   exact (EllipticCurveGeom.mem_naiveExactOrderSubfunctor_obj.mp x.2).comp _
 
@@ -830,20 +853,18 @@ instance smooth_universalTate_structureMap : Smooth (universalTate B).structureM
 
 variable (B N hN) in
 /-- **`Y₁(N)` is smooth over `B`.** For `N ≥ 4` invertible on `B`, the structure morphism of the
-fine moduli scheme `Y₁(N)` to `B` is smooth; for example `Y₁(N)` is smooth over `ℤ[1/N]`.
-
-It is a retract over `B` of the scheme `Z` of points of naive exact order `N` on the universal Tate
-normal form, which is finite étale over the smooth `B`-scheme `B × Spec ℤ[A, B][Δ⁻¹]`: the point
-`(0, 0)` gives a section `Y₁(N) ⟶ Z`, and the morphism `Z ⟶ Y₁(N)` classifying the tautological
-point of `Z` retracts it. -/
+fine moduli scheme `Y₁(N)` to `B` is smooth; for example `Y₁(N)` is smooth over `ℤ[1/N]`. -/
 theorem smooth_yOne_structureMap (h4 : 4 ≤ N) : Smooth (yOne B N hN).structureMap := by
+  -- `Y₁(N)` is a retract over `B` of the scheme `Z` of points of naive exact order `N` on the
+  -- universal Tate normal form, which is finite étale over the smooth `B`-scheme
+  -- `B × Spec ℤ[A, B][Δ⁻¹]`: the point `(0, 0)` gives a section `Y₁(N) ⟶ Z`, and the morphism
+  -- `Z ⟶ Y₁(N)` classifying the tautological point `P` of `Z` retracts it
   have hN' := natCast_residueField_universalTate_ne_zero B N hN
-  -- the finite étale scheme `Z` of points of naive exact order `N` of the universal Tate normal
-  -- form, over its base `B × Spec ℤ[A, B][Δ⁻¹]`, and its tautological point `P`
-  set T : Over (universalTate B).base := Over.mk (((universalTate B).curve.naiveExactOrderOpens
-    hN').ι ≫ ((universalTate B).curve.torsion N).X.hom)
+  have hP := (universalTate B).isOfNaiveExactOrder_naiveExactOrderPoint hN'
+  have hPx := (universalTate B).naiveExactOrderPoint_left_comp_total hN'
+  set T := (universalTate B).naiveExactOrderOver hN'
+  set P := (universalTate B).naiveExactOrderPoint hN'
   have hT : Smooth T.hom := inferInstanceAs (Smooth (_ ≫ _))
-  obtain ⟨P, hP, hPx⟩ := exists_isOfNaiveExactOrder_naiveExactOrderOpens (universalTate B) hN'
   -- the retraction `r : Z ⟶ Y₁(N)` is the base of the arrow `k` classifying `P`
   obtain ⟨k, hk, -⟩ := existsUnique_hom_yOne (hN := hN) h4 hP
   -- the section `i : Y₁(N) ⟶ Z` given by the point `(0, 0)`, and the arrow `j` of `Ell/B` over it
@@ -865,9 +886,7 @@ theorem smooth_yOne_structureMap (h4 : 4 ≤ N) : Smooth (yOne B N hN).structure
     · rw [Category.assoc, ← comp_total, hjι, yOnePoint, EllipticCurveGeom.pointsPullback_left_comp,
         Category.assoc, hPx, hjb, yOneι_base]
       exact hsq.w
-    · rw [Category.assoc, Category.assoc, Hom.total_structureMap,
-        EllipticCurveGeom.left_comp_structureMap_assoc, EllipticCurveGeom.left_comp_structureMap]
-      exact (Category.id_comp _).trans (Category.comp_id _).symm
+    · simp [T]
   -- so `j ≫ k` and the identity both classify `(0, 0)`, and agree
   have hjk : j ≫ k = 𝟙 _ := by
     refine (existsUnique_hom_yOne (hN := hN) h4 isOfNaiveExactOrder_yOnePoint).unique ?_ ?_
