@@ -67,8 +67,9 @@ theorem inverseRegularizedGamma_eq_quantile (hs : 0 < s) :
     inverseRegularizedGamma s u = (gammaMeasure s 1).quantile u :=
   ite_eq_left hs
 
-/-- In the valid range, `P⁻¹(s, u)` is the least point at which `P(s, ·)` reaches `u`. -/
-theorem inverseRegularizedGamma_eq_sInf (hs : 0 < s) (_hu : u ∈ Ioo 0 1) :
+/-- For positive shape, `P⁻¹(s, u)` is the infimum of the points at which `P(s, ·)` reaches
+`u`. -/
+theorem inverseRegularizedGamma_eq_sInf (hs : 0 < s) :
     inverseRegularizedGamma s u = sInf {x | u ≤ regularizedGamma s x} := by
   rw [inverseRegularizedGamma_eq_quantile hs, Measure.quantile_def]
   congr 1
@@ -105,6 +106,24 @@ theorem inverseRegularizedGamma_eq_zero_of_one_le (s : ℝ) (hu : 1 ≤ u) :
     rw [hset, Real.sInf_empty]
   · exact ite_eq_right hs
 
+/-- `P⁻¹(s, u)` is `0` whenever `s` or `u` lies outside the valid range `0 < s`, `0 < u < 1`. -/
+theorem inverseRegularizedGamma_eq_zero_of_not (h : ¬(0 < s ∧ u ∈ Ioo 0 1)) :
+    inverseRegularizedGamma s u = 0 := by
+  rcases not_and_or.mp h with hs | hu
+  · exact inverseRegularizedGamma_eq_zero_of_nonpos_left (le_of_not_gt hs) u
+  · simp only [mem_Ioo, not_and_or, not_lt] at hu
+    rcases hu with hu | hu
+    · exact inverseRegularizedGamma_eq_zero_of_nonpos_right s hu
+    · exact inverseRegularizedGamma_eq_zero_of_one_le s hu
+
+private theorem strictMonoOn_cdf_gammaMeasure (hs : 0 < s) :
+    StrictMonoOn (cdf (gammaMeasure s 1)) (cdf (gammaMeasure s 1) ⁻¹' Ioo 0 1) := by
+  have h : ⇑(cdf (gammaMeasure s 1)) = regularizedGamma s :=
+    funext fun x => by rw [TauCeti.Probability.cdf_gammaMeasure_eq hs one_pos, one_mul]
+  rw [h]
+  exact (strictMonoOn_regularizedGamma hs).mono fun x hx =>
+    mem_Ici.2 ((regularizedGamma_pos_iff hs).1 hx.1).le
+
 /-- The points at which `P(s, ·)` reaches a level `u ∈ (0, 1)` form the closed ray starting at
 `P⁻¹(s, u)`. -/
 theorem setOf_le_regularizedGamma_eq_Ici (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
@@ -136,35 +155,25 @@ theorem inverseRegularizedGamma_pos (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
 
 /-- `P⁻¹(s, u)` is nonnegative, for every parameter value. -/
 theorem inverseRegularizedGamma_nonneg (s u : ℝ) : 0 ≤ inverseRegularizedGamma s u := by
-  by_cases hs : 0 < s
-  · by_cases hu0 : u ≤ 0
-    · rw [inverseRegularizedGamma_eq_zero_of_nonpos_right s hu0]
-    · by_cases hu1 : 1 ≤ u
-      · rw [inverseRegularizedGamma_eq_zero_of_one_le s hu1]
-      · exact (inverseRegularizedGamma_pos hs ⟨lt_of_not_ge hu0, lt_of_not_ge hu1⟩).le
-  · exact (ite_eq_right hs).ge
+  by_cases h : 0 < s ∧ u ∈ Ioo 0 1
+  · exact (inverseRegularizedGamma_pos h.1 h.2).le
+  · rw [inverseRegularizedGamma_eq_zero_of_not h]
 
 /-- `P⁻¹(s, ·)` is a right inverse of `P(s, ·)` on the levels `0 < u < 1`. -/
 theorem regularizedGamma_inverseRegularizedGamma (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     regularizedGamma s (inverseRegularizedGamma s u) = u := by
-  refine le_antisymm ?_ ((inverseRegularizedGamma_le_iff hs hu).1 le_rfl)
-  -- To the left of `P⁻¹(s, u)` the function stays below `u`, so by continuity it is at most `u`
-  -- at `P⁻¹(s, u)` itself.
-  refine le_of_tendsto (((continuous_regularizedGamma s).tendsto _).mono_left
-    (nhdsWithin_le_nhds (s := Iio (inverseRegularizedGamma s u)))) ?_
-  filter_upwards [self_mem_nhdsWithin] with y hy
-  exact ((lt_inverseRegularizedGamma_iff hs hu).1 hy).le
+  have h := Measure.cdf_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
+    hu.1 hu.2
+  rwa [TauCeti.Probability.cdf_gammaMeasure_eq hs one_pos, one_mul,
+    ← inverseRegularizedGamma_eq_quantile hs] at h
 
 /-- The strict form of `TauCeti.inverseRegularizedGamma_le_iff`. -/
 theorem inverseRegularizedGamma_lt_iff (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     inverseRegularizedGamma s u < x ↔ u < regularizedGamma s x := by
-  refine ⟨fun h => ?_, fun h => not_le.1 fun hx => ?_⟩
-  · have hpos := inverseRegularizedGamma_pos hs hu
-    rw [← regularizedGamma_inverseRegularizedGamma hs hu]
-    exact strictMonoOn_regularizedGamma hs hpos.le (hpos.trans h).le h
-  · have := regularizedGamma_monotone s hx
-    rw [regularizedGamma_inverseRegularizedGamma hs hu] at this
-    exact not_lt.2 this h
+  rw [inverseRegularizedGamma_eq_quantile hs, Measure.quantile_lt_iff _
+    (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos) (strictMonoOn_cdf_gammaMeasure hs)
+    hu.1 hu.2,
+    TauCeti.Probability.cdf_gammaMeasure_eq hs one_pos, one_mul]
 
 /-- Uniqueness: for `0 < s` and `0 < u < 1`, the only solution of `P(s, x) = u` is
 `x = P⁻¹(s, u)`. -/
@@ -184,20 +193,18 @@ theorem inverseRegularizedGamma_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
 
 /-- `P⁻¹(s, ·)` is strictly increasing on the levels `0 < u < 1`. -/
 theorem strictMonoOn_inverseRegularizedGamma (hs : 0 < s) :
-    StrictMonoOn (inverseRegularizedGamma s) (Ioo 0 1) := fun u hu v hv huv => by
-  rwa [lt_inverseRegularizedGamma_iff hs hv, regularizedGamma_inverseRegularizedGamma hs hu]
+    StrictMonoOn (inverseRegularizedGamma s) (Ioo 0 1) := by
+  rw [show inverseRegularizedGamma s = _ from
+    funext fun _ => inverseRegularizedGamma_eq_quantile hs]
+  exact Measure.strictMonoOn_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
 
 /-- `P⁻¹(s, ·)` is continuous on the levels `0 < u < 1`. -/
 theorem continuousOn_inverseRegularizedGamma (hs : 0 < s) :
-    ContinuousOn (inverseRegularizedGamma s) (Ioo 0 1) := fun u hu => by
-  -- A monotone function whose image of a neighbourhood is a neighbourhood is continuous; here the
-  -- image of `(0, 1)` is all of `(0, ∞)`.
-  refine (continuousAt_of_monotoneOn_of_image_mem_nhds
-    (strictMonoOn_inverseRegularizedGamma hs).monotoneOn (isOpen_Ioo.mem_nhds hu)
-    (mem_of_superset (Ioi_mem_nhds (inverseRegularizedGamma_pos hs hu)) fun y hy => ?_))
-    |>.continuousWithinAt
-  exact ⟨regularizedGamma s y, ⟨regularizedGamma_pos hs hy, regularizedGamma_lt_one s y⟩,
-    inverseRegularizedGamma_regularizedGamma hs hy⟩
+    ContinuousOn (inverseRegularizedGamma s) (Ioo 0 1) := by
+  rw [show inverseRegularizedGamma s = _ from
+    funext fun _ => inverseRegularizedGamma_eq_quantile hs]
+  exact Measure.continuousOn_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
+    (strictMonoOn_cdf_gammaMeasure hs)
 
 /-- `P⁻¹(s, u)` tends to `0` from above as the level `u` decreases to `0`. -/
 theorem tendsto_inverseRegularizedGamma_nhdsGT_zero (hs : 0 < s) :
@@ -237,14 +244,7 @@ theorem measurable_inverseRegularizedGamma :
     by_cases h : 0 < s ∧ u ∈ Ioo 0 1
     · rw [inverseRegularizedGamma_le_iff h.1 h.2]
       tauto
-    · have hinv : inverseRegularizedGamma s u = 0 := by
-        rcases not_and_or.mp h with hs | hu
-        · exact inverseRegularizedGamma_eq_zero_of_nonpos_left (le_of_not_gt hs) u
-        · simp only [mem_Ioo, not_and_or, not_lt] at hu
-          rcases hu with hu | hu
-          · exact inverseRegularizedGamma_eq_zero_of_nonpos_right s hu
-          · exact inverseRegularizedGamma_eq_zero_of_one_le s hu
-      rw [hinv]
+    · rw [inverseRegularizedGamma_eq_zero_of_not h]
       tauto
   rw [hpre]
   exact (hV.inter (measurableSet_le measurable_snd (by fun_prop))).union
