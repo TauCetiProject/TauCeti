@@ -64,6 +64,35 @@ theorem concaveOn_volume_real_add_smul_rpow (K L : ConvexBody E)
   simpa only [K.convex.add_smul_interpolation L.convex hp hq hpq hs ht,
     smul_eq_mul] using h
 
+/-- The dimension root of parallel volume is bounded below by the affine function whose
+intercept and slope are the volume roots of the two convex bodies. -/
+theorem volume_real_rpow_add_mul_le_volume_real_add_smul_rpow (K L : ConvexBody E)
+    (hn : Module.finrank ℝ E ≠ 0) {t : ℝ} (ht : 0 ≤ t) :
+    volume.real (K : Set E) ^ (Module.finrank ℝ E : ℝ)⁻¹ +
+      t * volume.real (L : Set E) ^ (Module.finrank ℝ E : ℝ)⁻¹ ≤
+        volume.real ((K : Set E) + t • (L : Set E)) ^ (Module.finrank ℝ E : ℝ)⁻¹ := by
+  simpa only [one_mul, one_smul] using
+    TauCeti.mul_volume_real_rpow_add_mul_volume_real_rpow_le hn
+      K.nonempty K.isCompact.measurableSet.nullMeasurableSet
+      L.nonempty L.isCompact.measurableSet.nullMeasurableSet zero_le_one ht
+      (by simpa only [one_smul] using (K.isCompact.add (L.isCompact.smul t)).measure_lt_top.ne)
+
+/-- The dimension root of parallel volume is bounded above on nonnegative parameters by
+its tangent at zero whenever the right derivative exists. -/
+theorem volume_real_add_smul_rpow_le_of_hasDerivWithinAt (K L : ConvexBody E)
+    (hn : Module.finrank ℝ E ≠ 0) {d : ℝ}
+    (hd : HasDerivWithinAt (fun t : ℝ ↦
+      volume.real ((K : Set E) + t • (L : Set E)) ^ (Module.finrank ℝ E : ℝ)⁻¹)
+      d (Ioi 0) 0) {t : ℝ} (ht : 0 ≤ t) :
+    volume.real ((K : Set E) + t • (L : Set E)) ^ (Module.finrank ℝ E : ℝ)⁻¹ ≤
+      volume.real (K : Set E) ^ (Module.finrank ℝ E : ℝ)⁻¹ + t * d := by
+  obtain rfl | htpos := ht.eq_or_lt
+  · simp [zero_smul_set L.nonempty]
+  have hconc := K.concaveOn_volume_real_add_smul_rpow L hn
+  have htangent := hconc.slope_le_of_hasDerivWithinAt_Ioi (by simp) ht htpos hd
+  simp only [slope_def_field, zero_smul_set L.nonempty, add_zero, sub_zero] at htangent
+  linarith [(div_le_iff₀ htpos).1 htangent]
+
 /-- If the right derivative of the parallel volume root exists at zero, it is bounded
 below by the volume root of the added convex body. -/
 theorem volume_real_rpow_le_of_hasDerivWithinAt (K L : ConvexBody E)
@@ -72,15 +101,10 @@ theorem volume_real_rpow_le_of_hasDerivWithinAt (K L : ConvexBody E)
       volume.real ((K : Set E) + t • (L : Set E)) ^ (Module.finrank ℝ E : ℝ)⁻¹)
       d (Ioi 0) 0) :
     volume.real (L : Set E) ^ (Module.finrank ℝ E : ℝ)⁻¹ ≤ d := by
-  have hconc := K.concaveOn_volume_real_add_smul_rpow L hn
-  have htangent := hconc.slope_le_of_hasDerivWithinAt_Ioi
-    (by simp) (by simp : (1 : ℝ) ∈ Ici 0) zero_lt_one hd
-  have hBM := TauCeti.volume_real_rpow_add_volume_real_rpow_le hn
-    K.nonempty K.isCompact.measurableSet.nullMeasurableSet
-    L.nonempty L.isCompact.measurableSet.nullMeasurableSet
-    (K.isCompact.add L.isCompact).measure_lt_top.ne
-  simp only [slope_def_field, one_smul, zero_smul_set L.nonempty,
-    add_zero, sub_zero, div_one] at htangent
+  have hlower := K.volume_real_rpow_add_mul_le_volume_real_add_smul_rpow L hn
+    (t := 1) zero_le_one
+  have hupper := K.volume_real_add_smul_rpow_le_of_hasDerivWithinAt L hn hd
+    (t := 1) zero_le_one
   linarith
 
 /-- The right derivative at zero attains its Brunn–Minkowski lower bound exactly when
@@ -97,18 +121,8 @@ theorem hasDerivWithinAt_volume_real_add_smul_rpow_iff (K L : ConvexBody E)
           t * volume.real (L : Set E) ^ (Module.finrank ℝ E : ℝ)⁻¹ := by
   constructor
   · intro hd t ht
-    obtain rfl | htpos := ht.eq_or_lt
-    · simp [zero_smul_set L.nonempty]
-    have hconc := K.concaveOn_volume_real_add_smul_rpow L hn
-    have htangent := hconc.slope_le_of_hasDerivWithinAt_Ioi (by simp) ht htpos hd
-    simp only [slope_def_field, zero_smul_set L.nonempty, add_zero, sub_zero] at htangent
-    have hupper := (div_le_iff₀ htpos).1 htangent
-    have hlower := TauCeti.mul_volume_real_rpow_add_mul_volume_real_rpow_le hn
-      K.nonempty K.isCompact.measurableSet.nullMeasurableSet
-      L.nonempty L.isCompact.measurableSet.nullMeasurableSet zero_le_one ht
-      (by simpa only [one_smul] using (K.isCompact.add (L.isCompact.smul t)).measure_lt_top.ne)
-    simp only [one_mul, one_smul] at hlower
-    linarith
+    exact le_antisymm (K.volume_real_add_smul_rpow_le_of_hasDerivWithinAt L hn hd ht)
+      (K.volume_real_rpow_add_mul_le_volume_real_add_smul_rpow L hn ht)
   · intro h
     have hd := ((hasDerivAt_id (0 : ℝ)).mul_const
       (volume.real (L : Set E) ^ (Module.finrank ℝ E : ℝ)⁻¹)).const_add
