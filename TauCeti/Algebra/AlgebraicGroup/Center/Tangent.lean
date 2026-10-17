@@ -55,11 +55,8 @@ theorem mem_lieSubalgebra_centerDefiningIdeal_iff_forall_adDerivation_eq_self
   constructor
   · intro hd A _ _ φ g
     have hd' : Derivation.mapValue φ d ∈
-        (centerDefiningIdeal H).lieSubalgebra (B := A) := by
-      rw [HopfIdeal.mem_lieSubalgebra_iff] at hd ⊢
-      intro x hx
-      erw [Derivation.mapValue_apply, hd x hx, map_zero]
-      rfl
+        (centerDefiningIdeal H).lieSubalgebra (B := A) :=
+      (centerDefiningIdeal H).mapValue_mem_lieSubalgebra φ hd
     have hp := (HopfIdeal.mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff
       (centerDefiningIdeal H) (Derivation.mapValue φ d)).mpr hd'
     have hc : HopfAlgebra.IsCentralPoint
