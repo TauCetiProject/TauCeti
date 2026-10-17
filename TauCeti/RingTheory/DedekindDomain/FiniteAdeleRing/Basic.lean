@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
+import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
 
 /-!
 # The finite adele ring: separation, integral elements, and strong approximation
@@ -29,19 +30,19 @@ about it that are not stated in Mathlib:
   finite adeles;
 * consequently `K / R` is the quotient of the finite adeles by the integral finite adeles.
 
-More generally, for a set `S` of finite places, the finite adeles integral outside `S` form an
-open and closed `R`-subalgebra `∏_{v ∈ S} K_v × ∏_{v ∉ S} 𝒪_v`, the `S`-integral finite adeles.
-The restricted-product condition says exactly that every finite adele is `S`-integral for some
-finite `S`, so the finite adele ring is the union of these subalgebras; for finite `S` they carry
-the product topology. They meet `K` in the `S`-integers `S.integer K`, which are dense in them by
-strong approximation. The case `S = ∅` recovers the integral finite adeles and `R`.
-
 The fourth fact is the finite half of the discreteness of a number field in its adele ring.  The
 fifth says that an element of `K` can be made close to a given finite adele `a` at finitely many
 places while differing from `a` by an integral element at every other place.  Since the integral
 finite adeles are open, it implies that `K` and the integral finite adeles together span the finite
 adele ring additively, which with the fourth fact gives `K / R ≃ 𝔸ᶠ / ∏_v 𝒪_v`.  For a number field
 the infinite places are what is omitted here: `K` is discrete, not dense, in the full adele ring.
+
+More generally, for a set `S` of finite places, the finite adeles integral outside `S` form an
+open and closed `R`-subalgebra `∏_{v ∈ S} K_v × ∏_{v ∉ S} 𝒪_v`, the `S`-integral finite adeles.
+The restricted-product condition says exactly that every finite adele is `S`-integral for some
+finite `S`, so the finite adele ring is the union of these subalgebras; for finite `S` they carry
+the product topology. They meet `K` in the `S`-integers `S.integer K`, which are dense in them by
+strong approximation. The case `S = ∅` recovers the integral finite adeles and `R`.
 
 The proof clears denominators: a finite adele `a` has a common denominator `d ∈ R`, and the
 integral adele `a * d` is approximated by an element `r ∈ R` at finitely many places by the Chinese
@@ -201,17 +202,6 @@ theorem continuous_ofAdicCompletion (v : HeightOneSpectrum R) :
   exact TauCeti.continuous_restrictedProduct_mulSingle
     (fun w : HeightOneSpectrum R ↦ w.adicCompletionIntegers K) v
 
-variable (R K) in
-/-- The integral finite adeles are open in the finite adele ring. -/
-theorem isOpen_integralAdeles : IsOpen (integralAdeles R K : Set (FiniteAdeleRing R K)) :=
-  RestrictedProduct.isOpen_forall_mem fun _ ↦ Valued.isOpen_valuationSubring _
-
-variable (R K) in
-/-- The integral finite adeles are closed in the finite adele ring, being an open subgroup. -/
-theorem isClosed_integralAdeles : IsClosed (integralAdeles R K : Set (FiniteAdeleRing R K)) :=
-  AddSubgroup.isClosed_of_isOpen (integralAdeles R K).toSubring.toAddSubgroup
-    (isOpen_integralAdeles R K)
-
 /-- The integral finite adeles are compact when every local integer ring is compact. -/
 theorem isCompact_integralAdeles
     [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)] :
@@ -299,6 +289,16 @@ theorem isClosed_sIntegralAdeles (S : Set (HeightOneSpectrum R)) :
   AddSubgroup.isClosed_of_isOpen (sIntegralAdeles R K S).toSubring.toAddSubgroup
     (isOpen_sIntegralAdeles R K S)
 
+variable (R K) in
+/-- The integral finite adeles are open in the finite adele ring. -/
+theorem isOpen_integralAdeles : IsOpen (integralAdeles R K : Set (FiniteAdeleRing R K)) :=
+  sIntegralAdeles_empty R K ▸ isOpen_sIntegralAdeles R K ∅
+
+variable (R K) in
+/-- The integral finite adeles are closed in the finite adele ring, being an open subgroup. -/
+theorem isClosed_integralAdeles : IsClosed (integralAdeles R K : Set (FiniteAdeleRing R K)) :=
+  sIntegralAdeles_empty R K ▸ isClosed_sIntegralAdeles R K ∅
+
 /-- **For finite `S`, the `S`-integral finite adeles carry the product topology** of
 `∏_{v ∈ S} K_v × ∏_{v ∉ S} 𝒪_v`: reading off all components embeds them topologically into the
 full product `∏_v K_v`. Finiteness of `S` cannot be dropped in general: for `S = Set.univ` this
@@ -326,9 +326,7 @@ priority over the place-by-place unfolding `mem_sIntegralAdeles` as a `simp` lem
 theorem algebraMap_mem_sIntegralAdeles_iff (S : Set (HeightOneSpectrum R)) (x : K) :
     algebraMap K (FiniteAdeleRing R K) x ∈ sIntegralAdeles R K S ↔ x ∈ S.integer K := by
   simp only [mem_sIntegralAdeles, algebraMap_apply, mem_adicCompletionIntegers,
-    valuedAdicCompletion_eq_valuation']
-  -- Mathlib defines membership in `S.integer K` as this valuation condition, with no `mem` lemma
-  exact Iff.rfl
+    valuedAdicCompletion_eq_valuation', Set.mem_integer_iff]
 
 /-- The diagonal image of an element of `K` in the finite adele ring is integral exactly when the
 element lies in `R`: the integral finite adeles meet `K` in `R`. It takes priority over the
@@ -336,8 +334,8 @@ place-by-place unfolding `mem_integralAdeles` as a `simp` lemma. -/
 @[simp high]
 theorem algebraMap_mem_integralAdeles_iff (x : K) :
     algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K ↔ x ∈ (algebraMap R K).range := by
-  rw [← sIntegralAdeles_empty, algebraMap_mem_sIntegralAdeles_iff, integer_empty,
-    Algebra.mem_bot, RingHom.mem_range, Set.mem_range]
+  rw [← sIntegralAdeles_empty, algebraMap_mem_sIntegralAdeles_iff, Set.mem_integer_empty_iff,
+    RingHom.mem_range]
 
 end IsDedekindDomain.FiniteAdeleRing
 
@@ -513,8 +511,12 @@ variable (R K) in
 /-- **Strong approximation for the integral finite adeles**: they are the closure of `R`. -/
 theorem closure_range_algebraMap :
     closure (Set.range (algebraMap R (FiniteAdeleRing R K))) = integralAdeles R K := by
-  rw [← sIntegralAdeles_empty, ← closure_image_algebraMap_integer, integer_empty,
-    Algebra.coe_bot, ← Set.range_comp, ← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq]
+  have h : algebraMap K (FiniteAdeleRing R K) '' (∅ : Set (HeightOneSpectrum R)).integer K =
+      Set.range (algebraMap R (FiniteAdeleRing R K)) := by
+    ext a
+    simp only [Set.mem_image, SetLike.mem_coe, Set.mem_integer_empty_iff, Set.mem_range,
+      exists_exists_eq_and, ← IsScalarTower.algebraMap_apply]
+  rw [← h, closure_image_algebraMap_integer, sIntegralAdeles_empty]
 
 variable (R K) in
 /-- `R` is dense in the integral finite adeles. -/
