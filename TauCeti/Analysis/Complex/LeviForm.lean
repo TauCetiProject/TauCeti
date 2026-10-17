@@ -20,12 +20,13 @@ the sesquilinear form `leviForm f x` whose real and imaginary parts are
 `Re (leviForm f x v w) = (D²f(x)(v, w) + D²f(x)(I • v, I • w)) / 4`,
 `Im (leviForm f x v w) = (D²f(x)(I • v, w) - D²f(x)(v, I • w)) / 4`.
 
-In holomorphic coordinates `z_j = x_j + I y_j` its matrix entries are the Wirtinger second
-derivatives `∂²f / ∂z_j ∂(conj z_k)`, and for `C²` `f` its diagonal value `leviForm f x v v` is
-the real number `(D²f(x)(v, v) + D²f(x)(I • v, I • v)) / 4`. Unlike the real Hessian, which is
-intrinsic only at critical points, the Levi form transforms as a Hermitian form under holomorphic
-changes of variables at every point. Positive definiteness of the Levi form is strict
-plurisubharmonicity.
+In holomorphic coordinates `z_j = x_j + I y_j` with coordinate vectors `e_j`, its matrix entries
+are the Wirtinger second derivatives, with the arguments reversed: for `C²` `f`,
+`leviForm f x (e_k) (e_j) = ∂²f / ∂z_j ∂(conj z_k)`. For `C²` `f` its diagonal value
+`leviForm f x v v` is the real number `(D²f(x)(v, v) + D²f(x)(I • v, I • v)) / 4`. Unlike the
+real Hessian, which is intrinsic only at critical points, the Levi form transforms as a Hermitian
+form under holomorphic changes of variables at every point. Positive definiteness of the Levi form
+is strict plurisubharmonicity.
 
 This file gives the calculus of the Levi form: its value on the diagonal in terms of the Hessian
 quadratic form, Hermitian symmetry, the sum rule, the product rule, the rule for post-composition
@@ -73,7 +74,8 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 /-- The **Levi form** of a real function `f` at `x`: the sesquilinear form
 `(D²f(x)(v, w) + D²f(x)(I • v, I • w) + I * (D²f(x)(I • v, w) - D²f(x)(v, I • w))) / 4`,
 conjugate-linear in `v` and complex-linear in `w`. Its matrix entries in holomorphic coordinates
-are the Wirtinger derivatives `∂²f / ∂z_j ∂(conj z_k)`. -/
+are the Wirtinger derivatives, with the arguments reversed: for `C²` `f` and coordinate vectors
+`e_j`, `leviForm f x (e_k) (e_j) = ∂²f / ∂z_j ∂(conj z_k)`. -/
 noncomputable def leviForm (f : V → ℝ) (x : V) : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ :=
   (fderiv ℝ (fderiv ℝ f) x).toBilinForm.leviForm
 
