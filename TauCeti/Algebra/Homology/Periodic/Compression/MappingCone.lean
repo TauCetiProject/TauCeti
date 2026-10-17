@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.Homology.Periodic.Compression.Shift
 public import TauCeti.Algebra.Homology.Periodic.Triangulated
 
@@ -159,20 +159,12 @@ mapping cone of the compressed map. -/
 instance hasCompression_mappingCone : HasCompression n (mappingCone φ) := fun r ↦
   ⟨⟨⟨_, isColimitConeCofan n φ r⟩⟩⟩
 
-/-- The standard null-homotopy of `φ ≫ inr φ`, whose components are those of `inl φ`. -/
-private noncomputable def inrCompHomotopy : Homotopy (φ ≫ mappingCone.inr φ) 0 :=
-  homotopyCofiber.inrCompHomotopy φ fun j ↦ ⟨j - 1, by simp⟩
-
-private lemma inrCompHomotopy_hom (i j : ℤ) (hij : j + 1 = i) :
-    (inrCompHomotopy φ).hom i j = (mappingCone.inl φ).v i j (by omega) :=
-  homotopyCofiber.inrCompHomotopy_hom φ _ i j hij
-
 /-- The compression of `φ ≫ inr φ` is null-homotopic, by the compression of the standard
 null-homotopy of `φ ≫ inr φ`. -/
 noncomputable def compressionMappingConeInrHomotopy :
     Homotopy (compressionMap n φ ≫ compressionMap n (mappingCone.inr φ)) 0 :=
   (Homotopy.ofEq (compressionMap_comp n _ _).symm).trans
-    ((compressionHomotopy n (inrCompHomotopy φ)).trans
+    ((compressionHomotopy n (mappingCone.inrCompHomotopy φ)).trans
       (Homotopy.ofEq (compressionMap_zero n _ _)))
 
 @[reassoc]
@@ -182,8 +174,9 @@ lemma ιCompression_compressionMappingConeInrHomotopy_hom (i j : ℤ) (hij : j +
       (mappingCone.inl φ).v i j (by omega) ≫ ιCompression n (mappingCone φ) j s hj := by
   simp only [compressionMappingConeInrHomotopy, Homotopy.trans_hom, Homotopy.ofEq_hom,
     Pi.zero_apply, zero_add, add_zero]
-  rw [ιCompression_compressionHomotopy_hom n (inrCompHomotopy φ) i j hij r s hi hj,
-    inrCompHomotopy_hom φ i j hij]
+  rw [ιCompression_compressionHomotopy_hom n (mappingCone.inrCompHomotopy φ)
+      i j hij r s hi hj,
+    mappingCone.inrCompHomotopy_hom φ i j hij]
 
 /-- The comparison from the periodic mapping cone of the compressed map to the compression of the
 mapping cone. It is induced by the compressed inclusion `inr φ` and the compressed null-homotopy
@@ -256,8 +249,9 @@ of `inr φ` and the compressed null-homotopy of `φ ≫ inr φ`. -/
 lemma compressionMappingConeIso_inv :
     (compressionMappingConeIso n φ).inv =
       homotopyCofiber.desc _ (compressionMap n (mappingCone.inr φ))
-        (compressionMappingConeInrHomotopy n φ) :=
-  (rfl)
+        (compressionMappingConeInrHomotopy n φ) := by
+  ext r
+  rfl
 
 /-- On the summand of degree `i`, the comparison is given by the two projections of the mapping
 cone followed by the inclusions into the compressions. -/
@@ -285,6 +279,25 @@ lemma ιCompression_inlX_compressionMappingConeIso_inv_f (i j : ℤ) (hij : i + 
   (congrArg (ιCompression n K j s _ ≫ ·) (inlX_coneToCompression_f n φ r s hs)).trans
     (ιCompression_compressionMappingConeInrHomotopy_hom n φ j i hij s r _ hi)
 
+/-- On the right summand of the periodic cone, the inverse comparison is the compression of the
+right inclusion `inr φ` of the mapping cone. -/
+@[reassoc (attr := simp)]
+lemma ιCompression_inrX_compressionMappingConeIso_inv_f (i : ℤ) (r : ZMod n)
+    (hi : (i : ZMod n) = r) :
+    ιCompression n L i r hi ≫ homotopyCofiber.inrX (compressionMap n φ) r ≫
+        (compressionMappingConeIso n φ).inv.f r =
+      (mappingCone.inr φ).f i ≫ ιCompression n (mappingCone φ) i r hi := by
+  rw [compressionMappingConeIso_inv, homotopyCofiber.inrX_desc_f,
+    ιCompression_compressionMap_f]
+
+/-- The right inclusion of the periodic cone followed by the inverse comparison is the
+compression of `inr φ`. -/
+@[reassoc (attr := simp)]
+lemma inr_comp_compressionMappingConeIso_inv :
+    homotopyCofiber.inr (compressionMap n φ) ≫ (compressionMappingConeIso n φ).inv =
+      compressionMap n (mappingCone.inr φ) := by
+  rw [compressionMappingConeIso_inv, homotopyCofiber.inr_desc]
+
 /-- The compression of the inclusion `inr φ` corresponds to the inclusion of the periodic
 cone. -/
 @[reassoc (attr := simp)]
@@ -292,25 +305,6 @@ lemma compressionMap_inr_comp_compressionMappingConeIso_hom :
     compressionMap n (mappingCone.inr φ) ≫ (compressionMappingConeIso n φ).hom =
       homotopyCofiber.inr (compressionMap n φ) := by
   rw [← Iso.eq_comp_inv, compressionMappingConeIso_inv, homotopyCofiber.inr_desc]
-
-omit [HasCompression n K] [HasCompression n L] in
-/-- Mathlib's `mappingCone.inl_v_triangle_mor₃_f`, stated for the third morphism of the triangle
-as a morphism `mappingCone φ ⟶ K⟦1⟧` rather than between the vertices of the triangle. -/
-@[reassoc]
-private lemma inl_v_triangle_mor₃_f (i j : ℤ) (hij : j + 1 = i) :
-    (mappingCone.inl φ).v i j (by omega) ≫
-        (HomComplex.Cocycle.homOf ((-mappingCone.fst φ).rightShift 1 0 (zero_add 1))).f j =
-      -(K.shiftFunctorObjXIso 1 j i (by omega)).inv :=
-  mappingCone.inl_v_triangle_mor₃_f φ i j (by omega)
-
-omit [HasCompression n K] [HasCompression n L] in
-/-- Mathlib's `mappingCone.inr_f_triangle_mor₃_f`, stated for the third morphism of the triangle
-as a morphism `mappingCone φ ⟶ K⟦1⟧`. -/
-@[reassoc]
-private lemma inr_f_triangle_mor₃_f (i : ℤ) :
-    (mappingCone.inr φ).f i ≫
-        (HomComplex.Cocycle.homOf ((-mappingCone.fst φ).rightShift 1 0 (zero_add 1))).f i = 0 :=
-  mappingCone.inr_f_triangle_mor₃_f φ i
 
 @[reassoc]
 private lemma ιCompression_inlX_fstX (j : ℤ) (r s t : ZMod n)
@@ -340,10 +334,11 @@ lemma compressionMappingConeIso_hom_comp_coneProjection :
   · simp [-HomComplex.Cocycle.homOf_f,
       ιCompression_compressionMappingConeIso_hom_f_assoc n φ i (i + 1) rfl r (r + 1) hi (by simp),
       ιCompression_inlX_fstX n φ (i + 1) r (r + 1) (r + ((1 : ℤ) : ZMod n)) (by simp) (by simp),
-      inl_v_triangle_mor₃_f_assoc φ (i + 1) i rfl, CochainComplex.shiftFunctorObjXIso]
+      mappingCone.inl_v_triangle_mor₃_homOf_f_assoc φ (i + 1) i rfl,
+      CochainComplex.shiftFunctorObjXIso]
   · simp [-HomComplex.Cocycle.homOf_f,
       ιCompression_compressionMappingConeIso_hom_f_assoc n φ i (i + 1) rfl r (r + 1) hi (by simp),
-      inr_f_triangle_mor₃_f_assoc]
+      mappingCone.inr_f_triangle_mor₃_homOf_f_assoc]
 
 /-- The compression of the mapping-cone triangle `K ⟶ L ⟶ mappingCone φ ⟶ K⟦1⟧` of `φ`: its
 morphisms are the compressions of `φ`, of `inr φ` and of the third morphism of
