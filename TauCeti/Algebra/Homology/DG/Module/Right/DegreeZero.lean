@@ -193,7 +193,9 @@ instance : (degreeZeroToConcentrated.{uR, uA, uM} R A).EssSurj where
 instance : (degreeZeroToConcentrated.{uR, uA, uM} R A).IsEquivalence where
 
 /-- Ordinary right modules are equivalent to DG right modules concentrated in degree zero. -/
--- The pointwise unit and counit API needs the forward and inverse object carriers to reduce.
+-- Public pointwise unit/counit statements require the forward and inverse object carriers
+-- to be definitionally equal to the original modules. Functor equations cannot supply this
+-- equality during type checking; without exposure, those statements do not elaborate.
 @[expose]
 def degreeZeroEquivalence : ModuleCat.{uM} Aᵐᵒᵖ ≌
     ObjectProperty.FullSubcategory (IsConcentratedInDegreeZero
@@ -293,7 +295,8 @@ theorem leftDegreeZero_obj_differential (M : ModuleCat.{uM} A) :
 
 /-- Ordinary left modules are equivalent to right DG modules over the opposite algebra
 concentrated in degree zero. -/
--- The pointwise unit and counit API needs the forward and inverse object carriers to reduce.
+-- As for `degreeZeroEquivalence`, exposure is needed to type-check the public pointwise
+-- statements and counit component equations with the original modules as their carriers.
 @[expose]
 def leftDegreeZeroEquivalence : ModuleCat.{uM} A ≌
     ObjectProperty.FullSubcategory (IsConcentratedInDegreeZero
