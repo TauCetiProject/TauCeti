@@ -7,6 +7,8 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Reindex
 public import Mathlib.SetTheory.Ordinal.Family
+-- Non-public: `TauCeti.Ordinal.lift_iSup` moves the lift through a supremum of ranks.
+import TauCeti.SetTheory.Ordinal.Family
 
 /-!
 # Quantifier rank of infinitary formulas
@@ -109,8 +111,9 @@ theorem qrank_iInf {φs : ι → L.BoundedFormulaInf ι α n} :
 
 /-- Negation does not change the rank. -/
 @[simp]
-theorem qrank_not {φ : L.BoundedFormulaInf ι α n} : φ.not.qrank = φ.qrank :=
-  max_bot_right _
+theorem qrank_not {φ : L.BoundedFormulaInf ι α n} : φ.not.qrank = φ.qrank := by
+  rw [BoundedFormulaInf.not, qrank_imp, qrank_falsum]
+  exact max_eq_left zero_le
 
 /-- `⊥` has rank `0`. -/
 @[simp]
@@ -132,37 +135,25 @@ end Equations
 
 section Closure
 
-/-- Ordinal addition is not commutative, but it is on the finite part, which is all that is
-needed to reassociate the successors that `alls` and `exs` contribute. -/
-private theorem add_one_add_natCast (a : Ordinal) (n : ℕ) :
-    a + 1 + (n : Ordinal) = a + ((n + 1 : ℕ) : Ordinal) := by
-  rw [Nat.cast_add, Nat.cast_one, add_assoc, Nat.cast_add_one_comm]
-
 /-- Closing all `n` bound-variable slots universally adds `n` to the rank. -/
 @[simp]
 theorem qrank_alls : ∀ {n} {φ : L.BoundedFormulaInf ι α n}, φ.alls.qrank = φ.qrank + n
   | 0, φ => by rw [alls_zero, Nat.cast_zero, add_zero]
   | n + 1, φ => by
-    rw [alls_succ, qrank_alls, qrank_all, Order.succ_eq_add_one, add_one_add_natCast]
+    rw [alls_succ, qrank_alls, qrank_all, Order.succ_eq_add_one, add_assoc, Nat.cast_succ,
+      Nat.cast_add_one_comm]
 
 /-- Closing all `n` bound-variable slots existentially adds `n` to the rank. -/
 @[simp]
 theorem qrank_exs : ∀ {n} {φ : L.BoundedFormulaInf ι α n}, φ.exs.qrank = φ.qrank + n
   | 0, φ => by rw [exs_zero, Nat.cast_zero, add_zero]
   | n + 1, φ => by
-    rw [exs_succ, qrank_exs, qrank_ex, Order.succ_eq_add_one, add_one_add_natCast]
+    rw [exs_succ, qrank_exs, qrank_ex, Order.succ_eq_add_one, add_assoc, Nat.cast_succ,
+      Nat.cast_add_one_comm]
 
 end Closure
 
 section Transport
-
-/-- `Ordinal.lift` commutes with the supremum of a family bounded above. Normality of the lift
-gives this over a nonempty index type; over an empty one both sides are `0`. -/
-private theorem lift_iSup {β : Type w} {f : β → Ordinal.{uι}} (hf : BddAbove (Set.range f)) :
-    Ordinal.lift.{uκ} (⨆ i, f i) = ⨆ i, Ordinal.lift.{uκ} (f i) := by
-  rcases isEmpty_or_nonempty β with _ | _
-  · simp
-  · exact Ordinal.liftInitialSeg.isNormal.map_iSup hf
 
 /-- Padding with a rank-`0` formula does not change the lifted supremum of the ranks. Both
 infinitary cases of `qrank_reindex` are this statement, with the padding `⊤` or `⊥`. -/
@@ -171,7 +162,8 @@ private theorem lift_iSup_qrank_pad {n : ℕ} (c : IndexCoding ι κ)
     (φs : ι → L.BoundedFormulaInf ι α n) (ψs : ι → L.BoundedFormulaInf κ α n)
     (ih : ∀ i, Ordinal.lift.{uι} (ψs i).qrank = Ordinal.lift.{uκ} (φs i).qrank) :
     Ordinal.lift.{uι} (⨆ k, (c.pad d ψs k).qrank) = Ordinal.lift.{uκ} (⨆ i, (φs i).qrank) := by
-  rw [lift_iSup Ordinal.bddAbove_of_small, lift_iSup Ordinal.bddAbove_of_small]
+  rw [TauCeti.Ordinal.lift_iSup Ordinal.bddAbove_of_small,
+    TauCeti.Ordinal.lift_iSup Ordinal.bddAbove_of_small]
   refine le_antisymm (Ordinal.iSup_le fun k => ?_) (Ordinal.iSup_le fun i => ?_)
   · rcases hdec : c.decode k with _ | i
     · rw [c.pad_of_decode_none hdec, hd, Ordinal.lift_zero]
