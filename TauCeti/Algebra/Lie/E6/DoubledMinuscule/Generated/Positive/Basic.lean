@@ -110,16 +110,16 @@ abbrev coordinateHopfAlgebra : CommHopfAlgCat A :=
 
 /-- Restriction of the full generated carrier's coordinates to the positive subgroup. -/
 def restriction : generatedCoordinateHopfAlgebra A ⟶ coordinateHopfAlgebra A :=
-  (eqToIso (generatedCoordinateHopfAlgebra_def A)).hom ≫
-    CommHopfAlgCat.quotientMapOfLe _ (generatedDefiningIdeal_le A)
+  generatedCoordinateDesc A (CommHopfAlgCat.mkQuotient _ (definingIdeal A)) (by
+    rw [CommHopfAlgCat.mkQuotient_ker]
+    exact generatedDefiningIdeal_le A)
 
 /-- Restricting the ambient quotient coordinates recovers the positive quotient map. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_restriction :
     generatedCoordinateMap A ≫ restriction A =
-      CommHopfAlgCat.mkQuotient _ (definingIdeal A) := by
-  rw [restriction, ← Category.assoc, generatedCoordinateMap_comp_eqToIso_hom]
-  exact CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe _ (generatedDefiningIdeal_le A)
+      CommHopfAlgCat.mkQuotient _ (definingIdeal A) :=
+  generatedCoordinateMap_comp_generatedCoordinateDesc A _ _
 
 /-- Restriction to the positive subgroup is surjective, so it defines a closed immersion. -/
 theorem restriction_surjective : Function.Surjective (restriction A).hom := by
