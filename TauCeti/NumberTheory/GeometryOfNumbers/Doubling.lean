@@ -78,16 +78,6 @@ theorem box_mono {r : ι → ℝ} (hr : ∀ i, 0 ≤ r i) {c c' : ℝ} (h : c �
     box r c ⊆ box r c' :=
   fun _ hx i => (hx i).trans (by have := hr i; nlinarith)
 
-/-- Two reals lying in the same half-open floor-cell of positive width `q` (i.e.
-`⌊a / q⌋ = ⌊b / q⌋`) differ by strictly less than `q`. -/
-private theorem abs_sub_lt_of_floor_div_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q⌋ = ⌊b / q⌋) :
-    |a - b| < q := by
-  rw [Int.floor_eq_iff] at h
-  rw [abs_lt]
-  refine ⟨?_, ?_⟩ <;>
-    nlinarith [h.1, h.2, Int.floor_le (b / q), Int.lt_floor_add_one (b / q), hq,
-      mul_div_cancel₀ a hq.ne', mul_div_cancel₀ b hq.ne']
-
 section Packing
 
 /-- Grid pigeonhole, axis bound: the cell index of a coordinate lying in the box is one of
@@ -158,9 +148,11 @@ private theorem injOn_cellIndexMap_of_separated (r : ι → ℝ) (hr : ∀ i, 0 
   have hδ : 0 < ε * r i / Real.sqrt 2 :=
     div_pos (mul_pos hε (hr i)) (Real.sqrt_pos.2 (by norm_num))
   have hre : |(x i).re - (y i).re| < ε * r i / Real.sqrt 2 := by
-    simpa [add_sub_add_right_eq_sub] using abs_sub_lt_of_floor_div_eq hδ (hxy i).1
+    simpa [← sub_div, add_sub_add_right_eq_sub, abs_div, abs_of_pos hδ, div_lt_iff₀ hδ] using
+      Int.abs_sub_lt_one_of_floor_eq_floor (hxy i).1
   have him : |(x i).im - (y i).im| < ε * r i / Real.sqrt 2 := by
-    simpa [add_sub_add_right_eq_sub] using abs_sub_lt_of_floor_div_eq hδ (hxy i).2
+    simpa [← sub_div, add_sub_add_right_eq_sub, abs_div, abs_of_pos hδ, div_lt_iff₀ hδ] using
+      Int.abs_sub_lt_one_of_floor_eq_floor (hxy i).2
   have hlt : ‖x i - y i‖ < (ε * r i / Real.sqrt 2) * Real.sqrt 2 :=
     norm_lt_of_re_im_bound hδ.le (by rwa [Complex.sub_re]) (by rwa [Complex.sub_im])
   rw [div_mul_cancel₀ _ (by positivity : Real.sqrt 2 ≠ 0)] at hlt
@@ -241,8 +233,12 @@ private theorem norm_sub_le_of_coarseCell_eq {ri : ℝ} (hri : 0 < ri) {z w : �
     (him : ⌊z.im / (2 * ri / 3)⌋ = ⌊w.im / (2 * ri / 3)⌋) :
     ‖z - w‖ ≤ ri := by
   have hpos : (0 : ℝ) < 2 * ri / 3 := by positivity
-  have hre' : |z.re - w.re| ≤ 2 * ri / 3 := (abs_sub_lt_of_floor_div_eq hpos hre).le
-  have him' : |z.im - w.im| ≤ 2 * ri / 3 := (abs_sub_lt_of_floor_div_eq hpos him).le
+  have hre' : |z.re - w.re| ≤ 2 * ri / 3 := by
+    simpa [← sub_div, abs_div, abs_of_pos hpos, div_le_iff₀ hpos] using
+      (Int.abs_sub_lt_one_of_floor_eq_floor hre).le
+  have him' : |z.im - w.im| ≤ 2 * ri / 3 := by
+    simpa [← sub_div, abs_div, abs_of_pos hpos, div_le_iff₀ hpos] using
+      (Int.abs_sub_lt_one_of_floor_eq_floor him).le
   have hnorm : ‖z - w‖ ^ 2 ≤ ri ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im]
     nlinarith [abs_le.mp hre', abs_le.mp him']
