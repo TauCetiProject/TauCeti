@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Category
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Algebra.Opposite
 
 /-!
@@ -141,8 +141,7 @@ def degreeZeroIso (M : DGRightModuleCat.{uR, uA, uM}
   isoMk (LinearEquiv.refl Aᵐᵒᵖ M)
     (fun q x ↦ by
       rw [degreeZero_obj_grading, mem_trivialGrading_iff, hM.mem_grading_iff]
-      exact (congrArg (fun y : M ↦ q = 0 ∨ y = 0)
-        (LinearEquiv.refl_apply (R := Aᵐᵒᵖ) (M := M) x)).symm.to_iff)
+      exact Iff.rfl)
     (fun x ↦ by
       rw [hM.differential_eq_zero, degreeZero_obj_differential]
       exact (map_zero (LinearEquiv.refl Aᵐᵒᵖ M)).symm)
@@ -199,22 +198,13 @@ def degreeZeroEquivalence : ModuleCat.{uM} Aᵐᵒᵖ ≌
   counitIso := NatIso.ofComponents
     (fun M ↦ ObjectProperty.isoMk _ (degreeZeroIso M.obj M.property))
     (fun {M N} f ↦ ObjectProperty.hom_ext _ (hom_ext fun x ↦ by
-      simp only [Functor.id_obj, degreeZeroToConcentrated, Functor.comp_obj, ObjectProperty.ι_obj,
-        ObjectProperty.lift_obj_obj, Functor.comp_map, ObjectProperty.ι_map,
-        ObjectProperty.lift_map,
-        ObjectProperty.isoMk_hom, ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-        comp_apply, degreeZero_map_apply, forgetToRightModuleCat_map_hom, Functor.id_map,
-        degreeZeroIso_hom_apply]
-      exact degreeZeroIso_hom_apply N.obj N.property (f.hom x)))
+      dsimp [degreeZeroToConcentrated]
+      erw [comp_apply, comp_apply, degreeZeroIso_hom_apply, degreeZeroIso_hom_apply,
+        degreeZero_map_apply, forgetToRightModuleCat_map_hom]))
   functor_unitIso_comp M := ObjectProperty.hom_ext _ (hom_ext fun x ↦ by
-    simp only [degreeZeroToConcentrated, ObjectProperty.lift_obj_obj, Functor.comp_obj,
-      ObjectProperty.ι_obj, Iso.symm_hom, ObjectProperty.lift_map, Functor.id_obj,
-      NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
-      ObjectProperty.FullSubcategory.comp_hom,
-      ObjectProperty.homMk_hom, comp_apply, degreeZero_map_apply,
-      ObjectProperty.FullSubcategory.id_hom, id_apply]
-    exact (degreeZeroIso_hom_apply _ _ _).trans
-      (degreeZeroCompForgetIso_inv_app_apply R A M x))
+    dsimp [degreeZeroToConcentrated]
+    erw [comp_apply, degreeZeroIso_hom_apply, degreeZero_map_apply,
+      degreeZeroCompForgetIso_inv_app_apply, id_apply])
 
 /-- The forward functor of the equivalence is the degree-zero inclusion. -/
 @[simp]
@@ -287,6 +277,13 @@ def leftDegreeZeroEquivalence : ModuleCat.{uM} A ≌
   (ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A).symm).trans
     (degreeZeroEquivalence R Aᵐᵒᵖ)
 
+instance : (leftDegreeZero.{uR, uA, uM} R A).IsEquivalence :=
+  (leftDegreeZeroEquivalence R A).isEquivalence_functor
+
+instance : (leftDegreeZero.{uR, uA, uM} R A).Additive :=
+  inferInstanceAs ((ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom ⋙
+    degreeZeroToConcentrated.{uR, uA, uM} R Aᵐᵒᵖ).Additive)
+
 /-- The forward functor of the left-module equivalence is the explicit opposite-action bridge. -/
 @[simp]
 theorem leftDegreeZeroEquivalence_functor :
@@ -327,29 +324,14 @@ theorem leftDegreeZeroEquivalence_counitIso_hom_app_apply
       ((leftDegreeZeroEquivalence R A).counitIso.hom.app M).hom x = (x : M.obj) := by
   dsimp [leftDegreeZeroEquivalence, Equivalence.trans, degreeZeroEquivalence,
     degreeZeroToConcentrated]
-  simp only [ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso, RingEquiv.symm_symm,
-    RingEquiv.toRingHom_eq_coe, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.comp_obj,
-    Functor.id_obj, ModuleCat.restrictScalarsId'_hom_app, Category.id_comp,
-    ObjectProperty.isoMk_hom,
-    ObjectProperty.lift_obj_obj, ObjectProperty.homMk_hom]
-  -- Rebuild the coercion with the scalar-restriction objects so composition lemmas match.
+  simp only [Category.id_comp, Category.comp_id, ObjectProperty.isoMk_hom,
+    ObjectProperty.homMk_hom]
+  -- Fix the scalar-restriction source and target so the pointwise lemmas can match.
   change ((degreeZero R Aᵐᵒᵖ).map
     ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A).symm).counitIso.hom.app
       (forgetToRightModuleCat.obj M.obj)) ≫ (degreeZeroIso M.obj M.property).hom) x = x
-  refine (comp_apply ((degreeZero R Aᵐᵒᵖ).map
-    ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A).symm).counitIso.hom.app
-      (forgetToRightModuleCat.obj M.obj))) (degreeZeroIso M.obj M.property).hom x).trans ?_
-  refine (degreeZeroIso_hom_apply M.obj M.property _).trans ?_
-  refine (degreeZero_map_apply R Aᵐᵒᵖ _ x).trans ?_
-  let e := (RingEquiv.opOp A).symm
-  let U := forgetToRightModuleCat.obj M.obj
-  let f := (ModuleCat.restrictScalarsComp'App e.toRingHom e.symm.toRingHom (RingHom.id _)
-    e.symm_toRingHom_comp_toRingHom.symm U).inv
-  let g := (ModuleCat.restrictScalarsId'App (RingHom.id _) rfl U).hom
-  refine (LinearMap.congr_fun (ModuleCat.hom_comp f g) x).trans ?_
-  refine (LinearMap.comp_apply g.hom f.hom x).trans ?_
-  exact (ModuleCat.restrictScalarsId'App_hom_apply _ _ U _).trans
-    (ModuleCat.restrictScalarsComp'App_inv_apply _ _ _ _ U x)
+  erw [comp_apply, degreeZeroIso_hom_apply, degreeZero_map_apply,
+    RingEquiv.restrictScalarsEquivalence_counitIso_hom_app_apply]
 
 /-- The inverse counit of the left-module equivalence acts identically on elements. -/
 @[simp]
@@ -363,29 +345,14 @@ theorem leftDegreeZeroEquivalence_counitIso_inv_app_apply
       ((leftDegreeZeroEquivalence R A).counitIso.inv.app M).hom x = x := by
   dsimp [leftDegreeZeroEquivalence, Equivalence.trans, degreeZeroEquivalence,
     degreeZeroToConcentrated]
-  simp only [ObjectProperty.isoMk_inv, ObjectProperty.lift_obj_obj, ObjectProperty.homMk_hom,
-    ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso, RingEquiv.symm_symm,
-    RingEquiv.toRingHom_eq_coe, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app, Functor.id_obj,
-    Functor.comp_obj, ModuleCat.restrictScalarsId'_inv_app, Category.comp_id]
-  -- Rebuild the coercion with the scalar-restriction objects so composition lemmas match.
+  simp only [Category.id_comp, Category.comp_id, ObjectProperty.isoMk_inv,
+    ObjectProperty.homMk_hom]
+  -- Fix the scalar-restriction source and target so the pointwise lemmas can match.
   change ((degreeZeroIso M.obj M.property).inv ≫ (degreeZero R Aᵐᵒᵖ).map
     ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A).symm).counitIso.inv.app
       (forgetToRightModuleCat.obj M.obj))) x = x
-  refine (comp_apply (degreeZeroIso M.obj M.property).inv ((degreeZero R Aᵐᵒᵖ).map
-    ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A).symm).counitIso.inv.app
-      (forgetToRightModuleCat.obj M.obj))) x).trans ?_
-  refine (degreeZero_map_apply R Aᵐᵒᵖ _ _).trans ?_
-  let e := (RingEquiv.opOp A).symm
-  let U := forgetToRightModuleCat.obj M.obj
-  let y := (degreeZeroIso M.obj M.property).inv x
-  let f := (ModuleCat.restrictScalarsId'App (RingHom.id _) rfl U).inv
-  let g := (ModuleCat.restrictScalarsComp'App e.toRingHom e.symm.toRingHom (RingHom.id _)
-    e.symm_toRingHom_comp_toRingHom.symm U).hom
-  refine (LinearMap.congr_fun (ModuleCat.hom_comp f g) y).trans ?_
-  refine (LinearMap.comp_apply g.hom f.hom y).trans ?_
-  exact (ModuleCat.restrictScalarsComp'App_hom_apply _ _ _ _ U _).trans
-    ((ModuleCat.restrictScalarsId'App_inv_apply _ _ U y).trans
-      (degreeZeroIso_inv_apply M.obj M.property x))
+  erw [comp_apply, degreeZero_map_apply,
+    RingEquiv.restrictScalarsEquivalence_counitIso_inv_app_apply, degreeZeroIso_inv_apply]
 
 /-- In the left-to-right comparison, right multiplication by `op a` is the original left
 action of `a`. -/
