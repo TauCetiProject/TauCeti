@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Interior `Hᵏ` regularity
@@ -221,21 +220,12 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
         ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   obtain ⟨w, hw⟩ := hw
   set b := EuclideanSpace.basisFun ι ℝ with hb
-  have hΩU' : (Omega : Set (EuclideanSpace ℝ ι)) ⊆ U := subset_closure.trans hΩU
-  have haΩ : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega := fun i j => (ha i j).mono hΩU'
+  have haΩ : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega := fun i j =>
+    (ha i j).mono (subset_closure.trans hΩU)
   -- The energy integrand of `a` is bounded on `Ω`, so the equation may be tested on test functions.
-  have hcoeff : MemLp (fun x => energyIntegrand (a x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
-      (mu.restrict Omega) := by
-    have hac : ContinuousOn a U :=
-      continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).continuousOn
-    have hcont : ContinuousOn (fun x => energyIntegrand (a x) 0 0) U :=
-      ContinuousOn.energyIntegrand hac continuousOn_const continuousOn_const
-    -- The codomain is named explicitly: elaboration does not infer it by unification with the
-    -- goal.
-    exact ContinuousOn.memLp_top_restrict_of_subset_isCompact
-      (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) (hcont.mono hΩU) hΩ
-      Omega.isOpen.measurableSet subset_closure
+  have hcoeff := memLp_energyIntegrand_of_continuousOn (mu := mu) (b := 0) (c := 0) hΩ
+    ((continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).continuousOn).mono hΩU)
+    continuousOn_const continuousOn_const
   -- The first and second weak derivatives of `u`, from `u ∈ H^{k+2}(Ω)`.
   choose D hD using fun j => Wkp.exists_hasWeakLineDerivOn_value (k + 1) w (b j)
   choose E hE using fun i j => Wkp.exists_hasWeakLineDerivOn_value k (D j) (b i)
@@ -262,21 +252,6 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
   rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn haΩ hut hd hD' hFe φ]
   refine integral_congr_ae ?_
   -- Identify the commutator terms with the values of `M₁` and `M₂`.
-  have hG : (Wkp.value k (Fe + ∑ i, ∑ j, (M₁ i j + M₂ i j)) : EuclideanSpace ℝ ι → ℝ)
-      =ᵐ[mu.restrict Omega] fun x => Wkp.value k Fe x +
-        ∑ i, ∑ j, (Wkp.value k (M₁ i j) x + Wkp.value k (M₂ i j) x) := by
-    have hsum : Wkp.value k (∑ i, ∑ j, (M₁ i j + M₂ i j)) =
-        ∑ i, ∑ j, (Wkp.value k (M₁ i j) + Wkp.value k (M₂ i j)) := by
-      simp only [← Wkp.valueL_apply, map_sum, map_add]
-    rw [Wkp.value_add, hsum]
-    filter_upwards [Lp.coeFn_add (Wkp.value k Fe) _, Lp.coeFn_fun_finsetSum Finset.univ fun i =>
-        ∑ j, (Wkp.value k (M₁ i j) + Wkp.value k (M₂ i j)),
-      Filter.eventually_all.2 fun i => Lp.coeFn_fun_finsetSum Finset.univ fun j =>
-        Wkp.value k (M₁ i j) + Wkp.value k (M₂ i j),
-      Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j =>
-        Lp.coeFn_add (Wkp.value k (M₁ i j)) (Wkp.value k (M₂ i j))] with x h₁ h₂ h₃ h₄
-    rw [h₁, Pi.add_apply, h₂]
-    simp only [h₃, h₄, Pi.add_apply]
   have hu₁ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₁ i j) x =
       fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y e) x (b i) *
         ⟪W1p.gradient u x, b j⟫_ℝ := by
@@ -292,8 +267,15 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
     rw [Wkp.value_firstOrder] at h
     filter_upwards [hM₂ i j, (hE i j).ae_eq h] with x h₁ h₂
     rw [h₁, h₂, innerSL_apply_apply]
-  filter_upwards [hG, hu₁, hu₂] with x hx h₁ h₂
-  simp only [hx, h₁, h₂, hb]
+  rw [Wkp.value_add]
+  filter_upwards [Lp.coeFn_add (Wkp.value k Fe) _,
+    Wkp.value_finsetSum_ae k Finset.univ fun i => ∑ j, (M₁ i j + M₂ i j),
+    Filter.eventually_all.2 fun i => Wkp.value_finsetSum_ae k Finset.univ fun j => M₁ i j + M₂ i j,
+    Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j =>
+      Lp.coeFn_add (Wkp.value k (M₁ i j)) (Wkp.value k (M₂ i j)), hu₁, hu₂]
+    with x h₁ h₂ h₃ h₄ h₅ h₆
+  rw [h₁, Pi.add_apply, h₂]
+  simp only [h₃, Wkp.value_add, h₄, Pi.add_apply, h₅, h₆, hb]
 
 /-! ### Interior `H^{k+2}` regularity -/
 
@@ -306,7 +288,7 @@ in the sense that `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω F v` for every `v ∈ H¹�
 on `u`. Then `u ∈ H^{k+2}_loc(Ω)`: on every open `V` whose closure is compact and contained in
 `Ω`, the restriction of `u` is the value of an element of `W^{k+2,2}(V)`.
 
-No regularity of `∂Ω` is assumed, and the coefficients and their derivatives need not be bounded
+No regularity of `∂Ω` is assumed, and the derivatives of the coefficients need not be bounded
 on `Ω`. -/
 theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn [DecidableEq ι]
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
@@ -322,7 +304,8 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn [Decid
   induction k generalizing Omega V with
   | zero =>
     obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
-      (locallyLipschitzOn_matrixBilinearForm_of_contDiffOn Omega.isOpen hsmooth) MemLp.zero
+      (locallyLipschitzOn_matrixBilinearForm_of_contDiffOn Omega.isOpen
+        fun i j => (hsmooth i j).of_le (by simp)) MemLp.zero
       MemLp.zero hu hV hVΩ
     exact ⟨U, by rw [Wkp.value_succ, Wkp.value_one, hU]⟩
   | succ k ih =>

@@ -50,7 +50,7 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
 * `TauCeti.PDE.locallyLipschitzOn_matrixBilinearForm_of_contDiffOn`: a coefficient field with
-  smooth entries on an open set has locally Lipschitz bilinear forms there.
+  `C¹` entries on an open set has locally Lipschitz bilinear forms there.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
@@ -932,17 +932,17 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
 
-/-- **Smooth coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
-smooth on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz on `s` in the operator
-norm. -/
+/-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
+continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz
+on `s` in the operator norm. -/
 theorem locallyLipschitzOn_matrixBilinearForm_of_contDiffOn {a : EuclideanSpace ℝ n → Matrix n n ℝ}
     {s : Set (EuclideanSpace ℝ n)} (hs : IsOpen s)
-    (ha : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) s) :
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) s) :
     LocallyLipschitzOn s fun x => matrixBilinearForm (a x) := by
   intro x hx
   -- Near `x` each entry is Lipschitz, and the operator norm is at most the sum of the entries.
   choose K t ht hKt using fun i j =>
-    ((ha i j).contDiffAt (hs.mem_nhds hx)).of_le (by simp) |>.exists_lipschitzOnWith
+    ((ha i j).contDiffAt (hs.mem_nhds hx)).exists_lipschitzOnWith
   refine ⟨∑ i, ∑ j, K i j, ⋂ i, ⋂ j, t i j,
     mem_nhdsWithin_of_mem_nhds (Filter.iInter_mem.2 fun i => Filter.iInter_mem.2 (ht i)), ?_⟩
   refine LipschitzOnWith.of_dist_le_mul fun y hy z hz => ?_
