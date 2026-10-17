@@ -32,6 +32,8 @@ without differentiability assumptions.
   measurable in the model space.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
+* `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
+  continuous only on their measurable domain.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 -/
@@ -166,6 +168,50 @@ theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
     MeasurableSet ((extChartAt I x) '' s) := by
   rw [(extChartAt I x).image_eq_target_inter_inv_preimage hsub]
   exact hs x
+
+/-- Pulling a chart-measurable subset of one chart back along a map continuous on a
+measurable parameter domain gives a measurable subset of that domain. No measurable structure on
+the manifold or continuity outside the parameter domain is required. -/
+theorem IsChartMeasurable.measurableSet_inter_preimage [MeasurableSpace E] [BorelSpace E]
+    {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
+    {Q : X → M} {D : Set X} {s : Set M} (hs : IsChartMeasurable I s) (hQ : ContinuousOn Q D)
+    (hD : MeasurableSet D) (α : M) (hsource : s ⊆ (extChartAt I α).source) :
+    MeasurableSet (D ∩ Q ⁻¹' s) := by
+  classical
+  let q : D → M := fun x ↦ Q x
+  have hq : Continuous q := continuousOn_iff_continuous_domRestrict.mp hQ
+  let U := q ⁻¹' (extChartAt I α).source
+  let Ψ := extChartAt I α ∘ q
+  have hU : IsOpen U := (isOpen_extChartAt_source α).preimage hq
+  have hΨ : ContinuousOn Ψ U :=
+    (continuousOn_extChartAt α).comp hq.continuousOn (fun _ hx ↦ hx)
+  have hm : Measurable (U.piecewise Ψ (fun _ ↦ 0)) :=
+    hΨ.measurable_piecewise continuousOn_const hU.measurableSet
+  have he : q ⁻¹' s = U ∩ (U.piecewise Ψ (fun _ ↦ 0)) ⁻¹' ((extChartAt I α) '' s) := by
+    ext x
+    constructor
+    · intro hx
+      have hu : x ∈ U := hsource hx
+      refine ⟨hu, ?_⟩
+      rw [Set.mem_preimage, Set.piecewise_eq_of_mem U _ _ hu]
+      exact Set.mem_image_of_mem _ hx
+    · rintro ⟨hu, hz⟩
+      rw [Set.mem_preimage, Set.piecewise_eq_of_mem U _ _ hu] at hz
+      obtain ⟨y, hy, heq⟩ := hz
+      have hxy : y = q x := (extChartAt I α).injOn (hsource hy) hu heq
+      -- Expose membership in the preimage so the chart injectivity equality rewrites its point.
+      change q x ∈ s
+      rwa [← hxy]
+  have hpre : MeasurableSet (q ⁻¹' s) := by
+    rw [he]
+    exact hU.measurableSet.inter ((hs.image_extChartAt α hsource).preimage hm)
+  have himage : Subtype.val '' (q ⁻¹' s) = D ∩ Q ⁻¹' s := by
+    ext x
+    simp only [Set.mem_image, Set.mem_preimage, Set.mem_inter_iff]
+    exact ⟨fun ⟨y, hy, he⟩ ↦ he ▸ ⟨y.property, hy⟩,
+      fun ⟨hx, hqx⟩ ↦ ⟨⟨x, hx⟩, hqx, rfl⟩⟩
+  rw [← himage]
+  exact hD.subtype_image hpre
 
 /-- Every point has an open neighborhood whose extended-chart image is contained in a compact
 subset of the chart target. The manifold need not be Hausdorff. -/
