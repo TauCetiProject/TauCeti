@@ -64,9 +64,10 @@ derivative at `extChartAt I x x` of the coordinate expression of `f` in the pref
 chart, as a bilinear form on the tangent space at `x`.
 
 Like `TauCeti.manifoldMorseIndex`, the definition makes sense at every point and carries no
-regularity hypotheses. It is intrinsic only at critical points:
-`TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas` computes it in an arbitrary chart there.
-At a noncritical point it depends on the preferred chart. -/
+regularity hypotheses. At a critical point of a `C²` function on a manifold without boundary it is
+intrinsic: `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas` computes it in an arbitrary chart
+there. At a noncritical point it depends on the preferred chart, and on a manifold with boundary
+or corners it may also depend on the chart inverse outside `range I`. -/
 def criticalHessian (I : ModelWithCorners ℝ E H) (f : M → ℝ) (x : M) :
     TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
   fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
@@ -203,51 +204,36 @@ include he hx
 
 /-- The transition from the preferred chart at `x` to a chart `e` of the maximal atlas is `C²` at
 the chart image of `x`, with the invertible manifold derivative of `e` as its derivative there,
-and every preferred coordinate expression factors through it near that point. -/
+and every preferred coordinate expression factors through it near that point. The coordinate
+expression in `e` of a function which is `C²` at `x` is `C²` at the image of that point. -/
 private theorem exists_transition :
     ∃ φ : E → E, φ (extChartAt I x x) = e.extend I x ∧ ContDiffAt ℝ 2 φ (extChartAt I x x) ∧
       fderiv ℝ φ (extChartAt I x x) = mvfderiv I (e.extend I) x ∧
       (fderiv ℝ φ (extChartAt I x x)).IsInvertible ∧
-      ∀ f : M → ℝ, f ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
-        (f ∘ (e.extend I).symm) ∘ φ := by
+      (∀ f : M → ℝ, f ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
+        (f ∘ (e.extend I).symm) ∘ φ) ∧
+      ∀ f : M → ℝ, ContMDiffAt I 𝓘(ℝ) 2 f x →
+        ContDiffAt ℝ 2 (f ∘ (e.extend I).symm) (φ (extChartAt I x x)) := by
   have he1 : e ∈ IsManifold.maximalAtlas I 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by norm_num) he
   have hext := e.contMDiffAt_extend he hx
   have hD := ((hext.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm).symm
-  refine ⟨e.extend I ∘ (extChartAt I x).symm, by simp,
-    contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hext, hD,
-    hD ▸ ContinuousLinearMap.IsInvertible.comp
-      ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩ (isInvertible_mfderiv_extend he1 hx),
-    fun f ↦ ?_⟩
+  have hinv : (mvfderiv I (e.extend I) x).IsInvertible := by
+    -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
+    -- space of `E` with `E`; both factors are invertible.
+    unfold mvfderiv
+    exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
+      (isInvertible_mfderiv_extend he1 hx)
+  have hφx : (e.extend I ∘ (extChartAt I x).symm) (extChartAt I x x) = e.extend I x := by simp
+  refine ⟨e.extend I ∘ (extChartAt I x).symm, hφx,
+    contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hext, hD, hD ▸ hinv, fun f ↦ ?_,
+    fun f hf ↦ hφx ▸ (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).mp hf⟩
   have hmem : (extChartAt I x).symm ⁻¹' e.source ∈ 𝓝 (extChartAt I x x) :=
     (continuousAt_extChartAt_symm (I := I) x).preimage_mem_nhds
       (by simpa only [extChartAt_to_inv] using e.open_source.mem_nhds hx)
   filter_upwards [hmem] with y hy
   have hy' : (extChartAt I x).symm y ∈ (e.extend I).source := by rwa [e.extend_source]
   simp only [comp_apply, (e.extend I).left_inv hy']
-
-/-- At a critical point, the coordinate expression of a `C²` function in a chart `e` of the
-maximal atlas has vanishing derivative at the chart image of `x`. -/
-private theorem fderiv_comp_extend_symm_eq_zero (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hcrit : mvfderiv I f x = 0) :
-    fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) = 0 := by
-  obtain ⟨φ, hφx, hφ, -, ⟨L, hL⟩, hfg⟩ := exists_transition he hx
-  have hg : ContDiffAt ℝ 2 (f ∘ (e.extend I).symm) (φ (extChartAt I x x)) :=
-    hφx ▸ (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).mp hf
-  have hcomp := fderiv_comp (extChartAt I x x) (hg.differentiableAt two_ne_zero)
-    (hφ.differentiableAt two_ne_zero)
-  rw [← (hfg f).fderiv_eq,
-    ← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm, hcrit,
-    ← hL, hφx] at hcomp
-  -- Undo the invertible derivative of the transition map.
-  have hcancel : fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) =
-      (fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) ∘L (L : E →L[ℝ] E)) ∘L
-        (L.symm : E →L[ℝ] E) := by
-    ext u
-    simp
-  rw [hcancel, ← hcomp]
-  -- The zero map comes from `mvfderiv`, whose source is the tangent space at `x`, that is, `E`.
-  exact ContinuousLinearMap.zero_comp _
 
 /-- **The critical Hessian in an arbitrary chart.** At a critical point of a `C²` function on a
 boundaryless manifold, the critical Hessian is the Hessian of the coordinate expression in any
@@ -258,11 +244,11 @@ theorem criticalHessian_apply_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(�
     criticalHessian I f x v w =
       fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)
         (mvfderiv I (e.extend I) x v) (mvfderiv I (e.extend I) x w) := by
-  obtain ⟨φ, hφx, hφ, hDφ, -, hfg⟩ := exists_transition he hx
-  have hg : ContDiffAt ℝ 2 (f ∘ (e.extend I).symm) (φ (extChartAt I x x)) :=
-    hφx ▸ (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).mp hf
-  have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero hg hφ
-    (hφx ▸ fderiv_comp_extend_symm_eq_zero he hx hf hcrit) v w
+  obtain ⟨φ, hφx, hφ, hDφ, -, hfg, hreg⟩ := exists_transition he hx
+  have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (hreg f hf) hφ
+    (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+      (hf.mdifferentiableAt two_ne_zero)).mp hcrit) v w
   rw [← (hfg f).fderiv.fderiv_eq, hDφ, hφx] at key
   exact key
 
@@ -274,11 +260,9 @@ theorem isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas :
       IsNondegenerateCriticalPoint (f ∘ (e.extend I).symm) (e.extend I x) := by
   have hsmooth := contMDiffAt_iff_contDiffAt_comp_extend_symm (f := f) he hx
   by_cases hf : ContMDiffAt I 𝓘(ℝ) 2 f x
-  · obtain ⟨φ, hφx, hφ, -, hinv, hfg⟩ := exists_transition he hx
-    have hg : ContDiffAt ℝ 2 (f ∘ (e.extend I).symm) (φ (extChartAt I x x)) :=
-      hφx ▸ hsmooth.mp hf
+  · obtain ⟨φ, hφx, hφ, -, hinv, hfg, hreg⟩ := exists_transition he hx
     rw [isManifoldNondegenerateCriticalPoint_iff, ← hφx,
-      ← isNondegenerateCriticalPoint_comp_iff hg hφ hinv]
+      ← isNondegenerateCriticalPoint_comp_iff (hreg f hf) hφ hinv]
     exact ⟨fun h ↦ h.congr_of_eventuallyEq (hfg f), fun h ↦ h.congr_of_eventuallyEq (hfg f).symm⟩
   · exact iff_of_false (fun h ↦ hf h.contMDiffAt) fun h ↦ hf (hsmooth.mpr h.contDiffAt)
 
@@ -288,12 +272,11 @@ boundaryless manifold, the Morse index is the Morse index of the coordinate expr
 theorem manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hcrit : mvfderiv I f x = 0) :
     manifoldMorseIndex I f x = morseIndex (f ∘ (e.extend I).symm) (e.extend I x) := by
-  obtain ⟨φ, hφx, hφ, -, hinv, hfg⟩ := exists_transition he hx
-  have hg : ContDiffAt ℝ 2 (f ∘ (e.extend I).symm) (φ (extChartAt I x x)) :=
-    hφx ▸ (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).mp hf
+  obtain ⟨φ, hφx, hφ, -, hinv, hfg, hreg⟩ := exists_transition he hx
   rw [manifoldMorseIndex_def, morseIndex_congr_of_eventuallyEq (hfg f),
-    morseIndex_comp hg hφ (hφx ▸ fderiv_comp_extend_symm_eq_zero he hx hf hcrit) hinv,
-    hφx]
+    morseIndex_comp (hreg f hf) hφ (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+      (hf.mdifferentiableAt two_ne_zero)).mp hcrit) hinv, hφx]
 
 end Chart
 
