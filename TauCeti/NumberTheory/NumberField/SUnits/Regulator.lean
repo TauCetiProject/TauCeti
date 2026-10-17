@@ -44,7 +44,7 @@ def regulator : ℝ := ZLattice.covolume (unitLattice S)
 open Classical in
 /-- The defining covolume formula for the `S`-regulator. -/
 theorem regulator_def : regulator S = ZLattice.covolume (unitLattice S) :=
-  rfl
+  (rfl)
 
 /-- The `S`-regulator is positive. -/
 theorem regulator_pos : 0 < regulator S := by
