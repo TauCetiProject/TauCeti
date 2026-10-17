@@ -356,8 +356,9 @@ theorem iteratedDeriv_pgf_one {ν : Measure ℕ} {t : ℝ} (ht : 0 < t)
       ENNReal.ofReal_lt_ofReal_iff (Real.exp_pos t)]
     exact Real.one_lt_exp_iff.mpr ht
   have hdesc_int := integrable_descFactorial_of_integrable_exp_natCast ht hExp n
-  rw [hp.iteratedDeriv_one_eq_tsum_descFactorial_mul h_one_ball n,
+  rw [hp.iteratedDeriv_eq_tsum_descFactorial_mul_pow (by simpa using h_one_ball) n,
     integral_countable hdesc_int]
+  simp only [one_pow, mul_one]
   simp only [smul_eq_mul, mul_comm]
 
 /-- The probability-generating function of a finite measure on `ℕ` is analytic on `(-1, 1)`. -/
