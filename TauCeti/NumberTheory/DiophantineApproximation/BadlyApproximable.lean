@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import Mathlib.NumberTheory.Transcendental.Liouville.LiouvilleNumber
 public import TauCeti.FieldTheory.Minpoly.Primitive
-public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
+public import TauCeti.NumberTheory.DiophantineApproximation.SimultaneousExponent
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.NumberTheory.DiophantineApproximation.Dirichlet
 
@@ -49,6 +49,7 @@ that `y ‖y α‖ ‖y β‖ ≤ 1` for infinitely many `y ≥ 1` (`Real.infini
 public section
 
 open Filter Polynomial
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -269,6 +270,33 @@ theorem littlewoodConjecture_iff_badlyApproximable :
 example : BadlyApproximable √2 :=
   irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
     (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C]) (by simp [map_ofNat])
+
+example : simultaneousExponent ![√2] = 1 := by
+  have hsqrt : BadlyApproximable √2 :=
+    irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
+      (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C]) (by simp [map_ofNat])
+  apply (ENNReal.add_left_inj (by simp : (1 : ℝ≥0∞) ≠ ⊤)).mp
+  rw [simultaneousExponent_one_add irrational_sqrt_two, hsqrt.irrationalityExponent_eq,
+    one_add_one_eq_two]
+
+example : simultaneousExponent ![√2, √3] ≤ 1 := by
+  calc
+    simultaneousExponent ![√2, √3] ≤
+        simultaneousExponent (![√2, √3] ∘ fun _ : Fin 1 ↦ 0) :=
+      simultaneousExponent_le_comp _ _
+    _ = simultaneousExponent ![√2] := by
+      congr 1
+      funext i
+      fin_cases i
+      simp
+    _ = 1 := by
+      have hsqrt : BadlyApproximable √2 :=
+        irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
+          (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C])
+          (by simp [map_ofNat])
+      apply (ENNReal.add_left_inj (by simp : (1 : ℝ≥0∞) ≠ ⊤)).mp
+      rw [simultaneousExponent_one_add irrational_sqrt_two, hsqrt.irrationalityExponent_eq,
+        one_add_one_eq_two]
 
 example : BadlyApproximable Real.goldenRatio :=
   Real.goldenRatio_irrational.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - X - 1)
