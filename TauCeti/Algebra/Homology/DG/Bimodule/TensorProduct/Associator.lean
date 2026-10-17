@@ -19,9 +19,7 @@ the total grading and the signed differential. It is natural in all three bimodu
 and satisfies the pentagon identity, so iterated tensor composition has coherent
 parenthesizations. No flatness hypotheses are needed for these underived products.
 
-The construction bundles `BalancedTensorProduct.assoc`, reusing its graded and
-differential compatibility and its carrier coherence laws. Algebra and module
-carriers may live in independent universes.
+Algebra and module carriers may live in independent universes.
 
 ## References
 
