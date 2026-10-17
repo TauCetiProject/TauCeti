@@ -123,7 +123,7 @@ theorem isOrientationReversingAt_iff [IsManifold I 1 M] [IsManifold I' 1 M']
     simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
 
 /-- Negating the target orientation exchanges reversal and preservation. -/
-theorem isOrientationReversingAt_neg_right [IsManifold I 1 M] [IsManifold I' 1 M']
+@[simp 100] theorem isOrientationReversingAt_neg_right [IsManifold I 1 M] [IsManifold I' 1 M']
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
     (f : M → M') (x : M) :
     IsOrientationReversingAt o (-o') f x ↔ IsOrientationPreservingAt o o' f x := by
