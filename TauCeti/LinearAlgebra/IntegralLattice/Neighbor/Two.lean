@@ -5,33 +5,34 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
-public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
-public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
-public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Isotropic
 
 /-!
-# Even two-neighbors
+# Two-neighbors
 
-For an even lattice `L` and a lattice vector `v` of norm divisible by eight, first keep the
+For a lattice vector `v` of norm divisible by four, the two-neighbor of `L` along `v` is the
+general neighbor `TauCeti.IntegralLattice.neighbor` at `p = 2`. It is obtained by keeping the
 vectors pairing evenly with `v` (the neighbor kernel `TauCeti.IntegralLattice.neighborKernel` at
-`p = 2`), then glue in `v / 2`. The construction uses the existing quadratic-isotropic
-discriminant-subgroup gluing operation. When `L` is unimodular and some lattice vector pairs oddly
-with `v`, the result is an even unimodular two-neighbor.
+`p = 2`) and adjoining `v / 2`. This file shows that its carrier is the union of the even-pairing
+kernel and the translate of that kernel by `v / 2`.
 
-The carrier is the union of the even-pairing kernel and its half-vector translate. An odd
-pairing makes this kernel the intersection with the original lattice, of index two in each, so
-the result is a Kneser two-neighbor in the sense of `TauCeti.IntegralLattice.IsNeighbor`. It is
-the general neighbor `TauCeti.IntegralLattice.neighbor` at `p = 2`, by `twoNeighbor_eq_neighbor`,
-and its intersection, index, evenness and neighbor properties are derived from the general ones.
+The general results specialise as follows. When `L` is even and the norm of `v` is divisible by
+eight, the two-neighbor is even (`TauCeti.IntegralLattice.isEven_neighbor`). When some lattice
+vector pairs oddly with `v` (`Int.isCoprime_two_right`), the two-neighbor is a Kneser
+two-neighbor (`TauCeti.IntegralLattice.isNeighbor_neighbor`). Then it is unimodular when `L` is
+(`TauCeti.IntegralLattice.IsNeighbor.isUnimodular`).
+
+## Main results
+
+* `TauCeti.IntegralLattice.mem_neighbor_two_carrier_iff_mem_or_sub_mem`: the two-neighbor is the
+  union of the even-pairing kernel and its translate by `v / 2`.
 
 ## References
 
 * G. Nebe, [*Extremal lattices*](https://www.math.rwth-aachen.de/homes/Gabriele.Nebe/talks/OW12.pdf),
   slide 11, for the two-neighbor construction of the Leech lattice.
 * R. E. Borcherds, [*The Leech lattice and other lattices*](https://math.berkeley.edu/~reb/papers/thesis/thesis.pdf),
-  §0.2, for the even-pairing kernel and its discriminant glue.
+  §0.2, for the even-pairing kernel.
 -/
 
 public section
@@ -40,335 +41,31 @@ namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
-/-- The even-pairing kernel, with the original ambient rational form. -/
-noncomputable def twoNeighborKernelLattice (v : L) : IntegralLattice V :=
-  L.restrictFull (L.neighborKernel 2 v) (L.neighborKernel_le 2 v)
-
-/-- The kernel lattice has the even-pairing carrier. -/
+/-- The two-neighbor is the union of the even-pairing kernel and the translate of that kernel by
+`v / 2`. -/
 @[simp]
-theorem twoNeighborKernelLattice_carrier (v : L) :
-    (L.twoNeighborKernelLattice v).carrier = L.neighborKernel 2 v := by
-  unfold twoNeighborKernelLattice
-  exact restrictFull_carrier ..
-
-/-- Passing to the neighbor kernel keeps the ambient form. -/
-@[simp]
-theorem twoNeighborKernelLattice_form (v : L) : (L.twoNeighborKernelLattice v).form = L.form := by
-  unfold twoNeighborKernelLattice
-  exact restrictFull_form ..
-
-/-- The neighbor kernel of a nondegenerate lattice is nondegenerate. -/
-instance instIsNondegenerateTwoNeighborKernelLattice [L.IsNondegenerate] (v : L) :
-    (L.twoNeighborKernelLattice v).IsNondegenerate := by
-  unfold twoNeighborKernelLattice
-  infer_instance
-
-/-- The even-pairing kernel of an even lattice is even. -/
-theorem IsEven.twoNeighborKernelLattice {L : IntegralLattice V} (hL : L.IsEven) (v : L) :
-    (L.twoNeighborKernelLattice v).IsEven := by
-  unfold IntegralLattice.twoNeighborKernelLattice
-  exact isEven_restrictFull hL _ _
-
-/-- The even-pairing kernel is positive definite exactly when the original lattice is. -/
-theorem isPosDef_twoNeighborKernelLattice_iff (v : L) :
-    (L.twoNeighborKernelLattice v).IsPosDef ↔ L.IsPosDef := by
-  simp only [IsPosDef, twoNeighborKernelLattice_form]
-
-private theorem half_mem_twoNeighborKernelLattice_dualCarrier (v : L) :
-    (1 / 2 : ℚ) • (v : V) ∈ (L.twoNeighborKernelLattice v).dualCarrier := by
-  rw [dualCarrier, twoNeighborKernelLattice_form, twoNeighborKernelLattice_carrier,
-    LinearMap.BilinForm.mem_dualSubmodule]
-  intro x hx
-  obtain ⟨y, rfl, n, hn⟩ := (L.mem_neighborKernel_iff 2 v x).mp hx
-  refine Submodule.mem_one.mpr ⟨n, ?_⟩
-  have hform := L.integralForm_cast v y
-  rw [hn] at hform
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-  push_cast at hform
-  simp only [eq_intCast]
-  linarith
-
-/-- The vector `v / 2`, as an element of the dual of the even-pairing kernel. -/
-noncomputable def twoNeighborGlueVector (v : L) : (L.twoNeighborKernelLattice v).dualCarrier :=
-  ⟨(1 / 2 : ℚ) • (v : V), half_mem_twoNeighborKernelLattice_dualCarrier L v⟩
-
-/-- The explicit rational representative of the neighbor glue. -/
-@[simp]
-theorem coe_twoNeighborGlueVector (v : L) :
-    (L.twoNeighborGlueVector v : V) = (1 / 2 : ℚ) • (v : V) := by
-  rw [twoNeighborGlueVector]
-
-variable [L.IsNondegenerate]
-
-/-- The discriminant class of `v / 2` in the even-pairing kernel. -/
-noncomputable def twoNeighborGlueClass (v : L) : (L.twoNeighborKernelLattice v).DiscriminantGroup :=
-  Submodule.Quotient.mk (L.twoNeighborGlueVector v)
-
-/-- The cyclic discriminant subgroup generated by the neighbor glue. -/
-noncomputable def twoNeighborGlueSubgroup (v : L) :
-    AddSubgroup (L.twoNeighborKernelLattice v).DiscriminantGroup :=
-  AddSubgroup.zmultiples (L.twoNeighborGlueClass v)
-
-/-- Norm divisibility by eight makes the half-vector glue quadratically isotropic in the
-half-norm convention of the discriminant module. -/
-theorem isIsotropic_twoNeighborGlueSubgroup (hL : L.IsEven) (v : L)
-    (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    ((L.twoNeighborKernelLattice v).discriminantQuadraticModule
-      (hL.twoNeighborKernelLattice v)).IsIsotropic (L.twoNeighborGlueSubgroup v) := by
-  have hq : ((L.twoNeighborKernelLattice v).discriminantQuadraticModule
-      (hL.twoNeighborKernelLattice v)).quadratic (L.twoNeighborGlueClass v) = 0 := by
-    rw [discriminantQuadraticModule_quadratic, twoNeighborGlueClass,
-      discriminantQuadraticMap_mk_eq_zero_iff]
-    obtain ⟨n, hn⟩ := hv
-    refine ⟨n, ?_⟩
-    have hnorm : L.form v v = ((8 * n : ℤ) : ℚ) := by
-      rw [← norm_apply, ← integralNorm_cast, hn]
-    rw [← norm_apply, coe_twoNeighborGlueVector, norm_smul, norm_apply,
-      twoNeighborKernelLattice_form, hnorm]
-    push_cast
-    ring
-  refine (FiniteQuadraticModule.isIsotropic_def _).mpr ?_
-  intro x hx
-  rw [twoNeighborGlueSubgroup] at hx
-  obtain ⟨n, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp hx
-  exact (QuadraticMap.map_smul _ n (L.twoNeighborGlueClass v)).trans
-    ((congrArg (fun q : AddCircle (1 : ℚ) ↦ (n * n) • q) hq).trans (smul_zero _))
-
-/-- The even lattice from the two-neighbor formula: glue the even-pairing kernel along the
-class of `v / 2`. The index-two assertions require an odd pairing with the chosen vector. -/
-noncomputable def twoNeighbor (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    IntegralLattice V :=
-  (L.twoNeighborKernelLattice v).ofIsotropicSubgroup (hL.twoNeighborKernelLattice v)
-    (L.twoNeighborGlueSubgroup v) (L.isIsotropic_twoNeighborGlueSubgroup hL v hv)
-
-/-- The carrier of the neighbor is the actual inverse image of its cyclic discriminant glue. -/
-theorem twoNeighbor_carrier (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    (L.twoNeighbor hL v hv).carrier =
-      ((L.twoNeighborKernelLattice v).intermediateCarrierOfDiscriminantSubgroup
-        (L.twoNeighborGlueSubgroup v)).1 := by
-  rw [twoNeighbor, ofIsotropicSubgroup_carrier]
-
-/-- The two-neighbor carries the original ambient form. -/
-@[simp]
-theorem twoNeighbor_form (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    (L.twoNeighbor hL v hv).form = L.form := by
-  rw [twoNeighbor, ofIsotropicSubgroup_form, twoNeighborKernelLattice_form]
-
-/-- The two-neighbor carries the original ambient norm form. -/
-@[simp]
-theorem twoNeighbor_norm (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) (x : V) :
-    (L.twoNeighbor hL v hv).norm x = L.norm x := by
-  rw [norm_apply, twoNeighbor_form, norm_apply]
-
-/-- A two-neighbor is nondegenerate when its original lattice is. -/
-instance instIsNondegenerateTwoNeighbor (hL : L.IsEven) (v : L)
-    (hv : (8 : ℤ) ∣ L.integralNorm v) : (L.twoNeighbor hL v hv).IsNondegenerate := by
-  constructor
-  rw [twoNeighbor_form]
-  exact L.form_nondegenerate
-
-/-- A two-neighbor is positive definite exactly when the original lattice is. -/
-theorem isPosDef_twoNeighbor_iff (he : L.IsEven) (v : L)
-    (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    (L.twoNeighbor he v hv).IsPosDef ↔ L.IsPosDef := by
-  rw [twoNeighbor]
-  exact ((L.twoNeighborKernelLattice v).isPosDef_ofIsotropicSubgroup_iff
-    (he.twoNeighborKernelLattice v) (L.twoNeighborGlueSubgroup v)
-    (L.isIsotropic_twoNeighborGlueSubgroup he v hv)).trans
-      (L.isPosDef_twoNeighborKernelLattice_iff v)
-
-/-- The rank is preserved because the two-neighbor is a full lattice in the same ambient space. -/
-theorem finrank_twoNeighbor (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    Module.finrank ℤ (L.twoNeighbor hL v hv) = Module.finrank ℤ L := by
-  rw [finrank_carrier, finrank_carrier]
-
-/-- The parity kernel is contained in the glued neighbor carrier. -/
-theorem neighborKernel_le_twoNeighbor_carrier (hL : L.IsEven) (v : L)
-    (hv : (8 : ℤ) ∣ L.integralNorm v) : L.neighborKernel 2 v ≤ (L.twoNeighbor hL v hv).carrier := by
-  rw [twoNeighbor_carrier]
-  simpa only [twoNeighborKernelLattice_carrier] using
-    ((L.twoNeighborKernelLattice v).intermediateCarrierOfDiscriminantSubgroup
-      (L.twoNeighborGlueSubgroup v)).2.1
-
-/-- The half-vector actually belongs to the neighbor, rather than only to the kernel's dual. -/
-theorem half_mem_twoNeighbor_carrier (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    (1 / 2 : ℚ) • (v : V) ∈ (L.twoNeighbor hL v hv).carrier := by
-  rw [← coe_twoNeighborGlueVector L v, twoNeighbor_carrier,
-    coe_mem_intermediateCarrierOfDiscriminantSubgroup_iff, twoNeighborGlueSubgroup]
-  exact AddSubgroup.mem_zmultiples_iff.mpr ⟨1, by rw [one_smul, twoNeighborGlueClass]⟩
-
-/-- **Membership in the two-neighbor**: it is the parity kernel plus the integer multiples
-of the explicit half-vector. -/
-theorem mem_twoNeighbor_carrier_iff (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v)
-    (x : V) : x ∈ (L.twoNeighbor hL v hv).carrier ↔
-      ∃ y ∈ L.neighborKernel 2 v, ∃ n : ℤ, y + n • ((1 / 2 : ℚ) • (v : V)) = x := by
-  constructor
-  · intro hx
-    rw [twoNeighbor_carrier, mem_intermediateCarrierOfDiscriminantSubgroup_iff,
-      twoNeighborGlueSubgroup] at hx
-    obtain ⟨hxdual, n, hn⟩ := hx
-    have heq : (Submodule.Quotient.mk (⟨x, hxdual⟩ : (L.twoNeighborKernelLattice v).dualCarrier) :
-        (L.twoNeighborKernelLattice v).DiscriminantGroup) =
-        Submodule.Quotient.mk (n • L.twoNeighborGlueVector v) := by
-      rw [Submodule.Quotient.mk_smul]
-      exact hn.symm
-    have hy : x - n • ((1 / 2 : ℚ) • (v : V)) ∈ L.neighborKernel 2 v := by
-      simpa only [Submodule.coe_sub, Submodule.coe_smul, coe_twoNeighborGlueVector,
-        twoNeighborKernelLattice_carrier] using
-        (discriminantGroup_mk_eq_iff _ _ _).mp heq
-    exact ⟨_, hy, n, sub_add_cancel _ _⟩
-  · rintro ⟨y, hy, n, rfl⟩
-    exact Submodule.add_mem _ (L.neighborKernel_le_twoNeighbor_carrier hL v hv hy)
-      (Submodule.smul_mem _ n (L.half_mem_twoNeighbor_carrier hL v hv))
-
-/-- **The even two-neighbor is the neighbor at `p = 2`.** -/
-theorem twoNeighbor_eq_neighbor (he : L.IsEven) (v : L) (hn : (8 : ℤ) ∣ L.integralNorm v) :
-    L.twoNeighbor he v hn = L.neighbor 2 v (dvd_trans (by norm_num) hn) := by
-  refine ext ?_ (by rw [twoNeighbor_form, neighbor_form])
-  ext x
-  rw [mem_twoNeighbor_carrier_iff, mem_neighbor_carrier_iff]
-  simp only [one_div, Nat.cast_ofNat]
-
-/-- Gluing the half-vector gives an even lattice. -/
-theorem isEven_twoNeighbor (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    (L.twoNeighbor hL v hv).IsEven := by
-  rw [twoNeighbor_eq_neighbor]
-  exact L.isEven_neighbor _ hL (by norm_num; exact hv)
-
-omit [L.IsNondegenerate] in
-/-- For a unimodular original lattice, the even-pairing kernel has discriminant four. -/
-theorem discriminant_twoNeighborKernelLattice (hL : L.IsUnimodular) (v : L)
-    (hv : ∃ w : L, Odd (L.integralForm v w)) : (L.twoNeighborKernelLattice v).discriminant = 4 := by
-  let : L.IsNondegenerate := ⟨hL.nondegenerate⟩
-  obtain ⟨w, hw⟩ := hv
-  have h := (L.twoNeighborKernelLattice v).discriminant_eq_mul_relIndex_sq L
-    (L.twoNeighborKernelLattice_form v)
-    (by rw [twoNeighborKernelLattice_carrier]; exact L.neighborKernel_le 2 v)
-  rw [twoNeighborKernelLattice_carrier,
-    L.relIndex_neighborKernel 2 (w := w) (Int.isCoprime_two_right.mpr hw),
-    L.isUnimodular_iff_discriminant_eq_one.mp hL] at h
-  simpa using h
-
-omit [L.IsNondegenerate] in
-/-- Twice the half-vector glue class vanishes in the kernel discriminant group. -/
-theorem two_nsmul_twoNeighborGlueClass (v : L) (hv : Even (L.integralNorm v)) :
-    (2 : ℕ) • L.twoNeighborGlueClass v = 0 := by
-  rw [two_nsmul, twoNeighborGlueClass, ← Submodule.Quotient.mk_add,
-    discriminantGroup_mk_eq_zero_iff, Submodule.coe_add, coe_twoNeighborGlueVector,
-    twoNeighborKernelLattice_carrier, ← add_smul]
-  norm_num
-  rw [← integralNorm_apply]
-  exact even_iff_two_dvd.mp hv
-
-omit [L.IsNondegenerate] in
-/-- An odd pairing makes the half-vector class nonzero in the kernel discriminant group. -/
-theorem twoNeighborGlueClass_ne_zero (v : L) (hv : ∃ w : L, Odd (L.integralForm v w)) :
-    L.twoNeighborGlueClass v ≠ 0 := by
-  obtain ⟨w, hw⟩ := hv
-  intro hz
-  rw [twoNeighborGlueClass, discriminantGroup_mk_eq_zero_iff,
-    coe_twoNeighborGlueVector, twoNeighborKernelLattice_carrier] at hz
-  have h := (zsmul_inv_smul_mem_carrier_iff (p := 2) (Int.isCoprime_two_right.mpr hw) 1).mp
-    (by simpa using L.neighborKernel_le 2 v hz)
-  norm_num at h
-
-omit [L.IsNondegenerate] in
-/-- The cyclic glue has exactly two elements when the original vector has an odd pairing. -/
-theorem natCard_twoNeighborGlueSubgroup (v : L) (hn : Even (L.integralNorm v))
-    (hv : ∃ w : L, Odd (L.integralForm v w)) : Nat.card (L.twoNeighborGlueSubgroup v) = 2 := by
-  rw [twoNeighborGlueSubgroup, Nat.card_zmultiples]
-  exact addOrderOf_eq_prime (L.two_nsmul_twoNeighborGlueClass v hn)
-    (L.twoNeighborGlueClass_ne_zero v hv)
-
-/-- The two-neighbor is the union of its even-pairing kernel and the translate of that
-kernel by the half-vector. -/
-@[simp]
-theorem mem_twoNeighbor_carrier_iff_mem_or_sub_half_mem (he : L.IsEven) (v : L)
-    (hn : (8 : ℤ) ∣ L.integralNorm v) (x : V) :
-    x ∈ (L.twoNeighbor he v hn).carrier ↔
-      x ∈ L.neighborKernel 2 v ∨ x - (1 / 2 : ℚ) • (v : V) ∈ L.neighborKernel 2 v := by
-  let h : V := (1 / 2 : ℚ) • (v : V)
+theorem mem_neighbor_two_carrier_iff_mem_or_sub_mem {v : L} (hv : (2 : ℤ) ^ 2 ∣ L.integralNorm v)
+    (x : V) : x ∈ (L.neighbor 2 v hv).carrier ↔
+      x ∈ L.neighborKernel 2 v ∨ x - (2 : ℚ)⁻¹ • (v : V) ∈ L.neighborKernel 2 v := by
+  have hv₀ := L.coe_mem_neighborKernel_self 2 (dvd_trans (dvd_pow_self _ two_ne_zero) hv)
+  rw [mem_neighbor_carrier_iff]
+  simp only [Nat.cast_ofNat]
+  set h : V := (2 : ℚ)⁻¹ • (v : V)
   have hh : h + h = (v : V) := by
-    dsimp [h]
     rw [← add_smul]
     norm_num
-  have hv := L.coe_mem_neighborKernel_self 2 (dvd_trans (by norm_num) hn)
   constructor
-  · intro hx
-    obtain ⟨y, hy, n, rfl⟩ := (L.mem_twoNeighbor_carrier_iff he v hn x).mp hx
-    rcases Int.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
+  · rintro ⟨y, hy, n, rfl⟩
+    rcases Int.even_or_odd n with ⟨k, rfl⟩ | ⟨k, rfl⟩
     · left
-      have hmul : n • h = k • (v : V) := by rw [hk, add_smul, ← smul_add, hh]
-      -- Name the explicit half-vector with the local abbreviation `h` in the coset expression.
-      change y + n • h ∈ _
-      rw [hmul]
-      exact Submodule.add_mem _ hy (Submodule.smul_mem _ k hv)
+      rw [add_smul, ← smul_add, hh]
+      exact Submodule.add_mem _ hy (Submodule.smul_mem _ k hv₀)
     · right
-      have hmul : n • h = k • (v : V) + h := by
-        rw [hk, two_mul, add_smul, add_smul, one_smul, ← smul_add, hh]
-      -- The translate being subtracted is the same local half-vector `h`.
-      change y + n • h - h ∈ _
-      rw [hmul, ← add_assoc, add_sub_cancel_right]
-      exact Submodule.add_mem _ hy (Submodule.smul_mem _ k hv)
+      rw [add_smul, one_smul, two_mul, add_smul, ← smul_add, hh, ← add_assoc,
+        add_sub_cancel_right]
+      exact Submodule.add_mem _ hy (Submodule.smul_mem _ k hv₀)
   · rintro (hx | hx)
-    · exact L.neighborKernel_le_twoNeighbor_carrier he v hn hx
-    · have hsum := Submodule.add_mem (L.twoNeighbor he v hn).carrier
-        (L.neighborKernel_le_twoNeighbor_carrier he v hn hx)
-        (L.half_mem_twoNeighbor_carrier he v hn)
-      simpa only [sub_add_cancel] using hsum
-
-/-- With an odd pairing, the intersection of the original and neighboring carriers is
-exactly the even-pairing kernel. -/
-theorem carrier_inf_twoNeighbor_carrier (he : L.IsEven) (v : L)
-    (hn : (8 : ℤ) ∣ L.integralNorm v) (hv : ∃ w : L, Odd (L.integralForm v w)) :
-    L.carrier ⊓ (L.twoNeighbor he v hn).carrier = L.neighborKernel 2 v := by
-  obtain ⟨w, hw⟩ := hv
-  rw [twoNeighbor_eq_neighbor]
-  exact L.carrier_inf_neighbor_carrier _ (w := w) (Int.isCoprime_two_right.mpr hw)
-
-/-- The even-pairing kernel also has index two in the neighbor. -/
-theorem relIndex_neighborKernel_twoNeighbor (he : L.IsEven) (v : L)
-    (hn : (8 : ℤ) ∣ L.integralNorm v) (hv : ∃ w : L, Odd (L.integralForm v w)) :
-    (L.neighborKernel 2 v).toAddSubgroup.relIndex
-      (L.twoNeighbor he v hn).carrier.toAddSubgroup = 2 := by
-  obtain ⟨w, hw⟩ := hv
-  rw [twoNeighbor_eq_neighbor]
-  exact L.relIndex_neighborKernel_neighbor _ (w := w) (Int.isCoprime_two_right.mpr hw)
-
-/-- **Even two-neighbors are Kneser two-neighbors.** With an odd pairing, the even-pairing kernel
-is the intersection of the original and neighboring carriers, of index two in each. -/
-theorem isNeighbor_twoNeighbor (he : L.IsEven) (v : L) (hn : (8 : ℤ) ∣ L.integralNorm v)
-    (hv : ∃ w : L, Odd (L.integralForm v w)) : L.IsNeighbor (L.twoNeighbor he v hn) 2 := by
-  obtain ⟨w, hw⟩ := hv
-  rw [twoNeighbor_eq_neighbor]
-  exact L.isNeighbor_neighbor _ (w := w) (Int.isCoprime_two_right.mpr hw)
-
-omit [L.IsNondegenerate] in
-/-- **Even two-neighbors of unimodular lattices are unimodular.** The parity kernel has
-discriminant four, and its isotropic half-vector glue has order two and is therefore Lagrangian. -/
-theorem isUnimodular_twoNeighbor (he : L.IsEven) (hL : L.IsUnimodular) (v : L)
-    (hn : (8 : ℤ) ∣ L.integralNorm v) (hv : ∃ w : L, Odd (L.integralForm v w)) :
-    letI : L.IsNondegenerate := ⟨hL.nondegenerate⟩
-    (L.twoNeighbor he v hn).IsUnimodular := by
-  let : L.IsNondegenerate := ⟨hL.nondegenerate⟩
-  have hIso := L.isIsotropic_twoNeighborGlueSubgroup he v hn
-  have hcard : Nat.card (L.twoNeighborGlueSubgroup v) ^ 2 =
-      Nat.card ((L.twoNeighborKernelLattice v).discriminantQuadraticModule
-        (he.twoNeighborKernelLattice v)) := by
-    -- The quadratic discriminant module's carrier is the same existing discriminant group.
-    change Nat.card (L.twoNeighborGlueSubgroup v) ^ 2 =
-      Nat.card (L.twoNeighborKernelLattice v).DiscriminantGroup
-    rw [natCard_discriminantGroup, L.natCard_twoNeighborGlueSubgroup v
-      (even_iff_two_dvd.mpr (dvd_trans (by decide : (2 : ℤ) ∣ 8) hn)) hv,
-      L.discriminant_twoNeighborKernelLattice hL v hv]
-    norm_num
-  have hLag := FiniteQuadraticModule.IsIsotropic.isLagrangian_of_card_sq_eq _ hIso
-    (isNondegenerate_discriminantQuadraticModule _ _) hcard
-  have hLagB : (L.twoNeighborKernelLattice v).discriminantBilinearModule.IsLagrangian
-      (L.twoNeighborGlueSubgroup v) := by
-    simpa only [discriminantQuadraticModule_toFiniteBilinearModule] using
-      hLag.toFiniteBilinearModule
-  rw [twoNeighbor]
-  exact (isUnimodular_ofIsotropicSubgroup_iff_isLagrangian _ _ _ _).mpr hLagB
+    · exact ⟨x, hx, 0, by rw [zero_smul, add_zero]⟩
+    · exact ⟨x - h, hx, 1, by rw [one_smul, sub_add_cancel]⟩
 
 end TauCeti.IntegralLattice

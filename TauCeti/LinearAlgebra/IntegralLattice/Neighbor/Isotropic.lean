@@ -154,12 +154,6 @@ theorem relIndex_neighborKernel {v w : L} (hvw : IsCoprime (L.integralForm v w) 
     AddMonoidHom.range_eq_top.mpr (L.neighborCharacter_surjective p hvw)]
   simp
 
-/-- Multiplying `p⁻¹ • x` by the integer `p` recovers `x`. -/
-private theorem natCast_zsmul_inv_smul (p : ℕ) [NeZero p] (x : V) :
-    (p : ℤ) • ((p : ℚ)⁻¹ • x) = x := by
-  rw [← Int.cast_smul_eq_zsmul ℚ, smul_smul, Int.cast_natCast,
-    mul_inv_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne p)), one_smul]
-
 /-- The neighbor kernel is a full lattice in the ambient space, since it contains `p L`. -/
 instance isLattice_neighborKernel [NeZero p] (v : L) :
     (L.neighborKernel p v).IsLattice ℚ where
@@ -172,7 +166,8 @@ instance isLattice_neighborKernel [NeZero p] (v : L) :
     intro x hx
     have h := (Submodule.span ℚ (L.neighborKernel p v : Set V)).smul_mem (p : ℚ)⁻¹
       (Submodule.subset_span (L.smul_mem_neighborKernel p v ⟨x, hx⟩))
-    rwa [smul_comm, natCast_zsmul_inv_smul] at h
+    rwa [smul_comm, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ,
+      smul_inv_smul₀ (Nat.cast_ne_zero.mpr (NeZero.ne p))] at h
 
 private theorem isLattice_neighborCarrier [NeZero p] (v : L) :
     (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsLattice ℚ :=
@@ -323,13 +318,14 @@ theorem zsmul_inv_smul_mem_carrier_iff {w : L} (hvw : IsCoprime (L.integralForm 
       field_simp
     exact hvw.symm.dvd_of_dvd_mul_right hdvd
   · rintro ⟨m, rfl⟩
-    rw [mul_comm, mul_smul, natCast_zsmul_inv_smul]
+    rw [mul_comm, mul_smul, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ, smul_inv_smul₀ hp]
     exact L.carrier.smul_mem m v.2
 
 /-- The multiples of `p (v / p)` lie in the neighbor kernel. -/
 private theorem zsmul_inv_smul_mem_neighborKernel (m : ℤ) :
     ((p : ℤ) * m) • ((p : ℚ)⁻¹ • (v : V)) ∈ L.neighborKernel p v := by
-  rw [mul_comm, mul_smul, natCast_zsmul_inv_smul]
+  rw [mul_comm, mul_smul, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ,
+    smul_inv_smul₀ (Nat.cast_ne_zero.mpr (NeZero.ne p))]
   exact Submodule.smul_mem _ m
     (L.coe_mem_neighborKernel_self p (dvd_trans (dvd_pow_self _ two_ne_zero) hv))
 
