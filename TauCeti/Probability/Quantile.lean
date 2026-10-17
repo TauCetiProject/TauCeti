@@ -195,6 +195,7 @@ theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1
 
 /-- For a law with continuous cumulative distribution function, the quantile is an exact right
 inverse of the cumulative distribution function at every level strictly between `0` and `1`. -/
+@[simp]
 theorem cdf_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ)) (h0 : 0 < t) (h1 : t < 1) :
     cdf μ (μ.quantile t) = t := by
   refine le_antisymm ?_ (le_cdf_quantile μ h1)
@@ -213,6 +214,7 @@ theorem strictMonoOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ)) :
 
 /-- If the cumulative distribution function is strictly increasing where its values lie strictly
 between `0` and `1`, the quantile is a left inverse of it there. -/
+@[simp]
 theorem quantile_cdf (μ : Measure ℝ) (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
     (hx : cdf μ x ∈ Ioo 0 1) : μ.quantile (cdf μ x) = x := by
   refine le_antisymm ((quantile_le_iff μ hx.1 hx.2).2 le_rfl) (not_lt.1 fun h => ?_)

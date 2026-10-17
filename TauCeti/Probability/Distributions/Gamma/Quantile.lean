@@ -160,6 +160,7 @@ theorem inverseRegularizedGamma_nonneg (s u : ℝ) : 0 ≤ inverseRegularizedGam
   · rw [inverseRegularizedGamma_eq_zero_of_not h]
 
 /-- `P⁻¹(s, ·)` is a right inverse of `P(s, ·)` on the levels `0 < u < 1`. -/
+@[simp]
 theorem regularizedGamma_inverseRegularizedGamma (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     regularizedGamma s (inverseRegularizedGamma s u) = u := by
   have h := Measure.cdf_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
@@ -186,6 +187,7 @@ theorem inverseRegularizedGamma_eq_iff (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
   rw [regularizedGamma_inverseRegularizedGamma hs hu, hx]
 
 /-- `P⁻¹(s, ·)` is a left inverse of `P(s, ·)` on the open half-line `0 < x`. -/
+@[simp]
 theorem inverseRegularizedGamma_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
     inverseRegularizedGamma s (regularizedGamma s x) = x :=
   (inverseRegularizedGamma_eq_iff hs ⟨regularizedGamma_pos hs hx, regularizedGamma_lt_one s x⟩).2
@@ -193,18 +195,15 @@ theorem inverseRegularizedGamma_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
 
 /-- `P⁻¹(s, ·)` is strictly increasing on the levels `0 < u < 1`. -/
 theorem strictMonoOn_inverseRegularizedGamma (hs : 0 < s) :
-    StrictMonoOn (inverseRegularizedGamma s) (Ioo 0 1) := by
-  rw [show inverseRegularizedGamma s = _ from
-    funext fun _ => inverseRegularizedGamma_eq_quantile hs]
-  exact Measure.strictMonoOn_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
+    StrictMonoOn (inverseRegularizedGamma s) (Ioo 0 1) := fun a ha b hb hab => by
+  simpa only [inverseRegularizedGamma_eq_quantile hs] using Measure.strictMonoOn_quantile _
+    (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos) ha hb hab
 
 /-- `P⁻¹(s, ·)` is continuous on the levels `0 < u < 1`. -/
 theorem continuousOn_inverseRegularizedGamma (hs : 0 < s) :
-    ContinuousOn (inverseRegularizedGamma s) (Ioo 0 1) := by
-  rw [show inverseRegularizedGamma s = _ from
-    funext fun _ => inverseRegularizedGamma_eq_quantile hs]
-  exact Measure.continuousOn_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
-    (strictMonoOn_cdf_gammaMeasure hs)
+    ContinuousOn (inverseRegularizedGamma s) (Ioo 0 1) :=
+  (Measure.continuousOn_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
+    (strictMonoOn_cdf_gammaMeasure hs)).congr fun _ _ => inverseRegularizedGamma_eq_quantile hs
 
 /-- `P⁻¹(s, u)` tends to `0` from above as the level `u` decreases to `0`. -/
 theorem tendsto_inverseRegularizedGamma_nhdsGT_zero (hs : 0 < s) :
