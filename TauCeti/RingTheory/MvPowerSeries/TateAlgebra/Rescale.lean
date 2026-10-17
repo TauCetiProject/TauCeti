@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPowerSeries.Substitution
-public import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.RingTheory.MvPowerSeries.Rescale
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 /-!
@@ -33,18 +32,7 @@ namespace MvPowerSeries
 
 open Filter TauCeti
 
-variable {σ R : Type*} [NormedCommRing R] [NormOneClass R] {r s : σ → ℝ}
-
-private theorem weighted_norm_coeff_rescale (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
-    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
-    ‖coeff n (MvPowerSeries.rescale u f)‖ * n.prod (s · ^ ·) =
-      ‖coeff n f‖ * n.prod (r · ^ ·) := by
-  have hpow (i : σ) (_ : i ∈ n.support) : IsNormMulUnit (u i ^ n i) := (hu i).pow _
-  rw [coeff_rescale, Finsupp.prod, (IsNormMulUnit.prod hpow).norm_mul,
-    IsNormMulUnit.norm_prod hpow, mul_right_comm, mul_comm]
-  congr 1
-  simp only [Finsupp.prod, ← Finset.prod_mul_distrib]
-  exact Finset.prod_congr rfl fun i _ ↦ by rw [(hu i).norm_pow, ← mul_pow, hrs i]
+variable {σ R : Type*} [NormedCommRing R] {r s : σ → ℝ}
 
 /-- Rescaling by multiplicative units converts restrictedness at `r` into restrictedness at `s`
 when `‖u i‖ * s i = r i`. -/
@@ -53,17 +41,7 @@ theorem isRestricted_rescale_iff (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i)
     IsRestricted s (MvPowerSeries.rescale u f) ↔ IsRestricted r f := by
   unfold IsRestricted
   apply tendsto_congr'
-  exact .of_forall (weighted_norm_coeff_rescale u hu hrs f)
-
-omit [NormOneClass R] in
-/-- Rescaling by a family of units and then by their inverses is the identity. -/
-private theorem rescale_inv_rescale (u : σ → Rˣ) (f : MvPowerSeries σ R) :
-    MvPowerSeries.rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R))
-      (MvPowerSeries.rescale (fun i ↦ (u i : R)) f) = f := by
-  have h : ((fun i ↦ (u i : R)) * fun i ↦ (((u i)⁻¹ : Rˣ) : R)) = 1 := by
-    funext i
-    simp
-  rw [rescale_rescale, h, rescale_one, RingHom.id_apply]
+  exact .of_forall (norm_coeff_rescale_mul_prod u hu hrs f)
 
 end MvPowerSeries
 
@@ -71,7 +49,7 @@ namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
 
-variable {σ R : Type*} [NormedCommRing R] [NormOneClass R] {r s : σ → ℝ}
+variable {σ R : Type*} [NormedCommRing R] {r s : σ → ℝ}
 
 section Equiv
 
@@ -107,18 +85,23 @@ private theorem norm_restrictedRescaleAlgHom (u : σ → R) (hu : ∀ i, IsNormM
   congr 1
   funext n
   rw [coe_restrictedRescaleAlgHom]
-  exact weighted_norm_coeff_rescale u hu hrs f n
+  exact norm_coeff_rescale_mul_prod u hu hrs f n
+
+omit [IsUltrametricDist R] in
+private theorem norm_ne_zero_of_radius_eq (u : σ → Rˣ)
+    (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) (i : σ) : ‖(u i : R)‖ ≠ 0 := by
+  have hr : 0 < r i := Fact.out
+  have hs : 0 < s i := Fact.out
+  nlinarith [norm_nonneg (u i : R), hrs i]
 
 omit [IsUltrametricDist R] in
 private theorem inverse_radius_eq (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R))
     (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) (i : σ) :
     ‖(((u i)⁻¹ : Rˣ) : R)‖ * r i = s i := by
+  have hne := norm_ne_zero_of_radius_eq u hrs i
   have hnorm : ‖(((u i)⁻¹ : Rˣ) : R)‖ = ‖(u i : R)‖⁻¹ :=
-    (Units.isNormMulUnit_iff_norm_inv (u i)).mp (hu i)
-  have hne : ‖(u i : R)‖ ≠ 0 := by
-    have hr : 0 < r i := Fact.out
-    have hs : 0 < s i := Fact.out
-    nlinarith [norm_nonneg (u i : R), hrs i]
+    TauCeti.NormedRing.norm_units_inv_of_norm_mul (lt_of_le_of_ne (norm_nonneg _) (Ne.symm hne))
+      (hu i).norm_mul
   rw [hnorm]
   calc
     ‖(u i : R)‖⁻¹ * r i = ‖(u i : R)‖⁻¹ * (‖(u i : R)‖ * s i) := by

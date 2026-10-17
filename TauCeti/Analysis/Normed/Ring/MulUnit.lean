@@ -121,12 +121,6 @@ theorem norm_pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : ‖u ^ n‖ = ‖u�
   | zero => simp
   | succ n ih => rw [pow_succ', hu.norm_mul, ih, pow_succ']
 
-/-- The inverse of a multiplicative unit is again multiplicative. -/
-theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
-    IsNormMulUnit ((u⁻¹ : Rˣ) : R) := by
-  rw [Units.isNormMulUnit_iff_norm_inv] at hu ⊢
-  simp [hu]
-
 /-- Norm-preserving ring homomorphisms from a norm-one ring preserve multiplicative units,
 even when they are not onto. -/
 theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →+* S)
@@ -140,6 +134,25 @@ theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →+* S)
 end IsNormMulUnit
 
 end NormOne
+
+namespace IsNormMulUnit
+
+/-- The inverse of a multiplicative unit is again multiplicative. -/
+theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
+    IsNormMulUnit ((u⁻¹ : Rˣ) : R) := by
+  by_cases hu0 : ‖(u : R)‖ = 0
+  · refine ⟨Units.isUnit _, fun x ↦ ?_⟩
+    have hall (y : R) : ‖y‖ = 0 := by
+      have h := hu.norm_mul (((u⁻¹ : Rˣ) : R) * y)
+      simpa [← mul_assoc, hu0] using h
+    simp [hall]
+  · have hu0' : 0 < ‖(u : R)‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm hu0)
+    let _ : NormOneClass R :=
+      ⟨NormedRing.norm_one_of_norm_units_mul hu0' hu.norm_mul⟩
+    rw [Units.isNormMulUnit_iff_norm_inv] at hu ⊢
+    simp [hu]
+
+end IsNormMulUnit
 
 section CommRing
 
