@@ -126,20 +126,25 @@ theorem orderStatistic_lt_iff (k : Fin n) (x : Fin n → α) (t : α) :
 theorem orderStatistic_zero (x : Fin (n + 1) → α) :
     orderStatistic 0 x = Finset.univ.inf' Finset.univ_nonempty x := by
   refine eq_of_forall_ge_iff fun t => ?_
-  rw [orderStatistic_le_iff, Finset.inf'_le_iff, Fin.val_zero, Finset.card_pos,
-    Finset.filter_nonempty_iff]
+  simp [orderStatistic_le_iff, Finset.card_pos, Finset.filter_nonempty_iff]
 
 /-- The greatest order statistic is the maximum of the entries. -/
 @[simp]
 theorem orderStatistic_last (x : Fin (n + 1) → α) :
     orderStatistic (Fin.last n) x = Finset.univ.sup' Finset.univ_nonempty x := by
   refine eq_of_forall_ge_iff fun t => ?_
-  have hcard : n < #{i | x i ≤ t} ↔ #{i | x i ≤ t} = Fintype.card (Fin (n + 1)) := by
+  have hcard : n < #{i | x i ≤ t} ↔ ({i | x i ≤ t} : Finset _) = Finset.univ := by
     have := Finset.card_le_univ (Finset.univ.filter fun i => x i ≤ t)
-    rw [Fintype.card_fin] at this ⊢
+    rw [← Finset.card_eq_iff_eq_univ, Fintype.card_fin] at *
     omega
-  rw [orderStatistic_le_iff, Fin.val_last, hcard, Finset.card_eq_iff_eq_univ,
-    Finset.filter_eq_self, Finset.sup'_le_iff]
+  simp [orderStatistic_le_iff, hcard, Finset.filter_eq_self]
+
+/-- The sublevel sets of an order statistic, by the counting characterization
+`TauCeti.Probability.orderStatistic_le_iff`. -/
+theorem preimage_orderStatistic_Iic (k : Fin n) (t : α) :
+    orderStatistic k ⁻¹' Iic t = {x | (k : ℕ) < #{i | x i ≤ t}} := by
+  ext x
+  simp [orderStatistic_le_iff]
 
 variable [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [OrderTopology α]
   [SecondCountableTopology α]
@@ -154,11 +159,8 @@ theorem measurable_orderStatistic (k : Fin n) :
     exact Finset.measurable_sum _ fun i _ =>
       Measurable.ite (measurableSet_le (measurable_pi_apply i) measurable_const) measurable_const
         measurable_const
-  have hset : orderStatistic k ⁻¹' Iic t = (fun x : Fin n → α => #{i | x i ≤ t}) ⁻¹' Ioi k := by
-    ext x
-    simp [orderStatistic_le_iff]
-  rw [hset]
-  exact hcount (measurableSet_Ioi)
+  rw [preimage_orderStatistic_Iic]
+  exact hcount measurableSet_Ioi
 
 end Order
 
@@ -175,9 +177,8 @@ theorem cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta [IsProbabilityMea
     cdf ((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)) t =
       regularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k) (cdf μ t) := by
   have hset : orderStatistic k ⁻¹' Iic t =
-      {x : Fin n → ℝ | (k : ℕ) + 1 ≤ #{i | x i ∈ Iic t}} := by
-    ext x
-    simp [orderStatistic_le_iff]
+      {x : Fin n → ℝ | (k : ℕ) + 1 ≤ #{i | x i ∈ Iic t}} :=
+    preimage_orderStatistic_Iic k t
   rw [cdf_eq_real, map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic, hset,
     (hasLaw_card_filter_mem_pi (s := Iic t) measurableSet_Iic).measureReal_eq
       (p := fun j => (k : ℕ) + 1 ≤ j) .of_discrete, Fintype.card_fin,
