@@ -262,7 +262,7 @@ section CommRing
 variable [CommRing R] [CommRing K] [Algebra R K]
 
 /-- The unit pure tensors are the `R`-span of the base change of any basis. -/
-theorem range_mk_one_eq_span [AddCommGroup M] [Module R M] {ι : Type*} (b : Basis ι R M) :
+theorem range_mk_one_eq_span [AddCommMonoid M] [Module R M] {ι : Type*} (b : Basis ι R M) :
     LinearMap.range (TensorProduct.mk R K M 1) =
       Submodule.span R (Set.range (b.baseChange K)) := by
   rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
