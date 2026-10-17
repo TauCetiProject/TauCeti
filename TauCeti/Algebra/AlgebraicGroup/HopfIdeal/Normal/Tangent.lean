@@ -47,21 +47,14 @@ theorem IsNormal.adDerivation_mem_lieSubalgebra (hI : I.IsNormal)
     {d : Derivation R H (Bialgebra.CounitAlgebra R H B)}
     (hd : d ∈ I.lieSubalgebra (B := B)) :
     Derivation.adDerivation B g d ∈ I.lieSubalgebra (B := B) := by
-  rw [mem_lieSubalgebra_iff] at hd ⊢
+  rw [mem_lieSubalgebra_iff]
   let C := Bialgebra.CounitAlgebra R H B
   let p := (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val
   let q := AlgHom.mapValue (H := H) (inlAlgHom R C C) g
   let N := CommHopfAlgCat.quotientPointsSubgroup
     (_root_.CommHopfAlgCat.of R H) I (CommAlgCat.of R (DualNumber C))
-  have hp : p ∈ N := by
-    rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-    intro x hx
-    apply TrivSqZeroExt.ext
-    · rw [derivationMulEquivTangentKer_apply_fst]
-      simp [I.counit_eq_zero hx]
-      rfl
-    · rw [derivationMulEquivTangentKer_apply_snd]
-      exact hd x (mem_toIdeal.mpr hx)
+  have hp : p ∈ N :=
+    (I.mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff d).mpr hd
   have hn := CommHopfAlgCat.quotientPointsSubgroup_normal
     (_root_.CommHopfAlgCat.of R H) I hI (CommAlgCat.of R (DualNumber C))
   have hc := hn.conj_mem p hp q

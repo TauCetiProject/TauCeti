@@ -122,6 +122,32 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
 
+/-- Coefficientwise convergence to zero implies Gauss-norm convergence when the weighted
+coefficient norms are bounded by one null sequence, uniformly over the family. -/
+theorem tendsto_gaussNorm_zero_of_coeff_bound {α : Type*} {l : Filter α}
+    {F : α → PowerSeries R} {b : ℕ → ℝ}
+    (hcoeff : ∀ n, Tendsto (fun a ↦ (F a).coeff n) l (𝓝 0))
+    (hbound : ∀ a n, ‖(F a).coeff n‖ * c ^ n ≤ b n)
+    (hb : Tendsto b atTop (𝓝 0)) :
+    Tendsto (fun a ↦ (F a).gaussNorm norm c) l (𝓝 0) := by
+  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := eventually_atTop.mp (hb.eventually (gt_mem_nhds (half_pos hε)))
+  have hlow : ∀ᶠ a in l, ∀ n ∈ Finset.range N,
+      ‖(F a).coeff n‖ * c ^ n < ε / 2 := by
+    refine (Finset.eventually_all _).mpr fun n _ ↦ ?_
+    have hzero : Tendsto (fun a ↦ ‖(F a).coeff n‖ * c ^ n) l (𝓝 0) := by
+      simpa using ((hcoeff n).norm.mul_const (c ^ n))
+    exact hzero.eventually (gt_mem_nhds (half_pos hε))
+  filter_upwards [hlow] with a ha
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg
+    (PowerSeries.gaussNorm_nonneg norm c (F a) norm_nonneg)]
+  refine lt_of_le_of_lt ?_ (half_lt_self hε)
+  rw [PowerSeries.gaussNorm_eq]
+  refine ciSup_le fun n ↦ ?_
+  by_cases hn : n < N
+  · exact (ha n (Finset.mem_range.mpr hn)).le
+  · exact (hbound a n).trans (hN n (by omega)).le
+
 section Ultrametric
 
 variable [IsUltrametricDist R]

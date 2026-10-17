@@ -53,6 +53,8 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_tateNormalForm_curveGeom`: the same
   universal property, with the universal Tate normal form read as the elliptic curve `curveGeom`.
+* `WeierstrassCurve.UniversalTate.smooth_terminal_from`: the base `Spec ℤ[A, B][Δ⁻¹]` of the
+  universal Tate normal form is smooth over `Spec ℤ`.
 * `WeierstrassCurve.UniversalTate.point_ne_projModelZero`,
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero` and
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero`: the universal point
@@ -125,6 +127,22 @@ theorem point_projModelMulBy_two_ne_projModelZero (s) :
 theorem point_projModelMulBy_three_ne_projModelZero (s) :
     (point.{u} ≫ curveULift.projModelMulBy 3) s ≠ curveULift.projModelZero s :=
   point_conditions.2.2 s
+
+/-! ### Smoothness of the base -/
+
+/-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth over `Spec ℤ`, the
+terminal scheme. -/
+instance smooth_terminal_from : Smooth (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
+  let f : ULift.{u} ℤ →+* ULift.{u} Ring :=
+    ULift.ringEquiv.symm.toRingHom.comp ((algebraMap ℤ Ring).comp ULift.ringEquiv.toRingHom)
+  have hf : f.Smooth :=
+    ((RingHom.Smooth.of_bijective ULift.ringEquiv.bijective).comp
+      (RingHom.smooth_algebraMap.mpr inferInstance)).comp
+        (RingHom.Smooth.of_bijective ULift.ringEquiv.symm.bijective)
+  have : Smooth (Spec.map (CommRingCat.ofHom f)) := HasRingHomProperty.Spec_iff.mpr hf
+  have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
+  rw [terminal.hom_ext (terminal.from _) (Spec.map (CommRingCat.ofHom f) ≫ e.hom)]
+  infer_instance
 
 end WeierstrassCurve.UniversalTate
 

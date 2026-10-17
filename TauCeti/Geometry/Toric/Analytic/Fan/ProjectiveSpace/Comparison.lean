@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.Fan.ProjectiveSpace.Transition
-public import TauCeti.Topology.ComplexProjectiveSpace
+public import TauCeti.Topology.ComplexProjectiveSpace.Basic
 import TauCeti.Geometry.Toric.Analytic.Fan.Topology
 public import Mathlib.Analysis.Normed.Module.Normalize
 

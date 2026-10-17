@@ -18,7 +18,7 @@ the last two a real minuend. The file also records that adding a finite extended
 to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
 compares with the number itself in `EReal`, and that the coercion from `ℝ≥0∞` commutes with
 infima. The named inclusion `WithTop.toEReal` embeds real heights with a possible top value
-into `EReal` without installing a coercion.
+into `EReal` without installing a coercion; it is additive.
 
 ## Main results
 
@@ -44,6 +44,8 @@ into `EReal` without installing a coercion.
 * `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
   `a : ℝ≥0∞` is at most `a` in `EReal`.
 * `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima.
+* `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
+  `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
 
 public section
@@ -88,6 +90,24 @@ theorem _root_.WithTop.toEReal_injective : Function.Injective WithTop.toEReal :=
 @[simp]
 theorem _root_.WithTop.toEReal_eq_top_iff {x : WithTop ℝ} :
     x.toEReal = ⊤ ↔ x = ⊤ := WithBot.coe_eq_top
+
+/-- The inclusion into `EReal` is additive. -/
+@[simp]
+theorem _root_.WithTop.toEReal_add (x y : WithTop ℝ) :
+    (x + y).toEReal = x.toEReal + y.toEReal := by
+  induction x using WithTop.recTopCoe <;> induction y using WithTop.recTopCoe <;>
+    simp [← WithTop.coe_add, ← EReal.coe_add]
+
+/-- Subtracting a sum of two reals from the image of a sum of two heights gives the sum of the
+two separate differences. -/
+theorem _root_.WithTop.toEReal_add_sub_coe_add (x y : WithTop ℝ) (a b : ℝ) :
+    (x + y).toEReal - ((a + b : ℝ) : EReal) = (x.toEReal - a) + (y.toEReal - b) := by
+  induction x using WithTop.recTopCoe <;> induction y using WithTop.recTopCoe
+  case coe.coe r s =>
+    simp only [WithTop.toEReal_add, WithTop.toEReal_coe]
+    norm_cast
+    ring
+  all_goals simp [← EReal.coe_sub]
 
 /-- Subtracting a real constant commutes with an infimum in `EReal`; both sides are `⊤` when the
 index type is empty. -/

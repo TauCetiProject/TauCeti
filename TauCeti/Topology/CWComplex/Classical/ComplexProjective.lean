@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.Topology.ComplexProjectiveSpace
+public import TauCeti.Topology.ComplexProjectiveSpace.Basic
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 
 /-!

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
 public import Mathlib.RepresentationTheory.Basic
 import TauCeti.Algebra.DualNumber.Convolution
 
@@ -36,6 +37,8 @@ computation appears; inverses come from the group of points.
   `g ⋆ d ⋆ g⁻¹`, the form the algebraic manipulations use.
 * `Derivation.snd_conjugate_tangentPoint`: conjugation on dual-number tangent points
   induces the adjoint action on their infinitesimal coefficients.
+* `Derivation.adDerivation_eq_self_of_isCentralPoint`: universally central points
+  act trivially on tangent vectors.
 * `Derivation.adRepresentation`: the adjoint action, as a representation of
   the convolution group of points on the tangent space.
 
@@ -49,8 +52,9 @@ finite-projectivity hypothesis on the conormal module and is not attempted here.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §14 (the adjoint representation).
-* J. C. Jantzen, *Representations of Algebraic Groups*, I.7.18.
+* J. S. Milne, *Algebraic Groups* (2017), §10 (Lie algebras) and §14
+  (the adjoint representation).
+* J. C. Jantzen, *Representations of Algebraic Groups*, I.7, especially I.7.18.
 -/
 
 public section
@@ -254,5 +258,33 @@ theorem snd_conjugate_tangentPoint
   have ha := LinearMap.congr_fun hc a
   simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, sndHom_apply,
     AlgHom.toLinearMap_apply, Derivation.coeFn_coe, S, q, p, map_inv] using ha
+
+end Derivation
+
+open TauCeti WithConv TrivSqZeroExt
+
+namespace Derivation
+
+universe u v w
+
+variable {R : Type u} {H : Type v} {B : Type (max v w)} [CommRing R] [CommRing H] [HopfAlgebra R H]
+  [CommRing B] [Algebra R B]
+
+/-- A universally central point acts trivially on tangent vectors over its value algebra. -/
+theorem adDerivation_eq_self_of_isCentralPoint
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B))
+    {g : WithConv (H →ₐ[R] Bialgebra.CounitAlgebra R H B)}
+    (hg : HopfAlgebra.IsCentralPoint g) : adDerivation B g d = d := by
+  let C := Bialgebra.CounitAlgebra R H B
+  let p := (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val
+  let q := AlgHom.mapValue (H := H) (inlAlgHom R C C) g
+  rw [HopfAlgebra.isCentralPoint_def] at hg
+  have hc : q * p * q⁻¹ = p := by
+    have hq : Commute q p := hg (inlAlgHom R C C) p
+    exact Commute.mul_inv_cancel (G := WithConv (H →ₐ[R] DualNumber C)) hq
+  ext a
+  have ha := congrArg (fun z ↦ snd (z.ofConv a)) hc
+  rw [snd_conjugate_tangentPoint, derivationMulEquivTangentKer_apply_snd] at ha
+  exact ha
 
 end Derivation
