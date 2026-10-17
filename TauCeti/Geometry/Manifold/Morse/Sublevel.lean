@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.NormalizedChart
 public import TauCeti.Topology.Order.Sublevel
 import Mathlib.Topology.Connected.Clopen
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Disc sublevels at nondegenerate extrema
@@ -150,14 +151,10 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_local_superlevel_homeomorph_
     simp only [mem_ofPred_eq, Pi.neg_apply]
     constructor <;> rintro ⟨hy, hfy⟩ <;> exact ⟨hy, by linarith⟩
   refine ⟨(Homeomorph.setCongr hset).trans e, fun y ↦ ?_⟩
+  rw [Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   have hy := he ((Homeomorph.setCongr hset) y)
-  -- Set congruence retains the manifold point, and composition retains the radial coordinate.
-  have hcoe : ((Homeomorph.setCongr hset) y : M) = y := (rfl)
-  rw [hcoe] at hy
-  simp only [Function.comp_apply, Pi.neg_apply] at hy
-  simpa only [Homeomorph.trans_apply] using (by linarith :
-    f y = f x -
-      ‖(e ((Homeomorph.setCongr hset) y) : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ ^ 2)
+  simp only [Function.comp_apply, Pi.neg_apply, Homeomorph.setCongr_apply] at hy
+  linarith
 
 /-- If a function has a unique global minimum at a nondegenerate critical point and one compact
 sublevel strictly above it on which it is continuous, all sufficiently small whole sublevels are
@@ -191,7 +188,8 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBa
   have hset : {y | f y ≤ f x + r ^ 2} = {y | y ∈ U ∧ f y ≤ f x + r ^ 2} := by
     ext y
     exact ⟨fun hy ↦ ⟨hεU (le_trans hy (add_le_add le_rfl hrε)), hy⟩, And.right⟩
-  -- Set congruence retains the manifold point; the radial coordinate is still given by e.
-  exact ⟨(Homeomorph.setCongr hset).trans e, fun y ↦ he ((Homeomorph.setCongr hset) y)⟩
+  refine ⟨(Homeomorph.setCongr hset).trans e, fun y ↦ ?_⟩
+  rw [Homeomorph.trans_apply, Homeomorph.setCongr_apply]
+  simpa only [Homeomorph.setCongr_apply] using he ((Homeomorph.setCongr hset) y)
 
 end TauCeti

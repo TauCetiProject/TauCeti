@@ -25,7 +25,8 @@ theorem makes the construction reduce exactly to the existing calculus definitio
 not compare the preferred chart with arbitrary manifold charts.
 
 When the preferred-chart Hessian is nondegenerate, the indices of a function and its negation add
-to the dimension of the model space.
+to the dimension of the model space. At a local minimum of a `C²` function on a boundaryless
+manifold, the index vanishes without a nondegeneracy assumption.
 
 ## Main declarations
 
@@ -34,6 +35,8 @@ to the dimension of the model space.
   function.
 * `TauCeti.manifoldMorseIndex_modelSpace`: comparison with `TauCeti.morseIndex` on a normed
   vector space.
+* `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the index vanishes at a local minimum
+  of a `C²` function on a boundaryless manifold.
 * `TauCeti.manifoldMorseIndex_transContinuousLinearEquiv`: invariance under an equivalent choice
   of model space.
 * `TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`: the complementary-index

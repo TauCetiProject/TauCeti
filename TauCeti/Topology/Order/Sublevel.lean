@@ -26,7 +26,8 @@ open Set
 namespace TauCeti
 
 /-- Small sublevels of a function with a unique global minimum lie in any open neighbourhood
-of that minimum, provided one sublevel strictly above the minimum is compact. -/
+of that minimum, provided one sublevel strictly above the minimum is compact and `f` is
+continuous on it. -/
 theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X]
     {f : X → ℝ} {x : X} {a : ℝ}
     (hcompact : IsCompact {y | f y ≤ a}) (hf : ContinuousOn f {y | f y ≤ a})
