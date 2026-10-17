@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
-public import Mathlib.CategoryTheory.Filtered.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux
 
 /-!
@@ -113,8 +112,26 @@ noncomputable def levelDiagram : RamificationIndex ⥤ CommAlgCat K where
       RamificationIndex.transitionDegree_trans f.le g.le]
 
 /-- The object at every ramification index is the Laurent-series `K`-algebra. -/
+@[simp]
 theorem levelDiagram_obj (n : RamificationIndex) :
     (levelDiagram K).obj n = CommAlgCat.of K (LaurentSeries K) := rfl
+
+/-- The transition map along `n ≤ m` is the substitution `X ↦ X ^ (m / n)`. -/
+@[simp]
+theorem levelDiagram_map_hom {n m : RamificationIndex} (f : n ⟶ m) :
+    ((levelDiagram K).map f).hom =
+      LaurentSeries.expand K (RamificationIndex.transitionDegree f.le) := rfl
+
+variable {K} in
+/-- Moving a level-`n` series to level `m` along `X ↦ X ^ (m / n)` does not change its image in
+the Puiseux field. -/
+theorem levelEmbedding_expand_transitionDegree {n m : RamificationIndex} (h : n ≤ m)
+    (f : LaurentSeries K) :
+    levelEmbedding K m.toPNat
+      (LaurentSeries.expand K (RamificationIndex.transitionDegree h) f) =
+        levelEmbedding K n.toPNat f := by
+  rw [← RamificationIndex.mul_transitionDegree h]
+  exact levelEmbedding_expand n.toPNat (RamificationIndex.transitionDegree h) f
 
 /-- The level embeddings into the Puiseux field, as a cocone on the ramified-level diagram. -/
 @[expose]
@@ -125,14 +142,16 @@ noncomputable def levelCocone : Cocone (levelDiagram K) where
       naturality := fun {n m} f ↦ by
         apply CommAlgCat.hom_ext
         ext x
-        change levelEmbedding K m.toPNat
-          (LaurentSeries.expand K (RamificationIndex.transitionDegree f.le) x) =
-            levelEmbedding K n.toPNat x
-        rw [← RamificationIndex.mul_transitionDegree f.le]
-        exact levelEmbedding_expand n.toPNat (RamificationIndex.transitionDegree f.le) x }
+        exact levelEmbedding_expand_transitionDegree f.le x }
 
 /-- The point of the level cocone is the Puiseux field. -/
+@[simp]
 theorem levelCocone_pt : (levelCocone K).pt = CommAlgCat.of K (puiseuxField K) := rfl
+
+/-- The component of the level cocone at `n` is the level-`n` embedding. -/
+@[simp]
+theorem levelCocone_ι_app_hom (n : RamificationIndex) :
+    ((levelCocone K).ι.app n).hom = levelEmbedding K n.toPNat := rfl
 
 variable {K}
 
@@ -147,23 +166,12 @@ private theorem cocone_app_eq_of_levelEmbedding_eq (s : Cocone (levelDiagram K))
     {n m : RamificationIndex} {f g : LaurentSeries K}
     (hfg : levelEmbedding K n.toPNat f = levelEmbedding K m.toPNat g) :
     s.ι.app n f = s.ι.app m g := by
-  let l : RamificationIndex := ⟨n.toPNat * m.toPNat⟩
-  have hnl : n ≤ l := ⟨m.toPNat, rfl⟩
-  have hml : m ≤ l := ⟨n.toPNat, mul_comm _ _⟩
-  have hn : levelEmbedding K l.toPNat
-      (LaurentSeries.expand K (RamificationIndex.transitionDegree hnl) f) =
-      levelEmbedding K n.toPNat f := by
-    rw [← RamificationIndex.mul_transitionDegree hnl]
-    exact levelEmbedding_expand n.toPNat (RamificationIndex.transitionDegree hnl) f
-  have hm : levelEmbedding K l.toPNat
-      (LaurentSeries.expand K (RamificationIndex.transitionDegree hml) g) =
-      levelEmbedding K m.toPNat g := by
-    rw [← RamificationIndex.mul_transitionDegree hml]
-    exact levelEmbedding_expand m.toPNat (RamificationIndex.transitionDegree hml) g
+  obtain ⟨l, hnl, hml⟩ := exists_ge_ge n m
   have heq : LaurentSeries.expand K (RamificationIndex.transitionDegree hnl) f =
       LaurentSeries.expand K (RamificationIndex.transitionDegree hml) g := by
     apply (levelEmbedding K l.toPNat).injective
-    exact hn.trans (hfg.trans hm.symm)
+    exact (levelEmbedding_expand_transitionDegree hnl f).trans
+      (hfg.trans (levelEmbedding_expand_transitionDegree hml g).symm)
   rw [cocone_app_transition s hnl f, cocone_app_transition s hml g, heq]
 
 private noncomputable def chosenIndex (x : puiseuxField K) : RamificationIndex :=
@@ -194,69 +202,28 @@ private theorem levelDescFun_one (s : Cocone (levelDiagram K)) : levelDescFun s 
   rw [← map_one (levelEmbedding K (1 : ℕ+)), levelDescFun_levelEmbedding]
   exact map_one (s.ι.app ⟨1⟩).hom
 
+/-- Any two Puiseux series come from a common ramified level. -/
+private theorem exists_levelEmbedding_eq_and_eq (x y : puiseuxField K) :
+    ∃ (l : RamificationIndex) (f g : LaurentSeries K),
+      levelEmbedding K l.toPNat f = x ∧ levelEmbedding K l.toPNat g = y := by
+  obtain ⟨l, hl⟩ := exists_forall_mem_range_levelEmbedding ![x, y]
+  obtain ⟨f, hf⟩ := hl 0
+  obtain ⟨g, hg⟩ := hl 1
+  exact ⟨⟨l⟩, f, g, hf, hg⟩
+
 private theorem levelDescFun_add (s : Cocone (levelDiagram K)) (x y : puiseuxField K) :
     levelDescFun s (x + y) = levelDescFun s x + levelDescFun s y := by
-  let n := chosenIndex x
-  let m := chosenIndex y
-  let l : RamificationIndex := ⟨n.toPNat * m.toPNat⟩
-  let f := chosenPreimage x
-  let g := chosenPreimage y
-  have hnl : n ≤ l := ⟨m.toPNat, rfl⟩
-  have hml : m ≤ l := ⟨n.toPNat, mul_comm _ _⟩
-  let fn := LaurentSeries.expand K (RamificationIndex.transitionDegree
-    hnl) f
-  let gm := LaurentSeries.expand K (RamificationIndex.transitionDegree
-    hml) g
-  have hfx : levelEmbedding K l.toPNat fn = x := by
-    dsimp [fn]
-    rw [← RamificationIndex.mul_transitionDegree hnl]
-    rw [levelEmbedding_expand]
-    exact levelEmbedding_chosenPreimage x
-  have hgy : levelEmbedding K l.toPNat gm = y := by
-    dsimp [gm]
-    rw [← RamificationIndex.mul_transitionDegree hml]
-    rw [levelEmbedding_expand]
-    exact levelEmbedding_chosenPreimage y
-  calc
-    levelDescFun s (x + y) = levelDescFun s (levelEmbedding K l.toPNat (fn + gm)) := by
-      rw [map_add, hfx, hgy]
-    _ = s.ι.app l (fn + gm) := levelDescFun_levelEmbedding s l _
-    _ = s.ι.app l fn + s.ι.app l gm := map_add _ _ _
-    _ = levelDescFun s x + levelDescFun s y := by
-      rw [← levelDescFun_levelEmbedding s l fn, ← levelDescFun_levelEmbedding s l gm,
-        hfx, hgy]
+  obtain ⟨l, f, g, rfl, rfl⟩ := exists_levelEmbedding_eq_and_eq x y
+  rw [← map_add, levelDescFun_levelEmbedding, levelDescFun_levelEmbedding,
+    levelDescFun_levelEmbedding]
+  exact map_add _ _ _
 
 private theorem levelDescFun_mul (s : Cocone (levelDiagram K)) (x y : puiseuxField K) :
     levelDescFun s (x * y) = levelDescFun s x * levelDescFun s y := by
-  let n := chosenIndex x
-  let m := chosenIndex y
-  let l : RamificationIndex := ⟨n.toPNat * m.toPNat⟩
-  let f := chosenPreimage x
-  let g := chosenPreimage y
-  have hnl : n ≤ l := ⟨m.toPNat, rfl⟩
-  have hml : m ≤ l := ⟨n.toPNat, mul_comm _ _⟩
-  let fn := LaurentSeries.expand K (RamificationIndex.transitionDegree
-    hnl) f
-  let gm := LaurentSeries.expand K (RamificationIndex.transitionDegree
-    hml) g
-  have hfx : levelEmbedding K l.toPNat fn = x := by
-    dsimp [fn]
-    rw [← RamificationIndex.mul_transitionDegree hnl]
-    rw [levelEmbedding_expand]
-    exact levelEmbedding_chosenPreimage x
-  have hgy : levelEmbedding K l.toPNat gm = y := by
-    dsimp [gm]
-    rw [← RamificationIndex.mul_transitionDegree hml]
-    rw [levelEmbedding_expand]
-    exact levelEmbedding_chosenPreimage y
-  calc
-    levelDescFun s (x * y) = levelDescFun s (levelEmbedding K l.toPNat (fn * gm)) := by
-      rw [map_mul, hfx, hgy]
-    _ = s.ι.app l (fn * gm) := levelDescFun_levelEmbedding s l _
-    _ = s.ι.app l fn * s.ι.app l gm := map_mul _ _ _
-    _ = levelDescFun s x * levelDescFun s y := by
-      rw [← levelDescFun_levelEmbedding s l fn, ← levelDescFun_levelEmbedding s l gm,
-        hfx, hgy]
+  obtain ⟨l, f, g, rfl, rfl⟩ := exists_levelEmbedding_eq_and_eq x y
+  rw [← map_mul, levelDescFun_levelEmbedding, levelDescFun_levelEmbedding,
+    levelDescFun_levelEmbedding]
+  exact map_mul _ _ _
 
 private theorem levelDescFun_commutes (s : Cocone (levelDiagram K)) (r : K) :
     levelDescFun s (algebraMap K (puiseuxField K) r) = algebraMap K s.pt r := by
