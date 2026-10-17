@@ -124,14 +124,14 @@ def gRingOfHomogeneous : DirectSum.GRing (fun i ↦ M i) :=
 /-- In `gRingOfHomogeneous`, the product of homogeneous elements is the given homogeneous
 multiplication applied to their tensor product. -/
 @[simp]
-lemma gMul_gRingOfHomogeneous {i j : ι} (a : M i) (b : M j) :
+lemma gRingOfHomogeneous_gMul {i j : ι} (a : M i) (b : M j) :
     letI := gRingOfHomogeneous M one mul one_mul mul_one mul_assoc
     GradedMonoid.GMul.mul (A := fun i ↦ M i) a b = (mul i j).hom (a ⊗ₜ b) :=
   rfl
 
 /-- In `gRingOfHomogeneous`, the unit is the image of `1` under the given unit. -/
 @[simp]
-lemma gOne_gRingOfHomogeneous :
+lemma gRingOfHomogeneous_gOne :
     letI := gRingOfHomogeneous M one mul one_mul mul_one mul_assoc
     GradedMonoid.GOne.one (A := fun i ↦ M i) = one.hom 1 :=
   rfl
@@ -154,7 +154,7 @@ def gAlgebraOfHomogeneous :
 
 /-- The structure map of `gAlgebraOfHomogeneous` is the given unit. -/
 @[simp]
-lemma toFun_gAlgebraOfHomogeneous (r : R) :
+lemma gAlgebraOfHomogeneous_toFun (r : R) :
     letI := gRingOfHomogeneous M one mul one_mul mul_one mul_assoc
     (gAlgebraOfHomogeneous M one mul one_mul mul_one mul_assoc).toFun r = one.hom r :=
   rfl

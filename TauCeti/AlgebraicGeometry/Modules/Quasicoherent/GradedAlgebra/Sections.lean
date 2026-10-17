@@ -27,17 +27,26 @@ sections functor `Scheme.Modules.sectionsFunctor U`
 (`CategoryTheory.GradedObject.mul_assoc_of_laxMonoidal` and its companions), and the graded ring
 is then assembled by `TauCeti.ModuleCat.gCommRingOfHomogeneous`.
 
+This is the graded analogue of the ungraded construction of
+`TauCeti/AlgebraicGeometry/Modules/Algebra/Sections.lean`, whose
+`CategoryTheory.CommMon.commRingSections`, `CategoryTheory.CommMon.restrictSections` and
+`CategoryTheory.CommMon.toSectionsPresheaf` give the sections of a commutative `𝒪_X`-algebra
+their ring structure, restriction maps and structure morphism; the restriction and naturality
+arguments here follow the proofs there.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.gCommRingSections` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.gAlgebraSections`: the graded
   commutative `Γ(X, U)`-algebra structure on `n ↦ Γ(Aₙ, U)`, characterized by
-  `gMul_sections_def`, `gOne_sections_def` and `gAlgebraSections_toFun`;
+  `sections_gMul_def`, `sections_gOne_def` and `gAlgebraSections_toFun`;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.restrictGradedSections`: restriction of
   sections along `V ≤ U`, a degree-preserving ring homomorphism, assembled into the presheaf of
-  commutative rings `gradedSectionsPresheaf`;
+  commutative rings `gradedSectionsPresheaf` under the structure presheaf of `X`
+  (`toGradedSectionsPresheaf`);
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.gradedSectionsMap`: the degree-preserving
-  `Γ(X, U)`-algebra homomorphism induced by a morphism of graded quasicoherent algebras.
+  `Γ(X, U)`-algebra homomorphism induced by a morphism of graded quasicoherent algebras, natural
+  in `U` (`gradedSectionsPresheafMap`).
 -/
 
 public section
@@ -86,7 +95,7 @@ private lemma sectionsOne_eq :
 /-- The sections over `U` of the homogeneous components of a graded quasicoherent algebra form a
 graded commutative ring. The product of `x : Γ(Aᵢ, U)` and `y : Γ(Aⱼ, U)` is the homogeneous
 multiplication of `A` applied to the image of `x ⊗ₜ y` in the sections of `Aᵢ ⊗ Aⱼ`
-(`gMul_sections_def`). -/
+(`sections_gMul_def`). -/
 @[instance_reducible, instance]
 def gCommRingSections : DirectSum.GCommRing (fun n ↦ Γ(A.obj.X n, U)) :=
   TauCeti.ModuleCat.gCommRingOfHomogeneous
@@ -116,20 +125,23 @@ def gAlgebraSections : DirectSum.GAlgebra Γ(X, U) (fun n ↦ Γ(A.obj.X n, U)) 
 /-- The product of homogeneous sections `x : Γ(Aᵢ, U)` and `y : Γ(Aⱼ, U)` is the homogeneous
 multiplication of `A` applied to the image of `x ⊗ₜ y` under the tensor map of the sections
 functor. -/
-lemma gMul_sections_def {i j : ℕ} (x : Γ(A.obj.X i, U)) (y : Γ(A.obj.X j, U)) :
+@[simp]
+lemma sections_gMul_def {i j : ℕ} (x : Γ(A.obj.X i, U)) (y : Γ(A.obj.X j, U)) :
     GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.obj.X n, U)) x y =
       (A.mul i j).app U
         (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) _ _ (x ⊗ₜ y)) :=
   (rfl)
 
 /-- The unit of the graded ring of sections is the unit of `A` applied to `1 : Γ(X, U)`. -/
-lemma gOne_sections_def :
+@[simp]
+lemma sections_gOne_def :
     GradedMonoid.GOne.one (A := fun n ↦ Γ(A.obj.X n, U)) =
       A.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1) :=
   (rfl)
 
 /-- The structure map `Γ(X, U) → Γ(A₀, U)` of the graded algebra of sections is the unit of
 `A` on sections over `U`. -/
+@[simp]
 lemma gAlgebraSections_toFun (r : Γ(X, U)) :
     GAlgebra.toFun (R := Γ(X, U)) (A := fun n ↦ Γ(A.obj.X n, U)) r =
       A.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
@@ -157,20 +169,27 @@ private lemma map_gMul_sections {i j : ℕ} (x : Γ(A.obj.X i, U)) (y : Γ(A.obj
     f.op (x ⊗ₜ y)
   exact h₁.symm.trans (congrArg _ h₂.symm)
 
-/-- Restriction of sections along `V ≤ U` preserves the unit. -/
-private lemma map_gOne_sections :
-    (A.obj.X 0).presheaf.map f.op (GradedMonoid.GOne.one (A := fun n ↦ Γ(A.obj.X n, U))) =
-      GradedMonoid.GOne.one (A := fun n ↦ Γ(A.obj.X n, V)) := by
+/-- Restriction of sections along `V ≤ U` commutes with the structure maps
+`Γ(X, U) → Γ(A₀, U)`. -/
+private lemma map_gAlgebraSections_toFun (r : Γ(X, U)) :
+    (A.obj.X 0).presheaf.map f.op
+        (GAlgebra.toFun (R := Γ(X, U)) (A := fun n ↦ Γ(A.obj.X n, U)) r) =
+      GAlgebra.toFun (R := Γ(X, V)) (A := fun n ↦ Γ(A.obj.X n, V)) (X.presheaf.map f.op r) := by
   let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf :=
     _root_.SheafOfModules.forget _
   let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
-  -- The unit is the unit of `A` applied to the image of `1` under the unit map of `F`; both
-  -- commute with restriction, and restriction of regular functions preserves `1`.
+  -- The structure map is the unit of `A` after the unit map of `F`; both commute with
+  -- restriction.
   have h₁ := PresheafOfModules.naturality_apply A.one.val f.op
-    ((Functor.LaxMonoidal.ε F).app' (op U) (1 : Γ(X, U)))
-  have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.ε F) f.op (1 : Γ(X, U))
-  exact h₁.symm.trans (congrArg _ (h₂.symm.trans
-    (congrArg _ (map_one (X.presheaf.map f.op).hom))))
+    ((Functor.LaxMonoidal.ε F).app' (op U) r)
+  have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.ε F) f.op r
+  exact h₁.symm.trans (congrArg _ h₂.symm)
+
+/-- Restriction of sections along `V ≤ U` preserves the unit. -/
+private lemma map_gOne_sections :
+    (A.obj.X 0).presheaf.map f.op (GradedMonoid.GOne.one (A := fun n ↦ Γ(A.obj.X n, U))) =
+      GradedMonoid.GOne.one (A := fun n ↦ Γ(A.obj.X n, V)) :=
+  (map_gAlgebraSections_toFun A f 1).trans (congrArg _ (map_one (X.presheaf.map f.op).hom))
 
 /-- Restriction of sections along an inclusion of opens `V ≤ U`, as a ring homomorphism between
 the graded rings of sections. It sends each homogeneous section to its restriction, in the same
@@ -227,6 +246,23 @@ lemma gradedSectionsPresheaf_obj (U : X.Opensᵒᵖ) :
 @[simp]
 lemma gradedSectionsPresheaf_map {U V : X.Opensᵒᵖ} (f : U ⟶ V) :
     A.gradedSectionsPresheaf.map f = CommRingCat.ofHom (A.restrictGradedSections f.unop) :=
+  (rfl)
+
+/-- The structure morphism from the structure presheaf of `X` to the presheaf of graded rings of
+sections, given on each open `U` by the algebra map `Γ(X, U) → ⨁ n, Γ(Aₙ, U)` into degree
+zero. -/
+def toGradedSectionsPresheaf : X.presheaf ⟶ A.gradedSectionsPresheaf where
+  app U := CommRingCat.ofHom (algebraMap Γ(X, U.unop) (⨁ n, Γ(A.obj.X n, U.unop)))
+  naturality _ _ f := by
+    ext r
+    exact ((A.restrictGradedSections_of f.unop 0 _).trans
+      (congrArg _ (map_gAlgebraSections_toFun A f.unop r))).symm
+
+/-- The structure morphism `toGradedSectionsPresheaf` is the algebra map on each open. -/
+@[simp]
+lemma toGradedSectionsPresheaf_app (U : X.Opensᵒᵖ) :
+    A.toGradedSectionsPresheaf.app U =
+      CommRingCat.ofHom (algebraMap Γ(X, U.unop) (⨁ n, Γ(A.obj.X n, U.unop))) :=
   (rfl)
 
 section Map
@@ -301,6 +337,44 @@ lemma gradedSectionsMap_restrictGradedSections (φ : A ⟶ B) {U V : X.Opens} (f
     _ = B.restrictGradedSections f (gradedSectionsMap φ U (DirectSum.of _ n y)) :=
         ((congrArg _ (gradedSectionsMap_of φ U n y)).trans
           (B.restrictGradedSections_of f n _)).symm
+
+/-- The morphism of presheaves of graded rings of sections induced by a morphism of graded
+quasicoherent algebras: on each open `U` it is `gradedSectionsMap`. -/
+def gradedSectionsPresheafMap (φ : A ⟶ B) :
+    A.gradedSectionsPresheaf ⟶ B.gradedSectionsPresheaf where
+  app U := CommRingCat.ofHom (gradedSectionsMap φ U.unop).toRingHom
+  naturality _ _ f := by
+    ext x
+    exact gradedSectionsMap_restrictGradedSections φ f.unop x
+
+/-- The components of `gradedSectionsPresheafMap φ` are the maps `gradedSectionsMap φ`. -/
+@[simp]
+lemma gradedSectionsPresheafMap_app (φ : A ⟶ B) (U : X.Opensᵒᵖ) :
+    (gradedSectionsPresheafMap φ).app U =
+      CommRingCat.ofHom (gradedSectionsMap φ U.unop).toRingHom :=
+  (rfl)
+
+/-- The identity morphism induces the identity of the presheaf of graded rings of sections. -/
+@[simp]
+lemma gradedSectionsPresheafMap_id : gradedSectionsPresheafMap (𝟙 A) = 𝟙 _ := by
+  ext U x
+  exact DFunLike.congr_fun (gradedSectionsMap_id U.unop) x
+
+/-- The morphism of presheaves induced by a composite is the composite of the induced
+morphisms. -/
+lemma gradedSectionsPresheafMap_comp (φ : A ⟶ B) (ψ : B ⟶ C) :
+    gradedSectionsPresheafMap (φ ≫ ψ) =
+      gradedSectionsPresheafMap φ ≫ gradedSectionsPresheafMap ψ := by
+  ext U x
+  exact DFunLike.congr_fun (gradedSectionsMap_comp φ ψ U.unop) x
+
+/-- The morphism of presheaves induced by a morphism of graded quasicoherent algebras is
+compatible with the structure morphisms from the structure presheaf. -/
+@[reassoc (attr := simp)]
+lemma toGradedSectionsPresheaf_gradedSectionsPresheafMap (φ : A ⟶ B) :
+    A.toGradedSectionsPresheaf ≫ gradedSectionsPresheafMap φ = B.toGradedSectionsPresheaf := by
+  ext U r
+  exact (gradedSectionsMap φ U).commutes r
 
 end Map
 
