@@ -139,8 +139,7 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_injOn (μ : Measure E) 
   have hA'π : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod (graphPlan T μ), q ∈ A' := by
     rw [Measure.ae_prod_mem_iff_ae_ae_mem hA']
     filter_upwards [(Measure.ae_prod_mem_iff_ae_ae_mem hA).1 hAμ] with t ht
-    rw [graphPlan_def, ae_map_iff (aemeasurable_prodMk_self hT.aemeasurable)
-      (hA'.preimage measurable_prodMk_left)]
+    rw [ae_graphPlan_iff hT.aemeasurable (hA'.preimage measurable_prodMk_left)]
     exact ht.mono fun _ hx ↦ ⟨hx, rfl⟩
   obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn
     (graphPlan T μ) (by rwa [lintegral_graphPlan hT.aemeasurable (by fun_prop)]) hA' hA'π
@@ -149,9 +148,7 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_injOn (μ : Measure E) 
       exact congrArg (fun x ↦ (x, T x)) (hinj t hx hx' he)
   simp (disch := fun_prop) only [map_graphPlan hT.aemeasurable,
     lintegral_graphPlan hT.aemeasurable] at hce hact
-  rw [graphPlan_def] at hv
-  exact ⟨v, hce, hv.mono fun t ht hmem ↦
-    ae_of_ae_map (aemeasurable_prodMk_self hT.aemeasurable) (ht hmem), hact⟩
+  exact ⟨v, hce, hv.mono fun t ht hmem ↦ ae_of_ae_graphPlan hT.aemeasurable (ht hmem), hact⟩
 
 /-- **The velocity along a linear interpolation injective on a fixed set.** The special case of
 `exists_isContinuityEquation_map_smul_add_smul_of_injOn` in which, for almost every
@@ -171,10 +168,8 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn (μ : Measure 
   let S' : Set (E × E) := {z | z.1 ∈ S ∧ z.2 = T z.1}
   have hS' : MeasurableSet S' :=
     (measurable_fst hS).inter (measurableSet_eq_fun measurable_snd (hT.comp measurable_fst))
-  have hS'π : ∀ᵐ z ∂graphPlan T μ, z ∈ S' := by
-    rw [graphPlan_def]
-    exact (ae_map_iff (aemeasurable_prodMk_self hT.aemeasurable) hS').2
-      (hSμ.mono fun _ hx ↦ ⟨hx, rfl⟩)
+  have hS'π : ∀ᵐ z ∂graphPlan T μ, z ∈ S' :=
+    (ae_graphPlan_iff hT.aemeasurable hS').2 (hSμ.mono fun _ hx ↦ ⟨hx, rfl⟩)
   obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn
     (graphPlan T μ) (by rwa [lintegral_graphPlan hT.aemeasurable (by fun_prop)]) hS' hS'π
     (hinj.mono fun t ht hmem ↦ by
@@ -182,9 +177,7 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn (μ : Measure 
       exact congrArg (fun x ↦ (x, T x)) (ht hmem hx hx' he))
   simp (disch := fun_prop) only [map_graphPlan hT.aemeasurable,
     lintegral_graphPlan hT.aemeasurable] at hce hact
-  rw [graphPlan_def] at hv
-  exact ⟨v, hce, hv.mono fun t ht hmem ↦
-    ae_of_ae_map (aemeasurable_prodMk_self hT.aemeasurable) (ht hmem), hact⟩
+  exact ⟨v, hce, hv.mono fun t ht hmem ↦ ae_of_ae_graphPlan hT.aemeasurable (ht hmem), hact⟩
 
 /-- **The velocity along an optimal linear interpolation.** Let `E` be strictly convex, let
 `1 < p < ∞`, and let `μ` be a finite measure on `E` and `T` a measurable map whose graph plan is
@@ -211,8 +204,6 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_isOptimalCoupling
   obtain ⟨v, hce, hv, hact⟩ :=
     exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupling hp hp_top hopt hfin
   simp (disch := fun_prop) only [map_graphPlan hT.aemeasurable] at hce hact
-  rw [graphPlan_def] at hv
-  exact ⟨v, hce, hv.mono fun t ht hmem ↦
-    ae_of_ae_map (aemeasurable_prodMk_self hT.aemeasurable) (ht hmem), hact⟩
+  exact ⟨v, hce, hv.mono fun t ht hmem ↦ ae_of_ae_graphPlan hT.aemeasurable (ht hmem), hact⟩
 
 end TauCeti
