@@ -93,7 +93,7 @@ open Filter MeasureTheory ProbabilityTheory Set
 
 variable {a b x : ℝ}
 
-private lemma IntervalIntegrable.rpow_mul_one_sub_rpow_reflect {u v : ℝ}
+private lemma intervalIntegrable_rpow_mul_one_sub_rpow_reflect {u v : ℝ}
     (h : IntervalIntegrable (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume u v) :
     IntervalIntegrable (fun t : ℝ => t ^ (b - 1) * (1 - t) ^ (a - 1)) volume
       (1 - v) (1 - u) := by
@@ -121,7 +121,7 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   have key : IntervalIntegrable (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1 := by
     have hright : IntervalIntegrable
         (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume (1 / 2) 1 := by
-      convert (IntervalIntegrable.rpow_mul_one_sub_rpow_reflect
+      convert (intervalIntegrable_rpow_mul_one_sub_rpow_reflect
         (a := b) (b := a) (half b a hb)) using 1 <;> norm_num
     exact (half a b ha).trans hright
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
@@ -159,7 +159,7 @@ theorem integrableOn_rpow_mul_one_sub_rpow_iff :
       pos_of_integrableOn_rpow_mul_one_sub_rpow (a := b) (b := a) ?_⟩
     rw [← intervalIntegrable_iff_integrableOn_Ioo_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
     simpa only [sub_self, sub_zero] using
-      (IntervalIntegrable.rpow_mul_one_sub_rpow_reflect
+      (intervalIntegrable_rpow_mul_one_sub_rpow_reflect
         ((intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).mpr h))
   · rintro ⟨ha, hb⟩
     rw [← intervalIntegrable_iff_integrableOn_Ioo_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
