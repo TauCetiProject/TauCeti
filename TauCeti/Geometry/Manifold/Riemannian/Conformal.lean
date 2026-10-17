@@ -172,7 +172,7 @@ theorem yamabeRescale_yamabeRescale
 /-- The reciprocal positive factor undoes a conformal change. -/
 -- Cancel before the composition rule replaces the factors by their product.
 @[simp high]
-theorem yamabeRescale_inv
+theorem yamabeRescale_yamabeRescale_inv
     {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
     {u : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hp : ∀ x, 0 < u x} :
     yamabeRescale (yamabeRescale g u hu hp) (fun x ↦ (u x)⁻¹)
