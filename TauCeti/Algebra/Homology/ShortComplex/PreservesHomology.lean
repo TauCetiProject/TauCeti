@@ -22,7 +22,9 @@ records the companion statement for the class map: under the two identifications
 It also provides the natural isomorphism `ShortComplex.homologyDiagramIso` identifying the
 pointwise homology diagram `F ⋙ ShortComplex.homologyFunctor C` of a diagram
 `F : J ⥤ ShortComplex C` with the homology of the associated short complex of diagrams
-`(functorEquivalence J C).inverse.obj F` whenever evaluation at each object preserves homology.
+`(functorEquivalence J C).inverse.obj F` when that short complex has homology
+(`((functorEquivalence J C).inverse.obj F).HasHomology`) and evaluation at each object preserves
+its left and right homology.
 -/
 
 public section
@@ -160,8 +162,9 @@ theorem mapHomologyIso_evaluation_naturality (F : J ⥤ ShortComplex C)
 variable [CategoryWithHomology C]
 
 /-- The pointwise homology diagram of `F : J ⥤ ShortComplex C` is naturally isomorphic to the
-homology of the associated short complex of diagrams when evaluation at each object preserves
-homology. -/
+homology of the associated short complex of diagrams `(functorEquivalence J C).inverse.obj F` when
+`((functorEquivalence J C).inverse.obj F).HasHomology` holds and evaluation at each object
+preserves its left and right homology. -/
 noncomputable def homologyDiagramIso (F : J ⥤ ShortComplex C)
     [((functorEquivalence J C).inverse.obj F).HasHomology]
     [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
