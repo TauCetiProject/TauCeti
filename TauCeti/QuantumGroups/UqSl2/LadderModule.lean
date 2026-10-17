@@ -27,14 +27,9 @@ where `[r]_q` is the symmetric quantum integer and the out-of-range vectors `v_(
 `v_(m + 1)` are zero. The basis vectors are indexed by all integers, with `v_j = 0` outside
 `0 ≤ j ≤ m`; with this convention the action formulas hold for every integer `j`.
 
-The action is first built as an algebra map to the endomorphisms of the underlying complex
-vector space through the universal property of the presentation of `UqSl2 q`, and then installed
-as a native `Module` structure. For a generic parameter (nonzero and not a root of unity) the
-module is simple: applying a suitable power of `E` to any nonzero vector produces a nonzero
-multiple of `v₀`, and the powers of `F` recover every basis vector from `v₀`. At a generic
-parameter we also obtain Schur's lemma for `L_m^ε`, and we show that `L_m^ε` and `L_n^δ` are
-isomorphic only when `m = n` and `ε = δ`: the dimension recovers `m`, and the trace
-`ε [m + 1]_q` of `K⁻¹` recovers the sign.
+These are the signed simple modules of `U_q(sl₂)`. For a generic parameter (nonzero and not a
+root of unity), `L_m^ε` is a simple module whose endomorphisms are the complex scalars (Schur's
+lemma), and `L_m^ε` and `L_n^δ` are isomorphic only when `m = n` and `ε = δ`.
 
 ## Main definitions
 
@@ -139,12 +134,6 @@ private theorem shift_vec {c : ℤ → ℂ} {s j : ℤ}
     rw [vec_coe, shift, Basis.constr_basis]
   · rw [vec_eq_zero_iff.mpr (by omega), map_zero, h (by omega)]
 
-private theorem cast_mul_cast_self (ε : ℤˣ) : (ε : ℂ) * ε = 1 := by
-  rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-
-private theorem cast_ne_zero (ε : ℤˣ) : (ε : ℂ) ≠ 0 :=
-  left_ne_zero_of_mul_eq_one (cast_mul_cast_self ε)
-
 /-- The operator of `K`. -/
 private def kOp (q : ℂ) (m : ℕ) (ε : ℤˣ) : Module.End ℂ (LadderModule q m ε) :=
   shift (fun j => ε * q ^ ((m : ℤ) - 2 * j)) 0
@@ -206,22 +195,26 @@ private def tuple (q : ℂ) [Fact (q ≠ 0)] (m : ℕ) (ε : ℤˣ) :
   k_mul_kInv := end_ext fun j => by
     simp only [Module.End.mul_apply, Module.End.one_apply, kOp_vec, kInvOp_vec, map_smul,
       smul_smul]
-    rw [mul_mul_mul_comm, cast_mul_cast_self, ← zpow_add₀ (Fact.out : q ≠ 0)]
+    rw [mul_mul_mul_comm, ← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one,
+      ← zpow_add₀ (Fact.out : q ≠ 0)]
     simp
   kInv_mul_k := end_ext fun j => by
     simp only [Module.End.mul_apply, Module.End.one_apply, kOp_vec, kInvOp_vec, map_smul,
       smul_smul]
-    rw [mul_mul_mul_comm, cast_mul_cast_self, ← zpow_add₀ (Fact.out : q ≠ 0)]
+    rw [mul_mul_mul_comm, ← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one,
+      ← zpow_add₀ (Fact.out : q ≠ 0)]
     simp
   k_mul_e := end_ext fun j => by
     simp only [LinearMap.smul_apply, Module.End.mul_apply, kOp_vec, eOp_vec, map_smul, smul_smul]
     congr 1
+    -- Split the exponent of `q` as `2 + (m - 2j)` so that `zpow_add₀` exposes the factor `q ^ 2`.
     rw [show (m : ℤ) - 2 * (j - 1) = 2 + (m - 2 * j) by ring, zpow_add₀ (Fact.out : q ≠ 0),
       zpow_two]
     ring
   k_mul_f := end_ext fun j => by
     simp only [LinearMap.smul_apply, Module.End.mul_apply, kOp_vec, fOp_vec, map_smul, smul_smul]
     congr 1
+    -- Split the exponent of `q` as `-2 + (m - 2j)` so that `zpow_add₀` exposes `q⁻¹ ^ 2`.
     rw [show (m : ℤ) - 2 * (j + 1) = -2 + (m - 2 * j) by ring, zpow_add₀ (Fact.out : q ≠ 0),
       zpow_neg, zpow_two]
     ring
@@ -232,8 +225,11 @@ private def tuple (q : ℂ) [Fact (q ≠ 0)] (m : ℕ) (ε : ℤˣ) :
     congr 1
     -- The scalar identity is `ε [m - 2j]_q = ε ([m - j]_q [j + 1]_q - [m - j + 1]_q [j]_q)`.
     have h := quantumInteger_sub q ((m : ℤ) - j) j
+    -- Put `h` in the shape of the goal: rewrite `[m - 2j]_q` through its defining quotient,
+    -- with the exponents written as `m - 2j` and `2j - m` as in the actions of `K` and `K⁻¹`.
     rw [show (m : ℤ) - j - j = m - 2 * j by ring, quantumInteger_def,
       show -((m : ℤ) - 2 * j) = 2 * j - m by ring, div_eq_inv_mul] at h
+    -- The coefficient of `E` on `v_(j + 1)` is `[m - (j + 1) + 1]_q`; match it with `[m - j]_q`.
     rw [show (m : ℤ) - (j + 1) + 1 = m - j by ring]
     linear_combination -(ε : ℂ) * h
 
@@ -349,7 +345,7 @@ private theorem span_singleton_eq_top (hq : IsGenericQuantumParameter q)
       refine vec_mem_of_smul_mem (mul_ne_zero ?_ ?_) hmem
       · exact Finsupp.mem_support_iff.mp (Finset.max'_mem _ hs)
       · exact Finset.prod_ne_zero_iff.mpr fun i hi =>
-          mul_ne_zero (cast_ne_zero ε) (quantumInteger_ne_zero hq (by omega))
+          mul_ne_zero (Int.cast_ne_zero.mpr ε.ne_zero) (quantumInteger_ne_zero hq (by omega))
     · intro i _ hi
       by_cases his : i ∈ ((basis q m ε).repr x).support
       · have hlt : i < j₀ := lt_of_le_of_ne (Finset.le_max' _ i his) hi
