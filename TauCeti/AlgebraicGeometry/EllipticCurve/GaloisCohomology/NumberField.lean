@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Finiteness
-import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.FiniteRamification
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.FixingSubgroup
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AlmostEverywhere
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 
 /-!
@@ -36,6 +36,19 @@ namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] [NumberField K] (W : WeierstrassCurve K) [W.IsElliptic]
 
+/-- Over a number field whose absolute Galois group fixes the geometric `m`-torsion, the
+`m`-Selmer group with local conditions at all finite places is finite for `m ≠ 0`. No set of
+primes of good reduction needs to be supplied. -/
+theorem finite_selmerGroup_of_forall_smul_eq_of_numberField
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    {m : ℕ} (hm : m ≠ 0)
+    (h : ∀ (σ : AbsoluteGaloisGroup K) (P : W.TorsionCoeff m), σ • P = P) :
+    Finite (W.selmerGroup τ m) := by
+  obtain ⟨S, -, hgood, -⟩ :=
+    exists_finset_isElliptic_integralModel_adicCompletion (𝓞 K) W (Nat.cast_ne_zero.2 hm) ∅
+  exact W.finite_selmerGroup_of_forall_smul_eq (τ := τ) S.finite_toSet hgood hm h
+
 /-- The cohomological `m`-Selmer group of an elliptic curve over a number field, with local
 conditions at all finite places, is finite for every nonzero `m`. The conclusion is independent
 of the embeddings of separable closures used to define restriction. -/
@@ -55,16 +68,7 @@ theorem finite_selmerGroup_of_numberField
     let τL : ∀ w : HeightOneSpectrum (𝓞 L),
         SeparableClosure L →ₐ[L] SeparableClosure (w.adicCompletion L) :=
       fun _ ↦ IsSepClosed.lift
-    -- Over `L`, the finite ramification set and the rational-torsion theorem apply.
-    have hL : Finite ((W⁄L).selmerGroup τL m) := by
-      obtain ⟨S, -, hS⟩ := exists_finset_torsionRes_mem_unramifiedTorsionCohomology
-        (𝓞 L) (W⁄L) τL (Nat.cast_ne_zero.2 hm) ∅
-      have := (W⁄L).finite_unramifiedOutsideTorsionCohomology (τ := τL)
-        (S := (S : Set (HeightOneSpectrum (𝓞 L)))) S.finite_toSet hm hfix
-      have hle : (W⁄L).selmerGroup τL m ≤
-          (W⁄L).unramifiedOutsideTorsionCohomology τL S m := fun c hc ↦
-        mem_unramifiedOutsideTorsionCohomology_iff.2 (hS c hc)
-      exact Finite.of_injective _ (AddSubgroup.inclusion_injective hle)
+    have hL := (W⁄L).finite_selmerGroup_of_forall_smul_eq_of_numberField τL hm hfix
     -- Each completion of `L` extends the completion at its contracted prime of `K`.
     let under : HeightOneSpectrum (𝓞 L) → HeightOneSpectrum (𝓞 K) :=
       fun w ↦ w.under (𝓞 K)

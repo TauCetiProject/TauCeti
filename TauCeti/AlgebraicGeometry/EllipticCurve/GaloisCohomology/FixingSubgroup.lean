@@ -118,12 +118,9 @@ theorem smul_torsionCoeff_divisionField (m : ℕ)
   rw [← W.torsionCoeffBaseChange_smul]
   have hg : absoluteGaloisGroupMap (e : SeparableClosure K →ₐ[K]
       SeparableClosure (W.divisionField m)) g ∈ (W.divisionField m).fixingSubgroup := by
-    rw [absoluteGaloisGroupMap_separableClosureAlgEquiv]
-    simpa only [_root_.ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      _root_.ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.subgroupSubtype_apply,
-      IntermediateField.fieldRange_val] using
-      (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m)
-        (W.divisionField m).val g).prop
+    simpa only [IntermediateField.fieldRange_val] using
+      absoluteGaloisGroupMap_separableClosureAlgEquiv_mem_fixingSubgroup K
+        (W.divisionField m) (W.divisionField m).val g
   rw [(mem_fixingSubgroup_divisionField_iff.1 hg) Q]
 
 /-- **Restriction of `H¹(G_K, E[m])` to the `m`-division field `K(E[m])` has finite kernel**, for
