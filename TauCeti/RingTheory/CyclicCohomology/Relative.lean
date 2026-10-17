@@ -122,11 +122,21 @@ def relativeCyclicCochains (n : ℕ) :
 
 /-- A cyclic cochain on the forced unitization is relative exactly when its scalar restriction
 vanishes. -/
-@[simp]
 theorem mem_relativeCyclicCochains_iff {n : ℕ}
     {phi : cyclicCochains R (Unitization R A) M n} :
     phi ∈ relativeCyclicCochains R A M n ↔ unitizationScalarRestriction R A M n phi = 0 :=
   LinearMap.mem_ker
+
+/-- A cyclic cochain on the forced unitization is relative exactly when it vanishes whenever all
+its arguments are scalars. -/
+@[simp]
+theorem mem_relativeCyclicCochains_iff_forall {n : ℕ}
+    {phi : cyclicCochains R (Unitization R A) M n} :
+    phi ∈ relativeCyclicCochains R A M n ↔ ∀ a : Fin (n + 1) → R,
+      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ Unitization R A) M)
+        (fun i ↦ algebraMap R (Unitization R A) (a i)) = 0 := by
+  rw [mem_relativeCyclicCochains_iff, Subtype.ext_iff, MultilinearMap.ext_iff]
+  simp
 
 /-- The Hochschild coboundary of a relative cyclic cochain is relative. -/
 theorem cyclicHochschildCoboundary_mem_relativeCyclicCochains {n : ℕ}
