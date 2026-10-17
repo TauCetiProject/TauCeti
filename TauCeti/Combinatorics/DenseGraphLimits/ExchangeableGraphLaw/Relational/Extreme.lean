@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Relati
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Extreme
 public import TauCeti.Probability.Exchangeability.RelationalLaw.Convex
 import TauCeti.MeasureTheory.Measure.Face
+import TauCeti.Analysis.Convex.Extreme
 
 /-!
 # Extremality of graph laws under relational encoding
@@ -82,54 +83,23 @@ theorem mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints
     μ ∈ extremePoints ℝ≥0∞ exchangeableGraphProbabilityMeasures ↔
       μ.map SimpleGraph.toRelationalConfiguration ∈
         extremePoints ℝ≥0∞ (exchangeableRelationalProbabilityMeasures Language.graph) := by
-  simp only [mem_extremePoints_iff_left]
-  constructor
-  · rintro ⟨hμ, h⟩
-    refine ⟨map_toRelationalConfiguration_mem_iff.2 hμ, ?_⟩
-    intro ρ₁ hρ₁ ρ₂ hρ₂ hsegment
-    -- The encoded law lies in the face of measures concentrated on simple graphs, so both
-    -- ends of its decomposition can be decoded as graph measures.
-    have hface := TauCeti.MeasureTheory.isExtreme_setOf_measure_eq_zero
-      (exchangeableRelationalProbabilityMeasures Language.graph)
-      {c | IsSimpleGraph c}ᶜ
-    have hmem : μ.map SimpleGraph.toRelationalConfiguration ∈
-        {ρ ∈ exchangeableRelationalProbabilityMeasures Language.graph |
-          ρ {c | IsSimpleGraph c}ᶜ = 0} :=
-      ⟨map_toRelationalConfiguration_mem_iff.2 hμ,
-        ae_iff.1 (SimpleGraph.ae_isSimpleGraph_map_toRelationalConfiguration μ)⟩
-    have hs₁ : ∀ᵐ c ∂ρ₁, IsSimpleGraph c :=
-      ae_iff.2 (hface.2 hρ₁ hρ₂ hmem hsegment).2
-    have hs₂ : ∀ᵐ c ∂ρ₂, IsSimpleGraph c :=
-      ae_iff.2 (hface.2 hρ₂ hρ₁ hmem (by rwa [openSegment_symm])).2
-    have e₁ := SimpleGraph.map_comap_toRelationalConfiguration hs₁
-    have e₂ := SimpleGraph.map_comap_toRelationalConfiguration hs₂
-    have h₁ : ρ₁.comap SimpleGraph.toRelationalConfiguration ∈
-        exchangeableGraphProbabilityMeasures := by
-      rw [← map_toRelationalConfiguration_mem_iff, e₁]
-      exact hρ₁
-    have h₂ : ρ₂.comap SimpleGraph.toRelationalConfiguration ∈
-        exchangeableGraphProbabilityMeasures := by
-      rw [← map_toRelationalConfiguration_mem_iff, e₂]
-      exact hρ₂
-    obtain ⟨a, b, ha, hb, hab, hmix⟩ := hsegment
-    have hmix' : a • ρ₁.comap SimpleGraph.toRelationalConfiguration +
-        b • ρ₂.comap SimpleGraph.toRelationalConfiguration = μ := by
-      simpa only [SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_add,
-        Measure.comap_smul,
-        SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map] using
-          congrArg (Measure.comap SimpleGraph.toRelationalConfiguration) hmix
-    have heq := h _ h₁ _ h₂ ⟨a, b, ha, hb, hab, hmix'⟩
-    rw [← e₁, heq]
-  · rintro ⟨hμ, h⟩
-    refine ⟨map_toRelationalConfiguration_mem_iff.1 hμ, ?_⟩
-    rintro μ₁ hμ₁ μ₂ hμ₂ ⟨a, b, ha, hb, hab, hmix⟩
-    apply SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_injective
-    apply h _ (map_toRelationalConfiguration_mem_iff.2 hμ₁) _
-      (map_toRelationalConfiguration_mem_iff.2 hμ₂)
-    refine ⟨a, b, ha, hb, hab, ?_⟩
-    simpa only [Measure.map_add _ _ SimpleGraph.measurable_toRelationalConfiguration,
-      Measure.map_smul _ SimpleGraph.measurable_toRelationalConfiguration.aemeasurable] using
-        congrArg (Measure.map SimpleGraph.toRelationalConfiguration) hmix
+  have hf : ⇑(Measure.mapₗ SimpleGraph.toRelationalConfiguration) =
+      Measure.map (SimpleGraph.toRelationalConfiguration (V := ℕ)) :=
+    funext (Measure.mapₗ_apply_of_measurable SimpleGraph.measurable_toRelationalConfiguration)
+  have h := TauCeti.mem_extremePoints_iff_linearMap_mem_extremePoints
+    (C := exchangeableGraphProbabilityMeasures)
+    (TauCeti.MeasureTheory.isExtreme_setOf_measure_eq_zero
+      (exchangeableRelationalProbabilityMeasures Language.graph) {c | IsSimpleGraph c}ᶜ)
+    (Measure.mapₗ SimpleGraph.toRelationalConfiguration)
+  simp only [hf] at h
+  apply h SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_injective
+    (fun _ => map_toRelationalConfiguration_mem_iff)
+  · intro ν hν
+    exact ⟨map_toRelationalConfiguration_mem_iff.2 hν,
+      ae_iff.1 (SimpleGraph.ae_isSimpleGraph_map_toRelationalConfiguration ν)⟩
+  · intro ρ hρ
+    exact ⟨ρ.comap SimpleGraph.toRelationalConfiguration,
+      SimpleGraph.map_comap_toRelationalConfiguration (ae_iff.2 hρ.2)⟩
 
 /-- An encoded exchangeable graph law is extreme among all exchangeable relational probability
 measures exactly when its finite graph law is dissociated. -/
