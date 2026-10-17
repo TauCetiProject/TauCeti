@@ -29,6 +29,11 @@ the integer cusp width is a positive integer multiple of the strict width at `âˆ
 * `TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty`: the integer cusp
   width is a positive integer multiple of the strict width at `âˆž`.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
+
+## References
+
+* [Mathlib PR #39087](https://github.com/leanprover-community/mathlib4/pull/39087)
+  (Chris Birkbeck).
 -/
 
 public noncomputable section
