@@ -121,76 +121,49 @@ private theorem cocone_app_eq_of_levelEmbedding_eq (s : Cocone (levelDiagram K))
   simp only [ConcreteCategory.hom_ofHom]
   exact congrArg (s.ι.app l) heq
 
-private noncomputable def chosenIndex (x : puiseuxField K) : RamificationIndex :=
-  ⟨Classical.choose (exists_mem_range_levelEmbedding x)⟩
+variable (K) in
+/-- The image of level `n` in the Puiseux field, as a `K`-subalgebra. -/
+private noncomputable abbrev levelRange (n : RamificationIndex) : Subalgebra K (puiseuxField K) :=
+  (levelEmbedding K n.toPNat).range
 
-private noncomputable def chosenPreimage (x : puiseuxField K) : LaurentSeries K :=
-  Classical.choose (Classical.choose_spec (exists_mem_range_levelEmbedding x))
+private theorem directed_levelRange : Directed (· ≤ ·) (levelRange K) :=
+  Monotone.directed_le fun _ _ h ↦ range_levelEmbedding_le_of_dvd h
 
-private theorem levelEmbedding_chosenPreimage (x : puiseuxField K) :
-    levelEmbedding K (chosenIndex x).toPNat (chosenPreimage x) = x :=
-  Classical.choose_spec (Classical.choose_spec (exists_mem_range_levelEmbedding x))
+private theorem top_le_iSup_levelRange :
+    (⊤ : Subalgebra K (puiseuxField K)) ≤ ⨆ n, levelRange K n := fun x _ ↦
+  have ⟨n, hn⟩ := exists_mem_range_levelEmbedding x
+  le_iSup (levelRange K) (⟨n⟩ : RamificationIndex) hn
 
-private noncomputable def levelDescFun (s : Cocone (levelDiagram K))
-    (x : puiseuxField K) : s.pt :=
-  s.ι.app (chosenIndex x) (chosenPreimage x)
+variable (K) in
+/-- The level-`n` embedding, as an isomorphism onto its image. -/
+private noncomputable abbrev levelRangeEquiv (n : RamificationIndex) :
+    LaurentSeries K ≃ₐ[K] levelRange K n :=
+  AlgEquiv.ofInjective _ (levelEmbedding K n.toPNat).injective
 
-private theorem levelDescFun_levelEmbedding (s : Cocone (levelDiagram K))
-    (n : RamificationIndex) (f : LaurentSeries K) :
-    levelDescFun s (levelEmbedding K n.toPNat f) = s.ι.app n f := by
-  apply cocone_app_eq_of_levelEmbedding_eq s
-  exact levelEmbedding_chosenPreimage _
+private theorem levelEmbedding_levelRangeEquiv_symm {n : RamificationIndex} (x : levelRange K n) :
+    levelEmbedding K n.toPNat ((levelRangeEquiv K n).symm x) = x :=
+  congrArg Subtype.val ((levelRangeEquiv K n).apply_symm_apply x)
 
-private theorem levelDescFun_zero (s : Cocone (levelDiagram K)) : levelDescFun s 0 = 0 := by
-  rw [← map_zero (levelEmbedding K (1 : ℕ+)), levelDescFun_levelEmbedding]
-  exact map_zero (s.ι.app ⟨1⟩).hom
-
-private theorem levelDescFun_one (s : Cocone (levelDiagram K)) : levelDescFun s 1 = 1 := by
-  rw [← map_one (levelEmbedding K (1 : ℕ+)), levelDescFun_levelEmbedding]
-  exact map_one (s.ι.app ⟨1⟩).hom
-
-/-- Any two Puiseux series come from a common ramified level. -/
-private theorem exists_levelEmbedding_eq_and_eq (x y : puiseuxField K) :
-    ∃ (l : RamificationIndex) (f g : LaurentSeries K),
-      levelEmbedding K l.toPNat f = x ∧ levelEmbedding K l.toPNat g = y := by
-  obtain ⟨l, hl⟩ := exists_forall_mem_range_levelEmbedding ![x, y]
-  obtain ⟨f, hf⟩ := hl 0
-  obtain ⟨g, hg⟩ := hl 1
-  exact ⟨⟨l⟩, f, g, hf, hg⟩
-
-private theorem levelDescFun_add (s : Cocone (levelDiagram K)) (x y : puiseuxField K) :
-    levelDescFun s (x + y) = levelDescFun s x + levelDescFun s y := by
-  obtain ⟨l, f, g, rfl, rfl⟩ := exists_levelEmbedding_eq_and_eq x y
-  rw [← map_add, levelDescFun_levelEmbedding, levelDescFun_levelEmbedding,
-    levelDescFun_levelEmbedding]
-  exact map_add _ _ _
-
-private theorem levelDescFun_mul (s : Cocone (levelDiagram K)) (x y : puiseuxField K) :
-    levelDescFun s (x * y) = levelDescFun s x * levelDescFun s y := by
-  obtain ⟨l, f, g, rfl, rfl⟩ := exists_levelEmbedding_eq_and_eq x y
-  rw [← map_mul, levelDescFun_levelEmbedding, levelDescFun_levelEmbedding,
-    levelDescFun_levelEmbedding]
-  exact map_mul _ _ _
-
-private theorem levelDescFun_commutes (s : Cocone (levelDiagram K)) (r : K) :
-    levelDescFun s (algebraMap K (puiseuxField K) r) = algebraMap K s.pt r := by
-  rw [← (levelEmbedding K (1 : ℕ+)).commutes r, levelDescFun_levelEmbedding]
-  exact (s.ι.app ⟨1⟩).hom.commutes r
+/-- The leg of a cocone at `n`, transported to the image of level `n`. -/
+private noncomputable def levelRangeLift (s : Cocone (levelDiagram K)) (n : RamificationIndex) :
+    levelRange K n →ₐ[K] s.pt :=
+  (s.ι.app n).hom.comp (levelRangeEquiv K n).symm.toAlgHom
 
 private noncomputable def levelDesc (s : Cocone (levelDiagram K)) :
-    puiseuxField K →ₐ[K] s.pt where
-  toFun := levelDescFun s
-  map_zero' := levelDescFun_zero s
-  map_one' := levelDescFun_one s
-  map_add' := levelDescFun_add s
-  map_mul' := levelDescFun_mul s
-  commutes' := levelDescFun_commutes s
+    puiseuxField K →ₐ[K] s.pt :=
+  (Subalgebra.iSupLift (levelRange K) directed_levelRange (levelRangeLift s)
+      (fun _ _ h ↦ AlgHom.ext fun x ↦ cocone_app_eq_of_levelEmbedding_eq s
+        ((levelEmbedding_levelRangeEquiv_symm x).trans
+          (levelEmbedding_levelRangeEquiv_symm (Subalgebra.inclusion h x)).symm))
+      ⊤ top_le_iSup_levelRange).comp
+    Subalgebra.topEquiv.symm.toAlgHom
 
-@[simp]
 private theorem levelDesc_levelEmbedding (s : Cocone (levelDiagram K))
     (n : RamificationIndex) (f : LaurentSeries K) :
-    levelDesc s (levelEmbedding K n.toPNat f) = s.ι.app n f :=
-  levelDescFun_levelEmbedding s n f
+    levelDesc s (levelEmbedding K n.toPNat f) = s.ι.app n f := by
+  rw [levelDesc, AlgHom.comp_apply]
+  refine (Subalgebra.iSupLift_of_mem (levelRange K) (i := n) _ ⟨f, rfl⟩).trans ?_
+  exact cocone_app_eq_of_levelEmbedding_eq s (levelEmbedding_levelRangeEquiv_symm _)
 
 /-- The Puiseux field is the colimit of the ramified Laurent levels in `CommAlgCat K`.
 
