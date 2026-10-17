@@ -94,12 +94,6 @@ theorem absLogHeight₁_pos {u : (𝓞 K)ˣ} (hu : u ∉ torsion K) :
     0 < absLogHeight₁ (u : K) :=
   Real.log_pos (one_lt_absMulHeight₁ hu)
 
-/-- The product of the absolute logarithmic heights of a fundamental system is positive.
-In rank zero the product is empty and equals one. -/
-theorem prod_absLogHeight₁_fundSystem_pos :
-    0 < ∏ i, absLogHeight₁ (fundSystem K i : K) := by
-  exact Finset.prod_pos fun i _ ↦ absLogHeight₁_pos (fundSystem_not_mem_torsion i)
-
 end NumberField.Units
 
 namespace NumberField.RingOfIntegers
