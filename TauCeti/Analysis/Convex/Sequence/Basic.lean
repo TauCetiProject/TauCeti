@@ -23,8 +23,10 @@ interval, or a half-line; infinity never supplies a genuine edge slope.
 
 This file proves supporting-line and chord inequalities, including existence of
 affine minorants through finite heights and separation at infinite heights. It
-recovers heights from an anchor and consecutive increments, and characterises convexity by second
-differences. A sequence is admissible when it has a real affine lower bound,
+recovers heights from an anchor and consecutive increments, and characterises
+convexity by second differences and by the exchange inequality
+`h (i + 1) + h k ≤ h i + h (k + 1)` for `i ≤ k`, which needs no finiteness side
+conditions. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
 and shear. These results provide the discrete geometry used to construct lower
@@ -107,6 +109,51 @@ theorem isConvexSeq_iff_two_mul_le {h : ℕ → WithTop ℝ} :
     linarith
   · refine monotoneOn_of_le_add_one (ordConnected_finiteEdges hD) fun n _ hn hn' => ?_
     have hs := hmid n hn.1 hn'.2
+    simp only [unitSlope]
+    linarith
+
+/-- Convexity is the exchange inequality `h (i + 1) + h k ≤ h i + h (k + 1)` for all
+`i ≤ k`, read in `WithTop ℝ`. It needs no separate finiteness hypotheses: if the right
+side is finite, so are both heights on the left, which forces the finite domain to be
+order connected. -/
+theorem isConvexSeq_iff_add_le_add {h : ℕ → WithTop ℝ} :
+    IsConvexSeq h ↔ ∀ i k, i ≤ k → h (i + 1) + h k ≤ h i + h (k + 1) := by
+  refine ⟨fun hh i k hik => ?_, fun H => ⟨⟨?_⟩, fun i hi k hk hik => ?_⟩⟩
+  · by_cases hi : h i = ⊤
+    · simp [hi]
+    by_cases hk : h (k + 1) = ⊤
+    · simp [hk]
+    have hi₁ : h (i + 1) ≠ ⊤ := hh.ordConnected.out hi hk ⟨by omega, by omega⟩
+    have hk₀ : h k ≠ ⊤ := hh.ordConnected.out hi hk ⟨hik, by omega⟩
+    have hs := hh.monotoneOn ⟨hi, hi₁⟩ ⟨hk₀, hk⟩ hik
+    simp only [unitSlope] at hs
+    rw [← WithTop.coe_untop₀_of_ne_top hi, ← WithTop.coe_untop₀_of_ne_top hk,
+      ← WithTop.coe_untop₀_of_ne_top hi₁, ← WithTop.coe_untop₀_of_ne_top hk₀,
+      ← WithTop.coe_add, ← WithTop.coe_add, WithTop.coe_le_coe]
+    linarith
+  · -- Finiteness at both ends of an interval of length `d + 2` propagates one step inward.
+    have key : ∀ d i j, h i ≠ ⊤ → h (i + d) ≠ ⊤ → i ≤ j → j ≤ i + d → h j ≠ ⊤ := by
+      intro d
+      induction d using Nat.strong_induction_on with
+      | _ d ih =>
+        intro i j hi hd hij hjd
+        rcases (show j = i ∨ j = i + d ∨ (i < j ∧ j < i + d) by omega) with rfl | rfl | hj
+        · exact hi
+        · exact hd
+        obtain ⟨e, rfl⟩ : ∃ e, d = e + 2 := ⟨d - 2, by omega⟩
+        have hle := H i (i + e + 1) (by omega)
+        rw [show i + e + 1 + 1 = i + (e + 2) by omega] at hle
+        obtain ⟨hi₁, he⟩ := WithTop.add_ne_top.mp
+          (ne_top_of_le_ne_top (WithTop.add_ne_top.mpr ⟨hi, hd⟩) hle)
+        exact ih e (by omega) (i + 1) j hi₁ (by rwa [show i + 1 + e = i + e + 1 by omega])
+          (by omega) (by omega)
+    intro i hi k hk j hj
+    have hik : i ≤ k := hj.1.trans hj.2
+    exact key (k - i) i j hi (by rwa [Nat.add_sub_cancel' hik]) hj.1 (by have := hj.2; omega)
+  · have hle := H i k hik
+    rw [← WithTop.coe_untop₀_of_ne_top hi.1, ← WithTop.coe_untop₀_of_ne_top hk.2,
+      ← WithTop.coe_untop₀_of_ne_top hi.2, ← WithTop.coe_untop₀_of_ne_top hk.1,
+      ← WithTop.coe_add, ← WithTop.coe_add, WithTop.coe_le_coe] at hle
     simp only [unitSlope]
     linarith
 

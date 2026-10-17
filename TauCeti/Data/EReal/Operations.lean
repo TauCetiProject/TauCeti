@@ -18,12 +18,13 @@ the last two a real minuend. The file also records that adding a finite extended
 to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
 compares with the number itself in `EReal`, and that the coercion from `ℝ≥0∞` commutes with
 infima. The named inclusion `WithTop.toEReal` embeds real heights with a possible top value
-into `EReal` without installing a coercion.
+into `EReal` without installing a coercion; it is additive (`WithTop.toEReal_add`).
 
 ## Main results
 
 * `EReal.iInf_sub_coe` and `EReal.iSup_sub_coe` — subtracting a real constant commutes with an
-  infimum and with a supremum in `EReal`;
+  infimum and with a supremum in `EReal`; `EReal.iInf_add_coe` is the additive form for infima;
+* `EReal.add_sub_coe_add` — a sum of two reals is subtracted from a sum termwise;
 * `EReal.coe_sub_add_coe` — subtracting a sum whose final term is real can be reassociated when
   the minuend is real;
 * `EReal.coe_sub_le_comm` — the two subtrahends of a real minuend can be exchanged across an
@@ -89,6 +90,18 @@ theorem _root_.WithTop.toEReal_injective : Function.Injective WithTop.toEReal :=
 theorem _root_.WithTop.toEReal_eq_top_iff {x : WithTop ℝ} :
     x.toEReal = ⊤ ↔ x = ⊤ := WithBot.coe_eq_top
 
+/-- The inclusion into `EReal` is additive, including at `⊤`. -/
+@[simp]
+theorem _root_.WithTop.toEReal_add (x y : WithTop ℝ) :
+    (x + y).toEReal = x.toEReal + y.toEReal := by
+  induction x using WithTop.recTopCoe with
+  | top => rw [top_add, WithTop.toEReal_top, EReal.top_add_of_ne_bot (WithTop.toEReal_ne_bot y)]
+  | coe r =>
+    induction y using WithTop.recTopCoe with
+    | top => rw [add_top, WithTop.toEReal_top, WithTop.toEReal_coe, EReal.coe_add_top]
+    | coe s => rw [← WithTop.coe_add, WithTop.toEReal_coe, WithTop.toEReal_coe,
+        WithTop.toEReal_coe, EReal.coe_add]
+
 /-- Subtracting a real constant commutes with an infimum in `EReal`; both sides are `⊤` when the
 index type is empty. -/
 theorem _root_.EReal.iInf_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
@@ -106,6 +119,18 @@ theorem _root_.EReal.iSup_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
   exact iSup_le fun i =>
     (EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot a)) (.inl (EReal.coe_ne_top a))).1
       (le_iSup (fun i => f i - (a : EReal)) i)
+
+/-- Adding a real constant commutes with an infimum in `EReal`; both sides are `⊤` when the
+index type is empty. -/
+theorem _root_.EReal.iInf_add_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
+    (⨅ i, (f i + (a : EReal))) = (⨅ i, f i) + (a : EReal) := by
+  simpa only [sub_eq_add_neg, ← EReal.coe_neg, neg_neg] using EReal.iInf_sub_coe f (-a)
+
+/-- Subtracting a sum of two reals from a sum of two extended reals can be done termwise,
+with no finiteness hypothesis on the extended reals. -/
+theorem _root_.EReal.add_sub_coe_add (x y : EReal) (a b : ℝ) :
+    x + y - ((a + b : ℝ) : EReal) = (x - (a : EReal)) + (y - (b : EReal)) := by
+  induction x <;> induction y <;> simp [← EReal.coe_add, ← EReal.coe_sub, add_sub_add_comm]
 
 /-- Subtracting a sum whose final term is real can be reassociated when the minuend is real. -/
 theorem _root_.EReal.coe_sub_add_coe (b : EReal) (d a : ℝ) :
