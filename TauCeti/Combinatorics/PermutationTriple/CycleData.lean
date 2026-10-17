@@ -136,7 +136,7 @@ theorem cycleCounts_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
 @[simp]
 theorem cycleData_transport (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
     cycleData (transport e t) = cycleData t := by
-  simp [Prod.ext_iff, ← fullCycleType_def]
+  simp [Prod.ext_iff]
 
 /-- Transporting the labels of the sheets leaves all three cycle counts unchanged. -/
 @[simp]

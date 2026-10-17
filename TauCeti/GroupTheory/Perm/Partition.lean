@@ -28,7 +28,7 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 
 * `fullCycleType` is the canonical name for the complete cycle-length multiset; its bridge to
   Mathlib's partition API and its sum, identity, conjugacy, and transport lemmas are included.
-* `Equiv.Perm.count_one_parts_partition`, `Equiv.Perm.count_fullCycleType_of_ne_one`: the parts
+* `Equiv.Perm.count_one_parts_partition`, `Equiv.Perm.count_parts_partition_of_ne_one`: the parts
   equal to one are the fixed points of `σ`, and at every value other than one the multiset counts a
   part as often as `Equiv.Perm.cycleType` does. Together with Mathlib's
   `Equiv.Perm.filter_parts_partition_eq_cycleType` these say that no information is gained or
@@ -41,7 +41,7 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   exhibited factorization type contributes to the group that exhibits it.
 * `Equiv.Perm.exists_orderOf_eq_iff`: the orders of the permutations of a finite type are exactly
   the least common multiples of the partitions of its cardinality.
-* `Equiv.Perm.fullCycleType_permCongr`: transport along an equivalence `α ≃ β` of the underlying
+* `Equiv.Perm.parts_partition_permCongr`: transport along an equivalence `α ≃ β` of the underlying
   types leaves it unchanged. Its ingredient `Equiv.Perm.cycleType_permCongr` is proved here too,
   since Mathlib records only `Equiv.Perm.sign_permCongr`. The form for `Equiv.permCongrHom`, the
   group isomorphism a relabelling induces, needs no separate lemma: Mathlib's `simp` lemma
@@ -118,6 +118,13 @@ theorem count_one_parts_partition (σ : Equiv.Perm α) :
   rw [parts_partition, Multiset.count_add, Multiset.count_replicate_self,
     Multiset.count_eq_zero_of_notMem fun h => (one_lt_of_mem_cycleType h).false, zero_add]
 
+/-- At every value other than one, `Equiv.Perm.partition` counts a part as often as
+`Equiv.Perm.cycleType` does. -/
+@[simp]
+theorem count_parts_partition_of_ne_one (σ : Equiv.Perm α) {n : ℕ} (hn : n ≠ 1) :
+    σ.partition.parts.count n = σ.cycleType.count n := by
+  simp [parts_partition, Multiset.count_replicate, hn.symm]
+
 /-- The number of parts of `Equiv.Perm.partition` is the number of cycles of `σ` of length at
 least two together with its fixed points. -/
 @[simp]
@@ -149,12 +156,18 @@ theorem parts_partition_eq_cycleType {σ : Equiv.Perm α}
 
 /-! ### Special values -/
 
+/-- The parts of the identity permutation are all one, with one part for each element of the
+underlying finite type. -/
+@[simp]
+theorem parts_partition_one :
+    (1 : Equiv.Perm α).partition.parts = Multiset.replicate (Fintype.card α) 1 := by
+  rw [parts_partition, cycleType_one, support_one, Finset.card_empty, Nat.sub_zero, zero_add]
+
 /-- The identity is the only permutation all of whose parts are one. -/
 @[simp]
 theorem parts_partition_eq_replicate_one_iff {σ : Equiv.Perm α} :
     σ.partition.parts = Multiset.replicate (Fintype.card α) 1 ↔ σ = 1 := by
-  refine ⟨fun h => ?_, fun h => by
-    rw [h, parts_partition, cycleType_one, support_one, Finset.card_empty, Nat.sub_zero, zero_add]⟩
+  refine ⟨fun h => ?_, fun h => by rw [h, parts_partition_one]⟩
   rw [← cycleType_eq_zero, ← filter_parts_partition_eq_cycleType, h, Multiset.filter_eq_nil]
   exact fun n hn => by rw [Multiset.eq_of_mem_replicate hn]; omega
 
@@ -175,7 +188,7 @@ theorem parts_partition_swap {x y : α} (hxy : x ≠ y) :
 theorem parts_partition_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
     σ.partition.parts = 0 := by
   have hσ : σ = 1 := Equiv.ext fun x => isEmptyElim x
-  rw [parts_partition_eq_replicate_one_iff.2 hσ, Fintype.card_eq_zero, Multiset.replicate_zero]
+  rw [hσ, parts_partition_one, Fintype.card_eq_zero, Multiset.replicate_zero]
 
 /-- The parts of `Equiv.Perm.partition` are empty exactly on an empty type; in particular they do
 not vanish on the identity of a nonempty type, unlike `Equiv.Perm.cycleType`. -/
@@ -295,6 +308,15 @@ theorem card_support_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     (e.permCongr σ).support.card = σ.support.card := by
   rw [← sum_cycleType, ← sum_cycleType, cycleType_permCongr]
 
+/-- The parts of `Equiv.Perm.partition` are natural in the underlying type: a relabelling
+`e : α ≃ β` leaves them unchanged. This is what lets a statement about the roots of a polynomial,
+which form a type with no chosen numbering, be compared with a statement about `Fin n`. -/
+@[simp]
+theorem parts_partition_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
+    (e.permCongr σ).partition.parts = σ.partition.parts := by
+  rw [parts_partition, parts_partition, cycleType_permCongr, card_support_permCongr,
+    Fintype.card_congr e]
+
 /-! ### The canonical full cycle type API -/
 
 /-- `fullCycleType` is the unbundled parts of Mathlib's permutation partition. -/
@@ -344,20 +366,67 @@ theorem pos_of_mem_fullCycleType {σ : Equiv.Perm α} {n : ℕ}
 @[simp]
 theorem count_fullCycleType_of_ne_one (σ : Equiv.Perm α) {n : ℕ} (hn : n ≠ 1) :
     (fullCycleType σ).count n = σ.cycleType.count n := by
-  simp [fullCycleType, Multiset.count_replicate, hn.symm]
+  rw [fullCycleType_def]
+  exact Equiv.Perm.count_parts_partition_of_ne_one σ hn
 
 /-- The identity has one full cycle-type part for every point of the carrier. -/
 @[simp]
 theorem fullCycleType_one :
     fullCycleType (1 : Equiv.Perm α) = Multiset.replicate (Fintype.card α) 1 := by
-  rw [fullCycleType, cycleType_one, support_one, Finset.card_empty, Nat.sub_zero, zero_add]
+  rw [fullCycleType_def, Equiv.Perm.parts_partition_one]
+
+/-- On an empty finite carrier, the full cycle type is empty. -/
+@[simp]
+theorem fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
+    fullCycleType σ = 0 := by
+  rw [fullCycleType_def, Equiv.Perm.parts_partition_of_isEmpty]
+
+/-- The full cycle type is empty exactly when the carrier is empty. -/
+@[simp]
+theorem fullCycleType_eq_zero_iff {σ : Equiv.Perm α} :
+    fullCycleType σ = 0 ↔ Fintype.card α = 0 := by
+  simpa only [fullCycleType_def] using
+    (Equiv.Perm.parts_partition_eq_zero_iff (σ := σ))
+
+/-- The full cycle type agrees with the cycle type exactly when there are no fixed points. -/
+theorem fullCycleType_eq_cycleType_iff {σ : Equiv.Perm α} :
+    fullCycleType σ = σ.cycleType ↔ σ.support = Finset.univ := by
+  simpa only [fullCycleType_def] using
+    (Equiv.Perm.parts_partition_eq_cycleType_iff (σ := σ))
+
+/-- A fixed-point-free permutation has no one-parts in its full cycle type. -/
+theorem fullCycleType_eq_cycleType {σ : Equiv.Perm α}
+    (hσ : σ.support = Finset.univ) :
+    fullCycleType σ = σ.cycleType :=
+  fullCycleType_eq_cycleType_iff.2 hσ
+
+/-- Conjugating a permutation does not change its full cycle type. -/
+@[simp]
+theorem fullCycleType_conj (g σ : Equiv.Perm α) :
+    fullCycleType (g * σ * g⁻¹) = fullCycleType σ := by
+  rw [fullCycleType_def, fullCycleType_def,
+    Equiv.Perm.parts_partition_conj]
+
+/-- Inverting a permutation does not change its full cycle type. -/
+@[simp]
+theorem fullCycleType_inv (σ : Equiv.Perm α) :
+    fullCycleType σ⁻¹ = fullCycleType σ := by
+  rw [fullCycleType_def, fullCycleType_def,
+    Equiv.Perm.parts_partition_inv]
 
 /-- Relabelling the carrier does not change a permutation's full cycle type. -/
 @[simp]
 theorem fullCycleType_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     fullCycleType (e.permCongr σ) = fullCycleType σ := by
-  rw [fullCycleType, fullCycleType, cycleType_permCongr, card_support_permCongr,
-    Fintype.card_congr e]
+  rw [fullCycleType_def, fullCycleType_def,
+    Equiv.Perm.parts_partition_permCongr]
+
+/-- The parts equal to one in the full cycle type are precisely the fixed points. -/
+@[simp]
+theorem count_one_fullCycleType (σ : Equiv.Perm α) :
+    (fullCycleType σ).count 1 = Fintype.card α - σ.support.card := by
+  rw [fullCycleType_def]
+  exact Equiv.Perm.count_one_parts_partition σ
 
 open scoped Classical in
 /-- If the fibres of `m : α → γ` are the orbits of `σ`, then the full cycle type of `σ` is the
@@ -716,8 +785,7 @@ example : Equiv.Perm.fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} :
   rfl
 
 example : Equiv.Perm.fullCycleType (finRotate 4) = {4} := by
-  rw [Equiv.Perm.fullCycleType_def,
-    Equiv.Perm.parts_partition_eq_cycleType (support_finRotate_of_le (by norm_num)),
+  rw [Equiv.Perm.fullCycleType_eq_cycleType (support_finRotate_of_le (by norm_num)),
     cycleType_finRotate_of_le (by norm_num)]
 
 end Equiv.Perm
