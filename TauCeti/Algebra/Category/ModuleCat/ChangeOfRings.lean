@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.Localization.BaseChange
 The counit of restriction of scalars along a ring equivalence, and its inverse, act as the
 identity on the underlying elements.
 
-This file records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
+It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
 * Extension of scalars is additive.
 * Extension of scalars carries multiplication by a scalar to multiplication by its image
@@ -32,24 +32,24 @@ public section
 
 universe u v
 
-namespace RingEquiv
+namespace ModuleCat
 
 variable {R S : Type*} [Ring R] [Ring S]
 
 -- Simplify before Mathlib expands the counit into scalar-restriction comparison maps.
 /-- The counit of restriction of scalars along a ring equivalence keeps each element. -/
 @[simp↓]
-theorem restrictScalarsEquivalence_counitIso_hom_app_apply (e : R ≃+* S)
+theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply (e : R ≃+* S)
     (M : ModuleCat.{v} R) (x : M) :
     (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app M x = x := (rfl)
 
 /-- The inverse counit of restriction of scalars along a ring equivalence keeps each element. -/
 @[simp↓]
-theorem restrictScalarsEquivalence_counitIso_inv_app_apply (e : R ≃+* S)
+theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply (e : R ≃+* S)
     (M : ModuleCat.{v} R) (x : M) :
     (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
 
-end RingEquiv
+end ModuleCat
 
 namespace ModuleCat
 
