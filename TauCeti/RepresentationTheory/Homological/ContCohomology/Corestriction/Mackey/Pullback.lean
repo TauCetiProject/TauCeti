@@ -113,7 +113,8 @@ private theorem explicitMap2_explicitMackeyTerm2 (R : Subgroup G) (φ' : H →�
     QuotientGroup.congrOfSurjectiveOfKerLe (φ' : H →* R) hφ' hker
       (Subgroup.map_comap_eq_self_of_surjective hφ' Rs)
   rw [explicitMackeyTerm2_apply,
-    explicitCor2_pullback Rs (Rs.comap (φ' : H →* R)) φ' (φ'.subgroupComap Rs) (fun _ ↦ rfl) e
+    explicitCor2_pullback Rs (Rs.comap (φ' : H →* R)) φ' (φ'.subgroupComap Rs)
+      (φ'.subgroupComap_apply_coe Rs) e
       (fun h ↦ QuotientGroup.congrOfSurjectiveOfKerLe_mk _ hφ' hker _ h) f hf hequiv' hRs
       (hRs.preimage φ'.continuous),
     ← AddMonoidHom.comp_apply (explicitMap2 Rs M _ N _ f hf _),

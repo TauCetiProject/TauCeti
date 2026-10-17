@@ -411,12 +411,10 @@ theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H]
   obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective N q
   simpa only [QuotientGroup.mk'_apply, quotientLift_mk] using hg x
 
--- Exposed for the same reason as `TauCeti.ContinuousMonoidHom.subgroupInclusion`: compatibility
--- proofs for pullbacks along it have to see that it acts by `f` on the underlying elements.
 /-- The restriction of a continuous homomorphism `f : H → G` to the preimage of a subgroup `U`,
 both carrying the subspace topology, as a continuous homomorphism `f⁻¹(U) → U`: the continuous
 form of `MonoidHom.subgroupComap`. -/
-@[expose] def subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
+def subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
     (U : Subgroup G) : U.comap (f : H →* G) →ₜ* U where
   toMonoidHom := (f : H →* G).subgroupComap U
   continuous_toFun := (f.continuous.comp continuous_subtype_val).subtype_mk _
@@ -430,6 +428,12 @@ theorem coe_subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →�
 @[simp]
 theorem subgroupComap_apply_coe {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
     (U : Subgroup G) (x : U.comap (f : H →* G)) : (f.subgroupComap U x : G) = f x :=
+  (rfl)
+
+/-- An element of `f⁻¹(U)` acts through `f.subgroupComap U` as its image under `f`. -/
+theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
+    (U : Subgroup G) {α : Type*} [SMul G α] (x : U.comap (f : H →* G)) (a : α) :
+    f.subgroupComap U x • a = f x • a :=
   (rfl)
 
 /-- The kernel of precomposition with the quotient projection contains the subgroup. -/
