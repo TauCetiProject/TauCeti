@@ -50,6 +50,7 @@ def outwardFirstBasis (v : ℂ) (hv : v ≠ 0) : Module.Basis (Fin 2) ℝ ℂ :=
       ℂ ≃ₗ[ℂ] ℂ).restrictScalars ℝ)
 
 /-- The vectors of the outward-first basis are the rotated velocity and the velocity. -/
+@[simp]
 theorem outwardFirstBasis_apply (v : ℂ) (hv : v ≠ 0) :
     ⇑(outwardFirstBasis v hv) = ![-I * v, v] := by
   ext i
@@ -60,6 +61,7 @@ theorem outwardFirstBasis_apply (v : ℂ) (hv : v ≠ 0) :
     simp
 
 /-- The actual outward-first basis agrees with Mathlib's standard complex orientation. -/
+@[simp]
 theorem orientation_outwardFirstBasis (v : ℂ) (hv : v ≠ 0) :
     (outwardFirstBasis v hv).orientation = Complex.orientation := by
   -- Complex.orientation is the orientation of basisOneI; expose that basis for the determinant

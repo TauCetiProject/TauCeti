@@ -32,11 +32,8 @@ theorem _root_.ContDiff.isSmoothForm_manifoldOneForm {n : WithTop ℕ∞} {P Q :
   apply IsSmoothForm.of_contDiffWithinAt_inChartAt_self
   intro x
   rw [manifoldOneForm_inChartAt]
-  have he : oneForm P Q = fun z ↦ P z • Complex.reCLM + Q z • Complex.imCLM := by
-    ext z v
-    simp [oneForm_apply]
   have hlin : ContDiff ℝ n (oneForm P Q) := by
-    rw [he]
+    rw [oneForm_eq_clm]
     exact (hP.smul contDiff_const).add (hQ.smul contDiff_const)
   exact ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := ℂ) (F := ℝ)
     (0 : Fin 1)).toContinuousLinearEquiv.contDiff.comp hlin).contDiffWithinAt
@@ -60,11 +57,8 @@ theorem _root_.ContMDiff.isSmoothForm_mpullback_manifoldOneForm
     (hU.mem_nhds (hrange (mem_range_self x)))
   have hQx := (hQ (f x) (hrange (mem_range_self x))).contDiffAt
     (hU.mem_nhds (hrange (mem_range_self x)))
-  have he : oneForm P Q = fun z ↦ P z • Complex.reCLM + Q z • Complex.imCLM := by
-    ext z v
-    simp [oneForm_apply]
   have hlin : ContDiffAt ℝ n (oneForm P Q) (f x) := by
-    rw [he]
+    rw [oneForm_eq_clm]
     exact (hPx.smul contDiffAt_const).add (hQx.smul contDiffAt_const)
   exact ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := ℂ) (F := ℝ)
     (0 : Fin 1)).toContinuousLinearEquiv.contDiff.contDiffAt.comp (f x) hlin).contDiffWithinAt

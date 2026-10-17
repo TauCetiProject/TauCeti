@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.RectangleComparison
-public import TauCeti.Analysis.Green.Comparison.Area.Image
 public import TauCeti.Analysis.Green.Comparison.ExteriorDerivative
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
