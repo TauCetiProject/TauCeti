@@ -31,12 +31,18 @@ Facts about the invariants of an elliptic curve, complementing
   base change are the images of the original invariants.
 * `WeierstrassCurve.cusp`: the cusp curve `Y² = X³`, its coefficient projections, and the point
   `(1, 1)` on it (`WeierstrassCurve.equation_cusp_one_one`). It depends on nothing beyond a
-  Weierstrass equation, and is the specialization target
-  `TauCeti/AlgebraicGeometry/EllipticCurve/Universal.lean` uses to retract the universal ring
-  onto `ℤ`.
+  Weierstrass equation, and is the specialization target used to retract the universal ring onto
+  `ℤ`.
 
 All are stated over a commutative ring, matching the generality of the Mathlib results they
 complement.
+
+Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Weierstrass.lean` at commit `bc2fe8ff7396`
+(FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude). Every result here except the cusp curve
+is adapted from that file, and all are generalised from FLT's field-level statements to a
+commutative ring: the two `j`-criteria, and the base-change pair `baseChange_c₄_ne_zero` /
+`baseChange_c₆_ne_zero`, which FLT states only for a field extension.
 -/
 
 public section
@@ -47,7 +53,7 @@ section Invariants
 
 variable {R : Type*} [CommRing R]
 
-/-- **The discriminant is determined by the `c`-invariants**, wherever `1728` can be cancelled:
+/-- The discriminant is determined by the `c`-invariants, wherever `1728` can be cancelled:
 `WeierstrassCurve.c_relation` pins `1728 * Δ` down to `c₄³ - c₆²`. -/
 theorem Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : WeierstrassCurve R}
     (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) : W.Δ = W'.Δ := by
@@ -85,13 +91,13 @@ section BaseChange
 
 variable {A : Type*} [CommRing A] [Algebra R A]
 
-/-- **Base change preserves ellipticity.** Mathlib's instance is stated for
+/-- Base change preserves ellipticity. Mathlib's instance is stated for
 `WeierstrassCurve.map`, which instance search does not see through the plain `def`
 `WeierstrassCurve.baseChange`. -/
 instance isElliptic_baseChange [E.IsElliptic] : (E.baseChange A).IsElliptic :=
   inferInstanceAs (E.map _).IsElliptic
 
-/-- **`c₄ ≠ 0` survives base change** along an injection, since `c₄` of the base change is the
+/-- `c₄ ≠ 0` survives base change along an injection, since `c₄` of the base change is the
 image of `c₄`. Stated on `c₄` rather than on `j`: nothing here needs `[IsReduced R]` or the
 `j`-criterion — nor even that `E` be elliptic — and a caller with `j ≠ 0` gets the hypothesis from
 `j_eq_zero_iff`. -/
@@ -100,26 +106,26 @@ theorem baseChange_c₄_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc�
   simp only [baseChange, map_c₄]
   exact (map_ne_zero_iff _ hRA).mpr hc₄
 
-/-- **`c₆ ≠ 0` survives base change** along an injection. The companion of
+/-- `c₆ ≠ 0` survives base change along an injection. The companion of
 `baseChange_c₄_ne_zero`; a caller with `j ≠ 1728` gets the hypothesis from `j_eq_1728_iff`. -/
 theorem baseChange_c₆_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc₆ : E.c₆ ≠ 0) :
     (E.baseChange A).c₆ ≠ 0 := by
   simp only [baseChange, map_c₆]
   exact (map_ne_zero_iff _ hRA).mpr hc₆
 
-/-- **The discriminant of a base change is the image of the discriminant**, stated against an
+/-- The discriminant of a base change is the image of the discriminant, stated against an
 equation `W` known to be the base change of `W₀`. -/
 theorem algebraMap_Δ_of_baseChange_eq {W₀ : WeierstrassCurve R} {W : WeierstrassCurve A}
     (h : W₀.baseChange A = W) : algebraMap R A W₀.Δ = W.Δ := by
   rw [← h, baseChange, map_Δ]
 
-/-- **The invariant `c₄` of a base change is the image of `c₄`**, stated against an equation `W`
+/-- The invariant `c₄` of a base change is the image of `c₄`, stated against an equation `W`
 known to be the base change of `W₀`. -/
 theorem algebraMap_c₄_of_baseChange_eq {W₀ : WeierstrassCurve R} {W : WeierstrassCurve A}
     (h : W₀.baseChange A = W) : algebraMap R A W₀.c₄ = W.c₄ := by
   rw [← h, baseChange, map_c₄]
 
-/-- **The invariant `c₆` of a base change is the image of `c₆`**, stated against an equation `W`
+/-- The invariant `c₆` of a base change is the image of `c₆`, stated against an equation `W`
 known to be the base change of `W₀`. -/
 theorem algebraMap_c₆_of_baseChange_eq {W₀ : WeierstrassCurve R} {W : WeierstrassCurve A}
     (h : W₀.baseChange A = W) : algebraMap R A W₀.c₆ = W.c₆ := by
