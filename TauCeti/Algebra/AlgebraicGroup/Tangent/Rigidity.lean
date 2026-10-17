@@ -17,10 +17,10 @@ public import TauCeti.Algebra.Lie.Killing.Perfect
 /-!
 # Triviality of homomorphisms with zero differential
 
-A homomorphism from a connected affine group in characteristic zero is trivial if its
-differential at the identity is zero. Indeed, the scheme-theoretic kernel has the full
-Lie algebra. Cartier's theorem makes both it and the ambient group smooth, so connectedness
-forces the kernel to be the whole group.
+A homomorphism from a connected finite-type affine group over an algebraically closed field
+of characteristic zero is trivial if its differential at the identity is zero. Indeed, the
+scheme-theoretic kernel has the full Lie algebra. Cartier's theorem makes both it and the
+ambient group smooth, so connectedness forces the kernel to be the whole group.
 
 The statement is expressed contravariantly on coordinate Hopf algebras: `f : H ⟶ K`
 represents a morphism from `Spec K` to `Spec H`. Triviality is the counit followed by the
@@ -43,7 +43,6 @@ closed-subgroup criterion `HopfIdeal.eq_bot_of_lieSubalgebra_eq_top`.
 public section
 
 open CategoryTheory
-open scoped TensorProduct
 
 namespace TauCeti.CommHopfAlgCat
 
@@ -53,8 +52,9 @@ variable {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
 variable {H : _root_.CommHopfAlgCat.{u} k} {K : FiniteTypeCommHopfAlgCat.{u, u} k}
 variable [ConnectedSpace (PrimeSpectrum K)]
 
-/-- A morphism from a connected affine group in characteristic zero with zero differential
-is the trivial morphism. The target group need not be of finite type. -/
+/-- Over an algebraically closed field of characteristic zero, a morphism from a connected
+finite-type affine group with zero differential is trivial. The target group need not be
+of finite type. -/
 theorem _root_.CommHopfAlgCat.Hom.eq_unit_comp_counit_of_derivationCompLieHom_eq_zero
     (f : H ⟶ K.obj)
     (hf : derivationCompLieHom (B := k) f.hom = 0) :
@@ -103,19 +103,8 @@ theorem eq_unit_comp_counit_of_isKilling
     (LieHom.eq_zero_of_derivedSeries_one_eq_top
       (derivationCompLieHom (B := F) (baseChangeMap (K := F) f).hom)
       (derivedSeries_one_eq_top_of_isKilling F _))
-  apply _root_.CommHopfAlgCat.hom_ext
-  ext x
-  have hx := congrArg (fun g => g.hom (1 ⊗ₜ[k] x)) hf
-  rw [baseChangeMap_apply_tmul] at hx
-  -- Scalar extension is faithful; the equality on `1 ⊗ x` descends to the original ring.
-  apply Algebra.TensorProduct.includeRight_injective (algebraMap k F).injective
-  convert hx using 1
-  · simp only [Algebra.TensorProduct.includeRight_apply]
-  · simp only [Bialgebra.unitBialgHom, _root_.CommHopfAlgCat.ofHom_comp,
-      _root_.CommHopfAlgCat.hom_comp, ConcreteCategory.hom_ofHom, BialgHom.comp_apply,
-      Bialgebra.counitBialgHom_apply, BialgHom.ofAlgHom_apply, Algebra.ofId_apply,
-      Algebra.algebraMap_eq_smul_one, map_smul, Algebra.TensorProduct.includeRight_apply,
-      TensorProduct.counit_tmul, CommSemiring.counit_apply, smul_assoc, one_smul]
-    rw [← Algebra.TensorProduct.one_def]
+  apply baseChangeMap_injective_hom (K := F) (algebraMap k F).injective
+  rw [baseChangeMap_unit_comp_counit]
+  exact hf
 
 end TauCeti.CommHopfAlgCat

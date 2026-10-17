@@ -59,9 +59,11 @@ theorem groupLike_eq_one (hH : semisimpleCommHopfAlgProperty k H) (x : GroupLike
   have h := hH.hom_eq_unit_comp_counit (C := C)
     (CommHopfAlgCat.ofHom (MonoidAlgebra.liftGroupLikeBialgHom (R := k) (A := H)))
   have hx := congrArg (fun f => f.hom (MonoidAlgebra.single x (1 : k))) h
+  simp only [ConcreteCategory.hom_ofHom, BialgHom.comp_apply,
+    Bialgebra.counitBialgHom_apply] at hx
+  rw [MonoidAlgebra.liftGroupLikeBialgHom_single, MonoidAlgebra.counit_single] at hx
   apply GroupLike.ext
-  simpa [C, Bialgebra.unitBialgHom, MonoidAlgebra.liftGroupLikeBialgHom_single,
-    MonoidAlgebra.counit_single] using hx
+  simpa only [one_smul, CommSemiring.counit_apply, map_one, GroupLike.val_one] using hx
 
 end semisimpleCommHopfAlgProperty
 
