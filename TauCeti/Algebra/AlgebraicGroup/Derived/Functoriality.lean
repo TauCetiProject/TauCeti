@@ -213,6 +213,8 @@ theorem commutatorAlgHom_eq_zero_of_map_mem_derivedDefiningIdeal
     (f : H →ₐc[R] K) (hf : Function.Injective f) {x : H}
     (hx : f x ∈ derivedDefiningIdeal (R := R) K) :
     TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) x = 0 := by
+  -- The bialgebra tensor map has the same underlying function as the tensor map of
+  -- the underlying linear maps, so the linear-map injectivity lemma applies definitionally.
   have hmap : Function.Injective (Bialgebra.TensorProduct.map f f) :=
     TensorProduct.map_injective_of_flat_flat
       (f : H →ₗ[R] K) (f : H →ₗ[R] K) hf hf
