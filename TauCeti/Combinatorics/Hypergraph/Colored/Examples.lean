@@ -40,7 +40,7 @@ example : (const false : Colored3Graph Bool (Fin 3)).inducedCopyCount
 example : (const true : Colored3Graph Bool (Fin 3)).inducedCopyCount
     (FiniteColored3Pattern.const 3 false) = 0 := by
   apply inducedCopyCount_const_eq_zero
-  exact ⟨Set.powersetCard.ofCard (s := Finset.univ) (by decide), by simp⟩
+  exact ⟨Set.powersetCard.ofCard (s := Finset.univ) (by simp), by simp⟩
 
 -- No triples means no color constraints, even for an arbitrary palette and host coloring.
 example {κ : Type*} (H : Colored3Graph κ (Fin 3)) (F : FiniteColored3Pattern κ)
@@ -50,12 +50,12 @@ example {κ : Type*} (H : Colored3Graph κ (Fin 3)) (F : FiniteColored3Pattern �
 
 example : (const true : Colored3Graph Bool (Fin 0)).inducedCopyCount
     (FiniteColored3Pattern.const 0 false) = 1 := by
-  rw [inducedCopyCount_of_lt_three _ _ (by decide)]
-  decide
+  rw [inducedCopyCount_of_lt_three _ _ (by simp)]
+  simp
 
 example : (const true : Colored3Graph Bool (Fin 2)).inducedCopyCount
     (FiniteColored3Pattern.const 3 true) = 0 := by
   apply inducedCopyCount_eq_zero_of_card_lt
-  decide
+  simp
 
 end TauCeti

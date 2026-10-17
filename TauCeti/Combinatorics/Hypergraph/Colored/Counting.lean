@@ -38,10 +38,14 @@ namespace FiniteColored3Pattern
 variable {κ : Type*}
 
 /-- The pattern with `k` labeled vertices and constant triple color `c`. -/
-abbrev const (k : ℕ) (c : κ) : FiniteColored3Pattern κ := ⟨k, Colored3Graph.const c⟩
+def const (k : ℕ) (c : κ) : FiniteColored3Pattern κ := ⟨k, Colored3Graph.const c⟩
 
 @[simp]
 theorem k_const (k : ℕ) (c : κ) : (const k c).k = k := (rfl)
+
+@[simp]
+theorem graph_const (k : ℕ) (c : κ) :
+    (const k c).graph = Colored3Graph.const c := (rfl)
 
 end FiniteColored3Pattern
 
@@ -74,7 +78,7 @@ theorem isInducedCopy_of_lt_three (H : Colored3Graph κ V) (F : FiniteColored3Pa
 theorem isInducedCopy_comap_iff {W : Type*} (H : Colored3Graph κ V)
     (F : FiniteColored3Pattern κ) (f : W ↪ V) (g : Fin F.k ↪ W) :
     (H.comap f).IsInducedCopy F g ↔ H.IsInducedCopy F (g.trans f) := by
-  simp only [IsInducedCopy, comap_trans]
+  simp only [IsInducedCopy, comap_comap]
 
 variable [Fintype V]
 
@@ -139,7 +143,7 @@ theorem inducedCopyCount_const (c : κ) (k : ℕ) :
     apply Finset.eq_univ_of_forall
     intro f
     apply (mem_inducedCopies _ _ f).mpr
-    exact comap_const c f
+    simp only [IsInducedCopy, FiniteColored3Pattern.graph_const, comap_const]
   simp [inducedCopyCount_def, hall, Fintype.card_embedding_eq]
 
 /-- A constant host cannot realize a pattern containing a different triple color. -/
