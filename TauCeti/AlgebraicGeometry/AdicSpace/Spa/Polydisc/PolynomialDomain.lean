@@ -219,10 +219,8 @@ private theorem valuation_eval₂RingHom_eq_pow_mul_of_mem_cell {Z : Finset K} {
       (p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map fun α ↦ x.1.valuation (C (γ - α)) :=
     Multiset.map_congr rfl fun α hα ↦ ite_eq_right (Multiset.mem_filter.mp hα).2
   conv_lhs => rw [← Multiset.filter_add_not (fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) p.roots]
-  rw [Multiset.map_add, Multiset.prod_add, h₁, h₂, Multiset.map_const', Multiset.prod_replicate,
-    map_mul, map_mul, map_multiset_prod, map_multiset_prod, Multiset.map_map, Multiset.map_map,
-    mul_left_comm]
-  simp only [Function.comp_def]
+  rw [Multiset.map_add, Multiset.prod_add, h₁, h₂]
+  simp [map_multiset_prod, mul_left_comm (x.1.valuation (C p.leadingCoeff))]
 
 /-- **At a point of the cell with `x(T - γ) = 0`**, `δ = γ` and `γ` is not a root of both of two
 coprime polynomials, so one of the two root counts of
