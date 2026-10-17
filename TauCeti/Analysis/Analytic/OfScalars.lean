@@ -160,7 +160,7 @@ theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
 
 /-- Inside its ball of convergence, the iterated derivatives of a real scalar power series are
 the sums of its falling-factorial-weighted coefficients. -/
-theorem HasFPowerSeriesOnBall.iteratedDeriv_one_eq_tsum_descFactorial_mul
+theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_one_eq_tsum_descFactorial_mul
     {f : ℝ → ℝ} {c : ℕ → ℝ} {r : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f (ofScalars ℝ c) 0 r) (h_one : (1 : ℝ≥0∞) < r) (n : ℕ) :
     iteratedDeriv n f 1 = ∑' k : ℕ, (k.descFactorial n : ℝ) * c k := by

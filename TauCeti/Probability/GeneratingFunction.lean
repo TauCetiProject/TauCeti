@@ -243,20 +243,6 @@ section Coefficients
 
 open FormalMultilinearSeries
 
-private lemma summable_measureReal_mul_norm_of_integrable {E : Type*} [NormedAddCommGroup E]
-    {ν : Measure ℕ} {f : ℕ → E} (hf : Integrable f ν) :
-    Summable (fun k : ℕ ↦ ν.real {k} * ‖f k‖) := by
-  rw [← Measure.sum_smul_dirac ν] at hf
-  simpa only [measureReal_def] using hf.summable_of_dirac
-
-private lemma integrable_iff_summable_measureReal_mul_norm {E : Type*} [NormedAddCommGroup E]
-    (ν : Measure ℕ) [IsFiniteMeasure ν] (f : ℕ → E) :
-    Integrable f ν ↔ Summable (fun k : ℕ ↦ ν.real {k} * ‖f k‖) := by
-  refine ⟨summable_measureReal_mul_norm_of_integrable, fun h ↦ ?_⟩
-  rw [← Measure.sum_smul_dirac ν]
-  exact integrable_sum_dirac (fun k ↦ measure_ne_top ν {k})
-    (by simpa only [measureReal_def] using h)
-
 /-- If the monomial integrand is integrable, the probability-generating function is the sum of
 the power series whose coefficients are the singleton masses. -/
 theorem hasSum_pgf_of_integrable (ν : Measure ℕ) {t : ℝ}
@@ -298,7 +284,7 @@ theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast {ν : Measure ℕ} {
   have hexp (k : ℕ) : Real.exp (t * (k : ℝ)) = Real.exp t ^ k := by
     rw [mul_comm t, Real.exp_nat_mul]
   have hsum_exp : Summable (fun k : ℕ => ν.real {k} * ‖Real.exp (t * (k : ℝ))‖) :=
-    (integrable_iff_summable_measureReal_mul_norm ν _).mp hExp
+    summable_measureReal_mul_norm_of_integrable hExp
   have hp_radius : ENNReal.ofReal (Real.exp t) ≤ p.radius := by
     have hr := p.le_radius_of_summable_norm (r := Real.toNNReal (Real.exp t)) (by
       apply hsum_exp.congr
@@ -323,8 +309,10 @@ theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast {ν : Measure ℕ} {
       _ ≤ Real.exp t ^ k := pow_le_pow_left₀ (abs_nonneg z) hz_lt.le k
       _ = ‖Real.exp (t * (k : ℝ))‖ := by
         rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), hexp k]
-  have hz_int : Integrable (fun k : ℕ => z ^ k) ν :=
-    (integrable_iff_summable_measureReal_mul_norm ν _).mpr hsum_z
+  have hz_int : Integrable (fun k : ℕ => z ^ k) ν := by
+    rw [← Measure.sum_smul_dirac ν,
+      integrable_sum_dirac_iff (fun k ↦ measure_ne_top ν {k})]
+    simpa only [measureReal_def] using hsum_z
   simpa only [p, ofScalars_apply_eq, smul_eq_mul, zero_add] using
     hasSum_pgf_of_integrable ν hz_int
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -50,6 +51,14 @@ theorem integrable_smul_iff_abs_smul {X F : Type*} [MeasurableSpace X]
     · rw [ite_eq_right hx', abs_of_neg (lt_of_not_ge hx'), smul_smul, neg_one_mul, neg_neg]
   exact ⟨fun h ↦ (h.bdd_smul 1 hu hb).congr hmul,
     fun h ↦ (h.bdd_smul 1 hu hb).congr hinv⟩
+
+/-- Integrability with respect to a measure on `ℕ` implies summability of the singleton masses
+weighted by the norms of the function values. -/
+theorem summable_measureReal_mul_norm_of_integrable {E : Type*} [NormedAddCommGroup E]
+    {ν : Measure ℕ} {f : ℕ → E} (hf : Integrable f ν) :
+    Summable (fun k : ℕ ↦ ν.real {k} * ‖f k‖) := by
+  rw [← Measure.sum_smul_dirac ν] at hf
+  simpa only [measureReal_def] using hf.summable_of_dirac
 
 /-- An integrable function whose norm is almost everywhere at least one can only be carried by a
 finite measure. -/
