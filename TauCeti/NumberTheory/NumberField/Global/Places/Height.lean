@@ -70,7 +70,7 @@ theorem hasFiniteSupport_log_normalizedAbsValue (x : K) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp [HasFiniteSupport]
   · refine (hasFiniteMulSupport_normalizedAbsValue hx).subset fun v hv ↦ ?_
-    contrapose! hv
+    contrapose hv
     simp [notMem_mulSupport.mp hv]
 
 /-- The positive parts of the logarithms of the normalized absolute values of an element of a
@@ -144,7 +144,7 @@ theorem finsum_comp_log_normalizedAbsValue_eq_sum {f : ℝ → ℝ} (hf : f 0 = 
   rw [finsum_eq_sum_of_support_subset (s := S.disjSum Finset.univ), Finset.sum_disjSum]
   · simp [log_pow]
   · rintro (v | w) hv
-    · contrapose! hv
+    · contrapose hv
       simp [hS v (by simpa using hv), hf]
     · simp
 

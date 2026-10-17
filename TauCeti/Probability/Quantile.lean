@@ -53,6 +53,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.quantile_le_iff` — the Galois characterization of the quantile, with
   `MeasureTheory.Measure.setOf_le_cdf_eq_Ici` its set-level form and
   `MeasureTheory.Measure.lt_quantile_iff` its negation;
+* `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
+  level sets agree;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
   — the characterization of the upper quantile through the mass strictly to the left of a point;
 * `MeasureTheory.Measure.measureReal_Iio_quantile_le` and `MeasureTheory.Measure.le_cdf_quantile`
@@ -129,6 +131,14 @@ function reaches the level. The definition's body is not exposed, so this is the
 modules should rewrite with. -/
 theorem quantile_def (μ : Measure ℝ) (t : ℝ) :
     μ.quantile t = sInf {x : ℝ | t ≤ cdf μ x} := (rfl)
+
+/-- Quantiles of two measures at two levels agree when the corresponding cdf level sets agree. -/
+theorem quantile_eq_of_le_cdf_iff (ν μ : Measure ℝ) {u t : ℝ}
+    (h : ∀ x, u ≤ cdf ν x ↔ t ≤ cdf μ x) : ν.quantile u = μ.quantile t := by
+  rw [quantile_def, quantile_def]
+  apply congrArg sInf
+  ext x
+  exact h x
 
 variable {t x : ℝ}
 

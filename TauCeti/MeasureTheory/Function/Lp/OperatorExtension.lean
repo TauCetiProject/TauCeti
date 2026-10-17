@@ -50,10 +50,8 @@ namespace TauCeti
 open MeasureTheory
 open scoped ENNReal NNReal
 
-variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
-  [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞}
 
 /-- The `Lᵖ` functions which also belong to `L²`. -/
 def lpTwoSubmodule : Submodule ℝ (Lp E p μ) where
@@ -70,13 +68,11 @@ def lpTwoSubmodule : Submodule ℝ (Lp E p μ) where
     intro c f hf
     exact (hf.const_smul c).ae_eq (Lp.coeFn_smul c f).symm
 
-omit [Fact (1 ≤ p)] in
 /-- Membership in `Lᵖ ∩ L²` means that the `Lᵖ` representative also has finite `L²` norm. -/
 @[simp] theorem mem_lpTwoSubmodule (f : Lp E p μ) :
     f ∈ lpTwoSubmodule (E := E) (p := p) (μ := μ) ↔ MemLp (f : α → E) 2 μ :=
   Iff.rfl
 
-omit [Fact (1 ≤ p)] in
 /-- The `L²` membership proof carried by an element of `Lᵖ ∩ L²`. -/
 theorem lpTwoSubmodule.memLp (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
     MemLp (f.1 : α → E) 2 μ := f.property
@@ -113,12 +109,13 @@ def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ
       _ = c • (hf.toLp (f.1 : α → E) : α → E) x := by rw [h₂]
       _ = _ := h₄.symm
 
-omit [Fact (1 ≤ p)] in
 /-- The `L²` and `Lᵖ` views of an intersection function agree almost everywhere. -/
 theorem lpTwoSubmodule.toL2_ae (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
     (lpTwoSubmodule.toL2 f : α → E) =ᵐ[μ] (f.1 : α → E) := by
   have hf := lpTwoSubmodule.memLp f
   exact hf.coeFn_toLp
+
+variable [Fact (1 ≤ p)]
 
 /-- The intersection `Lᵖ ∩ L²` is dense in `Lᵖ` when `p < ∞`. -/
 theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
@@ -136,10 +133,9 @@ open scoped ENNReal NNReal
 
 variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {p : ℝ≥0∞}
 
-omit [CompleteSpace F] [Fact (1 ≤ p)] in
 /-- A strong-type estimate on `L²` makes the operator's value an `Lᵖ` function whenever its
 argument lies in `L² ∩ Lᵖ`. -/
 theorem memLp_apply_of_eLpNorm_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
@@ -204,7 +200,6 @@ def strongTypeOnIntersection (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
       _ = c • (hf.toLp _ : α → F) x := by rw [h₂]
       _ = _ := h₄.symm
 
-omit [CompleteSpace F] [Fact (1 ≤ p)] in
 /-- On the intersection, the strong-type map has the same pointwise values almost everywhere
 as the given `L²` operator. -/
 theorem strongTypeOnIntersection_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
@@ -225,10 +220,9 @@ open scoped ENNReal NNReal
 
 variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [CompleteSpace F] in
 /-- The `Lᵖ` bound on `L² ∩ Lᵖ`, expressed in ordinary operator norms. -/
 theorem norm_strongTypeOnIntersection_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
     (hT : ∀ f : Lp E 2 μ, MemLp f p μ →
@@ -247,6 +241,8 @@ theorem norm_strongTypeOnIntersection_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
   change ‖hTp.toLp (T (lpTwoSubmodule.toL2 f))‖ ≤ (C : ℝ) * ‖(f : Lp E p μ)‖
   rw [Lp.norm_toLp, Lp.norm_def]
   simpa [heq, ENNReal.toReal_mul] using h
+
+variable [CompleteSpace F]
 
 /-- The unique continuous `Lᵖ` extension of an `L²` operator satisfying a strong-type
 estimate. It agrees with the original operator on `L² ∩ Lᵖ`. -/

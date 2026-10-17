@@ -1,0 +1,97 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Algebra.Rat
+public import Mathlib.Algebra.Order.Ring.Star
+public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
+
+/-!
+# Positive definiteness over `ℤ`, `ℚ` and `ℝ`
+
+An integral lattice is positive definite when its rational form is
+(`TauCeti.IntegralLattice.IsPosDef`). This file shows that the same condition can be read on every
+other model of the lattice form: on the integral norm form of the carrier, on the integral Gram
+matrix of any carrier basis, on that Gram matrix with its entries cast to `ℝ`, and on the base
+change of the rational form to `ℝ`. The real statements hold more generally over any linearly
+ordered field whose order is the star order of the trivial star.
+
+The real Gram matrix is the form in which positive definiteness enters analytic arguments in
+Euclidean space, and the integral Gram matrix is the form in which it is checked on explicit
+lattices; these equivalences let either be used for `IsPosDef`. The passage from `ℚ` to `ℝ` rests
+on diagonalizing the rational form by a rational congruence
+(`TauCeti.Matrix.posDef_map_ratCast_iff`); the passage from `ℤ` to `ℚ` clears denominators
+(`TauCeti.Matrix.posDef_map_intCast_iff`).
+
+## Main results
+
+* `TauCeti.IntegralLattice.isPosDef_iff_posDef_gramMatrix`: a lattice is positive definite exactly
+  when the integral Gram matrix of a carrier basis is.
+* `TauCeti.IntegralLattice.isPosDef_iff_posDef_integralNorm`: a lattice is positive definite
+  exactly when its integral norm form is.
+* `TauCeti.IntegralLattice.isPosDef_iff_posDef_map_gramMatrix`: a lattice is positive definite
+  exactly when its Gram matrix, cast to `ℝ`, is.
+* `TauCeti.IntegralLattice.isPosDef_iff_posDef_baseChange`: a lattice is positive definite exactly
+  when the base change of its rational form to `ℝ` is.
+-/
+
+public section
+
+open Module
+
+namespace TauCeti.IntegralLattice
+
+variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
+
+/-- **A lattice is positive definite exactly when the integral Gram matrix of a carrier basis is
+positive definite.** -/
+theorem isPosDef_iff_posDef_gramMatrix {ι : Type*} [Finite ι] (b : Basis ι ℤ L) :
+    L.IsPosDef ↔ (L.gramMatrix b).PosDef := by
+  classical
+  have _i : Fintype ι := Fintype.ofFinite ι
+  rw [IsPosDef, LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix (b.extendOfIsLattice ℚ) _
+    L.isSymm, ← L.map_gramMatrix b, algebraMap_int_eq, Int.coe_castRingHom,
+    Matrix.posDef_map_intCast_iff]
+
+/-- **A lattice is positive definite exactly when its integral norm form is**, that is, when every
+nonzero vector of the carrier has positive norm. -/
+theorem isPosDef_iff_posDef_integralNorm : L.IsPosDef ↔ L.integralNorm.PosDef := by
+  classical
+  let b := Free.chooseBasis ℤ L
+  have h : L.integralNorm = L.integralForm.toQuadraticMap :=
+    QuadraticMap.ext fun x ↦ by rw [integralNorm_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+  rw [L.isPosDef_iff_posDef_gramMatrix b, h,
+    LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _ L.isSymm_integralForm,
+    L.gramMatrix_eq_toMatrix]
+
+variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K] [StarOrderedRing K]
+
+/-- **A lattice is positive definite exactly when its Gram matrix, cast to `ℝ`, is positive
+definite**, and more generally its cast to any linearly ordered field `K` whose order is the star
+order of the trivial star. -/
+theorem isPosDef_iff_posDef_map_gramMatrix {ι : Type*} [Finite ι] (b : Basis ι ℤ L) :
+    L.IsPosDef ↔ ((L.gramMatrix b).map (Int.cast : ℤ → K)).PosDef := by
+  rw [L.isPosDef_iff_posDef_gramMatrix b, ← Matrix.posDef_map_intCast_iff,
+    ← Matrix.posDef_map_ratCast_iff (K := K), Matrix.map_map]
+  simp only [Function.comp_def, Rat.cast_intCast]
+
+/-- **A lattice is positive definite exactly when its real form is**: the base change of the
+rational form to `ℝ`, or more generally to any linearly ordered field `K` whose order is the star
+order of the trivial star, is positive definite. -/
+theorem isPosDef_iff_posDef_baseChange :
+    L.IsPosDef ↔ (L.form.baseChange K).toQuadraticMap.PosDef := by
+  classical
+  let b := Free.chooseBasis ℤ L
+  have hsymm := LinearMap.BilinForm.isSymm_iff.mpr
+    (LinearMap.BilinForm.IsSymm.baseChange K (LinearMap.BilinForm.isSymm_iff.mp L.isSymm))
+  rw [LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix ((b.extendOfIsLattice ℚ).baseChange K)
+    _ hsymm, bilinForm_toMatrix_baseChange, ← L.map_gramMatrix, Matrix.map_map,
+    L.isPosDef_iff_posDef_map_gramMatrix (K := K) b]
+  simp only [Function.comp_def, algebraMap_int_eq, eq_intCast, map_intCast]
+
+end TauCeti.IntegralLattice
