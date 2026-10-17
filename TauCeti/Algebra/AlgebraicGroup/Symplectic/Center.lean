@@ -25,11 +25,6 @@ This identifies the central subgroup used in forming the adjoint symplectic grou
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 21, the classical semisimple groups.
-
-The functor-of-points construction follows
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Center.Basic`, using the symplectic
-matrix-center calculation and `RootsOfUnityGroup.pointsMulEquiv`. No division by two
-or passage to reduced points occurs.
 -/
 
 public section
@@ -136,26 +131,101 @@ theorem isCentralPoint_iff_existsUnique_rootsOfUnityScalarPoints
   · rintro ⟨f, rfl, -⟩
     exact isCentralPoint_rootsOfUnityScalarPoints m f
 
-section RepresentedCenter
+variable {R : Type u} [CommRing R]
 
-variable {k : Type u} [Field k]
-
-private def scalarCenterHom (A : CommAlgCat.{u} k) :
-    HopfAlgebra.points (R := k) (H := MonoidAlgebra k (Multiplicative (ZMod 2))) A →*
-      CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k m) A :=
+/-- Scalar square roots of one as universally central symplectic points. -/
+def rootsOfUnityScalarCenterHom (A : Type v) [CommRing A] [Algebra R A] :
+    WithConv (MonoidAlgebra R (Multiplicative (ZMod 2)) →ₐ[R] A) →*
+      HopfAlgebra.center R (coordinateHopfAlgebra R m) A :=
   (rootsOfUnityScalarPoints m).codRestrict _ fun f ↦
-    (CommHopfAlgCat.mem_centerPointsSubgroup_iff _ _ _).mpr
-      (isCentralPoint_rootsOfUnityScalarPoints m f)
+    HopfAlgebra.mem_center.mpr (isCentralPoint_rootsOfUnityScalarPoints m f)
 
-private theorem scalarCenterHom_bijective (hm : m ≠ 0) (A : CommAlgCat.{u} k) :
-    Function.Bijective (scalarCenterHom (m := m) A) := by
+/-- The underlying point of the universal-center map is the scalar point. -/
+@[simp↓]
+theorem coe_rootsOfUnityScalarCenterHom_apply
+    (A : Type v) [CommRing A] [Algebra R A]
+    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod 2)) →ₐ[R] A)) :
+    (rootsOfUnityScalarCenterHom (m := m) A f).1 = rootsOfUnityScalarPoints m f := (rfl)
+
+/-- In positive rank scalar square roots of one exhaust the universal center. -/
+theorem rootsOfUnityScalarCenterHom_bijective (hm : m ≠ 0)
+    (A : Type v) [CommRing A] [Algebra R A] :
+    Function.Bijective (rootsOfUnityScalarCenterHom (R := R) (m := m) A) := by
   constructor
   · intro f h he
     exact rootsOfUnityScalarPoints_injective hm (congrArg Subtype.val he)
   · intro g
     obtain ⟨f, hf, -⟩ := (isCentralPoint_iff_existsUnique_rootsOfUnityScalarPoints hm g.val).mp
-      ((CommHopfAlgCat.mem_centerPointsSubgroup_iff _ _ _).mp g.property)
+      (HopfAlgebra.mem_center.mp g.property)
     exact ⟨f, Subtype.ext hf⟩
+
+/-- Scalar square roots of one identify `μ₂` with the universal symplectic center
+pointwise over any commutative base ring. -/
+def rootsOfUnityScalarCenterMulEquiv (hm : m ≠ 0)
+    (A : Type v) [CommRing A] [Algebra R A] :
+    WithConv (MonoidAlgebra R (Multiplicative (ZMod 2)) →ₐ[R] A) ≃*
+      HopfAlgebra.center R (coordinateHopfAlgebra R m) A :=
+  MulEquiv.ofBijective (rootsOfUnityScalarCenterHom A)
+    (rootsOfUnityScalarCenterHom_bijective hm A)
+
+/-- The forward universal-center equivalence is the scalar-point map. -/
+@[simp↓]
+theorem rootsOfUnityScalarCenterMulEquiv_apply (hm : m ≠ 0)
+    (A : Type v) [CommRing A] [Algebra R A]
+    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod 2)) →ₐ[R] A)) :
+    (rootsOfUnityScalarCenterMulEquiv (m := m) hm A f).1 =
+      rootsOfUnityScalarPoints m f := (rfl)
+
+/-- Extract the square root of one from the upper-left matrix entry of a central point. -/
+def rootsOfUnityOfCenterPoint (hm : m ≠ 0)
+    {A : Type v} [CommRing A] [Algebra R A]
+    (g : HopfAlgebra.center R (coordinateHopfAlgebra R m) A) : rootsOfUnity 2 A :=
+  let i : Fin (m + m) := ⟨0, by omega⟩
+  let c := ((pointsMulEquiv R m (A := A) g.1).val : Matrix _ _ A) i i
+  have hc : c ^ 2 = 1 := by
+    obtain ⟨d, hd, hd2⟩ := (GLSymplecticFin.mem_center_iff hm _).mp
+      (MulEquivClass.apply_mem_center (pointsMulEquiv R m (A := A))
+        (HopfAlgebra.center_le_center g.2))
+    simpa [c, hd, Matrix.scalar_apply] using hd2
+  ⟨Units.mkOfMulEqOne c c (by simpa [sq] using hc), (mem_rootsOfUnity' 2 _).mpr hc⟩
+
+/-- Extraction recovers the root of unity of a scalar central point. -/
+@[simp↓]
+theorem rootsOfUnityOfCenterPoint_rootsOfUnityScalarCenterHom (hm : m ≠ 0)
+    {A : Type v} [CommRing A] [Algebra R A]
+    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod 2)) →ₐ[R] A)) :
+    rootsOfUnityOfCenterPoint hm (rootsOfUnityScalarCenterHom (m := m) A f) =
+      RootsOfUnityGroup.pointsMulEquiv 2 f := by
+  apply Subtype.ext
+  apply Units.ext
+  simp only [rootsOfUnityOfCenterPoint, Units.val_mkOfMulEqOne]
+  rw [coe_rootsOfUnityScalarCenterHom_apply, pointsMulEquiv_rootsOfUnityScalarPoints,
+    GLSymplecticFin.coe_rootsOfUnityScalar]
+  simp [Matrix.scalar_apply]
+
+/-- The inverse universal-center equivalence extracts the scalar root of unity. -/
+@[simp↓]
+theorem rootsOfUnityScalarCenterMulEquiv_symm_apply (hm : m ≠ 0)
+    (A : Type v) [CommRing A] [Algebra R A]
+    (g : HopfAlgebra.center R (coordinateHopfAlgebra R m) A) :
+    (rootsOfUnityScalarCenterMulEquiv hm A).symm g =
+      (RootsOfUnityGroup.pointsMulEquiv (R := R) 2).symm
+        (rootsOfUnityOfCenterPoint hm g) := by
+  obtain ⟨f, rfl⟩ := (rootsOfUnityScalarCenterMulEquiv hm A).surjective g
+  rw [MulEquiv.symm_apply_apply]
+  apply (RootsOfUnityGroup.pointsMulEquiv (R := R) 2).injective
+  rw [MulEquiv.apply_symm_apply]
+  exact (rootsOfUnityOfCenterPoint_rootsOfUnityScalarCenterHom hm f).symm
+
+section RepresentedCenter
+
+variable {k : Type u} [Field k]
+
+-- The functor-of-points construction is adapted from
+-- TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Center.Basic.
+private def scalarCenterEquiv (hm : m ≠ 0) (A : CommAlgCat.{u} k) :=
+  (rootsOfUnityScalarCenterMulEquiv hm A).trans <| MulEquiv.subgroupCongr
+    (CommHopfAlgCat.centerPointsSubgroup_eq_center (coordinateHopfAlgebra k m) A).symm
 
 /-- Scalar square roots of one identify the `μ₂` point functor with the represented
 center of the positive-rank symplectic group. -/
@@ -164,12 +234,13 @@ def rootsOfUnityScalarCenterNatIso (hm : m ≠ 0) :
       CommHopfAlgCat.quotientPointsSubgroupFunctor (coordinateHopfAlgebra k m)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k m)) :=
   NatIso.ofComponents
-    (fun A ↦ (MulEquiv.ofBijective (scalarCenterHom A)
-      (scalarCenterHom_bijective hm A)).toGrpIso) (by
+    (fun A ↦ (scalarCenterEquiv hm A).toGrpIso) (by
     intro A B φ
     ext f
     apply Subtype.ext
-    -- These concrete categorical components are the codomain restrictions of the scalar map.
+    -- Naturality is an equality of composed GrpCat morphisms; the value-map theorem
+    -- applies to algebra homomorphisms instead. Expose the compositions and the
+    -- subgroup restrictions so that it can apply to their underlying points.
     change rootsOfUnityScalarPoints m (AlgHom.mapValue φ.hom f) =
       AlgHom.mapValue φ.hom (rootsOfUnityScalarPoints m f)
     exact (mapValue_rootsOfUnityScalarPoints m φ.hom f).symm)
@@ -185,6 +256,24 @@ theorem rootsOfUnityScalarCenterNatIso_hom_app_apply (hm : m ≠ 0) (A : CommAlg
       (Y := GrpCat.of (CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k m) A))
       ((rootsOfUnityScalarCenterNatIso hm).hom.app A) f).1 =
         rootsOfUnityScalarPoints m f := (rfl)
+
+/-- The inverse natural center comparison extracts the scalar square root of one. -/
+@[simp↓]
+theorem rootsOfUnityScalarCenterNatIso_inv_app_apply (hm : m ≠ 0) (A : CommAlgCat.{u} k)
+    (g : CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k m) A) :
+    ConcreteCategory.hom
+      (X := GrpCat.of (CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k m) A))
+      (Y := (HopfAlgebra.pointsFunctor (R := k)
+        (H := MonoidAlgebra k (Multiplicative (ZMod 2)))).obj A)
+      ((rootsOfUnityScalarCenterNatIso hm).inv.app A) g =
+        (RootsOfUnityGroup.pointsMulEquiv (R := k) 2).symm
+          (rootsOfUnityOfCenterPoint hm
+            ⟨g.1, HopfAlgebra.mem_center.mpr
+              ((CommHopfAlgCat.mem_centerPointsSubgroup_iff _ _ _).mp g.2)⟩) := by
+  -- The categorical inverse is built from toGrpIso and subgroupCongr, whose
+  -- application wrappers have no rewrite rule to the universal-center equivalence.
+  change (rootsOfUnityScalarCenterMulEquiv (R := k) hm A).symm _ = _
+  exact rootsOfUnityScalarCenterMulEquiv_symm_apply hm A _
 
 /-- The full center of `Sp₂ₘ` in positive rank is `μ₂`, as an isomorphism of coordinate
 Hopf algebras. This includes characteristic two and nonreduced value algebras. -/

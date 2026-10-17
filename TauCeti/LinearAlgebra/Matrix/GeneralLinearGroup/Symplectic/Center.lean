@@ -15,8 +15,8 @@ Over any commutative ring, a matrix commuting with every symplectic matrix is sc
 Consequently the center of `Sp₂ₘ` in positive rank consists of scalar matrices whose
 scalar squares to one. This description retains the infinitesimal center in characteristic two.
 
-The commutant calculation uses the long-root transvections to eliminate off-diagonal
-entries and the difference-root elements to identify the remaining diagonal entries.
+The scalar homomorphism realizes square roots of one as central symplectic matrices,
+providing the pointwise description used for the center of the symplectic group scheme.
 
 ## References
 
