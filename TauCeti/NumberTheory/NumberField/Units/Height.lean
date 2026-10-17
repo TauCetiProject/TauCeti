@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.NumberTheory.Height.FiniteOrder
-public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 
 /-!
 # Height zero and torsion units
