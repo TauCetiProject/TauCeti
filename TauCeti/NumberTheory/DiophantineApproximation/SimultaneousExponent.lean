@@ -75,6 +75,23 @@ theorem simultaneousExponent_le_iff {θ : ι → ℝ} {a : ℝ≥0∞} :
       ∀ w : ℝ, (simultaneousApproximationDenominators θ w).Infinite → ENNReal.ofReal w ≤ a :=
   iSup₂_le_iff
 
+/-- Increasing the exponent can only shrink the set of admissible denominators. -/
+theorem simultaneousApproximationDenominators_antitone (θ : ι → ℝ) :
+    Antitone (simultaneousApproximationDenominators θ) := by
+  rintro w w' hw q ⟨hq, p, hp⟩
+  refine ⟨hq, p, fun i ↦ (hp i).trans ?_⟩
+  exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hq) (neg_le_neg hw)
+
+/-- Every real exponent strictly below the simultaneous exponent admits infinitely many
+simultaneous approximations. -/
+theorem infinite_simultaneousApproximationDenominators_of_lt_simultaneousExponent
+    {θ : ι → ℝ} {w : ℝ} (h : ENNReal.ofReal w < simultaneousExponent θ) :
+    (simultaneousApproximationDenominators θ w).Infinite := by
+  simp only [simultaneousExponent, lt_iSup_iff] at h
+  obtain ⟨w', hw', hww'⟩ := h
+  exact hw'.mono <|
+    simultaneousApproximationDenominators_antitone θ (ENNReal.ofReal_lt_ofReal_iff'.mp hww').1.le
+
 /-- Restricting a family of simultaneous approximations along any map preserves every
 admissible denominator. -/
 theorem simultaneousApproximationDenominators_mono_comp
