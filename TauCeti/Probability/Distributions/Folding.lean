@@ -127,7 +127,7 @@ private theorem hasLaw_abs_withDensity [HasPDF X P] :
   rw [← map_abs_withDensity (measurable_pdf X P volume)]
   exact HasLaw.comp ⟨measurable_abs.aemeasurable, rfl⟩ hX
 
-private theorem measurable_foldedPDF [HasPDF X P] :
+private theorem measurable_foldedPDF :
     Measurable ((Ioi 0).indicator fun x => pdf X P volume x + pdf X P volume (-x)) :=
   ((measurable_pdf X P volume).add ((measurable_pdf X P volume).comp measurable_neg)).indicator
     measurableSet_Ioi
