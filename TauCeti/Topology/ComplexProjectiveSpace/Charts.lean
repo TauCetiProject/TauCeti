@@ -57,6 +57,14 @@ def affineOpen (k : Fin (n + 1)) : Set (ComplexProjectiveSpace n) :=
 theorem mem_affineOpen_iff (k : Fin (n + 1)) (p : ComplexProjectiveSpace n) :
     p ∈ affineOpen k ↔ ratio k k p ≠ 0 := Iff.rfl
 
+/-- The normalizing homogeneous ratio is one on its affine chart domain. -/
+@[simp]
+theorem ratio_self_eq_one (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
+    (hp : p ∈ affineOpen k) : ratio k k p = 1 := by
+  obtain ⟨v, rfl⟩ := mk_surjective n p
+  have hk : v.1 k ≠ 0 := by simpa using hp
+  simpa only [ratio_mk] using div_self hk
+
 /-- The homogeneous-coordinate chart domains are open for the sphere-quotient topology. -/
 theorem isOpen_affineOpen (k : Fin (n + 1)) : IsOpen (affineOpen k) := by
   apply (isOpenQuotientMap_mk n).isQuotientMap.isOpen_preimage.mp
@@ -195,6 +203,7 @@ theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
   simp [mem_affineOpen_iff]
 
 /-- The transition between standard affine charts is the usual homogeneous-ratio formula. -/
+@[simp↓]
 theorem affineChart_transition (k l : Fin (n + 1)) (z : Fin n → ℂ) (j : Fin n) :
     affineChart l ((affineChart k).symm z) j =
       Fin.insertNth (α := fun _ ↦ ℂ) k 1 z (l.succAbove j) /
