@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cech
 import all TauCeti.AlgebraicTopology.Singular.Cech
+import TauCeti.Topology.Category.TopCat.Basic
 
 /-!
 # Naturality of the ordered Čech--singular comparison
@@ -20,7 +21,7 @@ The identity map of a space includes refinements with the same ordered index typ
 
 Unlike the unnormalized Čech nerve, the ordered complex has no columns beyond the cardinality
 of a finite index type. The maps here use its existing ordered Čech functor and Mathlib's total
-complex functor, so they preserve this finite column filtration. No covering hypothesis or
+complex functor, so they preserve the column filtration. No covering hypothesis or
 abelian assumption is needed for the chain maps or their augmentation square.
 
 ## References
@@ -41,15 +42,6 @@ universe w v u
 namespace TauCeti
 
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
-
--- Subtype restrictions and `Opens.toTopCat` have different morphism presentations.
--- Compare their composites pointwise before applying the chain functor.
-private lemma map_comp_eq_of_apply_eq {D : Type u} [Category.{v} D]
-    (F : TopCat.{w} ⥤ D) {A B E : TopCat.{w}}
-    (f : A ⟶ B) (g : B ⟶ E) (h : A ⟶ E) (hfg : ∀ x, g (f x) = h x) :
-    F.map f ≫ F.map g = F.map h := by
-  rw [← F.map_comp]
-  exact congrArg F.map (TopCat.ext hfg)
 
 variable {X Y Z : TopCat.{w}} {ι : Type w}
   (U : ι → Opens X) (V : ι → Opens Y) (f : X ⟶ Y)
@@ -73,7 +65,7 @@ def cechSingularChainsMap : cechSingularChains U R ⟶ cechSingularChains V R wh
       ⟨hmaps.restrict f _ _, f.hom.continuous.continuousOn.mapsToRestrict hmaps⟩)
   naturality s t a := by
     dsimp only [cechSingularChains_map]
-    exact (map_comp_eq_of_apply_eq ((singularChainComplexFunctor C).obj R)
+    exact (Functor.map_comp_eq_of_topCat_apply_eq ((singularChainComplexFunctor C).obj R)
       _ _ _ (fun _ ↦ rfl)).trans (((singularChainComplexFunctor C).obj R).map_comp _ _)
 
 /-- The map on an intersection is induced by any restriction of `f` to that intersection.
@@ -96,7 +88,7 @@ lemma cechSingularChainsMap_app_comp_inclusion (s : Finset ι) :
       ((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.inf U)) ≫
         ((singularChainComplexFunctor C).obj R).map f := by
   dsimp only [cechSingularChainsMap]
-  exact (map_comp_eq_of_apply_eq ((singularChainComplexFunctor C).obj R)
+  exact (Functor.map_comp_eq_of_topCat_apply_eq ((singularChainComplexFunctor C).obj R)
     _ _ _ (fun _ ↦ rfl)).trans (((singularChainComplexFunctor C).obj R).map_comp _ _)
 
 /-- Identity maps act identically on singular chains of finite intersections. -/
@@ -118,7 +110,7 @@ lemma cechSingularChainsMap_comp :
   apply NatTrans.ext
   funext s
   dsimp only [cechSingularChainsMap, NatTrans.comp_app]
-  exact (map_comp_eq_of_apply_eq ((singularChainComplexFunctor C).obj R)
+  exact (Functor.map_comp_eq_of_topCat_apply_eq ((singularChainComplexFunctor C).obj R)
     _ _ _ (fun _ ↦ rfl)).symm
 
 variable [LinearOrder ι]
