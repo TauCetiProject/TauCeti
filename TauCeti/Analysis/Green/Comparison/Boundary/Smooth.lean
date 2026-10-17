@@ -85,12 +85,7 @@ theorem exists_boundary_chart_circulation
   have hg : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) g := hf.comp hinc
   have he : boundaryRestriction φ =
       mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) g (manifoldOneForm P Q) := by
-    ext x v
-    rw [boundaryRestriction_apply, mpullback_apply, mpullback_apply]
-    have hd := mfderiv_comp x (hf x) (hinc x)
-    exact congrArg (manifoldOneForm P Q (f x)) (funext fun i ↦ by
-      simpa only [g, Function.comp_def, ContinuousLinearMap.comp_apply] using
-        (congrArg (fun L ↦ L (v i)) hd).symm)
+    exact boundaryRestriction_mpullback hf (manifoldOneForm P Q)
   have hb := hφ.boundaryRestriction
   have hcb := isCompact_tsupport_boundaryRestriction hc
   have hi := ((isSmoothForm_def 0 _).mpr ((isSmoothBundleForm_def 0 _).mp

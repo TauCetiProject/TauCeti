@@ -29,9 +29,8 @@ open scoped Manifold
 
 namespace TauCeti.Green
 
-private def lineParam : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) :=
-  (EuclideanSpace.equiv (Fin 1) ℝ).symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.pi fun _ : Fin 1 ↦ ContinuousLinearMap.id ℝ ℝ)
+private abbrev lineParam : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) :=
+  (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).symm.toContinuousLinearMap
 
 private theorem lineParam_apply (t : ℝ) :
     lineParam t = (EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t) := rfl
@@ -41,11 +40,6 @@ private theorem lineParam_one :
   ext i
   rw [Subsingleton.elim i 0]
   simp [lineParam, EuclideanSpace.basisFun_apply]
-
-private theorem lineParam_proj (z : EuclideanSpace ℝ (Fin 1)) : lineParam (z 0) = z := by
-  ext i
-  rw [Subsingleton.elim i 0]
-  rfl
 
 variable {N : Type*} [TopologicalSpace N]
   [ChartedSpace (EuclideanSpace ℝ (Fin 1)) N]
@@ -75,6 +69,7 @@ theorem inChartAt_mpullback_manifoldOneForm_eq_circulationFun
     simpa only [_root_.ModelWithCorners.range_eq_univ, mdifferentiableWithinAt_univ,
       mdifferentiableAt_iff_differentiableAt] using h
   have hγ := hd.hasFDerivAt.comp_hasDerivAt t lineParam.hasFDerivAt.hasDerivAt
+  -- Name the canonical inverse projection so the derivative chain rule matches the parameter map.
   change (mpullback _ _ f (manifoldOneForm P Q)).inChartAt α (lineParam t)
     (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis = circulationFun P Q (g ∘ lineParam) t
   rw [RoughForm.inChartAt_mpullback_modelSpace _ f α ht' (hf _),
@@ -125,7 +120,9 @@ theorem integralTopForm_weighted_mpullback_chart
   have hS : ψ.signedInChartAt b α (fun _ ↦ 1) =
       F ∘ EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0 := by
     funext z
-    have he := lineParam_proj z
+    have he : lineParam (z 0) = z :=
+      (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).symm_apply_apply z
+    -- Expose function composition and indicator evaluation at the unique real coordinate.
     change ψ.signedInChartAt b α (fun _ ↦ 1) z = A.indicator g (z 0)
     by_cases hz : z ∈ e.target
     · have ht : z 0 ∈ A := by simpa only [A, he, mem_ofPred_eq] using hz
@@ -133,8 +130,9 @@ theorem integralTopForm_weighted_mpullback_chart
       rw [RoughForm.signedInChartAt_apply, dite_eq_left hz]
       simp only [Units.val_one, Int.cast_one, one_mul]
       rw [RoughForm.inChartAt_fun_smul, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-      have hr := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f hf α
-        (show lineParam (z 0) ∈ e.target by rw [he]; exact hz)
+      have htarget : lineParam (z 0) ∈ e.target := he.symm ▸ hz
+      have hr := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f hf α htarget
+      -- Use the named basis and inverse projection before rewriting the parameter inverse law.
       change (mpullback _ _ f (manifoldOneForm P Q)).inChartAt α (lineParam (z 0)) b =
         circulationFun P Q (fun t ↦ f (e.symm (lineParam t))) (z 0) at hr
       rw [he, hγ'] at hr
@@ -154,6 +152,7 @@ theorem integralTopForm_weighted_mpullback_chart
       (TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
       (TauCeti.measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0) F univ
     simp only [preimage_univ, setIntegral_univ] at ht
+    -- The measure-preserving projection theorem is stated using explicit function composition.
     change (∫ z, F (EuclideanSpace.proj 0 z)) = _
     rw [ht]
     exact integral_indicator hA
@@ -212,6 +211,7 @@ theorem integralTopForm_mpullback_chart_eq_intervalIntegral
       rw [e.right_inv htarget] at hb'
       exact ht'.2 hb'
     have he := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f hf α htarget
+    -- Expose the localized coefficient in the canonical one-coordinate parametrization.
     change φ.inChartAt α (lineParam t) (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis =
       circulationFun P Q (fun t ↦ f (e.symm (lineParam t))) t at he
     rw [hγ'] at he

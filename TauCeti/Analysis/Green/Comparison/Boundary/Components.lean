@@ -74,31 +74,12 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
   have hφ := ContMDiff.isSmoothForm_mpullback_manifoldOneForm (n := 0) hf hU hrange
     (contDiffOn_zero.mpr hP) (contDiffOn_zero.mpr hQ)
   have hi := hφ.integrableTopForm hc (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis
-  let L := (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).symm
-  have hL (t : ℝ) : (L t) 0 = t := by
-    change L.symm (L t) = t
-    exact L.symm_apply_apply t
-  have hγ (i : ι) (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) :
-      DifferentiableAt ℝ (γ i).extend t := by
-    have hz : (L t) 0 ∈ Ioo (0 : ℝ) 1 := (hL t).symm ▸ ht
-    have hcomp := ((hf (R i (L t))).mdifferentiableAt one_ne_zero).hasMFDerivAt.comp
-      (L t) (hqd i (L t) hz)
-    have hflat := HasMFDerivAt.hasFDerivAt (𝕜 := ℝ) (E' := ℂ) hcomp
-    have hLderiv : HasFDerivAt L L.toContinuousLinearMap t := L.hasFDerivAt
-    have hh := HasFDerivAt.comp (𝕜 := ℝ) (G := ℂ) t hflat hLderiv
-    have he : (f ∘ R i) ∘ L = (γ i).extend := by
-      funext w
-      change f ((q i).extend ((L w) 0)) = (γ i).extend w
-      rw [hL]
-      rfl
-    rw [he] at hh
-    exact hh.differentiableAt
   have heval (i : ι) (z : E) (hz : z ∈ D) :
       φ (R i z) (fun j ↦ e i z ((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis j)) =
         circulationFun P Q (γ i).extend (z 0) := by
     exact Path.mpullback_manifoldOneForm_coefficient (q i) f hf.continuous P Q z
       (e i z).toContinuousLinearMap (hqd i z hz)
-      ((hf (R i z)).mdifferentiableAt one_ne_zero) (hγ i (z 0) hz)
+      ((hf (R i z)).mdifferentiableAt one_ne_zero)
   have hD : MeasurableSet D := measurableSet_Ioo.preimage
     (EuclideanSpace.proj (𝕜 := ℝ) 0).continuous.measurable
   have hri (i : ι) : R i '' D = (q i).extend '' Ioo (0 : ℝ) 1 := by
@@ -137,6 +118,7 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
       (TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
       (TauCeti.measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0)
       (circulationFun P Q (γ i).extend) (Ioo (0 : ℝ) 1)
+    -- Read the Euclidean parameter integral as pullback along its measure-preserving projection.
     change (∫ z in (EuclideanSpace.proj 0) ⁻¹' Ioo (0 : ℝ) 1,
       circulationFun P Q (γ i).extend (EuclideanSpace.proj 0 z)) = _
     rw [hp, ← integral_Icc_eq_integral_Ioo,
@@ -156,8 +138,9 @@ local instance boundaryComponentsCompactSpace : CompactSpace ((𝓡∂ (1 + 1)).
     ((𝓡∂ (1 + 1)).isClosed_boundary (M := M)
       (by simp : (∞ : WithTop ℕ∞) ≠ 0)).isCompact
 
-/-- Global Stokes on an actual smooth boundary agrees with the existing closed-path curve
-integral. The area form is the actual pullback of planar area, weighted by curl. -/
+/-- Global Stokes on an actual smooth boundary is the finite sum of oriented boundary-arc
+curve integrals, allowing subdivisions whose endpoints differ. The area form is the actual
+pullback of planar area, weighted by curl. -/
 theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fintype ι]
     (o : Manifold.Orientation (𝓡∂ (1 + 1)) M (Fin (1 + 1)))
     (f : M → ℂ) (hf : ContMDiff (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) 2 f)
@@ -194,13 +177,7 @@ theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fi
     (hf.of_le (by norm_num)).comp (hinc.of_le (by simp))
   have he : boundaryRestriction φ = mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) g
       (manifoldOneForm P Q) := by
-    ext x v
-    rw [boundaryRestriction_apply, mpullback_apply, mpullback_apply]
-    have hd := mfderiv_comp x (hf.mdifferentiable (by norm_num) x)
-      (hinc.mdifferentiable (by simp) x)
-    exact congrArg (manifoldOneForm P Q (f x)) (funext fun i ↦ by
-      simpa only [g, Function.comp_def, ContinuousLinearMap.comp_apply] using
-        (congrArg (fun L ↦ L (v i)) hd).symm)
+    exact boundaryRestriction_mpullback (hf.mdifferentiable (by norm_num)) (manifoldOneForm P Q)
   have hφ := ContMDiff.isSmoothForm_mpullback_manifoldOneForm (n := 1) hf hU hrange hP hQ
   have hc : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin 2)) [⋀^Fin _]→L[ℝ] ℝ) φ) :=
     isCompact_univ.of_isClosed_subset
@@ -235,6 +212,8 @@ theorem integral_image_curl_eq_boundary_sum_curveIntegral {ι : Type*} [Fintype 
       (NormedSpace.fromTangentSpace (f x)).toContinuousLinearMap.comp
         (mfderiv (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f x))
     (hFo : ∀ x, Orientation.map (Fin (1 + 1)) (F x).toLinearEquiv
+      -- Fix the common Euclidean tangent model so orientation transport ignores base-point
+      -- wrappers.
       (show Orientation ℝ (EuclideanSpace ℝ (Fin (1 + 1))) (Fin (1 + 1)) from
         o.orientationAt x) = Complex.orientation)
     (P Q : ℂ → ℝ) (U : Set ℂ) (hU : IsOpen U) (hrange : range f ⊆ U)

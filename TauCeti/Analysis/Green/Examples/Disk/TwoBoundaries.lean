@@ -80,6 +80,25 @@ def twoDiskBoundaryOrientation : Manifold.Orientation (𝓡 1) (B ⊕ B) (Fin 1)
 private def componentInclusion (i : Bool) : B → B ⊕ B :=
   if i then Sum.inr else Sum.inl
 
+/-- The actual tangent map of either disjoint-sum inclusion, between the common model fibers. -/
+private def componentTangentEquiv (i : Bool) (x : B) :
+    TangentSpace (𝓡 1) x ≃L[ℝ] TangentSpace (𝓡 1) (componentInclusion i x) :=
+  ContinuousLinearEquiv.refl ℝ E₁
+
+private theorem componentTangentEquiv_eq_mfderiv (i : Bool) (x : B) :
+    (componentTangentEquiv i x).toContinuousLinearMap =
+      mfderiv (𝓡 1) (𝓡 1) (componentInclusion i) x := by
+  cases i
+  · -- The left sum inclusion has the identity derivative on its component's model fiber.
+    change ContinuousLinearMap.id ℝ E₁ = mfderiv (𝓡 1) (𝓡 1) (Sum.inl : B → B ⊕ B) x
+    exact mfderiv_sumInl.symm
+  · -- The right sum inclusion has the same identity model derivative.
+    change ContinuousLinearMap.id ℝ E₁ = mfderiv (𝓡 1) (𝓡 1) (Sum.inr : B → B ⊕ B) x
+    exact mfderiv_sumInr.symm
+
+private theorem componentTangentEquiv_apply (i : Bool) (x : B) (v : E₁) :
+    componentTangentEquiv i x v = v := rfl
+
 private theorem continuous_componentInclusion (i : Bool) : Continuous (componentInclusion i) := by
   cases i
   · exact continuous_inl
@@ -88,6 +107,7 @@ private theorem continuous_componentInclusion (i : Bool) : Continuous (component
 private theorem doubleBoundaryLift_orientationAt (l : Manifold.OrientationLift (𝓡 1) B (Fin 1))
     (i : Bool) (x : B) :
     (doubleBoundaryLift l).orientationAt (componentInclusion i x) =
+      -- Both summands use this same tangent model; only their base points differ.
       (show Orientation ℝ E₁ (Fin 1) from l.orientationAt x) := by
   rw [Manifold.OrientationLift.orientationAt_eq,
     Manifold.OrientationLift.chartOrientation_eq_ite,
@@ -99,9 +119,11 @@ private theorem doubleBoundaryLift_orientationAt (l : Manifold.OrientationLift (
 orientation. The disjoint-union charts identify the corresponding tangent model spaces. -/
 theorem orientationAt_twoDiskBoundaryOrientation (x : B ⊕ B) :
     twoDiskBoundaryOrientation.orientationAt x =
+      -- Both summands use this same tangent model; only their base points differ.
       (show Orientation ℝ E₁ (Fin 1) from
         (boundaryOrientation (Manifold.Orientation.closedBall (n := 2)
           Complex.basisOneI.orientation)).orientationAt (Sum.elim id id x)) := by
+  -- Unfold the chosen orientation lift before applying its summand orientation identity.
   change (Manifold.Orientation.mk
     (doubleBoundaryLift diskOrientationLift.boundary)).orientationAt x = _
   rw [← diskOrientationLift_mk, boundaryOrientation_mk,
@@ -138,6 +160,7 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     have hi (i : Bool) : (q i).extend '' Ioo (0 : ℝ) 1 =
         componentInclusion i '' {(sphereDiffeomorphBoundaryClosedBall (n := 1)
           (Circle.exp (-Real.pi)))}ᶜ := by
+      -- Expose composition of the mapped path extension before transporting its image.
       change (componentInclusion i ∘ unitDiskBoundaryLoop.extend) '' Ioo (0 : ℝ) 1 = _
       rw [image_comp, unitDiskBoundaryLoop_image]
     simp only [hi]
@@ -177,12 +200,27 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
         (Manifold.Orientation.closedBall (n := 2) Complex.basisOneI.orientation)
         (Manifold.Orientation.map_orientationAt_closedBall (n := 2)
           Complex.basisOneI.orientation) z hz
-      refine ⟨(show E₁ ≃L[ℝ] TangentSpace (𝓡 1) ((q i).extend (z 0)) from e), fun _ ↦ ?_⟩
+      let ecomp := e.trans (componentTangentEquiv i (unitDiskBoundaryLoop.extend (z 0)))
+      refine ⟨ecomp, fun _ ↦ ?_⟩
       constructor
-      · cases i
-        · convert! (hasMFDerivAt_inl (I := 𝓡 1)).comp z hd using 1
-        · convert! (hasMFDerivAt_inr (I := 𝓡 1)).comp z hd using 1
+      · have hinc : HasMFDerivAt (𝓡 1) (𝓡 1) (componentInclusion i)
+            (unitDiskBoundaryLoop.extend (z 0))
+            (componentTangentEquiv i
+              (unitDiskBoundaryLoop.extend (z 0))).toContinuousLinearMap := by
+          rw [componentTangentEquiv_eq_mfderiv]
+          cases i
+          · exact (hasMFDerivAt_inl (I := 𝓡 1)).mdifferentiableAt.hasMFDerivAt
+          · exact (hasMFDerivAt_inr (I := 𝓡 1)).mdifferentiableAt.hasMFDerivAt
+        -- Normalize the mapped path base point before comparing the composed tangent maps.
+        have hcomposition := hinc.comp z hd
+        convert! hcomposition using 1
       · rw [hqext, doubleBoundaryLift_orientationAt]
+        -- The inclusion tangent equivalence is the identity on the shared Euclidean model.
+        have hecomp : ecomp.toLinearEquiv = e.toLinearEquiv := by
+          apply LinearEquiv.ext
+          intro v
+          exact componentTangentEquiv_apply i _ (e v)
+        rw [hecomp]
         rw [← diskOrientationLift_mk, boundaryOrientation_mk,
           Manifold.Orientation.orientationAt_mk] at ho
         exact ho
@@ -201,7 +239,8 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     cases i <;> rfl
   refine ⟨hr.1, ?_, ?_⟩
   · convert! hr.2.1 false using 1
-  · change integralTopForm (Manifold.Orientation.mk (doubleBoundaryLift l))
+  · -- Unfold the chosen lift and folding map to match the finite-component integral theorem.
+    change integralTopForm (Manifold.Orientation.mk (doubleBoundaryLift l))
       (mpullback (𝓡 1) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)) = _
     rw [hr.2.2, Fintype.sum_bool, hmap, hmap, two_mul]
 

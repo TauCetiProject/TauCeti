@@ -52,8 +52,10 @@ def unitDiskBoundaryLoop : Path (S (Circle.exp (-π))) (S (Circle.exp (-π))) wh
     ((continuous_const.mul continuous_subtype_val).sub continuous_const)
   source' := by simp
   target' := by
+    -- Evaluate the path endpoint on its subtype parameter before reducing the endpoint angle.
     change S (Circle.exp (2 * π * 1 - π)) = S (Circle.exp (-π))
-    rw [mul_one, show 2 * π - π = π by ring, exp_pi_eq_exp_neg_pi]
+    have hangle : 2 * π - π = π := by ring
+    rw [mul_one, hangle, exp_pi_eq_exp_neg_pi]
 
 /-- On the parameter interval, the loop extension is the actual circle exponential followed
 by the sphere-to-boundary diffeomorphism. -/
@@ -81,9 +83,9 @@ theorem unitDiskBoundaryLoop_injOn : InjOn unitDiskBoundaryLoop.extend (Ioo (0 :
   have hu1 := hu.2
   rw [unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self ht),
     unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self hu)] at he
-  have h := Circle.exp_injOn_Ico (a := -π) (b := π) (by linarith)
-    (show 2 * π * t - π ∈ Ico (-π) π by constructor <;> nlinarith [pi_pos])
-    (show 2 * π * u - π ∈ Ico (-π) π by constructor <;> nlinarith [pi_pos])
+  have htangle : 2 * π * t - π ∈ Ico (-π) π := by constructor <;> nlinarith [pi_pos]
+  have huangle : 2 * π * u - π ∈ Ico (-π) π := by constructor <;> nlinarith [pi_pos]
+  have h := Circle.exp_injOn_Ico (a := -π) (b := π) (by linarith) htangle huangle
     ((S).injective he)
   nlinarith [pi_pos]
 
@@ -97,15 +99,16 @@ theorem unitDiskBoundaryLoop_image :
     have ht1 := ht.2
     rw [unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self ht)]
     intro he
-    have h := Circle.exp_injOn_Ico (a := -π) (b := π) (by linarith)
-      (show 2 * π * t - π ∈ Ico (-π) π by constructor <;> nlinarith [pi_pos])
-      (show -π ∈ Ico (-π) π by constructor <;> linarith [pi_pos])
+    have htangle : 2 * π * t - π ∈ Ico (-π) π := by constructor <;> nlinarith [pi_pos]
+    have hseam : -π ∈ Ico (-π) π := by constructor <;> linarith [pi_pos]
+    have h := Circle.exp_injOn_Ico (a := -π) (b := π) (by linarith) htangle hseam
       ((S).injective he)
     nlinarith [pi_pos]
   · intro hx
     have hx' : (S).symm x ≠ Circle.exp (-π) := by
       intro he
       apply hx
+      -- Expose the complement of the singleton seam after applying the diffeomorphism inverse.
       change x = S (Circle.exp (-π))
       rw [← (S).apply_symm_apply x, he]
     let θ := Complex.arg (((S).symm x : Circle) : ℂ)
@@ -114,6 +117,7 @@ theorem unitDiskBoundaryLoop_image :
       intro he
       apply hx'
       rw [← Circle.exp_arg ((S).symm x)]
+      -- The named angle is the principal argument of the inverse boundary point.
       change Circle.exp θ = Circle.exp (-π)
       rw [he, exp_pi_eq_exp_neg_pi])
     let t := (θ + π) / (2 * π)
@@ -125,6 +129,8 @@ theorem unitDiskBoundaryLoop_image :
     rw [unitDiskBoundaryLoop_extend (Ioo_subset_Icc_self ht)]
     have he : 2 * π * t - π = θ := by dsimp [t]; field_simp; ring
     rw [he]
+    -- Evaluate the path endpoint on its subtype parameter before reducing the endpoint angle.
+    -- Expose the principal argument and inverse diffeomorphism before using their inverse laws.
     change S (Circle.exp (Complex.arg ((S).symm x))) = x
     exact (congrArg (fun z : Circle ↦ S z) (Circle.exp_arg ((S).symm x))).trans
       ((S).apply_symm_apply x)
@@ -152,6 +158,7 @@ private theorem hasDerivAt_unitDiskBoundaryLoop_val {t : ℝ} (ht : t ∈ Ioo (0
   convert! h using 1
   rw [hv]
   simp only [Complex.real_smul]
+  -- Real scalar multiplication on ℂ is multiplication by the corresponding complex scalar.
   change (↑(2 * π : ℝ) * (Complex.I * Complex.exp (↑(2 * π * t - π) * Complex.I))) =
     Complex.exp (↑(2 * π * t - π) * Complex.I) * (↑(2 * π : ℝ) * Complex.I)
   ring
@@ -194,15 +201,18 @@ private theorem exists_unitDiskBoundaryLoop_tangentEquiv (z : EuclideanSpace ℝ
         (by simp : (1 : ℕ∞ω) ≠ 0)).contMDiff).mdifferentiableAt
       one_ne_zero
   let L : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ) (𝓡 1) q t
+  -- State the derivative on the fixed Euclidean boundary tangent model for composition.
   have hL : (show EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ from
       mfderiv (𝓡 1) 𝓘(ℝ, ℂ) A (q t)) (L 1) = v := by
     have hh := mfderiv_comp t hA hq
     rw [mfderiv_eq_fderiv] at hh
     have he := congrArg (fun T : ℝ →L[ℝ] ℂ ↦ T 1) hh
+    -- Evaluate the derivative chain rule at the real unit vector and expose the model tangent map.
     change fderiv ℝ (fun s ↦ (unitDiskBoundaryLoop.extend s).val.val) (z 0) 1 =
       (show EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ from
         mfderiv (𝓡 1) 𝓘(ℝ, ℂ) A (q t)) (L 1) at he
     rw [(hasDerivAt_unitDiskBoundaryLoop_val hz).hasFDerivAt.fderiv] at he
+    -- The real unit vector acts by unit scalar multiplication on the complex velocity.
     change (1 : ℝ) • v = _ at he
     rw [one_smul] at he
     exact he.symm
@@ -210,6 +220,7 @@ private theorem exists_unitDiskBoundaryLoop_tangentEquiv (z : EuclideanSpace ℝ
     intro he
     have hv := unitDiskBoundaryLoop_velocity_ne_zero t
     apply hv
+    -- The named velocity v is exactly the explicit circle velocity in the nonvanishing theorem.
     change v = 0
     rw [← hL, he, map_zero]
   have hLi : Function.Injective L := by
@@ -226,11 +237,14 @@ private theorem exists_unitDiskBoundaryLoop_tangentEquiv (z : EuclideanSpace ℝ
   let e : EuclideanSpace ℝ (Fin 1) ≃L[ℝ] TangentSpace (𝓡 1) (q t) := proj.trans L'
   refine ⟨e, ?_, ?_⟩
   · have hh := hq.hasMFDerivAt.comp z proj.hasFDerivAt.hasMFDerivAt
+    -- The source tangent model is the one-coordinate Euclidean space; cancel its identification.
     convert! hh using 1
-  · change (show EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ from
+  · -- Express the actual inclusion derivative in its fixed Euclidean tangent model.
+    change (show EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ from
       mfderiv (𝓡 1) 𝓘(ℝ, ℂ) A (q t)) (e _) = v
     rw [← hL]
     congr 1
+    -- Evaluate the composed continuous linear equivalence on the unique Euclidean basis vector.
     change L (proj ((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis 0)) = L 1
     congr 1
     simp [proj]

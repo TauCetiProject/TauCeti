@@ -65,6 +65,7 @@ theorem green_unitDisk (P Q : ℂ → ℝ) (hP : ContDiff ℝ 1 P) (hQ : ContDif
   let F : D → EuclideanSpace ℝ (Fin 2) ≃L[ℝ] ℂ :=
     fun x ↦ subtypeValClosedBallTangentEquiv (n := 2) x
   have hFo (x : D) : Orientation.map (Fin 2) (F x).toLinearEquiv
+      -- The orientation comparison uses the fixed Euclidean model of each disk tangent fiber.
       (show Orientation ℝ (EuclideanSpace ℝ (Fin 2)) (Fin 2) from
         o.orientationAt x) = Complex.orientation := by
     exact Manifold.Orientation.map_orientationAt_closedBall (n := 2) Complex.basisOneI.orientation x

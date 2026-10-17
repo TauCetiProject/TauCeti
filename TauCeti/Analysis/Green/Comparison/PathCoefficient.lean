@@ -33,8 +33,7 @@ theorem _root_.Path.mpullback_manifoldOneForm_coefficient {p r : N} (q : Path p 
     (L : E →L[ℝ] TangentSpace 𝓘(ℝ, E) (q.extend (z 0)))
     (hL : HasMFDerivAt 𝓘(ℝ, E) 𝓘(ℝ, E) (fun w : E ↦ q.extend (w 0)) z
       (L.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap))
-    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (q.extend (z 0)))
-    (hγ : DifferentiableAt ℝ (q.map hc).extend (z 0)) :
+    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (q.extend (z 0))) :
     mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q) (q.extend (z 0))
       (fun i ↦ L ((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis i)) =
         circulationFun P Q (q.map hc).extend (z 0) := by
@@ -45,14 +44,25 @@ theorem _root_.Path.mpullback_manifoldOneForm_coefficient {p r : N} (q : Path p 
   have hflat : HasFDerivAt (f ∘ R)
       ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (f (R z))).toContinuousLinearMap.comp
         ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (R z)).comp L)) z := by
+    -- The normed source and target tangent identifications cancel in the composed derivative.
     convert hleft.hasFDerivAt using 1
     rfl
+  let invProj := (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).symm
+  have hproj_inv (t : ℝ) : (invProj t) 0 = t := invProj.symm_apply_apply t
+  have he : (f ∘ R) ∘ invProj = γ.extend := by
+    funext t
+    simp only [Function.comp_apply, hmap, hproj_inv]
+  have hγ : DifferentiableAt ℝ γ.extend (z 0) := by
+    have hinv : invProj (z 0) = z := invProj.apply_symm_apply z
+    have hd : DifferentiableAt ℝ (f ∘ R) (invProj (z 0)) := hinv.symm ▸ hflat.differentiableAt
+    exact he ▸ hd.comp (z 0) invProj.differentiableAt
   have hright := hγ.hasDerivAt.hasFDerivAt.comp z
     (EuclideanSpace.proj (𝕜 := ℝ) 0).hasFDerivAt
-  have he : f ∘ R = γ.extend ∘ EuclideanSpace.proj 0 := by funext w; exact hmap w
-  rw [he] at hflat
+  have heq : f ∘ R = γ.extend ∘ EuclideanSpace.proj 0 := by funext w; exact hmap w
+  rw [heq] at hflat
   have hproj : EuclideanSpace.proj (𝕜 := ℝ) 0
       ((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis 0) = 1 := by
+    -- The projection evaluates the unique coordinate of the Euclidean basis vector.
     change ((EuclideanSpace.basisFun (Fin 1) ℝ).toBasis 0) 0 = 1
     simp [EuclideanSpace.basisFun_apply]
   have hv := congrArg (fun A : E →L[ℝ] ℂ ↦
