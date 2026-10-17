@@ -125,7 +125,6 @@ private theorem mulLeftCLE_symm_apply (b : ℝ) (hb : b ≠ 0) (x : ℝ) :
   rw [ContinuousLinearEquiv.apply_symm_apply, mulLeftCLE_apply]
   exact (mul_div_cancel₀ x hb).symm
 
-@[simp]
 private theorem det_mulLeftCLE (b : ℝ) (hb : b ≠ 0) :
     LinearMap.det (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b := by
   rw [show (mulLeftCLE b hb : ℝ →ₗ[ℝ] ℝ) = b • LinearMap.id by
