@@ -7,8 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
