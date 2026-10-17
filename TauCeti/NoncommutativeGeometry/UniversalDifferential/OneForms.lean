@@ -221,6 +221,14 @@ def d : A →ₗ[k] UniversalOneForms k A :=
 theorem d_apply (a : A) : d k A a = (derivation k A) (a : Unitization k A) := by
   rfl
 
+/-- Differentiation on the forced unitization ignores its scalar component. -/
+theorem d_snd (y : Unitization k A) : d k A y.snd = (derivation k A) y := by
+  induction y with
+  | inl_add_inr r a =>
+    rw [map_add, ← Unitization.algebraMap_eq_inl, BimoduleDerivation.map_algebraMap,
+      zero_add, ← d_apply]
+    simp [Unitization.algebraMap_eq_inl]
+
 /-- The universal differential is `1 ⊗ a - a ⊗ 1` inside the forced unitization. -/
 theorem coe_d (a : A) :
     ((d k A a : UniversalOneForms k A) : Unitization k A ⊗[k] Unitization k A) =
@@ -233,6 +241,14 @@ theorem d_mul (a b : A) :
       op (b : Unitization k A) • d k A a := by
   rw [d_apply, d_apply, d_apply, Unitization.inr_mul]
   exact (derivation k A).leibniz (a : Unitization k A) (b : Unitization k A)
+
+/-- Right multiplication of a tensor word is determined by the Leibniz rule on `A⁺`. -/
+theorem smul_right_smul_d (x : Unitization k A) (a : A) (y : Unitization k A) :
+    op y • (x • d k A a) = x • d k A ((a : Unitization k A) * y).snd -
+      (x * (a : Unitization k A)) • d k A y.snd := by
+  rw [d_snd, (derivation k A).leibniz, ← d_apply, ← d_snd, smul_add,
+    smul_comm x (op y), ← mul_smul]
+  abel
 
 section UniversalProperty
 
