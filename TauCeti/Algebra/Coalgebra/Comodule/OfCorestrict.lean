@@ -159,13 +159,13 @@ noncomputable def Hom.ofCorestrict (g : Hom R C M N) :
       apply hN
       have hcomm : ι.toLinearMap.lTensor N ∘ₗ TensorProduct.map g.toLinearMap LinearMap.id =
           TensorProduct.map g.toLinearMap LinearMap.id ∘ₗ ι.toLinearMap.lTensor M := by
-        rw [LinearMap.lTensor_comp_map, LinearMap.map_comp_lTensor]
-        simp
+        simpa only [LinearMap.lTensor] using
+          LinearMap.lTensor_comp_map_id_comm g.toLinearMap ι.toLinearMap
       simp only [LinearMap.comp_apply]
       rw [← LinearMap.comp_apply, hcomm, LinearMap.comp_apply]
       simp only [CoalgHom.toLinearMap_eq_ofClass]
-      rw [lTensor_coact_ofCorestrict, lTensor_coact_ofCorestrict, Hom.map_coact_apply]
-      rfl }
+      rw [lTensor_coact_ofCorestrict, lTensor_coact_ofCorestrict]
+      exact Hom.map_coact_apply g m }
 
 /-- The lifted morphism has the same underlying function. -/
 @[simp]

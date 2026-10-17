@@ -61,6 +61,8 @@ argument.
   closed subgroup exactly when its matrix coefficients are coinvariants.
 * `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule`: the scheme-theoretic invariant
   representation of a normal subgroup, over any field.
+* `TauCeti.HopfIdeal.IsNormal.weightSpaceOneLinearEquiv`: identifies the weight-space and
+  subcomodule presentations of the invariant vectors.
 * `TauCeti.HopfIdeal.IsNormal.coact_mem_range_lTensor_coinvariants`: its coaction has
   coefficients in the coordinate ring of the quotient group.
 
@@ -240,6 +242,42 @@ private theorem assoc_rTensor_coact_natural {Q : Type x} [AddCommMonoid Q] [Modu
   exact assoc_rTensor_lTensor_natural π (Comodule.coact (R := k) (C := A))
     (Comodule.coact (R := k) (C := A) v)
 
+omit [Comodule k A V] in
+private theorem assoc_flip_one_rTensor (Q : Type x) [AddCommMonoid Q] [Module k Q] [One Q]
+    (y : V ⊗[k] A) :
+    TensorProduct.assoc k V Q A (((TensorProduct.mk k V Q).flip 1).rTensor A y) =
+      (TensorProduct.mk k Q A 1).lTensor V y := by
+  induction y with
+  | tmul a b => simp
+  | add y z hy hz => simp [hy, hz]
+
+private theorem assoc_rTensor_coact_eq_lTensor_one_of_mem_range
+    {Q : Type x} [AddCommMonoid Q] [Module k Q] [One Q] (B : Submodule k A) (π : A →ₗ[k] Q)
+    {v : V} {x : V ⊗[k] B}
+    (hx : B.subtype.lTensor V x = Comodule.coact (R := k) (C := A) v)
+    (hleft : π.rTensor A ∘ₗ Coalgebra.comul ∘ₗ B.subtype =
+      TensorProduct.mk k Q A 1 ∘ₗ B.subtype) :
+    TensorProduct.assoc k V Q A
+        ((π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
+          (Comodule.coact (R := k) (C := A) v)) =
+      (TensorProduct.mk k Q A 1).lTensor V (Comodule.coact (R := k) (C := A) v) := by
+  calc
+    _ = (π.rTensor A).lTensor V
+        (Coalgebra.comul.lTensor V (Comodule.coact (R := k) (C := A) v)) :=
+      assoc_rTensor_coact_natural π v
+    _ = (π.rTensor A ∘ₗ Coalgebra.comul).lTensor V
+        (Comodule.coact (R := k) (C := A) v) := by
+      rw [LinearMap.lTensor_comp_apply]
+    _ = (π.rTensor A ∘ₗ Coalgebra.comul).lTensor V (B.subtype.lTensor V x) := by rw [hx]
+    _ = ((π.rTensor A ∘ₗ Coalgebra.comul) ∘ₗ B.subtype).lTensor V x := by
+      exact (LinearMap.lTensor_comp_apply V (f := B.subtype)
+        (g := π.rTensor A ∘ₗ Coalgebra.comul) x).symm
+    _ = (TensorProduct.mk k Q A 1 ∘ₗ B.subtype).lTensor V x := by
+      rw [LinearMap.comp_assoc, hleft]
+    _ = (TensorProduct.mk k Q A 1).lTensor V (B.subtype.lTensor V x) := by
+      rw [LinearMap.lTensor_comp_apply]
+    _ = _ := by rw [hx]
+
 /-- **Invariant vectors have invariant matrix coefficients.** Over a field, a vector is fixed by
 the closed subgroup cut out by `I` exactly when its coaction has coefficients in the coinvariants
 of `I`, the functions invariant under right translation by that subgroup. -/
@@ -285,15 +323,11 @@ theorem mem_weightSpace_one_iff_coact_mem_range {v : V} :
     rw [hB]
     exact ⟨y, by rw [← hy, TensorProduct.AlgebraTensorModule.coe_lTensor]⟩
   · rintro ⟨x, hx⟩
-    -- On the coinvariants, `π` is the counit followed by the unit.
-    have hπ : π ∘ₗ B.subtype =
-        Algebra.linearMap k Q ∘ₗ Coalgebra.counit ∘ₗ B.subtype := by
-      ext ⟨a, ha⟩
-      simpa [π] using mk_eq_algebraMap_counit_of_mem_coinvariants ha
     calc
       π.lTensor V (Comodule.coact (R := k) (C := A) v) =
           (π ∘ₗ B.subtype).lTensor V x := by rw [← hx, LinearMap.lTensor_comp_apply]
-      _ = (Algebra.linearMap k Q ∘ₗ Coalgebra.counit ∘ₗ B.subtype).lTensor V x := by rw [hπ]
+      _ = (Algebra.linearMap k Q ∘ₗ Coalgebra.counit ∘ₗ B.subtype).lTensor V x := by
+        rw [mkₐ_toLinearMap_comp_subtype_coinvariants]
       _ = (Algebra.linearMap k Q).lTensor V
           (Coalgebra.counit.lTensor V (B.subtype.lTensor V x)) := by
             rw [LinearMap.lTensor_comp_apply, LinearMap.lTensor_comp_apply]
@@ -326,40 +360,17 @@ theorem IsNormal.coact_mem_range_rTensor_weightSpace_one (hI : I.IsNormal) {v : 
       (H := _root_.CommHopfAlgCat.of k A) (I := I) hI ((Subalgebra.mem_toSubmodule _).1 hb)
   -- Restricting the matrix coefficients of `v` to the subgroup gives the trivial coaction.
   have hF : F.rTensor A (Comodule.coact (R := k) (C := A) v) = 0 := by
-    have hone (y : V ⊗[k] A) :
-        TensorProduct.assoc k V Q A (((TensorProduct.mk k V Q).flip 1).rTensor A y) =
-          (TensorProduct.mk k Q A 1).lTensor V y := by
-      induction y with
-      | tmul a b => simp
-      | add y z hy hz => simp [hy, hz]
-    have hcoact : TensorProduct.assoc k V Q A
-        ((π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
-          (Comodule.coact (R := k) (C := A) v)) =
-        (TensorProduct.mk k Q A 1).lTensor V (Comodule.coact (R := k) (C := A) v) := by
-      calc
-        _ = (π.rTensor A).lTensor V
-            (Coalgebra.comul.lTensor V (Comodule.coact (R := k) (C := A) v)) :=
-          assoc_rTensor_coact_natural π v
-        _ = (π.rTensor A ∘ₗ Coalgebra.comul).lTensor V
-            (Comodule.coact (R := k) (C := A) v) := by
-          rw [LinearMap.lTensor_comp_apply]
-        _ = (π.rTensor A ∘ₗ Coalgebra.comul).lTensor V (B.subtype.lTensor V x) := by rw [hx]
-        _ = ((π.rTensor A ∘ₗ Coalgebra.comul) ∘ₗ B.subtype).lTensor V x := by
-          exact (LinearMap.lTensor_comp_apply V (f := B.subtype)
-            (g := π.rTensor A ∘ₗ Coalgebra.comul) x).symm
-        _ = (TensorProduct.mk k Q A 1 ∘ₗ B.subtype).lTensor V x := by
-          rw [LinearMap.comp_assoc, hleft]
-        _ = (TensorProduct.mk k Q A 1).lTensor V
-            (B.subtype.lTensor V x) := by rw [LinearMap.lTensor_comp_apply]
-        _ = _ := by rw [hx]
     have hsub : F.rTensor A (Comodule.coact (R := k) (C := A) v) =
         (π.lTensor V ∘ₗ Comodule.coact (R := k) (C := A)).rTensor A
             (Comodule.coact (R := k) (C := A) v) -
           ((TensorProduct.mk k V Q).flip 1).rTensor A (Comodule.coact (R := k) (C := A) v) := by
       simp only [F, LinearMap.rTensor_sub]
+      -- Subtraction of linear maps evaluates pointwise by definition.
       rfl
     apply (TensorProduct.assoc k V Q A).injective
-    rw [hsub, map_sub, hcoact, hone, sub_self, map_zero]
+    rw [hsub, map_sub,
+      assoc_rTensor_coact_eq_lTensor_one_of_mem_range B π hx hleft,
+      assoc_flip_one_rTensor Q, sub_self, map_zero]
   have hexact := LinearMap.exact_iff.mp
     (Module.Flat.rTensor_exact A (LinearMap.exact_subtype_ker_map F))
   rw [hW, ← hexact]
@@ -378,6 +389,19 @@ noncomputable def IsNormal.weightSpaceOneSubcomodule (hI : I.IsNormal) : Subcomo
 theorem IsNormal.weightSpaceOneSubcomodule_toSubmodule (hI : I.IsNormal) :
     (hI.weightSpaceOneSubcomodule V).toSubmodule = I.weightSpace V 1 :=
   (rfl)
+
+/-- The weight-space and subcomodule presentations of normal-subgroup invariants are linearly
+equivalent. -/
+noncomputable def IsNormal.weightSpaceOneLinearEquiv (hI : I.IsNormal) :
+    I.weightSpace V 1 ≃ₗ[k] hI.weightSpaceOneSubcomodule V :=
+  LinearEquiv.ofEq _ _ hI.weightSpaceOneSubcomodule_toSubmodule.symm
+
+/-- The invariant-vector equivalence preserves the underlying ambient vector. -/
+@[simp]
+theorem IsNormal.coe_weightSpaceOneLinearEquiv_apply (hI : I.IsNormal)
+    (v : I.weightSpace V 1) :
+    (hI.weightSpaceOneLinearEquiv v : V) = v := by
+  rfl
 
 /-- An ambient vector belongs to the normal-subgroup invariant representation precisely when
 its coaction restricts to the trivial coaction on the subgroup. -/
@@ -406,16 +430,16 @@ theorem IsNormal.coact_mem_range_lTensor_coinvariants (hI : I.IsNormal)
       hI.coact_mem_range_rTensor_weightSpace_one w.2⟩
   obtain ⟨z, hz⟩ := hrange
   let W := hI.weightSpaceOneSubcomodule V
-  let e : I.weightSpace V 1 →ₗ[k] W :=
-    { toFun x := ⟨x, x.2⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  refine ⟨e.rTensor _ z, ?_⟩
+  let e := hI.weightSpaceOneLinearEquiv (V := V)
+  have he : (SMulMemClass.subtype W : W →ₗ[k] V) ∘ₗ e.toLinearMap =
+      (I.weightSpace V 1).subtype := by
+    ext x
+    exact hI.coe_weightSpaceOneLinearEquiv_apply x
+  refine ⟨e.toLinearMap.rTensor _ z, ?_⟩
   apply Module.Flat.rTensor_preserves_injective_linearMap (SMulMemClass.subtype W)
     Subtype.val_injective
   rw [Subcomodule.subtype_rTensor_coact, ← hz, ← LinearMap.comp_apply (LinearMap.lTensor _ _),
-    LinearMap.lTensor_comp_rTensor, ← LinearMap.comp_apply, LinearMap.rTensor_comp_map]
-  rfl
+    LinearMap.lTensor_comp_rTensor, ← LinearMap.comp_apply, LinearMap.rTensor_comp_map, he]
 
 /-- Every algebra-valued subgroup point fixes the scalar extension of an invariant vector. -/
 theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_weightSpaceOneSubcomodule

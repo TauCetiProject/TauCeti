@@ -54,6 +54,8 @@ This file sets up that candidate and proves its Hopf-algebraic closure propertie
   `TauCeti.HopfIdeal.mem_coinvariants_iff_forall_mul`: the functor-of-points characterization.
 * `TauCeti.HopfIdeal.sub_algebraMap_counit_mem_of_mem_coinvariants`: coinvariants are constant on
   `N`.
+* `TauCeti.HopfIdeal.mkₐ_toLinearMap_comp_subtype_coinvariants`: on coinvariants, the quotient
+  map is the counit followed by the scalar inclusion.
 * `TauCeti.HopfIdeal.coinvariants_mono`, `TauCeti.HopfIdeal.coinvariants_bot` and
   `TauCeti.HopfIdeal.coinvariants_augmentation`: dependence on the Hopf ideal.
 * `TauCeti.HopfIdeal.comul_mem_range_lTensor_of_mem_coinvariants`: the left coideal property.
@@ -138,6 +140,15 @@ theorem mk_eq_algebraMap_counit_of_mem_coinvariants (hh : h ∈ I.coinvariants) 
       algebraMap R (H ⧸ I.toIdeal) (Coalgebra.counit (R := R) h) := by
     simp [e, Algebra.smul_def]
   rw [← hlhs, mem_coinvariants_iff.mp hh, hrhs]
+
+/-- On the coinvariants, the quotient map is the counit followed by the scalar inclusion. -/
+theorem mkₐ_toLinearMap_comp_subtype_coinvariants :
+    (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap ∘ₗ
+        (Subalgebra.toSubmodule I.coinvariants).subtype =
+      Algebra.linearMap R (H ⧸ I.toIdeal) ∘ₗ Coalgebra.counit ∘ₗ
+        (Subalgebra.toSubmodule I.coinvariants).subtype := by
+  ext x
+  exact mk_eq_algebraMap_counit_of_mem_coinvariants x.2
 
 /-- Enlarging the Hopf ideal shrinks the subgroup it cuts out, so enlarges the coinvariants. -/
 theorem coinvariants_mono {I J : HopfIdeal R H} (hIJ : I ≤ J) :
@@ -342,15 +353,11 @@ theorem IsNormal.rTensor_mkₐ_comul_of_mem_coinvariants [Module.Flat R H] (hI :
   let B := Subalgebra.toSubmodule I.coinvariants
   let π : H →ₗ[R] H ⧸ I.toIdeal := (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
   obtain ⟨y, hy⟩ := hI.comul_mem_range_rTensor_of_mem_coinvariants hh
-  have hπ : π ∘ₗ B.subtype =
-      Algebra.linearMap R (H ⧸ I.toIdeal) ∘ₗ Coalgebra.counit ∘ₗ B.subtype := by
-    ext ⟨x, hx⟩
-    simpa [π] using mk_eq_algebraMap_counit_of_mem_coinvariants hx
   calc
     π.rTensor H (Coalgebra.comul (R := R) h) =
         (π ∘ₗ B.subtype).rTensor H y := by rw [← hy, LinearMap.rTensor_comp_apply]
     _ = (Algebra.linearMap R (H ⧸ I.toIdeal) ∘ₗ Coalgebra.counit ∘ₗ B.subtype).rTensor H y :=
-      by rw [hπ]
+      by rw [mkₐ_toLinearMap_comp_subtype_coinvariants]
     _ = (Algebra.linearMap R (H ⧸ I.toIdeal)).rTensor H
         (Coalgebra.counit.rTensor H (B.subtype.rTensor H y)) := by
       rw [LinearMap.rTensor_comp_apply, LinearMap.rTensor_comp_apply]

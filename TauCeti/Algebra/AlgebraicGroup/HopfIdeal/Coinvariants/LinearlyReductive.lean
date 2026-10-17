@@ -94,14 +94,13 @@ private theorem coact_mem_range_lTensor_coinvariantsCoalgHom (hI : I.IsNormal)
     Comodule.coact (R := k) (C := H) w ∈
       LinearMap.range ((coinvariantsCoalgHom hI).toLinearMap.lTensor _) := by
   obtain ⟨z, hz⟩ := hI.coact_mem_range_lTensor_coinvariants w
-  let e : Subalgebra.toSubmodule I.coinvariants →ₗ[k] CommHopfAlgCat.coinvariants hI :=
-    { toFun x := ⟨x, x.2⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
+  let e : Subalgebra.toSubmodule I.coinvariants ≃ₗ[k] CommHopfAlgCat.coinvariants hI :=
+    LinearEquiv.refl k _
   have he : (coinvariantsCoalgHom hI).toLinearMap ∘ₗ e =
-      (Subalgebra.toSubmodule I.coinvariants).subtype :=
-    LinearMap.ext fun _ ↦ rfl
-  refine ⟨e.lTensor _ z, ?_⟩
+      (Subalgebra.toSubmodule I.coinvariants).subtype := by
+    -- Both maps are the subtype inclusion of the same coinvariant carrier.
+    rfl
+  refine ⟨e.toLinearMap.lTensor _ z, ?_⟩
   rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, he, hz]
 
 /-- The representation of `G ⧸ N` on the `N`-invariant vectors of `V`. -/
@@ -131,20 +130,12 @@ private noncomputable def coinvariantsComoduleHom (hI : I.IsNormal) {V' : Type w
       (hI.weightSpaceOneSubcomodule V') :=
   Comodule.Hom.ofCorestrict _ _ _ _ _ _ _ <|
     (f.comp (Subcomodule.subtype _)).codRestrict _ fun w ↦ by
-      have hcomm : TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap ∘ₗ
-          TensorProduct.map f.toLinearMap LinearMap.id =
-            TensorProduct.map f.toLinearMap LinearMap.id ∘ₗ
-              TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-        change (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.lTensor _ ∘ₗ
-            TensorProduct.map f.toLinearMap LinearMap.id =
-          TensorProduct.map f.toLinearMap LinearMap.id ∘ₗ
-            (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.lTensor _
-        rw [LinearMap.lTensor_comp_map, LinearMap.map_comp_lTensor]
-        simp
       rw [HopfIdeal.IsNormal.mem_weightSpaceOneSubcomodule, Comodule.Hom.comp_apply,
-        Subcomodule.subtype_apply, ← Comodule.Hom.map_coact_apply, ← LinearMap.comp_apply, hcomm,
-        LinearMap.comp_apply, hI.mem_weightSpaceOneSubcomodule.1 w.2, TensorProduct.map_tmul,
-        LinearMap.id_apply, Comodule.Hom.coe_toLinearMap]
+        Subcomodule.subtype_apply, ← Comodule.Hom.map_coact_apply, ← LinearMap.comp_apply,
+        LinearMap.lTensor_comp_map_id_comm f.toLinearMap
+          (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap,
+        LinearMap.comp_apply, hI.mem_weightSpaceOneSubcomodule.1 w.2,
+        TensorProduct.map_tmul, LinearMap.id_apply, Comodule.Hom.coe_toLinearMap]
 
 /-- The restricted morphism acts as the original one on underlying vectors. -/
 private theorem coe_coinvariantsComoduleHom_apply (hI : I.IsNormal) {V' : Type w}
@@ -172,10 +163,15 @@ theorem linearlyReductiveCommHopfAlgProperty.of_quotient_of_coinvariants
         v ∈ (letI : Comodule k (H ⧸ I.toIdeal) V := Comodule.Corestrict q;
           Comodule.fixedSubcomodule k (H ⧸ I.toIdeal) V) := by
     let _ : Comodule k (H ⧸ I.toIdeal) V := Comodule.Corestrict q
+    have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
+      ext x
+      -- Expose the two bundled quotient maps before applying their evaluation lemmas.
+      change (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom x =
+        (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap x
+      rw [BialgHom.toCoalgHom_apply, Bialgebra.Quotient.mkBialgHom_apply,
+        AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
     rw [HopfIdeal.IsNormal.mem_weightSpaceOneSubcomodule, Comodule.mem_fixedSubcomodule,
-      Comodule.corestrict_coact_apply]
-    -- `q` is the quotient map `H → H ⧸ I`, bundled as a coalgebra morphism.
-    rfl
+      Comodule.corestrict_coact_apply, hq]
   have hsurj : Function.Surjective (coinvariantsComoduleHom M hI f.hom) := by
     rintro ⟨y, hy⟩
     let _ : Comodule k (H ⧸ I.toIdeal) M := Comodule.Corestrict q
