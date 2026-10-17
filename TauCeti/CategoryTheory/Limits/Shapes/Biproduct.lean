@@ -29,7 +29,9 @@ biproduct comparison.
 In a category with zero morphisms, a zero object and binary biproducts give all finite biproducts
 (`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a biproduct indexed by
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
-inductive step for computing additive invariants of finite biproducts. An additive functor which
+inductive step for computing additive invariants of finite biproducts. Similarly,
+`TauCeti.biproductSumIso` splits a sum-indexed biproduct into its two indexed parts.
+An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
@@ -159,6 +161,45 @@ theorem hasFiniteBiproducts_of_hasBinaryBiproducts [HasZeroObject C] [HasBinaryB
         · apply biproduct.hom_ext'
           intro j
           simpa [b] using hm (some j)
+
+/-- A biproduct indexed by a sum type is the binary biproduct of the two indexed parts. -/
+noncomputable def biproductSumIso {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.rec f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] : (⨁ Sum.rec f g) ≅ (⨁ f) ⊞ (⨁ g) where
+  hom := biprod.lift (biproduct.lift fun j ↦ biproduct.π _ (Sum.inl j))
+    (biproduct.lift fun k ↦ biproduct.π _ (Sum.inr k))
+  inv := biproduct.lift fun i ↦ match i with
+    | Sum.inl j => biprod.fst ≫ biproduct.π f j
+    | Sum.inr k => biprod.snd ≫ biproduct.π g k
+  hom_inv_id := by
+    apply biproduct.hom_ext
+    rintro (j | k) <;> simp
+  inv_hom_id := by
+    apply biprod.hom_ext
+    · apply biproduct.hom_ext
+      intro j
+      simp
+    · apply biproduct.hom_ext
+      intro k
+      simp
+
+/-- The sum-indexed comparison preserves the projections onto the first indexed part. -/
+@[reassoc (attr := simp)]
+theorem biproductSumIso_hom_fst_π {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.rec f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] (j : J) :
+    (biproductSumIso f g).hom ≫ biprod.fst ≫ biproduct.π f j =
+      biproduct.π (Sum.rec f g) (Sum.inl j) := by
+  simp [biproductSumIso]
+
+/-- The sum-indexed comparison preserves the projections onto the second indexed part. -/
+@[reassoc (attr := simp)]
+theorem biproductSumIso_hom_snd_π {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
+    [HasBiproduct f] [HasBiproduct g] [HasBiproduct (Sum.rec f g)]
+    [HasBinaryBiproduct (⨁ f) (⨁ g)] (k : K) :
+    (biproductSumIso f g).hom ≫ biprod.snd ≫ biproduct.π g k =
+      biproduct.π (Sum.rec f g) (Sum.inr k) := by
+  simp [biproductSumIso]
 
 variable {J : Type w} (f : Option J → C) [HasBiproduct f]
   [HasBiproduct fun j => f (some j)] [HasBinaryBiproduct (f none) (⨁ fun j => f (some j))]

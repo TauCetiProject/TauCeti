@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Simple
+public import Mathlib.CategoryTheory.Preadditive.HomOrthogonal
+public import Mathlib.CategoryTheory.Preadditive.Schur
 public import Mathlib.CategoryTheory.Skeletal
 
 /-!
@@ -139,6 +140,17 @@ theorem equiv_apply_classOf (e : C ≌ D) (X : C) [Simple X] :
     (classOfReprIso _).symm⟩
 
 end Equivalence
+
+/-- Distinct isomorphism classes of simple objects have no nonzero morphisms between their
+representatives. -/
+theorem homOrthogonal_repr {D : Type u₁} [Category.{v₁} D] [Preadditive D] [HasKernels D] :
+    HomOrthogonal (repr (C := D)) := by
+  intro S T h
+  apply subsingleton_of_forall_eq (0 : S.repr ⟶ T.repr)
+  intro f
+  by_contra hf
+  have := isIso_of_hom_simple hf
+  exact h ((eq_iff_nonempty_iso S T).2 ⟨asIso f⟩)
 
 end SimpleClasses
 
