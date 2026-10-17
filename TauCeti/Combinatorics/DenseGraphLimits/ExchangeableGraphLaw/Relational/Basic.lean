@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Basic
 public import TauCeti.Combinatorics.SimpleGraph.RelationalConfiguration
-public import TauCeti.Probability.Exchangeability.RelationalLaw
+public import TauCeti.Probability.Exchangeability.RelationalLaw.Basic
 -- Non-public: `measure_ext_of_map_restrict_val`, the window determination of laws on `ℕ`.
 import TauCeti.MeasureTheory.Measure.RelationalConfiguration
 
