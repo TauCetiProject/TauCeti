@@ -58,13 +58,6 @@ theorem exists_isLeftAlmostSplit_translate (f : P₁ →ₗ[A] P₀)
     (range f).shortExact_quotientShortComplex.exists_extClass_eq _ α
   have hleft : IsLeftAlmostSplit i :=
     hS.isLeftAlmostSplit_f_iff_extClass.mpr ⟨heq ▸ hα, by simpa only [heq] using hkill⟩
-  -- Finite-dimensionality of the transpose passes to its scalar dual and then
-  -- gives finite generation over A. This uses the inherited dual action on T.
-  have : Module.Finite k (AuslanderReitenTranspose f) := Module.Finite.trans Aᵐᵒᵖ _
-  have : Module.Finite k (AuslanderReitenTranslate k f) :=
-    inferInstanceAs (Module.Finite k (Module.Dual k (AuslanderReitenTranspose f)))
-  have : Module.Finite A (AuslanderReitenTranslate k f) :=
-    Module.Finite.of_restrictScalars_finite k A _
   have : Module.Finite A E := Module.Finite.of_exact (f := i.hom) (g := p.hom)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hS.exact)
     hS.moduleCat_surjective_g

@@ -55,10 +55,6 @@ private theorem finite_ext_translate (f : P₁ →ₗ[A] P₀) :
   let := Module.restrictScalars k A P₁
   have := IsScalarTower.restrictScalars k A P₁
   let := Module.Finite.trans (R := k) A P₁
-  have : Module.Finite k (AuslanderReitenTranspose f) := Module.Finite.trans Aᵐᵒᵖ _
-  have : FiniteDimensional k T :=
-    inferInstanceAs (Module.Finite k (Module.Dual k (AuslanderReitenTranspose f)))
-  have : Module.Finite A T := Module.Finite.of_restrictScalars_finite k A T
   -- Bundle the inherited dual action before using ModuleCat's algebra scalars.
   -- Its compHom scalar instance must also be selected for the unbundled SMul class.
   let : Module A T := T.isModule

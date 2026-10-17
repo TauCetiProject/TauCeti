@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+public import TauCeti.Algebra.Homology.Ext.Presentation
 import TauCeti.CategoryTheory.Exact.Abelian
-import TauCeti.CategoryTheory.Exact.BaseChange
 
 /-!
 # Realizing Ext¹ by short exact sequences
@@ -16,7 +15,7 @@ Given a short exact sequence with projective middle term, every class in `Ext¹`
 its final term is represented by a short exact sequence with the prescribed endpoints.
 The middle term is obtained by pushing out the given presentation.
 
-This uses Mathlib's `Ext.contravariant_sequence_exact₃` to express a class as a boundary,
+This uses `TauCeti.homBoundary_surjective` to express a class as a boundary,
 and `ShortComplex.ShortExact.extClass_naturality` to identify the pushout class. In
 particular, the result can turn extension classes with annihilation properties into
 sequences with lifting properties.
@@ -43,21 +42,15 @@ theorem exists_extClass_eq (hS : S.ShortExact) [Projective S.X₂]
     (Y : C) (α : Ext.{w} S.X₃ Y 1) :
     ∃ (E : C) (i : Y ⟶ E) (p : E ⟶ S.X₃) (h : i ≫ p = 0)
       (hT : (ShortComplex.mk i p h).ShortExact), hT.extClass = α := by
-  obtain ⟨x, hx⟩ := Ext.contravariant_sequence_exact₃ hS Y α (n₀ := 0)
-    (Ext.eq_zero_of_projective _) rfl
-  obtain ⟨f, rfl⟩ := (Ext.mk₀_bijective S.X₁ Y).surjective x
+  obtain ⟨f, rfl⟩ := homBoundary_surjective ℤ hS Y α
   let sq := IsPushout.of_hasPushout S.f f
-  have hT : (cobaseChange S sq).ShortExact :=
-    (ExactStructure.abelian_conflation _).mp
-      ((ExactStructure.abelian C).conflation_cobaseChange
-        ((ExactStructure.abelian_conflation S).mpr hS) sq)
-  rw [cobaseChange_def] at hT
+  have hT := shortExact_cobaseChange hS sq
   refine ⟨pushout S.f f, pushout.inr S.f f, cobaseChangeπ S sq, by simp, hT, ?_⟩
   let φ : S ⟶ ShortComplex.mk (pushout.inr S.f f) (cobaseChangeπ S sq) (by simp) :=
     ⟨f, pushout.inl S.f f, 𝟙 S.X₃, pushout.condition.symm, by simp⟩
   calc
     hT.extClass = hS.extClass.comp (Ext.mk₀ f) (add_zero 1) := by
       simpa only [φ, Ext.mk₀_id_comp] using (hS.extClass_naturality hT φ).symm
-    _ = α := hx
+    _ = homBoundary ℤ hS Y f := (homBoundary_apply ℤ hS Y f).symm
 
 end CategoryTheory.ShortComplex.ShortExact
