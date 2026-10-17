@@ -38,6 +38,8 @@ using Mathlib's `LipschitzOnWith.extend_real`.
 * `TauCeti.exists_isLipschitzChartWith_of_lipschitzOnWith`: extension of a local Lipschitz graph
   to a global graph defining the same boundary chart.
 * `Set.IsLipschitzChartWith.mono_radii`: restriction of a chart to a smaller cylinder.
+* `Set.IsLipschitzChartWith.exists_mono_radii_two_mul_lt`: restriction to a cylinder whose
+  normal radius exceeds twice the graph's tangential rise.
 * `Set.IsLipschitzChartWith.smul`: positive dilation of a chart, with explicit coordinates
   `TauCeti.dilateConj`, graph and radii.
 * `Set.IsLipschitzDomainWith.smul`: positive dilations preserve Lipschitz domains and constants.
@@ -78,6 +80,13 @@ omit [NormedSpace ℝ E] in
 theorem isOpen_normalCylinder (a b : ℝ) : IsOpen (normalCylinder (E := E) a b) := by
   exact (isOpen_Ioo.preimage (WithLp.prod_continuous_ofLp 2 ℝ E).fst).inter
     (isOpen_ball.preimage (WithLp.prod_continuous_ofLp 2 ℝ E).snd)
+
+omit [NormedSpace ℝ E] in
+/-- A normal product cylinder is bounded. -/
+theorem isBounded_normalCylinder (a b : ℝ) :
+    Bornology.IsBounded (normalCylinder (E := E) a b) :=
+  (WithLp.prod_antilipschitzWith_ofLp 2 ℝ E).isBounded_preimage
+    ((isBounded_Ioo (-a) a).prod isBounded_ball)
 
 omit [NormedSpace ℝ E] in
 /-- Shrinking either radius shrinks the normal product cylinder. -/
@@ -187,6 +196,22 @@ theorem IsLipschitzChartWith.mono_radii (h : Omega.IsLipschitzChartWith L e φ a
     {a' b' : ℝ} (ha' : 0 < a') (hb' : 0 < b') (haa' : a' ≤ a) (hbb' : b' ≤ b) :
     Omega.IsLipschitzChartWith L e φ a' b' :=
   ⟨ha', hb', h.2.2.1, h.2.2.2.1, fun _ hz ↦ h.symm_mem_iff (normalCylinder_mono haa' hbb' hz)⟩
+
+/-- **Room for reflection across the graph.** Shrinking the tangential radius of a chart gives a
+chart with the same coordinates, graph and normal radius whose radii satisfy `2 * L * b' < a`.
+The shortened cylinder `normalCylinder (a - 2 * L * b') b'` then still contains the centre, and
+the reflection `t ↦ 2 * φ y - t` across the graph keeps it inside `normalCylinder a b'`. -/
+theorem IsLipschitzChartWith.exists_mono_radii_two_mul_lt
+    (h : Omega.IsLipschitzChartWith L e φ a b) :
+    ∃ b' ≤ b, Omega.IsLipschitzChartWith L e φ a b' ∧ 2 * L * b' < a := by
+  have hL : (0 : ℝ) < 2 * L + 1 := by positivity
+  refine ⟨min b (a / (2 * L + 1)), min_le_left _ _,
+    h.mono_radii h.1 (lt_min h.2.1 (div_pos h.1 hL)) le_rfl (min_le_left _ _), ?_⟩
+  calc 2 * L * min b (a / (2 * L + 1)) ≤ 2 * L * (a / (2 * L + 1)) := by
+        gcongr; exact min_le_right _ _
+    _ < a := by
+        rw [mul_div_assoc', div_lt_iff₀ hL]
+        nlinarith [h.1]
 
 /-- The preimage of the chart cylinder is a neighbourhood of the centre of the chart. -/
 theorem IsLipschitzChartWith.preimage_normalCylinder_mem_nhds
