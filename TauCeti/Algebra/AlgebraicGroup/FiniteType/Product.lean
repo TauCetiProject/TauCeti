@@ -26,6 +26,12 @@ morphisms in `FiniteTypeCommHopfAlgCat`. The points of the finite-type product a
 with pairs of points by the existing product-points equivalence from
 `TauCeti.Algebra.AlgebraicGroup.Product`.
 
+The coordinate inclusions are injective over any commutative base ring, since the counit
+projections retract them. Over a field,
+`HopfIdeal.eq_augmentation_of_comap_includeLeft_of_comap_includeRight` shows that a closed
+subgroup of a product is trivial when both projection images are trivial, by identifying its
+Hopf ideal with the augmentation ideal.
+
 Affine group schemes of finite type remain finite type under products.
 -/
 
