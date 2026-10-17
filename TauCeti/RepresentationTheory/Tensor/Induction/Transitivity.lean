@@ -84,7 +84,7 @@ noncomputable def tensorInducedTransitivity (t : (V.subgroupOf U).LeftTransversa
       (ρ.comp (subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)))).Equiv
       (V.tensorInducedRepresentation (compositeLeftTransversal hVU s t) ρ) :=
   Representation.Equiv.mk (tensorInducedTransitivityLinearEquiv hVU s) (fun g ↦ by
-    apply PiTensorProduct.ext_tprod_tprod
+    apply PiTensorProduct.ext_sigma_tprod
     intro m
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
       tensorInducedRepresentation_apply_tprod, tensorInducedTransitivityLinearEquiv_tprod]

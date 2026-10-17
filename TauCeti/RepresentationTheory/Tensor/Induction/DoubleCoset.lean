@@ -21,9 +21,10 @@ Let `U` and `V` be subgroups of `G`.  The `U`-cosets indexing tensor induction s
 
 The equivalence here is oriented from the iterated tensor product to the original tensor power,
 in parallel with `Subgroup.tensorInducedTransitivityLinearEquiv`.  Its inverse is the actual
-double-coset decomposition.  The construction is independent of any representation or chosen
-transversal; those enter later when each orbit factor is identified with tensor induction of the
-conjugated coefficient representation.
+double-coset decomposition.  The construction depends on the chosen double-coset representatives
+`r`, which index the orbit factors, but needs no further coset transversal and no representation;
+those enter later when each orbit factor is identified with tensor induction of the conjugated
+coefficient representation.
 
 ## Main definitions
 

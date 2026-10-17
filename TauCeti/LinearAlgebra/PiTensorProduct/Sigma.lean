@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.PiTensorProduct.Assoc
+public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 import Mathlib.Logic.Equiv.Sum
+import Mathlib.Data.Fintype.Option
 import Mathlib.LinearAlgebra.TensorProduct.Map
 
 /-!
@@ -14,7 +15,8 @@ import Mathlib.LinearAlgebra.TensorProduct.Map
 
 A tensor power indexed by a finite disjoint union can be regrouped as an outer tensor product
 whose factors are the tensor powers over the individual fibres.  The fibres themselves need not
-be finite.  This is the dependent-sum analogue of `PiTensorProduct.prodEquiv`.
+be finite.  The constant-fibre case is `PiTensorProduct.prodEquiv`, which is derived from this
+equivalence.
 
 The equivalence is characterized on tensors of pure tensors, and is compatible with factorwise
 linear maps.  Its first application is the double-coset decomposition of tensor induction, where
@@ -60,36 +62,20 @@ private theorem exists_sigmaEquiv (ι : Type w) [Finite ι] :
     simp
   | @h_option α _ ih =>
     intro κ
-    obtain ⟨f, hf⟩ := ih (fun i ↦ κ (some i))
-    let e : Option α ≃ α ⊕ PUnit.{w + 1} :=
-      { toFun := fun o ↦ match o with
-          | some i => .inl i
-          | none => .inr PUnit.unit
-        invFun := fun z ↦ match z with
-          | .inl i => some i
-          | .inr _ => none
-        left_inv := fun o ↦ by cases o <;> rfl
-        right_inv := fun z ↦ by rcases z with i | ⟨⟩ <;> rfl }
-    let p : (Σ i : α, κ (some i)) ⊕ κ none ≃ Σ o : Option α, κ o :=
-      ((Equiv.refl (Σ i : α, κ (some i))).sumCongr
-          (Equiv.uniqueSigma (fun _ : PUnit.{w + 1} ↦ κ none)).symm).trans
-        ((Equiv.sumSigmaDistrib (fun z : α ⊕ PUnit.{w + 1} ↦ κ (e.symm z))).symm.trans
-          (Equiv.sigmaCongrLeft e.symm))
+    let e : Option α ≃ α ⊕ PUnit.{w + 1} := Equiv.optionEquivSumPUnit α
+    obtain ⟨f, hf⟩ := ih (fun i ↦ κ (e.symm (.inl i)))
+    let p : (Σ i : α, κ (e.symm (.inl i))) ⊕ κ (e.symm (.inr PUnit.unit)) ≃ Σ o, κ o :=
+      ((Equiv.refl _).sumCongr (Equiv.uniqueSigma fun u ↦ κ (e.symm (.inr u))).symm).trans
+        ((Equiv.sumSigmaDistrib fun z ↦ κ (e.symm z)).symm.trans (Equiv.sigmaCongrLeft e.symm))
     refine ⟨(reindex R (fun o ↦ ⨂[R] _ : κ o, M) e).trans
       ((tmulEquivDep R (fun z ↦ ⨂[R] _ : κ (e.symm z), M)).symm.trans
-        ((TensorProduct.congr f
-          (subsingletonEquiv (R := R) (s := fun _ : PUnit.{w + 1} ↦
-            ⨂[R] _ : κ none, M) PUnit.unit)).trans
+        ((TensorProduct.congr f (subsingletonEquiv (R := R)
+          (s := fun u ↦ ⨂[R] _ : κ (e.symm (.inr u)), M) PUnit.unit)).trans
           ((tmulEquiv R M).trans (reindex R (fun _ ↦ M) p)))), ?_⟩
     intro m
-    dsimp only [e]
     simp only [LinearEquiv.trans_apply, reindex_tprod, tmulEquivDep_symm_apply,
       TensorProduct.congr_tmul, subsingletonEquiv_apply_tprod]
-    rw [hf]
-    change (reindex R (fun _ ↦ M) p) ((tmulEquiv R M)
-      ((tprod R fun q : Σ i : α, κ (some i) ↦ m (some q.1) q.2) ⊗ₜ[R]
-        tprod R (m none))) = tprod R (fun q : Σ i, κ i ↦ m q.1 q.2)
-    rw [tmulEquiv_apply, reindex_tprod]
+    rw [hf, tmulEquiv_apply, reindex_tprod]
     congr 1
     funext q
     rcases q with ⟨i, j⟩
@@ -148,13 +134,7 @@ theorem sigmaEquiv_map [Finite ι] {N : Type*} [AddCommMonoid N] [Module R N]
       map (fun p ↦ f p.1 p.2) ∘ₗ sigmaEquiv.toLinearMap := by
     apply ext_sigma_tprod
     intro m
-    simp only [LinearMap.comp_apply, map_tprod]
-    change sigmaEquiv (R := R) (M := N) (ι := ι) (κ := κ)
-        (tprod R fun i ↦ tprod R fun j ↦ f i j (m i j)) =
-      map (fun p ↦ f p.1 p.2)
-        (sigmaEquiv (R := R) (M := M) (ι := ι) (κ := κ)
-          (tprod R fun i ↦ tprod R (m i)))
-    rw [sigmaEquiv_tprod, sigmaEquiv_tprod, map_tprod]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, map_tprod, sigmaEquiv_tprod]
   exact LinearMap.congr_fun H z
 
 end PiTensorProduct
