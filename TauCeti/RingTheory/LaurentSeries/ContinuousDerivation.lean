@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
-public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.Algebra.Lie.Subalgebra
-public import Mathlib.Algebra.Lie.TransferInstance
 public import TauCeti.RingTheory.Derivation.Localization
-public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 
 /-!
@@ -29,9 +26,9 @@ that agree on a dense subset are equal.
 
 The continuous derivations form an `F`-submodule `TauCeti.continuousDerivations K` of
 `Derivation K F F`, which `TauCeti.continuousDerivationsEquiv K` identifies with `F` itself.
-Their commutator gives a Lie algebra over `K`, with `[aD, bD] = (a Db - b Da)D`. The subalgebras
-preserving the embedded
-power-series ring and its maximal ideal are respectively `K⟦X⟧ D` and `X K⟦X⟧ D`. These
+Their commutator makes them a Lie subalgebra of the Laurent derivations, whose Lie structure
+and coefficient formula are defined in `LaurentSeries.Derivative`. The subalgebras preserving the
+embedded power-series ring and its maximal ideal are respectively `K⟦X⟧ D` and `X K⟦X⟧ D`. These
 classifications hold in every characteristic.
 
 ## Main results
@@ -47,7 +44,6 @@ classifications hold in every characteristic.
 * `TauCeti.continuousDerivations`: the `F`-submodule of continuous derivations, and
   `TauCeti.continuousDerivationsEquiv`: its identification with `F` sending `a` to `a • D`.
 * `TauCeti.continuousDerivationsLieSubalgebra`: continuous derivations as a Lie subalgebra.
-* `TauCeti.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
 * `TauCeti.mem_powerSeriesPreservingDerivations_iff` and
   `TauCeti.mem_maximalIdealPreservingDerivations_iff`: the two coefficient classifications.
 -/
@@ -66,53 +62,6 @@ theorem Polynomial.aeval_single_one_eq_algebraMap {R : Type*} [CommSemiring R] (
     simp [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, PowerSeries.algebraMap_apply']
   | add p q hp hq => simp [hp, hq]
   | monomial n a h => simp_all [pow_succ, ← mul_assoc]
-
-namespace Derivation
-
-variable {R : Type*} [CommRing R]
-
-private theorem laurentSeries_module_eq_algebraModule : (inferInstance : Module R R⸨X⸩) =
-    (inferInstance : Algebra R R⸨X⸩).toModule :=
-  Module.ext <| funext fun r ↦ funext fun f ↦
-    (TauCeti.laurentSeries_algebraMap_mul_eq_smul r f).symm
-
-/-- The commutator Lie ring on Laurent derivations with their coefficientwise codomain scalars.
-The native derivation Lie ring uses the algebra-induced codomain module; these scalar actions
-agree. Additive transport keeps the existing additive group on derivations. -/
-noncomputable instance laurentSeriesLieRing : LieRing (Derivation R R⸨X⸩ R⸨X⸩) :=
-  (@AddEquiv.cast _ (fun m : Module R R⸨X⸩ ↦ @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
-    (fun m ↦ @Derivation.instAdd R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
-    (inferInstance : Module R R⸨X⸩) (inferInstance : Algebra R R⸨X⸩).toModule
-    (by exact laurentSeries_module_eq_algebraModule)).lieRing
-
-/-- Evaluation of the commutator through the coefficientwise Laurent scalar presentation. -/
-theorem laurentSeries_commutator_apply (δ ε : Derivation R R⸨X⸩ R⸨X⸩) (f : R⸨X⸩) :
-    ⁅δ, ε⁆ f = δ (ε f) - ε (δ f) := by
-  have aux (m : Module R R⸨X⸩) (h : m = (inferInstance : Algebra R R⸨X⸩).toModule)
-      (δ ε : @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m) :
-      @Bracket.bracket _ _
-        (@AddEquiv.cast _
-          (fun m : Module R R⸨X⸩ ↦ @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
-          (fun m ↦ @Derivation.instAdd R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
-          m (inferInstance : Algebra R R⸨X⸩).toModule h).lieRing.toBracket δ ε f =
-        δ (ε f) - ε (δ f) := by
-    cases h
-    rfl
-  exact aux _ laurentSeries_module_eq_algebraModule δ ε
-
-/-- Laurent derivations form a Lie algebra over the coefficient ring, retaining the existing
-coefficientwise scalar action on derivations. -/
-noncomputable instance laurentSeriesLieAlgebra : LieAlgebra R (Derivation R R⸨X⸩ R⸨X⸩) where
-  __ := (inferInstance : Module R (Derivation R R⸨X⸩ R⸨X⸩))
-  lie_smul r δ ε := by
-    ext1 f
-    simp only [laurentSeries_commutator_apply, Derivation.smul_apply,
-      smul_sub]
-    congr 1
-    -- The input action on a derivation is algebra-induced; its output action is coefficientwise.
-    rw [← TauCeti.laurentSeries_algebraMap_mul_eq_smul, ← Algebra.smul_def, δ.map_smul]
-
-end Derivation
 
 namespace TauCeti
 
@@ -214,17 +163,6 @@ theorem continuousDerivationsEquiv_symm_apply (δ : continuousDerivations K) :
     (continuousDerivationsEquiv K).symm δ = (δ : Derivation K K⸨X⸩ K⸨X⸩) (single 1 1) :=
   (rfl)
 
-/-- The commutator of Laurent vector fields has coefficient `a D b - b D a`.
-This formula uses no characteristic assumption. -/
-theorem lie_smul_laurentSeriesDerivation {R : Type*} [CommRing R] (a b : R⸨X⸩) :
-    ⁅a • laurentSeriesDerivation R, b • laurentSeriesDerivation R⁆ =
-      (a * laurentSeriesDerivation R b - b * laurentSeriesDerivation R a) •
-        laurentSeriesDerivation R := by
-  ext1 f
-  simp only [Derivation.laurentSeries_commutator_apply, Derivation.smul_apply, smul_eq_mul,
-    Derivation.leibniz]
-  ring
-
 variable (K) in
 /-- Continuous Laurent derivations, with their commutator Lie algebra structure over `K`. -/
 noncomputable def continuousDerivationsLieSubalgebra :
@@ -269,6 +207,7 @@ noncomputable def powerSeriesPreservingDerivations :
 
 /-- Membership in the power-series-preserving Lie subalgebra means continuity and preservation
 of the embedded power-series ring. -/
+@[simp]
 theorem mem_powerSeriesPreservingDerivations {δ : Derivation K K⸨X⸩ K⸨X⸩} :
     δ ∈ powerSeriesPreservingDerivations K ↔
       Continuous δ ∧ ∀ f : K⟦X⟧, ∃ g : K⟦X⟧, δ (f : K⸨X⸩) = g :=
@@ -326,6 +265,7 @@ noncomputable def maximalIdealPreservingDerivations :
 
 /-- Membership in the maximal-ideal-preserving Lie subalgebra means continuity and
 preservation of all power-series multiples of `X`. -/
+@[simp]
 theorem mem_maximalIdealPreservingDerivations {δ : Derivation K K⸨X⸩ K⸨X⸩} :
     δ ∈ maximalIdealPreservingDerivations K ↔
       Continuous δ ∧ ∀ f : K⟦X⟧, ∃ g : K⟦X⟧,
