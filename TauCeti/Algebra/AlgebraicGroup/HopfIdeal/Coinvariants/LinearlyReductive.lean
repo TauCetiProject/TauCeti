@@ -108,8 +108,7 @@ private theorem tmul_one_mem_range_tensorShear {x : H} (hx : x ∈ I) :
   have hPr : P r = 0 := by
     rw [← RingHom.mem_ker, Ideal.ker_tensorProduct_map_id_quotient]
     exact hr
-  rw [Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
-    ← Submodule.restrictScalars_mem R, Ideal.map_includeRight_eq] at hw
+  rw [Ideal.mem_rightTensorIdeal_iff] at hw
   obtain ⟨w, rfl⟩ := hw
   refine ⟨w, ?_⟩
   have h := congrArg P hsum
@@ -140,8 +139,7 @@ private theorem mem_span_coinvariants_of_isLinearlyReductive
     { carrier := I.toIdeal.restrictScalars k
       coact_mem' := fun m hm ↦ by
         have h := map_comul_mem_leftTensorIdeal I hm
-        rw [Ideal.leftTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
-          ← Submodule.restrictScalars_mem k, Ideal.map_includeLeft_eq] at h
+        rw [Ideal.mem_leftTensorIdeal_iff] at h
         rw [hcoact]
         exact h }
   let : Comodule k C (H ⊗[k] C) := Comodule.cofree k C H

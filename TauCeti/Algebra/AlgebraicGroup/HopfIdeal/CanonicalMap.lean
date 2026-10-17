@@ -132,12 +132,16 @@ private theorem canonicalMap_injective_of_le_span [Module.Flat R H] (I : HopfIde
         simp only [LinearMap.lTensor_tmul, LinearMap.rTensor_tmul, Submodule.subtype_apply,
           LinearMap.mul'_apply, q, mapOfCompatibleSMul_tmul]
         exact tmul_coe_eq_mul_tmul_one I _ β
-    have h : (q.comp σ.symm.toAlgHom) (includeRight b) = 0 := by
-      simp only [σ, AlgHom.comp_apply, includeRight_apply, AlgEquiv.coe_toAlgHom,
-        HopfAlgebra.tensorShearMulRight_symm_tmul, ← Algebra.TensorProduct.one_def, one_mul]
-      rw [← hw, ← LinearMap.rTensor_def, hq, hw, HopfAlgebra.mul_antipode_rTensor_comul_apply, hb0,
-        map_zero, TensorProduct.zero_tmul]
-    exact h
+    have hq' : q ((HopfAlgebra.antipode R).rTensor H (Coalgebra.comul (R := R) b)) =
+        LinearMap.mul' R H ((HopfAlgebra.antipode R).rTensor H
+          (Coalgebra.comul (R := R) b)) ⊗ₜ[B] (1 : H) := by
+      rw [← hw]
+      exact hq w
+    change (q.comp σ.symm.toAlgHom) (includeRight b) = 0
+    simp only [σ, AlgHom.comp_apply, includeRight_apply, AlgEquiv.coe_toAlgHom,
+      HopfAlgebra.tensorShearMulRight_symm_tmul, ← Algebra.TensorProduct.one_def, one_mul]
+    rw [← LinearMap.rTensor_def, hq', HopfAlgebra.mul_antipode_rTensor_comul_apply, hb0,
+      map_zero, TensorProduct.zero_tmul]
   rw [injective_iff_map_eq_zero]
   intro z hz
   obtain ⟨y, rfl⟩ := mapOfCompatibleSMul_surjective B R R H H z

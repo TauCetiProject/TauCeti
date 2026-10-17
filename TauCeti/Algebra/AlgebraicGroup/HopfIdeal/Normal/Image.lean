@@ -111,9 +111,11 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
     rw [comap_toIdeal]
     ext y
     simp [g, q, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
-  rw [hgker, Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
-    ← Algebra.TensorProduct.lTensor_ker_of_flat g,
-    RingHom.mem_ker]
+  rw [hgker, Ideal.mem_rightTensorIdeal_iff]
+  change HopfAlgebra.conjugationAlgHom (R := k) (H := H) x ∈
+    LinearMap.range ((LinearMap.ker g.toLinearMap).subtype.lTensor H)
+  rw [← (Module.Flat.lTensor_exact H g.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq,
+    LinearMap.mem_ker]
   have hmaps' :
       (Algebra.TensorProduct.map f.toAlgHom (AlgHom.id k (K ⧸ I.toIdeal))).comp
           (Algebra.TensorProduct.map (AlgHom.id k H) g) =
@@ -159,9 +161,11 @@ theorem isNormal_ker_of_conjugation_equivariant (f : H →ₐc[k] K)
   rw [isNormal_iff_conjugation_mem]
   intro x hx
   rw [ker_toIdeal]
-  rw [Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
-    ← Algebra.TensorProduct.lTensor_ker_of_flat f.toAlgHom,
-    RingHom.mem_ker]
+  rw [Ideal.mem_rightTensorIdeal_iff]
+  change HopfAlgebra.conjugationAlgHom (R := k) (H := H) x ∈
+    LinearMap.range ((LinearMap.ker f.toAlgHom.toLinearMap).subtype.lTensor H)
+  rw [← (Module.Flat.lTensor_exact H
+    f.toAlgHom.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq, LinearMap.mem_ker]
   have hfx : f x = 0 := (mem_ker f).mp hx
   calc
     Algebra.TensorProduct.map (AlgHom.id k H) f.toAlgHom
