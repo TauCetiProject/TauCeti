@@ -101,8 +101,9 @@ def LpToL1CLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
 
 /-- The finite-measure `Lᵖ` to `L¹` inclusion has the original representative almost everywhere. -/
 theorem LpToL1CLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
-    [Fact (1 ≤ p)] (f : Lp F p μ) : LpToL1CLM (𝕜 := 𝕜) μ p f =ᵐ[μ] f :=
-  MemLp.coeFn_toLp ((Lp.memLp f).mono_exponent Fact.out)
+    [Fact (1 ≤ p)] (f : Lp F p μ) : LpToL1CLM (𝕜 := 𝕜) μ p f =ᵐ[μ] f := by
+  simp only [LpToL1CLM, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk]
+  exact MemLp.coeFn_toLp _
 
 end MeasureTheory.Measure
 
