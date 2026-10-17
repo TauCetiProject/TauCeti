@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
+import Mathlib.Data.Int.Associated
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The genus of an integral lattice
@@ -16,6 +18,12 @@ Two integral lattices have the same genus when their real signatures agree and t
 localizations are isometric at every prime. This relation also makes sense for degenerate forms.
 The local condition concerns the actual forms on `ℤ_p ⊗[ℤ] L`, rather than just their extensions
 to `ℚ_p`.
+
+The genus determines the signed determinant. Integral local isometry at `p` changes the
+determinant by the square of a unit of `ℤ_p`, so the absolute determinants have the same
+`p`-adic valuation at every prime and are therefore equal. The real signature fixes the sign:
+the determinant vanishes exactly when the null index is positive, and otherwise has sign
+`(-1)^{n₋}`.
 
 For lattices with equal nonzero signed determinants, the local tests reduce to the finite set
 of prime factors of twice the absolute determinant. Outside that set, the local determinants
@@ -79,6 +87,31 @@ theorem trans (h : L.SameGenus M) (h' : M.SameGenus N) : L.SameGenus N :=
   (sameGenus_iff L N).mpr
     ⟨h.signature_eq.trans h'.signature_eq,
       fun p ↦ (h.localIntegralForm_equivalent p).trans (h'.localIntegralForm_equivalent p)⟩
+
+/-- **Lattices in the same genus have equal signed determinants.** No nondegeneracy assumption is
+needed: degenerate lattices in one genus both have determinant zero. -/
+theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
+  have habs : L.determinant.natAbs = M.determinant.natAbs := by
+    refine Int.natAbs_eq_iff_associated.mpr
+      (Int.associated_iff_forall_associated_padicInt.mpr fun p _ ↦ ?_)
+    obtain ⟨u, hu⟩ := L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p
+      (h.localIntegralForm_equivalent p)
+    exact Associated.symm ⟨u ^ 2, by rw [hu, Units.val_pow_eq_pow_val, mul_comm]⟩
+  have hnull : L.sigNull = M.sigNull := congrArg (fun s ↦ s.2.1) h.signature_eq
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) h.signature_eq
+  have hsign : SignType.sign L.determinant = SignType.sign M.determinant := by
+    by_cases hL : L.determinant = 0
+    · have hM : M.determinant = 0 := by
+        rwa [← not_ne_iff, M.determinant_ne_zero_iff_sigNull_eq_zero, ← hnull,
+          ← L.determinant_ne_zero_iff_sigNull_eq_zero, not_ne_iff]
+      rw [hL, hM]
+    · have hM : M.determinant ≠ 0 := by
+        rwa [M.determinant_ne_zero_iff_sigNull_eq_zero, ← hnull,
+          ← L.determinant_ne_zero_iff_sigNull_eq_zero]
+      rw [L.sign_determinant (L.determinant_ne_zero_iff.mp hL),
+        M.sign_determinant (M.determinant_ne_zero_iff.mp hM), hneg]
+  rw [← Int.sign_mul_natAbs L.determinant, ← Int.sign_mul_natAbs M.determinant,
+    Int.sign_eq_sign, Int.sign_eq_sign, hsign, habs]
 
 end SameGenus
 

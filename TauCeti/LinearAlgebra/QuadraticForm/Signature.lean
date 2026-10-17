@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Sign.Basic
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.Submodule.Prod
+import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 
 /-!
 # Definiteness and the signature of a quadratic form
@@ -23,7 +26,8 @@ complement Mathlib's definitions of `QuadraticMap.PosDef`, `sigPos`, and `sigNeg
 It also proves that restriction to a subspace cannot increase either index of inertia, that
 quotienting a quadratic form by its radical preserves both indices, and that multiplication by a
 positive scalar preserves both indices while multiplication by a negative scalar exchanges them.
-Finally, both indices are additive under orthogonal products.
+Finally, both indices are additive under orthogonal products, and the negative index determines
+the sign of the Gram determinant of a nondegenerate symmetric bilinear form.
 
 ## Main results
 
@@ -49,6 +53,8 @@ Finally, both indices are additive under orthogonal products.
   is characterized by vanishing negative index and trivial radical.
 * `QuadraticForm.sigPos_add_sigNeg_of_nondegenerate`: the two indices of inertia of a
   nondegenerate quadratic form add up to the dimension.
+* `LinearMap.BilinForm.sign_det_toMatrix`: the Gram determinant of a nondegenerate symmetric
+  bilinear form has sign `(-1)^q`, for `q` the negative index of inertia.
 
 ## References
 
@@ -332,5 +338,31 @@ theorem posDef_toQuadraticMap_iff_finrank_ker_eq_zero_and_sigNeg_eq_zero
     isPosSemidef_iff_sigNeg_eq_zero B hB,
     LinearMap.BilinForm.nondegenerate_iff_ker_eq_bot,
     Submodule.finrank_eq_zero, and_comm]
+
+/-- **The determinant-sign formula.** The Gram determinant of a nondegenerate symmetric bilinear
+form, in any basis, has sign `(-1)^q`, where `q` is the negative index of inertia of its
+quadratic form. -/
+theorem sign_det_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι] (B : LinearMap.BilinForm K M)
+    (hB : B.IsSymm) (hB' : B.Nondegenerate) (b : Module.Basis ι K M) :
+    SignType.sign (B.toMatrix b).det = (-1) ^ _root_.sigNeg B.toQuadraticMap := by
+  have _ : Invertible (2 : K) := invertibleOfNonzero (by norm_num)
+  obtain ⟨v₀, hv₀⟩ := LinearMap.BilinForm.exists_orthogonal_basis (isSymm_iff.mp hB)
+  let v := v₀.reindex (v₀.indexEquiv b)
+  have hv : B.iIsOrtho v := fun i j hij ↦ by
+    simpa only [Function.onFun, v, Module.Basis.reindex_apply] using
+      hv₀ ((v₀.indexEquiv b).symm.injective.ne hij)
+  have hw (i : ι) : B (v i) (v i) ≠ 0 := hv.not_isOrtho_basis_self_of_nondegenerate hB' i
+  rw [sigNeg_of_equiv_weightedSumSquares (hB.equivalent_weightedSumSquares_of_iIsOrtho v hv),
+    det_toMatrix_eq_det_sq_mul_det v b, hv.toMatrix_eq_diagonal, Matrix.det_diagonal, sign_mul,
+    ← Module.Basis.det_apply, sign_pos (sq_pos_of_ne_zero (v.isUnit_det b).ne_zero), one_mul]
+  have hsign (i : ι) :
+      SignType.sign (B (v i) (v i)) = if B (v i) (v i) < 0 then -1 else 1 := by
+    rcases (hw i).lt_or_gt with h | h
+    · simp [sign_neg h, h]
+    · simp [sign_pos h, h.not_gt]
+  have hprod := map_prod (signHom (α := K)) (fun i ↦ B (v i) (v i)) Finset.univ
+  simp only [signHom_apply, hsign] at hprod
+  rw [hprod, Finset.prod_ite, Finset.prod_const, Finset.prod_const_one, mul_one,
+    Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
 end LinearMap.BilinForm
