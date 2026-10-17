@@ -81,17 +81,21 @@ theorem discr_formClass_weightedSumSquares_neg_self_mul (a b : Kˣ) :
     RegularFormClass.discr
         (formClass _ (nondegenerate_weightedSumSquares_neg_self_mul a b)) =
       RegularFormClass.discr (formClass _ (nondegenerate_weightedSumSquares_one_neg b)) := by
-  have h₁ := discr_formClass _ (nondegenerate_weightedSumSquares_one_neg b) ⟨2, ![1, -b]⟩ (by
-    rw [presentedForm_two]
-    simpa using (QuadraticMap.Equivalent.refl
-      (QuadraticMap.weightedSumSquares K ![(1 : K), -(b : K)])))
-  have h₂ := discr_formClass _ (nondegenerate_weightedSumSquares_neg_self_mul a b)
-    ⟨2, ![a, -(a * b)]⟩ (by
-      rw [presentedForm_two]
-      simpa using (QuadraticMap.Equivalent.refl
-        (QuadraticMap.weightedSumSquares K ![(a : K), -(a * b : K)])))
-  rw [h₁, h₂, squareClass_eq_iff_isSquare_mul]
-  exact ⟨a * b, by ext; simp [Fin.prod_univ_two]; ring⟩
+  have discr_of_eq (c : Fin 2 → K) (w : Fin 2 → Kˣ) (hc : c = fun i => (w i : K))
+      (h : (weightedSumSquares K c).Nondegenerate) :
+      RegularFormClass.discr (formClass (weightedSumSquares K c) h) =
+        squareClass (∏ i, w i) := by
+    subst c
+    exact discr_formClass_weightedSumSquares w h
+  have h₁ := discr_of_eq ![1, -(b : K)] ![(1 : Kˣ), -b]
+    (by funext i; fin_cases i <;> simp) (nondegenerate_weightedSumSquares_one_neg b)
+  have h₂ := discr_of_eq ![(a : K), -(a * b : K)] ![a, -(a * b)]
+    (by funext i; fin_cases i <;> simp) (nondegenerate_weightedSumSquares_neg_self_mul a b)
+  rw [h₂, h₁, squareClass_eq_iff_isSquare_mul]
+  refine ⟨a * b, Units.ext ?_⟩
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_mul,
+    Units.val_neg, Units.val_one]
+  ring
 
 end Planes
 
