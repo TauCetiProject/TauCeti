@@ -49,6 +49,18 @@ theorem pow_ne_one {q : K} (hq : IsGenericQuantumParameter q) {n : ℕ} (hn : 0 
     q ^ n ≠ 1 :=
   hq.2 n hn
 
+/-- The natural powers of a generic quantum parameter are pairwise distinct. -/
+theorem pow_injective {q : K} (hq : IsGenericQuantumParameter q) :
+    Function.Injective (q ^ · : ℕ → K) := by
+  intro m n h
+  wlog hmn : m ≤ n generalizing m n
+  · exact (this h.symm (by omega)).symm
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
+  dsimp only at h
+  rw [pow_add, left_eq_mul₀ (pow_ne_zero _ hq.ne_zero)] at h
+  by_contra hd
+  exact hq.pow_ne_one (n := d) (by omega) h
+
 /-- A generic quantum parameter is not equal to its inverse. -/
 theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
   intro h
