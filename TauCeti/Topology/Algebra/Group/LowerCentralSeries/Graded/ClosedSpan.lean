@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Continuous
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 import Mathlib.Topology.Algebra.ProperAction.Basic
+import TauCeti.Topology.Separation.TypeTags
 
 /-!
 # Generation of the graded pieces of the closed lower central series
@@ -117,10 +118,6 @@ theorem exists_sum_gradedBracket_eq_of_range {ι : Type*} [Fintype ι]
       (∑ i, gradedBracket 0 G 0 n (gradedMkZero 0 G (s i)) (y i)) = z := by
   classical
   have : CompactSpace (ι → gradedPiece 0 G n) := inferInstance
-  have : IsClosed ((pLowerCentralSeries 0 G (0 + n + 1 + 1)).subgroupOf
-      (pLowerCentralSeries 0 G (0 + n + 1)) : Set (pLowerCentralSeries 0 G (0 + n + 1))) :=
-    (isClosed_pLowerCentralSeries (0 + n + 1 + 1)).preimage continuous_subtype_val
-  have : T2Space (gradedPiece 0 G (0 + n + 1)) := QuotientGroup.instT2Space
   let f : (ι → gradedPiece 0 G n) →+ gradedPiece 0 G (0 + n + 1) :=
     { toFun := fun y ↦ ∑ i, gradedBracket 0 G 0 n (gradedMkZero 0 G (s i)) (y i)
       map_zero' := by simp
