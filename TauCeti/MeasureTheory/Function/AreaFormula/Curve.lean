@@ -77,9 +77,8 @@ theorem eVariationOn_eq_lintegral_encard (hγ : LipschitzOnWith K γ (Icc a b)) 
     eVariationOn γ (Icc a b) =
       ∫⁻ y, (((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞)) ∂μHE[1] := by
   by_cases hab : a ≤ b
-  · have hAC : AbsolutelyContinuousOnInterval γ a b :=
-      (show LipschitzOnWith K γ (uIcc a b) by simpa [uIcc_of_le hab] using hγ)
-        |>.absolutelyContinuousOnInterval
+  · have hγu : LipschitzOnWith K γ (uIcc a b) := by rwa [uIcc_of_le hab]
+    have hAC : AbsolutelyContinuousOnInterval γ a b := hγu.absolutelyContinuousOnInterval
     calc
       eVariationOn γ (Icc a b) = ∫⁻ t in uIoc a b, ‖deriv γ t‖ₑ := by
         rw [← uIcc_of_le hab]
