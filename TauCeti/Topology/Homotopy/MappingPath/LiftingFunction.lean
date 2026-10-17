@@ -118,7 +118,7 @@ theorem isHurewiczFibration (Λ : LiftingFunction p) : IsHurewiczFibration.{w} p
   refine isHurewiczFibration_iff.2 ⟨p.continuous, fun A _ f H hH ↦ ?_⟩
   -- The homotopy at `a` is a path starting at `p (f a)`; lift these paths from `f a`.
   let γ : C(A, C(I, B)) := (H.comp ContinuousMap.prodSwap).curry
-  have h₀ : ∀ a, γ a 0 = p (f a) := hH
+  have h₀ : ∀ a, γ a 0 = p (f a) := fun a ↦ by simpa [γ] using hH a
   refine ⟨⟨fun x ↦ Λ.lift (f x.2) (γ x.2) (h₀ x.2) x.1, ?_⟩, funext fun x ↦ ?_, fun a ↦ ?_⟩
   · exact (Λ.continuous_lift (f.continuous.comp continuous_snd)
       (γ.continuous.comp continuous_snd) fun x ↦ h₀ x.2).eval continuous_fst
@@ -135,8 +135,8 @@ theorem IsHurewiczFibration.nonempty_liftingFunction {p : C(E, B)}
   obtain ⟨G, hG, hG₀⟩ := h.hasHomotopyLiftingProperty (MappingPathSpace p)
     ⟨fun x ↦ x.val.1, by fun_prop⟩ H fun x ↦ x.property
   exact ⟨{ toContinuousMap := (G.comp ContinuousMap.prodSwap).curry
-           apply_zero' := hG₀
-           comp_apply' := fun x ↦ ContinuousMap.ext fun t ↦ congrFun hG (t, x) }⟩
+           apply_zero' x := by simpa using hG₀ x
+           comp_apply' x := ContinuousMap.ext fun t ↦ by simpa [H] using congrFun hG (t, x) }⟩
 
 /-- A map is a Hurewicz fibration for test spaces in `Type (max u v)` if and only if it has a
 lifting function. -/
