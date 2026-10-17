@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
+public import TauCeti.MeasureTheory.Group.ConvolutionSupport
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
@@ -56,58 +57,18 @@ namespace TauCeti
 
 namespace CStarAction
 
-variable {G A : Type*} [Group G] [NonUnitalCStarAlgebra A]
+variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
 
-/-! ### Support bookkeeping for twisted integrands -/
-
-section Support
-
-variable {E : Type*} [NormedAddCommGroup E] {F : G → G → E} {K L : Set G}
-
-/-- A two-variable integrand which vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L` has its parametric
-integral `s ↦ ∫ r, F s r` supported in `K * L`. -/
-private theorem support_integral_subset [NormedSpace ℝ E] [MeasurableSpace G] (μ : Measure G)
-    (hF : ∀ s r, F s r ≠ 0 → r ∈ K ∧ r⁻¹ * s ∈ L) :
-    support (fun s => ∫ r, F s r ∂μ) ⊆ K * L := by
-  intro s hs
-  by_contra h
-  refine hs (integral_eq_zero_of_ae (.of_forall fun r => ?_))
-  by_contra hr
-  obtain ⟨hrK, hrL⟩ := hF s r hr
-  exact h ⟨r, hrK, r⁻¹ * s, hrL, mul_inv_cancel_left r s⟩
-
-variable [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- A two-variable integrand which vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, for compact `K`
-and `L`, is compactly supported on `G × G`. -/
-private theorem hasCompactSupport_uncurry (hK : IsCompact K) (hL : IsCompact L)
-    (hF : ∀ s r, F s r ≠ 0 → r ∈ K ∧ r⁻¹ * s ∈ L) : HasCompactSupport (uncurry F) := by
-  refine ((hK.mul hL).prod hK).closure_of_subset fun p hp => ?_
-  obtain ⟨hrK, hrL⟩ := hF p.1 p.2 hp
-  exact ⟨⟨p.2, hrK, p.2⁻¹ * p.1, hrL, mul_inv_cancel_left p.2 p.1⟩, hrK⟩
-
-/-- The parametric integral of a continuous integrand which vanishes unless `r ∈ K` and
-`r⁻¹ * s ∈ L`, for compact `K` and `L`, is continuous with compact support. -/
-private theorem continuous_integral_and_hasCompactSupport [NormedSpace ℝ E] [MeasurableSpace G]
-    [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] (hK : IsCompact K)
-    (hL : IsCompact L) (hcont : Continuous (uncurry F))
-    (hF : ∀ s r, F s r ≠ 0 → r ∈ K ∧ r⁻¹ * s ∈ L) :
-    Continuous (fun s => ∫ r, F s r ∂μ) ∧ HasCompactSupport (fun s => ∫ r, F s r ∂μ) :=
-  ⟨continuousOn_univ.mp <| continuousOn_integral_of_compact_support hK hcont.continuousOn
-      fun s r _ hr => by_contra fun h => hr (hF s r h).1,
-    (hK.mul hL).closure_of_subset (support_integral_subset μ hF)⟩
-
-end Support
-
-variable [TopologicalSpace G]
+/-- The automorphism `α g`, as a linear isometry. -/
+private def toLinearIsometry (α : CStarAction G A) (g : G) : A →ₗᵢ[ℂ] A where
+  toLinearMap := (α g : A →ₗ[ℂ] A)
+  norm_map' := α.norm_apply g
 
 /-- Each automorphism of a C⋆-action commutes with Bochner integrals. No integrability is needed,
 since the automorphism is a linear isometry. -/
 theorem integral_comp_comm (α : CStarAction G A) {X : Type*} [MeasurableSpace X] (ν : Measure X)
     (g : G) (F : X → A) : ∫ x, α g (F x) ∂ν = α g (∫ x, F x ∂ν) :=
-  LinearIsometry.integral_comp_comm
-    { toLinearMap := (α g : A →ₗ[ℂ] A)
-      norm_map' := α.norm_apply g } F
+  (α.toLinearIsometry g).integral_comp_comm F
 
 /-! ### The twisted integrand -/
 
@@ -148,12 +109,11 @@ variable [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G]
 /-- The twisted convolution of two compactly supported coefficient functions, before bundling. -/
 private noncomputable def convolutionAux : C_c(G, A) where
   toFun s := ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ
-  continuous_toFun :=
-    (continuous_integral_and_hasCompactSupport μ f.hasCompactSupport g.hasCompactSupport
-      (continuous_integrand α f g) fun _ _ => mem_tsupport_of_integrand_ne_zero α f g).1
-  hasCompactSupport' :=
-    (continuous_integral_and_hasCompactSupport μ f.hasCompactSupport g.hasCompactSupport
-      (continuous_integrand α f g) fun _ _ => mem_tsupport_of_integrand_ne_zero α f g).2
+  continuous_toFun := continuousOn_univ.mp <| continuousOn_integral_of_compact_support
+    f.hasCompactSupport (continuous_integrand α f g).continuousOn
+    fun _ _ _ hr => by_contra fun h => hr (mem_tsupport_of_integrand_ne_zero α f g h).1
+  hasCompactSupport' := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
+    g.hasCompactSupport fun _ _ => mem_tsupport_of_integrand_ne_zero α f g
 
 /-- The twisted convolution `(f ⋆ g) s = ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ` on `C_c(G, A)`, as a
 `ℂ`-bilinear map. -/
@@ -183,7 +143,7 @@ theorem convolution_apply (s : G) :
 
 /-- A twisted convolution is supported in the product of the supports. -/
 theorem support_convolution_subset : support (α.convolution μ f g) ⊆ support f * support g :=
-  support_integral_subset μ fun _ _ => mem_support_of_integrand_ne_zero α f g
+  support_integral_subset_mul μ fun _ _ => mem_support_of_integrand_ne_zero α f g
 
 /-! ### Left-invariant measures -/
 
@@ -200,7 +160,8 @@ theorem convolution_assoc :
         exact (integral_mul_const_of_integrable (integrable_integrand α f g μ t)).symm
     _ = ∫ r, ∫ t, f r * α r (g (r⁻¹ * t)) * α t (h (t⁻¹ * s)) ∂μ ∂μ := by
         refine integral_integral_swap_of_hasCompactSupport ?_
-          (hasCompactSupport_uncurry f.hasCompactSupport g.hasCompactSupport fun t r htr =>
+          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport
+            fun t r htr =>
             mem_tsupport_of_integrand_ne_zero α f g (left_ne_zero_of_mul htr))
         rw [uncurry_def]
         fun_prop
@@ -210,9 +171,8 @@ theorem convolution_assoc :
         rw [← integral_comp_comm, ← integral_const_mul_of_integrable, ← integral_mul_left_eq_self
           (fun t => f r * α r (g (r⁻¹ * t)) * α t (h (t⁻¹ * s))) r]
         · simp [mul_apply, mul_assoc]
-        · refine Continuous.integrable_of_hasCompactSupport (by fun_prop)
-            (g.hasCompactSupport.mono' fun t ht => subset_tsupport _ fun hg => ht ?_)
-          simp [show g t = 0 from hg]
+        · exact (α.toLinearIsometry r).toContinuousLinearMap.integrable_comp
+            (integrable_integrand α g h μ (r⁻¹ * s))
 
 /-- The `L¹` norm is submultiplicative for twisted convolution with respect to a left-invariant
 measure. -/
@@ -226,8 +186,11 @@ theorem integral_norm_convolution_le :
   have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
     rw [uncurry_def]
     fun_prop
-  obtain ⟨hNcont, hNsupp⟩ := continuous_integral_and_hasCompactSupport μ f.hasCompactSupport
-    g.hasCompactSupport hcont hsupp
+  have hNcont : Continuous fun s => ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ :=
+    continuousOn_univ.mp <| continuousOn_integral_of_compact_support f.hasCompactSupport
+      hcont.continuousOn fun s r _ hr => by_contra fun h => hr (hsupp s r h).1
+  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
+    g.hasCompactSupport hsupp
   calc ∫ s, ‖α.convolution μ f g s‖ ∂μ
       ≤ ∫ s, ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ := by
         refine integral_mono ((α.convolution μ f g).continuous.norm.integrable_of_hasCompactSupport
@@ -240,7 +203,7 @@ theorem integral_norm_convolution_le :
         simpa using norm_mul_le (f r) (α r (g (r⁻¹ * s)))
     _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
         integral_integral_swap_of_hasCompactSupport hcont
-          (hasCompactSupport_uncurry f.hasCompactSupport g.hasCompactSupport hsupp)
+          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
     _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
         congr 1 with r
         rw [integral_const_mul]
