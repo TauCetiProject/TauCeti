@@ -77,6 +77,14 @@ theorem derivedDefiningIdeal_toIdeal_le_ker :
   rw [derivedDefiningIdeal, HopfIdeal.sSup_toIdeal]
   exact iSup_le fun I ↦ I.2
 
+/-- The commutator coordinate morphism vanishes on each element of the derived defining
+ideal. -/
+theorem commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal {x : H}
+    (hx : x ∈ derivedDefiningIdeal (R := R) H) :
+    HopfAlgebra.commutatorAlgHom (R := R) (H := H) x = 0 :=
+  RingHom.mem_ker.mp
+    (derivedDefiningIdeal_toIdeal_le_ker H (HopfIdeal.mem_toIdeal.mpr hx))
+
 /-- A Hopf ideal is contained in the derived defining ideal exactly when the commutator
 coordinate morphism kills it. This is the coordinate universal property of the derived
 subgroup. -/
