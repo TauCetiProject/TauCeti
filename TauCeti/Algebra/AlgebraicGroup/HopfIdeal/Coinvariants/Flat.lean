@@ -20,8 +20,7 @@ subgroup. The subgroup need not be normal, smooth, or connected.
 
 Exactness of invariants gives ideal contraction and hence lifts of closed points. Ambient
 left translations act transitively on these points; generic flatness therefore propagates
-to the entire invariant spectrum. This supplies the flatness input to the affine homogeneous
-quotient construction, independently of the equation identifying its fibres as subgroup cosets.
+to the entire invariant spectrum.
 
 The central formal inputs are `ComoduleAlgebra.comap_map_coinvariants`, Hilbert--Nagata
 finite generation, and `Scheme.Hom.flat_of_transitive_closedPoints_of_finiteType`.
@@ -92,12 +91,15 @@ theorem faithfullyFlat_coinvariants_of_isLinearlyReductive [IsAlgClosed k]
       Scheme.Spec.mapIso (HopfAlgebra.leftTranslationAlgEquiv g).toRingEquiv.toCommRingCatIso.op
     let b (g : WithConv (H →ₐ[k] k)) : Spec (.of B) ≅ Spec (.of B) :=
       Scheme.Spec.mapIso (I.coinvariantsLeftTranslation g).toRingEquiv.toCommRingCatIso.op
+    -- `Spec.mapIso` sends the opposite ring isomorphism to the spectrum isomorphism
+    -- whose forward map is `Spec.map` of the underlying ring homomorphism.
+    -- The AlgEquiv projections through `toRingEquiv` and `toAlgHom` give the same ring map.
     have ha (g : WithConv (H →ₐ[k] k)) : (a g).hom =
         Spec.map (CommRingCat.ofHom
           (HopfAlgebra.leftTranslationAlgEquiv g).toRingEquiv.toRingHom) := rfl
     have hb (g : WithConv (H →ₐ[k] k)) : (b g).hom =
         Spec.map (CommRingCat.ofHom
-          (I.coinvariantsLeftTranslation g).toRingEquiv.toRingHom) := rfl
+          (I.coinvariantsLeftTranslation g).toAlgHom.toRingHom) := rfl
     apply f.flat_of_transitive_closedPoints_of_finiteType a b
     · intro g
       rw [ha, hb]

@@ -54,6 +54,7 @@ theorem coact_corestrict_apply (f : H →ₐc[R] K) (a : A) :
     (Algebra.TensorProduct.toLinearMap_map (AlgHom.id R A) f.toAlgHom) _).symm
 
 /-- The corestricted algebra coaction is the original coaction followed by `id ⊗ f`. -/
+@[simp]
 theorem coactAlgHom_corestrict (f : H →ₐc[R] K) :
     letI := Corestrict (A := A) f
     coactAlgHom R K A =

@@ -78,6 +78,28 @@ theorem coe_coinvariantsLeftTranslation_symm (g : WithConv (H →ₐ[R] R))
       HopfAlgebra.leftTranslationAlgEquiv g⁻¹ x :=
   (rfl)
 
+/-- Left translation by the identity point fixes the coinvariant algebra. -/
+@[simp]
+theorem coinvariantsLeftTranslation_one :
+    I.coinvariantsLeftTranslation (1 : WithConv (H →ₐ[R] R)) = 1 := by
+  ext x
+  simp
+
+/-- Pullback on coinvariants reverses the order of convolution products. -/
+@[simp]
+theorem coinvariantsLeftTranslation_mul (g h : WithConv (H →ₐ[R] R)) :
+    I.coinvariantsLeftTranslation (g * h) =
+      I.coinvariantsLeftTranslation h * I.coinvariantsLeftTranslation g := by
+  ext x
+  simp
+
+/-- Translation by the inverse point inverts the automorphism of coinvariants. -/
+@[simp]
+theorem coinvariantsLeftTranslation_inv (g : WithConv (H →ₐ[R] R)) :
+    I.coinvariantsLeftTranslation g⁻¹ = (I.coinvariantsLeftTranslation g)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← coinvariantsLeftTranslation_mul, mul_inv_cancel, coinvariantsLeftTranslation_one]
+
 /-- Pulling a restricted point back by a coinvariant left translation multiplies the
 original point on the left before restricting it. -/
 theorem comp_coinvariantsLeftTranslation (g : WithConv (H →ₐ[R] R))
