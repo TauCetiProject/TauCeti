@@ -37,7 +37,8 @@ variable {R : Type u} [CommSemiring R] {M : Type v} [AddCommMonoid M] [Module R 
 the product. The inner index can be arbitrary. -/
 noncomputable def prodEquiv [Finite ι] :
     (⨂[R] _ : ι, ⨂[R] _ : κ, M) ≃ₗ[R] (⨂[R] _ : ι × κ, M) :=
-  (sigmaEquiv (κ := fun _ : ι ↦ κ)).trans (reindex R (fun _ ↦ M) (Equiv.sigmaEquivProd ι κ))
+  (sigmaEquiv (κ := fun _ : ι ↦ κ) (M := fun _ _ ↦ M)).trans
+    (reindex R (fun _ ↦ M) (Equiv.sigmaEquivProd ι κ))
 
 /-- Flattening a tensor of pure tensors concatenates the two index coordinates. -/
 @[simp] theorem prodEquiv_tprod [Finite ι] (m : ι → κ → M) :

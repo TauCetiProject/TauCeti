@@ -60,7 +60,7 @@ noncomputable def tensorInducedDoubleCosetLinearEquiv :
     (⨂[R] D : DoubleCoset.Quotient (V : Set G) (U : Set G),
       ⨂[R] _ : V ⧸ (TauCeti.mackeySubgroup (r D) U V).subgroupOf V, M) ≃ₗ[R]
         (⨂[R] _ : G ⧸ U, M) :=
-  PiTensorProduct.sigmaEquiv.trans
+  (PiTensorProduct.sigmaEquiv (M := fun _ _ ↦ M)).trans
     (PiTensorProduct.reindex R (fun _ ↦ M) (TauCeti.mackeyQuotientEquiv U V r hr))
 
 /-- On orbitwise pure tensors, double-coset regrouping simply reads the Mackey coordinates of
