@@ -291,4 +291,26 @@ theorem support_realizationMap_of_injOn {α β : Type*} [DecidableEq β]
   rw [_root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
     Finsupp.mapDomain_support_of_injOn x.1 hf]
 
+/-- A simplicial isomorphism transports sets defined by support predicates whenever those
+predicates correspond under the vertex map. -/
+theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq α] [DecidableEq β]
+    {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β}
+    (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (g : _root_.PreAbstractSimplicialComplex.SimplicialMap
+      L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
+    (hgf : g.comp f = _root_.PreAbstractSimplicialComplex.SimplicialMap.id
+      K.toPreAbstractSimplicialComplex)
+    (hfg : f.comp g = _root_.PreAbstractSimplicialComplex.SimplicialMap.id
+      L.toPreAbstractSimplicialComplex)
+    {P : Finset α → Prop} {Q : Finset β → Prop}
+    (hPQ : ∀ s, P s ↔ Q (s.image f)) :
+    f.realizationMap '' {x | P x.1.support} = {y | Q y.1.support} := by
+  have hf := injective_of_comp_eq_id f g hgf
+  ext y
+  obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
+  rw [_root_.PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply,
+    (f.realizationMap_injective_iff.mpr hf).mem_set_image]
+  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn, hPQ]
+
 end TauCeti.PreAbstractSimplicialComplex.SimplicialMap

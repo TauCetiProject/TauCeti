@@ -118,12 +118,9 @@ theorem image_realizationMap_openCell {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.openCell n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [openCell_realizationCellEquiv_symm, openCell_realizationCellEquiv_symm]
-  have hf := injective_of_comp_eq_id f g hgf
-  ext y
-  obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
-  rw [realizationHomeomorph_apply, (f.realizationMap_injective_iff.mpr hf).mem_set_image]
-  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn,
-    cellEquiv_face, Finset.image_inj hf]
+  apply image_realizationMap_ofPred_support f g hgf hfg
+    (P := (· = c.1.1)) (Q := (· = (cellEquiv f g hgf hfg n c).1.1))
+  simp only [cellEquiv_face, Finset.image_inj (injective_of_comp_eq_id f g hgf), implies_true]
 
 /-- A simplicial isomorphism carries a closed CW cell onto the closed cell of the image face. -/
 theorem image_realizationMap_closedCell {n : ℕ} (c : RealizationCell K n) :
@@ -133,12 +130,10 @@ theorem image_realizationMap_closedCell {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.closedCell n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [closedCell_realizationCellEquiv_symm, closedCell_realizationCellEquiv_symm]
-  have hf := injective_of_comp_eq_id f g hgf
-  ext y
-  obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
-  rw [realizationHomeomorph_apply, (f.realizationMap_injective_iff.mpr hf).mem_set_image]
-  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn,
-    cellEquiv_face, Finset.image_subset_image_iff hf]
+  apply image_realizationMap_ofPred_support f g hgf hfg
+    (P := (· ⊆ c.1.1)) (Q := (· ⊆ (cellEquiv f g hgf hfg n c).1.1))
+  simp only [cellEquiv_face, Finset.image_subset_image_iff (injective_of_comp_eq_id f g hgf),
+    implies_true]
 
 /-- A simplicial isomorphism carries a cell frontier onto the frontier of its image cell. -/
 theorem image_realizationMap_cellFrontier {n : ℕ} (c : RealizationCell K n) :
@@ -148,12 +143,10 @@ theorem image_realizationMap_cellFrontier {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.cellFrontier n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [cellFrontier_realizationCellEquiv_symm, cellFrontier_realizationCellEquiv_symm]
-  have hf := injective_of_comp_eq_id f g hgf
-  ext y
-  obtain ⟨x, rfl⟩ := (f.realizationHomeomorph g hgf hfg).surjective y
-  rw [realizationHomeomorph_apply, (f.realizationMap_injective_iff.mpr hf).mem_set_image]
-  simp only [mem_ofPred_eq, support_realizationMap_of_injOn f x hf.injOn,
-    cellEquiv_face, Finset.image_ssubset_image hf]
+  apply image_realizationMap_ofPred_support f g hgf hfg
+    (P := (· ⊂ c.1.1)) (Q := (· ⊂ (cellEquiv f g hgf hfg n c).1.1))
+  simp only [cellEquiv_face, Finset.image_ssubset_image (injective_of_comp_eq_id f g hgf),
+    implies_true]
 
 end Realization
 
