@@ -45,7 +45,7 @@ ideal norm of the distance to its operator-norm limit.
 ## References
 
 * B. Simon, *Trace Ideals and Their Applications*, second edition, AMS, 2005, Chapter 2.
-* I. C. Gohberg, M. G. Kreĭn, *Introduction to the Theory of Linear Nonselfadjoint Operators*,
+* I. C. Gohberg, M. G. Krein, *Introduction to the Theory of Linear Nonselfadjoint Operators*,
   AMS, 1969, Chapter III.
 -/
 
