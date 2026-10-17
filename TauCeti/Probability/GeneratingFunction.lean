@@ -272,8 +272,8 @@ theorem pgf_eq_tsum (ν : Measure ℕ) [IsFiniteMeasure ν] {t : ℝ} (ht : |t| 
 
 /-- A nonnegative exponential moment extends the power-series representation of a
 probability-generating function to the open ball of radius `exp t`. -/
-theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast {ν : Measure ℕ} {t : ℝ} (ht : 0 ≤ t)
-    (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) :
+theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_mul_natCast {ν : Measure ℕ} {t : ℝ}
+    (ht : 0 ≤ t) (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) :
     HasFPowerSeriesOnBall (pgf id ν) (ofScalars ℝ fun k => ν.real {k}) 0
       (ENNReal.ofReal (Real.exp t)) := by
   let p := ofScalars ℝ fun k => ν.real {k}
@@ -321,12 +321,12 @@ power series whose coefficients are the singleton masses, and that series conver
 unit ball. -/
 theorem hasFPowerSeriesOnBall_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
     HasFPowerSeriesOnBall (pgf id ν) (ofScalars ℝ fun n => ν.real {n}) 0 1 := by
-  simpa using hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast (ν := ν) le_rfl
+  simpa using hasFPowerSeriesOnBall_pgf_of_integrable_exp_mul_natCast (ν := ν) le_rfl
     (by simpa only [zero_mul, Real.exp_zero] using integrable_const (μ := ν) (1 : ℝ))
 
 /-- A positive exponential moment makes every natural falling factorial integrable. -/
-theorem integrable_descFactorial_of_integrable_exp_natCast {ν : Measure ℕ} {t : ℝ} (ht : 0 < t)
-    (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
+theorem integrable_descFactorial_of_integrable_exp_mul_natCast {ν : Measure ℕ} {t : ℝ}
+    (ht : 0 < t) (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
     Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν := by
   let _ : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_of_one_le hExp <|
     Filter.Eventually.of_forall fun k => by
@@ -350,12 +350,12 @@ theorem iteratedDeriv_pgf_one {ν : Measure ℕ} {t : ℝ} (ht : 0 < t)
     iteratedDeriv n (pgf id ν) 1 = ∫ k : ℕ, (k.descFactorial n : ℝ) ∂ν := by
   let p := ofScalars ℝ fun k => ν.real {k}
   have hp : HasFPowerSeriesOnBall (pgf id ν) p 0 (ENNReal.ofReal (Real.exp t)) := by
-    simpa only [p] using hasFPowerSeriesOnBall_pgf_of_integrable_exp_natCast ht.le hExp
+    simpa only [p] using hasFPowerSeriesOnBall_pgf_of_integrable_exp_mul_natCast ht.le hExp
   have h_one_ball : (1 : ℝ≥0∞) < ENNReal.ofReal (Real.exp t) := by
     rw [← ENNReal.ofReal_one,
       ENNReal.ofReal_lt_ofReal_iff (Real.exp_pos t)]
     exact Real.one_lt_exp_iff.mpr ht
-  have hdesc_int := integrable_descFactorial_of_integrable_exp_natCast ht hExp n
+  have hdesc_int := integrable_descFactorial_of_integrable_exp_mul_natCast ht hExp n
   rw [hp.iteratedDeriv_eq_tsum_descFactorial_mul_pow (by simpa using h_one_ball) n,
     integral_countable hdesc_int]
   simp only [one_pow, mul_one]

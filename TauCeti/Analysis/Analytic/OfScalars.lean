@@ -160,20 +160,21 @@ theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [ofScalarsSum, mul_comm] using h.symm
 
-/-- Inside its ball of convergence, the iterated derivatives of a real scalar power series are
+/-- Inside its ball of convergence, the iterated derivatives of a scalar power series are
 given by the termwise differentiated series. -/
 theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
-    {f : ℝ → ℝ} {c : ℕ → ℝ} {r : ℝ≥0∞}
-    (hf : HasFPowerSeriesOnBall f (ofScalars ℝ c) 0 r) {y : ℝ} (hy : ‖y‖ₑ < r) (n : ℕ) :
-    iteratedDeriv n f y = ∑' k : ℕ, (k.descFactorial n : ℝ) * c k * y ^ (k - n) := by
-  let p := ofScalars ℝ c
+    {𝕂 : Type*} [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
+    iteratedDeriv n f y = ∑' k : ℕ, (k.descFactorial n : 𝕂) * c k * y ^ (k - n) := by
+  let p := ofScalars 𝕂 c
   have hp_y := hf.changeOrigin (y := y) hy
   have hderiv :
-      (n.factorial : ℝ) * (p.changeOrigin y n) (fun _ ↦ (1 : ℝ)) =
+      (n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂)) =
         iteratedDeriv n f y := by
     rw [iteratedDeriv_eq_iteratedFDeriv]
     simpa only [p, zero_add, nsmul_eq_mul, Nat.cast_ofNat] using
-      hp_y.factorial_smul (1 : ℝ) n
+      hp_y.factorial_smul (1 : 𝕂) n
   have h_radius : ‖y‖ₑ < p.radius := hy.trans_le hf.r_le
   have hp_change := p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)
   have hsum_map := hp_change.hasSum (y := y) (by
@@ -181,28 +182,28 @@ theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
     exact h_radius)
   have hsum_coeff :
       HasSum (fun l : ℕ ↦ ((p.changeOriginSeries n l) (fun _ ↦ y))
-        (fun _ ↦ (1 : ℝ))) ((p.changeOrigin y n) (fun _ ↦ (1 : ℝ))) :=
+        (fun _ ↦ (1 : 𝕂))) ((p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) :=
     by simpa only [zero_add] using
-      ContinuousMultilinearMap.hasSum_eval hsum_map (fun _ ↦ (1 : ℝ))
+      ContinuousMultilinearMap.hasSum_eval hsum_map (fun _ ↦ (1 : 𝕂))
   have hsum_choose :
-      HasSum (fun l : ℕ ↦ (Nat.choose (n + l) l : ℝ) * c (n + l) * y ^ l)
-        ((p.changeOrigin y n) (fun _ ↦ (1 : ℝ))) := by
+      HasSum (fun l : ℕ ↦ (Nat.choose (n + l) l : 𝕂) * c (n + l) * y ^ l)
+        ((p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
     convert hsum_coeff using 1
     ext l
     simpa only [p, nsmul_eq_mul, smul_eq_mul, one_pow, mul_one, mul_assoc] using
-      (changeOriginSeries_ofScalars_apply c y (1 : ℝ) n l).symm
+      (changeOriginSeries_ofScalars_apply c y (1 : 𝕂) n l).symm
   have hsum_tail :
-      HasSum (fun l : ℕ ↦ ((n + l).descFactorial n : ℝ) * c (n + l) * y ^ l)
-        ((n.factorial : ℝ) * (p.changeOrigin y n) (fun _ ↦ (1 : ℝ))) := by
-    convert hsum_choose.mul_left (n.factorial : ℝ) using 1
+      HasSum (fun l : ℕ ↦ ((n + l).descFactorial n : 𝕂) * c (n + l) * y ^ l)
+        ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
+    convert hsum_choose.mul_left (n.factorial : 𝕂) using 1
     ext l
     rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.choose_symm_add]
     push_cast
     ring
-  let g : ℕ → ℝ := fun k ↦ (k.descFactorial n : ℝ) * c k * y ^ (k - n)
+  let g : ℕ → 𝕂 := fun k ↦ (k.descFactorial n : 𝕂) * c k * y ^ (k - n)
   have hsum_tail' :
       HasSum (fun l : ℕ ↦ g (l + n))
-        ((n.factorial : ℝ) * (p.changeOrigin y n) (fun _ ↦ (1 : ℝ))) := by
+        ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
     simpa only [g, add_comm, Nat.add_sub_cancel_left] using hsum_tail
   have hprefix : ∑ k ∈ Finset.range n, g k = 0 := by
     apply Finset.sum_eq_zero
@@ -210,7 +211,7 @@ theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
     simp only [g, Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk), Nat.cast_zero,
       zero_mul]
   have hsum_desc :
-      HasSum g ((n.factorial : ℝ) * (p.changeOrigin y n) (fun _ ↦ (1 : ℝ))) := by
+      HasSum g ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
     have h := (hasSum_nat_add_iff n).mp hsum_tail'
     simpa only [hprefix, add_zero] using h
   rw [← hderiv]
