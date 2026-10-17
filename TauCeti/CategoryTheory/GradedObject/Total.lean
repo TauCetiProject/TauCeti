@@ -111,7 +111,7 @@ lemma total_tensor_hom_ext {X Y : GradedObject I C} {A : C}
 
 /-- Morphisms out of `((∐ᵢ Xᵢ) ⊗ (∐ⱼ Yⱼ)) ⊗ (∐ₖ Zₖ)` agree as soon as they agree on every
 summand `(Xᵢ ⊗ Yⱼ) ⊗ Zₖ`. -/
-private lemma total_tensor_tensor_hom_ext {X Y Z : GradedObject I C} {A : C}
+lemma total_tensor_tensor_hom_ext {X Y Z : GradedObject I C} {A : C}
     {f g : ((total I C).obj X ⊗ (total I C).obj Y) ⊗ (total I C).obj Z ⟶ A}
     (h : ∀ i j k, ((ιTotal X i ⊗ₘ ιTotal Y j) ⊗ₘ ιTotal Z k) ≫ f =
       ((ιTotal X i ⊗ₘ ιTotal Y j) ⊗ₘ ιTotal Z k) ≫ g) :
@@ -122,10 +122,10 @@ private lemma total_tensor_tensor_hom_ext {X Y Z : GradedObject I C} {A : C}
     (tensorRight ((total I C).obj Y) ⋙ tensorRight (Z k)) X) _ _ fun i ↦ ?_
   refine Cofan.IsColimit.hom_ext (isColimitOfHasCoproductOfPreservesColimit
     (tensorLeft (X i) ⋙ tensorRight (Z k)) Y) _ _ fun j ↦ ?_
-  have := h i j k
-  rw [tensorHom_def, tensorHom_def', comp_whiskerRight, Category.assoc, Category.assoc,
-    Category.assoc, Category.assoc] at this
-  exact this
+  have hijk := h i j k
+  rw [tensorHom_def, tensorHom_def', comp_whiskerRight] at hijk
+  simp only [Category.assoc] at hijk
+  exact hijk
 
 end Ext
 
@@ -159,11 +159,20 @@ variable (μ' : ∀ X Y : GradedObject I C, (total I C).obj X ⊗ (total I C).ob
     (ιTotal X i ⊗ₘ ιTotal Y j) ≫ μ' X Y = Monoidal.ιTensorObj X Y i j n h ≫ ιTotal (X ⊗ Y) n)
 include hμ'
 
+omit [∀ A : C, PreservesColimitsOfShape (Discrete I) (tensorLeft A)]
+    [∀ A : C, PreservesColimitsOfShape (Discrete I) (tensorRight A)] in
+private lemma total_μ_component {P Q : C} (X Y : GradedObject I C) (i j n : I)
+    (h : i + j = n) (f : P ⟶ X i) (g : Q ⟶ Y j) :
+    ((f ≫ ιTotal X i) ⊗ₘ (g ≫ ιTotal Y j)) ≫ μ' X Y =
+      (f ⊗ₘ g) ≫ Monoidal.ιTensorObj X Y i j n h ≫ ιTotal (X ⊗ Y) n := by
+  rw [← tensorHom_comp_tensorHom_assoc, hμ' X Y i j n h]
+
 private lemma total_μ_natural {X Y X' Y' : GradedObject I C} (f : X ⟶ Y) (g : X' ⟶ Y') :
     ((total I C).map f ⊗ₘ (total I C).map g) ≫ μ' Y Y' = μ' X X' ≫ (total I C).map (f ⊗ₘ g) := by
   refine total_tensor_hom_ext fun i j ↦ ?_
   rw [tensorHom_comp_tensorHom_assoc, ιTotal_total_map, ιTotal_total_map,
-    ← tensorHom_comp_tensorHom_assoc, hμ' _ _ i j _ rfl, reassoc_of% (hμ' X X' i j _ rfl),
+    total_μ_component μ' hμ' Y Y' i j _ rfl (f i) (g j),
+    reassoc_of% (hμ' X X' i j _ rfl),
     ιTotal_total_map, ← Category.assoc, ← Category.assoc]
   -- The tensor product of morphisms of graded objects is `Monoidal.tensorHom`.
   exact congrArg (· ≫ _) (Monoidal.ι_tensorHom f g i j _ rfl).symm
@@ -182,13 +191,18 @@ private lemma total_associativity (X Y Z : GradedObject I C) :
   refine Eq.trans ?_ (key.trans ?_)
   -- In both cases `rfl` identifies the tensor product and the associator of graded objects with
   -- `Monoidal.tensorObj` and `Monoidal.associator`, in which `key` is stated.
-  · rw [tensorHom_comp_tensorHom_assoc, hμ' X Y i j _ rfl, Category.comp_id,
-      ← Category.id_comp (ιTotal Z k), ← tensorHom_comp_tensorHom_assoc,
-      reassoc_of% (hμ' (X ⊗ Y) Z (i + j) k (i + j + k) rfl), ιTotal_total_map, tensorHom_id]
+  · rw [tensorHom_comp_tensorHom_assoc, hμ' X Y i j _ rfl]
+    simp only [Category.comp_id]
+    rw [reassoc_of% (total_μ_component μ' hμ' (X ⊗ Y) Z (i + j) k
+        (i + j + k) rfl (Monoidal.ιTensorObj X Y i j (i + j) rfl) (𝟙 (Z k))),
+      ιTotal_total_map]
+    simp only [tensorHom_id]
     rfl
-  · rw [associator_naturality_assoc, tensorHom_comp_tensorHom_assoc, hμ' Y Z j k _ rfl,
-      Category.comp_id, ← Category.id_comp (ιTotal X i), ← tensorHom_comp_tensorHom_assoc,
-      hμ' X (Y ⊗ Z) i (j + k) (i + j + k) (add_assoc i j k).symm, id_tensorHom]
+  · rw [associator_naturality_assoc, tensorHom_comp_tensorHom_assoc, hμ' Y Z j k _ rfl]
+    simp only [Category.comp_id]
+    rw [← Category.id_comp (ιTotal X i), ← tensorHom_comp_tensorHom_assoc,
+      hμ' X (Y ⊗ Z) i (j + k) (i + j + k) (add_assoc i j k).symm]
+    simp only [id_tensorHom]
     rfl
 
 omit [∀ A : C, PreservesColimitsOfShape (Discrete I) (tensorRight A)] in
@@ -198,10 +212,12 @@ private lemma total_left_unitality (X : GradedObject I C) :
         𝟙 ((total I C).obj X)) ≫ μ' (𝟙_ (GradedObject I C)) X ≫
         (total I C).map (λ_ X).hom := by
   refine whiskerLeft_total_hom_ext fun i ↦ ?_
-  rw [leftUnitor_naturality, ← id_tensorHom, tensorHom_comp_tensorHom_assoc, Category.id_comp,
+  rw [leftUnitor_naturality]
+  simp only [← id_tensorHom, tensorHom_comp_tensorHom_assoc, Category.id_comp,
     Category.comp_id]
-  conv_rhs => rw [← Category.id_comp (ιTotal X i), ← tensorHom_comp_tensorHom_assoc,
-    reassoc_of% (hμ' _ X 0 i i (zero_add i)), ιTotal_total_map, tensorHom_id]
+  conv_rhs => rw [reassoc_of% (total_μ_component μ' hμ' (𝟙_ (GradedObject I C)) X
+    0 i i (zero_add i) Monoidal.tensorUnit₀.inv (𝟙 (X i))), ιTotal_total_map,
+    tensorHom_id]
   -- The left unitor of graded objects is inverse to the inclusion of `𝟙_ C ⊗ X i` in degree
   -- `0 + i` (`Monoidal.leftUnitor_inv_apply`).
   have h : Monoidal.tensorUnit₀.inv ▷ X i ≫
@@ -217,10 +233,12 @@ private lemma total_right_unitality (X : GradedObject I C) :
         (Monoidal.tensorUnit₀.inv ≫ ιTotal (𝟙_ (GradedObject I C)) 0)) ≫
         μ' X (𝟙_ (GradedObject I C)) ≫ (total I C).map (ρ_ X).hom := by
   refine whiskerRight_total_hom_ext fun i ↦ ?_
-  rw [rightUnitor_naturality, ← tensorHom_id, tensorHom_comp_tensorHom_assoc, Category.id_comp,
+  rw [rightUnitor_naturality]
+  simp only [← tensorHom_id, tensorHom_comp_tensorHom_assoc, Category.id_comp,
     Category.comp_id]
-  conv_rhs => rw [← Category.id_comp (ιTotal X i), ← tensorHom_comp_tensorHom_assoc,
-    reassoc_of% (hμ' X _ i 0 i (add_zero i)), ιTotal_total_map, id_tensorHom]
+  conv_rhs => rw [reassoc_of% (total_μ_component μ' hμ' X (𝟙_ (GradedObject I C))
+    i 0 i (add_zero i) (𝟙 (X i)) Monoidal.tensorUnit₀.inv), ιTotal_total_map,
+    id_tensorHom]
   -- The right unitor of graded objects is inverse to the inclusion of `X i ⊗ 𝟙_ C` in degree
   -- `i + 0` (`Monoidal.rightUnitor_inv_apply`).
   have h : X i ◁ Monoidal.tensorUnit₀.inv ≫
