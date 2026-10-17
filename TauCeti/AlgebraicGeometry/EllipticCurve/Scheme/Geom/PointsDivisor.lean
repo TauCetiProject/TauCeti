@@ -11,6 +11,7 @@ import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Finite
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
@@ -23,8 +24,9 @@ effective Cartier divisor `[x a]` on `E`. The divisor `∑_{a ∈ A} [x a]`
 times in the family are counted with multiplicity.
 
 The divisor `∑_a [x a]` is a relative effective Cartier divisor on `E` over `S`, hence finite
-locally free over `S` since `E` is proper. It contains each of the points `x a`, does not depend on
-how the points are indexed, and commutes with base change.
+locally free over `S` since `E` is proper. It contains each of the points `x a`, its support is the
+union of their images, it does not depend on how the points are indexed, and it commutes with base
+change.
 Particular cases are the divisor `[P] + [2P] + ⋯ + [NP]` of points of exact order `N`
 (`EllipticCurveGeom.multiplesDivisor`) and the divisor `∑_{a ∈ (ℤ/Nℤ)²} [φ a]` of Drinfeld bases
 (`EllipticCurveGeom.IsDrinfeldBasis`).
@@ -42,6 +44,8 @@ Particular cases are the divisor `[P] + [2P] + ⋯ + [NP]` of points of exact or
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_pointsDivisor` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_pointsDivisor`:
   `∑_a [x a]` is finite locally free over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.coe_support_pointsDivisor`: the support of
+  `∑_a [x a]` is the union of the images of the sections `x a`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor_comp_equiv`: `∑_a [x a]` does not
   depend on the indexing.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor_pointsPullback`: `∑_a [x a]`
@@ -114,6 +118,15 @@ theorem pointsDivisor_le_ker (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureM
   classical
   rw [pointsDivisor, ← Finset.mul_prod_erase _ _ (Finset.mem_univ a)]
   exact mul_le_of_le_one_right bot_le le_top
+
+/-- The support of the divisor `∑_a [x a]` is the union of the images of the sections `x a`. -/
+theorem coe_support_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
+    ((E.pointsDivisor x).support : Set E.carrier) = ⋃ a, Set.range (x a).left := by
+  have (a : A) : IsClosedImmersion (x a).left :=
+    (x a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
+  simp [pointsDivisor_def, Scheme.IdealSheafData.support_prod,
+    TopologicalSpace.Closeds.coe_finset_sup, Scheme.Hom.support_ker,
+    fun a ↦ (x a).left.isClosedEmbedding.isClosed_range.closure_eq]
 
 /-- **The divisor `∑_a [x a]` does not depend on the indexing** of the family of points. -/
 @[simp]

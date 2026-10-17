@@ -8,10 +8,10 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Basic
 
 /-!
-# Products of ideal sheaves with disjoint supports
+# Products of ideal sheaves
 
-When the supports of finitely many ideal sheaves are pairwise disjoint, their
-product equals their intersection.
+The support of a finite product of ideal sheaves is the union of their supports. When the
+supports are pairwise disjoint, the product equals their intersection.
 This identifies the sum of disjoint section divisors with their scheme-theoretic union.
 -/
 
@@ -20,6 +20,15 @@ public section
 open AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+/-- The support of a finite product of ideal sheaves is the union of their supports. -/
+@[simp]
+theorem support_prod {X : Scheme} {ι : Type*} (s : Finset ι) (I : ι → X.IdealSheafData) :
+    (∏ i ∈ s, I i).support = s.sup fun i ↦ (I i).support := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Scheme.IdealSheafData.one_eq_top, Scheme.IdealSheafData.support_top]
+  | insert i s hi ih => rw [Finset.prod_insert hi, support_mul, ih, Finset.sup_insert]
 
 /-- Ideal sheaves with disjoint supports generate the unit ideal sheaf together. -/
 theorem sup_eq_top_of_disjoint_support
