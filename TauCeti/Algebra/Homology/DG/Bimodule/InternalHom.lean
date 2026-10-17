@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.TransferInstance
 public import TauCeti.Algebra.Homology.DG.Bimodule.Defs
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
+public import TauCeti.Algebra.Homology.DG.Module.Right.Yoneda
 
 /-!
 # The internal Hom of differential graded modules
@@ -38,6 +39,8 @@ identity: evaluation at the unit is a bijective morphism of DG right modules `Ho
   differentials.
 * `TauCeti.DGRightModule.InternalHom.evalOne`: evaluation at the unit, from the internal Hom out
   of the regular bimodule.
+* `TauCeti.DGRightModule.InternalHom.rightMul`: right multiplication by an element of `N`, the
+  inverse of evaluation at the unit.
 
 ## Main results
 
@@ -86,7 +89,7 @@ variable (𝒜) [DirectSum.Decomposition 𝒜] in
 include 𝒜 in
 /-- Precomposing a finite sum of homogeneous right-module maps with the action of an element of
 `A` gives a finite sum of homogeneous right-module maps. -/
-theorem comp_toLinearMap_mem_iSup {f : M →ₗ[Bᵐᵒᵖ] N}
+theorem comp_toLinearMap_mem_iSup_dgRightModuleCochains {f : M →ₗ[Bᵐᵒᵖ] N}
     (hf : f ∈ ⨆ p, dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p) (a : A) :
     f ∘ₗ DistribSMul.toLinearMap Bᵐᵒᵖ M a ∈
       ⨆ p, dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p := by
@@ -304,11 +307,14 @@ theorem differential_ofCochains (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p) :
     differential 𝒜 hM hN (ofCochains 𝒜 p f) =
       ofCochains 𝒜 (p + 1) (dgRightModuleCochains.differential (hM := hM) (hN := hN) p f) := by
-  have h := decomposeLinearEquiv_apply_coe (grading 𝒜 B ℳ 𝒩) p
-    ⟨ofCochains 𝒜 p f, ofCochains_mem_grading p f⟩
-  simp only at h
-  rw [differential, LinearMap.comp_apply, LinearEquiv.coe_coe, h, DirectSum.toModule_lof]
-  rfl
+  have h : decomposeLinearEquiv (grading 𝒜 B ℳ 𝒩) (ofCochains 𝒜 p f) =
+      lof R ℤ (fun q ↦ grading 𝒜 B ℳ 𝒩 q) p ⟨ofCochains 𝒜 p f, ofCochains_mem_grading p f⟩ :=
+    decomposeLinearEquiv_apply_coe _ p ⟨_, ofCochains_mem_grading p f⟩
+  have hf : (coeLM ∘ₗ (grading 𝒜 B ℳ 𝒩 p).subtype).codRestrict _ (fun g ↦ g.2)
+      ⟨ofCochains 𝒜 p f, ofCochains_mem_grading p f⟩ = f :=
+    Subtype.ext ((LinearMap.codRestrict_apply _ _ _).trans (coeLM_ofCochains (𝒜 := 𝒜) p f))
+  rw [differential, LinearMap.comp_apply, LinearEquiv.coe_coe, h, DirectSum.toModule_lof,
+    LinearMap.comp_apply, LinearMap.comp_apply, hf]
 
 /-- The differential of the internal Hom on a homogeneous map `f` of degree `p` is the graded
 commutator `d_N ∘ f - (-1) ^ p f ∘ d_M`. -/
@@ -328,7 +334,7 @@ theorem differential_mem_grading {p : ℤ} {f : InternalHom 𝒜 B ℳ 𝒩}
 
 /-- The differential of the internal Hom squares to zero. -/
 @[simp]
-theorem differential_differential (f : InternalHom 𝒜 B ℳ 𝒩) :
+theorem differential_sq_zero (f : InternalHom 𝒜 B ℳ 𝒩) :
     differential 𝒜 hM hN (differential 𝒜 hM hN f) = 0 := by
   induction f using DirectSum.Decomposition.inductionOn (grading 𝒜 B ℳ 𝒩) with
   | zero => rw [map_zero, map_zero]
@@ -351,7 +357,7 @@ variable [Module A M] [SMulCommClass A Bᵐᵒᵖ M] [DirectSum.Decomposition �
 /-- The right action of `A` on the internal Hom, `(f · a)(x) = f (a x)`. -/
 instance : SMul Aᵐᵒᵖ (InternalHom 𝒜 B ℳ 𝒩) where
   smul a f := ⟨⟨(f.val : M →ₗ[Bᵐᵒᵖ] N) ∘ₗ DistribSMul.toLinearMap Bᵐᵒᵖ M a.unop,
-    comp_toLinearMap_mem_iSup 𝒜 f.val.2 a.unop⟩⟩
+    comp_toLinearMap_mem_iSup_dgRightModuleCochains 𝒜 f.val.2 a.unop⟩⟩
 
 /-- The right action of `A` on the internal Hom precomposes with the left action on `M`. -/
 @[simp]
@@ -415,7 +421,7 @@ theorem internalHom (hM : IsDGBimodule hA hB ℳ dM) (hN : IsDGRightModule hB �
       (InternalHom.differential 𝒜 hM.isDGRightModule hN) where
   isHomogeneous := LinearMap.isHomogeneous_def.2 fun _ _ hf ↦
     InternalHom.differential_mem_grading _ _ hf
-  sq_zero := InternalHom.differential_differential _ _
+  sq_zero := InternalHom.differential_sq_zero _ _
   leibniz {q f} hf a := by
     induction a using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
@@ -445,29 +451,29 @@ variable {R : Type uR} {B : Type uB} {N : Type uN} [CommRing R] [Ring B] [Algebr
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece 𝒩]
   {dN : N →ₗ[R] N}
 
-/-- Right multiplication of an element of `N` by elements of `B` is a right-module map
-`B ⟶ N`. -/
-private def rightMul (n : N) : B →ₗ[Bᵐᵒᵖ] N where
-  toFun b := op b • n
-  map_add' b c := by rw [op_add, add_smul]
-  map_smul' c b := by
-    rw [smul_eq_mul_unop, op_mul, op_unop, mul_smul, RingHom.id_apply]
+variable (ℬ 𝒩) in
+/-- **Right multiplication** `b ↦ n b` by an element `n` of `N`, as an element of the internal Hom
+out of the regular bimodule.  On each homogeneous component of `n` it is the inverse of the
+degreewise Yoneda lemma `TauCeti.dgYonedaCochainEquiv`, and it is inverse to evaluation at the
+unit. -/
+noncomputable def rightMul : N →ₗ[R] InternalHom ℬ B ℬ 𝒩 :=
+  DirectSum.toModule R ℤ _ (fun q ↦ ofCochains ℬ q ∘ₗ
+    (dgYonedaCochainEquiv (𝒜 := ℬ) (ℳ := 𝒩) q).symm.toLinearMap) ∘ₗ
+    (decomposeLinearEquiv 𝒩).toLinearMap
 
-/-- Right multiplication by any element is a finite sum of homogeneous right-module maps. -/
-private theorem rightMul_mem_iSup (n : N) :
-    rightMul n ∈ ⨆ q, dgRightModuleCochains (R := R) (A := B) (ℳ := ℬ) (ℳN := 𝒩) q := by
+/-- On an element of degree `q`, right multiplication is the inverse of the degreewise Yoneda
+lemma. -/
+theorem rightMul_coe {q : ℤ} (n : 𝒩 q) :
+    rightMul ℬ 𝒩 (n : N) = ofCochains ℬ q ((dgYonedaCochainEquiv (𝒜 := ℬ) (ℳ := 𝒩) q).symm n) := by
+  rw [rightMul, LinearMap.comp_apply, LinearEquiv.coe_coe, decomposeLinearEquiv_apply_coe,
+    DirectSum.toModule_lof, LinearMap.comp_apply, LinearEquiv.coe_coe]
+
+@[simp]
+theorem rightMul_apply (n : N) (b : B) : rightMul ℬ 𝒩 n b = op b • n := by
   induction n using DirectSum.Decomposition.inductionOn 𝒩 with
-  | zero =>
-    convert zero_mem (⨆ q, dgRightModuleCochains (R := R) (A := B) (ℳ := ℬ) (ℳN := 𝒩) q)
-    exact LinearMap.ext fun b ↦ smul_zero _
-  | @homogeneous q n =>
-    refine Submodule.mem_iSup_of_mem q (dgRightModuleCochains.mem_iff.2
-      (LinearMap.isHomogeneous_def.2 fun r b hb ↦ ?_))
-    rw [add_comm]
-    exact op_smul_mem_of_mem_graded hb n.2
-  | add n n' hn hn' =>
-    convert add_mem hn hn' using 1
-    exact LinearMap.ext fun b ↦ smul_add _ _ _
+  | zero => rw [map_zero, zero_apply, smul_zero]
+  | @homogeneous q n => rw [rightMul_coe, ofCochains_apply, dgYonedaCochainEquiv_symm_apply]
+  | add n n' hn hn' => rw [map_add, add_apply, hn, hn', smul_add]
 
 variable (hN : IsDGRightModule hB 𝒩 dN)
 
@@ -493,14 +499,25 @@ def evalOne : DGRightModuleHom (hB.isDGBimodule.internalHom hN) hN where
 @[simp]
 theorem evalOne_apply (f : InternalHom ℬ B ℬ 𝒩) : evalOne hN f = f 1 := (rfl)
 
+/-- Evaluation at the unit is a left inverse of right multiplication. -/
+theorem evalOne_rightMul (n : N) : evalOne hN (rightMul ℬ 𝒩 n) = n := by
+  rw [evalOne_apply, rightMul_apply, op_one, one_smul]
+
+/-- Right multiplication is a left inverse of evaluation at the unit. -/
+theorem rightMul_evalOne (f : InternalHom ℬ B ℬ 𝒩) : rightMul ℬ 𝒩 (evalOne hN f) = f := by
+  induction f using DirectSum.Decomposition.inductionOn (grading ℬ B ℬ 𝒩) with
+  | zero => rw [map_zero, map_zero]
+  | @homogeneous q f =>
+    obtain ⟨g, hg⟩ := mem_grading_iff_exists.1 f.2
+    rw [← hg, evalOne_apply, ofCochains_apply, ← dgYonedaCochainEquiv_apply, rightMul_coe,
+      LinearEquiv.symm_apply_apply]
+  | add f g hf hg => rw [map_add, map_add, hf, hg]
+
 /-- **The regular bimodule represents the identity**: evaluation at the unit is a bijection
-`Hom_B(B, N) ⟶ N`, with inverse sending `n` to right multiplication `b ↦ n b`. -/
-theorem evalOne_bijective : Function.Bijective (evalOne hN) := by
-  refine ⟨fun f g hfg ↦ ext fun b ↦ ?_, fun n ↦ ⟨⟨⟨rightMul n, rightMul_mem_iSup n⟩⟩, ?_⟩⟩
-  · rw [evalOne_apply, evalOne_apply] at hfg
-    rw [← one_mul b, ← op_smul_eq_mul, map_smul, map_smul, hfg]
-  · rw [evalOne_apply, mk_apply]
-    exact one_smul _ n
+`Hom_B(B, N) ⟶ N`, with inverse `rightMul` sending `n` to right multiplication `b ↦ n b`. -/
+theorem evalOne_bijective : Function.Bijective (evalOne hN) :=
+  ⟨Function.LeftInverse.injective (g := rightMul ℬ 𝒩) (rightMul_evalOne hN),
+    Function.RightInverse.surjective (evalOne_rightMul hN)⟩
 
 end DGRightModule.InternalHom
 
