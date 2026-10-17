@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -22,7 +21,8 @@ Consequently, normalized Hausdorff measure on the graph is quantitatively equiva
 measure on the parameter space.
 
 The exact weighted surface-integration formula on such a graph is the area formula for injective
-Lipschitz maps, `LipschitzWith.lintegral_image_eq_lintegral_normDet_fderiv_mul`, applied to
+Lipschitz maps, `LipschitzWith.lintegral_image_eq_lintegral_normDet_fderiv_mul` from
+`TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz`, applied to
 `hφ.normalGraphEmbedding` and `(injective_normalGraphEmbedding φ).injOn`; its density is the
 geometric Jacobian of the graph parametrization. These results allow an `L²` trace constructed
 in graph coordinates to be interpreted as a trace with respect to Euclidean surface measure.
