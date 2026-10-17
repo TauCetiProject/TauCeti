@@ -16,20 +16,27 @@ On a real inner product space `E` of dimension `n`, the *conformal coefficient* 
 
 `aₙ = 4 (n - 1) / (n - 2)`,  `pₙ = 2 n / (n - 2)`,
 
-so that the conformal Laplacian of a metric `g` is `aₙ Δ⁺_g + Scal_g`, with `Δ⁺ = -Δ` the
-nonnegative Laplacian. The *bubble* of scale `t > 0` centred at `b` is
+so that, for `n > 2`, the conformal Laplacian of a metric `g` is `aₙ Δ⁺_g + Scal_g`, with
+`Δ⁺ = -Δ` the nonnegative Laplacian. The *bubble* of scale `t > 0` centred at `b` is
 
 `U_{t,b}(x) = (2 t / (t² + ‖x - b‖²)) ^ ((n - 2) / 2)`.
 
-Classically, `U_{t,b} ^ (4 / (n - 2))` times the Euclidean metric is the pullback of the unit
-round metric of `Sⁿ` under `x ↦ σ⁻¹ ((x - b) / t)`, with `σ` a stereographic projection; this
-identification is not formalized here. Accordingly, the bubble solves the conformal Laplacian
+The definitions are total: they make sense in every dimension, and at `n = 2` the divisions by
+`n - 2` evaluate to `0` by Lean's convention. Their geometric and analytic meaning is classical
+only for `n > 2`, which is the setting of the Yamabe problem.
+
+Classically, for `n > 2`, `U_{t,b} ^ (4 / (n - 2))` times the Euclidean metric is the pullback of
+the unit round metric of `Sⁿ` under `x ↦ σ⁻¹ ((x - b) / t)`, with `σ` a stereographic projection;
+this identification is not formalized here. Accordingly, the bubble solves the conformal Laplacian
 equation whose right-hand side carries the scalar curvature `n (n - 1)` of the unit sphere:
 
 `aₙ (-Δ U_{t,b}) = n (n - 1) U_{t,b} ^ (pₙ - 1)`.
 
-These functions are the extremals of the sharp Euclidean Sobolev inequality and the local models
-for the test functions of the Yamabe problem.
+As stated, this equation is proved here for every `n ≠ 2`; in dimensions `0` and `1` both sides
+vanish, and it carries no geometric content.
+
+For `n > 2`, these functions are the extremals of the sharp Euclidean Sobolev inequality and the
+local models for the test functions of the Yamabe problem.
 
 ## Main declarations
 
@@ -39,6 +46,8 @@ for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_pos`, `TauCeti.Yamabe.contDiff_bubble`: positivity and smoothness.
 * `TauCeti.Yamabe.bubble_zero_sub`, `TauCeti.Yamabe.bubble_zero_smul`: every bubble is a
   translate of a rescaled standard bubble `U_{1,0}`.
+* `TauCeti.Yamabe.laplacian_div_add_norm_sub_sq_rpow`: the Laplacian of an arbitrary real power
+  of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)`.
 * `TauCeti.Yamabe.laplacian_bubble`: `Δ U_{t,b} = -(n (n - 2) / 4) U_{t,b} ^ (pₙ - 1)`.
 * `TauCeti.Yamabe.conformalCoefficient_mul_neg_laplacian_bubble`: the bubble equation
   `aₙ (-Δ U_{t,b}) = n (n - 1) U_{t,b} ^ (pₙ - 1)`.
@@ -58,14 +67,16 @@ namespace TauCeti.Yamabe
 open InnerProductSpace Laplacian
 open scoped Gradient
 
-/-- The critical Sobolev exponent `pₙ = 2 n / (n - 2)` of `H¹` in dimension `n`. -/
+/-- The exponent `pₙ = 2 n / (n - 2)`; for `n > 2` it is the critical Sobolev exponent of `H¹` in
+dimension `n`. At `n = 2` it is `0` by the convention for division by zero. -/
 def criticalExponent (n : ℕ) : ℝ := 2 * n / (n - 2)
 
 /-- Unfolding lemma for `TauCeti.Yamabe.criticalExponent`. -/
 theorem criticalExponent_def (n : ℕ) : criticalExponent n = 2 * n / (n - 2) := (rfl)
 
-/-- The coefficient `aₙ = 4 (n - 1) / (n - 2)` of the nonnegative Laplacian in the conformal
-Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. -/
+/-- The coefficient `aₙ = 4 (n - 1) / (n - 2)`; for `n > 2` it is the coefficient of the
+nonnegative Laplacian in the conformal Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. At `n = 2` it is
+`0` by the convention for division by zero. -/
 def conformalCoefficient (n : ℕ) : ℝ := 4 * (n - 1) / (n - 2)
 
 /-- Unfolding lemma for `TauCeti.Yamabe.conformalCoefficient`. -/
@@ -122,9 +133,9 @@ theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
 
 variable [FiniteDimensional ℝ E]
 
-/-- The Laplacian of a real power of `y ↦ 2 t / (t² + ‖y - b‖²)`, by the chain rule through
-the squared distance to `b`. -/
-private theorem laplacian_div_add_norm_sub_sq_rpow {t : ℝ} (ht : 0 < t) (k : ℝ) (b x : E) :
+/-- The Laplacian of a real power of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)`, by the chain
+rule through the squared distance to `b`. -/
+theorem laplacian_div_add_norm_sub_sq_rpow {t : ℝ} (ht : 0 < t) (k : ℝ) (b x : E) :
     Δ (fun y : E ↦ ((2 * t / (t ^ 2 + ‖y - b‖ ^ 2)) ^ k : ℝ)) x =
       (2 * t) ^ k * (t ^ 2 + ‖x - b‖ ^ 2) ^ (-k - 2) *
         (4 * k * (k + 1) * ‖x - b‖ ^ 2 -
@@ -174,7 +185,8 @@ private theorem laplacian_div_add_norm_sub_sq_rpow {t : ℝ} (ht : 0 < t) (k : �
   ring
 
 /-- **The Laplacian of a bubble**: `Δ U_{t,b} = -(n (n - 2) / 4) U_{t,b} ^ (pₙ - 1)`, where
-`n` is the dimension of `E` and `pₙ = 2 n / (n - 2)` is the critical exponent. -/
+`n` is the dimension of `E` and `pₙ = 2 n / (n - 2)` is the exponent `criticalExponent n`. The
+identity holds in every dimension; at `n = 2` both sides vanish. -/
 theorem laplacian_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     Δ (bubble t b) x = -((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 2) / 4) *
       bubble t b x ^ (criticalExponent (Module.finrank ℝ E) - 1) := by
