@@ -158,6 +158,7 @@ lemma braiding_inv_app_smashMk (x : X.right.obj n) (y : Y.right.obj n) :
 noncomputable def tensorUnitSimplex (n : SimplexCategoryᵒᵖ) : (𝟙_ PointedSSet.{u}).right.obj n :=
   (some PUnit.unit : Option PUnit.{u + 1})
 
+@[simp]
 lemma tensorUnitSimplex_ne_point (n : SimplexCategoryᵒᵖ) :
     tensorUnitSimplex.{u} n ≠ (𝟙_ PointedSSet.{u}).point n :=
   Option.some_ne_none _
@@ -221,6 +222,7 @@ def wedge (X Y : PointedSSet.{u}) : (X.right ⊗ Y.right).Subcomplex :=
 
 /-- A simplex of the cartesian product lies in the wedge exactly when one of its coordinates is
 the basepoint. -/
+@[simp]
 lemma mem_wedge_iff (z : (X.right ⊗ Y.right).obj n) :
     dsimp% z ∈ (wedge X Y).obj n ↔ z.1 = X.point n ∨ z.2 = Y.point n := by
   have h (W : PointedSSet.{u}) (w : W.right.obj n) :
