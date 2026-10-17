@@ -210,6 +210,63 @@ private def swapOffDiag (C : PlumbingCube V)
     have hp := Finset.mem_offDiag.mp p.property
     exact Finset.mem_offDiag.mpr ⟨hp.2.1, hp.1, hp.2.2.symm⟩⟩
 
+/-- Both paths to the lower-lower corner of the square spanned by `v` and `w` give the same
+weighted generator. -/
+private theorem single_lowerFace_lowerFace_swap
+    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) {v w : V}
+    (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hvw : v ≠ w) :
+    Finsupp.single ((C.lowerFace v hv).lowerFace w
+        (by rw [PlumbingCube.lowerFace_directions]
+            exact Finset.mem_erase_of_ne_of_mem hvw.symm hw))
+      (X ^ (PlumbingCube.characteristicLowerFaceExponent P k C v +
+        PlumbingCube.characteristicLowerFaceExponent P k (C.lowerFace v hv) w) : R[X]) =
+    Finsupp.single ((C.lowerFace w hw).lowerFace v
+        (by rw [PlumbingCube.lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hvw hv))
+      (X ^ (PlumbingCube.characteristicLowerFaceExponent P k C w +
+        PlumbingCube.characteristicLowerFaceExponent P k (C.lowerFace w hw) v)) := by
+  rw [C.lowerFace_lowerFace_comm hv hw hvw,
+    PlumbingCube.characteristicLowerFaceExponent_add_lowerFace_comm P k C hv hw hvw]
+
+/-- Both paths to the upper-upper corner of the square spanned by `v` and `w` give the same
+weighted generator. -/
+private theorem single_upperFace_upperFace_swap
+    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) {v w : V}
+    (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hvw : v ≠ w) :
+    Finsupp.single ((C.upperFace v hv).upperFace w
+        (by rw [PlumbingCube.upperFace_directions]
+            exact Finset.mem_erase_of_ne_of_mem hvw.symm hw))
+      (X ^ (PlumbingCube.characteristicUpperFaceExponent P k C hv +
+        PlumbingCube.characteristicUpperFaceExponent P k (C.upperFace v hv)
+          (by rw [PlumbingCube.upperFace_directions]
+              exact Finset.mem_erase_of_ne_of_mem hvw.symm hw)) : R[X]) =
+    Finsupp.single ((C.upperFace w hw).upperFace v
+        (by rw [PlumbingCube.upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hvw hv))
+      (X ^ (PlumbingCube.characteristicUpperFaceExponent P k C hw +
+        PlumbingCube.characteristicUpperFaceExponent P k (C.upperFace w hw)
+          (by rw [PlumbingCube.upperFace_directions]
+              exact Finset.mem_erase_of_ne_of_mem hvw hv))) := by
+  rw [C.upperFace_upperFace_comm hv hw hvw,
+    PlumbingCube.characteristicUpperFaceExponent_add_upperFace_comm P k C hv hw hvw]
+
+/-- The lower-then-upper path and the upper-then-lower path to the mixed corner of the square
+spanned by `v` and `w` give the same weighted generator. -/
+private theorem single_lowerFace_upperFace_eq_single_upperFace_lowerFace
+    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) {v w : V}
+    (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hvw : v ≠ w) :
+    Finsupp.single ((C.lowerFace v hv).upperFace w
+        (by rw [PlumbingCube.lowerFace_directions]
+            exact Finset.mem_erase_of_ne_of_mem hvw.symm hw))
+      (X ^ (PlumbingCube.characteristicLowerFaceExponent P k C v +
+        PlumbingCube.characteristicUpperFaceExponent P k (C.lowerFace v hv)
+          (by rw [PlumbingCube.lowerFace_directions]
+              exact Finset.mem_erase_of_ne_of_mem hvw.symm hw)) : R[X]) =
+    Finsupp.single ((C.upperFace w hw).lowerFace v
+        (by rw [PlumbingCube.upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hvw hv))
+      (X ^ (PlumbingCube.characteristicUpperFaceExponent P k C hw +
+        PlumbingCube.characteristicLowerFaceExponent P k (C.upperFace w hw) v)) := by
+  rw [C.lowerFace_upperFace_comm hv hw hvw,
+    PlumbingCube.characteristicLowerFaceExponent_add_upperFace_comm P k C hv hw hvw]
+
 /-- Reversing the two directions leaves the four faces and their `U`-exponents unchanged. The
 lower-lower and upper-upper terms match their counterparts, while the two mixed terms are
 exchanged. -/
@@ -221,16 +278,11 @@ private theorem latticeTwoDirectionFaces_swap
   obtain ⟨⟨v, w⟩, hp⟩ := p
   rw [Finset.mem_offDiag] at hp
   obtain ⟨hv, hw, hvw⟩ := hp
-  simp only [latticeTwoDirectionFaces, swapOffDiag]
-  simp only [Prod.swap_prod_mk]
-  rw [← C.lowerFace_lowerFace_comm hv hw hvw,
-    ← C.upperFace_upperFace_comm hv hw hvw,
-    C.lowerFace_upperFace_comm hw hv hvw.symm,
-    C.upperFace_lowerFace_comm hw hv hvw.symm,
-    ← PlumbingCube.characteristicLowerFaceExponent_add_lowerFace_comm P k C hv hw hvw,
-    ← PlumbingCube.characteristicUpperFaceExponent_add_upperFace_comm P k C hv hw hvw,
-    PlumbingCube.characteristicLowerFaceExponent_add_upperFace_comm P k C hw hv hvw.symm,
-    PlumbingCube.characteristicUpperFaceExponent_add_lowerFace_comm P k C hw hv hvw.symm]
+  simp only [latticeTwoDirectionFaces, swapOffDiag, Prod.swap_prod_mk]
+  rw [single_lowerFace_lowerFace_swap R P k C hw hv hvw.symm,
+    single_upperFace_upperFace_swap R P k C hw hv hvw.symm,
+    single_lowerFace_upperFace_eq_single_upperFace_lowerFace R P k C hw hv hvw.symm,
+    ← single_lowerFace_upperFace_eq_single_upperFace_lowerFace R P k C hv hw hvw]
   abel
 
 omit [Fintype V] in
@@ -309,7 +361,7 @@ private theorem signedLatticeDifferential_signedLatticeDifferentialOnGenerator_e
 
 /-- The oriented differential of the weighted boundary of a single plumbing cube vanishes. -/
 @[simp]
-theorem signedLatticeDifferential_signedLatticeDifferentialOnGenerator
+theorem signedLatticeDifferential_signedLatticeDifferentialOnGenerator_eq_zero
     (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) :
     P.signedLatticeDifferential R k (P.signedLatticeDifferentialOnGenerator R k C) = 0 := by
   rw [signedLatticeDifferential_signedLatticeDifferentialOnGenerator_eq_sum,
@@ -347,6 +399,7 @@ theorem mapRange_signedLatticeDifferentialOnGenerator
 /-- Applying a ring homomorphism to all coefficients intertwines the oriented lattice
 differentials over the two coefficient rings. In particular the oriented complex over `ℤ[U]`
 reduces modulo two to the oriented complex over `𝔽₂[U]`. -/
+@[simp]
 theorem signedLatticeDifferential_mapRange
     (P : PlumbingGraph V) (k : P.characteristicVectors) (c : PlumbingCube V →₀ R[X]) :
     P.signedLatticeDifferential S k

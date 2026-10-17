@@ -113,6 +113,7 @@ noncomputable def signedLatticeHomology
 
 /-- Lattice homology over `R[U]` is the canonical homology object of the oriented lattice short
 complex. -/
+@[simp]
 theorem signedLatticeHomology_def (P : PlumbingGraph V) (k : P.characteristicVectors) :
     P.signedLatticeHomology R k = (P.signedLatticeShortComplex R k).homology :=
   (rfl)
