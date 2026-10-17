@@ -38,6 +38,8 @@ as the S-equivalence class of a Seifert matrix — offers.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
 * `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
+* `Matrix.signature_eq_zero_of_forall_mem_eq_zero`: a matrix `A` with `A + Aᵀ` invertible which
+  vanishes on half of the coordinates has signature zero.
 * `Matrix.signature_eq_of_congr_diagonal`: the signature read off an explicit diagonalising
   congruence.
 * `Matrix.signature_add_transpose`: the signature of `A + Aᵀ` is the signature of `A`.
@@ -179,6 +181,29 @@ theorem signature_eq_of_congr_diagonal [DecidableEq ι] {P A : Matrix ι ι 𝕜
     {d : ι → 𝕜} (h : P * A * Pᵀ = diagonal d) :
     signature A = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
   rw [← signature_congr hP A, h, signature_diagonal]
+
+/-- **A nondegenerate form vanishing on half of the coordinates has signature zero.** If `A + Aᵀ`
+is invertible and `A` vanishes on `s × s` for a set `s` of at least half of the coordinates, the
+coordinate subspace of `s` is isotropic for the quadratic form of `A`, which forces its two indices
+of inertia to agree. -/
+theorem signature_eq_zero_of_forall_mem_eq_zero [DecidableEq ι] {A : Matrix ι ι 𝕜}
+    (hA : IsUnit (A + Aᵀ).det) {s : Finset ι} (hs : Fintype.card ι ≤ 2 * s.card)
+    (h : ∀ i ∈ s, ∀ j ∈ s, A i j = 0) : signature A = 0 := by
+  have hW : ∀ x ∈ Pi.spanSubset 𝕜 (s : Set ι), A.toQuadraticForm' x = 0 := by
+    intro x hx
+    rw [Pi.mem_spanSubset_iff] at hx
+    rw [toQuadraticForm'_apply]
+    refine Finset.sum_eq_zero fun i _ => ?_
+    by_cases hi : i ∈ s
+    · rw [mulVec, dotProduct, Finset.sum_eq_zero fun j _ => ?_, mul_zero]
+      by_cases hj : j ∈ s
+      · rw [h i hi j hj, zero_mul]
+      · rw [hx j (by simpa using hj), mul_zero]
+    · rw [hx i (by simpa using hi), zero_mul]
+  rw [signature_def, QuadraticForm.sigPos_eq_sigNeg_of_forall_mem_eq_zero _
+    (nondegenerate_toQuadraticForm' hA) hW
+    (by rwa [Module.finrank_fintype_fun_eq_card, Pi.dim_spanSubset, Set.ncard_coe_finset]),
+    sub_self]
 
 /-- The Gram matrix of a hyperbolic plane has signature zero: it is congruent to
 `diagonal ![2, -2]`. -/
