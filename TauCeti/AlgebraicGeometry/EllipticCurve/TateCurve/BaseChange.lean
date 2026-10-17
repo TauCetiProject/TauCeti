@@ -23,7 +23,7 @@ They apply in particular to finite extensions equipped with their norm-preservin
 
 ## Main definitions
 
-* `TauCeti.tateParameterBaseChange`: the map `Kˣ / q^ℤ → Lˣ / f(q)^ℤ` induced by a field
+* `TauCeti.tateParameterBaseChange`: the map `Kˣ / q^ℤ → Lˣ / f(q)^ℤ` induced by a ring
   homomorphism.
 
 ## Main results
@@ -126,7 +126,7 @@ end Coordinates
 
 section Parameters
 
-variable [NormedField K] [NormedField L] (f : K →+* L)
+variable [CommRing K] [CommRing L] (f : K →+* L)
 
 /-- Base change of multiplicative Tate parameters, from `Kˣ / q^ℤ` to `Lˣ / f(q)^ℤ`. -/
 noncomputable def tateParameterBaseChange (q : Kˣ) :
@@ -143,6 +143,12 @@ theorem tateParameterBaseChange_mk (q u : Kˣ) :
         Lˣ ⧸ Subgroup.zpowers (Units.map (f : K →* L) q)) := by
   apply QuotientGroup.map_mk
 
+end Parameters
+
+section ParameterCoordinates
+
+variable [NormedField K] [NormedField L] (f : K →+* L)
+
 /-- The coordinate pair on the multiplicative quotient commutes with continuous base change. -/
 theorem tateQuotientCoordinates_tateParameterBaseChange [CompleteSpace K] [IsUltrametricDist K]
     (hf : Continuous f) (q : Kˣ) (hq : ‖(q : K)‖ < 1) (x : Kˣ ⧸ Subgroup.zpowers q) :
@@ -154,7 +160,7 @@ theorem tateQuotientCoordinates_tateParameterBaseChange [CompleteSpace K] [IsUlt
       tateQuotientCoordinates_mk, map_tateUniformizationX f hf q u hq,
       map_tateUniformizationY f hf q u hq]
 
-end Parameters
+end ParameterCoordinates
 
 end TauCeti
 
