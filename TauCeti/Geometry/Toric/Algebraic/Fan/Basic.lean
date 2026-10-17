@@ -177,6 +177,13 @@ def IsComplete : Prop := Φ.support = Set.univ
 theorem isComplete_iff : Φ.IsComplete ↔ ∀ x : V, ∃ σ ∈ Φ.cones, x ∈ σ := by
   simp [IsComplete, Set.eq_univ_iff_forall]
 
+variable {Φ} in
+/-- A complete fan is nonempty: some cone contains the origin. In particular, the empty fan is
+not complete. -/
+theorem IsComplete.nonempty_cones (h : Φ.IsComplete) : Nonempty Φ.cones :=
+  let ⟨σ, hσ, _⟩ := Φ.isComplete_iff.1 h 0
+  ⟨⟨σ, hσ⟩⟩
+
 /-! ### The fan of a single cone -/
 
 /-- The faces of a toric cone form a fan, the fan of the affine toric variety of that cone. -/
@@ -287,6 +294,11 @@ variable (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
 /-- The cones of a subfan are the chosen subset. -/
 @[simp]
 theorem subfan_cones : (Φ.subfan S hS hface).cones = S := (rfl)
+
+/-- The empty subfan of a fan has no cones. -/
+instance (hS : ∅ ⊆ Φ.cones) (hface : ∀ ⦃σ τ⦄, σ ∈ (∅ : Set (PointedCone ℝ V)) →
+    τ.IsFaceOf σ → τ ∈ (∅ : Set (PointedCone ℝ V))) : IsEmpty (Φ.subfan ∅ hS hface).cones :=
+  Set.isEmpty_coe_sort.2 rfl
 
 /-- A subfan uses the ambient fan's integral lattice. -/
 @[simp]

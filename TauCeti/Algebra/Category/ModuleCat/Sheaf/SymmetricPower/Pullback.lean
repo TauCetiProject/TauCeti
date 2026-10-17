@@ -34,7 +34,9 @@ of underlying presheaves.
 * `TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison`: the canonical map
   `Symⁿ (φ_* M) ⟶ φ_* (Symⁿ M)`;
 * `TauCeti.SheafOfModules.pullbackSymmetricPowerComparison`: its mate
-  `G (Symⁿ M) ⟶ Symⁿ (G M)`.
+  `G (Symⁿ M) ⟶ Symⁿ (G M)`;
+* `TauCeti.SheafOfModules.pullbackSymmetricPowerComparison_app_val_app_unit`: its value on
+  sheafified symmetric tensors in the image of the adjunction unit.
 
 ## References
 
@@ -91,6 +93,43 @@ theorem unit_comp_forget_map_pushforwardSymmetricPowerComparison_app (n : ℕ)
             (_root_.SheafOfModules.symmetricPowerIso n M).inv) :=
   unit_comp_forget_map_sheafifyPushforwardComparison_app φ _ _ _ _ _ M
 
+/-- On sections over `U`, the pushforward comparison sends the sheafification of a sectionwise
+symmetric tensor `x` of `φ_* M` to the sheafification of the same symmetric tensor of `M` over
+`F U`, with its coefficients mapped along `φ`. -/
+@[simp]
+theorem pushforwardSymmetricPowerComparison_app_val_app_unit (n : ℕ)
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
+    (x : (PresheafOfModulesOfCommRing.obj (R := S.obj)
+      ((_root_.SheafOfModules.pushforward φ).obj M).val U).symmetricPower n) :
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj]
+    (((pushforwardSymmetricPowerComparison φ n).app M).val.app U
+      ((_root_.SheafOfModules.symmetricPowerIso n
+          ((_root_.SheafOfModules.pushforward φ).obj M)).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower (R := S.obj) n).obj
+            ((_root_.SheafOfModules.pushforward φ).obj M).val)).app U x)) =
+    (_root_.SheafOfModules.symmetricPowerIso n M).inv.val.app (F.op.obj U)
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) n).obj M.val)).app (F.op.obj U)
+        (TauCeti.SymmetricAlgebra.homogeneousSubmoduleMapₛₗ
+          ((_root_.ModuleCat.semilinearMapAddEquiv ((commRingCatHom φ).app U).hom
+            ((ModuleCat.restrictScalars ((commRingCatHom φ).app U).hom).obj
+              (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val (F.op.obj U)))
+            (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val (F.op.obj U))).symm (𝟙 _))
+          n x))) := by
+  have h := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app U)
+    (unit_comp_forget_map_pushforwardSymmetricPowerComparison_app φ n M)) x
+  refine h.trans (congrArg (fun y ↦
+    (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+      ((PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) n).obj M.val)) ≫
+      (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.symmetricPowerIso n M).inv).app
+        (F.op.obj U) y) ?_)
+  -- Composites evaluate on sections by definition; it remains to compare the sectionwise
+  -- comparison with the induced map of symmetric algebras.
+  exact Subtype.ext <| (PresheafOfModules.coe_pushforwardSymmetricPowerComparison_app_app_apply
+    (commRingCatHom φ) n M.val U x).trans
+      (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x).symm
+
 /-- In degree one, the symmetric-power comparison of pushforward is the identity of `φ_* M`,
 read through the identifications `Sym¹ M ≅ M`. -/
 -- Not `@[simp]`: `symmetricPowerOneIso_hom_app` unfolds the left-hand side.
@@ -144,6 +183,53 @@ theorem unit_comp_pushforward_pullbackSymmetricPowerComparison (n : ℕ)
       (pushforwardSymmetricPowerComparison φ n).app (G.obj M) :=
   (unit_mateEquiv_symm adj adj
     (TwoSquare.mk _ _ _ _ (pushforwardSymmetricPowerComparison φ n)) M).symm
+
+/-- On the sheafification of a sectionwise symmetric tensor `x` in the image of the adjunction
+unit, the pullback comparison takes the sheafification of the image of `x` under the map of
+symmetric algebras induced by the unit. -/
+@[simp]
+theorem pullbackSymmetricPowerComparison_app_val_app_unit (n : ℕ)
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
+    (x : (PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U).symmetricPower n) :
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, Functor.op_obj]
+    (((pullbackSymmetricPowerComparison adj n).app M).val.app (F.op.obj U)
+      ((adj.unit.app ((_root_.SheafOfModules.symmetricPower S n).obj M)).val.app U
+        ((_root_.SheafOfModules.symmetricPowerIso n M).inv.val.app U
+          (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
+            ((PresheafOfModulesOfCommRing.symmetricPower (R := S.obj) n).obj M.val)).app U x))) =
+    (_root_.SheafOfModules.symmetricPowerIso n (G.obj M)).inv.val.app (F.op.obj U)
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) n).obj (G.obj M).val)).app
+            (F.op.obj U)
+        (TauCeti.SymmetricAlgebra.homogeneousSubmoduleMapₛₗ
+          ((_root_.ModuleCat.semilinearMapAddEquiv ((commRingCatHom φ).app U).hom
+            (PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U)
+            (PresheafOfModulesOfCommRing.obj (R := R.obj) (G.obj M).val (F.op.obj U))).symm
+              ((adj.unit.app M).val.app U)) n x))) := by
+  have h := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.val.app U)
+    (unit_comp_pushforward_pullbackSymmetricPowerComparison adj n M))
+    ((_root_.SheafOfModules.symmetricPowerIso n M).inv.val.app U
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.symmetricPower (R := S.obj) n).obj M.val)).app U x))
+  -- As in `pushforwardSymmetricPowerComparison_app_val_app_unit`, composites evaluate on
+  -- sections by definition; compute `Symⁿ` of the unit and then the pushforward comparison.
+  refine h.trans ?_
+  refine (congrArg (((pushforwardSymmetricPowerComparison φ n).app (G.obj M)).val.app U)
+    (_root_.SheafOfModules.symmetricPower_map_val_app_unit n (adj.unit.app M) U x)).trans ?_
+  refine (pushforwardSymmetricPowerComparison_app_val_app_unit φ n (G.obj M) U _).trans ?_
+  refine congrArg (fun y ↦ (_root_.SheafOfModules.symmetricPowerIso n (G.obj M)).inv.val.app
+    (F.op.obj U) (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+      ((PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) n).obj (G.obj M).val)).app
+        (F.op.obj U) y)) (Subtype.ext ?_)
+  refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n _).trans ?_
+  refine (congrArg (SymmetricAlgebra.mapₛₗ _)
+    (ModuleCat.symmetricPower.coe_map_apply _ n x)).trans ?_
+  refine (congrArg (SymmetricAlgebra.mapₛₗ _)
+    (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map _).symm x.1)).trans ?_
+  -- The two induced ring homomorphisms compose to the one induced by the unit; the underlying
+  -- functions of the semilinear maps agree by definition.
+  rw [TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply, ← RingHom.comp_apply,
+    SymmetricAlgebra.mapₛₗ_comp_mapₛₗ] <;> intro <;> rfl
 
 /-- In degree one, the pullback comparison is the identity of `G M`, read through the
 identifications `Sym¹ M ≅ M`. -/
