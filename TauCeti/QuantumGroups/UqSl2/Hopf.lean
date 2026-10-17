@@ -89,13 +89,20 @@ generators to zero. -/
 def counit (q : ℂ) : UqSl2 q →ₐ[ℂ] ℂ := lift (counitTuple q)
 
 omit [Fact (q ≠ 0)] in
-@[local simp] private theorem counit_eAux : counit q (e q) = 0 := by simp [counit, counitTuple]
+/-- The unconditional augmentation sends the raising generator to zero. -/
+@[simp] theorem counit_apply_e : counit q (e q) = 0 := by simp [counit, counitTuple]
+
 omit [Fact (q ≠ 0)] in
-@[local simp] private theorem counit_fAux : counit q (f q) = 0 := by simp [counit, counitTuple]
+/-- The unconditional augmentation sends the lowering generator to zero. -/
+@[simp] theorem counit_apply_f : counit q (f q) = 0 := by simp [counit, counitTuple]
+
 omit [Fact (q ≠ 0)] in
-@[local simp] private theorem counit_kAux : counit q (k q) = 1 := by simp [counit, counitTuple]
+/-- The unconditional augmentation sends the weight generator to one. -/
+@[simp] theorem counit_apply_k : counit q (k q) = 1 := by simp [counit, counitTuple]
+
 omit [Fact (q ≠ 0)] in
-@[local simp] private theorem counit_kInvAux :
+/-- The unconditional augmentation sends the inverse weight generator to one. -/
+@[simp] theorem counit_apply_kInv :
     counit q (kInv q) = 1 := by simp [counit, counitTuple]
 
 /-- The bialgebra structure determined by the presentation's coproduct and counit. -/
@@ -187,19 +194,19 @@ noncomputable instance instHopfAlgebra : HopfAlgebra ℂ (UqSl2 q) := by
 
 /-- The raising generator has zero counit. -/
 @[simp] theorem counit_e (q : ℂ) [Fact (q ≠ 0)] : Coalgebra.counit (R := ℂ) (e q) = 0 :=
-  counit_eAux q
+  counit_apply_e q
 
 /-- The lowering generator has zero counit. -/
 @[simp] theorem counit_f (q : ℂ) [Fact (q ≠ 0)] : Coalgebra.counit (R := ℂ) (f q) = 0 :=
-  counit_fAux q
+  counit_apply_f q
 
 /-- The weight generator has counit one. -/
 @[simp] theorem counit_k (q : ℂ) [Fact (q ≠ 0)] : Coalgebra.counit (R := ℂ) (k q) = 1 :=
-  counit_kAux q
+  counit_apply_k q
 
 /-- The inverse weight generator has counit one. -/
 @[simp] theorem counit_kInv (q : ℂ) [Fact (q ≠ 0)] : Coalgebra.counit (R := ℂ) (kInv q) = 1 :=
-  counit_kInvAux q
+  counit_apply_kInv q
 
 /-- The antipode of the raising generator. -/
 @[simp] theorem antipode_e (q : ℂ) [Fact (q ≠ 0)] : HopfAlgebra.antipode ℂ (e q) =
