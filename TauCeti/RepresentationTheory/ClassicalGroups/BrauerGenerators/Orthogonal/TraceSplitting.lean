@@ -136,9 +136,8 @@ the invertible loop value changes neither its kernel nor its image, so this is
 @[simp]
 theorem ker_orthogonalTraceProjection (hn : IsUnit (n : k)) :
     LinearMap.ker (orthogonalTraceProjection k n hn) = harmonicTensors k n 2 := by
-  -- Mathlib's `LinearMap.ker_smul` and `LinearMap.range_smul` are stated over a division ring;
-  -- here the scalar is only a unit of the commutative semiring `k`, so the two inclusions are
-  -- redone.
+  -- Mathlib's `LinearMap.ker_smul` is stated over a division ring; here the scalar is only a
+  -- unit of the commutative semiring `k`, so the two inclusions are redone.
   rw [harmonicTensors_two_eq_ker_orthogonalCap, ← ker_orthogonalCupCap]
   ext x
   rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalTraceProjection_apply,
@@ -204,29 +203,29 @@ theorem orthogonalTraceProjection_apply_of_mem_orthogonalTraceLine (hn : IsUnit 
   rw [orthogonalTraceProjection_apply, orthogonalCap_comp_orthogonalCup_apply, ← smul_eq_mul,
     map_smul, smul_smul, hn.val_inv_mul, one_smul]
 
-/-- The projection lands in the trace line, the cup being what it ends with. -/
-theorem orthogonalTraceProjection_apply_mem_orthogonalTraceLine (hn : IsUnit (n : k))
-    (x : ⨂[k]^2 (Fin n → k)) :
-    orthogonalTraceProjection k n hn x ∈ orthogonalTraceLine k n := by
-  rw [mem_orthogonalTraceLine_iff, orthogonalTraceProjection_apply]
-  exact ⟨((hn.unit⁻¹ : kˣ) : k) * orthogonalCap k n x, by rw [← smul_eq_mul, map_smul]⟩
-
 /-- **The range of the projection is the trace line**, by
 `TauCeti.range_orthogonalCupCap`: the normalization `n⁻¹` is a unit, so it moves through the
-Brauer generator without changing its image. -/
+Brauer generator without changing its image. Each inclusion is an instance of
+`LinearMap.range_smul_le_range`, the one for `n⁻¹ • e` and the other for `n • (n⁻¹ • e) = e`. -/
 @[simp]
 theorem range_orthogonalTraceProjection (hn : IsUnit (n : k)) :
     LinearMap.range (orthogonalTraceProjection k n hn) =
       (orthogonalTraceLine k n).toSubmodule := by
+  have h : (n : k) • orthogonalTraceProjection k n hn = orthogonalCupCap k n := by
+    rw [orthogonalTraceProjection, smul_smul, hn.mul_val_inv, one_smul]
   rw [orthogonalTraceLine_toSubmodule, ← range_orthogonalCupCap]
-  refine le_antisymm (fun y hy => ?_) (fun y hy => ?_)
-  · obtain ⟨x, rfl⟩ := hy
-    exact ⟨((hn.unit⁻¹ : kˣ) : k) • x, by
-      rw [map_smul, orthogonalCupCap_apply, orthogonalTraceProjection_apply]⟩
-  · obtain ⟨x, rfl⟩ := hy
-    exact ⟨(n : k) • x, by
-      rw [orthogonalTraceProjection_apply, map_smul, map_smul, smul_smul, hn.val_inv_mul, one_smul,
-        orthogonalCupCap_apply]⟩
+  refine le_antisymm ?_ ?_
+  · rw [orthogonalTraceProjection]
+    exact LinearMap.range_smul_le_range _ _
+  · rw [← h]
+    exact LinearMap.range_smul_le_range _ _
+
+/-- The projection lands in the trace line, the cup being what it ends with. -/
+theorem orthogonalTraceProjection_apply_mem_orthogonalTraceLine (hn : IsUnit (n : k))
+    (x : ⨂[k]^2 (Fin n → k)) :
+    orthogonalTraceProjection k n hn x ∈ orthogonalTraceLine k n :=
+  Subrepresentation.mem_toSubmodule.mp
+    (range_orthogonalTraceProjection k n hn ▸ LinearMap.mem_range_self _ x)
 
 /-! ### The trace splitting -/
 

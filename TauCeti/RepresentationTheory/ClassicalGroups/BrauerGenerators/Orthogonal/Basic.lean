@@ -230,13 +230,6 @@ two outputs. The name follows the written order of the composite `cup ∘ₗ cap
 noncomputable def orthogonalCupCap : Module.End k (⨂[k]^2 (Fin n → k)) :=
   orthogonalCup k n ∘ₗ orthogonalCap k n
 
-/-- The Brauer generator `e` as a composite of linear maps: the companion of
-`TauCeti.orthogonalCupCap_apply` at the level of maps, so that the kernel and range calculus for a
-composition applies to `e` without rebuilding the composite by extensionality. -/
-theorem orthogonalCupCap_eq_comp :
-    orthogonalCupCap k n = orthogonalCup k n ∘ₗ orthogonalCap k n :=
-  (rfl)
-
 @[simp]
 theorem orthogonalCupCap_apply (x : ⨂[k]^2 (Fin n → k)) :
     orthogonalCupCap k n x = orthogonalCup k n (orthogonalCap k n x) :=
@@ -261,7 +254,7 @@ theorem ker_orthogonalCupCap :
 being surjective once `V ≠ 0`. For `n = 0` the cup is the zero map and both images are `⊥`. -/
 theorem range_orthogonalCupCap :
     LinearMap.range (orthogonalCupCap k n) = LinearMap.range (orthogonalCup k n) := by
-  rw [orthogonalCupCap_eq_comp]
+  rw [orthogonalCupCap]
   obtain _ | m := n
   · have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
     rw [hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
@@ -401,11 +394,14 @@ theorem sub_permTensorAction_swap_mem_ker_orthogonalCap (x : ⨂[k]^2 (Fin n →
   rw [LinearMap.mem_ker, map_sub, h, sub_self]
 
 /-- **An antisymmetric tensor is killed by the cap.** This is the exterior square sitting inside
-the kernel of the cap; it needs `2` cancellable, the antisymmetric tensors being the `-1`-eigenspace
-of the crossing only where `2` is regular. It is not the two-strand case of the downstream
-`TauCeti.mem_harmonicTensors_of_forall_swap_eq_neg`, which inverts `2` rather than merely
-cancelling it; over a ring where `2` is regular but not invertible — `ℤ`, say — only the statement
-here applies. -/
+the kernel of the cap. Regularity of `2` is not what identifies the antisymmetric tensors as the
+`-1`-eigenspace of the crossing — that is a matter of definition, in every characteristic — but
+what turns the vanishing of the antisymmetrization into the vanishing of the contraction: the cap
+is unchanged by the crossing, so it kills `x - s · x`, which is `2 • x` once `s · x = -x`, and
+that says `2 * cap x = 0`; cancelling the regular `2` leaves `cap x = 0`. So this is not the
+two-strand case of the downstream `TauCeti.mem_harmonicTensors_of_forall_swap_eq_neg`, which
+inverts `2` rather than merely cancelling it; over a ring where `2` is regular but not
+invertible — `ℤ`, say — only the statement here applies. -/
 theorem mem_ker_orthogonalCap_of_permTensorAction_swap_eq_neg (h2 : IsRegular (2 : k))
     {x : ⨂[k]^2 (Fin n → k)} (hx : permTensorAction k n 2 (Equiv.swap 0 1) x = -x) :
     x ∈ LinearMap.ker (orthogonalCap k n) := by
