@@ -19,16 +19,14 @@ compare exactly when every partial sum of unit slopes does. This is weaker than 
 slopes one by one: on `[0, 2]` the slopes `(0, 2)` lie below the slopes `(1, 1)`, although the
 second slope is larger. For an arbitrary height sequence `a`, the heights of slope data lie
 below `a` exactly when `a` is infinite outside the domain of the slope data and bounded below by
-the cumulative slope sums on it. Since slope data represents a convex sequence, combining this
-with `le_lowerConvexEnvelope_iff` gives the comparison used for Hodge lower polygons:
-nondecreasing weights whose partial sums bound the coefficient heights give a polygon below the
-lower convex envelope of those heights.
+the cumulative slope sums on it. The corresponding interfaces for lower-convex-envelope
+comparisons are `le_lowerConvexEnvelope_iff` and `isConvexSeq_heights`.
 
 ## Main results
 
 * `setOf_ne_top_subset_of_le`: the reversal of finite domains forced by the order.
-* `add_affine_le_add_affine_iff`: common height translations and shears preserve and reflect
-  the order.
+* `add_coe_le_add_coe_iff`, `add_affine_le_add_affine_iff`: common finite shifts, in particular
+  height translations and shears, preserve and reflect the order.
 * `le_iff_forall_sum_unitSlope_le`: two height sequences with the same anchor and the same
   finite domain compare exactly when their partial sums of unit slopes do.
 * `FiniteSlopeData.heights_le_heights_iff`, `InfiniteSlopeData.heights_le_heights_iff`: the
@@ -47,7 +45,7 @@ open Finset
 
 namespace TauCeti
 
-/-! ### Real height sequences -/
+/-! ### Height sequences -/
 
 /-- With the value `⊤` outside finite domains, a smaller height sequence has a larger finite
 domain. -/
@@ -55,12 +53,19 @@ theorem setOf_ne_top_subset_of_le {α : Type*} [Preorder α] {h g : ℕ → With
     (hhg : h ≤ g) : {n | g n ≠ ⊤} ⊆ {n | h n ≠ ⊤} :=
   fun n (hn : g n ≠ ⊤) (hh : h n = ⊤) => hn (WithTop.top_le_iff.mp (hh ▸ hhg n))
 
+/-- Adding a common finite-valued function to two height sequences does not change how they
+compare. -/
+theorem add_coe_le_add_coe_iff {Γ : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+    [IsOrderedCancelAddMonoid Γ] {h g : ℕ → WithTop Γ} (f : ℕ → Γ) :
+    ((fun n => h n + (f n : WithTop Γ)) ≤ fun n => g n + (f n : WithTop Γ)) ↔ h ≤ g :=
+  by simp only [Pi.le_def, WithTop.add_le_add_iff_right WithTop.coe_ne_top]
+
 /-- Adding a common real affine function to two height sequences does not change how they
 compare. With `m = 0` this is a common height translation; with `c = 0` a common shear. -/
 theorem add_affine_le_add_affine_iff {h g : ℕ → WithTop ℝ} (c m : ℝ) :
     ((fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) ≤
       fun n => g n + ((c + m * n : ℝ) : WithTop ℝ)) ↔ h ≤ g :=
-  by simp only [Pi.le_def, WithTop.add_le_add_iff_right WithTop.coe_ne_top]
+  add_coe_le_add_coe_iff fun n => c + m * n
 
 /-- Two height sequences with the same finite domain and the same height at a lower bound `l`
 of that domain compare exactly when, at every finite index `l + j`, the sum of the first `j`
@@ -74,8 +79,8 @@ theorem le_iff_forall_sum_unitSlope_le {h g : ℕ → WithTop ℝ} {l : ℕ}
   have key (j : ℕ) (hj : h (l + j) ≠ ⊤) : h (l + j) ≤ g (l + j) ↔
       ∑ i ∈ range j, unitSlope h (l + i) ≤ ∑ i ∈ range j, unitSlope g (l + i) := by
     rw [eq_coe_add_sum_unitSlope hj (Nat.le_add_right l j),
-      eq_coe_add_sum_unitSlope ((hdom _).1 hj) (Nat.le_add_right l j), WithTop.coe_le_coe, hl,
-      add_le_add_iff_left, sum_Ico_eq_sum_range, sum_Ico_eq_sum_range, Nat.add_sub_cancel_left]
+      eq_coe_add_sum_unitSlope ((hdom _).1 hj) (Nat.le_add_right l j)]
+    simp [hl, sum_Ico_eq_sum_range]
   refine ⟨fun hhg j hj => (key j hj).1 (hhg _), fun H n => ?_⟩
   by_cases hn : h n = ⊤
   · rw [hn, not_ne_iff.mp ((hdom n).not.mp (not_not.mpr hn))]
@@ -107,19 +112,22 @@ theorem heights_le_iff [Preorder Γ] {d : FiniteSlopeData Γ} {a : ℕ → WithT
 
 variable [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
 
-/-- **Partial-sum criterion.** Finite slope data with the same anchor and length represent
-comparable heights exactly when all partial sums of their slopes compare. The slopes themselves
-need not compare termwise. -/
+/-- **Partial-sum criterion.** For finite slope data with the same anchor and length,
+`d.heights ≤ e.heights` exactly when each partial sum of `d`'s slopes is at most the corresponding
+partial sum of `e`'s. The slopes themselves need not compare termwise. -/
 theorem heights_le_heights_iff {d e : FiniteSlopeData Γ} (hstart : d.start = e.start)
     (hheight : d.initialHeight = e.initialHeight) (hlength : d.length = e.length) :
     d.heights ≤ e.heights ↔ ∀ k, prefixSum k d.slope ≤ prefixSum k e.slope := by
   rw [heights_le_iff]
-  have hmin (k : ℕ) : min k d.length = min k e.length := by rw [hlength]
   refine ⟨fun ⟨_, hin⟩ k => ?_, fun H => ⟨fun n hn => ?_, fun k hk => ?_⟩⟩
-  · have := hin (min k d.length) (min_le_right _ _)
-    rw [hstart, e.heights_start_add (hmin k ▸ min_le_right _ _), WithTop.coe_le_coe, hheight,
-      add_le_add_iff_left, prefixSum_min, hmin k, prefixSum_min] at this
-    exact this
+  · have hin' := hin (min k d.length) (min_le_right _ _)
+    rw [hstart, e.heights_start_add (le_trans (min_le_right k d.length) hlength.le)] at hin'
+    have hde : prefixSum (min k d.length) d.slope ≤ prefixSum (min k d.length) e.slope := by
+      simpa only [WithTop.coe_le_coe, hheight, add_le_add_iff_left] using hin'
+    calc
+      prefixSum k d.slope = prefixSum (min k d.length) d.slope := (prefixSum_min _ _).symm
+      _ ≤ prefixSum (min k d.length) e.slope := hde
+      _ = prefixSum k e.slope := by rw [congrArg (min k) hlength, prefixSum_min]
   · rw [e.heights_eq_top_iff]
     omega
   · rw [hstart, e.heights_start_add (hlength ▸ hk), WithTop.coe_le_coe, hheight]
@@ -150,9 +158,9 @@ theorem heights_le_iff [Preorder Γ] {d : InfiniteSlopeData Γ} {a : ℕ → Wit
 
 variable [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
 
-/-- **Partial-sum criterion.** Infinite slope data with the same anchor represent comparable
-heights exactly when all partial sums of their slopes compare. The slopes themselves need not
-compare termwise. -/
+/-- **Partial-sum criterion.** For infinite slope data with the same anchor,
+`d.heights ≤ e.heights` exactly when each partial sum of `d`'s slopes is at most the corresponding
+partial sum of `e`'s. The slopes themselves need not compare termwise. -/
 theorem heights_le_heights_iff {d e : InfiniteSlopeData Γ} (hstart : d.start = e.start)
     (hheight : d.initialHeight = e.initialHeight) :
     d.heights ≤ e.heights ↔ ∀ k, ∑ i ∈ range k, d.slope i ≤ ∑ i ∈ range k, e.slope i := by
