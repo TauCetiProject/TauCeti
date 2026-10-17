@@ -78,6 +78,15 @@ theorem isFundSystem_fundSystem :
 
 variable {S}
 
+/-- A family `ε` of `S`-units is a fundamental system exactly when, together with the torsion
+subgroup, it generates the `S`-units and it has `NumberField.Units.rank K + #S` members. -/
+theorem isFundSystem_iff {ι : Type*} [Fintype ι]
+    {ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K} :
+    IsFundSystem S ε ↔ Subgroup.closure (Set.range ε) ⊔
+      CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) = ⊤ ∧
+        Fintype.card ι = NumberField.Units.rank K + #S :=
+  Iff.rfl
+
 /-- A family of `S`-units generates the `S`-units modulo torsion exactly when its `S`-logarithmic
 images span the `S`-unit lattice over `ℤ`. -/
 theorem span_logEmbedding_eq_unitLattice_iff {ι : Type*}
@@ -179,50 +188,77 @@ private theorem sum_fullLogMatrix {ι : Type*}
   rw [Fintype.sum_sum_type]
   exact sum_mult_mul_log_add_sum_log_finitePlace S (ε i)
 
+/-- The disjoint union of the elements other than `a` and of `β`, as the subtype of `α ⊕ β` of the
+elements other than `Sum.inl a`. -/
+private def sumSubtypeNeEquiv {α β : Type*} (a : α) :
+    ({x // x ≠ a} ⊕ β) ≃ {j : α ⊕ β // j ≠ Sum.inl a} :=
+  ((Equiv.subtypeSum (p := (· ≠ Sum.inl a))).trans (Equiv.sumCongr
+    (Equiv.subtypeEquivRight fun _ ↦ Sum.inl_injective.ne_iff)
+    (Equiv.subtypeUnivEquiv fun _ ↦ Sum.inr_ne_inl))).symm
+
+@[simp]
+private theorem coe_sumSubtypeNeEquiv {α β : Type*} (a : α) (x : {x // x ≠ a} ⊕ β) :
+    (sumSubtypeNeEquiv a x : α ⊕ β) = Sum.map Subtype.val id x := by
+  rcases x with x | y <;> simp [sumSubtypeNeEquiv, Equiv.subtypeSum]
+
+/-- The square matrix of weighted logarithms of a family of `S`-units, without the column of the
+infinite place `w'`: the row of `ε i` lists `mult w * log (w (ε i))` at the infinite places
+`w ≠ w'` and `log ‖ε i‖_v` at the places `v ∈ S`, in the order given by `e`. -/
+private def logMatrix {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
+    (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) : Matrix ι ι ℝ :=
+  Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
+    (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
+    (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k)
+
+private theorem logMatrix_apply {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
+    (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) (i k : ι) :
+    logMatrix ε w' e i k = Sum.elim (fun w : {w // w ≠ w'} ↦
+      (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
+      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k) :=
+  rfl
+
 /-- Deleting the column of the infinite place `w'` from the full matrix of weighted logarithms
 gives the matrix of the determinant formula. -/
 private theorem fullLogMatrix_submatrix {ι : Type*}
     (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K) (w' : InfinitePlace K)
     (e : ι ≃ ({w // w ≠ w'} ⊕ S)) :
-    (fullLogMatrix ε).submatrix id (fun k ↦
-      ((e.trans ((Equiv.subtypeSum (p := (· ≠ Sum.inl w'))).trans (Equiv.sumCongr
-        (Equiv.subtypeEquivRight fun _ ↦ Sum.inl_injective.ne_iff)
-        (Equiv.subtypeUnivEquiv fun _ ↦ Sum.inr_ne_inl))).symm) k :
-          InfinitePlace K ⊕ S)) =
-      Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
-        (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
-        (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k) := by
+    (fullLogMatrix ε).submatrix id (fun k ↦ ((e.trans (sumSubtypeNeEquiv w')) k :
+      InfinitePlace K ⊕ S)) = logMatrix ε w' e := by
   ext i k
-  simp only [Matrix.submatrix_apply, Matrix.of_apply, id, Equiv.trans_apply]
-  rcases e k with w | v <;> rfl
+  rcases hk : e k with w | v <;> simp [fullLogMatrix, logMatrix_apply, hk]
 
-/-- **The determinant formula for the `S`-regulator.** For a fundamental system `ε` of `S`-units,
-an infinite place `w'` and any identification `e` of `ι` with the places of `S` and the infinite
-places other than `w'`, the `S`-regulator is the absolute value of the determinant of the matrix
-whose `i`-th row lists `mult w * log (w (ε i))` at the infinite places `w ≠ w'` and
-`log ‖ε i‖_v` at the places `v ∈ S`, in the order given by `e`. This is the `S`-analogue of
-Mathlib's `NumberField.Units.regulator_eq_det`. -/
+/-- **The determinant formula for the `S`-regulator.** For a family `ε` of `S`-units that, together
+with the torsion subgroup, generates the `S`-units, an infinite place `w'` and any identification
+`e` of `ι` with the places of `S` and the infinite places other than `w'`, the `S`-regulator is the
+absolute value of the determinant of the matrix whose `i`-th row lists `mult w * log (w (ε i))` at
+the infinite places `w ≠ w'` and `log ‖ε i‖_v` at the places `v ∈ S`, in the order given by `e`.
+The family `ε` is then a fundamental system, its cardinality being forced by `e`. This is the
+`S`-analogue of Mathlib's `NumberField.Units.regulator_eq_det`. -/
 theorem regulator_eq_abs_det {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K} (hε : IsFundSystem S ε)
+    {ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hε : Subgroup.closure (Set.range ε) ⊔
+      CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) = ⊤)
     (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) :
     regulator S = |(Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
       (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
       (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k)).det| := by
   classical
-  -- First the case of the distinguished place `w₀`, from the basis `basisOfIsFundSystem hε`.
+  -- The cardinality of `ι` is forced by `e`, so `ε` is a fundamental system.
   have hcard : Fintype.card ι = Fintype.card ({w : InfinitePlace K // w ≠ w₀} ⊕ S) := by
-    rw [hε.2, Fintype.card_sum, ← finrank_logSpace S, Module.finrank_fintype_fun_eq_card,
-      Fintype.card_sum]
+    simp [Fintype.card_congr e, Fintype.card_subtype_compl]
+  have hε' : IsFundSystem S ε := by
+    refine isFundSystem_iff.mpr ⟨hε, ?_⟩
+    rw [hcard, ← Module.finrank_fintype_fun_eq_card ℝ, finrank_logSpace]
+  -- First the case of the distinguished place `w₀`, from the basis `basisOfIsFundSystem hε'`.
   set e₀ := Fintype.equivOfCardEq hcard
-  have h₀ : regulator S = |(Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w₀} ↦
-      (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
-      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e₀ k)).det| := by
-    rw [regulator_def, ZLattice.covolume_eq_det _ ((basisOfIsFundSystem hε).reindex e₀),
+  have h₀ : regulator S = |(logMatrix ε w₀ e₀).det| := by
+    rw [regulator_def, ZLattice.covolume_eq_det _ ((basisOfIsFundSystem hε').reindex e₀),
       ← Matrix.det_submatrix_equiv_self e₀]
     congr 2
     ext i k
-    rcases hk : e₀ k with w | v <;> simp [hk]
+    rcases hk : e₀ k with w | v <;> simp [logMatrix_apply, hk]
   -- Then move the omitted place from `w₀` to `w'`.
+  change regulator S = |(logMatrix ε w' e).det|
   rw [h₀, ← fullLogMatrix_submatrix, ← fullLogMatrix_submatrix]
   exact Matrix.abs_det_submatrix_eq_of_sum_eq_zero _ (sum_fullLogMatrix ε) _ _
 
@@ -234,9 +270,9 @@ theorem regulator_empty : regulator (∅ : Finset (HeightOneSpectrum (𝓞 K))) 
     ((∅ : Finset (HeightOneSpectrum (𝓞 K))) : Set (HeightOneSpectrum (𝓞 K)))
   set ε : Fin (NumberField.Units.rank K) → T.unit K := fun i ↦
     unitOfUnits T K (NumberField.Units.fundSystem K i)
-  -- The ordinary fundamental system is a fundamental system of `∅`-units.
-  have hε : IsFundSystem ∅ ε := by
-    refine ⟨eq_top_iff.mpr fun x _ ↦ ?_, by simp⟩
+  -- The ordinary fundamental system generates the `∅`-units modulo torsion.
+  have hε : Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion (T.unit K) = ⊤ := by
+    refine eq_top_iff.mpr fun x _ ↦ ?_
     obtain ⟨u, hu⟩ := Set.mem_unit_empty_iff (R := 𝓞 K) K |>.mp (by simpa [T] using x.2)
     have hx : unitOfUnits T K u = x := Subtype.ext (Units.ext (by rw [val_unitOfUnits, hu]))
     have hu' : u ∈ Subgroup.closure (Set.range (NumberField.Units.fundSystem K)) ⊔

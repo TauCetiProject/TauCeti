@@ -24,6 +24,9 @@ are arbitrary.
 
 ## Main results
 
+* `Matrix.exists_det_submatrix_eq_units_smul_of_injective`: choosing the columns along any injective
+  map avoiding a column `j`, instead of along an equivalence `ι ≃ {j' // j' ≠ j}`, changes the
+  determinant only by a sign. This holds for any matrix.
 * `Matrix.exists_det_submatrix_eq_units_smul_of_sum_eq_zero`: the two determinants agree up to a
   sign `s : ℤˣ`.
 * `Matrix.abs_det_submatrix_eq_of_sum_eq_zero`: over a commutative ring with a linear order, such
@@ -41,7 +44,7 @@ variable {ι κ R : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [CommRing 
 omit [Fintype κ] in
 /-- Choosing the columns of `M` along an injective map `g : ι → κ` that avoids `j` gives the same
 determinant, up to sign, as choosing them along an equivalence `ι ≃ {j' // j' ≠ j}`. -/
-private theorem exists_det_submatrix_eq_units_smul_of_injective (M : Matrix ι κ R) {j : κ}
+theorem exists_det_submatrix_eq_units_smul_of_injective (M : Matrix ι κ R) {j : κ}
     (e : ι ≃ {j' // j' ≠ j}) {g : ι → κ} (hg : Function.Injective g) (hgj : ∀ k, g k ≠ j) :
     ∃ s : ℤˣ, (M.submatrix id g).det = s • (M.submatrix id fun k ↦ (e k : κ)).det := by
   set σ : ι → ι := fun k ↦ e.symm ⟨g k, hgj k⟩
