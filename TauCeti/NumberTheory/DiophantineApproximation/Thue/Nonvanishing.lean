@@ -79,8 +79,10 @@ private theorem ne_zero_and_forall_smul_ne_of_dvd {α : L} (hd : 2 ≤ (minpoly 
   have hne : algebraMap K L a - α ≠ 0 := sub_ne_zero.2 fun h ↦ by
     rw [← h, minpoly.eq_X_sub_C, natDegree_X_sub_C] at hd
     omega
-  rw [← ha, smul_eq_C_mul, Polynomial.map_mul, map_C, ← sub_mul, ← C_sub] at hdvd
-  exact (isUnit_C.2 hne.isUnit).dvd_mul_left.1 hdvd
+  have heq : P.map (algebraMap K L) - C α * Q.map (algebraMap K L) =
+      C (algebraMap K L a - α) * Q.map (algebraMap K L) := by
+    simp [← ha, smul_eq_C_mul, sub_mul]
+  exact (isUnit_C.2 hne.isUnit).dvd_mul_left.1 (heq ▸ hdvd)
 
 /-- **Nonvanishing derivatives of Thue's polynomials.** Let `α` be algebraic of degree `d ≥ 2`
 over a field `K` of characteristic zero, and let `P, Q ∈ K[X]`, not both zero, of degree at most
