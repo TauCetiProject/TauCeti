@@ -16,7 +16,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Finite.Entropy
 This file identifies the finite matrix formulas for entropic optimal transport with the generic
 measure-theoretic definitions. For probability mass functions `μ` and `ν` on finite spaces, a
 transportation matrix `A` represents the coupling `A.toPMF.toMeasure`. Its matrix objective is the
-real form of the sum of the transport integral and the Kullback--Leibler divergence from
+real form of the sum of the transport integral and `ε` times the Kullback--Leibler divergence from
 `μ.toMeasure.prod ν.toMeasure`.
 
 The same conventions agree on the dual side. The measure-theoretic Gibbs factor splits into the
@@ -165,28 +165,6 @@ theorem ofReal_entropicTransportValue_eq (C : Matrix ι κ ℝ) (ε : ℝ≥0)
   · exact TauCeti.entropicTransportCost_le A.isCoupling_toPMF_toMeasure _ _
 
 end Finite
-
-/-- A matrix is a diagonal scaling of the product-weighted Gibbs kernel exactly when its entries
-are the product of the row and column weights multiplied by the generic Gibbs factor. -/
-theorem isDiagonalScaling_gibbs_iff (P C : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
-    (ε : ℝ≥0) (φ : ι → ℝ) (ψ : κ → ℝ) (hC : ∀ i j, 0 ≤ C i j) :
-    IsDiagonalScaling P
-        (of fun i j ↦ a i * b j * Real.exp (-C i j / ε))
-        (fun i ↦ Real.exp (φ i / ε)) (fun j ↦ Real.exp (ψ j / ε)) ↔
-      ∀ i j, P i j = a i * b j *
-        TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) := by
-  rw [isDiagonalScaling_def]
-  constructor <;> intro h i j
-  · rw [h i j, of_apply,
-      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
-    ring
-  · rw [h i j, of_apply,
-      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
-    ring
-
-end Matrix
-
-namespace Matrix
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Uniform
-public import Mathlib.MeasureTheory.Measure.Prod
 public import TauCeti.Probability.ProbabilityMassFunction.Marginal
 
 /-!
@@ -14,9 +12,7 @@ public import TauCeti.Probability.ProbabilityMassFunction.Marginal
 
 This file records the summation identities for probability mass functions that need a finiteness
 hypothesis: the total mass on a finite type, and the finite-sum specializations of the marginal
-formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`. It also computes the
-real singleton mass under the product of two PMF measures, and the probability that two independent
-uniform samples from a two-element type differ.
+formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
 
 ## Main results
 
@@ -25,16 +21,12 @@ uniform samples from a two-element type differ.
   its row and column sums whenever the factor being summed over is finite.
 * `PMF.map_fst_eq_iff_fintype`, `PMF.map_snd_eq_iff_fintype`: characterizations of prescribed
   marginals by those finite sums.
-* `PMF.real_prod_toMeasure_singleton`: the real singleton mass under a product of PMF measures.
-* `PMF.uniformOfFintype_fin_two_prod_offDiagonal`: independent uniform samples from `Fin 2`
-  differ with probability `1 / 2`.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Set
 open scoped BigOperators ENNReal
 
 universe u v
@@ -42,17 +34,6 @@ universe u v
 namespace PMF
 
 variable {ι : Type u} {κ : Type v}
-
-/-- The real mass of a singleton under the product of two PMF measures is the product of their
-point masses. -/
-@[simp]
-theorem real_prod_toMeasure_singleton [MeasurableSpace ι] [MeasurableSingletonClass ι]
-    [MeasurableSpace κ] [MeasurableSingletonClass κ]
-    (μ : PMF ι) (ν : PMF κ) (i : ι) (j : κ) :
-    (μ.toMeasure.prod ν.toMeasure).real {(i, j)} = (μ i).toReal * (ν j).toReal := by
-  rw [← Set.singleton_prod_singleton, measureReal_prod_prod, Measure.real,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _), Measure.real,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
 
 /-- The real values of a probability mass function on a finite type sum to one. -/
 @[simp]
