@@ -58,7 +58,8 @@ theorem manifoldAreaForm_apply (z : ℂ) (v : Fin 2 → TangentSpace 𝓘(ℝ, �
       (fun i ↦ NormedSpace.fromTangentSpace (𝕜 := ℝ) z (v i)) := (rfl)
 
 /-- The area form's coordinate expression is the existing constant normalized volume form. -/
-@[simp]
+-- Normalize before the generic model-space chart rule erases the chart expression.
+@[simp↓]
 theorem manifoldAreaForm_inChartAt (c : ℂ) :
     manifoldAreaForm.inChartAt c = fun _ ↦ complexAreaForm := by
   rw [RoughForm.inChartAt_modelSpace]
@@ -70,7 +71,8 @@ theorem basisOneI_addHaar : Complex.basisOneI.addHaar = (volume : Measure ℂ) :
   exact Complex.orthonormalBasisOneI.addHaar_eq_volume
 
 /-- The actual top-form coefficient of a scalar multiple of planar area is that scalar. -/
-@[simp]
+-- Normalize before chart and basis simplification erase this scalar-coefficient pattern.
+@[simp↓]
 theorem inChartAt_fun_smul_manifoldAreaForm (f : ℂ → ℝ) (c z : ℂ) :
     RoughForm.inChartAt (I := 𝓘(ℝ, ℂ)) (fun x ↦ f x • manifoldAreaForm x)
       c z Complex.basisOneI = f z := by
