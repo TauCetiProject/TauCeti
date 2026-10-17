@@ -313,8 +313,9 @@ theorem stabilizer_eq_mackeySubgroup_subgroupOf (s : G) (H K : Subgroup G) :
 elements as the Mackey subgroup has index in `K`. -/
 theorem card_orbit_eq_relIndex (s : G) (H K : Subgroup G) :
     Nat.card (orbit K ((s : G ⧸ H))) = (mackeySubgroup s H K).relIndex K := by
-  rw [Subgroup.relIndex, ← stabilizer_eq_mackeySubgroup_subgroupOf, Nat.card_coe_set_eq]
-  exact (index_stabilizer K _).symm
+  rw [Subgroup.card_orbit_quotientGroup_mk, mackeySubgroup_def, inf_comm,
+    Subgroup.inf_relIndex_right, ← Subgroup.relIndex_pointwise_smul (MulAut.conj s), map_inv,
+    smul_inv_smul]
 
 /-- If `H` has finite index in `G` then the Mackey subgroup has finite index in `K`, so the Mackey
 summand attached to `s` is induced along a finite-index inclusion. -/
