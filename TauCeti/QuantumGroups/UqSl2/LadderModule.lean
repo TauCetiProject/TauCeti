@@ -98,6 +98,7 @@ theorem vec_coe (i : Fin (m + 1)) : vec q m ε i = basis q m ε i := by
   · omega
 
 /-- The ladder vectors vanish exactly outside the range `0 ≤ j ≤ m`. -/
+@[simp]
 theorem vec_eq_zero_iff {j : ℤ} : vec q m ε j = 0 ↔ j < 0 ∨ (m : ℤ) < j := by
   rw [vec]
   split_ifs with h
@@ -107,10 +108,12 @@ theorem vec_eq_zero_iff {j : ℤ} : vec q m ε j = 0 ↔ j < 0 ∨ (m : ℤ) < j
     omega
 
 /-- The ladder vectors with negative index vanish. -/
+@[simp]
 theorem vec_eq_zero_of_neg {j : ℤ} (hj : j < 0) : vec q m ε j = 0 :=
   vec_eq_zero_iff.mpr (.inl hj)
 
 /-- The ladder vectors with index above `m` vanish. -/
+@[simp]
 theorem vec_eq_zero_of_lt {j : ℤ} (hj : (m : ℤ) < j) : vec q m ε j = 0 :=
   vec_eq_zero_iff.mpr (.inr hj)
 
