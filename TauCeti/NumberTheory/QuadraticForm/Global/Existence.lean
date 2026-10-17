@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.CorrectionPlanes
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 public import TauCeti.NumberTheory.QuadraticForm.Global.SummandExchange
-import TauCeti.LinearAlgebra.QuadraticForm.Witt.Extension
+import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 /-!
 # Correcting a global form at finitely many places
@@ -141,10 +141,12 @@ theorem atRealPlace_equivalent_of_weightedSumSquares_neg_self_mul_prod_equivalen
     (nondegenerate_weightedSumSquares_neg_self_mul a b) h
     (equivalent_atRealPlace_binary_one_neg_of_pos a hb)
 
+omit [NumberField K] in
 /-- **The corrected form has the discriminant of `W`.** If `⟨α, -αβ⟩ ⊥ Q ≅ ⟨1, -β⟩ ⊥ W` over
 `K` with `Q` and `W` regular, then `Q` and `W` have the same discriminant, because the two planes
 do. -/
-theorem discr_eq_of_weightedSumSquares_neg_self_mul_prod_equivalent [FiniteDimensional K V']
+theorem discr_eq_of_weightedSumSquares_neg_self_mul_prod_equivalent [Invertible (2 : K)]
+    [FiniteDimensional K V']
     (hQ : Q.Nondegenerate) (hW : W.Nondegenerate) {a b : Kˣ}
     (h : ((weightedSumSquares K ![(a : K), -(a * b : K)]).prod Q).Equivalent
       ((weightedSumSquares K ![1, -(b : K)]).prod W)) :
