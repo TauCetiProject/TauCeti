@@ -264,24 +264,6 @@ theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares {w : ι → R}
   simpa [QuadraticMap.associated_weightedSumSquares, Pi.single_apply,
     (hw i).left.mul_left_eq_zero_iff] using hx (Pi.single i 1)
 
-section CorrectionPlanes
-
-variable {K : Type*} [Field K] [Invertible (2 : K)]
-
-/-- The norm plane `⟨1, -β⟩` is regular. -/
-theorem _root_.QuadraticForm.nondegenerate_weightedSumSquares_one_neg (b : Kˣ) :
-    (QuadraticMap.weightedSumSquares K ![1, -(b : K)]).Nondegenerate :=
-  QuadraticMap.nondegenerate_weightedSumSquares fun i => by
-    fin_cases i <;> simp [isRegular_iff_ne_zero]
-
-/-- The scaled norm plane `⟨α, -αβ⟩` is regular. -/
-theorem _root_.QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
-    (QuadraticMap.weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate :=
-  QuadraticMap.nondegenerate_weightedSumSquares fun i => by
-    fin_cases i <;> simp [isRegular_iff_ne_zero]
-
-end CorrectionPlanes
-
 /-- **Isometric diagonal forms with unit weights have weight products differing by a square.** An
 isometry of the coordinate spaces changes the Gram matrix of a diagonal form by a congruence, so
 it changes its determinant — the product of the weights — by the square of the determinant of that

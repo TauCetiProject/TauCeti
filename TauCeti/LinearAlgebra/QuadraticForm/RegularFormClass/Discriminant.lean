@@ -346,26 +346,6 @@ theorem discr_formClass {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimens
     RegularFormClass.discr (formClass Q hQ) = squareClass (∏ i, p.2 i) := by
   rw [formClass_mk Q hQ p hp, RegularFormClass.discr_mk]
 
-/-- The planes `⟨α, -αβ⟩` and `⟨1, -β⟩` have the same discriminant, since `-α²β` and `-β`
-differ by a square. -/
-theorem _root_.QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul (a b : Kˣ) :
-    RegularFormClass.discr
-        (formClass _ (QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul a b)) =
-      RegularFormClass.discr
-        (formClass _ (QuadraticForm.nondegenerate_weightedSumSquares_one_neg b)) := by
-  have h₁ := discr_formClass _ (QuadraticForm.nondegenerate_weightedSumSquares_one_neg b)
-    ⟨2, ![1, -b]⟩ (by
-      rw [presentedForm_two]
-      simpa using (QuadraticMap.Equivalent.refl
-        (QuadraticMap.weightedSumSquares K ![(1 : K), -(b : K)])))
-  have h₂ := discr_formClass _ (QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul a b)
-    ⟨2, ![a, -(a * b)]⟩ (by
-      rw [presentedForm_two]
-      simpa using (QuadraticMap.Equivalent.refl
-        (QuadraticMap.weightedSumSquares K ![(a : K), -(a * b : K)])))
-  rw [h₁, h₂, squareClass_eq_iff_isSquare_mul]
-  exact ⟨a * b, by ext; simp [Fin.prod_univ_two]; ring⟩
-
 /-- **The discriminant is the Gram determinant modulo squares**: the discriminant of a regular
 form is the square class of the determinant `QuadraticForm.discr b Q` of its Gram matrix in any
 basis `b`. -/
