@@ -145,6 +145,27 @@ namespace IsCAD
 
 variable {𝒞 : Set (Set (Fin n → ℝ))}
 
+/-- Stacks over every cell of a CAD assemble into a CAD whose projections are exactly the
+original cells. Any property shared by all stack cells holds on every cell of the new CAD. -/
+theorem exists_succ_of_forall_exists_stack (h𝒞 : IsCAD n 𝒞)
+    (P : Set (Fin (n + 1) → ℝ) → Prop)
+    (h : ∀ C ∈ 𝒞, ∃ k, ∃ θ : Fin k → C → ℝ, IsSemialgebraicStack C θ ∧
+      ∀ E ∈ stackCells C θ, P E) :
+    ∃ 𝒟, IsCAD (n + 1) 𝒟 ∧ image Fin.tail '' 𝒟 = 𝒞 ∧ ∀ E ∈ 𝒟, P E := by
+  classical
+  have hstack (C : Set (Fin n → ℝ)) : ∃ k, ∃ θ : Fin k → C → ℝ, C ∈ 𝒞 →
+      IsSemialgebraicStack C θ ∧ ∀ E ∈ stackCells C θ, P E := by
+    by_cases hC : C ∈ 𝒞
+    · obtain ⟨k, θ, hθ⟩ := h C hC
+      exact ⟨k, θ, fun _ ↦ hθ⟩
+    · exact ⟨0, Fin.elim0, fun h ↦ (hC h).elim⟩
+  choose k θ hθ using hstack
+  refine ⟨_, .succ k θ h𝒞 (fun C hC ↦ (hθ C hC).1), ?_, ?_⟩
+  · exact image_image_tail_iUnion_stackCells fun C hC ↦ (hθ C hC).1.strictMono
+  · intro E hE
+    obtain ⟨C, hC, hE⟩ := mem_iUnion₂.mp hE
+    exact (hθ C hC).2 E hE
+
 /-- A cylindrical algebraic decomposition has finitely many cells. -/
 theorem finite (h : IsCAD n 𝒞) : 𝒞.Finite := by
   induction h with

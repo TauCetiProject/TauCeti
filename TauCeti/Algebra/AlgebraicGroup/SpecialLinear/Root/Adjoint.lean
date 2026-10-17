@@ -76,6 +76,18 @@ theorem cotangentLinearEquiv_symm_derivationComp_rootSubgroup
     ((LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2).map_smul
       (AdditiveGroup.gaTangentLinearEquiv d) 1)
 
+/-- Cotangent duality sends the normalized adjoint root vector to the
+root-subgroup differential of the additive unit tangent vector.
+Use this identity for explicit rewriting through the indexed coordinate presentation. -/
+theorem cotangentLinearEquiv_rootVector
+    (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
+    Derivation.cotangentLinearEquiv (B := R) (rootVector (R := R) p) =
+      derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.2).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1) := by
+  apply (Derivation.cotangentLinearEquiv (B := R)).symm.injective
+  rw [LinearEquiv.symm_apply_apply, cotangentLinearEquiv_symm_derivationComp_rootSubgroup,
+    LinearEquiv.apply_symm_apply, one_smul]
+
 /-- The differential of the root subgroup, as an isomorphism onto the adjoint
 root space over the base ring. -/
 def rootDifferentialEquiv (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :

@@ -104,12 +104,12 @@ theorem exists_diffeomorph_normalBundle_subset
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
     {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-    letI := f.normalSpaceFiberBundle (F := F) hn hdim
+    letI := f.orthogonalNormalSpaceFiberBundle (F := F) hn hdim
     ∃ W : TopologicalSpace.Opens V, (W : Set V) ⊆ O ∧
       ∃ Φ : TotalSpace F (fun x => f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, F), 𝓘(ℝ, V)⟯ W,
         ∀ x, (Φ (zeroSection F (fun x => f.NormalSpace x hn) x) : V) = f x := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  let := f.normalSpaceFiberBundle (F := F) hn hdim
+  let := f.orthogonalNormalSpaceFiberBundle (F := F) hn hdim
   let := normalFiberBundle (f.contMDiff.of_le (by simp))
     (f.isImmersion.mfderiv_injective hn) hdim
   obtain ⟨W, hW, Φ, hzero⟩ := exists_diffeomorph_wholeNormalBundle_subset

@@ -67,15 +67,16 @@ namespace PDE
 open InnerProductSpace Laplacian MeasureTheory Metric Set Filter TopologicalSpace
 open scoped Distributions Gradient InnerProductSpace ENNReal Topology
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι → ℝ}
 
 /-- **Green's first identity against `H¹₀(Ω)`.** Let `u ∈ H¹(Ω)` agree almost everywhere on `Ω`
 with a function `w` of class `C²` on `Ω` whose Laplacian lies in `L²(Ω)`. Then
 `∫_Ω ∇v · ∇u = -∫_Ω Δw v` for every `v ∈ H¹₀(Ω)`: `u` solves `-Δu = -Δw` weakly. No boundary
 condition is imposed on `u`. -/
-theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu Omega 2}
-    (hw : ContDiffOn ℝ 2 w Omega) (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
+theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq ι]
+    {u : W1p mu Omega 2} (hw : ContDiffOn ℝ 2 w Omega)
+    (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
     (hΔ : MemLp (Δ w) 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
     energyFormH1 (fun _ => 1) 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, -Δ w x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
@@ -91,7 +92,7 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu 
   · -- Against a test function: `∫ ⟪∇φ, ∇u⟫ = -∫ Δφ u = -∫ Δφ w = -∫ φ Δw`.
     have hgrad : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
         ∫ x, ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, W1p.gradient u x⟫_ℝ ∂mu := by
-      rw [energyFormH1_const_eq_setIntegral]
+      rw [energyFormH1_zero_zero_eq_setIntegral]
       refine (integral_congr_ae ?_).trans
         (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_)
       · filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
@@ -121,7 +122,6 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu 
   · filter_upwards [hf] with x hx
     rw [hx, Pi.neg_apply]
 
-omit [DecidableEq ι] in
 /-- **The energy of a classical solution above a positive level.** Let `w` be of class `C²` on a
 bounded open set `Ω`, continuous on its closure, zero on its frontier, with `|w| ≤ S` on `Ω` and
 `Δw` integrable on `Ω`. Then for `ε > 0`, testing `-Δw` against the truncation `(w - ε)⁺`, which
@@ -208,7 +208,6 @@ private theorem setLIntegral_enorm_gradient_sq_le
     _ ≤ ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) :=
         ENNReal.ofReal_le_ofReal (hleft ▸ hgreen ▸ hright)
 
-omit [DecidableEq ι] in
 /-- **The Dirichlet energy of a classical solution is finite.** Under the hypotheses of
 `setLIntegral_enorm_gradient_sq_le`, `∫_Ω ‖∇w‖² ≤ 2 S ∫_Ω |Δw|`: the bound above each level `ε > 0`
 of `w` and of `-w`, in the limit `ε → 0`, controls the energy on `{w ≠ 0}`, and `∇w = 0` almost
@@ -278,6 +277,8 @@ private theorem setLIntegral_enorm_gradient_sq_le_add
         rw [lintegral_indicator hA, Measure.restrict_restrict hA,
           inter_eq_left.2 inter_subset_left]
     _ ≤ C + C := hnz
+
+variable [DecidableEq ι]
 
 /-- **A classical solution of the Dirichlet problem is the weak solution.** Let `Ω` be a bounded
 open set and let `w` be of class `C²` on `Ω`, continuous on `closure Ω` and zero on

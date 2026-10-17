@@ -54,6 +54,8 @@ object stabilizes after finitely many pages to the corresponding graded piece of
 * `HomologicalComplex₂.rowFiltrationSpectralSequence`: its spectral sequence.
 * `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso`: the first page is the homology
   of the rows.
+* `HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso`: the first page of the row
+  filtration of the flipped bicomplex is the homology of the original columns.
 * `HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_two_X_of_pos`,
   `HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_two_X_of_neg`: the first page
   vanishes outside the range of the rows.
@@ -428,6 +430,25 @@ def rowFiltrationSpectralSequenceFirstPageXIso (p : ℤ) (s k : ℕ) (hp : p + 2
     (K.totalRow s).extendHomologyIso embeddingDownNat (j := k + s) (by simp; omega) ≪≫
     K.totalRowHomologyIso s k
 
+/-! ### The column filtration -/
+
+/-- A row of the flipped bicomplex is the corresponding column of the original bicomplex. -/
+def flipRowIso (p : ℕ) :
+    (((HomologicalComplex.eval C (down ℕ) p).mapHomologicalComplex (down ℕ)).obj K.flip) ≅ K.X p :=
+  Iso.refl _
+
+/-- The spectral sequence obtained by applying the row filtration to the flipped bicomplex. Its
+first page is the vertical homology of the original bicomplex. -/
+abbrev columnFiltrationSpectralSequence := K.flip.rowFiltrationSpectralSequence
+
+/-- **The first page of the column-filtration spectral sequence** is the vertical homology of the
+columns: its object at `(-k - 2p, p)` is the degree-`k` homology of the column `K.X p`. -/
+def columnFiltrationSpectralSequenceFirstPageXIso (p k : ℕ) :
+    (K.columnFiltrationSpectralSequence.page 2).X (-(k : ℤ) - 2 * p, p) ≅
+      (K.X p).homology k :=
+  K.flip.rowFiltrationSpectralSequenceFirstPageXIso (-(k : ℤ) - 2 * p) p k (by omega) ≪≫
+    HomologicalComplex.homologyMapIso (K.flipRowIso p) k
+
 /-- The first page of the spectral sequence of the row filtration vanishes at `(p, s)` when
 `p + 2s > 0`: the row `s` contributes nothing in total degree `-(p + s) < s`. -/
 lemma isZero_rowFiltrationSpectralSequence_page_two_X_of_pos (p : ℤ) (s : ℕ)
@@ -457,6 +478,14 @@ def rowFiltrationAbutmentIso (n : ℕ) :
       K.monotone_rowFiltration)).abutment (-n) ≅ (K.total (down ℕ)).homology n :=
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     (K.total (down ℕ)).extendHomologyIso embeddingDownNat (by simp)
+
+/-- The abutment of the column-filtration spectral sequence is the homology of the original total
+complex. The comparison incorporates the Koszul sign of the total-complex flip. -/
+def columnFiltrationAbutmentIso (n : ℕ) :
+    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.flip.rowFiltration
+      K.flip.monotone_rowFiltration)).abutment (-n) ≅ (K.total (down ℕ)).homology n :=
+  K.flip.rowFiltrationAbutmentIso n ≪≫
+    HomologicalComplex.homologyMapIso (K.totalFlipIso (down ℕ)) n
 
 /-! ### Convergence -/
 

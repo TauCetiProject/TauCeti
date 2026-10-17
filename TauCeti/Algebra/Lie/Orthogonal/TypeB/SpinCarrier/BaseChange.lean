@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.ClosedRootSubgroup
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
@@ -55,6 +56,8 @@ its torus is maximal, or that its root datum is the simply connected type-`Bₙ�
 * `baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap` and
   `baseChangePointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap`: the
   transported coordinate maps induce the named root-subgroup and weight-torus points.
+* `TauCeti.TypeBSpinCarrier.rootSubgroupIntegralCoordinateMap_surjective`: every numbered integral
+  root-subgroup coordinate map is surjective.
 
 ## References
 
@@ -330,6 +333,16 @@ theorem mkQuotient_comp_rootSubgroupIntegralCoordinateMap
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) (definingIdeal_def n) k
+
+/-- Every numbered integral root-subgroup coordinate map is surjective. -/
+theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    Function.Surjective (rootSubgroupIntegralCoordinateMap n k).hom := by
+  have h := (rootSubgroupCoordinateMap_surjective n k).comp
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
+    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
+  exact Function.Surjective.of_comp h
 
 /-- On points, the integral factored coordinate map is the named numbered root subgroup. -/
 @[simp]

@@ -138,6 +138,29 @@ theorem exists_sum_eq_of_mem_weightMul_idealImage_succ (P : PairOfDefinition A)
     exact Finset.sum_congr rfl fun z _ ↦ by ring
   exact hle hx
 
+/-- A series whose coefficient at `ν` lies in `Tν · I^(n + m ν)`, for a level function `m` with
+finite sublevel sets, is `T`-restricted: the levels force the coefficients into every basic
+neighbourhood outside a finite set.
+
+This is the convergence half of
+`TauCeti.Huber.PairOfDefinition.exists_sum_weightedRingOfDefinitionC_mul`, where `m` comes from
+`TauCeti.Huber.PairOfDefinition.exists_level`. -/
+private theorem isWeightedRestricted_of_coeff_mem_weightMul_idealImage (P : PairOfDefinition A)
+    {T : Fin k → Set A} (n : ℕ) {m : (Fin k →₀ ℕ) → ℕ} (hmfin : ∀ M : ℕ, {ν | m ν < M}.Finite)
+    {s : MvPowerSeries (Fin k) A}
+    (hc : ∀ ν, MvPowerSeries.coeff ν s ∈ weightMul T ν (P.idealImage (n + m ν))) :
+    IsWeightedRestricted T s := by
+  refine isWeightedRestricted_iff.mpr fun U ↦ ?_
+  obtain ⟨M, -, hM⟩ := P.hasBasis_nhds_zero.mem_iff.mp (U.isOpen.mem_nhds U.zero_mem)
+  rw [Filter.eventually_cofinite]
+  refine (hmfin M).subset fun ν hν ↦ ?_
+  simp only [Set.mem_ofPred_eq] at hν ⊢
+  by_contra hle
+  refine hν ?_
+  refine weightMul_mono T ν ?_ (hc ν)
+  exact le_trans (P.idealImage_anti (by omega))
+    fun x hx ↦ SetLike.mem_coe.mp (hM (SetLike.mem_coe.mpr hx))
+
 section Nonarchimedean
 
 variable [NonarchimedeanRing A] {T : Fin k → Set A}
@@ -279,30 +302,6 @@ private theorem exists_mem_weightedIdeal_coe_eq (P : PairOfDefinition A) (hT : I
     (P.mem_weightedRingOfDefinition hT).mpr <| mem_weightedNhd.mpr fun ν ↦
       weightMul_mono T ν (P.idealImage_le_ringOfDefinition n) (hmem ν)⟩,
     rfl, mem_weightedNhd.mpr hmem⟩
-
-omit [NonarchimedeanRing A] in
-/-- A series whose coefficient at `ν` lies in `Tν · I^(n + m ν)`, for a level function `m` with
-finite sublevel sets, is `T`-restricted: the levels force the coefficients into every basic
-neighbourhood outside a finite set.
-
-This is the convergence half of
-`TauCeti.Huber.PairOfDefinition.exists_sum_weightedRingOfDefinitionC_mul`, where `m` comes from
-`TauCeti.Huber.PairOfDefinition.exists_level`. -/
-private theorem isWeightedRestricted_of_coeff_mem_weightMul_idealImage (P : PairOfDefinition A)
-    (n : ℕ) {m : (Fin k →₀ ℕ) → ℕ} (hmfin : ∀ M : ℕ, {ν | m ν < M}.Finite)
-    {s : MvPowerSeries (Fin k) A}
-    (hc : ∀ ν, MvPowerSeries.coeff ν s ∈ weightMul T ν (P.idealImage (n + m ν))) :
-    IsWeightedRestricted T s := by
-  refine isWeightedRestricted_iff.mpr fun U ↦ ?_
-  obtain ⟨M, -, hM⟩ := P.hasBasis_nhds_zero.mem_iff.mp (U.isOpen.mem_nhds U.zero_mem)
-  rw [Filter.eventually_cofinite]
-  refine (hmfin M).subset fun ν hν ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hν ⊢
-  by_contra hle
-  refine hν ?_
-  refine weightMul_mono T ν ?_ (hc ν)
-  exact le_trans (P.idealImage_anti (by omega))
-    fun x hx ↦ SetLike.mem_coe.mp (hM (SetLike.mem_coe.mpr hx))
 
 /-- **The decomposition of a series.** A series all of whose coefficients meet the `Iⁿ⁺¹` bound is
 a combination, with cofactors in `Iⁿ⟨X⟩_T`, of the constant series attached to a finite generating

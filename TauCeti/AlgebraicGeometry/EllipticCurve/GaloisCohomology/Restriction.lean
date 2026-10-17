@@ -59,6 +59,12 @@ local Kummer map serve as the local condition at `L` of the `m`-Selmer group.
   `absoluteGaloisGroupMap τ`.
 * `WeierstrassCurve.pointCoeffBaseChange_basePointCoeff`: on points of `E(K)` it is base change
   to `L`.
+* `WeierstrassCurve.pointCoeffBaseChange_pointCoeffBaseChange`,
+  `WeierstrassCurve.torsionCoeffBaseChange_torsionCoeffBaseChange`: the maps compose in a tower
+  `K → L → M`, up to the identification of `(W⁄L)⁄M` with `W⁄M`.
+* `WeierstrassCurve.pointCoeffBaseChange_bijective`,
+  `WeierstrassCurve.torsionCoeffBaseChange_bijective`: the coordinate maps along a bijective
+  embedding of separable closures are bijective.
 * `WeierstrassCurve.pointRes_torsionCoeffIncl`: restriction commutes with
   `H¹(G, E[m]) → H¹(G, E)`.
 * `WeierstrassCurve.torsionRes_kummerMap`: restriction commutes with the Kummer maps.
@@ -87,17 +93,13 @@ variable {K : Type*} [Field K] {L : Type*} [Field L] [Algebra K L] (W : Weierstr
 
 /-! ### The map on points over the separable closures -/
 
-/-- The base change of `W` to `Lˢ` is the base change of `W⁄L` to `Lˢ`. -/
-private theorem baseChange_separableClosure_eq :
-    W⁄(SeparableClosure L) = (W⁄L)⁄(SeparableClosure L) :=
-  (map_baseChange W (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm
-
 /-- Applying `τ` to the coordinates of a nonsingular point of `W` over `Kˢ` gives a nonsingular
 point of `W⁄L` over `Lˢ`. -/
 theorem nonsingular_baseChange_separableClosure {x y : SeparableClosure K}
     (h : (W⁄(SeparableClosure K)).toAffine.Nonsingular x y) :
     ((W⁄L)⁄(SeparableClosure L)).toAffine.Nonsingular (τ x) (τ y) :=
-  (W.baseChange_separableClosure_eq (L := L)) ▸
+  (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+    W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm ▸
     (W.toAffine.baseChange_nonsingular (S := K) (f := τ) τ.injective x y).2 h
 
 open scoped Classical in
@@ -106,7 +108,9 @@ applies `τ` to the coordinates of a point. -/
 def pointCoeffBaseChange : W.PointCoeff →+ (W⁄L).PointCoeff :=
   (W⁄L).pointCoeffEquiv.toAddMonoidHom.comp <|
     (AddEquiv.cast (M := fun V : WeierstrassCurve (SeparableClosure L) => V.toAffine.Point)
-      (W.baseChange_separableClosure_eq (L := L))).toAddMonoidHom.comp <|
+      (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+        W.map_baseChange
+          (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm).toAddMonoidHom.comp <|
     (Affine.Point.map (W' := W.toAffine) τ).comp W.pointCoeffEquiv.symm.toAddMonoidHom
 
 open scoped Classical in
@@ -118,7 +122,8 @@ theorem pointCoeffBaseChange_pointCoeffEquiv_some {x y : SeparableClosure K}
       (W⁄L).pointCoeffEquiv (.some _ _ (W.nonsingular_baseChange_separableClosure τ h)) := by
   simp only [pointCoeffBaseChange, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.symm_apply_apply, Affine.Point.map_some, AddEquiv.cast_apply]
-  rw [Affine.Point.cast_some (W.baseChange_separableClosure_eq (L := L))]
+  rw [Affine.Point.cast_some (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+    W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm]
 
 open scoped Classical in
 /-- **`pointCoeffBaseChange τ` is equivariant** along `absoluteGaloisGroupMap τ : G_L → G_K`. -/
@@ -194,6 +199,79 @@ theorem torsionCoeffBaseChange_comp (σ : AbsoluteGaloisGroup K) (m : ℕ)
   apply Subtype.ext
   rw [coe_torsionCoeffBaseChange, coe_torsionCoeffBaseChange, coe_smul_torsionCoeff,
     pointCoeffBaseChange_comp]
+
+/-! ### Bijectivity along a bijective embedding -/
+
+variable {τ} in
+open scoped Classical in
+/-- **Along a bijective embedding of separable closures, `E(Kˢ) → E(Lˢ)` is bijective.** -/
+theorem pointCoeffBaseChange_bijective (hτ : Function.Bijective τ) :
+    Function.Bijective (W.pointCoeffBaseChange τ) := by
+  let e : SeparableClosure K ≃ₐ[K] SeparableClosure L := AlgEquiv.ofBijective τ hτ
+  -- The point map along `τ` is injective, with right inverse the point map along `e.symm`.
+  have hmap : Function.Bijective (Affine.Point.map (W' := W.toAffine) τ) := by
+    refine ⟨Affine.Point.map_injective _, fun Q ↦ ⟨Affine.Point.map e.symm.toAlgHom Q, ?_⟩⟩
+    rcases Q with _ | ⟨x, y, h⟩
+    · rfl
+    · simp only [Affine.Point.map_some]
+      congr <;> exact e.apply_symm_apply _
+  simp only [pointCoeffBaseChange, AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom]
+  exact (W⁄L).pointCoeffEquiv.bijective.comp <| (AddEquiv.cast _).bijective.comp <|
+    hmap.comp W.pointCoeffEquiv.symm.bijective
+
+variable {τ} in
+/-- **Along a bijective embedding of separable closures, `E(Kˢ)[m] → E(Lˢ)[m]` is bijective.** -/
+theorem torsionCoeffBaseChange_bijective (hτ : Function.Bijective τ) :
+    Function.Bijective (W.torsionCoeffBaseChange τ m) := by
+  -- `torsionCoeffBaseChange τ m` is the transport of `m`-torsion along `pointCoeffBaseChange τ`.
+  let e := AddEquiv.ofBijective (W.pointCoeffBaseChange τ) (W.pointCoeffBaseChange_bijective hτ)
+  have h : ⇑(W.torsionCoeffBaseChange τ m) = e.torsionByCongr m := funext fun _ ↦ Subtype.ext <| by
+    rw [coe_torsionCoeffBaseChange, AddEquiv.torsionByCongr_apply_coe, AddEquiv.ofBijective_apply]
+  exact h ▸ (e.torsionByCongr m).bijective
+
+/-! ### Towers of extensions
+
+The identification of `(W⁄L)⁄M` with `W⁄M` is Mathlib's `WeierstrassCurve.map_baseChange` at
+`IsScalarTower.toAlgHom K L M`, whose underlying ring homomorphism is `algebraMap L M`; the `show`
+in the statements below only restates it in terms of base change. -/
+
+section Tower
+
+variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
+  (τ' : SeparableClosure L →ₐ[L] SeparableClosure M)
+  (τ'' : SeparableClosure K →ₐ[K] SeparableClosure M)
+
+open scoped Classical in
+/-- **The coordinate maps compose in a tower** `K → L → M`: if `τ'' : Kˢ → Mˢ` is the composite of
+`τ : Kˢ → Lˢ` and `τ' : Lˢ → Mˢ`, mapping `E(Kˢ) → E(Lˢ) → E(Mˢ)` along `τ` and `τ'` is mapping
+along `τ''`, followed by the identification of `(W⁄L)⁄M` with `W⁄M`. -/
+theorem pointCoeffBaseChange_pointCoeffBaseChange (hτ : ∀ x, τ'' x = τ' (τ x))
+    (P : W.PointCoeff) :
+    (W⁄L).pointCoeffBaseChange τ' (W.pointCoeffBaseChange τ P) =
+      AddEquiv.cast (M := PointCoeff) (show (W⁄L)⁄M = W⁄M from
+        W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm
+        (W.pointCoeffBaseChange τ'' P) := by
+  obtain ⟨P, rfl⟩ := W.pointCoeffEquiv.surjective P
+  rcases P with _ | ⟨x, y, h⟩
+  · simp only [← Affine.Point.zero_def, map_zero]
+  · rw [pointCoeffBaseChange_pointCoeffEquiv_some, pointCoeffBaseChange_pointCoeffEquiv_some,
+      pointCoeffBaseChange_pointCoeffEquiv_some, cast_pointCoeffEquiv_some]
+    simp only [hτ]
+
+/-- **The maps on `m`-torsion compose in a tower** `K → L → M`, as in
+`WeierstrassCurve.pointCoeffBaseChange_pointCoeffBaseChange`. -/
+theorem torsionCoeffBaseChange_torsionCoeffBaseChange (hτ : ∀ x, τ'' x = τ' (τ x)) (m : ℕ)
+    (P : W.TorsionCoeff m) :
+    (W⁄L).torsionCoeffBaseChange τ' m (W.torsionCoeffBaseChange τ m P) =
+      AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.TorsionCoeff m)
+        (show (W⁄L)⁄M = W⁄M from
+          W.map_baseChange (IsScalarTower.toAlgHom K L M)).symm
+        (W.torsionCoeffBaseChange τ'' m P) :=
+  Subtype.ext <| by
+    rw [coe_torsionCoeffBaseChange, coe_torsionCoeffBaseChange, coe_cast_torsionCoeff,
+      coe_torsionCoeffBaseChange, pointCoeffBaseChange_pointCoeffBaseChange W τ τ' τ'' hτ]
+
+end Tower
 
 /-! ### Restriction on first cohomology -/
 

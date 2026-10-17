@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
-public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 
 /-!
@@ -28,7 +28,8 @@ sectionwise symmetric algebras) and sheafifying, exactly as the tensor product
   sheaves of `R`-modules;
 * `SheafOfModules.symmetricPowerIso` and `SheafOfModules.symmetricPower_map` are its
   defining identification with the sheafification of the sectionwise symmetric power;
-* `SheafOfModules.symmetricPowerZeroIso` identifies `Sym⁰ M` with the structure sheaf;
+* `SheafOfModules.symmetricPowerZeroIso` identifies `Sym⁰ M` with the structure sheaf, with
+  components computed by `symmetricPowerZeroIso_hom_app` and `symmetricPowerZeroIso_inv_app`;
 * `SheafOfModules.symmetricPowerOneIso` identifies `Sym¹ M` with `M`;
 * `SheafOfModules.overSymmetricPowerIso` identifies the restriction of `Symⁿ M` to a slice site
   with the symmetric power of the restriction of `M`.
@@ -117,6 +118,19 @@ theorem symmetricPowerZeroIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) 
           ((PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).hom.app M.val) ≫
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
           (SheafOfModules.unit (ringCatSheaf R))).hom :=
+  (rfl)
+
+/-- On components, the inverse of `symmetricPowerZeroIso` is the identification of the structure
+sheaf with the sheafified unit, followed by the sheafification of the inverse presheaf-level
+identification `PresheafOfModulesOfCommRing.symmetricPowerZeroIso`. -/
+@[simp, reassoc]
+theorem symmetricPowerZeroIso_inv_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (symmetricPowerZeroIso R).inv.app M =
+      (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
+          (SheafOfModules.unit (ringCatSheaf R))).inv ≫
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+          ((PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).inv.app M.val) ≫
+        (symmetricPowerIso 0 M).inv :=
   (rfl)
 
 /-- On components, `symmetricPowerOneIso` is the sheafification of the presheaf-level

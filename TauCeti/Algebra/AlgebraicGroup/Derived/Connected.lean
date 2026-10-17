@@ -35,6 +35,8 @@ identity component to be the whole subgroup.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open scoped TensorProduct
 open WithConv
 

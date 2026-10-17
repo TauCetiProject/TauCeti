@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.RingTheory.Algebraic.Denominator
 public import Mathlib.RingTheory.Polynomial.GaussLemma
@@ -40,6 +41,8 @@ clears the denominator of `x`.
 * `TauCeti.isPrimitive_primitiveMinpoly`, `TauCeti.leadingCoeff_primitiveMinpoly_pos`,
   `TauCeti.irreducible_primitiveMinpoly`, `TauCeti.aeval_primitiveMinpoly`: `F_x` is primitive,
   has positive leading coefficient, and for algebraic `x` is irreducible and vanishes at `x`.
+* `TauCeti.rootSet_primitiveMinpoly`: for algebraic `x`, `F_x` and `minpoly ℚ x` have the same
+  roots in every field of characteristic zero.
 * `TauCeti.primitiveMinpoly_dvd_iff`: for algebraic `x`, `F_x ∣ P` in `ℤ[X]` iff `P(x) = 0`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
 * `TauCeti.primitiveMinpoly_eq_minpoly_int`: `F_x = minpoly ℤ x` for `x` integral over `ℤ`.
@@ -147,6 +150,15 @@ theorem aeval_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
   rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
     minpoly.aeval, mul_zero]
 
+/-- For algebraic `x`, the primitive minimal polynomial has the same roots as `minpoly ℚ x` in
+every field of characteristic zero: its image in `ℚ[X]` is a nonzero multiple of `minpoly ℚ x`. -/
+theorem rootSet_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) (K : Type*) [Field K]
+    [CharZero K] : (primitiveMinpoly x).rootSet K = (minpoly ℚ x).rootSet K := by
+  ext z
+  rw [mem_rootSet, mem_rootSet, ← aeval_map_algebraMap ℚ, algebraMap_int_eq,
+    map_primitiveMinpoly hx, aeval_mul, aeval_C]
+  simp [minpoly.ne_zero hx.isIntegral]
+
 /-- The primitive minimal polynomial has the degree of `x` over `ℚ`. For transcendental `x` both
 sides are `0`. -/
 @[simp]
@@ -181,6 +193,16 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
   rw [IsPrimitive.Int.dvd_iff_map_cast_dvd_map_cast _ _ (isPrimitive_primitiveMinpoly x),
     (associated_map_primitiveMinpoly hx).dvd_iff_dvd_left]
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
+
+/-- Reversing a primitive defining polynomial gives a multiple of the primitive
+minimal polynomial of the inverse root. -/
+theorem primitiveMinpoly_inv_dvd_reverse {x : F} (hx : IsAlgebraic ℚ x)
+    (hx0 : x ≠ 0) : primitiveMinpoly x⁻¹ ∣ (primitiveMinpoly x).reverse := by
+  let := invertibleOfNonzero hx0
+  apply (primitiveMinpoly_dvd_iff hx.inv).mpr
+  simpa only [aeval_def, invOf_eq_inv] using
+    (eval₂_reverse_eq_zero_iff (algebraMap ℤ F) x (primitiveMinpoly x)).mpr
+      (aeval_primitiveMinpoly hx)
 
 /-- The uniqueness characterisation: an irreducible `P ∈ ℤ[X]` with positive leading coefficient
 vanishing at `x` is the primitive minimal polynomial of `x`. Such a `P` is automatically

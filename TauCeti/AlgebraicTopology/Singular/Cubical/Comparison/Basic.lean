@@ -186,6 +186,88 @@ theorem cubicalToSingular_app_f_zero_ofZeroCube {X : TopCat.{u}} (c : SingularCu
   rw [← SingularCube.eq_point c] at h
   exact h
 
+/-- The comparison with simplicial chains is natural: pushing forward the image of a cube is the
+image of the pushed-forward cube. -/
+theorem singularChains_map_cubicalToSingular {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
+    (c : SingularCube X n) :
+    ((singularChains k).map f).f n
+        (((cubicalToSingular k).app X).f n
+          (NormalizedCubicalChain.ofCube X k c)) =
+      ((cubicalToSingular k).app Y).f n
+        (NormalizedCubicalChain.ofCube Y k (f.hom.comp c)) := by
+  have h := congrArg (fun φ ↦ φ.f n (NormalizedCubicalChain.ofCube X k c))
+    ((cubicalToSingular k).naturality f)
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp] at h
+  -- The term `((normalizedCubicalChainComplex k).obj X).X n` is the module of normalized chains by
+  -- definition, which `exact` sees but `rw` does not.
+  exact h.symm.trans (congrArg (((cubicalToSingular k).app Y).f n).hom
+    ((normalizedCubicalChainComplex_map_f_apply f n _).trans
+      (NormalizedCubicalChain.map_ofCube _ f.hom c)))
+
+section ModelChains
+
+variable (k)
+
+/-- The image, under the comparison with simplicial chains, of the identity cube of the model
+`Iⁿ`. -/
+def cubicalToSingularGen (n : ℕ) : ((singularChains k).obj (cubeModel.{u} n)).X n :=
+  ((cubicalToSingular k).app (cubeModel.{u} n)).f n
+    (NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n))
+
+/-- The image, under the comparison with simplicial chains, of the subcube `upCube n ∘ ι` of the
+model `Iⁿ`. -/
+def cubicalToSingularSubcube (n : ℕ) {m : ℕ} (ι : C(Fin m → unitInterval, Fin n → unitInterval)) :
+    ((singularChains k).obj (cubeModel.{u} n)).X m :=
+  ((cubicalToSingular k).app (cubeModel.{u} n)).f m
+    (NormalizedCubicalChain.ofCube (cubeModel.{u} n) k ((upCube n).comp ι))
+
+/-- The image of the identity cube is the image of its subcube along the identity. -/
+theorem cubicalToSingularSubcube_id (n : ℕ) :
+    cubicalToSingularSubcube k n (ContinuousMap.id (Fin n → unitInterval)) =
+      cubicalToSingularGen k n :=
+  (rfl)
+
+/-- The image of a degenerate subcube of the model is zero. -/
+theorem cubicalToSingularSubcube_eq_zero {n m : ℕ}
+    {ι : C(Fin m → unitInterval, Fin n → unitInterval)}
+    (h : SingularCube.IsDegenerate ((upCube.{u} n).comp ι)) :
+    cubicalToSingularSubcube k n ι = 0 := by
+  unfold cubicalToSingularSubcube
+  rw [NormalizedCubicalChain.ofCube_eq_zero k h]
+  exact LinearMap.map_zero _
+
+/-- Pushing forward the image of a subcube of the model along a map between models is the image of
+the pushed-forward subcube. -/
+theorem singularChains_map_cubicalToSingularSubcube {n m p : ℕ}
+    (ι : C(Fin m → unitInterval, Fin n → unitInterval))
+    (κ : C(Fin p → unitInterval, Fin m → unitInterval)) :
+    ((singularChains k).map (cubeToHom ((upCube.{u} n).comp ι))).f p
+        (cubicalToSingularSubcube k m κ) =
+      cubicalToSingularSubcube k n (ι.comp κ) := by
+  unfold cubicalToSingularSubcube
+  rw [singularChains_map_cubicalToSingular, ← ContinuousMap.comp_assoc,
+    cubeToHom_hom_comp_upCube, ContinuousMap.comp_assoc]
+
+/-- The boundary of the image of the identity cube of the model `Iⁿ⁺¹` is the alternating sum of
+the images of its faces. -/
+theorem singularChains_d_cubicalToSingularGen (n : ℕ) :
+    ((singularChains k).obj (cubeModel.{u} (n + 1))).d (n + 1) n
+        (cubicalToSingularGen k (n + 1)) =
+      ∑ i : Fin (n + 1), ((-1 : k) ^ (i : ℕ)) •
+        (cubicalToSingularSubcube k (n + 1) (SingularCube.face i 0 (ContinuousMap.id _)) -
+          cubicalToSingularSubcube k (n + 1) (SingularCube.face i 1 (ContinuousMap.id _))) := by
+  unfold cubicalToSingularGen cubicalToSingularSubcube
+  refine (HomologicalComplex.Hom.comm_apply ((cubicalToSingular k).app _) _ _ _).trans
+    ((congrArg (((cubicalToSingular k).app _).f n).hom
+      (normalizedCubicalChainComplex_obj_d_apply _ n _)).trans ?_)
+  rw [NormalizedCubicalChain.boundary_ofCube]
+  simp only [SingularCube.comp_face_id]
+  -- The sums are over the same indices and the comparison is linear.
+  exact (map_sum _ _ _).trans
+    (Finset.sum_congr rfl fun i _ ↦ (map_smul _ _ _).trans (congrArg _ (map_sub _ _ _)))
+
+end ModelChains
+
 /-! ### Quasi-isomorphisms and the homology comparison -/
 
 /-- The comparison map to cubical chains is a quasi-isomorphism. -/

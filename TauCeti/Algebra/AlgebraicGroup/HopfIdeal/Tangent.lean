@@ -93,7 +93,7 @@ theorem quotientLieHom_adDerivation (I : HopfIdeal R H)
       (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
     quotientLieHom I (Derivation.adDerivation B g d) =
       Derivation.adDerivation B
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
+        (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
           (Bialgebra.Quotient.mkBialgHom I.toIdeal) g)
         (quotientLieHom I d) := by
   rw [quotientLieHom_apply, quotientLieHom_apply]

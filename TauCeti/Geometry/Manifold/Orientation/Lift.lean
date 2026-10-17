@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.LinearAlgebra.Orientation.Basis
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 public import Mathlib.Topology.LocallyConstant.Basic
@@ -318,6 +319,20 @@ theorem orientationAt_eq (o : OrientationLift I M ι) (x : M) :
   -- therefore gives the identity orientation map, with the displayed model-space type.
   change _root_.Orientation.map ι (LinearEquiv.refl ℝ E) _ = _ at h
   rwa [_root_.Orientation.map_refl] at h
+
+/-- The tangent basis sign is the model basis sign multiplied by the preferred chart sign. -/
+theorem signBasis_orientationAt [DecidableEq ι] (o : OrientationLift I M ι)
+    (b : Module.Basis ι ℝ E) (x : M) :
+    _root_.Orientation.signBasis (o.orientationAt x) b =
+      _root_.Orientation.signBasis o.modelOrientation b * o.signAt x x := by
+  rw [orientationAt_eq]
+  -- The preferred tangent fibre is definitionally E; identify its scalar structure
+  -- explicitly so the model-space signBasis simplifications match.
+  change _root_.Orientation.signBasis
+    (o.chartOrientation x ⟨x, mem_chart_source H x⟩) b = _
+  rw [chartOrientation_eq_ite, signAt_of_mem _ (mem_chart_source H x)]
+  rcases Int.units_eq_one_or (o.sign x ⟨x, mem_chart_source H x⟩) with h | h <;>
+    simp [h]
 
 /-- The tangent orientations of a lift vary locally constantly in bundle trivializations. -/
 def toVectorBundleOrientation (o : OrientationLift I M ι) :

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
+public import Mathlib.Geometry.Manifold.VectorField.Pullback
 
 /-!
 # Interior products of rough differential forms
@@ -20,7 +21,8 @@ These operations provide the algebraic input for Cartan's calculus and contracti
 
 We use Mathlib's `AlternatingMap.curryLeft` and retain continuity of the remaining variables.
 This works for arbitrary topological coefficient fibres without choosing fibre norms. For fixed
-normed coefficients on the model space it agrees with `ContinuousAlternatingMap.curryLeft`.
+normed coefficients on the model space it agrees with `ContinuousAlternatingMap.curryLeft`, and
+in the chart at a point it is `curryLeft` of the coordinate expressions of the form and the field.
 
 ## References
 
@@ -296,14 +298,41 @@ theorem mpullback_interior {E' H' M' : Type*}
     mpullback I I' f (ω.interior Y) = (mpullback I I' f ω).interior X :=
   funext fun x ↦ mpullback_interior_at f X Y ω (hXY x)
 
+/-- For normed coefficients, the interior product at a point is Mathlib's continuous currying
+operation applied to the value of the form. -/
+theorem RoughForm.interior_apply_eq_curryLeft {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (X : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) (x : M) :
+    ω.interior X x = ContinuousAlternatingMap.curryLeft (E := E) (ω x) (X x) := by
+  ext v
+  -- Tangent spaces identify definitionally with `E`; both currying operations insert into the
+  -- same first slot, and their continuity proofs are propositionally irrelevant.
+  rfl
+
 /-- On the model space, the interior product is Mathlib's continuous currying operation. -/
 theorem RoughForm.interior_modelSpace {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (X : E → E) (ω : RoughForm 𝓘(ℝ, E) E F (k + 1)) :
-    ω.interior X = fun x ↦ ContinuousAlternatingMap.curryLeft (E := E) (ω x) (X x) := by
-  ext x v
-  -- Model tangent spaces identify definitionally with `E`; both currying operations insert
-  -- into the same first slot, and their continuity proofs are propositionally irrelevant.
-  rfl
+    ω.interior X = fun x ↦ ContinuousAlternatingMap.curryLeft (E := E) (ω x) (X x) :=
+  funext (RoughForm.interior_apply_eq_curryLeft X ω)
+
+/-- In the chart at `x`, the interior product of a form with a vector field is the interior
+product of the coordinate expressions of the form and of the field. -/
+theorem RoughForm.inChartAt_interior {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [IsManifold I 1 M] (X : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) {x : M}
+    {z : E} (hz : z ∈ (extChartAt I x).target) :
+    (ω.interior X).inChartAt x z =
+      (ω.inChartAt x z).curryLeft
+        (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm X (Set.range I) z) := by
+  ext v
+  refine Eq.trans ?_ (ContinuousAlternatingMap.curryLeft_apply_apply _ _ _).symm
+  rw [inChartAt_apply, inChartAt_apply, interior_apply]
+  congr 1
+  funext i
+  cases i using Fin.cases with
+  | zero =>
+    -- the chart derivative undoes the inverse-chart pullback on the chart target
+    simp only [Matrix.cons_val_zero, VectorField.mpullbackWithin_apply]
+    exact ((isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _).symm
+  | succ i => rfl
 
 end FixedCoefficients
 
