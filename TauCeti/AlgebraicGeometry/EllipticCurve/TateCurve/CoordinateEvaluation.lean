@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.AnnulusEvaluatio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Coordinates
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Specialization
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
-import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Comparing formal and analytic Tate coordinates
@@ -126,56 +128,6 @@ private theorem eval_tate_expansion (f : ℤ⟦X⟧⟦X⟧) (c₀ cp cm : ℕ �
     ring
   rw [hdiag, hminus, tsum_positiveRay cm v u hv hu]
 
-omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem tsum_x_expansion (r : K) (hr : ‖r‖ < 1) :
-    (∑' d : ℕ, ((d + 1 : ℕ) : K) * r ^ (d + 1)) = r / (1 - r) ^ 2 := by
-  calc
-    _ = r * ∑' d : ℕ, (((d + 1).choose 1 : ℕ) : K) * r ^ d := by
-      rw [← tsum_mul_left]
-      apply tsum_congr
-      intro d
-      simp only [Nat.choose_one_right, pow_succ]
-      ring
-    _ = _ := by rw [tsum_choose_mul_geometric_of_norm_lt_one 1 hr]; ring
-
-private theorem tsum_y_expansion (r : K) (hr : ‖r‖ < 1) :
-    (∑' d : ℕ, (((d + 1).choose 2 : ℕ) : K) * r ^ (d + 1)) = r ^ 2 / (1 - r) ^ 3 := by
-  have hs := summable_intCast_mul_pow (K := K) (fun d ↦ ((d + 1).choose 2 : ℤ)) hr
-  have ht : Summable (fun d : ℕ ↦ (((d + 1).choose 2 : ℕ) : K) * r ^ (d + 1)) := by
-    simpa only [Int.cast_natCast, pow_succ, mul_assoc] using hs.mul_right r
-  rw [tsum_eq_zero_add' ((summable_nat_add_iff 1).mpr ht)]
-  simp only [Nat.choose_eq_zero_of_lt (by decide : 1 < 2), Nat.cast_zero, zero_mul, zero_add]
-  calc
-    _ = r ^ 2 * ∑' d : ℕ, (((d + 2).choose 2 : ℕ) : K) * r ^ d := by
-      rw [← tsum_mul_left]
-      apply tsum_congr
-      intro d
-      rw [Nat.add_assoc, pow_add]
-      ring
-    _ = _ := by rw [tsum_choose_mul_geometric_of_norm_lt_one 2 hr]; ring
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem tsum_negative_y_expansion (r : K) (hr : ‖r‖ < 1) :
-    (∑' d : ℕ, -((((d + 1 + 1).choose 2 : ℕ) : K)) * r ^ (d + 1)) =
-      -r / (1 - r) ^ 3 := by
-  calc
-    _ = -r * ∑' d : ℕ, (((d + 2).choose 2 : ℕ) : K) * r ^ d := by
-      rw [← tsum_mul_left]
-      apply tsum_congr
-      intro d
-      rw [Nat.add_assoc, pow_succ]
-      ring
-    _ = _ := by rw [tsum_choose_mul_geometric_of_norm_lt_one 2 hr]; ring
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem norm_ray_lt_one (u v : K) (hu : ‖u‖ < 1) (hv : ‖v‖ < 1) (n : ℕ) :
-    ‖u ^ (n + 1) * v ^ n‖ < 1 := by
-  rw [norm_mul, norm_pow, norm_pow]
-  calc
-    ‖u‖ ^ (n + 1) * ‖v‖ ^ n ≤ ‖u‖ ^ (n + 1) * 1 :=
-      mul_le_mul_of_nonneg_left (pow_le_one₀ (norm_nonneg _) hv.le) (by positivity)
-    _ < 1 := by simpa using pow_lt_one₀ (norm_nonneg _) hu (by omega)
-
 private theorem eval_tateFormalX_expansion (u v : K) (hu : ‖u‖ < 1) (hv : ‖v‖ < 1) :
     evalIntBivariateSeries u hu v hv (tateFormalX ℤ) =
       -2 * divisorSumAt 1 (u * v) +
@@ -193,8 +145,8 @@ private theorem eval_tateFormalX_expansion (u v : K) (hu : ‖u‖ < 1) (hv : �
   have he := eval_tate_expansion (tateFormalX ℤ) (fun d ↦ -2 * (σ 1 d : ℤ))
     (fun d ↦ (d : ℤ)) (fun d ↦ (d : ℤ)) hc u v hu hv
   simp only [Int.cast_natCast] at he
-  simp_rw [tsum_x_expansion _ (norm_ray_lt_one u v hu hv _),
-    tsum_x_expansion _ (norm_ray_lt_one v u hv hu _)] at he
+  simp_rw [tsum_natCast_succ_mul_pow_succ _ (norm_pow_succ_mul_pow_lt_one u v hu hv.le _),
+    tsum_natCast_succ_mul_pow_succ _ (norm_pow_succ_mul_pow_lt_one v u hv hu.le _)] at he
   rw [he]
   congr 2
   simp [divisorSumAt_def, ← tsum_mul_left, mul_assoc]
@@ -217,32 +169,9 @@ private theorem eval_tateFormalY_expansion (u v : K) (hu : ‖u‖ < 1) (hv : �
   have he := eval_tate_expansion (tateFormalY ℤ) (fun d ↦ (σ 1 d : ℤ))
     (fun d ↦ (d.choose 2 : ℤ)) (fun d ↦ -((d + 1).choose 2 : ℤ)) hc u v hu hv
   simp only [Int.cast_neg, Int.cast_natCast] at he
-  simp_rw [tsum_y_expansion _ (norm_ray_lt_one u v hu hv _),
-    tsum_negative_y_expansion _ (norm_ray_lt_one v u hv hu _)] at he
+  simp_rw [tsum_choose_two_mul_pow_succ _ (norm_pow_succ_mul_pow_lt_one u v hu hv.le _),
+    tsum_neg_choose_two_mul_pow_succ _ (norm_pow_succ_mul_pow_lt_one v u hv hu.le _)] at he
   simpa only [divisorSumAt_def, Int.cast_natCast] using he
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem ray_positive (u v : Kˣ) (n : ℕ) :
-    ((u * v : Kˣ) : K) ^ (n : ℤ) * (u : K) = (u : K) ^ (n + 1) * (v : K) ^ n := by
-  simp only [Units.val_mul, zpow_natCast, mul_pow, pow_succ]
-  ring
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem ray_negative (u v : Kˣ) (n : ℕ) :
-    ((u * v : Kˣ) : K) ^ (-((n : ℤ) + 1)) * (u : K) =
-      ((v : K) ^ (n + 1) * (u : K) ^ n)⁻¹ := by
-  simp only [Units.val_mul, zpow_neg, zpow_add₀ (mul_ne_zero u.ne_zero v.ne_zero),
-    zpow_natCast, zpow_one, mul_pow, pow_succ]
-  field_simp
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-private theorem inverse_y_term (r : K) (hr : r ≠ 0) :
-    (r⁻¹) ^ 2 / (1 - r⁻¹) ^ 3 = -r / (1 - r) ^ 3 := by
-  rw [yTerm_inv r hr]
-  by_cases h : r = 1
-  · simp [h]
-  · field_simp
-    ring
 
 /-- Evaluation of the formal first Tate coordinate agrees with the bilateral coordinate when
 both `u` and `v` have norm less than one and the Tate parameter is `u v`. -/
@@ -255,19 +184,20 @@ theorem evalIntBivariateSeries_tateFormalX (u v : Kˣ)
   have hs := summable_tateUniformizationX (u * v) hq u
   have hp : Summable (fun n : ℕ ↦ (u : K) ^ (n + 1) * (v : K) ^ n /
       (1 - (u : K) ^ (n + 1) * (v : K) ^ n) ^ 2) := by
-    simpa only [Function.comp_def, ray_positive] using hs.comp_injective Nat.cast_injective
+    simpa only [Function.comp_def, Units.val_mul_zpow_natCast_mul] using
+      hs.comp_injective Nat.cast_injective
   have hn : Function.Injective (fun n : ℕ ↦ -((n : ℤ) + 1)) := by
     intro a b h
     exact Nat.cast_injective (add_right_cancel (neg_injective h))
   have hm : Summable (fun n : ℕ ↦ (v : K) ^ (n + 1) * (u : K) ^ n /
       (1 - (v : K) ^ (n + 1) * (u : K) ^ n) ^ 2) := by
-    simpa only [Function.comp_def, ray_negative,
-      xTerm_inv _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
+    simpa only [Function.comp_def, Units.val_mul_zpow_neg_natCast_succ_mul,
+      inv_div_one_sub_inv_sq]
       using hs.comp_injective hn
   rw [eval_tateFormalX_expansion _ _ hu hv, tateUniformizationX_def,
     ← tsum_nat_add_neg_add_one hs]
-  simp_rw [ray_positive, ray_negative,
-    xTerm_inv _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
+  simp_rw [Units.val_mul_zpow_natCast_mul, Units.val_mul_zpow_neg_natCast_succ_mul,
+    inv_div_one_sub_inv_sq]
   rw [hp.tsum_add hm, Units.val_mul]
   ring
 
@@ -282,19 +212,20 @@ theorem evalIntBivariateSeries_tateFormalY (u v : Kˣ)
   have hs := summable_tateUniformizationY (u * v) hq u
   have hp : Summable (fun n : ℕ ↦ ((u : K) ^ (n + 1) * (v : K) ^ n) ^ 2 /
       (1 - (u : K) ^ (n + 1) * (v : K) ^ n) ^ 3) := by
-    simpa only [Function.comp_def, ray_positive] using hs.comp_injective Nat.cast_injective
+    simpa only [Function.comp_def, Units.val_mul_zpow_natCast_mul] using
+      hs.comp_injective Nat.cast_injective
   have hn : Function.Injective (fun n : ℕ ↦ -((n : ℤ) + 1)) := by
     intro a b h
     exact Nat.cast_injective (add_right_cancel (neg_injective h))
   have hm : Summable (fun n : ℕ ↦ -((v : K) ^ (n + 1) * (u : K) ^ n) /
       (1 - (v : K) ^ (n + 1) * (u : K) ^ n) ^ 3) := by
-    simpa only [Function.comp_def, ray_negative,
-      inverse_y_term _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
+    simpa only [Function.comp_def, Units.val_mul_zpow_neg_natCast_succ_mul,
+      inv_sq_div_one_sub_inv_cube]
       using hs.comp_injective hn
   rw [eval_tateFormalY_expansion _ _ hu hv, tateUniformizationY_def,
     ← tsum_nat_add_neg_add_one hs]
-  simp_rw [ray_positive, ray_negative,
-    inverse_y_term _ (mul_ne_zero (pow_ne_zero _ v.ne_zero) (pow_ne_zero _ u.ne_zero))]
+  simp_rw [Units.val_mul_zpow_natCast_mul, Units.val_mul_zpow_neg_natCast_succ_mul,
+    inv_sq_div_one_sub_inv_cube]
   rw [hp.tsum_add hm, Units.val_mul]
   ring
 
