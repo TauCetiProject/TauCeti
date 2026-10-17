@@ -55,9 +55,9 @@ theorem toCircle_exp (γ : Path x x) (t : I) :
       AddCircle.toCircle_apply_mk, div_one]
   rw [toCircle, ContinuousMap.coe_mk, Function.comp_apply, h]
   rcases eq_or_lt_of_le t.2.2 with ht | ht
-  · rw [ht, AddCircle.coe_period, ← AddCircle.coe_zero (p := (1 : ℝ)),
-      AddCircle.liftIco_zero_coe_apply ⟨le_rfl, zero_lt_one⟩, γ.extend_zero,
-      show t = 1 from Subtype.ext ht, γ.target]
+  · have ht' : t = 1 := Subtype.ext ht
+    rw [ht, AddCircle.coe_period, ← AddCircle.coe_zero (p := (1 : ℝ)),
+      AddCircle.liftIco_zero_coe_apply ⟨le_rfl, zero_lt_one⟩, γ.extend_zero, ht', γ.target]
   · rw [AddCircle.liftIco_zero_coe_apply ⟨t.2.1, ht⟩, γ.extend_extends']
 
 /-- The point `1` of the circle goes to the base point of the loop. -/
