@@ -50,6 +50,7 @@ lattice in `Mathlib.NumberTheory.NumberField.Units.DirichletTheorem`, with two c
 * `TauCeti.NumberField.SUnit.unitLattice_span_eq_top`: the lattice spans the `S`-logarithmic
   space.
 * `TauCeti.NumberField.SUnit.instIsZLatticeUnitLattice`: the lattice is a full `ℤ`-lattice.
+* `TauCeti.NumberField.SUnit.regulator_def`: the `S`-regulator is the covolume of the lattice.
 * `TauCeti.NumberField.SUnit.regulator_pos`: the `S`-regulator is positive.
 
 ## References
@@ -149,9 +150,7 @@ def logEmbeddingEquiv :
 theorem logEmbeddingEquiv_apply (x : (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
     (logEmbeddingEquiv S (Submodule.Quotient.mk (Additive.ofMul x)) : logSpace S) =
       logEmbedding S (Additive.ofMul x) := by
-  rw [logEmbeddingEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, LinearMap.quotKerEquivRange_apply_mk,
-    AddMonoidHom.coe_toIntLinearMap]
+  rfl
 
 /-! ### Rank and spanning -/
 
@@ -187,6 +186,11 @@ instance instIsZLatticeUnitLattice : IsZLattice ℝ (unitLattice S) where
 open Classical in
 /-- The `S`-regulator of a number field: the covolume of the `S`-unit lattice. -/
 def regulator : ℝ := ZLattice.covolume (unitLattice S)
+
+open Classical in
+/-- The `S`-regulator is the covolume of the `S`-unit lattice. -/
+theorem regulator_def : regulator S = ZLattice.covolume (unitLattice S) := by
+  rfl
 
 /-- The `S`-regulator is positive. -/
 theorem regulator_pos : 0 < regulator S := by
