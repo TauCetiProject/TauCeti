@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.Analysis.Normed.Ring.MulUnit
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 /-!
 # Rescaling restricted power series
@@ -35,53 +35,35 @@ open Filter TauCeti
 
 variable {σ R : Type*} [NormedCommRing R] [NormOneClass R] {r s : σ → ℝ}
 
-private theorem isNormMulUnit_prod_pow (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (n : σ →₀ ℕ) :
-    IsNormMulUnit (n.prod fun i m ↦ (u i : R) ^ m) := by
-  classical
-  rw [Finsupp.prod]
-  exact Finset.prod_induction _ IsNormMulUnit (fun _ _ ↦ IsNormMulUnit.mul)
-    isNormMulUnit_one fun i _ ↦ (hu i).pow _
-
-private theorem norm_prod_pow (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R))
-    (n : σ →₀ ℕ) :
-    ‖n.prod fun i m ↦ (u i : R) ^ m‖ = n.prod fun i m ↦ ‖(u i : R)‖ ^ m := by
-  classical
-  have norm_pow (i : σ) (m : ℕ) : ‖(u i : R) ^ m‖ = ‖(u i : R)‖ ^ m := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [pow_succ', (hu i).norm_mul, ih, pow_succ']
-  simp only [Finsupp.prod]
-  induction n.support using Finset.induction_on with
-  | empty => simp
-  | @insert i t hi ih =>
-      rw [Finset.prod_insert hi, Finset.prod_insert hi, ((hu i).pow (n i)).norm_mul, ih,
-        norm_pow]
-
-private theorem weighted_norm_coeff_rescale (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i)
-    (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
-    ‖coeff n (MvPowerSeries.rescale (fun i ↦ (u i : R)) f)‖ * n.prod (s · ^ ·) =
+private theorem weighted_norm_coeff_rescale (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
+    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
+    ‖coeff n (MvPowerSeries.rescale u f)‖ * n.prod (s · ^ ·) =
       ‖coeff n f‖ * n.prod (r · ^ ·) := by
-  rw [coeff_rescale, (isNormMulUnit_prod_pow u hu n).norm_mul, norm_prod_pow u hu n]
-  calc
-    (n.prod fun i m ↦ ‖(u i : R)‖ ^ m) * ‖coeff n f‖ * n.prod (s · ^ ·) =
-        ‖coeff n f‖ *
-          ((n.prod fun i m ↦ ‖(u i : R)‖ ^ m) * n.prod (s · ^ ·)) := by
-      ac_rfl
-    _ = ‖coeff n f‖ * n.prod (r · ^ ·) := by
-      congr 1
-      simp only [Finsupp.prod, ← Finset.prod_mul_distrib]
-      exact Finset.prod_congr rfl fun i _ ↦ by rw [← mul_pow, hrs i]
+  have hpow (i : σ) (_ : i ∈ n.support) : IsNormMulUnit (u i ^ n i) := (hu i).pow _
+  rw [coeff_rescale, Finsupp.prod, (IsNormMulUnit.prod hpow).norm_mul,
+    IsNormMulUnit.norm_prod hpow, mul_right_comm, mul_comm]
+  congr 1
+  simp only [Finsupp.prod, ← Finset.prod_mul_distrib]
+  exact Finset.prod_congr rfl fun i _ ↦ by rw [(hu i).norm_pow, ← mul_pow, hrs i]
 
 /-- Rescaling by multiplicative units converts restrictedness at `r` into restrictedness at `s`
 when `‖u i‖ * s i = r i`. -/
-theorem isRestricted_rescale_iff (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R))
-    (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) (f : MvPowerSeries σ R) :
-    IsRestricted s (MvPowerSeries.rescale (fun i ↦ (u i : R)) f) ↔ IsRestricted r f := by
+theorem isRestricted_rescale_iff (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
+    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : MvPowerSeries σ R) :
+    IsRestricted s (MvPowerSeries.rescale u f) ↔ IsRestricted r f := by
   unfold IsRestricted
   apply tendsto_congr'
   exact .of_forall (weighted_norm_coeff_rescale u hu hrs f)
+
+omit [NormOneClass R] in
+/-- Rescaling by a family of units and then by their inverses is the identity. -/
+private theorem rescale_inv_rescale (u : σ → Rˣ) (f : MvPowerSeries σ R) :
+    MvPowerSeries.rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R))
+      (MvPowerSeries.rescale (fun i ↦ (u i : R)) f) = f := by
+  have h : ((fun i ↦ (u i : R)) * fun i ↦ (((u i)⁻¹ : Rˣ) : R)) = 1 := by
+    funext i
+    simp
+  rw [rescale_rescale, h, rescale_one, RingHom.id_apply]
 
 end MvPowerSeries
 
@@ -97,36 +79,29 @@ variable [IsUltrametricDist R] [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
 
 /-- Rescale restricted series by multiplicative units, from radii `r` to radii `s` satisfying
 `‖u i‖ * s i = r i`. -/
-private noncomputable def restrictedRescaleAlgHom (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) :
+private noncomputable def restrictedRescaleAlgHom (u : σ → R)
+    (hu : ∀ i, IsNormMulUnit (u i)) (hrs : ∀ i, ‖u i‖ * s i = r i) :
     IsRestricted.subring (R := R) r →ₐ[R] IsRestricted.subring (R := R) s where
-  toFun f := ⟨MvPowerSeries.rescale (fun i ↦ (u i : R)) f,
-    (isRestricted_rescale_iff u hu hrs f).mpr f.2⟩
-  map_one' := Subtype.ext (map_one (MvPowerSeries.rescale fun i ↦ (u i : R)))
-  map_mul' f g := Subtype.ext
-    (map_mul (MvPowerSeries.rescale fun i ↦ (u i : R)) (f : MvPowerSeries σ R) g)
-  map_zero' := Subtype.ext (map_zero (MvPowerSeries.rescale fun i ↦ (u i : R)))
-  map_add' f g := Subtype.ext
-    (map_add (MvPowerSeries.rescale fun i ↦ (u i : R)) (f : MvPowerSeries σ R) g)
+  toFun f := ⟨MvPowerSeries.rescale u f, (isRestricted_rescale_iff u hu hrs f).mpr f.2⟩
+  map_one' := Subtype.ext (map_one (MvPowerSeries.rescale u))
+  map_mul' f g := Subtype.ext (map_mul (MvPowerSeries.rescale u) (f : MvPowerSeries σ R) g)
+  map_zero' := Subtype.ext (map_zero (MvPowerSeries.rescale u))
+  map_add' f g := Subtype.ext (map_add (MvPowerSeries.rescale u) (f : MvPowerSeries σ R) g)
   commutes' a := Subtype.ext <| by
     simpa only [MvPowerSeries.rescaleAlgHom_apply, coe_algebraMap_isRestrictedSubring,
-      MvPowerSeries.c_eq_algebraMap] using
-      (MvPowerSeries.rescaleAlgHom (fun i ↦ (u i : R))).commutes a
+      MvPowerSeries.c_eq_algebraMap] using (MvPowerSeries.rescaleAlgHom u).commutes a
 
 omit [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)] in
 /-- The underlying formal series of `restrictedRescaleAlgHom` is Mathlib's rescaling. -/
 @[simp]
-private theorem coe_restrictedRescaleAlgHom (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R))
-    (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) (f : IsRestricted.subring (R := R) r) :
-    (restrictedRescaleAlgHom u hu hrs f : MvPowerSeries σ R) =
-      MvPowerSeries.rescale (fun i ↦ (u i : R)) f := by
+private theorem coe_restrictedRescaleAlgHom (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
+    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : IsRestricted.subring (R := R) r) :
+    (restrictedRescaleAlgHom u hu hrs f : MvPowerSeries σ R) = MvPowerSeries.rescale u f := by
   rfl
 
 /-- Rescaling between corresponding radii preserves the Gauss norm. -/
-private theorem norm_restrictedRescaleAlgHom (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i)
-    (f : IsRestricted.subring (R := R) r) :
+private theorem norm_restrictedRescaleAlgHom (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
+    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : IsRestricted.subring (R := R) r) :
     ‖restrictedRescaleAlgHom u hu hrs f‖ = ‖f‖ := by
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, gaussNorm]
   congr 1
@@ -150,46 +125,17 @@ private theorem inverse_radius_eq (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u
       rw [hrs i]
     _ = s i := inv_mul_cancel_left₀ hne _
 
-private theorem restrictedRescaleAlgHom_comp_inverse (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) :
-    (restrictedRescaleAlgHom u hu hrs).comp
-        (restrictedRescaleAlgHom (fun i ↦ (u i)⁻¹) (fun i ↦ (hu i).units_inv)
-          (inverse_radius_eq u hu hrs)) =
-      AlgHom.id R (IsRestricted.subring (R := R) s) := by
-  apply AlgHom.ext fun f ↦ Subtype.ext <| by
-    simp only [AlgHom.coe_comp, Function.comp_apply, coe_restrictedRescaleAlgHom,
-      AlgHom.coe_id, id_eq, MvPowerSeries.rescale_rescale]
-    have h : ((fun i ↦ (((u i)⁻¹ : Rˣ) : R)) * fun i ↦ (u i : R)) = 1 := by
-      funext i
-      simp
-    rw [h, MvPowerSeries.rescale_one]
-    rfl
-
-private theorem restrictedRescaleAlgHom_inverse_comp (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) :
-    (restrictedRescaleAlgHom (fun i ↦ (u i)⁻¹) (fun i ↦ (hu i).units_inv)
-        (inverse_radius_eq u hu hrs)).comp
-        (restrictedRescaleAlgHom u hu hrs) =
-      AlgHom.id R (IsRestricted.subring (R := R) r) := by
-  apply AlgHom.ext fun f ↦ Subtype.ext <| by
-    simp only [AlgHom.coe_comp, Function.comp_apply, coe_restrictedRescaleAlgHom,
-      AlgHom.coe_id, id_eq, MvPowerSeries.rescale_rescale]
-    have h : ((fun i ↦ (u i : R)) * fun i ↦ (((u i)⁻¹ : Rˣ) : R)) = 1 := by
-      funext i
-      simp
-    rw [h, MvPowerSeries.rescale_one]
-    rfl
-
 /-- The isometric change of polyradii obtained by substituting `X i ↦ u i * X i`, where each
 `u i` is a multiplicative unit and `‖u i‖ * s i = r i`. The inverse substitutes `u i⁻¹`. -/
 noncomputable def restrictedRescaleEquiv (u : σ → Rˣ)
     (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) :
     IsRestricted.subring (R := R) r ≃ₐ[R] IsRestricted.subring (R := R) s :=
-  AlgEquiv.ofAlgHom (restrictedRescaleAlgHom u hu hrs)
-    (restrictedRescaleAlgHom (fun i ↦ (u i)⁻¹) (fun i ↦ (hu i).units_inv)
+  AlgEquiv.ofAlgHom (restrictedRescaleAlgHom (fun i ↦ (u i : R)) hu hrs)
+    (restrictedRescaleAlgHom (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) (fun i ↦ (hu i).units_inv)
       (inverse_radius_eq u hu hrs))
-    (restrictedRescaleAlgHom_comp_inverse u hu hrs)
-    (restrictedRescaleAlgHom_inverse_comp u hu hrs)
+    (AlgHom.ext fun f ↦ Subtype.ext <| by
+      simpa using rescale_inv_rescale (fun i ↦ (u i)⁻¹) (f : MvPowerSeries σ R))
+    (AlgHom.ext fun f ↦ Subtype.ext <| rescale_inv_rescale u f)
 
 /-- The rescaling equivalence acts by Mathlib's rescaling on the underlying formal series. -/
 @[simp]
@@ -214,7 +160,7 @@ theorem norm_restrictedRescaleEquiv (u : σ → Rˣ)
     (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i)
     (f : IsRestricted.subring (R := R) r) :
     ‖restrictedRescaleEquiv u hu hrs f‖ = ‖f‖ :=
-  norm_restrictedRescaleAlgHom u hu hrs f
+  norm_restrictedRescaleAlgHom (fun i ↦ (u i : R)) hu hrs f
 
 /-- The rescaling equivalence sends `X i` to `u i * X i`. -/
 @[simp]
@@ -228,12 +174,10 @@ theorem restrictedRescaleEquiv_X (u : σ → Rˣ)
   apply Subtype.ext
   ext n
   rw [coe_restrictedRescaleEquiv, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
-    coeff_rescale, coeff_C_mul]
-  by_cases hn : n = Finsupp.single i 1
-  · subst n
-    simp [MvPowerSeries.X]
-  · rw [coeff_X]
-    simp [hn]
+    coeff_rescale, coeff_C_mul, coeff_X]
+  split_ifs with hn
+  · simp [hn]
+  · simp
 
 /-- The rescaling equivalence is an isometry for the two Gauss norms. -/
 theorem isometry_restrictedRescaleEquiv (u : σ → Rˣ)
