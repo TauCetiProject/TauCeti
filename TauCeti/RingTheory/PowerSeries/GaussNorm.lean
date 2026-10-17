@@ -91,7 +91,8 @@ closed unit disc next to its Gauss points.
   multiply without loss of norm.
 * `TauCeti.PowerSeries.exists_isLowestDominant`, `TauCeti.PowerSeries.IsLowestDominant.unique`
   and `TauCeti.PowerSeries.IsLowestDominant.mul`: a nonzero restricted series has exactly one
-  lowest dominant degree, and lowest dominant degrees add under multiplication.
+  lowest dominant degree, and lowest dominant degrees add under multiplication whenever the two
+  lowest dominant coefficients multiply without loss of norm.
 * `TauCeti.PowerSeries.gaussNorm_mul_of_isRestricted`: multiplicativity of the Gauss norm.
 * `TauCeti.PowerSeries.gaussValuationAbove_le_iff` and
   `TauCeti.PowerSeries.gaussValuationBelow_le_iff`: the two refined Gauss valuations compare
@@ -386,9 +387,9 @@ This is the mirror image of `TauCeti.PowerSeries.IsDistinguished`, which singles
 degree attaining the Gauss norm. The two degrees agree exactly when the Gauss norm is attained
 in a single degree. At a positive radius a nonzero restricted series has exactly one lowest
 dominant degree (`TauCeti.PowerSeries.exists_isLowestDominant` and
-`TauCeti.PowerSeries.IsLowestDominant.unique`), and over a multiplicative ultrametric norm the
-lowest dominant degree of a product is the sum of those of the factors
-(`TauCeti.PowerSeries.IsLowestDominant.mul`). -/
+`TauCeti.PowerSeries.IsLowestDominant.unique`), and over an ultrametric norm the lowest dominant
+degree of a product is the sum of those of the factors whenever the two lowest dominant
+coefficients multiply without loss of norm (`TauCeti.PowerSeries.IsLowestDominant.mul`). -/
 structure IsLowestDominant : Prop where
   /-- The Gauss norm is positive. -/
   gaussNorm_pos : 0 < f.gaussNorm norm c
@@ -785,16 +786,16 @@ theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c
     hmul ▸ norm_coeff_mul_mul_pow_lt_of_forall_lt hc.le
       fun m₁ m₂ hsum ↦ hf.norm_coeff_mul_mul_pow_lt hg hc (by omega)⟩
 
-variable [NormMulClass R]
-
 /-- The product of series with lowest dominant degrees `i` and `j` has lowest dominant degree
-`i + j` at a positive radius, provided both have bounded weighted coefficient norms. -/
+`i + j` at a positive radius, provided both have bounded weighted coefficient norms and the
+product of their lowest dominant coefficients has the product of their norms. -/
 theorem IsLowestDominant.mul (hf : IsLowestDominant c i f) (hg : IsLowestDominant c j g)
-    (hc : 0 < c) (hbf : f.HasGaussNorm norm c) (hbg : g.HasGaussNorm norm c) :
+    (hc : 0 < c) (hbf : f.HasGaussNorm norm c) (hbg : g.HasGaussNorm norm c)
+    (hij : ‖f.coeff i * g.coeff j‖ = ‖f.coeff i‖ * ‖g.coeff j‖) :
     IsLowestDominant c (i + j) (f * g) := by
   have hdom : ‖(f * g).coeff (i + j)‖ * c ^ (i + j) = f.gaussNorm norm c * g.gaussNorm norm c :=
     norm_coeff_mul_mul_pow_eq_of_lt hc hf.norm_coeff_mul_pow_eq hg.norm_coeff_mul_pow_eq
-      (norm_mul _ _) fun m n hmn hne ↦ hf.norm_coeff_mul_mul_pow_lt hg hc hbf hbg <| by
+      hij fun m n hmn hne ↦ hf.norm_coeff_mul_mul_pow_lt hg hc hbf hbg <| by
         have : m ≠ i ∨ n ≠ j := by simpa only [Ne, Prod.ext_iff, not_and_or] using hne
         omega
   have hmul := gaussNorm_mul_eq_of_norm_coeff_mul_pow_eq hc hbf hbg hdom
@@ -975,7 +976,7 @@ private theorem lowestDominantDegree_mul (hc : 0 < c) (hf : f ≠ 0) (hg : g ≠
     lowestDominantDegree hc (f * g) = lowestDominantDegree hc f + lowestDominantDegree hc g := by
   have h := (isLowestDominant_lowestDominantDegree hc hf).mul
     (isLowestDominant_lowestDominantDegree hc hg) hc (hasGaussNorm_of_isRestricted f.2)
-    (hasGaussNorm_of_isRestricted g.2)
+    (hasGaussNorm_of_isRestricted g.2) (norm_mul _ _)
   rw [← MulMemClass.coe_mul] at h
   exact lowestDominantDegree_eq hc h
 
