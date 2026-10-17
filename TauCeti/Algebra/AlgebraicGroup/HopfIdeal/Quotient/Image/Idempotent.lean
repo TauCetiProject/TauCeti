@@ -32,6 +32,7 @@ universe u v w
 variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
 
 /-- The coordinate image factorization of an idempotent endomorphism is a retraction. -/
+@[simp]
 theorem imageι_comp_mkImage_of_idempotent (f : H ⟶ H) (hf : f ≫ f = f) :
     imageι f ≫ mkImage f = 𝟙 (image f) := by
   apply (cancel_epi (mkImage f)).mp
@@ -41,6 +42,7 @@ theorem imageι_comp_mkImage_of_idempotent (f : H ⟶ H) (hf : f ≫ f = f) :
 
 /-- The image of an idempotent affine-group endomorphism represents its fixed points over
 all commutative test algebras, including nonreduced algebras. -/
+@[simp]
 theorem mem_quotientPointsSubgroup_ker_iff_mapDomain_eq_self (f : H ⟶ H)
     (hf : f ≫ f = f) (A : CommAlgCat.{w} k) (g : WithConv (H →ₐ[k] A)) :
     g ∈ quotientPointsSubgroup H (HopfIdeal.ker f.hom) A ↔
