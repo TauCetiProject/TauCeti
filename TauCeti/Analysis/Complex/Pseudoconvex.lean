@@ -74,8 +74,9 @@ eigenvalues: there is a complex subspace `P` with `dim_ℂ V ≤ dim_ℂ P + q` 
 is positive definite. (By Sylvester's law of inertia for Hermitian forms, the largest dimension of
 such a subspace is the number of positive eigenvalues.) For `q ≥ dim_ℂ V` the condition always
 holds, and strong `0`-pseudoconvexity is strict plurisubharmonicity. -/
-def IsStronglyPseudoconvexAt (q : ℕ) (f : V → ℝ) (x : V) : Prop :=
-  ∃ P : Submodule ℂ V, finrank ℂ V ≤ finrank ℂ P + q ∧
+def IsStronglyPseudoconvexAt [FiniteDimensional ℂ V] (q : ℕ) (f : V → ℝ) (x : V) : Prop :=
+  ∃ P : Submodule ℂ V,
+    Fintype.card (Module.Free.ChooseBasisIndex ℂ V) ≤ finrank ℂ P + q ∧
     ∀ v ∈ P, v ≠ 0 → 0 < (leviForm f x v v).re
 
 /-- The defining property of strict plurisubharmonicity. -/
@@ -84,10 +85,10 @@ theorem isStrictlyPlurisubharmonicAt_iff :
   Iff.rfl
 
 /-- The defining property of strong `q`-pseudoconvexity. -/
-theorem isStronglyPseudoconvexAt_iff :
+theorem isStronglyPseudoconvexAt_iff [FiniteDimensional ℂ V] :
     IsStronglyPseudoconvexAt q f x ↔ ∃ P : Submodule ℂ V, finrank ℂ V ≤ finrank ℂ P + q ∧
-      ∀ v ∈ P, v ≠ 0 → 0 < (leviForm f x v v).re :=
-  Iff.rfl
+      ∀ v ∈ P, v ≠ 0 → 0 < (leviForm f x v v).re := by
+  rw [IsStronglyPseudoconvexAt, Module.finrank_eq_card_chooseBasisIndex]
 
 /-- Strict plurisubharmonicity in terms of the real Hessian: `f` is strictly plurisubharmonic at
 `x` exactly when `Hess f(v, v) + Hess f(I • v, I • v) > 0` for every `v ≠ 0`. -/
@@ -98,22 +99,29 @@ theorem isStrictlyPlurisubharmonicAt_iff_hessianQuadraticForm :
   exact forall₂_congr fun _ _ ↦ div_pos_iff_of_pos_right (by norm_num)
 
 /-- Strong `q`-pseudoconvexity is weaker for larger `q`. -/
-theorem IsStronglyPseudoconvexAt.mono (h : IsStronglyPseudoconvexAt q f x) (hqr : q ≤ r) :
+theorem IsStronglyPseudoconvexAt.mono [FiniteDimensional ℂ V]
+    (h : IsStronglyPseudoconvexAt q f x) (hqr : q ≤ r) :
     IsStronglyPseudoconvexAt r f x := by
+  rw [isStronglyPseudoconvexAt_iff] at h ⊢
   obtain ⟨P, hP, hpos⟩ := h
   exact ⟨P, by omega, hpos⟩
 
 /-- A strictly plurisubharmonic function is strongly `q`-pseudoconvex for every `q`. -/
 theorem IsStrictlyPlurisubharmonicAt.isStronglyPseudoconvexAt
-    (h : IsStrictlyPlurisubharmonicAt f x) (q : ℕ) : IsStronglyPseudoconvexAt q f x :=
-  ⟨⊤, by simp, fun v _ hv ↦ h v hv⟩
+    [FiniteDimensional ℂ V] (h : IsStrictlyPlurisubharmonicAt f x) (q : ℕ) :
+    IsStronglyPseudoconvexAt q f x := by
+  rw [isStronglyPseudoconvexAt_iff]
+  exact ⟨⊤, by simp, fun v _ hv ↦ h v hv⟩
 
 /-- Strong `0`-pseudoconvexity is strict plurisubharmonicity. -/
 theorem isStronglyPseudoconvexAt_zero_iff [FiniteDimensional ℂ V] :
     IsStronglyPseudoconvexAt 0 f x ↔ IsStrictlyPlurisubharmonicAt f x := by
-  refine ⟨fun ⟨P, hP, hpos⟩ v hv ↦ ?_, fun h ↦ h.isStronglyPseudoconvexAt 0⟩
-  have hP : P = ⊤ := Submodule.eq_top_of_finrank_eq (le_antisymm P.finrank_le hP)
-  exact hpos v (hP ▸ Submodule.mem_top) hv
+  constructor
+  · rw [isStronglyPseudoconvexAt_iff]
+    rintro ⟨P, hP, hpos⟩ v hv
+    have hP : P = ⊤ := Submodule.eq_top_of_finrank_eq (le_antisymm P.finrank_le hP)
+    exact hpos v (hP ▸ Submodule.mem_top) hv
+  · exact fun h ↦ h.isStronglyPseudoconvexAt 0
 
 /-- Strict plurisubharmonicity at a point depends only on the germ of the function there. -/
 theorem IsStrictlyPlurisubharmonicAt.congr_of_eventuallyEq
@@ -123,16 +131,18 @@ theorem IsStrictlyPlurisubharmonicAt.congr_of_eventuallyEq
   exact h
 
 /-- Strong `q`-pseudoconvexity at a point depends only on the germ of the function there. -/
-theorem IsStronglyPseudoconvexAt.congr_of_eventuallyEq
+theorem IsStronglyPseudoconvexAt.congr_of_eventuallyEq [FiniteDimensional ℂ V]
     (h : IsStronglyPseudoconvexAt q f x) (hfg : g =ᶠ[𝓝 x] f) :
     IsStronglyPseudoconvexAt q g x := by
-  rw [IsStronglyPseudoconvexAt, leviForm_congr_of_eventuallyEq hfg]
+  rw [isStronglyPseudoconvexAt_iff] at h ⊢
+  rw [leviForm_congr_of_eventuallyEq hfg]
   exact h
 
 /-- **The Morse index bound `λ ≤ n + q`.** If `f` is strongly `q`-pseudoconvex at `x`, then the
 negative index of inertia of the real Hessian of `f` at `x` is at most `dim_ℂ V + q`. -/
 theorem IsStronglyPseudoconvexAt.morseIndex_le [FiniteDimensional ℂ V]
     (h : IsStronglyPseudoconvexAt q f x) : morseIndex f x ≤ finrank ℂ V + q := by
+  rw [isStronglyPseudoconvexAt_iff] at h
   obtain ⟨P, hP, hpos⟩ := h
   have hQ : hessianQuadraticForm f x = (fderiv ℝ (fderiv ℝ f) x).toBilinForm.toQuadraticMap :=
     QuadraticMap.ext fun v ↦ by simp
@@ -167,6 +177,7 @@ theorem IsStronglyPseudoconvexAt.comp [FiniteDimensional ℂ V] [FiniteDimension
     (h : IsStronglyPseudoconvexAt q f (g b)) (hf : ContDiffAt ℝ 2 f (g b))
     (hg : ContDiffAt ℂ 2 g b) (hg' : Injective (fderiv ℂ g b)) :
     IsStronglyPseudoconvexAt q (f ∘ g) b := by
+  rw [isStronglyPseudoconvexAt_iff] at h ⊢
   obtain ⟨P, hP, hpos⟩ := h
   refine ⟨P.comap (fderiv ℂ g b : W →ₗ[ℂ] V), ?_, fun v hv hv0 ↦ ?_⟩
   · have := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank
@@ -185,10 +196,11 @@ theorem IsStrictlyPlurisubharmonicAt.scalar_comp {φ : ℝ → ℝ}
 
 /-- Post-composition with a function `φ` of one real variable with `φ'(f x) > 0` and
 `φ''(f x) ≥ 0` preserves strong `q`-pseudoconvexity at `x`. -/
-theorem IsStronglyPseudoconvexAt.scalar_comp {φ : ℝ → ℝ}
+theorem IsStronglyPseudoconvexAt.scalar_comp [FiniteDimensional ℂ V] {φ : ℝ → ℝ}
     (h : IsStronglyPseudoconvexAt q f x) (hφ : ContDiffAt ℝ 2 φ (f x))
     (hf : ContDiffAt ℝ 2 f x) (hφ₁ : 0 < deriv φ (f x)) (hφ₂ : 0 ≤ iteratedDeriv 2 φ (f x)) :
     IsStronglyPseudoconvexAt q (φ ∘ f) x := by
+  rw [isStronglyPseudoconvexAt_iff] at h ⊢
   obtain ⟨P, hP, hpos⟩ := h
   exact ⟨P, hP, fun v hv hv0 ↦ (mul_pos hφ₁ (hpos v hv hv0)).trans_le
     (le_re_leviForm_scalar_comp_apply_self hφ hf hφ₂ v)⟩
