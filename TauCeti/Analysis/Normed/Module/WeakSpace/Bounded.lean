@@ -31,7 +31,7 @@ public section
 
 open Bornology Filter Set Topology
 
-namespace NormedSpace
+namespace TauCeti.NormedSpace
 
 variable (𝕜 : Type*) {E : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -45,13 +45,13 @@ theorem isBounded_iff_forall_dual_isBounded {s : Set E} :
     exact f.lipschitzWith.isBounded_image hs
   · intro hs
     have hpointwise (f : StrongDual 𝕜 E) :
-        ∃ C, ∀ x : s, ‖inclusionInDoubleDual 𝕜 E x f‖ ≤ C := by
+        ∃ C, ∀ x : s, ‖NormedSpace.inclusionInDoubleDual 𝕜 E x f‖ ≤ C := by
       obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp (hs f)
       exact ⟨C, fun x ↦ by simpa using hC (f x) (mem_image_of_mem f x.property)⟩
     obtain ⟨C, hC⟩ := banach_steinhaus
-      (g := fun x : s ↦ inclusionInDoubleDual 𝕜 E x) hpointwise
+      (g := fun x : s ↦ NormedSpace.inclusionInDoubleDual 𝕜 E x) hpointwise
     refine isBounded_iff_forall_norm_le.mpr ⟨C, fun x hx ↦ ?_⟩
-    exact (inclusionInDoubleDualLi 𝕜).norm_map x ▸ hC ⟨x, hx⟩
+    exact (NormedSpace.inclusionInDoubleDualLi 𝕜).norm_map x ▸ hC ⟨x, hx⟩
 
 /-- A set is bounded for the weak topology exactly when it is norm bounded. -/
 @[simp]
@@ -71,7 +71,7 @@ theorem isVonNBounded_toWeakSpace_iff {s : Set E} :
     simpa only [toWeakSpaceCLM_eq_toWeakSpace] using
       ((NormedSpace.isVonNBounded_iff 𝕜).mpr hs).image (toWeakSpaceCLM 𝕜 E)
 
-end NormedSpace
+end TauCeti.NormedSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -79,7 +79,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜]
 /-- A weakly compact set is norm bounded, even in an incomplete space. -/
 theorem IsCompact.isBounded_toWeakSpace_preimage {s : Set (WeakSpace 𝕜 E)}
     (hs : IsCompact s) : IsBounded (toWeakSpace 𝕜 E ⁻¹' s) := by
-  rw [← NormedSpace.isVonNBounded_toWeakSpace_iff 𝕜,
+  rw [← TauCeti.NormedSpace.isVonNBounded_toWeakSpace_iff 𝕜,
     (toWeakSpace 𝕜 E).surjective.image_preimage]
   exact hs.isVonNBounded 𝕜
 
@@ -87,5 +87,5 @@ theorem IsCompact.isBounded_toWeakSpace_preimage {s : Set (WeakSpace 𝕜 E)}
 theorem Filter.Tendsto.isBounded_range_of_toWeakSpace {u : ℕ → E} {x : E}
     (hu : Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x))) :
     Bornology.IsBounded (range u) := by
-  rw [← NormedSpace.isVonNBounded_toWeakSpace_iff 𝕜, ← range_comp]
+  rw [← TauCeti.NormedSpace.isVonNBounded_toWeakSpace_iff 𝕜, ← range_comp]
   exact hu.isVonNBounded_range 𝕜
