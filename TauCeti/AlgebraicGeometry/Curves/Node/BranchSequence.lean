@@ -63,6 +63,20 @@ def branchSheafSequenceMiddleIso :
     (Scheme.Modules.pushforward
       (Spec.map (CommRingCat.ofHom (branchMap R).toRingHom))).mapIso tildeSelf
 
+/-- The middle-term comparison sends a pair of branch functions to its associated
+section on the two branches. -/
+@[simp]
+theorem branchSheafSequenceMiddleIso_hom_toOpen (p : R[X] × R[X]) :
+    dsimp% only [ShortComplex.map_X₂, AlgHom.toRingHom_eq_coe]
+    (branchSheafSequenceMiddleIso R).hom.val.app (.op ⊤)
+        (tilde.toOpen (R := .of (NodeAlgebra R 0))
+          ((ModuleCat.restrictScalars (branchMap R : NodeAlgebra R 0 →+* R[X] × R[X])).obj
+            (ModuleCat.of (R[X] × R[X]) (R[X] × R[X]))) ⊤ p) =
+      tilde.toOpen (R := .of (R[X] × R[X])) (ModuleCat.of (R[X] × R[X]) (R[X] × R[X])) ⊤ p := by
+  exact tildeRestrictScalarsIsoPushforward_hom_toOpen
+    (CommRingCat.ofHom (branchMap R).toRingHom)
+    (ModuleCat.of (R[X] × R[X]) (R[X] × R[X])) p
+
 /-- The last term of the branch sequence is the direct image of the structure
 sheaf of the singular section. -/
 def branchSheafSequenceRightIso :
@@ -73,6 +87,19 @@ def branchSheafSequenceRightIso :
       (CommRingCat.ofHom (nodeValue R).toRingHom) (ModuleCat.of R R) ≪≫
     (Scheme.Modules.pushforward
       (Spec.map (CommRingCat.ofHom (nodeValue R).toRingHom))).mapIso tildeSelf
+
+/-- The last-term comparison sends a value at the node to its associated section
+on the singular section. -/
+@[simp]
+theorem branchSheafSequenceRightIso_hom_toOpen (r : R) :
+    dsimp% only [ShortComplex.map_X₃, AlgHom.toRingHom_eq_coe]
+    (branchSheafSequenceRightIso R).hom.val.app (.op ⊤)
+        (tilde.toOpen (R := .of (NodeAlgebra R 0))
+          ((ModuleCat.restrictScalars (nodeValue R : NodeAlgebra R 0 →+* R)).obj
+            (ModuleCat.of R R)) ⊤ r) =
+      tilde.toOpen (R := .of R) (ModuleCat.of R R) ⊤ r := by
+  exact tildeRestrictScalarsIsoPushforward_hom_toOpen
+    (CommRingCat.ofHom (nodeValue R).toRingHom) (ModuleCat.of R R) r
 
 /-- The normalization sequence of the split node is short exact as sheaves of
 modules on the node, including over nonreduced base rings. -/
