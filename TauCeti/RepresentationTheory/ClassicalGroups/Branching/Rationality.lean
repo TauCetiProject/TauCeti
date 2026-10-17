@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.BlockSucc
-public import TauCeti.RepresentationTheory.ClassicalGroups.Branching.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 
 /-!

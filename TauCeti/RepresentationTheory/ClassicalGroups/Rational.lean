@@ -8,7 +8,7 @@ module
 public import Mathlib.Basic.Complex.Basic
 -- The two subalgebras of functions on `GL n k` the definitions below are stated against; this
 -- module also supplies `MvPolynomial.eval`, in which their coordinate form is written.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Basic
 -- The subalgebra-generic behaviour of matrix coefficients under change of basis, quotients,
 -- tensor products and tensor powers; this module also supplies `Basis.piTensorProduct`, the basis
 -- the tensor-power results below are stated against.

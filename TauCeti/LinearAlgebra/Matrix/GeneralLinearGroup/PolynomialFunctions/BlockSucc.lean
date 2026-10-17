@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockSucc
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Basic
 
 /-!
 # Polynomial and rational functions under the block inclusion
