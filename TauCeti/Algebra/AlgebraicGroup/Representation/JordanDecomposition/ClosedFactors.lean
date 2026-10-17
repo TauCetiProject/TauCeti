@@ -27,6 +27,7 @@ splitting used in the structure theory of solvable affine groups.
 
 Over every commutative test algebra, the two closed factors are the fixed subgroups of
 the projections, and multiplication gives a unique factorization into these subgroups.
+The test-algebra universe is independent of the base-field and coordinate-algebra universe.
 For nonreduced test algebras, these are scheme-theoretic Jordan factors; no assertion of
 operator semisimplicity over such algebras is made.
 
