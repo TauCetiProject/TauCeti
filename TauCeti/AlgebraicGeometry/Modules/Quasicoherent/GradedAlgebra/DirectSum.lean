@@ -32,6 +32,9 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   `A ↦ ⨁ₙ Aₙ` from graded quasicoherent algebras to quasicoherent algebras;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal`: the inclusion
   of a homogeneous summand in the underlying direct sum;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isColimitιTotal` and
+  `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.toQuasicoherentAlgebra_hom_ext`: these
+  inclusions exhibit the underlying module as the coproduct of the homogeneous components;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_tensorHom_ιTotal_mul` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_toQuasicoherentAlgebra`: its
   multiplication restricts to the homogeneous multiplication on `Aᵢ ⊗ Aⱼ`, and its unit is the
@@ -87,6 +90,30 @@ def ιTotal (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
   GradedObject.ιTotal A.obj.X n ≫
     (eqToHom (toQuasicoherentAlgebra_obj_obj A).symm).hom.hom
 
+/-- The inclusion of the degree-`n` summand is the coprojection `GradedObject.ιTotal` into the
+total object, transported along the identification of the direct-sum algebra's underlying module
+with the total object. -/
+theorem ιTotal_def (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    ιTotal A n =
+      GradedObject.ιTotal A.obj.X n ≫ eqToHom (toQuasicoherentAlgebra_obj_obj_X A).symm :=
+  (rfl)
+
+/-- The underlying module of the direct-sum algebra is the coproduct of the homogeneous
+components, with coprojections `ιTotal`. -/
+def isColimitιTotal (A : GradedQuasicoherentAlgebra X) :
+    IsColimit (Cofan.mk (toQuasicoherentAlgebra.obj A).obj.X (ιTotal A)) :=
+  IsColimit.ofIsoColimit (coproductIsCoproduct fun n ↦ A.obj.X n)
+    (Cofan.ext (eqToIso (toQuasicoherentAlgebra_obj_obj_X A).symm)
+      fun n ↦ (ιTotal_def A n).symm)
+
+/-- Morphisms out of the direct-sum algebra agree as soon as they agree on every homogeneous
+summand. -/
+@[ext]
+theorem toQuasicoherentAlgebra_hom_ext {A : GradedQuasicoherentAlgebra X} {M : X.Modules}
+    {f g : (toQuasicoherentAlgebra.obj A).obj.X ⟶ M} (h : ∀ n, ιTotal A n ≫ f = ιTotal A n ≫ g) :
+    f = g :=
+  Cofan.IsColimit.hom_ext (isColimitιTotal A) f g h
+
 /-- On the summand `Aᵢ ⊗ Aⱼ`, the multiplication of the direct-sum algebra is the homogeneous
 multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` followed by the inclusion of the summand of degree `i + j`. -/
 @[reassoc]
@@ -114,11 +141,10 @@ theorem ιTotal_tensorHom_ιTotal_mul (A : GradedQuasicoherentAlgebra X) (i j : 
           (GradedObject.total ℕ X.Modules).map μ[A.obj.X] = _
     rw [GradedObject.ιTotal_tensorHom_ιTotal_total_μ_assoc _ _ i j _ rfl,
       GradedObject.ιTotal_total_map, mul_def, Category.assoc]
-  unfold ιTotal
-  change ((GradedObject.ιTotal A.obj.X i ≫ φ) ⊗ₘ
-      (GradedObject.ιTotal A.obj.X j ≫ φ)) ≫
-        μ[(toQuasicoherentAlgebra.obj A).obj.X] =
-      A.mul i j ≫ GradedObject.ιTotal A.obj.X (i + j) ≫ φ
+  -- The morphism underlying the identification `e` of monoid objects is the identification of
+  -- their underlying modules, which is the one occurring in `ιTotal_def`.
+  have hφX : eqToHom (toQuasicoherentAlgebra_obj_obj_X A).symm = φ := rfl
+  rw [ιTotal_def, ιTotal_def, ιTotal_def, hφX]
   have hcomp := (tensorHom_comp_tensorHom_assoc (GradedObject.ιTotal A.obj.X i)
     (GradedObject.ιTotal A.obj.X j) φ φ
     μ[(toQuasicoherentAlgebra.obj A).obj.X]).symm
@@ -150,9 +176,9 @@ theorem one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X) :
         (GradedObject.total ℕ X.Modules).map η[A.obj.X] = _
     rw [GradedObject.total_ε, Category.assoc, GradedObject.ιTotal_total_map,
       one_def, Category.assoc]
-  unfold ιTotal
-  change η[(toQuasicoherentAlgebra.obj A).obj.X] =
-    A.one ≫ GradedObject.ιTotal A.obj.X 0 ≫ φ
+  -- As in `ιTotal_tensorHom_ιTotal_mul`, `φ` is the identification occurring in `ιTotal_def`.
+  have hφX : eqToHom (toQuasicoherentAlgebra_obj_obj_X A).symm = φ := rfl
+  rw [ιTotal_def, hφX]
   exact hone.symm.trans ((congrArg (· ≫ φ) htotal).trans (Category.assoc _ _ _))
 
 /-- On the summand `Aₙ`, the algebra morphism induced by a graded algebra morphism `f` is the
