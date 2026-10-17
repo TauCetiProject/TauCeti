@@ -45,16 +45,6 @@ variable (e : LieEquiv R L L) (he : H.map e = H)
 
 namespace LieSubalgebra
 
-/-- An automorphism acting by `-1` on a subalgebra normalises it, since a subalgebra is closed
-under negation. -/
-theorem map_eq_self_of_forall_mem_apply_eq_neg (hneg : ∀ y ∈ H, e y = -y) : H.map e = H := by
-  refine le_antisymm (fun z hz ↦ ?_) (fun z hz ↦ ?_)
-  · rw [LieSubalgebra.mem_map] at hz
-    obtain ⟨y, hy, rfl⟩ := hz
-    simpa [hneg y hy] using neg_mem hy
-  · rw [LieSubalgebra.mem_map]
-    exact ⟨-z, neg_mem hz, by simp [hneg (-z) (neg_mem hz)]⟩
-
 /-- An automorphism that maps a Lie subalgebra `H` into itself in both directions normalises `H`. -/
 theorem map_eq_self_of_mem (h_mem : ∀ x ∈ H, e x ∈ H) (h_symm : ∀ x ∈ H, e.symm x ∈ H) :
     H.map e = H := by
@@ -68,6 +58,13 @@ theorem map_eq_self_of_involutive (h_inv : Function.Involutive e) (h_mem : ∀ x
   map_eq_self_of_mem e h_mem fun x hx ↦ by
     rw [e.symm_apply_eq.mpr (h_inv x).symm]
     exact h_mem x hx
+
+/-- An automorphism acting by `-1` on a subalgebra normalises it, since a subalgebra is closed
+under negation. -/
+theorem map_eq_self_of_forall_mem_apply_eq_neg (hneg : ∀ y ∈ H, e y = -y) : H.map e = H :=
+  map_eq_self_of_mem e (fun y hy ↦ hneg y hy ▸ neg_mem hy) fun y hy ↦ by
+    rw [e.symm_apply_eq.mpr (by rw [hneg (-y) (neg_mem hy), neg_neg])]
+    exact neg_mem hy
 
 include he in
 /-- The inverse of a normalising automorphism normalises `H` as well. -/
