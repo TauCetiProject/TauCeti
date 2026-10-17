@@ -27,6 +27,9 @@ model space `E` itself; no smoothness of the transition maps is needed.
 
 ## Main declarations
 
+* `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source`: every point in the
+  source of a partial homeomorphism to `E` has arbitrarily small neighbourhoods whose punctured
+  versions are connected.
 * `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton`: every point of the manifold has
   arbitrarily small neighbourhoods whose punctured versions are connected.
 * `TauCeti.isPreconnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from
@@ -43,14 +46,13 @@ open Metric Set Topology
 namespace TauCeti
 
 variable {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace X]
-  [ChartedSpace E X]
 
-/-- In a manifold modelled on a real normed space of dimension greater than one, every point `x`
-has arbitrarily small neighbourhoods `V` with `V \ {x}` connected. -/
-theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : X)
+/-- If `E` is a real normed space of dimension greater than one, every point `x` in the source of
+a partial homeomorphism `φ : X → E` has arbitrarily small neighbourhoods `V` with `V \ {x}`
+connected. -/
+theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
+    (h : 1 < Module.rank ℝ E) (φ : OpenPartialHomeomorph X E) {x : X} (hx : x ∈ φ.source)
     {U : Set X} (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) := by
-  set φ := chartAt E x
-  have hx : x ∈ φ.source := mem_chart_source E x
   -- A ball around `φ x` inside the image of `U` is carried back by the inverse chart.
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
     (φ.image_mem_nhds hx (Filter.inter_mem hU (φ.open_source.mem_nhds hx)))
@@ -70,6 +72,15 @@ theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (h : 1 < Module.rank 
   · rw [hsdiff]
     exact (isConnected_ball_sdiff_singleton h (φ x) hr).image _
       (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
+
+variable [ChartedSpace E X]
+
+/-- In a manifold modelled on a real normed space of dimension greater than one, every point `x`
+has arbitrarily small neighbourhoods `V` with `V \ {x}` connected. -/
+theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : X)
+    {U : Set X} (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) :=
+  exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source h (chartAt E x)
+    (mem_chart_source E x) hU
 
 /-- **Removing a closed discrete set from a preconnected manifold leaves it preconnected**, when
 the model is a real normed space of dimension greater than one. -/

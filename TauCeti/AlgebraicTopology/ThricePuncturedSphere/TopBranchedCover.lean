@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Geometry.Manifold.Connected
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -33,6 +33,10 @@ marked fibres. Every fibre of `π` is finite, and the local degrees over any poi
 degree: `∑ e = n`. Thus the local degrees in each fibre form a partition of the covering degree,
 recording how sheets coalesce over branch values.
 
+Deleting the fibres over the three marked points leaves a connected cover of degree `n` of the
+thrice-punctured sphere (`TauCeti.TopBranchedCover.connectedCover`), compatibly with isomorphisms,
+so restriction descends to isomorphism classes.
+
 The data carries no atlas. The local models at marked points and the covering map elsewhere
 already provide a chart around every point (`TauCeti.TopBranchedCover.exists_mem_source`), so `Z`
 is a topological surface, and properness of `π` is a consequence of compactness
@@ -45,8 +49,12 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.Iso`: isomorphisms, homeomorphisms commuting with the projections.
 * `TauCeti.TopBranchedCover.IsoClass n`: branched covers of degree `n` up to isomorphism.
 * `TauCeti.TopBranchedCover.localDegree`: the local degree at a point.
+* `TauCeti.TopBranchedCover.restrict`: the projection restricted to the complement of the marked
+  fibres, as a map to the thrice-punctured sphere.
 * `TauCeti.TopBranchedCover.connectedCover`: the connected finite cover of the
   thrice-punctured sphere obtained by deleting the marked fibres.
+* `TauCeti.TopBranchedCover.IsoClass.restrict`: restriction on isomorphism classes, to
+  isomorphism classes of connected covers of the thrice-punctured sphere.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results
@@ -58,6 +66,11 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.finsum_mem_preimage_singleton_localDegree`: the local degrees over
   any point sum to the degree.
 * `TauCeti.TopBranchedCover.Iso.localDegree_apply`: isomorphisms preserve local degrees.
+* `TauCeti.TopBranchedCover.isConnected_preimage_range`: deleting the marked fibres leaves a
+  connected space, which is moreover path connected
+  (`TauCeti.TopBranchedCover.instPathConnectedSpacePreimageRange`).
+* `TauCeti.TopBranchedCover.natCard_restrict_preimage_singleton`: the restricted cover has
+  degree `n`.
 * `TauCeti.TopBranchedCover.Iso.connectedCoverIso`: an isomorphism of branched covers restricts
   to an isomorphism of their unbranched connected covers.
 
@@ -131,7 +144,8 @@ theorem isCoveringMap_restrictPreimage : IsCoveringMap (markedᶜ.restrictPreima
 
 /-! ### The unbranched cover -/
 
-/-- The restriction of a topological branched cover over the thrice-punctured sphere. -/
+/-- The projection `π` restricted to the complement of the fibres over `0`, `1` and `∞`, viewed
+as a map to `ThricePuncturedSphere` through `toOnePoint`. -/
 def restrict : X.π ⁻¹' range toOnePoint → ThricePuncturedSphere :=
   isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph.symm ∘
     (range toOnePoint).restrictPreimage X.π
@@ -228,31 +242,6 @@ theorem natCard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     exact mem_range_self z
   simpa only [mem_compl_iff] using hz
 
-private theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (x : X.Z) {U : Set X.Z}
-    (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) := by
-  obtain ⟨φ, hx⟩ := X.exists_mem_source x
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
-    (φ.image_mem_nhds hx (Filter.inter_mem hU (φ.open_source.mem_nhds hx)))
-  have hbt : Metric.ball (φ x) r ⊆ φ.target :=
-    hball.trans <| by
-      rintro _ ⟨y, hy, rfl⟩
-      exact φ.map_source hy.2
-  have hsdiff : φ.symm '' Metric.ball (φ x) r \ {x} =
-      φ.symm '' (Metric.ball (φ x) r \ {φ x}) := by
-    rw [(φ.symm.injOn.mono hbt).image_sdiff_subset
-      (singleton_subset_iff.2 (Metric.mem_ball_self hr)), image_singleton, φ.left_inv hx]
-  refine ⟨φ.symm '' Metric.ball (φ x) r, ?_, ?_, ?_⟩
-  · simpa [φ.left_inv hx] using
-      φ.symm.image_mem_nhds (φ.map_source hx) (Metric.ball_mem_nhds _ hr)
-  · rintro _ ⟨z, hz, rfl⟩
-    obtain ⟨y, hy, rfl⟩ := hball hz
-    rw [φ.left_inv hy.2]
-    exact hy.1
-  · rw [hsdiff]
-    exact (isConnected_ball_sdiff_singleton
-        (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) (φ x) hr).image _
-      (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
-
 /-- Removing the fibres over `0`, `1` and `∞` from the connected total space leaves a connected
 space. -/
 theorem isConnected_preimage_range : IsConnected (X.π ⁻¹' range toOnePoint) := by
@@ -260,7 +249,9 @@ theorem isConnected_preimage_range : IsConnected (X.π ⁻¹' range toOnePoint) 
     finite_marked.preimage' fun y _ ↦ X.finite_preimage_singleton y
   have hpre : IsPreconnected (X.π ⁻¹' marked)ᶜ :=
     isPreconnected_compl_of_isDiscrete hfin.isClosed hfin.isDiscrete fun x _ _ hU ↦
-      X.exists_mem_nhds_subset_isConnected_sdiff_singleton x hU
+      let ⟨φ, hx⟩ := X.exists_mem_source x
+      exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
+        (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) φ hx hU
   have htwo : ((2 : ℂ) : OnePoint ℂ) ∉ marked := by
     norm_num [mem_marked]
   obtain ⟨z, hz⟩ := X.surjective ((2 : ℂ) : OnePoint ℂ)
@@ -399,6 +390,19 @@ theorem coe_restrict_apply (ι : Iso X Y) (z : X.π ⁻¹' range toOnePoint) :
     (ι.restrict z : Y.Z) = ι.toHomeomorph z :=
   (rfl)
 
+@[simp]
+theorem refl_restrict (X : TopBranchedCover n) : (refl X).restrict = Homeomorph.refl _ :=
+  (rfl)
+
+@[simp]
+theorem symm_restrict (ι : Iso X Y) : ι.symm.restrict = ι.restrict.symm :=
+  (rfl)
+
+@[simp]
+theorem trans_restrict (ι : Iso X Y) (κ : Iso Y W) :
+    (ι.trans κ).restrict = ι.restrict.trans κ.restrict :=
+  (rfl)
+
 /-- The restriction of an isomorphism of topological branched covers commutes with the
 projections to the thrice-punctured sphere. -/
 @[simp]
@@ -413,6 +417,16 @@ def connectedCoverIso (ι : Iso X Y) : X.connectedCover.cover ≅ Y.connectedCov
   CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo ι.restrict) (by
     ext z
     exact congrArg Subtype.val (ι.restrict_restrict z))
+
+@[simp]
+theorem connectedCoverIso_hom_hom_left (ι : Iso X Y) :
+    ι.connectedCoverIso.hom.hom.left = (TopCat.isoOfHomeo ι.restrict).hom :=
+  CoveringSpace.FullSubcategory.isoMk_hom_hom_left _ _
+
+@[simp]
+theorem connectedCoverIso_inv_hom_left (ι : Iso X Y) :
+    ι.connectedCoverIso.inv.hom.left = (TopCat.isoOfHomeo ι.restrict).inv :=
+  CoveringSpace.FullSubcategory.isoMk_inv_hom_left _ _
 
 /-- Isomorphisms of branched covers preserve local degrees. -/
 @[simp]
