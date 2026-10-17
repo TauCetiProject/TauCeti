@@ -18,15 +18,16 @@ De Giorgi's extended perimeter
 
 (`TauCeti.perimeter_eq_iSup`), defined without any regularity of its topological boundary. It is
 the measure-theoretic notion of boundary area: a measurable set has finite perimeter in `Ω`
-exactly when `P(s; Ω) < ∞`, which does not require `s` to have finite volume. For a set that is
-not null-measurable the integrals in the supremum are Mathlib's junk value `0` for
-non-integrable functions, so its perimeter is a junk value carrying no geometric meaning.
+exactly when `P(s; Ω) < ∞`, which does not require `s` to have finite volume. The perimeter is
+meaningful when `s ∩ Ω` is null-measurable; otherwise the integrals in the supremum may be
+Mathlib's junk value `0` for non-integrable functions, and the perimeter may then be a junk value
+carrying no geometric meaning.
 
 The perimeter only sees `s` up to null sets (`TauCeti.perimeter_congr_ae`), so topological
 frontier and perimeter can differ. Against an additive Haar measure, complements have the same
 perimeter (`TauCeti.perimeter_compl`), since their indicators differ by a constant. Lower
-semicontinuity under local convergence in measure (`TauCeti.perimeter_le_liminf`) is the basic
-compactness input for perimeter problems.
+semicontinuity under local convergence in measure (`TauCeti.perimeter_le_liminf`) supplies
+the semicontinuity half of the direct method for perimeter problems.
 
 ## Main declarations
 
