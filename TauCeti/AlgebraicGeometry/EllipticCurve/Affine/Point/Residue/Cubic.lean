@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: a common root of a cubic and its derivative divides the discriminant.
 import TauCeti.Algebra.CubicDiscriminant
+-- Proof-only: membership in the maximal ideal `(ϖ)` is divisibility by `ϖ`.
+import TauCeti.RingTheory.Valuation.PrincipalMaximalIdeal
 
 /-!
 # Points with singular reduction at the reduction symbol `I₀*`
@@ -116,6 +118,20 @@ private theorem prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero
   rw [hdiscr, pow_succ]
   exact mul_dvd_mul_left _ hd
 
+omit [DecidableEq F] in
+/-- At `I₀*`, the coefficients `a₃`, `a₄` and `a₆` of the integral model lie in the maximal ideal,
+as `some_notMem_nonsingularReduction_iff` requires. -/
+private theorem mem_maximalIdeal_of_isTateTerminal_IStar_zero {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar 0)) :
+    (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring ∧
+      (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring ∧
+      (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring := by
+  obtain ⟨-, -, h₃, h₄, h₆, -⟩ := isTateTerminal_IStar_zero.1 h
+  exact ⟨(v.mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ two_ne_zero).trans h₃),
+    (v.mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ two_ne_zero).trans h₄),
+    (v.mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ three_ne_zero).trans h₆)⟩
+
 /-- A point with singular reduction at `I₀*`, with `x = ϖ X`, has `y = ϖ² Y`, and `X` is a root of
 the residue cubic modulo `ϖ`. -/
 private theorem exists_yCoord_eq_and_dvd_cubic {ϖ : v.valuationSubring}
@@ -130,22 +146,14 @@ private theorem exists_yCoord_eq_and_dvd_cubic {ϖ : v.valuationSubring}
       ϖ ∣ X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ := by
   obtain ⟨hp, h₁, h₃, -⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
-  obtain ⟨-, -, -, h₄', h₆', -⟩ := isTateTerminal_IStar_zero.1 h
-  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
-  rcases P with _ | ⟨x, y, hxy⟩
-  · exact absurd (zero_mem _) hP
-  obtain ⟨-, hy⟩ := (some_notMem_nonsingularReduction_iff v ((hmem _).2 (dvd_pow_self ϖ
-    two_ne_zero |>.trans h₃)) ((hmem _).2 (dvd_pow_self ϖ two_ne_zero |>.trans h₄'))
-    ((hmem _).2 (dvd_pow_self ϖ three_ne_zero |>.trans h₆')) hxy).1 hP
+  obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
+  obtain ⟨x, y, hxy, rfl, -, hy⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   rw [Point.xCoord_some] at hX
-  subst hX
-  set y₀ : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).2 hy.le⟩
-  have hE : (integralModel v.valuationSubring W).toAffine.Equation (ϖ * X) y₀ :=
-    (equation_integralModel_iff v).2 hxy.left
-  obtain ⟨⟨Y, hY⟩, hX⟩ := (integralModel v.valuationSubring W).sq_dvd_and_dvd_cubic_of_equation hp
-    h₁ h₂ h₃ h₄ h₆ hE ((hmem _).1 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy))
-  exact ⟨Y, by rw [Point.yCoord_some, ← hY], hX⟩
+  obtain rfl := Subtype.val_injective hX
+  obtain ⟨⟨Y, rfl⟩, hX⟩ := (integralModel v.valuationSubring W).sq_dvd_and_dvd_cubic_of_equation hp
+    h₁ h₂ h₃ h₄ h₆ ((equation_integralModel_iff v).2 hxy.left)
+    ((v.mem_maximalIdeal_iff_dvd hϖ).1 hy)
+  exact ⟨Y, Point.yCoord_some hxy, hX⟩
 
 /-- **At `I₀*`, a point with singular reduction has `x = ϖ X`, with the residue of `X` a root of the
 residue cubic.** Here `ϖ` generates the maximal ideal of the valuation ring, Tate's algorithm stops
@@ -161,23 +169,12 @@ theorem exists_xCoord_eq_of_isTateTerminal_IStar_zero
     ∃ X : v.valuationSubring, P.xCoord = ((ϖ * X : v.valuationSubring) : F) ∧
       residue _ X ^ 3 + residue _ A₂ * residue _ X ^ 2 + residue _ A₄ * residue _ X +
         residue _ A₆ = 0 := by
-  obtain ⟨-, -, -, h₄', h₆', -⟩ := isTateTerminal_IStar_zero.1 h
-  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
-  obtain ⟨h₃, -⟩ := (prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄
-    h₆).2.2
-  rcases P with _ | ⟨x, y, hxy⟩
-  · exact absurd (zero_mem _) hP
-  obtain ⟨hx, -⟩ := (some_notMem_nonsingularReduction_iff v ((hmem _).2 (dvd_pow_self ϖ
-    two_ne_zero |>.trans h₃)) ((hmem _).2 (dvd_pow_self ϖ two_ne_zero |>.trans h₄'))
-    ((hmem _).2 (dvd_pow_self ϖ three_ne_zero |>.trans h₆')) hxy).1 hP
-  obtain ⟨X, hX⟩ := (hmem ⟨x, (v.mem_valuationSubring_iff x).2 hx.le⟩).1
-    ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx)
-  have hX' : (Point.some x y hxy).xCoord = ((ϖ * X : v.valuationSubring) : F) := by
-    rw [Point.xCoord_some, ← hX]
-  obtain ⟨-, -, hc⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP hX'
-  refine ⟨X, hX', ?_⟩
-  simpa using (residue_eq_zero_iff _).2 ((hmem _).2 hc)
+  obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
+  obtain ⟨x, y, hxy, rfl, hx, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
+  obtain ⟨X, rfl⟩ := (v.mem_maximalIdeal_iff_dvd hϖ).1 hx
+  obtain ⟨-, -, hc⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP (Point.xCoord_some hxy)
+  refine ⟨X, Point.xCoord_some hxy, ?_⟩
+  simpa using (residue_eq_zero_iff _).2 ((v.mem_maximalIdeal_iff_dvd hϖ).2 hc)
 
 /-- **At `I₀*`, a point with singular reduction has `y = ϖ² Y`.** Here `ϖ` generates the maximal
 ideal of the valuation ring and Tate's algorithm stops at `I₀*` on the integral model. -/
@@ -211,18 +208,14 @@ private theorem exists_dvd_of_add_notMem_nonsingularReduction {ϖ : v.valuationS
       ϖ ∣ X₁ * X₂ + X₁ * X₃ + X₂ * X₃ - A₄ ∧ ϖ ∣ X₁ * X₂ * X₃ + A₆ := by
   obtain ⟨hp, ⟨A₁, hA₁⟩, ⟨A₃, hA₃⟩, -⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
-  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
-  have m₃ := (hmem (integralModel v.valuationSubring W).a₃).2 ⟨ϖ * A₃, by rw [hA₃]; ring⟩
-  have m₄ := (hmem (integralModel v.valuationSubring W).a₄).2 ⟨ϖ * A₄, by rw [h₄]; ring⟩
-  have m₆ := (hmem (integralModel v.valuationSubring W).a₆).2 ⟨ϖ ^ 2 * A₆, by rw [h₆]; ring⟩
+  obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
   obtain ⟨Y₁, hY₁, -⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP hX₁
   obtain ⟨x₁, y₁, h₁, rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   obtain ⟨x₂, y₂, h₂', rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hQ
   -- the chord through `P` and `Q`, with slope `ℓ` and third point `(x₃, y₃)`
   obtain ⟨x₃, y₃, ℓ, -, -, -, hx₃, -, hb, -, hc⟩ :=
     exists_chord_of_add_notMem_nonsingularReduction v m₃ m₄ m₆ hPQ
-  obtain ⟨X₃, rfl⟩ := (hmem x₃).1 hx₃
+  obtain ⟨X₃, rfl⟩ := (v.mem_maximalIdeal_iff_dvd hϖ).1 hx₃
   rw [Point.xCoord_some] at hX₁ hX₂
   rw [Point.yCoord_some] at hY₁
   obtain rfl := Subtype.val_injective hX₁
@@ -266,8 +259,7 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
     P + Q ∉ W.nonsingularReduction v := by
   obtain ⟨hp, ⟨A₁, hA₁⟩, ⟨A₃, hA₃⟩, -⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
-  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
+  obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
   obtain ⟨Y₁, hY₁, -⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP hX₁
   obtain ⟨Y₂, hY₂, -⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hQ hX₂
   rcases P with _ | ⟨x₁, y₁, h₁⟩
@@ -277,7 +269,8 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
   rw [Point.xCoord_some] at hX₁ hX₂
   rw [Point.yCoord_some] at hY₁ hY₂
   -- `X₁ − X₂` is a unit, so `x₁ ≠ x₂`
-  have hu : IsUnit (X₁ - X₂) := notMem_maximalIdeal.1 fun hm ↦ hX ((hmem _).1 hm)
+  have hu : IsUnit (X₁ - X₂) :=
+    notMem_maximalIdeal.1 fun hm ↦ hX ((v.mem_maximalIdeal_iff_dvd hϖ).1 hm)
   have hx : x₁ ≠ x₂ := by
     intro hx
     rw [hX₁, hX₂] at hx
@@ -306,13 +299,11 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
   set X₃ : v.valuationSubring := (ϖ * L) ^ 2 + ϖ * A₁ * (ϖ * L) - ϖ * A₂ - ϖ * X₁ - ϖ * X₂
   set Y₃ : v.valuationSubring := -((ϖ * L) * (X₃ - ϖ * X₁) + ϖ ^ 2 * Y₁) - ϖ * A₁ * X₃ - ϖ ^ 2 * A₃
   have hX₃ : X₃ ∈ maximalIdeal v.valuationSubring :=
-    (hmem _).2 ⟨ϖ * L ^ 2 + ϖ * A₁ * L - A₂ - X₁ - X₂, by ring⟩
+    (v.mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * L ^ 2 + ϖ * A₁ * L - A₂ - X₁ - X₂, by ring⟩
   have hY₃ : Y₃ ∈ maximalIdeal v.valuationSubring :=
-    (hmem _).2 ⟨-(L * (X₃ - ϖ * X₁) + ϖ * Y₁) - A₁ * X₃ - ϖ * A₃, by ring⟩
+    (v.mem_maximalIdeal_iff_dvd hϖ).2 ⟨-(L * (X₃ - ϖ * X₁) + ϖ * Y₁) - A₁ * X₃ - ϖ * A₃, by ring⟩
   rw [Point.add_some hxy]
-  refine (some_notMem_nonsingularReduction_iff v ((hmem _).2 (dvd_pow_self ϖ two_ne_zero |>.trans
-    ⟨A₃, hA₃⟩)) ((hmem _).2 (dvd_pow_self ϖ two_ne_zero |>.trans ⟨A₄, h₄⟩))
-    ((hmem _).2 (dvd_pow_self ϖ three_ne_zero |>.trans ⟨A₆, h₆⟩)) _).2 ⟨?_, ?_⟩
+  refine (some_notMem_nonsingularReduction_iff v m₃ m₄ m₆ _).2 ⟨?_, ?_⟩
   · convert (Valuation.mem_maximalIdeal_iff (v := v)).1 hX₃ using 2
     rw [addX, hℓ, ha₁, ha₂, hX₁, hX₂]
     simp only [X₃]
@@ -342,10 +333,8 @@ theorem add_mem_nonsingularReduction_iff_of_isTateTerminal_IStar_zero {ϖ : v.va
     {X₁ X₂ : v.valuationSubring} (hX₁ : P.xCoord = ((ϖ * X₁ : v.valuationSubring) : F))
     (hX₂ : Q.xCoord = ((ϖ * X₂ : v.valuationSubring) : F)) :
     P + Q ∈ W.nonsingularReduction v ↔ residue _ X₁ = residue _ X₂ := by
-  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   have hres : residue _ X₁ = residue _ X₂ ↔ ϖ ∣ X₁ - X₂ := by
-    rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff, hmem]
+    rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff, v.mem_maximalIdeal_iff_dvd hϖ]
   rw [hres]
   constructor
   · intro hPQ
@@ -377,15 +366,14 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero
     (ht : t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0) :
     ∃ P : W.Point, P ∉ W.nonsingularReduction v ∧ ∃ X : v.valuationSubring,
       P.xCoord = ((ϖ * X : v.valuationSubring) : F) ∧ residue _ X = t := by
-  obtain ⟨hp, ⟨A₁, hA₁⟩, ⟨A₃, hA₃⟩, hD⟩ :=
+  obtain ⟨hp, -, -, hD⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
-  have hmem (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
+  obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
   -- a root of `T³ + A₂ T² + A₄ T + A₆` modulo `ϖ` is simple
   have hsimple (z : v.valuationSubring) (hz : ϖ ∣ z ^ 3 + A₂ * z ^ 2 + A₄ * z + A₆) :
       IsUnit (3 * z ^ 2 + 2 * A₂ * z + A₄) :=
-    notMem_maximalIdeal.1 fun hm ↦ hD (TauCeti.Cubic.dvd_discr hz (dvd_pow ((hmem _).1 hm)
-      two_ne_zero))
+    notMem_maximalIdeal.1 fun hm ↦ hD (TauCeti.Cubic.dvd_discr hz
+      (dvd_pow ((v.mem_maximalIdeal_iff_dvd hϖ).1 hm) two_ne_zero))
   -- lift `t` to a root `X` by Hensel's lemma
   set p : (v.valuationSubring)[X] := (Cubic.mk 1 A₂ A₄ A₆).toPoly
   have heval (z : v.valuationSubring) : p.eval z = z ^ 3 + A₂ * z ^ 2 + A₄ * z + A₆ := by
@@ -395,9 +383,9 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero
     ring
   obtain ⟨t₀, rfl⟩ := residue_surjective t
   have ht₀ : ϖ ∣ t₀ ^ 3 + A₂ * t₀ ^ 2 + A₄ * t₀ + A₆ :=
-    (hmem _).1 ((residue_eq_zero_iff _).1 (by simpa using ht))
+    (v.mem_maximalIdeal_iff_dvd hϖ).1 ((residue_eq_zero_iff _).1 (by simpa using ht))
   obtain ⟨X, hX, hXt⟩ := HenselianLocalRing.is_henselian p Cubic.monic_of_a_eq_one' t₀
-    ((hmem _).2 (heval t₀ ▸ ht₀)) (hder t₀ ▸ hsimple t₀ ht₀)
+    ((v.mem_maximalIdeal_iff_dvd hϖ).2 (heval t₀ ▸ ht₀)) (hder t₀ ▸ hsimple t₀ ht₀)
   have hX0 : X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ = 0 := heval X ▸ hX.eq_zero
   -- the point `(ϖ X, 0)`
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular (ϖ * X) 0 := by
@@ -412,11 +400,9 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero
     have := ((integralModel v.valuationSubring W).toAffine.map_nonsingular
       (IsFractionRing.injective _ F) _ _).mpr hns
     rwa [← baseChange_integralModel_eq v.valuationSubring W]
-  have hlt (z : v.valuationSubring) (hz : ϖ ∣ z) : v (z : F) < 1 :=
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 ((hmem _).2 hz)
-  exact ⟨.some _ _ hF, (some_notMem_nonsingularReduction_iff v ((hmem _).2 ⟨ϖ * A₃, by
-    rw [hA₃]; ring⟩) ((hmem _).2 ⟨ϖ * A₄, by rw [h₄]; ring⟩) ((hmem _).2 ⟨ϖ ^ 2 * A₆, by
-    rw [h₆]; ring⟩) hF).2 ⟨hlt _ (dvd_mul_right ϖ X), hlt _ (dvd_zero ϖ)⟩, X,
+  exact ⟨.some _ _ hF, (some_notMem_nonsingularReduction_iff v m₃ m₄ m₆ hF).2
+    ⟨v.map_lt_one_of_maximalIdeal_eq_span_of_dvd hϖ (dvd_mul_right ϖ X),
+      v.map_lt_one_of_maximalIdeal_eq_span_of_dvd hϖ (dvd_zero ϖ)⟩, X,
     Point.xCoord_some hF, by rwa [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]⟩
 
 /-- **At `I₀*` over a Henselian valuation ring, `[E(F) : E₀(F)]` is one more than the number of
