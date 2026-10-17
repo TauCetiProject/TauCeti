@@ -450,6 +450,7 @@ noncomputable def inverseRegularizedIncompleteBeta (a b u : ℝ) : ℝ :=
   else 0
 
 /-- Outside its parameter domain, the inverse regularized incomplete beta function is zero. -/
+@[simp]
 theorem inverseRegularizedIncompleteBeta_eq_zero
     (h : ¬(0 < a ∧ 0 < b ∧ 0 < u ∧ u < 1)) :
     inverseRegularizedIncompleteBeta a b u = 0 := by
@@ -464,6 +465,7 @@ theorem inverseRegularizedIncompleteBeta_mem_Ioo (ha : 0 < a) (hb : 0 < b)
     (exists_unique_regularizedIncompleteBeta_eq ha hb hu0 hu1)).1.1
 
 /-- The regularized incomplete beta function is a left inverse of its inverse on `(0, 1)`. -/
+@[simp]
 theorem regularizedIncompleteBeta_inverse (ha : 0 < a) (hb : 0 < b)
     (hu0 : 0 < u) (hu1 : u < 1) :
     regularizedIncompleteBeta a b (inverseRegularizedIncompleteBeta a b u) = u := by
@@ -492,7 +494,9 @@ theorem inverseRegularizedIncompleteBeta_le_iff (ha : 0 < a) (hb : 0 < b)
     rw [regularizedIncompleteBeta_inverse ha hb hu0 hu1] at this
     exact (not_lt_of_ge h) this
 
-/-- The inverse regularized incomplete beta function is a right inverse on `(0, 1)`. -/
+/-- The inverse regularized incomplete beta function is a left inverse of the regularized
+incomplete beta function on `(0, 1)`. -/
+@[simp]
 theorem inverseRegularizedIncompleteBeta_regularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b)
     (hx0 : 0 < x) (hx1 : x < 1) :
     inverseRegularizedIncompleteBeta a b (regularizedIncompleteBeta a b x) = x := by
