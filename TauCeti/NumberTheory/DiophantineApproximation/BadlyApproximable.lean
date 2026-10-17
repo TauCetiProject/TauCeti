@@ -21,10 +21,13 @@ nearest integer. Equivalently, `|ξ - r| ≥ c / den(r) ^ 2` for every rational 
 (`badlyApproximable_iff_forall_ratCast`), so for a fixed badly approximable `ξ` the constant in
 Dirichlet's bound `|ξ - p / q| < 1 / q ^ 2` cannot be made arbitrarily small. Badly
 approximable numbers have irrationality exponent exactly `2`
-(`BadlyApproximable.irrationalityExponent_eq`), so they are not Liouville numbers. The property is
+(`BadlyApproximable.irrationalityExponent_eq`), so they are not Liouville numbers, and
+one-dimensional simultaneous exponent exactly `1`
+(`BadlyApproximable.simultaneousExponent_eq_one`). The property is
 invariant under the rational affine maps `ξ ↦ ξ + r` and `ξ ↦ r ξ` with `r ≠ 0`. Liouville's
 inequality makes every real quadratic irrational badly approximable
-(`badlyApproximable_of_natDegree_minpoly_eq_two`).
+(`badlyApproximable_of_natDegree_minpoly_eq_two`); in particular `√2` is
+(`badlyApproximable_sqrt_two`).
 
 Littlewood's conjecture asserts that `inf_{y ≥ 1} y ‖y α‖ ‖y β‖ = 0` for all real `α`, `β`. It is
 open, and is recorded here only as the proposition `LittlewoodConjecture`. It holds for `α`, `β`
@@ -133,6 +136,12 @@ theorem BadlyApproximable.irrationalityExponent_eq {ξ : ℝ} (h : BadlyApproxim
   le_antisymm ((irrationalityExponent_le_two_iff ξ).mpr fun _ hp ↦ h.not_liouvilleWith hp)
     ((two_le_irrationalityExponent_iff ξ).mpr h.irrational)
 
+/-- A badly approximable number has one-dimensional simultaneous exponent `1`. -/
+theorem BadlyApproximable.simultaneousExponent_eq_one {ξ : ℝ} (h : BadlyApproximable ξ) :
+    simultaneousExponent ![ξ] = 1 := by
+  apply (ENNReal.add_left_inj ENNReal.one_ne_top).mp
+  rw [h.irrational.simultaneousExponent_add_one, h.irrationalityExponent_eq, one_add_one_eq_two]
+
 /-- A badly approximable number is not a Liouville number. -/
 theorem BadlyApproximable.not_liouville {ξ : ℝ} (h : BadlyApproximable ξ) : ¬Liouville ξ :=
   fun hL ↦ h.not_liouvilleWith (by norm_num : (2 : ℝ) < 3) (hL.liouvilleWith 3)
@@ -226,6 +235,11 @@ theorem badlyApproximable_of_natDegree_minpoly_eq_two {ξ : ℝ}
   exact hirr.badlyApproximable_of_aeval_eq_zero (primitiveMinpoly_ne_zero ξ)
     (by rw [natDegree_primitiveMinpoly, h]) (aeval_primitiveMinpoly hint.isAlgebraic)
 
+/-- `√2` is badly approximable. -/
+theorem badlyApproximable_sqrt_two : BadlyApproximable √2 :=
+  irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
+    (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C]) (by simp [map_ofNat])
+
 /-! ### Littlewood's conjecture -/
 
 /-- **Littlewood's conjecture**: for all real `α`, `β` and every `ε > 0` there is `y ≥ 1` with
@@ -267,17 +281,8 @@ theorem littlewoodConjecture_iff_badlyApproximable :
 
 /-! ### Examples -/
 
-example : BadlyApproximable √2 :=
-  irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
-    (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C]) (by simp [map_ofNat])
-
-example : simultaneousExponent ![√2] = 1 := by
-  have hsqrt : BadlyApproximable √2 :=
-    irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
-      (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C]) (by simp [map_ofNat])
-  apply (ENNReal.add_left_inj (by simp : (1 : ℝ≥0∞) ≠ ⊤)).mp
-  rw [simultaneousExponent_one_add irrational_sqrt_two, hsqrt.irrationalityExponent_eq,
-    one_add_one_eq_two]
+example : simultaneousExponent ![√2] = 1 :=
+  badlyApproximable_sqrt_two.simultaneousExponent_eq_one
 
 example : simultaneousExponent ![√2, √3] ≤ 1 := by
   calc
@@ -289,14 +294,7 @@ example : simultaneousExponent ![√2, √3] ≤ 1 := by
       funext i
       fin_cases i
       simp
-    _ = 1 := by
-      have hsqrt : BadlyApproximable √2 :=
-        irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
-          (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C])
-          (by simp [map_ofNat])
-      apply (ENNReal.add_left_inj (by simp : (1 : ℝ≥0∞) ≠ ⊤)).mp
-      rw [simultaneousExponent_one_add irrational_sqrt_two, hsqrt.irrationalityExponent_eq,
-        one_add_one_eq_two]
+    _ = 1 := badlyApproximable_sqrt_two.simultaneousExponent_eq_one
 
 example : BadlyApproximable Real.goldenRatio :=
   Real.goldenRatio_irrational.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - X - 1)
@@ -314,9 +312,7 @@ example (q : ℚ) (β : ℝ) {ε : ℝ} (hε : 0 < ε) :
 bounded away from `0`. -/
 example : ¬∀ α : ℝ, ∀ ε > (0 : ℝ), ∃ y : ℕ, 0 < y ∧ y * |y * α - round (y * α)| < ε := by
   intro h
-  obtain ⟨c, hc, hsqrt⟩ := badlyApproximable_iff.mp <|
-    irrational_sqrt_two.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - C 2)
-      (X_pow_sub_C_ne_zero two_pos 2) (by rw [natDegree_X_pow_sub_C]) (by simp [map_ofNat])
+  obtain ⟨c, hc, hsqrt⟩ := badlyApproximable_iff.mp badlyApproximable_sqrt_two
   obtain ⟨y, hy, hyc⟩ := h √2 c hc
   exact (hsqrt y hy).not_gt hyc
 

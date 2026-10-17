@@ -22,9 +22,10 @@ does not change the exponent: negating every coordinate makes the two formulatio
 Recording only denominators also does not change infinitude, since for fixed `q` the displayed
 bounds leave only finitely many choices for the integer vector.
 
-The main results identify the one-dimensional exponent with the usual irrationality exponent,
-up to the expected shift by one, show that a rational family and the empty family have infinite
-exponent, and show that forgetting coordinates can only increase the exponent.
+The main results identify the one-dimensional exponent of an irrational real number with its
+irrationality exponent, up to the expected shift by one, show that a rational family and an empty
+family have infinite exponent, and show that forgetting coordinates can only increase the
+exponent.
 -/
 
 public section
@@ -39,6 +40,14 @@ variable {ι κ : Type*}
 /-- The positive denominators giving simultaneous approximations to `θ` with exponent `w`. -/
 def simultaneousApproximationDenominators (θ : ι → ℝ) (w : ℝ) : Set ℕ :=
   {q | 0 < q ∧ ∃ p : ι → ℤ, ∀ i, |(q : ℝ) * θ i - p i| ≤ (q : ℝ) ^ (-w)}
+
+/-- A natural number is an admissible denominator exactly when it is positive and has integer
+numerators approximating every coordinate to within the exponent bound. -/
+@[simp]
+theorem mem_simultaneousApproximationDenominators {θ : ι → ℝ} {w : ℝ} {q : ℕ} :
+    q ∈ simultaneousApproximationDenominators θ w ↔
+      0 < q ∧ ∃ p : ι → ℤ, ∀ i, |(q : ℝ) * θ i - p i| ≤ (q : ℝ) ^ (-w) :=
+  Iff.rfl
 
 /-- The simultaneous approximation exponent of a finite family `θ`. -/
 noncomputable def simultaneousExponent (θ : ι → ℝ) : ℝ≥0∞ :=
@@ -59,6 +68,13 @@ theorem le_simultaneousExponent_of_infinite {θ : ι → ℝ} {w : ℝ}
     ENNReal.ofReal w ≤ simultaneousExponent θ :=
   le_iSup_of_le w <| le_iSup_of_le h le_rfl
 
+/-- The simultaneous exponent is at most `a` exactly when every exponent admitting infinitely
+many simultaneous approximations is. -/
+theorem simultaneousExponent_le_iff {θ : ι → ℝ} {a : ℝ≥0∞} :
+    simultaneousExponent θ ≤ a ↔
+      ∀ w : ℝ, (simultaneousApproximationDenominators θ w).Infinite → ENNReal.ofReal w ≤ a :=
+  iSup₂_le_iff
+
 /-- Restricting a family of simultaneous approximations along any map preserves every
 admissible denominator. -/
 theorem simultaneousApproximationDenominators_mono_comp
@@ -72,7 +88,7 @@ theorem simultaneousApproximationDenominators_mono_comp
 does not require the reindexing map to be injective. -/
 theorem simultaneousExponent_le_comp (θ : ι → ℝ) (f : κ → ι) :
     simultaneousExponent θ ≤ simultaneousExponent (θ ∘ f) := by
-  refine iSup₂_le fun w h ↦ le_simultaneousExponent_of_infinite ?_
+  refine simultaneousExponent_le_iff.2 fun w h ↦ le_simultaneousExponent_of_infinite ?_
   exact h.mono (simultaneousApproximationDenominators_mono_comp θ f w)
 
 /-! ### Rational families -/
@@ -109,18 +125,17 @@ theorem simultaneousExponent_eq_top_of_forall_rat [Finite ι] {θ : ι → ℝ}
   refine iSup_le fun n ↦ ?_
   simpa using le_simultaneousExponent_of_infinite (hinfinite n)
 
-/-- The empty family has infinite simultaneous exponent. -/
+/-- A family indexed by an empty type has infinite simultaneous exponent. -/
 @[simp]
-theorem simultaneousExponent_empty :
-    simultaneousExponent (fun i : Fin 0 ↦ Fin.elim0 i) = ⊤ := by
-  apply simultaneousExponent_eq_top_of_forall_rat
-  exact fun i ↦ Fin.elim0 i
+theorem simultaneousExponent_of_isEmpty [IsEmpty ι] (θ : ι → ℝ) : simultaneousExponent θ = ⊤ :=
+  simultaneousExponent_eq_top_of_forall_rat isEmptyElim
 
 /-! ### One dimension -/
 
-/-- Infinitely many one-dimensional simultaneous approximations of exponent `w` give the
-`LiouvilleWith` condition of exponent `w + 1`. -/
-theorem liouvilleWith_one_add_of_simultaneous_infinite {w ξ : ℝ} (hξ : Irrational ξ)
+/-- For an irrational real number `ξ`, infinitely many one-dimensional simultaneous
+approximations of exponent `w` give the `LiouvilleWith` condition of exponent `w + 1`. -/
+theorem _root_.Irrational.liouvilleWith_add_one_of_simultaneous_infinite {w ξ : ℝ}
+    (hξ : Irrational ξ)
     (h : (simultaneousApproximationDenominators ![ξ] w).Infinite) :
     LiouvilleWith (w + 1) ξ := by
   refine ⟨2, Nat.frequently_atTop_iff_infinite.2 <| h.mono ?_⟩
@@ -144,7 +159,7 @@ theorem liouvilleWith_one_add_of_simultaneous_infinite {w ξ : ℝ} (hξ : Irrat
 
 /-- A `LiouvilleWith` exponent strictly larger than `w + 1` supplies infinitely many
 one-dimensional simultaneous approximations of exponent `w`. -/
-theorem simultaneous_infinite_of_liouvilleWith {p w ξ : ℝ} (h : LiouvilleWith p ξ)
+theorem _root_.LiouvilleWith.simultaneous_infinite {p w ξ : ℝ} (h : LiouvilleWith p ξ)
     (hpw : w + 1 < p) : (simultaneousApproximationDenominators ![ξ] w).Infinite := by
   rw [← Nat.frequently_atTop_iff_infinite]
   refine ((eventually_gt_atTop 0).and_frequently
@@ -166,18 +181,19 @@ theorem simultaneous_infinite_of_liouvilleWith {p w ξ : ℝ} (h : LiouvilleWith
   fin_cases i
   simpa using hbound
 
-/-- In one dimension the simultaneous exponent, shifted by one, is the irrationality exponent. -/
-theorem simultaneousExponent_one_add {ξ : ℝ} (hξ : Irrational ξ) :
+/-- For an irrational real number `ξ`, the one-dimensional simultaneous exponent, shifted by
+one, is the irrationality exponent of `ξ`. -/
+theorem _root_.Irrational.simultaneousExponent_add_one {ξ : ℝ} (hξ : Irrational ξ) :
     simultaneousExponent ![ξ] + 1 = irrationalityExponent ξ := by
   apply le_antisymm
   · have hex : ∃ w, (simultaneousApproximationDenominators ![ξ] w).Infinite :=
-      ⟨0, simultaneous_infinite_of_liouvilleWith hξ.liouvilleWith_two (by norm_num)⟩
+      ⟨0, hξ.liouvilleWith_two.simultaneous_infinite (by norm_num)⟩
     rw [simultaneousExponent, ENNReal.biSup_add' hex]
     refine iSup₂_le fun w hw ↦ ?_
     by_cases hw0 : 0 ≤ w
     · rw [← ENNReal.ofReal_one, ← ENNReal.ofReal_add hw0 zero_le_one]
       exact le_irrationalityExponent_of_liouvilleWith
-        (liouvilleWith_one_add_of_simultaneous_infinite hξ hw)
+        (hξ.liouvilleWith_add_one_of_simultaneous_infinite hw)
     · simp only [ENNReal.ofReal_eq_zero.mpr (le_of_not_ge hw0), zero_add]
       exact one_le_irrationalityExponent ξ
   · rw [irrationalityExponent_le_iff]
@@ -196,7 +212,7 @@ theorem simultaneousExponent_one_add {ξ : ℝ} (hξ : Irrational ξ) :
       exact
         (ENNReal.ofReal_lt_ofReal_iff (ENNReal.toReal_nonneg.trans_lt hcw')).mpr hcw' |>.trans_le <|
         le_simultaneousExponent_of_infinite
-          (simultaneous_infinite_of_liouvilleWith hp (by linarith))
+          (hp.simultaneous_infinite (by linarith))
 
 /-! ### Examples -/
 
