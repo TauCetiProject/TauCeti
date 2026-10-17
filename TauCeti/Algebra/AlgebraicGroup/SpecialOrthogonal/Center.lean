@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center
 /-!
 # The scheme-theoretic center of the special orthogonal group
 
-For `n ≥ 3`, over a commutative value algebra where two is invertible, universal centrality of
-an `SOₙ`-point is equivalent to membership in the center of its special orthogonal matrix group.
+For `n ≥ 3`, over a commutative value algebra where two is a non-zero-divisor, universal centrality
+of an `SOₙ`-point is equivalent to membership in the center of its special orthogonal matrix group.
 The matrix-center computation in
 `TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center` identifies these as the scalar
 matrices `c • 1` with `c² = 1` and `c^n = 1`.
@@ -39,25 +39,22 @@ universe u v
 section Ring
 
 variable {R : Type u} [CommRing R] (n : ℕ) (hn : 3 ≤ n)
-variable {A : Type v} [CommRing A] [Algebra R A] [Invertible (2 : A)]
+variable {A : Type v} [CommRing A] [Algebra R A] (h2 : IsRegular (2 : A))
 
-include hn in
+include hn h2 in
 /-- In dimension at least three, a special orthogonal point over a ring where two is
-invertible is universally central exactly when its matrix is central. -/
+a non-zero-divisor is universally central exactly when its matrix is central. -/
 theorem isCentralPoint_iff_mem_center_pointsMulEquiv
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     HopfAlgebra.IsCentralPoint g ↔
       pointsMulEquiv R n (A := A) g ∈
         Subgroup.center (Matrix.specialOrthogonalGroup (Fin n) A) := by
   constructor
-  · intro hg
-    apply Subgroup.mem_center_iff.mpr
-    intro h
-    obtain ⟨p, rfl⟩ := (pointsMulEquiv R n (A := A)).surjective h
-    exact ((hg.commute p).map (pointsMulEquiv R n)).symm.eq
+  · exact fun hg ↦ MulEquivClass.apply_mem_center (pointsMulEquiv R n (A := A))
+      (HopfAlgebra.center_le_center (HopfAlgebra.mem_center.mpr hg))
   · intro hg
     obtain ⟨c, hc, _, _⟩ :=
-      (Matrix.SpecialOrthogonalGroup.mem_center_iff (pointsMulEquiv R n (A := A) g)
+      (Matrix.SpecialOrthogonalGroup.mem_center_iff h2 (pointsMulEquiv R n (A := A) g)
         (by simpa using hn)).mp hg
     rw [HopfAlgebra.isCentralPoint_def]
     intro B _ _ φ h
@@ -73,15 +70,15 @@ theorem isCentralPoint_iff_mem_center_pointsMulEquiv
       (Matrix.scalar_commute (φ c) (Commute.all _)
         (pointsMulEquiv R n (A := B) h : Matrix (Fin n) (Fin n) B)).eq
 
-include hn in
+include hn h2 in
 /-- Every universally central point of an odd-dimensional special orthogonal group is the
 identity, including points with values in nonreduced algebras. -/
 theorem eq_one_of_isCentralPoint_of_odd (hodd : Odd n)
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
     (hg : HopfAlgebra.IsCentralPoint g) : g = 1 := by
-  have hmatrix := Matrix.SpecialOrthogonalGroup.eq_one_of_mem_center_of_odd
+  have hmatrix := Matrix.SpecialOrthogonalGroup.eq_one_of_mem_center_of_odd h2
     (pointsMulEquiv R n (A := A) g) (by simpa using hn) (by simpa using hodd)
-    ((isCentralPoint_iff_mem_center_pointsMulEquiv n hn g).mp hg)
+    ((isCentralPoint_iff_mem_center_pointsMulEquiv n hn h2 g).mp hg)
   exact (pointsMulEquiv R n).injective (hmatrix.trans (map_one _).symm)
 
 end Ring
@@ -97,7 +94,6 @@ theorem centerDefiningIdeal_eq_augmentation_of_odd (k : Type u) [Field k] [NeZer
   intro A g hg
   have htwo : IsUnit (2 : A) := by
     simpa only [map_ofNat] using (isUnit_iff_ne_zero.mpr (NeZero.ne (2 : k))).map (algebraMap k A)
-  let _ : Invertible (2 : A) := htwo.invertible
-  exact eq_one_of_isCentralPoint_of_odd n hn hodd g hg
+  exact eq_one_of_isCentralPoint_of_odd n hn htwo.isRegular hodd g hg
 
 end TauCeti.SpecialOrthogonal

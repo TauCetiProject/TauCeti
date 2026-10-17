@@ -12,7 +12,7 @@ import Mathlib.Algebra.Ring.Parity
 /-!
 # The center of the special orthogonal matrix group
 
-In dimension at least three, over a commutative ring where two is invertible, the matrices
+In dimension at least three, over a commutative ring where two is a non-zero-divisor, the matrices
 commuting with the special orthogonal group are exactly the scalar matrices. Consequently its
 center consists of the scalar matrices `c • 1` with `c² = 1` and `c^n = 1`. In odd dimension
 the center is trivial. The ring may have nilpotents, so these statements also detect the
@@ -37,8 +37,8 @@ variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 attribute [local instance] starRingOfComm
 
 /-- A matrix commuting with every special orthogonal matrix in dimension at least three is
-scalar, over any commutative ring where two is invertible. -/
-theorem mem_range_scalar_of_commute_specialOrthogonalGroup [Invertible (2 : R)]
+scalar, over any commutative ring where two is a non-zero-divisor. -/
+theorem mem_range_scalar_of_commute_specialOrthogonalGroup (h2 : IsRegular (2 : R))
     (M : Matrix n n R) (hn : 3 ≤ Fintype.card n)
     (hM : ∀ g : specialOrthogonalGroup n R, Commute (g : Matrix n n R) M) :
     M ∈ Set.range (scalar n) := by
@@ -63,7 +63,7 @@ theorem mem_range_scalar_of_commute_specialOrthogonalGroup [Invertible (2 : R)]
     simp only [g, coordinateHalfTurn_mulVec, mulVec_single_one, col_apply,
       true_or, ↓reduceIte] at h
     have hzero : (2 : R) * M i j = 0 := by linear_combination -h
-    exact (isUnit_of_invertible (2 : R)).mul_left_cancel (hzero.trans (mul_zero _).symm)
+    exact h2.left (hzero.trans (mul_zero _).symm)
   have hdiag (i j : n) : M i i = M j j := by
     by_cases hij : i = j
     · rw [hij]
@@ -85,13 +85,13 @@ namespace SpecialOrthogonalGroup
 
 /-- In dimension at least three, the center consists precisely of the scalar orthogonal
 matrices of determinant one. This includes coefficients with nilpotents. -/
-@[simp] theorem mem_center_iff [Invertible (2 : R)] (g : specialOrthogonalGroup n R)
+@[simp] theorem mem_center_iff (h2 : IsRegular (2 : R)) (g : specialOrthogonalGroup n R)
     (hn : 3 ≤ Fintype.card n) :
     g ∈ Subgroup.center (specialOrthogonalGroup n R) ↔
       ∃ c : R, (g : Matrix n n R) = scalar n c ∧ c ^ 2 = 1 ∧ c ^ Fintype.card n = 1 := by
   constructor
   · intro hg
-    obtain ⟨c, hc⟩ := mem_range_scalar_of_commute_specialOrthogonalGroup (g : Matrix n n R) hn
+    obtain ⟨c, hc⟩ := mem_range_scalar_of_commute_specialOrthogonalGroup h2 (g : Matrix n n R) hn
       (fun h ↦ congrArg Subtype.val ((Subgroup.mem_center_iff.mp hg) h))
     refine ⟨c, hc.symm, ?_, ?_⟩
     · let _ : Nonempty n := Fintype.card_pos_iff.mp (by omega)
@@ -108,16 +108,15 @@ matrices of determinant one. This includes coefficients with nilpotents. -/
       (scalar_commute c (Commute.all c) (h : Matrix n n R)).symm.eq
 
 /-- Odd-dimensional special orthogonal groups have trivial center when their dimension is at
-least three and two is invertible in the coefficient ring. -/
-theorem eq_one_of_mem_center_of_odd [Invertible (2 : R)]
+least three and two is a non-zero-divisor in the coefficient ring. -/
+theorem eq_one_of_mem_center_of_odd (h2 : IsRegular (2 : R))
     (g : specialOrthogonalGroup n R) (hn : 3 ≤ Fintype.card n)
     (hodd : Odd (Fintype.card n)) (hg : g ∈ Subgroup.center (specialOrthogonalGroup n R)) :
     g = 1 := by
-  obtain ⟨c, hc, hc2, hcn⟩ := (mem_center_iff g hn).mp hg
+  obtain ⟨c, hc, hc2, hcn⟩ := (mem_center_iff h2 g hn).mp hg
   obtain ⟨m, hm⟩ := hodd
   have hc1 : c = 1 := by
-    rw [hm, pow_add, pow_mul, hc2, one_pow, pow_one, one_mul] at hcn
-    exact hcn
+    simpa [hm, pow_add, pow_mul, hc2] using hcn
   apply Subtype.ext
   simp [hc, hc1, scalar_apply]
 

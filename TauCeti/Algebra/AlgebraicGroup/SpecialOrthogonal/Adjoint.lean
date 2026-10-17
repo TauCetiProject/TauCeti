@@ -36,6 +36,8 @@ theorem adjointSemisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_
       ⟨finiteTypeCoordinateHopfAlgebra k n,
         semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k n (by omega)⟩ := by
   apply (adjointSemisimpleCommHopfAlgProperty_iff _).mpr
+  -- Direct rewriting leaves the augmentation's CommRing instance tied to the old object,
+  -- producing an ill-typed motive. Abstracting the bundled Hopf algebra transports it too.
   exact (congrArg (fun H : _root_.CommHopfAlgCat k ↦
     CommHopfAlgCat.centerDefiningIdeal H = HopfIdeal.augmentation k H)
       (finiteTypeCoordinateHopfAlgebra_obj k n)).mpr
