@@ -243,11 +243,6 @@ private theorem evensBs_cyclicFourGenerator :
     evensExtend_cyclicFourEvenCharacter_one, evensBs_cyclicFourGenerator, zero_mul, mul_zero,
     add_zero, toAdd_one]
 
-private theorem cyclicFourGenerator_sq_mul_generator :
-    (cyclicFourGenerator * cyclicFourGenerator) * cyclicFourGenerator =
-      cyclicFourGenerator ^ 3 := by
-  rw [pow_succ, pow_two]
-
 private theorem cyclicFourGraphLift_pow_two :
     cyclicFourGraphLift ^ 2 =
       ⟨Multiplicative.ofAdd 1, cyclicFourGenerator * cyclicFourGenerator⟩ := by
@@ -257,7 +252,7 @@ private theorem cyclicFourGraphLift_pow_three :
     cyclicFourGraphLift ^ 3 =
       ⟨Multiplicative.ofAdd 1, cyclicFourGenerator ^ 3⟩ := by
   rw [pow_succ, cyclicFourGraphLift_pow_two]
-  ext <;> simp [cyclicFourGraphLift, cyclicFourGenerator_sq_mul_generator]
+  ext <;> simp [cyclicFourGraphLift, ← pow_three']
 
 /-- **The fourth power of the canonical lift is the nontrivial kernel element.** -/
 theorem cyclicFourGraphLift_pow_four :
