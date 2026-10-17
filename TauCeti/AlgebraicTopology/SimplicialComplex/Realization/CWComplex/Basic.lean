@@ -21,7 +21,9 @@ A linear order on the vertex type chooses one enumeration of each face.  This av
 cells and fixes the orientations of the characteristic maps.  The resulting open and closed
 cells themselves depend only on the underlying faces.  The equivalence `realizationCellEquiv`
 identifies the cells of `realizationCWComplex K` with `RealizationCell K`, through which its open
-cells, closed cells, and cell frontiers are described by barycentric supports.
+cells, closed cells, and cell frontiers are described by barycentric supports. The CW
+filtration stage `skeletonLT n` consists of points with at most `n` nonzero barycentric
+coordinates.
 
 ## References
 
@@ -250,5 +252,41 @@ theorem cellFrontier_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι
     RelCWComplex.cellFrontier n ((realizationCellEquiv K n).symm c) =
       {x : Realization K | x.1.support ⊂ c.1.1} :=
   c.image_characteristicMap_sphere
+
+/-- Stage `n` of the CW filtration consists exactly of points with at most `n` nonzero
+barycentric coordinates. Stage zero is empty and stage infinity is the whole realization. -/
+@[simp]
+theorem skeletonLT_realizationCWComplex (K : AbstractSimplicialComplex ι) (n : ℕ∞) :
+    letI := realizationCWComplex K
+    (RelCWComplex.skeletonLT (univ : Set (Realization K)) n : Set (Realization K)) =
+      {x | (x.1.support.card : ℕ∞) ≤ n} := by
+  let := realizationCWComplex K
+  induction n using ENat.recTopCoe with
+  | top => simp
+  | coe n =>
+    ext x
+    simp only [SetLike.mem_coe, mem_ofPred_eq, ENat.natCast_le_natCast]
+    rw [CWComplex.mem_skeletonLT_iff]
+    constructor
+    · rintro ⟨m, hmn, c, hxc⟩
+      let d := realizationCellEquiv K m c
+      have hx : x.1.support = d.1.1 := by
+        rw [← (realizationCellEquiv K m).symm_apply_apply c,
+          openCell_realizationCellEquiv_symm] at hxc
+        exact hxc
+      have hm : m < n := by exact_mod_cast hmn
+      rw [hx, d.2]
+      omega
+    · intro hx
+      have hpos : 0 < x.1.support.card :=
+        Finset.card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))
+      let m := x.1.support.card - 1
+      let d : RealizationCell K m :=
+        ⟨⟨x.1.support, support_mem K x⟩, by dsimp [m]; omega⟩
+      refine ⟨m, ?_, (realizationCellEquiv K m).symm d, ?_⟩
+      · have hm : m < n := by dsimp [m]; omega
+        exact_mod_cast hm
+      · rw [openCell_realizationCellEquiv_symm]
+        rfl
 
 end AbstractSimplicialComplex

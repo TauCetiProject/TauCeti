@@ -37,42 +37,6 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι] (K : AbstractSimplicialComplex ι)
 
-/-- Stage `n` of the CW filtration consists exactly of points with at most `n` nonzero
-barycentric coordinates. Stage zero is empty and stage infinity is the whole realization. -/
-@[simp]
-theorem skeletonLT_realizationCWComplex (n : ℕ∞) :
-    letI := realizationCWComplex K
-    (RelCWComplex.skeletonLT (univ : Set (Realization K)) n : Set (Realization K)) =
-      {x | (x.1.support.card : ℕ∞) ≤ n} := by
-  let := realizationCWComplex K
-  induction n using ENat.recTopCoe with
-  | top => simp
-  | coe n =>
-    ext x
-    simp only [SetLike.mem_coe, mem_ofPred_eq, ENat.natCast_le_natCast]
-    rw [CWComplex.mem_skeletonLT_iff]
-    constructor
-    · rintro ⟨m, hmn, c, hxc⟩
-      let d := realizationCellEquiv K m c
-      have hx : x.1.support = d.1.1 := by
-        rw [← (realizationCellEquiv K m).symm_apply_apply c,
-          openCell_realizationCellEquiv_symm] at hxc
-        exact hxc
-      have hm : m < n := by exact_mod_cast hmn
-      rw [hx, d.2]
-      omega
-    · intro hx
-      have hpos : 0 < x.1.support.card :=
-        Finset.card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))
-      let m := x.1.support.card - 1
-      let d : RealizationCell K m :=
-        ⟨⟨x.1.support, support_mem K x⟩, by dsimp [m]; omega⟩
-      refine ⟨m, ?_, (realizationCellEquiv K m).symm d, ?_⟩
-      · have hm : m < n := by dsimp [m]; omega
-        exact_mod_cast hm
-      · rw [openCell_realizationCellEquiv_symm]
-        rfl
-
 /-- The ordinary CW `n`-skeleton is the realized simplicial `n`-skeleton, with its existing
 subspace inclusion into the weak realization. -/
 theorem skeleton_realizationCWComplex (n : ℕ) :
