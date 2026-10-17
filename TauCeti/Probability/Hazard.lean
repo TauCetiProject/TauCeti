@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import TauCeti.Probability.Cdf.Density
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
 # Survival functions and hazard rates
@@ -40,8 +39,9 @@ determines it: `S x = exp (-∫ t in 0..x, f t / S t)`.
   survival function;
 * `TauCeti.Probability.hasDerivAt_neg_log_one_sub_cdf` — the cumulative hazard has the hazard rate
   as its derivative wherever the cdf is differentiable and survival is positive;
-* `TauCeti.Probability.one_sub_cdf_zero_eq_one` — survival starts at one for an atomless law
-  carried by the nonnegative half-line;
+* `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
+  `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` — survival starts at one
+  for an atomless or absolutely continuous law carried by the nonnegative half-line;
 * `TauCeti.Probability.one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity` and
   `TauCeti.Probability.one_sub_cdf_eq_exp_neg_integral_rnDeriv` — survival is the exponential of
   minus the cumulative hazard for a law on `[0, ∞)` with a density, or absolutely continuous with
@@ -129,6 +129,14 @@ theorem one_sub_cdf_zero_eq_one [IsProbabilityMeasure μ] [NullSingletonClass μ
     1 - cdf μ 0 = 1 := by
   rw [Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0, sub_zero]
 
+/-- **Survival starts at one for an absolutely continuous law.** A probability law absolutely
+continuous with respect to Lebesgue measure and carried by the nonnegative half-line has survival
+probability one at zero. -/
+theorem one_sub_cdf_zero_eq_one_of_absolutelyContinuous [IsProbabilityMeasure μ]
+    (hac : μ ≪ volume) (h0 : μ (Iio 0) = 0) : 1 - cdf μ 0 = 1 := by
+  have : NullSingletonClass μ := ⟨fun t ↦ hac (measure_singleton t)⟩
+  exact one_sub_cdf_zero_eq_one h0
+
 /-! ### Laws with a density -/
 
 section Density
@@ -142,9 +150,7 @@ theorem one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity
     (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
     (hnn : 0 ≤ᵐ[volume] f) (h0 : μ (Iio 0) = 0) (hSx : cdf μ x < 1) :
     1 - cdf μ x = Real.exp (-∫ t in (0 : ℝ)..x, f t / (1 - cdf μ t)) := by
-  have hac : μ ≪ volume := hμ ▸ withDensity_absolutelyContinuous volume _
-  have : NullSingletonClass μ :=
-    Measure.nullSingletonClass_of_absolutelyContinuous μ volume hac
+  have : NullSingletonClass μ := by rw [hμ]; infer_instance
   have hcdf0 : cdf μ 0 = 0 := Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0
   have hmax : cdf μ (max 0 x) < 1 := by
     rcases le_total 0 x with hx | hx

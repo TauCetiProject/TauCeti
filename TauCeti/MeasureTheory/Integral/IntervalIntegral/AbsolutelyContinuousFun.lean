@@ -187,13 +187,6 @@ namespace AbsolutelyContinuousOnInterval
 
 variable {f V : ℝ → ℝ} {a b : ℝ}
 
-/-- The logarithm of an absolutely continuous real function that does not vanish on the interval
-is absolutely continuous. -/
-protected theorem log (hf : AbsolutelyContinuousOnInterval f a b)
-    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) :
-    AbsolutelyContinuousOnInterval (fun t ↦ Real.log (f t)) a b :=
-  hf.comp_of_contDiffAt fun _ ⟨t, ht, hft⟩ ↦ Real.contDiffAt_log.2 (hft ▸ h0 t ht)
-
 private theorem ae_hasDerivAt_log (h0 : ∀ t ∈ uIcc a b, f t ≠ 0)
     (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
     ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ Real.log (f t)) (V t / f t) t := by

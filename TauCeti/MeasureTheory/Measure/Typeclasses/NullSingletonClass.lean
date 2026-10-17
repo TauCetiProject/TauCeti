@@ -8,32 +8,15 @@ module
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
-# Measures with null singletons
+# Images after removing finitely many inputs
 
-Absolute continuity with respect to a measure with null singletons preserves this property. Also,
-for a measure with null singletons, removing finitely many inputs changes the image of an arbitrary
-map only on a null set. Neither measurability nor injectivity of the map is needed.
-
-## Main results
-
-* `MeasureTheory.Measure.nullSingletonClass_of_absolutelyContinuous` shows that absolute
-  continuity with respect to an atomless measure preserves null singletons;
-* `Set.Finite.image_sdiff_ae_eq` shows that removing finitely many inputs preserves the image of a
-  set almost everywhere.
+For a measure with null singletons, removing finitely many inputs changes the image of an
+arbitrary map only on a null set. Neither measurability nor injectivity of the map is needed.
 -/
 
 public section
 
 open MeasureTheory Set
-
-namespace MeasureTheory.Measure
-
-/-- A measure absolutely continuous with respect to an atomless measure has no atoms. -/
-theorem nullSingletonClass_of_absolutelyContinuous {α : Type*} [MeasurableSpace α]
-    (μ ν : Measure α) [NullSingletonClass ν] (hμν : μ ≪ ν) : NullSingletonClass μ :=
-  ⟨fun t => hμν (measure_singleton t)⟩
-
-end MeasureTheory.Measure
 
 /-- Removing finitely many inputs preserves an arbitrary image almost everywhere for a
 measure with null singletons. -/
