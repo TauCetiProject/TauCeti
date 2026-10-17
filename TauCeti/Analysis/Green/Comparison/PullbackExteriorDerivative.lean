@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Green.Comparison.ExteriorDerivative
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 
 /-!
 # Coordinate area for pulled-back planar circulation forms
@@ -95,16 +94,5 @@ theorem _root_.ContMDiff.mextDeriv_mpullback_manifoldOneForm {f : M → ℂ} {P 
       fun x ↦ curl P Q (f x) • mpullback I 𝓘(ℝ, ℂ) f manifoldAreaForm x := by
   funext x
   exact ContMDiff.mextDeriv_mpullback_manifoldOneForm_apply hf x (hP x) (hQ x)
-
-/-- The actual top-form integral of the exterior derivative is the curl-weighted pulled-back
-coordinate area integral. This is the area side of the smooth-boundary comparison. -/
-theorem integralTopForm_mextDeriv_mpullback_manifoldOneForm [FiniteDimensional ℝ E]
-    (o : Manifold.Orientation I M (Fin 2)) {f : M → ℂ} {P Q : ℂ → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ, ℂ) 2 f)
-    (hP : ∀ x, DifferentiableAt ℝ P (f x)) (hQ : ∀ x, DifferentiableAt ℝ Q (f x)) :
-    integralTopForm o (mextDeriv (mpullback I 𝓘(ℝ, ℂ) f (manifoldOneForm P Q))) =
-      integralTopForm o (fun x ↦ curl P Q (f x) •
-        mpullback I 𝓘(ℝ, ℂ) f manifoldAreaForm x) := by
-  rw [ContMDiff.mextDeriv_mpullback_manifoldOneForm hf hP hQ]
 
 end TauCeti.Green

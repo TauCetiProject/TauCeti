@@ -88,16 +88,6 @@ theorem oneForm_flux_eq_inner (X Y : ℂ → ℝ) (z v : ℂ) :
     neg_re, neg_mul, I_re, I_im]
   ring
 
-/-- Rotation to the outward normal preserves speed. -/
-theorem norm_outwardFirst (v : ℂ) : ‖-I * v‖ = ‖v‖ := by
-  rw [norm_mul, norm_neg, Complex.norm_I, one_mul]
-
-/-- The normalization of the outward rotated velocity is a unit normal at nonzero velocity. -/
-theorem norm_unitOutwardFirst {v : ℂ} (hv : v ≠ 0) :
-    ‖(‖v‖⁻¹ : ℝ) • (-I * v)‖ = 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_nonneg (norm_nonneg v),
-    norm_outwardFirst, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)]
-
 /-- Flux is inner product with the unit outward normal, multiplied by speed. -/
 theorem oneForm_flux_eq_inner_unitNormal_mul_speed (X Y : ℂ → ℝ) (z : ℂ)
     {v : ℂ} (hv : v ≠ 0) :
