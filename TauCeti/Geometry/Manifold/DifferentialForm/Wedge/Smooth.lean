@@ -205,6 +205,34 @@ theorem wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
             ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedge, RoughForm.wedge_apply]
 
+/-- Swapping smooth paired forms flips the coefficient pairing and contributes the graded sign. -/
+theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
+    (v : Fin (k + l) → TangentSpace I x) :
+    (wedgeWith μ φ ψ).1 x v =
+      (-1 : ℝ) ^ (k * l) •
+        (wedgeWith μ.flip ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  simpa only [coe_wedgeWith] using
+    RoughForm.wedgeWith_flip μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) x v
+
+/-- A symmetric coefficient pairing makes the smooth paired wedge graded-commutative. -/
+theorem wedgeWith_comm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)
+    (hμ : ∀ a b, μ a b = μ b a) (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₁ l)
+    (x : M) (v : Fin (k + l) → TangentSpace I x) :
+    (wedgeWith μ φ ψ).1 x v =
+      (-1 : ℝ) ^ (k * l) •
+        (wedgeWith μ ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  simpa only [coe_wedgeWith] using
+    RoughForm.wedgeWith_comm μ hμ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₁ l) x v
+
+/-- Real-valued smooth forms commute with the usual graded sign. -/
+theorem wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
+    (v : Fin (k + l) → TangentSpace I x) :
+    (wedge φ ψ).1 x v =
+      (-1 : ℝ) ^ (k * l) • (wedge ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  simpa only [wedge, coe_wedgeWith, RoughForm.wedge_def] using
+    RoughForm.wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) x v
+
 end SmoothForm
 
 end TauCeti
