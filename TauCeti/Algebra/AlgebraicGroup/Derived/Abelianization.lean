@@ -60,8 +60,7 @@ theorem isCocomm_iff_kernelHopfIdeal_le_derivedDefiningIdeal
     apply le_antisymm (HopfIdeal.le_augmentation R Q _)
     rw [le_derivedDefiningIdeal_iff]
     intro x hx
-    rw [RingHom.mem_ker]
-    change TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := Q) x = 0
+    rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
     have hmap : Function.Injective (Bialgebra.TensorProduct.map f.hom f.hom) := by
       exact TensorProduct.map_injective_of_flat_flat
         (f.hom : Q →ₗ[R] H) (f.hom : Q →ₗ[R] H) hf hf
