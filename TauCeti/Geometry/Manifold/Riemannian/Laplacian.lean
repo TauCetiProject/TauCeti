@@ -347,8 +347,11 @@ theorem laplaceBeltrami_eq_laplacian
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
-    change (NormedSpace.fromTangentSpace x)
-      ((NormedSpace.fromTangentSpace x).symm u) = u
+    -- Expose the inverse `LinearEquiv` carried by the isometry equivalence.
+    change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
+    rw [show e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv by
+      dsimp [e]
+      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
     exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
   simpa only [b, OrthonormalBasis.map_apply, he] using
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
@@ -357,13 +360,8 @@ theorem laplaceBeltrami_eq_laplacian
 theorem laplaceBeltrami_norm_sq
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) :
-    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
-      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  dsimp only
-  let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
-    ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
   rw [laplaceBeltrami_eq_laplacian]
   · exact TauCeti.laplacian_norm_sq x
   · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
