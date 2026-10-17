@@ -80,8 +80,6 @@ variable (hp : p.IsMaximal) (hp0 : p ≠ ⊥)
 
 attribute [local instance] Ideal.Quotient.field
 
-include hp hp0 hx hx'
-
 open scoped Classical in
 /-- **The Kummer–Dedekind criterion**: the primes of `S` lying over a nonzero maximal ideal `p` of
 `R` prime to the conductor of `R[x]` correspond to the normalized irreducible factors of
@@ -106,7 +104,6 @@ theorem primesOverEquivNormalizedFactorsMinPolyMk_symm_apply_coe {Q : R[X]}
   KummerDedekind.normalizedFactorsMapEquivNormalizedFactorsMinPolyMk_symm_apply_eq_span
     hp hQ hp0 hx hx'
 
-omit hp0 in
 open scoped Classical in
 /-- **The residue ring at a Kummer–Dedekind factor**: for `Q` a lift of a normalized irreducible
 factor of `minpoly R x` modulo `p`, the quotient of `S` by the prime `span (p S ∪ {Q (x)})`
@@ -116,6 +113,7 @@ noncomputable def quotientEquivQuotientSpan {Q : R[X]}
       normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) :
     (R ⧸ p)[X] ⧸ span {Q.map (Ideal.Quotient.mk p)} ≃+*
       S ⧸ span (p.map (algebraMap R S) ∪ {aeval x Q}) :=
+  have : p.IsMaximal := hp
   have h0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
     map_monic_ne_zero (minpoly.monic hx')
   have h₁ : span {Q.map (Ideal.Quotient.mk p)} =
@@ -133,7 +131,6 @@ noncomputable def quotientEquivQuotientSpan {Q : R[X]}
           KummerDedekind.quotMapEquivQuotQuotMap_symm_apply hx hx' Q])).trans <|
     (DoubleQuot.quotQuotEquivQuotSup _ _).trans (Ideal.quotEquivOfEq h₂)
 
-omit hp0 in
 open scoped Classical in
 /-- `TauCeti.KummerDedekind.quotientEquivQuotientSpan` carries the class of a polynomial `P` over
 `R ⧸ p` to the class of `P (x)`. -/
@@ -200,11 +197,12 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
 
 namespace Ideal
 
-omit hp0 in
 open scoped Classical in
 /-- **The converse of `Ideal.irreducible_map_of_irreducible_minpoly`.** If `p S` is irreducible,
 that is, if `p` stays prime in `S`, then `minpoly R x` modulo `p` is irreducible. -/
-theorem irreducible_minpoly_of_irreducible_map (h : Irreducible (p.map (algebraMap R S))) :
+theorem irreducible_minpoly_of_irreducible_map (hp : p.IsMaximal)
+    (hx : (conductor R x).comap (algebraMap R S) ⊔ p = ⊤) (hx' : IsIntegral R x)
+    (h : Irreducible (p.map (algebraMap R S))) :
     Irreducible ((minpoly R x).map (Ideal.Quotient.mk p)) := by
   have hp0 : p ≠ ⊥ := by
     rintro rfl
@@ -231,7 +229,8 @@ theorem irreducible_minpoly_of_irreducible_map (h : Irreducible (p.map (algebraM
 
 /-- **The Kummer–Dedekind irreducibility criterion.** `p` stays prime in `S` exactly when
 `minpoly R x` is irreducible modulo `p`. -/
-theorem irreducible_map_iff_irreducible_minpoly :
+theorem irreducible_map_iff_irreducible_minpoly (hp : p.IsMaximal) (hp0 : p ≠ ⊥)
+    (hx : (conductor R x).comap (algebraMap R S) ⊔ p = ⊤) (hx' : IsIntegral R x) :
     Irreducible (p.map (algebraMap R S)) ↔
       Irreducible ((minpoly R x).map (Ideal.Quotient.mk p)) :=
   ⟨irreducible_minpoly_of_irreducible_map hp hx hx',
