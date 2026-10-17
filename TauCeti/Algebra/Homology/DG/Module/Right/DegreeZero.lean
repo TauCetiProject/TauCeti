@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Homology.DG.Module.Right.Category
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.Algebra.Algebra.Opposite
 
 /-!
 # Ordinary modules as DG modules concentrated in degree zero
@@ -74,6 +73,12 @@ def degreeZero : ModuleCat.{uM} Aᵐᵒᵖ ⥤
   map_comp f g := hom_ext fun x ↦ by
     rw [comp_apply]
     exact LinearMap.congr_fun (ModuleCat.hom_comp f g) x
+
+/-- The degree-zero inclusion keeps the original right action. -/
+@[simp]
+theorem degreeZero_obj_smul (M : ModuleCat.{uM} Aᵐᵒᵖ) (a : Aᵐᵒᵖ)
+    (x : (degreeZero R A).obj M) :
+    a • x = @SMul.smul Aᵐᵒᵖ M inferInstance a x := (rfl)
 
 /-- The grading of an included ordinary module is the trivial grading. -/
 @[simp]

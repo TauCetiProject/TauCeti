@@ -254,6 +254,12 @@ def forgetToRightModuleCat : DGRightModuleCat.{uR, uA, uM} h ⥤ ModuleCat.{uM} 
   map_id M := ModuleCat.hom_ext (LinearMap.ext fun x ↦ id_apply M x)
   map_comp f g := ModuleCat.hom_ext (LinearMap.ext fun x ↦ comp_apply f g x)
 
+/-- Forgetting the grading and differential keeps the original right action. -/
+@[simp]
+theorem forgetToRightModuleCat_obj_smul (M : DGRightModuleCat.{uR, uA, uM} h) (a : Aᵐᵒᵖ)
+    (x : (forgetToRightModuleCat (h := h)).obj M) :
+    a • x = @SMul.smul Aᵐᵒᵖ M inferInstance a x := (rfl)
+
 @[simp]
 theorem forgetToRightModuleCat_map_hom (f : M ⟶ N) :
     ((forgetToRightModuleCat (h := h)).map f).hom = f.toLinearMap := (rfl)
