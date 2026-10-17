@@ -14,6 +14,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 The dimension root of outer volume scales by the absolute value of a real dilation
 in a positive-dimensional real inner product space. The identity applies to arbitrary
 sets and infinite outer volumes, and supplies the scaling law for volume inequalities.
+
+We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
+normed space by the measure of the unit ball times the dimension power of its diameter. This is
+the elementary estimate converting coverings by sets of small diameter into measure bounds.
 -/
 
 public section
@@ -36,3 +40,34 @@ theorem volume_smul_rpow {A : Set E} (hn : Module.finrank ℝ E ≠ 0) (c : ℝ)
     Real.pow_rpow_inv_natCast (abs_nonneg c) hn]
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The closure of a set of diameter `d` in an `n`-dimensional real normed space has additive
+Haar measure at most `μ (ball 0 1) * d ^ n`, since it lies in a closed ball of radius `d`.
+This holds for every set, including empty and unbounded ones. -/
+theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] (s : Set E) :
+    μ (closure s) ≤ μ (Metric.ball 0 1) * Metric.ediam s ^ Module.finrank ℝ E := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
+  · simp
+  by_cases hs : Metric.ediam s = ∞
+  · have hE : Module.finrank ℝ E ≠ 0 := by
+      intro hE
+      have : Subsingleton E := Module.finrank_zero_iff.1 hE
+      rw [Metric.ediam_subsingleton Set.subsingleton_of_subsingleton] at hs
+      exact ENNReal.zero_ne_top hs
+    rw [hs, ENNReal.top_pow hE, ENNReal.mul_top (Metric.measure_ball_pos μ 0 one_pos).ne']
+    exact le_top
+  have hb : Bornology.IsBounded s := Metric.isBounded_iff_ediam_ne_top.2 hs
+  have hsub : closure s ⊆ Metric.closedBall x (Metric.diam s) := fun y hy ↦ by
+    rw [Metric.mem_closedBall, ← Metric.diam_closure]
+    exact Metric.dist_le_diam_of_mem hb.closure hy (subset_closure hx)
+  calc μ (closure s) ≤ μ (Metric.closedBall x (Metric.diam s)) := measure_mono hsub
+    _ = μ (Metric.ball 0 1) * Metric.ediam s ^ Module.finrank ℝ E := by
+      rw [addHaar_closedBall μ x Metric.diam_nonneg, mul_comm,
+        ENNReal.ofReal_pow Metric.diam_nonneg, Metric.diam, ENNReal.ofReal_toReal hs]
+
+end MeasureTheory.Measure
