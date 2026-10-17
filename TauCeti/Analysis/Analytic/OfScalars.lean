@@ -20,7 +20,7 @@ block. It also identifies the iterated derivatives at zero of a convergent compl
 
 public section
 
-open scoped BigOperators
+open scoped BigOperators ENNReal
 
 namespace FormalMultilinearSeries
 
@@ -132,6 +132,26 @@ theorem ofScalars_comp_ofScalars (c d : ℕ → 𝕜) :
   rw [prod_applyComposition_ofScalars]
   simp only [smul_smul]
 
+/-- Evaluating a term of the change-of-origin series of a scalar series at two constant vectors
+produces the corresponding binomial coefficient. -/
+theorem changeOriginSeries_ofScalars_apply {𝕂 R : Type*} [NontriviallyNormedField 𝕂]
+    [NormedCommRing R] [NormedAlgebra 𝕂 R] (c : ℕ → 𝕂) (x y : R) (n l : ℕ) :
+    (((ofScalars R c).changeOriginSeries n l) (fun _ ↦ x)) (fun _ ↦ y) =
+      Nat.choose (n + l) l • (c (n + l) • (x ^ l * y ^ n)) := by
+  -- The change-of-origin API exposes this coefficient through its defining finite sum. After
+  -- unfolding it, each summand places `x` at the `l` indices of its finset and `y` elsewhere.
+  rw [changeOriginSeries]
+  simp only [_root_.sum_apply]
+  simp_rw [changeOriginSeriesTerm_apply]
+  have hx (s : {s : Finset (Fin (n + l)) // s.card = l}) :
+      ofScalars R c (n + l) (s.val.piecewise (fun _ ↦ x) (fun _ ↦ y)) =
+        c (n + l) • (x ^ l * y ^ n) := by
+    simp only [ofScalars, _root_.smul_apply, ContinuousMultilinearMap.mkPiAlgebraFin_apply,
+      List.prod_ofFn, Finset.prod_piecewise, Finset.univ_inter, Finset.prod_const,
+      Finset.card_univ_sdiff, Fintype.card_fin, s.property, Nat.add_sub_cancel]
+  simp_rw [hx]
+  rw [Finset.sum_const, Finset.card_univ, Fintype.card_finset_len, Fintype.card_fin]
+
 /-- The iterated derivatives at zero of the sum of a complex scalar formal multilinear series
 recover its coefficients, up to the factorial normalization. -/
 theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
@@ -145,5 +165,62 @@ theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
   have h := hfac n
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [ofScalarsSum, mul_comm] using h.symm
+
+/-- Inside its ball of convergence, the iterated derivatives of a scalar power series are
+given by the termwise differentiated series. -/
+theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
+    {𝕂 : Type*} [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
+    iteratedDeriv n f y = ∑' k : ℕ, (k.descFactorial n : 𝕂) * c k * y ^ (k - n) := by
+  let p := ofScalars 𝕂 c
+  have hp_y := hf.changeOrigin (y := y) hy
+  have hderiv :
+      (n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂)) =
+        iteratedDeriv n f y := by
+    rw [iteratedDeriv_eq_iteratedFDeriv]
+    simpa only [p, zero_add, nsmul_eq_mul, Nat.cast_ofNat] using
+      hp_y.factorial_smul (1 : 𝕂) n
+  have h_radius : ‖y‖ₑ < p.radius := hy.trans_le hf.r_le
+  have hp_change := p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)
+  have hsum_map := hp_change.hasSum (y := y) (by
+    rw [mem_eball_zero_iff]
+    exact h_radius)
+  have hsum_coeff :
+      HasSum (fun l : ℕ ↦ ((p.changeOriginSeries n l) (fun _ ↦ y))
+        (fun _ ↦ (1 : 𝕂))) ((p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) :=
+    by simpa only [zero_add] using
+      ContinuousMultilinearMap.hasSum_eval hsum_map (fun _ ↦ (1 : 𝕂))
+  have hsum_choose :
+      HasSum (fun l : ℕ ↦ (Nat.choose (n + l) l : 𝕂) * c (n + l) * y ^ l)
+        ((p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
+    convert hsum_coeff using 1
+    ext l
+    simpa only [p, nsmul_eq_mul, smul_eq_mul, one_pow, mul_one, mul_assoc] using
+      (changeOriginSeries_ofScalars_apply c y (1 : 𝕂) n l).symm
+  have hsum_tail :
+      HasSum (fun l : ℕ ↦ ((n + l).descFactorial n : 𝕂) * c (n + l) * y ^ l)
+        ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
+    convert hsum_choose.mul_left (n.factorial : 𝕂) using 1
+    ext l
+    rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.choose_symm_add]
+    push_cast
+    ring
+  let g : ℕ → 𝕂 := fun k ↦ (k.descFactorial n : 𝕂) * c k * y ^ (k - n)
+  have hsum_tail' :
+      HasSum (fun l : ℕ ↦ g (l + n))
+        ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
+    simpa only [g, add_comm, Nat.add_sub_cancel_left] using hsum_tail
+  have hprefix : ∑ k ∈ Finset.range n, g k = 0 := by
+    apply Finset.sum_eq_zero
+    intro k hk
+    simp only [g, Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk), Nat.cast_zero,
+      zero_mul]
+  have hsum_desc :
+      HasSum g ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
+    have h := (hasSum_nat_add_iff n).mp hsum_tail'
+    simpa only [hprefix, add_zero] using h
+  rw [← hderiv]
+  exact hsum_desc.tsum_eq.symm
 
 end FormalMultilinearSeries
