@@ -28,6 +28,7 @@ positive mass and ensures that both conditional laws and quantiles are nondegene
 
 ## Main results
 
+* `MeasureTheory.Measure.cdf_cond` — the cdf of a law conditioned on a measurable event;
 * `MeasureTheory.Measure.cdf_cond_Ioc` — the cdf of a law conditioned on `(l, r]`;
 * `MeasureTheory.Measure.quantile_cond_Ioc` — the corresponding interior quantile formula.
 -/
@@ -40,30 +41,28 @@ namespace MeasureTheory.Measure
 
 variable (μ : Measure ℝ) [IsProbabilityMeasure μ]
 
+/-- The cdf of `μ` conditioned on a measurable event is the proportion of that event lying below
+the cdf argument. -/
+theorem cdf_cond {A : Set ℝ} (hA : MeasurableSet A) (hμA : μ A ≠ 0) (x : ℝ) :
+    cdf (ProbabilityTheory.cond μ A) x = μ.real (A ∩ Iic x) / μ.real A := by
+  let _ := ProbabilityTheory.cond_isProbabilityMeasure hμA
+  rw [cdf_eq_real, measureReal_def, ProbabilityTheory.cond_apply hA, ENNReal.toReal_mul,
+    ENNReal.toReal_inv, ← div_eq_inv_mul, ← measureReal_def, ← measureReal_def]
+
 /-- The cdf of `μ` conditioned on `(l, r]` is the increment of the original cdf above `cdf μ l`,
 clipped between the endpoint masses and normalized by `cdf μ r - cdf μ l`. -/
 theorem cdf_cond_Ioc {l r : ℝ} (hLR : cdf μ l < cdf μ r) (x : ℝ) :
     cdf (ProbabilityTheory.cond μ (Ioc l r)) x =
       (min (cdf μ r) (max (cdf μ l) (cdf μ x)) - cdf μ l) /
         (cdf μ r - cdf μ l) := by
-  have hlr : l < r := by
-    by_contra h
-    exact (not_lt_of_ge (monotone_cdf μ (not_lt.mp h))) hLR
-  have hmassReal : 0 < μ.real (Ioc l r) := by
-    rw [measureReal_Ioc_eq_cdf_sub μ hlr.le]
-    exact sub_pos.mpr hLR
-  have hmass : μ (Ioc l r) ≠ 0 :=
-    (measureReal_eq_zero_iff (measure_ne_top μ _)).not.mp hmassReal.ne'
-  let _ := ProbabilityTheory.cond_isProbabilityMeasure hmass
-  rw [cdf_eq_real, measureReal_def, ProbabilityTheory.cond_apply measurableSet_Ioc,
-    ENNReal.toReal_mul, ENNReal.toReal_inv, ← div_eq_inv_mul, ← measureReal_def,
-    ← measureReal_def, measureReal_Ioc_eq_cdf_sub μ hlr.le]
+  have hlr : l < r := lt_of_cdf_lt_cdf μ hLR
+  have hmass : μ (Ioc l r) ≠ 0 := (measure_Ioc_pos_iff_cdf_lt μ).2 hLR |>.ne'
+  rw [cdf_cond μ measurableSet_Ioc hmass, measureReal_Ioc_eq_cdf_sub μ hlr.le]
   by_cases hxl : x ≤ l
   · have hinter : Ioc l r ∩ Iic x = ∅ := by
       ext y
       simp only [mem_inter_iff, mem_Ioc, mem_Iic, mem_empty_iff_false, iff_false]
-      rintro ⟨⟨hly, _⟩, hyx⟩
-      exact (not_lt_of_ge (hyx.trans hxl)) hly
+      grind
     rw [hinter, measureReal_empty]
     have hFxL : cdf μ x ≤ cdf μ l := monotone_cdf μ hxl
     rw [max_eq_left hFxL, min_eq_right hLR.le, sub_self, zero_div]
@@ -72,11 +71,7 @@ theorem cdf_cond_Ioc {l r : ℝ} (hLR : cdf μ l < cdf μ r) (x : ℝ) :
     · have hinter : Ioc l r ∩ Iic x = Ioc l x := by
         ext y
         simp only [mem_inter_iff, mem_Ioc, mem_Iic]
-        constructor
-        · rintro ⟨⟨hly, _⟩, hyx⟩
-          exact ⟨hly, hyx⟩
-        · rintro ⟨hly, hyx⟩
-          exact ⟨⟨hly, hyx.trans hxr⟩, hyx⟩
+        grind
       rw [hinter, measureReal_Ioc_eq_cdf_sub μ hlx,
         max_eq_right (monotone_cdf μ hlx), min_eq_right (monotone_cdf μ hxr)]
     · have hrx : r ≤ x := (not_le.mp hxr).le
@@ -92,24 +87,11 @@ theorem quantile_cond_Ioc {l r u : ℝ} (hLR : cdf μ l < cdf μ r)
     (hu : u ∈ Ioo (0 : ℝ) 1) :
     (ProbabilityTheory.cond μ (Ioc l r)).quantile u =
       μ.quantile (cdf μ l + u * (cdf μ r - cdf μ l)) := by
-  have hlr : l < r := by
-    by_contra h
-    exact (not_lt_of_ge (monotone_cdf μ (not_lt.mp h))) hLR
-  have hmassReal : 0 < μ.real (Ioc l r) := by
-    rw [measureReal_Ioc_eq_cdf_sub μ hlr.le]
-    exact sub_pos.mpr hLR
-  have hmass : μ (Ioc l r) ≠ 0 :=
-    (measureReal_eq_zero_iff (measure_ne_top μ _)).not.mp hmassReal.ne'
-  let _ := ProbabilityTheory.cond_isProbabilityMeasure hmass
   have hD : 0 < cdf μ r - cdf μ l := sub_pos.mpr hLR
   have hqL : cdf μ l < cdf μ l + u * (cdf μ r - cdf μ l) := by
     nlinarith [mul_pos hu.1 hD]
-  have hq0 : 0 < cdf μ l + u * (cdf μ r - cdf μ l) := by
-    nlinarith [cdf_nonneg μ l]
   have hqR : cdf μ l + u * (cdf μ r - cdf μ l) < cdf μ r := by
     nlinarith [hu.2]
-  have hq1 : cdf μ l + u * (cdf μ r - cdf μ l) < 1 :=
-    hqR.trans_le (cdf_le_one μ r)
   -- The clipped-cdf formula turns its quantile adjunction into the adjunction for `μ` at the
   -- rescaled level. Splitting at the two clipping thresholds avoids any atomlessness assumption.
   have hlevel (x : ℝ) :
@@ -130,11 +112,6 @@ theorem quantile_cond_Ioc {l r u : ℝ} (hLR : cdf μ l < cdf μ r)
       · have hxR : cdf μ x ≤ cdf μ r := (not_le.mp hRx).le
         rw [max_eq_right hLx, min_eq_right hxR, le_div_iff₀ hD]
         constructor <;> intro h <;> linarith
-  apply le_antisymm
-  · rw [quantile_le_iff _ hu.1 hu.2]
-    exact (hlevel _).mpr (le_cdf_quantile μ hq1)
-  · rw [quantile_le_iff _ hq0 hq1]
-    exact (hlevel _).mp
-      (le_cdf_quantile (ProbabilityTheory.cond μ (Ioc l r)) hu.2)
+  exact quantile_eq_of_le_cdf_iff _ _ hlevel
 
 end MeasureTheory.Measure

@@ -24,6 +24,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
+  strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
@@ -90,12 +92,34 @@ theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
     ((cdf ν).right_continuous x).rightLim_eq]
 
+/-- A strict increase of a cdf can only occur across a nontrivial interval. -/
+theorem lt_of_cdf_lt_cdf (ν : Measure ℝ) {a b : ℝ} (h : cdf ν a < cdf ν b) : a < b :=
+  (monotone_cdf ν).reflect_lt h
+
 /-- The mass of a bounded interval `Ioc a b` is the increment of the cumulative distribution
 function between its endpoints. -/
 theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ}
     (hab : a ≤ b) : ν.real (Ioc a b) = cdf ν b - cdf ν a := by
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
+
+/-- A half-open interval has positive mass exactly when the cdf strictly increases across its
+endpoints. -/
+theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ} :
+    0 < ν (Ioc a b) ↔ cdf ν a < cdf ν b := by
+  constructor
+  · intro h
+    obtain ⟨x, hax, hxb⟩ := nonempty_of_measure_ne_zero h.ne'
+    have hab : a < b := hax.trans_le hxb
+    rw [← sub_pos, ← measureReal_Ioc_eq_cdf_sub ν hab.le]
+    exact lt_of_le_of_ne measureReal_nonneg
+      (Ne.symm ((measureReal_ne_zero_iff (measure_ne_top ν _)).2 h.ne'))
+  · intro h
+    have hab : a < b := lt_of_cdf_lt_cdf ν h
+    apply pos_iff_ne_zero.mpr
+    exact (measureReal_ne_zero_iff (measure_ne_top ν _)).1 <| by
+      rw [measureReal_Ioc_eq_cdf_sub ν hab.le]
+      exact (sub_pos.mpr h).ne'
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/
