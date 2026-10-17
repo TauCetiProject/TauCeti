@@ -24,72 +24,47 @@ open scoped BigOperators
 
 namespace FormalMultilinearSeries
 
-variable {𝕜 E : Type*}
-
-private theorem ofFn_embedding_eq_block {n : ℕ} (p : Composition n) (v : Fin n → E)
-    (i : Fin p.length) :
-    List.ofFn (fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)) =
-      ((List.ofFn v).splitWrtComposition p).get ⟨i, by simp⟩ := by
-  rw [List.get_eq_getElem, List.getElem_splitWrtComposition]
-  refine List.ext_getElem ?_ fun j hj₁ hj₂ ↦ by simp; rfl
-  rw [List.length_ofFn, List.length_drop, List.length_take, List.length_ofFn,
-    Nat.min_eq_left (p.sizeUpTo_le _), p.sizeUpTo_succ' i, Nat.add_sub_cancel_left]
-
-variable [Field 𝕜] [Ring E] [Algebra 𝕜 E]
-
-private theorem prod_ofFn_smul {n : ℕ} (a : Fin n → 𝕜) (b : Fin n → E) :
-    (List.ofFn fun i ↦ a i • b i).prod = (∏ i, a i) • (List.ofFn b).prod := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [List.ofFn_succ, List.ofFn_succ, Fin.prod_univ_succ]
-    simp only [List.prod_cons, ih]
-    exact smul_mul_smul_comm _ _ _ _
-
-private theorem prod_blocks {n : ℕ} (p : Composition n) (v : Fin n → E) :
-    (List.ofFn fun i : Fin p.length ↦
-        (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).prod).prod =
-      (List.ofFn v).prod := by
-  have h :
-      List.ofFn (fun i : Fin p.length ↦
-          (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).prod) =
-        ((List.ofFn v).splitWrtComposition p).map List.prod := by
-    apply List.ext_getElem
-    · simp
-    · intro i hi₁ hi₂
-      simp only [List.getElem_ofFn, List.getElem_map]
-      exact congrArg List.prod (ofFn_embedding_eq_block p v ⟨i, by simpa using hi₁⟩)
-  rw [h, ← List.prod_flatten, List.splitWrtComposition,
-    List.flatten_splitWrtCompositionAux (by simp)]
-
-variable [TopologicalSpace E] [IsTopologicalRing E]
-
-private theorem prod_applyComposition_ofScalars {n : ℕ} (d : ℕ → 𝕜) (p : Composition n)
-    (v : Fin n → E) :
-    (List.ofFn fun i : Fin p.length ↦
-        (ofScalars E d).applyComposition p v i).prod =
-      (∏ i, d (p.blocksFun i)) • (List.ofFn v).prod := by
-  simp only [applyComposition, ofScalars, _root_.smul_apply,
-    ContinuousMultilinearMap.mkPiAlgebraFin_apply]
-  rw [prod_ofFn_smul]
-  congr 1
-  exact prod_blocks p v
+variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E] [IsTopologicalRing E]
 
 /-- Composing two scalar formal multilinear series gives the scalar series whose coefficients are
 obtained by summing over compositions. This remains valid for noncommutative target algebras. -/
 theorem ofScalars_comp_ofScalars (c d : ℕ → 𝕜) :
     (ofScalars E c).comp (ofScalars E d) =
       ofScalars E fun n ↦ ∑ p : Composition n, c p.length * ∏ i, d (p.blocksFun i) := by
+  have prod_ofFn_smul {m : ℕ} (a : Fin m → 𝕜) (b : Fin m → E) :
+      (List.ofFn fun i ↦ a i • b i).prod = (∏ i, a i) • (List.ofFn b).prod := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [List.ofFn_succ, List.ofFn_succ, Fin.prod_univ_succ]
+      simp only [List.prod_cons, ih]
+      exact smul_mul_smul_comm _ _ _ _
   ext n v
   simp only [FormalMultilinearSeries.comp, ofScalars]
   rw [sum_apply, _root_.smul_apply, ContinuousMultilinearMap.mkPiAlgebraFin_apply,
     Finset.sum_smul]
-  apply Finset.sum_congr rfl
-  intro p _
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  have hprod :
+      (List.ofFn fun i : Fin p.length ↦ (ofScalars E d).applyComposition p v i).prod =
+        (∏ i, d (p.blocksFun i)) • (List.ofFn v).prod := by
+    simp only [applyComposition, ofScalars, _root_.smul_apply,
+      ContinuousMultilinearMap.mkPiAlgebraFin_apply]
+    rw [prod_ofFn_smul]
+    congr 1
+    have hblocks :
+        List.ofFn (fun i : Fin p.length ↦ (List.ofFn (v ∘ p.embedding i)).prod) =
+          ((List.ofFn v).splitWrtComposition p).map List.prod := by
+      refine List.ext_getElem (by simp) fun i hi₁ hi₂ ↦ ?_
+      simp only [List.getElem_ofFn, List.getElem_map, List.getElem_splitWrtComposition]
+      refine congrArg List.prod (List.ext_getElem ?_ fun j hj₁ hj₂ ↦ by simp; rfl)
+      rw [List.length_ofFn, List.length_drop, List.length_take, List.length_ofFn,
+        Nat.min_eq_left (p.sizeUpTo_le _), p.sizeUpTo_succ' ⟨i, by simpa using hi₁⟩,
+        Nat.add_sub_cancel_left]
+    rw [hblocks, ← List.prod_flatten, List.splitWrtComposition,
+      List.flatten_splitWrtCompositionAux (by simp)]
   simp only [compAlongComposition_apply, ofScalars, _root_.smul_apply,
     ContinuousMultilinearMap.mkPiAlgebraFin_apply]
-  rw [prod_applyComposition_ofScalars]
-  simp only [smul_smul]
+  rw [hprod, smul_smul]
 
 /-- The iterated derivatives at zero of the sum of a scalar formal multilinear series over a
 complete nontrivially normed field recover its coefficients, up to the factorial normalization. -/
