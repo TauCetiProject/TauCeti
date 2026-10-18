@@ -121,13 +121,8 @@ theorem exists_contDiffOn_two_ae_eq_of_locally_holderOnWith
   let V : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x r, isOpen_ball⟩
   let S : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x (r / 4), isOpen_ball⟩
   have hSV : thickening (r / 4) (S : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ V := by
-    rw [thickening_eq_biUnion_ball]
-    intro y hy
-    obtain ⟨z, hz, hy⟩ := mem_iUnion₂.1 hy
-    have hdist := dist_triangle y z x
-    have hz' := mem_ball.1 hz
-    have hy' := mem_ball.1 hy
-    exact mem_ball.2 (by linarith)
+    dsimp [S, V]
+    exact (Metric.thickening_ball x (r / 4) (r / 4)).trans (ball_subset_ball (by linarith))
   have hVO : closure (V : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Omega :=
     closure_ball_subset_closedBall.trans hrO
   obtain ⟨g, hg, hug⟩ := exists_contDiffOn_two_ae_eq_on_of_holderOnWith hα hα1 hf hu
