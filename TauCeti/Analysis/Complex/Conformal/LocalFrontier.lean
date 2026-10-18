@@ -19,7 +19,8 @@ When it agrees locally with an open sector, its frontier away from the vertex li
 bounding rays, and the vertex itself lies on the frontier. When it agrees far out with an open
 sector of opening less than `2π`, some point lies outside its closure. When it agrees far out with
 an open half-strip, its frontier far out lies on the two bounding rays, and again some point lies
-outside its closure; the same holds when far out it misses an open half-strip. These facts supply
+outside its closure; the same holds when far out it misses an open half-strip. On the closed
+half-strip the exponential coordinate `exp (π * I - ζ)` tends to `0` at infinity. These facts supply
 the boundary conditions for polygonal conformal maps.
 -/
 
@@ -234,6 +235,25 @@ theorem re_div_nonneg_and_im_div_eq_zero_or_eq_pi_of_mem_frontier {c b z : ℂ} 
   by_contra h
   rw [not_or] at h
   exact hzS ⟨hre', him₀.lt_of_ne (Ne.symm h.1), himπ.lt_of_ne h.2⟩
+
+/-- In the closed half-strip `{0 ≤ re ζ, 0 ≤ im ζ ≤ π}`, the exponential coordinate
+`exp (π * I - ζ)`, which maps the half-strip into the closed upper half-disc, tends to `0` as `ζ`
+tends to infinity. -/
+theorem tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded {α : Type*} {l : Filter α} {ζ : α → ℂ}
+    (hζ : Filter.Tendsto ζ l (Bornology.cobounded ℂ))
+    (hmem : ∀ᶠ a in l, 0 ≤ (ζ a).re ∧ (ζ a).im ∈ Icc 0 Real.pi) :
+    Filter.Tendsto (fun a => exp (Real.pi * I - ζ a)) l (𝓝 0) := by
+  -- on the half-strip `re ζ ≥ ‖ζ‖ - π`, which tends to infinity
+  have hre : Filter.Tendsto (fun a => (ζ a).re) l Filter.atTop := by
+    refine Filter.tendsto_atTop_mono' _ ?_ (Filter.tendsto_atTop_add_const_right _ (-Real.pi)
+      (tendsto_norm_cobounded_atTop.comp hζ))
+    filter_upwards [hmem] with a ⟨hre, him₀, himπ⟩
+    have h := norm_le_abs_re_add_abs_im (ζ a)
+    rw [abs_of_nonneg hre, abs_of_nonneg him₀] at h
+    simp only [Function.comp_apply]
+    linarith
+  refine tendsto_exp_comap_re_atBot.comp (Filter.tendsto_comap_iff.mpr ?_)
+  simpa [Function.comp_def] using Filter.tendsto_neg_atTop_atBot.comp hre
 
 /-- If, far from `c`, every point `z` of a set `U` has `0 < re ((z - c) / b)` (as for a set that
 coincides far out with a half-strip or a half-plane), then some point lies outside the closure of
