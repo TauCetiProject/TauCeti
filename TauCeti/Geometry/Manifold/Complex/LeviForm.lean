@@ -50,6 +50,7 @@ Morse index is at most `dim_ℂ E + q`.
 * `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`,
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
   negation, product and composition rules.
+* `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
 * `TauCeti.re_manifoldLeviForm_apply_of_mem_maximalAtlas` and
@@ -229,6 +230,54 @@ theorem le_re_manifoldLeviForm_scalar_comp_apply_self {φ : ℝ → ℝ} (hφ : 
   have h := le_re_leviForm_scalar_comp_apply_self (hfx ▸ hφ) (contDiffAt_comp_chartAt_symm hf)
     (hfx ▸ hφ₂) v
   rwa [hfx] at h
+
+section Pullback
+
+variable {F N : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [TopologicalSpace N]
+  [ChartedSpace F N] {g : M → N} {u : N → ℝ}
+
+/-- **The holomorphic pullback rule** for the Levi form on complex manifolds. If `g` is complex
+`C²` at `x` and `u` is real `C²` at `g x`, then the Levi form of `u ∘ g` is the pullback of the
+Levi form of `u` by the complex manifold derivative of `g`. -/
+theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u (g x))
+    (hg : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 g x) (v w : E) :
+    manifoldLeviForm E (u ∘ g) x v w =
+      manifoldLeviForm F u (g x) (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x v)
+        (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x w) := by
+  let G : E → F := chartAt F (g x) ∘ g ∘ (chartAt E x).symm
+  have hx' : (chartAt E x).symm (chartAt E x x) = x :=
+    (chartAt E x).left_inv (mem_chart_source E x)
+  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := by
+    rw [← contDiffWithinAt_univ]
+    simpa only [G, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, id_comp, comp_id, Set.range_id] using
+      (contMDiffAt_iff.mp hg).2
+  have hGx : G (chartAt E x x) = chartAt F (g x) (g x) := by
+    simp only [G, Function.comp_apply, hx']
+  have hD : fderiv ℂ G (chartAt E x x) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x := by
+    rw [(hg.mdifferentiableAt (by norm_num)).mfderiv_abuse]
+    have hcoord : writtenInExtChartAt 𝓘(ℂ, E) 𝓘(ℂ, F) x g = G := by
+      ext z
+      rfl
+    have hpoint : extChartAt 𝓘(ℂ, E) x x = chartAt E x x := by rfl
+    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ, hpoint]
+  have hcomp : (u ∘ g) ∘ (chartAt E x).symm =ᶠ[𝓝 (chartAt E x x)]
+      (u ∘ (chartAt F (g x)).symm) ∘ G := by
+    have hcont : Tendsto (g ∘ (chartAt E x).symm) (𝓝 (chartAt E x x)) (𝓝 (g x)) := by
+      simpa only [ContinuousAt, Function.comp_apply, hx'] using hg.continuousAt.comp_of_eq
+        ((chartAt E x).continuousAt_symm (mem_chart_target E x)) hx'
+    have hmem : (g ∘ (chartAt E x).symm) ⁻¹' (chartAt F (g x)).source ∈
+        𝓝 (chartAt E x x) :=
+      hcont ((chartAt F (g x)).open_source.mem_nhds (mem_chart_source F (g x)))
+    filter_upwards [hmem] with z hz
+    simp only [G, Function.comp_apply]
+    have hz' : g ((chartAt E x).symm z) ∈ (chartAt F (g x)).source := hz
+    rw [(chartAt F (g x)).left_inv hz']
+  rw [manifoldLeviForm_def, manifoldLeviForm_def, leviForm_congr_of_eventuallyEq hcomp]
+  rw [TauCeti.leviForm_comp_apply (hGx ▸ contDiffAt_comp_chartAt_symm hu) hG, hGx, hD]
+  rfl
+
+end Pullback
 
 /-! ### Independence of the holomorphic chart -/
 
