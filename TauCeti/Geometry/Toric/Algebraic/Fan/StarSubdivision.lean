@@ -15,10 +15,11 @@ import Mathlib.LinearAlgebra.Transvection.Basic
 
 Let `τ` be a regular cone with primitive ray generators `u_ρ`, and let `A` be a finite set of rays
 of `τ`, spanning the face `σ` of `τ`. The star subdivision of the fan of faces of `τ` along `σ`
-adds the ray through `u_A = ∑ ρ ∈ A, u_ρ`. Indexing the generators `u_ρ` by `some ρ` and `u_A` by
-`none`, its cones are the cones spanned by the generators indexed by a set `S` of indices which
-omits `some ρ` for some `ρ ∈ A`. Equivalently, they are the faces of `τ` not containing `σ`, and
-the cones spanned by such a face together with `u_A`.
+uses the ray through `u_A = ∑ ρ ∈ A, u_ρ`, which is a new ray when `A` contains at least two rays;
+for `A = {ρ}` it is `ρ` itself, since then `u_A = u_ρ`. Indexing the generators `u_ρ` by `some ρ`
+and `u_A` by `none`, its cones are the cones spanned by the generators indexed by a set `S` of
+indices which omits `some ρ` for some `ρ ∈ A`. Equivalently, they are the faces of `τ` not
+containing `σ`, and the cones spanned by such a face together with `u_A`.
 
 Replacing a generator `u_ρ` with `ρ ∈ A` by `u_A` is a unimodular change of an integral basis
 extending the primitive generators of `τ`, so every cone of the star subdivision is regular. The
@@ -340,7 +341,8 @@ theorem isRegular_starSubdivision : (starSubdivision hi A hτ).IsRegular := by
   exact isRegularCone_starSubdivisionCone hi A hτ hS
 
 /-- For nonempty `A`, the ray through the sum of the primitive generators of the rays in `A` is a
-cone of the star subdivision: the ray which the star subdivision introduces. -/
+cone of the star subdivision. When `A` contains at least two rays, this is the new ray of the star
+subdivision; for `A = {ρ}` it is the ray `ρ` itself. -/
 theorem hull_singleton_mem_starSubdivision_cones (hA : A.Nonempty) :
     PointedCone.hull ℝ {i (∑ ρ ∈ A, primitiveGenerator hi hτ.toIsToricCone ρ)} ∈
       (starSubdivision hi A hτ).cones := by
