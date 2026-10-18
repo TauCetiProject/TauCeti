@@ -31,7 +31,7 @@ statement to be sign-correct.
 A principal minor of a square matrix, indexed by an arbitrary (possibly infinite) type, is the
 determinant of its restriction to the rows and columns indexed by a finite set of indices.
 `Matrix.principalMinor` names it; it is the building block of the principal-minor series
-`det (1 - T A)` in `TauCeti.Analysis.Matrix.CharPowerSeries`.
+`det (1 - T A)` in `TauCeti.Analysis.Matrix.CharPowerSeries.Basic`.
 
 ## Main definitions
 

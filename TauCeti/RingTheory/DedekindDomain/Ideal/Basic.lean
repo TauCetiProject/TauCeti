@@ -45,11 +45,9 @@ input to the adic-valuation transport in
 `(equivOfRingEquiv e).symm` is `Ideal.comap e` on underlying ideals
 (`IsDedekindDomain.HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm`).
 
-`Ideal.IsPrimeTo` generalizes the `IsGood` predicate of
-`TauCetiRoadmap/ArithmeticDirichletSeries/Suggested.lean`, where it is stated for the bad primes
-of an ideal weight on a number field; the design of the predicate — nonzeroness included, so that
-`⊥` is prime to no set at all — is taken from there, while nothing in it is specific to a number
-field.
+In the context of arithmetic Dirichlet series, `Ideal.IsPrimeTo I S` expresses that a nonzero
+ideal `I` avoids a set `S` of bad primes; nonzeroness is built into the predicate so that `⊥` is
+prime to no set at all.
 
 The file also identifies any height-one prime of a discrete valuation ring with its maximal ideal
 (`IsDedekindDomain.HeightOneSpectrum.eq_maximalIdeal`), which is what lets a condition stated at
@@ -240,10 +238,6 @@ theorem asIdeal_equivOfRingEquiv_symm (e : R ≃+* R') (w : HeightOneSpectrum R'
 
 end RingEquivTransport
 
-end IsDedekindDomain.HeightOneSpectrum
-
-namespace IsDedekindDomain.HeightOneSpectrum
-
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- Distinct height one primes are incomparable: a height one prime is not contained in any
@@ -299,6 +293,20 @@ theorem isPrimeTo_insert_iff {𝔭 : HeightOneSpectrum R} :
   simp only [isPrimeTo_iff, Set.forall_mem_insert]
   tauto
 
+/-- **Being prime to a set of primes transports along a ring isomorphism.** An ideal pulled back
+along `e : R ≃+* A` is prime to `T` exactly when the ideal itself is prime to the image of `T`
+under the induced bijection of height-one spectra. -/
+theorem isPrimeTo_comap_iff {A : Type*} [CommRing A] (e : R ≃+* A)
+    {I : Ideal A} {T : Set (HeightOneSpectrum R)} :
+    IsPrimeTo (I.comap e) T ↔ IsPrimeTo I (HeightOneSpectrum.equivOfRingEquiv e '' T) := by
+  have hbot : I.comap e = ⊥ ↔ I = ⊥ := by
+    rw [← Ideal.map_symm, Ideal.map_eq_bot_iff_of_injective e.symm.injective]
+  have hdvd (𝔭 : HeightOneSpectrum R) :
+      𝔭.asIdeal ∣ I.comap e ↔ (HeightOneSpectrum.equivOfRingEquiv e 𝔭).asIdeal ∣ I := by
+    rw [← Ideal.map_dvd_map_iff_of_ringEquiv e, ← HeightOneSpectrum.asIdeal_equivOfRingEquiv,
+      Ideal.map_comap_of_surjective e e.surjective I]
+  simp only [isPrimeTo_iff, ne_eq, hbot, Set.forall_mem_image, hdvd]
+
 variable [IsDedekindDomain R]
 
 @[simp]
@@ -326,34 +334,6 @@ theorem isPrimeTo_asIdeal_iff {𝔭 : HeightOneSpectrum R} :
   refine ⟨fun h h𝔭 ↦ h.not_dvd h𝔭 dvd_rfl, fun h𝔭 ↦ ⟨𝔭.ne_bot, fun 𝔮 h𝔮 hdvd ↦ h𝔭 ?_⟩⟩
   exact HeightOneSpectrum.asIdeal_injective
     ((prime_dvd_prime_iff_eq 𝔮.prime 𝔭.prime).mp hdvd) ▸ h𝔮
-
-/-- **Being prime to a set of primes transports along a ring isomorphism.** An ideal pulled back
-along `e : R ≃+* A` is prime to `T` exactly when the ideal itself is prime to the image of `T`
-under the induced bijection of height-one spectra. -/
-theorem isPrimeTo_comap_iff {A : Type*} [CommRing A] [IsDedekindDomain A] (e : R ≃+* A)
-    {I : Ideal A} {T : Set (HeightOneSpectrum R)} :
-    IsPrimeTo (I.comap e) T ↔ IsPrimeTo I (HeightOneSpectrum.equivOfRingEquiv e '' T) := by
-  have hmem (𝔭 : HeightOneSpectrum R) (x : A) :
-      x ∈ (HeightOneSpectrum.equivOfRingEquiv e 𝔭).asIdeal ↔ e.symm x ∈ 𝔭.asIdeal := Iff.rfl
-  have hbot : I.comap e = ⊥ ↔ I = ⊥ := by
-    rw [← Ideal.map_symm]
-    exact Ideal.map_eq_bot_iff_of_injective e.symm.injective
-  have hdvd (𝔭 : HeightOneSpectrum R) :
-      𝔭.asIdeal ∣ I.comap e ↔ (HeightOneSpectrum.equivOfRingEquiv e 𝔭).asIdeal ∣ I := by
-    rw [dvd_iff_le, dvd_iff_le]
-    constructor
-    · intro h y hy
-      exact (hmem 𝔭 y).mpr (h (Ideal.mem_comap.mpr (by rwa [e.apply_symm_apply])))
-    · intro h x hx
-      have hx' := (hmem 𝔭 (e x)).mp (h (Ideal.mem_comap.mp hx))
-      rwa [e.symm_apply_apply] at hx'
-  constructor
-  · rintro ⟨h0, h⟩
-    refine ⟨fun hI ↦ h0 (hbot.mpr hI), ?_⟩
-    rintro _ ⟨𝔭, h𝔭, rfl⟩
-    exact fun hd ↦ h 𝔭 h𝔭 ((hdvd 𝔭).mpr hd)
-  · rintro ⟨h0, h⟩
-    exact ⟨fun hI ↦ h0 (hbot.mp hI), fun 𝔭 h𝔭 hd ↦ h _ ⟨𝔭, h𝔭, rfl⟩ ((hdvd 𝔭).mp hd)⟩
 
 /-- **Induction on ideals prime to `S`.** Such an ideal is a finite product of height-one
 primes outside `S`, so a property holding at `⊤` and stable under multiplication by a

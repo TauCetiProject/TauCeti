@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Dynamics.Flow.Basic
 
 /-!
 # Continuous actions on C⋆-algebras
@@ -18,6 +19,8 @@ continuity needed when an action is applied to a coefficient-valued convolution 
 
 Actions can be pulled back along continuous group homomorphisms and transported along
 star-algebra equivalences. The latter construction expresses conjugacy of dynamical systems.
+Membership in a subset invariant in the sense of Mathlib's `IsInvariant` is unchanged by the
+action.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 The joint-continuity argument uses Mathlib's `StarAlgEquiv.isometry` and
@@ -78,6 +81,12 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
     α g (α g⁻¹ a) = a := by
   rw [← mul_apply]
   simp
+
+/-- Membership in an invariant subset is unchanged by the action. -/
+@[simp]
+theorem _root_.IsInvariant.cstarAction_apply_mem_iff {α : CStarAction G A} {s : Set A}
+    (hs : IsInvariant (fun g a ↦ α g a) s) (g : G) (a : A) : α g a ∈ s ↔ a ∈ s :=
+  hs.apply_mem_iff (fun g a ↦ α.inv_apply_apply g a) g a
 
 /-- Point-norm continuity implies joint continuity of the action. -/
 @[fun_prop]

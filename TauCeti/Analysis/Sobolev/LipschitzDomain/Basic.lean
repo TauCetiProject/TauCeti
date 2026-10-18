@@ -51,11 +51,15 @@ support-containment lemmas provide the shared geometry for chart trace and exten
 * `TauCeti.exists_isLipschitzChartWith_of_lipschitzOnWith`: extension of a local Lipschitz graph
   to a global graph defining the same boundary chart.
 * `Set.IsLipschitzChartWith.mono_radii`: restriction of a chart to a smaller cylinder.
+* `Set.IsLipschitzChartWith.exists_mono_radii_two_mul_lt`: restriction to a cylinder whose
+  normal radius exceeds twice the graph's tangential rise.
 * `Set.IsLipschitzChartWith.smul`: positive dilation of a chart, with explicit coordinates
   `TauCeti.dilateConj`, graph and radii.
 * `Set.IsLipschitzDomainWith.smul`: positive dilations preserve Lipschitz domains and constants.
 * `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_cover`: the frontier of a bounded
   Lipschitz domain is covered by finitely many chart cylinders with a common Lipschitz constant.
+* `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover`: the frontier of
+  a bounded Lipschitz domain is covered by finitely many shortened chart cylinders.
 
 ## References
 
@@ -93,6 +97,13 @@ omit [NormedSpace ℝ E] in
 theorem isOpen_normalCylinder (a b : ℝ) : IsOpen (normalCylinder (E := E) a b) := by
   exact (isOpen_Ioo.preimage (WithLp.prod_continuous_ofLp 2 ℝ E).fst).inter
     (isOpen_ball.preimage (WithLp.prod_continuous_ofLp 2 ℝ E).snd)
+
+omit [NormedSpace ℝ E] in
+/-- A normal product cylinder is bounded. -/
+theorem isBounded_normalCylinder (a b : ℝ) :
+    Bornology.IsBounded (normalCylinder (E := E) a b) :=
+  (WithLp.prod_antilipschitzWith_ofLp 2 ℝ E).isBounded_preimage
+    ((isBounded_Ioo (-a) a).prod isBounded_ball)
 
 omit [NormedSpace ℝ E] in
 /-- Shrinking either radius shrinks the normal product cylinder. -/
@@ -157,6 +168,17 @@ theorem image_frontier_inter_normalCylinder (hc : IsLipschitzChart Ω e γ K h r
   rw [← e.coe_toHomeomorph, e.toHomeomorph.image_frontier, e.coe_toHomeomorph,
     ← frontier_inter_open_inter hC, hc.image_inter_normalCylinder, frontier_inter_open_inter hC,
     frontier_setOf_lt_fst hc.lipschitzWith.continuous]
+
+/-- Inside the cylinder of a Lipschitz chart, the closure of `Ω` is the region on or above the
+graph. -/
+theorem image_closure_inter_normalCylinder (hc : IsLipschitzChart Ω e γ K h r) :
+    e '' closure Ω ∩ normalCylinder h r = {x | γ x.snd ≤ x.fst} ∩ normalCylinder h r := by
+  rw [closure_eq_self_union_frontier, image_union, union_inter_distrib_right,
+    hc.image_inter_normalCylinder, hc.image_frontier_inter_normalCylinder,
+    ← union_inter_distrib_right]
+  congr 1
+  ext x
+  simp [le_iff_lt_or_eq, eq_comm]
 
 /-- A point whose image lies in the cylinder of a Lipschitz chart belongs to `Ω` exactly when
 its image lies above the graph. -/
@@ -511,6 +533,24 @@ theorem IsLipschitzChartWith.mono_radii (h : Omega.IsLipschitzChartWith L e φ a
     Omega.IsLipschitzChartWith L e φ a' b' :=
   ⟨h.1, h.toIsLipschitzChart.mono ha' hb' haa' hbb'⟩
 
+/-- **Room for reflection across the graph.** Shrinking the tangential radius of a chart gives a
+chart with the same coordinates, graph and normal radius whose radii satisfy `2 * L * b' < a`.
+The shortened cylinder `normalCylinder (a - 2 * L * b') b'` then still contains the centre, and
+the reflection `t ↦ 2 * φ y - t` across the graph keeps it inside `normalCylinder a b'`. -/
+theorem IsLipschitzChartWith.exists_mono_radii_two_mul_lt
+    (h : Omega.IsLipschitzChartWith L e φ a b) :
+    ∃ b' ≤ b, Omega.IsLipschitzChartWith L e φ a b' ∧ 2 * L * b' < a := by
+  have hL : (0 : ℝ) < 2 * L + 1 := by positivity
+  refine ⟨min b (a / (2 * L + 1)), min_le_left _ _,
+    h.mono_radii h.toIsLipschitzChart.height_pos
+      (lt_min h.toIsLipschitzChart.radius_pos
+        (div_pos h.toIsLipschitzChart.height_pos hL)) le_rfl (min_le_left _ _), ?_⟩
+  calc 2 * L * min b (a / (2 * L + 1)) ≤ 2 * L * (a / (2 * L + 1)) := by
+        gcongr; exact min_le_right _ _
+    _ < a := by
+        rw [mul_div_assoc', div_lt_iff₀ hL]
+        nlinarith [h.toIsLipschitzChart.height_pos]
+
 /-- The preimage of the chart cylinder is a neighbourhood of the centre of the chart. -/
 theorem IsLipschitzChartWith.preimage_normalCylinder_mem_nhds
     (h : Omega.IsLipschitzChartWith L e φ a b) {x : F} (hx : e x = 0) :
@@ -652,6 +692,50 @@ theorem IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_cover [FiniteDi
         frontier Omega ⊆ ⋃ x ∈ t, e x ⁻¹' normalCylinder (a x) (b x) :=
   (isCompact_of_isClosed_isBounded isClosed_frontier
     (hb.closure.subset frontier_subset_closure)).exists_finset_isLipschitzChartWith_cover h.2
+
+/-- **Finite covers of compact boundary pieces by shortened chart cylinders.** If `Omega` is a
+Lipschitz domain with constant `L` at every point of a compact set `K`, then finitely many points
+of `K` carry Lipschitz boundary charts with the common constant `L` and radii satisfying
+`2 * L * b x < a x`, whose shortened cylinders `normalCylinder (a x - 2 * L * b x) (b x)`
+cover `K`. -/
+theorem _root_.IsCompact.exists_finset_isLipschitzChartWith_two_mul_lt_cover
+    {K : Set (WithLp 2 (ℝ × E))} (hK : IsCompact K)
+    (h : ∀ x ∈ K, Omega.IsLipschitzDomainAtWith (E := E) L x) :
+    ∃ (t : Finset (WithLp 2 (ℝ × E))) (e : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ]
+        WithLp 2 (ℝ × E)) (φ : WithLp 2 (ℝ × E) → E → ℝ) (a b : WithLp 2 (ℝ × E) → ℝ),
+      (∀ x ∈ t, x ∈ K ∧ e x x = 0 ∧
+        Omega.IsLipschitzChartWith L (e x) (φ x) (a x) (b x) ∧ 2 * L * b x < a x) ∧
+        K ⊆ ⋃ x ∈ t, e x ⁻¹' normalCylinder (a x - 2 * L * b x) (b x) := by
+  have hshort : ∀ x ∈ K, ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+      (φ : E → ℝ) (a b : ℝ), e x = 0 ∧ Omega.IsLipschitzChartWith L e φ a b ∧ 2 * L * b < a := by
+    intro x hx
+    obtain ⟨e, φ, a, b, hex, hchart⟩ := (isLipschitzDomainAtWith_iff ..).1 (h x hx)
+    obtain ⟨b', -, hchart', hlt⟩ := hchart.exists_mono_radii_two_mul_lt
+    exact ⟨e, φ, a, b', hex, hchart', hlt⟩
+  choose! e φ a b hex hchart hlt using hshort
+  have hnhds : ∀ x ∈ K, e x ⁻¹' normalCylinder (a x - 2 * L * b x) (b x) ∈ 𝓝 x := by
+    intro x hx
+    have hb0 := ((isLipschitzChartWith_iff ..).1 (hchart x hx)).2.1
+    exact ((hchart x hx).mono_radii (sub_pos.2 (hlt x hx)) hb0 (sub_le_self _ (by positivity))
+      le_rfl).preimage_normalCylinder_mem_nhds (hex x hx)
+  obtain ⟨t, htK, hcover⟩ := hK.elim_nhds_subcover _ hnhds
+  exact ⟨t, e, φ, a, b, fun x hx ↦ ⟨htK x hx, hex x (htK x hx), hchart x (htK x hx),
+    hlt x (htK x hx)⟩, hcover⟩
+
+/-- **Finite covers of bounded Lipschitz domains by shortened chart cylinders.** The frontier of
+a bounded Lipschitz domain with constant `L` is covered by finitely many shortened cylinders
+`normalCylinder (a x - 2 * L * b x) (b x)` of Lipschitz boundary charts, centred at frontier points,
+with the common constant `L` and radii satisfying `2 * L * b x < a x`. -/
+theorem IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover
+    [FiniteDimensional ℝ E] (h : Omega.IsLipschitzDomainWith L) (hb : Bornology.IsBounded Omega) :
+    ∃ (t : Finset (WithLp 2 (ℝ × E))) (e : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ]
+        WithLp 2 (ℝ × E)) (φ : WithLp 2 (ℝ × E) → E → ℝ) (a b : WithLp 2 (ℝ × E) → ℝ),
+      (∀ x ∈ t, x ∈ frontier Omega ∧ e x x = 0 ∧
+        Omega.IsLipschitzChartWith L (e x) (φ x) (a x) (b x) ∧ 2 * L * b x < a x) ∧
+        frontier Omega ⊆ ⋃ x ∈ t, e x ⁻¹' normalCylinder (a x - 2 * L * b x) (b x) :=
+  (isCompact_of_isClosed_isBounded isClosed_frontier
+    (hb.closure.subset frontier_subset_closure)).exists_finset_isLipschitzChartWith_two_mul_lt_cover
+    h.2
 
 end Cover
 

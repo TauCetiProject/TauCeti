@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Set.PowersetCard
@@ -55,6 +56,8 @@ import Mathlib.Tactic.NoncommRing
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
   over a pair of finite types, to the values of its summand at the two points where it is
   supported, and at the four cells of a rectangle.
+* `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
+  has distinct coordinates.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -169,6 +172,12 @@ end TauCeti
 namespace Finset
 
 open scoped symmDiff
+
+/-- Every pair in the product of disjoint finsets has distinct coordinates. -/
+theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : Disjoint s t) :
+    (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
+  filter_true_of_mem fun _ hp =>
+    hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
 
 /-- **The symmetric difference and the intersection account for both cardinalities.** The
 symmetric difference is the union minus the intersection, and the union and the intersection

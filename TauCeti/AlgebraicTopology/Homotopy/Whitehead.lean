@@ -85,7 +85,7 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
   have hcomp : (proj f).comp (ι.comp (ψ : C(X, range (incl f)))) = f := by
     ext x'
     rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, ContinuousMap.subtypeVal_apply,
-      ContinuousMap.coe_coe, inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f),
+      ContinuousMap.coe_ofClass, inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f),
       proj_comp_incl]
   have hproj : (homotopyEquiv f).toFun = proj f := ContinuousMap.ext homotopyEquiv_apply
   -- By two out of three `ι ∘ ψ` is a weak homotopy equivalence, hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.

@@ -12,7 +12,7 @@ import Mathlib.RingTheory.Localization.Integral
 -- Proof-only, and load-bearing despite no textual use: supplies `IsIntegrallyClosed` on a
 -- `ValuationSubring`, which the overring argument closes with.
 import Mathlib.RingTheory.Valuation.LocalSubring
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 -- Proof-only: `Valuation.eq_valuation_of_forall_mem_asIdeal_iff` identifies the valuations of the
 -- primes of an overring that lie over a given prime.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
