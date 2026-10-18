@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 import TauCeti.RepresentationTheory.Intertwining
-import TauCeti.RepresentationTheory.Spin.Exceptional.Six.Standard
+import TauCeti.RepresentationTheory.Spin.HalfSpin.Standard
 
 /-!
 # The standard half-spin modules of a polarized six-dimensional space
