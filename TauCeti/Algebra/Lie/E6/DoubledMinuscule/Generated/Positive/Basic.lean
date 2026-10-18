@@ -162,6 +162,14 @@ theorem restriction_comp_commonKernelLift (j : Fin 6 ⊕ Unit) :
     CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
   cases j <;> rfl
 
+/-- The positive subgroup contains every positive numbered root subgroup and the weight torus. -/
+theorem carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift (j : Fin 6 ⊕ Unit) :
+    (carrierDefiningIdeal A).toIdeal ≤ RingHom.ker
+      (generatedCoordinateLift A (match j with
+        | .inl i => .inl (.inl i)
+        | .inr u => .inr u)).hom.toAlgHom.toRingHom :=
+  CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker _ j
+
 /-- A closed subgroup of the full generated carrier contains the positive subgroup exactly
 when it contains the six positive numbered root subgroups and the weight torus. -/
 theorem le_carrierDefiningIdeal_iff (I : HopfIdeal A (generatedCoordinateHopfAlgebra A)) :
