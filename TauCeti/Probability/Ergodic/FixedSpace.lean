@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.LinearAlgebra.FixedSubmodule
 
 /-!
@@ -19,6 +19,8 @@ It also records the simp lemma `coe_compMeasurePreservingₗᵢ`, which identifi
 the composition isometry with Mathlib's composition operator
 `MeasureTheory.Lp.compMeasurePreserving`, so that statements phrased with the isometry can be
 rewritten into the form the lemmas about representatives use.
+
+For real-valued `Lᵖ`, composition is monotone and hence positive.
 -/
 
 public section
@@ -83,6 +85,30 @@ theorem mem_fixedSpace_iterate {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
 
 end Generic
 
+section RealOrder
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- The `Lᵖ` composition isometry of a measure-preserving map is monotone. -/
+theorem compMeasurePreservingₗᵢ_monotone (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
+    Monotone (Lp.compMeasurePreservingₗᵢ ℝ T hT : Lp ℝ p μ → Lp ℝ p μ) := by
+  change Monotone fun f => Lp.compMeasurePreserving T hT f
+  intro f g hfg
+  rw [← Lp.coeFn_le] at hfg ⊢
+  have hfgT := hT.quasiMeasurePreserving.tendsto_ae hfg
+  filter_upwards [hfgT, Lp.coeFn_compMeasurePreserving f hT,
+    Lp.coeFn_compMeasurePreserving g hT] with ω hω hf hg
+  rw [hf, hg]
+  exact hω
+
+/-- The `Lᵖ` composition isometry of a measure-preserving map is positive. -/
+theorem compMeasurePreservingₗᵢ_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
+    {f : Lp ℝ p μ} (hf : 0 ≤ f) : 0 ≤ Lp.compMeasurePreservingₗᵢ ℝ T hT f := by
+  have h := compMeasurePreservingₗᵢ_monotone T hT hf
+  rwa [map_zero] at h
+
+end RealOrder
+
 section Complete
 
 variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
@@ -101,6 +127,13 @@ theorem coe_compMeasurePreservingₗᵢ (T : Ω → Ω) (hT : MeasurePreserving 
       ⇑(Lp.compMeasurePreserving (E := E) (p := p) T hT) := by
   funext g
   exact compMeasurePreservingₗ_apply T hT g
+
+/-- Characterization of fixed points of the `Lᵖ` composition isometry using representatives. -/
+@[simp]
+theorem compMeasurePreservingₗᵢ_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
+    (g : Lp E p μ) : Lp.compMeasurePreservingₗᵢ 𝕜 T hT g = g ↔ (g : Ω → E) ∘ T =ᵐ[μ] g := by
+  change Lp.compMeasurePreserving T hT g = g ↔ _
+  exact compMeasurePreserving_eq_self_iff hT g
 
 /-- The fixed space is the equalizer of the continuous `Lᵖ` composition operator and the
 identity. -/

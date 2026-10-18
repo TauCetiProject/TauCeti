@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.Holder
+public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.Probability.Ergodic.FixedSpace
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 
 /-!
@@ -19,7 +20,8 @@ iterates of `T`.
 
 On `L∞`, `linftyOne` supplies the constant-one element for an arbitrary measure, while Mathlib's
 heterogeneous Hölder action supplies pointwise multiplication. Mathlib's existing composition
-isometry preserves these operations and is positive and monotone.
+isometry preserves these operations. Its positivity, monotonicity, and fixed-point
+characterization hold on general `Lᵖ` and are supplied by `TauCeti.Probability.Ergodic.FixedSpace`.
 
 Mathlib provides the underlying composition maps as `AEEqFun.compMeasurePreserving` and
 `Lp.compMeasurePreservingₗᵢ`. The only new construction here is their Markov-operator interface.
@@ -37,21 +39,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-
-/-! ## The constant one in `L∞`
-
-Unlike `Lp.const`, this construction needs no finite-measure hypothesis: the essential supremum
-of a constant is finite on every measure space.
--/
-
-/-- The constant-one element of `L∞(μ)`. -/
-noncomputable def linftyOne : Lp ℝ ∞ μ :=
-  (memLp_top_const (1 : ℝ)).toLp fun _ => 1
-
-/-- The representative of `linftyOne` is almost everywhere the constant function one. -/
-theorem coeFn_linftyOne :
-    (linftyOne (Ω := Ω) (μ := μ) : Ω → ℝ) =ᵐ[μ] fun _ => 1 :=
-  MemLp.coeFn_toLp (memLp_top_const (1 : ℝ))
 
 /-- The deterministic Koopman Markov operator associated to a measure-preserving endomorphism.
 
@@ -142,24 +129,6 @@ theorem koopmanMarkov_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ �
 
 /-! ## The `L∞` Markov laws -/
 
-/-- Composition by a measure-preserving map is monotone on `L∞`. -/
-theorem compMeasurePreservingLInfty_monotone (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    Monotone (Lp.compMeasurePreservingₗᵢ ℝ T hT : Lp ℝ ∞ μ → Lp ℝ ∞ μ) := by
-  intro f g hfg
-  rw [Lp.compMeasurePreservingₗᵢ_apply, Lp.compMeasurePreservingₗᵢ_apply]
-  rw [← Lp.coeFn_le] at hfg ⊢
-  have hfgT := hT.quasiMeasurePreserving.tendsto_ae hfg
-  filter_upwards [hfgT, Lp.coeFn_compMeasurePreserving f hT,
-    Lp.coeFn_compMeasurePreserving g hT] with ω hω hf hg
-  rw [hf, hg]
-  exact hω
-
-/-- Composition by a measure-preserving map is positive on `L∞`. -/
-theorem compMeasurePreservingLInfty_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
-    {f : Lp ℝ ∞ μ} (hf : 0 ≤ f) : 0 ≤ Lp.compMeasurePreservingₗᵢ ℝ T hT f := by
-  have h := compMeasurePreservingLInfty_monotone T hT hf
-  rwa [map_zero] at h
-
 /-- Composition by a measure-preserving map preserves the constant-one element of `L∞`. -/
 @[simp]
 theorem compMeasurePreservingLInfty_one (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
@@ -187,18 +156,6 @@ theorem compMeasurePreservingLInfty_mul (T : Ω → Ω) (hT : MeasurePreserving 
     with ω hlhs hmul hrhs hf hg
   rw [hlhs, Function.comp_apply, hmul, hrhs]
   simp only [Pi.smul_apply', hf, hg, Function.comp_apply]
-
-/-- An `L∞` function is fixed by composition exactly when its representative is almost everywhere
-invariant under the measure-preserving transformation. -/
-theorem compMeasurePreservingLInfty_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
-    (f : Lp ℝ ∞ μ) : Lp.compMeasurePreservingₗᵢ ℝ T hT f = f ↔ f ∘ T =ᵐ[μ] f := by
-  rw [Lp.compMeasurePreservingₗᵢ_apply]
-  constructor
-  · intro h
-    exact (Lp.coeFn_compMeasurePreserving f hT).symm.trans
-      (Filter.Eventually.of_forall fun ω => congrArg (fun q : Lp ℝ ∞ μ => q ω) h)
-  · intro h
-    exact Lp.ext ((Lp.coeFn_compMeasurePreserving f hT).trans h)
 
 end Probability
 
