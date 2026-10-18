@@ -102,4 +102,21 @@ theorem eventually_signature_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
   filter_upwards [hc.eventually ((hB x).eventually_signature_eq hdet)] with y hy
   exact hy (hB y)
 
+/-- The negative index of the quadratic form of a continuous real symmetric matrix family is
+locally constant at a nonsingular member. Only local symmetry of the family is required. -/
+theorem eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
+    {B : X → Matrix ι ι ℝ} {x : X} (hx : (B x).IsHermitian)
+    (hB : ∀ᶠ y in nhds x, (B y).IsHermitian) (hc : ContinuousAt B x)
+    (hdet : IsUnit (B x).det) :
+    ∀ᶠ y in nhds x,
+      sigNeg ((B y).toQuadraticForm') = sigNeg ((B x).toQuadraticForm') := by
+  filter_upwards [hc.eventually (hx.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
+    with y hy hhy
+  obtain ⟨R, hR, hRB⟩ := hy hhy
+  have hRB' : R.transpose * B x * R.transpose.transpose = B y := by
+    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial, Matrix.transpose_transpose] using hRB
+  apply QuadraticMap.Equivalent.sigNeg_eq
+  rw [← hRB']
+  exact ⟨Matrix.isometryEquivCongr (by simpa using hR) (B x)⟩
+
 end Matrix.IsHermitian
