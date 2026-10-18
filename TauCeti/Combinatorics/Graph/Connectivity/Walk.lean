@@ -29,46 +29,46 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
 
-/-- An edge-labelled walk in a multigraph.  Its endpoints are actual vertices of the graph and
-each step records an actual edge together with its incidence. -/
-inductive Walk (G : Graph α β) : V(G) → V(G) → Type (max u v)
-  | nil {x : V(G)} : Walk G x x
-  | cons {x y z : V(G)} (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : Walk G y z) :
+/-- An edge-labelled walk in a multigraph. Each step records an edge together with its
+incidence; a zero-length walk may be based at any ambient point. -/
+inductive Walk (G : Graph α β) : α → α → Type (max u v)
+  | nil {x : α} : Walk G x x
+  | cons {x y z : α} (e : β) (h : G.IsLink e x y) (p : Walk G y z) :
       Walk G x z
 
 attribute [refl] Walk.nil
 
 namespace Walk
 
-variable {x y z w : V(G)}
+variable {x y z w : α}
 
 /-- Pattern for a length-zero walk with its vertex explicit. -/
 @[match_pattern]
-abbrev nil' (x : V(G)) : G.Walk x x := .nil
+abbrev nil' (x : α) : G.Walk x x := .nil
 
 /-- Pattern for a nonempty walk with all three vertices explicit. -/
 @[match_pattern]
-abbrev cons' (x y z : V(G)) (e : E(G)) (h : G.IsLink e.1 x.1 y.1)
+abbrev cons' (x y z : α) (e : β) (h : G.IsLink e x y)
     (p : G.Walk y z) : G.Walk x z := .cons e h p
 
-instance (x : V(G)) : Inhabited (G.Walk x x) := ⟨.nil⟩
+instance (x : α) : Inhabited (G.Walk x x) := ⟨.nil⟩
 
-/-- The one-edge walk associated to an edge linking two actual vertices. -/
-def IsLink.toWalk {e : E(G)} (h : G.IsLink e.1 x.1 y.1) : G.Walk x y :=
+/-- The one-edge walk associated to an edge linking two vertices. -/
+def _root_.Graph.IsLink.toWalk {e : β} (h : G.IsLink e x y) : G.Walk x y :=
   .cons e h .nil
 
 /-- The number of edge traversals in a walk. -/
-def length {x y : V(G)} : G.Walk x y → ℕ
+def length {x y : α} : G.Walk x y → ℕ
   | .nil => 0
   | .cons _ _ p => p.length + 1
 
-/-- The actual vertices visited by a walk, in order and including both endpoints. -/
-def support {x y : V(G)} : G.Walk x y → List V(G)
+/-- The vertices visited by a walk, in order and including both endpoints. -/
+def support {x y : α} : G.Walk x y → List α
   | .nil => [x]
   | .cons _ _ p => x :: p.support
 
-/-- The actual edges traversed by a walk, in order and with repetitions. -/
-def edges {x y : V(G)} : G.Walk x y → List E(G)
+/-- The edges traversed by a walk, in order and with repetitions. -/
+def edges {x y : α} : G.Walk x y → List β
   | .nil => []
   | .cons e _ p => e :: p.edges
 
@@ -76,33 +76,33 @@ def edges {x y : V(G)} : G.Walk x y → List E(G)
 theorem length_nil : (nil : G.Walk x x).length = 0 := (rfl)
 
 @[simp]
-theorem length_cons (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z) :
+theorem length_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).length = p.length + 1 := (rfl)
 
 @[simp]
 theorem support_nil : (nil : G.Walk x x).support = [x] := (rfl)
 
 @[simp]
-theorem support_cons (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z) :
+theorem support_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).support = x :: p.support := (rfl)
 
 @[simp]
 theorem edges_nil : (nil : G.Walk x x).edges = [] := (rfl)
 
 @[simp]
-theorem edges_cons (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z) :
+theorem edges_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).edges = e :: p.edges := (rfl)
 
 @[simp]
-theorem _root_.Graph.IsLink.length_toWalk {e : E(G)} (h : G.IsLink e.1 x.1 y.1) :
+theorem _root_.Graph.IsLink.length_toWalk {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).length = 1 := (rfl)
 
 @[simp]
-theorem _root_.Graph.IsLink.support_toWalk {e : E(G)} (h : G.IsLink e.1 x.1 y.1) :
+theorem _root_.Graph.IsLink.support_toWalk {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).support = [x, y] := (rfl)
 
 @[simp]
-theorem _root_.Graph.IsLink.edges_toWalk {e : E(G)} (h : G.IsLink e.1 x.1 y.1) :
+theorem _root_.Graph.IsLink.edges_toWalk {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).edges = [e] := (rfl)
 
 @[simp]
@@ -121,6 +121,10 @@ theorem getLast_support (p : G.Walk x y) : p.support.getLast (by simp) = y := by
 
 @[simp]
 theorem cons_tail_support (p : G.Walk x y) : x :: p.support.tail = p.support := by
+  cases p <;> simp
+
+theorem mem_support_iff {a : α} (p : G.Walk x y) :
+    a ∈ p.support ↔ a = x ∨ a ∈ p.support.tail := by
   cases p <;> simp
 
 @[simp]
@@ -145,19 +149,37 @@ theorem length_support (p : G.Walk x y) : p.support.length = p.length + 1 := by
   | nil => rfl
   | cons e h p ih => simp [ih, Nat.add_assoc]
 
+theorem eq_of_length_eq_zero {p : G.Walk x y} (hp : p.length = 0) : x = y := by
+  cases p with
+  | nil => rfl
+  | cons e h p => simp at hp
+
+/-- A walk is nil when it consists of no steps. -/
+inductive Nil : {x y : α} → G.Walk x y → Prop
+  | nil {x : α} : Nil (.nil : G.Walk x x)
+
+@[simp]
+theorem nil_nil : (nil : G.Walk x x).Nil := Nil.nil
+
+@[simp]
+theorem not_nil_cons {e : β} {h : G.IsLink e x y} {p : G.Walk y z} :
+    ¬ (cons e h p).Nil := nofun
+
+@[simp]
+theorem length_eq_zero_iff {p : G.Walk x y} : p.length = 0 ↔ p.Nil := by
+  cases p <;> simp
+
 /-- An endpoint of an edge traversed by a walk occurs in the walk's support. -/
-theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : V(G)} {e : E(G)}
-    (h : G.IsLink e.1 a.1 b.1) (he : e ∈ p.edges) : a ∈ p.support := by
+theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : α} {e : β}
+    (h : G.IsLink e a b) (he : e ∈ p.edges) : a ∈ p.support := by
   induction p with
   | nil => simp at he
   | @cons x' y' z' f hf p ih =>
       simp only [edges_cons, List.mem_cons] at he
       rcases he with rfl | he
       · rcases h.left_eq_or_eq hf with ha | ha
-        · have hax : a = x' := Subtype.ext ha
-          simp [hax]
-        · have hay : a = y' := Subtype.ext ha
-          simp [hay]
+        · simp [ha]
+        · simp [ha]
       · simp [ih he]
 
 /-- A walk with no repeated vertices also has no repeated edge identities. -/
@@ -171,7 +193,7 @@ theorem edges_nodup_of_support_nodup (p : G.Walk x y) (hp : p.support.Nodup) :
       exact ⟨fun he => hp.1 (p.mem_support_of_isLink_of_mem_edges h he), ih hp.2⟩
 
 /-- Concatenation of two walks whose adjacent endpoints agree. -/
-def append {x y z : V(G)} : G.Walk x y → G.Walk y z → G.Walk x z
+def append {x y z : α} : G.Walk x y → G.Walk y z → G.Walk x z
   | .nil, q => q
   | .cons e h p, q => .cons e h (p.append q)
 
@@ -179,7 +201,7 @@ def append {x y z : V(G)} : G.Walk x y → G.Walk y z → G.Walk x z
 theorem nil_append (p : G.Walk x y) : (nil : G.Walk x x).append p = p := (rfl)
 
 @[simp]
-theorem cons_append (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z)
+theorem cons_append (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
     (q : G.Walk z w) : (cons e h p).append q = cons e h (p.append q) := (rfl)
 
 @[simp]
@@ -213,12 +235,12 @@ theorem support_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).support = p.support ++ q.support.tail := by
   induction p <;> cases q <;> simp_all
 
-theorem support_append_eq_dropLast_append (p : G.Walk x y) (q : G.Walk y z) :
+theorem support_append_eq_support_dropLast_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).support = p.support.dropLast ++ q.support := by
   induction p <;> simp_all [List.dropLast_cons_of_ne_nil]
 
 /-- Auxiliary tail-recursive operation used to reverse a walk. -/
-protected def reverseAux {x y z : V(G)} : G.Walk x y → G.Walk x z → G.Walk y z
+protected def reverseAux {x y z : α} : G.Walk x y → G.Walk x z → G.Walk y z
   | .nil, q => q
   | .cons e h p, q => p.reverseAux (.cons e h.symm q)
 
@@ -229,7 +251,7 @@ def reverse (p : G.Walk x y) : G.Walk y x := p.reverseAux .nil
 theorem reverse_nil : (nil : G.Walk x x).reverse = nil := (rfl)
 
 @[simp]
-theorem _root_.Graph.IsLink.reverse_toWalk {e : E(G)} (h : G.IsLink e.1 x.1 y.1) :
+theorem _root_.Graph.IsLink.reverse_toWalk {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).reverse = IsLink.toWalk h.symm := (rfl)
 
 @[simp]
@@ -251,7 +273,7 @@ theorem reverseAux_eq_reverse_append (p : G.Walk x y) (q : G.Walk x z) :
   simp [reverse]
 
 @[simp]
-theorem reverse_cons (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z) :
+theorem reverse_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).reverse = p.reverse.append (IsLink.toWalk h.symm) := by
   simp [reverse, Walk.reverseAux, IsLink.toWalk]
 
@@ -318,7 +340,7 @@ theorem isTrail_nil : IsTrail (nil : G.Walk x x) := by
   simp [IsTrail]
 
 @[simp]
-theorem isTrail_cons (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z) :
+theorem isTrail_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     IsTrail (cons e h p) ↔ IsTrail p ∧ e ∉ p.edges := by
   simp [IsTrail, and_comm]
 
@@ -327,9 +349,16 @@ theorem isPath_nil : IsPath (nil : G.Walk x x) := by
   simp [IsPath]
 
 @[simp]
-theorem isPath_cons (e : E(G)) (h : G.IsLink e.1 x.1 y.1) (p : G.Walk y z) :
+theorem isPath_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     IsPath (cons e h p) ↔ IsPath p ∧ x ∉ p.support := by
   simp [IsPath, and_comm]
+
+@[simp]
+theorem cons_isCycle_iff (e : β) (h : G.IsLink e x y) (p : G.Walk y x) :
+    IsCycle (cons e h p) ↔ p.IsPath ∧ e ∉ p.edges := by
+  simp only [IsCycle, IsPath, edges_cons, List.nodup_cons, support_cons, List.tail_cons]
+  have hp : p.support.Nodup → p.edges.Nodup := edges_nodup_of_support_nodup p
+  tauto
 
 /-- Every path is a trail. -/
 theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
@@ -339,7 +368,7 @@ theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup 
   hp
 
 @[simp]
-theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : E(G)} (h : G.IsLink e.1 x.1 y.1) :
+theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).IsPath ↔ x ≠ y := by
   simp [IsPath]
 
@@ -363,7 +392,7 @@ theorem IsCycle.support_tail_nodup {p : G.Walk x x} (hp : p.IsCycle) :
     p.support.tail.Nodup := hp.2.2
 
 @[simp]
-theorem _root_.Graph.IsLink.isCycle_toWalk {e : E(G)} (h : G.IsLink e.1 x.1 x.1) :
+theorem _root_.Graph.IsLink.isCycle_toWalk {e : β} (h : G.IsLink e x x) :
     (IsLink.toWalk h).IsCycle := by
   simp [IsCycle, IsLink.toWalk]
 
@@ -379,30 +408,56 @@ theorem isCycle_reverse (p : G.Walk x x) : p.reverse.IsCycle ↔ p.IsCycle := by
 
 end Walk
 
-/-- Two actual vertices are reachable when an edge-labelled walk joins them. -/
-def Reachable (G : Graph α β) (x y : V(G)) : Prop := Nonempty (G.Walk x y)
+/-- Two ambient points are reachable when the first is an actual vertex and an edge-labelled
+walk joins them. The endpoint is then automatically an actual vertex as well. -/
+def Reachable (G : Graph α β) (x y : α) : Prop := x ∈ V(G) ∧ Nonempty (G.Walk x y)
 
-theorem reachable_iff_nonempty_walk {x y : V(G)} :
-    G.Reachable x y ↔ Nonempty (G.Walk x y) := (Iff.rfl)
+theorem reachable_iff_mem_nonempty_walk {x y : α} :
+    G.Reachable x y ↔ x ∈ V(G) ∧ Nonempty (G.Walk x y) := (Iff.rfl)
+
+namespace Walk
+
+theorem end_mem_vertexSet {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : y ∈ V(G) := by
+  induction p with
+  | nil => exact hx
+  | cons e h p ih => exact ih h.right_mem
+
+/-- A walk starting at an actual vertex witnesses reachability. -/
+theorem reachable {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : G.Reachable x y :=
+  ⟨hx, ⟨p⟩⟩
+
+end Walk
+
+/-- The endpoints of a link are reachable. -/
+theorem IsLink.reachable {x y : α} {e : β} (h : G.IsLink e x y) : G.Reachable x y :=
+  h.toWalk.reachable h.left_mem
 
 namespace Reachable
 
-variable {x y z : V(G)}
+variable {x y z : α}
 
 /-- Every actual vertex is reachable from itself. -/
 @[refl]
-theorem refl (x : V(G)) : G.Reachable x x := ⟨.nil⟩
+theorem refl (hx : x ∈ V(G)) : G.Reachable x x := ⟨hx, ⟨.nil⟩⟩
 
 /-- Multigraph reachability is symmetric. -/
 @[symm]
-theorem symm (h : G.Reachable x y) : G.Reachable y x :=
-  h.map Walk.reverse
+theorem symm (h : G.Reachable x y) : G.Reachable y x := by
+  rcases h with ⟨hx, ⟨p⟩⟩
+  exact ⟨p.end_mem_vertexSet hx, ⟨p.reverse⟩⟩
 
 /-- Multigraph reachability is transitive. -/
 @[trans]
-theorem trans (hxy : G.Reachable x y) (hyz : G.Reachable y z) : G.Reachable x z :=
-  Nonempty.map2 Walk.append hxy hyz
+theorem trans (hxy : G.Reachable x y) (hyz : G.Reachable y z) : G.Reachable x z := by
+  rcases hxy with ⟨hx, ⟨p⟩⟩
+  rcases hyz with ⟨_, ⟨q⟩⟩
+  exact ⟨hx, ⟨p.append q⟩⟩
 
 end Reachable
+
+/-- Reachability is an equivalence relation on the actual vertices of a graph. -/
+theorem reachable_is_equivalence (G : Graph α β) :
+    Equivalence (fun x y : V(G) => G.Reachable x y) :=
+  ⟨fun x => Reachable.refl x.property, Reachable.symm, Reachable.trans⟩
 
 end Graph
