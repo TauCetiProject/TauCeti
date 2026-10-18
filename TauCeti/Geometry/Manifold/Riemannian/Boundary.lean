@@ -40,59 +40,122 @@ namespace Bundle.ContMDiffRiemannianMetric
 
 variable {n : ℕ} {k : ℕ∞ω} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-  [IsManifold (𝓡∂ (n + 1)) 1 M]
   [IsManifold (𝓡∂ (n + 1)) (k + 1) M]
 
-local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
-    ((𝓡∂ (n + 1)).boundary M) :=
-  TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
-
-local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) :=
-  TauCeti.isManifold_boundary (n := n) (k := 1) M one_ne_zero
-
 private lemma contMDiff_subtypeVal_boundary :
+    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+        ((𝓡∂ (n + 1)).boundary M) :=
+      TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+        ((𝓡∂ (n + 1)).boundary M) :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
     ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) (k + 1)
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) := by
+  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+    IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+      ((𝓡∂ (n + 1)).boundary M) :=
+    TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+      ((𝓡∂ (n + 1)).boundary M) :=
+    IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
   exact (TauCeti.isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M
     (by simp)).contMDiff
 
-include k in
 private lemma injective_mfderiv_subtypeVal_boundary :
+    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+        ((𝓡∂ (n + 1)).boundary M) :=
+      TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+        ((𝓡∂ (n + 1)).boundary M) :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
     ∀ x, Function.Injective
       (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
         (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x) := by
+  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+    IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+      ((𝓡∂ (n + 1)).boundary M) :=
+    TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+      ((𝓡∂ (n + 1)).boundary M) :=
+    IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+  dsimp only
   intro x
   exact (TauCeti.isImmersion_subtypeVal_boundary (n := n) (k := k + 1) M
     (by simp)).mfderiv_injective (by simp) x
 
 /-- The `C^k` Riemannian metric induced on the boundary by an ambient `C^k` metric. -/
 noncomputable def restrictBoundaryTangentSpace
-    (g : ContMDiffRiemannianMetric (𝓡∂ (n + 1)) k
+    (g : let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+      ContMDiffRiemannianMetric (𝓡∂ (n + 1)) k
         (EuclideanSpace ℝ (Fin (n + 1)))
         (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)) :
+    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+        ((𝓡∂ (n + 1)).boundary M) :=
+      TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+        ((𝓡∂ (n + 1)).boundary M) :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
     ContMDiffRiemannianMetric 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k
       (EuclideanSpace ℝ (Fin n))
       (fun x : (𝓡∂ (n + 1)).boundary M ↦
         TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :=
+    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+        ((𝓡∂ (n + 1)).boundary M) :=
+      TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+        ((𝓡∂ (n + 1)).boundary M) :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
     g.pullback Subtype.val (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
       (injective_mfderiv_subtypeVal_boundary (n := n) (k := k) (M := M))
 
 /-- The induced boundary metric evaluates the ambient metric on boundary tangent derivatives. -/
 @[simp]
 theorem restrictBoundaryTangentSpace_inner
-    (g : ContMDiffRiemannianMetric (𝓡∂ (n + 1)) k
+    (g : let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+      ContMDiffRiemannianMetric (𝓡∂ (n + 1)) k
         (EuclideanSpace ℝ (Fin (n + 1)))
         (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)) :
+    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+        ((𝓡∂ (n + 1)).boundary M) :=
+      TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+        ((𝓡∂ (n + 1)).boundary M) :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
     ∀ (x : (𝓡∂ (n + 1)).boundary M)
       (v w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x),
       (g.restrictBoundaryTangentSpace).inner x v w =
         g.inner (x : M)
           (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
             (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x v)
-      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
             (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) := by
+  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+    IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+      ((𝓡∂ (n + 1)).boundary M) :=
+    TauCeti.isManifold_boundary (n := n) (k := k + 1) M (by simp)
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+      ((𝓡∂ (n + 1)).boundary M) :=
+    IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+  dsimp only
   intro x v w
+  change (g.pullback Subtype.val
+      (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
+      (injective_mfderiv_subtypeVal_boundary (n := n) (k := k) (M := M))).inner x v w = _
   exact g.pullback_inner Subtype.val
     (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
     (injective_mfderiv_subtypeVal_boundary (n := n) (k := k) (M := M)) x v w
