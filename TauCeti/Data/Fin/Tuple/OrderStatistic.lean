@@ -59,7 +59,7 @@ theorem orderStatistic_def (k : Fin n) (x : Fin n → α) :
 theorem orderStatistic_comp_of_monotone {β : Type*} [LinearOrder β] (f : α → β)
     (hf : Monotone f) (k : Fin n) (x : Fin n → α) :
     orderStatistic k (f ∘ x) = f (orderStatistic k x) := by
-  change ((f ∘ x) ∘ Tuple.sort (f ∘ x)) k = (f ∘ (x ∘ Tuple.sort x)) k
+  rw [orderStatistic_def, orderStatistic_def]
   exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort (f ∘ x))
     (hf.comp (Tuple.monotone_sort x))) k
 
@@ -132,8 +132,10 @@ theorem measurable_orderStatistic (k : Fin n) :
     rw [(Finset.mem_powersetCard.mp s.2).2]
     omega)
   have hrepr : (orderStatistic k : (Fin n → α) → α) =
-      fun x => p.attach.inf' hpa fun s => s.1.sup' (hs s) x := by
+      p.attach.inf' hpa fun s =>
+        s.1.sup' (hs s) fun i (x : Fin n → α) => x i := by
     funext x
+    simp only [Finset.inf'_apply, Finset.sup'_apply]
     refine eq_of_forall_ge_iff fun t => ?_
     rw [orderStatistic_le_iff, Nat.lt_iff_add_one_le]
     simp only [Finset.inf'_le_iff, Finset.sup'_le_iff]
@@ -148,20 +150,11 @@ theorem measurable_orderStatistic (k : Fin n) :
       exact Finset.card_le_card fun i hi =>
         Finset.mem_filter.mpr ⟨Finset.mem_univ i, hsle i hi⟩
   rw [hrepr]
-  rw [show (fun x => p.attach.inf' hpa fun s => s.1.sup' (hs s) x) =
-      p.attach.inf' hpa (fun s x => s.1.sup' (hs s) x) by
-    funext x
-    rw [Finset.inf'_apply]]
-  refine Finset.inf'_induction hpa (fun s x => s.1.sup' (hs s) x)
-    (p := fun f => Measurable f) (fun (f : (Fin n → α) → α) hf g hg => ?_) ?_
-  · change Measurable fun x => min (f x) (g x)
-    exact hf.min hg
-  · intro s _
-    rw [show (fun x => s.1.sup' (hs s) x) =
-        s.1.sup' (hs s) (fun i x => x i) by
-      funext x
-      rw [Finset.sup'_apply]]
-    exact Finset.measurable_sup' (hs s) fun i _ =>
-      measurable_pi_apply (X := fun _ : Fin n => α) i
+  refine Finset.inf'_induction hpa
+    (fun s => s.1.sup' (hs s) fun i (x : Fin n → α) => x i)
+    (p := fun f => Measurable f) (fun (_ : (Fin n → α) → α) hf _ hg => hf.min hg) ?_
+  intro s _
+  exact Finset.measurable_sup' (hs s) fun i _ =>
+    measurable_pi_apply (X := fun _ : Fin n => α) i
 
 end TauCeti
