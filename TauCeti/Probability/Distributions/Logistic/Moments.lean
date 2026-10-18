@@ -17,11 +17,9 @@ Every natural moment of a logistic law is integrable. For positive scale `s`, it
 the location `m`, its second raw moment is `m ^ 2 + π ^ 2 * s ^ 2 / 3`, and its variance is
 `π ^ 2 * s ^ 2 / 3`.
 
-The computation uses the established Gamma-product moment-generating function and Mathlib's
-Euler reflection formula `Real.Gamma_mul_Gamma_one_sub`. Multiplying the MGF by
-`sin (π * s * t)` removes the singularity in the quotient formula at zero. The second and
-third derivatives of this identity give the first two moments without differentiating Gamma
-twice.
+Moment integrability justifies integrating polynomials term by term. The mean and second raw
+moment formulas evaluate expectations of affine and quadratic functions, while the variance
+formula describes dispersion in terms of the scale.
 
 ## References
 
@@ -58,6 +56,11 @@ theorem integrable_pow_logisticMeasure (m s : ℝ) (n : ℕ) :
 theorem integrable_id_logisticMeasure (m s : ℝ) : Integrable id (logisticMeasure m s) := by
   simpa [Function.id_def] using integrable_pow_logisticMeasure m s 1
 
+/- The computation uses the established Gamma-product moment-generating function and Mathlib's
+Euler reflection formula `Real.Gamma_mul_Gamma_one_sub`. Multiplying the MGF by
+`sin (π * s * t)` removes the singularity in the quotient formula at zero. The second and
+third derivatives of this identity give the first two moments without differentiating Gamma
+twice. -/
 private lemma mgf_mul_sin_logisticMeasure (hs : 0 < s) :
     (fun t => mgf id (logisticMeasure m s) t * sin (π * s * t)) =ᶠ[𝓝 0]
       (fun t => exp (m * t) * (π * s * t)) := by
