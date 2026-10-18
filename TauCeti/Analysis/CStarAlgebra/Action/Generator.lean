@@ -44,13 +44,7 @@ variable {A : Type*} [NonUnitalCStarAlgebra A]
 /-- A continuous real C⋆-action, viewed as a strongly continuous group of real operators. -/
 def toStronglyContinuousGroup (α : CStarAction (Multiplicative ℝ) A) :
     StronglyContinuousGroup A where
-  toFun t :=
-    let T : A →L[ℂ] A :=
-      { toFun := α (Multiplicative.ofAdd t)
-        map_add' := map_add _
-        map_smul' := map_smul _
-        cont := (StarAlgEquiv.isometry (α (Multiplicative.ofAdd t))).continuous }
-    T.restrictScalars ℝ
+  toFun t := (α.toContinuousLinearMap (Multiplicative.ofAdd t)).restrictScalars ℝ
   map_zero' := by
     ext a
     exact α.one_apply a

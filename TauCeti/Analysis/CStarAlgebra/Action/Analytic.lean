@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator
 public import TauCeti.Analysis.Complex.RealIdentity
-public import Mathlib.Analysis.Complex.RealDeriv
 
 /-!
 # Entire analytic elements of C⋆-algebra actions
@@ -18,7 +17,7 @@ entire `A`-valued function. That function is unique, and `α.entireExtension a z
 `α_z a` at complex time `z`.
 
 The entire analytic elements form a nonunital star subalgebra, on which the complex-time
-extension is additive, multiplicative and satisfies `α_z (a⋆) = (α_{conj z} a)⋆`. It is
+extension is complex linear, multiplicative and satisfies `α_z (a⋆) = (α_{conj z} a)⋆`. It is
 invariant under the action and its complex-time extension: `α_w (α_z a) = α_{z + w} a`. The
 norm of `α_z a` depends only on the imaginary part of `z`, so the extension is bounded on
 every horizontal strip of bounded width. Entire analytic elements lie in the domain of the
@@ -98,16 +97,6 @@ theorem isEntireAnalytic_iff :
   ⟨fun h => ⟨h.differentiable_entireExtension, h.entireExtension_ofReal⟩,
     fun h => ⟨_, h.1, h.2⟩⟩
 
-/-- Every automorphism of the action is differentiable along complex curves. -/
-private theorem differentiable_apply_comp (g : Multiplicative ℝ) {F : ℂ → A}
-    (hF : Differentiable ℂ F) : Differentiable ℂ fun z => α g (F z) :=
-  let T : A →L[ℂ] A :=
-    { toFun := α g
-      map_add' := map_add _
-      map_smul' := map_smul _
-      cont := (StarAlgEquiv.isometry (α g)).continuous }
-  T.differentiable.comp hF
-
 namespace IsEntireAnalytic
 
 /-- **Time shift.** Translating complex time by a real time `t` is the action of `t`. -/
@@ -115,10 +104,9 @@ theorem entireExtension_add_ofReal (h : α.IsEntireAnalytic a) (z : ℂ) (t : �
     α.entireExtension a (z + t) = α (Multiplicative.ofAdd t) (α.entireExtension a z) := by
   have hF := h.differentiable_entireExtension
   have := (hF.comp (differentiable_id.add_const (t : ℂ))).eq_of_ofReal_eq
-    (differentiable_apply_comp (Multiplicative.ofAdd t) hF) fun s => by
-      simp only [Function.comp_apply, id_eq]
-      rw [← Complex.ofReal_add, h.entireExtension_ofReal, h.entireExtension_ofReal,
-        ofAdd_add, mul_comm, mul_apply]
+    ((α.toContinuousLinearMap (Multiplicative.ofAdd t)).differentiable.comp hF) fun s => by
+      simp only [Function.comp_apply, id_eq, toContinuousLinearMap_apply, ← Complex.ofReal_add,
+        h.entireExtension_ofReal, ofAdd_add, mul_comm (Multiplicative.ofAdd s), mul_apply]
   exact congrFun this z
 
 /-- The values of the complex-time extension are again entire analytic. -/
@@ -221,6 +209,29 @@ private theorem differentiable_entireExtension_mul (ha : α.IsEntireAnalytic a)
     Differentiable ℂ fun z => α.entireExtension a z * α.entireExtension b z :=
   (ContinuousLinearMap.mul ℂ A).isBoundedBilinearMap.differentiable.comp
     (ha.differentiable_entireExtension.prodMk hb.differentiable_entireExtension)
+
+/-- Negatives of entire analytic elements are entire analytic. -/
+theorem neg (ha : α.IsEntireAnalytic a) : α.IsEntireAnalytic (-a) :=
+  ⟨_, ha.differentiable_entireExtension.neg, fun t => by simp [ha.entireExtension_ofReal]⟩
+
+/-- The complex-time extension commutes with negation. -/
+theorem entireExtension_neg (ha : α.IsEntireAnalytic a) (z : ℂ) :
+    α.entireExtension (-a) z = -α.entireExtension a z :=
+  congrFun (entireExtension_eq_of_differentiable ha.differentiable_entireExtension.neg fun t => by
+    simp [ha.entireExtension_ofReal]) z
+
+/-- Differences of entire analytic elements are entire analytic. -/
+theorem sub (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) :
+    α.IsEntireAnalytic (a - b) :=
+  ⟨_, ha.differentiable_entireExtension.sub hb.differentiable_entireExtension, fun t => by
+    simp [ha.entireExtension_ofReal, hb.entireExtension_ofReal]⟩
+
+/-- The complex-time extension commutes with subtraction. -/
+theorem entireExtension_sub (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) (z : ℂ) :
+    α.entireExtension (a - b) z = α.entireExtension a z - α.entireExtension b z :=
+  congrFun (entireExtension_eq_of_differentiable
+    (ha.differentiable_entireExtension.sub hb.differentiable_entireExtension) fun t => by
+      simp [ha.entireExtension_ofReal, hb.entireExtension_ofReal]) z
 
 /-- Products of entire analytic elements are entire analytic. -/
 theorem mul (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) :

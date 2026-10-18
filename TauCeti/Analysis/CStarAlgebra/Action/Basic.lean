@@ -14,8 +14,9 @@ public import TauCeti.Dynamics.Flow.Basic
 
 A `CStarAction G A` is a homomorphism into the complex star-algebra automorphisms of `A`
 whose orbits are norm-continuous. The algebra need not have an identity. Automorphisms are
-isometric, so point-norm continuity implies joint continuity of evaluation. This is the
-continuity needed when an action is applied to a coefficient-valued convolution integrand.
+isometric, hence each one is a continuous complex linear map, and point-norm continuity implies
+joint continuity of evaluation. This is the continuity needed when an action is applied to a
+coefficient-valued convolution integrand.
 
 Actions can be pulled back along continuous group homomorphisms and transported along
 star-algebra equivalences. The latter construction expresses conjugacy of dynamical systems.
@@ -81,6 +82,18 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
     α g (α g⁻¹ a) = a := by
   rw [← mul_apply]
   simp
+
+/-- The automorphism by which a group element acts, as a continuous complex linear map. -/
+@[expose] def toContinuousLinearMap (α : CStarAction G A) (g : G) : A →L[ℂ] A where
+  toFun := α g
+  map_add' := map_add _
+  map_smul' := map_smul _
+  cont := (StarAlgEquiv.isometry (α g)).continuous
+
+@[simp]
+theorem toContinuousLinearMap_apply (α : CStarAction G A) (g : G) (a : A) :
+    α.toContinuousLinearMap g a = α g a :=
+  (rfl)
 
 /-- Membership in an invariant subset is unchanged by the action. -/
 @[simp]
