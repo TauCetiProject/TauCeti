@@ -44,6 +44,10 @@ these statements the vertices are indexed by natural numbers `k`, cast to `Fin n
   `ConvexPolygon.volume_carrier_three_of_forall_eq_inr`: an ideal triangle has area `π`.
 * `ConvexPolygon.volume_carrier_three_of_vertex_one_of_vertex_two`: a triangle with two ideal
   vertices has area `π - α`, for its angle `α` at the third vertex.
+* `volume_rightHalfPlane`, `volume_leftHalfPlane`: by contrast, a half-plane has infinite area.
+* `ConvexPolygon.carrier_subset_closure_leftHalfPlane_of_forall`: the hull property, which follows
+  from finiteness of the area: the carrier lies in every closed half-plane containing the
+  vertices.
 
 ## Source
 
@@ -61,6 +65,21 @@ open MeasureTheory UpperHalfPlane
 open scoped MatrixGroups Pointwise OnePoint Real Fin.NatCast
 
 namespace TauCeti.UpperHalfPlane
+
+/-- The open right half-plane of a geodesic line has infinite area. -/
+theorem volume_rightHalfPlane (g : PSL(2, ℝ)) : volume (rightHalfPlane g) = ⊤ := by
+  rw [rightHalfPlane_def, measure_smul]
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  -- the half-plane `{Re z > 0}` contains regions above height `1` of every width
+  calc (r : ENNReal) = ENNReal.ofReal (((r : ℝ) + 1 - 1) / 1) := by simp
+    _ = volume {z : ℍ | z.re ∈ Set.Ico 1 ((r : ℝ) + 1) ∧ 1 < z.im} :=
+      (volume_setOf_re_mem_Ico_and_lt_im 1 ((r : ℝ) + 1) one_pos).symm
+    _ ≤ volume {z : ℍ | 0 < z.re} := measure_mono fun z hz ↦ one_pos.trans_le hz.1.1
+
+/-- The open left half-plane of a geodesic line has infinite area. -/
+theorem volume_leftHalfPlane (g : PSL(2, ℝ)) : volume (leftHalfPlane g) = ⊤ := by
+  rw [← rightHalfPlane_mul_pslS]
+  exact volume_rightHalfPlane _
 
 namespace ConvexPolygon
 
@@ -250,6 +269,42 @@ theorem volume_carrier_ne_top : volume P.carrier ≠ ⊤ := by
 theorem toReal_volume_carrier :
     (volume P.carrier).toReal = (n - 2) * π - ∑ i, P.interiorAngle i := by
   rw [volume_carrier, ENNReal.toReal_ofReal (sub_nonneg.2 P.sum_interiorAngle_le)]
+
+/-- **The carrier lies in every closed half-plane containing the vertices.** If every vertex of a
+convex polygon, finite or ideal, is weakly to the left of `geodesicLine g`, then so is the whole
+carrier: otherwise the carrier, whose boundary is made of sides lying in the closed half-plane,
+would contain the whole open right half-plane, which has infinite area. -/
+theorem carrier_subset_closure_leftHalfPlane_of_forall {g : PSL(2, ℝ)}
+    (h : ∀ i, P.vertex i ∈ extClosedLeftHalfPlane g) : P.carrier ⊆ closure (leftHalfPlane g) := by
+  -- the boundary of the carrier is the union of the sides, which lie in the closed half-plane
+  have hfr : frontier P.carrier ⊆ closure (leftHalfPlane g) := by
+    rw [P.frontier_carrier]
+    exact Set.iUnion_subset fun i ↦ by
+      rw [P.side_def]
+      exact extGeodesicSegment_subset_closure_leftHalfPlane (h i) (h (i + 1))
+  have hdisj := disjoint_rightHalfPlane_closure_leftHalfPlane g
+  intro z hz
+  by_contra hzg
+  have hzr : z ∈ rightHalfPlane g := by
+    have hz' := (rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane g).symm ▸
+      Set.mem_univ z
+    rw [closure_leftHalfPlane] at hzg
+    rcases hz' with (h | h) | h
+    · exact h
+    · exact absurd (Or.inr h) hzg
+    · exact absurd (Or.inl h) hzg
+  -- the open right half-plane misses the boundary, so by connectedness it lies in the carrier
+  have hsub : rightHalfPlane g ⊆ interior P.carrier := by
+    refine (isPreconnected_rightHalfPlane g).subset_left_of_subset_union isOpen_interior
+      P.isClosed_carrier.isOpen_compl (disjoint_compl_right.mono_left interior_subset)
+      (fun w hw ↦ ?_) ⟨z, hzr, ?_⟩
+    · by_cases hwC : w ∈ P.carrier
+      · exact Or.inl (by_contra fun hwi ↦ hdisj.le_bot ⟨hw, hfr ⟨subset_closure hwC, hwi⟩⟩)
+      · exact Or.inr hwC
+    · exact by_contra fun hzi ↦ hdisj.le_bot ⟨hzr, hfr ⟨subset_closure hz, hzi⟩⟩
+  have hle := measure_mono (μ := volume) (hsub.trans interior_subset)
+  rw [volume_rightHalfPlane] at hle
+  exact P.volume_carrier_ne_top (top_le_iff.1 hle)
 
 /-- An ideal polygon, with all `n` vertices on `∂ℍ`, has area `(n - 2) π`. -/
 theorem volume_carrier_of_forall_eq_inr (h : ∀ i, ∃ ξ : OnePoint ℝ, P.vertex i = .inr ξ) :
