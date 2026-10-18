@@ -321,8 +321,15 @@ noncomputable def eichlerTransvectionHom (hu : L.integralNorm u = 0) :
     rw [← hk]
     exact zsmul_mem (Submodule.mem_span_singleton_self (u : V)) k
 
-/-- The homomorphism sends the class of `w` to the Eichler transvection `E_{u,w}`. -/
+/-- The homomorphism sends the class of `w` to the Eichler transvection `E_{u,w}`, as an element
+of `specialOrthogonalGroup L`. -/
 @[simp]
+theorem toMul_eichlerTransvectionHom_mk (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) :
+    Additive.toMul (eichlerTransvectionHom hu (Submodule.Quotient.mk w)) =
+      ⟨eichlerTransvection hu w, eichlerTransvection_mem_specialOrthogonalGroup hu w⟩ := (rfl)
+
+/-- The homomorphism sends the class of `w` to the Eichler transvection `E_{u,w}`, as an isometry
+of `L`. -/
 theorem coe_toMul_eichlerTransvectionHom_mk (hu : L.integralNorm u = 0)
     (w : L.evenOrthogonal u) :
     ((Additive.toMul (eichlerTransvectionHom hu (Submodule.Quotient.mk w)) :
