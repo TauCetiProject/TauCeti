@@ -46,6 +46,9 @@ and maps are defined without nondegeneracy or a positive-dimension hypothesis.
   `fullAdelicSpecialOrthogonalToOrthogonal_comp_fullAdelicSpecialOrthogonalCongr`, in the
   namespace `TauCeti.QuadraticMap.OrthogonalCompactOpens`: the transports intertwine the maps
   `Spin → SO → O`.
+* `fullAdelicOrthogonalToFinite_comp_fullAdelicOrthogonalCongr` and its special orthogonal and
+  Spin analogues: forgetting the real place turns each full adelic transport into the
+  corresponding finite adelic transport.
 
 ## References
 
@@ -396,6 +399,51 @@ theorem fullAdelicSpecialOrthogonalToOrthogonal_comp_fullAdelicSpecialOrthogonal
         U.fullAdelicSpecialOrthogonalToOrthogonal := by
   ext g : 1
   simp [he]
+
+/-- Forgetting the real component turns full adelic orthogonal transport into finite adelic
+orthogonal transport. -/
+@[simp]
+theorem fullAdelicOrthogonalToFinite_comp_fullAdelicOrthogonalCongr
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p) (U'.orthogonal p)) :
+    U'.fullAdelicOrthogonalToFinite.comp
+        (U.fullAdelicOrthogonalCongr U' eR e he :
+          U.fullAdelicOrthogonal →* U'.fullAdelicOrthogonal) =
+      (restrictedProductCongrRight U.orthogonal U'.orthogonal
+          (fun p ↦ (e p).orthogonalGroupCongr) he :
+          U.finiteAdelicOrthogonal →* U'.finiteAdelicOrthogonal).comp
+        U.fullAdelicOrthogonalToFinite := by
+  ext x : 1
+  rfl
+
+/-- Forgetting the real component turns full adelic special orthogonal transport into finite
+adelic special orthogonal transport. -/
+@[simp]
+theorem fullAdelicSpecialOrthogonalToFinite_comp_fullAdelicSpecialOrthogonalCongr
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p) (U'.specialOrthogonal p)) :
+    U'.fullAdelicSpecialOrthogonalToFinite.comp
+        (U.fullAdelicSpecialOrthogonalCongr U' eR e hso :
+          U.fullAdelicSpecialOrthogonal →* U'.fullAdelicSpecialOrthogonal) =
+      (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
+          (fun p ↦ (e p).specialOrthogonalGroupCongr) hso :
+          U.finiteAdelicSpecialOrthogonal →* U'.finiteAdelicSpecialOrthogonal).comp
+        U.fullAdelicSpecialOrthogonalToFinite := by
+  ext x : 1
+  rfl
+
+/-- Forgetting the real component turns full adelic Spin transport into finite adelic Spin
+transport. -/
+@[simp]
+theorem fullAdelicSpinToFinite_comp_fullAdelicSpinCongr
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p) (U'.spin p)) :
+    U'.fullAdelicSpinToFinite.comp
+        (U.fullAdelicSpinCongr U' eR e hs : U.fullAdelicSpin →* U'.fullAdelicSpin) =
+      (restrictedProductCongrRight U.spin U'.spin (fun p ↦ (e p).spinGroupEquiv) hs :
+          U.finiteAdelicSpin →* U'.finiteAdelicSpin).comp
+        U.fullAdelicSpinToFinite := by
+  ext x : 1
+  rfl
 
 end Congr
 

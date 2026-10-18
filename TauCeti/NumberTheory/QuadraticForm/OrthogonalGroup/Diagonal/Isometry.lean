@@ -21,10 +21,6 @@ extensions of the rational isometry carry the full adelic diagonal subgroups ont
 the same way. The assertions hold for orthogonal, special orthogonal and Spin points, without
 nondegeneracy assumptions on the quadratic forms.
 
-The proofs use the naturality of scalar extension, `restrictedProductCongrRight`, the full adelic
-transports such as `TauCeti.QuadraticMap.OrthogonalCompactOpens.fullAdelicOrthogonalCongr`, and the
-coordinate formulas for `rationalDiagonal`.
-
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms* (1963), §101.
