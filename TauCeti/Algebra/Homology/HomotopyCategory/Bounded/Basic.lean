@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
+public import Mathlib.CategoryTheory.Localization.OfQuotient
 public import TauCeti.Algebra.Homology.EssentiallySmall
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.ObjectProperty
@@ -32,7 +33,9 @@ The construction follows the organization of Mathlib's bounded-below category
 * `CochainComplex.Bounded`: the full subcategory of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.bounded`: the corresponding property in the homotopy category.
 * `TauCeti.HomotopyCategory.Bounded`: the homotopy category of bounded cochain complexes.
-* `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes.
+* `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes. It is
+  a localization functor with respect to the homotopy equivalences, so functors and their shift
+  compatibilities descend along it.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
 small (through `HomotopyCategory.essentiallySmall` and
@@ -108,6 +111,26 @@ instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ whe
 /-- The full subcategory of bounded cochain complexes. -/
 abbrev Bounded [HasZeroMorphisms C] :=
   (CochainComplex.bounded C).FullSubcategory
+
+section
+
+variable {C} [Preadditive C] [HasBinaryBiproducts C]
+
+/-- The cylinder of a bounded cochain complex is bounded. -/
+lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C K) :
+    CochainComplex.bounded C K.cylinder := by
+  obtain ⟨a, b, ha, hb⟩ := (CochainComplex.bounded_iff C K).1 hK
+  obtain ⟨a', ha'⟩ := K.plus_cylinder ⟨a, ha⟩
+  refine (CochainComplex.bounded_iff C _).2 ⟨a', b, ha', ?_⟩
+  rw [CochainComplex.isStrictlyLE_iff]
+  intro i hi
+  refine homotopyCofiber.isZero_X (biprod.lift (𝟙 K) (-𝟙 K)) _ ?_ (fun j hj ↦ ?_)
+  · refine IsZero.of_iso ?_ ((HomologicalComplex.eval C (.up ℤ) i).mapBiprod _ _)
+    simpa using K.isZero_of_isStrictlyLE b i
+  · simp only [ComplexShape.up_Rel] at hj
+    exact K.isZero_of_isStrictlyLE b _ (by lia)
+
+end
 
 namespace Bounded
 
@@ -351,6 +374,29 @@ instance : (quotient C).EssSurj where
 instance : (quotient C).Full := by
   dsimp [quotient]
   infer_instance
+
+variable (C) in
+/-- The quotient functor from bounded cochain complexes is a localization functor with respect to
+the homotopy equivalences. This is the bounded analogue of Mathlib's corresponding instance for
+`HomotopyCategory.Plus.quotient`. -/
+instance [HasBinaryBiproducts C] :
+    (quotient C).IsLocalization
+      ((homotopyEquivalences C (.up ℤ)).inverseImage (CochainComplex.Bounded.ι C)) :=
+  Functor.isLocalization_of_essSurj_of_full_of_exists_cylinders _ _
+    (fun _ _ f hf ↦ by
+      simpa [← isIso_iff_of_reflects_iso _ (ι C),
+        ← HomotopyCategory.inverseImage_quotient_isomorphisms] using hf) (by
+    rintro K L f₀ f₁ hf
+    obtain ⟨f₀, rfl⟩ := ObjectProperty.homMk_surjective f₀
+    obtain ⟨f₁, rfl⟩ := ObjectProperty.homMk_surjective f₁
+    replace hf := HomotopyCategory.homotopyOfEq f₀ f₁ (by
+      simpa [quotient_map_hom, cancel_epi, cancel_mono] using congrArg InducedCategory.Hom.hom hf)
+    exact ⟨K.obj.precylinder.toFullSubcategory (CochainComplex.bounded_cylinder K.property),
+      HomotopicalAlgebra.Precylinder.LeftHomotopy.fullSubcategoryEquiv.symm
+        { h := cylinder.desc _ _ hf
+          h₀ := cylinder.ι₀_desc _ _ hf
+          h₁ := cylinder.ι₁_desc _ _ hf },
+      ⟨cylinder.homotopyEquiv _ (fun n ↦ ⟨n - 1, by simp⟩), rfl⟩⟩)
 
 section
 

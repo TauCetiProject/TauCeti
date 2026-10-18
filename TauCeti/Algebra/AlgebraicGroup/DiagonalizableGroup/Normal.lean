@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Finite
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 import TauCeti.RingTheory.FiniteType.FiniteRange
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints

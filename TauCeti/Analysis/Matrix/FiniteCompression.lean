@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.CharPowerSeries
+public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Finite compressions of principal-minor series
@@ -31,6 +32,7 @@ public section
 namespace TauCeti
 
 open Filter Finset Matrix Polynomial Topology
+open scoped PowerSeries.WithPiTopology
 
 variable {ι R : Type*} [DecidableEq ι]
 
@@ -87,6 +89,19 @@ theorem tendsto_coeff_charpolyRev_finiteCompression [CommRing R] [TopologicalSpa
   · simpa only [coeff_charpolyRev_finiteCompression, Matrix.charCoeff_def, hn, one_mul] using h
   · simpa only [coeff_charpolyRev_finiteCompression, Matrix.charCoeff_def, hn, neg_one_mul]
       using h.neg
+
+/-- Finite compressions converge coefficientwise to the principal-minor series whenever
+all the defining families of minors are summable. -/
+theorem tendsto_charpolyRev_finiteCompression [CommRing R] [TopologicalSpace R]
+    [ContinuousNeg R] {A : Matrix ι ι R}
+    (hA : ∀ n, Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
+    Tendsto (fun S : Finset ι ↦
+      ((A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev : PowerSeries R))
+      atTop (𝓝 A.charPowerSeries) := by
+  rw [PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
+  intro n
+  simpa only [Polynomial.coeff_coe, Matrix.coeff_charPowerSeries] using
+    tendsto_coeff_charpolyRev_finiteCompression n (hA n)
 
 /-- The principal-minor series of an output truncation is the polynomial determinant on
 the retained coordinates. No convergence or row-decay hypothesis on the original matrix is

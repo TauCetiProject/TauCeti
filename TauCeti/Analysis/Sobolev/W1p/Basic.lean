@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Dual
-import TauCeti.Analysis.Sobolev.GraphStep
+import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!

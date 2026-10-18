@@ -10,13 +10,14 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 /-!
 # Faces of the standard simplex
 
-Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f` along injective
-maps `f`, which embed a standard simplex as a face of a larger one.  Such a map keeps the weights
-of a point, so it is injective.  For `f = j.succAbove` its image is the facet on which the `j`-th
-weight vanishes, so a function taking a constant value on every facet takes that value wherever
-some weight vanishes.  Two facets, opposite `j < k`, meet in the codimension-two face opposite both:
-a common point of the two facets comes from that face through both composites of face maps, the
-two sides of the simplicial identity `SimplexCategory.δ_comp_δ`.
+Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
+map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
+one and keeps the weights of a point, so it is injective.  For `f = j.succAbove` its image is the
+facet on which the `j`-th weight vanishes, so a function taking a constant value on every facet
+takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
+codimension-two face opposite both: a common point of the two facets comes from that face through
+both composites of face maps, the two sides of the simplicial identity
+`SimplexCategory.δ_comp_δ`.
 -/
 
 public section
@@ -33,6 +34,16 @@ theorem ext_fin_three {R : Type*} [PartialOrder R] [Semiring R]
     | ⟨2, _⟩ => h2
 
 variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
+
+/-- Mapping a standard simplex adds the weights over each fibre of the map. -/
+theorem weights_map_apply [Fintype X] [DecidableEq Y]
+    (f : X → Y) (x : StdSimplex R X) (y : Y) :
+    (x.map f).weights y = ∑ i with f i = y, x.weights i := by
+  rw [weights_map, Finsupp.mapDomain_fintype, Finsupp.coe_finsetSum, Finset.sum_apply,
+    Finset.sum_filter]
+  apply Finset.sum_congr rfl
+  intro i _
+  by_cases hi : f i = y <;> simp [hi]
 
 /-- Along an injective map, the weight at the image of a point is the weight at that point. -/
 theorem weights_map_apply_of_injective {f : X → Y} (hf : f.Injective) (x : StdSimplex R X)

@@ -253,7 +253,7 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
     exact hSfin.lt_top
   have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
       ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
-    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (mu := mu.restrict (U : Set E)) (p := p) S
+    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (μ := mu.restrict (U : Set E)) (p := p) S
       hSlt).continuous.congr fun f => Set.setIntegralLp_apply (𝕜 := ℝ) S hSlt f
   simp only [hEq]
   exact continuous_const.mul
