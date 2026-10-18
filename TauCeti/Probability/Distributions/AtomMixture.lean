@@ -49,6 +49,7 @@ theorem atomMixture_def {α : Type*} [MeasurableSpace α]
       ENNReal.ofReal (1 - (w : ℝ)) • μ := (rfl)
 
 /-- Evaluation of an atom mixture on a measurable set. -/
+@[simp]
 theorem atomMixture_apply {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) (w : unitInterval) {s : Set α}
     (hs : MeasurableSet s) :
@@ -156,10 +157,11 @@ theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSi
 namespace TauCeti.Probability
 
 /-- Integrating against an atom mixture gives the corresponding convex combination. -/
-theorem integral_atomMixture {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    (μ : Measure α) (c : α) (w : unitInterval) (f : α → ℝ) (hf : Integrable f μ) :
+theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (μ : Measure α) (c : α) (w : unitInterval) (f : α → E) (hf : Integrable f μ) :
     ∫ x, f x ∂μ.atomMixture c w =
-      (w : ℝ) * f c + (1 - (w : ℝ)) * ∫ x, f x ∂μ := by
+      (w : ℝ) • f c + (1 - (w : ℝ)) • ∫ x, f x ∂μ := by
   rw [Measure.atomMixture, integral_add_measure]
   · simp [ENNReal.toReal_ofReal (unitInterval.nonneg w),
       ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
@@ -171,7 +173,7 @@ theorem integral_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable id μ) :
     ∫ x, x ∂μ.atomMixture c w =
       (w : ℝ) * c + (1 - (w : ℝ)) * ∫ x, x ∂μ := by
-  simpa only [id_eq] using integral_atomMixture μ c w id hμ
+  simpa only [id_eq, smul_eq_mul] using integral_atomMixture μ c w id hμ
 
 /-- The second raw moment of an atom mixture is the convex combination of the component second
 moments. -/
@@ -179,7 +181,7 @@ theorem integral_sq_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable (fun x => x ^ 2) μ) :
     ∫ x, x ^ 2 ∂μ.atomMixture c w =
       (w : ℝ) * c ^ 2 + (1 - (w : ℝ)) * ∫ x, x ^ 2 ∂μ := by
-  exact integral_atomMixture μ c w (fun x => x ^ 2) hμ
+  simpa only [smul_eq_mul] using integral_atomMixture μ c w (fun x => x ^ 2) hμ
 
 /-- The variance of an atom mixture is the within-component variance plus the variance caused by
 separating the atom from the component mean. -/
@@ -203,11 +205,7 @@ private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
     (hμ : Integrable (fun x => Real.exp (t * x)) μ) :
     mgf id (μ.atomMixture c w) t =
       (w : ℝ) * Real.exp (t * c) + (1 - (w : ℝ)) * mgf id μ t := by
-  rw [Measure.atomMixture, mgf_add_measure]
-  · simp [mgf, ENNReal.toReal_ofReal (unitInterval.nonneg w),
-      ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
-  · exact (integrable_dirac (by simp)).smul_measure (by simp)
-  · exact hμ.smul_measure (by simp)
+  simpa [mgf] using integral_atomMixture μ c w (fun x => Real.exp (t * x)) hμ
 
 /-- Away from the pure-atom endpoint, an atom mixture has an exponential moment exactly when its
 base component does. -/
@@ -263,15 +261,12 @@ theorem charFun_atomMixture (μ : Measure ℝ) [IsFiniteMeasure μ] (c : ℝ)
     charFun (μ.atomMixture c w) t =
       (w : ℝ) * Complex.exp (t * c * Complex.I) +
         (1 - (w : ℝ)) * charFun μ t := by
-  rw [charFun_apply_real, Measure.atomMixture, integral_add_measure]
-  · simp [charFun_apply_real, ENNReal.toReal_ofReal (unitInterval.nonneg w),
-      ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
-  · exact (integrable_dirac (by simp)).smul_measure (by simp)
-  · have hμ : Integrable (fun x : ℝ => Complex.exp (t * x * Complex.I)) μ := by
-      refine (integrable_const (1 : ℝ)).mono (by fun_prop) ?_
-      filter_upwards with x
-      convert le_rfl
-      simp [← Complex.ofReal_mul]
-    exact hμ.smul_measure (by simp)
+  have hμ : Integrable (fun x : ℝ => Complex.exp (t * x * Complex.I)) μ := by
+    refine (integrable_const (1 : ℝ)).mono (by fun_prop) ?_
+    filter_upwards with x
+    convert le_rfl
+    simp [← Complex.ofReal_mul]
+  simpa [charFun_apply_real] using
+    integral_atomMixture μ c w (fun x : ℝ => Complex.exp (t * x * Complex.I)) hμ
 
 end TauCeti.Probability
