@@ -122,7 +122,7 @@ theorem map_uniformOn_finset (e : α ↪ β) (he : Measurable e) (s : Finset α)
     map_uniformOn_of_bijOn s.finite_toSet he e.injective.injOn.bijOn_image
 
 /-- A bijection transports the uniform law on a finite type to the uniform law on its codomain. -/
-theorem map_uniformOn_univ (e : α ≃ β) [Finite α] [Finite β] :
+theorem map_uniformOn_univ (e : α ≃ β) [Finite α] :
     (uniformOn (Set.univ : Set α)).map e = uniformOn (Set.univ : Set β) := by
   exact map_uniformOn_of_bijOn Set.finite_univ (measurable_of_finite e) e.bijective.bijOn_univ
 
