@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Distributions.Gamma.Basic
 
 /-!
 # The density of the Gumbel distribution
@@ -36,8 +37,8 @@ interfaces used by density-based constructions.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
-  2nd ed., Wiley (1994), ch. 21.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
+  2nd ed., Wiley (1995), ch. 22.
 -/
 
 public section
@@ -67,7 +68,7 @@ def gumbelPDF (m s x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (gumbelPDFReal m s x)
 
 /-- The `ℝ≥0∞`-valued Gumbel density is `ENNReal.ofReal` of the real-valued one. -/
-theorem gumbelPDF_def (m s x : ℝ) :
+theorem gumbelPDF_eq_ofReal (m s x : ℝ) :
     gumbelPDF m s x = ENNReal.ofReal (gumbelPDFReal m s x) :=
   (rfl)
 
@@ -114,7 +115,7 @@ theorem gumbelPDFReal_pos (hs : 0 < s) (m x : ℝ) : 0 < gumbelPDFReal m s x := 
 
 /-- The `ℝ≥0∞`-valued Gumbel density is strictly positive at positive scale. -/
 theorem gumbelPDF_pos (hs : 0 < s) (m x : ℝ) : 0 < gumbelPDF m s x := by
-  rw [gumbelPDF_def, ENNReal.ofReal_pos]
+  rw [gumbelPDF_eq_ofReal, ENNReal.ofReal_pos]
   exact gumbelPDFReal_pos hs m x
 
 /-- Converting the extended nonnegative Gumbel density to `ℝ` recovers `gumbelPDFReal`. -/
@@ -198,21 +199,11 @@ theorem gumbelMeasure_eq_withDensity (m s : ℝ) :
       exact gumbelTransform_weight hs m e he
     rw [withDensity_congr_ae hweight, image_gumbelTransform_Ioi hs m,
       Measure.restrict_univ] at hmap
-    have hindicator :
-        (Ioi (0 : ℝ)).indicator (exponentialPDF 1) =ᵐ[volume] exponentialPDF 1 := by
-      filter_upwards [Ioi_ae_eq_Ici (μ := (volume : Measure ℝ)) (a := 0)] with e he
-      by_cases hpos : 0 < e
-      · simp [hpos]
-      · have hneg : e < 0 := by
-          rw [Set.mem_Ioi, Set.mem_Ici] at he
-          exact lt_of_not_ge fun hnonneg ↦ hpos (he.mpr hnonneg)
-        simp [hpos, exponentialPDF_of_neg hneg]
-    have hrestricted :
-        (volume.restrict (Ioi (0 : ℝ))).withDensity (exponentialPDF 1) =
-          volume.withDensity (exponentialPDF 1) := by
-      rw [← withDensity_indicator measurableSet_Ioi]
-      exact withDensity_congr_ae hindicator
-    rw [gumbelMeasure_of_pos hs, expMeasure_eq_withDensity, ← hrestricted, hmap]
+    have hexp :
+        expMeasure 1 = (volume.restrict (Ioi (0 : ℝ))).withDensity (exponentialPDF 1) := by
+      change gammaMeasure 1 1 = (volume.restrict (Ioi (0 : ℝ))).withDensity (gammaPDF 1 1)
+      exact gammaMeasure_eq_withDensity_restrict_Ioi 1 1
+    rw [gumbelMeasure_of_pos hs, hexp, hmap]
 
 /-- The `ℝ≥0∞`-valued Gumbel density has total mass `1` at positive scale. -/
 theorem lintegral_gumbelPDF_eq_one (hs : 0 < s) (m : ℝ) :
@@ -251,7 +242,7 @@ is Lebesgue integrable. This holds at every scale, including the zero measure. -
 theorem integrable_gumbelMeasure_iff (m s : ℝ) {g : ℝ → E} :
     Integrable g (gumbelMeasure m s) ↔
       Integrable fun y ↦ gumbelPDFReal m s y • g y := by
-  rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_def m s)]
+  rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_eq_ofReal m s)]
   exact integrable_withDensity_ofReal_iff (measurable_gumbelPDFReal m s).aemeasurable
     (ae_of_all _ (gumbelPDFReal_nonneg m s))
 
@@ -259,7 +250,7 @@ theorem integrable_gumbelMeasure_iff (m s : ℝ) {g : ℝ → E} :
 every scale, including the zero measure. -/
 theorem integral_gumbelMeasure_eq (m s : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂gumbelMeasure m s = ∫ y, gumbelPDFReal m s y • g y := by
-  rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_def m s)]
+  rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_eq_ofReal m s)]
   exact integral_withDensity_ofReal (measurable_gumbelPDFReal m s).aemeasurable
     (ae_of_all _ (gumbelPDFReal_nonneg m s)) g
 
