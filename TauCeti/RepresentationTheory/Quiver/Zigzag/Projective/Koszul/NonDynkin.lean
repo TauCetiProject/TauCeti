@@ -7,9 +7,10 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.NonDynkin
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Koszul.Bipartite
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.NonKoszul
 
 /-!
-# Koszul resolutions of zigzag simples for non-Dynkin graphs
+# Koszul resolutions of zigzag simples for non-Dynkin graphs and the Koszulity dichotomy
 
 Let `G` be a finite connected simple graph which is not a finite Dynkin diagram. The
 Etingof--Eu theorem gives injective left Koszul differentials for the preprojective algebra of
@@ -18,14 +19,33 @@ signed--signless comparison for bipartite graphs, together with the direct const
 graphs containing a cycle, then gives a linear graded projective resolution of every vertex
 simple of the zigzag algebra of `G`.
 
-This completes the positive half of the classical Koszulity classification of finite connected
-zigzag algebras in its resolution-theoretic form. The finite ADE obstruction is
-`TauCeti.exists_not_exists_isLinear_zigzagGradedSimple_of_isSimplyLaced`.
+Combined with the finite-ADE linear-resolution obstruction of
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.NonKoszul` and the finite/infinite
+dichotomy of `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.FiniteDimensional`, this
+establishes the complete resolution-theoretic Koszulity classification for connected finite
+simple graphs on at least two vertices: every graded vertex simple of `ZigzagAlgebra k G` admits
+a linear graded projective resolution if and only if `G` is not isomorphic to the diagram of any
+valid finite Dynkin type, and if and only if the preprojective (or signless preprojective)
+algebra of `G` is infinite-dimensional.
 
-## Main result
+## Main results
 
-* The main theorem below gives every graded vertex simple of a connected non-Dynkin zigzag
-  algebra a linear projective resolution.
+* `exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_not_exists_dynkinType_iso`:
+  every graded vertex simple of a connected non-Dynkin zigzag algebra has a linear graded
+  projective resolution.
+* `forall_preprojectiveKoszulLeft_injective_iff` and
+  `forall_preprojectiveKoszulLeft_injective_iff_not_finiteDimensional`: **the Koszulity dichotomy
+  for preprojective algebras of oriented graphs**: the left Koszul differential is injective at
+  every vertex if and only if the graph is not a Dynkin diagram, and if and only if the
+  preprojective algebra is infinite-dimensional.
+* `forall_exists_isLinear_zigzagGradedSimple_iff`: **the Koszulity dichotomy for zigzag
+  algebras**: for a connected finite simple graph on at least two vertices, every graded vertex
+  simple is linearly resolved if and only if the graph is not a Dynkin diagram.
+* `forall_exists_isLinear_zigzagGradedSimple_iff_forall_preprojectiveKoszulLeft_injective`,
+  `forall_exists_isLinear_zigzagGradedSimple_iff_not_finiteDimensional_preprojective`, and
+  `forall_exists_isLinear_zigzagGradedSimple_iff_not_finiteDimensional_signlessPreprojective`:
+  equivalence of zigzag Koszulity with exactness of the preprojective Koszul complex and with
+  infinite-dimensionality of the preprojective and signless preprojective algebras.
 
 ## References
 
@@ -47,6 +67,42 @@ universe u w
 
 variable (k : Type w) [Field k] {V : Type u} {G : SimpleGraph V} [Finite V]
 
+/-- For a nonempty finite quiver whose preprojective algebra is finite-dimensional, the left Koszul
+differential fails to be injective at some vertex. -/
+theorem exists_not_preprojectiveKoszulLeft_injective_of_finiteDimensional
+    {Q : Type*} [Quiver Q] [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] [Nonempty Q]
+    [FiniteDimensional k (preprojectiveAlgebra k Q)] :
+    ∃ v : Q, ¬ Function.Injective (preprojectiveKoszulLeft k v) := by
+  obtain ⟨v, y, hy, hb, hy0⟩ :=
+    exists_ne_zero_forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero k Q
+  exact ⟨v, fun h => hy0 ((preprojectiveKoszulLeft_injective_iff k v).1 h y hy hb)⟩
+
+/-- **The Koszulity dichotomy for preprojective algebras of oriented graphs**: for a connected
+finite simple graph `G` and any orientation `o` of `G`, the left Koszul differential of
+`Π_k(OrientedQuiver G o)` is injective at every vertex if and only if `G` is not isomorphic to the
+diagram of any valid Dynkin type. -/
+theorem forall_preprojectiveKoszulLeft_injective_iff (hG : G.Connected) (o : Orientation G) :
+    (∀ v : OrientedQuiver G o, Function.Injective (preprojectiveKoszulLeft k v)) ↔
+      ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix) := by
+  refine ⟨fun h ⟨_, _, ⟨e⟩⟩ => ?_,
+    fun hD v => preprojectiveKoszulLeft_injective_of_not_exists_dynkinType_iso k hG hD o v⟩
+  have _ : Nonempty V := hG.nonempty
+  have _ : Nonempty (OrientedQuiver G o) := (OrientedQuiver.vertexEquiv G o).symm.nonempty
+  have _ := finiteDimensional_preprojectiveAlgebra_of_iso k e o
+  obtain ⟨v, hv⟩ :=
+    exists_not_preprojectiveKoszulLeft_injective_of_finiteDimensional k (Q := OrientedQuiver G o)
+  exact hv (h v)
+
+/-- For a connected finite simple graph `G` and any orientation `o` of `G`, the left Koszul
+differential of `Π_k(OrientedQuiver G o)` is injective at every vertex if and only if
+`Π_k(OrientedQuiver G o)` is infinite-dimensional. -/
+theorem forall_preprojectiveKoszulLeft_injective_iff_not_finiteDimensional
+    (hG : G.Connected) (o : Orientation G) :
+    (∀ v : OrientedQuiver G o, Function.Injective (preprojectiveKoszulLeft k v)) ↔
+      ¬ FiniteDimensional k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
+  rw [forall_preprojectiveKoszulLeft_injective_iff k hG o,
+    finiteDimensional_preprojectiveAlgebra_orientedQuiver_iff k hG o]
+
 /-- **Every vertex simple of a connected non-Dynkin zigzag algebra has a linear resolution.**
 If `G` is not isomorphic to the diagram of any valid finite Dynkin type, then the graded simple
 at every vertex has a linear graded projective resolution. This includes all connected
@@ -64,5 +120,54 @@ exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_not_exists_dynk
   exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_preprojectiveKoszulLeft_injective
     k hG.preconnected o
       (preprojectiveKoszulLeft_injective_of_not_exists_dynkinType_iso k hG hD o) v
+
+/-- **The Koszulity dichotomy for zigzag algebras**: for a connected finite simple graph `G` on at
+least two vertices, every graded vertex simple of `ZigzagAlgebra k G` admits a linear graded
+projective resolution if and only if `G` is not isomorphic to the diagram of any valid Dynkin
+type. -/
+theorem forall_exists_isLinear_zigzagGradedSimple_iff [Nontrivial V] (hG : G.Connected) :
+    (∀ v : V, ∃ r : GradedProjectiveResolution.{w, max u w, max u w, max u w}
+      (zigzagIntegerGrade k G) (zigzagGradedSimple k G v).grading, r.IsLinear) ↔
+      ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix) :=
+  ⟨fun h ⟨_, ht, ⟨e⟩⟩ =>
+    let ⟨v, hv⟩ := exists_not_exists_isLinear_zigzagGradedSimple_of_iso k ht e
+    hv (h v),
+   fun hD v =>
+    exists_isLinear_gradedProjectiveResolution_zigzagGradedSimple_of_not_exists_dynkinType_iso
+      k hG hD v⟩
+
+/-- For a connected finite simple graph `G` on at least two vertices and any orientation `o` of `G`,
+every graded vertex simple of `ZigzagAlgebra k G` admits a linear graded projective resolution if
+and only if the left Koszul differential of `Π_k(OrientedQuiver G o)` is injective at every
+vertex. -/
+theorem forall_exists_isLinear_zigzagGradedSimple_iff_forall_preprojectiveKoszulLeft_injective
+    [Nontrivial V] (hG : G.Connected) (o : Orientation G) :
+    (∀ v : V, ∃ r : GradedProjectiveResolution.{w, max u w, max u w, max u w}
+      (zigzagIntegerGrade k G) (zigzagGradedSimple k G v).grading, r.IsLinear) ↔
+      ∀ v : OrientedQuiver G o, Function.Injective (preprojectiveKoszulLeft k v) := by
+  rw [forall_exists_isLinear_zigzagGradedSimple_iff k hG,
+    forall_preprojectiveKoszulLeft_injective_iff k hG o]
+
+/-- For a connected finite simple graph `G` on at least two vertices and any orientation `o` of `G`,
+every graded vertex simple of `ZigzagAlgebra k G` admits a linear graded projective resolution if
+and only if the preprojective algebra `Π_k(OrientedQuiver G o)` is infinite-dimensional. -/
+theorem forall_exists_isLinear_zigzagGradedSimple_iff_not_finiteDimensional_preprojective
+    [Nontrivial V] (hG : G.Connected) (o : Orientation G) :
+    (∀ v : V, ∃ r : GradedProjectiveResolution.{w, max u w, max u w, max u w}
+      (zigzagIntegerGrade k G) (zigzagGradedSimple k G v).grading, r.IsLinear) ↔
+      ¬ FiniteDimensional k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
+  rw [forall_exists_isLinear_zigzagGradedSimple_iff k hG,
+    finiteDimensional_preprojectiveAlgebra_orientedQuiver_iff k hG o]
+
+/-- For a connected finite simple graph `G` on at least two vertices, every graded vertex simple of
+`ZigzagAlgebra k G` admits a linear graded projective resolution if and only if the signless
+preprojective algebra of `DoubledQuiver G` is infinite-dimensional. -/
+theorem forall_exists_isLinear_zigzagGradedSimple_iff_not_finiteDimensional_signlessPreprojective
+    [Nontrivial V] [∀ i, Fintype (G.neighborSet i)] (hG : G.Connected) :
+    (∀ v : V, ∃ r : GradedProjectiveResolution.{w, max u w, max u w, max u w}
+      (zigzagIntegerGrade k G) (zigzagGradedSimple k G v).grading, r.IsLinear) ↔
+      ¬ FiniteDimensional k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  rw [forall_exists_isLinear_zigzagGradedSimple_iff k hG,
+    finiteDimensional_signlessPreprojectiveAlgebra_iff k hG]
 
 end TauCeti

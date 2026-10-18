@@ -17,14 +17,17 @@ import TauCeti.RepresentationTheory.Quiver.Zigzag.Connected
 # Signless and preprojective relations of an oriented graph
 
 A two-colouring of a simple graph gives a source--sink orientation by directing every edge toward
-its `true` endpoint. Symmetrifying this oriented quiver recovers the doubled quiver. Under that
-identification, the signless relation of the graph becomes the signless relation of the
-symmetrified orientation.
+its `true` endpoint. Symmetrifying any orientation of the graph recovers the doubled quiver. Under
+that identification, the signless relation of the graph becomes the signless relation of the
+symmetrified orientation, and rescaling each arrow of the orientation by the sign of the colour of
+its head identifies the signless preprojective algebra of the doubled graph with the additive
+preprojective algebra of the orientation.
 
-Since every arrow of the oriented quiver goes from a `false` vertex to a `true` vertex, the
-signless/preprojective comparison needs no further arrow rescaling. Thus the signless
-preprojective algebra of the doubled graph is explicitly isomorphic to the additive
-preprojective algebra of its source--sink orientation.
+For the source--sink orientation, every arrow of the oriented quiver goes from a `false` vertex to a
+`true` vertex, so the signless/preprojective comparison needs no further arrow rescaling. Thus the
+signless preprojective algebra of the doubled graph is explicitly isomorphic to the additive
+preprojective algebra of its source--sink orientation by the identity of the symmetrified path
+algebra.
 
 Conversely, suppose that a unit gauge makes every corner of the preprojective relator a scalar
 multiple of the corresponding signless relator. The comparison scalars change sign along every
@@ -40,6 +43,9 @@ any choice of orientation.
 * `TauCeti.DoubledQuiver.orientationSignlessPreprojectiveAlgebraEquiv`: the induced comparison
   between the signless algebra of the doubled graph and the signless algebra of a symmetrified
   orientation.
+* `SimpleGraph.Coloring.signlessPreprojectiveAlgebraEquiv` and
+  `SimpleGraph.IsBipartite.signlessPreprojectiveAlgebraEquiv`: the comparison between the graph's
+  signless algebra and the preprojective algebra of any orientation.
 * `SimpleGraph.Coloring.sourceSinkSignlessPreprojectiveAlgebraEquiv`: the comparison between the
   graph's signless algebra and the preprojective algebra of the source--sink orientation.
 * `TauCeti.DoubledQuiver.Orientation.not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite`:
@@ -232,6 +238,18 @@ theorem orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk
   rw [signlessPreprojectiveMk_apply, signlessPreprojectiveMk_apply,
     orientationSignlessPreprojectiveAlgebraEquiv, Ideal.quotientEquivAlg_mk]
 
+/-- The inverse signless-quotient comparison is induced by the inverse path-algebra comparison. -/
+@[simp]
+theorem orientationSignlessPreprojectiveAlgebraEquiv_symm_signlessPreprojectiveMk
+    (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
+    (orientationSignlessPreprojectiveAlgebraEquiv o k).symm (signlessPreprojectiveMk k _ x) =
+      signlessPreprojectiveMk k _
+        ((orientationPathAlgebraEquiv o k).symm x) := by
+  apply (orientationSignlessPreprojectiveAlgebraEquiv o k).injective
+  rw [AlgEquiv.apply_symm_apply,
+    orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+    AlgEquiv.apply_symm_apply]
+
 /-- Vanishing of a path in the signless algebra of a doubled graph transfers to the
 preprojective algebra of any orientation when the graph is bipartite. -/
 theorem preprojectiveMk_ofPath_eq_zero_of_signless
@@ -243,24 +261,17 @@ theorem preprojectiveMk_ofPath_eq_zero_of_signless
     preprojectiveMk k (OrientedQuiver G o) (ofPath x) = 0 := by
   let e := (orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)
-  have hpath :
-      (orientationSignlessPreprojectiveAlgebraEquiv o k).symm
-        (signlessPreprojectiveMk k _ (ofPath x)) =
-      signlessPreprojectiveMk k _
-        (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
-    apply (orientationSignlessPreprojectiveAlgebraEquiv o k).injective
-    rw [AlgEquiv.apply_symm_apply,
-      orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
-      ← orientationPathAlgebraEquiv_symm_ofPath, AlgEquiv.apply_symm_apply]
   have htransport :
       e.symm (preprojectiveMk k (OrientedQuiver G o) (ofPath x)) =
         _root_.Quiver.Path.weight
           (fun {_ _} f => doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) f)
           x.2.2 • signlessPreprojectiveMk k _
             (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
-    rw [AlgEquiv.symm_trans_apply]
-    rw [symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
-      rescale_ofPath, map_smul, map_smul, hpath]
+    rw [AlgEquiv.symm_trans_apply,
+      symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
+      rescale_ofPath, map_smul, map_smul,
+      orientationSignlessPreprojectiveAlgebraEquiv_symm_signlessPreprojectiveMk,
+      orientationPathAlgebraEquiv_symm_ofPath]
   apply e.symm.injective
   simp only [htransport, hx, smul_zero, map_zero]
 
@@ -280,31 +291,70 @@ variable {V : Type u} {G : SimpleGraph V}
 
 variable (C : G.Coloring Bool)
 
-/-- The colour of a vertex of the oriented quiver, transported from the graph. -/
-def sourceSinkColor (i : OrientedQuiver G C.sourceSink) : Bool :=
-  C ((OrientedQuiver.vertexEquiv G C.sourceSink).symm i)
+/-- The colour of a vertex of an oriented quiver, transported from the graph. -/
+def orientedColor (o : Orientation G) (i : OrientedQuiver G o) : Bool :=
+  C ((OrientedQuiver.vertexEquiv G o).symm i)
 
-/-- The colour on the source--sink oriented quiver is the original graph colouring. -/
+/-- The colour on an oriented quiver is the original graph colouring. -/
 @[simp]
-theorem sourceSinkColor_vertex (i : V) :
-    C.sourceSinkColor (OrientedQuiver.vertex G C.sourceSink i) = C i := by
-  rw [sourceSinkColor, OrientedQuiver.vertexEquiv_symm_vertex]
+theorem orientedColor_vertex (o : Orientation G) (i : V) :
+    C.orientedColor o (OrientedQuiver.vertex G o i) = C i := by
+  rw [orientedColor, OrientedQuiver.vertexEquiv_symm_vertex]
 
-/-- Every arrow of the source--sink orientation has differently coloured endpoints. -/
-theorem sourceSinkColor_ne {i j : OrientedQuiver G C.sourceSink} (a : i ⟶ j) :
-    C.sourceSinkColor i ≠ C.sourceSinkColor j := by
-  exact C.valid a.1
+/-- Every arrow of an orientation of a two-coloured graph has differently coloured endpoints. -/
+theorem orientedColor_ne (o : Orientation G) {i j : OrientedQuiver G o} (a : i ⟶ j) :
+    C.orientedColor o i ≠ C.orientedColor o j :=
+  C.valid a.1
 
 /-- Every arrow of the source--sink orientation ends at a vertex of colour `true`. -/
-theorem sourceSinkColor_target_eq_true
+theorem orientedColor_sourceSink_target_eq_true
     {i j : OrientedQuiver G C.sourceSink} (a : i ⟶ j) :
-    C.sourceSinkColor j = true := by
-  rw [sourceSinkColor]
+    C.orientedColor C.sourceSink j = true := by
+  rw [orientedColor]
   exact (mem_sourceSink_iff C _).mp a.2
 
 /-! ### The preprojective comparison -/
 
 variable (k : Type w) [CommRing k] [Finite V]
+
+/-- **The signless algebra of a two-coloured graph is isomorphic to the additive preprojective
+algebra of any of its orientations.** The isomorphism identifies the doubled quiver with the
+symmetrification of the oriented graph and then rescales each arrow by the sign of the colour of
+its head. -/
+noncomputable def signlessPreprojectiveAlgebraEquiv (o : Orientation G) :
+    signlessPreprojectiveAlgebra k (DoubledQuiver G) ≃ₐ[k]
+      preprojectiveAlgebra k (OrientedQuiver G o) :=
+  (orientationSignlessPreprojectiveAlgebraEquiv o k).trans
+    (symmetrifySignlessPreprojectiveAlgebraEquiv k
+      (c := C.orientedColor o) (fun {_ _} a => C.orientedColor_ne o a))
+
+/-- The bipartite comparison for an arbitrary orientation sends a doubled-path-algebra class
+through the orientation identification and the head-colour sign rescaling. -/
+@[simp]
+theorem signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk (o : Orientation G)
+    (x : pathAlgebra k (DoubledQuiver G)) :
+    C.signlessPreprojectiveAlgebraEquiv k o (signlessPreprojectiveMk k _ x) =
+      preprojectiveMk k (OrientedQuiver G o)
+        (rescale (doubledLabelling k fun _ j _ => if C.orientedColor o j then (1 : k) else -1)
+          (orientationPathAlgebraEquiv o k x)) := by
+  rw [signlessPreprojectiveAlgebraEquiv, AlgEquiv.trans_apply,
+    orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+    symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+
+/-- The inverse bipartite comparison for an arbitrary orientation rescales by the head-colour sign
+and applies the inverse orientation path-algebra identification. -/
+@[simp]
+theorem signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk (o : Orientation G)
+    (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
+    (C.signlessPreprojectiveAlgebraEquiv k o).symm
+        (preprojectiveMk k (OrientedQuiver G o) x) =
+      signlessPreprojectiveMk k (DoubledQuiver G)
+        ((orientationPathAlgebraEquiv o k).symm
+          (rescale (doubledLabelling k fun _ j _ => if C.orientedColor o j then (1 : k) else -1)
+            x)) := by
+  rw [signlessPreprojectiveAlgebraEquiv, AlgEquiv.symm_trans_apply,
+    symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
+    orientationSignlessPreprojectiveAlgebraEquiv_symm_signlessPreprojectiveMk]
 
 /-- **The signless algebra of a bipartite graph is the additive preprojective algebra of its
 source--sink orientation.** The isomorphism first identifies the doubled quiver with the
@@ -312,9 +362,7 @@ symmetrification of the oriented graph; no further arrow rescaling is needed. -/
 noncomputable def sourceSinkSignlessPreprojectiveAlgebraEquiv :
     signlessPreprojectiveAlgebra k (DoubledQuiver G) ≃ₐ[k]
       preprojectiveAlgebra k (OrientedQuiver G C.sourceSink) :=
-  (orientationSignlessPreprojectiveAlgebraEquiv C.sourceSink k).trans
-    (symmetrifySignlessPreprojectiveAlgebraEquiv k
-      (c := C.sourceSinkColor) (fun {_ _} a => C.sourceSinkColor_ne a))
+  C.signlessPreprojectiveAlgebraEquiv k C.sourceSink
 
 /-- The bipartite comparison sends the class of a doubled-path-algebra element to its image under
 the source--sink identification, followed by the standard preprojective quotient map. -/
@@ -325,11 +373,11 @@ theorem sourceSinkSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk
         (signlessPreprojectiveMk k _ x) =
       preprojectiveMk k (OrientedQuiver G C.sourceSink)
         (orientationPathAlgebraEquiv C.sourceSink k x) := by
-  rw [sourceSinkSignlessPreprojectiveAlgebraEquiv, AlgEquiv.trans_apply,
-    orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+  rw [sourceSinkSignlessPreprojectiveAlgebraEquiv, signlessPreprojectiveAlgebraEquiv,
+    AlgEquiv.trans_apply, orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk_of_forall_head
-      k (c := C.sourceSinkColor) (fun {_ _} a => C.sourceSinkColor_ne a)
-        (fun {_ _} a => C.sourceSinkColor_target_eq_true a)]
+      k (c := C.orientedColor C.sourceSink) (fun {_ _} a => C.orientedColor_ne C.sourceSink a)
+        (fun {_ _} a => C.orientedColor_sourceSink_target_eq_true a)]
 
 /-- The inverse bipartite comparison sends a preprojective representative through the inverse
 source--sink path-algebra identification. -/
@@ -346,6 +394,29 @@ theorem sourceSinkSignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk
     AlgEquiv.apply_symm_apply]
 
 end SimpleGraph.Coloring
+
+namespace SimpleGraph.IsBipartite
+
+open TauCeti TauCeti.DoubledQuiver
+
+universe u w
+
+variable {V : Type u} {G : SimpleGraph V} (hG : G.IsBipartite)
+
+/-- A two-colouring of a bipartite graph, valued in `Bool`. -/
+noncomputable def coloringBool : G.Coloring Bool :=
+  G.recolorOfEquiv finTwoEquiv hG.some
+
+variable (k : Type w) [CommRing k] [Finite V]
+
+/-- **The signless preprojective algebra of a bipartite graph is isomorphic to the additive
+preprojective algebra of any of its orientations.** -/
+noncomputable def signlessPreprojectiveAlgebraEquiv (o : Orientation G) :
+    signlessPreprojectiveAlgebra k (DoubledQuiver G) ≃ₐ[k]
+      preprojectiveAlgebra k (OrientedQuiver G o) :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv k o
+
+end SimpleGraph.IsBipartite
 
 namespace TauCeti.DoubledQuiver.Orientation
 
