@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Realization
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
-import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Partial.Integrable
 
 /-!
@@ -329,52 +328,9 @@ section FiniteEqualMass
 
 variable [IsFiniteMeasure μ] [NullSingletonClass μ] [Nonempty Y]
 
-omit [MetricSpace X] [MetricSpace Y] [PolishSpace X] [PolishSpace Y]
-  [BorelSpace X] [BorelSpace Y] in
-/-- At zero mass, Monge and Kantorovich costs both vanish when the target is nonempty. The
-nonemptiness assumption is necessary for the existence of a transport map from a nonempty source
-type to the empty target type, even though the source measure is zero. -/
-private theorem mongeCost_eq_transportCost_zero (c : X × Y → ℝ≥0∞) :
-    mongeCost c (0 : Measure X) (0 : Measure Y) = transportCost c 0 0 := by
-  let y : Y := Classical.choice inferInstance
-  have hT : ProbabilityTheory.HasLaw (fun _ : X ↦ y) (0 : Measure Y) (0 : Measure X) :=
-    ⟨measurable_const.aemeasurable, by simp⟩
-  have hMonge : mongeCost c (0 : Measure X) (0 : Measure Y) = 0 :=
-    nonpos_iff_eq_zero.1 <|
-      (mongeCost_le_transportMapCost hT c).trans_eq (transportMapCost_zero_measure c _)
-  have hKantorovich : transportCost c (0 : Measure X) (0 : Measure Y) = 0 :=
-    nonpos_iff_eq_zero.1 (by simpa using transportCost_le_lintegral isCoupling_zero c)
-  rw [hMonge, hKantorovich]
-
-omit [MetricSpace X] [MetricSpace Y] [PolishSpace X] [PolishSpace Y]
-  [BorelSpace X] [BorelSpace Y] [NullSingletonClass μ] [Nonempty Y] in
-/-- Equality of the normalized probability Monge and Kantorovich values transfers to nonzero
-finite measures of equal mass. -/
-private theorem mongeCost_eq_transportCost_of_normalized {c : X × Y → ℝ≥0∞} (hμ : μ ≠ 0)
-    (hnorm : mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) =
-      transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν)) :
-    mongeCost c μ ν = transportCost c μ ν := by
-  have hm₀ : μ univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ
-  have hm_top : μ univ ≠ ∞ := measure_ne_top μ univ
-  have hscale (ρ : Measure X) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
-    rw [smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top, one_smul]
-  have hscaleY (ρ : Measure Y) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
-    rw [smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top, one_smul]
-  calc
-    mongeCost c μ ν =
-        mongeCost c (μ univ • ((μ univ)⁻¹ • μ))
-          (μ univ • ((μ univ)⁻¹ • ν)) := by rw [hscale, hscaleY]
-    _ = μ univ * mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) :=
-      mongeCost_smul hm₀ hm_top c _ _
-    _ = μ univ * transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) := by
-      rw [hnorm]
-    _ = transportCost c (μ univ • ((μ univ)⁻¹ • μ))
-        (μ univ • ((μ univ)⁻¹ • ν)) := (transportCost_smul hm_top c _ _).symm
-    _ = transportCost c μ ν := by rw [hscale, hscaleY]
-
-/-- For finite atomless source and target measures of equal mass, the Monge and Kantorovich values
-agree for every bounded continuous nonnegative cost. The zero-mass case is handled without
-normalization. -/
+/-- For finite measures of equal mass with an atomless source and a nonempty target type, the
+Monge and Kantorovich values agree for every bounded continuous nonnegative cost. The zero-mass
+case is handled without normalization. -/
 theorem mongeCost_eq_transportCost_boundedContinuous_of_measure_univ_eq
     (hmass : μ univ = ν univ) (f : BoundedContinuousFunction (X × Y) NNReal) :
     mongeCost (fun z ↦ (f z : ℝ≥0∞)) μ ν =
@@ -384,7 +340,7 @@ theorem mongeCost_eq_transportCost_boundedContinuous_of_measure_univ_eq
       rw [← hmass, hμ]
       simp
     rw [hμ, hν]
-    exact mongeCost_eq_transportCost_zero _
+    exact mongeCost_eq_transportCost_zero_measure _
   have hm₀ : μ univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ
   have hm_top : μ univ ≠ ∞ := measure_ne_top μ univ
   let μ' := (μ univ)⁻¹ • μ
@@ -397,16 +353,16 @@ theorem mongeCost_eq_transportCost_boundedContinuous_of_measure_univ_eq
       ENNReal.inv_mul_cancel hm₀ hm_top]⟩
   let μ₀ : ProbabilityMeasure X := ⟨μ', inferInstance⟩
   let ν₀ : ProbabilityMeasure Y := ⟨ν', inferInstance⟩
-  let : NullSingletonClass (μ₀ : Measure X) := by
-    change NullSingletonClass μ'
-    infer_instance
+  -- Instance search does not unfold the coercion `(μ₀ : Measure X)` to `μ'`, so the
+  -- atomlessness instance for `μ'` is transported along this definitional equality explicitly.
+  let : NullSingletonClass (μ₀ : Measure X) := inferInstanceAs (NullSingletonClass μ')
   apply mongeCost_eq_transportCost_of_normalized hμ
   exact mongeCost_eq_transportCost_boundedContinuous
     (μ₀ := μ₀) (ν₀ := ν₀) f
 
-/-- For finite atomless source and target measures of equal mass, Monge's and Kantorovich's values
-agree for a continuous cost with an integrable split upper envelope. The zero-mass case is handled
-without normalization. -/
+/-- For finite measures of equal mass with an atomless source and a nonempty target type, Monge's
+and Kantorovich's values agree for a continuous cost with an integrable split upper envelope. The
+zero-mass case is handled without normalization. -/
 theorem mongeCost_eq_transportCost_of_le_split_of_measure_univ_eq {c : X × Y → ℝ≥0∞}
     {a : X → ℝ≥0∞} {b : Y → ℝ≥0∞} (hmass : μ univ = ν univ) (hc : Continuous c)
     (ha : AEMeasurable a μ) (hb : AEMeasurable b ν) (haint : ∫⁻ x, a x ∂μ ≠ ∞)
@@ -417,7 +373,7 @@ theorem mongeCost_eq_transportCost_of_le_split_of_measure_univ_eq {c : X × Y �
       rw [← hmass, hμ]
       simp
     rw [hμ, hν]
-    exact mongeCost_eq_transportCost_zero _
+    exact mongeCost_eq_transportCost_zero_measure _
   have hm₀ : μ univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ
   have hm_top : μ univ ≠ ∞ := measure_ne_top μ univ
   have hinv₀ : (μ univ)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hm_top

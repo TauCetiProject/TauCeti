@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 public import TauCeti.Probability.HasLaw
+import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 
 /-!
 # The Monge problem
@@ -59,6 +60,10 @@ non-top value implies feasibility.
 
 * `TauCeti.transportCost_le_mongeCost` — **the Monge-to-Kantorovich relaxation inequality**, the
   Monge value dominates the Kantorovich value;
+* `TauCeti.mongeCost_zero_measure` and `TauCeti.mongeCost_eq_transportCost_zero_measure` — at
+  zero mass, with a nonempty target type, both values vanish;
+* `TauCeti.mongeCost_eq_transportCost_of_normalized` — equality of the two values for the
+  normalized probability measures transfers to a nonzero finite source and its target;
 * `TauCeti.transportCost_lt_mongeCost_dirac` — the inequality is strict for a Dirac source and
   a target that is null on singletons, where
   `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the Monge problem infeasible
@@ -251,6 +256,48 @@ theorem transportCost_le_mongeCost (c : X × Y → ℝ≥0∞) (μ : Measure X) 
     transportCost c μ ν ≤ mongeCost c μ ν :=
   le_mongeCost fun T hT ↦ by
     rw [transportMapCost_def]; exact transportCost_le_lintegral_of_hasLaw hT c
+
+/-- At zero mass a constant map transports the zero source onto the zero target at no cost, so the
+Monge value vanishes. The target type must be nonempty for such a map to exist. -/
+@[simp]
+theorem mongeCost_zero_measure [Nonempty Y] (c : X × Y → ℝ≥0∞) :
+    mongeCost c (0 : Measure X) (0 : Measure Y) = 0 := by
+  have hT : HasLaw (fun _ : X ↦ Classical.arbitrary Y) (0 : Measure Y) (0 : Measure X) :=
+    ⟨measurable_const.aemeasurable, by simp⟩
+  exact nonpos_iff_eq_zero.1 <|
+    (mongeCost_le_transportMapCost hT c).trans_eq (transportMapCost_zero_measure c _)
+
+/-- At zero mass the Monge and Kantorovich values agree, both being zero, as soon as the target
+type is nonempty. -/
+theorem mongeCost_eq_transportCost_zero_measure [Nonempty Y] (c : X × Y → ℝ≥0∞) :
+    mongeCost c (0 : Measure X) (0 : Measure Y) = transportCost c 0 0 :=
+  le_antisymm ((mongeCost_zero_measure c).trans_le bot_le) (transportCost_le_mongeCost c 0 0)
+
+/-- Equality of the Monge and Kantorovich values for the probability measures obtained by
+normalizing a nonzero finite source `μ` and a target `ν` by the mass of `μ` transfers to `μ` and
+`ν` themselves. Combined with `TauCeti.mongeCost_eq_transportCost_zero_measure`, this reduces
+equality for finite measures of equal mass to the probability case. -/
+theorem mongeCost_eq_transportCost_of_normalized [IsFiniteMeasure μ] (hμ : μ ≠ 0)
+    (hnorm : mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) =
+      transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν)) :
+    mongeCost c μ ν = transportCost c μ ν := by
+  have hm₀ : μ univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ
+  have hm_top : μ univ ≠ ∞ := measure_ne_top μ univ
+  have hscale (ρ : Measure X) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
+    rw [smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top, one_smul]
+  have hscaleY (ρ : Measure Y) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
+    rw [smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top, one_smul]
+  calc
+    mongeCost c μ ν =
+        mongeCost c (μ univ • ((μ univ)⁻¹ • μ))
+          (μ univ • ((μ univ)⁻¹ • ν)) := by rw [hscale, hscaleY]
+    _ = μ univ * mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) :=
+      mongeCost_smul hm₀ hm_top c _ _
+    _ = μ univ * transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) := by
+      rw [hnorm]
+    _ = transportCost c (μ univ • ((μ univ)⁻¹ • μ))
+        (μ univ • ((μ univ)⁻¹ • ν)) := (transportCost_smul hm_top c _ _).symm
+    _ = transportCost c μ ν := by rw [hscale, hscaleY]
 
 /-! ### Optimal transport maps -/
 
