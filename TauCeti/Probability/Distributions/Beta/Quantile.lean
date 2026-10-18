@@ -35,6 +35,7 @@ variable {a b u : ℝ}
 
 /-- The lower quantile of a Beta law with positive shape parameters is the inverse regularized
 incomplete Beta function. -/
+@[simp]
 theorem quantile_betaMeasure (ha : 0 < a) (hb : 0 < b) (hu : u ∈ Ioo 0 1) :
     (betaMeasure a b).quantile u = inverseRegularizedIncompleteBeta a b u := by
   apply le_antisymm
