@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 
+import TauCeti.Algebra.Module.Submodule.Map
+
 /-!
 # The Plücker point of a subspace
 
@@ -104,8 +106,12 @@ private theorem mk_plucker_basis_eq_iff {W : Submodule K (ι → K)} {n : ℕ} (
         ((plucker_ne_zero_iff _).2 b.linearIndependent_coe_basis) =
       Projectivization.mk K (plucker fun i ↦ (b' i : ι → K))
         ((plucker_ne_zero_iff _).2 b'.linearIndependent_coe_basis) ↔ U = W := by
+  have span_coe_basis (X : Submodule K (ι → K)) (c : Basis (Fin n) K X) :
+      span K (range fun i ↦ (c i : ι → K)) = X := by
+    simpa only [LinearMap.id_apply, Submodule.map_id] using
+      (Submodule.map_eq_span_basis X c LinearMap.id).symm
   rw [mk_plucker_eq_mk_plucker_iff b.linearIndependent_coe_basis
-    b'.linearIndependent_coe_basis, b.span_range_coe_basis, b'.span_range_coe_basis]
+    b'.linearIndependent_coe_basis, span_coe_basis U b, span_coe_basis W b']
 
 /-- The Plücker point of a subspace `U` of `ι → K`: the point of the projective space over
 `powersetCard ι (finrank K U) → K` given by the Plücker coordinates of a basis of `U`. It does

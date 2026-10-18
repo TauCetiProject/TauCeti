@@ -27,8 +27,8 @@ linear-map composition.
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
-* `Module.Basis.linearIndependent_coe_basis`, `Module.Basis.span_range_coe_basis`: the vectors of
-  a basis of a submodule `U`, viewed in the ambient module, are linearly independent and span `U`.
+* `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
+  the ambient module, are linearly independent.
 -/
 
 public section
@@ -86,13 +86,6 @@ independent. -/
 theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
     LinearIndependent R fun i ↦ (b i : M) :=
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
-
-/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, span `U`. -/
-theorem span_range_coe_basis (b : Module.Basis n R U) :
-    Submodule.span R (Set.range fun i ↦ (b i : M)) = U := by
-  -- The ambient vectors are by definition the images of `b` under the inclusion of `U`.
-  rw [show (fun i ↦ (b i : M)) = U.subtype ∘ b from rfl, Set.range_comp, Submodule.span_image,
-    b.span_eq, Submodule.map_top, Submodule.range_subtype]
 
 end Submodule
 
