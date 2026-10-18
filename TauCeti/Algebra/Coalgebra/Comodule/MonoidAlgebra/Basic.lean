@@ -153,6 +153,37 @@ theorem tensorCoeffEquiv_symm_single (g : G) (v : V) :
   classical
   simp [tensorCoeffEquiv, LinearEquiv.symm_lTensor]
 
+/-- Contracting the last leg of the comultiplication against a basis coefficient leaves
+that coefficient times the corresponding group-like basis vector. -/
+@[simp]
+theorem tensorComponent_monoidCoeff_comul (g : G) (a : MonoidAlgebra R G) :
+    LinearMap.tensorComponent (monoidCoeff R G g) (Coalgebra.comul a) =
+      a.coeff g • MonoidAlgebra.single g (1 : R) := by
+  classical
+  have h : LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ Coalgebra.comul =
+      (monoidCoeff R G g).smulRight (MonoidAlgebra.single g (1 : R)) := by
+    refine MonoidAlgebra.lhom_ext' fun h ↦ ?_
+    ext r
+    by_cases hh : h = g <;> simp [MonoidAlgebra.comul_single, hh]
+  simpa only [LinearMap.comp_apply, LinearMap.smulRight_apply, monoidCoeff_apply] using
+    LinearMap.congr_fun h a
+
+/-- Contracting the last leg of the comultiplication on a tensor with `R[G]` leaves
+its coefficient tensored with the corresponding group-like basis vector. -/
+@[simp]
+theorem tensorComponent_monoidCoeff_comul_lTensor (g : G)
+    (b : V ⊗[R] MonoidAlgebra R G) :
+    (LinearMap.tensorComponent (monoidCoeff R G g)).lTensor V
+        (Coalgebra.comul.lTensor V b) =
+      LinearMap.tensorComponent (monoidCoeff R G g) b ⊗ₜ[R]
+        MonoidAlgebra.single g 1 := by
+  induction b using TensorProduct.inductionOn with
+  | add b c hb hc => simp [hb, hc, TensorProduct.add_tmul]
+  | tmul v a =>
+    rw [LinearMap.lTensor_tmul, LinearMap.lTensor_tmul, tensorComponent_monoidCoeff_comul]
+    simp only [LinearMap.tensorComponent_tmul, monoidCoeff_apply,
+      TensorProduct.smul_tmul, MonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+
 end Component
 
 /-! ## The weight components of a comodule -/
@@ -250,20 +281,16 @@ a single coefficient map: the elements `single g 1` are group-like. -/
 private theorem coeff_comp_tensorComponent_comp_comul_self (g : G) :
     monoidCoeff R G g ∘ₗ _root_.LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ
         Coalgebra.comul (R := R) (A := MonoidAlgebra R G) = monoidCoeff R G g := by
-  refine MonoidAlgebra.lhom_ext' fun k => ?_
-  ext
-  by_cases hk : k = g <;>
-    simp [monoidCoeff, MonoidAlgebra.comul_single, hk]
+  classical
+  exact LinearMap.ext fun a ↦ by simp
 
 /-- Composed with the comultiplication of `R[G]`, the pair of coefficient maps at distinct indices
 vanishes. -/
 private theorem coeff_comp_tensorComponent_comp_comul_of_ne {h g : G} (hne : h ≠ g) :
     monoidCoeff R G h ∘ₗ _root_.LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ
         Coalgebra.comul (R := R) (A := MonoidAlgebra R G) = 0 := by
-  refine MonoidAlgebra.lhom_ext' fun k => ?_
-  ext
-  by_cases hk : k = g <;>
-    simp [monoidCoeff, MonoidAlgebra.comul_single, hk, hne]
+  classical
+  exact LinearMap.ext fun a ↦ by simp [hne]
 
 variable [Comodule R (MonoidAlgebra R G) V]
 

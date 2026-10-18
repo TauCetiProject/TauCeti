@@ -8,15 +8,16 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Distributions.Beta.Measurability
 public import TauCeti.Probability.Distributions.Binomial.Measurability
+import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 
 /-!
 # The beta-binomial distribution
 
 This file defines the beta-binomial law by mixing a binomial success probability against a Beta
-law.  It proves normalization, the classical Beta-function mass formula, finite support, and
-parameter measurability.  The binomial kernel is extended measurably to all real mixing values by
-projection onto the unit interval; this choice is immaterial because Beta laws are concentrated on
-the open unit interval.
+law.  It proves normalization, the classical Beta-function mass formula, finite support,
+parameter measurability, integrability, and mixture integration.  The binomial kernel is extended
+measurably to all real mixing values by projection onto the unit interval; this choice is immaterial
+because Beta laws are concentrated on the open unit interval.
 
 ## Main results
 
@@ -24,6 +25,8 @@ the open unit interval.
 * `TauCeti.Probability.betaBinomialMeasure_real_singleton` gives its mass function;
 * `TauCeti.Probability.betaBinomialMeasure_eq_sum_dirac` gives its finite Dirac-sum form;
 * `TauCeti.Probability.betaBinomialMeasure_singleton_ne_zero_iff` identifies its support;
+* `TauCeti.Probability.integrable_betaBinomialMeasure` proves integrability of every observable;
+* `TauCeti.Probability.integral_betaBinomialMeasure_eq_integral` integrates via the mixture;
 * `TauCeti.Probability.measurable_betaBinomialMeasure` gives joint parameter measurability.
 
 ## References
@@ -194,6 +197,39 @@ theorem betaBinomialMeasure_zero_trials {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
   · have hkpos : 0 < k := Nat.pos_of_ne_zero hk
     simp [Measure.dirac_apply' _ (measurableSet_singleton k), hk,
       Nat.choose_eq_zero_of_lt hkpos]
+
+/-- Every function on the native carrier is integrable against a beta-binomial law.
+This also includes invalid shapes, for which the law is zero. -/
+theorem integrable_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
+    (f : ℕ → E) (n : ℕ) (a b : ℝ) : Integrable f (betaBinomialMeasure n a b) := by
+  by_cases h : 0 < a ∧ 0 < b
+  · rw [betaBinomialMeasure_eq_sum_dirac h.1 h.2]
+    exact integrable_finsetSum_measure.mpr fun _ _ =>
+      (integrable_dirac (by simp)).smul_measure (by simp)
+  · simp [betaBinomialMeasure_eq_zero_of_invalid h]
+
+/-- Every function is integrable against the real cast of a beta-binomial law. -/
+theorem integrable_map_cast_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
+    (f : ℝ → E) (n : ℕ) (a b : ℝ) :
+    Integrable f ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)) := by
+  rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
+  exact integrable_betaBinomialMeasure (fun k => f (k : ℝ)) n a b
+
+/-- Integrate a beta-binomial observable by first integrating against its binomial component,
+then against the Beta mixing law. -/
+theorem integral_betaBinomialMeasure_eq_integral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (n : ℕ) (f : ℕ → E) :
+    ∫ k, f k ∂betaBinomialMeasure n a b =
+      ∫ p : ℝ, ∫ k, f k ∂binomial n (Set.projIcc 0 1 zero_le_one p) ∂betaMeasure a b := by
+  let κ : Kernel ℝ ℕ := ⟨fun p => binomial n (Set.projIcc 0 1 zero_le_one p), by fun_prop⟩
+  have hcomp : κ ∘ₘ betaMeasure a b = betaBinomialMeasure n a b :=
+    (betaBinomialMeasure_eq_bind ha hb n).symm
+  have hf : Integrable f ((κ ∘ₖ Kernel.const Unit (betaMeasure a b)) ()) := by
+    rw [← Measure.comp_eq_comp_const_apply, hcomp]
+    exact integrable_betaBinomialMeasure f n a b
+  have hi := Kernel.integral_comp hf
+  rw [← Measure.comp_eq_comp_const_apply, hcomp, Kernel.const_apply] at hi
+  exact hi
 
 /-- The beta-binomial family is jointly measurable in the trial count and both shape
 parameters. -/
