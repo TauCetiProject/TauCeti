@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Order.Sigma
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.OrderedMap
 public import TauCeti.Topology.CWComplex.Classical.FreeAction
@@ -353,12 +354,12 @@ variable (G) in
 def classifyingSpaceCellEquiv (n : ℕ) :
     cell (univ : Set (classifyingSpace G)) n ≃
       MulAction.orbitRel.Quotient G ((indexedJoin fun _ : ℕ => G).RealizationCell n) :=
+  letI := cellMulAction (G := G) exists_smul_openCell_eq n
   ((isQuotientCoveringMap_classifyingSpaceProj G).cellQuotientEquiv
-    exists_smul_openCell_eq (fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq) n).trans <|
-    Quotient.congr (realizationCellEquiv _ n) fun i j => by
-      simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, cellMulAction_smul_eq]
-      exact exists_congr fun g => by
-        rw [← realizationCellEquiv_smul, (realizationCellEquiv _ n).apply_eq_iff_eq]
+      exists_smul_openCell_eq (fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq) n).trans <|
+    MulAction.orbitRelQuotientCongr (MulEquiv.refl G) (realizationCellEquiv _ n) fun g i => by
+      rw [cellMulAction_smul_eq, realizationCellEquiv_smul]
+      rfl
 
 /-- **The characteristic maps of the classifying space.** The characteristic map of the orbit of
 a simplex `c` of the countable join is the characteristic map of `c` followed by the orbit map,
@@ -375,8 +376,7 @@ theorem map_classifyingSpaceCellEquiv_symm_mk
       (hp.cellQuotientEquiv exists_smul_openCell_eq
         (fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq) n).symm (Quotient.mk'' i) := by
     rw [Equiv.symm_apply_eq, classifyingSpaceCellEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
-    exact ((Quotient.congr_mk _ _ i).trans
-      (congrArg _ ((realizationCellEquiv _ n).apply_symm_apply c))).symm
+    rw [MulAction.orbitRelQuotientCongr_mk, (realizationCellEquiv _ n).apply_symm_apply]
   -- The orbit-space construction uses a chosen representative, a translate of `i`.
   obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 (Quotient.exact'
     (Quotient.out_eq' (Quotient.mk'' i : MulAction.orbitRel.Quotient G _)))
