@@ -131,7 +131,7 @@ private theorem analyticOnNhd_gumbelComplexMGF (hs : 0 < s) :
   apply DifferentiableOn.analyticOnNhd _
     (isOpen_lt Complex.continuous_re continuous_const)
   intro z hz
-  change z.re < 1 / s at hz
+  simp only [Set.mem_ofPred_eq] at hz
   have hshape : 0 < (1 - (s : ℂ) * z).re := by
     simp only [Complex.sub_re, Complex.one_re, Complex.mul_re, Complex.ofReal_re,
       Complex.ofReal_im, zero_mul, sub_zero]
