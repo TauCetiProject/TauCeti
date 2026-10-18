@@ -40,8 +40,11 @@ it yields normalization, the cumulative distribution function, and the moments i
 * `TauCeti.Probability.isProbabilityMeasure_kumaraswamyMeasure_iff` — the law is a probability
   measure exactly at positive parameters;
 * `TauCeti.Probability.support_kumaraswamyMeasure` — the topological support is `[0, 1]`;
+* `TauCeti.Probability.integrable_kumaraswamyMeasure_iff` and
+  `TauCeti.Probability.integral_kumaraswamyMeasure_eq` — integrability and integration against the
+  law, transferred to the real density;
 * `TauCeti.Probability.cdf_kumaraswamyMeasure_of_mem_Icc` — the cdf `1 - (1 - x ^ a) ^ b` on the
-  unit interval;
+  unit interval, and `TauCeti.Probability.cdf_kumaraswamyMeasure_eq` its closed form everywhere;
 * `TauCeti.Probability.measurable_kumaraswamyMeasure` — joint measurability in the parameters.
 
 ## References
@@ -214,6 +217,30 @@ theorem ae_mem_Icc_kumaraswamyMeasure (a b : ℝ) :
   filter_upwards [ae_mem_Ioo_kumaraswamyMeasure a b] with x hx
   exact Ioo_subset_Icc_self hx
 
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against a Kumaraswamy law exactly when
+its density-weighted version is Lebesgue integrable. This holds at every parameter, the zero
+measure included. -/
+theorem integrable_kumaraswamyMeasure_iff (a b : ℝ) {g : ℝ → E} :
+    Integrable g (kumaraswamyMeasure a b) ↔
+      Integrable (fun x ↦ kumaraswamyPDFReal a b x • g x) := by
+  rw [kumaraswamyMeasure_eq_withDensity, funext (kumaraswamyPDF_eq_ofReal a b)]
+  exact Probability.integrable_withDensity_ofReal_iff
+    (measurable_kumaraswamyPDFReal a b).aemeasurable (ae_of_all _ (kumaraswamyPDFReal_nonneg a b))
+
+/-- **Integral transfer.** An integral against a Kumaraswamy law is the density-weighted Lebesgue
+integral. This holds at every parameter, the zero measure included. -/
+theorem integral_kumaraswamyMeasure_eq (a b : ℝ) (g : ℝ → E) :
+    ∫ x, g x ∂kumaraswamyMeasure a b = ∫ x, kumaraswamyPDFReal a b x • g x := by
+  rw [kumaraswamyMeasure_eq_withDensity, funext (kumaraswamyPDF_eq_ofReal a b)]
+  exact Probability.integral_withDensity_ofReal (measurable_kumaraswamyPDFReal a b).aemeasurable
+    (ae_of_all _ (kumaraswamyPDFReal_nonneg a b)) g
+
+end Transfer
+
 /-- At positive parameters, the topological support of the Kumaraswamy law is the closed unit
 interval. -/
 theorem support_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
@@ -372,6 +399,17 @@ theorem cdf_kumaraswamyMeasure_of_one_le (ha : 0 < a) (hb : 0 < b) (hx : 1 ≤ x
       rw [cdf_kumaraswamyMeasure_of_mem_Icc ha hb ⟨zero_le_one, le_rfl⟩, Real.one_rpow,
         sub_self, Real.zero_rpow hb.ne', sub_zero]
     _ ≤ cdf (kumaraswamyMeasure a b) x := (cdf _).mono hx
+
+/-- The Kumaraswamy cdf in closed form at every point: `0` on the nonpositive half-line,
+`1 - (1 - x ^ a) ^ b` on `(0, 1)`, and `1` from the upper endpoint on. -/
+@[simp]
+theorem cdf_kumaraswamyMeasure_eq (ha : 0 < a) (hb : 0 < b) (x : ℝ) :
+    cdf (kumaraswamyMeasure a b) x =
+      if x ≤ 0 then 0 else if x < 1 then 1 - (1 - x ^ a) ^ b else 1 := by
+  split_ifs with h₀ h₁
+  · exact cdf_kumaraswamyMeasure_of_nonpos ha hb h₀
+  · exact cdf_kumaraswamyMeasure_of_mem_Icc ha hb ⟨le_of_not_ge h₀, h₁.le⟩
+  · exact cdf_kumaraswamyMeasure_of_one_le ha hb (le_of_not_gt h₁)
 
 /-- The Kumaraswamy cdf is continuous. -/
 theorem continuous_cdf_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
