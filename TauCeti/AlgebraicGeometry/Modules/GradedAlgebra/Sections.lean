@@ -68,7 +68,7 @@ variable {X : Scheme.{u}} (A : CommMon (GradedObject ℕ X.Modules)) (U : X.Open
 private abbrev sectionsOne :
     𝟙_ (ModuleCat.{u} Γ(X, U)) ⟶ (Scheme.Modules.sectionsFunctor U).obj (A.X 0) :=
   Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
-    (Scheme.Modules.sectionsFunctor U).map A.one
+    (Scheme.Modules.sectionsFunctor U).map A.toMon.one
 
 /-- The homogeneous multiplication of `A` on sections over `U`, as a morphism of
 `Γ(X, U)`-modules out of the tensor product of the modules of sections. -/
@@ -77,21 +77,23 @@ private abbrev sectionsMul (i j : ℕ) :
         (Scheme.Modules.sectionsFunctor U).obj (A.X j) ⟶
       (Scheme.Modules.sectionsFunctor U).obj (A.X (i + j)) :=
   Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) _ _ ≫
-    (Scheme.Modules.sectionsFunctor U).map (A.mul i j)
+    (Scheme.Modules.sectionsFunctor U).map (A.toMon.mul i j)
 
 private lemma sectionsMul_eq (i j : ℕ) :
     sectionsMul A U i j =
       ((Iso.refl _).hom ⊗ₘ (Iso.refl _).hom) ≫
         Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) (A.X i) (A.X j) ≫
-          (Scheme.Modules.sectionsFunctor U).map (A.mul i j) ≫ (Iso.refl _).inv := by
+          (Scheme.Modules.sectionsFunctor U).map (A.toMon.mul i j) ≫ (Iso.refl _).inv := by
   rw [Iso.refl_hom, Iso.refl_hom, Iso.refl_inv, id_tensorHom_id, Category.id_comp,
     Category.comp_id]
+  rfl
 
 private lemma sectionsOne_eq :
     sectionsOne A U =
       Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
-        (Scheme.Modules.sectionsFunctor U).map A.one ≫ (Iso.refl _).inv := by
+        (Scheme.Modules.sectionsFunctor U).map A.toMon.one ≫ (Iso.refl _).inv := by
   rw [Iso.refl_inv, Category.comp_id]
+  rfl
 
 /-- The sections over `U` of the homogeneous components of a graded algebra form a
 graded commutative ring. The product of `x : Γ(Aᵢ, U)` and `y : Γ(Aⱼ, U)` is the homogeneous
@@ -104,10 +106,10 @@ def _root_.CategoryTheory.CommMon.gCommRingSections :
     (fun n ↦ (Scheme.Modules.sectionsFunctor U).obj (A.X n)) (sectionsOne A U)
     (sectionsMul A U)
     (GradedObject.one_mul_of_laxMonoidal _ _ (sectionsMul_eq A U) _ _ (sectionsOne_eq A U)
-      A.one_mul)
+      A.toMon.one_mul)
     (GradedObject.mul_one_of_laxMonoidal _ _ (sectionsMul_eq A U) _ _ (sectionsOne_eq A U)
-      A.mul_one)
-    (GradedObject.mul_assoc_of_laxMonoidal _ _ (sectionsMul_eq A U) A.mul_assoc)
+      A.toMon.mul_one)
+    (GradedObject.mul_assoc_of_laxMonoidal _ _ (sectionsMul_eq A U) A.toMon.mul_assoc)
     (GradedObject.mul_comm_of_laxBraided _ _ (sectionsMul_eq A U) A.mul_comm)
 
 /-- The sections over `U` of the homogeneous components of a graded algebra form a
@@ -120,10 +122,10 @@ def _root_.CategoryTheory.CommMon.gAlgebraSections :
     (fun n ↦ (Scheme.Modules.sectionsFunctor U).obj (A.X n)) (sectionsOne A U)
     (sectionsMul A U)
     (GradedObject.one_mul_of_laxMonoidal _ _ (sectionsMul_eq A U) _ _ (sectionsOne_eq A U)
-      A.one_mul)
+      A.toMon.one_mul)
     (GradedObject.mul_one_of_laxMonoidal _ _ (sectionsMul_eq A U) _ _ (sectionsOne_eq A U)
-      A.mul_one)
-    (GradedObject.mul_assoc_of_laxMonoidal _ _ (sectionsMul_eq A U) A.mul_assoc)
+      A.toMon.mul_one)
+    (GradedObject.mul_assoc_of_laxMonoidal _ _ (sectionsMul_eq A U) A.toMon.mul_assoc)
 
 /-- The product of homogeneous sections `x : Γ(Aᵢ, U)` and `y : Γ(Aⱼ, U)` is the homogeneous
 multiplication of `A` applied to the image of `x ⊗ₜ y` under the tensor map of the sections
@@ -132,7 +134,7 @@ functor. -/
 lemma _root_.CategoryTheory.CommMon.sections_gMul_def {i j : ℕ}
     (x : Γ(A.X i, U)) (y : Γ(A.X j, U)) :
     GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) x y =
-      (A.mul i j).app U
+      (A.toMon.mul i j).app U
         (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) _ _ (x ⊗ₜ y)) :=
   (rfl)
 
@@ -140,7 +142,7 @@ lemma _root_.CategoryTheory.CommMon.sections_gMul_def {i j : ℕ}
 @[simp]
 lemma _root_.CategoryTheory.CommMon.sections_gOne_def :
     GradedMonoid.GOne.one (A := fun n ↦ Γ(A.X n, U)) =
-      A.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1) :=
+      A.toMon.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1) :=
   (rfl)
 
 /-- The structure map `Γ(X, U) → Γ(A₀, U)` of the graded algebra of sections is the unit of
@@ -148,7 +150,7 @@ lemma _root_.CategoryTheory.CommMon.sections_gOne_def :
 @[simp]
 lemma _root_.CategoryTheory.CommMon.gAlgebraSections_toFun (r : Γ(X, U)) :
     GAlgebra.toFun (R := Γ(X, U)) (A := fun n ↦ Γ(A.X n, U)) r =
-      A.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
+      A.toMon.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
   (rfl)
 
 section Restriction
@@ -167,7 +169,7 @@ private lemma map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U)) (y : Γ(A.X j, U)
   -- The product is the multiplication of `A` applied to the tensor map of `F`; both commute
   -- with restriction, and restriction of the sectionwise tensor product sends `x ⊗ₜ y` to the
   -- pure tensor of the restrictions.
-  have h₁ := PresheafOfModules.naturality_apply (A.mul i j).val f.op
+  have h₁ := PresheafOfModules.naturality_apply (A.toMon.mul i j).val f.op
     ((Functor.LaxMonoidal.μ F (A.X i) (A.X j)).app' (op U) (x ⊗ₜ y))
   have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.μ F (A.X i) (A.X j))
     f.op (x ⊗ₜ y)
@@ -184,7 +186,7 @@ private lemma map_gAlgebraSections_toFun (r : Γ(X, U)) :
   let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
   -- The structure map is the unit of `A` after the unit map of `F`; both commute with
   -- restriction.
-  have h₁ := PresheafOfModules.naturality_apply A.one.val f.op
+  have h₁ := PresheafOfModules.naturality_apply A.toMon.one.val f.op
     ((Functor.LaxMonoidal.ε F).app' (op U) r)
   have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.ε F) f.op r
   exact h₁.symm.trans (congrArg _ h₂.symm)
@@ -287,13 +289,14 @@ private lemma app_gMul_sections (φ : A ⟶ B) (U : X.Opens) {i j : ℕ} (x : Γ
   congr($(ModuleCat.hom_ext_iff.mp (GradedObject.map_mul_of_laxMonoidal _ _ (sectionsMul_eq A U)
     _ _ (sectionsMul_eq B U) _ (fun n ↦ (Scheme.Modules.sectionsFunctor U).map
       (φ.hom.hom n)) (fun n ↦ by rw [Iso.refl_hom, Iso.refl_inv, Category.id_comp,
-        Category.comp_id]) (map_mul φ) i j)) (x ⊗ₜ y)).symm
+        Category.comp_id]) (Mon.map_mul φ.hom) i j)) (x ⊗ₜ y)).symm
 
 /-- A morphism of graded algebras preserves the unit on sections. -/
 private lemma app_gOne_sections (φ : A ⟶ B) (U : X.Opens) :
     (φ.hom.hom 0).app U (GradedMonoid.GOne.one (A := fun n ↦ Γ(A.X n, U))) =
       GradedMonoid.GOne.one (A := fun n ↦ Γ(B.X n, U)) :=
-  congr($(ModuleCat.hom_ext_iff.mp ((Scheme.Modules.sectionsFunctor U).congr_map (one_map φ)))
+  congr($(ModuleCat.hom_ext_iff.mp
+    ((Scheme.Modules.sectionsFunctor U).congr_map (Mon.one_map φ.hom)))
     (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1))
 
 /-- The `Γ(X, U)`-algebra homomorphism between graded rings of sections induced by a morphism of

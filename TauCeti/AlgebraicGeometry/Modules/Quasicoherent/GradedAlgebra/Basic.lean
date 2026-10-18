@@ -185,8 +185,8 @@ theorem ofHomogeneous_obj_X :
 identification `ofHomogeneous_obj_X` of its components with `M`. -/
 @[simp]
 theorem mul_ofHomogeneous (i j : ℕ) :
-    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.mul i j =
-      eqToHom (by rw [ofHomogeneous_obj_X]) ≫ mul i j ≫
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.toMon.mul i j =
+      eqToHom (by rw [CommMon.toMon_X, ofHomogeneous_obj_X]) ≫ mul i j ≫
         eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
           (i + j)).symm :=
   (GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
@@ -196,7 +196,7 @@ theorem mul_ofHomogeneous (i j : ℕ) :
 `ofHomogeneous_obj_X` of its degree-zero component with `M 0`. -/
 @[simp]
 theorem one_ofHomogeneous :
-    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.one =
+    (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.toMon.one =
       one ≫ eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
         0).symm :=
   (congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
@@ -208,19 +208,22 @@ end Homogeneous
 algebras which preserves the unit and the homogeneous multiplications is a morphism of graded
 quasicoherent algebras. -/
 def homMk {A B : GradedQuasicoherentAlgebra X} (f : ∀ n, A.obj.X n ⟶ B.obj.X n)
-    (one_f : A.obj.one ≫ f 0 = B.obj.one)
-    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.obj.mul i j = A.obj.mul i j ≫ f (i + j)) : A ⟶ B :=
+    (one_f : A.obj.toMon.one ≫ f 0 = B.obj.toMon.one)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.obj.toMon.mul i j = A.obj.toMon.mul i j ≫ f (i + j)) :
+    A ⟶ B :=
   have hf := GradedObject.isMonHom_of_homogeneous (X := A.obj.X) (Y := B.obj.X) f
-    (by simpa [CommMon.one] using one_f)
-    (fun i j ↦ by simpa [CommMon.mul, Category.assoc] using (mul_f i j).symm)
+    (by
+      rw [← cancel_epi (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv]
+      exact (Category.assoc _ _ _).symm.trans one_f)
+    (fun i j ↦ (Category.assoc _ _ _).symm.trans (mul_f i j).symm)
   ObjectProperty.homMk (CommMon.homMk (Mon.Hom.mk' (M := A.obj.toMon) (N := B.obj.toMon) f
     hf.one_hom hf.mul_hom))
 
 /-- The components of `homMk f` are the given morphisms. -/
 @[simp]
 theorem homMk_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : ∀ n, A.obj.X n ⟶ B.obj.X n)
-    (one_f : A.obj.one ≫ f 0 = B.obj.one)
-    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.obj.mul i j = A.obj.mul i j ≫ f (i + j)) :
+    (one_f : A.obj.toMon.one ≫ f 0 = B.obj.toMon.one)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.obj.toMon.mul i j = A.obj.toMon.mul i j ≫ f (i + j)) :
     (homMk f one_f mul_f).hom.hom.hom = f :=
   (rfl)
 
