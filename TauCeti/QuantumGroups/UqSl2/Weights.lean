@@ -128,6 +128,29 @@ theorem exists_e_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
   have := (injective_pow_iff_not_isOfFinOrder.mpr hu) hp'
   omega
 
+/-- At a generic parameter, the lowering string through any weight vector terminates. -/
+theorem exists_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
+    {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) : ∃ n : ℕ, f q ^ n • v = 0 := by
+  by_cases hv0 : v = 0
+  · exact ⟨0, by simp [hv0]⟩
+  by_contra! h
+  have hmu := weight_ne_zero hv hv0
+  let ev : ℕ → (Algebra.lsmul ℂ ℂ V (k q)).Eigenvalues := fun n =>
+    ⟨(q⁻¹ ^ 2) ^ n * μ, Module.End.hasEigenvalue_of_hasEigenvector
+      ⟨f_pow_smul_mem_weightSpace hv n, h n⟩⟩
+  apply not_injective_infinite_finite ev
+  intro n m hnm
+  have hp : q⁻¹ ^ (2 * n) = q⁻¹ ^ (2 * m) := by
+    simpa only [ev, ← pow_mul, mul_left_inj' hmu] using congrArg Subtype.val hnm
+  let u : ℂˣ := Units.mk0 q⁻¹ hq.inv.ne_zero
+  have hu : ¬IsOfFinOrder u := by
+    rw [isOfFinOrder_iff_pow_eq_one]
+    rintro ⟨r, hr, hu⟩
+    exact hq.inv.pow_ne_one hr (congrArg Units.val hu)
+  have hp' : u ^ (2 * n) = u ^ (2 * m) := Units.ext hp
+  have := (injective_pow_iff_not_isOfFinOrder.mpr hu) hp'
+  omega
+
 /-- Every nonzero finite-dimensional module at a generic parameter has a highest-weight
 vector. No diagonalizability of `K` is assumed. -/
 theorem exists_highest_weight_vector (hq : IsGenericQuantumParameter q) [Nontrivial V] :
