@@ -39,7 +39,7 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
 * `TauCeti.singularToCubical_app_f_zero_simplexChain` and
   `TauCeti.cubicalToSingular_app_f_zero_ofCube`: in degree zero the comparison maps send a point
   to the same point.
-* `TauCeti.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
+* `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
   normalized cubical chains induces isomorphisms on singular homology.
 
 ## References
@@ -327,6 +327,8 @@ theorem singularCubicalHomologyNatIso_app (n : ℕ) (X : TopCat.{u}) :
     (singularCubicalHomologyNatIso k n).app X = singularCubicalHomologyIso k X n :=
   (rfl)
 
+namespace TopCat
+
 /-- A map of spaces which induces a quasi-isomorphism of normalized cubical chains induces
 isomorphisms on singular homology. -/
 theorem isIso_singularHomologyMap_of_quasiIso {X Y : TopCat.{u}} (f : X ⟶ Y)
@@ -339,5 +341,7 @@ theorem isIso_singularHomologyMap_of_quasiIso {X Y : TopCat.{u}} (f : X ⟶ Y)
     rw [h]
     infer_instance
   exact hS
+
+end TopCat
 
 end TauCeti

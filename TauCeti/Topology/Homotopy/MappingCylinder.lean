@@ -338,6 +338,7 @@ lemma inclHomeomorph_apply_coe (x : X) : (inclHomeomorph f x : MappingCylinder f
 
 /-- `f` factors as the homeomorphism of its source with the bottom face of the mapping cylinder,
 followed by the inclusion of the bottom face and the projection onto the target. -/
+@[simp]
 lemma proj_comp_subtypeVal_comp_inclHomeomorph :
     (proj f).comp ((ContinuousMap.subtypeVal (Set.range (incl f))).comp
       (inclHomeomorph f : C(X, Set.range (incl f)))) = f := by

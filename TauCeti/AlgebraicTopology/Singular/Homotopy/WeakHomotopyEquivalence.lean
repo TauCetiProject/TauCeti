@@ -94,6 +94,6 @@ theorem isIso_singularHomologyMap (hf : f.IsWeakHomotopyEquivalence) (n : ℕ) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
       (TopCat.ofHom f)) := by
   have := hf.quasiIso_normalizedCubicalChainComplex_map k
-  exact isIso_singularHomologyMap_of_quasiIso _ n
+  exact TopCat.isIso_singularHomologyMap_of_quasiIso _ n
 
 end ContinuousMap.IsWeakHomotopyEquivalence

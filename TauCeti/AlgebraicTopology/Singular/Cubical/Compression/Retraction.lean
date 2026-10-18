@@ -399,7 +399,7 @@ theorem isIso_singularHomologyMap (D : SubspaceCubeDeformation A) (n : ℕ) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
       (TopCat.ofHom (ContinuousMap.subtypeVal A))) := by
   have := D.quasiIso_normalizedCubicalChainComplex_map R
-  exact isIso_singularHomologyMap_of_quasiIso _ n
+  exact TopCat.isIso_singularHomologyMap_of_quasiIso _ n
 
 end SubspaceCubeDeformation
 
