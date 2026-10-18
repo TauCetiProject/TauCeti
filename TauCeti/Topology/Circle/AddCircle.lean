@@ -26,6 +26,9 @@ Applied to both factors, it identifies the torus `S¹ × S¹` with the standard 
 * `AddCircle.homeomorphCircle_symm_one` — the inverse circle homeomorphism sends `1` to `0` for
   every nonzero real period.
 * `AddCircle.homeomorphCircle_symm_exp` — it sends `exp (2πix / T)` to the class of `x`.
+* `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
+  `TauCeti.circleProdHomeomorphUnitAddTorus_symm_apply` — the torus homeomorphism and its inverse
+  act factorwise through `AddCircle.homeomorphCircle`.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_exp` — the torus homeomorphism sends
   `(exp (2πia), exp (2πib))` to the class of `(a, b)`.
 -/
@@ -56,6 +59,24 @@ each circle factor being identified with `ℝ / ℤ` by `AddCircle.homeomorphCir
 noncomputable def circleProdHomeomorphUnitAddTorus : Circle × Circle ≃ₜ UnitAddTorus (Fin 2) :=
   ((AddCircle.homeomorphCircle one_ne_zero).symm.prodCongr
     (AddCircle.homeomorphCircle one_ne_zero).symm).trans Homeomorph.finTwoArrow.symm
+
+/-- The identification of `S¹ × S¹` with `ℝ² / ℤ²` reads each circle factor through
+`AddCircle.homeomorphCircle.symm`. -/
+@[simp]
+theorem circleProdHomeomorphUnitAddTorus_apply (z : Circle × Circle) :
+    circleProdHomeomorphUnitAddTorus z =
+      ![(AddCircle.homeomorphCircle one_ne_zero).symm z.1,
+        (AddCircle.homeomorphCircle one_ne_zero).symm z.2] := by
+  ext i
+  fin_cases i <;> rfl
+
+/-- The inverse identification of `ℝ² / ℤ²` with `S¹ × S¹` sends the coordinates of a point to the
+circle by `AddCircle.toCircle`. -/
+@[simp]
+theorem circleProdHomeomorphUnitAddTorus_symm_apply (x : UnitAddTorus (Fin 2)) :
+    circleProdHomeomorphUnitAddTorus.symm x =
+      (AddCircle.toCircle (x 0), AddCircle.toCircle (x 1)) := by
+  simp [circleProdHomeomorphUnitAddTorus, AddCircle.homeomorphCircle_apply]
 
 /-- The identification of `S¹ × S¹` with `ℝ² / ℤ²` sends `(exp (2πia), exp (2πib))` to the class
 of `(a, b)`. -/

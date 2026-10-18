@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Naturality
 public import TauCeti.AlgebraicTopology.UniversalCover.Torus.FundamentalGroup
-public import TauCeti.Topology.Circle.AddCircle
+public import TauCeti.Topology.Circle.Loop
 
 /-!
 # The first homology of a torus, naturally in integer matrices
@@ -41,10 +41,9 @@ boundaries of solid tori `D² × S¹`.
 * `TauCeti.torusFirstHomologyEquiv_loopClass`, `TauCeti.torusFirstHomologyEquiv_symm_apply`: the
   class of the straight loop of `n` corresponds to `n`.
 * `TauCeti.torusFirstHomologyEquiv_homologyMap_smulVecHom`: naturality in integer matrices.
-* `TauCeti.torusCurve p q`: the `(p, q)` curve on `S¹ × S¹`, a loop at `(1, 1)`.
 * `TauCeti.circleProdFirstHomologyEquiv`, `TauCeti.circleProdFirstHomologyEquiv_torusCurve`: the
   isomorphism `H₁(Y; ℤ) ≃ₗ[ℤ] ℤ²` of a space parametrized by `S¹ × S¹`, sending the class of the
-  `(p, q)` curve to `(p, q)`.
+  `(p, q)` curve `TauCeti.torusCurve p q` to `(p, q)`.
 
 ## References
 
@@ -118,21 +117,6 @@ theorem torusFirstHomologyEquiv_homologyMap_smulVecHom [Fintype ι] {κ : Type} 
 
 /-! ### Tori parametrized by `S¹ × S¹` -/
 
-/-- The `(p, q)` curve `t ↦ (exp (2πipt), exp (2πiqt))` on the torus `S¹ × S¹`, a loop at
-`(1, 1)` winding `p` times around the first circle and `q` times around the second. -/
-def torusCurve (p q : ℤ) : Path ((1 : Circle), (1 : Circle)) (1, 1) where
-  toFun t := (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t)))
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by
-    simp only [Set.Icc.coe_one, mul_one]
-    exact Prod.ext (Circle.exp_two_pi_mul_int p) (Circle.exp_two_pi_mul_int q)
-
-@[simp]
-theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
-    torusCurve p q t = (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t))) :=
-  (rfl)
-
 section Parametrized
 
 variable {Y : Type} [TopologicalSpace Y] (e : Circle × Circle ≃ₜ Y)
@@ -149,6 +133,17 @@ def circleProdFirstHomologyEquiv :
     ((singularChains ℤ).mapIso
       (TopCat.isoOfHomeo (e.symm.trans circleProdHomeomorphUnitAddTorus))) 1).toLinearEquiv.trans
     (torusFirstHomologyEquiv (fun _ : Fin 2 ↦ (1 : ℝ)) fun _ ↦ one_ne_zero)
+
+/-- The identification of the first homology of a parametrized torus with `ℤ²` pushes a class
+forward to `ℝ² / ℤ²` along `e.symm` and `TauCeti.circleProdHomeomorphUnitAddTorus`, then reads it
+off by `TauCeti.torusFirstHomologyEquiv`. -/
+theorem circleProdFirstHomologyEquiv_apply
+    (x : ((singularChains ℤ).obj (TopCat.of Y)).homology 1) :
+    circleProdFirstHomologyEquiv e x =
+      torusFirstHomologyEquiv (fun _ : Fin 2 ↦ (1 : ℝ)) (fun _ ↦ one_ne_zero)
+        ((HomologicalComplex.homologyMap ((singularChains ℤ).map
+          (TopCat.isoOfHomeo (e.symm.trans circleProdHomeomorphUnitAddTorus)).hom) 1).hom x) := by
+  simp [circleProdFirstHomologyEquiv]
 
 /-- The identification of the first homology of a parametrized torus with `ℤ²` sends the class of
 the `(p, q)` curve `t ↦ e (exp (2πipt), exp (2πiqt))` to `(p, q)`. -/
@@ -168,9 +163,8 @@ theorem circleProdFirstHomologyEquiv_torusCurve (p q : ℤ) :
     have ht := circleProdHomeomorphUnitAddTorus_exp (p * t) (q * t)
     ext i
     fin_cases i <;> simp_all [g, mul_comm]
-  rw [circleProdFirstHomologyEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
-    HomologicalComplex.homologyMapIso_hom, Functor.mapIso_hom,
-    homologyMap_H₁AddEquivHomology_loopClass g.hom, h, torusFirstHomologyEquiv_loopClass]
+  rw [circleProdFirstHomologyEquiv_apply, homologyMap_H₁AddEquivHomology_loopClass g.hom, h,
+    torusFirstHomologyEquiv_loopClass]
 
 end Parametrized
 
