@@ -20,7 +20,7 @@ actual comodule weight space `Derivation.adjointWeightSpace`.
 
 The character is written multiplicatively because the coordinate algebra of the split torus is
 the group algebra on `Multiplicative (ULift (Fin n) →₀ ℤ)`.  Off the diagonal it is nontrivial,
-so every ordered pair `i ≠ j` gives an element of
+so over a nontrivial base ring every ordered pair `i ≠ j` gives an element of
 `Derivation.nontrivialAdjointWeights`.  On the diagonal the matrix units have trivial weight,
 identifying the diagonal tangent directions as torus-fixed vectors.
 
@@ -33,7 +33,7 @@ identifying the diagonal tangent directions as torus-fixed vectors.
 * `TauCeti.GeneralLinear.matrixUnitTangent_mem_adjointWeightSpace`: `E_ij` has weight
   `e_i - e_j` under the diagonal torus.
 * `TauCeti.GeneralLinear.matrixUnitWeight_mem_nontrivialAdjointWeights`: every off-diagonal
-  character `e_i - e_j` is a root read from the adjoint representation.
+  character `e_i - e_j` is a root read from the adjoint representation over a nontrivial base ring.
 
 ## References
 
