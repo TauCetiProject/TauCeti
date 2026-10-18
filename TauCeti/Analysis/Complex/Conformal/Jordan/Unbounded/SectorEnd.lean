@@ -19,8 +19,8 @@ to infinity, and let `g = (f - q)⁻¹` be its inverted coordinate, continuous o
 half-plane and injective away from its zeros.  The real zeros of `g` are the boundary parameters at
 which `f` tends to infinity.
 
-This file treats a zero `x` of `g` at which the domain ends in a sector: near `x` the map `f` takes
-its values in the upper half-plane in the far part
+This file treats a zero `x` of `g` at which the domain ends in a sector: `f` maps the points of
+the upper half-plane near `x` into the far part
 `{ρ < ‖w - c‖, |arg ((w - c) / b)| < β * π / 2}` of a sector of opening `β * π`, `0 < β < 2`, and
 that far part lies in the image of `f`.  Then the recentered coordinate
 `TauCeti.recenterInvertedCoordinate q c b g`, which is `b / (f - c)` in the upper half-plane,
@@ -57,26 +57,10 @@ namespace TauCeti
 
 variable {f g : ℂ → ℂ} {q : ℂ}
 
-/-- Near a zero of a continuous inverted coordinate, the points `q + g⁻¹` at which `g` does not
-vanish are far from any given centre `c`. -/
-private theorem exists_ball_lt_norm_of_inverted_coordinate
-    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) {x : ℝ} (hx : g x = 0) (c : ℂ) (R : ℝ) :
-    ∃ r > 0, ∀ z ∈ ball (x : ℂ) r, 0 ≤ z.im → g z ≠ 0 → R < ‖q + (g z)⁻¹ - c‖ := by
-  have hg : Tendsto g (𝓝[{z : ℂ | 0 ≤ z.im} ∩ {z | g z ≠ 0}] (x : ℂ)) (𝓝[≠] 0) :=
-    tendsto_nhdsWithin_iff.mpr ⟨hx ▸ ((hgc _ (by simp)).mono inter_subset_left).tendsto,
-      eventually_nhdsWithin_of_forall fun z hz => hz.2⟩
-  have hfar : Tendsto (fun z => q + (g z)⁻¹ - c)
-      (𝓝[{z : ℂ | 0 ≤ z.im} ∩ {z | g z ≠ 0}] (x : ℂ)) (cobounded ℂ) :=
-    (tendsto_sub_const_cobounded c).comp
-      ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
-  obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp
-    ((tendsto_norm_cobounded_atTop.comp hfar).eventually_gt_atTop R)
-  exact ⟨r, hr, fun z hz hzH hgz => h ⟨hz, hzH, hgz⟩⟩
-
 /-- **The recentered coordinate at a sector end.**  Let `g = (f - q)⁻¹` be the inverted coordinate
 of a map `f` of the upper half-plane: `g` is continuous on the closed upper half-plane, holomorphic
 and nonzero in its interior, and injective away from its zeros.  Let `x` be a real zero of `g`, and
-suppose that near `x` the map `f` takes its values in the upper half-plane in the far part
+suppose that `f` maps the points of the upper half-plane near `x` into the far part
 `S = {ρ < ‖w - c‖, |arg ((w - c) / b)| < β * π / 2}` of a sector of opening `β * π`, where
 `0 < β < 2`, and that `S` lies in the image of `f`.  Then on a closed upper half-disc about `x` the
 recentered coordinate `G = TauCeti.recenterInvertedCoordinate q c b g` agrees with `b / (f - c)`
