@@ -117,9 +117,14 @@ theorem ofRaw_rev (color : {p : V × V // p.1 ≠ p.2} → κ) (c : κ × κ) :
 end PairColorSystem
 
 /-- The ordered distinct pair formed by two coordinates of an injective tuple. -/
-@[expose] def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
+def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
     (hij : i ≠ j) : {p : V × V // p.1 ≠ p.2} :=
   ⟨(x.1 i, x.1 j), fun h ↦ hij (x.2 h)⟩
+
+/-- The underlying pair of `coordPair x i j hij` consists of the `i`th and `j`th coordinates. -/
+@[simp]
+theorem coe_coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
+    (hij : i ≠ j) : (coordPair x i j hij : V × V) = (x.1 i, x.1 j) := (rfl)
 
 /-- The color of a coordinate pair is the total pair color of the two coordinates. -/
 theorem PairColorSystem.color_coordPair_eq_iff {ι κ V : Type*} (C : PairColorSystem κ V)

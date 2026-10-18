@@ -226,7 +226,8 @@ theorem coordPair_mem_pairSupport₀₁ {S : PairSkeleton3 κ V} {P : Polyad3 S}
     coordPair x 0 1 (by decide) ∈ P.pairSupport₀₁ := by
   rw [P.mem_support] at hx
   obtain ⟨h₀, h₁, -, hk, -, -⟩ := hx
-  exact P.mem_pairSupport₀₁ _ |>.2 ⟨h₀, h₁, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
+  rw [P.mem_pairSupport₀₁, coe_coordPair]
+  exact ⟨h₀, h₁, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
 
 /-- The `(0, 2)` coordinate pair of a supported triple lies in the corresponding pair support. -/
 theorem coordPair_mem_pairSupport₀₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
@@ -234,7 +235,8 @@ theorem coordPair_mem_pairSupport₀₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
     coordPair x 0 2 (by decide) ∈ P.pairSupport₀₂ := by
   rw [P.mem_support] at hx
   obtain ⟨h₀, -, h₂, -, hk, -⟩ := hx
-  exact P.mem_pairSupport₀₂ _ |>.2 ⟨h₀, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
+  rw [P.mem_pairSupport₀₂, coe_coordPair]
+  exact ⟨h₀, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
 
 /-- The `(1, 2)` coordinate pair of a supported triple lies in the corresponding pair support. -/
 theorem coordPair_mem_pairSupport₁₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
@@ -242,6 +244,7 @@ theorem coordPair_mem_pairSupport₁₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
     coordPair x 1 2 (by decide) ∈ P.pairSupport₁₂ := by
   rw [P.mem_support] at hx
   obtain ⟨-, h₁, h₂, -, -, hk⟩ := hx
-  exact P.mem_pairSupport₁₂ _ |>.2 ⟨h₁, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
+  rw [P.mem_pairSupport₁₂, coe_coordPair]
+  exact ⟨h₁, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
 
 end TauCeti
