@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Scott.Formula
 public import TauCeti.ModelTheory.Scott.Stabilization
 public import TauCeti.ModelTheory.BackAndForth.TupleSystem
+public import TauCeti.ModelTheory.Infinitary.Equiv
 
 /-!
 # Scott sentences at stabilizing levels
@@ -21,6 +22,9 @@ ordinal levels. The realizing structure need not be countable.
 `scottSentence M` uses the least internal stabilization ordinal. Its construction and the
 back-and-forth conclusion are independent of the subsequent passage from a system to an
 isomorphism between countable structures.
+
+Isomorphic copies satisfy these sentences by invariance of infinitary satisfaction. This
+supplies the isomorphism-to-satisfaction direction of their characterization.
 
 The construction is due to Dana Scott, *Logic with denumerably long formulas and finite strings
 of quantifiers* (1965). Unlike the empty-tuple approximation called `scottSentenceAt` in Cameron
@@ -117,3 +121,24 @@ theorem bfEquiv_of_realize_scottSentence (h : SentenceInf.Realize (scottSentence
   exact hs.bfEquiv β hs.empty_mem
 
 end TauCeti
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti
+
+variable {L : Language.{u, v}} [L.IsRelational] [Countable (Σ k, L.Relations k)]
+variable {M : Type w} {N : Type w'} [L.Structure M] [L.Structure N] [Countable M]
+
+/-- Every isomorphic copy satisfies the Scott sentence at a countable internally
+stabilizing level of the original structure. -/
+theorem realize_scottSentenceAt (e : M ≃[L] N) {α : Ordinal.{o}}
+    (hα : α < Ordinal.omega 1) (hs : SelfStabilizesCompletely (L := L) M α) :
+    SentenceInf.Realize (scottSentenceAt (L := L) M α) N :=
+  (StrongHomClass.realize_sentenceInf e _).mp (realize_scottSentenceAt_self M hα hs)
+
+/-- Every isomorphic copy of a countable structure satisfies its canonical Scott sentence. -/
+theorem realize_scottSentence (e : M ≃[L] N) :
+    SentenceInf.Realize (scottSentence (L := L) M) N :=
+  (StrongHomClass.realize_sentenceInf e _).mp (realize_scottSentence_self M)
+
+end FirstOrder.Language.Equiv
