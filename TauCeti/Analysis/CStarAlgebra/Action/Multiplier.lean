@@ -42,21 +42,12 @@ namespace TauCeti.CStarAction
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
 
 /-- The action induced on the multiplier algebra: `g` acts by the unique extension of `α g`. -/
-def multiplier (α : CStarAction G A) : G →* (𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)) where
-  toFun g := DoubleCentralizer.congr (α g)
-  map_one' := by
-    ext m : 1
-    exact DoubleCentralizer.ext _ _ _ _ <| Prod.ext
-      (ContinuousLinearMap.ext fun _ => by simp) (ContinuousLinearMap.ext fun _ => by simp)
-  map_mul' g h := by
-    ext m : 1
-    exact DoubleCentralizer.ext _ _ _ _ <| Prod.ext
-      (ContinuousLinearMap.ext fun _ => by simp [mul_apply])
-      (ContinuousLinearMap.ext fun _ => by simp [mul_apply])
+def multiplier (α : CStarAction G A) : G →* (𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)) :=
+  DoubleCentralizer.congrAut.comp α.toMonoidHom
 
 theorem multiplier_apply (α : CStarAction G A) (g : G) :
     α.multiplier g = DoubleCentralizer.congr (α g) :=
-  (rfl)
+  DoubleCentralizer.congrAut_apply (α g)
 
 @[simp]
 theorem multiplier_apply_fst (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
@@ -68,18 +59,25 @@ theorem multiplier_apply_snd (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (
     (α.multiplier g m).snd a = α g (m.snd (α g⁻¹ a)) := by
   simp [multiplier_apply]
 
+/-- The inverse of an automorphism of the induced action is the action of the inverse element. -/
+@[simp]
+theorem multiplier_symm_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) :
+    (α.multiplier g).symm m = α.multiplier g⁻¹ m := by
+  rw [map_inv]
+  rfl
+
 /-- The induced action restricts to the original action on `A`. -/
 @[simp]
 theorem multiplier_coe (α : CStarAction G A) (g : G) (a : A) :
-    α.multiplier g (a : 𝓜(ℂ, A)) = (α g a : 𝓜(ℂ, A)) :=
-  DoubleCentralizer.congr_coe (α g) a
+    α.multiplier g (a : 𝓜(ℂ, A)) = (α g a : 𝓜(ℂ, A)) := by
+  simp [multiplier_apply]
 
-/-- The induced action is the unique action on `𝓜(ℂ, A)` by multiplicative maps that restricts
-to `α` on `A`. -/
+/-- The induced action is the unique action on `𝓜(ℂ, A)` by star-algebra automorphisms that
+restricts to `α` on `A`. -/
 theorem eq_multiplier_of_apply_coe (α : CStarAction G A)
     (β : G →* (𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A))) (hβ : ∀ g (a : A), β g a = (α g a : 𝓜(ℂ, A))) :
     β = α.multiplier :=
-  MonoidHom.ext fun g => StarAlgEquiv.ext <| congrFun <|
+  MonoidHom.ext fun g => StarAlgEquiv.ext <| congrFun <| multiplier_apply α g ▸
     DoubleCentralizer.eq_congr_of_apply_coe (α g) (β g) (hβ g)
 
 /-- Strict continuity of the induced action, for the left centralizer. -/
