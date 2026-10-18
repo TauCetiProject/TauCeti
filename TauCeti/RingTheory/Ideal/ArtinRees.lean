@@ -111,7 +111,7 @@ namespace Submodule
 /-- Pushing the filtration that `J • ⊤` induces on `L ∩ N₀`, viewed inside `N₀`, forward along
 the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
 @[simp]
-theorem map_subtype_smul_top_inf_comap (J : Ideal R) (N₀ L : Submodule R M) :
+theorem map_subtype_smul_top_inf_comap (N₀ : Submodule R M) (J : Ideal R) (L : Submodule R M) :
     (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
   rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_smul'', Submodule.map_top,
     Submodule.range_subtype, Submodule.map_comap_subtype, ← inf_assoc,
