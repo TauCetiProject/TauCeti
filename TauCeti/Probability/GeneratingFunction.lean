@@ -13,6 +13,7 @@ public import Mathlib.Probability.Moments.Basic
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
@@ -50,6 +51,8 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   analyticity on the open unit ball.
 * `TauCeti.Probability.iteratedDeriv_pgf_one` — under a positive exponential moment, the
   derivatives at one are the factorial moments.
+* `TauCeti.Probability.tendsto_iteratedDeriv_pgf_nhdsLT_one` — under a finite factorial moment,
+  the corresponding derivative tends to that moment as the argument tends to one from below.
 * `TauCeti.Probability.iteratedDeriv_pgf_zero` — the Taylor coefficients at the origin are the
   singleton masses, with `TauCeti.Probability.pgf_zero` and `TauCeti.Probability.deriv_pgf_zero`
   reading off the first two.
@@ -64,8 +67,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal
+open Filter MeasureTheory ProbabilityTheory
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -312,6 +315,15 @@ theorem hasFPowerSeriesOnBall_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
   simpa using hasFPowerSeriesOnBall_pgf_of_integrable_exp_mul_natCast (ν := ν) (t := 0)
     (by simpa only [zero_mul, Real.exp_zero] using integrable_const (μ := ν) (1 : ℝ))
 
+/-- An integrable `n`th power of a natural-number-valued function makes its `n`th falling
+factorial integrable. -/
+theorem integrable_descFactorial_of_integrable_pow_natCast {ν : Measure ℕ} {n : ℕ}
+    (h : Integrable (fun k : ℕ => (k : ℝ) ^ n) ν) :
+    Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν := by
+  refine h.mono' (by fun_prop) <| Filter.Eventually.of_forall fun k => ?_
+  rw [Real.norm_eq_abs, abs_of_nonneg (Nat.cast_nonneg _)]
+  exact_mod_cast k.descFactorial_le_pow n
+
 /-- A positive exponential moment makes every natural falling factorial integrable. -/
 theorem integrable_descFactorial_of_integrable_exp_mul_natCast {ν : Measure ℕ} {t : ℝ}
     (ht : 0 < t) (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
@@ -328,8 +340,7 @@ theorem integrable_descFactorial_of_integrable_exp_mul_natCast {ν : Measure ℕ
         (Nat.cast_nonneg k))
   have hpow : Integrable (fun k : ℕ => (k : ℝ) ^ n) ν :=
     integrable_pow_of_integrable_exp_mul ht.ne' hExp hExpNeg n
-  refine hpow.mono' (by fun_prop) <| Filter.Eventually.of_forall fun k => ?_
-  exact_mod_cast k.descFactorial_le_pow n
+  exact integrable_descFactorial_of_integrable_pow_natCast hpow
 
 /-- If a measure on `ℕ` has a positive exponential moment, then the `n`th derivative at one of
 its probability-generating function is its `n`th factorial moment. -/
@@ -348,6 +359,63 @@ theorem iteratedDeriv_pgf_one {ν : Measure ℕ} {t : ℝ} (ht : 0 < t)
     integral_countable hdesc_int]
   simp only [one_pow, mul_one]
   simp only [smul_eq_mul, mul_comm]
+
+/-- If a finite measure on `ℕ` has a finite `n`th factorial moment, then the `n`th derivative of
+its probability-generating function tends to that moment as the argument tends to one from
+below. -/
+theorem tendsto_iteratedDeriv_pgf_nhdsLT_one {ν : Measure ℕ} [IsFiniteMeasure ν] {n : ℕ}
+    (hdesc : Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν) :
+    Tendsto (fun z => iteratedDeriv n (pgf id ν) z) (𝓝[<] 1)
+      (𝓝 (∫ k : ℕ, (k.descFactorial n : ℝ) ∂ν)) := by
+  have hnorm {z : ℝ} (hz : |z| ≤ 1) (k : ℕ) :
+      ‖(k.descFactorial n : ℝ) * z ^ (k - n)‖ ≤ (k.descFactorial n : ℝ) := by
+    rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg (Nat.cast_nonneg _), norm_pow,
+      Real.norm_eq_abs]
+    calc
+      (k.descFactorial n : ℝ) * |z| ^ (k - n) ≤ (k.descFactorial n : ℝ) * 1 := by
+        gcongr
+        exact pow_le_one₀ (abs_nonneg z) hz
+      _ = (k.descFactorial n : ℝ) := mul_one _
+  have h_integral :
+      Tendsto (fun z : ℝ => ∫ k : ℕ, (k.descFactorial n : ℝ) * z ^ (k - n) ∂ν)
+        (𝓝[<] 1) (𝓝 (∫ k : ℕ, (k.descFactorial n : ℝ) ∂ν)) := by
+    apply tendsto_integral_filter_of_dominated_convergence
+      (fun k : ℕ => (k.descFactorial n : ℝ))
+    · filter_upwards with z
+      fun_prop
+    · filter_upwards [Ioo_mem_nhdsLT (show (0 : ℝ) < 1 by norm_num)] with z hz
+      exact Filter.Eventually.of_forall fun k => hnorm (abs_le.mpr
+        ⟨(neg_nonpos.mpr (zero_le_one : (0 : ℝ) ≤ 1)).trans hz.1.le, hz.2.le⟩) k
+    · exact hdesc
+    · filter_upwards with k
+      have h_id : Tendsto (fun z : ℝ => z) (𝓝[<] 1) (𝓝 1) :=
+        tendsto_id'.2 nhdsWithin_le_nhds
+      simpa only [one_pow, mul_one] using
+        (h_id.pow (k - n)).const_mul (k.descFactorial n : ℝ)
+  apply h_integral.congr'
+  filter_upwards [Ioo_mem_nhdsLT (show (0 : ℝ) < 1 by norm_num)] with z hz
+  have hz_abs : |z| < 1 := by simpa [abs_of_pos hz.1] using hz.2
+  have hz_ball : ‖z‖ₑ < (1 : ℝ≥0∞) := by
+    rw [← ofReal_norm, ENNReal.ofReal_lt_one]
+    simpa only [Real.norm_eq_abs] using hz_abs
+  have hz_int : Integrable (fun k : ℕ => (k.descFactorial n : ℝ) * z ^ (k - n)) ν :=
+    hdesc.mono' (by fun_prop) (Filter.Eventually.of_forall (hnorm hz_abs.le))
+  rw [(hasFPowerSeriesOnBall_pgf ν).iteratedDeriv_eq_tsum_descFactorial_mul_pow hz_ball n,
+    integral_countable hz_int]
+  congr 1
+  funext k
+  simp only [smul_eq_mul]
+  ring
+
+/-- If a finite measure on `ℕ` has a finite `n`th ordinary moment, then the `n`th derivative of
+its probability-generating function tends to the `n`th factorial moment as the argument tends to
+one from below. -/
+theorem tendsto_iteratedDeriv_pgf_nhdsLT_one_of_integrable_pow_natCast {ν : Measure ℕ}
+    [IsFiniteMeasure ν] {n : ℕ} (hn : Integrable (fun k : ℕ => (k : ℝ) ^ n) ν) :
+    Tendsto (fun z => iteratedDeriv n (pgf id ν) z) (𝓝[<] 1)
+      (𝓝 (∫ k : ℕ, (k.descFactorial n : ℝ) ∂ν)) :=
+  tendsto_iteratedDeriv_pgf_nhdsLT_one
+    (integrable_descFactorial_of_integrable_pow_natCast hn)
 
 /-- The probability-generating function of a finite measure on `ℕ` is analytic on `(-1, 1)`. -/
 theorem analyticOnNhd_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
