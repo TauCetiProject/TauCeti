@@ -26,6 +26,8 @@ without differentiability assumptions.
 
 ## Main results
 
+* `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
+  composed with its chart agrees locally with the original function.
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
 * `TauCeti.MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
@@ -40,7 +42,7 @@ without differentiability assumptions.
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -48,6 +50,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Near the center of an extended chart, composing a chart representative with the chart
+recovers the original function. No continuity of the function is needed. -/
+theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M → α) (x : M) :
+    (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
+  filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
+  exact congrArg f ((extChartAt I x).left_inv hy)
 
 /-- Changing extended coordinates transports the coordinate image of a subset of the overlap
 onto its image in the second chart. No differentiability assumption is needed. -/

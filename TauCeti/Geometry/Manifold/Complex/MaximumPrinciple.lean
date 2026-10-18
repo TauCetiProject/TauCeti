@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.MaximumPrinciple
+public import TauCeti.Analysis.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import Mathlib.Geometry.Manifold.ContMDiff.Basic
 public import Mathlib.Topology.Order.Compact
@@ -72,10 +72,7 @@ theorem re_leviForm_mfderiv_nonpos_of_isLocalMax
     exact hg.continuousAt.tendsto.comp hs
   have heq : ((f ∘ g) ∘ (extChartAt I x).symm) =ᶠ[𝓝 z]
       (f ∘ (extChartAt J (g x)).symm) ∘ G := by
-    filter_upwards [ht.eventually ((isOpen_extChartAt_source (I := J) (g x)).mem_nhds
-      (mem_extChartAt_source (I := J) (g x)))] with y hy
-    simp only [G, writtenInExtChartAt, Function.comp_apply]
-    exact congrArg f ((extChartAt J (g x)).left_inv hy).symm
+    exact ((comp_extChartAt_symm_comp_extChartAt_eventuallyEq f (g x)).comp_tendsto ht).symm
   have hmax' : IsLocalMax (((f ∘ g) ∘ (extChartAt I x).symm)) z := by
     have hm : IsLocalMax (f ∘ g) ((extChartAt I x).symm z) := by
       simpa [z] using hmax
@@ -85,12 +82,8 @@ theorem re_leviForm_mfderiv_nonpos_of_isLocalMax
     (hf'.comp z (hG.restrict_scalars ℝ)) (hmax'.congr heq) (tangentSpaceCastModel I x v)
   rw [leviForm_comp_apply hf' hG, hGz] at hnonpos
   -- Identify the coordinate derivative with the actual tangent map, retaining the canonical casts.
-  have hd : fderiv ℂ G z (tangentSpaceCastModel I x v) =
-      tangentSpaceCastModel J (g x) (mfderiv I J g x v) := by
-    rw [(hg.mdifferentiableAt (by norm_num)).mfderiv,
-      ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
-    simp [G, z]
-  simpa only [hd] using hnonpos
+  simpa only [G, z, ← tangentSpaceCastModel_mfderiv_apply
+    (hg.mdifferentiableAt (by norm_num))] using hnonpos
 
 /-- For a real function that is `C²` near the image of a complex `C²` map from a nonempty
 compact complex manifold, at some point its Levi form is nonpositive on the whole tangent image.
@@ -105,10 +98,7 @@ theorem exists_forall_re_leviForm_mfderiv_nonpos [CompactSpace M] [Nonempty M]
         (tangentSpaceCastModel J (g x) (mfderiv I J g x v))).re ≤ 0 := by
   have hfc (x : M) : ContinuousAt f (g x) := by
     have hc := (hf₂ x).continuousAt.comp (continuousAt_extChartAt (I := J) (g x))
-    refine hc.congr ?_
-    filter_upwards [(isOpen_extChartAt_source (I := J) (g x)).mem_nhds
-      (mem_extChartAt_source (I := J) (g x))] with y hy
-    exact congrArg f ((extChartAt J (g x)).left_inv hy)
+    exact hc.congr (comp_extChartAt_symm_comp_extChartAt_eventuallyEq f (g x))
   have hcont : Continuous (f ∘ g) := continuous_iff_continuousAt.mpr
     (fun x ↦ (hfc x).comp (hg x).continuousAt)
   obtain ⟨x, _, hx⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hcont.continuousOn
@@ -130,16 +120,9 @@ theorem not_forall_injective_mfderiv_of_re_leviForm_pos
   obtain ⟨x, hx⟩ := exists_forall_re_leviForm_mfderiv_nonpos hf₂ hg
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   let u := (tangentSpaceCastModel I x).symm v
-  have hu : u ≠ 0 := by
-    intro h
-    apply hv
-    simpa only [u, ContinuousLinearEquiv.apply_symm_apply, map_zero] using
-      congrArg (tangentSpaceCastModel I x) h
-  have hw : tangentSpaceCastModel J (g x) (mfderiv I J g x u) ≠ 0 := by
-    intro h
-    apply hu
-    apply hinj x
-    exact (tangentSpaceCastModel J (g x)).injective (by simpa using h)
+  have hu : u ≠ 0 := EmbeddingLike.map_ne_zero_iff.mpr hv
+  have hw : tangentSpaceCastModel J (g x) (mfderiv I J g x u) ≠ 0 :=
+    EmbeddingLike.map_ne_zero_iff.mpr (((hinj x).ne_iff' (map_zero _)).mpr hu)
   exact (not_lt_of_ge (hx u)) (hpos x _ hw)
 
 end TauCeti
