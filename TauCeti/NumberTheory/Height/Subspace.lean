@@ -152,6 +152,7 @@ theorem relativeSubspaceLogHeight_top :
   simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
 
 /-- The relative height of the line spanned by a nonzero vector is the height of the vector. -/
+@[simp]
 theorem relativeSubspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     relativeSubspaceHeight (K ∙ x) = mulHeight x := by
   have h := relativeSubspaceHeight_span_range (linearIndependent_unique_iff.2 hx :
@@ -169,6 +170,7 @@ theorem relativeSubspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
 
 /-- The relative logarithmic height of the line spanned by a nonzero vector is the logarithmic
 height of the vector. -/
+@[simp]
 theorem relativeSubspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     relativeSubspaceLogHeight (K ∙ x) = logHeight x := by
   rw [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight,
