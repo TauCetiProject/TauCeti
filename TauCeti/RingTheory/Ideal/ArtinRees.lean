@@ -110,6 +110,7 @@ namespace Submodule
 
 /-- Pushing the filtration that `J • ⊤` induces on `L ∩ N₀`, viewed inside `N₀`, forward along
 the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
+@[simp]
 theorem map_subtype_smul_top_inf_comap (J : Ideal R) (N₀ L : Submodule R M) :
     (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
   rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_smul'', Submodule.map_top,
@@ -124,8 +125,8 @@ namespace Ideal
 over a noetherian ring, there is a shift `k` such that `I ^ (n + k) • N₀ ⊓ L` equals
 `I ^ n • (I ^ k • N₀ ⊓ L)` for every submodule `L` and every `n`. The ambient module need not be
 finite: only `N₀` is, so Mathlib's `Ideal.exists_pow_inf_eq_pow_smul` is applied inside `N₀`.
-In particular `I ^ (n + k) • N₀ ⊓ L ≤ I ^ n • L`, so the filtration `N₀` induces on `L` is
-cofinal in the `I`-adic filtration of `L`. -/
+In particular `I ^ (n + k) • N₀ ⊓ L ≤ I ^ n • L`; when `L ≤ N₀`, this shows that the
+filtration `N₀` induces on `L` is cofinal in the `I`-adic filtration of `L`. -/
 theorem exists_pow_add_smul_inf_eq_pow_smul [IsNoetherianRing R] (I : Ideal R)
     {N₀ : Submodule R M} (hN₀ : N₀.FG) (L : Submodule R M) :
     ∃ k : ℕ, ∀ n : ℕ, I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L) := by
