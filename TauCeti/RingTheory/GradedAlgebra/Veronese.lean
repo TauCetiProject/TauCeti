@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.FiniteType
-public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Basic
+public import TauCeti.RingTheory.GradedAlgebra.FiniteType
 
 /-!
 # Veronese subrings of finitely generated graded algebras
@@ -53,17 +53,6 @@ open DirectSum
 namespace TauCeti.GradedAlgebra
 
 variable {R A : Type*}
-
-section GradedMul
-
-variable {ι : Type*} [Add ι] [CommSemiring R] [Semiring A] [Algebra R A]
-  (𝒜 : ι → Submodule R A) [SetLike.GradedMul 𝒜]
-
-/-- The product of two homogeneous components lies in the component of the sum of the degrees. -/
-private theorem mul_le_grade_add (i j : ι) : 𝒜 i * 𝒜 j ≤ 𝒜 (i + j) :=
-  Submodule.mul_le.mpr fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
-
-end GradedMul
 
 section CommSemiring
 
@@ -190,30 +179,6 @@ theorem grade_mul_eq_pow_of_card_mul_le (hs : Algebra.adjoin (𝒜 0) (s : Set A
     rw [pow_succ', ← ih hm0, add_one_mul, add_comm,
       grade_add_eq_mul_of_card_mul_le hs hdeg hdvd he
         (hse.trans (Nat.le_mul_of_pos_left e (Nat.pos_of_ne_zero hm0)))]
-
-variable (𝒜) in
-/-- A graded algebra of finite type over `𝒜 0` is generated over `𝒜 0` by finitely many
-homogeneous elements of positive degree. This is the semiring version of Mathlib's
-`GradedAlgebra.exists_finset_adjoin_eq_top_and_homogeneous_ne_zero`, which is stated for rings,
-with the same proof: take the nonzero-degree homogeneous components of a finite generating set. -/
-private theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (𝒜 0) A] :
-    ∃ s : Finset A, Algebra.adjoin (𝒜 0) (s : Set A) = ⊤ ∧ ∀ x ∈ s, ∃ n ≠ 0, x ∈ 𝒜 n := by
-  classical
-  obtain ⟨F, hF⟩ := Algebra.FiniteType.out (R := 𝒜 0) (A := A)
-  refine ⟨F.biUnion fun f ↦ ((decompose 𝒜 f).support.filter (· ≠ 0)).image
-    fun n ↦ (decompose 𝒜 f n : A), ?_, ?_⟩
-  · rw [← top_le_iff, ← hF, Algebra.adjoin_le_iff]
-    intro f hf
-    rw [← sum_support_decompose 𝒜 f]
-    refine sum_mem fun n hn ↦ ?_
-    by_cases hn0 : n = 0
-    · subst hn0
-      exact Subalgebra.algebraMap_mem _ (decompose 𝒜 f 0)
-    · exact Algebra.subset_adjoin
-        (by simpa using ⟨f, hf, n, ⟨DFinsupp.mem_support_iff.mp hn, hn0⟩, rfl⟩)
-  · simp only [Finset.mem_biUnion, Finset.mem_image, Finset.mem_filter]
-    rintro _ ⟨f, -, n, ⟨-, hn0⟩, rfl⟩
-    exact ⟨n, hn0, (decompose 𝒜 f n).2⟩
 
 variable (𝒜) in
 /-- **Veronese subrings of a graded algebra of finite type are eventually generated in degree
