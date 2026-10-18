@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.ModelTheory.PartialEquiv
+public import TauCeti.ModelTheory.PartialEquiv
 
 /-!
 # Potential isomorphisms
@@ -16,6 +16,10 @@ must remain inside the chosen family. Mathlib's `Language.IsExtensionPair` inste
 finitely generated partial equivalence to extend; holding in both directions, together with an
 initial finitely generated partial equivalence, it implies potential isomorphism
 (`FirstOrder.Language.IsExtensionPair.potentialIso`).
+
+In any language, potential isomorphism is reflexive, since an isomorphism gives one
+(`FirstOrder.Language.Equiv.potentialIso`), symmetric (`TauCeti.PotentialIso.symm`), and
+transitive (`TauCeti.PotentialIso.trans`), by composing members of the two families.
 
 The definition is the finitely-generated-partial-equivalence presentation of the back-and-forth
 systems used by Carol Karp, *Finite-quantifier equivalence* (1965). Cameron Freer's
@@ -104,6 +108,55 @@ theorem PotentialIso.symm (h : PotentialIso (L := L) M N) :
     refine ⟨k.symm, ?_, hm, ?_⟩
     · rwa [Set.mem_ofPred_eq, FGEquiv.symm_symm]
     · exact PartialEquiv.monotone_symm hgk
+
+/-- Potential isomorphism is transitive. -/
+theorem PotentialIso.trans {P : Type*} [L.Structure P] (h₁ : PotentialIso (L := L) M N)
+    (h₂ : PotentialIso (L := L) N P) : PotentialIso (L := L) M P := by
+  obtain ⟨S, ⟨f₀, hf₀⟩, hSf, hSb⟩ := h₁
+  obtain ⟨T, ⟨g₀, hg₀⟩, hTf, hTb⟩ := h₂
+  -- Forth extensions in `T` cover any finitely generated substructure, generator by generator.
+  have cover : ∀ g ∈ T, ∀ A : L.Substructure N, A.FG → ∃ g' ∈ T, A ≤ g'.1.dom ∧ g ≤ g' := by
+    classical
+    rintro g hg _ ⟨s, rfl⟩
+    suffices ∃ g' ∈ T, (s : Set N) ⊆ g'.1.dom ∧ g ≤ g' from
+      let ⟨g', hg', hs, hgg'⟩ := this; ⟨g', hg', Substructure.closure_le.2 hs, hgg'⟩
+    induction s using Finset.induction_on with
+    | empty => exact ⟨g, hg, by simp, le_rfl⟩
+    | insert a s _ ih =>
+      obtain ⟨g₁, hg₁, hs, hgg₁⟩ := ih
+      obtain ⟨g₂, hg₂, ha, hg₁g₂⟩ := hTf g₁ hg₁ a
+      refine ⟨g₂, hg₂, ?_, hgg₁.trans hg₁g₂⟩
+      rw [Finset.coe_insert, Set.insert_subset_iff]
+      exact ⟨ha, hs.trans (PartialEquiv.dom_le_dom hg₁g₂)⟩
+  -- The composites of compatible members of `S` and `T` form the required family.
+  let comp (f : L.FGEquiv M N) (g : L.FGEquiv N P) (h : f.1.cod ≤ g.1.dom) : L.FGEquiv M P :=
+    ⟨g.1.comp f.1 h, by rw [PartialEquiv.dom_comp]; exact f.2⟩
+  refine ⟨{k | ∃ f ∈ S, ∃ g ∈ T, ∃ h, k = comp f g h}, ?_, ?_, ?_⟩
+  · obtain ⟨g, hg, h, -⟩ := cover g₀ hg₀ _ (f₀.1.dom_fg_iff_cod_fg.1 f₀.2)
+    exact ⟨_, f₀, hf₀, g, hg, h, rfl⟩
+  · rintro _ ⟨f, hf, g, hg, h, rfl⟩ m
+    obtain ⟨f', hf', hm, hff'⟩ := hSf f hf m
+    obtain ⟨g', hg', h', hgg'⟩ := cover g hg _ (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+    exact ⟨_, ⟨f', hf', g', hg', h', rfl⟩, by rwa [PartialEquiv.dom_comp],
+      PartialEquiv.comp_le_comp hff' hgg' h h'⟩
+  · rintro _ ⟨f, hf, g, hg, h, rfl⟩ p
+    -- Extend `g` to reach `p`, extend `f` to reach the preimage `y` of `p`, then extend the first
+    -- extension of `g` over the codomain of the extension of `f`.
+    obtain ⟨g₁, hg₁, hp, hgg₁⟩ := hTb g hg p
+    let y := g₁.1.toEquiv.symm ⟨p, hp⟩
+    obtain ⟨f', hf', hy, hff'⟩ := hSb f hf y
+    obtain ⟨g', hg', h', hg₁g'⟩ := cover g₁ hg₁ _ (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+    refine ⟨_, ⟨f', hf', g', hg', h', rfl⟩, ?_,
+      PartialEquiv.comp_le_comp hff' (hgg₁.trans hg₁g') h h'⟩
+    let x := f'.1.toEquiv.symm ⟨y, hy⟩
+    have hx : (x : M) ∈ (g'.1.comp f'.1 h').dom := by rw [PartialEquiv.dom_comp]; exact x.2
+    convert ((g'.1.comp f'.1 h').toEquiv ⟨x, hx⟩).2
+    rw [PartialEquiv.comp_apply]
+    have hfx : (f'.1.toEquiv ⟨x, x.2⟩ : N) = y := by simp [x]
+    have hg := congrArg Subtype.val (PartialEquiv.toEquiv_inclusion_apply hg₁g' y)
+    simp only [Substructure.coe_inclusion] at hg
+    simp only [hfx]
+    exact (hg.trans (by simp [y])).symm
 
 /-- Mathlib's global two-sided extension property gives a potential isomorphism when there is an
 initial finitely generated partial equivalence. -/
