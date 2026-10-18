@@ -107,20 +107,9 @@ theorem exists_eventually_mem_of_inverted_coordinate_eq_zero {ι : Type*} {U : S
 normalized half-strip coordinate `(q + g⁻¹ - c) / b` tends to infinity. -/
 private theorem tendsto_cobounded_div_of_tendsto_nhdsNE_zero {α : Type*} {l : Filter α}
     {g : α → ℂ} {c b : ℂ} (hb : b ≠ 0) (hg : Tendsto g l (𝓝[≠] 0)) :
-    Tendsto (fun a => (q + (g a)⁻¹ - c) / b) l (cobounded ℂ) := by
-  simpa [div_eq_mul_inv, Function.comp_def] using
-    (tendsto_mul_right_cobounded (inv_ne_zero hb)).comp ((tendsto_sub_const_cobounded c).comp
-      ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg)))
-
-/-- A point of the closed half-strip `{ρ ≤ re ζ, 0 ≤ im ζ ≤ π}` far enough out has real part
-greater than `|ρ|`. -/
-private theorem abs_lt_re_of_halfStrip {ζ : ℂ} {ρ : ℝ} (hre : ρ ≤ ζ.re)
-    (him : ζ.im ∈ Icc 0 Real.pi) (hfar : |ρ| + Real.pi < ‖ζ‖) : |ρ| < ζ.re := by
-  have h := norm_le_abs_re_add_abs_im ζ
-  rw [abs_of_nonneg him.1] at h
-  rcases lt_abs.mp (show |ρ| < |ζ.re| by linarith [him.2]) with h' | h'
-  · exact h'
-  · linarith [neg_abs_le ρ]
+    Tendsto (fun a => (q + (g a)⁻¹ - c) / b) l (cobounded ℂ) :=
+  tendsto_sub_div_of_tendsto_cobounded hb
+    ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
 
 /-- Near a zero of the inverted coordinate whose end is the half-strip
 `{ρ < re ζ, 0 < im ζ < π}`, `ζ = (w - c) / b`, the normalized coordinate
@@ -155,35 +144,39 @@ private theorem exists_ball_halfStrip_of_inverted_coordinate
   refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun z hz hzH hgz => ?_⟩
   have hz₁ : z ∈ ball (x : ℂ) r₁ := ball_subset_ball (min_le_left _ _) hz
   have hzfar : |ρ| + Real.pi < ‖φ z‖ := hfar ⟨ball_subset_ball (min_le_right _ _) hz, hzH, hgz⟩
-  rcases hzH.lt_or_eq with hzH | hzH
-  · obtain ⟨hre, him⟩ := hφS hz₁ hzH
-    exact ⟨(abs_nonneg ρ).trans (abs_lt_re_of_halfStrip hre.le (Ioo_subset_Icc_self him)
-      hzfar).le, Ioo_subset_Icc_self him, fun _ => him, fun h => absurd h hzH.ne'⟩
-  -- a real point lies in the closure of the half-strip, but not in the half-strip itself
-  have hT : IsClosed {ζ : ℂ | ρ ≤ ζ.re ∧ ζ.im ∈ Icc 0 Real.pi} :=
-    (isClosed_le continuous_const Complex.continuous_re).inter
-      (isClosed_Icc.preimage Complex.continuous_im)
-  have hφc : ContinuousWithinAt φ (ball (x : ℂ) r₁ ∩ upperHalfPlaneSet) z :=
-    (ContinuousWithinAt.div_const ((continuousWithinAt_const.add
-      ((hgc z hzH.le).inv₀ hgz)).sub continuousWithinAt_const) b).mono fun w hw =>
-      mem_ofPred.mpr (le_of_lt hw.2)
-  have hzcl : z ∈ closure (ball (x : ℂ) r₁ ∩ upperHalfPlaneSet) :=
-    isOpen_ball.inter_closure ⟨hz₁, by simp [upperHalfPlaneSet, ← hzH]⟩
-  have : (𝓝[ball (x : ℂ) r₁ ∩ upperHalfPlaneSet] z).NeBot :=
-    mem_closure_iff_nhdsWithin_neBot.mp hzcl
-  obtain ⟨hre, him⟩ : ρ ≤ (φ z).re ∧ (φ z).im ∈ Icc 0 Real.pi :=
-    hT.mem_of_tendsto hφc.tendsto (eventually_nhdsWithin_of_forall fun w hw =>
+  obtain ⟨hre, him⟩ : ρ ≤ (φ z).re ∧ (φ z).im ∈ Icc 0 Real.pi := by
+    rcases hzH.lt_or_eq with hzH | hzH
+    · exact ⟨(hφS hz₁ hzH).1.le, Ioo_subset_Icc_self (hφS hz₁ hzH).2⟩
+    -- a real point lies in the closure of the half-strip
+    have hT : IsClosed {ζ : ℂ | ρ ≤ ζ.re ∧ ζ.im ∈ Icc 0 Real.pi} :=
+      (isClosed_le continuous_const Complex.continuous_re).inter
+        (isClosed_Icc.preimage Complex.continuous_im)
+    have hφc : ContinuousWithinAt φ (ball (x : ℂ) r₁ ∩ upperHalfPlaneSet) z :=
+      (ContinuousWithinAt.div_const ((continuousWithinAt_const.add
+        ((hgc z hzH.le).inv₀ hgz)).sub continuousWithinAt_const) b).mono fun w hw =>
+        mem_ofPred.mpr (le_of_lt hw.2)
+    have hzcl : z ∈ closure (ball (x : ℂ) r₁ ∩ upperHalfPlaneSet) :=
+      isOpen_ball.inter_closure ⟨hz₁, by simp [upperHalfPlaneSet, ← hzH]⟩
+    have : (𝓝[ball (x : ℂ) r₁ ∩ upperHalfPlaneSet] z).NeBot :=
+      mem_closure_iff_nhdsWithin_neBot.mp hzcl
+    exact hT.mem_of_tendsto hφc.tendsto (eventually_nhdsWithin_of_forall fun w hw =>
       ⟨(hφS hw.1 hw.2).1.le, Ioo_subset_Icc_self (hφS hw.1 hw.2).2⟩)
-  have hlt := abs_lt_re_of_halfStrip hre him hzfar
-  refine ⟨(abs_nonneg ρ).trans hlt.le, him, fun h => absurd hzH.symm h.ne', fun _ => ?_⟩
+  -- far out in the closed half-strip the real part exceeds `|ρ|`
+  have hlt : |ρ| < (φ z).re := by
+    rcases lt_abs.mp ((add_lt_add_iff_right Real.pi).mp
+        (hzfar.trans_le (norm_le_abs_re_add_pi_of_im_mem_Icc him))) with h | h
+    · exact h
+    · linarith [neg_abs_le ρ]
+  refine ⟨(abs_nonneg ρ).trans hlt.le, him, fun hzH => (hφS hz₁ hzH).2, fun hzH => ?_⟩
+  -- a real point is not in the half-strip itself
   by_contra hne
   rw [not_or] at hne
   -- otherwise the boundary value would be a value of `f` at an interior point
   obtain ⟨y, hy, hyz⟩ := hS (a := q + (g z)⁻¹)
     ⟨(le_abs_self ρ).trans_lt hlt, him.1.lt_of_ne (Ne.symm hne.1), him.2.lt_of_ne hne.2⟩
   have hgy : g y = g z := by rw [hgf hy]; simp [hyz]
-  have hyz' := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hzH.le, hgz⟩ hgy
-  exact absurd (hyz' ▸ hy : 0 < z.im) (by simp [← hzH])
+  have hyz' := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hzH.ge, hgz⟩ hgy
+  exact absurd (hyz' ▸ hy : 0 < z.im) (by simp [hzH])
 
 /-- The exponential coordinate `exp (π * I - ζ)` of the normalized half-strip coordinate
 `ζ = (q + g⁻¹ - c) / b`, filled in with `0` at the zeros of `g`, is continuous wherever `ζ` stays
@@ -213,6 +206,26 @@ private theorem continuousOn_exp_halfStrip_of_inverted_coordinate [∀ z, Decida
         ((continuousWithinAt_const.add ((hgc z hz).inv₀ hgz)).sub continuousWithinAt_const)
           b)).cexp
     · filter_upwards [(hgc z hz).eventually_ne hgz] with w hw using ite_eq_right hw
+
+/-- The exponential coordinate `exp (π * I - ζ)` of the normalized half-strip coordinate
+`ζ = (q + g⁻¹ - c) / b`, filled in with `0` at the zeros of `g`, is injective wherever `ζ` stays in
+the closed strip `0 ≤ im ζ ≤ π` off the zeros of `g`, provided `g` is injective off its zeros and
+has at most one zero there. -/
+private theorem injOn_exp_halfStrip_of_inverted_coordinate [∀ z, Decidable (g z = 0)]
+    {c b : ℂ} (hb : b ≠ 0) {B : Set ℂ} (hgi : InjOn g (B ∩ {z | g z ≠ 0}))
+    (hzero : (B ∩ {z | g z = 0}).Subsingleton)
+    (hB : ∀ z ∈ B, g z ≠ 0 → ((q + (g z)⁻¹ - c) / b).im ∈ Icc 0 Real.pi) :
+    InjOn
+      (fun z => if g z = 0 then 0 else exp (Real.pi * Complex.I - (q + (g z)⁻¹ - c) / b)) B := by
+  intro z hz w hw hzw
+  by_cases hgz : g z = 0 <;> by_cases hgw : g w = 0 <;>
+    simp only [hgz, hgw, ite_true, ite_false] at hzw
+  · exact hzero ⟨hz, hgz⟩ ⟨hw, hgw⟩
+  · exact absurd hzw.symm (exp_ne_zero _)
+  · exact absurd hzw (exp_ne_zero _)
+  · have hφ := injOn_exp_pi_mul_I_sub (hB z hz hgz) (hB w hw hgw) hzw
+    simp only [div_left_inj' hb, sub_left_inj, add_right_inj, inv_inj] at hφ
+    exact hgi ⟨hz, hgz⟩ ⟨hw, hgw⟩ hφ
 
 /-- **The exponential coordinate at a parallel-sided end.**  Let `g = (f - q)⁻¹` be the inverted
 coordinate of a holomorphic map `f` of the upper half-plane: `g` is continuous on the closed upper
@@ -251,8 +264,7 @@ theorem exists_ball_halfStrip_end_of_inverted_coordinate
   have hGne {z : ℂ} (hgz : g z ≠ 0) : G z = exp (Real.pi * Complex.I - φ z) := ite_eq_right hgz
   have hGim {z : ℂ} (hgz : g z ≠ 0) :
       (G z).im = Real.exp (-(φ z).re) * Real.sin (φ z).im := by
-    rw [hGne hgz, exp_im]
-    simp [Real.sin_pi_sub]
+    rw [hGne hgz, im_exp_pi_mul_I_sub]
   have hGc : ContinuousOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) :=
     continuousOn_exp_halfStrip_of_inverted_coordinate hb (hgc.mono inter_subset_right)
       fun z hz hgz => ⟨(hstrip z hz.1 hz.2 hgz).1, (hstrip z hz.1 hz.2 hgz).2.1⟩
@@ -275,33 +287,19 @@ theorem exists_ball_halfStrip_end_of_inverted_coordinate
   obtain ⟨r', hr', hiso⟩ := Metric.mem_nhdsWithin_iff.mp <| eventually_ne_zero_of_real_on_axis hr
     hGc hGd hGR fun z hz hzH h => (hGH z hz hzH).ne' (by rw [h, zero_im])
   have hball : ball (x : ℂ) (min r r') ⊆ ball (x : ℂ) r := ball_subset_ball (min_le_left _ _)
-  have hzero {z : ℂ} (hz : z ∈ ball (x : ℂ) (min r r')) (hzH : 0 ≤ z.im) (hGz : G z = 0) :
+  have hzero {z : ℂ} (hz : z ∈ ball (x : ℂ) (min r r') ∩ {z : ℂ | 0 ≤ z.im}) (hgz : g z = 0) :
       z = x := by
     by_contra hzx
-    exact hiso ⟨ball_subset_ball (min_le_right _ _) hz, hzH, hzx⟩ hGz
+    exact hiso ⟨ball_subset_ball (min_le_right _ _) hz.1, hz.2, hzx⟩ (ite_eq_left hgz)
   refine ⟨min r r', lt_min hr hr', c + Real.pi * Complex.I * b, -b, neg_ne_zero.mpr hb, G,
     fun z hz => ?_, ite_eq_left hx, hGc.mono (inter_subset_inter_left _ hball),
-    fun z hz hz0 => hGR z (hball hz) hz0, fun z hz => hGH z (hball hz.1) hz.2, ?_⟩
-  · rw [hGne (hgne z hz.2)]
-    dsimp only
-    rw [eq_add_inv_of_inverted_coordinate hgf hz.2]
-    congr 1
-    simp only [φ]
-    field_simp
-    ring
-  -- `exp` is injective on the closed strip `0 ≤ im ≤ π`, and `g` away from its zeros
-  intro z hz w hw hzw
-  by_cases hGz : G z = 0
-  · rw [hzero hz.1 hz.2 hGz, hzero hw.1 hw.2 (hzw ▸ hGz)]
-  have hgz : g z ≠ 0 := fun h => hGz (ite_eq_left h)
-  have hgw : g w ≠ 0 := fun h => hGz (hzw.trans (ite_eq_left h))
-  have hlog {y : ℂ} (hy : y ∈ ball (x : ℂ) (min r r') ∩ {z : ℂ | 0 ≤ z.im}) (hgy : g y ≠ 0) :
-      log (G y) = Real.pi * Complex.I - φ y := by
-    have him : (φ y).im ∈ Icc 0 Real.pi := (hstrip y (hball hy.1) hy.2 hgy).2.1
-    rw [hGne hgy, log_exp] <;> simp <;> linarith [Real.pi_pos, him.1, him.2]
-  have hφ : φ z = φ w := by
-    simpa using (hlog hz hgz).symm.trans ((congrArg log hzw).trans (hlog hw hgw))
-  simp only [φ, div_left_inj' hb, sub_left_inj, add_right_inj, inv_inj] at hφ
-  exact hgi ⟨hz.2, hgz⟩ ⟨hw.2, hgw⟩ hφ
+    fun z hz hz0 => hGR z (hball hz) hz0, fun z hz => hGH z (hball hz.1) hz.2,
+    injOn_exp_halfStrip_of_inverted_coordinate hb (hgi.mono fun z hz => by exact ⟨hz.1.2, hz.2⟩)
+      (fun z hz w hw => (hzero hz.1 hz.2).trans (hzero hw.1 hw.2).symm)
+      fun z hz hgz => (hstrip z (hball hz.1) hz.2 hgz).2.1⟩
+  rw [hGne (hgne z hz.2)]
+  dsimp only
+  rw [eq_add_inv_of_inverted_coordinate hgf hz.2]
+  exact exp_pi_mul_I_sub_div hb
 
 end TauCeti
