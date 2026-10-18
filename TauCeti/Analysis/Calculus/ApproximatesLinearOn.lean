@@ -82,8 +82,9 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
     rcases f'.subsingleton_or_nnnorm_symm_pos with hE | hpos
     · exact Or.inl hE
     right
-    rw [inv_eq_one_div, lt_div_iff₀ hpos, ← NNReal.coe_lt_coe, NNReal.coe_mul,
-      NNReal.coe_one, coe_nnnorm]
+    refine (NNReal.lt_inv_iff_mul_lt hpos.ne').2 ?_
+    rw [← NNReal.coe_lt_coe]
+    push_cast
     have hmul := mul_le_mul_of_nonneg_left hf' c.coe_nonneg
     nlinarith
   exact ⟨a, ha, hfa, fun z hz hfz ↦ hinj hz (hsub ha) (hfz.trans hfa.symm)⟩
