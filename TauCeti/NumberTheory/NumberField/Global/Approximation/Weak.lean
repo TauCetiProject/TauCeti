@@ -321,7 +321,8 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
   obtain ⟨Y, hY⟩ := exists_forall_apply_sub_lt S
     (fun v hv ↦ by
       obtain ⟨a, ha, hva⟩ := hstd v hv
-      exact AbsoluteValue.isNontrivial_of_isStandard ha (fun n ↦ by simpa using hva (n : ℚ)))
+      exact AbsoluteValue.isNontrivial_of_forall_natCast_eq ha.isNontrivial
+        (fun n ↦ by simpa using hva (n : ℚ)))
     (fun v hv w hw h ↦ by
       obtain ⟨a, ha, hva⟩ := hstd v hv
       obtain ⟨b, hb, hwb⟩ := hstd w hw

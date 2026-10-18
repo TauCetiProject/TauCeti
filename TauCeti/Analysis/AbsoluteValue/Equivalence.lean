@@ -29,6 +29,8 @@ two such that are equivalent are equal.
   where they are not `1` are equal.
 * `AbsoluteValue.IsEquiv.eq_of_isStandard`: equivalent absolute values agreeing on natural-number
   casts with standard absolute values on `ℚ` are equal.
+* `AbsoluteValue.isNontrivial_of_forall_natCast_eq`: agreement on natural-number casts transfers
+  nontriviality from an absolute value on `ℚ` to one on a semiring.
 -/
 
 public section
@@ -138,11 +140,5 @@ theorem _root_.AbsoluteValue.isNontrivial_of_forall_natCast_eq {F : Type*} [Semi
   obtain ⟨n, hn, hn'⟩ := ha.exists_nat_ne_one
   exact ⟨n, v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero (Nat.cast_ne_zero.mpr hn)),
     by rwa [hva]⟩
-
-/-- An absolute value agreeing on natural-number casts with a standard one on `ℚ` is nontrivial. -/
-theorem _root_.AbsoluteValue.isNontrivial_of_isStandard {F : Type*} [Semiring F]
-    {v : AbsoluteValue F ℝ} {a : AbsoluteValue ℚ ℝ} (ha : Rat.AbsoluteValue.IsStandard a)
-    (hva : ∀ n : ℕ, v n = a n) : v.IsNontrivial :=
-  AbsoluteValue.isNontrivial_of_forall_natCast_eq ha.isNontrivial hva
 
 end TauCeti
