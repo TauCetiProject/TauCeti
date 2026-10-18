@@ -45,6 +45,19 @@ instance : IsProbabilityMeasure rademacherMeasure := by
   rw [rademacherMeasure]
   infer_instance
 
+/-- The Rademacher law is invariant under reflection in the origin. -/
+@[simp]
+theorem rademacherMeasure_map_neg :
+    rademacherMeasure.map (fun x : ℝ ↦ -x) = rademacherMeasure := by
+  rw [rademacherMeasure_eq, Measure.map_add _ _ measurable_neg]
+  rw [Measure.map_smul _ measurable_neg.aemeasurable,
+    Measure.map_smul _ measurable_neg.aemeasurable]
+  simp [add_comm]
+
+/-- The Rademacher law is invariant under negation. -/
+instance : rademacherMeasure.IsNegInvariant :=
+  ⟨by simp [Measure.neg_def]⟩
+
 /-- Integration against the Rademacher law is the average of evaluation at `-1` and `1`. -/
 theorem integral_rademacherMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] (f : ℝ → E) :
