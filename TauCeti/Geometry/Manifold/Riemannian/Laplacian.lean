@@ -372,8 +372,7 @@ theorem divergence_eq_trace_fderiv_model_space
       ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
     divergence (modelWithCornersSelf ℝ F) V x =
       LinearMap.trace ℝ F (fderiv ℝ V x).toLinearMap := by
-  let _ : RiemannianBundle (fun y : F ↦ TangentSpace (modelWithCornersSelf ℝ F) y) :=
-    ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+  intro _
   simp only [divergence]
   let e := tangentSpaceCastModel (modelWithCornersSelf ℝ F) x
   let A : TangentSpace (modelWithCornersSelf ℝ F) x →ₗ[ℝ]
@@ -385,7 +384,9 @@ theorem divergence_eq_trace_fderiv_model_space
         A := by
     ext v
     apply e.injective
-    simpa [A, e] using congrArg id (hconn (e v))
+    change e (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F V x v) =
+      fderiv ℝ V x (e v)
+    simpa only [e, ContinuousLinearEquiv.symm_apply_apply] using hconn (e v)
   rw [hA]
   exact (LinearMap.trace_conj' _ e.toLinearEquiv).symm
 
