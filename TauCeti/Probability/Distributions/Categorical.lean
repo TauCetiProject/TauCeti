@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Multinomial.Measurability
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Probability.Distributions.Multinomial.Transforms
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.Measurability
@@ -130,20 +131,6 @@ section Aggregation
 variable [Fintype I] [Fintype J] [MeasurableSpace I] [MeasurableSpace J]
   [MeasurableSingletonClass I] [MeasurableSingletonClass J]
 
-omit [Fintype J] [MeasurableSpace I] [MeasurableSpace J]
-  [MeasurableSingletonClass I] [MeasurableSingletonClass J] in
-private theorem coe_weights_map_apply [DecidableEq J]
-    (f : I → J) (p : StdSimplex NNReal I) (j : J) :
-    ((p.map f).weights j : ENNReal) =
-      ∑ i, if f i = j then (p.weights i : ENNReal) else 0 := by
-  classical
-  rw [StdSimplex.weights_map, Finsupp.mapDomain_fintype,
-    Finsupp.coe_finsetSum, Finset.sum_apply]
-  push_cast
-  apply Finset.sum_congr rfl
-  intro i _
-  by_cases hi : f i = j <;> simp [hi]
-
 /-- Mapping a categorical law along a map of category types adds weights over its fibres. -/
 @[simp]
 theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
@@ -154,10 +141,13 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
   intro j
   rw [Measure.map_apply hf (MeasurableSet.singleton j),
     categoricalMeasure_def, Measure.finsetSum_apply, categoricalMeasure_singleton,
-    coe_weights_map_apply]
+    StdSimplex.weights_map_apply]
   simp only [Measure.smul_apply, Measure.dirac_apply' _ (hf (MeasurableSet.singleton j)),
     Set.indicator, Set.mem_preimage, Set.mem_singleton_iff, Pi.one_apply, smul_eq_mul, mul_ite,
     mul_one, mul_zero]
+  rw [← Finset.sum_filter]
+  push_cast
+  rfl
 
 end Aggregation
 
