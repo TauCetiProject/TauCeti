@@ -10,8 +10,9 @@ public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Naturality
 /-!
 # Monomial coordinate changes and Construction A
 
-A monomial change of coordinates preserves the rational form used in Construction A exactly
-when each of its coefficients is a sign. Thus a monomial code equivalence has a coordinatewise
+For a nonzero modulus, a monomial change of coordinates preserves the rational form used in
+Construction A exactly when each of its coefficients is a sign. At modulus zero the form is zero,
+so every monomial map preserves it. Thus a monomial code equivalence has a coordinatewise
 isometric lift precisely when its coefficients modulo the modulus are reductions of signs.
 The existing signed-coordinate isometry then supplies the lattice isometry.
 -/
@@ -26,8 +27,9 @@ section
 
 variable [Fintype ι] [Fintype κ]
 
-/-- A rational monomial map preserves the Construction A form exactly when every multiplier is
-a sign. This criterion is independent of the modulus. -/
+/-- For a nonzero modulus, a rational monomial map preserves the Construction A form exactly
+when every multiplier is a sign. The criterion does not depend on which nonzero modulus is used;
+at modulus zero the form is zero, so every monomial map preserves it. -/
 theorem form_monomialEquiv_iff (m : ℕ) [NeZero m] (u : ι → ℚˣ) (e : ι ≃ κ) :
     (∀ x y : ι → ℚ, form m (monomialEquiv u e x) (monomialEquiv u e y) =
       form m x y) ↔ ∀ i, (u i : ℚ) ^ 2 = 1 := by
