@@ -17,32 +17,18 @@ says that a good rational approximation `ξ₁` of `α`, that is `|ξ₁ - α| �
 height controls the heights of all other good approximations: there are constants `C` and `λ`,
 depending only on `α` and `κ`, such that `H(ξ₁) ≥ C` implies `H(ξ) ≤ H(ξ₁) ^ λ` for every `ξ ∈ ℚ`
 with `|ξ - α| ≤ H(ξ) ^ (-κ)`. Here `H` is the multiplicative height `Height.mulHeight₁` on `ℚ`.
+Only the existence of `C` and `λ` is stated, not Evertse's explicit values.
 
 By Northcott's theorem there are only finitely many rationals of bounded height, so the gap
 principle gives **Thue's approximation theorem**: `|ξ - α| ≤ H(ξ) ^ (-κ)` has only finitely many
 rational solutions `ξ`. The proof gives no way to list them, since it needs one solution of
 height at least `C` to bound the others.
 
-The proof evaluates Thue's auxiliary polynomials `P` and `Q` of parameter `r`
-(`TauCeti.exists_thue_auxiliary_polynomials`) at two good approximations `ξ₁` and `ξ₂`. Some
-Hasse derivative difference `A = Dᵏ P (ξ₁) - ξ₂ Dᵏ Q (ξ₁)` with `k ≤ d (2 ε r + 1)` is a nonzero
-rational number with `|A| ≥ (H(ξ₁) ^ N H(ξ₂))⁻¹`, where `N ≤ (1 / 2 + ε) d r` bounds the degrees
-(`TauCeti.exists_thue_hasseDeriv_lower_bound`). On the other hand
-`|A| ≤ C₂ ^ r (H(ξ₁) ^ (-κ (r - k)) + H(ξ₂) ^ (-κ))`
-(`TauCeti.norm_eval_hasseDeriv_sub_mul_le`). If `H(ξ₂) > H(ξ₁) ^ λ`, then `r` can be chosen so
-that `H(ξ₁) ^ r` is slightly smaller than `H(ξ₂) ^ ((κ - 1) / ((1 / 2 + 2 ε) d))`, and then both
-terms of the upper bound are smaller than the lower bound.
-
 ## Main results
 
 * `TauCeti.thue_gap_principle`: Thue's gap principle, for complex algebraic `α`.
 * `TauCeti.thue_approximation`: Thue's approximation theorem, for complex algebraic `α`.
 * `TauCeti.thue_approximation_real`: Thue's approximation theorem for real algebraic `α`.
-
-## Implementation notes
-
-The parameter `ε` of the auxiliary polynomials is `(κ - 1 - d / 2) / (4 d κ)`. The constants
-`C` and `λ` differ from Evertse's explicit ones, and only their existence is stated.
 
 ## References
 
