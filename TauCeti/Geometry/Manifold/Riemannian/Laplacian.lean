@@ -80,13 +80,14 @@ section HessianSymmetry
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- The Hessian applied to two differentiable vector fields is the directional derivative of the
-directional derivative of `f`, minus the derivative in the covariant derivative direction. -/
+/-- The Hessian applied to a vector field and a differentiable vector field is the directional
+derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
+direction. -/
 theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
-    (V W : (y : M) → TangentSpace I y) (_hV : MDiffAt (T% V) x)
+    (V W : (y : M) → TangentSpace I y)
     (hW : MDiffAt (T% W) x) :
     hessian I f x (V x) (W x) =
       mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
@@ -129,8 +130,8 @@ theorem hessian_symm [IsManifold I ∞ M]
   have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
   let _ : IsManifold I (∞ + 1) M := by
     simpa using (inferInstance : IsManifold I ∞ M)
-  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hV hW
-  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hW hV
+  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
   have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
