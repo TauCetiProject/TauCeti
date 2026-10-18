@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Subgroup
+public import Mathlib.Data.FunLike.Fintype
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 
@@ -52,10 +53,8 @@ variable {A : FiniteQuadraticModule}
 
 /-- The orthogonal group of a finite quadratic module is finite. -/
 instance finite_orthogonalGroup (A : FiniteQuadraticModule) : Finite (orthogonalGroup A) := by
-  apply Finite.of_injective (fun g : orthogonalGroup A ↦ fun x : A ↦ g • x)
-  intro g h hgh
-  ext x
-  exact congrFun hgh x
+  have : Finite (A ≃ₗ[ℤ] A) := FunLike.finite _
+  infer_instance
 
 /-- The action of `O(A)` on `A` preserves the quadratic map. -/
 @[simp]
