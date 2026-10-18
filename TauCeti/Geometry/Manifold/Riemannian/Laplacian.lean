@@ -363,6 +363,33 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
 open scoped Gradient Laplacian
 
 /-- On a finite-dimensional real inner-product space with its standard metric, the Riemannian
+divergence is the trace of the ordinary Fréchet derivative. -/
+theorem divergence_eq_trace_fderiv_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : ∀ y : F, TangentSpace (modelWithCornersSelf ℝ F) y} {x : F}
+    (hV : DifferentiableAt ℝ V x) :
+    let _ : RiemannianBundle (fun y : F ↦ TangentSpace (modelWithCornersSelf ℝ F) y) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    divergence (modelWithCornersSelf ℝ F) V x =
+      LinearMap.trace ℝ F (fderiv ℝ V x).toLinearMap := by
+  let _ : RiemannianBundle (fun y : F ↦ TangentSpace (modelWithCornersSelf ℝ F) y) :=
+    ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+  simp only [divergence]
+  let e := tangentSpaceCastModel (modelWithCornersSelf ℝ F) x
+  let A : TangentSpace (modelWithCornersSelf ℝ F) x →ₗ[ℝ]
+      TangentSpace (modelWithCornersSelf ℝ F) x :=
+    (e.symm.toLinearMap.comp ((fderiv ℝ V x).toLinearMap)).comp e.toLinearMap
+  have hconn := leviCivitaConnection_eq_fderiv_model_space (V := V) hV
+  have hA :
+      (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F V x).toLinearMap =
+        A := by
+    ext v
+    apply e.injective
+    simpa [A, e] using congrArg id (hconn (e v))
+  rw [hA]
+  exact (LinearMap.trace_conj' _ e.toLinearEquiv).symm
+
+/-- On a finite-dimensional real inner-product space with its standard metric, the Riemannian
 Hessian is the second Fréchet derivative. -/
 theorem hessian_eq_iteratedFDeriv_model_space
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
