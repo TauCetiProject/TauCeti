@@ -90,6 +90,14 @@ theorem tsupport_smul (c : ℝ) (φ : RoughForm I X F k) (hc : c ≠ 0) :
 
 end SMul
 
+/-- The zero form has compact topological support. -/
+theorem isCompact_tsupport_zero :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (0 : RoughForm I X F k)) := by
+  -- Identify the dependent zero section with a fixed-codomain zero function so that
+  -- the function `tsupport_zero` simplification applies.
+  change IsCompact (_root_.tsupport (0 : X → E [⋀^Fin k]→L[ℝ] F))
+  simp
+
 /-- The topological support of a pullback is contained in the preimage of the original support. -/
 theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
     (φ : RoughForm I' Y F k) :

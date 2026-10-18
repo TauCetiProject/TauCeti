@@ -476,13 +476,7 @@ public theorem IntegrableTopForm.zero (b : Module.Basis (Fin k) ℝ E) :
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   rw [integrableTopForm_iff]
-  have hz : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ)
-      (0 : RoughForm I M ℝ k)) := by
-    -- Identify the dependent zero section with a fixed-codomain zero function so that
-    -- the function tsupport_zero simplification can apply.
-    change IsCompact (_root_.tsupport (0 : M → E [⋀^Fin k]→L[ℝ] ℝ))
-    simp
-  refine ⟨hz, ⟨b⟩, ?_⟩
+  refine ⟨RoughForm.isCompact_tsupport_zero, ⟨b⟩, ?_⟩
   intro b α
   have heq : (0 : RoughForm I M ℝ k).signedInChartAt b α (fun _ ↦ 1) = 0 :=
     funext (RoughForm.signedInChartAt_zero b α (fun _ ↦ 1))
