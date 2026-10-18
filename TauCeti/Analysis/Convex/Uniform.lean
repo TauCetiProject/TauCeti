@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convex.Uniform
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-import Mathlib.Analysis.Normed.Module.WeakDual
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 
 /-!
@@ -26,7 +25,7 @@ applies to every closed subspace of a uniformly convex Banach space.
 
 ## Main results
 
-* `TauCeti.exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace`: the
+* `StrongDual.exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace`: the
   quantitative approximation of a bidual point by the canonical image.
 * `TauCeti.denseRange_inclusionInDoubleDual_of_uniformConvexSpace`: the canonical image of a
   uniformly convex space is norm dense in its bidual.
@@ -52,10 +51,10 @@ open Function Metric NormedSpace Set
 
 namespace Submodule
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [UniformConvexSpace E]
+variable {R E : Type*} [Ring R] [SeminormedAddCommGroup E] [Module R E] [UniformConvexSpace E]
 
 /-- A subspace of a uniformly convex space, with the induced norm, is uniformly convex. -/
-instance uniformConvexSpace (s : Submodule ℝ E) : UniformConvexSpace s where
+instance uniformConvexSpace (s : Submodule R E) : UniformConvexSpace s where
   uniform_convex ε hε := by
     obtain ⟨δ, hδ, h⟩ := exists_forall_sphere_dist_add_le_two_sub E hε
     refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
@@ -65,9 +64,9 @@ instance uniformConvexSpace (s : Submodule ℝ E) : UniformConvexSpace s where
 
 end Submodule
 
-namespace TauCeti
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [UniformConvexSpace E]
+
+namespace StrongDual
 
 /-- In a uniformly convex space, every point `φ` of the bidual lies within any prescribed `ε > 0`
 of the canonical image of a point of norm at most `‖φ‖`. No completeness is assumed. -/
@@ -125,12 +124,16 @@ theorem exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace
   rwa [mem_preimage, StrongDual.toStrongDual_toWeakDual,
     mem_closedBall_iff_norm (E := StrongDual ℝ (StrongDual ℝ E))] at hφ
 
+end StrongDual
+
+namespace TauCeti
+
 /-- The canonical image of a uniformly convex space is norm dense in its bidual. -/
 theorem denseRange_inclusionInDoubleDual_of_uniformConvexSpace :
     DenseRange (inclusionInDoubleDual ℝ E) := by
   refine Metric.denseRange_iff (f := inclusionInDoubleDual ℝ E) |>.2 fun φ ε hε ↦ ?_
   obtain ⟨x, -, hx⟩ :=
-    exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace φ (half_pos hε)
+    φ.exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace (half_pos hε)
   exact ⟨x, by rw [dist_eq_norm (E := StrongDual ℝ (StrongDual ℝ E))]; linarith⟩
 
 /-- **Milman–Pettis theorem.** A uniformly convex Banach space is reflexive: its canonical map
