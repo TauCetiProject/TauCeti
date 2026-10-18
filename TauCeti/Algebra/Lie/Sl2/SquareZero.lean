@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Algebra.Module.LinearMap.End
 import Mathlib.Tactic.Abel
@@ -32,13 +31,14 @@ Chevalley rank-one identity
 x_α(u) x_{-α}(-u⁻¹) x_α(u) = h_α(u) n_α,      n_α = x_α(1) x_{-α}(-1) x_α(1),
 ```
 
-holds over every commutative coefficient ring, at every unit `u`, because both sides equal
-`1 + u E - u⁻¹ F - E F - F E`. The left-hand side is the triple product computed in
+holds for a bilinear scalar action over any coefficient ring, at every unit `u`, because both
+sides equal `1 + u E - u⁻¹ F - E F - F E`. The left-hand side is the triple product computed in
 `triple_product_of_mul_self_eq_zero`, and the right-hand side is the diagonal element
 `1 + (u - 1) E F + (u⁻¹ - 1) F E` rescaling the two root terms of that normal form at parameters
 `(1, -1)`, which is `torus_mul_triple_product_of_mul_self_eq_zero`. Neither step divides by
 anything: the square-zero hypothesis truncates every divided-power exponential after its first
-term, so no denominator is ever introduced.
+term, so no denominator is ever introduced. The triple-product calculation does not even require
+associativity of the ambient ring.
 
 Finally, on an additively torsion-free module over any semiring, an integer eigenvector of `H`
 has eigenvalue `1`, `0` or `-1`. The two products select its component at each outer eigenvalue.
@@ -52,7 +52,7 @@ carrier of type `Cₙ` among them.
 * `e_mul_f_mul_e_of_mul_self_eq_zero` and `f_mul_e_mul_f_of_mul_self_eq_zero`: the halved `sl₂`
   relations `E F E = E` and `F E F = F`.
 * `triple_product_of_mul_self_eq_zero`: the normal form of `(1 + α E) (1 + β F) (1 + α E)` when
-  `α β = -1`, over an arbitrary commutative coefficient ring.
+  `α β = -1`, for bilinear multiplication over an arbitrary coefficient ring.
 * `torus_mul_triple_product_of_mul_self_eq_zero`: multiplying that normal form at `(1, -1)` by a
   diagonal element rescales its two root terms.
 * `mul_apply_of_eq_zsmul`: an integer eigenvector of `H` has eigenvalue `1`, `0` or `-1`,
@@ -105,25 +105,40 @@ end HalfRelation
 
 /-! ## The rank-one identity over an arbitrary coefficient ring -/
 
-section RankOne
+section TripleProduct
 
-variable {B A : Type*} [CommRing B] [Ring A] [Algebra B A] {E F : A}
+variable {B A : Type*} [Ring B] [NonAssocRing A] [Module B A]
+  [IsScalarTower B A A] [SMulCommClass B A A] {E F : A}
 
 /-- **The rank-one product of three square-zero exponentials.** When the two parameters multiply
-to `-1`, the product `(1 + α E) (1 + β F) (1 + α E)` is `1 + α E + β F - E F - F E`. -/
+to `-1`, the product `(1 + α E) (1 + β F) (1 + α E)` is `1 + α E + β F - E F - F E`.
+Only bilinearity of multiplication is needed; the ambient ring need not be associative and the
+coefficient ring need not be commutative. -/
 theorem triple_product_of_mul_self_eq_zero (hEE : E * E = 0) (hEFE : E * F * E = E) {α β : B}
     (hαβ : α * β = -1) :
     (1 + α • E) * (1 + β • F) * (1 + α • E) = 1 + α • E + β • F - E * F - F * E := by
-  have hβα : β * α = -1 := by rw [mul_comm]; exact hαβ
+  -- Bilinearity exchanges the two scalar actions on a product with the identity.
+  have hβα (a : A) : (β * α) • a = -a := by
+    rw [← one_mul a, ← smul_mul_smul_comm, mul_smul_comm, smul_mul_assoc,
+      one_mul, smul_smul, hαβ, neg_one_smul]
   -- Expand the product and collect every coefficient in front of a monomial in `E` and `F`, ...
   simp only [add_mul, mul_add, smul_add, one_mul, mul_one, smul_mul_assoc, mul_smul_comm,
     smul_smul]
   -- ... then evaluate the monomials and their coefficients.
-  simp only [hEE, hEFE, hαβ, hβα, mul_neg_one, smul_zero, add_zero, neg_smul, one_smul]
+  simp only [hEE, hEFE, ← mul_assoc, hαβ, hβα, neg_one_mul, smul_zero, add_zero,
+    neg_smul, one_smul]
   abel
 
+end TripleProduct
+
+section Torus
+
+variable {B A : Type*} [Ring B] [Ring A] [Module B A]
+  [IsScalarTower B A A] [SMulCommClass B A A] {E F : A}
+
 /-- **The coroot value times the Weyl representative.** Multiplying the normal form at parameters
-`(1, -1)` by the diagonal element `1 + (α - 1) E F + (β - 1) F E` rescales its two root terms. -/
+`(1, -1)` by the diagonal element `1 + (α - 1) E F + (β - 1) F E` rescales its two root terms.
+The coefficient ring need not be commutative when its scalar action commutes with multiplication. -/
 theorem torus_mul_triple_product_of_mul_self_eq_zero (hEE : E * E = 0) (hFF : F * F = 0)
     (hEFE : E * F * E = E) (hFEF : F * E * F = F) (α β : B) :
     (1 + (α - 1) • (E * F) + (β - 1) • (F * E)) *
@@ -144,7 +159,7 @@ theorem torus_mul_triple_product_of_mul_self_eq_zero (hEE : E * E = 0) (hFF : F 
     sub_smul, neg_smul, add_zero]
   abel
 
-end RankOne
+end Torus
 
 /-! ## The two idempotents on an integer eigenvector -/
 
