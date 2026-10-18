@@ -11,14 +11,10 @@ public import TauCeti.CategoryTheory.Monoidal.Rigid.Drinfeld
 /-!
 # The canonical pivotal structure on a symmetric rigid category
 
-In a braided right rigid category the Drinfeld isomorphisms `drinfeldIso X : X ≅ Xᘁᘁ` form a
-natural isomorphism `drinfeldNatIso : 𝟭 C ≅ doubleRightDualFunctor C`. It is always compatible
-with the unit comparison of the double right dual functor. When the braiding is symmetric it is
-also compatible with the tensor comparison, so it is a monoidal natural isomorphism: this rests
-on the fact that in a symmetric category the swapped pairing of a tensor product is the tensor
-product of the swapped pairings (`TauCeti.braiding_comp_tensor_evaluation`). Hence every
-symmetric rigid category carries a canonical pivotal structure, registered as the instance
-`TauCeti.symmetricPivotalCategory`.
+In a symmetric rigid category the Drinfeld isomorphisms `drinfeldIso X : X ≅ Xᘁᘁ` form a
+monoidal natural isomorphism `drinfeldNatIso : 𝟭 C ≅ doubleRightDualFunctor C`
+(`TauCeti.drinfeldNatIso_isMonoidal`). Hence every symmetric rigid category carries a canonical
+pivotal structure, registered as the instance `TauCeti.symmetricPivotalCategory`.
 
 Through the Drinfeld isomorphism, the pivotal pairing of `X` becomes the braided swap of the
 pairing `(X, Xᘁ)`, so both traces are computed by the braiding:
@@ -29,13 +25,6 @@ structure satisfies the sphericity condition.
 
 ## Main declarations
 
-* `TauCeti.drinfeldNatIso`: the Drinfeld isomorphisms as a natural isomorphism
-  `𝟭 C ≅ doubleRightDualFunctor C` in a braided right rigid category, with
-  `TauCeti.drinfeldNatIso_hom_app_unit` its compatibility with the unit comparison;
-* `TauCeti.drinfeldIso_tensor_hom`: in a symmetric category, the Drinfeld isomorphism of
-  `X ⊗ Y` is the tensor product of those of `X` and `Y`, followed by the tensor comparison of the
-  double right dual functor;
-* `TauCeti.drinfeldNatIso_isMonoidal`: in a symmetric category, `drinfeldNatIso` is monoidal;
 * `TauCeti.symmetricPivotalCategory`: the canonical pivotal structure on a symmetric rigid
   category, whose components are the Drinfeld isomorphisms (`TauCeti.pivotalIsoApp_eq_drinfeldIso`);
 * `TauCeti.rightTrace_eq_braiding` and `TauCeti.leftTrace_eq_braiding`: the traces as braided
@@ -51,103 +40,13 @@ structure satisfies the sphericity condition.
 
 public section
 
-open CategoryTheory MonoidalCategory BraidedCategory ExactPairing Functor.LaxMonoidal
+open CategoryTheory MonoidalCategory BraidedCategory ExactPairing
 
 universe v u
 
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-section Braided
-
-variable [BraidedCategory C] [RightRigidCategory C]
-
-/-- The Drinfeld isomorphisms `X ≅ Xᘁᘁ` of a braided right rigid category, as a natural
-isomorphism from the identity functor to the double right dual functor. -/
-noncomputable def drinfeldNatIso : 𝟭 C ≅ doubleRightDualFunctor C :=
-  NatIso.ofComponents (fun X => drinfeldIso X) fun f => drinfeldIso_hom_naturality f
-
-/-- The components of `drinfeldNatIso` are the Drinfeld isomorphisms. -/
-@[simp]
-theorem drinfeldNatIso_hom_app (X : C) :
-    (drinfeldNatIso (C := C)).hom.app X = (drinfeldIso X).hom :=
-  (rfl)
-
-/-- The components of the inverse of `drinfeldNatIso` are the inverse Drinfeld isomorphisms. -/
-@[simp]
-theorem drinfeldNatIso_inv_app (X : C) :
-    (drinfeldNatIso (C := C)).inv.app X = (drinfeldIso X).inv :=
-  (rfl)
-
-/-- At the unit, the Drinfeld isomorphism is the unit comparison of the double right dual
-functor. This holds for any braiding. -/
-theorem drinfeldNatIso_hom_app_unit :
-    (drinfeldNatIso (C := C)).hom.app (𝟙_ C) = ε (doubleRightDualFunctor C) := by
-  refine Eq.trans ?_ (doubleRightDualFunctor_ε C).symm
-  rw [drinfeldNatIso_hom_app]
-  -- The dual of `𝟙_ C` here is the one chosen by the rigid structure, not `hasRightDualUnit`.
-  refine rightHom_ext (X := (RightRigidCategory.rightDual (𝟙_ C)).rightDual) ?_
-  -- The evaluation of `(𝟙_ C, (𝟙_ C)ᘁ)` through the identification `(𝟙_ C)ᘁ ≅ 𝟙_ C`.
-  have h := rightMate_comp_evaluation exactPairingUnit (RightRigidCategory.rightDual (𝟙_ C)).exact
-    (𝟙 _)
-  rw [MonoidalCategory.whiskerLeft_id, Category.id_comp, ← rightDualIso_hom,
-    ExactPairing.unit_evaluation] at h
-  rw [drinfeldIso_hom_comp_evaluation, comp_whiskerRight, Category.assoc,
-    rightMate_comp_evaluation, ← whisker_exchange_assoc, rightDualIso_inv,
-    rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp,
-    ExactPairing.unit_evaluation, ← h, braiding_tensorUnit_left]
-  monoidal
-
-end Braided
-
-section Symmetric
-
-variable [SymmetricCategory C] [RightRigidCategory C]
-
-/-- In a symmetric right rigid category, the Drinfeld isomorphism of `X ⊗ Y` is the tensor product
-of the Drinfeld isomorphisms of `X` and `Y`, followed by the tensor comparison of the double
-right dual functor. -/
-theorem drinfeldIso_tensor_hom (X Y : C) :
-    (drinfeldIso (X ⊗ Y)).hom =
-      ((drinfeldIso X).hom ⊗ₘ (drinfeldIso Y).hom) ≫ μ (doubleRightDualFunctor C) X Y := by
-  refine Eq.trans ?_ (congrArg (_ ≫ ·) (doubleRightDualFunctor_μ C X Y).symm)
-  refine rightHom_ext (X := (X ⊗ Y)ᘁ) ?_
-  -- Evaluate both sides against `(X ⊗ Y)ᘁ`, and move the comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` to the
-  -- front, so that the right side becomes an evaluation of the tensor product pairing of
-  -- `(Yᘁ, Yᘁᘁ)` and `(Xᘁ, Xᘁᘁ)`.
-  rw [drinfeldIso_hom_comp_evaluation, comp_whiskerRight, comp_whiskerRight, Category.assoc,
-    Category.assoc, rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
-    ← whisker_exchange_assoc, rightDualTensorIso.eq_1 Yᘁ Xᘁ, rightDualIso_inv,
-    rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp,
-    tensor_evaluation]
-  -- After the Drinfeld isomorphisms, that evaluation is the braided evaluation of the tensor
-  -- product pairing of `(X, Xᘁ)` and `(Y, Yᘁ)`.
-  have key : ((drinfeldIso X).hom ⊗ₘ (drinfeldIso Y).hom) ▷ (Yᘁ ⊗ Xᘁ) ≫
-      𝟙 _ ⊗≫ ((Xᘁ : C)ᘁ : C) ◁ ε_ Yᘁ Yᘁᘁ ▷ (Xᘁ : C) ⊗≫ ε_ Xᘁ Xᘁᘁ =
-        (β_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ)).hom ≫ ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) := by
-    rw [braiding_comp_tensor_evaluation]
-    calc
-      _ = 𝟙 _ ⊗≫ ((drinfeldIso X).hom ▷ ((Y ⊗ (Yᘁ : C)) ⊗ (Xᘁ : C)) ≫
-            ((Xᘁ : C)ᘁ : C) ◁ (((drinfeldIso Y).hom ▷ (Yᘁ : C) ≫ ε_ Yᘁ Yᘁᘁ) ▷ (Xᘁ : C))) ⊗≫
-              ε_ Xᘁ Xᘁᘁ := by
-        rw [tensorHom_def]; monoidal
-      _ = 𝟙 _ ⊗≫ (X ◁ (((drinfeldIso Y).hom ▷ (Yᘁ : C) ≫ ε_ Yᘁ Yᘁᘁ) ▷ (Xᘁ : C)) ≫
-            (drinfeldIso X).hom ▷ (𝟙_ C ⊗ (Xᘁ : C))) ⊗≫ ε_ Xᘁ Xᘁᘁ := by
-        rw [whisker_exchange]
-      _ = _ := by
-        rw [drinfeldIso_hom_comp_evaluation, ← drinfeldIso_hom_comp_evaluation X]; monoidal
-  rw [key, braiding_naturality_right_assoc, rightDualTensorIso, rightDualIso_hom,
-    rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp]
-
-/-- In a symmetric right rigid category, the Drinfeld isomorphisms form a monoidal natural
-isomorphism from the identity functor to the double right dual functor. -/
-instance drinfeldNatIso_isMonoidal : NatTrans.IsMonoidal (drinfeldNatIso (C := C)).hom where
-  -- The unit and tensor comparisons of the identity functor are identities.
-  unit := (Category.id_comp _).trans drinfeldNatIso_hom_app_unit
-  tensor X Y := (Category.id_comp _).trans (drinfeldIso_tensor_hom X Y)
-
-end Symmetric
 
 section Pivotal
 
