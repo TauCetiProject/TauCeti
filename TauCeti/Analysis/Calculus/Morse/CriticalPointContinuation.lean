@@ -128,61 +128,34 @@ theorem exists_contDiffAt_criticalPoint_continuation
     · simpa only [G] using hqcrit
     · rw [← hvertical q (ψ q) (hGq.differentiableAt (by norm_num))]
       exact hqinv
-  let b := Module.finBasis ℝ E
   let V : P → E →L[ℝ] E →L[ℝ] ℝ := fun q ↦
     (fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E)
-  let A : P → Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
-    fun q ↦ (V q).toBilinForm.toMatrix b
-  have hAContinuous : ContinuousAt A p := by
-    apply continuousAt_pi.2
-    intro i
-    apply continuousAt_pi.2
-    intro j
-    simpa only [A, V, LinearMap.BilinForm.toMatrix_apply,
-      ContinuousLinearMap.toBilinForm_apply] using
-      (hverticalContinuous.clm_apply continuousAt_const).clm_apply continuousAt_const
-  have hAHermitian (q : P) (hFq : ContDiffAt ℝ 3 F (q, ψ q))
-      (hGq : ContDiffAt ℝ 2 G (q, ψ q)) : (A q).IsHermitian := by
+  have hVhessian (q : P) (hGq : ContDiffAt ℝ 2 G (q, ψ q)) :
+      V q = fderiv ℝ (fderiv ℝ (fun y ↦ F (q, y))) (ψ q) :=
+    hvertical q (ψ q) (hGq.differentiableAt (by norm_num))
+  have hsymm : ∀ᶠ q in 𝓝 p, (V q).toBilinForm.IsSymm := by
+    filter_upwards [hFAlong, hGAlong] with q hFq hGq
     have hslice : ContDiffAt ℝ 2 (fun y ↦ F (q, y)) (ψ q) :=
       hFq.comp (ψ q) (contDiffAt_const.prodMk contDiffAt_id) |>.of_le (by norm_num)
-    have hsymm : (V q).toBilinForm.IsSymm := by
-      refine ⟨?_⟩
-      intro u v
-      simp only [V, ContinuousLinearMap.toBilinForm_apply]
-      rw [hvertical q (ψ q) (hGq.differentiableAt (by norm_num))]
-      exact hslice.isSymmSndFDerivAt (by norm_num) u v
-    have hmatrixSymm : (A q).IsSymm := by
-      exact ((V q).toBilinForm.isSymm_toMatrix_iff_isSymm b).mpr hsymm
-    simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial,
-      Matrix.IsSymm] using hmatrixSymm
-  have hdet : IsUnit (A p).det := by
-    rw [isUnit_iff_ne_zero]
-    apply (LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp
+    refine ⟨fun u v ↦ ?_⟩
+    simp only [ContinuousLinearMap.toBilinForm_apply, hVhessian q hGq]
+    exact hslice.isSymmSndFDerivAt (by norm_num) u v
+  have hnd : (V p).toBilinForm.Nondegenerate := by
     apply LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
-    have hVbase : V p = fderiv ℝ (fderiv ℝ (fun y ↦ F (p, y))) x := by
-      simp only [V, hψp]
-      exact hvertical p x (hG.differentiableAt (by norm_num))
-    rw [hVbase]
+    rw [hVhessian p hGbase, hψp]
     exact h.separatingLeft
-  have hmatrixIndex (q : P) (hGq : ContDiffAt ℝ 2 G (q, ψ q)) :
-      sigNeg ((A q).toQuadraticForm') = morseIndex (fun y ↦ F (q, y)) (ψ q) := by
-    rw [LinearMap.BilinForm.sigNeg_toMatrix b, morseIndex_def]
+  have hmorseIndex (q : P) (hGq : ContDiffAt ℝ 2 G (q, ψ q)) :
+      morseIndex (fun y ↦ F (q, y)) (ψ q) = sigNeg (V q).toBilinForm.toQuadraticMap := by
+    rw [morseIndex_def]
     congr 1
     ext v
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hessianQuadraticForm_apply]
-    simp only [V, ContinuousLinearMap.toBilinForm_apply]
-    rw [hvertical q (ψ q) (hGq.differentiableAt (by norm_num))]
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hessianQuadraticForm_apply,
+      ContinuousLinearMap.toBilinForm_apply, hVhessian q hGq]
   have hindex : ∀ᶠ q in 𝓝 p,
       morseIndex (fun y ↦ F (q, y)) (ψ q) = morseIndex (fun y ↦ F (p, y)) x := by
-    have hHermitianAlong : ∀ᶠ q in nhds p, (A q).IsHermitian := by
-      filter_upwards [hFAlong, hGAlong] with q hFq hGq
-      exact hAHermitian q hFq hGq
-    have hmatrixIndexEventually :=
-      (hAHermitian p hFbase hGbase).eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt
-        hHermitianAlong hAContinuous hdet
-    filter_upwards [hmatrixIndexEventually, hGAlong] with q hq hGq
-    rw [← hmatrixIndex q hGq, ← hψp, ← hmatrixIndex p hGbase]
-    exact hq
+    filter_upwards [ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt hsymm
+      hverticalContinuous hnd, hGAlong] with q hq hGq
+    rw [hmorseIndex q hGq, hq, ← hmorseIndex p hGbase, hψp]
   have hvalue : ContDiffAt ℝ 2 (fun q ↦ F (q, ψ q)) p :=
     (hFbase.of_le (by norm_num)).comp p (contDiffAt_id.prodMk hψ)
   have hfamilyAt : HasFDerivAt F (fderiv ℝ F (p, x)) (p, x) :=

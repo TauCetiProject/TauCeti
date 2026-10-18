@@ -304,6 +304,7 @@ variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 omit [IsStrictOrderedRing K] [FiniteDimensional K M] in
 /-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
+@[simp]
 theorem sigNeg_toMatrix {I : Type*} [Fintype I] [DecidableEq I]
     (b : Module.Basis I K M) (B : LinearMap.BilinForm K M) :
     _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap := by
