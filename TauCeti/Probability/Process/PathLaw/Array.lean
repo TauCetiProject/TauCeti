@@ -42,12 +42,6 @@ namespace Probability
 variable {Ω α β : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
   {μ : Measure Ω} {X : ℕ × ℕ → Ω → α} {Y : Ω → β}
 
-/-- Reassembling a column process into an array, with the two coordinates transposed, is
-measurable. -/
-private theorem measurable_uncurrySwap :
-    Measurable fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1 :=
-  Measurable.of_eval fun p ↦ (measurable_pi_apply p.1).comp (measurable_pi_apply p.2)
-
 /-- **An array law is the uncurried path law of its row process.** A statement about the law of
 the row process therefore transports to one about the law of the array. -/
 theorem map_uncurry_pathLaw_arrayRow (hX : ∀ p, AEMeasurable (X p) μ) :
@@ -64,7 +58,8 @@ theorem map_uncurrySwap_pathLaw_arrayCol (hX : ∀ p, AEMeasurable (X p) μ) :
     (pathLaw μ (arrayCol X)).map
         (fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1) =
       μ.map fun ω p ↦ X p ω := by
-  rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable measurable_uncurrySwap.aemeasurable
+  rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable
+    (by fun_prop : Measurable fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1).aemeasurable
     (AEMeasurable.of_eval fun j ↦ aemeasurable_arrayCol hX j)]
   refine congrArg (Measure.map · _) ?_
   funext ω ⟨i, j⟩
@@ -90,7 +85,8 @@ theorem map_uncurrySwap_jointPathLaw_arrayCol (hX : ∀ p, AEMeasurable (X p) μ
         (Prod.map id fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1)
       = μ.map fun ω ↦ (Y ω, fun p : ℕ × ℕ ↦ X p ω) := by
   rw [jointPathLaw_def, AEMeasurable.map_map_of_aemeasurable
-    (measurable_id.prodMap measurable_uncurrySwap).aemeasurable
+    (measurable_id.prodMap
+      (by fun_prop : Measurable fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1)).aemeasurable
     (hY.prodMk (AEMeasurable.of_eval (aemeasurable_arrayCol hX)))]
   refine congrArg (Measure.map · _) (funext fun ω ↦ Prod.ext rfl (funext fun p ↦ ?_))
   simp
