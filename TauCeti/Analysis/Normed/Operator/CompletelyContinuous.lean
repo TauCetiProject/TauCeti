@@ -141,6 +141,12 @@ theorem IsCompletelyContinuous.neg {u : M →L[R] N} (hu : u.IsCompletelyContinu
   rw [neg_apply, neg_apply, neg_sub_neg, norm_sub_rev]
   exact huv x
 
+/-- Complete continuity is invariant under negation. -/
+@[simp]
+theorem IsCompletelyContinuous.neg_iff {u : M →L[R] N} :
+    (-u).IsCompletelyContinuous ↔ u.IsCompletelyContinuous :=
+  ⟨fun hu ↦ by simpa using hu.neg, IsCompletelyContinuous.neg⟩
+
 theorem IsCompletelyContinuous.sub {u u' : M →L[R] N} (hu : u.IsCompletelyContinuous)
     (hu' : u'.IsCompletelyContinuous) : (u - u').IsCompletelyContinuous :=
   sub_eq_add_neg u u' ▸ hu.add hu'.neg

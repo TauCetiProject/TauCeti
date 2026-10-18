@@ -119,6 +119,11 @@ variable [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 theorem IsFiniteRank.neg {f : M →ₗ[R] N} (hf : f.IsFiniteRank) : (-f).IsFiniteRank := by
   rwa [IsFiniteRank, range_neg]
 
+/-- Finite rank is invariant under negation. -/
+@[simp]
+theorem IsFiniteRank.neg_iff {f : M →ₗ[R] N} : (-f).IsFiniteRank ↔ f.IsFiniteRank :=
+  ⟨fun hf ↦ by simpa using hf.neg, IsFiniteRank.neg⟩
+
 theorem IsFiniteRank.sub {f g : M →ₗ[R] N} (hf : f.IsFiniteRank) (hg : g.IsFiniteRank) :
     (f - g).IsFiniteRank :=
   sub_eq_add_neg f g ▸ hf.add hg.neg
