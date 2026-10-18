@@ -256,7 +256,8 @@ private theorem IsAdmissible.inv_comp {c u u' : _root_.FundamentalGroupoid X} {e
 
 /-- Every point has an admissible morphism out of it: the identity at a point of `V`, and the
 class of a path inside some `W i` to a point of `W i ∩ V` otherwise. -/
-private theorem exists_isAdmissible (hcover : ∀ y, V ∈ 𝓝 y ∨ ∃ i, W i ∈ 𝓝 y)
+private theorem _root_.FundamentalGroupoid.exists_isAdmissible
+    (hcover : ∀ y, V ∈ 𝓝 y ∨ ∃ i, W i ∈ 𝓝 y)
     (c : _root_.FundamentalGroupoid X) :
     ∃ (u : _root_.FundamentalGroupoid X) (e : c ⟶ u), IsAdmissible V W e := by
   by_cases hc : c.as ∈ V
