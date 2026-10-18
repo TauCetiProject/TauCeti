@@ -44,7 +44,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
   lies in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
-* `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
+* `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
+* `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
+  integer floor, including at negative points.
 
 ## Adapted from
 
@@ -100,6 +102,15 @@ theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure �
     [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
   rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
   ring
+
+/-- The cdf of an integer-valued law cast to the reals is its cumulative mass through the integer
+floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
+theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
+    cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
+  have hpre : (Int.cast : ℤ → ℝ) ⁻¹' Iic x = Iic ⌊x⌋ := by
+    ext k
+    simp only [mem_preimage, mem_Iic, Int.le_floor]
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre]
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
