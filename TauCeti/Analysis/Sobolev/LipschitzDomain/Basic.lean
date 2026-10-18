@@ -169,6 +169,17 @@ theorem image_frontier_inter_normalCylinder (hc : IsLipschitzChart Ω e γ K h r
     ← frontier_inter_open_inter hC, hc.image_inter_normalCylinder, frontier_inter_open_inter hC,
     frontier_setOf_lt_fst hc.lipschitzWith.continuous]
 
+/-- Inside the cylinder of a Lipschitz chart, the closure of `Ω` is the region on or above the
+graph. -/
+theorem image_closure_inter_normalCylinder (hc : IsLipschitzChart Ω e γ K h r) :
+    e '' closure Ω ∩ normalCylinder h r = {x | γ x.snd ≤ x.fst} ∩ normalCylinder h r := by
+  rw [closure_eq_self_union_frontier, image_union, union_inter_distrib_right,
+    hc.image_inter_normalCylinder, hc.image_frontier_inter_normalCylinder,
+    ← union_inter_distrib_right]
+  congr 1
+  ext x
+  simp [le_iff_lt_or_eq, eq_comm]
+
 /-- A point whose image lies in the cylinder of a Lipschitz chart belongs to `Ω` exactly when
 its image lies above the graph. -/
 theorem mem_iff (hc : IsLipschitzChart Ω e γ K h r) {x : F} (hxC : e x ∈ normalCylinder h r) :
