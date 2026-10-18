@@ -21,19 +21,24 @@ open scoped ENNReal
 
 namespace PiLp
 
-variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
   {E F : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)]
   [∀ i, SeminormedAddCommGroup (F i)]
 
 /-- Coordinatewise domination of norms implies domination of finite `Lᵖ` norms. -/
 theorem norm_mono {x : PiLp p E} {y : PiLp p F}
     (h : ∀ i, ‖x i‖ ≤ ‖y i‖) : ‖x‖ ≤ ‖y‖ := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [norm_eq_card, norm_eq_card]
+    apply Nat.cast_le.mpr
+    apply Finset.card_le_card
+    apply Set.Finite.toFinset_mono
+    intro i hi hzero
+    exact hi (le_antisymm (by simpa only [hzero] using h i) (norm_nonneg _))
   rcases eq_or_ne p ∞ with rfl | hp
   · rw [norm_eq_ciSup, norm_eq_ciSup]
     exact ciSup_mono (Set.finite_range _).bddAbove h
-  · have hp0 : 0 < p.toReal := ENNReal.toReal_pos (by
-      exact ne_of_gt (lt_of_lt_of_le zero_lt_one Fact.out)) hp
-    simp only [norm_eq_sum hp0]
+  · simp only [norm_eq_sum (ENNReal.toReal_pos hp0 hp)]
     gcongr
     · exact Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _
     · exact h _
