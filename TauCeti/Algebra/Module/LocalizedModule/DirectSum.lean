@@ -12,9 +12,7 @@ public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
 If each `fᵢ : Mᵢ →ₗ[R] M'ᵢ` is a localization of modules at a submonoid `S` of `R`, then so is
 the componentwise map `⨁ i, Mᵢ →ₗ[R] ⨁ i, M'ᵢ`, for an arbitrary index type. This is the
-direct-sum counterpart of Mathlib's `IsLocalizedModule.prodMap` and `IsLocalizedModule.pi`, and is
-proved in the same way, through the characterization of localizations as base changes
-(`isLocalizedModule_iff_isBaseChange`) and Mathlib's `IsBaseChange.directSum`.
+direct-sum counterpart of Mathlib's `IsLocalizedModule.prodMap` and `IsLocalizedModule.pi`.
 -/
 
 public section

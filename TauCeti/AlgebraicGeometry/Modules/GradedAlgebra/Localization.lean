@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Sites.SmallAffineZariski
 public import TauCeti.Algebra.Module.LocalizedModule.DirectSum
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
@@ -29,11 +30,13 @@ constructions with graded algebras. It is the graded counterpart of
 
 * `CategoryTheory.CommMon.isLocalization_gradedSections_basicOpen`: the restriction
   `⨁ n, Γ(Aₙ, U) → ⨁ n, Γ(Aₙ, X.basicOpen f)` is a localization away from `f`.
+* `CategoryTheory.CommMon.coequifibered_toGradedSectionsPresheaf`: on the affine opens of `X`, the
+  presheaf of graded rings of sections is coequifibered over the structure presheaf.
 -/
 
 public section
 
-open CategoryTheory Opposite DirectSum AlgebraicGeometry
+open CategoryTheory Opposite DirectSum AlgebraicGeometry Scheme.AffineZariskiSite
 
 namespace TauCeti
 
@@ -91,6 +94,18 @@ theorem _root_.CategoryTheory.CommMon.isLocalization_gradedSections_basicOpen
     rw [Submonoid.smul_def, Submonoid.smul_def, Algebra.smul_def, Algebra.smul_def] at hc
     dsimp only
     rwa [← map_pow]
+
+/-- On the affine opens of `X`, the presheaf of graded rings of sections of a graded algebra with
+quasicoherent homogeneous components is coequifibered over the structure presheaf: its graded rings
+of sections over basic opens are localizations. This is the condition under which Mathlib glues the
+spectra of its sections (`AlgebraicGeometry.Scheme.AffineZariskiSite.relativeGluingData`). -/
+theorem _root_.CategoryTheory.CommMon.coequifibered_toGradedSectionsPresheaf
+    [∀ n, (A.X n).IsQuasicoherent] :
+    ((toOpensFunctor X).op.whiskerLeft A.toGradedSectionsPresheaf).Coequifibered := by
+  apply coequifibered_iff_forall_isLocalizationAway.mpr
+  intro U f
+  rw [Functor.whiskerLeft_app, CommMon.toGradedSectionsPresheaf_app]
+  exact A.isLocalization_gradedSections_basicOpen U.2 f
 
 end
 
