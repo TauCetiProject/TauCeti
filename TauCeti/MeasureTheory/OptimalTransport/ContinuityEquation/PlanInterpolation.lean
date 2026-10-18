@@ -21,8 +21,9 @@ speed along the segment from `x` to `y` gives the curve of laws
 
 `μₜ = (Fₜ)₊ π`, where `Fₜ (x, y) = (1 - t) • x + t • y`,
 
-from `μ₀ = π.fst` to `μ₁ = π.snd`. When `π` is an optimal coupling for `W_p`, this is the
-displacement interpolation of `μ` and `ν`, a geodesic segment of `P_p (E)`
+from `μ₀ = π.fst` to `μ₁ = π.snd`. When `1 ≤ p`, both marginals are probability measures with
+finite `p`-th moment, and `π` is an optimal coupling for `W_p`, this is the displacement
+interpolation of `μ` and `ν`, a geodesic segment of `P_p (E)`
 (`TauCeti.WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul`). This file describes the
 curve in Eulerian terms. Unlike the linear interpolation of a map
 (`TauCeti.exists_isContinuityEquation_map_smul_add_smul`), no transport map is needed: the mass at
