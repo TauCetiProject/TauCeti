@@ -55,22 +55,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
 variable {Γ : Subgroup PSL(2, ℝ)} {p : ℍ} {n : ℕ} [NeZero n] {P : ConvexPolygon n}
 
-/-- A nontrivial element of a group acting freely at `p` moves `p`. -/
-private theorem smul_ne_of_ne_one (hp : p ∈ TauCeti.freeLocus Γ ℍ) {g : Γ} (hg : g ≠ 1) :
-    g • p ≠ p := fun h ↦
-  hg (Subgroup.mem_bot.1 ((TauCeti.mem_freeLocus Γ ℍ).1 hp ▸ mem_stabilizer_iff.2 h))
-
-/-- For a centre with trivial stabilizer, two nontrivial elements whose Dirichlet faces share
-two distinct points are equal. -/
-private theorem eq_of_nontrivial_dirichletFace_inter (hp : p ∈ TauCeti.freeLocus Γ ℍ)
-    {g g' : Γ} (hg : g ≠ 1) (hg' : g' ≠ 1)
-    (h : (dirichletFace p g ∩ dirichletFace p g').Nontrivial) : g = g' := by
-  have he := smul_eq_of_nontrivial_dirichletFace_inter (smul_ne_of_ne_one hp hg)
-    (smul_ne_of_ne_one hp hg') h
-  by_contra hne
-  exact smul_ne_of_ne_one hp (g := g'⁻¹ * g) (fun h ↦ hne (inv_mul_eq_one.1 h).symm)
-    (by rw [mul_smul, he, inv_smul_smul])
-
 variable [DiscreteTopology Γ]
 
 /-- If side `i` of a Dirichlet polygon is the face of `h⁻¹` and side `j` the face of `h`, then
@@ -81,7 +65,7 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
     (hi : P.side i = dirichletFace p h⁻¹) (hj : P.side j = dirichletFace p h) :
     (h : PSL(2, ℝ)) • P.vertex i = P.vertex (j + 1) ∧
       (h : PSL(2, ℝ)) • P.vertex (i + 1) = P.vertex j := by
-  have hhp := smul_ne_of_ne_one hp hh
+  have hhp := TauCeti.smul_ne_of_ne_one Γ ℍ hp hh
   have hside : ((h : PSL(2, ℝ)) • P).side i = P.side j := by
     have hinv := inv_smul_dirichletFace p h⁻¹
     rw [inv_inv, Set.subtype_smul_set] at hinv
@@ -131,17 +115,6 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
     exact ⟨hfrom.right_eq_of_extGeodesicSegment_eq (P.isGeodesicFromTo_sideGeodesic j) hseg,
       hfrom.left_eq_of_extGeodesicSegment_eq (P.isGeodesicFromTo_sideGeodesic j) hseg⟩
 
-/-- For a centre with trivial stabilizer, each side of a Dirichlet polygon is the Dirichlet face
-of a unique element of `Γ` other than the identity. -/
-private theorem existsUnique_side_eq_dirichletFace (hP : P.carrier = dirichletDomain Γ p)
-    (hp : p ∈ TauCeti.freeLocus Γ ℍ) (i : Fin n) :
-    ∃! g : Γ, g ≠ 1 ∧ P.side i = dirichletFace p g := by
-  obtain ⟨g, hg, hi⟩ := exists_side_eq_dirichletFace hP i
-  refine ⟨g, ⟨fun h ↦ hg (by rw [h, one_smul]), hi⟩, fun g' hg' ↦ ?_⟩
-  refine eq_of_nontrivial_dirichletFace_inter hp hg'.1 (fun h ↦ hg (by rw [h, one_smul])) ?_
-  rw [← hi, ← hg'.2, inter_self]
-  exact P.side_nontrivial i
-
 /-- **Sides of a Dirichlet polygon are paired along Dirichlet faces.** If the carrier of `P` is
 the Dirichlet domain of a discrete `Γ` centred at a point with trivial stabilizer, and `σ` is a
 side pairing of `P` by elements of `Γ`, then side `i` is the Dirichlet face of the inverse of
@@ -158,8 +131,8 @@ theorem SidePairing.side_eq_dirichletFace (σ : P.SidePairing) (hmap : ∀ i, σ
     refine (inv_smul_mem_dirichletDomain_iff hxD t⁻¹).1 ?_
     rw [inv_inv, ← hP]
     exact P.side_subset_carrier _ (σ.map_smul_side i ▸ smul_mem_smul_set hx)
-  obtain ⟨j, hj⟩ := exists_side_eq_dirichletFace_of_nontrivial hP (smul_ne_of_ne_one hp ht)
-    ((P.side_nontrivial i).mono hsub)
+  obtain ⟨j, hj⟩ := exists_side_eq_dirichletFace_of_nontrivial hP
+    (TauCeti.smul_ne_of_ne_one Γ ℍ hp ht) ((P.side_nontrivial i).mono hsub)
   rw [← hj, P.eq_of_nontrivial_side_inter_side (i := j) (j := i)
     (by rw [hj, inter_eq_right.2 hsub]; exact P.side_nontrivial i)]
 
@@ -175,7 +148,8 @@ theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
   have hg_inv (i : Fin n) : (g i)⁻¹ ≠ 1 := inv_ne_one.2 (hg i).1
   -- the face of `(g i)⁻¹` is a side `pair i`, whose element is `(g i)⁻¹`
   have hpair (i : Fin n) : ∃ j, P.side j = dirichletFace p (g i)⁻¹ := by
-    refine exists_side_eq_dirichletFace_of_nontrivial hP (smul_ne_of_ne_one hp (hg_inv i)) ?_
+    refine exists_side_eq_dirichletFace_of_nontrivial hP
+      (TauCeti.smul_ne_of_ne_one Γ ℍ hp (hg_inv i)) ?_
     have hinv := inv_smul_dirichletFace p (g i)
     rw [Set.subtype_smul_set] at hinv
     rw [← hinv, ← (hg i).2, ← side_smul]
@@ -239,7 +213,7 @@ theorem exists_sidePairing_relatorQuotientTo_bijective_of_compactSpace
   rw [CompactConvexPolygon.carrier_toConvexPolygon, hP]
   refine Set.disjoint_left.2 fun z hz hz' ↦ ?_
   obtain ⟨w, hw, rfl⟩ := Set.mem_smul_set.1 hz
-  have hγp : γ • p ≠ p := ConvexPolygon.smul_ne_of_ne_one hp hγ
+  have hγp : γ • p ≠ p := TauCeti.smul_ne_of_ne_one Γ ℍ hp hγ
   have h₁ := mem_interior_dirichletDomain_iff.1 hw γ⁻¹ fun h ↦
     hγp ((smul_eq_iff_eq_inv_smul γ).2 h.symm)
   have h₂ := mem_interior_dirichletDomain_iff.1 hz' γ hγp

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Finite
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
+public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Faces
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.HalfPlaneIntersection
@@ -163,6 +164,25 @@ theorem ConvexPolygon.exists_side_eq_dirichletFace (hP : P.carrier = dirichletDo
   rw [← hj, P.eq_of_nontrivial_side_inter_side (i := i) (j := j) ?_]
   rw [hj, inter_comm]
   exact hgS.mono (inter_subset_inter_right _ hS)
+
+end ConvexPolygon
+
+section ConvexPolygon
+
+variable {G} [Group G] [MulAction G ℍ] [ProperlyDiscontinuousSMul G ℍ]
+  {n : ℕ} [NeZero n] {P : ConvexPolygon n} {p : ℍ}
+
+/-- For a centre with trivial stabilizer, each side of a Dirichlet polygon is the Dirichlet face
+of a unique element other than the identity. -/
+theorem ConvexPolygon.existsUnique_side_eq_dirichletFace
+    (hP : P.carrier = dirichletDomain G p) (hp : p ∈ TauCeti.freeLocus G ℍ) (i : Fin n) :
+    ∃! g : G, g ≠ 1 ∧ P.side i = dirichletFace p g := by
+  obtain ⟨g, hg, hi⟩ := P.exists_side_eq_dirichletFace hP i
+  refine ⟨g, ⟨fun h ↦ hg (by rw [h, one_smul]), hi⟩, fun g' hg' ↦ ?_⟩
+  refine eq_of_nontrivial_dirichletFace_inter hp hg'.1
+    (fun h ↦ hg (by rw [h, one_smul])) ?_
+  rw [← hi, ← hg'.2, inter_self]
+  exact P.side_nontrivial i
 
 end ConvexPolygon
 

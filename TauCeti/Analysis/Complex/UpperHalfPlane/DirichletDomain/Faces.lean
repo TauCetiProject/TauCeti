@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Basic
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
+public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Intersection
 
@@ -146,5 +147,22 @@ theorem mem_interior_dirichletDomain_iff {p z : ℍ} :
   have hzD := interior_subset hz
   refine lt_of_le_of_ne (mem_dirichletDomain.mp hzD g) fun he ↦ ?_
   exact (dirichletFace_subset_frontier hg (mem_dirichletFace.mpr ⟨hzD, he⟩)).2 hz
+
+end TauCeti.UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+variable {G : Type*} [Group G] [MulAction G ℍ]
+
+/-- For a centre with trivial stabilizer, two nonidentity elements whose Dirichlet faces share
+two distinct points are equal. -/
+theorem eq_of_nontrivial_dirichletFace_inter {p : ℍ}
+    (hp : p ∈ TauCeti.freeLocus G ℍ) {g g' : G} (hg : g ≠ 1) (hg' : g' ≠ 1)
+    (h : (dirichletFace p g ∩ dirichletFace p g').Nontrivial) : g = g' := by
+  have he := smul_eq_of_nontrivial_dirichletFace_inter
+    (TauCeti.smul_ne_of_ne_one G ℍ hp hg) (TauCeti.smul_ne_of_ne_one G ℍ hp hg') h
+  by_contra hne
+  exact TauCeti.smul_ne_of_ne_one G ℍ hp (g := g'⁻¹ * g)
+    (fun h' ↦ hne (inv_mul_eq_one.1 h').symm) (by rw [mul_smul, he, inv_smul_smul])
 
 end TauCeti.UpperHalfPlane
