@@ -69,8 +69,7 @@ theorem lieMap_homEquivKerProjHom_symm
   rw [hp] at hcomp
   apply LieHom.ext
   intro Y
-  change d.lieMap Y = _
-  simpa only [LieHom.comp_apply, LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply] using
+  simpa only [d, LieHom.comp_apply, LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply] using
     (congrArg (fun L ↦ L ((lieEquivProjHom I G).symm Y)) hcomp).symm
 
 end TauCeti.UniversalCover
