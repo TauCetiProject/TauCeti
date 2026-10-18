@@ -94,15 +94,30 @@ theorem chiPDFReal_of_pos (hk : 0 < k) (hs : 0 < s) (hx : 0 < x) :
   simp [chiPDFReal, hk, hs, hx]
 
 /-- The density vanishes off the positive-parameter, positive-coordinate domain. -/
-@[simp]
 theorem chiPDFReal_of_not_pos (h : ¬ (0 < k ∧ 0 < s ∧ 0 < x)) :
     chiPDFReal k s x = 0 := by
   simp [chiPDFReal, h]
 
 /-- The extended density vanishes off the positive-parameter, positive-coordinate domain. -/
-@[simp]
 theorem chiPDF_of_not_pos (h : ¬ (0 < k ∧ 0 < s ∧ 0 < x)) : chiPDF k s x = 0 := by
   simp [chiPDF_eq_ofReal, chiPDFReal_of_not_pos h]
+
+/-- The real chi density vanishes on the nonpositive half-line. -/
+@[simp]
+theorem chiPDFReal_of_nonpos (hx : x ≤ 0) : chiPDFReal k s x = 0 :=
+  chiPDFReal_of_not_pos (by grind)
+
+/-- The extended chi density vanishes on the nonpositive half-line. -/
+@[simp]
+theorem chiPDF_of_nonpos (hx : x ≤ 0) : chiPDF k s x = 0 :=
+  chiPDF_of_not_pos (by grind)
+
+/-- The extended chi density on the positive half-line at positive parameters. -/
+@[simp]
+theorem chiPDF_of_pos (hk : 0 < k) (hs : 0 < s) (hx : 0 < x) :
+    chiPDF k s x = ENNReal.ofReal ((2 : ℝ) ^ (1 - k / 2) / Real.Gamma (k / 2) *
+      (x / s) ^ (k - 1) * exp (-(x / s) ^ 2 / 2) / s) := by
+  rw [chiPDF_eq_ofReal, chiPDFReal_of_pos hk hs hx]
 
 /-- The real chi density is nonnegative for every parameter value. -/
 theorem chiPDFReal_nonneg (k s x : ℝ) : 0 ≤ chiPDFReal k s x := by
@@ -149,31 +164,33 @@ theorem measurable_chiPDF (k s : ℝ) : Measurable (chiPDF k s) := by
 theorem chiMeasure_eq_withDensity (hk : 0 < k) (hs : 0 < s) :
     chiMeasure k s = volume.withDensity (chiPDF k s) := by
   have hstandard : (chiSquaredMeasure k).map Real.sqrt =
-      volume.withDensity (fun x ↦ ENNReal.ofReal
-        (if 0 < x then (2 : ℝ) ^ (1 - k / 2) / Real.Gamma (k / 2) *
-          x ^ (k - 1) * exp (-x ^ 2 / 2) else 0)) := by
+      volume.withDensity (chiPDF k 1) := by
     rw [map_sqrt_chiSquaredMeasure hk, ← withDensity_indicator measurableSet_Ioi]
     apply withDensity_congr_ae
     refine .of_forall fun x ↦ ?_
-    by_cases hx : 0 < x <;> simp [hx]
+    by_cases hx : 0 < x
+    · simp [hx, chiPDF_of_pos hk zero_lt_one hx]
+    · simp [hx, chiPDF_of_nonpos (le_of_not_gt hx)]
   have hpush : (chiSquaredMeasure k).map (fun x ↦ s * √x) =
       ((chiSquaredMeasure k).map Real.sqrt).map (fun x ↦ s * x) := by
     exact (Measure.map_map (by fun_prop) (by fun_prop)).symm
   rw [chiMeasure_of_pos hs, hpush, hstandard]
   have hmap := map_affine_withDensity_volume (a := 0) (b := s)
-    (fun x ↦ ENNReal.ofReal (if 0 < x then (2 : ℝ) ^ (1 - k / 2) /
-      Real.Gamma (k / 2) * x ^ (k - 1) * exp (-x ^ 2 / 2) else 0)) hs.ne'
+    (chiPDF k 1) hs.ne'
   simp only [zero_add] at hmap
   rw [hmap]
   apply withDensity_congr_ae
   refine .of_forall fun x ↦ ?_
-  simp only [affineDensity_apply, abs_of_pos hs, sub_zero, chiPDF, chiPDFReal,
-    hk, hs, true_and, div_pos_iff_of_pos_right hs]
-  split_ifs with hx
-  · rw [← ENNReal.ofReal_mul (by positivity)]
+  simp only [affineDensity_apply, abs_of_pos hs, sub_zero]
+  by_cases hx : 0 < x
+  · rw [chiPDF_of_pos hk zero_lt_one (div_pos hx hs), chiPDF_of_pos hk hs hx]
+    simp only [div_one]
+    rw [← ENNReal.ofReal_mul (by positivity)]
     congr 1
     ring
-  · simp
+  · rw [chiPDF_of_nonpos (div_nonpos_of_nonpos_of_nonneg (le_of_not_gt hx) hs.le),
+      chiPDF_of_nonpos (le_of_not_gt hx)]
+    simp
 
 /-- The chi family is jointly Giry measurable, including its invalid and Dirac branches. -/
 @[fun_prop]
@@ -192,7 +209,7 @@ theorem measurable_chiMeasure : Measurable fun p : ℝ × ℝ ↦ chiMeasure p.1
             chiMeasure_of_neg (lt_of_le_of_ne (le_of_not_gt hk') hk)]
           have hz : chiPDF p.1 p.2 = 0 := by
             funext x
-            simp [chiPDF, chiPDFReal, hk']
+            exact chiPDF_of_not_pos (by tauto)
           rw [hz]
           simp
     · simp [hs, chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
@@ -222,16 +239,24 @@ theorem rnDeriv_chiMeasure (hk : 0 < k) (hs : 0 < s) :
   exact Measure.rnDeriv_withDensity _ (measurable_chiPDF k s)
 
 /-- Positive-degree chi laws are carried by the positive half-line. -/
-theorem ae_pos_chiMeasure (hk : 0 < k) (hs : 0 < s) :
+theorem ae_pos_chiMeasure (hk : 0 < k) :
     ∀ᵐ x ∂chiMeasure k s, 0 < x := by
+  by_cases hs : 0 < s
+  swap
+  · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
   rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk]
   apply (ae_map_iff (by fun_prop) measurableSet_Ioi).2
   filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
   exact mul_pos hs (Real.sqrt_pos.2 hx)
 
-/-- Positive scaling multiplies the chi scale, including degree zero and negative degrees. -/
-theorem chiMeasure_map_const_mul (hc : 0 < c) (hs : 0 < s) :
+/-- Positive scaling multiplies the chi scale in every parameter regime. -/
+@[simp]
+theorem chiMeasure_map_const_mul (hc : 0 < c) :
     (chiMeasure k s).map (fun x ↦ c * x) = chiMeasure k (c * s) := by
+  by_cases hs : 0 < s
+  swap
+  · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs),
+      chiMeasure_of_scale_nonpos (mul_nonpos_of_nonneg_of_nonpos hc.le (le_of_not_gt hs))]
   rw [chiMeasure_of_pos hs, chiMeasure_of_pos (mul_pos hc hs),
     Measure.map_map (by fun_prop) (by fun_prop)]
   congr 1
@@ -239,17 +264,18 @@ theorem chiMeasure_map_const_mul (hc : 0 < c) (hs : 0 < s) :
   exact (mul_assoc c s (√x)).symm
 
 /-- Taking a scaled square root of a chi-squared variable gives the chi law. -/
-theorem hasLaw_sqrt_chiSquaredMeasure (hs : 0 < s)
+theorem hasLaw_chiMeasure_of_hasLaw_chiSquaredMeasure (hs : 0 < s)
     (hX : HasLaw X (chiSquaredMeasure k) P) :
     HasLaw (fun ω ↦ s * √(X ω)) (chiMeasure k s) P := by
   rw [chiMeasure_of_pos hs]
   exact (hasLaw_map (X := fun x : ℝ ↦ s * √x) (by fun_prop)).fun_comp hX
 
 /-- Squaring a chi variable gives the squared scale times a chi-squared variable. -/
-theorem chiMeasure_map_sq (hk : 0 ≤ k) (hs : 0 < s) :
+theorem chiMeasure_map_sq (hs : 0 < s) :
     (chiMeasure k s).map (fun x ↦ x ^ 2) =
       (chiSquaredMeasure k).map (fun x ↦ s ^ 2 * x) := by
-  rcases hk.eq_or_lt' with rfl | hk
+  rcases lt_trichotomy k 0 with hk | rfl | hk
+  · simp [chiMeasure_of_neg hk, chiSquaredMeasure_of_neg hk]
   · simp [chiMeasure_zero hs, Measure.map_dirac]
   · rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
       Measure.map_map (by fun_prop) (by fun_prop)]
@@ -259,6 +285,7 @@ theorem chiMeasure_map_sq (hk : 0 ≤ k) (hs : 0 < s) :
 
 /-- The chi cdf is the regularized lower incomplete Gamma function on the nonnegative half-line
 and zero below it. -/
+@[simp]
 theorem cdf_chiMeasure_eq (hk : 0 < k) (hs : 0 < s) (x : ℝ) :
     cdf (chiMeasure k s) x =
       if x < 0 then 0 else regularizedGamma (k / 2) ((x / s) ^ 2 / 2) := by

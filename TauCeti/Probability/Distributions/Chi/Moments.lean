@@ -33,6 +33,12 @@ namespace TauCeti.Probability
 
 variable {k s q t : ℝ}
 
+private theorem mul_sqrt_rpow_ae_eq_gammaMeasure (hs : 0 < s) (q : ℝ) :
+    (fun x : ℝ ↦ (s * √x) ^ q) =ᵐ[gammaMeasure (k / 2) (1 / 2)]
+      fun x ↦ s ^ q * x ^ (q / 2) := by
+  filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
+  rw [mul_rpow hs.le (sqrt_nonneg x), ← rpow_div_two_eq_sqrt q hx.le]
+
 /-- A real power is integrable under a positive-degree chi law exactly above minus its degree. -/
 @[simp]
 theorem integrable_rpow_chiMeasure_iff (hk : 0 < k) (hs : 0 < s) (q : ℝ) :
@@ -40,11 +46,7 @@ theorem integrable_rpow_chiMeasure_iff (hk : 0 < k) (hs : 0 < s) (q : ℝ) :
   rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def]
-  have heq : (fun x : ℝ ↦ (s * √x) ^ q) =ᵐ[gammaMeasure (k / 2) (1 / 2)]
-      fun x ↦ s ^ q * x ^ (q / 2) := by
-    filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
-    rw [mul_rpow hs.le (sqrt_nonneg x), ← rpow_div_two_eq_sqrt q hx.le]
-  rw [integrable_congr heq,
+  rw [integrable_congr (mul_sqrt_rpow_ae_eq_gammaMeasure hs q),
     integrable_const_mul_iff (isUnit_iff_ne_zero.2 (rpow_pos_of_pos hs q).ne'),
     integrable_rpow_gammaMeasure_iff (half_pos hk) one_half_pos]
   constructor <;> intro h <;> linarith
@@ -55,11 +57,7 @@ theorem integral_rpow_chiMeasure (hk : 0 < k) (hs : 0 < s) (hq : -k < q) :
       s ^ q * (2 : ℝ) ^ (q / 2) * Real.Gamma ((k + q) / 2) / Real.Gamma (k / 2) := by
   rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
     integral_map (by fun_prop) (by fun_prop)]
-  have heq : (fun x : ℝ ↦ (s * √x) ^ q) =ᵐ[gammaMeasure (k / 2) (1 / 2)]
-      fun x ↦ s ^ q * x ^ (q / 2) := by
-    filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
-    rw [mul_rpow hs.le (sqrt_nonneg x), ← rpow_div_two_eq_sqrt q hx.le]
-  rw [integral_congr_ae heq, integral_const_mul,
+  rw [integral_congr_ae (mul_sqrt_rpow_ae_eq_gammaMeasure hs q), integral_const_mul,
     integral_rpow_gammaMeasure (half_pos hk) one_half_pos (by linarith : -(k / 2) < q / 2)]
   rw [one_div, inv_rpow (by norm_num), rpow_neg (by norm_num), inv_inv]
   rw [show k / 2 + q / 2 = (k + q) / 2 by ring]
@@ -96,11 +94,11 @@ theorem integral_id_chiMeasure (hk : 0 < k) (hs : 0 < s) :
   simpa only [pow_one, Nat.cast_one, ← sqrt_eq_rpow] using integral_pow_chiMeasure hk hs 1
 
 /-- The second chi moment is scale squared times degrees, including degree zero. -/
-@[simp]
+@[simp high]
 theorem integral_sq_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
     ∫ x, x ^ 2 ∂chiMeasure k s = s ^ 2 * k := by
   let _ := isProbabilityMeasure_chiMeasure hk hs
-  have h := congrArg (fun μ : Measure ℝ ↦ ∫ x, x ∂μ) (chiMeasure_map_sq hk hs)
+  have h := congrArg (fun μ : Measure ℝ ↦ ∫ x, x ∂μ) (chiMeasure_map_sq (k := k) hs)
   rw [integral_map (by fun_prop) (by fun_prop),
     integral_map (by fun_prop) (by fun_prop), integral_const_mul,
     integral_id_chiSquaredMeasure hk] at h
@@ -119,10 +117,14 @@ theorem variance_id_chiMeasure (hk : 0 < k) (hs : 0 < s) :
   rw [div_pow, mul_pow, mul_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
   ring
 
-/-- Every exponential moment of a chi law is integrable, including degree zero. -/
-theorem integrable_exp_mul_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) (t : ℝ) :
+/-- Every exponential moment of a chi law is integrable in every parameter regime. -/
+theorem integrable_exp_mul_chiMeasure (k s t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x)) (chiMeasure k s) := by
-  rcases hk.eq_or_lt' with rfl | hk
+  by_cases hs : 0 < s
+  swap
+  · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
+  rcases lt_trichotomy k 0 with hk | rfl | hk
+  · simp [chiMeasure_of_neg hk]
   · rw [chiMeasure_zero hs]
     exact integrable_dirac (by simp)
   · rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
@@ -138,12 +140,12 @@ theorem integrable_exp_mul_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) (t : ℝ) :
     have hsqrt := sq_sqrt hx.le
     nlinarith
 
-/-- The exact exponential-integrability domain of every valid chi law is the whole real line. -/
+/-- The exact exponential-integrability domain of every chi law is the whole real line. -/
 @[simp]
-theorem integrableExpSet_id_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
+theorem integrableExpSet_id_chiMeasure (k s : ℝ) :
     integrableExpSet id (chiMeasure k s) = univ := by
   ext t
   simp only [integrableExpSet, id_eq, mem_ofPred_eq, mem_univ, iff_true]
-  exact integrable_exp_mul_chiMeasure hk hs t
+  exact integrable_exp_mul_chiMeasure k s t
 
 end TauCeti.Probability
