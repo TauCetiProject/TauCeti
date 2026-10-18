@@ -72,17 +72,10 @@ of universal conjugation. -/
 theorem parabolicLimitLieHom_apply_apply (l : H →ₐc[R] LaurentPolynomial R)
     (d : (parabolicDefiningHopfIdeal l).lieSubalgebra (B := B)) (h : H) :
     parabolicLimitLieHom l d h = d.val ((conjugationAlgHom l h).coeff 0) := by
-  -- Identify both counit coefficient algebras with `B` before comparing their values.
-  apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
   simp only [parabolicLimitLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
-    derivationCompLieHom_apply]
-  rw [algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom,
-    parabolicLimitCoordinateMap_apply,
-    CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
-    HopfIdeal.quotientLieEquiv_symm_apply_mk]
-  exact (Bialgebra.CounitAlgebra.algEquivSelf_apply R
-    (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal) B _).trans
-      (Bialgebra.CounitAlgebra.algEquivSelf_apply R H B _).symm
+    derivationCompLieHom_apply, derivationComp_apply, BialgHom.coe_toAlgHom]
+  rw [parabolicLimitCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply,
+    Ideal.Quotient.mkₐ_eq_mk, HopfIdeal.quotientLieEquiv_symm_apply_mk]
 
 /-- A tangent vector of the dynamic parabolic is killed by the limit differential exactly
 when it belongs to the tangent Lie algebra of the dynamic unipotent subgroup. -/
@@ -94,10 +87,8 @@ theorem parabolicLimitLieHom_eq_zero_iff (l : H →ₐc[R] LaurentPolynomial R)
   rw [parabolicLimitLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     ← LieHom.mem_ker, ← LieIdeal.mem_toLieSubalgebra,
     ← CommHopfAlgCat.lieSubalgebra_kernelHopfIdeal,
-    kernelHopfIdeal_parabolicLimitCoordinateMap, HopfIdeal.lieSubalgebra_map,
-    LieSubalgebra.mem_comap, CommHopfAlgCat.hom_mkQuotient, derivationCompLieHom_apply,
-    ← HopfIdeal.quotientLieHom_apply, ← HopfIdeal.quotientLieEquiv_apply_coe,
-    LieEquiv.apply_symm_apply]
+    kernelHopfIdeal_parabolicLimitCoordinateMap, CommHopfAlgCat.hom_mkQuotient]
+  exact HopfIdeal.quotientLieEquiv_symm_mem_lieSubalgebra_map_iff _ _ d
 
 /-- The limit differential restricts to the identity on the Levi tangent Lie algebra. -/
 @[simp]
