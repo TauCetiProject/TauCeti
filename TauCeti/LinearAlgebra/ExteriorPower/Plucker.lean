@@ -159,6 +159,11 @@ theorem plucker_ne_zero_iff [Finite ι] (x : Fin p → ι → K) :
     exact plucker_eq_repr_ιMulti x s
   rw [h, Finsupp.coe_eq_zero, LinearEquiv.map_eq_zero_iff]
 
+/-- Over a field, a linearly independent family has a nonzero Plücker coordinate. -/
+theorem plucker_ne_zero [Finite ι] {x : Fin p → ι → K} (hx : LinearIndependent K x) :
+    plucker x ≠ 0 :=
+  (plucker_ne_zero_iff x).2 hx
+
 end Field
 
 end TauCeti
