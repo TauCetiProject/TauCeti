@@ -222,31 +222,17 @@ theorem finiteProjectionEquiv_apply [Finite A] [DiscreteTopology A] (μ : D(A, R
 theorem finiteProjectionEquiv_symm_apply [Finite A] [DiscreteTopology A] (c : A →₀ R) :
     finiteProjectionEquiv.symm c = ofFiniteCoefficients c := (rfl)
 
-end TopologicalRing
-
-section Normed
-
-variable [NormedCommRing R]
-
-/-- Finite projection is weakly continuous when its coefficients carry the product topology. -/
-theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
-    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
-      (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
-  let : TopologicalSpace D(X, R) := WeakTopology
-  have heval : Continuous (fun μ : D(X, R) ↦ fun f : C(X, R) ↦ μ f) :=
-    continuous_induced_dom
-  exact continuous_pi fun a ↦
-    (continuous_apply (fiberIndicator (R := R) q a)).comp heval
-
 section Profinite
 
-variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X]
+variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] [T2Space R]
 
 /-- A measure on a profinite space is determined by its projections to all finite discrete
 quotients. -/
 theorem finiteProjection_ext (μ ν : D(X, R))
     (h : ∀ (n : ℕ) (q : C(X, Fin n)), finiteProjection q μ = finiteProjection q ν) :
     μ = ν := by
+  -- The density argument only needs the canonical uniformity of the additive group of `R`.
+  let := IsTopologicalAddGroup.rightUniformSpace R
   let S : Set C(X, R) := {f | ∃ (n : ℕ) (q : C(X, Fin n)) (g : Fin n → R),
     f = (ContinuousMap.equivFnOfDiscrete.symm g).comp q}
   have hS : Dense S := by
@@ -269,6 +255,22 @@ theorem finiteProjection_ext (μ ν : D(X, R))
   exact congrFun (Continuous.ext_on hS μ.continuous ν.continuous hEqOn) f
 
 end Profinite
+
+end TopologicalRing
+
+section Normed
+
+variable [NormedCommRing R]
+
+/-- Finite projection is weakly continuous when its coefficients carry the product topology. -/
+theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
+      (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
+  let : TopologicalSpace D(X, R) := WeakTopology
+  have heval : Continuous (fun μ : D(X, R) ↦ fun f : C(X, R) ↦ μ f) :=
+    continuous_induced_dom
+  exact continuous_pi fun a ↦
+    (continuous_apply (fiberIndicator (R := R) q a)).comp heval
 
 end Normed
 

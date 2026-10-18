@@ -322,6 +322,14 @@ theorem eq_extendCoefficients_of_apply_comp (hjc : Continuous j) {ν : D(X, K)}
     classical
     by_cases hx : q x = a <;> simp [fiberIndicator_apply, hx]
 
+/-- Extension of coefficients along an injective `j` is injective. -/
+theorem extendCoefficients_injective [T2Space O] (hinj : Function.Injective j) :
+    Function.Injective (extendCoefficients (X := X) j hj) := fun μ ν h ↦
+  finiteProjection_ext _ _ fun n q ↦ by
+    have := congrArg (finiteProjection q) h
+    rw [finiteProjection_extendCoefficients, finiteProjection_extendCoefficients] at this
+    exact Finsupp.mapRange_injective _ (map_zero j) hinj this
+
 end TopologicalRing
 
 section OperatorNorm
@@ -339,22 +347,6 @@ theorem norm_toCLMEquiv_extendCoefficients_le (μ : D(X, O)) :
       (norm_locallyConstantIntegral_le j μ hj))
 
 end OperatorNorm
-
-section Normed
-
-variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*} [NormedField K]
-  [CompleteSpace K] [IsUltrametricDist K] [NormedCommRing O] (j : O →+* K)
-  (hj : ∀ a, ‖j a‖ ≤ 1)
-
-/-- Extension of coefficients along an injective `j` is injective. -/
-theorem extendCoefficients_injective (hinj : Function.Injective j) :
-    Function.Injective (extendCoefficients (X := X) j hj) := fun μ ν h ↦
-  finiteProjection_ext _ _ fun n q ↦ by
-    have := congrArg (finiteProjection q) h
-    rw [finiteProjection_extendCoefficients, finiteProjection_extendCoefficients] at this
-    exact Finsupp.mapRange_injective _ (map_zero j) hinj this
-
-end Normed
 
 section Examples
 
