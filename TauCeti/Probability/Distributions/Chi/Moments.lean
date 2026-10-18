@@ -76,6 +76,11 @@ theorem integrable_pow_chiMeasure (k s : ℝ) (n : ℕ) :
           linarith [show (0 : ℝ) ≤ n from Nat.cast_nonneg n])
   · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
 
+/-- At degree zero and positive scale, the zeroth chi moment is one and all others vanish. -/
+theorem integral_pow_chiMeasure_zero (hs : 0 < s) (n : ℕ) :
+    ∫ x, x ^ n ∂chiMeasure 0 s = if n = 0 then 1 else 0 := by
+  rw [chiMeasure_zero hs, integral_dirac, zero_pow_eq]
+
 /-- Natural moments of positive-degree chi laws. -/
 @[simp]
 theorem integral_pow_chiMeasure (hk : 0 < k) (hs : 0 < s) (n : ℕ) :
@@ -86,12 +91,14 @@ theorem integral_pow_chiMeasure (hk : 0 < k) (hs : 0 < s) (n : ℕ) :
     integral_rpow_chiMeasure hk hs (q := (n : ℝ)) (by
       linarith [show (0 : ℝ) ≤ n from Nat.cast_nonneg n])
 
-/-- The chi mean at positive degrees and scale. -/
+/-- The chi mean at nonnegative degrees and positive scale, including degree zero. -/
 @[simp]
-theorem integral_id_chiMeasure (hk : 0 < k) (hs : 0 < s) :
+theorem integral_id_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
     ∫ x, x ∂chiMeasure k s =
       s * √2 * Real.Gamma ((k + 1) / 2) / Real.Gamma (k / 2) := by
-  simpa only [pow_one, Nat.cast_one, ← sqrt_eq_rpow] using integral_pow_chiMeasure hk hs 1
+  rcases hk.eq_or_lt' with rfl | hk
+  · simp [chiMeasure_zero hs]
+  · simpa only [pow_one, Nat.cast_one, ← sqrt_eq_rpow] using integral_pow_chiMeasure hk hs 1
 
 /-- The second chi moment is scale squared times degrees, including degree zero. -/
 @[simp high]
@@ -104,21 +111,21 @@ theorem integral_sq_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
     integral_id_chiSquaredMeasure hk] at h
   exact h
 
-/-- The variance of a positive-degree chi law. -/
+/-- The chi variance at nonnegative degrees and positive scale, including degree zero. -/
 @[simp]
-theorem variance_id_chiMeasure (hk : 0 < k) (hs : 0 < s) :
+theorem variance_id_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
     variance id (chiMeasure k s) =
       s ^ 2 * (k - 2 * (Real.Gamma ((k + 1) / 2) / Real.Gamma (k / 2)) ^ 2) := by
-  let _ := isProbabilityMeasure_chiMeasure hk.le hs
+  let _ := isProbabilityMeasure_chiMeasure hk hs
   have hLp : MemLp id 2 (chiMeasure k s) :=
     (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2 (integrable_pow_chiMeasure k s 2)
   rw [variance_eq_sub hLp]
-  simp only [Pi.pow_apply, id_eq, integral_sq_chiMeasure hk.le hs, integral_id_chiMeasure hk hs]
+  simp only [Pi.pow_apply, id_eq, integral_sq_chiMeasure hk hs, integral_id_chiMeasure hk hs]
   rw [div_pow, mul_pow, mul_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
   ring
 
 /-- Every exponential moment of a chi law is integrable in every parameter regime. -/
-theorem integrable_exp_mul_chiMeasure (k s t : ℝ) :
+theorem integrable_exp_mul_id_chiMeasure (k s t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x)) (chiMeasure k s) := by
   by_cases hs : 0 < s
   swap
@@ -146,6 +153,6 @@ theorem integrableExpSet_id_chiMeasure (k s : ℝ) :
     integrableExpSet id (chiMeasure k s) = univ := by
   ext t
   simp only [integrableExpSet, id_eq, mem_ofPred_eq, mem_univ, iff_true]
-  exact integrable_exp_mul_chiMeasure k s t
+  exact integrable_exp_mul_id_chiMeasure k s t
 
 end TauCeti.Probability
