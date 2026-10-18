@@ -157,12 +157,19 @@ theorem simultaneousExponent_of_isEmpty [IsEmpty ι] (θ : ι → ℝ) : simulta
 
 /-! ### Dirichlet's lower bound -/
 
-/-- **Dirichlet's theorem, infinitely many denominators.** If some coordinate of a finite family
-`θ` is irrational, then infinitely many positive integers `q` admit integers `pᵢ` with
-`|q θᵢ - pᵢ| ≤ q ^ (-1 / n)` for every `i`, where `n` is the number of coordinates. -/
-theorem infinite_simultaneousApproximationDenominators_inv_card [Fintype ι] {θ : ι → ℝ}
-    {i₀ : ι} (hi₀ : Irrational (θ i₀)) :
+/-- **Dirichlet's theorem, infinitely many denominators.** For every finite family `θ`,
+infinitely many positive integers `q` admit integers `pᵢ` with `|q θᵢ - pᵢ| ≤ q ^ (-1 / n)` for
+every `i`, where `n` is the number of coordinates. -/
+theorem infinite_simultaneousApproximationDenominators_inv_card [Fintype ι] (θ : ι → ℝ) :
     (simultaneousApproximationDenominators θ (Fintype.card ι : ℝ)⁻¹).Infinite := by
+  by_cases h : ∃ i, Irrational (θ i)
+  swap
+  · -- A rational family has infinite exponent, so every exponent has infinitely many solutions.
+    refine infinite_simultaneousApproximationDenominators_of_lt_simultaneousExponent ?_
+    rw [simultaneousExponent_eq_top_of_forall_rat fun i ↦ by
+      simpa [Irrational] using not_exists.mp h i]
+    exact ENNReal.ofReal_lt_top
+  obtain ⟨i₀, hi₀⟩ := h
   have : Nonempty ι := ⟨i₀⟩
   have hn : Fintype.card ι ≠ 0 := Fintype.card_ne_zero
   refine Set.infinite_of_forall_exists_gt fun N ↦ ?_
@@ -196,14 +203,11 @@ theorem infinite_simultaneousApproximationDenominators_inv_card [Fintype ι] {θ
 has simultaneous exponent at least `1 / n`. For the empty family both sides are `⊤`. -/
 theorem inv_card_le_simultaneousExponent [Fintype ι] (θ : ι → ℝ) :
     (Fintype.card ι : ℝ≥0∞)⁻¹ ≤ simultaneousExponent θ := by
-  by_cases h : ∃ i, Irrational (θ i)
-  · obtain ⟨i, hi⟩ := h
-    have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 (Fintype.card_pos_iff.2 ⟨i⟩)
-    simpa [ENNReal.ofReal_inv_of_pos hn] using le_simultaneousExponent_of_infinite
-      (infinite_simultaneousApproximationDenominators_inv_card hi)
-  · rw [simultaneousExponent_eq_top_of_forall_rat fun i ↦ by
-      simpa [Irrational] using not_exists.mp h i]
-    exact le_top
+  cases isEmpty_or_nonempty ι
+  · simp
+  have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
+  simpa [ENNReal.ofReal_inv_of_pos hn] using le_simultaneousExponent_of_infinite
+    (infinite_simultaneousApproximationDenominators_inv_card θ)
 
 /-! ### One dimension -/
 

@@ -92,11 +92,12 @@ theorem linearFormApproximations_antitone (θ : ι → ℝ) :
     Antitone (linearFormApproximations θ) := fun _ _ hww' _ hx ↦
   ⟨hx.1, hx.2.trans (Real.rpow_le_rpow_of_exponent_le (one_le_norm_of_mem hx) (neg_le_neg hww'))⟩
 
-/-- If the linear form of `x` has absolute value at most one and `‖(xᵢ)ᵢ‖ ≤ N`, then
-`‖x‖ ≤ max (1 + N ∑ i, |θᵢ|) N`. -/
-private theorem norm_le_max_of_abs_le_one {θ : ι → ℝ} {N : ℝ} {x : ℤ × (ι → ℤ)}
-    (hL : |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ 1) (hN : ‖x.2‖ ≤ N) :
-    ‖x‖ ≤ max (1 + N * ∑ i, |θ i|) N := by
+/-- If the linear form `x₀ + ∑ i, xᵢ θᵢ` of an integer vector `x` has absolute value at most `δ`
+and `‖(xᵢ)ᵢ‖ ≤ N`, then the sup norm of the full vector satisfies
+`‖x‖ ≤ max (δ + N ∑ i, |θᵢ|) N`. -/
+theorem norm_le_max_of_abs_add_sum_mul_le {θ : ι → ℝ} {δ N : ℝ} {x : ℤ × (ι → ℤ)}
+    (hL : |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ δ) (hN : ‖x.2‖ ≤ N) :
+    ‖x‖ ≤ max (δ + N * ∑ i, |θ i|) N := by
   rw [Prod.norm_def]
   refine max_le_max ?_ hN
   -- The coordinate `x₀` is the linear form minus the contribution of the other coordinates.
@@ -114,7 +115,7 @@ coefficients `(xᵢ)ᵢ` of sup norm at most `N`. -/
 private theorem finite_setOf_abs_le_one_norm_snd_le (θ : ι → ℝ) (N : ℝ) :
     {x : ℤ × (ι → ℤ) | |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ 1 ∧ ‖x.2‖ ≤ N}.Finite :=
   ((isCompact_closedBall (0 : ℤ × (ι → ℤ)) (max (1 + N * ∑ i, |θ i|) N)).finite_of_discrete
-    ).subset fun _ ⟨hL, hN⟩ ↦ mem_closedBall_zero_iff.2 (norm_le_max_of_abs_le_one hL hN)
+    ).subset fun _ ⟨hL, hN⟩ ↦ mem_closedBall_zero_iff.2 (norm_le_max_of_abs_add_sum_mul_le hL hN)
 
 /-- The linear-form exponent `w(θ)` of `θ : ι → ℝ` is the supremum, in `ℝ≥0∞`, of the real
 exponents `w` for which infinitely many integer vectors `x = (x₀, (xᵢ)ᵢ)` satisfy
@@ -416,7 +417,7 @@ theorem infinite_linearFormApproximations_of_lt_card [Nonempty ι] {θ : ι → 
   have hL₁ : |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ 1 :=
     hxL.trans (Real.rpow_le_one_of_one_le_of_nonpos hN (by simp [n]))
   have hNR : R ≤ N := (not_le.1 (not_and.1 hxR hL₁)).le
-  have hxC : ‖x‖ ≤ C * N := (norm_le_max_of_abs_le_one hL₁ le_rfl).trans <| max_le
+  have hxC : ‖x‖ ≤ C * N := (norm_le_max_of_abs_add_sum_mul_le hL₁ le_rfl).trans <| max_le
     (by nlinarith [Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦ abs_nonneg (θ i)])
     (le_mul_of_one_le_left (by linarith) hC)
   have hN₀ : 0 < N := zero_lt_one.trans_le hN
