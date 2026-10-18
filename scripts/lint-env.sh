@@ -705,6 +705,10 @@ fi
 # Violations not in the baseline: new debt — fail, and show each check's reasoning.
 LC_ALL=C comm -23 "$TMP/violations.txt" "$BASELINE" > "$TMP/new.txt"
 if [ -s "$TMP/new.txt" ]; then
+  # Retry hints only, emitted after all existing report/nonce/ratchet validation.
+  # Optional metadata never changes the audit's verdict. Unknowns retain fallback.
+  python3 "$TRUSTED_SCRIPTS/lint_env_locations.py" "$TMP/out.txt" "$TMP/new.txt" \
+    "$MODULE_IMPORT_LIST" "$PROJECT_ROOT" "$hdr_count" || true
   echo
   echo "lint-env: NEW violation(s) not in the grandfathered baseline (as '<linter> <declaration>'):"
   awk 'NR==FNR { want[$0]=1; next }

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.Topology.Algebra.ConstMulAction
@@ -84,6 +85,18 @@ theorem symmetricAlgebraMapIso_hom_toSpecZero (e : M ≃ₗ[R] M) :
       toSpecZero (homogeneousSubmodule R M) := by
   rw [symmetricAlgebraMapIso_hom, map_toSpecZero]
   simp
+
+/-- The projective isomorphism induced by a linear equivalence lies over the coefficient ring:
+it commutes with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`. -/
+-- Preserve this square before simplifying the isomorphism to `Proj.map`.
+@[reassoc (attr := simp↓)]
+theorem symmetricAlgebraMapIso_hom_projToSpec (e : M ≃ₗ[R] N) :
+    (symmetricAlgebraMapIso R e).hom ≫ projToSpec R M = projToSpec R N := by
+  rw [symmetricAlgebraMapIso_hom, projToSpec_def, projToSpec_def, map_toSpecZero_assoc,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  congr 3
+  ext r
+  simp [GradedRingHom.gradedZeroRingHom]
 
 /-- Inverting a linear equivalence inverts its projective isomorphism. -/
 @[simp]

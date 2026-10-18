@@ -12,8 +12,10 @@ public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Divergence, Hessian, and Laplace–Beltrami operators
@@ -74,6 +76,90 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
+
+section HessianSymmetry
+
+variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The Hessian applied to a vector field and a differentiable vector field is the directional
+derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
+direction. -/
+theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
+    (V W : (y : M) → TangentSpace I y)
+    (hW : MDiffAt (T% W) x) :
+    hessian I f x (V x) (W x) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
+        mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
+  let _ : IsManifold I (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold I ∞ M)
+  have hG : ContMDiff I I.tangent ∞
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
+    contMDiff_mgradient hf
+  have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
+  have hinner :=
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      V (σ := mgradient I f) (τ := W) hG' hW
+  have hinner' : (fun y ↦ inner ℝ (mgradient I f y) (W y)) =
+      (fun y ↦ mvfderiv I f y (W y)) := by
+    funext y
+    exact inner_mgradient (I := I) (f := f) (x := y) (W y)
+  rw [hinner'] at hinner
+  have hinner'' :
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
+        inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
+            (W x) +
+          inner ℝ (mgradient I f x)
+            ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
+    simpa only [Function.comp_apply] using hinner
+  have hgrad := inner_mgradient (I := I) (f := f) (x := x)
+    ((CovariantDerivative.leviCivitaConnection I M W) x (V x))
+  rw [hessian_def]
+  linarith
+
+/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. -/
+theorem hessian_symm [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) (v w : TangentSpace I x) :
+    hessian I f x v w = hessian I f x w v := by
+  let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
+  let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
+  have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
+  have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
+  let _ : IsManifold I (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold I ∞ M)
+  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
+  have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
+  let _ : IsManifold I (minSmoothness ℝ 2) M :=
+    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
+  -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
+  have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
+    hf.contMDiffAt (by simp) hV hW
+  have hzero :
+      (CovariantDerivative.leviCivitaConnection I M).torsion x (V x) (W x) = 0 := by
+    rw [CovariantDerivative.torsion_leviCivitaConnection_eq_zero I]
+    simp
+  have htw := CovariantDerivative.torsion_apply
+    (CovariantDerivative.leviCivitaConnection I M) hV hW
+  rw [hzero] at htw
+  have htw' :
+      CovariantDerivative.leviCivitaConnection I M W x (V x) -
+          CovariantDerivative.leviCivitaConnection I M V x (W x) =
+        VectorField.mlieBracket I V W x := by
+    exact sub_eq_zero.mp htw.symm
+  dsimp [V, W] at hessianVW hessianWV htw' hbracket
+  simp only [FiberBundle.extend_apply_self] at hessianVW hessianWV htw' hbracket
+  have htw_mvfderiv := congrArg (mvfderiv I f x) htw'
+  simp only [map_sub] at htw_mvfderiv
+  -- The two directional-derivative equations now differ only by the torsion equation.
+  rw [hessianVW, hessianWV]
+  linarith [hbracket, htw_mvfderiv]
+
+end HessianSymmetry
 
 /-- The Laplace–Beltrami operator, with the sign convention `Δ = div ∘ grad`. -/
 noncomputable def laplaceBeltrami (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -277,6 +363,45 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
 open scoped Gradient Laplacian
 
 /-- On a finite-dimensional real inner-product space with its standard metric, the Riemannian
+divergence is the trace of the ordinary Fréchet derivative. -/
+theorem divergence_eq_trace_fderiv_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : ∀ y : F, TangentSpace (modelWithCornersSelf ℝ F) y} {x : F}
+    (hV : DifferentiableAt ℝ V x) :
+    let _ : RiemannianBundle (fun y : F ↦ TangentSpace (modelWithCornersSelf ℝ F) y) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    divergence (modelWithCornersSelf ℝ F) V x =
+      LinearMap.trace ℝ F (fderiv ℝ V x).toLinearMap := by
+  intro _
+  simp only [divergence]
+  let e := tangentSpaceCastModel (modelWithCornersSelf ℝ F) x
+  let A : TangentSpace (modelWithCornersSelf ℝ F) x →ₗ[ℝ]
+      TangentSpace (modelWithCornersSelf ℝ F) x :=
+    e.symm.toLinearEquiv.conj (fderiv ℝ V x).toLinearMap
+  have hconn := leviCivitaConnection_eq_fderiv_model_space (V := V) hV
+  have hconj (v : TangentSpace (modelWithCornersSelf ℝ F) x) :
+      e (A v) = fderiv ℝ V x (e v) := by
+    dsimp only [A]
+    rw [LinearEquiv.conj_apply_apply]
+    simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearMap.coe_coe,
+      ContinuousLinearEquiv.symm_symm, e.apply_symm_apply]
+  have hA :
+      (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F V x).toLinearMap =
+        A := by
+    ext v
+    apply e.injective
+    calc
+      e ((CovariantDerivative.leviCivitaConnection
+          (modelWithCornersSelf ℝ F) F V x).toLinearMap v) =
+          fderiv ℝ V x (e v) := by
+        simpa only [e, ContinuousLinearMap.coe_coe,
+          ContinuousLinearEquiv.symm_apply_apply] using hconn (e v)
+      _ = e (A v) := (hconj v).symm
+  rw [hA]
+  exact (LinearMap.trace_conj' _ e.toLinearEquiv).symm
+
+/-- On a finite-dimensional real inner-product space with its standard metric, the Riemannian
 Hessian is the second Fréchet derivative. -/
 theorem hessian_eq_iteratedFDeriv_model_space
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -345,8 +470,25 @@ theorem laplaceBeltrami_eq_laplacian
   rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x b,
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := e.apply_symm_apply u
+  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
+    -- Expose the inverse `LinearEquiv` carried by the isometry equivalence.
+    change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
+    rw [show e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv by
+      dsimp [e]
+      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
+    exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
   simpa only [b, OrthonormalBasis.map_apply, he] using
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
+
+/-- The squared norm has constant flat Laplace--Beltrami operator. -/
+@[simp] theorem laplaceBeltrami_norm_sq
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
+      2 * Module.finrank ℝ F := by
+  rw [laplaceBeltrami_eq_laplacian]
+  · exact TauCeti.laplacian_norm_sq x
+  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
+      (by norm_num)).differentiable (by norm_num)) x
 
 end TauCeti.Manifold

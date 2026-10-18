@@ -85,6 +85,45 @@ theorem stableConnectingMapOp_eq :
           (eqToHom (E.projectiveStableOpFunctor_obj hE.projective_iff_injective
             (Opposite.op S.X₃)))).unop := (rfl)
 
+/-- The image of the opposite connecting map, after the suspension-loop comparison, is
+the opposite of its transpose, with the quotient-object identifications at its endpoints. -/
+theorem projectiveStableOpFunctor_map_connectingMap
+    (S : ShortComplex C) (hS : E.Conflation S) :
+    let hX₁' : (E.projectiveStableOpFunctor hE.projective_iff_injective).obj
+        (E.op.projectiveStableFunctor.obj S.op.X₃) =
+        Opposite.op (E.projectiveStableFunctor.obj S.X₁) :=
+      E.projectiveStableOpFunctor_obj hE.projective_iff_injective (Opposite.op S.X₁)
+    let hX₃' : (E.projectiveStableOpFunctor hE.projective_iff_injective).obj
+        (E.op.projectiveStableFunctor.obj S.op.X₁) =
+        Opposite.op (E.projectiveStableFunctor.obj S.X₃) :=
+      E.projectiveStableOpFunctor_obj hE.projective_iff_injective (Opposite.op S.X₃)
+    (E.projectiveStableOpFunctor hE.projective_iff_injective).map
+        (E.op.projectiveStableFunctor.map
+          (hE.op.connectingMap ((E.op_conflation_op_iff S).mpr hS))) ≫
+      (E.projectiveStableOpFunctor hE.projective_iff_injective).map
+        (eqToHom (hE.op.stableSuspension_obj_projectiveStableFunctor_obj S.op.X₁).symm) ≫
+      hE.stableSuspensionCompProjectiveStableOpFunctorIso.hom.app
+        (E.op.projectiveStableFunctor.obj S.op.X₁) =
+    eqToHom hX₁' ≫
+      (hE.stableConnectingMapOp hS).op ≫
+      hE.enoughProjectives.stableLoop.op.map (eqToHom hX₃'.symm) := by
+  intro hX₁' hX₃'
+  have h : (hE.stableConnectingMapOp hS).op =
+      eqToHom hX₁'.symm ≫
+        (E.projectiveStableOpFunctor hE.projective_iff_injective).map
+          (E.op.projectiveStableFunctor.map
+          (hE.op.connectingMap ((E.op_conflation_op_iff S).mpr hS))) ≫
+        (E.projectiveStableOpFunctor hE.projective_iff_injective).map
+          (eqToHom (hE.op.stableSuspension_obj_projectiveStableFunctor_obj S.op.X₁).symm) ≫
+        hE.stableSuspensionCompProjectiveStableOpFunctorIso.hom.app
+          (E.op.projectiveStableFunctor.obj S.op.X₁) ≫
+        hE.enoughProjectives.stableLoop.op.map (eqToHom hX₃') :=
+    Quiver.Hom.unop_inj (hE.stableConnectingMapOp_eq hS)
+  rw [h]
+  simp only [Functor.comp_obj, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, ← Functor.map_comp, eqToHom_trans, CategoryTheory.Functor.map_id,
+    Category.comp_id]
+
 /-- A lift of the chosen projective presentation of `Z` to a conflation `X ⟶ Y ⟶ Z`
 computes the transpose of its opposite connecting map. The kernel map is independent of
 the chosen lift after passing to the stable category. -/

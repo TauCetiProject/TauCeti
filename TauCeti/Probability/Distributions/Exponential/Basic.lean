@@ -79,6 +79,14 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
+/-- `expMeasure r` is its exponential density against Lebesgue measure restricted to the
+positive half-line. -/
+theorem expMeasure_eq_withDensity_restrict_Ioi (r : ℝ) :
+    expMeasure r = (volume.restrict (Ioi (0 : ℝ))).withDensity (exponentialPDF r) := by
+  -- Mathlib defines the exponential measure and density as the shape-one Gamma versions.
+  change gammaMeasure 1 r = (volume.restrict (Ioi (0 : ℝ))).withDensity (gammaPDF 1 r)
+  exact gammaMeasure_eq_withDensity_restrict_Ioi 1 r
+
 /-- The measure `expMeasure r` is concentrated on the positive reals, for every `r`. For `0 < r`
 this says an exponential random variable is almost surely positive; for `r ≤ 0` the measure is
 zero and the statement holds trivially. -/

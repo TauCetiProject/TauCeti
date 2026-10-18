@@ -414,6 +414,17 @@ theorem explicitMackeyTerm2_mk (s : G) (f : Z2 U M) :
           (smul_continuousMackeyToH_smul G M U V s) f) : H2 V M) := by
   rw [explicitMackeyTerm2, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
+/-- The degree-two Mackey summand is the corestriction from the Mackey subgroup of the pullback
+along conjugation by `s`. -/
+theorem explicitMackeyTerm2_apply (s : G) (x : H2 U M) :
+    explicitMackeyTerm2 G M U V hU s x =
+      explicitCor2 V M ((mackeySubgroup s U V).subgroupOf V)
+        (U.isOpen_mackeySubgroup_subgroupOf V hU s)
+        (explicitMap2 U M ((mackeySubgroup s U V).subgroupOf V) M (U.continuousMackeyToH V s)
+          (DistribSMul.toAddMonoidHom M s) ((continuous_const_smul s).congr fun _ => rfl)
+          (smul_continuousMackeyToH_smul G M U V s) x) :=
+  (rfl)
+
 include hr in
 /-- **The Mackey double-coset formula in degree two** (NSW (1.5.6)): for an open subgroup `U` of
 finite index and any subgroup `V`,

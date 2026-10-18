@@ -45,4 +45,14 @@ theorem IsPLOn.isLocallyFlat_of_homeomorph_graph
     IsLocallyFlat E F f :=
   (continuousOn_univ.mp hf.continuousOn).isLocallyFlat_of_homeomorph_graph Φ hΦ
 
+/-- A piecewise-linear map on an open domain has a locally flat graph in the ambient product.
+This is the PL corollary of `ContinuousOn.isLocallyFlat_graph_of_isOpen`, and is the graph form
+used when a PL embedding is described in coordinate charts. -/
+theorem IsPLOn.isLocallyFlat_graph_of_isOpen
+    {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    {f : E → F} {s : Set E} (hs : IsOpen s) (hf : IsPLOn f s) :
+    IsLocallyFlat s F (fun x : s => ((x.1, f x.1) : E × F)) :=
+  _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen hf.continuousOn hs
+
 end TauCeti

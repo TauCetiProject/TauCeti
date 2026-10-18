@@ -6,19 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
-public import Mathlib.Algebra.Group.Units.Defs
+public import Mathlib.Algebra.Group.Units.Hom
 
 import Mathlib.Algebra.Group.Commute.Units
 
 /-!
-# Squares of units
+# Squares and powers of units
 
-This file relates squares in a monoid to squares in its group of units.
+This file relates squares in a monoid to squares in its group of units. It also rewrites integer
+powers of products of units as monomials with consecutive natural exponents. These identities
+let bilateral sums over integer powers split into two sums over natural numbers, without
+requiring a zero in the ambient monoid.
 
 ## Main results
 
 * `TauCeti.isSquare_units_val_iff`: a unit is a square exactly when its underlying monoid element
   is a square.
+* `Units.val_mul_zpow_natCast_mul`: nonnegative product powers give consecutive monomials.
+* `Units.val_mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
 
 public section
@@ -37,3 +42,25 @@ theorem isSquare_units_val_iff {M : Type*} [Monoid M] {u : Mˣ} :
     exact ⟨(v : M), by simp⟩
 
 end TauCeti
+
+namespace Units
+
+/-- A nonnegative power of the product of two units gives consecutive monomial exponents
+after multiplication by the first unit. -/
+theorem val_mul_zpow_natCast_mul {M : Type*} [DivisionCommMonoid M] (u v : Mˣ) (n : ℕ) :
+    ((u * v : Mˣ) : M) ^ (n : ℤ) * (u : M) = (u : M) ^ (n + 1) * (v : M) ^ n := by
+  simp only [Units.val_mul, zpow_natCast, mul_pow, pow_succ]
+  ac_rfl
+
+/-- A strictly negative power of the product of two units gives the inverse monomial with
+the consecutive exponents exchanged. -/
+theorem val_mul_zpow_neg_natCast_succ_mul {M : Type*} [DivisionCommMonoid M]
+    (u v : Mˣ) (n : ℕ) :
+    ((u * v : Mˣ) : M) ^ (-((n : ℤ) + 1)) * (u : M) =
+      ((v : M) ^ (n + 1) * (u : M) ^ n)⁻¹ := by
+  have h : (u * v) ^ (-((n : ℤ) + 1)) * u = (v ^ (n + 1) * u ^ n)⁻¹ := by
+    simp [zpow_neg, zpow_add, mul_pow, pow_succ, mul_assoc, mul_left_comm, mul_comm]
+  simpa only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_inv_eq_inv_val,
+    Units.val_pow_eq_pow_val] using congrArg (fun w : Mˣ ↦ (w : M)) h
+
+end Units

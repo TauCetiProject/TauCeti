@@ -169,6 +169,25 @@ class LintScopeTest(unittest.TestCase):
              "repos/o/r/pulls/12": pr()})
         self.assertEqual(modules, ["TauCeti.A.B", "TauCeti.C", "TauCeti.D'"])
 
+    def test_integrated_scope_uses_local_tree_but_raw_github_identity(self):
+        def assemble(checkout, git, base, head, env, responses):
+            # Raw H changed A. Main independently deletes A, and integration T
+            # adds B instead. GitHub only knows raw H, never local synthetic T.
+            git("checkout", "-q", "--detach", base)
+            (checkout / "TauCeti/A.lean").unlink()
+            git("add", "-A")
+            git("commit", "-qm", "main")
+            captured = git("rev-parse", "HEAD")
+            (checkout / "TauCeti/B.lean").write_text("integrated\n")
+            git("add", "-A")
+            git("commit", "-qm", "integration")
+            tested = git("rev-parse", "HEAD")
+            env.update(TESTED_BASE=captured, TESTED_HEAD=tested)
+        modules = self.run_scope(self.PR_ENV,
+            {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]},
+             "repos/o/r/pulls/12": pr()}, prepare=assemble)
+        self.assertEqual(modules, ["TauCeti.B"])
+
     def test_no_tauceti_change_lints_nothing(self):
         self.assertEqual(self.run_scope(
             self.PR_ENV,
