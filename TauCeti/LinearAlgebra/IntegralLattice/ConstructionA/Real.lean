@@ -15,7 +15,7 @@ public import Mathlib.Algebra.BigOperators.Field
 /-!
 # The real normalization of Construction A
 
-The rational Construction A form divides the dot product by the positive modulus `m`.
+The rational Construction A form divides the dot product by the modulus `m`.
 Multiplying real coordinates by `1 / √m` instead gives the ordinary dot product.
 This file identifies the scalar extension `ℝ ⊗[ℚ] (ι → ℚ)` with `ι → ℝ` by a bilinear
 isometry and identifies the image of the rational lattice with the usual real Construction A
@@ -23,8 +23,11 @@ carrier: the vectors `z / √m` whose integer coordinates reduce to a codeword.
 
 The comparison applies to every additive code, without self-orthogonality. When the code is
 self-orthogonal it also identifies the carrier and form of the bundled integral lattice.
-The modulus is positive throughout, and the coordinate type is arbitrary and finite for
-the full-lattice instance, scalar extension, and bilinear forms.
+The embedding `realEmbedding` and the carrier `realLattice` are defined for every modulus
+`m : ℕ`; at `m = 0` the embedding is zero (`(√0)⁻¹ = 0`), so `realLattice 0 C` is the zero
+submodule. Injectivity, the full-lattice instance, the scalar-extension isometry, and the
+comparison with the integral lattice assume `[NeZero m]`. The coordinate type is arbitrary,
+and finite for the full-lattice instance, scalar extension, and bilinear forms.
 
 The normalization follows Harada–Munemasa–Venkov, *Classification of ternary extremal
 self-dual codes of length 28*, §2, and Munemasa–Tamura, *The codes and the lattices of

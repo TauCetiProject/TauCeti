@@ -20,7 +20,7 @@ For an additive code `C ≤ (ZMod m)^ι`, `ConstructionA.lattice m C` is the sub
 `ConstructionA.form m x y = (∑ i, x i * y i) / m`. This rational model becomes the usual
 Construction A lattice after scaling real coordinates by `1 / √m`.
 
-When the coordinate type is finite, the carrier is a full lattice for every code.
+When the coordinate type is finite and `m ≠ 0`, the carrier is a full lattice for every code.
 Its dual carrier is literally the carrier
 constructed from the dual code, so integrality is equivalent to self-orthogonality of the code,
 and the resulting integral lattice is unimodular exactly when the code is self-dual.
@@ -28,7 +28,8 @@ Additive codes over `ZMod m` are canonically submodules through `AddSubgroup.toZ
 their dual here is the existing `Submodule.euclideanDual`, transported back to an additive
 subgroup. The carrier and the form are defined for every modulus `m : ℕ` (at `m = 0` the form
 is zero); the results that divide by the modulus assume `[NeZero m]`, and no primality hypothesis
-is needed. The normalized form is positive definite, so every Construction A lattice is definite.
+is needed. For `m ≠ 0` the normalized form is positive definite, so every Construction A
+lattice is definite.
 At `m = 1`, the construction is the integer coordinate lattice with the ordinary dot product, and
 the same results apply.
 
