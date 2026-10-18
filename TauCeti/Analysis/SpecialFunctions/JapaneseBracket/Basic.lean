@@ -28,6 +28,8 @@ normalization of the multivariate Cauchy distribution and of the Poisson kernel 
 
 ## Main declarations
 
+* `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
+  `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integral_rpow_neg_one_add_norm_sq`: the value of the integral.
 -/
 
@@ -39,6 +41,19 @@ open MeasureTheory Metric Module ProbabilityTheory Real Set
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
+
+/-- The rescaled Japanese bracket `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)` with `c ≠ 0` is integrable on
+a real inner product space of dimension `d < r`, for every additive Haar measure. For `c = 1` this
+is Mathlib's `integrable_rpow_neg_one_add_norm_sq`. -/
+theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure] {c r : ℝ}
+    (hc : c ≠ 0) (hr : (finrank ℝ V : ℝ) < r) :
+    Integrable (fun x : V ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)) μ := by
+  refine (((integrable_rpow_neg_one_add_norm_sq (μ := μ) hr).comp_smul (inv_ne_zero hc)).const_mul
+    ((c ^ 2) ^ (-r / 2))).congr (.of_forall fun x ↦ ?_)
+  have hc2 : c ^ 2 ≠ 0 := pow_ne_zero 2 hc
+  beta_reduce
+  rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
+    Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
 
 /-- **The integral of the Japanese bracket.** On a real inner product space `V` of dimension
 `d < r`, `∫ (1 + ‖x‖ ^ 2) ^ (-r / 2) = π ^ (d / 2) Γ((r - d) / 2) / Γ(r / 2)`. -/
