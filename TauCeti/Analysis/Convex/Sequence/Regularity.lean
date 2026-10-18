@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Face
-public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Convex.Continuous
 public import Mathlib.Topology.Order.Lattice
 public import Mathlib.Topology.Algebra.Ring.Real
 
@@ -16,6 +16,7 @@ public import Mathlib.Topology.Algebra.Ring.Real
 The real supporting value is concave on the slopes where the supporting value is not
 negative infinity. For a nonempty height sequence, this is its finite-value domain
 and is a lower interval of slopes. No convexity assumption on the heights is needed.
+The real supporting value is continuous on the interior of this slope domain.
 For the empty sequence, the real supporting value is the constant zero function.
 
 For a nonempty finite point set, the supporting value is the minimum of finitely many
@@ -60,30 +61,31 @@ theorem concaveOn_supportingValue_toReal (a : ℕ → WithTop ℝ) :
       (fun σ => (supportingValue a σ).toReal) := by
   obtain rfl | ha := eq_or_ne a ⊤
   · simpa using concaveOn_const (0 : ℝ) (convex_setOf_supportingValue_ne_bot ⊤)
-  have hne : ∃ n, a n ≠ ⊤ := by
-    by_contra! h
-    exact ha (funext h)
+  have hne : ∃ n, a n ≠ ⊤ := Function.ne_iff.mp ha
   refine ⟨convex_setOf_supportingValue_ne_bot a, ?_⟩
   intro x hx y hy u v hu hv huv
   have htop (σ : ℝ) : supportingValue a σ ≠ ⊤ :=
     ne_of_lt (supportingValue_lt_top_iff.mpr hne)
   have hline (σ : ℝ) (hσ : supportingValue a σ ≠ ⊥) :=
-    coe_le_supportingValue_iff.mp (EReal.coe_toReal_le hσ)
+    coe_le_supportingValue_iff_untop₀.mp (EReal.coe_toReal_le hσ)
   have hxy : supportingValue a (u • x + v • y) ≠ ⊥ :=
     (convex_setOf_supportingValue_ne_bot a) hx hy hu hv huv
   apply EReal.coe_le_coe_iff.mp
   rw [EReal.coe_toReal (htop _) hxy]
-  apply coe_le_supportingValue_iff.mpr
-  intro n
-  by_cases hn : a n = ⊤
-  · simp [hn]
-  have hx' := WithTop.untop₀_le_untop₀ hn (hline x hx n)
-  have hy' := WithTop.untop₀_le_untop₀ hn (hline y hy n)
-  apply WithTop.le_of_untop₀_le_untop₀ WithTop.coe_ne_top
-  simp only [WithTop.untop₀_coe] at hx' hy' ⊢
-  simp only [smul_eq_mul] at *
-  nlinarith [mul_le_mul_of_nonneg_left hx' hu, mul_le_mul_of_nonneg_left hy' hv,
+  apply coe_le_supportingValue_iff_untop₀.mpr
+  intro n hn
+  have hx' := hline x hx n hn
+  have hy' := hline y hy n hn
+  simp only [smul_eq_mul]
+  linarith [mul_le_mul_of_nonneg_left hx' hu, mul_le_mul_of_nonneg_left hy' hv,
     congrArg (fun t : ℝ => t * (a n).untop₀) huv]
+
+/-- The real supporting value of any height sequence is continuous on the interior
+of the slopes where its supporting value is not negative infinity. -/
+theorem continuousOn_supportingValue_toReal (a : ℕ → WithTop ℝ) :
+    ContinuousOn (fun σ => (supportingValue a σ).toReal)
+      (interior {σ | supportingValue a σ ≠ ⊥}) :=
+  (concaveOn_supportingValue_toReal a).continuousOn_interior
 
 /-- On a nonempty finite point set, supporting values are the real minimum of the
 finitely many tilted heights. Missing heights do not participate in the minimum. -/
@@ -98,12 +100,8 @@ theorem supportingValue_eq_coe_inf' {I : Finset ℕ} (hI : I.Nonempty)
     rw [← WithTop.coe_untop₀_of_ne_top ((hdom n).mpr hn), WithTop.toEReal_coe,
       EReal.coe_sub]
     simp
-  · apply coe_le_supportingValue_iff.mpr
-    intro n
-    by_cases hn : a n = ⊤
-    · simp [hn]
-    apply WithTop.le_of_untop₀_le_untop₀ WithTop.coe_ne_top
-    simp only [WithTop.untop₀_coe]
+  · apply coe_le_supportingValue_iff_untop₀.mpr
+    intro n hn
     have := I.inf'_le (fun n => (a n).untop₀ - σ * n) ((hdom n).mp hn)
     linarith
 
@@ -115,12 +113,7 @@ theorem continuous_supportingValue_toReal_of_finite
   classical
   obtain rfl | ha := eq_or_ne a ⊤
   · simpa using (continuous_const : Continuous (fun _ : ℝ => (0 : ℝ)))
-  have hne : {n | a n ≠ ⊤}.Nonempty := by
-    by_contra h
-    apply ha
-    funext n
-    by_contra hn
-    exact h ⟨n, hn⟩
+  have hne : {n | a n ≠ ⊤}.Nonempty := Function.ne_iff.mp ha
   let I := hfinite.toFinset
   have hI : I.Nonempty := hfinite.toFinset_nonempty.mpr hne
   have heq (σ : ℝ) : (supportingValue a σ).toReal =
@@ -158,9 +151,8 @@ theorem IsConvexSeq.exists_finset_supportingValue_eq_inf' (hh : IsConvexSeq h)
   apply le_antisymm
   · apply le_inf'
     intro n hn
-    have hcn := WithTop.untop₀_le_untop₀ ((hmem n).mp hn).2
-      (isSupportingLine_iff_forall.mp hc n)
-    simp only [WithTop.untop₀_coe] at hcn
+    have hcn := coe_le_supportingValue_iff_untop₀.mp (isSupportingLine_iff.mp hc)
+      n ((hmem n).mp hn).2
     linarith
   · exact (I.inf'_le _ ((hmem l).mpr ⟨hf.left_le_right.trans hum, hlfin⟩)).trans_eq hlreal
 
@@ -170,8 +162,11 @@ theorem IsConvexSeq.continuousOn_supportingValue_toReal (hh : IsConvexSeq h)
     {m : ℕ} (hm : m ∈ finiteEdges h) :
     ContinuousOn (fun σ => (supportingValue h σ).toReal) (Iio (unitSlope h m)) := by
   obtain ⟨I, hI, _, heq⟩ := hh.exists_finset_supportingValue_eq_inf' hm
-  have hc : Continuous (fun σ => I.inf' hI (fun n => (h n).untop₀ - σ * n)) := by
-    fun_prop
-  exact hc.continuousOn.congr fun σ hσ => by rw [heq σ hσ, EReal.toReal_coe]
+  apply (TauCeti.continuousOn_supportingValue_toReal h).mono
+  apply isOpen_Iio.subset_interior_iff.mpr
+  intro σ hσ
+  change supportingValue h σ ≠ ⊥
+  rw [heq σ hσ]
+  exact EReal.coe_ne_bot _
 
 end TauCeti
