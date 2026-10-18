@@ -17,12 +17,13 @@ public import TauCeti.Order.Northcott.Sequence
 
 **Roth's theorem** (Roth, 1955): if `α` is a real algebraic number and `κ > 2`, then only
 finitely many rational numbers `ξ` satisfy `|ξ - α| ≤ H(ξ) ^ (-κ)`, where `H` is the
-multiplicative height `Height.mulHeight₁` on `ℚ`. Equivalently, for irrational `α` there is a
-constant `c > 0` with `|ξ - α| ≥ c H(ξ) ^ (-κ)` for every `ξ ∈ ℚ`. The proof is ineffective: it
-gives neither a bound for the heights of the exceptional `ξ` nor a value of `c`.
+multiplicative height `Height.mulHeight₁` on `ℚ`. Equivalently, there is a constant `c > 0`
+with `|ξ - α| ≥ c H(ξ) ^ (-κ)` for every `ξ ∈ ℚ` with `ξ ≠ α`; for irrational `α` this holds for
+every `ξ ∈ ℚ`. The proof is ineffective: it gives neither a bound for the heights of the
+exceptional `ξ` nor a value of `c`. For rational `α` the statement also holds, and is elementary.
 
-For rational `α` the statement also holds, and is elementary; irrationality is only needed for
-the lower bound, which fails at `ξ = α`.
+As consequences, a real algebraic number is not a Liouville number with any exponent `p > 2`,
+so its irrationality exponent is at most `2`, and exactly `2` if it is irrational.
 
 The proof assembles the steps of the auxiliary polynomial method. Suppose that infinitely many
 `ξ` satisfy the inequality. Fix a small `ε > 0` and a number `n` of variables with
@@ -43,10 +44,14 @@ The proof assembles the steps of the auxiliary polynomial method. Suppose that i
 
 ## Main results
 
-* `TauCeti.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg`: Roth's theorem, the finiteness of the
-  set of very good rational approximations of a real algebraic number.
-* `TauCeti.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub`: Roth's theorem as a lower bound for
-  `|ξ - α|`, for irrational `α`.
+* `IsAlgebraic.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg`: Roth's theorem, the finiteness
+  of the set of very good rational approximations of a real algebraic number.
+* `IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub`: Roth's theorem as a lower bound
+  for `|ξ - α|`, for `ξ ≠ α`.
+* `IsAlgebraic.not_liouvilleWith`: a real algebraic number is not `LiouvilleWith p` for `p > 2`.
+* `IsAlgebraic.irrationalityExponent_le_two`, `IsAlgebraic.irrationalityExponent_eq_two`: the
+  irrationality exponent of a real algebraic number is at most `2`, and equal to `2` if the
+  number is irrational.
 
 ## References
 
@@ -62,10 +67,18 @@ open Finset Height MvPolynomial Real
 
 namespace TauCeti
 
+/-- The constant `12 b max(1, house α)` in the coefficient bound of Roth's auxiliary polynomial
+is at least `2`. -/
+private theorem two_le_twelve_mul_max_house (α : ℝ) {b : ℕ} (hb : 0 < b) :
+    2 ≤ 12 * b * max 1 (house α) := by
+  have hb₁ : (1 : ℝ) ≤ b := by exact_mod_cast hb
+  nlinarith [le_max_left 1 (house α)]
+
 /-- The main step of the proof of Roth's theorem. Let `β₀, β₁, …` be rational approximations
 of `α` with `|βₖ - α| ≤ H(βₖ) ^ (-κ)`, whose logarithmic heights satisfy `L ≤ h(β₀)` and
 `M h(βₖ) ≤ h(βₖ₊₁)`, where `σ M ≥ 2` and `σ⁻¹ (5 C₁ / 2 + 5 n) ≤ L` for
-`σ = (5 ε / 4) ^ 2 ^ (n - 1)` and `C₁ = log (12 b max(1, ⌈α⌉))`. If `n ≥ 1` and
+`σ = (5 ε / 4) ^ 2 ^ (n - 1)` and `C₁ = log (12 b max(1, house α))`, where `house α` is the
+largest absolute value of the conjugates of `α`. If `n ≥ 1` and
 `2 d ≤ exp (ε² n / 2)`, then `κ (1 - ε) (1 / 2 - 3 ε) n ≤ n + C₂ / L`, where
 `C₂ = 4 C₁ + 2 log (2 max(1, |α|)) + 4`. -/
 private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
@@ -85,10 +98,9 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   have hσ : σ ≤ 5 * ε / 4 :=
     pow_le_of_le_one (by positivity) (by linarith) (pow_ne_zero _ two_ne_zero)
   have hM₂ : 2 ≤ M := by nlinarith
-  have hC₁ : log 2 ≤ C₁ := by
-    have hb₁ : (1 : ℝ) ≤ b := by exact_mod_cast hb
-    exact log_le_log two_pos (by nlinarith [le_max_left 1 (house α)])
-  have hC₁₀ : 0 ≤ C₁ := (log_nonneg one_le_two).trans hC₁
+  have h12 := two_le_twelve_mul_max_house α hb
+  have hC₁ : log 2 ≤ C₁ := log_le_log two_pos h12
+  have hC₁₀ : 0 ≤ C₁ := log_nonneg (by linarith)
   have hL₀ : 0 < L := lt_of_lt_of_le (by positivity) hL
   have hpos : ∀ k, 0 < h k := by
     intro k
@@ -118,7 +130,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
     hε₀.le (by simpa using hd) fun i ↦ (hr i).ne'
   have hPcoeff' (μ : Fin n →₀ ℕ) : |(P.coeff μ : ℝ)| ≤ exp (C₁ * ∑ i, (r i : ℝ)) := by
     rw [mul_comm, ← Nat.cast_sum, exp_nat_mul,
-      exp_log (by nlinarith [le_max_left 1 (house α), (Nat.one_le_cast (α := ℝ)).2 hb])]
+      exp_log (by linarith)]
     exact hPcoeff μ
   -- Roth's lemma bounds the index of `P` at `β`.
   have : NeZero n := ⟨hn.ne'⟩
@@ -194,39 +206,44 @@ theorem _root_.IsAlgebraic.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg {α
   have key := roth_inequality hb hbα hε₀ hε hn hd hκ₀.le (M := 2 / σ)
     (by rw [mul_div_cancel₀ _ hσ₀.ne']) (le_max_left _ _) hβ h₀.le fun k ↦ (hh k).le
   have hn₁ : (1 : ℝ) ≤ n := by exact_mod_cast hn
-  have hC₁₀ : 0 ≤ log (12 * b * max 1 (house α)) := by
-    have hb₁ : (1 : ℝ) ≤ b := by exact_mod_cast hb
-    exact log_nonneg (by nlinarith [le_max_left 1 (house α)])
+  have hC₁₀ : 0 ≤ log (12 * b * max 1 (house α)) :=
+    log_nonneg (by linarith [two_le_twelve_mul_max_house α hb])
   have hL₀ : 0 < L := lt_of_lt_of_le (mul_pos (inv_pos.2 hσ₀) (by linarith)) (le_max_left _ _)
   have hC₂L : C₂ / L ≤ ε := by
     rw [div_le_iff₀ hL₀]
     have := (div_le_iff₀ hε₀).1 (le_max_right _ _ : C₂ / ε ≤ L)
     linarith
-  nlinarith
+  -- Multiplying `1 + ε < κ (1 - ε) (1 / 2 - 3 ε)` by `n ≥ 1` contradicts `key`, as
+  -- `C₂ / L ≤ ε ≤ ε n`.
+  have key' : κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) ≤ n + C₂ / L := key
+  have hκεn : (1 + ε) * n < κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) := by
+    linarith [mul_lt_mul_of_pos_right hκε (by positivity : (0 : ℝ) < n)]
+  linarith [mul_le_mul_of_nonneg_left hn₁ hε₀.le]
 
 /-- **Roth's theorem** as a lower bound (Evertse, Theorem 6.2). If `α` is a real algebraic
-irrational number and `κ > 2`, then there is `c > 0` with `c H(ξ) ^ (-κ) ≤ |ξ - α|` for every
-`ξ ∈ ℚ`. -/
+number and `κ > 2`, then there is `c > 0` with `c H(ξ) ^ (-κ) ≤ |ξ - α|` for every `ξ ∈ ℚ` with
+`ξ ≠ α`. For irrational `α` the condition `ξ ≠ α` always holds, by `Irrational.ne_rat`. -/
 theorem _root_.IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub {α : ℝ}
-    (hα : IsAlgebraic ℚ α) (hirr : Irrational α) {κ : ℝ} (hκ : 2 < κ) :
-    ∃ c : ℝ, 0 < c ∧ ∀ ξ : ℚ, c * mulHeight₁ ξ ^ (-κ) ≤ |(ξ : ℝ) - α| := by
-  set S := {ξ : ℚ | |(ξ : ℝ) - α| ≤ mulHeight₁ ξ ^ (-κ)}
-  have hS : S.Finite := hα.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg hκ
+    (hα : IsAlgebraic ℚ α) {κ : ℝ} (hκ : 2 < κ) :
+    ∃ c : ℝ, 0 < c ∧ ∀ ξ : ℚ, (ξ : ℝ) ≠ α → c * mulHeight₁ ξ ^ (-κ) ≤ |(ξ : ℝ) - α| := by
+  set S := {ξ : ℚ | |(ξ : ℝ) - α| ≤ mulHeight₁ ξ ^ (-κ) ∧ (ξ : ℝ) ≠ α}
+  have hS : S.Finite := (hα.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg hκ).subset
+    fun _ hξ ↦ hξ.1
   -- On the finite set `S`, the positive function `|ξ - α| H(ξ) ^ κ` is bounded below.
   obtain ⟨c, hc₀, hc⟩ : ∃ c : ℝ, 0 < c ∧ ∀ ξ ∈ S, c ≤ |(ξ : ℝ) - α| * mulHeight₁ ξ ^ κ := by
     rcases S.eq_empty_or_nonempty with hS0 | hSne
     · exact ⟨1, one_pos, by simp [hS0]⟩
     obtain ⟨ξ₀, hξ₀, hmin⟩ := Set.exists_min_image S
       (fun ξ : ℚ ↦ |(ξ : ℝ) - α| * mulHeight₁ ξ ^ κ) hS hSne
-    exact ⟨_, mul_pos (abs_pos.2 (sub_ne_zero.2 (hirr.ne_rat ξ₀).symm))
+    exact ⟨_, mul_pos (abs_pos.2 (sub_ne_zero.2 hξ₀.2))
       (rpow_pos_of_pos (mulHeight₁_pos ξ₀) κ), hmin⟩
-  refine ⟨min c 1, lt_min hc₀ one_pos, fun ξ ↦ ?_⟩
+  refine ⟨min c 1, lt_min hc₀ one_pos, fun ξ hξα ↦ ?_⟩
   have hH : 0 < mulHeight₁ ξ := mulHeight₁_pos ξ
   have hHκ : 0 < mulHeight₁ ξ ^ κ := rpow_pos_of_pos hH κ
   rw [rpow_neg hH.le, ← div_eq_mul_inv, div_le_iff₀ hHκ]
   by_cases hξ : ξ ∈ S
   · exact (min_le_left _ _).trans (hc ξ hξ)
-  · have hlt : mulHeight₁ ξ ^ (-κ) < |(ξ : ℝ) - α| := lt_of_not_ge hξ
+  · have hlt : mulHeight₁ ξ ^ (-κ) < |(ξ : ℝ) - α| := lt_of_not_ge fun h ↦ hξ ⟨h, hξα⟩
     rw [rpow_neg hH.le, inv_lt_iff_one_lt_mul₀' hHκ] at hlt
     exact (min_le_right _ _).trans (by linarith)
 
@@ -248,19 +265,12 @@ theorem _root_.IsAlgebraic.not_liouvilleWith {α : ℝ} (hα : IsAlgebraic ℚ �
   have hr : |α - r| < (r.den : ℝ) ^ (-q) := hr
   have hd : (1 : ℝ) ≤ r.den := by exact_mod_cast r.pos
   have hr1 : |α - r| < 1 := hr.trans_le (rpow_le_one_of_one_le_of_nonpos hd (by linarith))
-  have hH : mulHeight₁ r ≤ A * r.den := by
-    have hnum : (r.num : ℝ) = r * r.den := by
-      rw [Rat.cast_def]
-      field_simp
-    have hrA : |(r : ℝ)| ≤ A := by
-      have := abs_sub_abs_le_abs_sub (r : ℝ) α
-      rw [abs_sub_comm] at this
-      linarith
-    rw [Rat.mulHeight₁_eq_max]
-    push_cast
-    refine max_le ?_ (le_mul_of_one_le_left (by positivity) hA)
-    rw [Nat.cast_natAbs, Int.cast_abs, hnum, abs_mul, Nat.abs_cast]
-    exact mul_le_mul_of_nonneg_right hrA (by positivity)
+  have hrA : |(r : ℝ)| ≤ A := by
+    have := abs_sub_abs_le_abs_sub (r : ℝ) α
+    rw [abs_sub_comm] at this
+    linarith
+  have hH : mulHeight₁ r ≤ A * r.den := (Rat.mulHeight₁_le_max_one_abs_mul_den r).trans
+    (mul_le_mul_of_nonneg_right (max_le hA hrA) (by positivity))
   rcases lt_or_ge (r.den : ℝ) N with hdN | hdN
   · exact Or.inr (hH.trans (by gcongr))
   refine Or.inl ((abs_sub_comm (r : ℝ) α).trans_le (hr.le.trans ?_))
