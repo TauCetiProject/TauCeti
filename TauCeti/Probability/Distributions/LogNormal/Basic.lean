@@ -305,7 +305,6 @@ theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
     exact (isOpen_Ioi.inter hU).measure_pos volume ⟨y, hyPos, hyU⟩
 
 /-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
-@[simp]
 theorem support_logNormalMeasure_zero_var (m : ℝ) :
     (logNormalMeasure m 0).support = {Real.exp m} := by
   rw [logNormalMeasure_zero_var]
