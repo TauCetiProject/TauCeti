@@ -36,6 +36,9 @@ each step gives uniqueness of the factorization.
 
 ## Main results
 
+* `PowerSeries.eq_zero_of_mul_add_mul_eq_zero`: if the constant coefficient of `F₂` is monic and
+  coprime to that of `F₁`, then `F₂ * B + F₁ * A = 0` over `R[X]⟦t⟧`, with the coefficients of `A`
+  of degree below that of the constant coefficient of `F₂`, forces `A = 0` and `B = 0`.
 * `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`: existence of the lifted factorization.
 * `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`: uniqueness of the lifted
   factorization.
@@ -63,7 +66,8 @@ variable {R : Type*} [CommRing R]
 /-- If `F₂ * B + F₁ * A = 0` for power series over `R[X]`, where the constant coefficient `g` of
 `F₂` is monic and coprime to that of `F₁` and every coefficient of `A` has degree `< deg g`, then
 `A = 0` and `B = 0`: the coefficient recursion of Hensel lifting has unique solutions. -/
-private theorem eq_zero_of_mul_add_mul_eq_zero {g : R[X]} (hg : g.Monic) {A B F₁ F₂ : R[X]⟦X⟧}
+theorem _root_.PowerSeries.eq_zero_of_mul_add_mul_eq_zero {g : R[X]} (hg : g.Monic)
+    {A B F₁ F₂ : R[X]⟦X⟧}
     (hcop : IsCoprime g (PowerSeries.constantCoeff F₁)) (hF₂ : PowerSeries.constantCoeff F₂ = g)
     (hA : ∀ k, PowerSeries.coeff k A ∈ degreeLT R g.natDegree) (h : F₂ * B + F₁ * A = 0) :
     A = 0 ∧ B = 0 := by
@@ -240,7 +244,7 @@ theorem Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime {G G' H H' : R⟦X⟧[X]} (hG
     rw [← map_mul, ← map_mul, ← map_add, ← map_zero swapPowerSeries]
     congr 1
     linear_combination h
-  obtain ⟨hA0, hB0⟩ := eq_zero_of_mul_add_mul_eq_zero (hG.map _)
+  obtain ⟨hA0, hB0⟩ := PowerSeries.eq_zero_of_mul_add_mul_eq_zero (hG.map _)
     (by rwa [constantCoeff_swapPowerSeries]) (by rw [constantCoeff_swapPowerSeries, hGG']) hA hrel
   rw [← map_zero swapPowerSeries] at hA0 hB0
   exact ⟨sub_eq_zero.mp (swapPowerSeries_injective hA0),
