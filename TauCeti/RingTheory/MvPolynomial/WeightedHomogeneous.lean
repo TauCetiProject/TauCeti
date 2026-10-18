@@ -8,12 +8,15 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
-# Weighted homogeneity under substitution of homogeneous polynomials
+# Weighted homogeneity under substitution
 
-Give the variable `i` the weight `w i`, and substitute for it a polynomial that is homogeneous of
-degree `w i`. A weighted homogeneous polynomial of weight `m` then becomes a homogeneous
-polynomial of degree `m`. When the substitution is injective the converse holds: a polynomial
-whose substitution is homogeneous of degree `m` is itself weighted homogeneous of weight `m`.
+Give the variable `i` the weight `w i`, and substitute for it a polynomial that is weighted
+homogeneous of weight `w i` for weights `v` on the target variables. A weighted homogeneous
+polynomial of weight `m` then becomes weighted homogeneous of weight `m` for the weights `v`. The
+homogeneous case is `v = 1`: substituting polynomials homogeneous of degree `w i` turns a weighted
+homogeneous polynomial of weight `m` into a homogeneous polynomial of degree `m`. In this case,
+when the substitution is injective, the converse holds: a polynomial whose substitution is
+homogeneous of degree `m` is itself weighted homogeneous of weight `m`.
 
 The motivating substitution sends the variable `i` of `MvPolynomial (Fin n) R` to the elementary
 symmetric polynomial `eᵢ₊₁`, which is homogeneous of degree `i + 1`
@@ -27,8 +30,8 @@ such symmetric polynomials (`MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`).
 
 * `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
   homogeneous of the weights of the variables preserves weighted homogeneity.
-* `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse, for an injective
-  substitution.
+* `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
+  case, for an injective substitution.
 -/
 
 public section
