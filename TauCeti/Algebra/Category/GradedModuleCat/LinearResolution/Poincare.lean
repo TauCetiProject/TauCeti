@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Simple
+public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare
 
 /-!
@@ -21,10 +22,16 @@ not retain that data.
 The statement assumes graded Euler-admissibility for the simple targets being tested.  This makes
 the Poincaré series finite without replacing Ext-vanishing by a totalized infinite sum.
 
-## Main result
+For an exhaustive family of finite simple modules concentrated in degree zero, the pointwise
+criterion assembles into simultaneous linearity exactly when every entry of the family's full
+bigraded Ext Poincaré matrix is diagonal.
+
+## Main results
 
 * `TauCeti.GradedProjectiveResolution.IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries`:
   diagonal support of the bigraded Ext Poincaré series detects linearity.
+* `TauCeti.forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal`: simultaneous linearity of
+  chosen minimal resolutions is equivalent to diagonal support of every matrix entry.
 
 ## References
 
@@ -86,3 +93,65 @@ theorem IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries (hr : r.IsMi
       ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).symm.injective.subsingleton
 
 end TauCeti.GradedProjectiveResolution
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Abelian
+
+universe uk uA uI
+
+variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+  [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+  {I : Type uI}
+
+/-- **Chosen minimal resolutions of an exhaustive simple family are linear exactly when every
+entry of its full bigraded Ext Poincaré matrix is diagonal.** The family is exhaustive up to
+internal shift, while its chosen representatives are concentrated in degree zero. The matrix
+uses any common cohomological Ext bound. -/
+theorem forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
+    (S : I → (gradedFiniteModules 𝒜).FullSubcategory) (hS : IsExhaustiveGradedSimpleFamily S)
+    (hSzero : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
+    (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
+      (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜))
+    (r : ∀ i, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S i).obj.grading)
+    [∀ i n, Module.Finite k ((r i).X n)] (hr : ∀ i, (r i).IsMinimal)
+    (hneg : ∀ p < 0, 𝒜 p = ⊥) {b : ℕ}
+    (hb : ∀ i j, IsGradedExtBoundedBy.{uA} (GradedModuleCat.shift 𝒜) (S i).obj (S j).obj b) :
+    (∀ i, (r i).IsLinear) ↔
+      ∀ i j, Bigraded.IsDiagonal
+        (bigradedExtPoincareMatrix (fun i ↦ (S i).obj)
+          (fun i j ↦ (h.isGradedEulerAdmissible (S i).property (S j).property).internallyFinite)
+          b i j) := by
+  constructor
+  · intro hlin i j
+    rw [bigradedExtPoincareMatrix_apply]
+    apply (isDiagonal_bigradedExtPoincareSeries_iff _ (hb i j)).2
+    intro n p hnp
+    have hshift : Subsingleton (Ext.{uA} (S i).obj ((S j).obj.shiftObj p) n) :=
+      (hlin i).subsingleton_ext_shiftObj_of_ne (hSzero j) n p hnp
+    rw [← GradedModuleCat.shiftFunctor_obj] at hshift
+    exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
+      ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj) n).injective.subsingleton
+  · intro hdiag i
+    apply ((hr i).isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
+    intro N hNfinite hNsimple hNzero n p hnp
+    let _ : Module.Finite k N := hNfinite
+    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
+    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
+      ⟨N, gradedFiniteModules_iff.2 inferInstance⟩
+    obtain ⟨j, ⟨eN : N'.obj ≅ (S j).obj⟩⟩ :=
+      hS.exists_iso_of_concentrated S hSzero N' hNsimple hNzero
+    have hij := hdiag i j
+    rw [bigradedExtPoincareMatrix_apply] at hij
+    have hExt : Subsingleton
+        (GradedExt.{uA} (GradedModuleCat.shift 𝒜) (S i).obj (S j).obj n p) :=
+      ((isDiagonal_bigradedExtPoincareSeries_iff
+        (h.isGradedEulerAdmissible (S i).property (S j).property).internallyFinite
+        (hb i j)).1 hij) n p hnp
+    rw [← GradedModuleCat.shiftFunctor_obj]
+    exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
+      ((GradedModuleCat.shiftFunctor (𝒜 := 𝒜) p).mapIso eN ≪≫
+        ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm) n).injective.subsingleton
+
+end TauCeti

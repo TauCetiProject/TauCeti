@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restricti
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.RootsOfUnity
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
+public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 
 /-!
 # The Weil pairing on the Galois coefficient modules of an elliptic curve
@@ -51,6 +52,8 @@ classes unramified outside a finite set `S` of places are then controlled by the
 * `WeierstrassCurve.torsionCoeffWeilPairing_torsionCoeffBaseChange`: the Weil pairing commutes with
   the maps on torsion and on roots of unity induced by an embedding `Kˢ → Lˢ` of separable closures.
 * `WeierstrassCurve.torsionCoeffWeilPairing_nondegenerate`: the Weil pairing is nondegenerate.
+* `WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne`: the Weil pairing of two distinct
+  points of order two is the nontrivial element of `μ₂`.
 * `WeierstrassCurve.explicitMap1_explicitCoeff1_weilPairingCoeff`: restriction to a field
   extension commutes with the maps `H¹(G, E[m]) → H¹(G, μ_m)`.
 * `WeierstrassCurve.explicitCoeff1_weilPairingCoeff_injective`: if `G_K` fixes `E(Kˢ)[m]`, the
@@ -131,6 +134,25 @@ theorem torsionCoeffWeilPairing_nondegenerate {P : W.TorsionCoeff m}
     fun Q ↦ ?_
   simpa [torsionCoeffWeilPairing_apply _ _ _ hm.natCast_ne_zero_of_algebra] using
     hP (AddEquiv.torsionByCongr W.pointCoeffEquiv m Q)
+
+variable {W} in
+/-- **The Weil pairing of two distinct points of order two is `-1`**: on `E(Kˢ)[2]`, for `2`
+invertible in `K`, `e₂(T, S)` is the nontrivial element of `μ₂` whenever `T` and `S` are distinct
+and nonzero. -/
+theorem torsionCoeffWeilPairing_two_eq_mu2NegOne (h2 : IsUnit ((2 : ℕ) : K))
+    {T S : W.TorsionCoeff 2} (hT : T ≠ 0) (hS : S ≠ 0) (hTS : T ≠ S) :
+    W.torsionCoeffWeilPairing 2 h2 T S = mu2NegOne := by
+  have := W.isAddKleinFour_torsionCoeff_two h2
+  refine (eq_zero_or_eq_mu2NegOne _).resolve_left fun h ↦ hT ?_
+  refine W.torsionCoeffWeilPairing_nondegenerate 2 h2 fun Q ↦ ?_
+  by_cases hQ : Q = 0
+  · rw [hQ, map_zero]
+  by_cases hQT : Q = T
+  · rw [hQT, torsionCoeffWeilPairing_self]
+  by_cases hQS : Q = S
+  · rw [hQS, h]
+  rw [IsAddKleinFour.eq_add_of_ne_all hT hS hTS hQ hQT hQS, map_add, h,
+    torsionCoeffWeilPairing_self, add_zero]
 
 include hm in
 /-- If `G_K` fixes every point of `E(Kˢ)[m]`, it fixes every `m`-th root of unity: these are

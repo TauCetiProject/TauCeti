@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.RingTheory.GradedAlgebra.Trivial
 import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -53,6 +54,8 @@ its degree alone.
   annihilates the unit and, more generally, the image of the ground ring.
 * `TauCeti.isNonUnitalDGAlgebra_zero` and `TauCeti.isDGAlgebra_zero`: a graded algebra with zero
   differential is a differential graded algebra.
+* `TauCeti.isDGAlgebra_trivialGrading`: in particular, the ground ring, trivially graded with zero
+  differential, is a differential graded algebra.
 
 For a unital DG algebra, the homogeneous consequences of the axioms are also available through
 its regular differential graded left module.  Cycles, boundaries, and the cohomology algebra are
@@ -229,6 +232,12 @@ theorem isDGAlgebra_zero (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] :
   map_mem := fun _ ↦ zero_mem _
   sq_zero _ := rfl
   leibniz := fun _ _ ↦ by simp
+
+/-- The ground ring with its trivial grading and zero differential is a differential graded
+algebra. -/
+theorem isDGAlgebra_trivialGrading (R : Type*) [CommRing R] :
+    IsDGAlgebra (trivialGrading R R) (0 : R →ₗ[R] R) :=
+  isDGAlgebra_zero _
 
 end Unital
 

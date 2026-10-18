@@ -39,6 +39,8 @@ one convenient witness that every graph admits an orientation.
   the linear-order orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
   recovers the adjacency counts of the graph.
+* `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
+  against the arrow counts of an orientation in both directions is its neighbour sum.
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
@@ -280,6 +282,27 @@ theorem card_symmetrify_hom [DecidableRel G.Adj] (i j : V) :
       if G.Adj i j then 1 else 0 := by
   rw [TauCeti.card_symmetrify_hom, Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
     card_hom_add_card_hom G o i j]
+
+/-- **A weight on a graph read on an orientation**: for every vertex `i`, the multigraph sum
+`∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` over the vertices of the oriented quiver is the neighbour sum
+`∑_{j ∼ i} δ_j`, since an orientation has exactly one arrow over each edge. -/
+theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*} [Semiring S]
+    (δ : V → S) (i : V) :
+    ∑ j : OrientedQuiver G o, ((Fintype.card (vertex G o i ⟶ j) +
+        Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ ((vertexEquiv G o).symm j) =
+      ∑ j ∈ G.neighborFinset i, δ j := by
+  have hc (j : V) :
+      ((Fintype.card (vertex G o i ⟶ vertex G o j) + Fintype.card (vertex G o j ⟶ vertex G o i) :
+        ℕ) : S) = if G.Adj i j then 1 else 0 := by
+    rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, card_hom_add_card_hom G o i j]
+    split_ifs <;> simp
+  have hsum :
+      ∑ j ∈ G.neighborFinset i, δ j = ∑ j : V, (if G.Adj i j then (1 : S) else 0) * δ j := by
+    simp only [ite_mul, one_mul, zero_mul]
+    rw [← Finset.sum_filter]
+    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+  refine (hsum.trans (Fintype.sum_equiv (vertexEquiv G o) _ _ fun j => ?_)).symm
+  simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
