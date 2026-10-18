@@ -138,11 +138,13 @@ theorem isNormalScheme_Spec_iff_forall_localization (R : CommRingCat.{u}) :
     IsNormalScheme (Spec R) ↔ ∀ (p : Ideal R) [p.IsPrime],
       IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p) := by
   refine isNormalScheme_iff_forall_stalk.trans ⟨fun h p _ ↦ ?_, fun h x ↦ ?_⟩
-  · exact (Spec.stalkIso R ⟨p, inferInstance⟩).commRingCatIsoToRingEquiv
-      |>.isDomain_and_isIntegrallyClosed (h ⟨p, inferInstance⟩)
+  · let e := (Spec.stalkIso R ⟨p, inferInstance⟩).commRingCatIsoToRingEquiv
+    obtain ⟨_, _⟩ := h ⟨p, inferInstance⟩
+    exact ⟨e.symm.toMulEquiv.isDomain _, .of_equiv e⟩
   · have : x.asIdeal.IsPrime := x.isPrime
-    exact (Spec.stalkIso R x).commRingCatIsoToRingEquiv.symm.isDomain_and_isIntegrallyClosed
-      (h x.asIdeal)
+    let e := (Spec.stalkIso R x).commRingCatIsoToRingEquiv.symm
+    obtain ⟨_, _⟩ := h x.asIdeal
+    exact ⟨e.symm.toMulEquiv.isDomain _, .of_equiv e⟩
 
 /-- A scheme is normal iff the ring of sections over every affine open is normal: `Spec Γ(X, U)`
 is normal, which by `isNormalScheme_Spec_iff_forall_localization` says that every localization

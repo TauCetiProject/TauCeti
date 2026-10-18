@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.RingTheory.LocalProperties.IntegrallyClosed
-public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Integrally closed sections of integral schemes
@@ -41,7 +40,14 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion {X Y : Sche
     IsDomain (Y.presheaf.stalk (f x)) ∧ IsIntegrallyClosed (Y.presheaf.stalk (f x)) ↔
       IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
   let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
-  ⟨e.isDomain_and_isIntegrallyClosed, e.symm.isDomain_and_isIntegrallyClosed⟩
+  by
+    constructor
+    · intro h
+      obtain ⟨_, _⟩ := h
+      exact ⟨e.symm.toMulEquiv.isDomain _, .of_equiv e⟩
+    · intro h
+      obtain ⟨_, _⟩ := h
+      exact ⟨e.toMulEquiv.isDomain _, .of_equiv e.symm⟩
 
 /-- On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally
 closed if the local rings at the points of `V` are: its localizations at maximal ideals are local
