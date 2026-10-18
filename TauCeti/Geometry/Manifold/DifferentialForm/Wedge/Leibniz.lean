@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
 
 /-!
@@ -37,7 +38,7 @@ public section
 noncomputable section
 
 open Set Bundle ContinuousAlternatingMap
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -139,5 +140,22 @@ theorem mextDeriv_wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) hφ hψ v
+
+namespace SmoothForm
+
+/-- The exterior derivative of the wedge of smooth forms, evaluated on tangent vectors. -/
+theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
+    (v : Fin (k + l + 1) → TangentSpace I x) :
+    mextDeriv (wedge φ ψ).1 x v =
+      RoughForm.wedge (mextDeriv φ.1) ψ.1 x
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv ψ.1) x
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  rw [coe_wedge]
+  exact mextDeriv_wedge
+    (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).mdifferentiable (by simp) x)
+    (((isSmoothBundleForm_def ∞ ψ.1).mp (mem_smoothForms.mp ψ.2)).mdifferentiable (by simp) x) v
+
+end SmoothForm
 
 end TauCeti
