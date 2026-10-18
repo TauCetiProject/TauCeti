@@ -11,8 +11,9 @@ public import TauCeti.Analysis.Matrix.FiniteCompression
 # Block-triangular principal-minor series
 
 The principal-minor series of a block-triangular matrix is the product of the series of its
-diagonal blocks, provided the defining families of principal minors are summable. The index
-types can be infinite or empty, and the coefficient ring can have nilpotents.
+diagonal blocks, provided the defining families of principal minors are summable. This includes
+dependent block-diagonal matrices with finitely many blocks. The coordinate index types can be
+infinite or empty, and the coefficient ring can have nilpotents.
 
 This factorization separates the determinant on an invariant coordinate summand from the
 determinant on its quotient. It follows by passing to the limit in finite coordinate
@@ -91,6 +92,44 @@ theorem charPowerSeries_fromBlocks_zero₁₂
   rw [← charPowerSeries_submatrix_equiv (fromBlocks A 0 C D) e, hmatrix,
     charPowerSeries_fromBlocks_zero₂₁ D C A hD hA hsum, mul_comm]
 
+/-- The principal-minor series of a finite dependent block-diagonal matrix is the product of
+the series of its blocks. Summability is required blockwise and for the assembled matrix. -/
+@[simp]
+theorem charPowerSeries_blockDiagonal' {o : Type*} {m : o → Type*}
+    [Fintype o] [DecidableEq o] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R)
+    (hA : ∀ i n, Summable fun s : {s : Finset (m i) // s.card = n} ↦
+      (A i).principalMinor s)
+    (hM : ∀ n, Summable fun s : {s : Finset (Σ i, m i) // s.card = n} ↦
+      (blockDiagonal' A).principalMinor s) :
+    (blockDiagonal' A).charPowerSeries = ∏ i, (A i).charPowerSeries := by
+  classical
+  let F := fun (i : o) (S : Finset (Σ i, m i)) ↦
+    (((A i).submatrix
+      (Subtype.val : S.preimage (Sigma.mk i) sigma_mk_injective.injOn → m i)
+      Subtype.val).charpolyRev : PowerSeries R)
+  have hF (i : o) : Tendsto (F i) atTop (𝓝 (A i).charPowerSeries) :=
+    (TauCeti.tendsto_charpolyRev_finiteCompression (hA i)).comp
+      (tendsto_finset_preimage_atTop_atTop sigma_mk_injective)
+  have hprod (s : Finset o) :
+      Tendsto (fun S ↦ ∏ i ∈ s, F i S) atTop (𝓝 (∏ i ∈ s, (A i).charPowerSeries)) := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | @insert i s hi ih => simpa [Finset.prod_insert hi] using (hF i).mul ih
+  have hright : Tendsto (fun S ↦ ∏ i, F i S) atTop
+      (𝓝 (∏ i, (A i).charPowerSeries)) := by
+    simpa using hprod Finset.univ
+  apply tendsto_nhds_unique (TauCeti.tendsto_charpolyRev_finiteCompression hM)
+  apply hright.congr'
+  filter_upwards [] with S
+  simp only [F]
+  rw [charpolyRev_submatrix_blockDiagonal']
+  let P := fun i ↦ ((A i).submatrix
+    (Subtype.val : S.preimage (Sigma.mk i) sigma_mk_injective.injOn → m i)
+    Subtype.val).charpolyRev
+  -- Expose the coercion's ring homomorphism so its finite-product law applies directly.
+  change (∏ i, (P i : PowerSeries R)) = ((∏ i, P i : Polynomial R) : PowerSeries R)
+  exact (map_prod (Polynomial.coeToPowerSeries.ringHom (R := R)) P Finset.univ).symm
+
 end TopologicalRing
 
 section Ultrametric
@@ -126,6 +165,19 @@ theorem charPowerSeries_fromBlocks_zero₁₂_of_norm_le
   · exact fun n ↦ summable_principalMinor
       (fun i j ↦ h (Sum.inr i) (Sum.inr j))
       (hr.comp Sum.inr_injective.tendsto_cofinite) n
+  · exact summable_principalMinor h hr
+
+/-- A finite dependent block-diagonal matrix with a null row majorant has determinant equal to
+the product of its block determinants. Blocks may have infinite or empty coordinate types. -/
+theorem charPowerSeries_blockDiagonal'_of_norm_le {o : Type*} {m : o → Type*}
+    [Fintype o] [DecidableEq o] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R)
+    {r : (Σ i, m i) → ℝ} (h : ∀ i j, ‖blockDiagonal' A i j‖ ≤ r i)
+    (hr : Tendsto r cofinite (𝓝 0)) :
+    (blockDiagonal' A).charPowerSeries = ∏ i, (A i).charPowerSeries := by
+  apply charPowerSeries_blockDiagonal' A
+  · intro i n
+    exact summable_principalMinor (fun j k ↦ by simpa using h ⟨i, j⟩ ⟨i, k⟩)
+      (hr.comp sigma_mk_injective.tendsto_cofinite) n
   · exact summable_principalMinor h hr
 
 end Ultrametric

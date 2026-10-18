@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+public import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # The reversed characteristic polynomial `det (1 - X A)` of a square matrix
@@ -32,6 +33,8 @@ the dimension.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
   block-triangular matrices, with `Matrix.charpolyRev_of_isUpperTriangular` and
   `Matrix.charpolyRev_diagonal` as special cases.
+* `Matrix.charpolyRev_blockDiagonal'`: multiplicativity for a finite dependent family of
+  diagonal blocks.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
   and `B` of transposed shapes. Unlike `Matrix.charpoly_mul_comm'`, no power of `X` corrects for
   the different sizes of `A B` and `B A`.
@@ -152,6 +155,43 @@ theorem charpolyRev_fromBlocks_zero₁₂ (A : Matrix ι ι R) (C' : Matrix κ �
     (fromBlocks A 0 C' D).charpolyRev = A.charpolyRev * D.charpolyRev := by
   rw [← charpolyRev_transpose, fromBlocks_transpose, transpose_zero,
     charpolyRev_fromBlocks_zero₂₁, charpolyRev_transpose, charpolyRev_transpose]
+
+/-- `det (1 - X A)` of a finite dependent block-diagonal matrix is the product of the
+reversed characteristic polynomials of its blocks. Empty blocks contribute the factor `1`. -/
+@[simp]
+theorem charpolyRev_blockDiagonal' {o : Type*} {m : o → Type*} [Fintype o] [DecidableEq o]
+    [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R) :
+    (blockDiagonal' A).charpolyRev = ∏ i, (A i).charpolyRev := by
+  rw [charpolyRev, blockDiagonal'_map _ _ (map_zero C), ← blockDiagonal'_smul,
+    ← blockDiagonal'_one, ← blockDiagonal'_sub, det_blockDiagonal']
+  simp only [Pi.sub_apply, Pi.one_apply, Pi.smul_apply, charpolyRev]
+
+/-- A finite compression of a dependent block-diagonal matrix factors over the compressed
+blocks. The block at `i` is restricted to the coordinates of the compression lying over `i`. -/
+theorem charpolyRev_submatrix_blockDiagonal' {o : Type*} {m : o → Type*}
+    [Fintype o] [DecidableEq o] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R)
+    (S : Finset (Σ i, m i)) :
+    ((blockDiagonal' A).submatrix (Subtype.val : S → Σ i, m i) Subtype.val).charpolyRev =
+      ∏ i, ((A i).submatrix
+        (Subtype.val : S.preimage (Sigma.mk i) sigma_mk_injective.injOn → m i)
+        Subtype.val).charpolyRev := by
+  classical
+  let fiber := fun i ↦ S.preimage (Sigma.mk i) sigma_mk_injective.injOn
+  let e : (Σ i, fiber i) ≃ S := {
+    toFun x := ⟨⟨x.1, x.2.1⟩, Finset.mem_preimage.mp x.2.2⟩
+    invFun x := ⟨x.1.1, ⟨x.1.2, Finset.mem_preimage.mpr x.2⟩⟩
+    left_inv _ := rfl
+    right_inv _ := rfl }
+  have hmatrix :
+      (blockDiagonal' A).submatrix (Subtype.val : S → Σ i, m i) Subtype.val =
+        reindex e e (blockDiagonal' fun i ↦
+          (A i).submatrix (Subtype.val : fiber i → m i) Subtype.val) := by
+    ext ⟨⟨i, x⟩, hx⟩ ⟨⟨j, y⟩, hy⟩
+    by_cases h : i = j
+    · subst j
+      simp [e, fiber, blockDiagonal'_apply]
+    · simp [e, fiber, blockDiagonal'_apply, h]
+  rw [hmatrix, charpolyRev_reindex, charpolyRev_blockDiagonal']
 
 omit [Fintype ι] [Fintype κ] in
 /-- Compressing an upper block-triangular matrix to a disjoint sum of finite coordinate sets
