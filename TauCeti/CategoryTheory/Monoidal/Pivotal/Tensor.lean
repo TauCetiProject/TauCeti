@@ -73,25 +73,45 @@ theorem pivotalExactPairing_tensor_evaluation (X Y : C) :
       (rightDualTensorIso Yᘁ Xᘁ).inv ≫ ((rightDualTensorIso X Y).hom)ᘁ := by
     rw [pivotalIsoApp_tensor_hom, doubleRightDualFunctor_μ]
     rfl
-  rw [pivotalExactPairing_evaluation, hφ]
-  simp only [comp_whiskerRight, Category.assoc]
-  rw [rightAdjointMate_comp_evaluation]
-  simp only [← whisker_exchange_assoc]
-  congr 1
-  -- What remains is the evaluation of a tensor product of transported pairings.
-  rw [rightDualTensorIso, rightDualIso_inv, rightMate_comp_evaluation]
-  simp only [MonoidalCategory.whiskerLeft_id, Category.id_comp]
-  rw [tensor_evaluation]
-  rw [@tensor_evaluation C _ _ _ _ _ _ (pivotalExactPairing Y) (pivotalExactPairing X)]
-  rw [pivotalExactPairing_evaluation, pivotalExactPairing_evaluation, tensorHom_def']
-  calc _ = 𝟙 _ ⊗≫ X ◁ (pivotalIsoApp Y).hom ▷ (Yᘁ : C) ▷ (Xᘁ : C) ⊗≫
-        ((pivotalIsoApp X).hom ▷ (((Yᘁ : C)ᘁ : C) ⊗ (Yᘁ : C)) ≫
-          ((Xᘁ : C)ᘁ : C) ◁ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C)) ▷ (Xᘁ : C) ⊗≫
-        ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by monoidal
-    _ = 𝟙 _ ⊗≫ X ◁ (pivotalIsoApp Y).hom ▷ (Yᘁ : C) ▷ (Xᘁ : C) ⊗≫
-        (X ◁ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C) ≫ (pivotalIsoApp X).hom ▷ 𝟙_ C) ▷ (Xᘁ : C) ⊗≫
-        ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by rw [whisker_exchange]
-    _ = _ := by monoidal
+  -- The evaluation of the tensor product of the pivotal pairings, written with the canonical
+  -- pairing of `Yᘁ ⊗ Xᘁ`: transporting along `rightDualTensorIso Yᘁ Xᘁ` gives the tensor product
+  -- of the canonical pairings, and the rest is coherence plus one interchange.
+  have hε : (((pivotalIsoApp X).hom ⊗ₘ (pivotalIsoApp Y).hom) ≫
+        (rightDualTensorIso Yᘁ Xᘁ).inv) ▷ ((Yᘁ : C) ⊗ (Xᘁ : C)) ≫
+        ε_ ((Yᘁ : C) ⊗ (Xᘁ : C)) (((Yᘁ : C) ⊗ (Xᘁ : C))ᘁ : C) =
+      @evaluation C _ _ (Yᘁ ⊗ Xᘁ) (X ⊗ Y)
+        (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X)) := by
+    rw [comp_whiskerRight, Category.assoc, rightDualTensorIso, rightDualIso_inv,
+      rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp,
+      tensor_evaluation,
+      @tensor_evaluation C _ _ _ _ _ _ (pivotalExactPairing Y) (pivotalExactPairing X),
+      pivotalExactPairing_evaluation, pivotalExactPairing_evaluation, tensorHom_def']
+    calc _ = 𝟙 _ ⊗≫ X ◁ (pivotalIsoApp Y).hom ▷ (Yᘁ : C) ▷ (Xᘁ : C) ⊗≫
+          ((pivotalIsoApp X).hom ▷ (((Yᘁ : C)ᘁ : C) ⊗ (Yᘁ : C)) ≫
+            ((Xᘁ : C)ᘁ : C) ◁ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C)) ▷ (Xᘁ : C) ⊗≫
+          ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by monoidal
+      _ = 𝟙 _ ⊗≫ X ◁ (pivotalIsoApp Y).hom ▷ (Yᘁ : C) ▷ (Xᘁ : C) ⊗≫
+          (X ◁ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C) ≫ (pivotalIsoApp X).hom ▷ 𝟙_ C) ▷ (Xᘁ : C) ⊗≫
+          ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by rw [whisker_exchange]
+      _ = _ := by monoidal
+  calc _ = (pivotalIsoApp (X ⊗ Y)).hom ▷ ((X ⊗ Y)ᘁ : C) ≫
+        ε_ ((X ⊗ Y)ᘁ : C) (((X ⊗ Y)ᘁ : C)ᘁ : C) := pivotalExactPairing_evaluation _
+    _ = (((pivotalIsoApp X).hom ⊗ₘ (pivotalIsoApp Y).hom) ≫
+          (rightDualTensorIso Yᘁ Xᘁ).inv) ▷ ((X ⊗ Y)ᘁ : C) ≫
+        ((rightDualTensorIso X Y).hom)ᘁ ▷ ((X ⊗ Y)ᘁ : C) ≫
+        ε_ ((X ⊗ Y)ᘁ : C) (((X ⊗ Y)ᘁ : C)ᘁ : C) := by
+      rw [hφ, ← Category.assoc, comp_whiskerRight, Category.assoc]
+    _ = (((pivotalIsoApp X).hom ⊗ₘ (pivotalIsoApp Y).hom) ≫
+          (rightDualTensorIso Yᘁ Xᘁ).inv) ▷ ((X ⊗ Y)ᘁ : C) ≫
+        _ ◁ (rightDualTensorIso X Y).hom ≫
+        ε_ ((Yᘁ : C) ⊗ (Xᘁ : C)) (((Yᘁ : C) ⊗ (Xᘁ : C))ᘁ : C) := by
+      rw [rightAdjointMate_comp_evaluation]
+    _ = (X ⊗ Y) ◁ (rightDualTensorIso X Y).hom ≫
+        (((pivotalIsoApp X).hom ⊗ₘ (pivotalIsoApp Y).hom) ≫
+          (rightDualTensorIso Yᘁ Xᘁ).inv) ▷ ((Yᘁ : C) ⊗ (Xᘁ : C)) ≫
+        ε_ ((Yᘁ : C) ⊗ (Xᘁ : C)) (((Yᘁ : C) ⊗ (Xᘁ : C))ᘁ : C) :=
+      (whisker_exchange_assoc _ _ _).symm
+    _ = _ := by rw [hε]
 
 /-- The coevaluation of the pivotal pairing of `X ⊗ Y`, followed by the comparison
 `rightDualTensorIso X Y : (X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ`, is the coevaluation of the tensor product of the
