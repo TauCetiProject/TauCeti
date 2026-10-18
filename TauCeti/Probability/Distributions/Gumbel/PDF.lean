@@ -240,6 +240,31 @@ theorem integrable_gumbelPDFReal (m s : ℝ) : Integrable (gumbelPDFReal m s) :=
     rw [integral_gumbelPDFReal_eq_one hs m]
     exact one_ne_zero
 
+/-! ### Transfer to the density -/
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A function is integrable against a Gumbel measure exactly when its density-weighted version
+is Lebesgue integrable. This holds at every scale, including the zero measure. -/
+theorem integrable_gumbelMeasure_iff (m s : ℝ) {g : ℝ → E} :
+    Integrable g (gumbelMeasure m s) ↔
+      Integrable fun y ↦ gumbelPDFReal m s y • g y := by
+  rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_def m s)]
+  exact integrable_withDensity_ofReal_iff (measurable_gumbelPDFReal m s).aemeasurable
+    (ae_of_all _ (gumbelPDFReal_nonneg m s))
+
+/-- An integral against a Gumbel measure is the density-weighted Lebesgue integral. This holds at
+every scale, including the zero measure. -/
+theorem integral_gumbelMeasure_eq (m s : ℝ) (g : ℝ → E) :
+    ∫ y, g y ∂gumbelMeasure m s = ∫ y, gumbelPDFReal m s y • g y := by
+  rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_def m s)]
+  exact integral_withDensity_ofReal (measurable_gumbelPDFReal m s).aemeasurable
+    (ae_of_all _ (gumbelPDFReal_nonneg m s)) g
+
+end Transfer
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A random variable with a Gumbel law has density `gumbelPDF`. -/
