@@ -34,8 +34,9 @@ a large index of one of the two Wronskians.
 
 * `TauCeti.ofReal_mul_min_le_weightedIndex_det_hasseDeriv`: the lower bound
   `m min (δ / 2) (δ² / 2) ≤ Ind(W)`, over any commutative ring.
-* `TauCeti.ofReal_mul_min_le_weightedIndex_genWronskian_add`: for a separated polynomial over an
-  integral domain, the same lower bound for the sum of the indices of the two Wronskians.
+* `TauCeti.ofReal_mul_min_le_weightedIndex_genWronskian_add`: for a separated polynomial over a
+  ring without zero divisors, the same lower bound for the sum of the indices of the two
+  Wronskians.
 
 ## References
 
@@ -77,7 +78,8 @@ theorem ofReal_mul_min_le_weightedIndex_det_hasseDeriv {r : σ → ℕ} {a : σ 
       rw [weight_single, nsmul_eq_mul]
       rcases Nat.eq_zero_or_pos (l : ℕ) with hl | hl
       · simp [hl]
-      · have hr : (0 : ℝ) < r i := by exact_mod_cast (show 0 < r i by omega)
+      · have hrNat : 0 < r i := by omega
+        have hr : (0 : ℝ) < r i := by exact_mod_cast hrNat
         rw [ENNReal.ofReal_div_of_pos hr, ENNReal.ofReal_natCast, ENNReal.ofReal_natCast,
           div_eq_mul_inv]
     have hw := weightedIndex_le_weightedIndex_hasseDeriv_add r a (D k + single i (l : ℕ)) P
@@ -98,13 +100,14 @@ theorem ofReal_mul_min_le_weightedIndex_det_hasseDeriv {r : σ → ℕ} {a : σ 
         rw [ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ le_max_right _ _]
         simp
 
-/-- **The index of the two Wronskians in Roth's lemma.** Let `P = ∑ₖ fₖ · gₖ(Xᵢ)` over an
-integral domain, where no `fₖ` involves `Xᵢ`, and let the rows `D k` not differentiate in `Xᵢ`.
+/-- **The index of the two Wronskians in Roth's lemma.** Let `P = ∑ₖ fₖ · gₖ(Xᵢ)` over a
+ring without zero divisors, where no `fₖ` involves `Xᵢ`, and let the rows `D k` not differentiate
+in `Xᵢ`.
 Under the hypotheses of `ofReal_mul_min_le_weightedIndex_det_hasseDeriv`, the indices of the
 generalized Wronskian `W_D(f)` and of the Hasse Wronskian of the `gₖ` placed in `Xᵢ` add up to at
 least `m min (δ / 2) (δ² / 2)`, where `δ = t - c`. -/
-theorem ofReal_mul_min_le_weightedIndex_genWronskian_add [IsDomain R] {r : σ → ℕ} {a : σ → R}
-    {i : σ} (hm : m ≤ r i + 1) {D : Fin m → σ →₀ ℕ} (hDi : ∀ k, D k i = 0)
+theorem ofReal_mul_min_le_weightedIndex_genWronskian_add [NoZeroDivisors R] {r : σ → ℕ}
+    {a : σ → R} {i : σ} (hm : m ≤ r i + 1) {D : Fin m → σ →₀ ℕ} (hDi : ∀ k, D k i = 0)
     {f : Fin m → MvPolynomial σ R} (hf : ∀ k, i ∉ (f k).vars) (g : Fin m → Polynomial R)
     {t c : ℝ} (hc : 0 ≤ c)
     (ht : ENNReal.ofReal t ≤ weightedIndex r a (∑ k, f k * (g k).toMvPolynomial i))
