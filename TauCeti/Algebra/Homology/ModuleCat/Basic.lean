@@ -21,6 +21,9 @@ the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly returns
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
+A linear map into `K.X n` whose values are cycles induces a class map into the homology,
+`HomologicalComplex.moduleCatHomologyClass`; it is surjective when every cycle is a value, its
+kernel consists of the elements sent to boundaries, and chain maps act on it compatibly.
 Consequently, when `K` is the union of subcomplexes `L i`, every homology class of `K` comes from
 some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).  Two cycles whose difference
 is a boundary have the same homology class
@@ -166,6 +169,66 @@ noncomputable def moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
 lemma iCycles_moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
     (hx : K.d n m x = 0) : K.iCycles n (K.moduleCatCyclesMk x m hm hx) = x :=
   (K.sc n).moduleCatCyclesIso_inv_iCycles_apply _
+
+section HomologyClass
+
+variable {n} {m : ι} (hm : c.next n = m) {Z : Type*} [AddCommGroup Z] [Module R Z]
+  (j : Z →ₗ[R] K.X n) (hj : ∀ z, K.d n m (j z) = 0)
+
+/-- The homology class map of a linear map `j` into the degree-`n` term of a complex of modules
+whose values are cycles. Unlike `HomologicalComplex.moduleCatCohomologyClassOfIso`, the source of
+`j` need not be a submodule of a module identified with the term, so subcomplexes are covered. -/
+noncomputable def moduleCatHomologyClass : Z →ₗ[R] K.homology n :=
+  (K.homologyπ n).hom ∘ₗ (K.sc n).moduleCatCyclesIso.inv.hom ∘ₗ
+    j.codRestrict _ fun z ↦ by subst hm; exact hj z
+
+/-- The class of `z` is the homology class of the cycle `j z`. -/
+lemma moduleCatHomologyClass_apply (z : Z) :
+    K.moduleCatHomologyClass hm j hj z =
+      K.homologyπ n (K.moduleCatCyclesMk (j z) m hm (hj z)) :=
+  (rfl)
+
+/-- If every degree-`n` cycle is a value of `j`, then every homology class is the class of an
+element. -/
+lemma moduleCatHomologyClass_surjective (h : ∀ x : K.X n, K.d n m x = 0 → ∃ z, j z = x) :
+    Function.Surjective (K.moduleCatHomologyClass hm j hj) := by
+  intro x
+  obtain ⟨y, rfl⟩ := K.moduleCat_homologyπ_surjective n x
+  obtain ⟨z, hz⟩ := h (K.iCycles n y) <| by
+    subst hm
+    rw [← ConcreteCategory.comp_apply, K.iCycles_d]
+    rfl
+  refine ⟨z, ?_⟩
+  rw [moduleCatHomologyClass_apply]
+  congr 1
+  apply K.moduleCat_iCycles_injective n
+  rw [iCycles_moduleCatCyclesMk, hz]
+
+/-- The class of `z` vanishes exactly when `j z` is a boundary, the image of an element of the
+term of degree `c.prev n`. -/
+lemma moduleCatHomologyClass_eq_zero_iff {p : ι} (hp : c.prev n = p) (z : Z) :
+    K.moduleCatHomologyClass hm j hj z = 0 ↔ ∃ y : K.X p, K.d p n y = j z := by
+  rw [moduleCatHomologyClass_apply, K.moduleCat_homologyπ_eq_zero_iff hp]
+  refine exists_congr fun y ↦ ?_
+  rw [← (K.moduleCat_iCycles_injective n).eq_iff, iCycles_moduleCatCyclesMk,
+    ← ModuleCat.comp_apply, toCycles_i]
+
+variable {K} in
+/-- A chain map `φ` sends the class of `z` to the class of `g z` when it carries `j z` to
+`j' (g z)`. -/
+lemma homologyMap_moduleCatHomologyClass {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
+    {Z' : Type*} [AddCommGroup Z'] [Module R Z'] (j' : Z' →ₗ[R] L.X n)
+    (hj' : ∀ z, L.d n m (j' z) = 0) (g : Z →ₗ[R] Z') (h : ∀ z, φ.f n (j z) = j' (g z)) (z : Z) :
+    homologyMap φ n (K.moduleCatHomologyClass hm j hj z) =
+      L.moduleCatHomologyClass hm j' hj' (g z) := by
+  rw [moduleCatHomologyClass_apply, moduleCatHomologyClass_apply, ← ModuleCat.comp_apply,
+    homologyπ_naturality, ModuleCat.comp_apply]
+  congr 1
+  apply L.moduleCat_iCycles_injective n
+  rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk,
+    iCycles_moduleCatCyclesMk, h]
+
+end HomologyClass
 
 variable {n} in
 /-- Two degree-`n` cycles of a complex of modules whose difference is a boundary have the same

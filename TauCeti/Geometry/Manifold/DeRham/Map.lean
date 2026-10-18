@@ -59,10 +59,9 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
     closedForms I' M' k →ₗ[ℝ] closedForms I M k :=
   ((SmoothForm.mpullback f hf).domRestrict (closedForms I' M' k)).codRestrict
     (closedForms I M k) fun φ ↦ by
-      have hclosed : mextDerivₗ I' k φ.1 = 0 :=
-        Subtype.ext (by rw [mextDerivₗ_apply, (mem_closedForms I' φ.1).mp φ.2, Submodule.coe_zero])
-      rw [mem_closedForms, LinearMap.domRestrict_apply, ← mextDerivₗ_apply,
-        SmoothForm.mextDerivₗ_mpullback, hclosed, map_zero, Submodule.coe_zero]
+      rw [mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.domRestrict_apply,
+        SmoothForm.mextDerivₗ_mpullback,
+        (mem_closedForms_iff_mextDerivₗ_eq_zero I' φ.1).mp φ.2, map_zero]
 
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
