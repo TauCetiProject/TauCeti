@@ -35,6 +35,7 @@ variable {a b u : ℝ}
 
 /-- The lower quantile of the uniform probability measure on `Set.Ioc a b` is affine
 interpolation between the endpoints. -/
+@[simp]
 theorem quantile_uniformMeasure (hab : a < b) (hu : u ∈ Ioo 0 1) :
     (uniformMeasure a b).quantile u = a + (b - a) * u := by
   let _ : IsProbabilityMeasure (uniformMeasure a b) := isProbabilityMeasure_uniformMeasure hab
