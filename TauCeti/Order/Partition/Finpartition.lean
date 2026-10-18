@@ -220,16 +220,12 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
 /-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
 theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
     ({B | refinementParent h B = A} : Finset Q.parts).biUnion Subtype.val = A.1 := by
-  ext x
-  simp only [Finset.mem_biUnion, Finset.mem_filter, Finset.mem_univ, true_and,
-    refinementParent_eq_iff]
-  refine ⟨fun ⟨B, hBA, hx⟩ => hBA hx, fun hx => ?_⟩
-  have hxs : x ∈ s := P.le A.2 hx
-  set B : Q.parts := ⟨Q.part x, Q.part_mem.2 hxs⟩
-  have hxB : x ∈ B.1 := Q.mem_part hxs
-  have hpar : (refinementParent h B).1 = A.1 :=
-    P.eq_of_mem_parts (refinementParent h B).2 A.2 (le_refinementParent h B hxB) hx
-  exact ⟨B, hpar ▸ le_refinementParent h B, hxB⟩
+  classical
+  calc
+    _ = {B ∈ Q.parts | B ⊆ A.1}.biUnion id := by
+      ext x
+      simp [Subtype.exists, and_assoc, and_left_comm]
+    _ = _ := biUnion_filter_subset_eq_of_le h A.2
 
 /-- The sizes of the fine parts with a given coarse parent add up to the size of that parent. -/
 theorem sum_card_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
