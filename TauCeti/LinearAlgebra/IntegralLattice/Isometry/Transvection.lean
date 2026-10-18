@@ -214,6 +214,7 @@ theorem eichlerTransvection_apply_self (hu : L.integralNorm u = 0) (w : L.evenOr
   transvection_apply_self _ _
 
 /-- An Eichler transvection has determinant one. -/
+@[simp]
 theorem det_eichlerTransvection (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) :
     Isometry.det L (eichlerTransvection hu w) = 1 := by
   -- On the carrier, `E_{u,w}` is the composite of the integral linear transvections
@@ -241,7 +242,6 @@ theorem eichlerTransvection_mem_specialOrthogonalGroup (hu : L.integralNorm u = 
   mem_specialOrthogonalGroup_iff.mpr (det_eichlerTransvection hu w)
 
 /-- The Eichler transvection with parameter `0` is the identity. -/
-@[simp]
 theorem eichlerTransvection_zero (hu : L.integralNorm u = 0) : eichlerTransvection hu 0 = 1 := by
   ext x
   simp [eichlerTransvection_apply]
@@ -288,6 +288,7 @@ theorem eichlerTransvection_zsmul (hu : L.integralNorm u = 0) (w : L.evenOrthogo
   simpa only [toMul_zsmul, Subgroup.coe_zpow, coe_toMul_eichlerTransvectionAddHom] using h
 
 /-- An Eichler transvection whose parameter is a rational multiple of `u` is the identity. -/
+@[simp]
 theorem eichlerTransvection_eq_one_of_mem_span (hu : L.integralNorm u = 0)
     {w : L.evenOrthogonal u} (hw : ((w : L) : V) ∈ ℚ ∙ (u : V)) : eichlerTransvection hu w = 1 := by
   ext x
