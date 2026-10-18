@@ -11,19 +11,20 @@ public import TauCeti.QuantumGroups.UqSl2.LadderModule
 /-!
 # Classification of the finite-dimensional simple `U_q(sl₂)`-modules
 
-Every nonzero finite-dimensional module has a highest-weight vector whose lowering string forces
-its weight to be `ε q^m`, because the spectrum of `K` is finite; no diagonalizability of `K` is
-assumed. The universal property of `LadderModule.lift` makes the resulting map from `L_m^ε` an
-isomorphism when the target is simple. Together with the pairwise non-isomorphism of the ladder
-modules, this shows that every finite-dimensional simple `UqSl2 q`-module is isomorphic to exactly
-one `L_m^ε`.
+At a generic parameter `q` (nonzero and not a root of unity), every nonzero finite-dimensional
+module has a highest-weight vector whose lowering string forces its weight to be `ε q^m`, because
+the spectrum of `K` is finite; no diagonalizability of `K` is assumed. The universal property of
+`LadderModule.lift` makes the resulting map from `L_m^ε` an isomorphism when the target is simple.
+Together with the pairwise non-isomorphism of the ladder modules, this shows that at a generic
+parameter every finite-dimensional simple `UqSl2 q`-module is isomorphic to exactly one `L_m^ε`.
 
 ## Main results
 
-* `TauCeti.UqSl2.exists_linearEquiv_ladderModule`: every finite-dimensional simple `UqSl2 q`-module
-  is isomorphic to a signed ladder module.
-* `TauCeti.UqSl2.existsUnique_linearEquiv_ladderModule`: every finite-dimensional simple
-  `UqSl2 q`-module is isomorphic to `L_m^ε` for exactly one pair `(m, ε)`.
+* `TauCeti.UqSl2.exists_linearEquiv_ladderModule`: at a generic parameter, every
+  finite-dimensional simple `UqSl2 q`-module is isomorphic to a signed ladder module.
+* `TauCeti.UqSl2.existsUnique_linearEquiv_ladderModule`: at a generic parameter, every
+  finite-dimensional simple `UqSl2 q`-module is isomorphic to `L_m^ε` for exactly one pair
+  `(m, ε)`.
 
 ## References
 

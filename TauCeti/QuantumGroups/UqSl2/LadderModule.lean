@@ -31,7 +31,8 @@ root of unity), `L_m^ε` is a simple module whose endomorphisms are the complex 
 lemma), and `L_m^ε` and `L_n^δ` are isomorphic only when `m = n` and `ε = δ`.
 
 A vector `v` of weight `ε q^m` in any `UqSl2 q`-module, killed by `E` and by `F^(m+1)`,
-determines a unique module map from `L_m^ε` that sends `vⱼ` to `v`.
+determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more generally sends
+`v_j` to the normalized lowering string `F^j v / ([1]_q ⋯ [j]_q)`.
 
 ## Main definitions
 
