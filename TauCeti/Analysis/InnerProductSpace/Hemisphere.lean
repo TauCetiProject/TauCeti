@@ -172,9 +172,7 @@ theorem range_equatorInclusion :
 
 end Equator
 
-section Seminormed
-
-variable [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
 /-- The normalization of `x - t • p`, for a point `x` of the unit sphere orthogonal to `p`: for
 `t > 0` it moves from `x` towards `-p` along a great circle. -/
@@ -188,10 +186,6 @@ private def normalizeSubSmul (x : sphere (0 : E) 1) (hx : ⟪(x : E), (p : E)⟫
     have hpos : 0 < √(1 + t ^ 2) := Real.sqrt_pos.2 (by positivity)
     rw [norm_smul, hnorm, Real.norm_eq_abs,
       abs_of_pos (inv_pos.2 hpos), inv_mul_cancel₀ hpos.ne']⟩
-
-end Seminormed
-
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
 /-- The frontier of the closed hemisphere around `p` in the unit sphere is the equator. -/
 theorem frontier_setOf_inner_nonneg :
