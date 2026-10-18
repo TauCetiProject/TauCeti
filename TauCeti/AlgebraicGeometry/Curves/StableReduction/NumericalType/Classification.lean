@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.DoubleFork
+public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
-import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.DoubleFork
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.E8
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Exceptional
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Connected proper sets of `(-2)`-indices
+# Structural classification of `(-2)`-indices
 
 Let `S` be a set of components of a numerical type, each of self-intersection `aᵢᵢ = -2wᵢ`, which
 is connected, in the sense that no nonempty proper subset of `S` is disjoint from the rest of
@@ -47,16 +47,41 @@ of `(-2)`-indices is either small or a chain or a fork, the two shapes treated i
 ## Main results
 
 * `TauCeti.NumericalType.exists_chain_or_fork_or_exceptional`: the classification above.
-* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_card_eq`: in an
-  exhaustive chain whose endpoints do not meet when `2 < t`, nonconsecutive components do not meet.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.not_card_eq_succ_of_branch_two`: the
   exceptional configuration of `5 ≤ t ≤ 7` chain components with a leaf at `c 2` cannot exhaust a
   numerical type.
-* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.exists_lt_eq_of_card_eq`,
-  `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.eq_or_exists_lt_eq_of_card_eq` and
-  `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.eq_or_eq_or_exists_lt_eq_of_card_eq`:
-  decomposition of any component in a numerical type exhausted by a chain, a fork, or a double
-  fork.
+* `TauCeti.NumericalType.topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine` and
+  `TauCeti.NumericalType.exists_chain_or_fork_or_star_or_affine_of_topologicalGenus_eq_zero`:
+  classification when every component has self-intersection `-2w`, without requiring a proper
+  subset. These supply the structural part of the minimal genus-one classification
+  ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)).
+
+## Exhaustive configurations
+
+Let `T` be a numerical type in which every component has self-intersection `aᵢᵢ = -2wᵢ`. Starting
+from a longest chain `c 0 - c 1 - ⋯ - c (t - 1)` of components, there are three possibilities for
+the set `A` of components in the chain:
+
+* `A` is the whole component set. Any chord other than `c 0 - c (t - 1)` would bound a proper
+  subchain whose ends meet, which `IsSelfIntersectionMinusTwoChain.intersection_eq_zero` excludes.
+  If `c 0` and `c (t - 1)` meet and `t ≥ 3`, every vertex has at least two neighbours, so the
+  topological genus is positive and the cycle classification applies; otherwise `c` is an
+  exhaustive chordless path.
+* `A` together with a single component `x` outside `A` is the whole component set. By maximality of
+  `c`, `x` only meets the interior subchain `c 1, …, c (t - 2)`, which is at least two components
+  shorter than `T`, so `x` meets a unique component `c r` (`0 < r` and `r + 1 < t`). When `r = 1`
+  or `r = t - 2`, `(c, x)` is an exhaustive fork. Otherwise, after orienting `c` so that
+  `2 ≤ r` and `2r + 1 ≤ t`, `r ≥ 3` gives the affine `E₇` configuration, `r = 2` with `t ≥ 8`
+  gives the affine `E₈` configuration, and `r = 2` with `5 ≤ t ≤ 7` is excluded by the fibre
+  relations because the proper five-component subfork and the proper chain fix the weights while the
+  multiplicities have no positive kernel solution.
+* There is a further component `y` outside `insert x A` meeting `insert x A`. If `y` meets `x`,
+  maximality of `c` gives at least two chain components on each side of `c r`, producing the
+  affine `E₆` configuration. If `y` meets `c r`, `c r` has four neighbours `c (r - 1)`,
+  `c (r + 1)`, `x` and `y`, producing the four-leaf star (affine `D₄`). If `y` meets `c s` with
+  `r ≠ s`, the subchain between `r - 1` and `s + 1` with leaves `x` and `y` is a double fork,
+  which `IsSelfIntersectionMinusTwoFork.not_oppositeFork` forces to exhaust `T`, producing the
+  affine `D` configuration.
 
 -/
 
@@ -232,27 +257,6 @@ lemma two_le_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain t c)
       hy_self (fun _ ↦ by simpa [T.intersection_comm] using hxy))
     fun i hi ↦ by split_ifs; exacts [hyS, hxS, hcS _ (by omega)]
   omega
-
-/-- In a chain exhausting all components of a numerical type, any two nonconsecutive components
-other than the pair of endpoints do not meet, because the subchain between them is proper. If the
-endpoints do not meet when `2 < t`, then no two nonconsecutive components meet. -/
-lemma intersection_eq_zero_of_card_eq (hc : T.IsSelfIntersectionMinusTwoChain t c)
-    (hcard : Fintype.card T.Component = t)
-    (hends : 2 < t → T.intersection (c 0) (c (t - 1)) = 0) (i : ℕ) (hi : i < t) (j : ℕ)
-    (hj : j < t) (hij : i ≠ j) (hij₁ : i + 1 ≠ j) (hji₁ : j + 1 ≠ i) :
-    T.intersection (c i) (c j) = 0 := by
-  have hlt : ∀ u v : ℕ, u + 1 < v → v < t → T.intersection (c u) (c v) = 0 := by
-    intro u v huv hv
-    by_cases he : u = 0 ∧ v = t - 1
-    · rcases he with ⟨rfl, rfl⟩
-      exact hends (by omega)
-    · have hsub := (hc.shift (r := u) (s := v - u + 1) (by omega)).intersection_eq_zero
-        (by omega) (p := 0) (q := v - u) (by omega) (by omega) (by omega) (by omega) (by omega)
-      simpa [show u + (v - u) = v by omega] using hsub
-  rcases lt_or_gt_of_ne hij with h | h
-  · exact hlt i j (by omega) hj
-  · rw [T.intersection_comm]
-    exact hlt j i (by omega) hi
 
 /-- A chain `c 0, …, c (t - 1)` of length `5 ≤ t ≤ 7` together with a single leaf `x` at `c 2`
 cannot exhaust a numerical type: the five-component subfork on `c 0, c 1, c 2, c 3, x` and the
@@ -503,71 +507,364 @@ theorem exists_chain_or_fork_or_exceptional {S : Finset T.Component}
     exact ⟨t, c, x, hc, by omega, ht7, hx_ne, hx_self, by simpa [hr] using hpos,
       fun i hi hi3 ↦ hx_zero i hi (by omega), hS_eq⟩
 
-/-- Every component of a numerical type exhausted by a chain `c` of length `t` has the form `c i`
-for some `i < t`. -/
-lemma IsSelfIntersectionMinusTwoChain.exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ → T.Component}
-    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : Fintype.card T.Component = t)
-    (v : T.Component) : ∃ i < t, c i = v := by
-  classical
-  have hu : (range t).image c = univ := eq_univ_of_card _ (by rw [hc.card_image_range, hcard])
-  simpa [← hu] using mem_univ v
+open _root_.Matrix
 
-/-- Every component of a numerical type exhausted by a fork `(c, b)` of chain length `t` is either
-`b` or `c i` for some `i < t`. -/
-lemma IsSelfIntersectionMinusTwoFork.eq_or_exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ → T.Component}
-    {b : T.Component} (hf : T.IsSelfIntersectionMinusTwoFork t c b)
-    (hcard : Fintype.card T.Component = t + 1) (v : T.Component) :
-    v = b ∨ ∃ i < t, c i = v := by
-  classical
-  have hb_notMem : b ∉ (range t).image c := by
-    simp only [mem_image, mem_range, not_exists, not_and]
-    exact fun i hi h ↦ hf.branch_ne i hi h.symm
-  have hu : insert b ((range t).image c) = univ :=
-    eq_univ_of_card _ (by rw [card_insert_of_notMem hb_notMem, hf.card_image_range, hcard])
-  simpa [← hu] using mem_univ v
+namespace IsSelfIntersectionMinusTwoChain
 
-/-- Every component of a numerical type exhausted by a double fork `(c, left, right)` of chain
-length `t ≥ 4` is `left`, `right`, or `c i` for some `i < t`. -/
-lemma IsSelfIntersectionMinusTwoFork.eq_or_eq_or_exists_lt_eq_of_card_eq {t : ℕ}
-    {c : ℕ → T.Component} {left right : T.Component}
-    (hr : T.IsSelfIntersectionMinusTwoFork t c right)
-    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left) (ht : 4 ≤ t)
-    (hcard : Fintype.card T.Component = t + 2) (v : T.Component) :
-    v = left ∨ v = right ∨ ∃ i < t, c i = v := by
-  classical
-  have hleft_ne (i : ℕ) (hi : i < t) : left ≠ c i := by
-    simpa only [show t - 1 - (t - 1 - i) = i by omega] using hl.branch_ne (t - 1 - i) (by omega)
-  have hlr : left ≠ right := by
-    rintro rfl
-    have hpos : 0 < T.intersection (c 1) left := by
-      simpa only [show t - 1 - (t - 2) = 1 by omega] using hl.branch_intersection_pos
-    rw [hr.branch_intersection_eq_zero (by omega) (by omega)] at hpos
-    exact lt_irrefl 0 hpos
-  have hr_notMem : right ∉ (range t).image c := by
-    simp only [mem_image, mem_range, not_exists, not_and]
-    exact fun i hi h ↦ hr.branch_ne i hi h.symm
-  have hl_notMem : left ∉ insert right ((range t).image c) := by
-    simp only [mem_insert, mem_image, mem_range, not_or, not_exists, not_and]
-    exact ⟨hlr, fun i hi h ↦ hleft_ne i hi h.symm⟩
-  have hu : insert left (insert right ((range t).image c)) = univ :=
-    eq_univ_of_card _ (by
-      rw [card_insert_of_notMem hl_notMem, card_insert_of_notMem hr_notMem,
-        hr.card_image_range, hcard])
-  simpa [← hu] using mem_univ v
+variable {t : ℕ} {c : ℕ → T.Component}
 
-/-- Any numerical type in which every component has self-intersection `-2w` has at least two
-components. -/
-lemma one_lt_card_of_intersection_self_eq
+/-! ### Exhibiting star and affine `E` configurations -/
+
+/-- A chain component `c r` (`0 < r` and `r + 1 < t`) meeting two distinct components `x` and `y`
+outside the chain forms a four-leaf star with leaves `c (r - 1)`, `c (r + 1)`, `x` and `y`. -/
+private lemma exists_fourLeafStar (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : ℕ}
+    (hr0 : 0 < r) (hrt : r + 1 < t) {x y : T.Component} (hxy : x ≠ y)
+    (hx_ne : ∀ i < t, x ≠ c i) (hy_ne : ∀ i < t, y ≠ c i)
+    (hx : 0 < T.intersection (c r) x) (hy : 0 < T.intersection (c r) y) :
+    ∃ c₀ : T.Component, ∃ l : Fin 4 → T.Component,
+      Function.Injective l ∧ ∀ i, T.Adj c₀ (l i) := by
+  let l : Fin 4 → T.Component := ![c (r - 1), c (r + 1), x, y]
+  refine ⟨c r, l, ?_, ?_⟩
+  · intro i j hij
+    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
+    all_goals first
+      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
+      | exact absurd hij (hx_ne _ (by omega)).symm
+      | exact absurd hij (hx_ne _ (by omega))
+      | exact absurd hij (hy_ne _ (by omega)).symm
+      | exact absurd hij (hy_ne _ (by omega))
+      | exact absurd hij hxy
+      | exact absurd hij hxy.symm
+  · intro i
+    fin_cases i <;> simp only [l, T.adj_iff]
+    · exact ⟨hc.ne (by omega) (by omega) (by omega),
+        by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)⟩
+    · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.intersection_succ_pos r hrt⟩
+    · exact ⟨(hx_ne r (by omega)).symm, hx⟩
+    · exact ⟨(hy_ne r (by omega)).symm, hy⟩
+
+/-- A chain component `c r` (`2 ≤ r` and `r + 3 ≤ t`) meeting `x` outside the chain, which in turn
+meets `y` outside the chain, produces the seven-component affine `E₆` configuration. -/
+private lemma exists_affineE6 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : ℕ}
+    (hr : 2 ≤ r) (hrt : r + 3 ≤ t) {x y : T.Component} (hxy : x ≠ y)
+    (hx_ne : ∀ i < t, x ≠ c i) (hy_ne : ∀ i < t, y ≠ c i)
+    (hx : 0 < T.intersection (c r) x) (hxy_pos : 0 < T.intersection x y) :
+    ∃ l : Fin 7 → T.Component, Function.Injective l ∧
+      ∀ i j, AffineDynkinType.E6.graph.Adj i j → T.Adj (l i) (l j) := by
+  let l : Fin 7 → T.Component := ![c r, c (r - 1), c (r - 2), c (r + 1), c (r + 2), x, y]
+  have hl : Function.Injective l := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
+    all_goals first
+      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
+      | exact absurd hij (hx_ne _ (by omega)).symm
+      | exact absurd hij (hx_ne _ (by omega))
+      | exact absurd hij (hy_ne _ (by omega)).symm
+      | exact absurd hij (hy_ne _ (by omega))
+      | exact absurd hij hxy
+      | exact absurd hij hxy.symm
+  refine ⟨l, hl, fun i j hadj ↦ T.adj_iff.mpr ⟨hl.ne hadj.ne, ?_⟩⟩
+  have hlt (u v : Fin 7) (huv : u < v) (h : AffineDynkinType.E6.graph.Adj u v) :
+      0 < T.intersection (l u) (l v) := by
+    have hG := (AffineDynkinType.graph_E6_adj u v).mp h
+    rw [min_eq_left (Fin.le_def.mp huv.le), max_eq_right (Fin.le_def.mp huv.le)] at hG
+    simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hG
+    rcases hG with ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ <;>
+      [obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 1 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 1 ∧ v = 2 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 3 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 3 ∧ v = 4 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 5 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 5 ∧ v = 6 := ⟨Fin.ext hu, Fin.ext hv⟩]
+    all_goals first
+      | exact hx
+      | exact hxy_pos
+      | exact hc.intersection_pos (by omega) (by omega)
+      | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · exact hlt i j hij hadj
+  · exact (AffineDynkinType.E6.graph.loopless.irrefl i hadj).elim
+  · rw [T.intersection_comm]
+    exact hlt j i hji hadj.symm
+
+/-- A chain component `c r` (`3 ≤ r` and `r + 4 ≤ t`) meeting `x` outside the chain produces the
+eight-component affine `E₇` configuration. -/
+private lemma exists_affineE7 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : ℕ}
+    (hr : 3 ≤ r) (hrt : r + 4 ≤ t) {x : T.Component} (hx_ne : ∀ i < t, x ≠ c i)
+    (hx : 0 < T.intersection (c r) x) :
+    ∃ l : Fin 8 → T.Component, Function.Injective l ∧
+      ∀ i j, AffineDynkinType.E7.graph.Adj i j → 0 < T.intersection (l i) (l j) := by
+  let l : Fin 8 → T.Component :=
+    ![c r, x, c (r - 1), c (r - 2), c (r - 3), c (r + 1), c (r + 2), c (r + 3)]
+  have hl : Function.Injective l := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
+    all_goals first
+      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
+      | exact absurd hij (hx_ne _ (by omega)).symm
+      | exact absurd hij (hx_ne _ (by omega))
+  refine ⟨l, hl, fun i j hadj ↦ ?_⟩
+  have hlt (u v : Fin 8) (huv : u < v) (h : AffineDynkinType.E7.graph.Adj u v) :
+      0 < T.intersection (l u) (l v) := by
+    have hG := (AffineDynkinType.graph_E7_adj u v).mp h
+    rw [min_eq_left (Fin.le_def.mp huv.le), max_eq_right (Fin.le_def.mp huv.le)] at hG
+    simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hG
+    rcases hG with ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ |
+        ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ <;>
+      [obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 1 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 2 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 2 ∧ v = 3 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 3 ∧ v = 4 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 5 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 5 ∧ v = 6 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 6 ∧ v = 7 := ⟨Fin.ext hu, Fin.ext hv⟩]
+    all_goals first
+      | exact hx
+      | exact hc.intersection_pos (by omega) (by omega)
+      | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · exact hlt i j hij hadj
+  · exact (AffineDynkinType.E7.graph.loopless.irrefl i hadj).elim
+  · rw [T.intersection_comm]
+    exact hlt j i hji hadj.symm
+
+/-- A chain `c 0, …, c (t - 1)` of length `8 ≤ t` with a leaf `x` outside the chain meeting `c 2`
+produces the nine-component affine `E₈` configuration. -/
+private lemma exists_affineE8 (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht : 8 ≤ t)
+    {x : T.Component} (hx_ne : ∀ i < t, x ≠ c i) (hx : 0 < T.intersection (c 2) x) :
+    ∃ l : Fin 9 → T.Component, Function.Injective l ∧
+      ∀ i j, AffineDynkinType.E8.graph.Adj i j → 0 < T.intersection (l i) (l j) := by
+  let l : Fin 9 → T.Component := ![c 2, x, c 1, c 0, c 3, c 4, c 5, c 6, c 7]
+  have hl : Function.Injective l := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
+    all_goals first
+      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
+      | exact absurd hij (hx_ne _ (by omega)).symm
+      | exact absurd hij (hx_ne _ (by omega))
+  refine ⟨l, hl, fun i j hadj ↦ ?_⟩
+  have hlt (u v : Fin 9) (huv : u < v) (h : AffineDynkinType.E8.graph.Adj u v) :
+      0 < T.intersection (l u) (l v) := by
+    have hG := (AffineDynkinType.graph_E8_adj u v).mp h
+    rw [min_eq_left (Fin.le_def.mp huv.le), max_eq_right (Fin.le_def.mp huv.le)] at hG
+    simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hG
+    rcases hG with ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ |
+        ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ <;>
+      [obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 1 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 2 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 2 ∧ v = 3 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 4 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 4 ∧ v = 5 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 5 ∧ v = 6 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 6 ∧ v = 7 := ⟨Fin.ext hu, Fin.ext hv⟩;
+        obtain ⟨rfl, rfl⟩ : u = 7 ∧ v = 8 := ⟨Fin.ext hu, Fin.ext hv⟩]
+    all_goals first
+      | exact hx
+      | exact hc.intersection_pos (by omega) (by omega)
+      | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · exact hlt i j hij hadj
+  · exact (AffineDynkinType.E8.graph.loopless.irrefl i hadj).elim
+  · rw [T.intersection_comm]
+    exact hlt j i hji hadj.symm
+
+/-- Two distinct leaves `x` and `y` outside a chain `c` meeting interior chain components `c r`
+and `c s` (`0 < r ≤ s` and `s + 1 < t`) either sit at the same component (forming a four-leaf
+star) or sit at `c 1` and `c (t - 2)` of a chain of length `t ≥ 4` with `Fintype.card = t + 2`
+(forming an exhaustive double fork). -/
+private lemma exists_fourLeafStar_or_doubleFork (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : t + 2 ≤ Fintype.card T.Component) {x y : T.Component} (hxy : x ≠ y)
+    (hx_ne : ∀ i < t, x ≠ c i) (hy_ne : ∀ i < t, y ≠ c i)
+    (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
+    (hy_self : T.intersection y y = -(2 * (T.weight y : ℤ))) {r s : ℕ} (hr0 : 0 < r)
+    (hrs : r ≤ s) (hst : s + 1 < t) (hx : 0 < T.intersection (c r) x)
+    (hy : 0 < T.intersection (c s) y) :
+    (∃ c₀ : T.Component, ∃ l : Fin 4 → T.Component,
+        Function.Injective l ∧ ∀ i, T.Adj c₀ (l i)) ∨
+      ∃ t' c' left right, 4 ≤ t' ∧ Fintype.card T.Component = t' + 2 ∧
+        T.IsSelfIntersectionMinusTwoFork t' c' right ∧
+        T.IsSelfIntersectionMinusTwoFork t' (fun i ↦ c' (t' - 1 - i)) left := by
+  rcases hrs.eq_or_lt with rfl | hrs
+  · exact .inl (hc.exists_fourLeafStar hr0 hst hxy hx_ne hy_ne hx hy)
+  · have hd := hc.shift (r := r - 1) (s := s - r + 3) (by omega)
+    have hrf : T.IsSelfIntersectionMinusTwoFork (s - r + 3) (fun k ↦ c (r - 1 + k)) y :=
+      ⟨hd, by omega, fun i hi ↦ hy_ne _ (by omega), hy_self,
+        by simpa [show r - 1 + (s - r + 1) = s by omega] using hy⟩
+    have hlf : T.IsSelfIntersectionMinusTwoFork (s - r + 3)
+        (fun i ↦ c (r - 1 + (s - r + 3 - 1 - i))) x :=
+      ⟨hd.reverse, by omega, fun i hi ↦ hx_ne _ (by omega), hx_self,
+        by simpa [show r - 1 + 1 = r by omega] using hx⟩
+    have hnot : ¬ (s - r + 3 + 2 < Fintype.card T.Component) :=
+      hrf.not_oppositeFork hlf (by omega)
+    exact .inr ⟨s - r + 3, fun k ↦ c (r - 1 + k), x, y, by omega, by omega, hrf, hlf⟩
+
+/-- An exhaustive configuration consisting of a chain `c` and a single leaf `x` at `c r`
+(`2 ≤ r` and `2 * r + 1 ≤ t`) is either an affine `E₇` or an affine `E₈` configuration. -/
+private lemma exists_affineE7_or_affineE8_of_card_eq_succ
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : Fintype.card T.Component = t + 1)
+    {x : T.Component} (hx_ne : ∀ i < t, x ≠ c i)
+    (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ))) {r : ℕ} (hr : 2 ≤ r)
+    (hrt : 2 * r + 1 ≤ t) (hx : 0 < T.intersection (c r) x)
+    (hx_zero : ∀ i < t, i ≠ r → T.intersection (c i) x = 0) :
+    (∃ l : Fin 8 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E7.graph.Adj i j → 0 < T.intersection (l i) (l j)) ∨
+      ∃ l : Fin 9 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E8.graph.Adj i j → 0 < T.intersection (l i) (l j) := by
+  by_cases hr3 : 3 ≤ r
+  · exact .inl (hc.exists_affineE7 hr3 (by omega) hx_ne hx)
+  obtain rfl : r = 2 := by omega
+  by_cases ht8 : 8 ≤ t
+  · exact .inr (hc.exists_affineE8 ht8 hx_ne hx)
+  · exact (hc.not_card_eq_succ_of_branch_two (by omega) (by omega)
+      hx_ne hx_self hx hx_zero hcard).elim
+
+end IsSelfIntersectionMinusTwoChain
+
+/-! ### Structural classification of numerical types with self-intersections `-2w` -/
+
+/-- **Structural classification of numerical types with self-intersections `-2w`.**
+If every component of a numerical type `T` has self-intersection `aᵢᵢ = -2wᵢ`, then one of the
+following holds:
+
+* `0 < T.topologicalGenus` (the intersection graph contains a cycle, so by
+  `TauCeti.NumericalType.weight_eq_of_topologicalGenus_pos` and its companions it is a single cycle
+  with constant weights and multiplicities);
+* `T` is exhausted by a chordless chain of at least two components;
+* `T` is exhausted by a fork of chain length at least three;
+* `T` contains (and hence, by `TauCeti.NumericalType.exists_equiv_fourLeafStar`, is exhausted by) a
+  four-leaf star (affine `D₄`);
+* `T` is exhausted by a double fork of chain length at least four (affine `Dₙ`, `n ≥ 5`);
+* `T` contains (and hence, by `TauCeti.NumericalType.exists_equiv_affineE6`,
+  `exists_equiv_affineE7`, or `exists_equiv_affineE8`, is exhausted by) an affine `E₆`, `E₇`, or
+  `E₈` configuration. -/
+theorem topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine
     (hself : ∀ i, T.intersection i i = -(2 * (T.weight i : ℤ))) :
-    1 < Fintype.card T.Component := by
-  have hpos : 0 < Fintype.card T.Component := Fintype.card_pos
-  by_contra! hle
-  have hcard : Fintype.card T.Component = 1 := by omega
-  obtain ⟨i⟩ := T.componentNonempty
-  have h0 := T.intersection_eq_zero_of_card_eq_one hcard i i
-  have hw := (T.weight i).pos
-  have := hself i
-  omega
+    0 < T.topologicalGenus ∨
+      (∃ t c, 2 ≤ t ∧ Fintype.card T.Component = t ∧ T.IsSelfIntersectionMinusTwoChain t c ∧
+        ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∨
+      (∃ t c b, Fintype.card T.Component = t + 1 ∧ T.IsSelfIntersectionMinusTwoFork t c b) ∨
+      (∃ c₀ : T.Component, ∃ l : Fin 4 → T.Component,
+        Function.Injective l ∧ ∀ i, T.Adj c₀ (l i)) ∨
+      (∃ t c left right, 4 ≤ t ∧ Fintype.card T.Component = t + 2 ∧
+        T.IsSelfIntersectionMinusTwoFork t c right ∧
+        T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left) ∨
+      (∃ l : Fin 7 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E6.graph.Adj i j → T.Adj (l i) (l j)) ∨
+      (∃ l : Fin 8 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E7.graph.Adj i j → 0 < T.intersection (l i) (l j)) ∨
+      (∃ l : Fin 9 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E8.graph.Adj i j → 0 < T.intersection (l i) (l j)) := by
+  classical
+  have hcard_gt_one := T.one_lt_card_of_intersection_self_eq hself
+  obtain ⟨t, c, hc, hcU, hmax⟩ := T.exists_chain_forall_le univ
+  set A := (range t).image c with hA_def
+  have mem_A {x : T.Component} : x ∈ A ↔ ∃ i < t, c i = x := by simp [hA_def]
+  have hAcard : #A = t := hc.card_image_range
+  have ht : 0 < t := by
+    obtain ⟨x⟩ := T.componentNonempty
+    have := hmax 1 (fun _ ↦ x) ⟨by omega, fun _ _ ↦ hself x, by omega⟩ fun _ _ ↦ mem_univ x
+    omega
+  by_cases hAU : A = univ
+  · -- The longest chain exhausts `T`.
+    have hcard : Fintype.card T.Component = t := by
+      rw [← card_univ, ← hAU, hAcard]
+    by_cases hends : 2 < t ∧ 0 < T.intersection (c 0) (c (t - 1))
+    · exact .inl (hc.topologicalGenus_pos_of_card_eq hcard hends.1 hends.2)
+    · refine .inr (.inl ⟨t, c, by omega, hcard, hc, hc.intersection_eq_zero_of_card_eq hcard ?_⟩)
+      intro ht2
+      have hle : T.intersection (c 0) (c (t - 1)) ≤ 0 := not_lt.mp fun h ↦ hends ⟨ht2, h⟩
+      exact le_antisymm hle (T.offDiagonal_nonneg _ _ (hc.ne (by omega) (by omega) (by omega)))
+  -- Some component `x` outside `A` meets `c r`.
+  obtain ⟨b₀, hmem, x, hxA, hpos⟩ :=
+    T.exists_mem_notMem_adj A ⟨c 0, mem_A.mpr ⟨0, ht, rfl⟩⟩ (coe_eq_univ.not.mpr hAU)
+  replace hpos := (T.adj_iff.mp hpos).2
+  obtain ⟨r, hr, rfl⟩ := mem_A.mp hmem
+  have hx_ne : ∀ i < t, x ≠ c i := fun i hi h ↦ hxA (mem_A.mpr ⟨i, hi, h.symm⟩)
+  obtain ⟨hr0, hrt⟩ := hc.pos_and_lt_of_intersection_pos hcU hmax (mem_univ x) hx_ne (hself x)
+    hr hpos
+  have hx_zero : ∀ i < t, i ≠ r → T.intersection (c i) x = 0 :=
+    fun i hi hir ↦ hc.intersection_eq_zero_of_ne_of_intersection_pos hcU hmax (mem_univ x)
+      hx_ne (hself x) hr hpos hi hir
+  by_cases hBU : insert x A = univ
+  · -- `c` and `x` exhaust `T`.
+    have hcard : Fintype.card T.Component = t + 1 := by
+      rw [← card_univ, ← hBU, card_insert_of_notMem hxA, hAcard]
+    right; right
+    by_cases hfork_right : r = t - 2
+    · exact .inl ⟨t, c, x, hcard, hc, by omega, hx_ne, hself x, hfork_right ▸ hpos⟩
+    by_cases hfork_left : r = 1
+    · refine .inl ⟨t, fun i ↦ c (t - 1 - i), x, hcard, hc.reverse, by omega,
+        fun i hi ↦ hx_ne _ (by omega), hself x, ?_⟩
+      simpa [show t - 1 - (t - 2) = r by omega] using hpos
+    right; right; right; right
+    by_cases hdir : 2 * r + 1 ≤ t
+    · exact hc.exists_affineE7_or_affineE8_of_card_eq_succ hcard hx_ne (hself x)
+        (by omega) hdir hpos hx_zero
+    · have hpos' : 0 < T.intersection (c (t - 1 - (t - 1 - r))) x := by
+        simpa [show t - 1 - (t - 1 - r) = r by omega] using hpos
+      exact hc.reverse.exists_affineE7_or_affineE8_of_card_eq_succ hcard
+        (fun i hi ↦ hx_ne _ (by omega)) (hself x) (by omega) (by omega) hpos'
+        fun i hi hir ↦ hx_zero _ (by omega) (by omega)
+  · -- Some component `y` outside `insert x A` meets `insert x A`.
+    obtain ⟨b, hb, y, hyB, hby⟩ :=
+      T.exists_mem_notMem_adj ↑(insert x A) (insert_nonempty x A) (coe_eq_univ.not.mpr hBU)
+    replace hby := (T.adj_iff.mp hby).2
+    have hyx : y ≠ x := fun h ↦ hyB (h ▸ mem_insert_self _ _)
+    have hyA : y ∉ A := fun h ↦ hyB (mem_insert_of_mem h)
+    have hy_ne : ∀ i < t, y ≠ c i := fun i hi h ↦ hyA (mem_A.mpr ⟨i, hi, h.symm⟩)
+    have hcard₂ : t + 2 ≤ Fintype.card T.Component := by
+      have := card_le_card (subset_univ (insert y (insert x A)))
+      rw [card_univ, card_insert_of_notMem hyB, card_insert_of_notMem hxA, hAcard] at this
+      omega
+    rcases mem_insert.mp hb with hbx | hbA
+    · -- `y` meets `x`, producing the affine `E₆` configuration.
+      subst b
+      have hr2 := hc.two_le_of_intersection_pos hcU hmax (mem_univ x) hx_ne (hself x)
+        (mem_univ y) hy_ne (hself y) hyx hr hpos hby
+      have hrt2 := hc.reverse.two_le_of_intersection_pos (fun i hi ↦ hcU _ (by omega)) hmax
+        (mem_univ x) (fun i hi ↦ hx_ne _ (by omega)) (hself x) (mem_univ y)
+        (fun i hi ↦ hy_ne _ (by omega)) (hself y) hyx (r := t - 1 - r) (by omega)
+        (by simpa [show t - 1 - (t - 1 - r) = r by omega] using hpos) hby
+      exact .inr (.inr (.inr (.inr (.inr (.inl
+        (hc.exists_affineE6 hr2 (by omega) hyx.symm hx_ne hy_ne hpos hby))))))
+    · -- `y` meets `c s`, producing either a four-leaf star or an exhaustive double fork.
+      obtain ⟨s, hs, rfl⟩ := mem_A.mp hbA
+      obtain ⟨hs0, hst⟩ := hc.pos_and_lt_of_intersection_pos hcU hmax (mem_univ y) hy_ne
+        (hself y) hs hby
+      right; right; right
+      rcases le_total r s with hrs | hsr
+      · rcases hc.exists_fourLeafStar_or_doubleFork hcard₂ hyx.symm hx_ne hy_ne (hself x)
+            (hself y) hr0 hrs hst hpos hby with hstar | hdouble
+        · exact .inl hstar
+        · exact .inr (.inl hdouble)
+      · rcases hc.exists_fourLeafStar_or_doubleFork hcard₂ hyx hy_ne hx_ne (hself y)
+            (hself x) hs0 hsr hrt hby hpos with hstar | hdouble
+        · exact .inl hstar
+        · exact .inr (.inl hdouble)
+
+/-- **Structural classification of tree-shaped numerical types with self-intersections `-2w`.**
+If every component of `T` has self-intersection `-2w` and `T.topologicalGenus = 0` (so the
+intersection graph is a tree), then `T` is a chordless path, a fork, a four-leaf star, a double
+fork, or an affine `E₆`, `E₇`, or `E₈` configuration. -/
+theorem exists_chain_or_fork_or_star_or_affine_of_topologicalGenus_eq_zero
+    (hself : ∀ i, T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (htop : T.topologicalGenus = 0) :
+    (∃ t c, 2 ≤ t ∧ Fintype.card T.Component = t ∧ T.IsSelfIntersectionMinusTwoChain t c ∧
+        ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∨
+      (∃ t c b, Fintype.card T.Component = t + 1 ∧ T.IsSelfIntersectionMinusTwoFork t c b) ∨
+      (∃ c₀ : T.Component, ∃ l : Fin 4 → T.Component,
+        Function.Injective l ∧ ∀ i, T.Adj c₀ (l i)) ∨
+      (∃ t c left right, 4 ≤ t ∧ Fintype.card T.Component = t + 2 ∧
+        T.IsSelfIntersectionMinusTwoFork t c right ∧
+        T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left) ∨
+      (∃ l : Fin 7 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E6.graph.Adj i j → T.Adj (l i) (l j)) ∨
+      (∃ l : Fin 8 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E7.graph.Adj i j → 0 < T.intersection (l i) (l j)) ∨
+      (∃ l : Fin 9 → T.Component, Function.Injective l ∧
+        ∀ i j, AffineDynkinType.E8.graph.Adj i j → 0 < T.intersection (l i) (l j)) :=
+  (T.topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine hself).resolve_left
+    (by omega)
 
 end NumericalType
 

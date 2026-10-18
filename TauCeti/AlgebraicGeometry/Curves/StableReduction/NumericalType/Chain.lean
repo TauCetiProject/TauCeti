@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
+import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
@@ -813,6 +815,88 @@ theorem IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ
         2 * (T.weight (c (t - 1)) : ℤ) = W) ∧
       ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c (t - 1)) : ℤ) = W) :=
   T.exists_weight_eq_except_one_end_aux t c hc hcard ht
+
+/-- In a chain exhausting all components of a numerical type, any two nonconsecutive components
+other than the pair of endpoints do not meet, because the subchain between them is proper. If the
+endpoints do not meet when `2 < t`, then no two nonconsecutive components meet. -/
+lemma IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_card_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : Fintype.card T.Component = t)
+    (hends : 2 < t → T.intersection (c 0) (c (t - 1)) = 0) (i : ℕ) (hi : i < t) (j : ℕ)
+    (hj : j < t) (hij : i ≠ j) (hij₁ : i + 1 ≠ j) (hji₁ : j + 1 ≠ i) :
+    T.intersection (c i) (c j) = 0 := by
+  have hlt : ∀ u v : ℕ, u + 1 < v → v < t → T.intersection (c u) (c v) = 0 := by
+    intro u v huv hv
+    by_cases he : u = 0 ∧ v = t - 1
+    · rcases he with ⟨rfl, rfl⟩
+      exact hends (by omega)
+    · have hsub := (hc.shift (r := u) (s := v - u + 1) (by omega)).intersection_eq_zero
+        (by omega) (p := 0) (q := v - u) (by omega) (by omega) (by omega) (by omega) (by omega)
+      simpa [show u + (v - u) = v by omega] using hsub
+  rcases lt_or_gt_of_ne hij with h | h
+  · exact hlt i j (by omega) hj
+  · rw [T.intersection_comm]
+    exact hlt j i (by omega) hi
+
+/-- Every component of a numerical type exhausted by a chain `c` of length `t` has the form `c i`
+for some `i < t`. -/
+lemma IsSelfIntersectionMinusTwoChain.exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : Fintype.card T.Component = t)
+    (v : T.Component) : ∃ i < t, c i = v := by
+  classical
+  have hu : (range t).image c = univ := eq_univ_of_card _ (by rw [hc.card_image_range, hcard])
+  simpa [← hu] using mem_univ v
+
+/-- If a chain of at least three components exhausts a numerical type and its two endpoints meet,
+then every component has at least two neighbours in the intersection graph, so the topological
+genus is positive. -/
+lemma IsSelfIntersectionMinusTwoChain.topologicalGenus_pos_of_card_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : Fintype.card T.Component = t) (ht : 2 < t)
+    (hends : 0 < T.intersection (c 0) (c (t - 1))) :
+    0 < T.topologicalGenus := by
+  classical
+  have hu : (range t).image c = (univ : Finset T.Component) :=
+    eq_univ_of_card _ (by rw [hc.card_image_range, hcard])
+  have htwo (v : T.Component) : 2 ≤ T.intersectionGraph.degree v := by
+    have hv : v ∈ (range t).image c := hu ▸ mem_univ v
+    obtain ⟨i, hi, rfl⟩ := mem_image.mp hv
+    replace hi := mem_range.mp hi
+    suffices ∃ j k, j ≠ k ∧ T.Adj (c i) j ∧ T.Adj (c i) k by
+      obtain ⟨j, k, hjk, hj, hk⟩ := this
+      rw [← SimpleGraph.card_neighborFinset_eq_degree]
+      have hsub : ({j, k} : Finset T.Component) ⊆ T.intersectionGraph.neighborFinset (c i) := by
+        intro z hz
+        simp only [mem_insert, mem_singleton] at hz
+        rw [SimpleGraph.mem_neighborFinset, T.intersectionGraph_adj_iff]
+        rcases hz with rfl | rfl <;> assumption
+      exact (card_pair hjk).symm.trans_le (card_le_card hsub)
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact ⟨c 1, c (t - 1), hc.ne (by omega) (by omega) (by omega),
+        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+          hc.intersection_succ_pos 0 (by omega)⟩,
+        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), hends⟩⟩
+    by_cases hilast : i = t - 1
+    · subst i
+      refine ⟨c 0, c (t - 2), hc.ne (by omega) (by omega) (by omega),
+        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+          by rwa [T.intersection_comm]⟩,
+        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩⟩
+      rw [T.intersection_comm]
+      exact hc.intersection_pos (by omega) (by omega)
+    · refine ⟨c (i - 1), c (i + 1), hc.ne (by omega) (by omega) (by omega),
+        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩,
+        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+          hc.intersection_succ_pos i (by omega)⟩⟩
+      rw [T.intersection_comm]
+      exact hc.intersection_pos (by omega) (by omega)
+  have hdeg : 2 * Fintype.card T.Component ≤ ∑ v, T.intersectionGraph.degree v := by
+    simpa [mul_comm 2] using sum_le_sum fun v (_ : v ∈ univ) ↦ htwo v
+  have hsum := T.intersectionGraph.sum_degrees_eq_twice_card_edges
+  have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
+    rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+  rw [topologicalGenus_def, Nat.card_eq_fintype_card]
+  omega
 
 end NumericalType
 

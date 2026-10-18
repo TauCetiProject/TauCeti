@@ -305,6 +305,16 @@ lemma one_lt_card_of_intersection_self_ne_zero {i : T.Component}
   lt_of_le_of_ne Fintype.card_pos fun h1 ↦
     h (T.intersection_eq_zero_of_card_eq_one h1.symm i i)
 
+/-- Any numerical type in which every component has self-intersection `-2w` has at least two
+components. -/
+lemma one_lt_card_of_intersection_self_eq
+    (hself : ∀ i, T.intersection i i = -(2 * (T.weight i : ℤ))) :
+    1 < Fintype.card T.Component := by
+  obtain ⟨i⟩ := T.componentNonempty
+  apply T.one_lt_card_of_intersection_self_ne_zero (i := i)
+  rw [hself i]
+  exact (neg_neg_of_pos (by positivity)).ne
+
 /-! ### Integrality of the signed genus -/
 
 /-- The multiplicity-weighted sum of the self-intersections of a numerical type is even.

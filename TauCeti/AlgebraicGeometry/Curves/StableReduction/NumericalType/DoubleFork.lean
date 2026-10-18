@@ -357,6 +357,35 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
 
 end IsSelfIntersectionMinusTwoFork
 
+/-- Every component of a numerical type exhausted by a double fork `(c, left, right)` of chain
+length `t ≥ 4` is `left`, `right`, or `c i` for some `i < t`. -/
+lemma IsSelfIntersectionMinusTwoFork.eq_or_eq_or_exists_lt_eq_of_card_eq {t : ℕ}
+    {c : ℕ → T.Component} {left right : T.Component}
+    (hr : T.IsSelfIntersectionMinusTwoFork t c right)
+    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left) (ht : 4 ≤ t)
+    (hcard : Fintype.card T.Component = t + 2) (v : T.Component) :
+    v = left ∨ v = right ∨ ∃ i < t, c i = v := by
+  classical
+  have hleft_ne (i : ℕ) (hi : i < t) : left ≠ c i := by
+    simpa only [show t - 1 - (t - 1 - i) = i by omega] using hl.branch_ne (t - 1 - i) (by omega)
+  have hlr : left ≠ right := by
+    rintro rfl
+    have hpos : 0 < T.intersection (c 1) left := by
+      simpa only [show t - 1 - (t - 2) = 1 by omega] using hl.branch_intersection_pos
+    rw [hr.branch_intersection_eq_zero (by omega) (by omega)] at hpos
+    exact lt_irrefl 0 hpos
+  have hr_notMem : right ∉ (range t).image c := by
+    simp only [mem_image, mem_range, not_exists, not_and]
+    exact fun i hi h ↦ hr.branch_ne i hi h.symm
+  have hl_notMem : left ∉ insert right ((range t).image c) := by
+    simp only [mem_insert, mem_image, mem_range, not_or, not_exists, not_and]
+    exact ⟨hlr, fun i hi h ↦ hleft_ne i hi h.symm⟩
+  have hu : insert left (insert right ((range t).image c)) = univ :=
+    eq_univ_of_card _ (by
+      rw [card_insert_of_notMem hl_notMem, card_insert_of_notMem hr_notMem,
+        hr.card_image_range, hcard])
+  simpa [← hu] using mem_univ v
+
 end NumericalType
 
 end TauCeti

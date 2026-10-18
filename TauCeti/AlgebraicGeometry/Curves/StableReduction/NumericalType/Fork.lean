@@ -574,6 +574,16 @@ lemma branch_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
 
 end IsSelfIntersectionMinusTwoFork
 
+/-- Every component of a numerical type exhausted by a fork `(c, b)` of chain length `t` is either
+`b` or `c i` for some `i < t`. -/
+lemma IsSelfIntersectionMinusTwoFork.eq_or_exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ → T.Component}
+    {b : T.Component} (hf : T.IsSelfIntersectionMinusTwoFork t c b)
+    (hcard : Fintype.card T.Component = t + 1) (v : T.Component) :
+    v = b ∨ ∃ i < t, c i = v := by
+  classical
+  have hu := hf.insert_image_range_eq_univ hcard
+  simpa [← hu] using mem_univ v
+
 end NumericalType
 
 end TauCeti
