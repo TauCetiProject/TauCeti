@@ -12,8 +12,10 @@ public import Mathlib.ModelTheory.PartialEquiv
 
 Two structures are potentially isomorphic when some nonempty family of equivalences between
 finitely generated substructures has the back-and-forth extension property. Crucially, extensions
-must remain inside the chosen family. This is weaker than Mathlib's `Language.IsExtensionPair`,
-which requires every finitely generated partial equivalence to extend.
+must remain inside the chosen family. Mathlib's `Language.IsExtensionPair` instead requires every
+finitely generated partial equivalence to extend; holding in both directions, together with an
+initial finitely generated partial equivalence, it implies potential isomorphism
+(`FirstOrder.Language.IsExtensionPair.potentialIso`).
 
 The definition is the finitely-generated-partial-equivalence presentation of the back-and-forth
 systems used by Carol Karp, *Finite-quantifier equivalence* (1965). Cameron Freer's
@@ -50,7 +52,8 @@ theorem potentialIso_def : PotentialIso (L := L) M N ↔
 
 /-- An isomorphism gives a potential isomorphism by restricting it to finitely generated
 substructures. -/
-theorem potentialIso_of_equiv (e : M ≃[L] N) : PotentialIso (L := L) M N := by
+theorem _root_.FirstOrder.Language.Equiv.potentialIso (e : M ≃[L] N) :
+    PotentialIso (L := L) M N := by
   let F : M ≃ₚ[L] N := e.toEmbedding.toPartialEquiv
   refine ⟨{f | f.1 ≤ F}, ?_, ?_, ?_⟩
   · have hbot : (⊥ : L.Substructure M) ≤ F.dom := bot_le
@@ -80,29 +83,31 @@ theorem potentialIso_of_equiv (e : M ≃[L] N) : PotentialIso (L := L) M N := by
       exact mem_of_le_of_mem le_sup_left hn
     · exact PartialEquiv.le_codRestrict f.1 F le_sup_right hA hf
 
+/-- Inverting a finitely generated partial equivalence twice gives it back. -/
+@[simp]
+theorem _root_.FirstOrder.Language.FGEquiv.symm_symm (f : L.FGEquiv M N) : f.symm.symm = f :=
+  Subtype.ext f.1.symm_symm
+
 /-- Potential isomorphism is symmetric. -/
 theorem PotentialIso.symm (h : PotentialIso (L := L) M N) :
     PotentialIso (L := L) N M := by
   obtain ⟨S, ⟨f, hf⟩, hforth, hback⟩ := h
   refine ⟨{g | g.symm ∈ S}, ⟨f.symm, ?_⟩, ?_, ?_⟩
-  · have heq : f.symm.symm = f := by rfl
-    exact heq.symm ▸ hf
+  · rwa [Set.mem_ofPred_eq, FGEquiv.symm_symm]
   · intro g hg n
     obtain ⟨k, hk, hn, hgk⟩ := hback g.symm hg n
     refine ⟨k.symm, ?_, hn, ?_⟩
-    · have heq : k.symm.symm = k := by rfl
-      exact heq.symm ▸ hk
+    · rwa [Set.mem_ofPred_eq, FGEquiv.symm_symm]
     · exact PartialEquiv.monotone_symm hgk
   · intro g hg m
     obtain ⟨k, hk, hm, hgk⟩ := hforth g.symm hg m
     refine ⟨k.symm, ?_, hm, ?_⟩
-    · have heq : k.symm.symm = k := by rfl
-      exact heq.symm ▸ hk
+    · rwa [Set.mem_ofPred_eq, FGEquiv.symm_symm]
     · exact PartialEquiv.monotone_symm hgk
 
 /-- Mathlib's global two-sided extension property gives a potential isomorphism when there is an
 initial finitely generated partial equivalence. -/
-theorem potentialIso_of_isExtensionPair (hMN : L.IsExtensionPair M N)
+theorem _root_.FirstOrder.Language.IsExtensionPair.potentialIso (hMN : L.IsExtensionPair M N)
     (hNM : L.IsExtensionPair N M) (hne : Nonempty (L.FGEquiv M N)) :
     PotentialIso (L := L) M N := by
   refine ⟨Set.univ, hne.elim fun f => ⟨f, Set.mem_univ f⟩, ?_, ?_⟩
