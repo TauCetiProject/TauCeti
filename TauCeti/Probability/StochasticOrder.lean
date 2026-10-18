@@ -56,7 +56,7 @@ level strictly between zero and one.
 
 The reversal is the usual convention for first-order stochastic dominance: a law shifted to the
 right has a smaller cdf and larger quantiles. -/
-theorem cdf_le_iff_quantile_le [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+theorem cdf_le_iff_quantile_le :
     (∀ x, cdf ν x ≤ cdf μ x) ↔
       ∀ t ∈ Ioo (0 : ℝ) 1, μ.quantile t ≤ ν.quantile t := by
   constructor
