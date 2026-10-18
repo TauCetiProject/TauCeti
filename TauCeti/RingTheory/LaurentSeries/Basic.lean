@@ -235,7 +235,6 @@ theorem coeff_neg_one_eq_zero_of_valuation_le_one {K : Type*} [Field K] {f : K�
 
 /-- The formal derivative of any Laurent series has residue (coefficient of `X⁻¹`) equal to
 zero. -/
-@[simp]
 theorem coeff_neg_one_derivative {R : Type*} [Ring R] (f : R⸨X⸩) :
     (derivative R f).coeff (-1) = 0 := by
   simp [derivative_apply]
