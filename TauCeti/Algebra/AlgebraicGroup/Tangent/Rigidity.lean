@@ -6,8 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Equalizer
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
@@ -15,12 +15,15 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 public import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
-# Triviality of homomorphisms with zero differential
+# Homomorphisms determined by their differentials
+
+Two homomorphisms from a connected finite-type affine group over an algebraically closed field
+of characteristic zero agree if their differentials agree. Their scheme-theoretic equalizer
+has the full Lie algebra. Cartier's theorem makes it smooth, so it is the whole source group.
 
 A homomorphism from a connected finite-type affine group over an algebraically closed field
-of characteristic zero is trivial if its differential at the identity is zero. Indeed, the
-scheme-theoretic kernel has the full Lie algebra. Cartier's theorem makes both it and the
-ambient group smooth, so connectedness forces the kernel to be the whole group.
+of characteristic zero is trivial if its differential at the identity is zero. This follows
+by comparing it with the trivial homomorphism, whose differential is zero.
 
 The statement is expressed contravariantly on coordinate Hopf algebras: `f : H ⟶ K`
 represents a morphism from `Spec K` to `Spec H`. Triviality is the counit followed by the
@@ -31,7 +34,7 @@ finite-type affine group with nondegenerate Killing form to a commutative affine
 trivial: its differential maps a perfect Lie algebra to an abelian one. This supplies the
 vanishing of commutative images for semisimple groups.
 
-The kernel comparison uses `CommHopfAlgCat.lieSubalgebra_kernelHopfIdeal` and the smooth
+The equalizer comparison uses `HopfIdeal.mem_lieSubalgebra_equalizer_iff` and the smooth
 closed-subgroup criterion `HopfIdeal.eq_bot_of_lieSubalgebra_eq_top`.
 
 ## References
@@ -52,6 +55,25 @@ variable {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
 variable {H : _root_.CommHopfAlgCat.{u} k} {K : FiniteTypeCommHopfAlgCat.{u, u} k}
 variable [ConnectedSpace (PrimeSpectrum K)]
 
+/-- Two homomorphisms from a connected finite-type affine group over an algebraically closed
+field of characteristic zero agree if their differentials at the identity agree. The target
+group need not be of finite type. -/
+theorem _root_.CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq
+    (f g : H ⟶ K.obj)
+    (hfg : derivationCompLieHom (B := k) f.hom = derivationCompLieHom (B := k) g.hom) :
+    f = g := by
+  let _ : Algebra.Smooth k K :=
+    (smoothCommHopfAlgProperty_iff K.obj).mp (smoothCommHopfAlgProperty_of_charZero k K.obj)
+  let I := equalizerHopfIdeal f g
+  let _ : Algebra.Smooth k (K ⧸ I.toIdeal) :=
+    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
+      (_root_.CommHopfAlgCat.of k (K ⧸ I.toIdeal)))
+  apply (equalizerHopfIdeal_eq_bot_iff f g).mp
+  apply HopfIdeal.eq_bot_of_lieSubalgebra_eq_top I
+  ext d
+  simp only [I, equalizerHopfIdeal_def, HopfIdeal.mem_lieSubalgebra_equalizer_iff,
+    hfg, LieSubalgebra.mem_top]
+
 /-- Over an algebraically closed field of characteristic zero, a morphism from a connected
 finite-type affine group with zero differential is trivial. The target group need not be
 of finite type. -/
@@ -60,19 +82,13 @@ theorem _root_.CommHopfAlgCat.Hom.eq_unit_comp_counit_of_derivationCompLieHom_eq
     (hf : derivationCompLieHom (B := k) f.hom = 0) :
     f = _root_.CommHopfAlgCat.ofHom
       ((Bialgebra.unitBialgHom k K).comp (Bialgebra.counitBialgHom k H)) := by
-  let _ : Algebra.Smooth k K :=
-    (smoothCommHopfAlgProperty_iff K.obj).mp (smoothCommHopfAlgProperty_of_charZero k K.obj)
-  let _ : Algebra.Smooth k (K ⧸ (kernelHopfIdeal f).toIdeal) :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
-      (_root_.CommHopfAlgCat.of k (K ⧸ (kernelHopfIdeal f).toIdeal)))
-  have hlie : (kernelHopfIdeal f).lieSubalgebra (B := k) = ⊤ := by
-    ext d
-    simp [lieSubalgebra_kernelHopfIdeal, hf]
-  have hker := HopfIdeal.eq_bot_of_lieSubalgebra_eq_top (kernelHopfIdeal f) hlie
-  simpa only [Category.comp_id] using
-    (comp_eq_unit_comp_counit_iff f (𝟙 K.obj)).mpr (by
-      rw [hker, HopfIdeal.bot_toIdeal]
-      exact bot_le)
+  apply f.eq_of_derivationCompLieHom_eq
+  rw [hf]
+  ext d a
+  -- Mathlib has no application lemma for the unit bialgebra morphism.
+  simp [derivationCompLieHom_apply, derivationComp_apply, Bialgebra.unitBialgHom]
+  -- The remaining zeros use different counit coefficient synonyms.
+  rfl
 
 end TauCeti.CommHopfAlgCat
 
