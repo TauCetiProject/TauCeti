@@ -30,9 +30,6 @@ normal subgroup preserves the component group, including for infinitesimal kerne
 * J. S. Milne, *Algebraic Groups* (2017), §5, identity components and quotients.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §6.7.
 
-The descent argument follows the component-idempotent argument in
-`TauCeti.Algebra.AlgebraicGroup.Connected.Extension`, using
-`TauCeti.CommHopfAlgCat.coinvariants_kernelHopfIdeal_eq_range`.
 -/
 
 public section
@@ -66,6 +63,9 @@ theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
     exact (rationalComponentMap_apply Q h).symm.trans
       (hC.trans (rationalKernelPoint_one_component Q).symm)
   -- Descend the source component idempotent and detect it on the target identity component.
+  -- This follows the component-idempotent argument in
+  -- TauCeti.Algebra.AlgebraicGroup.Connected.Extension, using
+  -- TauCeti.CommHopfAlgCat.coinvariants_kernelHopfIdeal_eq_range.
   obtain ⟨a, hidem, ha⟩ := f.hom.exists_map_eq_identityComponentIdempotent hf
   -- Its counit is one, so its clopen basic open contains the target identity component.
   have hε : (Bialgebra.counitAlgHom k Q) a = 1 := by
