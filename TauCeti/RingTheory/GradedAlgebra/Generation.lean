@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
-# Finite generation from an eventual recurrence on homogeneous pieces
+# Finite generation from an eventual recurrence on a direct-sum decomposition
 
-Let `A` be an `ℕ`-graded `R`-algebra and `B` an `R`-subalgebra of `A`. Suppose that, from
-some degree `N` onward, every homogeneous piece satisfies `Aₙ₊₁ ⊆ B · Aₙ`. Then the pieces
-of degrees at most `N` span `A` as a `B`-module. If these finitely many pieces are finite
+Let `A` be an `R`-algebra with an `ℕ`-indexed direct-sum decomposition into `R`-submodules
+and `B` an `R`-subalgebra of `A`. Suppose that, from some index `N` onward, every piece
+satisfies `Aₙ₊₁ ⊆ B · Aₙ`. Then the pieces of indices at most `N` span `A` as a `B`-module.
+Multiplication need not respect the decomposition. If these finitely many pieces are finite
 `R`-modules, `A` is a finite `B`-module; if `B` is also of finite type over `R`, so is `A`.
 
 For section rings of divisors on curves, a function pencil gives the recurrence with `B`
@@ -34,10 +35,10 @@ variable {R A : Type*} [CommSemiring R]
 section Semiring
 
 variable [Semiring A] [Algebra R A]
-    (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] (B : Subalgebra R A) (N : ℕ)
+    (𝒜 : ℕ → Submodule R A) [DirectSum.Decomposition 𝒜] (B : Subalgebra R A) (N : ℕ)
 
-/-- If every piece above degree `N` is obtained from the preceding one by multiplication
-with elements of `B`, the pieces of degrees at most `N` span the whole algebra over `B`. -/
+/-- If every piece above index `N` is obtained from the preceding one by multiplication
+with elements of `B`, the pieces of indices at most `N` span the whole algebra over `B`. -/
 theorem span_eq_top_of_le_mul
     (hstep : ∀ n, N ≤ n → 𝒜 (n + 1) ≤ B.toSubmodule * 𝒜 n) :
     Submodule.span B (↑(⨆ i : Fin (N + 1), 𝒜 i) : Set A) = ⊤ := by
@@ -61,8 +62,8 @@ theorem span_eq_top_of_le_mul
   rw [← sum_support_decompose 𝒜 x]
   exact Submodule.sum_mem _ fun n _ ↦ hpiece n (SetLike.coe_mem _)
 
-/-- An eventual recurrence `Aₙ₊₁ ⊆ B · Aₙ` makes the graded algebra finite over `B`,
-provided its pieces of degrees at most the recurrence threshold are finite over `R`. -/
+/-- An eventual recurrence `Aₙ₊₁ ⊆ B · Aₙ` makes the decomposed algebra finite over `B`,
+provided its pieces of indices at most the recurrence threshold are finite over `R`. -/
 theorem finite_of_le_mul
     (hfinite : ∀ i : Fin (N + 1), (𝒜 i).FG)
     (hstep : ∀ n, N ≤ n → 𝒜 (n + 1) ≤ B.toSubmodule * 𝒜 n) :
@@ -74,11 +75,11 @@ theorem finite_of_le_mul
 end Semiring
 
 variable [CommSemiring A] [Algebra R A]
-    (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] (N : ℕ)
+    (𝒜 : ℕ → Submodule R A) [DirectSum.Decomposition 𝒜] (N : ℕ)
 
 /-- An eventual recurrence `Aₙ₊₁ ⊆ U · Aₙ` with a finitely generated submodule `U` makes the
-whole graded algebra of finite type, provided its initial homogeneous pieces are finite.
-The multiplying submodule need not be homogeneous. -/
+whole decomposed algebra of finite type, provided its initial pieces are finite.
+The multiplying submodule need not be a piece of the decomposition. -/
 theorem finiteType_of_le_mul (U : Submodule R A) (hU : U.FG)
     (hfinite : ∀ i : Fin (N + 1), (𝒜 i).FG)
     (hstep : ∀ n, N ≤ n → 𝒜 (n + 1) ≤ U * 𝒜 n) :
