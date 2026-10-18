@@ -35,7 +35,8 @@ Benamou–Brenier formula for the cost `L w = ‖w‖ ^ p`.
 
 The infimum is taken in `ℝ`, so the results assume `φ` and `L` bounded below, which makes it finite
 for `t ≥ 0`. At `t = 0` the formula degenerates to the infimum of `φ`; the Hopf–Lax function
-recovers `φ` only as a limit `t → 0⁺` and is not studied at `t ≤ 0` here.
+recovers `φ` as a limit `t → 0⁺` only under additional hypotheses. That limit, and times `t ≤ 0`,
+are not studied here.
 
 ## Main definitions
 

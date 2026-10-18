@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
-import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Convexity of powers of the norm
