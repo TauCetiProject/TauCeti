@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
+public import Mathlib.Dynamics.Flow
 
 /-!
 # Equivariant homomorphisms and invariant C⋆-subalgebras
@@ -147,29 +148,24 @@ end Hom
 
 end TauCeti.CStarAction
 
-namespace NonUnitalStarSubalgebra
+namespace IsInvariant
 
 open TauCeti
 
 variable {G A B : Type*} [Group G] [TopologicalSpace G]
   [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
 
-/-- A nonunital star subalgebra is invariant under a C⋆-action when every group element
-maps each of its elements back into the subalgebra. -/
-def IsInvariant (S : NonUnitalStarSubalgebra ℂ A) (α : CStarAction G A) : Prop :=
-  ∀ g : G, ∀ {a : A}, a ∈ S → α g a ∈ S
-
-namespace IsInvariant
-
 variable {S : NonUnitalStarSubalgebra ℂ A} {T : NonUnitalStarSubalgebra ℂ B}
   {α : CStarAction G A} {β : CStarAction G B}
 
 /-- Apply invariance to a member of the subalgebra. -/
-theorem apply_mem (hS : S.IsInvariant α) (g : G) {a : A} (ha : a ∈ S) : α g a ∈ S :=
+theorem apply_mem (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    (g : G) {a : A} (ha : a ∈ S) : α g a ∈ S :=
   hS g ha
 
 /-- Invariance under a group action can equivalently be stated as equality with every image. -/
-theorem image_eq (hS : S.IsInvariant α) (g : G) : α g '' (S : Set A) = S := by
+theorem image_eq (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    (g : G) : α g '' (S : Set A) = S := by
   apply Set.Subset.antisymm
   · rintro _ ⟨a, ha, rfl⟩
     exact hS g ha
@@ -177,7 +173,9 @@ theorem image_eq (hS : S.IsInvariant α) (g : G) : α g '' (S : Set A) = S := by
     exact ⟨α g⁻¹ a, hS g⁻¹ ha, α.apply_inv_apply g a⟩
 
 /-- A star subalgebra is invariant exactly when every group element maps it onto itself. -/
-theorem iff_image_eq : S.IsInvariant α ↔ ∀ g : G, α g '' (S : Set A) = S := by
+theorem iff_image_eq :
+    _root_.IsInvariant (fun g a => α g a) (S : Set A) ↔
+      ∀ g : G, α g '' (S : Set A) = S := by
   constructor
   · exact fun hS g => hS.image_eq g
   · intro hS g a ha
@@ -185,32 +183,38 @@ theorem iff_image_eq : S.IsInvariant α ↔ ∀ g : G, α g '' (S : Set A) = S :
     rwa [hS g] at this
 
 /-- The topological closure of an invariant star subalgebra is invariant. -/
-theorem topologicalClosure (hS : S.IsInvariant α) : S.topologicalClosure.IsInvariant α := by
+theorem topologicalClosure (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A)) :
+    _root_.IsInvariant (fun g a => α g a) (S.topologicalClosure : Set A) := by
   intro g a ha
   exact map_mem_closure (StarAlgEquiv.isometry (α g)).continuous ha fun x hx => hS g hx
 
-/-- The top star subalgebra is invariant under every C⋆-action. -/
+/-- The universal set is invariant under every C⋆-action. -/
 @[simp]
-theorem top (α : CStarAction G A) : (⊤ : NonUnitalStarSubalgebra ℂ A).IsInvariant α :=
+theorem top (α : CStarAction G A) :
+    _root_.IsInvariant (fun g a => α g a) Set.univ :=
   fun _ _ _ => Set.mem_univ _
 
-/-- The bottom star subalgebra is invariant under every C⋆-action. -/
+/-- The zero singleton is invariant under every C⋆-action. -/
 @[simp]
-theorem bot (α : CStarAction G A) : (⊥ : NonUnitalStarSubalgebra ℂ A).IsInvariant α := by
+theorem bot (α : CStarAction G A) :
+    _root_.IsInvariant (fun g a => α g a) {0} := by
   intro g a ha
-  rw [NonUnitalStarAlgebra.mem_bot] at ha ⊢
-  simp only [ha, map_zero]
+  change a = 0 at ha
+  change α g a = 0
+  rw [ha, map_zero]
 
 /-- The image of an invariant star subalgebra under an equivariant homomorphism is invariant. -/
-theorem map (hS : S.IsInvariant α) (f : CStarAction.Hom α β) :
-    (S.map f.toNonUnitalStarAlgHom).IsInvariant β := by
+theorem map (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    (f : CStarAction.Hom α β) :
+    _root_.IsInvariant (fun g b => β g b) (S.map f.toNonUnitalStarAlgHom : Set B) := by
   intro g b hb
   obtain ⟨a, ha, rfl⟩ := hb
   exact ⟨α g a, hS g ha, f.map_action g a⟩
 
 /-- The preimage of an invariant star subalgebra under an equivariant homomorphism is invariant. -/
-theorem comap (hT : T.IsInvariant β) (f : CStarAction.Hom α β) :
-    (T.comap f.toNonUnitalStarAlgHom).IsInvariant α := by
+theorem comap (hT : _root_.IsInvariant (fun g b => β g b) (T : Set B))
+    (f : CStarAction.Hom α β) :
+    _root_.IsInvariant (fun g a => α g a) (T.comap f.toNonUnitalStarAlgHom : Set A) := by
   intro g a ha
   apply (NonUnitalStarSubalgebra.mem_comap T f.toNonUnitalStarAlgHom _).mpr
   rw [f.map_action' g a]
@@ -219,11 +223,16 @@ theorem comap (hT : T.IsInvariant β) (f : CStarAction.Hom α β) :
 
 /-- The range of an equivariant homomorphism is an invariant star subalgebra. -/
 theorem range (f : CStarAction.Hom α β) :
-    (NonUnitalStarAlgHom.range f.toNonUnitalStarAlgHom).IsInvariant β := by
-  simpa only [NonUnitalStarAlgebra.map_top] using (top α).map f
+    _root_.IsInvariant (fun g b => β g b)
+      (NonUnitalStarAlgHom.range f.toNonUnitalStarAlgHom : Set B) := by
+  have htop : _root_.IsInvariant (fun g a => α g a)
+      ((⊤ : NonUnitalStarSubalgebra ℂ A) : Set A) := by
+    simpa only [NonUnitalStarAlgebra.coe_top] using top α
+  simpa only [NonUnitalStarAlgebra.map_top] using htop.map f
 
 /-- Restrict an automorphism from an action to an invariant star subalgebra. -/
-def restrictEquiv (hS : S.IsInvariant α) (g : G) : S ≃⋆ₐ[ℂ] S where
+def restrictEquiv (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    (g : G) : S ≃⋆ₐ[ℂ] S where
   toFun a := ⟨α g a, hS.apply_mem g a.property⟩
   invFun a := ⟨α g⁻¹ a, hS.apply_mem g⁻¹ a.property⟩
   left_inv a := Subtype.ext (α.inv_apply_apply g a)
@@ -234,18 +243,21 @@ def restrictEquiv (hS : S.IsInvariant α) (g : G) : S ≃⋆ₐ[ℂ] S where
   map_smul' z a := Subtype.ext (map_smul (α g) z (a : A))
 
 @[simp]
-theorem coe_restrictEquiv (hS : S.IsInvariant α) (g : G) :
+theorem coe_restrictEquiv
+    (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A)) (g : G) :
     ((hS.restrictEquiv g : S ≃⋆ₐ[ℂ] S) : S → S) =
       fun a => ⟨α g a, hS.apply_mem g a.property⟩ :=
   (rfl)
 
 @[simp]
-theorem restrictEquiv_apply (hS : S.IsInvariant α) (g : G) (a : S) :
+theorem restrictEquiv_apply
+    (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A)) (g : G) (a : S) :
     hS.restrictEquiv g a = ⟨α g a, hS.apply_mem g a.property⟩ :=
   (rfl)
 
 /-- Restrict a C⋆-action to a closed invariant star subalgebra. -/
-def restrict (hS : S.IsInvariant α) [IsClosed (S : Set A)] : CStarAction G S where
+def restrict (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    [IsClosed (S : Set A)] : CStarAction G S where
   toMonoidHom :=
     { toFun := hS.restrictEquiv
       map_one' := by
@@ -258,21 +270,22 @@ def restrict (hS : S.IsInvariant α) [IsClosed (S : Set A)] : CStarAction G S wh
     (α.continuous_orbit a).subtype_mk fun g => hS.apply_mem g a.property
 
 @[simp]
-theorem restrict_apply (hS : S.IsInvariant α) [IsClosed (S : Set A)] (g : G) (a : S) :
+theorem restrict_apply (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    [IsClosed (S : Set A)] (g : G) (a : S) :
     hS.restrict g a = ⟨α g a, hS.apply_mem g a.property⟩ :=
   (rfl)
 
 /-- The canonical inclusion of a closed invariant star subalgebra is equivariant. -/
-def subtypeHom (hS : S.IsInvariant α) [IsClosed (S : Set A)] :
+def subtypeHom (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    [IsClosed (S : Set A)] :
     CStarAction.Hom hS.restrict α where
   toNonUnitalStarAlgHom := NonUnitalStarSubalgebraClass.subtype S
   map_action' _ _ := rfl
 
 @[simp]
-theorem subtypeHom_apply (hS : S.IsInvariant α) [IsClosed (S : Set A)] (a : S) :
+theorem subtypeHom_apply (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
+    [IsClosed (S : Set A)] (a : S) :
     hS.subtypeHom a = a :=
   (rfl)
 
 end IsInvariant
-
-end NonUnitalStarSubalgebra
