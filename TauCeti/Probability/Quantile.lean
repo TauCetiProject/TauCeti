@@ -55,6 +55,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.quantile_le_iff` — the Galois characterization of the quantile, with
   `MeasureTheory.Measure.setOf_le_cdf_eq_Ici` its set-level form and
   `MeasureTheory.Measure.lt_quantile_iff` its negation;
+* `MeasureTheory.Measure.cdf_le_iff_quantile_le` — cdf comparison is equivalent to quantile
+  comparison at every interior probability level;
 * `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
   inverse laws, when the cumulative distribution function is continuous, respectively strictly
   increasing where its values lie strictly between `0` and `1`; together they give
@@ -220,6 +222,38 @@ theorem quantile_le_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
   ⟨fun h ↦ (le_cdf_quantile μ h1).trans (monotone_cdf μ h),
     fun h ↦ csInf_le (bddBelow_setOf_le_cdf μ h0) h⟩
+
+/-- **CDF comparison is equivalent to quantile comparison.** For probability laws `μ` and `ν`,
+`cdf ν ≤ cdf μ` pointwise exactly when the lower quantile of `μ` is at most that of `ν` at every
+level strictly between zero and one.
+
+The reversal is the usual convention for first-order stochastic dominance: a law shifted to the
+right has a smaller cdf and larger quantiles. -/
+theorem cdf_le_iff_quantile_le {μ ν : Measure ℝ} :
+    (∀ x, cdf ν x ≤ cdf μ x) ↔
+      ∀ t ∈ Ioo (0 : ℝ) 1, μ.quantile t ≤ ν.quantile t := by
+  constructor
+  · intro h t ht
+    rw [quantile_le_iff μ ht.1 ht.2]
+    exact (le_cdf_quantile ν ht.2).trans (h _)
+  · intro h x
+    by_contra hle
+    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
+    let t := (cdf μ x + cdf ν x) / 2
+    have ht0 : 0 < t := by
+      dsimp [t]
+      linarith [cdf_nonneg μ x, cdf_nonneg ν x]
+    have ht1 : t < 1 := by
+      dsimp [t]
+      linarith [cdf_le_one μ x, cdf_le_one ν x]
+    have hνx : ν.quantile t ≤ x := by
+      rw [quantile_le_iff ν ht0 ht1]
+      dsimp [t]
+      linarith
+    have hμx : μ.quantile t ≤ x := (h t ⟨ht0, ht1⟩).trans hνx
+    have htμ : t ≤ cdf μ x := (quantile_le_iff μ ht0 ht1).mp hμx
+    dsimp [t] at htμ
+    linarith
 
 /-- The set of points whose cumulative mass reaches a level strictly between `0` and `1` is the
 closed ray to the right of the quantile at that level. -/
