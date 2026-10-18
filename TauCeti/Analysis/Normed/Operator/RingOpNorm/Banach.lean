@@ -255,6 +255,7 @@ theorem norm_oneSub_symm_apply (x : E) : ‖(oneSub t ht).symm x‖ = ‖x‖ :=
 
 /-- In an ultrametric module with a nonzero vector, the inverse of `1 - t` has operator norm one
 when `‖t‖ < 1`. -/
+@[simp]
 theorem ringOpNorm_oneSub_symm [Nontrivial E] : ‖((oneSub t ht).symm : E →L[R] E)‖ = 1 := by
   rw [coe_oneSub_symm]
   exact TauCeti.norm_inverse_one_sub ht
