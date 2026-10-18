@@ -118,7 +118,8 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω
 
 /-- The proportions and total of independent Gamma random variables have the joint
 Dirichlet–Gamma product law. -/
-theorem hasLaw_dirichletNormalize_sum_gammaMeasure_of_iIndepFun (ha : ∀ i, 0 < a i) (hr : 0 < r)
+theorem hasLaw_dirichletNormalize_sum_prod_gammaMeasure_of_iIndepFun
+    (ha : ∀ i, 0 < a i) (hr : 0 < r)
     (h_ind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
     HasLaw (fun ω ↦ (dirichletNormalize (fun i ↦ X i ω), ∑ i, X i ω))
       ((dirichletMeasure a).prod (gammaMeasure (∑ i, a i) r)) P := by
@@ -148,6 +149,6 @@ theorem indepFun_dirichletNormalize_sum_of_hasLaw_gammaMeasure (ha : ∀ i, 0 < 
       (fun i _ ↦ ha i) (fun i _ ↦ hX i)
   exact (indepFun_iff_hasLaw_prodMk_prod
     (hasLaw_dirichletNormalize_gammaMeasure_of_iIndepFun ha hr h_ind hX) hsum).2
-      (hasLaw_dirichletNormalize_sum_gammaMeasure_of_iIndepFun ha hr h_ind hX)
+      (hasLaw_dirichletNormalize_sum_prod_gammaMeasure_of_iIndepFun ha hr h_ind hX)
 
 end TauCeti.Probability
