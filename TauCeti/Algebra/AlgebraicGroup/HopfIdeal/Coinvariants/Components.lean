@@ -19,10 +19,9 @@ identity component form a finite étale algebra. For normal subgroups this is th
 algebra of the represented quotient. Neither the ambient group nor the subgroup needs to
 be reduced, and finiteness of the invariant algebra does not require normality.
 
-The component coordinate map and its scheme-theoretic kernel are constructed in
-`Connected.ComponentGroup.Coordinate`. Faithfully flat descent identifies its range with
-the coinvariants of the identity component; the coinvariants of any larger subgroup are a
-subalgebra of this finite reduced algebra.
+The identity-component coinvariants are the functions on the finite component group.
+For a normal subgroup containing the identity component, the quotient is therefore a
+finite étale quotient of the component group.
 
 ## References
 
@@ -38,6 +37,9 @@ universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
 
+/- The component coordinate map and its scheme-theoretic kernel come from
+`Connected.ComponentGroup.Coordinate`. Faithfully flat descent identifies its range
+with the identity-component coinvariants. -/
 /-- The functions invariant under the identity component are exactly the pullbacks of
 functions on the finite component group, including for nonreduced affine groups. -/
 @[simp]

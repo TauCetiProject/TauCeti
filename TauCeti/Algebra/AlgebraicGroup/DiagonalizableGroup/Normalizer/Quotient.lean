@@ -16,12 +16,9 @@ algebraically closed field. If its scheme normalizer is reduced, the represented
 of the normalizer by the scheme centralizer is finite étale. In characteristic zero the
 reducedness hypothesis follows from Cartier's theorem.
 
-The quotient coordinate algebra is the existing coinvariant algebra for the centralizer
-ideal inside the normalizer. Normality is supplied by
-`BialgHom.isNormal_map_centralizerHopfIdeal_mkBialgHom_normalizerHopfIdeal`, and the
-normalizer's identity component lies in the centralizer by `Normalizer.Connected`.
-The finite étale quotient theorem then applies. In particular, this retains the scheme
-structure of the quotient, rather than only bounding the character action on rational points.
+The quotient coordinate algebra is the coinvariant algebra for the centralizer ideal
+inside the normalizer. The result describes the full quotient scheme, including when
+the diagonalizable subgroup is nonreduced.
 
 For a maximal torus in a reductive group, identifying the centralizer with the torus
 turns this quotient into the Weyl group scheme. That identification is a separate result.
@@ -45,6 +42,10 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
   (π : H →ₐc[k] MonoidAlgebra k X) (hπ : Function.Surjective π)
   [IsReduced (FiniteTypeCommHopfAlgCat.quotient H (normalizerHopfIdeal π hπ))]
 
+/- Normality is supplied by
+`BialgHom.isNormal_map_centralizerHopfIdeal_mkBialgHom_normalizerHopfIdeal`.
+The containment below uses `Normalizer.Connected`, so the component-coinvariant
+theorems apply to the centralizer inside the normalizer. -/
 /-- Inside the scheme normalizer, its identity component is contained in the
 centralizer. The inequality is reversed on defining ideals. -/
 private theorem map_centralizerHopfIdeal_le_identityComponentHopfIdeal :

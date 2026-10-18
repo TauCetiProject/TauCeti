@@ -13,14 +13,14 @@ public import Mathlib.FieldTheory.Perfect
 
 A finite reduced commutative algebra over a perfect field is étale. This permits finite
 affine quotients to be recognized as finite étale schemes from their coordinate algebras.
-The result uses Mathlib's Artinian decomposition `IsArtinianRing.equivPi`: each factor is a
-finite field extension, and perfectness makes each extension separable.
 -/
 
 public section
 
 namespace TauCeti
 
+/- Mathlib's Artinian decomposition `IsArtinianRing.equivPi` gives finite field-extension
+factors, which are separable over the perfect base field. -/
 /-- A finite reduced commutative algebra over a perfect field is étale. -/
 theorem algebraEtale_of_finite_of_isReduced (k A : Type*) [Field k] [PerfectField k]
     [CommRing A] [Algebra k A] [Module.Finite k A] [IsReduced A] : Algebra.Etale k A := by
