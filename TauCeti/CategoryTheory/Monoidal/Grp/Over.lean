@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Basic
-public import Mathlib.CategoryTheory.Monoidal.Grp
+public import TauCeti.CategoryTheory.Monoidal.Grp.Basic
 
 /-!
 # Monomorphisms of group objects over a base
@@ -24,10 +24,10 @@ universe v u
 namespace CategoryTheory.Grp
 
 /-- A morphism of group objects over a base is monic if its underlying morphism is monic. -/
-instance (priority := 900) mono_of_mono_underlying {C : Type u} [Category.{v} C] {X : C}
+instance (priority := 900) mono_of_mono_left {C : Type u} [Category.{v} C] {X : C}
     [CartesianMonoidalCategory (Over X)] {G H : Grp (Over X)} (f : G ⟶ H)
-    [Mono f.hom.hom.left] : Mono f :=
-  (Grp.forget _ ⋙ Over.forget _).mono_of_mono_map
-    (inferInstanceAs (Mono f.hom.hom.left))
+    [Mono f.hom.hom.left] : Mono f := by
+  have := Over.mono_of_mono_left f.hom.hom
+  exact mono_of_mono_hom f
 
 end CategoryTheory.Grp

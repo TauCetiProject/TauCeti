@@ -140,10 +140,7 @@ noncomputable def mapIso {H : Grp (Over X)} (e : G ≅ H) :
 /-- The subobject underlying a transported closed subgroup is the transported subobject. -/
 @[simp]
 lemma coe_mapIso {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme G) :
-    (mapIso e P).1 = Subobject.mapIsoToOrderIso e P.1 := by
-  -- `mapIso` is not exposed, so it is unfolded first; its `toFun` is this subobject by definition.
-  unfold mapIso
-  rfl
+    (mapIso e P).1 = (Subobject.map e.hom).obj P.1 := (rfl)
 
 /-- Postcomposing a closed immersion with an isomorphism of group schemes gives a closed
 immersion. -/
@@ -162,17 +159,13 @@ lemma mapIso_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ G)
     [IsClosedImmersion i.hom.hom.left] :
     mapIso e (mk i) = mk (i ≫ e.hom) :=
   Subtype.ext (by
-    rw [coe_mapIso, coe_mk, coe_mk, Subobject.mapIsoToOrderIso_apply, Subobject.map_mk])
+    rw [coe_mapIso, coe_mk, coe_mk, Subobject.map_mk])
 
 /-- The subobject underlying a closed subgroup transported back along an isomorphism is the
 subobject transported back along it. -/
 @[simp]
 lemma coe_mapIso_symm {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme H) :
-    ((mapIso e).symm P).1 = (Subobject.mapIsoToOrderIso e).symm P.1 := by
-  -- `mapIso` is not exposed, so it is unfolded first; its `invFun` is this subobject by
-  -- definition.
-  unfold mapIso
-  rfl
+    ((mapIso e).symm P).1 = (Subobject.map e.inv).obj P.1 := (rfl)
 
 /-- Postcomposing a closed immersion with the inverse of an isomorphism of group schemes gives a
 closed immersion. -/
@@ -188,9 +181,7 @@ lemma mapIso_symm_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ H)
     [IsClosedImmersion i.hom.hom.left] :
     (mapIso e).symm (mk i) = mk (i ≫ e.inv) :=
   Subtype.ext (by
-    rw [coe_mapIso_symm, coe_mk, coe_mk]
-    exact (Subobject.mapIsoToOrderIso_symm_apply e (Subobject.mk i)).trans
-      (Subobject.map_mk i e.inv))
+    rw [coe_mapIso_symm, coe_mk, coe_mk, Subobject.map_mk])
 
 end ClosedSubgroupScheme
 
