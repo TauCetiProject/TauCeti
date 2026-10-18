@@ -12,8 +12,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
 /-!
 # Adjoint root spaces of the general linear group
 
-For `GL_n` over a field, restrict the adjoint representation to its diagonal split torus.  The
-matrix unit `E_ij` is a weight vector of character `e_i - e_j`: conjugation by
+For `GL_n` over a commutative ring, restrict the adjoint representation to its diagonal split
+torus. The matrix unit `E_ij` is a weight vector of character `e_i - e_j`: conjugation by
 `diag(t_0, ..., t_{n-1})` multiplies it by `t_i t_j⁻¹`.  This file turns the pointwise matrix
 calculation in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Basic` into membership in the
 actual comodule weight space `Derivation.adjointWeightSpace`.
@@ -54,7 +54,7 @@ universe u
 
 noncomputable section
 
-variable {k : Type u} [Field k] {n : ℕ}
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-- The diagonal-torus weight `e_i - e_j` of the matrix unit `E_ij`, written as an element of
 the multiplicative character group of the rank-`n` split torus. -/
@@ -106,7 +106,7 @@ theorem matrixUnitWeight_ne_one {i j : Fin n} (hij : i ≠ j) :
 
 /-- Off the diagonal, the character `e_i - e_j` determines the ordered pair `(i, j)`.  This
 follows in the torsion-free character lattice `ULift (Fin n) →₀ ℤ`, independently of the base
-field. -/
+ring. -/
 @[simp]
 theorem matrixUnitWeight_eq_matrixUnitWeight_iff {i j : Fin n} (hij : i ≠ j) (a b : Fin n) :
     (matrixUnitWeight a b : Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) =
@@ -303,7 +303,7 @@ theorem matrixUnitTangent_mem_trivialAdjointWeightSpace (i : Fin n) :
   simpa using matrixUnitTangent_mem_adjointWeightSpace (k := k) i i
 
 /-- Every matrix-unit tangent vector is nonzero. -/
-theorem matrixUnitTangent_ne_zero (i j : Fin n) :
+theorem matrixUnitTangent_ne_zero [Nontrivial k] (i j : Fin n) :
     matrixUnitTangent (k := k) i j ≠ 0 := by
   intro hzero
   have hmatrix := congrArg (cotangentDualMatrixEquiv (k := k) (n := n)) hzero
@@ -312,7 +312,7 @@ theorem matrixUnitTangent_ne_zero (i j : Fin n) :
 
 /-- Every off-diagonal character `e_i - e_j` occurs as a nontrivial adjoint weight of `GL_n`
 relative to its diagonal torus. -/
-theorem matrixUnitWeight_mem_nontrivialAdjointWeights {i j : Fin n} (hij : i ≠ j) :
+theorem matrixUnitWeight_mem_nontrivialAdjointWeights [Nontrivial k] {i j : Fin n} (hij : i ≠ j) :
     matrixUnitWeight i j ∈
       Derivation.nontrivialAdjointWeights
         (diagonalTorusCoordinateMap (R := k) (N := n)).hom := by
