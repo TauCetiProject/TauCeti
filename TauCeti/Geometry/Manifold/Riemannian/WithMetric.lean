@@ -134,6 +134,16 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
 
+/-- The copy of a compact manifold is compact. -/
+instance [CompactSpace M] : CompactSpace (WithMetric g) :=
+  (homeomorph g).symm.compactSpace
+
+/-- The copy of a Lindelöf manifold is Lindelöf. -/
+instance [LindelofSpace M] : LindelofSpace (WithMetric g) :=
+  isLindelof_univ_iff.1 <| by
+    simpa only [(homeomorph g).symm.surjective.range_eq] using
+      isLindelof_range (homeomorph g).symm.continuous
+
 /-- The copy of `M` carrying `g` has the charts of `M`, precomposed with `ofWithMetric`. -/
 instance : ChartedSpace H (WithMetric g) where
   atlas := (homeomorph g).transOpenPartialHomeomorph '' atlas H M

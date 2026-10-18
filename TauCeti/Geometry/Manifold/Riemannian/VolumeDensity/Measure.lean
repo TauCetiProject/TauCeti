@@ -36,6 +36,7 @@ Proposition 2.44.
 ## Main results
 
 * `TauCeti.chartRiemannianVolume_apply`: the coordinate integral formula.
+* `TauCeti.setLIntegral_chartRiemannianVolume`: integration against a chart volume in coordinates.
 * `TauCeti.chartRiemannianVolume_restrict_source`: a chart volume is supported on its source.
 * `TauCeti.chartRiemannianVolume_finiteAtFilter_nhds`: every point of a chart source has a
   neighbourhood of finite chart volume.
@@ -137,6 +138,44 @@ theorem chartRiemannianVolume_apply
   intro y hy
   exact (chartVolumeDensityData (I := I) α).eq_on_target
     ((extChartAt I α).image_source_eq_target.subset (Set.image_mono inter_subset_right hy))
+
+/-- **Integration in coordinates** against a chart volume measure: the integral of `φ` over a
+measurable set `s` is the coordinate integral, over the image of the part of `s` in the chart
+source, of `φ` read in the chart times the chart density. No measurability of `φ` is needed. -/
+theorem setLIntegral_chartRiemannianVolume
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (α : M) {s : Set M} (hs : MeasurableSet s) (φ : M → ℝ≥0∞) :
+    ∫⁻ x in s, φ x ∂chartRiemannianVolume (I := I) α =
+      ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
+        ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
+          φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  set e := extChartAt I α
+  set d := chartVolumeDensityData (I := I) α
+  have hR : MeasurableEmbedding (e.source.domRestrict e) :=
+    measurableEmbedding_extChartAt_restrict α
+  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
+    MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+  have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
+    Set.image_domRestrict _ _ _
+  have hA : MeasurableSet (e '' (s ∩ e.source)) := by
+    rw [← himage]
+    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtype_coe)
+  have htarget : e '' (s ∩ e.source) ⊆ e.target :=
+    e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
+  -- Read `φ` on the chart source through the coordinate map `e`.
+  have hφ (μ : Measure e.source) : ∫⁻ z, φ z ∂μ =
+      ∫⁻ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
+    lintegral_congr fun z ↦ by simp only [Set.domRestrict_apply, e.left_inv z.2]
+  rw [chartRiemannianVolume, hval.restrict_map, hval.lintegral_map, hR.restrict_comap, himage, hφ]
+  refine (hR.lintegral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
+  rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,
+    Set.inter_eq_right.2 (himage ▸ Set.image_subset_range _ _),
+    setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable _ d.measurable_toFun _ hA
+      ((ae_restrict_iff' hA).2 (Filter.Eventually.of_forall fun y hy ↦ ?_))]
+  · refine setLIntegral_congr_fun hA fun y hy ↦ ?_
+    rw [Pi.mul_apply, d.eq_on_target (htarget hy)]
+  · rw [d.eq_on_target (htarget hy)]
+    exact ENNReal.ofReal_lt_top
 
 /-- A chart volume gives positive mass to the source of a boundaryless chart. -/
 theorem chartRiemannianVolume_pos [I.Boundaryless]
