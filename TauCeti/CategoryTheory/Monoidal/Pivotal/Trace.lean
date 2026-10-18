@@ -235,6 +235,15 @@ theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f 
 theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
   simp [leftTrace_def]
 
+/-- The left trace commutes with finite sums. -/
+@[simp]
+theorem leftTrace_sum {ι : Type*} {X : C} (s : Finset ι) (f : ι → (X ⟶ X)) :
+    leftTrace (∑ i ∈ s, f i) = ∑ i ∈ s, leftTrace (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [hi, ih]
+
 /-- The left trace commutes with negation. -/
 @[simp]
 theorem leftTrace_neg {X : C} (f : X ⟶ X) : leftTrace (-f) = -leftTrace f :=
@@ -255,6 +264,15 @@ theorem rightTrace_add {X : C} (f g : X ⟶ X) :
 @[simp]
 theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
   simp [rightTrace_def]
+
+/-- The right trace commutes with finite sums. -/
+@[simp]
+theorem rightTrace_sum {ι : Type*} {X : C} (s : Finset ι) (f : ι → (X ⟶ X)) :
+    rightTrace (∑ i ∈ s, f i) = ∑ i ∈ s, rightTrace (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [hi, ih]
 
 /-- The right trace commutes with negation. -/
 @[simp]
