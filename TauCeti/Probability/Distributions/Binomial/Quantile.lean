@@ -104,6 +104,8 @@ theorem quantile_map_cast_binomial_eq_self (hu : u ∈ Ioo 0 1)
     exact (not_le_of_gt hlevel) (hj.trans hmass)
 
 /-- With no trials, every interior binomial quantile is zero. -/
+-- Not a simp lemma: `map_cast_binomial_zero` already simplifies its left-hand side, so `simpNF`
+-- rejects the annotation.
 theorem quantile_map_cast_binomial_zero (p : unitInterval) (hu : u ∈ Ioo 0 1) :
     Bin(ℝ, 0, p).quantile u = 0 := by
   rw [quantile_map_cast_binomial_eq_zero_iff hu]
