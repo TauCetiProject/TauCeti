@@ -19,6 +19,10 @@ is positive, including in rank zero, when the product is empty and equals one.
 The estimates combine the determinant bounds in `Regulator.Basic` with the comparison between
 height and the `ℓ¹` norm of the logarithmic embedding in `Units.Log.Embedding`.
 
+For Mathlib's canonical `fundSystem K`, positivity specializes to
+`prod_absLogHeight₁_pos (closure_fundSystem_sup_torsion_eq_top (K := K))`.
+Both this specialization and the regulator bounds are available from the present module.
+
 ## References
 
 * Y. Bugeaud and K. Győry, *Bounds for the solutions of unit equations*, Acta Arith. **74**
