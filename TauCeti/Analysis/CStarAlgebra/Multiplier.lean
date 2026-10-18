@@ -112,9 +112,19 @@ private def conj (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) : 𝓜(ℂ, B) wher
   fst := e.toContinuousLinearEquiv.conjContinuousAlgEquiv m.fst
   snd := e.toContinuousLinearEquiv.conjContinuousAlgEquiv m.snd
   central x y := by
+    simp only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
+      StarAlgEquiv.toContinuousLinearEquiv_symm, StarAlgEquiv.coe_toContinuousLinearEquiv]
     calc e (m.snd (e.symm x)) * y = e (m.snd (e.symm x) * e.symm y) := by simp
       _ = e (e.symm x * m.fst (e.symm y)) := by rw [m.central]
       _ = x * e (m.fst (e.symm y)) := by simp
+
+private theorem conj_apply_fst (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) (b : B) :
+    (conj e m).fst b = e (m.fst (e.symm b)) := by
+  simp [conj]
+
+private theorem conj_apply_snd (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) (b : B) :
+    (conj e m).snd b = e (m.snd (e.symm b)) := by
+  simp [conj]
 
 private theorem conj_symm_conj (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) : conj e.symm (conj e m) = m :=
   ext_fst_snd (fun _ => by simp [conj]) (fun _ => by simp [conj])
@@ -135,12 +145,12 @@ def congr (e : A ≃⋆ₐ[ℂ] B) : 𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, B) wh
 @[simp]
 theorem congr_apply_fst (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) (b : B) :
     (congr e m).fst b = e (m.fst (e.symm b)) :=
-  (rfl)
+  conj_apply_fst e m b
 
 @[simp]
 theorem congr_apply_snd (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) (b : B) :
     (congr e m).snd b = e (m.snd (e.symm b)) :=
-  (rfl)
+  conj_apply_snd e m b
 
 @[simp]
 theorem congr_symm (e : A ≃⋆ₐ[ℂ] B) : (congr e).symm = congr e.symm :=
@@ -178,11 +188,13 @@ theorem eq_congr_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) 𝓜(ℂ, B)]
     (hφ : ∀ a : A, φ a = (e a : 𝓜(ℂ, B))) : ⇑φ = congr e := by
   funext m
   refine ext_fst_snd (fun b => ?_) (fun b => ?_)
-  · apply coe_injective (𝕜 := ℂ)
+  · rw [congr_apply_fst]
+    apply coe_injective (𝕜 := ℂ)
     calc ((φ m).fst b : 𝓜(ℂ, B)) = φ m * φ (e.symm b : 𝓜(ℂ, A)) := by
           rw [hφ, e.apply_symm_apply, mul_coe_eq_coe_fst]
       _ = (e (m.fst (e.symm b)) : 𝓜(ℂ, B)) := by rw [← map_mul, mul_coe_eq_coe_fst, hφ]
-  · apply coe_injective (𝕜 := ℂ)
+  · rw [congr_apply_snd]
+    apply coe_injective (𝕜 := ℂ)
     calc ((φ m).snd b : 𝓜(ℂ, B)) = φ (e.symm b : 𝓜(ℂ, A)) * φ m := by
           rw [hφ, e.apply_symm_apply, coe_mul_eq_coe_snd]
       _ = (e (m.snd (e.symm b)) : 𝓜(ℂ, B)) := by rw [← map_mul, coe_mul_eq_coe_snd, hφ]

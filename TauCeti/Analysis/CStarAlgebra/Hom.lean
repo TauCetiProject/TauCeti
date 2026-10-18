@@ -14,7 +14,7 @@ A star-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.
 bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
 -/
 
-@[expose] public section
+public section
 
 namespace StarAlgEquiv
 
