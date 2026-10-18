@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.CartanMap
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Idempotents
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
@@ -160,6 +159,39 @@ theorem zigzagAlgebraGradedSimple_def (i : V) :
       let _ := zigzagAlgebraIntegerGradedAlgebra k G
       gradedPositiveMulQuotient A (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i) := by
   rw [zigzagAlgebraGradedSimple]
+
+/-- The class of a vertex-projective element in its graded simple head. -/
+def zigzagAlgebraGradedSimpleMk (i : V) :
+    (Ideal.span {e i} : Ideal (zigzagAlgebra k G)) →ₗ[zigzagAlgebra k G]
+      zigzagAlgebraGradedSimple k G i :=
+  let _ := zigzagAlgebraIntegerGradedAlgebra k G
+  gradedPositiveMulQuotientMk (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
+
+/-- Every element of the graded simple head has a vertex-projective representative. -/
+theorem zigzagAlgebraGradedSimpleMk_surjective (i : V) :
+    Function.Surjective (zigzagAlgebraGradedSimpleMk k G i) :=
+  let _ := zigzagAlgebraIntegerGradedAlgebra k G
+  gradedPositiveMulQuotientMk_surjective _
+
+/-- A representative vanishes in the graded head exactly when it lies in the
+positive-degree ideal of its vertex projective. -/
+@[simp]
+theorem zigzagAlgebraGradedSimpleMk_eq_zero_iff (i : V)
+    (x : (Ideal.span {e i} : Ideal (zigzagAlgebra k G))) :
+    zigzagAlgebraGradedSimpleMk k G i x = 0 ↔
+      (x : zigzagAlgebra k G) ∈ gradedPositiveMulIdeal A (e i) :=
+  let _ := zigzagAlgebraIntegerGradedAlgebra k G
+  gradedPositiveMulQuotientMk_eq_zero_iff _ x
+
+/-- The head projection sends a homogeneous representative of degree `p` to the
+degree-`p` piece of the graded vertex simple. -/
+theorem zigzagAlgebraGradedSimpleMk_mem_piece (i : V) {p : ℤ}
+    (x : (Ideal.span {e i} : Ideal (zigzagAlgebra k G)))
+    (hx : (x : zigzagAlgebra k G) ∈ A p) :
+    zigzagAlgebraGradedSimpleMk k G i x ∈
+      (zigzagAlgebraGradedSimple k G i).grading.piece p := by
+  let _ := zigzagAlgebraIntegerGradedAlgebra k G
+  exact (mem_gradedPositiveMulQuotient_piece_iff _).2 ⟨x, hx, rfl⟩
 
 /-- The head of a public vertex projective is a finite graded module. -/
 theorem gradedFiniteModules_zigzagAlgebraGradedSimple (i : V) :
