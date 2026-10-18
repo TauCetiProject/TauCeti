@@ -25,7 +25,7 @@ distributed real random variables.
 * `poissonBinomialMeasure` is the native law on `ℕ`;
 * `poissonBinomialMeasure_singleton` gives its singleton masses as a sum over subsets;
 * `pgf_poissonBinomialMeasure` gives its probability-generating function;
-* `iIndepFun.hasLaw_sum_bernoulli_poissonBinomial` identifies independent Bernoulli sums;
+* `iIndepFun.hasLaw_sum_poissonBinomialMeasure` identifies independent Bernoulli sums;
 * `map_sum_pi_bernoulliMeasure` gives the corresponding product-measure pushforward;
 * `poissonBinomialMeasure_eq_conv_bernoulliMeasure` gives the adjoining-one-trial recursion;
 * `poissonBinomialMeasure_const` recovers the binomial distribution.
@@ -53,13 +53,26 @@ variable {ι Ω : Type*} [Fintype ι]
 open Classical in
 /-- The probability of the success set `s` for independent Bernoulli trials with success
 probabilities `p`. -/
-@[expose] def poissonBinomialWeight (p : ι → unitInterval) (s : Finset ι) : ℝ≥0 :=
+def poissonBinomialWeight (p : ι → unitInterval) (s : Finset ι) : ℝ≥0 :=
   (∏ i ∈ s, unitInterval.toNNReal (p i)) *
     ∏ i ∈ sᶜ, unitInterval.toNNReal (σ (p i))
 
+/-- The product formula for the probability of a given success set. -/
+theorem poissonBinomialWeight_def [DecidableEq ι] (p : ι → unitInterval) (s : Finset ι) :
+    poissonBinomialWeight p s =
+      (∏ i ∈ s, unitInterval.toNNReal (p i)) *
+        ∏ i ∈ sᶜ, unitInterval.toNNReal (σ (p i)) := by
+  unfold poissonBinomialWeight
+  congr 1
+  apply Finset.prod_congr
+  · ext i
+    simp
+  · intros
+    rfl
+
 /-- The Poisson-binomial law with success probabilities `p` is the weighted sum of point masses
 at the cardinalities of all possible success sets. -/
-@[expose] def poissonBinomialMeasure (p : ι → unitInterval) : Measure ℕ :=
+def poissonBinomialMeasure (p : ι → unitInterval) : Measure ℕ :=
   ∑ s : Finset ι, poissonBinomialWeight p s • Measure.dirac s.card
 
 /-- The Poisson-binomial weights sum to one. -/
@@ -71,18 +84,19 @@ theorem sum_poissonBinomialWeight (p : ι → unitInterval) :
     ∑ s : Finset ι, poissonBinomialWeight p s =
         ∏ i, (unitInterval.toNNReal (p i) + unitInterval.toNNReal (σ (p i))) := by
       rw [Fintype.prod_add]
-      simp only [poissonBinomialWeight]
+      simp only [poissonBinomialWeight_def]
     _ = 1 := by simp
 
 open Classical in
 /-- The value of a Poisson-binomial law on a measurable set is the sum of the weights of the
 success sets whose cardinalities belong to it. -/
-theorem poissonBinomialMeasure_apply (p : ι → unitInterval) (S : Set ℕ) (hS : MeasurableSet S) :
+theorem poissonBinomialMeasure_apply (p : ι → unitInterval) (S : Set ℕ) :
     poissonBinomialMeasure p S =
       ∑ s : Finset ι with s.card ∈ S, (poissonBinomialWeight p s : ℝ≥0∞) := by
   classical
   rw [poissonBinomialMeasure, Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ hS, ENNReal.smul_def, smul_eq_mul,
+  simp only [Measure.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
+    ENNReal.smul_def, smul_eq_mul,
     Set.indicator, Pi.one_apply]
   rw [Finset.sum_filter]
   apply Finset.sum_congr rfl
@@ -94,7 +108,7 @@ instance isProbabilityMeasure_poissonBinomialMeasure (p : ι → unitInterval) :
     IsProbabilityMeasure (poissonBinomialMeasure p) where
   measure_univ := by
     classical
-    rw [poissonBinomialMeasure_apply p Set.univ MeasurableSet.univ]
+    rw [poissonBinomialMeasure_apply p Set.univ]
     simp only [Set.mem_univ, Finset.filter_true]
     norm_cast
     exact sum_poissonBinomialWeight p
@@ -105,12 +119,8 @@ theorem poissonBinomialMeasure_singleton (p : ι → unitInterval) (k : ℕ) :
     poissonBinomialMeasure p {k} =
       ∑ s ∈ Finset.univ.powersetCard k, (poissonBinomialWeight p s : ℝ≥0∞) := by
   classical
-  rw [poissonBinomialMeasure_apply p {k} (MeasurableSet.singleton k)]
-  have hfilter : Finset.univ.powersetCard k =
-      (Finset.univ : Finset (Finset ι)).filter fun s => s.card = k := by
-    ext s
-    simp [Finset.mem_powersetCard]
-  rw [hfilter]
+  rw [poissonBinomialMeasure_apply p {k}, Finset.powersetCard_eq_filter,
+    Finset.powerset_univ]
   simp only [Set.mem_singleton_iff]
 
 /-- The real singleton mass of a Poisson-binomial law. -/
@@ -135,7 +145,7 @@ theorem poissonBinomialMeasure_singleton_eq_zero (p : ι → unitInterval) {k : 
 theorem poissonBinomialMeasure_Iic_card (p : ι → unitInterval) :
     poissonBinomialMeasure p (Set.Iic (Fintype.card ι)) = 1 := by
   classical
-  rw [poissonBinomialMeasure_apply p (Set.Iic (Fintype.card ι)) measurableSet_Iic]
+  rw [poissonBinomialMeasure_apply p (Set.Iic (Fintype.card ι))]
   simp only [Set.mem_Iic]
   rw [Finset.filter_eq_self.2]
   · norm_cast
@@ -153,7 +163,7 @@ theorem pgf_poissonBinomialMeasure (p : ι → unitInterval) (z : ℝ) :
   rw [pgf_def, poissonBinomialMeasure]
   rw [integral_finsetSum_measure]
   · simp only [integral_smul_nnreal_measure, integral_dirac, id_eq, NNReal.smul_def,
-      poissonBinomialWeight, NNReal.coe_mul, NNReal.coe_prod, unitInterval.coe_toNNReal,
+      poissonBinomialWeight_def, NNReal.coe_mul, NNReal.coe_prod, unitInterval.coe_toNNReal,
       smul_eq_mul]
     calc
       ∑ s : Finset ι,
@@ -175,9 +185,18 @@ theorem pgf_poissonBinomialMeasure (p : ι → unitInterval) (z : ℝ) :
   · intro s hs
     exact (integrable_dirac (by simp)).smul_measure_nnreal
 
+end Probability
+
+end TauCeti
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
 /-- A finite sum of independent Bernoulli variables has the Poisson-binomial law with the
 corresponding success probabilities. -/
-theorem iIndepFun.hasLaw_sum_bernoulli_poissonBinomial
+theorem iIndepFun.hasLaw_sum_poissonBinomialMeasure
+    {ι Ω : Type*} [Fintype ι]
     [MeasurableSpace Ω] {P : Measure Ω} {X : ι → Ω → ℕ} {p : ι → unitInterval}
     (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) Ber((1 : ℕ), 0, p i) P) :
     HasLaw (fun ω ↦ ∑ i, X i ω) (poissonBinomialMeasure p) P := by
@@ -198,6 +217,14 @@ theorem iIndepFun.hasLaw_sum_bernoulli_poissonBinomial
   rw [HasLaw.pgf_eq (hX i)]
   exact pgf_bernoulliMeasure (p i) z
 
+end ProbabilityTheory
+
+namespace TauCeti
+
+namespace Probability
+
+variable {ι Ω : Type*} [Fintype ι]
+
 /-- Pushing the product of Bernoulli laws forward by coordinate sum gives the
 Poisson-binomial law. -/
 theorem map_sum_pi_bernoulliMeasure (p : ι → unitInterval) :
@@ -206,7 +233,7 @@ theorem map_sum_pi_bernoulliMeasure (p : ι → unitInterval) :
   have hindep : iIndepFun (fun (i : ι) (x : ι → ℕ) ↦ x i)
       (Measure.pi fun i : ι ↦ Ber((1 : ℕ), 0, p i)) :=
     iIndepFun_pi (X := fun _ ↦ (id : ℕ → ℕ)) fun _ ↦ aemeasurable_id
-  exact (iIndepFun.hasLaw_sum_bernoulli_poissonBinomial hindep fun i ↦
+  exact (hindep.hasLaw_sum_poissonBinomialMeasure fun i ↦
     (measurePreserving_eval (fun i : ι ↦ Ber((1 : ℕ), 0, p i)) i).hasLaw).map_eq
 
 /-- The Poisson-binomial law of an empty family is the point mass at zero. -/
@@ -257,7 +284,7 @@ theorem measurable_poissonBinomialWeight (s : Finset ι) :
     Measurable fun p : ι → unitInterval ↦ poissonBinomialWeight p s := by
   classical
   apply Continuous.measurable
-  simp only [poissonBinomialWeight]
+  simp only [poissonBinomialWeight_def]
   fun_prop
 
 /-- The Poisson-binomial family is measurable in its finite vector of success probabilities. -/
