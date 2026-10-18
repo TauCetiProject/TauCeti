@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.ChartedSpace
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Map
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Transport
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
 public import TauCeti.Topology.Covering.Clopen
 
@@ -26,10 +26,13 @@ cover centred at that point and the inverse of the standard sphere coordinate
 
 Consequently every connected degree-`n` cover `C` of `ℂ ∖ {0, 1}` fills to a topological branched
 cover of degree `n` (`TauCeti.ConnectedCover.toTopBranchedCover`), whose local degree at the added
-point of a component is the local degree of that component. Deleting the marked fibres again
-recovers `C` up to isomorphism (`TauCeti.ConnectedCover.connectedCoverIso`), so the restriction
-map from isomorphism classes of topological branched covers of degree `n` to isomorphism classes
-of connected degree-`n` covers of `ℂ ∖ {0, 1}` is surjective
+point of a component is the local degree of that component. Isomorphic covers fill to isomorphic
+branched covers (`TauCeti.ConnectedCover.toTopBranchedCoverIso`), so filling is defined on
+isomorphism classes (`TauCeti.ConnectedCoverClass.toTopBranchedCover`). Deleting the marked fibres
+again recovers `C` up to isomorphism (`TauCeti.ConnectedCover.connectedCoverIso`), so filling is a
+right inverse of the restriction map from isomorphism classes of topological branched covers of
+degree `n` to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0, 1}`
+(`TauCeti.ConnectedCoverClass.restrict_toTopBranchedCover`), which is therefore surjective
 (`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`). Since a branched cover is determined by
 its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
 branched cover is isomorphic to the filled cover of its unbranched part
@@ -44,8 +47,14 @@ branched cover is isomorphic to the filled cover of its unbranched part
   as a topological branched cover of degree `n`.
 * `TauCeti.ConnectedCover.localDegree_toTopBranchedCover_center`: its local degrees at the added
   points.
+* `TauCeti.ConnectedCover.toTopBranchedCoverIso`: an isomorphism of covers extends to an
+  isomorphism of their filled branched covers.
+* `TauCeti.ConnectedCoverClass.toTopBranchedCover`: the filled branched cover of an isomorphism
+  class of covers.
 * `TauCeti.ConnectedCover.connectedCoverIso`: deleting the marked fibres of the filled cover
   gives back the original cover.
+* `TauCeti.ConnectedCoverClass.restrict_toTopBranchedCover`: on isomorphism classes, restriction
+  undoes filling.
 * `TauCeti.TopBranchedCover.IsoClass.restrict_surjective`: every connected degree-`n` cover of
   `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
 * `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
@@ -199,7 +208,50 @@ theorem connectedCoverIso_inv_hom_left :
     C.connectedCoverIso.inv.hom.left = (TopCat.isoOfHomeo C.connectedCoverHomeomorph).inv :=
   CoveringSpace.FullSubcategory.isoMk_inv_hom_left _ _
 
+variable {C} {D : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n}
+
+/-- **Isomorphic covers have isomorphic filled branched covers.** An isomorphism `f` of connected
+covers of `ℂ ∖ {0, 1}` extends to an isomorphism of their filled branched covers, which is `f` on
+the total space of `C` (`TauCeti.ConnectedCover.toTopBranchedCoverIso_apply_incl`). -/
+def toTopBranchedCoverIso (f : C.cover ≅ D.cover) :
+    TopBranchedCover.Iso C.toTopBranchedCover D.toTopBranchedCover where
+  -- The homeomorphism `TopCat.homeoOfIso ((totalSpace _ _).mapIso f)` of total spaces is
+  -- definitionally `f.hom.hom.left` on points, since `homeoOfIso` and `Functor.mapIso` apply the
+  -- forward morphism and `CoveringSpace.FullSubcategory.totalSpace_map` holds by `rfl`. So the
+  -- commutation `FullSubcategory.w f.hom` of `f` with the projections is the hypothesis
+  -- `p' ∘ h = p` of `FilledCover.congr`.
+  toHomeomorph := FilledCover.congr C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
+    (TopCat.homeoOfIso ((CoveringSpace.FullSubcategory.totalSpace _ _).mapIso f))
+    (funext (CategoryTheory.ConcreteCategory.congr_hom (CoveringSpace.FullSubcategory.w f.hom)))
+  π_apply := fillMap_congr_apply _ _ _ _
+
+/-- The isomorphism `TauCeti.ConnectedCover.toTopBranchedCoverIso f` is `f` on the total space of
+`C`. -/
+@[simp]
+theorem toTopBranchedCoverIso_apply_incl (f : C.cover ≅ D.cover) (x : (C.cover : TopCat)) :
+    (toTopBranchedCoverIso f).toHomeomorph (incl (chart _) x) = incl (chart _) (f.hom.hom.left x) :=
+  -- The homeomorphism of total spaces is `f.hom.hom.left` by definition, as in
+  -- `TauCeti.ConnectedCover.toTopBranchedCoverIso`.
+  congr_apply_incl _ _ _ _ x
+
 end ConnectedCover
+
+/-- **The filled branched cover of an isomorphism class of covers.** Filling the punctures of a
+connected degree-`n` cover of `ℂ ∖ {0, 1}` is well defined on isomorphism classes, by
+`TauCeti.ConnectedCover.toTopBranchedCoverIso`. -/
+def ConnectedCoverClass.toTopBranchedCover {n : ℕ} :
+    ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+      TopBranchedCover.IsoClass.{0} n :=
+  lift (fun C ↦ .mk C.toTopBranchedCover) fun _ _ ⟨f⟩ ↦
+    TopBranchedCover.IsoClass.mk_eq_mk_iff.2 ⟨ConnectedCover.toTopBranchedCoverIso f⟩
+
+/-- The filled branched cover of the class of `C` is the class of the filled branched cover of
+`C`. -/
+@[simp]
+theorem ConnectedCoverClass.toTopBranchedCover_mk {n : ℕ}
+    (C : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    (mk C).toTopBranchedCover = .mk C.toTopBranchedCover :=
+  lift_mk _ _ C
 
 /-- Restricting the filled branched cover of `C` over `ℂ ∖ {0, 1}` gives back the isomorphism
 class of `C`. -/
@@ -209,14 +261,22 @@ theorem ConnectedCoverClass.mk_connectedCover_toTopBranchedCover {n : ℕ}
     mk C.toTopBranchedCover.connectedCover = mk C :=
   (mk_eq_mk_iff.2 ⟨C.connectedCoverIso⟩).symm
 
+/-- **Restriction undoes filling on isomorphism classes.** Restricting the filled branched cover
+of a class of connected degree-`n` covers of `ℂ ∖ {0, 1}` over `ℂ ∖ {0, 1}` gives back that
+class. -/
+@[simp]
+theorem ConnectedCoverClass.restrict_toTopBranchedCover {n : ℕ}
+    (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    c.toTopBranchedCover.restrict = c := by
+  obtain ⟨C, rfl⟩ := mk_surjective c
+  simp
+
 /-- **Every connected degree-`n` cover of `ℂ ∖ {0, 1}` extends to a topological branched cover of
 the sphere**: restriction over `ℂ ∖ {0, 1}` is surjective on isomorphism classes, the filled cover
-`TauCeti.ConnectedCover.toTopBranchedCover` providing a preimage of each class. -/
+`TauCeti.ConnectedCoverClass.toTopBranchedCover` providing a preimage of each class. -/
 theorem TopBranchedCover.IsoClass.restrict_surjective {n : ℕ} :
-    Surjective (IsoClass.restrict : IsoClass.{0} n → _) := by
-  intro c
-  obtain ⟨C, rfl⟩ := ConnectedCoverClass.mk_surjective c
-  exact ⟨.mk C.toTopBranchedCover, by simp⟩
+    Surjective (IsoClass.restrict : IsoClass.{0} n → _) :=
+  RightInverse.surjective ConnectedCoverClass.restrict_toTopBranchedCover
 
 /-- **A branched cover is the filling of its unbranched part.** Every topological branched cover
 `X` of degree `n` is isomorphic to the filled cover of the connected cover of `ℂ ∖ {0, 1}` obtained
