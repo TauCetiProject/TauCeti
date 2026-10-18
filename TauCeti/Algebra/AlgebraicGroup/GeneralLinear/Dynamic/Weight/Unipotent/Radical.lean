@@ -5,24 +5,29 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.DiagonalTorus
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Reductive
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.Kernel
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Unipotent.Geometry
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Pointwise
-public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.DiagonalizableQuotient
+public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
 
 /-!
-# Unipotent radicals of injective-weight parabolics
+# Unipotent radicals of weight parabolics
 
-For an injective weight `w : Fin N → ℤ`, the dynamic parabolic `P(w)` has diagonal-torus
+For any weight `w : Fin N → ℤ`, the dynamic parabolic `P(w)` has block-diagonal
 Levi quotient and weight-unipotent kernel `U(w)`. This file identifies that kernel with the
-unipotent radical of `P(w)`.
+unipotent radical of `P(w)`, including repeated weights, rank zero, and every characteristic.
 
 The normality and kernel calculation come from the represented dynamic Levi decomposition.
 The weight-unipotent coordinate algebra is polynomial, hence smooth and geometrically connected,
-and its points are unipotent. The general diagonalizable-quotient criterion then gives the
-claimed equality of Hopf ideals.
+and its points are unipotent. The Levi quotient is reductive even when weights repeat,
+and the limit has a section, so the reductive-quotient criterion gives the equality of Hopf ideals.
+The section makes the limit schematically dominant, as required by that criterion.
+The reductivity input is
+`GeneralLinear.reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra`;
+the kernel comparison is
+`FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive`.
 
 ## Main declaration
 
@@ -49,11 +54,11 @@ noncomputable section
 
 variable {N : ℕ}
 
-/-- **The unipotent radical of an injective-weight parabolic is its weight-unipotent subgroup.**
+/-- **The unipotent radical of any weight parabolic is its weight-unipotent subgroup.**
 The pullback along the displayed object equality presents the result in the coordinate algebra
 where the canonical weight-unipotent ideal is defined. -/
 @[simp] theorem unipotentRadicalDefiningIdeal_weightParabolicFiniteTypeCoordinateHopfAlgebra
-    (k : Type u) [Field k] (w : Fin N → ℤ) (hw : Function.Injective w) :
+    (k : Type u) [Field k] (w : Fin N → ℤ) :
     (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
         (weightParabolicFiniteTypeCoordinateHopfAlgebra k w)).comapOfSurjective
       (eqToHom (weightParabolicFiniteTypeCoordinateHopfAlgebra_obj k w).symm).hom
@@ -86,23 +91,27 @@ where the canonical weight-unipotent ideal is defined. -/
         ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
           (_root_.CommHopfAlgCat.{u} k)).mapIso eU) hUconnected)
       ((smoothUnipotentCommHopfAlgProperty k).prop_of_iso eU hUsmoothUnipotent)
-  let G := SplitTorus.characterGroup (ULift.{u} (Fin N))
-  let eL := weightLeviDiagonalCoordinateIso k w hw
-  let fL := weightParabolicLimitCoordinateMap k w
-  let f : (DiagonalizableGroup.coordinateRing k G).obj ⟶ H.obj := eL.inv ≫ fL
-  have hker : CommHopfAlgCat.kernelHopfIdeal f = I := by
-    calc
-      CommHopfAlgCat.kernelHopfIdeal f = CommHopfAlgCat.kernelHopfIdeal fL :=
-        CommHopfAlgCat.kernelHopfIdeal_comp_of_surjective eL.inv
-          (ConcreteCategory.bijective_of_isIso eL.inv).2 fL
-      _ = I := kernelHopfIdeal_weightParabolicLimitCoordinateMap k w
+  let D : FiniteTypeCommHopfAlgCat.{u, u} k :=
+    ⟨weightLeviCoordinateHopfAlgebra k w,
+      weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w ▸
+        (weightLeviFiniteTypeCoordinateHopfAlgebra k w).property⟩
+  let eD : weightLeviFiniteTypeCoordinateHopfAlgebra k w ≅ D :=
+    ObjectProperty.isoMk _ (eqToIso (weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w))
+  have hD : reductiveCommHopfAlgProperty k D :=
+    (reductiveCommHopfAlgProperty k).prop_of_iso eD
+      (reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra k w)
+  let f : D.obj ⟶ H.obj := weightParabolicLimitCoordinateMap k w
+  have hleft : Function.LeftInverse (weightLeviToParabolicCoordinateMap k w).hom f.hom := by
+    intro x
+    simpa only [f, ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
+      congrArg (fun g ↦ g x)
+        (weightParabolicLimitCoordinateMap_comp_weightLeviToParabolicCoordinateMap k w)
+  have hker : CommHopfAlgCat.kernelHopfIdeal f = I :=
+    kernelHopfIdeal_weightParabolicLimitCoordinateMap k w
   have hRaw : FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H = I := by
     rw [← hker]
-    exact
-      unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_geometricallySemisimple
-        H (DiagonalizableGroup.coordinateRing k G)
-          (DiagonalizableGroup.geometricallySemisimplePointsCommHopfAlgProperty k G)
-          f (hker ▸ hI)
+    exact unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive
+      H D hD f hleft.injective (hker ▸ hI)
   let e : weightParabolicFiniteTypeCoordinateHopfAlgebra k w ≅ H :=
     ObjectProperty.isoMk _
       (eqToIso (weightParabolicFiniteTypeCoordinateHopfAlgebra_obj k w))
