@@ -39,7 +39,7 @@ open scoped Topology
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [MeasurableSpace E] {μ : Measure E}
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {s : Set E} {v : E} {u u' : E → F}
 
-variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [SeparatelyContinuousAdd E]
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousConstVAdd E E]
   [ContinuousSMul 𝕜 E] [OpensMeasurableSpace E] [MeasurableAdd E] in
 /-- For a translation-invariant measure `μ`, an almost-everywhere line derivative of a function
 a.e.-strongly measurable on an open set `s` is a.e.-strongly measurable on `s`: it is the
@@ -60,7 +60,7 @@ theorem MeasureTheory.AEStronglyMeasurable.of_ae_hasLineDerivAt [μ.IsAddRightIn
   · filter_upwards [ae_restrict_of_ae h, ae_restrict_mem hsm] with x hx hxs
     have hev : ∀ᶠ t in 𝓝[≠] (0 : 𝕜), x + t • v ∈ s := by
       have hlim : Tendsto (fun t : 𝕜 => x + t • v) (𝓝 0) (𝓝 x) :=
-        (by fun_prop : Continuous fun t : 𝕜 => x + t • v).tendsto' 0 x (by simp)
+        ((continuous_id.smul continuous_const).const_vadd x).tendsto' 0 x (by simp)
       exact nhdsWithin_le_nhds (hlim.eventually (hs.mem_nhds hxs))
     refine (hx hxs).tendsto_slope_zero.congr' ?_
     filter_upwards [hev] with t ht
