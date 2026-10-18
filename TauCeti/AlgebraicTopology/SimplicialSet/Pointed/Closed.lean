@@ -96,8 +96,9 @@ acts on based maps by postcomposition. -/
 protected def ihom : PointedSSet.{u} ⥤ PointedSSet.{u} where
   obj Y := Under.mk (basedMapsPoint X Y)
   map {Y Y'} g := Under.homMk
-    { app n := ↾fun φ ↦ ⟨φ.1.comp (.ofNatTrans g.right), (mem_basedMaps_iff _).2 fun m f ↦
-        (congrArg (g.right.app m) (basedMaps_app_point φ f)).trans (app_point g m)⟩
+    { app n := ↾fun φ ↦ ⟨φ.1.comp (.ofNatTrans g.right), (mem_basedMaps_iff _).2 fun m f ↦ by
+        change g.right.app m (φ.1.app m f (X.point m)) = _
+        simp [basedMaps_app_point φ f]⟩
       naturality _ _ _ := rfl }
     (by
       ext n a
@@ -105,6 +106,15 @@ protected def ihom : PointedSSet.{u} ⥤ PointedSSet.{u} where
       refine Functor.functorHom_ext fun m f ↦ ?_
       ext x
       simp [basedMapsPoint])
+
+variable {X Y} in
+/-- Two simplices of `Map_*(X, Y)` are equal when their components agree on every simplex. -/
+@[ext]
+lemma ihom_obj_right_ext {n : SimplexCategoryᵒᵖ} {φ ψ : ((PointedSSet.ihom X).obj Y).right.obj n}
+    (h : ∀ m (f : n ⟶ m) x, (φ : (basedMaps X Y).obj n).1.app m f x =
+      (ψ : (basedMaps X Y).obj n).1.app m f x) :
+    φ = ψ :=
+  Subtype.ext (Functor.functorHom_ext fun m f ↦ by ext x; exact h m f x)
 
 variable (Z)
 
@@ -116,32 +126,29 @@ def tensorHomEquiv : (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (PointedSSet.ihom X).obj Z) wher
       ((FunctorToTypes.functorHomEquiv X.right Y.right Z.right).symm (smashProj X Y ≫ f.right))
       (by
         rintro n _ ⟨y, rfl⟩ m g
-        exact (congrArg (f.right.app m) (smashMk_point_left _)).trans (app_point f m)))
+        change f.right.app m (smashMk (X.point m) (Y.right.map g y)) = Z.point m
+        simp))
     (by
-      ext n a
-      apply Subtype.ext
-      refine Functor.functorHom_ext fun m g ↦ ?_
-      ext x
-      have hy : Y.right.map g (Y.hom.app n a) = Y.point m := by simp
-      have hc : (SSet.const (X := X.right) (Z.point _)).app m x = Z.point m := by simp
-      refine ((congrArg (fun y ↦ f.right.app m (smashMk x y)) hy).trans ?_).trans hc.symm
-      exact (congrArg (f.right.app m) (smashMk_point_right x)).trans (app_point f m))
+      ext n a m g x
+      change f.right.app m (smashMk x (Y.right.map g (Y.hom.app n a))) = _
+      simp [PointedSSet.ihom, basedMapsPoint])
   invFun g := smashLift
     (FunctorToTypes.functorHomEquiv X.right Y.right Z.right (g.right ≫ (basedMaps X Z).ι))
     (fun n y ↦ (g.right.app n y : (basedMaps X Z).obj n).2 n (𝟙 n))
-    (fun n x ↦ (congrArg (fun φ : (basedMaps X Z).obj n ↦ φ.1.app n (𝟙 n) x)
-      (app_point g n)).trans (map_point Z _))
-  left_inv f := tensor_ext fun n x y ↦
-    congrArg (fun y ↦ f.right.app n (smashMk x y)) (by simp : Y.right.map (𝟙 n) y = y)
+    (fun n x ↦ by
+      change (g.right.app n (Y.point n) : (basedMaps X Z).obj n).1.app n (𝟙 n) x = _
+      rw [app_point]
+      simp [PointedSSet.ihom, basedMapsPoint])
+  left_inv f := tensor_ext fun n x y ↦ by
+    change f.right.app n (smashMk x (Y.right.map (𝟙 n) y)) = _
+    simp
   right_inv g := by
-    ext n y
-    apply Subtype.ext
-    refine Functor.functorHom_ext fun m f ↦ ?_
-    ext x
-    exact (congrArg (fun φ : (basedMaps X Z).obj m ↦ φ.1.app m (𝟙 m) x)
-      (ConcreteCategory.congr_hom (g.right.naturality f) y)).trans
-      (congrArg (fun h ↦ (g.right.app n y : (basedMaps X Z).obj n).1.app m h x)
-        (Category.comp_id f))
+    ext n y m f x
+    refine (congrArg (fun φ : (basedMaps X Z).obj m ↦ φ.1.app m (𝟙 m) x)
+      (ConcreteCategory.congr_hom (g.right.naturality f) y)).trans ?_
+    change (g.right.app n y : (basedMaps X Z).obj n).1.app m (f ≫ 𝟙 m) x =
+      (g.right.app n y : (basedMaps X Z).obj n).1.app m f x
+    rw [Category.comp_id]
 
 variable {X Y Z}
 
@@ -189,7 +196,9 @@ lemma homEquiv_def (X Y Z : PointedSSet.{u}) :
 lemma curry_right_app_coe_app_apply (f : X ⊗ Y ⟶ Z) {n m : SimplexCategoryᵒᵖ}
     (y : Y.right.obj n) (g : n ⟶ m) (x : X.right.obj m) :
     dsimp% ((MonoidalClosed.curry f).right.app n y : (basedMaps X Z).obj n).1.app m g x =
-      f.right.app m (smashMk x (Y.right.map g y)) := (rfl)
+      f.right.app m (smashMk x (Y.right.map g y)) := by
+  rw [← MonoidalClosed.homEquiv_apply_eq, homEquiv_def]
+  exact tensorHomEquiv_apply_right_app_coe_app_apply f y g x
 
 @[simp]
 lemma uncurry_right_app_smashMk (g : Y ⟶ (ihom X).obj Z) {n : SimplexCategoryᵒᵖ}
@@ -226,14 +235,16 @@ lemma ihom_ev_app_right_app_smashMk {n : SimplexCategoryᵒᵖ} (x : X.right.obj
     dsimp% ((ihom.ev X).app Y).right.app n (smashMk x φ) =
       (φ : (basedMaps X Y).obj n).1.app n (𝟙 n) x := by
   rw [← MonoidalClosed.uncurry_id_eq_ev, uncurry_right_app_smashMk]
-  rfl
+  simp
 
 /-- Coevaluation `Y ⟶ Map_*(X, X ⊗ Y)` sends a simplex `y` to the based map `x ↦ x ∧ y`. -/
 @[simp]
 lemma ihom_coev_app_right_app_coe_app_apply {n m : SimplexCategoryᵒᵖ} (y : Y.right.obj n)
     (f : n ⟶ m) (x : X.right.obj m) :
     dsimp% (((ihom.coev X).app Y).right.app n y : (basedMaps X (X ⊗ Y)).obj n).1.app m f x =
-      smashMk x (Y.right.map f y) := (rfl)
+      smashMk x (Y.right.map f y) := by
+  rw [← MonoidalClosed.curry_id_eq_coev, curry_right_app_coe_app_apply]
+  simp
 
 end PointedSSet
 
