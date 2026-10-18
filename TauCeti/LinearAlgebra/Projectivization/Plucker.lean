@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 
 /-!
@@ -66,21 +67,10 @@ theorem mk_plucker_eq_mk_plucker_iff {x y : Fin p → ι → K} (hx : LinearInde
       ext s
       rw [← plucker_eq_repr_ιMulti, ← ha, Units.smul_def, Units.smul_def, map_smul,
         Finsupp.smul_apply, Pi.smul_apply, ← plucker_eq_repr_ιMulti]
-    -- A vector lies in the span of an independent family exactly when its product with the
-    -- exterior product of the family vanishes.
-    have hmem (z : Fin p → ι → K) (hz : LinearIndependent K z) (v : ι → K) :
-        v ∈ Submodule.span K (range z) ↔
-          ExteriorAlgebra.ι K v * (ιMulti K p z : ExteriorAlgebra K (ι → K)) = 0 := by
-      have hcons : v ∈ Submodule.span K (range z) ↔
-          ¬LinearIndependent K (Fin.cons v z : Fin (p + 1) → ι → K) := by
-        rw [linearIndependent_finCons]
-        tauto
-      rw [hcons, ← ιMulti_ne_zero_iff, not_not, ← ZeroMemClass.coe_eq_zero, ιMulti_apply_coe,
-        ExteriorAlgebra.ιMulti_succ_apply, ιMulti_apply_coe]
-      simp [Matrix.vecTail, Function.comp_def]
     ext v
-    rw [hmem x hx, hmem y hy, hι, Units.smul_def, Submodule.coe_smul, mul_smul_comm,
-      smul_eq_zero_iff_right a.ne_zero]
+    rw [exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hx,
+      exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hy, hι, Units.smul_def,
+      Submodule.coe_smul, mul_smul_comm, smul_eq_zero_iff_right a.ne_zero]
   · intro h
     -- Write `x` in the basis `y` of the common span.
     have hxy (i : Fin p) : x i ∈ Submodule.span K (range y) := h ▸ Submodule.subset_span ⟨i, rfl⟩
@@ -106,30 +96,16 @@ open TauCeti
 
 variable {ι K : Type*} [LinearOrder ι] [Finite ι] [Field K] (U : Submodule K (ι → K))
 
-omit [LinearOrder ι] [Finite ι] in
-/-- The coordinate vectors of a basis of a subspace `U` of `ι → K` are linearly independent. -/
-private theorem linearIndependent_coe_basis {n : Type*} (b : Basis n K U) :
-    LinearIndependent K fun i ↦ (b i : ι → K) :=
-  b.linearIndependent.map' U.subtype U.ker_subtype
-
-omit [LinearOrder ι] [Finite ι] in
-/-- The coordinate vectors of a basis of a subspace `U` of `ι → K` span `U`. -/
-private theorem span_range_coe_basis {n : Type*} (b : Basis n K U) :
-    span K (range fun i ↦ (b i : ι → K)) = U := by
-  -- The coordinate vectors are by definition the images of `b` under the inclusion of `U`.
-  rw [show (fun i ↦ (b i : ι → K)) = U.subtype ∘ b from rfl, range_comp, span_image, b.span_eq,
-    map_top, range_subtype]
-
 /-- Bases of the same size of two subspaces have proportional Plücker coordinates exactly when
 the subspaces are equal. -/
 private theorem mk_plucker_basis_eq_iff {W : Submodule K (ι → K)} {n : ℕ} (b : Basis (Fin n) K U)
     (b' : Basis (Fin n) K W) :
     Projectivization.mk K (plucker fun i ↦ (b i : ι → K))
-        (plucker_ne_zero (linearIndependent_coe_basis U b)) =
+        (plucker_ne_zero (linearIndependent_coe_basis b)) =
       Projectivization.mk K (plucker fun i ↦ (b' i : ι → K))
-        (plucker_ne_zero (linearIndependent_coe_basis W b')) ↔ U = W := by
-  rw [mk_plucker_eq_mk_plucker_iff (linearIndependent_coe_basis U b)
-    (linearIndependent_coe_basis W b'), span_range_coe_basis, span_range_coe_basis]
+        (plucker_ne_zero (linearIndependent_coe_basis b')) ↔ U = W := by
+  rw [mk_plucker_eq_mk_plucker_iff (linearIndependent_coe_basis b)
+    (linearIndependent_coe_basis b'), span_range_coe_basis, span_range_coe_basis]
 
 /-- The Plücker point of a subspace `U` of `ι → K`: the point of the projective space over
 `powersetCard ι (finrank K U) → K` given by the Plücker coordinates of a basis of `U`. It does
@@ -137,13 +113,13 @@ not depend on the basis, by `relativePluckerPoint_eq_mk`. -/
 noncomputable def relativePluckerPoint :
     Projectivization K (powersetCard ι (finrank K U) → K) :=
   .mk K (plucker fun i ↦ (finBasis K U i : ι → K))
-    (plucker_ne_zero ((finBasis K U).linearIndependent.map' U.subtype U.ker_subtype))
+    (plucker_ne_zero (linearIndependent_coe_basis (finBasis K U)))
 
 variable {U} in
 /-- The Plücker point of `U` is the class of the Plücker coordinates of any basis of `U`. -/
 theorem relativePluckerPoint_eq_mk (b : Basis (Fin (finrank K U)) K U) :
     relativePluckerPoint U = .mk K (plucker fun i ↦ (b i : ι → K))
-      (plucker_ne_zero (b.linearIndependent.map' U.subtype U.ker_subtype)) :=
+      (plucker_ne_zero (linearIndependent_coe_basis b)) :=
   (mk_plucker_basis_eq_iff U _ b).2 rfl
 
 /-- A subspace is determined by its dimension together with its Plücker point: the Plücker point
@@ -158,7 +134,7 @@ theorem relativePluckerPoint_injective :
   -- any basis of `U` indexed by `Fin q` with `q = finrank K U`.
   have key (q : ℕ) (hq : finrank K U = q) (b : Basis (Fin q) K U) :
       HEq (relativePluckerPoint U) (Projectivization.mk K (plucker fun i ↦ (b i : ι → K))
-        (plucker_ne_zero (b.linearIndependent.map' U.subtype U.ker_subtype))) := by
+        (plucker_ne_zero (linearIndependent_coe_basis b))) := by
     subst hq
     rw [relativePluckerPoint_eq_mk b]
   have := eq_of_heq ((key _ hp ((finBasis K U).reindex (finCongr hp))).symm.trans h)

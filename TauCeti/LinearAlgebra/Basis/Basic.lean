@@ -27,6 +27,8 @@ linear-map composition.
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
+* `Submodule.linearIndependent_coe_basis`, `Submodule.span_range_coe_basis`: the vectors of a basis
+  of a submodule `U`, viewed in the ambient module, are linearly independent and span `U`.
 -/
 
 public section
@@ -76,3 +78,22 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
 
 end Module.Basis
+
+namespace Submodule
+
+variable {R M n : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {U : Submodule R M}
+
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, are linearly
+independent. -/
+theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
+    LinearIndependent R fun i ↦ (b i : M) :=
+  b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
+
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, span `U`. -/
+theorem span_range_coe_basis (b : Module.Basis n R U) :
+    span R (Set.range fun i ↦ (b i : M)) = U := by
+  -- The ambient vectors are by definition the images of `b` under the inclusion of `U`.
+  rw [show (fun i ↦ (b i : M)) = U.subtype ∘ b from rfl, Set.range_comp, span_image, b.span_eq,
+    map_top, range_subtype]
+
+end Submodule
