@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.ModelTheory.Infinitary.CodedConnectives
 import TauCeti.ModelTheory.Infinitary.FreeVariables
 import Mathlib.ModelTheory.Graph
 import Mathlib.Tactic.FinCases

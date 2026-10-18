@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Semantics
 public import TauCeti.ModelTheory.Infinitary.Reindex
 public import Mathlib.Data.Set.Countable
 
