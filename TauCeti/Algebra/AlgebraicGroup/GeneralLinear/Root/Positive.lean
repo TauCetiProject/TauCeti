@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Over
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Base
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Space
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Tangent
-import TauCeti.LinearAlgebra.RootSystem.Positive
 
 /-!
 # Positive and simple roots of the standard general-linear torus and Borel
