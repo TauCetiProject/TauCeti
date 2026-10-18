@@ -61,6 +61,8 @@ of the blow-down.
   the intersection of their index sets.
 * `TauCeti.Toric.isRegularCone_starSubdivisionCone`: every cone of the star subdivision is
   regular.
+* `TauCeti.Toric.starSubdivisionCone_eq_faceOrderIso_symm`: a cone of the star subdivision whose
+  index set omits `none` is a face of the cone.
 * `TauCeti.Toric.Fan.starSubdivision`: the star subdivision of the fan of faces of a regular cone.
 * `TauCeti.Toric.Fan.isRegular_starSubdivision`: it is regular.
 * `TauCeti.Toric.Fan.starSubdivision_isSubdivision`: for nonempty `A` it subdivides the fan of
@@ -166,6 +168,20 @@ theorem starSubdivisionCone_le (S : Set (Option (ToricRay τ))) :
   refine Submodule.span_le.2 ?_
   rintro _ ⟨_, ⟨k, -, rfl⟩, rfl⟩
   exact starSubdivisionGenerator_mem hi A hτ k
+
+/-- A face of a toric cone `τ` containing the sum of the primitive generators of all rays of `τ`
+contains `τ`: by the face property it contains every primitive generator, and these span `τ`. -/
+theorem IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem {F : PointedCone ℝ V}
+    (hF : F.IsFaceOf τ)
+    (hu : i (∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl τ) hτ.fg,
+      primitiveGenerator hi hτ ρ) ∈ F) : τ ≤ F := by
+  have hsum : ∑ ν : ToricRay.faceFinset (PointedCone.IsFaceOf.refl τ) hτ.fg,
+      i (primitiveGenerator hi hτ ν) ∈ F := by
+    rwa [Finset.sum_coe_sort _ fun ν ↦ i (primitiveGenerator hi hτ ν), ← map_sum]
+  refine (hτ.hull_primitiveGenerator hi).ge.trans (Submodule.span_le.2 ?_)
+  rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
+  exact hF.mem_of_sum_mem (fun ν ↦ ν.1.1.isFaceOf.le (primitiveGenerator_mem hi hτ ν.1)) hsum
+    ⟨ρ, (ToricRay.mem_faceFinset _ _).2 ρ.1.isFaceOf.le⟩
 
 /-- Viewing a set `B` of rays of a face `τ₀` of `τ` as rays of `τ` does not change the ray
 generators of the star subdivision along `B`. -/
@@ -315,6 +331,29 @@ theorem isRegularCone_starSubdivisionCone {S : Set (Option (ToricRay τ))}
       simp [hρ, hbu]
   rw [starSubdivisionCone_def, himage]
   exact isRegularCone_hull_image_basis hi _ _
+
+/-- A cone of the star subdivision of a regular cone `τ` whose index set omits `none` is the face
+of `τ` spanned by the rays it indexes. -/
+theorem starSubdivisionCone_eq_faceOrderIso_symm {S : Set (Option (ToricRay τ))} (hS : none ∉ S) :
+    starSubdivisionCone hi A hτ.toIsToricCone S =
+      ((hτ.faceOrderIso hi).symm {ρ | some ρ ∈ S}).toPointedCone := by
+  rw [IsRegularCone.faceOrderIso_symm_apply_toPointedCone, starSubdivisionCone_def]
+  congr 2
+  ext x
+  constructor
+  · rintro ⟨k, hk, rfl⟩
+    cases k with
+    | none => exact (hS hk).elim
+    | some ρ => exact ⟨ρ, hk, rfl⟩
+  · rintro ⟨ρ, hρ, rfl⟩
+    exact ⟨some ρ, hρ, rfl⟩
+
+/-- A cone of the star subdivision of a regular cone `τ` whose index set omits `none` is a face
+of `τ`. -/
+theorem isFaceOf_starSubdivisionCone {S : Set (Option (ToricRay τ))} (hS : none ∉ S) :
+    (starSubdivisionCone hi A hτ.toIsToricCone S).IsFaceOf τ := by
+  rw [starSubdivisionCone_eq_faceOrderIso_symm hi A hτ hS]
+  exact ((hτ.faceOrderIso hi).symm _).isFaceOf
 
 end Regular
 
@@ -761,20 +800,10 @@ theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
     Submodule.span_singleton_le_iff_mem]
   constructor
   · intro hu
-    -- The face `σ ⊓ L` of `σ` contains `u_σ`, hence every primitive ray generator of `σ`.
-    have hF := Φ.inf_isFaceOf_left hσ (f.leastCone_mem C.2)
-    have hmem (ρ : ToricRay σ) : i (primitiveGenerator Φ.lattice hσt ρ) ∈ σ ⊓ f.leastCone C.2 := by
-      have hρ : ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) hσt.fg :=
-        (ToricRay.mem_faceFinset _ _).2 ρ.1.isFaceOf.le
-      have hsum : ∑ ν : ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) hσt.fg,
-          i (primitiveGenerator Φ.lattice hσt ν) ∈ σ ⊓ f.leastCone C.2 := by
-        rw [Finset.sum_coe_sort _ fun ν ↦ i (primitiveGenerator Φ.lattice hσt ν), ← map_sum]
-        exact ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hCL hu⟩
-      exact hF.mem_of_sum_mem
-        (fun ν ↦ ν.1.1.isFaceOf.le (primitiveGenerator_mem Φ.lattice hσt ν.1)) hsum ⟨ρ, hρ⟩
-    refine (hσt.hull_primitiveGenerator Φ.lattice).ge.trans (Submodule.span_le.2 ?_)
-    rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
-    exact (hmem ρ).2
+    -- The face `σ ⊓ L` of `σ` contains `u_σ`, hence contains `σ`.
+    exact (hσt.le_of_isFaceOf_of_sum_primitiveGenerator_mem Φ.lattice
+      (Φ.inf_isFaceOf_left hσ (f.leastCone_mem C.2))
+      ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hCL hu⟩).trans inf_le_right
   · intro hσL
     obtain ⟨C, hC⟩ := C
     rcases (Φ.mem_starSubdivisionAlong_cones hΦ hσ).1 hC with ⟨hCΦ, hσC⟩ | ⟨τ, hτ, hστ, hCτ⟩
@@ -784,34 +813,16 @@ theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
     · rw [← starSubdivisionGenerator_none_faceFinset Φ hσ hτ hστ]
       exact PointedCone.subset_hull ⟨_, ⟨none, hS, rfl⟩, rfl⟩
     -- Otherwise the cone is the face of `τ` spanned by rays of `τ`, which misses `ρ₀`.
-    exfalso
     have hτr := isRegular_iff.1 hΦ _ hτ
-    set T : Set (ToricRay τ) := {ρ | some ρ ∈ S}
-    have hface : starSubdivisionCone Φ.lattice
-        (ToricRay.faceFinset (Φ.isFaceOf_of_le hτ hσ hστ) hσt.fg) hτr.toIsToricCone S =
-          ((hτr.faceOrderIso Φ.lattice).symm T).toPointedCone := by
-      rw [IsRegularCone.faceOrderIso_symm_apply_toPointedCone, starSubdivisionCone_def]
-      congr 2
-      ext x
-      constructor
-      · rintro ⟨k, hk, rfl⟩
-        cases k with
-        | none => exact (hS hk).elim
-        | some ρ => exact ⟨ρ, hk, rfl⟩
-      · rintro ⟨ρ, hρ, rfl⟩
-        exact ⟨some ρ, hρ, rfl⟩
-    have hCΦ : starSubdivisionCone Φ.lattice
-        (ToricRay.faceFinset (Φ.isFaceOf_of_le hτ hσ hστ) hσt.fg) hτr.toIsToricCone S ∈
-          Φ.cones := by
-      rw [hface]
-      exact Φ.mem_of_isFaceOf hτ ((hτr.faceOrderIso Φ.lattice).symm T).isFaceOf
-    have hσC := hσL.trans (hleast hC hCΦ)
+    have hface := starSubdivisionCone_eq_faceOrderIso_symm Φ.lattice
+      (ToricRay.faceFinset (Φ.isFaceOf_of_le hτ hσ hστ) hσt.fg) hτr hS
+    have hσC := hσL.trans (hleast hC (Φ.mem_of_isFaceOf hτ
+      (isFaceOf_starSubdivisionCone Φ.lattice _ hτr hS)))
     rw [hface] at hσC
-    have hρ₀ : ρ₀ ∈ hτr.faceOrderIso Φ.lattice ((hτr.faceOrderIso Φ.lattice).symm T) :=
-      (hτr.mem_faceOrderIso_iff Φ.lattice _ ρ₀).2 (hσC (((ToricRay.mem_faceFinset _ _).1 hρ₀A)
-        (primitiveGenerator_mem Φ.lattice hτr.toIsToricCone ρ₀)))
+    have hρ₀ := (hτr.mem_faceOrderIso_iff Φ.lattice _ ρ₀).2 (hσC (((ToricRay.mem_faceFinset _ _).1
+      hρ₀A) (primitiveGenerator_mem Φ.lattice hτr.toIsToricCone ρ₀)))
     rw [OrderIso.apply_symm_apply] at hρ₀
-    exact hρ₀S hρ₀
+    exact (hρ₀S hρ₀).elim
 
 end Along
 
