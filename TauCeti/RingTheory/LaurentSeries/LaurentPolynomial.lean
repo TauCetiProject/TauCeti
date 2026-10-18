@@ -98,8 +98,7 @@ theorem algebraMap_eq_toLaurentSeries (p : R[T;T⁻¹]) :
 tower. -/
 instance isScalarTower_laurentSeries : IsScalarTower R R[T;T⁻¹] R⸨X⸩ :=
   .of_algebraMap_smul fun r f ↦ by
-    rw [Algebra.smul_def, algebraMap_eq_toLaurentSeries, LaurentPolynomial.algebraMap_apply,
-      Algebra.algebraMap_self_apply, toLaurentSeries_C, HahnSeries.C_mul_eq_smul]
+    simp [Algebra.smul_def]
 
 /-- The inclusion of a polynomial into Laurent series agrees with first viewing it as a Laurent
 polynomial. -/
@@ -111,12 +110,8 @@ theorem toLaurentSeries_toLaurent (p : R[X]) :
       (HahnSeries.ofPowerSeries ℤ R).comp Polynomial.coeToPowerSeries.ringHom := by
     apply Polynomial.ringHom_ext
     · intro r
-      rw [RingHom.comp_apply, RingHom.comp_apply, Polynomial.toLaurent_C,
-        Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_C,
-        toLaurentSeries_C, PowerSeries.coe_C]
-    · rw [RingHom.comp_apply, RingHom.comp_apply, Polynomial.toLaurent_X,
-        Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X,
-        toLaurentSeries_T, PowerSeries.coe_X]
+      simp
+    · simp
   exact DFunLike.congr_fun h p
 
 /-- The polynomial, Laurent-polynomial, and Laurent-series algebra structures form a tower. -/
