@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Data.List.Chain
+import TauCeti.Algebra.BigOperators.Ring.List
 
 /-!
 # Free independence of subalgebras
@@ -129,16 +130,6 @@ theorem apply_mul_of_ne (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : �
     (by simp [Algebra.algebraMap_eq_smul_one, hφ])
   simpa [Algebra.algebraMap_eq_smul_one, sub_mul, mul_sub, hφ, sub_eq_zero] using this
 
-/-- Centring the letter `x` of the word `v ++ x :: u` at `c` splits the value of the word into the
-value of the centred word and `c` times the value of the word with `x` deleted. -/
-private theorem prod_append_cons (v u : List (ι × A)) (x : ι × A) (c : R) :
-    ((v ++ x :: u).map Prod.snd).prod =
-      ((v ++ (x.1, x.2 - algebraMap R A c) :: u).map Prod.snd).prod +
-        c • ((v ++ u).map Prod.snd).prod := by
-  simp only [List.map_append, List.map_cons, List.prod_append, List.prod_cons, sub_mul, mul_sub,
-    Algebra.smul_def, Algebra.left_comm _ c]
-  abel
-
 /-- The centring step: if two normalised functionals for which `B` is free agree on each `B i`
 and on all words of length less than `n`, then they agree on every alternating word `v ++ u` of
 length `n ≠ 0` whose prefix `v` is centred. The letters of `u` are centred one at a time, each
@@ -161,7 +152,12 @@ private theorem apply_prod_append_eq_of_isChain (hφ : φ 1 = 1) (hfφ : IsFreel
   | cons x u ihu =>
     intro v hlen hw halt hc
     have hx : x.2 ∈ B x.1 := hw x (by simp)
-    rw [prod_append_cons v u x (φ x.2), map_add, map_add, map_smul, map_smul]
+    rw [show ((v ++ x :: u).map Prod.snd).prod =
+        ((v ++ (x.1, x.2 - algebraMap R A (φ x.2)) :: u).map Prod.snd).prod +
+          φ x.2 • ((v ++ u).map Prod.snd).prod by
+      simp only [List.map_append, List.map_cons, List.prod_append_sub_algebraMap_cons,
+        sub_add_cancel],
+      map_add, map_add, map_smul, map_smul]
     congr 1
     · have := ihu (v ++ [(x.1, x.2 - algebraMap R A (φ x.2))]) (by simpa using hlen) ?_ ?_ ?_
       · simpa using this
