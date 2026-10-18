@@ -72,6 +72,7 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero (hr : 0 �
       (𝓝[>] 0) (𝓝 0) := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
   have hmass : 0 < (negativeBinomialMeasure r p).real (Iic 0) := by
+    -- The explicit set type makes `Iic_bot` specialize to naturals before rewriting the measure.
     rw [show (Iic 0 : Set ℕ) = {0} from Iic_bot,
       negativeBinomialMeasure_real_singleton hr hp hp1]
     exact (negativeBinomialWeightReal_pos_iff hr hp hp1 0).2 (Or.inl rfl)
