@@ -19,8 +19,8 @@ continuity needed when an action is applied to a coefficient-valued convolution 
 
 Actions can be pulled back along continuous group homomorphisms and transported along
 star-algebra equivalences. The latter construction expresses conjugacy of dynamical systems.
-Membership in a subset invariant in the sense of Mathlib's `IsInvariant` is unchanged by the
-action.
+Membership in a subset invariant in the sense of Mathlib's `IsInvariant` is unchanged by any
+family of maps with inverses, in particular by the action.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 The joint-continuity argument uses Mathlib's `StarAlgEquiv.isometry` and
@@ -30,6 +30,13 @@ The joint-continuity argument uses Mathlib's `StarAlgEquiv.isometry` and
 public section
 
 namespace TauCeti
+
+/-- Membership in a subset invariant under a family of maps with inverses is unchanged by each
+map. -/
+theorem _root_.IsInvariant.apply_mem_iff {G X : Type*} [Inv G] {ϕ : G → X → X} {s : Set X}
+    (hs : IsInvariant ϕ s) (hϕ : ∀ g x, ϕ g⁻¹ (ϕ g x) = x) (g : G) (x : X) :
+    ϕ g x ∈ s ↔ x ∈ s :=
+  ⟨fun h ↦ hϕ g x ▸ hs g⁻¹ h, fun h ↦ hs g h⟩
 
 variable (G A : Type*) [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
 
@@ -84,10 +91,9 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
 
 /-- Membership in an invariant subset is unchanged by the action. -/
 @[simp]
-theorem _root_.IsInvariant.apply_mem_iff {α : CStarAction G A} {s : Set A}
-    (hs : IsInvariant (fun g a ↦ α g a) s) (g : G) (a : A) : α g a ∈ s ↔ a ∈ s := by
-  refine ⟨fun h ↦ ?_, fun ha ↦ hs g ha⟩
-  simpa only [inv_apply_apply] using hs g⁻¹ h
+theorem _root_.IsInvariant.cstarAction_apply_mem_iff {α : CStarAction G A} {s : Set A}
+    (hs : IsInvariant (fun g a ↦ α g a) s) (g : G) (a : A) : α g a ∈ s ↔ a ∈ s :=
+  hs.apply_mem_iff (fun g a ↦ α.inv_apply_apply g a) g a
 
 /-- Point-norm continuity implies joint continuity of the action. -/
 @[fun_prop]
