@@ -24,8 +24,6 @@ law only when the conditioning event has positive mass.
 
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed.,
   Wiley (2005), Chapter 4.
-* The multinomial mass calculation uses `multinomialMeasure_singleton` and
-  Mathlib's `poissonMeasure_singleton` and `Nat.multinomial_spec`.
 -/
 
 public section
