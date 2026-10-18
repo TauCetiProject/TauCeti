@@ -419,6 +419,17 @@ theorem componentCoordinateHom_apply (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (componentCoordinateHom H).hom x = componentCoordinateMap H x := by
   rfl
 
+/-- The component coordinate morphism is injective on coordinate algebras. -/
+theorem componentCoordinateHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    Function.Injective (componentCoordinateHom H).hom := by
+  intro x y hxy
+  apply componentCoordinateMap_injective H
+  exact (componentCoordinateHom_apply H x).symm.trans
+    (hxy.trans (componentCoordinateHom_apply H y))
+
+instance (H : FiniteTypeCommHopfAlgCat.{u, u} k) : Mono (componentCoordinateHom H) :=
+  ConcreteCategory.mono_of_injective _ (componentCoordinateHom_injective H)
+
 /-- The idempotent of the identity component of `Spec H` is the idempotent of the connected
 component of the augmentation point. -/
 private theorem connectedComponentsIdempotent_one (H : FiniteTypeCommHopfAlgCat.{u, u} k) :

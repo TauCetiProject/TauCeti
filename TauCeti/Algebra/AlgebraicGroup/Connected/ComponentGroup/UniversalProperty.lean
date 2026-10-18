@@ -74,42 +74,6 @@ theorem kernelHopfIdeal_le_identityComponentHopfIdeal_of_etale
   rwa [CommHopfAlgCat.kernelHopfIdeal_comp_of_surjective e.hom
     (ConcreteCategory.bijective_of_isIso e.hom).2 f] at h
 
-/-- Identify the constant component coordinate algebra with the identity-component coinvariants.
-This comparison is used only to construct the factorization through the component morphism. -/
-private def componentCoinvariantsIso :
-    CommHopfAlgCat.of k
-        (ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) ≅
-      CommHopfAlgCat.coinvariants (isNormal_identityComponentHopfIdeal H) := by
-  let f := CommHopfAlgCat.liftCoinvariants (isNormal_identityComponentHopfIdeal H)
-    (componentCoordinateHom H) (kernelHopfIdeal_componentCoordinateHom H).le
-  have hf (x) : (f.hom x : H) = componentCoordinateMap H x :=
-    (CommHopfAlgCat.coe_liftCoinvariants_apply _ _ _ x).trans
-      (componentCoordinateHom_apply H x)
-  have hbij : Function.Bijective f.hom := by
-    constructor
-    · intro x y hxy
-      apply componentCoordinateMap_injective H
-      rw [← hf x, ← hf y]
-      exact congrArg (fun z :
-        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).coinvariants ↦ (z : H)) hxy
-    · intro y
-      have hy : (y : H) ∈ (componentCoordinateMap H).range := by
-        rw [← coinvariants_identityComponentHopfIdeal_eq_range H]
-        exact y.property
-      obtain ⟨x, hx⟩ := hy
-      exact ⟨x, Subtype.ext ((hf x).trans hx)⟩
-  let _ : IsIso f := (ConcreteCategory.isIso_iff_bijective f).mpr hbij
-  exact asIso f
-
-private theorem componentCoinvariantsIso_hom_comp :
-    (componentCoinvariantsIso H).hom ≫
-        CommHopfAlgCat.coinvariantsι (isNormal_identityComponentHopfIdeal H) =
-      componentCoordinateHom H := by
-  ext x
-  exact CommHopfAlgCat.coe_liftCoinvariants_apply
-    (isNormal_identityComponentHopfIdeal H) (componentCoordinateHom H)
-    (kernelHopfIdeal_componentCoordinateHom H).le x
-
 /-- **The universal property of the component group.** Every affine-group homomorphism to a
 finite étale group factors uniquely through the canonical component morphism. The coordinate
 arrow of the factorization runs from the étale target to the component coordinate algebra. -/
@@ -124,10 +88,6 @@ theorem existsUnique_comp_componentCoordinateHom
   have hfactor : (l ≫ (componentCoinvariantsIso H).inv) ≫ componentCoordinateHom H = f := by
     rw [Category.assoc, ← componentCoinvariantsIso_hom_comp H, Iso.inv_hom_id_assoc]
     exact CommHopfAlgCat.liftCoinvariants_comp_coinvariantsι _ _ _
-  have : Mono (componentCoordinateHom H) := ConcreteCategory.mono_of_injective _ fun x y h ↦ by
-    apply componentCoordinateMap_injective H
-    rw [← componentCoordinateHom_apply H x, ← componentCoordinateHom_apply H y]
-    exact h
   exact ⟨l ≫ (componentCoinvariantsIso H).inv, hfactor,
     fun g hg ↦ (cancel_mono (componentCoordinateHom H)).mp (hg.trans hfactor.symm)⟩
 
