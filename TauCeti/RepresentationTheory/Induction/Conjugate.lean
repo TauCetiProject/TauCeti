@@ -149,6 +149,7 @@ theorem conjRepFunctor_map_hom_toLinearMap [Semiring k] (s : G) {H : Subgroup G}
   rfl
 
 /-- The conjugate action: `x` acts on `{}^s A` as `s⁻¹xs` acts on `A`. -/
+@[simp]
 theorem conjRep_ρ [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H)
     (x : (MulAut.conj s • H : Subgroup G)) :
     (conjRep s A).ρ x = A.ρ (conjSubgroupEquiv s H x) :=
@@ -436,6 +437,7 @@ section FDRepAction
 variable [CommRing k]
 
 /-- The conjugate finite-dimensional action: `x` acts on `{}^s A` as `s⁻¹xs` acts on `A`. -/
+@[simp]
 theorem conjFDRep_ρ (s : G) {H : Subgroup G} (A : FDRep k H)
     (x : (MulAut.conj s • H : Subgroup G)) :
     (conjFDRep s A).ρ x = A.ρ (conjSubgroupEquiv s H x) :=
