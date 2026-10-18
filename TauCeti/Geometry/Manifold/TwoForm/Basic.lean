@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 
@@ -44,73 +46,92 @@ namespace SmoothTwoForm
 
 variable {form form' : SmoothTwoForm I M}
 
-/-- Evaluate a degree-two form on two tangent vectors. -/
-instance : CoeFun (SmoothTwoForm I M) fun _ ↦
-    (x : M) → TangentSpace I x → TangentSpace I x → ℝ :=
-  ⟨fun form x v w ↦ SmoothForm.eval₂ form x v w⟩
-
-@[simp] theorem isAlt (form : SmoothTwoForm I M) (x : M) (v : TangentSpace I x) :
-    (form.1 x) ![v, v] = 0 := by
-  simpa only [SmoothForm.eval₂_apply] using SmoothForm.eval₂_self form x v
-
-/-- The algebraic bilinear form represented by a smooth two-form at a point. -/
-def bilinFormAt (form : SmoothTwoForm I M) (x : M) :
-    LinearMap.BilinForm ℝ (TangentSpace I x) :=
-  SmoothForm.bilinFormAt form x
-
-@[simp] theorem bilinFormAt_apply (form : SmoothTwoForm I M) (x : M)
-    (v w : TangentSpace I x) : form.bilinFormAt x v w = form x v w := by
-  exact SmoothForm.bilinFormAt_apply form x v w
-
-theorem isAlt_bilinFormAt (form : SmoothTwoForm I M) (x : M) :
-    (form.bilinFormAt x).IsAlt :=
-  SmoothForm.isAlt_bilinFormAt form x
-
-/-- The value of a two-form on the model fibre, for chart-based exterior calculus. -/
-def altAt (form : SmoothTwoForm I M) (x : M) : E [⋀^Fin 2]→L[ℝ] ℝ :=
-  SmoothForm.altAt form x
-
-@[simp] theorem altAt_apply (form : SmoothTwoForm I M) (x : M) (v : Fin 2 → E) :
-    form.altAt x v = form x (v 0) (v 1) := by
-  exact SmoothForm.altAt_apply_eval₂ form x v
-
-@[ext] theorem ext (h : ∀ (x : M) (v w : TangentSpace I x), form x v w = form' x v w) :
-    form = form' := by
-  apply SmoothForm.ext
-  intro x v w
-  exact h x v w
-
 section Evaluation
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Evaluating a smooth degree-two form on two smooth tangent fields along a smooth map gives a
+smooth scalar function. -/
+lemma contMDiff_apply {n : ℕ∞ω} [ENat.LEInfty n] (form : SmoothTwoForm I M)
+    {b : N → M}
+    {V W : ∀ y : N, TangentSpace I (b y)}
+    (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y)))
+    (hW : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
+    ContMDiff I' 𝓘(ℝ) n (fun y ↦ SmoothForm.eval₂ form (b y) (V y) (W y)) := by
+  have hb : ContMDiff I' I n b := fun y ↦ by
+    have hy := hV y
+    rw [← contMDiffWithinAt_univ] at hy ⊢
+    exact (contMDiffWithinAt_totalSpace.mp hy).1
+  have hform := (form.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
+  have hform' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] ℝ) (b y)
+        (form.toContMDiffSection (b y))) := by
+    convert hform using 1
+    funext y
+    rfl
+  intro y₀
+  let e := trivializationAt E (TangentSpace I) (b y₀)
+  have he : b y₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (b y₀)
+  have hV' := (e.contMDiffAt_iff (f := fun y ↦ TotalSpace.mk' E (b y) (V y))
+    (FiberBundle.mem_trivializationAt_proj_source (x := ⟨b y₀, V y₀⟩))).mp (hV y₀)
+  have hW' := (e.contMDiffAt_iff (f := fun y ↦ TotalSpace.mk' E (b y) (W y))
+    (FiberBundle.mem_trivializationAt_proj_source (x := ⟨b y₀, W y₀⟩))).mp (hW y₀)
+  have hf := (contMDiffAt_continuousAlternatingMap_bundle (IM := I') (IB := I) (n := n)
+    (f := fun y : N ↦
+      (Bundle.TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] ℝ) (b y)
+        (form.toContMDiffSection (b y))))
+    ).mp (hform' y₀)
+  have happly := (hf.2.continuousAlternatingMap_apply
+    (f := fun i : Fin 2 ↦ Fin.cases
+      (fun y ↦ (e ⟨b y, V y⟩).2)
+      (fun _ ↦ fun y ↦ (e ⟨b y, W y⟩).2) i)
+    (fun i ↦ by
+    fin_cases i
+    · exact hV'.2
+    · exact hW'.2))
+  refine happly.congr_of_eventuallyEq ?_
+  filter_upwards [(hb y₀).continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds he)] with y hy
+  change SmoothForm.eval₂ form (b y) (V y) (W y) =
+    ContinuousAlternatingMap.inCoordinates E ℝ
+      (B₁ := M) (B₂ := M) (E₁ := TangentSpace I) (E₂ := Bundle.Trivial M ℝ)
+      (b y₀) (b y) (b y₀) (b y)
+      ((SmoothForm.toContMDiffSection form) (b y)) _
+  rw [ContinuousAlternatingMap.inCoordinates_eq (F₁ := E) (F₂ := ℝ)
+    (B₁ := M) (B₂ := M) (E₁ := TangentSpace I) (E₂ := Bundle.Trivial M ℝ)
+    hy (by simp)]
+  have hVvec : (trivializationAt E (TangentSpace I) (b y₀)).symm (b y)
+      (e ⟨b y, V y⟩).2 = V y := by
+    rw [← e.symmL_apply (R := ℝ) hy]
+    simpa [e.coe_linearMapAt_of_mem (R := ℝ) hy] using
+      (e.symmL_continuousLinearMapAt (R := ℝ) hy (V y))
+  have hWvec : (trivializationAt E (TangentSpace I) (b y₀)).symm (b y)
+      (e ⟨b y, W y⟩).2 = W y := by
+    rw [← e.symmL_apply (R := ℝ) hy]
+    simpa [e.coe_linearMapAt_of_mem (R := ℝ) hy] using
+      (e.symmL_continuousLinearMapAt (R := ℝ) hy (W y))
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, SmoothForm.eval₂_apply]
+  simp only [Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearEquivAt_trivialization, ContinuousLinearEquiv.coe_refl,
+    SmoothForm.toContMDiffSection_apply, ContinuousLinearEquiv.coe_coe,
+    Trivialization.continuousLinearEquivAt_symm_apply,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe, ContinuousLinearMap.coe_id',
+    Function.comp_apply, id_eq]
+  congr 1
+  funext i
+  fin_cases i
+  · simpa [Function.comp_apply] using hVvec.symm
+  · convert hWvec.symm using 1 <;> rfl
 
 end Evaluation
 
-private theorem constAltIsAlt {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) : LinearMap.IsAlt B.toBilinForm :=
-  fun v ↦ by simpa only [ContinuousLinearMap.toBilinForm_apply] using hB v
-
-private def constAlt {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) : V [⋀^Fin 2]→L[ℝ] ℝ :=
-  (constAltIsAlt B hB).toAlternatingMap.mkContinuous ‖B‖ (by
-    intro v
-    calc
-      ‖(constAltIsAlt B hB).toAlternatingMap v‖ = ‖B (v 0) (v 1)‖ := by
-        rw [LinearMap.IsAlt.toAlternatingMap_apply]
-        rfl
-      _ ≤ ‖B‖ * ∏ i, ‖v i‖ := by
-        rw [Fin.prod_univ_two, ← mul_assoc]
-        exact B.le_opNorm₂ (v 0) (v 1))
-
-@[simp] private theorem constAlt_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (z : Fin 2 → V) :
-    constAlt B hB z = B (z 0) (z 1) := by
-  rw [constAlt, AlternatingMap.coe_mkContinuous, LinearMap.IsAlt.toAlternatingMap_apply]
-  rfl
-
 /-- A continuous alternating bilinear form defines a constant smooth two-form on its model space. -/
 def const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) :
+    (B : V →L[ℝ] V →L[ℝ] ℝ) (_hB : ∀ v, B v v = 0) :
     SmoothTwoForm (modelWithCornersSelf ℝ V) V := by
-  let A := constAlt B hB
+  let A := (2⁻¹ : ℝ) • ContinuousAlternatingMap.alternatizeBilinCLM ℝ V ℝ B
   let A' : ∀ x : V, TangentSpace (modelWithCornersSelf ℝ V) x [⋀^Fin 2]→L[ℝ] ℝ :=
     fun x ↦ A.compContinuousLinearMap (NormedSpace.fromTangentSpace x).toContinuousLinearMap
   exact ⟨A', by
@@ -148,13 +169,22 @@ def const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
     (v w : TangentSpace (modelWithCornersSelf ℝ V) x) :
-    const B hB x v w = B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
-  change SmoothForm.eval₂ (const B hB) x v w = _
+    SmoothForm.eval₂ (const B hB) x v w =
+      B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   rw [SmoothForm.eval₂_apply]
   dsimp [const]
-  rw [constAlt_apply]
+  rw [ContinuousAlternatingMap.alternatizeBilinCLM_apply]
+  have hneg := LinearMap.IsAlt.neg (show LinearMap.IsAlt B.toBilinForm from fun v ↦ by
+    simpa only [ContinuousLinearMap.toBilinForm_apply] using hB v)
+    (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w)
   simp only [Function.comp_apply]
-  simp
+  have hneg' : -B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) =
+      B (NormedSpace.fromTangentSpace x w) (NormedSpace.fromTangentSpace x v) := by
+    simpa only [ContinuousLinearMap.toBilinForm_apply] using hneg
+  change 2⁻¹ * (B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) -
+      B (NormedSpace.fromTangentSpace x w) (NormedSpace.fromTangentSpace x v)) = _
+  rw [← hneg']
+  ring
 
 theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x v w : V) :
