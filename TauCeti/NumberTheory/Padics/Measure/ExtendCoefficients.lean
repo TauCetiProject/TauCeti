@@ -360,20 +360,19 @@ section Examples
 
 variable {p : ℕ} [Fact p.Prime]
 
-private theorem norm_coeRingHom_le_one (a : ℤ_[p]) : ‖PadicInt.Coe.ringHom a‖ ≤ 1 :=
-  PadicInt.norm_le_one a
-
 /- The arithmetic case: coefficients extended from `ℤ_p` to `ℚ_p`. The extension of a Dirac measure
 evaluates test functions at its point, and it does not forget multiplicities. -/
 
 example (x : ℤ_[p]) (f : C(ℤ_[p], ℚ_[p])) :
-    extendCoefficients PadicInt.Coe.ringHom norm_coeRingHom_le_one (dirac ℤ_[p] x) f = f x := by
+    extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
+      (dirac ℤ_[p] x) f = f x := by
   simp
 
 example (x : ℤ_[p]) :
-    extendCoefficients PadicInt.Coe.ringHom norm_coeRingHom_le_one
+    extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
         (dirac ℤ_[p] x + dirac ℤ_[p] x) ≠
-      extendCoefficients PadicInt.Coe.ringHom norm_coeRingHom_le_one (dirac ℤ_[p] x) := by
+      extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
+        (dirac ℤ_[p] x) := by
   intro h
   have := congrArg (fun ν : D(ℤ_[p], ℚ_[p]) ↦ ν 1) h
   norm_num at this
