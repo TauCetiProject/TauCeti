@@ -38,6 +38,9 @@ private def rescaleAlgHom (t : ℂˣ) : UqSl2 q →ₐ[ℂ] UqSl2 q :=
       e_mul_f_sub_f_mul_e := by
         simp [smul_smul, e_mul_f_sub_f_mul_e] }
 
+/- `lift_generator` returns `GeneratorTuple.toFun`, whose body and equations are not exposed
+downstream. The four proofs below use the public `liftEquiv` equations to access tuple fields;
+the reverse rewrites put the goal in the form of `liftEquiv.apply_symm_apply`. -/
 @[simp] private theorem rescaleAlgHom_e (t : ℂˣ) :
     rescaleAlgHom q t (e q) = (t : ℂ) • e q := by
   unfold rescaleAlgHom
