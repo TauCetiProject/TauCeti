@@ -68,8 +68,9 @@ theorem generalizedExtremeValueMap_zero (m s e : ℝ) :
     generalizedExtremeValueMap m s 0 e = m - s * Real.log e := by
   simp [generalizedExtremeValueMap]
 
-/-- At nonzero shape, the generalized extreme-value transformation has its power form. -/
-theorem generalizedExtremeValueMap_of_ne {ξ : ℝ} (hξ : ξ ≠ 0) (m s e : ℝ) :
+/-- At nonzero shape, the generalized extreme-value transformation is
+`m + s * (exp (-ξ * log e) - 1) / ξ`. -/
+theorem generalizedExtremeValueMap_of_shape_ne_zero {ξ : ℝ} (hξ : ξ ≠ 0) (m s e : ℝ) :
     generalizedExtremeValueMap m s ξ e =
       m + s * (Real.exp (-ξ * Real.log e) - 1) / ξ := by
   simp [generalizedExtremeValueMap, hξ]
@@ -81,7 +82,7 @@ theorem generalizedExtremeValueMap_eq_rpow {e : ℝ} (he : 0 < e) (m s ξ : ℝ)
       if ξ = 0 then m - s * Real.log e else m + s * (e ^ (-ξ) - 1) / ξ := by
   by_cases hξ : ξ = 0
   · simp [hξ]
-  · rw [generalizedExtremeValueMap_of_ne hξ]
+  · rw [generalizedExtremeValueMap_of_shape_ne_zero hξ]
     rw [ite_eq_right hξ, Real.rpow_def_of_pos he]
     have hexp : -ξ * Real.log e = Real.log e * -ξ := mul_comm _ _
     rw [hexp]
@@ -94,6 +95,13 @@ theorem measurable_generalizedExtremeValueMap :
   simp only [generalizedExtremeValueMap]
   exact Measurable.ite (measurableSet_eq_fun measurable_fst.snd measurable_const) (by fun_prop)
     (by fun_prop)
+
+/-- The generalized extreme-value transformation is measurable in its exponential input. -/
+@[fun_prop]
+theorem measurable_generalizedExtremeValueMap_right (m s ξ : ℝ) :
+    Measurable (generalizedExtremeValueMap m s ξ) :=
+  measurable_generalizedExtremeValueMap.comp
+    (((measurable_const.prodMk measurable_const).prodMk measurable_const).prodMk measurable_id)
 
 /-- The generalized extreme-value measure in the maximum convention.
 
@@ -126,8 +134,8 @@ theorem generalizedExtremeValueMeasure_zero (m s : ℝ) :
     funext e
     exact generalizedExtremeValueMap_zero m s e
 
-/-- For nonzero shape and positive scale, the generalized extreme-value law is the image of a
-rate-one exponential variable under `e ↦ m + s * (e ^ (-ξ) - 1) / ξ`, almost everywhere. -/
+/-- For nonzero shape and positive scale, the generalized extreme-value law is the pushforward of
+a rate-one exponential law under `e ↦ m + s * (e ^ (-ξ) - 1) / ξ`. -/
 theorem generalizedExtremeValueMeasure_of_shape_ne_zero {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0)
     (m : ℝ) :
     generalizedExtremeValueMeasure m s ξ =
@@ -152,10 +160,18 @@ theorem hasLaw_generalizedExtremeValueMeasure_of_hasLaw_expMeasure
     HasLaw (fun ω => generalizedExtremeValueMap m s ξ (E ω))
       (generalizedExtremeValueMeasure m s ξ) P := by
   rw [generalizedExtremeValueMeasure_of_pos hs]
+  exact (hasLaw_map (measurable_generalizedExtremeValueMap_right m s ξ).aemeasurable).comp hE
+
+/-- If `E` has the rate-one exponential law, then its nonzero-shape power transformation has the
+corresponding generalized extreme-value law. -/
+theorem hasLaw_generalizedExtremeValueMeasure_of_hasLaw_expMeasure_of_shape_ne_zero
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {E : Ω → ℝ}
+    {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) (m : ℝ) (hE : HasLaw E (expMeasure 1) P) :
+    HasLaw (fun ω => m + s * (E ω ^ (-ξ) - 1) / ξ)
+      (generalizedExtremeValueMeasure m s ξ) P := by
+  rw [generalizedExtremeValueMeasure_of_shape_ne_zero hs hξ]
   exact (hasLaw_map
-    (measurable_generalizedExtremeValueMap.comp
-      (((measurable_const.prodMk measurable_const).prodMk measurable_const).prodMk
-        measurable_id)).aemeasurable).comp hE
+    (by fun_prop : Measurable fun e : ℝ => m + s * (e ^ (-ξ) - 1) / ξ).aemeasurable).comp hE
 
 /-- A positive affine map changes the location and scale of a generalized extreme-value law and
 leaves its shape fixed. The equality also respects the nonpositive-scale zero branch. -/
@@ -168,10 +184,7 @@ theorem map_affine_generalizedExtremeValueMeasure {b : ℝ} (hb : 0 < b) (a m s 
         (mul_nonpos_of_nonneg_of_nonpos hb.le hs), Measure.map_zero]
   · rw [generalizedExtremeValueMeasure_of_pos hs,
       generalizedExtremeValueMeasure_of_pos (mul_pos hb hs),
-      Measure.map_map (by fun_prop) (by
-        exact measurable_generalizedExtremeValueMap.comp
-          (((measurable_const.prodMk measurable_const).prodMk measurable_const).prodMk
-            measurable_id))]
+      Measure.map_map (by fun_prop) (measurable_generalizedExtremeValueMap_right m s ξ)]
     congr 1
     funext e
     simp only [Function.comp_apply, generalizedExtremeValueMap]
