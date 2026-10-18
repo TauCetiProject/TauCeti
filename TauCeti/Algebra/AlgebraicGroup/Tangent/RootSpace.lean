@@ -62,6 +62,8 @@ which `Φ` is read off.
 * `Derivation.dualCotangentMap_mem_adjointWeightSpace_iff`: the differential of a closed
   immersion `Spec L → Spec H` detects the adjoint weight spaces of a diagonalizable subgroup of
   `Spec L`.
+* `BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective`: more generally, an
+  injective differential detects these weight spaces.
 * `Derivation.map_dualCotangentMap_adjointWeightSpace` and `Derivation.adjointWeightSpaceEquiv`:
   the differential of an isomorphism carries each weight space onto the corresponding weight
   space for the transported diagonalizable subgroup.
@@ -409,6 +411,23 @@ variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Finite R (Bialgebra.CotangentSpace R L)]
   [Module.Projective R (Bialgebra.CotangentSpace R L)]
 
+/-- A homomorphism with injective differential detects adjoint weights for any homomorphism
+from a diagonalizable group into its source. No injectivity of the coordinate map is needed. -/
+theorem _root_.BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective (φ : H →ₐc[R] L)
+    (hφ : Function.Injective (dualCotangentMap φ))
+    (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
+    (y : Module.Dual R (Bialgebra.CotangentSpace R L)) :
+    dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α ↔ y ∈ adjointWeightSpace π α := by
+  let A := CommAlgCat.of R (MonoidAlgebra R M)
+  have hinj := Module.Flat.lTensor_preserves_injective_linearMap (M := A)
+    (dualCotangentMap φ) hφ
+  rw [mem_adjointWeightSpace_iff_universalPointAction,
+    mem_adjointWeightSpace_iff_universalPointAction]
+  conv_rhs => rw [← hinj.eq_iff]
+  rw [BialgHom.lTensor_dualCotangentMap_adjointAction, LinearMap.lTensor_tmul,
+    LinearMap.lTensor_tmul]
+  simp only [BialgHom.mapDomain_apply, BialgHom.comp_toAlgHom, A]
+
 /-- **The differential of a closed immersion detects adjoint weight spaces.** Let
 `φ : H →ₐc[R] L` be surjective, so that it represents a closed immersion `Spec L → Spec H`, and let
 `π` represent a homomorphism `D(M) → Spec L`. A tangent vector of `Spec L` has weight `α` exactly
@@ -417,19 +436,12 @@ theorem dualCotangentMap_mem_adjointWeightSpace_iff (φ : H →ₐc[R] L)
     (hφ : Function.Surjective φ) (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
     (y : Module.Dual R (Bialgebra.CotangentSpace R L)) :
     dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α ↔ y ∈ adjointWeightSpace π α := by
-  rw [mem_adjointWeightSpace_iff_universalPointAction,
-    mem_adjointWeightSpace_iff_universalPointAction,
-    ← (tangentScalarExtensionEquiv (R := R) (A := H)
-      (B := CommAlgCat.of R (MonoidAlgebra R M))).injective.eq_iff,
-    ← (tangentScalarExtensionEquiv (R := R) (A := L)
-      (B := CommAlgCat.of R (MonoidAlgebra R M))).injective.eq_iff,
-    ← (derivationComp_injective_of_surjective (B := CommAlgCat.of R (MonoidAlgebra R M)) φ
-      hφ).eq_iff,
-    tangentScalarExtensionEquiv_adjointAction, tangentScalarExtensionEquiv_adjointAction,
-    ← LinearMap.lTensor_tmul, ← LinearMap.lTensor_tmul,
-    tangentScalarExtensionEquiv_lTensor_dualCotangentMap,
-    tangentScalarExtensionEquiv_lTensor_dualCotangentMap, derivationComp_adDerivation,
-    BialgHom.comp_toAlgHom, pointInCounitAlgebra_comp]
+  apply BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective φ _ π α y
+  intro x y hxy
+  apply (cotangentLinearEquiv (R := R) (A := L) (B := R)).injective
+  apply derivationComp_injective_of_surjective φ hφ
+  simpa only [← cotangentLinearEquiv_dualCotangentMap] using
+    congrArg (cotangentLinearEquiv (R := R) (A := H) (B := R)) hxy
 
 /-- The differential of a bialgebra equivalence carries each adjoint weight space onto the
 weight space of the same character for the transported diagonalizable subgroup. -/
