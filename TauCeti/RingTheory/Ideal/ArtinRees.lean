@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.Filtration
 Mathlib's Artin–Rees lemma, `Ideal.exists_pow_inf_eq_pow_smul`, compares the `I`-adic filtration
 of a module with the filtration it induces on a submodule. This file draws two consequences that
 the adic theory uses: lifting through a surjection with control on the filtration, and the
-comparison of the induced and intrinsic `I`-adic filtrations of a submodule of a finitely
-generated submodule.
+Artin–Rees lemma for a finitely generated submodule of an arbitrary module, comparing the
+filtration it induces on another submodule with that submodule's `I`-adic filtration.
 
 Fix a submodule `N` of a finite module `M` over a noetherian ring. Then **one shift `k₀` serves
 every surjection onto `N` and every depth at once**: for any module `P` and any surjection
@@ -39,9 +39,11 @@ the Huber development that consumes it.
 * `TauCeti.ArtinRees.exists_controlled_lift`: there is a shift depending only on `I` and the
   submodule — quantified before the surjection — for which every surjection onto that submodule
   admits lifts with control on the `I`-adic filtration.
-* `TauCeti.ArtinRees.exists_pow_smul_inf_le_pow_smul`: for `L ≤ N₀` with `N₀` finitely
-  generated, the filtration `I ^ m • N₀ ⊓ L` is cofinal in `I ^ n • L`; this is the form used to
-  compare natural topologies of finite modules over Huber rings.
+* `TauCeti.Submodule.map_subtype_smul_top_inf_comap`: transport of the filtration induced by
+  `J • ⊤` from a submodule `N₀` to the ambient module, where it becomes `J • N₀ ⊓ L`.
+* `TauCeti.Ideal.exists_pow_add_smul_inf_eq_pow_smul`: for `N₀` finitely generated, one shift
+  `k` gives `I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L)` for all `n`; this is the form used
+  to compare natural topologies of finite modules over Huber rings.
 
 ## Provenance
 
@@ -100,23 +102,41 @@ theorem exists_controlled_lift [IsNoetherianRing R] [Module.Finite R M] (I : Ide
   rw [← hmap] at hv_top
   exact Submodule.mem_map.mp hv_top
 
-/-- **The `I`-adic filtration of a finitely generated submodule induces the `I`-adic filtration
-on a smaller submodule.** If `N₀` is a finitely generated submodule over a noetherian ring and
-`L ≤ N₀`, then every `I ^ n • L` contains `I ^ m • N₀ ⊓ L` for some `m`. The ambient module need
-not be finite: only `N₀` is, so Artin–Rees is applied inside `N₀`. -/
-theorem exists_pow_smul_inf_le_pow_smul [IsNoetherianRing R] (I : Ideal R)
-    {N₀ L : Submodule R M} (hN₀ : N₀.FG) (hL : L ≤ N₀) (n : ℕ) :
-    ∃ m : ℕ, I ^ m • N₀ ⊓ L ≤ I ^ n • L := by
+end TauCeti.ArtinRees
+
+variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+namespace TauCeti.Submodule
+
+/-- Pushing the filtration that `J • ⊤` induces on `L ∩ N₀`, viewed inside `N₀`, forward along
+the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
+theorem map_subtype_smul_top_inf_comap (J : _root_.Ideal R) (N₀ L : Submodule R M) :
+    (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
+  rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_smul'', Submodule.map_top,
+    Submodule.range_subtype, Submodule.map_comap_subtype, ← inf_assoc,
+    inf_eq_left.mpr Submodule.smul_le_right]
+
+end TauCeti.Submodule
+
+namespace TauCeti.Ideal
+
+/-- **Artin–Rees for a finitely generated submodule.** If `N₀` is a finitely generated submodule
+over a noetherian ring, there is a shift `k` such that `I ^ (n + k) • N₀ ⊓ L` equals
+`I ^ n • (I ^ k • N₀ ⊓ L)` for every submodule `L` and every `n`. The ambient module need not be
+finite: only `N₀` is, so Mathlib's `Ideal.exists_pow_inf_eq_pow_smul` is applied inside `N₀`.
+In particular `I ^ (n + k) • N₀ ⊓ L ≤ I ^ n • L`, so the filtration `N₀` induces on `L` is
+cofinal in the `I`-adic filtration of `L`. -/
+theorem exists_pow_add_smul_inf_eq_pow_smul [IsNoetherianRing R] (I : _root_.Ideal R)
+    {N₀ : Submodule R M} (hN₀ : N₀.FG) (L : Submodule R M) :
+    ∃ k : ℕ, ∀ n : ℕ, I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L) := by
   have : Module.Finite R N₀ := Module.Finite.iff_fg.mpr hN₀
   obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul (L.comap N₀.subtype)
-  refine ⟨n + k, ?_⟩
-  have hL' : (L.comap N₀.subtype).map N₀.subtype = L := by
-    rw [Submodule.map_comap_subtype, inf_eq_right.mpr hL]
-  have hle := Submodule.map_mono (f := N₀.subtype)
-    ((hk (n + k) (Nat.le_add_left k n)).trans_le (Submodule.smul_mono le_rfl inf_le_right))
-  rwa [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_smul'', Submodule.map_top,
-    Submodule.range_subtype, Nat.add_sub_cancel, Submodule.map_smul'', hL'] at hle
+  refine ⟨k, fun n ↦ ?_⟩
+  -- Artin–Rees inside `N₀`, transported to `M` along the inclusion `N₀ → M`.
+  have h := congrArg (Submodule.map N₀.subtype) (hk (n + k) (Nat.le_add_left k n))
+  rwa [Submodule.map_subtype_smul_top_inf_comap, Nat.add_sub_cancel, Submodule.map_smul'',
+    Submodule.map_subtype_smul_top_inf_comap] at h
 
-end TauCeti.ArtinRees
+end TauCeti.Ideal
 
 end

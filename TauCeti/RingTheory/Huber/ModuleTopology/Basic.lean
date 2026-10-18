@@ -21,10 +21,6 @@ This is the description of the natural topology through which finite modules ove
 are compared with `I`-adically topologised modules over its ring of definition: it is the input
 for strictness of linear maps and for completeness of finite modules when `A₀` is noetherian.
 
-The proof presents `M` as a quotient of `Aᵏ` by the linear-combination map of a finite generating
-family of `M₀`. That map is an open quotient map for the natural topologies, and it carries the
-basic neighbourhood `(Iⁿ)ᵏ` of `Aᵏ` onto `Iⁿ • M₀`.
-
 The file also records the absorption property of a ring of definition: a power of `I` carries a
 finitely generated `A₀`-submodule lying in the `A`-span of `K` into `K`.
 
