@@ -6,7 +6,6 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 
 /-!
@@ -18,6 +17,10 @@ power `𝔪_T ^ e` of the maximal ideal of `T`, and `e` is Mathlib's ramificatio
 `(maximalIdeal T).ramificationIdx S`, the length of `T ⧸ 𝔪_S T`. For an extension of discrete
 valuation rings this is the ramification index of Stacks, Definition 15.113.1 (09E4): the
 exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit `u`.
+
+The proof identifies Mathlib's length-based index with the exponent-based
+`Ideal.ramificationIdx'` over the Dedekind domain `T`
+(`Ideal.ramificationIdx'_eq_ramificationIdx'`).
 
 ## Main results
 
@@ -55,19 +58,15 @@ theorem map_maximalIdeal_eq_pow_ramificationIdx
   obtain ⟨n, hn⟩ := ideal_eq_span_pow_irreducible h hϖ
   have hpow : (maximalIdeal S).map (algebraMap S T) = maximalIdeal T ^ n := by
     rw [hn, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
-  -- The ramification index is the length of `T_𝔪 ⧸ 𝔪_S T_𝔪 = T_𝔪 ⧸ 𝔪_{T_𝔪} ^ n`, which is `n`.
-  let Tm := Localization.AtPrime (maximalIdeal T)
-  have hunder : (maximalIdeal T).under S = maximalIdeal S :=
-    maximalIdeal_comap (algebraMap S T)
-  have hmapTm : (maximalIdeal S).map (algebraMap S Tm) = maximalIdeal Tm ^ n := by
-    rw [IsScalarTower.algebraMap_eq S T Tm, ← Ideal.map_map, hpow, Ideal.map_pow,
-      Localization.AtPrime.map_eq_maximalIdeal]
-  have : IsDiscreteValuationRing Tm :=
-    IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain T
-      (IsDiscreteValuationRing.not_a_field T) Tm
+  -- The length-based ramification index agrees with the exponent-based one over the Dedekind
+  -- domain `T` (`Ideal.ramificationIdx'_eq_ramificationIdx'`), and the latter is `n`.
+  have : (maximalIdeal T).LiesOver (maximalIdeal S) :=
+    ⟨(maximalIdeal_comap (algebraMap S T)).symm⟩
   have hidx : (maximalIdeal T).ramificationIdx S = n := by
-    rw [Ideal.ramificationIdx_def, hunder, hmapTm, length_quotient_pow_maximalIdeal,
-      ENat.toNat_natCast]
+    rw [← Ideal.ramificationIdx'_eq_ramificationIdx' (maximalIdeal S) (maximalIdeal T) h]
+    refine Ideal.ramificationIdx'_spec hpow.le ?_
+    rw [hpow]
+    exact (Ideal.pow_succ_lt_pow (not_a_field T) n).not_ge
   rw [hidx, hpow]
 
 end IsDiscreteValuationRing
