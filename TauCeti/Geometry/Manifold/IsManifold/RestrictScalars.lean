@@ -16,6 +16,8 @@ A map which is `C^n` over `𝕜'` is `C^n` over `𝕜`, so the `C^n` groupoid of
 `𝓘(𝕜', E)` is, with the same charts, a `C^n` manifold modelled on `𝓘(𝕜, E)`, and every chart of
 its maximal atlas over `𝕜'` is a chart of its maximal atlas over `𝕜`.
 
+The groupoid comparison is obtained from Mathlib's `ContDiffOn.restrict_scalars`.
+
 The main example is a complex manifold modelled on `𝓘(ℂ, E)`, which is a real manifold modelled on
 `𝓘(ℝ, E)`; its holomorphic charts are real `C^n` charts. This is how real-analytic notions, such as
 the real Hessian at a critical point, are applied to complex manifolds.
