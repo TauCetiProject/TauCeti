@@ -105,9 +105,8 @@ private theorem mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdele
   have hnorm := ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit
     (E := AlgebraicClosure K) S T (Finset.disjoint_coe.1 hST) hcl hpS
     (Subgroup.zpowers_le.2 <|
-      (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K) a).1 <|
-        (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).1 <|
-          auxiliaryKummerIdeleSubgroup_le_one S T p ha)
+      (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T a).1 <|
+        auxiliaryKummerIdeleSubgroup_le_one S T p ha)
     (fun v hv b hb ↦ by
       obtain ⟨c, hc⟩ := hpow _ (HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v a ▸ hmem.1 v hv)
         b hb
@@ -139,9 +138,8 @@ theorem unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_iff
         a ∈ (powMonoidHom p : Kˣ →* Kˣ).range := by
   constructor
   · intro ha
-    refine ⟨(IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
-      (R := 𝓞 K) a).1 ((mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).1
-        (auxiliaryKummerIdeleSubgroup_le_one S T p ha)), ?_⟩
+    refine ⟨(unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T a).1
+      (auxiliaryKummerIdeleSubgroup_le_one S T p ha), ?_⟩
     exact mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdeleSubgroup
       hp hST hcl hpS hsurj ha
   rintro ⟨hunit, b, rfl⟩
@@ -149,9 +147,7 @@ theorem unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_iff
   refine ⟨fun v _ ↦ ⟨Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom b, ?_⟩,
     fun w ↦ ⟨Units.map (algebraMap K w.Completion).toMonoidHom b, ?_⟩,
     ((mem_auxiliaryKummerIdeleSubgroup_one_iff S T _).1 <|
-      (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).2 <|
-        (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
-          (R := 𝓞 K) (b ^ p)).2 hunit)⟩
+      (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T (b ^ p)).2 hunit)⟩
   · simp [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding]
   · simp [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
 

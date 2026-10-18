@@ -79,6 +79,15 @@ theorem mem_auxiliaryKummerIdeleSubgroup_one_iff_union
   · exact fun h v hv ↦ h v (fun hvS ↦ hv (Or.inl hvS)) fun hvT ↦ hv (Or.inr hvT)
   · exact fun h v hvS hvT ↦ h v fun hv ↦ hv.elim hvS hvT
 
+/-- The principal idele of `a` lies in the exponent-one auxiliary Kummer subgroup exactly when
+`a` is an `(S ∪ T)`-unit. -/
+theorem unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (a : Kˣ) :
+    IdeleGroup.unitEmbedding (𝓞 K) K a ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
+      a ∈ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K := by
+  rw [mem_auxiliaryKummerIdeleSubgroup_one_iff_union,
+    IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff]
+
 /-- Every auxiliary Kummer idele is an `(S ∪ T)`-idele. -/
 theorem auxiliaryKummerIdeleSubgroup_le_one
     (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
@@ -199,8 +208,7 @@ private theorem principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one
     exact (IdeleGroup.mem_principalSubgroup_iff_exists_mem_unit
       ((mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mp hx)).1 hP
   · rintro ⟨a, ha, rfl⟩
-    exact ⟨⟨a, rfl⟩, (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).2 <|
-      (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K) a).2 ha⟩
+    exact ⟨⟨a, rfl⟩, (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T a).2 ha⟩
 
 /-- **The index of the auxiliary Kummer idele classes.** If the classes of `S ∪ T` generate the
 ideal class group, then
