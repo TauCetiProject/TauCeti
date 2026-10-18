@@ -414,13 +414,11 @@ def connectedCoverHomeomorph (ι : Iso X Y) :
 associated connected covers of the thrice-punctured sphere. -/
 def connectedCoverIso (ι : Iso X Y) : X.connectedCover.cover ≅ Y.connectedCover.cover :=
   CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo ι.connectedCoverHomeomorph) (by
-    ext z
-    change Subtype.val (Y.connectedCover.cover.proj (ι.connectedCoverHomeomorph z)) =
-      Subtype.val (X.connectedCover.cover.proj z)
-    exact congrArg Subtype.val <| by
-      rw [← Y.restrict_connectedCoverHomeomorph]
-      simp only [connectedCoverHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
-      rw [ι.restrict_restrict, X.restrict_connectedCoverHomeomorph])
+    ext1 z
+    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_coe,
+      ← Y.restrict_connectedCoverHomeomorph, ← X.restrict_connectedCoverHomeomorph]
+    simp only [connectedCoverHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply,
+      ι.restrict_restrict])
 
 @[simp]
 theorem connectedCoverIso_hom_hom_left (ι : Iso X Y) :
