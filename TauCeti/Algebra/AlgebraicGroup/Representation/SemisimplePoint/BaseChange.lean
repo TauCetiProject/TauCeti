@@ -36,6 +36,18 @@ universe u
 variable {k H K : Type u} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
 variable [Algebra.FiniteType k H] [Field K] [Algebra k K] [PerfectField K]
 
+omit [PerfectField K] in
+/-- Semisimplicity of an endomorphism of a bundled finite-dimensional comodule agrees with
+semisimplicity on the underlying unbundled comodule. The bundled object reconstructs its additive
+group from its module structure, so the two statements use different additive group instances. -/
+private theorem isSemisimple_fgComoduleCatOf_iff {C N : Type u} [AddCommMonoid C] [Module K C]
+    [Coalgebra K C] [AddCommGroup N] [Module K N] [Comodule K C N] [Module.Finite K N]
+    (f : Module.End K N) :
+    @Module.End.IsSemisimple K (FGComoduleCat.of (R := K) (C := C) N) _
+        (FGComoduleCat.instAddCommGroupCarrier _) _ f ↔ f.IsSemisimple :=
+  @LinearEquiv.isSemisimple_iff K (FGComoduleCat.of (R := K) (C := C) N) _
+    (FGComoduleCat.instAddCommGroupCarrier _) _ f N _ _ f (LinearEquiv.refl K N) rfl
+
 /-- Semisimplicity of points is invariant under the base-change adjunction to a perfect
 extension field. No perfectness of the original field or reducedness of the group is needed. -/
 @[simp]
@@ -49,20 +61,7 @@ theorem isSemisimplePoint_baseChangePointsMulEquiv_iff
     intro M
     let _ := Comodule.baseChange (R := k) (H := H) (M := M) K
     rw [← Comodule.basePointsRepresentation_baseChangePointsMulEquiv (M := M) g]
-    have h := (isSemisimplePoint_iff_forall_isSemisimple_basePointsRepresentation _).mp hg
-      (FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M))
-    -- The bundled comodule reconstructs its additive group from its module. Transport
-    -- along the identity linear equivalence to avoid identifying those group instances.
-    exact (@LinearEquiv.isSemisimple_iff K
-      (FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M)) _
-      (FGComoduleCat.instAddCommGroupCarrier _) _
-      (Comodule.basePointsRepresentation (H := K ⊗[k] H)
-        (FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M))
-        (AlgHom.baseChangePointsMulEquiv (K := K) g))
-      (K ⊗[k] M) _ _
-      (Comodule.basePointsRepresentation (H := K ⊗[k] H) (K ⊗[k] M)
-        (AlgHom.baseChangePointsMulEquiv (K := K) g))
-      (LinearEquiv.refl K _) (by ext x; rfl)).mp h
+    exact hg.isSemisimple_basePointsRepresentation (M := K ⊗[k] M)
   · intro hg
     obtain ⟨M, d, b, hb⟩ := Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom
       (k := k) (H := H)
@@ -75,15 +74,10 @@ theorem isSemisimplePoint_baseChangePointsMulEquiv_iff
     let MK := FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M)
     apply (isSemisimplePoint_iff_isSemisimple_pointsAction_of_isFaithful
       MK (Comodule.IsFaithful.baseChange (K := K) hM) _).mpr
-    rw [isSemisimple_pointsAction_iff_basePointsRepresentation]
-    rw [Comodule.basePointsRepresentation_baseChangePointsMulEquiv]
-    have h := (isSemisimplePoint_iff_forall_isSemisimple_endOfPoint g).mp hg
-      (FGComoduleCat.of (R := k) (C := H) M)
-    -- Use the identity equivalence for the additive group reconstructed by `MK`.
-    exact (@LinearEquiv.isSemisimple_iff K
-      (K ⊗[k] (FGComoduleCat.of (R := k) (C := H) M)) _ _ _
-      (Comodule.endOfPoint (FGComoduleCat.of (R := k) (C := H) M) g.ofConv)
-      MK (FGComoduleCat.instAddCommGroupCarrier MK) _ (Comodule.endOfPoint M g.ofConv)
-      (LinearEquiv.refl K _) (by ext x; rfl)).mp h
+    rw [isSemisimple_pointsAction_iff_basePointsRepresentation,
+      Comodule.basePointsRepresentation_baseChangePointsMulEquiv]
+    exact (isSemisimple_fgComoduleCatOf_iff (C := K ⊗[k] H) _).mpr <|
+      (isSemisimplePoint_iff_forall_isSemisimple_endOfPoint g).mp hg
+        (FGComoduleCat.of (R := k) (C := H) M)
 
 end TauCeti.HopfAlgebra
