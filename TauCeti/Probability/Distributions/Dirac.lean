@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
@@ -20,6 +21,7 @@ Mathlib as `ProbabilityTheory.mgf_dirac'`.
 ## Main results
 
 * `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
+* `MeasureTheory.Measure.support_dirac` — the topological support of a Dirac measure;
 * `MeasureTheory.Measure.quantile_dirac` and `MeasureTheory.Measure.upperQuantile_dirac` — the
   lower and upper quantile functions of a Dirac measure;
 * `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
@@ -60,6 +62,27 @@ end TauCeti.Probability
 namespace MeasureTheory.Measure
 
 open ProbabilityTheory Set TauCeti.Probability
+open scoped Topology
+
+variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [T1Space X]
+  [MeasurableSingletonClass X]
+
+/-- The topological support of a Dirac measure is its singleton atom. -/
+@[simp]
+theorem support_dirac (a : X) : (dirac a).support = {a} := by
+  ext x
+  rw [mem_support_iff_forall]
+  simp only [Set.mem_singleton_iff]
+  constructor
+  · intro hx
+    by_contra hne
+    have hxCompl : x ∈ ({a}ᶜ : Set X) := by simpa
+    have hnhds : ({a}ᶜ : Set X) ∈ 𝓝 x :=
+      isOpen_compl_singleton.mem_nhds hxCompl
+    simpa using hx _ hnhds
+  · rintro rfl U hU
+    rw [dirac_apply_of_mem (mem_of_mem_nhds hU)]
+    exact zero_lt_one
 
 /-- At every level in `Ioc 0 1`, including the endpoint level `1`, the quantile function of a
 Dirac law is its atom. -/

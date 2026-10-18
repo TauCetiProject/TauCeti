@@ -9,7 +9,6 @@ public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import Mathlib.Probability.Moments.Variance
-public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
@@ -307,20 +306,7 @@ theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
 /-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
 theorem support_logNormalMeasure_zero_var (m : ℝ) :
     (logNormalMeasure m 0).support = {Real.exp m} := by
-  rw [logNormalMeasure_zero_var]
-  ext x
-  rw [Measure.mem_support_iff_forall]
-  simp only [Set.mem_singleton_iff]
-  constructor
-  · intro hx
-    by_contra hne
-    have hxCompl : x ∈ ({Real.exp m}ᶜ : Set ℝ) := by simpa
-    have hnhds : ({Real.exp m}ᶜ : Set ℝ) ∈ 𝓝 x :=
-      isOpen_compl_singleton.mem_nhds hxCompl
-    simpa using hx _ hnhds
-  · rintro rfl U hU
-    rw [Measure.dirac_apply_of_mem (mem_of_mem_nhds hU)]
-    exact zero_lt_one
+  rw [logNormalMeasure_zero_var, Measure.support_dirac]
 
 /-! ### The cumulative distribution function -/
 
