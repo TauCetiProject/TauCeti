@@ -27,9 +27,6 @@ model space `E` itself; no smoothness of the transition maps is needed.
 
 ## Main declarations
 
-* `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source`: every point in the
-  source of a partial homeomorphism to `E` has arbitrarily small neighbourhoods whose punctured
-  versions are connected.
 * `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton`: every point of the manifold has
   arbitrarily small neighbourhoods whose punctured versions are connected.
 * `TauCeti.isPreconnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from
@@ -46,34 +43,7 @@ open Metric Set Topology
 namespace TauCeti
 
 variable {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace X]
-
-/-- If `E` is a real normed space of dimension greater than one, every point `x` in the source of
-a partial homeomorphism `φ : X → E` has arbitrarily small neighbourhoods `V` with `V \ {x}`
-connected. -/
-theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
-    (h : 1 < Module.rank ℝ E) (φ : OpenPartialHomeomorph X E) {x : X} (hx : x ∈ φ.source)
-    {U : Set X} (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) := by
-  -- A ball around `φ x` inside the image of `U` is carried back by the inverse chart.
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
-    (φ.image_mem_nhds hx (Filter.inter_mem hU (φ.open_source.mem_nhds hx)))
-  have hbt : ball (φ x) r ⊆ φ.target :=
-    hball.trans <| by
-      rintro _ ⟨y, hy, rfl⟩
-      exact φ.map_source hy.2
-  have hsdiff : φ.symm '' ball (φ x) r \ {x} = φ.symm '' (ball (φ x) r \ {φ x}) := by
-    rw [(φ.symm.injOn.mono hbt).image_sdiff_subset (singleton_subset_iff.2 (mem_ball_self hr)),
-      image_singleton, φ.left_inv hx]
-  refine ⟨φ.symm '' ball (φ x) r, ?_, ?_, ?_⟩
-  · simpa [φ.left_inv hx] using φ.symm.image_mem_nhds (φ.map_source hx) (ball_mem_nhds _ hr)
-  · rintro _ ⟨z, hz, rfl⟩
-    obtain ⟨y, hy, rfl⟩ := hball hz
-    rw [φ.left_inv hy.2]
-    exact hy.1
-  · rw [hsdiff]
-    exact (isConnected_ball_sdiff_singleton h (φ x) hr).image _
-      (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
-
-variable [ChartedSpace E X]
+  [ChartedSpace E X]
 
 /-- In a manifold modelled on a real normed space of dimension greater than one, every point `x`
 has arbitrarily small neighbourhoods `V` with `V \ {x}` connected. -/

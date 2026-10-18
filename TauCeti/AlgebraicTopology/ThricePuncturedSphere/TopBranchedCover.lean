@@ -13,7 +13,8 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
-import TauCeti.Geometry.Manifold.Connected
+import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
+import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -147,24 +148,18 @@ theorem isCoveringMap_restrictPreimage : IsCoveringMap (markedᶜ.restrictPreima
 /-- The projection `π` restricted to the complement of the fibres over `0`, `1` and `∞`, viewed
 as a map to `ThricePuncturedSphere` through `toOnePoint`. -/
 def restrict : X.π ⁻¹' range toOnePoint → ThricePuncturedSphere :=
-  isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph.symm ∘
-    (range toOnePoint).restrictPreimage X.π
+  restrictOver X.π
 
 /-- The restricted projection agrees with the branched covering map, read in the Riemann sphere. -/
 @[simp]
 theorem coe_restrict_apply (z : X.π ⁻¹' range toOnePoint) :
-    (((X.restrict z : ThricePuncturedSphere) : ℂ) : OnePoint ℂ) = X.π z := by
-  have h : isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph (X.restrict z) =
-      (range toOnePoint).restrictPreimage X.π z :=
-    Homeomorph.apply_symm_apply _ _
-  simpa using congrArg Subtype.val h
+    (((X.restrict z : ThricePuncturedSphere) : ℂ) : OnePoint ℂ) = X.π z :=
+  coe_restrictOver_apply X.π z
 
 /-- Deleting the fibres over the three marked points leaves a covering of the
 thrice-punctured sphere. -/
-theorem isCoveringMap_restrict : IsCoveringMap X.restrict := by
-  have h : IsCoveringMapOn X.π (range toOnePoint) := by
-    simpa only [range_toOnePoint] using X.isCoveringMapOn
-  exact h.isCoveringMap_restrictPreimage.homeomorph_comp _
+theorem isCoveringMap_restrict : IsCoveringMap X.restrict :=
+  isCoveringMap_restrictOver X.isCoveringMapOn
 
 /-- Off the marked fibres, `π` is locally the first power map. -/
 theorem isLocalPowerAt_one {z : X.Z} (hz : X.π z ∉ marked) : IsLocalPowerAt X.π z 1 :=
@@ -220,22 +215,18 @@ theorem finite_preimage_singleton (y : OnePoint ℂ) : (X.π ⁻¹' {y}).Finite 
 branched cover. -/
 theorem image_val_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     (Subtype.val : (X.π ⁻¹' range toOnePoint) → X.Z) '' (X.restrict ⁻¹' {z}) =
-      X.π ⁻¹' {toOnePoint z} := by
-  simp only [restrict, preimage_comp, Homeomorph.preimage_symm, image_singleton,
-    Set.image_val_preimage_restrictPreimage]
-  rw [Topology.IsEmbedding.toHomeomorph_apply_coe]
+      X.π ⁻¹' {toOnePoint z} :=
+  image_val_restrictOver_preimage_singleton X.π z
 
 /-- Every fibre of the restricted cover is finite. -/
 theorem finite_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     (X.restrict ⁻¹' {z}).Finite :=
-  (finite_image_iff Subtype.val_injective.injOn).1 <|
-    X.image_val_restrict_preimage_singleton z ▸ X.finite_preimage_singleton _
+  finite_restrictOver_preimage_singleton X.π (X.finite_preimage_singleton _)
 
 /-- Every fibre of the restricted cover has `n` points. -/
 theorem natCard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     Nat.card (X.restrict ⁻¹' {z}) = n := by
-  rw [Nat.card_coe_set_eq, ← ncard_image_of_injective _ Subtype.val_injective,
-    X.image_val_restrict_preimage_singleton]
+  rw [Nat.card_coe_set_eq, restrict, ncard_restrictOver_preimage_singleton]
   apply X.natCard_preimage_singleton
   have hz : toOnePoint z ∈ markedᶜ := by
     rw [← range_toOnePoint]

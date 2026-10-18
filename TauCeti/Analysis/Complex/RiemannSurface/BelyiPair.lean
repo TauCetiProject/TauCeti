@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
-import TauCeti.Data.Set.Restrict
+import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
 import TauCeti.Geometry.Manifold.Connected
 
 /-!
@@ -173,47 +173,37 @@ theorem ncard_preimage_singleton {y : OnePoint ℂ}
 as a map to `ℂ ∖ {0, 1}`: this is the finite cover of the thrice-punctured sphere attached to the
 pair (`TauCeti.AnalyticBelyiPair.isCoveringMap_restrict`). -/
 def restrict : P.β ⁻¹' range toOnePoint → ThricePuncturedSphere :=
-  isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph.symm ∘
-    (range toOnePoint).restrictPreimage P.β
+  restrictOver P.β
 
 /-- The restricted Belyi map agrees with the Belyi map, read in the Riemann sphere. -/
 @[simp]
 theorem coe_restrict_apply (x : P.β ⁻¹' range toOnePoint) :
-    (((P.restrict x : ThricePuncturedSphere) : ℂ) : OnePoint ℂ) = P.β x := by
-  have h : isOpenEmbedding_toOnePoint.isEmbedding.toHomeomorph (P.restrict x) =
-      (range toOnePoint).restrictPreimage P.β x :=
-    Homeomorph.apply_symm_apply _ _
-  simpa using congrArg Subtype.val h
+    (((P.restrict x : ThricePuncturedSphere) : ℂ) : OnePoint ℂ) = P.β x :=
+  coe_restrictOver_apply P.β x
 
 /-- **The cover attached to an analytic Belyi pair.** The Belyi map restricted over the
 thrice-punctured sphere `ℂ ∖ {0, 1}` is a covering map. -/
 theorem isCoveringMap_restrict : IsCoveringMap P.restrict :=
-  have h : IsCoveringMapOn P.β (range toOnePoint) := by
-    rw [range_toOnePoint]
+  isCoveringMap_restrictOver <| by
     convert P.isCoveringMapOn using 1
     ext w
     simp only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff]
-  h.isCoveringMap_restrictPreimage.homeomorph_comp _
 
 /-- The points of `X` over a point `z` of `ℂ ∖ {0, 1}` are the fibre of the Belyi map over `z`. -/
 theorem image_val_restrict_preimage_singleton (z : ThricePuncturedSphere) :
-    (↑) '' (P.restrict ⁻¹' {z}) = P.β ⁻¹' {toOnePoint z} := by
-  simp only [restrict, preimage_comp, Homeomorph.preimage_symm, image_singleton,
-    Set.image_val_preimage_restrictPreimage]
-  rw [Topology.IsEmbedding.toHomeomorph_apply_coe]
+    (↑) '' (P.restrict ⁻¹' {z}) = P.β ⁻¹' {toOnePoint z} :=
+  image_val_restrictOver_preimage_singleton P.β z
 
 /-- Every fibre of the cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair is finite. -/
 theorem finite_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     (P.restrict ⁻¹' {z}).Finite :=
-  (finite_image_iff Subtype.val_injective.injOn).1 <|
-    P.image_val_restrict_preimage_singleton z ▸ P.β.finite_fiber _
+  finite_restrictOver_preimage_singleton P.β (P.β.finite_fiber _)
 
 /-- The cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair has as many sheets as the degree
 of the Belyi map. -/
 theorem ncard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     (P.restrict ⁻¹' {z}).ncard = degree P.β := by
-  rw [restrict, preimage_comp, Homeomorph.preimage_symm, image_singleton,
-    TauCeti.ncard_fiber_restrictPreimage, Topology.IsEmbedding.toHomeomorph_apply_coe]
+  rw [restrict, ncard_restrictOver_preimage_singleton]
   refine P.ncard_preimage_singleton ?_
   have hz : toOnePoint z ∈ markedᶜ := by
     rw [← range_toOnePoint]
