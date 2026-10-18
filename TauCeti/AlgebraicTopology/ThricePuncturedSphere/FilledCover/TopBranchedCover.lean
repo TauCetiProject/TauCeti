@@ -30,7 +30,11 @@ point of a component is the local degree of that component. Deleting the marked 
 recovers `C` up to isomorphism (`TauCeti.ConnectedCover.connectedCoverIso`), so the restriction
 map from isomorphism classes of topological branched covers of degree `n` to isomorphism classes
 of connected degree-`n` covers of `ℂ ∖ {0, 1}` is surjective
-(`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`).
+(`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`). Since a branched cover is determined by
+its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
+branched cover is isomorphic to the filled cover of its unbranched part
+(`TauCeti.TopBranchedCover.isoFilledCover`), and restriction is a bijection on isomorphism classes
+(`TauCeti.TopBranchedCover.IsoClass.restrict_bijective`).
 
 ## Main results
 
@@ -44,6 +48,10 @@ of connected degree-`n` covers of `ℂ ∖ {0, 1}` is surjective
   gives back the original cover.
 * `TauCeti.TopBranchedCover.IsoClass.restrict_surjective`: every connected degree-`n` cover of
   `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
+* `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
+  the filled cover of its unbranched part.
+* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`: topological branched covers of degree
+  `n` and connected degree-`n` covers of `ℂ ∖ {0, 1}` have the same isomorphism classes.
 
 ## References
 
@@ -209,5 +217,33 @@ theorem TopBranchedCover.IsoClass.restrict_surjective {n : ℕ} :
   intro c
   obtain ⟨C, rfl⟩ := ConnectedCoverClass.mk_surjective c
   exact ⟨.mk C.toTopBranchedCover, by simp⟩
+
+/-- **A branched cover is the filling of its unbranched part.** Every topological branched cover
+`X` of degree `n` is isomorphic to the filled cover of the connected cover of `ℂ ∖ {0, 1}` obtained
+by deleting its marked fibres, by an isomorphism which on the unbranched part is the inclusion into
+the filled cover (`TauCeti.TopBranchedCover.coe_isoFilledCover_apply`). By
+`TauCeti.TopBranchedCover.Iso.restrict_injective`, it is the only such isomorphism. -/
+def TopBranchedCover.isoFilledCover {n : ℕ} (X : TopBranchedCover.{0} n) :
+    X.Iso X.connectedCover.toTopBranchedCover :=
+  .ofConnectedCoverIso X.connectedCover.connectedCoverIso
+
+open FilledCover in
+/-- On the unbranched part, `TauCeti.TopBranchedCover.isoFilledCover` is the inclusion of the
+total space of the connected cover into its filled cover. -/
+@[simp]
+theorem TopBranchedCover.coe_isoFilledCover_apply {n : ℕ} (X : TopBranchedCover.{0} n)
+    (x : (X.connectedCover.cover : TopCat)) :
+    X.isoFilledCover.toHomeomorph (X.connectedCoverHomeomorph x) = incl (chart _) x := by
+  rw [← Iso.coe_restrict_apply, isoFilledCover,
+    Iso.restrict_ofConnectedCoverIso_connectedCoverHomeomorph,
+    ConnectedCover.connectedCoverIso_hom_hom_left]
+  exact X.connectedCover.coe_connectedCoverHomeomorph_apply x
+
+/-- **Topological branched covers are classified by their unbranched parts**: restriction over
+`ℂ ∖ {0, 1}` is a bijection from isomorphism classes of topological branched covers of degree `n`
+to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0, 1}`. -/
+theorem TopBranchedCover.IsoClass.restrict_bijective {n : ℕ} :
+    Bijective (IsoClass.restrict : IsoClass.{0} n → _) :=
+  ⟨restrict_injective, restrict_surjective⟩
 
 end TauCeti
