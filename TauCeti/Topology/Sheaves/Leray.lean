@@ -125,8 +125,8 @@ theorem nonempty_homology_cechComplex_iso_H [Finite ι]
   -- the product of the members `U (a j)` is their intersection
   have h : (∏ᶜ fun j ↦ U (a j)) = (Finset.univ.image a).inf U := by
     rw [Finset.inf_image, Finset.inf_univ_eq_iInf]
-    exact le_antisymm (le_iInf fun j ↦ leOfHom (Pi.π _ j))
-      (leOfHom (Pi.lift fun j ↦ homOfLE (iInf_le _ j)))
+    exact (CompleteLattice.finite_limit_eq_finset_univ_inf _).trans <| by
+      rw [Finset.inf_univ_eq_iInf]; exact discreteEquiv.iInf_comp (g := fun j ↦ U (a j))
   rw [h]
   exact hF _ (Finset.univ_nonempty.image a) k
 
