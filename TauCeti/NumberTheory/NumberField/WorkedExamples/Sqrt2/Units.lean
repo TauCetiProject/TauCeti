@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
-import TauCeti.NumberTheory.NumberField.Minpoly
-import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.RealPlace
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Height
-import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.Ramification
 
 /-!
 # The fundamental unit, the regulator and the height of `1 + √2`
@@ -34,8 +32,6 @@ with equality, `log (1 + √2) / 2 = (1 / 2) · log (1 + √2)`, so its constant
 
 * `TauCeti.NumberField.Sqrt2.one_add_mul_sub_one_eq_one`: `(1 + θ) (θ − 1) = 1`, so `1 + θ` is a
   unit (`TauCeti.NumberField.Sqrt2.isUnit_one_add`).
-* `TauCeti.NumberField.Sqrt2.exists_isReal_and_apply_eq_one_add_sqrt_two`: a real place where
-  `1 + θ` has absolute value `1 + √2`.
 * `TauCeti.NumberField.Sqrt2.unitCandidateEliminationCertificate_one_add_sqrt_two`: the
   elimination certificate at `1 + √2`.
 * `TauCeti.NumberField.Sqrt2.closure_sup_torsion_eq_top`: a unit with value `1 + θ` generates the
@@ -77,39 +73,6 @@ omit [NumberField K] in
 /-- `1 + θ` is a unit of `𝓞 K`. -/
 theorem isUnit_one_add (hmin : minpoly ℤ θ = X ^ 2 - 2) : IsUnit (1 + θ) :=
   IsUnit.of_mul_eq_one _ (one_add_mul_sub_one_eq_one hmin)
-
-/-- **The real place at `1 + √2`.** There is a real infinite place `w` of `ℚ(√2)` at which `1 + θ`
-has absolute value `w (1 + θ) = 1 + √2`. -/
-theorem exists_isReal_and_apply_eq_one_add_sqrt_two (hmin : minpoly ℤ θ = X ^ 2 - 2)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    ∃ w : InfinitePlace K, w.IsReal ∧ w ((1 + θ : 𝓞 K) : K) = 1 + √2 := by
-  let ϑ : IntegralPrimitiveElement K := ⟨θ, hgen⟩
-  -- The real embedding sending `θ` to `√2`.
-  have hroot : aeval √2 (minpoly ℚ (IntegralPrimitiveElement.powerBasis ϑ).gen) = 0 := by
-    rw [IntegralPrimitiveElement.powerBasis_gen, RingOfIntegers.minpoly_rat_coe, hmin,
-      aeval_map_algebraMap]
-    simp [map_ofNat]
-  let f : K →ₐ[ℚ] ℝ := (IntegralPrimitiveElement.powerBasis ϑ).lift √2 hroot
-  let ψ : K →+* ℂ := Complex.ofRealHom.comp f.toRingHom
-  have hψ : ComplexEmbedding.IsReal ψ := by
-    rw [ComplexEmbedding.isReal_iff]
-    ext x
-    simp [ψ, ComplexEmbedding.conjugate_coe_eq, Complex.conj_ofReal]
-  refine ⟨InfinitePlace.mk ψ, isReal_mk_iff.mpr hψ, ?_⟩
-  have hfθ : f θ = √2 := by
-    have := (IntegralPrimitiveElement.powerBasis ϑ).lift_gen √2 hroot
-    rwa [IntegralPrimitiveElement.powerBasis_gen] at this
-  rw [InfinitePlace.apply]
-  simp only [ψ, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_add, map_one,
-    hfθ, Complex.ofRealHom_eq_coe]
-  rw [← Complex.ofReal_one, ← Complex.ofReal_add, Complex.norm_real, Real.norm_eq_abs]
-  exact abs_of_pos (by positivity)
-
-/-- `ℚ(√2)` has unit rank one. -/
-theorem units_rank_eq_one (hmin : minpoly ℤ θ = X ^ 2 - 2)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : rank K = 1 := by
-  obtain ⟨w, hw, -⟩ := exists_isReal_and_apply_eq_one_add_sqrt_two hmin hgen
-  exact rank_eq_one_of_finrank_eq_two_of_isReal (finrank_eq_two hmin hgen) hw
 
 /-- **The elimination certificate at `1 + √2`.** In `ℚ(√2)`, every candidate polynomial
 `X² + mX ± 1` with `|m| ≤ 2 + √2` either has no real root in `(1, 1 + √2)` or, as for
