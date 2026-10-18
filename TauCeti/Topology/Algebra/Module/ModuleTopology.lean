@@ -23,7 +23,7 @@ completeness hypothesis on the scalars is needed.
 
 Separation of the scalars cannot be dropped from the Hausdorff and closed-subspace statements:
 over a semiring with the indiscrete topology, the module topology of every module is indiscrete
-(`IsModuleTopology.indiscreteTopology`), so `IsModuleTopology` on its own does not replace the
+(`IndiscreteTopology.of_continuousSMul`), so `IsModuleTopology` on its own does not replace the
 separation of the scalars.
 
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
@@ -116,12 +116,12 @@ theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSp
   rw [hW]
   exact isClosed_singleton.preimage (IsModuleTopology.continuous_of_linearMap W.mkQ)
 
-/-- Over a semiring with the indiscrete topology, the module topology of any module is
-indiscrete. -/
-theorem _root_.IsModuleTopology.indiscreteTopology (R M : Type*) [Semiring R]
-    [TopologicalSpace R] [IndiscreteTopology R] [AddCommMonoid M] [Module R M]
-    [TopologicalSpace M] [IsModuleTopology R M] : IndiscreteTopology M := by
-  have := IsModuleTopology.toContinuousSMul R M
+/-- A space on which scalars with the indiscrete topology act continuously, with zero, is
+indiscrete. In particular, over a semiring with the indiscrete topology, the module topology of
+any module is indiscrete. -/
+theorem _root_.IndiscreteTopology.of_continuousSMul (R M : Type*) [MonoidWithZero R]
+    [TopologicalSpace R] [IndiscreteTopology R] [Zero M] [MulActionWithZero R M]
+    [TopologicalSpace M] [ContinuousSMul R M] : IndiscreteTopology M := by
   -- The indiscrete scalars `0` and `1` are inseparable, so `0 = 0 • x` and `x = 1 • x` are.
   have h (x : M) : Inseparable (0 : M) x := by
     simpa using (Inseparable.all (0 : R) 1).smul (.refl x)

@@ -212,11 +212,12 @@ end FiniteDimensional
 section Indiscrete
 
 variable {K V : Type*} [CommSemiring K] [TopologicalSpace K] [IndiscreteTopology K]
-  [AddCommGroup V] [Module K V]
+  [AddCommMonoid V] [Module K V]
 
 /-- The endomorphism algebra over a scalar ring with the indiscrete topology is indiscrete. -/
 instance instIndiscreteTopologyModuleEnd : IndiscreteTopology (Module.End K V) :=
-  IsModuleTopology.indiscreteTopology K (Module.End K V)
+  have := IsModuleTopology.toContinuousSMul K (Module.End K V)
+  IndiscreteTopology.of_continuousSMul K (Module.End K V)
 
 /-- The linear automorphisms over a scalar ring with the indiscrete topology form an indiscrete
 space. -/

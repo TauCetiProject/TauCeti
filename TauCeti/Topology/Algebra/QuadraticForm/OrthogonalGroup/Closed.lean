@@ -81,7 +81,7 @@ end Endomorphism
 section Indiscrete
 
 variable {R M N : Type*} [CommSemiring R] [TopologicalSpace R] [IndiscreteTopology R]
-  [AddCommGroup M] [Module R M] [Nontrivial M] [AddCommMonoid N] [Module R N]
+  [AddCommMonoid M] [Module R M] [Nontrivial M] [AddCommMonoid N] [Module R N]
   [TopologicalSpace (Module.End R M)] [IsModuleTopology R (Module.End R M)]
 
 /-- Over a semiring with the indiscrete topology, the orthogonal group of any quadratic map on a
@@ -91,7 +91,8 @@ orthogonal group is nonempty and does not contain `0`. Thus the separation hypot
 theorem _root_.QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology
     (Q : QuadraticMap R M N) :
     ¬ IsClosed (Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap)) := by
-  have := IsModuleTopology.indiscreteTopology R (Module.End R M)
+  have := IsModuleTopology.toContinuousSMul R (Module.End R M)
+  have := IndiscreteTopology.of_continuousSMul R (Module.End R M)
   rw [IndiscreteTopology.isClosed_iff, not_or]
   refine ⟨(Set.range_nonempty _).ne_empty, fun h ↦ ?_⟩
   obtain ⟨g, hg⟩ : (0 : Module.End R M) ∈ Set.range _ := h ▸ Set.mem_univ _
