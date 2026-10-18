@@ -49,6 +49,7 @@ to zero from above. -/
 theorem tendsto_quantile_expMeasure_nhdsGT_zero (hr : 0 < r) :
     Tendsto (fun u ↦ ((expMeasure r).quantile u : EReal)) (nhdsWithin 0 (Ioi 0))
       (nhds 0) := by
+  rw [expMeasure]
   exact EReal.tendsto_coe.2
     ((tendsto_quantile_gammaMeasure_nhdsGT_zero one_pos hr).mono_right inf_le_left)
 
@@ -57,7 +58,7 @@ below. -/
 theorem tendsto_quantile_expMeasure_nhdsLT_one (hr : 0 < r) :
     Tendsto (fun u ↦ ((expMeasure r).quantile u : EReal)) (nhdsWithin 1 (Iio 1))
       (nhds ⊤) := by
-  rw [EReal.tendsto_coe_nhds_top_iff]
+  rw [expMeasure, EReal.tendsto_coe_nhds_top_iff]
   exact tendsto_quantile_gammaMeasure_nhdsLT_one one_pos hr
 
 end TauCeti.Probability
