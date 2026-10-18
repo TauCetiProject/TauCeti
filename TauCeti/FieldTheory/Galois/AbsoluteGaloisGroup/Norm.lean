@@ -124,8 +124,9 @@ theorem coe_norm_eq_prod_quotient_out (hW : fixedField W.toSubgroup = E)
   let e : W.toSubgroup ≃* (SeparableClosure K ≃ₐ[E] SeparableClosure K) :=
     (MulEquiv.subgroupCongr (toSubgroup_eq_fixingSubgroup_of_fixedField_eq hW)).trans
       E.fixingSubgroupEquiv
-  have he (g : W.toSubgroup) (y : SeparableClosure K) : e g y = (g : AbsoluteGaloisGroup K) y :=
-    rfl
+  have he (g : W.toSubgroup) (y : SeparableClosure K) : e g y = (g : AbsoluteGaloisGroup K) y := by
+    rw [MulEquiv.trans_apply, IntermediateField.coe_fixingSubgroupEquiv_apply,
+      MulEquiv.subgroupCongr_apply]
   have hmem (g : W.toSubgroup) :
       g ∈ W'.toSubgroup.subgroupOf W.toSubgroup ↔ e g ∈ φ.fieldRange.fixingSubgroup := by
     rw [Subgroup.mem_subgroupOf, toSubgroup_eq_fixingSubgroup_of_fixedField_eq hW',
