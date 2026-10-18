@@ -10,6 +10,7 @@ public import Mathlib.Algebra.ContinuedFractions.Determinant
 public import Mathlib.NumberTheory.DiophantineApproximation.ContinuedFractions
 public import TauCeti.Algebra.ContinuedFractions.Approximations
 public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -200,33 +201,6 @@ private theorem liouvilleWith_one_add_of_frequently (hξ : Irrational ξ) {s : �
     _ = q ^ (-(1 + s)) := by
       rw [Real.rpow_neg (by positivity), Real.rpow_add (by positivity), Real.rpow_one, one_div]
 
-/-- Below the threshold `2 ≤ d ^ (p - 2)` of Legendre's theorem, `d ^ (-p) ≤ 1 / (2 d ^ 2)`. -/
-private theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ (p - 2)) :
-    d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
-  have hsplit : d ^ (-p) = (d ^ (p - 2))⁻¹ * (d ^ 2)⁻¹ := by
-    rw [← Real.rpow_neg hd.le, ← Real.rpow_natCast, ← Real.rpow_neg hd.le, ← Real.rpow_add hd]
-    congr 1
-    push_cast
-    ring
-  rw [hsplit, one_div, mul_inv]
-  gcongr
-
-/-- The logarithmic form of `q ^ p < q (q + q')`: if moreover `q ≤ q'` and
-`log 2 < (p - 1 - t) log q`, then `t < log q' / log q`. -/
-private theorem lt_log_div_log_of_rpow_lt {q q' p t : ℝ} (hq : 2 ≤ q) (hqq' : q ≤ q')
-    (hpow : q ^ p < q * (q + q')) (hlog2 : Real.log 2 < (p - 1 - t) * Real.log q) :
-    t < Real.log q' / Real.log q := by
-  have hq0 : 0 < q := by linarith
-  have hlog : 0 < Real.log q := Real.log_pos (by linarith)
-  have hpow' : q ^ (p - 1) < 2 * q' := by
-    rw [Real.rpow_sub_one hq0.ne', div_lt_iff₀ hq0]
-    nlinarith
-  have hlogs : (p - 1) * Real.log q < Real.log 2 + Real.log q' := by
-    rw [← Real.log_rpow hq0, ← Real.log_mul two_ne_zero (by linarith)]
-    exact Real.log_lt_log (Real.rpow_pos_of_pos hq0 _) hpow'
-  rw [lt_div_iff₀ hlog]
-  nlinarith
-
 /-- If infinitely many rationals `r` satisfy `|ξ - r| < r.den ^ (-p)` with `p > 2`, then
 infinitely often `log qₖ₊₁ / log qₖ` exceeds any `t < p - 1`: by Legendre's theorem these
 rationals are convergents, and the lower error bound forces `qₖ ^ (p - 1) < 2 qₖ₊₁`. -/
@@ -247,13 +221,13 @@ private theorem frequently_lt_log_div_log (hξ : Irrational ξ) {p : ℝ} (hp : 
   obtain ⟨h2, hlog2, hK⟩ := hN r.den hNr
   -- Legendre's theorem identifies `r` with a convergent `pₖ / qₖ`, with `k ≥ K`.
   obtain ⟨k, rfl⟩ := exists_rat_eq_convergent
-    (hr.trans_le (rpow_neg_le_one_div_two_mul_sq (by positivity) h2))
+    (hr.trans_le (Real.rpow_neg_le_one_div_two_mul_sq (by positivity) h2))
   refine ⟨k, not_lt.mp fun hk ↦ (monotone_den_convergent ξ hk.le).not_gt hK, ?_⟩
   -- The two error bounds give `qₖ ^ p < qₖ (qₖ + qₖ₊₁)`.
   have hpow := (one_div_lt_abs_sub_convergent hξ k).trans hr
   rw [Real.rpow_neg (by positivity), one_div,
     inv_lt_inv₀ (by positivity) (by positivity)] at hpow
-  refine lt_log_div_log_of_rpow_lt ?_ (by exact_mod_cast monotone_den_convergent ξ k.le_succ)
+  refine Real.lt_log_div_log_of_rpow_lt ?_ (by exact_mod_cast monotone_den_convergent ξ k.le_succ)
     hpow hlog2
   exact_mod_cast (Nat.succ_le_of_lt (ξ.convergent K).pos).trans_lt hK
 
