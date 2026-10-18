@@ -141,6 +141,7 @@ lemma logHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
 
 /-- The affine height may equally be computed by prepending the coordinate `1` to a tuple
 indexed by `Fin n`: the projective height of `Fin.cons 1 x` is `Height.mulHeightAff x`. -/
+@[simp]
 lemma mulHeight_cons_one {n : ℕ} (x : Fin n → K) :
     mulHeight (Fin.cons 1 x : Fin (n + 1) → K) = mulHeightAff x := by
   have h : (Fin.cons 1 x : Fin (n + 1) → K) = (fun o : Option (Fin n) ↦ o.elim 1 x) ∘
@@ -150,6 +151,7 @@ lemma mulHeight_cons_one {n : ℕ} (x : Fin n → K) :
   rw [h, mulHeight_comp_equiv, mulHeightAff_def]
 
 /-- The logarithmic form of `Height.mulHeight_cons_one`. -/
+@[simp]
 lemma logHeight_cons_one {n : ℕ} (x : Fin n → K) :
     logHeight (Fin.cons 1 x : Fin (n + 1) → K) = logHeightAff x := by
   rw [logHeight_eq_log_mulHeight, mulHeight_cons_one, logHeightAff_eq_log_mulHeightAff]
