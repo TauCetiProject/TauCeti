@@ -102,34 +102,11 @@ theorem comp_action (hf : α.IsEquivariant β f) (φ : ContinuousMonoidHom H G) 
     (α.comp φ).IsEquivariant (β.comp φ) f :=
   fun h a ↦ by simpa only [CStarAction.comp_apply] using hf (φ h) a
 
-/-- Every homomorphism between trivial actions is equivariant. -/
-theorem trivial (f : A →⋆ₙₐ[ℂ] B) :
-    (CStarAction.trivial (G := G) (A := A)).IsEquivariant
-      (CStarAction.trivial (G := G) (A := B)) f :=
-  fun g a ↦ by simp only [CStarAction.trivial_apply]
-
 /-- The equivalence used to transport an action is equivariant for the transported action. -/
 theorem conjugate (α : CStarAction G A) (e : A ≃⋆ₐ[ℂ] B) :
     α.IsEquivariant (α.conjugate e) e.toNonUnitalStarAlgHom := by
   intro g a
   simp
-
-/-- An equivariant star-algebra equivalence has equivariant inverse. -/
-theorem symm (e : A ≃⋆ₐ[ℂ] B) (he : α.IsEquivariant β e.toNonUnitalStarAlgHom) :
-    β.IsEquivariant α e.symm.toNonUnitalStarAlgHom :=
-  fun g ↦ (he g).inverse_left e.symm_apply_apply e.apply_symm_apply
-
-/-- A star-algebra equivalence is equivariant exactly when transport along it gives the target
-action. -/
-theorem starAlgEquiv_iff_conjugate_eq (e : A ≃⋆ₐ[ℂ] B) :
-    α.IsEquivariant β e.toNonUnitalStarAlgHom ↔ α.conjugate e = β := by
-  constructor
-  · intro he
-    ext g b
-    simpa only [conjugate_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
-      e.apply_symm_apply] using he.apply g (e.symm b)
-  · rintro rfl
-    exact IsEquivariant.conjugate α e
 
 /-- The preimage of an invariant subset under an equivariant homomorphism is invariant. -/
 theorem isInvariant_preimage (hf : α.IsEquivariant β f) {s : Set B}
@@ -150,6 +127,52 @@ theorem isInvariant_range (hf : α.IsEquivariant β f) :
   exact fun g ↦ (hf g).mapsTo_range
 
 end IsEquivariant
+
+end TauCeti.CStarAction
+
+namespace NonUnitalStarAlgHom
+
+variable {G A B : Type*} [Group G] [TopologicalSpace G]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- Every homomorphism between trivial actions is equivariant. -/
+theorem isEquivariant_trivial (f : A →⋆ₙₐ[ℂ] B) :
+    (TauCeti.CStarAction.trivial (G := G) (A := A)).IsEquivariant
+      (TauCeti.CStarAction.trivial (G := G) (A := B)) f :=
+  fun g a ↦ by simp only [TauCeti.CStarAction.trivial_apply]
+
+end NonUnitalStarAlgHom
+
+namespace StarAlgEquiv
+
+variable {G A B : Type*} [Group G] [TopologicalSpace G]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  {α : TauCeti.CStarAction G A} {β : TauCeti.CStarAction G B}
+
+/-- An equivariant star-algebra equivalence has equivariant inverse. -/
+theorem isEquivariant_symm (e : A ≃⋆ₐ[ℂ] B) (he : α.IsEquivariant β e.toNonUnitalStarAlgHom) :
+    β.IsEquivariant α e.symm.toNonUnitalStarAlgHom :=
+  fun g ↦ (he g).inverse_left e.symm_apply_apply e.apply_symm_apply
+
+/-- A star-algebra equivalence is equivariant exactly when transport along it gives the target
+action. -/
+theorem isEquivariant_iff_conjugate_eq (e : A ≃⋆ₐ[ℂ] B) :
+    α.IsEquivariant β e.toNonUnitalStarAlgHom ↔ α.conjugate e = β := by
+  constructor
+  · intro he
+    ext g b
+    simpa only [TauCeti.CStarAction.conjugate_apply, toNonUnitalStarAlgHom_apply,
+      e.apply_symm_apply] using he.apply g (e.symm b)
+  · rintro rfl
+    exact TauCeti.CStarAction.IsEquivariant.conjugate α e
+
+end StarAlgEquiv
+
+namespace TauCeti.CStarAction
+
+variable {G H A B C : Type*}
+  [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
 
 section Restrict
 
