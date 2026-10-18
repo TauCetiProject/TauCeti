@@ -46,7 +46,7 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
 * `integrable_log_expMeasure`, `integral_log_expMeasure` — integrability and the mean of the
-  logarithm under the unit-rate exponential law;
+  logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
@@ -151,24 +151,24 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
 
-/-- The logarithm is integrable under the unit-rate exponential law. -/
+/-- The logarithm is integrable under every positive-rate exponential law. -/
 @[simp]
-theorem integrable_log_expMeasure : Integrable log (expMeasure 1) := by
+theorem integrable_log_expMeasure (hr : 0 < r) : Integrable log (expMeasure r) := by
   rw [expMeasure]
-  have hpos : Integrable (fun x : ℝ => x ^ (1 / 2 : ℝ)) (gammaMeasure 1 1) :=
-    (integrable_rpow_gammaMeasure_iff one_pos one_pos _).2 (by norm_num)
-  have hneg : Integrable (fun x : ℝ => x ^ (-1 / 2 : ℝ)) (gammaMeasure 1 1) :=
-    (integrable_rpow_gammaMeasure_iff one_pos one_pos _).2 (by norm_num)
+  have hpos : Integrable (fun x : ℝ => x ^ (1 / 2 : ℝ)) (gammaMeasure 1 r) :=
+    (integrable_rpow_gammaMeasure_iff one_pos hr _).2 (by norm_num)
+  have hneg : Integrable (fun x : ℝ => x ^ (-1 / 2 : ℝ)) (gammaMeasure 1 r) :=
+    (integrable_rpow_gammaMeasure_iff one_pos hr _).2 (by norm_num)
   have hpos' : Integrable (fun x : ℝ => exp ((0 + 1 / 2) * log x))
-      (gammaMeasure 1 1) := by
+      (gammaMeasure 1 r) := by
     refine hpos.congr ?_
-    filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
+    filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
     rw [Real.rpow_def_of_pos hx]
     ring_nf
   have hneg' : Integrable (fun x : ℝ => exp ((0 - 1 / 2) * log x))
-      (gammaMeasure 1 1) := by
+      (gammaMeasure 1 r) := by
     refine hneg.congr ?_
-    filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
+    filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
     rw [Real.rpow_def_of_pos hx]
     ring_nf
   have habs := integrable_pow_abs_mul_exp_of_integrable_exp_mul
@@ -176,20 +176,41 @@ theorem integrable_log_expMeasure : Integrable log (expMeasure 1) := by
   rw [← integrable_norm_iff (by fun_prop)]
   simpa only [zero_mul, zero_add, exp_zero, mul_one, pow_one, Real.norm_eq_abs] using habs
 
-/-- The mean of the logarithm under the unit-rate exponential law is the negative of the
-Euler--Mascheroni constant. -/
+/-- The mean of the logarithm under an exponential law of positive rate `r` is
+`-γ - log r`. -/
 @[simp]
-theorem integral_log_expMeasure :
-    ∫ e : ℝ, log e ∂expMeasure 1 = -Real.eulerMascheroniConstant := by
-  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos one_pos]
-  simp only [one_rpow, Gamma_one, div_one, sub_self, rpow_zero, one_mul,
-    smul_eq_mul]
+theorem integral_log_expMeasure (hr : 0 < r) :
+    ∫ e : ℝ, log e ∂expMeasure r = -Real.eulerMascheroniConstant - log r := by
+  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos hr]
+  simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one, smul_eq_mul]
+  have hscale := integral_comp_mul_left_Ioi'
+    (fun y : ℝ => exp (-y) * log (y / r)) 0 hr
+  simp only [mul_zero, mul_div_cancel_left₀ _ hr.ne', smul_eq_mul] at hscale
+  have hlog : IntegrableOn (fun x : ℝ => log x * exp (-x)) (Ioi 0) := by
+    have h := (integrable_expMeasure_iff one_pos).mp (integrable_log_expMeasure one_pos)
+    refine h.integrableOn.congr_fun ?_ measurableSet_Ioi
+    intro x hx
+    simp only [exponentialPDFReal, gammaPDFReal, ite_eq_left hx.le, Real.rpow_one, Gamma_one,
+      div_one, sub_self, rpow_zero, mul_one, one_mul, smul_eq_mul]
+    ring
   calc
-    (∫ x in Ioi 0, exp (-x) * log x) = ∫ x in Ioi 0, log x * exp (-x) := by
+    (∫ x in Ioi 0, r * exp (-(r * x)) * log x) =
+        r * ∫ x in Ioi 0, exp (-(r * x)) * log x := by
+      rw [← integral_const_mul]
+      congr 1
+      funext x
+      ring
+    _ = ∫ x in Ioi 0, exp (-x) * log (x / r) := hscale
+    (∫ x in Ioi 0, exp (-x) * log (x / r)) =
+        ∫ x in Ioi 0, log x * exp (-x) - log r * exp (-x) := by
       apply setIntegral_congr_fun measurableSet_Ioi
       intro x hx
+      dsimp only
+      rw [log_div (ne_of_gt hx) hr.ne']
       ring
-    _ = -Real.eulerMascheroniConstant := by
+    _ = -Real.eulerMascheroniConstant - log r := by
+      rw [integral_sub hlog ((integrableOn_exp_neg_Ioi 0).const_mul _),
+        integral_const_mul, integral_exp_neg_Ioi_zero]
       linarith [Real.eulerMascheroniConstant_eq_neg_integral_log]
 
 /-- **The exact exponential-integrability threshold.** The integrand `exp (t * x)` is integrable
