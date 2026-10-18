@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
 
@@ -90,10 +91,10 @@ theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
     (volume.withDensity f).map (|·|) =
       volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
   have hvolume : volume.map (fun x : ℝ => -x) = volume := by
-    convert Real.map_volume_mul_left (a := (-1 : ℝ)) (by norm_num) using 1 <;> norm_num
+    exact Measure.map_neg_eq_self (volume : Measure ℝ)
   have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
     have h := MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
-    have hvolume' : volume.map (MeasurableEquiv.neg ℝ) = volume := by simpa using hvolume
+    have hvolume' : volume.map (MeasurableEquiv.neg ℝ) = volume := hvolume
     rw [hvolume'] at h
     simpa [Measure.neg_def] using h
   rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
