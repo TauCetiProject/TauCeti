@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Group.Pi.Basic
-public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.GroupTheory.Coset.Basic
 import Mathlib.Tactic.Abel
 public import TauCeti.Combinatorics.Network.Basic
 
@@ -114,10 +115,7 @@ noncomputable def excessHom [Fintype V] [∀ x y, Fintype (Hom x y)]
     {K : Type w} [AddCommGroup K] : Assignment Hom K →+ (V → K) where
   toFun := excessAt Hom
   map_zero' := funext (excessAt_zero Hom)
-  map_add' f g := by
-    ext x
-    simp [excessAt, sum_add_distrib]
-    abel
+  map_add' f g := funext (excessAt_add Hom f g)
 
 @[simp]
 theorem excessHom_apply [Fintype V] [∀ x y, Fintype (Hom x y)]
@@ -192,47 +190,21 @@ theorem sub_mem_signedCirculations_iff [Fintype V] [∀ x y, Fintype (Hom x y)]
       ∀ x, excessAt Hom f x = excessAt Hom g x := by
   simp only [mem_signedCirculations, excessAt_sub, sub_eq_zero]
 
-/-- A nonempty fibre of the excess map is a translate of the circulation subgroup. -/
-noncomputable def excessFiberEquivCirculations [Fintype V]
-    [∀ x y, Fintype (Hom x y)] {K : Type w} [AddCommGroup K] (h : Assignment Hom K) :
-    {f : Assignment Hom K // excessHom Hom f = excessHom Hom h} ≃
-      (signedCirculations Hom : AddSubgroup (Assignment Hom K)) where
-  toFun f := ⟨fun e ↦ f.1 e - h e, (mem_signedCirculations Hom _).2 fun x ↦ by
-    simpa only [excessAt_sub, sub_eq_zero, excessHom_apply] using congrFun f.property x⟩
-  invFun g := ⟨(fun e ↦ g.1 e + h e), by
-    apply funext
-    intro x
-    rw [excessHom_apply, excessAt_add, (mem_signedCirculations Hom g.1).1 g.property x,
-      zero_add, excessHom_apply]⟩
-  left_inv f := by
-    ext x y e
-    simp
-  right_inv g := by
-    ext x y e
-    simp
-
 /-- An assignment conserved away from two terminals has opposite terminal excesses. -/
 theorem excessAt_source_eq_neg_sink [Fintype V] [∀ x y, Fintype (Hom x y)]
     {K : Type w} [AddCommGroup K] (f : Assignment Hom K) {s t : V}
     (hconserve : ∀ x, x ≠ s → x ≠ t → excessAt Hom f x = 0) :
     excessAt Hom f s = -excessAt Hom f t := by
   classical
-  have hpair : ∑ x ∈ {s, t}, excessAt Hom f x = 0 := by
-    refine (Finset.sum_subset (by simp) ?_).trans (sum_excessAt_eq_zero Hom f)
-    intro x hx hxst
-    apply hconserve x
-    · intro hxs
-      subst x
-      simp at hxst
-    · intro hxt
-      subst x
-      simp at hxst
   by_cases hst : s = t
   · subst t
-    have hsingle : excessAt Hom f s = 0 := by simpa using hpair
+    have hsingle :=
+      (Fintype.sum_eq_single s fun x hx ↦ hconserve x hx hx).symm.trans
+        (sum_excessAt_eq_zero Hom f)
     simp [hsingle]
-  · have hsum : excessAt Hom f s + excessAt Hom f t = 0 := by simpa [hst] using hpair
-    exact eq_neg_of_add_eq_zero_left hsum
+  · exact eq_neg_of_add_eq_zero_left <|
+      (Fintype.sum_eq_add s t hst fun x hx ↦ hconserve x hx.1 hx.2).symm.trans
+        (sum_excessAt_eq_zero Hom f)
 
 namespace Network
 
