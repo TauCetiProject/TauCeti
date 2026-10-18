@@ -11,8 +11,6 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 
-import Mathlib.Data.Fin.Parity
-
 /-!
 # The ordered simplicial chain complex
 

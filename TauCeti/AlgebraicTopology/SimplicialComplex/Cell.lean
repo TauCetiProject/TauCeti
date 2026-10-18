@@ -78,29 +78,16 @@ theorem face_val (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
   (rfl)
 
 /-- The increasing enumeration of a deleted-vertex face skips exactly the deleted position. -/
+@[simp]
 theorem vertexEmbedding_face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
     ⇑(c.face j).vertexEmbedding = c.vertexEmbedding ∘ j.succAbove := by
-  have hmono : StrictMono (c.vertexEmbedding ∘ j.succAbove) :=
-    c.strictMono_vertexEmbedding.comp (Fin.strictMono_succAbove j)
   symm
-  apply (hmono.range_inj_of_wellFoundedLT (c.face j).strictMono_vertexEmbedding).mp
-  have himage : Finset.univ.image (c.vertexEmbedding ∘ j.succAbove) =
-      Finset.univ.image (c.face j).vertexEmbedding := by
-    rw [(c.face j).image_vertexEmbedding, face_val]
-    ext v
-    simp only [Finset.mem_image, Finset.mem_univ, true_and, Function.comp_apply,
-      Finset.mem_erase]
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact ⟨fun h ↦ j.succAbove_ne i (c.vertexEmbedding.injective h),
-        c.vertexEmbedding_mem (j.succAbove i)⟩
-    · rintro ⟨hvj, hv⟩
-      rw [← c.image_vertexEmbedding] at hv
-      rcases Finset.mem_image.mp hv with ⟨i, -, rfl⟩
-      rcases Fin.exists_succAbove_eq (fun h ↦ hvj (congrArg c.vertexEmbedding h)) with ⟨k, hk⟩
-      exact ⟨k, congrArg c.vertexEmbedding hk⟩
-  simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ] using
-    congrArg (fun s : Finset ι ↦ (s : Set ι)) himage
+  apply Finset.orderEmbOfFin_unique (c.face j).2
+  · intro i
+    rw [face_val, Finset.mem_erase]
+    exact ⟨fun h ↦ j.succAbove_ne i (c.vertexEmbedding.injective h),
+      c.vertexEmbedding_mem (j.succAbove i)⟩
+  · exact c.strictMono_vertexEmbedding.comp (Fin.strictMono_succAbove j)
 
 /-- Deleting two vertices is independent of their order, with the indices transported through
 the first deletion.  This is the semisimplicial face identity. -/
@@ -112,13 +99,7 @@ theorem face_face (c : RealizationCell K (n + 2)) (i : Fin (n + 3)) (j : Fin (n 
   rw [congrFun (vertexEmbedding_face c i) j,
     congrFun (vertexEmbedding_face c (i.succAbove j)) (j.predAbove i)]
   simp only [Function.comp_apply, Fin.succAbove_succAbove_predAbove]
-  ext v
-  simp only [Finset.mem_erase]
-  constructor
-  · rintro ⟨hvi, hvj, hv⟩
-    exact ⟨hvj, hvi, hv⟩
-  · rintro ⟨hvj, hvi, hv⟩
-    exact ⟨hvi, hvj, hv⟩
+  exact Finset.erase_right_comm
 
 end RealizationCell
 
