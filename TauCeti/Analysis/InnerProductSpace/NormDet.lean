@@ -173,6 +173,15 @@ omit [FiniteDimensional ℝ V] in
 theorem orthogonalKerEquivOfSurjective_apply (L : U →L[ℝ] V) (hL : Surjective L)
     (u : L.kerᗮ) : orthogonalKerEquivOfSurjective L hL u = L u := (rfl)
 
+omit [FiniteDimensional ℝ V] in
+/-- Applying the original map to the inverse orthogonal-kernel restriction recovers the
+target point. -/
+@[simp]
+theorem orthogonalKerEquivOfSurjective_symm_apply (L : U →L[ℝ] V) (hL : Surjective L)
+    (y : V) : L ((orthogonalKerEquivOfSurjective L hL).symm y : U) = y := by
+  simpa only [orthogonalKerEquivOfSurjective_apply] using
+    (orthogonalKerEquivOfSurjective L hL).apply_symm_apply y
+
 /-- The norm determinant of a surjective map restricted to the orthogonal complement of its
 kernel equals the norm determinant of its adjoint. -/
 theorem normDet_orthogonalKerEquivOfSurjective (L : U →L[ℝ] V) (hL : Surjective L) :

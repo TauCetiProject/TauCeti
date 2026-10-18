@@ -120,9 +120,7 @@ theorem measurable_lintegral_linear_fiber (hL : Surjective L) {f : E → ℝ≥0
   have hcoord (y : F) :
       (∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]) =
         ∫⁻ z : L.ker, f ((R.symm y : E) + z) := by
-    have hy : L (R.symm y : E) = y := by
-      simpa only [R, orthogonalKerEquivOfSurjective_apply] using
-        R.apply_symm_apply y
+    have hy : L (R.symm y : E) = y := orthogonalKerEquivOfSurjective_symm_apply L hL y
     conv_lhs => rw [← hy]
     exact lintegral_linear_fiber f
   simp_rw [hcoord]
