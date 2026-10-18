@@ -105,6 +105,14 @@ variable (X : TopCat.{u}) (x : X)
 def killingStageIncl (m : ℕ) : (killingStage n X x m).1 ⟶ (killingStage n X x (m + 1)).1 :=
   cellAttachmentIncl _
 
+/-- The inclusion of each stage of the tower into the next is the inclusion of the cell
+attachment. -/
+lemma killingStageIncl_def (m : ℕ) :
+    killingStageIncl n X x m =
+      cellAttachmentIncl (killingAttachingMaps n (killingStage n X x m).1
+        (killingStage n X x m).2 m).2 :=
+  (rfl)
+
 /-- The inclusion of each stage of the tower into the next preserves the base points. -/
 @[simp]
 lemma killingStageIncl_basepoint (m : ℕ) :
@@ -130,6 +138,7 @@ inclusions of the stages are maps into this space by definition. -/
 
 /-- The step from stage `m` to stage `m + 1` of the tower is the inclusion of the cell
 attachment. -/
+@[simp]
 lemma killingTower_map_homOfLE_succ (m : ℕ) :
     (killingTower n X x).map (homOfLE (Order.le_succ m)) = killingStageIncl n X x m :=
   Functor.ofSequence_map_homOfLE_succ _ m
@@ -145,6 +154,9 @@ and their inclusions are those of the tower by definition, as recorded by
   incl := (colimit.cocone (killingTower n X x)).ι
   isColimit := colimit.isColimit _
   fac := Category.id_comp _
+  -- `Order.succ m` is `m + 1` on `ℕ`, and `Functor.ofSequence` has the stages as its objects by
+  -- definition, so the source and target of step `m` of the tower are by definition those of the
+  -- cell attachment, and identity isomorphisms identify the two arrows.
   attachCells m _ := (cellAttachmentAttachCells _).ofArrowIso
     (Arrow.isoMk (Iso.refl _) (Iso.refl _) (by
       rw [killingTower_map_homOfLE_succ]
@@ -160,7 +172,15 @@ lemma killHomotopyGroupsRelativeCWComplex_incl_app (m : ℕ) :
     (killHomotopyGroupsRelativeCWComplex n X x).incl.app m = colimit.ι (killingTower n X x) m :=
   (rfl)
 
+/-- The cells attached at step `m` of the relative CW complex are indexed as in
+`TauCeti.killingAttachingMaps`. -/
+lemma killHomotopyGroupsRelativeCWComplex_attachCells_ι (m : ℕ) :
+    ((killHomotopyGroupsRelativeCWComplex n X x).attachCells m (not_isMax m)).ι =
+      (killingAttachingMaps n (killingStage n X x m).1 (killingStage n X x m).2 m).1 :=
+  (rfl)
+
 /-- The base point of each stage goes to the image of `x` in the colimit. -/
+@[simp]
 lemma colimit_ι_killingStage_basepoint (m : ℕ) :
     colimit.ι (killingTower n X x) m (killingStage n X x m).2 = killHomotopyGroupsIncl n X x x := by
   induction m with
@@ -174,7 +194,7 @@ lemma colimit_ι_killingStage_basepoint (m : ℕ) :
     rfl
 
 /-- Every stage of the tower over a Hausdorff space is Hausdorff. -/
-lemma t2Space_killingStage [T2Space X] (m : ℕ) : T2Space (killingStage n X x m).1 := by
+instance instT2SpaceKillingStage [T2Space X] (m : ℕ) : T2Space (killingStage n X x m).1 := by
   induction m with
   | zero => assumption
   | succ m ih => exact instT2SpaceCellAttachment _
@@ -182,6 +202,7 @@ lemma t2Space_killingStage [T2Space X] (m : ℕ) : T2Space (killingStage n X x m
 /-- No cells of dimension at most `n` are attached in the tower. -/
 lemma isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι {m : ℕ} (hm : m ≤ n) :
     IsEmpty ((killHomotopyGroupsRelativeCWComplex n X x).attachCells m (not_isMax m)).ι := by
+  rw [killHomotopyGroupsRelativeCWComplex_attachCells_ι]
   match m, hm with
   | 0, _ => exact inferInstanceAs (IsEmpty PEmpty)
   | k + 1, hk => exact ⟨fun p ↦ absurd p.2 (by omega)⟩
@@ -210,7 +231,6 @@ image of `x`, for a Hausdorff space `X`. -/
 theorem subsingleton_homotopyGroup_killHomotopyGroups [T2Space X] {k : ℕ} (hk : n ≤ k) :
     Subsingleton (π_ k (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x)) := by
   have : NeZero k := ⟨((NeZero.pos n).trans_le hk).ne'⟩
-  have := t2Space_killingStage n X x (k + 1)
   -- Step `k + 1` attaches a cell along every generalized loop of dimension `k`, killing `πₖ`.
   have hkill : Subsingleton (π_ k (killingStage n X x (k + 2)).1 (killingStage n X x (k + 2)).2) :=
     subsingleton_homotopyGroup_cellAttachment (X := (killingStage n X x (k + 1)).1)
