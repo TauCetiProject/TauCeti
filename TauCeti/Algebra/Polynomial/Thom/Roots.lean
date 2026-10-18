@@ -61,24 +61,18 @@ theorem thomLT_iff {σ τ : Fin d → SignType} :
 
 instance : DecidableRel (ThomLT (d := d)) := fun _ _ ↦ decidable_of_iff _ thomLT_iff.symm
 
-/-- Two words have at most one last coordinate of disagreement. -/
-private theorem eq_of_ne_of_forall_lt_eq {σ τ : Fin d → SignType} {i i' : Fin d}
-    (hi : σ i ≠ τ i) (ht : ∀ j, i < j → σ j = τ j) (hi' : σ i' ≠ τ i')
-    (ht' : ∀ j, i' < j → σ j = τ j) : i = i' := by
-  rcases lt_trichotomy i i' with h | h | h
-  · exact absurd (ht i' h) hi'
-  · exact h
-  · exact absurd (ht' i h) hi
-
 /-- At the last coordinate of disagreement, `ThomLT` is read off from the two differing signs and
 the next coordinate. -/
 theorem thomLT_iff_of_ne {σ τ : Fin d → SignType} {i : Fin d} (hi : σ i ≠ τ i)
     (ht : ∀ j, i < j → σ j = τ j) :
     ThomLT σ τ ↔ ∃ h : i.val + 1 < d,
       (σ ⟨i.val + 1, h⟩ = 1 ∧ σ i < τ i) ∨ (σ ⟨i.val + 1, h⟩ = -1 ∧ τ i < σ i) := by
+  have hg {k : Fin d} (hk : σ k ≠ τ k) (ht : ∀ j, k < j → σ j = τ j) :
+      IsGreatest {j | σ j ≠ τ j} k :=
+    ⟨hk, fun j hj ↦ not_lt.1 fun h ↦ hj (ht j h)⟩
   constructor
   · rintro ⟨i', hi', ht', h⟩
-    obtain rfl := eq_of_ne_of_forall_lt_eq hi' ht' hi ht
+    obtain rfl := (hg hi' ht').unique (hg hi ht)
     exact h
   · exact fun h ↦ ⟨i, hi, ht, h⟩
 
@@ -102,6 +96,26 @@ theorem ThomLT.asymm {σ τ : Fin d → SignType} (h : ThomLT σ τ) : ¬ThomLT 
   · rw [h1] at h2; cases h2
   · rw [h1] at h2; cases h2
   · exact lt_asymm hlt hlt'
+
+/-- `ThomLT` is transitive on all words, realized or not. -/
+theorem ThomLT.trans {σ τ υ : Fin d → SignType} (hστ : ThomLT σ τ) (hτυ : ThomLT τ υ) :
+    ThomLT σ υ := by
+  obtain ⟨i, hi, ht, hd, h⟩ := hστ
+  obtain ⟨k, hk, hk', hd', h'⟩ := hτυ
+  rcases lt_trichotomy i k with hik | rfl | hik
+  · have hsucc : i < ⟨k.val + 1, hd'⟩ := Fin.lt_def.2 (Nat.lt_succ_of_lt hik)
+    refine ⟨k, ht k hik ▸ hk, fun j hj ↦ (ht j (hik.trans hj)).trans (hk' j hj), hd', ?_⟩
+    rwa [ht k hik, ht _ hsucc]
+  · have htail : ∀ j, i < j → σ j = υ j := fun j hj ↦ (ht j hj).trans (hk' j hj)
+    rw [← ht _ (Fin.lt_def.2 (Nat.lt_succ_self i.val))] at h'
+    rcases h with ⟨h1, hlt⟩ | ⟨h1, hlt⟩ <;> rcases h' with ⟨h2, hlt'⟩ | ⟨h2, hlt'⟩
+    · exact ⟨i, (hlt.trans hlt').ne, htail, hd, Or.inl ⟨h1, hlt.trans hlt'⟩⟩
+    · rw [h1] at h2; cases h2
+    · rw [h1] at h2; cases h2
+    · exact ⟨i, (hlt'.trans hlt).ne', htail, hd, Or.inr ⟨h1, hlt'.trans hlt⟩⟩
+  · have hsucc : k < ⟨i.val + 1, hd⟩ := Fin.lt_def.2 (Nat.lt_succ_of_lt hik)
+    refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
+    rwa [← hk' i hik]
 
 end Comparison
 
@@ -237,16 +251,5 @@ theorem thomLT_or_thomLT_of_mem_thomEncodings (hrolle : PolynomialRolle R) {p : 
   obtain ⟨-, b, hb, rfl⟩ := mem_thomEncodings.1 hτ
   rw [← lt_iff_thomLT p hrolle hne, ← lt_iff_thomLT p hrolle hne.symm]
   exact lt_or_gt_of_ne fun h ↦ hne (h ▸ rfl)
-
-/-- `ThomLT` is transitive on realized Thom encodings. -/
-theorem ThomLT.trans_of_mem_thomEncodings (hrolle : PolynomialRolle R) {p : R[X]}
-    {σ τ υ : Fin p.natDegree → SignType} (hσ : σ ∈ p.thomEncodings) (hτ : τ ∈ p.thomEncodings)
-    (hυ : υ ∈ p.thomEncodings) (hστ : ThomLT σ τ) (hτυ : ThomLT τ υ) : ThomLT σ υ := by
-  obtain ⟨hp, a, ha, rfl⟩ := mem_thomEncodings.1 hσ
-  obtain ⟨-, b, hb, rfl⟩ := mem_thomEncodings.1 hτ
-  obtain ⟨-, c, hc, rfl⟩ := mem_thomEncodings.1 hυ
-  rw [← lt_iff_thomLT_of_eval_eq_zero hrolle hp ha hb] at hστ
-  rw [← lt_iff_thomLT_of_eval_eq_zero hrolle hp hb hc] at hτυ
-  exact (lt_iff_thomLT_of_eval_eq_zero hrolle hp ha hc).1 (hστ.trans hτυ)
 
 end Polynomial
