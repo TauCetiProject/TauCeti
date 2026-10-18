@@ -287,6 +287,7 @@ theorem rnDeriv_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
 /-- **The topological support of a nondegenerate log-normal law** is the closed nonnegative
 half-line. Although the law is almost surely strictly positive, every neighborhood of zero has
 positive mass. -/
+@[simp]
 theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
     (logNormalMeasure m v).support = Ici 0 := by
   apply Set.Subset.antisymm
@@ -306,7 +307,7 @@ theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
 /-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
 theorem support_logNormalMeasure_zero_var (m : ℝ) :
     (logNormalMeasure m 0).support = {Real.exp m} := by
-  rw [logNormalMeasure_zero_var, Measure.support_dirac]
+  rw [logNormalMeasure_zero_var, Measure.support_dirac, closure_singleton]
 
 /-! ### The cumulative distribution function -/
 
