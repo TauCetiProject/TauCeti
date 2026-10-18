@@ -141,8 +141,7 @@ of `(X, Xᘁ)` and `(Y, Yᘁ)` is the evaluation of `(X ⊗ Y, (X ⊗ Y)ᘁ)`. -
 @[reassoc]
 theorem rightDualTensorIso_hom_whiskerRight_evaluation :
     (rightDualTensorIso X Y).hom ▷ (X ⊗ Y) ≫ ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) = ε_ (X ⊗ Y) (X ⊗ Y)ᘁ := by
-  rw [rightDualTensorIso, rightDualIso_hom, rightMate_comp_evaluation,
-    MonoidalCategory.whiskerLeft_id, Category.id_comp]
+  rw [rightDualTensorIso, rightDualIso_hom_whiskerRight_evaluation]
 
 /-- Through the comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ`, the evaluation of `(X ⊗ Y, (X ⊗ Y)ᘁ)` is the
 evaluation of the tensor product pairing of `(X, Xᘁ)` and `(Y, Yᘁ)`. -/

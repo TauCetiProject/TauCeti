@@ -173,14 +173,13 @@ theorem drinfeldIso_unit_hom :
   -- The dual of `𝟙_ C` here is the one chosen by the rigid structure, not `hasRightDualUnit`.
   refine rightHom_ext (X := (RightRigidCategory.rightDual (𝟙_ C)).rightDual) ?_
   -- The evaluation of `(𝟙_ C, (𝟙_ C)ᘁ)` through the identification `(𝟙_ C)ᘁ ≅ 𝟙_ C`.
-  have h := rightMate_comp_evaluation exactPairingUnit (RightRigidCategory.rightDual (𝟙_ C)).exact
-    (𝟙 _)
-  rw [MonoidalCategory.whiskerLeft_id, Category.id_comp, ← rightDualIso_hom,
-    ExactPairing.unit_evaluation] at h
+  have h := rightDualIso_hom_whiskerRight_evaluation (RightRigidCategory.rightDual (𝟙_ C)).exact
+    exactPairingUnit
+  rw [ExactPairing.unit_evaluation] at h
   rw [drinfeldIso_hom_comp_evaluation, comp_whiskerRight, Category.assoc,
-    rightMate_comp_evaluation, ← whisker_exchange_assoc, rightDualIso_inv,
-    rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp,
-    ExactPairing.unit_evaluation, ← h, braiding_tensorUnit_left]
+    rightMate_comp_evaluation, ← whisker_exchange_assoc,
+    rightDualIso_inv_whiskerRight_evaluation, ExactPairing.unit_evaluation, ← h,
+    braiding_tensorUnit_left]
   monoidal
 
 end Braided
