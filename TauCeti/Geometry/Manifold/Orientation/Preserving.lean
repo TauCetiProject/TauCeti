@@ -86,10 +86,7 @@ theorem isOrientationPreservingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I
       _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = o'.orientationAt (f x) := by
   constructor
   · rintro ⟨e', he', h⟩
-    have heq : e' = e := by
-      ext v
-      exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace I' (f x) => L v)
-        (he'.trans he.symm)
+    have heq : e' = e := ContinuousLinearEquiv.coe_injective (he'.trans he.symm)
     simpa [heq] using h
   · intro h
     exact ⟨e, he, h⟩
@@ -105,10 +102,7 @@ theorem isOrientationReversingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I'
         -(o'.orientationAt (f x)) := by
   constructor
   · rintro ⟨e', he', h⟩
-    have heq : e' = e := by
-      ext v
-      exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace I' (f x) => L v)
-        (he'.trans he.symm)
+    have heq : e' = e := ContinuousLinearEquiv.coe_injective (he'.trans he.symm)
     simpa [heq] using h
   · intro h
     exact ⟨e, he, h⟩
@@ -202,10 +196,7 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
   rintro ⟨hpres, hrev⟩
   obtain ⟨e, he, _⟩ := (isOrientationPreservingAt_iff o o' f x).mp hpres
   obtain ⟨e', he', _⟩ := (isOrientationReversingAt_iff o o' f x).mp hrev
-  have heq : e = e' := by
-    ext v
-    exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace I' (f x) => L v)
-      (he.trans he'.symm)
+  have heq : e = e' := ContinuousLinearEquiv.coe_injective (he.trans he'.symm)
   subst e'
   have hpres' := (isOrientationPreservingAt_iff_of_coe_eq o o' f x e he).mp hpres
   have hrev' := (isOrientationReversingAt_iff_of_coe_eq o o' f x e he).mp hrev
