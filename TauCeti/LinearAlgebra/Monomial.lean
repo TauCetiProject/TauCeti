@@ -160,6 +160,8 @@ theorem mem_monomialGroup {f : (ι → R) ≃ₗ[R] (ι → R)} :
     f ∈ monomialGroup R ι ↔ ∃ (u : ι → Rˣ) (e : Equiv.Perm ι), monomialEquiv u e = f :=
   Iff.rfl
 
+/-- A monomial equivalence induced by coordinate units and a coordinate permutation belongs
+to the monomial group. -/
 theorem monomialEquiv_mem_monomialGroup (u : ι → Rˣ) (e : Equiv.Perm ι) :
     monomialEquiv u e ∈ monomialGroup R ι :=
   ⟨u, e, rfl⟩
