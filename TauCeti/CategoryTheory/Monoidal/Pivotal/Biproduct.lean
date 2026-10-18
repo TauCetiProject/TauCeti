@@ -13,8 +13,8 @@ public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
 
 The left and right trace of an endomorphism of a finite biproduct are the sums of the traces
 of its diagonal components. In particular, both pivotal dimensions are additive on finite
-biproducts and vanish on the zero object. These identities allow dimensions to descend through
-the direct-sum relations in a Grothendieck group.
+biproducts. These identities allow dimensions to descend through the direct-sum relations in a
+Grothendieck group.
 
 The diagonal formulas apply to arbitrary endomorphisms, including ones with nonzero
 off-diagonal components. Only the particular biproduct in the statement is required to exist;
@@ -28,7 +28,6 @@ neither an abelian category nor existence of all finite biproducts is assumed.
 public section
 
 open CategoryTheory CategoryTheory.Limits MonoidalCategory
-open scoped ZeroObject
 
 universe v u
 
@@ -152,15 +151,5 @@ theorem rightDim_biprod : rightDim (X ⊞ Y) = rightDim X + rightDim Y := by
   simp
 
 end Binary
-
-/-- The zero object has left pivotal dimension zero. -/
-@[simp]
-theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
-  rw [← leftTrace_id, id_zero, leftTrace_zero]
-
-/-- The zero object has right pivotal dimension zero. -/
-@[simp]
-theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
-  rw [← rightTrace_id, id_zero, rightTrace_zero]
 
 end TauCeti

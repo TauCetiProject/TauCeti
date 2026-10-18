@@ -31,7 +31,8 @@ We prove the basic properties of the two traces: both are cyclic, so in particul
 under conjugation by an isomorphism; the right adjoint mate exchanges them, by the Freyd–Yetter
 identity `φ_{Xᘁ} = (φ_X⁻¹)ᘁ`, so that the left dimension of `Xᘁ` is the right dimension of `X`;
 both are the identity on scalars `𝟙_ C ⟶ 𝟙_ C`, so that the unit has dimension `𝟙`; and both are
-additive, and `R`-linear in an `R`-linear monoidal category.
+additive, and `R`-linear in an `R`-linear monoidal category. The zero object has both dimensions
+zero in a preadditive monoidal category.
 
 ## Main declarations
 
@@ -61,7 +62,8 @@ additive, and `R`-linear in an `R`-linear monoidal category.
 
 public section
 
-open CategoryTheory MonoidalCategory ExactPairing
+open CategoryTheory CategoryTheory.Limits MonoidalCategory ExactPairing
+open scoped ZeroObject
 
 universe v u
 
@@ -235,6 +237,11 @@ theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f 
 theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
   simp [leftTrace_def]
 
+/-- The zero object has left pivotal dimension zero. -/
+@[simp]
+theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
+  rw [← leftTrace_id, id_zero, leftTrace_zero]
+
 /-- The left trace commutes with finite sums. -/
 @[simp]
 theorem leftTrace_sum {ι : Type*} {X : C} (s : Finset ι) (f : ι → (X ⟶ X)) :
@@ -264,6 +271,11 @@ theorem rightTrace_add {X : C} (f g : X ⟶ X) :
 @[simp]
 theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
   simp [rightTrace_def]
+
+/-- The zero object has right pivotal dimension zero. -/
+@[simp]
+theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
+  rw [← rightTrace_id, id_zero, rightTrace_zero]
 
 /-- The right trace commutes with finite sums. -/
 @[simp]
