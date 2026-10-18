@@ -17,7 +17,10 @@ For an ideal `I` of a commutative ring `R`, the quotient map `R → R ⧸ I` ide
 `Spec (R ⧸ I)` homeomorphically with the closed subset `V(I)` of `Spec R`. So the topological Krull
 dimension of `V(I)` is the Krull dimension of `R ⧸ I`.
 Quotienting by the nilradical preserves the entire prime spectrum, hence its Krull dimension and
-the height of each prime ideal.
+the height of each prime ideal. Conversely, quotients by nonzero principal ideals bound the Krull
+dimension from above: the second prime of a chain contains a nonzero element, and the rest of the
+chain lies over it. This is the upper-bound step of dimension counts by induction on the number of
+variables.
 
 The spectrum of a ring is pure-dimensional of dimension `d` exactly when every quotient by a
 minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
@@ -30,6 +33,9 @@ for minimal primes `P`. This gives a componentwise criterion using only quotient
 * `TauCeti.isPureDimensional_primeSpectrum_iff`: the spectrum is pure-dimensional exactly when
   every minimal-prime quotient has the prescribed dimension.
 * `TauCeti.ringKrullDim_quotient_nilradical`: reduction preserves Krull dimension.
+* `TauCeti.ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le`: if every quotient by a
+  nonzero principal ideal has Krull dimension at most `n`, the ring has Krull dimension at most
+  `n + 1`.
 * `Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
 -/
 
@@ -74,6 +80,32 @@ theorem ringKrullDim_quotient_nilradical :
     ringKrullDim (R ⧸ nilradical R) = ringKrullDim R := by
   rw [ringKrullDim_quotient, PrimeSpectrum.zeroLocus_nilradical, ringKrullDim]
   exact Order.krullDim_eq_of_orderIso OrderIso.Set.univ
+
+variable {R}
+
+/-- If the quotient of `R` by every nonzero principal ideal has Krull dimension at most `n`, then
+`R` has Krull dimension at most `n + 1`. -/
+theorem ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le {n : ℕ∞}
+    (h : ∀ f : R, f ≠ 0 → ringKrullDim (R ⧸ Ideal.span {f}) ≤ n) :
+    ringKrullDim R ≤ n + 1 := by
+  refine iSup_le fun l ↦ ?_
+  rcases l with ⟨_ | k, p, step⟩
+  · exact WithBot.coe_le_coe.mpr bot_le
+  -- The second prime `p 1` contains some `f ∉ p 0`; then `f ≠ 0`, and the primes from `p 1` on
+  -- form a chain of length `k` in `V(f)`.
+  have h₀₁ : (p 0).asIdeal < (p 1).asIdeal := step 0
+  obtain ⟨f, hf₁, hf₀⟩ := IsConcreteLE.exists_of_lt h₀₁
+  have hf : f ≠ 0 := by
+    rintro rfl
+    exact hf₀ (zero_mem _)
+  have hmono : Monotone p := LTSeries.monotone ⟨k + 1, p, step⟩
+  let q : LTSeries (PrimeSpectrum.zeroLocus (R := R) (Ideal.span {f})) :=
+    ⟨k, fun i ↦ ⟨p i.succ, by
+      rw [PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe, Ideal.span_singleton_le_iff_mem]
+      exact hmono (Fin.succ_pos i) hf₁⟩, fun i ↦ step i.succ⟩
+  have hq := (Order.LTSeries.length_le_krullDim q).trans
+    ((ringKrullDim_quotient _).symm.le.trans (h f hf))
+  simpa using add_le_add_left hq 1
 
 end TauCeti
 
