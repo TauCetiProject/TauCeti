@@ -15,10 +15,13 @@ public import Mathlib.CategoryTheory.Subobject.Limits
 
 This file records that the canonical kernel sequence of an epimorphism and the canonical cokernel
 sequence of a monomorphism are short exact, and that a short complex of functors with values in
-an abelian category is short exact as soon as it is short exact objectwise.
+an abelian category is short exact as soon as it is short exact objectwise. It also records
+that the two maps of a short exact sequence split simultaneously.
 
 ## Main statements
 
+* `TauCeti.isSplitMono_f_iff_isSplitEpi_g`: the initial map of a short exact sequence splits
+  if and only if the final map splits.
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`: for composable `a` and `b` with
@@ -45,6 +48,19 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 
 universe v u
+
+/-- In a short exact sequence, the initial map is a split monomorphism exactly when the final
+map is a split epimorphism. -/
+theorem isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] [Preadditive C]
+    [Balanced C] {S : ShortComplex C} (hS : S.ShortExact) :
+    IsSplitMono S.f ↔ IsSplitEpi S.g := by
+  constructor
+  · intro hf
+    exact (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
+      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
+  · intro hg
+    exact (ShortComplex.Splitting.ofExactOfSection S hS.exact
+      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 

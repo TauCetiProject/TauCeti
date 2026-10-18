@@ -32,23 +32,6 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Preadditive
 
 universe v u
 
-namespace TauCeti
-
-/-- In a short exact sequence, the initial map is a split monomorphism exactly when the final
-map is a split epimorphism. -/
-theorem isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] [Preadditive C]
-    [Balanced C] {S : ShortComplex C} (hS : S.ShortExact) :
-    IsSplitMono S.f ↔ IsSplitEpi S.g := by
-  constructor
-  · intro hf
-    exact (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
-      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
-  · intro hg
-    exact (ShortComplex.Splitting.ofExactOfSection S hS.exact
-      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
-
-end TauCeti
-
 namespace CategoryTheory.ShortComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S : ShortComplex C}

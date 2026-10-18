@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.Exact.Abelian
 import TauCeti.CategoryTheory.Exact.BaseChange
 
