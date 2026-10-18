@@ -10,9 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 /-!
 # Derivatives and norms
 
-A uniform upper bound on the norm of a function's Fréchet derivative is
-nonnegative. This supplies the sign condition used in estimates involving that bound.
-
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
 derivative of a map into a sphere is tangent to the sphere.
 -/
@@ -23,12 +20,6 @@ open Filter
 open scoped Topology RealInnerProductSpace
 
 namespace TauCeti
-
-/-- A uniform upper bound on the derivative norm is nonnegative. -/
-theorem nonneg_of_forall_norm_fderiv_le {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {γ : E → F} {L : ℝ} (hL : ∀ y, ‖fderiv 𝕜 γ y‖ ≤ L) : 0 ≤ L :=
-  (norm_nonneg _).trans (hL 0)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
