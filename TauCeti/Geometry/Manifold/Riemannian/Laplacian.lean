@@ -383,8 +383,9 @@ theorem divergence_eq_trace_fderiv_model_space
       e (A v) = fderiv ℝ V x (e v) := by
     dsimp only [A]
     rw [LinearEquiv.conj_apply_apply]
-    change e (e.symm (fderiv ℝ V x (e v))) = fderiv ℝ V x (e v)
-    rw [e.apply_symm_apply]
+    simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearMap.coe_coe,
+      ContinuousLinearEquiv.symm_symm, e.apply_symm_apply]
   have hA :
       (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F V x).toLinearMap =
         A := by
