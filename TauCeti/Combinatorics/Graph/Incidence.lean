@@ -136,7 +136,6 @@ theorem incidenceSet_banana_left (x y : α) (E : Set β) :
   simp
 
 /-- Every edge identity of a bouquet is incident to its unique vertex. -/
-@[simp]
 theorem incidenceSet_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceSet x = E := by
   ext e
@@ -164,7 +163,6 @@ theorem incidenceCount_banana_left (x y : α) (E : Set β) :
 
 /-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
 number of actual edges. -/
-@[simp]
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceCount x = E.ncard := by
   simp [incidenceCount]
@@ -342,7 +340,6 @@ theorem incidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
   rw [incidenceCount, incidenceSet_ofSimpleGraph, SimpleGraph.ncard_incidenceSet]
 
 /-- The nonloop incidence count on `Graph.ofSimpleGraph H` is the degree in `H`. -/
-@[simp]
 theorem nonloopIncidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
     (Graph.ofSimpleGraph H).nonloopIncidenceCount x = H.degree x := by
   rw [nonloopIncidenceCount_eq_incidenceCount, incidenceCount_ofSimpleGraph]
