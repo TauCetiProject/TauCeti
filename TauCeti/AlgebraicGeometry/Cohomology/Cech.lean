@@ -16,7 +16,7 @@ Let `X` be a locally Noetherian scheme with affine diagonal, for instance a sepa
 scheme, and let `M` be a quasi-coherent sheaf of modules on `X`. Finite intersections of affine
 opens of `X` are then affine, and `M` has no cohomology in positive degrees on them. So every
 finite affine open cover `U` of `X` is a Leray cover for `M`, and by Leray's theorem
-(`TauCeti.Topology.nonempty_homology_cechComplex_iso_H`) the Čech cohomology `Ȟⁿ(U, M)` of the
+(`TauCeti.Topology.nonempty_homology_cechComplex_iso_H`) the Čech cohomology `Hⁿ(U, M)` of the
 underlying abelian sheaf of `M` is isomorphic to the cohomology `Hⁿ(X, M)`, so that `Hⁿ(X, M)` can
 be computed, as an abelian group, from the Čech complex of any finite affine open cover. The
 isomorphism is one of abelian groups, and is not claimed to be natural in `M`.
@@ -24,7 +24,7 @@ isomorphism is one of abelian groups, and is not claimed to be natural in `M`.
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.nonempty_homology_cechComplex_iso_cohomology`: for a finite
-  affine open cover `U` of `X`, `Ȟⁿ(U, M) ≅ Hⁿ(X, M)` for every `n`.
+  affine open cover `U` of `X`, `Hⁿ(U, M) ≅ Hⁿ(X, M)` for every `n`.
 
 ## References
 
@@ -46,7 +46,7 @@ variable {X : Scheme.{u}} (M : X.Modules)
 /-- **Čech cohomology computes the cohomology of a quasi-coherent sheaf.** Let `X` be a locally
 Noetherian scheme with affine diagonal (for instance a separated one), `M` a quasi-coherent sheaf
 of modules on `X`, and `U` a finite family of affine opens covering `X`. Then the Čech cohomology
-`Ȟⁿ(U, M)` of the underlying abelian sheaf of `M` is isomorphic to `Hⁿ(X, M)`, for every `n`. -/
+`Hⁿ(U, M)` of the underlying abelian sheaf of `M` is isomorphic to `Hⁿ(X, M)`, for every `n`. -/
 theorem nonempty_homology_cechComplex_iso_cohomology [IsLocallyNoetherian X]
     [IsAffineHom (pullback.diagonal (terminal.from X))] [M.IsQuasicoherent] {ι : Type u}
     [Finite ι] (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)

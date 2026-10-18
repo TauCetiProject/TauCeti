@@ -19,7 +19,7 @@ import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 Let `F` be a sheaf of abelian groups on a topological space `X` and let `U` be a finite open cover
 of `X` such that `F` has no cohomology in positive degrees on any nonempty finite intersection of
-members of `U` (a *Leray cover* for `F`). Then the Čech cohomology `Ȟⁿ(U, F)`, the cohomology of
+members of `U` (a *Leray cover* for `F`). Then the Čech cohomology `Hⁿ(U, F)`, the cohomology of
 the Čech complex `Č(U, F)`, is isomorphic to the sheaf cohomology `Hⁿ(X, F)` in every degree.
 
 The proof is by dimension shifting. Embed `F` into an injective sheaf `I`, with cokernel `Q`.
@@ -29,9 +29,9 @@ The proof is by dimension shifting. Embed `F` into an injective sheaf `I`, with 
   short exact sequence `0 ⟶ Č(U, F) ⟶ Č(U, I) ⟶ Č(U, Q) ⟶ 0`.
 * `I` is flasque, so `Č(U, I)` has no cohomology in positive degrees
   (`TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque`), and neither has `I` sheaf cohomology.
-  The two long exact sequences then give `Ȟⁿ⁺¹(U, F) ≅ Ȟⁿ(U, Q)` and `Hⁿ⁺¹(X, F) ≅ Hⁿ(X, Q)` for
-  `n ≥ 1`, while in degree one both `Ȟ¹(U, F)` and `H¹(X, F)` are the cokernel of
-  `I(X) ⟶ Q(X)`, since `Ȟ⁰` and `H⁰` are both global sections.
+  The two long exact sequences then give `Hⁿ⁺¹(U, F) ≅ Hⁿ(U, Q)` and `Hⁿ⁺¹(X, F) ≅ Hⁿ(X, Q)` for
+  `n ≥ 1`, while in degree one both `H¹(U, F)` and `H¹(X, F)` are the cokernel of
+  `I(X) ⟶ Q(X)`, since `H⁰(U, -)` and `H⁰(X, -)` are both global sections.
 * `Q` is again acyclic on the finite intersections, as `Hᵏ(V, Q) ≅ Hᵏ⁺¹(V, F)` for `k ≥ 1`.
 
 Induction on the degree, for all sheaves at once, concludes.
@@ -41,7 +41,7 @@ The isomorphism is not claimed to be natural in `F`.
 ## Main results
 
 * `TauCeti.Topology.nonempty_homology_cechComplex_iso_H`: for a finite Leray cover `U` of `X`,
-  `Ȟⁿ(U, F) ≅ Hⁿ(X, F)` for every `n`.
+  `Hⁿ(U, F) ≅ Hⁿ(X, F)` for every `n`.
 
 ## References
 
@@ -108,7 +108,7 @@ private lemma homologyMap_comp_homologyZeroCechIso_hom
 
 /-- **Leray's theorem, in the form proved by induction.** If `F` has no cohomology in positive
 degrees on the finite products `U (a 0) × ⋯ × U (a m)` of members of the cover, then
-`Ȟⁿ(U, F) ≅ Hⁿ(X, F)`. -/
+`Hⁿ(U, F) ≅ Hⁿ(X, F)`. -/
 private lemma nonempty_homology_cechComplex_iso_H_aux [Finite ι] (n : ℕ) :
     ∀ F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u},
       (∀ (m : ℕ) (a : Fin (m + 1) → ι) (k : ℕ),
@@ -157,7 +157,7 @@ private lemma nonempty_homology_cechComplex_iso_H_aux [Finite ι] (n : ℕ) :
 
 /-- **Leray's theorem.** Let `U` be a finite family of opens covering a topological space `X`, and
 let `F` be a sheaf of abelian groups on `X` with no cohomology in positive degrees on any nonempty
-finite intersection of members of `U`. Then the Čech cohomology `Ȟⁿ(U, F)`, the cohomology of the
+finite intersection of members of `U`. Then the Čech cohomology `Hⁿ(U, F)`, the cohomology of the
 Čech complex of `F` for `U`, is isomorphic to the sheaf cohomology `Hⁿ(X, F)`, for every `n`. -/
 theorem nonempty_homology_cechComplex_iso_H [Finite ι]
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
