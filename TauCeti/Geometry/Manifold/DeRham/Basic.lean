@@ -62,6 +62,14 @@ theorem deRhamComplex_d (k : ℕ) :
   dsimp +instances [deRhamComplexXIso, deRhamComplex]
   simp
 
+/-- The differential of the de Rham complex, evaluated on an element. -/
+theorem deRhamComplex_d_apply (k : ℕ) (x : (deRhamComplex I M).X k) :
+    (deRhamComplex I M).d k (k + 1) x =
+      (deRhamComplexXIso I (k + 1)).inv
+        (mextDerivₗ I (F := ℝ) k ((deRhamComplexXIso I k).hom x)) := by
+  rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k), ModuleCat.comp_apply,
+    ModuleCat.comp_apply, ConcreteCategory.hom_ofHom]
+
 variable (M) in
 /-- The submodule of smooth forms whose exterior derivative vanishes. -/
 def closedForms (k : ℕ) : Submodule ℝ (SmoothForm I M ℝ k) :=
@@ -107,24 +115,33 @@ variable (M) in
 abbrev deRhamCohomology (k : ℕ) : Type _ :=
   (deRhamComplex I M).homology k
 
-/-- The differential of the de Rham complex, evaluated on an element. -/
-private theorem deRhamComplex_d_apply (k : ℕ) (x : (deRhamComplex I M).X k) :
-    (deRhamComplex I M).d k (k + 1) x =
-      (deRhamComplexXIso I (k + 1)).inv
-        (mextDerivₗ I (F := ℝ) k ((deRhamComplexXIso I k).hom x)) := by
-  rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k)]
-  rfl
+/-- A closed form, viewed in the de Rham complex, is killed by the differential. -/
+theorem deRhamComplex_d_eq_zero_of_mem_closedForms (k : ℕ) {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ closedForms I M k) :
+    (deRhamComplex I M).d k (k + 1) ((deRhamComplexXIso I k).inv φ) = 0 := by
+  rw [deRhamComplex_d_apply]
+  simp [(mem_closedForms_iff_mextDerivₗ_eq_zero I φ).mp hφ]
 
 namespace deRhamCohomology
 
 /-- The cohomology class of a closed smooth form, the homology class of the corresponding cycle
 of the de Rham complex. -/
-@[expose]
 def mk (k : ℕ) : closedForms I M k →ₗ[ℝ] deRhamCohomology I M k :=
   (deRhamComplex I M).moduleCatHomologyClass (Z := closedForms I M k) (CochainComplex.next ℕ k)
     ((deRhamComplexXIso I k).inv.hom ∘ₗ (closedForms I M k).subtype) fun φ ↦ by
-      rw [LinearMap.comp_apply, deRhamComplex_d_apply]
-      simp [(mem_closedForms_iff_mextDerivₗ_eq_zero I φ.1).mp φ.2]
+      rw [LinearMap.comp_apply]
+      exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.2
+
+/-- The class map is the homology class map of the inclusion of closed forms into the de Rham
+complex. -/
+theorem mk_eq_moduleCatHomologyClass (k : ℕ) :
+    mk I (M := M) k =
+      (deRhamComplex I M).moduleCatHomologyClass (Z := closedForms I M k)
+        (CochainComplex.next ℕ k) ((deRhamComplexXIso I k).inv.hom ∘ₗ (closedForms I M k).subtype)
+        fun φ ↦ by
+          rw [LinearMap.comp_apply]
+          exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.2 :=
+  (rfl)
 
 /-- Every de Rham cohomology class is represented by a closed smooth form. -/
 theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) := by

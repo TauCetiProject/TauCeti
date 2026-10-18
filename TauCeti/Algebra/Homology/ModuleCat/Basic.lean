@@ -30,8 +30,8 @@ is a boundary have the same homology class
 (`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`), and a cycle has zero homology
 class exactly when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
-`HomologicalComplex.moduleCatCohomologyClassOfIso` packages the resulting class map, its
-surjectivity, and its kernel description.
+`HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
+with its surjectivity and its kernel described by the coboundaries.
 -/
 
 public section
@@ -78,85 +78,6 @@ lemma moduleCat_homologyπ_eq_zero_iff {m : ι} (hm : c.prev n = m) (z : K.cycle
   rw [← ModuleCat.comp_apply, toCycles_comp_homologyπ]
   rfl
 
-section CochainPresentation
-
-variable (K : CochainComplex (ModuleCat R) ℕ)
-variable (V : ℕ → Type*) [∀ n, AddCommGroup (V n)] [∀ n, Module R (V n)]
-variable (Z B : ∀ n, Submodule R (V n))
-variable (e : ∀ n, K.X n ≅ ModuleCat.of R (V n))
-variable (hZ : ∀ (n : ℕ) (z : V n),
-  z ∈ Z n ↔ K.d n (n + 1) ((e n).inv z) = 0)
-variable (hB : ∀ (n : ℕ) (z : V n),
-  z ∈ B n ↔ ∃ y : K.X ((ComplexShape.up ℕ).prev n),
-    K.d ((ComplexShape.up ℕ).prev n) n y = (e n).inv z)
-
-/-- A cocycle of a cochain complex of modules, viewed as a cycle of the complex. -/
-noncomputable def moduleCatCocyclesToCyclesOfIso (n : ℕ) :
-    ModuleCat.of R (Z n) ⟶ K.cycles n :=
-  K.liftCycles (ModuleCat.ofHom (Z n).subtype ≫ (e n).inv) (n + 1) (by simp) (by
-    exact ModuleCat.hom_ext (LinearMap.ext fun z ↦ (hZ n z.1).1 z.2))
-
-/-- The underlying element of the cycle associated to a cocycle is the cocycle transported through
-the chosen identification of the term of the complex. -/
-@[simp]
-lemma iCycles_moduleCatCocyclesToCyclesOfIso (n : ℕ) (z : Z n) :
-    K.iCycles n (K.moduleCatCocyclesToCyclesOfIso V Z e hZ n z) = (e n).inv z.1 := by
-  rw [moduleCatCocyclesToCyclesOfIso, ← ConcreteCategory.comp_apply, liftCycles_i]
-  -- The remaining composite is the subtype inclusion followed by the chosen term isomorphism.
-  rfl
-
-/-- The linear map sending a cocycle of a cochain complex of modules to its cohomology class. -/
-noncomputable def moduleCatCohomologyClassOfIso (n : ℕ) : Z n →ₗ[R] K.homology n :=
-  (K.moduleCatCocyclesToCyclesOfIso V Z e hZ n ≫ K.homologyπ n).hom
-
-/-- The class of a cocycle is the homology class of its associated cycle. -/
-lemma moduleCatCohomologyClassOfIso_apply (n : ℕ) (z : Z n) :
-    K.moduleCatCohomologyClassOfIso V Z e hZ n z =
-      K.homologyπ n (K.moduleCatCocyclesToCyclesOfIso V Z e hZ n z) := by
-  rw [moduleCatCohomologyClassOfIso, ← ModuleCat.comp_apply]
-
-/-- Every cohomology class of a cochain complex of modules is represented by a cocycle. -/
-lemma moduleCatCohomologyClassOfIso_surjective (n : ℕ) :
-    Function.Surjective (K.moduleCatCohomologyClassOfIso V Z e hZ n) := by
-  intro x
-  obtain ⟨z, rfl⟩ := K.moduleCat_homologyπ_surjective n x
-  have hz : (e n).hom (K.iCycles n z) ∈ Z n := (hZ n _).2 <| by
-    rw [Iso.hom_inv_id_apply, ← ConcreteCategory.comp_apply, K.iCycles_d]
-    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-  refine ⟨⟨(e n).hom (K.iCycles n z), hz⟩, ?_⟩
-  rw [moduleCatCohomologyClassOfIso_apply]
-  apply congrArg (K.homologyπ n)
-  apply K.moduleCat_iCycles_injective n
-  rw [iCycles_moduleCatCocyclesToCyclesOfIso, Iso.hom_inv_id_apply]
-
-/-- A cocycle has zero class exactly when its underlying element is in the image of the incoming
-differential from the degree preceding it. -/
-lemma moduleCatCohomologyClassOfIso_eq_zero_iff_exists {n m : ℕ}
-    (hm : (ComplexShape.up ℕ).prev n = m) (z : Z n) :
-    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔
-      ∃ y, K.d m n y = (e n).inv z.1 := by
-  rw [moduleCatCohomologyClassOfIso_apply, K.moduleCat_homologyπ_eq_zero_iff hm]
-  refine exists_congr fun y ↦ ?_
-  rw [← (K.moduleCat_iCycles_injective n).eq_iff,
-    iCycles_moduleCatCocyclesToCyclesOfIso, ← ModuleCat.comp_apply, toCycles_i]
-
-include hB
-
-/-- The class of a cocycle is zero exactly when its underlying element is a coboundary. -/
-lemma moduleCatCohomologyClassOfIso_eq_zero_iff (n : ℕ) (z : Z n) :
-    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔ z.1 ∈ B n := by
-  rw [K.moduleCatCohomologyClassOfIso_eq_zero_iff_exists V Z e hZ rfl]
-  exact (hB n z.1).symm
-
-/-- Two cocycles represent the same cohomology class exactly when their difference is a
-coboundary. -/
-lemma moduleCatCohomologyClassOfIso_eq_iff (n : ℕ) (z w : Z n) :
-    K.moduleCatCohomologyClassOfIso V Z e hZ n z =
-        K.moduleCatCohomologyClassOfIso V Z e hZ n w ↔ (z - w).1 ∈ B n := by
-  rw [← sub_eq_zero, ← map_sub, moduleCatCohomologyClassOfIso_eq_zero_iff K V Z B e hZ hB]
-
-end CochainPresentation
-
 variable {n} in
 /-- An element `x` of `K.X n` killed by the differential `K.d n m` out of degree `n`, as a cycle
 of degree `n`. -/
@@ -176,8 +97,8 @@ variable {n} {m : ι} (hm : c.next n = m) {Z : Type*} [AddCommGroup Z] [Module R
   (j : Z →ₗ[R] K.X n) (hj : ∀ z, K.d n m (j z) = 0)
 
 /-- The homology class map of a linear map `j` into the degree-`n` term of a complex of modules
-whose values are cycles. Unlike `HomologicalComplex.moduleCatCohomologyClassOfIso`, the source of
-`j` need not be a submodule of a module identified with the term, so subcomplexes are covered. -/
+whose values are cycles. The source of `j` need not be a submodule of a module identified with the
+term, so subcomplexes are covered. -/
 noncomputable def moduleCatHomologyClass : Z →ₗ[R] K.homology n :=
   (K.homologyπ n).hom ∘ₗ (K.sc n).moduleCatCyclesIso.inv.hom ∘ₗ
     j.codRestrict _ fun z ↦ by subst hm; exact hj z
@@ -229,6 +150,62 @@ lemma homologyMap_moduleCatHomologyClass {L : HomologicalComplex (ModuleCat R) c
     iCycles_moduleCatCyclesMk, h]
 
 end HomologyClass
+
+section CochainPresentation
+
+variable (K : CochainComplex (ModuleCat R) ℕ)
+variable (V : ℕ → Type*) [∀ n, AddCommGroup (V n)] [∀ n, Module R (V n)]
+variable (Z B : ∀ n, Submodule R (V n))
+variable (e : ∀ n, K.X n ≅ ModuleCat.of R (V n))
+variable (hZ : ∀ (n : ℕ) (z : V n),
+  z ∈ Z n ↔ K.d n (n + 1) ((e n).inv z) = 0)
+variable (hB : ∀ (n : ℕ) (z : V n),
+  z ∈ B n ↔ ∃ y : K.X ((ComplexShape.up ℕ).prev n),
+    K.d ((ComplexShape.up ℕ).prev n) n y = (e n).inv z)
+
+/-- The linear map sending a cocycle of a cochain complex of modules to its cohomology class, the
+homology class map of the cocycles transported through the chosen identifications of the terms. -/
+noncomputable def moduleCatCohomologyClassOfIso (n : ℕ) : Z n →ₗ[R] K.homology n :=
+  K.moduleCatHomologyClass (CochainComplex.next ℕ n) ((e n).inv.hom ∘ₗ (Z n).subtype)
+    fun z ↦ (hZ n z.1).1 z.2
+
+/-- The class of a cocycle is the homology class of the cocycle transported into the complex. -/
+lemma moduleCatCohomologyClassOfIso_apply (n : ℕ) (z : Z n) :
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z =
+      K.homologyπ n (K.moduleCatCyclesMk ((e n).inv z.1) (n + 1) (CochainComplex.next ℕ n)
+        ((hZ n z.1).1 z.2)) :=
+  (rfl)
+
+/-- Every cohomology class of a cochain complex of modules is represented by a cocycle. -/
+lemma moduleCatCohomologyClassOfIso_surjective (n : ℕ) :
+    Function.Surjective (K.moduleCatCohomologyClassOfIso V Z e hZ n) :=
+  K.moduleCatHomologyClass_surjective _ _ _ fun x hx ↦
+    ⟨⟨(e n).hom x, (hZ n _).2 (by rwa [Iso.hom_inv_id_apply])⟩, Iso.hom_inv_id_apply (e n) x⟩
+
+/-- A cocycle has zero class exactly when its underlying element is in the image of the incoming
+differential from the degree preceding it. -/
+lemma moduleCatCohomologyClassOfIso_eq_zero_iff_exists {n m : ℕ}
+    (hm : (ComplexShape.up ℕ).prev n = m) (z : Z n) :
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔
+      ∃ y, K.d m n y = (e n).inv z.1 :=
+  K.moduleCatHomologyClass_eq_zero_iff _ _ _ hm z
+
+include hB
+
+/-- The class of a cocycle is zero exactly when its underlying element is a coboundary. -/
+lemma moduleCatCohomologyClassOfIso_eq_zero_iff (n : ℕ) (z : Z n) :
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔ z.1 ∈ B n := by
+  rw [K.moduleCatCohomologyClassOfIso_eq_zero_iff_exists V Z e hZ rfl]
+  exact (hB n z.1).symm
+
+/-- Two cocycles represent the same cohomology class exactly when their difference is a
+coboundary. -/
+lemma moduleCatCohomologyClassOfIso_eq_iff (n : ℕ) (z w : Z n) :
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z =
+        K.moduleCatCohomologyClassOfIso V Z e hZ n w ↔ (z - w).1 ∈ B n := by
+  rw [← sub_eq_zero, ← map_sub, moduleCatCohomologyClassOfIso_eq_zero_iff K V Z B e hZ hB]
+
+end CochainPresentation
 
 variable {n} in
 /-- Two degree-`n` cycles of a complex of modules whose difference is a boundary have the same
