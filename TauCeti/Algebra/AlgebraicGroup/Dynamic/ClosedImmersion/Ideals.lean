@@ -31,9 +31,9 @@ open TauCeti TauCeti.Cocharacter
 
 namespace BialgHom
 
-universe u v
+universe u v w
 
-variable {R : Type u} {H K : Type v}
+variable {R : Type u} {H : Type v} {K : Type w}
   [CommRing R] [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
 
 /-- The dynamic parabolic of a closed subgroup is the scheme-theoretic inverse image
@@ -48,14 +48,13 @@ theorem parabolicDefiningHopfIdeal_eq_map_of_surjective
     (H := _root_.CommHopfAlgCat.of R K)
   intro A
   ext g
-  have hm := CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
-    (_root_.CommHopfAlgCat.ofHom φ) (parabolicDefiningHopfIdeal (l.comp φ)) A g
-  simp only [_root_.CommHopfAlgCat.hom_ofHom] at hm
-  rw [quotientPointsSubgroup_parabolicDefiningHopfIdeal, hm,
-    quotientPointsSubgroup_parabolicDefiningHopfIdeal]
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    _root_.CommHopfAlgCat.hom_ofHom, ← BialgHom.mapDomain_apply]
-  exact mem_parabolic_iff_of_surjective φ hφ l g
+  rw [quotientPointsSubgroup_parabolicDefiningHopfIdeal,
+    mem_parabolic_iff_of_surjective φ hφ l g,
+    ← quotientPointsSubgroup_parabolicDefiningHopfIdeal]
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simp only [HopfIdeal.mem_map_iff_of_surjective hφ, BialgHom.mapDomain_apply_apply,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
 
 /-- The dynamic unipotent subgroup of a closed subgroup is the scheme-theoretic inverse
 image of the ambient dynamic unipotent subgroup. -/
@@ -67,13 +66,12 @@ theorem unipotentDefiningHopfIdeal_eq_map_of_surjective
     (H := _root_.CommHopfAlgCat.of R K)
   intro A
   ext g
-  have hm := CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
-    (_root_.CommHopfAlgCat.ofHom φ) (l.comp φ).unipotentDefiningHopfIdeal A g
-  simp only [_root_.CommHopfAlgCat.hom_ofHom] at hm
-  rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal, hm,
-    quotientPointsSubgroup_unipotentDefiningHopfIdeal]
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    _root_.CommHopfAlgCat.hom_ofHom, ← BialgHom.mapDomain_apply]
-  exact mem_unipotent_iff_of_surjective φ hφ l g
+  rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal,
+    mem_unipotent_iff_of_surjective φ hφ l g,
+    ← quotientPointsSubgroup_unipotentDefiningHopfIdeal]
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simp only [HopfIdeal.mem_map_iff_of_surjective hφ, BialgHom.mapDomain_apply_apply,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
 
 end BialgHom

@@ -35,11 +35,11 @@ open TauCeti.Cocharacter
 
 namespace TauCeti.GeneralLinear.Dynamic
 
-universe u v
+universe u v w
 
 variable {R : Type u} [CommRing R] {N : ℕ}
-variable {H : Type u} [CommRing H] [HopfAlgebra R H]
-variable {B : Type v} [CommRing B] [Algebra R B]
+variable {H : Type v} [CommRing H] [HopfAlgebra R H]
+variable {B : Type w} [CommRing B] [Algebra R B]
 
 /-- In a faithful representation with diagonal cocharacter, the dynamic parabolic Lie
 algebra is cut out by the negative-weight matrix entries of the differential. -/
