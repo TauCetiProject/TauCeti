@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Bases.Map
-public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 
