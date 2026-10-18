@@ -21,7 +21,13 @@ finite type algebras is the J-2 condition of Stacks, Definition 15.48.1 (07P7).
 ## Main definitions and results
 
 * `TauCeti.Excellence.regularLocus R`: the primes `p` of `R` with `R_p` a regular local ring.
-* `TauCeti.Excellence.regularLocus_eq_univ`: a regular ring is regular at every prime.
+* `TauCeti.Excellence.mem_regularLocus_iff_of_isLocalization`: membership can be tested on any
+  localization of `R` at the prime, not only on `Localization.AtPrime`.
+* `TauCeti.Excellence.regularLocus_eq_univ`: a regular ring is regular at every prime, and
+  `TauCeti.Excellence.regularLocus_eq_univ_iff`: conversely, a Noetherian ring regular at every
+  prime is a regular ring.
+* `TauCeti.Excellence.algebraMap_eq_zero_of_mem_regularLocus_of_isNilpotent`: a nilpotent element
+  of `R` vanishes in every localization at a prime of the regular locus.
 * `TauCeti.Excellence.regularLocus_ringEquiv`: a ring isomorphism `R ≃+* S` identifies the regular
   loci through the induced homeomorphism of prime spectra.
 * `TauCeti.Excellence.regularLocus_eq_empty_of_subsingleton`: the zero ring has empty regular
@@ -38,8 +44,10 @@ finite type algebras is the J-2 condition of Stacks, Definition 15.48.1 (07P7).
   `lean/Pcf/Bounding/FiniteTypeRegularLocus.lean`: `regularLocus` and `regularLocus_eq_univ` are
   its `Pcf.primeRegularLocus` and `Pcf.primeRegularLocus_eq_univ`, and `regularLocus_ringEquiv`
   follows the comap-preimage form of its `Pcf.preimage_primeRegularLocus_of_isLocalization`
-  together with its `Pcf.isRegularLocalRing_iff_of_ringEquiv`. The empty-locus results and the
-  examples are new here.
+  together with its `Pcf.isRegularLocalRing_iff_of_ringEquiv`. New here, with no source in that
+  project: `mem_regularLocus_iff_of_isLocalization`, `regularLocus_eq_univ_iff`,
+  `algebraMap_eq_zero_of_mem_regularLocus_of_isNilpotent`, the empty-locus results and the
+  examples.
 -/
 
 public section
@@ -60,10 +68,27 @@ theorem mem_regularLocus {p : PrimeSpectrum R} :
     p ∈ regularLocus R ↔ IsRegularLocalRing (Localization.AtPrime p.asIdeal) :=
   Iff.rfl
 
+/-- A prime `p` lies in the regular locus exactly when some, equivalently every, localization `S`
+of `R` at `p` is a regular local ring. -/
+theorem mem_regularLocus_iff_of_isLocalization {p : PrimeSpectrum R} (S : Type*) [CommRing S]
+    [Algebra R S] [IsLocalization.AtPrime S p.asIdeal] :
+    p ∈ regularLocus R ↔ IsRegularLocalRing S := by
+  let e : Localization.AtPrime p.asIdeal ≃+* S :=
+    (IsLocalization.algEquiv p.asIdeal.primeCompl _ S).toRingEquiv
+  rw [mem_regularLocus]
+  exact ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
+
 variable (R) in
 /-- Every prime of a regular ring lies in its regular locus. -/
 theorem regularLocus_eq_univ [IsRegularRing R] : regularLocus R = Set.univ :=
   Set.eq_univ_of_forall fun _ ↦ mem_regularLocus.mpr inferInstance
+
+variable (R) in
+/-- A Noetherian ring is a regular ring exactly when its regular locus is everything. -/
+theorem regularLocus_eq_univ_iff [IsNoetherianRing R] :
+    regularLocus R = Set.univ ↔ IsRegularRing R :=
+  ⟨fun h ↦ isRegularRing_iff.mpr fun q hq ↦
+    mem_regularLocus.mp (Set.eq_univ_iff_forall.mp h ⟨q, hq⟩), fun _ ↦ regularLocus_eq_univ R⟩
 
 /-- A ring isomorphism `e : R ≃+* S` identifies the regular loci: a prime `p` of `S` is in the
 regular locus of `S` exactly when its contraction to `R` is in the regular locus of `R`. -/
@@ -75,6 +100,14 @@ theorem regularLocus_ringEquiv {S : Type*} [CommRing S] (e : R ≃+* S) :
   exact ⟨fun h ↦ @IsRegularLocalRing.of_ringEquiv _ _ h _ _ f,
     fun h ↦ @IsRegularLocalRing.of_ringEquiv _ _ h _ _ f.symm⟩
 
+/-- A nilpotent element of `R` vanishes in every localization `S` of `R` at a prime of the regular
+locus, since a regular local ring is a domain. -/
+theorem algebraMap_eq_zero_of_mem_regularLocus_of_isNilpotent {p : PrimeSpectrum R}
+    (hp : p ∈ regularLocus R) (S : Type*) [CommRing S] [Algebra R S]
+    [IsLocalization.AtPrime S p.asIdeal] {a : R} (ha : IsNilpotent a) : algebraMap R S a = 0 :=
+  have := (mem_regularLocus_iff_of_isLocalization S).mp hp
+  (ha.map _).eq_zero
+
 variable (R) in
 /-- The zero ring has empty regular locus, as it has no primes. -/
 theorem regularLocus_eq_empty_of_subsingleton [Subsingleton R] : regularLocus R = ∅ :=
@@ -83,23 +116,16 @@ theorem regularLocus_eq_empty_of_subsingleton [Subsingleton R] : regularLocus R 
 variable (k : Type*) [CommRing k]
 
 /-- The dual numbers `k[ε]/(ε²)` over a commutative ring `k` have empty regular locus: in every
-localization at a prime, `ε` is a nonzero element with `ε² = 0`, so no such localization is a
-domain, whereas a regular local ring is a domain. -/
+localization at a prime, `ε` is a nonzero element with `ε² = 0`, whereas nilpotents vanish in the
+localizations at primes of the regular locus. -/
 theorem regularLocus_trivSqZeroExt_eq_empty : regularLocus (TrivSqZeroExt k k) = ∅ := by
   refine Set.eq_empty_of_forall_notMem fun p hp ↦ ?_
-  rw [mem_regularLocus] at hp
-  -- Argue for an abstract localization `S`: on `Localization.AtPrime` itself the domain instance
-  -- of a regular local ring does not unify with the localization's own semiring structure.
-  suffices ∀ (S : Type _) [CommRing S] [Algebra (TrivSqZeroExt k k) S]
-      [IsLocalization.AtPrime S p.asIdeal] [IsRegularLocalRing S], False from
-    this (Localization.AtPrime p.asIdeal)
-  intro S _ _ _ _
   set ε : TrivSqZeroExt k k := TrivSqZeroExt.inr 1
   have hεsq : ε * ε = 0 := by simp [ε]
-  have hε : algebraMap (TrivSqZeroExt k k) S ε = 0 :=
-    mul_self_eq_zero.mp (by rw [← map_mul, hεsq, map_zero])
+  have hε := algebraMap_eq_zero_of_mem_regularLocus_of_isNilpotent hp
+    (Localization.AtPrime p.asIdeal) (a := ε) ⟨2, by rw [pow_two, hεsq]⟩
   -- Some `s ∉ p` kills `ε`; comparing second components forces `s.fst = 0`, so `s ^ 2 = 0 ∈ p`.
-  obtain ⟨⟨s, hs⟩, hsε⟩ := (IsLocalization.map_eq_zero_iff p.asIdeal.primeCompl S ε).mp hε
+  obtain ⟨⟨s, hs⟩, hsε⟩ := (IsLocalization.map_eq_zero_iff p.asIdeal.primeCompl _ ε).mp hε
   have hfst : s.fst = 0 := by
     simpa [ε] using congrArg TrivSqZeroExt.snd hsε
   have hss : s * s = 0 := by
