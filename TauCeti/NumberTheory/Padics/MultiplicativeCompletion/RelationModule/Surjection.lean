@@ -126,6 +126,7 @@ private theorem explicitCoeff2_contCohomologyClass_of_presentation
   let V := (galoisSubgroup K L j).toSubgroup
   have hRV : R ≤ V.comap φ.toMonoidHom := by
     intro r hr
+    -- Expose membership in the abbreviations `R` and `V` so the kernel lemmas apply.
     change φ r ∈ (galoisSubgroup K L j).toSubgroup
     rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom, MonoidHom.mem_ker]
     simpa [R] using (hφ r).trans (MonoidHom.mem_ker.mp hr)
@@ -142,22 +143,21 @@ private theorem explicitCoeff2_contCohomologyClass_of_presentation
     apply MonoidHom.ext
     intro f
     simp only [MonoidHom.comp_apply]
-    change Y.toGroupExtension.rightHom (ψ (QuotientGroup.mk f)) =
-      X.toGroupExtension.rightHom (QuotientGroup.mk f)
-    rw [show ψ (QuotientGroup.mk f) = QuotientGroup.mk (φ f) by
-      exact abelianizationProPExtensionMap_mk p φ.toMonoidHom φ.continuous hRV f,
-      show Y.toGroupExtension.rightHom (QuotientGroup.mk (φ f)) =
-          j.restrictNormalHom (φ f) by
-        exact galoisClassModuleExtension_rightHom_mk p K L j (φ f),
-      show X.toGroupExtension.rightHom (QuotientGroup.mk f) =
-          freeProfiniteGroup.lift g f by
-        exact freeProfiniteGroup.presentationProfiniteExtension_rightHom_mk p hd f]
-    exact hφ f
+    calc
+      Y.toGroupExtension.rightHom (ψ (QuotientGroup.mk f)) =
+          Y.toGroupExtension.rightHom (QuotientGroup.mk (φ f)) := congrArg _
+            (abelianizationProPExtensionMap_mk p φ.toMonoidHom φ.continuous hRV f)
+      _ = j.restrictNormalHom (φ f) := by
+        simp [Y]
+      _ = freeProfiniteGroup.lift g f := hφ f
+      _ = X.toGroupExtension.rightHom (QuotientGroup.mk f) := by
+        simp [X]
   let k := relationModuleToAbelianizationProPEquivariant p K L hg β j
   have hk_map : k.toMonoidHom = abelianizationProPMap p φ.toMonoidHom φ.continuous hRV := by
     apply MonoidHom.ext
     intro x
     obtain ⟨r, rfl⟩ := abelianizationProPMk_surjective p (freeProfiniteGroup ι) R x
+    -- Expose the map applications hidden by `k` and `R` so their application lemmas rewrite.
     change relationModuleToAbelianizationProPEquivariant p K L hg β j
         (abelianizationProPMk p (freeProfiniteGroup ι) R r) = _
     rw [relationModuleToAbelianizationProPEquivariant_apply,
