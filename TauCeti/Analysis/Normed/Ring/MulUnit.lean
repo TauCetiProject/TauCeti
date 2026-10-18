@@ -15,8 +15,9 @@ A multiplicative unit is an invertible element whose left multiplication scales 
 its own norm. This singles out the units needed in norm estimates over coefficient rings whose
 norm need not be multiplicative. In a norm-one ring, the condition is equivalent to the inverse
 having reciprocal norm, and norm-preserving ring homomorphisms preserve multiplicative units
-from a norm-one source ring. Powers and finite products of multiplicative units are again
-multiplicative units, and their norms are the corresponding powers and products of norms. In a
+from a norm-one source ring. A nontrivial normed ring with a multiplicative unit has
+`‖1‖ = 1`. Powers and finite products of multiplicative units are again multiplicative units,
+and their norms are the corresponding powers and products of norms. In a
 complete ultrametric norm-one ring, small perturbations of one are multiplicative units.
 
 ## References
@@ -80,6 +81,12 @@ theorem mul {u v : R} (hu : IsNormMulUnit u) (hv : IsNormMulUnit v) :
   refine ⟨hu.isUnit.mul hv.isUnit, fun x ↦ ?_⟩
   rw [mul_assoc, hu.norm_mul, hv.norm_mul, hu.norm_mul, mul_assoc]
 
+/-- A nontrivial normed ring with a multiplicative unit has `‖1‖ = 1`. -/
+theorem norm_one {A : Type*} [NormedRing A] [Nontrivial A] {u : A} (hu : IsNormMulUnit u) :
+    ‖(1 : A)‖ = 1 := by
+  obtain ⟨v, rfl⟩ := hu.isUnit
+  exact NormedRing.norm_one_of_norm_units_mul (norm_pos_iff.mpr (Units.ne_zero v)) hu.norm_mul
+
 end IsNormMulUnit
 
 section NormOne
@@ -126,7 +133,7 @@ even when they are not onto. -/
 theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →+* S)
     (hφ : ∀ x, ‖φ x‖ = ‖x‖) : IsNormMulUnit (φ u) := by
   obtain ⟨v, rfl⟩ := hu.isUnit
-  let : NormOneClass S := ⟨by rw [← φ.map_one, hφ, norm_one]⟩
+  let : NormOneClass S := ⟨by rw [← φ.map_one, hφ, NormOneClass.norm_one]⟩
   have hv := (Units.isNormMulUnit_iff_norm_inv v).mp hu
   apply (Units.isNormMulUnit_iff_norm_inv (Units.map φ.toMonoidHom v)).mpr
   exact (hφ _).trans (hv.trans (congrArg (·⁻¹) (hφ _).symm))

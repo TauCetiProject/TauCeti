@@ -28,23 +28,6 @@ and compatibility with constants are inherited without introducing another serie
 
 public section
 
-namespace MvPowerSeries
-
-open Filter TauCeti
-
-variable {σ R : Type*} [NormedCommRing R] {r s : σ → ℝ}
-
-/-- Rescaling by multiplicative units converts restrictedness at `r` into restrictedness at `s`
-when `‖u i‖ * s i = r i`. -/
-theorem isRestricted_rescale_iff (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
-    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : MvPowerSeries σ R) :
-    IsRestricted s (MvPowerSeries.rescale u f) ↔ IsRestricted r f := by
-  unfold IsRestricted
-  apply tendsto_congr'
-  exact .of_forall (norm_coeff_rescale_mul_prod u hu hrs f)
-
-end MvPowerSeries
-
 namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
