@@ -163,6 +163,13 @@ def mul (A : GradedQuasicoherentAlgebra X) (i j : ℕ) :
     A.obj.X i ⊗ A.obj.X j ⟶ A.obj.X (i + j) :=
   GradedObject.Monoidal.ιTensorObj A.obj.X A.obj.X i j (i + j) rfl ≫ μ[A.obj.X] (i + j)
 
+/-- Homogeneous multiplication is the multiplication of `A` on the summand `Aᵢ ⊗ Aⱼ` of degree
+`i + j` of `A ⊗ A`. -/
+theorem mul_def (A : GradedQuasicoherentAlgebra X) (i j : ℕ) :
+    A.mul i j =
+      GradedObject.Monoidal.ιTensorObj A.obj.X A.obj.X i j (i + j) rfl ≫ μ[A.obj.X] (i + j) :=
+  (rfl)
+
 /-- Multiplication through the summand of degree `n = i + j` is homogeneous multiplication
 followed by the transport along `i + j = n`. -/
 private theorem ιTensorObj_mul (A : GradedQuasicoherentAlgebra X) {i j n : ℕ} (h : i + j = n) :
@@ -243,6 +250,12 @@ theorem map_mul {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (i j : ℕ) :
 to its degree-zero component. -/
 def one (A : GradedQuasicoherentAlgebra X) : 𝟙_ X.Modules ⟶ A.obj.X 0 :=
   (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv ≫ η[A.obj.X] 0
+
+/-- The unit is the degree-zero component of the unit of `A`, through the identification of
+the degree-zero component of the tensor unit with the structure sheaf. -/
+theorem one_def (A : GradedQuasicoherentAlgebra X) :
+    A.one = (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv ≫ η[A.obj.X] 0 :=
+  (rfl)
 
 /-- A graded algebra morphism preserves the unit in degree zero. -/
 @[reassoc, simp]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.Basic
+public import Mathlib.Basic.Countable.Basic
 
 /-!
 # Atomic types of finite tuples
@@ -38,6 +39,20 @@ inductive AtomicIdx (L : Language.{u, v}) (n : ℕ) : Type v where
 variable {L : Language.{u, v}} {n : ℕ}
 variable {M : Type w} {N : Type w'} {P : Type w''}
 variable [L.Structure M] [L.Structure N] [L.Structure P]
+
+/-- A countable relation language has countably many atomic tests on a finite tuple. -/
+instance [Countable (Σ k, L.Relations k)] : Countable (AtomicIdx L n) := by
+  have : ∀ k, Countable (L.Relations k) := fun k =>
+    (sigma_mk_injective (i := k)).countable
+  let f : AtomicIdx L n → (Fin n × Fin n) ⊕ (Σ k, L.Relations k × (Fin k → Fin n))
+    | .eq i j => .inl (i, j)
+    | .rel r g => .inr ⟨_, r, g⟩
+  apply Function.Injective.countable (f := f)
+  intro i j hij
+  cases i <;> cases j <;> simp_all [f]
+  rcases hij with ⟨rfl, h⟩
+  cases eq_of_heq h
+  simp
 
 /-- Evaluate an atomic test at a tuple. -/
 def AtomicIdx.Holds : AtomicIdx L n → (Fin n → M) → Prop

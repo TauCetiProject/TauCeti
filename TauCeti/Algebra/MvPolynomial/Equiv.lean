@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Data.Finsupp.Fin
 
 /-!
@@ -187,6 +188,22 @@ theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y :
     polynomial_eval_map_finSuccEquiv' φ 0 s y f
 
 end Map
+
+/-- Rotating the last variable to coordinate zero before singling it out is the same as
+singling out the last variable directly. This identifies the coordinate-zero convention for
+polynomial families with the last-coordinate convention for successive base specialization. -/
+theorem finSuccEquiv_rename_finRotate (f : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv R n (rename (finRotate (n + 1)) f) =
+      optionEquivLeft R (Fin n) (rename finSuccEquivLast f) := by
+  have h : (finSuccEquiv R n).toAlgHom.comp (rename (finRotate (n + 1))) =
+      (optionEquivLeft R (Fin n)).toAlgHom.comp (rename finSuccEquivLast) := by
+    apply algHom_ext
+    intro i
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · simp [finSuccEquiv_X_zero, optionEquivLeft_X_none]
+    · have hrot : finRotate (n + 1) j.castSucc = j.succ := finRotate_of_lt j.isLt
+      simp [hrot, finSuccEquiv_X_succ, optionEquivLeft_X_some]
+  exact DFunLike.congr_fun h f
 
 /-- Moving the polynomial variable into the coefficient ring maps a constant multivariate
 polynomial by the univariate constant-coefficient homomorphism. -/
