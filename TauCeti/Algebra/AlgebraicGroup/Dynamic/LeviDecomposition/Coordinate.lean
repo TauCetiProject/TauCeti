@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Levi.Representability
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Representability
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 public import TauCeti.Algebra.AlgebraicGroup.Product
 
@@ -94,14 +94,38 @@ private theorem decompositionPointsEquiv_mapValue (l : H →ₐc[R] LaurentPolyn
     (f : WithConv (((U l) ⊗[R] (Z l)) →ₐ[R] A)) :
     decompositionPointsEquiv l B (AlgHom.mapValue φ.hom f) =
       AlgHom.mapValue φ.hom (decompositionPointsEquiv l A f) := by
-  apply CommHopfAlgCat.quotientPointsHom_injective
-    (_root_.CommHopfAlgCat.of R H) (parabolicDefiningHopfIdeal l) B
-  rw [decompositionPointsEquiv_ambient,
-    ← CommHopfAlgCat.mapValue_quotientPointsHom, decompositionPointsEquiv_ambient,
-    map_mul, AffineGroup.Product.pointsMulEquiv_mapValue]
-  exact congrArg₂ (· * ·)
-    (CommHopfAlgCat.mapValue_quotientPointsHom _ _ φ.hom _).symm
-    (CommHopfAlgCat.mapValue_quotientPointsHom _ _ φ.hom _).symm
+  have hU : l.unipotentPointsIso.hom.app B
+      (AlgHom.mapValue φ.hom (AffineGroup.Product.pointsMulEquiv f).1) =
+      mapUnipotent l φ
+        (l.unipotentPointsIso.hom.app A (AffineGroup.Product.pointsMulEquiv f).1) := by
+    have hn := l.unipotentPointsIso.hom.naturality φ
+    rw [unipotentFunctor_map, HopfAlgebra.pointsFunctor_map] at hn
+    exact congrArg (fun k ↦ k.hom (AffineGroup.Product.pointsMulEquiv f).1) hn
+  have hZ : (leviPointsIso l).hom.app B
+      (AlgHom.mapValue φ.hom (AffineGroup.Product.pointsMulEquiv f).2) =
+      mapLevi l φ ((leviPointsIso l).hom.app A (AffineGroup.Product.pointsMulEquiv f).2) := by
+    have hn := (leviPointsIso l).hom.naturality φ
+    rw [leviFunctor_map, HopfAlgebra.pointsFunctor_map] at hn
+    exact congrArg (fun k ↦ k.hom (AffineGroup.Product.pointsMulEquiv f).2) hn
+  have hP (g : parabolic A l) : (parabolicPointsIso l).inv.app B (mapParabolic l φ g) =
+      AlgHom.mapValue φ.hom ((parabolicPointsIso l).inv.app A g) := by
+    have hn := (parabolicPointsIso l).inv.naturality φ
+    rw [parabolicFunctor_map, HopfAlgebra.pointsFunctor_map] at hn
+    exact congrArg (fun k ↦ k.hom g) hn
+  -- Expand only the composite equivalence to apply naturality of its three representing
+  -- isomorphisms and the existing dynamic Levi decomposition.
+  change (parabolicPointsIso l).inv.app B
+    (leviDecompositionMulEquiv B l
+      ⟨l.unipotentPointsIso.hom.app B
+          (AffineGroup.Product.pointsMulEquiv (AlgHom.mapValue φ.hom f)).1,
+        (leviPointsIso l).hom.app B
+          (AffineGroup.Product.pointsMulEquiv (AlgHom.mapValue φ.hom f)).2⟩) =
+    AlgHom.mapValue φ.hom ((parabolicPointsIso l).inv.app A
+      (leviDecompositionMulEquiv A l
+        ⟨l.unipotentPointsIso.hom.app A (AffineGroup.Product.pointsMulEquiv f).1,
+          (leviPointsIso l).hom.app A (AffineGroup.Product.pointsMulEquiv f).2⟩))
+  rw [AffineGroup.Product.pointsMulEquiv_mapValue, hU, hZ, ← hP,
+    mapParabolic_leviDecompositionMulEquiv_apply, leviSemidirectMap_apply]
 
 /-- The Levi factorization as a bijection between algebra-category hom sets. -/
 private noncomputable def decompositionHomEquiv (l : H →ₐc[R] LaurentPolynomial R)
