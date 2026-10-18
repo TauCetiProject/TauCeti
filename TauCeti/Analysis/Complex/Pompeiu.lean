@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Topology.Algebra.Module.ComplexSmulI
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.CauchyKernel
 
