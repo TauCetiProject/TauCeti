@@ -5,17 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
-public import Mathlib.Algebra.Polynomial.Degree.Defs
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Data.Set.Countable
 
 /-!
 # Countable ideal-adic approximation of bounded-degree polynomials
 
-Over a domain with finite quotients, every set of polynomials of bounded degree has a countable
-subset that approximates each of its members coefficientwise modulo every power of a fixed
-nonzero ideal. The approximants stay in the original set, so constraints such as monicity or
-the Eisenstein condition are preserved without separate stability arguments.
+Over a commutative ring, if the quotients by powers of an ideal are countable, every set of
+polynomials of bounded degree has a countable subset that approximates each of its members
+coefficientwise modulo every power of that ideal. The approximants stay in the original set,
+so constraints such as monicity or the Eisenstein condition are preserved without separate
+stability arguments.
 
 This gives countable families of defining polynomials when root counts are locally constant
 under ideal-adic perturbations. No topology on the coefficient ring is required.
@@ -27,19 +29,20 @@ open Polynomial
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] [IsDomain R] [Ring.HasFiniteQuotients R]
+variable {R : Type*} [CommRing R]
 
 /-- A set of polynomials of bounded degree has a countable subset approximating all its members
-coefficientwise modulo every power of a nonzero ideal. The approximants belong to the given set.
+coefficientwise modulo every power of an ideal whose power quotients are countable.
+The approximants belong to the given set.
 -/
-theorem _root_.Ideal.exists_countable_polynomial_approximations (I : Ideal R) (hI : I ≠ ⊥)
+theorem _root_.Ideal.exists_countable_polynomial_approximations (I : Ideal R)
+    (hI : ∀ k : ℕ, Countable (R ⧸ I ^ k))
     (s : Set R[X]) {n : ℕ} (hn : ∀ f ∈ s, f.natDegree ≤ n) :
     ∃ t ⊆ s, t.Countable ∧ ∀ f ∈ s, ∀ k : ℕ, ∃ g ∈ t,
       ∀ i, g.coeff i - f.coeff i ∈ I ^ k := by
   classical
-  have (k : ℕ) : Finite (R ⧸ I ^ k) :=
-    Ring.HasFiniteQuotients.finiteQuotient (pow_ne_zero k hI)
-  -- There are only finitely many residue vectors at each precision. Choose representatives
+  have (k : ℕ) : Countable (R ⧸ I ^ k) := hI k
+  -- There are only countably many residue vectors at each precision. Choose representatives
   -- only from the specified set, leaving an arbitrary value at unrealized vectors.
   let residue (k : ℕ) (f : R[X]) : Fin (n + 1) → R ⧸ I ^ k :=
     fun i ↦ Ideal.Quotient.mk (I ^ k) (f.coeff i)

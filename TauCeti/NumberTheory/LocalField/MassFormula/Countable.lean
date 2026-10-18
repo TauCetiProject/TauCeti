@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein
+import TauCeti.FieldTheory.IntermediateField.Card
 import TauCeti.NumberTheory.LocalField.RootCount
 import TauCeti.RingTheory.Polynomial.Approximation
 
@@ -41,19 +42,23 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- The totally ramified degree-`n` subextensions of a separable closure of a nonarchimedean
 local field form a countable set, also in equal characteristic. -/
-theorem totallyRamifiedOfDegree_countable {n : ℕ} (hn : 0 < n) :
+theorem countable_totallyRamifiedOfDegree {n : ℕ} (hn : 0 < n) :
     (totallyRamifiedOfDegree K n).Countable := by
   classical
   -- Approximate within the Eisenstein locus itself, so every chosen polynomial still has
   -- the prescribed degree and its roots generate extensions of that degree.
   let S : Set 𝒪[K][X] := {f | f.Monic ∧ f.IsEisensteinAt 𝓂[K] ∧ f.natDegree = n}
+  have hquot (k : ℕ) : Countable (𝒪[K] ⧸ 𝓂[K] ^ k) := by
+    have : Finite (𝒪[K] ⧸ 𝓂[K] ^ k) := Ring.HasFiniteQuotients.finiteQuotient
+      (pow_ne_zero k (IsDiscreteValuationRing.not_a_field 𝒪[K]))
+    infer_instance
   obtain ⟨s, hsS, hs, happrox⟩ :=
     (𝓂[K]).exists_countable_polynomial_approximations
-      (IsDiscreteValuationRing.not_a_field 𝒪[K]) S (fun f hf ↦ hf.2.2.le)
-  have hcover : (⋃ f ∈ s, (fun x : SeparableClosure K ↦ K⟮x⟯) ''
-      (f.map (algebraMap 𝒪[K] K)).rootSet (SeparableClosure K)).Countable :=
-    hs.biUnion fun f _ ↦ ((f.map (algebraMap 𝒪[K] K)).rootSet_finite
-      (SeparableClosure K)).countable.image _
+      hquot S (fun f hf ↦ hf.2.2.le)
+  have hcover : (⋃ f ∈ s, {L : IntermediateField K (SeparableClosure K) |
+      ∃ x ∈ (f.map (algebraMap 𝒪[K] K)).rootSet (SeparableClosure K), L = K⟮x⟯}).Countable :=
+    hs.biUnion fun f _ ↦ (IntermediateField.finite_setOf_exists_mem_eq_adjoin_simple_of_finite
+      ((f.map (algebraMap 𝒪[K] K)).rootSet_finite (SeparableClosure K))).countable
   refine hcover.mono fun L hL ↦ ?_
   have hL' := mem_totallyRamifiedOfDegree_iff.mp hL
   have := hL'.2.finite
@@ -91,6 +96,6 @@ theorem totallyRamifiedOfDegree_countable {n : ℕ} (hn : 0 < n) :
     IntermediateField.eq_of_le_of_finrank_eq
       (IntermediateField.adjoin_simple_le_iff.mpr z.property) (hzdeg.trans hL'.1.symm)
   refine Set.mem_iUnion.mpr ⟨g, Set.mem_iUnion.mpr ⟨hgs, ?_⟩⟩
-  exact ⟨L.val z, (hg.map _).mem_rootSet.mpr hzroot, hzgen⟩
+  exact ⟨L.val z, (hg.map _).mem_rootSet.mpr hzroot, hzgen.symm⟩
 
 end TauCeti
