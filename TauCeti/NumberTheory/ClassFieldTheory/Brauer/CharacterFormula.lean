@@ -294,23 +294,15 @@ theorem exists_subgroupInvMap_characterCarryCocycle_eq (H : Subgroup (AbsoluteGa
   -- `H` is the subgroup fixing its fixed field `E`, which is finite over `K`.
   obtain ⟨E, _, rfl⟩ : ∃ E : IntermediateField K (SeparableClosure K),
       FiniteDimensional K E ∧ E.val.fieldRange.fixingSubgroup = H := by
-    obtain ⟨E, hE⟩ : ∃ E : IntermediateField K (SeparableClosure K), E.fixingSubgroup = H :=
-      ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨H, Subgroup.isClosed_of_isOpen H hH⟩⟩
-    refine ⟨E, ?_, by rw [IntermediateField.fieldRange_val, hE]⟩
-    rw [← InfiniteGalois.isOpen_iff_finite, hE]
-    exact hH
+    let U : OpenSubgroup (AbsoluteGaloisGroup K) := ⟨H, hH⟩
+    refine ⟨_, finiteDimensional_fixedField_toSubgroup U, ?_⟩
+    rw [IntermediateField.fieldRange_val, ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl]
   let T := absoluteGaloisGroupEquivFixingSubgroup K E E.val
   let e := absoluteGaloisGroupRestrictEquiv E
-  -- The elements on which `ψ` takes the value `ψ(h)` form a coset of its open kernel.
+  -- The elements on which `ψ` takes the value `ψ(h)` form an open set, `ψ` being locally constant.
   let S : Set (Field.absoluteGaloisGroup E) := {ρ | ψ (.ofMul (T (e ρ))) = ψ (.ofMul h)}
-  have hS : IsOpen S := by
-    have : S = (fun ρ ↦ Additive.ofMul (h⁻¹ * T (e ρ))) ⁻¹' ψ.ker := Set.ext fun ρ ↦ by
-      rw [Set.mem_preimage, SetLike.mem_coe, AddMonoidHom.mem_ker, ofMul_mul, map_add, ofMul_inv,
-        map_neg, neg_add_eq_zero, eq_comm]
-      rfl
-    rw [this]
-    exact hψ.preimage (continuous_ofMul.comp (continuous_const.mul
-      (T.continuous.comp e.continuous)))
+  have hS : IsOpen S := ((ψ.isLocallyConstant_of_isOpen_ker hψ).comp_continuous
+    (continuous_ofMul.comp (T.continuous.comp e.continuous))).isOpen_fiber _
   have hh : e.symm (T.symm h) ∈ S := by simp [S]
   -- The canonical structure of nonarchimedean local field on `E`.
   let _ := algebraicExtensionValuativeRel K E
