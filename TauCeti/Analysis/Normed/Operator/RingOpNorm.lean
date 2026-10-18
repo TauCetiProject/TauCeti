@@ -204,6 +204,14 @@ theorem ringOpNorm_zero : ‖(0 : E →SL[σ] F)‖ = 0 :=
 theorem ringOpNorm_id_le : ‖ContinuousLinearMap.id R E‖ ≤ 1 :=
   ringOpNorm_le_bound _ zero_le_one fun x ↦ by simp
 
+/-- If some vector has nonzero norm, then the identity has norm `1`. -/
+@[simp]
+theorem ringOpNorm_id [NontrivialTopology E] : ‖ContinuousLinearMap.id R E‖ = 1 := by
+  refine le_antisymm ringOpNorm_id_le ?_
+  obtain ⟨x, hx⟩ := exists_norm_ne_zero E
+  have h := le_ringOpNorm_of_exists_bound (ContinuousLinearMap.id R E) ⟨1, fun x ↦ by simp⟩ x
+  exact le_of_mul_le_mul_right (by simpa using h) ((norm_nonneg x).lt_of_ne' hx)
+
 /-- A composition of maps with uniform bounds is bounded by the product of their operator
 norms. -/
 theorem ringOpNorm_comp_le_of_exists_bound (g : F →SL[τ] G) (f : E →SL[σ] F)
@@ -275,13 +283,6 @@ theorem ringOpNorm_add_le_max [IsUltrametricDist F] (f g : E →L[R] F) :
 theorem ringOpNorm_comp_le (g : F →L[R] G) (f : E →L[R] F) : ‖g.comp f‖ ≤ ‖g‖ * ‖f‖ :=
   ringOpNorm_comp_le_of_exists_bound g f ((ringOpNorm_bound g).imp fun _ h ↦ h.2)
     ((ringOpNorm_bound f).imp fun _ h ↦ h.2)
-
-/-- If some vector has nonzero norm, then the identity has norm `1`. -/
-@[simp]
-theorem ringOpNorm_id [NontrivialTopology E] : ‖ContinuousLinearMap.id R E‖ = 1 := by
-  refine le_antisymm ringOpNorm_id_le ?_
-  obtain ⟨x, hx⟩ := exists_norm_ne_zero E
-  simpa [div_self hx] using ratio_le_ringOpNorm (ContinuousLinearMap.id R E) x
 
 /-- Scalar multiplication of operators is contractive for the operator norm. -/
 theorem ringOpNorm_smul_le {S : Type*} [SeminormedAddCommGroup S] [DistribSMul S F]
