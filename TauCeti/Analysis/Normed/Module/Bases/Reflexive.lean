@@ -71,6 +71,12 @@ theorem coord_sum_range (a : ℕ → 𝕜) {i n : ℕ} (hi : i < n) :
   classical
   simp [map_sum, b.ortho, Pi.single_apply, hi]
 
+/-- Precomposition with an initial projection is a finite linear combination of coordinates. -/
+theorem comp_proj_eq_sum (f : StrongDual 𝕜 E) (n : ℕ) :
+    f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
+  ext x
+  simp [proj_apply, mul_comm]
+
 /-- Coordinates of a convergent basis series are its coefficients. -/
 theorem coord_eq_of_hasSum {a : ℕ → 𝕜} {x : E}
     (h : HasSum (fun i ↦ a i • b i) x (SummationFilter.conditional ℕ)) (i : ℕ) :
@@ -174,11 +180,7 @@ theorem surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete
     intro f
     have heq : f (∑ i ∈ Finset.range n, Φ (b.coord i) • b i) =
         Φ (f.comp (SchauderBasis.proj b n)) := by
-      have hf : f.comp (SchauderBasis.proj b n) =
-          ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
-        ext x
-        simp [SchauderBasis.proj_apply, mul_comm]
-      simp [hf, mul_comm]
+      simp [b.comp_proj_eq_sum, mul_comm]
     rw [heq]
     calc
       ‖Φ (f.comp (SchauderBasis.proj b n))‖ ≤ ‖Φ‖ * ‖f.comp (SchauderBasis.proj b n)‖ :=
