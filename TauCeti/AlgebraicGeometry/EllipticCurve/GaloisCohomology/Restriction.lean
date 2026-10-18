@@ -65,6 +65,8 @@ local Kummer map serve as the local condition at `L` of the `m`-Selmer group.
 * `WeierstrassCurve.pointCoeffBaseChange_bijective`,
   `WeierstrassCurve.torsionCoeffBaseChange_bijective`: the coordinate maps along a bijective
   embedding of separable closures are bijective.
+* `WeierstrassCurve.forall_smul_eq_torsionCoeff_baseChange`: along a bijective embedding,
+  `G_L` acts trivially on `E(Lˢ)[m]` once it acts trivially on `E(Kˢ)[m]`.
 * `WeierstrassCurve.pointRes_torsionCoeffIncl`: restriction commutes with
   `H¹(G, E[m]) → H¹(G, E)`.
 * `WeierstrassCurve.torsionRes_kummerMap`: restriction commutes with the Kummer maps.
@@ -228,6 +230,16 @@ theorem torsionCoeffBaseChange_bijective (hτ : Function.Bijective τ) :
   have h : ⇑(W.torsionCoeffBaseChange τ m) = e.torsionByCongr m := funext fun _ ↦ Subtype.ext <| by
     rw [coe_torsionCoeffBaseChange, AddEquiv.torsionByCongr_apply_coe, AddEquiv.ofBijective_apply]
   exact h ▸ (e.torsionByCongr m).bijective
+
+variable {τ} in
+/-- **Rational `m`-torsion descends along a bijective embedding of separable closures**: if `G_L`
+acts trivially on `E(Kˢ)[m]` through `absoluteGaloisGroupMap τ`, then it acts trivially on
+`E(Lˢ)[m]`. -/
+theorem forall_smul_eq_torsionCoeff_baseChange (hτ : Function.Bijective τ)
+    (h : ∀ (g : AbsoluteGaloisGroup L) (Q : W.TorsionCoeff m), absoluteGaloisGroupMap τ g • Q = Q)
+    (g : AbsoluteGaloisGroup L) (P : (W⁄L).TorsionCoeff m) : g • P = P := by
+  obtain ⟨Q, rfl⟩ := (W.torsionCoeffBaseChange_bijective m hτ).2 P
+  rw [← W.torsionCoeffBaseChange_smul, h]
 
 /-! ### Towers of extensions
 

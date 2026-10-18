@@ -51,35 +51,6 @@ private def completionSeparableClosureEmbeddings (F : Type*) [Field F] [NumberFi
       SeparableClosure F →ₐ[F] SeparableClosure (v.adicCompletion F) :=
   fun _ ↦ IsSepClosed.lift
 
-omit [NumberField K] in
-/-- Rational torsion descends across a bijective embedding of separable closures. -/
-private theorem forall_smul_eq_torsionCoeff_baseChange {L : Type*} [Field L] [Algebra K L]
-    (m : ℕ) (τ : SeparableClosure K →ₐ[K] SeparableClosure L) (hτ : Function.Bijective τ)
-    (h : ∀ (σ : AbsoluteGaloisGroup L) (Q : W.TorsionCoeff m),
-      absoluteGaloisGroupMap τ σ • Q = Q) :
-    ∀ (σ : AbsoluteGaloisGroup L) (P : (W⁄L).TorsionCoeff m), σ • P = P := by
-  intro σ P
-  obtain ⟨Q, rfl⟩ := (W.torsionCoeffBaseChange_bijective m hτ).2 P
-  rw [← W.torsionCoeffBaseChange_smul, h]
-
-omit [NumberField K] in
-/-- Over the division field `K(E[m])`, every geometric `m`-torsion point is rational. -/
-private theorem forall_smul_eq_torsionCoeff_divisionField (m : ℕ)
-    (σ : AbsoluteGaloisGroup (W.divisionField m))
-    (P : (W⁄(W.divisionField m)).TorsionCoeff m) : σ • P = P := by
-  let e : SeparableClosure K ≃ₐ[K] SeparableClosure (W.divisionField m) :=
-    separableClosureAlgEquiv K (W.divisionField m) (W.divisionField m).val
-  apply W.forall_smul_eq_torsionCoeff_baseChange m (e : _ →ₐ[K] _) e.bijective _ σ P
-  intro g Q
-  apply (W.mem_fixingSubgroup_divisionField_iff (m := m)).1 _ Q
-  rw [absoluteGaloisGroupMap_separableClosureAlgEquiv]
-  change (↑(absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m)
-    (W.divisionField m).val g) : AbsoluteGaloisGroup K) ∈
-      (W.divisionField m).fixingSubgroup
-  simpa only [IntermediateField.fieldRange_val] using
-    (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m)
-      (W.divisionField m).val g).2
-
 /-- **The `m`-Selmer group of an elliptic curve over a number field is finite** (Silverman
 X.4.2). The local conditions are the images of the Kummer maps over the completions at all finite
 places. The conclusion holds for every nonzero natural number `m`. -/
