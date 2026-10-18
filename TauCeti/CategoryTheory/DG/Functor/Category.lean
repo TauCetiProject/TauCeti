@@ -143,7 +143,7 @@ theorem IsNatural.smul {n : ℤ}
   simp only [Pi.smul_apply, dgComp_smul, smul_dgComp, hη f h₁ h₂, smul_comm r]
 
 /-- **The differential of a natural family is natural**, with the Koszul sign of the next
-degree.  This is the Leibniz rule applied to both sides of the naturality condition. -/
+degree `n + 1`. -/
 theorem IsNatural.dgDifferential {n : ℤ}
     {η : ∀ X : C, DGHom R n (F.toEnrichedFunctor.obj X) (G.toEnrichedFunctor.obj X)}
     (hη : IsNatural η) : IsNatural fun X ↦ dgDifferential R n (η X) := by
