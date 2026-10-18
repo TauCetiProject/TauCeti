@@ -97,7 +97,8 @@ theorem eval₂_C_T_neg_sub_T_injective :
     Function.Injective (Polynomial.eval₂ C (T (-1) - T 1) : R[X] → R[T;T⁻¹]) := by
   intro p q hpq
   apply eval₂_C_T_add_C_mul_T_neg_add_C_injective (R := R) (-1) 0
-  -- Exponent negation fixes the coefficients and exchanges the two Laurent variables.
+  -- Mathlib's LaurentPolynomial.invert is an algebra equivalence requiring CommSemiring R.
+  -- Use the exponent-negation ring equivalence to allow noncommutative coefficients.
   let f := (AddMonoidAlgebra.mapDomainRingEquiv R (AddEquiv.neg ℤ)).toRingHom
   have hfC : f.comp C = C := by ext r; simp [f, ← single_eq_C, -single_eq_C_mul_T]
   have hfT (n : ℤ) : f (T n) = T (-n) := by simp [f, T, -single_eq_C_mul_T]
