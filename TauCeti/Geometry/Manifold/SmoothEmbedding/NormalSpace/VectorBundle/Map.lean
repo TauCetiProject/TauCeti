@@ -60,6 +60,26 @@ private def pullbackTangentMap
   ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
     (mfderiv J J' v (f p.proj) p.2)⟩
 
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 V'] in
+/-- Over equal base points, `tangentSpaceCast` is heterogeneously the identity. -/
+private theorem heq_tangentSpaceCast {x y : N'} (hxy : x = y) (w : TangentSpace J' x) :
+    HEq (tangentSpaceCast J' x y w) w := by
+  subst hxy
+  rfl
+
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
+  [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 V'] [TopologicalSpace M]
+  [TopologicalSpace M'] in
+/-- Lifting `pullbackTangentMap` to the ambient tangent bundle gives the ambient tangent map at
+the lifted point. The base points agree by the commuting square, and over these equal base
+points `tangentSpaceCast` identifies the two tangent spaces, by `heq_tangentSpaceCast`. -/
+private theorem lift_pullbackTangentMap
+    (f : M → N) (g : M' → N') (u : M → M') (v : N → N')
+    (h : v ∘ f = g ∘ u) (p : TotalSpace V (f *ᵖ (TangentSpace J))) :
+    Pullback.lift g (pullbackTangentMap (J := J) (J' := J') f g u v h p) =
+      tangentMap J J' v (Pullback.lift f p) :=
+  TotalSpace.ext (congrFun h p.proj).symm (heq_tangentSpaceCast (congrFun h p.proj) _)
+
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
   [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 V'] in
 private theorem contMDiff_pullbackTangentMap
@@ -82,10 +102,7 @@ private theorem contMDiff_pullbackTangentMap
         (fun p : TotalSpace V (f *ᵖ (TangentSpace J)) => Pullback.lift f p) :=
       ((Bundle.Pullback.contMDiff_iff f (f.contMDiff.of_le hfn)).mp contMDiff_id).2
     have htangent := (hv.contMDiff_tangentMap le_rfl).comp hlift
-    apply htangent.congr
-    intro p
-    apply TotalSpace.ext (congrFun h p.proj).symm
-    rfl
+    exact htangent.congr (lift_pullbackTangentMap f g u v h)
 
 /-- A commuting square between smooth embeddings induces a `C^r` map of their intrinsic normal
 bundles when its map of ambient manifolds is `C^(r + 1)` and its map of embedded manifolds is
