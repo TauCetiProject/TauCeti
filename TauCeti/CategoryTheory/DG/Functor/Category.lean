@@ -391,38 +391,6 @@ private theorem homTo_dgClosedHomOf_of_eq {X Y : D} {g : DGHom R 0 X Y}
   exact congrArg (ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ))
     (dgClosedHomOf_dgClosedHom R (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) a))
 
-/-- The enriched whiskering `eHomWhiskerLeft` by a map `a` from the tensor unit postcomposes a
-homogeneous morphism with the closed morphism represented by `a`. -/
-private theorem eHomWhiskerLeft_f_apply {X Y Z : D}
-    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R Y Z) (p : ℤ)
-    (f : DGHom R p X Y) :
-    ((eHomWhiskerLeft (CochainComplex (ModuleCat.{v} R) ℤ)
-      (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)
-      (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) a)).f p).hom f =
-      dgComp R f (unitApp R a) (add_zero p) := by
-  rw [eHomWhiskerLeft, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    HomologicalComplex.rightUnitor_inv_f, HomologicalComplex.rightUnitor'_inv]
-  simp only [Category.assoc, HomologicalComplex.ι_whiskerLeft_assoc, ModuleCat.hom_comp,
-    LinearMap.coe_comp]
-  rw [← dgCompMap_tmul, dgCompMap_def]
-  rfl
-
-/-- The enriched whiskering `eHomWhiskerRight` by a map `a` from the tensor unit precomposes a
-homogeneous morphism with the closed morphism represented by `a`. -/
-private theorem eHomWhiskerRight_f_apply {X Y Z : D}
-    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R X Y) (p : ℤ)
-    (f : DGHom R p Y Z) :
-    ((eHomWhiskerRight (CochainComplex (ModuleCat.{v} R) ℤ)
-      (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) a)
-      (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Z)).f p).hom f =
-      dgComp R (unitApp R a) f (zero_add p) := by
-  rw [eHomWhiskerRight, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    HomologicalComplex.leftUnitor_inv_f, HomologicalComplex.leftUnitor'_inv]
-  simp only [Category.assoc, HomologicalComplex.ι_whiskerRight_assoc, ModuleCat.hom_comp,
-    LinearMap.coe_comp]
-  rw [← dgCompMap_tmul, dgCompMap_def]
-  rfl
-
 /-- The closed components of a closed degree-zero DG natural transformation form a natural
 family: graded naturality at the tensor unit, evaluated in degree `p`. -/
 private theorem isNatural_unitApp {F G : DGFunctor R C D} (α : F ⟶ G) :
@@ -442,9 +410,16 @@ private theorem isNatural_unitApp {F G : DGFunctor R C D} (α : F ⟶ G) :
     congrArg (fun φ ↦ (φ.f p).hom f)
       ((unitGradedNaturality_iff F.toEnrichedFunctor G.toEnrichedFunctor X Y (α.app X)
         (α.app Y)).mp (α.naturality X Y))
+  have hl := eHomWhiskerLeft_f_apply R _
+    (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) (α.app Y)) p
+    (((F.toEnrichedFunctor.map X Y).f p).hom f)
+  have hr := eHomWhiskerRight_f_apply R
+    (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) (α.app X)) _ p
+    (((G.toEnrichedFunctor.map X Y).f p).hom f)
   rw [EnrichedFunctor.dgMap_apply, EnrichedFunctor.dgMap_apply]
-  exact (eHomWhiskerLeft_f_apply R (α.app Y) p _).symm.trans
-    (hs.trans (eHomWhiskerRight_f_apply R (α.app X) p _))
+  exact (congrArg (fun g ↦ dgComp R _ g h₁) (unitApp_eq_dgClosedHom R (α.app Y))).trans
+    (hl.symm.trans (hs.trans (hr.trans
+      (congrArg (fun g ↦ dgComp R g _ h₂) (unitApp_eq_dgClosedHom R (α.app X))).symm)))
 
 /-- The components of a closed morphism of DG functors are closed. -/
 theorem dgApp_mem_dgCycles {F G : DGFunctor R C D} {η : DGHom R 0 F G}
@@ -469,15 +444,13 @@ noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
       naturality X Y := by
         apply (unitGradedNaturality_iff F.toEnrichedFunctor G.toEnrichedFunctor X Y _ _).mpr
         ext p f
-        have hl := eHomWhiskerLeft_f_apply R (ForgetEnrichment.homTo
-          (CochainComplex (ModuleCat.{v} R) ℤ)
-          (dgClosedHomOf R (dgApp R 0 Y η.1) (dgApp_mem_dgCycles R η.2 Y))) p
+        have hl := eHomWhiskerLeft_f_apply R _
+          (dgClosedHomOf R (dgApp R 0 Y η.1) (dgApp_mem_dgCycles R η.2 Y)) p
           (((F.toEnrichedFunctor.map X Y).f p).hom f)
-        have hr := eHomWhiskerRight_f_apply R (ForgetEnrichment.homTo
-          (CochainComplex (ModuleCat.{v} R) ℤ)
-          (dgClosedHomOf R (dgApp R 0 X η.1) (dgApp_mem_dgCycles R η.2 X))) p
+        have hr := eHomWhiskerRight_f_apply R
+          (dgClosedHomOf R (dgApp R 0 X η.1) (dgApp_mem_dgCycles R η.2 X)) _ p
           (((G.toEnrichedFunctor.map X Y).f p).hom f)
-        rw [unitApp_homTo] at hl hr
+        rw [dgClosedHom_dgClosedHomOf] at hl hr
         refine hl.trans (Eq.trans ?_ hr.symm)
         rw [← EnrichedFunctor.dgMap_apply, ← EnrichedFunctor.dgMap_apply,
           dgComp_dgMap_dgApp R η.1 f (add_zero p) (zero_add p), mul_zero, Int.negOnePow_zero,
@@ -500,6 +473,7 @@ theorem dgApp_homEquivDGCycles (α : F ⟶ G) (X : C) :
 
 /-- The components of the DG natural transformation determined by a closed morphism `η` are the
 components of `η`, regarded as maps from the tensor unit. -/
+@[simp]
 theorem homEquivDGCycles_symm_app (η : dgCycles R F G) (X : C) :
     ((homEquivDGCycles R F G).symm η).app X =
       ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ)
