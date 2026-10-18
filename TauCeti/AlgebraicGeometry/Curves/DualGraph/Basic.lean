@@ -15,7 +15,7 @@ import Mathlib.Tactic.Linarith
 
 The **dual graph** of a proper nodal curve `X` over an algebraically closed field records how
 the curve is assembled from smooth pieces. Its vertices are the irreducible components of the
-normalization `X̃`, its edges are the nodes of `X`, and the two endpoints of an edge are the
+normalization of `X`, its edges are the nodes of `X`, and the two endpoints of an edge are the
 components carrying the two branches of the node; when both branches lie on one component the
 edge is a loop. Each vertex is labelled by the genus of its normalized component, and each
 marking of a pointed curve is attached to the component on which it lies.
