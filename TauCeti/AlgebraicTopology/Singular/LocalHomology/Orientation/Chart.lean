@@ -166,7 +166,8 @@ variable {M E : Type w} [TopologicalSpace M] [T2Space M]
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The local orientation selected by an oriented chart. -/
-def localOrientationOfOrientedChart (φ : OpenPartialHomeomorph M E) {x : M}
+def _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart
+    (φ : OpenPartialHomeomorph M E) {x : M}
     (hx : x ∈ φ.source) {n : ℕ} (o : Orientation ℝ E (Fin (n + 1)))
     (hE : finrank ℝ E = n + 1) : LocalOrientation M x (n + 1) :=
   ⟨(singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
@@ -175,11 +176,12 @@ def localOrientationOfOrientedChart (φ : OpenPartialHomeomorph M E) {x : M}
 
 /-- Reversing the chart-model orientation reverses the selected local orientation. -/
 @[simp]
-theorem localOrientationOfOrientedChart_neg (φ : OpenPartialHomeomorph M E) {x : M}
+theorem _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_neg
+    (φ : OpenPartialHomeomorph M E) {x : M}
     (hx : x ∈ φ.source) {n : ℕ} (o : Orientation ℝ E (Fin (n + 1)))
     (hE : finrank ℝ E = n + 1) :
-    localOrientationOfOrientedChart φ hx (-o) hE =
-      -localOrientationOfOrientedChart φ hx o hE := by
+    φ.localOrientationOfOrientedChart hx (-o) hE =
+      -φ.localOrientationOfOrientedChart hx o hE := by
   apply Subtype.ext
   rw [LocalOrientation.coe_neg]
   exact congrArg (fun f ↦ f 1) (singularHomologyComplSingletonIsoOfOrientation_neg_inv
@@ -201,7 +203,7 @@ def localOrientationOfManifoldOrientation {n : ℕ}
     (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
     (hE : finrank ℝ E = n + 1) (x : M) : LocalOrientation M x (n + 1) :=
   o.lift
-    (fun l ↦ localOrientationOfOrientedChart (chartAt E x) (mem_chart_source E x)
+    (fun l ↦ (chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x)
       (l.chartOrientation x ⟨x, mem_chart_source E x⟩) hE)
     (fun l ↦ by
       have hchart : l.flip.chartOrientation x ⟨x, mem_chart_source E x⟩ =
@@ -216,7 +218,7 @@ theorem localOrientationOfManifoldOrientation_mk {n : ℕ}
     (l : Manifold.OrientationLift 𝓘(ℝ, E) M (Fin (n + 1)))
     (hE : finrank ℝ E = n + 1) (x : M) :
     localOrientationOfManifoldOrientation (Manifold.Orientation.mk l) hE x =
-      localOrientationOfOrientedChart (chartAt E x) (mem_chart_source E x)
+      (chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x)
         (l.chartOrientation x ⟨x, mem_chart_source E x⟩) hE := by
   simp only [localOrientationOfManifoldOrientation, Manifold.Orientation.lift_mk]
 
@@ -235,7 +237,7 @@ theorem localOrientationOfManifoldOrientation_neg {n : ℕ}
           -l.chartOrientation x ⟨x, mem_chart_source E x⟩ := by
         rw [← (-l).orientationAt_eq x, l.orientationAt_neg, l.orientationAt_eq x]
         congr
-      rw [hchart, localOrientationOfOrientedChart_neg]
+      rw [hchart, OpenPartialHomeomorph.localOrientationOfOrientedChart_neg]
 
 end Manifold
 
