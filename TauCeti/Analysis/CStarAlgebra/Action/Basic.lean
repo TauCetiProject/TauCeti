@@ -101,6 +101,23 @@ theorem continuous_apply (α : CStarAction G A) {X : Type*} [TopologicalSpace X]
     Continuous fun x => α (g x) (a x) :=
   α.continuous.comp (hg.prodMk ha)
 
+/-- The inverse of an automorphism of the action is the action of the inverse element. -/
+@[simp]
+theorem symm_apply (α : CStarAction G A) (g : G) (a : A) : (α g).symm a = α g⁻¹ a :=
+  (α g).symm_apply_eq.mpr (α.apply_inv_apply g a).symm
+
+/-- Orbits through inverses are continuous. Continuity of inversion in `G` is not needed, since
+`‖α g⁻¹ a - α h⁻¹ a‖ = ‖α h b - α g b‖` for `b = α h⁻¹ a`. -/
+theorem continuous_inv_apply (α : CStarAction G A) (a : A) : Continuous fun g => α g⁻¹ a := by
+  refine continuous_iff_continuousAt.2 fun h => ?_
+  have hdist (g : G) : dist (α g⁻¹ a) (α h⁻¹ a) = dist (α g (α h⁻¹ a)) a := by
+    rw [← (StarAlgEquiv.isometry (α g)).dist_eq, apply_inv_apply, dist_comm]
+  have hlim : Filter.Tendsto (fun g => α g (α h⁻¹ a)) (nhds h) (nhds a) := by
+    simpa using (α.continuous_orbit (α h⁻¹ a)).tendsto h
+  rw [tendsto_iff_dist_tendsto_zero] at hlim
+  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
+  simpa only [hdist] using hlim
+
 /-- The trivial action, including on the zero algebra. -/
 def trivial : CStarAction G A where
   toMonoidHom := 1

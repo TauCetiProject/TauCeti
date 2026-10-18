@@ -229,6 +229,24 @@ lemma _root_.CategoryTheory.CommMon.restrictGradedSections_comp {W : X.Opens} (g
       (A.restrictGradedSections g).comp (A.restrictGradedSections f) :=
   DirectSum.ringHom_ext fun n x ↦ by simp
 
+/-- Restriction of sections restricts each homogeneous component. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.restrictGradedSections_apply (x : ⨁ n, Γ(A.X n, U))
+    (n : ℕ) :
+    A.restrictGradedSections f x n = (A.X n).presheaf.map f.op (x n) := by
+  have h : (A.restrictGradedSections f).toAddMonoidHom =
+      DirectSum.map fun n ↦ ((A.X n).presheaf.map f.op).hom :=
+    DirectSum.addHom_ext fun n y ↦ by simp
+  exact congrArg (· n) (DFunLike.congr_fun h x)
+
+/-- Restriction of sections commutes with the structure maps `Γ(X, U) → ⨁ n, Γ(Aₙ, U)`. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.restrictGradedSections_algebraMap (r : Γ(X, U)) :
+    A.restrictGradedSections f (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) r) =
+      algebraMap Γ(X, V) (⨁ n, Γ(A.X n, V)) (X.presheaf.map f.op r) := by
+  rw [DirectSum.algebraMap_apply, DirectSum.algebraMap_apply, restrictGradedSections_of,
+    map_gAlgebraSections_toFun]
+
 end Restriction
 
 /-- The presheaf of graded rings of sections of a graded algebra: it sends an open
@@ -264,8 +282,7 @@ def _root_.CategoryTheory.CommMon.toGradedSectionsPresheaf :
   app U := CommRingCat.ofHom (algebraMap Γ(X, U.unop) (⨁ n, Γ(A.X n, U.unop)))
   naturality _ _ f := by
     ext r
-    exact ((A.restrictGradedSections_of f.unop 0 _).trans
-      (congrArg _ (map_gAlgebraSections_toFun A f.unop r))).symm
+    exact (A.restrictGradedSections_algebraMap f.unop r).symm
 
 /-- The structure morphism `toGradedSectionsPresheaf` is the algebra map on each open. -/
 @[simp]

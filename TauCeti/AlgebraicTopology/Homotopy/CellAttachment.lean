@@ -26,11 +26,17 @@ these are `TauCeti.bijective_homotopyGroupMap_cellAttachmentIncl` and
 `TauCeti.surjective_homotopyGroupMap_cellAttachmentIncl`.
 
 This is Hatcher's Corollary 4.12 for the pair `(Y, X)`, all of whose cells outside `X` have
-dimension `n + 1`. Attaching the cells is a relative CW complex
-(`HomotopicalAlgebra.AttachCells.toRelativeCWComplex`), whose classical skeleton
-`skeletonLT Y (n + 1)` is the range of `f`, so the statements for the inclusion of a skeleton
+dimension `n + 1`. More generally, for any relative CW complex `f : X ⟶ Y` in Mathlib's categorical
+sense, on a Hausdorff space `X`, the classical skeleton `skeletonLT Y (n + 1)` is the image of the
+stage `c.F.obj (n + 1)`, and it is the range of `f` when no cells of dimension at most `n` are
+attached. So the statements for the inclusion of a skeleton
 (`TauCeti.surjective_homotopyGroupMap_skeletonLT`, `TauCeti.injective_homotopyGroupMap_skeletonLT`)
-apply; `f` is a closed embedding, which identifies `X` with its range.
+apply: the stage `c.F.obj (n + 1)` is surjective on `π_k` for `k ≤ n`
+(`TopCat.RelativeCWComplex.surjective_homotopyGroupMap_incl_app`), and `f` is bijective on `π_k` for
+`k < n` when there are no cells of dimension at most `n`
+(`TopCat.RelativeCWComplex.bijective_homotopyGroupMap`). The stages and `f` are closed embeddings,
+which identifies them with their ranges. Attaching cells of a single dimension is such a relative
+CW complex (`HomotopicalAlgebra.AttachCells.toRelativeCWComplex`).
 
 When `n ≥ 1`, attaching cells kills chosen classes of `π_n(X, x)`. A generalized loop `p`
 representing a class gives the attaching map `GenLoop.diskBoundaryMap p`, the
@@ -42,6 +48,11 @@ corresponding pointed map `Sⁿ → X`. It becomes null-homotopic in `Y`
 
 ## Main results
 
+* `TopCat.RelativeCWComplex.surjective_homotopyGroupMap_incl_app`: the stage carrying the cells
+  of dimension at most `n` of a relative CW complex is surjective on `π_k` for `k ≤ n`.
+* `TopCat.RelativeCWComplex.surjective_homotopyGroupMap`,
+  `TopCat.RelativeCWComplex.bijective_homotopyGroupMap`: a relative CW complex without cells of
+  dimension at most `n` is surjective on `π_k` for `k ≤ n` and bijective for `k < n`.
 * `HomotopicalAlgebra.AttachCells.surjective_homotopyGroupMap`: attaching `(n + 1)`-cells is
   surjective on `π_k` for `k ≤ n`.
 * `HomotopicalAlgebra.AttachCells.bijective_homotopyGroupMap`: attaching `(n + 1)`-cells is
@@ -64,6 +75,55 @@ universe u v
 
 open CategoryTheory Topology Set TauCeti
 
+namespace TopCat.RelativeCWComplex
+
+variable {X Y : TopCat.{u}} {f : X ⟶ Y} (c : RelativeCWComplex.{u} f) [T2Space X]
+  {N : Type v} [Finite N] {n : ℕ}
+
+/-- **A stage of a relative CW complex is surjective on `π_k` below its dimension** (Hatcher,
+Corollary 4.12). If `f : X ⟶ Y` is a relative CW complex on a Hausdorff space `X`, the inclusion
+of the stage `c.F.obj (n + 1)`, which carries the cells of dimension at most `n`, induces a
+surjection `π_k(c.F.obj (n + 1), y) → π_k(Y, y)`, where `k = Nat.card N ≤ n`. -/
+theorem surjective_homotopyGroupMap_incl_app (hN : Nat.card N ≤ n) (y : c.F.obj (n + 1)) :
+    Function.Surjective (HomotopyGroup.map (N := N) (x := y) (c.incl.app (n + 1)).hom rfl) := by
+  let := c.toRelCWComplex
+  have := c.t2Space
+  rw [HomotopyGroup.map_eq_comp_of_isEmbedding (c.isClosedEmbedding_incl_app (n + 1)).isEmbedding y]
+  exact (Equiv.surjective _).comp ((surjective_homotopyGroupMap_skeletonLT hN
+    (c.range_incl_app_eq_toRelCWComplex_skeletonLT (n + 1)).symm (subset_univ _) _).comp
+      (Equiv.surjective _))
+
+/-- **A relative CW complex without cells of dimension at most `n` is surjective on `π_k` for
+`k ≤ n`** (Hatcher, Corollary 4.12). If `f : X ⟶ Y` is a relative CW complex on a Hausdorff space
+`X` all of whose cells have dimension greater than `n`, then `f` induces a surjection
+`π_k(X, x) → π_k(Y, f x)`, where `k = Nat.card N ≤ n`. -/
+theorem surjective_homotopyGroupMap (hc : ∀ m ≤ n, IsEmpty (c.attachCells m (not_isMax m)).ι)
+    (hN : Nat.card N ≤ n) (x : X) :
+    Function.Surjective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) := by
+  let := c.toRelCWComplex
+  have := c.t2Space
+  have hA := c.skeletonLT_toRelCWComplex_eq_range fun m hm ↦ hc m (Nat.lt_succ_iff.1 hm)
+  rw [HomotopyGroup.map_eq_comp_of_isEmbedding c.isClosedEmbedding.isEmbedding x]
+  exact (Equiv.surjective _).comp ((surjective_homotopyGroupMap_skeletonLT hN hA
+    (subset_univ _) _).comp (Equiv.surjective _))
+
+/-- **A relative CW complex without cells of dimension at most `n` is bijective on `π_k` for
+`k < n`** (Hatcher, Corollary 4.12). If `f : X ⟶ Y` is a relative CW complex on a Hausdorff space
+`X` all of whose cells have dimension greater than `n`, then `f` induces a bijection
+`π_k(X, x) → π_k(Y, f x)`, where `k = Nat.card N < n`. -/
+theorem bijective_homotopyGroupMap (hc : ∀ m ≤ n, IsEmpty (c.attachCells m (not_isMax m)).ι)
+    (hN : Nat.card N < n) (x : X) :
+    Function.Bijective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) := by
+  refine ⟨?_, c.surjective_homotopyGroupMap hc hN.le x⟩
+  let := c.toRelCWComplex
+  have := c.t2Space
+  have hA := c.skeletonLT_toRelCWComplex_eq_range fun m hm ↦ hc m (Nat.lt_succ_iff.1 hm)
+  rw [HomotopyGroup.map_eq_comp_of_isEmbedding c.isClosedEmbedding.isEmbedding x]
+  exact (Equiv.injective _).comp ((injective_homotopyGroupMap_skeletonLT hN hA
+    (subset_univ _) _).comp (Equiv.injective _))
+
+end TopCat.RelativeCWComplex
+
 namespace HomotopicalAlgebra.AttachCells
 
 variable {X Y : TopCat.{u}} {f : X ⟶ Y} {N : Type v} [T2Space X] [Finite N] {n : ℕ}
@@ -74,26 +134,17 @@ include c
 If `Y` is obtained from a Hausdorff space `X` by attaching `(n + 1)`-disks along `f`, then `f`
 induces a surjection `π_k(X, x) → π_k(Y, f x)`, where `k = Nat.card N ≤ n`. -/
 theorem surjective_homotopyGroupMap (hN : Nat.card N ≤ n) (x : X) :
-    Function.Surjective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) := by
-  let := c.toRelativeCWComplex.toRelCWComplex
-  have := c.toRelativeCWComplex.t2Space
-  rw [HomotopyGroup.map_eq_comp_of_isEmbedding
-    c.toRelativeCWComplex.isClosedEmbedding.isEmbedding x]
-  exact (Equiv.surjective _).comp ((surjective_homotopyGroupMap_skeletonLT hN
-    (c.skeletonLT_toRelCWComplex le_rfl) (subset_univ _) _).comp (Equiv.surjective _))
+    Function.Surjective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) :=
+  c.toRelativeCWComplex.surjective_homotopyGroupMap
+    (fun _ hm ↦ c.isEmpty_toRelativeCWComplex_attachCells_ι (by omega) _) hN x
 
 /-- **Attaching `(n + 1)`-cells is bijective on `π_k` for `k < n`** (Hatcher, Corollary 4.12).
 If `Y` is obtained from a Hausdorff space `X` by attaching `(n + 1)`-disks along `f`, then `f`
 induces a bijection `π_k(X, x) → π_k(Y, f x)`, where `k = Nat.card N < n`. -/
 theorem bijective_homotopyGroupMap (hN : Nat.card N < n) (x : X) :
-    Function.Bijective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) := by
-  refine ⟨?_, c.surjective_homotopyGroupMap hN.le x⟩
-  let := c.toRelativeCWComplex.toRelCWComplex
-  have := c.toRelativeCWComplex.t2Space
-  rw [HomotopyGroup.map_eq_comp_of_isEmbedding
-    c.toRelativeCWComplex.isClosedEmbedding.isEmbedding x]
-  exact (Equiv.injective _).comp ((injective_homotopyGroupMap_skeletonLT hN
-    (c.skeletonLT_toRelCWComplex le_rfl) (subset_univ _) _).comp (Equiv.injective _))
+    Function.Bijective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) :=
+  c.toRelativeCWComplex.bijective_homotopyGroupMap
+    (fun _ hm ↦ c.isEmpty_toRelativeCWComplex_attachCells_ι (by omega) _) hN x
 
 end HomotopicalAlgebra.AttachCells
 

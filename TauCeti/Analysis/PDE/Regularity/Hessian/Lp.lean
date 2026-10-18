@@ -415,8 +415,8 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian {p : ℝ≥0∞}
   set D : (Fin 2 → Fin n) → 𝓢(EuclideanSpace ℝ (Fin n), F) := fun r => ∂_{b (r 0)} (∂_{b (r 1)} u)
   -- The Hessian is bounded pointwise by the sum of its values on pairs of basis vectors.
   have hpt : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ ∑ r, ‖D r x‖ := fun x => by
-    refine ((iteratedFDeriv ℝ 2 u x).opNorm_le_sum_norm_apply_orthonormalBasis b).trans_eq
-      (Finset.sum_congr rfl fun r _ => ?_)
+    refine ((iteratedFDeriv ℝ 2 u x).opNorm_le_sum_norm_apply_orthonormalBasis
+      (fun _ => b)).trans_eq (Finset.sum_congr (by ext; simp) fun r _ => ?_)
     rw [← SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv,
       LineDeriv.iteratedLineDerivOp_succ_left,
       LineDeriv.iteratedLineDerivOp_one]

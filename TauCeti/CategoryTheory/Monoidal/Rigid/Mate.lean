@@ -62,7 +62,8 @@ morphism.
   coevaluation, and conversely;
 * `TauCeti.rightAdjointMate_eq_rightMate`, `CategoryTheory.ExactPairing.rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightDualIso_inv`: Mathlib's `rightAdjointMate` and `rightDualIso`
-  as mates;
+  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation` and
+  `rightDualIso_inv_whiskerRight_evaluation`;
 * `CategoryTheory.ExactPairing.leftDualHom_ext`: morphisms into a left dual agree once they agree
   after evaluation;
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
@@ -244,6 +245,21 @@ theorem rightDualIso_inv {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : 
     (rightDualIso p₁ p₂).inv = rightMate p₁ p₂ (𝟙 X) :=
   -- `(rightDualIso p₁ p₂).inv` and `(rightDualIso p₂ p₁).hom` are the same mate of `𝟙 X`.
   rightDualIso_hom p₂ p₁
+
+/-- Through the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂`, the evaluation of `p₂` is the
+evaluation of `p₁`. -/
+@[reassoc]
+theorem rightDualIso_hom_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).hom ▷ X ≫ ε_ X Y₂ = ε_ X Y₁ := by
+  rw [rightDualIso_hom, rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id,
+    Category.id_comp]
+
+/-- Through the inverse comparison `(rightDualIso p₁ p₂).inv : Y₂ ⟶ Y₁`, the evaluation of `p₁` is
+the evaluation of `p₂`. -/
+@[reassoc]
+theorem rightDualIso_inv_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).inv ▷ X ≫ ε_ X Y₁ = ε_ X Y₂ := by
+  rw [rightDualIso_inv, ← rightDualIso_hom, rightDualIso_hom_whiskerRight_evaluation]
 
 /-- The mate of the evaluation `ε_ X X' : X' ⊗ X ⟶ 𝟙_ C`, taken with respect to the tensor product
 pairing of `(X', X'')` with `(X, X')` and the self-pairing of the unit, is the coevaluation
