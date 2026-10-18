@@ -59,28 +59,12 @@ private theorem residueMap_naturality (I : Ideal R) {B C : Neighbourhood.{u, u} 
     (f : B ⟶ C) : (residueMap I C).comp f.hom.hom = residueMap I B := by
   apply AlgHom.ext
   intro b
-  obtain ⟨r, hr⟩ := ((isNeighbourhood_iff I B.obj).mp B.property).2.2
-    (Ideal.Quotient.mk (I.map (algebraMap R B.obj)) b)
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
-  rw [reducedMap_mk, Ideal.Quotient.eq] at hr
-  have hr' : b - algebraMap R B.obj r ∈ I.map (algebraMap R B.obj) := by
-    rw [← neg_sub]
-    exact neg_mem hr
-  have hfb : f.hom.hom b - algebraMap R C.obj r ∈ I.map (algebraMap R C.obj) := by
-    rw [← f.hom.hom.commutes, ← map_sub, ← f.hom.hom.comp_algebraMap,
-      ← Ideal.map_map]
-    exact Ideal.mem_map_of_mem _ hr'
-  have hb : Ideal.Quotient.mk (I.map (algebraMap R B.obj)) b =
-      Ideal.Quotient.mk (I.map (algebraMap R B.obj)) (algebraMap R B.obj r) :=
-    Ideal.Quotient.eq.mpr hr'
-  -- Expose the two quotient maps so the equalities modulo the extended ideals can rewrite.
-  change (residueEquiv I C).symm
-      (Ideal.Quotient.mk (I.map (algebraMap R C.obj)) (f.hom.hom b)) =
-    (residueEquiv I B).symm
-      (Ideal.Quotient.mk (I.map (algebraMap R B.obj)) b)
-  rw [Ideal.Quotient.eq.mpr hfb, hb]
-  rw [← residueEquiv_mk I C, ← residueEquiv_mk I B,
-    AlgEquiv.symm_apply_apply, AlgEquiv.symm_apply_apply]
+  have h := quotient_mk_eq_of_reducedMap_surjective I
+    ((isNeighbourhood_iff I B.obj).mp B.property).2.2
+    ((residueMap I C).comp f.hom.hom) (residueMap I B) b
+  rw [Ideal.Quotient.algebraMap_eq, Ideal.map_quotient_self, Ideal.Quotient.eq,
+    Ideal.mem_bot, sub_eq_zero] at h
+  exact h
 
 private noncomputable def residueCocone (I : Ideal R) :
     Cocone ((IsNeighbourhood I).ι) where
