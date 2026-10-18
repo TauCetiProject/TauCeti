@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Poisson.Basic
+public import Mathlib.Probability.Distributions.Poisson.Basic
 public import TauCeti.Probability.StochasticOrder
 
 /-!
@@ -41,8 +41,7 @@ namespace TauCeti.Probability
 
 variable {r s : ℝ≥0} {u : ℝ}
 
-/-- Increasing the rate decreases the cdf of a real-cast Poisson law. The proof couples the
-smaller-rate variable with its sum with an independent Poisson increment. -/
+/-- Increasing the rate decreases the cdf of a real-cast Poisson law. -/
 theorem cdf_map_cast_poissonMeasure_le (hrs : r ≤ s) (x : ℝ) :
     cdf Po(ℝ, s) x ≤ cdf Po(ℝ, r) x := by
   let P := Po(r).prod Po(s - r)
