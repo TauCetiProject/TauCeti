@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Trace.Multiplication
 public import TauCeti.Analysis.Sobolev.Trace.Epigraph.Basic
 import TauCeti.Analysis.Sobolev.W1p.Mollification
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
@@ -67,33 +68,6 @@ local instance :
   rw [Opens.coe_top, Measure.restrict_univ]
   infer_instance
 
-/-- The jet of a whole-space `H¹` function whose value is represented by `f` vanishes almost
-everywhere off the support of `f`. -/
-private theorem jet_ae_eq_zero_of_value_ae_eq
-    {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2} {f : WithLp 2 (ℝ × E) → ℝ}
-    (hu : W1p.value u =ᵐ[volume] f) :
-    ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict
-        ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))),
-      x ∉ tsupport f →
-        (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) x = 0 := by
-  let V : Opens (WithLp 2 (ℝ × E)) := ⟨(tsupport f)ᶜ, (isClosed_tsupport f).isOpen_compl⟩
-  have hV : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (V : Set _),
-      W1p.value u x = 0 := by
-    filter_upwards [ae_restrict_of_ae hu, ae_restrict_mem V.isOpen.measurableSet] with x hx hxV
-    rw [hx]
-    exact image_eq_zero_of_notMem_tsupport hxV
-  have hgrad := (ae_restrict_iff' V.isOpen.measurableSet).1
-    (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (le_top : V ≤ ⊤) hV)
-  have hv := W1p.value_apply_ae u
-  have hg := W1p.gradient_apply_ae u
-  simp only [Opens.coe_top, Measure.restrict_univ] at hv hg ⊢
-  filter_upwards [hv, hg, hu, hgrad] with x hv hg hux hgx hx
-  refine (WithLp.ext_iff _).2 (Prod.ext ?_ ?_)
-  · rw [WithLp.ofLp_zero, Prod.fst_zero, ← WithLp.fst, ← hv, hux]
-    exact image_eq_zero_of_notMem_tsupport hx
-  · rw [WithLp.ofLp_zero, Prod.snd_zero, ← WithLp.snd, ← hg]
-    exact hgx hx
-
 /-- The flat trace of a whole-space `H¹` function with a continuous compactly supported
 representative is its restriction. Mollifications are test functions whose traces are their
 restrictions; they converge to `u` in `H¹` and to `f` pointwise. -/
@@ -107,8 +81,20 @@ private theorem hyperplaneTrace_apply_ae_of_hasCompactSupport (a : ℝ)
     tendsto_one_div_add_atTop_nhds_zero_nat
   let conv : ℕ → WithLp 2 (ℝ × E) → ℝ := fun k =>
     (phi k).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] f
+  -- The jet of `u` vanishes off the support of `f`.
+  have hjet : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict
+      ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))),
+      x ∉ tsupport f → (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) x = 0 := by
+    let V : Opens (WithLp 2 (ℝ × E)) := ⟨(tsupport f)ᶜ, (isClosed_tsupport f).isOpen_compl⟩
+    have hV : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (V : Set _),
+        W1p.value u x = 0 := by
+      filter_upwards [ae_restrict_of_ae hu, ae_restrict_mem V.isOpen.measurableSet] with x hx hxV
+      rw [hx]
+      exact image_eq_zero_of_notMem_tsupport hxV
+    exact ae_restrict_of_ae <| (ae_restrict_iff' V.isOpen.measurableSet).1
+      (W1p.coe_ae_eq_zero_of_value_ae_eq_zero (le_top : V ≤ ⊤) hV)
   choose Φ hΦ using fun k => W1p.normedBumpL_mem_range_of_ae_eq_zero (by norm_num) (phi k)
-    hfc (jet_ae_eq_zero_of_value_ae_eq hu)
+    hfc hjet
   -- Each mollification is the test function `Φ k`, which is the pointwise convolution.
   have hΦconv (k : ℕ) : (Φ k : WithLp 2 (ℝ × E) → ℝ) = conv k := by
     have hmem : MemLp f 2 ((volume : Measure (WithLp 2 (ℝ × E))).restrict
@@ -194,7 +180,8 @@ theorem W1p.halfSpaceTrace_apply_ae_of_continuousOn (a : ℝ)
   have hext : W1p.value (W1p.extendByReflectionL a u) =ᵐ[volume] f ∘ fold := by
     filter_upwards [W1p.value_extendByReflectionL_ae a u, hu',
       (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae hu',
-      measure_eq_zero_iff_ae_notMem.1 (addHaar_setOf_fst_eq (E := E) volume a)] with x hx h1 h2 h3
+      measure_eq_zero_iff_ae_notMem.1 (Measure.addHaar_setOf_fst_eq (E := E) volume a)] with
+      x hx h1 h2 h3
     rw [hx]
     rcases lt_trichotomy a x.fst with hlt | heq | hgt
     · have hxH : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=

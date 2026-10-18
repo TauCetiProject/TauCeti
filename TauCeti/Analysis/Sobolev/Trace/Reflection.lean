@@ -42,8 +42,7 @@ Dominated convergence then passes to the limit.
 * `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
   `Submodule.reflection` in the hyperplane `{0} × E`.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
-  its measure preservation and derivative. Its fixed hyperplane is null
-  (`TauCeti.addHaar_setOf_fst_eq`).
+  its measure preservation and derivative.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
   supported a positive distance inside the half-space, with the common bound
   `TauCeti.exists_normalCutoff_bound` on it and its gradient.
@@ -206,23 +205,6 @@ theorem locallyIntegrable_comp_normalReflection (a : ℝ) {F : Type*}
     LocallyIntegrable fun x => g (normalReflection E a x) :=
   (locallyIntegrable_map_homeomorph (normalReflection E a).toHomeomorph).1 <| by
     rwa [AffineIsometryEquiv.coe_toHomeomorph, (measurePreserving_normalReflection a).map_eq]
-
-/-- The hyperplane `{a} × E`, the fixed set of the normal reflection, is a null set for every
-additive Haar measure. -/
-theorem addHaar_setOf_fst_eq (μ : Measure (WithLp 2 (ℝ × E))) [μ.IsAddHaarMeasure] (a : ℝ) :
-    μ {x | x.fst = a} = 0 := by
-  let s : AffineSubspace ℝ (WithLp 2 (ℝ × E)) :=
-    AffineSubspace.mk' (WithLp.toLp 2 (a, 0)) (LinearMap.ker (WithLp.fstL 2 ℝ ℝ E).toLinearMap)
-  have hs : (s : Set (WithLp 2 (ℝ × E))) = {x | x.fst = a} := by
-    ext x
-    simp [s, sub_eq_zero]
-  have hne : s ≠ ⊤ := by
-    intro h
-    have hmem : WithLp.toLp 2 (a + 1, (0 : E)) ∈ s := h ▸ AffineSubspace.mem_top ℝ _ _
-    rw [← SetLike.mem_coe, hs] at hmem
-    simp at hmem
-  rw [← hs]
-  exact Measure.addHaar_affineSubspace μ s hne
 
 end Reflection
 
