@@ -88,6 +88,7 @@ theorem pullbackHomeomorph_map_val (a : C(B, B')) (b : C(K, K'))
     simp only [pullbackHomeomorph_val_snd_val, map_val]
     exact Prod.ext (ContinuousMap.congr_fun h p.val.1).symm rfl
 
+/-- The identity commutative square induces the identity map on the mapping-path fibre. -/
 @[simp]
 theorem map_id : map (f := f) (f' := f) (k := k) (k' := k) (.id B) (.id K) (by simp) rfl =
     ContinuousMap.id (MappingPathFiber f k) := by
