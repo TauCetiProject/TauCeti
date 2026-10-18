@@ -49,6 +49,8 @@ non-top value implies feasibility.
   map `T`, the objective of the Monge problem;
 * `TauCeti.mongeCost c μ ν` — the Monge value: the infimum of `TauCeti.transportMapCost c μ T`
   over the transport maps `T` from `μ` to `ν`, and `∞` when there are none;
+* `TauCeti.transportMapCost_smul` and `TauCeti.mongeCost_smul` — homogeneity under scaling of the
+  source, respectively of both marginals;
 * `TauCeti.IsMongeMinimizer c μ ν T` — `T` is a transport map attaining the Monge value;
 * `TauCeti.IsKantorovichOptimalTransportMap c μ ν T` — `T` is a transport map whose cost is the
   Kantorovich value `TauCeti.transportCost c μ ν`.
@@ -133,6 +135,12 @@ theorem transportMapCost_zero_measure (c : X × Y → ℝ≥0∞) (T : X → Y) 
     transportMapCost c (0 : Measure X) T = 0 := by
   rw [transportMapCost_def, lintegral_zero_measure]
 
+/-- Scaling the source measure scales the cost of a fixed transport map. -/
+@[simp]
+theorem transportMapCost_smul (a : ℝ≥0∞) (c : X × Y → ℝ≥0∞) (μ : Measure X) (T : X → Y) :
+    transportMapCost c (a • μ) T = a * transportMapCost c μ T := by
+  rw [transportMapCost_def, transportMapCost_def, lintegral_smul_measure, smul_eq_mul]
+
 /-- The cost of a transport map only depends on the map up to `μ`-almost everywhere equality,
 which is the equivalence `ProbabilityTheory.HasLaw` is invariant under. -/
 theorem transportMapCost_congr (h : T =ᵐ[μ] S) (c : X × Y → ℝ≥0∞) :
@@ -173,6 +181,29 @@ def mongeCost (c : X × Y → ℝ≥0∞) (μ : Measure X) (ν : Measure Y) : �
 /-- The Monge value as the infimum of the costs of all transport maps. -/
 theorem mongeCost_def :
     mongeCost c μ ν = ⨅ (T : X → Y) (_ : HasLaw T ν μ), transportMapCost c μ T := (rfl)
+
+/-- **Homogeneity of the Monge cost.** Scaling both marginals by the same nonzero finite factor
+scales the Monge value by that factor. The nonzero assumption is necessary: at zero mass a
+transport map need not exist when the target type is empty. -/
+theorem mongeCost_smul (ha₀ : a ≠ 0) (ha : a ≠ ∞) (c : X × Y → ℝ≥0∞)
+    (μ : Measure X) (ν : Measure Y) :
+    mongeCost c (a • μ) (a • ν) = a * mongeCost c μ ν := by
+  have hLaw (T : X → Y) : HasLaw T (a • ν) (a • μ) ↔ HasLaw T ν μ := by
+    constructor
+    · intro hT
+      have hTm : AEMeasurable T μ := (aemeasurable_smul_measure_iff ha₀).1 hT.aemeasurable
+      refine ⟨hTm, ?_⟩
+      have hmap := hT.map_eq
+      rw [Measure.map_smul a hTm] at hmap
+      apply_fun (a⁻¹ • ·) at hmap
+      simpa only [smul_smul, ENNReal.inv_mul_cancel ha₀ ha, one_smul] using hmap
+    · intro hT
+      refine ⟨(aemeasurable_smul_measure_iff ha₀).2 hT.aemeasurable, ?_⟩
+      rw [Measure.map_smul a hT.aemeasurable, hT.map_eq]
+  rw [mongeCost_def, mongeCost_def]
+  simp_rw [hLaw, transportMapCost_smul]
+  symm
+  simp only [ENNReal.mul_iInf_of_ne ha₀ ha]
 
 /-- Every transport map bounds the Monge value from above. -/
 theorem mongeCost_le_transportMapCost (hT : HasLaw T ν μ) (c : X × Y → ℝ≥0∞) :
