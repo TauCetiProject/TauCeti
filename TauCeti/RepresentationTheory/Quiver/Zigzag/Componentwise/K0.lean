@@ -146,25 +146,20 @@ theorem zigzagAlgebraGradedProjectiveClassBasis_repr_class (i : V) :
   rw [← zigzagAlgebraGradedProjectiveClassBasis_apply]
   exact Module.Basis.repr_self _ i
 
-open scoped Classical in
-/-- The graded Cartan map has diagonal coordinate `1 + q²`, edge coordinate `q`, and zero
-otherwise, for the public algebra even at isolated vertices. -/
-theorem gradedIdempotentCoordinate_gradedCartanMap_zigzagAlgebraGradedProjectiveClass
-    (i j : V) :
-    gradedIdempotentCoordinate (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-        (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
-        (gradedCartanMap A (zigzagAlgebraGradedProjectiveClass k G j)) =
-      if i = j then 1 + T 2 else if G.Adj i j then T 1 else 0 := by
-  rw [zigzagAlgebraGradedProjectiveClass_def, gradedCartanMap_of,
-    gradedIdempotentCoordinate_of, smulGradedDimension_zigzagAlgebraGradedProjective]
-
 /-! ### The simple-class basis and the categorical Cartan matrix -/
 
 /-- The graded head of the public vertex projective, obtained by killing its positive-degree
 part. At an isolated vertex this kills the degree-two dual-number generator. -/
-abbrev zigzagAlgebraGradedSimple (i : V) : GradedModuleCat.{max u w} A :=
+def zigzagAlgebraGradedSimple (i : V) : GradedModuleCat.{max u w} A :=
   let _ := zigzagAlgebraIntegerGradedAlgebra k G
   gradedPositiveMulQuotient A (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
+
+/-- A graded vertex simple is the generic graded head of its vertex idempotent. -/
+theorem zigzagAlgebraGradedSimple_def (i : V) :
+    zigzagAlgebraGradedSimple k G i =
+      let _ := zigzagAlgebraIntegerGradedAlgebra k G
+      gradedPositiveMulQuotient A (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i) := by
+  rw [zigzagAlgebraGradedSimple]
 
 /-- The head of a public vertex projective is a finite graded module. -/
 theorem gradedFiniteModules_zigzagAlgebraGradedSimple (i : V) :
@@ -183,6 +178,27 @@ theorem simple_zigzagAlgebraGradedSimple (i : V) :
     (completeOrthogonalIdempotents_zigzagAlgebraBasis_inl k G).toOrthogonalIdempotents
     (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G)
     (zigzagAlgebraIntegerGrade_zero_eq_span_range k G).le i
+    ((zigzagAlgebraBasis k G).ne_zero (.inl i))
+
+/-- A graded vertex simple is finite-dimensional. -/
+instance (i : V) : Module.Finite k (zigzagAlgebraGradedSimple k G i) :=
+  have : Module.Finite (zigzagAlgebra k G) (zigzagAlgebraGradedSimple k G i) :=
+    gradedFiniteModules_iff.1 (gradedFiniteModules_zigzagAlgebraGradedSimple k G i)
+  Module.Finite.trans (zigzagAlgebra k G) _
+
+/-- The graded vertex simple is concentrated in degree zero, with dimension one at its own
+vertex and zero at every other vertex. -/
+@[simp]
+theorem smulGradedDimension_zigzagAlgebraGradedSimple [DecidableEq V] (j i : V) :
+    (zigzagAlgebraGradedSimple k G i).smulGradedDimension (e j) =
+      if j = i then 1 else 0 := by
+  let _ := zigzagAlgebraIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  exact smulGradedDimension_gradedIdempotentHead
+    (fun _ ↦ zigzagAlgebraIntegerGrade_eq_bot_of_neg k G)
+    (completeOrthogonalIdempotents_zigzagAlgebraBasis_inl k G).toOrthogonalIdempotents
+    (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G)
+    (zigzagAlgebraIntegerGrade_zero_eq_span_range k G).le j i
     ((zigzagAlgebraBasis k G).ne_zero (.inl i))
 
 /-- The vertex-head class basis of `G₀^gr(mod Z)` for the public componentwise zigzag algebra. -/
