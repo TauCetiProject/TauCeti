@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Homotopy.Equiv
+import Mathlib.Topology.Homotopy.Path
 
 /-!
 # The mapping cylinder of a continuous map
@@ -42,7 +44,8 @@ and its companions record.
   `TauCeti.MappingCylinder.inclHomeomorph` the homeomorphism of the source with the bottom face.
 * `TauCeti.MappingCylinder.deformation`: **the mapping cylinder deformation retracts onto its
   base**, with `TauCeti.MappingCylinder.homotopyEquiv` the resulting homotopy equivalence with
-  the target.
+  the target, and `TauCeti.MappingCylinder.exists_mem_range_incl_joined` joining every point to
+  the bottom face when `f` is surjective on path components.
 
 ## References
 
@@ -419,6 +422,20 @@ lemma homotopyEquiv_apply (m : MappingCylinder f) : homotopyEquiv f m = proj f m
 /-- The homotopy inverse of the projection is the base inclusion. -/
 @[simp]
 lemma homotopyEquiv_symm_apply (y : Y) : (homotopyEquiv f).symm y = mkBase f y := (rfl)
+
+/-- If every point of `Y` is joined by a path to a point of the image of `f`, then every point of
+the mapping cylinder is joined by a path to a point of its bottom face `range (incl f)`. -/
+theorem exists_mem_range_incl_joined (h : ∀ y, ∃ x, Joined (f x) y) (m : MappingCylinder f) :
+    ∃ b ∈ Set.range (incl f), Joined m b := by
+  -- The deformation onto the base joins `m` to `mkBase (proj m)`, and `incl x` to
+  -- `mkBase (f x)`.
+  have hdef (m : MappingCylinder f) : Joined m (mkBase f (proj f m)) :=
+    ⟨(deformation f).toHomotopy.evalAt m⟩
+  obtain ⟨x, hx⟩ := h (proj f m)
+  have hx' := hdef (incl f x)
+  rw [← ContinuousMap.comp_apply (proj f), proj_comp_incl] at hx'
+  exact ⟨incl f x, Set.mem_range_self x,
+    (hdef m).trans ((hx.symm.map (mkBase f).continuous).trans hx'.symm)⟩
 
 end Deformation
 
