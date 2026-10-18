@@ -148,6 +148,16 @@ theorem tarskiQuery_eq_card_sub_card (p q : R[X]) :
       (p.roots.toFinset.filter (fun x => q.eval x < 0)).card := by
   rw [tarskiQuery_eq_signSum, signSum_eq_card_sub_card]
 
+/-- A Tarski query lies between minus the degree of its root polynomial and its degree. -/
+theorem tarskiQuery_mem_Icc_natDegree (p q : R[X]) :
+    tarskiQuery p q ∈ Set.Icc (-(p.natDegree : ℤ)) (p.natDegree : ℤ) := by
+  rw [tarskiQuery_eq_card_sub_card]
+  have hroots : p.roots.toFinset.card ≤ p.natDegree :=
+    (Multiset.toFinset_card_le p.roots).trans (card_roots' p)
+  have hpos := Finset.card_filter_le p.roots.toFinset (fun x => 0 < q.eval x)
+  have hneg := Finset.card_filter_le p.roots.toFinset (fun x => q.eval x < 0)
+  constructor <;> omega
+
 @[simp, grind =]
 theorem tarskiQuery_zero_left (q : R[X]) : tarskiQuery 0 q = 0 := by
   simp [tarskiQuery_eq_signSum]
