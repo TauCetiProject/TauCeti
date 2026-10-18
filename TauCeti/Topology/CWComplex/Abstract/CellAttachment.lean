@@ -125,21 +125,6 @@ theorem cellAttachmentCell_lift (φ : ι → (TopCat.diskBoundary n ⟶ X)) (f :
   rw [cellAttachmentCell, cellAttachmentLift, Category.assoc, pushout.inr_desc,
     Sigma.ι_comp_desc]
 
-/-- Maps out of a cell attachment are equal when they agree on the old space and on every
-characteristic disk. -/
-theorem cellAttachment_hom_ext (φ : ι → (TopCat.diskBoundary n ⟶ X))
-    {f g : cellAttachment φ ⟶ Y}
-    (hX : cellAttachmentIncl φ ≫ f = cellAttachmentIncl φ ≫ g)
-    (hcell : ∀ i, cellAttachmentCell φ i ≫ f = cellAttachmentCell φ i ≫ g) :
-    f = g := by
-  apply pushout.hom_ext (f := Sigma.desc φ)
-    (g := Limits.Sigma.map fun _ ↦ TopCat.diskBoundaryInclusion n)
-  · exact hX
-  apply Sigma.hom_ext
-  intro i
-  rw [← Category.assoc, ← Category.assoc]
-  exact hcell i
-
 /-- The inclusion of the old space into a cell attachment is a closed embedding. -/
 theorem isClosedEmbedding_cellAttachmentIncl (φ : ι → (TopCat.diskBoundary n ⟶ X)) :
     Topology.IsClosedEmbedding (cellAttachmentIncl φ) :=
@@ -161,9 +146,9 @@ attachment: its characteristic disk gives an extension. -/
 theorem cellAttachment_attachingMap_nullhomotopic
     (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι) :
     ((cellAttachmentIncl φ).hom.comp (φ i).hom).Nullhomotopic := by
-  rw [show (cellAttachmentIncl φ).hom.comp (φ i).hom =
-    (cellAttachmentCell φ i).hom.comp (TopCat.diskBoundaryInclusion n).hom by
-      exact congrArg TopCat.Hom.hom (cellAttachment_boundary φ i)]
+  have h := congrArg TopCat.Hom.hom (cellAttachment_boundary φ i)
+  simp only [TopCat.hom_comp] at h
+  rw [h]
   exact (((id_nullhomotopic (TopCat.disk n)).comp_right (cellAttachmentCell φ i).hom).comp_left
     (TopCat.diskBoundaryInclusion n).hom)
 
