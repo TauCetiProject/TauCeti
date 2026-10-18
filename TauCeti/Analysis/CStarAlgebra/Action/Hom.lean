@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Equivariant homomorphisms and invariant C⋆-subalgebras
@@ -219,10 +218,7 @@ theorem comap (hT : T.IsInvariant β) (f : CStarAction.Hom α β) :
 /-- The range of an equivariant homomorphism is an invariant star subalgebra. -/
 theorem range (f : CStarAction.Hom α β) :
     (NonUnitalStarAlgHom.range f.toNonUnitalStarAlgHom).IsInvariant β := by
-  intro g b hb
-  obtain ⟨a, rfl⟩ := (NonUnitalStarAlgHom.mem_range _).mp hb
-  rw [← f.map_action' g a]
-  exact NonUnitalStarAlgHom.mem_range_self _ (α g a)
+  simpa only [NonUnitalStarAlgebra.map_top] using (top α).map f
 
 /-- Restrict an automorphism from an action to an invariant star subalgebra. -/
 def restrictEquiv (hS : S.IsInvariant α) (g : G) : S ≃⋆ₐ[ℂ] S where
