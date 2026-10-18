@@ -290,7 +290,7 @@ theorem adDerivation_eq_self_iff_commute_tangentPoint
     rw [tangentKer_def]
     infer_instance
   have hmem : q * p.val * q⁻¹ ∈ tangentKer R H B :=
-    Subgroup.Normal.conj_mem (inferInstance : (tangentKer R H B).Normal) p.val p.property q
+    Subgroup.Normal.conj_mem p.val p.property q
   constructor
   · intro h
     have he : q * p.val * q⁻¹ = p.val := by

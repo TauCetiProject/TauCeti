@@ -190,7 +190,7 @@ theorem maximalAbelianExtension_eq_fixedField_inf_separableClosure :
   have := isAbelianGalois_fixedField_inf_separableClosure K Ω
   refine le_antisymm (le_inf ?_ (maximalAbelianExtension_le_separableClosure K Ω))
     (le_maximalAbelianExtension _)
-  rw [le_iff_le, fixingSubgroup_maximalAbelianExtension]
+  rw [le_fixedField_iff_le_fixingSubgroup, fixingSubgroup_maximalAbelianExtension]
 
 variable (K Ω) in
 /-- **The Galois group of the maximal abelian extension is the topological abelianization**: for

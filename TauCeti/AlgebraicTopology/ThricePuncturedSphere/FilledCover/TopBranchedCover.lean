@@ -173,7 +173,7 @@ the total space of `C` into its filled cover. -/
 def connectedCoverIso : C.cover ≅ C.toTopBranchedCover.connectedCover.cover :=
   CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo C.connectedCoverHomeomorph) (by
     ext1 x
-    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_coe,
+    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_ofClass,
       ← TopBranchedCover.restrict_connectedCoverHomeomorph]
     apply isOpenEmbedding_toOnePoint.injective
     rw [toOnePoint_apply, TopBranchedCover.coe_restrict_apply, coe_connectedCoverHomeomorph_apply]

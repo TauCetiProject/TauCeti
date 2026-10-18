@@ -80,7 +80,7 @@ private theorem index_fixingSubgroup_adjoin (hj₀ : E.j ≠ 0) (hj₁₇₂₈ 
   set H := (adjoin K {(ρ.u : Ω), ρ.r, ρ.s, ρ.t}).fixingSubgroup
   -- an automorphism lies in `H` exactly when it fixes `ρ`
   have hmem (σ : Ω ≃ₐ[K] Ω) : σ ∈ H ↔ ρ.map (σ : Ω →+* Ω) = ρ := by
-    rw [← Subgroup.zpowers_le, ← le_iff_le, adjoin_le_iff]
+    rw [← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup, adjoin_le_iff]
     simp [Set.insert_subset_iff, mem_fixedField_zpowers_iff, -mem_fixedField_iff,
       VariableChange.ext_iff, Units.ext_iff]
   have hmul (σ τ : Ω ≃ₐ[K] Ω) : ρ.map ((σ * τ : Ω ≃ₐ[K] Ω) : Ω →+* Ω) =
@@ -167,7 +167,7 @@ theorem exists_smul_quadraticTwist_eq_quadraticTwist_iff [IsGalois K Ω] (hj₀ 
     by_contra! hle
     have hL'L : L' ≤ L := by
       rw [← InfiniteGalois.fixedField_fixingSubgroup L]
-      exact (le_iff_le _ _).mpr fun σ hσ ↦ hle σ hσ
+      exact (le_fixedField_iff_le_fixingSubgroup _ _).mpr fun σ hσ ↦ hle σ hσ
     refine hne (eq_of_le_of_finrank_eq hL'L ?_).symm
     rw [Algebra.IsQuadraticExtension.finrank_eq_two, Algebra.IsQuadraticExtension.finrank_eq_two]
   have hσL₀ (x : L) : σ (algebraMap L Ω x) = algebraMap L Ω x :=
