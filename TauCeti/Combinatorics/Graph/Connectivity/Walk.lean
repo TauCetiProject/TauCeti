@@ -72,24 +72,24 @@ def edges {x y : α} : G.Walk x y → List β
   | .nil => []
   | .cons e _ p => e :: p.edges
 
-@[simp]
+@[simp, grind =]
 theorem length_nil : (nil : G.Walk x x).length = 0 := (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem length_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).length = p.length + 1 := (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem support_nil : (nil : G.Walk x x).support = [x] := (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem support_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).support = x :: p.support := (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem edges_nil : (nil : G.Walk x x).edges = [] := (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem edges_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).edges = e :: p.edges := (rfl)
 
@@ -137,13 +137,13 @@ theorem end_mem_support (p : G.Walk x y) : y ∈ p.support := by
   | nil => simp
   | cons e h p ih => simp [ih]
 
-@[simp]
+@[simp, grind =]
 theorem length_edges (p : G.Walk x y) : p.edges.length = p.length := by
   induction p with
   | nil => rfl
   | cons e h p ih => simp [ih]
 
-@[simp]
+@[simp, grind =]
 theorem length_support (p : G.Walk x y) : p.support.length = p.length + 1 := by
   induction p with
   | nil => rfl
@@ -158,16 +158,57 @@ theorem eq_of_length_eq_zero {p : G.Walk x y} (hp : p.length = 0) : x = y := by
 inductive Nil : {x y : α} → G.Walk x y → Prop
   | nil {x : α} : Nil (.nil : G.Walk x x)
 
-@[simp]
+@[simp, grind .]
 theorem nil_nil : (nil : G.Walk x x).Nil := Nil.nil
 
 @[simp]
 theorem not_nil_cons {e : β} {h : G.IsLink e x y} {p : G.Walk y z} :
     ¬ (cons e h p).Nil := nofun
 
-@[simp]
+@[simp, grind .]
 theorem length_eq_zero_iff {p : G.Walk x y} : p.length = 0 ↔ p.Nil := by
   cases p <;> simp
+
+@[grind .]
+protected theorem Nil.eq {p : G.Walk x y} : p.Nil → x = y
+  | .nil => rfl
+
+theorem nil_iff_support_eq {p : G.Walk x y} : p.Nil ↔ p.support = [x] := by
+  cases p <;> simp
+
+/-- A walk with definitionally equal endpoints is nil exactly when it equals `nil`. -/
+@[simp]
+theorem eq_nil_iff_nil {p : G.Walk x x} : p = nil ↔ p.Nil := by
+  cases p <;> simp
+
+alias ⟨_, Nil.eq_nil⟩ := eq_nil_iff_nil
+
+/-- Every edge traversed by a walk is an actual edge of the ambient graph. -/
+theorem edges_subset_edgeSet (p : G.Walk x y) :
+    ∀ ⦃e : β⦄, e ∈ p.edges → e ∈ E(G) := by
+  induction p with
+  | nil => simp
+  | cons e h p ih =>
+      intro f hf
+      simp only [edges_cons, List.mem_cons] at hf
+      exact hf.elim (fun hfe => hfe ▸ h.edge_mem) (fun hfp => ih hfp)
+
+/-- Every vertex on a positive-length walk is an actual vertex of the ambient graph. -/
+theorem support_subset_vertexSet (p : G.Walk x y) (hp : 0 < p.length) :
+    ∀ a ∈ p.support, a ∈ V(G) := by
+  induction p with
+  | nil => simp at hp
+  | @cons x y z e h p ih =>
+      intro a ha
+      simp only [support_cons, List.mem_cons] at ha
+      rcases ha with rfl | ha
+      · exact h.left_mem
+      · by_cases hp' : 0 < p.length
+        · exact ih hp' a ha
+        · have hnil : p.Nil := length_eq_zero_iff.mp (Nat.eq_zero_of_not_pos hp')
+          cases hnil
+          simp only [support_nil, List.mem_singleton] at ha
+          exact ha ▸ h.right_mem
 
 /-- An endpoint of an edge traversed by a walk occurs in the walk's support. -/
 theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : α} {e : β}
@@ -216,21 +257,21 @@ theorem append_assoc (p : G.Walk x y) (q : G.Walk y z) (r : G.Walk z w) :
   | nil => rfl
   | cons e h p ih => simp [ih]
 
-@[simp]
+@[simp, grind =]
 theorem length_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).length = p.length + q.length := by
   induction p with
   | nil => simp
   | cons e h p ih => simp [ih, Nat.add_assoc, Nat.add_comm]
 
-@[simp]
+@[simp, grind =]
 theorem edges_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).edges = p.edges ++ q.edges := by
   induction p with
   | nil => rfl
   | cons e h p ih => simp [ih]
 
-@[simp]
+@[simp, grind =]
 theorem support_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).support = p.support ++ q.support.tail := by
   induction p <;> cases q <;> simp_all
@@ -288,19 +329,19 @@ theorem reverse_reverse (p : G.Walk x y) : p.reverse.reverse = p := by
   | nil => rfl
   | cons e h p ih => simp [ih, IsLink.toWalk]
 
-@[simp]
+@[simp, grind =]
 theorem length_reverse (p : G.Walk x y) : p.reverse.length = p.length := by
   induction p with
   | nil => rfl
   | cons e h p ih => simp [ih]
 
-@[simp]
+@[simp, grind =]
 theorem edges_reverse (p : G.Walk x y) : p.reverse.edges = p.edges.reverse := by
   induction p with
   | nil => rfl
   | cons e h p ih => simp [ih]
 
-@[simp]
+@[simp, grind =]
 theorem support_reverse (p : G.Walk x y) : p.reverse.support = p.support.reverse := by
   induction p with
   | nil => rfl
@@ -339,7 +380,7 @@ theorem isCycle_def (p : G.Walk x x) :
 theorem isTrail_nil : IsTrail (nil : G.Walk x x) := by
   simp [IsTrail]
 
-@[simp]
+@[simp, grind =]
 theorem isTrail_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     IsTrail (cons e h p) ↔ IsTrail p ∧ e ∉ p.edges := by
   simp [IsTrail, and_comm]
@@ -348,7 +389,7 @@ theorem isTrail_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
 theorem isPath_nil : IsPath (nil : G.Walk x x) := by
   simp [IsPath]
 
-@[simp]
+@[simp, grind =]
 theorem isPath_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     IsPath (cons e h p) ↔ IsPath p ∧ x ∉ p.support := by
   simp [IsPath, and_comm]
@@ -388,6 +429,9 @@ theorem IsCycle.isTrail {p : G.Walk x x} (hp : p.IsCycle) : p.IsTrail := hp.2.1
 
 theorem IsCycle.ne_nil {p : G.Walk x x} (hp : p.IsCycle) : p ≠ .nil := hp.1
 
+theorem IsCycle.not_nil {p : G.Walk x x} (hp : p.IsCycle) : ¬ p.Nil :=
+  fun h => hp.ne_nil h.eq_nil
+
 theorem IsCycle.support_tail_nodup {p : G.Walk x x} (hp : p.IsCycle) :
     p.support.tail.Nodup := hp.2.2
 
@@ -412,7 +456,7 @@ end Walk
 walk joins them. The endpoint is then automatically an actual vertex as well. -/
 def Reachable (G : Graph α β) (x y : α) : Prop := x ∈ V(G) ∧ Nonempty (G.Walk x y)
 
-theorem reachable_iff_mem_nonempty_walk {x y : α} :
+theorem reachable_def {x y : α} :
     G.Reachable x y ↔ x ∈ V(G) ∧ Nonempty (G.Walk x y) := (Iff.rfl)
 
 namespace Walk
@@ -435,6 +479,15 @@ theorem IsLink.reachable {x y : α} {e : β} (h : G.IsLink e x y) : G.Reachable 
 namespace Reachable
 
 variable {x y z : α}
+
+theorem left_mem (h : G.Reachable x y) : x ∈ V(G) := h.1
+
+theorem right_mem (h : G.Reachable x y) : y ∈ V(G) := by
+  rcases h with ⟨hx, ⟨p⟩⟩
+  exact p.end_mem_vertexSet hx
+
+protected theorem elim {p : Prop} (h : G.Reachable x y) (hp : G.Walk x y → p) : p :=
+  Nonempty.elim h.2 hp
 
 /-- Every actual vertex is reachable from itself. -/
 @[refl]
