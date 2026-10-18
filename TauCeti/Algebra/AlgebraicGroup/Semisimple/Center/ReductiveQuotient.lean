@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Lie
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Center.Lie
-public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.RepresentableQuotient
+public import TauCeti.Algebra.AlgebraicGroup.Reductive.CenterQuotient
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
