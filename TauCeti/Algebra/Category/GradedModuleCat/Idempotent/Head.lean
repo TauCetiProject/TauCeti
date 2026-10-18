@@ -46,13 +46,14 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.gradedPositiveMulQuotientMk_eq_zero_iff`: the kernel of `Ae ⟶ Ae / A₊e` is `A₊e`.
 * `TauCeti.mem_gradedPositiveMulQuotient_piece_iff`: the degree-`p` piece of `Ae / A₊e` consists
   of the classes of the degree-`p` elements of `Ae`.
+* `TauCeti.decompose_eq_zero_of_mem_gradedPositiveMulIdeal`: over a nonnegatively graded algebra,
+  the elements of `A₊e` have no component in degrees `≤ 0`.
 * `TauCeti.gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk`,
   `TauCeti.gradedPositiveMulQuotientLift_unique`: the universal property of `Ae / A₊e`.
 * `TauCeti.smulGradedDimension_gradedIdempotentHead`: the graded dimension of `eⱼ • Sᵢ` is `δᵢⱼ`.
 * `TauCeti.simple_gradedIdempotentHead`: each graded head `Sᵢ` is a simple graded module.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedIdempotentHead`: every simple finite graded module
   is isomorphic to a shift of some `Sᵢ`.
-
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded modules
@@ -240,7 +241,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 include hneg in
 /-- In a nonnegatively graded algebra, every element of `A₊e` has vanishing components in all
 degrees `q ≤ 0`. -/
-private theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
+theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
     (hy : y ∈ gradedPositiveMulIdeal 𝒜 f) {q : ℤ} (hq : q ≤ 0) : (decompose 𝒜 y q : A) = 0 := by
   induction hy using Submodule.span_induction generalizing q with
   | mem y hy =>

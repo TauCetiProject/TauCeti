@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.NumberTheory.DiophantineApproximation.Basic
 public import TauCeti.MeasureTheory.Group.GeometryOfNumbers
 
 /-!
@@ -31,6 +32,10 @@ lower bounds behind exponents of approximation.
 * `TauCeti.simultaneous_dirichlet`: for `α ∈ ℝᵐ` and `Q > 1` there are integers `x` and
   `0 < y ≤ Q ^ m` with `|xᵢ - αᵢ y| ≤ Q⁻¹`.
 * `TauCeti.dirichlet_linearForm_infinite`: the case of a single linear form.
+* `Real.infinite_setOf_mul_abs_mul_sub_round_le_one`: for every real `α`, infinitely many
+  `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`, where `‖x‖ = |x - round x|`.
+* `Real.infinite_setOf_mul_le_one`: for every pair of reals `α`, `β`, infinitely many `q ≥ 1`
+  satisfy `q ‖q α‖ ‖q β‖ ≤ 1`.
 
 ## Implementation notes
 
@@ -209,5 +214,52 @@ theorem dirichlet_linearForm_infinite [Nonempty κ] (α : κ → ℝ)
   · simp only [Prod.mk.injEq] at h
     exact Prod.ext h.2 (funext fun _ ↦ h.1)
   · simpa [Unique.forall_iff] using hp
+
+/-- A rational number times a multiple of its denominator is an integer, so it has distance `0`
+from the nearest integer. -/
+theorem _root_.Rat.abs_den_mul_sub_round_eq_zero (r : ℚ) (n : ℕ) :
+    |((n * r.den : ℕ) : ℝ) * r - round (((n * r.den : ℕ) : ℝ) * r)| = 0 := by
+  have h : ((n * r.den : ℕ) : ℝ) * r = ((n * r.num : ℤ) : ℝ) := by
+    push_cast
+    rw [mul_assoc]
+    exact congrArg _ (by exact_mod_cast r.den_mul_eq_num)
+  rw [h, round_intCast, sub_self, abs_zero]
+
+/-- **Dirichlet's theorem, nearest-integer form.** For every real `α`, infinitely many natural
+numbers `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`. -/
+theorem _root_.Real.infinite_setOf_mul_abs_mul_sub_round_le_one (α : ℝ) :
+    {q : ℕ | 0 < q ∧ q * |q * α - round (q * α)| ≤ 1}.Infinite := by
+  refine Set.infinite_of_forall_exists_gt fun N ↦ ?_
+  by_cases hα : Irrational α
+  · -- The distances `‖k α‖` with `1 ≤ k ≤ N` are positive, so Dirichlet's theorem with a large
+    -- parameter `n` produces some `k > N`.
+    have hpos (k : ℕ) (hk : k ∈ Finset.Icc 1 N) : 0 < |k * α - round (k * α)| :=
+      abs_pos.mpr <| sub_ne_zero.mpr <|
+        (hα.natCast_mul (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hk).1)).ne_int _
+    have hev : ∀ᶠ n : ℕ in atTop,
+        0 < n ∧ ∀ k ∈ Finset.Icc 1 N, 1 / ((n : ℝ) + 1) < |k * α - round (k * α)| :=
+      (eventually_gt_atTop 0).and <| (eventually_all_finset _).mpr fun k hk ↦
+        tendsto_one_div_add_atTop_nhds_zero_nat.eventually (gt_mem_nhds (hpos k hk))
+    obtain ⟨n, hn, hnN⟩ := hev.exists
+    obtain ⟨k, hk, hkn, hkα⟩ := Real.exists_nat_abs_mul_sub_round_le α hn
+    refine ⟨k, ⟨hk, ?_⟩, ?_⟩
+    · calc (k : ℝ) * |k * α - round (k * α)| ≤ n * (1 / (n + 1)) := by gcongr
+        _ ≤ 1 := by rw [mul_one_div, div_le_one (by positivity)]; linarith
+    · by_contra hkN
+      exact (hnN k (Finset.mem_Icc.mpr ⟨hk, not_lt.mp hkN⟩)).not_ge hkα
+  · -- A rational `α = r` has `‖q α‖ = 0` at every multiple `q` of `den r`.
+    obtain ⟨r, rfl⟩ := not_not.mp hα
+    refine ⟨(N + 1) * r.den, ⟨Nat.mul_pos N.succ_pos r.den_pos, ?_⟩, ?_⟩
+    · rw [r.abs_den_mul_sub_round_eq_zero, mul_zero]
+      exact zero_le_one
+    · exact (Nat.lt_succ_self N).trans_le (Nat.le_mul_of_pos_right _ r.den_pos)
+
+/-- For all real `α`, `β`, infinitely many `y ≥ 1` satisfy `y ‖y α‖ ‖y β‖ ≤ 1`. -/
+theorem _root_.Real.infinite_setOf_mul_le_one (α β : ℝ) :
+    {y : ℕ | 0 < y ∧ y * |y * α - round (y * α)| * |y * β - round (y * β)| ≤ 1}.Infinite := by
+  refine Set.Infinite.mono ?_ α.infinite_setOf_mul_abs_mul_sub_round_le_one
+  rintro y ⟨hy, hyα⟩
+  refine ⟨hy, ?_⟩
+  exact (mul_le_of_le_one_right (by positivity) ((abs_sub_round _).trans (by norm_num))).trans hyα
 
 end TauCeti

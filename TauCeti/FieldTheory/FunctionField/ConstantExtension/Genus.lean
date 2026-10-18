@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Conorm
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RiemannRoch
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.DegreeZero
@@ -22,9 +22,9 @@ degrees `l [F : k(x)]` and their dimensions do not change in `F'`
 (`TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`), and every divisor of `F'` is
 linearly equivalent to one below some `l B`.
 
-When `k' / k` is finite the conorm `Con : Div(F) → Div(F')` is defined; it preserves degrees and
-the dimensions of Riemann–Roch spaces, so it carries the canonical class to the canonical class
-and is injective on divisor classes.
+The conorm `Con : Div(F) → Div(F')` preserves degrees and the dimensions of Riemann–Roch
+spaces, so it carries the canonical class to the canonical class and is injective on divisor
+classes, including when the separable algebraic constant extension is infinite.
 
 Exactness of `k'` in `F'` is not needed for the degree and genus identities; where the canonical
 class of `F' / k'` is spoken of, it follows from exactness of `k` in `F`
@@ -303,26 +303,13 @@ theorem genus_eq_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
 
 end Algebraic
 
-/-! ### Finite separable constant field extensions -/
+/-! ### Divisor classes under separable algebraic constant field extensions -/
 
-variable [FiniteDimensional F F'] [Algebra.IsSeparable k k']
-
-/-- **The conorm along a constant field extension preserves degrees** (Stichtenoth,
-Theorem 3.6.3(c)): for a finite separable constant field extension `F · k' / k'` of `F / k` with
-exact constant field `k`, `deg (Con D) = deg D` for every divisor `D` of `F / k`.  No
-function-field hypothesis on `F / k` is needed. -/
-@[simp]
-theorem Divisor.degree_conorm_of_constantCompositum_eq_top
-    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (D : Divisor k F) :
-    Divisor.degree (Divisor.conorm k' F' D) = Divisor.degree D := by
-  have := finiteDimensional_base_of_constantCompositum_eq_top hex h
-  have := isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') h
-  rw [Divisor.degree_conorm_of_isSeparable k' F'
-    (finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex),
-    geometricDegree_eq_one_of_constantCompositum_eq_top F k' F' h, Nat.cast_one, one_mul]
+variable [Algebra.IsIntegral F F'] [Algebra.IsSeparable k k']
+variable [∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-- **The conorm of the canonical class is the canonical class** (Stichtenoth,
-Theorem 3.6.3(e)): for a finite separable constant field extension `F · k' / k'` of `F / k` with
+Theorem 3.6.3(e)): for a separable algebraic constant field extension `F · k' / k'` of `F / k` with
 exact constant field `k`, the conorm on divisor classes sends the canonical class of `F / k` to the
 canonical class of `F · k' / k'`, whose constant field `k'` is exact as well. -/
 @[simp]
@@ -336,14 +323,14 @@ theorem conormClassGroup_canonicalClass_of_constantCompositum_eq_top (hF : IsFun
   obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
   have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
   rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
-    Divisor.dim_conorm hex h hF, Divisor.degree_conorm_of_constantCompositum_eq_top hex h,
+    Divisor.dim_conorm hex h hF, Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h,
     genus_eq_genus_of_constantCompositum_eq_top hF hex h]
   exact hW'
 
-/-- **The conorm is injective on divisor classes** (Stichtenoth, Theorem 3.6.3(f)): along a finite
-separable constant field extension of a function field with exact constant field, two divisors
-with the same conorm class lie in the same class; equivalently, a divisor whose conorm is principal
-is itself principal. -/
+/-- **The conorm is injective on divisor classes** (Stichtenoth, Theorem 3.6.3(f)):
+along a separable algebraic constant field extension of a function field with exact constants,
+two divisors with the same conorm class lie in the same class; equivalently, a divisor whose
+conorm is principal is itself principal. -/
 theorem conormClassGroup_injective_of_constantCompositum_eq_top (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) := by
@@ -354,12 +341,12 @@ theorem conormClassGroup_injective_of_constantCompositum_eq_top (hF : IsFunction
   rw [Divisor.conormClassGroup_divisorClass, Divisor.divisorClass_eq_zero_iff hF'] at hc
   obtain ⟨z, hz⟩ := hc
   have hdeg : Divisor.degree D = 0 := by
-    rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hex h, ← hz,
+    rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h, ← hz,
       Divisor.degree_principal]
   have hdim : 1 ≤ Divisor.dim D := by
     rw [← Divisor.dim_conorm hex h hF]
     exact (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF' (by
-      rw [Divisor.degree_conorm_of_constantCompositum_eq_top hex h, hdeg])).2 ⟨z, hz⟩
+      rw [Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h, hdeg])).2 ⟨z, hz⟩
   exact (Divisor.divisorClass_eq_zero_iff hF).2
     ((Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hdeg).1 hdim)
 
