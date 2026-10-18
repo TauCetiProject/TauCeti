@@ -97,6 +97,8 @@ protected def ihom : PointedSSet.{u} ⥤ PointedSSet.{u} where
   obj Y := Under.mk (basedMapsPoint X Y)
   map {Y Y'} g := Under.homMk
     { app n := ↾fun φ ↦ ⟨φ.1.comp (.ofNatTrans g.right), (mem_basedMaps_iff _).2 fun m f ↦ by
+        -- A simplex of `[X, Y]` is a `Functor.HomObj` only after unfolding Mathlib's internal
+        -- hom, so `simp` cannot rewrite `Functor.HomObj.comp`; `change` states the component.
         change g.right.app m (φ.1.app m f (X.point m)) = _
         simp [basedMaps_app_point φ f]⟩
       naturality _ _ _ := rfl }
@@ -121,31 +123,42 @@ variable (Z)
 /-- Currying identifies based maps `X ⊗ Y ⟶ Z` out of the smash product with based maps
 `Y ⟶ Map_*(X, Z)`: a simplex `y` goes to the based map `x ↦ f (x ∧ y)`. -/
 def tensorHomEquiv : (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (PointedSSet.ihom X).obj Z) where
+  -- The `change` steps below state goals about simplices of `[X, Z]` as components of based maps.
+  -- These simplices are `Functor.HomObj`s only after unfolding Mathlib's internal hom, so neither
+  -- Mathlib's `functorHomEquiv` simp lemmas nor `smashLift_app_smashMk` match them: `simp` leaves
+  -- these goals unsolved, and `rw` cannot locate the patterns.
   toFun f := Under.homMk
     (SSet.Subcomplex.lift (B := basedMaps X Z)
       ((FunctorToTypes.functorHomEquiv X.right Y.right Z.right).symm (smashProj X Y ≫ f.right))
       (by
         rintro n _ ⟨y, rfl⟩ m g
+        -- Evaluate the curried map `(functorHomEquiv _ _ _).symm (smashProj X Y ≫ f.right)`.
         change f.right.app m (smashMk (X.point m) (Y.right.map g y)) = Z.point m
         simp))
     (by
       ext n a m g x
+      -- Evaluate the curried map through `Subcomplex.lift`.
       change f.right.app m (smashMk x (Y.right.map g (Y.hom.app n a))) = _
       simp [PointedSSet.ihom, basedMapsPoint])
   invFun g := smashLift
     (FunctorToTypes.functorHomEquiv X.right Y.right Z.right (g.right ≫ (basedMaps X Z).ι))
     (fun n y ↦ (g.right.app n y : (basedMaps X Z).obj n).2 n (𝟙 n))
     (fun n x ↦ by
+      -- Evaluate the uncurried map `functorHomEquiv _ _ _ (g.right ≫ (basedMaps X Z).ι)`.
       change (g.right.app n (Y.point n) : (basedMaps X Z).obj n).1.app n (𝟙 n) x = _
       rw [app_point]
       simp [PointedSSet.ihom, basedMapsPoint])
   left_inv f := tensor_ext fun n x y ↦ by
+    -- Evaluate the uncurried map through `smashLift`, then the curried map.
     change f.right.app n (smashMk x (Y.right.map (𝟙 n) y)) = _
     simp
   right_inv g := by
     ext n y m f x
+    -- Naturality of `g.right` at `f`, evaluated at `𝟙 m` and `x`. `simp` would prove the
+    -- naturality square itself again and reduce it to `True`, so it is applied directly.
     refine (congrArg (fun φ : (basedMaps X Z).obj m ↦ φ.1.app m (𝟙 m) x)
-      (ConcreteCategory.congr_hom (g.right.naturality f) y)).trans ?_
+      (NatTrans.naturality_apply g.right f y)).trans ?_
+    -- Unfold the action of `Map_*(X, Z)` on simplices, which precomposes with `f`.
     change (g.right.app n y : (basedMaps X Z).obj n).1.app m (f ≫ 𝟙 m) x =
       (g.right.app n y : (basedMaps X Z).obj n).1.app m f x
     rw [Category.comp_id]
