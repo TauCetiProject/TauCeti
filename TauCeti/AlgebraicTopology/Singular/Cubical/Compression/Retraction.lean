@@ -66,6 +66,9 @@ homology under weak homotopy equivalences (Hatcher, Proposition 4.21).
 
 ## References
 
+* The chain-level construction follows the parallel formalization in
+  `TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction`, adapted so that the retraction
+  lands in the chains of the subspace rather than defining an endomorphism.
 * S. Eilenberg, *Singular homology theory*, Ann. of Math. (2) 45 (1944), 407–447, for the
   deformation of singular chains into the subcomplex of a subspace.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
