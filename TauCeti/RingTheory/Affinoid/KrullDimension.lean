@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.NoetherNormalization
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.KrullDimension
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
+import TauCeti.RingTheory.KrullDimension.Basic
 
 /-!
 # Krull dimension of affinoid algebras
@@ -55,7 +56,6 @@ theorem exists_ringKrullDim_eq_finite_injective [Nontrivial A] (hA : IsAffinoidA
 /-- A nonzero affinoid algebra has finite Krull dimension. -/
 theorem finiteRingKrullDim [Nontrivial A] (hA : IsAffinoidAlgebra K A) : FiniteRingKrullDim A := by
   obtain ⟨n, hn, -⟩ := hA.exists_ringKrullDim_eq_finite_injective
-  exact finiteRingKrullDim_iff_ne_bot_and_top.mpr
-    (hn ▸ ⟨WithBot.natCast_ne_bot _, WithBot.coe_inj.not.mpr (ENat.natCast_ne_top _)⟩)
+  exact .of_ringKrullDim_eq_natCast hn
 
 end TauCeti.IsAffinoidAlgebra

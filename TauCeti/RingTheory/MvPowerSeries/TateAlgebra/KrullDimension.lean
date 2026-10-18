@@ -9,8 +9,10 @@ public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 import Mathlib.RingTheory.KrullDimension.Field
+import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.KrullDimension.Quotient
+import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 
 /-!
@@ -36,9 +38,6 @@ algebra `K⟨X⟩⟨Y⟩`.
 
 * `TauCeti.MvPowerSeries.ringKrullDim_isRestricted_subring`: the Tate algebra in the variables
   `σ`, for finite `σ`, has Krull dimension `Nat.card σ`.
-* `TauCeti.PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring`: adjoining a
-  restricted variable raises the Krull dimension by at least one, over any ultrametric normed
-  commutative ring.
 * `TauCeti.MvPowerSeries.ringKrullDim_eq_natCard_of_isIntegral`: a ring that is integral over an
   injectively embedded Tate algebra in the variables `σ` has Krull dimension `Nat.card σ`.
 
@@ -49,22 +48,6 @@ algebra `K⟨X⟩⟨Y⟩`.
 -/
 
 public section
-
-namespace TauCeti.PowerSeries
-
-/-- Setting the variable to zero shows `dim R + 1 ≤ dim R⟨X⟩` for the ring of restricted power
-series of any radius over an ultrametric normed commutative ring `R`. -/
-theorem ringKrullDim_succ_le_ringKrullDim_isRestricted_subring {R : Type*} [NormedCommRing R]
-    [IsUltrametricDist R] (c : ℝ) :
-    ringKrullDim R + 1 ≤ ringKrullDim (PowerSeries.IsRestricted.subring (R := R) c) := by
-  let S := PowerSeries.IsRestricted.subring (R := R) c
-  let X : S := ⟨PowerSeries.X, PowerSeries.X_eq (R := R) ▸ PowerSeries.isRestricted_monomial c 1 1⟩
-  have hX : X ∈ nonZeroDivisors S := mem_nonZeroDivisors_iff_right.mpr fun x hx ↦
-    Subtype.ext <| PowerSeries.mul_X_cancel (ψ := 0) (by simpa [X] using congrArg Subtype.val hx)
-  exact ringKrullDim_succ_le_of_surjective (PowerSeries.constantCoeff.comp S.subtype)
-    (fun r ↦ ⟨⟨PowerSeries.C r, PowerSeries.isRestricted_C c r⟩, by simp⟩) hX (by simp [X])
-
-end TauCeti.PowerSeries
 
 namespace TauCeti.MvPowerSeries
 
@@ -121,9 +104,8 @@ theorem ringKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
       exact PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring 1
 
 /-- The Tate algebra in finitely many variables has finite Krull dimension. -/
-instance finiteRingKrullDim {σ : Type*} [Finite σ] : FiniteRingKrullDim (Tate σ) := by
-  rw [finiteRingKrullDim_iff_ne_bot_and_top, ringKrullDim_isRestricted_subring]
-  exact ⟨WithBot.natCast_ne_bot _, WithBot.coe_inj.not.mpr (ENat.natCast_ne_top _)⟩
+instance finiteRingKrullDim {σ : Type*} [Finite σ] : FiniteRingKrullDim (Tate σ) :=
+  .of_ringKrullDim_eq_natCast ringKrullDim_isRestricted_subring
 
 /-- **The degree of a normalisation is the Krull dimension.** A ring that is integral over an
 injectively embedded Tate algebra `K⟨X₁, …, X_d⟩` has Krull dimension `d`. This applies to the
