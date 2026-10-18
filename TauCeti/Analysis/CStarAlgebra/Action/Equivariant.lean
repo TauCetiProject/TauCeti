@@ -34,9 +34,12 @@ variable {G H A B C : Type*}
   [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
   [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
 
+end TauCeti.CStarAction
+
 namespace IsInvariant
 
-variable {α : CStarAction G A} {s t : Set A}
+variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
+  {α : TauCeti.CStarAction G A} {s t : Set A}
 
 /-- An invariant subset contains the image of each of its elements under the action. -/
 theorem apply_mem (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
@@ -48,7 +51,7 @@ theorem apply_mem (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
 theorem apply_mem_iff (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
     (g : G) (a : A) : α g a ∈ s ↔ a ∈ s := by
   refine ⟨fun h ↦ ?_, fun ha ↦ hs g ha⟩
-  simpa only [inv_apply_apply] using hs g⁻¹ h
+  simpa only [TauCeti.CStarAction.inv_apply_apply] using hs g⁻¹ h
 
 /-- The empty subset is invariant. -/
 protected theorem empty : _root_.IsInvariant (fun g a ↦ α g a) ∅ :=
@@ -73,6 +76,12 @@ theorem iInter {ι : Type*} {s : ι → Set A}
   exact fun i ↦ hs i g (ha i)
 
 end IsInvariant
+
+namespace TauCeti.CStarAction
+
+variable {G H A B C : Type*}
+  [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
 
 /-- A nonunital star-algebra homomorphism is equivariant when it intertwines two actions. -/
 def IsEquivariant (α : CStarAction G A) (β : CStarAction G B)
