@@ -41,8 +41,8 @@ replaces `K` by `K(E[m])`, over which `E[m]` is rational.
   restricts to zero over `L` exactly when it restricts to zero on `Gal(Kˢ/σ(L))`.
 * `WeierstrassCurve.ker_pointRes`, `WeierstrassCurve.ker_torsionRes`: the same statement for the
   kernels.
-* `WeierstrassCurve.smul_torsionCoeff_divisionField`: the absolute Galois group of `K(E[m])`
-  acts trivially on the geometric `m`-torsion.
+* `WeierstrassCurve.forall_smul_eq_torsionCoeff_divisionField`: over the `m`-division field, every
+  point of `E[m]` is rational.
 * `WeierstrassCurve.finite_ker_torsionRes_divisionField`: for `W` elliptic and `m ≠ 0`, restriction
   of `H¹(G_K, E[m])` to the `m`-division field has finite kernel.
 * `WeierstrassCurve.finite_selmerGroup_of_finite_selmerGroup_divisionField`: hence `Sel_m(E/K)` is
@@ -107,21 +107,18 @@ theorem ker_torsionRes (m : ℕ) :
 
 /-! ### Restriction to the division field -/
 
-/-- Every geometric `m`-torsion point is fixed by the absolute Galois group of the
-`m`-division field. No ellipticity or invertibility assumption is needed. -/
-@[simp]
-theorem smul_torsionCoeff_divisionField (m : ℕ)
-    (g : AbsoluteGaloisGroup (W.divisionField m))
-    (P : (W⁄(W.divisionField m)).TorsionCoeff m) : g • P = P := by
+/-- **Over the `m`-division field `K(E[m])`, every geometric `m`-torsion point is rational**: `G_L`
+acts trivially on `E(Lˢ)[m]` for `L = K(E[m])`. -/
+theorem forall_smul_eq_torsionCoeff_divisionField (m : ℕ)
+    (g : AbsoluteGaloisGroup (W.divisionField m)) (P : (W⁄(W.divisionField m)).TorsionCoeff m) :
+    g • P = P := by
   let e := separableClosureAlgEquiv K (W.divisionField m) (W.divisionField m).val
-  obtain ⟨Q, rfl⟩ := (W.torsionCoeffBaseChange_bijective (τ := e.toAlgHom) m e.bijective).2 P
-  rw [← W.torsionCoeffBaseChange_smul]
-  have hg : absoluteGaloisGroupMap (e : SeparableClosure K →ₐ[K]
-      SeparableClosure (W.divisionField m)) g ∈ (W.divisionField m).fixingSubgroup := by
-    simpa only [IntermediateField.fieldRange_val] using
-      absoluteGaloisGroupMap_separableClosureAlgEquiv_mem_fixingSubgroup K
-        (W.divisionField m) (W.divisionField m).val g
-  rw [(mem_fixingSubgroup_divisionField_iff.1 hg) Q]
+  refine W.forall_smul_eq_torsionCoeff_baseChange m (τ := e) e.bijective (fun g Q ↦ ?_) g P
+  refine (W.mem_fixingSubgroup_divisionField_iff (m := m)).1 ?_ Q
+  rw [absoluteGaloisGroupMap_separableClosureAlgEquiv, ContinuousMonoidHom.comp_toFun,
+    ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.subgroupSubtype_apply]
+  simpa only [IntermediateField.fieldRange_val] using
+    (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m) (W.divisionField m).val g).2
 
 /-- **Restriction of `H¹(G_K, E[m])` to the `m`-division field `K(E[m])` has finite kernel**, for
 `W` elliptic and `m ≠ 0`, along any embedding of separable closures. -/

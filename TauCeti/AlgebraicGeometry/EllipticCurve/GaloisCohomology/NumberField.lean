@@ -77,6 +77,7 @@ theorem finite_selmerGroup_of_numberField
     open scoped AdicCompletionExtension in
       exact W.finite_selmerGroup_of_finite_ker_torsionRes ρ τ τL under (hker ρ) hL
   let : NumberField (W.divisionField m) := NumberField.of_module_finite K _
-  exact descend (W.smul_torsionCoeff_divisionField m) (W.finite_ker_torsionRes_divisionField m)
+  exact descend (W.forall_smul_eq_torsionCoeff_divisionField m)
+    (W.finite_ker_torsionRes_divisionField m)
 
 end WeierstrassCurve

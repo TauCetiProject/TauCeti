@@ -499,3 +499,35 @@ theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R]
 end Cocharacter
 
 end TauCeti
+
+namespace BialgHom
+
+open TauCeti TauCeti.Cocharacter
+
+universe u v w
+
+variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+variable {A : Type w} [CommSemiring A] [Algebra R A]
+
+/-- A dynamic Levi point commutes with every value of its cocharacter over the same algebra.
+The converse requires testing after extensions of the value algebra. -/
+theorem commute_pointsHom_of_mem_levi (l : H →ₐc[R] LaurentPolynomial R)
+    {g : WithConv (H →ₐ[R] A)} (hg : g ∈ levi A l) (t : Aˣ) :
+    Commute g (pointsHom A l t) := by
+  let ψ : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) t).restrictScalars R
+  have hconst : ψ.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) =
+      AlgHom.id R A := by
+    ext a
+    simp [ψ]
+  have hunit : Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A) = t := by
+    ext
+    simp [ψ]
+  have h := congrArg (AlgHom.mapValue (H := H) ψ) (mem_levi_iff.mp hg)
+  have heval : AlgHom.mapValue ψ (Cocharacter.constPoint A g) = g := by
+    ext a
+    simp [constPoint_apply, ψ]
+  simp only [mapValue_conjugate, hunit, hconst, AlgHom.mapValue_id,
+    MonoidHom.id_apply, heval] at h
+  exact ((mul_inv_eq_iff_eq_mul).mp h).symm
+
+end BialgHom

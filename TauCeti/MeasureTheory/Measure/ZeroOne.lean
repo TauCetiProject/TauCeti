@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
+public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 import TauCeti.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.GroupWithZero.Idempotent

@@ -15,8 +15,10 @@ A multiplicative unit is an invertible element whose left multiplication scales 
 its own norm. This singles out the units needed in norm estimates over coefficient rings whose
 norm need not be multiplicative. In a norm-one ring, the condition is equivalent to the inverse
 having reciprocal norm, and norm-preserving ring homomorphisms preserve multiplicative units
-from a norm-one source ring. In a complete ultrametric norm-one ring, small perturbations of one
-are multiplicative units.
+from a norm-one source ring. A nontrivial normed ring with a multiplicative unit has
+`‖1‖ = 1`. Powers and finite products of multiplicative units are again multiplicative units,
+and their norms are the corresponding powers and products of norms. In a
+complete ultrametric norm-one ring, small perturbations of one are multiplicative units.
 
 ## References
 
@@ -79,6 +81,12 @@ theorem mul {u v : R} (hu : IsNormMulUnit u) (hv : IsNormMulUnit v) :
   refine ⟨hu.isUnit.mul hv.isUnit, fun x ↦ ?_⟩
   rw [mul_assoc, hu.norm_mul, hv.norm_mul, hu.norm_mul, mul_assoc]
 
+/-- A nontrivial normed ring with a multiplicative unit has `‖1‖ = 1`. -/
+theorem norm_one {A : Type*} [NormedRing A] [Nontrivial A] {u : A} (hu : IsNormMulUnit u) :
+    ‖(1 : A)‖ = 1 := by
+  obtain ⟨v, rfl⟩ := hu.isUnit
+  exact NormedRing.norm_one_of_norm_units_mul (norm_pos_iff.mpr (Units.ne_zero v)) hu.norm_mul
+
 end IsNormMulUnit
 
 section NormOne
@@ -114,18 +122,18 @@ theorem pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : IsNormMulUnit (u ^ n) := 
   | zero => simp
   | succ n ih => simpa [pow_succ] using ih.mul hu
 
-/-- The inverse of a multiplicative unit is again multiplicative. -/
-theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
-    IsNormMulUnit ((u⁻¹ : Rˣ) : R) := by
-  rw [Units.isNormMulUnit_iff_norm_inv] at hu ⊢
-  simp [hu]
+/-- The norm of a power of a multiplicative unit is the power of its norm. -/
+theorem norm_pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : ‖u ^ n‖ = ‖u‖ ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ', hu.norm_mul, ih, pow_succ']
 
 /-- Norm-preserving ring homomorphisms from a norm-one ring preserve multiplicative units,
 even when they are not onto. -/
 theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →+* S)
     (hφ : ∀ x, ‖φ x‖ = ‖x‖) : IsNormMulUnit (φ u) := by
   obtain ⟨v, rfl⟩ := hu.isUnit
-  let : NormOneClass S := ⟨by rw [← φ.map_one, hφ, norm_one]⟩
+  let : NormOneClass S := ⟨by rw [← φ.map_one, hφ, NormOneClass.norm_one]⟩
   have hv := (Units.isNormMulUnit_iff_norm_inv v).mp hu
   apply (Units.isNormMulUnit_iff_norm_inv (Units.map φ.toMonoidHom v)).mpr
   exact (hφ _).trans (hv.trans (congrArg (·⁻¹) (hφ _).symm))
@@ -133,6 +141,49 @@ theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →+* S)
 end IsNormMulUnit
 
 end NormOne
+
+namespace IsNormMulUnit
+
+/-- The inverse of a multiplicative unit is again multiplicative. -/
+theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
+    IsNormMulUnit ((u⁻¹ : Rˣ) : R) := by
+  by_cases hu0 : ‖(u : R)‖ = 0
+  · refine ⟨Units.isUnit _, fun x ↦ ?_⟩
+    have hall (y : R) : ‖y‖ = 0 := by
+      have h := hu.norm_mul (((u⁻¹ : Rˣ) : R) * y)
+      simpa [← mul_assoc, hu0] using h
+    simp [hall]
+  · have hu0' : 0 < ‖(u : R)‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm hu0)
+    let _ : NormOneClass R :=
+      ⟨NormedRing.norm_one_of_norm_units_mul hu0' hu.norm_mul⟩
+    rw [Units.isNormMulUnit_iff_norm_inv] at hu ⊢
+    simp [hu]
+
+end IsNormMulUnit
+
+section CommRing
+
+variable {ι A : Type*} [SeminormedCommRing A] [NormOneClass A] {s : Finset ι} {u : ι → A}
+
+namespace IsNormMulUnit
+
+/-- Finite products of multiplicative units are multiplicative units. -/
+theorem prod (hu : ∀ i ∈ s, IsNormMulUnit (u i)) : IsNormMulUnit (∏ i ∈ s, u i) :=
+  Finset.prod_induction _ IsNormMulUnit (fun _ _ ↦ IsNormMulUnit.mul) isNormMulUnit_one hu
+
+/-- The norm of a finite product of multiplicative units is the product of their norms. -/
+theorem norm_prod (hu : ∀ i ∈ s, IsNormMulUnit (u i)) : ‖∏ i ∈ s, u i‖ = ∏ i ∈ s, ‖u i‖ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i t hi ih =>
+      rw [Finset.prod_insert hi, Finset.prod_insert hi,
+        (hu i (Finset.mem_insert_self i t)).norm_mul,
+        ih fun j hj ↦ hu j (Finset.mem_insert_of_mem hj)]
+
+end IsNormMulUnit
+
+end CommRing
 
 /-- In a ring with multiplicative norm every unit is a multiplicative unit. -/
 theorem isNormMulUnit_iff_isUnit [NormMulClass R] (u : R) :

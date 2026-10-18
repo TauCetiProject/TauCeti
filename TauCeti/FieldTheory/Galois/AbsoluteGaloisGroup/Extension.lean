@@ -241,14 +241,4 @@ theorem absoluteGaloisGroupMap_separableClosureAlgEquiv :
           AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) :=
   ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_eq_iff _).2 fun y ↦ by simp
 
-/-- The map along the chosen identification of separable closures fixes the embedded extension
-pointwise. -/
-theorem absoluteGaloisGroupMap_separableClosureAlgEquiv_mem_fixingSubgroup
-    (g : AbsoluteGaloisGroup L) :
-    absoluteGaloisGroupMap
-        (separableClosureAlgEquiv K L σ : SeparableClosure K →ₐ[K] SeparableClosure L) g ∈
-      σ.fieldRange.fixingSubgroup := by
-  rw [absoluteGaloisGroupMap_separableClosureAlgEquiv]
-  exact (absoluteGaloisGroupEquivFixingSubgroup K L σ g).property
-
 end TauCeti
