@@ -45,6 +45,21 @@ theorem fiberIndicator_apply [DiscreteTopology A] [DecidableEq A]
   classical
   simp [fiberIndicator, Pi.single_apply]
 
+/-- The fibre indicators of `q` pull back to the fibre indicators of `q ∘ φ`. -/
+@[simp]
+theorem fiberIndicator_comp [DiscreteTopology A] (q : C(X, A)) (φ : C(B, X)) (a : A) :
+    (q.fiberIndicator (R := R) a).comp φ = (q.comp φ).fiberIndicator a := by
+  classical
+  ext x
+  simp
+
+/-- The indicator of an empty fibre vanishes. -/
+theorem fiberIndicator_eq_zero_of_notMem_range [DiscreteTopology A] {q : C(X, A)} {a : A}
+    (ha : a ∉ Set.range q) : q.fiberIndicator (R := R) a = 0 := by
+  classical
+  ext x
+  simp [fiberIndicator_apply, show q x ≠ a from fun h ↦ ha ⟨x, h⟩]
+
 end ContinuousMap
 
 namespace AbstractMeasure
@@ -90,6 +105,18 @@ theorem finiteProjection_dirac [Finite A] [DiscreteTopology A]
   classical
   ext a
   simp only [finiteProjection_apply, dirac_apply, fiberIndicator_apply, Finsupp.single_apply]
+
+/-- A fibre of `q` that is empty carries no mass. -/
+theorem finiteProjection_apply_of_notMem_range [Finite A] [DiscreteTopology A] {q : C(X, A)}
+    (μ : D(X, R)) {a : A} (ha : a ∉ Set.range q) : finiteProjection q μ a = 0 := by
+  rw [finiteProjection_apply, fiberIndicator_eq_zero_of_notMem_range ha, map_zero]
+
+/-- The finite projection of a pushforward is the finite projection along the composite. -/
+@[simp]
+theorem finiteProjection_map [Finite A] [DiscreteTopology A] (φ : C(B, X)) (q : C(X, A))
+    (μ : D(B, R)) : finiteProjection q (map φ μ) = finiteProjection (q.comp φ) μ := by
+  ext a
+  simp
 
 /-- Finite projection is functorial when one finite quotient refines another. -/
 theorem finiteProjection_comp [Finite A] [Finite B] [DiscreteTopology A] [DiscreteTopology B]
