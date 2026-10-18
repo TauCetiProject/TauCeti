@@ -32,6 +32,17 @@ namespace TauCeti
 
 open Module Module.End ComplexStarModule LinearMap
 
+/-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
+instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) [IsStarNormal T] :
+    IsStarNormal T.toContinuousLinearMap where
+  star_comm_self := by
+    ext x
+    simpa [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+      ← LinearMap.adjoint_toContinuousLinearMap] using
+      congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
+
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [FiniteDimensional ℂ E]
 
@@ -48,6 +59,40 @@ theorem apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T : E →ₗ[ℂ
     mem_eigenspace_iff.mp hb, add_smul,
     mul_smul]
 
+/-- Finite-dimensional Fuglede: an operator commuting with a normal operator also commutes
+with its adjoint. -/
+theorem commute_star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
+    (h : Commute T S) : Commute T (star S) := by
+  have := FiniteDimensional.complete ℂ E
+  have hc : Commute T.toContinuousLinearMap S.toContinuousLinearMap := by
+    ext x
+    exact congrArg (fun f : E →ₗ[ℂ] E => f x) h.eq
+  have hs := IsStarNormal.commute_star_right (a := S.toContinuousLinearMap) inferInstance hc
+  ext x
+  simpa [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    ← LinearMap.adjoint_toContinuousLinearMap] using
+    congrArg (fun f : E →L[ℂ] E => f x) hs.eq
+
+/-- The real and imaginary parts of two commuting normal operators commute in all four
+combinations. -/
+theorem commute_realPart_and_imaginaryPart {T S : E →ₗ[ℂ] E}
+    [IsStarNormal T] [IsStarNormal S] (h : Commute T S) :
+    Commute (ℜ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
+      Commute (ℜ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) ∧
+      Commute (ℑ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
+      Commute (ℑ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) := by
+  have h₂ := commute_star_right_of_isStarNormal h
+  have h₃ := (commute_star_right_of_isStarNormal h.symm).symm
+  have h₄ := h.star_star
+  simp only [realPart_apply_coe, imaginaryPart_apply_coe]
+  exact ⟨(((h.add_right h₂).add_left (h₃.add_right h₄)).smul_left _).smul_right _,
+    ((((h.sub_right h₂).add_left (h₃.sub_right h₄)).smul_left _).smul_right
+      (2⁻¹ : ℝ)).smul_right _,
+    ((((h.add_right h₂).sub_left (h₃.add_right h₄)).smul_left
+      (2⁻¹ : ℝ)).smul_left _).smul_right _,
+    (((((h.sub_right h₂).sub_left (h₃.sub_right h₄)).smul_left
+      (2⁻¹ : ℝ)).smul_left _).smul_right (2⁻¹ : ℝ)).smul_right _⟩
+
 /-- A commuting family of normal operators has a common orthonormal eigenbasis, indexed by
 any finite type of cardinality equal to the dimension. No finiteness of the family is needed. -/
 theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
@@ -60,23 +105,6 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   have := FiniteDimensional.complete ℂ E
   have hcomm (i j : ι) : Commute (T i) (T j) :=
     if h : i = j then h ▸ Commute.refl _ else hC h
-  -- Fuglede's theorem is stated for continuous operators; in finite dimensions all maps qualify.
-  have hstar (i j : ι) : Commute (T i) (star (T j)) := by
-    let A := (T j).toContinuousLinearMap
-    let B := (T i).toContinuousLinearMap
-    have : IsStarNormal A := ⟨by
-      ext x
-      simpa [A, LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
-        ← LinearMap.adjoint_toContinuousLinearMap] using
-        congrArg (fun f : E →ₗ[ℂ] E => f x) (hT j).star_comm_self.eq⟩
-    have h : Commute B A := by
-      ext x
-      exact congrArg (fun f : E →ₗ[ℂ] E => f x) (hcomm i j).eq
-    have hs := IsStarNormal.commute_star_right (a := A) inferInstance h
-    ext x
-    simpa [A, B, LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
-      ← LinearMap.adjoint_toContinuousLinearMap] using
-      congrArg (fun f : E →L[ℂ] E => f x) hs.eq
   -- All real and imaginary parts are symmetric and commute with one another.
   let S : ι × Bool → E →ₗ[ℂ] E := fun p => if p.2 then ℑ (T p.1) else ℜ (T p.1)
   have hS (p : ι × Bool) : (S p).IsSymmetric := by
@@ -86,22 +114,16 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     · exact (isSymmetric_iff_isSelfAdjoint _).mpr (ℜ _).2
   have hSC : Pairwise (fun p q => Commute (S p) (S q)) := by
     intro p q _
-    have h₁ := hcomm p.1 q.1
-    have h₂ := hstar p.1 q.1
-    have h₃ := (hstar q.1 p.1).symm
-    have h₄ := (hcomm p.1 q.1).star_star
+    have := hT p.1
+    have := hT q.1
+    have h := commute_realPart_and_imaginaryPart (hcomm p.1 q.1)
     rcases p with ⟨i, a⟩
     rcases q with ⟨j, b⟩
-    cases a <;> cases b <;>
-      simp only [S, Bool.false_eq_true, ↓reduceIte, realPart_apply_coe,
-        imaginaryPart_apply_coe]
-    · exact (((h₁.add_right h₂).add_left (h₃.add_right h₄)).smul_left _).smul_right _
-    · exact ((((h₁.sub_right h₂).add_left (h₃.sub_right h₄)).smul_left _).smul_right
-        (2⁻¹ : ℝ)).smul_right _
-    · exact ((((h₁.add_right h₂).sub_left (h₃.add_right h₄)).smul_left
-        (2⁻¹ : ℝ)).smul_left _).smul_right _
-    · exact (((((h₁.sub_right h₂).sub_left (h₃.sub_right h₄)).smul_left
-        (2⁻¹ : ℝ)).smul_left _).smul_right (2⁻¹ : ℝ)).smul_right _
+    cases a <;> cases b
+    · exact h.1
+    · exact h.2.1
+    · exact h.2.2.1
+    · exact h.2.2.2
   -- Only finitely many joint eigenspaces are nonzero. Choose a basis subordinate to them.
   let V : ((ι × Bool) → ℂ) → Submodule ℂ E := fun χ =>
     ⨅ p, eigenspace (S p) (χ p)

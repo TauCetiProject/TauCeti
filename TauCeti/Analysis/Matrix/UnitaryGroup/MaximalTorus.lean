@@ -75,19 +75,31 @@ theorem exists_map_conj_eq_unitaryTorus {T : Subgroup (unitaryGroup n ℂ)}
     ∃ u : unitaryGroup n ℂ, T.map (MulAut.conj u).toMonoidHom = unitaryTorus n := by
   have := hT.isTorus.isMulCommutative
   obtain ⟨u, hu⟩ := exists_map_conj_le_unitaryTorus (H := T)
-  have hD := isTorus_unitaryTorus.map (MulAut.conj u⁻¹).toMonoidHom
-    (continuous_const.mul continuous_id |>.mul continuous_const)
-  have hle : T ≤ (unitaryTorus n).map (MulAut.conj u⁻¹).toMonoidHom := by
-    intro t ht
-    refine ⟨MulAut.conj u t, hu ⟨t, ht, rfl⟩, ?_⟩
-    simp [MulAut.conj_apply, mul_assoc]
-  have heq := hT.eq_of_le hD hle
-  refine ⟨u, le_antisymm hu ?_⟩
-  intro d hd
-  refine ⟨MulAut.conj u⁻¹ d, ?_, ?_⟩
-  · rw [heq]
-    exact ⟨d, hd, rfl⟩
-  · simp [MulAut.conj_apply, mul_assoc]
+  have hconj : Continuous (MulAut.conj u : unitaryGroup n ℂ → unitaryGroup n ℂ) := by
+    exact (IsTopologicalGroup.continuous_conj u).congr
+      fun g => (MulAut.conj_apply u g).symm
+  have hconj' : Continuous (MulAut.conj u).symm := by
+    exact (IsTopologicalGroup.continuous_conj u⁻¹).congr
+      fun g => by simp only [MulAut.conj_symm_apply, inv_inv]
+  exact ⟨u, (hT.map_mulEquiv (MulAut.conj u) hconj hconj').eq_of_le
+    isTorus_unitaryTorus hu⟩
+
+/-- The maximal tori of `U(n)` are exactly the conjugates of its diagonal torus. -/
+theorem isMaximalTorus_iff_exists_map_conj_eq_unitaryTorus
+    {T : Subgroup (unitaryGroup n ℂ)} :
+    Lie.IsMaximalTorus T ↔
+      ∃ u : unitaryGroup n ℂ, T.map (MulAut.conj u).toMonoidHom = unitaryTorus n := by
+  refine ⟨exists_map_conj_eq_unitaryTorus, ?_⟩
+  rintro ⟨u, hu⟩
+  have hconj : Continuous (MulAut.conj u : unitaryGroup n ℂ → unitaryGroup n ℂ) := by
+    exact (IsTopologicalGroup.continuous_conj u).congr
+      fun g => (MulAut.conj_apply u g).symm
+  have hconj' : Continuous (MulAut.conj u).symm := by
+    exact (IsTopologicalGroup.continuous_conj u⁻¹).congr
+      fun g => by simp only [MulAut.conj_symm_apply, inv_inv]
+  have h := isMaximalTorus_unitaryTorus.map_mulEquiv (MulAut.conj u).symm hconj' hconj
+  rw [← hu] at h
+  simpa [Subgroup.map_map] using h
 
 /-- Any two maximal tori of `U(n)` are conjugate. -/
 theorem exists_map_conj_eq_of_isMaximalTorus {T S : Subgroup (unitaryGroup n ℂ)}

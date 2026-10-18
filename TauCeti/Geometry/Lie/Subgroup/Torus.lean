@@ -106,6 +106,17 @@ theorem IsTorus.map {G' : Type*} [TopologicalSpace G'] [Group G']
     have := hT.isMulCommutative
     infer_instance
 
+/-- A group isomorphism continuous in both directions preserves maximal tori. -/
+theorem IsMaximalTorus.map_mulEquiv {G' : Type*} [TopologicalSpace G'] [Group G']
+    {T : Subgroup G} (hT : IsMaximalTorus T) (f : G ≃* G')
+    (hf : Continuous f) (hf' : Continuous f.symm) :
+    IsMaximalTorus (T.map f.toMonoidHom) := by
+  refine ⟨hT.isTorus.map f.toMonoidHom hf, fun S hS hle => ?_⟩
+  have hle' : T ≤ S.map f.symm.toMonoidHom := by
+    simpa [Subgroup.map_map] using Subgroup.map_mono (f := f.symm.toMonoidHom) hle
+  have heq := hT.eq_of_le (hS.map f.symm.toMonoidHom hf') hle'
+  simpa [Subgroup.map_map] using Subgroup.map_mono (f := f.toMonoidHom) heq.ge
+
 /-- The trivial subgroup is a torus. -/
 theorem isTorus_bot : IsTorus (⊥ : Subgroup G) where
   isCompact := by
