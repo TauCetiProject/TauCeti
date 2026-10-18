@@ -304,6 +304,36 @@ theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type
   refine (hsum.trans (Fintype.sum_equiv (vertexEquiv G o) _ _ fun j => ?_)).symm
   simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
 
+/-- **A positive superadditive weight on an oriented graph excludes isolated vertices.** Let `δ`
+be a weight on the vertices of an orientation of a finite simple graph over a strictly ordered
+commutative ring, positive at every vertex, with `2 δ ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
+vertex of the oriented quiver. Then every vertex of the graph has a neighbour: if `i` had none,
+every Hom-set in the sums at `i` would be empty, so the superadditivity sum would vanish and force
+`δ (vertex G o i) ≤ 0`. -/
+theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    (δ : OrientedQuiver G o → S) (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)
+    (i : V) : ∃ j, G.Adj i j := by
+  classical
+  by_contra h
+  have h : ∀ j, ¬ G.Adj i j := fun j hj => h ⟨j, hj⟩
+  have h0 : ∑ j : OrientedQuiver G o,
+      ((Fintype.card (vertex G o i ⟶ j) +
+        Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ j = 0 := by
+    refine Finset.sum_eq_zero fun j _ => ?_
+    have e1 : IsEmpty (vertex G o i ⟶ j) :=
+      ⟨fun e => h ((vertexEquiv G o).symm j) ((homEquiv G o i ((vertexEquiv G o).symm j) e).1)⟩
+    have e2 : IsEmpty (j ⟶ vertex G o i) :=
+      ⟨fun e => h ((vertexEquiv G o).symm j)
+        ((G.adj_comm _ _).mp ((homEquiv G o ((vertexEquiv G o).symm j) i e).1))⟩
+    rw [Fintype.card_eq_zero_iff.2 e1, Fintype.card_eq_zero_iff.2 e2]
+    simp
+  specialize hδle (vertex G o i)
+  rw [h0] at hδle
+  grind
+
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
   obj i := DoubledQuiver.vertexEquiv G ((vertexEquiv G o).symm i)

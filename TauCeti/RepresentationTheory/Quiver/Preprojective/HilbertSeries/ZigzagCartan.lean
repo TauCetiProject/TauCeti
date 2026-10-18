@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.NonDynkin
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Superadditive
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Sinkless
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.CartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
@@ -41,12 +41,15 @@ quadratic dual for bipartite `G`:
 H_{Π(Q)}(t) = C_G(-t)⁻¹.
 ```
 
-It holds for every orientation of `G` at which every Koszul complex is a resolution, and this file
-proves it unconditionally for every orientation without sinks. A connected graph has an orientation
-without sinks exactly when it is not a tree, so the non-Dynkin trees, such as `D~ₙ` and `E₆~`,
-`E₇~`, `E₈~`, are covered here only through the conditional form. The theorem of Etingof and Eu
-discharges it for every orientation of a connected non-Dynkin graph
-(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso`).
+It holds for every orientation of `G` at which every Koszul complex is a resolution. This file
+proves the identity unconditionally as soon as the oriented quiver carries a positive weight `δ`
+satisfying `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every vertex, at quiver level as well as
+after reindexing by the vertices of `G`. Orientations without sinks already satisfied the condition
+for every graph; the theorem of Etingof and Eu supplies it for every orientation of a connected
+graph which is not a Dynkin diagram
+(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso`,
+module `HilbertSeries/NonDynkin.lean`), so the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`,
+`E₈~`, are covered.
 
 ## Main results
 
@@ -55,18 +58,16 @@ discharges it for every orientation of a connected non-Dynkin graph
 * `TauCeti.mul_preprojectiveHilbertSeries_eq_one` and
   `TauCeti.preprojectiveHilbertSeries_eq_inv`: for a quiver without sinks,
   `H(t) = ((1 + t²) I - t A)⁻¹`.
+* `TauCeti.mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum` and
+  `TauCeti.preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum`: the same for any finite quiver
+  carrying a positive superadditive weight, with no hypothesis on sinks.
 * `TauCeti.zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_iff`:
   for an orientation of a graph without isolated vertices, `C_G(-t) H(t) = I` exactly when every
   Koszul complex of the preprojective algebra is a resolution.
-* `TauCeti.zigzagGradedCartanMapNegX`, the Cartan matrix `C_G(-t)` as a single declaration.
-* `TauCeti.zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum` and
-  its dual-form corollary
-  `TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMapNegX_of_two_mul_le_sum`: for an
-  orientation carrying a positive superadditive weight, `H_{Π(Q)}(t) = C_G(-t)⁻¹`.
-* `zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso`
-  and `preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMapNegX_of_not_exists_dynkinType_iso`
-  (both namespaced in `TauCeti`): the same for every orientation of a connected graph which is not
-  isomorphic to the diagram of a valid Dynkin type.
+* `zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum`
+  and `preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X_of_two_mul_le_sum`
+  (both namespaced in `TauCeti`): `H_{Π(Q)}(t) = C_G(-t)⁻¹` for an orientation whose oriented
+  quiver carries a positive superadditive weight.
 * `TauCeti.zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one` and
   `TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X`: for an
   orientation without sinks, `H_{Π(Q)}(t) = C_G(-t)⁻¹`.
@@ -113,6 +114,44 @@ theorem sum_card_mul_finrank_preprojectiveCorner_eq (m : ℕ) (i : Symmetrify Q)
       exact preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hy)).1
 
 variable [DecidableEq Q]
+
+omit hQ
+/-- **The Hilbert series identity for a quiver with a superadditive weight.** Let `δ` be a weight
+on the vertices of a finite quiver `Q` over a strictly ordered commutative ring, positive with
+
+```text
+2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j
+```
+
+at every vertex. No hypothesis on the sinks of `Q` is needed; the Koszul complexes at every vertex
+are exact at their left end
+(`TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum`), so the
+matrix Hilbert series `H` of `Π` satisfies `((1 + X²) I - X A) H = I` for `A_{v,w} = #(w ⟶ v)` the
+arrow-count matrix of the doubled quiver. -/
+theorem mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum {S : Type*} [CommRing S]
+    [LinearOrder S] [IsStrictOrderedRing S] {δ : Q → S} (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
+    (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix Q Q ℤ⟦X⟧) -
+        (X : ℤ⟦X⟧) • Matrix.of fun v w : Q =>
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
+      preprojectiveHilbertSeries k Q = 1 :=
+  (mul_preprojectiveHilbertSeries_eq_one_iff k Q).2 fun v _ hy =>
+    (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum k hδ hδle v hy).1
+
+/-- **The Hilbert series of a preprojective algebra whose quiver carries a superadditive weight**
+is the inverse matrix `H = ((1 + X²) I - X A)⁻¹`, under the same hypothesis on `δ`. -/
+theorem preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum {S : Type*} [CommRing S]
+    [LinearOrder S] [IsStrictOrderedRing S] {δ : Q → S} (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
+    preprojectiveHilbertSeries k Q =
+      (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix Q Q ℤ⟦X⟧) -
+        (X : ℤ⟦X⟧) • Matrix.of fun v w : Q =>
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧))⁻¹ :=
+  (Matrix.inv_eq_right_inv
+    (mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum k hδ hδle)).symm
+include hQ
 
 /-- **The Hilbert series identity for a quiver without sinks.** If every vertex of `Q` is the tail
 of an arrow and `A_{v,w} = #(w ⟶ v)` is the arrow-count matrix of the doubled quiver, then
@@ -191,109 +230,50 @@ theorem zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_
     congrArg (fun M => M.submatrix (OrientedQuiver.vertexEquiv G o).symm
       (OrientedQuiver.vertexEquiv G o).symm) h
 
-/--
-**The zigzag graded Cartan matrix evaluated at `q = -X`**: for a vertex with a neighbour the
-diagonal entry is `1 + X²`, the entry over an edge is `-X`, and every other entry vanishes, as read
-off `TauCeti.zigzagGradedCartanMatrix_apply`; at an isolated vertex the diagonal entry is `1`. This
-is the denominator matrix of the matrix Hilbert series of the preprojective algebra of an
-orientation of a graph without isolated vertices.
--/
-noncomputable def zigzagGradedCartanMapNegX (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
-    [Finite V] : Matrix V V ℤ⟦X⟧ :=
-  (zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧))
-
-/--
-**The inverse quantum Cartan comparison with a superadditive weight.** Let `G` be a finite simple
-graph, `o` an orientation of `G`, and suppose the oriented quiver carries a positive weight `δ` with
-`2 δ i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every vertex. Then `C_G(-X) H = I` for `H` the matrix
-Hilbert series `H` of the preprojective algebra of the oriented quiver. This is the hypothesis of
-the theorem of Etingof and Eu: a connected graph which is not a Dynkin diagram satisfies it for
-every orientation (`TauCeti.exists_pos_two_mul_le_sum_orientedQuiver`).
--/
-theorem zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum
-    [Fintype V] [DecidableEq V] {δ : OrientedQuiver G o → ℝ} (hδ : ∀ i, 0 < δ i)
+/-- **The inverse quantum Cartan comparison with a superadditive weight.** Let `G` be a finite
+simple graph, `o` an orientation of `G`, and suppose the oriented quiver carries a positive weight
+`δ` over a strictly ordered commutative ring with `2 δ i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at
+every vertex. Then `C_G(-X) H = I`, where `H` is the matrix Hilbert series of the preprojective
+algebra of the oriented quiver, indexed by the vertices of `G`. The non-Dynkin hypothesis of the
+theorem of Etingof and Eu implies this condition for every orientation
+(`TauCeti.exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso`). -/
+theorem
+zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum
+    [Fintype V] [DecidableEq V]
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    {δ : OrientedQuiver G o → S} (hδ : ∀ i, 0 < δ i)
     (hδle : ∀ i, 2 * δ i ≤
-      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : ℝ) * δ j) :
-    zigzagGradedCartanMapNegX k G *
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
+    (zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)) *
         (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
           (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) = 1 := by
   classical
-  -- An isolated vertex would make the superadditivity sum vanish, contradicting `δ > 0`.
-  have hns : ∀ i : V, ∃ j, G.Adj i j := by
-    by_contra! hi
-    obtain ⟨i, hi⟩ := hi
-    have hcard : ∀ i' j' : V, ¬ G.Adj i' j' →
-        Fintype.card (OrientedQuiver.vertex G o i' ⟶ OrientedQuiver.vertex G o j') = 0 := by
-      intro i' j' h
-      apply Fintype.card_eq_zero_iff.2
-      by_contra hne
-      obtain ⟨e⟩ := not_isEmpty_iff.1 hne
-      exact h (OrientedQuiver.homEquiv G o i' j' e).1
-    have hsum : ∑ j : OrientedQuiver G o,
-        ((Fintype.card (OrientedQuiver.vertex G o i ⟶ j) +
-            Fintype.card (j ⟶ OrientedQuiver.vertex G o i) : ℕ) : ℝ) * δ j = 0 := by
-      refine Finset.sum_eq_zero fun j _ => ?_
-      obtain ⟨j', rfl⟩ := (OrientedQuiver.vertexEquiv G o).surjective j
-      rw [OrientedQuiver.vertexEquiv_apply, hcard i j' (fun h => hi j' h),
-        hcard j' i (fun h => hi j' h.symm)]
-      simp
-    linarith [hδ (OrientedQuiver.vertex G o i),
-      (hδle (OrientedQuiver.vertex G o i)).trans_eq hsum]
+  -- A positive superadditive weight rules out isolated vertices, so the entrywise formula
+  -- `zigzagGradedCartanMatrix_apply` applies and the graph-level `iff` above is available.
+  have hns : ∀ i : V, ∃ j, G.Adj i j := fun i =>
+    OrientedQuiver.exists_adj_of_pos_two_mul_le_sum G o δ hδ hδle i
   exact (zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_iff k o
     hns).2 fun v _ hy =>
     (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum k hδ hδle v
       hy).1
 
-/--
-The inverse form of
-`zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum`: under the same
-hypothesis on `δ`, the matrix Hilbert series of the preprojective algebra of the oriented quiver,
-indexed by the vertices of `G`, is `H(X) = C_G(-X)⁻¹` for `C_G(q)` the zigzag graded Cartan matrix.
--/
-theorem preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMapNegX_of_two_mul_le_sum
-    [Fintype V] [DecidableEq V] {δ : OrientedQuiver G o → ℝ} (hδ : ∀ i, 0 < δ i)
+/-- The inverse form of
+`zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum`:
+under the same hypothesis on `δ`, the matrix Hilbert series of the preprojective algebra of the
+oriented quiver, indexed by the vertices of `G`, is `H(X) = C_G(-X)⁻¹` for `C_G(q)` the zigzag
+graded Cartan matrix. -/
+theorem preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X_of_two_mul_le_sum
+    [Fintype V] [DecidableEq V]
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    {δ : OrientedQuiver G o → S} (hδ : ∀ i, 0 < δ i)
     (hδle : ∀ i, 2 * δ i ≤
-      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : ℝ) * δ j) :
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
     (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
         (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) =
-      (zigzagGradedCartanMapNegX k G)⁻¹ :=
+      ((zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)))⁻¹ :=
   (Matrix.inv_eq_right_inv
-    (zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum k o hδ
-      hδle)).symm
-
-/--
-**The inverse quantum Cartan comparison for a connected non-Dynkin graph.** Let `G` be a connected
-finite simple graph which is not isomorphic to the diagram of any valid Dynkin type, and `o` any
-orientation of `G`. Then `C_G(-X) H = I` for `H` the matrix Hilbert series of the preprojective
-algebra of the oriented quiver. This covers every orientation of the affine diagrams `D~ₙ`, `E₆~`,
-`E₇~` and `E₈~`, and of every other non-Dynkin tree, by the theorem of Etingof and Eu.
--/
-theorem zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso
-    [Fintype V] [DecidableEq V] (hG : G.Connected)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
-    zigzagGradedCartanMapNegX k G *
-        (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
-          (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) = 1 := by
-  obtain ⟨δ, hδ, hδle⟩ := exists_pos_two_mul_le_sum_orientedQuiver hG hD o
-  exact zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum k o hδ
-    hδle
-
-/--
-The inverse form of
-`zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso`:
-for every orientation `o` of a connected graph `G` which is not isomorphic to the diagram of any
-valid Dynkin type, the matrix Hilbert series of the preprojective algebra of the oriented quiver,
-indexed by the vertices of `G`, is `H(X) = C_G(-X)⁻¹` for `C_G(q)` the zigzag graded Cartan matrix.
--/
-theorem preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMapNegX_of_not_exists_dynkinType_iso
-    [Fintype V] [DecidableEq V] (hG : G.Connected)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
-    (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
-        (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) =
-      (zigzagGradedCartanMapNegX k G)⁻¹ :=
-  (Matrix.inv_eq_right_inv
-    (zigzagGradedCartanMapNegX_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso
-      k o hG hD)).symm
+  (zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum
+    k o hδ hδle)).symm
 
 variable (hQ : ∀ u : OrientedQuiver G o, ∃ w, Nonempty (u ⟶ w))
 include hQ
