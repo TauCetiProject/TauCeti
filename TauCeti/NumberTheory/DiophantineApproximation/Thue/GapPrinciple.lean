@@ -232,8 +232,8 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
 
 /-- **Thue's approximation theorem**, for complex `α`. Let `α` be a complex algebraic number of
 degree `d ≥ 2` and let `κ > d / 2 + 1`. Then only finitely many rationals `ξ` satisfy
-`|ξ - α| ≤ H(ξ) ^ (-κ)`. This extends Evertse, Theorem 6.9, which is stated for real `α` of
-degree `d ≥ 3`, to complex `α` and to degree `2`. -/
+`|ξ - α| ≤ H(ξ) ^ (-κ)`. This is a variant of Evertse, Theorem 6.9, rather than that statement
+verbatim: here `α` may be complex and every degree `d ≥ 2` is allowed. -/
 theorem thue_approximation {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {κ : ℝ}
     (hκ : (minpoly ℚ α).natDegree / 2 + 1 < κ) :
     {ξ : ℚ | ‖(ξ : ℂ) - α‖ ≤ mulHeight₁ ξ ^ (-κ)}.Finite := by
@@ -248,8 +248,8 @@ theorem thue_approximation {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
 
 /-- **Thue's approximation theorem** for real `α`. Let `α` be a real algebraic number of degree
 `d ≥ 2` and let `κ > d / 2 + 1`. Then only finitely many rationals `ξ` satisfy
-`|ξ - α| ≤ H(ξ) ^ (-κ)`. For `d ≥ 3` this is Evertse, Theorem 6.9; the case `d = 2` is an
-extension of the cited statement. -/
+`|ξ - α| ≤ H(ξ) ^ (-κ)`. This is a variant of Evertse, Theorem 6.9, rather than that statement
+verbatim: every degree `d ≥ 2` is allowed. -/
 theorem thue_approximation_real {α : ℝ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {κ : ℝ}
     (hκ : (minpoly ℚ α).natDegree / 2 + 1 < κ) :
     {ξ : ℚ | |(ξ : ℝ) - α| ≤ mulHeight₁ ξ ^ (-κ)}.Finite := by
