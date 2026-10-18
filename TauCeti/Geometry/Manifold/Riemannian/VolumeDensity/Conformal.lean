@@ -21,10 +21,10 @@ respect to that of `g`:
 
 so that `∫ φ dV_ĝ = ∫ f ^ (N / 2) φ dV_g` for every function `φ` on `M`, and on a compact manifold
 `Vol(ĝ) = ∫ f ^ (N / 2) dV_g`. For the conformal factor `f = u ^ (4 / (N - 2))` of the Yamabe
-problem, with `u ≥ 0`, this is `Vol(ĝ) = ∫ u ^ (2 N / (N - 2)) dV_g`, the exponent being the
-critical Sobolev exponent.
+problem, with `u ≥ 0`, this is `Vol(ĝ) = ∫ u ^ (2 N / (N - 2)) dV_g`; when `N > 2` the exponent is
+the critical Sobolev exponent, while the identity itself holds in every dimension.
 
-The copies of `M` are given their Borel `σ`-algebras. The identities refine the pointwise
+The copies of `M` carry their Borel `σ`-algebras. The identities refine the pointwise
 comparison of chart densities `TauCeti.WithMetric.chartVolumeDensity_rescale`, and use no
 orientation.
 
@@ -57,11 +57,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
-
-/-- The copy of `M` carrying a metric is measured on its Borel `σ`-algebra. -/
-instance : MeasurableSpace (WithMetric g) := borel _
-
-instance : BorelSpace (WithMetric g) := ⟨rfl⟩
 
 variable {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n f} {hf_pos : ∀ x, 0 < f x}
 
@@ -160,7 +155,8 @@ theorem riemannianTotalVolume_rescale [CompactSpace M] :
 
 /-- **Total volume of a Yamabe conformal metric.** On a compact manifold of real dimension `N`, the
 metric `u ^ (4 / (N - 2)) g` given by a nonnegative function `u` has total volume
-`∫ u ^ (2 N / (N - 2)) dV_g`; the exponent `2 N / (N - 2)` is the critical Sobolev exponent. -/
+`∫ u ^ (2 N / (N - 2)) dV_g`. When `N > 2` the exponent `2 N / (N - 2)` is the critical Sobolev
+exponent; the identity holds in every dimension. -/
 theorem riemannianTotalVolume_rescale_rpow [CompactSpace M] {u : M → ℝ} (hu : ∀ x, 0 ≤ u x)
     {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))}
     {hf_pos : ∀ x, 0 < u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))} :
