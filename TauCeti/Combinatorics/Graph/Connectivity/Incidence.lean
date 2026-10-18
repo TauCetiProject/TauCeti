@@ -124,7 +124,6 @@ theorem incidenceCount_noEdge (X : Set α) (x : (Graph.noEdge X β).vertexSet) :
   simp [incidenceCount, incidenceSet, Inc]
 
 /-- A graph with no edges has nonloop incidence count zero at every actual vertex. -/
-@[simp]
 theorem nonloopIncidenceCount_noEdge (X : Set α) (x : (Graph.noEdge X β).vertexSet) :
     (Graph.noEdge X β).nonloopIncidenceCount x = 0 := by
   simp [nonloopIncidenceCount, incidenceSet, loopSet, Inc, IsLoopAt]
@@ -140,7 +139,6 @@ theorem incidenceCount_banana_left (x y : α) (E : Set β) :
 
 /-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
 number of actual edges. -/
-@[simp]
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceCount ⟨x, by simp⟩ = E.ncard := by
   exact incidenceCount_banana_left x x E
