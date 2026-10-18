@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Height.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 public import TauCeti.Algebra.MvPolynomial.Rename
+public import TauCeti.Algebra.MvPolynomial.Variables
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.RingTheory.MvPolynomial.AbvCoeff
 import TauCeti.NumberTheory.Height.Basic
@@ -34,14 +35,26 @@ entries have partial degrees at most `d j` and coefficients dominated by those o
 `h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`.
 This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's lemma.
 
+Although the height of a product is not the product of the heights in general, it is when the
+two factors involve disjoint sets of variables: then the coefficients of the product are exactly
+the products of the coefficients of the factors. `mulHeight_mul_of_disjoint_vars` and
+`logHeight_mul_of_disjoint_vars` state `H(P Q) = H(P) H(Q)` and `h(P Q) = h(P) + h(Q)` for nonzero
+`P` and `Q`, and `mulHeight_mul_toMvPolynomial` specializes them to a product of a polynomial not
+involving `Xᵢ` with a one-variable polynomial placed in `Xᵢ`. In the inductive step of Roth's
+lemma, this is the shape of the product of a generalized Wronskian and a one-variable Wronskian.
+
 ## References
 
 * Lukas Pottmeyer, *Diophantine Approximation*, §3.2, Definition 3.2.1 and Lemma 3.2.2
   (17 January 2022). The absolute heights in those notes correspond to degree-root
   normalizations of the relative heights defined here. The determinant bound is the
-  estimate of §3.4.6.
+  estimate of §3.4.6. The height of a product in disjoint variables is Exercise 3.3.
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
+  (2006), Proposition 1.6.2.
 * The determinant bound follows `DiophantineApproximation/PolynomialDeterminantHeight.lean` in
-  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
+  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0). The height
+  of a product in disjoint variables adapts `DiophantineApproximation/DisjointVariables.lean` of
+  the same snapshot.
 -/
 
 public section
@@ -227,6 +240,68 @@ theorem mulHeight_X_sub_C (i : σ) (a : K) :
 theorem logHeight_X_sub_C (i : σ) (a : K) :
     (X i - C a).logHeight = Height.logHeight₁ a := by
   rw [logHeight_eq_log_mulHeight, mulHeight_X_sub_C, Height.logHeight₁_eq_log_mulHeight₁]
+
+end MvPolynomial
+
+namespace MvPolynomial
+
+variable {K σ : Type*} [Field K] [Height.AdmissibleAbsValues K]
+
+/-- **The height of a product in disjoint variables.** If the nonzero polynomials `P` and `Q`
+involve disjoint sets of variables, then `H(P * Q) = H(P) H(Q)`. In general the height of a
+product is only bounded by the product of the heights up to a factor depending on the degrees. -/
+theorem mulHeight_mul_of_disjoint_vars {P Q : MvPolynomial σ K} (h : Disjoint P.vars Q.vars)
+    (hP : P ≠ 0) (hQ : Q ≠ 0) : (P * Q).mulHeight = P.mulHeight * Q.mulHeight := by
+  classical
+  rw [mulHeight_eq_finsupp, mulHeight_eq_finsupp, mulHeight_eq_finsupp]
+  refine Finsupp.mulHeight_eq_mul_of_injOn (e := fun p ↦ p.1 + p.2)
+    ((injOn_add_of_disjoint_vars h).mono fun p hp ↦ ?_)
+    (fun a ha b hb ↦ coeff_add_mul_of_disjoint_vars h
+      (support_subset_vars_of_mem_support ha) (support_subset_vars_of_mem_support hb))
+    (fun c hc ↦ Finset.mem_add.1 (support_mul P Q hc))
+    (AddMonoidAlgebra.coeff_eq_zero.not.2 hP) (AddMonoidAlgebra.coeff_eq_zero.not.2 hQ)
+  obtain ⟨ha, hb⟩ := Finset.mem_product.1 hp
+  exact ⟨support_subset_vars_of_mem_support ha, support_subset_vars_of_mem_support hb⟩
+
+/-- **The logarithmic height of a product in disjoint variables.** If the nonzero polynomials
+`P` and `Q` involve disjoint sets of variables, then `h(P * Q) = h(P) + h(Q)`. -/
+theorem logHeight_mul_of_disjoint_vars {P Q : MvPolynomial σ K} (h : Disjoint P.vars Q.vars)
+    (hP : P ≠ 0) (hQ : Q ≠ 0) : (P * Q).logHeight = P.logHeight + Q.logHeight := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_mul_of_disjoint_vars h hP hQ,
+    Real.log_mul (mulHeight_pos P).ne' (mulHeight_pos Q).ne', logHeight_eq_log_mulHeight,
+    logHeight_eq_log_mulHeight]
+
+/-- If the nonzero polynomial `F` does not involve the variable `Xᵢ`, then multiplying it by a
+nonzero one-variable polynomial `p` placed in `Xᵢ` multiplies its height by the height of `p`. -/
+theorem mulHeight_mul_toMvPolynomial {F : MvPolynomial σ K} {i : σ} (hi : i ∉ F.vars)
+    (hF : F ≠ 0) {p : Polynomial K} (hp : p ≠ 0) :
+    (F * p.toMvPolynomial i).mulHeight = F.mulHeight * p.mulHeight := by
+  rw [mulHeight_mul_of_disjoint_vars
+      (Finset.disjoint_of_subset_right (p.vars_toMvPolynomial_subset i)
+        (Finset.disjoint_singleton_right.2 hi))
+      hF ((map_ne_zero_iff _ (Polynomial.toMvPolynomial_injective i)).2 hp),
+    Polynomial.mulHeight_toMvPolynomial]
+
+/-- If the nonzero polynomial `F` does not involve the variable `Xᵢ`, then multiplying it by a
+nonzero one-variable polynomial `p` placed in `Xᵢ` adds the logarithmic height of `p`. -/
+theorem logHeight_mul_toMvPolynomial {F : MvPolynomial σ K} {i : σ} (hi : i ∉ F.vars)
+    (hF : F ≠ 0) {p : Polynomial K} (hp : p ≠ 0) :
+    (F * p.toMvPolynomial i).logHeight = F.logHeight + p.logHeight := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_mul_toMvPolynomial hi hF hp,
+    Real.log_mul (mulHeight_pos F).ne' (Polynomial.mulHeight_pos p).ne',
+    logHeight_eq_log_mulHeight, Polynomial.logHeight_eq_log_mulHeight]
+
+/-- Over `ℚ`, `(X₀ - 2) (X₁ - 3)` has height `6 = 2 * 3`. -/
+example : ((X 0 - C 2) * (X 1 - C 3) : MvPolynomial (Fin 2) ℚ).mulHeight = 6 := by
+  classical
+  have hne (i : Fin 2) (a : ℚ) : (X i - C a : MvPolynomial (Fin 2) ℚ) ≠ 0 :=
+    fun h ↦ by
+      simpa [coeff_X, coeff_C, eq_comm (a := (0 : Fin 2 →₀ ℕ)), Finsupp.single_eq_zero] using
+        congrArg (fun p : MvPolynomial (Fin 2) ℚ ↦ p.coeff (Finsupp.single i 1)) h
+  rw [mulHeight_mul_of_disjoint_vars (by rw [vars_sub_of_disjoint, vars_sub_of_disjoint] <;> simp)
+    (hne 0 2) (hne 1 3), mulHeight_X_sub_C, mulHeight_X_sub_C]
+  simp [Rat.mulHeight₁_eq_max]
+  norm_num
 
 end MvPolynomial
 
