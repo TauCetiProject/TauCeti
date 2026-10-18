@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Isogeny
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Adjoint
 import TauCeti.Algebra.AlgebraicGroup.Isogeny.Central
-import TauCeti.Algebra.AlgebraicGroup.Isogeny.FiniteCenter
 
 /-!
 # Isogenies identify adjoint forms
@@ -19,13 +18,12 @@ of the representative in an isogeny class. The comparison commutes with the quot
 projections, is uniquely determined by that equation, and respects identity and composition.
 
 For the coordinate arrow `f : H ⟶ K`, compose `f` with the center-quotient inclusion of `H`.
-The kernel of the corresponding group homomorphism is the inverse image of the center of
-`Spec H`, hence the full center of `Spec K` by `IsIsogeny.map_centerDefiningIdeal_eq`.
-The universal property of the represented center quotient then gives the isomorphism.
+The composite is an isogeny, hence central in characteristic zero. Since the center quotient
+of `H` is adjoint, the existing central-isogeny comparison gives the isomorphism.
 No centrality hypothesis on the given isogeny or splitting hypothesis on the groups is needed.
 
 The construction follows the represented-quotient comparison in
-`Semisimple.Center.Isogeny`, using the center pullback theorem from `Isogeny.FiniteCenter`.
+`Semisimple.Center.Isogeny`, using the centrality theorem from `Isogeny.Central`.
 
 ## References
 
@@ -43,20 +41,6 @@ universe u
 
 variable {k : Type u} [Field k] [CharZero k]
   {H K L : FiniteTypeCommHopfAlgCat.{u, u} k}
-
-/-- Composing an isogeny from a geometrically connected affine group to a semisimple group
-with the latter's center quotient kills exactly the source center. The coordinate arrow points
-from `H` to `K`. -/
-theorem kernelHopfIdeal_centerQuotientι_comp
-    (hH : semisimpleCommHopfAlgProperty k H)
-    (hK : geometricallyConnectedCommHopfAlgProperty k K.obj)
-    (f : H.obj ⟶ K.obj) (hf : CommHopfAlgCat.IsIsogeny f) :
-    CommHopfAlgCat.kernelHopfIdeal (hH.centerQuotientι ≫ f) =
-      CommHopfAlgCat.centerDefiningIdeal K.obj := by
-  let _ : Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj) :=
-    hH.moduleFinite_centerCoordinate
-  rw [CommHopfAlgCat.kernelHopfIdeal_comp, hH.kernelHopfIdeal_centerQuotientι_eq]
-  exact hf.map_centerDefiningIdeal_eq hK
 
 /-- An isogeny of semisimple affine groups in characteristic zero canonically identifies
 their represented center quotients, which are their adjoint forms. -/
