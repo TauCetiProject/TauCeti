@@ -30,8 +30,6 @@ the formal degree of the family, so the description does not depend on the speci
 
 ## Main declarations
 
-* `TauCeti.isSemialgebraic_setOf_tarskiQuery_map_eval_eq_of_monic` describes one query fiber
-  for a monic root family.
 * `TauCeti.isSemialgebraic_setOf_tarskiQuery_map_eval_eq` describes one query fiber for an
   arbitrary root family.
 * `TauCeti.isSemialgebraic_setOf_tarskiQuery_map_eval` allows an arbitrary condition on a finite
@@ -78,14 +76,13 @@ private theorem tarskiQuery_map_eval_eq_integralNormalization {P : (MvPolynomial
   have ha : MvPolynomial.eval x a ≠ 0 := hlc ▸ leadingCoeff_ne_zero.mpr hx
   rw [← integralNormalization_map _ _ ha, hmap,
     tarskiQuery_integralNormalization hx fun z _ => ?_]
-  rw [hlc, eval_map, eval₂_mul, eval₂_C, scaleRoots_eval₂_mul, map_pow, ← mul_assoc,
-    sign_mul, sign_pos (mul_self_pos.mpr (pow_ne_zero _ ha)), one_mul, eval_map]
+  rw [hlc, eval_map, sign_eval₂_C_pow_mul_scaleRoots _ _ ha, eval_map]
 
 variable [IsRealClosed R]
 
 /-- The parameters at which a Tarski query of two specializations of polynomial families has a
 prescribed value form a semialgebraic set, provided the root family is monic. -/
-theorem isSemialgebraic_setOf_tarskiQuery_map_eval_eq_of_monic
+private theorem isSemialgebraic_setOf_tarskiQuery_map_eval_eq_of_monic
     (P Q : (MvPolynomial σ R)[X]) (hP : P.Monic) (c : ℤ) :
     IsSemialgebraic {x : σ → R |
       tarskiQuery (P.map (MvPolynomial.eval x)) (Q.map (MvPolynomial.eval x)) = c} := by
