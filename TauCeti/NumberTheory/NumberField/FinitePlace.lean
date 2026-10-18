@@ -69,10 +69,8 @@ theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
     (HeightOneSpectrum.one_lt_absNorm_nnreal v).ne'
 
 /-- For a nonzero tuple over a number field, the maximum of the finite-place absolute values of
-its coordinates is `1` at all but finitely many finite places.
-
-Adapted from the private `Height.hasFiniteMulSupport_iSup_nonarchAbsVal` in
-`Mathlib/NumberTheory/Height/Basic.lean`. -/
+its coordinates is `1` at all but finitely many finite places. -/
+-- This proof adapts the private `Height.hasFiniteMulSupport_iSup_nonarchAbsVal` from Mathlib.
 theorem hasFiniteMulSupport_iSup {ι : Type*} [Finite ι] {y : ι → K} (hy : y ≠ 0) :
     (fun v : FinitePlace K ↦ ⨆ i, v (y i)).HasFiniteMulSupport := by
   have : Nonempty {i // y i ≠ 0} := nonempty_subtype.mpr (Function.ne_iff.mp hy)
