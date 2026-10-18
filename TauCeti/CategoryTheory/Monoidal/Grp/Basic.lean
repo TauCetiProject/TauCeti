@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Grp
+public import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Monomorphisms of group objects
@@ -24,7 +24,7 @@ namespace CategoryTheory.Grp
 /-- A morphism of group objects is monic if its underlying morphism is monic. -/
 instance (priority := 900) mono_of_mono_hom {C : Type u} [Category.{v} C]
     [CartesianMonoidalCategory C] {G H : Grp C} (f : G ⟶ H) [Mono f.hom.hom] : Mono f :=
-  -- The forgetful functor maps `f` to `f.hom.hom` by definition.
-  (Grp.forget C).mono_of_mono_map (inferInstanceAs (Mono f.hom.hom))
+  -- Forgetting inverses maps `f` to `f.hom` by definition.
+  (Grp.forget₂Mon C).mono_of_mono_map (Mon.mono_of_mono_hom f.hom)
 
 end CategoryTheory.Grp
