@@ -55,13 +55,41 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
   induction b using Int.induction_on with
   | zero => simp
   | succ n ih =>
-    rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hk]
-    simp only [mul_smul_comm, smul_smul, mul_assoc, ← zpow_add₀ (Fact.out : q ≠ 0)]
-    rw [show 2 * ((n : ℤ) + 1) = 2 * n + 2 by ring]
+    have hExp : 2 * ((n : ℤ) + 1) = 2 * n + 2 := by ring
+    calc
+      f q * ((kUnit q ^ ((n : ℤ) + 1) : (UqSl2 q)ˣ) : UqSl2 q) =
+          (f q * ((kUnit q ^ (n : ℤ) : (UqSl2 q)ˣ) : UqSl2 q)) * k q := by
+        rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc]
+      _ = (q ^ (2 * (n : ℤ)) •
+          (((kUnit q ^ (n : ℤ) : (UqSl2 q)ˣ) : UqSl2 q) * f q)) * k q := by
+        rw [ih]
+      _ = q ^ (2 * (n : ℤ)) •
+          (((kUnit q ^ (n : ℤ) : (UqSl2 q)ˣ) : UqSl2 q) *
+            (q ^ (2 : ℤ) • (k q * f q))) := by
+        rw [smul_mul_assoc, mul_assoc, hk]
+      _ = q ^ (2 * ((n : ℤ) + 1)) •
+          (((kUnit q ^ ((n : ℤ) + 1) : (UqSl2 q)ˣ) : UqSl2 q) * f q) := by
+        rw [hExp, zpow_add_one, Units.val_mul, kUnit_val]
+        simp only [mul_smul_comm, smul_smul, mul_assoc,
+          ← zpow_add₀ (Fact.out : q ≠ 0)]
   | pred n ih =>
-    rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hkInv]
-    simp only [mul_smul_comm, smul_smul, mul_assoc, ← zpow_add₀ (Fact.out : q ≠ 0)]
-    rw [show 2 * (-(n : ℤ) - 1) = 2 * -n + -2 by ring]
+    have hExp : 2 * (-(n : ℤ) - 1) = 2 * -n + -2 := by ring
+    calc
+      f q * ((kUnit q ^ (-(n : ℤ) - 1) : (UqSl2 q)ˣ) : UqSl2 q) =
+          (f q * ((kUnit q ^ (-(n : ℤ)) : (UqSl2 q)ˣ) : UqSl2 q)) * kInv q := by
+        rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc]
+      _ = (q ^ (2 * -(n : ℤ)) •
+          (((kUnit q ^ (-(n : ℤ)) : (UqSl2 q)ˣ) : UqSl2 q) * f q)) * kInv q := by
+        rw [ih]
+      _ = q ^ (2 * -(n : ℤ)) •
+          (((kUnit q ^ (-(n : ℤ)) : (UqSl2 q)ˣ) : UqSl2 q) *
+            (q ^ (-2 : ℤ) • (kInv q * f q))) := by
+        rw [smul_mul_assoc, mul_assoc, hkInv]
+      _ = q ^ (2 * (-(n : ℤ) - 1)) •
+          (((kUnit q ^ (-(n : ℤ) - 1) : (UqSl2 q)ˣ) : UqSl2 q) * f q) := by
+        rw [hExp, zpow_sub_one, Units.val_mul, kUnit_inv]
+        simp only [mul_smul_comm, smul_smul, mul_assoc,
+          ← zpow_add₀ (Fact.out : q ≠ 0)]
 
 /-- Moving a natural power of `F` past an integer power of `K`. -/
 theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
@@ -71,11 +99,28 @@ theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
   induction a with
   | zero => simp
   | succ a ih =>
-    rw [pow_succ, mul_assoc, f_mul_kUnit_zpow, mul_smul_comm, ← mul_assoc, ih, smul_mul_assoc]
-    simp only [smul_smul, mul_assoc, ← zpow_add₀ (Fact.out : q ≠ 0)]
-    congr 2
-    push_cast
-    ring
+    have hExp : 2 * b * (a + 1 : ℕ) = 2 * b + 2 * b * a := by
+      push_cast
+      ring
+    calc
+      f q ^ (a + 1) * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
+          f q ^ a * (f q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q)) := by
+        rw [pow_succ, mul_assoc]
+      _ = f q ^ a * (q ^ (2 * b) •
+          (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q)) := by
+        rw [f_mul_kUnit_zpow]
+      _ = q ^ (2 * b) •
+          ((f q ^ a * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q)) * f q) := by
+        rw [mul_smul_comm, ← mul_assoc]
+      _ = q ^ (2 * b) •
+          ((q ^ (2 * b * a) •
+            (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q ^ a)) * f q) := by
+        rw [ih]
+      _ = q ^ (2 * b * (a + 1 : ℕ)) •
+          (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q ^ (a + 1)) := by
+        rw [hExp, pow_succ]
+        simp only [smul_mul_assoc, smul_smul, mul_assoc,
+          ← zpow_add₀ (Fact.out : q ≠ 0)]
 
 /-- The reindexing from the nested Ore-extension exponents to PBW exponents `(a, b, c)`. -/
 private def pbwIndexEquiv : ((ℤ × ℕ) × ℕ) ≃ ℕ × ℤ × ℕ where
