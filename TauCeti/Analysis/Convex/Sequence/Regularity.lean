@@ -165,7 +165,7 @@ theorem IsConvexSeq.continuousOn_supportingValue_toReal (hh : IsConvexSeq h)
   apply (TauCeti.continuousOn_supportingValue_toReal h).mono
   apply isOpen_Iio.subset_interior_iff.mpr
   intro σ hσ
-  change supportingValue h σ ≠ ⊥
+  simp only [Set.mem_ofPred_eq]
   rw [heq σ hσ]
   exact EReal.coe_ne_bot _
 
