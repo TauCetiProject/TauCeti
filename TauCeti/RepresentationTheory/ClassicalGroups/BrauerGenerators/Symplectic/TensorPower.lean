@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.tprod_update_pair_expand`, the standard-basis expansion at two slots.
+-- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, the congruence at two slots the cup
+-- invariance below runs on.
 public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Basic
--- `Matrix.sum_sum_smul_congruence`, the regrouping the cup invariance below runs on two slots.
-import TauCeti.LinearAlgebra.Matrix.Congruence
 -- The entrywise identities for `Matrix.J` the relations below contract with.
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -658,36 +657,6 @@ theorem symplecticCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
 
 /-! ### The arc as an intertwiner -/
 
-/-- **The cup at two slots is invariant** under every matrix `A` with `A * J * Aᵀ = J`: expanding
-the two slots in the standard basis turns the bivector of `J` into the bivector of the congruate
-`A * J * Aᵀ`. This is the general-slot form of
-`TauCeti.piTensorProductMap_comp_symplecticCup`, and it reads the same regrouping
-`Matrix.sum_sum_smul_congruence` off the two chosen slots that
-`Matrix.piTensorProductMap_bivector` reads off a tensor square. -/
-private theorem sum_sum_tprod_update_pair_mulVec
-    {A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k}
-    (hA : A * Matrix.J (Fin n) k * Aᵀ = Matrix.J (Fin n) k) {i j : Fin d} (hij : i ≠ j)
-    (u : Fin d → ((Fin n ⊕ Fin n) → k)) :
-    ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
-        PiTensorProduct.tprod k (Function.update
-          (Function.update u i (A *ᵥ Pi.single x (1 : k))) j (A *ᵥ Pi.single y (1 : k))) =
-      ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
-        PiTensorProduct.tprod k (Function.update
-          (Function.update u i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
-  have hexpand : ∀ x y : Fin n ⊕ Fin n,
-      PiTensorProduct.tprod k (Function.update
-          (Function.update u i (A *ᵥ Pi.single x (1 : k))) j (A *ᵥ Pi.single y (1 : k))) =
-        ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, (A a x * A b y) •
-          PiTensorProduct.tprod k (Function.update
-            (Function.update u i (Pi.single a (1 : k))) j (Pi.single b (1 : k))) := by
-    intro x y
-    rw [tprod_update_pair_expand hij u]
-    simp only [Matrix.mulVec_single_one, Matrix.col_apply]
-  simp only [hexpand]
-  rw [Matrix.sum_sum_smul_congruence A (Matrix.J (Fin n) k) fun a b =>
-    PiTensorProduct.tprod k (Function.update
-      (Function.update u i (Pi.single a (1 : k))) j (Pi.single b (1 : k))), hA]
-
 /-- **The generator commutes with the diagonal action of a symplectic matrix**: the cap consumes
 `Aᵀ * J * A = J`, which is exactly preservation of the standard alternating form, and the cup the
 other one-sided identity `A * J * Aᵀ = J`, which `SymplecticGroup.mem_iff` derives from it. -/
@@ -711,7 +680,11 @@ theorem commute_symplecticCupCapAt_piTensorProductMap
   simp only [Matrix.mulVecLin_apply]
   rw [hform]
   refine congrArg _ ?_
-  rw [neg_inj, ← sum_sum_tprod_update_pair_mulVec hcup hij fun t => A *ᵥ v t]
+  -- the cup at the slots `i` and `j` is invariant: pushing `A` through them congruates `J`
+  have hbivector := sum_sum_smul_tprod_update_pair_mulVec A (Matrix.J (Fin n) k) hij
+    fun t => A *ᵥ v t
+  rw [hcup] at hbivector
+  rw [neg_inj, ← hbivector]
   refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_sum]
   refine Finset.sum_congr rfl fun y _ => ?_
