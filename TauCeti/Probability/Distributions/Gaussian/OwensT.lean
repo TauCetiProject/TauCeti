@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.OwensT
+public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 
 /-!
@@ -52,43 +53,11 @@ open scoped Topology NNReal
 
 namespace Real
 
-/-- Differentiation in `h` under the integral sign defining Owen's T function, with the constant
-bound `|h| + 1` on the derivative of the integrand near `h`. -/
-private theorem hasDerivAt_intervalIntegral_owensT (h a : ℝ) :
-    HasDerivAt (fun x => ∫ t in (0 : ℝ)..a, rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2))
-      (∫ t in (0 : ℝ)..a, -h * rexp (-h ^ 2 * (1 + t ^ 2) / 2)) h := by
-  have hFc (x : ℝ) : Continuous fun t : ℝ => rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2) :=
-    Continuous.div (by fun_prop) (by fun_prop) fun _ => by positivity
-  refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (F := fun x t => rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2))
-    (F' := fun x t => -x * rexp (-x ^ 2 * (1 + t ^ 2) / 2))
-    (bound := fun _ => |h| + 1) (Metric.ball_mem_nhds h one_pos)
-    (Eventually.of_forall fun x => (hFc x).aestronglyMeasurable) ((hFc h).intervalIntegrable _ _)
-    (by fun_prop :
-      Continuous fun t : ℝ => -h * rexp (-h ^ 2 * (1 + t ^ 2) / 2)).aestronglyMeasurable
-    (ae_of_all _ fun t _ x hx => ?_) intervalIntegrable_const (ae_of_all _ fun t _ x _ => ?_)).2
-  · have hx' : |x| ≤ |h| + 1 := by
-      have := abs_sub_abs_le_abs_sub x h
-      rw [Metric.mem_ball, dist_eq_norm, Real.norm_eq_abs] at hx
-      linarith
-    rw [Real.norm_eq_abs, abs_mul, abs_neg, abs_of_pos (exp_pos _)]
-    refine (mul_le_of_le_one_right (abs_nonneg x) (exp_le_one_iff.2 ?_)).trans hx'
-    have : 0 ≤ x ^ 2 * (1 + t ^ 2) := by positivity
-    linarith
-  · have hpos : (1 + t ^ 2) ≠ 0 := by positivity
-    convert (((hasDerivAt_pow 2 x).neg.mul_const (1 + t ^ 2)).div_const 2).exp.div_const
-      (1 + t ^ 2) using 1
-    simp only [Pi.neg_apply]
-    field_simp
-    ring
-
 /-- The derivative of Owen's T function in its first argument is
 `-φ(h) * (Φ(a * h) - 1 / 2)`, where `φ` and `Φ` are the standard Gaussian density and cdf. -/
 theorem hasDerivAt_owensT_left (h a : ℝ) :
     HasDerivAt (fun h => owensT h a)
       (-(gaussianPDFReal 0 1 h * (cdf (gaussianReal 0 1) (a * h) - 1 / 2))) h := by
-  have hφ (y : ℝ) : gaussianPDFReal 0 1 y = (√(2 * π))⁻¹ * rexp (-y ^ 2 / 2) := by
-    simp [gaussianPDFReal]
   -- The derivative of the integrand factors as `-2π * φ(h) * (h * φ(h * t))`.
   have hsplit (t : ℝ) : -h * rexp (-h ^ 2 * (1 + t ^ 2) / 2) =
       -(2 * π * gaussianPDFReal 0 1 h) * (h * gaussianPDFReal 0 1 (h * t)) := by
@@ -97,8 +66,10 @@ theorem hasDerivAt_owensT_left (h a : ℝ) :
     have hexp : rexp (-h ^ 2 * (1 + t ^ 2) / 2) = rexp (-h ^ 2 / 2) * rexp (-(h * t) ^ 2 / 2) := by
       rw [← exp_add]
       ring_nf
-    rw [hφ, hφ, hexp]
-    linear_combination (h * rexp (-h ^ 2 / 2) * rexp (-(h * t) ^ 2 / 2)) * hc
+    rw [gaussianPDFReal_zero_one, gaussianPDFReal_zero_one, hexp]
+    simp only [neg_div]
+    linear_combination
+      (h * rexp (-(h ^ 2 / 2)) * rexp (-((h * t) ^ 2 / 2))) * hc
   -- Substituting `s = h * t` leaves the Gaussian mass of `[0, a * h]`.
   have hmass : h * ∫ t in (0 : ℝ)..a, gaussianPDFReal 0 1 (h * t) =
       cdf (gaussianReal 0 1) (a * h) - 1 / 2 := by

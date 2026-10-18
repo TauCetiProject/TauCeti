@@ -29,6 +29,8 @@ density and cdf, and the skew-normal identities are in
 * `Real.continuous_owensT` and `Real.measurable_owensT` — joint continuity and measurability.
 * `Real.owensT_neg_left` and `Real.owensT_neg_right` — evenness in `h` and oddness in `a`.
 * `Real.owensT_zero_left` — `T(0, a) = arctan a / (2π)`.
+* `Real.hasDerivAt_intervalIntegral_owensT` — differentiation in the first argument under the
+  integral defining Owen's T function.
 * `Real.hasDerivAt_owensT_right` — the derivative in `a`.
 * `Real.abs_owensT_le`, `Real.tendsto_owensT_atTop` and `Real.tendsto_owensT_atBot` — the
   Gaussian bound and the limits in `h`.
@@ -69,6 +71,36 @@ def owensT (h a : ℝ) : ℝ :=
 theorem owensT_def (h a : ℝ) :
     owensT h a = (2 * π)⁻¹ * ∫ t in (0 : ℝ)..a, rexp (-h ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2) :=
   (rfl)
+
+/-- Differentiation in `h` under the integral sign defining Owen's T function, with the constant
+bound `|h| + 1` on the derivative of the integrand near `h`. -/
+theorem hasDerivAt_intervalIntegral_owensT (h a : ℝ) :
+    HasDerivAt (fun x => ∫ t in (0 : ℝ)..a, rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2))
+      (∫ t in (0 : ℝ)..a, -h * rexp (-h ^ 2 * (1 + t ^ 2) / 2)) h := by
+  have hFc (x : ℝ) : Continuous fun t : ℝ => rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2) :=
+    Continuous.div (by fun_prop) (by fun_prop) fun _ => by positivity
+  refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (F := fun x t => rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2))
+    (F' := fun x t => -x * rexp (-x ^ 2 * (1 + t ^ 2) / 2))
+    (bound := fun _ => |h| + 1) (Metric.ball_mem_nhds h one_pos)
+    (Eventually.of_forall fun x => (hFc x).aestronglyMeasurable) ((hFc h).intervalIntegrable _ _)
+    (by fun_prop :
+      Continuous fun t : ℝ => -h * rexp (-h ^ 2 * (1 + t ^ 2) / 2)).aestronglyMeasurable
+    (ae_of_all _ fun t _ x hx => ?_) intervalIntegrable_const (ae_of_all _ fun t _ x _ => ?_)).2
+  · have hx' : |x| ≤ |h| + 1 := by
+      have := abs_sub_abs_le_abs_sub x h
+      rw [Metric.mem_ball, dist_eq_norm, Real.norm_eq_abs] at hx
+      linarith
+    rw [Real.norm_eq_abs, abs_mul, abs_neg, abs_of_pos (exp_pos _)]
+    refine (mul_le_of_le_one_right (abs_nonneg x) (exp_le_one_iff.2 ?_)).trans hx'
+    have : 0 ≤ x ^ 2 * (1 + t ^ 2) := by positivity
+    linarith
+  · have hpos : (1 + t ^ 2) ≠ 0 := by positivity
+    convert (((hasDerivAt_pow 2 x).neg.mul_const (1 + t ^ 2)).div_const 2).exp.div_const
+      (1 + t ^ 2) using 1
+    simp only [Pi.neg_apply]
+    field_simp
+    ring
 
 /-- Owen's T function is jointly continuous. -/
 theorem continuous_owensT : Continuous fun p : ℝ × ℝ => owensT p.1 p.2 := by
