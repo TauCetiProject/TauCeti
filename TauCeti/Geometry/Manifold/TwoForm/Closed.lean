@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Closed smooth differential two-forms
@@ -90,6 +91,48 @@ theorem isClosed_const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (const B hB : SmoothTwoForm (modelWithCornersSelf ℝ V) V).IsClosed := by
   change mextDeriv (const B hB).1 = 0
   exact mextDeriv_const B hB
+
+/-! ### Closure properties -/
+
+/-- The zero smooth two-form is closed. -/
+theorem isClosed_zero : (0 : SmoothTwoForm I M).IsClosed := by
+  change mextDeriv (0 : SmoothTwoForm I M).1 = (0 : RoughForm I M ℝ (2 + 1))
+  have h := congrArg Subtype.val
+    ((mextDerivₗ (F := ℝ) I 2).map_zero :
+      (mextDerivₗ (F := ℝ) I 2) (0 : SmoothForm I M ℝ 2) = 0)
+  rw [mextDerivₗ_apply] at h
+  change mextDeriv (0 : SmoothTwoForm I M).1 = (0 : SmoothForm I M ℝ (2 + 1)).1
+  exact h
+
+/-- The sum of two closed smooth two-forms is closed. -/
+theorem IsClosed.add {form' : SmoothTwoForm I M} (h : form.IsClosed)
+    (h' : form'.IsClosed) : (form + form').IsClosed := by
+  change mextDeriv (form + form').1 = 0
+  have hsum : mextDeriv (form + form').1 = mextDeriv form.1 + mextDeriv form'.1 := by
+    rw [← mextDerivₗ_apply (F := ℝ), ← mextDerivₗ_apply (F := ℝ),
+      ← mextDerivₗ_apply (F := ℝ)]
+    exact congrArg Subtype.val ((mextDerivₗ (F := ℝ) I 2).map_add form form')
+  rw [hsum, h, h', add_zero]
+
+/-- A real scalar multiple of a closed smooth two-form is closed. -/
+theorem IsClosed.smul (c : ℝ) (h : form.IsClosed) : (c • form).IsClosed := by
+  change mextDeriv (c • form).1 = 0
+  have hsmul : mextDeriv (c • form).1 = c • mextDeriv form.1 := by
+    rw [← mextDerivₗ_apply (F := ℝ), ← mextDerivₗ_apply (F := ℝ)]
+    exact congrArg Subtype.val ((mextDerivₗ (F := ℝ) I 2).map_smul c form)
+  rw [hsmul, h, smul_zero]
+
+/-- The negative of a closed smooth two-form is closed. -/
+theorem IsClosed.neg (h : form.IsClosed) : (-form).IsClosed := by
+  change mextDeriv (-form.1) = 0
+  rw [mextDeriv_neg, h, neg_zero]
+
+/-- The difference of two closed smooth two-forms is closed. -/
+theorem IsClosed.sub {form' : SmoothTwoForm I M} (h : form.IsClosed)
+    (h' : form'.IsClosed) : (form - form').IsClosed := by
+  rw [sub_eq_add_neg]
+  exact SmoothTwoForm.IsClosed.add (form := form) h
+    (SmoothTwoForm.IsClosed.neg (form := form') h')
 
 end SmoothTwoForm
 
