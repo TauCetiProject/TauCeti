@@ -120,14 +120,8 @@ noncomputable def smoothTensorInducedGradedResolutionAugmentation :
 theorem smoothTensorInducedGradedResolutionAugmentation_app
     (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     (smoothTensorInducedGradedResolutionAugmentation U hU s).app A =
-      smoothTensorInducedGradedResolutionAugmentationApp U hU s A :=
-  by
-    refine (congrArg (fun α ↦ α.app A)
-      (smoothTensorInducedGradedResolutionAugmentation.eq_1 U hU s)).trans ?_
-    change (smoothTensorInductionFunctor R G U hU s).map
-      (smoothGradedResolutionAugmentation.app A) = _
-    exact (congrArg (smoothTensorInductionFunctor R G U hU s).map
-      (smoothGradedResolutionAugmentation_app A)).trans
-        (smoothTensorInducedGradedResolutionAugmentationApp.eq_1 U hU s A).symm
+      smoothTensorInducedGradedResolutionAugmentationApp U hU s A := by
+  rw [smoothTensorInducedGradedResolutionAugmentation, Functor.whiskerRight_app,
+    smoothGradedResolutionAugmentation_app, smoothTensorInducedGradedResolutionAugmentationApp]
 
 end TauCeti
