@@ -39,7 +39,7 @@ groups over `ℝ` and `ℚ_p` are studied.
 
 * `TauCeti.QuadraticMap.isClosed_range_orthogonalGroup_toLinearMap`: the orthogonal group is
   closed in the endomorphism space, through its underlying linear maps.
-* `TauCeti.QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology`:
+* `QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology`:
   without separation of the scalars this fails for every form on a nontrivial module.
 * `TauCeti.QuadraticMap.isClosed_orthogonalGroup`: the orthogonal group is closed in the linear
   automorphism group.
@@ -87,7 +87,7 @@ variable {R M N : Type*} [CommSemiring R] [TopologicalSpace R] [IndiscreteTopolo
 nontrivial module is not closed in the endomorphism space: that space is indiscrete, and the
 orthogonal group is nonempty and does not contain `0`. Thus the separation hypothesis of
 `isClosed_range_orthogonalGroup_toLinearMap` cannot be dropped. -/
-theorem not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology
+theorem _root_.QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology
     (Q : QuadraticMap R M N) :
     ¬ IsClosed (Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap)) := by
   have := IsModuleTopology.indiscreteTopology R (Module.End R M)
