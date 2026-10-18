@@ -34,6 +34,7 @@ namespace Real
 
 /-- The logit `u ↦ log (u / (1 - u))` is a right inverse of the sigmoid on the open unit
 interval. -/
+@[simp]
 theorem sigmoid_log_div_one_sub {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
     sigmoid (log (u / (1 - u))) = u := by
   have h1' : 0 < 1 - u := sub_pos.mpr h1
