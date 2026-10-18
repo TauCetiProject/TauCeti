@@ -33,9 +33,9 @@ idele class group as a topological group: `C_K ≃ C_K¹ × ℝ>0`.
 * `TauCeti.GlobalNumberFields.ideleNormSection` and
   `TauCeti.GlobalNumberFields.ideleClassNormSection`: the resulting continuous sections of the
   idele norm and of the idele class norm.
-* `TauCeti.GlobalNumberFields.IdeleClassGroup.quotientNormOneEquiv`: the isomorphism of
+* `NumberField.IdeleClassGroup.quotientNormOneEquiv`: the isomorphism of
   topological groups `C_K / C_K¹ ≃ₜ* ℝ>0` induced by the idele class norm.
-* `TauCeti.GlobalNumberFields.IdeleClassGroup.normOneProdEquiv`: the splitting
+* `NumberField.IdeleClassGroup.normOneProdEquiv`: the splitting
   `C_K ≃ₜ* C_K¹ × ℝ>0` determined by an infinite place.
 
 ## Main results
@@ -45,9 +45,9 @@ idele class group as a topological group: `C_K ≃ C_K¹ × ℝ>0`.
   inverse to the norms.
 * `TauCeti.GlobalNumberFields.isOpenQuotientMap_ideleNorm` and
   `TauCeti.GlobalNumberFields.isOpenQuotientMap_ideleClassNorm`: the norms are open quotient maps.
-* `TauCeti.GlobalNumberFields.IdeleClassGroup.quotientNormOneEquiv_mk`: the norm quotient
+* `NumberField.IdeleClassGroup.quotientNormOneEquiv_mk`: the norm quotient
   isomorphism is induced by the idele class norm.
-* `TauCeti.GlobalNumberFields.IdeleClassGroup.not_compactSpace`: the idele class group is not
+* `NumberField.IdeleClassGroup.not_compactSpace`: the idele class group is not
   compact.
 
 ## References
@@ -87,7 +87,6 @@ theorem coe_completionNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
   (rfl)
 
 /-- The normalized absolute value of `completionNormSection w t` is `t`. -/
-@[simp]
 theorem completionNormalizedAbsValue_completionNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
     completionNormalizedAbsValue w (completionNormSection w t) = (t : ℝ≥0) := by
   rw [coe_completionNormSection, completionNormalizedAbsValue_ofReal, NNReal.abs_eq,
@@ -151,7 +150,13 @@ theorem isOpenQuotientMap_ideleClassNorm : IsOpenQuotientMap (ideleClassNorm (K 
     .of_inverse (ideleClassNormSection K w).continuous continuous_ideleClassNorm
       (ideleClassNorm_ideleClassNormSection w)
 
-namespace IdeleClassGroup
+end TauCeti.GlobalNumberFields
+
+namespace NumberField.IdeleClassGroup
+
+open TauCeti.GlobalNumberFields TauCeti.GlobalNumberFields.IdeleClassGroup
+
+variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### The norm quotient -/
 
@@ -240,6 +245,4 @@ theorem normOneProdEquiv_symm_apply (w : InfinitePlace K) (p : normOne K × ℝ�
     (normOneProdEquiv w).symm p = p.1 * ideleClassNormSection K w p.2 :=
   (rfl)
 
-end IdeleClassGroup
-
-end TauCeti.GlobalNumberFields
+end NumberField.IdeleClassGroup

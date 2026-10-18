@@ -102,7 +102,6 @@ end Completion
 
 /-- The normalized absolute value of a real number in the completion at `w` is its absolute
 value raised to the multiplicity of `w`. -/
-@[simp]
 theorem completionNormalizedAbsValue_ofReal (r : ℝ) :
     completionNormalizedAbsValue w (Completion.ofReal w r) = |r| ^ w.mult := by
   rw [completionNormalizedAbsValue_apply, Completion.norm_ofReal]
