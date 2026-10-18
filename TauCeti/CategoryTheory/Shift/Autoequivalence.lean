@@ -452,7 +452,7 @@ theorem shiftFunctorNegOneIso_inv_app {G : C ⥤ C} (ε : G ⋙ e.functor ≅ �
 
 /-- Shifting the inverse degree `-1` comparison by `1` recovers the degree `1` comparison followed
 by the counit `ε.hom` and the `(-1) + 1 = 0` shift cancellation. -/
-private theorem shift_shiftFunctorNegOneIso_inv_app {G : C ⥤ C} (ε : G ⋙ e.functor ≅ 𝟭 C) (X : C) :
+theorem shift_shiftFunctorNegOneIso_inv_app {G : C ⥤ C} (ε : G ⋙ e.functor ≅ 𝟭 C) (X : C) :
     letI := e.hasShift
     ((e.shiftFunctorNegOneIso ε).inv.app X)⟦(1 : ℤ)⟧' =
       e.shiftFunctorOneIso.hom.app (G.obj X) ≫ ε.hom.app X ≫
