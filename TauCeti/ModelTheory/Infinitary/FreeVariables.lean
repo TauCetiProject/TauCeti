@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Semantics
+public import TauCeti.ModelTheory.Infinitary.Reindex
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -18,20 +19,37 @@ bound-variable slot and therefore do not change this support.
 
 Realization depends only on the free valuation on this set. For a countable branching carrier
 the support is countable, and for an embedded first-order formula it is exactly Mathlib's
-`BoundedFormula.freeVarFinset`.
+`BoundedFormula.freeVarFinset`. Coded connectives collect the support of their original branches,
+and carrier transport preserves support.
 -/
 
 public section
 
-universe u v uι uα w
+universe u v uι uκ uα w
 
 namespace TauCeti
 
 open FirstOrder.Language
 
-namespace BoundedFormulaInf
-
 variable {L : FirstOrder.Language.{u, v}} {ι : Type uι} {α : Type uα} {n : ℕ}
+
+namespace Term
+
+/-- Term realization depends only on the free valuation on its finite left-variable support;
+the valuation of the right variables is held fixed. -/
+theorem realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [L.Structure M]
+    (t : L.Term (α ⊕ β)) {v₁ v₂ : α → M} (ys : β → M)
+    (h : Set.EqOn v₁ v₂ ↑t.varFinsetLeft) :
+    t.realize (Sum.elim v₁ ys) = t.realize (Sum.elim v₂ ys) := by
+  rw [← t.realize_restrictVarLeft' (Set.Subset.refl _),
+    ← t.realize_restrictVarLeft' (Set.Subset.refl _)]
+  have hv : v₁ ∘ ((↑) : (↑t.varFinsetLeft : Set α) → α) = v₂ ∘ (↑) :=
+    funext fun a => h a.property
+  rw [hv]
+
+end Term
+
+namespace BoundedFormulaInf
 
 /-- The set of free variables occurring in an infinitary formula. This is syntactic support,
 not the smallest set on which its truth value depends. -/
@@ -52,18 +70,17 @@ theorem freeVarSupport_falsum :
 theorem freeVarSupport_equal [DecidableEq α] (t₁ t₂ : L.Term (α ⊕ Fin n)) :
     freeVarSupport (.equal t₁ t₂ : L.BoundedFormulaInf ι α n) =
       ↑t₁.varFinsetLeft ∪ ↑t₂.varFinsetLeft := by
-  unfold freeVarSupport
-  congr 3 <;> exact Subsingleton.elim _ _
+  -- Reconcile the definition's classical instance with the caller's decidable equality.
+  simp only [freeVarSupport]
+  congr!
 
 @[simp]
 theorem freeVarSupport_rel [DecidableEq α] {k : ℕ} (R : L.Relations k)
     (ts : Fin k → L.Term (α ⊕ Fin n)) :
     freeVarSupport (.rel R ts : L.BoundedFormulaInf ι α n) = ⋃ i, ↑(ts i).varFinsetLeft := by
-  unfold freeVarSupport
-  congr 1
-  funext i
-  congr 2
-  exact Subsingleton.elim _ _
+  -- Reconcile the definition's classical instance with the caller's decidable equality.
+  simp only [freeVarSupport]
+  congr!
 
 @[simp]
 theorem freeVarSupport_imp (φ ψ : L.BoundedFormulaInf ι α n) :
@@ -130,32 +147,66 @@ theorem freeVarSupport_exs (φ : L.BoundedFormulaInf ι α n) :
   | zero => rw [FirstOrder.Language.BoundedFormulaInf.exs_zero]
   | succ n ih => rw [FirstOrder.Language.BoundedFormulaInf.exs_succ, ih, freeVarSupport_ex]
 
+private theorem mem_freeVarSupport_pad {κ : Type uκ} (c : IndexCoding ι κ)
+    (d : L.BoundedFormulaInf κ α n) (φs : ι → L.BoundedFormulaInf κ α n) (k : κ) (a : α) :
+    a ∈ freeVarSupport (c.pad d φs k) ↔
+      c.pad (a ∈ freeVarSupport d) (fun i => a ∈ freeVarSupport (φs i)) k :=
+  Iff.of_eq (congrFun (c.comp_pad (fun φ : L.BoundedFormulaInf κ α n =>
+    a ∈ freeVarSupport φ) d φs) k)
+
+/-- A coded conjunction has exactly the free variables of its original branches. -/
+@[simp]
+theorem freeVarSupport_iInfAlong {κ : Type uκ} (c : IndexCoding ι κ)
+    (φs : ι → L.BoundedFormulaInf κ α n) :
+    freeVarSupport (FirstOrder.Language.BoundedFormulaInf.iInfAlong c φs) =
+      ⋃ i, freeVarSupport (φs i) := by
+  ext a
+  simp only [FirstOrder.Language.BoundedFormulaInf.iInfAlong_def, freeVarSupport_iInf,
+    Set.mem_iUnion, mem_freeVarSupport_pad, freeVarSupport_top, Set.mem_empty_iff_false]
+  exact c.exists_pad_false_iff _
+
+/-- A coded disjunction has exactly the free variables of its original branches. -/
+@[simp]
+theorem freeVarSupport_iSupAlong {κ : Type uκ} (c : IndexCoding ι κ)
+    (φs : ι → L.BoundedFormulaInf κ α n) :
+    freeVarSupport (FirstOrder.Language.BoundedFormulaInf.iSupAlong c φs) =
+      ⋃ i, freeVarSupport (φs i) := by
+  ext a
+  simp only [FirstOrder.Language.BoundedFormulaInf.iSupAlong_def, freeVarSupport_iSup,
+    Set.mem_iUnion, mem_freeVarSupport_pad, freeVarSupport_bot, Set.mem_empty_iff_false]
+  exact c.exists_pad_false_iff _
+
+/-- Transport along any carrier coding preserves syntactic free-variable support. -/
+@[simp]
+theorem freeVarSupport_reindex {κ : Type uκ} (c : IndexCoding ι κ)
+    (φ : L.BoundedFormulaInf ι α n) : freeVarSupport (φ.reindex c) = freeVarSupport φ := by
+  classical
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
 /-- Changing the free valuation away from syntactic support does not affect realization.
 The bound-variable valuation is arbitrary and is held fixed. -/
 theorem realize_congr_freeVarSupport {M : Type w} [L.Structure M]
     (φ : L.BoundedFormulaInf ι α n) {v₁ v₂ : α → M} (xs : Fin n → M)
     (h : Set.EqOn v₁ v₂ (freeVarSupport φ)) : φ.Realize v₁ xs ↔ φ.Realize v₂ xs := by
   classical
-  -- Use the existing restriction semantics to compare terms on their finite free support.
-  have term_congr {k : ℕ} (t : L.Term (α ⊕ Fin k)) (ys : Fin k → M)
-      (ht : Set.EqOn v₁ v₂ ↑t.varFinsetLeft) :
-      t.realize (Sum.elim v₁ ys) = t.realize (Sum.elim v₂ ys) := by
-    rw [← t.realize_restrictVarLeft' (Set.Subset.refl _),
-      ← t.realize_restrictVarLeft' (Set.Subset.refl _)]
-    have hv : v₁ ∘ ((↑) : (↑t.varFinsetLeft : Set α) → α) = v₂ ∘ (↑) :=
-      funext fun a => ht a.property
-    rw [hv]
   induction φ with
   | falsum => simp
   | equal t₁ t₂ =>
     simp only [freeVarSupport_equal] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_equal,
-      term_congr t₁ xs (h.mono Set.subset_union_left),
-      term_congr t₂ xs (h.mono Set.subset_union_right)]
+      Term.realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
+      Term.realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
   | rel R ts =>
     rw [freeVarSupport_rel] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_rel]
-    have ht (i) := term_congr (ts i) xs
+    have ht (i) := Term.realize_congr_varFinsetLeft (ts i) xs
       (h.mono (Set.subset_iUnion (fun i => ((ts i).varFinsetLeft : Set α)) i))
     simp only [ht]
   | imp φ ψ ihφ ihψ =>

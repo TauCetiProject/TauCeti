@@ -24,7 +24,7 @@ through public statements only:
 * coded conjunctions and disjunctions realize as the conjunction and disjunction of their branches,
   for an empty source carrier, with unused target indices, and with a decoder that sends several
   target indices to the same branch;
-* a countable conjunction can have infinite free-variable support;
+* a countable conjunction can have infinite free-variable support, also after carrier transport;
 * changing a valuation outside support preserves truth, also under a quantifier;
 * `simp` uses a formula- or sentence-level hypothesis, or a default-priority formula-level rewrite
   rule, before descending to bounded realization.
@@ -148,6 +148,13 @@ attribute [local instance] Language.emptyStructure
 example : freeVarSupport
     (all (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0))) :
       Language.empty.BoundedFormulaω ℕ 0) = Set.univ := by
+  ext i
+  simp [Term.varFinsetLeft]
+
+-- Transport keeps this infinite support even when the target has an unused padding index.
+example : freeVarSupport
+    ((all (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0).reindex (IndexCoding.sumInl ℕ Unit)) = Set.univ := by
   ext i
   simp [Term.varFinsetLeft]
 
