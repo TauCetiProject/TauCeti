@@ -234,8 +234,6 @@ theorem charFun_rademacherMeasure (t : ℝ) :
   norm_num only [Complex.ofReal_neg, Complex.ofReal_one]
   rw [Complex.real_smul, Complex.real_smul]
   push_cast
-  -- Normalize the exponent at `-1` into the negated exponent used by `Complex.cos`.
-  rw [show (t : ℂ) * -1 * Complex.I = -((t : ℂ) * Complex.I) by ring]
   ring_nf
 
 end TauCeti.Probability
