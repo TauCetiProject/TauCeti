@@ -45,10 +45,10 @@ zero but no divisor of degree one
 
 * `AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`: the pullback of rational
   functions along `X.isoProjectiveLine e` is `e`.
-* `AlgebraicGeometry.Scheme.nonempty_algEquiv_ratFunc_of_genus_eq_zero`: a regular proper curve of
-  genus zero with a divisor of degree one has rational function field.
-* `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero`: such a curve is
-  isomorphic to `ℙ¹_k` over `k`.
+* `AlgebraicGeometry.Scheme.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`:
+  a regular proper curve of genus zero with a divisor of degree one has rational function field.
+* `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one`:
+  such a curve is isomorphic to `ℙ¹_k` over `k`.
 * `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_section`: in particular,
   a regular proper curve of genus zero with a `k`-rational point is isomorphic to `ℙ¹_k`.
 
@@ -114,7 +114,7 @@ theorem functionFieldMap_isoProjectiveLine_hom (e : RatFunc k ≃ₐ[k] X.functi
 a regular proper curve over `k`, with `k` integrally closed in `k(X)`. If `dim_k H¹(X, 𝒪_X) = 0`
 and some divisor on `X` has degree one, then `k(X)` is `k`-isomorphic to the rational function
 field `k(t)`. -/
-theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero
+theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one
     (hk : IsIntegrallyClosedIn k X.functionField)
     (hg : finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) = 0)
     {D : SchemeWeilDivisor X} (hD : SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D = 1) :
@@ -122,13 +122,13 @@ theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero
   have hX := IsCurveOver.topologicalKrullDim_eq_one (X := X) k
   have hdim := IsCurveOver.coheight_le_one (k := k) (X := X)
   let _ : IsNoetherian X := IsCurveOver.isNoetherian k X
-  let _ : X.IsSeparated := IsCurveOver.isSeparated k X
+  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hex := IsCurveOver.valuativeCriterion_existence k X
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hX
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   have hgF : TauCeti.genus k X.functionField = 0 := by
     rw [← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, genus_def, hg]
-  exact nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hF hk hgF
+  exact TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hF hk hgF
     ⟨SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D, by
       rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor, hD]⟩
 
@@ -136,12 +136,12 @@ theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero
 regular proper curve over `k`, with `k` integrally closed in `k(X)`. If `dim_k H¹(X, 𝒪_X) = 0` and
 some divisor on `X` has degree one, for instance the prime divisor of a `k`-rational point, then
 `X` is isomorphic to `ℙ¹_k` over `k`. -/
-theorem exists_iso_projectiveLine_of_genus_eq_zero
+theorem exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one
     (hk : IsIntegrallyClosedIn k X.functionField)
     (hg : finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) = 0)
     {D : SchemeWeilDivisor X} (hD : SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D = 1) :
     ∃ e : X ≅ projectiveLine k, e.hom.IsOver (Spec (.of k)) := by
-  obtain ⟨e⟩ := X.nonempty_algEquiv_ratFunc_of_genus_eq_zero hk hg hD
+  obtain ⟨e⟩ := X.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hk hg hD
   exact ⟨X.isoProjectiveLine e.symm, inferInstance⟩
 
 /-- **A curve of genus zero with a rational point is the projective line.** Let `X` be a regular
@@ -152,7 +152,7 @@ theorem exists_iso_projectiveLine_of_genus_eq_zero_of_section
     (hg : finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) = 0)
     {s : Spec (.of k) ⟶ X} (hs : s ≫ (X ↘ Spec (.of k)) = 𝟙 _) :
     ∃ e : X ≅ projectiveLine k, e.hom.IsOver (Spec (.of k)) :=
-  X.exists_iso_projectiveLine_of_genus_eq_zero hk hg
+  X.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one hk hg
     (relativeDegree_ofPoint_of_section hs
       (x₀ := ⟨_, IsCurveOver.coheight_section_eq_one k hs⟩) rfl)
 

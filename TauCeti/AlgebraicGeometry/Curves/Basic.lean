@@ -25,7 +25,7 @@ divisor.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry
 
 universe u
 
@@ -66,11 +66,6 @@ theorem IsCurveOver.isNoetherian [X.IsCurveOver k] : IsNoetherian X := by
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have : CompactSpace X := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance
   exact {}
-
-variable (k X) in
-/-- A curve over a field is separated as a scheme. -/
-theorem IsCurveOver.isSeparated [X.IsCurveOver k] : X.IsSeparated :=
-  ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
 
 variable (k X) in
 /-- The structure morphism of a curve satisfies the existence part of the valuative criterion. -/
