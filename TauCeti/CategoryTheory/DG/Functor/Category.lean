@@ -26,8 +26,7 @@ next degree.
 
 This is the DG category in which modules over a DG category live: a right DG module over `C` is
 a DG functor `Cᵒᵖ ⥤ C(R)` to cochain complexes, and the morphism complexes of modules are the
-Hom complexes constructed here.  Evaluation at an object of `C` is a DG functor out of this
-category.
+Hom complexes constructed here.
 
 The objects are those of `TauCeti.DGFunctor R C D`, whose ordinary morphisms are the closed
 degree-zero DG natural transformations; these are exactly the closed degree-zero morphisms of the
@@ -43,7 +42,6 @@ natural family, a family indexed by the objects of `C`, is again a module in tha
 * `TauCeti.DGFunctor.instDGCategory`: DG functors `C ⥤ D` form a differential graded category.
 * `TauCeti.DGFunctor.dgHomEquiv`: a morphism of degree `n` is a natural family of degree `n`.
 * `TauCeti.DGFunctor.dgApp`: the component of a morphism of DG functors at an object.
-* `TauCeti.DGFunctor.evaluation`: evaluation at an object, a DG functor.
 * `TauCeti.DGFunctor.homEquivDGCycles`: DG natural transformations `F ⟶ G` are the closed
   degree-zero morphisms `F ⟶ G` of the DG category of DG functors.
 
@@ -355,32 +353,6 @@ theorem dgApp_dgComp {F G H : DGFunctor R C D} {p q n : ℤ} (η : DGHom R p F G
 theorem dgApp_dgId (F : DGFunctor R C D) (X : C) :
     dgApp R 0 X (dgId R F) = dgId R (F.toEnrichedFunctor.obj X) :=
   congrFun (congrArg Subtype.val ((homComplexData R).dgId_toDGCategory F)) X
-
-/-! ### Evaluation -/
-
-/-- **Evaluation at an object** `X` of `C` is a DG functor from DG functors `C ⥤ D` to `D`:
-it sends `F` to `F X` and a morphism `η` to its component `η X`. -/
--- The body is exposed so that `(evaluation R X).obj F` is definitionally `F X`, as for
--- `CategoryTheory.EnrichedFunctor.ofDGMap`; otherwise the homogeneous morphisms of the two sides
--- of `dgMap_evaluation` would have different types, and that lemma could not be stated.
-@[expose]
-noncomputable def evaluation (X : C) :
-    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGFunctor R C D) D :=
-  EnrichedFunctor.ofDGMap (fun F ↦ F.toEnrichedFunctor.obj X) (fun n ↦ dgApp R n X)
-    (fun _ η ↦ dgApp_dgDifferential R η X) (fun F ↦ dgApp_dgId R F X)
-    (fun η θ h ↦ dgApp_dgComp R η θ h X)
-
-/-- Evaluation at `X` sends a DG functor `F` to `F X`. -/
-@[simp]
-theorem evaluation_obj (X : C) (F : DGFunctor R C D) :
-    (evaluation R X).obj F = F.toEnrichedFunctor.obj X :=
-  (rfl)
-
-/-- Evaluation at `X` sends a morphism of DG functors to its component at `X`. -/
-@[simp]
-theorem dgMap_evaluation (X : C) {F G : DGFunctor R C D} {n : ℤ} (η : DGHom R n F G) :
-    (evaluation R X).dgMap n η = dgApp R n X η :=
-  (EnrichedFunctor.dgMap_apply _ η).trans rfl
 
 /-! ### Closed degree-zero morphisms
 
