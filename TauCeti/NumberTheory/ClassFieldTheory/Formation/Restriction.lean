@@ -715,6 +715,56 @@ theorem subgroupLayer_range_galHom {small : NormalLayer G} (T : LayerRestriction
   exact ⟨fun ⟨hg, hmem⟩ ↦ (T.mk_mem_range_galHom_iff ⟨g, hg⟩).1 hmem,
     fun hg ↦ ⟨T.ground_toSubgroup_le hg, (T.mk_mem_range_galHom_iff _).2 hg⟩⟩
 
+/-! ### The layer of a quotient of the Galois group -/
+
+variable (N : Subgroup L.Gal) [N.Normal]
+
+/-- The **layer of a quotient** `(U ⧸ V) ⧸ N` of the Galois group by a normal subgroup `N`: the
+finite normal layer `W ◁ U` with the same ground subgroup whose top subgroup is the preimage `W`
+of `N`. In field notation it is the subextension `K^N / F` of `K / F`, which `L` refines
+(`NormalLayer.quotientRefinement`). -/
+def quotientLayer : NormalLayer G where
+  ground := L.ground
+  top := (L.subgroupLayer N).ground
+  top_le_ground := OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_le_ground N)
+  normal := by
+    rw [ground_subgroupLayer, subgroupGround_eq_map_comap, ← Subgroup.comap_subtype,
+      Subgroup.comap_map_eq_self_of_injective (Subgroup.subtype_injective _)]
+    exact Subgroup.Normal.comap inferInstance _
+
+/-- The layer of a quotient has the ground subgroup of the layer it comes from. -/
+@[simp]
+theorem ground_quotientLayer : (L.quotientLayer N).ground = L.ground :=
+  (rfl)
+
+/-- The top subgroup of the layer of `(U ⧸ V) ⧸ N` is the preimage of `N`. -/
+@[simp]
+theorem top_quotientLayer : (L.quotientLayer N).top.toSubgroup = L.subgroupGround N :=
+  L.ground_subgroupLayer N
+
+/-- **A layer refines the layer of each quotient of its Galois group:** it has the same ground
+field and a bigger top field. -/
+theorem quotientRefinement : LayerRefinement (L.quotientLayer N) L :=
+  ⟨rfl, OpenSubgroup.toSubgroup_le.1 (L.top_le_subgroupGround N)⟩
+
+/-- The homomorphism of Galois groups of the refinement `L` of the layer of `(U ⧸ V) ⧸ N` has
+kernel `N`. -/
+@[simp]
+theorem ker_galHom_quotientRefinement : (L.quotientRefinement N).galHom.ker = N := by
+  ext γ
+  induction γ using QuotientGroup.induction_on with
+  | H w =>
+    rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, ← OpenSubgroup.mem_toSubgroup,
+      top_quotientLayer, mem_subgroupGround]
+    exact ⟨fun ⟨_, hmem⟩ ↦ hmem, fun hmem ↦ ⟨w.2, hmem⟩⟩
+
+/-- **The degree of the layer of `(U ⧸ V) ⧸ N` is the index of `N`.** -/
+theorem degree_quotientLayer : (L.quotientLayer N).degree = N.index := by
+  rw [degree_eq_relIndex, top_quotientLayer, ground_quotientLayer, Subgroup.relIndex,
+    ← Subgroup.comap_subtype, subgroupGround_eq_map_comap,
+    Subgroup.comap_map_eq_self_of_injective (Subgroup.subtype_injective _)]
+  exact Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective L.relativeTop)
+
 end NormalLayer
 
 end TauCeti.ClassFieldTheory

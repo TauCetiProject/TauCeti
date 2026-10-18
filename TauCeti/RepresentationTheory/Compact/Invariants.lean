@@ -29,7 +29,7 @@ image pointwise.
 
 In finite dimension the trace of a projection is the dimension of its image, and the trace of the
 integrated operator is the Haar integral of the character
-(`TauCeti.ContRepresentation.trace_integratedOperator`). The two readings of the same trace give the
+(`ContRepresentation.trace_integratedOperator`). The two readings of the same trace give the
 counting theorem
 
 `dim V^G = ∫ g, χ_π g ∂(haarProb G)`,
@@ -70,10 +70,9 @@ The invariant subspace is Mathlib's `ContRepresentation.invariants`, not a new d
 projection is packaged through Mathlib's `LinearMap.IsProj` so that `LinearMap.IsProj.trace`
 applies verbatim.
 
-The declarations here live in the root `ContRepresentation` namespace, so that `π.haarAverageMap hπ`
-elaborates, rather than in `TauCeti.ContRepresentation` alongside the integrated operator they are
-built from; the older namespace is opened to reach that operator. The character and its formulas
-are methods in `ContRepresentation`.
+The declarations here live in the root `ContRepresentation` namespace, alongside
+`ContRepresentation.integratedOperator` and `ContRepresentation.character`, so that
+`π.haarAverageMap hπ` elaborates.
 
 ## References
 
@@ -88,7 +87,7 @@ Chapter II.
 
 public section
 
-open MeasureTheory TauCeti TauCeti.ContRepresentation
+open MeasureTheory TauCeti
 
 namespace ContRepresentation
 

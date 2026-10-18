@@ -81,11 +81,10 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
-omit [DecidableEq ι] in
 /-- **De Giorgi's decay of upper level sets.** Let `u ∈ H¹(Ω)`, let `B(x₀, R) ⊆ Ω` with `R > 0`,
 let `k < M` with `(u - k)⁺ ∈ L²(Ω)`, and let `θ > 0` with
 `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Suppose that for every level `l ∈ [k, M)` the truncation
@@ -207,7 +206,6 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
     _ = 2 ^ (n + 2) * √Q / θ * V := by
         rw [← mul_pow, Real.sqrt_sq (by positivity)]
 
-omit [DecidableEq ι] in
 /-- If `u ≤ M` almost everywhere on `B(x₀, 2R)`, a bound of `E` by `K` times the `L²` mass of
 `(u - l)⁺` on `B(x₀, 2R)`, which is the form the Caccioppoli inequality on
 `B(x₀, R) ⊆ B(x₀, 2R)` takes, gives the bound `Q R⁻² (M - l)² |B(x₀, R)|` with `Q = 2ⁿ K R²`. -/
@@ -227,6 +225,8 @@ private theorem le_mul_sq_div_sq_mul_measureReal_ball_of_le_mul_setIntegral
   rw [mu.addHaar_real_ball_of_pos x₀ (by positivity), mu.addHaar_real_ball_of_pos x₀ hR]
   field_simp
   ring
+
+variable [DecidableEq ι]
 
 /-- **Decay of upper level sets of weak subsolutions (De Giorgi).** Fix ellipticity constants
 `λ, Λ` and a proportion `θ > 0`. There is `C > 0`, depending only on these and the dimension,

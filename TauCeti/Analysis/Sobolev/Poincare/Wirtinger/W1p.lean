@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -56,6 +57,8 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
   for a ball contained in `Ω`, with both sides written as integrals over the ball.
 * `TauCeti.W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset`: the same bound in `L¹`,
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
+* `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
+  function with vanishing weak gradient is almost everywhere constant.
 
 ## References
 
@@ -424,5 +427,39 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
     rw [hx]
   · congr 1
     exact lintegral_congr_ae (hgrad.mono fun x hx ↦ by simp only [hx])
+
+/-! ### Functions with vanishing gradient -/
+
+/-- A Sobolev function with vanishing weak gradient is almost everywhere constant on every ball
+contained in its domain, by the `L¹` Poincaré–Wirtinger inequality on that ball. -/
+private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p mu Omega p}
+    (hu : W1p.gradient u = 0) {x : E} {r : ℝ} (hr : 0 < r) (hxr : ball x r ⊆ (Omega : Set E)) :
+    ∃ c : ℝ, ∀ᵐ y ∂mu.restrict (ball x r), W1p.value u y = c := by
+  have : IsFiniteMeasure (mu.restrict (ball x r)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  set m := ⨍ y in ball x r, W1p.value u y ∂mu
+  have hP := W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hxr u
+  have hgrad : ∫ y in ball x r, ‖W1p.gradient u y‖ ∂mu = 0 := by
+    refine integral_eq_zero_of_ae (ae_restrict_of_ae_restrict_of_subset hxr ?_)
+    filter_upwards [(Lp.ext_iff.1 hu).trans (Lp.coeFn_zero _ _ _)] with y hy
+    simp [hy]
+  rw [hgrad, mul_zero] at hP
+  have hint : IntegrableOn (fun y ↦ |W1p.value u y - m|) (ball x r) mu :=
+    ((((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hxr le_rfl)).integrable
+      Fact.out).sub (integrable_const m)).abs
+  have hzero := (integral_eq_zero_iff_of_nonneg (fun _ ↦ abs_nonneg _) hint).1
+    (hP.antisymm (integral_nonneg fun _ ↦ abs_nonneg _))
+  exact ⟨m, hzero.mono fun y hy ↦ sub_eq_zero.1 (abs_eq_zero.1 hy)⟩
+
+/-- **A Sobolev function with vanishing gradient on a connected domain is constant.** If `Ω` is
+preconnected and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere
+on `Ω` with a constant. -/
+theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
+  refine hconn.exists_ae_eq_const_of_forall_nhds fun x hx => ?_
+  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hr hxr
+  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
 
 end TauCeti

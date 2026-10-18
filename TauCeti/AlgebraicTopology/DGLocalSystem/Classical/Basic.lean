@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.LocalCoefficient
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 
@@ -158,6 +159,12 @@ theorem classicalDGLocalSystem_differential (L : LocalCoefficientSystem.{u, u, w
     (classicalDGLocalSystem x L).differential = 0 :=
   (rfl)
 
+/-- The DG local system of a classical local system is concentrated in degree zero. -/
+theorem isConcentratedInDegreeZero_classicalDGLocalSystem
+    (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (classicalDGLocalSystem x L).IsConcentratedInDegreeZero :=
+  DGRightModuleCat.isConcentratedInDegreeZero_iff.2 fun _ hq ↦ trivialGrading_eq_bot R _ hq
+
 /-- A Moore loop acts on the fiber by the monodromy of its class: the point chain of a loop `γ`
 acts by the monodromy of the inverse of `fundamentalGroupHom γ`, that is of the class of `γ`. -/
 @[simp]
@@ -249,7 +256,7 @@ theorem classicalDGLocalSystemMap_injective [PathConnectedSpace X]
   have hx : φ.app (FundamentalGroupoid.mk x) = ψ.app (FundamentalGroupoid.mk x) :=
     ModuleCat.hom_ext (LinearMap.ext fun m ↦ congrArg (fun f ↦ f.toLinearMap m) h)
   exact Groupoid.natTrans_ext (x₀ := FundamentalGroupoid.mk x)
-    (fun y ↦ ⟨(⟦PathConnectedSpace.somePath x y.as⟧ : Path.Homotopic.Quotient x y.as)⟩) hx
+    (FundamentalGroupoid.nonempty_hom _) hx
 
 /-- On a path-connected space, the functor from classical to DG local systems is faithful. -/
 instance [PathConnectedSpace X] : (classicalDGLocalSystemFunctor R x).Faithful where

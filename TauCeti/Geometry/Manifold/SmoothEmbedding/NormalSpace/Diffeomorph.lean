@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Euclidean
 public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
@@ -21,7 +21,7 @@ the orthogonal atlas. The regularity of either bundle as a manifold is separatel
 by the regularity of the embedding and its normal vector-bundle atlas.
 
 The construction upgrades `normalBundleHomeomorphOrthogonal`, using
-`normalSpaceTrivialization_apply` and Mathlib's bundle-valued smoothness criterion.
+`orthogonalNormalSpaceTrivialization_apply` and Mathlib's bundle-valued smoothness criterion.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24.
@@ -48,13 +48,13 @@ Both charted structures use the same fixed model fibre `F`. -/
 def normalBundleDiffeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
     (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (m : ℕ∞ω) :
-    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := normalFiberBundle
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim
     TotalSpace F (fun x => f.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(ℝ, F), I.prod 𝓘(ℝ, F)⟯
       TotalSpace F (fun x => normalSubspace I f x) := by
-  let := f.normalSpaceFiberBundle hn hdim
+  let := f.orthogonalNormalSpaceFiberBundle hn hdim
   let := normalFiberBundle
     (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
     (f.isImmersion.mfderiv_injective hn) hdim
@@ -66,8 +66,9 @@ def normalBundleDiffeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
     apply Bundle.contMDiffAt_totalSpace.mpr
     refine ⟨?_, ?_⟩
     · simpa only [id_eq, h, Homeomorph.coe_toEquiv, normalBundleHomeomorphOrthogonal_apply] using hb
-    · simpa only [id_eq, h, normalSpaceFiberBundle_trivializationAt,
-        normalSpaceTrivialization_apply, normalFiberBundle_trivializationAt, Homeomorph.coe_toEquiv,
+    · simpa only [id_eq, h, orthogonalNormalSpaceFiberBundle_trivializationAt,
+        orthogonalNormalSpaceTrivialization_apply, normalFiberBundle_trivializationAt,
+        Homeomorph.coe_toEquiv,
         normalBundleHomeomorphOrthogonal_apply] using hv
   · intro p
     obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace.mp
@@ -78,8 +79,8 @@ def normalBundleDiffeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
         normalBundleHomeomorphOrthogonal_symm_apply] using hb
     · have hp : ((f.normalBundleHomeomorphOrthogonal hn).symm p).proj = p.proj := by
         rw [normalBundleHomeomorphOrthogonal_symm_apply]
-      simpa only [id_eq, normalSpaceFiberBundle_trivializationAt,
-        normalSpaceTrivialization_apply, h, Homeomorph.coe_symm_toEquiv, hp,
+      simpa only [id_eq, orthogonalNormalSpaceFiberBundle_trivializationAt,
+        orthogonalNormalSpaceTrivialization_apply, h, Homeomorph.coe_symm_toEquiv, hp,
         Homeomorph.apply_symm_apply, normalFiberBundle_trivializationAt] using hv
 
 variable (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
@@ -87,7 +88,7 @@ variable (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
 
 /-- The smooth identification retains the existing quotient-to-orthogonal homeomorphism. -/
 @[simp] theorem normalBundleDiffeomorphOrthogonal_toHomeomorph :
-    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := normalFiberBundle
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim
@@ -98,7 +99,7 @@ variable (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
 /-- The smooth identification takes the orthogonal representative of each normal class. -/
 @[simp] theorem normalBundleDiffeomorphOrthogonal_apply
     (p : TotalSpace F (fun x => f.NormalSpace x hn)) :
-    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := normalFiberBundle
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim
@@ -110,7 +111,7 @@ variable (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
 /-- The inverse smooth identification takes the intrinsic class of an orthogonal vector. -/
 @[simp] theorem normalBundleDiffeomorphOrthogonal_symm_apply
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
-    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := normalFiberBundle
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim

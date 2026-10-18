@@ -60,15 +60,16 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {a b : ℝ}
 
 /-! ### Geodesics are critical -/
+
+section EnergyCritical
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [FiniteDimensional ℝ E] [IsManifold I 2 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **Geodesics are critical points of the energy.** For `2 ≤ n`, a geodesic on the open interval
 between `a` and `b` which is `C^n` at every point of `[a, b]` is a critical point of the energy
@@ -82,11 +83,13 @@ theorem IsGeodesicCurveOn.isEnergyCritical {n : WithTop ℕ∞} (hn : 2 ≤ n)
     intervalIntegral.integral_zero
   simp only [((isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mp h).2 t ht, inner_zero_right]
 
+end EnergyCritical
+
 /-! ### Critical points are geodesics -/
 
 section Converse
 
-variable [I.Boundaryless] {n : ℕ∞} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
+variable {n : ℕ∞} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
 
 open scoped Classical in
 variable (I) in
@@ -96,17 +99,11 @@ coordinate vector `e` of the extended chart at `x₀`, with profile `φ`:
 private def chartVariation (γ : ℝ → M) (x₀ : M) (J : Set ℝ) (φ : ℝ → ℝ) (e : E) (s t : ℝ) : M :=
   if t ∈ J then (extChartAt I x₀).symm (extChartAt I x₀ (γ t) + (s * φ t) • e) else γ t
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] in
 /-- Outside `J`, the chart variation is `γ`. -/
 private theorem chartVariation_of_notMem {t : ℝ} (ht : t ∉ J) (s : ℝ) :
     chartVariation I γ x₀ J φ e s t = γ t := by
   simp [chartVariation, ht]
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] in
 /-- Where the displacement `s φ(t)` vanishes, the chart variation is `γ`. -/
 private theorem chartVariation_of_mul_eq_zero (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
     {s t : ℝ} (h : s * φ t = 0) : chartVariation I γ x₀ J φ e s t = γ t := by
@@ -115,17 +112,13 @@ private theorem chartVariation_of_mul_eq_zero (hJ : ∀ t ∈ J, γ t ∈ (extCh
     exact (extChartAt I x₀).left_inv (hJ t htJ)
   · exact chartVariation_of_notMem htJ s
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] in
 /-- The central curve of the chart variation is `γ`. -/
 private theorem chartVariation_zero (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) :
     chartVariation I γ x₀ J φ e 0 = γ :=
   funext fun _ ↦ chartVariation_of_mul_eq_zero hJ (zero_mul _)
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+variable [I.Boundaryless]
+
 /-- On a `C^n` manifold, the chart variation of a curve which is `C^n` at `t` is `C^n` at `(0, t)`,
 for a `C^n` profile supported in the open set `J`. -/
 private theorem contMDiffAt_chartVariation [IsManifold I n M] (hJo : IsOpen J)
@@ -156,9 +149,6 @@ private theorem contMDiffAt_chartVariation [IsManifold I n M] (hJo : IsOpen J)
     filter_upwards [continuousAt_snd.preimage_mem_nhds hev] with z hz
     exact chartVariation_of_mul_eq_zero hJ (by rw [hz, Pi.zero_apply, mul_zero])
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- On a `C^n` manifold, the chart variation of a curve which is `C^n` on `[a, b]`, for a `C^n`
 profile supported in an open set `J ⊆ uIoo a b`, is a `C^n` variation with fixed endpoints between
 `a` and `b`. -/
@@ -174,9 +164,8 @@ private theorem isFixedEndpointVariation_chartVariation [IsManifold I n M] (hJo 
   exact ⟨fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (hγ t ht),
     hend a left_notMem_uIoo, hend b right_notMem_uIoo⟩
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+variable [IsManifold I 2 M]
+
 /-- At a parameter of `J`, the variation field of the chart variation is `φ t` times the tangent
 vector at `γ t` with coordinates `e` in the tangent-bundle trivialization at `x₀`. -/
 private theorem variationField_chartVariation (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
@@ -206,6 +195,10 @@ private theorem variationField_chartVariation (hJ : ∀ t ∈ J, γ t ∈ (extCh
     TangentBundle.symmL_trivializationAt (by simpa using hJ t htJ), I.range_eq_univ,
     mfderivWithin_univ]
   exact (mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm (extChartAt I x₀ (γ t))).map_smul (φ t) e
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The first-variation integrand of the chart variation: `φ t` times the pairing of the tangent
 vector with trivialization coordinates `e` against the covariant acceleration of `γ`. -/

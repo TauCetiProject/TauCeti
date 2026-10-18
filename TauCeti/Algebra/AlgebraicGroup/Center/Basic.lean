@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 import Mathlib.LinearAlgebra.TensorProduct.Basis
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 
 /-!
@@ -48,6 +48,8 @@ ideal, so the represented closed subgroup is canonical.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory TensorProduct WithConv
 

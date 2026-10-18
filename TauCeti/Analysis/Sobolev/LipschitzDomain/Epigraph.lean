@@ -57,7 +57,8 @@ theorem _root_.LipschitzWith.isLipschitzDomainWith_normalEpigraph {L : ℝ≥0} 
     intro y z
     simpa [ψ] using hφ (y + x.snd) (z + x.snd)
   rw [Set.isLipschitzDomainAtWith_iff]
-  refine ⟨e, ψ, 1, 1, zero_lt_one, zero_lt_one, ?_, ?_, hψ, ?_⟩
+  refine ⟨e, ψ, 1, 1, ?_, (Set.isLipschitzChartWith_iff ..).2
+    ⟨zero_lt_one, zero_lt_one, ?_, hψ, ?_⟩⟩
   · simp [e]
   · simp [ψ, hxGraph]
   · intro z _

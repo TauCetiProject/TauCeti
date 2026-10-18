@@ -59,6 +59,8 @@ the two inequalities up to `τ³`, and `τ → 1` gives the formula.
   `ApproximatesLinearOn.ofReal_normDet_mul_volume_le`: the area formula up to a controlled factor
   for a map approximated by an injective linear map.
 * `MeasureTheory.lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image`: the area formula.
+* `MeasureTheory.euclideanHausdorffMeasure_image_le_lintegral_normDet`: the resulting upper bound
+  for the image of a map that factors through a `1`-Lipschitz map.
 
 ## References
 
@@ -373,6 +375,28 @@ theorem lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image (hs : Measur
       (euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt hs hd hinj hf hτ).2)
     (hlim fun _ hτ =>
       (euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt hs hd hinj hf hτ).1)
+
+/-- **Area bound through a `1`-Lipschitz factorization.** If `h` factors on a measurable set `s`
+as `p ∘ g`, where `p` is `1`-Lipschitz on `g '' s` and `g` is injective on `s` with injective
+derivatives `g' x`, then `μHE[m] (h '' s) ≤ ∫⁻ x in s, J (g' x)`, where `m = dim U` and
+`J = normDet`. The target of `h` is an arbitrary extended metric space. -/
+theorem euclideanHausdorffMeasure_image_le_lintegral_normDet {X : Type*} [EMetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] {h : U → X} {g : U → V} {g' : U → U →L[ℝ] V}
+    {p : V → X} (hs : MeasurableSet s) (hp : LipschitzOnWith 1 p (g '' s))
+    (hpg : ∀ x ∈ s, p (g x) = h x) (hg : ∀ x ∈ s, HasFDerivAt g (g' x) x)
+    (hg' : ∀ x ∈ s, Injective (g' x)) (hinj : InjOn g s) :
+    μHE[finrank ℝ U] (h '' s) ≤ ∫⁻ x in s, ENNReal.ofReal (g' x).normDet := by
+  have himage : h '' s = p '' (g '' s) := by
+    rw [image_image]
+    exact (image_congr fun x hx => hpg x hx).symm
+  calc μHE[finrank ℝ U] (h '' s) ≤ 1 ^ finrank ℝ U * μHE[finrank ℝ U] (g '' s) := by
+        rw [himage]
+        simpa using hp.euclideanHausdorffMeasure_image_le _
+    _ = ∫⁻ x in s, ENNReal.ofReal (g' x).normDet := by
+        rw [one_pow, one_mul,
+          ← lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs
+            (fun x hx => (hg x hx).differentiableAt) (fun x hx => (hg x hx).fderiv ▸ hg' x hx) hinj]
+        exact setLIntegral_congr_fun hs fun x hx => by rw [(hg x hx).fderiv]
 
 end MeasureTheory
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
@@ -135,6 +135,14 @@ theorem IsSmoothBundleForm.mpullback
     IsSmoothBundleForm I F (Trivial M F) m (mpullback I I' f ω) := by
   rw [isSmoothBundleForm_def] at hω ⊢
   exact fun x ↦ (hω (f x)).mpullback_form (hf x) hmn
+
+/-- Pullback of a fixed-coefficient `C^m` form along a `C^(m+1)` map is `C^m`.
+This is the form-level interface to the general bundle-section pullback theorem. -/
+theorem IsSmoothForm.mpullback (hω : IsSmoothForm I' m ω)
+    (hf : ContMDiff I I' (m + 1) f) : IsSmoothForm I m (mpullback I I' f ω) := by
+  rw [isSmoothForm_def]
+  exact (isSmoothBundleForm_def _ _).mp
+    (IsSmoothBundleForm.mpullback ((isSmoothBundleForm_def _ _).mpr hω.contMDiff) hf le_rfl)
 
 namespace SmoothForm
 

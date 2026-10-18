@@ -116,12 +116,7 @@ theorem eq_zero_of_mem_kerReduction_of_nsmul_eq_zero {n : ℕ} (hn : (n : A) ∉
     P = 0 := by
   -- `n` is a unit of the completed valuation ring
   have hunit : IsUnit (n : O_u) := by
-    rw [← map_natCast (algebraMap A O_u),
-      HeightOneSpectrum.adicCompletionIntegers.isUnit_iff_valued_eq_one,
-      HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply,
-      HeightOneSpectrum.valuedAdicCompletion_eq_valuation',
-      HeightOneSpectrum.valuation_eq_one_iff_notMem]
-    exact hn
+    simpa using (u.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) (n : A)).mpr hn
   set e := C.formalPointAddEquivKerReduction u
   have hQ : n • e.symm ⟨P, hP⟩ = 0 := by
     rw [← map_nsmul, AddEquiv.map_eq_zero_iff]

@@ -44,6 +44,8 @@ in optimal transport.
   pair of points and the geodesic paths joining them is closed.
 * `TauCeti.segmentPath_mem_geodesicPaths`: the affine segments of a real normed space are geodesic
   paths.
+* `TauCeti.eq_segmentPath_of_mem_geodesicPaths`: conversely, in a strictly convex real normed
+  space every geodesic path is the affine segment between its endpoints.
 
 ## References
 
@@ -162,5 +164,20 @@ theorem segmentPath_mem_geodesicPaths (z : E × E) : segmentPath z ∈ geodesicP
   fun s t ↦ by simp [dist_lineMap_lineMap, Real.dist_eq]
 
 end Normed
+
+section StrictConvex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
+
+/-- In a strictly convex real normed space, a constant-speed geodesic path is the affine segment
+between its endpoints. -/
+theorem eq_segmentPath_of_mem_geodesicPaths {γ : C(I, E)}
+    (hγ : γ ∈ geodesicPaths E) : γ = segmentPath (γ 0, γ 1) := by
+  ext t
+  rw [segmentPath_apply]
+  simpa only [IccExtend_of_mem _ _ t.property] using
+    (mem_geodesicPaths_iff_isGeodesicSegment.1 hγ).eq_lineMap t.property
+
+end StrictConvex
 
 end TauCeti

@@ -56,6 +56,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   with `‖1‖ = 1` and a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
   ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
+* `TauCeti.Huber.IsTateRing.of_normedAlgebra`: an ultrametric seminormed algebra over a
+  nontrivially normed field is Tate, without requiring its norm at one to equal one.
 
 ## References
 
@@ -246,5 +248,36 @@ instance IsTateRing.of_nontriviallyNormedField (K : Type*) [NontriviallyNormedFi
     [IsUltrametricDist K] : IsTateRing K := by
   obtain ⟨ϖ, h0, h1⟩ := NormedField.exists_norm_lt_one K
   exact IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)) h1
+
+/-- An ultrametric seminormed algebra over a nontrivially normed field is a Tate ring.
+No normalisation of the algebra norm at one is required. -/
+theorem IsTateRing.of_normedAlgebra (K : Type*) [NontriviallyNormedField K]
+    (A : Type*) [SeminormedCommRing A] [NormedAlgebra K A]
+    [IsUltrametricDist A] : IsTateRing A := by
+  -- The elements acting contractively by multiplication form an open bounded subring,
+  -- even when the given norm has `‖1‖ > 1`.
+  let A₀ : Subring A :=
+    { carrier := {a | ∀ x : A, ‖a * x‖ ≤ ‖x‖}
+      zero_mem' := by simp
+      one_mem' := by simp
+      add_mem' := fun ha hb x ↦ by
+        rw [add_mul]
+        exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (ha x) (hb x))
+      neg_mem' := fun ha x ↦ by simpa using ha x
+      mul_mem' := fun ha hb x ↦ by
+        rw [mul_assoc]
+        exact (ha _).trans (hb x) }
+  have hball : Metric.ball (0 : A) 1 ⊆ A₀ := by
+    intro a ha x
+    exact (norm_mul_le a x).trans
+      (mul_le_of_le_one_left (norm_nonneg x) (mem_ball_zero_iff.mp ha).le)
+  have hopen : IsOpen (A₀ : Set A) := A₀.toAddSubgroup.isOpen_of_mem_nhds
+    (Filter.mem_of_superset (Metric.ball_mem_nhds 0 zero_lt_one) hball)
+  have hb : IsBounded (A₀ : Set A) := (isBounded_closedBall_zero ‖(1 : A)‖).subset
+    fun a ha ↦ mem_closedBall_zero_iff.mpr (by simpa using ha 1)
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  have hϖ := IsPseudoUniformizer.of_norm_lt_one
+    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1
+  exact IsTateRing.of_isOpen_isBounded A₀ hopen hb (hϖ.map (continuous_algebraMap K A))
 
 end TauCeti.Huber
