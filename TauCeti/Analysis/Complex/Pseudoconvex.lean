@@ -286,12 +286,6 @@ theorem isOpen_setOf_re_leviForm_posOnSubspace [FiniteDimensional ℂ V] (q : �
   rw [hfactor] at hc
   exact pos_of_mul_pos_right hc (sq_nonneg ‖(⟨v, hv⟩ : P)‖⁻¹)
 
--- The metric on continuous bilinear forms is the operator-norm metric. A term is needed because
--- the nested operator-norm instances are not reducibly equal.
-private theorem dist_eq_norm_sub_bilin (B B' : V →L[ℝ] V →L[ℝ] ℝ) :
-    dist B B' = ‖B - B'‖ :=
-  dist_eq_norm B B'
-
 /-- **Strong `q`-pseudoconvexity is open in the fine `C²` topology.** Let the second derivative
 of `f` vary continuously on `U`, and suppose `f` is strongly `q`-pseudoconvex at every point of
 `U`. Then there is a tolerance `ε`, continuous and positive on `U`, such that every function whose
@@ -328,7 +322,8 @@ theorem exists_continuousOn_pos_forall_isStronglyPseudoconvexAt
         (not_not.mpr (hmem x hx)), fun g x _ hlt ↦ ?_⟩
     have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
         infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
-      (dist_comm _ _).trans_lt ((dist_eq_norm_sub_bilin _ _).trans_lt hlt)
+      (dist_comm _ _).trans_lt
+        ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
     have hg : fderiv ℝ (fderiv ℝ g) x ∈ S :=
       not_not.mp (notMem_of_dist_lt_infDist hdist)
     simpa only [isStronglyPseudoconvexAt_iff, S, Set.mem_ofPred_eq, leviForm_def] using hg
