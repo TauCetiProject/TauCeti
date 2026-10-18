@@ -15,15 +15,13 @@ moment by the square root of the corresponding weighted second moment.
 
 ## Main results
 
-* `TauCeti.weighted_sum_abs_le_sqrt`: the weighted first-moment bound when the weights sum to at
+* `Finset.weighted_sum_abs_le_sqrt`: the weighted first-moment bound when the weights sum to at
   most one.
 -/
 
 public section
 
-namespace TauCeti
-
-open Finset
+namespace Finset
 
 /-- **Weighted Cauchy--Schwarz.** If nonnegative weights sum to at most one and the weighted
 sum of squares of `f` is at most `ε`, then the weighted sum of `|f|` is at most `√ε`. -/
@@ -38,4 +36,4 @@ theorem weighted_sum_abs_le_sqrt {ι : Type*} (s : Finset ι) (w f : ι → ℝ)
     fun i _ => (by rw [mul_pow, sq_abs]; ring : _ = _).le).trans ?_
   exact (mul_le_mul hw1 hε (sum_nonneg hg) zero_le_one).trans_eq (one_mul ε)
 
-end TauCeti
+end Finset

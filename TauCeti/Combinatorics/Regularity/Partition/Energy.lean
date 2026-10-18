@@ -204,7 +204,7 @@ theorem weightedDensityDeviation_abs_le (h : Q ≤ P) {ε : ℝ}
       (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) ≤ 1 := by
     simpa using Q.sum_sum_weight_le_one
   rw [← Fintype.sum_prod_type'] at hgap hw ⊢
-  exact TauCeti.weighted_sum_abs_le_sqrt (ι := Q.parts × Q.parts) univ
+  exact Finset.weighted_sum_abs_le_sqrt (ι := Q.parts × Q.parts) univ
     (fun p => #p.1.1 * #p.2.1 / (Fintype.card V : ℝ) ^ 2)
     (fun p => (G.edgeDensity p.1.1 p.2.1 : ℝ) -
       G.edgeDensity (refinementParent h p.1).1 (refinementParent h p.2).1)
