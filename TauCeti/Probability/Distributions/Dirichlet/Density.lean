@@ -698,14 +698,34 @@ private theorem map_dirichletUnchart_source {a : ι → ℝ} (ha : ∀ i, 0 < a 
   filter_upwards [ae_restrict_mem (measurableSet_dirichletUnchartSource i₀)] with z hz
   exact dirichletUnchart_density ha i₀ hz
 
-/-- On the strictly positive orthant, coordinate normalization is the chart applied to the chart
-coordinates of the split vector. -/
-private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ} (hx : ∀ i, 0 < x i) :
+/-- Reading the total and normalized chart coordinates of independent unit-rate Gamma variables
+gives the product of the Gamma law of the total and the Dirichlet chart density. -/
+theorem map_dirichletChartCoords_prod_gammaMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (i₀ : ι) :
+    ((gammaMeasure (a i₀) 1).prod
+      (Measure.pi fun j : {i // i ≠ i₀} ↦ gammaMeasure (a j) 1)).map
+        (dirichletChartCoords i₀) =
+      (gammaMeasure (∑ i, a i) 1).prod
+        ((volume : Measure ({i // i ≠ i₀} → ℝ)).withDensity (dirichletChartPDF a i₀)) := by
+  rw [← map_dirichletUnchart_source ha i₀,
+    Measure.map_map (measurable_dirichletChartCoords i₀) (measurable_dirichletUnchart i₀),
+    ← withDensity_dirichletSourcePDF a i₀]
+  calc
+    _ = Measure.map id
+        ((volume.restrict (dirichletUnchartSource i₀)).withDensity (dirichletSourcePDF a i₀)) := by
+      apply Measure.map_congr
+      filter_upwards [(withDensity_absolutelyContinuous _ _).ae_le
+        (ae_restrict_mem (measurableSet_dirichletUnchartSource i₀))] with z hz
+      exact dirichletChartCoords_dirichletUnchart hz
+    _ = _ := Measure.map_id
+
+/-- For a vector with nonzero total, normalization is the chart applied to the chart coordinates
+of the split vector. -/
+theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ} (hx : ∑ i, x i ≠ 0) :
     dirichletNormalize x
       = dirichletChart i₀ (dirichletChartCoords i₀ (x i₀, fun j : {i // i ≠ i₀} ↦ x j)).2 := by
   have hT : x i₀ + ∑ j : {i // i ≠ i₀}, x j = ∑ i, x i :=
     (Fintype.sum_eq_add_sum_subtype_ne x i₀).symm
-  have hTpos : 0 < ∑ i, x i := Finset.sum_pos (fun i _ ↦ hx i) ⟨i₀, Finset.mem_univ i₀⟩
   ext i
   rw [dirichletNormalize_apply]
   by_cases h : i = i₀
@@ -749,7 +769,8 @@ theorem dirichletMeasure_eq_map_withDensity_dirichletChartPDF {a : ι → ℝ} (
         rw [dirichletMeasure_of_pos ha]
         refine Measure.map_congr ?_
         filter_upwards [ae_pos_pi_gammaMeasure a fun _ ↦ (1 : ℝ)] with x hx
-        exact dirichletNormalize_eq_dirichletChart i₀ hx
+        exact dirichletNormalize_eq_dirichletChart i₀
+          (Finset.sum_pos (fun i _ ↦ hx i) ⟨i₀, Finset.mem_univ i₀⟩).ne'
     _ = ((gammaMeasure (a i₀) 1).prod
           (Measure.pi fun j : {i // i ≠ i₀} ↦ gammaMeasure (a j) 1)).map
           (dirichletChart i₀ ∘ Prod.snd ∘ dirichletChartCoords i₀) := by
