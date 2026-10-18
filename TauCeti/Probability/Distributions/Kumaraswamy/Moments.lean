@@ -96,17 +96,20 @@ theorem integrable_pow_kumaraswamyMeasure (a b : ℝ) (n : ℕ) :
     (lt_of_lt_of_le (neg_neg_of_pos ha) n.cast_nonneg)
 
 /-- The `n`th raw moment of a Kumaraswamy `(a, b)` variable. -/
+@[simp]
 theorem integral_pow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
     ∫ x, x ^ n ∂kumaraswamyMeasure a b = b * beta (1 + n / a) b := by
   simpa only [Real.rpow_natCast] using integral_rpow_kumaraswamyMeasure (q := n) ha hb
     (lt_of_lt_of_le (neg_neg_of_pos ha) n.cast_nonneg)
 
 /-- The mean of a Kumaraswamy `(a, b)` variable. -/
+@[simp]
 theorem integral_id_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     ∫ x, x ∂kumaraswamyMeasure a b = b * beta (1 + 1 / a) b := by
   simpa using integral_pow_kumaraswamyMeasure ha hb 1
 
 /-- The variance of a Kumaraswamy `(a, b)` variable. -/
+@[simp]
 theorem variance_id_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     variance id (kumaraswamyMeasure a b) =
       b * beta (1 + 2 / a) b - (b * beta (1 + 1 / a) b) ^ 2 := by
