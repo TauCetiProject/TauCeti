@@ -53,7 +53,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`: on a boundaryless manifold, a map into a
   normed space is `C^n` at a point exactly when its coordinate expression in the preferred chart,
   or in any chart of the `C^n` maximal atlas, is `C^n` there.
-* `TauCeti.contDiffAt_comp_chartAt_symm` and `TauCeti.fderiv_comp_chartAt_symm`: the corresponding
+* `ContMDiffAt.contDiffAt_comp_chartAt_symm` and
+  `MDifferentiableAt.fderiv_comp_chartAt_symm`: the corresponding
   regularity and derivative formulas for a manifold modelled on its model space.
 * `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the derivative of its
@@ -282,11 +283,11 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
 
-namespace TauCeti
-
 section SelfModel
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] {g : N → F} {z : N}
+
+namespace ContMDiffAt
 
 /-- On a manifold modelled on its model space, the preferred-chart coordinate expression of a
 `C^n` map into a normed space is `C^n` at the chart image of the point. -/
@@ -297,6 +298,10 @@ theorem contDiffAt_comp_chartAt_symm {n : WithTop ℕ∞}
   have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
   simpa only [hext, hext'] using hg.contDiffAt_comp_extChartAt_symm
 
+end ContMDiffAt
+
+namespace MDifferentiableAt
+
 /-- On a manifold modelled on its model space, the derivative of the preferred-chart coordinate
 expression is the vector-valued manifold derivative. -/
 theorem fderiv_comp_chartAt_symm (hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g z) :
@@ -305,9 +310,9 @@ theorem fderiv_comp_chartAt_symm (hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜
   have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
   rw [hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
 
-end SelfModel
+end MDifferentiableAt
 
-end TauCeti
+end SelfModel
 
 omit [IsManifold I 1 M] in
 /-- On a boundaryless manifold, a map into a normed space is differentiable at `x` exactly when

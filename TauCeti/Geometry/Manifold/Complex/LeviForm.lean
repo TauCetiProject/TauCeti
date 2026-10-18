@@ -142,14 +142,14 @@ theorem manifoldLeviForm_apply_self (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f
     manifoldLeviForm E f x v v =
       ((criticalHessian 𝓘(ℝ, E) f x v v + criticalHessian 𝓘(ℝ, E) f x (I • v) (I • v)) / 4 :
         ℝ) := by
-  rw [manifoldLeviForm_def, leviForm_apply_self (contDiffAt_comp_chartAt_symm hf),
+  rw [manifoldLeviForm_def, leviForm_apply_self hf.contDiffAt_comp_chartAt_symm,
     hessianQuadraticForm_apply, hessianQuadraticForm_apply, fderiv_fderiv_comp_chartAt_symm,
     fderiv_fderiv_comp_chartAt_symm]
 
 /-- The Levi form of a function which is `C²` at `x` is Hermitian. -/
 theorem isSymm_manifoldLeviForm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) :
     (manifoldLeviForm E f x).IsSymm :=
-  isSymm_leviForm (contDiffAt_comp_chartAt_symm hf)
+  isSymm_leviForm hf.contDiffAt_comp_chartAt_symm
 
 /-! ### Algebraic rules -/
 
@@ -157,7 +157,7 @@ theorem isSymm_manifoldLeviForm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) 
 theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
     (hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 g x) :
     manifoldLeviForm E (f + g) x = manifoldLeviForm E f x + manifoldLeviForm E g x :=
-  leviForm_add (contDiffAt_comp_chartAt_symm hf) (contDiffAt_comp_chartAt_symm hg)
+  leviForm_add hf.contDiffAt_comp_chartAt_symm hg.contDiffAt_comp_chartAt_symm
 
 /-- Negating a function negates its Levi form on a complex manifold. -/
 @[simp]
@@ -178,10 +178,10 @@ theorem manifoldLeviForm_mul_apply {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E
               (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) g x) : StrongDual ℂ E) w +
             conj ((StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) g x) : StrongDual ℂ E) v) *
               (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w) := by
-  have h := leviForm_mul_apply (contDiffAt_comp_chartAt_symm hf)
-    (contDiffAt_comp_chartAt_symm hg) v w
-  rwa [fderiv_comp_chartAt_symm (hf.mdifferentiableAt (by norm_num)),
-    fderiv_comp_chartAt_symm (hg.mdifferentiableAt (by norm_num)), comp_apply, comp_apply,
+  have h := leviForm_mul_apply hf.contDiffAt_comp_chartAt_symm
+    hg.contDiffAt_comp_chartAt_symm v w
+  rwa [(hf.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm,
+    (hg.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm, comp_apply, comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **The composition rule** for the Levi form on a complex manifold, for post-composition with a
@@ -197,8 +197,8 @@ theorem manifoldLeviForm_scalar_comp_apply {φ : ℝ → ℝ} (hφ : ContDiffAt 
             (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w)) := by
   have hφ' : ContDiffAt ℝ 2 φ ((f ∘ (chartAt E x).symm) (chartAt E x x)) := by
     rwa [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
-  have h := leviForm_scalar_comp_apply hφ' (contDiffAt_comp_chartAt_symm hf) v w
-  rwa [fderiv_comp_chartAt_symm (hf.mdifferentiableAt (by norm_num)), comp_apply,
+  have h := leviForm_scalar_comp_apply hφ' hf.contDiffAt_comp_chartAt_symm v w
+  rwa [(hf.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm, comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **Post-composition with a convex function** on a complex manifold. If `φ'' ≥ 0` at `f x`, then
@@ -211,7 +211,7 @@ theorem le_re_manifoldLeviForm_scalar_comp_apply_self {φ : ℝ → ℝ} (hφ : 
       (manifoldLeviForm E (φ ∘ f) x v v).re := by
   have hfx : (f ∘ (chartAt E x).symm) (chartAt E x x) = f x := by
     rw [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
-  have h := le_re_leviForm_scalar_comp_apply_self (hfx ▸ hφ) (contDiffAt_comp_chartAt_symm hf)
+  have h := le_re_leviForm_scalar_comp_apply_self (hfx ▸ hφ) hf.contDiffAt_comp_chartAt_symm
     (hfx ▸ hφ₂) v
   rwa [hfx] at h
 
@@ -258,7 +258,7 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
     have hz' : g ((chartAt E x).symm z) ∈ (chartAt F (g x)).source := hz
     rw [(chartAt F (g x)).left_inv hz']
   rw [manifoldLeviForm_def, manifoldLeviForm_def, leviForm_congr_of_eventuallyEq hcomp]
-  rw [TauCeti.leviForm_comp_apply (hGx ▸ contDiffAt_comp_chartAt_symm hu) hG, hGx, hD]
+  rw [TauCeti.leviForm_comp_apply (hGx ▸ hu.contDiffAt_comp_chartAt_symm) hG, hGx, hD]
   rfl
 
 end Pullback
