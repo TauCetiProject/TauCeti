@@ -25,6 +25,8 @@ such symmetric polynomials (`MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`).
 
 ## Main results
 
+* `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
+  homogeneous of the weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.isHomogeneous_aeval`: substituting homogeneous polynomials
   of the weights turns weighted homogeneity into homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse, for an injective
@@ -41,22 +43,30 @@ section CommSemiring
 
 variable [CommSemiring R]
 
+/-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
+`w i` for the weights `v` into a polynomial that is weighted homogeneous of weight `m` for the
+weights `w` gives a polynomial that is weighted homogeneous of weight `m` for the weights `v`. -/
+theorem IsWeightedHomogeneous.aeval {M : Type*} [AddCommMonoid M] {w : σ → M} {v : τ → M}
+    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {g : σ → MvPolynomial τ R}
+    (hg : ∀ i, (g i).IsWeightedHomogeneous v (w i)) :
+    (MvPolynomial.aeval g φ).IsWeightedHomogeneous v m := by
+  induction hφ using IsWeightedHomogeneous.induction_on with
+  | zero => simpa using isWeightedHomogeneous_zero R v m
+  | add p q _ _ ihp ihq => simpa using ihp.add ihq
+  | monomial d r hr =>
+    rw [aeval_monomial, Finsupp.prod, algebraMap_eq]
+    have hprod := IsWeightedHomogeneous.prod d.support (fun i => g i ^ d i)
+      (fun i => d i • w i) fun i _ => (hg i).pow (d i)
+    convert (isWeightedHomogeneous_C v r).mul hprod using 1
+    rw [← hr, Finsupp.weight_apply, Finsupp.sum, zero_add]
+
 /-- Substituting, for each variable `i`, a polynomial homogeneous of degree `w i` into a
 polynomial that is weighted homogeneous of weight `m` for the weights `w` gives a homogeneous
 polynomial of degree `m`. -/
 theorem IsWeightedHomogeneous.isHomogeneous_aeval {w : σ → ℕ} {φ : MvPolynomial σ R} {m : ℕ}
     (hφ : φ.IsWeightedHomogeneous w m) {g : σ → MvPolynomial τ R}
-    (hg : ∀ i, (g i).IsHomogeneous (w i)) : (aeval g φ).IsHomogeneous m := by
-  induction hφ using IsWeightedHomogeneous.induction_on with
-  | zero => simpa using isHomogeneous_zero τ R m
-  | add p q _ _ ihp ihq => simpa using ihp.add ihq
-  | monomial d r hr =>
-    rw [aeval_monomial, Finsupp.prod, algebraMap_eq]
-    have hprod := IsHomogeneous.prod d.support (fun i => g i ^ d i) (fun i => w i * d i)
-      fun i _ => (hg i).pow (d i)
-    convert (isHomogeneous_C τ r).mul hprod using 1
-    rw [← hr, Finsupp.weight_apply, Finsupp.sum, zero_add]
-    exact Finset.sum_congr rfl fun i _ => by rw [smul_eq_mul, mul_comm]
+    (hg : ∀ i, (g i).IsHomogeneous (w i)) : (MvPolynomial.aeval g φ).IsHomogeneous m :=
+  hφ.aeval hg
 
 /-- **Weighted homogeneity from homogeneity of a substitution.** If `g i` is homogeneous of
 degree `w i` for every variable `i` and substitution of the `g i` is injective, then a polynomial
