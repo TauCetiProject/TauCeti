@@ -245,11 +245,6 @@ theorem logisticMeasure_of_pos (hs : 0 < s) (m : ℝ) :
 theorem logisticMeasure_of_nonpos (hs : s ≤ 0) (m : ℝ) : logisticMeasure m s = 0 := by
   rw [logisticMeasure, ite_eq_right (not_lt.mpr hs)]
 
-/-- The map defining the logistic law is measurable. -/
-private lemma measurable_logit_affine (m s : ℝ) :
-    Measurable fun u : ℝ => m + s * Real.log (u / (1 - u)) := by
-  fun_prop
-
 /-- For a positive scale the logistic law is a probability measure. -/
 theorem isProbabilityMeasure_logisticMeasure (hs : 0 < s) (m : ℝ) :
     IsProbabilityMeasure (logisticMeasure m s) := by
@@ -262,7 +257,7 @@ theorem hasLaw_logisticMeasure_of_hasLaw_uniformMeasure {Ω : Type*} [Measurable
     {P : Measure Ω} {U : Ω → ℝ} (hs : 0 < s) (m : ℝ) (hU : HasLaw U (uniformMeasure 0 1) P) :
     HasLaw (fun ω => m + s * Real.log (U ω / (1 - U ω))) (logisticMeasure m s) P := by
   rw [logisticMeasure_of_pos hs]
-  exact (hasLaw_map (measurable_logit_affine m s).aemeasurable).comp hU
+  exact (hasLaw_map (Real.measurable_logit_affine m s).aemeasurable).comp hU
 
 /-- The logistic law of a lower half-line: the event `{X ≤ x}` has mass
 `Real.sigmoid ((x - m) / s)`. -/
@@ -286,8 +281,9 @@ theorem logisticMeasure_Iic (hs : 0 < s) (m x : ℝ) :
       have := (Real.log_div_one_sub_le_iff h0 h1).mpr hle
       rw [le_div_iff₀ hs] at this
       linarith
-  rw [logisticMeasure_of_pos hs, Measure.map_apply (measurable_logit_affine m s) measurableSet_Iic,
-    hunif, Measure.restrict_apply (measurable_logit_affine m s measurableSet_Iic), hpre,
+  rw [logisticMeasure_of_pos hs,
+    Measure.map_apply (Real.measurable_logit_affine m s) measurableSet_Iic, hunif,
+    Measure.restrict_apply (Real.measurable_logit_affine m s measurableSet_Iic), hpre,
     Real.volume_Ioc, sub_zero]
 
 /-- **The cdf of the logistic law** is the sigmoid of the standardized point:

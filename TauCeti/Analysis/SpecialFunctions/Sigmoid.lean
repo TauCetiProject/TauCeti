@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
+import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
 /-!
 # The logit function inverts the sigmoid
@@ -22,6 +23,7 @@ exponential.
 
 * `Real.sigmoid_log_div_one_sub` — `sigmoid (log (u / (1 - u))) = u` for `0 < u < 1`;
 * `Real.log_div_one_sub_le_iff` — `log (u / (1 - u)) ≤ y ↔ u ≤ sigmoid y` for `0 < u < 1`;
+* `Real.measurable_logit_affine` — affine transformations of the logit are measurable;
 * `Real.sigmoid_mul_one_sub_sigmoid` — the derivative of the sigmoid is
   `sigmoid y * (1 - sigmoid y) = exp (-y) / (1 + exp (-y)) ^ 2`.
 -/
@@ -44,6 +46,12 @@ sigmoid of `y`. -/
 theorem log_div_one_sub_le_iff {u y : ℝ} (h0 : 0 < u) (h1 : u < 1) :
     log (u / (1 - u)) ≤ y ↔ u ≤ sigmoid y := by
   rw [← sigmoid_le_iff, sigmoid_log_div_one_sub h0 h1]
+
+/-- An affine transformation of the logit is measurable. -/
+@[fun_prop]
+theorem measurable_logit_affine (m s : ℝ) :
+    Measurable fun u : ℝ => m + s * log (u / (1 - u)) := by
+  fun_prop
 
 /-- The derivative `sigmoid y * (1 - sigmoid y)` of the sigmoid, written through the
 exponential. -/
