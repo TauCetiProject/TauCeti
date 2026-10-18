@@ -147,6 +147,53 @@ def ofData (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
   color₀₂ := k₀₂
   color₁₂ := k₁₂
 
+/-- The role-zero cell of `ofData` is the given one. -/
+@[simp]
+theorem ofData_c₀ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
+    (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
+    (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).c₀ = c₀ := (rfl)
+
+/-- The role-one cell of `ofData` is the given one. -/
+@[simp]
+theorem ofData_c₁ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
+    (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
+    (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).c₁ = c₁ := (rfl)
+
+/-- The role-two cell of `ofData` is the given one. -/
+@[simp]
+theorem ofData_c₂ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
+    (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
+    (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).c₂ = c₂ := (rfl)
+
+/-- The color on roles zero and one of `ofData` is the given one. -/
+@[simp]
+theorem ofData_color₀₁ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
+    (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
+    (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).color₀₁ = k₀₁ := (rfl)
+
+/-- The color on roles zero and two of `ofData` is the given one. -/
+@[simp]
+theorem ofData_color₀₂ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
+    (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
+    (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).color₀₂ = k₀₂ := (rfl)
+
+/-- The color on roles one and two of `ofData` is the given one. -/
+@[simp]
+theorem ofData_color₁₂ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertexPart.parts)
+    (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
+    (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).color₁₂ = k₁₂ := (rfl)
+
+/-- Membership in the support of the polyad determined by three cells and three pair colors. -/
+theorem mem_ofData_support {c₀ c₁ c₂ : Finset V} {h₀ : c₀ ∈ S.vertexPart.parts}
+    {h₁ : c₁ ∈ S.vertexPart.parts} {h₂ : c₂ ∈ S.vertexPart.parts} {k₀₁ k₀₂ k₁₂ : κ}
+    {x : {x : Fin 3 → V // Function.Injective x}} :
+    x ∈ (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).support ↔
+      x.1 0 ∈ c₀ ∧ x.1 1 ∈ c₁ ∧ x.1 2 ∈ c₂ ∧
+        S.pairColors.colorOfPair (x.1 0) (x.1 1) = some k₀₁ ∧
+        S.pairColors.colorOfPair (x.1 0) (x.1 2) = some k₀₂ ∧
+        S.pairColors.colorOfPair (x.1 1) (x.1 2) = some k₁₂ := by
+  simp
+
 /-- The pair graph of a polyad on roles zero and one. -/
 noncomputable def pairSupport₀₁ (P : Polyad3 S) :
     Finset {p : V × V // p.1 ≠ p.2} := by
@@ -246,5 +293,18 @@ theorem coordPair_mem_pairSupport₁₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
   obtain ⟨-, h₁, h₂, -, -, hk⟩ := hx
   rw [P.mem_pairSupport₁₂, coe_coordPair]
   exact ⟨h₁, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
+
+/-- A triple lies in the support of a polyad exactly when its three canonically oriented
+coordinate pairs lie in the corresponding pair supports. -/
+theorem Polyad3.mem_support_iff_coordPair_mem {S : PairSkeleton3 κ V} {P : Polyad3 S}
+    {x : {x : Fin 3 → V // Function.Injective x}} :
+    x ∈ P.support ↔ coordPair x 0 1 (by decide) ∈ P.pairSupport₀₁ ∧
+      coordPair x 0 2 (by decide) ∈ P.pairSupport₀₂ ∧
+        coordPair x 1 2 (by decide) ∈ P.pairSupport₁₂ := by
+  refine ⟨fun hx ↦ ⟨coordPair_mem_pairSupport₀₁ hx, coordPair_mem_pairSupport₀₂ hx,
+    coordPair_mem_pairSupport₁₂ hx⟩, fun ⟨h₀₁, h₀₂, h₁₂⟩ ↦ ?_⟩
+  simp only [P.mem_pairSupport₀₁, P.mem_pairSupport₀₂, P.mem_pairSupport₁₂, coe_coordPair,
+    S.pairColors.color_coordPair_eq_iff] at h₀₁ h₀₂ h₁₂
+  exact (P.mem_support x).2 ⟨h₀₁.1, h₀₁.2.1, h₀₂.2.1, h₀₁.2.2, h₀₂.2.2, h₁₂.2.2⟩
 
 end TauCeti
