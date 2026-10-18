@@ -150,6 +150,9 @@ theorem coe_β_toAnalyticBelyiPair : ⇑C.toAnalyticBelyiPair.β = fillMap ⇑C.
   exact AnalyticBelyiPair.coe_β_ofIsCoveringMapOn _ _ _ _
 
 /-- The analytic Belyi pair of a connected degree-`n` cover has degree `n`. -/
+-- A pre-simp lemma, so that it fires before `coe_β_toAnalyticBelyiPair` rewrites the coercion
+-- of the Belyi map, after which the degree is no longer stated about the pair's surface.
+@[simp↓]
 theorem degree_toAnalyticBelyiPair : RiemannSurface.degree C.toAnalyticBelyiPair.β = n := by
   have hy : toOnePoint basePt ∉ marked := by
     rw [← mem_compl_iff, ← range_toOnePoint]
