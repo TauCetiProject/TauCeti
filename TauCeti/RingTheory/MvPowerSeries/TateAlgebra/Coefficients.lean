@@ -69,9 +69,7 @@ private theorem toRestrictedCoeff_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
     toRestrictedCoeff f (WithTopology.toTopology ⊥ t) =
       coeff t (f : _root_.MvPowerSeries σ R) := by
-  change ZeroAtInftyContinuousMap.mkOfDiscrete _ _ (WithTopology.toTopology ⊥ t) = _
-  rw [congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _)
-    (WithTopology.toTopology ⊥ t)]
+  rw [toRestrictedCoeff, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
 
 private noncomputable def ofRestrictedCoeff
     (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) :
@@ -114,10 +112,8 @@ private noncomputable def restrictedCoeffLinearEquiv :
     apply ZeroAtInftyContinuousMap.ext
     rintro ⟨t⟩
     simp only [toRestrictedCoeff_apply, ZeroAtInftyContinuousMap.smul_apply, RingHom.id_apply]
-    rw [Algebra.smul_def]
-    change coeff t (C r * (f : _root_.MvPowerSeries σ R)) =
-      r * coeff t (f : _root_.MvPowerSeries σ R)
-    exact coeff_C_mul t (f : _root_.MvPowerSeries σ R) r
+    rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring, coeff_C_mul,
+      smul_eq_mul]
 
 private theorem restrictedCoeffLinearEquiv_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
