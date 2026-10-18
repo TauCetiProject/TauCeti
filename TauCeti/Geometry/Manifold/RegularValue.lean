@@ -13,8 +13,10 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 A point `x` is a *regular point* of a map `f : M → N` between manifolds when the manifold
 derivative `mfderiv I J f x` is surjective, and `y : N` is a *regular value* of `f` when every
 point of the fibre `f ⁻¹' {y}` is a regular point. A value outside the range of `f` is regular.
-These are the points and values at which a mapping degree is counted, and Sard's theorem says that
-the regular values of a differentiable map between manifolds of equal dimension are dense.
+These are the points and values at which a mapping degree is counted. Sard's theorem
+(`TauCeti.dense_isRegularValue`) says that the regular values of a differentiable map from a
+Lindelöf real manifold to a real manifold, both modelled on finite-dimensional spaces of the same
+dimension and of class at least `C¹`, are dense.
 
 Read in the extended charts at arbitrary points `x₀` and `y₀` whose sources contain `x` and
 `f x`, the point `x` is regular exactly when the Fréchet derivative of the coordinate expression
