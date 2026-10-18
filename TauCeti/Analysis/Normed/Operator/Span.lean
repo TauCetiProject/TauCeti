@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Topology.Algebra.Module.Span
 
 /-!
@@ -133,10 +134,10 @@ theorem exists_continuousLinearEquiv_topologicalClosure_span_of_bounds
     ⟨w i, (span 𝕜 (range w)).le_topologicalClosure (subset_span (mem_range_self i))⟩
   have hvw : ∀ a : ι →₀ 𝕜,
       ‖Finsupp.linearCombination 𝕜 w' a‖ ≤ C * ‖Finsupp.linearCombination 𝕜 v' a‖ := by
-    simpa [Finsupp.linearCombination_apply, Finsupp.sum, v', w'] using hC
+    simpa only [← Submodule.norm_coe, Submodule.coe_linearCombination] using hC
   have hwv : ∀ a : ι →₀ 𝕜,
       ‖Finsupp.linearCombination 𝕜 v' a‖ ≤ D * ‖Finsupp.linearCombination 𝕜 w' a‖ := by
-    simpa [Finsupp.linearCombination_apply, Finsupp.sum, v', w'] using hD
+    simpa only [← Submodule.norm_coe, Submodule.coe_linearCombination] using hD
   refine ⟨continuousLinearEquivOfLinearCombinationBounds v' w'
     (dense_span_in_topologicalClosure v) (dense_span_in_topologicalClosure w) hvw hwv, ?_,
     norm_continuousLinearEquivOfLinearCombinationBounds_le _ _ _ _ _ _ hC₀,
@@ -179,7 +180,7 @@ theorem exists_continuousLinearEquiv_topologicalClosure_span_iff
           Finsupp.apply_linearCombination 𝕜 T.toLinearEquiv.toLinearMap v' a
       have h := T.toContinuousLinearMap.le_opNorm (Finsupp.linearCombination 𝕜 v' a)
       simp only [ContinuousLinearEquiv.coe_coe, hmap] at h
-      simpa [Finsupp.linearCombination_apply, Finsupp.sum, v', w'] using h
+      simpa only [← Submodule.norm_coe, Submodule.coe_linearCombination] using h
     · intro a
       have hmap : T.symm (Finsupp.linearCombination 𝕜 w' a) =
           Finsupp.linearCombination 𝕜 v' a := by
@@ -188,7 +189,7 @@ theorem exists_continuousLinearEquiv_topologicalClosure_span_iff
           Finsupp.apply_linearCombination 𝕜 T.symm.toLinearEquiv.toLinearMap w' a
       have h := T.symm.toContinuousLinearMap.le_opNorm (Finsupp.linearCombination 𝕜 w' a)
       simp only [ContinuousLinearEquiv.coe_coe, hmap] at h
-      simpa [Finsupp.linearCombination_apply, Finsupp.sum, v', w'] using h
+      simpa only [← Submodule.norm_coe, Submodule.coe_linearCombination] using h
   · rintro ⟨C, D, hC₀, hD₀, hC, hD⟩
     obtain ⟨T, hT, _, _⟩ :=
       exists_continuousLinearEquiv_topologicalClosure_span_of_bounds v w hC₀ hD₀ hC hD
