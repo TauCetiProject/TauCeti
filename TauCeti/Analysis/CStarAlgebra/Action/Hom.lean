@@ -202,7 +202,7 @@ theorem top (α : CStarAction G A) :
 
 /-- The zero singleton is invariant under every C⋆-action. -/
 @[simp]
-theorem bot (α : CStarAction G A) :
+theorem singleton_zero (α : CStarAction G A) :
     _root_.IsInvariant (fun g a => α g a) {0} := by
   intro g a ha
   simp only [Set.mem_singleton_iff] at ha ⊢
@@ -227,9 +227,7 @@ theorem comap (ht : _root_.IsInvariant (fun g b => β g b) t)
     (f : CStarAction.Hom α β) :
     _root_.IsInvariant (fun g a => α g a) (f ⁻¹' t) := by
   intro g a ha
-  change f (α g a) ∈ t
-  rw [f.map_action]
-  exact ht g ha
+  simpa only [Set.mem_preimage, f.map_action] using ht g ha
 
 /-- The preimage of an invariant star subalgebra under an equivariant homomorphism is invariant. -/
 theorem comap_subalgebra (hT : _root_.IsInvariant (fun g b => β g b) (T : Set B))
