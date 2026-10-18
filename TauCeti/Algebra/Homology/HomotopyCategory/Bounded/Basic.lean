@@ -31,11 +31,17 @@ The construction follows the organization of Mathlib's bounded-below category
 
 * `CochainComplex.bounded`: the property of being strictly bounded above and below.
 * `CochainComplex.Bounded`: the full subcategory of bounded cochain complexes.
+* `CochainComplex.Bounded.mappingCone` and `CochainComplex.Bounded.mappingConeTriangle`: the
+  standard mapping cone and mapping-cone triangle in the category of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.bounded`: the corresponding property in the homotopy category.
 * `TauCeti.HomotopyCategory.Bounded`: the homotopy category of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes. It is
   a localization functor with respect to the homotopy equivalences, so functors and their shift
   compatibilities descend along it.
+* `TauCeti.HomotopyCategory.Bounded.mappingConeTriangleh` and
+  `TauCeti.HomotopyCategory.Bounded.distinguished_iff_iso_mappingConeTriangleh`: the standard
+  mapping-cone triangle in the bounded homotopy category and the characterization of distinguished
+  triangles as those isomorphic to a bounded mapping-cone triangle.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
 small (through `HomotopyCategory.essentiallySmall` and
@@ -130,9 +136,37 @@ lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C
   · simp only [ComplexShape.up_Rel] at hj
     exact K.isZero_of_isStrictlyLE b _ (by lia)
 
+/-- If `K` is strictly bounded above by `n₁` and `L` is strictly bounded above by `n₂`, then
+`mappingCone f` is strictly bounded above by any `n` with `n₁ ≤ n + 1` and `n₂ ≤ n`. -/
+lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (n₁ n₂ n : ℤ) [K.IsStrictlyLE n₁] [L.IsStrictlyLE n₂]
+    (hn₁ : n₁ ≤ n + 1 := by lia) (hn₂ : n₂ ≤ n := by lia) :
+    (mappingCone f).IsStrictlyLE n := by
+  rw [isStrictlyLE_iff]
+  intro i hi
+  rw [mappingCone.isZero_X_iff]
+  exact ⟨K.isZero_of_isStrictlyLE n₁ (i + 1) (by lia),
+    L.isZero_of_isStrictlyLE n₂ i (by lia)⟩
+
+/-- The mapping cone of a morphism between bounded cochain complexes is bounded. -/
+lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (hK : CochainComplex.bounded C K) (hL : CochainComplex.bounded C L) :
+    CochainComplex.bounded C (mappingCone f) := by
+  obtain ⟨a₁, b₁, ha₁, hb₁⟩ := (CochainComplex.bounded_iff C K).1 hK
+  obtain ⟨a₂, b₂, ha₂, hb₂⟩ := (CochainComplex.bounded_iff C L).1 hL
+  let _ := ha₁
+  let _ := hb₁
+  let _ := ha₂
+  let _ := hb₂
+  exact (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂,
+    isStrictlyGE_mappingCone f a₁ a₂ _ (by lia) (by lia),
+    isStrictlyLE_mappingCone f b₁ b₂ _ (by lia) (by lia)⟩
+
 end
 
 namespace Bounded
+
+section
 
 variable [HasZeroMorphisms C]
 
@@ -143,6 +177,56 @@ abbrev ι : CochainComplex.Bounded C ⥤ CochainComplex C ℤ :=
 /-- The inclusion of bounded cochain complexes is fully faithful. -/
 abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
+
+end
+
+section MappingCone
+
+variable {C} [Preadditive C] [HasBinaryBiproducts C] {K L : CochainComplex.Bounded C}
+
+/-- The mapping cone of a morphism of bounded cochain complexes, as a bounded cochain complex. -/
+-- Subsequent public declarations (`mappingConeInr`, `mappingConeTriangle`) have types that depend
+-- on `(mappingCone f).obj` being definitionally `CochainComplex.mappingCone f.hom`.
+@[expose, implicit_reducible]
+noncomputable def mappingCone (f : K ⟶ L) : CochainComplex.Bounded C :=
+  ⟨CochainComplex.mappingCone f.hom, CochainComplex.bounded_mappingCone f.hom K.property L.property⟩
+
+/-- The underlying cochain complex of the bounded mapping cone is the ordinary mapping cone. -/
+@[simp]
+lemma mappingCone_obj (f : K ⟶ L) : (mappingCone f).obj = CochainComplex.mappingCone f.hom :=
+  (rfl)
+
+/-- The canonical inclusion `L ⟶ mappingCone f` in the category of bounded cochain complexes. -/
+noncomputable def mappingConeInr (f : K ⟶ L) : L ⟶ mappingCone f :=
+  ObjectProperty.homMk (CochainComplex.mappingCone.inr f.hom)
+
+/-- The underlying morphism of `mappingConeInr f` is `CochainComplex.mappingCone.inr f.hom`. -/
+@[simp]
+lemma mappingConeInr_hom (f : K ⟶ L) :
+    (mappingConeInr f).hom = CochainComplex.mappingCone.inr f.hom :=
+  (rfl)
+
+/-- The standard mapping-cone triangle `K ⟶ L ⟶ mappingCone f ⟶ K⟦(1 : ℤ)⟧` in the category of
+bounded cochain complexes. Its third morphism is the third morphism of
+`CochainComplex.mappingCone.triangle f.hom` followed by the shift comparison of the inclusion
+`CochainComplex.Bounded.ι C`. -/
+@[expose, implicit_reducible, simps! obj₁ obj₂ obj₃ mor₁ mor₂ mor₃]
+noncomputable def mappingConeTriangle (f : K ⟶ L) : Triangle (CochainComplex.Bounded C) :=
+  Triangle.mk f (mappingConeInr f)
+    (ObjectProperty.homMk ((CochainComplex.mappingCone.triangle f.hom).mor₃ ≫
+      ((ι C).commShiftIso (1 : ℤ)).inv.app K))
+
+/-- Inclusion into all cochain complexes identifies the bounded mapping-cone triangle with
+`CochainComplex.mappingCone.triangle f.hom`. -/
+noncomputable def mappingConeTriangleCompιIso (f : K ⟶ L) :
+    (ι C).mapTriangle.obj (mappingConeTriangle f) ≅
+      CochainComplex.mappingCone.triangle f.hom :=
+  Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (by dsimp [CochainComplex.mappingCone.triangle]; simp)
+    (by dsimp [CochainComplex.mappingCone.triangle]; simp)
+    (by dsimp [CochainComplex.mappingCone.triangle, mappingConeTriangle]; simp)
+
+end MappingCone
 
 end Bounded
 
@@ -206,13 +290,6 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
     have h₂' : CochainComplex.bounded C T.obj₂.as := by
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
-    rw [CochainComplex.bounded_iff] at h₁' h₂'
-    obtain ⟨a₁, b₁, ha₁, hb₁⟩ := h₁'
-    obtain ⟨a₂, b₂, ha₂, hb₂⟩ := h₂'
-    let _ := ha₁
-    let _ := hb₁
-    let _ := ha₂
-    let _ := hb₂
     have quotient_obj_of_as (K : HomotopyCategory C (.up ℤ)) :
         (HomotopyCategory.quotient C (.up ℤ)).obj K.as = K := by
       cases K
@@ -224,24 +301,18 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
     obtain ⟨f : T.obj₁.as ⟶ T.obj₂.as, hf⟩ :=
       (HomotopyCategory.quotient C (.up ℤ)).map_surjective
         (e₁.hom ≫ T.mor₁ ≫ e₂.inv)
-    refine ⟨(HomotopyCategory.quotient C (.up ℤ)).obj (CochainComplex.mappingCone f), ?_,
+    refine ⟨(HomotopyCategory.quotient C (.up ℤ)).obj (CochainComplex.mappingCone f),
+      (HomotopyCategory.bounded_quotient_obj_iff _).2
+        (CochainComplex.bounded_mappingCone f h₁' h₂'),
       ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T _ hT
         (HomotopyCategory.mappingCone_triangleh_distinguished f)
         e₁.symm e₂.symm ?_)⟩⟩
-    · rw [HomotopyCategory.bounded_quotient_obj_iff, CochainComplex.bounded_iff]
-      refine ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂, ?_, ?_⟩
-      · exact CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _ (by omega) (by omega)
-      · rw [CochainComplex.isStrictlyLE_iff]
-        intro i hi
-        rw [CochainComplex.mappingCone.isZero_X_iff]
-        exact ⟨CochainComplex.isZero_of_isStrictlyLE (K := T.obj₁.as) b₁ (i + 1) (by omega),
-          CochainComplex.isZero_of_isStrictlyLE (K := T.obj₂.as) b₂ i (by omega)⟩
     -- Unfold the compatibility condition from `isoTriangleOfIso₁₂`; the explicit transports
     -- `e₁` and `e₂` avoid the nonstandard definitional-equality options used by Mathlib's proof.
-    · change T.mor₁ ≫ e₂.inv =
-        e₁.inv ≫ (HomotopyCategory.quotient C (.up ℤ)).map f
-      rw [hf]
-      simp
+    change T.mor₁ ≫ e₂.inv =
+      e₁.inv ≫ (HomotopyCategory.quotient C (.up ℤ)).map f
+    rw [hf]
+    simp
 
 instance [HasZeroObject C] [HasBinaryBiproducts C] :
     (HomotopyCategory.bounded C).IsTriangulated where
@@ -436,6 +507,63 @@ instance (n : ℤ) : (singleFunctor C n).Additive := by
   infer_instance
 
 end
+
+section MappingCone
+
+variable [HasBinaryBiproducts C] {K L : CochainComplex.Bounded C}
+
+/-- The standard mapping-cone triangle in the bounded homotopy category attached to a morphism
+`f : K ⟶ L` of bounded cochain complexes. -/
+noncomputable abbrev mappingConeTriangleh (f : K ⟶ L) : Triangle (HomotopyCategory.Bounded C) :=
+  (quotient C).mapTriangle.obj (CochainComplex.Bounded.mappingConeTriangle f)
+
+/-- Inclusion into the full homotopy category identifies the bounded mapping-cone triangle with
+`CochainComplex.mappingCone.triangleh f.hom`. -/
+noncomputable def mappingConeTrianglehCompιIso (f : K ⟶ L) :
+    (ι C).mapTriangle.obj (mappingConeTriangleh f) ≅
+      CochainComplex.mappingCone.triangleh f.hom :=
+  ((quotient C).mapTriangleCompIso (ι C)).symm.app
+      (CochainComplex.Bounded.mappingConeTriangle f) ≪≫
+    (Functor.mapTriangleIso (quotientCompιIso C)).app
+      (CochainComplex.Bounded.mappingConeTriangle f) ≪≫
+    ((CochainComplex.Bounded.ι C).mapTriangleCompIso
+      (HomotopyCategory.quotient C (.up ℤ))).app
+      (CochainComplex.Bounded.mappingConeTriangle f) ≪≫
+    (HomotopyCategory.quotient C (.up ℤ)).mapTriangle.mapIso
+      (CochainComplex.Bounded.mappingConeTriangleCompιIso f)
+
+/-- The bounded mapping-cone triangle of any morphism of bounded cochain complexes is
+distinguished in the bounded homotopy category. -/
+lemma mappingConeTriangleh_distinguished [HasZeroObject C] (f : K ⟶ L) :
+    mappingConeTriangleh f ∈ distTriang (HomotopyCategory.Bounded C) :=
+  isomorphic_distinguished _
+    (HomotopyCategory.mappingCone_triangleh_distinguished f.hom) _
+    (mappingConeTrianglehCompιIso f)
+
+/-- A triangle in the bounded homotopy category is distinguished if and only if it is isomorphic
+to the bounded mapping-cone triangle `mappingConeTriangleh f` of a morphism of bounded cochain
+complexes. -/
+lemma distinguished_iff_iso_mappingConeTriangleh [HasZeroObject C]
+    (T : Triangle (HomotopyCategory.Bounded C)) :
+    (T ∈ distTriang (HomotopyCategory.Bounded C)) ↔
+      ∃ (K L : CochainComplex.Bounded C) (f : K ⟶ L),
+        Nonempty (T ≅ mappingConeTriangleh f) := by
+  constructor
+  · intro hT
+    obtain ⟨K, hK⟩ := quotient_obj_surjective T.obj₁
+    obtain ⟨L, hL⟩ := quotient_obj_surjective T.obj₂
+    let e₁ : (quotient C).obj K ≅ T.obj₁ := eqToIso hK
+    let e₂ : (quotient C).obj L ≅ T.obj₂ := eqToIso hL
+    obtain ⟨f, hf⟩ := (quotient C).map_surjective (e₁.hom ≫ T.mor₁ ≫ e₂.inv)
+    refine ⟨K, L, f, ⟨isoTriangleOfIso₁₂ T (mappingConeTriangleh f) hT
+      (mappingConeTriangleh_distinguished f) e₁.symm e₂.symm ?_⟩⟩
+    change T.mor₁ ≫ e₂.inv = e₁.inv ≫ (quotient C).map f
+    rw [hf]
+    simp
+  · rintro ⟨K, L, f, ⟨e⟩⟩
+    exact isomorphic_distinguished _ (mappingConeTriangleh_distinguished f) _ e
+
+end MappingCone
 
 end Bounded
 

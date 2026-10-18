@@ -26,11 +26,18 @@ compression of Mathlib's mapping-cone triangle `CochainComplex.mappingCone.trian
 periodic mapping-cone triangle of `Δₙ φ`
 (`TauCeti.PeriodicComplex.compressionMappingConeTriangleIso`). Consequently the image of the
 compressed triangle in the periodic homotopy category is distinguished
-(`TauCeti.PeriodicComplex.compressionMappingConeTriangle_mem_distTriang`).
+(`TauCeti.PeriodicComplex.compressionMappingConeTriangle_mem_distTriang`). On bounded complexes,
+this identifies the image of `CochainComplex.Bounded.mappingConeTriangle f` under
+`compressionFunctor n` with the periodic mapping-cone triangle
+(`TauCeti.PeriodicComplex.compressionFunctorMapTriangleIso`), identifies the image of
+`TauCeti.HomotopyCategory.Bounded.mappingConeTriangleh f` under `homotopyCompressionFunctor n` with
+`TauCeti.PeriodicComplex.mappingConeTriangle`
+(`TauCeti.PeriodicComplex.homotopyCompressionFunctorMapTrianglehIso`), and shows that
+`homotopyCompressionFunctor n : K^b(C) ⥤ K_n(C)` is a triangle functor.
 
-The results hold for every morphism between complexes whose compressions exist, for instance
-bounded complexes: the degree-`r` term of the periodic cone exhibits the required coproduct for
-the mapping cone (`TauCeti.PeriodicComplex.hasCompression_mappingCone`).
+The cone comparison holds for every morphism between complexes whose compressions exist, for
+instance bounded complexes: the degree-`r` term of the periodic cone exhibits the required
+coproduct for the mapping cone (`TauCeti.PeriodicComplex.hasCompression_mappingCone`).
 
 ## References
 
@@ -380,5 +387,105 @@ theorem compressionMappingConeTriangle_mem_distTriang [HasZeroObject C] :
       distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
   isomorphic_distinguished _ (mappingCone_mem_distTriang (compressionMap n φ)) _
     ((HomotopyCategory.quotient C _).mapTriangle.mapIso (compressionMappingConeTriangleIso n φ))
+
+section Bounded
+
+variable [HasFiniteCoproducts C] {X Y : CochainComplex.Bounded C} (f : X ⟶ Y)
+
+/-- On bounded cochain complexes, `compressionFunctor n` sends the bounded mapping cone of `f` to
+the compression of the ordinary mapping cone of `f.hom`. -/
+lemma compressionFunctor_obj_mappingCone :
+    (compressionFunctor n).obj (CochainComplex.Bounded.mappingCone f) =
+      compression n (mappingCone f.hom) :=
+  compressionFunctor_obj n (CochainComplex.Bounded.mappingCone f)
+
+/-- For a morphism `f : X ⟶ Y` of bounded cochain complexes, the compression of the bounded
+mapping cone of `f` is naturally isomorphic to the periodic mapping cone of the compressed
+morphism `compressionMap n f.hom`. -/
+noncomputable def compressionFunctorMappingConeIso :
+    (compressionFunctor n).obj (CochainComplex.Bounded.mappingCone f) ≅
+      homotopyCofiber (compressionMap n f.hom) :=
+  eqToIso (compressionFunctor_obj_mappingCone n f) ≪≫ compressionMappingConeIso n f.hom
+
+/-- Applying `compressionFunctor n` to the bounded mapping-cone triangle of `f` produces a
+triangle isomorphic to `compressionMappingConeTriangle n f.hom` via the canonical object
+identifications `compressionFunctor_obj`. -/
+noncomputable def compressionFunctorMappingConeTriangleIso :
+    (compressionFunctor n).mapTriangle.obj (CochainComplex.Bounded.mappingConeTriangle f) ≅
+      compressionMappingConeTriangle n f.hom :=
+  Triangle.isoMk _ _ (eqToIso (compressionFunctor_obj n X))
+    (eqToIso (compressionFunctor_obj n Y))
+    (eqToIso (compressionFunctor_obj_mappingCone n f))
+    (by dsimp [compressionMappingConeTriangle]; simp)
+    (by dsimp [compressionMappingConeTriangle]; simp)
+    (by
+      dsimp [compressionMappingConeTriangle, CochainComplex.Bounded.mappingConeTriangle,
+        CochainComplex.mappingCone.triangle]
+      simp only [compressionFunctor_map, compressionFunctor_commShiftIso,
+        compressionFunctorShiftIso_hom_app, eqToHom_map, Category.assoc,
+        eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, eqToHom_trans, Category.comp_id]
+      rw [← compressionMap_comp_assoc]
+      simp)
+
+/-- Applying `compressionFunctor n` to the bounded mapping-cone triangle of `f` produces a
+triangle isomorphic to the periodic mapping-cone triangle of `compressionMap n f.hom`. -/
+noncomputable def compressionFunctorMapTriangleIso :
+    (compressionFunctor n).mapTriangle.obj (CochainComplex.Bounded.mappingConeTriangle f) ≅
+      Triangle.mk (compressionMap n f.hom)
+        (homotopyCofiber.inr (compressionMap n f.hom))
+        (-coneProjection (compressionMap n f.hom)) :=
+  compressionFunctorMappingConeTriangleIso n f ≪≫ compressionMappingConeTriangleIso n f.hom
+
+/-- On the bounded homotopy category, `homotopyCompressionFunctor n` sends the bounded
+mapping-cone triangle `mappingConeTriangleh f` to a triangle isomorphic to the homotopy image of
+`compressionMappingConeTriangle n f.hom`. -/
+noncomputable def homotopyCompressionFunctorMappingConeTrianglehIso :
+    (homotopyCompressionFunctor n).mapTriangle.obj
+        (HomotopyCategory.Bounded.mappingConeTriangleh f) ≅
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.obj
+        (compressionMappingConeTriangle n f.hom) :=
+  ((HomotopyCategory.Bounded.quotient C).mapTriangleCompIso
+      (homotopyCompressionFunctor n)).symm.app
+        (CochainComplex.Bounded.mappingConeTriangle f) ≪≫
+    (Functor.mapTriangleIso
+      (quotientCompHomotopyCompressionFunctorIso (C := C) n)).app
+        (CochainComplex.Bounded.mappingConeTriangle f) ≪≫
+    ((compressionFunctor n).mapTriangleCompIso
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n)))).app
+        (CochainComplex.Bounded.mappingConeTriangle f) ≪≫
+    (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.mapIso
+      (compressionFunctorMappingConeTriangleIso n f)
+
+/-- On the bounded homotopy category, `homotopyCompressionFunctor n` sends the bounded
+mapping-cone triangle `mappingConeTriangleh f` to the periodic mapping-cone triangle of
+`compressionMap n f.hom`. -/
+noncomputable def homotopyCompressionFunctorMapTrianglehIso :
+    (homotopyCompressionFunctor n).mapTriangle.obj
+        (HomotopyCategory.Bounded.mappingConeTriangleh f) ≅
+      mappingConeTriangle (compressionMap n f.hom) :=
+  homotopyCompressionFunctorMappingConeTrianglehIso n f ≪≫
+    (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.mapIso
+      (compressionMappingConeTriangleIso n f.hom)
+
+/-- The image under `homotopyCompressionFunctor n` of a bounded mapping-cone triangle is
+distinguished in the periodic homotopy category. -/
+theorem homotopyCompressionFunctor_mappingConeTriangleh_mem_distTriang [HasZeroObject C] :
+    (homotopyCompressionFunctor n).mapTriangle.obj
+        (HomotopyCategory.Bounded.mappingConeTriangleh f) ∈
+      distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
+  isomorphic_distinguished _ (compressionMappingConeTriangle_mem_distTriang n f.hom) _
+    (homotopyCompressionFunctorMappingConeTrianglehIso n f)
+
+/-- **Periodic compression on the bounded homotopy category is triangulated.** The functor
+`homotopyCompressionFunctor n : K^b(C) ⥤ K_n(C)` preserves distinguished triangles. -/
+instance [HasZeroObject C] : (homotopyCompressionFunctor (C := C) n).IsTriangulated where
+  map_distinguished T hT := by
+    obtain ⟨X, Y, f, ⟨e⟩⟩ :=
+      (HomotopyCategory.Bounded.distinguished_iff_iso_mappingConeTriangleh T).mp hT
+    exact isomorphic_distinguished _
+      (homotopyCompressionFunctor_mappingConeTriangleh_mem_distTriang n f) _
+      ((homotopyCompressionFunctor n).mapTriangle.mapIso e)
+
+end Bounded
 
 end TauCeti.PeriodicComplex
