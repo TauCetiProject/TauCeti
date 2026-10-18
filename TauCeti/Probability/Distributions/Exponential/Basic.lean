@@ -39,8 +39,9 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 
 ## Main results
 
-* `integrable_expMeasure_iff`, `integral_expMeasure_eq` — integrability and integration against
-  the exponential law, transferred to the real density;
+* `integrable_expMeasure_iff`, `integral_expMeasure_eq`,
+  `integrable_expMeasure_iff_integrableOn_Ioi`, `integral_expMeasure_eq_integral_Ioi` —
+  integrability and integration against the exponential law, transferred to the real density;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
@@ -116,6 +117,30 @@ theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
   exact Probability.integral_withDensity_ofReal
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
 
+/-- Integrability against an exponential law is integrability of the weighted integrand over
+`(0, ∞)`. -/
+theorem integrable_expMeasure_iff_integrableOn_Ioi (hr : 0 < r) (g : ℝ → E) :
+    Integrable g (expMeasure r) ↔
+      IntegrableOn (fun x => (r * exp (-(r * x))) • g x) (Ioi 0) := by
+  have hpos : ∀ x ∈ Ioi (0 : ℝ), exponentialPDFReal r x • g x =
+      (r * exp (-(r * x))) • g x := fun x hx => by
+    simp only [exponentialPDFReal, gammaPDFReal, ite_eq_left hx.le, Real.rpow_one, Gamma_one,
+      div_one, sub_self, rpow_zero, mul_one]
+  have hneg : IntegrableOn (fun x => exponentialPDFReal r x • g x) (Iio 0) := by
+    refine integrableOn_zero.congr_fun (fun x hx => ?_) measurableSet_Iio
+    simp only [exponentialPDFReal, gammaPDFReal, ite_eq_right (not_le.mpr hx), zero_smul]
+  rw [integrable_expMeasure_iff hr, ← integrableOn_univ,
+    ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union, integrableOn_Ici_iff_integrableOn_Ioi]
+  exact ⟨fun h => h.2.congr_fun hpos measurableSet_Ioi,
+    fun h => ⟨hneg, h.congr_fun (fun x hx => (hpos x hx).symm) measurableSet_Ioi⟩⟩
+
+/-- An integral against an exponential law is the set integral of the weighted integrand over
+`(0, ∞)`. -/
+theorem integral_expMeasure_eq_integral_Ioi (hr : 0 < r) (g : ℝ → E) :
+    ∫ x, g x ∂expMeasure r = ∫ x in Ioi 0, (r * exp (-(r * x))) • g x := by
+  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos hr]
+  simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one]
+
 end Transfer
 
 /-- **Every moment of the exponential law is integrable.** This is not implied by the moment
@@ -174,18 +199,15 @@ theorem integrable_log_expMeasure (hr : 0 < r) : Integrable log (expMeasure r) :
 @[simp]
 theorem integral_log_expMeasure (hr : 0 < r) :
     ∫ e : ℝ, log e ∂expMeasure r = -Real.eulerMascheroniConstant - log r := by
-  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos hr]
-  simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one, smul_eq_mul]
+  rw [integral_expMeasure_eq_integral_Ioi hr]
+  simp only [smul_eq_mul]
   have hscale := integral_comp_mul_left_Ioi'
     (fun y : ℝ => exp (-y) * log (y / r)) 0 hr
   simp only [mul_zero, mul_div_cancel_left₀ _ hr.ne', smul_eq_mul] at hscale
   have hlog : IntegrableOn (fun x : ℝ => log x * exp (-x)) (Ioi 0) := by
-    have h := (integrable_expMeasure_iff one_pos).mp (integrable_log_expMeasure one_pos)
-    refine h.integrableOn.congr_fun ?_ measurableSet_Ioi
-    intro x hx
-    simp only [exponentialPDFReal, gammaPDFReal, ite_eq_left hx.le, Real.rpow_one, Gamma_one,
-      div_one, sub_self, rpow_zero, mul_one, one_mul, smul_eq_mul]
-    ring
+    simpa only [one_mul, mul_one, neg_mul, smul_eq_mul, mul_comm] using
+      (integrable_expMeasure_iff_integrableOn_Ioi one_pos log).mp
+        (integrable_log_expMeasure one_pos)
   calc
     (∫ x in Ioi 0, r * exp (-(r * x)) * log x) =
         r * ∫ x in Ioi 0, exp (-(r * x)) * log x := by

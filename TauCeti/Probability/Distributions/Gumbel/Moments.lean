@@ -14,10 +14,10 @@ import TauCeti.Probability.Distributions.Logistic.Moments
 /-!
 # Moments of the Gumbel distribution
 
-For a positive-scale Gumbel law, the identity belongs to `L²`, its mean is the location plus
-the scale times the Euler--Mascheroni constant, and its variance is `π²s² / 6`.
+For a positive-scale Gumbel law, the identity belongs to every finite `Lᵖ`, its mean is the
+location plus the scale times the Euler--Mascheroni constant, and its variance is `π²s² / 6`.
 
-Square-integrability follows directly from the exponential pushforward construction.  The mean
+Integrability follows directly from the exponential pushforward construction.  The mean
 uses the classical logarithmic integral for the Euler--Mascheroni constant.  For the variance,
 the difference of two independent identically distributed Gumbel variables is logistic, so its
 variance is twice the Gumbel variance.
@@ -33,23 +33,24 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set
+open scoped NNReal
 
 namespace TauCeti.Probability
 
 variable {m s : ℝ}
 
-private lemma memLp_gumbel_source :
-    MemLp (fun e : ℝ => m - s * log e) 2 (expMeasure 1) := by
+private lemma memLp_gumbel_source (p : ℝ≥0) :
+    MemLp (fun e : ℝ => m - s * log e) p (expMeasure 1) := by
   let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
-  exact (memLp_const m).sub ((memLp_log_expMeasure one_pos 2).const_mul s)
+  exact (memLp_const m).sub ((memLp_log_expMeasure one_pos p).const_mul s)
 
-/-- The identity belongs to `L²` under every Gumbel law, including the zero measure at a
-nonpositive scale. -/
-theorem memLp_id_gumbelMeasure (m s : ℝ) : MemLp id 2 (gumbelMeasure m s) := by
+/-- The identity belongs to every finite `Lᵖ` under every Gumbel law, including the zero measure
+at a nonpositive scale. -/
+theorem memLp_id_gumbelMeasure (m s : ℝ) (p : ℝ≥0) : MemLp id p (gumbelMeasure m s) := by
   by_cases hs : 0 < s
   · rw [gumbelMeasure_of_pos hs,
       memLp_map_measure_iff aestronglyMeasurable_id (by fun_prop)]
-    refine (memLp_gumbel_source (m := m) (s := s)).congr_norm (by fun_prop) ?_
+    refine (memLp_gumbel_source (m := m) (s := s) p).congr_norm (by fun_prop) ?_
     filter_upwards with e
     simp only [Function.comp_apply, id_eq]
   · simp [gumbelMeasure_of_nonpos (le_of_not_gt hs)]
@@ -71,7 +72,7 @@ theorem variance_id_gumbelMeasure (hs : 0 < s) (m : ℝ) :
     variance id (gumbelMeasure m s) = π ^ 2 * s ^ 2 / 6 := by
   let μ := gumbelMeasure m s
   let _ : IsProbabilityMeasure μ := isProbabilityMeasure_gumbelMeasure hs m
-  have hmem : MemLp id 2 μ := memLp_id_gumbelMeasure m s
+  have hmem : MemLp id 2 μ := memLp_id_gumbelMeasure m s 2
   have hfst : MemLp (fun z : ℝ × ℝ => z.1) 2 (μ.prod μ) := hmem.comp_fst μ
   have hsnd : MemLp (fun z : ℝ × ℝ => z.2) 2 (μ.prod μ) := hmem.comp_snd μ
   have hindep : IndepFun (fun z : ℝ × ℝ => z.1) (fun z : ℝ × ℝ => z.2) (μ.prod μ) :=
