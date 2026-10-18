@@ -44,15 +44,8 @@ theorem isSemisimplePoint_iff_isSemisimple_pointsAction_of_isFaithful
   · exact fun hg ↦ (isSemisimplePoint_def g).mp hg M
   · intro hg
     rw [isSemisimplePoint_iff_unipotentPart_eq_one]
-    apply Comodule.pointsAction_injective_of_isFaithful hM
-    have hGL :
-        LinearMap.GeneralLinearGroup.ofLinearEquiv
-            (Comodule.pointsAction M (Point.unipotentPart k H K g)) =
-          LinearMap.GeneralLinearGroup.ofLinearEquiv
-            (Comodule.pointsAction M (1 : WithConv (H →ₐ[k] K))) := by
-      rw [Point.ofLinearEquiv_pointsAction_unipotentPart,
-        GeneralLinearGroup.unipotentPart_eq_one_of_isSemisimple hg, map_one]
-      exact ((LinearMap.GeneralLinearGroup.generalLinearEquiv K _).symm.map_one).symm
-    exact (LinearMap.GeneralLinearGroup.generalLinearEquiv K _).symm.injective hGL
+    apply Comodule.eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful hM
+    rw [Point.ofLinearEquiv_pointsAction_unipotentPart,
+      GeneralLinearGroup.unipotentPart_eq_one_of_isSemisimple hg]
 
 end TauCeti.HopfAlgebra
