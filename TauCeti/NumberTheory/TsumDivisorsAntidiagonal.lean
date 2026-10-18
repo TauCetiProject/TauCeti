@@ -94,28 +94,6 @@ theorem summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow (a : ℕ → K) {C
       · exact le_max_left _ _
     _ = C * ((p.2 : ℝ) ^ k * r ^ (p.1 * p.2 : ℕ)) := by rw [hn, pow_add]; ring
 
-/-- Regrouping a Lambert series with weights of polynomial growth gives a convergent
-divisor-sum expansion. The term at index zero vanishes because `Nat.divisors 0` is empty. -/
-theorem hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
-    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k)
-    {q : K} (hq : ‖q‖ < 1) :
-    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors, a d) * q ^ n)
-      (∑' n : ℕ+, ∑' d : ℕ+, a d * q ^ (n * d : ℕ)) := by
-  have hs : Summable (fun p : ℕ+ × ℕ+ ↦ a p.2 * q ^ (p.1 * p.2 : ℕ)) := by
-    simpa using (summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow a ha hq
-      (u := 1) (by simpa using hq)).of_norm
-  have h := HasSum.sum_divisorsAntidiagonal
-    (f := fun n d : ℕ ↦ a d * q ^ (n * d)) hs.hasSum
-  have he (n : ℕ+) :
-      (∑ x ∈ (n : ℕ).divisorsAntidiagonal, a x.2 * q ^ (x.1 * x.2)) =
-        (∑ d ∈ (n : ℕ).divisors, a d) * q ^ (n : ℕ) := by
-    rw [Nat.sum_divisorsAntidiagonal' (fun c d ↦ a d * q ^ (c * d)), Finset.sum_mul]
-    exact Finset.sum_congr rfl fun d hd ↦ by rw [Nat.div_mul_cancel (Nat.dvd_of_mem_divisors hd)]
-  simp_rw [he] at h
-  rw [hs.tsum_prod] at h
-  simpa using (hasSum_pnat_iff (f := fun n : ℕ ↦
-    (∑ d ∈ n.divisors, a d) * q ^ n)).mp h
-
 /-- A Lambert series with weights of polynomial growth and `‖q * u‖ < 1` expands as a
 power series whose coefficients are finite divisor sums. -/
 theorem hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
@@ -145,6 +123,22 @@ theorem hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow (a : ℕ → K) {C : 
   intro d
   rw [mul_pow, ← pow_mul]
   ring
+
+/-- Regrouping a Lambert series with weights of polynomial growth gives a convergent
+divisor-sum expansion. The term at index zero vanishes because `Nat.divisors 0` is empty. -/
+theorem hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
+    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k)
+    {q : K} (hq : ‖q‖ < 1) :
+    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors, a d) * q ^ n)
+      (∑' n : ℕ+, ∑' d : ℕ+, a d * q ^ (n * d : ℕ)) := by
+  have h := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq
+    (u := 1) (by simpa using hq)
+  simp only [one_pow, mul_one] at h
+  convert h using 1
+  apply tsum_congr
+  intro n
+  rw [tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * q ^ ((n : ℕ) * d))]
+  simp only [pow_mul]
 
 section NormedField
 
