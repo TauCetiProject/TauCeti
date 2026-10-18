@@ -76,7 +76,6 @@ theorem minkowskiSum_add_eq_add_iff_of_mem_supportingFace
 
 /-- A supporting face of the Minkowski sum consists exactly of sums of contact indices
 for the two supporting lines of the same slope. -/
-@[simp]
 theorem mem_supportingFace_minkowskiSum_iff (hc : IsSupportingLine h σ c)
     (hd : IsSupportingLine g σ d) {n : ℕ} :
     n ∈ supportingFace (minkowskiSum h g) σ (c + d) ↔
