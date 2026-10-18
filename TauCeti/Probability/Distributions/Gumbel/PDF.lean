@@ -209,6 +209,22 @@ theorem gumbelMeasure_eq_withDensity (m s : ℝ) :
       exact withDensity_congr_ae hindicator
     rw [gumbelMeasure_of_pos hs, expMeasure_eq_withDensity, ← hrestricted, hmap]
 
+/-- The `ℝ≥0∞`-valued Gumbel density has total mass `1` at positive scale. -/
+theorem lintegral_gumbelPDF_eq_one (hs : 0 < s) (m : ℝ) :
+    ∫⁻ x, gumbelPDF m s x = 1 := by
+  let _ := isProbabilityMeasure_gumbelMeasure hs m
+  have h : gumbelMeasure m s Set.univ = 1 := measure_univ
+  rwa [gumbelMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
+    Measure.restrict_univ] at h
+
+/-- The real-valued Gumbel density has integral `1` at positive scale. -/
+theorem integral_gumbelPDFReal_eq_one (hs : 0 < s) (m : ℝ) :
+    ∫ x, gumbelPDFReal m s x = 1 := by
+  simp_rw [← toReal_gumbelPDF]
+  rw [integral_toReal (measurable_gumbelPDF m s).aemeasurable
+      (ae_of_all _ fun x ↦ lt_top_iff_ne_top.mpr (gumbelPDF_ne_top m s x)),
+    lintegral_gumbelPDF_eq_one hs m, ENNReal.toReal_one]
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A random variable with a Gumbel law has density `gumbelPDF`. -/
