@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.RCLike.Lemmas
+public import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The Banach–Mazur distance
@@ -202,39 +203,6 @@ section Attained
 variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Rescaling a continuous linear equivalence by a nonzero scalar, with the inverse rescaled by
-the inverse scalar. -/
-private theorem exists_coe_eq_smul (T : E ≃L[𝕜] F) {d : 𝕜} (hd : d ≠ 0) :
-    ∃ U : E ≃L[𝕜] F, (U : E →L[𝕜] F) = d • (T : E →L[𝕜] F) ∧
-      (U.symm : F →L[𝕜] E) = d⁻¹ • (T.symm : F →L[𝕜] E) :=
-  ⟨.equivOfInverse' (d • (T : E →L[𝕜] F)) (d⁻¹ • (T.symm : F →L[𝕜] E))
-    (by simp [smul_smul, hd]) (by simp [smul_smul, hd]), by simp, by simp⟩
-
-/-- Given a scalar with `1 < ‖c‖`, every continuous linear equivalence `T` from a nonzero space
-can be rescaled, without changing `‖T‖ * ‖T⁻¹‖`, to have norm at most `1` and inverse of norm at
-most `‖c‖ * ‖T‖ * ‖T⁻¹‖`. -/
-private theorem exists_rescale [Nontrivial E] {c : 𝕜} (hc : 1 < ‖c‖) (T : E ≃L[𝕜] F) :
-    ∃ U : E ≃L[𝕜] F, ‖(U : E →L[𝕜] F)‖ ≤ 1 ∧
-      ‖(U.symm : F →L[𝕜] E)‖ ≤ ‖c‖ * (‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖) ∧
-      ‖(U : E →L[𝕜] F)‖ * ‖(U.symm : F →L[𝕜] E)‖ =
-        ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
-  have hT : (T : E →L[𝕜] F) ≠ 0 := fun h ↦ by
-    obtain ⟨x, hx⟩ := exists_ne (0 : E)
-    exact hx (T.injective (by simpa using congr($h x)))
-  obtain ⟨d, hd, hlt, hge, -⟩ := rescale_to_shell hc one_pos hT
-  obtain ⟨U, hU, hUs⟩ := exists_coe_eq_smul T hd
-  have hd' : 0 < ‖d‖ := norm_pos_iff.2 hd
-  rw [norm_smul] at hlt hge
-  refine ⟨U, by rw [hU, norm_smul]; exact hlt.le, ?_, ?_⟩
-  · rw [hUs, norm_smul, norm_inv, ← mul_assoc]
-    gcongr
-    rw [inv_le_iff_one_le_mul₀ hd']
-    calc 1 = ‖c‖ * ‖c‖⁻¹ := (mul_inv_cancel₀ (by positivity)).symm
-      _ ≤ ‖c‖ * (‖d‖ * ‖(T : E →L[𝕜] F)‖) := by gcongr; simpa [one_div] using hge
-      _ = _ := by ring
-  · rw [hU, hUs, norm_smul, norm_smul, norm_inv]
-    field_simp
-
 /-- Over a locally compact field, the infimum defining the Banach–Mazur distance between
 isomorphic finite-dimensional spaces is attained. -/
 theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
@@ -263,7 +231,7 @@ theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
       (isClosed_eq (continuous_snd.clm_comp continuous_fst) continuous_const)
   have hmem {T : E ≃L[𝕜] F} (hT : ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ ≤ P) :
       ∃ p ∈ K, g p = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
-    obtain ⟨U, hU₁, hU₂, hU⟩ := exists_rescale hc T
+    obtain ⟨U, hU₁, hU₂, hU⟩ := T.exists_norm_le_one_and_norm_symm_le hc
     refine ⟨((U : E →L[𝕜] F), (U.symm : F →L[𝕜] E)), ⟨⟨?_, ?_⟩, ?_, ?_⟩, hU⟩
     · simpa using hU₁
     · simpa using hU₂.trans (by gcongr)
@@ -304,7 +272,7 @@ theorem banachMazurDist_eq_one_iff [FiniteDimensional 𝕜 E] [Nontrivial E] :
   -- Rescale a minimizer `T` to norm one; then its inverse also has norm one.
   set a := ‖(T : E →L[𝕜] F)‖
   have ha : a ≠ 0 := left_ne_zero_of_mul_eq_one hT
-  obtain ⟨U, hU, hUs⟩ := exists_coe_eq_smul T (inv_ne_zero (RCLike.ofReal_ne_zero.2 ha))
+  obtain ⟨U, hU, hUs⟩ := T.exists_coe_eq_smul (inv_ne_zero (RCLike.ofReal_ne_zero.2 ha))
   have hU₁ : ‖(U : E →L[𝕜] F)‖ ≤ 1 := by
     rw [hU, norm_smul, norm_inv, RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _),
       inv_mul_cancel₀ ha]
