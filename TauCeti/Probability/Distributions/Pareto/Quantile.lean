@@ -77,12 +77,8 @@ theorem tendsto_quantile_paretoMeasure_nhdsLT_one (ht : 0 < t) (hr : 0 < r) :
     Tendsto (fun u ↦ ((paretoMeasure t r).quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) := by
   rw [EReal.tendsto_coe_nhds_top_iff]
   have hsub : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · have hid : Tendsto (fun u : ℝ ↦ u) (𝓝[<] 1) (𝓝 1) :=
-        tendsto_id.mono_left nhdsWithin_le_nhds
-      simpa only [sub_self] using (tendsto_const_nhds (x := (1 : ℝ))).sub hid
-    · filter_upwards [self_mem_nhdsWithin] with u hu
-      exact sub_pos.mpr hu
+    simpa only [Tendsto, Filter.map_subLeft_nhdsLT, sub_self] using
+      (le_refl (𝓝[>] (0 : ℝ)))
   have hlim : Tendsto (fun u : ℝ ↦ t * (1 - u) ^ (-1 / r)) (𝓝[<] 1) atTop :=
     ((tendsto_rpow_neg_nhdsGT_zero
       (div_neg_of_neg_of_pos (by norm_num) hr)).comp hsub).const_mul_atTop ht
