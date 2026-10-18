@@ -106,10 +106,12 @@ private lemma end_multiplicities (hf : T.IsSelfIntersectionMinusTwoFork t c bran
     (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity branch ∧
       (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity branch ∧
       (T.multiplicity (c (t - 3)) : ℤ) = 2 * T.multiplicity branch := by
+  have ht₂ : t - 2 + 1 = t - 1 := by omega
+  have ht₃ : t - 3 + 1 = t - 2 := by omega
   have hlastEdge : T.intersection (c (t - 2)) (c (t - 1)) = W := by
-    simpa only [show t - 2 + 1 = t - 1 by omega] using hedge (t - 2) (by omega) (by omega)
+    simpa only [ht₂] using hedge (t - 2) (by omega) (by omega)
   have hpreviousEdge : T.intersection (c (t - 3)) (c (t - 2)) = W := by
-    simpa only [show t - 3 + 1 = t - 2 by omega] using hedge (t - 3) (by omega) (by omega)
+    simpa only [ht₃] using hedge (t - 3) (by omega) (by omega)
   have hbranch := hf.branch_fiber_relation hcard
   rw [hf.branch_intersection_self, hbranchWeight, T.intersection_comm branch,
     hbranchEdge] at hbranch
@@ -148,10 +150,11 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   have hedge (i : ℕ) (hi : 0 < i) (hit : i + 1 < t) :
       T.intersection (c i) (c (i + 1)) = W := by
     have := hedge' (i - 1) (by omega)
-    simpa only [c', Nat.sub_add_cancel hi, show i - 1 + 1 + 1 = i + 1 by omega] using this
+    simpa only [c', Nat.sub_add_cancel hi] using this
   have hbranchWeight' : (T.weight branch : ℤ) = W := by exact hbranchWeight
   have hbranchEdge' : T.intersection (c (t - 2)) branch = W := by
-    simpa only [c', show t - 1 - 2 + 1 = t - 2 by omega] using hbranchEdge
+    have ht₂ : t - 1 - 2 + 1 = t - 2 := by omega
+    simpa only [c', ht₂] using hbranchEdge
   obtain ⟨W', -, hint', hleft, -, -⟩ :=
     hf.toIsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end hchainCard ht
   have hWW : W' = W := by
@@ -218,7 +221,7 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
         (N := t - 2) (f := fun j ↦ (T.multiplicity (c (j + 1)) : ℤ))
         (fun j hj ↦ hrec (j + 1) (by omega) (hedge (j + 1) (by omega) (by omega)))
         (i - 1) (by omega)
-      simp only [Nat.sub_add_cancel hi, Nat.zero_add, show 1 + 1 = 2 from rfl, hm1, hm2,
+      simp only [Nat.sub_add_cancel hi, Nat.zero_add, hm1, hm2,
         sub_self, smul_zero, add_zero] at h
       exact h
     have hm0 : (T.multiplicity (c 0) : ℤ) = T.multiplicity branch := by
@@ -235,7 +238,8 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
       · simp only [hend, ↓reduceIte]
         rcases hend with rfl | hend
         · exact hm0
-        · rw [show i = t - 1 by omega, hlast]
+        · obtain rfl : i = t - 1 := by omega
+          exact hlast
       · simp only [hend, ↓reduceIte]
         rw [hconst i (by omega) (by omega), hm0]
     · intro i hi
@@ -275,7 +279,8 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     · intro i hi
       by_cases hilast : i + 1 = t
       · simp only [hilast, ↓reduceIte]
-        rw [show i = t - 1 by omega, hlast]
+        obtain rfl : i = t - 1 := by omega
+        exact hlast
       · simp only [hilast, ↓reduceIte]
         rw [hconst i (by omega), hm0]
     · intro i hi

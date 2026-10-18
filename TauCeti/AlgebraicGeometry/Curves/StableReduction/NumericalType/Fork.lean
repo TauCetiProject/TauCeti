@@ -463,7 +463,8 @@ lemma tail (hf : T.IsSelfIntersectionMinusTwoFork t c branch) (ht : 3 < t) :
   branch_ne i hi := hf.branch_ne (i + 1) (by omega)
   branch_intersection_self := hf.branch_intersection_self
   branch_intersection_pos := by
-    simpa only [show t - 1 - 2 + 1 = t - 2 by omega] using hf.branch_intersection_pos
+    have ht₂ : t - 1 - 2 + 1 = t - 2 := by omega
+    simpa only [ht₂] using hf.branch_intersection_pos
 
 /-- The chain components of a fork together with its extra leaf exhaust a numerical type with
 `t + 1` components. -/
@@ -541,8 +542,9 @@ lemma fork_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       T.multiplicity branch * T.intersection (c (t - 2)) branch = 0 := by
   have ht := hf.two_lt
   have h := hf.sum_range_intersection_mul_multiplicity hcard (c (t - 2))
-  rw [hf.interior_sum_eq (by omega) _ (i := t - 2) (by omega) (by omega),
-    show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega] at h
+  have ht₃ : t - 2 - 1 = t - 3 := by omega
+  have ht₁ : t - 2 + 1 = t - 1 := by omega
+  rw [hf.interior_sum_eq (by omega) _ (i := t - 2) (by omega) (by omega), ht₃, ht₁] at h
   linarith
 
 /-- For a fork exhausting a numerical type, the fibre relation at the terminal chain component
