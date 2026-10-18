@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Basic
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Recognition
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
 public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.BaseChange
 import TauCeti.Algebra.Coalgebra.BaseChange
 
