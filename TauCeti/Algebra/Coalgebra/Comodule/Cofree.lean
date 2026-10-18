@@ -18,9 +18,10 @@ the value at `M` of the right adjoint to the forgetful functor from comodules to
 universal property is `Comodule.Hom.cofreeEquiv`: comodule morphisms from a comodule `P` into
 `M ⊗[R] C` are exactly `R`-linear maps `P → M`.
 
-Taking `M = R` recovers (up to the unitor) the regular comodule already provided in
-`TauCeti.Algebra.Coalgebra.Comodule.Regular`; the cofree construction generalizes it to an
-arbitrary module of "coefficients".
+Taking `M = R` recovers, through the left unitor `Comodule.Hom.cofreeLid`, the regular comodule
+`Comodule.instSelf`; the cofree construction generalizes it to an arbitrary module of
+"coefficients". Lifting a functional `f : C → R` and applying the unitor gives the left
+contraction `c ↦ ∑ f(c₍₁₎) c₍₂₎`, an endomorphism of the regular comodule.
 
 The cofree comodule structure is provided as an explicit named definition `Comodule.cofree`,
 not as a global instance: an `R`-module can carry many coactions, and the cofree one (which on
@@ -38,6 +39,10 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
 * `TauCeti.Comodule.Hom.cofreeLift`: the comodule morphism `P → M ⊗[R] C` lifting an `R`-linear
   map `P → M`.
 * `TauCeti.Comodule.Hom.cofreeEquiv`: the cofree adjunction, `Hom R C P (M ⊗[R] C) ≃ (P →ₗ[R] M)`.
+* `TauCeti.Comodule.Hom.cofreeLid`: the left unitor from the cofree comodule on `R` to the
+  regular comodule.
+* `TauCeti.Comodule.Hom.leftContraction`: the regular-comodule endomorphism
+  `c ↦ ∑ f(c₍₁₎) c₍₂₎` attached to a functional `f`.
 * `TauCeti.ComoduleCat.cofree`: the cofree comodule, bundled as an object of `ComoduleCat`.
 
 ## References
@@ -400,6 +405,37 @@ theorem eq_zero_iff_counit {P : Type*} [AddCommMonoid P] [Module R P] [Comodule 
   · intro hf
     apply (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).injective
     simpa only [cofreeEquiv_apply, Hom.zero_toLinearMap, LinearMap.comp_zero] using hf
+
+variable (R C) in
+/-- The left unitor `R ⊗[R] C ≃ C` is a comodule morphism from the cofree comodule on `R` to the
+regular comodule. -/
+noncomputable def cofreeLid : Hom R C (R ⊗[R] C) C where
+  toLinearMap := (TensorProduct.lid R C).toLinearMap
+  map_coact := by
+    refine TensorProduct.ext' fun r c ↦ ?_
+    simp only [LinearMap.coe_comp, Function.comp_apply, cofree_coact_tmul, instSelf_coact,
+      LinearEquiv.coe_coe, TensorProduct.lid_tmul, map_smul]
+    induction Coalgebra.comul (R := R) c using TensorProduct.inductionOn with
+    | tmul a b => simp [TensorProduct.smul_tmul']
+    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, smul_add, hy, hz]
+
+/-- The comodule morphism `cofreeLid` is the left unitor. -/
+@[simp]
+theorem cofreeLid_apply (x : R ⊗[R] C) : cofreeLid R C x = TensorProduct.lid R C x :=
+  (rfl)
+
+/-- Contracting the comultiplication against a functional in its left tensor factor,
+`c ↦ ∑ f(c₍₁₎) c₍₂₎`, is an endomorphism of the regular comodule: the cofree lift of `f`
+followed by the left unitor. For the coordinate algebra of an affine group and a point `f`, this
+is pullback along left translation by `f`. -/
+noncomputable def leftContraction (f : C →ₗ[R] R) : Hom R C C C :=
+  (cofreeLid R C).comp (cofreeLift (C := C) f)
+
+/-- Evaluation of the left contraction of the regular comodule. -/
+@[simp]
+theorem leftContraction_apply (f : C →ₗ[R] R) (c : C) :
+    leftContraction f c = TensorProduct.lid R C (f.rTensor C (Coalgebra.comul c)) :=
+  (rfl)
 
 end Hom
 
