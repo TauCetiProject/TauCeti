@@ -36,8 +36,8 @@ Heights of subspaces are heights of these points.
   proportional Plücker coordinates exactly when they span the same subspace.
 * `Submodule.relativePluckerPoint_eq_mk`: the Plücker point of `U` is the class of the Plücker
   coordinates of any basis of `U`.
-* `Submodule.relativePluckerPoint_injective`: a subspace is determined by its dimension and its
-  Plücker point.
+* `Submodule.finrank_relativePluckerPoint_injective`: a subspace is determined by its dimension
+  and its Plücker point.
 
 ## References
 
@@ -130,7 +130,7 @@ theorem relativePluckerPoint_eq_mk (b : Basis (Fin (finrank K U)) K U) :
 
 /-- A subspace is determined by its dimension together with its Plücker point: the Plücker point
 is injective on the subspaces of each fixed dimension. -/
-theorem relativePluckerPoint_injective :
+theorem finrank_relativePluckerPoint_injective :
     Function.Injective fun U : Submodule K (ι → K) ↦
       (⟨finrank K U, relativePluckerPoint U⟩ :
         Σ p : ℕ, Projectivization K (powersetCard ι p → K)) := by

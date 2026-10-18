@@ -124,8 +124,7 @@ theorem relativeSubspaceHeight_bot : relativeSubspaceHeight (⊥ : Submodule K (
   have h := relativeSubspaceHeight_span_range (linearIndependent_empty_type (ι := Fin 0)
     (R := K) (v := fun _ ↦ (0 : ι → K)))
   rw [range_eq_empty, span_empty] at h
-  rw [h, show plucker (fun _ : Fin 0 ↦ (0 : ι → K)) = 1 from funext (plucker_of_isEmpty _),
-    mulHeight_one]
+  rw [h, funext (plucker_of_isEmpty _), ← Pi.one_def, mulHeight_one]
 
 /-- The whole space has relative height `1`. -/
 @[simp]
@@ -182,13 +181,18 @@ end Submodule
 spanned by `(1, 2)` has height `2`. -/
 
 example : (ℚ ∙ ![(2 : ℚ), 2]).relativeSubspaceHeight = 1 := by
-  rw [Submodule.relativeSubspaceHeight_span_singleton (by simp),
-    show ![(2 : ℚ), 2] = (2 : ℚ) • 1 by ext i; fin_cases i <;> simp,
-    Height.mulHeight_smul_eq_mulHeight _ two_ne_zero, Height.mulHeight_one]
+  rw [Submodule.relativeSubspaceHeight_span_singleton (by simp)]
+  calc Height.mulHeight ![(2 : ℚ), 2]
+      _ = Height.mulHeight ((2 : ℚ) • (1 : Fin 2 → ℚ)) := by
+        congr 1; ext i; fin_cases i <;> simp
+      _ = 1 := by rw [Height.mulHeight_smul_eq_mulHeight _ two_ne_zero, Height.mulHeight_one]
 
 example : (ℚ ∙ ![(1 : ℚ), 2]).relativeSubspaceHeight = 2 := by
-  rw [Submodule.relativeSubspaceHeight_span_singleton (by simp),
-    ← Height.mulHeight_comp_equiv (Equiv.swap 0 1),
-    show ![(1 : ℚ), 2] ∘ Equiv.swap 0 1 = ![2, 1] by ext i; fin_cases i <;> rfl,
-    ← Height.mulHeight₁_eq_mulHeight]
-  exact_mod_cast Rat.mulHeight₁_natCast 2
+  rw [Submodule.relativeSubspaceHeight_span_singleton (by simp)]
+  calc Height.mulHeight ![(1 : ℚ), 2]
+      _ = Height.mulHeight (![(1 : ℚ), 2] ∘ Equiv.swap 0 1) :=
+        (Height.mulHeight_comp_equiv (Equiv.swap 0 1) _).symm
+      _ = Height.mulHeight ![(2 : ℚ), 1] := by congr 1; ext i; fin_cases i <;> rfl
+      _ = 2 := by
+        rw [← Height.mulHeight₁_eq_mulHeight]
+        exact_mod_cast Rat.mulHeight₁_natCast 2
