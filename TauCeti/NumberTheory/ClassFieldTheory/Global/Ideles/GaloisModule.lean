@@ -15,11 +15,11 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoria
 Let `K` be a number field and `V ◁ U` a finite normal layer of the idele formation
 `ideleFormation K`, whose ground subgroup `U` is any open subgroup of `G_K`. Let `E` be the fixed
 field of `V`, let `F` be a field over which `E` is an algebra, and let
-`e : U ⨸ V ≃* Gal(E/F)` send the class of each `u ∈ U` to the restriction of `u` to `E`.
+`e : U ⧸ V ≃* Gal(E/F)` send the class of each `u ∈ U` to the restriction of `u` to `E`.
 
 The coefficient module `(I_{Kˢ})^V` of the layer is the idele group `I_E`, through
 `ideleLevelEquiv`. This file proves that, along `e`, this identification intertwines the action of
-`U ⨸ V` on the layer with the Galois action of `Gal(E/F)` on `I_E`
+`U ⧸ V` on the layer with the Galois action of `Gal(E/F)` on `I_E`
 (`NormalLayer.ideleLevelEquiv_ρ`). Consequently the cohomology of the layer is the Galois
 cohomology `Hⁿ(Gal(E/F), I_E)` in every degree (`NormalLayer.ideleCohomologyEquiv`).
 
@@ -80,7 +80,7 @@ variable (L : NormalLayer (AbsoluteGaloisGroup K))
 
 include he in
 /-- **The coefficient module of a layer of the idele formation is `I_E` as a Galois module**:
-if `E` is the fixed field of the top subgroup of the layer and `e : U ⨸ V ≃* Gal(E/F)` sends
+if `E` is the fixed field of the top subgroup of the layer and `e : U ⧸ V ≃* Gal(E/F)` sends
 the class of each `u` to its restriction to `E`, then `τ ∈ Gal(E/F)` acts on `I_E` as
 `e⁻¹ τ` acts on the coefficient module `(I_{Kˢ})^V` of the layer, through
 `ideleLevelEquiv`. -/
@@ -98,9 +98,9 @@ theorem ideleLevelEquiv_ρ (τ : Gal(E/F)) (a : (idelesRep F E).V) :
 /-! ### Cohomology -/
 
 /-- **The cohomology of a layer of the idele formation is the Galois cohomology of the ideles**:
-if `E` is the fixed field of the top subgroup of the layer and `e : U ⨸ V ≃* Gal(E/F)` sends
+if `E` is the fixed field of the top subgroup of the layer and `e : U ⧸ V ≃* Gal(E/F)` sends
 the class of each `u` to its restriction to `E`, then
-`Hⁿ(U ⨸ V, (I_{Kˢ})^V) ≃ Hⁿ(Gal(E/F), I_E)` in every degree `n`. -/
+`Hⁿ(U ⧸ V, (I_{Kˢ})^V) ≃ Hⁿ(Gal(E/F), I_E)` in every degree `n`. -/
 def ideleCohomologyEquiv (n : ℕ) :
     L.H (ideleFormation K) n ≃+ groupCohomology (idelesRep F E) n :=
   (groupCohomology.mapIso e.symm (ideleLevelEquiv hE).toIntLinearEquiv
