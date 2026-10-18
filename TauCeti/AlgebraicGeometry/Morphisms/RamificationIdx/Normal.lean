@@ -14,15 +14,13 @@ public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 # Ramification indices at points with discrete valuation local rings
 
 At a point `x` of `X` whose image has codimension one on a locally Noetherian normal scheme `Y`,
-the local ring `𝒪_{Y,f(x)}` is a discrete valuation ring, so the stalk map of a dominant `f` from
-an integral scheme is flat (`AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_isDominant`), and
-Mathlib's `Ideal.ramificationIdx_tower` makes ramification indices multiply along a composite.
+ramification indices multiply along a composite when `f : X ⟶ Y` is dominant and `X` is integral.
 
 At a point `x` of codimension one of a locally Noetherian normal integral scheme `X`, the local
 ring `𝒪_{X,x}` is a discrete valuation ring, and for a dominant `f` to a reduced scheme `Y` whose
 image point is not the generic point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with
-`e = ramificationIdxAt f x`. When `𝒪_{Y,f(x)}`
-is also a discrete valuation ring (for instance when `Y` is locally Noetherian and normal and
+`e = ramificationIdxAt f x`. When `𝒪_{Y,f(x)}` is also a discrete valuation ring (for instance when
+`Y` is locally Noetherian and normal and
 `f x` has codimension one), `e` is the ramification index of the extension of discrete valuation
 rings (Stacks, Definition 15.113.1 (09E4)).
 
@@ -58,8 +56,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- **Ramification indices multiply in towers.** For a dominant morphism `f : X ⟶ Y` from an
 integral scheme and a point `x` whose image has coheight one on the locally Noetherian normal
-scheme `Y`, `e_x(f ≫ g) = e_x(f) e_{f(x)}(g)` for every `g : Y ⟶ Z`. The local ring of `Y` at
-`f x` is a discrete valuation ring, over which the stalk map of `f` is flat. -/
+scheme `Y`, `e_x(f ≫ g) = e_x(f) e_{f(x)}(g)` for every `g : Y ⟶ Z`. -/
 theorem ramificationIdxAt_comp {Z : Scheme.{u}} (g : Y ⟶ Z) [IsDominant f] [IsIntegral X]
     [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X)
     (hfx : coheight (f x) = 1) :

@@ -18,10 +18,6 @@ power `𝔪_T ^ e` of the maximal ideal of `T`, and `e` is Mathlib's ramificatio
 valuation rings this is the ramification index of Stacks, Definition 15.113.1 (09E4): the
 exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit `u`.
 
-The proof identifies Mathlib's length-based index with the exponent-based
-`Ideal.ramificationIdx'` over the Dedekind domain `T`
-(`Ideal.ramificationIdx'_eq_ramificationIdx'`).
-
 ## Main results
 
 * `IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`: `𝔪_S T = 𝔪_T ^ e` with `e` the

@@ -16,13 +16,10 @@ public import TauCeti.RingTheory.KrullDimension.Fiber
 # Codimension of points under finite morphisms to a normal scheme
 
 Let `f : X ⟶ Y` be a finite dominant morphism of integral schemes with `Y` locally Noetherian and
-normal. On affine charts `f` is a finite injective extension `A → B` of Noetherian domains with `A`
-integrally closed, which satisfies going down (Stacks, Proposition 10.38.7 (00H8)); as `B` is
-quasi-finite over `A`, the dimension formula gives `ht 𝔮 = ht (𝔮 ∩ A)` for every prime `𝔮` of
-`B` (`Ideal.height_eq_height_under_of_quasiFinite`). Hence `f` preserves the codimension of every
-point, and in particular sends points of codimension one to points of codimension one, which is
-the input `hf` of `TauCeti.NormalSchemes.codimensionOneMap`. Without normality of `Y` this fails
-(Stacks, Section 110.19 (02JE)).
+normal. Then `f` preserves the codimension of every point, and in particular sends points of
+codimension one to points of codimension one. This supplies the input `hf` of
+`TauCeti.NormalSchemes.codimensionOneMap`. Without normality of `Y` this fails (Stacks, Section
+110.19 (02JE)).
 
 ## Main results
 
@@ -54,8 +51,7 @@ universe u
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target preserves
-the coheight of every point: on affine charts it is a finite injective extension of Noetherian
-domains with integrally closed base, which satisfies going down. -/
+the coheight of every point. -/
 theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
     [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) : coheight (f x) = coheight x := by
   have himage : IsIrreducible (Set.range f) := by
@@ -63,8 +59,7 @@ theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
       (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
   have : IrreducibleSpace Y := by
     apply (irreducibleSpace_def Y).mpr
-    change IsIrreducible (Set.univ : Set Y)
-    simpa only [f.denseRange.closure_eq] using himage.closure
+    simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
   have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := f x) (U := ⊤) trivial
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
