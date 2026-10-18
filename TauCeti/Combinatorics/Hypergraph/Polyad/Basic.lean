@@ -183,17 +183,6 @@ theorem ofData_color₁₂ (c₀ c₁ c₂ : Finset V) (h₀ : c₀ ∈ S.vertex
     (h₁ : c₁ ∈ S.vertexPart.parts) (h₂ : c₂ ∈ S.vertexPart.parts) (k₀₁ k₀₂ k₁₂ : κ) :
     (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).color₁₂ = k₁₂ := (rfl)
 
-/-- Membership in the support of the polyad determined by three cells and three pair colors. -/
-theorem mem_ofData_support {c₀ c₁ c₂ : Finset V} {h₀ : c₀ ∈ S.vertexPart.parts}
-    {h₁ : c₁ ∈ S.vertexPart.parts} {h₂ : c₂ ∈ S.vertexPart.parts} {k₀₁ k₀₂ k₁₂ : κ}
-    {x : {x : Fin 3 → V // Function.Injective x}} :
-    x ∈ (ofData c₀ c₁ c₂ h₀ h₁ h₂ k₀₁ k₀₂ k₁₂).support ↔
-      x.1 0 ∈ c₀ ∧ x.1 1 ∈ c₁ ∧ x.1 2 ∈ c₂ ∧
-        S.pairColors.colorOfPair (x.1 0) (x.1 1) = some k₀₁ ∧
-        S.pairColors.colorOfPair (x.1 0) (x.1 2) = some k₀₂ ∧
-        S.pairColors.colorOfPair (x.1 1) (x.1 2) = some k₁₂ := by
-  simp
-
 /-- The pair graph of a polyad on roles zero and one. -/
 noncomputable def pairSupport₀₁ (P : Polyad3 S) :
     Finset {p : V × V // p.1 ≠ p.2} := by
