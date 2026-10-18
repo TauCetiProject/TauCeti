@@ -30,6 +30,9 @@ nonempty, the star subdivision covers `τ`: subtracting from the coefficients of
 the least coefficient at a ray of `A`, and putting it on `u_A`, writes the point as a conical
 combination omitting a generator indexed by `A`. So it subdivides the fan of faces of `τ`.
 
+The construction of the fan and its face arguments are adapted from those of
+`TauCeti.Toric.Fan.projectiveSpace` in `TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Basic`.
+
 Classically, the toric variety of the star subdivision is the blow-up of the affine toric
 variety of `τ` along the orbit closure of `σ`.
 
@@ -282,18 +285,14 @@ noncomputable def starSubdivision : Fan i where
     refine ⟨{k | k ∈ S ∧ i (starSubdivisionGenerator hi A hτ.toIsToricCone k) ∈ σ}, ?_, ?_⟩
     · obtain ⟨ρ, hρA, hρS⟩ := hS
       exact ⟨ρ, hρA, fun h ↦ hρS h.1⟩
-    have hface := PointedCone.Face.eq_hull_inter_of_eq_hull ⟨σ, hσ⟩ _
-      (starSubdivisionCone_def hi A hτ.toIsToricCone S)
+    have hface := PointedCone.Face.eq_hull_image ⟨σ, hσ⟩
+      (v := fun k : S ↦ i (starSubdivisionGenerator hi A hτ.toIsToricCone k))
+      (by rw [starSubdivisionCone_eq_hull, image_eq_range])
     refine Eq.trans ?_ hface.symm
-    rw [starSubdivisionCone_def]
+    rw [starSubdivisionCone_eq_hull]
     congr 1
     ext x
-    simp only [mem_image, mem_inter_iff, mem_ofPred_eq]
-    constructor
-    · rintro ⟨_, ⟨k, ⟨hkS, hkσ⟩, rfl⟩, rfl⟩
-      exact ⟨⟨_, ⟨k, hkS, rfl⟩, rfl⟩, hkσ⟩
-    · rintro ⟨⟨_, ⟨k, hkS, rfl⟩, rfl⟩, hkσ⟩
-      exact ⟨_, ⟨k, ⟨hkS, hkσ⟩, rfl⟩, rfl⟩
+    simp [← PointedCone.Face.mem_toPointedCone, and_comm]
   inf_isFaceOf_left := by
     rintro _ _ ⟨S, hS, rfl⟩ ⟨T, hT, rfl⟩
     rw [starSubdivisionCone_inf hi A hτ hS hT, starSubdivisionCone_eq_hull,
@@ -332,6 +331,7 @@ theorem hull_singleton_mem_starSubdivision_cones (hA : A.Nonempty) :
   exact ⟨{none}, ⟨ρ, hρ, by simp⟩, by simp [starSubdivisionCone_def]⟩
 
 /-- For nonempty `A`, the star subdivision of a regular cone `τ` covers `τ`. -/
+@[simp]
 theorem support_starSubdivision (hA : A.Nonempty) :
     (starSubdivision hi A hτ).support = (τ : Set V) := by
   classical
