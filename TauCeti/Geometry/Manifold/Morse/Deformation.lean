@@ -237,7 +237,7 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
       right_inv := ⟨F.toHomotopy⟩ }, coe_sublevelInclusion_apply f hab⟩
   have : r.comp (sublevelInclusion f a b hab) =
       ContinuousMap.id _ := ContinuousMap.ext hr
-  rw [this]
+  exact this ▸ .refl _
 
 end Flow
 

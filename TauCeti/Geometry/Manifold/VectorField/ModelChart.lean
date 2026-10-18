@@ -26,6 +26,8 @@ of a smooth function, a smooth field along which the function strictly decreases
 * `TauCeti.mfderiv_mpullback_apply`, `TauCeti.mvfderiv_mpullback_apply`,
   `TauCeti.contMDiffOn_mpullback`: the pullback of a vector field by a chart.
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
+* `TauCeti.mvfderiv_chartConstField_apply`: the derivative of a function along a constant chart
+  field, read in the chart.
 * `TauCeti.exists_mem_nhds_mvfderiv_chartConstField_lt_zero`: near a regular point of a smooth
   function, some constant field in the preferred chart is a direction of strict decrease.
 * `TauCeti.exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one`: near a regular point of a smooth
@@ -122,6 +124,17 @@ theorem contMDiffOn_chartConstField [FiniteDimensional ℝ E] (p : M) (v : E) :
   contMDiffOn_mpullback (IsManifold.chart_mem_maximalAtlas p) contDiffOn_const
 
 omit [FiniteDimensional ℝ E] in
+/-- On the source of the preferred chart at `y₀`, the derivative of a smooth `f` along a constant
+chart field with value `v` is the derivative of `f ∘ (chartAt E y₀).symm` in the direction `v`. -/
+theorem mvfderiv_chartConstField_apply (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) {y₀ y : M} (v : E)
+    (hy : y ∈ (chartAt E y₀).source) :
+    mvfderiv 𝓘(ℝ, E) f y (chartConstField E y₀ v y) =
+      fderiv ℝ (f ∘ (chartAt E y₀).symm) (chartAt E y₀ y) v :=
+  mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀) (eqOn_comp_chartAt_symm y₀) _ hy
+    (((contDiffOn_comp_chartAt_symm hf y₀).contDiffAt ((chartAt E y₀).open_target.mem_nhds
+      ((chartAt E y₀).map_source hy))).differentiableAt (by simp))
+
+omit [FiniteDimensional ℝ E] in
 /-- Near a regular point of `f`, some constant field in the preferred chart is a direction of
 strict decrease of `f`. -/
 theorem exists_mem_nhds_mvfderiv_chartConstField_lt_zero (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
@@ -153,8 +166,7 @@ theorem exists_mem_nhds_mvfderiv_chartConstField_lt_zero (hf : ContMDiff 𝓘(�
     (hcont.comp (c.continuousAt hmem)).eventually (gt_mem_nhds hv)
   refine ⟨v, {y | y ∈ c.source ∧ fderiv ℝ h (c y) v < 0},
     Filter.inter_mem (c.open_source.mem_nhds hmem) hev, fun y hy ↦ hy.1, fun y hy ↦ ?_⟩
-  rw [chartConstField, mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀)
-    (eqOn_comp_chartAt_symm y₀) _ hy.1 (hdiff y hy.1)]
+  rw [mvfderiv_chartConstField_apply hf v hy.1]
   exact hy.2
 
 /-- Near a regular point of a smooth function `f`, there is a smooth local vector field along which
@@ -173,9 +185,7 @@ theorem exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ
   have hh := contDiffOn_comp_chartAt_symm hf y₀
   have hdf : ∀ y ∈ c.source,
       mvfderiv 𝓘(ℝ, E) f y (chartConstField E y₀ v y) = fderiv ℝ h (c y) v := fun y hy ↦
-    mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀) (eqOn_comp_chartAt_symm y₀)
-      _ hy ((hh.contDiffAt (c.open_target.mem_nhds (c.map_source hy))).differentiableAt
-        (by simp))
+    mvfderiv_chartConstField_apply hf v hy
   have hg : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ (fun y ↦ fderiv ℝ h (c y) v) U := by
     have h' : ContDiffOn ℝ ∞ (fun z ↦ fderiv ℝ h z v) c.target :=
       (hh.fderiv_of_isOpen c.open_target (by simp)).clm_apply contDiffOn_const

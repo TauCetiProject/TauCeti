@@ -319,6 +319,7 @@ theorem mfderiv_source (f : M → N) (x : BoundarylessModel I M) :
     simp only [ContinuousLinearMap.zero_comp]
 
 /-- Changing the source model does not change whether the derivative vanishes. -/
+@[simp]
 theorem mfderiv_source_eq_zero_iff (f : M → N) (x : BoundarylessModel I M) :
     mfderiv 𝓘(𝕜, E) J (f ∘ (homeomorph I M).symm) x = 0 ↔
       mfderiv I J f ((homeomorph I M).symm x) = 0 := by
