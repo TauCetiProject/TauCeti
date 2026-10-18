@@ -396,7 +396,7 @@ protected theorem map₀ (hπ : IsCoupling π μ ν) {f : X → X'} {g : Y → Y
 /-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
 coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
 protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
-    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
     IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
       (μ.prod μ') (ν.prod ν') := by
   have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=

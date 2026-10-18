@@ -138,7 +138,8 @@ theorem coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_symm_apply
   exact coe_spinGroupEquivQuaternionUnitary_symm_apply _ _ _ _ _ q
 
 /-- The Hamilton quaternion corresponding to a Spin element has norm-square one. -/
-@[simp]
+-- Compute the norm before simplifying the intermediate even-unitary coercion.
+@[simp↓]
 theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
     Quaternion.normSq

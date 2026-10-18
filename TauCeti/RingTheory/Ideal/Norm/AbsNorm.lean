@@ -77,7 +77,7 @@ variable {S : Type*} [CommRing S] [Module.Free ℤ S] [Module.Finite ℤ S]
 /-- **Congruent elements with norms of nonnegative product generate ideals of congruent norms.**
 If `a ≡ b` modulo the ideal `(m)` of a Dedekind domain `S` that is free of finite rank over `ℤ`,
 and `N(a) N(b) ≥ 0`, then the absolute norms of `(a)` and `(b)` are congruent modulo `m`. -/
-theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S] [Infinite S]
+theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S]
     {m : ℕ}
     {a b : S} (hab : 0 ≤ Algebra.norm ℤ a * Algebra.norm ℤ b)
     (h : a - b ∈ Ideal.span {(m : S)}) :

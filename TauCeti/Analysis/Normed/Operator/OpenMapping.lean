@@ -402,7 +402,7 @@ theorem equivRangeOfIsTate_apply (f : M →L[R] N) (hinj : Injective f)
 @[simp]
 theorem equivRangeOfIsTate_symm_apply_apply (f : M →L[R] N) (hinj : Injective f)
     (hclosed : IsClosed (Set.range f)) (x : M) :
-    (f.equivRangeOfIsTate hinj hclosed).symm (f.rangeRestrict x) = x :=
+    (f.equivRangeOfIsTate hinj hclosed).symm (Set.rangeFactorization f x) = x :=
   (f.equivRangeOfIsTate hinj hclosed).symm_apply_apply x
 
 @[simp]
