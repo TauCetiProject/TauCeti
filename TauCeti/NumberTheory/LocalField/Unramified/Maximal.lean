@@ -162,7 +162,7 @@ theorem maximalUnramifiedExtension_eq_adjoin :
   simp only [Set.mem_iUnion, Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
   -- `X^{q^0} − X` is zero, so it has no roots.
   exact ⟨fun ⟨f, hne, hx⟩ ↦ ⟨f, fun hf ↦ hne (by simp [hf]), hx⟩,
-    fun ⟨f, hf, hx⟩ ↦ ⟨f, FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, hx⟩⟩
+    fun ⟨f, hf, hx⟩ ↦ ⟨f, X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), hx⟩⟩
 
 variable {K Ω} in
 /-- **Roots of unity of order prime to `p` are unramified.** If the residue characteristic of `K`

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 
@@ -13,7 +14,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 # The gradient on a normed space
 
 On a flat inner product space with its standard Riemannian metric, the manifold gradient agrees
-with Mathlib's `gradient`.
+with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient.
 -/
 
 public section
@@ -58,5 +59,26 @@ theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSp
       rw [inner_mgradient, ← InnerProductSpace.toDual_apply_apply, toDual_gradient]
       rw [mvfderiv_eq_fderiv]
       simp
+
+/-- The gradient of the squared norm in the standard flat metric is the radial vector field.
+
+Source: `Mathlib.Analysis.InnerProductSpace.Calculus.fderiv_norm_sq_apply`.
+-/
+@[simp]
+theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
+    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x = 2 • x := by
+  dsimp only
+  have hx : (InnerProductSpace.toDual ℝ F).symm ((innerSL ℝ) x) = x := by
+    have hdual : (innerSL ℝ) x = (InnerProductSpace.toDual ℝ F) x := by
+      ext y
+      rw [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+    rw [hdual]
+    exact (InnerProductSpace.toDual ℝ F).symm_apply_apply x
+  rw [mgradient_eq_gradient]
+  simp [gradient, fderiv_norm_sq_apply, hx]
+  rfl
 
 end TauCeti.Manifold
