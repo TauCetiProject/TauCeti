@@ -54,6 +54,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.quantile_le_iff` — the Galois characterization of the quantile, with
   `MeasureTheory.Measure.setOf_le_cdf_eq_Ici` its set-level form and
   `MeasureTheory.Measure.lt_quantile_iff` its negation;
+* `MeasureTheory.Measure.cdf_le_iff_quantile_le` — reversed pointwise comparison of two cdfs is
+  equivalent to pointwise comparison of their interior quantiles;
 * `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
   inverse laws, when the cumulative distribution function is continuous, respectively strictly
   increasing where its values lie strictly between `0` and `1`; together they give
@@ -195,6 +197,35 @@ theorem quantile_le_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
   ⟨fun h ↦ (le_cdf_quantile μ h1).trans (monotone_cdf μ h),
     fun h ↦ csInf_le (bddBelow_setOf_le_cdf μ h0) h⟩
+
+/-- Reversed pointwise comparison of the cdfs of two real measures is equivalent to pointwise
+comparison of their quantiles at every level strictly between zero and one. -/
+theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
+    (∀ x, cdf ν x ≤ cdf μ x) ↔
+      ∀ u, 0 < u → u < 1 → μ.quantile u ≤ ν.quantile u := by
+  constructor
+  · intro hcdf u hu0 hu1
+    rw [quantile_le_iff μ hu0 hu1]
+    exact (le_cdf_quantile ν hu1).trans (hcdf _)
+  · intro hquant x
+    by_contra hle
+    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
+    let u := (cdf μ x + cdf ν x) / 2
+    have hu0 : 0 < u := by
+      dsimp [u]
+      linarith [cdf_nonneg μ x]
+    have hu1 : u < 1 := by
+      dsimp [u]
+      linarith [cdf_le_one ν x]
+    have hμu : cdf μ x < u := by
+      dsimp [u]
+      linarith
+    have huν : u ≤ cdf ν x := by
+      dsimp [u]
+      linarith
+    have hνq : ν.quantile u ≤ x := (quantile_le_iff ν hu0 hu1).2 huν
+    have hμq : μ.quantile u ≤ x := (hquant u hu0 hu1).trans hνq
+    exact (not_le_of_gt hμu) ((quantile_le_iff μ hu0 hu1).1 hμq)
 
 /-- The set of points whose cumulative mass reaches a level strictly between `0` and `1` is the
 closed ray to the right of the quantile at that level. -/

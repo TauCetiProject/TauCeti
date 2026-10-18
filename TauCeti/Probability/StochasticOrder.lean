@@ -21,8 +21,6 @@ measures while still providing the characteristic forms used in stochastic-order
 
 ## Main results
 
-* `MeasureTheory.Measure.cdf_le_iff_quantile_le` characterizes reversed cdf comparison by
-  interior quantile comparison.
 * `MeasureTheory.Measure.ae_fst_le_snd_quantileCoupling` shows that the common-uniform coupling is
   ordered whenever the cdfs are ordered.
 * `TauCeti.IsCoupling.cdf_le_of_ae_fst_le_snd` proves the converse for an arbitrary coupling.
@@ -42,35 +40,6 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set
 
 namespace MeasureTheory.Measure
-
-/-- Reversed pointwise comparison of the cdfs of two real probability laws is equivalent to
-pointwise comparison of their quantiles at every level strictly between zero and one. -/
-theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
-    (∀ x, cdf ν x ≤ cdf μ x) ↔
-      ∀ u, 0 < u → u < 1 → μ.quantile u ≤ ν.quantile u := by
-  constructor
-  · intro hcdf u hu0 hu1
-    rw [quantile_le_iff μ hu0 hu1]
-    exact (le_cdf_quantile ν hu1).trans (hcdf _)
-  · intro hquant x
-    by_contra hle
-    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
-    let u := (cdf μ x + cdf ν x) / 2
-    have hu0 : 0 < u := by
-      dsimp [u]
-      linarith [cdf_nonneg μ x]
-    have hu1 : u < 1 := by
-      dsimp [u]
-      linarith [cdf_le_one ν x]
-    have hμu : cdf μ x < u := by
-      dsimp [u]
-      linarith
-    have huν : u ≤ cdf ν x := by
-      dsimp [u]
-      linarith
-    have hνq : ν.quantile u ≤ x := (quantile_le_iff ν hu0 hu1).2 huν
-    have hμq : μ.quantile u ≤ x := (hquant u hu0 hu1).trans hνq
-    exact (not_le_of_gt hμu) ((quantile_le_iff μ hu0 hu1).1 hμq)
 
 /-- If the cdfs are ordered, the common-uniform quantile coupling is concentrated on ordered
 pairs. Thus the stochastic comparison is realized by random variables satisfying `X ≤ Y` almost
