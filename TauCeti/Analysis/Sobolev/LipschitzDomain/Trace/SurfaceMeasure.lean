@@ -89,8 +89,6 @@ theorem W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn
     exact hx.1
   obtain ⟨y, hy, rfl⟩ := hximage
   refine ⟨y, ?_, rfl⟩
-  change W1p.lipschitzChartTrace h psi hpsi hM hpsiM hgM hs u y ≠
-    psi (e.symm (normalGraphEmbedding phi y)) * f (e.symm (normalGraphEmbedding phi y))
-  simpa only [e.apply_symm_apply, normalGraphEmbedding_snd] using hx.2
+  simpa only [bad, mem_ofPred_eq, e.apply_symm_apply, normalGraphEmbedding_snd] using hx.2
 
 end TauCeti

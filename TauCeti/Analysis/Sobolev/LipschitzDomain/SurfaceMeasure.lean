@@ -115,11 +115,7 @@ theorem volume_le_euclideanHausdorffMeasure_frontier_inter
     volume (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b) ≤
       μHE[finrank ℝ E] (frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b) := by
   rw [← h.image_boundaryParametrization]
-  rw [show (fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) ''
-      (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b) =
-      e.symm '' (TauCeti.normalGraphEmbedding phi ''
-        (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b)) by
-        rw [image_image]]
+  rw [← image_image]
   rw [e.symm.isometry.euclideanHausdorffMeasure_image]
   exact TauCeti.volume_le_euclideanHausdorffMeasure_normalGraphEmbedding_image phi _
 
@@ -131,11 +127,7 @@ theorem euclideanHausdorffMeasure_frontier_inter_le
       ((L + 1 : ℝ≥0) : ℝ≥0∞) ^ finrank ℝ E *
         volume (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b) := by
   rw [← h.image_boundaryParametrization]
-  rw [show (fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) ''
-      (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b) =
-      e.symm '' (TauCeti.normalGraphEmbedding phi ''
-        (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b)) by
-        rw [image_image]]
+  rw [← image_image]
   rw [e.symm.isometry.euclideanHausdorffMeasure_image]
   exact h.lipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_le _
 
@@ -146,9 +138,7 @@ theorem euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff
     μHE[finrank ℝ E]
         ((fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' s) = 0 ↔
       volume s = 0 := by
-  rw [show (fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' s =
-      e.symm '' (TauCeti.normalGraphEmbedding phi '' s) by
-        rw [image_image]]
+  rw [← image_image]
   rw [e.symm.isometry.euclideanHausdorffMeasure_image]
   exact h.lipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff s
 
