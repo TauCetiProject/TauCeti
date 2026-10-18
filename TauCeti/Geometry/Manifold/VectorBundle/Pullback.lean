@@ -43,25 +43,16 @@ variable {𝕜 F EM EM' EX H H' HX B B' X K : Type*} [NontriviallyNormedField �
 
 /-- A map into a pullback bundle is `C^n` at a point exactly when its base projection and its
 lift to the original total space are `C^n` there. -/
-theorem contMDiffAt_iff (f : K) (hf : ContMDiff I' I n f)
-    {q : X → TotalSpace F ((f : B' → B) *ᵖ E)} {x : X} :
+theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)} {x : X}
+    (hf : ContMDiffAt I' I n f (q x).proj) :
     ContMDiffAt IX (I'.prod 𝓘(𝕜, F)) n q x ↔
       ContMDiffAt IX I' n (fun y => (q y).proj) x ∧
         ContMDiffAt IX (I.prod 𝓘(𝕜, F)) n
           (fun y => Pullback.lift f (q y)) x := by
-  rw [Bundle.contMDiffAt_totalSpace]
-  constructor
-  · rintro ⟨hq, hcoord⟩
-    refine ⟨hq, Bundle.contMDiffAt_totalSpace.mpr ⟨hf.contMDiffAt.comp x hq, ?_⟩⟩
-    change ContMDiffAt IX 𝓘(𝕜, F) n
-      (fun y => ((trivializationAt F E (f (q x).proj)).pullback f (q y)).2) x at hcoord
-    simpa only [Trivialization.pullback_apply, Pullback.lift_proj] using hcoord
-  · rintro ⟨hq, hlift⟩
-    refine ⟨hq, ?_⟩
-    have hcoord := (Bundle.contMDiffAt_totalSpace.mp hlift).2
-    change ContMDiffAt IX 𝓘(𝕜, F) n
-      (fun y => ((trivializationAt F E (f (q x).proj)).pullback f (q y)).2) x
-    simpa only [Trivialization.pullback_apply, Pullback.lift_proj] using hcoord
+  simp only [Bundle.contMDiffAt_totalSpace, trivializationAt,
+    FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
+  exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp x hq, hcoord⟩,
+    fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩
 
 /-- A map into a pullback bundle is `C^n` exactly when its base projection and its lift to the
 original total space are `C^n`. -/
@@ -71,6 +62,7 @@ theorem contMDiff_iff (f : K) (hf : ContMDiff I' I n f)
       ContMDiff IX I' n (fun y => (q y).proj) ∧
         ContMDiff IX (I.prod 𝓘(𝕜, F)) n
           (fun y => Pullback.lift f (q y)) := by
-  simp only [ContMDiff, contMDiffAt_iff f hf, forall_and]
+  simp only [ContMDiff, ← forall_and]
+  exact forall_congr' fun x => contMDiffAt_iff f hf.contMDiffAt
 
 end Bundle.Pullback
