@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Theorem
 
+import TauCeti.Data.Int.MaxAbs
+
 /-!
 # Roth's theorem for binary forms
 
@@ -17,7 +19,7 @@ theorem gives the **Thue–Roth inequality**: for every `κ > 2` there is `c > 0
 `|F(x, y)| ≥ c max(|x|, |y|) ^ (d - κ)` whenever `x, y ∈ ℤ` and `F(x, y) ≠ 0`.
 
 Over `ℂ`, `F = a ∏ᵢ Lᵢ` is a product of `d` pairwise non-proportional linear forms, each `X₁` or
-`X₀ - α X₁` with `α` algebraic (`Polynomial.homogenize_eq_C_mul_X_pow_mul_prod`). At an integer
+`X₀ - α X₁` with `α` algebraic (`MvPolynomial.IsHomogeneous.exists_linear_factors`). At an integer
 point `(x, y)` with `M = max(|x|, |y|)`:
 
 * by Cramer's rule, two non-proportional forms cannot both be much smaller than `M`
@@ -107,13 +109,6 @@ theorem exists_pos_mul_max_norm_le_norm_of_pairwise {T : Finset (𝕜 × 𝕜)}
 
 end NormedField
 
-/-- A point `(x, y)` of `ℤ²` other than the origin has `max(|x|, |y|) ≥ 1`. -/
-private theorem one_le_max_abs_intCast {x y : ℤ} (h : x ≠ 0 ∨ y ≠ 0) :
-    1 ≤ max |(x : ℝ)| |(y : ℝ)| := by
-  rcases h with hx | hy
-  · exact le_max_of_le_left (by exact_mod_cast Int.one_le_abs hx)
-  · exact le_max_of_le_right (by exact_mod_cast Int.one_le_abs hy)
-
 /-- **Roth's theorem for a linear form.** If `α ∈ ℂ` is algebraic and `κ > 2`, then there is
 `c > 0` with `‖x - α y‖ ≥ c max(|x|, |y|) ^ (1 - κ)` for all integers `x`, `y` with `x ≠ α y`. -/
 theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ}
@@ -126,7 +121,7 @@ theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ
   refine ⟨min (1 / 2) (c₀ / (2 * A)), by positivity, fun x y hxy ↦ ?_⟩
   set M := max |(x : ℝ)| |(y : ℝ)|
   have hy₀ := abs_nonneg (y : ℝ)
-  have hM : 1 ≤ M := one_le_max_abs_intCast <| by
+  have hM : 1 ≤ M := Int.one_le_max_abs_cast <| by
     by_contra! h0
     exact hxy (by simp [h0.1, h0.2])
   have hM₀ : 0 < M := by linarith
@@ -201,11 +196,11 @@ theorem exists_pos_mul_max_abs_rpow_le_prod_norm {T : Finset (ℂ × ℂ)}
     by_cases hxy0 : x = 0 ∧ y = 0
     · simp only [M, hxy0.1, hxy0.2, Int.cast_zero, abs_zero, max_self]
       exact zero_rpow_le_one _
-    · exact rpow_le_one_of_one_le_of_nonpos (one_le_max_abs_intCast (not_and_or.1 hxy0))
+    · exact rpow_le_one_of_one_le_of_nonpos (Int.one_le_max_abs_cast (not_and_or.1 hxy0))
         (by linarith)
   -- Split off a form `ℓ₀` of least norm; all the others are at least `c₁ M ≥ c M`.
   obtain ⟨ℓ₀, hℓ₀, hmin⟩ := T.exists_min_image (fun ℓ ↦ ‖ℓ.1 * x + ℓ.2 * y‖) hne
-  have hM : 1 ≤ M := one_le_max_abs_intCast <| by
+  have hM : 1 ≤ M := Int.one_le_max_abs_cast <| by
     by_contra! h0
     exact hxy ℓ₀ hℓ₀ (by simp [h0.1, h0.2])
   have hM₀ : 0 < M := by linarith
@@ -225,91 +220,6 @@ theorem exists_pos_mul_max_abs_rpow_le_prod_norm {T : Finset (ℂ × ℂ)}
         ring
     _ ≤ _ := mul_le_mul (hcL ℓ₀ hℓ₀ x y (hxy ℓ₀ hℓ₀)) hrest (by positivity) (norm_nonneg _)
 
-/-- A binary form `F ∈ ℤ[X₀, X₁]` of degree `d` with no squared linear factor over `ℂ` factors
-over `ℂ` as `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` with `a ≠ 0` and `d` pairwise non-proportional linear
-forms, each either `X₁` or `X₀ - α X₁` with `α` algebraic. -/
-private theorem exists_linear_factors {F : MvPolynomial (Fin 2) ℤ} {d : ℕ}
-    (hF : F.IsHomogeneous d) (hF₀ : F ≠ 0)
-    (hsq : ∀ a b : ℂ, (a, b) ≠ (0, 0) →
-      ¬(MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1) ^ 2 ∣
-        F.map (Int.castRingHom ℂ)) :
-    ∃ a : ℂ, a ≠ 0 ∧ ∃ T : Finset (ℂ × ℂ), #T = d ∧
-      (T : Set (ℂ × ℂ)).Pairwise (fun ℓ ℓ' ↦ ℓ.1 * ℓ'.2 - ℓ.2 * ℓ'.1 ≠ 0) ∧
-      (∀ ℓ ∈ T, ℓ = (0, 1) ∨ ∃ α : ℂ, IsAlgebraic ℚ α ∧ ℓ = (1, -α)) ∧
-      ∀ x y : ℂ, MvPolynomial.eval ![x, y] (F.map (Int.castRingHom ℂ)) =
-        a * ∏ ℓ ∈ T, (ℓ.1 * x + ℓ.2 * y) := by
-  classical
-  -- `F = g.homogenize d` for the dehomogenization `g = F(X, 1)`, which splits over `ℂ`.
-  set f : ℤ[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
-  set g : ℂ[X] := f.map (Int.castRingHom ℂ)
-  have hgd : g.natDegree ≤ d := natDegree_map_le.trans hF.natDegree_aeval_X_one_le
-  have hG : F.map (Int.castRingHom ℂ) = g.homogenize d := by
-    rw [homogenize_map, homogenize_eq_of_isHomogeneous hF rfl]
-  have hg₀ : g ≠ 0 := by
-    intro hg
-    rw [hg, homogenize_zero] at hG
-    exact hF₀ (MvPolynomial.map_injective _ (RingHom.injective_int _) (by rw [hG, map_zero]))
-  have hf₀ : f ≠ 0 := fun hf ↦ hg₀ (by simp [g, hf])
-  have hfac := g.homogenize_eq_C_mul_X_pow_mul_prod hgd IsAlgClosed.card_roots_eq_natDegree
-  rw [← hG] at hfac
-  have hdk : g.natDegree + (d - g.natDegree) = d := Nat.add_sub_cancel' hgd
-  generalize d - g.natDegree = k at hfac hdk
-  -- No squared linear factor: `X₁ ^ 2 ∤ F` gives `k ≤ 1`, and `(X₀ - α X₁) ^ 2 ∤ F` gives
-  -- simple roots.
-  have hk : k ≤ 1 := by
-    by_contra! hk
-    obtain ⟨j, hj⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
-    refine hsq 0 1 (by simp) ⟨MvPolynomial.C g.leadingCoeff * MvPolynomial.X 1 ^ j *
-      (g.roots.map fun a ↦ MvPolynomial.X 0 - MvPolynomial.C a * MvPolynomial.X 1).prod, ?_⟩
-    rw [hfac, hj]
-    simp only [map_zero, zero_mul, map_one, one_mul, zero_add]
-    ring
-  have hnodup : g.roots.Nodup := by
-    rw [Multiset.nodup_iff_ne_cons_cons]
-    rintro α t ht
-    refine hsq 1 (-α) (by simp) ⟨MvPolynomial.C g.leadingCoeff * MvPolynomial.X 1 ^ k *
-      (t.map fun a ↦ MvPolynomial.X 0 - MvPolynomial.C a * MvPolynomial.X 1).prod, ?_⟩
-    rw [hfac, ht, Multiset.map_cons, Multiset.map_cons, Multiset.prod_cons, Multiset.prod_cons]
-    simp only [map_one, one_mul, map_neg, neg_mul, ← sub_eq_add_neg]
-    ring
-  have halg : ∀ α ∈ g.roots, IsAlgebraic ℚ α := fun α hα ↦ by
-    refine (IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).1 ⟨f, hf₀, ?_⟩
-    rw [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, algebraMap_int_eq]
-    exact (Polynomial.mem_roots hg₀).1 hα
-  -- The linear forms `X₀ - α X₁` for the roots `α`, and `k` copies of `X₁`.
-  set s : Multiset (ℂ × ℂ) := g.roots.map (fun α ↦ ((1 : ℂ), -α)) + Multiset.replicate k (0, 1)
-  have hmem : ∀ ℓ ∈ s, (∃ α ∈ g.roots, ℓ = (1, -α)) ∨ ℓ = (0, 1) := fun ℓ hℓ ↦ by
-    rcases Multiset.mem_add.1 hℓ with h | h
-    · obtain ⟨α, hα, rfl⟩ := Multiset.mem_map.1 h
-      exact Or.inl ⟨α, hα, rfl⟩
-    · exact Or.inr (Multiset.eq_of_mem_replicate h)
-  have hs : s.Nodup := by
-    refine Multiset.nodup_add.2 ⟨hnodup.map fun α β h ↦ neg_injective (Prod.ext_iff.1 h).2,
-      ?_, Multiset.disjoint_left.2 fun h1 h2 ↦ ?_⟩
-    · interval_cases k <;> simp
-    · obtain ⟨α, -, rfl⟩ := Multiset.mem_map.1 h1
-      exact one_ne_zero (Prod.ext_iff.1 (Multiset.eq_of_mem_replicate h2)).1
-  set T : Finset (ℂ × ℂ) := ⟨s, hs⟩
-  refine ⟨g.leadingCoeff, leadingCoeff_ne_zero.2 hg₀, T, ?_, ?_, ?_, fun x y ↦ ?_⟩
-  · simp [T, s, IsAlgClosed.card_roots_eq_natDegree, hdk]
-  · intro ℓ hℓ ℓ' hℓ' hne
-    rcases hmem ℓ hℓ with ⟨α, -, rfl⟩ | rfl <;> rcases hmem ℓ' hℓ' with ⟨β, -, rfl⟩ | rfl
-    · intro h
-      obtain rfl : α = β := by linear_combination h
-      exact hne rfl
-    all_goals simp_all
-  · intro ℓ hℓ
-    rcases hmem ℓ hℓ with ⟨α, hα, rfl⟩ | rfl
-    · exact Or.inr ⟨α, halg α hα, rfl⟩
-    · exact Or.inl rfl
-  · rw [hfac, Finset.prod_eq_multiset_prod]
-    simp only [T, s, map_mul, MvPolynomial.eval_C, map_pow, MvPolynomial.eval_X,
-      map_multiset_prod, Multiset.map_map, Multiset.map_add, Multiset.prod_add,
-      Multiset.map_replicate, Multiset.prod_replicate, Function.comp_def, map_sub]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, zero_mul,
-      one_mul, zero_add, neg_mul, ← sub_eq_add_neg]
-    ring
-
 /-- **The Thue–Roth inequality for binary forms** (Evertse, Theorem 6.3). Let `F ∈ ℤ[X₀, X₁]` be
 a binary form of degree `d` with no squared linear factor over `ℂ`, and let `κ > 2`. Then there
 is `c > 0` with `|F(x, y)| ≥ c max(|x|, |y|) ^ (d - κ)` for all integers `x`, `y` with
@@ -324,7 +234,34 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
       c * max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - κ) ≤ |(MvPolynomial.eval ![x, y] F : ℝ)| := by
   rcases eq_or_ne F 0 with rfl | hF₀
   · exact ⟨1, one_pos, fun x y h ↦ absurd (map_zero _) h⟩
-  obtain ⟨a, ha, T, hTd, hT, hTL, heval⟩ := exists_linear_factors hF hF₀ hsq
+  -- Over `ℂ`, `F` splits into pairwise non-proportional linear factors.
+  have hG₀ : F.map (Int.castRingHom ℂ) ≠ 0 := fun h ↦
+    hF₀ (MvPolynomial.map_injective _ (RingHom.injective_int _) (by rw [h, map_zero]))
+  obtain ⟨a, ha, T, hTd, hT, hTL, hFT⟩ :=
+    (hF.map _).exists_linear_factors hG₀ IsAlgClosed.card_roots_eq_natDegree hsq
+  have heval : ∀ x y : ℂ, MvPolynomial.eval ![x, y] (F.map (Int.castRingHom ℂ)) =
+      a * ∏ ℓ ∈ T, (ℓ.1 * x + ℓ.2 * y) := fun x y ↦ by
+    rw [hFT]
+    simp
+  -- The roots of `F(X, 1)` are algebraic.
+  have halg : ∀ α ∈ (MvPolynomial.aeval ![Polynomial.X, 1] (F.map (Int.castRingHom ℂ)) :
+      ℂ[X]).roots, IsAlgebraic ℚ α := by
+    have hmap : ∀ P : MvPolynomial (Fin 2) ℤ,
+        MvPolynomial.aeval ![Polynomial.X, 1] (P.map (Int.castRingHom ℂ)) =
+          (MvPolynomial.aeval ![Polynomial.X, 1] P : ℤ[X]).map (Int.castRingHom ℂ) := fun P ↦ by
+      induction P using MvPolynomial.induction_on with
+      | C a => simp
+      | add p q hp hq => simp [hp, hq]
+      | mul_X p i hp =>
+        simp only [map_mul, MvPolynomial.map_X, MvPolynomial.aeval_X, hp, Polynomial.map_mul]
+        fin_cases i <;> simp
+    intro α hα
+    rw [hmap] at hα
+    set f : ℤ[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
+    have hf₀ : f ≠ 0 := fun h ↦ Polynomial.ne_zero_of_mem_roots hα (by rw [h, Polynomial.map_zero])
+    refine (IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).1 ⟨f, hf₀, ?_⟩
+    rw [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, algebraMap_int_eq]
+    exact Polynomial.isRoot_of_mem_roots hα
   -- Each linear factor satisfies Roth's inequality: `X₁` trivially, `X₀ - α X₁` by Roth's theorem.
   have hL : ∀ ℓ ∈ T, ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, ℓ.1 * x + ℓ.2 * y ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖ℓ.1 * x + ℓ.2 * y‖ := by
@@ -334,9 +271,9 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
       simp only [zero_mul, one_mul, zero_add, Complex.norm_intCast] at hxy ⊢
       have hy : y ≠ 0 := by exact_mod_cast hxy
       calc max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ 1 :=
-            rpow_le_one_of_one_le_of_nonpos (one_le_max_abs_intCast (Or.inr hy)) (by linarith)
+            rpow_le_one_of_one_le_of_nonpos (Int.one_le_max_abs_cast (Or.inr hy)) (by linarith)
         _ ≤ |(y : ℝ)| := by exact_mod_cast Int.one_le_abs hy
-    · obtain ⟨c, hc, h⟩ := hα.exists_pos_mul_max_abs_rpow_le_norm_sub_mul hκ
+    · obtain ⟨c, hc, h⟩ := (halg α hα).exists_pos_mul_max_abs_rpow_le_norm_sub_mul hκ
       refine ⟨c, hc, fun x y hxy ↦ ?_⟩
       have e : (1 : ℂ) * x + -α * y = x - α * y := by ring
       rw [e] at hxy ⊢

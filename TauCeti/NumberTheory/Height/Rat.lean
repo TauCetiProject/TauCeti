@@ -113,21 +113,13 @@ theorem mulHeight₁_le_max_one_abs_mul_den (q : ℚ) :
 `max(|x|, |y|)`. -/
 theorem mulHeight₁_intCast_div_le (x : ℤ) {y : ℤ} (hy : y ≠ 0) :
     mulHeight₁ ((x : ℚ) / y) ≤ max |(x : ℝ)| |(y : ℝ)| := by
-  rw [mulHeight₁_eq_max, ← Rat.divInt_eq_div]
-  have hnum : (Rat.divInt x y).num.natAbs ≤ x.natAbs := by
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp
-    exact Int.natAbs_le_of_dvd_ne_zero (Rat.num_dvd x hy) hx
-  have hden : ((Rat.divInt x y).den : ℤ) ≤ |y| :=
-    Int.le_of_dvd (abs_pos.2 hy) ((Rat.den_dvd x y).trans (self_dvd_abs y))
-  have h1 : ((Rat.divInt x y).num.natAbs : ℝ) ≤ |(x : ℝ)| := by
-    rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast]
-    exact_mod_cast hnum
-  have h2 : ((Rat.divInt x y).den : ℝ) ≤ |(y : ℝ)| := by
-    rw [← Int.cast_abs]
-    exact_mod_cast hden
-  push_cast
-  exact max_le_max h1 h2
+  have hv : ![(x : ℚ), y] = ((↑) : ℤ → ℚ) ∘ ![x, y] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [mulHeight₁_div_eq_mulHeight, hv]
+  refine (mulHeight_le_max_abs (by simp [hy])).trans ?_
+  rw [← Int.cast_abs, ← Int.cast_abs, ← Int.cast_max, Int.cast_le]
+  exact ciSup_le fun i ↦ by fin_cases i <;> simp
 
 /-- The logarithm of the denominator of a rational number is at most its logarithmic height. -/
 theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q := by
