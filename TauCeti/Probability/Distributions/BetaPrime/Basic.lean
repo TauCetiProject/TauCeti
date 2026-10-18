@@ -202,7 +202,8 @@ private theorem affineDensity_fisherSnedecor_eq_betaPrime (ha : 0 < a) (hb : 0 <
 theorem betaPrimeMeasure_eq_withDensity (a b : ℝ) :
     betaPrimeMeasure a b = volume.withDensity (betaPrimePDF a b) := by
   by_cases h : 0 < a ∧ 0 < b
-  · rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure h.1 h.2,
+  · -- `map_affine_withDensity_volume` expects the scaling map in affine form.
+    rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure h.1 h.2,
       fisherSnedecorMeasure_eq_withDensity,
       show (fun y : ℝ ↦ a / b * y) = fun y ↦ 0 + (a / b) * y by ext; simp,
       map_affine_withDensity_volume _ (div_ne_zero h.1.ne' h.2.ne'),
@@ -252,6 +253,7 @@ theorem cdf_betaPrimeMeasure_eq (ha : 0 < a) (hb : 0 < b) (x : ℝ) :
   let _ : IsProbabilityMeasure (fisherSnedecorMeasure (2 * a) (2 * b)) :=
     isProbabilityMeasure_fisherSnedecorMeasure (mul_pos (by norm_num) ha)
       (mul_pos (by norm_num) hb)
+  -- `cdf_map_affine_of_pos` expects the scaling map in affine form.
   rw [show (fun y : ℝ ↦ (a / b) * y) = fun y ↦ 0 + (a / b) * y by
     funext y
     ring]
