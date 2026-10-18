@@ -40,7 +40,8 @@ groups over `ℝ` and `ℚ_p` are studied.
 * `TauCeti.QuadraticMap.isClosed_range_orthogonalGroup_toLinearMap`: the orthogonal group is
   closed in the endomorphism space, through its underlying linear maps.
 * `QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology`:
-  without separation of the scalars this fails for every form on a nontrivial module.
+  over scalars with the indiscrete topology this fails for every quadratic map on a nontrivial
+  module, so the `T2Space` hypothesis cannot be dropped.
 * `TauCeti.QuadraticMap.isClosed_orthogonalGroup`: the orthogonal group is closed in the linear
   automorphism group.
 * `TauCeti.QuadraticMap.instLocallyCompactSpaceOrthogonalGroup`: the orthogonal group is locally
