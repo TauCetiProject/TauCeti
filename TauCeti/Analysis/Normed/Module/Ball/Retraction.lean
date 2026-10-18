@@ -77,6 +77,11 @@ When `0 ≤ r`, this is the radial retraction onto the closed ball of radius `r`
 noncomputable def centeredRadialRetraction (x₀ : E) (r : ℝ) (x : E) : E :=
   x₀ + radialRetraction r (x - x₀)
 
+/-- The defining formula of the centred radial retraction, as a translate of the radial
+retraction about the origin. -/
+theorem centeredRadialRetraction_def (x₀ : E) (r : ℝ) (x : E) :
+    centeredRadialRetraction x₀ r x = x₀ + radialRetraction r (x - x₀) := (rfl)
+
 /-- The radial retraction centred at the origin is the original radial retraction. -/
 @[simp]
 theorem centeredRadialRetraction_zero (r : ℝ) :
@@ -123,6 +128,13 @@ theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :
   rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
   · rw [radialRetraction, ← hx, div_zero, min_eq_right zero_le_one]
   · rw [radialRetraction, min_eq_right ((div_le_one hx).2 h)]
+
+/-- Outside the closed ball of radius `r` about `x₀`, the centred radial retraction moves `x`
+towards `x₀` by the factor `r / dist x x₀`. -/
+theorem centeredRadialRetraction_of_le_dist {x₀ : E} (h : r ≤ dist x x₀) :
+    centeredRadialRetraction x₀ r x = x₀ + (r / dist x x₀) • (x - x₀) := by
+  rw [dist_eq_norm] at h ⊢
+  rw [centeredRadialRetraction_def, radialRetraction_of_le_norm h]
 
 /-- For nonnegative radius, the radial retraction has norm `min ‖x‖ r`. -/
 @[simp]
