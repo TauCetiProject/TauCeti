@@ -36,6 +36,8 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
   `Module.finrank R M < d`.
 * `exteriorPower.fromTensorPower_comp_toTensorPower`: antisymmetrizing and projecting back is
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
+* `exteriorPower.ιMulti_ne_zero_iff`: over a field, an exterior product of vectors is nonzero
+  exactly when the vectors are linearly independent.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -203,6 +205,26 @@ theorem range_toTensorPower :
 
 end FromTensorPower
 
+/-! ### Exterior products over a field -/
+
+section Field
+
+variable {K : Type*} [Field K] {V : Type*} [AddCommGroup V] [Module K V]
+
+/-- Over a field, the exterior product of `n` vectors is nonzero exactly when they are linearly
+independent. -/
+theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
+    ιMulti K n v ≠ 0 ↔ LinearIndependent K v := by
+  refine ⟨fun h ↦ by_contra fun hv ↦ h ((ιMulti K n).map_linearDependent v hv), fun hv ↦ ?_⟩
+  -- The only `n`-element subset of `Fin n` is enumerated by the identity.
+  have hs : (Finset.univ : Finset (Fin n)).card = n := by simp
+  have he : ⇑(Set.powersetCard.ofFinEmbEquiv.symm (Set.powersetCard.ofCard hs)) = id := by
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    exact (Finset.orderEmbOfFin_unique hs (fun _ ↦ Finset.mem_univ _) strictMono_id).symm
+  simpa [ιMulti_family, he] using (ιMulti_family_linearIndependent_field (n := n) hv).ne_zero
+    (Set.powersetCard.ofCard hs)
+
+end Field
 
 end exteriorPower
 

@@ -6,27 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Beta.Quantile
-public import TauCeti.Probability.Distributions.FisherSnedecor.Cdf
-public import TauCeti.Probability.Quantile.Map
+public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
+public import Mathlib.Topology.Instances.EReal.Lemmas
+import TauCeti.Probability.Quantile.Map
 
 /-!
-# Quantiles of the Fisher--Snedecor distribution
+# Quantiles of Fisher's F laws
 
-This file evaluates the quantile function of the Fisher--Snedecor distribution in terms of the
-inverse regularized incomplete beta function. It also records the limiting values at both ends of
-the probability interval.
+For positive numerator and denominator degrees of freedom `m` and `n`, the Fisher--Snedecor
+quantile is obtained by applying the beta-to-F transformation to the quantile of a
+`Beta (m / 2, n / 2)` law. Thus, if
+
+`b = inverseRegularizedIncompleteBeta (m / 2) (n / 2) u`,
+
+then the quantile at an interior probability level `u` is `(n / m) * b / (1 - b)`. The
+one-sided endpoint limits are `0` and `+∞`, matching the support of the law.
 
 ## Main results
 
-* `quantile_fisherSnedecorMeasure` gives the quantile for probabilities strictly between zero and
-  one.
-* `tendsto_quantile_fisherSnedecorMeasure_nhdsGT_zero` and
-  `tendsto_quantile_fisherSnedecorMeasure_nhdsLT_one` give the one-sided endpoint limits.
+* `TauCeti.Probability.quantile_fisherSnedecorMeasure` gives the explicit quantile formula.
+* `TauCeti.Probability.tendsto_quantile_fisherSnedecorMeasure_nhdsGT_zero` and
+  `TauCeti.Probability.tendsto_quantile_fisherSnedecorMeasure_nhdsLT_one` give the support-endpoint
+  limits.
 
 ## References
 
-* N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions, Volume 2*,
-  Chapter 27
+* N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
+  2nd ed., Wiley (1995), chapter 27.
 -/
 
 public section
@@ -34,84 +40,81 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Set Topology
-open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
 variable {m n u : ℝ}
 
-/-- The quantile of the Fisher--Snedecor distribution is obtained by applying its beta-to-Fisher
-transformation to the corresponding beta quantile. -/
-@[simp]
+/-- The quantile of a Fisher--Snedecor law with positive degrees of freedom is the beta-to-F
+transform of the corresponding Beta quantile. -/
 theorem quantile_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n) (hu : u ∈ Ioo 0 1) :
     (fisherSnedecorMeasure m n).quantile u =
       (n / m) * inverseRegularizedIncompleteBeta (m / 2) (n / 2) u /
         (1 - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u) := by
-  have hm2 : 0 < m / 2 := by positivity
-  have hn2 : 0 < n / 2 := by positivity
-  let _ := isProbabilityMeasureBeta hm2 hn2
-  have hmem : ∀ᵐ x ∂betaMeasure (m / 2) (n / 2), x ∈ Iio (1 : ℝ) :=
-    (ae_mem_Ioo_betaMeasure (m / 2) (n / 2)).mono fun _ hx => hx.2
-  have hcont : ContinuousOn (fisherSnedecorMap m n) (Iio 1) := fun x hx =>
-    (hasDerivAt_fisherSnedecorMap m n (ne_of_lt hx)).continuousAt.continuousWithinAt
   rw [fisherSnedecorMeasure_eq_map hm hn]
-  rw [Measure.quantile_map_of_monotoneOn ordConnected_Iio hmem
-    (fisherSnedecorMap_strictMonoOn hm hn).monotoneOn hcont hu.1 hu.2]
-  rw [quantile_betaMeasure hm2 hn2 hu]
-  rw [fisherSnedecorMap_def]
+  let _ : IsProbabilityMeasure (betaMeasure (m / 2) (n / 2)) :=
+    isProbabilityMeasureBeta (by linarith) (by linarith)
+  rw [Measure.quantile_map_of_monotoneOn ordConnected_Ioo
+      (ae_mem_Ioo_betaMeasure (m / 2) (n / 2))
+      ((fisherSnedecorMap_strictMonoOn hm hn).monotoneOn.mono fun _ hx ↦ hx.2)
+      (fun x hx ↦
+        (hasDerivAt_fisherSnedecorMap m n (ne_of_lt hx.2)).continuousAt.continuousWithinAt)
+      hu.1 hu.2,
+    quantile_betaMeasure (by linarith) (by linarith) hu, fisherSnedecorMap_def]
 
-/-- The Fisher--Snedecor quantile tends to its lower support endpoint as the probability tends to
-zero from above. -/
+/-- Fisher--Snedecor quantiles tend to the lower support endpoint `0` as the probability level
+tends to zero from above. -/
 theorem tendsto_quantile_fisherSnedecorMeasure_nhdsGT_zero (hm : 0 < m) (hn : 0 < n) :
-    Tendsto (fun u => (fisherSnedecorMeasure m n).quantile u) (𝓝[>] 0) (𝓝 0) := by
-  have hm2 : 0 < m / 2 := by positivity
-  have hn2 : 0 < n / 2 := by positivity
-  have hlim : Tendsto
-      (fun u => fisherSnedecorMap m n
-        (inverseRegularizedIncompleteBeta (m / 2) (n / 2) u))
+    Tendsto (fun u ↦ ((fisherSnedecorMeasure m n).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
-    have hcont := (hasDerivAt_fisherSnedecorMap m n (u := 0) (by norm_num)).continuousAt.tendsto
-    have hcomp := hcont.comp (tendsto_inverseRegularizedIncompleteBeta_zero hm2 hn2)
+  have hmap : Tendsto (fisherSnedecorMap m n) (𝓝 0) (𝓝 0) := by
     have hzero : fisherSnedecorMap m n 0 = 0 := by
       rw [fisherSnedecorMap_def]
       norm_num
-    rw [hzero] at hcomp
-    exact hcomp
-  apply hlim.congr'
+    have h := (hasDerivAt_fisherSnedecorMap m n
+      (by norm_num : (0 : ℝ) ≠ 1)).continuousAt.tendsto
+    rw [hzero] at h
+    exact h
+  have hlim := hmap.comp
+    (tendsto_inverseRegularizedIncompleteBeta_zero (a := m / 2) (b := n / 2)
+      (by linarith) (by linarith))
+  apply (EReal.tendsto_coe.mpr hlim).congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-  rw [fisherSnedecorMap_def]
-  exact (quantile_fisherSnedecorMeasure hm hn hu).symm
+  rw [Function.comp_apply, fisherSnedecorMap_def]
+  exact congrArg (fun x : ℝ ↦ (x : EReal))
+    (quantile_fisherSnedecorMeasure hm hn hu).symm
 
-/-- The Fisher--Snedecor quantile tends to infinity as the probability tends to one from below. -/
+/-- Fisher--Snedecor quantiles tend to infinity as the probability level tends to one from
+below. -/
 theorem tendsto_quantile_fisherSnedecorMeasure_nhdsLT_one (hm : 0 < m) (hn : 0 < n) :
-    Tendsto (fun u => (fisherSnedecorMeasure m n).quantile u) (𝓝[<] 1) atTop := by
-  have hm2 : 0 < m / 2 := by positivity
-  have hn2 : 0 < n / 2 := by positivity
-  have hbeta := tendsto_inverseRegularizedIncompleteBeta_one hm2 hn2
-  have hden : Tendsto
-      (fun u => 1 - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u)
-      (𝓝[<] 1) (𝓝[>] 0) := by
-    rw [tendsto_nhdsWithin_iff]
-    constructor
-    · have hsub : Tendsto
-          (fun u => (1 : ℝ) - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u)
-          (𝓝[<] 1) (𝓝 (1 - 1)) := tendsto_const_nhds.sub hbeta
-      simpa using hsub
-    · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-      exact sub_pos.mpr
-        (inverseRegularizedIncompleteBeta_mem_Ioo hm2 hn2 hu.1 hu.2).2
-  have hnum : Tendsto
-      (fun u => (n / m) * inverseRegularizedIncompleteBeta (m / 2) (n / 2) u)
-      (𝓝[<] 1) (𝓝 (n / m)) := by
-    simpa using tendsto_const_nhds.mul hbeta
-  have hlim : Tendsto
-      (fun u => (n / m) * inverseRegularizedIncompleteBeta (m / 2) (n / 2) u /
-        (1 - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u))
-      (𝓝[<] 1) atTop := by
-    simpa [div_eq_mul_inv] using
-      hnum.pos_mul_atTop (div_pos hn hm) (tendsto_inv_nhdsGT_zero.comp hden)
-  apply hlim.congr'
+    Tendsto (fun u ↦ ((fisherSnedecorMeasure m n).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 ⊤) := by
+  have hsub : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
+    simpa only [Tendsto, Filter.map_subLeft_nhdsLT, sub_self] using
+      (le_refl (𝓝[>] (0 : ℝ)))
+  have hinv : Tendsto (fun u : ℝ ↦ (1 - u)⁻¹) (𝓝[<] 1) atTop :=
+    tendsto_inv_nhdsGT_zero.comp hsub
+  have hnum : Tendsto (fun u : ℝ ↦ (n / m) * u) (𝓝[<] 1) (𝓝 (n / m)) := by
+    simpa using tendsto_const_nhds.mul
+      ((continuous_id.tendsto (1 : ℝ)).mono_left nhdsWithin_le_nhds)
+  have hmap : Tendsto (fisherSnedecorMap m n) (𝓝[<] 1) atTop := by
+    have hfun : fisherSnedecorMap m n = fun u ↦ (1 - u)⁻¹ * ((n / m) * u) := by
+      funext u
+      rw [fisherSnedecorMap_def]
+      ring
+    rw [hfun]
+    exact hinv.atTop_mul_pos (div_pos hn hm) hnum
+  have hbeta : Tendsto (inverseRegularizedIncompleteBeta (m / 2) (n / 2))
+      (𝓝[<] 1) (𝓝[<] 1) := by
+    refine tendsto_nhdsWithin_iff.mpr
+      ⟨tendsto_inverseRegularizedIncompleteBeta_one (a := m / 2) (b := n / 2)
+        (by linarith) (by linarith), ?_⟩
+    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+    exact (inverseRegularizedIncompleteBeta_mem_Ioo (by linarith) (by linarith) hu.1 hu.2).2
+  apply EReal.tendsto_coe_nhds_top_iff.mpr
+  apply (hmap.comp hbeta).congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  rw [Function.comp_apply, fisherSnedecorMap_def]
   exact (quantile_fisherSnedecorMeasure hm hn hu).symm
 
 end TauCeti.Probability

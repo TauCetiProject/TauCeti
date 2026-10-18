@@ -12,7 +12,9 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 
 The finite `Lᵖ` norm respects coordinatewise bounds on norms, including when the two
 families have different target spaces. This compares scalar evaluations of a vector
-family with the vector family's `Lᵖ` norm.
+family with the vector family's `Lᵖ` norm. For constant fibres we deduce the bound for
+the image of a family under a map of bounded growth, the norm of a family of multiples
+of one vector, and the invariance of the norm under reindexing.
 -/
 
 public section
@@ -48,5 +50,41 @@ theorem norm_mono {x : PiLp p E} {y : PiLp p F}
 theorem norm_norm (x : PiLp p E) :
     ‖WithLp.toLp p (fun i ↦ ‖x i‖)‖ = ‖x‖ :=
   le_antisymm (norm_mono fun i ↦ by simp) (norm_mono fun i ↦ by simp)
+
+section Constant
+
+variable [Fact (1 ≤ p)] {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+
+/-- Applying a map with `‖g v‖ ≤ C * ‖v‖` to each member of a finite family multiplies its
+`Lᵖ` norm by at most `C`. -/
+theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hC : 0 ≤ C) (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖)
+    (x : ι → E) : ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ C * ‖WithLp.toLp p x‖ := by
+  calc
+    ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
+      norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using hg (x i)
+    _ = C * ‖WithLp.toLp p x‖ := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm (WithLp.toLp p x)]
+
+/-- A finite family of multiples of one vector has `Lᵖ` norm equal to the `Lᵖ` norm of the
+coefficients times the norm of the vector. -/
+theorem norm_toLp_smul_const {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] (a : ι → 𝕜) (y : F) :
+    ‖WithLp.toLp p (fun i ↦ a i • y)‖ = ‖WithLp.toLp p a‖ * ‖y‖ := by
+  calc
+    ‖WithLp.toLp p (fun i ↦ a i • y)‖ = ‖‖y‖ • WithLp.toLp p (fun i ↦ ‖a i‖)‖ :=
+      le_antisymm (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
+        (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
+    _ = ‖WithLp.toLp p a‖ * ‖y‖ := by
+      rw [norm_smul, _root_.norm_norm, norm_norm (WithLp.toLp p a), mul_comm]
+
+/-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm. -/
+theorem norm_toLp_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι → E) :
+    ‖WithLp.toLp p (x ∘ e)‖ = ‖WithLp.toLp p x‖ := by
+  have he : LinearIsometryEquiv.piLpCongrLeft p ℤ E e.symm (WithLp.toLp p x) =
+      WithLp.toLp p (x ∘ e) := by
+    ext i
+    simp [Equiv.piCongrLeft']
+  rw [← he, LinearIsometryEquiv.norm_map]
+
+end Constant
 
 end PiLp
