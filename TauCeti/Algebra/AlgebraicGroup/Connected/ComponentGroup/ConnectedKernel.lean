@@ -18,13 +18,6 @@ field induces an isomorphism on component groups if its scheme-theoretic kernel 
 Neither the groups nor the kernel need be smooth or reduced. Thus quotienting by a connected
 normal subgroup preserves the component group, including for infinitesimal kernels.
 
-The component homomorphism is already surjective. For injectivity, the connected kernel
-lies in the identity component, so the component coordinate functions are kernel coinvariants
-and descend along the faithfully flat morphism. In particular, the idempotent selecting the
-source identity component descends to an idempotent of the target. It is one at the identity,
-and hence on the entire target identity component. This detects the kernel of the component
-homomorphism without discarding nilpotents in either coordinate algebra.
-
 ## Main declarations
 
 * `TauCeti.FiniteTypeCommHopfAlgCat.mapComponentGroup_injective_of_connected_kernel`:
