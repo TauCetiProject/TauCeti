@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Convex.Sequence.Minkowski.Basic
 
+import Mathlib.Algebra.Order.Group.Pointwise.Interval
+
 /-!
 # Supporting faces of Minkowski sums
 
@@ -104,16 +106,14 @@ theorem minkowskiSum (hf : IsFiniteFace h σ l u) (hg : IsFiniteFace g σ l' u')
   refine isFiniteFace_iff.mpr ⟨Nat.add_le_add hf.left_le_right hg.left_le_right, c + d,
     hc.minkowskiSum hd, ?_⟩
   ext n
-  rw [mem_supportingFace_minkowskiSum_iff hc hd]
-  simp only [hface, gface, Set.mem_Icc]
+  rw [mem_supportingFace_minkowskiSum_iff hc hd, hface, gface,
+    ← Set.Icc_add_Icc hf.left_le_right hg.left_le_right]
   constructor
   · rintro ⟨i, j, hij, hi, hj⟩
-    omega
+    exact Set.mem_add.mpr ⟨i, hi, j, hj, hij⟩
   · intro hn
-    refine ⟨min u (n - l'), n - min u (n - l'), ?_⟩
-    have := hf.left_le_right
-    have := hg.left_le_right
-    omega
+    obtain ⟨i, hi, j, hj, hij⟩ := Set.mem_add.mp hn
+    exact ⟨i, j, hij, hi, hj⟩
 
 /-- At the left endpoint of the sum face, the only minimising split uses the two left
 endpoints. All indices here are absolute, not measured from the polygon's anchor. -/
