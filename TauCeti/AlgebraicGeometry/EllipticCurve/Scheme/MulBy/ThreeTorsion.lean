@@ -71,33 +71,6 @@ namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic]
 
--- In the group of sections of the projective model, `3P = 0` exactly when `2P = -P`.
-private theorem projModelMulBy_three_eq_projModelZero_iff {P : Spec (.of R) ⟶ W.projModel}
-    (hP : P ≫ W.projModelOver = 𝟙 _) :
-    P ≫ W.projModelMulBy 3 = W.projModelZero ↔ P ≫ W.projModelMulBy 2 = P ≫ W.projModelNeg := by
-  let p : 𝟙_ (Over (Spec (.of R))) ⟶ Over.mk W.projModelOver := Over.homMk P (by simpa using hP)
-  have hp : p.left = P := rfl
-  have h₁ : (1 : 𝟙_ (Over (Spec (.of R))) ⟶ Over.mk W.projModelOver).left = W.projModelZero := by
-    simp [Hom.one_def]
-  have hinv : (p⁻¹).left = p.left ≫ W.projModelNeg := by
-    simp [Hom.inv_def]
-  have key : p ^ (3 : ℤ) = 1 ↔ p ^ (2 : ℤ) = p⁻¹ := by
-    rw [show (3 : ℤ) = 2 + 1 by norm_num, zpow_add_one, mul_eq_one_iff_eq_inv]
-  rw [← hp, comp_projModelMulBy, comp_projModelMulBy, ← h₁, ← hinv]
-  exact ⟨fun h ↦ congrArg Over.Hom.left (key.mp (Over.OverMorphism.ext h)),
-    fun h ↦ congrArg Over.Hom.left (key.mpr (Over.OverMorphism.ext h))⟩
-
--- Multiplication by `2` on a section is the addition morphism at the pair `(P, P)`.
-private theorem projModelMulBy_two_eq_lift_additionMorphism {P : Spec (.of R) ⟶ W.projModel}
-    (hP : P ≫ W.projModelOver = 𝟙 _) :
-    P ≫ W.projModelMulBy 2 = pullback.lift P P rfl ≫ W.additionMorphism := by
-  let p : 𝟙_ (Over (Spec (.of R))) ⟶ Over.mk W.projModelOver := Over.homMk P (by simpa using hP)
-  have hp : p.left = P := rfl
-  rw [← hp, comp_projModelMulBy, show (2 : ℤ) = 1 + 1 by norm_num, zpow_add_one, zpow_one]
-  simp only [Hom.mul_def, Over.comp_left, Over.lift_left, mul_projModelOver_left]
-  -- the two sides differ only in the proof of the condition of `pullback.lift`
-  rfl
-
 -- If `ψ₂(x, y)` is a unit, then `2P = -P` exactly when `Ψ₃(x) = 0`.
 private theorem projModelAffinePoint_projModelMulBy_two_eq_projModelNeg_iff {x y : R}
     (h : W.toAffine.Equation x y) (hψ₂ : IsUnit (W.ψ₂.evalEval x y)) :
@@ -112,7 +85,7 @@ private theorem projModelAffinePoint_projModelMulBy_two_eq_projModelNeg_iff {x y
   have hm : IsUnit ((W.toProjective.map (RingHom.id R)).dblAddXYZ ![x, y, 1] ![x, y, 1] 2) := by
     rw [hdbl, Projective.dblXYZ_some h]
     simpa using hψ₂.pow 3
-  rw [projModelMulBy_two_eq_lift_additionMorphism (projModelAffinePoint_projModelOver h),
+  rw [comp_projModelMulBy_two (projModelAffinePoint_projModelOver h),
     projModelAffinePoint_projModelNeg, projModelAffinePoint_def, projModelAffinePoint_def,
     lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
     projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h]
@@ -131,7 +104,8 @@ if and only if `x` is a root of the `3`-division polynomial `Ψ₃`. -/
 theorem projModelAffinePoint_projModelMulBy_three_eq_projModelZero_iff {x y : R}
     (h : W.toAffine.Equation x y) :
     W.projModelAffinePoint h ≫ W.projModelMulBy 3 = W.projModelZero ↔ W.Ψ₃.eval x = 0 := by
-  rw [projModelMulBy_three_eq_projModelZero_iff (projModelAffinePoint_projModelOver h)]
+  rw [show (3 : ℤ) = 2 + 1 by norm_num,
+    comp_projModelMulBy_add_one_eq_projModelZero_iff (projModelAffinePoint_projModelOver h)]
   refine ⟨fun h₂ ↦ (projModelAffinePoint_projModelMulBy_two_eq_projModelNeg_iff h ?_).mp h₂,
     fun h₃ ↦ (projModelAffinePoint_projModelMulBy_two_eq_projModelNeg_iff h
       (isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero h h₃)).mpr h₃⟩

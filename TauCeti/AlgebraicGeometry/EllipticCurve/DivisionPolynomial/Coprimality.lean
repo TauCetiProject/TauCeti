@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 
 /-!
 # Coprimality of the division polynomials `Φₙ` and `ΨSqₙ`
@@ -197,10 +198,8 @@ theorem isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero {x y : R} (h : W.toAffine.Eq
   have h₃ : (W.map π).Ψ₃.eval (π x) = 0 := by
     rw [map_Ψ₃, eval_map_apply, hx, map_zero]
   apply (W.map π).eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero hΔ h₃
-  have h₂ : W.Ψ₂Sq.eval x = W.ψ₂.evalEval x y ^ 2 := by
-    have := congrArg (evalEval x y) W.C_Ψ₂Sq
-    rwa [evalEval_C, evalEval_sub, evalEval_pow, evalEval_mul, h, mul_zero, sub_zero] at this
-  rw [map_Ψ₂Sq, eval_map_apply, h₂, map_pow, Ideal.Quotient.eq_zero_iff_mem.mpr hmem]
+  rw [map_Ψ₂Sq, eval_map_apply, ← evalEval_ψ₂_sq W h, map_pow,
+    Ideal.Quotient.eq_zero_iff_mem.mpr hmem]
   simp
 
 end CommRing

@@ -14,7 +14,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Formula
 
 Two identities the Nagell–Lutz route needs and Mathlib lacks — one univariate, one bivariate —
 and the consumer the univariate one exists for, followed by three evaluations of `Ψ₃` that
-reduce a Weierstrass curve to Tate normal form.
+reduce a Weierstrass curve to Tate normal form, and Mathlib's projective doubling formula `dblXYZ`
+at `[x : y : 1]` written through `ψ₂` and `Ψ₃`.
 
 Mathlib gives the univariate polynomials `Φₙ` in two registers. `Φ_three` and `Φ_four` are stated
 through the division polynomials `Ψ₃`, `preΨ₄` and `Ψ₂Sq`; `Φ_two` is stated through the
@@ -61,9 +62,12 @@ does not ask that the pair lie on the curve.
 The last three evaluate `Ψ₃` and `ψ₂` at a point and are what reduces a Weierstrass curve to Tate
 normal form (`TauCeti/AlgebraicGeometry/EllipticCurve/TateNormalForm.lean`): once the point is
 moved to `(0, 0)` with horizontal tangent, `b₈ = a₂a₃²`, so the normalisation `a₂ = a₃` is read off
-`Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` and `Projective.dblXYZ_some` ask that the point lie on the
-curve. The latter is what identifies the sections of the projective model killed by `3` over an
-arbitrary base ring (`TauCeti/AlgebraicGeometry/EllipticCurve/Scheme/MulBy/ThreeTorsion.lean`).
+`Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` asks that the point lie on the curve.
+
+`Projective.dblXYZ_some` is not part of that route. It is the projective doubling formula at an
+affine point of the curve, and it is what identifies the sections of the projective model killed
+by `3` over an arbitrary base ring
+(`TauCeti/AlgebraicGeometry/EllipticCurve/Scheme/MulBy/ThreeTorsion.lean`).
 
 The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
 an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
@@ -88,7 +92,8 @@ argument runs on, and `evalEval_ψ₂_of_isCharNeTwoNF` is what turns `ψ₂` in
 is short. The rest of that route has since landed — the point-level doubling formula in
 `DivisionPolynomial/Descent.lean` and the integrality theorem as
 `isInteger_or_order_two_of_torsion` — so the consumers named above now exist. Nothing in this file
-assumes them: every declaration here is a statement about polynomials.
+assumes them: every declaration here is an identity among polynomials, their evaluations, or
+Mathlib's projective formulas.
 
 ## Provenance
 
