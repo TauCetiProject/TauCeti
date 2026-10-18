@@ -21,6 +21,11 @@ module topology of a finite-dimensional space is Hausdorff and locally compact, 
 of a finite-dimensional space is closed; over σ-compact scalars it is σ-compact. No norm or
 completeness hypothesis on the scalars is needed.
 
+Some hypothesis on the scalar topology is needed for any of this: over a semiring with the
+indiscrete topology, the module topology of every module is indiscrete
+(`IsModuleTopology.indiscreteTopology`), so `IsModuleTopology` on its own does not replace the
+separation of the scalars.
+
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
 -/
@@ -110,5 +115,26 @@ theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSp
     simp [Submodule.Quotient.mk_eq_zero]
   rw [hW]
   exact isClosed_singleton.preimage (IsModuleTopology.continuous_of_linearMap W.mkQ)
+
+/-- Over a semiring with the indiscrete topology, the module topology of any module is
+indiscrete. -/
+theorem _root_.IsModuleTopology.indiscreteTopology (R M : Type*) [Semiring R]
+    [TopologicalSpace R] [IndiscreteTopology R] [AddCommGroup M] [Module R M]
+    [TopologicalSpace M] [IsModuleTopology R M] : IndiscreteTopology M := by
+  have : ContinuousAdd M := IsModuleTopology.toContinuousAdd R M
+  -- Every nonempty open set contains `0`: the orbit map `r ↦ r • x` is continuous out of the
+  -- indiscrete scalars, so the preimage of an open set containing `x = 1 • x` contains `0`.
+  have hzero {U : Set M} (hU : IsOpen U) {x : M} (hx : x ∈ U) : (0 : M) ∈ U := by
+    have hpre : IsOpen ((· • x) ⁻¹' U : Set R) :=
+      hU.preimage (continuous_id.smul continuous_const)
+    rcases (IndiscreteTopology.isOpen_iff _).mp hpre with h | h
+    · exact absurd (show (1 : R) ∈ (· • x) ⁻¹' U by simpa using hx) (h ▸ Set.notMem_empty _)
+    · simpa using (show (0 : R) ∈ (· • x) ⁻¹' U from h ▸ Set.mem_univ _)
+  -- Translating by `y` then shows that every nonempty open set contains every point `y`.
+  have hmem {U : Set M} (hU : IsOpen U) {x : M} (hx : x ∈ U) (y : M) : y ∈ U := by
+    simpa using hzero (hU.preimage (continuous_id.add continuous_const : Continuous (· + y)))
+      (show x - y + y ∈ U by simpa using hx)
+  exact .of_forall_inseparable fun x y ↦ inseparable_iff_forall_isOpen.mpr
+    fun U hU ↦ ⟨fun hx ↦ hmem hU hx y, fun hy ↦ hmem hU hy x⟩
 
 end TauCeti
