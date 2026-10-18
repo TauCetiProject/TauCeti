@@ -58,15 +58,8 @@ theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteT
   · rintro _ ⟨y, hy, rfl⟩
     exact hy
   · let j := C.ofRestrict O.isOpenEmbedding ≫ g
-    have hr : Set.range j.base = Set.range (X.ofRestrict D.isOpenEmbedding).base := by
-      -- The bases use the continuous-map coercion, whereas the range lemmas for open
-      -- inclusions use the TopCat coercion. Compare the subtype witnesses directly.
-      ext z
-      constructor
-      · rintro ⟨y, rfl⟩
-        exact ⟨⟨g.base y.1, y.1, y.2, rfl⟩, rfl⟩
-      · rintro ⟨⟨_, y, hy, rfl⟩, rfl⟩
-        exact ⟨⟨y, hy⟩, rfl⟩
+    have hr : Set.range j.base = Set.range (X.ofRestrict D.isOpenEmbedding).base :=
+      IsOpenImmersion.range_ofRestrict_comp_base g O
     have hc := locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
       P P' hP hP' φ hφ hsheaf O
     have hj : LocallyOfFiniteType (j ≫ f) := by
@@ -80,7 +73,7 @@ theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteT
 
 /-- Precomposing a morphism locally of finite type with an open immersion preserves the
 property, without any adicness hypothesis on the spaces. -/
-theorem LocallyOfFiniteType.comp_isOpenImmersion {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
+theorem LocallyOfFiniteType.isOpenImmersion_comp {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
     (g : Z ⟶ X) [IsOpenImmersion g] : LocallyOfFiniteType (g ≫ f) := by
   let O : Opens X := ⟨Set.range g.base, g.isOpenEmbedding.isOpen_range⟩
   have hr : Set.range g.base = Set.range (X.ofRestrict O.isOpenEmbedding).base :=
