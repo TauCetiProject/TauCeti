@@ -339,19 +339,35 @@ theorem upperQuantile_map_affine_neg [IsProbabilityMeasure μ] {u : ℝ} (hb : b
     rw [affine_pullback_self hb.ne]
     linarith
 
-/-- A constant affine map has the constant as every interior lower quantile. -/
-@[simp]
-theorem quantile_map_affine_zero [IsProbabilityMeasure μ] {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
-    (μ.map fun _ => a).quantile u = a := by
-  simp only [Measure.map_const, measure_univ, one_smul]
-  exact Measure.quantile_dirac a h0 h1.le
+/-- The lower quantile of an affine image, including positive, zero, and negative slopes. -/
+theorem quantile_map_affine [IsProbabilityMeasure μ] {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun x => a + b * x).quantile u =
+      if 0 < b then a + b * μ.quantile u
+      else if b = 0 then a else a + b * μ.upperQuantile (1 - u) := by
+  by_cases hb : 0 < b
+  · rw [ite_eq_left hb]
+    exact quantile_map_affine_pos hb h0 h1
+  · by_cases hb0 : b = 0
+    · subst b
+      simp only [lt_self_iff_false, zero_mul, add_zero, Measure.map_const, measure_univ, one_smul]
+      exact Measure.quantile_dirac a h0 h1.le
+    · rw [ite_eq_right hb, ite_eq_right hb0]
+      exact quantile_map_affine_neg (lt_of_le_of_ne (not_lt.mp hb) hb0) h0 h1
 
-/-- A constant affine map has the constant as every interior upper quantile. -/
-@[simp]
-theorem upperQuantile_map_affine_zero [IsProbabilityMeasure μ] {u : ℝ} (h0 : 0 < u)
-    (h1 : u < 1) : (μ.map fun _ => a).upperQuantile u = a := by
-  simp only [Measure.map_const, measure_univ, one_smul]
-  exact Measure.upperQuantile_dirac a h0.le h1
+/-- The upper quantile of an affine image, including positive, zero, and negative slopes. -/
+theorem upperQuantile_map_affine [IsProbabilityMeasure μ] {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun x => a + b * x).upperQuantile u =
+      if 0 < b then a + b * μ.upperQuantile u
+      else if b = 0 then a else a + b * μ.quantile (1 - u) := by
+  by_cases hb : 0 < b
+  · rw [ite_eq_left hb]
+    exact upperQuantile_map_affine_pos hb h0 h1
+  · by_cases hb0 : b = 0
+    · subst b
+      simp only [lt_self_iff_false, zero_mul, add_zero, Measure.map_const, measure_univ, one_smul]
+      exact Measure.upperQuantile_dirac a h0.le h1
+    · rw [ite_eq_right hb, ite_eq_right hb0]
+      exact upperQuantile_map_affine_neg (lt_of_le_of_ne (not_lt.mp hb) hb0) h0 h1
 
 /-! ### Integrability and moments -/
 
