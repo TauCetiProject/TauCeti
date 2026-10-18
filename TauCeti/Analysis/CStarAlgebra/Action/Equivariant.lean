@@ -38,13 +38,14 @@ end TauCeti.CStarAction
 
 namespace IsInvariant
 
-variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-  {α : TauCeti.CStarAction G A} {s t : Set A}
+variable {G A : Type*} {φ : G → A → A} {s : Set A}
 
 /-- An invariant subset contains the image of each of its elements under the action. -/
-theorem apply_mem (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
-    (g : G) {a : A} (ha : a ∈ s) : α g a ∈ s :=
+theorem apply_mem (hs : _root_.IsInvariant φ s) (g : G) {a : A} (ha : a ∈ s) : φ g a ∈ s :=
   hs g ha
+
+variable [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
+  {α : TauCeti.CStarAction G A}
 
 /-- Membership in an invariant subset is unchanged by the action. -/
 @[simp]
@@ -52,28 +53,6 @@ theorem apply_mem_iff (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
     (g : G) (a : A) : α g a ∈ s ↔ a ∈ s := by
   refine ⟨fun h ↦ ?_, fun ha ↦ hs g ha⟩
   simpa only [TauCeti.CStarAction.inv_apply_apply] using hs g⁻¹ h
-
-/-- The empty subset is invariant. -/
-protected theorem empty : _root_.IsInvariant (fun g a ↦ α g a) ∅ :=
-  fun _ _ h ↦ h.elim
-
-/-- The whole algebra is invariant. -/
-protected theorem univ : _root_.IsInvariant (fun g a ↦ α g a) Set.univ :=
-  fun _ _ _ ↦ Set.mem_univ _
-
-/-- Intersections of invariant subsets are invariant. -/
-theorem inter (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
-    (ht : _root_.IsInvariant (fun g a ↦ α g a) t) :
-    _root_.IsInvariant (fun g a ↦ α g a) (s ∩ t) :=
-  fun g _ ha ↦ ⟨hs g ha.1, ht g ha.2⟩
-
-/-- Arbitrary intersections of invariant subsets are invariant. -/
-theorem iInter {ι : Type*} {s : ι → Set A}
-    (hs : ∀ i, _root_.IsInvariant (fun g a ↦ α g a) (s i)) :
-    _root_.IsInvariant (fun g a ↦ α g a) (⋂ i, s i) := by
-  intro g a ha
-  simp only [Set.mem_iInter] at ha ⊢
-  exact fun i ↦ hs i g (ha i)
 
 end IsInvariant
 
@@ -87,6 +66,12 @@ variable {G H A B C : Type*}
 def IsEquivariant (α : CStarAction G A) (β : CStarAction G B)
     (f : A →⋆ₙₐ[ℂ] B) : Prop :=
   ∀ g, Function.Semiconj f (α g) (β g)
+
+/-- Equivariance is equivalent to the pointwise intertwining identity. -/
+theorem isEquivariant_iff {α : CStarAction G A} {β : CStarAction G B}
+    {f : A →⋆ₙₐ[ℂ] B} :
+    α.IsEquivariant β f ↔ ∀ g a, f (α g a) = β g (f a) :=
+  Iff.rfl
 
 namespace IsEquivariant
 
