@@ -64,7 +64,7 @@ theorem groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint :
       e'.toCoalgEquiv.toCoalgHom.isCocomm_of_surjective e'.surjective
     refine ⟨hc, fun g ↦ ?_⟩
     exact (HopfAlgebra.isSemisimplePoint_mapDomain_iff e' g).mp
-      (isSemisimplePoint (AlgHom.mapDomain e'.toBialgHom g))
+      (isSemisimplePoint (BialgHom.mapDomain (e' : MonoidAlgebra k G →ₐc[k] H) g))
   · rintro ⟨hc, hss⟩
     let _ := hc
     rw [groupLikeSpannedProperty_iff]
