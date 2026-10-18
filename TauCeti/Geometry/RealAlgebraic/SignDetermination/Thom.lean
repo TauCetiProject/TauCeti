@@ -5,7 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Thom
+public import TauCeti.Algebra.Polynomial.Thom.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignDetermination.Roots
 
 /-! # Recovering Thom encodings from sign sums

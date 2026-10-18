@@ -131,6 +131,23 @@ theorem rootIntMatrix_apply (j : Fin 6 ⊕ Fin 6) (a b : Fin 54) :
     rep_kostantForm_mem_lattice j matrixBasis
     (rep_rootGenerator_matrixBasis_eq_smul j b) a
 
+/-- A numbered root operator has nonzero entries only at its signed simple-root weight
+difference. The weights are integral, before any change of coefficient ring. -/
+theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin 6 ⊕ Fin 6) {a b : Fin 54}
+    (hab : matrixWeight a - matrixWeight b ≠ E6.rootGeneratorWeight k) :
+    rootIntMatrix k a b = 0 := by
+  rw [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
+  exact repr_eq_zero_of_isCartanWeightVector
+    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+    (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+    rep_kostantForm_mem_lattice matrixBasis matrixWeight isCartanWeightVector_matrixBasis
+    (isCartanWeightVector_coe_kostantRootOperator
+      (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+      (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice k (E6.lie_serreH_rootGenerator k)
+      (isCartanWeightVector_matrixBasis b))
+    (by intro h; exact hab (sub_eq_iff_eq_add'.mpr h))
+
 /-- The root-operator matrices have zero entries between distinct minuscule summands. -/
 theorem rootIntMatrix_eq_zero_of_summand_ne (j : Fin 6 ⊕ Fin 6) {a b : Fin 54}
     (hab : matrixSummand a ≠ matrixSummand b) : rootIntMatrix j a b = 0 := by

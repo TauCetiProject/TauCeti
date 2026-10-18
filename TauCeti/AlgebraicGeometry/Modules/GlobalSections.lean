@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
 # Global-functions actions on sheaves of modules
@@ -18,8 +19,18 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 `Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
-presheaf. Pullback of local functions by a morphism over the base preserves these images
+presheaf, which on the whole scheme is the base-ring map to global functions
+(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). The sections of the structure
+sheaf over the whole scheme are identified base-linearly with global functions by
+`Scheme.Modules.structureSheafSectionsBaseLinearEquiv`. Pullback of local functions by a morphism
+over the base preserves these images
 (`AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
+
+In a commuting square
+over `Spec S ⟶ Spec R`, `Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app` gives
+the compatible base-ring actions on coordinate rings. For a cartesian square and an affine
+open, `Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen` identifies those rings
+as the pushout over the original base rings.
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`.
@@ -72,7 +83,7 @@ def globalSectionsSmul
 @[simp]
 lemma globalSectionsSmul_app
     (M : X.Modules) (r : Γ(X, ⊤)) (U : X.Opens) :
-    (globalSectionsSmul M r).app U = M.smul (X.presheaf.map U.leTop.op r) := by
+    (globalSectionsSmul M r).app U = (M.smul (X.presheaf.map U.leTop.op r)).asHom := by
   rfl
 
 -- In the next four proofs, sheaf-morphism extensionality leaves pointwise bundled-module goals.
@@ -124,18 +135,18 @@ instance isIso_globalSectionsSmul_units
 the endomorphism ring of the sheaf. -/
 def globalSectionsAction
     (M : X.Modules) : Γ(X, ⊤) →+* End M where
-  toFun := globalSectionsSmul M
-  map_one' := globalSectionsSmul_one M
+  toFun r := .of (globalSectionsSmul M r)
+  map_one' := End.ext (globalSectionsSmul_one M)
   map_mul' := fun r s ↦ by
-    rw [globalSectionsSmul_mul]
-    exact (End.mul_def _ _).symm
-  map_zero' := globalSectionsSmul_zero M
-  map_add' := globalSectionsSmul_add M
+    apply End.ext
+    exact globalSectionsSmul_mul M r s
+  map_zero' := End.ext (globalSectionsSmul_zero M)
+  map_add' := fun r s ↦ End.ext (globalSectionsSmul_add M r s)
 
 @[simp]
 lemma globalSectionsAction_apply
     (M : X.Modules) (r : Γ(X, ⊤)) :
-    globalSectionsAction M r = globalSectionsSmul M r :=
+    globalSectionsAction M r = End.of (globalSectionsSmul M r) :=
   by rfl
 
 /-- Multiplication by a global function is natural in the sheaf of modules. -/
@@ -164,8 +175,9 @@ lemma pushforward_map_globalSectionsSmul
   rw [pushforward_map_app, globalSectionsSmul_app, globalSectionsSmul_app]
   -- The sections of the pushforward over `U` are the sections of `N` over `f ⁻¹ᵁ U`, with scalars
   -- restricted along `f.app U`; no lemma exposes this, so record it explicitly.
-  change N.smul (X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r)) =
-    N.smul (f.app U (Y.presheaf.map U.leTop.op r))
+  ext x
+  change X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r) • x =
+    f.app U (Y.presheaf.map U.leTop.op r) • x
   congr 1
   exact (ConcreteCategory.comp_apply _ _ r).symm.trans
     (congrArg (· r) (f.naturality U.leTop.op)).symm
@@ -244,6 +256,14 @@ lemma baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
   -- `app ⊤` followed by that restriction.
   rfl
 
+/-- On the whole scheme, the base-ring map to sections is `baseRingToGlobalSections`. -/
+lemma baseRingToStructurePresheaf_app_top :
+    (X.baseRingToStructurePresheaf R).app (op ⊤) =
+      CommRingCat.ofHom (Modules.baseRingToGlobalSections R X) := by
+  rw [baseRingToStructurePresheaf_app, Subsingleton.elim (unop (op (⊤ : X.Opens))).leTop.op (𝟙 _),
+    X.presheaf.map_id]
+  exact Category.comp_id _
+
 variable {R} in
 /-- Compatible structure morphisms make the actions of the two base rings on sections
 into a scalar tower. -/
@@ -297,6 +317,51 @@ instance (priority := 900) globalSectionsBaseModule
     (M : X.Modules) : Module R Γ(M, ⊤) :=
   Module.compHom Γ(M, ⊤) (baseRingToGlobalSections R X)
 
+/-- The global sections of the structure sheaf as a module are its ring of global functions, as
+modules over the base ring. -/
+def structureSheafSectionsBaseLinearEquiv :
+    let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    Γ(M, ⊤) ≃ₗ[R] Γ(X, ⊤) := by
+  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+  letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+  letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+  exact
+    { toFun s := s
+      invFun s := s
+      map_add' _ _ := rfl
+      map_smul' r s := by
+        rw [RingHom.id_apply]
+        -- Both actions are multiplication in `Γ(X, ⊤)`: on `Γ(M, ⊤)` by the image of `r` under
+        -- `baseRingToGlobalSections` (from `Module.compHom`), on `Γ(X, ⊤)` by its image under
+        -- `baseRingToStructurePresheaf` (from `RingHom.toAlgebra`). Unfolding both actions
+        -- reduces the goal to `baseRingToStructurePresheaf_app_top`.
+        change baseRingToGlobalSections R X r * (show Γ(X, ⊤) from s) =
+          (X.baseRingToStructurePresheaf R).app (op ⊤) r * (show Γ(X, ⊤) from s)
+        exact (congrArg (· * (show Γ(X, ⊤) from s))
+          (ConcreteCategory.congr_hom (Scheme.baseRingToStructurePresheaf_app_top R X) r)).symm
+      left_inv _ := rfl
+      right_inv _ := rfl }
+
+@[simp]
+lemma structureSheafSectionsBaseLinearEquiv_apply :
+    let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    ∀ s : Γ(M, ⊤), structureSheafSectionsBaseLinearEquiv R X s = s := by
+  intros
+  rfl
+
+@[simp]
+lemma structureSheafSectionsBaseLinearEquiv_symm_apply :
+    let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    letI : Module R Γ(M, ⊤) := Module.compHom _ (baseRingToGlobalSections R X)
+    letI : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    ∀ s : Γ(X, ⊤), (structureSheafSectionsBaseLinearEquiv R X).symm s = s := by
+  intros
+  rfl
+
 @[simp]
 lemma base_smul_globalSections
     (M : X.Modules) (r : R) (x : Γ(M, ⊤)) :
@@ -306,5 +371,74 @@ lemma base_smul_globalSections
 end AlgebraicGeometry.Scheme.Modules
 
 end Base
+
+namespace AlgebraicGeometry.Scheme
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+  {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))]
+  {g : Y ⟶ X}
+/-- In a cartesian square over affine bases, the coordinate rings of an affine open and
+its inverse image form a pushout over the original base rings. -/
+theorem isPushout_baseRingToStructurePresheaf_of_isAffineOpen
+    (H : IsPullback g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    {U : X.Opens} (hU : IsAffineOpen U) :
+    let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+    let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+      ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+    IsPushout (CommRingCat.ofHom (algebraMap R S))
+      (CommRingCat.ofHom (algebraMap R Γ(X, U)))
+      (CommRingCat.ofHom (algebraMap S Γ(Y, g ⁻¹ᵁ U))) (g.app U) := by
+  have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  have := isIso_pushoutSection_of_isAffineOpen H (US := ⊤) (UT := ⊤) (UX := U)
+    (UY := g ⁻¹ᵁ U) le_top le_top (by simp) (isAffineOpen_top _) (isAffineOpen_top _) hU
+  refine ((isIso_pushoutSection_iff ..).mp this).flip.of_iso (Scheme.ΓSpecIso (.of R))
+    (Scheme.ΓSpecIso (.of S)) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+  · rw [← Scheme.ΓSpecIso_naturality]
+    exact congrArg (· ≫ _) (Scheme.Hom.appLE_eq_app _)
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+      Category.comp_id]
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+      Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+      Category.comp_id]
+  · simp only [Iso.refl_hom, Category.comp_id, Category.id_comp, Scheme.Hom.appLE_eq_app]
+end AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Modules
+section BaseScalars
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+  {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))]
+  (g : Y ⟶ X) (U : X.Opens)
+/-- In a commuting square over `Spec S ⟶ Spec R`, the action of `R` on sections over
+`g ⁻¹ᵁ U` through `g.app U` is compatible with the action of `S` from the structure morphism.
+This supplies the scalar tower for comparing base-ring actions on these coordinate rings. -/
+lemma isScalarTower_baseRingToStructurePresheaf_app
+    (C : CommSq g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S)))) :
+    letI : Algebra R Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+    letI : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+      ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+    letI : Algebra R Γ(Y, g ⁻¹ᵁ U) :=
+      ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
+    IsScalarTower R S Γ(Y, g ⁻¹ᵁ U) := by
+  let : Algebra R Γ(X, U) :=
+    ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  let : Algebra R Γ(Y, g ⁻¹ᵁ U) :=
+    ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
+  refine IsScalarTower.of_algebraMap_eq' (RingHom.ext fun r ↦ ?_)
+  let : Y.Over (Spec (.of R)) :=
+    ⟨(Y ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))⟩
+  have : g.IsOver (Spec (.of R)) := ⟨C.w⟩
+  exact (app_baseRingToStructurePresheaf R g U r).trans
+    (Y.baseRingToStructurePresheaf_app_algebraMap
+      (R := R) (S := S) rfl (g ⁻¹ᵁ U) r).symm
+end BaseScalars
+end AlgebraicGeometry.Scheme.Modules
 
 end

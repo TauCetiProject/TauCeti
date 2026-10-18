@@ -31,6 +31,8 @@ opposite DG and `A∞` objects without changing their sign convention.
 * `InternalGrading.oppositeGradedAlgebra`: a graded algebra induces one on its opposite.
 * `instGradedSMulOppositeSelf`: right multiplication respects an internal grading whenever
   multiplication does, including for nonunital multiplication.
+* `TauCeti.op_smul_mem_of_mem_graded`: right scalar multiplication by a homogeneous element of
+  degree `e` shifts module degrees by `e`.
 * `InternalGrading.op_koszulTwist`: the Koszul twist commutes with `op`.
 * `InternalGrading.opLinearEquiv_comp_quadraticTwist`, `InternalGrading.op_quadraticTwist`, and
   `InternalGrading.unop_quadraticTwist`: the quadratic twist commutes with passage to and from the
@@ -47,7 +49,7 @@ open scoped DirectSum
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 namespace InternalGrading
 
@@ -198,5 +200,24 @@ instance instGradedSMulOppositeSelf (𝒜 : ℤ → Submodule R A) [DirectSum.De
     exact SetLike.mul_mem_graded hb ha
 
 end RightSelfAction
+
+section GradedSMul
+
+variable {R : Type u} {A : Type v} {M : Type w}
+  [Semiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid M] [Module R M] [SMul Aᵐᵒᵖ M]
+  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜] {ℳ : ℤ → Submodule R M}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
+/-- A homogeneous element `α` of degree `q`, acted on by a homogeneous `a` of degree `e`, has
+degree `q + e`. -/
+theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
+    (hα : α ∈ ℳ q) : op a • α ∈ ℳ (q + e) := by
+  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
+    rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
+    exact ha
+  have := SetLike.GradedSMul.smul_mem hop hα
+  rwa [vadd_eq_add, add_comm] at this
+
+end GradedSMul
 
 end TauCeti

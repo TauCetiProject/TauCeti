@@ -30,6 +30,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   directional derivatives.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
   this identity characterises the manifold bracket at that point.
+* `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
+  bracket of the coordinate expressions of two fields is their manifold bracket.
 
 ## References
 
@@ -339,3 +341,24 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
   exact hinj hv
 
 end TauCeti
+
+namespace VectorField
+
+omit [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M] in
+/-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
+vector fields is their manifold Lie bracket. -/
+theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
+    (V W : ∀ y : M, TangentSpace I y) (s : Set M) (x : M) :
+    lieBracketWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
+      (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
+      ((extChartAt I x).symm ⁻¹' s ∩ Set.range I) (extChartAt I x x) =
+        mlieBracketWithin I V W s x := by
+  -- The chart derivative at its centre is the identity of `E`; `TangentSpace I x` is not
+  -- syntactically `E`, so the identification is made on the inverse before evaluating it.
+  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E :=
+    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) (mfderiv_extChartAt_self (I := I) (x := x))).trans
+      ContinuousLinearMap.inverse_id
+  rw [mlieBracketWithin_apply]
+  exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
+
+end VectorField

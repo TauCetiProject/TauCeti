@@ -64,8 +64,9 @@ of `φ` is a hypothesis, to be supplied by a Rademacher-type theorem for the pot
   at a contact point, and `TauCeti.fderiv_eq_of_mem_contactSet` its `fderiv` form;
 * `TauCeti.subsingleton_setOf_mem_contactSet` — under the twist condition, a point where the
   potential is differentiable has at most one contact partner;
-* `TauCeti.fderiv_norm_sub_sq_div_two_injective` — the quadratic cost `‖x - y‖ ^ 2 / 2` on a
-  real inner product space is twisted;
+* `TauCeti.fderiv_norm_sub_sq_div_two` and `TauCeti.fderiv_norm_sub_sq_div_two_injective` — the
+  quadratic cost `‖x - y‖ ^ 2 / 2` on a real inner product space has `x`-derivative
+  `⟪x - y, ·⟫`, and is therefore twisted;
 * `TauCeti.ae_subsingleton_setOf_mem_contactSet` — the contact fibres are almost all
   subsingletons when the potential is differentiable almost everywhere;
 * `TauCeti.IsDualCertificate.ae_exists_condKernel_eq_dirac` — optimal couplings have almost
@@ -162,19 +163,23 @@ theorem subsingleton_setOf_mem_contactSet
   exact (fderiv_eq_of_mem_contactSet (hfeas y₁) hfin h₁ hφ (hc y₁ h₁)).symm.trans
     (fderiv_eq_of_mem_contactSet (hfeas y₂) hfin h₂ hφ (hc y₂ h₂))
 
+/-- On a real inner product space, the `x`-derivative of the quadratic cost `‖x - y‖ ^ 2 / 2` at
+`x` is `⟪x - y, ·⟫`. -/
+theorem fderiv_norm_sub_sq_div_two {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (x y : F) : fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x = innerSL ℝ (x - y) := by
+  simp_rw [div_eq_mul_inv]
+  refine (HasFDerivAt.mul_const (HasFDerivAt.norm_sq ((hasFDerivAt_id x).sub_const y))
+    2⁻¹).fderiv.trans ?_
+  ext v
+  simp
+
 /-- **The quadratic cost is twisted.** On a real inner product space, the `x`-derivative of the
 cost `‖x - y‖ ^ 2 / 2` at `x` is `⟪x - y, ·⟫`, which determines `y`. -/
 theorem fderiv_norm_sub_sq_div_two_injective {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] (x : F) :
     Function.Injective fun y : F ↦ fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x := by
-  have hderiv (y : F) : fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x = innerSL ℝ (x - y) := by
-    simp_rw [div_eq_mul_inv]
-    refine (HasFDerivAt.mul_const (HasFDerivAt.norm_sq ((hasFDerivAt_id x).sub_const y))
-      2⁻¹).fderiv.trans ?_
-    ext v
-    simp
   intro y₁ y₂ h
-  simpa only [hderiv, innerSL_inj, sub_right_inj] using h
+  simpa only [fderiv_norm_sub_sq_div_two, innerSL_inj, sub_right_inj] using h
 
 variable [MeasurableSpace E] {μ : Measure E}
 

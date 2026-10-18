@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Semisimple
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Diagonalization
-public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Span
+import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
 import TauCeti.Algebra.Coalgebra.Cocommutative
 
 /-!
@@ -24,8 +23,8 @@ Reducedness cannot be dropped: infinitesimal groups such as `αₚ` have only th
 geometric point but need not be diagonalizable. Connectedness is not required, so the
 recognition theorem also applies to smooth finite diagonalizable groups.
 
-The proof combines the simultaneous diagonalization API with the reconstruction theorem
-`TauCeti.DiagonalizableGroup.essImage_coordinateRingFunctor`.
+The proof combines `TauCeti.HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint` with the
+reconstruction theorem `TauCeti.DiagonalizableGroup.essImage_coordinateRingFunctor`.
 
 ## References
 
@@ -69,13 +68,7 @@ theorem groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint :
   · rintro ⟨hc, hss⟩
     let _ := hc
     rw [groupLikeSpannedProperty_iff]
-    apply Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_iSup_groupLikeWeightSpace_eq_top
-    intro M
-    apply Comodule.iSup_groupLikeWeightSpace_eq_top_of_commute_of_isSemisimple
-    · exact fun g h _ ↦ (Commute.all g h).map (Comodule.basePointsRepresentation M)
-    · intro g
-      exact (HopfAlgebra.isSemisimplePoint_iff_forall_isSemisimple_basePointsRepresentation g).mp
-        (hss g) M
+    exact HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint k H hss
 
 end DiagonalizableGroup
 

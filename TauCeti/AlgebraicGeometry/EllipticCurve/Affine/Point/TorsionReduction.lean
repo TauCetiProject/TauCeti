@@ -8,11 +8,17 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Free
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Division
+import TauCeti.Algebra.Module.Torsion.Snake
+import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 -- Proof-only: carrying points of `W` to the completion.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
+-- Proof-only: the torsion of the nonsingular points of a singular cubic.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Singular
 
 /-!
-# Reduction is injective on torsion
+# Torsion and reduction
 
 Let `A` be a Dedekind domain with fraction field `F`, let `u` be a height-one prime of `A`, and let
 `W` be an elliptic curve over `F` with an integral model at `u`. A point of `W(F)` whose order
@@ -28,6 +34,11 @@ this homomorphism is injective on the `n`-torsion `W(F)[n]` for every `n ∉ u`:
 VII.3.1(b), read over the global field. When the residue field is finite this bounds the
 prime-to-`u` torsion: `#W(F)[n]` divides `#W_k(k)`.
 
+Over the completed field `F_u`, every point of the reduced curve lifts, and multiplication by
+`n ∉ u` is bijective on the formal kernel. Correcting an arbitrary lift by a point of that kernel
+therefore gives a unique `n`-torsion lift. Thus reduction is an additive equivalence on the
+`n`-torsion over `F_u`, rather than only an injection as over a global field.
+
 Torsion of order divisible by the residue characteristic `p` is caught as well when the
 ramification at `u` is small relative to `p`: if `p ∉ u ^ (p - 1)`, the kernel of reduction has no
 `p`-torsion either (Silverman AEC IV.6.1;
@@ -35,9 +46,19 @@ ramification at `u` is small relative to `p`: if `p ∉ u ^ (p - 1)`, the kernel
 prime `p` satisfies `p ∉ u ^ (p - 1)`, as at every odd prime of `ℤ`, reduction is therefore
 injective on the whole torsion subgroup of `W(F)`, and its order divides `#W_k(k)`.
 
+At bad reduction, when the integral model has singular reduction, the same integrality makes
+reduction injective on the points of `W(F)[n]` with nonsingular reduction, for `n ∉ u`. Those land
+in the `n`-torsion of the nonsingular points of a singular cubic over the residue field, whose
+order divides `n`. So the subgroup `E₀(F)` of points with nonsingular reduction meets `W(F)[n]` in
+at most `n` points, and the rest of `W(F)[n]` is seen by the index `[E(F) : E₀(F)]`:
+`#W(F)[n]` divides `n · [E(F) : E₀(F)]`. In particular, if `W(F)[n]` is all of the `n²` torsion
+points, `n` divides that index. This is the step of the criterion of Néron, Ogg and Shafarevich
+(Silverman AEC VII.7.1) that turns unramified torsion of unbounded order into good reduction, the
+index being bounded independently of `n` over unramified extensions.
+
 ## Main results
 
-All results are in the namespace `WeierstrassCurve.Affine.Point`.
+Unless indicated otherwise, the results are in `WeierstrassCurve.Affine.Point`.
 
 * `valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero`: a nonzero point of
   `W(F)` killed by an integer `n ∉ u` has coordinates integral at `u`.
@@ -47,6 +68,10 @@ All results are in the namespace `WeierstrassCurve.Affine.Point`.
   `n ∉ u`.
 * `card_torsionBy_dvd_card_reduction`: at good reduction, `#W(F)[n]` divides the number of points
   of the reduced curve for `n ∉ u`.
+* `existsUnique_torsion_lift`: over the completed field with good reduction, every reduced
+  `n`-torsion point has a unique `n`-torsion lift, for `n ∉ u`.
+* `WeierstrassCurve.torsionReductionAddEquiv`: reduction identifies the `n`-torsion over the
+  completed field with the `n`-torsion of its reduction, for `n ∉ u`.
 * `valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero_of_forall_prime_dvd`: a
   nonzero point of `W(F)` killed by an integer `n ≠ 0` whose prime factors `p` satisfy
   `p ∉ u ^ (p - 1)` has coordinates integral at `u`.
@@ -56,10 +81,18 @@ All results are in the namespace `WeierstrassCurve.Affine.Point`.
   `p ∉ u ^ (p - 1)`, reduction is injective on the torsion subgroup of `W(F)`.
 * `card_torsion_dvd_card_reduction`: under the same hypotheses, the order of the torsion subgroup
   of `W(F)` divides the number of points of the reduced curve.
+* `eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero`: at bad reduction, a point of
+  `E₀(F)` killed by an integer prime to `u` cannot lie in the kernel of reduction.
+* `natCard_nonsingularReduction_inf_torsionBy_dvd`: at bad reduction, the number of points of
+  `W(F)[n]` with nonsingular reduction divides `n`, for `n ∉ u`.
+* `natCard_torsionBy_dvd_mul_index_nonsingularReduction`: at bad reduction, `#W(F)[n]` divides
+  `n · [E(F) : E₀(F)]` for `n ∉ u`.
+* `dvd_index_nonsingularReduction`: at bad reduction, if `W(F)[n]` has `n²` points for some
+  `n ∉ u`, then `n` divides `[E(F) : E₀(F)]`.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.6.1 and VII.3.1.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.6.1, VII.3.1 and VII.7.1.
 -/
 
 public section
@@ -134,6 +167,8 @@ theorem valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero_of_
     u.valuation F P.xCoord ≤ 1 ∧ u.valuation F P.yCoord ≤ 1 :=
   valuation_le_one_of_forall_kerReduction u (fun C _ _ hQ hnQ ↦
     C.eq_zero_of_mem_kerReduction_of_nsmul_eq_zero_of_forall_prime_dvd u hn hnu hQ hnQ) hP h
+
+section GoodReduction
 
 variable [IsIntegral (u.valuation F).valuationSubring W]
   [(integralModel (u.valuation F).valuationSubring W).IsElliptic] [DecidableEq F]
@@ -225,6 +260,216 @@ theorem card_torsion_dvd_card_reduction
   exact AddSubgroup.card_dvd_of_injective
     ((reductionHom (u.valuation F)).comp (AddCommGroup.torsion W.Point).subtype)
     fun P Q hPQ ↦ Subtype.ext (injOn_reductionHom_torsion u hu P.2 Q.2 hPQ)
+
+end GoodReduction
+
+section Completion
+
+variable (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic]
+  [DecidableEq (u.adicCompletion F)]
+  [DecidableEq (ResidueField
+    (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ))).valuationSubring)]
+
+local notation "R_u" =>
+  Valuation.valuationSubring
+    (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
+
+local instance : IsIntegral O_u (C.baseChange F_u) := ⟨C, rfl⟩
+
+local instance : (C.baseChange F_u).IsElliptic :=
+  inferInstanceAs (C.map (algebraMap O_u F_u)).IsElliptic
+
+local instance : ((C.baseChange F_u).integralModel O_u).IsElliptic := by
+  rw [integralModel_baseChange_self]
+  infer_instance
+
+local instance : (integralModel R_u (C.baseChange F_u).toAffine).IsElliptic :=
+  inferInstanceAs (((C.baseChange F_u).integralModel O_u).IsElliptic)
+
+local instance : HenselianLocalRing O_u := by
+  have : IsAdicComplete (maximalIdeal O_u) O_u :=
+    (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)).isAdicComplete_iff.mpr
+      ⟨inferInstance, inferInstance⟩
+  infer_instance
+
+local instance : HenselianLocalRing R_u :=
+  inferInstanceAs (HenselianLocalRing O_u)
+
+/-- Over the completion, the kernel of the good-reduction homomorphism is the formal kernel
+of reduction `E₁`. -/
+theorem mem_kerReduction_iff_reductionHom_eq_zero {P : (C.baseChange F_u).toAffine.Point} :
+    P ∈ C.kerReduction u ↔ reductionHom Valued.v P = 0 := by
+  rw [mem_kerReduction_iff, reductionHom_eq_zero_iff, reduction_eq_zero_iff]
+
+/-- **Prime-to-residue-characteristic torsion lifts uniquely under good reduction.** Over a
+completed discretely valued field, every reduced point killed by an integer prime to the
+residue characteristic has a unique lift killed by that integer (Silverman VII.3.1). -/
+theorem existsUnique_torsion_lift {n : ℕ} (hn : (n : A) ∉ u.asIdeal)
+    (Q : ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point)
+    (hQ : n • Q = 0) :
+    ∃! P : (C.baseChange F_u).toAffine.Point,
+      n • P = 0 ∧ reductionHom Valued.v P = Q := by
+  -- The existing formal-kernel presentation fixes classical equality decisions. Equality
+  -- decisions are unique, so transport that presentation to the caller's point-group data.
+  cases Subsingleton.elim (inferInstance : DecidableEq F_u)
+    (fun a b ↦ Classical.propDecidable (a = b))
+  classical
+  obtain ⟨P, hP⟩ := reductionHom_surjective Valued.v
+    (W := (C.baseChange F_u).toAffine) Q
+  have hnP : n • P ∈ C.kerReduction u := by
+    rw [mem_kerReduction_iff_reductionHom_eq_zero u C, map_nsmul, hP, hQ]
+  obtain ⟨R, hR⟩ := (C.nsmul_kerReduction_bijective u hn).2 ⟨n • P, hnP⟩
+  have hR' : n • (R : (C.baseChange F_u).toAffine.Point) = n • P :=
+    congrArg Subtype.val hR
+  have hredR : reductionHom Valued.v (R : (C.baseChange F_u).toAffine.Point) = 0 := by
+    rw [← mem_kerReduction_iff_reductionHom_eq_zero u C]
+    exact R.property
+  refine ⟨P - R, ⟨by rw [nsmul_sub, hR', sub_self], by rw [map_sub, hredR, sub_zero, hP]⟩,
+    fun S hS ↦ ?_⟩
+  apply sub_eq_zero.mp
+  have hmem : S - (P - R) ∈ C.kerReduction u := by
+    rw [mem_kerReduction_iff_reductionHom_eq_zero u C, map_sub,
+      hS.2, map_sub, hP, hredR, sub_zero, sub_self]
+  exact C.eq_zero_of_mem_kerReduction_of_nsmul_eq_zero u hn hmem
+    (by rw [nsmul_sub, nsmul_sub, hS.1, hR', sub_self, sub_self])
+
+/-- **Specialization identifies the prime-to-residue-characteristic torsion at good
+reduction.** The reduced curve is the actual integral model selected by `reductionHom`.
+The source is over the completed field; the analogous assertion over a global field need not
+hold. -/
+noncomputable def _root_.WeierstrassCurve.torsionReductionAddEquiv
+    {n : ℕ} (hn : (n : A) ∉ u.asIdeal) :
+    Submodule.torsionBy ℤ (C.baseChange F_u).toAffine.Point (n : ℤ) ≃+
+      Submodule.torsionBy ℤ
+        ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point (n : ℤ) := by
+  let ρ := reductionHom Valued.v (W := (C.baseChange F_u).toAffine)
+  let f := (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
+  apply AddEquiv.ofBijective f
+  constructor
+  · intro P Q h
+    apply Subtype.ext
+    have hPn : n • (P : (C.baseChange F_u).toAffine.Point) = 0 := by
+      simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp P.property
+    have hQn : n • (Q : (C.baseChange F_u).toAffine.Point) = 0 := by
+      simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.property
+    obtain ⟨T, -, hT⟩ := existsUnique_torsion_lift u C hn (ρ P) (by
+      rw [← map_nsmul, hPn, _root_.map_zero])
+    have hPQ : ρ P = ρ Q := by
+      simpa [f, TauCeti.coe_torsionByMap_apply] using congrArg Subtype.val h
+    exact (hT P ⟨hPn, rfl⟩).trans (hT Q ⟨hQn, hPQ.symm⟩).symm
+  · intro Q
+    obtain ⟨P, hP, -⟩ := existsUnique_torsion_lift u C hn Q
+      (by simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.property)
+    refine ⟨⟨P, (Submodule.mem_torsionBy_iff _ _).mpr (by simpa using hP.1)⟩, ?_⟩
+    apply Subtype.ext
+    simpa [f, TauCeti.coe_torsionByMap_apply] using hP.2
+
+/-- The torsion specialization equivalence sends a point to its reduction. -/
+@[simp]
+theorem _root_.WeierstrassCurve.coe_torsionReductionAddEquiv_apply {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal)
+    (P : Submodule.torsionBy ℤ (C.baseChange F_u).toAffine.Point (n : ℤ)) :
+    (C.torsionReductionAddEquiv u hn P :
+      ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point) =
+        reductionHom Valued.v (W := (C.baseChange F_u).toAffine) P := by
+  exact TauCeti.coe_torsionByMap_apply _ _ _
+
+/-- The inverse torsion specialization equivalence lifts a reduced point to a point with
+that reduction. -/
+@[simp]
+theorem _root_.WeierstrassCurve.reductionHom_torsionReductionAddEquiv_symm {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal)
+    (Q : Submodule.torsionBy ℤ
+      ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point (n : ℤ)) :
+    reductionHom Valued.v (W := (C.baseChange F_u).toAffine)
+        ((C.torsionReductionAddEquiv u hn).symm Q : (C.baseChange F_u).toAffine.Point) = Q := by
+  have h := congrArg Subtype.val ((C.torsionReductionAddEquiv u hn).apply_symm_apply Q)
+  simpa only [coe_torsionReductionAddEquiv_apply] using h
+
+end Completion
+
+section BadReduction
+
+variable [IsIntegral (u.valuation F).valuationSubring W] [W.IsElliptic] [DecidableEq F]
+
+/-- **At bad reduction, nonsingular reduction has no torsion prime to `u` in its kernel**
+(Silverman AEC VII.3.1(b)): a point in `E₀(F)` killed by an integer `n ∉ u` that reduces to the
+point at infinity is the point at infinity. -/
+theorem eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero {n : ℕ}
+    [DecidableEq (ResidueField (u.valuation F).valuationSubring)]
+    (hn : (n : A) ∉ u.asIdeal) {P : W.nonsingularReduction (u.valuation F)}
+    (hP : W.nonsingularReductionHom (u.valuation F) P = 0) (h : n • (P : W.Point) = 0) :
+    P = 0 := by
+  classical
+  apply Subtype.ext
+  by_contra hP0
+  rcases (nonsingularReductionHom_eq_zero_iff _ _).1 hP with h0 | hx
+  · exact hP0 h0
+  · exact hx.not_ge
+      (valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero u hn hP0 h).1
+
+/-- **At bad reduction, the `n`-torsion with nonsingular reduction is small** (Silverman AEC
+VII.7.1): if the integral model of `W` at `u` has singular reduction, then for `n ∉ u` the number of
+points of `W(F)[n]` with nonsingular reduction divides `n`. In particular `E₀(F) ∩ W(F)[n]` is
+never all of `(ℤ / n)²` for `n > 1`. -/
+theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ < 1) {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal) :
+    Nat.card ↥(W.nonsingularReduction (u.valuation F) ⊓ AddSubgroup.torsionBy W.Point n) ∣ n := by
+  classical
+  -- the reduced curve is singular, and `n` is invertible over the residue field
+  have hΔk : ((integralModel (u.valuation F).valuationSubring W).map
+      (residue (u.valuation F).valuationSubring)).Δ = 0 := by
+    rw [map_Δ, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
+    rwa [← integralModel_Δ_eq (u.valuation F).valuationSubring W,
+      ValuationSubring.algebraMap_apply] at hΔ
+  have hnk : (n : ResidueField (u.valuation F).valuationSubring) ≠ 0 := by
+    rw [← map_natCast (residue _), Ne, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
+    push_cast
+    rwa [← map_natCast (algebraMap A F), HeightOneSpectrum.valuation_lt_one_iff_mem]
+  -- reduction is injective on the `n`-torsion with nonsingular reduction
+  let ρ := (W.nonsingularReductionHom (u.valuation F)).comp
+    (AddSubgroup.inclusion (inf_le_left (b := AddSubgroup.torsionBy W.Point n)))
+  have hρ : Function.Injective ρ := by
+    refine (injective_iff_map_eq_zero ρ).2 fun P hP ↦ ?_
+    have hP' := eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero u hn hP
+      ((AddSubgroup.torsionBy.nsmul_iff (A := W.Point)).1 P.2.2)
+    have hPval := congrArg
+      (fun Q : W.nonsingularReduction (u.valuation F) ↦ (Q : W.Point)) hP'
+    exact Subtype.ext hPval
+  -- and its image consists of `n`-torsion points of the singular reduced curve
+  have hρn (P) : ρ P ∈ AddSubgroup.torsionBy _ n := by
+    have hnP : n • P = 0 := Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.1 P.2.2)
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, hnP, _root_.map_zero]
+  exact (AddSubgroup.card_dvd_of_injective (ρ.codRestrict _ hρn)
+    fun P Q h ↦ hρ (congrArg Subtype.val h)).trans (natCard_torsionBy_dvd_of_Δ_eq_zero hΔk hnk)
+
+/-- **At bad reduction, torsion forces a large index of `E₀`** (Silverman AEC VII.7.1): if the
+integral model of `W` at `u` has singular reduction, then for `n ∉ u` the number of points of
+`W(F)[n]` divides `n · [E(F) : E₀(F)]`, where `E₀(F)` is the subgroup of points with nonsingular
+reduction. -/
+theorem natCard_torsionBy_dvd_mul_index_nonsingularReduction (hΔ : u.valuation F W.Δ < 1) {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal) :
+    Nat.card (AddSubgroup.torsionBy W.Point n) ∣
+      n * (W.nonsingularReduction (u.valuation F)).index := by
+  rw [← (W.nonsingularReduction (u.valuation F)).relIndex_mul_card
+    (AddSubgroup.torsionBy W.Point n), mul_comm n]
+  exact mul_dvd_mul (AddSubgroup.relIndex_dvd_index_of_normal _ _)
+    (natCard_nonsingularReduction_inf_torsionBy_dvd u hΔ hn)
+
+/-- **At bad reduction, full `n`-torsion forces `n` to divide the index of `E₀`** (Silverman AEC
+VII.7.1): if the integral model of `W` at `u` has singular reduction and `W(F)[n]` has `n²` points
+for some `n ∉ u`, then `n` divides `[E(F) : E₀(F)]`. In particular, when that index is finite,
+`n` is at most the index: full torsion of order prime to `u` beyond the index excludes bad
+reduction. -/
+theorem dvd_index_nonsingularReduction (hΔ : u.valuation F W.Δ < 1) {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal) (h : Nat.card (AddSubgroup.torsionBy W.Point n) = n ^ 2) :
+    n ∣ (W.nonsingularReduction (u.valuation F)).index := by
+  have hn0 : n ≠ 0 := by rintro rfl; exact hn (by simp)
+  have := natCard_torsionBy_dvd_mul_index_nonsingularReduction u hΔ hn
+  rw [h, sq] at this
+  exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero hn0)).1 this
+
+end BadReduction
 
 end WeierstrassCurve.Affine.Point
 

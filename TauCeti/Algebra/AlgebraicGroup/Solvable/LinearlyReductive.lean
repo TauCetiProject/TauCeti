@@ -9,9 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.CompletelyReducible
-import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
-import TauCeti.Algebra.Coalgebra.Comodule.Weight.Span
+import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
 
 /-!
 # Connected solvable linearly reductive groups are tori
@@ -52,9 +50,11 @@ group over an algebraically closed field is spanned by its group-like elements. 
 theorem groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable
     (hlr : Coalgebra.IsLinearlyReductive.{u, v, u} k H) :
     Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ = ⊤ := by
-  apply Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_iSup_groupLikeWeightSpace_eq_top
-  intro M
-  apply Comodule.iSup_groupLikeWeightSpace_eq_top_of_isCompletelyReducible
+  refine Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_finite_subcomodule fun N hNfin ↦ ?_
+  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
+  -- A subcomodule and its underlying submodule subtype the same carrier.
+  have _ : Module.Finite k N := hNfin
+  apply Comodule.iSup_groupLikeWeightSpace_eq_top_of_isCompletelyReducible (M := N)
     hlr.isCompletelyReducible
   intro Q hQ
   let _ : AddCommGroup Q := Module.addCommMonoidToAddCommGroup k
@@ -76,20 +76,10 @@ open torusCommHopfAlgProperty
 algebraically closed field is a torus. Smoothness follows from the conclusion. -/
 theorem torusCommHopfAlgProperty_of_isLinearlyReductive_of_isSolvable
     (hlr : linearlyReductiveCommHopfAlgProperty k H.obj) :
-    torusCommHopfAlgProperty k H := by
-  have hdiag : DiagonalizableGroup.groupLikeSpannedProperty k H :=
-    (DiagonalizableGroup.groupLikeSpannedProperty_iff k H).mpr
-      (HopfAlgebra.groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable k H
-        ((linearlyReductiveCommHopfAlgProperty_iff k H.obj).mp hlr))
-  rw [← DiagonalizableGroup.essImage_coordinateRingFunctor] at hdiag
-  obtain ⟨G, ⟨i⟩⟩ := hdiag
-  apply (iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced
-    k H).mpr
-  exact ⟨(multiplicativeTypeCommHopfAlgProperty k).prop_of_iso i
-      (DiagonalizableGroup.multiplicativeType_coordinateRing k G),
-    (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance,
-    (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed k H.obj).mpr
-      inferInstance⟩
+    torusCommHopfAlgProperty k H :=
+  of_groupLikeSetSpan_eq_top H
+    (HopfAlgebra.groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable k H
+      ((linearlyReductiveCommHopfAlgProperty_iff k H.obj).mp hlr))
 
 /-- Among reduced connected solvable affine groups of finite type over an algebraically closed
 field, linear reductivity is equivalent to being a torus, in every characteristic. -/

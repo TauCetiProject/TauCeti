@@ -74,19 +74,23 @@ theorem exists_surjective_presentationClassModuleHom :
   intro f hf hs hc hy hcard
   let X := presentationProfiniteExtension p hg
   let Y := abelianizationProPProfiniteExtension p H W
-  obtain ⟨φ, hφ⟩ := exists_presentationProfiniteExtension_comparison p W hg
+  obtain ⟨φ, hφ⟩ := exists_presentationProfiniteExtension_comparison p hg Y
+    isProP_maximalProPQuotient
   obtain ⟨-, χ, -, hχ, -, hright⟩ :=
     X.exists_surjective_continuousMonoidHom_of_comparison Y φ hφ
       isProP_maximalProPQuotient f hf hs hc hy hcard
-  let q := ContinuousMonoidHom.quotientMk
+  let q := Subgroup.quotientMkContinuousMonoidHom
     (abelianizationProPExtensionKernel p (freeProfiniteGroup ι)
       (lift g : freeProfiniteGroup ι →* H ⧸ W).ker)
-  refine ⟨χ.comp q, hχ.comp QuotientGroup.mk_surjective, MonoidHom.ext fun x ↦ ?_⟩
+  refine ⟨χ.comp q, hχ.comp (fun y ↦ by
+    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective y
+    exact ⟨x, Subgroup.quotientMkContinuousMonoidHom_apply _ x⟩), MonoidHom.ext fun x ↦ ?_⟩
   have h := DFunLike.congr_fun hright (QuotientGroup.mk x)
   rw [MonoidHom.comp_apply, presentationProfiniteExtension_rightHom_mk] at h
   -- The bundled composition has the canonical quotient carrier; expose its evaluation
   -- because simplification of the carrier hides the quotient-map evaluation lemma.
-  change (abelianizationProPExtension p H W).rightHom (χ (QuotientGroup.mk x)) = lift g x
+  change (abelianizationProPExtension p H W).rightHom (χ (q x)) = lift g x
+  simp only [q, Subgroup.quotientMkContinuousMonoidHom_apply]
   exact h
 
 end TauCeti.freeProfiniteGroup

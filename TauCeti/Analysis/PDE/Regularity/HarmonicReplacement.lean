@@ -67,7 +67,7 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
 
 /-- **The energy estimate for the replacement.** Let `a` be measurable and uniformly elliptic on
@@ -75,8 +75,9 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
 `u - w ∈ H¹₀(Ω)`, with `w` a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) = 0`, that is `a(w, v) = 0` for
 every `v ∈ H¹₀(Ω)`. If the functional `v ↦ a(u, v)` on `H¹₀(Ω)` is represented by a field
 `G ∈ L²(Ω; ℝⁿ)` as `a(u, v) = ⟪G, ∇v⟫_{L²}`, then `λ ‖∇(u - w)‖_{L²} ≤ ‖G‖_{L²}`. -/
-theorem UniformlyEllipticOn.mul_norm_gradient_sub_le {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {lam Lam : ℝ} (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u w : W1p mu Omega 2}
     (huw : u - w ∈ w1p0Submodule mu Omega 2)
     (hw : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 w (v : W1p mu Omega 2) = 0)
@@ -112,15 +113,15 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le {a : EuclideanSpace ℝ ι 
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
 everywhere on `Ω` with a function harmonic on `Ω`. No boundary condition on `w` and no regularity
 of `Ω` is assumed. -/
-theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Omega 2}
-    (hw : ∀ φ : 𝓓(Omega, ℝ),
+theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero [DecidableEq ι]
+    {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
       energyFormH1 (fun _ => 1) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 φ) = 0) :
     ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
       (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h := by
   refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
     ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩)
   rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
-    ← hw φ, energyFormH1_const_eq_setIntegral]
+    ← hw φ, energyFormH1_zero_zero_eq_setIntegral]
   simp_rw [real_inner_comm (W1p.gradient w _)]
   rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
   refine integral_congr_ae ?_
@@ -128,7 +129,6 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Om
   rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
   exact EuclideanSpace.inner_eq_star_dotProduct _ _
 
-omit [DecidableEq ι] in
 /-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
 `w ∈ W^{1,p}(Ω)` is weakly harmonic on `Ω`, then the weak gradient of `w` agrees almost
 everywhere on `Ω` with a function `Ω → ℝⁿ` harmonic on `Ω`. -/

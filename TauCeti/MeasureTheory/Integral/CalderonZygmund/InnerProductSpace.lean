@@ -15,7 +15,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
 
 The Calderón–Zygmund theorems
 (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`,
-`ContinuousLinearMap.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`) are stated on
+`TauCeti.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`) are stated on
 `ℝⁿ = ι → ℝ` with the sup distance, because the Calderón–Zygmund decomposition runs on dyadic
 cubes. The singular integral kernels of analysis, such as the second derivatives `D²Gₙ (x - y)` of
 the Newtonian kernel, are instead estimated in the Euclidean distance. This file states the
@@ -44,17 +44,37 @@ estimate extends it to `dist x y' > 2 dist y y'`
 (`TauCeti.norm_sub_le_mul_rpow_of_norm_le_mul_rpow`). The kernel representation is assumed off
 compact sets, rather than off balls of `V`, because a sup-distance ball of `ι → ℝ` is a cube of `V`.
 
+Kernels that are not standard, such as the kernels of the Fourier multipliers of the
+Mihlin–Hörmander theorem, often satisfy only **Hörmander's condition**
+
+`∫_{‖x - y'‖ > 2 ‖y - y'‖} ‖K x y - K x y'‖ dx ≤ B` for all `y`, `y'`.
+
+Without a size estimate, the region `‖x - y'‖ > 2 ‖y - y'‖` cannot be enlarged, so this is used
+with the cancellation condition in coordinates for the dilation factor `2 √n`: the complement of
+the sup-distance ball of radius `2 √n r` around the centre of a cube of `V` lies in the region of
+Hörmander's condition for every point of the cube. The resulting weak type `(1, 1)` and strong
+type `(p, p)` bounds (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`,
+`TauCeti.exists_eLpNorm_le_of_hormander`) have constants depending only on `n`, `p`,
+`B` and a bound for `‖T‖`, so they hold uniformly over families of operators.
+
 ## Main declarations
 
 * `ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow`: an operator on
   `L²(V)` with a standard kernel is of weak type `(1, 1)`.
 * `ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow`: an operator on `L²(V)` such that
   both it and its adjoint have standard kernels is bounded in the `Lᵖ` norm for `1 < p < ∞`.
+* `TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`: operators on `L²(V)` with
+  kernels satisfying Hörmander's condition are of weak type `(1, 1)`, uniformly.
+* `TauCeti.exists_eLpNorm_le_of_hormander`: operators on `L²(V)` such that both they
+  and their adjoints have kernels satisfying Hörmander's condition are bounded in the `Lᵖ` norm
+  for `1 < p < ∞`, uniformly.
 
 ## References
 
 * E. Stein, *Singular Integrals and Differentiability Properties of Functions*, Chapter II, §2.
 * L. Grafakos, *Classical Fourier Analysis*, Sections 5.3 and 5.4.
+* L. Hörmander, *Estimates for translation invariant operators in Lᵖ spaces*, Acta Math. **104**
+  (1960), 93–140.
 -/
 
 public section
@@ -222,6 +242,37 @@ private theorem coordConj_ae_eq_integral
     ← he.integral_comp' (fun z => k (e x) z (g z))]
   exact integral_congr_ae (hge.mono fun z hz => congrArg (k (e x) (e z)) hz)
 
+/-- Conjugating by the coordinate map preserves the operator norm. -/
+private theorem enorm_coordConj
+    (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V)) :
+    ‖coordConj b T‖ₑ = ‖T‖ₑ := by
+  simp only [coordConj, enorm_eq_nnnorm, opNNNorm_linearIsometryEquiv_comp]
+  exact congrArg _ (opNNNorm_comp_linearIsometryEquiv T (lpCoord b E).symm)
+
+/-- A weak type `(1, 1)` bound for `T` in coordinates is a weak type `(1, 1)` bound for `T`, with
+the same constant. -/
+private theorem mul_volume_lt_enorm_le_of_coordConj
+    (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V)) {A : ℝ≥0∞}
+    (hA : ∀ (f : Lp E 2 (volume : Measure (ι → ℝ))) (t : ℝ≥0∞),
+      t * volume {x | t < ‖coordConj b T f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ)
+    (f : Lp E 2 (volume : Measure V)) (t : ℝ≥0∞) :
+    t * volume {x | t < ‖T f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
+  have he := measurePreserving_coord b
+  have h := hA (lpCoord b E f) t
+  -- Transfer the level set of `T' (f ∘ e) = (T f) ∘ e` and the `L¹` norm of `f ∘ e` back to `V`.
+  have hS : MeasurableSet {v | t < ‖T f v‖ₑ} :=
+    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).enorm
+  have hlevel : volume {x | t < ‖coordConj b T (lpCoord b E f) x‖ₑ} =
+      volume {v | t < ‖T f v‖ₑ} := by
+    rw [← he.measure_preimage hS.nullMeasurableSet]
+    refine measure_congr ?_
+    filter_upwards [coeFn_lpCoord b (T f)] with x hx
+    simp only [coordConj_lpCoord, hx, Function.comp_apply, mem_ofPred_eq, mem_preimage]
+  have hnorm : ∫⁻ x, ‖lpCoord b E f x‖ₑ = ∫⁻ v, ‖f v‖ₑ := by
+    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
+      ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
+  rwa [hlevel, hnorm] at h
+
 variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **The cancellation condition in coordinates.** If `T` has a standard kernel on `V`, the
@@ -249,6 +300,67 @@ private theorem exists_cancellation [Nonempty ι]
       (K := fun x y => k (coord b x) (coord b y)) hδ fun x => norm_coord_sub_le b hδ.le hsize hk)
     (coordConj_ae_eq_integral b T hrep)⟩
   exact ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top
+
+/-- **Hörmander's condition in coordinates.** If `T` is given off compact sets by a kernel `k`
+satisfying Hörmander's condition for the distance of `V`, then `T` in coordinates satisfies the
+cancellation condition of the Calderón–Zygmund theorem on `ι → ℝ` with dilation factor `2 √n` and
+the same constant. A sup-distance ball of radius `r` lies in the Euclidean ball of radius `√n r`
+with the same centre, and the complement of the sup-distance ball of radius `2 √n r` lies in the
+complement of the Euclidean ball of radius `2 √n r`, where Hörmander's condition applies. -/
+private theorem setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander
+    (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V))
+    {k : V → V → E →L[ℝ] F} (hkm : StronglyMeasurable (Function.uncurry k)) {B : ℝ≥0∞}
+    (hB : ∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ ≤ B)
+    (hrep : ∀ (f : Lp E 2 (volume : Measure V)) (s : Set V), IsCompact s →
+      (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s → T f x = ∫ z, k x z (f z))
+    (f : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ)
+    (hf : ∀ᵐ x, x ∉ closedBall y r → f x = 0) (hmean : ∫ x, f x = 0) :
+    ∫⁻ x in (closedBall y (2 * NNReal.sqrt (Fintype.card ι) * r))ᶜ, ‖coordConj b T f x‖ₑ ≤
+      B * ∫⁻ x, ‖f x‖ₑ := by
+  set e := coord b
+  set L : ℝ := (NNReal.sqrt (Fintype.card ι) : ℝ)
+  have he := measurePreserving_coord b
+  set g := (lpCoord b E).symm f
+  have hge : g ∘ e =ᵐ[volume] f := by
+    filter_upwards [he.quasiMeasurePreserving.ae_eq_comp (coeFn_lpCoord_symm b f)] with x hx
+    simpa using hx
+  -- `g = f ∘ e⁻¹` vanishes off the Euclidean ball of radius `√n r`, and has integral zero.
+  have hgs : ∀ᵐ v, v ∉ closedBall (e y) (L * r) → g v = 0 := by
+    filter_upwards [coeFn_lpCoord_symm b f, he.symm.quasiMeasurePreserving.ae hf]
+      with v hv hv' hvs
+    rw [hv]
+    refine hv' fun hmem => hvs ?_
+    rw [mem_closedBall] at hmem ⊢
+    calc dist v (e y) = dist (e (e.symm v)) (e y) := by rw [e.apply_symm_apply]
+      _ ≤ L * dist (e.symm v) y := dist_coord_le b _ _
+      _ ≤ L * r := by gcongr
+  have : IsFiniteMeasure (volume.restrict (closedBall (e y) (L * r))) :=
+    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
+  have hg : Integrable g := IntegrableOn.integrable_of_ae_notMem_eq_zero
+    (((Lp.memLp g).restrict _).integrable one_le_two) hgs
+  have hgmean : ∫ v, g v = 0 := by
+    rw [← he.integral_comp' (fun v => g v), ← hmean]
+    exact integral_congr_ae hge
+  have hcanc := TauCeti.setLIntegral_compl_closedBall_enorm_le_of_hormander hkm hB hg hgs hgmean
+    (hrep g _ (isCompact_closedBall _ _) hgs)
+  -- Transfer back to coordinates, where `T` in coordinates is `(T g) ∘ e`.
+  have hsub : (closedBall y (2 * L * r))ᶜ ⊆ e ⁻¹' (closedBall (e y) (2 * (L * r)))ᶜ :=
+    fun x hx hx' => hx <| by
+      rw [mem_closedBall, ← mul_assoc] at hx'
+      exact (dist_le_dist_coord b x y).trans hx'
+  calc ∫⁻ x in (closedBall y (2 * L * r))ᶜ, ‖coordConj b T f x‖ₑ
+      ≤ ∫⁻ x in e ⁻¹' (closedBall (e y) (2 * (L * r)))ᶜ, ‖coordConj b T f x‖ₑ :=
+        lintegral_mono_set hsub
+    _ = ∫⁻ x in e ⁻¹' (closedBall (e y) (2 * (L * r)))ᶜ, ‖T g (e x)‖ₑ := by
+        refine lintegral_congr_ae (ae_restrict_of_ae ?_)
+        filter_upwards [coeFn_lpCoord b (T g)] with x hx
+        rw [coordConj_apply, hx, Function.comp_apply]
+    _ = ∫⁻ v in (closedBall (e y) (2 * (L * r)))ᶜ, ‖T g v‖ₑ :=
+        he.setLIntegral_comp_preimage_emb e.measurableEmbedding (fun v => ‖T g v‖ₑ) _
+    _ ≤ B * ∫⁻ v, ‖g v‖ₑ := hcanc
+    _ = B * ∫⁻ x, ‖f x‖ₑ := by
+        rw [← he.lintegral_comp_emb e.measurableEmbedding]
+        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg enorm hx))
 
 end Coordinates
 
@@ -280,25 +392,45 @@ theorem exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
       t * volume {x | t < ‖T f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
   set b := stdOrthonormalBasis ℝ V
   have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
-  have he := measurePreserving_coord b
   obtain ⟨B, hB, hT⟩ := exists_cancellation b T hkm hδ hsize hk hrep
-  set T' := coordConj b T
-  refine ⟨(2 ^ Fintype.card (Fin (Module.finrank ℝ V)) * (4 * ‖T'‖ₑ ^ 2 + 1) + 4 * B).toNNReal,
-    fun f t => ?_⟩
+  refine ⟨(2 ^ Fintype.card (Fin (Module.finrank ℝ V)) * (4 * ‖coordConj b T‖ₑ ^ 2) +
+    ENNReal.ofReal 2 ^ Fintype.card (Fin (Module.finrank ℝ V)) + 4 * B).toNNReal, ?_⟩
   rw [ENNReal.coe_toNNReal (by finiteness)]
-  have h := mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le T' hT (lpCoord b E f) t
-  -- Transfer the level set of `T' (f ∘ e) = (T f) ∘ e` and the `L¹` norm of `f ∘ e` back to `V`.
-  have hS : MeasurableSet {v | t < ‖T f v‖ₑ} :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).enorm
-  have hlevel : volume {x | t < ‖T' (lpCoord b E f) x‖ₑ} = volume {v | t < ‖T f v‖ₑ} := by
-    rw [← he.measure_preimage hS.nullMeasurableSet]
-    refine measure_congr ?_
-    filter_upwards [coeFn_lpCoord b (T f)] with x hx
-    simp only [T', coordConj_lpCoord, hx, Function.comp_apply, mem_ofPred_eq, mem_preimage]
-  have hnorm : ∫⁻ x, ‖lpCoord b E f x‖ₑ = ∫⁻ v, ‖f v‖ₑ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-      ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
-  rwa [hlevel, hnorm] at h
+  exact mul_volume_lt_enorm_le_of_coordConj b T
+    (mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le (coordConj b T) hT)
+
+/-- **The Calderón–Zygmund theorem on an inner product space under Hörmander's condition**, weak
+type `(1, 1)`, with a constant depending only on the data. Let `V` be a finite-dimensional real
+inner product space of dimension `n ≥ 1`, and let `M` and `B` be finite. There is a constant `A`
+with the following property. Let `T` be a bounded linear operator on `L²(V)` with `‖T‖ ≤ M`, such
+that `T f x = ∫ k x y (f y) dy` for almost every `x` off any compact set outside which `f` vanishes,
+where the kernel `k` satisfies **Hörmander's condition**
+
+`∫_{‖x - y'‖ > 2 ‖y - y'‖} ‖k x y - k x y'‖ dx ≤ B` for all `y`, `y'`.
+
+Then `t · |{‖T f‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. One can take
+`A = 4 · 2ⁿ M² + (2 √n)ⁿ + 4 B`. -/
+theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hormander [Nontrivial V] {M B : ℝ≥0∞}
+    (hM : M ≠ ∞) (hB : B ≠ ∞) :
+    ∃ A : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V))
+      (k : V → V → E →L[ℝ] F), ‖T‖ₑ ≤ M → StronglyMeasurable (Function.uncurry k) →
+      (∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ ≤ B) →
+      (∀ (f : Lp E 2 (volume : Measure V)) (s : Set V), IsCompact s →
+        (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s → T f x = ∫ z, k x z (f z)) →
+      ∀ (f : Lp E 2 (volume : Measure V)) (t : ℝ≥0∞),
+        t * volume {x | t < ‖T f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
+  set b := stdOrthonormalBasis ℝ V
+  have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
+  refine ⟨(2 ^ Fintype.card (Fin (Module.finrank ℝ V)) * (4 * M ^ 2) +
+    ENNReal.ofReal (2 * NNReal.sqrt (Fintype.card (Fin (Module.finrank ℝ V)))) ^
+      Fintype.card (Fin (Module.finrank ℝ V)) + 4 * B).toNNReal,
+    fun T k hTM hkm hk hrep f t => ?_⟩
+  rw [ENNReal.coe_toNNReal (by finiteness)]
+  refine mul_volume_lt_enorm_le_of_coordConj b T (fun g s => ?_) f t
+  refine (mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le (coordConj b T)
+    (setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander b T hkm hk hrep) g s).trans ?_
+  rw [enorm_coordConj]
+  gcongr
 
 variable {H K : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   [NormedAddCommGroup K] [InnerProductSpace ℝ K] [CompleteSpace K] {p : ℝ≥0∞}
@@ -341,9 +473,53 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
   obtain ⟨B, hB, hT⟩ := exists_cancellation b T hkm hδ hsize hk hrep
   obtain ⟨B', hB', hT'⟩ := exists_cancellation b (adjoint T) hk'm hδ' hsize' hk' hrep'
   rw [← adjoint_coordConj] at hT'
-  obtain ⟨A, hA⟩ := (coordConj b T).exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
-    hB hB' hT hT' hp hp_top
+  obtain ⟨A, hA⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
+    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) enorm_ne_top hB hB'
+    hp hp_top
   refine ⟨A, fun f => ?_⟩
-  simpa only [coordConj_lpCoord, eLpNorm_lpCoord] using hA (lpCoord b H f)
+  simpa only [coordConj_lpCoord, eLpNorm_lpCoord] using
+    hA (coordConj b T) le_rfl hT hT' (lpCoord b H f)
+
+
+/-- **The Calderón–Zygmund theorem on an inner product space under Hörmander's condition**, strong
+type `(p, p)` for `1 < p < ∞`, with a constant depending only on the data. Let `V` be a
+finite-dimensional real inner product space of dimension `n ≥ 1`, let `M`, `B` and `B'` be finite,
+and let `1 < p < ∞`. There is a constant `C` with the following property. Let `T` be a bounded
+linear operator on `L²(V)` of Hilbert space valued functions with `‖T‖ ≤ M`. Suppose that `T` and
+its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`: for every
+compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (respectively
+`T† f x = ∫ k' x y (f y) dy`) for almost every `x ∉ s`. Suppose that both kernels satisfy
+**Hörmander's condition**
+
+`∫_{‖x - y'‖ > 2 ‖y - y'‖} ‖k x y - k x y'‖ dx ≤ B` and
+`∫_{‖x - y'‖ > 2 ‖y - y'‖} ‖k' x y - k' x y'‖ dx ≤ B'` for all `y`, `y'`.
+
+Then `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`. Since `C` does not depend on `T`, the theorem applies
+uniformly to families of operators, such as the truncations of a Fourier multiplier. -/
+theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : ℝ≥0∞}
+    (hM : M ≠ ∞) (hB : B ≠ ∞) (hB' : B' ≠ ∞) (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ (T : Lp H 2 (volume : Measure V) →L[ℝ] Lp K 2 (volume : Measure V))
+      (k : V → V → H →L[ℝ] K) (k' : V → V → K →L[ℝ] H), ‖T‖ₑ ≤ M →
+      StronglyMeasurable (Function.uncurry k) → StronglyMeasurable (Function.uncurry k') →
+      (∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ ≤ B) →
+      (∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k' x y - k' x y'‖ₑ ≤ B') →
+      (∀ (f : Lp H 2 (volume : Measure V)) (s : Set V), IsCompact s →
+        (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s → T f x = ∫ z, k x z (f z)) →
+      (∀ (f : Lp K 2 (volume : Measure V)) (s : Set V), IsCompact s →
+        (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s → adjoint T f x = ∫ z, k' x z (f z)) →
+      ∀ f : Lp H 2 (volume : Measure V), eLpNorm (T f) p volume ≤ C * eLpNorm f p volume := by
+  set b := stdOrthonormalBasis ℝ V
+  have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
+  obtain ⟨C, hC⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
+    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K)
+    (2 * NNReal.sqrt (Fintype.card (Fin (Module.finrank ℝ V)))) hM hB hB' hp hp_top
+  refine ⟨C, fun T k k' hTM hkm hk'm hk hk' hrep hrep' f => ?_⟩
+  have hT' :=
+    setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander b (adjoint T) hk'm hk' hrep'
+  rw [← adjoint_coordConj] at hT'
+  simpa only [coordConj_lpCoord, eLpNorm_lpCoord] using
+    hC (coordConj b T) ((enorm_coordConj b T).trans_le hTM)
+      (setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander b T hkm hk hrep) hT'
+      (lpCoord b H f)
 
 end ContinuousLinearMap
