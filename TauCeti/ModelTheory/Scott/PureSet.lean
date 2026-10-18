@@ -53,10 +53,7 @@ theorem selfStabilizesCompletely_empty :
     exact (hat.eq_iff _ _).mp (hg ⟨a i, ⟨i, rfl⟩⟩)
   have hext (x : M) : SameAtomicType (L := Language.empty) (snoc a x) (snoc b (e x)) := by
     have hmap : e ∘ snoc a x = snoc b (e x) := by
-      funext i
-      induction i using Fin.lastCases with
-      | last => simp
-      | cast i => simp [heab]
+      simpa only [(funext heab : e ∘ a = b)] using (Fin.comp_snoc e a x)
     rw [← hmap]
     apply (sameAtomicType_iff _ _).mpr
     exact ⟨fun i j => e.injective.eq_iff.symm, fun r => isEmptyElim r⟩
