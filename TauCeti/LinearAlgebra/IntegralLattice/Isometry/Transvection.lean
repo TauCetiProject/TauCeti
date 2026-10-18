@@ -213,6 +213,13 @@ theorem eichlerTransvection_apply_self (hu : L.integralNorm u = 0) (w : L.evenOr
     eichlerTransvection hu w u = u :=
   transvection_apply_self _ _
 
+/-- An Eichler transvection fixes every vector orthogonal to both `u` and `w`. -/
+@[simp]
+theorem eichlerTransvection_apply_of_form_eq_zero (hu : L.integralNorm u = 0)
+    (w : L.evenOrthogonal u) {x : V} (hxu : L.form x u = 0) (hxw : L.form x w = 0) :
+    eichlerTransvection hu w x = x := by
+  simp [eichlerTransvection_apply, hxu, hxw]
+
 /-- An Eichler transvection has determinant one. -/
 @[simp]
 theorem det_eichlerTransvection (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) :
