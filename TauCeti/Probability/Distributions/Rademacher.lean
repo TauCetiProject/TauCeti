@@ -15,8 +15,7 @@ public import TauCeti.Probability.Quantile
 
 The Rademacher law is the probability measure on `ℝ` assigning equal mass to `-1` and `1`.
 This file gives its masses and support, cumulative distribution and quantile, natural moments,
-and moment- and characteristic-function formulas.  It is implemented as a symmetric Bernoulli
-measure, so integration reduces to Mathlib's finite Bernoulli integral.
+and moment- and characteristic-function formulas.
 -/
 
 public section
@@ -54,6 +53,7 @@ theorem integral_rademacherMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpa
   norm_num
 
 /-- Every function is integrable with respect to the finitely supported Rademacher law. -/
+@[simp]
 theorem integrable_rademacherMeasure {E : Type*} [NormedAddCommGroup E] (f : ℝ → E) :
     Integrable f rademacherMeasure := by
   rw [rademacherMeasure]
@@ -122,6 +122,7 @@ theorem cdf_rademacherMeasure (x : ℝ) :
 
 /-- The interior lower quantile of the Rademacher law is `-1` on the lower half of the unit
 interval and `1` on the upper half. -/
+@[simp]
 theorem quantile_rademacherMeasure {u : ℝ} (hu : u ∈ Ioo 0 1) :
     rademacherMeasure.quantile u = if u ≤ 1 / 2 then -1 else 1 := by
   split_ifs with hu_half
@@ -221,6 +222,7 @@ theorem charFun_rademacherMeasure (t : ℝ) :
   norm_num only [Complex.ofReal_neg, Complex.ofReal_one]
   rw [Complex.real_smul, Complex.real_smul]
   push_cast
+  -- Normalize the exponent at `-1` into the negated exponent used by `Complex.cos`.
   rw [show (t : ℂ) * -1 * Complex.I = -((t : ℂ) * Complex.I) by ring]
   ring_nf
 
