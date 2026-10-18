@@ -16,7 +16,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 For squarefree `N`, the corrected series `E₂(z) - d E₂(dz)`, indexed by divisors `d > 1`
 of `N`, span a complement to `S₂(Γ₀(N))` in `M₂(Γ₀(N))`. Thus every weight-two form is a
 unique sum of a cusp form and a linear combination of these corrected series, and the
-codimension of the cusp space is the number of divisors of `N` minus one.
+codimension of the cusp space is the number of divisors of `N` minus one, as stated in
+`TauCeti.finrank_weight_two_Gamma0_of_squarefree`.
 
 The boundary vectors of the corrected series are already known to be independent.
 At squarefree level there is one cusp per divisor, and the residue relation cuts the

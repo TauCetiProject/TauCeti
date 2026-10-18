@@ -13,7 +13,9 @@ import Mathlib.Data.Nat.Squarefree
 # Constant terms at squarefree level
 
 For squarefree `N`, a cusp of `Γ₀(N)` is determined by the gcd of its denominator with `N`.
-Consequently constant terms at the representatives `1/d`, for `d ∣ N`, detect cuspidality.
+Consequently `TauCeti.constantTermsAtDivisors`, recording the constant terms at the
+representatives `1/d` for `d ∣ N`, detects cuspidality:
+`TauCeti.ker_constantTermsAtDivisors_of_squarefree` identifies its kernel with the cusp space.
 The map recording these constant terms has proper image in weight two, by the residue
 relation. These facts allow boundary interpolation by corrected Eisenstein series.
 
