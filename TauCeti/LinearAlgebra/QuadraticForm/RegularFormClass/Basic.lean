@@ -52,8 +52,6 @@ rank is additive.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
 * `TauCeti.formClass_eq_zero_iff`: a regular form has zero class exactly when its space has
   dimension zero.
-* `QuadraticForm.equivalent_zero_iff_finrank_eq_zero`: a form is isometric to the
-  canonical zero-dimensional form exactly when its space has dimension zero.
 * `TauCeti.formClass_lift_radical_eq_of_equivalent`: equivalent forms have equal regular quotient
   classes.
 * `TauCeti.formClass_lift_radical_eq`: a zero-plus-regular splitting computes the regular quotient
@@ -713,27 +711,6 @@ dimension zero. -/
 theorem formClass_eq_zero_iff (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     formClass Q hQ = 0 ↔ Module.finrank K V = 0 := by
   rw [← RegularFormClass.rank_eq_zero_iff, rank_formClass]
-
-/-- A quadratic form is isometric to the canonical zero-dimensional form exactly when
-its underlying space has dimension zero. -/
-@[simp]
-theorem _root_.QuadraticForm.equivalent_zero_iff_finrank_eq_zero
-    (Q : QuadraticForm K V) :
-    Q.Equivalent (0 : QuadraticForm K (Fin 0 → K)) ↔ Module.finrank K V = 0 := by
-  constructor
-  · rintro ⟨e⟩
-    simpa using e.toLinearEquiv.finrank_eq
-  · intro h
-    let _ := Module.finrank_zero_iff.mp h
-    have hQ : Q.Nondegenerate := by
-      rw [QuadraticMap.nondegenerate_iff_radical_eq_bot]
-      exact Submodule.eq_bot_of_subsingleton
-    have hzero : (0 : QuadraticForm K (Fin 0 → K)).Nondegenerate := by
-      rw [QuadraticMap.nondegenerate_iff_radical_eq_bot]
-      exact Submodule.eq_bot_of_subsingleton
-    rw [← formClass_eq_iff Q hQ 0 hzero]
-    exact (formClass_eq_zero_iff Q hQ).2 h |>.trans <|
-      ((formClass_eq_zero_iff 0 hzero).2 (by simp)).symm
 
 /-- The class of an orthogonal product is the sum of the classes. -/
 @[simp]
