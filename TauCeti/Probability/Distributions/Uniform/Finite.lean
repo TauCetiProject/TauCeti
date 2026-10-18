@@ -19,12 +19,12 @@ uniform measures to uniform measures on their images.
 
 ## Main results
 
-* `ProbabilityTheory.uniformOn_coe_finset_eq_uniformOfFinset`: the conditional-counting and
+* `TauCeti.Probability.uniformOn_coe_finset_eq_uniformOfFinset`: the conditional-counting and
   finite Dirac-sum constructions agree.
-* `ProbabilityTheory.integral_uniformOn_finset`: integration against a finite uniform law is a
+* `TauCeti.Probability.integral_uniformOn_finset`: integration against a finite uniform law is a
   normalized finite sum.
-* `ProbabilityTheory.map_uniformOn_of_bijOn`: a measurable bijection pushes a finite uniform law
-  to the uniform law on its target.
+* `TauCeti.Probability.map_uniformOn_of_bijOn`: a bijection between finite sets pushes a finite
+  uniform law to the uniform law on its target.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
 -/
@@ -33,10 +33,10 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory Set
 open scoped ENNReal
 
-namespace ProbabilityTheory
+namespace TauCeti.Probability
 
 variable {α β E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
@@ -96,19 +96,26 @@ theorem integral_uniformOn_univ [Fintype α] [NormedAddCommGroup E] [NormedSpace
       (Fintype.card α : ℝ)⁻¹ • ∑ x, f x := by
   simpa using integral_uniformOn_finset (Finset.univ : Finset α) f
 
-variable [MeasurableSpace β] [MeasurableSingletonClass β]
+variable [MeasurableSpace β]
 
-/-- A measurable bijection between finite sets transports one uniform law to the other. -/
+/-- Every function is almost everywhere measurable against a uniform law on a finite set. -/
+theorem aemeasurable_uniformOn_finset (s : Finset α) (f : α → β) :
+    AEMeasurable f (uniformOn (s : Set α)) := by
+  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset, ← Measure.sum_coe_finset]
+  exact aemeasurable_sum_measure_iff.2 fun _ ↦ aemeasurable_dirac.smul_measure _
+
+variable [MeasurableSingletonClass β]
+
+/-- A bijection between finite sets transports one uniform law to the other. -/
 theorem map_uniformOn_of_bijOn {f : α → β} {s : Set α} {t : Set β} (hs : s.Finite)
-    (hf : Measurable f) (h : Set.BijOn f s t) : (uniformOn s).map f = uniformOn t := by
+    (h : Set.BijOn f s t) : (uniformOn s).map f = uniformOn t := by
   have ht : t.Finite := h.image_eq ▸ hs.image f
+  have hf : AEMeasurable f (uniformOn s) := by
+    simpa using aemeasurable_uniformOn_finset hs.toFinset f
   ext t' ht'
-  have hinter : Set.BijOn f (s ∩ f ⁻¹' t') (t ∩ t') := by
-    refine ⟨fun x hx ↦ ⟨h.mapsTo hx.1, hx.2⟩, h.injOn.mono inter_subset_left, ?_⟩
-    rintro y ⟨hy, hyt'⟩
-    obtain ⟨x, hx, rfl⟩ := h.surjOn hy
-    exact ⟨x, ⟨hx, hyt'⟩, rfl⟩
-  rw [Measure.map_apply hf ht', uniformOn, cond_apply hs.measurableSet,
+  have hinter : Set.BijOn f (s ∩ f ⁻¹' t') (t ∩ t') :=
+    h.inter_mapsTo (fun _ hx ↦ hx) Set.inter_subset_right
+  rw [Measure.map_apply_of_aemeasurable hf ht', uniformOn, cond_apply hs.measurableSet,
     uniformOn, cond_apply ht.measurableSet]
   rw [Measure.count_apply hs.measurableSet, Measure.count_apply ht.measurableSet,
     Measure.count_apply (hs.inter_of_left _).measurableSet,
@@ -116,26 +123,22 @@ theorem map_uniformOn_of_bijOn {f : α → β} {s : Set α} {t : Set β} (hs : s
   rw [Set.encard_congr h.equiv, Set.encard_congr hinter.equiv]
 
 /-- An embedding transports the uniform law on a finite set to the uniform law on its image. -/
-theorem map_uniformOn_finset (e : α ↪ β) (he : Measurable e) (s : Finset α) :
+theorem map_uniformOn_finset (e : α ↪ β) (s : Finset α) :
     (uniformOn (s : Set α)).map e = uniformOn (s.map e : Finset β) := by
   simpa only [Finset.coe_map] using
-    map_uniformOn_of_bijOn s.finite_toSet he e.injective.injOn.bijOn_image
+    map_uniformOn_of_bijOn s.finite_toSet e.injective.injOn.bijOn_image
 
 /-- A bijection transports the uniform law on a finite type to the uniform law on its codomain. -/
 theorem map_uniformOn_univ (e : α ≃ β) [Finite α] :
     (uniformOn (Set.univ : Set α)).map e = uniformOn (Set.univ : Set β) := by
-  exact map_uniformOn_of_bijOn Set.finite_univ (measurable_of_finite e) e.bijective.bijOn_univ
-
-end ProbabilityTheory
-
-namespace TauCeti.Probability
+  exact map_uniformOn_of_bijOn Set.finite_univ e.bijective.bijOn_univ
 
 /-- The uniform measure on all of a nonempty finite type is a probability measure. -/
 instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [Nonempty α]
     [MeasurableSpace α] [MeasurableSingletonClass α] :
     IsProbabilityMeasure (Measure.uniformOfFinset (Finset.univ : Finset α)) := by
-  rw [← ProbabilityTheory.uniformOn_coe_finset_eq_uniformOfFinset]
-  simpa using ProbabilityTheory.isProbabilityMeasure_uniformOn
+  rw [← uniformOn_coe_finset_eq_uniformOfFinset]
+  simpa using isProbabilityMeasure_uniformOn
     (s := (Set.univ : Set α)) Set.finite_univ Set.univ_nonempty
 
 /-- Two independent uniform samples from `Fin 2` differ with probability `1 / 2`. -/
