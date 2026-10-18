@@ -412,6 +412,16 @@ theorem quotientLieEquiv_apply_coe (I : HopfIdeal R H)
     (LieHom.equivRangeOfInjective_apply (quotientLieHom (B := B) I)
       (quotientLieHom_injective I) d)
 
+/-- Descending a tangent vector through a quotient identifies membership in the tangent Lie
+algebra cut out by a mapped Hopf ideal with membership in the original tangent Lie algebra. -/
+theorem quotientLieEquiv_symm_mem_lieSubalgebra_map_iff (I J : HopfIdeal R H)
+    (d : lieSubalgebra (B := B) I) :
+    (quotientLieEquiv I).symm d ∈
+        (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).lieSubalgebra ↔
+      d.val ∈ J.lieSubalgebra := by
+  rw [lieSubalgebra_map, LieSubalgebra.mem_comap, derivationCompLieHom_apply,
+    ← quotientLieHom_apply, ← quotientLieEquiv_apply_coe, LieEquiv.apply_symm_apply]
+
 /-- The inverse of the canonical Lie equivalence descends an ambient derivation by evaluating
 on representatives of the quotient. -/
 @[simp]

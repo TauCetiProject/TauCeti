@@ -504,6 +504,19 @@ theorem C_mul_X_pow_eq_monomial (a : R) (n : ℕ) :
     C (σ := σ) (δ := δ) a * X ^ n = monomial n a := by
   rw [X_pow_eq_monomial, C_mul_monomial, mul_one]
 
+/-- Induction on an Ore polynomial through the constants, the variable, sums and products. -/
+@[elab_as_elim]
+theorem induction_on_mul {P : OreExtension σ δ → Prop} (p : OreExtension σ δ)
+    (C : ∀ a, P (C a)) (X : P X) (add : ∀ p q, P p → P q → P (p + q))
+    (mul : ∀ p q, P p → P q → P (p * q)) : P p := by
+  have hpow (n : ℕ) : P (OreExtension.X ^ n) := by
+    induction n with
+    | zero => simpa using C 1
+    | succ n ih => simpa [pow_succ] using mul _ _ ih X
+  induction p using induction_on with
+  | zero => simpa using C 0
+  | add n a p _ _ ih => simpa using add _ _ (mul _ _ (C a) (hpow n)) ih
+
 /-- Multiplication by the variable has the skew-derivation coefficient recursion. -/
 @[simp]
 theorem X_mul_monomial (n : ℕ) (a : R) :

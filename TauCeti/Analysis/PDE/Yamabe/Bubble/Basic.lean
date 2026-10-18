@@ -46,6 +46,9 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_pos`, `TauCeti.Yamabe.contDiff_bubble`: positivity and smoothness.
 * `TauCeti.Yamabe.bubble_zero_sub`, `TauCeti.Yamabe.bubble_zero_smul`: every bubble is a
   translate of a rescaled standard bubble `U_{1,0}`.
+* `TauCeti.Yamabe.bubble_rpow_criticalExponent`: the critical power of a bubble.
+* `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of
+  a bubble and the square of the norm of its differential.
 * `TauCeti.Yamabe.laplacian_div_add_norm_sub_sq_rpow`: the Laplacian of an arbitrary real power
   of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)`.
 * `TauCeti.Yamabe.laplacian_bubble`: `Δ U_{t,b} = -(n (n - 2) / 4) U_{t,b} ^ (pₙ - 1)`.
@@ -64,7 +67,7 @@ noncomputable section
 
 namespace TauCeti.Yamabe
 
-open InnerProductSpace Laplacian
+open InnerProductSpace Laplacian Module
 open scoped Gradient
 
 /-- The exponent `pₙ = 2 n / (n - 2)`; for `n > 2` it is the critical Sobolev exponent of `H¹` in
@@ -130,6 +133,75 @@ theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
     field_simp
   rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow (inv_nonneg.mpr ht.le) (by positivity),
     Real.inv_rpow ht.le, Real.rpow_neg ht.le]
+
+/-- In dimension `n ≠ 2`, the critical power of a bubble is
+`U_{t,b} ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`. -/
+theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 0 < t) (b x : E) :
+    bubble t b x ^ criticalExponent (finrank ℝ E) =
+      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
+  rw [bubble_apply, criticalExponent_def, ← Real.rpow_mul (by positivity),
+    ← Real.rpow_natCast _ (finrank ℝ E)]
+  congr 1
+  field_simp
+
+section Gradient
+
+variable [CompleteSpace E]
+
+/-- **The gradient of a bubble**:
+`∇U_{t,b}(x) = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) (x - b)`, where `n` is the dimension of
+`E`. -/
+theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+    HasGradientAt (bubble t b)
+      (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b)) x := by
+  set k : ℝ := ((finrank ℝ E : ℝ) - 2) / 2
+  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
+  -- Write the bubble as `F ∘ q` with `q y = t² + ‖y - b‖²` and `F s = (2 t s⁻¹) ^ k`.
+  have hq : HasFDerivAt (fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2) (toDual ℝ E ((2 : ℝ) • (x - b))) x := by
+    refine (((hasStrictFDerivAt_norm_sq (x - b)).hasFDerivAt.comp x
+      ((hasFDerivAt_id x).sub_const b)).const_add (t ^ 2)).congr_fderiv ?_
+    ext v
+    simp
+  have hF : HasDerivAt (fun s : ℝ ↦ (2 * t * s⁻¹) ^ k)
+      (2 * t * -((t ^ 2 + ‖x - b‖ ^ 2) ^ 2)⁻¹ * k * (2 * t * (t ^ 2 + ‖x - b‖ ^ 2)⁻¹) ^ (k - 1))
+      (t ^ 2 + ‖x - b‖ ^ 2) :=
+    ((hasDerivAt_inv hQ.ne').const_mul (2 * t)).rpow_const (Or.inl (by positivity))
+  have hU : bubble t b = (fun s : ℝ ↦ (2 * t * s⁻¹) ^ k) ∘ fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2 := by
+    funext y
+    simp [bubble_apply, div_eq_mul_inv, k]
+  have h := hF.comp_hasFDerivAt x hq
+  rw [← hU, ← map_smul, smul_smul] at h
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine h.congr_fderiv ?_
+  congr 2
+  rw [bubble_apply, div_eq_mul_inv,
+    Real.rpow_sub_one (by positivity : 2 * t * (t ^ 2 + ‖x - b‖ ^ 2)⁻¹ ≠ 0)]
+  simp only [k]
+  field_simp
+
+/-- The gradient of a bubble, as a value of `gradient`. -/
+theorem gradient_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+    ∇ (bubble t b) x =
+      -(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b) :=
+  (hasGradientAt_bubble ht b x).gradient
+
+/-- The squared norm of the differential of a bubble is the radial function
+`((n - 2) / (2 t)) ² ‖x - b‖² (2 t / (t² + ‖x - b‖²)) ^ n`. -/
+theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
+    ‖fderiv ℝ (bubble t b) x‖ ^ 2 = (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * ‖x - b‖ ^ 2 *
+      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
+  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
+  have hU2 : bubble t b x ^ 2 =
+      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E / (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ 2 := by
+    have ha : 0 < 2 * t / (t ^ 2 + ‖x - b‖ ^ 2) := by positivity
+    rw [bubble_apply, ← Real.rpow_mul_natCast ha.le, show ((finrank ℝ E : ℝ) - 2) / 2 * (2 : ℕ) =
+      (finrank ℝ E : ℝ) - 2 by push_cast; ring, Real.rpow_sub ha, Real.rpow_natCast, Real.rpow_two]
+  rw [(hasGradientAt_bubble ht b x).hasFDerivAt.fderiv, LinearIsometryEquiv.norm_map, norm_smul,
+    mul_pow, norm_neg, Real.norm_eq_abs, sq_abs, mul_pow, hU2]
+  field_simp
+
+end Gradient
 
 variable [FiniteDimensional ℝ E]
 

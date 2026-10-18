@@ -114,6 +114,21 @@ theorem mapValue_conjugate {C : Type*} [CommSemiring C] [Algebra R C]
     mapValue_pointsHom, constPoint_apply, ← AlgHom.mapValue_apply, AlgHom.mapValue_comp,
     MonoidHom.comp_apply]
 
+/-- Evaluating generic conjugation at the Laurent parameter one recovers the original point. -/
+theorem mapValue_laurentEval_one_conjugate (g : WithConv (H →ₐ[R] A)) :
+    AlgHom.mapValue ((laurentEval (R := A) (1 : Aˣ)).restrictScalars R)
+      (conjugate A l g) = g := by
+  set e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
+  rw [mapValue_conjugate]
+  have hu : Units.map e.toMonoidHom (LaurentPolynomial.genericUnit A) = 1 := by
+    ext
+    simp [e]
+  have hc : e.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) = AlgHom.id R A := by
+    ext a
+    simp [e]
+  rw [hu, hc]
+  simp
+
 /-- **Conjugation by the generic point is natural in the value algebra.** -/
 theorem mapValue_conjugate_mapAlgHom (g : WithConv (H →ₐ[R] A)) :
     AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (conjugate A l g) =
@@ -184,6 +199,21 @@ theorem limit_apply_eq_coeff_conjugate (g : parabolic A l) (h : H) :
     ← Polynomial.coeff_zero_eq_eval_zero, LaurentPolynomial.coeff_toLaurent]
   exact (Finsupp.mapDomain_apply_of_injective
     (Nat.castEmbedding (R := ℤ)).injective _ 0).symm
+
+/-- Evaluating the extending conjugation family at one recovers the original point. -/
+@[simp]
+theorem toConv_aeval_one_comp_extend (g : parabolic A l) :
+    toConv (((Polynomial.aeval (1 : A)).restrictScalars R).comp (extend A l g).ofConv) =
+      g.1 := by
+  rw [← AlgHom.mapValue_apply]
+  let e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
+  have he : e.comp (Polynomial.toLaurentAlg.restrictScalars R) =
+      (Polynomial.aeval (1 : A)).restrictScalars R := by
+    ext a <;> simp [e]
+  rw [← he, AlgHom.mapValue_comp, MonoidHom.comp_apply,
+    AlgHom.mapValue_apply (Polynomial.toLaurentAlg.restrictScalars R),
+    ← ofPolyPoint_apply, ofPolyPoint_extend]
+  exact mapValue_laurentEval_one_conjugate l g.1
 
 /-! ### The Levi and unipotent parts -/
 
@@ -480,6 +510,16 @@ theorem conj_mem_unipotent {p u : WithConv (H →ₐ[R] A)} (hp : p ∈ paraboli
   have hsplit : (⟨p * u * p⁻¹, hmem⟩ : parabolic A l) =
       (⟨p, hp⟩ : parabolic A l) * ⟨u, huP⟩ * (⟨p, hp⟩ : parabolic A l)⁻¹ := rfl
   rw [hsplit, map_mul, map_mul, map_inv, hu1, mul_one, mul_inv_cancel]
+
+/-- Generic conjugation carries a dynamic unipotent point to a dynamic unipotent point
+with Laurent-polynomial values. -/
+theorem conjugate_mem_unipotent {g : WithConv (H →ₐ[R] A)} (hg : g ∈ unipotent A l) :
+    conjugate A l g ∈ unipotent (LaurentPolynomial A) l := by
+  rw [conjugate_apply, genericPoint_eq_pointsHom]
+  apply conj_mem_unipotent
+    (levi_le_parabolic (pointsHom_mem_levi (LaurentPolynomial.genericUnit A)))
+  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
+    unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
 
 /-- The Levi decomposition of a point of the dynamic parabolic is unique. -/
 theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R] A)}

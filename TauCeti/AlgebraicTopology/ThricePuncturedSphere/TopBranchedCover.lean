@@ -417,7 +417,7 @@ associated connected covers of the thrice-punctured sphere. -/
 def connectedCoverIso (ι : Iso X Y) : X.connectedCover.cover ≅ Y.connectedCover.cover :=
   CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo ι.connectedCoverHomeomorph) (by
     ext1 z
-    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_coe,
+    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_ofClass,
       ← Y.restrict_connectedCoverHomeomorph, ← X.restrict_connectedCoverHomeomorph]
     simp only [connectedCoverHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply,
       ι.restrict_restrict])
