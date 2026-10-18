@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Field.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Theorem
 
 import TauCeti.Data.Int.MaxAbs
+import TauCeti.RingTheory.Algebraic.Basic
 
 /-!
 # Roth's theorem for binary forms
@@ -190,29 +191,9 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     simp
   -- The roots of `F(X, 1)` are algebraic.
   have halg : ∀ α ∈ (MvPolynomial.aeval ![Polynomial.X, 1] (F.map (Int.castRingHom ℂ)) :
-      ℂ[X]).roots, IsAlgebraic ℚ α := by
-    have hmap : ∀ P : MvPolynomial (Fin 2) ℤ,
-        MvPolynomial.aeval ![Polynomial.X, 1] (P.map (Int.castRingHom ℂ)) =
-          (MvPolynomial.aeval ![Polynomial.X, 1] P : ℤ[X]).map (Int.castRingHom ℂ) := fun P ↦ by
-      rw [← Polynomial.coe_mapRingHom, MvPolynomial.map_aeval, MvPolynomial.aeval_def,
-        MvPolynomial.eval₂_map]
-      congr 1
-      · ext n
-        simp
-      · funext i
-        fin_cases i <;> simp
-    intro α hα
-    rw [hmap] at hα
-    set f : ℤ[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
-    have hroot : α ∈ f.rootSet ℂ := by
-      rw [Polynomial.mem_rootSet']
-      have hfmap : f.map (Int.castRingHom ℂ) ≠ 0 := Polynomial.ne_zero_of_mem_roots hα
-      rw [Polynomial.mem_roots hfmap] at hα
-      exact ⟨hfmap, by
-        simpa [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, algebraMap_int_eq] using hα⟩
-    have hinj : Function.Injective (algebraMap ℤ ℚ) := Int.cast_injective
-    exact (isAlgebraic_of_mem_rootSet hroot).extendScalars (R := ℤ) (S := ℚ)
-      hinj
+      ℂ[X]).roots, IsAlgebraic ℚ α := fun α hα ↦ by
+    rw [MvPolynomial.aeval_X_one_map, ← algebraMap_int_eq] at hα
+    exact (isAlgebraic_of_mem_aroots hα).extendScalars (R := ℤ) Int.cast_injective
   -- Each linear factor satisfies Roth's inequality: `X₁` trivially, `X₀ - α X₁` by Roth's theorem.
   have hL : ∀ ℓ ∈ T, ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, ℓ.1 * x + ℓ.2 * y ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖ℓ.1 * x + ℓ.2 * y‖ := by

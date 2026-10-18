@@ -43,6 +43,8 @@ at integer points.
   `Polynomial.nodup_roots_of_not_sq_dvd_homogenize`: if neither `X₁ ^ 2` nor any
   `(X₀ - a X₁) ^ 2` divides the homogenization of degree `n ≥ natDegree p`, then
   `n ≤ natDegree p + 1` and the roots of `p` are simple.
+* `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
+  coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
   squared linear factor, whose dehomogenization splits, is `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` for `d`
   pairwise non-proportional linear forms.
@@ -137,6 +139,18 @@ end Polynomial
 namespace MvPolynomial
 
 open Finset
+
+/-- The dehomogenization `F(X, 1)` of a binary form commutes with mapping the coefficients along a
+ring homomorphism `φ`. -/
+theorem aeval_X_one_map {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R →+* S)
+    (F : MvPolynomial (Fin 2) R) :
+    aeval ![Polynomial.X, 1] (F.map φ) = (aeval ![Polynomial.X, 1] F : Polynomial R).map φ := by
+  rw [← Polynomial.coe_mapRingHom, map_aeval, aeval_def, eval₂_map]
+  congr 1
+  · ext n
+    simp
+  · funext i
+    fin_cases i <;> simp
 
 /-- **Splitting of binary forms.** Let `F ≠ 0` be a binary form of degree `d` over a domain, with
 no squared linear factor, whose dehomogenization `F(X, 1)` has as many roots as its degree (for
