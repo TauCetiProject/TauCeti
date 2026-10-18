@@ -123,7 +123,7 @@ theorem fixingSubgroup_fixedField_gc :
         (IntermediateField.fixingSubgroup : IntermediateField K M → Subgroup (M ≃ₐ[K] M)))
       ((IntermediateField.fixedField : Subgroup (M ≃ₐ[K] M) → IntermediateField K M) ∘
         OrderDual.ofDual) :=
-  fun E H ↦ (IntermediateField.le_iff_le H.ofDual E).symm
+  fun E H ↦ (IntermediateField.le_fixedField_iff_le_fixingSubgroup H.ofDual E).symm
 
 /-- An intermediate field is the fixed field of its fixers whenever the extension above it
 is Galois. No Galois or algebraicity assumption on the original base is needed. -/
@@ -137,7 +137,7 @@ theorem fixedField_fixingSubgroup (E : IntermediateField K M) [IsGalois E M] :
         hx _ (E.fixingSubgroupEquiv.symm σ).2
     obtain ⟨y, rfl⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed (k := E) x).mpr hfixed
     exact y.2
-  · exact (le_iff_le _ _).mpr le_rfl
+  · exact (le_fixedField_iff_le_fixingSubgroup _ _).mpr le_rfl
 
 /-- **A finite group of automorphisms is the whole fixing subgroup of its fixed field.** Every
 `K`-automorphism of `M` that fixes `M ^ H` pointwise already lies in `H`.
@@ -148,7 +148,7 @@ finite automorphism group, so every subgroup of it is finite. Finiteness of `H` 
 infinite extension `M / K` can still supply. -/
 theorem fixingSubgroup_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     fixingSubgroup (fixedField H) = H := by
-  refine le_antisymm (fun σ hσ ↦ ?_) ((le_iff_le _ _).mp le_rfl)
+  refine le_antisymm (fun σ hσ ↦ ?_) ((le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl)
   rw [mem_fixingSubgroup_iff] at hσ
   obtain ⟨g, hg⟩ := FixedPoints.toAlgAut_surjective H M
     (AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) fun x ↦ hσ x x.2)
@@ -263,7 +263,7 @@ theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
   ext σ
   rw [Subgroup.mem_iInf]
   exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
-    by simp [← Subgroup.zpowers_le, ← IntermediateField.le_iff_le]⟩
+    by simp [← Subgroup.zpowers_le, ← IntermediateField.le_fixedField_iff_le_fixingSubgroup]⟩
 
 /-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
 `E` is the join of the simple extensions it contains, each of them finite over `K`, so
@@ -342,7 +342,7 @@ instance finite_fixingSubgroup (E : IntermediateField K M) [FiniteDimensional E 
 theorem finite_of_finiteDimensional_fixedField (H : Subgroup (M ≃ₐ[K] M))
     [FiniteDimensional (fixedField H) M] : Finite H :=
   letI := finite_fixingSubgroup (fixedField H)
-  have hH : H ≤ fixingSubgroup (fixedField H) := (le_iff_le _ _).mp le_rfl
+  have hH : H ≤ fixingSubgroup (fixedField H) := (le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl
   .of_injective (Set.inclusion hH) (Set.inclusion_injective hH)
 
 /-- **The fixing subgroup of an intermediate field of finite degree is no larger than that

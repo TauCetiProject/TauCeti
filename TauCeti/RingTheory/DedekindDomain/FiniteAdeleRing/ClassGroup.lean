@@ -30,6 +30,8 @@ the everywhere-integral units together with the principal finite ideles.
   the invertible fractional ideals whose multiplicity at `v` is the `v`-adic order.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits`: the finite ideles whose components are units of
   the local integers at every place, that is, the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits`: the finite ideles whose components are local
+  units away from a prescribed set of places.
 * `IsDedekindDomain.FiniteAdeleRing.toClassGroup`: the induced homomorphism to `ClassGroup R`.
 
 ## Main results
@@ -39,6 +41,8 @@ the everywhere-integral units together with the principal finite ideles.
   of `toFractionalIdeal`.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits_eq_units_integralAdeles`: the
   everywhere-integral units are the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_units_sIntegralAdeles`: the analogous
+  description of the `S`-integral units.
 * `IsDedekindDomain.FiniteAdeleRing.toFractionalIdeal_surjective` and
   `IsDedekindDomain.FiniteAdeleRing.ker_toFractionalIdeal`: the fractional-ideal map is surjective
   with kernel the everywhere-integral units, so the invertible fractional ideals are the quotient
@@ -255,27 +259,100 @@ def integralUnits : Subgroup 𝔸ᶠ[R, K]ˣ where
     x ∈ integralUnits R K ↔ ∀ v : HeightOneSpectrum R, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 :=
   Iff.rfl
 
+/-! ### The `S`-integral units -/
+
+variable (R K) in
+/-- The **`S`-integral finite ideles**: the finite ideles whose components are units of the local
+integers at every place outside `S`. These are the unit group of the `S`-integral finite adeles
+`∏_{v ∈ S} K_v × ∏_{v ∉ S} 𝒪_v`. -/
+def sIntegralUnits (S : Set (HeightOneSpectrum R)) : Subgroup 𝔸ᶠ[R, K]ˣ where
+  carrier := {x | ∀ v ∉ S, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1}
+  one_mem' v _ := by rw [Units.val_one, one_apply, map_one]
+  mul_mem' hx hy v hv := by rw [Units.val_mul, mul_apply, map_mul, hx v hv, hy v hv, one_mul]
+  inv_mem' {x} hx v hv := by rw [valued_coe_units_inv_apply, hx v hv, inv_one]
+
+/-- A finite idele is `S`-integral exactly when its components outside `S` have valuation one. -/
+@[simp]
+theorem mem_sIntegralUnits_iff {S : Set (HeightOneSpectrum R)} {x : 𝔸ᶠ[R, K]ˣ} :
+    x ∈ sIntegralUnits R K S ↔
+      ∀ v ∉ S, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 :=
+  Iff.rfl
+
+variable (R K) in
+/-- The `∅`-integral finite ideles are the everywhere-integral units. -/
+@[simp]
+theorem sIntegralUnits_empty : sIntegralUnits R K ∅ = integralUnits R K := by
+  ext x
+  simp
+
+variable (R K) in
+/-- Every finite idele is integral outside the set of all finite places. -/
+@[simp]
+theorem sIntegralUnits_univ : sIntegralUnits R K Set.univ = ⊤ := by
+  ext x
+  simp
+
+variable (R K) in
+/-- Allowing more non-integral places gives a larger group of `S`-integral finite ideles. -/
+theorem sIntegralUnits_mono : Monotone (sIntegralUnits R K) :=
+  fun _ _ hST _ hx v hv ↦ hx v fun hvS ↦ hv (hST hvS)
+
+/-- A finite idele is `S`-integral exactly when both it and its inverse are `S`-integral finite
+adeles. -/
+theorem mem_sIntegralUnits_iff_mem_sIntegralAdeles
+    {S : Set (HeightOneSpectrum R)} {x : 𝔸ᶠ[R, K]ˣ} :
+    x ∈ sIntegralUnits R K S ↔
+      (x : 𝔸ᶠ[R, K]) ∈ sIntegralAdeles R K S ∧
+        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) ∈ sIntegralAdeles R K S := by
+  simp only [mem_sIntegralUnits_iff, mem_sIntegralAdeles, valued_coe_units_inv_apply,
+    mem_adicCompletionIntegers]
+  constructor
+  · intro h
+    exact ⟨fun v hv ↦ (h v hv).le, fun v hv ↦ by rw [h v hv, inv_one]⟩
+  · rintro ⟨h₁, h₂⟩ v hv
+    have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
+      zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
+    exact le_antisymm (h₁ v hv) ((inv_le_one₀ hpos).mp (h₂ v hv))
+
+variable (R K) in
+/-- The `S`-integral finite ideles are the unit group of the `S`-integral finite adeles. -/
+theorem sIntegralUnits_eq_units_sIntegralAdeles (S : Set (HeightOneSpectrum R)) :
+    sIntegralUnits R K S = (sIntegralAdeles R K S).toSubmonoid.units := by
+  ext x
+  rw [mem_sIntegralUnits_iff_mem_sIntegralAdeles, Submonoid.mem_units_iff]
+  exact Iff.rfl
+
 /-- A finite idele is an everywhere-integral unit exactly when both it and its inverse are
 integral at every place. -/
 theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, K]ˣ} :
     x ∈ integralUnits R K ↔ ∀ v : HeightOneSpectrum R,
       (x : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K ∧
         ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v ∈ v.adicCompletionIntegers K := by
-  simp only [mem_integralUnits_iff, mem_adicCompletionIntegers, valued_coe_units_inv_apply]
-  refine forall_congr' fun v ↦ ?_
-  have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
-    zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
-  exact ⟨fun h ↦ ⟨h.le, by rw [h, inv_one]⟩,
-    fun ⟨h₁, h₂⟩ ↦ le_antisymm h₁ ((inv_le_one₀ hpos).mp h₂)⟩
+  rw [← sIntegralUnits_empty, mem_sIntegralUnits_iff_mem_sIntegralAdeles, sIntegralAdeles_empty,
+    mem_integralAdeles, mem_integralAdeles, forall_and]
 
 variable (R K) in
 /-- The everywhere-integral units are the unit group of the integral finite adeles `∏_v 𝒪_v`: a
 finite idele lies in `integralUnits` exactly when it and its inverse are integral finite adeles. -/
 theorem integralUnits_eq_units_integralAdeles :
     integralUnits R K = (integralAdeles R K).toSubmonoid.units := by
-  ext x
-  rw [mem_integralUnits_iff_forall_mem_adicCompletionIntegers, Submonoid.mem_units_iff]
-  exact forall_and.trans (and_congr mem_integralAdeles.symm mem_integralAdeles.symm)
+  rw [← sIntegralUnits_empty, sIntegralUnits_eq_units_sIntegralAdeles, sIntegralAdeles_empty]
+
+/-- Every finite idele is `S`-integral for some finite set `S` of places. -/
+theorem exists_finset_mem_sIntegralUnits (x : 𝔸ᶠ[R, K]ˣ) :
+    ∃ S : Finset (HeightOneSpectrum R), x ∈ sIntegralUnits R K S := by
+  let T := Filter.eventually_cofinite.mp (eventually_valued_coe_units_apply_eq_one x)
+  refine ⟨T.toFinset, mem_sIntegralUnits_iff.mpr fun v hv ↦ ?_⟩
+  by_contra hne
+  exact hv (T.mem_toFinset.mpr hne)
+
+variable (R K) in
+/-- The finite idele group is the union of its `S`-integral subgroups over finite sets `S`. -/
+theorem iSup_sIntegralUnits :
+    ⨆ S : Finset (HeightOneSpectrum R), sIntegralUnits R K S = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦
+    let ⟨S, hS⟩ := exists_finset_mem_sIntegralUnits x
+    Subgroup.mem_iSup_of_mem S hS
 
 /-- The principal finite idele of a unit of `R` is an everywhere-integral unit. -/
 @[simp 1100] theorem unitEmbedding_map_algebraMap_mem_integralUnits (u : Rˣ) :
@@ -378,26 +455,24 @@ theorem toClassGroup_mem_closure_iff (x : 𝔸ᶠ[R, K]ˣ) :
   refine ⟨fun hx ↦ ?_, fun ⟨a, ha⟩ ↦ ?_⟩
   · -- Every class in the closure is the class of a finite idele that is a unit outside `T`.
     have key : ∀ c ∈ Subgroup.closure (HeightOneSpectrum.classGroupMk '' T),
-        ∃ z : 𝔸ᶠ[R, K]ˣ, (∀ v ∉ T, Valued.v ((z : 𝔸ᶠ[R, K]) v) = 1) ∧
-          toClassGroup R K z = c := fun c hc ↦ by
+        ∃ z ∈ sIntegralUnits R K T, toClassGroup R K z = c := fun c hc ↦ by
       induction hc using Subgroup.closure_induction with
       | mem c hc =>
         obtain ⟨w, hw, rfl⟩ := hc
         obtain ⟨y, hy⟩ := toFractionalIdeal_surjective (R := R) (K := K) (w.unitOfPrime K)
-        refine ⟨y, fun v hv ↦ ?_, ?_⟩
+        refine ⟨y, mem_sIntegralUnits_iff.mpr fun v hv ↦ ?_, ?_⟩
         · rw [← adicOrd_eq_zero_iff, ← count_coe_toFractionalIdeal, hy, coe_unitOfPrime]
           exact FractionalIdeal.count_maximal_coprime K v (ne_of_mem_of_not_mem hw hv)
         · rw [toClassGroup_apply, hy, w.classGroupMk_eq_mk K]
           exact congrArg _ (Units.ext (coe_unitOfPrime w K))
-      | one => exact ⟨1, fun v _ ↦ by rw [Units.val_one, one_apply, map_one], map_one _⟩
+      | one => exact ⟨1, one_mem _, map_one _⟩
       | mul c d _ _ hc hd =>
         obtain ⟨z, hz, rfl⟩ := hc
         obtain ⟨z', hz', rfl⟩ := hd
-        exact ⟨z * z', fun v hv ↦ by rw [Units.val_mul, mul_apply, map_mul, hz v hv, hz' v hv,
-          one_mul], map_mul _ _ _⟩
+        exact ⟨z * z', mul_mem hz hz', map_mul _ _ _⟩
       | inv c _ hc =>
         obtain ⟨z, hz, rfl⟩ := hc
-        exact ⟨z⁻¹, fun v hv ↦ by rw [valued_coe_units_inv_apply, hz v hv, inv_one], map_inv _ _⟩
+        exact ⟨z⁻¹, inv_mem hz, map_inv _ _⟩
     obtain ⟨z, hz, hzx⟩ := key _ hx
     -- `x z⁻¹` has trivial class, so it is an everywhere-integral unit times a principal idele.
     have hker : x * z⁻¹ ∈ integralUnits R K ⊔ (unitEmbedding R K).range := by
@@ -407,7 +482,8 @@ theorem toClassGroup_mem_closure_iff (x : 𝔸ᶠ[R, K]ˣ) :
     have hxb : x * unitEmbedding R K b⁻¹ = z * u := by
       have hx' : x = u * unitEmbedding R K b * z := by rw [hub, inv_mul_cancel_right]
       rw [hx', map_inv, mul_right_comm, mul_inv_cancel_right, mul_comm]
-    rw [hxb, Units.val_mul, mul_apply, map_mul, hz v hv, mem_integralUnits_iff.mp hu v, one_mul]
+    rw [hxb, Units.val_mul, mul_apply, map_mul, mem_sIntegralUnits_iff.mp hz v hv,
+      mem_integralUnits_iff.mp hu v, one_mul]
   · -- Multiplying by a principal idele does not change the class.
     have hclass : toClassGroup R K x = toClassGroup R K (x * unitEmbedding R K a) := by
       rw [map_mul, toClassGroup_apply (unitEmbedding R K a), toFractionalIdeal_unitEmbedding,

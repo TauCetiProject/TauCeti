@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Euclidean.Volume.Measure
+public import TauCeti.MeasureTheory.Measure.Hausdorff
 
 /-!
-# The one-dimensional Euclidean Hausdorff measure
+# Zero- and one-dimensional Euclidean Hausdorff measure
 
 Mathlib's Euclidean Hausdorff measure `μHE[d]` is the raw Hausdorff measure `μH[d]` rescaled by
 the constant that makes it agree with Lebesgue measure on `d`-dimensional Euclidean space. In
-dimension one this constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`.
-Hence `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with
-either normalization.
+dimension zero, Hausdorff measure is counting measure
+(`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the normalizing constant is `1`,
+because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence `μHE[1] = μH[1]` on every
+extended metric space, so length statements may be proved with either normalization.
 -/
 
 public section

@@ -61,7 +61,7 @@ theorem IsDistinguished.polynomialToRestricted_dvd_iff
       (x : PowerSeries R)) ha
     simp only [coe_polynomialToRestricted, Subring.coe_mul] at hcoe
     simpa [mul_comm] using hcoe.symm.trans hdiv
-  have hzero := (hp.eq_and_eq_of_mul_add_eq_mul_add hc a.2
+  have hzero := (hp.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) a.2
     (isRestricted_polynomial (g /ₘ p)) (fun n _ ↦ by simp) hr heq).2
   exact (Polynomial.modByMonic_eq_zero_iff_dvd hm.monic).mp
     (Polynomial.coe_injective R (by simpa using hzero.symm))

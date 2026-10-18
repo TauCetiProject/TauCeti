@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.Topology.Separation.DisjointCover
 -- Supplies compact and totally disconnected instances; `PrincipalUnits` imports it privately.
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.Topology.Algebra.Group.LocallyConstant
+import TauCeti.NumberTheory.Padics.QuotientTower
 
 /-!
 # The congruence quotients of `ℤ_pˣ` and functions factoring through them
@@ -47,9 +47,9 @@ some `(ℤ/p^nℤ)ˣ`, and such test functions are dense among all continuous on
   (2024), Definitions 3.7–3.8, Remarks 3.11–3.12 and Proposition 3.16.
 * D. Loeffler, Mathlib's `Mathlib.Topology.Separation.DisjointCover`, for finite approximation of
   continuous maps on profinite spaces.
-* Tau Ceti's `TauCeti.Topology.Algebra.Group.LocallyConstant`, whose open right-translation
-  stabilizer (`TauCeti.isOpen_rightTranslationStabilizer`) drives the descent of locally constant
-  functions.
+* Tau Ceti's `TauCeti.FiniteQuotientTower`, of which the truncations form the instance
+  `TauCeti.FiniteQuotientTower.unitTower`; the factorisation and descent statements here are its
+  general descent results read on that tower.
 -/
 
 public section
@@ -110,22 +110,17 @@ under right translation by the principal unit group `U^(n)`. -/
 theorem exists_comp_unitsToZModPow_eq_iff {n : ℕ} {f : ℤ_[p]ˣ → A} :
     (∃ g : (ZMod (p ^ n))ˣ → A, g ∘ PadicInt.unitsToZModPow n = f) ↔
       ∀ u, ∀ k ∈ unitsPrincipal p n, f (u * k) = f u := by
-  refine ⟨?_, fun hf ↦ ?_⟩
-  · rintro ⟨g, rfl⟩ u k hk
-    simp [unitsToZModPow_eq_one_iff.mpr hk]
-  · have : Nonempty A := ⟨f 1⟩
-    obtain ⟨g, hg⟩ := (Function.factorsThrough_iff f).mp fun u v huv ↦ by
-      rw [← hf u (u⁻¹ * v) (unitsToZModPow_eq_iff.mp huv), mul_inv_cancel_left]
-    exact ⟨g, hg.symm⟩
+  simpa only [FiniteQuotientTower.unitTower_q, FiniteQuotientTower.mem_ker_unitTower] using
+    (FiniteQuotientTower.unitTower p).exists_comp_q_eq_iff
 
 /-- A function that factors through truncation modulo `p ^ n` also factors through truncation
 modulo `p ^ m` for every `m ≥ n`. -/
 theorem exists_comp_unitsToZModPow_eq_of_le {n m : ℕ} (hnm : n ≤ m) {f : ℤ_[p]ˣ → A}
     (hf : ∃ g : (ZMod (p ^ n))ˣ → A, g ∘ PadicInt.unitsToZModPow n = f) :
     ∃ g : (ZMod (p ^ m))ˣ → A, g ∘ PadicInt.unitsToZModPow m = f := by
-  obtain ⟨g, rfl⟩ := hf
-  exact ⟨g ∘ ZMod.unitsMap (pow_dvd_pow p hnm), by
-    ext u; simp⟩
+  simpa only [FiniteQuotientTower.unitTower_q] using
+    (FiniteQuotientTower.unitTower p).exists_comp_q_eq_of_le hnm
+      (by simpa only [FiniteQuotientTower.unitTower_q] using hf)
 
 end TauCeti
 
@@ -141,10 +136,8 @@ applies in particular to every continuous map to a discrete space, by
 `IsLocallyConstant.iff_continuous`. -/
 theorem exists_comp_unitsToZModPow_eq {f : ℤ_[p]ˣ → A} (hf : IsLocallyConstant f) :
     ∃ n, ∃ g : (ZMod (p ^ n))ˣ → A, g ∘ PadicInt.unitsToZModPow n = f := by
-  -- The right-translation stabilizer of `f` is open, so it contains some `U^(n)`.
-  obtain ⟨n, hn⟩ := exists_unitsPrincipal_le_of_isOpen (isOpen_rightTranslationStabilizer hf)
-  exact ⟨n, exists_comp_unitsToZModPow_eq_iff.mpr fun u k hk ↦
-    mem_rightTranslationStabilizer.mp (hn hk) u⟩
+  simpa only [FiniteQuotientTower.unitTower_q] using
+    (FiniteQuotientTower.unitTower p).exists_comp_q_eq hf
 
 /-- Every locally constant homomorphism from `ℤ_pˣ` to a monoid factors through truncation
 modulo `p ^ n`, for some `n`, by a homomorphism. This applies in particular to every continuous
@@ -153,12 +146,8 @@ theorem exists_monoidHom_comp_unitsToZModPow_eq [Monoid A] {q : ℤ_[p]ˣ →* A
     (hq : IsLocallyConstant q) :
     ∃ n, ∃ t : (ZMod (p ^ n))ˣ →* A,
       t.comp (PadicInt.unitsToZModPow n).toMonoidHom = q := by
-  obtain ⟨n, hn⟩ := exists_unitsPrincipal_le_of_isOpen (isOpen_rightTranslationStabilizer hq)
-  have hker : unitsPrincipal p n ≤ q.ker := fun k hk ↦ by
-    simpa using mem_rightTranslationStabilizer.mp (hn hk) 1
-  refine ⟨n, (QuotientGroup.lift _ q hker).comp (unitsToZModPowQuotient p n).symm.toMonoidHom, ?_⟩
-  ext u
-  simp
+  simpa only [FiniteQuotientTower.unitTower_q, ContinuousMonoidHom.coe_toMonoidHom] using
+    (FiniteQuotientTower.unitTower p).exists_monoidHom_comp_q_eq hq
 
 end IsLocallyConstant
 

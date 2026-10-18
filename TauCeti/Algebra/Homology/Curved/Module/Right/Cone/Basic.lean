@@ -19,7 +19,9 @@ because `f` commutes with the differentials. Its curvature is therefore the same
 curvature of `M` and `N`, without a centrality assumption.
 
 The right action is unchanged. The canonical inclusion of `N` and projection to `M[1]` are
-closed maps, and the adjacent composites vanish in the existing homotopy category.
+closed maps, and the adjacent composites vanish in the existing homotopy category. A closed map
+`g : N ⟶ P` with `f ≫ g = 0` induces the closed map `coneDesc f g hfg : cone(f) ⟶ P`.
+A null-homotopic closed map factors through its source's identity cone via the inclusion.
 
 ## References
 
@@ -27,6 +29,8 @@ closed maps, and the adjacent composites vanish in the existing homotopy categor
   and 7.6. His curvature is the negative of the right-module curvature stored here.
 * The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Cone.Basic`: the curved-duplex
   cone formalization is the precedent for the cone, its maps and its contraction interface.
+* The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Frobenius`: the identity-cone
+  factorization adapts the corresponding componentwise split construction.
 -/
 
 public section
@@ -157,6 +161,44 @@ theorem coneInclusion_comp_coneProjection : coneInclusion f ≫ coneProjection f
   intro x
   simp only [closedHom_comp, closedHom_coneInclusion, closedHom_coneProjection, closedHom_zero]
   rfl
+
+section ConeDesc
+
+variable {P : CurvedDGRightModuleCat.{u, u, u} h}
+  (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)
+  (hfg : f ≫ g = 0)
+
+/-- A closed map `g` killing the closed map `f` induces the closed map `cone(f) ⟶ P`
+sending `(x, y)` to `g y`. -/
+noncomputable def coneDesc :
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P :=
+  closedHomOf ((closedHom g).comp (LinearMap.snd Aᵐᵒᵖ M N))
+    (fun p x hx ↦ by rw [cone_grading] at hx; exact closedHom_mem g hx.2)
+    (fun x ↦ by
+      have hx : closedHom g (closedHom f x.1) = 0 := by
+        rw [← LinearMap.comp_apply, ← closedHom_comp, hfg, closedHom_zero, LinearMap.zero_apply]
+      -- Evaluate the second projection on the cone's product carrier.
+      change P.differential (closedHom g x.2) = closedHom g ((cone f).differential x).2
+      rw [cone_differential_apply, map_add, hx, zero_add, differential_closedHom])
+
+/-- The map out of the cone applies `g` to the second component. -/
+@[simp]
+theorem closedHom_coneDesc :
+    closedHom (coneDesc f g hfg) = (closedHom g).comp (LinearMap.snd Aᵐᵒᵖ M N) :=
+  closedHom_closedHomOf _ _ _
+
+/-- The cone inclusion followed by the induced map out of the cone is the original map. -/
+@[reassoc (attr := simp)]
+theorem coneInclusion_comp_coneDesc : coneInclusion f ≫ coneDesc f g hfg = g := by
+  apply closedHom_ext
+  intro x
+  rw [closedHom_comp, closedHom_coneDesc, closedHom_coneInclusion]
+  -- Evaluate the second projection after the second inclusion on the cone's product carrier.
+  rfl
+
+end ConeDesc
 
 /-- The first linear inclusion, viewed as a degree-minus-one homotopy into the cone. -/
 noncomputable def coneInclusionHomotopy :
@@ -591,5 +633,60 @@ theorem coneMap_id :
   simp only [closedHom_coneMap_apply, closedHom_id, LinearMap.id_apply,
     Submodule.coe_zero, LinearMap.zero_apply, add_zero]
   exact Prod.mk.eta
+
+/-- A closed map is null-homotopic exactly when it factors through the identity cone of its
+source via the canonical inclusion. -/
+theorem quotient_map_eq_zero_iff_factors_coneIdentity
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    (dgClosedToHomotopy R).map f = 0 ↔
+      ∃ g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ)
+          (cone (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M))) ⟶
+            ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N,
+        coneInclusion (𝟙 (ForgetEnrichment.of _ M)) ≫ g = f := by
+  constructor
+  · intro hf
+    rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff] at hf
+    obtain ⟨k, hk⟩ := hf
+    let f₀ : M →ₗ[Aᵐᵒᵖ] N := closedHom f
+    let k₀ : M →ₗ[Aᵐᵒᵖ] N := k.1
+    have hk' (x : M) : f₀ x =
+        N.differential (k₀ x) + k₀ (M.differential x) := by
+      have hx := hk x
+      erw [← closedHom_eq] at hx
+      exact hx
+    let g := closedHomOf (k₀.coprod f₀)
+      (M := cone (𝟙 (ForgetEnrichment.of _ M))) (N := N)
+      (fun p x hx ↦ by
+        rw [cone_grading] at hx
+        rw [LinearMap.coprod_apply]
+        exact (N.grading p).add_mem (by simpa using dgRightModuleCochains.map_mem k hx.1)
+          (closedHom_mem f hx.2))
+      (fun x ↦ by
+        -- The commuting-map goal has reduced the coprod application through its coercion;
+        -- `LinearMap.coprod_apply` no longer occurs as a rewrite head. Express the two
+        -- stored product components before applying the public cone differential equation.
+        change N.differential (k₀ x.1 + f₀ x.2) =
+          k₀ ((cone (𝟙 (ForgetEnrichment.of _ M))).differential x).1 +
+            f₀ ((cone (𝟙 (ForgetEnrichment.of _ M))).differential x).2
+        rw [cone_differential_apply, closedHom_id]
+        simp only [LinearMap.id_apply, map_add, map_neg]
+        erw [differential_closedHom f]
+        rw [hk' x.1]
+        abel_nf
+        rfl)
+    refine ⟨g, ?_⟩
+    apply closedHom_ext
+    intro x
+    dsimp only [g]
+    erw [closedHom_comp, closedHom_closedHomOf, closedHom_coneInclusion]
+    -- The closed-map evaluation has already reduced the coprod and inclusion through
+    -- their coercions. Name the resulting original-carrier expression for `map_zero`.
+    change k₀ 0 + f₀ x = f₀ x
+    rw [map_zero, zero_add]
+  · rintro ⟨g, rfl⟩
+    rw [Functor.map_comp]
+    rw [(isZero_homotopy_cone_isIso (𝟙 (ForgetEnrichment.of _ M))).eq_of_src
+      ((dgClosedToHomotopy R).map g) 0, CategoryTheory.Limits.comp_zero]
 
 end TauCeti.CurvedDGRightModuleCat

@@ -107,7 +107,7 @@ the action `(g, h) · A = π g ∘ A ∘ π h⁻¹` and differs from the compari
 (`TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`). The character
 averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `ContRepresentation.isotypicProjector`: that projector is built from
-`TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
+`ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
 representation then only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). Both
 obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`, and
