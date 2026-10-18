@@ -12,7 +12,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.CharP
-import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Fixed
 import TauCeti.RingTheory.Invariant.Free
 
@@ -29,8 +29,8 @@ linearly reductive group is therefore semisimple.
 Left translation by `Γ` is a free action on the coordinate algebra: a translate of a geometric
 point is the point itself only for the identity translation. By the theory of free actions of
 finite groups, some function `c` has orbit sum `∑ γ ∈ Γ, γ • c = 1`. The orbit sum is the
-contraction of the regular comodule against the functional `∑ γ ∈ Γ, γ⁻¹`, a comodule
-endomorphism, so linear reductivity lifts the invariant `1` in its image to an invariant preimage.
+regular matrix coefficient of the functional `∑ γ ∈ Γ, γ⁻¹`, a comodule endomorphism, so linear
+reductivity lifts the invariant `1` in its image to an invariant preimage.
 The only invariants of the regular comodule are the constants, and the orbit sum multiplies
 constants by the order of `Γ`. Hence that order is nonzero in `k`.
 
@@ -100,15 +100,15 @@ theorem natCast_card_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
             AlgHom.ext fun a ↦ by simpa [hsmul] using DFunLike.congr_fun hx a
           simpa using (comp_leftTranslationAlgEquiv_eq_self_iff
             (algebraMap k (AlgebraicClosure k)).injective _ x).mp hfix
-  -- The orbit sum is the contraction of the regular comodule against `∑ γ, γ⁻¹`.
-  let T : Comodule.Hom k H H H := Comodule.Hom.leftContraction
+  -- The orbit sum is the regular matrix coefficient of the functional `∑ γ, γ⁻¹`.
+  let T : Comodule.Hom k H H H := Comodule.matrixCoefficientHom (M := H)
     (∑ γ : Γ, ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k)).ofConv.toLinearMap)
   have hT (a : H) : T a = ∑ γ : Γ, γ • a := by
-    have hsum : (∑ γ : Γ, ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k)).ofConv.toLinearMap).rTensor H =
-        ∑ γ : Γ, ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k)).ofConv.toLinearMap.rTensor H :=
-      map_sum (LinearMap.rTensorHom H) _ _
-    rw [Comodule.Hom.leftContraction_apply, hsum, LinearMap.sum_apply, map_sum]
-    exact Finset.sum_congr rfl fun γ _ ↦ by rw [hsmul, leftTranslationAlgEquiv_apply]
+    rw [Comodule.matrixCoefficientHom_apply, ← Comodule.matrixCoefficientBilinear_apply_apply,
+      map_sum, LinearMap.sum_apply]
+    exact Finset.sum_congr rfl fun γ _ ↦ by
+      rw [hsmul, leftTranslationAlgEquiv_apply, Comodule.matrixCoefficientBilinear_apply_apply]
+      rfl
   have hone : (1 : H) ∈ Comodule.fixedSubcomodule k H H := by
     simp [Comodule.mem_fixedSubcomodule, Algebra.TensorProduct.one_def]
   -- Linear reductivity lifts `1` to an invariant, hence constant, function.
