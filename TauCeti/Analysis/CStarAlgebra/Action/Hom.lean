@@ -164,22 +164,21 @@ theorem apply_mem (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
   hS g ha
 
 /-- Invariance under a group action can equivalently be stated as equality with every image. -/
-theorem image_eq (hS : _root_.IsInvariant (fun g a => α g a) (S : Set A))
-    (g : G) : α g '' (S : Set A) = S := by
+theorem image_eq {s : Set A} (hs : _root_.IsInvariant (fun g a => α g a) s)
+    (g : G) : α g '' s = s := by
   apply Set.Subset.antisymm
   · rintro _ ⟨a, ha, rfl⟩
-    exact hS g ha
+    exact hs g ha
   · intro a ha
-    exact ⟨α g⁻¹ a, hS g⁻¹ ha, α.apply_inv_apply g a⟩
+    exact ⟨α g⁻¹ a, hs g⁻¹ ha, α.apply_inv_apply g a⟩
 
-/-- A star subalgebra is invariant exactly when every group element maps it onto itself. -/
-theorem iff_image_eq :
-    _root_.IsInvariant (fun g a => α g a) (S : Set A) ↔
-      ∀ g : G, α g '' (S : Set A) = S := by
+/-- A set is invariant exactly when every group element maps it onto itself. -/
+theorem iff_image_eq {s : Set A} :
+    _root_.IsInvariant (fun g a => α g a) s ↔ ∀ g : G, α g '' s = s := by
   constructor
   · exact fun hS g => hS.image_eq g
   · intro hS g a ha
-    have : α g a ∈ α g '' (S : Set A) := ⟨a, ha, rfl⟩
+    have : α g a ∈ α g '' s := ⟨a, ha, rfl⟩
     rwa [hS g] at this
 
 /-- The topological closure of an invariant star subalgebra is invariant. -/
@@ -199,8 +198,7 @@ theorem top (α : CStarAction G A) :
 theorem bot (α : CStarAction G A) :
     _root_.IsInvariant (fun g a => α g a) {0} := by
   intro g a ha
-  change a = 0 at ha
-  change α g a = 0
+  simp only [Set.mem_singleton_iff] at ha ⊢
   rw [ha, map_zero]
 
 /-- The image of an invariant star subalgebra under an equivariant homomorphism is invariant. -/
