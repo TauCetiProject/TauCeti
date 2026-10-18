@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Height.NumberField
 
 import Mathlib.Algebra.FiniteSupport.Basic
-import Mathlib.Algebra.Order.Hom.Lattice
+import TauCeti.NumberTheory.NumberField.FinitePlace
 
 /-!
 # Euclidean heights over number fields
@@ -47,17 +47,6 @@ open Function Module NumberField
 namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- For a nonzero tuple over a number field, the maximum of the finite-place absolute values of
-its coordinates is `1` at all but finitely many finite places.
-
-Adapted from the private `Height.hasFiniteMulSupport_iSup_nonarchAbsVal` in
-`Mathlib/NumberTheory/Height/Basic.lean`. -/
-theorem NumberField.FinitePlace.hasFiniteMulSupport_iSup {ι : Type*} [Finite ι] {y : ι → K}
-    (hy : y ≠ 0) : (fun v : FinitePlace K ↦ ⨆ i, v (y i)).HasFiniteMulSupport := by
-  have : Nonempty {i // y i ≠ 0} := nonempty_subtype.mpr (Function.ne_iff.mp hy)
-  simp_rw [Finite.iSup_eq_iSup_subtype hy]
-  exact .iSup fun i ↦ FinitePlace.hasFiniteMulSupport i.property
 
 /-- The degree-normalized Euclidean height of a finite tuple over a number field. It uses the
 Euclidean norm at infinite places and the maximum norm at finite places. In particular, its
