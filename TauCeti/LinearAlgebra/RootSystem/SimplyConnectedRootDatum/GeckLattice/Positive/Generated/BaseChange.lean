@@ -26,7 +26,7 @@ specialization of the integral toral closure is made.
   free base change carries the positive generated defining ideal onto its counterpart.
 * `TauCeti.DynkinType.geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeIso`:
   the coordinate-algebra comparison.
-* `TauCeti.DynkinType.baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp`:
+* `baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp_baseChangeIso_hom`:
   compatibility with restriction from the full generated subgroup.
 
 ## References
@@ -90,7 +90,7 @@ def geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeIso [Module.Free k K] :
 
 /-- The positive-subgroup comparison commutes with the ambient general-linear quotient maps. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_geckPositiveGeneratedCoordinateMap_comp [Module.Free k K] :
+theorem baseChangeMap_geckPositiveGeneratedCoordinateMap_comp_baseChangeIso_hom [Module.Free k K] :
     CommHopfAlgCat.baseChangeMap (K := K) (t.geckPositiveGeneratedCoordinateMap ht k) ≫
         (t.geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom ≫
@@ -104,7 +104,8 @@ theorem baseChangeMap_geckPositiveGeneratedCoordinateMap_comp [Module.Free k K] 
 /-- Base change of the positive subgroup inside the full generated subgroup agrees with the
 positive subgroup inside the base-changed full generated subgroup. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp [Module.Free k K] :
+theorem baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp_baseChangeIso_hom
+    [Module.Free k K] :
     CommHopfAlgCat.baseChangeMap (K := K) (eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht k) ≫
         CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra k (t.geckDim ht))
           (t.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal ht k) ≫
@@ -127,7 +128,7 @@ theorem baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp [Module.Free k 
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
       CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
     rw [← geckPositiveGeneratedCoordinateMap_def]
-  rw [baseChangeMap_geckPositiveGeneratedCoordinateMap_comp, ← Category.assoc]
+  rw [baseChangeMap_geckPositiveGeneratedCoordinateMap_comp_baseChangeIso_hom, ← Category.assoc]
   simp only [
   baseChangeMap_geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateHopfAlgebraBaseChangeIso_hom]
   simp only [geckGeneratedCoordinateMap_def, geckPositiveGeneratedCoordinateMap_def,
