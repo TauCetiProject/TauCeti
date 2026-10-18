@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.RealPlace
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Height
+import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.Ramification
 
 /-!
 # The fundamental unit, the regulator and the height of `1 + √2`

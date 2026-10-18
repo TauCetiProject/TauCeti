@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
-public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.Ramification
+public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.Basic
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
 
