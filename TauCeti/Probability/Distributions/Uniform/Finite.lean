@@ -23,7 +23,7 @@ uniform measures to uniform measures on their images.
   finite Dirac-sum constructions agree.
 * `Finset.integral_uniformOn_finset`: integration against a finite uniform law is a
   normalized finite sum.
-* `TauCeti.Probability.map_uniformOn_of_bijOn`: a bijection between sets pushes a uniform law to
+* `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
@@ -116,12 +116,16 @@ theorem integral_uniformOn_univ [Fintype α] [NormedAddCommGroup E] [NormedSpace
       (Fintype.card α : ℝ)⁻¹ • ∑ x, f x := by
   simpa using Finset.integral_uniformOn_finset (Finset.univ : Finset α) f
 
+end TauCeti.Probability
+
+namespace Set.BijOn
+
 variable [MeasurableSpace β]
 
 variable [MeasurableSingletonClass β]
 
 /-- A bijection between sets transports one uniform law to the other. -/
-theorem map_uniformOn_of_bijOn {f : α → β} {s : Set α} {t : Set β}
+theorem map_uniformOn {f : α → β} {s : Set α} {t : Set β}
     (h : Set.BijOn f s t) : (uniformOn s).map f = uniformOn t := by
   by_cases hs : s.Finite
   · have ht : t.Finite := h.finite_iff_finite.mp hs
@@ -139,7 +143,7 @@ theorem map_uniformOn_of_bijOn {f : α → β} {s : Set α} {t : Set β}
   · have ht : ¬ t.Finite := fun ht ↦ hs (h.finite_iff_finite.mpr ht)
     rw [(uniformOn_eq_zero).2 (Or.inl hs), (uniformOn_eq_zero).2 (Or.inl ht), Measure.map_zero]
 
-end TauCeti.Probability
+end Set.BijOn
 
 namespace Function.Embedding
 
@@ -149,7 +153,7 @@ variable [MeasurableSpace β] [MeasurableSingletonClass β]
 theorem map_uniformOn_finset (e : α ↪ β) (s : Finset α) :
     (uniformOn (s : Set α)).map e = uniformOn (s.map e : Finset β) := by
   simpa only [Finset.coe_map] using
-    TauCeti.Probability.map_uniformOn_of_bijOn e.injective.injOn.bijOn_image
+    e.injective.injOn.bijOn_image.map_uniformOn
 
 end Function.Embedding
 
@@ -160,7 +164,7 @@ variable [MeasurableSpace β] [MeasurableSingletonClass β]
 /-- A bijection transports the uniform law on a type to the uniform law on its codomain. -/
 theorem map_uniformOn_univ (e : α ≃ β) :
     (uniformOn (_root_.Set.univ : Set α)).map e = uniformOn (_root_.Set.univ : Set β) := by
-  exact TauCeti.Probability.map_uniformOn_of_bijOn e.bijective.bijOn_univ
+  exact e.bijective.bijOn_univ.map_uniformOn
 
 end Equiv
 
