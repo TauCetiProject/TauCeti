@@ -183,7 +183,7 @@ theorem exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso [Fintype V] (hG :
     obtain ⟨t, ht, -, hφ⟩ := exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
       (isFiniteType_graphCartanMatrix_of_posDef h)
     exact ⟨t, ht, hφ⟩
-  exact hG.exists_pos_two_mul_le_sum hδ0 hδ hδle
+  exact hG.exists_pos_smul_le_sum (c := (2 : ℝ)) hδ0 hδ hδle
 
 omit [DecidableEq V] [DecidableRel G.Adj] in
 /-- **A connected non-Dynkin graph has no isolated vertex.** If a connected finite simple graph `G`
