@@ -6,7 +6,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
-public import TauCeti.AlgebraicGeometry.Morphisms.RamificationIdx
+public import TauCeti.AlgebraicGeometry.Morphisms.RamificationIdx.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
@@ -19,8 +19,9 @@ an integral scheme is flat (`AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_isDom
 Mathlib's `Ideal.ramificationIdx_tower` makes ramification indices multiply along a composite.
 
 At a point `x` of codimension one of a locally Noetherian normal integral scheme `X`, the local
-ring `𝒪_{X,x}` is a discrete valuation ring, and for a dominant `f` whose image point is not the
-generic point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`. When `𝒪_{Y,f(x)}`
+ring `𝒪_{X,x}` is a discrete valuation ring, and for a dominant `f` to a reduced scheme `Y` whose
+image point is not the generic point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with
+`e = ramificationIdxAt f x`. When `𝒪_{Y,f(x)}`
 is also a discrete valuation ring (for instance when `Y` is locally Noetherian and normal and
 `f x` has codimension one), `e` is the ramification index of the extension of discrete valuation
 rings (Stacks, Definition 15.113.1 (09E4)).
@@ -31,8 +32,8 @@ rings (Stacks, Definition 15.113.1 (09E4)).
   dominant morphism from an integral scheme and `f x` has coheight one on a locally Noetherian
   normal scheme.
 * `TauCeti.NormalSchemes.map_maximalIdeal_eq_pow_ramificationIdxAt`: at a point of coheight one of
-  a locally Noetherian normal integral scheme, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with
-  `e = ramificationIdxAt f x`. This is the roadmap target `ramificationIdxAt_eq_dvr`.
+  a locally Noetherian normal integral scheme and for a dominant map to a reduced scheme with
+  non-generic image point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`.
 
 ## References
 
@@ -86,7 +87,7 @@ locally Noetherian normal integral scheme `X`, for a dominant `f : X ⟶ Y` to a
 `f x` not of coheight zero, the local ring `𝒪_{X,x}` is a discrete valuation ring and
 `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`. When `𝒪_{Y,f(x)}` is also a
 discrete valuation ring, `e` is the ramification index of the extension `𝒪_{Y,f(x)} → 𝒪_{X,x}` of
-Stacks, Definition 15.113.1 (09E4). This is the roadmap target `ramificationIdxAt_eq_dvr`. -/
+Stacks, Definition 15.113.1 (09E4). -/
 @[stacks 09E4 "the ramification index of the stalk extension"]
 theorem map_maximalIdeal_eq_pow_ramificationIdxAt [IsDominant f] [IsIntegral X] [IsReduced Y]
     [IsLocallyNoetherian X] [IsNormalScheme X] (x : X) (hx : coheight x = 1)

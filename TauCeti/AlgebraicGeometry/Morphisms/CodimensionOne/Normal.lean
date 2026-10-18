@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.RingTheory.IntegralClosure.GoingDown
-public import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne
+public import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.KrullDimension.Fiber
 
@@ -56,8 +56,16 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target preserves
 the coheight of every point: on affine charts it is a finite injective extension of Noetherian
 domains with integrally closed base, which satisfies going down. -/
-theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X] [IsIntegral Y]
+theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
     [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) : coheight (f x) = coheight x := by
+  have himage : IsIrreducible (Set.range f) := by
+    simpa only [Set.image_univ] using
+      (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
+  have : IrreducibleSpace Y := by
+    apply (irreducibleSpace_def Y).mpr
+    change IsIrreducible (Set.univ : Set Y)
+    simpa only [f.denseRange.closure_eq] using himage.closure
+  have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := f x) (U := ⊤) trivial
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
   have : Nonempty U := ⟨⟨f x, hxU⟩⟩
@@ -89,7 +97,7 @@ theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X] [I
 points of coheight one to points of coheight one (going down, Stacks, Proposition 10.38.7
 (00H8)). -/
 theorem coheight_apply_eq_one_of_isNormalScheme [IsLocallyNoetherian Y] [IsNormalScheme Y]
-    [IsFinite f] [IsDominant f] [IsIntegral X] [IsIntegral Y]
+    [IsFinite f] [IsDominant f] [IsIntegral X]
     (x : X) (hx : coheight x = 1) : coheight (f x) = 1 :=
   (coheight_apply_eq_coheight f x).trans hx
 
