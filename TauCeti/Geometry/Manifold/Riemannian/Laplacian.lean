@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Divergence, Hessian, and Laplace–Beltrami operators
@@ -75,6 +76,90 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
+
+section HessianSymmetry
+
+variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The Hessian applied to a vector field and a differentiable vector field is the directional
+derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
+direction. -/
+theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
+    (V W : (y : M) → TangentSpace I y)
+    (hW : MDiffAt (T% W) x) :
+    hessian I f x (V x) (W x) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
+        mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
+  let _ : IsManifold I (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold I ∞ M)
+  have hG : ContMDiff I I.tangent ∞
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
+    contMDiff_mgradient hf
+  have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
+  have hinner :=
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      V (σ := mgradient I f) (τ := W) hG' hW
+  have hinner' : (fun y ↦ inner ℝ (mgradient I f y) (W y)) =
+      (fun y ↦ mvfderiv I f y (W y)) := by
+    funext y
+    exact inner_mgradient (I := I) (f := f) (x := y) (W y)
+  rw [hinner'] at hinner
+  have hinner'' :
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
+        inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
+            (W x) +
+          inner ℝ (mgradient I f x)
+            ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
+    simpa only [Function.comp_apply] using hinner
+  have hgrad := inner_mgradient (I := I) (f := f) (x := x)
+    ((CovariantDerivative.leviCivitaConnection I M W) x (V x))
+  rw [hessian_def]
+  linarith
+
+/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. -/
+theorem hessian_symm [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) (v w : TangentSpace I x) :
+    hessian I f x v w = hessian I f x w v := by
+  let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
+  let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
+  have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
+  have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
+  let _ : IsManifold I (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold I ∞ M)
+  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
+  have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
+  let _ : IsManifold I (minSmoothness ℝ 2) M :=
+    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
+  -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
+  have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
+    hf.contMDiffAt (by simp) hV hW
+  have hzero :
+      (CovariantDerivative.leviCivitaConnection I M).torsion x (V x) (W x) = 0 := by
+    rw [CovariantDerivative.torsion_leviCivitaConnection_eq_zero I]
+    simp
+  have htw := CovariantDerivative.torsion_apply
+    (CovariantDerivative.leviCivitaConnection I M) hV hW
+  rw [hzero] at htw
+  have htw' :
+      CovariantDerivative.leviCivitaConnection I M W x (V x) -
+          CovariantDerivative.leviCivitaConnection I M V x (W x) =
+        VectorField.mlieBracket I V W x := by
+    exact sub_eq_zero.mp htw.symm
+  dsimp [V, W] at hessianVW hessianWV htw' hbracket
+  simp only [FiberBundle.extend_apply_self] at hessianVW hessianWV htw' hbracket
+  have htw_mvfderiv := congrArg (mvfderiv I f x) htw'
+  simp only [map_sub] at htw_mvfderiv
+  -- The two directional-derivative equations now differ only by the torsion equation.
+  rw [hessianVW, hessianWV]
+  linarith [hbracket, htw_mvfderiv]
+
+end HessianSymmetry
 
 /-- The Laplace–Beltrami operator, with the sign convention `Δ = div ∘ grad`. -/
 noncomputable def laplaceBeltrami (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]

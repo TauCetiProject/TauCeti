@@ -29,8 +29,8 @@ the representation of a logistic variable as a difference of independent Gumbel 
 * `TauCeti.Probability.isProbabilityMeasure_gumbelMeasure` proves normalization for positive scale;
 * `TauCeti.Probability.hasLaw_gumbelMeasure_of_hasLaw_expMeasure` gives the random-variable
   construction;
-* `TauCeti.Probability.map_affine_gumbelMeasure` and
-  `ProbabilityTheory.HasLaw.affine_gumbelMeasure` identify positive affine images;
+* `TauCeti.Probability.map_affine_gumbelMeasure` gives positive affine transport, with the
+  random-variable form `TauCeti.Probability.hasLaw_affine_gumbelMeasure`;
 * `TauCeti.Probability.measurable_gumbelMeasure` proves measurability in the parameters;
 * `TauCeti.Probability.cdf_gumbelMeasure_eq` computes the cdf;
 * `TauCeti.Probability.quantile_gumbelMeasure` computes the quantile, and the two following
@@ -38,8 +38,8 @@ the representation of a logistic variable as a difference of independent Gumbel 
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
-  Wiley (1995), ch. 22.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
+  Wiley (1994), ch. 21.
 -/
 
 public section
@@ -73,23 +73,6 @@ theorem gumbelMeasure_of_pos (hs : 0 < s) (m : ℝ) :
 theorem gumbelMeasure_of_nonpos (hs : s ≤ 0) (m : ℝ) : gumbelMeasure m s = 0 := by
   rw [gumbelMeasure, ite_eq_right (not_lt.mpr hs)]
 
-/-! ### Affine transport -/
-
-/-- A positive affine image of a Gumbel law is Gumbel, with the location and scale transformed
-in the usual way. -/
-theorem map_affine_gumbelMeasure (m s : ℝ) {a b : ℝ} (hb : 0 < b) :
-    (gumbelMeasure m s).map (fun x => a + b * x) =
-      gumbelMeasure (a + b * m) (b * s) := by
-  rcases le_or_gt s 0 with hs | hs
-  · rw [gumbelMeasure_of_nonpos hs, Measure.map_zero,
-      gumbelMeasure_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hb.le hs)]
-  · rw [gumbelMeasure_of_pos hs, gumbelMeasure_of_pos (mul_pos hb hs),
-      Measure.map_map (by fun_prop) (by fun_prop)]
-    apply Measure.map_congr
-    filter_upwards [] with x
-    simp only [Function.comp_apply]
-    ring
-
 /-- A Gumbel law with positive scale is a probability measure. -/
 theorem isProbabilityMeasure_gumbelMeasure (hs : 0 < s) (m : ℝ) :
     IsProbabilityMeasure (gumbelMeasure m s) := by
@@ -105,6 +88,31 @@ theorem hasLaw_gumbelMeasure_of_hasLaw_expMeasure {Ω : Type*} [MeasurableSpace 
   rw [gumbelMeasure_of_pos hs]
   exact (hasLaw_map
     (measurable_const.sub (measurable_const.mul Real.measurable_log)).aemeasurable).comp hE
+
+/-- A positive affine change of a Gumbel variable changes its location to `a + b * m` and its
+scale to `b * s`. The identity also respects the nonpositive-scale zero-measure branch. -/
+theorem map_affine_gumbelMeasure {b : ℝ} (hb : 0 < b) (a m s : ℝ) :
+    (gumbelMeasure m s).map (fun x => a + b * x) =
+      gumbelMeasure (a + b * m) (b * s) := by
+  by_cases hs : 0 < s
+  · rw [gumbelMeasure_of_pos hs, gumbelMeasure_of_pos (mul_pos hb hs),
+      Measure.map_map (by fun_prop) (by fun_prop)]
+    congr 1
+    funext e
+    simp only [Function.comp_apply]
+    ring
+  · rw [gumbelMeasure_of_nonpos (le_of_not_gt hs),
+      gumbelMeasure_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hb.le (le_of_not_gt hs)),
+      Measure.map_zero]
+
+/-- The random-variable form of positive affine transport of the Gumbel law. -/
+theorem hasLaw_affine_gumbelMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {b : ℝ} (hb : 0 < b) (a : ℝ)
+    (hX : HasLaw X (gumbelMeasure m s) P) :
+    HasLaw (fun ω => a + b * X ω) (gumbelMeasure (a + b * m) (b * s)) P := by
+  rw [← map_affine_gumbelMeasure hb]
+  exact (hasLaw_map
+    (measurable_const.add (measurable_const.mul measurable_id)).aemeasurable).comp hX
 
 /-- The Gumbel family is measurable in its location and scale parameters, including the
 nonpositive-scale zero-measure branch. -/
@@ -199,19 +207,3 @@ theorem tendsto_quantile_gumbelMeasure_nhdsLT_one (hs : 0 < s) (m : ℝ) :
 end Probability
 
 end TauCeti
-
-namespace ProbabilityTheory
-
-open TauCeti.Probability
-
-/-- A positive affine transform of a Gumbel random variable has the corresponding transformed
-Gumbel law. -/
-theorem HasLaw.affine_gumbelMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → ℝ} {m s a b : ℝ} (hX : HasLaw X (gumbelMeasure m s) P) (hb : 0 < b) :
-    HasLaw (fun ω => a + b * X ω) (gumbelMeasure (a + b * m) (b * s)) P := by
-  have hmap : HasLaw (fun x : ℝ => a + b * x) (gumbelMeasure (a + b * m) (b * s))
-      (gumbelMeasure m s) :=
-    ⟨by fun_prop, map_affine_gumbelMeasure m s hb⟩
-  exact hmap.fun_comp hX
-
-end ProbabilityTheory

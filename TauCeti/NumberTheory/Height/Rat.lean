@@ -31,6 +31,7 @@ height estimates such as Roth's lemma.
 * `Rat.mulHeight_le_max_abs`: `H(x) ≤ maxᵢ |xᵢ|` for a nonzero integer tuple `x`.
 * `Rat.den_le_mulHeight₁`, `Rat.log_den_le_logHeight₁`: the denominator of a rational number is
   at most its height.
+* `Rat.mulHeight₁_le_max_one_abs_mul_den`: conversely, `H(q) ≤ max(1, |q|) den(q)`.
 * `Finsupp.mulHeight_mapRange_intCast_le`, `Finsupp.mulHeight_mapRange_intCast_eq`: the bound,
   and the equality for coprime entries, for finitely supported integer vectors.
 * `Finsupp.mulHeight_mapRange_intCast_le_of_abs_le`: `H(x) ≤ B` if all entries of the nonzero
@@ -93,6 +94,19 @@ theorem logHeight_le_max_abs (x : ι → ℤ) :
 theorem den_le_mulHeight₁ (q : ℚ) : (q.den : ℝ) ≤ mulHeight₁ q := by
   rw [mulHeight₁_eq_max]
   exact_mod_cast le_max_right _ _
+
+/-- The multiplicative height of a rational number `q` is at most `max 1 |q|` times its
+denominator. -/
+theorem mulHeight₁_le_max_one_abs_mul_den (q : ℚ) :
+    mulHeight₁ q ≤ max 1 |(q : ℝ)| * q.den := by
+  have hnum : (q.num : ℝ) = q * q.den := by
+    rw [Rat.cast_def]
+    field_simp
+  rw [mulHeight₁_eq_max]
+  push_cast
+  refine max_le ?_ (le_mul_of_one_le_left (by positivity) (le_max_left _ _))
+  rw [Nat.cast_natAbs, Int.cast_abs, hnum, abs_mul, Nat.abs_cast]
+  exact mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
 
 /-- The logarithm of the denominator of a rational number is at most its logarithmic height. -/
 theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q := by

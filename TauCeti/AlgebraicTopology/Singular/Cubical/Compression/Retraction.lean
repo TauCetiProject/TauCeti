@@ -35,8 +35,9 @@ isomorphisms on singular homology with coefficients in any ring
 applies as soon as every point of `X` is joined by a path to `A` and all relative homotopy sets
 `π_{n+1}(X, A, a)` vanish
 (`TauCeti.isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup`). For the inclusion of the
-bottom of the mapping cylinder of a weak homotopy equivalence, this is the invariance of singular
-homology under weak homotopy equivalences (Hatcher, Proposition 4.21).
+bottom of the mapping cylinder of a weak homotopy equivalence, this gives the invariance of
+singular homology under weak homotopy equivalences (Hatcher, Proposition 4.21), proved as
+`ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`.
 
 ## Main definitions
 
@@ -398,15 +399,7 @@ theorem isIso_singularHomologyMap (D : SubspaceCubeDeformation A) (n : ℕ) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
       (TopCat.ofHom (ContinuousMap.subtypeVal A))) := by
   have := D.quasiIso_normalizedCubicalChainComplex_map R
-  have h := singularCubicalHomologyIso_hom_naturality (k := R)
-    (TopCat.ofHom (ContinuousMap.subtypeVal A)) n
-  rw [← Iso.eq_comp_inv] at h
-  -- The singular homology functor sends a map to the homology map of its singular chain map.
-  have hS : IsIso (HomologicalComplex.homologyMap
-      ((singularChains R).map (TopCat.ofHom (ContinuousMap.subtypeVal A))) n) := by
-    rw [h]
-    infer_instance
-  exact hS
+  exact TopCat.isIso_singularHomologyMap_of_quasiIso _ n
 
 end SubspaceCubeDeformation
 
