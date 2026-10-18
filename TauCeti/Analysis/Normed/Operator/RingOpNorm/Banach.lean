@@ -35,7 +35,7 @@ be opened there. On the zero module every operator has norm zero (`norm_of_subsi
 For a complete normed `R`-module `E`, the endomorphism ring is a Banach ring, so *Neumann
 inversion* applies: for `‖t‖ < 1` the operator `1 - t` is invertible with inverse the Neumann
 series `∑ tⁿ`. This is packaged as the continuous linear automorphism
-`ContinuousLinearEquiv.oneSub t ht`. When `E` is ultrametric, `1 - t` and its inverse are
+`ContinuousLinearMap.oneSub t ht`. When `E` is ultrametric, `1 - t` and its inverse are
 isometries, so the inverse has operator norm one on a module with a vector of nonzero norm.
 
 ## Main definitions
@@ -43,17 +43,17 @@ isometries, so the inverse has operator norm one on a module with a vector of no
 * `TauCeti.RingOpNorm.seminormedAddCommGroup`, `TauCeti.RingOpNorm.normedAddCommGroup`,
   `TauCeti.RingOpNorm.seminormedRing`, `TauCeti.RingOpNorm.normedRing`: the scoped operator-norm
   structures.
-* `ContinuousLinearEquiv.oneSub t ht`: the automorphism `1 - t` of a complete normed module over
+* `ContinuousLinearMap.oneSub t ht`: the automorphism `1 - t` of a complete normed module over
   Tate scalars, for `‖t‖ < 1`.
 
 ## Main results
 
 * `TauCeti.RingOpNorm.completeSpace`: the operator space is complete when the target is.
 * `TauCeti.RingOpNorm.isUltrametricDist`: the operator norm is ultrametric when the target is.
-* `ContinuousLinearEquiv.coe_oneSub_symm`: the inverse of `1 - t` is `Ring.inverse (1 - t)`,
+* `ContinuousLinearMap.coe_oneSub_symm`: the inverse of `1 - t` is `Ring.inverse (1 - t)`,
   the sum of the Neumann series.
-* `ContinuousLinearEquiv.norm_oneSub_apply`, `ContinuousLinearEquiv.norm_oneSub_symm_apply` and
-  `ContinuousLinearEquiv.ringOpNorm_oneSub_symm`: in the ultrametric case `1 - t` and its inverse
+* `ContinuousLinearMap.norm_oneSub_apply`, `ContinuousLinearMap.norm_oneSub_symm_apply` and
+  `ContinuousLinearMap.ringOpNorm_oneSub_symm`: in the ultrametric case `1 - t` and its inverse
   preserve norms, and the inverse has operator norm one (the Neumann estimate
   `TauCeti.norm_inverse_one_sub` in the Banach ring of operators).
 
@@ -201,9 +201,7 @@ theorem seminormedAddCommGroup_eq {K E F : Type*} [NontriviallyNormedField K]
 
 end TauCeti.RingOpNorm
 
-namespace ContinuousLinearEquiv
-
-open ContinuousLinearMap
+namespace ContinuousLinearMap
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]
@@ -222,7 +220,6 @@ theorem coe_oneSub : (oneSub t ht : E →L[R] E) = 1 - t :=
   (rfl)
 
 /-- The automorphism `oneSub t ht` sends `x` to `x - t x`. -/
-@[simp]
 theorem oneSub_apply (x : E) : oneSub t ht x = x - t x :=
   (rfl)
 
@@ -240,6 +237,7 @@ section Ultrametric
 variable [IsUltrametricDist E]
 
 /-- In an ultrametric module, `1 - t` preserves norms when `‖t‖ < 1`. -/
+@[simp]
 theorem norm_oneSub_apply (x : E) : ‖oneSub t ht x‖ = ‖x‖ := by
   rcases (norm_nonneg x).eq_or_lt with hx | hx
   · have htx : ‖t x‖ ≤ 0 := (le_ringOpNorm t x).trans (by simp [← hx])
@@ -263,4 +261,4 @@ theorem ringOpNorm_oneSub_symm [Nontrivial E] : ‖((oneSub t ht).symm : E →L[
 
 end Ultrametric
 
-end ContinuousLinearEquiv
+end ContinuousLinearMap
