@@ -25,6 +25,9 @@ centred at `b` (`TauCeti.Yamabe.bubble`). With `aₙ = 4 (n - 1) / (n - 2)` and
   measure;
 * the value `∫ U ^ pₙ = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` for Lebesgue measure.
 
+The integrability of `U ^ pₙ` and its value hold more generally in every positive dimension
+`n ≠ 2`, including `n = 1`.
+
 The value is the classical surface area `|Sⁿ|` of the unit sphere `Sⁿ ⊆ ℝⁿ⁺¹`, as it must be,
 since `U ^ (4 / (n - 2))` times the Euclidean metric is the pullback of the round metric of `Sⁿ`;
 neither the sphere nor the stereographic projection is formalized here. Classically, the two
@@ -65,19 +68,20 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- In dimension `n > 2`, the critical power `U_{t,b} ^ pₙ` of a bubble is integrable for every
-additive Haar measure. -/
-theorem integrable_bubble_rpow_criticalExponent (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t)
-    (b : E) : Integrable (fun x ↦ bubble t b x ^ criticalExponent (finrank ℝ E)) μ := by
+/-- In every positive dimension `n ≠ 2`, the critical power `U_{t,b} ^ pₙ` of a bubble is
+integrable for every additive Haar measure. -/
+theorem integrable_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : finrank ℝ E ≠ 2)
+    {t : ℝ} (ht : 0 < t) (b : E) :
+    Integrable (fun x ↦ bubble t b x ^ criticalExponent (finrank ℝ E)) μ := by
   have hr : (finrank ℝ E : ℝ) < 2 * finrank ℝ E := by
-    have : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
+    have : (0 : ℝ) < finrank ℝ E := by exact_mod_cast hn₀
     linarith
   have hint := ((integrable_rpow_neg_sq_add_norm_sq μ ht.ne' hr).const_mul
     ((2 * t) ^ finrank ℝ E)).comp_sub_right b
   refine hint.congr (.of_forall fun x ↦ ?_)
   have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   beta_reduce
-  rw [bubble_rpow_criticalExponent hn.ne' ht, show -(2 * (finrank ℝ E : ℝ)) / 2 =
+  rw [bubble_rpow_criticalExponent hn ht, show -(2 * (finrank ℝ E : ℝ)) / 2 =
     -(finrank ℝ E : ℝ) by ring, Real.rpow_neg hQ.le, Real.rpow_natCast, div_pow, div_eq_mul_inv]
 
 /-- In dimension `n > 2`, the squared norm of the differential of a bubble is integrable for
@@ -123,7 +127,8 @@ theorem memLp_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     (contDiff_bubble (m := 0) ht.ne' b).continuous.aestronglyMeasurable
     (by simpa using hp) ENNReal.ofReal_ne_top).mp ?_
   rw [ENNReal.toReal_ofReal hp.le]
-  refine (integrable_bubble_rpow_criticalExponent μ hn ht b).congr (.of_forall fun x ↦ ?_)
+  refine (integrable_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht b).congr
+    (.of_forall fun x ↦ ?_)
   simp only [Real.norm_of_nonneg (bubble_pos ht b x).le]
 
 /-- In dimension `n > 2`, the differential of a bubble lies in `L²` for every additive Haar
@@ -160,7 +165,7 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq (hn : 2 < finran
     have : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn.ne')
     positivity
   have h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * ψ r) (Ioi 0) := by
-    have h := integrable_bubble_rpow_criticalExponent μ hn ht 0
+    have h := integrable_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht 0
     rw [hpow 0] at h
     simp only [sub_zero] at h
     simpa using (integrable_fun_norm_addHaar μ (f := ψ)).mp h
@@ -201,19 +206,19 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq (hn : 2 < finran
       rw [hrad]
       field_simp
 
-/-- **The critical norm of a bubble**: in dimension `n > 2`, for Lebesgue measure,
+/-- **The critical norm of a bubble**: in every positive dimension `n ≠ 2`, for Lebesgue measure,
 `∫ U_{t,b} ^ pₙ = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)`, independently of the scale and the
 centre. The right-hand side is the classical surface area of the unit sphere `Sⁿ ⊆ ℝⁿ⁺¹`. -/
-theorem integral_bubble_rpow_criticalExponent (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t)
-    (b : E) :
+theorem integral_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : finrank ℝ E ≠ 2)
+    {t : ℝ} (ht : 0 < t) (b : E) :
     ∫ x, bubble t b x ^ criticalExponent (finrank ℝ E) =
       2 * π ^ (((finrank ℝ E : ℝ) + 1) / 2) / Gamma (((finrank ℝ E : ℝ) + 1) / 2) := by
   set n := finrank ℝ E with hn_def
-  have hn0 : (0 : ℝ) < n := by positivity
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn₀
   set ψ : ℝ → ℝ := fun r ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ n with hψ
   have hpow : (fun x ↦ bubble t b x ^ criticalExponent n) = fun x ↦ ψ ‖x - b‖ := by
     funext x
-    exact bubble_rpow_criticalExponent hn.ne' ht b x
+    exact bubble_rpow_criticalExponent hn ht b x
   -- Rescale: `ψ ‖y‖ = (2 / t) ^ n (1 + ‖t⁻¹ • y‖²) ^ (-n)`.
   have hscale (y : E) : ψ ‖y‖ =
       (2 / t) ^ n * (1 + ‖t⁻¹ • y‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2) := by

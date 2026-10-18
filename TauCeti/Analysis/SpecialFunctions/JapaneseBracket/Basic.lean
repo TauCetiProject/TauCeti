@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 Mathlib proves that `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable on a finite-dimensional real
 normed space `V` of dimension `d` as soon as `d < r`
-(`integrable_rpow_neg_one_add_norm_sq`). This file computes the integral:
+(`integrable_rpow_neg_one_add_norm_sq`). When `V` is moreover a real inner product space, this
+file computes the integral against its canonical Lebesgue measure `volume`:
 
 `∫ x : V, (1 + ‖x‖ ^ 2) ^ (-r / 2) = π ^ (d / 2) Γ((r - d) / 2) / Γ(r / 2)`.
 
@@ -32,7 +33,8 @@ normalization of the multivariate Cauchy distribution and of the Poisson kernel 
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.sub_two_mul_integral_radial`: an identity between two radial moments of the rescaled
   bracket.
-* `TauCeti.integral_rpow_neg_one_add_norm_sq`: the value of the integral.
+* `TauCeti.integral_rpow_neg_one_add_norm_sq`: the value of the integral on a real inner
+  product space, for its canonical Lebesgue measure.
 -/
 
 public section
