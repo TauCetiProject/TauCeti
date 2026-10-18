@@ -48,16 +48,19 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
     f q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       q ^ (2 * b) •
         (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q) := by
-  have hf : f q * (kUnit q : UqSl2 q) =
-      ((Units.mk0 q Fact.out ^ 2 : ℂˣ) : ℂ) • ((kUnit q : UqSl2 q) * f q) := by
-    rw [kUnit_val, k_mul_f, smul_smul, Units.val_pow_eq_pow_val, Units.val_mk0, inv_pow,
-      mul_inv_cancel₀ (pow_ne_zero 2 Fact.out), one_smul]
-  have hscale : (((Units.mk0 q Fact.out ^ 2) ^ b : ℂˣ) : ℂ) = q ^ (2 * b) := by
-    simpa using pbwScale_coe q 1 b
-  simpa only [laurentEval_T, rescale_T, map_mul, laurentEval_C, Algebra.smul_def, mul_assoc,
-    Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, map_zpow,
-    Units.val_zpow_eq_zpow_val, hscale] using
-    (TauCeti.mul_laurentEval hf (T b))
+  have hk : f q * k q = q ^ (2 : ℤ) • (k q * f q) := by
+    rw [k_mul_f, smul_smul, zpow_ofNat, ← mul_pow, mul_inv_cancel₀ Fact.out, one_pow, one_smul]
+  have hkInv : f q * kInv q = q ^ (-2 : ℤ) • (kInv q * f q) := by
+    rw [f_mul_kInv, zpow_neg, zpow_ofNat, inv_pow]
+  induction b using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+    rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hk,
+      mul_smul_comm, smul_smul, ← mul_assoc, ← zpow_add₀ Fact.out, mul_add_one]
+  | pred n ih =>
+    rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc, ih, smul_mul_assoc, mul_assoc,
+      hkInv, mul_smul_comm, smul_smul, ← mul_assoc, ← zpow_add₀ Fact.out, mul_sub_one,
+      sub_eq_add_neg]
 
 /-- Moving a natural power of `F` past an integer power of `K`. -/
 theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
