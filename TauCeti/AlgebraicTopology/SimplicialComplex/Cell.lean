@@ -14,7 +14,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 An `n`-cell of an abstract simplicial complex is a face with `n + 1` vertices.  For a linearly
 ordered vertex type, every cell has a canonical increasing enumeration.  This file also defines
 the codimension-one cell obtained by deleting an enumerated vertex and proves the semisimplicial
-face identity.
+face identity.  The codimension-one cells are classified by the vertex deleted from the original
+face.
 
 ## Main definitions
 
@@ -76,6 +77,47 @@ def face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) : RealizationCell K n
 theorem face_val (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
     (c.face j).1.1 = c.1.1.erase (c.vertexEmbedding j) :=
   (rfl)
+
+/-- The codimension-one faces obtained by deleting vertices are pairwise distinct. -/
+theorem face_injective (c : RealizationCell K (n + 1)) : Function.Injective c.face := by
+  intro i j hij
+  have herase : c.1.1.erase (c.vertexEmbedding i) =
+      c.1.1.erase (c.vertexEmbedding j) := by
+    simpa only [face_val] using congrArg (fun d => d.1.1) hij
+  exact c.vertexEmbedding.injective
+    ((Finset.erase_inj c.1.1 (c.vertexEmbedding_mem i)).mp herase)
+
+/-- A finite set lies in a codimension-one face exactly when it is a proper subset of the
+original face. -/
+theorem exists_subset_face_iff_ssubset (c : RealizationCell K (n + 1)) (s : Finset ι) :
+    (∃ j, s ⊆ (c.face j).1.1) ↔ s ⊂ c.1.1 := by
+  constructor
+  · rintro ⟨j, hs⟩
+    exact hs.trans_lt (Finset.erase_ssubset (c.vertexEmbedding_mem j))
+  · intro hs
+    obtain ⟨a, ha, hsa⟩ := Finset.ssubset_iff_exists_subset_erase.mp hs
+    have ha' : a ∈ Finset.univ.image c.vertexEmbedding := by
+      simpa only [image_vertexEmbedding] using ha
+    obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp ha'
+    exact ⟨j, by simpa only [face_val] using hsa⟩
+
+/-- The codimension-one cells of a cell are exactly its subfaces of the appropriate dimension. -/
+theorem exists_face_eq_iff_subset (c : RealizationCell K (n + 1)) (d : RealizationCell K n) :
+    (∃ j, c.face j = d) ↔ d.1.1 ⊆ c.1.1 := by
+  constructor
+  · rintro ⟨j, rfl⟩
+    exact Finset.erase_subset _ _
+  · intro hdc
+    have hdc' : d.1.1 ⊂ c.1.1 := Finset.ssubset_iff_subset_ne.mpr ⟨hdc, by
+        intro h
+        have hcard := congrArg Finset.card h
+        simp only [d.2, c.2] at hcard
+        omega⟩
+    obtain ⟨j, hdj⟩ := (c.exists_subset_face_iff_ssubset d.1.1).mpr hdc'
+    refine ⟨j, Subtype.ext (Subtype.ext ?_)⟩
+    exact (Finset.eq_of_subset_of_card_le hdj (by
+      simp only [d.2, (c.face j).2]
+      omega)).symm
 
 /-- The increasing enumeration of a deleted-vertex face skips exactly the deleted position. -/
 @[simp]

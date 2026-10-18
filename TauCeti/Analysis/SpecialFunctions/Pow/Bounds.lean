@@ -30,6 +30,10 @@ If `1 ≤ C`, `D < n` and `C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) 
 is the counting step of Siegel's lemma: it compares the integer points of a box with the cells
 of a partition of the image of that box under `D` linear forms.
 
+For `t > 0` and every natural `k`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`: the Japanese bracket
+decays at least as fast as `t ^ (-1)`. This converts symbol estimates of order `0` into Mihlin's
+condition.
+
 ## Main results
 
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
@@ -39,6 +43,7 @@ of a partition of the image of that box under `D` linear forms.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
+* `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
 -/
 
 public section
@@ -121,5 +126,16 @@ theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D
     _ < (B + 1) ^ ((n : ℝ) - D) * (B + 1) ^ D := by gcongr
     _ = (B + 1) ^ n := by
         rw [← rpow_natCast _ D, ← rpow_add (by positivity), sub_add_cancel, rpow_natCast]
+
+/-- For `t > 0`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`. -/
+theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    (1 + t ^ 2) ^ (-(k : ℝ) / 2) ≤ 1 / t ^ k := by
+  have hpow : t ^ k ≤ (1 + t ^ 2) ^ ((k : ℝ) / 2) := by
+    calc t ^ k = (t ^ 2) ^ ((k : ℝ) / 2) := by
+          rw [← rpow_natCast, ← rpow_natCast, ← rpow_mul ht.le]
+          ring_nf
+      _ ≤ _ := rpow_le_rpow (by positivity) (by linarith) (by positivity)
+  rw [neg_div, rpow_neg (by positivity), ← one_div]
+  exact one_div_le_one_div_of_le (by positivity) hpow
 
 end Real
