@@ -46,7 +46,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
 * `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
-  integer floor, including at negative points.
+  integer floor, including at negative points;
+* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` shows that every level below one is
+  reached by a finite cumulative mass of a natural-valued law.
 
 ## Adapted from
 
@@ -69,6 +71,12 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- Below the level `1` some point has cumulative mass at least the level, because the cumulative
+distribution function tends to `1` at `+∞`. -/
+theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
+    {x : ℝ | t ≤ cdf μ x}.Nonempty :=
+  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
 
 /-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
 `1 - cdf μ x`. -/
@@ -107,10 +115,7 @@ theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure �
 floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
 theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
     cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
-  have hpre : (Int.cast : ℤ → ℝ) ⁻¹' Iic x = Iic ⌊x⌋ := by
-    ext k
-    simp only [mem_preimage, mem_Iic, Int.le_floor]
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre]
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, Int.preimage_Iic]
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
@@ -134,6 +139,14 @@ theorem cdf_map_natCast_of_neg {x : ℝ} (hx : x < 0) :
     exact lt_of_lt_of_le hx (Nat.cast_nonneg k)
   rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre,
     measureReal_empty]
+
+/-- Every level below one is reached by a finite cumulative mass of a natural-valued probability
+law. This existence proof supplies the witness required by `Nat.find`. -/
+theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u ≤ μ.real (Iic k) := by
+  obtain ⟨x, hx⟩ := nonempty_setOf_le_cdf (μ.map (Nat.cast : ℕ → ℝ)) hu
+  refine ⟨⌈x⌉₊, ?_⟩
+  have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
+  simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
 
 /-- **CDF continuity from null singletons.** The cumulative distribution function of a
 probability measure on `ℝ` is continuous when every singleton has measure zero. -/

@@ -81,14 +81,6 @@ theorem quantile_map_natCast_eq_iff (hu : u ∈ Ioo 0 1) (k : ℕ) :
   rw [hleast.isLeast_iff_eq, ← Nat.cast_inj (R := ℝ),
     ← quantile_map_natCast_eq_floor μ hu]
 
-/-- Every level below one is reached by a finite cumulative mass of a natural-valued probability
-law. This existence proof supplies the witness required by `Nat.find`. -/
-theorem exists_nat_le_measureReal_Iic (hu : u < 1) : ∃ k : ℕ, u ≤ μ.real (Iic k) := by
-  obtain ⟨x, hx⟩ := nonempty_setOf_le_cdf (μ.map (Nat.cast : ℕ → ℝ)) hu
-  refine ⟨⌈x⌉₊, ?_⟩
-  have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
-  simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
-
 /-- The quantile of a natural-valued law is the first index at which its native cumulative mass
 reaches the level, expressed by `Nat.find`. -/
 theorem quantile_map_natCast_eq_find (hu : u ∈ Ioo 0 1) :
