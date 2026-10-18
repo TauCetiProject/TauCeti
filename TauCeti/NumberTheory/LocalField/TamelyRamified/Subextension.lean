@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.WildInertia
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 
 /-!
@@ -23,17 +21,14 @@ degree is `f(L/K)`, and so its degree over `K` is `[L : K] / p ^ k`. No Galois o
 hypothesis on `L/K` is needed.
 
 The lower bound on the ramification index comes from a radical: for every uniformizer `π` of `K`,
-some `α ∈ L` satisfies `α ^ e' = ω π` with `ω` a root of unity of order prime to `p`, and such an
-`α` lies in `Kᵗ`.
+some `α ∈ L` satisfies `α ^ e' = ω π` with `ω` a root of unity of order prime to `p`
+(`TauCeti.exists_pow_ordCompl_ramificationIndex_eq_mul`), and such an `α` lies in `Kᵗ`.
 
 When `L/K` is Galois, `Kᵗ ⊓ L` is also the fixed field of the first lower ramification group
 `G₁(L/K)`. These statements accept any compatible local-field structures on `L` and on `Kᵗ ⊓ L`.
 
 ## Main results
 
-* `TauCeti.exists_pow_ordCompl_ramificationIndex_eq_mul`: for a finite extension `L/K` and a
-  uniformizer `π` of `K`, some `α ∈ Lˣ` has `α ^ e' = ω π` for a root of unity `ω` of order
-  dividing `#𝓀[L] - 1`.
 * `IntermediateField.ramificationIndex_maximalTameExtension_inf`,
   `IntermediateField.inertiaDegree_maximalTameExtension_inf` and
   `IntermediateField.finrank_maximalTameExtension_inf`: the invariants of `Kᵗ ⊓ L` over `K`.
@@ -69,52 +64,6 @@ theorem finrank_fixedField_lowerRamificationGroup_one :
   rw [IsGalois.card_aut_eq_finrank, natCard_lowerRamificationGroup_one]
 
 end TauCeti.LocalFieldsRamification
-
-namespace TauCeti
-
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-/-- **The tame part of the ramification index is attained by a radical.** Let `L/K` be a finite
-extension of nonarchimedean local fields whose ramification index is `e = p ^ k e'`, where `p` is
-the residue characteristic and `p ∤ e'`, and let `π` be a uniformizer of `K`. Then
-`α ^ e' = ω π` for some `α ∈ Lˣ` and some root of unity `ω ∈ L` of order dividing
-`#𝓀[L] - 1`. -/
-theorem exists_pow_ordCompl_ramificationIndex_eq_mul {π : Kˣ} (hπ : IsUniformizer K π) :
-    ∃ α : Lˣ, ∃ ω ∈ rootsOfUnity (Nat.card 𝓀[L] - 1) L,
-      α ^ (ramificationIndex K L /
-          ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K])) =
-        ω * Units.map (algebraMap K L : K →* L) π := by
-  set p := ringChar 𝓀[K]
-  set e := ramificationIndex K L
-  set k := e.factorization p
-  obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer (K := L)
-  -- `β = ϖ ^ p ^ k` has valuation `p ^ k`, so `x = β ^ e' / π` is a unit of `𝒪[L]`.
-  set β := ϖ ^ p ^ k
-  set x := β ^ (e / p ^ k) * (Units.map (algebraMap K L : K →* L) π)⁻¹
-  have hx : x ∈ unitFiltration L 0 := by
-    rw [isUniformizer_def] at hπ hϖ
-    rw [← ker_normalizedValuation, MonoidHom.mem_ker]
-    simp only [x, β, map_mul, map_inv, map_pow, normalizedValuation_algebraMap, hπ, hϖ, ← pow_mul,
-      e, k, p, Nat.ordProj_mul_ordCompl_eq_self, mul_inv_cancel]
-  -- Split `x` as a root of unity times a principal unit, and take an `e'`-th root of the
-  -- principal unit, which exists since `p ∤ e'`.
-  set y := unitFiltrationZeroEquivProd L ⟨x, hx⟩
-  have hy : x = y.1 * y.2 := by
-    have h := congrArg Subtype.val ((unitFiltrationZeroEquivProd L).symm_apply_apply ⟨x, hx⟩)
-    rw [coe_unitFiltrationZeroEquivProd_symm_apply] at h
-    exact h.symm
-  have hunit : IsUnit ((e / p ^ k : ℕ) : 𝒪[L]) := by
-    rw [IsLocalRing.isUnit_natCast_iff_not_dvd, ← Algebra.ringChar_eq 𝓀[K] 𝓀[L]]
-    exact Nat.not_dvd_ordCompl (CharP.prime_ringChar 𝓀[K]) ramificationIndex_pos.ne'
-  obtain ⟨γ, hγ⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hunit y.2.2
-  rw [powMonoidHom_apply] at hγ
-  refine ⟨β * γ⁻¹, y.1, y.1.2, ?_⟩
-  have hβ : β ^ (e / p ^ k) = x * Units.map (algebraMap K L : K →* L) π := by simp [x]
-  rw [mul_pow, inv_pow, hγ, hβ, hy, mul_right_comm, mul_inv_cancel_right]
-
-end TauCeti
 
 namespace IntermediateField
 
