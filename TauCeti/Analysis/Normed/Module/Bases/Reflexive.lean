@@ -16,16 +16,19 @@ A Schauder basis is shrinking if its coordinate functionals span a norm-dense
 subspace of the continuous dual. It is boundedly complete if every scalar sequence
 with bounded initial partial sums gives a convergent basis expansion.
 
-James's basis criterion characterizes reflexivity by these two properties. The
-forward direction uses weak compactness of bounded sets; the reverse direction
-reconstructs a vector from the coordinates assigned by a bidual functional.
-All series here use initial segments, rather than unconditional summation. The
-proof reuses Mathlib's basis projections and their uniform norm bound, together
-with the weak compactness characterization of reflexivity.
+James's basis criterion characterizes reflexivity by these two properties.
+All series here use initial segments, rather than unconditional summation.
 
 ## References
 
 * R. E. Megginson, *An Introduction to Banach Space Theory*, §4.4, Theorem 4.4.15.
+-/
+
+/-
+The forward direction uses weak compactness of bounded sets; the reverse direction
+reconstructs a vector from the coordinates assigned by a bidual functional.
+The proof reuses Mathlib's basis projections and their uniform norm bound, together
+with the weak compactness characterization of reflexivity.
 -/
 
 public section
@@ -134,10 +137,10 @@ theorem isShrinking_of_surjective_inclusionInDoubleDual
   have := DFunLike.congr_fun hx f
   simpa [hxzero, dual_def] using this.symm
 
-/-- Every Schauder basis of a reflexive space is boundedly complete. A weak cluster
-point of the bounded partial sums has the prescribed coordinates. -/
+/-- Every Schauder basis of a reflexive space is boundedly complete. -/
 theorem isBoundedlyComplete_of_surjective_inclusionInDoubleDual
     (hE : Surjective (inclusionInDoubleDual 𝕜 E)) : b.IsBoundedlyComplete := by
+  -- A weak cluster point of the bounded partial sums has the prescribed coordinates.
   rw [b.isBoundedlyComplete_iff]
   intro a ⟨C, hC⟩
   let s (n : ℕ) := ∑ i ∈ Finset.range n, a i • b i
