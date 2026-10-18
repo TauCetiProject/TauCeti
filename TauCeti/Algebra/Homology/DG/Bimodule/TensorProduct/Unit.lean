@@ -114,7 +114,6 @@ theorem tensorUnitEquiv_symm_apply (x : tensorUnit.{v} hA) :
     (tensorUnitEquiv.{v} hA).symm x = x.down := rfl
 
 /-- The grading of the regular DG bimodule is the transported algebra grading. -/
-@[simp]
 theorem tensorUnit_grading : (tensorUnit.{v} hA).grading =
     ((InternalGrading.ofDecomposition 𝒜).map
       ((ULift.moduleEquiv : ULift.{v} A ≃ₗ[R] A).symm)).piece := rfl
@@ -171,7 +170,6 @@ theorem tensorUnitEquiv_one_mem_grading_zero :
   exact SetLike.one_mem_graded 𝒜
 
 /-- The differential of the lifted algebra unit vanishes. -/
-@[simp]
 theorem tensorUnit_differential_one :
     (tensorUnit.{v} hA).differential (tensorUnitEquiv.{v} hA 1) = 0 := by
   rw [tensorUnit_differential_apply, tensorUnitEquiv_apply, hA.map_one_eq_zero]
@@ -191,18 +189,18 @@ variable {B : Type uB} [Ring B] [Algebra R B]
   (hB : IsDGAlgebra ℬ dB)
   (M : DGBimoduleCat.{uR, uA, uB, max v uA} hA hB)
 
-local instance : SetLike.GradedSMul
+local instance tensorLeftUnitorGradedSMulUnitRight : SetLike.GradedSMul
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (InternalGrading.ofDecomposition (tensorUnit.{v} hA).grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul 𝒜
+local instance tensorLeftUnitorGradedSMulModuleLeft : SetLike.GradedSMul 𝒜
     (InternalGrading.ofDecomposition M.grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul
+local instance tensorLeftUnitorGradedSMulAlgebraRight : SetLike.GradedSMul
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (InternalGrading.ofDecomposition 𝒜).piece := by
   rw [InternalGrading.ofDecomposition_piece]
@@ -441,18 +439,18 @@ variable {B : Type uB} [Ring B] [Algebra R B]
   (hB : IsDGAlgebra ℬ dB)
   (M : DGBimoduleCat.{uR, uA, uB, max v uB} hA hB)
 
-local instance : SetLike.GradedSMul
+local instance tensorRightUnitorGradedSMulModuleRight : SetLike.GradedSMul
     (InternalGrading.ofDecomposition ℬ).opposite.piece
     (InternalGrading.ofDecomposition M.grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul ℬ
+local instance tensorRightUnitorGradedSMulUnitLeft : SetLike.GradedSMul ℬ
     (InternalGrading.ofDecomposition (tensorUnit.{v} hB).grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul ℬ
+local instance tensorRightUnitorGradedSMulAlgebraLeft : SetLike.GradedSMul ℬ
     (InternalGrading.ofDecomposition ℬ).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
