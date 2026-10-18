@@ -70,10 +70,14 @@ regular locus of `S` exactly when its contraction to `R` is in the regular locus
 theorem regularLocus_ringEquiv {S : Type*} [CommRing S] (e : R ≃+* S) :
     PrimeSpectrum.comap (e : R →+* S) ⁻¹' regularLocus R = regularLocus S := by
   ext p
-  let f : Localization.AtPrime (p.asIdeal.comap e) ≃+* Localization.AtPrime p.asIdeal :=
-    IsLocalization.ringEquivOfRingEquiv _ _ e (e.map_primeCompl_comap_eq p.asIdeal)
-  exact ⟨fun h ↦ @IsRegularLocalRing.of_ringEquiv _ _ h _ _ f,
-    fun h ↦ @IsRegularLocalRing.of_ringEquiv _ _ h _ _ f.symm⟩
+  -- The prime of `R` below `p` is `p.asIdeal.comap e` by `PrimeSpectrum.comap_asIdeal`, a `rfl`
+  -- lemma, so `e.map_primeCompl_comap_eq` applies to its complement as stated.
+  let q := PrimeSpectrum.comap (e : R →+* S) p
+  let f : Localization.AtPrime q.asIdeal ≃+* Localization.AtPrime p.asIdeal :=
+    IsLocalization.ringEquivOfRingEquiv (M := q.asIdeal.primeCompl) _ _ e
+      (e.map_primeCompl_comap_eq p.asIdeal)
+  rw [Set.mem_preimage, mem_regularLocus, mem_regularLocus]
+  exact ⟨fun _ ↦ .of_ringEquiv f, fun _ ↦ .of_ringEquiv f.symm⟩
 
 variable (R) in
 /-- The zero ring has empty regular locus, as it has no primes. -/
