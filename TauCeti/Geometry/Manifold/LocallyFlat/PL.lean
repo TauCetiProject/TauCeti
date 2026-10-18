@@ -45,23 +45,6 @@ theorem IsPLOn.isLocallyFlat_of_homeomorph_graph
     IsLocallyFlat E F f :=
   (continuousOn_univ.mp hf.continuousOn).isLocallyFlat_of_homeomorph_graph Φ hΦ
 
-/-- If `f` is continuous on an open set `s`, its graph parametrized by `s` is locally flat in the
-ambient product `E × F`, with complementary model `F`. This is the graph form used when a map is
-described on an open coordinate domain, including coordinate-chart applications. -/
-theorem _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen
-    {E F : Type*} [TopologicalSpace E]
-    [AddGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-    {f : E → F} {s : Set E} (hf : ContinuousOn f s) (hs : IsOpen s) :
-    IsLocallyFlat s F (fun x : s => ((x.1, f x.1) : E × F)) := by
-  have hcont : Continuous (s.domRestrict f) :=
-    continuousOn_iff_continuous_domRestrict.mp hf
-  have hgraph : IsLocallyFlat s F (fun x : s => (x, s.domRestrict f x)) := by
-    apply TauCeti.isLocallyFlat_graph
-    exact hcont
-  have hopen : Topology.IsOpenEmbedding (Prod.map (Subtype.val : s → E) (id : F → F)) :=
-    hs.isOpenEmbedding_subtypeVal.prodMap Topology.IsOpenEmbedding.id
-  exact hgraph.isOpenEmbedding_comp hopen
-
 /-- A piecewise-linear map on an open domain has a locally flat graph in the ambient product.
 This is the PL corollary of `ContinuousOn.isLocallyFlat_graph_of_isOpen`, and is the graph form
 used when a PL embedding is described in coordinate charts. -/
