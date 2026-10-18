@@ -34,8 +34,7 @@ variable [L.Structure M] [L.Structure N] [L.Structure P]
 
 /-- The composite of partial equivalences `f : M ≃ₚ[L] N` and `g : N ≃ₚ[L] P` when the codomain
 of `f` lies in the domain of `g`. It has the domain of `f`. -/
-@[expose] noncomputable def comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) :
-    M ≃ₚ[L] P where
+noncomputable def comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) : M ≃ₚ[L] P where
   dom := f.dom
   cod := (g.domRestrict h).cod
   toEquiv := (g.domRestrict h).toEquiv.comp f.toEquiv
@@ -43,23 +42,29 @@ of `f` lies in the domain of `g`. It has the domain of `f`. -/
 /-- The composite has the domain of the first partial equivalence. -/
 @[simp]
 theorem dom_comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) :
-    (g.comp f h).dom = f.dom := rfl
+    (g.comp f h).dom = f.dom := (rfl)
 
 /-- The composite applies the first partial equivalence, then the second. -/
 theorem comp_apply (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) {x : M}
-    (hx : x ∈ (g.comp f h).dom) :
-    ((g.comp f h).toEquiv ⟨x, hx⟩ : P) = g.toEquiv ⟨f.toEquiv ⟨x, hx⟩, h (f.toEquiv _).2⟩ := rfl
+    (hx : x ∈ f.dom) :
+    ((g.comp f h).toEquiv ⟨x, (dom_comp g f h).ge hx⟩ : P) =
+      g.toEquiv ⟨f.toEquiv ⟨x, hx⟩, h (f.toEquiv ⟨x, hx⟩).2⟩ := (rfl)
 
 /-- Composition of partial equivalences is monotone in both arguments. -/
 theorem comp_le_comp {f f' : M ≃ₚ[L] N} {g g' : N ≃ₚ[L] P} (hf : f ≤ f') (hg : g ≤ g')
     (h : f.cod ≤ g.dom) (h' : f'.cod ≤ g'.dom) : g.comp f h ≤ g'.comp f' h' := by
-  refine ⟨show f.dom ≤ f'.dom from dom_le_dom hf, ?_⟩
+  have hdom : (g.comp f h).dom ≤ (g'.comp f' h').dom := by
+    rw [dom_comp, dom_comp]
+    exact dom_le_dom hf
+  refine (le_def _ _).2 ⟨hdom, ?_⟩
   ext ⟨x, hx⟩
+  rw [dom_comp] at hx
   have hf' := congrArg Subtype.val (toEquiv_inclusion_apply hf ⟨x, hx⟩)
   have hg' := congrArg Subtype.val (toEquiv_inclusion_apply hg ⟨_, h (f.toEquiv ⟨x, hx⟩).2⟩)
-  change (g'.toEquiv ⟨f'.toEquiv ⟨x, dom_le_dom hf hx⟩, _⟩ : P) = g.toEquiv ⟨f.toEquiv ⟨x, hx⟩, _⟩
   simp only [Substructure.coe_inclusion] at hf' hg'
-  simp only [hf']
+  simp only [Embedding.comp_apply, Equiv.coe_toEmbedding, Substructure.coe_subtype,
+    Substructure.coe_inclusion, comp_apply _ _ _ hx,
+    comp_apply _ _ _ (dom_le_dom hf hx), hf']
   exact hg'
 
 end FirstOrder.Language.PartialEquiv

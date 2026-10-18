@@ -149,9 +149,8 @@ theorem PotentialIso.trans {P : Type*} [L.Structure P] (h₁ : PotentialIso (L :
     refine ⟨_, ⟨f', hf', g', hg', h', rfl⟩, ?_,
       PartialEquiv.comp_le_comp hff' (hgg₁.trans hg₁g') h h'⟩
     let x := f'.1.toEquiv.symm ⟨y, hy⟩
-    have hx : (x : M) ∈ (g'.1.comp f'.1 h').dom := by rw [PartialEquiv.dom_comp]; exact x.2
-    convert ((g'.1.comp f'.1 h').toEquiv ⟨x, hx⟩).2
-    rw [PartialEquiv.comp_apply]
+    convert ((g'.1.comp f'.1 h').toEquiv ⟨x, (PartialEquiv.dom_comp _ _ h').ge x.2⟩).2
+    rw [PartialEquiv.comp_apply _ _ _ x.2]
     have hfx : (f'.1.toEquiv ⟨x, x.2⟩ : N) = y := by simp [x]
     have hg := congrArg Subtype.val (PartialEquiv.toEquiv_inclusion_apply hg₁g' y)
     simp only [Substructure.coe_inclusion] at hg
