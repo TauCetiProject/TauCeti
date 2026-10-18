@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Basic
-public import TauCeti.Analysis.Analytic.LaurentConjugation
+public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 
 /-!
 # Conjugation-compatible Laurent forms of nonmonic roots

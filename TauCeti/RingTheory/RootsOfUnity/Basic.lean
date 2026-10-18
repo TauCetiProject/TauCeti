@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Defs
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
@@ -14,8 +15,10 @@ public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 # Basic results on roots of unity
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
-and counts the square roots of unity in a domain in which `2 ≠ 0`. For a prime `p` it relates the
-triviality of the `p`th roots of unity to the absence of a primitive one. It also records that
+and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
+`n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
+homomorphism into a domain. For a prime `p` it relates the triviality of the `p`th roots of
+unity to the absence of a primitive one. It also records that
 roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
 Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
 of unity.
@@ -35,10 +38,13 @@ of unity.
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
+* `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
+* `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
+  commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
@@ -85,6 +91,15 @@ theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
 
+/-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
+exponent divides `n`. -/
+theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n R) ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact dvd_zero _
+  have : NeZero n := ⟨hn⟩
+  rw [← IsCyclic.exponent_eq_card]
+  exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
+
 /-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
 odd order `n` is a primitive `2n`-th root of unity. -/
 theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveRoot ζ n) (hn : Odd n)
@@ -93,6 +108,17 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
   rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
     (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
   rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
+
+/-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
+`n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,
+and the `n`-th roots of unity of a domain form a cyclic group. For instance, every field extension
+of a field containing the `n`-th roots of unity contains them. -/
+theorem _root_.HasEnoughRootsOfUnity.of_injective {M : Type*} [CommMonoid M] [IsDomain R]
+    {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity M n] {f : M →* R} (hf : Function.Injective f) :
+    HasEnoughRootsOfUnity R n where
+  prim := have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M n
+    ⟨f ζ, hζ.map_of_injective hf⟩
+  cyc := rootsOfUnity.isCyclic R n
 
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/

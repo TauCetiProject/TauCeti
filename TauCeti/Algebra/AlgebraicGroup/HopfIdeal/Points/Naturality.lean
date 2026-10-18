@@ -26,6 +26,8 @@ not just a subgroup at each individual algebra.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 
 namespace TauCeti
@@ -43,7 +45,7 @@ lemma mapPoints_quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f) =
       quotientPointsHom H I B (HopfAlgebra.mapPoints (H := quotient H I) χ f) := by
-  exact mapPointsFunctor_naturality_apply (R := R) (mkQuotient H I) χ f
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_naturality_apply (R := R) (mkQuotient H I) χ f
 
 /-- The quotient-points inclusion commutes with post-composition, including when the source and
 target value algebras lie in different universes. -/

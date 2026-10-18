@@ -12,7 +12,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Trace
 -- Proof-only: base change of morphisms is an injective ring map.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: the pencil determinant of a `2 × 2` matrix.
-import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 -- Proof-only: the Cayley–Hamilton theorem for `2 × 2` matrices.
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 

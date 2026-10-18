@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.DG.HomotopyCategory
+public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
 public import Mathlib.CategoryTheory.Whiskering
 
 /-!
@@ -175,6 +176,36 @@ theorem dgClosedHom_comp
     ModuleCat.MonoidalCategory.leftUnitor_inv_apply]
   rw [← ModuleCat.comp_apply, ← dgCompMap_def]
   exact dgCompMap_tmul R (by omega) _ _
+
+/-- Enriched postcomposition `eHomWhiskerLeft` with an underlying morphism `g` postcomposes a
+homogeneous morphism with the closed component of `g`. -/
+@[simp]
+theorem eHomWhiskerLeft_f_apply (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C)
+    {Y Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (g : Y ⟶ Z) (p : ℤ)
+    (f : DGHom R p (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
+      (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)) :
+    ((eHomWhiskerLeft (CochainComplex (ModuleCat.{v} R) ℤ) X g).f p).hom f =
+      dgComp R f (dgClosedHom R g) (add_zero p) := by
+  rw [eHomWhiskerLeft, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    rightUnitor_inv_f, rightUnitor'_inv]
+  simp only [Category.assoc, ι_whiskerLeft_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
+  rw [← dgCompMap_tmul, dgCompMap_def]
+  rfl
+
+/-- Enriched precomposition `eHomWhiskerRight` with an underlying morphism `g` precomposes a
+homogeneous morphism with the closed component of `g`. -/
+@[simp]
+theorem eHomWhiskerRight_f_apply {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
+    (g : X ⟶ Y) (Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) (p : ℤ)
+    (f : DGHom R p (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)
+      (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Z)) :
+    ((eHomWhiskerRight (CochainComplex (ModuleCat.{v} R) ℤ) g Z).f p).hom f =
+      dgComp R (dgClosedHom R g) f (zero_add p) := by
+  rw [eHomWhiskerRight, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    leftUnitor_inv_f, leftUnitor'_inv]
+  simp only [Category.assoc, ι_whiskerRight_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
+  rw [← dgCompMap_tmul, dgCompMap_def]
+  rfl
 
 /-- The underlying morphism constructed from the DG identity is the identity. -/
 @[simp]

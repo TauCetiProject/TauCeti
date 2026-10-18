@@ -65,7 +65,7 @@ theorem eLpNorm_le_of_eLpNorm_adjoint_le [SigmaFinite ν] (T : Lp E 2 μ →L[�
     exact integral_congr_ae (hGg.mono fun x hx => by simp only [hx])
   calc ‖∫ x, ⟪T f x, g x⟫_𝕜 ∂ν‖ₑ = ‖∫ x, ⟪f x, adjoint T G x⟫_𝕜 ∂μ‖ₑ := by rw [hpair]
     _ ≤ eLpNorm f p μ * eLpNorm (adjoint T G) p' μ :=
-        enorm_integral_inner_le (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+        enorm_integral_inner_le
     _ ≤ eLpNorm f p μ * (C * eLpNorm G q' ν) := by gcongr; exact hT G
     _ = C * eLpNorm f p μ * eLpNorm g q' ν := by rw [eLpNorm_congr_ae hGg]; ring
 

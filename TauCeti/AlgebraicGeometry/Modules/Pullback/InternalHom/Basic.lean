@@ -51,7 +51,7 @@ def pullbackIhomComparison :
       Scheme.Modules.pullback f ⋙ ihom ((Scheme.Modules.pullback f).obj M) :=
   (mateEquiv (ihom.adjunction M)
     (ihom.adjunction ((Scheme.Modules.pullback f).obj M))
-    (.mk _ _ _ _ (Scheme.Modules.pullbackTensorLeftIso f M).inv)).natTrans
+    (.mk _ _ _ _ (Scheme.Modules.pullbackTensorLeftIso f M).inv))
 
 /-- Evaluation after the base-change comparison is the pullback of evaluation, preceded by
 the inverse canonical tensor comparison. This characterizes the base-change map. -/

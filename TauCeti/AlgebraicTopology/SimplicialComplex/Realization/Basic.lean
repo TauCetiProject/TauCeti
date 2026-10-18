@@ -110,6 +110,11 @@ topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
   TopologicalSpace.induced (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) inferInstance
 
+/-- Closed coordinate simplices are Hausdorff, including on an infinite vertex type. -/
+instance instT2SpaceStandardSimplex (σ : Finset ι) : T2Space (StandardSimplex σ) :=
+  (Topology.IsEmbedding.induced
+    (fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v))).t2Space
+
 /-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
 instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
   let c := Finsupp.lcoeFun (R := ℝ) (α := ι) (M := ℝ)

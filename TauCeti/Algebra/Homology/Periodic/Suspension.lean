@@ -34,9 +34,9 @@ to integer-indexed cochain complexes.
 * T. Stai, *The triangulated hull of periodic complexes*, Mathematical Research Letters **25**
   (2018), 199–236, Section 3.
 
-The presentation comparison is `ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj`.
-The natural-isomorphism construction follows the analogous finite-projective duplex
-comparison in `TauCeti.CommutativeAlgebra.MatrixFactorization.Shift`.
+The natural isomorphism is built with
+`ExactStructure.IsFrobenius.stableSuspensionIsoOfPresentations`, and its transport to the
+homotopy category with `ExactStructure.IsFrobenius.stableSuspensionCompIsoOfFactorization`.
 -/
 
 public section
@@ -103,6 +103,20 @@ theorem projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap
   · dsimp only [coneInjectivePresentation]
     exact (mapArrowHom_comp_coneProjection _ _ α).symm
 
+/-- The identity comparison of the cokernel terms of identity-cone presentations with the
+shifted complexes is natural in the projective stable category. -/
+private theorem projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap_comp
+    {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (E).projectiveStableFunctor.map
+        ((coneInjectivePresentation X).cokernelMap (coneInjectivePresentation Y) f) ≫
+        (Iso.refl ((E).projectiveStableFunctor.obj (Y⟦(1 : ℤ)⟧))).hom =
+      (Iso.refl ((E).projectiveStableFunctor.obj (X⟦(1 : ℤ)⟧))).hom ≫
+        (E).projectiveStableFunctor.map (f⟦(1 : ℤ)⟧') :=
+  -- The cokernel terms are the shifted complexes only definitionally, beyond the reach of `simp`.
+  (Category.comp_id _).trans
+    ((projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap f).trans
+      (Category.id_comp _).symm)
+
 variable (C n)
 
 /-- Stable suspension of the componentwise split exact category is naturally the image of
@@ -111,24 +125,8 @@ noncomputable def splitStableSuspensionIsoShift :
     (E).projectiveStableFunctor ⋙ (hE).stableSuspension ≅
       CategoryTheory.shiftFunctor (CochainComplex C (ZMod n)) (1 : ℤ) ⋙
         (E).projectiveStableFunctor :=
-  (NatIso.ofComponents (fun X => Iso.trans
-    (X := (CategoryTheory.shiftFunctor (CochainComplex C (ZMod n)) (1 : ℤ) ⋙
-      (E).projectiveStableFunctor).obj X)
-    (Z := ((E).projectiveStableFunctor ⋙ (hE).stableSuspension).obj X)
-    ((hE).projectiveStableIsoSuspensionObj (coneInjectivePresentation X))
-    (eqToIso ((hE).stableSuspension_obj_projectiveStableFunctor_obj X).symm))
-    (fun {X Y} f => by
-      have h := (hE).projectiveStableIsoSuspensionObj_hom_naturality
-        (coneInjectivePresentation X) (coneInjectivePresentation Y) f
-      rw [projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap] at h
-      rw [Functor.comp_map, Functor.comp_map,
-        ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map]
-      -- The isomorphism endpoints are displayed as composite-functor objects. Reduction
-      -- aligns them with the presentation endpoints so that the component lemmas apply.
-      erw [Iso.trans_hom, Iso.trans_hom]
-      rw [eqToIso.hom, eqToIso.hom]
-      simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-      exact (Category.assoc _ _ _).symm.trans ((reassoc_of% h) _))).symm
+  (hE).stableSuspensionIsoOfPresentations _ coneInjectivePresentation (fun _ => Iso.refl _)
+    projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap_comp
 
 /-- The suspension comparison is induced by the identity from the chosen injective
 presentation to the identity-cone presentation. -/
@@ -137,12 +135,10 @@ theorem splitStableSuspensionIsoShift_hom_app (X : CochainComplex C (ZMod n)) :
     (splitStableSuspensionIsoShift C n).hom.app X =
       eqToHom ((hE).stableSuspension_obj_projectiveStableFunctor_obj X) ≫
         (E).projectiveStableFunctor.map
-          (((hE).suspensionPresentation X).cokernelMap (coneInjectivePresentation X) (𝟙 X)) := by
-  simp only [splitStableSuspensionIsoShift, Iso.symm_hom, NatIso.ofComponents_inv_app]
-  -- Align the composite-functor endpoints as in the definition.
-  erw [Iso.trans_inv]
-  rw [eqToIso.inv, ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv]
-  rfl
+          (((hE).suspensionPresentation X).cokernelMap (coneInjectivePresentation X) (𝟙 X)) :=
+  ((hE).stableSuspensionIsoOfPresentations_hom_app _ _ _
+    projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap_comp X).trans
+    (congrArg (_ ≫ ·) (Category.comp_id _))
 
 /-- The inverse suspension comparison is induced by the identity in the other direction. -/
 @[simp]
@@ -150,12 +146,10 @@ theorem splitStableSuspensionIsoShift_inv_app (X : CochainComplex C (ZMod n)) :
     (splitStableSuspensionIsoShift C n).inv.app X =
       (E).projectiveStableFunctor.map
           ((coneInjectivePresentation X).cokernelMap ((hE).suspensionPresentation X) (𝟙 X)) ≫
-        eqToHom ((hE).stableSuspension_obj_projectiveStableFunctor_obj X).symm := by
-  simp only [splitStableSuspensionIsoShift, Iso.symm_inv, NatIso.ofComponents_hom_app]
-  -- Align the composite-functor endpoints as in the definition.
-  erw [Iso.trans_hom]
-  rw [eqToIso.hom, ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_hom]
-  rfl
+        eqToHom ((hE).stableSuspension_obj_projectiveStableFunctor_obj X).symm :=
+  ((hE).stableSuspensionIsoOfPresentations_inv_app _ _ _
+    projectiveStableFunctor_map_coneInjectivePresentation_cokernelMap_comp X).trans
+    (Category.id_comp _)
 
 /-- The stable-to-homotopy equivalence intertwines stable suspension with the existing
 signed shift by one on the periodic homotopy category. -/
@@ -165,18 +159,11 @@ noncomputable def stableSuspensionCompStableToHomotopyIso :
       ExactStructure.homologicalComplexSplitStableToHomotopy C
         (ComplexShape.up (ZMod n)) (fun i => ⟨i + 1, rfl⟩) ⋙
           CategoryTheory.shiftFunctor (HomotopyCategory C (ComplexShape.up (ZMod n))) (1 : ℤ) :=
-  Quotient.natIsoLift _ <|
-    (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (splitStableSuspensionIsoShift C n) _ ≪≫
-      Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _ (eqToIso
-        (ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy
-          C (ComplexShape.up (ZMod n)) (fun i => ⟨i + 1, rfl⟩))) ≪≫
-      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso (1 : ℤ) ≪≫
-      Functor.isoWhiskerRight (eqToIso
-        (ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy
-          C (ComplexShape.up (ZMod n)) (fun i => ⟨i + 1, rfl⟩)).symm) _ ≪≫
-      Functor.associator _ _ _
+  (hE).stableSuspensionCompIsoOfFactorization
+    (ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy
+      C (ComplexShape.up (ZMod n)) (fun i => ⟨i + 1, rfl⟩))
+    (splitStableSuspensionIsoShift C n)
+    ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso (1 : ℤ))
 
 /-- On a represented complex, the intertwining isomorphism is the image of the suspension
 comparison, followed by the quotient's shift comparison. -/
@@ -193,7 +180,7 @@ theorem stableSuspensionCompStableToHomotopyIso_hom_app (X : CochainComplex C (Z
             (1 : ℤ)).hom.app X ≫
             eqToHom (by simp only [Functor.comp_obj,
               ExactStructure.homologicalComplexSplitStableToHomotopy_obj, shift_quotient_obj]) := by
-  simp [stableSuspensionCompStableToHomotopyIso, eqToHom_map]
+  simp [stableSuspensionCompStableToHomotopyIso]
 
 /-- The inverse intertwining comparison uses the inverse quotient shift comparison and
 then the image of the inverse suspension comparison. -/
@@ -209,6 +196,6 @@ theorem stableSuspensionCompStableToHomotopyIso_inv_app (X : CochainComplex C (Z
             (ExactStructure.homologicalComplexSplitStableToHomotopy C
               (ComplexShape.up (ZMod n)) (fun i => ⟨i + 1, rfl⟩)).map
                 ((splitStableSuspensionIsoShift C n).inv.app X) := by
-  simp [stableSuspensionCompStableToHomotopyIso, eqToHom_map]
+  simp [stableSuspensionCompStableToHomotopyIso]
 
 end TauCeti.PeriodicComplex

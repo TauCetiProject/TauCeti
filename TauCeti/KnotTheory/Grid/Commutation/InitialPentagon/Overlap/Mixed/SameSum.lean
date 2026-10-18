@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.LeftRight
+public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.LeftRight.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.SameSum
 
 /-!

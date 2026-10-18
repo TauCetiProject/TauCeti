@@ -8,7 +8,11 @@ module
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 
 /-!
-# The Radon–Nikodym derivative at an atom
+# The Radon–Nikodym derivative on null sets and at atoms
+
+On a `μ`-null set `s`, the Radon–Nikodym derivative `μ.rnDeriv ν` vanishes `ν`-almost everywhere
+(`MeasureTheory.Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero`): its integral over a measurable
+hull of `s` is at most `μ s = 0`.
 
 The Radon–Nikodym derivative `μ.rnDeriv ν` is a fixed representative of an almost-everywhere
 defined density, so in general its value at a single point carries no information. At a point
@@ -24,7 +28,20 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] {μ ν : Measure α} {x : α}
+variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+
+/-- The Radon–Nikodym derivative of `μ` with respect to `ν` vanishes `ν`-almost everywhere on a
+`μ`-null set. -/
+theorem ae_rnDeriv_eq_zero_of_measure_eq_zero {s : Set α} (hs : μ s = 0) :
+    ∀ᵐ x ∂ν, x ∈ s → μ.rnDeriv ν x = 0 := by
+  have h : ∫⁻ x in toMeasurable μ s, μ.rnDeriv ν x ∂ν = 0 :=
+    le_antisymm ((withDensity_apply_le _ _).trans <|
+      (le_iff'.1 (withDensity_rnDeriv_le μ ν) _).trans (by rw [measure_toMeasurable, hs])) zero_le
+  rw [lintegral_eq_zero_iff (measurable_rnDeriv μ ν)] at h
+  exact ((ae_restrict_iff' (measurableSet_toMeasurable μ s)).1 h).mono fun x hx hxs ↦
+    hx (subset_toMeasurable μ s hxs)
+
+variable [MeasurableSingletonClass α] {x : α}
 
 /-- At an atom `x` of `ν`, the Radon–Nikodym derivative of `μ` with respect to `ν`, weighted by the
 mass of the atom, is the `μ`-mass of `x`: the singular part of `μ` does not charge `{x}`. -/

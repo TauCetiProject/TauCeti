@@ -57,7 +57,8 @@ theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
     rw [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
       (g := fun w : ℂ => q + w⁻¹)
       (by intro z; simp) (by intro w; simp)]
-    exact (inter_eq_right.mpr fun w hw (hw0 : w = 0) => hqU (by simpa [hw0] using hw)).symm
+    exact (inter_eq_right (s := {0}ᶜ).mpr fun w hw (hw0 : w = 0) =>
+      hqU (by simpa [hw0] using hw)).symm
   rw [this]
   exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
 

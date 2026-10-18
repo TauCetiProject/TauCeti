@@ -27,6 +27,10 @@ without either being an algebra over the other.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
   elements of `A` and is integral over `A` has its numerator divisible by its denominator, when
   `A` is integrally closed.
+* `TauCeti.isIntegral_natCast_pow_mul_pow`: if `b x` is integral over `ℤ`, then so is
+  `b ^ n x ^ j` for `j ≤ n`.
+* `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
+  `b ≠ 0`, then `x` is integral over `ℚ`.
 -/
 
 public section
@@ -70,5 +74,20 @@ theorem dvd_of_isIntegral_div
   obtain ⟨e, he⟩ := IsIntegrallyClosed.isIntegral_iff.mp ((isIntegral_algHom_iff f hf).mp (hw ▸ h))
   refine ⟨e, IsFractionRing.injective A (FractionRing A) ?_⟩
   rw [map_mul, he, mul_div_cancel₀ _ hdF]
+
+/-- If `b x` is integral over `ℤ`, then so is `b ^ n x ^ j` for `j ≤ n`. -/
+theorem isIntegral_natCast_pow_mul_pow {A : Type*} [CommRing A] {x : A} {b : ℕ}
+    (hbx : IsIntegral ℤ ((b : A) * x)) {j n : ℕ} (hj : j ≤ n) :
+    IsIntegral ℤ ((b : A) ^ n * x ^ j) := by
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hj
+  rw [pow_add, mul_right_comm, ← mul_pow, mul_comm]
+  exact ((isIntegral_natCast b).pow l).mul (hbx.pow j)
+
+/-- If `b x` is integral over `ℤ` for a nonzero natural number `b`, then `x` is integral over
+`ℚ`. -/
+theorem isIntegral_rat_of_isIntegral_natCast_mul {F : Type*} [Field F] [CharZero F] {x : F}
+    {b : ℕ} (hb : b ≠ 0) (hbx : IsIntegral ℤ ((b : F) * x)) : IsIntegral ℚ x := by
+  have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul (hbx.tower_top (A := ℚ))
+  rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hb), one_mul] at h
 
 end TauCeti

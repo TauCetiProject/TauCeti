@@ -43,6 +43,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
   original carrier, retaining the original rational ambient space; it inherits nondegeneracy and,
   by `isEven_restrictFull`, evenness.
+* `TauCeti.IntegralLattice.inf`: the full restriction to the intersection of two carriers on the
+  same rational space, with the form of the first lattice.
 * `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
   when the embedded submodule is full.
 
@@ -224,6 +226,27 @@ theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodu
   rw [restrictFull_carrier] at hx
   obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hN hx⟩
   exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
+
+/-- The intersection of the carriers of two integral lattices on the same rational space is a
+full lattice. -/
+instance isLattice_carrier_inf (L M : IntegralLattice V) : (L.carrier ⊓ M.carrier).IsLattice ℚ :=
+  have := L.finiteDimensional
+  inferInstance
+
+/-- The integral lattice on the intersection of the carriers of `L` and `M`, with the form of
+`L`. -/
+noncomputable def inf (L M : IntegralLattice V) : IntegralLattice V :=
+  L.restrictFull (L.carrier ⊓ M.carrier) inf_le_left
+
+/-- The carrier of `L.inf M` is the intersection of the two carriers. -/
+@[simp]
+theorem inf_carrier (L M : IntegralLattice V) : (L.inf M).carrier = L.carrier ⊓ M.carrier :=
+  restrictFull_carrier ..
+
+/-- The lattice `L.inf M` carries the form of `L`. -/
+@[simp]
+theorem inf_form (L M : IntegralLattice V) : (L.inf M).form = L.form :=
+  restrictFull_form ..
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
 private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ L)

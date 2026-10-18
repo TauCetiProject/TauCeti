@@ -90,7 +90,7 @@ theorem range_inf_iSup_deligneSplittingFamily_eq_map_iSup (f : Hom source target
     LinearMap.range f.toLinearMap ⊓ ⨆ (pq) (_ : P pq), target.deligneSplittingFamily pq =
       (⨆ (pq) (_ : P pq), source.deligneSplittingFamily pq).map f.toLinearMap := by
   rw [f.range_eq_iSup_map_deligneSplittingFamily, inf_comm,
-    TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂ (A := target.deligneSplittingFamily)
+    iSupIndep.iSup₂_inf_iSup_eq_iSup₂ (A := target.deligneSplittingFamily)
       (B := fun pq ↦ (source.deligneSplittingFamily pq).map f.toLinearMap)
       target.iSupIndep_deligneSplittingFamily
       (fun pq ↦ by

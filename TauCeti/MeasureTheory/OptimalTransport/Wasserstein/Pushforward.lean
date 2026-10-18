@@ -30,6 +30,9 @@ spaces.
 * `TauCeti.wassersteinEDist_map_le_eLpNorm` bounds the distance between the laws of two
   a.e. strongly measurable maps from arbitrary measurable spaces into a Borel extended
   pseudometric space, using any coupling of their source measures.
+* `TauCeti.wassersteinEDist_map_le_eLpNorm_of_measurable_edist` gives the same bound for
+  a.e. measurable maps into any space with a measurable extended distance, such as `ℝ≥0∞`, which
+  is not a pseudometric space in its order topology.
 * `TauCeti.hasFiniteMoment_map_iff_memLp_edist` identifies the moment condition on a law
   with radial `MemLp` on its source.
 * `TauCeti.exists_coe_eq_map_of_memLp` shows that the law of a map of `Lᵖ` under a probability
@@ -45,8 +48,10 @@ spaces.
 * `TauCeti.WassersteinSpace.map` lifts pushforward to finite-moment probability measures.
 * `TauCeti.WassersteinSpace.lipschitzWith_map` gives the induced Lipschitz map between
   Wasserstein spaces.
+* `TauCeti.WassersteinSpace.isometry_map` shows that pushforward by an isometric measurable
+  embedding is an isometry of finite-moment Wasserstein spaces.
 * `TauCeti.WassersteinSpace.mapIsometryEquiv` lifts measurable isometric equivalences.
-* `TauCeti.wassersteinEDist_map_eq` gives invariance under a measurable isometric equivalence.
+* `TauCeti.wassersteinEDist_map_eq` gives invariance under an isometric measurable embedding.
 * `TauCeti.wassersteinEDist_map_prod_le` shows that a common random nonexpansive map does not
   increase the Wasserstein distance.
 
@@ -95,6 +100,33 @@ theorem wassersteinEDist_map_le_eLpNorm (hπ : IsCoupling π μ ν)
     (eLpNorm_map_measure hd (hfπ.prodMk hgπ))
 
 end MeasurableSource
+
+section MeasurableEDist
+
+variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z] [EDist Z]
+  {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)} {f : X → Z} {g : Y → Z} {p : ℝ≥0∞}
+
+/-- Two a.e. measurable maps into a space with a measurable extended distance send a coupling to a
+transport plan whose cost bounds the Wasserstein distance of their laws. The target needs no
+topology, so this applies to `ℝ≥0∞`, which is not a pseudometric space in its order topology. -/
+theorem wassersteinEDist_map_le_eLpNorm_of_measurable_edist (hπ : IsCoupling π μ ν)
+    (hd : Measurable fun z : Z × Z ↦ edist z.1 z.2) (hf : AEMeasurable f μ)
+    (hg : AEMeasurable g ν) :
+    wassersteinEDist p (μ.map f) (ν.map g) ≤
+      eLpNorm (fun q : X × Y ↦ edist (f q.1) (g q.2)) p π := by
+  -- Push `π` forward along measurable representatives of the two maps.
+  have hσ := hπ.map hf.measurable_mk hg.measurable_mk
+  rw [Measure.map_congr hf.ae_eq_mk, Measure.map_congr hg.ae_eq_mk]
+  refine (wassersteinEDist_le hσ p).trans_eq ?_
+  rw [eLpNorm_map_measure hd.aestronglyMeasurable
+    (hf.measurable_mk.prodMap hg.measurable_mk).aemeasurable]
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hf.ae_eq_mk,
+    hπ.measurePreserving_snd.quasiMeasurePreserving.ae_eq_comp hg.ae_eq_mk] with q h₁ h₂
+  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd] at h₁ h₂ ⊢
+  rw [h₁, h₂]
+
+end MeasurableEDist
 
 section Moment
 
@@ -277,37 +309,52 @@ end WassersteinSpace
 
 section Isometry
 
-variable {e : X ≃ᵐ Y}
-
-/-- A measurable isometric equivalence preserves Wasserstein distance. -/
+/-- Pushforward by an isometric measurable embedding preserves Wasserstein distance. -/
 @[simp]
 theorem wassersteinEDist_map_eq
-    (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) (he : Isometry e)
-    (μ ν : Measure X) :
-    wassersteinEDist p (μ.map e) (ν.map e) = wassersteinEDist p μ ν := by
-  let ei : X ≃ᵢ Y := { e.toEquiv with isometry_toFun := he }
+    (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) (hf : MeasurableEmbedding f)
+    (hi : Isometry f) (μ ν : Measure X) :
+    wassersteinEDist p (μ.map f) (ν.map f) = wassersteinEDist p μ ν := by
   have hdX : Measurable fun z : X × X ↦ edist z.1 z.2 := by
-    have hdist_comp : (fun z : Y × Y ↦ edist z.1 z.2) ∘ Prod.map e e =
-        fun z : X × X ↦ edist z.1 z.2 := by
-      funext z
-      exact he.edist_eq z.1 z.2
-    rw [← hdist_comp]
-    exact hdY.comp (e.measurable.prodMap e.measurable)
-  have hforward : wassersteinEDist p (μ.map e) (ν.map e) ≤ wassersteinEDist p μ ν := by
-    have h := wassersteinEDist_map_le_mul_of_ne_zero (p := p) hdY e.measurable
-      ei.isometry.lipschitzWith one_ne_zero μ ν
-    simpa only [ENNReal.coe_one, one_mul] using h
-  have hbackward : wassersteinEDist p ((μ.map e).map e.symm) ((ν.map e).map e.symm) ≤
-      wassersteinEDist p (μ.map e) (ν.map e) := by
-    have h := wassersteinEDist_map_le_mul_of_ne_zero (p := p) hdX e.symm.measurable
-      ei.symm.isometry.lipschitzWith one_ne_zero (μ.map e) (ν.map e)
-    simpa only [ENNReal.coe_one, one_mul] using h
-  refine le_antisymm hforward ?_
+    have hcomp : (fun z : Y × Y ↦ edist z.1 z.2) ∘ Prod.map f f =
+        fun z : X × X ↦ edist z.1 z.2 :=
+      funext fun z ↦ hi.edist_eq z.1 z.2
+    exact hcomp ▸ hdY.comp (hf.measurable.prodMap hf.measurable)
+  refine le_antisymm ?_ ?_
+  · simpa only [ENNReal.coe_one, one_mul] using wassersteinEDist_map_le_mul_of_ne_zero (p := p)
+      hdY hf.measurable hi.lipschitzWith one_ne_zero μ ν
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · simp [Subsingleton.elim μ 0, Subsingleton.elim ν 0]
+  -- A measurable left inverse `g` of `f`.
+  set g : Y → X := Function.extend f id fun _ ↦ x₀
+  have hg : Measurable g := hf.measurable_extend measurable_id measurable_const
+  have hgf (x : X) : g (f x) = x := hf.injective.extend_apply _ _ x
+  have hmap (m : Measure X) : (m.map f).map g = m := by
+    rw [Measure.map_map hg hf.measurable]
+    simp [Function.comp_def, hgf]
+  -- Every coupling of the pushed-forward measures is concentrated on the product of the ranges,
+  -- where `g` is again isometric and pulls the coupling back.
+  refine le_of_forall_gt fun c hc ↦ ?_
+  obtain ⟨π, hπ, hπc⟩ := wassersteinEDist_lt_iff.1 hc
+  have hrange : ∀ᵐ z ∂π, z.1 ∈ Set.range f ∧ z.2 ∈ Set.range f :=
+    (hπ.measurePreserving_fst.quasiMeasurePreserving.ae
+      (ae_map_mem_range hf.measurableSet_range hf.measurable.aemeasurable)).and
+      (hπ.measurePreserving_snd.quasiMeasurePreserving.ae
+        (ae_map_mem_range hf.measurableSet_range hf.measurable.aemeasurable))
   calc
-    wassersteinEDist p μ ν =
-        wassersteinEDist p ((μ.map e).map e.symm) ((ν.map e).map e.symm) := by
-      rw [e.map_symm_map, e.map_symm_map]
-    _ ≤ wassersteinEDist p (μ.map e) (ν.map e) := hbackward
+    wassersteinEDist p μ ν = wassersteinEDist p ((μ.map f).map g) ((ν.map f).map g) := by
+      rw [hmap, hmap]
+    _ ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (π.map (Prod.map g g)) :=
+      wassersteinEDist_le (hπ.map hg hg) p
+    _ = eLpNorm (fun z : Y × Y ↦ edist (g z.1) (g z.2)) p π :=
+      eLpNorm_map_measure hdX.aestronglyMeasurable (hg.prodMap hg).aemeasurable
+    _ = eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p π := by
+      refine eLpNorm_congr_ae ?_
+      filter_upwards [hrange] with z ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+      rw [← hx, ← hy, hgf, hgf, hi.edist_eq]
+    _ < c := hπc
+
+variable {e : X ≃ᵐ Y}
 
 /-- A measurable isometric equivalence preserves the finite-moment condition. -/
 @[simp]
@@ -383,6 +430,15 @@ theorem lipschitzWith_map (hf : Measurable f) (hLip : LipschitzWith K f) :
     wassersteinEDist_map_le_mul (p := p) measurable_edist hf hLip
       ((mu : ProbabilityMeasure X) : Measure X) ((nu : ProbabilityMeasure X) : Measure X)
 
+/-- Pushforward by an isometric measurable embedding is an isometry between finite-moment
+Wasserstein spaces. -/
+theorem isometry_map (hf : MeasurableEmbedding f) (hi : Isometry f) :
+    Isometry (map (p := p) f (fun _ ↦ measurable_edist_right) hf.measurable hi.lipschitzWith) := by
+  intro mu nu
+  simpa only [edist_def, coe_map, ProbabilityMeasure.toMeasure_map] using
+    wassersteinEDist_map_eq (p := p) measurable_edist hf hi
+      ((mu : ProbabilityMeasure X) : Measure X) ((nu : ProbabilityMeasure X) : Measure X)
+
 /-- A measurable isometric equivalence of ground spaces induces an isometric equivalence of their
 finite-moment Wasserstein spaces. -/
 noncomputable def mapIsometryEquiv (e : X ≃ᵐ Y) (he : Isometry e) :
@@ -408,10 +464,7 @@ noncomputable def mapIsometryEquiv (e : X ≃ᵐ Y) (he : Isometry e) :
     apply ProbabilityMeasure.toMeasure_injective
     simpa only [ProbabilityMeasure.toMeasure_map] using
       (e.map_map_symm (ν := ((mu : ProbabilityMeasure Y) : Measure Y)))
-  · intro mu nu
-    simpa only [edist_def, coe_map, ProbabilityMeasure.toMeasure_map] using
-      wassersteinEDist_map_eq (p := p) measurable_edist he
-        ((mu : ProbabilityMeasure X) : Measure X) ((nu : ProbabilityMeasure X) : Measure X)
+  · exact isometry_map e.measurableEmbedding he
 
 /-- The isometric equivalence induced by a measurable isometric equivalence acts by pushforward
 along that equivalence. -/
