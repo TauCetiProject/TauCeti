@@ -29,7 +29,8 @@ commutes with `E`, `F` and `K` is `UqSl2 q`-linear. We also package `K` as a uni
 commutation rules with `K⁻¹`; these are the basic presentation-level identities used when putting
 words into triangular order.  Establishing a PBW basis, and hence nontriviality of this
 presentation, requires additional Ore-extension arguments and is not part of the presentation
-API.
+API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero `q`, with an
+iterated Ore extension of `ℂ[K, K⁻¹]`.
 
 ## Main definitions
 

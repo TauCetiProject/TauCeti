@@ -37,6 +37,8 @@ symmetric algebras of quasicoherent sheaves, enter this category.
   property;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.toGradedModules`: the underlying graded
   module functor;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.hom_ext_of_epi_mul`: morphisms out of a
+  graded quasicoherent algebra generated in degree one are determined in degree one;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degree`: extraction of a homogeneous
   component as a quasicoherent sheaf;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degreeOne`: the degree-one functor;
@@ -123,6 +125,14 @@ theorem hom_ext {A B : GradedQuasicoherentAlgebra X} (f g : A ⟶ B)
   apply ObjectProperty.hom_ext
   apply CommMon.hom_ext
   exact GradedObject.hom_ext _ _ h
+
+/-- Morphisms out of a graded quasicoherent algebra `A` generated in degree one are determined by
+their degree-one components. Here generation in degree one means that the unit `𝒪_X ⟶ A₀` and
+the multiplications `Aₙ ⊗ A₁ ⟶ Aₙ₊₁` are epimorphisms, as for symmetric algebras. -/
+theorem hom_ext_of_epi_mul {A B : GradedQuasicoherentAlgebra X} [Epi A.obj.toMon.one]
+    [∀ n, Epi (A.obj.toMon.mul n 1)] {f g : A ⟶ B} (h : f.hom.hom.hom 1 = g.hom.hom.hom 1) :
+    f = g :=
+  ObjectProperty.hom_ext _ (CommMon.hom_ext _ _ (congrArg Mon.Hom.hom (Mon.hom_ext_of_epi_mul h)))
 
 /-- Extract the degree-`n` component of a graded quasicoherent algebra as a quasicoherent sheaf.
 On morphisms this is the degree-`n` component of the underlying graded algebra morphism. -/

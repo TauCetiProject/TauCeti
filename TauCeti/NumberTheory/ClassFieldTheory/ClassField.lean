@@ -103,7 +103,7 @@ This turns a class-field correspondence that preserves the order on subgroups in
 order-reversing correspondence on fields. -/
 theorem classField_le_classField_iff (V W : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     classField F W ≤ classField F V ↔ V ≤ W :=
-  (le_iff_le V.toSubgroup (classField F W)).trans <| by
+  (le_fixedField_iff_le_fixingSubgroup V.toSubgroup (classField F W)).trans <| by
     rw [fixingSubgroup_classField]
     exact Iff.rfl
 

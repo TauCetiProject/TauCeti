@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Localization
 public import TauCeti.Analysis.Sobolev.Trace.Epigraph.Basic
+import TauCeti.Analysis.Sobolev.Trace.Continuous
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -21,7 +22,9 @@ frontier of the original domain.
 `W1p.lipschitzChartLocalizeL` performs the cutoff, zero extension past the artificial chart
 boundary, and rigid coordinate change. It has norm at most `2 M`. Composing with the graph
 trace gives `W1p.lipschitzChartTrace`, of norm at most `2 M (1 + L)`. Functions in `H¹₀` have
-zero local trace. Equality of the cutoff products suffices for equality of local traces.
+zero local trace. Equality of the cutoff products suffices for equality of local traces. For a
+function continuous up to the boundary, the local trace is the classical boundary value of the
+cutoff product at the graph point (`W1p.lipschitzChartTrace_apply_ae_of_continuousOn`).
 These are the local operators used when assembling a boundary trace by a partition of unity.
 
 Unlike reflection extension, taking a trace requires no shortening of the chart cylinder:
@@ -38,7 +41,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Set TopologicalSpace Filter Topology
 open scoped ENNReal NNReal ContDiff Gradient
 
 namespace TauCeti
@@ -129,5 +132,61 @@ theorem W1p.lipschitzChartTrace_eq_of_smul_value_ae_eq
     W1p.value_lipschitzChartLocalizeL_ae h hψ hM hψM hgM hs v,
     ae_restrict_of_ae (e.symm.measurePreserving.quasiMeasurePreserving.ae hi)] with z hu hv hz
   rw [hu, hv, hz]
+
+/-- **The local trace of a function continuous up to the boundary.** If `u ∈ H¹(Ω)` agrees almost
+everywhere with a function `f` continuous on `closure Ω`, then its local chart trace is the
+classical boundary value of the cutoff product `ψ f` at the graph point `e.symm (φ y, y)`, for
+almost every `y`. -/
+theorem W1p.lipschitzChartTrace_apply_ae_of_continuousOn
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω 2}
+    {f : WithLp 2 (ℝ × E) → ℝ} (hf : ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))))
+    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f) :
+    ∀ᵐ y ∂(volume : Measure E),
+      W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs u y =
+        ψ (e.symm (normalGraphEmbedding φ y)) * f (e.symm (normalGraphEmbedding φ y)) := by
+  let G : WithLp 2 (ℝ × E) → ℝ := fun z => ψ (e.symm z) * f (e.symm z)
+  -- Inside the chart cylinder, the closed region above the graph is the closure of `Ω`.
+  have hcl : ∀ z ∈ normalCylinder a b, φ z.snd ≤ z.fst →
+      e.symm z ∈ closure (Ω : Set (WithLp 2 (ℝ × E))) := by
+    intro z hz hle
+    obtain ⟨x, hx, rfl⟩ :=
+      (h.toIsLipschitzChart.image_closure_inter_normalCylinder.superset ⟨hle, hz⟩).1
+    simpa using hx
+  have hG : ContinuousOn G {z | φ z.snd ≤ z.fst} := by
+    intro z hz
+    by_cases hzs : e.symm z ∈ tsupport ψ
+    · have hzC : z ∈ normalCylinder a b := by simpa using hs hzs
+      rw [← continuousWithinAt_inter ((isOpen_normalCylinder a b).mem_nhds hzC)]
+      exact (hψ.continuous.comp e.symm.continuous).continuousWithinAt.mul
+        ((hf (e.symm z) (hcl z hzC hz)).comp e.symm.continuous.continuousWithinAt
+          fun w hw => hcl w hw.2 hw.1)
+    · have hzero : G =ᶠ[𝓝 z] fun _ => 0 := by
+        filter_upwards [((isClosed_tsupport ψ).isOpen_compl.preimage e.symm.continuous).mem_nhds
+          hzs] with w hw
+        simp [G, image_eq_zero_of_notMem_tsupport hw]
+      exact (continuousAt_const.congr hzero.symm).continuousWithinAt
+  have hu' := e.symm.measurePreserving.quasiMeasurePreserving.ae
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hu)
+  have hv : W1p.value (W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u) =ᵐ[volume.restrict
+      (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩ : Set (WithLp 2 (ℝ × E)))] G := by
+    filter_upwards [W1p.value_lipschitzChartLocalizeL_ae h hψ hM hψM hgM hs u,
+      ae_restrict_of_ae hu',
+      ae_restrict_mem (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩).isOpen.measurableSet]
+      with z hz hfz hzE
+    rw [hz]
+    by_cases hzΩ : e.symm z ∈ Ω
+    · rw [indicator_of_mem hzΩ, hfz hzΩ, smul_eq_mul]
+    · have hzs : e.symm z ∉ tsupport ψ := fun hzs => hzΩ
+        (chartEpigraph_inter_tsupport_subset h hs
+          ⟨mem_chartEpigraph.2 (by simpa using hzE), hzs⟩)
+      rw [indicator_of_notMem hzΩ]
+      simp only [G, image_eq_zero_of_notMem_tsupport hzs, zero_mul]
+  filter_upwards [W1p.normalEpigraphTrace_apply_ae_of_continuousOn h.lipschitzWith
+    (f := G) (by simpa using hG) hv] with y hy
+  rw [W1p.lipschitzChartTrace_apply, hy]
+  simp only [G, ContinuousMap.coe_mk]
 
 end TauCeti
