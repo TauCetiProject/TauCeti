@@ -9,8 +9,7 @@ public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.IsTensorProduct
+public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Full submodule lattices
@@ -19,9 +18,7 @@ This file provides generic results about full submodules over fraction fields. I
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
 rational linear equivalences preserve fullness. Finally, a free full lattice over an integral
-domain rationalizes to its ambient vector space over the fraction field. The unit-tensor
-construction works more generally over semirings: a flat module embeds in its scalar extension
-along a faithful algebra, and free modules have free images.
+domain rationalizes to its ambient vector space over the fraction field.
 
 ## Main declarations
 
@@ -43,8 +40,6 @@ along a faithful algebra, and free modules have free images.
   of a free full lattice submodule to its ambient vector space.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
   vector lies in a free full lattice submodule.
-* `TauCeti.TensorProduct.unitTmulEquiv`: a flat module is the module of unit pure tensors in
-  its scalar extension along a faithful algebra.
 * `TauCeti.TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
@@ -260,56 +255,6 @@ end Submodule
 namespace TensorProduct
 
 variable {R : Type u} {K : Type v} {M : Type w}
-
-section CommSemiring
-
-variable [CommSemiring R] [Semiring K] [Algebra R K]
-variable [AddCommMonoid M] [Module R M]
-
-/-- The unit pure tensors are the `R`-span of the base change of any basis. -/
-theorem _root_.Module.Basis.range_mk_one_eq_span {ι : Type*} (b : Basis ι R M) :
-    LinearMap.range (TensorProduct.mk R K M 1) =
-      Submodule.span R (Set.range (b.baseChange K)) := by
-  rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
-  exact congrArg (Submodule.span R)
-    (congrArg Set.range (funext fun i ↦ (Basis.baseChange_apply K b i).symm))
-
-variable [FaithfulSMul R K]
-
-section Flat
-
-variable [Module.Flat R M]
-
-variable (R K M) in
-/-- A flat module is canonically isomorphic to the module of unit pure tensors in its scalar
-extension along a faithful algebra. -/
-noncomputable def unitTmulEquiv : M ≃ₗ[R] LinearMap.range (TensorProduct.mk R K M 1) :=
-  LinearEquiv.ofInjective _ (Module.Flat.tensorProduct_mk_injective R M K)
-
-/-- The unit-tensor equivalence sends a vector to its unit pure tensor. This equation
-characterizes the equivalence. -/
-@[simp]
-theorem coe_unitTmulEquiv_apply (m : M) :
-    (unitTmulEquiv R K M m : K ⊗[R] M) = 1 ⊗ₜ[R] m := by
-  rw [unitTmulEquiv, LinearEquiv.ofInjective_apply, TensorProduct.mk_apply]
-
-/-- The inverse unit-tensor equivalence recovers a vector from its unit pure tensor. -/
-@[simp]
-theorem unitTmulEquiv_symm_tmul (m : M)
-    (h : (1 : K) ⊗ₜ[R] m ∈ LinearMap.range (TensorProduct.mk R K M 1)) :
-    (unitTmulEquiv R K M).symm ⟨1 ⊗ₜ[R] m, h⟩ = m := by
-  apply (unitTmulEquiv R K M).injective
-  rw [LinearEquiv.apply_symm_apply]
-  exact Subtype.ext (coe_unitTmulEquiv_apply m).symm
-
-end Flat
-
-/-- The module of unit pure tensors is free whenever the original module is free. -/
-instance free_range_mk_one [Module.Free R M] :
-    Module.Free R (LinearMap.range (TensorProduct.mk R K M 1)) :=
-  Module.Free.of_equiv (unitTmulEquiv R K M)
-
-end CommSemiring
 
 section CommRing
 
