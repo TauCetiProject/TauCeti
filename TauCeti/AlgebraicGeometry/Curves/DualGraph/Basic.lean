@@ -208,6 +208,11 @@ lemma valence_def (v : G.Vertex) :
     G.valence v = #{h : G.Edge × Fin 2 | G.endpoint h.1 h.2 = v} :=
   (rfl)
 
+/-- The valence of a vertex is the sum over the edges of the number of their branches at it. -/
+lemma valence_eq_sum (v : G.Vertex) :
+    G.valence v = ∑ e, #{i : Fin 2 | G.endpoint e i = v} := by
+  simp only [valence_def, card_filter, Fintype.sum_prod_type]
+
 /-- The handshake identity: the valences add up to twice the number of edges. -/
 theorem sum_valence : ∑ v, G.valence v = 2 * Fintype.card G.Edge := by
   have := card_eq_sum_card_fiberwise (s := (univ : Finset (G.Edge × Fin 2))) (t := univ)

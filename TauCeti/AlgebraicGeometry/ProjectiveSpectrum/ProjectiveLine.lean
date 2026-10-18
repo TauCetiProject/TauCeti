@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
@@ -28,10 +31,12 @@ the degree-zero part `R[X₀, X₁]_(Xᵢ)` of the localization away from `Xᵢ`
 setting `Xᵢ = 1` and the other coordinate to `X`, identifies it with the polynomial ring `R[X]`:
 the fraction `p / Xᵢⁿ` of a form `p` of degree `n` goes to `p` with `Xᵢ = 1`. The projective line
 `ℙ¹_R` is proper over `R`, as the Proj of the symmetric algebra of a finite module
-(`TauCeti.SymmetricAlgebra.instIsProperOver`); it is integral when `R` is a domain, and its local
-rings are regular when `R` is a regular ring. Over a domain, its function field is the fraction
-field `R(X)` of the ring `R[X]` of functions on the chart `D₊(X₀)`, the function `X₁ / X₀` on that
-chart going to `X`.
+(`TauCeti.SymmetricAlgebra.instIsProperOver`), and smooth of relative dimension one over `R`, since
+each chart is the affine line `Spec R[X]`; it is integral when `R` is a domain, and its local
+rings are regular when `R` is a regular ring. Its formation commutes with every change of base
+ring `R → S`: `ℙ¹_S` is the fibre product `ℙ¹_R ×_{Spec R} Spec S`. Over a domain, its function
+field is the fraction field `R(X)` of the ring `R[X]` of functions on the chart `D₊(X₀)`, the
+function `X₁ / X₀` on that chart going to `X`.
 
 ## Main definitions
 
@@ -45,6 +50,8 @@ chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.awayι R i`: the open immersion of that chart.
 * `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv R i`: the functions on the chart
   `D₊(Xᵢ)` are the polynomials `R[X]`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.baseChangeProjection R S`: for an `R`-algebra `S`, the
+  projection `ℙ¹_S ⟶ ℙ¹_R`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv R`: over a domain `R`, the function
   field of `ℙ¹_R` is `R(X)`, as an `R`-algebra.
 
@@ -56,6 +63,10 @@ chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isIntegral`: `ℙ¹_R` is integral over a domain.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`: its local rings are
   regular over a regular ring.
+* `TauCeti.AlgebraicGeometry.projectiveLine.smoothOfRelativeDimension`: `ℙ¹_R` is smooth of
+  relative dimension one over `Spec R`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection`: `ℙ¹_S` is the base
+  change of `ℙ¹_R` along `Spec S ⟶ Spec R`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_germToFunctionField`: on the chart
   `D₊(X₀)`, the identification of the function field with `R(X)` is `chartSectionsEquiv`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_symm_X`: that identification sends
@@ -69,7 +80,8 @@ chart going to `X`.
 
 public section
 
-open CategoryTheory AlgebraicGeometry HomogeneousLocalization Polynomial
+open CategoryTheory Limits AlgebraicGeometry HomogeneousLocalization Polynomial
+open scoped TensorProduct
 
 universe u
 
@@ -307,6 +319,66 @@ theorem chartSectionsEquiv_appLE (i : Fin 2) (a : Γ(Spec (.of R), ⊤)) :
   -- Then the composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
   rw [show Scheme.Hom.appLE _ ⊤ ⊤ _ = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
     awayι_over, Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+
+/-! ### Smoothness -/
+
+/-- The chart ring `R[X₀, X₁]_(Xᵢ)` is standard smooth of relative dimension one over `R`: it is
+the polynomial ring `R[X]` (`awayEquivPolynomial`). -/
+instance isStandardSmoothOfRelativeDimension_away (i : Fin 2) :
+    Algebra.IsStandardSmoothOfRelativeDimension 1 R (Away 𝒜 (coord R i)) := by
+  have := Algebra.IsStandardSmoothOfRelativeDimension.mvPolynomial R PUnit.{u + 1}
+  rw [Nat.card_unique] at this
+  exact .of_algEquiv 1
+    ((MvPolynomial.uniqueAlgEquiv (R := R) PUnit.{u + 1}).trans (awayEquivPolynomial R i).symm)
+
+/-- On the chart `D₊(Xᵢ)`, the structure morphism of the projective line is smooth of relative
+dimension one. -/
+theorem smoothOfRelativeDimension_awayι (i : Fin 2) :
+    SmoothOfRelativeDimension 1 (awayι R i ≫ (projectiveLine R ↘ Spec (.of R))) := by
+  rw [awayι_over, HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension 1)]
+  exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _
+    ((RingHom.isStandardSmoothOfRelativeDimension_algebraMap 1).mpr inferInstance)
+
+/-- **The projective line is smooth of relative dimension one** over `Spec R`: it is covered by
+the two charts `D₊(Xᵢ)`, each of which is the affine line `Spec R[X]` over `Spec R`. -/
+instance smoothOfRelativeDimension :
+    SmoothOfRelativeDimension 1 (projectiveLine R ↘ Spec (.of R)) := by
+  let 𝒰 : (projectiveLine R).OpenCover :=
+    Scheme.Cover.mkOfCovers (Fin 2) _ (awayι R) (exists_eq_awayι R)
+  have (i : 𝒰.I₀) : IsAffine (𝒰.X i) := inferInstanceAs (IsAffine (Spec _))
+  exact HasRingHomProperty.of_source_openCover (P := @SmoothOfRelativeDimension 1) 𝒰
+    fun i ↦ (HasRingHomProperty.iff_of_isAffine (P := @SmoothOfRelativeDimension 1)).mp
+      (smoothOfRelativeDimension_awayι R i)
+
+/-! ### Base change -/
+
+section BaseChange
+
+variable (S : Type u) [CommRing S] [Algebra R S]
+
+/-- The projection `ℙ¹_S ⟶ ℙ¹_R` for an `R`-algebra `S`: the coordinates `S²` of `ℙ¹_S` are
+identified with `S ⊗[R] R²`, and `Proj (Sym_S (S ⊗[R] R²))` maps to `Proj (Sym_R R²)` by extension
+of scalars. -/
+noncomputable def baseChangeProjection : projectiveLine S ⟶ projectiveLine R :=
+  (Proj.symmetricAlgebraMapIso S (TensorProduct.piScalarRight R S S (Fin 2))).hom ≫
+    (Proj.symmetricAlgebraScalarTensorIso R S (Fin 2 → R)).hom ≫
+      Proj.baseChangeProjection 𝒜 S
+
+/-- **Base change of the projective line**: for an `R`-algebra `S`, the square formed by the
+projection `ℙ¹_S ⟶ ℙ¹_R`, the structure morphisms, and `Spec S ⟶ Spec R` is a pullback, that is,
+`ℙ¹_S = ℙ¹_R ×_{Spec R} Spec S`. -/
+theorem isPullback_baseChangeProjection :
+    IsPullback (baseChangeProjection R S) (projectiveLine S ↘ Spec (.of S))
+      (projectiveLine R ↘ Spec (.of R)) (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  rw [SymmetricAlgebra.over_eq_projToSpec, SymmetricAlgebra.over_eq_projToSpec]
+  refine (Proj.isPullback_symmetricAlgebra_baseChange R S (Fin 2 → R)).of_iso
+    (Proj.symmetricAlgebraMapIso S (TensorProduct.piScalarRight R S S (Fin 2))).symm
+    (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ (by simp) (by simp)
+  · rw [Iso.refl_hom, Category.comp_id, Iso.symm_hom, baseChangeProjection, Iso.inv_hom_id_assoc]
+  · rw [Iso.refl_hom, Category.comp_id, Iso.symm_hom, Iso.eq_inv_comp,
+      Proj.symmetricAlgebraMapIso_hom_projToSpec]
+
+end BaseChange
 
 /-! ### The function field -/
 

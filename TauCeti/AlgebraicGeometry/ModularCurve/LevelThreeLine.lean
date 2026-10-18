@@ -18,9 +18,9 @@ level-three normal form
 
   `Y² + 3 μ X Y + (μ³ - 1) Y = X³`,
 
-which carries the basis of its `3`-torsion with first point `(0, 0)` once a primitive cube root of
-unity is adjoined. This curve has `c₄ = 9 μ (μ³ + 8)` and `Δ = 27 (μ³ - 1)³`, so its `j`-invariant
-is
+which, when `3` is invertible, carries the basis of its `3`-torsion with first point `(0, 0)` once
+a primitive cube root of unity is adjoined. This curve has `c₄ = 9 μ (μ³ + 8)` and
+`Δ = 27 (μ³ - 1)³`, so its `j`-invariant is
 
   `j = c₄³ / Δ = 27 μ³ (μ³ + 8)³ / (μ³ - 1)³ = 27 u`,  `u = μ³ (μ³ + 8)³ / (μ³ - 1)³`.
 
@@ -141,7 +141,7 @@ theorem mu_pow_three_mul_mu_pow_three_add_eight_pow_three :
   have h : aeval (mu R) (levelThreeRelation R) = 0 := AdjoinRoot.eval₂_root _
   simp only [levelThreeRelation, map_sub, map_pow, map_add, map_mul, aeval_X, map_one, aeval_C,
     map_ofNat] at h
-  linear_combination h
+  exact sub_eq_zero.mp h
 
 /-- **The discriminant is a unit on the level-three line.** When `3` is invertible in `R`, the
 element `μ³ - 1`, whose cube is `Δ / 27`, is a unit: with `d = μ³ - 1`, the defining identity reads
@@ -150,36 +150,57 @@ theorem isUnit_mu_pow_three_sub_one (h3 : IsUnit (3 : R)) : IsUnit (mu R ^ 3 - 1
   set d := mu R ^ 3 - 1
   set u := algebraMap R[X] (LevelThreeRing R) X
   have h729 : IsUnit (729 : LevelThreeRing R) := by
-    have h := (h3.map (algebraMap R (LevelThreeRing R))).pow 6
-    rwa [map_ofNat, show (3 : LevelThreeRing R) ^ 6 = 729 by norm_num] at h
+    convert (h3.map (algebraMap R (LevelThreeRing R))).pow 6 using 1
+    norm_num [map_ofNat]
   refine isUnit_of_mul_isUnit_left (y := -(d ^ 3 + (28 - u) * d ^ 2 + 270 * d + 972)) ?_
   convert h729 using 1
   linear_combination -mu_pow_three_mul_mu_pow_three_add_eight_pow_three R
 
 section lift
 
-variable {R} {S : Type*} [CommRing S] [Algebra R S]
+variable {R} {S : Type*}
 
-/-- An `R`-algebra map out of the level-three ring sends the coordinate `u` to
-`x³ (x³ + 8)³ / (x³ - 1)³`, where `x` is the image of `μ`. -/
-theorem map_algebraMap_X_mul (φ : LevelThreeRing R →ₐ[R] S) :
+/-- A ring map out of the level-three ring preserves the relation between the coordinates
+`u` and `μ`. The target ring need not be commutative. -/
+theorem map_algebraMap_X_mul [Ring S] (φ : LevelThreeRing R →+* S) :
     φ (algebraMap R[X] (LevelThreeRing R) X) * (φ (mu R) ^ 3 - 1) ^ 3 =
       φ (mu R) ^ 3 * (φ (mu R) ^ 3 + 8) ^ 3 := by
   have h := congrArg φ (mu_pow_three_mul_mu_pow_three_add_eight_pow_three R)
   simp only [map_pow, map_add, map_sub, map_mul, map_one, map_ofNat] at h
   exact h.symm
 
+/-- Two `R`-algebra maps out of the level-three ring agree once they agree on `μ`, provided
+the common image `x` has `x³ - 1` a unit. This does not require `3` to be invertible in `R`.
+The unit condition is necessary: modulo `3`, maps sending `μ` to `1` may send `u` anywhere. -/
+theorem algHom_ext [Ring S] [Algebra R S] {φ ψ : LevelThreeRing R →ₐ[R] S}
+    (hx : IsUnit (φ (mu R) ^ 3 - 1)) (h : φ (mu R) = ψ (mu R)) : φ = ψ := by
+  have hu :
+      φ (algebraMap R[X] (LevelThreeRing R) X) = ψ (algebraMap R[X] (LevelThreeRing R) X) := by
+    apply (hx.pow 3).mul_right_cancel
+    have hφ := map_algebraMap_X_mul φ.toRingHom
+    have hψ := map_algebraMap_X_mul ψ.toRingHom
+    simp only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at hφ hψ
+    rw [hφ, h, ← hψ]
+  exact AdjoinRoot.algHom_ext' (Polynomial.algHom_ext hu) h
+
+/-- Two `R[u]`-algebra maps out of the level-three ring agree once they agree on `μ`. -/
+@[ext]
+theorem algHom_ext' [Semiring S] [Algebra R[X] S] {φ ψ : LevelThreeRing R →ₐ[R[X]] S}
+    (h : φ (mu R) = ψ (mu R)) : φ = ψ :=
+  AdjoinRoot.algHom_ext h
+
+variable [CommRing S] [Algebra R S]
+
 /-- The **universal property** of the level-three ring: an element `x` of an `R`-algebra `S` such
-that `x³ - 1` is a unit determines an `R`-algebra map sending `μ` to `x`. It is unique when `3` is
-invertible in `R` (`TauCeti.LevelThreeRing.algHom_ext`). -/
+that `x³ - 1` is a unit determines a unique `R`-algebra map sending `μ` to `x`
+(`TauCeti.LevelThreeRing.algHom_ext`). -/
 noncomputable def lift (x : S) (hx : IsUnit (x ^ 3 - 1)) : LevelThreeRing R →ₐ[R] S :=
   AdjoinRoot.liftAlgHom (levelThreeRelation R)
     (aeval (x ^ 3 * (x ^ 3 + 8) ^ 3 * ↑hx.unit⁻¹ ^ 3)) x (by
-      have h := hx.mul_val_inv
       simp only [levelThreeRelation, eval₂_sub, eval₂_pow, eval₂_add, eval₂_mul, eval₂_X,
         eval₂_one, eval₂_C, eval₂_ofNat, AlgHom.coe_toRingHom, aeval_X]
-      linear_combination (-(x ^ 3 * (x ^ 3 + 8) ^ 3) *
-        (1 + (x ^ 3 - 1) * ↑hx.unit⁻¹ + ((x ^ 3 - 1) * ↑hx.unit⁻¹) ^ 2)) * h)
+      rw [mul_assoc, ← mul_pow (↑hx.unit⁻¹ : S) (x ^ 3 - 1), hx.val_inv_mul, one_pow, mul_one,
+        sub_self])
 
 @[simp]
 theorem lift_mu (x : S) (hx : IsUnit (x ^ 3 - 1)) : lift (R := R) x hx (mu R) = x :=
@@ -192,26 +213,6 @@ theorem lift_algebraMap_X (x : S) (hx : IsUnit (x ^ 3 - 1)) :
     lift (R := R) x hx (algebraMap R[X] (LevelThreeRing R) X) =
       x ^ 3 * (x ^ 3 + 8) ^ 3 * ↑hx.unit⁻¹ ^ 3 :=
   (AdjoinRoot.liftAlgHom_of _ _ _ _ X).trans (aeval_X _)
-
-/-- When `3` is invertible in `R`, two `R`-algebra maps out of the level-three ring agree once
-they agree on `μ`. The hypothesis on `3` is necessary: modulo `3`, the maps sending `μ` to `1` may
-send `u` anywhere. -/
-theorem algHom_ext (h3 : IsUnit (3 : R)) {φ ψ : LevelThreeRing R →ₐ[R] S}
-    (h : φ (mu R) = ψ (mu R)) : φ = ψ := by
-  have hu :
-      φ (algebraMap R[X] (LevelThreeRing R) X) = ψ (algebraMap R[X] (LevelThreeRing R) X) := by
-    have hd := ((isUnit_mu_pow_three_sub_one R h3).map φ).pow 3
-    rw [map_sub, map_pow, map_one] at hd
-    refine hd.mul_right_cancel ?_
-    rw [map_algebraMap_X_mul, h, ← map_algebraMap_X_mul ψ]
-  exact AdjoinRoot.algHom_ext' (Polynomial.algHom_ext hu) h
-
-omit [Algebra R S] in
-/-- Two `R[u]`-algebra maps out of the level-three ring agree once they agree on `μ`. -/
-@[ext]
-theorem algHom_ext' [Algebra R[X] S] {φ ψ : LevelThreeRing R →ₐ[R[X]] S}
-    (h : φ (mu R) = ψ (mu R)) : φ = ψ :=
-  AdjoinRoot.algHom_ext h
 
 end lift
 
@@ -235,7 +236,7 @@ noncomputable def equivLocalization (h3 : IsUnit (3 : R)) :
         (fun r ↦ by
           simp [IsScalarTower.algebraMap_apply R R[X] (Localization.Away (X ^ 3 - 1 : R[X]))])
         (by simp))
-    (algHom_ext h3 (by simp))
+    (algHom_ext (by simpa using isUnit_mu_pow_three_sub_one R h3) (by simp))
 
 @[simp]
 theorem equivLocalization_mu (h3 : IsUnit (3 : R)) :
@@ -255,7 +256,7 @@ theorem equivLocalization_algebraMap_X (h3 : IsUnit (3 : R)) :
       IsLocalization.mk' (Localization.Away (X ^ 3 - 1 : R[X])) (X ^ 3 * (X ^ 3 + 8) ^ 3 : R[X])
         (⟨(X ^ 3 - 1) ^ 3, 3, rfl⟩ : Submonoid.powers (X ^ 3 - 1 : R[X])) := by
   rw [IsLocalization.eq_mk'_iff_mul_eq]
-  simpa [map_ofNat] using map_algebraMap_X_mul (equivLocalization h3).toAlgHom
+  simpa [map_ofNat] using map_algebraMap_X_mul (equivLocalization h3).toRingHom
 
 end equivLocalization
 

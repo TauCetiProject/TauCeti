@@ -48,7 +48,8 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
-  coefficientwise scalar action.
+  coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
+  scalar towers from the coefficientwise action to the algebra action.
 * `TauCeti.LaurentSeries.valuation_eq_exp_neg_order`: a nonzero Laurent series `f` has valuation
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `PowerSeries.order_coe` and `PowerSeries.orderTop_coe_of_ne_zero`: the order of a power series in
@@ -166,6 +167,16 @@ theorem laurentSeries_algebraMap_mul_eq_smul {R A : Type*} [CommSemiring R] [Com
     algebraMap R (LaurentSeries A) c * f = c • f := by
   rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply, HahnSeries.ofPowerSeries_C,
     HahnSeries.C_mul_eq_smul, algebraMap_smul]
+
+/-- A scalar tower `R → R⸨X⸩ → M` for the coefficientwise action of `R` on `R⸨X⸩`, which is the
+one found by instance search, is also a scalar tower for the algebra action, since the two actions
+agree. Derivations out of `R⸨X⸩` and Kähler differentials of `R⸨X⸩` use the algebra action. -/
+instance laurentSeries_isScalarTower_algebra {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R⸨X⸩ M] [Module R M] [IsScalarTower R R⸨X⸩ M] :
+    @IsScalarTower R R⸨X⸩ M Algebra.toSMul _ _ :=
+  .of_algebraMap_smul fun c m ↦ by
+    rw [← mul_one (algebraMap R R⸨X⸩ c), laurentSeries_algebraMap_mul_eq_smul, smul_assoc,
+      one_smul]
 
 end TauCeti
 

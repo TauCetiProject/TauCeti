@@ -19,8 +19,10 @@ When it agrees locally with an open sector, its frontier away from the vertex li
 bounding rays, and the vertex itself lies on the frontier. When it agrees far out with an open
 sector of opening less than `2π`, some point lies outside its closure. When it agrees far out with
 an open half-strip, its frontier far out lies on the two bounding rays, and again some point lies
-outside its closure; the same holds when far out it misses an open half-strip. These facts supply
-the boundary conditions for polygonal conformal maps.
+outside its closure; the same holds when far out it misses an open half-strip. The exponential
+coordinate `exp (π * I - ζ)` is injective on the closed strip `0 ≤ im ζ ≤ π`, real on its bounding
+lines and in the upper half-plane inside it, and on the closed half-strip it tends to `0` at
+infinity. These facts supply the boundary conditions for polygonal conformal maps.
 -/
 
 public section
@@ -234,6 +236,58 @@ theorem re_div_nonneg_and_im_div_eq_zero_or_eq_pi_of_mem_frontier {c b z : ℂ} 
   by_contra h
   rw [not_or] at h
   exact hzS ⟨hre', him₀.lt_of_ne (Ne.symm h.1), himπ.lt_of_ne h.2⟩
+
+/-- A point `ζ` of the closed strip `0 ≤ im ζ ≤ π` has `‖ζ‖ ≤ |re ζ| + π`. -/
+theorem norm_le_abs_re_add_pi_of_im_mem_Icc {ζ : ℂ} (him : ζ.im ∈ Icc 0 Real.pi) :
+    ‖ζ‖ ≤ |ζ.re| + Real.pi := by
+  have h := norm_le_abs_re_add_abs_im ζ
+  rw [abs_of_nonneg him.1] at h
+  linarith [him.2]
+
+/-- The imaginary part of the exponential coordinate `exp (π * I - ζ)` of the half-strip, which
+is positive on the open strip `0 < im ζ < π` and vanishes on its bounding lines. -/
+theorem im_exp_pi_mul_I_sub (ζ : ℂ) :
+    (exp (Real.pi * I - ζ)).im = Real.exp (-ζ.re) * Real.sin ζ.im := by
+  rw [exp_im]
+  simp [Real.sin_pi_sub]
+
+/-- The exponential coordinate `exp (π * I - ζ)` is injective on the closed strip
+`0 ≤ im ζ ≤ π`. -/
+theorem injOn_exp_pi_mul_I_sub :
+    InjOn (fun ζ : ℂ => exp (Real.pi * I - ζ)) {ζ : ℂ | ζ.im ∈ Icc 0 Real.pi} := by
+  have hlog {ζ : ℂ} (hζ : ζ.im ∈ Icc 0 Real.pi) :
+      log (exp (Real.pi * I - ζ)) = Real.pi * I - ζ := by
+    have him : (Real.pi * I - ζ).im = Real.pi - ζ.im := by simp
+    exact log_exp (by rw [him]; linarith [hζ.2, Real.pi_pos]) (by rw [him]; linarith [hζ.1])
+  intro ζ hζ ξ hξ h
+  simpa using (hlog hζ).symm.trans ((congrArg log h).trans (hlog hξ))
+
+/-- The exponential coordinate `exp (π * I - (w - c) / b)` of the half-strip
+`{0 < re ((w - c) / b), 0 < im ((w - c) / b) < π}` is an exponential `exp ((w - c') / b')`. -/
+theorem exp_pi_mul_I_sub_div {w c b : ℂ} (hb : b ≠ 0) :
+    exp (Real.pi * I - (w - c) / b) = exp ((w - (c + Real.pi * I * b)) / -b) := by
+  congr 1
+  field_simp
+  ring
+
+/-- In the closed half-strip `{0 ≤ re ζ, 0 ≤ im ζ ≤ π}`, the exponential coordinate
+`exp (π * I - ζ)`, which maps the half-strip into the closed upper half-disc, tends to `0` as `ζ`
+tends to infinity. -/
+theorem tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded {α : Type*} {l : Filter α} {ζ : α → ℂ}
+    (hζ : Filter.Tendsto ζ l (Bornology.cobounded ℂ))
+    (hmem : ∀ᶠ a in l, 0 ≤ (ζ a).re ∧ (ζ a).im ∈ Icc 0 Real.pi) :
+    Filter.Tendsto (fun a => exp (Real.pi * I - ζ a)) l (𝓝 0) := by
+  -- on the half-strip `re ζ ≥ ‖ζ‖ - π`, which tends to infinity
+  have hre : Filter.Tendsto (fun a => (ζ a).re) l Filter.atTop := by
+    refine Filter.tendsto_atTop_mono' _ ?_ (Filter.tendsto_atTop_add_const_right _ (-Real.pi)
+      (tendsto_norm_cobounded_atTop.comp hζ))
+    filter_upwards [hmem] with a ⟨hre, him⟩
+    have h := norm_le_abs_re_add_pi_of_im_mem_Icc him
+    rw [abs_of_nonneg hre] at h
+    simp only [Function.comp_apply]
+    linarith
+  refine tendsto_exp_comap_re_atBot.comp (Filter.tendsto_comap_iff.mpr ?_)
+  simpa [Function.comp_def] using Filter.tendsto_neg_atTop_atBot.comp hre
 
 /-- If, far from `c`, every point `z` of a set `U` has `0 < re ((z - c) / b)` (as for a set that
 coincides far out with a half-strip or a half-plane), then some point lies outside the closure of
