@@ -25,7 +25,7 @@ an elliptic function field with exact constant field `k`.  This is the converse 
 Proposition 6.1.2 (`TauCeti.Place.exists_isWeierstrassCoordinates_of_genus_eq_one`).  It contains
 parts (a) and (c) of his Proposition 6.1.3, which treats `y² = f(x)` in characteristic other than
 two, for an arbitrary Weierstrass equation in every characteristic; the different of `F / k(x)`
-(part (b)) is not computed here.
+(part (b)) is computed in `TauCeti.FieldTheory.FunctionField.Elliptic.Weierstrass.Different`.
 
 Together with `TauCeti.Place.IsWeierstrassCoordinates.isElliptic`, it shows that over a perfect
 field, Weierstrass coordinates at a place of degree one of a function field are coordinates on
