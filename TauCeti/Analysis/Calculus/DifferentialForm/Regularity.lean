@@ -53,21 +53,13 @@ theorem contDiffOn_extDerivWithin (hω : ContDiffOn 𝕜 p ω s)
     ContDiffOn 𝕜 r (extDerivWithin ω s) s :=
   fun x hx ↦ contDiffWithinAt_extDerivWithin (hω x hx) hs hrp hx
 
-section RealSuccessor
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- A `C^(n+1)` real differential form has a `C^n` exterior derivative on a
-set with unique derivatives. This successor form is the finite-regularity interface used by
-manifold charts, and also includes the smooth case `n = ∞`. -/
-theorem contDiffOn_extDerivWithin_succ {n : WithTop ℕ∞} {k : ℕ}
-    {ω : E → E [⋀^Fin k]→L[ℝ] F} {s : Set E} (hs : UniqueDiffOn ℝ s)
-    (hω : ContDiffOn ℝ (n + 1) ω s) :
-    ContDiffOn ℝ n (extDerivWithin ω s) s :=
+/-- A `C^(n+1)` differential form has a `C^n` exterior derivative within a set with
+unique derivatives; this is `contDiffOn_extDerivWithin` with `p = n + 1`, and covers
+`n = ∞` and `n = ω`. -/
+theorem contDiffOn_extDerivWithin_succ {n : WithTop ℕ∞}
+    (hs : UniqueDiffOn 𝕜 s) (hω : ContDiffOn 𝕜 (n + 1) ω s) :
+    ContDiffOn 𝕜 n (extDerivWithin ω s) s :=
   contDiffOn_extDerivWithin hω hs le_rfl
-
-end RealSuccessor
 
 /-- A `C^p` form has a `C^r` exterior derivative at a point, provided `r + 1 ≤ p`. -/
 theorem contDiffAt_extDeriv (hω : ContDiffAt 𝕜 p ω x) (hrp : r + 1 ≤ p) :
