@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.CenterQuotient
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Finite
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Isogeny.Basic
-public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Reductive
 
 /-!
@@ -52,27 +51,14 @@ variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- The represented center-quotient projection is a central isogeny. -/
 theorem isCentralIsogeny_centerQuotientι (hH : semisimpleCommHopfAlgProperty k H) :
-    CommHopfAlgCat.IsCentralIsogeny hH.reductive.centerQuotientι := by
-  have hseq := CommHopfAlgCat.isShortExact_mkQuotient_kernelHopfIdeal
-    hH.reductive.centerQuotientι hH.reductive.faithfullyFlat_centerQuotientι
-  have hfinite : Module.Finite k
-      (CommHopfAlgCat.quotient H.obj
-        (CommHopfAlgCat.kernelHopfIdeal hH.reductive.centerQuotientι)) := by
-    rw [hH.reductive.kernelHopfIdeal_centerQuotientι_eq]
-    exact hH.moduleFinite_centerCoordinate
-  have hisog := hseq.isIsogeny_iff_moduleFinite.mpr hfinite
-  rw [CommHopfAlgCat.isCentralIsogeny_iff]
-  refine ⟨hisog.finite, hisog.faithfullyFlat, ?_⟩
-  rw [reductiveCommHopfAlgProperty.kernelHopfIdeal_centerQuotientι_eq]
-  exact CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj
+    CommHopfAlgCat.IsCentralIsogeny hH.reductive.centerQuotientι :=
+  hH.reductive.isCentralIsogeny_centerQuotientι_of_moduleFinite hH.moduleFinite_centerCoordinate
 
 /-- The represented quotient of a semisimple affine group by its scheme-theoretic center is
 semisimple. -/
 theorem semisimple_centerQuotient (hH : semisimpleCommHopfAlgProperty k H) :
-    semisimpleCommHopfAlgProperty k hH.reductive.centerQuotient := by
-  let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
-  exact hH.of_isCentralIsogeny hH.reductive.centerQuotientι hH.isCentralIsogeny_centerQuotientι
+    semisimpleCommHopfAlgProperty k hH.reductive.centerQuotient :=
+  hH.of_isCentralIsogeny hH.reductive.centerQuotientι hH.isCentralIsogeny_centerQuotientι
 
 end semisimpleCommHopfAlgProperty
 

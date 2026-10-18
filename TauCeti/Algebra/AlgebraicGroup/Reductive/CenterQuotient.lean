@@ -99,6 +99,17 @@ theorem kernelHopfIdeal_centerQuotientι_eq (hH : reductiveCommHopfAlgProperty k
   exact CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
 
+/-- The represented center-quotient projection is a central isogeny when the scheme-theoretic
+center is finite. -/
+theorem isCentralIsogeny_centerQuotientι_of_moduleFinite
+    (hH : reductiveCommHopfAlgProperty k H)
+    (hfin : Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj)) :
+    CommHopfAlgCat.IsCentralIsogeny hH.centerQuotientι := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  exact CommHopfAlgCat.isCentralIsogeny_coinvariantsι
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj) hfin
+
 /-- A homomorphism whose kernel contains the center factors through the represented center
 quotient. -/
 noncomputable def liftCenterQuotient (hH : reductiveCommHopfAlgProperty k H)
