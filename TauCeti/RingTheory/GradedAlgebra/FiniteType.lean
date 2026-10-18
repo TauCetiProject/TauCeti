@@ -111,11 +111,11 @@ variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- A graded algebra of finite type over `𝒜 0` is generated over `𝒜 0` by finitely many
 homogeneous elements of positive degree. This is the semiring version of Mathlib's
-`GradedAlgebra.exists_finset_adjoin_eq_top_and_homogeneous_ne_zero`, which is stated for rings,
-with the same proof: take the nonzero-degree homogeneous components of a finite generating set. -/
+`GradedAlgebra.exists_finset_adjoin_eq_top_and_homogeneous_ne_zero`, which is stated for rings. -/
 theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (𝒜 0) A] :
     ∃ s : Finset A, Algebra.adjoin (𝒜 0) (s : Set A) = ⊤ ∧ ∀ x ∈ s, ∃ n ≠ 0, x ∈ 𝒜 n := by
   classical
+  -- As in the ring proof, take the nonzero-degree homogeneous components of finite generators.
   obtain ⟨F, hF⟩ := Algebra.FiniteType.out (R := 𝒜 0) (A := A)
   refine ⟨F.biUnion fun f ↦ ((decompose 𝒜 f).support.filter (· ≠ 0)).image
     fun n ↦ (decompose 𝒜 f n : A), ?_, ?_⟩
