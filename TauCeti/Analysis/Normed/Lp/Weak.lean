@@ -85,15 +85,8 @@ theorem weakLpNorm_le_norm (x : ι → E) :
     weakLpNorm (𝕜 := 𝕜) p x ≤ ‖WithLp.toLp p x‖ := by
   apply (weakLpNorm_le_iff p x (norm_nonneg _)).2
   intro f
-  calc
-    ‖WithLp.toLp p (fun i ↦ f (x i))‖ ≤
-        ‖‖f‖ • WithLp.toLp p (fun i ↦ ‖x i‖)‖ := by
-      apply PiLp.norm_mono
-      intro i
-      simpa using f.le_opNorm (x i)
-    _ = ‖WithLp.toLp p x‖ * ‖f‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg _),
-        PiLp.norm_norm (WithLp.toLp p x), mul_comm]
+  rw [mul_comm]
+  exact PiLp.norm_toLp_comp_le (norm_nonneg f) f.le_opNorm x
 
 /-- Applying a bounded operator to a family multiplies its weak norm by at most the
 operator norm. -/
@@ -114,15 +107,8 @@ theorem weakLpNorm_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι 
     weakLpNorm (𝕜 := 𝕜) p (x ∘ e) = weakLpNorm (𝕜 := 𝕜) p x := by
   have hn (f : StrongDual 𝕜 E) :
       ‖WithLp.toLp p (fun i ↦ f ((x ∘ e) i))‖ =
-        ‖WithLp.toLp p (fun i ↦ f (x i))‖ := by
-    have he : (LinearIsometryEquiv.piLpCongrLeft p 𝕜 𝕜 e.symm)
-        (WithLp.toLp p (fun i ↦ f (x i))) =
-        WithLp.toLp p (fun i ↦ f ((x ∘ e) i)) := by
-      apply PiLp.ext
-      intro i
-      simp [LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft']
-    rw [← he]
-    exact (LinearIsometryEquiv.piLpCongrLeft p 𝕜 𝕜 e.symm).norm_map _
+        ‖WithLp.toLp p (fun i ↦ f (x i))‖ :=
+    PiLp.norm_toLp_comp_equiv e fun i ↦ f (x i)
   apply le_antisymm
   · exact (weakLpNorm_le_iff p _ (apply_nonneg _ _)).2 fun f ↦
       (hn f).trans_le (norm_eval_le_weakLpNorm p x f)

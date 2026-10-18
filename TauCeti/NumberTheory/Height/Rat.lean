@@ -29,6 +29,8 @@ height estimates such as Roth's lemma.
 ## Main results
 
 * `Rat.mulHeight_le_max_abs`: `H(x) ≤ maxᵢ |xᵢ|` for a nonzero integer tuple `x`.
+* `Rat.den_le_mulHeight₁`, `Rat.log_den_le_logHeight₁`: the denominator of a rational number is
+  at most its height.
 * `Finsupp.mulHeight_mapRange_intCast_le`, `Finsupp.mulHeight_mapRange_intCast_eq`: the bound,
   and the equality for coprime entries, for finitely supported integer vectors.
 * `Finsupp.mulHeight_mapRange_intCast_le_of_abs_le`: `H(x) ≤ B` if all entries of the nonzero
@@ -86,6 +88,16 @@ theorem logHeight_le_max_abs (x : ι → ℤ) :
   · cases isEmpty_or_nonempty ι <;> simp [iSup_of_empty', Int.csSup_empty]
   rw [logHeight_eq_log_mulHeight]
   exact Real.log_le_log (mulHeight_pos _) (mulHeight_le_max_abs hx)
+
+/-- The denominator of a rational number is at most its multiplicative height. -/
+theorem den_le_mulHeight₁ (q : ℚ) : (q.den : ℝ) ≤ mulHeight₁ q := by
+  rw [mulHeight₁_eq_max]
+  exact_mod_cast le_max_right _ _
+
+/-- The logarithm of the denominator of a rational number is at most its logarithmic height. -/
+theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q := by
+  rw [logHeight₁_eq_log_mulHeight₁]
+  exact Real.log_le_log (by positivity) (den_le_mulHeight₁ q)
 
 end Rat
 

@@ -7,15 +7,18 @@ module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Quantile
-
+public import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Probability.Distributions.Gamma.Quantile
 
 /-!
 # Quantiles of exponential laws
 
 This file computes the lower quantile of the exponential probability measure with positive rate
-`r`. At an interior probability level `u`, the quantile is `-log (1 - u) / r`. Consequently its
-one-sided endpoint limits are `0` and positive infinity, the endpoints of the law's support.
+`r`. At an interior probability level `u`, it is `-log (1 - u) / r`. Its one-sided endpoint
+limits are `0` and positive infinity in `EReal`.
+
+The formula and limits are inherited from the Gamma law with shape one, reflecting Mathlib's
+definition of `expMeasure r` as `gammaMeasure 1 r`.
 
 ## Main results
 
@@ -35,7 +38,7 @@ namespace TauCeti.Probability
 variable {r u : ℝ}
 
 /-- The lower quantile of an exponential law with positive rate `r` is
-`-log (1 - u) / r`. -/
+`-log (1 - u) / r` at every interior probability level. -/
 @[simp]
 theorem quantile_expMeasure (hr : 0 < r) (hu : u ∈ Ioo 0 1) :
     (expMeasure r).quantile u = -Real.log (1 - u) / r := by
@@ -44,13 +47,17 @@ theorem quantile_expMeasure (hr : 0 < r) (hu : u ∈ Ioo 0 1) :
 /-- Exponential quantiles tend to the lower support endpoint `0` as the probability level tends
 to zero from above. -/
 theorem tendsto_quantile_expMeasure_nhdsGT_zero (hr : 0 < r) :
-    Tendsto (expMeasure r).quantile (nhdsWithin 0 (Ioi 0)) (nhdsWithin 0 (Ioi 0)) := by
-  simpa only [expMeasure] using tendsto_quantile_gammaMeasure_nhdsGT_zero one_pos hr
+    Tendsto (fun u ↦ ((expMeasure r).quantile u : EReal)) (nhdsWithin 0 (Ioi 0))
+      (nhds 0) := by
+  exact EReal.tendsto_coe.2
+    ((tendsto_quantile_gammaMeasure_nhdsGT_zero one_pos hr).mono_right inf_le_left)
 
 /-- Exponential quantiles tend to positive infinity as the probability level tends to one from
 below. -/
 theorem tendsto_quantile_expMeasure_nhdsLT_one (hr : 0 < r) :
-    Tendsto (expMeasure r).quantile (nhdsWithin 1 (Iio 1)) atTop := by
-  simpa only [expMeasure] using tendsto_quantile_gammaMeasure_nhdsLT_one one_pos hr
+    Tendsto (fun u ↦ ((expMeasure r).quantile u : EReal)) (nhdsWithin 1 (Iio 1))
+      (nhds ⊤) := by
+  rw [EReal.tendsto_coe_nhds_top_iff]
+  exact tendsto_quantile_gammaMeasure_nhdsLT_one one_pos hr
 
 end TauCeti.Probability
