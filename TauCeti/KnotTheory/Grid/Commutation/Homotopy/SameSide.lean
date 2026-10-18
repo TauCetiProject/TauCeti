@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.TerminalPair
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.InitialPair.Weight
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+import TauCeti.Algebra.CharP.Two
 
 /-!
 # Removing same-side pentagon pairs from the commutation homotopy equation
@@ -230,7 +231,7 @@ open scoped Classical in
 complement of the same-side recut image off the diagonal. The diagonal returning annuli
 and the matched same-side pairs have already been discharged. -/
 theorem unblockedDifferential_commutationHomotopy_add_eq_iff_sdiff_sameSide
-    (R : Type*) [CommSemiring R] [IsCancelAdd R] [CharP R 2] :
+    (R : Type*) [CommSemiring R] [CharP R 2] :
     (∀ c : GridChainMinus R n,
       G.unblockedDifferential R (G.commutationHomotopy R C c) +
           G.commutationHomotopy R C (G.unblockedDifferential R c) =
@@ -240,6 +241,7 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_sdiff_sameSide
             G.hexagonCompositeWeight C R F) =
           ∑ D ∈ G.pentagonPairDecompositions C x z \ G.sameSidePentagonPairs C x z,
             G.pentagonPairWeight C R D := by
+  have : IsCancelAdd R := isCancelAdd_of_charTwo R
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired C R]
   have hdiag (x : GridState n) :
       (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
