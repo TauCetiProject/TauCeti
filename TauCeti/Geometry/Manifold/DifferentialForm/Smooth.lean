@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 
 /-!
