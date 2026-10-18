@@ -16,15 +16,15 @@ in the extended natural numbers.
 
 ## Main results
 
-* `TauCeti.ENat.natCast_le_nsmul_add_iff_ceilDiv_le` rewrites an affine inequality in `ℕ∞`
+* `ENat.natCast_le_nsmul_add_iff_ceilDiv_le` rewrites an affine inequality in `ℕ∞`
   using natural-number ceiling division.
-* `TauCeti.Nat.ceilDiv_mul_sub_of_lt` evaluates a ceiling division after subtracting a residue
+* `Nat.ceilDiv_mul_sub_of_lt` evaluates a ceiling division after subtracting a residue
   smaller than the divisor.
 -/
 
 public section
 
-namespace TauCeti.ENat
+namespace ENat
 
 /-- For `0 < e`, the bound `r ≤ e • a + i` on an extended natural number `a` is the bound
 `ceil((r - i) / e) ≤ a`. -/
@@ -33,13 +33,13 @@ theorem natCast_le_nsmul_add_iff_ceilDiv_le {e : ℕ} (he : 0 < e) (r i : ℕ) (
   cases a with
   | top => simp [he.ne']
   | coe v =>
-      rw [nsmul_eq_mul, ← Nat.cast_mul, ← Nat.cast_add, _root_.ENat.natCast_le_natCast,
-        _root_.ENat.natCast_le_natCast, ceilDiv_le_iff_le_mul he]
+      rw [nsmul_eq_mul, ← Nat.cast_mul, ← Nat.cast_add, ENat.natCast_le_natCast,
+        ENat.natCast_le_natCast, ceilDiv_le_iff_le_mul he]
       omega
 
-end TauCeti.ENat
+end ENat
 
-namespace TauCeti.Nat
+namespace Nat
 
 /-- For `i < e`, rounding `(e * ρ - i) / e` up gives back `ρ`. -/
 theorem ceilDiv_mul_sub_of_lt {e i : ℕ} (hi : i < e) (ρ : ℕ) : (e * ρ - i) ⌈/⌉ e = ρ := by
@@ -48,4 +48,4 @@ theorem ceilDiv_mul_sub_of_lt {e i : ℕ} (hi : i < e) (ρ : ℕ) : (e * ρ - i)
   · rw [Nat.ceilDiv_eq_add_pred_div]
     refine Nat.div_eq_of_lt_le ?_ ?_ <;> rw [Nat.mul_comm] <;> grind
 
-end TauCeti.Nat
+end Nat

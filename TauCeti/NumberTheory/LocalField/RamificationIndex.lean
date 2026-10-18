@@ -55,9 +55,9 @@ filtration.
   uniformizer of `L` are orthogonal, so an `𝒪[K]`-linear combination of them has the least
   term valuation.
 * `TauCeti.le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible` and
-  `TauCeti.ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible`: in these
-  coordinates, a valuation ball of `𝒪[L]` is a box of powers of `𝓂[K]`, and a cube at radii
-  divisible by `e(L/K)`.
+  `TauCeti.ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible`: the
+  preimage of a valuation ball of `𝒪[L]` under the coefficient map `c ↦ ∑ c i ϖ ^ i` on
+  `Fin n → 𝒪[K]` is a box of powers of `𝓂[K]`, and a cube at radii divisible by `e(L/K)`.
 * `TauCeti.ramificationIndex_eq_iff`: `e` is the only natural number with that property.
 * `TauCeti.ramificationIndex_pos`: the ramification index is positive.
 * `TauCeti.normalizedValuation_algebraMap_irreducible` and
@@ -461,7 +461,7 @@ theorem le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible {ϖ : 𝒪[L]} (hϖ 
   rw [addVal_sum_algebraMap_mul_pow_of_irreducible hϖ hn c, le_iInf_iff]
   refine forall_congr' fun i ↦ ?_
   rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
-  exact TauCeti.ENat.natCast_le_nsmul_add_iff_ceilDiv_le ramificationIndex_pos _ _ _
+  exact ENat.natCast_le_nsmul_add_iff_ceilDiv_le ramificationIndex_pos _ _ _
 
 /-- **Valuation cubes in uniformizer coordinates.** At a radius `e(L/K) * ρ` divisible by the
 ramification index, the box of `le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible` is the cube
@@ -473,7 +473,7 @@ theorem ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducibl
       ∀ i : Fin n, c i ∈ 𝓂[K] ^ ρ := by
   rw [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible hϖ hn c]
   refine forall_congr' fun i ↦ ?_
-  rw [TauCeti.Nat.ceilDiv_mul_sub_of_lt (i.isLt.trans_le hn)]
+  rw [Nat.ceilDiv_mul_sub_of_lt (i.isLt.trans_le hn)]
 
 variable (K L) in
 /-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.

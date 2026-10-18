@@ -10,8 +10,9 @@ public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
 /-!
 # Valuation balls in Eisenstein power-basis coordinates
 
-For an Eisenstein generator `ξ` of a finite extension `L/K`, the normalized valuation of the
-`i`-th power-basis term is congruent to `i` modulo the degree. Consequently, the coefficient
+For an Eisenstein generator `ξ` of a finite extension `L/K` of degree `n`, the `i`-th
+power-basis term has additive valuation `addVal (algebraMap (c i) * ξ ^ i) = n * addVal (c i) + i`,
+so its additive valuation has residue `i` modulo `n`. Consequently, the coefficient
 vectors whose power-basis linear combination lies in the valuation ball of radius `r` form a
 box: the `i`-th coefficient belongs to the `ceil((r - i) / n)`-th power of the maximal ideal of
 `O_K`. At radii divisible by `n`, this box is a cube. Both statements specialize the uniformizer
