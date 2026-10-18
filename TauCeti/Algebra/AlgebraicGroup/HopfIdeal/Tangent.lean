@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Equalizer
 import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
@@ -37,6 +38,8 @@ Layer 2 target "the Lie algebra of a closed subgroup".
   Hopf ideal, or just on a chosen set of ideal generators.
 * `TauCeti.HopfIdeal.mem_lieSubalgebra_sup_iff`: a derivation lies in the tangent Lie algebra
   of an intersection of closed subgroups exactly when it lies in both tangent Lie algebras.
+* `TauCeti.HopfIdeal.mem_lieSubalgebra_equalizer_iff`: the Lie algebra of an equalizer is the
+  equalizer of the differentials.
 * `TauCeti.HopfIdeal.quotientLieEquiv`: the closed subgroup's Lie algebra is Lie-equivalent to
   that image.
 * `TauCeti.HopfIdeal.lieSubalgebra_map`: tangent Lie algebras commute with inverse images of
@@ -337,6 +340,30 @@ theorem mem_lieSubalgebra_iff_of_toIdeal_eq_span (I : HopfIdeal R H) {S : Set H}
       exact Ideal.subset_span hy
     apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
     simp only [Bialgebra.CounitAlgebra.algEquivSelf_smul, hyε, map_zero, zero_mul]
+
+/-- The Lie algebra of the equalizer of two group homomorphisms is the equalizer of their
+differentials. This holds over any commutative base ring and with arbitrary coefficients.
+Use this as an explicit rewrite: the general `mem_lieSubalgebra_iff` already simplifies
+membership in the tangent Lie algebra of any closed subgroup. -/
+theorem mem_lieSubalgebra_equalizer_iff {K : Type*} [CommRing K] [HopfAlgebra R K]
+    (f g : K →ₐc[R] H) (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    d ∈ (equalizer f g).lieSubalgebra (B := B) ↔
+      derivationCompLieHom (B := B) f d = derivationCompLieHom (B := B) g d := by
+  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _
+    (equalizer_toIdeal.trans (equalizerIdeal_eq_span f g))]
+  simp only [Set.forall_mem_range, map_sub, sub_eq_zero]
+  constructor
+  · intro h
+    ext a
+    apply (Bialgebra.CounitAlgebra.algEquivSelf R K B).injective
+    simpa only [derivationCompLieHom_apply, algEquivSelf_derivationComp_apply,
+      BialgHom.coe_toAlgHom] using
+      congrArg (Bialgebra.CounitAlgebra.algEquivSelf R H B) (h a)
+  · intro h a
+    apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
+    simpa only [derivationCompLieHom_apply, algEquivSelf_derivationComp_apply,
+      BialgHom.coe_toAlgHom] using
+      congrArg (fun e ↦ Bialgebra.CounitAlgebra.algEquivSelf R K B (e a)) h
 
 /-- Taking the inverse image of a closed subgroup commutes with taking its tangent Lie
 algebra. On coordinate rings the inverse image is presented by the image Hopf ideal.
