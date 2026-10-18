@@ -89,7 +89,7 @@ section Monomials
 variable {M : Type*} [AddCommGroup M] [Module R M]
 
 /-- The ordered even monomials `1, e₀e₁, e₀e₂, e₁e₂`. -/
-noncomputable def spinSixEvenMonomial (b : Basis (Fin 3) R M) :
+noncomputable def _root_.Module.Basis.spinSixEvenMonomial (b : Basis (Fin 3) R M) :
     Fin 4 → ExteriorAlgebra R M :=
   ![1, ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1),
     ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 2),
@@ -97,12 +97,12 @@ noncomputable def spinSixEvenMonomial (b : Basis (Fin 3) R M) :
 
 /-- Evaluation of the ordered even-monomial coordinates. -/
 @[simp]
-theorem spinSixEvenMonomial_apply (b : Basis (Fin 3) R M) (j : Fin 4) :
-    spinSixEvenMonomial b j =
+theorem _root_.Module.Basis.spinSixEvenMonomial_apply (b : Basis (Fin 3) R M) (j : Fin 4) :
+    b.spinSixEvenMonomial j =
       ![1, ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1),
         ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 2),
         ExteriorAlgebra.ι R (b 1) * ExteriorAlgebra.ι R (b 2)] j := by
-  rw [spinSixEvenMonomial]
+  rw [Module.Basis.spinSixEvenMonomial]
 
 end Monomials
 
@@ -326,21 +326,25 @@ private theorem basis_empty_eq_one : b.ExteriorAlgebra ∅ = 1 := by
   exact ExteriorAlgebra.ιMulti_zero_apply _
 
 private theorem evenMonomial_eq :
-    spinSixEvenMonomial b = b.ExteriorAlgebra ∘ ![∅, {0, 1}, {0, 2}, {1, 2}] := by
+    b.spinSixEvenMonomial = b.ExteriorAlgebra ∘ ![∅, {0, 1}, {0, 2}, {1, 2}] := by
   ext j
   fin_cases j
-  · simp [spinSixEvenMonomial, basis_empty_eq_one]
-  · simp [spinSixEvenMonomial, ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 1 by decide)]
-  · simp [spinSixEvenMonomial, ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 2 by decide)]
-  · simp [spinSixEvenMonomial, ExteriorAlgebra.basis_pair b (show (1 : Fin 3) < 2 by decide)]
+  · simp [Module.Basis.spinSixEvenMonomial, basis_empty_eq_one]
+  · simp [Module.Basis.spinSixEvenMonomial,
+      ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 1 by decide)]
+  · simp [Module.Basis.spinSixEvenMonomial,
+      ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 2 by decide)]
+  · simp [Module.Basis.spinSixEvenMonomial,
+      ExteriorAlgebra.basis_pair b (show (1 : Fin 3) < 2 by decide)]
 
 private theorem evenMonomial_mem (j : Fin 4) :
-    spinSixEvenMonomial b j ∈ evenOdd (0 : QuadraticForm K M) 0 := by
+    b.spinSixEvenMonomial j ∈ evenOdd (0 : QuadraticForm K M) 0 := by
   fin_cases j
-  · simpa [spinSixEvenMonomial] using SetLike.one_mem_graded (evenOdd (0 : QuadraticForm K M))
+  · simpa [Module.Basis.spinSixEvenMonomial] using
+      SetLike.one_mem_graded (evenOdd (0 : QuadraticForm K M))
   all_goals exact ι_mul_ι_mem_evenOdd_zero _ _ _
 
-private theorem linearIndependent_evenMonomial : LinearIndependent K (spinSixEvenMonomial b) := by
+private theorem linearIndependent_evenMonomial : LinearIndependent K b.spinSixEvenMonomial := by
   rw [evenMonomial_eq]
   exact b.ExteriorAlgebra.linearIndependent.comp _ (by decide)
 
@@ -355,17 +359,17 @@ private theorem finrank_evenOdd_zero_eq_four :
 variable {N : Submodule K (ExteriorAlgebra K M)} (hN : N = evenOdd (0 : QuadraticForm K M) 0)
 
 /-- The basis `1, e₀e₁, e₀e₂, e₁e₂` of the even half. -/
-noncomputable def spinSixEvenMonomialBasis : Basis (Fin 4) K N :=
+noncomputable def _root_.Module.Basis.spinSixEvenMonomialBasis : Basis (Fin 4) K N :=
   basisOfLinearIndependentOfCardEqFinrank
-    (b := fun j ↦ (⟨spinSixEvenMonomial b j, hN ▸ evenMonomial_mem b j⟩ : N))
+    (b := fun j ↦ (⟨b.spinSixEvenMonomial j, hN ▸ evenMonomial_mem b j⟩ : N))
     (LinearIndependent.of_comp N.subtype (linearIndependent_evenMonomial b))
     (by rw [hN, finrank_evenOdd_zero_eq_four b]; rfl)
 
 /-- The even-monomial basis has the prescribed exterior-algebra representatives. -/
 @[simp]
-theorem coe_spinSixEvenMonomialBasis (j : Fin 4) :
-    (spinSixEvenMonomialBasis b hN j : ExteriorAlgebra K M) = spinSixEvenMonomial b j := by
-  simp [spinSixEvenMonomialBasis]
+theorem _root_.Module.Basis.coe_spinSixEvenMonomialBasis (j : Fin 4) :
+    (b.spinSixEvenMonomialBasis hN j : ExteriorAlgebra K M) = b.spinSixEvenMonomial j := by
+  simp [Module.Basis.spinSixEvenMonomialBasis]
 
 /-- The matrix of the action of `v₀ = e₀ + f₀` after a vector with coordinates `X` in `W` and
 `C` in `W'`. -/
@@ -397,38 +401,42 @@ private theorem det_baseBeforeMatrix (X C : Fin 3 → K) :
 
 private theorem toMatrix_eq_baseAfterMatrix (x : M) (d : Dual K M) (f : Module.End K N)
     (hf : ∀ s, (f s : ExteriorAlgebra K M) = fockAction (b 0) (b.coord 0) (fockAction x d s)) :
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b hN) (spinSixEvenMonomialBasis b hN) f =
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN) f =
       baseAfterMatrix (b.repr x) (fun i ↦ d (b i)) := by
-  rw [← LinearMap.toMatrix_toLin (spinSixEvenMonomialBasis b hN) (spinSixEvenMonomialBasis b hN)
+  rw [← LinearMap.toMatrix_toLin (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN)
     (baseAfterMatrix _ _)]
   congr 1
-  refine (spinSixEvenMonomialBasis b hN).ext fun j ↦ Subtype.ext ?_
+  refine (b.spinSixEvenMonomialBasis hN).ext fun j ↦ Subtype.ext ?_
   rw [hf, Matrix.toLin_self, Submodule.coe_sum]
-  simp only [Submodule.coe_smul, coe_spinSixEvenMonomialBasis, Fin.sum_univ_four]
+  simp only [Submodule.coe_smul, Module.Basis.coe_spinSixEvenMonomialBasis,
+    Fin.sum_univ_four]
   fin_cases j
-  · simp [spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_one]
-  · simp [spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_one]
-  · simp [spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_two]
     module
-  · simp [spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_one_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_one_two]
 
 private theorem toMatrix_eq_baseBeforeMatrix (x : M) (d : Dual K M) (f : Module.End K N)
     (hf : ∀ s, (f s : ExteriorAlgebra K M) = fockAction x d (fockAction (b 0) (b.coord 0) s)) :
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b hN) (spinSixEvenMonomialBasis b hN) f =
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN) f =
       baseBeforeMatrix (b.repr x) (fun i ↦ d (b i)) := by
-  rw [← LinearMap.toMatrix_toLin (spinSixEvenMonomialBasis b hN) (spinSixEvenMonomialBasis b hN)
+  rw [← LinearMap.toMatrix_toLin (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN)
     (baseBeforeMatrix _ _)]
   congr 1
-  refine (spinSixEvenMonomialBasis b hN).ext fun j ↦ Subtype.ext ?_
+  refine (b.spinSixEvenMonomialBasis hN).ext fun j ↦ Subtype.ext ?_
   rw [hf, Matrix.toLin_self, Submodule.coe_sum]
-  simp only [Submodule.coe_smul, coe_spinSixEvenMonomialBasis, Fin.sum_univ_four]
+  simp only [Submodule.coe_smul, Module.Basis.coe_spinSixEvenMonomialBasis,
+    Fin.sum_univ_four]
   fin_cases j
-  · simp [spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one]
     module
-  · simp [spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_zero_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix,
+      fockAction_fockAction_base_zero_one]
     module
-  · simp [spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_zero_two]
-  · simp [spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix,
+      fockAction_fockAction_base_zero_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one_two]
     module
 
 end FockModel
@@ -546,8 +554,8 @@ private theorem vectorPair_eq_mul (u v : V) :
 
 include hline in
 private theorem toMatrix_vectorPair_baseVector_left (v : V) :
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
-        (spinSixEvenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (vectorPair Q (baseVector P b) v)) =
       baseAfterMatrix (b.repr (creationPart P v)) (fun i ↦ annihilationPart P v (b i)) := by
   refine toMatrix_eq_baseAfterMatrix b (spinPlus_def P) _ _ _ fun s ↦ ?_
@@ -557,8 +565,8 @@ private theorem toMatrix_vectorPair_baseVector_left (v : V) :
 
 include hline in
 private theorem toMatrix_vectorPair_baseVector_right (v : V) :
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
-        (spinSixEvenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (vectorPair Q v (baseVector P b))) =
       baseBeforeMatrix (b.repr (creationPart P v)) (fun i ↦ annihilationPart P v (b i)) := by
   refine toMatrix_eq_baseBeforeMatrix b (spinPlus_def P) _ _ _ fun s ↦ ?_
@@ -572,8 +580,8 @@ determinant `(Q u) ^ 2 * (Q v) ^ 2`. -/
 private theorem det_spinPlusAction_vectorPair (u v : V) :
     LinearMap.det (spinPlusAction Q P hline (vectorPair Q u v)) = Q u ^ 2 * Q v ^ 2 := by
   rw [vectorPair_eq_mul P hline b, map_mul, map_mul LinearMap.det,
-    ← LinearMap.det_toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P)),
-    ← LinearMap.det_toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P)),
+    ← LinearMap.det_toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P)),
+    ← LinearMap.det_toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P)),
     toMatrix_vectorPair_baseVector_left P hline, toMatrix_vectorPair_baseVector_right P hline,
     det_baseAfterMatrix, det_baseBeforeMatrix, ← annihilationPart_creationPart P hline u,
     ← annihilationPart_creationPart P hline v, apply_eq_sum b (creationPart P u),
@@ -661,8 +669,8 @@ private theorem polar_basis_dualVector {a a' : Fin 3} (h : a ≠ a') (c : K) :
 include hline in
 private theorem toMatrix_spinTransvection {u w : V} (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (huw : QuadraticMap.polar Q u w = 0) :
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
-        (spinSixEvenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (spinGroupToEven Q (spinTransvection hQ hu huw))) =
       1 + baseBeforeMatrix (b.repr (creationPart P w)) (fun i ↦ annihilationPart P w (b i)) *
         baseAfterMatrix (b.repr (creationPart P u)) (fun i ↦ annihilationPart P u (b i)) := by
@@ -716,8 +724,8 @@ theorem spinSixTransvectionLift_zero {i j : Fin 4} (hij : i ≠ j) :
   exact Submodule.zero_mem _
 
 private abbrev SpinSixLiftHasMatrix (i j : Fin 4) (hij : i ≠ j) (c : K) : Prop :=
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
-        (spinSixEvenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (spinGroupToEven Q
           (spinSixTransvectionLift P hline b hij c))) = Matrix.transvection i j c
 
@@ -811,8 +819,8 @@ include hline in
 @[simp]
 theorem toMatrix_spinPlusAction_spinSixTransvectionLift {i j : Fin 4}
     (hij : i ≠ j) (c : K) :
-    LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
-        (spinSixEvenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (spinGroupToEven Q
           (spinSixTransvectionLift P hline b hij c))) = Matrix.transvection i j c := by
   fin_cases i <;> fin_cases j
@@ -866,7 +874,7 @@ include hline b in
 private theorem exists_spinPlusAction_spinGroupToEven_eq_of_basis
     (f : Module.End K (spinPlus Q P)) (hf : LinearMap.det f = 1) :
     ∃ s : spinGroup Q, spinPlusAction Q P hline (spinGroupToEven Q s) = f := by
-  let B := spinSixEvenMonomialBasis b (spinPlus_def P)
+  let B := b.spinSixEvenMonomialBasis (spinPlus_def P)
   -- The half-spin matrices of Spin elements form a subgroup of `SL₄(K)`.
   let ψ : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
     { toFun s := ⟨LinearMap.toMatrix B B (spinPlusAction Q P hline (spinGroupToEven Q s)), by
@@ -913,7 +921,7 @@ private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear
       LinearMap.det (spinPlusAction _ _ (splitEvenPolarization_line K 3)
         (evenUnitaryGroupEvenPart _ x)) := by
   have : Module.Finite K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
-    Module.Finite.of_basis (spinSixEvenMonomialBasis (splitEvenBasis K 3) (spinPlus_def _))
+    Module.Finite.of_basis ((splitEvenBasis K 3).spinSixEvenMonomialBasis (spinPlus_def _))
   have h := hyperbolicSixEvenEquivMatrixProd_apply K (evenUnitaryGroupEvenPart _ x)
   rw [SpinPolarizationData.evenCliffordEquivProdMatrix_apply] at h
   rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
