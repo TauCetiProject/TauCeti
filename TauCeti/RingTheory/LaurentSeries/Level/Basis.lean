@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerBasis
 public import TauCeti.Algebra.Group.Coprime
-public import TauCeti.RingTheory.LaurentSeries.Puiseux
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 
 /-!
 # Power bases of ramified Laurent-series levels
