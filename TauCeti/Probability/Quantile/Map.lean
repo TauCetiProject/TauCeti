@@ -222,7 +222,7 @@ theorem upperQuantile_neg [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
 /-- Pushing forward along a nonincreasing map `g` is pushing the reflected law forward along the
 map `x ↦ g (-x)`, which is nondecreasing and continuous on the reflected interval, and that
 interval carries all the mass of the reflected law. -/
-private theorem map_eq_map_neg_comp [IsProbabilityMeasure μ] (hs : s.OrdConnected)
+private theorem map_eq_map_neg_comp (hs : s.OrdConnected)
     (hμs : ∀ᵐ x ∂μ, x ∈ s) (hg : AntitoneOn g s) (hgc : ContinuousOn g s) :
     μ.map g = μ.neg.map (g ∘ Neg.neg) ∧ (Neg.neg ⁻¹' s).OrdConnected ∧
       (∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s) ∧
