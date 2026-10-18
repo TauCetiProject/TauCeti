@@ -84,14 +84,10 @@ private def cylinderSum (q : C(X, A)) (g : A → K) : K :=
 private theorem cylinderSum_comp (r : C(X, B)) (t : C(B, A)) (g : A → K) :
     cylinderSum j μ (t.comp r) g = cylinderSum j μ r (g ∘ t) := by
   classical
-  rw [cylinderSum, cylinderSum, finiteProjection_comp]
-  change (∑ a, ((AddMonoidHom.mulLeft (g a)).comp j.toAddMonoidHom)
-      ((finiteProjection r μ).mapDomain t a)) =
-    ∑ b, ((AddMonoidHom.mulLeft (g (t b))).comp j.toAddMonoidHom) (finiteProjection r μ b)
-  rw [← Finsupp.sum_fintype _ _ (fun _ ↦ map_zero _),
-    ← Finsupp.sum_fintype _ _ (fun _ ↦ map_zero _)]
-  exact Finsupp.sum_mapDomain_index_addMonoidHom
-    (fun a ↦ (AddMonoidHom.mulLeft (g a)).comp j.toAddMonoidHom)
+  rw [cylinderSum, cylinderSum, finiteProjection_comp,
+    ← Finsupp.sum_fintype _ (fun a c ↦ g a * j c) (fun _ ↦ by simp),
+    ← Finsupp.sum_fintype _ (fun b c ↦ (g ∘ t) b * j c) (fun _ ↦ by simp)]
+  exact Finsupp.sum_mapDomain_index (fun _ ↦ by simp) (fun _ _ _ ↦ by rw [map_add, mul_add])
 
 /-- `cylinderSum` depends only on the function `g ∘ q`. -/
 private theorem cylinderSum_eq_of_comp_eq (q : C(X, A)) (q' : C(X, B)) (g : A → K)

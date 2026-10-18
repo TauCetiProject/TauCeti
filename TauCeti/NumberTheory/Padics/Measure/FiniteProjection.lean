@@ -58,7 +58,8 @@ theorem fiberIndicator_eq_zero_of_notMem_range [DiscreteTopology A] {q : C(X, A)
     (ha : a ∉ Set.range q) : q.fiberIndicator (R := R) a = 0 := by
   classical
   ext x
-  simp [fiberIndicator_apply, show q x ≠ a from fun h ↦ ha ⟨x, h⟩]
+  have hx : q x ≠ a := fun h ↦ ha ⟨x, h⟩
+  simp [fiberIndicator_apply, hx]
 
 end ContinuousMap
 
