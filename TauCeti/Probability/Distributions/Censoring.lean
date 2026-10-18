@@ -93,13 +93,13 @@ theorem map_coe_projIcc {l r : ℝ} (hlr : l < r) :
 
 /-- The cdf of a law projected onto `[l, r]` is zero below `l`, agrees with the original cdf on
 `[l, r)`, and is one from `r` onwards. -/
-theorem cdf_map_coe_projIcc [IsProbabilityMeasure μ] {l r : ℝ} (hlr : l < r) (x : ℝ) :
-    cdf (μ.map clip[l, r; hlr.le]) x =
+@[simp] theorem cdf_map_coe_projIcc [IsProbabilityMeasure μ] {l r : ℝ} (hlr : l ≤ r) (x : ℝ) :
+    cdf (μ.map clip[l, r; hlr]) x =
       if x < l then 0 else if x < r then cdf μ x else 1 := by
-  rw [cdf_eq_real, Measure.real, Measure.map_apply (measurable_clip hlr.le) measurableSet_Iic]
+  rw [cdf_eq_real, Measure.real, Measure.map_apply (measurable_clip hlr) measurableSet_Iic]
   by_cases hxl : x < l
   · rw [ite_eq_left hxl]
-    have hpre : clip[l, r; hlr.le] ⁻¹' Iic x = ∅ := by
+    have hpre : clip[l, r; hlr] ⁻¹' Iic x = ∅ := by
       ext y
       simp only [mem_preimage, mem_Iic, Set.coe_projIcc, mem_empty_iff_false, iff_false]
       grind
@@ -108,13 +108,13 @@ theorem cdf_map_coe_projIcc [IsProbabilityMeasure μ] {l r : ℝ} (hlr : l < r) 
     by_cases hxr : x < r
     · rw [ite_eq_left hxr]
       rw [cdf_eq_real, Measure.real]
-      have hpre : clip[l, r; hlr.le] ⁻¹' Iic x = Iic x := by
+      have hpre : clip[l, r; hlr] ⁻¹' Iic x = Iic x := by
         ext y
         simp only [mem_preimage, mem_Iic, Set.coe_projIcc]
         grind
       rw [hpre]
     · rw [ite_eq_right hxr]
-      have hpre : clip[l, r; hlr.le] ⁻¹' Iic x = Set.univ := by
+      have hpre : clip[l, r; hlr] ⁻¹' Iic x = Set.univ := by
         ext y
         simp only [mem_preimage, mem_Iic, Set.coe_projIcc, mem_univ, iff_true]
         grind
@@ -123,17 +123,17 @@ theorem cdf_map_coe_projIcc [IsProbabilityMeasure μ] {l r : ℝ} (hlr : l < r) 
 
 /-- For an interior probability level, the quantile of a law projected onto `[l, r]` is the
 projection of the original quantile. -/
-theorem quantile_map_coe_projIcc [IsProbabilityMeasure μ] {l r u : ℝ} (hlr : l < r)
+@[simp] theorem quantile_map_coe_projIcc [IsProbabilityMeasure μ] {l r u : ℝ} (hlr : l ≤ r)
     (hu : u ∈ Ioo (0 : ℝ) 1) :
-    (μ.map clip[l, r; hlr.le]).quantile u = clip[l, r; hlr.le] (μ.quantile u) := by
-  let ν := μ.map clip[l, r; hlr.le]
+    (μ.map clip[l, r; hlr]).quantile u = clip[l, r; hlr] (μ.quantile u) := by
+  let ν := μ.map clip[l, r; hlr]
   have hlevel (x : ℝ) :
-      clip[l, r; hlr.le] (μ.quantile u) ≤ x ↔ u ≤ cdf ν x := by
+      clip[l, r; hlr] (μ.quantile u) ≤ x ↔ u ≤ cdf ν x := by
     rw [cdf_map_coe_projIcc μ hlr]
     by_cases hxl : x < l
     · rw [ite_eq_left hxl]
       constructor <;> intro h
-      · exact ((not_le_of_gt hxl) ((Set.projIcc l r hlr.le _).property.1.trans h)).elim
+      · exact ((not_le_of_gt hxl) ((Set.projIcc l r hlr _).property.1.trans h)).elim
       · linarith [hu.1]
     · rw [ite_eq_right hxl]
       by_cases hxr : x < r
@@ -145,28 +145,28 @@ theorem quantile_map_coe_projIcc [IsProbabilityMeasure μ] {l r u : ℝ} (hlr : 
         constructor
         · exact fun _ ↦ hu.2.le
         · intro _
-          exact (Set.projIcc l r hlr.le _).property.2.trans (not_lt.mp hxr)
+          exact (Set.projIcc l r hlr _).property.2.trans (not_lt.mp hxr)
   apply le_antisymm
   · exact (quantile_le_iff ν hu.1 hu.2).2 ((hlevel _).1 le_rfl)
   · exact (hlevel _).2 ((quantile_le_iff ν hu.1 hu.2).1 le_rfl)
 
 /-- Every natural power is integrable under a law projected onto a bounded interval. -/
-theorem integrable_pow_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l < r) (n : ℕ) :
-    Integrable (fun x : ℝ ↦ x ^ n) (μ.map clip[l, r; hlr.le]) := by
-  rw [integrable_map_measure (by fun_prop) (measurable_clip hlr.le).aemeasurable]
+theorem integrable_pow_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l ≤ r) (n : ℕ) :
+    Integrable (fun x : ℝ ↦ x ^ n) (μ.map clip[l, r; hlr]) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_clip hlr).aemeasurable]
   refine Integrable.of_bound (by fun_prop) (max |l| |r| ^ n) ?_
   filter_upwards with x
   rw [Function.comp_apply, Real.norm_eq_abs, abs_pow]
   exact pow_le_pow_left₀ (abs_nonneg _)
-    (abs_le_max_abs_abs (Set.projIcc l r hlr.le x).property.1
-      (Set.projIcc l r hlr.le x).property.2) n
+    (abs_le_max_abs_abs (Set.projIcc l r hlr x).property.1
+      (Set.projIcc l r hlr x).property.2) n
 
 /-- Every natural moment of a projected law is the sum of the two endpoint contributions and the
 unchanged contribution from the interval interior. -/
 theorem integral_pow_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l < r) (n : ℕ) :
     ∫ x : ℝ, x ^ n ∂(μ.map clip[l, r; hlr.le]) =
       μ.real (Iic l) * l ^ n + ∫ x in Ioo l r, x ^ n ∂μ + μ.real (Ici r) * r ^ n := by
-  have hint := integrable_pow_map_coe_projIcc μ hlr n
+  have hint := integrable_pow_map_coe_projIcc μ hlr.le n
   rw [map_coe_projIcc μ hlr, integrable_add_measure, integrable_add_measure] at hint
   rw [map_coe_projIcc μ hlr, integral_add_measure (hint.1.1.add_measure hint.1.2) hint.2,
     integral_add_measure hint.1.1 hint.1.2]
@@ -187,21 +187,15 @@ theorem integral_sq_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l < 
   integral_pow_map_coe_projIcc μ hlr 2
 
 /-- Every exponential moment is integrable under a law projected onto a bounded interval. -/
-theorem integrable_exp_mul_id_map_coe_projIcc [IsFiniteMeasure μ] {l r t : ℝ} (hlr : l < r) :
-    Integrable (fun x : ℝ ↦ Real.exp (t * x)) (μ.map clip[l, r; hlr.le]) := by
-  rw [integrable_map_measure (by fun_prop) (measurable_clip hlr.le).aemeasurable]
-  refine Integrable.of_bound (by fun_prop) (Real.exp (|t| * max |l| |r|)) ?_
-  filter_upwards with x
-  rw [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-  exact Real.exp_le_exp.mpr <| (le_abs_self (t * (Set.projIcc l r hlr.le x : ℝ))).trans <| by
-    rw [abs_mul]
-    gcongr
-    exact abs_le_max_abs_abs (Set.projIcc l r hlr.le x).property.1
-      (Set.projIcc l r hlr.le x).property.2
+theorem integrable_exp_mul_id_map_coe_projIcc [IsFiniteMeasure μ] {l r t : ℝ} (hlr : l ≤ r) :
+    Integrable (fun x : ℝ ↦ Real.exp (t * x)) (μ.map clip[l, r; hlr]) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_clip hlr).aemeasurable]
+  exact integrable_exp_mul_of_mem_Icc (measurable_clip hlr).aemeasurable
+    (Filter.Eventually.of_forall fun x ↦ (Set.projIcc l r hlr x).property)
 
 /-- A law projected onto a bounded interval has every real exponential moment. -/
-theorem integrableExpSet_id_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l < r) :
-    integrableExpSet id (μ.map clip[l, r; hlr.le]) = Set.univ := by
+@[simp] theorem integrableExpSet_id_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l ≤ r) :
+    integrableExpSet id (μ.map clip[l, r; hlr]) = Set.univ := by
   ext t
   simp only [integrableExpSet, mem_ofPred_eq, mem_univ, iff_true, id_eq]
   exact integrable_exp_mul_id_map_coe_projIcc μ hlr
