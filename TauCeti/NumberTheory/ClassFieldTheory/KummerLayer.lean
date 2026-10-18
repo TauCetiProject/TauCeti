@@ -89,7 +89,7 @@ theorem mem_kummerLayer_iff {σ : AbsoluteGaloisGroup K} :
   -- Membership in the open normal subgroup is membership in its underlying fixing subgroup.
   have hmem : σ ∈ kummerLayer n Δ ↔ σ ∈ (kummerField (SeparableClosure K) n Δ).fixingSubgroup :=
     Iff.rfl
-  rw [hmem, ← Subgroup.zpowers_le, ← le_iff_le, kummerField_le_iff]
+  rw [hmem, ← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup, kummerField_le_iff]
   simp only [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   refine forall₄_congr fun _ _ x _ ↦ ⟨fun h ↦ by simpa using h 1, fun h k ↦ ?_⟩
   -- The powers of `σ` fix `x` because they lie in the stabilizer of `x`, which contains `σ`.
@@ -136,7 +136,7 @@ theorem isAbelianClassFieldLayer_kummerLayer : (kummerLayer n Δ).IsAbelianClass
 theorem degree_kummerLayer :
     (NormalLayer.ofOpenNormal (kummerLayer n Δ)).degree =
       (powMonoidHom n : Kˣ →* Kˣ).range.relIndex Δ := by
-  have : NeZero (n : K) := (HasEnoughRootsOfUnity.exists_primitiveRoot K n).choose_spec.neZero'
+  have : NeZero (n : K) := (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n).choose_spec.neZero'
   have : NeZero (n : SeparableClosure K) := .nat_of_injective (algebraMap K _).injective
   rw [NormalLayer.degree_eq_natCard_gal,
     Nat.card_congr (NormalLayer.galOfOpenNormalEquiv (kummerLayer n Δ)).toEquiv,

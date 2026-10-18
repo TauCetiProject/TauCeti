@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.RingTheory.LocalRing.Module
+import TauCeti.LinearAlgebra.Submodule.Compl
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -30,9 +30,10 @@ self-pairing with the same property. A symmetric form with unit Gram determinant
 orthogonal basis with unit self-pairings over any such local ring.
 
 Over a field in which `2` is invertible, every symmetric bilinear form on a finite-dimensional
-space has an orthogonal basis (`LinearMap.BilinForm.exists_orthogonal_basis`). In characteristic
-two this fails: a nonzero alternating form is symmetric, and an orthogonal basis for it would make
-every basis pairing vanish, hence the whole form. This file shows that the alternating forms are
+space has an orthogonal basis (`LinearMap.BilinForm.exists_orthogonal_basis`); in matrix terms,
+every symmetric matrix is congruent to a diagonal one. In characteristic two this fails: a nonzero
+alternating form is symmetric, and an orthogonal basis for it would make every basis pairing
+vanish, hence the whole form. This file shows that the alternating forms are
 the only obstruction, in every characteristic: a symmetric form has an orthogonal basis if and
 only if it is zero or not alternating (`LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_iff`).
 
@@ -86,6 +87,8 @@ exactly when their associated quadratic forms are equivalent.
   form on `Fin n → K`, so any two of them of the same dimension are equivalent.
 * `LinearMap.BilinForm.Nondegenerate.exists_basis_toMatrix_eq_J_or_toMatrix_eq_one`: the
   symplectic-or-orthonormal dichotomy.
+* `Matrix.IsSymm.exists_isUnit_transpose_mul_mul_eq_diagonal`: when `2` is invertible in a field,
+  every symmetric matrix over it is congruent to a diagonal matrix.
 
 ## References
 
@@ -260,10 +263,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     have hxx : IsUnit (B x x) := isUnit_of_dvd_unit (hx (b 0) (b j)) hentry
     let N := B.orthogonal (R ∙ x)
     have hc := B.isCompl_span_singleton_orthogonal_of_isUnit x hxx
-    have : Module.Finite R N := .equiv (Submodule.quotientEquivOfIsCompl _ _ hc)
-    have : Flat R N := Flat.of_retract N.subtype
-      (N.projectionOnto (R ∙ x) hc.symm) (by ext; simp)
-    have : Free R N := free_of_flat_of_isLocalRing
+    obtain ⟨hfinite, hfree⟩ := N.finite_free_of_isCompl hc.symm
     have hli : ∀ a : R, ∀ y ∈ N, a • x + y = 0 → a = 0 := by
       intro a y hy hay
       have hxy : B x y = 0 := by simpa [N, orthogonal] using hy
@@ -476,3 +476,22 @@ theorem Nondegenerate.exists_basis_toMatrix_eq_J_or_toMatrix_eq_one (hsq : ∀ a
 end Field
 
 end LinearMap.BilinForm
+
+open scoped Matrix in
+/-- **A symmetric matrix over a field in which `2` is invertible is congruent to a diagonal
+matrix**: `Pᵀ * A * P` is diagonal for some invertible `P`. This is the matrix form of
+`LinearMap.BilinForm.exists_orthogonal_basis`. -/
+theorem Matrix.IsSymm.exists_isUnit_transpose_mul_mul_eq_diagonal {K n : Type*} [Field K]
+    [Invertible (2 : K)] [Fintype n] [DecidableEq n] {A : Matrix n n K} (hA : A.IsSymm) :
+    ∃ (P : Matrix n n K) (d : n → K), IsUnit P ∧ Pᵀ * A * P = Matrix.diagonal d := by
+  obtain ⟨v, hv⟩ := LinearMap.BilinForm.exists_orthogonal_basis
+    (LinearMap.BilinForm.isSymm_iff.mp (Matrix.isSymm_toBilin'_iff_isSymm.mpr hA))
+  -- Index the orthogonal basis by `n`, so that its coordinate matrix is square.
+  let w := v.reindex (v.indexEquiv (Pi.basisFun K n))
+  have hw : A.toBilin'.iIsOrtho w := fun i j hij ↦ by
+    simpa only [Function.onFun, w, Module.Basis.reindex_apply] using
+      hv ((v.indexEquiv (Pi.basisFun K n)).symm.injective.ne hij)
+  have key := LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (Pi.basisFun K n) w A.toBilin'
+  rw [LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin',
+    hw.toMatrix_eq_diagonal] at key
+  exact ⟨_, _, @isUnit_of_invertible _ _ _ ((Pi.basisFun K n).invertibleToMatrix w), key⟩

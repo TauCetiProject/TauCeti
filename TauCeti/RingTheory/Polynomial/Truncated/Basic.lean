@@ -18,7 +18,7 @@ file does: the class of `X` is nilpotent, and over a local ring `R` the algebra 
 again **local** when `n ≠ 0`.
 
 Locality is the useful form of the statement, because it is what pins the idempotents: through
-`TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem` a truncated polynomial algebra has no
+`IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing` a truncated polynomial algebra has no
 idempotent besides `0` and `1`. That is exactly the input to the indecomposability of a nilpotent
 Jordan block, whose endomorphism algebra is `k[X]/(Xⁿ)`.
 

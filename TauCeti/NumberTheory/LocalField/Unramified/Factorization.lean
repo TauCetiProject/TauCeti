@@ -32,6 +32,8 @@ local field on `E` compatible with `K`; `L` is then a valuative extension of `E`
   `TauCeti.isUnramified_unramifiedExtension_inertiaDegree`: `L₀/K` is unramified of degree `f`.
 * `TauCeti.le_unramifiedExtension_inertiaDegree_of_isUnramified`: every unramified intermediate
   field of `L/K` lies in `L₀`.
+* `TauCeti.dvd_inertiaDegree_of_isPrimitiveRoot`: if `L` contains a primitive `(q^f − 1)`-st root
+  of unity, then `f ∣ f(L/K)`.
 * `TauCeti.eq_unramifiedExtension_inertiaDegree_iff`: `L₀` is the unique intermediate field
   which is unramified over `K` and over which `L` is totally ramified.
 * `TauCeti.IsUnramified.unramifiedExtension_inertiaDegree_eq_top`: `L₀ = L` when `L/K` is
@@ -99,6 +101,22 @@ theorem le_unramifiedExtension_inertiaDegree_of_isUnramified (E : IntermediateFi
     _ ≤ unramifiedExtension K L (inertiaDegree K L) :=
       unramifiedExtension_le_of_dvd inertiaDegree_pos.ne'
         (Dvd.intro _ (IsUnramified.inertiaDegree_tower_eq K E L).symm)
+
+variable {K L} in
+/-- **Roots of unity bound the residue degree from below.** If `L` contains a primitive
+`(q^f − 1)`-st root of unity, where `q = #𝓀[K]` and `f ≠ 0`, then `f` divides `f(L/K)`: the
+unramified extension of degree `f` lies in `L`. -/
+theorem dvd_inertiaDegree_of_isPrimitiveRoot {f : ℕ} (hf : f ≠ 0) {ζ : L}
+    (hζ : IsPrimitiveRoot ζ (Nat.card 𝓀[K] ^ f - 1)) : f ∣ inertiaDegree K L := by
+  have := finite_of_valuativeExtension K L
+  let _ := finiteIntermediateFieldValuativeRel K L (unramifiedExtension K L f)
+  let _ := finiteIntermediateFieldTopology K L (unramifiedExtension K L f)
+  have := finiteIntermediateField_isNonarchimedeanLocalField K L (unramifiedExtension K L f)
+  have := finiteIntermediateField_valuativeExtension K L (unramifiedExtension K L f)
+  have := isUnramified_unramifiedExtension_of_isPrimitiveRoot hf hζ
+  rw [inertiaDegree_tower (K := K) (L := unramifiedExtension K L f) L,
+    IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension_of_isPrimitiveRoot hf hζ]
+  exact dvd_mul_right _ _
 
 /-- **The top step of the factorization has degree `e`.** The degree of `L` over the unramified
 extension of degree `f(L/K)` inside `L` is the ramification index `e(L/K)`. -/

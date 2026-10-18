@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
+import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
@@ -31,6 +35,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 
 * `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
   which the form is right-separating are independent.
+* `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
+  disjoint sets of indices are orthogonal.
+* `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
+  forms are isometric.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -44,6 +52,14 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   restriction splits a bilinear module over a commutative ring.
 * `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect symmetric
   restriction splits a bilinear module over a commutative ring.
+* `LinearMap.BilinForm.map_dualAnnihilator_toPerfPair_symm`: identify a dual annihilator with
+  the orthogonal complement under a symmetric perfect pairing.
+* `LinearMap.BilinForm.IsRefl.isInternal_orthogonal_finCons`: adjoin an orthogonal summand
+  to an internal orthogonal decomposition of its complement.
+* `LinearMap.BilinForm.isPerfPair_restrict_of_isCompl_orthogonal`: a symmetric perfect pairing
+  remains perfect on a submodule complementary to its orthogonal complement.
+* `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
+  orthogonally split submodule over a commutative semiring.
 * `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
   the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
@@ -73,6 +89,54 @@ theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι 
   have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
     iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
   exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
+
+/-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
+sets are orthogonal. -/
+theorem apply_eq_zero_of_mem_biSup (B : LinearMap.BilinForm K V) {ι : Type*}
+    {N : ι → Submodule K V} (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    {s t : Set ι} (hst : Disjoint s t) {x y : V} (hx : x ∈ ⨆ i ∈ s, N i)
+    (hy : y ∈ ⨆ j ∈ t, N j) : B x y = 0 := by
+  have hle : ⨆ i ∈ s, N i ≤ ⨅ y ∈ ⨆ j ∈ t, N j, LinearMap.ker (B.flip y) :=
+    iSup₂_le fun i hi x hx ↦ by
+      have hker : ⨆ j ∈ t, N j ≤ LinearMap.ker (B x) :=
+        iSup₂_le fun j hj y hy ↦ hO i j (hst.ne_of_mem hi hj) x hx y hy
+      simpa only [Submodule.mem_iInf, LinearMap.mem_ker, flip_apply] using fun y hy ↦ hker hy
+  simpa using (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hle hx) y) hy
+
+/-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
+of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
+forms to corresponding members are isometric, then the forms are isometric. -/
+theorem equivalent_of_isInternal {M : Type*} [AddCommMonoid M] [Module K M] {ι : Type*}
+    [DecidableEq ι] {B : LinearMap.BilinForm K V} {B' : LinearMap.BilinForm K M}
+    {N : ι → Submodule K V} {N' : ι → Submodule K M} (hN : DirectSum.IsInternal N)
+    (hN' : DirectSum.IsInternal N')
+    (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    (hO' : ∀ i j, i ≠ j → ∀ x ∈ N' i, ∀ y ∈ N' j, B' x y = 0)
+    (h : ∀ i, (B.restrict (N i)).Equivalent (B'.restrict (N' i))) : B.Equivalent B' := by
+  let u i : N i ≃ₗ[K] N' i := (h i).some.toLinearEquiv
+  let e := DirectSum.congrLinearEquiv u
+  -- Both forms, pulled back to `⨁ i, N i`, agree on pairs of generators.
+  have key : B.compl₁₂ (DirectSum.coeLinearMap N) (DirectSum.coeLinearMap N) =
+      B'.compl₁₂ (DirectSum.coeLinearMap N' ∘ₗ e.toLinearMap)
+        (DirectSum.coeLinearMap N' ∘ₗ e.toLinearMap) := by
+    refine DirectSum.linearMap_ext K fun i ↦ LinearMap.ext fun x ↦
+      DirectSum.linearMap_ext K fun j ↦ LinearMap.ext fun y ↦ ?_
+    simp only [LinearMap.comp_apply, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, e,
+      DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof, DirectSum.coeLinearMap_lof]
+    by_cases hij : i = j
+    · subst hij
+      exact ((h i).some.map_app y x).symm
+    · rw [hO i j hij _ x.2 _ y.2, hO' i j hij _ (u i x).2 _ (u j y).2]
+  let c := LinearEquiv.ofBijective (DirectSum.coeLinearMap N) hN
+  have hc (x : V) : DirectSum.coeLinearMap N (c.symm x) = x := c.apply_symm_apply x
+  refine ⟨⟨c.symm ≪≫ₗ e ≪≫ₗ LinearEquiv.ofBijective (DirectSum.coeLinearMap N') hN',
+    fun x y ↦ ?_⟩⟩
+  -- The isometry decomposes `x`, applies the isometries `u i` and recombines; the first step of
+  -- the calculation spells this composite out.
+  calc B' (DirectSum.coeLinearMap N' (e (c.symm x))) (DirectSum.coeLinearMap N' (e (c.symm y)))
+      = B (DirectSum.coeLinearMap N (c.symm x)) (DirectSum.coeLinearMap N (c.symm y)) :=
+        (LinearMap.congr_fun₂ key _ _).symm
+    _ = B x y := by rw [hc, hc]
 
 end LinearMap.BilinForm
 
@@ -187,6 +251,100 @@ theorem isCompl_orthogonal_of_restrict_bijective
     simpa [LinearMap.BilinForm.restrict_apply, LinearMap.BilinForm.flip_apply] using
       (hB.eq y x)
   exact B.isCompl_orthogonal_of_flip_restrict_bijective S (hflip ▸ h)
+
+/-- The perfect-pairing identification with the dual sends the dual annihilator of a
+submodule to its orthogonal complement for a symmetric form. -/
+theorem map_dualAnnihilator_toPerfPair_symm (B : LinearMap.BilinForm R M) [B.IsPerfPair]
+    (hB : B.IsSymm) (S : Submodule R M) :
+    S.dualAnnihilator.map B.toPerfPair.symm.toLinearMap = B.orthogonal S := by
+  rw [Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
+  have hmap : B.toPerfPair.toLinearMap = B := LinearMap.ext B.toLinearMap_toPerfPair
+  have hflip : LinearMap.flip B = B := LinearMap.ext₂ fun x y ↦ hB.eq y x
+  simpa only [hmap, hflip, orthogonal] using
+    Submodule.comap_dualAnnihilator_eq_orthogonalBilin B S
+
+/-- A symmetric perfect pairing restricts to a perfect pairing on any submodule complementary
+to its orthogonal complement. No field or finite generation hypothesis is needed. -/
+theorem isPerfPair_restrict_of_isCompl_orthogonal
+    (B : LinearMap.BilinForm R M) [B.IsPerfPair] (hB : B.IsSymm)
+    (S : Submodule R M) (hS : IsCompl S (B.orthogonal S)) :
+    (B.restrict S).IsPerfPair := by
+  have hflip : LinearMap.flip B = B := LinearMap.ext₂ fun x y ↦ hB.eq y x
+  have : (LinearMap.flip B).IsPerfPair := LinearMap.IsPerfPair.flip inferInstance
+  have hp : B.IsPerfectCompl S S :=
+    ⟨by rwa [B.map_dualAnnihilator_toPerfPair_symm hB],
+      by rwa [map_dualAnnihilator_toPerfPair_symm (LinearMap.flip B) (hflip.symm ▸ hB), hflip]⟩
+  exact LinearMap.IsPerfPair.restrict B S.subtype S.subtype
+    S.injective_subtype S.injective_subtype (by simpa using hp)
+
+/-- Adjoining an orthogonal summand to an internal orthogonal decomposition of its complement
+gives an internal orthogonal decomposition of the ambient module. -/
+theorem IsRefl.isInternal_orthogonal_finCons {B : LinearMap.BilinForm R M} (hB : B.IsRefl)
+    (S : Submodule R M) (hc : IsCompl S (B.orthogonal S)) {k : ℕ}
+    (N : Fin k → Submodule R (B.orthogonal S)) (hN : DirectSum.IsInternal N)
+    (horth : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0) :
+    let P := Fin.cons S (fun i ↦ (N i).map (B.orthogonal S).subtype)
+    DirectSum.IsInternal P ∧
+      ∀ i j, i ≠ j → ∀ x ∈ P i, ∀ y ∈ P j, B x y = 0 := by
+  classical
+  let T := B.orthogonal S
+  let Q := fun i ↦ (N i).map T.subtype
+  let P : Fin (k + 1) → Submodule R M := Fin.cons S Q
+  have hQle : ∀ i, Q i ≤ T := by
+    rintro i _ ⟨x, hx, rfl⟩
+    exact x.2
+  have hT : iSup Q = T := by
+    rw [← Submodule.map_iSup, hN.submodule_iSup_eq_top,
+      Submodule.map_top, Submodule.range_subtype]
+  have hQ := T.subtype.iSupIndep_map T.injective_subtype hN.submodule_iSupIndep
+  have hind : iSupIndep P := by
+    intro i
+    refine Fin.cases ?_ (fun i ↦ ?_) i
+    · apply hc.disjoint.mono_right
+      refine iSup_le (Fin.cases (by simp [P]) (fun j ↦ ?_))
+      exact iSup_le fun _ ↦ hQle j
+    · have hother : (⨆ j ≠ i.succ, P j) = S ⊔ ⨆ j ≠ i, Q j := by
+        apply eq_of_forall_ge_iff
+        intro U
+        simp [iSup_le_iff, Fin.forall_fin_succ, P, (Fin.succ_ne_zero i).symm]
+      rw [hother]
+      apply Disjoint.symm
+      exact (hQ i).symm.disjoint_sup_left_of_disjoint_sup_right
+        (hc.disjoint.mono_right (sup_le (iSup_le fun j ↦ iSup_le fun _ ↦ hQle j) (hQle i)))
+  refine ⟨(DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
+    ⟨hind, ?_⟩, ?_⟩
+  · apply eq_top_iff.mpr
+    rw [← hc.sup_eq_top]
+    exact sup_le (le_iSup P 0) (hT.symm.trans_le (iSup_le fun i ↦ le_iSup P i.succ))
+  · intro i j
+    refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
+    all_goals intro hij
+    · exact (hij rfl).elim
+    · rintro x hx _ ⟨y, hy, rfl⟩
+      exact y.2 x hx
+    · rintro _ ⟨x, hx, rfl⟩ y hy
+      exact hB.eq_zero (x.2 y hy)
+    · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+      exact horth i j (fun h ↦ hij (congrArg Fin.succ h)) x hx y hy
+
+/-- For a right-separating reflexive form, a submodule complementary to its orthogonal complement
+equals its double orthogonal complement, over an arbitrary commutative semiring. -/
+theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
+    (hB : B.IsRefl) (hsep : B.SeparatingRight) (S : Submodule R M)
+    (hS : IsCompl S (B.orthogonal S)) : B.orthogonal (B.orthogonal S) = S := by
+  apply le_antisymm _ (le_orthogonal_orthogonal hB)
+  intro x hx
+  obtain ⟨s, hs, t, ht, rfl⟩ :=
+    Submodule.mem_sup.mp (hS.sup_eq_top ▸ Submodule.mem_top (x := x))
+  have ht0 : t = 0 := hsep t fun y ↦ by
+    obtain ⟨s', hs', t', ht', rfl⟩ :=
+      Submodule.mem_sup.mp (hS.sup_eq_top ▸ Submodule.mem_top (x := y))
+    have h := hx t' ht'
+    have hst' : B s t' = 0 := ht' s hs
+    have ht't : B t' t = 0 := by simpa [hB.eq_zero hst'] using h
+    simp [ht s' hs', ht't]
+  simpa [ht0] using hs
 
 /-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
 theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)

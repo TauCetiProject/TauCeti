@@ -11,7 +11,11 @@ public import Mathlib.Data.Set.SymmDiff
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
-# A layer-cake formula for the distance between real functions
+# Layer-cake formulas for products and distances
+
+For two nonnegative measurable functions, their product integral is the double integral of the
+measures of intersections of their strict superlevel sets. This is the two-function form of the
+layer-cake formula and is useful for comparing pairings through level-set geometry.
 
 This file expresses the `L¹` distance between two almost everywhere measurable real functions as
 the integral, over all levels, of the measure of the symmetric difference of their sublevel sets.
@@ -26,6 +30,8 @@ difference into a mixture of one-sided integrals of the form above.
 
 ## Main statements
 
+* `TauCeti.lintegral_mul_eq_lintegral_lintegral_measure_inter` — the integral of a product of
+  nonnegative functions, as a double integral of intersections of superlevel sets;
 * `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff` — the `L¹` distance of two real
   functions, level by level;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
@@ -46,6 +52,56 @@ open scoped ENNReal symmDiff
 namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- **Two-function layer cake.** The integral of the product of two nonnegative functions is the
+double integral of the measures of the intersections of their strict superlevel sets:
+
+`∫⁻ x, f x * g x ∂m = ∫⁻ t > 0, ∫⁻ s > 0, m ({ofReal t < f} ∩ {ofReal s < g})`.
+
+The formula allows infinite values and requires no finiteness or σ-finiteness assumption on the
+measure. -/
+theorem lintegral_mul_eq_lintegral_lintegral_measure_inter (m : Measure α)
+    {f g : α → ℝ≥0∞} (hf : AEMeasurable f m) (hg : AEMeasurable g m) :
+    ∫⁻ x, f x * g x ∂m =
+      ∫⁻ s in Ioi (0 : ℝ), ∫⁻ t in Ioi (0 : ℝ),
+        m ({x | ENNReal.ofReal t < f x} ∩ {x | ENNReal.ofReal s < g x}) := by
+  let F := hf.mk f
+  let G := hg.mk g
+  have hF : Measurable F := hf.measurable_mk
+  have hG : Measurable G := hg.measurable_mk
+  have hfg : (fun x => f x * g x) =ᵐ[m] fun x => F x * G x :=
+    hf.ae_eq_mk.fun_mul hg.ae_eq_mk
+  have hlevels (s t : ℝ) :
+      m ({x | ENNReal.ofReal t < f x} ∩ {x | ENNReal.ofReal s < g x}) =
+        m ({x | ENNReal.ofReal t < F x} ∩ {x | ENNReal.ofReal s < G x}) := by
+    apply measure_congr
+    filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with x hfx hgx
+    simp only [mem_inter_iff, mem_ofPred_eq]
+    rw [hfx, hgx]
+  have hR :
+      (∫⁻ s in Ioi (0 : ℝ), ∫⁻ t in Ioi (0 : ℝ),
+        m ({x | ENNReal.ofReal t < f x} ∩ {x | ENNReal.ofReal s < g x})) =
+      ∫⁻ s in Ioi (0 : ℝ), ∫⁻ t in Ioi (0 : ℝ),
+        m ({x | ENNReal.ofReal t < F x} ∩ {x | ENNReal.ofReal s < G x}) := by
+    refine setLIntegral_congr_fun measurableSet_Ioi fun s _ => ?_
+    exact setLIntegral_congr_fun measurableSet_Ioi fun t _ => hlevels s t
+  rw [lintegral_congr_ae hfg]
+  rw [hR]
+  have hdensity : (∫⁻ x, F x * G x ∂m) = ∫⁻ x, G x ∂m.withDensity F := by
+    symm
+    simpa only [Pi.mul_apply] using lintegral_withDensity_eq_lintegral_mul m hF hG
+  rw [hdensity]
+  have hlayer (ν : Measure α) {u : α → ℝ≥0∞} (hu : AEMeasurable u ν) :
+      ∫⁻ x, u x ∂ν = ∫⁻ t in Ioi (0 : ℝ), ν {x | ENNReal.ofReal t < u x} := by
+    simpa using lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu one_pos
+  rw [hlayer (m.withDensity F) hG.aemeasurable]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun s _ => ?_
+  have hGs : MeasurableSet {x | ENNReal.ofReal s < G x} :=
+    measurableSet_lt measurable_const hG
+  rw [withDensity_apply _ hGs, hlayer (m.restrict {x | ENNReal.ofReal s < G x})
+    hF.aemeasurable.restrict]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+  rw [Measure.restrict_apply (measurableSet_lt measurable_const hF), inter_comm]
 
 /-- A level lies between two reals exactly when exactly one of them is at most that level. -/
 private theorem mem_Ico_min_max_iff {x y s : ℝ} :

@@ -130,6 +130,14 @@ theorem _root_.Representation.baseChange_apply (ρ : _root_.Representation R G V
     rw [_root_.Representation.baseChange, MonoidHom.comp_apply]
     rfl
 
+/-- Scalar extension commutes with precomposition of a representation. -/
+@[simp]
+theorem _root_.Representation.baseChange_comp {H : Type*} [Monoid H]
+    (ρ : _root_.Representation R G V) (φ : H →* G) :
+    _root_.Representation.baseChange A (ρ.comp φ) =
+      (_root_.Representation.baseChange A ρ).comp φ := by
+  simp only [_root_.Representation.baseChange, MonoidHom.comp_assoc]
+
 end BaseChange
 
 section Invariants
@@ -763,14 +771,14 @@ theorem baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRepHom k' φ).hom.hom.hom = LinearMap.baseChange k' φ.hom.hom.hom := (rfl)
 
 -- Proved by `TauCeti.baseChangeFDRepHom_hom_hom_hom` followed by
--- `LinearMap.baseChange_eq_ltensor`. This is the reading
+-- `LinearMap.baseChange_eq_lTensor`. This is the reading
 -- `TauCeti.shortExact_map_baseChangeFDRep` needs, the flatness lemmas being stated for
 -- `LinearMap.lTensor`.
 /-- **The function underlying the base change of an equivariant map is `LinearMap.lTensor k'`** of
 the function underlying it, the two maps differing only in the ring they are linear over. -/
 theorem coe_baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
     ⇑(baseChangeFDRepHom k' φ).hom.hom.hom = ⇑(LinearMap.lTensor k' φ.hom.hom.hom) := by
-  rw [baseChangeFDRepHom_hom_hom_hom, LinearMap.baseChange_eq_ltensor]
+  rw [baseChangeFDRepHom_hom_hom_hom, LinearMap.baseChange_eq_lTensor]
 
 /-- **Base change of equivariant maps is additive.** -/
 theorem baseChangeFDRepHom_add {V W : FDRep k G} (φ ψ : V ⟶ W) :

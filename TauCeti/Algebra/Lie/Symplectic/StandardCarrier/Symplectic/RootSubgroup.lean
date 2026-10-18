@@ -108,7 +108,10 @@ private theorem coe_rootSubgroupPoints_symplecticRootIndex
             GLSymplecticFin.differenceShortRootHom_apply]
           simp only [Fin.orderSucc_castSucc]
 
-private theorem rootSubgroupCoordinateMap_eq
+/-- In Hopf coordinates, each numbered Kostant root subgroup of the type-C carrier is the standard
+symplectic root subgroup of the corresponding index, read through the symplectic quotient of
+`O(GL_(2n+2))`. -/
+theorem kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     kostantRootSubgroupCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
         (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
@@ -158,7 +161,8 @@ theorem rootSubgroup_comp_symplecticIso
   apply (cancel_mono (Symplectic.inclusion ℤ (n + 1))).mp
   rw [Category.assoc, symplecticIso_hom_comp_inclusion, rootSubgroup_comp_carrierι,
     kostantRootSubgroup_def, Symplectic.rootSubgroup_def, Symplectic.inclusion_def]
-  rw [rootSubgroupCoordinateMap_eq, op_comp, Functor.map_comp]
+  rw [kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap, op_comp,
+    Functor.map_comp]
   simp [GeneralLinear.hopfIdealInclusion_def, Symplectic.coordinateMap_def,
     CommHopfAlgCat.quotientSpecι_def, Category.assoc]
 

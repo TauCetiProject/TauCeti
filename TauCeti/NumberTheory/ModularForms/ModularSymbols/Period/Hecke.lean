@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic
+public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Diamond
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Map
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
 
@@ -110,15 +110,15 @@ theorem periodMap_heckeTCuspNat (N : ℕ) [NeZero N] (n : ℕ) [NeZero n] (hk : 
     DFunLike.coe_injective (by rw [coe_heckeTCuspNat, coe_heckeSlashCuspFormEnd])
   rw [h, heckeTSymbol_def, periodMap_heckeSlashCuspFormEnd]
 
-/-- **Diamond equivariance of the period map.** A lift `γ ∈ Γ₀(N)` of the diamond label acts
-on the symbols through its single double coset, and on period functionals by precomposition.
-The identity holds for every lift, without choosing a representative of the label. -/
-theorem periodMap_diamondOpCusp (N : ℕ) [NeZero N] (γ : Gamma0 N) (hk : k = w + 2)
+/-- **Diamond equivariance of the period map.** A diamond acts on symbols through the single
+double coset of any lift in `Γ₀(N)`, and on period functionals by precomposition. -/
+theorem periodMap_diamondOpCusp (N : ℕ) [NeZero N] (d : (ZMod N)ˣ) (hk : k = w + 2)
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    periodMap R (Gamma1 N) hk (diamondOpCusp k ((Gamma0Map N).toHomUnits γ) f) =
-      periodMap R (Gamma1 N) hk f ∘ₗ
-        heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N γ)
-          (Delta0_le_intEntries N (diamondCosetGamma1 N γ).out.property) := by
+    periodMap R (Gamma1 N) hk (diamondOpCusp k d f) =
+      periodMap R (Gamma1 N) hk f ∘ₗ diamondSymbol R w N d := by
+  let γ := (Gamma0Map_toHomUnits_surjective d).choose
+  rw [← (Gamma0Map_toHomUnits_surjective d).choose_spec]
+  rw [diamondSymbol_eq_heckeSymbol γ rfl]
   rw [← heckeSlashGamma1CuspFormEnd_diamondCosetGamma1 k γ]
   -- Compare the sealed level-specific and general operators through their slash-sum API.
   have h : heckeSlashGamma1CuspFormEnd k (diamondCosetGamma1 N γ) f =

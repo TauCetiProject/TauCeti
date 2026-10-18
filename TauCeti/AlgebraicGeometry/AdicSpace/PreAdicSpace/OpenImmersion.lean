@@ -66,6 +66,9 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   `f⁻¹(V)` has the same isomorphism-invariant properties as that restriction.
 * `TauCeti.PreAdicSpace.Hom.prop_restrictPreimage_restrictPreimage_iff`: restricting over an open
   and then over an open of it is restricting over the image of the second open.
+* `TauCeti.PreAdicSpace.Hom.prop_restrictPreimage_of_forall_exists_le`: a property that descends
+  along open covers of the target holds over an open once it holds over a neighbourhood inside it
+  of each of its points.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion`, including its
 construction of pullbacks along open immersions.
@@ -181,6 +184,21 @@ theorem isoOfRangeEq_inv_comp : (isoOfRangeEq f g e).inv ≫ f = g :=
   lift_fac f g e.ge
 
 end IsoOfRangeEq
+
+/-- Restricting the source of an open immersion to an open `U` has the same image as the
+inclusion of the image of `U` in the target. -/
+theorem range_ofRestrict_comp_base (g : X ⟶ Y) [IsOpenImmersion g] (U : Opens X) :
+    Set.range (X.ofRestrict U.isOpenEmbedding ≫ g).base =
+      Set.range (Y.ofRestrict
+        (g.isOpenEmbedding.isOpenMap.functor.obj U).isOpenEmbedding).base := by
+  -- Compare subtype witnesses directly: rewriting the bases under `Set.range` would require
+  -- identifying the carrier of a restriction with its defining open at default transparency.
+  ext y
+  constructor
+  · rintro ⟨⟨x, hx⟩, rfl⟩
+    exact ⟨⟨g.base x, x, hx, rfl⟩, rfl⟩
+  · rintro ⟨⟨_, x, hx, rfl⟩, rfl⟩
+    exact ⟨⟨x, hx⟩, rfl⟩
 
 section IsoRestrict
 
@@ -361,23 +379,6 @@ section Restrict
 
 variable {U : TopCat.{u}} (X : PreAdicSpace.{u}) {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
 
--- Both bases are the inclusion of a subtype followed by `f`, so a point lies in either range
--- exactly when it is the image of a point of `V`. The identifications of the two bases with
--- `f ∘ Subtype.val` are the `rfl`-lemmas `comp_base` and `ofRestrict_base`, which cannot be
--- rewritten inside `Set.range`: the source of the right-hand side of `ofRestrict_base` is the open
--- `(Opens.toTopCat _).obj V`, while the source of the left-hand side is the carrier of a
--- restriction, which unfolds to it only at default transparency, so the rewritten composite is
--- ill-typed for `rw`. The two sets are compared pointwise instead.
-private theorem range_ofRestrict_comp_ofRestrict_base (V : Opens (X.restrict h)) :
-    Set.range ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h).base =
-      Set.range (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding).base := by
-  ext y
-  constructor
-  · rintro ⟨⟨v, hv⟩, rfl⟩
-    exact ⟨⟨f v, v, hv, rfl⟩, rfl⟩
-  · rintro ⟨⟨_, v, hv, rfl⟩, rfl⟩
-    exact ⟨⟨v, hv⟩, rfl⟩
-
 /-- Restricting a restriction is restricting to the image: `X` restricted to `U` and then to an
 open `V` of `U` is isomorphic in `𝒱^pre` to `X` restricted to the image of `V` in `X`, both being
 open subspaces of `X` with the same image. The isomorphism is compatible with the canonical
@@ -387,7 +388,7 @@ noncomputable def restrictRestrictIso (V : Opens (X.restrict h)) :
       X.restrict (h.isOpenMap.functor.obj V).isOpenEmbedding :=
   IsOpenImmersion.isoOfRangeEq ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h)
     (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding)
-    (range_ofRestrict_comp_ofRestrict_base X h V)
+    (IsOpenImmersion.range_ofRestrict_comp_base (X.ofRestrict h) V)
 
 @[reassoc (attr := simp)]
 theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict h)) :
@@ -509,6 +510,27 @@ theorem prop_restrictPreimage_restrictPreimage_iff (P : MorphismProperty PreAdic
         (f.restrictPreimage_base_apply W x').trans (Subtype.ext hzx.symm)
       exact ⟨⟨x', Opens.mem_map.mpr (heq.symm ▸ hz)⟩, rfl⟩
   · simp
+
+/-- **Restricting over an open covered by good opens**: let `P` be an isomorphism-invariant
+property of morphisms that descends along open covers of the target. If every point of an open `W`
+of `Y` has an open neighbourhood `V ≤ W` over which the restriction of `f` has `P`, then so does
+the restriction `f⁻¹(W) → W`. -/
+theorem prop_restrictPreimage_of_forall_exists_le (P : MorphismProperty PreAdicSpace.{u})
+    [P.RespectsIso]
+    (hP : ∀ {X' Y' : PreAdicSpace.{u}} (g : X' ⟶ Y') {ι : Type u} (V : ι → Opens Y'),
+      iSup V = ⊤ → (∀ i, P (g.restrictPreimage (V i))) → P g)
+    (W : Opens Y) (h : ∀ y : W, ∃ V : Opens Y, y.1 ∈ V ∧ V ≤ W ∧ P (f.restrictPreimage V)) :
+    P (f.restrictPreimage W) := by
+  choose V hyV hVW hV using h
+  -- the opens `V y`, read as opens of `Y|_W`, cover it
+  refine hP _ (fun y ↦ (Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (V y))
+    (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, Opens.mem_map.mpr (hyV y)⟩) fun y ↦ ?_
+  have hO : W.isOpenEmbedding.isOpenMap.functor.obj
+      ((Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (V y)) = V y :=
+    (Opens.functor_obj_map_obj W.isOpenEmbedding.isOpenMap (V y)).trans
+      (by rw [Opens.isOpenEmbedding_obj_top, inf_eq_right.mpr (hVW y)])
+  rw [prop_restrictPreimage_restrictPreimage_iff f P, hO]
+  exact hV y
 
 end Hom
 

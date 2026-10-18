@@ -12,16 +12,16 @@ public import Mathlib.CategoryTheory.Groupoid
 
 Let `C` be a groupoid and `x₀ : C` an object which admits a morphism to every object. Restricting
 functors `F G : C ⥤ D` to `x₀` produces objects of `D` with actions of the vertex group
-`End x₀`. This file proves that an isomorphism `F.obj x₀ ≅ G.obj x₀` commuting with these
-actions extends to a natural isomorphism `F ≅ G`, and the extension has the given isomorphism
-as its component at `x₀`.
+`End x₀`. This file proves that a morphism `F.obj x₀ ⟶ G.obj x₀` commuting with these actions
+extends uniquely to a natural transformation `F ⟶ G` with the given morphism as its component at
+`x₀`, and likewise for isomorphisms.
 
 The construction is the usual transport of structure. Choosing a morphism `γ x : x₀ ⟶ x` for
-every object, the component at `x` is `F.map (γ x)⁻¹ ≫ e ≫ G.map (γ x)`; naturality at
+every object, the component at `x` is `F.map (γ x)⁻¹ ≫ φ ≫ G.map (γ x)`; naturality at
 `f : x ⟶ y` holds because the discrepancy `γ x ≫ f ≫ (γ y)⁻¹` between the two chosen morphisms
 is an endomorphism of `x₀`, so equivariance applies to it. Nothing depends on the choice, since
 the resulting natural transformation is determined by its component at `x₀`, and that component
-is `e` whatever `γ x₀` is.
+is `φ` whatever `γ x₀` is.
 
 The hypothesis is exactly connectedness of the groupoid when `C` is nonempty, but is stated as
 the family of nonemptiness assertions `∀ x, Nonempty (x₀ ⟶ x)` rather than through
@@ -33,6 +33,10 @@ of the two formulations is not needed.
 
 * `TauCeti.Groupoid.natTrans_ext`: a natural transformation is determined by its component at the
   weakly initial object.
+* `TauCeti.Groupoid.natTransOfEnd`: an equivariant morphism of the values at a weakly initial
+  object of a groupoid extends to a natural transformation.
+* `TauCeti.Groupoid.natTransOfEnd_app_self`: the extension restricts to the given morphism.
+* `TauCeti.Groupoid.eq_natTransOfEnd`: the extension is the only natural transformation doing so.
 * `TauCeti.Groupoid.natIsoOfEnd`: an equivariant isomorphism of the values at a weakly initial
   object of a groupoid extends to a natural isomorphism.
 * `TauCeti.Groupoid.natIsoOfEnd_app_self`: the extension restricts to the given isomorphism.
@@ -69,44 +73,61 @@ theorem natIso_ext {α β : F ≅ G} (h : α.app x₀ = β.app x₀) : α = β :
 private def chosenIso (x : C) : x₀ ≅ x :=
   (CategoryTheory.Groupoid.isoEquivHom x₀ x).symm (hconn x).some
 
+/-- An `End x₀`-equivariant morphism between the values of two functors at a weakly initial
+object of a groupoid extends to a natural transformation.
+
+Its component at `x₀` is the given morphism, by `natTransOfEnd_app_self`. -/
+def natTransOfEnd (φ : F.obj x₀ ⟶ G.obj x₀)
+    (hφ : ∀ g : x₀ ⟶ x₀, F.map g ≫ φ = φ ≫ G.map g) : F ⟶ G where
+  app x := F.map (chosenIso hconn x).inv ≫ φ ≫ G.map (chosenIso hconn x).hom
+  naturality {x y} f := by
+    -- Cancel the chosen transports, then apply equivariance to their discrepancy.
+    rw [← cancel_epi (F.map (chosenIso hconn x).hom),
+      ← cancel_mono (G.map (chosenIso hconn y).inv)]
+    simp only [Category.assoc, ← F.map_comp_assoc, ← G.map_comp, Iso.hom_inv_id, F.map_id,
+      G.map_id, Category.id_comp, Category.comp_id]
+    exact hφ _
+
+private theorem natTransOfEnd_app (φ : F.obj x₀ ⟶ G.obj x₀)
+    (hφ : ∀ g : x₀ ⟶ x₀, F.map g ≫ φ = φ ≫ G.map g) (x : C) :
+    (natTransOfEnd hconn φ hφ).app x =
+      F.map (chosenIso hconn x).inv ≫ φ ≫ G.map (chosenIso hconn x).hom :=
+  rfl
+
+/-- The extension of an equivariant morphism restricts to that morphism. -/
+@[simp]
+theorem natTransOfEnd_app_self (φ : F.obj x₀ ⟶ G.obj x₀)
+    (hφ : ∀ g : x₀ ⟶ x₀, F.map g ≫ φ = φ ≫ G.map g) :
+    (natTransOfEnd hconn φ hφ).app x₀ = φ := by
+  rw [natTransOfEnd_app, ← hφ (chosenIso hconn x₀).hom, ← Category.assoc, ← F.map_comp,
+    Iso.inv_hom_id, F.map_id, Category.id_comp]
+
+/-- The extension is the only natural transformation restricting to the given morphism at the
+weakly initial object. -/
+theorem eq_natTransOfEnd (φ : F.obj x₀ ⟶ G.obj x₀)
+    (hφ : ∀ g : x₀ ⟶ x₀, F.map g ≫ φ = φ ≫ G.map g) (α : F ⟶ G) (hα : α.app x₀ = φ) :
+    α = natTransOfEnd hconn φ hφ :=
+  natTrans_ext hconn (by rw [hα, natTransOfEnd_app_self])
+
 /-- An `End x₀`-equivariant isomorphism between the values of two functors at a
 weakly initial object of a groupoid extends to a natural isomorphism.
 
 Its component at `x₀` is the given isomorphism, by `natIsoOfEnd_app_self`. -/
 def natIsoOfEnd (e : F.obj x₀ ≅ G.obj x₀)
     (he : ∀ g : x₀ ⟶ x₀, F.map g ≫ e.hom = e.hom ≫ G.map g) :
-    F ≅ G :=
-  NatIso.ofComponents
-    (fun x => (F.mapIso (chosenIso hconn x)).symm ≪≫ e ≪≫ G.mapIso (chosenIso hconn x))
-    (fun {x y} f => by
-      simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, Functor.mapIso_inv,
-        Category.assoc]
-      -- Cancel the chosen transports, then apply equivariance to their discrepancy.
-      rw [← cancel_epi (F.mapIso (chosenIso hconn x)).hom,
-        ← cancel_mono (G.mapIso (chosenIso hconn y)).inv]
-      simp only [Functor.mapIso_hom, Functor.mapIso_inv]
-      rw [← F.map_comp_assoc, ← F.map_comp_assoc]
-      simp only [Category.assoc]
-      rw [reassoc_of% (he ((chosenIso hconn x).hom ≫ f ≫ (chosenIso hconn y).inv))]
-      rw [← F.map_comp_assoc, Iso.hom_inv_id, F.map_id, Category.id_comp]
-      simp only [G.map_comp, Category.assoc]
-      simp)
-
-private theorem natIsoOfEnd_hom_app (e : F.obj x₀ ≅ G.obj x₀)
-    (he : ∀ g : x₀ ⟶ x₀, F.map g ≫ e.hom = e.hom ≫ G.map g) (x : C) :
-    (natIsoOfEnd hconn e he).hom.app x =
-      F.map (chosenIso hconn x).inv ≫ e.hom ≫ G.map (chosenIso hconn x).hom := by
-  simp [natIsoOfEnd]
+    F ≅ G where
+  hom := natTransOfEnd hconn e.hom he
+  inv := natTransOfEnd hconn e.inv fun g ↦ by
+    rw [Iso.comp_inv_eq, Category.assoc, he, Iso.inv_hom_id_assoc]
+  hom_inv_id := natTrans_ext hconn (by simp)
+  inv_hom_id := natTrans_ext hconn (by simp)
 
 /-- The extension of an equivariant isomorphism restricts to that isomorphism. -/
 @[simp]
 theorem natIsoOfEnd_app_self (e : F.obj x₀ ≅ G.obj x₀)
     (he : ∀ g : x₀ ⟶ x₀, F.map g ≫ e.hom = e.hom ≫ G.map g) :
-    (natIsoOfEnd hconn e he).app x₀ = e := by
-  apply Iso.ext
-  -- Compare the hom components using the chosen transport formula.
-  rw [Iso.app_hom, natIsoOfEnd_hom_app, ← he (chosenIso hconn x₀).hom, ← Category.assoc,
-    ← F.map_comp, Iso.inv_hom_id, F.map_id, Category.id_comp]
+    (natIsoOfEnd hconn e he).app x₀ = e :=
+  Iso.ext (natTransOfEnd_app_self hconn e.hom he)
 
 /-- The extension is the only natural isomorphism restricting to the given one at the weakly
 initial object. -/

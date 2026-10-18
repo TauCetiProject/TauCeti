@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Invariant
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.InvariantSum
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
@@ -48,6 +49,8 @@ rational radicand `b` (`hilbertProductFormula_of_coe_eq_ratCast`), and in partic
   extension.
 * `TauCeti.ClassFieldTheory.hilbertProductFormula_of_mem_adjoin`: Hilbert reciprocity when a
   square root of `b` lies in a cyclotomic extension.
+* `TauCeti.ClassFieldTheory.hilbertProductFormula_of_subsingleton_h1_globalFormation`: Hilbert
+  reciprocity from idele-class `H¹`-vanishing over the finite extensions of the ground field.
 * `TauCeti.ClassFieldTheory.hilbertProductFormula_of_coe_eq_ratCast`: Hilbert reciprocity for a
   rational radicand `b`.
 * `TauCeti.ClassFieldTheory.hilbertProductFormula_rat`: Hilbert reciprocity over `ℚ`.
@@ -118,6 +121,20 @@ theorem hilbertProductFormula_of_mem_adjoin (a b : Kˣ) {s : SeparableClosure K}
     rw [← sumLocalInv_brLocalization_kummerBrauerClass, map_zero,
       sumLocalInv_brLocalization_kummerBrauerClass_eq_zero_of_mem_adjoin _ a b hs hm hsm]
 
+/-- **Hilbert reciprocity, from idele-class `H¹`-vanishing.** If `H¹` vanishes on every layer
+of the idele-class formation over every finite extension of the number field `K`, then the
+Hilbert invariants of `a, b ∈ Kˣ` sum to zero over all places of `K`. -/
+theorem hilbertProductFormula_of_subsingleton_h1_globalFormation
+    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E]
+      (V : OpenNormalSubgroup (AbsoluteGaloisGroup E)),
+      Subsingleton ((NormalLayer.ofOpenNormal V).H (globalFormation E) 1))
+    (a b : Kˣ) :
+    (∑ v ∈ finiteHilbertSupport K a b, finiteHilbertInvariantAt K v a b) +
+        ∑ w : InfinitePlace K, infiniteHilbertInvariantAt K w a b = 0 :=
+  ZMod.toRatAddCircle_injective 2 <| by
+    rw [← sumLocalInv_brLocalization_kummerBrauerClass, map_zero,
+      sumLocalInv_brLocalization_eq_zero_of_subsingleton_h1_globalFormation K h]
+
 /-- **Hilbert reciprocity for a rational radicand.** For `a, b ∈ Kˣ` with `b` rational, the Hilbert
 invariants of `a` and `b` at all the finite and infinite places of `K` sum to zero. -/
 theorem hilbertProductFormula_of_coe_eq_ratCast (a b : Kˣ) {q : ℚ} (hb : (b : K) = q) :
@@ -130,7 +147,7 @@ theorem hilbertProductFormula_of_coe_eq_ratCast (a b : Kˣ) {q : ℚ} (hb : (b :
   have hN : 0 < N := Nat.mul_pos (by decide) (Int.natAbs_pos.2
     (mul_ne_zero (Rat.num_ne_zero.2 hq) (Int.natCast_ne_zero.2 q.den_nz)))
   have : NeZero N := ⟨hN.ne'⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) N
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) N
   obtain ⟨s, hs⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap K (SeparableClosure K) b) 2
   have hsq : s ^ 2 = (q : SeparableClosure K) := by rw [hs, hb, map_ratCast]
   refine hilbertProductFormula_of_mem_adjoin a b hs hN.ne' ?_

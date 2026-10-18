@@ -188,7 +188,7 @@ theorem zeroConeChartHomeomorphOfBasis_apply {l s : ℕ}
   simp only [zeroConeChartHomeomorphOfBasis, Homeomorph.trans_apply,
     Homeomorph.apply_symm_apply, Homeomorph.coe_uniqueProd, coe_coneChartHomeomorph,
     Homeomorph.sumArrowHomeomorphProdArrow_apply, ContinuousMulEquiv.toHomeomorph_eq_coe,
-    HomeomorphClass.coe_coe, coe_complexTorusCoordinatesContinuousMulEquiv]
+    Homeomorph.coe_ofClass, coe_complexTorusCoordinatesContinuousMulEquiv]
   ext j
   simp only [Function.comp_apply, complexTorusCoordinates_apply, coneChartEquiv_smul_snd,
     coneChartEquiv_default, Prod.snd_one, Pi.one_apply, mul_one]

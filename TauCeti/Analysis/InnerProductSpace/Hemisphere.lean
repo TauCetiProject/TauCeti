@@ -33,6 +33,7 @@ complement of an embedded sphere.
 
 * `TauCeti.coe_hemisphereHomeomorph_apply` and `TauCeti.coe_hemisphereHomeomorph_symm_apply`:
   the formulas for the homeomorphism and its inverse.
+* `TauCeti.frontier_setOf_inner_nonneg`: the equator is the frontier of each closed hemisphere.
 * `TauCeti.range_equatorInclusion`: the equator is the intersection of the closed hemispheres
   around `p` and `-p`.
 -/
@@ -157,5 +158,52 @@ theorem range_equatorInclusion :
     refine ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_right.2 ?_⟩,
       mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere x)⟩, rfl⟩
     rwa [real_inner_comm]
+
+/-- The norm of `x - t • p`, for a point `x` of the unit sphere orthogonal to `p`. -/
+private lemma norm_sub_smul_of_inner_eq_zero (x : sphere (0 : E) 1)
+    (hx : ⟪(x : E), (p : E)⟫ = 0) (t : ℝ) : ‖(x : E) - t • (p : E)‖ = √(1 + t ^ 2) := by
+  rw [← Real.sqrt_sq (norm_nonneg _), norm_sub_sq_real, real_inner_smul_right, hx, norm_smul,
+    mul_pow, Real.norm_eq_abs, sq_abs, norm_eq_of_mem_sphere x, norm_eq_of_mem_sphere p]
+  ring_nf
+
+/-- The normalization of `x - t • p`, for a point `x` of the unit sphere orthogonal to `p`: for
+`t > 0` it moves from `x` towards `-p` along a great circle. -/
+private def normalizeSubSmul (x : sphere (0 : E) 1) (hx : ⟪(x : E), (p : E)⟫ = 0) (t : ℝ) :
+    sphere (0 : E) 1 :=
+  ⟨(√(1 + t ^ 2))⁻¹ • ((x : E) - t • (p : E)), mem_sphere_zero_iff_norm.2 <| by
+    have hpos : 0 < √(1 + t ^ 2) := Real.sqrt_pos.2 (by positivity)
+    rw [norm_smul, norm_sub_smul_of_inner_eq_zero p x hx, Real.norm_eq_abs,
+      abs_of_pos (inv_pos.2 hpos), inv_mul_cancel₀ hpos.ne']⟩
+
+/-- The frontier of the closed hemisphere around `p` in the unit sphere is the equator. -/
+theorem frontier_setOf_inner_nonneg :
+    frontier {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} = range (equatorInclusion p) := by
+  rw [range_equatorInclusion]
+  refine Set.ext fun x ↦ ?_
+  simp only [mem_inter_iff, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg]
+  constructor
+  · intro hx
+    have hx := frontier_le_subset_eq continuous_const (by fun_prop) hx
+    exact ⟨hx.le, hx.ge⟩
+  · rintro ⟨h₁, h₂⟩
+    have hx : ⟪(x : E), (p : E)⟫ = 0 := le_antisymm h₂ h₁
+    rw [frontier_eq_closure_inter_closure]
+    refine ⟨subset_closure h₁, ?_⟩
+    -- Moving from `x` towards `-p` along a great circle leaves the hemisphere.
+    have hγ : Continuous (normalizeSubSmul p x hx) := by
+      unfold normalizeSubSmul
+      exact .subtype_mk (.smul (.inv₀ (by fun_prop) fun t ↦ (Real.sqrt_pos.2
+        (by positivity)).ne') (by fun_prop)) _
+    have h₀ : normalizeSubSmul p x hx 0 = x := by
+      ext
+      simp [normalizeSubSmul]
+    rw [← h₀]
+    refine map_mem_closure hγ (by simp) (s := Ioi 0) fun t (ht : 0 < t) ↦ ?_
+    have hp : ⟪(p : E), (p : E)⟫ = 1 := by
+      rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
+    simp only [mem_compl_iff, mem_ofPred_eq, not_le, normalizeSubSmul, real_inner_smul_left,
+      inner_sub_left, hx, hp]
+    have hpos : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
+    nlinarith
 
 end TauCeti

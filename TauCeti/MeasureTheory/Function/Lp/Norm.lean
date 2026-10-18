@@ -24,6 +24,8 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
+  exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
@@ -78,6 +80,19 @@ end TauCeti
 namespace MeasureTheory
 
 open scoped ENNReal
+
+/-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
+of nonzero measure. -/
+theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {c : ℝ} (hc_nonneg : 0 ≤ c)
+    (hc : c < ‖f‖) : m {x | c < ‖f x‖} ≠ 0 := by
+  intro hms
+  have hae : ∀ᵐ x ∂m, ‖f x‖ ≤ c :=
+    (measure_eq_zero_iff_ae_notMem.mp hms).mono fun x hx ↦ le_of_not_gt hx
+  have hf_le : ‖f‖ ≤ c := by
+    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
+    exact ENNReal.toReal_le_of_le_ofReal hc_nonneg (eLpNormEssSup_le_of_ae_bound hae)
+  exact (not_lt_of_ge hf_le) hc
 
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]

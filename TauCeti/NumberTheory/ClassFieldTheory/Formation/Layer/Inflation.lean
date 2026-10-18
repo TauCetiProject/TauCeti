@@ -161,7 +161,7 @@ private theorem h2EquivExplicit_H2π (c : cocycles₂ (L.rep F)) :
 `(u, v) ↦ c (u V, v V)` on the ground subgroup `U`, with values in `M` (`inflCocycle2_apply`).
 Its class is `explicitInfl2 L e he [c]` (`explicitInfl2_H2π`). -/
 def inflCocycle2 (c : cocycles₂ (L.rep F)) : Z2 L.ground.toSubgroup M :=
-  cocyclesMap2 _ _ _ _ (ContinuousMonoidHom.quotientMk _)
+  cocyclesMap2 _ _ _ _ (Subgroup.quotientMkContinuousMonoidHom _)
     (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M).subtype
     (continuous_fixedPoints_addSubgroup_subtype _ _ _)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).fixedPoints_subtype_quotientMk_smul
@@ -174,7 +174,8 @@ two arguments, read in `M`. -/
 theorem inflCocycle2_apply (c : cocycles₂ (L.rep F)) (u v : L.ground.toSubgroup) :
     (inflCocycle2 L e he c : L.ground.toSubgroup × L.ground.toSubgroup → M) (u, v) =
       e.symm (c ((u : L.Gal), (v : L.Gal)) : F.level L.top) := by
-  rw [inflCocycle2, cocyclesMap2_apply]
+  rw [inflCocycle2, cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
   exact L.coeffFixedPointsEquiv_apply_coe e he _
 
 /-- **Inflation on cocycle classes**: `explicitInfl2 L e he` sends the class of a layer cocycle `c`

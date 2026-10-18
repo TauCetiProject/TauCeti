@@ -23,14 +23,18 @@ By Tonelli, the mass is `∫_{y > 0} (w(y) / 2) ∫_ℝ |sin t| e^{-y |t|} dt dy
 of `|sin|` is `2 (1 + e^{-π y}) / ((1 - e^{-π y}) (1 + y²))`, and the weight
 `w(y) = (1 - e^{-π y}) / (1 + e^{-π y})` is exactly the factor that cancels the periodic part,
 leaving `∫_{y > 0} (1 + y²)⁻¹ dy = π / 2`. This value is the sharp constant `π / 2` in the norm
-bound for the Sylvester equation `AX - XB = C` with pairwise separated spectra.
+bound for the Sylvester equation `AX - XB = C` with pairwise separated spectra. In that bound the
+kernel is integrated against a bounded vector-valued function `F`, and the mass gives
+`‖∫ k(t) • F(t) dt‖ ≤ (π / 2) sup ‖F‖`.
 
 ## Main results
 
 * `TauCeti.HaagerupZsido.integrable_kernelIntegrand`: the integrand
   `(y, t) ↦ (sin t / 2) w(y) e^{-|t| y}` is integrable on `(0, ∞) × ℝ`;
 * `TauCeti.HaagerupZsido.integral_abs_realKernel`: `∫_ℝ |r(t)| dt = π / 2`;
-* `TauCeti.HaagerupZsido.integral_norm_reciprocalKernel`: `∫_ℝ ‖k(t)‖ dt = π / 2`.
+* `TauCeti.HaagerupZsido.integral_norm_reciprocalKernel`: `∫_ℝ ‖k(t)‖ dt = π / 2`;
+* `TauCeti.HaagerupZsido.norm_integral_reciprocalKernel_smul_le`: if `‖F(t)‖ ≤ C` almost
+  everywhere, then `‖∫_ℝ k(t) • F(t) dt‖ ≤ (π / 2) C`.
 
 ## References
 
@@ -129,5 +133,25 @@ theorem integral_abs_realKernel : ∫ t, |realKernel t| = π / 2 := by
 /-- **The exact mass of the Haagerup–Zsidó kernel.** `∫_ℝ ‖k(t)‖ dt = π / 2`. -/
 theorem integral_norm_reciprocalKernel : ∫ t, ‖reciprocalKernel t‖ = π / 2 := by
   simp only [norm_reciprocalKernel, integral_abs_realKernel]
+
+/-- Against the Haagerup–Zsidó kernel `k`, every almost everywhere strongly measurable and
+essentially bounded function `F : ℝ → G` into a complex normed space gives an integrable product
+`t ↦ k(t) • F(t)`. -/
+theorem integrable_reciprocalKernel_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    {F : ℝ → G} {C : ℝ} (hF : AEStronglyMeasurable F) (hFC : ∀ᵐ t, ‖F t‖ ≤ C) :
+    Integrable fun t ↦ reciprocalKernel t • F t :=
+  integrable_reciprocalKernel.smul_of_top_left (memLp_top_of_bound hF C hFC)
+
+/-- **The kernel-mass integral bound.** If `F : ℝ → G` takes values in a complex normed space and
+`‖F(t)‖ ≤ C` almost everywhere, then `‖∫ k(t) • F(t) dt‖ ≤ (π / 2) C`, where `k` is the
+Haagerup–Zsidó kernel. -/
+theorem norm_integral_reciprocalKernel_smul_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] {F : ℝ → G} {C : ℝ} (hFC : ∀ᵐ t, ‖F t‖ ≤ C) :
+    ‖∫ t, reciprocalKernel t • F t‖ ≤ π / 2 * C := by
+  rw [← integral_norm_reciprocalKernel, ← integral_mul_const]
+  refine norm_integral_le_of_norm_le (integrable_reciprocalKernel.norm.mul_const C)
+    (hFC.mono fun t ht ↦ ?_)
+  rw [norm_smul]
+  exact mul_le_mul_of_nonneg_left ht (norm_nonneg _)
 
 end TauCeti.HaagerupZsido
