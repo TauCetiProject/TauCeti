@@ -30,6 +30,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
   its cdf;
+* `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
+  evaluate the cdf of the image of a real law under absolute value, and
+  `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
@@ -63,6 +66,32 @@ theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsN
     (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
   rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
     measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+
+/-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
+`[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
+theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
+    cdf (μ.map (|·|)) x = cdf μ x - μ.real (Iio (-x)) := by
+  have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
+    ext y
+    simp [abs_le, and_comm]
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
+      measurableSet_Iio, cdf_eq_real]
+
+/-- The image of `μ` under absolute value puts no mass on the negative half-line. -/
+theorem cdf_map_abs_of_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : x < 0) :
+    cdf (μ.map (|·|)) x = 0 := by
+  have hpre : (|·|) ⁻¹' Iic x = ∅ :=
+    eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_empty]
+
+/-- The cdf of the image of a symmetric law under absolute value at `x ≥ 0` is
+`2 * cdf μ x - 1`. -/
+theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
+  rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
+  ring
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 

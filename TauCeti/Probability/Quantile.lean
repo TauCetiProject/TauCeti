@@ -61,6 +61,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   `MeasureTheory.Measure.continuousOn_quantile`;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
+* `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
+  absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
   — the characterization of the upper quantile through the mass strictly to the left of a point;
 * `MeasureTheory.Measure.measureReal_Iio_quantile_le` and `MeasureTheory.Measure.le_cdf_quantile`
@@ -145,6 +147,21 @@ theorem quantile_eq_of_le_cdf_iff (ν μ : Measure ℝ) {u t : ℝ}
   apply congrArg sInf
   ext x
   exact h x
+
+/-- **The quantile of a symmetric fold.** At a positive level `u`, the quantile of the image of a
+symmetric law `μ` under absolute value is the quantile of `μ` at level `(1 + u) / 2`. -/
+theorem quantile_map_abs (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant] {u : ℝ}
+    (hu : 0 < u) : (μ.map (|·|)).quantile u = μ.quantile ((1 + u) / 2) := by
+  refine quantile_eq_of_le_cdf_iff _ _ fun x => ?_
+  rcases le_or_gt 0 x with hx | hx
+  · rw [μ.cdf_map_abs_of_isNegInvariant hx]
+    constructor <;> intro h <;> linarith
+  · rw [μ.cdf_map_abs_of_neg hx]
+    -- Below `0`, the cdf of a symmetric law is at most `1 / 2`.
+    have hle : cdf μ x ≤ 1 - cdf μ x := by
+      rw [← μ.measureReal_Iio_neg x, cdf_eq_real]
+      exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
+    constructor <;> intro h <;> linarith
 
 variable {t x : ℝ}
 

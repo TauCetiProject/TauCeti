@@ -35,15 +35,18 @@ densities and quantiles are instances of these formulas.
 
 ## Main results
 
-* `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — the decomposition of the folded law;
-* `TauCeti.Probability.cdf_map_abs_of_nonneg`, `TauCeti.Probability.cdf_map_abs_of_neg` — its cdf;
-* `MeasureTheory.Measure.map_abs_apply_zero` — its atom at `0`;
-* `TauCeti.Probability.map_abs_withDensity` — its density;
 * `TauCeti.Probability.hasPDF_abs`, `TauCeti.Probability.pdf_abs` — the density of `|X|`;
-* `TauCeti.Probability.cdf_map_abs_of_isNegInvariant` — the cdf `2 F(x) - 1` of a symmetric fold;
-* `TauCeti.Probability.quantile_map_abs` — the quantile `Q_μ ((1 + u) / 2)` of a symmetric fold;
 * `TauCeti.Probability.map_abs_eq_cond_Ici` — a symmetric law with no atom at `0` folds to its
   conditioning on `[0, ∞)`.
+
+The identities about `μ.map (|·|)` that do not depend on a random variable live with the theory
+they belong to. The decomposition `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` and the
+atom `MeasureTheory.Measure.map_abs_apply_zero` are in `TauCeti.MeasureTheory.Measure.Real`, the
+density `TauCeti.Probability.map_abs_withDensity` is in `TauCeti.MeasureTheory.Measure.WithDensity`,
+the cdf formulas `MeasureTheory.Measure.cdf_map_abs_of_nonneg`,
+`MeasureTheory.Measure.cdf_map_abs_of_neg` and `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant`
+are in `TauCeti.Probability.Cdf`, and the quantile formula `MeasureTheory.Measure.quantile_map_abs`
+is in `TauCeti.Probability.Quantile`.
 -/
 
 public section
@@ -56,25 +59,6 @@ private theorem measurable_abs : Measurable fun x : ℝ => |x| := continuous_abs
 namespace TauCeti.Probability
 
 variable {μ : Measure ℝ}
-
-/-- The cdf of the folded law at a nonnegative point `x` is the mass of `[-x, x]`, that is, the cdf
-of `μ` at `x` minus its left limit at `-x`. -/
-theorem cdf_map_abs_of_nonneg [IsProbabilityMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
-    cdf (μ.map (|·|)) x = cdf μ x - μ.real (Iio (-x)) := by
-  have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
-    ext y
-    simp [abs_le, and_comm]
-  rw [cdf_eq_real, map_measureReal_apply measurable_abs measurableSet_Iic, hpre,
-    measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
-      measurableSet_Iio, cdf_eq_real]
-
-/-- The folded law puts no mass on the negative half-line. -/
-theorem cdf_map_abs_of_neg [IsProbabilityMeasure μ] {x : ℝ} (hx : x < 0) :
-    cdf (μ.map (|·|)) x = 0 := by
-  have hpre : (|·|) ⁻¹' Iic x = ∅ :=
-    eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
-  rw [cdf_eq_real, map_measureReal_apply measurable_abs measurableSet_Iic, hpre,
-    measureReal_empty]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
@@ -105,27 +89,6 @@ theorem pdf_abs [HasPDF X P] :
   pdf_eq_of_hasLaw_withDensity measurable_foldedPDF.aemeasurable hasLaw_abs_withDensity
 
 /-! ### Symmetric laws -/
-
-/-- The cdf of a symmetric law folded at `x ≥ 0` is `2 * cdf μ x - 1`. -/
-theorem cdf_map_abs_of_isNegInvariant [IsProbabilityMeasure μ] [μ.IsNegInvariant] {x : ℝ}
-    (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
-  rw [cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
-  ring
-
-/-- **The quantile of a symmetric fold.** At a positive level `u`, the quantile of the folded law of
-a symmetric law `μ` is the quantile of `μ` at level `(1 + u) / 2`. -/
-theorem quantile_map_abs [IsProbabilityMeasure μ] [μ.IsNegInvariant] {u : ℝ} (hu : 0 < u) :
-    (μ.map (|·|)).quantile u = μ.quantile ((1 + u) / 2) := by
-  refine Measure.quantile_eq_of_le_cdf_iff _ _ fun x => ?_
-  rcases le_or_gt 0 x with hx | hx
-  · rw [cdf_map_abs_of_isNegInvariant hx]
-    constructor <;> intro h <;> linarith
-  · rw [cdf_map_abs_of_neg hx]
-    -- Below `0`, the cdf of a symmetric law is at most `1 / 2`.
-    have hle : cdf μ x ≤ 1 - cdf μ x := by
-      rw [← μ.measureReal_Iio_neg x, cdf_eq_real]
-      exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
-    constructor <;> intro h <;> linarith
 
 /-- **Folding a symmetric law is conditioning it on `[0, ∞)`**, provided it has no atom at `0`. -/
 theorem map_abs_eq_cond_Ici [IsProbabilityMeasure μ] [μ.IsNegInvariant] (h0 : μ {0} = 0) :
