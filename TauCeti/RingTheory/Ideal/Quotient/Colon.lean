@@ -18,13 +18,15 @@ the ideal quotient `(I : c) = {r | r * c ∈ I}`. This is the form in which asso
 
 ## Main results
 
-* `Ideal.Quotient.mem_colon_singleton_mk`: `r` annihilates the class of `c` in `R ⧸ I` exactly
-  when `r * c ∈ I`.
+* `TauCeti.Ideal.Quotient.mem_colon_singleton_mk`: `r` annihilates the class of `c` in
+  `R ⧸ I` exactly when `r * c ∈ I`.
 -/
 
 public section
 
-namespace Ideal.Quotient
+open Ideal.Quotient
+
+namespace TauCeti.Ideal.Quotient
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
 
@@ -34,4 +36,4 @@ theorem mem_colon_singleton_mk {c r : R} :
   rw [Submodule.mem_colon_singleton, Algebra.smul_def, algebraMap_eq, ← map_mul, Submodule.mem_bot,
     eq_zero_iff_mem]
 
-end Ideal.Quotient
+end TauCeti.Ideal.Quotient

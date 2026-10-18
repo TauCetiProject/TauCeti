@@ -72,7 +72,7 @@ public section
 
 namespace TauCeti
 
-open _root_.IsLocalRing _root_.IsRegularLocalRing Ideal
+open _root_.IsLocalRing _root_.IsRegularLocalRing _root_.Ideal
 
 open scoped nonZeroDivisors
 
