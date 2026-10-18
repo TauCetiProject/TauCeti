@@ -16,10 +16,8 @@ Increasing the first positive shape or decreasing the second positive shape incr
 law in first-order stochastic order. We give the reversed cdf inequalities, the corresponding
 interior quantile inequality, and the almost-sure order of the common-uniform quantile coupling.
 
-The comparison comes from the independent-Gamma ratio construction: adding an independent
-positive Gamma increment to the numerator increases its fraction of the total. Reflection of
-the Beta cdf gives the second-shape comparison. Equal shapes are handled directly, without a
-zero-shape Gamma law.
+These comparisons transfer probability and quantile bounds between Beta laws with ordered
+shape parameters.
 
 ## References
 
