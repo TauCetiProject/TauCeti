@@ -75,10 +75,6 @@ theorem riemannRochSpace_add_poles_eq_sup (hF : IsFunctionField k F)
     hF hex (hA.trans (Divisor.degree_le_of_le hlow))
   have hdimHigh := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree
     hF hex (hA.trans (Divisor.degree_le_of_le (hlow.trans hhigh)))
-  have hdegrees : Divisor.degree (Divisor.zeros hF z) = Divisor.degree (Divisor.poles hF z) := by
-    have h := Divisor.degree_principal hF z
-    rw [← Divisor.zeros_sub_poles hF z, Divisor.degree_sub] at h
-    omega
   have := finiteDimensional_riemannRochSpace hF A
   have := finiteDimensional_riemannRochSpace hF (A - Divisor.principal hF z)
   have := finiteDimensional_riemannRochSpace hF (A + Divisor.poles hF z)
@@ -87,7 +83,8 @@ theorem riemannRochSpace_add_poles_eq_sup (hF : IsFunctionField k F)
     (riemannRochSpace (A - Divisor.principal hF z))
   rw [← riemannRochSpace_inf, hinf, ← Divisor.dim_def, ← Divisor.dim_def,
     ← Divisor.dim_def, Divisor.dim_sub_principal] at hdim
-  simp only [Divisor.degree_sub, Divisor.degree_add, hdegrees] at hdimLow hdimHigh
+  simp only [Divisor.degree_sub, Divisor.degree_add, Divisor.degree_zeros_eq_degree_poles hF z]
+    at hdimLow hdimHigh
   rw [← Divisor.dim_def]
   omega
 
@@ -120,13 +117,9 @@ theorem mem_riemannRochSpace_succ_nsmul_poles_iff (hF : IsFunctionField k F)
     f ∈ riemannRochSpace ((n + 1) • Divisor.poles hF z) ↔
       ∃ a ∈ riemannRochSpace (n • Divisor.poles hF z),
         ∃ b ∈ riemannRochSpace (n • Divisor.poles hF z), f = a + (z : F) * b := by
-  have hdegrees : Divisor.degree (Divisor.zeros hF z) = Divisor.degree (Divisor.poles hF z) := by
-    have h := Divisor.degree_principal hF z
-    rw [← Divisor.zeros_sub_poles hF z, Divisor.degree_sub] at h
-    omega
   have hbound : 2 * (genus k F : ℤ) - 1 ≤
       Divisor.degree (n • Divisor.poles hF z - Divisor.zeros hF z) := by
-    rw [Divisor.degree_sub, map_nsmul, nsmul_eq_mul, hdegrees]
+    rw [Divisor.degree_sub, map_nsmul, nsmul_eq_mul, Divisor.degree_zeros_eq_degree_poles hF z]
     nlinarith [hn]
   simpa only [add_nsmul, one_nsmul] using
     mem_riemannRochSpace_add_poles_iff hF hex z (n • Divisor.poles hF z) hbound f
