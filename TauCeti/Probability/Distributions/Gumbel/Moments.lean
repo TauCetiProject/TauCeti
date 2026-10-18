@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 
-import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.Probability.Distributions.Logistic.Gumbel
 import TauCeti.Probability.Distributions.Logistic.Moments
@@ -76,24 +74,6 @@ theorem memLp_id_gumbelMeasure (hs : 0 < s) (m : ℝ) : MemLp id 2 (gumbelMeasur
   refine (memLp_gumbel_source (m := m) hs).congr_norm (by fun_prop) ?_
   filter_upwards with e
   simp only [Function.comp_apply, id_eq]
-
-private lemma integrable_log_expMeasure : Integrable log (expMeasure 1) := by
-  let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
-  have hsource := (memLp_gumbel_source (m := 0) (s := 1) one_pos).integrable one_le_two
-  exact hsource.neg.congr (ae_of_all _ fun e => by simp)
-
-private lemma integral_log_expMeasure :
-    ∫ e : ℝ, log e ∂expMeasure 1 = -Real.eulerMascheroniConstant := by
-  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos one_pos]
-  simp only [one_rpow, Gamma_one, div_one, sub_self, rpow_zero, one_mul,
-    smul_eq_mul]
-  calc
-    (∫ x in Ioi 0, exp (-x) * log x) = ∫ x in Ioi 0, log x * exp (-x) := by
-      apply setIntegral_congr_fun measurableSet_Ioi
-      intro x hx
-      ring
-    _ = -Real.eulerMascheroniConstant := by
-      linarith [Real.eulerMascheroniConstant_eq_neg_integral_log]
 
 /-- The mean of a positive-scale Gumbel law is `m + s * γ`, where `γ` is the
 Euler--Mascheroni constant. -/

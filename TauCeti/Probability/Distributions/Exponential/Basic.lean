@@ -6,10 +6,12 @@ Authors: Claude, Codex, The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Exponential
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
+import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Probability.Density
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
@@ -43,6 +45,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
+* `integrable_log_expMeasure`, `integral_log_expMeasure` — integrability and the mean of the
+  logarithm under the unit-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
@@ -146,6 +150,45 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 @[simp]
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
+
+/-- The logarithm is integrable under the unit-rate exponential law. -/
+theorem integrable_log_expMeasure : Integrable log (expMeasure 1) := by
+  rw [expMeasure]
+  have hpos : Integrable (fun x : ℝ => x ^ (1 / 2 : ℝ)) (gammaMeasure 1 1) :=
+    (integrable_rpow_gammaMeasure_iff one_pos one_pos _).2 (by norm_num)
+  have hneg : Integrable (fun x : ℝ => x ^ (-1 / 2 : ℝ)) (gammaMeasure 1 1) :=
+    (integrable_rpow_gammaMeasure_iff one_pos one_pos _).2 (by norm_num)
+  have hpos' : Integrable (fun x : ℝ => exp ((0 + 1 / 2) * log x))
+      (gammaMeasure 1 1) := by
+    refine hpos.congr ?_
+    filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
+    rw [Real.rpow_def_of_pos hx]
+    ring_nf
+  have hneg' : Integrable (fun x : ℝ => exp ((0 - 1 / 2) * log x))
+      (gammaMeasure 1 1) := by
+    refine hneg.congr ?_
+    filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
+    rw [Real.rpow_def_of_pos hx]
+    ring_nf
+  have habs := integrable_pow_abs_mul_exp_of_integrable_exp_mul
+    (X := log) (v := 0) (t := (1 / 2 : ℝ)) (by norm_num) hpos' hneg' 1
+  rw [← integrable_norm_iff (by fun_prop)]
+  simpa only [zero_mul, zero_add, exp_zero, mul_one, pow_one, Real.norm_eq_abs] using habs
+
+/-- The mean of the logarithm under the unit-rate exponential law is the negative of the
+Euler--Mascheroni constant. -/
+theorem integral_log_expMeasure :
+    ∫ e : ℝ, log e ∂expMeasure 1 = -Real.eulerMascheroniConstant := by
+  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos one_pos]
+  simp only [one_rpow, Gamma_one, div_one, sub_self, rpow_zero, one_mul,
+    smul_eq_mul]
+  calc
+    (∫ x in Ioi 0, exp (-x) * log x) = ∫ x in Ioi 0, log x * exp (-x) := by
+      apply setIntegral_congr_fun measurableSet_Ioi
+      intro x hx
+      ring
+    _ = -Real.eulerMascheroniConstant := by
+      linarith [Real.eulerMascheroniConstant_eq_neg_integral_log]
 
 /-- **The exact exponential-integrability threshold.** The integrand `exp (t * x)` is integrable
 against an exponential law with positive rate `r` exactly when `t < r`. -/
