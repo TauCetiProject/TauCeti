@@ -21,8 +21,7 @@ Only the existence of `C` and `λ` is stated, not Evertse's explicit values.
 
 By Northcott's theorem there are only finitely many rationals of bounded height, so the gap
 principle gives **Thue's approximation theorem**: `|ξ - α| ≤ H(ξ) ^ (-κ)` has only finitely many
-rational solutions `ξ`. The proof gives no way to list them, since it needs one solution of
-height at least `C` to bound the others.
+rational solutions `ξ`.
 
 ## Main results
 
