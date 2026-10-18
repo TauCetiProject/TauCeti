@@ -42,9 +42,10 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff`: definiteness
   tests for the extreme indices.
-* `TauCeti.criticalHessianMatrix`: the Gram matrix of the critical Hessian in a tangent-space
-  basis, with determinant, inertia, and definiteness comparisons
-  (`TauCeti.criticalHessianMatrix_posDef_iff` and `TauCeti.neg_criticalHessianMatrix_posDef_iff`).
+* `Module.Basis.criticalHessianMatrix`: the Gram matrix of the critical Hessian in a
+  tangent-space basis, with determinant, inertia, and definiteness comparisons
+  (`Module.Basis.criticalHessianMatrix_posDef_iff` and
+  `Module.Basis.neg_criticalHessianMatrix_posDef_iff`).
 * `TauCeti.exists_negDef_subspace_finrank_eq_manifoldMorseIndex`: the Morse
   index is attained by a negative-definite tangent subspace.
 * `TauCeti.exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg`: the Morse index of `-f` is
@@ -129,9 +130,11 @@ theorem criticalHessian_neg : criticalHessian I (-f) x = -criticalHessian I f x 
 /-- The Morse index of `-f` is the positive inertia index of the critical Hessian of `f`. -/
 theorem manifoldMorseIndex_neg_eq_sigPos_criticalHessian :
     manifoldMorseIndex I (-f) x = sigPos (criticalHessian I f x).toBilinForm.toQuadraticMap := by
-  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, criticalHessian_neg]
-  change sigNeg ((-(criticalHessian I f x).toBilinForm).toQuadraticMap) = _
-  rw [LinearMap.BilinMap.toQuadraticMap_neg, sigNeg_neg]
+  have hneg : (-criticalHessian I f x).toBilinForm = -(criticalHessian I f x).toBilinForm := by
+    ext v w
+    simp only [ContinuousLinearMap.toBilinForm_apply, neg_apply, LinearMap.neg_apply]
+  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, criticalHessian_neg, hneg,
+    LinearMap.BilinMap.toQuadraticMap_neg, sigNeg_neg]
 
 /-- On a normed space with its self-model, the critical Hessian is the second derivative. -/
 @[simp]
@@ -148,80 +151,84 @@ theorem IsManifoldNondegenerateCriticalPoint.isInvertible_criticalHessian
     (h : IsManifoldNondegenerateCriticalPoint I f x) : (criticalHessian I f x).IsInvertible :=
   ((isManifoldNondegenerateCriticalPoint_iff I).mp h).isInvertible
 
+/-- On a finite-dimensional model space, an injective critical Hessian is invertible as a map to
+the dual of the tangent space. -/
+theorem criticalHessian_isInvertible_of_injective [FiniteDimensional ℝ E]
+    (h : Injective (criticalHessian I f x)) : (criticalHessian I f x).IsInvertible :=
+  -- `TangentSpace I x` is by definition the model space `E`, so the finite-dimensional result
+  -- for the normed space `E` applies; matrix and subspace proofs go through this lemma.
+  ContinuousLinearMap.isInvertible_of_injective (E := E) h
+
 /-! ### Matrix and subspace descriptions -/
 
 section Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The matrix of the critical Hessian in a basis of the tangent space. -/
-noncomputable def criticalHessianMatrix
-    (b : Module.Basis ι ℝ (TangentSpace I x)) : Matrix ι ι ℝ :=
+/-- The matrix of the critical Hessian of `f` in a basis of the tangent space. -/
+noncomputable def _root_.Module.Basis.criticalHessianMatrix
+    (b : Module.Basis ι ℝ (TangentSpace I x)) (f : M → ℝ) : Matrix ι ι ℝ :=
   (criticalHessian I f x).toBilinForm.toMatrix b
 
 /-- The entries of the critical Hessian matrix are its values on basis vectors. -/
 @[simp]
-theorem criticalHessianMatrix_apply (b : Module.Basis ι ℝ (TangentSpace I x)) (i j : ι) :
-    criticalHessianMatrix (I := I) (f := f) (x := x) b i j =
-      criticalHessian I f x (b i) (b j) :=
+theorem _root_.Module.Basis.criticalHessianMatrix_apply
+    (b : Module.Basis ι ℝ (TangentSpace I x)) (i j : ι) :
+    b.criticalHessianMatrix f i j = criticalHessian I f x (b i) (b j) :=
   LinearMap.BilinForm.toMatrix_apply _ _ _ _
 
 /-- The critical Hessian matrix depends only on the germ of the function. -/
-theorem criticalHessianMatrix_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g)
-    (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    criticalHessianMatrix (I := I) (f := f) (x := x) b =
-      criticalHessianMatrix (I := I) (f := g) (x := x) b := by
-  rw [criticalHessianMatrix, criticalHessianMatrix, criticalHessian_congr_of_eventuallyEq hfg]
+theorem _root_.Module.Basis.criticalHessianMatrix_congr_of_eventuallyEq
+    (b : Module.Basis ι ℝ (TangentSpace I x))
+    (hfg : f =ᶠ[𝓝 x] g) : b.criticalHessianMatrix f = b.criticalHessianMatrix g := by
+  rw [Module.Basis.criticalHessianMatrix, Module.Basis.criticalHessianMatrix,
+    criticalHessian_congr_of_eventuallyEq hfg]
 
 /-- Negating the function negates its critical Hessian matrix. -/
 @[simp]
-theorem criticalHessianMatrix_neg (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    criticalHessianMatrix (I := I) (f := -f) (x := x) b =
-      -criticalHessianMatrix (I := I) (f := f) (x := x) b := by
+theorem _root_.Module.Basis.criticalHessianMatrix_neg
+    (b : Module.Basis ι ℝ (TangentSpace I x)) :
+    b.criticalHessianMatrix (-f) = -b.criticalHessianMatrix f := by
   ext i j
-  simp only [criticalHessianMatrix_apply, criticalHessian_neg, neg_apply, Matrix.neg_apply]
+  simp only [Module.Basis.criticalHessianMatrix_apply, criticalHessian_neg, neg_apply,
+    Matrix.neg_apply]
 
 /-- Critical Hessian matrices in two tangent-space bases are related by congruence. -/
-theorem criticalHessianMatrix_changeBasis {κ : Type*} [Fintype κ] [DecidableEq κ]
+theorem _root_.Module.Basis.criticalHessianMatrix_changeBasis
+    {κ : Type*} [Fintype κ] [DecidableEq κ]
     (b : Module.Basis ι ℝ (TangentSpace I x)) (c : Module.Basis κ ℝ (TangentSpace I x)) :
-    Matrix.transpose (b.toMatrix c) *
-        criticalHessianMatrix (I := I) (f := f) (x := x) b * b.toMatrix c =
-      criticalHessianMatrix (I := I) (f := f) (x := x) c :=
+    Matrix.transpose (b.toMatrix c) * b.criticalHessianMatrix f * b.toMatrix c =
+      c.criticalHessianMatrix f :=
   LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b c (criticalHessian I f x).toBilinForm
 
 /-- The critical Hessian is recovered from its matrix by the usual coordinate formula. -/
-theorem criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec
+theorem _root_.Module.Basis.criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec
     (b : Module.Basis ι ℝ (TangentSpace I x)) (v w : TangentSpace I x) :
     criticalHessian I f x v w =
-      dotProduct (b.repr v)
-        ((criticalHessianMatrix (I := I) (f := f) (x := x) b).mulVec (b.repr w)) :=
+      dotProduct (b.repr v) ((b.criticalHessianMatrix f).mulVec (b.repr w)) :=
   (criticalHessian I f x).toBilinForm.apply_eq_dotProduct_toMatrix_mulVec b v w
 
 /-- The negative inertia index of the critical Hessian matrix is the manifold Morse index. -/
-theorem sigNeg_toQuadraticForm_criticalHessianMatrix
+theorem _root_.Module.Basis.sigNeg_toQuadraticForm_criticalHessianMatrix
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    sigNeg (criticalHessianMatrix (I := I) (f := f) (x := x) b).toQuadraticForm' =
-      manifoldMorseIndex I f x := by
-  rw [criticalHessianMatrix, LinearMap.BilinForm.sigNeg_toMatrix,
+    sigNeg (b.criticalHessianMatrix f).toQuadraticForm' = manifoldMorseIndex I f x := by
+  rw [Module.Basis.criticalHessianMatrix, LinearMap.BilinForm.sigNeg_toMatrix,
     manifoldMorseIndex_eq_sigNeg_criticalHessian]
 
 /-- The critical Hessian is invertible exactly when its matrix in any basis has nonzero
 determinant. -/
-theorem criticalHessian_isInvertible_iff_det_ne_zero
+theorem _root_.Module.Basis.criticalHessian_isInvertible_iff_det_ne_zero
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    (criticalHessian I f x).IsInvertible ↔
-      (criticalHessianMatrix (I := I) (f := f) (x := x) b).det ≠ 0 := by
-  let _ : FiniteDimensional ℝ (TangentSpace I x) := b.finiteDimensional_of_finite
-  rw [criticalHessianMatrix, ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
-  constructor
-  · intro h
-    exact LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
-      ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mpr h.injective)
-  · intro h
-    -- The tangent space is the model space `E`, so invertibility follows from its normed structure.
-    let _ : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
-    exact ContinuousLinearMap.isInvertible_of_injective (E := E)
-      ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mp h.1)
+    (criticalHessian I f x).IsInvertible ↔ (b.criticalHessianMatrix f).det ≠ 0 := by
+  have : FiniteDimensional ℝ (TangentSpace I x) := b.finiteDimensional_of_finite
+  rw [Module.Basis.criticalHessianMatrix, ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
+  refine ⟨fun h ↦ LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
+    ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mpr h.injective),
+    fun h ↦ ?_⟩
+  -- `b` is also a basis of the model space `E`, which is `TangentSpace I x` by definition.
+  have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+  exact criticalHessian_isInvertible_of_injective
+    ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mp h.1)
 
 end Matrix
 
@@ -231,7 +238,7 @@ variable [FiniteDimensional ℝ E]
 
 /-- Restricting the critical Hessian to a tangent subspace cannot increase its negative inertia
 index. -/
-theorem sigNeg_restrict_criticalHessian_le_manifoldMorseIndex
+theorem _root_.Submodule.sigNeg_restrict_criticalHessian_le_manifoldMorseIndex
     (W : Submodule ℝ (TangentSpace I x)) :
     sigNeg ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W) ≤
       manifoldMorseIndex I f x := by
@@ -355,47 +362,46 @@ section Matrix
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The matrix of the critical Hessian of a `C²` function is symmetric. -/
-theorem criticalHessianMatrix_isSymm (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    (criticalHessianMatrix (I := I) (f := f) (x := x) b).IsSymm := by
-  rw [criticalHessianMatrix,
+theorem _root_.Module.Basis.criticalHessianMatrix_isSymm
+    (b : Module.Basis ι ℝ (TangentSpace I x))
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) : (b.criticalHessianMatrix f).IsSymm := by
+  rw [Module.Basis.criticalHessianMatrix,
     (criticalHessian I f x).toBilinForm.isSymm_toMatrix_iff_isSymm b]
   exact ⟨criticalHessian_apply_swap hf⟩
 
 /-- The matrix of the critical Hessian of a `C²` function is positive definite exactly when the
 critical Hessian is positive definite. -/
-theorem criticalHessianMatrix_posDef_iff (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    (criticalHessianMatrix (I := I) (f := f) (x := x) b).PosDef ↔
-      ∀ v ≠ 0, 0 < criticalHessian I f x v v := by
+theorem _root_.Module.Basis.criticalHessianMatrix_posDef_iff
+    (b : Module.Basis ι ℝ (TangentSpace I x))
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    (b.criticalHessianMatrix f).PosDef ↔ ∀ v ≠ 0, 0 < criticalHessian I f x v v := by
   simp only [Matrix.posDef_iff_dotProduct_mulVec, star_trivial, Matrix.isHermitian_iff_isSymm,
-    criticalHessianMatrix_isSymm hf b, true_and]
+    b.criticalHessianMatrix_isSymm hf, true_and]
   refine ⟨fun h v hv ↦ ?_, fun h c hc ↦ ?_⟩
-  · rw [criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec b]
+  · rw [b.criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec]
     exact h ((not_congr Finsupp.coe_eq_zero).mpr (b.repr.map_ne_zero_iff.mpr hv))
   · have hpos := h _ (b.equivFun.symm.map_ne_zero_iff.mpr hc)
-    rwa [criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec b, ← b.equivFun_apply,
+    rwa [b.criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec, ← b.equivFun_apply,
       b.equivFun.apply_symm_apply] at hpos
 
 /-- The negated matrix of the critical Hessian of a `C²` function is positive definite exactly when
 the critical Hessian is negative definite. -/
-theorem neg_criticalHessianMatrix_posDef_iff (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (b : Module.Basis ι ℝ (TangentSpace I x)) :
-    (-criticalHessianMatrix (I := I) (f := f) (x := x) b).PosDef ↔
-      ∀ v ≠ 0, criticalHessian I f x v v < 0 := by
+theorem _root_.Module.Basis.neg_criticalHessianMatrix_posDef_iff
+    (b : Module.Basis ι ℝ (TangentSpace I x))
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    (-b.criticalHessianMatrix f).PosDef ↔ ∀ v ≠ 0, criticalHessian I f x v v < 0 := by
   have hf' : ContMDiffAt I 𝓘(ℝ) 2 (-f) x := contDiff_neg.contMDiff.contMDiffAt.comp x hf
-  rw [← criticalHessianMatrix_neg, criticalHessianMatrix_posDef_iff hf' b]
+  rw [← b.criticalHessianMatrix_neg, b.criticalHessianMatrix_posDef_iff hf']
   simp only [criticalHessian_neg, neg_apply, neg_pos]
 
 /-- In a tangent-space basis, nondegeneracy of a critical point is equivalent to `C²` regularity,
 vanishing differential, and a nonzero determinant of the critical Hessian matrix. -/
-theorem isManifoldNondegenerateCriticalPoint_iff_det_criticalHessianMatrix
+theorem _root_.Module.Basis.isManifoldNondegenerateCriticalPoint_iff_det_criticalHessianMatrix
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
     IsManifoldNondegenerateCriticalPoint I f x ↔
-      ContMDiffAt I 𝓘(ℝ) 2 f x ∧ mvfderiv I f x = 0 ∧
-        (criticalHessianMatrix (I := I) (f := f) (x := x) b).det ≠ 0 := by
+      ContMDiffAt I 𝓘(ℝ) 2 f x ∧ mvfderiv I f x = 0 ∧ (b.criticalHessianMatrix f).det ≠ 0 := by
   rw [isManifoldNondegenerateCriticalPoint_iff_criticalHessian,
-    criticalHessian_isInvertible_iff_det_ne_zero (I := I) (f := f) (x := x) b]
+    b.criticalHessian_isInvertible_iff_det_ne_zero]
 
 end Matrix
 
