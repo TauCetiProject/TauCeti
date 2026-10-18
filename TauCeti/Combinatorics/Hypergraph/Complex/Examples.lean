@@ -25,7 +25,7 @@ open Finset PreAbstractSimplicialComplex
 
 /-- The filled triangle, obtained by adjoining the empty face to the abstract two-simplex. -/
 noncomputable def filledTriangle : HypergraphComplex 3 (Fin 3) :=
-  ofPreAbstractSimplicialComplex (simplex univ) (finite_faces_simplex univ)
+  .ofPreAbstractSimplicialComplex (simplex univ) (finite_faces_simplex univ)
 
 /-- The faces of the filled triangle are the subsets of its three vertices at each level. -/
 @[simp]

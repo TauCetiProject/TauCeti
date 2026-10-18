@@ -18,6 +18,9 @@ records faces in finite cardinality levels. The conversions in this file identif
 pre-abstract simplicial complexes with finitely many faces with these finite graded complexes after
 forgetting or adjoining the empty face. Neither conversion requires a finite ambient vertex type.
 
+Use `HypergraphComplex.ofPreAbstractSimplicialComplex` to construct a finite graded complex and
+`HypergraphComplex.toPreAbstractSimplicialComplex` to forget its empty face and grading.
+
 The grading uses face cardinality: a triple lies in level `3`, corresponding to simplicial
 dimension `2`.
 -/
@@ -108,7 +111,8 @@ theorem finite_faces_toPreAbstractSimplicialComplex (C : HypergraphComplex r V) 
   exact mem_biUnion.mpr ⟨⟨s.card, Nat.lt_succ_of_le hle⟩, mem_univ _, hface⟩
 
 /-- Keep the faces of cardinality at most `r` of a finite precomplex and adjoin the empty face.
-On a finite ambient type, the finiteness proof can be supplied by `Set.toFinite _`. -/
+On a finite ambient type, the finiteness proof can be supplied by `Set.toFinite _`.
+With an expected `HypergraphComplex r V` type, use `.ofPreAbstractSimplicialComplex K hfinite`. -/
 noncomputable def ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialComplex V)
     (hfinite : K.faces.Finite) : HypergraphComplex r V := by
   classical
