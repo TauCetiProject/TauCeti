@@ -320,6 +320,13 @@ theorem restrict_connectedCoverHomeomorph (z : (X.connectedCover.cover : TopCat)
   unfold connectedCoverHomeomorph connectedCover
   rfl
 
+/-- Under the canonical identification, the branched-cover projection is the packaged cover's
+projection, read in the Riemann sphere. -/
+theorem π_connectedCoverHomeomorph (z : (X.connectedCover.cover : TopCat)) :
+    X.π (X.connectedCoverHomeomorph z) =
+      (((X.connectedCover.cover.proj z : ThricePuncturedSphere) : ℂ) : OnePoint ℂ) := by
+  rw [← coe_restrict_apply, restrict_connectedCoverHomeomorph]
+
 /-- **The local degrees over any point add up to the degree.** Over an unmarked point this is the
 degree hypothesis; over a marked point `q`, it says that the multiset of local degrees over `q`
 is a partition of `n`. -/
@@ -523,7 +530,7 @@ a single point, which is the limit. -/
 
 section Extend
 
-variable {X} {Y : TopBranchedCover n}
+variable {X} {m : ℕ} {Y : TopBranchedCover m}
 
 /-- At a point `x` of a marked fibre, the unbranched part has preconnected approach regions: `x`
 has arbitrarily small neighbourhoods `V` such that `V \ {x}` is connected and contained in the
@@ -537,10 +544,12 @@ private theorem exists_mem_nhds_isPreconnected_inter {x : X.Z}
       (X.finite_preimage_marked.sdiff.isClosed.isOpen_compl.mem_nhds fun h ↦ h.2 (mem_singleton x)))
   refine ⟨V, hV, fun z hz ↦ (hVs hz).1, ?_⟩
   convert hVconn.isPreconnected using 1
+  -- Within `V`, the only point of a marked fibre is `x` itself.
   ext z
-  rw [range_toOnePoint, preimage_compl] at hx ⊢
-  exact ⟨fun ⟨hz, hzV⟩ ↦ ⟨hzV, fun h ↦ hx (mem_singleton_iff.1 h ▸ hz)⟩,
-    fun ⟨hzV, hzx⟩ ↦ ⟨fun hz ↦ (hVs hzV).2 ⟨hz, hzx⟩, hzV⟩⟩
+  have hz := @hVs z
+  simp only [range_toOnePoint, preimage_compl, mem_compl_iff, mem_preimage, mem_inter_iff,
+    Set.mem_sdiff, mem_singleton_iff] at hx hz ⊢
+  grind
 
 /-- **Maps of unbranched parts have limits at the marked fibres.** A continuous map over the
 thrice-punctured sphere from the unbranched part of `X` to that of `Y` converges, at every point of
@@ -605,9 +614,7 @@ theorem extend_apply_val (z : X.π ⁻¹' range toOnePoint) : extend f hπ z = f
 of `f`. -/
 theorem eq_extend {g : C(X.Z, Y.Z)} (hg : ∀ z : X.π ⁻¹' range toOnePoint, g z = f z) :
     g = extend f hπ :=
-  ContinuousMap.ext <| congrFun <| Continuous.ext_on X.dense_preimage_range g.continuous
-    (extend f hπ).continuous fun z hz ↦ by
-      rw [hg ⟨z, hz⟩, ← extend_apply_val f hπ ⟨z, hz⟩]
+  ContinuousMap.ext <| congrFun (X.dense_preimage_range.extend_unique hg g.continuous).symm
 
 /-- The extension of `f` commutes with the projections. -/
 @[simp]
@@ -675,9 +682,8 @@ def ofConnectedCoverIso (e : X.connectedCover.cover ≅ Y.connectedCover.cover) 
       (TopCat.homeoOfIso ((CoveringSpace.FullSubcategory.totalSpace _ _).mapIso e)).trans
         Y.connectedCoverHomeomorph) fun z ↦ by
     obtain ⟨w, rfl⟩ := X.connectedCoverHomeomorph.surjective z
-    rw [← X.coe_restrict_apply, ← Y.coe_restrict_apply, Homeomorph.trans_apply,
-      Homeomorph.trans_apply, Homeomorph.symm_apply_apply, restrict_connectedCoverHomeomorph,
-      restrict_connectedCoverHomeomorph]
+    rw [Homeomorph.trans_apply, Homeomorph.trans_apply, Homeomorph.symm_apply_apply,
+      π_connectedCoverHomeomorph, π_connectedCoverHomeomorph]
     exact congrArg (fun z ↦ (((z : ThricePuncturedSphere) : ℂ) : OnePoint ℂ))
       (CategoryTheory.ConcreteCategory.congr_hom (CoveringSpace.FullSubcategory.w e.hom) w)
 
