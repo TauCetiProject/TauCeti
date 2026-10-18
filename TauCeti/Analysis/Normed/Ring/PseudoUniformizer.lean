@@ -84,7 +84,7 @@ theorem norm_units_smul_of_norm_mul (m : M) : ‖(u : R) • m‖ = ‖(u : R)�
   calc ‖(u : R)‖ * ‖m‖ = ‖(u : R)‖ * ‖((u⁻¹ : Rˣ) : R) • (u : R) • m‖ := by simp [smul_smul]
     _ ≤ ‖(u : R)‖ * (‖((u⁻¹ : Rˣ) : R)‖ * ‖(u : R) • m‖) := by gcongr; exact norm_smul_le _ _
     _ = ‖(u : R) • m‖ := by
-        rw [norm_units_inv_of_norm_mul hu0 hu]
+        rw [norm_units_inv_of_norm_mul hu0.ne' hu]
         field_simp
 
 /-- The inverse of a unit of positive norm by which left multiplication scales the norm exactly
@@ -115,7 +115,7 @@ end Module
 /-- An integer power of a unit of positive norm by which left multiplication scales the norm
 exactly has the corresponding power of its norm. -/
 theorem norm_units_zpow_of_norm_mul (n : ℤ) : ‖((u ^ n : Rˣ) : R)‖ = ‖(u : R)‖ ^ n := by
-  simpa [norm_one_of_norm_units_mul hu0 hu] using norm_units_zpow_smul_of_norm_mul hu0 hu n (1 : R)
+  simpa [norm_one_of_norm_mul hu0.ne' hu] using norm_units_zpow_smul_of_norm_mul hu0 hu n (1 : R)
 
 /-- A natural power of a unit of positive norm by which left multiplication scales the norm
 exactly has the corresponding power of its norm. -/
@@ -151,7 +151,7 @@ variable {R : Type*} [SeminormedRing R] (ϖ : PseudoUniformizer R)
 
 include ϖ in
 /-- The existence of a multiplicative pseudo-uniformiser forces `‖1‖ = 1`. -/
-theorem norm_one : ‖(1 : R)‖ = 1 := norm_one_of_norm_units_mul ϖ.norm_pos ϖ.norm_mul
+theorem norm_one : ‖(1 : R)‖ = 1 := norm_one_of_norm_mul ϖ.norm_pos.ne' ϖ.norm_mul
 
 include ϖ in
 /-- A seminormed ring with a multiplicative pseudo-uniformiser satisfies `‖1‖ = 1`. -/
@@ -166,7 +166,7 @@ theorem nontrivial : Nontrivial R :=
 /-- The inverse of a multiplicative pseudo-uniformiser has the inverse norm. -/
 @[simp]
 theorem norm_inv : ‖((ϖ.unit⁻¹ : Rˣ) : R)‖ = ‖(ϖ.unit : R)‖⁻¹ :=
-  norm_units_inv_of_norm_mul ϖ.norm_pos ϖ.norm_mul
+  norm_units_inv_of_norm_mul ϖ.norm_pos.ne' ϖ.norm_mul
 
 section Module
 
