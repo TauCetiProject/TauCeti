@@ -470,7 +470,8 @@ theorem inf_mem_starSubdivision_cones {τ₀ C : PointedCone ℝ V} (h : τ₀.I
       | some ρ =>
         have hρ : ρ ∈ Set.range e := by
           rw [← hτ.faceOrderIso_apply hi ⟨τ₀, h⟩, hτ.mem_faceOrderIso_iff hi]
-          exact hkτ₀
+          rw [← PointedCone.Face.mem_toPointedCone]
+          rwa [starSubdivisionGenerator_some] at hkτ₀
         obtain ⟨ν, rfl⟩ := hρ
         exact ⟨some ν, rfl⟩
     exact ⟨_, ⟨k₀, hk, rfl⟩, by rw [starSubdivisionGenerator_map_faceEmbedding]⟩
