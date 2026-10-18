@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Orientation
+public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -20,6 +20,12 @@ pointwise object for the manifold divergence and Stokes identities.
 
 The construction is total, as are the rough forms in the differential-form API.  Its defining
 characterization is that it evaluates to `1` on every positively oriented orthonormal basis.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Proposition 15.29.  The normalization on positively oriented orthonormal bases is the
+  characterization stated in that proposition.
 -/
 
 public section
@@ -40,13 +46,22 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The Riemannian volume form determined by an orientation, defined fibrewise on tangent spaces. -/
 noncomputable def riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)) :
     RoughForm I M ℝ m := fun x ↦ by
-  let : Fact (Module.finrank ℝ (TangentSpace I x) = m) := by
-    refine ⟨(finrank_tangentSpace (I := I) x).trans ?_⟩
-    simpa using o.card_eq.symm
-  exact AlternatingMap.mkContinuous ((Manifold.Orientation.orientationAt o x).volumeForm) 1 (by
-    intro v
-    have h := (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_le v
-    simpa [Real.norm_eq_abs] using h)
+  let : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+  exact (Manifold.Orientation.orientationAt o x).volumeFormL
+
+/-- Evaluation of the Riemannian volume form is Mathlib's oriented volume form. -/
+theorem riemannianVolumeForm_apply
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (v : Fin m → TangentSpace I x) :
+    riemannianVolumeForm o x v =
+      (letI : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+        ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+       (Manifold.Orientation.orientationAt o x).volumeForm v) := by
+  let : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+  change (Manifold.Orientation.orientationAt o x).volumeFormL v = _
+  exact Orientation.volumeFormL_apply _ _
 
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
 theorem riemannianVolumeForm_apply_orthonormal
@@ -55,9 +70,53 @@ theorem riemannianVolumeForm_apply_orthonormal
     (hb : b.toBasis.orientation = Manifold.Orientation.orientationAt o x) :
     riemannianVolumeForm o x b = 1 := by
   let : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
-    ⟨(finrank_tangentSpace (I := I) x).trans (by simpa using o.card_eq.symm)⟩
-  rw [riemannianVolumeForm, AlternatingMap.coe_mkContinuous,
-    (Manifold.Orientation.orientationAt o x).volumeForm_robust b hb]
+    ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+  rw [riemannianVolumeForm_apply, (Manifold.Orientation.orientationAt o x).volumeForm_robust b hb]
   exact b.toBasis.det_self
+
+/-- The Riemannian volume form has absolute value one on every orthonormal basis. -/
+theorem abs_riemannianVolumeForm_apply_orthonormal
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x)) :
+    |riemannianVolumeForm o x b| = 1 := by
+  let : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+  rw [riemannianVolumeForm_apply]
+  exact (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_of_orthonormal b
+
+/-- The Riemannian volume form is negative on an oppositely oriented orthonormal basis. -/
+theorem riemannianVolumeForm_apply_orthonormal_of_opposite
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.toBasis.orientation ≠ Manifold.Orientation.orientationAt o x) :
+    riemannianVolumeForm o x b = -1 := by
+  let : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+  rw [riemannianVolumeForm_apply,
+    (Manifold.Orientation.orientationAt o x).volumeForm_robust_neg b hb]
+  rw [neg_apply]
+  simpa only [OrthonormalBasis.coe_toBasis] using congrArg Neg.neg b.toBasis.det_self
+
+/-- A top form taking value one on an oriented orthonormal basis is the Riemannian volume form. -/
+theorem eq_riemannianVolumeForm_of_apply_orthonormal
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (ω : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ)
+    (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.toBasis.orientation = Manifold.Orientation.orientationAt o x)
+    (hω : ω b = 1) :
+    ω = riemannianVolumeForm o x := by
+  let : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+  ext v
+  rw [riemannianVolumeForm_apply]
+  calc
+    ω v = ω.toAlternatingMap v := rfl
+    _ = (ω.toAlternatingMap b • b.toBasis.det) v :=
+      congrArg (fun f ↦ f v) (ω.toAlternatingMap.eq_smul_basis_det b.toBasis)
+    _ = b.toBasis.det v := by
+      rw [show ω.toAlternatingMap b = 1 by simpa using hω]
+      simp
+    _ = (Manifold.Orientation.orientationAt o x).volumeForm v := by
+      rw [(Manifold.Orientation.orientationAt o x).volumeForm_robust b hb]
 
 end TauCeti

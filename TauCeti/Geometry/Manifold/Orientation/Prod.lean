@@ -133,8 +133,8 @@ theorem orientationAt_prod (o : Orientation I M (Fin m))
     (o' : Orientation I' M' (Fin n)) (x : M × M') :
     (o.prod o').orientationAt x =
       _root_.Orientation.prod (o.orientationAt x.1) (o'.orientationAt x.2)
-        ((TauCeti.finrank_tangentSpace (I := I) x.1).trans (by simpa using o.card_eq.symm))
-        ((TauCeti.finrank_tangentSpace (I := I') x.2).trans (by simpa using o'.card_eq.symm)) := by
+        (by simpa using o.finrank_tangentSpace_eq x.1)
+        (by simpa using o'.finrank_tangentSpace_eq x.2) := by
   induction o using Orientation.inductionOn with | h l =>
     induction o' using Orientation.inductionOn with | h l' =>
       rw [prod_mk, orientationAt_mk, OrientationLift.orientationAt_eq,

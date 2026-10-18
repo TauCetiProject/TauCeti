@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -32,20 +33,19 @@ attribute [local instance] Complex.finrank_real_complex_fact
 
 /-- The existing oriented complex volume form as a continuous alternating map. -/
 def complexAreaForm : ℂ [⋀^Fin 2]→L[ℝ] ℝ :=
-  Complex.orientation.volumeForm.mkContinuous 1 fun v ↦ by
-    simpa only [Real.norm_eq_abs, one_mul] using Complex.orientation.abs_volumeForm_apply_le v
+  Complex.orientation.volumeFormL
 
 /-- Evaluation retains the actual normalized orientation volume form. -/
 theorem complexAreaForm_apply (v : Fin 2 → ℂ) :
-    complexAreaForm v = Complex.orientation.volumeForm v := (rfl)
+    complexAreaForm v = Complex.orientation.volumeForm v := by
+  change Complex.orientation.volumeFormL v = _
+  exact Orientation.volumeFormL_apply _ _
 
 /-- The normalized volume coefficient in the actual positive complex basis is one. -/
 @[simp]
 theorem complexAreaForm_one_I : complexAreaForm ![1, Complex.I] = 1 := by
   rw [← Complex.coe_basisOneI]
-  rw [complexAreaForm_apply,
-    Complex.orientation.volumeForm_robust Complex.orthonormalBasisOneI rfl]
-  exact Complex.basisOneI.det_self
+  exact Orientation.volumeFormL_robust Complex.orientation Complex.orthonormalBasisOneI rfl
 
 /-- The canonical complex volume form transported to the actual tangent fibers. -/
 def manifoldAreaForm : RoughForm 𝓘(ℝ, ℂ) ℂ ℝ 2 := fun z ↦
