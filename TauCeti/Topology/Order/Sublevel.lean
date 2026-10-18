@@ -29,9 +29,9 @@ is the topological half of the deformation of sublevels across a band without cr
 where the motion is the flow of a vector field `X` with `df(X) = -1` on the band.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
-`{f ≤ b}` exactly onto `{f ≤ a}` (`TauCeti.apply_flow_le_iff_of_apply_eq_sub`), and, when `f`
+`{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
 strictly decreases along flow lines starting on the level `a`, the level `f⁻¹(b)` exactly onto
-`f⁻¹(a)` (`TauCeti.apply_flow_eq_iff_of_apply_eq_sub`). This is the topological half of the
+`f⁻¹(a)` (`Flow.apply_eq_iff_of_apply_eq_sub`). This is the topological half of the
 homeomorphism between the sublevels on either side of a band without critical points.
 -/
 
@@ -135,7 +135,9 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       map_one_left := fun x ↦ Subtype.ext <| by simp [hφ0]
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
 
-section Flow
+end TauCeti
+
+namespace Flow
 
 variable {X : Type*} [TopologicalSpace X] {f : X → ℝ} {a b : ℝ} (φ : Flow ℝ X)
 
@@ -143,7 +145,7 @@ variable {X : Type*} [TopologicalSpace X] {f : X → ℝ} {a b : ℝ} (φ : Flow
 increases in positive time, and which lowers `f` at unit speed through the band `a ≤ f ≤ b`. Then
 the time-`(b - a)` map of `φ` carries a point into `{f ≤ a}` exactly when the point lies in
 `{f ≤ b}`. -/
-theorem apply_flow_le_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
+theorem apply_le_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
     (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t) (x : X) :
     f (φ (b - a) x) ≤ a ↔ f x ≤ b := by
@@ -175,17 +177,17 @@ theorem apply_flow_le_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
         _ = a := by rw [h1]; ring
 
 /-- **Levels along a unit-speed descent.** Under the hypotheses of
-`TauCeti.apply_flow_le_iff_of_apply_eq_sub`, suppose moreover that `f` drops strictly below `a`
+`Flow.apply_le_iff_of_apply_eq_sub`, suppose moreover that `f` drops strictly below `a`
 along the flow line of every point of the level `f⁻¹(a)`. Then the time-`(b - a)` map of `φ`
 carries a point into `f⁻¹(a)` exactly when the point lies in `f⁻¹(b)`. -/
-theorem apply_flow_eq_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
+theorem apply_eq_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
     (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
     (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) (x : X) :
     f (φ (b - a) x) = a ↔ f x = b := by
   constructor
   · intro h
-    have hb := (apply_flow_le_iff_of_apply_eq_sub φ hf hab hanti hφf x).1 h.le
+    have hb := (φ.apply_le_iff_of_apply_eq_sub hf hab hanti hφf x).1 h.le
     refine hb.eq_of_not_lt fun hb' ↦ ?_
     rcases lt_or_ge (f x) a with hxa | hxa
     · -- Below the level `a`, the flow line never rises back to `a`.
@@ -202,5 +204,3 @@ theorem apply_flow_eq_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
     ring
 
 end Flow
-
-end TauCeti

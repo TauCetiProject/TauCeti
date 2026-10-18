@@ -168,8 +168,8 @@ theorem exists_diffeomorph_sublevel (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a 
   have hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a := fun x t hx ht ↦
     (hlt x t hx.ge (hx.trans_le hab) ht).trans_eq hx
   refine ⟨⟨(φ.toHomeomorph (b - a)).toEquiv, hφs (b - a), hφs (-(b - a))⟩, fun x ↦
-    ⟨apply_flow_le_iff_of_apply_eq_sub φ hf.continuous hab hanti' hφ x,
-      apply_flow_eq_iff_of_apply_eq_sub φ hf.continuous hab hanti' hφ hφa x⟩⟩
+    ⟨φ.apply_le_iff_of_apply_eq_sub hf.continuous hab hanti' hφ x,
+      φ.apply_eq_iff_of_apply_eq_sub hf.continuous hab hanti' hφ hφa x⟩⟩
 
 /-- **Sublevels on either side of a band without critical points are homeomorphic**
 (Milnor, Theorem 3.1). Under the hypotheses of `TauCeti.exists_diffeomorph_sublevel`, there is a
