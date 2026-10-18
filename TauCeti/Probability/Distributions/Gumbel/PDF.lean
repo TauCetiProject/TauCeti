@@ -66,6 +66,16 @@ def gumbelPDFReal (m s x : ℝ) : ℝ :=
 def gumbelPDF (m s x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (gumbelPDFReal m s x)
 
+/-- The `ℝ≥0∞`-valued Gumbel density is `ENNReal.ofReal` of the real-valued one. -/
+theorem gumbelPDF_def (m s x : ℝ) :
+    gumbelPDF m s x = ENNReal.ofReal (gumbelPDFReal m s x) :=
+  (rfl)
+
+/-- The Gumbel density is finite. -/
+@[simp]
+theorem gumbelPDF_ne_top (m s x : ℝ) : gumbelPDF m s x ≠ ⊤ :=
+  ENNReal.ofReal_ne_top
+
 /-- The Gumbel density vanishes for nonpositive scale. -/
 @[simp]
 theorem gumbelPDFReal_of_nonpos (hs : s ≤ 0) (m x : ℝ) : gumbelPDFReal m s x = 0 := by
