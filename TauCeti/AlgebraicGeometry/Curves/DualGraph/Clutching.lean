@@ -74,6 +74,30 @@ section External
 
 variable (G₁ : DualGraph.{u₁} (Option ι)) (G₂ : DualGraph.{u₂} (Option κ))
 
+private abbrev clutchEndpoint :
+    Option (G₁.Edge ⊕ G₂.Edge) → Fin 2 → G₁.Vertex ⊕ G₂.Vertex
+  | none => ![.inl (G₁.marking none), .inr (G₂.marking none)]
+  | some (.inl e) => fun i ↦ .inl (G₁.endpoint e i)
+  | some (.inr e) => fun i ↦ .inr (G₂.endpoint e i)
+
+private lemma clutchLiftLeft (v w : G₁.Vertex) :
+    Relation.ReflTransGen
+      (fun v w ↦ ∃ e,
+        (clutchEndpoint G₁ G₂ e 0 = v ∧ clutchEndpoint G₁ G₂ e 1 = w) ∨
+          (clutchEndpoint G₁ G₂ e 0 = w ∧ clutchEndpoint G₁ G₂ e 1 = v))
+      (.inl v) (.inl w) :=
+  (G₁.connected v w).lift Sum.inl fun _ _ ⟨e, h⟩ ↦
+    ⟨some (.inl e), by simpa using h⟩
+
+private lemma clutchLiftRight (v w : G₂.Vertex) :
+    Relation.ReflTransGen
+      (fun v w ↦ ∃ e,
+        (clutchEndpoint G₁ G₂ e 0 = v ∧ clutchEndpoint G₁ G₂ e 1 = w) ∨
+          (clutchEndpoint G₁ G₂ e 0 = w ∧ clutchEndpoint G₁ G₂ e 1 = v))
+      (.inr v) (.inr w) :=
+  (G₂.connected v w).lift Sum.inr fun _ _ ⟨e, h⟩ ↦
+    ⟨some (.inr e), by simpa using h⟩
+
 /-- External clutching: the dual graph obtained by gluing a curve with dual graph `G₁` to a curve
 with dual graph `G₂` along their markings `none`. It is the disjoint union of `G₁` and `G₂` with a
 new edge, the edge `none`, joining the components carrying those two markings. -/
@@ -89,14 +113,14 @@ abbrev clutch : DualGraph.{max u₁ u₂} (ι ⊕ κ) where
   connected := by
     -- Chains in `G₁` and `G₂` lift to the two halves, and the new edge joins the halves.
     rintro (v | v) (w | w)
-    · exact (G₁.connected v w).lift Sum.inl fun _ _ ⟨e, h⟩ ↦ ⟨some (.inl e), by simpa using h⟩
+    · exact clutchLiftLeft G₁ G₂ v w
     · refine .trans (b := .inl (G₁.marking none)) ?_ (.head ⟨none, Or.inl ⟨rfl, rfl⟩⟩ ?_)
-      · exact (G₁.connected v _).lift Sum.inl fun _ _ ⟨e, h⟩ ↦ ⟨some (.inl e), by simpa using h⟩
-      · exact (G₂.connected _ w).lift Sum.inr fun _ _ ⟨e, h⟩ ↦ ⟨some (.inr e), by simpa using h⟩
+      · exact clutchLiftLeft G₁ G₂ v _
+      · exact clutchLiftRight G₁ G₂ _ w
     · refine .trans (b := .inr (G₂.marking none)) ?_ (.head ⟨none, Or.inr ⟨rfl, rfl⟩⟩ ?_)
-      · exact (G₂.connected v _).lift Sum.inr fun _ _ ⟨e, h⟩ ↦ ⟨some (.inr e), by simpa using h⟩
-      · exact (G₁.connected _ w).lift Sum.inl fun _ _ ⟨e, h⟩ ↦ ⟨some (.inl e), by simpa using h⟩
-    · exact (G₂.connected v w).lift Sum.inr fun _ _ ⟨e, h⟩ ↦ ⟨some (.inr e), by simpa using h⟩
+      · exact clutchLiftRight G₁ G₂ v _
+      · exact clutchLiftLeft G₁ G₂ _ w
+    · exact clutchLiftRight G₁ G₂ v w
 
 @[simp]
 lemma endpoint_clutch_none :
@@ -161,17 +185,19 @@ theorem arithmeticGenus_clutch :
 marking. -/
 theorem valence_clutch_inl (v : G₁.Vertex) :
     (G₁.clutch G₂).valence (.inl v) = G₁.valence v + if G₁.marking none = v then 1 else 0 := by
-  rw [valence_eq_sum, valence_eq_sum, Fintype.sum_option, Fintype.sum_sum_type, add_comm]
-  simp only [card_filter, Fin.sum_univ_two]
-  simp
+  simp only [valence_eq_sum, card_filter, Fintype.sum_option, Fintype.sum_sum_type,
+    Fin.sum_univ_two, add_comm, Fin.isValue, Matrix.cons_val_zero, Sum.inl.injEq,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, reduceCtorEq, reduceIte, add_zero, zero_add,
+    sum_const_zero]
 
 /-- A component of `G₂` gains one branch of the new node exactly when it carries the glued
 marking. -/
 theorem valence_clutch_inr (v : G₂.Vertex) :
     (G₁.clutch G₂).valence (.inr v) = G₂.valence v + if G₂.marking none = v then 1 else 0 := by
-  rw [valence_eq_sum, valence_eq_sum, Fintype.sum_option, Fintype.sum_sum_type, add_comm]
-  simp only [card_filter, Fin.sum_univ_two]
-  simp
+  simp only [valence_eq_sum, card_filter, Fintype.sum_option, Fintype.sum_sum_type,
+    Fin.sum_univ_two, add_comm, Fin.isValue, Matrix.cons_val_zero, reduceCtorEq, reduceIte,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Sum.inr.injEq, zero_add, add_zero,
+    sum_const_zero]
 
 variable [Fintype ι] [Fintype κ]
 
@@ -179,17 +205,17 @@ variable [Fintype ι] [Fintype κ]
 theorem numMarkings_clutch_inl (v : G₁.Vertex) :
     (G₁.clutch G₂).numMarkings (.inl v) + (if G₁.marking none = v then 1 else 0) =
       G₁.numMarkings v := by
-  rw [numMarkings_def, numMarkings_def, card_filter, card_filter, Fintype.sum_option,
-    Fintype.sum_sum_type, add_comm]
-  simp
+  simp only [numMarkings_def, card_filter, Fintype.sum_option, Fintype.sum_sum_type,
+    add_comm, Sum.elim_inl, Sum.inl.injEq, Sum.elim_inr, reduceCtorEq, reduceIte,
+    sum_const_zero, zero_add]
 
 /-- A component of `G₂` loses the glued marking exactly when it carries it. -/
 theorem numMarkings_clutch_inr (v : G₂.Vertex) :
     (G₁.clutch G₂).numMarkings (.inr v) + (if G₂.marking none = v then 1 else 0) =
       G₂.numMarkings v := by
-  rw [numMarkings_def, numMarkings_def, card_filter, card_filter, Fintype.sum_option,
-    Fintype.sum_sum_type, add_comm]
-  simp
+  simp only [numMarkings_def, card_filter, Fintype.sum_option, Fintype.sum_sum_type,
+    add_comm, Sum.elim_inl, reduceCtorEq, reduceIte, sum_const_zero, Sum.elim_inr,
+    Sum.inr.injEq, zero_add]
 
 /-- External clutching preserves the log-canonical degree of every component of `G₁`: the glued
 marking becomes a branch of the new node. -/
@@ -284,15 +310,14 @@ theorem arithmeticGenus_selfClutch : G.selfClutch.arithmeticGenus = G.arithmetic
 /-- A component gains one branch of the new node for each glued marking it carries. -/
 theorem valence_selfClutch (v : G.Vertex) :
     G.selfClutch.valence v = G.valence v + #{i : Fin 2 | G.marking (.inr i) = v} := by
-  rw [valence_eq_sum, valence_eq_sum, Fintype.sum_option, add_comm]
+  simp only [valence_eq_sum, card_filter, Fintype.sum_option, add_comm]
 
 variable [Fintype ι]
 
 /-- A component loses each glued marking it carries. -/
 theorem numMarkings_selfClutch (v : G.Vertex) :
     G.selfClutch.numMarkings v + #{i : Fin 2 | G.marking (.inr i) = v} = G.numMarkings v := by
-  rw [numMarkings_def, numMarkings_def, card_filter, card_filter, card_filter,
-    Fintype.sum_sum_type]
+  simp only [numMarkings_def, card_filter, Fintype.sum_sum_type]
 
 /-- Self-clutching preserves every log-canonical degree: the two glued markings become the two
 branches of the new node. -/
