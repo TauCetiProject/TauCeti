@@ -62,6 +62,9 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.scalar_comp` and
   `TauCeti.IsManifoldStronglyPseudoconvexAt.scalar_comp`: increasing convex post-composition
   preserves the corresponding positivity conditions.
+* `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.comp` and
+  `TauCeti.IsManifoldStronglyPseudoconvexAt.comp`: the positivity conditions restrict along
+  holomorphic immersions.
 * `TauCeti.re_manifoldLeviForm_apply_of_mem_maximalAtlas` and
   `TauCeti.im_manifoldLeviForm_apply_of_mem_maximalAtlas`: at a critical point, the real and
   imaginary parts may be computed from the real Hessian in any real `C²` chart.
@@ -393,6 +396,73 @@ theorem IsManifoldStronglyPseudoconvexAt.scalar_comp [FiniteDimensional ℂ E] {
   obtain ⟨P, hP, hpos⟩ := h
   exact ⟨P, hP, fun v hv hv0 ↦ (mul_pos hφ₁ (hpos v hv hv0)).trans_le
     (le_re_manifoldLeviForm_scalar_comp_apply_self hφ hf hφ₂ v)⟩
+
+/-- Strict plurisubharmonicity on a complex manifold at `x` depends only on the germ of the
+function at `x`. -/
+theorem IsManifoldStrictlyPlurisubharmonicAt.congr_of_eventuallyEq {g : M → ℝ}
+    (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (hfg : g =ᶠ[𝓝 x] f) :
+    IsManifoldStrictlyPlurisubharmonicAt E g x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_iff, manifoldLeviForm_congr_of_eventuallyEq hfg]
+  exact isManifoldStrictlyPlurisubharmonicAt_iff.mp h
+
+/-- Strong `q`-pseudoconvexity on a complex manifold at `x` depends only on the germ of the
+function at `x`. -/
+theorem IsManifoldStronglyPseudoconvexAt.congr_of_eventuallyEq [FiniteDimensional ℂ E] {q : ℕ}
+    {g : M → ℝ} (h : IsManifoldStronglyPseudoconvexAt E q f x) (hfg : g =ᶠ[𝓝 x] f) :
+    IsManifoldStronglyPseudoconvexAt E q g x := by
+  rw [isManifoldStronglyPseudoconvexAt_iff, manifoldLeviForm_congr_of_eventuallyEq hfg]
+  exact isManifoldStronglyPseudoconvexAt_iff.mp h
+
+/-- The sum of two `C²` functions strictly plurisubharmonic at `x` on a complex manifold is
+strictly plurisubharmonic at `x`. -/
+theorem IsManifoldStrictlyPlurisubharmonicAt.add {g : M → ℝ}
+    (hf : IsManifoldStrictlyPlurisubharmonicAt E f x)
+    (hg : IsManifoldStrictlyPlurisubharmonicAt E g x) (hf' : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
+    (hg' : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 g x) :
+    IsManifoldStrictlyPlurisubharmonicAt E (f + g) x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_iff] at hf hg ⊢
+  intro v hv
+  rw [manifoldLeviForm_add hf' hg']
+  simpa using add_pos (hf v hv) (hg v hv)
+
+section Pullback
+
+variable {F N : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [TopologicalSpace N]
+  [ChartedSpace F N] {g : M → N} {u : N → ℝ}
+
+/-- **Restriction along a holomorphic immersion** of complex manifolds. If `u` is strictly
+plurisubharmonic at `g x` and the complex manifold derivative of the complex `C²` map `g` at `x` is
+injective, then `u ∘ g` is strictly plurisubharmonic at `x`. -/
+theorem IsManifoldStrictlyPlurisubharmonicAt.comp
+    (h : IsManifoldStrictlyPlurisubharmonicAt F u (g x))
+    (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u (g x)) (hg : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 g x)
+    (hg' : Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x)) :
+    IsManifoldStrictlyPlurisubharmonicAt E (u ∘ g) x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_iff] at h ⊢
+  intro v hv
+  rw [manifoldLeviForm_comp_apply hu hg]
+  exact h _ ((map_ne_zero_iff _ hg').2 hv)
+
+/-- **Restriction along a holomorphic immersion** of complex manifolds. If `u` is strongly
+`q`-pseudoconvex at `g x` and the complex manifold derivative of the complex `C²` map `g` at `x` is
+injective, then `u ∘ g` is strongly `q`-pseudoconvex at `x`: the preimage of a positive subspace of
+codimension at most `q` is a positive subspace of codimension at most `q`. -/
+theorem IsManifoldStronglyPseudoconvexAt.comp [FiniteDimensional ℂ E] [FiniteDimensional ℂ F]
+    {q : ℕ} (h : IsManifoldStronglyPseudoconvexAt F q u (g x))
+    (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u (g x)) (hg : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 g x)
+    (hg' : Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x)) :
+    IsManifoldStronglyPseudoconvexAt E q (u ∘ g) x := by
+  rw [isManifoldStronglyPseudoconvexAt_iff] at h ⊢
+  obtain ⟨P, hP, hpos⟩ := h
+  -- The manifold derivative of `g`, typed on the model spaces.
+  let D : E →L[ℂ] F := mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x
+  refine ⟨P.comap (D : E →ₗ[ℂ] F), ?_, fun v hv hv0 ↦ ?_⟩
+  · have := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank (D : E →ₗ[ℂ] F) P
+    omega
+  · rw [manifoldLeviForm_comp_apply hu hg]
+    exact hpos _ hv ((map_ne_zero_iff _ hg').2 hv0)
+
+end Pullback
 
 variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
 
