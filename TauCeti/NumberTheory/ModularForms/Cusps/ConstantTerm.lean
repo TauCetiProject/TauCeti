@@ -43,6 +43,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.constantTermAt`: the constant-term functional attached to an element of
   `SL₂(ℤ)`.
 * `ModularForm.constantTerms`: all constant terms at once, as a linear map to `SL₂(ℤ) → ℂ`.
+* `TauCeti.constantTermsAtDivisors`: constant terms at the divisor representatives `1/d`
+  of `Γ₀(N)`, available at every nonzero level.
 * `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit`: the constant term indexed by a cusp
   translation orbit.
 
@@ -373,6 +375,19 @@ end ModularForm
 namespace TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+/-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
+def constantTermsAtDivisors :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
+  LinearMap.pi fun d ↦ _root_.ModularForm.constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+
+/-- Evaluation of the divisor-indexed constant-term map. -/
+@[simp]
+theorem constantTermsAtDivisors_apply
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : N.divisors) :
+    constantTermsAtDivisors f d =
+      _root_.ModularForm.constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ f :=
+  (rfl)
 
 /-- Inside `M_k(N, χ)`, the common kernel of the cusp constant terms is precisely the image of
 `S_k(N, χ)`. -/

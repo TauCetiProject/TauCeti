@@ -40,28 +40,6 @@ namespace TauCeti.EisensteinSeries
 
 variable {N : ℕ} [NeZero N]
 
-private def nontrivialDivisorEquiv :
-    {d : ℕ // 1 < d ∧ d ∣ N} ≃
-      {d : N.divisors // d ≠ ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩} where
-  toFun d := ⟨⟨d.val, Nat.mem_divisors.mpr ⟨d.property.2, NeZero.ne N⟩⟩,
-    fun h ↦ by have := congrArg Subtype.val h; simp at this; omega⟩
-  invFun d := ⟨d.val.val, by
-    have hdpos := Nat.pos_of_mem_divisors d.val.property
-    have hdne : d.val.val ≠ 1 := fun h ↦ d.property (Subtype.ext h)
-    exact ⟨by omega, Nat.dvd_of_mem_divisors d.val.property⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The corrected weight-two Eisenstein span has dimension `τ(N) - 1`, at any nonzero level. -/
-theorem finrank_span_correctedE2AtLevel :
-    Module.finrank ℂ (Submodule.span ℂ (Set.range (correctedE2AtLevel N))) =
-      N.divisors.card - 1 := by
-  classical
-  let _ := Fintype.ofEquiv _ (nontrivialDivisorEquiv (N := N)).symm
-  rw [finrank_span_eq_card (linearIndependent_correctedE2AtLevel N),
-    Fintype.card_congr (nontrivialDivisorEquiv (N := N))]
-  simp
-
 /-- At squarefree level, the corrected weight-two Eisenstein series and the cusp forms are
 complementary in the full modular-form space. This includes `N = 1`, when the Eisenstein span
 and the entire weight-two space are both zero. -/

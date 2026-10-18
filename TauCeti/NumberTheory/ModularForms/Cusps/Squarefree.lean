@@ -74,19 +74,6 @@ theorem constantTermAt_eq_of_gcd_eq_of_squarefree
   rw [hγ, constantTermAt_mul_T_zpow,
     constantTermAt_mul_left (Subgroup.mem_map_of_mem _ hδ)]
 
-/-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
-def constantTermsAtDivisors :
-    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
-  LinearMap.pi fun d ↦ constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
-
-/-- Evaluation of the divisor-indexed constant-term map. -/
-@[simp]
-theorem constantTermsAtDivisors_apply
-    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : N.divisors) :
-    constantTermsAtDivisors f d =
-      constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ f :=
-  (rfl)
-
 /-- At squarefree level, the divisor-indexed values recover every cusp constant term. -/
 theorem constantTermAt_eq_constantTermsAtDivisors
     (hN : Squarefree N) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (γ : SL(2, ℤ)) :
@@ -111,6 +98,7 @@ theorem ker_constantTermsAtDivisors_of_squarefree (hN : Squarefree N) :
     rfl
   · intro h
     ext d
+    rw [constantTermsAtDivisors_apply]
     exact h _
 
 /-- In weight two, not every divisor-indexed boundary vector occurs at squarefree level. -/

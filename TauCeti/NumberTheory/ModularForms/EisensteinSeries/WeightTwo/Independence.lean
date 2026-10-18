@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Divisors
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
@@ -24,6 +25,8 @@ weight-two Eisenstein series with cusp constant-term data.
 * `qExpansion_coeff_correctedE2AtLevel`: the coefficients of each restricted series.
 * `linearIndependent_correctedE2AtLevel`: independence of this family over all nontrivial
   divisor levels `d` of `N`.
+* `finrank_span_correctedE2AtLevel`: the corrected span has dimension `τ(N) - 1` at every
+  nonzero level.
 
 ## References
 
@@ -163,5 +166,15 @@ theorem linearIndependent_correctedE2AtLevel (N : ℕ) :
   have hscale : (24 : ℂ) * (m.val : ℂ) ≠ 0 :=
     mul_ne_zero (by norm_num) (Nat.cast_ne_zero.mpr hmpos)
   exact (mul_ne_zero hgm hscale) hcorrection
+
+/-- The corrected weight-two Eisenstein span has dimension `τ(N) - 1`, at any nonzero level. -/
+theorem finrank_span_correctedE2AtLevel {N : ℕ} [NeZero N] :
+    Module.finrank ℂ (Submodule.span ℂ (Set.range (correctedE2AtLevel N))) =
+      N.divisors.card - 1 := by
+  classical
+  let _ := Fintype.ofEquiv _ (nontrivialDivisorEquiv (N := N)).symm
+  rw [finrank_span_eq_card (linearIndependent_correctedE2AtLevel N),
+    Fintype.card_congr (nontrivialDivisorEquiv (N := N))]
+  simp
 
 end TauCeti.EisensteinSeries
