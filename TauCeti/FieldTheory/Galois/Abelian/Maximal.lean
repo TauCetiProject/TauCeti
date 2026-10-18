@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.FieldTheory.Galois.Quotient
-public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # The maximal abelian extension
@@ -41,9 +40,13 @@ separable closure of `K` in `Ω`.
 
 ## Main results
 
+* `IntermediateField.isAbelianGalois_iSup`: a compositum of abelian Galois subextensions is
+  abelian Galois.
 * `TauCeti.isAbelianGalois_maximalAbelianExtension`: `K^{ab}/K` is abelian Galois.
 * `TauCeti.le_maximalAbelianExtension_iff`: an intermediate field lies in `K^{ab}` exactly when
   it is abelian Galois over `K`.
+* `TauCeti.mem_maximalAbelianExtension_iff`: an element lies in `K^{ab}` exactly when it lies in
+  some abelian Galois subextension.
 * `TauCeti.maximalAbelianExtension_le_separableClosure`: `K^{ab}` lies in the separable closure.
 * `TauCeti.fixingSubgroup_maximalAbelianExtension`: for `Ω/K` normal, the fixing subgroup of
   `K^{ab}` is the closed commutator subgroup of `Gal(Ω/K)`.
@@ -83,62 +86,66 @@ theorem maximalAbelianExtension_def :
 variable {K Ω}
 
 /-- Every abelian Galois subextension lies in the maximal abelian extension. -/
-theorem le_maximalAbelianExtension (E : IntermediateField K Ω) [IsAbelianGalois K E] :
-    E ≤ maximalAbelianExtension K Ω :=
+theorem _root_.IntermediateField.le_maximalAbelianExtension (E : IntermediateField K Ω)
+    [IsAbelianGalois K E] : E ≤ maximalAbelianExtension K Ω :=
   le_iSup (fun E : {E : IntermediateField K Ω // IsAbelianGalois K E} ↦ (E : IntermediateField K Ω))
     ⟨E, ‹_›⟩
 
-/-- An automorphism of `K^{ab}` maps every abelian Galois subextension into itself, and its
-restriction there is the restriction of automorphisms of that subextension. So two automorphisms
-of `K^{ab}` commute on each such subextension, because its Galois group is commutative. -/
-private theorem mul_apply_eq_mul_apply_of_isAbelianGalois (σ τ : Gal(maximalAbelianExtension K Ω/K))
-    (E : IntermediateField K Ω) [IsAbelianGalois K E] (x : Ω) (hx : x ∈ E) :
-    ((σ * τ) ⟨x, le_maximalAbelianExtension E hx⟩ : Ω) =
-      ((τ * σ) ⟨x, le_maximalAbelianExtension E hx⟩ : Ω) := by
-  -- `E` read as an intermediate field of `K^{ab}`.
-  let E' : IntermediateField K (maximalAbelianExtension K Ω) :=
-    IntermediateField.restrict (le_maximalAbelianExtension E)
+/-- Two automorphisms of a compositum of abelian Galois subextensions commute on each of them. -/
+private theorem mul_apply_eq_mul_apply_of_isAbelianGalois {ι : Type*}
+    (E : ι → IntermediateField K Ω) [∀ i, IsAbelianGalois K (E i)] (σ τ : Gal(↥(⨆ i, E i)/K))
+    (i : ι) (x : Ω) (hx : x ∈ E i) :
+    ((σ * τ) ⟨x, le_iSup E i hx⟩ : Ω) = ((τ * σ) ⟨x, le_iSup E i hx⟩ : Ω) := by
+  -- An automorphism of the compositum maps `E i` into itself, and its restriction there is the
+  -- restriction of automorphisms of `E i`, whose Galois group is commutative.
+  -- Read `E i` as an intermediate field of the compositum.
+  let E' : IntermediateField K ↥(⨆ i, E i) := IntermediateField.restrict (le_iSup E i)
   have : IsAbelianGalois K E' :=
-    .of_algHom (IntermediateField.restrictAlgEquiv (le_maximalAbelianExtension E)).symm.toAlgHom
+    .of_algHom (IntermediateField.restrictAlgEquiv (le_iSup E i)).symm.toAlgHom
   have hcomm : AlgEquiv.restrictNormalHom E' (σ * τ) = AlgEquiv.restrictNormalHom E' (τ * σ) := by
     rw [map_mul, map_mul, mul_comm']
-  have hx' : (⟨x, le_maximalAbelianExtension E hx⟩ : maximalAbelianExtension K Ω) ∈ E' :=
-    (mem_restrict _ _).mpr hx
-  have h := congrArg
-    (fun ρ : Gal(E'/K) ↦ ((ρ ⟨_, hx'⟩ : maximalAbelianExtension K Ω) : Ω)) hcomm
+  have hx' : (⟨x, le_iSup E i hx⟩ : ↥(⨆ i, E i)) ∈ E' := (mem_restrict _ _).mpr hx
+  have h := congrArg (fun ρ : Gal(E'/K) ↦ ((ρ ⟨_, hx'⟩ : ↥(⨆ i, E i)) : Ω)) hcomm
   simpa only [AlgEquiv.restrictNormalHom_apply, AlgEquiv.restrictNormal_commutes] using h
 
+/-- **The compositum of abelian Galois subextensions is abelian Galois.** This extends
+`IsAbelianGalois.sup` from two subextensions to an arbitrary family. -/
+instance _root_.IntermediateField.isAbelianGalois_iSup {ι : Type*} (E : ι → IntermediateField K Ω)
+    [∀ i, IsAbelianGalois K (E i)] : IsAbelianGalois K ↥(⨆ i, E i) := by
+  -- It is Galois as a compositum of Galois extensions, and two automorphisms of it commute
+  -- because they commute on each `E i`, and those generate it.
+  have : IsGalois K ↥(⨆ i, E i) := ⟨⟩
+  refine { is_comm := ⟨fun σ τ ↦ ?_⟩ }
+  -- Two automorphisms of the compositum agree once they agree on a generating set, here the
+  -- union of the `E i`.
+  have h := algHom_ext_of_eq_adjoin K (S := ⨆ i, E i) (s := ⋃ i, (E i : Set Ω))
+    (by rw [iSup_eq_adjoin])
+    (φ₁ := (⨆ i, E i).val.comp (σ * τ).toAlgHom)
+    (φ₂ := (⨆ i, E i).val.comp (τ * σ).toAlgHom) (fun x hx ↦ by
+      obtain ⟨i, hxE⟩ := Set.mem_iUnion.mp hx
+      exact mul_apply_eq_mul_apply_of_isAbelianGalois E σ τ i x hxE)
+  exact AlgEquiv.ext fun x ↦ Subtype.ext (AlgHom.congr_fun h x)
+
 variable (K Ω) in
-/-- **The maximal abelian extension is abelian Galois.** It is Galois as a compositum of Galois
-extensions, and two automorphisms of it commute because they commute on each abelian Galois
-subextension, and those generate it. -/
+/-- **The maximal abelian extension is abelian Galois.** -/
 instance isAbelianGalois_maximalAbelianExtension :
     IsAbelianGalois K (maximalAbelianExtension K Ω) := by
-  have : ∀ E : {E : IntermediateField K Ω // IsAbelianGalois K E}, Normal K E :=
-    fun E ↦ have := E.2; inferInstance
-  have : ∀ E : {E : IntermediateField K Ω // IsAbelianGalois K E}, Algebra.IsSeparable K E :=
-    fun E ↦ have := E.2; inferInstance
-  have : IsGalois K (maximalAbelianExtension K Ω) := by
-    rw [maximalAbelianExtension_def]
-    exact ⟨⟩
-  refine { is_comm := ⟨fun σ τ ↦ ?_⟩ }
-  -- Two automorphisms of `K^{ab}` agree once they agree on a generating set, here the union of
-  -- the abelian Galois subextensions.
-  have h := algHom_ext_of_eq_adjoin K (S := maximalAbelianExtension K Ω)
-    (s := ⋃ E : {E : IntermediateField K Ω // IsAbelianGalois K E}, (E : Set Ω))
-    (by rw [maximalAbelianExtension_def, iSup_eq_adjoin])
-    (φ₁ := (maximalAbelianExtension K Ω).val.comp (σ * τ).toAlgHom)
-    (φ₂ := (maximalAbelianExtension K Ω).val.comp (τ * σ).toAlgHom) (fun x hx ↦ by
-      obtain ⟨E, hxE⟩ := Set.mem_iUnion.mp hx
-      have := E.2
-      exact mul_apply_eq_mul_apply_of_isAbelianGalois σ τ E x hxE)
-  exact AlgEquiv.ext fun x ↦ Subtype.ext (AlgHom.congr_fun h x)
+  have : ∀ E : {E : IntermediateField K Ω // IsAbelianGalois K E},
+      IsAbelianGalois K (E : IntermediateField K Ω) := fun E ↦ E.2
+  rw [maximalAbelianExtension_def]
+  infer_instance
 
 /-- **The maximal abelian extension is the largest abelian Galois subextension**: an intermediate
 field lies in it exactly when it is abelian Galois over `K`. -/
 theorem le_maximalAbelianExtension_iff {E : IntermediateField K Ω} :
     E ≤ maximalAbelianExtension K Ω ↔ IsAbelianGalois K E :=
   ⟨fun h ↦ .of_algHom (IntermediateField.inclusion h), fun _ ↦ le_maximalAbelianExtension E⟩
+
+/-- An element lies in the maximal abelian extension exactly when it lies in some intermediate
+field that is abelian Galois over `K`. -/
+theorem mem_maximalAbelianExtension_iff {x : Ω} :
+    x ∈ maximalAbelianExtension K Ω ↔ ∃ E : IntermediateField K Ω, IsAbelianGalois K E ∧ x ∈ E :=
+  ⟨fun hx ↦ ⟨_, inferInstance, hx⟩, fun ⟨E, _, hx⟩ ↦ le_maximalAbelianExtension E hx⟩
 
 variable (K Ω) in
 /-- The maximal abelian extension lies in the separable closure of `K` in `Ω`. -/
@@ -153,13 +160,14 @@ section Normal
 variable [Normal K Ω]
 
 /-- The separable part of the fixed field of the closed commutator subgroup of `Gal(Ω/K)` is an
-abelian Galois extension of `K`. It is normal because the closed commutator subgroup is a normal
-subgroup, and abelian because restricting to it kills every commutator. -/
+abelian Galois extension of `K`. -/
 private theorem isAbelianGalois_fixedField_inf_separableClosure :
     IsAbelianGalois K ↥(fixedField (commutator Gal(Ω/K)).topologicalClosure ⊓
       separableClosure K Ω) := by
   set C := (commutator Gal(Ω/K)).topologicalClosure
   set M := fixedField C ⊓ separableClosure K Ω
+  -- `M` is normal because the closed commutator subgroup is a normal subgroup, and abelian
+  -- because restricting to it kills every commutator.
   have : Algebra.IsSeparable K M := (le_separableClosure_iff K Ω M).mp inf_le_right
   have : Normal K M := by
     refine normal_iff_forall_map_le'.mpr fun σ y hy ↦ ?_
