@@ -35,8 +35,6 @@ traces and dimensions are therefore multiplicative without further hypotheses.
   product of the pivotal pairings, up to `rightDualTensorIso X Y`;
 * `TauCeti.leftTrace_tensorHom` and `TauCeti.rightTrace_tensorHom`: the traces of `f ⊗ₘ g` as
   nested loops;
-* `TauCeti.leftTrace_comp_whiskerLeft_scalar` and `TauCeti.rightTrace_scalar_whiskerRight_comp`:
-  a scalar acting on the outer side of the loop factors out of the trace;
 * `TauCeti.leftTrace_tensorHom_eq_comp`, `TauCeti.rightTrace_tensorHom_eq_comp`,
   `TauCeti.leftDim_tensor_eq_comp` and `TauCeti.rightDim_tensor_eq_comp`: multiplicativity of the
   traces and dimensions when the relevant scalar acts in the same way from both sides;
@@ -161,26 +159,6 @@ theorem rightTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
   refine (@ExactPairing.coevaluation_tensorHom_whiskerRight_evaluation C _ _ _ _ _ _
     (pivotalExactPairing X) _ (pivotalExactPairing Y) _ f g).trans ?_
   rw [rightTrace_def, rightTrace_def]
-
-/-- A scalar acting on `Y` from the right factors out of the left trace. -/
-theorem leftTrace_comp_whiskerLeft_scalar {Y : C} (g : Y ⟶ Y) (a : 𝟙_ C ⟶ 𝟙_ C) :
-    leftTrace (g ≫ (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom) = leftTrace g ≫ a := by
-  have h : (Yᘁ : C) ◁ ((ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom) ≫ ε_ Y Yᘁ = ε_ Y Yᘁ ≫ a := by
-    calc _ = (ρ_ ((Yᘁ : C) ⊗ Y)).inv ≫ ((Yᘁ : C) ⊗ Y) ◁ a ≫
-          ((ρ_ ((Yᘁ : C) ⊗ Y)).hom ≫ ε_ Y Yᘁ) := by monoidal
-      _ = _ := by rw [whiskerLeft_scalar_comp]; simp
-  rw [leftTrace_def, leftTrace_def, MonoidalCategory.whiskerLeft_comp, Category.assoc, h]
-  simp only [Category.assoc]
-
-/-- A scalar acting on `X` from the left factors out of the right trace. -/
-theorem rightTrace_scalar_whiskerRight_comp {X : C} (a : 𝟙_ C ⟶ 𝟙_ C) (f : X ⟶ X) :
-    rightTrace ((λ_ X).inv ≫ a ▷ X ≫ (λ_ X).hom ≫ f) = a ≫ rightTrace f := by
-  have h : η_ X Xᘁ ≫ ((λ_ X).inv ≫ a ▷ X ≫ (λ_ X).hom ≫ f) ▷ (Xᘁ : C) =
-      a ≫ η_ X Xᘁ ≫ f ▷ (Xᘁ : C) := by
-    calc _ = (η_ X Xᘁ ≫ (λ_ (X ⊗ (Xᘁ : C))).inv) ≫ a ▷ (X ⊗ (Xᘁ : C)) ≫
-          (λ_ (X ⊗ (Xᘁ : C))).hom ≫ f ▷ (Xᘁ : C) := by monoidal
-      _ = _ := by rw [comp_scalar_whiskerRight_assoc]; simp
-  rw [rightTrace_def, rightTrace_def, reassoc_of% h]
 
 /-- **Multiplicativity of the left trace**: if the left trace of `f` acts on `Y` in the same way
 from the left and from the right, then `leftTrace (f ⊗ₘ g) = leftTrace f ≫ leftTrace g`. -/
