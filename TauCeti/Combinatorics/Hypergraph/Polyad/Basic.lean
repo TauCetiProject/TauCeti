@@ -114,23 +114,23 @@ theorem ext_data {P Q : Polyad3 S} (h₀ : P.c₀ = Q.c₀) (h₁ : P.c₁ = Q.c
   rfl
 
 /-- The six data fields of a polyad, with its cells bundled as parts of the skeleton. -/
-def partData (P : Polyad3 S) :
+private def partData (P : Polyad3 S) :
     (S.vertexPart.parts × S.vertexPart.parts × S.vertexPart.parts) × κ × κ × κ :=
   ((⟨P.c₀, P.hc₀⟩, ⟨P.c₁, P.hc₁⟩, ⟨P.c₂, P.hc₂⟩),
     P.color₀₁, P.color₀₂, P.color₁₂)
 
 /-- The data encoding of polyads is injective. -/
-theorem partData_injective : Function.Injective (partData (S := S)) := by
+private theorem partData_injective : Function.Injective (partData (S := S)) := by
   intro P Q h
   simp only [partData, Prod.mk.injEq, Subtype.mk.injEq] at h
   exact ext_data h.1.1 h.1.2.1 h.1.2.2 h.2.1 h.2.2.1 h.2.2.2
 
 /-- Polyads have decidable equality when the pair palette does. -/
-noncomputable instance [DecidableEq κ] : DecidableEq (Polyad3 S) :=
+@[no_expose] noncomputable instance [DecidableEq κ] : DecidableEq (Polyad3 S) :=
   partData_injective.decidableEq
 
 /-- There are finitely many polyads over a finite pair palette. -/
-noncomputable instance [Fintype κ] : Fintype (Polyad3 S) :=
+@[no_expose] noncomputable instance [Fintype κ] : Fintype (Polyad3 S) :=
   Fintype.ofInjective _ partData_injective
 
 /-- The polyad determined by three cells of the skeleton and three pair colors. -/
@@ -168,18 +168,24 @@ noncomputable def pairSupport₁₂ (P : Polyad3 S) :
   exact univ.filter fun p ↦
     p.1.1 ∈ P.c₁ ∧ p.1.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₁₂
 
+/-- Membership in the pair support on roles zero and one: the pair has its endpoints in the
+corresponding cells and carries the corresponding color. -/
 @[simp]
 theorem mem_pairSupport₀₁ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ P.pairSupport₀₁ ↔
       p.1.1 ∈ P.c₀ ∧ p.1.2 ∈ P.c₁ ∧ S.pairColors.color p = P.color₀₁ := by
   simp [pairSupport₀₁]
 
+/-- Membership in the pair support on roles zero and two: the pair has its endpoints in the
+corresponding cells and carries the corresponding color. -/
 @[simp]
 theorem mem_pairSupport₀₂ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ P.pairSupport₀₂ ↔
       p.1.1 ∈ P.c₀ ∧ p.1.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₀₂ := by
   simp [pairSupport₀₂]
 
+/-- Membership in the pair support on roles one and two: the pair has its endpoints in the
+corresponding cells and carries the corresponding color. -/
 @[simp]
 theorem mem_pairSupport₁₂ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ P.pairSupport₁₂ ↔
@@ -214,21 +220,13 @@ theorem faceKey_one (k₀₁ k₀₂ k₁₂ : κ) : faceKey k₀₁ k₀₂ k�
 @[simp]
 theorem faceKey_two (k₀₁ k₀₂ k₁₂ : κ) : faceKey k₀₁ k₀₂ k₁₂ 2 = k₀₁ := (rfl)
 
-/-- The ordered coordinate pair of an injective triple at two distinct roles. -/
-def coordPair (x : {x : Fin 3 → V // Function.Injective x}) (i j : Fin 3) (hij : i ≠ j) :
-    {p : V × V // p.1 ≠ p.2} :=
-  ⟨(x.1 i, x.1 j), fun h ↦ hij (x.2 h)⟩
-
 /-- The `(0, 1)` coordinate pair of a supported triple lies in the corresponding pair support. -/
 theorem coordPair_mem_pairSupport₀₁ {S : PairSkeleton3 κ V} {P : Polyad3 S}
     {x : {x : Fin 3 → V // Function.Injective x}} (hx : x ∈ P.support) :
     coordPair x 0 1 (by decide) ∈ P.pairSupport₀₁ := by
   rw [P.mem_support] at hx
   obtain ⟨h₀, h₁, -, hk, -, -⟩ := hx
-  have hne : x.1 0 ≠ x.1 1 := fun h ↦ (by decide : (0 : Fin 3) ≠ 1) (x.2 h)
-  rw [S.pairColors.colorOfPair_of_ne hne] at hk
-  rw [P.mem_pairSupport₀₁]
-  exact ⟨h₀, h₁, by simpa [coordPair] using Option.some.inj hk⟩
+  exact P.mem_pairSupport₀₁ _ |>.2 ⟨h₀, h₁, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
 
 /-- The `(0, 2)` coordinate pair of a supported triple lies in the corresponding pair support. -/
 theorem coordPair_mem_pairSupport₀₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
@@ -236,10 +234,7 @@ theorem coordPair_mem_pairSupport₀₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
     coordPair x 0 2 (by decide) ∈ P.pairSupport₀₂ := by
   rw [P.mem_support] at hx
   obtain ⟨h₀, -, h₂, -, hk, -⟩ := hx
-  have hne : x.1 0 ≠ x.1 2 := fun h ↦ (by decide : (0 : Fin 3) ≠ 2) (x.2 h)
-  rw [S.pairColors.colorOfPair_of_ne hne] at hk
-  rw [P.mem_pairSupport₀₂]
-  exact ⟨h₀, h₂, by simpa [coordPair] using Option.some.inj hk⟩
+  exact P.mem_pairSupport₀₂ _ |>.2 ⟨h₀, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
 
 /-- The `(1, 2)` coordinate pair of a supported triple lies in the corresponding pair support. -/
 theorem coordPair_mem_pairSupport₁₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
@@ -247,9 +242,6 @@ theorem coordPair_mem_pairSupport₁₂ {S : PairSkeleton3 κ V} {P : Polyad3 S}
     coordPair x 1 2 (by decide) ∈ P.pairSupport₁₂ := by
   rw [P.mem_support] at hx
   obtain ⟨-, h₁, h₂, -, -, hk⟩ := hx
-  have hne : x.1 1 ≠ x.1 2 := fun h ↦ (by decide : (1 : Fin 3) ≠ 2) (x.2 h)
-  rw [S.pairColors.colorOfPair_of_ne hne] at hk
-  rw [P.mem_pairSupport₁₂]
-  exact ⟨h₁, h₂, by simpa [coordPair] using Option.some.inj hk⟩
+  exact P.mem_pairSupport₁₂ _ |>.2 ⟨h₁, h₂, (S.pairColors.color_coordPair_eq_iff _).2 hk⟩
 
 end TauCeti
