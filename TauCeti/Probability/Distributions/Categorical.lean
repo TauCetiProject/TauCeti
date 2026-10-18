@@ -88,20 +88,12 @@ theorem categoricalMeasure_real_singleton (p : StdSimplex NNReal I) (i : I) :
   rw [measureReal_def, categoricalMeasure_singleton]
   simp
 
-/-- Every function on a finite category type is integrable under a categorical law. -/
-theorem integrable_categoricalMeasure {E : Type*} [NormedAddGroup E]
-    (g : I → E) (p : StdSimplex NNReal I) : Integrable g (categoricalMeasure p) := by
-  rw [categoricalMeasure_def]
-  exact integrable_finsetSum_measure.mpr fun i _ ↦
-    (integrable_dirac (by simp)).smul_measure ENNReal.coe_ne_top
-
 /-- Integration against a categorical law is the probability-weighted finite sum. -/
 theorem integral_categoricalMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] (g : I → E) (p : StdSimplex NNReal I) :
     ∫ i, g i ∂categoricalMeasure p = ∑ i, (p.weights i : ℝ) • g i := by
-  rw [categoricalMeasure_def, integral_finsetSum_measure]
-  · simp [NNReal.smul_def]
-  · exact fun i _ ↦ (integrable_dirac (by simp)).smul_measure ENNReal.coe_ne_top
+  simpa only [categoricalMeasure_real_singleton] using
+    integral_fintype (μ := categoricalMeasure p) (f := g) Integrable.of_finite
 
 end Basic
 
