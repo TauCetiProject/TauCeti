@@ -39,6 +39,8 @@ domain rationalizes to its ambient vector space over the fraction field.
   submodule into its ambient vector space over the fraction field is a base change.
 * `TauCeti.Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
   of a free full lattice submodule to its ambient vector space.
+* `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
+  vector lies in a free full lattice submodule.
 * `TauCeti.TensorProduct.unitTmulEquiv`: a finite free module is the full lattice of unit pure
   tensors in its scalar extension.
 * `TauCeti.TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
@@ -341,3 +343,27 @@ theorem unitTmulEquiv_baseChange_trans_rationalizationEquiv :
 end TensorProduct
 
 end TauCeti
+
+namespace Submodule.IsLattice
+
+universe u v w
+
+variable {R : Type u} {K : Type v} {V' : Type w}
+variable [CommRing R] [IsDomain R]
+variable [Field K] [Algebra R K] [IsFractionRing R K]
+variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
+
+variable (K) in
+/-- Some nonzero multiple of every ambient vector lies in a free full lattice submodule. -/
+theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
+    (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
+  have hS : IsLocalizedModule (nonZeroDivisors R) S.subtype :=
+    (isLocalizedModule_iff_isBaseChange (nonZeroDivisors R) K _).mpr
+      (TauCeti.Submodule.IsLattice.isBaseChange_subtype S)
+  obtain ⟨⟨x, r⟩, hr⟩ := hS.surj v
+  refine ⟨r, nonZeroDivisors.coe_ne_zero r, ?_⟩
+  rw [Submonoid.smul_def] at hr
+  rw [hr]
+  exact x.2
+
+end Submodule.IsLattice

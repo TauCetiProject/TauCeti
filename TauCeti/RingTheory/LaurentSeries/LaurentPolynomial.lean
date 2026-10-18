@@ -14,9 +14,12 @@ public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 A Laurent polynomial is a Laurent series with finitely many nonzero coefficients. This file
 defines the ring homomorphism `LaurentPolynomial.toLaurentSeries : R[T;T⁻¹] →+* R⸨X⸩` sending `T`
-to `X`, and shows that it preserves coefficients, so in particular it is injective. Its image is
-exactly the Laurent series of finite support, and the order of a nonzero image is the least
-exponent in the Laurent polynomial's support.
+to `X`, and shows that it preserves coefficients, so in particular it is injective. This map gives
+`R⸨X⸩` its canonical `R[T;T⁻¹]`-algebra structure. The resulting algebra towers make the two
+routes from polynomials to Laurent series agree: through power series and through Laurent
+polynomials. The image of the Laurent-polynomial map is exactly the Laurent series of finite
+support, and the order of a nonzero image is the least exponent in the Laurent polynomial's
+support.
 
 For a Laurent series `f`, `LaurentSeries.trunc N f` retains the terms of exponent strictly less
 than `N`. These Laurent polynomials converge to `f` as `N` tends to infinity. Consequently,
@@ -25,25 +28,26 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
 ## Main definitions
 
 * `LaurentPolynomial.toLaurentSeries`: the inclusion of Laurent polynomials into Laurent series.
-* `TauCeti.toLaurentSeriesAlgHom`: the inclusion as an algebra homomorphism.
+* `LaurentSeries.algebraLaurentPolynomial`: the induced Laurent-polynomial algebra structure.
 
 ## Main results
 
 * `LaurentPolynomial.toLaurentSeries_T`: `Tⁿ` is sent to `Xⁿ`, for every integer `n`.
 * `LaurentPolynomial.coeff_toLaurentSeries`: the inclusion preserves coefficients.
 * `LaurentPolynomial.toLaurentSeries_injective`: the inclusion is injective.
+* `LaurentPolynomial.toLaurentSeries_toLaurent`: the polynomial embedding commutes with the
+  inclusions into Laurent polynomials and power series.
 * `LaurentPolynomial.mem_range_toLaurentSeries_iff`: the image consists exactly of the
   finite-support Laurent series.
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
-* `TauCeti.toLaurentSeries_toLaurent`: compatibility with polynomial and power-series inclusions.
 * `TauCeti.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
 -/
 
 public section
 
-open scoped LaurentPolynomial LaurentSeries
+open scoped LaurentPolynomial LaurentSeries Polynomial
 
 namespace LaurentPolynomial
 
@@ -80,6 +84,42 @@ theorem toLaurentSeries_T (n : ℤ) : toLaurentSeries (T n : R[T;T⁻¹]) = Hahn
 @[simp]
 theorem toLaurentSeries_C (r : R) : toLaurentSeries (C r) = HahnSeries.C r := by
   rw [toLaurentSeries, eval₂_C]
+
+/-- Laurent series form an algebra over Laurent polynomials through the finite-support
+inclusion. -/
+noncomputable instance _root_.LaurentSeries.algebraLaurentPolynomial : Algebra R[T;T⁻¹] R⸨X⸩ :=
+  toLaurentSeries.toAlgebra
+
+/-- The algebra map from Laurent polynomials to Laurent series is the finite-support
+inclusion. -/
+@[simp]
+theorem algebraMap_eq_toLaurentSeries (p : R[T;T⁻¹]) :
+    algebraMap R[T;T⁻¹] R⸨X⸩ p = toLaurentSeries p := (rfl)
+
+/-- The coefficient ring, Laurent-polynomial ring, and Laurent-series ring form an algebra
+tower. -/
+instance isScalarTower_laurentSeries : IsScalarTower R R[T;T⁻¹] R⸨X⸩ :=
+  .of_algebraMap_smul fun r f ↦ by
+    simp [Algebra.smul_def]
+
+/-- The inclusion of a polynomial into Laurent series agrees with first viewing it as a Laurent
+polynomial. -/
+@[simp]
+theorem toLaurentSeries_toLaurent (p : R[X]) :
+    toLaurentSeries (Polynomial.toLaurent p) =
+      ((p : PowerSeries R) : LaurentSeries R) := by
+  have h : (toLaurentSeries (R := R)).comp Polynomial.toLaurent =
+      (HahnSeries.ofPowerSeries ℤ R).comp Polynomial.coeToPowerSeries.ringHom := by
+    apply Polynomial.ringHom_ext
+    · intro r
+      simp
+    · simp
+  exact DFunLike.congr_fun h p
+
+/-- The polynomial, Laurent-polynomial, and Laurent-series algebra structures form a tower. -/
+instance isScalarTower_polynomial_laurentPolynomial :
+    IsScalarTower (Polynomial R) R[T;T⁻¹] (LaurentSeries R) :=
+  .of_algebraMap_eq fun p ↦ by simp
 
 /-- The inclusion of Laurent polynomials into Laurent series preserves coefficients. -/
 @[simp]
@@ -228,38 +268,6 @@ theorem denseRange_toLaurentSeries :
 end LaurentPolynomial
 
 namespace TauCeti
-open HahnSeries
-
-noncomputable section
-
-variable {R : Type*} [CommSemiring R]
-
-/-- The canonical Laurent-series inclusion, equipped with its coefficient-algebra structure. -/
-def toLaurentSeriesAlgHom : R[T;T⁻¹] →ₐ[R] R⸨X⸩ where
-  __ := LaurentPolynomial.toLaurentSeries
-  commutes' c := by
-    change LaurentPolynomial.toLaurentSeries (algebraMap R R[T;T⁻¹] c) =
-      algebraMap R R⸨X⸩ c
-    rw [← LaurentPolynomial.C_eq_algebraMap, LaurentPolynomial.toLaurentSeries_C]
-    simp [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, ofPowerSeries_C]
-
-/-- The Laurent-polynomial and power-series inclusions of a polynomial agree. -/
-@[simp]
-theorem toLaurentSeries_toLaurent (p : Polynomial R) :
-    LaurentPolynomial.toLaurentSeries p.toLaurent = ((p : PowerSeries R) : R⸨X⸩) := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | monomial n c =>
-    ext i
-    simp only [Polynomial.toLaurent_C_mul_T, map_mul, LaurentPolynomial.toLaurentSeries_C,
-      LaurentPolynomial.toLaurentSeries_T, HahnSeries.C_apply, single_mul_single, zero_add, mul_one,
-      coeff_single, PowerSeries.coeff_coe, Polynomial.coe_monomial]
-    by_cases hi : i < 0
-    · have hne : i ≠ (n : ℤ) := by omega
-      simp [hi, hne]
-    · have habs : (i.natAbs : ℤ) = i := Int.natAbs_of_nonneg (by omega)
-      have hindex : i = (n : ℤ) ↔ i.natAbs = n := by omega
-      simp [hi, PowerSeries.coeff_monomial, hindex]
 
 variable {K : Type*} [Field K]
 
@@ -270,7 +278,5 @@ theorem valuation_sub_toLaurentSeries_trunc_le (a : ℤ) (f : K⸨X⸩) :
   rw [_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero]
   intro n hn
   simp [hn]
-
-end
 
 end TauCeti
