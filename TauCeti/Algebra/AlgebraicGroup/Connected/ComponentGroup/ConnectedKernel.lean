@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Coordinate
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
@@ -54,38 +53,6 @@ universe u
 variable {k : Type u} [Field k] [IsAlgClosed k]
 variable {Q G : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-/-- The identity-component idempotent descends along a faithfully flat homomorphism with
-connected kernel. -/
-private theorem exists_map_eq_identityComponentIdempotent (f : Q ⟶ G)
-    (hf : f.hom.hom.toAlgHom.toRingHom.FaithfullyFlat)
-    [ConnectedSpace (PrimeSpectrum
-      (CommHopfAlgCat.quotient G.obj (CommHopfAlgCat.kernelHopfIdeal f.hom)))] :
-    ∃ a : Q, f.hom.hom a =
-      PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k G) := by
-  classical
-  have hI : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := G) ≤
-      CommHopfAlgCat.kernelHopfIdeal f.hom := by
-    intro x hx
-    exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ x).mp
-      (CommHopfAlgCat.identityComponentHopfIdeal_toIdeal_le_ker_of_connected
-        (CommHopfAlgCat.mkQuotient G.obj (CommHopfAlgCat.kernelHopfIdeal f.hom)) hx)
-  have hcoinv : ∀ x, (componentCoordinateHom G).hom x ∈
-      (CommHopfAlgCat.kernelHopfIdeal f.hom).coinvariants := by
-    apply (HopfIdeal.forall_hom_mem_coinvariants_iff _).mpr
-    rw [kernelHopfIdeal_componentCoordinateHom]
-    exact hI
-  let C := ConnectedComponents (PrimeSpectrum G)
-  have he := hcoinv ((ConstantGroup.functionAlgEquiv k C).symm (Pi.single 1 1))
-  rw [componentCoordinateHom_apply, componentCoordinateMap_indicator] at he
-  have heq : PrimeSpectrum.connectedComponentsIdempotent (1 : C) =
-      PrimeSpectrum.connectedComponentIdempotent
-        (Bialgebra.augmentationPoint k G : PrimeSpectrum G) :=
-    (congrArg PrimeSpectrum.connectedComponentsIdempotent
-      (rationalKernelPoint_one_component G).symm).trans
-      (PrimeSpectrum.connectedComponentsIdempotent_mk _)
-  rw [heq, CommHopfAlgCat.coinvariants_kernelHopfIdeal_eq_range f.hom hf] at he
-  exact he
-
 /-- A faithfully flat homomorphism with connected scheme-theoretic kernel is injective on
 component groups. The source, target, and kernel may be nonreduced. -/
 theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
@@ -106,12 +73,8 @@ theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
     exact (rationalComponentMap_apply Q h).symm.trans
       (hC.trans (rationalKernelPoint_one_component Q).symm)
   -- Descend the source component idempotent and detect it on the target identity component.
-  obtain ⟨a, ha⟩ := exists_map_eq_identityComponentIdempotent f hf
-  have hidem : IsIdempotentElem a := by
-    have hinj : Function.Injective f.hom.hom := hf.injective
-    apply hinj
-    rw [map_mul, ha]
-    exact PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent _
+  obtain ⟨a, hidem, ha⟩ := f.hom.exists_map_eq_identityComponentIdempotent hf
+  -- Its counit is one, so its clopen basic open contains the target identity component.
   have hε : (Bialgebra.counitAlgHom k Q) a = 1 := by
     have he := AlgHom.congr_fun (BialgHom.counitAlgHom_comp f.hom.hom) a
     simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom] at he
@@ -120,25 +83,21 @@ theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
   have hopen : IsClopen (PrimeSpectrum.basicOpen a : Set (PrimeSpectrum Q)) :=
     PrimeSpectrum.isClopen_iff.mpr ⟨a, hidem, rfl⟩
   have hidentity : (Bialgebra.augmentationPoint k Q : PrimeSpectrum Q) ∈
-      PrimeSpectrum.basicOpen a := by
-    apply (PrimeSpectrum.mem_basicOpen a _).mpr
-    simpa only [Bialgebra.augmentationPoint, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker,
-      AlgHom.coe_toRingHom] using (hε.trans_ne one_ne_zero)
-  have hnonzero : h.ofConv a ≠ 0 := by
-    have hm := hopen.connectedComponent_subset hidentity hmem
-    have hm' := (PrimeSpectrum.mem_basicOpen a _).mp hm
-    simpa only [rationalKernelPoint, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker,
-      AlgHom.coe_toRingHom] using hm'
+      PrimeSpectrum.basicOpen a :=
+    (Bialgebra.augmentationPoint_mem_basicOpen_iff k Q a).mpr (hε.trans_ne one_ne_zero)
+  have hnonzero : h.ofConv a ≠ 0 :=
+    (rationalKernelPoint_mem_basicOpen_iff Q h a).mp
+      (hopen.connectedComponent_subset hidentity hmem)
+  -- Pull back to the source to detect the kernel of the component homomorphism.
   have hsource : rationalKernelPoint G g ∈
       connectedComponent zG := by
     rw [← PrimeSpectrum.basicOpen_connectedComponentIdempotent zG]
-    apply (PrimeSpectrum.mem_basicOpen _ _).mpr
+    apply (rationalKernelPoint_mem_basicOpen_iff G g _).mpr
     have hg : g.ofConv (f.hom.hom a) ≠ 0 := by
       simpa only [h, BialgHom.mapDomain_apply, WithConv.ofConv_toConv,
         AlgHom.comp_apply, BialgHom.coe_toAlgHom] using hnonzero
     rw [ha] at hg
-    simpa only [rationalKernelPoint, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker,
-      AlgHom.coe_toRingHom] using hg
+    exact hg
   rw [rationalComponentMap_apply, ← rationalKernelPoint_one_component G]
   exact ConnectedComponents.coe_eq_coe'.mpr hsource
 
