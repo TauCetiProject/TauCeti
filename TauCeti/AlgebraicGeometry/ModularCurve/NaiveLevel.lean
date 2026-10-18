@@ -12,6 +12,7 @@ public import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.TateNormalForm
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # The naive moduli problems `[Γ₁(N)]` and `[Γ(N)]`
@@ -75,7 +76,8 @@ of `E[N]` is such an `H` (`EllipticCurveGeom.existsUnique_comp_torsionPairHom`),
 problem `[Γ(N)]` is relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`).
 Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every
 property stable under base change and composition which open immersions have
-(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
+(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation, and
+étaleness when `N` is invertible on `B` (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
 
 ## Main definitions
 
@@ -133,8 +135,9 @@ property stable under base change and composition which open immersions have
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_gammaNaiveRelRepData`: the representing
   morphisms of `[Γ₁(N)]` and `[Γ(N)]` inherit the properties of `E[N]` stable under base change
   and composition and holding for open immersions.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData`: if `N` is
-  invertible on `B`, the naive problem `[Γ₁(N)]` is étale over `Ell/B`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData` and
+  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: if `N` is
+  invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are étale over `Ell/B`.
 
 ## References
 
@@ -776,6 +779,17 @@ theorem hasProperty_gammaNaiveRelRepData {W : MorphismProperty Scheme.{u}}
 theorem hasProperty_gammaNaiveRelRepData_locallyOfFinitePresentation :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
+
+/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B` when `N` is invertible on `B`**
+(Katz–Mazur, 3.7.1): if `N` is invertible in every residue field of `B`, each representing scheme
+is étale over its base, as an open subscheme of `E[N] ×_S E[N]`. -/
+theorem hasProperty_etale_gammaNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
+    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
+  have : MorphismProperty.IsStableUnderComposition @Etale :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
+    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun _ ↦ by
+      simpa using X.structureMap.natCast_residueField_ne_zero (hN _)
 
 end GammaNaive
 

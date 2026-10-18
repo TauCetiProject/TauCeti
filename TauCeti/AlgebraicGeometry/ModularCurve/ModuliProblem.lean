@@ -198,6 +198,24 @@ theorem hasProperty_congr (D' : P.RelRepData) (W : MorphismProperty Scheme.{u}) 
   let e := (D.representableBy X).uniqueUpToIso (D'.representableBy X)
   rw [← Over.w e.hom, W.cancel_left_of_respectsIso]
 
+/-- Transport relative-representability data along an isomorphism of moduli problems. -/
+noncomputable def ofIso (D : P.RelRepData) (e : P ≅ Q) : Q.RelRepData where
+  rep X := D.rep X
+  representableBy X :=
+    (D.representableBy X).ofIso (Functor.isoWhiskerLeft X.baseChangeFunctor.op e)
+
+@[simp]
+theorem ofIso_rep (D : P.RelRepData) (e : P ≅ Q) (X : EllObj B) :
+    (D.ofIso e).rep X = D.rep X :=
+  (rfl)
+
+/-- Isomorphic moduli problems have the same isomorphism-invariant properties of representing
+morphisms. -/
+theorem hasProperty_iff_of_iso (D : P.RelRepData) (D' : Q.RelRepData) (e : P ≅ Q)
+    (W : MorphismProperty Scheme.{u}) [W.RespectsIso] :
+    D.HasProperty W ↔ D'.HasProperty W :=
+  (D.ofIso e).hasProperty_congr D' W
+
 variable (B) in
 /-- The trivial moduli problem `[Γ(1)]`, the terminal presheaf `𝟙_` on `Ell/B`, is relatively
 representable: its fibre over `(E/S)` is represented by `S` itself. -/
