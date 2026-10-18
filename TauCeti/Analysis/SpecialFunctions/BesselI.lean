@@ -12,7 +12,7 @@ public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 # The modified Bessel function of the first kind
 
 This file defines the modified Bessel function of the first kind of real order `ν` at a real
-argument `x`,
+argument `x`. For `x > 0`, it satisfies
 `I_ν(x) = (x / 2) ^ ν ₀F₁(; ν + 1; x ^ 2 / 4) = ∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`,
 and develops its basic real-variable theory.
 
@@ -20,9 +20,11 @@ The definition follows the shape of Mathlib's `Complex.besselJ`: `Real.besselI �
 part of `(x / 2) ^ ν * ₀F₁(; ν + 1; (x / 2) ^ 2)`, computed with the complex power and Mathlib's
 regularized hypergeometric function `Complex.regularizedHGFun`. The regularization (dividing by
 `Γ(j + ν + 1)` rather than by a Pochhammer symbol) makes the series meaningful for every real `ν`.
-For `x ≥ 0`, or for an integer order, the complex power is real and `Real.besselI ν x` is the
-classical value. For `x < 0` and non-integer `ν` the value is the real part of the principal
-branch, matching the totalization of `Real.rpow`.
+For `x > 0`, or for an integer order, the complex power is real and `Real.besselI ν x` is the
+classical value. At `x = 0`, the definition is totalized to `1` for `ν = 0` and `0` otherwise;
+these values agree with the classical continuous extension for nonnegative or integer orders.
+For `x < 0` and non-integer `ν` the value is the real part of the principal branch, matching the
+totalization of `Real.rpow`.
 
 The modified Bessel functions appear in the densities of the noncentral chi-squared, von Mises and
 von Mises–Fisher laws.
@@ -47,6 +49,8 @@ von Mises–Fisher laws.
 
 * *NIST Digital Library of Mathematical Functions*, §10.25 (definition and power series) and
   §10.29 (recurrence relations and derivatives).
+* [mathlib4#43070](https://github.com/leanprover-community/mathlib4/pull/43070), whose proposed
+  `Complex.besselI` formula this real-part definition follows.
 -/
 
 public section
@@ -86,17 +90,21 @@ theorem besselI_eq_rpow_mul (ν x : ℝ) :
 theorem hasSum_besselI (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     HasSum (fun j : ℕ => (x / 2) ^ (2 * j + ν) / (j ! * Gamma (j + ν + 1))) (besselI ν x) := by
   have hx2 : 0 < x / 2 := by positivity
+  have hcast (j : ℕ) : 2 * (j : ℝ) + ν = ((2 * j : ℕ) : ℝ) + ν := by
+    push_cast
+    ring
+  have hadd (j : ℕ) : (j : ℝ) + ν + 1 = ν + 1 + j := by ring
   rw [besselI_eq_rpow_mul]
   convert (Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re (ν + 1) ((x / 2) ^ 2)).mul_left
     ((x / 2) ^ ν) using 2 with j
-  rw [show 2 * (j : ℝ) + ν = ((2 * j : ℕ) : ℝ) + ν by push_cast; ring, rpow_add hx2,
-    rpow_natCast, pow_mul, show (j : ℝ) + ν + 1 = ν + 1 + j by ring]
+  rw [hcast, rpow_add hx2, rpow_natCast, pow_mul, hadd]
   ring
 
 /-- `I_ν(x)` is positive for `ν > -1` and `x > 0`. -/
 theorem besselI_pos {ν x : ℝ} (hν : -1 < ν) (hx : 0 < x) : 0 < besselI ν x := by
   have hterm (j : ℕ) : 0 < (x / 2) ^ (2 * j + ν) / (j ! * Gamma (j + ν + 1)) := by
-    have := Gamma_pos_of_pos (show 0 < (j : ℝ) + ν + 1 by linarith [j.cast_nonneg (α := ℝ)])
+    have hj : 0 < (j : ℝ) + ν + 1 := by linarith [j.cast_nonneg (α := ℝ)]
+    have := Gamma_pos_of_pos hj
     positivity
   exact hasSum_lt (f := 0) (i := 0) (fun j => (hterm j).le) (hterm 0) hasSum_zero
     (hasSum_besselI ν hx)
@@ -126,7 +134,8 @@ theorem tendsto_rpow_neg_mul_besselI_nhdsGT_zero (ν : ℝ) :
       (f := fun x : ℝ => (ν, x)) (by fun_prop)).continuousAt.tendsto.mono_left nhdsWithin_le_nhds
   have h0 : (Complex.regularizedHGFun 0 {((ν + 1 : ℝ) : ℂ)} ((0 / 2) ^ 2 : ℝ)).re =
       (Gamma (ν + 1))⁻¹ := by
-    rw [show ((0 / 2) ^ 2 : ℝ) = 0 by norm_num, Complex.ofReal_zero, Complex.regularizedHGFun_zero,
+    have hzero : ((0 / 2) ^ 2 : ℝ) = 0 := by norm_num
+    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero,
       Complex.regularizedHGFunCoeff_zero_singleton]
     simp only [Nat.factorial_zero, Nat.cast_one, one_mul, Nat.cast_zero, add_zero]
     rw [Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.ofReal_re]
@@ -180,13 +189,20 @@ theorem hasDerivAt_besselI (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
 theorem besselI_sub_besselI (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
     besselI (ν - 1) x - besselI (ν + 1) x = 2 * ν / x * besselI ν x := by
   have hx2 : x / 2 ≠ 0 := div_ne_zero hx two_ne_zero
+  have hsub : ((ν - 1 + 1 : ℝ) : ℂ) = ν := by
+    push_cast
+    ring
+  have hadd_two : ((ν + 1 + 1 : ℝ) : ℂ) = ν + 2 := by
+    push_cast
+    ring
+  have hadd_one : ((ν + 1 : ℝ) : ℂ) = ν + 1 := by
+    push_cast
+    ring
   have h := congrArg Complex.re
     (Complex.regularizedHGFun_zero_singleton_eq_mul_add_mul (ν : ℂ) (((x / 2) ^ 2 : ℝ) : ℂ))
   rw [Complex.add_re, Complex.re_ofReal_mul, Complex.re_ofReal_mul] at h
   rw [besselI_eq_rpow_mul, besselI_eq_rpow_mul, besselI_eq_rpow_mul,
-    show ((ν - 1 + 1 : ℝ) : ℂ) = ν by push_cast; ring,
-    show ((ν + 1 + 1 : ℝ) : ℂ) = ν + 2 by push_cast; ring,
-    show ((ν + 1 : ℝ) : ℂ) = ν + 1 by push_cast; ring, h, rpow_sub_one hx2, rpow_add_one hx2]
+    hsub, hadd_two, hadd_one, h, rpow_sub_one hx2, rpow_add_one hx2]
   field_simp
   ring
 

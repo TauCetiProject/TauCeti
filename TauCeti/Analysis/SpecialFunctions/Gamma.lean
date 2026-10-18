@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!

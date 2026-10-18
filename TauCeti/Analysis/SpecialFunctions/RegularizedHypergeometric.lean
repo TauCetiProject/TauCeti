@@ -49,7 +49,7 @@ theorem regularizedHGFunCoeff_zero_singleton (b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff 0 {b} n = (n ! * Gamma (b + n))⁻¹ := by
   simp [regularizedHGFunCoeff]
 
-/-- When there are at most as many lower as upper parameters, the regularized hypergeometric
+/-- When there are at most as many upper as lower parameters, the regularized hypergeometric
 series converges to `regularizedHGFun a b z` at every `z`. -/
 theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
     HasSum (fun n => regularizedHGFunCoeff a b n * z ^ n) (regularizedHGFun a b z) := by
@@ -62,6 +62,12 @@ theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z 
 theorem regularizedHGFun_zero_singleton_eq_mul_add_mul (b z : ℂ) :
     regularizedHGFun 0 {b} z =
       b * regularizedHGFun 0 {b + 1} z + z * regularizedHGFun 0 {b + 2} z := by
+  have hadd_one (n : ℕ) : b + 1 + ((n + 1 : ℕ) : ℂ) = b + ((n + 1 : ℕ) : ℂ) + 1 := by
+    push_cast
+    ring
+  have hadd_two (n : ℕ) : b + 2 + (n : ℂ) = b + ((n + 1 : ℕ) : ℂ) + 1 := by
+    push_cast
+    ring
   have h₁ := (hasSum_regularizedHGFun (a := 0) (b := {b + 1}) (by simp) z).mul_left b
   have h₂ := (hasSum_regularizedHGFun (a := 0) (b := {b + 2}) (by simp) z).mul_left z
   rw [← hasSum_nat_add_iff' 1] at h₁
@@ -70,9 +76,8 @@ theorem regularizedHGFun_zero_singleton_eq_mul_add_mul (b z : ℂ) :
   convert h₁.add h₂ using 1
   · ext n
     simp only [regularizedHGFunCoeff_zero_singleton]
-    rw [show b + 1 + ((n + 1 : ℕ) : ℂ) = b + ((n + 1 : ℕ) : ℂ) + 1 by push_cast; ring,
-      show b + 2 + (n : ℂ) = b + ((n + 1 : ℕ) : ℂ) + 1 by push_cast; ring, mul_inv, mul_inv,
-      mul_inv, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (b + ((n + 1 : ℕ) : ℂ))]
+    rw [hadd_one, hadd_two, mul_inv, mul_inv, mul_inv,
+      one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (b + ((n + 1 : ℕ) : ℂ))]
     generalize (Gamma (b + ((n + 1 : ℕ) : ℂ) + 1))⁻¹ = g
     rw [Nat.factorial_succ]
     push_cast
@@ -81,7 +86,9 @@ theorem regularizedHGFun_zero_singleton_eq_mul_add_mul (b z : ℂ) :
   · simp [one_div_Gamma_eq_self_mul_one_div_Gamma_add_one b]
     ring
 
-private theorem hasSum_ofReal_regularizedHGFun_zero_singleton (b y : ℝ) :
+/-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
+hypergeometric value. -/
+theorem hasSum_ofReal_regularizedHGFun_zero_singleton (b y : ℝ) :
     HasSum (fun n : ℕ => ((y ^ n / (n ! * Real.Gamma (b + n)) : ℝ) : ℂ))
       (regularizedHGFun 0 {(b : ℂ)} y) := by
   convert hasSum_regularizedHGFun (a := 0) (b := {(b : ℂ)}) (by simp) (y : ℂ) with n
@@ -89,6 +96,7 @@ private theorem hasSum_ofReal_regularizedHGFun_zero_singleton (b y : ℝ) :
   ring
 
 /-- At real arguments, `₀F₁(; b; y)` is real. -/
+@[simp]
 theorem regularizedHGFun_zero_singleton_ofReal_im (b y : ℝ) :
     (regularizedHGFun 0 {(b : ℂ)} y).im = 0 := by
   refine (hasSum_im (hasSum_ofReal_regularizedHGFun_zero_singleton b y)).unique ?_
@@ -157,9 +165,10 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     rw [← hasSum_nat_add_iff' 1]
     convert hasSum_regularizedHGFun_zero_singleton_ofReal_re (b + 1) y using 1
     · ext n
+      have hadd : b + (n + 1 : ℝ) = b + 1 + n := by ring
       rw [Nat.factorial_succ]
       push_cast
-      rw [show b + (n + 1 : ℝ) = b + 1 + n by ring]
+      rw [hadd]
       field_simp
     · simp
   · have hz' : |z| ≤ R := (abs_lt.2 hz).le
