@@ -18,14 +18,23 @@ factors: the homogenization of `∏ (X - a)` is `∏ (X - a Y)`. Consequently, a
 many roots as its degree, `p = c ∏ (X - a)`, has degree-`(natDegree p)` homogenization
 `F(x, y) = c ∏ (x - a y)` at *every* point `(x, y)`, including the points with `y = 0`.
 
-This factorisation is the starting point of Liouville-type lower bounds for binary forms at
-integer points.
+More generally, the homogenization of degree `n ≥ natDegree p` of such a `p` is
+`c X₁ ^ (n - natDegree p) ∏ (X₀ - a X₁)`; since every binary form `F` of degree `n` is the
+homogenization of its dehomogenization `F(X, 1)`, of degree at most `n`, this factors binary forms
+over an algebraically closed field into linear forms.
+
+This factorisation is the starting point of Liouville- and Roth-type lower bounds for binary forms
+at integer points.
 
 ## Main results
 
 * `Polynomial.homogenize_multiset_prod_X_sub_C`: `homogenize (∏ (X - a)) (card s) = ∏ (X - a Y)`.
 * `Polynomial.eval_homogenize_natDegree_of_card_roots`: if `p` has `natDegree p` roots, then
   `F(x) = leadingCoeff p * ∏_{a ∈ roots p} (x 0 - a x 1)`.
+* `Polynomial.homogenize_eq_C_mul_X_pow_mul_prod`: if `p` has `natDegree p` roots, then its
+  homogenization of degree `n` is `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏ (X₀ - a X₁)`.
+* `MvPolynomial.IsHomogeneous.natDegree_aeval_X_one_le`: a binary form of degree `n`
+  dehomogenizes to a polynomial of degree at most `n`.
 -/
 
 public section
@@ -63,4 +72,39 @@ theorem eval_homogenize_natDegree_of_card_roots [IsDomain R] {p : R[X]}
       rw [homogenize_C_mul, homogenize_multiset_prod_X_sub_C]
       simp [map_multiset_prod, Multiset.map_map]
 
+/-- If `p` has as many roots as its degree, its homogenization of degree `n ≥ natDegree p` is
+the binary form `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏_{a ∈ roots p} (X₀ - a X₁)`. -/
+theorem homogenize_eq_C_mul_X_pow_mul_prod [IsDomain R] {p : R[X]} {n : ℕ}
+    (hn : p.natDegree ≤ n) (hroots : Multiset.card p.roots = p.natDegree) :
+    p.homogenize n = MvPolynomial.C p.leadingCoeff * MvPolynomial.X 1 ^ (n - p.natDegree) *
+      (p.roots.map fun a ↦ MvPolynomial.X 0 - MvPolynomial.C a * MvPolynomial.X 1).prod := by
+  have hp := C_leadingCoeff_mul_prod_multiset_X_sub_C hroots
+  have h := homogenize_mul p 1 le_rfl (natDegree_one.trans_le (Nat.zero_le (n - p.natDegree)))
+  rw [mul_one, Nat.add_sub_cancel' hn, homogenize_one] at h
+  rw [h, mul_right_comm]
+  congr 1
+  calc p.homogenize p.natDegree
+      = (C p.leadingCoeff * (p.roots.map fun a ↦ X - C a).prod).homogenize
+          (Multiset.card p.roots) := by rw [hp, hroots]
+    _ = _ := by rw [homogenize_C_mul, homogenize_multiset_prod_X_sub_C, MvPolynomial.C_mul']
+
 end Polynomial
+
+namespace MvPolynomial
+
+/-- The dehomogenization `F(X, 1)` of a binary form `F` of degree `n` has degree at most `n`. -/
+theorem IsHomogeneous.natDegree_aeval_X_one_le {R : Type*} [CommSemiring R]
+    {F : MvPolynomial (Fin 2) R} {n : ℕ} (hF : F.IsHomogeneous n) :
+    (MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).natDegree ≤ n := by
+  conv_lhs => rw [F.as_sum]
+  rw [map_sum]
+  refine Polynomial.natDegree_sum_le_of_forall_le _ _ fun s hs ↦ ?_
+  have hdeg : s 0 + s 1 = n := by
+    simpa [Finsupp.weight_apply, Finsupp.sum_fintype, Fin.sum_univ_two] using
+      hF (mem_support_iff.mp hs)
+  rw [aeval_monomial, Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, one_pow, mul_one,
+    Polynomial.algebraMap_eq]
+  exact (Polynomial.natDegree_C_mul_X_pow_le _ _).trans (by omega)
+
+end MvPolynomial

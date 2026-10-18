@@ -32,6 +32,7 @@ height estimates such as Roth's lemma.
 * `Rat.den_le_mulHeight₁`, `Rat.log_den_le_logHeight₁`: the denominator of a rational number is
   at most its height.
 * `Rat.mulHeight₁_le_max_one_abs_mul_den`: conversely, `H(q) ≤ max(1, |q|) den(q)`.
+* `Rat.mulHeight₁_intCast_div_le`: `H(x / y) ≤ max(|x|, |y|)` for integers `x` and `y ≠ 0`.
 * `Finsupp.mulHeight_mapRange_intCast_le`, `Finsupp.mulHeight_mapRange_intCast_eq`: the bound,
   and the equality for coprime entries, for finitely supported integer vectors.
 * `Finsupp.mulHeight_mapRange_intCast_le_of_abs_le`: `H(x) ≤ B` if all entries of the nonzero
@@ -107,6 +108,26 @@ theorem mulHeight₁_le_max_one_abs_mul_den (q : ℚ) :
   refine max_le ?_ (le_mul_of_one_le_left (by positivity) (le_max_left _ _))
   rw [Nat.cast_natAbs, Int.cast_abs, hnum, abs_mul, Nat.abs_cast]
   exact mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
+
+/-- The multiplicative height of a quotient `x / y` of integers with `y ≠ 0` is at most
+`max(|x|, |y|)`. -/
+theorem mulHeight₁_intCast_div_le (x : ℤ) {y : ℤ} (hy : y ≠ 0) :
+    mulHeight₁ ((x : ℚ) / y) ≤ max |(x : ℝ)| |(y : ℝ)| := by
+  rw [mulHeight₁_eq_max, ← Rat.divInt_eq_div]
+  have hnum : (Rat.divInt x y).num.natAbs ≤ x.natAbs := by
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    exact Int.natAbs_le_of_dvd_ne_zero (Rat.num_dvd x hy) hx
+  have hden : ((Rat.divInt x y).den : ℤ) ≤ |y| :=
+    Int.le_of_dvd (abs_pos.2 hy) ((Rat.den_dvd x y).trans (self_dvd_abs y))
+  have h1 : ((Rat.divInt x y).num.natAbs : ℝ) ≤ |(x : ℝ)| := by
+    rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast]
+    exact_mod_cast hnum
+  have h2 : ((Rat.divInt x y).den : ℝ) ≤ |(y : ℝ)| := by
+    rw [← Int.cast_abs]
+    exact_mod_cast hden
+  push_cast
+  exact max_le_max h1 h2
 
 /-- The logarithm of the denominator of a rational number is at most its logarithmic height. -/
 theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q := by
