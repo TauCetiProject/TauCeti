@@ -47,6 +47,11 @@ Morse index is at most `dim_ℂ E + q`.
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
   `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`.
+* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`,
+  `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
+  negation, product and composition rules.
+* `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
+  convex function preserves positivity of the Levi form.
 * `TauCeti.re_manifoldLeviForm_apply_of_mem_maximalAtlas` and
   `TauCeti.im_manifoldLeviForm_apply_of_mem_maximalAtlas`: at a critical point, the real and
   imaginary parts may be computed from the real Hessian in any real `C²` chart.
@@ -65,7 +70,7 @@ Morse index is at most `dim_ℂ E + q`.
 public section
 
 open Complex Filter Function Module Set Topology
-open scoped ContDiff Manifold
+open scoped ComplexConjugate ContDiff Manifold
 
 noncomputable section
 
@@ -120,6 +125,14 @@ private theorem contDiffAt_comp_chartAt_symm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
   have hext' : extChartAt 𝓘(ℝ, E) x x = chartAt E x x := by simp
   simpa only [hext, hext'] using hf.contDiffAt_comp_extChartAt_symm
 
+/-- The real derivative of `f` in the preferred chart is the derivative `mvfderiv` of `f` on the
+real manifold underlying `M`. -/
+private theorem fderiv_comp_chartAt_symm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) :
+    fderiv ℝ (f ∘ (chartAt E x).symm) (chartAt E x x) = mvfderiv 𝓘(ℝ, E) f x := by
+  have hext : ((extChartAt 𝓘(ℝ, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
+  have hext' : extChartAt 𝓘(ℝ, E) x x = chartAt E x x := by simp
+  rw [(hf.mdifferentiableAt (by norm_num)).mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+
 /-- The real part of the Levi form is one quarter of the `I`-invariant part of the critical
 Hessian. -/
 @[simp]
@@ -167,6 +180,55 @@ theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
 theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
     manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
   leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- **The product rule** for the Levi form on a complex manifold. Writing `∂f` for the
+complex-linear extension `StrongDual.extendRCLike` of the real differential `mvfderiv 𝓘(ℝ, E) f x`,
+the Levi form of `f g` at `x` is `f(x) L g + g(x) L f + (conj (∂f v) ∂g w + conj (∂g v) ∂f w) / 4`.
+-/
+theorem manifoldLeviForm_mul_apply {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
+    (hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 g x) (v w : E) :
+    manifoldLeviForm E (f * g) x v w =
+      f x * manifoldLeviForm E g x v w + g x * manifoldLeviForm E f x v w +
+        (4 : ℂ)⁻¹ *
+          (conj ((StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) v) *
+              (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) g x) : StrongDual ℂ E) w +
+            conj ((StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) g x) : StrongDual ℂ E) v) *
+              (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w) := by
+  have h := leviForm_mul_apply (contDiffAt_comp_chartAt_symm hf)
+    (contDiffAt_comp_chartAt_symm hg) v w
+  rwa [fderiv_comp_chartAt_symm hf, fderiv_comp_chartAt_symm hg, comp_apply, comp_apply,
+    (chartAt E x).left_inv (mem_chart_source E x)] at h
+
+/-- **The composition rule** for the Levi form on a complex manifold, for post-composition with a
+function of one real variable. Writing `∂f` for the complex-linear extension
+`StrongDual.extendRCLike` of `mvfderiv 𝓘(ℝ, E) f x`, the Levi form of `φ ∘ f` at `x` is
+`φ'(f x) L f + φ''(f x) conj (∂f v) ∂f w / 4`. -/
+theorem manifoldLeviForm_scalar_comp_apply {φ : ℝ → ℝ} (hφ : ContDiffAt ℝ 2 φ (f x))
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (v w : E) :
+    manifoldLeviForm E (φ ∘ f) x v w =
+      deriv φ (f x) * manifoldLeviForm E f x v w +
+        iteratedDeriv 2 φ (f x) * ((4 : ℂ)⁻¹ *
+          (conj ((StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) v) *
+            (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w)) := by
+  have hφ' : ContDiffAt ℝ 2 φ ((f ∘ (chartAt E x).symm) (chartAt E x x)) := by
+    rwa [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
+  have h := leviForm_scalar_comp_apply hφ' (contDiffAt_comp_chartAt_symm hf) v w
+  rwa [fderiv_comp_chartAt_symm hf, comp_apply,
+    (chartAt E x).left_inv (mem_chart_source E x)] at h
+
+/-- **Post-composition with a convex function** on a complex manifold. If `φ'' ≥ 0` at `f x`, then
+the diagonal of the Levi form of `φ ∘ f` dominates `φ'(f x)` times the diagonal of the Levi form
+of `f`. In particular, if moreover `φ'(f x) > 0`, post-composition with `φ` preserves strict
+positivity of the Levi form at `x`. -/
+theorem le_re_manifoldLeviForm_scalar_comp_apply_self {φ : ℝ → ℝ} (hφ : ContDiffAt ℝ 2 φ (f x))
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hφ₂ : 0 ≤ iteratedDeriv 2 φ (f x)) (v : E) :
+    deriv φ (f x) * (manifoldLeviForm E f x v v).re ≤
+      (manifoldLeviForm E (φ ∘ f) x v v).re := by
+  have hfx : (f ∘ (chartAt E x).symm) (chartAt E x x) = f x := by
+    rw [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
+  have h := le_re_leviForm_scalar_comp_apply_self (hfx ▸ hφ) (contDiffAt_comp_chartAt_symm hf)
+    (hfx ▸ hφ₂) v
+  rwa [hfx] at h
 
 /-! ### Independence of the holomorphic chart -/
 
