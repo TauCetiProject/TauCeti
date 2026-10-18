@@ -6,14 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Coordinate
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.Weights
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Connected
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
-public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
-public import TauCeti.RingTheory.Smooth.Retract
 
 /-!
 # Dynamic subgroups of reductive groups
@@ -38,9 +35,6 @@ weights of a noncentral cocharacter of a reductive group cannot all be nonnegati
 
 ## Main declarations
 
-* `BialgHom.formallySmooth_quotient_unipotentDefiningHopfIdeal` and
-  `BialgHom.formallySmooth_quotient_leviDefiningHopfIdeal`: the dynamic unipotent and Levi
-  subgroups are formally smooth when the dynamic parabolic is.
 * `BialgHom.isUnipotentRadicalCandidate_unipotentDefiningHopfIdeal`: in a smooth group, if
   `P(λ) = G` then `U(λ)` is a connected normal smooth unipotent closed subgroup.
 * `TauCeti.reductiveCommHopfAlgProperty.unipotentDefiningHopfIdeal_eq_augmentation`: in a
@@ -66,66 +60,7 @@ open scoped TensorProduct
 
 namespace BialgHom
 
-universe u v
-
-section Ring
-
-variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [HopfAlgebra R H]
-
-/-- The dynamic unipotent subgroup is an algebra retract of the dynamic parabolic, so it is
-formally smooth whenever the dynamic parabolic is. -/
-theorem formallySmooth_quotient_unipotentDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
-    [Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal)] :
-    Algebra.FormallySmooth R (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal) := by
-  let ε : (H ⧸ (leviDefiningHopfIdeal l).toIdeal) →ₐ[R] R :=
-    Bialgebra.counitAlgHom R (H ⧸ (leviDefiningHopfIdeal l).toIdeal)
-  refine Algebra.FormallySmooth.of_retract
-    ((l.parabolicCoordinateAlgEquiv.symm.toAlgHom).comp Algebra.TensorProduct.includeLeft)
-    (((Algebra.TensorProduct.rid R R _).toAlgHom.comp
-      (Algebra.TensorProduct.map (AlgHom.id R _) ε)).comp
-        l.parabolicCoordinateAlgEquiv.toAlgHom) ?_
-  ext x
-  simp
-
-/-- The dynamic Levi subgroup is an algebra retract of the dynamic parabolic, so it is formally
-smooth whenever the dynamic parabolic is. -/
-theorem formallySmooth_quotient_leviDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
-    [Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal)] :
-    Algebra.FormallySmooth R (H ⧸ (leviDefiningHopfIdeal l).toIdeal) := by
-  let ε : (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal) →ₐ[R] R :=
-    Bialgebra.counitAlgHom R (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal)
-  refine Algebra.FormallySmooth.of_retract
-    ((l.parabolicCoordinateAlgEquiv.symm.toAlgHom).comp Algebra.TensorProduct.includeRight)
-    (((Algebra.TensorProduct.lid R _).toAlgHom.comp
-      (Algebra.TensorProduct.map ε (AlgHom.id R _))).comp
-        l.parabolicCoordinateAlgEquiv.toAlgHom) ?_
-  ext x
-  simp
-
-/-- If the dynamic parabolic of a cocharacter is the whole group, then its points over every
-value algebra are all the points. -/
-theorem parabolic_eq_top_of_parabolicDefiningHopfIdeal_eq_bot
-    (l : H →ₐc[R] LaurentPolynomial R) (hl : parabolicDefiningHopfIdeal l = ⊥)
-    (A : Type*) [CommRing A] [Algebra R A] :
-    parabolic A l = ⊤ := by
-  rw [← quotientPointsSubgroup_parabolicDefiningHopfIdeal, hl,
-    CommHopfAlgCat.quotientPointsSubgroup_bot]
-
-/-- If the dynamic parabolic of a cocharacter is the whole group, then the dynamic unipotent
-subgroup is a normal closed subgroup of the whole group. -/
-theorem isNormal_unipotentDefiningHopfIdeal_of_parabolicDefiningHopfIdeal_eq_bot
-    (l : H →ₐc[R] LaurentPolynomial R) (hl : parabolicDefiningHopfIdeal l = ⊥) :
-    l.unipotentDefiningHopfIdeal.IsNormal := by
-  rw [CommHopfAlgCat.isNormal_iff_quotientPointsSubgroup_normal (_root_.CommHopfAlgCat.of R H)]
-  rintro ⟨A⟩
-  rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal]
-  refine ⟨fun u hu g ↦ conj_mem_unipotent ?_ hu⟩
-  rw [parabolic_eq_top_of_parabolicDefiningHopfIdeal_eq_bot l hl]
-  exact Subgroup.mem_top g
-
-end Ring
-
-section Field
+universe u
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
@@ -146,8 +81,6 @@ theorem isUnipotentRadicalCandidate_unipotentDefiningHopfIdeal [Algebra.Smooth k
     have := formallySmooth_quotient_unipotentDefiningHopfIdeal l
     exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
   · rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal]
-
-end Field
 
 end BialgHom
 
@@ -253,31 +186,15 @@ theorem parabolicDefiningHopfIdeal_eq_bot_iff_of_charZero (hH : reductiveCommHop
       Derivation.adjointWeightSpace
         ((AddMonoidAlgebra.toMultiplicativeBialgEquiv k k ℤ).toBialgHom.comp l)
         (Multiplicative.ofAdd n) = ⊥ := by
-  set π := (AddMonoidAlgebra.toMultiplicativeBialgEquiv k k ℤ).toBialgHom.comp l
   refine ⟨fun hl n hn ↦ ?_, fun hneg ↦ ?_⟩
   · by_contra hne
-    have hmem : Multiplicative.ofAdd n ∈ Derivation.nontrivialAdjointWeights π :=
+    have hmem : Multiplicative.ofAdd n ∈ Derivation.nontrivialAdjointWeights
+        ((AddMonoidAlgebra.toMultiplicativeBialgEquiv k k ℤ).toBialgHom.comp l) :=
       Derivation.mem_nontrivialAdjointWeights.mpr ⟨by simpa using hn.ne, hne⟩
     rw [hH.nontrivialAdjointWeights_eq_empty l hl] at hmem
     exact hmem
-  have := hH.smooth
   have := geometricallyConnectedCommHopfAlgProperty.connectedSpace k H.obj hH.geometricallyConnected
-  -- Cartier's theorem makes the dynamic parabolic smooth.
-  have : Algebra.Smooth k (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal) :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
-      (CommHopfAlgCat.quotient H.obj (parabolicDefiningHopfIdeal l)))
-  -- The weight decomposition was stated with classical decidable equality on the characters.
-  let : DecidableEq (Multiplicative ℤ) := Classical.decEq _
-  apply HopfIdeal.eq_bot_of_lieSubalgebra_eq_top
-  apply LieSubalgebra.toSubmodule_injective
-  rw [BialgHom.lieSubalgebra_parabolicDefiningHopfIdeal_toSubmodule,
-    LieSubalgebra.top_toSubmodule, Submodule.map_eq_top_iff, eq_top_iff,
-    ← (Derivation.isInternal_adjointWeightSpace π).submodule_iSup_eq_top]
-  refine iSup_le fun α ↦ ?_
-  rcases lt_or_ge α.toAdd 0 with hn | hn
-  · rw [← ofAdd_toAdd α, hneg _ hn]
-    exact bot_le
-  · exact le_iSup₂_of_le α.toAdd hn le_rfl
+  exact l.parabolicDefiningHopfIdeal_eq_bot_of_adjointWeightSpace_neg_eq_bot hneg
 
 end Lie
 
