@@ -101,11 +101,11 @@ the subspaces are equal. -/
 private theorem mk_plucker_basis_eq_iff {W : Submodule K (ι → K)} {n : ℕ} (b : Basis (Fin n) K U)
     (b' : Basis (Fin n) K W) :
     Projectivization.mk K (plucker fun i ↦ (b i : ι → K))
-        (plucker_ne_zero (linearIndependent_coe_basis b)) =
+        (plucker_ne_zero b.linearIndependent_coe_basis) =
       Projectivization.mk K (plucker fun i ↦ (b' i : ι → K))
-        (plucker_ne_zero (linearIndependent_coe_basis b')) ↔ U = W := by
-  rw [mk_plucker_eq_mk_plucker_iff (linearIndependent_coe_basis b)
-    (linearIndependent_coe_basis b'), span_range_coe_basis, span_range_coe_basis]
+        (plucker_ne_zero b'.linearIndependent_coe_basis) ↔ U = W := by
+  rw [mk_plucker_eq_mk_plucker_iff b.linearIndependent_coe_basis
+    b'.linearIndependent_coe_basis, b.span_range_coe_basis, b'.span_range_coe_basis]
 
 /-- The Plücker point of a subspace `U` of `ι → K`: the point of the projective space over
 `powersetCard ι (finrank K U) → K` given by the Plücker coordinates of a basis of `U`. It does
@@ -113,13 +113,13 @@ not depend on the basis, by `relativePluckerPoint_eq_mk`. -/
 noncomputable def relativePluckerPoint :
     Projectivization K (powersetCard ι (finrank K U) → K) :=
   .mk K (plucker fun i ↦ (finBasis K U i : ι → K))
-    (plucker_ne_zero (linearIndependent_coe_basis (finBasis K U)))
+    (plucker_ne_zero (finBasis K U).linearIndependent_coe_basis)
 
 variable {U} in
 /-- The Plücker point of `U` is the class of the Plücker coordinates of any basis of `U`. -/
 theorem relativePluckerPoint_eq_mk (b : Basis (Fin (finrank K U)) K U) :
     relativePluckerPoint U = .mk K (plucker fun i ↦ (b i : ι → K))
-      (plucker_ne_zero (linearIndependent_coe_basis b)) :=
+      (plucker_ne_zero b.linearIndependent_coe_basis) :=
   (mk_plucker_basis_eq_iff U _ b).2 rfl
 
 /-- A subspace is determined by its dimension together with its Plücker point: the Plücker point
@@ -134,7 +134,7 @@ theorem relativePluckerPoint_injective :
   -- any basis of `U` indexed by `Fin q` with `q = finrank K U`.
   have key (q : ℕ) (hq : finrank K U = q) (b : Basis (Fin q) K U) :
       HEq (relativePluckerPoint U) (Projectivization.mk K (plucker fun i ↦ (b i : ι → K))
-        (plucker_ne_zero (linearIndependent_coe_basis b))) := by
+        (plucker_ne_zero b.linearIndependent_coe_basis)) := by
     subst hq
     rw [relativePluckerPoint_eq_mk b]
   have := eq_of_heq ((key _ hp ((finBasis K U).reindex (finCongr hp))).symm.trans h)
