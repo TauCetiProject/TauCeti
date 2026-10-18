@@ -78,7 +78,43 @@ theorem union_isLink (h : G.Compatible H) :
     h.union.IsLink e x y ↔ G.IsLink e x y ∨ H.IsLink e x y :=
   (Iff.rfl)
 
+@[simp]
+theorem union_inc_iff (h : G.Compatible H) :
+    h.union.Inc e x ↔ G.Inc e x ∨ H.Inc e x := by
+  constructor
+  · rintro ⟨y, hxy⟩
+    exact h.union_isLink.mp hxy |>.imp (fun hxy ↦ ⟨y, hxy⟩) (fun hxy ↦ ⟨y, hxy⟩)
+  · rintro (⟨y, hxy⟩ | ⟨y, hxy⟩)
+    · exact ⟨y, h.union_isLink.mpr (Or.inl hxy)⟩
+    · exact ⟨y, h.union_isLink.mpr (Or.inr hxy)⟩
+
+@[simp]
+theorem union_adj_iff (h : G.Compatible H) :
+    h.union.Adj x y ↔ G.Adj x y ∨ H.Adj x y := by
+  constructor
+  · rintro ⟨e, hxy⟩
+    exact h.union_isLink.mp hxy |>.imp (fun hxy ↦ ⟨e, hxy⟩) (fun hxy ↦ ⟨e, hxy⟩)
+  · rintro (⟨e, hxy⟩ | ⟨e, hxy⟩)
+    · exact ⟨e, h.union_isLink.mpr (Or.inl hxy)⟩
+    · exact ⟨e, h.union_isLink.mpr (Or.inr hxy)⟩
+
+@[simp]
+theorem union_isLoopAt_iff (h : G.Compatible H) :
+    h.union.IsLoopAt e x ↔ G.IsLoopAt e x ∨ H.IsLoopAt e x := by
+  simp [← isLink_self_iff]
+
+@[simp]
+theorem union_isNonloopAt_iff (h : G.Compatible H) :
+    h.union.IsNonloopAt e x ↔ G.IsNonloopAt e x ∨ H.IsNonloopAt e x := by
+  constructor
+  · rintro ⟨y, hy, hxy⟩
+    exact h.union_isLink.mp hxy |>.imp (fun hxy ↦ ⟨y, hy, hxy⟩) (fun hxy ↦ ⟨y, hy, hxy⟩)
+  · rintro (⟨y, hy, hxy⟩ | ⟨y, hy, hxy⟩)
+    · exact ⟨y, hy, h.union_isLink.mpr (Or.inl hxy)⟩
+    · exact ⟨y, hy, h.union_isLink.mpr (Or.inr hxy)⟩
+
 /-- The left input is a subgraph of a compatible union. -/
+@[simp]
 theorem left_le_union (h : G.Compatible H) : G ≤ h.union where
   vertexSet_mono := subset_union_left
   isLink_mono := by
@@ -86,6 +122,7 @@ theorem left_le_union (h : G.Compatible H) : G ≤ h.union where
     exact h.union_isLink.mpr (Or.inl hxy)
 
 /-- The right input is a subgraph of a compatible union. -/
+@[simp]
 theorem right_le_union (h : G.Compatible H) : H ≤ h.union where
   vertexSet_mono := subset_union_right
   isLink_mono := by
@@ -113,7 +150,7 @@ theorem union_comm (h : G.Compatible H) : h.union = h.symm.union := by
 
 /-- The union of `G` and `H` is compatible with `K` when all three graphs are pairwise
 compatible. -/
-theorem union_compatible_right (hGH : G.Compatible H) (hGK : G.Compatible K)
+theorem union_compatible (hGH : G.Compatible H) (hGK : G.Compatible K)
     (hHK : H.Compatible K) : hGH.union.Compatible K := by
   intro e heGH heK x y
   constructor
@@ -127,14 +164,14 @@ theorem union_compatible_right (hGH : G.Compatible H) (hGK : G.Compatible K)
 
 /-- `G` is compatible with the union of `H` and `K` when all three graphs are pairwise
 compatible. -/
-theorem compatible_union_left (hGH : G.Compatible H) (hGK : G.Compatible K)
+theorem compatible_union (hGH : G.Compatible H) (hGK : G.Compatible K)
     (hHK : H.Compatible K) : G.Compatible hHK.union :=
-  (hHK.union_compatible_right hGH.symm hGK.symm).symm
+  (hHK.union_compatible hGH.symm hGK.symm).symm
 
 /-- Compatible union is associative for three pairwise compatible graphs. -/
 theorem union_assoc (hGH : G.Compatible H) (hGK : G.Compatible K) (hHK : H.Compatible K) :
-    (hGH.union_compatible_right hGK hHK).union =
-      (hGH.compatible_union_left hGK hHK).union := by
+    (hGH.union_compatible hGK hHK).union =
+      (hGH.compatible_union hGK hHK).union := by
   apply Graph.ext
   · exact Set.union_assoc V(G) V(H) V(K)
   · intro e x y
