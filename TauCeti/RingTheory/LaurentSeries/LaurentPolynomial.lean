@@ -117,10 +117,7 @@ theorem toLaurentSeries_toLaurent (p : R[X]) :
 /-- The polynomial, Laurent-polynomial, and Laurent-series algebra structures form a tower. -/
 instance isScalarTower_polynomial_laurentPolynomial :
     IsScalarTower (Polynomial R) R[T;T⁻¹] (LaurentSeries R) :=
-  IsScalarTower.of_algebraMap_eq (R := Polynomial R) (S := R[T;T⁻¹])
-    (A := LaurentSeries R) fun p ↦ by
-    rw [algebraMap_eq_toLaurentSeries, LaurentPolynomial.algebraMap_eq_toLaurent,
-      toLaurentSeries_toLaurent, Polynomial.algebraMap_hahnSeries_apply]
+  .of_algebraMap_eq fun p ↦ by simp
 
 /-- The inclusion of Laurent polynomials into Laurent series preserves coefficients. -/
 @[simp]
