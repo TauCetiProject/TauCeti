@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 For an elliptic curve in characteristic-`≠ 2` normal form, the cohomological descent map
 
 ```text
-H¹(G_K, E[2]) ⟶ (K[X] ⨸ (f))ˣ ⨸ squares
+H¹(G_K, E[2]) ⟶ (K[X] / (f))ˣ / squares
 ```
 
 is injective and carries the cohomological Kummer map to the explicit `x - T` map. Consequently a
