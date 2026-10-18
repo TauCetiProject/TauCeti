@@ -388,59 +388,25 @@ def reducedCyclicCochainComplexIsKernel :
     (KernelFork.ofι (reducedCyclicCochainComplexι R A M)
       (reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap R A M))
     (HomologicalComplex.eval (ModuleCat R) (ComplexShape.up ℕ) n)).symm ?_
-  apply ModuleCat.isLimitKernelFork
-  · intro x
-    constructor
-    · intro hx
-      have hz : (cyclicCochainComplexXIso R A M n).hom x ∈
-          reducedCyclicCochains R A M n := by
-        rw [mem_reducedCyclicCochains_iff]
-        change ((scalarCyclicRestrictionComplexMap R A M).f n) x = 0 at hx
-        calc
-          scalarCyclicRestriction R A M n ((cyclicCochainComplexXIso R A M n).hom x) =
-              (cyclicCochainComplexXIso R R M n).hom
-                ((scalarCyclicRestrictionComplexMap R A M).f n x) :=
-            (ConcreteCategory.congr_hom
-              (scalarCyclicRestrictionComplexMap_f R A M n) x).symm
-          _ = 0 := by rw [hx, map_zero]
-      let z : reducedCyclicCochains R A M n :=
-        ⟨(cyclicCochainComplexXIso R A M n).hom x, hz⟩
-      refine ⟨(reducedCyclicCochainComplexXIso R A M n).inv z, ?_⟩
-      change (reducedCyclicCochainComplexι R A M).f n
-        ((reducedCyclicCochainComplexXIso R A M n).inv z) = x
-      apply (ModuleCat.mono_iff_injective
-        (cyclicCochainComplexXIso R A M n).hom).1 inferInstance
-      calc
-        (cyclicCochainComplexXIso R A M n).hom
-            ((reducedCyclicCochainComplexι R A M).f n
-              ((reducedCyclicCochainComplexXIso R A M n).inv z)) =
-            ((reducedCyclicCochainComplexXIso R A M n).hom
-              ((reducedCyclicCochainComplexXIso R A M n).inv z)).1 :=
-          ConcreteCategory.congr_hom (reducedCyclicCochainComplexι_f R A M n) _
-        _ = z.1 := congrArg Subtype.val
-          ((reducedCyclicCochainComplexXIso R A M n).hom_inv_id_apply z)
-        _ = (cyclicCochainComplexXIso R A M n).hom x := rfl
-    · rintro ⟨y, rfl⟩
-      change ((reducedCyclicCochainComplexι R A M ≫
-        scalarCyclicRestrictionComplexMap R A M).f n) y = 0
-      rw [reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap]
-      rfl
-  · intro x y hxy
-    change (reducedCyclicCochainComplexι R A M).f n x =
-      (reducedCyclicCochainComplexι R A M).f n y at hxy
-    apply (ModuleCat.mono_iff_injective
-      (reducedCyclicCochainComplexXIso R A M n).hom).1 inferInstance
-    apply Subtype.ext
-    calc
-      ((reducedCyclicCochainComplexXIso R A M n).hom x).1 =
-          (cyclicCochainComplexXIso R A M n).hom
-            ((reducedCyclicCochainComplexι R A M).f n x) :=
-        (ConcreteCategory.congr_hom (reducedCyclicCochainComplexι_f R A M n) x).symm
-      _ = (cyclicCochainComplexXIso R A M n).hom
-          ((reducedCyclicCochainComplexι R A M).f n y) :=
-        congrArg (cyclicCochainComplexXIso R A M n).hom.hom hxy
-      _ = ((reducedCyclicCochainComplexXIso R A M n).hom y).1 :=
-        ConcreteCategory.congr_hom (reducedCyclicCochainComplexι_f R A M n) y
+  refine IsKernel.ofIso (ModuleCat.ofHom (scalarCyclicRestriction R A M n))
+    (ModuleCat.kernelIsLimit (ModuleCat.ofHom (scalarCyclicRestriction R A M n))) _
+    (cyclicCochainComplexXIso R A M n).symm
+    (cyclicCochainComplexXIso R R M n).symm
+    (reducedCyclicCochainComplexXIso R A M n).symm ?_ ?_
+  · change (cyclicCochainComplexXIso R A M n).inv ≫
+      (scalarCyclicRestrictionComplexMap R A M).f n =
+        ModuleCat.ofHom (scalarCyclicRestriction R A M n) ≫
+          (cyclicCochainComplexXIso R R M n).inv
+    rw [← cancel_mono (cyclicCochainComplexXIso R R M n).hom]
+    simp only [Category.assoc, scalarCyclicRestrictionComplexMap_f,
+      Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
+  · change (reducedCyclicCochainComplexXIso R A M n).inv ≫
+      (reducedCyclicCochainComplexι R A M).f n =
+        ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype ≫
+          (cyclicCochainComplexXIso R A M n).inv
+    rw [← cancel_mono (cyclicCochainComplexXIso R A M n).hom]
+    simp only [Category.assoc, reducedCyclicCochainComplexι_f,
+      Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
 
 end ComplexKernel
 
