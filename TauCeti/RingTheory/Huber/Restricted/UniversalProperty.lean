@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.ModuleTopology
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
-public import Mathlib.Topology.UniformSpace.Equicontinuity
+public import TauCeti.Topology.Algebra.Module.Equicontinuity
 
 /-!
 # The universal property of restricted series with module coefficients
@@ -87,46 +87,9 @@ section General
 variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [TopologicalSpace M] [Module A M]
   [ContinuousAdd M] [ContinuousConstSMul A M]
 
-/-- The monomial `m Tˢ` with coefficient `m ∈ M`, as an `A`-linear map `M → M⟨T₁, …, Tₖ⟩`. -/
-noncomputable def restrictedMvPowerSeriesSubmoduleMonomial (s : Fin k →₀ ℕ) :
-    M →ₗ[A] restrictedMvPowerSeriesSubmodule k A M :=
-  (LinearMap.single A (fun _ : Fin k →₀ ℕ ↦ M) s).codRestrict _ fun _ ↦
-    mem_restrictedMvPowerSeriesSubmodule.mpr <| isRestricted_of_hasFiniteSupport <|
-      (Set.finite_singleton s).subset Pi.support_single_subset
-
-/-- The coefficients of the monomial `m Tˢ`: `m` at `s` and `0` elsewhere. -/
-@[simp]
-theorem coeff_restrictedMvPowerSeriesSubmoduleMonomial (s : Fin k →₀ ℕ) (m : M)
-    (t : Fin k →₀ ℕ) :
-    (((restrictedMvPowerSeriesSubmoduleMonomial (A := A) s m :
-        restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) :
-      (Fin k →₀ ℕ) → M) t = (Pi.single s m : (Fin k →₀ ℕ) → M) t := (rfl)
-
-/-- The map induced on restricted series by a linear map `φ` sends `m Tˢ` to `φ(m) Tˢ`. -/
-@[simp]
-theorem restrictedMvPowerSeriesSubmoduleMap_monomial {N : Type*} [AddCommMonoid N]
-    [TopologicalSpace N] [Module A N] [ContinuousAdd N] [ContinuousConstSMul A N]
-    (φ : M →ₗ[A] N) (hφ : ContinuousAt φ 0) (s : Fin k →₀ ℕ) (m : M) :
-    restrictedMvPowerSeriesSubmoduleMap φ hφ (restrictedMvPowerSeriesSubmoduleMonomial s m) =
-      restrictedMvPowerSeriesSubmoduleMonomial s (φ m) := by
-  ext t
-  by_cases ht : t = s <;> simp [ht]
-
 section Lift
 
 variable {N : Type*} [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N] [Module A N]
-
-omit [ContinuousAdd M] [ContinuousConstSMul A M] in
-/-- For a family of maps equicontinuous at `0`, a single neighbourhood of `0` in `M` is sent into
-a given neighbourhood of `0` by all of them. -/
-private theorem eventually_forall_apply_mem {φ : (Fin k →₀ ℕ) → M →ₗ[A] N}
-    (hφ : EquicontinuousAt (fun s ↦ ⇑(φ s)) 0) {W : Set N} (hW : W ∈ 𝓝 0) :
-    ∀ᶠ m in 𝓝 (0 : M), ∀ s, φ s m ∈ W := by
-  have hU : {p : N × N | p.2 - p.1 ∈ W} ∈ 𝓤 N := by
-    rw [uniformity_eq_comap_nhds_zero N]
-    exact preimage_mem_comap hW
-  filter_upwards [hφ _ hU] with m hm s
-  simpa using hm s
 
 /-- The terms `φₛ(fₛ)` tend to `0`, because the coefficients `fₛ` do and the `φₛ` are
 equicontinuous at `0`. -/
@@ -135,7 +98,7 @@ private theorem tendsto_cofinite_apply_coeff {φ : (Fin k →₀ ℕ) → M →�
     Tendsto (fun s ↦ φ s (((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s)) cofinite
       (𝓝 0) := fun W hW ↦ mem_map.mpr <| by
   filter_upwards [(isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)).eventually
-    (eventually_forall_apply_mem hφ hW)] with s hs
+    (equicontinuousAt_eventually_forall_apply_mem hφ hW)] with s hs
   exact hs s
 
 variable [ContinuousConstSMul A N] [T2Space N] [CompleteSpace N] [NonarchimedeanAddGroup N]
@@ -215,7 +178,14 @@ theorem hasSum_restrictedMvPowerSeriesSubmoduleMonomial
   have hc : (((∑ s ∈ S, restrictedMvPowerSeriesSubmoduleMonomial s (a s) - f :
       restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) t =
       ∑ s ∈ S, (Pi.single s (a s) : (Fin k →₀ ℕ) → M) t - a t :=
-    (map_sub c _ _).trans (congrArg (· - c f) (map_sum c _ S))
+    (map_sub c _ _).trans <| by
+      rw [map_sum]
+      have hcoeff (s : Fin k →₀ ℕ) :
+          c (restrictedMvPowerSeriesSubmoduleMonomial s (a s)) =
+            (Pi.single s (a s) : (Fin k →₀ ℕ) → M) t :=
+        coeff_restrictedMvPowerSeriesSubmoduleMonomial s (a s) t
+      have hcf : c f = a t := rfl
+      simp only [hcoeff, hcf]
   -- The partial sum over `S` agrees with `f` on `S` and vanishes off `S`.
   rw [hc, Finset.sum_pi_single]
   by_cases ht : t ∈ S
@@ -255,7 +225,7 @@ theorem continuous_restrictedMvPowerSeriesSubmoduleLift {φ : (Fin k →₀ ℕ)
   -- Shrink `U` to an open subgroup `W`; a sum of terms in `W` stays in the closed set `W`.
   obtain ⟨W, hWU⟩ := NonarchimedeanAddGroup.is_nonarchimedean U hU
   obtain ⟨V, hV, hVW⟩ := eventually_iff_exists_mem.mp
-    (eventually_forall_apply_mem hφ (W.isOpen.mem_nhds W.zero_mem))
+    (equicontinuousAt_eventually_forall_apply_mem hφ (W.isOpen.mem_nhds W.zero_mem))
   refine mem_map.mpr <| mem_of_superset
     (hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule.mem_of_mem hV) fun f hf ↦ hWU ?_
   exact tsum_mem W.isClosed fun s ↦ hVW _ (hf s) s
