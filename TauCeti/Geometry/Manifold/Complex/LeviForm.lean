@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Pseudoconvex
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
+public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 
 /-!
@@ -30,13 +31,18 @@ preferred chart, and the Levi form of `f` is the Levi form of this real bilinear
 particular, for `C²` `f` the diagonal of the Levi form is one quarter of
 `Hess f(v, v) + Hess f(I • v, I • v)`. At a critical point the critical Hessian is intrinsic as
 well, and this diagonal may be computed from the real Hessian in any real `C²` chart.
-Consequently the index bounds of strongly `q`-pseudoconvex functions hold for the manifold Morse
-index: at a critical point where `f` is strongly `q`-pseudoconvex in some holomorphic chart, the
-Morse index is at most `dim_ℂ E + q`.
+Strict plurisubharmonicity and strong `q`-pseudoconvexity of `f` at `x` are positivity conditions
+on `TauCeti.manifoldLeviForm E f x`, so for `f` real `C²` at `x` they may be checked in any
+holomorphic chart. Consequently the index bounds of strongly `q`-pseudoconvex functions hold for
+the manifold Morse index: at a critical point where `f` is strongly `q`-pseudoconvex, the Morse
+index is at most `dim_ℂ E + q`.
 
 ## Main definitions
 
 * `TauCeti.manifoldLeviForm E f x`: the Levi form of `f` at `x`, computed in the preferred chart.
+* `TauCeti.IsManifoldStrictlyPlurisubharmonicAt E f x`,
+  `TauCeti.IsManifoldStronglyPseudoconvexAt E q f x`: positive definiteness of the Levi form at
+  `x`, on all of `E` or on a complex subspace of codimension at most `q`.
 
 ## Main results
 
@@ -58,9 +64,12 @@ Morse index is at most `dim_ℂ E + q`.
   imaginary parts may be computed from the real Hessian in any real `C²` chart.
 * `TauCeti.manifoldLeviForm_apply_self_of_mem_maximalAtlas`: at a critical point the same holds
   with the real Hessian computed in any real `C²` chart.
-* `TauCeti.IsStronglyPseudoconvexAt.manifoldMorseIndex_le` and
-  `TauCeti.IsStrictlyPlurisubharmonicAt.manifoldMorseIndex_le`: the manifold Morse index bounds
-  `λ ≤ n + q` and `λ ≤ n` at critical points.
+* `TauCeti.isManifoldStrictlyPlurisubharmonicAt_iff_of_mem_maximalAtlas` and
+  `TauCeti.isManifoldStronglyPseudoconvexAt_iff_of_mem_maximalAtlas`: for `f` real `C²` at `x`,
+  these positivity conditions may be checked in any holomorphic chart.
+* `TauCeti.IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le` and
+  `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le`: the manifold Morse index
+  bounds `λ ≤ n + q` and `λ ≤ n` at critical points.
 
 ## References
 
@@ -302,6 +311,108 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
 
 end Chart
 
+/-! ### Strict plurisubharmonicity and strong pseudoconvexity -/
+
+section Positivity
+
+variable (E) in
+/-- A real function `f` on a complex manifold is **strictly plurisubharmonic** at `x` if its Levi
+form at `x` is positive definite: `0 < Re (manifoldLeviForm E f x v v)` for every nonzero `v`
+(`TauCeti.isManifoldStrictlyPlurisubharmonicAt_iff`). As for `TauCeti.manifoldLeviForm`, it is
+defined in the preferred chart at `x`; by
+`TauCeti.isManifoldStrictlyPlurisubharmonicAt_iff_of_mem_maximalAtlas`, for `f` real `C²` at `x` it
+may be checked in any chart at `x` of the holomorphic `C²` maximal atlas. -/
+def IsManifoldStrictlyPlurisubharmonicAt (f : M → ℝ) (x : M) : Prop :=
+  IsStrictlyPlurisubharmonicAt (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+variable (E) in
+/-- A real function `f` on a complex manifold modelled on a finite-dimensional space `E` is
+**strongly `q`-pseudoconvex** at `x` if its Levi form at `x` is positive definite on a complex
+subspace `P` of `E` with `dim_ℂ E ≤ dim_ℂ P + q` (`TauCeti.isManifoldStronglyPseudoconvexAt_iff`).
+As for `TauCeti.manifoldLeviForm`, it is defined in the preferred chart at `x`; by
+`TauCeti.isManifoldStronglyPseudoconvexAt_iff_of_mem_maximalAtlas`, for `f` real `C²` at `x` it
+may be checked in any chart at `x` of the holomorphic `C²` maximal atlas. -/
+def IsManifoldStronglyPseudoconvexAt [FiniteDimensional ℂ E] (q : ℕ) (f : M → ℝ) (x : M) :
+    Prop :=
+  IsStronglyPseudoconvexAt q (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- Strict plurisubharmonicity on a complex manifold is positive definiteness of the Levi form. -/
+theorem isManifoldStrictlyPlurisubharmonicAt_iff :
+    IsManifoldStrictlyPlurisubharmonicAt E f x ↔
+      ∀ v : E, v ≠ 0 → 0 < (manifoldLeviForm E f x v v).re :=
+  isStrictlyPlurisubharmonicAt_iff
+
+/-- Strong `q`-pseudoconvexity on a complex manifold is positive definiteness of the Levi form on
+a complex subspace of codimension at most `q`. -/
+theorem isManifoldStronglyPseudoconvexAt_iff [FiniteDimensional ℂ E] {q : ℕ} :
+    IsManifoldStronglyPseudoconvexAt E q f x ↔ ∃ P : Submodule ℂ E,
+      finrank ℂ E ≤ finrank ℂ P + q ∧ ∀ v ∈ P, v ≠ 0 → 0 < (manifoldLeviForm E f x v v).re :=
+  isStronglyPseudoconvexAt_iff
+
+/-- A strictly plurisubharmonic function on a complex manifold is strongly `q`-pseudoconvex for
+every `q`. -/
+theorem IsManifoldStrictlyPlurisubharmonicAt.isManifoldStronglyPseudoconvexAt
+    [FiniteDimensional ℂ E] (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (q : ℕ) :
+    IsManifoldStronglyPseudoconvexAt E q f x :=
+  IsStrictlyPlurisubharmonicAt.isStronglyPseudoconvexAt h q
+
+variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+
+/-- **Strict plurisubharmonicity in an arbitrary holomorphic chart.** For `f` real `C²` at `x` and
+a chart `e` at `x` of the holomorphic `C²` maximal atlas, `f` is strictly plurisubharmonic at `x`
+if and only if its coordinate expression `f ∘ e.symm` is strictly plurisubharmonic at `e x`. -/
+theorem isManifoldStrictlyPlurisubharmonicAt_iff_of_mem_maximalAtlas
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 2 M) (hx : x ∈ e.source)
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) :
+    IsManifoldStrictlyPlurisubharmonicAt E f x ↔
+      IsStrictlyPlurisubharmonicAt (f ∘ e.symm) (e x) := by
+  -- The invertible chart derivative, typed on the model space `E`.
+  obtain ⟨D, hD⟩ : ∃ D : E ≃L[ℂ] E, (D : E →L[ℂ] E) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x :=
+    isInvertible_mfderiv_chart (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+  have key (v : E) : leviForm (f ∘ e.symm) (e x) (D v) (D v) = manifoldLeviForm E f x v v := by
+    rw [← leviForm_comp_symm_apply_of_mem_maximalAtlas he hx hf, ← hD]
+    -- The two sides differ only in reading `D` as a map between tangent spaces of `M`.
+    rfl
+  rw [isManifoldStrictlyPlurisubharmonicAt_iff, isStrictlyPlurisubharmonicAt_iff]
+  refine ⟨fun h u hu ↦ ?_, fun h v hv ↦ ?_⟩
+  · obtain ⟨v, rfl⟩ := D.surjective u
+    rw [key]
+    exact h v (by simpa using hu)
+  · rw [← key]
+    exact h (D v) (by simpa using hv)
+
+/-- **Strong `q`-pseudoconvexity in an arbitrary holomorphic chart.** For `f` real `C²` at `x` and
+a chart `e` at `x` of the holomorphic `C²` maximal atlas, `f` is strongly `q`-pseudoconvex at `x`
+if and only if its coordinate expression `f ∘ e.symm` is strongly `q`-pseudoconvex at `e x`. -/
+theorem isManifoldStronglyPseudoconvexAt_iff_of_mem_maximalAtlas [FiniteDimensional ℂ E]
+    {q : ℕ} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 2 M) (hx : x ∈ e.source)
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) :
+    IsManifoldStronglyPseudoconvexAt E q f x ↔
+      IsStronglyPseudoconvexAt q (f ∘ e.symm) (e x) := by
+  -- The invertible chart derivative, typed on the model space `E`.
+  obtain ⟨D, hD⟩ : ∃ D : E ≃L[ℂ] E, (D : E →L[ℂ] E) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x :=
+    isInvertible_mfderiv_chart (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+  have key (v : E) : leviForm (f ∘ e.symm) (e x) (D v) (D v) = manifoldLeviForm E f x v v := by
+    rw [← leviForm_comp_symm_apply_of_mem_maximalAtlas he hx hf, ← hD]
+    -- The two sides differ only in reading `D` as a map between tangent spaces of `M`.
+    rfl
+  rw [isManifoldStronglyPseudoconvexAt_iff, isStronglyPseudoconvexAt_iff]
+  constructor
+  · rintro ⟨P, hP, hpos⟩
+    refine ⟨P.map (D.toLinearEquiv : E →ₗ[ℂ] E), by rwa [LinearEquiv.finrank_map_eq], ?_⟩
+    rintro _ ⟨v, hv, rfl⟩ hv0
+    simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at hv0 ⊢
+    rw [key]
+    exact hpos v hv (by simpa using hv0)
+  · rintro ⟨Q, hQ, hpos⟩
+    refine ⟨Q.map (D.symm.toLinearEquiv : E →ₗ[ℂ] E), by rwa [LinearEquiv.finrank_map_eq], ?_⟩
+    rintro _ ⟨u, hu, rfl⟩ hu0
+    simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at hu0 ⊢
+    rw [← key, D.apply_symm_apply]
+    exact hpos u hu (by simpa using hu0)
+
+end Positivity
+
 /-! ### Critical points -/
 
 section Critical
@@ -375,28 +486,28 @@ theorem manifoldLeviForm_apply_self_of_mem_maximalAtlas
 variable [FiniteDimensional ℂ E]
 
 /-- **The index bound for strongly `q`-pseudoconvex functions on a complex manifold.** At a
-critical point `x` of a function `f` which is `C²` at `x` and strongly `q`-pseudoconvex in some
-holomorphic chart `e` at `x`, the Morse index of `f` is at most `dim_ℂ E + q`. -/
-theorem IsStronglyPseudoconvexAt.manifoldMorseIndex_le {q : ℕ}
-    (h : IsStronglyPseudoconvexAt q (f ∘ e.symm) (e x))
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 2 M) (hx : x ∈ e.source)
-    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
+critical point `x` of a function `f` which is `C²` at `x` and strongly `q`-pseudoconvex at `x`, the
+Morse index of `f` is at most `dim_ℂ E + q`. -/
+theorem IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le [IsManifold 𝓘(ℂ, E) 2 M] {q : ℕ}
+    (h : IsManifoldStronglyPseudoconvexAt E q f x) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
+    (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E + q := by
+  have he : chartAt E x ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 2 M :=
+    IsManifold.chart_mem_maximalAtlas x
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
-    (IsManifold.maximalAtlas_subset_restrictScalars ℝ he) hx hf hcrit]
+    (IsManifold.maximalAtlas_subset_restrictScalars ℝ he) (mem_chart_source E x) hf hcrit]
   simpa only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id] using
-    h.morseIndex_le
+    IsStronglyPseudoconvexAt.morseIndex_le h
 
 /-- **The index bound for strictly plurisubharmonic functions on a complex manifold.** At a
-critical point `x` of a function `f` which is `C²` at `x` and strictly plurisubharmonic in some
-holomorphic chart `e` at `x`, the Morse index of `f` is at most `dim_ℂ E`. -/
-theorem IsStrictlyPlurisubharmonicAt.manifoldMorseIndex_le
-    (h : IsStrictlyPlurisubharmonicAt (f ∘ e.symm) (e x))
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 2 M) (hx : x ∈ e.source)
-    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
+critical point `x` of a function `f` which is `C²` at `x` and strictly plurisubharmonic at `x`, the
+Morse index of `f` is at most `dim_ℂ E`. -/
+theorem IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le [IsManifold 𝓘(ℂ, E) 2 M]
+    (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
+    (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E := by
-  simpa using (h.isStronglyPseudoconvexAt 0).manifoldMorseIndex_le he hx hf hcrit
+  simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
 
 end Critical
 
