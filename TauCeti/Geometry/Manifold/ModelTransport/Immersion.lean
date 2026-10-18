@@ -72,7 +72,7 @@ theorem isImmersionAtOfComplement_target_iff {g : N → M} {x : N} :
     · rw [originalChart_source]
       exact h.source_subset_preimage_source
     · intro y hy
-      rw [comp_apply, comp_apply, extend_originalChart_apply]
+      rw [comp_apply, comp_apply, originalChart_extend_apply]
       simpa only [comp_apply, OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe,
         id_eq] using h.writtenInCharts hy
   · intro h
@@ -140,10 +140,10 @@ theorem isImmersionAtOfComplement_source_iff {g : M → N} {x : BoundarylessMode
       have hy' := h.source_subset_preimage_source hy
       rwa [mem_preimage, comp_apply, Homeomorph.symm_apply_apply] at hy'
     · intro v hv
-      rw [extend_originalChart_target] at hv
+      rw [originalChart_extend_target] at hv
       have hv' : v ∈ (h.domChart.extend 𝓘(𝕜, E)).target := by
         simpa [OpenPartialHomeomorph.extend_target] using hv
-      rw [comp_apply, comp_apply, extend_originalChart_symm_apply]
+      rw [comp_apply, comp_apply, originalChart_extend_symm_apply]
       simpa only [comp_apply, OpenPartialHomeomorph.extend_coe_symm,
         modelWithCornersSelf_coe_symm, id_eq] using h.writtenInCharts hv'
   · intro h

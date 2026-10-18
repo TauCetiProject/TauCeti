@@ -149,21 +149,21 @@ theorem originalChart_source (φ : OpenPartialHomeomorph (BoundarylessModel I M)
   rfl
 
 /-- The extended original chart of a chart of the copy has the same coordinates. -/
-theorem extend_originalChart_apply (φ : OpenPartialHomeomorph (BoundarylessModel I M) E)
+theorem originalChart_extend_apply (φ : OpenPartialHomeomorph (BoundarylessModel I M) E)
     (y : M) : (originalChart I φ).extend I y = φ (homeomorph I M y) := by
   rw [originalChart_extend, homeomorph_apply]
   -- Coercing the partial equivalence is coercing the chart; the carriers agree definitionally.
   rfl
 
 /-- The extended original chart of a chart of the copy has the same inverse. -/
-theorem extend_originalChart_symm_apply (φ : OpenPartialHomeomorph (BoundarylessModel I M) E)
+theorem originalChart_extend_symm_apply (φ : OpenPartialHomeomorph (BoundarylessModel I M) E)
     (v : E) : ((originalChart I φ).extend I).symm v = (homeomorph I M).symm (φ.symm v) := by
   rw [originalChart_extend, homeomorph_symm_apply]
   -- As above, now for the inverse chart.
   rfl
 
 /-- The extended original chart of a chart of the copy has the same target. -/
-theorem extend_originalChart_target (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
+theorem originalChart_extend_target (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
     ((originalChart I φ).extend I).target = φ.target := by
   rw [originalChart_extend]
 
