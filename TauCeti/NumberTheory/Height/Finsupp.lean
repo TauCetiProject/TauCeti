@@ -154,16 +154,8 @@ theorem mulHeight_eq_mul_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ 
     obtain ⟨a, ha, b, hb, rfl⟩ := hsupp c hc
     exact Finset.mem_image_of_mem e (Finset.mem_product.2 ⟨ha, hb⟩)
   -- The pairs of indices in the two supports are in bijection with `s`.
-  let E : x.support × y.support ≃ s := Equiv.ofBijective
-    (fun p ↦ ⟨e (p.1, p.2), Finset.mem_image_of_mem e (Finset.mem_product.2 ⟨p.1.2, p.2.2⟩)⟩)
-    ⟨fun p q hpq ↦ by
-      have h := he (Finset.mem_coe.2 (Finset.mem_product.2 ⟨p.1.2, p.2.2⟩))
-        (Finset.mem_coe.2 (Finset.mem_product.2 ⟨q.1.2, q.2.2⟩)) (congrArg Subtype.val hpq)
-      exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h)),
-    fun c ↦ by
-      obtain ⟨p, hp, hpc⟩ := Finset.mem_image.1 c.2
-      obtain ⟨ha, hb⟩ := Finset.mem_product.1 hp
-      exact ⟨(⟨p.1, ha⟩, ⟨p.2, hb⟩), Subtype.ext hpc⟩⟩
+  let E : x.support × y.support ≃ s := (Equiv.Finset.prod x.support y.support).symm.trans
+    ((Equiv.Set.imageOfInjOn e _ he).trans (Set.equivOfEq Finset.coe_image.symm))
   have hx' : (fun a : x.support ↦ x a) ≠ 0 := by
     obtain ⟨a, ha⟩ := Finsupp.support_nonempty_iff.2 hx
     exact Function.ne_iff.2 ⟨⟨a, ha⟩, mem_support_iff.1 ha⟩
