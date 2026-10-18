@@ -41,10 +41,8 @@ the complex orthogonal complement. In particular it is stable under multiplicati
 theorem orthogonal_restrictScalars (K : Submodule ℂ E) :
     (K.restrictScalars ℝ)ᗮ = Kᗮ.restrictScalars ℝ := by
   ext v
-  simp only [mem_orthogonal, restrictScalars_mem, real_inner_eq_re_inner]
-  refine ⟨fun h u hu ↦ ?_, fun h u hu ↦ by simp [h u hu]⟩
-  rw [inner_eq_zero_iff_forall_re_inner_smul_left]
-  exact fun c ↦ h _ (K.smul_mem c hu)
+  rw [restrictScalars_mem, mem_orthogonal_iff_re_inner_eq_zero (K := K), mem_orthogonal]
+  simp only [restrictScalars_mem, real_inner_eq_re_inner]
 
 /-- A complex subspace admitting a complex orthogonal projection admits a real one. -/
 instance HasOrthogonalProjection.restrictScalars (K : Submodule ℂ E) [K.HasOrthogonalProjection] :

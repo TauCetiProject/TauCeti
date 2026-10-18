@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Analysis.InnerProductSpace.Projection.RestrictScalars
 
@@ -49,8 +50,6 @@ so that their eigenvalues come in pairs `±λ`.
   second fundamental form pairs like the second derivative.
 * `ContDiffAt.secondFundamentalForm_apply_comm`: symmetry.
 * `ContDiffAt.secondFundamentalForm_comp`: invariance under reparametrisation of the source.
-* `DifferentiableAt.range_fderiv_restrictScalars`: the tangent space does not depend on the
-  field of scalars.
 * `DifferentiableAt.orthogonal_range_fderiv_restrictScalars`: the real normal space of a
   holomorphic map is its complex normal space.
 * `ContDiffAt.secondFundamentalForm_restrictScalars_apply`: the real second fundamental form of a
@@ -91,6 +90,7 @@ theorem secondFundamentalForm_apply (i : V → E) (x : V) (v w : V) :
   (rfl)
 
 /-- The second fundamental form takes values in the normal space. -/
+@[simp]
 theorem secondFundamentalForm_apply_mem_orthogonal (i : V → E) (x : V) (v w : V) :
     secondFundamentalForm 𝕜 i x v w ∈ (fderiv 𝕜 i x).rangeᗮ :=
   Submodule.starProjection_apply_mem _ _
@@ -134,23 +134,6 @@ theorem _root_.ContDiffAt.secondFundamentalForm_comp {i : V → E} {φ : W → V
 
 end General
 
-section RestrictScalars
-
-variable (𝕜 : Type*) {𝕜' V E : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAlgebra 𝕜 𝕜'] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace 𝕜' V]
-  [IsScalarTower 𝕜 𝕜' V] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
-  [IsScalarTower 𝕜 𝕜' E] {i : V → E} {x : V}
-
-/-- The tangent space of a map differentiable over a larger field `𝕜'` is the same over `𝕜`. For
-a holomorphic map, the real tangent space is the complex tangent space; in particular it is stable
-under multiplication by `I`. -/
-theorem _root_.DifferentiableAt.range_fderiv_restrictScalars (hi : DifferentiableAt 𝕜' i x) :
-    (fderiv 𝕜 i x).range = (fderiv 𝕜' i x).range.restrictScalars 𝕜 := by
-  rw [hi.fderiv_restrictScalars 𝕜]
-  exact LinearMap.range_restrictScalars _
-
-end RestrictScalars
-
 section Complex
 
 /-! ### Holomorphic maps
@@ -187,11 +170,13 @@ theorem _root_.ContDiffAt.secondFundamentalForm_restrictScalars_apply (hi : Cont
     Submodule.starProjection_restrictScalars_apply]
 
 /-- The real second fundamental form of a holomorphic map satisfies `B(Jv, w) = J B(v, w)`. -/
+@[simp]
 theorem _root_.ContDiffAt.secondFundamentalForm_I_smul_left (hi : ContDiffAt ℂ 2 i x) (v w : V) :
     secondFundamentalForm ℝ i x (I • v) w = I • secondFundamentalForm ℝ i x v w := by
   simp [hi.secondFundamentalForm_restrictScalars_apply]
 
 /-- The real second fundamental form of a holomorphic map satisfies `B(v, Jw) = J B(v, w)`. -/
+@[simp]
 theorem _root_.ContDiffAt.secondFundamentalForm_I_smul_right (hi : ContDiffAt ℂ 2 i x)
     (v w : V) :
     secondFundamentalForm ℝ i x v (I • w) = I • secondFundamentalForm ℝ i x v w := by
