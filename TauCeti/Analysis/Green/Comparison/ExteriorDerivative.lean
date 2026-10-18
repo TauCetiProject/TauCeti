@@ -25,6 +25,8 @@ open scoped Manifold
 
 namespace TauCeti.Green
 
+attribute [local instance] Complex.finrank_real_complex_fact
+
 /-- The actual planar manifold exterior derivative is curl times the normalized area form. -/
 theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
@@ -36,12 +38,13 @@ theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area {P Q : �
     simp only [ω, ContinuousAlternatingMap.compContinuousLinearMap_apply,
       ContinuousLinearEquiv.coe_coe, Complex.coe_basisOneI]
     exact DifferentiableAt.mextDeriv_manifoldOneForm_apply hP hQ
-  have he : ω = curl P Q z • complexAreaForm := by
+  have he : ω = curl P Q z • Complex.orientation.volumeFormL := by
     ext v
     rw [ContinuousAlternatingMap.apply_eq_det_mul (ω := ω) (b := Complex.basisOneI),
       ContinuousAlternatingMap.smul_apply,
-      ContinuousAlternatingMap.apply_eq_det_mul (ω := complexAreaForm)
-        (b := Complex.basisOneI), hc, Complex.coe_basisOneI, complexAreaForm_one_I, mul_one,
+      ContinuousAlternatingMap.apply_eq_det_mul (ω := Complex.orientation.volumeFormL)
+        (b := Complex.basisOneI), hc, Complex.coe_basisOneI, Orientation.volumeFormL_apply,
+        complexAreaForm_one_I, mul_one,
       smul_eq_mul]
     ring
   ext v

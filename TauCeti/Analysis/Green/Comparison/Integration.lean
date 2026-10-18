@@ -34,10 +34,10 @@ the scalar times the normalized alternating volume coefficient in any basis. -/
 theorem signedInChartAt_fun_smul_manifoldAreaForm (f : ℂ → ℝ)
     (b : Module.Basis (Fin 2) ℝ ℂ) (c z : ℂ) :
     RoughForm.signedInChartAt (I := 𝓘(ℝ, ℂ)) (fun x ↦ f x • manifoldAreaForm x)
-      b c (fun _ ↦ 1) z = f z * complexAreaForm b := by
+      b c (fun _ ↦ 1) z = f z * Complex.orientation.volumeFormL b := by
   have hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) c).source := by simp
   have he : RoughForm.inChartAt (I := 𝓘(ℝ, ℂ)) (fun x ↦ f x • manifoldAreaForm x) c =
-      fun x ↦ f x • complexAreaForm := by
+      fun x ↦ f x • Complex.orientation.volumeFormL := by
     funext x
     rw [RoughForm.inChartAt_fun_smul, manifoldAreaForm_inChartAt]
     simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
@@ -66,7 +66,7 @@ theorem chartIntegral_model_manifoldAreaForm (f : ℂ → ℝ) (c : ℂ) :
     _root_.Orientation.signBasis_orientation Complex.basisOneI
   rw [ho]
   simp_rw [signedInChartAt_fun_smul_manifoldAreaForm, Complex.coe_basisOneI,
-    complexAreaForm_one_I, mul_one]
+    Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one]
   simp only [Units.val_one, Int.cast_one, one_mul, basisOneI_addHaar]
 
 /-- Genuine compactly supported planar coefficient integrability gives intrinsic top-form
@@ -83,14 +83,15 @@ theorem _root_.HasCompactSupport.integrableTopForm_fun_smul_manifoldAreaForm {f 
   · intro b c
     have heq : RoughForm.signedInChartAt (I := 𝓘(ℝ, ℂ))
         (fun x ↦ f x • manifoldAreaForm x) b c (fun _ ↦ 1) =
-        fun z ↦ f z * complexAreaForm b :=
+        fun z ↦ f z * Complex.orientation.volumeFormL b :=
       funext (signedInChartAt_fun_smul_manifoldAreaForm f b c)
     rw [heq]
     have he := Complex.basisOneI.integrable_apply_basis_iff b
-      (fun z ↦ f z • complexAreaForm)
+      (fun z ↦ f z • Complex.orientation.volumeFormL)
     simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      Complex.coe_basisOneI, complexAreaForm_one_I, mul_one, basisOneI_addHaar] at he
-    exact he.mpr hf
+      Complex.coe_basisOneI, Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one,
+      basisOneI_addHaar] at he
+    simpa only [Orientation.volumeFormL_apply] using he.mpr hf
 
 /-- The canonical oriented manifold integral of integrable compactly supported planar area
 is the existing complex Lebesgue integral, including discontinuous scalar coefficients. -/

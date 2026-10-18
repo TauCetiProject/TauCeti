@@ -46,8 +46,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The Riemannian volume form determined by an orientation, defined fibrewise on tangent spaces. -/
 noncomputable def riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)) :
     RoughForm I M ℝ m := fun x ↦
-  letI := o.fact_finrank_tangentSpace x
+  let := o.fact_finrank_tangentSpace x
   (Manifold.Orientation.orientationAt o x).volumeFormL
+
+/-- Unfolding the Riemannian volume form at a point exposes its oriented fibre form. -/
+theorem riemannianVolumeForm_eq
+    (o : Manifold.Orientation I M (Fin m)) (x : M) :
+    riemannianVolumeForm o x =
+      (letI := o.fact_finrank_tangentSpace x
+       (Manifold.Orientation.orientationAt o x).volumeFormL) := by
+  simp only [riemannianVolumeForm]
 
 /-- Evaluation of the Riemannian volume form is Mathlib's oriented volume form. -/
 theorem riemannianVolumeForm_apply
@@ -66,7 +74,7 @@ theorem riemannianVolumeForm_apply_orthonormal
     (hb : b.toBasis.orientation = Manifold.Orientation.orientationAt o x) :
     riemannianVolumeForm o x b = 1 := by
   let := o.fact_finrank_tangentSpace x
-  change (Manifold.Orientation.orientationAt o x).volumeFormL b = 1
+  rw [riemannianVolumeForm_eq]
   exact Orientation.volumeFormL_robust _ b hb
 
 /-- The Riemannian volume form has absolute value one on every orthonormal basis. -/
@@ -75,7 +83,7 @@ theorem abs_riemannianVolumeForm_apply_orthonormal
     (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x)) :
     |riemannianVolumeForm o x b| = 1 := by
   let := o.fact_finrank_tangentSpace x
-  change |(Manifold.Orientation.orientationAt o x).volumeFormL b| = 1
+  rw [riemannianVolumeForm_eq]
   exact Orientation.abs_volumeFormL_apply_of_orthonormal _ b
 
 /-- The Riemannian volume form is negative on an oppositely oriented orthonormal basis. -/
@@ -85,7 +93,7 @@ theorem riemannianVolumeForm_apply_orthonormal_of_opposite
     (hb : b.toBasis.orientation ≠ Manifold.Orientation.orientationAt o x) :
     riemannianVolumeForm o x b = -1 := by
   let := o.fact_finrank_tangentSpace x
-  change (Manifold.Orientation.orientationAt o x).volumeFormL b = -1
+  rw [riemannianVolumeForm_eq]
   exact Orientation.volumeFormL_robust_neg _ b hb
 
 /-- A top form taking value one on an oriented orthonormal basis is the Riemannian volume form. -/
@@ -97,7 +105,7 @@ theorem eq_riemannianVolumeForm_of_apply_orthonormal
     (hω : ω b = 1) :
     ω = riemannianVolumeForm o x := by
   let := o.fact_finrank_tangentSpace x
-  change ω = (Manifold.Orientation.orientationAt o x).volumeFormL
+  rw [riemannianVolumeForm_eq]
   exact Orientation.eq_volumeFormL_of_apply_orthonormal _ ω b hb hω
 
 end TauCeti

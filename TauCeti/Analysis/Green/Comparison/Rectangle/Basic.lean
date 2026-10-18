@@ -32,6 +32,8 @@ open scoped Manifold
 
 namespace TauCeti.Green
 
+attribute [local instance] Complex.finrank_real_complex_fact
+
 /-- A horizontal face, as an actual oriented interval manifold, integrates the `dx`
 coefficient. No regularity is required of the unused `dy` coefficient. -/
 theorem integralTopForm_horizontal_face {a b : ℝ} [Fact (a < b)] (y : ℝ)
@@ -173,11 +175,12 @@ theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
       manifoldAreaForm_apply]
     simp only [ContinuousLinearEquiv.apply_symm_apply, smul_eq_mul]
     -- The two canonical tangent equivalences cancel; expose the resulting scalar coefficient.
-    change f (L x) * complexAreaForm (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = _
+    change f (L x) * Complex.orientation.volumeFormL
+      (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = _
     have hv : (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = Complex.basisOneI := by
       funext i
       fin_cases i <;> simp [L, Complex.equivRealProdCLM_symm_apply, Complex.coe_basisOneI]
-    rw [hv, Complex.coe_basisOneI, complexAreaForm_one_I, mul_one]
+    rw [hv, Complex.coe_basisOneI, Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one]
     rfl
   rw [hcomp] at hi ⊢
   have h := integralTopForm_mpullback_rectangle η hi
