@@ -152,6 +152,7 @@ theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
 
 /-- The logarithm is integrable under the unit-rate exponential law. -/
+@[simp]
 theorem integrable_log_expMeasure : Integrable log (expMeasure 1) := by
   rw [expMeasure]
   have hpos : Integrable (fun x : ℝ => x ^ (1 / 2 : ℝ)) (gammaMeasure 1 1) :=
@@ -177,6 +178,7 @@ theorem integrable_log_expMeasure : Integrable log (expMeasure 1) := by
 
 /-- The mean of the logarithm under the unit-rate exponential law is the negative of the
 Euler--Mascheroni constant. -/
+@[simp]
 theorem integral_log_expMeasure :
     ∫ e : ℝ, log e ∂expMeasure 1 = -Real.eulerMascheroniConstant := by
   rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos one_pos]
