@@ -149,11 +149,6 @@ section Complex
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
 
-/-- Reduced cyclic cochains inherit their additive group structure from cyclic cochains. -/
-instance reducedCyclicCochainsAddCommGroup (n : ℕ) :
-    AddCommGroup (reducedCyclicCochains R A M n) :=
-  (reducedCyclicCochains R A M n).addCommGroup
-
 /-- The reduced cyclic cochain complex of a unital algebra. Its degree-`n` term is the kernel of
 restriction from cyclic cochains on the algebra to cyclic cochains on the ground ring. -/
 def reducedCyclicCochainComplex : CochainComplex (ModuleCat R) ℕ :=
