@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
-public import Mathlib.Analysis.CStarAlgebra.Hom
+public import TauCeti.Analysis.CStarAlgebra.Hom
 
 /-!
 # Functoriality of multiplier algebras of C⋆-algebras
@@ -16,9 +16,6 @@ proves that, when `A` has a proper star (for example, when it is a C⋆-ring), t
 centralizers are module maps for right and left multiplication respectively, so that the
 products of a multiplier with an element of `A` are again elements of `A`, and the canonical
 map `A → 𝓜(𝕜, A)` is injective. For C⋆-algebras this map is isometric.
-
-A star-algebra equivalence of complex C⋆-algebras is isometric, so it bundles as a continuous
-linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
 
 A star-algebra equivalence `e : A ≃⋆ₐ[ℂ] B` of complex C⋆-algebras extends to a star-algebra
 equivalence `DoubleCentralizer.congr e : 𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, B)`, sending `(L, R)` to
@@ -40,33 +37,6 @@ public section
 noncomputable section
 
 open scoped MultiplierAlgebra
-
-namespace StarAlgEquiv
-
-variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-
-/-- A star-algebra equivalence of C⋆-algebras as a continuous linear equivalence. Both directions
-are continuous because star-algebra equivalences of C⋆-algebras are isometric. -/
-def toContinuousLinearEquiv (e : A ≃⋆ₐ[ℂ] B) : A ≃L[ℂ] B where
-  toFun := e
-  invFun := e.symm
-  left_inv := e.symm_apply_apply
-  right_inv := e.apply_symm_apply
-  map_add' := map_add e
-  map_smul' := map_smul e
-  continuous_toFun := (StarAlgEquiv.isometry e).continuous
-  continuous_invFun := (StarAlgEquiv.isometry e.symm).continuous
-
-@[simp]
-theorem coe_toContinuousLinearEquiv (e : A ≃⋆ₐ[ℂ] B) : ⇑e.toContinuousLinearEquiv = e :=
-  (rfl)
-
-@[simp]
-theorem toContinuousLinearEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
-    e.toContinuousLinearEquiv.symm = e.symm.toContinuousLinearEquiv :=
-  (rfl)
-
-end StarAlgEquiv
 
 namespace DoubleCentralizer
 
@@ -181,6 +151,7 @@ theorem congr_refl : congr (StarAlgEquiv.refl ℂ A) = StarAlgEquiv.refl ℂ �
   ext m : 1
   exact ext_fst_snd (fun _ => by simp) (fun _ => by simp)
 
+@[simp]
 theorem congr_trans (e : A ≃⋆ₐ[ℂ] B) (f : B ≃⋆ₐ[ℂ] C) :
     congr (e.trans f) = (congr e).trans (congr f) := by
   ext m : 1

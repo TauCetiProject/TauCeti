@@ -63,8 +63,7 @@ theorem multiplier_apply_snd (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (
 @[simp]
 theorem multiplier_symm_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) :
     (α.multiplier g).symm m = α.multiplier g⁻¹ m := by
-  rw [map_inv]
-  rfl
+  rw [map_inv, StarAlgEquiv.aut_inv]
 
 /-- The induced action restricts to the original action on `A`. -/
 @[simp]
