@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
-import TauCeti.Probability.Distributions.Gamma.Basic
 
 /-!
 # The density of the Gumbel distribution
@@ -162,10 +161,7 @@ private theorem image_gumbelTransform_Ioi (hs : 0 < s) (m : ℝ) :
 private theorem gumbelTransform_injOn (hs : 0 < s) (m : ℝ) :
     InjOn (fun e : ℝ ↦ m - s * Real.log e) (Ioi 0) := by
   intro a ha b hb hab
-  have hlog : Real.log a = Real.log b := by
-    apply (mul_left_cancel₀ hs.ne')
-    linarith
-  exact Real.exp_log ha ▸ Real.exp_log hb ▸ congrArg Real.exp hlog
+  exact Real.log_injOn_pos ha hb (mul_left_cancel₀ hs.ne' (by linarith))
 
 private theorem gumbelTransform_weight (hs : 0 < s) (m : ℝ) (e : ℝ) (he : 0 < e) :
     ENNReal.ofReal |-(s / e)| * gumbelPDF m s (m - s * Real.log e) = exponentialPDF 1 e := by
@@ -199,11 +195,7 @@ theorem gumbelMeasure_eq_withDensity (m s : ℝ) :
       exact gumbelTransform_weight hs m e he
     rw [withDensity_congr_ae hweight, image_gumbelTransform_Ioi hs m,
       Measure.restrict_univ] at hmap
-    have hexp :
-        expMeasure 1 = (volume.restrict (Ioi (0 : ℝ))).withDensity (exponentialPDF 1) := by
-      change gammaMeasure 1 1 = (volume.restrict (Ioi (0 : ℝ))).withDensity (gammaPDF 1 1)
-      exact gammaMeasure_eq_withDensity_restrict_Ioi 1 1
-    rw [gumbelMeasure_of_pos hs, hexp, hmap]
+    rw [gumbelMeasure_of_pos hs, expMeasure_eq_withDensity_restrict_Ioi, hmap]
 
 /-- The `ℝ≥0∞`-valued Gumbel density has total mass `1` at positive scale. -/
 theorem lintegral_gumbelPDF_eq_one (hs : 0 < s) (m : ℝ) :
