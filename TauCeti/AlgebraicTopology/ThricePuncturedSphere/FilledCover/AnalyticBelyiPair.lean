@@ -156,9 +156,8 @@ theorem degree_toAnalyticBelyiPair : RiemannSurface.degree C.toAnalyticBelyiPair
     exact mem_range_self _
   refine (C.toAnalyticBelyiPair.ncard_preimage_singleton (y := toOnePoint basePt)
     (by simpa only [mem_marked, mem_insert_iff, mem_singleton_iff] using hy)).symm.trans ?_
-  rw [← Nat.card_coe_set_eq, coe_β_toAnalyticBelyiPair]
-  -- The projection of `C.toTopBranchedCover` is `fillMap` by definition
-  -- (`TauCeti.ConnectedCover.toTopBranchedCover_π_apply`).
+  rw [← Nat.card_coe_set_eq, coe_β_toAnalyticBelyiPair,
+    ← funext C.toTopBranchedCover_π_apply]
   exact C.toTopBranchedCover.natCard_preimage_singleton _ hy
 
 /-- **The topological branched cover underlying the filled analytic Belyi pair** of a connected
@@ -169,12 +168,11 @@ theorem toTopBranchedCoverIsoClass_toAnalyticBelyiPair :
         ⟦⟨C.toAnalyticBelyiPair, C.degree_toAnalyticBelyiPair⟩⟧ =
       .mk C.toTopBranchedCover := by
   rw [AnalyticBelyiPair.toTopBranchedCoverIsoClass_mk]
-  -- Both branched covers have total space the filled cover, and both projections are `fillMap` by
-  -- definition (`TauCeti.ConnectedCover.toTopBranchedCover_π_apply` and
-  -- `TauCeti.AnalyticBelyiPair.toTopBranchedCover_π_apply`).
+  -- Both branched covers have total space the filled cover.
   exact TopBranchedCover.IsoClass.mk_eq_mk_iff.2
     ⟨⟨Homeomorph.refl (FilledCover ⇑C.cover.proj), fun z =>
-      (congrFun C.coe_β_toAnalyticBelyiPair z).symm⟩⟩
+      (C.toTopBranchedCover_π_apply z).trans <| (congrFun C.coe_β_toAnalyticBelyiPair z).symm.trans
+        (AnalyticBelyiPair.toTopBranchedCover_π_apply _ _ z).symm⟩⟩
 
 end ConnectedCover
 
