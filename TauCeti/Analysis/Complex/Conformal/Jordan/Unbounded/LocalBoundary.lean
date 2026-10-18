@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.BoundaryPrevertex
-
-import TauCeti.Analysis.Complex.Conformal.LocalFrontier
-import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+public import TauCeti.Analysis.Complex.Conformal.LocalFrontier
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # Finite boundary geometry from an inverted coordinate
