@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
 public import TauCeti.RepresentationTheory.Pi
-import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
 # The finite `S`-ideles as a product of semi-local factors
@@ -43,6 +43,8 @@ computed one place at a time, through Shapiro's lemma for each semi-local factor
 
 ## Main results
 
+* `TauCeti.finiteSIdeles_eq_sIntegralUnits`: the finite `S`-ideles are the `S`-integral finite
+  ideles of `L` (`IsDedekindDomain.FiniteAdeleRing.sIntegralUnits`) for the places above `S`.
 * `TauCeti.mem_finiteSIdeles_iff_valued_eq_one`: a finite idele is an `S`-idele exactly when its
   components at the places not above `S` have valuation one.
 * `TauCeti.toFiniteIdele_mem_finiteSIdeles_iff`: an idele is an `S`-idele exactly when its finite
@@ -80,6 +82,13 @@ variable (S : Finset (HeightOneSpectrum (𝒪 K)))
 component at every place of `L` not above `S` is a unit of `𝒪_w`. -/
 def finiteSIdeles : Subgroup (FiniteAdeleRing (𝒪 L) L)ˣ :=
   FiniteAdeleRing.sIntegralUnits (𝒪 L) L {w | w.under (𝒪 K) ∈ S}
+
+omit [NumberField K] in
+/-- The finite `S`-ideles of `L` are the `S'`-integral finite ideles of `L`, for `S'` the set of
+places of `L` above `S`. -/
+theorem finiteSIdeles_eq_sIntegralUnits :
+    finiteSIdeles L S = FiniteAdeleRing.sIntegralUnits (𝒪 L) L {w | w.under (𝒪 K) ∈ S} :=
+  (rfl)
 
 variable {L S}
 
