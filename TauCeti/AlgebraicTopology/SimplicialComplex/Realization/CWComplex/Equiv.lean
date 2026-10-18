@@ -67,6 +67,9 @@ theorem cellEquiv_face {n : ℕ} (c : RealizationCell K n) :
 /-- The inverse cell equivalence is obtained by exchanging the two simplicial maps. -/
 theorem cellEquiv_symm (n : ℕ) :
     (cellEquiv f g hgf hfg n).symm = cellEquiv g f hfg hgf n :=
+  -- This definitional inverse is intentional: `cellEquiv` uses `faceOrderHom f` and
+  -- `faceOrderHom g` symmetrically, so exchanging the maps swaps `toFun` and `invFun`
+  -- exactly as `Equiv.symm` does; proof irrelevance identifies the remaining proof fields.
   (rfl)
 
 /-- The face of an inverse image cell is the image under the inverse vertex map. -/
