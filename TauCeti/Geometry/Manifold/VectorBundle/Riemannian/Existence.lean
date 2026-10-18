@@ -9,7 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
-import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Existence of Riemannian metrics
@@ -33,9 +34,6 @@ parts, and it gives the exponential maps, distances and volumes built from a met
 
 ## Main results
 
-* `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
-  topological vector space that are symmetric, positive definite and have a von Neumann bounded
-  unit set form a convex set.
 * `TauCeti.nonempty_contMDiffRiemannianMetric`: a `C^n` vector bundle with finite-dimensional
   fibres over a σ-compact Hausdorff smooth manifold modelled on a finite-dimensional space has a
   `C^n` Riemannian metric.
@@ -56,57 +54,6 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-section Convex
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousConstSMul ℝ V]
-
-/-- If `c • g ≤ h` on the diagonal for some `c > 0`, then the unit set `{v | h v v < 1}` of `h` is
-von Neumann bounded as soon as the unit set of `g` is. -/
-theorem isVonNBounded_setOfPred_lt_one_of_le {g h : V →L[ℝ] V →L[ℝ] ℝ} {c : ℝ} (hc : 0 < c)
-    (hle : ∀ v, c * g v v ≤ h v v) (hg : IsVonNBounded ℝ {v | g v v < 1}) :
-    IsVonNBounded ℝ {v | h v v < 1} := by
-  -- The unit set of `h` lies in the image of the unit set of `g` under scaling by `(√c)⁻¹`.
-  set r := Real.sqrt c
-  have hr : 0 < r := Real.sqrt_pos.mpr hc
-  refine (hg.image (r⁻¹ • ContinuousLinearMap.id ℝ V)).subset ?_
-  intro v hv
-  refine ⟨r • v, ?_, by simp [smul_smul, mul_inv_cancel₀ hr.ne']⟩
-  simp only [mem_ofPred_eq, map_smul, smul_apply, smul_eq_mul] at hv ⊢
-  calc r * (r * g v v) = c * g v v := by rw [← mul_assoc, Real.mul_self_sqrt hc.le]
-    _ ≤ h v v := hle v
-    _ < 1 := hv
-
-/-- The fibrewise conditions of a Riemannian metric cut out a convex set: the continuous bilinear
-forms on a real topological vector space that are symmetric, positive definite and have a
-von Neumann bounded unit set are closed under convex combinations. -/
-theorem convex_setOfPred_symm_pos_isVonNBounded :
-    Convex ℝ {g : V →L[ℝ] V →L[ℝ] ℝ | (∀ v w, g v w = g w v) ∧ (∀ v, v ≠ 0 → 0 < g v v) ∧
-      IsVonNBounded ℝ {v | g v v < 1}} := by
-  -- A positive definite form is nonnegative on the diagonal.
-  have nonneg {g : V →L[ℝ] V →L[ℝ] ℝ} (hg : ∀ v, v ≠ 0 → 0 < g v v) (v : V) : 0 ≤ g v v := by
-    rcases eq_or_ne v 0 with rfl | hv
-    · simp
-    · exact (hg v hv).le
-  rintro g ⟨hgs, hgp, hgb⟩ g' ⟨hgs', hgp', hgb'⟩ a b ha hb hab
-  have hab' (v : V) : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
-  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_, ?_⟩
-  · -- One of the two coefficients is positive.
-    rw [hab']
-    rcases ha.eq_or_lt with rfl | ha'
-    · rw [zero_add] at hab
-      subst hab
-      simpa using hgp' v hv
-    · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv))
-        (mul_nonneg hb (nonneg hgp' v))
-  · -- One of the two coefficients is at least `1 / 2`, and that term dominates.
-    rcases le_total (1 / 2 : ℝ) a with ha' | hb'
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
-
-end Convex
-
 variable
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {n : ℕ∞}
@@ -115,28 +62,6 @@ variable
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E]
-
-/-- The field of bilinear forms `b ↦ φ (e b ·) (e b ·)` obtained by pulling back a fixed bilinear
-form `φ` on the model fibre along the preferred trivialization `e` at `x` is `C^n` on the base set
-of `e`. -/
-private theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E IB]
-    (φ : F →L[ℝ] F →L[ℝ] ℝ) (x : B) :
-    ContMDiffOn IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
-      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) b
-        ((ContinuousLinearMap.precomp ℝ ((trivializationAt F E x).continuousLinearMapAt ℝ b)).comp
-          (φ.comp ((trivializationAt F E x).continuousLinearMapAt ℝ b))))
-      (trivializationAt F E x).baseSet := by
-  -- Recording this instance locally keeps the instance search for the vector bundle structure on
-  -- the bundle of bilinear forms within the default budget.
-  have : ∀ b, ContinuousAdd (E b →L[ℝ] ℝ) := fun b ↦ inferInstance
-  rw [Trivialization.contMDiffOn_section_iff (F := F →L[ℝ] F →L[ℝ] ℝ)
-    (E := fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) (trivializationAt _ _ x)
-    (trivializationAt F E x).open_baseSet (by simp [hom_trivializationAt_baseSet])]
-  -- Read in the corresponding trivialization of the bundle of bilinear forms, the field is the
-  -- constant `φ`.
-  refine (contMDiffOn_const (c := φ)).congr fun b hb ↦ ?_
-  ext v w
-  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
 
 /-- **Existence of Riemannian metrics.** A `C^n` real vector bundle with finite-dimensional fibres
 over a σ-compact Hausdorff smooth manifold modelled on a finite-dimensional space carries a `C^n`
@@ -155,8 +80,8 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
   let g (x b : B) : E b →L[ℝ] E b →L[ℝ] ℝ :=
     (ContinuousLinearMap.precomp ℝ ((trivializationAt F E x).continuousLinearMapAt ℝ b)).comp
       (φ.comp ((trivializationAt F E x).continuousLinearMapAt ℝ b))
-  -- As in `contMDiffOn_trivializationAt_pullbackForm`, these local instances keep the instance
-  -- search for the bundle of bilinear forms within the default budget.
+  -- As in `Manifold.contMDiffOn_trivializationAt_pullbackForm`, these local instances keep the
+  -- instance search for the bundle of bilinear forms within the default budget.
   have : ∀ b, ContinuousAdd (E b →L[ℝ] ℝ) := fun b ↦ inferInstance
   let : ∀ b, AddCommGroup (E b →L[ℝ] E b →L[ℝ] ℝ) := fun b ↦ inferInstance
   obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local (n := n) IB
@@ -166,7 +91,7 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
     (fun _ ↦ convex_setOfPred_symm_pos_isVonNBounded) fun x ↦ by
       refine ⟨(trivializationAt F E x).baseSet,
         (trivializationAt F E x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E x),
-        g x, contMDiffOn_trivializationAt_pullbackForm φ x, fun b hb ↦ ?_⟩
+        g x, Manifold.contMDiffOn_trivializationAt_pullbackForm φ x, fun b hb ↦ ?_⟩
       -- Over the base set, `g x b` is `φ` read through the fibre isomorphism `L : E b ≃ F`.
       set L := (trivializationAt F E x).continuousLinearEquivAt ℝ b hb
       have hg (v w : E b) : g x b v w = inner ℝ (T (L v)) (T (L w)) := by
