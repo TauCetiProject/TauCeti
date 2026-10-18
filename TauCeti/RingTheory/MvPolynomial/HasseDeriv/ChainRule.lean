@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -155,10 +156,8 @@ theorem eval_blockLinearForm (A : ι → κ → τ → R) (y : ι × τ → R) (
 theorem eval_aeval_blockLinearForm (A : ι → κ → τ → R) (y : ι × τ → R)
     (F : MvPolynomial (ι × κ) R) :
     eval y (aeval (blockLinearForm A) F) = eval (fun p ↦ ∑ a, A p.1 p.2 a * y (p.1, a)) F := by
-  induction F using MvPolynomial.induction_on with
-  | C r => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p s hp => simp [hp]
+  simpa only [aeval_eq_eval, eval_blockLinearForm] using
+    comp_aeval_apply (blockLinearForm A) (aeval y) F
 
 /-- Block-linear forms are linear forms: homogeneous of degree one. -/
 theorem isHomogeneous_blockLinearForm (A : ι → κ → τ → R) (p : ι × κ) :
@@ -173,20 +172,6 @@ private theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι �
       (if p.1 = b then 1 else 0) :=
   IsWeightedHomogeneous.sum _ _ _ fun a _ ↦ (isWeightedHomogeneous_X _ _ (p.1, a)).C_mul _
 
-/-- The indicator weight of block `b` of a multi-index is its degree in block `b`. -/
-private theorem weight_blockIndicator [Fintype κ] [DecidableEq ι] (e : ι × κ →₀ ℕ) (b : ι) :
-    Finsupp.weight (fun p : ι × κ ↦ if p.1 = b then 1 else 0) e = ∑ l, e (b, l) := by
-  induction e using Finsupp.induction_linear with
-  | zero => simp
-  | add f g hf hg => simp only [map_add, hf, hg, Finsupp.add_apply, sum_add_distrib]
-  | single p n =>
-    obtain ⟨h, l⟩ := p
-    by_cases hb : h = b
-    · subst hb
-      classical
-      simp [Finsupp.weight_single, Finsupp.single_apply]
-    · simp [Finsupp.weight_single, hb]
-
 /-- **Block degrees of the substitution coefficients.** If the coefficient
 `c_{e,k} = [Y^k] ∏_{h,l} (∑ₐ A_{h,l,a} Y_{h,a})^(e_{h,l})` is nonzero, then `e` and `k` have the
 same degree in every block: `∑ₗ e_{b,l} = ∑ₐ k_{b,a}`. -/
@@ -198,7 +183,7 @@ theorem sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero [Fintype κ]
   have hw := IsWeightedHomogeneous.aeval
     (isWeightedHomogeneous_monomial (fun p : ι × κ ↦ if p.1 = b then 1 else 0) e (1 : R) rfl)
     (isWeightedHomogeneous_blockLinearForm A b)
-  rw [← weight_blockIndicator, ← weight_blockIndicator, hw h]
+  rw [← Finsupp.weight_ite_fst_eq_sum, ← Finsupp.weight_ite_fst_eq_sum, hw h]
 
 /-- **Degrees after a block-linear substitution.** If every monomial of `F` has degree at most
 `d h` in each block `h`, then the substituted polynomial `F(AY)` has degree at most `d h` in each
@@ -216,7 +201,7 @@ theorem degreeOf_aeval_blockLinearForm_le [Fintype κ] (A : ι → κ → τ →
       (F.coeff μ) rfl)
     (isWeightedHomogeneous_blockLinearForm A q.1)
   have hblock := hw (mem_support_iff.1 hν)
-  rw [weight_blockIndicator, weight_blockIndicator] at hblock
+  rw [Finsupp.weight_ite_fst_eq_sum, Finsupp.weight_ite_fst_eq_sum] at hblock
   calc ν q ≤ ∑ a, ν (q.1, a) :=
         single_le_sum (f := fun a ↦ ν (q.1, a)) (fun _ _ ↦ Nat.zero_le _) (mem_univ q.2)
     _ = ∑ l, μ (q.1, l) := hblock
