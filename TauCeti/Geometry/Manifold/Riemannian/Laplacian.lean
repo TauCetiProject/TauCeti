@@ -384,9 +384,11 @@ theorem divergence_eq_trace_fderiv_model_space
         A := by
     ext v
     apply e.injective
-    change e (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F V x v) =
-      fderiv ℝ V x (e v)
-    simpa only [e, ContinuousLinearEquiv.symm_apply_apply] using hconn (e v)
+    have hAv : A v = e.symm (fderiv ℝ V x (e v)) := by
+      simp only [A, LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
+      rfl
+    rw [hAv, ContinuousLinearEquiv.apply_symm_apply]
+    exact hconn (e v)
   rw [hA]
   exact (LinearMap.trace_conj' _ e.toLinearEquiv).symm
 
