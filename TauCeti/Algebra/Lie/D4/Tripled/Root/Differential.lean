@@ -26,8 +26,8 @@ the carrier identified with an independently pinned simply connected group schem
 
 ## Main declarations
 
-* `TauCeti.D4Tripled.rootMatrix`: the integral matrix of a numbered root generator, with
-  `TauCeti.D4Tripled.rootMatrix_eq_zero_of_weight_ne`.
+* `TauCeti.D4Tripled.rootMatrix_eq_zero_of_weight_ne`: the integral root matrices have the
+  expected signed simple-root weight support.
 * `TauCeti.D4Tripled.tangentMatrix_derivationComp_rootSubgroup`: the differential of a numbered
   root subgroup is the tangent parameter times its integral root matrix.
 * `TauCeti.D4Tripled.rootVector`: the normalized root vector, with
@@ -64,20 +64,6 @@ attribute [local instance high] Algebra.toModule
 
 /-! ## The integral root matrices -/
 
-/-- The integral matrix of a numbered simple-root generator on the tripled module: a raising
-matrix at a positive index, a lowering matrix at a negative one. -/
-def rootMatrix : Fin 4 ⊕ Fin 4 → Matrix (Fin 24) (Fin 24) ℤ
-  | .inl i => raisingMatrix i
-  | .inr i => loweringMatrix i
-
-/-- The integral matrix of a positive numbered root generator is the raising matrix. -/
-@[simp]
-theorem rootMatrix_inl (i : Fin 4) : rootMatrix (.inl i) = raisingMatrix i := (rfl)
-
-/-- The integral matrix of a negative numbered root generator is the lowering matrix. -/
-@[simp]
-theorem rootMatrix_inr (i : Fin 4) : rootMatrix (.inr i) = loweringMatrix i := (rfl)
-
 /-- The Kostant integral matrix of a represented numbered root generator in the tripled lattice
 basis is its raising or lowering matrix. -/
 theorem kostantRootGeneratorIntMatrix_eq_rootMatrix (k : Fin 4 ⊕ Fin 4) :
@@ -87,8 +73,8 @@ theorem kostantRootGeneratorIntMatrix_eq_rootMatrix (k : Fin 4 ⊕ Fin 4) :
       rootMatrix k := by
   apply kostantRootGeneratorIntMatrix_eq_of_action
   cases k with
-  | inl i => exact rep_serreRootGenerator_inl_latticeBasis_eq_sum i
-  | inr i => exact rep_serreRootGenerator_inr_latticeBasis_eq_sum i
+  | inl i => simpa only [rootMatrix_inl] using rep_serreRootGenerator_inl_latticeBasis_eq_sum i
+  | inr i => simpa only [rootMatrix_inr] using rep_serreRootGenerator_inr_latticeBasis_eq_sum i
 
 /-- **A numbered integral root matrix has no entries outside its signed simple-root weight
 difference.** The weights are the integral tripled weights, before any change of coefficient
