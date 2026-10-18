@@ -35,6 +35,11 @@ each relator is trivial. Applied to the classifying space of the presented group
 `K(G, 1)` whose fundamental group is identified with `G`, this shows that the homomorphism from
 the presented group is injective (`TauCeti.PresentationComplex.fundamentalGroupHom_injective`).
 
+It is also surjective, because attaching 2-cells induces a surjection on fundamental groups
+(`TauCeti.TwoCellAttachment.surjective_map_incl`). So the fundamental group of the presentation
+complex is the presented group (`TauCeti.PresentationComplex.fundamentalGroupMulEquiv`). With no
+relators the presentation complex is the wedge of circles, and this is the free group.
+
 ## Main definitions
 
 * `TauCeti.PresentationComplex.attachingLoop`: a loop in the wedge of circles representing an
@@ -43,6 +48,8 @@ the presented group is injective (`TauCeti.PresentationComplex.fundamentalGroupH
 * `TauCeti.PresentationComplex.basepoint`: its vertex.
 * `TauCeti.PresentationComplex.fundamentalGroupHom`: the homomorphism from the presented group to
   the fundamental group of the presentation complex.
+* `TauCeti.PresentationComplex.fundamentalGroupMulEquiv`: the isomorphism
+  `π₁(PresentationComplex R) ≃* PresentedGroup R`.
 
 ## Main results
 
@@ -50,14 +57,17 @@ the presented group is injective (`TauCeti.PresentationComplex.fundamentalGroupH
   the `s`-th circle.
 * `TauCeti.PresentationComplex.exists_mapOfEq_comp_fundamentalGroupHom`: every homomorphism from
   the presented group to a fundamental group is induced by a based map.
-* `TauCeti.PresentationComplex.fundamentalGroupHom_injective`: the homomorphism from the presented
-  group to the fundamental group of the presentation complex is injective.
+* `TauCeti.PresentationComplex.fundamentalGroupHom_injective`,
+  `TauCeti.PresentationComplex.fundamentalGroupHom_surjective`: the homomorphism from the presented
+  group to the fundamental group of the presentation complex is injective and surjective.
+* `TauCeti.PresentationComplex.fundamentalGroupMulEquiv_mapOfEq_expLoop`: the isomorphism sends
+  the loop around the `s`-th circle to the generator `s`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 1.2, Corollary 1.28 and the presentation complex `X_G` described before it, and
-  Section 1.B for maps into a `K(G, 1)`.
+  Section 1.2, Proposition 1.26, Corollary 1.28 and the presentation complex `X_G` described
+  before it, and Section 1.B for maps into a `K(G, 1)`.
 -/
 
 public section
@@ -196,6 +206,42 @@ theorem fundamentalGroupHom_injective : Function.Injective (fundamentalGroupHom 
   refine Function.Injective.of_comp (f := FundamentalGroup.mapOfEq f hf) ?_
   rw [← MonoidHom.coe_comp, hψ]
   exact (classifyingSpaceFundamentalGroupMulEquiv _).symm.injective
+
+/-- **The homomorphism from the presented group to the fundamental group of the presentation
+complex is surjective.** Every loop at the vertex is homotopic into the wedge of circles
+(`TwoCellAttachment.surjective_map_incl`), whose fundamental group is the free group. -/
+theorem fundamentalGroupHom_surjective : Function.Surjective (fundamentalGroupHom R) := by
+  intro g
+  obtain ⟨h, rfl⟩ := TwoCellAttachment.surjective_map_incl g
+  exact ⟨PresentedGroup.mk R (circleFundamentalGroupMulEquiv S h), by
+    rw [fundamentalGroupHom_mk, MulEquiv.symm_apply_apply]⟩
+
+variable (R) in
+/-- **The fundamental group of the presentation complex is the presented group.** The
+isomorphism `π₁(PresentationComplex R) ≃* PresentedGroup R` is the inverse of
+`fundamentalGroupHom R`, so the loop around the `s`-th circle goes to the generator `s`. -/
+def fundamentalGroupMulEquiv :
+    FundamentalGroup (PresentationComplex R) (basepoint R) ≃* PresentedGroup R :=
+  (MulEquiv.ofBijective (fundamentalGroupHom R)
+    ⟨fundamentalGroupHom_injective, fundamentalGroupHom_surjective⟩).symm
+
+@[simp]
+theorem fundamentalGroupMulEquiv_symm_apply (g : PresentedGroup R) :
+    (fundamentalGroupMulEquiv R).symm g = fundamentalGroupHom R g :=
+  (rfl)
+
+@[simp]
+theorem fundamentalGroupMulEquiv_fundamentalGroupHom (g : PresentedGroup R) :
+    fundamentalGroupMulEquiv R (fundamentalGroupHom R g) = g :=
+  (fundamentalGroupMulEquiv R).apply_symm_apply g
+
+/-- **The loop around the `s`-th circle goes to the generator `s`.** -/
+theorem fundamentalGroupMulEquiv_mapOfEq_expLoop (s : S) :
+    fundamentalGroupMulEquiv R (FundamentalGroup.mapOfEq ((incl R).comp (WedgeSum.incl _ s))
+        (congrArg (incl R) (WedgeSum.incl_apply_self s))
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))) =
+      PresentedGroup.of s := by
+  rw [← fundamentalGroupHom_of, fundamentalGroupMulEquiv_fundamentalGroupHom]
 
 end PresentationComplex
 
