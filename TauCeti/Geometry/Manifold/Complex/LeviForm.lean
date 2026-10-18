@@ -74,18 +74,6 @@ namespace TauCeti
 variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace M]
   [ChartedSpace E M] {f : M → ℝ} {x : M}
 
-private theorem tangentSpaceCastModel_apply_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {F N : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace N]
-    [ChartedSpace F N] (y : N) (v : F) :
-    tangentSpaceCastModel (𝓘(𝕜, F)) y v = v :=
-  rfl
-
-private theorem mfderiv_apply_eq_mvfderiv_apply_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {F N : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace N]
-    [ChartedSpace F N] (g : N → F) (y : N) (v : F) :
-    mfderiv (𝓘(𝕜, F)) (𝓘(𝕜, F)) g y v = mvfderiv (𝓘(𝕜, F)) g y v := by
-  rfl
-
 variable (E) in
 /-- The **Levi form** of a real function `f` on a complex manifold at `x`: the Levi form of the
 coordinate expression of `f` in the preferred chart at `x`. It is a sesquilinear form on the model
@@ -118,11 +106,11 @@ private theorem fderiv_fderiv_comp_chartAt_symm (v w : E) :
       criticalHessian 𝓘(ℝ, E) f x v w := by
   have hext : ((extChartAt 𝓘(ℝ, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
   have hext' : extChartAt 𝓘(ℝ, E) x x = chartAt E x x := by simp
-  rw [criticalHessian_def, hext, hext']
-  change fderiv ℝ (fderiv ℝ (f ∘ (chartAt E x).symm)) (chartAt E x x) v w =
-    fderiv ℝ (fderiv ℝ (f ∘ (chartAt E x).symm)) (chartAt E x x)
-      (tangentSpaceCastModel (𝓘(ℝ, E)) x v) (tangentSpaceCastModel (𝓘(ℝ, E)) x w)
-  rw [tangentSpaceCastModel_apply_self, tangentSpaceCastModel_apply_self]
+  have h : fderiv ℝ (fderiv ℝ (f ∘ (chartAt E x).symm)) (chartAt E x x) =
+      criticalHessian 𝓘(ℝ, E) f x := by
+    rw [criticalHessian_def, hext, hext']
+  -- `criticalHessian` is a form on `TangentSpace 𝓘(ℝ, E) x`, which is `E` by definition.
+  exact congr($h v w)
 
 /-- The coordinate expression in the preferred chart of a function which is `C²` at `x` is `C²`
 at the chart image of `x`. -/
@@ -197,7 +185,6 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
     leviForm (f ∘ e.symm) (e x) (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x v)
         (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x w) =
       manifoldLeviForm E f x v w := by
-  rw [mfderiv_apply_eq_mvfderiv_apply_self, mfderiv_apply_eq_mvfderiv_apply_self]
   set y := chartAt E x x
   have hy : (chartAt E x).symm y = x := (chartAt E x).left_inv (mem_chart_source E x)
   -- The holomorphic transition map from the preferred chart to `e`.
@@ -212,10 +199,6 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
     rw [(mdifferentiableAt_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mfderiv_abuse]
     simp [writtenInExtChartAt, φ, y]
-  have hDφ' : fderiv ℂ φ y = mvfderiv 𝓘(ℂ, E) e x := by
-    ext u
-    rw [hDφ]
-    exact mfderiv_apply_eq_mvfderiv_apply_self e x u
   -- The coordinate expression in `e` is `C²`, as `e` is a real `C²` chart.
   have hfe : ContDiffAt ℝ 2 (f ∘ e.symm) (φ y) := by
     have h := (contMDiffAt_iff_contDiffAt_comp_extend_symm
@@ -230,7 +213,8 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
     filter_upwards [hmem] with z hz
     simp only [φ, comp_apply, e.left_inv hz]
   rw [manifoldLeviForm_def, leviForm_congr_of_eventuallyEq hfg,
-    leviForm_comp_apply (hφy ▸ hfe) hφ, hDφ', hφy]
+    leviForm_comp_apply (hφy ▸ hfe) hφ, hDφ, hφy]
+  -- The two sides differ only in reading the model space `E` as the tangent spaces of `M`.
   rfl
 
 end Chart
@@ -240,16 +224,6 @@ end Chart
 section Critical
 
 variable {e : OpenPartialHomeomorph M E}
-
-private theorem mvfderiv_extend_apply_eq_mfderiv (e : OpenPartialHomeomorph M E) (u : E) :
-    mvfderiv 𝓘(ℝ, E) (e.extend 𝓘(ℝ, E)) x u =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e x u := by
-  calc
-    _ = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (e.extend 𝓘(ℝ, E)) x u :=
-      (mfderiv_apply_eq_mvfderiv_apply_self (e.extend 𝓘(ℝ, E)) x u).symm
-    _ = _ := by
-      simp only [OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, id_comp]
-      rfl
 
 /-- **The real part of the Levi form at a critical point, in an arbitrary real chart.** For a
 real `C²` chart `e`, it is the quarter-sum of the real Hessian on the chart derivatives of
@@ -265,10 +239,10 @@ theorem re_manifoldLeviForm_apply_of_mem_maximalAtlas
           (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e x (I • w))) / 4 := by
   have h₁ := criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit v w
   have h₂ := criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit (I • v) (I • w)
-  rw [mvfderiv_extend_apply_eq_mfderiv, mvfderiv_extend_apply_eq_mfderiv] at h₁ h₂
   simp only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id] at h₁ h₂
   rw [re_manifoldLeviForm_apply]
+  -- On the model space `E`, `mvfderiv 𝓘(ℝ, E) e x` is `mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e x` by definition.
   exact congrArg₂ (fun a b : ℝ ↦ (a + b) / 4) h₁ h₂
 
 /-- **The imaginary part of the Levi form at a critical point, in an arbitrary real chart.** For
@@ -286,10 +260,10 @@ theorem im_manifoldLeviForm_apply_of_mem_maximalAtlas
           (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e x (I • w))) / 4 := by
   have h₁ := criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit (I • v) w
   have h₂ := criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit v (I • w)
-  rw [mvfderiv_extend_apply_eq_mfderiv, mvfderiv_extend_apply_eq_mfderiv] at h₁ h₂
   simp only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id] at h₁ h₂
   rw [im_manifoldLeviForm_apply]
+  -- On the model space `E`, `mvfderiv 𝓘(ℝ, E) e x` is `mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e x` by definition.
   exact congrArg₂ (fun a b : ℝ ↦ (a - b) / 4) h₁ h₂
 
 /-- **The Levi form at a critical point, from the real Hessian in any chart.** At a critical point
