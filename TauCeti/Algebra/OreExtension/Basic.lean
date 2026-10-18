@@ -37,6 +37,9 @@ module: `C a` acts coefficientwise on the left, while `X` sends `a Xⁿ` to
 ## Main statements
 
 * `TauCeti.OreExtension.X_mul_C`: the Ore commutation relation.
+* `TauCeti.OreExtension.coeff_X_mul_zero` and `coeff_X_mul_succ`: the coefficient recursion
+  for left multiplication by the variable.
+* `TauCeti.OreExtension.sum_monomial_eq`: the left-coefficient expansion.
 * `TauCeti.OreExtension.lift_C`, `TauCeti.OreExtension.lift_X`, and
   `TauCeti.OreExtension.ringHom_ext`: the universal property for ring homomorphisms.
 * `TauCeti.OreExtension.liftAlgHom_C`, `TauCeti.OreExtension.liftAlgHom_X`, and
@@ -196,6 +199,8 @@ theorem leftCoeffLinearEquiv_apply (p : OreExtension σ δ) :
 theorem leftCoeffLinearEquiv_symm_apply (f : ℕ →₀ R) :
     (leftCoeffLinearEquiv (σ := σ) (δ := δ)).symm f = ⟨f⟩ := (rfl)
 
+instance [Nontrivial R] : Nontrivial (OreExtension σ δ) := leftCoeffLinearEquiv.nontrivial
+
 /-- The left monomial basis of an Ore extension. -/
 noncomputable def monomialBasis : Module.Basis ℕ R (OreExtension σ δ) :=
   Module.Basis.ofRepr leftCoeffLinearEquiv
@@ -255,6 +260,18 @@ theorem smul_monomial {S : Type*} [SMulZeroClass S R] (s : S) (n : ℕ) (a : R) 
     s • monomial (σ := σ) (δ := δ) n a = monomial n (s • a) := by
   ext m
   by_cases h : n = m <;> simp [h]
+
+/-- Coefficients commute with finite sums. -/
+@[simp]
+theorem finsetSum_coeff {ι : Type*} (s : Finset ι) (p : ι → OreExtension σ δ) (n : ℕ) :
+    coeff (∑ i ∈ s, p i) n = ∑ i ∈ s, coeff (p i) n := by
+  simp only [coeff_def, ← leftCoeffLinearEquiv_apply, map_sum, Finset.sum_apply']
+
+/-- Every Ore polynomial is the sum of its left-coefficient monomials. -/
+theorem sum_monomial_eq (p : OreExtension σ δ) :
+    ∑ n ∈ p.toFinsupp.support, monomial n (coeff p n) = p := by
+  simpa [Finsupp.linearCombination_apply, Finsupp.sum, coeff_def, smul_monomial, smul_eq_mul]
+    using (monomialBasis (σ := σ) (δ := δ)).linearCombination_repr p
 
 private def xOperator : OreExtension σ δ →ₗ[k] OreExtension σ δ :=
   (Finsupp.lsum k fun n =>
@@ -487,6 +504,38 @@ theorem C_mul_X_pow_eq_monomial (a : R) (n : ℕ) :
     C (σ := σ) (δ := δ) a * X ^ n = monomial n a := by
   rw [X_pow_eq_monomial, C_mul_monomial, mul_one]
 
+/-- Multiplication by the variable has the skew-derivation coefficient recursion. -/
+@[simp]
+theorem X_mul_monomial (n : ℕ) (a : R) :
+    X (σ := σ) (δ := δ) * monomial n a =
+      monomial (n + 1) (σ a) + monomial n (δ a) := by
+  simp [X_eq_monomial]
+
+/-- The constant coefficient of left multiplication by the variable. -/
+@[simp]
+theorem coeff_X_mul_zero (p : OreExtension σ δ) : coeff (X * p) 0 = δ (coeff p 0) := by
+  induction p using induction_on with
+  | zero => simp
+  | add n a p hn ha ih =>
+    simp only [mul_add, coeff_add, X_mul_monomial, map_add, ih]
+    by_cases h : n = 0 <;> simp [coeff_monomial, h]
+
+/-- The positive-degree coefficients of left multiplication by the variable. -/
+@[simp]
+theorem coeff_X_mul_succ (p : OreExtension σ δ) (n : ℕ) :
+    coeff (X * p) (n + 1) = σ (coeff p n) + δ (coeff p (n + 1)) := by
+  induction p using induction_on with
+  | zero => simp
+  | add m a p hm ha ih =>
+    simp only [mul_add, coeff_add, X_mul_monomial, map_add, ih, coeff_monomial]
+    by_cases h : m = n
+    · subst m
+      simp [add_comm, add_left_comm]
+    · by_cases h' : m = n + 1
+      · subst m
+        simp [add_comm, add_left_comm]
+      · simp [h, h']
+
 section UniversalProperty
 
 variable {S : Type*} [Semiring S]
@@ -606,6 +655,17 @@ theorem algHom_ext {f g : OreExtension σ δ →ₐ[k] S}
   AlgHom.toRingHom_injective (ringHom_ext hC hX)
 
 end UniversalProperty
+
+section Ring
+
+variable {S : Type*} [Ring S] [Algebra k S] {τ : S →ₐ[k] S} {ε : SigmaDerivation τ}
+
+instance instAddCommGroup : AddCommGroup (OreExtension τ ε) :=
+  Module.addCommMonoidToAddCommGroup S
+
+instance instRing : Ring (OreExtension τ ε) where
+
+end Ring
 
 end OreExtension
 
