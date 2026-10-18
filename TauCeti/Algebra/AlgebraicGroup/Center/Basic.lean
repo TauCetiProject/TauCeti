@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 import Mathlib.LinearAlgebra.TensorProduct.Basis
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 
 /-!

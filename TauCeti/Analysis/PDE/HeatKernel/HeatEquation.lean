@@ -27,8 +27,8 @@ discontinuous no such limit is asserted. This file proves the equation:
 Both derivatives are taken under the integral sign. In space, every derivative of `K_t` is
 dominated, uniformly on unit translates, by a multiple of `K_{4t}`
 (`TauCeti.exists_integrable_norm_iteratedFDeriv_heatKernel_add_le`), and this feeds the general
-smoothness theorem `TauCeti.contDiff_convolution_left_of_dominated`. In time, `∂ₜK_s = ΔK_s` is
-dominated for `s` near `t` by a multiple of `K_{4t}`.
+smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In time,
+`∂ₜK_s = ΔK_s` is dominated for `s` near `t` by a multiple of `K_{4t}`.
 
 ## Main declarations
 

@@ -165,10 +165,10 @@ theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β
   have hwrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod w a b
   have hvrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod v a b
   simp only [← Iic_prod_Iic] at hwrect hvrect
-  rw [hrect (isLowerSet_Iic a) (isLowerSet_Iic b),
-    hrect (isLowerSet_Iio a) (isLowerSet_Iic b),
-    hrect (isLowerSet_Iic a) (isLowerSet_Iio b),
-    hrect (isLowerSet_Iio a) (isLowerSet_Iio b)] at hwrect
+  rw [hrect (IsLowerSet.Iic a) (IsLowerSet.Iic b),
+    hrect (IsLowerSet.Iio a) (IsLowerSet.Iic b),
+    hrect (IsLowerSet.Iic a) (IsLowerSet.Iio b),
+    hrect (IsLowerSet.Iio a) (IsLowerSet.Iio b)] at hwrect
   exact add_left_cancel (hwrect.symm.trans hvrect)
 
 end Finsupp

@@ -245,6 +245,24 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     (sub_nonneg.mpr (Nat.cast_le.mpr hij) : (0 : ℝ) ≤ j - i)
   nlinarith
 
+/-- Moving two indices one step towards each other does not increase the sum of their
+heights: for `i ≤ k`, the inner pair `i + 1, k + 1` has sum at most that of the outer pair
+`i, k + 2`. If either outer height is infinite, the bound is trivial. -/
+theorem succ_add_succ_le_add {i k : ℕ} (hik : i ≤ k) :
+    h (i + 1) + h (k + 1) ≤ h i + h (k + 2) := by
+  by_cases hi : h i = ⊤
+  · simp [hi]
+  by_cases hk : h (k + 2) = ⊤
+  · simp [hk]
+  have hi' := hh.ne_top_of_le_of_le hi hk (Nat.le_succ i) (by omega)
+  have hk' := hh.ne_top_of_le_of_le hi hk (by omega) (Nat.le_succ (k + 1))
+  have hs := hh.monotoneOn (a := i) (b := k + 1) ⟨hi, hi'⟩ ⟨hk', hk⟩ (by omega)
+  simp only [unitSlope] at hs
+  rw [← WithTop.coe_untop₀_of_ne_top hi, ← WithTop.coe_untop₀_of_ne_top hk,
+    ← WithTop.coe_untop₀_of_ne_top hi', ← WithTop.coe_untop₀_of_ne_top hk',
+    ← WithTop.coe_add, ← WithTop.coe_add, WithTop.coe_le_coe]
+  linarith
+
 /-- An intermediate height is at most the larger of two outer heights. If either
 outer height is infinite, the bound is trivial. -/
 theorem le_max {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) : h j ≤ max (h i) (h k) := by

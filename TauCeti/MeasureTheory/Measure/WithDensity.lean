@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Pushing a weighted measure forward
@@ -36,6 +38,8 @@ measure finite.
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
   equivalence is the image measure weighted by the transported weight.
+* `TauCeti.Probability.map_abs_withDensity`: the image of a weighted Lebesgue measure under
+  absolute value has the folded density.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
@@ -43,6 +47,8 @@ measure finite.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
+* `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
+  obtained by the same substitution and Jacobian factor.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -74,6 +80,33 @@ theorem map_withDensity (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0
   simp only [MeasurableEquiv.symm_apply_apply]
 
 end MeasurableEquiv
+
+namespace TauCeti.Probability
+
+open Set
+
+/-- **The folded density.** If `μ` has density `f` with respect to Lebesgue measure, then the
+folded law has density `f x + f (-x)` on the positive half-line and `0` elsewhere. -/
+theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    (volume.withDensity f).map (|·|) =
+      volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
+  have hvolume : volume.map (fun x : ℝ => -x) = volume := by
+    exact Measure.map_neg_eq_self (volume : Measure ℝ)
+  have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
+    have h := MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
+    have hvolume' : volume.map (MeasurableEquiv.neg ℝ) = volume := hvolume
+    rw [hvolume'] at h
+    simpa [Measure.neg_def] using h
+  rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
+    restrict_withDensity measurableSet_Ici,
+    restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
+    ← withDensity_indicator measurableSet_Ioi, ← withDensity_indicator measurableSet_Ioi,
+    ← withDensity_add_left (hf.indicator measurableSet_Ioi)]
+  congr 1
+  ext x
+  by_cases hx : x ∈ Ioi 0 <;> simp [hx]
+
+end TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
@@ -149,6 +182,54 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
         rw [← MeasurableEquiv.coe_addLeft c, MeasurableEquiv.map_withDensity]
         simp only [MeasurableEquiv.coe_addLeft, MeasurableEquiv.symm_addLeft,
           map_add_left_eq_self, neg_add_eq_sub]
+
+/-- **Radon–Nikodym derivative under an invertible affine map.** The derivative of the image of
+an s-finite measure under `x ↦ c + A x`, relative to an additive Haar measure, is obtained by
+substituting the inverse affine map and multiplying by the reciprocal absolute determinant. -/
+theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[ℝ] E) (c : E)
+    (ν : Measure E) [SFinite ν] :
+    (ν.map fun x ↦ c + A x).rnDeriv μ =ᵐ[μ]
+      fun y ↦ ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| *
+        ν.rnDeriv μ (A.symm (y - c)) := by
+  let e : E ≃ᵐ E := A.toHomeomorph.toMeasurableEquiv.trans (MeasurableEquiv.addLeft c)
+  have he : (e : E → E) = fun x ↦ c + A x := by
+    funext x
+    simp [e]
+  have hemb : MeasurableEmbedding (fun x ↦ c + A x) := by
+    rw [← he]
+    exact e.measurableEmbedding
+  let r : ℝ≥0∞ := ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹|
+  have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
+  have hr : r ≠ 0 := by simp [r, hdet]
+  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := by
+    have hmapA : μ.map A = r • μ := by
+      simpa [r] using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+    calc
+      μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
+        (Measure.map_map (by fun_prop) (by fun_prop)).symm
+      _ = (r • μ).map (fun y : E ↦ c + y) := by rw [hmapA]
+      _ = r • μ := by
+        rw [Measure.map_smul r
+          ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable), map_add_left_eq_self]
+  have hsing : (ν.singularPart μ).map (fun x ↦ c + A x) ⟂ₘ μ := by
+    have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart ν μ)
+    rw [hmapμ] at h
+    exact h.mono_ac Measure.AbsolutelyContinuous.rfl (Measure.absolutelyContinuous_smul hr)
+  have hadd : ν.map (fun x ↦ c + A x) =
+      (ν.singularPart μ).map (fun x ↦ c + A x) +
+        μ.withDensity (fun y ↦ r * ν.rnDeriv μ (A.symm (y - c))) := by
+    calc
+      ν.map (fun x ↦ c + A x) =
+          (ν.singularPart μ + μ.withDensity (ν.rnDeriv μ)).map
+            (fun x ↦ c + A x) := congrArg (fun ρ : Measure E ↦
+              ρ.map (fun x ↦ c + A x)) (Measure.haveLebesgueDecomposition_add ν μ)
+      _ = (ν.singularPart μ).map (fun x ↦ c + A x) +
+          (μ.withDensity (ν.rnDeriv μ)).map (fun x ↦ c + A x) := by
+            rw [Measure.map_add _ _ (by fun_prop)]
+      _ = (ν.singularPart μ).map (fun x ↦ c + A x) +
+          μ.withDensity (fun y ↦ r * ν.rnDeriv μ (A.symm (y - c))) := by
+            rw [map_affine_withDensity μ A c]
+  exact (Measure.eq_rnDeriv₀ (by fun_prop) hsing hadd).symm
 
 end MeasureTheory.Measure
 

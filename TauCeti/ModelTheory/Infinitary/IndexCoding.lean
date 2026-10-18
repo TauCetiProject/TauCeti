@@ -185,6 +185,13 @@ theorem ofEquiv_trans (e₁ : ι ≃ κ) (e₂ : κ ≃ μ) :
   refine ext rfl (funext fun m ↦ ?_)
   simp [ofEquiv, trans]
 
+/-- Composing the coding of an equivalence with the coding of its inverse gives the identity
+coding. -/
+@[simp]
+theorem ofEquiv_trans_ofEquiv_symm (e : ι ≃ κ) :
+    (ofEquiv e).trans (ofEquiv e.symm) = IndexCoding.id ι := by
+  rw [← ofEquiv_trans, Equiv.self_trans_symm, ofEquiv_refl]
+
 /-- Total extension of a family along a coding: decoded indices select a branch, undecodable
 ones get the default. -/
 def pad {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) : κ → β :=

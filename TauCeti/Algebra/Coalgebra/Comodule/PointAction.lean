@@ -24,9 +24,9 @@ identifies those coefficients in `H`. A finite-dimensional subspace containing t
 `coact m - m ⊗ 1` has enough coordinate functionals to show that this tensor vanishes.
 
 The representation-level restatements live in
-`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction`. This criterion is the bridge in the
-Kolchin induction: a common fixed vector obtained from the geometric point representation is thereby
-promoted to a fixed vector of the comodule itself.
+`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic`. This criterion is the bridge
+in the Kolchin induction: a common fixed vector obtained from the geometric point representation is
+thereby promoted to a fixed vector of the comodule itself.
 
 ## Main declarations
 
