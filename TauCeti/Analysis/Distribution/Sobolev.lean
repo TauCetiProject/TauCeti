@@ -38,6 +38,9 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
+* `MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: for
+  `1 < p < ∞`, real symbols of order `0`, whose `k`-th derivatives are bounded by
+  `C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)`, map `H^{s,p}` to `H^{s,p}`.
 * `TemperedDistribution.MemSobolev.mono_of_one_lt`: `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`.
 * `TemperedDistribution.MemSobolev.lineDerivOp_of_one_lt`: `∂_m` maps `H^{s,p}` to `H^{s-1,p}`.
 * `TemperedDistribution.memSobolev_add_one_of_lineDerivOp`: if `f` and its derivatives along an
@@ -129,10 +132,13 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     mul_comm, ← fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) hg,
     ← besselPotential, hf', hg']
 
-/-- A real symbol of order `0` in Hörmander's sense, `‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ (-k / 2)`,
-maps `H^{s,p}` to `H^{s,p}` for `1 < p < ∞`. -/
-private theorem MemSobolev.fourierMultiplierCLM_ofReal (hp : 1 < p) (hp_top : p ≠ ∞)
-    {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℝ} (hg : g.HasTemperateGrowth)
+/-- **Order-zero real symbols act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a
+real symbol `g` of order `0` in Hörmander's sense, `‖D^k g x‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)` for
+every `k`, maps `H^{s,p}` to `H^{s,p}`. This is the Japanese-bracket form of Mihlin's condition in
+`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. -/
+theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
+    (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℝ}
+    (hg : g.HasTemperateGrowth)
     (hgk : ∀ k : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2)) :
     MemSobolev s p (fourierMultiplierCLM F (fun x ↦ (g x : ℂ)) f) := by
   choose C hC using hgk
@@ -156,7 +162,8 @@ private theorem MemSobolev.fourierMultiplierCLM_ofReal (hp : 1 < p) (hp_top : p 
 theorem MemSobolev.mono_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s)
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s' p f := by
   rw [← sub_add_cancel s' s, ← memSobolev_besselPotential_iff, besselPotential]
-  refine hf.fourierMultiplierCLM_ofReal hp hp_top (by fun_prop) fun k ↦ ?_
+  refine hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
+    (by fun_prop) fun k ↦ ?_
   -- The symbol `(1 + ‖x‖ ^ 2) ^ ((s' - s) / 2)` has nonpositive order.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E)
     ((s' - s) / 2) k
@@ -172,7 +179,8 @@ theorem MemSobolev.lineDerivOp_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s : 
     (hf : MemSobolev s p f) {m : E} : MemSobolev (s - 1) p (∂_{m} f) := by
   rw [SubNegMonoid.sub_eq_add_neg s 1, add_comm, ← memSobolev_besselPotential_iff,
     besselPotential_neg_one_lineDerivOp_eq f]
-  refine (hf.fourierMultiplierCLM_ofReal hp hp_top (by fun_prop) fun k ↦ ?_).smul _
+  refine (hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
+    (by fun_prop) fun k ↦ ?_).smul _
   -- The symbol `⟪x, m⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` has order `0`.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le m
     (-1 / 2) k

@@ -159,8 +159,8 @@ theorem memSobolev_natCast_iff_exists_wkp_value_eq {p : ENNReal} [Fact (1 ≤ p)
       rw [Nat.cast_succ, TemperedDistribution.memSobolev_natCast_add_one_iff hp hp_top, hvalue,
         Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn]
       refine ⟨fun h v => ?_, fun h => ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun v => ?_⟩⟩
-      · -- an `H^k` derivative is an `L²` function, hence by induction the value of a `W^{k,2}`
-        -- function
+      · -- an `H^{k,p}` derivative is an `Lᵖ` function, hence by induction the value of a
+        -- `W^{k,p}` function
         obtain ⟨u', hu'⟩ :=
           exists_real_lp_lineDeriv_of_memSobolev_zero u v
             ((h.2 v).mono_of_one_lt hp hp_top (Nat.cast_nonneg k))
