@@ -28,9 +28,9 @@ transport this holds for every boundaryless model, not only for self-modelled ma
 the coordinate form in which handles are attached to sublevel sets.
 
 As a first application, a nondegenerate critical point of index `0` is a strict local minimum,
-and one of index `dim M` is a strict local maximum. In dimension two, the remaining index-one
-case has the local saddle model `f = f x - u² + v²`; explicit coordinate curves approach the
-critical point through values below and above the critical value.
+and one of index `dim M` is a strict local maximum. For every other index, explicit coordinate
+curves approach the critical point through values below and above the critical value; in
+dimension two this is the index-one saddle model `f = f x - u² + v²`.
 
 ## Main declarations
 
@@ -42,8 +42,8 @@ critical point through values below and above the critical value.
   Morse lemma on a manifold with an arbitrary boundaryless model.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart`: the
   index-one normal form in dimension two.
-* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleCurves`: curves
-  approaching a two-dimensional saddle through lower and higher values.
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_saddleCurves`: curves approaching a
+  critical point of index strictly between `0` and `dim M` through lower and higher values.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_lt_of_manifoldMorseIndex_eq_zero` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_lt_of_manifoldMorseIndex_eq_finrank`:
   strict local extrema at critical points of extreme index.
@@ -248,22 +248,22 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
   norm_num [Fin.val_cast]
   ring
 
-/-- At an index-one critical point on a two-dimensional manifold, two coordinate-axis curves
-converge to the critical point through values strictly below and strictly above its value. The
-curves are defined on all of `ℝ`; the inequalities hold for every sufficiently small nonzero
-parameter. -/
-theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleCurves
+/-- At a nondegenerate critical point whose Morse index is neither `0` nor `dim M`, two
+coordinate-axis curves of a normalized Morse chart converge to the critical point through values
+strictly below and strictly above its value. The curves are defined on all of `ℝ`; the
+inequalities hold for every sufficiently small nonzero parameter. -/
+theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
     (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
-    (h : IsManifoldNondegenerateCriticalPoint I f x) (hdim : Module.finrank ℝ E = 2)
-    (hindex : manifoldMorseIndex I f x = 1) :
+    (h : IsManifoldNondegenerateCriticalPoint I f x) (hpos : 0 < manifoldMorseIndex I f x)
+    (hlt : manifoldMorseIndex I f x < Module.finrank ℝ E) :
     ∃ γneg γpos : ℝ → M,
       Tendsto γneg (𝓝 0) (𝓝 x) ∧ γneg 0 = x ∧
       Tendsto γpos (𝓝 0) (𝓝 x) ∧ γpos 0 = x ∧
       ∀ᶠ t in 𝓝[≠] 0, f (γneg t) < f x ∧ f x < f (γpos t) := by
-  obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_twoDimensional_saddleChart hf hdim hindex
-  -- Pull the two coordinate axes back through the inverse saddle chart.
-  let i0 : Fin (Module.finrank ℝ E) := finCongr hdim.symm 0
-  let i1 : Fin (Module.finrank ℝ E) := finCongr hdim.symm 1
+  obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_normalized_morseChart hf
+  -- Pull back the first (negative) and last (positive) coordinate axes through the inverse chart.
+  let i0 : Fin (Module.finrank ℝ E) := ⟨0, hpos.trans hlt⟩
+  let i1 : Fin (Module.finrank ℝ E) := ⟨Module.finrank ℝ E - 1, by omega⟩
   let uneg : ℝ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
     fun t ↦ EuclideanSpace.single i0 t
   let upos : ℝ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
@@ -329,13 +329,14 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleCurves
   have hrightNeg : ψ (γneg t) = uneg t := ψ.right_inv htn
   have hrightPos : ψ (γpos t) = upos t := ψ.right_inv htp
   have ht0 : t ≠ 0 := by simpa only [mem_compl_iff, mem_singleton_iff] using ht
-  -- On the two axes the saddle equation reduces respectively to `-t²` and `t²`.
+  -- On the two axes the normalized Morse equation reduces respectively to `-t²` and `t²`.
   constructor
   · rw [hψ (γneg t) hsourceNeg, hrightNeg]
-    simp [uneg, i0, EuclideanSpace.single, PiLp.single_apply]
+    simp [uneg, i0, EuclideanSpace.single, PiLp.single_apply, hpos]
     nlinarith [sq_pos_of_ne_zero ht0]
   · rw [hψ (γpos t) hsourcePos, hrightPos]
-    simp [upos, i1, EuclideanSpace.single, PiLp.single_apply]
+    have hle : ¬Module.finrank ℝ E - 1 < manifoldMorseIndex I f x := by omega
+    simp [upos, i1, EuclideanSpace.single, PiLp.single_apply, hle]
     nlinarith [sq_pos_of_ne_zero ht0]
 
 /-- At a nondegenerate critical point of Morse index `0` of a function smooth near it, on a
