@@ -35,6 +35,8 @@ theorem. The file also computes the derivative of the normal graph parametrizati
   the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
   parametrization at a differentiability point.
+* `DifferentiableAt.range_fderiv_normalGraphEmbedding`: the range of that derivative is the
+  linear tangent graph.
 -/
 
 public section
@@ -98,6 +100,17 @@ theorem _root_.DifferentiableAt.fderiv_normalGraphEmbedding {φ : V → ℝ} {x 
     (hφ : DifferentiableAt ℝ φ x) :
     fderiv ℝ (TauCeti.normalGraphEmbedding φ) x = (fderiv ℝ φ x).normalGraphL :=
   hφ.hasFDerivAt.normalGraphEmbedding.fderiv
+
+/-- At a differentiability point of `φ`, the range of the derivative of the normal graph
+parametrization is the linear graph of `fderiv ℝ φ x`. This is the tangent plane to a `C¹`
+normal graph at the corresponding point. -/
+theorem _root_.DifferentiableAt.range_fderiv_normalGraphEmbedding {φ : V → ℝ} {x : V}
+    (hφ : DifferentiableAt ℝ φ x) :
+    (LinearMap.range (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).toLinearMap :
+      Set (WithLp 2 (ℝ × V))) =
+      {z | z.fst = fderiv ℝ φ x z.snd} := by
+  rw [hφ.fderiv_normalGraphEmbedding]
+  exact (fderiv ℝ φ x).range_normalGraphL
 
 end NormalGraph
 
