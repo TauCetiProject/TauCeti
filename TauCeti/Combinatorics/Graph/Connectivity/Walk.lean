@@ -193,22 +193,24 @@ theorem edges_subset_edgeSet (p : G.Walk x y) :
       simp only [edges_cons, List.mem_cons] at hf
       exact hf.elim (fun hfe => hfe ▸ h.edge_mem) (fun hfp => ih hfp)
 
-/-- Every vertex on a positive-length walk is an actual vertex of the ambient graph. -/
-theorem support_subset_vertexSet (p : G.Walk x y) (hp : 0 < p.length) :
+/-- Every vertex on a walk starting at an actual vertex is an actual vertex of the ambient graph. -/
+theorem support_subset_vertexSet (p : G.Walk x y) (hx : x ∈ V(G)) :
     ∀ a ∈ p.support, a ∈ V(G) := by
   induction p with
-  | nil => simp at hp
+  | nil => simpa
   | @cons x y z e h p ih =>
       intro a ha
       simp only [support_cons, List.mem_cons] at ha
       rcases ha with rfl | ha
-      · exact h.left_mem
-      · by_cases hp' : 0 < p.length
-        · exact ih hp' a ha
-        · have hnil : p.Nil := length_eq_zero_iff.mp (Nat.eq_zero_of_not_pos hp')
-          cases hnil
-          simp only [support_nil, List.mem_singleton] at ha
-          exact ha ▸ h.right_mem
+      · exact hx
+      · exact ih h.right_mem a ha
+
+/-- Every vertex on a positive-length walk is an actual vertex of the ambient graph. -/
+theorem support_subset_vertexSet_of_pos (p : G.Walk x y) (hp : 0 < p.length) :
+    ∀ a ∈ p.support, a ∈ V(G) := by
+  cases p with
+  | nil => simp at hp
+  | cons e h p => exact (cons e h p).support_subset_vertexSet h.left_mem
 
 /-- An endpoint of an edge traversed by a walk occurs in the walk's support. -/
 theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : α} {e : β}
