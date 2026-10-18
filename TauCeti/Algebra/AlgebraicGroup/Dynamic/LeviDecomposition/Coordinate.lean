@@ -24,9 +24,6 @@ does not in general give the parabolic group law. On points the forward coordina
 induces multiplication in the order unipotent, then Levi. The characteristic formula below
 specifies that map without unfolding its construction.
 
-The construction combines the represented subgroup functors with the natural dynamic Levi
-decomposition and Mathlib's fully faithful coyoneda embedding.
-
 ## References
 
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
@@ -139,6 +136,13 @@ private noncomputable def decompositionCoordinateIso (l : H →ₐc[R] LaurentPo
     (fun f ↦ Equiv.apply_symm_apply _ f) (fun f ↦ Equiv.symm_apply_apply _ f)
     (decompositionHomEquiv_naturality l)
 
+/-- The coordinate morphism is the point bijection evaluated at the identity. -/
+private theorem decompositionCoordinateIso_hom (l : H →ₐc[R] LaurentPolynomial R) :
+    (decompositionCoordinateIso l).hom =
+      decompositionHomEquiv l (CommAlgCat.of R ((U l) ⊗[R] (Z l))) (𝟙 _) := by
+  -- Coyoneda corepresents the natural point bijection by its value at the identity.
+  rfl
+
 /-- Multiplication `U(l) × Z(l) → P(l)` is an isomorphism of underlying affine schemes,
 expressed contravariantly as an equivalence of coordinate algebras. The tensor product is
 not equipped with the semidirect-product Hopf structure here. -/
@@ -151,7 +155,9 @@ noncomputable def parabolicCoordinateAlgEquiv (l : H →ₐc[R] LaurentPolynomia
 private theorem parabolicCoordinateAlgEquiv_toAlgHom (l : H →ₐc[R] LaurentPolynomial R) :
     (parabolicCoordinateAlgEquiv l).toAlgHom =
       (decompositionHomEquiv l (CommAlgCat.of R ((U l) ⊗[R] (Z l))) (𝟙 _)).hom := by
-  rfl
+  ext h
+  exact (CommAlgCat.algEquivOfIso_apply (decompositionCoordinateIso l) h).trans
+    (congrArg (fun f ↦ f h) (decompositionCoordinateIso_hom l))
 
 private theorem quotientPointsHom_comp_parabolicCoordinateAlgEquiv
     (l : H →ₐc[R] LaurentPolynomial R) (A : CommAlgCat.{v} R)
@@ -177,11 +183,9 @@ private theorem quotientPointsHom_comp_parabolicCoordinateAlgEquiv
       toConv ((Algebra.TensorProduct.productMap f g).comp
         (parabolicCoordinateAlgEquiv l).toAlgHom) := by
     rw [parabolicCoordinateAlgEquiv_toAlgHom]
-    have hh := congrArg (fun h ↦ toConv (CommAlgCat.Hom.hom h)) hn
-    rw [decompositionHomEquiv_apply l _ (CommAlgCat.ofHom _),
-      CommAlgCat.hom_ofHom, CommAlgCat.hom_ofHom, toConv_ofConv,
-      CommAlgCat.hom_comp, CommAlgCat.hom_ofHom] at hh
-    exact hh
+    simpa only [decompositionHomEquiv_apply l _ (CommAlgCat.ofHom _), CommAlgCat.hom_ofHom,
+      toConv_ofConv, CommAlgCat.hom_comp] using
+      congrArg (fun h ↦ toConv (CommAlgCat.Hom.hom h)) hn
   rw [← heq, decompositionPointsEquiv_ambient]
   congr 1 <;> simp
 
