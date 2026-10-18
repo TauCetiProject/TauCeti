@@ -27,20 +27,24 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
   closed in every domain algebra.
 * `Subring.isIntegrallyClosedIn_comap`: the preimage of an integrally closed subring is integrally
   closed.
-* `TauCeti.isDomain_and_isIntegrallyClosed_of_ringEquiv`: the conjunction of domain and integral
+* `RingEquiv.isDomain_and_isIntegrallyClosed`: the conjunction of domain and integral
   closure properties is invariant under ring equivalences.
 -/
 
 public section
 
-namespace TauCeti
+namespace RingEquiv
 
 /-- Being an integrally closed domain is invariant under ring isomorphisms. -/
-lemma isDomain_and_isIntegrallyClosed_of_ringEquiv {A B : Type*} [CommRing A]
+lemma isDomain_and_isIntegrallyClosed {A B : Type*} [CommRing A]
     [CommRing B] (e : A ≃+* B) (h : IsDomain A ∧ IsIntegrallyClosed A) :
     IsDomain B ∧ IsIntegrallyClosed B := by
   obtain ⟨_, _⟩ := h
   exact ⟨e.symm.toMulEquiv.isDomain A, .of_equiv e⟩
+
+end RingEquiv
+
+namespace TauCeti
 
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A]
 

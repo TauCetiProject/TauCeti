@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
-public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Normal schemes
@@ -97,21 +96,12 @@ definition, as a single condition per point. -/
       ∀ x : X, IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
   ⟨fun _ _ ↦ ⟨inferInstance, inferInstance⟩, fun h ↦ ⟨fun x ↦ (h x).1, fun x ↦ (h x).2⟩⟩
 
-/-- An open immersion `f : X ⟶ Y` identifies the local ring of `X` at `x` with the local ring of
-`Y` at `f x`. -/
-private lemma stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f]
-    (x : X) :
-    IsDomain (Y.presheaf.stalk (f x)) ∧ IsIntegrallyClosed (Y.presheaf.stalk (f x)) ↔
-      IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
-  let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
-  ⟨isDomain_and_isIntegrallyClosed_of_ringEquiv e,
-    isDomain_and_isIntegrallyClosed_of_ringEquiv e.symm⟩
-
 /-- The source of an open immersion into a normal scheme is normal. -/
 theorem IsNormalScheme.of_isOpenImmersion {Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f]
     [IsNormalScheme Y] : IsNormalScheme X :=
   isNormalScheme_iff_forall_stalk.mpr fun x ↦
-    (stalk_iff_of_isOpenImmersion f x).mp (isNormalScheme_iff_forall_stalk.mp ‹_› (f x))
+    (isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion f x).mp
+      (isNormalScheme_iff_forall_stalk.mp ‹_› (f x))
 
 /-- Open subschemes of a normal scheme are normal. -/
 instance IsNormalScheme.opens [IsNormalScheme X] (U : X.Opens) : IsNormalScheme U :=
@@ -125,7 +115,8 @@ theorem IsNormalScheme.of_forall_exists_isOpenImmersion
     IsNormalScheme X := by
   refine isNormalScheme_iff_forall_stalk.mpr fun x ↦ ?_
   obtain ⟨Y, f, _, _, y, rfl⟩ := h x
-  exact (stalk_iff_of_isOpenImmersion f y).mpr (isNormalScheme_iff_forall_stalk.mp ‹_› y)
+  exact (isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion f y).mpr
+    (isNormalScheme_iff_forall_stalk.mp ‹_› y)
 
 /-- Normality is local on an open cover. Stacks, Lemma 28.7.2 (033J), in the form "normality
 is local". -/
@@ -147,11 +138,11 @@ theorem isNormalScheme_Spec_iff_forall_localization (R : CommRingCat.{u}) :
     IsNormalScheme (Spec R) ↔ ∀ (p : Ideal R) [p.IsPrime],
       IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p) := by
   refine isNormalScheme_iff_forall_stalk.trans ⟨fun h p _ ↦ ?_, fun h x ↦ ?_⟩
-  · exact isDomain_and_isIntegrallyClosed_of_ringEquiv
-      (Spec.stalkIso R ⟨p, inferInstance⟩).commRingCatIsoToRingEquiv (h ⟨p, inferInstance⟩)
+  · exact (Spec.stalkIso R ⟨p, inferInstance⟩).commRingCatIsoToRingEquiv
+      |>.isDomain_and_isIntegrallyClosed (h ⟨p, inferInstance⟩)
   · have : x.asIdeal.IsPrime := x.isPrime
-    exact isDomain_and_isIntegrallyClosed_of_ringEquiv
-      (Spec.stalkIso R x).commRingCatIsoToRingEquiv.symm (h x.asIdeal)
+    exact (Spec.stalkIso R x).commRingCatIsoToRingEquiv.symm.isDomain_and_isIntegrallyClosed
+      (h x.asIdeal)
 
 /-- A scheme is normal iff the ring of sections over every affine open is normal: `Spec Γ(X, U)`
 is normal, which by `isNormalScheme_Spec_iff_forall_localization` says that every localization
@@ -212,7 +203,7 @@ theorem IsNormalScheme.isDiscreteValuationRing_stalk (X : Scheme.{u}) [IsLocally
   have hdim : ringKrullDim (X.presheaf.stalk x) = 1 := by
     rw [ringKrullDim_stalk_eq_coheight]
     simp [hx]
-  exact TauCeti.IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
+  exact IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
 
 end AlgebraicGeometry
 

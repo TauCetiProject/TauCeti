@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.RingTheory.LocalProperties.IntegrallyClosed
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Integrally closed sections of integral schemes
@@ -19,15 +20,28 @@ rings of the scheme at points of `V`.
 
 * `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: on an integral scheme with integrally
   closed local rings, the sections over a nonempty affine open are integrally closed.
+* `AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
+  immersions preserve the domain and integral-closure conditions on stalks.
 -/
 
 public section
+
+open CategoryTheory
 
 namespace AlgebraicGeometry
 
 universe u
 
 variable {T : Scheme.{u}}
+
+/-- An open immersion identifies the local rings at corresponding points, preserving the
+conjunction of domain and integral-closure properties. -/
+theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [IsOpenImmersion f] (x : X) :
+    IsDomain (Y.presheaf.stalk (f x)) ∧ IsIntegrallyClosed (Y.presheaf.stalk (f x)) ↔
+      IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
+  let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
+  ⟨e.isDomain_and_isIntegrallyClosed, e.symm.isDomain_and_isIntegrallyClosed⟩
 
 /-- On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally
 closed if the local rings at the points of `V` are: its localizations at maximal ideals are local

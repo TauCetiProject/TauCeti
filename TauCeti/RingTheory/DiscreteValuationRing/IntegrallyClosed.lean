@@ -19,8 +19,9 @@ the dimension.
 
 ## Main results
 
-* `TauCeti.IsDiscreteValuationRing.of_ringKrullDim_eq_one`: a Noetherian integrally closed local
-  domain of Krull dimension one is a discrete valuation ring.
+* `IsDiscreteValuationRing.of_krullDimLE_one`: a Noetherian integrally closed local domain of
+  Krull dimension at most one that is not a field is a discrete valuation ring.
+* `IsDiscreteValuationRing.of_ringKrullDim_eq_one`: the dimension-one specialization.
 
 ## References
 
@@ -37,7 +38,20 @@ public section
 
 open IsLocalRing
 
-namespace TauCeti.IsDiscreteValuationRing
+namespace IsDiscreteValuationRing
+
+/-- A Noetherian integrally closed local domain of Krull dimension at most one that is not a
+field is a discrete valuation ring. -/
+theorem of_krullDimLE_one {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
+    [IsNoetherianRing R] [IsIntegrallyClosed R] [Ring.KrullDimLE 1 R]
+    (hnot : ¬ IsField R) : _root_.IsDiscreteValuationRing R := by
+  have hmax : maximalIdeal R ≠ ⊥ := fun hbot ↦ hnot (isField_iff_maximalIdeal_eq.mpr hbot)
+  have hnormal : IsIntegrallyClosed R ∧
+      ∀ P : Ideal R, P ≠ ⊥ → P.IsPrime → P = maximalIdeal R :=
+    ⟨inferInstance, fun P hP _ ↦ eq_maximalIdeal (Ideal.isMaximal_of_isPrime_of_ne_bot P hP)⟩
+  have : IsPrincipalIdealRing R :=
+    ((tfae_of_isNoetherianRing_of_isLocalRing_of_isDomain R).out 4 1).mp hnormal
+  exact { not_a_field' := hmax }
 
 /-- A Noetherian integrally closed local domain of Krull dimension one is a discrete valuation
 ring. Stacks, Lemma 10.119.7 (00PD). -/
@@ -46,14 +60,9 @@ theorem of_ringKrullDim_eq_one {R : Type*} [CommRing R] [IsDomain R] [IsLocalRin
     [IsNoetherianRing R] [IsIntegrallyClosed R] (h : ringKrullDim R = 1) :
     _root_.IsDiscreteValuationRing R := by
   have : Ring.KrullDimLE 1 R := Ring.krullDimLE_iff.mpr h.le
-  have hmax : maximalIdeal R ≠ ⊥ := fun hbot ↦ by
-    rw [ringKrullDim_eq_zero_of_isField (isField_iff_maximalIdeal_eq.mpr hbot)] at h
-    exact zero_ne_one h
-  have hnormal : IsIntegrallyClosed R ∧
-      ∀ P : Ideal R, P ≠ ⊥ → P.IsPrime → P = maximalIdeal R :=
-    ⟨inferInstance, fun P hP _ ↦ eq_maximalIdeal (Ideal.isMaximal_of_isPrime_of_ne_bot P hP)⟩
-  have : IsPrincipalIdealRing R :=
-    ((tfae_of_isNoetherianRing_of_isLocalRing_of_isDomain R).out 4 1).mp hnormal
-  exact { not_a_field' := hmax }
+  apply of_krullDimLE_one
+  intro hfield
+  rw [ringKrullDim_eq_zero_of_isField hfield] at h
+  exact zero_ne_one h
 
-end TauCeti.IsDiscreteValuationRing
+end IsDiscreteValuationRing
