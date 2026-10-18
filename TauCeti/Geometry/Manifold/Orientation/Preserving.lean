@@ -122,6 +122,22 @@ theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
   · exact .inl ((isOrientationPreservingAt_iff_of_coe_eq o o' f x e he).2 h)
   · exact .inr ((isOrientationReversingAt_iff_of_coe_eq o o' f x e he).2 h)
 
+/-- An orientation-preserving map has an invertible manifold derivative. -/
+theorem IsOrientationPreservingAt.isInvertible_mfderiv [IsManifold I 1 M]
+    [IsManifold I' 1 M'] (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) (h : IsOrientationPreservingAt o o' f x) :
+    (mfderiv I I' f x).IsInvertible := by
+  obtain ⟨e, he, _⟩ := h
+  exact ⟨e, he⟩
+
+/-- An orientation-reversing map has an invertible manifold derivative. -/
+theorem IsOrientationReversingAt.isInvertible_mfderiv [IsManifold I 1 M]
+    [IsManifold I' 1 M'] (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) (h : IsOrientationReversingAt o o' f x) :
+    (mfderiv I I' f x).IsInvertible := by
+  obtain ⟨e, he, _⟩ := h
+  exact ⟨e, he⟩
+
 /-- Negating the source orientation exchanges preservation and reversal. -/
 @[simp] theorem isOrientationPreservingAt_neg_left
     [IsManifold I 1 M] [IsManifold I' 1 M']
@@ -160,32 +176,14 @@ theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
     (f : M → M') (x : M) :
     IsOrientationReversingAt (-o) o' f x ↔ IsOrientationPreservingAt o o' f x := by
-  constructor
-  · rintro ⟨e, he, h⟩
-    refine ⟨e, he, ?_⟩
-    rw [orientationAt_neg, _root_.Orientation.map_neg] at h
-    have hh := congrArg Neg.neg h
-    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
-  · rintro ⟨e, he, h⟩
-    refine ⟨e, he, ?_⟩
-    rw [orientationAt_neg, _root_.Orientation.map_neg]
-    have hh := congrArg Neg.neg h
-    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using hh
+  rw [← isOrientationPreservingAt_neg_left, neg_neg]
 
 /-- Negating the target orientation exchanges reversal and preservation. -/
 @[simp] theorem isOrientationReversingAt_neg_right [IsManifold I 1 M] [IsManifold I' 1 M']
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
     (f : M → M') (x : M) :
     IsOrientationReversingAt o (-o') f x ↔ IsOrientationPreservingAt o o' f x := by
-  constructor
-  · rintro ⟨e, he, h⟩
-    refine ⟨e, he, ?_⟩
-    rw [orientationAt_neg] at h
-    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using h
-  · rintro ⟨e, he, h⟩
-    refine ⟨e, he, ?_⟩
-    rw [orientationAt_neg]
-    simpa only [Module.Ray.instInvolutiveNeg.neg_neg] using h
+  rw [← isOrientationPreservingAt_neg_right, neg_neg]
 
 /-- A map cannot preserve and reverse the same pair of orientations at one point. -/
 theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
@@ -232,20 +230,8 @@ theorem IsOrientationPreservingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
     IsOrientationPreservingAt o o'' (g ∘ f) x := by
   obtain ⟨e, he, h⟩ := hgf
   obtain ⟨e', he', h'⟩ := hgg
-  have hf : MDifferentiableAt I I' f x :=
-    mdifferentiableAt_of_mfderiv_injective fun v w hvw => by
-      apply e.injective
-      change (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) v =
-        (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) w
-      rw [he]
-      exact hvw
-  have hg : MDifferentiableAt I' I'' g (f x) :=
-    mdifferentiableAt_of_mfderiv_injective fun v w hvw => by
-      apply e'.injective
-      change (e' : TangentSpace I' (f x) →L[ℝ] TangentSpace I'' (g (f x))) v =
-        (e' : TangentSpace I' (f x) →L[ℝ] TangentSpace I'' (g (f x))) w
-      rw [he']
-      exact hvw
+  have hf := mdifferentiableAt_of_isInvertible_mfderiv ⟨e, he⟩
+  have hg := mdifferentiableAt_of_isInvertible_mfderiv ⟨e', he'⟩
   refine ⟨e.trans e', ?_, ?_⟩
   · rw [mfderiv_comp (x := x) hg hf, ← he', ← he]
     rfl
