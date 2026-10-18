@@ -51,7 +51,7 @@ open CategoryTheory Limits
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 section Cochains
 
@@ -190,40 +190,10 @@ theorem relativeCyclicHochschildCoboundary_comp_relativeCyclicHochschildCobounda
 
 end Cochains
 
-section Complex
+section Cocycles
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-/-- The relative cyclic cochain complex of a nonunital algebra. Its degree-`n` term is the kernel
-of scalar restriction on cyclic cochains of the forced unitization. -/
-def relativeCyclicCochainComplex : CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (relativeCyclicCochains R A M n))
-    (fun n ↦ ModuleCat.ofHom (relativeCyclicHochschildCoboundary R A M n))
-    fun n ↦ ModuleCat.hom_ext
-      (relativeCyclicHochschildCoboundary_comp_relativeCyclicHochschildCoboundary R A M n)
-
-/-- The degree-`n` term of the relative cyclic cochain complex is the module of relative cyclic
-`n`-cochains. -/
-def relativeCyclicCochainComplexXIso (n : ℕ) :
-    (relativeCyclicCochainComplex R A M).X n ≅
-      ModuleCat.of R (relativeCyclicCochains R A M n) :=
-  Iso.refl _
-
-/-- Under the canonical identifications of the terms, the differential of the relative cyclic
-cochain complex is the relative Hochschild coboundary. -/
-@[reassoc, elementwise]
-theorem relativeCyclicCochainComplex_d (n : ℕ) :
-    (relativeCyclicCochainComplex R A M).d n (n + 1) ≫
-        (relativeCyclicCochainComplexXIso R A M (n + 1)).hom =
-      (relativeCyclicCochainComplexXIso R A M n).hom ≫
-        ModuleCat.ofHom (relativeCyclicHochschildCoboundary R A M n) := by
-  simp [relativeCyclicCochainComplex, relativeCyclicCochainComplexXIso]
-
-/-- Relative cyclic cochains inherit their additive group structure from cyclic cochains. -/
-instance relativeCyclicCochainsAddCommGroup (n : ℕ) :
-    AddCommGroup (relativeCyclicCochains R A M n) :=
-  (relativeCyclicCochains R A M n).addCommGroup
+variable (R : Type*) (A : Type u) (M : Type*) [CommSemiring R] [NonUnitalSemiring A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- The relative cyclic `n`-cocycles: relative cochains annihilated by the relative Hochschild
 coboundary. -/
@@ -274,72 +244,130 @@ theorem relativeCyclicCoboundaries_le_relativeCyclicCocycles (n : ℕ) :
     exact LinearMap.range_le_ker_iff.2
       (relativeCyclicHochschildCoboundary_comp_relativeCyclicHochschildCoboundary R A M n)
 
+end Cocycles
+
+section Complex
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+/-- Relative cyclic cochains inherit their additive group structure from cyclic cochains. -/
+instance relativeCyclicCochainsAddCommGroup (n : ℕ) :
+    AddCommGroup (relativeCyclicCochains R A M n) :=
+  (relativeCyclicCochains R A M n).addCommGroup
+
+/-- The relative cyclic cochain complex of a nonunital algebra. Its degree-`n` term is the kernel
+of scalar restriction on cyclic cochains of the forced unitization. -/
+def relativeCyclicCochainComplex : CochainComplex (ModuleCat R) ℕ :=
+  CochainComplex.of (fun n ↦ ModuleCat.of R (relativeCyclicCochains R A M n))
+    (fun n ↦ ModuleCat.ofHom (relativeCyclicHochschildCoboundary R A M n))
+    fun n ↦ ModuleCat.hom_ext
+      (relativeCyclicHochschildCoboundary_comp_relativeCyclicHochschildCoboundary R A M n)
+
+/-- The degree-`n` term of the relative cyclic cochain complex is the module of relative cyclic
+`n`-cochains. -/
+def relativeCyclicCochainComplexXIso (n : ℕ) :
+    (relativeCyclicCochainComplex R A M).X n ≅
+      ModuleCat.of R (relativeCyclicCochains R A M n) :=
+  Iso.refl _
+
+/-- Under the canonical identifications of the terms, the differential of the relative cyclic
+cochain complex is the relative Hochschild coboundary. -/
+@[reassoc, elementwise]
+theorem relativeCyclicCochainComplex_d (n : ℕ) :
+    (relativeCyclicCochainComplex R A M).d n (n + 1) ≫
+        (relativeCyclicCochainComplexXIso R A M (n + 1)).hom =
+      (relativeCyclicCochainComplexXIso R A M n).hom ≫
+        ModuleCat.ofHom (relativeCyclicHochschildCoboundary R A M n) := by
+  simp [relativeCyclicCochainComplex, relativeCyclicCochainComplexXIso]
+
 /-- The relative cyclic cohomology of a nonunital algebra, defined as the cohomology of the
 kernel of scalar restriction on the cyclic cochain complex of its forced unitization. -/
 abbrev relativeCyclicCohomology (n : ℕ) : ModuleCat R :=
   (relativeCyclicCochainComplex R A M).homology n
 
-/-- A relative cyclic cocycle, viewed as a cycle of the relative cyclic cochain complex. -/
-private def relativeToCycles (n : ℕ) :
-    ModuleCat.of R (relativeCyclicCocycles R A M n) ⟶
-      (relativeCyclicCochainComplex R A M).cycles n :=
-  (relativeCyclicCochainComplex R A M).liftCycles
-    (ModuleCat.ofHom (relativeCyclicCocycles R A M n).subtype ≫
-      (relativeCyclicCochainComplexXIso R A M n).inv)
-    (n + 1) (by simp) (by
-      rw [← cancel_mono (relativeCyclicCochainComplexXIso R A M (n + 1)).hom,
-        Category.assoc, Category.assoc, relativeCyclicCochainComplex_d,
-        Iso.inv_hom_id_assoc, Limits.zero_comp]
-      exact ModuleCat.hom_ext (LinearMap.ext fun φ ↦ φ.2))
+private theorem mem_relativeCyclicCocycles_iff_complex (n : ℕ)
+    (φ : relativeCyclicCochains R A M n) :
+    φ ∈ relativeCyclicCocycles R A M n ↔
+      (relativeCyclicCochainComplex R A M).d n (n + 1)
+        ((relativeCyclicCochainComplexXIso R A M n).inv φ) = 0 := by
+  rw [mem_relativeCyclicCocycles_iff]
+  constructor
+  · intro hφ
+    apply (ModuleCat.mono_iff_injective
+      (relativeCyclicCochainComplexXIso R A M (n + 1)).hom).1 inferInstance
+    rw [relativeCyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hφ, map_zero]
+  · intro hφ
+    have h := congrArg (relativeCyclicCochainComplexXIso R A M (n + 1)).hom hφ
+    rw [relativeCyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero] at h
+    exact h
+
+private theorem mem_relativeCyclicCoboundaries_iff_complex (n : ℕ)
+    (φ : relativeCyclicCochains R A M n) :
+    φ ∈ relativeCyclicCoboundaries R A M n ↔
+      ∃ y : (relativeCyclicCochainComplex R A M).X ((ComplexShape.up ℕ).prev n),
+        (relativeCyclicCochainComplex R A M).d ((ComplexShape.up ℕ).prev n) n y =
+          (relativeCyclicCochainComplexXIso R A M n).inv φ := by
+  cases n with
+  | zero =>
+    rw [relativeCyclicCoboundaries_zero, Submodule.mem_bot, CochainComplex.prev_nat_zero]
+    rw [(relativeCyclicCochainComplex R A M).shape 0 0 (by simp)]
+    change φ = 0 ↔ ∃ _ : relativeCyclicCochains R A M 0, 0 = φ
+    constructor
+    · exact fun hφ ↦ ⟨0, hφ.symm⟩
+    · exact fun ⟨_, hφ⟩ ↦ hφ.symm
+  | succ n =>
+    rw [relativeCyclicCoboundaries_succ, LinearMap.mem_range,
+      CochainComplex.prev_nat_succ]
+    constructor
+    · rintro ⟨ψ, hψ⟩
+      refine ⟨(relativeCyclicCochainComplexXIso R A M n).inv ψ, ?_⟩
+      apply (ModuleCat.mono_iff_injective
+        (relativeCyclicCochainComplexXIso R A M (n + 1)).hom).1 inferInstance
+      rw [relativeCyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hψ,
+        Iso.inv_hom_id_apply]
+    · rintro ⟨ψ, hψ⟩
+      refine ⟨(relativeCyclicCochainComplexXIso R A M n).hom ψ, ?_⟩
+      rw [← relativeCyclicCochainComplex_d_apply, hψ, Iso.inv_hom_id_apply]
+
+private abbrev relativeToCycles (n : ℕ) :=
+  (relativeCyclicCochainComplex R A M).moduleCatCocyclesToCyclesOfIso
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M) n
 
 private theorem relative_iCycles_toCycles (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
     (relativeCyclicCochainComplex R A M).iCycles n (relativeToCycles R A M n φ) =
-      (relativeCyclicCochainComplexXIso R A M n).inv φ.1 := by
-  rw [relativeToCycles, ← ConcreteCategory.comp_apply, HomologicalComplex.liftCycles_i]
-  -- The reflexive term isomorphism and the subtype inclusion both evaluate to the cocycle carrier.
-  rfl
-
-private theorem relative_homologyπ_toCycles_eq_zero_iff {n m : ℕ}
-    (hm : (ComplexShape.up ℕ).prev n = m) (φ : relativeCyclicCocycles R A M n) :
-    (relativeCyclicCochainComplex R A M).homologyπ n (relativeToCycles R A M n φ) = 0 ↔
-      ∃ y, (relativeCyclicCochainComplex R A M).d m n y =
-        (relativeCyclicCochainComplexXIso R A M n).inv φ.1 := by
-  let K := relativeCyclicCochainComplex R A M
-  rw [K.moduleCat_homologyπ_eq_zero_iff hm]
-  refine exists_congr fun y ↦ ?_
-  rw [← (K.moduleCat_iCycles_injective n).eq_iff, relative_iCycles_toCycles,
-    ← ModuleCat.comp_apply, HomologicalComplex.toCycles_i]
+      (relativeCyclicCochainComplexXIso R A M n).inv φ.1 :=
+  (relativeCyclicCochainComplex R A M).iCycles_moduleCatCocyclesToCyclesOfIso
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M) n φ
 
 namespace relativeCyclicCohomology
 
 /-- The relative cyclic cohomology class of a relative cyclic cocycle. -/
 def mk (n : ℕ) :
     relativeCyclicCocycles R A M n →ₗ[R] relativeCyclicCohomology R A M n :=
-  (relativeToCycles R A M n ≫ (relativeCyclicCochainComplex R A M).homologyπ n).hom
+  (relativeCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M) n
 
 private theorem mk_apply (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
     mk R A M n φ =
       (relativeCyclicCochainComplex R A M).homologyπ n (relativeToCycles R A M n φ) :=
-  (rfl)
+  (relativeCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_apply
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M) n φ
 
 /-- Every relative cyclic cohomology class is represented by a relative cyclic cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
-  intro z
-  let K := relativeCyclicCochainComplex R A M
-  obtain ⟨c, rfl⟩ := K.moduleCat_homologyπ_surjective n z
-  have hc : (relativeCyclicCochainComplexXIso R A M n).hom (K.iCycles n c) ∈
-      relativeCyclicCocycles R A M n := by
-    have h : K.d n (n + 1) (K.iCycles n c) = 0 := by
-      rw [← ConcreteCategory.comp_apply, K.iCycles_d]
-      -- Evaluating the zero morphism of modules gives the zero element.
-      rfl
-    rw [relativeCyclicCocycles, LinearMap.mem_ker,
-      ← relativeCyclicCochainComplex_d_apply, h, map_zero]
-  refine ⟨⟨_, hc⟩, ?_⟩
-  rw [mk_apply]
-  congr 1
-  apply K.moduleCat_iCycles_injective n
-  rw [relative_iCycles_toCycles, Iso.hom_inv_id_apply]
+  exact (relativeCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_surjective
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M) n
 
 /-- A relative cyclic cocycle has zero cohomology class exactly when it is a relative cyclic
 coboundary. -/
@@ -347,34 +375,22 @@ coboundary. -/
 theorem mk_eq_zero_iff (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
     mk R A M n φ = 0 ↔
       (φ : relativeCyclicCochains R A M n) ∈ relativeCyclicCoboundaries R A M n := by
-  let K := relativeCyclicCochainComplex R A M
-  cases n with
-  | zero =>
-    rw [mk_apply, relative_homologyπ_toCycles_eq_zero_iff R A M CochainComplex.prev_nat_zero,
-      K.shape 0 0 (by simp), relativeCyclicCoboundaries_zero, Submodule.mem_bot]
-    refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun h ↦ ⟨0, by rw [h, map_zero, map_zero]⟩⟩
-    rw [← Iso.inv_hom_id_apply (relativeCyclicCochainComplexXIso R A M 0) φ.1, ← hy]
-    simp
-  | succ n =>
-    rw [mk_apply, relative_homologyπ_toCycles_eq_zero_iff R A M
-      (CochainComplex.prev_nat_succ n), mem_relativeCyclicCoboundaries_succ_iff]
-    constructor
-    · rintro ⟨y, hy⟩
-      refine ⟨(relativeCyclicCochainComplexXIso R A M n).hom y, ?_⟩
-      rw [← relativeCyclicCochainComplex_d_apply, hy, Iso.inv_hom_id_apply]
-    · rintro ⟨ψ, hψ⟩
-      refine ⟨(relativeCyclicCochainComplexXIso R A M n).inv ψ, ?_⟩
-      apply (ModuleCat.mono_iff_injective
-        (relativeCyclicCochainComplexXIso R A M (n + 1)).hom).1 inferInstance
-      rw [relativeCyclicCochainComplex_d_apply, Iso.inv_hom_id_apply,
-        Iso.inv_hom_id_apply, hψ]
+  exact (relativeCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCoboundaries R A M) (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M)
+    (mem_relativeCyclicCoboundaries_iff_complex R A M) n φ
 
 /-- Two relative cyclic cocycles have the same class exactly when they differ by a relative
 cyclic coboundary. -/
 theorem mk_eq_mk_iff (n : ℕ) (φ ψ : relativeCyclicCocycles R A M n) :
     mk R A M n φ = mk R A M n ψ ↔
       (φ : relativeCyclicCochains R A M n) - ψ ∈ relativeCyclicCoboundaries R A M n := by
-  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff, Submodule.coe_sub]
+  exact (relativeCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_iff
+    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
+    (relativeCyclicCoboundaries R A M) (relativeCyclicCochainComplexXIso R A M)
+    (mem_relativeCyclicCocycles_iff_complex R A M)
+    (mem_relativeCyclicCoboundaries_iff_complex R A M) n φ ψ
 
 end relativeCyclicCohomology
 
@@ -382,7 +398,7 @@ end Complex
 
 section Map
 
-variable {R : Type*} {A B C : Type u} {M : Type*} [CommRing R]
+variable {R : Type*} {A : Type u} {B : Type v} {C : Type w} {M : Type*} [CommSemiring R]
   [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
   [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
   [NonUnitalSemiring C] [Module R C] [IsScalarTower R C C] [SMulCommClass R C C]
@@ -456,6 +472,23 @@ theorem relativeCyclicHochschildCoboundary_relativeCyclicCochainsMap
     (Unitization.map (R := R) f).toNonUnitalAlgHom
     (φ : cyclicCochains R (Unitization R B) M n)
 
+/-- Pullback of a relative cyclic cocycle is a relative cyclic cocycle. -/
+theorem relativeCyclicCochainsMap_mem_relativeCyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
+    (φ : relativeCyclicCocycles R B M n) :
+    relativeCyclicCochainsMap M f n φ ∈ relativeCyclicCocycles R A M n := by
+  rw [mem_relativeCyclicCocycles_iff,
+    relativeCyclicHochschildCoboundary_relativeCyclicCochainsMap, φ.2, map_zero]
+
+end Map
+
+section ComplexMap
+
+variable {R : Type*} {A B C : Type u} {M : Type*} [CommRing R]
+  [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
+  [NonUnitalSemiring C] [Module R C] [IsScalarTower R C C] [SMulCommClass R C C]
+  [AddCommGroup M] [Module R M]
+
 variable (M) in
 /-- The cochain map between relative cyclic cochain complexes induced contravariantly by a
 homomorphism of nonunital algebras. -/
@@ -500,13 +533,6 @@ theorem relativeCyclicCochainComplexMap_comp (f : A →ₙₐ[R] B) (g : B →�
     (relativeCyclicCochainsMap_comp (M := M) f g n)).trans
     (ModuleCat.ofHom_comp _ _)
 
-/-- Pullback of a relative cyclic cocycle is a relative cyclic cocycle. -/
-theorem relativeCyclicCochainsMap_mem_relativeCyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
-    (φ : relativeCyclicCocycles R B M n) :
-    relativeCyclicCochainsMap M f n φ ∈ relativeCyclicCocycles R A M n := by
-  rw [mem_relativeCyclicCocycles_iff,
-    relativeCyclicHochschildCoboundary_relativeCyclicCochainsMap, φ.2, map_zero]
-
 namespace relativeCyclicCohomology
 
 variable (M) in
@@ -545,7 +571,7 @@ theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
 
 end relativeCyclicCohomology
 
-end Map
+end ComplexMap
 
 
 section ComplexSplitting
