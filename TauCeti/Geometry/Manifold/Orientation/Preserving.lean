@@ -144,20 +144,17 @@ theorem IsOrientationReversingAt.isInvertible_mfderiv [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
     (f : M → M') (x : M) :
     IsOrientationPreservingAt (-o) o' f x ↔ IsOrientationReversingAt o o' f x := by
-  have neg_neg_orientation (y : _root_.Orientation ℝ (TangentSpace I' (f x)) ι) : - -y = y := by
-    induction y using Module.Ray.ind ℝ with
-    | h v hv => simp only [neg_rayOfNeZero, neg_neg]
   constructor
   · rintro ⟨e, he, h⟩
     refine ⟨e, he, ?_⟩
     rw [orientationAt_neg, _root_.Orientation.map_neg] at h
     have hh := congrArg Neg.neg h
-    exact (neg_neg_orientation _).symm.trans hh
+    exact (neg_neg _).symm.trans hh
   · rintro ⟨e, he, h⟩
     refine ⟨e, he, ?_⟩
     rw [orientationAt_neg, _root_.Orientation.map_neg]
     have hh := congrArg Neg.neg h
-    exact hh.trans (neg_neg_orientation _)
+    exact hh.trans (_root_.neg_neg (o'.orientationAt (f x)))
 
 /-- Negating the target orientation exchanges preservation and reversal. -/
 @[simp] theorem isOrientationPreservingAt_neg_right [IsManifold I 1 M] [IsManifold I' 1 M']
@@ -218,8 +215,7 @@ theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
     IsOrientationReversingAt (I := I) (I' := I) (M' := M) o (-o) id x := by
   simp
 
-/-- The composition of two orientation-preserving maps preserves orientations at a point. The
-derivative-equivalence witnesses supply the differentiability needed for the manifold chain rule. -/
+/-- The composition of two orientation-preserving maps preserves orientations at a point. -/
 theorem IsOrientationPreservingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
     [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation I' M' ι} {o'' : Manifold.Orientation I'' M'' ι}
