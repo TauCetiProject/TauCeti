@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.Fait
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
+import TauCeti.Algebra.Coalgebra.Comodule.Finite.Semisimple
 
 /-!
 # Semisimple points under base change
@@ -35,18 +36,6 @@ universe u
 
 variable {k H K : Type u} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
 variable [Algebra.FiniteType k H] [Field K] [Algebra k K] [PerfectField K]
-
-omit [PerfectField K] in
-/-- Semisimplicity of an endomorphism of a bundled finite-dimensional comodule agrees with
-semisimplicity on the underlying unbundled comodule. The bundled object reconstructs its additive
-group from its module structure, so the two statements use different additive group instances. -/
-private theorem isSemisimple_fgComoduleCatOf_iff {C N : Type u} [AddCommMonoid C] [Module K C]
-    [Coalgebra K C] [AddCommGroup N] [Module K N] [Comodule K C N] [Module.Finite K N]
-    (f : Module.End K N) :
-    @Module.End.IsSemisimple K (FGComoduleCat.of (R := K) (C := C) N) _
-        (FGComoduleCat.instAddCommGroupCarrier _) _ f ↔ f.IsSemisimple :=
-  @LinearEquiv.isSemisimple_iff K (FGComoduleCat.of (R := K) (C := C) N) _
-    (FGComoduleCat.instAddCommGroupCarrier _) _ f N _ _ f (LinearEquiv.refl K N) rfl
 
 /-- Semisimplicity of points is invariant under the base-change adjunction to a perfect
 extension field. No perfectness of the original field or reducedness of the group is needed. -/

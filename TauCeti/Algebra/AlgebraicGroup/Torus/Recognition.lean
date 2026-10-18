@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Recognition
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 
 /-!
 # Recognizing tori from semisimple geometric points
@@ -46,9 +45,6 @@ theorem torusCommHopfAlgProperty_iff_isCocomm_and_geometricallySemisimplePoints
   rw [iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced,
     multiplicativeTypeCommHopfAlgProperty_iff_isCocomm_and_geometricallySemisimplePoints]
   refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, hconn, ?_⟩⟩
-  apply geometricallyReducedCommHopfAlgProperty.of_baseChange (AlgebraicClosure k) H.obj
-  exact (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed
-    (AlgebraicClosure k) (CommHopfAlgCat.baseChange (K := AlgebraicClosure k) H.obj)).mpr
-      inferInstance
+  exact geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced H.obj
 
 end TauCeti
