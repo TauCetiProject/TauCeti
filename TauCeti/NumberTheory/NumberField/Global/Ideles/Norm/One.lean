@@ -84,6 +84,10 @@ norm one. -/
 def normOne : Subgroup (IdeleClassGroup (𝓞 K) K) :=
   (ideleClassNorm (K := K)).ker
 
+/-- The norm-one idele class group is normal, being a kernel. -/
+instance normal_normOne : (normOne K).Normal :=
+  MonoidHom.normal_ker _
+
 /-- An idele class lies in the norm-one subgroup exactly when its idele class norm is `1`. -/
 @[simp]
 theorem mem_normOne_iff {x : IdeleClassGroup (𝓞 K) K} : x ∈ normOne K ↔ ideleClassNorm x = 1 :=
