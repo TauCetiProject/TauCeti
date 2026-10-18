@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Jacobson.Ring
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 
 /-!
 # Tate algebras are Jacobson rings

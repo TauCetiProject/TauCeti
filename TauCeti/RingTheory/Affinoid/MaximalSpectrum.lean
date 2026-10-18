@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Jacobson
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.RingTheory.Ideal.GoingUp
