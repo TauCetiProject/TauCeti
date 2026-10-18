@@ -1,0 +1,111 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EtaleTwoDescent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
+
+/-!
+# Local conditions in cohomological and explicit two-descent
+
+For an elliptic curve in characteristic-`≠ 2` normal form, the cohomological descent map
+
+```text
+H¹(G_K, E[2]) ⟶ (K[X] ⨸ (f))ˣ ⨸ squares
+```
+
+is injective and carries the cohomological Kummer map to the explicit `x - T` map. Consequently a
+cohomology class lies in the image of the Kummer map exactly when its explicit image lies in the
+image of `x - T`. This identifies the cohomological and explicit local conditions used to define
+the two versions of the `2`-Selmer group.
+
+The family-level theorem applies this identification after restriction to every chosen extension
+field. It describes the cohomological `2`-Selmer group entirely in terms of the local explicit
+descent images. Comparing it with the global explicit `2`-Selmer group additionally requires
+naturality of the assembled cohomological descent map under scalar extension.
+
+## Main results
+
+* `TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff`: the cohomological descent image of a
+  class lies in the explicit descent image exactly when the class is a Kummer class.
+* `WeierstrassCurve.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_range_μ`: membership in
+  the cohomological `2`-Selmer group is equivalent to membership of every local explicit image in
+  the corresponding local `x - T` image.
+
+## References
+
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.1 and X.4.
+-/
+
+public section
+
+noncomputable section
+
+open TauCeti.ContCohomology
+
+namespace TauCeti
+
+namespace TwoDescent
+
+variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K)
+  [W.IsElliptic] [W.toAffine.IsCharNeTwoNF]
+
+/-- **The cohomological and explicit local conditions agree.** The image of a cohomology class
+under the cohomological `2`-descent map lies in the image of the explicit `x - T` descent map if
+and only if the class itself lies in the image of the cohomological Kummer map. -/
+theorem cohomologicalMap_mem_range_μ_iff (h2 : IsUnit ((2 : ℕ) : K))
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    cohomologicalMap W h2 (.ofAdd c) ∈ (WeierstrassCurve.Affine.μ (W := W.toAffine)).range ↔
+      c ∈ (W.kummerMap 2 h2).range := by
+  constructor
+  · rintro ⟨P, hP⟩
+    refine ⟨P.toAdd, ?_⟩
+    apply congrArg Multiplicative.toAdd
+    apply cohomologicalMap_injective W h2
+    calc
+      cohomologicalMap W h2 (.ofAdd (W.kummerMap 2 h2 P.toAdd)) = W.toAffine.μ₀ P.toAdd :=
+        cohomologicalMap_kummerMap W h2 P.toAdd
+      _ = W.toAffine.μ P := by
+        rw [← WeierstrassCurve.Affine.μ_apply, ofAdd_toAdd]
+      _ = cohomologicalMap W h2 (.ofAdd c) := hP
+  · rintro ⟨P, rfl⟩
+    refine ⟨.ofAdd P, ?_⟩
+    simpa using (cohomologicalMap_kummerMap W h2 P).symm
+
+end TwoDescent
+
+end TauCeti
+
+namespace WeierstrassCurve
+
+open TauCeti
+
+variable {K : Type*} [Field K] (W : WeierstrassCurve K)
+  [W.IsElliptic] [W.toAffine.IsCharNeTwoNF]
+  {I : Type*} (L : I → Type*) [(i : I) → Field (L i)] [(i : I) → Algebra K (L i)]
+  (tau : (i : I) → SeparableClosure K →ₐ[K] SeparableClosure (L i))
+
+/-- **The cohomological `2`-Selmer condition in explicit local coordinates.** A class is in the
+cohomological `2`-Selmer group exactly when, at every chosen extension field, its restricted
+class maps into the image of the local `x - T` descent map. -/
+theorem mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_range_μ
+    [∀ i, DecidableEq (L i)] (h2 : IsUnit ((2 : ℕ) : K))
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    c ∈ W.selmerGroup tau 2 ↔ ∀ i,
+      letI := W.toAffine.isCharNeTwoNF_map (algebraMap K (L i))
+      TauCeti.TwoDescent.cohomologicalMap (W.baseChange (L i))
+          (by rw [← map_natCast (algebraMap K (L i))]; exact h2.map (algebraMap K (L i)))
+          (.ofAdd (W.torsionRes (tau i) 2 c)) ∈
+        (Affine.μ (W := (W.baseChange (L i)).toAffine)).range := by
+  rw [W.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap tau h2]
+  apply forall_congr'
+  intro i
+  exact (TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff
+    (W.baseChange (L i))
+      (by rw [← map_natCast (algebraMap K (L i))]; exact h2.map (algebraMap K (L i)))).symm
+
+end WeierstrassCurve
