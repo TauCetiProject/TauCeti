@@ -665,6 +665,17 @@ instance instAddCommGroup : AddCommGroup (OreExtension τ ε) :=
 
 instance instRing : Ring (OreExtension τ ε) where
 
+/-- Negation acts coefficientwise on Ore polynomials. -/
+@[simp]
+theorem coeff_neg (p : OreExtension τ ε) (n : ℕ) : coeff (-p) n = -coeff p n := by
+  simp [← add_eq_zero_iff_eq_neg, ← coeff_add, neg_add_cancel p]
+
+/-- Subtraction acts coefficientwise on Ore polynomials. -/
+@[simp]
+theorem coeff_sub (p q : OreExtension τ ε) (n : ℕ) :
+    coeff (p - q) n = coeff p n - coeff q n := by
+  simp [sub_eq_add_neg]
+
 end Ring
 
 end OreExtension
