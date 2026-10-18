@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Density
+public import TauCeti.Probability.Quantile
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
@@ -14,6 +15,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # Affine images of real laws
@@ -55,6 +57,10 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
   Radon–Nikodym interfaces;
 * `TauCeti.Probability.cdf_map_affine_of_pos`, `TauCeti.Probability.cdf_map_affine_of_neg` — the
   cdf at a positive and at a negative slope;
+* `TauCeti.Probability.quantile_map_affine_pos`,
+  `TauCeti.Probability.quantile_map_affine_neg` and their upper-quantile counterparts — affine
+  transport of lower and upper quantiles, including the reversal of the level at a negative
+  slope;
 * `TauCeti.Probability.memLp_id_map_affine_iff` — a nonconstant affine image has exactly the
   absolute moments of the original law;
 * `TauCeti.Probability.integral_id_map_affine`, `TauCeti.Probability.variance_id_map_affine` —
@@ -235,6 +241,117 @@ theorem cdf_map_affine_of_neg [IsProbabilityMeasure μ] (hb : b < 0) (x : ℝ) :
     constructor <;> intro h <;> linarith
   rw [cdf_eq_real, map_measureReal_apply (measurable_affine a b) measurableSet_Iic, hpre,
     measureReal_compl measurableSet_Iio, probReal_univ]
+
+/-! ### Quantiles -/
+
+/-- At a positive slope, the mass strictly below a point under an affine image is the mass
+strictly below its pulled-back point. -/
+theorem measureReal_Iio_map_affine_of_pos (hb : 0 < b) (x : ℝ) :
+    (μ.map fun y => a + b * y).real (Iio x) = μ.real (Iio ((x - a) / b)) := by
+  have hpre : (fun y => a + b * y) ⁻¹' Iio x = Iio ((x - a) / b) := by
+    ext y
+    simp only [mem_preimage, mem_Iio, lt_div_iff₀ hb]
+    constructor <;> intro h <;> linarith
+  rw [map_measureReal_apply (measurable_affine a b) measurableSet_Iio, hpre]
+
+/-- At a negative slope, the mass strictly below a point under an affine image is one minus the
+cdf at its pulled-back point. -/
+theorem measureReal_Iio_map_affine_of_neg [IsProbabilityMeasure μ] (hb : b < 0) (x : ℝ) :
+    (μ.map fun y => a + b * y).real (Iio x) = 1 - cdf μ ((x - a) / b) := by
+  have hpre : (fun y => a + b * y) ⁻¹' Iio x = (Iic ((x - a) / b))ᶜ := by
+    ext y
+    simp only [mem_preimage, mem_Iio, mem_compl_iff, mem_Iic, not_le,
+      div_lt_iff_of_neg hb]
+    constructor <;> intro h <;> linarith
+  rw [map_measureReal_apply (measurable_affine a b) measurableSet_Iio, hpre,
+    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+
+private theorem affine_pullback_self (hb : b ≠ 0) (q : ℝ) : (a + b * q - a) / b = q := by
+  field_simp
+  ring
+
+/-- A positive affine map carries lower quantiles to lower quantiles. -/
+theorem quantile_map_affine_pos [IsProbabilityMeasure μ] {u : ℝ} (hb : 0 < b)
+    (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun x => a + b * x).quantile u = a + b * μ.quantile u := by
+  apply le_antisymm
+  · rw [Measure.quantile_le_iff _ h0 h1, cdf_map_affine_of_pos hb]
+    rw [affine_pullback_self hb.ne']
+    exact Measure.le_cdf_quantile μ h1
+  · have hcdf := Measure.le_cdf_quantile (μ.map fun x => a + b * x) h1
+    rw [cdf_map_affine_of_pos hb] at hcdf
+    have hq := (Measure.quantile_le_iff μ h0 h1).mpr hcdf
+    have := (le_div_iff₀ hb).mp hq
+    linarith
+
+/-- A positive affine map carries upper quantiles to upper quantiles. -/
+theorem upperQuantile_map_affine_pos [IsProbabilityMeasure μ] {u : ℝ} (hb : 0 < b)
+    (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun x => a + b * x).upperQuantile u = a + b * μ.upperQuantile u := by
+  apply le_antisymm
+  · have hmass := Measure.measureReal_Iio_upperQuantile_le
+      (μ.map fun x => a + b * x) h0 h1
+    rw [measureReal_Iio_map_affine_of_pos hb] at hmass
+    have hq := (Measure.le_upperQuantile_iff μ h0 h1).mpr hmass
+    have := (div_le_iff₀ hb).mp hq
+    linarith
+  · rw [Measure.le_upperQuantile_iff _ h0 h1, measureReal_Iio_map_affine_of_pos hb]
+    rw [affine_pullback_self hb.ne']
+    exact Measure.measureReal_Iio_upperQuantile_le μ h0 h1
+
+/-- A negative affine map carries lower quantiles to reflected upper quantiles. The upper
+quantile is necessary when the original cdf has a plateau at level `1 - u`. -/
+theorem quantile_map_affine_neg [IsProbabilityMeasure μ] {u : ℝ} (hb : b < 0)
+    (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun x => a + b * x).quantile u = a + b * μ.upperQuantile (1 - u) := by
+  have h10 : 0 < 1 - u := sub_pos.mpr h1
+  have h11 : 1 - u < 1 := sub_lt_self _ h0
+  apply le_antisymm
+  · rw [Measure.quantile_le_iff _ h0 h1, cdf_map_affine_of_neg hb]
+    have hmass := Measure.measureReal_Iio_upperQuantile_le μ h10 h11
+    rw [affine_pullback_self hb.ne]
+    linarith
+  · have hcdf := Measure.le_cdf_quantile (μ.map fun x => a + b * x) h1
+    rw [cdf_map_affine_of_neg hb] at hcdf
+    have hmass : μ.real (Iio (((μ.map fun x => a + b * x).quantile u - a) / b)) ≤ 1 - u :=
+      by linarith
+    have hq := (Measure.le_upperQuantile_iff μ h10 h11).mpr hmass
+    have := (div_le_iff_of_neg hb).mp hq
+    linarith
+
+/-- A negative affine map carries upper quantiles to reflected lower quantiles. -/
+theorem upperQuantile_map_affine_neg [IsProbabilityMeasure μ] {u : ℝ} (hb : b < 0)
+    (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun x => a + b * x).upperQuantile u = a + b * μ.quantile (1 - u) := by
+  have h10 : 0 < 1 - u := sub_pos.mpr h1
+  have h11 : 1 - u < 1 := sub_lt_self _ h0
+  apply le_antisymm
+  · have hmass := Measure.measureReal_Iio_upperQuantile_le
+      (μ.map fun x => a + b * x) h0 h1
+    rw [measureReal_Iio_map_affine_of_neg hb] at hmass
+    have hcdf : 1 - u ≤ cdf μ
+        (((μ.map fun x => a + b * x).upperQuantile u - a) / b) := by linarith
+    have hq := (Measure.quantile_le_iff μ h10 h11).mpr hcdf
+    have := (le_div_iff_of_neg hb).mp hq
+    linarith
+  · rw [Measure.le_upperQuantile_iff _ h0 h1, measureReal_Iio_map_affine_of_neg hb]
+    have hcdf := Measure.le_cdf_quantile μ h11
+    rw [affine_pullback_self hb.ne]
+    linarith
+
+/-- A constant affine map has the constant as every interior lower quantile. -/
+@[simp]
+theorem quantile_map_affine_zero [IsProbabilityMeasure μ] {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
+    (μ.map fun _ => a).quantile u = a := by
+  simp only [Measure.map_const, measure_univ, one_smul]
+  exact Measure.quantile_dirac a h0 h1.le
+
+/-- A constant affine map has the constant as every interior upper quantile. -/
+@[simp]
+theorem upperQuantile_map_affine_zero [IsProbabilityMeasure μ] {u : ℝ} (h0 : 0 < u)
+    (h1 : u < 1) : (μ.map fun _ => a).upperQuantile u = a := by
+  simp only [Measure.map_const, measure_univ, one_smul]
+  exact Measure.upperQuantile_dirac a h0.le h1
 
 /-! ### Integrability and moments -/
 
