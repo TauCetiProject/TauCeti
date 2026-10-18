@@ -8,9 +8,14 @@ module
 public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Strict convexity of powers of the norm
+# Convexity of powers of the norm
+
+In every real normed space, the `q`-th power of the norm is a convex function for every exponent
+`1 ≤ q`, as the composition of the convex norm with the convex nondecreasing function `t ↦ t ^ q`
+on `[0, ∞)`.
 
 In a strictly convex real normed space, the `q`-th power of the norm is a strictly convex function
 for every exponent `1 < q`. Both kinds of strictness are needed: strict convexity of `t ↦ t ^ q` on
@@ -23,6 +28,7 @@ This is the pointwise input for strict convexity of the spaces `Lᵖ(μ; E)` wit
 
 ## Main statements
 
+* `TauCeti.convexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is convex on a real normed space, for `1 ≤ q`.
 * `TauCeti.strictConvexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is strictly convex on a strictly convex real
   normed space, for `1 < q`.
 -/
@@ -33,7 +39,21 @@ open Set
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Convexity of powers of the norm.** In a real normed space, the function `x ↦ ‖x‖ ^ q` is
+convex for every exponent `1 ≤ q`. -/
+theorem convexOn_norm_rpow {q : ℝ} (hq : 1 ≤ q) : ConvexOn ℝ univ fun x : E ↦ ‖x‖ ^ q := by
+  refine ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩
+  have hle := (convexOn_norm convex_univ).2 (mem_univ x) (mem_univ y) ha hb hab
+  simp only [smul_eq_mul] at hle ⊢
+  calc ‖a • x + b • y‖ ^ q ≤ (a * ‖x‖ + b * ‖y‖) ^ q :=
+        Real.rpow_le_rpow (norm_nonneg _) hle (zero_le_one.trans hq)
+    _ ≤ a * ‖x‖ ^ q + b * ‖y‖ ^ q := by
+        simpa only [smul_eq_mul] using
+          (convexOn_rpow hq).2 (mem_Ici.2 (norm_nonneg x)) (mem_Ici.2 (norm_nonneg y)) ha hb hab
+
+variable [StrictConvexSpace ℝ E]
 
 /-- **Strict convexity of powers of the norm.** In a strictly convex real normed space, the
 function `x ↦ ‖x‖ ^ q` is strictly convex for every exponent `1 < q`. -/
