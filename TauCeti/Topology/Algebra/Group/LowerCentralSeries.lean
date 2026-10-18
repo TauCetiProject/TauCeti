@@ -169,7 +169,7 @@ instance pVerbalStep_normal (H K : Subgroup G) [H.Normal] [K.Normal] :
   have : (Subgroup.closure ((· ^ p) '' (H : Set G))).Normal := by
     refine closure_normal_of_forall_conj_mem ?_
     rintro g _ ⟨x, hx, rfl⟩
-    exact ⟨g * x * g⁻¹, Normal.conj_mem ‹H.Normal› x hx g, conj_pow⟩
+    exact ⟨g * x * g⁻¹, Normal.conj_mem x hx g, conj_pow⟩
   exact is_normal_topologicalClosure _
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]

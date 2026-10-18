@@ -149,8 +149,8 @@ points of an affine group over a field are schematically dense and have derived 
 most `n`. -/
 theorem derivedSeries_points_derived_eq_bot_of_dense_points {n : ℕ}
     (hdense : HopfIdeal.vanishingIdeal (⊤ : Subgroup (WithConv (H →ₐ[k] k))) = ⊥)
-    (hn : derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
-    derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
+    (hn : Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
+    Subgroup.derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
       (derivedDefiningIdeal (R := k) H) →ₐ[k] k)) n = ⊥ := by
   let A := _root_.CommHopfAlgCat.of k H
   let cl (S : Subgroup (WithConv (H →ₐ[k] k))) :=
@@ -158,18 +158,20 @@ theorem derivedSeries_points_derived_eq_bot_of_dense_points {n : ℕ}
   let φ := (quotientPointsHom A (derivedDefiningIdeal H) (CommAlgCat.of k k)).hom
   -- The `i`-th derived subgroup of the derived points lies in the closure of the `(i + 1)`-st
   -- derived subgroup of the ambient points.
-  have hle (i : ℕ) : (derivedSeries _ i).map φ ≤ cl (derivedSeries _ (i + 1)) := by
+  have hle (i : ℕ) :
+      (Subgroup.derivedSeries _ i).map φ ≤ cl (Subgroup.derivedSeries _ (i + 1)) := by
     induction i with
     | zero =>
-      rw [derivedSeries_zero, ← MonoidHom.range_eq_map, derivedSeries_one]
+      rw [Subgroup.derivedSeries_zero, ← MonoidHom.range_eq_map, Subgroup.derivedSeries_one]
       -- `quotientPointsSubgroup` is defined as the range of `quotientPointsHom`.
       exact (congrArg (fun I ↦ quotientPointsSubgroup A I (CommAlgCat.of k k))
         (derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points hdense)).le
     | succ i ih =>
-      rw [derivedSeries_succ, Subgroup.map_commutator, derivedSeries_succ _ (i + 1)]
+      rw [Subgroup.derivedSeries_succ, Subgroup.map_commutator,
+        Subgroup.derivedSeries_succ _ (i + 1)]
       exact (Subgroup.commutator_mono ih ih).trans
         (HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le _ _)
-  have hmap : (derivedSeries _ n).map φ = ⊥ := by
+  have hmap : (Subgroup.derivedSeries _ n).map φ = ⊥ := by
     have h := hle n
     rw [hn] at h
     exact le_bot_iff.mp (h.trans HopfIdeal.quotientPointsSubgroup_vanishingIdeal_bot.le)
@@ -198,8 +200,8 @@ finite-type affine group over an algebraically closed field, whose rational poin
 they have derived length at most `n + 1`, then the rational points of its scheme-theoretic derived
 subgroup have derived length at most `n`. -/
 theorem derivedSeries_points_derived_eq_bot {n : ℕ}
-    (hn : derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
-    derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
+    (hn : Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
+    Subgroup.derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
       (derivedDefiningIdeal (R := k) H) →ₐ[k] k)) n = ⊥ :=
   derivedSeries_points_derived_eq_bot_of_dense_points HopfIdeal.vanishingIdeal_top hn
 

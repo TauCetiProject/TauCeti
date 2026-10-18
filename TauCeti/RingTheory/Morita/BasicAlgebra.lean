@@ -8,8 +8,8 @@ module
 public import TauCeti.RingTheory.Jacobson.Semiperfect
 public import TauCeti.RingTheory.Morita.Corner
 public import TauCeti.RingTheory.Semisimple.BasicAlgebra
+import TauCeti.RingTheory.Idempotents.CornerJacobson
 import TauCeti.RingTheory.Idempotents.Full
-import TauCeti.RingTheory.Idempotents.Jacobson
 import TauCeti.RingTheory.Semisimple.FullIdempotent
 
 /-!

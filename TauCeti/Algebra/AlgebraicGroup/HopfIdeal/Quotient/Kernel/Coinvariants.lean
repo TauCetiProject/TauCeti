@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
@@ -128,5 +128,28 @@ theorem coinvariants_kernelHopfIdeal_eq_range (f : H ⟶ K)
   let : Module.FaithfullyFlat H K := hf
   exact coinvariants_kernelHopfIdeal_eq_range_of_isEffective f
     (Algebra.IsEffective.of_faithfullyFlat H K)
+
+/-- A faithfully flat affine-group morphism identifies its target with the represented
+quotient by its kernel. More generally, the canonical factorization through the coinvariants
+of any normal ideal equal to the kernel is bijective on coordinate algebras. -/
+theorem bijective_liftCoinvariants_of_faithfullyFlat
+    {I : HopfIdeal R K} [Module.Flat R K] [Module.Flat R I.coinvariants]
+    [Module.Flat R (K ⧸ Subalgebra.toSubmodule I.coinvariants)]
+    (hI : I.IsNormal) (f : H ⟶ K)
+    (hf : (f.hom.toAlgHom : H →+* K).FaithfullyFlat)
+    (hker : kernelHopfIdeal f = I) :
+    Function.Bijective (liftCoinvariants hI f hker.le).hom := by
+  constructor
+  · intro x y hxy
+    apply hf.injective
+    exact (coe_liftCoinvariants_apply hI f hker.le x).symm.trans
+      ((congrArg Subtype.val hxy).trans (coe_liftCoinvariants_apply hI f hker.le y))
+  · intro x
+    have hx : (x : K) ∈ f.hom.toAlgHom.range := by
+      rw [← coinvariants_kernelHopfIdeal_eq_range f hf, hker]
+      exact x.property
+    obtain ⟨y, hy⟩ := hx
+    refine ⟨y, Subtype.ext ?_⟩
+    exact (coe_liftCoinvariants_apply hI f hker.le y).trans hy
 
 end TauCeti.CommHopfAlgCat
