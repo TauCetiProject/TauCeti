@@ -28,10 +28,10 @@ The descent and density of cylinder functions are supplied by
 coordinate families; reconstructed measures use Mathlib's `AbstractMeasure` carrier and the
 existing `AbstractMeasure.finiteProjection`.
 
-The reconstruction API is in `TauCeti.AbstractMeasure`. In particular,
-`TauCeti.AbstractMeasure.ext_unitsToZModPow μ ν h` proves uniqueness,
-`TauCeti.AbstractMeasure.unitCoordinates_compatible μ` supplies compatibility, and
-`TauCeti.AbstractMeasure.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
+The reconstruction API is in `TauCeti`. In particular,
+`TauCeti.ext_unitsToZModPow μ ν h` proves uniqueness,
+`TauCeti.unitCoordinates_compatible μ` supplies compatibility, and
+`TauCeti.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
 
 ## References
 
@@ -44,7 +44,7 @@ public noncomputable section
 open ContinuousMap _root_.AbstractMeasure IsUltrametricDist
 open scoped AbstractMeasure
 
-namespace TauCeti.AbstractMeasure
+namespace TauCeti
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -337,4 +337,4 @@ example (u : ℤ_[2]ˣ) :
       (by intros; simp) = dirac ℤ_[2] u := by
   simp
 
-end TauCeti.AbstractMeasure
+end TauCeti
