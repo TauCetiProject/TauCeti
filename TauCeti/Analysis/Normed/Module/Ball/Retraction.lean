@@ -61,6 +61,13 @@ noncomputable def radialRetraction (r : ℝ) (x : E) : E := min 1 (r / ‖x‖) 
 noncomputable def centeredRadialRetraction (x₀ : E) (r : ℝ) (x : E) : E :=
   x₀ + radialRetraction r (x - x₀)
 
+/-- The radial retraction centred at the origin is the original radial retraction. -/
+@[simp]
+theorem centeredRadialRetraction_zero (r : ℝ) :
+    centeredRadialRetraction (0 : E) r = radialRetraction r := by
+  funext x
+  simp [centeredRadialRetraction]
+
 @[simp]
 theorem radialRetraction_zero (r : ℝ) : radialRetraction r (0 : E) = 0 := by
   simp [radialRetraction]
@@ -87,6 +94,13 @@ theorem radialRetraction_eventuallyEq_id (hx : ‖x‖ < r) :
   eventuallyEq_of_mem (isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)) fun _ hy ↦
     radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le
 
+/-- The centred radial retraction agrees with the identity on a neighborhood of every point in
+the open ball. -/
+theorem centeredRadialRetraction_eventuallyEq_id {x₀ : E} (hx : x ∈ ball x₀ r) :
+    centeredRadialRetraction x₀ r =ᶠ[nhds x] id :=
+  eventuallyEq_of_mem (isOpen_ball.mem_nhds hx) fun _ hy ↦
+    centeredRadialRetraction_of_mem_closedBall (mem_ball.1 hy).le
+
 /-- Outside the closed ball of radius `r` the radial retraction scales by `r / ‖x‖`. -/
 theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :
     radialRetraction r x = (r / ‖x‖) • x := by
@@ -103,6 +117,14 @@ theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x�
     min_mul_of_nonneg _ _ (norm_nonneg x), one_mul,
     div_mul_cancel₀ _ (norm_ne_zero_iff.2 hx)]
 
+/-- For nonnegative radius, the centred radial retraction is at distance `min (dist x x₀) r`
+from its centre. -/
+@[simp]
+theorem dist_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) (x : E) :
+    dist (centeredRadialRetraction x₀ r x) x₀ = min (dist x x₀) r := by
+  rw [centeredRadialRetraction, dist_eq_norm, add_sub_cancel_left, norm_radialRetraction hr,
+    dist_eq_norm]
+
 theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
     radialRetraction r x ∈ closedBall (0 : E) r := by
   rw [mem_closedBall_zero_iff, norm_radialRetraction hr]
@@ -111,8 +133,8 @@ theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
 /-- The centred radial retraction takes values in its closed ball. -/
 theorem centeredRadialRetraction_mem_closedBall {x₀ : E} (hr : 0 ≤ r) (x : E) :
     centeredRadialRetraction x₀ r x ∈ closedBall x₀ r := by
-  rw [centeredRadialRetraction, mem_closedBall, dist_eq_norm, add_sub_cancel_left]
-  simpa only [norm_radialRetraction hr] using min_le_right ‖x - x₀‖ r
+  rw [mem_closedBall, dist_centeredRadialRetraction hr]
+  exact min_le_right _ _
 
 /-- The radial retraction is idempotent for nonnegative radius. -/
 theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
@@ -122,6 +144,11 @@ theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
 theorem mapsTo_radialRetraction (hr : 0 ≤ r) :
     MapsTo (radialRetraction (E := E) r) univ (closedBall 0 r) :=
   fun x _ ↦ radialRetraction_mem_closedBall hr x
+
+/-- The centred radial retraction maps the whole space into its closed ball. -/
+theorem mapsTo_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
+    MapsTo (centeredRadialRetraction x₀ r) univ (closedBall x₀ r) :=
+  fun x _ ↦ centeredRadialRetraction_mem_closedBall hr x
 
 /-- The radial retraction distorts distance by at most a factor of two when the points are
 ordered by norm. This is the asymmetric half of `TauCeti.lipschitzWith_radialRetraction`. -/
@@ -190,16 +217,25 @@ theorem lipschitzWith_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
 
 end TauCeti
 
+/-- Precomposing with the centred radial retraction turns a map that is Lipschitz on a closed ball
+into a globally Lipschitz map, at the cost of doubling the constant. -/
+theorem LipschitzOnWith.comp_centeredRadialRetraction {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [PseudoEMetricSpace F] {f : E → F} {c : ℝ≥0} {x₀ : E} {r : ℝ}
+    (hf : LipschitzOnWith c f (closedBall x₀ r)) (hr : 0 ≤ r) :
+    LipschitzWith (c * 2) (f ∘ TauCeti.centeredRadialRetraction x₀ r) :=
+  lipschitzOnWith_univ.1 <| hf.comp
+    (lipschitzOnWith_univ.2 (TauCeti.lipschitzWith_centeredRadialRetraction hr))
+    (TauCeti.mapsTo_centeredRadialRetraction hr)
+
 /-- Precomposing with the radial retraction turns a map that is Lipschitz on the closed ball of
-radius `r` into a globally Lipschitz map, at the cost of doubling the constant.  The new map still
+radius `r` into a globally Lipschitz map, at the cost of doubling the constant. The new map still
 agrees with the old one on that ball, by `TauCeti.radialRetraction_of_norm_le`. -/
 theorem LipschitzOnWith.comp_radialRetraction {E F : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [PseudoEMetricSpace F] {f : E → F} {c : ℝ≥0} {r : ℝ}
     (hf : LipschitzOnWith c f (closedBall 0 r)) (hr : 0 ≤ r) :
-    LipschitzWith (c * 2) (f ∘ TauCeti.radialRetraction r) :=
-  lipschitzOnWith_univ.1 <| hf.comp
-    (lipschitzOnWith_univ.2 (TauCeti.lipschitzWith_radialRetraction hr))
-    (TauCeti.mapsTo_radialRetraction hr)
+    LipschitzWith (c * 2) (f ∘ TauCeti.radialRetraction r) := by
+  simpa only [TauCeti.centeredRadialRetraction_zero] using
+    hf.comp_centeredRadialRetraction hr
 
 /-- Composing a Hölder function on a closed ball with the centred radial retraction gives a global
 Hölder function with the same exponent and `2ᵅ` times the Hölder constant. -/
