@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
