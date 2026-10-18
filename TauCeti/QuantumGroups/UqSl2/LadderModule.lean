@@ -44,6 +44,8 @@ lemma), and `L_m^ε` and `L_n^δ` are isomorphic only when `m = n` and `ε = δ`
   the action of the generators.
 * `TauCeti.UqSl2.LadderModule.e_pow_smul_vec`, `f_pow_smul_vec`: the action of their powers.
 * `TauCeti.UqSl2.LadderModule.isSimpleModule`: `L_m^ε` is simple at a generic parameter.
+* `TauCeti.UqSl2.LadderModule.hom_ext`: at a generic parameter, module maps out of `L_m^ε` are
+  determined by their value at `v₀`.
 * `TauCeti.UqSl2.LadderModule.algebraMap_end_bijective`: Schur's lemma for `L_m^ε`.
 * `TauCeti.UqSl2.LadderModule.nonempty_linearEquiv_iff`: `L_m^ε ≅ L_n^δ` iff `m = n` and
   `ε = δ`, at a generic parameter.
@@ -358,6 +360,18 @@ theorem isSimpleModule (hq : IsGenericQuantumParameter q) :
     rw [span_singleton_eq_top hq hx]
     exact Submodule.mem_top
   exact Submodule.mem_span_singleton.mp hz
+
+/-- At a generic parameter, a `UqSl2 q`-module map out of `L_m^ε` is determined by its value at
+the highest vector `v₀`. -/
+theorem hom_ext (hq : IsGenericQuantumParameter q) {V : Type*} [AddCommGroup V]
+    [Module (UqSl2 q) V] {φ ψ : LadderModule q m ε →ₗ[UqSl2 q] V}
+    (h : φ (vec q m ε 0) = ψ (vec q m ε 0)) : φ = ψ := by
+  refine LinearMap.ext fun x => ?_
+  have hx : x ∈ Submodule.span (UqSl2 q) {vec q m ε 0} := by
+    rw [span_singleton_eq_top hq (by simp)]
+    exact Submodule.mem_top
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
+  rw [map_smul, map_smul, h]
 
 /-! ### Schur's lemma and pairwise non-isomorphism -/
 

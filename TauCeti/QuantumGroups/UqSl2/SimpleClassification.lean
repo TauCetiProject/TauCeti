@@ -30,9 +30,8 @@ finite-dimensional simple `UqSl2 q`-module is isomorphic to exactly one `L_m^ε`
 
 ## Main results
 
-* `TauCeti.UqSl2.LadderModule.lift_vec_zero`, `TauCeti.UqSl2.LadderModule.hom_ext`: `lift`
-  sends `v₀` to the given vector, and module maps out of `L_m^ε` are determined by their value
-  at `v₀`.
+* `TauCeti.UqSl2.LadderModule.lift_vec_zero`: `lift` sends `v₀` to the given vector; by
+  `TauCeti.UqSl2.LadderModule.hom_ext` it is the only module map doing so.
 * `TauCeti.UqSl2.LadderModule.lift_injective`: the map induced by a nonzero vector is injective.
 * `TauCeti.UqSl2.existsUnique_linearEquiv_ladderModule`: every finite-dimensional simple
   `UqSl2 q`-module is isomorphic to `L_m^ε` for exactly one pair `(m, ε)`.
@@ -130,8 +129,8 @@ include hf in
 private theorem constr_vec (j : ℕ) :
     (basis q m ε).constr ℂ (fun i => string q v i) (vec q m ε j) = string q v j := by
   by_cases hj : j ≤ m
-  · rw [show vec q m ε j = basis q m ε ⟨j, by omega⟩ from vec_coe ⟨j, by omega⟩,
-      Basis.constr_basis]
+  · obtain ⟨i, rfl⟩ : ∃ i : Fin (m + 1), (i : ℕ) = j := ⟨⟨j, by omega⟩, rfl⟩
+    rw [vec_coe, Basis.constr_basis]
   · rw [vec_eq_zero_of_lt (by omega), map_zero, string_eq_zero hf (by omega)]
 
 end String
@@ -161,8 +160,8 @@ def lift (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V 
         rcases j with _ | j
         · rw [e_smul_vec, map_smul, vec_eq_zero_of_neg (by omega), map_zero, smul_zero,
             Nat.cast_zero, hφ0, he]
-        · rw [e_smul_vec, map_smul, show ((j + 1 : ℕ) : ℤ) - 1 = j by omega,
-            show (m : ℤ) - ((j + 1 : ℕ) : ℤ) + 1 = m - j by omega, hφ, hφ, e_smul_string hq hv he]
+        · rw [e_smul_vec, map_smul, hφ (j + 1), Nat.cast_succ, add_sub_cancel_right,
+            sub_add_eq_sub_sub, sub_add_cancel, hφ, e_smul_string hq hv he]
       · refine map_smul_of_vec φ _ (fun j _ => ?_) x
         rw [f_smul_vec, map_smul, ← Nat.cast_succ, hφ, hφ, f_smul_string hq, Nat.cast_succ]
       · refine map_smul_of_vec φ _ (fun j _ => ?_) x
@@ -182,29 +181,12 @@ theorem lift_vec (j : ℕ) :
 theorem lift_vec_zero : lift hq hv he hf (vec q m ε 0) = v := by
   simpa using lift_vec hq hv he hf 0
 
-omit [Module ℂ V] [IsScalarTower ℂ (UqSl2 q) V] in
-include hq in
-/-- At a generic parameter, a `UqSl2 q`-module map out of `L_m^ε` is determined by its value at
-the highest vector `v₀`. -/
-theorem hom_ext {φ ψ : LadderModule q m ε →ₗ[UqSl2 q] V}
-    (h : φ (vec q m ε 0) = ψ (vec q m ε 0)) : φ = ψ := by
-  refine LinearMap.ext fun x => ?_
-  have hx : x ∈ Submodule.span (UqSl2 q) {vec q m ε 0} := by
-    have := isSimpleModule (m := m) (ε := ε) hq
-    rw [IsSimpleModule.span_singleton_eq_top (UqSl2 q)
-      (by simp : vec q m ε 0 ≠ 0)]
-    exact Submodule.mem_top
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
-  rw [map_smul, map_smul, h]
-
 include hq in
 /-- The map induced by a nonzero vector is injective. -/
-theorem lift_injective (hv0 : v ≠ 0) : Function.Injective (lift hq hv he hf) := by
+theorem lift_injective (hv0 : v ≠ 0) : Function.Injective (lift hq hv he hf) :=
   have := isSimpleModule (m := m) (ε := ε) hq
-  rw [← LinearMap.ker_eq_bot]
-  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_right fun htop => hv0 ?_
-  rw [← lift_vec_zero hq hv he hf]
-  exact LinearMap.mem_ker.mp (htop ▸ Submodule.mem_top)
+  LinearMap.injective_of_ne_zero fun h0 => hv0 <| by
+    rw [← lift_vec_zero hq hv he hf, h0, LinearMap.zero_apply]
 
 end LadderModule
 
