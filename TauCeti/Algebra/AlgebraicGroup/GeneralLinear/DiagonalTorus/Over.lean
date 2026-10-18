@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.DiagonalTorus
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel
 
 /-!
 # The standard torus and Borel of the general linear group over a ring
