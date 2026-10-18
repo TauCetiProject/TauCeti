@@ -144,8 +144,8 @@ private theorem span_singleton_D_apply_eq_top_of_eq_top (e : A ≃ₐ[R] B) {a :
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
     (h ▸ Submodule.mem_top : mapSemilinear e.symm.toAlgHom ξ ∈ Submodule.span A {D R A a})
   refine ⟨e c, ?_⟩
-  rw [← mapSemilinear_apply_symm_apply e ξ, ← hc, mapSemilinear_smul, mapSemilinear_D]
-  rfl
+  rw [← mapSemilinear_apply_symm_apply e ξ, ← hc, mapSemilinear_smul, mapSemilinear_D,
+    AlgEquiv.toAlgHom_apply, AlgEquiv.toAlgHom_apply]
 
 /-- A single differential `D a` generates the Kähler differentials exactly when its transport
 `D (e a)` along an algebra isomorphism `e` does. -/
