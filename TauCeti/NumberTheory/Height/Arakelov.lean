@@ -1,0 +1,408 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.Height.NumberField
+
+/-!
+# Euclidean heights over number fields
+
+This file defines the degree-normalized Euclidean height `height2` of a finite tuple over a
+number field. At an infinite place it uses the Euclidean norm of the tuple, while at a finite
+place it uses the maximum norm. The relative Arakelov height `arakelovMulHeight` is its
+field-degree power, with the usual projective junk value one at the zero tuple.
+
+The local formula and its normalization follow Evertse--Ferretti, where this Euclidean height is
+used for Plücker coordinates of subspaces. The elementary API here records the zero convention,
+reindexing, and the corresponding logarithmic and affine heights.
+
+## Main definitions
+
+* `TauCeti.height2`: the absolute Euclidean height of a tuple over a number field.
+* `TauCeti.arakelovMulHeight`: the relative Euclidean projective height.
+* `TauCeti.arakelovLogHeight`: the logarithm of the relative Euclidean projective height.
+* `TauCeti.arakelovMulHeightAff`: the relative affine Euclidean height of a finite tuple.
+* `TauCeti.arakelovLogHeightAff`: its logarithm.
+
+## References
+
+* J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
+  Theorem*, Ann. of Math. 177 (2013), §6.1 and §6.3.
+-/
+
+@[expose] public noncomputable section
+
+open scoped BigOperators
+open Function Module NumberField
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [NumberField K]
+
+-- This finite-place support reduction is the Euclidean-height counterpart of Mathlib's private
+-- support lemma for `Height.mulHeight`; zero coordinates must be discarded before applying the
+-- finite-support theorem for a single nonzero field element.
+private theorem hasFiniteMulSupport_iSup_finitePlace {ι : Type*} [Finite ι] {y : ι → K}
+    (hy : y ≠ 0) : (fun v : FinitePlace K ↦ ⨆ i, v (y i)).HasFiniteMulSupport := by
+  have : Nonempty {i // y i ≠ 0} := nonempty_subtype.mpr (Function.ne_iff.mp hy)
+  suffices (fun v : FinitePlace K ↦ ⨆ i : {j // y j ≠ 0}, v (y i)).HasFiniteMulSupport by
+    convert! this with v
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp hy
+    have : Nonempty ι := ⟨i⟩
+    refine le_antisymm (ciSup_le fun j ↦ ?_) (ciSup_le fun ⟨j, hj⟩ ↦
+      Finite.le_ciSup_of_le j le_rfl)
+    rcases eq_or_ne (y j) 0 with h | h
+    · rw [h, map_zero]
+      exact Real.iSup_nonneg' ⟨⟨i, hi⟩, v.val.nonneg _⟩
+    · exact Finite.le_ciSup_of_le ⟨j, h⟩ le_rfl
+  refine (Set.finite_iUnion fun i : {j // y j ≠ 0} ↦
+    FinitePlace.hasFiniteMulSupport i.property).subset ?_
+  intro v hv
+  change (⨆ i : {j // y j ≠ 0}, v (y i)) ≠ 1 at hv
+  rw [Set.mem_iUnion]
+  by_contra h
+  push Not at h
+  have heq (j : {k // y k ≠ 0}) : v (y j) = 1 := by
+    have hj := h j
+    change ¬v (y j) ≠ 1 at hj
+    exact not_ne_iff.mp hj
+  apply hv
+  apply le_antisymm
+  · exact ciSup_le fun j ↦ (heq j).le
+  · obtain ⟨i, hi⟩ := Function.ne_iff.mp hy
+    exact (heq ⟨i, hi⟩).ge.trans
+      (Finite.le_ciSup (f := fun j : {k // y k ≠ 0} ↦ v (y j)) ⟨i, hi⟩)
+
+/-- The degree-normalized Euclidean height of a finite tuple over a number field. It uses the
+Euclidean norm at infinite places and the maximum norm at finite places. In particular, its
+value at the zero tuple is zero. -/
+def height2 {ι : Type*} [Fintype ι] (y : ι → K) : ℝ :=
+  (∏ w : InfinitePlace K,
+      (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / (2 * finrank ℚ K))) *
+    ∏ᶠ v : FinitePlace K, (⨆ i, v (y i)) ^ ((1 : ℝ) / finrank ℚ K)
+
+/-- The Euclidean height is nonnegative. -/
+theorem height2_nonneg {ι : Type*} [Fintype ι] (y : ι → K) : 0 ≤ height2 y := by
+  apply mul_nonneg
+  · exact Finset.prod_nonneg fun _ _ ↦
+      Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity) _
+  · exact finprod_nonneg fun _ ↦ Real.rpow_nonneg (Real.iSup_nonneg_of_nonnegHomClass _ _) _
+
+/-- The Euclidean height of the zero tuple is zero. -/
+@[simp]
+theorem height2_zero {ι : Type*} [Fintype ι] : height2 (0 : ι → K) = 0 := by
+  let w : InfinitePlace K := Classical.choice inferInstance
+  have hD : (finrank ℚ K : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr finrank_pos.ne'
+  have hw : (w.mult : ℝ) / (2 * finrank ℚ K) ≠ 0 :=
+    div_ne_zero InfinitePlace.mult_coe_ne_zero (mul_ne_zero two_ne_zero hD)
+  have hprod :
+      ∏ v : InfinitePlace K, (∑ i : ι, ‖v.embedding ((0 : ι → K) i)‖ ^ 2) ^
+        ((v.mult : ℝ) / (2 * finrank ℚ K)) = 0 := by
+    apply Finset.prod_eq_zero (Finset.mem_univ w)
+    simp [Real.zero_rpow hw]
+  rw [height2, hprod, zero_mul]
+
+/-- The Euclidean height is unchanged by a bijective reindexing of the coordinates. -/
+@[simp]
+theorem height2_comp_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : ι ≃ ι')
+    (y : ι' → K) : height2 (y ∘ e) = height2 y := by
+  simp only [height2, comp_apply]
+  congr 1
+  · apply Finset.prod_congr rfl
+    intro w _
+    exact congrArg (fun z : ℝ ↦ z ^ ((w.mult : ℝ) / (2 * finrank ℚ K)))
+      (e.sum_comp fun i ↦ ‖w.embedding (y i)‖ ^ 2)
+  · apply finprod_congr
+    intro v
+    exact congrArg (fun z : ℝ ↦ z ^ ((1 : ℝ) / finrank ℚ K))
+      (e.iSup_comp (g := fun i ↦ v (y i)))
+
+open Classical in
+/-- The relative Euclidean projective height. It is the field-degree power of `height2` away
+from zero, and has the projective junk value one at the zero tuple. -/
+def arakelovMulHeight {ι : Type*} [Fintype ι] (y : ι → K) : ℝ :=
+  if y = 0 then 1 else height2 y ^ finrank ℚ K
+
+/-- The relative logarithmic Euclidean projective height. -/
+def arakelovLogHeight {ι : Type*} [Fintype ι] (y : ι → K) : ℝ :=
+  Real.log (arakelovMulHeight y)
+
+/-- The relative affine Euclidean height of a finite tuple, obtained by adjoining the coordinate
+one. -/
+def arakelovMulHeightAff {ι : Type*} [Fintype ι] (x : ι → K) : ℝ :=
+  arakelovMulHeight fun o : Option ι ↦ o.elim 1 x
+
+/-- The relative logarithmic affine Euclidean height of a finite tuple. -/
+def arakelovLogHeightAff {ι : Type*} [Fintype ι] (x : ι → K) : ℝ :=
+  Real.log (arakelovMulHeightAff x)
+
+@[simp]
+theorem arakelovMulHeight_zero {ι : Type*} [Fintype ι] :
+    arakelovMulHeight (0 : ι → K) = 1 := by
+  simp [arakelovMulHeight]
+
+/-- Away from zero, the relative height is the field-degree power of `height2`. -/
+theorem arakelovMulHeight_of_ne_zero {ι : Type*} [Fintype ι] {y : ι → K} (hy : y ≠ 0) :
+    arakelovMulHeight y = height2 y ^ finrank ℚ K := by
+  simp [arakelovMulHeight, hy]
+
+/-- The relative Euclidean projective height is nonnegative. -/
+theorem arakelovMulHeight_nonneg {ι : Type*} [Fintype ι] (y : ι → K) :
+    0 ≤ arakelovMulHeight y := by
+  by_cases hy : y = 0
+  · simp [hy]
+  · rw [arakelovMulHeight_of_ne_zero hy]
+    exact pow_nonneg (height2_nonneg y) _
+
+/-- The local formula for the relative Euclidean projective height of a nonzero tuple. The
+degree power removes the normalizing field-degree roots from `height2`. -/
+theorem arakelovMulHeight_eq {ι : Type*} [Fintype ι] {y : ι → K} (hy : y ≠ 0) :
+    arakelovMulHeight y =
+      (∏ w : InfinitePlace K,
+        (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) *
+      ∏ᶠ v : FinitePlace K, ⨆ i, v (y i) := by
+  rw [arakelovMulHeight_of_ne_zero hy, height2, mul_pow,
+    ← Finset.prod_pow Finset.univ]
+  have hD : finrank ℚ K ≠ 0 := finrank_pos.ne'
+  have hbase := hasFiniteMulSupport_iSup_finitePlace hy
+  have hrpow :
+      (fun v : FinitePlace K ↦ (⨆ i, v (y i)) ^ ((1 : ℝ) / finrank ℚ K)).HasFiniteMulSupport :=
+    hbase.subset fun v hv ↦ by
+      change (⨆ i, v (y i)) ^ ((1 : ℝ) / finrank ℚ K) ≠ 1 at hv
+      change (⨆ i, v (y i)) ≠ 1
+      exact fun h ↦ hv (by simp [h])
+  rw [finprod_pow hrpow]
+  congr 1
+  · apply Finset.prod_congr rfl
+    intro w _
+    rw [← Real.rpow_mul_natCast (Finset.sum_nonneg fun _ _ ↦ by positivity)]
+    congr 1
+    field_simp
+  · apply finprod_congr
+    intro v
+    simpa [one_div] using Real.rpow_inv_natCast_pow
+      (Real.iSup_nonneg_of_nonnegHomClass v _) hD
+
+/-- Multiplication by a nonzero number-field scalar preserves the relative Euclidean projective
+height. -/
+@[simp]
+theorem arakelovMulHeight_smul {ι : Type*} [Fintype ι] (y : ι → K) {c : K} (hc : c ≠ 0) :
+    arakelovMulHeight (c • y) = arakelovMulHeight y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  have hcy : c • y ≠ 0 := by simp [hc, hy]
+  rw [arakelovMulHeight_eq hcy, arakelovMulHeight_eq hy]
+  have hinf (w : InfinitePlace K) :
+      (∑ i, ‖w.embedding ((c • y) i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) =
+        w c ^ w.mult * (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
+    have hsum : ∑ i, ‖w.embedding ((c • y) i)‖ ^ 2 =
+        ‖w.embedding c‖ ^ 2 * ∑ i, ‖w.embedding (y i)‖ ^ 2 := by
+      simp only [Pi.smul_apply, smul_eq_mul, map_mul, norm_mul, Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro i _
+      ring
+    rw [hsum, Real.mul_rpow (sq_nonneg _) (Finset.sum_nonneg fun _ _ ↦ by positivity)]
+    congr 1
+    calc
+      (‖w.embedding c‖ ^ (2 : ℕ) : ℝ) ^ ((w.mult : ℝ) / 2) =
+          (‖w.embedding c‖ ^ (2 : ℝ)) ^ ((w.mult : ℝ) / 2) :=
+        congrArg (fun z : ℝ ↦ z ^ ((w.mult : ℝ) / 2)) (Real.rpow_natCast _ _).symm
+      _ =
+          ‖w.embedding c‖ ^ (2 * ((w.mult : ℝ) / 2)) :=
+        (Real.rpow_mul (norm_nonneg _) 2 ((w.mult : ℝ) / 2)).symm
+      _ = ‖w.embedding c‖ ^ (w.mult : ℝ) := by ring_nf
+      _ = ‖w.embedding c‖ ^ w.mult := Real.rpow_natCast _ _
+      _ = w c ^ w.mult := by rw [InfinitePlace.norm_embedding_eq]
+  have hfin (v : FinitePlace K) :
+      (⨆ i, v ((c • y) i)) = v c * ⨆ i, v (y i) := by
+    simp only [Pi.smul_apply, smul_eq_mul, map_mul]
+    exact (Real.mul_iSup_of_nonneg (v.val.nonneg c) fun i ↦ v (y i)).symm
+  simp_rw [hinf, hfin]
+  rw [Finset.prod_mul_distrib,
+    finprod_mul_distrib (FinitePlace.hasFiniteMulSupport hc)
+      (hasFiniteMulSupport_iSup_finitePlace hy),
+    mul_mul_mul_comm, NumberField.prod_abs_eq_one hc, one_mul]
+
+/-- The relative Euclidean projective height is at least one. -/
+theorem one_le_arakelovMulHeight {ι : Type*} [Fintype ι] (y : ι → K) :
+    1 ≤ arakelovMulHeight y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hy
+  have hi' : y i ≠ 0 := by simpa using hi
+  have hscaled : (y i)⁻¹ • y ≠ 0 := by simp [hi', hy]
+  rw [← arakelovMulHeight_smul y (inv_ne_zero hi'), arakelovMulHeight_eq hscaled]
+  apply one_le_mul_of_one_le_of_one_le
+  · apply Finset.one_le_prod₀
+    intro w _
+    apply Real.one_le_rpow
+    · calc
+        1 = ‖w.embedding (((y i)⁻¹ • y) i)‖ ^ 2 := by
+          simp [inv_mul_cancel₀ hi']
+        _ ≤ ∑ j, ‖w.embedding (((y i)⁻¹ • y) j)‖ ^ 2 :=
+          Finset.single_le_sum (s := Finset.univ)
+            (f := fun j ↦ ‖w.embedding (((y i)⁻¹ • y) j)‖ ^ 2)
+            (fun _ _ ↦ sq_nonneg _) (Finset.mem_univ i)
+    · positivity
+  · apply one_le_finprod
+    intro v
+    refine Finite.le_ciSup_of_le i ?_
+    simp [inv_mul_cancel₀ hi']
+
+/-- The relative Euclidean projective height is positive. -/
+theorem arakelovMulHeight_pos {ι : Type*} [Fintype ι] (y : ι → K) :
+    0 < arakelovMulHeight y :=
+  zero_lt_one.trans_le (one_le_arakelovMulHeight y)
+
+/-- The relative Euclidean projective height is nonzero. -/
+theorem arakelovMulHeight_ne_zero {ι : Type*} [Fintype ι] (y : ι → K) :
+    arakelovMulHeight y ≠ 0 :=
+  (arakelovMulHeight_pos y).ne'
+
+open Classical in
+/-- Taking the field-degree root recovers `height2` away from zero and preserves the projective
+junk value at zero. -/
+theorem arakelovMulHeight_eq_height2 {ι : Type*} [Fintype ι] (y : ι → K) :
+    arakelovMulHeight y ^ ((1 : ℝ) / finrank ℚ K) = if y = 0 then 1 else height2 y := by
+  by_cases hy : y = 0
+  · simp [hy]
+  · rw [ite_eq_right hy, arakelovMulHeight_of_ne_zero hy, ← Real.rpow_natCast,
+      ← Real.rpow_mul (height2_nonneg y)]
+    have hD : (finrank ℚ K : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr finrank_pos.ne'
+    rw [mul_div_cancel₀ _ hD, Real.rpow_one]
+
+/-- A nonzero tuple has Euclidean height at least one. -/
+theorem one_le_height2_of_ne_zero {ι : Type*} [Fintype ι] {y : ι → K} (hy : y ≠ 0) :
+    1 ≤ height2 y := by
+  have hroot := arakelovMulHeight_eq_height2 y
+  rw [ite_eq_right hy] at hroot
+  rw [← hroot]
+  exact Real.one_le_rpow (one_le_arakelovMulHeight y) (by positivity)
+
+/-- The Euclidean height of a nonzero tuple is positive. -/
+theorem height2_pos {ι : Type*} [Fintype ι] {y : ι → K} (hy : y ≠ 0) :
+    0 < height2 y :=
+  zero_lt_one.trans_le (one_le_height2_of_ne_zero hy)
+
+/-- The Euclidean height vanishes exactly on the zero tuple. -/
+@[simp]
+theorem height2_eq_zero_iff {ι : Type*} [Fintype ι] {y : ι → K} :
+    height2 y = 0 ↔ y = 0 := by
+  constructor
+  · intro h
+    by_contra hy
+    exact (height2_pos hy).ne' h
+  · rintro rfl
+    exact height2_zero
+
+/-- Multiplication by a nonzero number-field scalar preserves the degree-normalized Euclidean
+height. -/
+@[simp]
+theorem height2_smul {ι : Type*} [Fintype ι] (y : ι → K) {c : K} (hc : c ≠ 0) :
+    height2 (c • y) = height2 y := by
+  classical
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  have hcy : c • y ≠ 0 := by simp [hc, hy]
+  have h := congrArg (fun z : ℝ ↦ z ^ ((1 : ℝ) / finrank ℚ K))
+    (arakelovMulHeight_smul y hc)
+  rw [arakelovMulHeight_eq_height2, arakelovMulHeight_eq_height2] at h
+  simpa [hy, hcy] using h
+
+/-- The relative Euclidean projective height is unchanged by a bijective reindexing of the
+coordinates. -/
+@[simp]
+theorem arakelovMulHeight_comp_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : ι ≃ ι')
+    (y : ι' → K) : arakelovMulHeight (y ∘ e) = arakelovMulHeight y := by
+  by_cases hy : y = 0
+  · simp [hy]
+  · have hye : y ∘ e ≠ 0 := by
+      obtain ⟨i, hi⟩ := Function.ne_iff.mp hy
+      exact Function.ne_iff.mpr ⟨e.symm i, by simpa using hi⟩
+    rw [arakelovMulHeight_of_ne_zero hye, arakelovMulHeight_of_ne_zero hy,
+      height2_comp_equiv]
+
+@[simp]
+theorem arakelovLogHeight_zero {ι : Type*} [Fintype ι] :
+    arakelovLogHeight (0 : ι → K) = 0 := by
+  simp [arakelovLogHeight]
+
+/-- The multiplicative and logarithmic relative Euclidean heights agree by definition. -/
+theorem arakelovLogHeight_eq_log {ι : Type*} [Fintype ι] (y : ι → K) :
+    arakelovLogHeight y = Real.log (arakelovMulHeight y) := rfl
+
+/-- The relative logarithmic Euclidean height is nonnegative. -/
+theorem zero_le_arakelovLogHeight {ι : Type*} [Fintype ι] (y : ι → K) :
+    0 ≤ arakelovLogHeight y :=
+  Real.log_nonneg (one_le_arakelovMulHeight y)
+
+/-- The relative logarithmic Euclidean height is invariant under nonzero scalar multiplication. -/
+@[simp]
+theorem arakelovLogHeight_smul {ι : Type*} [Fintype ι] (y : ι → K) {c : K} (hc : c ≠ 0) :
+    arakelovLogHeight (c • y) = arakelovLogHeight y := by
+  simp [arakelovLogHeight, hc]
+
+/-- The relative logarithmic height is unchanged by a bijective reindexing. -/
+@[simp]
+theorem arakelovLogHeight_comp_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : ι ≃ ι')
+    (y : ι' → K) : arakelovLogHeight (y ∘ e) = arakelovLogHeight y := by
+  simp [arakelovLogHeight]
+
+/-- The affine multiplicative and logarithmic heights agree by definition. -/
+theorem arakelovLogHeightAff_eq_log {ι : Type*} [Fintype ι] (x : ι → K) :
+    arakelovLogHeightAff x = Real.log (arakelovMulHeightAff x) := rfl
+
+/-- The relative affine Euclidean height is at least one. -/
+theorem one_le_arakelovMulHeightAff {ι : Type*} [Fintype ι] (x : ι → K) :
+    1 ≤ arakelovMulHeightAff x :=
+  one_le_arakelovMulHeight _
+
+/-- The relative logarithmic affine Euclidean height is nonnegative. -/
+theorem zero_le_arakelovLogHeightAff {ι : Type*} [Fintype ι] (x : ι → K) :
+    0 ≤ arakelovLogHeightAff x :=
+  Real.log_nonneg (one_le_arakelovMulHeightAff x)
+
+/-- The relative affine Euclidean height is unchanged by a bijective reindexing. -/
+@[simp]
+theorem arakelovMulHeightAff_comp_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    (e : ι ≃ ι') (x : ι' → K) :
+    arakelovMulHeightAff (x ∘ e) = arakelovMulHeightAff x := by
+  let e' := Equiv.optionCongr e
+  have h : (fun o : Option ι ↦ o.elim 1 (x ∘ e)) =
+      (fun o : Option ι' ↦ o.elim 1 x) ∘ e' := by
+    ext o
+    cases o <;> rfl
+  rw [arakelovMulHeightAff, arakelovMulHeightAff, h, arakelovMulHeight_comp_equiv]
+
+/-- The relative logarithmic affine Euclidean height is unchanged by a bijective reindexing. -/
+@[simp]
+theorem arakelovLogHeightAff_comp_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    (e : ι ≃ ι') (x : ι' → K) :
+    arakelovLogHeightAff (x ∘ e) = arakelovLogHeightAff x := by
+  simp [arakelovLogHeightAff]
+
+@[simp]
+theorem arakelovMulHeightAff_zero {ι : Type*} [Fintype ι] :
+    arakelovMulHeightAff (0 : ι → K) = 1 := by
+  have hy : (fun o : Option ι ↦ o.elim 1 (0 : ι → K)) ≠ 0 := by
+    intro h
+    simpa using congrFun h none
+  rw [arakelovMulHeightAff, arakelovMulHeight_eq hy]
+  have hfin (v : FinitePlace K) :
+      ⨆ o : Option ι, v (o.elim 1 (0 : ι → K)) = 1 := by
+    apply le_antisymm
+    · refine ciSup_le fun o ↦ ?_
+      cases o <;> simp
+    · exact Finite.le_ciSup_of_le none (by simp)
+  simp_rw [hfin]
+  simp [Fintype.sum_option]
+
+@[simp]
+theorem arakelovLogHeightAff_zero {ι : Type*} [Fintype ι] :
+    arakelovLogHeightAff (0 : ι → K) = 0 := by
+  simp [arakelovLogHeightAff]
+
+end TauCeti
