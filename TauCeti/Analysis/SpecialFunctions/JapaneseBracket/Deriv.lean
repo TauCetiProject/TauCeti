@@ -20,8 +20,10 @@ like the bracket power of order `2r - k`:
 
 Each derivative gains one power of `⟨x⟩⁻¹`; this is the statement that `⟨x⟩ ^ (2r)` is a symbol of
 order `2r` in Hörmander's sense. The same holds for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`, of order `2r + 1`.
-These are the estimates that make the symbols of the Bessel potentials, and of the derivatives
-composed with them, multipliers of Mihlin type, and so bounded on `Lᵖ` for `1 < p < ∞`.
+For `r ≤ 0`, and for `r ≤ -1 / 2` in the case of `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`, these symbols have
+nonpositive order. Those are the estimates that make the symbols of the Bessel potentials of
+nonpositive order, and of first derivatives composed with the Bessel potential of order `-1`,
+multipliers of Mihlin type, and so bounded on `Lᵖ` for `1 < p < ∞`.
 
 The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times the linear map
 `2r ⟪x, ·⟫`, and a smooth function times a continuous linear map gains half a power of
@@ -44,10 +46,11 @@ by induction on `k`.
 
 public section
 
-variable {E G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup G]
-  [NormedSpace ℝ G]
+variable {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 namespace ContinuousLinearMap
+
+variable [NormedSpace ℝ E]
 
 /-- A continuous linear map grows like `(1 + ‖x‖ ^ 2) ^ (1 / 2)`, its derivative is constant, and
 its higher derivatives vanish: `‖D^j L x‖ ≤ ‖L‖ (1 + ‖x‖ ^ 2) ^ ((1 - j) / 2)` for every `j`. -/
@@ -60,9 +63,11 @@ theorem norm_iteratedFDeriv_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) (j : ℕ
     exact Real.le_sqrt_of_sq_le (by linarith)
   · rw [norm_iteratedFDeriv_one, L.fderiv]
     simp
-  · have h : iteratedFDeriv ℝ (j + 2) L x = 0 := by
-      rw [← norm_eq_zero, ← norm_iteratedFDeriv_fderiv, show fderiv ℝ L = fun _ ↦ L from
-        funext fun _ ↦ L.fderiv, iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
+  · -- The derivative of `L` is the constant map `L`, whose derivatives of positive order vanish.
+    have hL : fderiv ℝ L = fun _ ↦ L := funext fun _ ↦ L.fderiv
+    have h : iteratedFDeriv ℝ (j + 2) L x = 0 := by
+      rw [← norm_eq_zero, ← norm_iteratedFDeriv_fderiv, hL,
+        iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
       simp
     rw [h, norm_zero]
     positivity
@@ -102,6 +107,8 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
 end ContinuousLinearMap
 
 namespace TauCeti
+
+variable [InnerProductSpace ℝ E]
 
 /-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`. -/
 theorem hasFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :

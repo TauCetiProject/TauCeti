@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Bessel-potential regularity from first derivatives
@@ -128,17 +129,6 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     mul_comm, ← fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) hg,
     ← besselPotential, hf', hg']
 
-/-- For `t > 0`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`. -/
-private theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
-    (1 + t ^ 2) ^ (-(k : ℝ) / 2) ≤ 1 / t ^ k := by
-  have hpow : t ^ k ≤ (1 + t ^ 2) ^ ((k : ℝ) / 2) := by
-    calc t ^ k = (t ^ 2) ^ ((k : ℝ) / 2) := by
-          rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul ht.le]
-          ring_nf
-      _ ≤ _ := Real.rpow_le_rpow (by positivity) (by linarith) (by positivity)
-  rw [neg_div, Real.rpow_neg (by positivity), ← one_div]
-  exact one_div_le_one_div_of_le (by positivity) hpow
-
 /-- A real symbol of order `0` in Hörmander's sense, `‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ (-k / 2)`,
 maps `H^{s,p}` to `H^{s,p}` for `1 < p < ∞`. -/
 private theorem MemSobolev.fourierMultiplierCLM_ofReal (hp : 1 < p) (hp_top : p ≠ ∞)
@@ -159,13 +149,13 @@ private theorem MemSobolev.fourierMultiplierCLM_ofReal (hp : 1 < p) (hp_top : p 
         (hC k ξ).trans (by gcongr; exact Real.le_norm_self _)
     _ ≤ _ := by
         gcongr
-        exact one_add_sq_rpow_neg_le (norm_pos_iff.mpr hξ) k
+        exact Real.one_add_sq_rpow_neg_le (norm_pos_iff.mpr hξ) k
 
 /-- For `1 < p < ∞`, `H^{s,p}` is contained in `H^{s',p}` whenever `s' ≤ s`. For `p = 2` this is
 `MemSobolev.mono`. -/
 theorem MemSobolev.mono_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s)
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s' p f := by
-  rw [show s' = (s' - s) + s by ring, ← memSobolev_besselPotential_iff, besselPotential]
+  rw [← sub_add_cancel s' s, ← memSobolev_besselPotential_iff, besselPotential]
   refine hf.fourierMultiplierCLM_ofReal hp hp_top (by fun_prop) fun k ↦ ?_
   -- The symbol `(1 + ‖x‖ ^ 2) ^ ((s' - s) / 2)` has nonpositive order.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E)
