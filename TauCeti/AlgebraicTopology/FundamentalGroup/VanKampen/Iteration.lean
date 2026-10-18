@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
-public import TauCeti.Topology.Sets.PartialUnion
+public import Mathlib.Order.SetAccumulate
 
 import TauCeti.AlgebraicTopology.FundamentalGroup.Category
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
@@ -16,7 +16,7 @@ import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 The based van Kampen theorem may be applied while a space is assembled one cover member at a
 time.  This file states the two-set theorem with `A ∪ B`, rather than a previously fixed ambient
-space, as its target.  It then applies that form to the partial unions of an ordered family.
+space, as its target.  It then applies that form to the accumulated unions of an ordered family.
 
 Consequently, if the relevant members, partial unions, and overlaps are path connected, the
 fundamental group after adjoining the next member is the amalgamated free product of the previous
@@ -83,35 +83,30 @@ theorem isPushout_fundamentalGroup_union (hAopen : IsOpen A) (hBopen : IsOpen B)
   have hrange {s : Set X} (hs : s ⊆ A ∪ B) :
       s ⊆ range (Subtype.val : P → X) := by
     rwa [Subtype.range_coe]
-  let eA : A ≃ₜ A' :=
+  let subsetHomeomorph (s : Set X) (hs : s ⊆ A ∪ B) :
+      s ≃ₜ ((↑) : P → X) ⁻¹' s :=
     (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
-      (hrange subset_union_left)).symm
-  let eB : B ≃ₜ B' :=
-    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
-      (hrange subset_union_right)).symm
+      (hrange hs)).symm
+  have subsetHomeomorph_coe (s : Set X) (hs : s ⊆ A ∪ B) (y : s) :
+      ((((subsetHomeomorph s hs y : ((↑) : P → X) ⁻¹' s) : P) : X)) = y := by
+    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
+      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
+      (hrange hs) (subsetHomeomorph s hs y)
+    change (((subsetHomeomorph s hs).symm (subsetHomeomorph s hs y) : s) : X) =
+      (((subsetHomeomorph s hs y : ((↑) : P → X) ⁻¹' s) : P) : X) at h
+    simpa only [Homeomorph.symm_apply_apply] using h.symm
+  let eA : A ≃ₜ A' := subsetHomeomorph A subset_union_left
+  let eB : B ≃ₜ B' := subsetHomeomorph B subset_union_right
   let eAB : ↥(A ∩ B) ≃ₜ ↥(A' ∩ B') :=
-    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
-      (hrange (inter_subset_left.trans subset_union_left))).symm
+    subsetHomeomorph (A ∩ B) (inter_subset_left.trans subset_union_left)
   let eP : P ≃ₜ P := Homeomorph.refl P
   have eA_coe (y : A) : ((((eA y : A') : P) : X)) = y := by
-    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
-      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
-      (hrange subset_union_left) (eA y)
-    change ((eA.symm (eA y) : A) : X) = (((eA y : A') : P) : X) at h
-    simpa only [eA.symm_apply_apply] using h.symm
+    exact subsetHomeomorph_coe A subset_union_left y
   have eB_coe (y : B) : ((((eB y : B') : P) : X)) = y := by
-    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
-      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
-      (hrange subset_union_right) (eB y)
-    change ((eB.symm (eB y) : B) : X) = (((eB y : B') : P) : X) at h
-    simpa only [eB.symm_apply_apply] using h.symm
+    exact subsetHomeomorph_coe B subset_union_right y
   have eAB_coe (y : ↥(A ∩ B)) : ((((eAB y : ↥(A' ∩ B')) : P) : X)) = y := by
-    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
-      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
-      (hrange (inter_subset_left.trans subset_union_left)) (eAB y)
-    change ((eAB.symm (eAB y) : ↥(A ∩ B)) : X) =
-      (((eAB y : ↥(A' ∩ B')) : P) : X) at h
-    simpa only [eAB.symm_apply_apply] using h.symm
+    exact subsetHomeomorph_coe (A ∩ B)
+      (inter_subset_left.trans subset_union_left) y
   have heA : eA ⟨x, hxA⟩ = ⟨p, hpA⟩ := by
     apply Subtype.ext
     apply Subtype.ext
@@ -182,34 +177,36 @@ section Successive
 variable [TopologicalSpace X]
 variable (U : ℕ → Set X) (x : X)
 
-/-- **Successive van Kampen pushout.** The fundamental group of the union of the first `n + 2`
-members is the amalgamated free product of the fundamental group of the first `n + 1` members
+/-- **Successive van Kampen pushout.** The fundamental group of the union accumulated through
+index `n + 1` is the amalgamated free product of the fundamental group accumulated through `n`
 and that of `U (n + 1)`, over their intersection.
 
 Applying this theorem for consecutive values of `n` is the ordered finite-cover iteration of van
 Kampen.  Its path-connectedness assumptions mention precisely the three spaces occurring at this
 step, while openness is required only through the next member. -/
-theorem isPushout_fundamentalGroup_partialUnion_succ (n : ℕ)
+theorem isPushout_fundamentalGroup_accumulate_succ (n : ℕ)
     (hUopen : ∀ i ≤ n + 1, IsOpen (U i))
-    (hPartial : IsPathConnected (partialUnion U n))
+    (hPartial : IsPathConnected (Set.accumulate U n))
     (hNext : IsPathConnected (U (n + 1)))
-    (hInter : IsPathConnected (partialUnion U n ∩ U (n + 1)))
-    (hxPartial : x ∈ partialUnion U n) (hxNext : x ∈ U (n + 1)) :
+    (hInter : IsPathConnected (Set.accumulate U n ∩ U (n + 1)))
+    (hxPartial : x ∈ Set.accumulate U n) (hxNext : x ∈ U (n + 1)) :
     IsPushout
       (GrpCat.ofHom (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left)
         (⟨x, hxPartial, hxNext⟩ :
-          ↥(partialUnion U n ∩ U (n + 1)))))
+          ↥(Set.accumulate U n ∩ U (n + 1)))))
       (GrpCat.ofHom (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
         (⟨x, hxPartial, hxNext⟩ :
-          ↥(partialUnion U n ∩ U (n + 1)))))
+          ↥(Set.accumulate U n ∩ U (n + 1)))))
       (GrpCat.ofHom (FundamentalGroup.map
         (ContinuousMap.inclusion subset_union_left)
-        (⟨x, hxPartial⟩ : partialUnion U n)))
+        (⟨x, hxPartial⟩ : Set.accumulate U n)))
       (GrpCat.ofHom (FundamentalGroup.map
         (ContinuousMap.inclusion subset_union_right)
         (⟨x, hxNext⟩ : U (n + 1)))) := by
   exact isPushout_fundamentalGroup_union
-    (isOpen_partialUnion fun i hi ↦ hUopen i (hi.trans n.le_succ))
+    (by
+      rw [Set.accumulate_def]
+      exact isOpen_biUnion fun i hi ↦ hUopen i (le_trans hi n.le_succ))
     (hUopen (n + 1) le_rfl) hPartial hNext hInter hxPartial hxNext
 
 end Successive
