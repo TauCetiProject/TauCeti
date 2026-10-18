@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import Mathlib.Dynamics.Flow
 
 /-!
 # Equivariant maps of C⋆-algebra actions
@@ -27,34 +26,6 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 public section
 
 noncomputable section
-
-namespace TauCeti.CStarAction
-
-variable {G H A B C : Type*}
-  [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
-  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
-
-end TauCeti.CStarAction
-
-namespace IsInvariant
-
-variable {G A : Type*} {φ : G → A → A} {s : Set A}
-
-/-- An invariant subset contains the image of each of its elements under the action. -/
-theorem apply_mem (hs : _root_.IsInvariant φ s) (g : G) {a : A} (ha : a ∈ s) : φ g a ∈ s :=
-  hs g ha
-
-variable [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-  {α : TauCeti.CStarAction G A}
-
-/-- Membership in an invariant subset is unchanged by the action. -/
-@[simp]
-theorem apply_mem_iff (hs : _root_.IsInvariant (fun g a ↦ α g a) s)
-    (g : G) (a : A) : α g a ∈ s ↔ a ∈ s := by
-  refine ⟨fun h ↦ ?_, fun ha ↦ hs g ha⟩
-  simpa only [TauCeti.CStarAction.inv_apply_apply] using hs g⁻¹ h
-
-end IsInvariant
 
 namespace TauCeti.CStarAction
 
