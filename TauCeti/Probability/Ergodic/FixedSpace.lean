@@ -85,6 +85,27 @@ theorem mem_fixedSpace_iterate {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
 
 end Generic
 
+section CompositionIsometry
+
+variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
+  [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure Ω}
+
+/-- The map underlying Mathlib's `Lᵖ` composition isometry is Mathlib's composition operator
+`MeasureTheory.Lp.compMeasurePreserving`. This is the bridge between the statements phrased with
+the isometry, such as the mean ergodic theorem, and the lemmas about representatives, which are
+phrased with `MeasureTheory.Lp.compMeasurePreserving`. Together with Mathlib's simp lemma
+`LinearIsometry.coe_toContinuousLinearMap` it also normalizes the continuous linear map the
+isometry induces. -/
+@[simp]
+theorem coe_compMeasurePreservingₗᵢ (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
+    ⇑(Lp.compMeasurePreservingₗᵢ 𝕜 T hT) =
+      ⇑(Lp.compMeasurePreserving (E := E) (p := p) T hT) := by
+  funext g
+  exact compMeasurePreservingₗ_apply T hT g
+
+end CompositionIsometry
+
 section RealOrder
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
@@ -92,7 +113,7 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Type*} [MeasurableSpace Ω] {μ
 /-- The `Lᵖ` composition isometry of a measure-preserving map is monotone. -/
 theorem compMeasurePreservingₗᵢ_monotone (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     Monotone (Lp.compMeasurePreservingₗᵢ ℝ T hT : Lp ℝ p μ → Lp ℝ p μ) := by
-  change Monotone fun f => Lp.compMeasurePreserving T hT f
+  rw [coe_compMeasurePreservingₗᵢ]
   intro f g hfg
   rw [← Lp.coeFn_le] at hfg ⊢
   have hfgT := hT.quasiMeasurePreserving.tendsto_ae hfg
@@ -114,19 +135,6 @@ section Complete
 variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
   [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure Ω}
-
-/-- The map underlying Mathlib's `Lᵖ` composition isometry is Mathlib's composition operator
-`MeasureTheory.Lp.compMeasurePreserving`. This is the bridge between the statements phrased with
-the isometry, such as the mean ergodic theorem, and the lemmas about representatives, which are
-phrased with `MeasureTheory.Lp.compMeasurePreserving`. Together with Mathlib's simp lemma
-`LinearIsometry.coe_toContinuousLinearMap` it also normalizes the continuous linear map the
-isometry induces. -/
-@[simp]
-theorem coe_compMeasurePreservingₗᵢ (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    ⇑(Lp.compMeasurePreservingₗᵢ 𝕜 T hT) =
-      ⇑(Lp.compMeasurePreserving (E := E) (p := p) T hT) := by
-  funext g
-  exact compMeasurePreservingₗ_apply T hT g
 
 /-- The fixed space is the equalizer of the continuous `Lᵖ` composition operator and the
 identity. -/
