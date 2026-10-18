@@ -5,21 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients
 public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
 # Weak compactness of integral measures
 
-Integral measures on a profinite space form a compact space for the weak topology of
+Integral measures on a compact space form a compact space for the weak topology of
 integration against continuous integral tests. Evaluation embeds them as a closed subset of
 the product of copies of `ℤ_[p]` indexed by test functions: its image consists exactly of the
-linear functions that are `1`-Lipschitz. The uniform contraction bound follows from extension
-of coefficients to `ℚ_[p]`, whose operator norm is at most one.
+linear functions that are `1`-Lipschitz. The uniform contraction bound follows by dividing a
+nonzero test function by a value of maximal norm and using `ℤ_[p]`-linearity.
 
-This supplies weak compactness without a countability hypothesis on the profinite space.
+This supplies weak compactness without a countability hypothesis on the compact space.
 No norm or topology instance on measures is installed.
 
 ## References
@@ -35,28 +35,37 @@ open _root_.AbstractMeasure
 
 namespace TauCeti.AbstractMeasure
 
-variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-  [TotallyDisconnectedSpace X] {p : ℕ} [Fact p.Prime]
+variable {X : Type*} [TopologicalSpace X] [CompactSpace X] {p : ℕ} [Fact p.Prime]
 
 /-- An integral measure contracts the supremum norm of its test functions. -/
 theorem norm_integral_apply_le (μ : D(X, ℤ_[p])) (f : C(X, ℤ_[p])) :
     ‖μ f‖ ≤ ‖f‖ := by
-  let j : ℤ_[p] →+* ℚ_[p] := PadicInt.Coe.ringHom
-  have hj : ∀ a, ‖j a‖ ≤ 1 := by simpa [j] using PadicInt.norm_le_one
-  have hjc : Continuous j := continuous_subtype_val
-  let g : C(X, ℚ_[p]) := (⟨j, hjc⟩ : C(ℤ_[p], ℚ_[p])).comp f
-  have hg : ‖g‖ ≤ ‖f‖ := by
-    refine (ContinuousMap.norm_le _ (norm_nonneg _)).mpr fun x ↦ ?_
-    simpa [g, j] using f.norm_coe_le_norm x
-  calc
-    ‖μ f‖ = ‖extendCoefficients j hj μ g‖ := by
-      simp only [g, extendCoefficients_apply_comp j μ hj hjc]
-      simp [j]
-    _ ≤ 1 * ‖g‖ := by
-      simpa only [coe_toCLMEquiv] using
-        (toCLMEquiv (extendCoefficients j hj μ)).le_of_opNorm_le
-          (norm_toCLMEquiv_extendCoefficients_le j hj μ) g
-    _ ≤ ‖f‖ := by simpa using hg
+  by_cases hf : f = 0
+  · simp [hf]
+  cases isEmpty_or_nonempty X with
+  | inl h => exact (hf (Subsingleton.elim _ _)).elim
+  | inr h =>
+    obtain ⟨x, _, hx⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty
+      f.continuous.norm.continuousOn
+    have ha : f x ≠ 0 := by
+      intro ha
+      apply hf
+      ext y
+      exact norm_eq_zero.mp (le_antisymm (by simpa [ha] using hx (Set.mem_univ y))
+        (norm_nonneg _))
+    have ha' : (f x : ℚ_[p]) ≠ 0 := PadicInt.coe_ne_zero.mpr ha
+    have hdiv (y : X) : ‖(f y : ℚ_[p]) / (f x : ℚ_[p])‖ ≤ 1 := by
+      rw [norm_div, div_le_one (norm_pos_iff.mpr ha')]
+      exact hx (Set.mem_univ y)
+    let g : C(X, ℤ_[p]) := ⟨fun y ↦ ⟨(f y : ℚ_[p]) / (f x : ℚ_[p]), hdiv y⟩,
+      ((continuous_subtype_val.comp f.continuous).div_const _).subtype_mk _⟩
+    have hfg : f = f x • g := by
+      ext y
+      exact (mul_div_cancel₀ _ ha').symm
+    calc
+      ‖μ f‖ = ‖f x‖ * ‖μ g‖ := by rw [congrArg μ hfg, map_smul, norm_smul]
+      _ ≤ ‖f x‖ * 1 := mul_le_mul_of_nonneg_left (PadicInt.norm_le_one _) (norm_nonneg _)
+      _ ≤ ‖f‖ := by simpa using f.norm_coe_le_norm x
 
 /-- Integral measures are uniformly `1`-Lipschitz on the space of integral tests. -/
 theorem lipschitzWith_integral (μ : D(X, ℤ_[p])) : LipschitzWith 1 μ := by
@@ -84,7 +93,7 @@ theorem isClosedEmbedding_integral_eval_weak :
   rw [hrange]
   exact (LinearMap.isClosed_range_coe _ _ _).inter (isClosed_setOfPred_lipschitzWith 1)
 
-/-- Integral measures on any profinite space are compact for the weak topology.
+/-- Integral measures on any compact space are compact for the weak topology.
 The domain need not have a countable basis. -/
 theorem compactSpace_integralMeasures_weak :
     @CompactSpace D(X, ℤ_[p]) (WeakTopology (X := X) (R := ℤ_[p]) (E := ℤ_[p])) := by

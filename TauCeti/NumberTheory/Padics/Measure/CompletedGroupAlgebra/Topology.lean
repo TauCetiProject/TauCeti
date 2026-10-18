@@ -33,7 +33,7 @@ open _root_.AbstractMeasure
 namespace TauCeti.AbstractMeasure
 
 variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ]
-  [CompactSpace Γ] [T2Space Γ] [TotallyDisconnectedSpace Γ] {p : ℕ} [Fact p.Prime]
+  [CompactSpace Γ] [TotallyDisconnectedSpace Γ] {p : ℕ} [Fact p.Prime]
 
 /-- The canonical integral-measure algebra equivalence is a homeomorphism for the weak and
 inverse-limit topologies. -/
