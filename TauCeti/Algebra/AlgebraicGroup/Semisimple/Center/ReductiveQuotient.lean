@@ -108,7 +108,7 @@ theorem semisimple_of_kernel_eq_center
 
 /-- The quotient of a reductive group by its center, represented by the Hopf algebra of
 center-coinvariant functions, is semisimple in characteristic zero. -/
-theorem semisimple_coinvariants_centerDefiningIdeal
+theorem semisimple_centerQuotient
     (hG : reductiveCommHopfAlgProperty k G) :
     semisimpleCommHopfAlgProperty k hG.centerQuotient :=
   hG.semisimple_of_kernel_eq_center hG.centerQuotientι
