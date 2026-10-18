@@ -39,8 +39,8 @@ variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [ConnectedSpace (PrimeSpectrum 
 
 attribute [local instance] Derivation.adjointComodule
 
-/-- The Lie algebra of the scheme-theoretic center of a connected affine group in
-characteristic zero is the center of the tangent Lie algebra. -/
+/-- The Lie algebra of the scheme-theoretic center of a connected affine group over an
+algebraically closed field of characteristic zero is the center of the tangent Lie algebra. -/
 @[simp]
 theorem lieSubalgebra_centerDefiningIdeal_eq_center :
     (CommHopfAlgCat.centerDefiningIdeal H.obj).lieSubalgebra (B := k) =

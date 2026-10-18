@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Lie
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Center.Lie
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.RepresentableQuotient
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
@@ -25,8 +25,7 @@ import Mathlib.Algebra.Lie.CartanCriterion
 Over a field of characteristic zero, a faithfully flat homomorphism from a reductive
 affine group with kernel its full scheme-theoretic center has semisimple target.
 In particular, the Hopf algebra of center-coinvariant functions represents a semisimple
-group. This supplies the semisimplicity part of constructing the adjoint form; triviality
-of the quotient's scheme-theoretic center is not asserted here.
+group.
 
 Over an algebraically closed field, the quotient differential is surjective with kernel
 the center of the source Lie algebra, which is its solvable radical. The target Lie algebra
@@ -34,7 +33,6 @@ therefore has zero radical. Scalar extension of the given homomorphism and its k
 gives the result over the original field, without a splitting hypothesis.
 
 The proof uses `Center.Lie`, `Reductive.Lie`, `LieIdeal.radical_map_eq`, and Cartier's theorem.
-The affine quotient is the existing normal-coinvariant construction, not a new model.
 
 ## References
 
@@ -108,22 +106,12 @@ theorem semisimple_of_kernel_eq_center
   exact semisimpleCommHopfAlgProperty.of_baseChange
     (semisimple_of_kernel_eq_center_of_isAlgClosed hG.algebraicClosureBaseChange fK hfK hkerK)
 
-/-- The normal-coinvariant affine quotient of a reductive group by its center is
-semisimple in characteristic zero. This is the actual quotient coordinate Hopf algebra,
-over the original field. -/
+/-- The quotient of a reductive group by its center, represented by the Hopf algebra of
+center-coinvariant functions, is semisimple in characteristic zero. -/
 theorem semisimple_coinvariants_centerDefiningIdeal
     (hG : reductiveCommHopfAlgProperty k G) :
-    let hC := (CommHopfAlgCat.isCentral_centerDefiningIdeal G.obj).isNormal
-    letI : Algebra.Smooth k G := hG.smooth
-    letI : Algebra.IsGeometricallyReduced k G := isGeometricallyReduced_of_smooth k G
-    let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
-      ⟨CommHopfAlgCat.coinvariants hC, hC.finiteType_coinvariants⟩
-    semisimpleCommHopfAlgProperty k Q := by
-  intro hC Q
-  let _ : Algebra.Smooth k G := hG.smooth
-  let _ : Algebra.IsGeometricallyReduced k G := isGeometricallyReduced_of_smooth k G
-  exact hG.semisimple_of_kernel_eq_center (Q := Q) (CommHopfAlgCat.coinvariantsι hC)
-    (CommHopfAlgCat.faithfullyFlat_coinvariantsι hC)
-    (CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hC)
+    semisimpleCommHopfAlgProperty k hG.centerQuotient :=
+  hG.semisimple_of_kernel_eq_center hG.centerQuotientι
+    hG.faithfullyFlat_centerQuotientι hG.kernelHopfIdeal_centerQuotientι_eq
 
 end TauCeti.reductiveCommHopfAlgProperty
