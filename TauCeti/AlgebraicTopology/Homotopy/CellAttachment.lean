@@ -59,24 +59,7 @@ open CategoryTheory Topology Set TauCeti
 
 namespace HomotopicalAlgebra.AttachCells
 
-variable {X Y : TopCat.{u}} {f : X ⟶ Y} {N : Type v}
-
-/-- The map induced on homotopy groups by an embedding is the map induced by the inclusion of its
-range, read through the homeomorphism of the source with the range. -/
-private lemma homotopyGroupMap_eq_comp (hf : IsEmbedding f) (x : X) :
-    (HomotopyGroup.map (N := N) (x := x) f.hom rfl) =
-      HomotopyGroup.homeomorphEquivOfEq (Homeomorph.Set.univ Y) rfl ∘
-        HomotopyGroup.map (N := N)
-          (x := hf.toHomeomorph x)
-          (ContinuousMap.inclusion (subset_univ (range f))) rfl ∘
-        HomotopyGroup.homeomorphEquiv
-          (hf.toHomeomorph) x := by
-  funext p
-  simp only [Function.comp_apply, HomotopyGroup.homeomorphEquivOfEq_apply,
-    HomotopyGroup.homeomorphEquiv_apply, HomotopyGroup.map_comp_apply]
-  exact HomotopyGroup.map_congr (ContinuousMap.ext fun _ ↦ rfl) _ _ _
-
-variable [T2Space X] [Finite N] {n : ℕ}
+variable {X Y : TopCat.{u}} {f : X ⟶ Y} {N : Type v} [T2Space X] [Finite N] {n : ℕ}
   (c : AttachCells.{u} (TopCat.RelativeCWComplex.basicCell (n + 1)) f)
 include c
 
@@ -87,7 +70,8 @@ theorem surjective_homotopyGroupMap (hN : Nat.card N ≤ n) (x : X) :
     Function.Surjective (HomotopyGroup.map (N := N) (x := x) f.hom rfl) := by
   let := c.toRelativeCWComplex.toRelCWComplex
   have := c.toRelativeCWComplex.t2Space
-  rw [homotopyGroupMap_eq_comp c.toRelativeCWComplex.isClosedEmbedding.isEmbedding x]
+  rw [HomotopyGroup.map_eq_comp_of_isEmbedding
+    c.toRelativeCWComplex.isClosedEmbedding.isEmbedding x]
   exact (Equiv.surjective _).comp ((surjective_homotopyGroupMap_skeletonLT hN
     (c.skeletonLT_toRelCWComplex le_rfl) (subset_univ _) _).comp (Equiv.surjective _))
 
@@ -99,7 +83,8 @@ theorem bijective_homotopyGroupMap (hN : Nat.card N < n) (x : X) :
   refine ⟨?_, c.surjective_homotopyGroupMap hN.le x⟩
   let := c.toRelativeCWComplex.toRelCWComplex
   have := c.toRelativeCWComplex.t2Space
-  rw [homotopyGroupMap_eq_comp c.toRelativeCWComplex.isClosedEmbedding.isEmbedding x]
+  rw [HomotopyGroup.map_eq_comp_of_isEmbedding
+    c.toRelativeCWComplex.isClosedEmbedding.isEmbedding x]
   exact (Equiv.injective _).comp ((injective_homotopyGroupMap_skeletonLT hN
     (c.skeletonLT_toRelCWComplex le_rfl) (subset_univ _) _).comp (Equiv.injective _))
 

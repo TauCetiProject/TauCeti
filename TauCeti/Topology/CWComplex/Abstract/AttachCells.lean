@@ -54,6 +54,15 @@ This is how cells are attached to kill homotopy groups.
   Chapter 0 for attaching cells, and Section 4.1 for attaching cells to kill homotopy groups.
 * R. Fritsch and R. Piccinini, *Cellular Structures in Topology*, Cambridge University Press,
   1990, for the categorical definition of relative CW complexes.
+
+## Implementation notes
+
+The stages and their colimit follow the pattern of Mathlib's
+`CategoryTheory.TransfiniteCompositionOfShape.iic`, which restricts a transfinite composition
+along a monotone reindexing: here the fixed diagram `ComposableArrows.mk₁ f` over `Fin 2` is
+reindexed along the monotone step function `TauCeti.attachStageIndex n`, its colimit cocone comes
+from the terminal object `Fin.last 1` (`CategoryTheory.Limits.colimitOfDiagramTerminal`), and it
+is transported along the final reindexing by `CategoryTheory.Functor.Final.isColimitWhiskerEquiv`.
 -/
 
 public section
@@ -72,11 +81,11 @@ target for `n < k`. -/
 @[expose] def attachStageIndex (n k : ℕ) : Fin 2 := if k ≤ n then 0 else 1
 
 /-- Up to stage `n`, the index is `0`. -/
-lemma attachStageIndex_of_le {n k : ℕ} (h : k ≤ n) : attachStageIndex n k = 0 := by
+@[simp] lemma attachStageIndex_of_le {n k : ℕ} (h : k ≤ n) : attachStageIndex n k = 0 := by
   simp [attachStageIndex, h]
 
 /-- After stage `n`, the index is `1`. -/
-lemma attachStageIndex_of_lt {n k : ℕ} (h : n < k) : attachStageIndex n k = 1 := by
+@[simp] lemma attachStageIndex_of_lt {n k : ℕ} (h : n < k) : attachStageIndex n k = 1 := by
   simp [attachStageIndex, not_le.2 h]
 
 /-- The index is monotone in the stage. -/
@@ -111,7 +120,7 @@ abbrev attachStageFunctor : ℕ ⥤ C :=
 private lemma isIso_mk₁_map_of_eq {a b : Fin 2} (hab : a ≤ b) (h : a = b) :
     IsIso ((ComposableArrows.mk₁ f).map (homOfLE hab)) := by
   subst h
-  rw [show homOfLE hab = 𝟙 a from Subsingleton.elim _ _, CategoryTheory.Functor.map_id]
+  rw [Subsingleton.elim (homOfLE hab) (𝟙 a), CategoryTheory.Functor.map_id]
   infer_instance
 
 /-- Away from stage `n`, the steps of `attachStageFunctor f n` are isomorphisms. -/
@@ -157,7 +166,9 @@ variable {X Y : TopCat.{u}} {f : X ⟶ Y} {n : ℕ}
 `X` by attaching `n`-disks along `f`, then `f` is a relative CW complex whose stages are `X` up to
 stage `n` and `Y` afterwards; the cells attached at stage `n` are those of `c`, and no cells are
 attached at the other stages. The body is exposed so that the stages are those of
-`TauCeti.attachStageFunctor f n` by definition. -/
+`TauCeti.attachStageFunctor f n` by definition, which the statements about its attached cells
+need in order to typecheck; the stages and their inclusions into `Y` are characterised by
+`toRelativeCWComplex_F` and `toRelativeCWComplex_incl_app`. -/
 @[expose] def toRelativeCWComplex : TopCat.RelativeCWComplex.{u} f where
   F := attachStageFunctor f n
   isoBot := Iso.refl _
@@ -171,6 +182,16 @@ attached at the other stages. The body is exposed so that the stages are those o
     else
       have := isIso_attachStageFunctor_map f n hk
       ofIsIso _ _
+
+/-- The stages of `c.toRelativeCWComplex` are those of `TauCeti.attachStageFunctor f n`. -/
+lemma toRelativeCWComplex_F : c.toRelativeCWComplex.F = attachStageFunctor f n := rfl
+
+/-- The inclusion of stage `k` of `c.toRelativeCWComplex` into `Y` is the image under
+`ComposableArrows.mk₁ f` of the morphism to the last object of `Fin 2`. -/
+lemma toRelativeCWComplex_incl_app (k : ℕ) :
+    c.toRelativeCWComplex.incl.app k =
+      (ComposableArrows.mk₁ f).map ((Fin.isTerminalLast 1).from (attachStageIndex n k)) :=
+  rfl
 
 /-- At stage `n`, the cells of `c.toRelativeCWComplex` are attached as in `c`. -/
 lemma toRelativeCWComplex_attachCells_self :
