@@ -117,10 +117,11 @@ coefficient ring need not be commutative. -/
 theorem triple_product_of_mul_self_eq_zero (hEE : E * E = 0) (hEFE : E * F * E = E) {α β : B}
     (hαβ : α * β = -1) :
     (1 + α • E) * (1 + β • F) * (1 + α • E) = 1 + α • E + β • F - E * F - F * E := by
-  -- Bilinearity exchanges the two scalar actions on a product with the identity.
+  -- Right multiplication by `β • 1` exchanges the two scalar actions.
   have hβα (a : A) : (β * α) • a = -a := by
-    rw [← one_mul a, ← smul_mul_smul_comm, mul_smul_comm, smul_mul_assoc,
-      one_mul, smul_smul, hαβ, neg_one_smul]
+    have h := congrArg (α • ·) (mul_smul_one β a)
+    rw [← smul_mul_assoc] at h
+    simpa only [mul_smul_one, smul_smul, hαβ, neg_one_smul] using h
   -- Expand the product and collect every coefficient in front of a monomial in `E` and `F`, ...
   simp only [add_mul, mul_add, smul_add, one_mul, mul_one, smul_mul_assoc, mul_smul_comm,
     smul_smul]
