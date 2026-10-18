@@ -15,15 +15,14 @@ public import TauCeti.Topology.Covering.Clopen
 
 Let `p : E → ℂ ∖ {0, 1}` be a covering map with finite fibres, and let
 `TauCeti.FilledCover.fillMap p : FilledCover p → OnePoint ℂ` be its extension to the filled
-cover, sending the added point of each component of `p ⁻¹' D_q*` to its puncture `q`. This file
-proves the two local properties of `fillMap p` that make it a branched cover with branch values in
-`{0, 1, ∞}`:
-
-* over the complement of the three marked points it is a covering map, whose fibre over a point
-  `z` of `ℂ ∖ {0, 1}` is the fibre of `p` over `z`;
-* at the added point of a component `i`, it is `w ↦ w ^ e` for `e = FilledCover.degree p i`, in
-  the chart of the filled cover centred at that point and the inverse of the standard sphere
-  coordinate `TauCeti.ThricePuncturedSphere.Puncture.sphereCoordInv` at the puncture.
+cover, sending the added point of each component of `p ⁻¹' D_q*` to its puncture `q`. Over the
+complement of the three marked points `fillMap p` is a covering map, whose fibre over a point `z`
+of `ℂ ∖ {0, 1}` is the fibre of `p` over `z` (`TauCeti.FilledCover.isCoveringMapOn_fillMap`,
+`TauCeti.FilledCover.fillMap_preimage_toOnePoint`). This file proves the remaining local property
+that makes it a branched cover with branch values in `{0, 1, ∞}`: at the added point of a
+component `i`, it is `w ↦ w ^ e` for `e = FilledCover.degree p i`, in the chart of the filled
+cover centred at that point and the inverse of the standard sphere coordinate
+`TauCeti.ThricePuncturedSphere.Puncture.sphereCoordInv` at the puncture.
 
 Consequently every connected degree-`n` cover `C` of `ℂ ∖ {0, 1}` fills to a topological branched
 cover of degree `n` (`TauCeti.ConnectedCover.toTopBranchedCover`), whose local degree at the added
@@ -35,10 +34,6 @@ of connected degree-`n` covers of `ℂ ∖ {0, 1}` is surjective
 
 ## Main results
 
-* `TauCeti.FilledCover.fillMap_preimage_toOnePoint`: the fibre of `fillMap p` over a point of
-  `ℂ ∖ {0, 1}` is the fibre of `p`.
-* `TauCeti.FilledCover.isCoveringMapOn_fillMap`: off the marked points, `fillMap p` is a
-  covering map.
 * `TauCeti.FilledCover.isLocalPowerAt_fillMap_center`: at the added point of a component,
   `fillMap p` is locally the power map of exponent the local degree of the component.
 * `TauCeti.ConnectedCover.toTopBranchedCover`: the filled cover of a connected degree-`n` cover,
@@ -70,38 +65,8 @@ namespace FilledCover
 
 variable {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere}
 
-/-- The fibre of the extended projection over a point `z` of `ℂ ∖ {0, 1}` is the fibre of `p`
-over `z`: no added point lies over `z`. -/
-theorem fillMap_preimage_toOnePoint (z : ThricePuncturedSphere) :
-    fillMap p ⁻¹' {toOnePoint z} = incl (chart p) '' (p ⁻¹' {z}) := by
-  ext y
-  induction y using PunctureFilling.induction with
-  | incl x => simp [Subtype.ext_iff]
-  | center i =>
-    have h : center (chart p) i ∉ fillMap p ⁻¹' range toOnePoint := by
-      rw [preimage_range_toOnePoint]
-      rintro ⟨x, hx⟩
-      exact incl_ne_center x i hx
-    refine iff_of_false (fun hz => h ⟨z, (mem_singleton_iff.1 hz).symm⟩) ?_
-    rintro ⟨x, -, hx⟩
-    exact incl_ne_center x i hx
-
-/-- The fibre of the extended projection over a point `z` of `ℂ ∖ {0, 1}` has as many points as
-the fibre of `p` over `z`. -/
-theorem natCard_fillMap_preimage_toOnePoint (z : ThricePuncturedSphere) :
-    Nat.card (fillMap p ⁻¹' {toOnePoint z}) = Nat.card (p ⁻¹' {z}) := by
-  rw [fillMap_preimage_toOnePoint, Nat.card_image_of_injective incl_injective]
-
 variable (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
 include hp hfin
-
-/-- **Off the marked points, the extended projection is a covering map.** -/
-theorem isCoveringMapOn_fillMap : IsCoveringMapOn (fillMap p) markedᶜ := by
-  rw [← range_toOnePoint]
-  refine .of_isCoveringMap_restrictPreimage _ isOpenEmbedding_toOnePoint.isOpen_range ?_
-    (isCoveringMap_restrictPreimage_fillMap hp hfin)
-  rw [preimage_range_toOnePoint]
-  exact isOpen_range_incl
 
 /-- **The local model at a filled point.** At the added point of the component `i` over the
 puncture `q`, the extended projection is `w ↦ w ^ degree p i`, in the chart of the filled cover
