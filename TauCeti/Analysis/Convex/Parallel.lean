@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Action.Pointwise.Set
 public import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
@@ -29,7 +28,8 @@ pointwise set addition.
 * `Convex.add_smul_interpolation`: interpolation of two parallel convex sets with
   arbitrary nonnegative weights summing to one.
 * `Convex.add_smul_interpolation_sub`: the same identity with weights `1 - u` and `u`.
-* `Convex.add_smul_closedBall_interpolation`: the outer-parallel-body specialization.
+* `Convex.add_smul_closedBall_interpolation`: specialization to an arbitrary closed ball
+  in a seminormed real vector space.
 -/
 
 public section
@@ -72,15 +72,15 @@ end Convex
 
 section ClosedBall
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- Minkowski interpolation of the outer parallel sets of a convex set by the closed unit ball. -/
+/-- Minkowski interpolation of the parallel sets of a convex set by an arbitrary closed ball. -/
 theorem add_smul_closedBall_interpolation {K : Set V} (hK : Convex ℝ K)
-    {u s t : ℝ} (hu : u ∈ Icc 0 1) (hs : 0 ≤ s) (ht : 0 ≤ t) :
-    (1 - u) • (K + s • Metric.closedBall 0 1) +
-        u • (K + t • Metric.closedBall 0 1) =
-      K + ((1 - u) * s + u * t) • Metric.closedBall 0 1 :=
-  add_smul_interpolation_sub hK (convex_closedBall 0 1) hu hs ht
+    {c : V} {r u s t : ℝ} (hu : u ∈ Icc 0 1) (hs : 0 ≤ s) (ht : 0 ≤ t) :
+    (1 - u) • (K + s • Metric.closedBall c r) +
+        u • (K + t • Metric.closedBall c r) =
+      K + ((1 - u) * s + u * t) • Metric.closedBall c r :=
+  add_smul_interpolation_sub hK (convex_closedBall c r) hu hs ht
 
 end ClosedBall
 
