@@ -29,6 +29,8 @@ without either being an algebra over the other.
   `A` is integrally closed.
 * `TauCeti.isIntegral_natCast_pow_mul_pow`: if `b x` is integral over `ℤ`, then so is
   `b ^ n x ^ j` for `j ≤ n`.
+* `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
+  `b ≠ 0`, then `x` is integral over `ℚ`.
 -/
 
 public section
@@ -80,5 +82,12 @@ theorem isIntegral_natCast_pow_mul_pow {A : Type*} [CommRing A] {x : A} {b : ℕ
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hj
   rw [pow_add, mul_right_comm, ← mul_pow, mul_comm]
   exact ((isIntegral_natCast b).pow l).mul (hbx.pow j)
+
+/-- If `b x` is integral over `ℤ` for a nonzero natural number `b`, then `x` is integral over
+`ℚ`. -/
+theorem isIntegral_rat_of_isIntegral_natCast_mul {F : Type*} [Field F] [CharZero F] {x : F}
+    {b : ℕ} (hb : b ≠ 0) (hbx : IsIntegral ℤ ((b : F) * x)) : IsIntegral ℚ x := by
+  have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul (hbx.tower_top (A := ℚ))
+  rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hb), one_mul] at h
 
 end TauCeti

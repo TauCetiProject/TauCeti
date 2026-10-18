@@ -303,6 +303,20 @@ theorem retractChainMap_f_apply (m : ℕ) (g : NormalizedCubicalChain X R m) :
     (D.retractChainMap R).f m g = D.retractChain R m g :=
   (rfl)
 
+/-- Under the concrete identification of chain-complex terms, the retraction chain map acts by
+`BasedCubeDeformation.retractChain`. -/
+theorem normalizedCubicalChainComplexXEquiv_retractChainMap_f_apply (m : ℕ)
+    (g : ((normalizedCubicalChainComplex R).obj X).X m) :
+    normalizedCubicalChainComplexXEquiv X m ((D.retractChainMap R).f m g) =
+      D.retractChain R m (normalizedCubicalChainComplexXEquiv X m g) :=
+  let e := normalizedCubicalChainComplexXEquiv X m
+  calc
+    e ((D.retractChainMap R).f m g) =
+        e ((D.retractChainMap R).f m (e.symm (e g))) := by rw [e.symm_apply_apply]
+    _ = e (D.retractChain R m (e g)) :=
+      congrArg e (D.retractChainMap_f_apply R m (e g))
+    _ = D.retractChain R m (e g) := normalizedCubicalChainComplexXEquiv_apply X m _
+
 /-- The negative swept-cube operator, as a morphism between the terms of the normalized cubical
 chain complex. -/
 private def prismHom (m : ℕ) :

@@ -103,7 +103,8 @@ theorem eq_zero_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
   rw [φ.apply_self, map_zero] at h
   simp only [Pi.zero_apply, mul_zero, neg_zero] at h
   have h0 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x (X x) = 0 := φ.coord.map_eq_zero_iff.1 h
-  have hinv := isInvertible_mfderiv_chart φ.mem_maximalAtlas φ.mem_source
+  have hinv := isInvertible_mfderiv_chart
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
   rw [← hinv.inverse_apply_self (X x), h0, map_zero]
 
 /-- **The zeros of an adapted pseudo-gradient are the critical points of `f`.** -/

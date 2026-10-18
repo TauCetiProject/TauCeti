@@ -114,15 +114,8 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.scalarCurvature x = (Module.finrank ℝ (TangentSpace I x) : ℝ) *
       (Module.finrank ℝ (TangentSpace I x) - 1) * k := by
-  have hmodel : ∀ w u v, curvature x w u v =
-      (k • innerₗ (TangentSpace I x)) u v • w -
-        (k • innerₗ (TangentSpace I x)) w v • u := by
-    intro w u v
-    rw [h w u v]
-    simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_sub, smul_smul, smul_eq_mul]
-  rw [scalarCurvature_eq_of_curvatureTensor_eq_smul_sub cov x
-    (k • innerₗ (TangentSpace I x)) hmodel, map_smul,
-    TauCeti.bilinFormTrace_inner]
+  rw [scalarCurvature_apply, cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x k h,
+    map_smul, TauCeti.bilinFormTrace_inner]
   simp only [smul_eq_mul]
   ring
 
