@@ -220,6 +220,7 @@ theorem coe_oneSub : (oneSub t ht : E →L[R] E) = 1 - t :=
   (rfl)
 
 /-- The automorphism `oneSub t ht` sends `x` to `x - t x`. -/
+@[simp]
 theorem oneSub_apply (x : E) : oneSub t ht x = x - t x :=
   (rfl)
 
@@ -237,7 +238,6 @@ section Ultrametric
 variable [IsUltrametricDist E]
 
 /-- In an ultrametric module, `1 - t` preserves norms when `‖t‖ < 1`. -/
-@[simp]
 theorem norm_oneSub_apply (x : E) : ‖oneSub t ht x‖ = ‖x‖ := by
   rcases (norm_nonneg x).eq_or_lt with hx | hx
   · have htx : ‖t x‖ ≤ 0 := (le_ringOpNorm t x).trans (by simp [← hx])
