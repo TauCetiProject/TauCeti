@@ -62,13 +62,6 @@ variable {k : Type u} [CommRing k]
 variable {H : Type v} {K : Type w}
 variable [CommRing H] [CommRing K]
 variable [HopfAlgebra k H] [HopfAlgebra k K]
-
-/-- The ring-hom and linear-map kernels of an algebra homomorphism have the same underlying
-`k`-submodule. -/
-private theorem restrictScalars_ker_eq_linearMap_ker (g : H →ₐ[k] K) :
-    (RingHom.ker g).restrictScalars k = LinearMap.ker g.toLinearMap :=
-  rfl
-
 variable [Module.Flat k H]
 
 /-- Pulling a normal Hopf ideal back along an injective bialgebra morphism preserves normality
@@ -118,10 +111,9 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
     rw [comap_toIdeal]
     ext y
     simp [g, q, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
-  rw [hgker, Ideal.mem_rightTensorIdeal_iff]
-  rw [restrictScalars_ker_eq_linearMap_ker]
-  rw [← (Module.Flat.lTensor_exact H g.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq,
-    LinearMap.mem_ker]
+  rw [hgker, Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    ← Algebra.TensorProduct.lTensor_ker_of_flat g,
+    RingHom.mem_ker]
   have hmaps' :
       (Algebra.TensorProduct.map f.toAlgHom (AlgHom.id k (K ⧸ I.toIdeal))).comp
           (Algebra.TensorProduct.map (AlgHom.id k H) g) =
@@ -167,10 +159,9 @@ theorem isNormal_ker_of_conjugation_equivariant (f : H →ₐc[k] K)
   rw [isNormal_iff_conjugation_mem]
   intro x hx
   rw [ker_toIdeal]
-  rw [Ideal.mem_rightTensorIdeal_iff]
-  rw [restrictScalars_ker_eq_linearMap_ker]
-  rw [← (Module.Flat.lTensor_exact H
-    f.toAlgHom.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq, LinearMap.mem_ker]
+  rw [Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    ← Algebra.TensorProduct.lTensor_ker_of_flat f.toAlgHom,
+    RingHom.mem_ker]
   have hfx : f x = 0 := (mem_ker f).mp hx
   calc
     Algebra.TensorProduct.map (AlgHom.id k H) f.toAlgHom
