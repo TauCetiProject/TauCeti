@@ -335,13 +335,7 @@ private theorem exists_compactConvexPolygon_of_faces [Finite κ] [Nonempty κ] :
     rw [hside, hK]
     exact iInter_subset _ _
   · rw [CompactConvexPolygon.side_def, hPv, hPv', geodesicSegment_geodesicLine,
-      uIcc_of_le (hab (c i)).le]
-    ext z
-    constructor
-    · rintro ⟨τ, hτ, rfl⟩
-      exact ⟨(geodesicLine_mem_iff hS _ τ).2 hτ, mem_range_self τ⟩
-    · rintro ⟨hz, τ, rfl⟩
-      exact ⟨τ, (geodesicLine_mem_iff hS _ τ).1 hz, rfl⟩
+      uIcc_of_le (hab (c i)).le, ← hS (c i), image_preimage_eq_inter_range]
 
 end Faces
 
