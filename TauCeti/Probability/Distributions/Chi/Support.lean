@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Chi.Basic
 public import TauCeti.MeasureTheory.Measure.Dirac
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Support of chi distributions
@@ -59,19 +60,9 @@ theorem support_chiMeasure (k s : ℝ) :
     · simp [hk.ne, not_lt.mpr hk.le, chiMeasure_of_neg hk]
     · simp [chiMeasure_zero hs, Measure.support_dirac]
     · simp only [hk.ne', hk, ite_false, ite_true]
-      apply Set.Subset.antisymm
-      · apply Measure.support_subset_of_isClosed isClosed_Ici
-        filter_upwards [ae_pos_chiMeasure (s := s) hk] with x hx
-        exact hx.le
-      · rw [Measure.support_eq_forall_isOpen]
-        intro x hx U hxU hU
-        have hxClosure : x ∈ closure (Ioi (0 : ℝ)) := by
-          rw [closure_Ioi]
-          exact hx
-        obtain ⟨y, hyU, hyPos⟩ := mem_closure_iff.mp hxClosure U hU hxU
-        rw [chiMeasure_eq_withDensity hk hs, withDensity_apply _ hU.measurableSet,
-          setLIntegral_pos_iff (measurable_chiPDF k s), support_chiPDF hk hs]
-        exact (isOpen_Ioi.inter hU).measure_pos volume ⟨y, hyPos, hyU⟩
+      rw [chiMeasure_eq_withDensity hk hs,
+        Measure.support_withDensity_eq_closure (measurable_chiPDF k s) isOpen_Ioi
+          (support_chiPDF hk hs), closure_Ioi]
   · simp [hs, chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
 
 end TauCeti.Probability
