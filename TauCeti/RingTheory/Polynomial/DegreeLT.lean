@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.DegreeLT
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -34,15 +35,14 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
   land.
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
   remainder reads off `g * v + u`.
-* `Polynomial.mul_mem_degreeLT_add`: degree bounds add under multiplication.
 * `Polynomial.Monic.sub_mem_degreeLT`: the difference of two monic polynomials of the same degree
   `n` has degree `< n`.
 * `IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`, `IsCoprime.eq_zero_of_mul_add_mul_eq_zero`:
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
-rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` and `mul_mem_degreeLT_add` need
-only a semiring, and `Monic.sub_mem_degreeLT` only a ring.
+rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` needs only a semiring, and
+`Monic.sub_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -67,16 +67,6 @@ variable {R : Type*} [Semiring R] {g q : R[X]}
 theorem mem_degreeLT_natDegree_iff (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
   rw [mem_degreeLT, degree_eq_natDegree hg]
-
-/-- A polynomial of degree `< m` times one of `natDegree ≤ n` has degree `< m + n`. -/
-theorem mul_mem_degreeLT_add {p q : R[X]} {m n : ℕ} (hp : p ∈ degreeLT R m) (hq : q.natDegree ≤ n) :
-    p * q ∈ degreeLT R (m + n) := by
-  rw [mem_degreeLT] at hp ⊢
-  rcases eq_or_ne q 0 with rfl | hq0
-  · simp
-  refine (degree_mul_le _ _).trans_lt ?_
-  push_cast
-  exact WithBot.add_lt_add_of_lt_of_le (by simpa using hq0) hp (degree_le_of_natDegree_le hq)
 
 end Semiring
 
@@ -140,7 +130,8 @@ theorem _root_.IsCoprime.exists_mem_degreeLT_mul_add_mul_eq {g h c : R[X]} (hgh 
   refine ⟨a, _, ha, ?_, hab⟩
   have hgb : g * (u * c + h * ((v * c) /ₘ g)) ∈ degreeLT R (g.natDegree + h.natDegree) := by
     rw [eq_sub_of_add_eq hab]
-    exact sub_mem hc (mul_comm a h ▸ mul_mem_degreeLT_add ha le_rfl)
+    exact sub_mem hc (mul_comm a h ▸ mem_degreeLT.mpr
+      (degree_mul_lt_of_degree_lt_of_natDegree_le (mem_degreeLT.mp ha) le_rfl))
   simpa [mul_divByMonic_cancel_left _ hg] using divByMonic_mem_degreeLT hg hgb
 
 /-- Uniqueness in `IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`: if `g` is monic and coprime to
