@@ -57,6 +57,7 @@ variable {r}
 
 /-- Every vertex of a cycle has valence two: it carries one branch of the edge before it and one
 of the edge after it, or both branches of the loop when `r = 1`. -/
+@[simp]
 theorem valence_cycle (v : ZMod r) : (cycle r).valence v = 2 := by
   rw [valence_def, card_eq_two]
   refine ⟨(v, 0), (v - 1, 1), by simp, ?_⟩
@@ -64,6 +65,7 @@ theorem valence_cycle (v : ZMod r) : (cycle r).valence v = 2 := by
   fin_cases i <;> simp [eq_sub_iff_add_eq]
 
 /-- A cycle of rational curves has arithmetic genus one. -/
+@[simp]
 theorem arithmeticGenus_cycle : (cycle r).arithmeticGenus = 1 := by
   have h := (cycle r).arithmeticGenus_add_card_vertex
   simp only [sum_const_zero, zero_add] at h
@@ -71,14 +73,17 @@ theorem arithmeticGenus_cycle : (cycle r).arithmeticGenus = 1 := by
   omega
 
 /-- Every vertex of a cycle has log-canonical degree zero. -/
+@[simp]
 theorem logCanonicalDegree_cycle (v : ZMod r) : (cycle r).logCanonicalDegree v = 0 := by
   simp [logCanonicalDegree_def, valence_cycle]
 
 /-- A cycle of rational curves is semistable. -/
+@[simp]
 theorem isSemistable_cycle : (cycle r).IsSemistable :=
   (cycle r).isSemistable_iff.mpr fun v ↦ (logCanonicalDegree_cycle v).ge
 
 /-- A cycle of rational curves is not stable. -/
+@[simp]
 theorem not_isStable_cycle : ¬ (cycle r).IsStable :=
   fun h ↦ ((cycle r).isStable_iff.mp h 0).ne' (logCanonicalDegree_cycle 0)
 
