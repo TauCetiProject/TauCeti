@@ -94,14 +94,19 @@ theorem toLaurentSeries_injective : Function.Injective (toLaurentSeries (R := R)
   fun p q h ↦ LaurentPolynomial.ext fun n ↦ by
     rw [← coeff_toLaurentSeries, h, coeff_toLaurentSeries]
 
+/-- The support of a Laurent polynomial viewed as a Laurent series is its finite support. -/
+@[simp]
+theorem support_toLaurentSeries (p : R[T;T⁻¹]) :
+    (toLaurentSeries p).support = p.coeff.support := by
+  ext n
+  simp [HahnSeries.mem_support]
+
 /-- A Laurent series is the image of a Laurent polynomial exactly when it has finite support. -/
 theorem mem_range_toLaurentSeries_iff (f : R⸨X⸩) :
     f ∈ Set.range (toLaurentSeries (R := R)) ↔ f.support.Finite := by
   constructor
   · rintro ⟨p, rfl⟩
-    rw [show (toLaurentSeries p).support = (p.coeff.support : Set ℤ) by
-      ext n
-      simp [HahnSeries.mem_support, coeff_toLaurentSeries]]
+    rw [support_toLaurentSeries]
     exact p.coeff.support.finite_toSet
   · intro hf
     let p : R[T;T⁻¹] := AddMonoidAlgebra.ofCoeff (Finsupp.ofSupportFinite f.coeff hf)
