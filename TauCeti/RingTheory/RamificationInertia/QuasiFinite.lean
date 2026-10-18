@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.QuasiFinite.Basic
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+public import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # Positivity of the ramification index at a quasi-finite prime
@@ -53,23 +54,17 @@ instance isArtinianRing_quotient_of_quasiFiniteAt (p : Ideal R) (q : Ideal S) [q
     [q.LiesOver p] [Algebra.QuasiFiniteAt R q] :
     IsArtinianRing (Localization.AtPrime q ⧸ p.map (algebraMap R (Localization.AtPrime q))) := by
   -- `S_q` is quasi-finite over `R`, so Mathlib's instance applies to the maximal ideal `m` of
-  -- `S_q`; the localization of the local ring `S_q` at `m` is `S_q` itself.
+  -- `S_q`; the localization of the local ring `S_q` at `m` is `S_q` itself
+  -- (`IsLocalRing.algEquivLocalizationAtMaximalIdeal`).
   let Sq := Localization.AtPrime q
   let m := IsLocalRing.maximalIdeal Sq
   have hunder : m.under R = p := by
     rw [← Ideal.under_under (B := S), Localization.AtPrime.under_maximalIdeal, ← q.over_def p]
   have : m.LiesOver p := ⟨hunder.symm⟩
-  let e : Sq ≃ₐ[Sq] Localization.AtPrime m :=
-    IsLocalization.atUnits Sq m.primeCompl (S := Localization.AtPrime m)
-      fun y hy ↦ IsLocalRing.notMem_maximalIdeal.mp hy
-  have hcomp : (e.toRingEquiv : Sq →+* Localization.AtPrime m).comp (algebraMap R Sq) =
-      algebraMap R (Localization.AtPrime m) := by
-    ext r
-    simpa [IsScalarTower.algebraMap_apply R Sq (Localization.AtPrime m)] using
-      e.commutes (algebraMap R Sq r)
-  have hmap : (p.map (algebraMap R Sq)).map (e.toRingEquiv : Sq →+* Localization.AtPrime m) =
+  let e := IsLocalRing.algEquivLocalizationAtMaximalIdeal R Sq
+  have hmap : (p.map (algebraMap R Sq)).map (e.toAlgHom : Sq →+* Localization.AtPrime m) =
       p.map (algebraMap R (Localization.AtPrime m)) := by
-    rw [Ideal.map_map, hcomp]
+    rw [Ideal.map_map, AlgHom.comp_algebraMap]
   exact (Ideal.quotientEquiv _ _ e.toRingEquiv hmap.symm).symm.isArtinianRing
 
 /-- If `S` is quasi-finite over `R` at the prime `q`, the ramification index of `q` over `R` is

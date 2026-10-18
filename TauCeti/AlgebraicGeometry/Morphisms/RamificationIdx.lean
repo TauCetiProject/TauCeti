@@ -71,6 +71,7 @@ theorem ramificationIdxAt_def (x : X) :
 /-- The ramification index of `f` is positive at every point where `f` is quasi-finite. -/
 theorem ramificationIdxAt_pos {x : X} (hx : f.QuasiFiniteAt x) : 0 < ramificationIdxAt f x := by
   let := (f.stalkMap x).hom.toAlgebra
+  rw [Scheme.Hom.QuasiFiniteAt] at hx
   have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
     RingHom.quasiFinite_algebraMap.mp hx
   rw [ramificationIdxAt_def]
