@@ -153,6 +153,26 @@ private theorem mem_fixedSubcomodule_coinvariantsComodule_iff (hI : I.IsNormal)
   Comodule.mem_fixedSubcomodule_ofCorestrict_iff _ _ _ _
     (map_one (CommHopfAlgCat.coinvariantsι hI).hom)
 
+private theorem map_mem_weightSpace_one {V' : Type w}
+    [AddCommMonoid V'] [Module k V'] [Comodule k H V'] (f : Comodule.Hom k H V V')
+    {v : V} (hv : v ∈ I.weightSpace V 1) : f v ∈ I.weightSpace V' 1 := by
+  let q := (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom
+  let _ : Comodule k (H ⧸ I.toIdeal) V := Comodule.Corestrict q
+  let _ : Comodule k (H ⧸ I.toIdeal) V' := Comodule.Corestrict q
+  have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
+    ext x
+    change (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom x =
+      (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap x
+    rw [BialgHom.toCoalgHom_apply, Bialgebra.Quotient.mkBialgHom_apply,
+      AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  have hv' : v ∈ _root_.GroupLike.weightSpace (M := V) (1 : GroupLike k (H ⧸ I.toIdeal)) := by
+    rw [_root_.GroupLike.mem_weightSpace, Comodule.corestrict_coact_apply, hq]
+    simpa using I.mem_weightSpace.mp hv
+  have hfv := (Comodule.corestrictHom q f).map_mem_groupLikeWeightSpace hv'
+  rw [_root_.GroupLike.mem_weightSpace, Comodule.corestrict_coact_apply, hq] at hfv
+  exact I.mem_weightSpace.mpr <| by
+    simpa only [Comodule.corestrictHom_apply, GroupLike.val_one] using hfv
+
 /-- A morphism of representations of `G` restricts to a morphism of the representations of
 `G ⧸ N` on `N`-invariant vectors. -/
 private noncomputable def coinvariantsComoduleHom (hI : I.IsNormal) {V' : Type w}
@@ -163,12 +183,12 @@ private noncomputable def coinvariantsComoduleHom (hI : I.IsNormal) {V' : Type w
       (hI.weightSpaceOneSubcomodule V') :=
   Comodule.Hom.ofCorestrict _ _ _ _ _ _ _ <|
     (f.comp (Subcomodule.subtype _)).codRestrict _ fun w ↦ by
-      rw [HopfIdeal.IsNormal.mem_weightSpaceOneSubcomodule, Comodule.Hom.comp_apply,
-        Subcomodule.subtype_apply, ← Comodule.Hom.map_coact_apply, ← LinearMap.comp_apply,
-        LinearMap.lTensor_comp_map_id_comm f.toLinearMap
-          (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap,
-        LinearMap.comp_apply, hI.mem_weightSpaceOneSubcomodule.1 w.2,
-        TensorProduct.map_tmul, LinearMap.id_apply, Comodule.Hom.coe_toLinearMap]
+      have hw : (w : V) ∈ I.weightSpace V 1 := by
+        simpa only [← Subcomodule.mem_toSubmodule,
+          hI.weightSpaceOneSubcomodule_toSubmodule] using w.2
+      have hfw := map_mem_weightSpace_one V f hw
+      simpa only [← Subcomodule.mem_toSubmodule, hI.weightSpaceOneSubcomodule_toSubmodule,
+        Comodule.Hom.comp_apply, Subcomodule.subtype_apply] using hfw
 
 /-- The restricted morphism acts as the original one on underlying vectors. -/
 private theorem coe_coinvariantsComoduleHom_apply (hI : I.IsNormal) {V' : Type w}
