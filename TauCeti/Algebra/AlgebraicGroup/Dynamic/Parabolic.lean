@@ -114,6 +114,21 @@ theorem mapValue_conjugate {C : Type*} [CommSemiring C] [Algebra R C]
     mapValue_pointsHom, constPoint_apply, ← AlgHom.mapValue_apply, AlgHom.mapValue_comp,
     MonoidHom.comp_apply]
 
+/-- Evaluating generic conjugation at the Laurent parameter one recovers the original point. -/
+theorem mapValue_laurentEval_one_conjugate (g : WithConv (H →ₐ[R] A)) :
+    AlgHom.mapValue ((laurentEval (R := A) (1 : Aˣ)).restrictScalars R)
+      (conjugate A l g) = g := by
+  set e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
+  rw [mapValue_conjugate]
+  have hu : Units.map e.toMonoidHom (LaurentPolynomial.genericUnit A) = 1 := by
+    ext
+    simp [e]
+  have hc : e.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) = AlgHom.id R A := by
+    ext a
+    simp [e]
+  rw [hu, hc]
+  simp
+
 /-- **Conjugation by the generic point is natural in the value algebra.** -/
 theorem mapValue_conjugate_mapAlgHom (g : WithConv (H →ₐ[R] A)) :
     AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (conjugate A l g) =
@@ -197,15 +212,8 @@ theorem toConv_aeval_one_comp_extend (g : parabolic A l) :
     ext a <;> simp [e]
   rw [← he, AlgHom.mapValue_comp, MonoidHom.comp_apply,
     AlgHom.mapValue_apply (Polynomial.toLaurentAlg.restrictScalars R),
-    ← ofPolyPoint_apply, ofPolyPoint_extend, mapValue_conjugate]
-  have hu : Units.map e.toMonoidHom (LaurentPolynomial.genericUnit A) = 1 := by
-    ext
-    simp [e]
-  have hc : e.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) = AlgHom.id R A := by
-    ext a
-    simp [e]
-  rw [hu, hc]
-  simp
+    ← ofPolyPoint_apply, ofPolyPoint_extend]
+  exact mapValue_laurentEval_one_conjugate l g.1
 
 /-! ### The Levi and unipotent parts -/
 
