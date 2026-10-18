@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.GenusZero
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NodalReduction
 
 /-!
@@ -85,6 +86,18 @@ def projectiveLine :
   quasiSeparated := inferInstance
   genericFiberIso := projectiveLineGenericFiberIso R K
 
+/-- The chosen generic-fibre identification of the projective-line model is the canonical one. -/
+lemma projectiveLine_genericFiberIso :
+    HEq (projectiveLine R K).genericFiberIso (projectiveLineGenericFiberIso R K) := by
+  rw [projectiveLine]
+
+omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
+/-- The inverse of the generic-fibre identification is the canonical pullback isomorphism. -/
+lemma projectiveLineGenericFiberIso_inv_left :
+    (projectiveLineGenericFiberIso R K).inv.left =
+      (AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection R K).isoPullback.hom :=
+  (rfl)
+
 /-- The total space of the model `ℙ¹_R` is the projective line over `R`. -/
 @[simp]
 lemma projectiveLine_total : (projectiveLine R K).total = AlgebraicGeometry.projectiveLine R :=
@@ -96,6 +109,14 @@ lemma projectiveLine_toBase :
     (projectiveLine R K).toBase =
       eqToHom (projectiveLine_total R K) ≫ (AlgebraicGeometry.projectiveLine R ↘ Spec (.of R)) :=
   (rfl)
+
+/-- The generic fibre of the projective-line model is included by base-change projection. -/
+@[simp]
+lemma genericι_projectiveLine :
+    (projectiveLine R K).genericι =
+      AlgebraicGeometry.projectiveLine.baseChangeProjection R K ≫
+        eqToHom (projectiveLine_total R K).symm := by
+  simp [genericι_def, projectiveLine, projectiveLineGenericFiberIso_inv_left]
 
 /-- The model `ℙ¹_R` of `ℙ¹_K` is smooth of relative dimension one over `R`. -/
 instance smoothOfRelativeDimension_projectiveLine :

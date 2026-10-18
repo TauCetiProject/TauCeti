@@ -120,15 +120,10 @@ theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero
     {D : SchemeWeilDivisor X} (hD : SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D = 1) :
     Nonempty (X.functionField ≃ₐ[k] RatFunc k) := by
   have hX := IsCurveOver.topologicalKrullDim_eq_one (X := X) k
-  have hdim (x : X) : coheight x ≤ 1 := by
-    exact_mod_cast (coheight_le_topologicalKrullDim x).trans hX.le
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : CompactSpace X := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance
-  have : IsNoetherian X := {}
-  have : X.IsSeparated := ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
-  have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
-    (UniversallyClosed.eq_valuativeCriterion ▸
-      (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
+  have hdim := IsCurveOver.coheight_le_one (k := k) (X := X)
+  let _ : IsNoetherian X := IsCurveOver.isNoetherian k X
+  let _ : X.IsSeparated := IsCurveOver.isSeparated k X
+  have hex := IsCurveOver.valuativeCriterion_existence k X
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hX
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   have hgF : TauCeti.genus k X.functionField = 0 := by

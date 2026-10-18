@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
@@ -23,7 +25,7 @@ divisor.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 
 universe u
 
@@ -52,6 +54,30 @@ theorem IsCurveOver.isFunctionField [X.IsCurveOver k] :
     TauCeti.IsFunctionField k X.functionField := by
   exact (TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff k).2
     (IsCurveOver.topologicalKrullDim_eq_one k)
+
+/-- Every point of a curve has coheight at most one. -/
+theorem IsCurveOver.coheight_le_one [X.IsCurveOver k] (x : X) : Order.coheight x ≤ 1 := by
+  exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim x).trans
+    (IsCurveOver.topologicalKrullDim_eq_one k).le
+
+variable (k X) in
+/-- A curve over a field is a Noetherian scheme. -/
+theorem IsCurveOver.isNoetherian [X.IsCurveOver k] : IsNoetherian X := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : CompactSpace X := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance
+  exact {}
+
+variable (k X) in
+/-- A curve over a field is separated as a scheme. -/
+theorem IsCurveOver.isSeparated [X.IsCurveOver k] : X.IsSeparated :=
+  ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
+
+variable (k X) in
+/-- The structure morphism of a curve satisfies the existence part of the valuative criterion. -/
+theorem IsCurveOver.valuativeCriterion_existence [X.IsCurveOver k] :
+    ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
+  (UniversallyClosed.eq_valuativeCriterion ▸
+    (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
 
 variable (k X) in
 /-- **The local rings of a regular proper curve are valuation rings**: for a curve `X` over `k`
