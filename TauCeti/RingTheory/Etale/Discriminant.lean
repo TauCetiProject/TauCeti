@@ -42,6 +42,8 @@ a unit.
 
 * `TauCeti.Algebra.etale_iff_traceForm_nondegenerate`: a finite-dimensional algebra over a field is
   étale iff its trace form is nondegenerate.
+* `TauCeti.Algebra.algebraMap_discr_ne_zero_iff_etale_baseChange`: the discriminant of a basis has
+  nonzero image in a field `K` iff the fibre `K ⊗[A] B` is étale over `K`.
 * `TauCeti.Algebra.etale_of_isUnit_discr`: a finite free algebra over any ring whose basis has unit
   discriminant is étale.
 * `TauCeti.Algebra.etale_iff_isUnit_discr`: a finite free algebra is étale iff the discriminant of
@@ -49,8 +51,7 @@ a unit.
 * `TauCeti.Algebra.isUnit_algebraMap_discr_iff_etale_baseChange`: the discriminant of a basis maps
   to a unit in an `A`-algebra `A'` iff the base change to `A'` is étale.
 * `TauCeti.Algebra.isUnit_algebraMap_discr_iff_etale_localization`: the discriminant of a basis
-  is a unit at a prime `𝔭` iff the base change to `A_𝔭` is étale over `A_𝔭` (the LocalPurity
-  roadmap's `isUnit_discr_localization_iff`).
+  is a unit at a prime `𝔭` iff the base change to `A_𝔭` is étale over `A_𝔭`.
 
 ## References
 
@@ -107,6 +108,17 @@ theorem Algebra.etale_iff_traceForm_nondegenerate (K B : Type*) [Field K] [CommR
       ⟨MaximalSpectrum B, inferInstance, F, inferInstance, inferInstance, e, fun m ↦ ?_⟩
     exact ⟨hfin m, ((traceForm_nondegenerate_tfae K (F m)).out 3 1).mp (hF m)⟩
 
+/-- The discriminant of a basis of a finite free `A`-algebra `B` has nonzero image in a field `K`
+over `A` iff the fibre `K ⊗[A] B` is étale over `K`. -/
+theorem Algebra.algebraMap_discr_ne_zero_iff_etale_baseChange {A B ι : Type*} [CommRing A]
+    [CommRing B] [Algebra A B] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B)
+    (K : Type*) [Field K] [Algebra A K] :
+    algebraMap A K (Algebra.discr A b) ≠ 0 ↔ Algebra.Etale K (K ⊗[A] B) := by
+  have : FiniteDimensional K (K ⊗[A] B) := Module.Finite.of_basis (Algebra.TensorProduct.basis K b)
+  rw [Algebra.etale_iff_traceForm_nondegenerate,
+    ← Algebra.discr_ne_zero_iff_traceForm_nondegenerate (Algebra.TensorProduct.basis K b),
+    Algebra.discr_baseChange]
+
 /-- A finite free algebra whose basis has unit discriminant is étale. -/
 theorem Algebra.etale_of_isUnit_discr {A B ι : Type*} [CommRing A] [CommRing B] [Algebra A B]
     [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B) (hb : IsUnit (Algebra.discr A b)) :
@@ -116,14 +128,9 @@ theorem Algebra.etale_of_isUnit_discr {A B ι : Type*} [CommRing A] [CommRing B]
   have : Module.FinitePresentation A B := Module.finitePresentation_of_projective A B
   have : Algebra.FormallyUnramified A B :=
     Algebra.FormallyUnramified.of_formallyUnramified_baseChange_field fun K _ _ ↦ by
-      have : FiniteDimensional K (K ⊗[A] B) :=
-        Module.Finite.of_basis (Algebra.TensorProduct.basis K b)
-      have hdisc : Algebra.discr K (Algebra.TensorProduct.basis K b) ≠ 0 := by
-        rw [Algebra.discr_baseChange]
-        exact (hb.map (algebraMap A K)).ne_zero
       have : Algebra.Etale K (K ⊗[A] B) :=
-        (Algebra.etale_iff_traceForm_nondegenerate K _).mpr
-          ((Algebra.discr_ne_zero_iff_traceForm_nondegenerate _).mp hdisc)
+        (Algebra.algebraMap_discr_ne_zero_iff_etale_baseChange b K).mp
+          (hb.map (algebraMap A K)).ne_zero
       infer_instance
   exact Algebra.Etale.of_formallyUnramified_of_flat
 
@@ -137,13 +144,9 @@ theorem Algebra.etale_iff_isUnit_discr (A B : Type*) [CommRing A] [CommRing B] [
   by_contra hunit
   obtain ⟨m, hm, hdm⟩ := exists_max_ideal_of_mem_nonunits hunit
   let : Field (A ⧸ m) := Ideal.Quotient.field m
-  have : FiniteDimensional (A ⧸ m) ((A ⧸ m) ⊗[A] B) :=
-    Module.Finite.of_basis (Algebra.TensorProduct.basis (A ⧸ m) b)
-  have hdisc : Algebra.discr (A ⧸ m) (Algebra.TensorProduct.basis (A ⧸ m) b) ≠ 0 :=
-    (Algebra.discr_ne_zero_iff_traceForm_nondegenerate _).mpr
-      ((Algebra.etale_iff_traceForm_nondegenerate (A ⧸ m) ((A ⧸ m) ⊗[A] B)).mp inferInstance)
-  rw [Algebra.discr_baseChange, Ideal.Quotient.algebraMap_eq] at hdisc
-  exact hdisc (Ideal.Quotient.eq_zero_iff_mem.mpr hdm)
+  refine (Algebra.algebraMap_discr_ne_zero_iff_etale_baseChange b (A ⧸ m)).mpr inferInstance ?_
+  rw [Ideal.Quotient.algebraMap_eq]
+  exact Ideal.Quotient.eq_zero_iff_mem.mpr hdm
 
 /-- The discriminant of a basis of a finite free `A`-algebra `B` maps to a unit in an `A`-algebra
 `A'` iff the base change `A' ⊗[A] B` is étale over `A'`. -/
@@ -155,9 +158,7 @@ theorem Algebra.isUnit_algebraMap_discr_iff_etale_baseChange {A B ι : Type*} [C
     Algebra.discr_baseChange]
 
 /-- The discriminant of a basis of a finite free algebra is a unit at a prime `𝔭` iff the base
-change to the localization `A_𝔭` is étale over `A_𝔭`. This is the LocalPurity roadmap's
-`isUnit_discr_localization_iff`, named here after its general form
-`isUnit_algebraMap_discr_iff_etale_baseChange`. -/
+change to the localization `A_𝔭` is étale over `A_𝔭`. -/
 theorem Algebra.isUnit_algebraMap_discr_iff_etale_localization {A B ι : Type*} [CommRing A]
     [CommRing B] [Algebra A B] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B) (p : Ideal A)
     [p.IsPrime] :
