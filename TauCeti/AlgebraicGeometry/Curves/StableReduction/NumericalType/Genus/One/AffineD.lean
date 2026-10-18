@@ -24,12 +24,6 @@ on `t + 2` components in the classification of minimal numerical types of genus 
 five-component member, the four-leaf star, is treated in
 `TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Star`.
 
-Deleting either extra leaf leaves a proper fork, which is simply laced by
-`TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.exists_weight_intersection_eq`. The
-interior fibre relations make the multiplicities affine along `c 1, …, c (t - 2)`, and the fibre
-relations at the four ends and at the two branch points then force the leaves not to meet and the
-common difference to vanish.
-
 ## Main results
 
 * `TauCeti.NumericalType.IsGenusOneAffineDShape`: the numerical pattern of affine `D`.
@@ -86,29 +80,6 @@ theorem isGenusOneAffineDShape_iff {t : ℕ} {c : ℕ → T.Component} {left rig
         T.intersection left right = 0 :=
   Iff.rfl
 
-/-- The fibre relation at `x` for components `c 0, …, c (t - 1)` together with a disjoint finite
-set `S` of further components, when these exhaust the numerical type. -/
-private lemma sum_range_add_sum_eq_zero {t : ℕ} {c : ℕ → T.Component}
-    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j) {S : Finset T.Component}
-    (hS : ∀ i < t, c i ∉ S) (hcard : Fintype.card T.Component = t + #S) (x : T.Component) :
-    ∑ j ∈ range t, T.intersection x (c j) * T.multiplicity (c j) +
-      ∑ y ∈ S, T.intersection x y * T.multiplicity y = 0 := by
-  classical
-  have hinj' : Set.InjOn c (range t) := fun a ha b hb hab ↦
-    hinj a (mem_range.mp ha) b (mem_range.mp hb) hab
-  have hdisj : Disjoint ((range t).image c) S := by
-    rw [disjoint_left]
-    intro y hy
-    obtain ⟨i, hi, rfl⟩ := mem_image.mp hy
-    exact hS i (mem_range.mp hi)
-  have hu : (range t).image c ∪ S = univ := by
-    apply eq_univ_of_card
-    rw [card_union_of_disjoint hdisj, card_image_of_injOn hinj', card_range, hcard]
-  have h := T.fiber_relation x
-  rw [← hu, sum_union hdisj, sum_image hinj'] at h
-  rw [← h]
-  congr 1 <;> exact sum_congr rfl fun _ _ ↦ mul_comm _ _
-
 /-- If the multiplicities along `c 1, …, c (t - 2)` have vanishing second differences, as the
 interior fibre relations of a simply laced chain give, they are affine there: the multiplicity at
 `c i` is the one at `c 1` plus `i - 1` times the common difference, which is also the difference
@@ -150,7 +121,8 @@ private lemma sum_add_add_eq_zero (hr : T.IsSelfIntersectionMinusTwoFork t c rig
     ∑ j ∈ range t, T.intersection x (c j) * T.multiplicity (c j) +
       (T.intersection x left * T.multiplicity left +
         T.intersection x right * T.multiplicity right) = 0 := by
-  have h := sum_range_add_sum_eq_zero hr.injOn (S := {left, right}) (fun i hi h ↦ by
+  have h := sum_range_add_sum_intersection_mul_multiplicity_eq_zero hr.injOn
+    (S := {left, right}) (fun i hi h ↦ by
       rcases mem_insert.mp h with h | h
       · exact hleft_ne i hi h.symm
       · exact hr.branch_ne i hi (mem_singleton.mp h).symm)
@@ -194,39 +166,45 @@ theorem isGenusOneAffineDShape (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     rw [T.intersection_comm]
     simpa only [Nat.sub_add_cancel (by omega : 1 ≤ i)] using hedge (i - 1) (by omega)
   have hfib := hr.sum_add_add_eq_zero hleft_ne hleftRight hcard
-  -- The interior fibre relations away from the two branch points.
+  -- The fibre relation at an interior chain component, with the chain terms evaluated.
+  have hrow (i : ℕ) (hi : 0 < i) (hit : i + 1 < t) :
+      (w : ℤ) * T.multiplicity (c (i - 1)) + w * T.multiplicity (c (i + 1)) +
+          (T.intersection (c i) left * T.multiplicity left +
+            T.intersection (c i) right * T.multiplicity right) =
+        2 * w * T.multiplicity (c i) := by
+    have h := hfib (c i)
+    rw [hr.interior_sum_eq hchainCard _ hi hit] at h
+    rw [hedge' i hi (by omega), hr.intersection_self i (by omega), hw i (by omega),
+      hedge i hit] at h
+    linear_combination h
+  -- The interior fibre relations away from the two branch points make the multiplicities affine
+  -- along `c 1, …, c (t - 2)`.
   have hrec (i : ℕ) (hi : 1 < i) (hit : i + 2 < t) :
       (T.multiplicity (c (i - 1)) : ℤ) + T.multiplicity (c (i + 1)) =
         2 * T.multiplicity (c i) := by
-    have h := hfib (c i)
-    rw [hr.interior_sum_eq hchainCard _ (by omega) (by omega), hl0 i (by omega) (by omega),
-      hr0 i (by omega) (by omega), zero_mul, zero_mul, add_zero, add_zero,
-      hedge' i (by omega) (by omega), hr.intersection_self i (by omega), hw i (by omega),
-      hedge i (by omega)] at h
+    have h := hrow i (by omega) (by omega)
+    simp only [hl0 i (by omega) (by omega), hr0 i (by omega) (by omega), zero_mul,
+      add_zero] at h
     exact mul_left_cancel₀ hwpos.ne' (by linear_combination h)
   obtain ⟨hdiff, hprog⟩ := multiplicity_eq_add_of_add_eq_two_mul ht hrec
-  -- The fibre relations at the four ends and at the two branch points.
+  -- The fibre relations at the four ends and at the two branch points then force the leaves not
+  -- to meet and the common difference to vanish.
   have h₀ := hfib (c 0)
-  rw [hr.left_sum_eq hchainCard (by omega), hl0 0 (by omega) (by omega),
-    hr0 0 (by omega) (by omega), zero_mul, zero_mul, add_zero, add_zero,
-    hr.intersection_self 0 (by omega), hw 0 (by omega), hedge 0 (by omega)] at h₀
-  have h₁ := hfib (c 1)
-  rw [hr.interior_sum_eq hchainCard _ (by omega) (by omega), hledge,
-    hr0 1 (by omega) (by omega), zero_mul, add_zero, hedge' 1 (by omega) (by omega),
-    hr.intersection_self 1 (by omega), hw 1 (by omega), hedge 1 (by omega), Nat.sub_self,
-    show 1 + 1 = 2 from rfl] at h₁
-  have h₂ := hfib (c (t - 2))
-  rw [hr.interior_sum_eq hchainCard _ (by omega) (by omega), hredge,
-    hl0 (t - 2) (by omega) (by omega), zero_mul, zero_add,
-    hedge' (t - 2) (by omega) (by omega), hr.intersection_self (t - 2) (by omega),
-    hw (t - 2) (by omega), hedge (t - 2) (by omega), show t - 2 - 1 = t - 3 by omega,
-    show t - 2 + 1 = t - 1 by omega] at h₂
+  rw [hr.left_sum_eq hchainCard (by omega)] at h₀
+  simp only [hl0 0 (by omega) (by omega), hr0 0 (by omega) (by omega),
+    hr.intersection_self 0 (by omega), hw 0 (by omega), hedge 0 (by omega), zero_mul,
+    add_zero] at h₀
+  have h₁ := hrow 1 (by omega) (by omega)
+  simp only [hledge, hr0 1 (by omega) (by omega), zero_mul, add_zero] at h₁
+  have h₂ := hrow (t - 2) (by omega) (by omega)
+  simp only [hredge, hl0 (t - 2) (by omega) (by omega), zero_mul, zero_add,
+    show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega] at h₂
+  have hlastEdge : T.intersection (c (t - 1)) (c (t - 2)) = w := by
+    simpa only [show t - 1 - 1 = t - 2 by omega] using hedge' (t - 1) (by omega) (by omega)
   have h₃ := hfib (c (t - 1))
-  rw [hr.right_sum_eq hchainCard (by omega), hl0 (t - 1) (by omega) (by omega),
-    hr0 (t - 1) (by omega) (by omega), zero_mul, zero_mul, add_zero, add_zero,
-    show t - 2 = t - 1 - 1 by omega, hedge' (t - 1) (by omega) (by omega),
-    show t - 1 - 1 = t - 2 by omega, hr.intersection_self (t - 1) (by omega),
-    hw (t - 1) (by omega)] at h₃
+  rw [hr.right_sum_eq hchainCard (by omega)] at h₃
+  simp only [hl0 (t - 1) (by omega) (by omega), hr0 (t - 1) (by omega) (by omega), hlastEdge,
+    hr.intersection_self (t - 1) (by omega), hw (t - 1) (by omega), zero_mul, add_zero] at h₃
   have hL := hfib left
   rw [sum_eq_single_of_mem 1 (mem_range.mpr (by omega)) (fun j hj hne ↦ by
       rw [T.intersection_comm, hl0 j (mem_range.mp hj) hne, zero_mul]),
