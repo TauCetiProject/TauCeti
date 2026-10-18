@@ -108,8 +108,8 @@ coefficients are polynomials in `X`. -/
 noncomputable def swapPowerSeries : R⟦X⟧[X] →+* R[X]⟦X⟧ :=
   eval₂RingHom (PowerSeries.map C) (PowerSeries.C X)
 
-/-- `swapPowerSeries` sends a constant power series in `t` to the same power series with
-constant polynomial coefficients. -/
+/-- `swapPowerSeries` sends a constant polynomial with coefficient `a : R⟦t⟧` to the same
+power series in `t` with constant polynomial coefficients. -/
 @[simp]
 theorem swapPowerSeries_C (a : R⟦X⟧) : swapPowerSeries (C a) = PowerSeries.map C a :=
   eval₂_C _ _
@@ -155,7 +155,7 @@ theorem coeff_swapPowerSeries_mem_degreeLT {Q : R⟦X⟧[X]} {n : ℕ}
 
 section Ring
 
-variable {S : Type*} [CommRing S]
+variable {S : Type*} [CommSemiring S]
 
 /-- A power series `F` over `R[X]` whose constant coefficient is monic of degree `d` and whose
 other coefficients have degree `< d` comes from a monic polynomial over `R⟦X⟧` of degree `d`
