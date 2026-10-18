@@ -71,11 +71,6 @@ def projectiveLine :
   quasiSeparated := inferInstance
   genericFiberIso := projectiveLineGenericFiberIso R K
 
-/-- The chosen generic-fibre identification of the projective-line model is the canonical one. -/
-lemma projectiveLine_genericFiberIso :
-    HEq (projectiveLine R K).genericFiberIso (projectiveLineGenericFiberIso R K) := by
-  rw [projectiveLine]
-
 omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
 /-- The inverse of the generic-fibre identification is the canonical pullback isomorphism. -/
 lemma projectiveLineGenericFiberIso_inv_left :
