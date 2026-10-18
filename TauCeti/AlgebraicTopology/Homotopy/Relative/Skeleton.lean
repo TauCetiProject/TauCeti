@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Relative.Compression
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Compression
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
 # The pair of a CW complex and its skeleton is highly connected
