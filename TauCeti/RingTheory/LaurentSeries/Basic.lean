@@ -24,7 +24,8 @@ fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require
 `R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. This file shows that the algebra action
 of `R` on `A⸨X⸩` agrees with the coefficientwise action, and records that, over a field `K`, a
 nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is a
-unit of `K⟦X⟧`.
+unit of `K⟦X⟧`. Over any semiring, the power series are exactly the Laurent series without terms
+of negative degree.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -47,6 +48,8 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action.
+* `LaurentSeries.mem_range_ofPowerSeries_iff`: a Laurent series is a power series exactly when
+  its coefficients of negative degree vanish.
 * `TauCeti.LaurentSeries.valuation_eq_exp_neg_order`: a nonzero Laurent series `f` has valuation
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
@@ -119,6 +122,23 @@ theorem valuation_coe {g : K⟦X⟧} (hg : g ≠ 0) :
 end Valuation
 
 end TauCeti.LaurentSeries
+
+namespace LaurentSeries
+
+/-- A Laurent series is the image of a power series exactly when its coefficients of negative
+degree vanish. -/
+theorem mem_range_ofPowerSeries_iff {R : Type*} [Semiring R] {f : R⸨X⸩} :
+    f ∈ Set.range (HahnSeries.ofPowerSeries ℤ R) ↔ ∀ n < 0, f.coeff n = 0 := by
+  refine ⟨?_, fun hf ↦ ⟨PowerSeries.mk fun n ↦ f.coeff n, ?_⟩⟩
+  · rintro ⟨g, rfl⟩ n hn
+    simp [PowerSeries.coeff_coe, hn]
+  · ext n
+    rw [PowerSeries.coeff_coe]
+    split_ifs with hn
+    · exact (hf n hn).symm
+    · rw [PowerSeries.coeff_mk, Int.natAbs_of_nonneg (not_lt.1 hn)]
+
+end LaurentSeries
 
 namespace TauCeti
 
