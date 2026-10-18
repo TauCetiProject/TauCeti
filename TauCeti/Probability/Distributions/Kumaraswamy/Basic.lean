@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Beta.Cdf
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Cdf
 import TauCeti.Probability.Density
@@ -224,14 +225,6 @@ private theorem kumaraswamyPDF_eq_jacobian_mul_betaPDF (ha : 0 < a) (hb : 0 < b)
   congr 1
   field_simp
 
-/-- The power `x ^ a` maps the open unit interval onto itself. -/
-private theorem image_rpow_Ioo (ha : 0 < a) : (fun x : ℝ ↦ x ^ a) '' Ioo 0 1 = Ioo 0 1 := by
-  ext y
-  refine ⟨?_, fun hy ↦ ⟨y ^ a⁻¹, ⟨Real.rpow_pos_of_pos hy.1 _,
-    Real.rpow_lt_one hy.1.le hy.2 (inv_pos.mpr ha)⟩, Real.rpow_inv_rpow hy.1.le ha.ne'⟩⟩
-  rintro ⟨x, hx, rfl⟩
-  exact ⟨Real.rpow_pos_of_pos hx.1 a, Real.rpow_lt_one hx.1.le hx.2 ha⟩
-
 /-- **Kumaraswamy and Beta laws.** If `X` is Kumaraswamy `(a, b)`, then `X ^ a` is Beta
 `(1, b)`. -/
 theorem map_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
@@ -244,7 +237,7 @@ theorem map_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo (by fun_prop)
       (fun x hx ↦ (Real.hasDerivAt_rpow_const (Or.inl hx.1.ne')).hasDerivWithinAt)
       ((Real.rpow_left_injOn ha.ne').mono fun x hx ↦ le_of_lt hx.1),
-    image_rpow_Ioo ha, ← betaMeasure_eq_withDensity_restrict_Ioo]
+    Real.image_rpow_Ioo_zero_one ha, ← betaMeasure_eq_withDensity_restrict_Ioo]
 
 /-- The Kumaraswamy law is a probability measure at positive parameters. -/
 theorem isProbabilityMeasure_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :

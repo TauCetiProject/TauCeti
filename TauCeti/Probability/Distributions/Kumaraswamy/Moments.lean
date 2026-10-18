@@ -55,10 +55,6 @@ private theorem rpow_ae_eq_comp_rpow (ha : 0 < a) (b q : ℝ) :
   rw [Function.comp_apply, Real.rpow_zero, mul_one, ← Real.rpow_mul hx.1.le,
     mul_div_cancel₀ q ha.ne']
 
-private theorem zero_lt_one_add_div_iff (ha : 0 < a) : 0 < 1 + q / a ↔ -a < q := by
-  rw [show 1 + q / a = (a + q) / a by field_simp, div_pos_iff_of_pos_right ha,
-    neg_lt_iff_pos_add, add_comm]
-
 /-- The real power `x ^ q` is integrable against the Kumaraswamy `(a, b)` law exactly when
 `-a < q`. -/
 @[simp]
@@ -68,7 +64,7 @@ theorem integrable_rpow_kumaraswamyMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
     (by fun_prop : Measurable fun y : ℝ ↦ y ^ (q / a) * (1 - y) ^ (0 : ℝ)).aestronglyMeasurable
     (by fun_prop), map_rpow_kumaraswamyMeasure ha hb,
     integrable_rpow_mul_one_sub_rpow_betaMeasure_iff zero_lt_one hb, add_zero,
-    zero_lt_one_add_div_iff ha]
+    ← neg_lt_iff_pos_add', lt_div_iff₀ ha, neg_one_mul]
   exact and_iff_left hb
 
 /-- The real-power moment of a Kumaraswamy `(a, b)` variable above the threshold `-a`. -/
@@ -79,13 +75,17 @@ theorem integral_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) (hq : -a < q)
   refine (integral_map (μ := kumaraswamyMeasure a b) (φ := fun x : ℝ ↦ x ^ a) (by fun_prop)
     hg.aestronglyMeasurable).symm.trans ?_
   rw [map_rpow_kumaraswamyMeasure ha hb, integral_rpow_mul_one_sub_rpow_betaMeasure zero_lt_one hb
-      ((zero_lt_one_add_div_iff ha).mpr hq) (by rwa [add_zero]),
+      (by rwa [← neg_lt_iff_pos_add', lt_div_iff₀ ha, neg_one_mul]) (by rwa [add_zero]),
     add_zero, beta_comm 1 b, beta_one_right hb]
   field_simp
 
-/-- Every natural power is integrable against a Kumaraswamy law with positive parameters. -/
-theorem integrable_pow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
+/-- Every natural power is integrable against a Kumaraswamy law. -/
+theorem integrable_pow_kumaraswamyMeasure (a b : ℝ) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (kumaraswamyMeasure a b) := by
+  by_cases hab : 0 < a ∧ 0 < b
+  swap
+  · simp [kumaraswamyMeasure_of_not_pos hab]
+  obtain ⟨ha, hb⟩ := hab
   simpa only [Real.rpow_natCast] using (integrable_rpow_kumaraswamyMeasure_iff ha hb n).mpr
     (lt_of_lt_of_le (neg_neg_of_pos ha) n.cast_nonneg)
 
@@ -111,11 +111,14 @@ theorem variance_id_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
   simp only [Pi.pow_apply, id_eq, integral_pow_kumaraswamyMeasure ha hb 2,
     integral_id_kumaraswamyMeasure ha hb, Nat.cast_ofNat]
 
-/-- Every exponential moment of a Kumaraswamy law with positive parameters exists. -/
+/-- Every exponential moment of a Kumaraswamy law exists. -/
 @[simp]
-theorem integrableExpSet_id_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
+theorem integrableExpSet_id_kumaraswamyMeasure (a b : ℝ) :
     integrableExpSet id (kumaraswamyMeasure a b) = univ := by
-  have := isProbabilityMeasure_kumaraswamyMeasure ha hb
+  by_cases hab : 0 < a ∧ 0 < b
+  swap
+  · simp [kumaraswamyMeasure_of_not_pos hab, integrableExpSet]
+  have := isProbabilityMeasure_kumaraswamyMeasure hab.1 hab.2
   ext t
   simp only [mem_univ, iff_true, integrableExpSet, mem_ofPred_eq, id_eq]
   exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
