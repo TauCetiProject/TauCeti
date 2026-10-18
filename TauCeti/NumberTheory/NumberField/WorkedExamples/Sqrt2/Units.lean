@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Units.Regulator
-public import TauCeti.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
-import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Height
@@ -37,8 +34,8 @@ with equality, `log (1 + √2) / 2 = (1 / 2) · log (1 + √2)`, so its constant
 
 * `TauCeti.NumberField.Sqrt2.one_add_mul_sub_one_eq_one`: `(1 + θ) (θ − 1) = 1`, so `1 + θ` is a
   unit (`TauCeti.NumberField.Sqrt2.isUnit_one_add`).
-* `TauCeti.NumberField.Sqrt2.exists_isReal_and_apply_one_add_eq`: a real place where `1 + θ` has
-  absolute value `1 + √2`.
+* `TauCeti.NumberField.Sqrt2.exists_isReal_and_apply_eq_one_add_sqrt_two`: a real place where
+  `1 + θ` has absolute value `1 + √2`.
 * `TauCeti.NumberField.Sqrt2.unitCandidateEliminationCertificate_one_add_sqrt_two`: the
   elimination certificate at `1 + √2`.
 * `TauCeti.NumberField.Sqrt2.closure_sup_torsion_eq_top`: a unit with value `1 + θ` generates the
@@ -71,6 +68,7 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 omit [NumberField K] in
 /-- An algebraic integer `θ` with `minpoly ℤ θ = X² − 2` makes `1 + θ` a unit:
 `(1 + θ) (θ − 1) = 1`. -/
+@[simp]
 theorem one_add_mul_sub_one_eq_one (hmin : minpoly ℤ θ = X ^ 2 - 2) :
     (1 + θ) * (θ - 1) = 1 := by
   linear_combination sq_eq_two hmin
@@ -80,9 +78,9 @@ omit [NumberField K] in
 theorem isUnit_one_add (hmin : minpoly ℤ θ = X ^ 2 - 2) : IsUnit (1 + θ) :=
   IsUnit.of_mul_eq_one _ (one_add_mul_sub_one_eq_one hmin)
 
-/-- **The real place at `1 + √2`.** There is a real infinite place `w` of `ℚ(√2)` at which `θ` has
-the value `√2`, so `w (1 + θ) = 1 + √2`. -/
-theorem exists_isReal_and_apply_one_add_eq (hmin : minpoly ℤ θ = X ^ 2 - 2)
+/-- **The real place at `1 + √2`.** There is a real infinite place `w` of `ℚ(√2)` at which `1 + θ`
+has absolute value `w (1 + θ) = 1 + √2`. -/
+theorem exists_isReal_and_apply_eq_one_add_sqrt_two (hmin : minpoly ℤ θ = X ^ 2 - 2)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     ∃ w : InfinitePlace K, w.IsReal ∧ w ((1 + θ : 𝓞 K) : K) = 1 + √2 := by
   let ϑ : IntegralPrimitiveElement K := ⟨θ, hgen⟩
@@ -110,7 +108,7 @@ theorem exists_isReal_and_apply_one_add_eq (hmin : minpoly ℤ θ = X ^ 2 - 2)
 /-- `ℚ(√2)` has unit rank one. -/
 theorem units_rank_eq_one (hmin : minpoly ℤ θ = X ^ 2 - 2)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : rank K = 1 := by
-  obtain ⟨w, hw, -⟩ := exists_isReal_and_apply_one_add_eq hmin hgen
+  obtain ⟨w, hw, -⟩ := exists_isReal_and_apply_eq_one_add_sqrt_two hmin hgen
   exact rank_eq_one_of_finrank_eq_two_of_isReal (finrank_eq_two hmin hgen) hw
 
 /-- **The elimination certificate at `1 + √2`.** In `ℚ(√2)`, every candidate polynomial
@@ -165,7 +163,7 @@ the unit group modulo torsion. -/
 theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - 2)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = 1 + θ) :
     Subgroup.closure {u} ⊔ torsion K = ⊤ := by
-  obtain ⟨w, hw, hwu⟩ := exists_isReal_and_apply_one_add_eq hmin hgen
+  obtain ⟨w, hw, hwu⟩ := exists_isReal_and_apply_eq_one_add_sqrt_two hmin hgen
   rw [← hu] at hwu
   have h1 : 1 < w u := by rw [hwu]; exact lt_add_of_pos_right 1 (by positivity)
   refine UnitCandidateEliminationCertificate.sound ?_ (units_rank_eq_one hmin hgen)
@@ -176,7 +174,7 @@ theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - 2)
 /-- **The regulator of `ℚ(√2)`** is `Real.log (1 + √2)`. -/
 theorem regulator_eq_log_one_add_sqrt_two (hmin : minpoly ℤ θ = X ^ 2 - 2)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : regulator K = Real.log (1 + √2) := by
-  obtain ⟨w, hw, hwu⟩ := exists_isReal_and_apply_one_add_eq hmin hgen
+  obtain ⟨w, hw, hwu⟩ := exists_isReal_and_apply_eq_one_add_sqrt_two hmin hgen
   obtain ⟨u, hu⟩ := isUnit_one_add hmin
   rw [← hu] at hwu
   have h1 : 1 < w u := by rw [hwu]; exact lt_add_of_pos_right 1 (by positivity)
