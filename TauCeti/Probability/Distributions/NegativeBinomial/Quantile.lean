@@ -52,7 +52,6 @@ theorem quantile_map_cast_negativeBinomialMeasure_eq_iff (hr : 0 < r) (hp : 0 < 
 
 /-- At shape zero, every valid negative-binomial law is concentrated at zero, so its interior
 lower quantiles are zero. -/
-@[simp]
 theorem quantile_map_cast_negativeBinomialMeasure_zero (hp : 0 < p) (hp1 : p ≤ 1)
     (hu : u ∈ Ioo 0 1) :
     ((negativeBinomialMeasure 0 p).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
@@ -60,7 +59,6 @@ theorem quantile_map_cast_negativeBinomialMeasure_zero (hp : 0 < p) (hp1 : p ≤
 
 /-- At success probability one, every valid negative-binomial law is concentrated at zero, so
 its interior lower quantiles are zero. -/
-@[simp]
 theorem quantile_map_cast_negativeBinomialMeasure_one (hr : 0 ≤ r) (hu : u ∈ Ioo 0 1) :
     ((negativeBinomialMeasure r 1).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
   simp [negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one hr,
