@@ -11,10 +11,11 @@ public import Mathlib.Data.Finsupp.Multiset
 /-!
 # Weights of finitely supported functions
 
-If every variable has weight at most `c`, then the weight of a monomial `f : σ →₀ ℕ` is at most
-`degree f • c`. With `c = -1` over `ℤ`, this says that a monomial all of whose variables have
-negative weight has weight at most minus its total degree, which is how negatively graded
-variables bound the degree of elements of powers of the ideal of the variables.
+If every variable occurring in a monomial `f : σ →₀ ℕ` has weight at most `c`, then the weight
+of `f` is at most `degree f • c`. With `c = -1` over `ℤ`, this says that a monomial all of whose
+variables have negative weight has weight at most minus its total degree, which is how
+negatively graded variables bound the degree of elements of powers of the ideal of the
+variables.
 
 The weight of a multiset multiplicity function is the sum of the weights of its entries.
 
@@ -26,6 +27,10 @@ lexicographic order and weighted degree.
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
+* `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
+  the variables `s` occurring in `f`.
+* `Finsupp.weight_le_degree_nsmul_of_monotone`: for monotone weights `w`, if every variable
+  occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_gt_add_smul_add_weight_filter_lt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 -/
@@ -52,13 +57,25 @@ namespace Finsupp
 
 variable {σ M : Type*} [AddCommMonoid M] [Preorder M] [AddLeftMono M]
 
+/-- If every variable occurring in `f` has weight at most `c`, then the weight of `f` is at most
+its degree times `c`. -/
+theorem weight_le_degree_nsmul_of_mem_support (f : σ →₀ ℕ) {w : σ → M} {c : M}
+    (hw : ∀ s ∈ f.support, w s ≤ c) : weight w f ≤ degree f • c := by
+  rw [weight_apply, degree_apply, Finsupp.sum, ← Finset.sum_nsmul_assoc]
+  gcongr with s hs
+  exact hw s hs
+
 /-- If every variable has weight at most `c`, then the weight of `f` is at most its degree times
 `c`. -/
 theorem weight_le_degree_nsmul (f : σ →₀ ℕ) {w : σ → M} {c : M} (hw : ∀ s, w s ≤ c) :
-    weight w f ≤ degree f • c := by
-  rw [weight_apply, degree_apply, Finsupp.sum, ← Finset.sum_nsmul_assoc]
-  gcongr with s
-  exact hw s
+    weight w f ≤ degree f • c :=
+  weight_le_degree_nsmul_of_mem_support f fun s _ ↦ hw s
+
+/-- If the weights `w` are monotone and every variable occurring in `f` is at most `i`, then the
+weight of `f` is at most its degree times `w i`. -/
+theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w : σ → M}
+    (hw : Monotone w) {i : σ} (hf : ∀ s ∈ f.support, s ≤ i) : weight w f ≤ degree f • w i :=
+  weight_le_degree_nsmul_of_mem_support f fun s hs ↦ hw (hf s hs)
 
 end Finsupp
 

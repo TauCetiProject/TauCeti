@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Quantile
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
-public import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Probability.Quantile.Map
 
 /-!
@@ -65,56 +64,57 @@ theorem quantile_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n) (hu : u ∈ Ioo
 /-- Fisher--Snedecor quantiles tend to the lower support endpoint `0` as the probability level
 tends to zero from above. -/
 theorem tendsto_quantile_fisherSnedecorMeasure_nhdsGT_zero (hm : 0 < m) (hn : 0 < n) :
-    Tendsto (fun u ↦ ((fisherSnedecorMeasure m n).quantile u : EReal))
+    Tendsto (fun u ↦ (fisherSnedecorMeasure m n).quantile u) (𝓝[>] 0) (𝓝 0) := by
+  have hlim : Tendsto
+      (fun u ↦ fisherSnedecorMap m n
+        (inverseRegularizedIncompleteBeta (m / 2) (n / 2) u))
       (𝓝[>] 0) (𝓝 0) := by
-  have hmap : Tendsto (fisherSnedecorMap m n) (𝓝 0) (𝓝 0) := by
+    have hcont := (hasDerivAt_fisherSnedecorMap m n
+      (u := 0) (by norm_num)).continuousAt.tendsto
+    have hcomp := hcont.comp
+      (tendsto_inverseRegularizedIncompleteBeta_zero
+        (by linarith : 0 < m / 2) (by linarith : 0 < n / 2))
     have hzero : fisherSnedecorMap m n 0 = 0 := by
       rw [fisherSnedecorMap_def]
       norm_num
-    have h := (hasDerivAt_fisherSnedecorMap m n
-      (by norm_num : (0 : ℝ) ≠ 1)).continuousAt.tendsto
-    rw [hzero] at h
-    exact h
-  have hlim := hmap.comp
-    (tendsto_inverseRegularizedIncompleteBeta_zero (a := m / 2) (b := n / 2)
-      (by linarith) (by linarith))
-  apply (EReal.tendsto_coe.mpr hlim).congr'
+    rw [hzero] at hcomp
+    exact hcomp
+  apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-  rw [Function.comp_apply, fisherSnedecorMap_def]
-  exact congrArg (fun x : ℝ ↦ (x : EReal))
-    (quantile_fisherSnedecorMeasure hm hn hu).symm
+  rw [fisherSnedecorMap_def]
+  exact (quantile_fisherSnedecorMeasure hm hn hu).symm
 
 /-- Fisher--Snedecor quantiles tend to infinity as the probability level tends to one from
 below. -/
 theorem tendsto_quantile_fisherSnedecorMeasure_nhdsLT_one (hm : 0 < m) (hn : 0 < n) :
-    Tendsto (fun u ↦ ((fisherSnedecorMeasure m n).quantile u : EReal))
-      (𝓝[<] 1) (𝓝 ⊤) := by
-  have hsub : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
-    simpa only [Tendsto, Filter.map_subLeft_nhdsLT, sub_self] using
-      (le_refl (𝓝[>] (0 : ℝ)))
-  have hinv : Tendsto (fun u : ℝ ↦ (1 - u)⁻¹) (𝓝[<] 1) atTop :=
-    tendsto_inv_nhdsGT_zero.comp hsub
-  have hnum : Tendsto (fun u : ℝ ↦ (n / m) * u) (𝓝[<] 1) (𝓝 (n / m)) := by
-    simpa using tendsto_const_nhds.mul
-      ((continuous_id.tendsto (1 : ℝ)).mono_left nhdsWithin_le_nhds)
-  have hmap : Tendsto (fisherSnedecorMap m n) (𝓝[<] 1) atTop := by
-    have hfun : fisherSnedecorMap m n = fun u ↦ (1 - u)⁻¹ * ((n / m) * u) := by
-      funext u
-      rw [fisherSnedecorMap_def]
-      ring
-    rw [hfun]
-    exact hinv.atTop_mul_pos (div_pos hn hm) hnum
-  have hbeta : Tendsto (inverseRegularizedIncompleteBeta (m / 2) (n / 2))
-      (𝓝[<] 1) (𝓝[<] 1) := by
-    refine tendsto_nhdsWithin_iff.mpr
-      ⟨tendsto_inverseRegularizedIncompleteBeta_one (a := m / 2) (b := n / 2)
-        (by linarith) (by linarith), ?_⟩
-    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    exact (inverseRegularizedIncompleteBeta_mem_Ioo (by linarith) (by linarith) hu.1 hu.2).2
-  apply EReal.tendsto_coe_nhds_top_iff.mpr
-  apply (hmap.comp hbeta).congr'
+    Tendsto (fun u ↦ (fisherSnedecorMeasure m n).quantile u) (𝓝[<] 1) atTop := by
+  have hbeta := tendsto_inverseRegularizedIncompleteBeta_one
+    (by linarith : 0 < m / 2) (by linarith : 0 < n / 2)
+  have hden : Tendsto
+      (fun u ↦ 1 - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u)
+      (𝓝[<] 1) (𝓝[>] 0) := by
+    rw [tendsto_nhdsWithin_iff]
+    constructor
+    · have hsub : Tendsto
+          (fun u ↦ (1 : ℝ) - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u)
+          (𝓝[<] 1) (𝓝 (1 - 1)) := tendsto_const_nhds.sub hbeta
+      simpa using hsub
+    · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+      exact sub_pos.mpr
+        (inverseRegularizedIncompleteBeta_mem_Ioo
+          (by linarith) (by linarith) hu.1 hu.2).2
+  have hnum : Tendsto
+      (fun u ↦ (n / m) * inverseRegularizedIncompleteBeta (m / 2) (n / 2) u)
+      (𝓝[<] 1) (𝓝 (n / m)) := by
+    simpa using tendsto_const_nhds.mul hbeta
+  have hlim : Tendsto
+      (fun u ↦ (n / m) * inverseRegularizedIncompleteBeta (m / 2) (n / 2) u /
+        (1 - inverseRegularizedIncompleteBeta (m / 2) (n / 2) u))
+      (𝓝[<] 1) atTop := by
+    simpa [div_eq_mul_inv] using
+      hnum.pos_mul_atTop (div_pos hn hm) (tendsto_inv_nhdsGT_zero.comp hden)
+  apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-  rw [Function.comp_apply, fisherSnedecorMap_def]
   exact (quantile_fisherSnedecorMeasure hm hn hu).symm
 
 end TauCeti.Probability
