@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
-public import Mathlib.Algebra.Order.Floor.Div
 
 /-!
 # Valuation balls in Eisenstein power-basis coordinates
