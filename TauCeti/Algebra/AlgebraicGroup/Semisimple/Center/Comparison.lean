@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Isogeny
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Adjoint
+import TauCeti.Algebra.AlgebraicGroup.Isogeny.Central
 import TauCeti.Algebra.AlgebraicGroup.Isogeny.FiniteCenter
 
 /-!
@@ -64,14 +65,9 @@ noncomputable def centerQuotientIsoOfIsIsogeny
     (hK : semisimpleCommHopfAlgProperty k K)
     (f : H.obj ⟶ K.obj) (hf : CommHopfAlgCat.IsIsogeny f) :
     hH.centerQuotient.obj ≅ hK.centerQuotient.obj := by
-  have hker := hH.kernelHopfIdeal_centerQuotientι_comp hK.geometricallyConnected f hf
-  have hcomp := hH.isCentralIsogeny_centerQuotientι.isIsogeny.comp hf
-  have hcentral : (CommHopfAlgCat.kernelHopfIdeal (hH.centerQuotientι ≫ f)).IsCentral := by
-    rw [hker]
-    exact CommHopfAlgCat.isCentral_centerDefiningIdeal K.obj
   exact hK.centerQuotientIsoOfIsCentralIsogeny (hH.centerQuotientι ≫ f)
-    ((CommHopfAlgCat.isCentralIsogeny_iff _).mpr
-      ⟨hcomp.finite, hcomp.faithfullyFlat, hcentral⟩)
+    ((hH.isCentralIsogeny_centerQuotientι.isIsogeny.comp hf).isCentralIsogeny_of_charZero
+      hK.geometricallyConnected)
     ((adjointSemisimpleCommHopfAlgProperty_iff _).mp hH.adjointSemisimple_centerQuotient)
 
 /-- The comparison between adjoint forms intertwines the isogeny and the quotient
@@ -134,5 +130,33 @@ theorem centerQuotientIsoOfIsIsogeny_trans
   apply Iso.ext
   apply hH.centerQuotientIsoOfIsIsogeny_hom_unique
   simp
+
+/-- Composing the forward coordinate morphisms gives the comparison for the composite
+isogeny. -/
+@[reassoc (attr := simp)]
+theorem centerQuotientIsoOfIsIsogeny_hom_comp_hom
+    (hH : semisimpleCommHopfAlgProperty k H)
+    (hK : semisimpleCommHopfAlgProperty k K)
+    (hL : semisimpleCommHopfAlgProperty k L)
+    (f : H.obj ⟶ K.obj) (g : K.obj ⟶ L.obj)
+    (hf : CommHopfAlgCat.IsIsogeny f) (hg : CommHopfAlgCat.IsIsogeny g) :
+    (hH.centerQuotientIsoOfIsIsogeny hK f hf).hom ≫
+        (hK.centerQuotientIsoOfIsIsogeny hL g hg).hom =
+      (hH.centerQuotientIsoOfIsIsogeny hL (f ≫ g) (hf.comp hg)).hom :=
+  congrArg Iso.hom (hH.centerQuotientIsoOfIsIsogeny_trans hK hL f g hf hg)
+
+/-- Composing the inverse coordinate morphisms gives the inverse comparison for the
+composite isogeny. -/
+@[reassoc (attr := simp)]
+theorem centerQuotientIsoOfIsIsogeny_inv_comp_inv
+    (hH : semisimpleCommHopfAlgProperty k H)
+    (hK : semisimpleCommHopfAlgProperty k K)
+    (hL : semisimpleCommHopfAlgProperty k L)
+    (f : H.obj ⟶ K.obj) (g : K.obj ⟶ L.obj)
+    (hf : CommHopfAlgCat.IsIsogeny f) (hg : CommHopfAlgCat.IsIsogeny g) :
+    (hK.centerQuotientIsoOfIsIsogeny hL g hg).inv ≫
+        (hH.centerQuotientIsoOfIsIsogeny hK f hf).inv =
+      (hH.centerQuotientIsoOfIsIsogeny hL (f ≫ g) (hf.comp hg)).inv :=
+  congrArg Iso.inv (hH.centerQuotientIsoOfIsIsogeny_trans hK hL f g hf hg)
 
 end TauCeti.semisimpleCommHopfAlgProperty
