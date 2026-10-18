@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Between
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 
 /-!
 # Reflections in hyperbolic geodesics
@@ -22,6 +22,7 @@ side-pairing transformations for triangle groups.
 
 ## Main declarations
 
+* `TauCeti.UpperHalfPlane.isometry_J_smul`: the action of `UpperHalfPlane.J` is an isometry.
 * `TauCeti.UpperHalfPlane.imaginaryAxisReflection`: reflection in the imaginary axis, the action
   of `UpperHalfPlane.J`.
 * `TauCeti.UpperHalfPlane.geodesicReflection`: reflection in `geodesicLine g`, obtained by
@@ -55,6 +56,13 @@ open scoped MatrixGroups Pointwise
 
 namespace TauCeti.UpperHalfPlane
 
+/-- The orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` acts on `ℍ` by an
+isometry. -/
+theorem isometry_J_smul : Isometry (J • · : ℍ → ℍ) :=
+  Isometry.of_dist_eq fun z w ↦ by
+    rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul, dist_neg_neg,
+      Complex.dist_conj_conj, J_smul_im, J_smul_im]
+
 /-- Reflection in the imaginary axis of the upper half-plane, `x + iy ↦ -x + iy`, packaged as
 an isometry. It is the action of Mathlib's orientation-reversing involution
 `UpperHalfPlane.J : GL (Fin 2) ℝ` (`imaginaryAxisReflection_apply`). -/
@@ -63,12 +71,7 @@ def imaginaryAxisReflection : ℍ ≃ᵢ ℍ where
   invFun z := J • z
   left_inv z := by simp only [smul_smul, ← sq, J_sq, one_smul]
   right_inv z := by simp only [smul_smul, ← sq, J_sq, one_smul]
-  isometry_toFun := Isometry.of_dist_eq fun z w ↦ by
-    have him (z : ℍ) : (J • z).im = z.im := by
-      rw [← UpperHalfPlane.coe_im, coe_J_smul, Complex.neg_im, Complex.conj_im, neg_neg,
-        UpperHalfPlane.coe_im]
-    rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul, dist_neg_neg,
-      Complex.dist_conj_conj, him, him]
+  isometry_toFun := isometry_J_smul
 
 /-- Reflection in the imaginary axis is the action of `UpperHalfPlane.J`. -/
 theorem imaginaryAxisReflection_apply (z : ℍ) : imaginaryAxisReflection z = J • z :=
@@ -76,15 +79,13 @@ theorem imaginaryAxisReflection_apply (z : ℍ) : imaginaryAxisReflection z = J 
 
 /-- Reflection in the imaginary axis negates the real part. -/
 @[simp]
-theorem imaginaryAxisReflection_re (z : ℍ) : (imaginaryAxisReflection z).re = -z.re := by
-  rw [imaginaryAxisReflection_apply, ← UpperHalfPlane.coe_re, coe_J_smul, Complex.neg_re,
-    Complex.conj_re, UpperHalfPlane.coe_re]
+theorem imaginaryAxisReflection_re (z : ℍ) : (imaginaryAxisReflection z).re = -z.re :=
+  J_smul_re z
 
 /-- Reflection in the imaginary axis preserves the imaginary part. -/
 @[simp]
-theorem imaginaryAxisReflection_im (z : ℍ) : (imaginaryAxisReflection z).im = z.im := by
-  rw [imaginaryAxisReflection_apply, ← UpperHalfPlane.coe_im, coe_J_smul, Complex.neg_im,
-    Complex.conj_im, neg_neg, UpperHalfPlane.coe_im]
+theorem imaginaryAxisReflection_im (z : ℍ) : (imaginaryAxisReflection z).im = z.im :=
+  J_smul_im z
 
 /-- Reflection in the imaginary axis is an involution. -/
 @[simp]
@@ -218,20 +219,9 @@ theorem geodesicReflection_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) :
 theorem geodesicReflection_eq_of_range_eq {g h : PSL(2, ℝ)}
     (hgh : Set.range (geodesicLine g) = Set.range (geodesicLine h)) :
     geodesicReflection g = geodesicReflection h := by
-  have key (k : PSL(2, ℝ)) {s t : ℝ} (hst : s ≠ t) :
-      geodesicReflection (geodesicBetween (geodesicLine k s) (geodesicLine k t)) =
-        geodesicReflection k := by
-    rcases hst.lt_or_gt with hst | hst
-    · rw [geodesicBetween_geodesicLine_of_lt k hst, geodesicReflection_mul_dilation]
-    · rw [geodesicBetween_swap ((geodesicLine_injective k).ne hst.ne),
-        geodesicReflection_mul_pslS, geodesicReflection_mul_dilation,
-        geodesicBetween_geodesicLine_of_lt k hst, geodesicReflection_mul_dilation]
-  obtain ⟨s, hs⟩ : geodesicLine g 0 ∈ Set.range (geodesicLine h) := hgh ▸ Set.mem_range_self 0
-  obtain ⟨t, ht⟩ : geodesicLine g 1 ∈ Set.range (geodesicLine h) := hgh ▸ Set.mem_range_self 1
-  have hst : s ≠ t := by
-    rintro rfl
-    exact zero_ne_one (geodesicLine_injective g (hs.symm.trans ht))
-  rw [← key g zero_ne_one, ← hs, ← ht, key h hst]
+  rcases exists_eq_mul_dilation_or_eq_mul_pslS_mul_dilation_of_range_eq hgh with
+    ⟨s, rfl⟩ | ⟨s, rfl⟩ <;>
+  simp only [geodesicReflection_mul_dilation, geodesicReflection_mul_pslS]
 
 /-- A point reflected across `geodesicLine g` lies in its left half-plane exactly when the
 original point lies in its right half-plane. -/
