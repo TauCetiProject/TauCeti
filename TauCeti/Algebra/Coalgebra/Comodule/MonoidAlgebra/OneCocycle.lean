@@ -85,7 +85,7 @@ theorem tensorComponent_monoidCoeff_one_regularCoboundary (v : V) :
   simp [regularCoboundary_apply, weightProj_apply]
 
 /-- A regular cocycle is the coboundary of its identity-character coefficient. -/
-theorem eq_coboundary_monoidCoeff_one {b : V ⊗[R] MonoidAlgebra R G}
+theorem eq_regularCoboundary_tensorComponent_monoidCoeff_one {b : V ⊗[R] MonoidAlgebra R G}
     (hb : IsRegularCocycle₁ b) :
     b = regularCoboundary (LinearMap.tensorComponent (monoidCoeff R G 1) b) := by
   classical
@@ -94,10 +94,10 @@ theorem eq_coboundary_monoidCoeff_one {b : V ⊗[R] MonoidAlgebra R G}
     ((TensorProduct.assoc R V (MonoidAlgebra R G) (MonoidAlgebra R G)).symm t)) hb
   rw [LinearMap.tensorComponent_assoc_symm, tensorComponent_monoidCoeff_comul_lTensor] at h
   simp only [LinearEquiv.symm_apply_apply, map_add, LinearMap.tensorComponent_tmul,
-    monoidCoeff_apply, MonoidAlgebra.coeff_single] at h
-  rw [← LinearMap.comp_apply, ← coact_comp_tensorComponent, LinearMap.comp_apply] at h
+    tensorComponent_rTensor_coact, monoidCoeff_apply, MonoidAlgebra.coeff_single,
+    Finsupp.single_eq_same, one_smul] at h
   rw [regularCoboundary_apply]
-  exact (eq_sub_iff_add_eq).mpr (by simpa [add_comm] using h.symm)
+  exact (eq_sub_iff_add_eq).mpr (by simpa only [add_comm] using h.symm)
 
 /-- A coboundary satisfies the regular cocycle identity. -/
 @[simp]
@@ -113,11 +113,12 @@ theorem isRegularCocycle₁_regularCoboundary (v : V) :
 /-- Every regular one-cocycle has a unique coboundary representative whose invariant
 weight component vanishes. Thus the coboundary representative is determined without
 choosing a complement to the invariant submodule. -/
-theorem existsUnique_coboundary_weightProj_one_eq_zero {b : V ⊗[R] MonoidAlgebra R G}
+theorem existsUnique_weightProj_one_eq_zero_and_eq_regularCoboundary
+    {b : V ⊗[R] MonoidAlgebra R G}
     (hb : IsRegularCocycle₁ b) :
     ∃! v : V, weightProj R G V 1 v = 0 ∧ b = regularCoboundary v := by
   let v := LinearMap.tensorComponent (monoidCoeff R G 1) b
-  have hv := eq_coboundary_monoidCoeff_one hb
+  have hv := eq_regularCoboundary_tensorComponent_monoidCoeff_one hb
   have hc := congrArg (LinearMap.tensorComponent (monoidCoeff R G 1)) hv
   have hzero : weightProj R G V 1 v = 0 := by
     simpa only [tensorComponent_monoidCoeff_one_regularCoboundary, sub_eq_self, v] using hc.symm
@@ -128,11 +129,11 @@ theorem existsUnique_coboundary_weightProj_one_eq_zero {b : V ⊗[R] MonoidAlgeb
 
 /-- The regular cocycle equation is equivalent to being a coboundary. This is vanishing
 of rational first cohomology with module coefficients for a diagonalizable group. -/
-theorem isRegularCocycle₁_iff_exists_coboundary (b : V ⊗[R] MonoidAlgebra R G) :
+theorem isRegularCocycle₁_iff_exists_eq_regularCoboundary (b : V ⊗[R] MonoidAlgebra R G) :
     IsRegularCocycle₁ b ↔ ∃ v : V, b = regularCoboundary v := by
   constructor
   · intro hb
-    exact ⟨_, eq_coboundary_monoidCoeff_one hb⟩
+    exact ⟨_, eq_regularCoboundary_tensorComponent_monoidCoeff_one hb⟩
   · rintro ⟨v, rfl⟩
     exact isRegularCocycle₁_regularCoboundary v
 
