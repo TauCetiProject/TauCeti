@@ -13,6 +13,7 @@ public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Probability.Quantile.Map
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -36,6 +37,12 @@ pulled-back point: this left limit of the cdf cannot be replaced by the cdf itse
 an atom there. At slope zero the pushforward of a probability measure is the Dirac mass at `a`,
 which is Mathlib's `MeasureTheory.Measure.map_const`.
 
+The quantiles follow the same pattern. At a positive slope the quantile of the image is the image
+of the quantile. At a negative slope the levels are reflected and the lower and upper quantiles
+exchange roles: the quantile at level `t` is the image of the upper quantile at level `1 - t`.
+At slope zero both are `a`, by `MeasureTheory.Measure.quantile_dirac` and
+`MeasureTheory.Measure.upperQuantile_dirac`.
+
 The variance, moment-generating function and characteristic function computations follow
 Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const_add` and
 `ProbabilityTheory.variance_const_mul`, `ProbabilityTheory.mgf_const_add` and
@@ -55,6 +62,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
   Radon–Nikodym interfaces;
 * `TauCeti.Probability.cdf_map_affine_of_pos`, `TauCeti.Probability.cdf_map_affine_of_neg` — the
   cdf at a positive and at a negative slope;
+* `TauCeti.Probability.quantile_map_affine_of_pos`, `TauCeti.Probability.quantile_map_affine_of_neg`
+  and their upper-quantile counterparts — the quantiles at a positive and at a negative slope;
 * `TauCeti.Probability.memLp_id_map_affine_iff` — a nonconstant affine image has exactly the
   absolute moments of the original law;
 * `TauCeti.Probability.integral_id_map_affine`, `TauCeti.Probability.variance_id_map_affine` —
@@ -235,6 +244,36 @@ theorem cdf_map_affine_of_neg [IsProbabilityMeasure μ] (hb : b < 0) (x : ℝ) :
     constructor <;> intro h <;> linarith
   rw [cdf_eq_real, map_measureReal_apply (measurable_affine a b) measurableSet_Iic, hpre,
     measureReal_compl measurableSet_Iio, probReal_univ]
+
+/-! ### Quantiles -/
+
+/-- At a positive slope, the quantile of the affine image at a level strictly between `0` and `1`
+is the affine image of the quantile. -/
+theorem quantile_map_affine_of_pos [IsProbabilityMeasure μ] (hb : 0 < b) {t : ℝ} (h0 : 0 < t)
+    (h1 : t < 1) : (μ.map fun x => a + b * x).quantile t = a + b * μ.quantile t :=
+  Measure.quantile_map_of_monotone (fun _ _ h => by gcongr) (by fun_prop) h0 h1
+
+/-- At a positive slope, the upper quantile of the affine image at a level strictly between `0`
+and `1` is the affine image of the upper quantile. -/
+theorem upperQuantile_map_affine_of_pos [IsProbabilityMeasure μ] (hb : 0 < b) {t : ℝ}
+    (h0 : 0 < t) (h1 : t < 1) :
+    (μ.map fun x => a + b * x).upperQuantile t = a + b * μ.upperQuantile t :=
+  Measure.upperQuantile_map_of_monotone (fun _ _ h => by gcongr) (by fun_prop) h0 h1
+
+/-- At a negative slope, the quantile of the affine image at a level `t` strictly between `0` and
+`1` is the affine image of the upper quantile at the level `1 - t`. The upper quantile cannot be
+replaced by the quantile when the cumulative distribution function of `μ` has a plateau at the
+level `1 - t`. -/
+theorem quantile_map_affine_of_neg [IsProbabilityMeasure μ] (hb : b < 0) {t : ℝ} (h0 : 0 < t)
+    (h1 : t < 1) : (μ.map fun x => a + b * x).quantile t = a + b * μ.upperQuantile (1 - t) :=
+  Measure.quantile_map_of_antitone (fun _ _ h => by nlinarith) (by fun_prop) h0 h1
+
+/-- At a negative slope, the upper quantile of the affine image at a level `t` strictly between
+`0` and `1` is the affine image of the quantile at the level `1 - t`. -/
+theorem upperQuantile_map_affine_of_neg [IsProbabilityMeasure μ] (hb : b < 0) {t : ℝ}
+    (h0 : 0 < t) (h1 : t < 1) :
+    (μ.map fun x => a + b * x).upperQuantile t = a + b * μ.quantile (1 - t) :=
+  Measure.upperQuantile_map_of_antitone (fun _ _ h => by nlinarith) (by fun_prop) h0 h1
 
 /-! ### Integrability and moments -/
 

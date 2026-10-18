@@ -8,16 +8,20 @@ module
 public import Mathlib.MeasureTheory.Group.Measure
 
 /-!
-# Measures invariant under addition
+# Measures and the group operations
 
 This file records measure formulas for finite families of disjoint additive translates.  In
 lattice-point counting, the formula turns disjoint translates of a fundamental-domain cell into
-measure bounds that can be compared with the number of cells.
+measure bounds that can be compared with the number of cells. It also records that inverting or
+negating a probability measure gives a probability measure, so that the law of `X⁻¹` or `-X` can
+be used wherever a probability law is expected.
 
 ## Main results
 
 * `Measure.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure
   equal to the number of translates times the measure of the original set.
+* `Measure.isProbabilityMeasure_inv`, `Measure.isProbabilityMeasure_neg`: the inverse and the
+  negation of a probability measure are probability measures.
 -/
 
 public section
@@ -53,3 +57,14 @@ theorem _root_.MeasureTheory.Measure.measure_biUnion_sub_mem
   simp
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- The inverse of a probability measure is a probability measure. -/
+@[to_additive /-- The negation of a probability measure is a probability measure. -/]
+instance isProbabilityMeasure_inv {G : Type*} [MeasurableSpace G] [Inv G] (μ : Measure G)
+    [IsProbabilityMeasure μ] : IsProbabilityMeasure μ.inv := by
+  rw [inv_def]
+  infer_instance
+
+end MeasureTheory.Measure
