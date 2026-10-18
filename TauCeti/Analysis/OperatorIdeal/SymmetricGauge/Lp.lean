@@ -15,8 +15,6 @@ is a symmetric gauge. Its extension to arbitrary nonnegative extended-real seque
 the `p`-th root of the sum of their `p`-th powers, including when the sum is infinite.
 Applied to approximation numbers, these gauges construct the Schatten operator ideals.
 
-The triangle inequality reuses Mathlib's `NNReal.Lp_add_le`.
-
 ## References
 
 * B. Simon, *Trace Ideals and Their Applications*, second edition, AMS, 2005, Chapter 2.
@@ -33,6 +31,7 @@ namespace TauCeti.SymmetricGauge
 noncomputable def lpGauge (p : ℝ) (hp : 1 ≤ p) : SymmetricGauge where
   toFun a := (a.sum fun _ x ↦ x ^ p) ^ (1 / p)
   map_add_le' a b := by
+    -- The triangle inequality reuses Mathlib's `NNReal.Lp_add_le`.
     classical
     have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
     rw [Finsupp.sum_of_support_subset _ Finsupp.support_add _ (by simp [hp0]),
