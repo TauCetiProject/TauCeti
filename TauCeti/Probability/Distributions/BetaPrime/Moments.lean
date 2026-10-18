@@ -19,9 +19,9 @@ the singularity at zero and the polynomial tail, respectively. This file proves 
 criterion, its natural-power specializations, the mean and variance, and the exact
 exponential-integrability domain `Iic 0`.
 
-The real-power results use the odds-map image of Beta and its mixed real-power moments.
-The mean, variance, and exponential domain use the existing scaled Fisher--Snedecor
-representation, avoiding a second evaluation of the same beta-function recurrences.
+The beta-prime law is the odds-map image of `betaMeasure a b`, and equals the law of
+`(a / b) * Y` for `Y` with law `fisherSnedecorMeasure (2 * a) (2 * b)`. These
+integrability criteria identify which powers and exponentials have finite expectation.
 
 ## References
 
