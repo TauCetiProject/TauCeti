@@ -11,19 +11,20 @@ public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
-# Scalar towers, the product rule, and residues of `φⁿ dφ` for Laurent series
+# The algebra action, the product rule, and residues of `φⁿ dφ` for Laurent series
 
 For an `R`-algebra `A`, the `R`-algebra structure on `A⸨X⸩` is the one inherited from `A⟦X⟧`
 through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by the image of a
 constant power series. This is propositionally, but not definitionally, equal to the coefficientwise
 action `HahnSeries.instSMul` found by default.
 
-The imported Hahn-series scalar-tower instance covers the polynomial path
-`A[X] → A⟦X⟧ → A⸨X⸩`. This is what
+The scalar tower `S → A⟦X⟧ → A⸨X⸩` for any `A⟦X⟧`-algebra `S` (in particular `R` and `A[X]`)
+is imported from `TauCeti.RingTheory.HahnSeries.PowerSeries`; the tower over `R` is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
-`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. Over a field `K`, it also records that
-a nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is
-a unit of `K⟦X⟧`.
+`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. This file shows that the algebra action
+of `R` on `A⸨X⸩` agrees with the coefficientwise action, and records that, over a field `K`, a
+nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is a
+unit of `K⟦X⟧`.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
