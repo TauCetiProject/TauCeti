@@ -73,6 +73,7 @@ theorem levelDiagram_map_hom {n m : RamificationIndex} (f : n ⟶ m) :
 variable {K} in
 /-- Moving a level-`n` series to level `m` along `X ↦ X ^ (m / n)` does not change its image in
 the Puiseux field. -/
+@[simp]
 theorem levelEmbedding_expand_transitionDegree {n m : RamificationIndex} (h : n ≤ m)
     (f : LaurentSeries K) :
     levelEmbedding K m.toPNat
