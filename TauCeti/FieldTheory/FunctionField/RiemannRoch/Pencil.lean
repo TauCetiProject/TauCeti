@@ -165,14 +165,9 @@ theorem riemannRochSpace_add_nsmul_poles_eq_span (hF : IsFunctionField k F)
       · exact Submodule.span_mono (by
           rintro f ⟨i, hi, a, ha, rfl⟩
           exact ⟨i, by omega, a, ha, rfl⟩) ha
-      · induction hb using Submodule.span_induction with
-        | mem f hf =>
-          obtain ⟨i, hi, a, ha, rfl⟩ := hf
-          apply Submodule.subset_span
-          exact ⟨i + 1, by omega, a, ha, by simp [pow_succ, mul_assoc, mul_left_comm]⟩
-        | zero => simp
-        | add f g _ _ hf hg => simpa [mul_add] using Submodule.add_mem _ hf hg
-        | smul c f _ hf => simpa [mul_smul_comm] using Submodule.smul_mem _ c hf
+      · refine Submodule.mapsTo_span (f := LinearMap.mulLeft k (z : F)) ?_ hb
+        rintro f ⟨i, hi, a, ha, rfl⟩
+        exact ⟨i + 1, by omega, a, ha, by simp [pow_succ, mul_assoc, mul_left_comm]⟩
     · refine Submodule.span_le.mpr ?_
       rintro f ⟨i, hi, a, ha, rfl⟩
       have hpow : (z : F) ^ i ∈ riemannRochSpace (i • Divisor.poles hF z) := by
