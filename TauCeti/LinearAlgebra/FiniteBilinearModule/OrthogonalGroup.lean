@@ -67,14 +67,13 @@ theorem quadratic_smul (g : orthogonalGroup A) (x : A) :
 corresponding self-isometry. -/
 theorem smul_eq_map_toAddEquiv (g : orthogonalGroup A) (H : AddSubgroup A) :
     g • H = H.map (QuadraticMap.orthogonalGroupEquivIsometryEquiv A.quadratic g).toAddEquiv := by
-  ext x
-  simp only [AddSubgroup.mem_map]
-  have hg := congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv A.quadratic g)
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨y, hy, hg y⟩
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨y, hy, (hg y).symm⟩
+  calc
+    g • H = H.map (DistribMulAction.toAddMonoidEnd _ _ g) :=
+      AddSubgroup.pointwise_smul_def H
+    _ = H.map (QuadraticMap.orthogonalGroupEquivIsometryEquiv A.quadratic g).toAddEquiv := by
+      congr 1
+      ext x
+      exact (congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv A.quadratic g) x).symm
 
 /-- The orthogonal group preserves quadratic-isotropic subgroups. -/
 @[simp]
