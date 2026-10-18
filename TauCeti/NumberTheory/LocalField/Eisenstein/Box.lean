@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
-public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Algebra.Order.Floor.Div
 
 /-!
@@ -16,7 +15,10 @@ For an Eisenstein generator `ξ` of a finite extension `L/K`, the normalized val
 `i`-th power-basis term is congruent to `i` modulo the degree. Consequently, the coefficient
 vectors whose power-basis linear combination lies in the valuation ball of radius `r` form a
 box: the `i`-th coefficient belongs to the `ceil((r - i) / n)`-th power of the maximal ideal of
-`O_K`. At radii divisible by `n`, this box is a cube.
+`O_K`. At radii divisible by `n`, this box is a cube. Both statements specialize the uniformizer
+descriptions `TauCeti.le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible` and
+`TauCeti.ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible`, since an
+Eisenstein generator is a uniformizer and `e(L/K) = n`.
 
 These descriptions turn valuation-ball questions in a totally ramified extension into
 coordinatewise ideal-membership questions over the base field. They are used in local change of
@@ -55,38 +57,10 @@ theorem le_addVal_sum_eisenstein_powerBasis_iff
     (r : ℕ∞) ≤ IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ)) ↔
       ∀ i : Fin f.natDegree, c i ∈ 𝓂[K] ^ ((r - (i : ℕ)) ⌈/⌉ f.natDegree) := by
-  rw [addVal_sum_eisenstein_powerBasis f hf ξ hroot hgen c,
-    ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen,
-    le_iInf_iff]
-  have hdeg : 0 < f.natDegree := by
-    rw [← ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen]
-    exact ramificationIndex_pos
-  constructor
-  · intro h i
-    rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
-    cases hci : IsDiscreteValuationRing.addVal 𝒪[K] (c i) with
-    | top => simp
-    | coe v =>
-        have hi := h i
-        rw [hci, nsmul_eq_mul] at hi
-        rw [ENat.natCast_le_natCast]
-        rw [ceilDiv_le_iff_le_mul hdeg]
-        have hri : r ≤ f.natDegree * v + (i : ℕ) := by
-          exact_mod_cast hi
-        omega
-  · intro h i
-    have hi := h i
-    rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal] at hi
-    cases hci : IsDiscreteValuationRing.addVal 𝒪[K] (c i) with
-    | top => simp [hdeg.ne']
-    | coe v =>
-        rw [hci, ENat.natCast_le_natCast] at hi
-        simp only [nsmul_eq_mul, ← ENat.natCast_mul, ← ENat.natCast_add,
-          ENat.natCast_le_natCast]
-        have hsub : r - (i : ℕ) ≤ f.natDegree * v :=
-          (ceilDiv_le_iff_le_mul hdeg).mp hi
-        have hri : r ≤ f.natDegree * v + (i : ℕ) := by omega
-        exact_mod_cast hri
+  rw [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible
+      (irreducible_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen)
+      (ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen).ge c,
+    ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen]
 
 /-- At a radius divisible by the degree, the power-basis coordinate box is the cube in which
 every coefficient belongs to the same power of the base maximal ideal. -/
@@ -97,23 +71,9 @@ theorem natDegree_mul_le_addVal_sum_eisenstein_powerBasis_iff
     (f.natDegree * ρ : ℕ) ≤ IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ)) ↔
       ∀ i : Fin f.natDegree, c i ∈ 𝓂[K] ^ ρ := by
-  rw [le_addVal_sum_eisenstein_powerBasis_iff f hf ξ hroot hgen c]
-  have hdeg : 0 < f.natDegree := by
-    rw [← ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen]
-    exact ramificationIndex_pos
-  apply forall_congr'
-  intro i
-  have hceil : (f.natDegree * ρ - (i : ℕ)) ⌈/⌉ f.natDegree = ρ := by
-    cases ρ with
-    | zero => simp
-    | succ ρ =>
-        apply le_antisymm
-        · rw [ceilDiv_le_iff_le_mul hdeg]
-          omega
-        · have hlt : ρ < (f.natDegree * (ρ + 1) - (i : ℕ)) ⌈/⌉ f.natDegree := by
-            rw [(gc_mul_ceilDiv hdeg).lt_iff_lt, Nat.lt_sub_iff_add_lt]
-            nlinarith [i.isLt]
-          omega
-  simp only [hceil]
+  have he := ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
+  have h := ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible
+    (irreducible_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen) he.ge c ρ
+  rwa [he] at h
 
 end Polynomial
