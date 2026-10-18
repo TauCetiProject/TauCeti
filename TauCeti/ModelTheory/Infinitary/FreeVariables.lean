@@ -33,11 +33,9 @@ open FirstOrder.Language
 
 variable {L : FirstOrder.Language.{u, v}} {ι : Type uι} {α : Type uα} {n : ℕ}
 
-namespace Term
-
 /-- Term realization depends only on the free valuation on its finite left-variable support;
 the valuation of the right variables is held fixed. -/
-theorem realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [L.Structure M]
+theorem term_realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [L.Structure M]
     (t : L.Term (α ⊕ β)) {v₁ v₂ : α → M} (ys : β → M)
     (h : Set.EqOn v₁ v₂ ↑t.varFinsetLeft) :
     t.realize (Sum.elim v₁ ys) = t.realize (Sum.elim v₂ ys) := by
@@ -46,8 +44,6 @@ theorem realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [
   have hv : v₁ ∘ ((↑) : (↑t.varFinsetLeft : Set α) → α) = v₂ ∘ (↑) :=
     funext fun a => h a.property
   rw [hv]
-
-end Term
 
 namespace BoundedFormulaInf
 
@@ -201,12 +197,12 @@ theorem realize_congr_freeVarSupport {M : Type w} [L.Structure M]
   | equal t₁ t₂ =>
     simp only [freeVarSupport_equal] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_equal,
-      Term.realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
-      Term.realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
+      term_realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
+      term_realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
   | rel R ts =>
     rw [freeVarSupport_rel] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_rel]
-    have ht (i) := Term.realize_congr_varFinsetLeft (ts i) xs
+    have ht (i) := term_realize_congr_varFinsetLeft (ts i) xs
       (h.mono (Set.subset_iUnion (fun i => ((ts i).varFinsetLeft : Set α)) i))
     simp only [ht]
   | imp φ ψ ihφ ihψ =>
