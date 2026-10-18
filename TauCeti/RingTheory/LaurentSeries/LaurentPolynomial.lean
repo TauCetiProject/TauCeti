@@ -27,7 +27,7 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
 ## Main definitions
 
 * `LaurentPolynomial.toLaurentSeries`: the inclusion of Laurent polynomials into Laurent series.
-* `LaurentPolynomial.algebraLaurentSeries`: the induced Laurent-polynomial algebra structure.
+* `LaurentSeries.algebraLaurentPolynomial`: the induced Laurent-polynomial algebra structure.
 
 ## Main results
 
@@ -85,7 +85,7 @@ theorem toLaurentSeries_C (r : R) : toLaurentSeries (C r) = HahnSeries.C r := by
 
 /-- Laurent series form an algebra over Laurent polynomials through the finite-support
 inclusion. -/
-noncomputable instance algebraLaurentSeries : Algebra R[T;T⁻¹] R⸨X⸩ :=
+noncomputable instance _root_.LaurentSeries.algebraLaurentPolynomial : Algebra R[T;T⁻¹] R⸨X⸩ :=
   toLaurentSeries.toAlgebra
 
 /-- The algebra map from Laurent polynomials to Laurent series is the finite-support
@@ -97,16 +97,9 @@ theorem algebraMap_eq_toLaurentSeries (p : R[T;T⁻¹]) :
 /-- The coefficient ring, Laurent-polynomial ring, and Laurent-series ring form an algebra
 tower. -/
 instance isScalarTower_laurentSeries : IsScalarTower R R[T;T⁻¹] R⸨X⸩ :=
-  ⟨fun r p f ↦ by
-    calc
-      (r • p) • f = toLaurentSeries (r • p) * f := rfl
-      _ = toLaurentSeries (algebraMap R R[T;T⁻¹] r * p) * f := by
-        rw [Algebra.smul_def]
-      _ = (HahnSeries.C r * toLaurentSeries p) * f := by
-        rw [map_mul, LaurentPolynomial.algebraMap_apply, Algebra.algebraMap_self_apply,
-          toLaurentSeries_C]
-      _ = r • (toLaurentSeries p * f) := by rw [mul_assoc, HahnSeries.C_mul_eq_smul]
-      _ = r • (p • f) := rfl⟩
+  .of_algebraMap_smul fun r f ↦ by
+    rw [Algebra.smul_def, algebraMap_eq_toLaurentSeries, LaurentPolynomial.algebraMap_apply,
+      Algebra.algebraMap_self_apply, toLaurentSeries_C, HahnSeries.C_mul_eq_smul]
 
 /-- The inclusion of a polynomial into Laurent series agrees with first viewing it as a Laurent
 polynomial. -/
@@ -126,22 +119,13 @@ theorem toLaurentSeries_toLaurent (p : R[X]) :
         toLaurentSeries_T, PowerSeries.coe_X]
   exact DFunLike.congr_fun h p
 
-/-- The polynomial, power-series, and Laurent-series algebra structures form a tower. -/
-instance isScalarTower_polynomial_powerSeries :
-    IsScalarTower (Polynomial R) (PowerSeries R) (LaurentSeries R) :=
-  IsScalarTower.of_algebraMap_eq (R := Polynomial R) (S := PowerSeries R)
-    (A := LaurentSeries R) fun p ↦ by
-    rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply']
-    rfl
-
 /-- The polynomial, Laurent-polynomial, and Laurent-series algebra structures form a tower. -/
 instance isScalarTower_polynomial_laurentPolynomial :
     IsScalarTower (Polynomial R) R[T;T⁻¹] (LaurentSeries R) :=
   IsScalarTower.of_algebraMap_eq (R := Polynomial R) (S := R[T;T⁻¹])
     (A := LaurentSeries R) fun p ↦ by
     rw [algebraMap_eq_toLaurentSeries, LaurentPolynomial.algebraMap_eq_toLaurent,
-      toLaurentSeries_toLaurent, HahnSeries.algebraMap_apply']
-    rfl
+      toLaurentSeries_toLaurent, Polynomial.algebraMap_hahnSeries_apply]
 
 /-- The inclusion of Laurent polynomials into Laurent series preserves coefficients. -/
 @[simp]

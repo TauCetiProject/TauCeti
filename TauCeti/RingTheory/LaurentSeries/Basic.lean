@@ -17,7 +17,9 @@ through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by th
 constant power series. This is propositionally, but not definitionally, equal to the coefficientwise
 action `HahnSeries.instSMul` found by default.
 
-This file records that the algebra actions form a scalar tower `R → A⟦X⟧ → A⸨X⸩`. This is what
+This file records that the algebra actions form a scalar tower `R → A⟦X⟧ → A⸨X⸩`; more generally,
+for any `A⟦X⟧`-algebra `S` and strictly ordered semiring `Γ`, the actions form a tower
+`S → A⟦X⟧ → A⟦Γ⟧`, which also covers the polynomial path `A[X] → A⟦X⟧ → A⸨X⸩`. This is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
 `R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. Over a field `K`, it also records that
 a nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is
@@ -40,8 +42,8 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 
 ## Main results
 
-* `TauCeti.LaurentSeries.isScalarTower_powerSeries`: the algebra actions of `R` on `A⟦X⟧` and
-  `A⸨X⸩` form a scalar tower.
+* `TauCeti.hahnSeries_isScalarTower_powerSeries`: the algebra actions of `S` on `A⟦X⟧` and on
+  Hahn series `A⟦Γ⟧`, such as `A⸨X⸩`, form a scalar tower.
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
@@ -71,13 +73,6 @@ open scoped LaurentSeries PowerSeries
 namespace TauCeti.LaurentSeries
 
 variable {R : Type*} [CommSemiring R]
-
-/-- For an `R`-algebra `A`, the scalars of `R` on `A⸨X⸩` factor through `A⟦X⟧`. The scalar
-actions are stated through the algebra structures, since the `R`-algebra structure on `A⸨X⸩` is
-the one inherited from `A⟦X⟧` rather than the coefficientwise action. -/
-instance isScalarTower_powerSeries {A : Type*} [CommSemiring A] [Algebra R A] :
-    @IsScalarTower R A⟦X⟧ A⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-  .of_algebraMap_eq' rfl
 
 /-- Multiplying a Laurent series by a constant of the `R`-algebra structure on `R⸨X⸩` multiplies
 each coefficient by that constant. -/
@@ -127,6 +122,17 @@ end Valuation
 end TauCeti.LaurentSeries
 
 namespace TauCeti
+
+/-- For an `A⟦X⟧`-algebra `S`, the scalars of `S` on the Hahn series `A⟦Γ⟧` factor through
+`A⟦X⟧`. The `S`-algebra structure on `A⟦Γ⟧` is the one inherited from `A⟦X⟧`. For `S = R` with
+`A` an `R`-algebra and `Γ = ℤ`, the scalar actions on `A⸨X⸩` are therefore the algebra actions
+rather than the coefficientwise action. The case `S = A[X]` is the polynomial path
+`A[X] → A⟦X⟧ → A⸨X⸩`. -/
+instance hahnSeries_isScalarTower_powerSeries {Γ A S : Type*} [Semiring Γ] [PartialOrder Γ]
+    [IsStrictOrderedRing Γ] [CommSemiring A] [CommSemiring S] [Algebra S A⟦X⟧] :
+    IsScalarTower S A⟦X⟧ (HahnSeries Γ A) :=
+  .of_algebraMap_eq fun s ↦ by
+    rw [HahnSeries.algebraMap_apply', HahnSeries.algebraMap_apply', Algebra.algebraMap_self_apply]
 
 /-- Multiplication by a constant of the Laurent-series algebra structure agrees with the
 coefficientwise scalar action, for Laurent series with coefficients in any `R`-algebra. -/
