@@ -33,7 +33,8 @@ Finiteness of `ι` is needed: over an infinite index type, a multilinear map out
 
 * `PiTensorProduct.tensorDistribEquiv`: the equivalence `⨂ᵢ (Mᵢ ⊗ Nᵢ) ≃ (⨂ᵢ Mᵢ) ⊗ (⨂ᵢ Nᵢ)`.
 * `PiTensorProduct.optionEquiv`: splitting off the factor at `none` of a tensor product indexed
-  by `Option α`, the inductive step in the construction of `tensorDistribEquiv`.
+  by `Option α`, the inductive step in the constructions of `tensorDistribEquiv` and
+  `PiTensorProduct.sigmaEquiv`.
 
 ## Main results
 
