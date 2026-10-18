@@ -49,14 +49,13 @@ theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) 
 
 /-- The zero smooth form is closed. -/
 theorem isClosed_zero : (0 : SmoothForm I M F k).IsClosed := by
-  change mextDeriv (0 : RoughForm I M F k) = 0
+  rw [isClosed_def]
   exact mextDeriv_zero
 
 /-- The sum of two closed smooth forms is closed. -/
 theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
     (h' : form'.IsClosed) : (form + form').IsClosed := by
-  change mextDeriv (form + form').1 = 0
-  change mextDeriv (form.1 + form'.1) = 0
+  rw [isClosed_def, show (form + form').1 = form.1 + form'.1 by rfl]
   have hform : IsSmoothForm I ∞ form.1 := by
     exact (isSmoothForm_def ∞ _).mpr
       ((isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp form.2))
@@ -71,12 +70,12 @@ theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
 
 /-- A real scalar multiple of a closed smooth form is closed. -/
 theorem IsClosed.smul (c : ℝ) (h : form.IsClosed) : (c • form).IsClosed := by
-  change mextDeriv (c • form.1) = 0
+  rw [isClosed_def, show (c • form).1 = c • form.1 by rfl]
   rw [mextDeriv_smul, h, smul_zero]
 
 /-- The negative of a closed smooth form is closed. -/
 theorem IsClosed.neg (h : form.IsClosed) : (-form).IsClosed := by
-  change mextDeriv (-form.1) = 0
+  rw [isClosed_def, show (-form).1 = -form.1 by rfl]
   rw [mextDeriv_neg, h, neg_zero]
 
 /-- The difference of two closed smooth forms is closed. -/
@@ -91,7 +90,7 @@ theorem isClosed_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
     (A : V [⋀^Fin k]→L[ℝ] F) :
     (SmoothForm.const A : SmoothForm (modelWithCornersSelf ℝ V) V F k).IsClosed := by
-  change mextDeriv (SmoothForm.const A).1 = 0
+  rw [isClosed_def]
   have hconst : (fun y : V => A.compContinuousLinearMap
       (NormedSpace.fromTangentSpace y).toContinuousLinearMap) = fun _ => A := by
     funext y

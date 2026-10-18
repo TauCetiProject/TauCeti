@@ -42,7 +42,8 @@ namespace SmoothTwoForm
 
 variable {form form' : SmoothTwoForm I M}
 
-/-- A continuous alternating bilinear form defines a constant smooth two-form on its model space. -/
+/-- A continuous bilinear form defines a constant smooth two-form by antisymmetrization:
+`const B` evaluates to `(B v w - B w v) / 2`; when `B` is alternating, this agrees with `B`. -/
 def const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) :
     SmoothTwoForm (modelWithCornersSelf ℝ V) V :=
