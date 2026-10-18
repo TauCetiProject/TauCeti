@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-import Mathlib.Analysis.Normed.Group.Quotient
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
+import TauCeti.Analysis.Normed.Module.Dual.Submodule
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 
 /-!
@@ -94,6 +94,7 @@ theorem isWeaklyCompact_iff_exists_isCompact {T : E →L[𝕜] F} :
 /-! ### Algebraic operations -/
 
 /-- The zero operator is weakly compact. -/
+@[simp]
 theorem isWeaklyCompact_zero : (0 : E →L[𝕜] F).IsWeaklyCompact :=
   .of_isCompactOperator <| by
     have h : toWeakSpace 𝕜 F ∘ ⇑(0 : E →L[𝕜] F) = 0 := by
@@ -267,17 +268,6 @@ theorem IsWeaklyCompact.precomp {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) :
   simp only [dual_def, precomp_apply, comp_apply] at h ⊢
   rw [hy', h]
 
-/-- A vector outside a closed subspace is detected by a continuous linear functional vanishing on
-the subspace. -/
-private theorem exists_dual_forall_mem_eq_zero_ne_zero {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace 𝕜 X] {S : Submodule 𝕜 X} (hS : IsClosed (S : Set X)) {x : X} (hx : x ∉ S) :
-    ∃ f : StrongDual 𝕜 X, (∀ y ∈ S, f y = 0) ∧ f x ≠ 0 := by
-  let := hS
-  by_contra! h
-  refine hx ((Submodule.Quotient.mk_eq_zero S).1
-    (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun f ↦ ?_))
-  exact h (f.comp S.mkQL) fun y hy ↦ by simp [(Submodule.Quotient.mk_eq_zero S).2 hy]
-
 /-- **Gantmacher's theorem**, reverse direction: an operator into a Banach space whose adjoint is
 weakly compact is weakly compact. -/
 theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
@@ -295,7 +285,7 @@ theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
     rw [LinearMap.coe_range]
     exact (inclusionInDoubleDualLi 𝕜 (E := F)).isometry.isUniformInducing.isComplete_range.isClosed
   by_contra hΦ
-  obtain ⟨ψ, hψS, hψ⟩ := exists_dual_forall_mem_eq_zero_ne_zero (𝕜 := 𝕜) hS
+  obtain ⟨ψ, hψS, hψ⟩ := Submodule.exists_dual_forall_mem_eq_zero_ne_zero (𝕜 := 𝕜) hS
     (x := ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 T) Φ)
     fun h ↦ hΦ (LinearMap.mem_range.1 h)
   obtain ⟨g, hg⟩ := isWeaklyCompact_iff_range_subset.1 hT ⟨ψ, rfl⟩

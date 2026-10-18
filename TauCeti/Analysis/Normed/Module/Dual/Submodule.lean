@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # The dual of a submodule
@@ -24,6 +25,8 @@ The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`. N
 closedness assumption is needed, and `E` may be seminormed. The kernel computation holds over any
 nontrivially normed field; surjectivity and the isometry use the Hahn–Banach theorem
 `exists_extension_norm_eq`, so they are stated over fields satisfying `IsRCLikeNormedField`.
+Over such fields, a vector outside a closed submodule is also separated from it by a continuous
+linear functional vanishing on the submodule.
 
 This is the standard subspace-duality theorem; see Megginson, *An Introduction to Banach Space
 Theory*, §2.6. It is the continuous analogue of Mathlib's algebraic
@@ -57,6 +60,17 @@ theorem surjective_precomp_subtypeL (S : Submodule 𝕜 E) :
   intro g
   obtain ⟨f, hf, -⟩ := exists_extension_norm_eq S g
   exact ⟨f, ContinuousLinearMap.ext hf⟩
+
+/-- A vector outside a closed submodule is detected by a continuous linear functional vanishing on
+the submodule. -/
+theorem exists_dual_forall_mem_eq_zero_ne_zero {S : Submodule 𝕜 E} (hS : IsClosed (S : Set E))
+    {x : E} (hx : x ∉ S) : ∃ f : StrongDual 𝕜 E, (∀ y ∈ S, f y = 0) ∧ f x ≠ 0 := by
+  let := IsRCLikeNormedField.rclike 𝕜
+  let := hS
+  by_contra! h
+  refine hx ((Submodule.Quotient.mk_eq_zero S).1
+    (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun f ↦ ?_))
+  exact h (f.comp S.mkQL) fun y hy ↦ by simp [(Submodule.Quotient.mk_eq_zero S).2 hy]
 
 /-- The continuous dual of a submodule is isometrically the quotient of the continuous dual of
 the whole space by the annihilator of the submodule. The map sends the class of a functional to
