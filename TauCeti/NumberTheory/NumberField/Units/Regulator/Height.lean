@@ -108,6 +108,13 @@ theorem logHeight₁_eq_index_mul_regulator (hr : rank K = 1) (u : (𝓞 K)ˣ) :
     hplaces, nsmul_eq_mul, Nat.cast_ofNat] at h
   linarith
 
+/-- In unit rank one, the absolute logarithmic height of a unit is its index times the regulator,
+divided by the degree. -/
+theorem absLogHeight₁_eq_index_mul_regulator_div_finrank (hr : rank K = 1) (u : (𝓞 K)ˣ) :
+    absLogHeight₁ (u : K) =
+      ((Subgroup.closure {u} ⊔ torsion K).index : ℝ) * regulator K / Module.finrank ℚ K := by
+  rw [NumberField.absLogHeight₁_eq_div, logHeight₁_eq_index_mul_regulator hr]
+
 /-- In unit rank one, the relative logarithmic height of a fundamental unit is the regulator. -/
 theorem logHeight₁_eq_regulator_of_rank_eq_one (hr : rank K = 1) {ε : (𝓞 K)ˣ}
     (hε : Subgroup.closure {ε} ⊔ torsion K = ⊤) : logHeight₁ (ε : K) = regulator K := by
@@ -118,6 +125,6 @@ divided by the degree. -/
 theorem absLogHeight₁_eq_regulator_div_finrank_of_rank_eq_one (hr : rank K = 1) {ε : (𝓞 K)ˣ}
     (hε : Subgroup.closure {ε} ⊔ torsion K = ⊤) :
     absLogHeight₁ (ε : K) = regulator K / Module.finrank ℚ K := by
-  rw [NumberField.absLogHeight₁_eq_div, logHeight₁_eq_regulator_of_rank_eq_one hr hε]
+  simpa [hε] using absLogHeight₁_eq_index_mul_regulator_div_finrank hr ε
 
 end TauCeti.NumberField.Units
