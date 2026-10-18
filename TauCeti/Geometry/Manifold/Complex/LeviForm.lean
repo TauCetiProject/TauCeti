@@ -122,8 +122,9 @@ theorem manifoldLeviForm_congr_of_eventuallyEq {g : M → ℝ} (hfg : f =ᶠ[�
 
 /-! ### Comparison with the real critical Hessian -/
 
-/-- The real part of the Levi form is one quarter of the `I`-invariant part of the critical
-Hessian. -/
+/-- The real part of the Levi form is one quarter of the sum
+`Hess f(v, w) + Hess f(I • v, I • w)` of critical-Hessian values, that is, one half of the
+`I`-invariant part of the critical Hessian. -/
 @[simp]
 theorem re_manifoldLeviForm_apply (v w : E) :
     (manifoldLeviForm E f x v w).re =
@@ -131,8 +132,9 @@ theorem re_manifoldLeviForm_apply (v w : E) :
   rw [manifoldLeviForm_def, re_leviForm_apply, fderiv_fderiv_comp_chartAt_symm,
     fderiv_fderiv_comp_chartAt_symm]
 
-/-- The imaginary part of the Levi form is one quarter of the part of the critical Hessian which
-anticommutes with `I`. -/
+/-- The imaginary part of the Levi form is one quarter of the mixed difference
+`Hess f(I • v, w) - Hess f(v, I • w)` of critical-Hessian values. Only the `I`-invariant part of
+the critical Hessian contributes; its `I`-anti-invariant part cancels in this difference. -/
 @[simp]
 theorem im_manifoldLeviForm_apply (v w : E) :
     (manifoldLeviForm E f x v w).im =
