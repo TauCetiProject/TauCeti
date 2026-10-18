@@ -9,7 +9,6 @@ public import TauCeti.Data.Fintype.Fiber
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.RingTheory.Polynomial.IntegralNormalization
-import Mathlib.Basic.Sign.Basic
 
 /-! # Polynomial sign counts and Tarski queries
 
@@ -22,8 +21,6 @@ for `p = 0` the value is zero and does not describe the infinite zero set.
 The definitions and their basic API are independent of matrix inversion.
 Over a field, `Polynomial.tarskiQuery_integralNormalization` clears the leading coefficient of
 the root polynomial, so Tarski queries can always be computed at a monic root polynomial.
-Over an ordered field, `Polynomial.sign_eval₂_C_pow_mul_scaleRoots` supplies the matching
-rescaling of the query polynomial.
 
 ## References
 
@@ -226,13 +223,6 @@ theorem tarskiQuery_integralNormalization {p q r : R[X]} (hp : p ≠ 0)
     Finset.sum_image fun x _ y _ hxy => mul_left_cancel₀ ha hxy]
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [h x (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)).eq_zero]
-
-/-- **Rescaling preserves signs.** Evaluating `C (a ^ q.natDegree) * q.scaleRoots a` at `f a * z`
-multiplies the value of `q` at `z` by the positive square `(f a * f a) ^ q.natDegree`. -/
-theorem sign_eval₂_C_pow_mul_scaleRoots [IsStrictOrderedRing R] {S : Type*} [CommSemiring S]
-    (f : S →+* R) (q : S[X]) {a : S} (ha : f a ≠ 0) (z : R) :
-    sign ((C (a ^ q.natDegree) * q.scaleRoots a).eval₂ f (f a * z)) = sign (q.eval₂ f z) := by
-  simp [eval₂_pow, scaleRoots_eval₂_mul, ← mul_assoc, ← mul_pow, sign_mul, mul_self_pos, ha]
 
 end Field
 
