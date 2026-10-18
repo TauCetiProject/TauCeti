@@ -18,7 +18,9 @@ compactness of the filled cover then gives properness. For a nonempty cover the 
 surjective.
 
 Exactly the original cover lies over the unpunctured sphere, and the extension there is the
-original projection. Continuity and density also characterize the extension uniquely.
+original projection. In particular the fibre of the extension over a point of `ℂ ∖ {0, 1}` is
+the fibre of the original cover, and off the marked points the extension is a covering map.
+Continuity and density also characterize the extension uniquely.
 
 ## References
 
@@ -143,6 +145,38 @@ theorem isCoveringMap_restrictPreimage_fillMap :
   funext x
   apply Subtype.ext
   simp
+
+omit hp hfin in
+/-- The fibre of the extended projection over a point `z` of `ℂ ∖ {0, 1}` is the fibre of `p`
+over `z`: no added point lies over `z`. -/
+theorem fillMap_preimage_toOnePoint (z : ThricePuncturedSphere) :
+    fillMap p ⁻¹' {toOnePoint z} = PunctureFilling.incl (chart p) '' (p ⁻¹' {z}) := by
+  ext y
+  induction y using PunctureFilling.induction with
+  | incl x => simp [Subtype.ext_iff]
+  | center i =>
+    have h : PunctureFilling.center (chart p) i ∉ fillMap p ⁻¹' range toOnePoint := by
+      rw [preimage_range_toOnePoint]
+      rintro ⟨x, hx⟩
+      exact PunctureFilling.incl_ne_center x i hx
+    refine iff_of_false (fun hz => h ⟨z, (mem_singleton_iff.1 hz).symm⟩) ?_
+    rintro ⟨x, -, hx⟩
+    exact PunctureFilling.incl_ne_center x i hx
+
+omit hp hfin in
+/-- The fibre of the extended projection over a point `z` of `ℂ ∖ {0, 1}` has as many points as
+the fibre of `p` over `z`. -/
+theorem natCard_fillMap_preimage_toOnePoint (z : ThricePuncturedSphere) :
+    Nat.card (fillMap p ⁻¹' {toOnePoint z}) = Nat.card (p ⁻¹' {z}) := by
+  rw [fillMap_preimage_toOnePoint, Nat.card_image_of_injective PunctureFilling.incl_injective]
+
+/-- **Off the marked points, the extended projection is a covering map.** -/
+theorem isCoveringMapOn_fillMap : IsCoveringMapOn (fillMap p) markedᶜ := by
+  rw [← range_toOnePoint]
+  refine .of_isCoveringMap_restrictPreimage _ isOpenEmbedding_toOnePoint.isOpen_range ?_
+    (isCoveringMap_restrictPreimage_fillMap hp hfin)
+  rw [preimage_range_toOnePoint]
+  exact PunctureFilling.isOpen_range_incl
 
 /-- A continuous extension of the projection to the filled cover is unique. -/
 theorem fillMap_unique {f : FilledCover p → OnePoint ℂ} (hf : Continuous f)
