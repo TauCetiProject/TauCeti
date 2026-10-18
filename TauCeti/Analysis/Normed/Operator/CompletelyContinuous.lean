@@ -32,7 +32,7 @@ approximation, and over Tate scalars under composition on either side with conti
 maps. The identity of a complete normed
 module is completely continuous exactly when the module is finitely generated: an approximant
 of finite rank within distance `1 / 2` of the identity is surjective
-(`ContinuousLinearMap.surjective_of_norm_sub_apply_le`), so its range, which lies in a finitely
+(`TauCeti.surjective_of_norm_sub_apply_le`), so its range, which lies in a finitely
 generated submodule, is everything. Consequently a completely
 continuous `u` with `(1 - u) ^ n = 0` forces the module to be finitely generated.
 
@@ -241,7 +241,7 @@ theorem isCompletelyContinuous_id_iff :
   obtain ⟨v, hvQ, hv⟩ := h (1 / 2) one_half_pos
   obtain ⟨Q, hQ, hvQ⟩ := LinearMap.isFiniteRank_iff.mp hvQ
   have hrange : LinearMap.range (v : M →ₗ[R] M) = ⊤ :=
-    LinearMap.range_eq_top.mpr (surjective_of_norm_sub_apply_le one_half_lt_one hv)
+    LinearMap.range_eq_top.mpr (TauCeti.surjective_of_norm_sub_apply_le one_half_lt_one hv)
   exact ⟨eq_top_iff.mpr (hrange.ge.trans hvQ) ▸ hQ⟩
 
 end Complete

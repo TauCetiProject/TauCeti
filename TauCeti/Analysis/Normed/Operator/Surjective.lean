@@ -35,8 +35,8 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   condition on continuous linear maps.
 * `LinearMap.surjective_add_of_norm_le`: a surjective linear map into a Banach space stays
   surjective under a perturbation bounded by `θ < 1` times the map.
-* `ContinuousLinearMap.surjective_of_norm_sub_apply_le`: over any ring, a continuous linear
-  endomorphism of a complete normed module uniformly closer than `1` to the identity is
+* `TauCeti.surjective_of_norm_sub_apply_le`: an additive endomorphism of a complete normed
+  group (for instance a linear map over any ring) uniformly closer than `1` to the identity is
   surjective.
 -/
 
@@ -132,14 +132,15 @@ theorem surjective_add_of_norm_le (Q K : D →ₗ[𝕜] Y) (hQ : Surjective Q) {
 
 end LinearMap
 
-namespace ContinuousLinearMap
+namespace TauCeti
 
-variable {R M : Type*} [Ring R] [NormedAddCommGroup M] [Module R M] [CompleteSpace M]
+variable {M F : Type*} [NormedAddCommGroup M] [CompleteSpace M] [FunLike F M M]
+  [AddMonoidHomClass F M M]
 
-/-- On a complete normed module over any ring, a continuous linear endomorphism `v` with
-`‖x - v x‖ ≤ c * ‖x‖` for some `c < 1` is surjective: `v s = y` for the fixed point `s` of the
-contraction `x ↦ x - v x + y`. -/
-theorem surjective_of_norm_sub_apply_le {v : M →L[R] M} {c : ℝ} (hc : c < 1)
+/-- On a complete normed group, an additive endomorphism `v` with `‖x - v x‖ ≤ c * ‖x‖` for some
+`c < 1` is surjective: `v s = y` for the fixed point `s` of the contraction `x ↦ x - v x + y`.
+This applies in particular to linear and continuous linear endomorphisms over any ring. -/
+theorem surjective_of_norm_sub_apply_le {v : F} {c : ℝ} (hc : c < 1)
     (h : ∀ x, ‖x - v x‖ ≤ c * ‖x‖) : Surjective v := by
   intro y
   have hf : ContractingWith (Real.toNNReal c) (fun x ↦ x - v x + y) :=
@@ -149,6 +150,6 @@ theorem surjective_of_norm_sub_apply_le {v : M →L[R] M} {c : ℝ} (hc : c < 1)
   rw [sub_add_eq_add_sub, sub_eq_iff_eq_add, add_right_inj] at hs
   exact ⟨_, hs.symm⟩
 
-end ContinuousLinearMap
+end TauCeti
 
 end
