@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import Mathlib.Geometry.Manifold.ContMDiff.Basic
+public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Topology.Order.Compact
 
 /-!
@@ -23,6 +24,9 @@ conclusions use the actual manifold derivative, with the canonical tangent-to-mo
 explicit. Neither real criticality of the ambient function nor an embedding hypothesis is needed.
 The compactness obstruction applies in particular to embedded complex submanifolds, and requires
 no properness hypothesis on the immersion.
+
+`not_isImmersion_of_isManifoldStrictlyPlurisubharmonicAt` states the obstruction using
+manifold strict plurisubharmonicity and real manifold `C²` regularity.
 
 ## References
 
@@ -124,5 +128,28 @@ theorem not_forall_injective_mfderiv_of_re_leviForm_pos
   have hw : tangentSpaceCastModel J (g x) (mfderiv I J g x u) ≠ 0 :=
     EmbeddingLike.map_ne_zero_iff.mpr (((hinj x).ne_iff' (map_zero _)).mpr hu)
   exact (not_lt_of_ge (hx u)) (hpos x _ hw)
+
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace F P] {u : P → ℝ} {i : M → P}
+
+/-- A nonempty compact complex manifold with a nonzero tangent direction admits no holomorphic
+`C²` immersion into a complex manifold carrying a real `C²` strictly plurisubharmonic function. -/
+theorem not_isImmersion_of_isManifoldStrictlyPlurisubharmonicAt
+    [CompactSpace M] [Nonempty M] [Nontrivial E]
+    (hpos : ∀ y, IsManifoldStrictlyPlurisubharmonicAt F u y)
+    (hu : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ) 2 u) :
+    ¬ Manifold.IsImmersion I 𝓘(ℂ, F) 2 i := by
+  intro hi
+  refine not_forall_injective_mfderiv_of_re_leviForm_pos
+    (I := I) (J := 𝓘(ℂ, F)) (f := u) (g := i) ?_ ?_
+    hi.contMDiff (hi.mfderiv_injective (by norm_num))
+  · intro x
+    simpa only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp] using
+      (hu (i x)).contDiffAt_comp_chartAt_symm
+  · intro x w hw
+    simpa only [manifoldLeviForm_def, extChartAt_coe, extChartAt_coe_symm,
+      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_id,
+      Function.id_comp] using
+      (isManifoldStrictlyPlurisubharmonicAt_iff.mp (hpos (i x)) w hw)
 
 end TauCeti
