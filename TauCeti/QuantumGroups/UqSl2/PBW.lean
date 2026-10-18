@@ -55,12 +55,13 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
   induction b using Int.induction_on with
   | zero => simp
   | succ n ih =>
-    rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hk,
-      mul_smul_comm, smul_smul, ← mul_assoc, ← zpow_add₀ Fact.out, mul_add_one]
+    rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hk]
+    simp only [mul_smul_comm, smul_smul, mul_assoc, ← zpow_add₀ (Fact.out : q ≠ 0)]
+    rw [show 2 * ((n : ℤ) + 1) = 2 * n + 2 by ring]
   | pred n ih =>
-    rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc, ih, smul_mul_assoc, mul_assoc,
-      hkInv, mul_smul_comm, smul_smul, ← mul_assoc, ← zpow_add₀ Fact.out, mul_sub_one,
-      sub_eq_add_neg]
+    rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hkInv]
+    simp only [mul_smul_comm, smul_smul, mul_assoc, ← zpow_add₀ (Fact.out : q ≠ 0)]
+    rw [show 2 * (-(n : ℤ) - 1) = 2 * -n + -2 by ring]
 
 /-- Moving a natural power of `F` past an integer power of `K`. -/
 theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
@@ -70,10 +71,9 @@ theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
   induction a with
   | zero => simp
   | succ a ih =>
-    rw [pow_succ, mul_assoc, f_mul_kUnit_zpow, mul_smul_comm, ← mul_assoc, ih,
-      smul_mul_assoc, smul_smul, ← zpow_add₀ Fact.out]
-    simp only [mul_assoc]
-    congr 3
+    rw [pow_succ, mul_assoc, f_mul_kUnit_zpow, mul_smul_comm, ← mul_assoc, ih, smul_mul_assoc]
+    simp only [smul_smul, mul_assoc, ← zpow_add₀ (Fact.out : q ≠ 0)]
+    congr 2
     push_cast
     ring
 
