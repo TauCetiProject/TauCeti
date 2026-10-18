@@ -49,6 +49,8 @@ theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteT
   let g : C ⟶ X := eU.inv ≫ X.ofRestrict U.isOpenEmbedding
   let O : Opens C := (Opens.map g.base).obj W
   let D : Opens X := g.isOpenEmbedding.isOpenMap.functor.obj O
+  -- Unfolding g, base maps of composites reduce to function composition, and the
+  -- base map of the restriction inclusion reduces to the subtype projection.
   have hg : g.base (eU.hom.base ⟨x.1, hx⟩) = x.1 :=
     congrArg (fun k : X.restrict U.isOpenEmbedding ⟶ X ↦ k.base ⟨x.1, hx⟩)
       (Iso.hom_inv_id_assoc eU (X.ofRestrict U.isOpenEmbedding))
