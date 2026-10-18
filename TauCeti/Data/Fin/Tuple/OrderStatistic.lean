@@ -19,7 +19,7 @@ entries of the sorted tuple `x ∘ Tuple.sort x`.
 
 The order statistics are characterized by counting: `orderStatistic k x ≤ t` exactly
 when more than `k` entries of `x` are at most `t`. They commute with monotone maps and are
-measurable in a second-countable Borel order-closed topology.
+measurable whenever the binary minimum and maximum operations are measurable.
 
 ## Main definitions
 
@@ -116,8 +116,7 @@ theorem preimage_orderStatistic_Iic (k : Fin n) (t : α) :
   ext x
   simp
 
-variable [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [OrderClosedTopology α]
-  [SecondCountableTopology α]
+variable [MeasurableSpace α] [MeasurableInf₂ α] [MeasurableSup₂ α]
 
 /-- Each order statistic is a measurable function of the tuple. -/
 @[fun_prop]
@@ -152,7 +151,7 @@ theorem measurable_orderStatistic (k : Fin n) :
   rw [hrepr]
   refine Finset.inf'_induction hpa
     (fun s => s.1.sup' (hs s) fun i (x : Fin n → α) => x i)
-    (p := fun f => Measurable f) (fun (_ : (Fin n → α) → α) hf _ hg => hf.min hg) ?_
+    (p := fun f => Measurable f) (fun (_ : (Fin n → α) → α) hf _ hg => hf.inf hg) ?_
   intro s _
   exact Finset.measurable_sup' (hs s) fun i _ =>
     measurable_pi_apply (X := fun _ : Fin n => α) i
