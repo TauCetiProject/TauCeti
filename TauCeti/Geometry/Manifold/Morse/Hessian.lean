@@ -225,33 +225,11 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   -- The first-order chain rule identifies the coordinate directional derivative with `df(Y)`.
   have heq : (fun z ↦ fderiv ℝ g z (V z)) =ᶠ[𝓝 (ψ x)]
       (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
-    have hnear : ∀ᶠ y in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) f y :=
-      ((contMDiffAt_iff_contMDiffAt_nhds (by norm_num)).mp hf).mono
-        fun y hy ↦ hy.mdifferentiableAt two_ne_zero
-    have htarget : ψ.target ∈ 𝓝 (ψ x) := by
-      simpa only [ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ] using
-        extChartAt_target_mem_nhdsWithin (I := I) x
-    filter_upwards [htarget,
-      (continuousAt_extChartAt_symm (I := I) x).eventually (by simpa using hnear)] with z hz hfz
-    have hcomp := mfderiv_comp_mfderivWithin (I := 𝓘(ℝ, E)) (I' := I) (I'' := 𝓘(ℝ))
-      (f := ψ.symm) (g := f) (s := range I) z hfz
-      (mdifferentiableWithinAt_extChartAt_symm hz)
-      (by rw [ModelWithCorners.Boundaryless.range_eq_univ]; exact uniqueMDiffWithinAt_univ _)
-    rw [mfderivWithin_eq_fderivWithin] at hcomp
-    simp only [ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
-      mfderivWithin_univ] at hcomp
-    -- The canonical tangent identifications of normed spaces are identity maps.
-    have hcomp' : fderiv ℝ g z = (mfderiv I 𝓘(ℝ) f (ψ.symm z)).comp
-        (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) z) := by
-      rw [ModelWithCorners.Boundaryless.range_eq_univ, mfderivWithin_univ]
-      exact hcomp
-    have hcancel := (isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse
-      (Y (ψ.symm z))
-    -- Tangent spaces of the model and scalar target are their underlying normed spaces.
-    change fderiv ℝ g z ((mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) z).inverse
-      (Y (ψ.symm z))) = mfderiv I 𝓘(ℝ) f (ψ.symm z) (Y (ψ.symm z))
-    rw [hcomp']
-    exact congrArg (mfderiv I 𝓘(ℝ) f (ψ.symm z)) hcancel
+    let : IsManifold I (minSmoothness ℝ 2) M := by
+      simpa using (inferInstance : IsManifold I 2 M)
+    simpa only [g, V, ψ, ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ,
+      fderivWithin_univ] using
+      eventuallyEq_chart_directionalDerivative (U := Y) hf (by norm_num)
   -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
   have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
     ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY

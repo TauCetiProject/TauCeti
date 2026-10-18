@@ -34,6 +34,10 @@ manifold differential of a function to tangent vectors whose base point varies.
   pullback is the value of the field.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
+* `TauCeti.fderivWithin_chart_apply_mpullbackWithin`: the chain rule identifies coordinate
+  directional derivatives with manifold directional derivatives.
+* `TauCeti.eventuallyEq_chart_directionalDerivative`: this identification holds near the chart
+  centre within the model range.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
   forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
   is differentiable as a map of the space.
@@ -273,3 +277,77 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
     (by
       rw [extChartAt_to_inv]
       exact VectorField.mpullbackWithin_extChartAt_symm_apply V (mem_extChartAt_source x))
+
+namespace TauCeti
+
+section ChartDirectionalDerivatives
+
+open VectorField
+
+/-- In inverse-chart coordinates, applying the differential to the pullback of a vector field
+agrees with the manifold directional derivative. -/
+theorem fderivWithin_chart_apply_mpullbackWithin
+    {p : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} {z : E}
+    (hz : z ∈ (extChartAt I x).target)
+    (hpz : MDiffAt p ((extChartAt I x).symm z)) :
+    (fderivWithin 𝕜 (p ∘ (extChartAt I x).symm) (Set.range I) z)
+        (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z) =
+      mvfderiv I p ((extChartAt I x).symm z) (U ((extChartAt I x).symm z)) := by
+  -- `TangentSpace I _` is definitionally the model space `E`; no public rewrite lemma exposes the
+  -- coordinate composition in the form needed by the chain rule.
+  suffices h : (mfderiv[Set.range I] (p ∘ (extChartAt I x).symm) z)
+      ((mfderiv[Set.range I] (extChartAt I x).symm z).inverse
+        (U ((extChartAt I x).symm z))) =
+      (mfderiv% p ((extChartAt I x).symm z)) (U ((extChartAt I x).symm z)) by
+    rw [mfderivWithin_eq_fderivWithin] at h
+    exact h
+  have hunique : UniqueMDiffAt[Set.range I] z := by
+    rw [uniqueMDiffWithinAt_iff_uniqueDiffWithinAt]
+    exact I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x hz)
+  rw [mfderiv_comp_mfderivWithin
+    (I := 𝓘(𝕜, E)) (I' := I) (I'' := 𝓘(𝕜, F))
+    (f := (extChartAt I x).symm) (g := p) (s := Set.range I) z hpz
+    (mdifferentiableWithinAt_extChartAt_symm hz) hunique]
+  rw [ContinuousLinearMap.comp_apply]
+  exact congrArg (mfderiv% p ((extChartAt I x).symm z))
+    ((isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _)
+
+omit [IsManifold I 1 M]
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
+
+/-- A function of regularity at least `minSmoothness 𝕜 2` at a point is differentiable
+throughout a neighborhood of that point. -/
+theorem eventually_mdifferentiableAt_of_contMDiffAt
+    {f : M → F} {x : M} (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
+    ∀ᶠ y in 𝓝 x, MDiffAt f y := by
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (n := 2) (by norm_num)).1
+    (hf.of_le h2n)] with y hy
+  exact hy.mdifferentiableAt (by norm_num)
+
+/-- Near the chart centre within the model range, the coordinate directional derivative
+agrees with the manifold directional derivative composed with the inverse chart. -/
+theorem eventuallyEq_chart_directionalDerivative
+    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
+    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
+    (fun z ↦ (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) z)
+      (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z)) =ᶠ[
+      𝓝[Set.range I] (extChartAt I x x)]
+    (fun y ↦ mvfderiv I f y (U y)) ∘ (extChartAt I x).symm := by
+  have hf_eventually := eventually_mdifferentiableAt_of_contMDiffAt hf hn
+  have hsymm_tendsto : Tendsto (extChartAt I x).symm
+      (𝓝[Set.range I] (extChartAt I x x)) (𝓝 x) := by
+    simpa only [extChartAt_to_inv] using
+      (contMDiffWithinAt_extChartAt_symm_range_self
+        (I := I) (n := minSmoothness 𝕜 2) x).continuousWithinAt.tendsto
+  have htarget : ∀ᶠ z in 𝓝[Set.range I] (extChartAt I x x),
+      z ∈ (extChartAt I x).target :=
+    extChartAt_target_mem_nhdsWithin x
+  filter_upwards [htarget, hsymm_tendsto hf_eventually] with z hz hfz
+  exact fderivWithin_chart_apply_mpullbackWithin hz hfz
+
+end ChartDirectionalDerivatives
+
+end TauCeti
