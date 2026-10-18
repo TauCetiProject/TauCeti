@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Basic
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Intersection
 
 /-!
 # Geodesic faces of hyperbolic Dirichlet domains
@@ -59,6 +60,15 @@ theorem geodesicSegment_subset_dirichletFace {p z w : ℍ} {g : G}
   have huD := geodesicSegment_subset_dirichletDomain G hzD hwD hu
   exact mem_dirichletFace.mpr ⟨huD, le_antisymm (mem_dirichletDomain.mp huD g)
     (geodesicSegment_subset_setOf_dist_le_dist hzE.ge hwE.ge hu)⟩
+
+/-- Two faces indexed by elements moving the centre and sharing two distinct points have the
+same orbit point: a nondegenerate face determines the translate of the centre across it. -/
+theorem smul_eq_of_nontrivial_dirichletFace_inter {p : ℍ} {g g' : G} (hg : g • p ≠ p)
+    (hg' : g' • p ≠ p) (h : (dirichletFace p g ∩ dirichletFace p g').Nontrivial) :
+    g • p = g' • p := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := h
+  exact eq_of_dist_eq_dist_of_dist_eq_dist hg.symm hg'.symm hxy (mem_dirichletFace.mp hx.1).2
+    (mem_dirichletFace.mp hy.1).2 (mem_dirichletFace.mp hx.2).2 (mem_dirichletFace.mp hy.2).2
 
 /-- On its supporting bisector the face imposes just the Dirichlet-domain inequalities. -/
 @[simp]
