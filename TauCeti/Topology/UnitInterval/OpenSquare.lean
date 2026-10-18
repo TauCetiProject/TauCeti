@@ -122,6 +122,12 @@ a sphere about the puncture, read through the inclusion `I × I → ℝ × ℝ`.
 noncomputable def squareCentre : I × I :=
   (⟨1 / 2, by norm_num, by norm_num⟩, ⟨1 / 2, by norm_num, by norm_num⟩)
 
+@[simp]
+theorem coe_squareCentre_fst : (squareCentre.1 : ℝ) = 1 / 2 := (rfl)
+
+@[simp]
+theorem coe_squareCentre_snd : (squareCentre.2 : ℝ) = 1 / 2 := (rfl)
+
 theorem squareCentre_mem_Ioo_prod_Ioo : squareCentre ∈ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1 := by
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> rw [← Subtype.coe_lt_coe] <;> norm_num [squareCentre]
 
