@@ -486,9 +486,9 @@ private theorem eval₂_eq_inCoordinates
 
 /-- Evaluating a smooth degree-two form on two smooth tangent fields along a smooth map is smooth.
 
-The proof uses the alternating-bundle chart at the image of each point and the corresponding
-tangent-bundle trivialization, so it applies to arbitrary normed coefficient spaces. -/
-lemma contMDiff_apply [IsManifold I ∞ M] {n : ℕ∞ω} [ENat.LEInfty n]
+This result holds for arbitrary normed coefficient spaces and the regularity required by the
+smooth-form carrier. -/
+lemma contMDiff_apply {n : ℕ∞ω} [IsManifold I (n + 1) M] [ENat.LEInfty n]
     (form : SmoothForm I M F 2)
     {b : N → M}
     {V W : ∀ y : N, TangentSpace I (b y)}
@@ -510,6 +510,8 @@ lemma contMDiff_apply [IsManifold I ∞ M] {n : ℕ∞ω} [ENat.LEInfty n]
   intro y₀
   let e := trivializationAt E (TangentSpace I) (b y₀)
   have he : b y₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (b y₀)
+  let _ : ContMDiffVectorBundle n E (TangentSpace I) I :=
+    TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
   have hV' := (e.contMDiffAt_iff (f := fun y ↦ TotalSpace.mk' E (b y) (V y))
     (FiberBundle.mem_trivializationAt_proj_source (x := ⟨b y₀, V y₀⟩))).mp (hV y₀)
   have hW' := (e.contMDiffAt_iff (f := fun y ↦ TotalSpace.mk' E (b y) (W y))

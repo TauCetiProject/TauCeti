@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 
 /-!

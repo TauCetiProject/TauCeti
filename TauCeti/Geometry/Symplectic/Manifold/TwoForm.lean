@@ -23,9 +23,10 @@ In particular, tameness already forces fiberwise nondegeneracy. The constant con
 that every finite-dimensional symplectic vector space, and especially the standard doubled model,
 gives a non-vacuous manifold-level example.
 
-Closedness is the separate predicate `TauCeti.SmoothTwoForm.IsClosed` of
-`TauCeti/Geometry/Manifold/TwoForm/Closed.lean`, defined through the exterior derivative of the
-coordinate expressions of the form. A **symplectic form** on a manifold is a smooth two-form which
+Closedness is the separate predicate `TauCeti.SmoothForm.IsClosed` of
+`TauCeti/Geometry/Manifold/DifferentialForm/Closed.lean`, defined through the exterior derivative
+of the coordinate expressions of the form. A **symplectic form** on a manifold is a smooth two-form
+which
 is both closed and fiberwise nondegenerate; `TauCeti.SmoothTwoForm.IsSymplectic` bundles the two
 conditions, and a constant symplectic form on a finite-dimensional vector space is the basic
 example.
