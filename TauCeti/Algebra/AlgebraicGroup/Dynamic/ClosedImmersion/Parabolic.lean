@@ -33,9 +33,9 @@ reductivity, finite-type, or field hypothesis is needed.
 
 public section
 
-open WithConv
+open WithConv TauCeti.Cocharacter
 
-namespace TauCeti.Cocharacter
+namespace BialgHom
 
 variable {R H K A : Type*} [CommSemiring R] [Semiring H] [Semiring K]
 variable [HopfAlgebra R H] [HopfAlgebra R K] [CommSemiring A] [Algebra R A]
@@ -90,8 +90,8 @@ theorem mem_parabolic_iff_of_surjective (φ : H →ₐc[R] K) (hφ : Function.Su
       ((conjugate A l g).ofConv y).coeff n = 0 := by
     obtain ⟨x, rfl⟩ := hφ y
     rw [← hvalue x]
-    exact exists_toLaurent_eq_iff.mp ⟨F.ofConv x, rfl⟩ n hn
-  obtain ⟨E, hE⟩ := exists_algHom_toLaurent_comp_eq_iff.mpr hcoeff
+    exact TauCeti.exists_toLaurent_eq_iff.mp ⟨F.ofConv x, rfl⟩ n hn
+  obtain ⟨E, hE⟩ := TauCeti.exists_algHom_toLaurent_comp_eq_iff.mpr hcoeff
   apply mem_parabolic_of_eq (F := toConv E)
   rw [ofPolyPoint_apply]
   exact congrArg toConv hE
@@ -125,4 +125,4 @@ theorem unipotent_eq_comap_of_surjective (φ : H →ₐc[R] K) (hφ : Function.S
   ext g
   exact mem_unipotent_iff_of_surjective φ hφ l g
 
-end TauCeti.Cocharacter
+end BialgHom
