@@ -30,13 +30,13 @@ of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
-* `TauCeti.LinearMap.normDet_adjoint_of_finrank_eq`: a map between spaces of equal dimension
+* `TauCeti.normDet_adjoint_of_finrank_eq`: a map between spaces of equal dimension
   and its adjoint have the same norm determinant.
 * `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
   same Jacobian.
-* `TauCeti.ContinuousLinearMap.orthogonalKerEquivOfSurjective`: a surjective map restricted to
+* `TauCeti.orthogonalKerEquivOfSurjective`: a surjective map restricted to
   the orthogonal complement of its kernel, as a continuous linear equivalence.
-* `TauCeti.ContinuousLinearMap.normDet_orthogonalKerEquivOfSurjective`: the norm determinant of
+* `TauCeti.normDet_orthogonalKerEquivOfSurjective`: the norm determinant of
   this restriction equals that of the adjoint.
 -/
 
@@ -142,10 +142,6 @@ end LinearMap
 
 namespace TauCeti
 
-open TauCeti
-
-namespace LinearMap
-
 /-- Between spaces of equal dimension, a linear map and its adjoint have the same norm
 determinant. This compares the area and coarea factors for an invertible linear map. -/
 theorem normDet_adjoint_of_finrank_eq {𝕜 U V : Type*} [RCLike 𝕜]
@@ -159,10 +155,6 @@ theorem normDet_adjoint_of_finrank_eq {𝕜 U V : Type*} [RCLike 𝕜]
     LinearMap.toMatrix_adjoint, Matrix.det_conjTranspose,
     LinearMap.normDet_eq_norm_det_toMatrix _ bU bV]
   simp
-
-end LinearMap
-
-namespace ContinuousLinearMap
 
 open scoped RealInnerProductSpace
 
@@ -179,17 +171,17 @@ omit [FiniteDimensional ℝ V] in
 /-- The orthogonal-kernel restriction equivalence acts by the original map. -/
 @[simp]
 theorem orthogonalKerEquivOfSurjective_apply (L : U →L[ℝ] V) (hL : Surjective L)
-    (u : L.kerᗮ) : L.orthogonalKerEquivOfSurjective hL u = L u := (rfl)
+    (u : L.kerᗮ) : orthogonalKerEquivOfSurjective L hL u = L u := (rfl)
 
 /-- The norm determinant of a surjective map restricted to the orthogonal complement of its
 kernel equals the norm determinant of its adjoint. -/
 theorem normDet_orthogonalKerEquivOfSurjective (L : U →L[ℝ] V) (hL : Surjective L) :
-    (L.orthogonalKerEquivOfSurjective hL).toLinearMap.normDet = L.adjoint.normDet := by
+    (orthogonalKerEquivOfSurjective L hL).toLinearMap.normDet = L.adjoint.normDet := by
   let P := L.kerᗮ
   have hmem (y : V) : L.toLinearMap.adjoint y ∈ P := by
     simpa only [P, LinearMap.orthogonal_ker] using
       (LinearMap.mem_range_self L.toLinearMap.adjoint y)
-  have heq : (L.orthogonalKerEquivOfSurjective hL).toLinearMap.adjoint =
+  have heq : (orthogonalKerEquivOfSurjective L hL).toLinearMap.adjoint =
       L.toLinearMap.adjoint.codRestrict P hmem := by
     apply LinearMap.ext
     intro y
@@ -200,10 +192,8 @@ theorem normDet_orthogonalKerEquivOfSurjective (L : U →L[ℝ] V) (hL : Surject
       orthogonalKerEquivOfSurjective_apply,
       LinearMap.codRestrict_apply]
     exact (L.toLinearMap.adjoint_inner_left u y).symm
-  rw [← LinearMap.normDet_adjoint_of_finrank_eq _
-    (L.orthogonalKerEquivOfSurjective hL).toLinearEquiv.finrank_eq,
+  rw [← normDet_adjoint_of_finrank_eq _
+    (orthogonalKerEquivOfSurjective L hL).toLinearEquiv.finrank_eq,
     heq, LinearMap.normDet_codRestrict, ContinuousLinearMap.adjoint_toLinearMap]
-
-end ContinuousLinearMap
 
 end TauCeti

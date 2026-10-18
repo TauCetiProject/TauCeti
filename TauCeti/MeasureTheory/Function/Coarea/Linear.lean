@@ -74,7 +74,7 @@ theorem lintegral_coarea_linear (hL : Surjective L) {f : E → ℝ≥0∞}
     ENNReal.ofReal L.adjoint.normDet * ∫⁻ x, f x ∂(volume : Measure E) =
       ∫⁻ y : F, ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]
         ∂(volume : Measure F) := by
-  let R := L.orthogonalKerEquivOfSurjective hL
+  let R := orthogonalKerEquivOfSurjective L hL
   let H : F → ℝ≥0∞ := fun y ↦
     ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]
   have harea :=
@@ -84,7 +84,7 @@ theorem lintegral_coarea_linear (hL : Surjective L) {f : E → ℝ≥0∞}
       ∫⁻ u : L.kerᗮ, H (R u) := by
     have hrange : range R.toContinuousLinearMap = univ := R.surjective.range_eq
     have hJ : R.toContinuousLinearMap.toLinearMap.normDet = L.adjoint.normDet :=
-      L.normDet_orthogonalKerEquivOfSurjective hL
+      normDet_orthogonalKerEquivOfSurjective L hL
     simp only [image_univ, hrange, restrict_univ,
       R.toContinuousLinearMap.fderiv, hJ,
       lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
@@ -103,7 +103,7 @@ theorem lintegral_coarea_linear (hL : Surjective L) {f : E → ℝ≥0∞}
   · exact lintegral_prod _ hp
   apply lintegral_congr
   intro u
-  have hRu : R u = L u := L.orthogonalKerEquivOfSurjective_apply hL u
+  have hRu : R u = L u := orthogonalKerEquivOfSurjective_apply L hL u
   rw [hRu]
   simp only [H, lintegral_linear_fiber]
   simp only [e, Submodule.measurableEquivProd_symm_apply, vadd_eq_add, add_zero]
@@ -116,12 +116,12 @@ Borel measurable function of the target point. -/
 theorem measurable_lintegral_linear_fiber (hL : Surjective L) {f : E → ℝ≥0∞}
     (hf : Measurable f) :
     Measurable (fun y : F ↦ ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]) := by
-  let R := L.orthogonalKerEquivOfSurjective hL
+  let R := orthogonalKerEquivOfSurjective L hL
   have hcoord (y : F) :
       (∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]) =
         ∫⁻ z : L.ker, f ((R.symm y : E) + z) := by
     have hy : L (R.symm y : E) = y := by
-      simpa only [R, ContinuousLinearMap.orthogonalKerEquivOfSurjective_apply] using
+      simpa only [R, orthogonalKerEquivOfSurjective_apply] using
         R.apply_symm_apply y
     conv_lhs => rw [← hy]
     exact lintegral_linear_fiber f
