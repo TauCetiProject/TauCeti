@@ -105,12 +105,9 @@ theorem isRecut_recutTerminalInitialPentagonPair {x y z : GridState n}
     GridRectangleDecomposition.IsRecut
       ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
       (G.recutTerminalInitialPentagonPair C P Q hzx hP hQ) := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  let hone := G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx
-  change D.IsRecut (G.recutTerminalInitialPentagonPair C P Q hzx hP hQ)
   rw [G.recutTerminalInitialPentagonPair_def C]
-  exact D.isRecut_recut hone hP hQ
+  exact GridRectangleDecomposition.isRecut_recut _
+    (G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx) hP hQ
 
 /-- The terminal--initial recut has the side-data orientation in which the terminal side of the
 first pentagon is the initial side of the second. -/
@@ -121,13 +118,10 @@ theorem isRecutOfRightEqLeft_recutTerminalInitialPentagonPair {x y z : GridState
     GridRectangleDecomposition.IsRecutOfRightEqLeft
       ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
       (G.recutTerminalInitialPentagonPair C P Q hzx hP hQ) := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  let hone := G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx
-  change D.IsRecutOfRightEqLeft (G.recutTerminalInitialPentagonPair C P Q hzx hP hQ)
   rw [G.recutTerminalInitialPentagonPair_def C]
-  exact D.isRecutOfRightEqLeft_recut
-    (G.terminalInitialPentagonPair_right_eq_left C P Q) hone hP hQ
+  exact GridRectangleDecomposition.isRecutOfRightEqLeft_recut _
+    (G.terminalInitialPentagonPair_right_eq_left C P Q)
+    (G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx) hP hQ
 
 /-! ### Initial-side followed by terminal-side -/
 
@@ -189,12 +183,9 @@ theorem isRecut_recutInitialTerminalPentagonPair {x y z : GridState n}
     GridRectangleDecomposition.IsRecut
       ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
       (G.recutInitialTerminalPentagonPair C P Q hzx hP hQ) := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  let hone := G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx
-  change D.IsRecut (G.recutInitialTerminalPentagonPair C P Q hzx hP hQ)
   rw [G.recutInitialTerminalPentagonPair_def C]
-  exact D.isRecut_recut hone hP hQ
+  exact GridRectangleDecomposition.isRecut_recut _
+    (G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx) hP hQ
 
 /-- The initial--terminal recut has the side-data orientation in which the initial side of the
 first pentagon is the terminal side of the second. -/
@@ -205,12 +196,9 @@ theorem isRecutOfLeftEqRight_recutInitialTerminalPentagonPair {x y z : GridState
     GridRectangleDecomposition.IsRecutOfLeftEqRight
       ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
       (G.recutInitialTerminalPentagonPair C P Q hzx hP hQ) := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  let hone := G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx
-  change D.IsRecutOfLeftEqRight (G.recutInitialTerminalPentagonPair C P Q hzx hP hQ)
   rw [G.recutInitialTerminalPentagonPair_def C]
-  exact D.isRecutOfLeftEqRight_recut
-    (G.initialTerminalPentagonPair_left_eq_right C P Q) hone hP hQ
+  exact GridRectangleDecomposition.isRecutOfLeftEqRight_recut _
+    (G.initialTerminalPentagonPair_left_eq_right C P Q)
+    (G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx) hP hQ
 
 end TauCeti.GridDiagram
