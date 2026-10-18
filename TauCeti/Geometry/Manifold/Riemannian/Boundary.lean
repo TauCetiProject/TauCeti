@@ -153,9 +153,7 @@ theorem restrictBoundaryTangentSpace_inner
     IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
   dsimp only
   intro x v w
-  change (g.pullback Subtype.val
-      (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
-      (injective_mfderiv_subtypeVal_boundary (n := n) (k := k) (M := M))).inner x v w = _
+  rw [restrictBoundaryTangentSpace]
   exact g.pullback_inner Subtype.val
     (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
     (injective_mfderiv_subtypeVal_boundary (n := n) (k := k) (M := M)) x v w
