@@ -139,6 +139,7 @@ theorem coe_restrictedRescaleEquiv_symm (u : σ → Rˣ)
   rfl
 
 /-- The rescaling equivalence preserves the Gauss norm. -/
+@[simp]
 theorem norm_restrictedRescaleEquiv (u : σ → Rˣ)
     (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i)
     (f : IsRestricted.subring (R := R) r) :

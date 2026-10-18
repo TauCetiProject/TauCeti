@@ -58,7 +58,7 @@ theorem norm_coeff_rescale_mul_prod (u : σ → R) (hu : ∀ i, IsNormMulUnit (u
       simp
 
 /-- Rescaling by a family of units and then by their inverses is the identity. -/
-theorem rescale_inv_rescale {A : Type*} [CommRing A] (u : σ → Aˣ) (f : MvPowerSeries σ A) :
+theorem rescale_inv_rescale {A : Type*} [CommSemiring A] (u : σ → Aˣ) (f : MvPowerSeries σ A) :
     rescale (fun i ↦ (((u i)⁻¹ : Aˣ) : A)) (rescale (fun i ↦ (u i : A)) f) = f := by
   have h : ((fun i ↦ (u i : A)) * fun i ↦ (((u i)⁻¹ : Aˣ) : A)) = 1 := by
     funext i
