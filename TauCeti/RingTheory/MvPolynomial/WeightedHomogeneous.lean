@@ -27,8 +27,6 @@ such symmetric polynomials (`MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`).
 
 * `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
   homogeneous of the weights of the variables preserves weighted homogeneity.
-* `MvPolynomial.IsWeightedHomogeneous.isHomogeneous_aeval`: substituting homogeneous polynomials
-  of the weights turns weighted homogeneity into homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse, for an injective
   substitution.
 -/
@@ -60,14 +58,6 @@ theorem IsWeightedHomogeneous.aeval {M : Type*} [AddCommMonoid M] {w : σ → M}
     convert (isWeightedHomogeneous_C v r).mul hprod using 1
     rw [← hr, Finsupp.weight_apply, Finsupp.sum, zero_add]
 
-/-- Substituting, for each variable `i`, a polynomial homogeneous of degree `w i` into a
-polynomial that is weighted homogeneous of weight `m` for the weights `w` gives a homogeneous
-polynomial of degree `m`. -/
-theorem IsWeightedHomogeneous.isHomogeneous_aeval {w : σ → ℕ} {φ : MvPolynomial σ R} {m : ℕ}
-    (hφ : φ.IsWeightedHomogeneous w m) {g : σ → MvPolynomial τ R}
-    (hg : ∀ i, (g i).IsHomogeneous (w i)) : (MvPolynomial.aeval g φ).IsHomogeneous m :=
-  hφ.aeval hg
-
 /-- **Weighted homogeneity from homogeneity of a substitution.** If `g i` is homogeneous of
 degree `w i` for every variable `i` and substitution of the `g i` is injective, then a polynomial
 whose substitution is homogeneous of degree `m` is weighted homogeneous of weight `m`. -/
@@ -83,7 +73,7 @@ theorem isWeightedHomogeneous_of_isHomogeneous_aeval {w : σ → ℕ} {g : σ �
     rw [← finsum_eq_sum _ (weightedHomogeneousComponent_finsupp φ),
       sum_weightedHomogeneousComponent]
   have hcomp (n : ℕ) : (aeval g (weightedHomogeneousComponent w n φ)).IsHomogeneous n :=
-    (weightedHomogeneousComponent_isWeightedHomogeneous n φ).isHomogeneous_aeval hg
+    (weightedHomogeneousComponent_isWeightedHomogeneous n φ).aeval hg
   have key : aeval g φ = aeval g (weightedHomogeneousComponent w m φ) := by
     calc aeval g φ = homogeneousComponent m (aeval g φ) := (homogeneousComponent_eq_self h).symm
       _ = ∑ n ∈ s, homogeneousComponent m (aeval g (weightedHomogeneousComponent w n φ)) := by

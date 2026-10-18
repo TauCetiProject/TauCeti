@@ -37,6 +37,8 @@ in Schmidt's subspace theorem.
   `ℓ(X + Y) = ℓ(X) + ℓ(Y)`.
 * `MvPolynomial.hasseDeriv_aeval`: the chain rule for Hasse derivatives after substituting
   linear forms.
+* `MvPolynomial.isWeightedHomogeneous_blockLinearForm`: with the indicator weight of a block `b`,
+  a block-linear form has weight `1` on the variables of block `b` and `0` on the others.
 * `MvPolynomial.sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero`: `c_{e,k} ≠ 0` forces equal
   block degrees.
 * `MvPolynomial.degreeOf_aeval_blockLinearForm_le`: block degrees `≤ d h` bound the degree of the
@@ -166,7 +168,7 @@ theorem isHomogeneous_blockLinearForm (A : ι → κ → τ → R) (p : ι × κ
 
 /-- With the indicator weight of block `b`, the block-linear form of a variable of block `h` is
 weighted homogeneous of weight `1` if `h = b` and `0` otherwise. -/
-private theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι → κ → τ → R)
+theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι → κ → τ → R)
     (b : ι) (p : ι × κ) :
     (blockLinearForm A p).IsWeightedHomogeneous (fun q : ι × τ ↦ if q.1 = b then 1 else 0)
       (if p.1 = b then 1 else 0) :=
