@@ -23,9 +23,10 @@ computed by differentiating `g` under the integral. The first-order argument is 
 `HasCompactSupport.hasFDerivAt_convolution_right`, with the compact-support bound replaced by the
 domination hypothesis.
 
-The dominated results use a Borel measure invariant under translations and negation on a
-second-countable domain. The continuity theorem needs only a seminormed abelian group; the
-derivative statements require a real normed vector space.
+The dominated results use a measure invariant under translations and negation. Translations,
+negation and open sets are measurable. The continuity theorem needs a seminormed abelian
+domain and second-countability of either the domain or the kernel's codomain. The derivative
+statements use a second-countable real normed domain.
 
 The iterated derivative of `f ⋆[L, μ] g` is a convolution against the iterated derivative of `g`,
 for the bilinear map `L_n` sending `(a, B)` to the multilinear map `m ↦ L a (B m)`
@@ -111,8 +112,8 @@ end
 
 section
 
-variable [SeminormedAddCommGroup G] [BorelSpace G] [SecondCountableTopology G]
-  [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+variable [SeminormedAddCommGroup G] [OpensMeasurableSpace G] [MeasurableAdd G] [MeasurableNeg G]
+  [SecondCountableTopologyEither G E'] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
 
 /-- The convolution of an essentially bounded function with a continuous function that is
 dominated, uniformly on unit translates, by an integrable function is continuous. -/
@@ -132,8 +133,8 @@ end
 
 section
 
-variable [NormedAddCommGroup G] [NormedSpace ℝ G] [BorelSpace G] [SecondCountableTopology G]
-  [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+variable [NormedAddCommGroup G] [NormedSpace ℝ G] [OpensMeasurableSpace G] [MeasurableAdd G]
+  [MeasurableNeg G] [SecondCountableTopology G] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
 
 /-- **Differentiating a convolution under the integral.** Let `f` be essentially bounded and `g`
 be `C¹` and integrable, with `D g` dominated, uniformly on unit translates, by an integrable
