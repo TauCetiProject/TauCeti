@@ -62,6 +62,13 @@ variable {k : Type u} [CommRing k]
 variable {H : Type v} {K : Type w}
 variable [CommRing H] [CommRing K]
 variable [HopfAlgebra k H] [HopfAlgebra k K]
+
+/-- The ring-hom and linear-map kernels of an algebra homomorphism have the same underlying
+`k`-submodule. -/
+private theorem restrictScalars_ker_eq_linearMap_ker (g : H →ₐ[k] K) :
+    (RingHom.ker g).restrictScalars k = LinearMap.ker g.toLinearMap :=
+  rfl
+
 variable [Module.Flat k H]
 
 /-- Pulling a normal Hopf ideal back along an injective bialgebra morphism preserves normality
@@ -112,8 +119,7 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
     ext y
     simp [g, q, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
   rw [hgker, Ideal.mem_rightTensorIdeal_iff]
-  change HopfAlgebra.conjugationAlgHom (R := k) (H := H) x ∈
-    LinearMap.range ((LinearMap.ker g.toLinearMap).subtype.lTensor H)
+  rw [restrictScalars_ker_eq_linearMap_ker]
   rw [← (Module.Flat.lTensor_exact H g.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq,
     LinearMap.mem_ker]
   have hmaps' :
@@ -162,8 +168,7 @@ theorem isNormal_ker_of_conjugation_equivariant (f : H →ₐc[k] K)
   intro x hx
   rw [ker_toIdeal]
   rw [Ideal.mem_rightTensorIdeal_iff]
-  change HopfAlgebra.conjugationAlgHom (R := k) (H := H) x ∈
-    LinearMap.range ((LinearMap.ker f.toAlgHom.toLinearMap).subtype.lTensor H)
+  rw [restrictScalars_ker_eq_linearMap_ker]
   rw [← (Module.Flat.lTensor_exact H
     f.toAlgHom.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq, LinearMap.mem_ker]
   have hfx : f x = 0 := (mem_ker f).mp hx

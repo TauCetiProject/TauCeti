@@ -137,9 +137,16 @@ private theorem canonicalMap_injective_of_le_span [Module.Flat R H] (I : HopfIde
           (Coalgebra.comul (R := R) b)) ⊗ₜ[B] (1 : H) := by
       rw [← hw]
       exact hq w
-    change (q.comp σ.symm.toAlgHom) (includeRight b) = 0
-    simp only [σ, AlgHom.comp_apply, includeRight_apply, AlgEquiv.coe_toAlgHom,
-      HopfAlgebra.tensorShearMulRight_symm_tmul, ← Algebra.TensorProduct.one_def, one_mul]
+    apply Ideal.mem_comap.mpr
+    apply RingHom.mem_ker.mpr
+    rw [show includeRight.toRingHom b = (1 : H) ⊗ₜ[R] b by simp]
+    rw [AlgHom.comp_apply]
+    rw [show (↑σ.symm.toAlgHom : H ⊗[R] H → H ⊗[R] H) ((1 : H) ⊗ₜ[R] b) =
+        ((1 : H) ⊗ₜ[R] 1) *
+          TensorProduct.map (HopfAlgebraStruct.antipode R) LinearMap.id
+            (Coalgebra.comul (R := R) b) by
+      exact HopfAlgebra.tensorShearMulRight_symm_tmul 1 b]
+    rw [← Algebra.TensorProduct.one_def, one_mul]
     rw [← LinearMap.rTensor_def, hq', HopfAlgebra.mul_antipode_rTensor_comul_apply, hb0,
       map_zero, TensorProduct.zero_tmul]
   rw [injective_iff_map_eq_zero]
