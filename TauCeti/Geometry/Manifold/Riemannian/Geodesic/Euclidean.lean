@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 

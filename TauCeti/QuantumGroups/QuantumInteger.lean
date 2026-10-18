@@ -64,6 +64,12 @@ parameter. -/
 theorem sub_inv_ne_zero {q : K} (hq : IsGenericQuantumParameter q) : q - q⁻¹ ≠ 0 :=
   sub_ne_zero.mpr hq.ne_inv
 
+/-- The inverse of a generic quantum parameter is generic. -/
+theorem inv {q : K} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParameter q⁻¹ := by
+  refine ⟨inv_ne_zero hq.ne_zero, fun n hn hpow => ?_⟩
+  apply hq.pow_ne_one hn
+  simpa [inv_pow] using congrArg Inv.inv hpow
+
 end IsGenericQuantumParameter
 
 /-- The symmetric quantum integer `[r]_q = (q^r - q⁻ʳ) / (q - q⁻¹)`. -/
@@ -152,6 +158,26 @@ theorem quantumInteger_add_one (q : K) (r : ℤ) :
   rw [hneg_sub_one, zpow_sub₀ hq0]
   simp only [zpow_one, zpow_neg]
   field_simp [hq0, hq]
+  ring
+
+/-- The difference of two quantum integers as a determinant of neighbouring quantum integers:
+`[a - b]_q = [a]_q [b + 1]_q - [a + 1]_q [b]_q`. -/
+theorem quantumInteger_sub (q : K) (a b : ℤ) :
+    quantumInteger q (a - b) =
+      quantumInteger q a * quantumInteger q (b + 1) -
+        quantumInteger q (a + 1) * quantumInteger q b := by
+  by_cases hq : q - q⁻¹ = 0
+  · simp [quantumInteger, hq]
+  have hq0 : q ≠ 0 := by
+    rintro rfl
+    simp at hq
+  have h2 : q ^ 2 - 1 ≠ 0 := by
+    intro h
+    apply hq
+    field_simp
+    linear_combination h
+  simp only [quantumInteger, zpow_sub₀ hq0, zpow_add₀ hq0, zpow_neg, neg_add, zpow_one]
+  field_simp
   ring
 
 /-- Every nonzero-index quantum integer is nonzero at a generic parameter. -/

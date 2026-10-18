@@ -318,6 +318,17 @@ theorem mfderiv_source (f : M → N) (x : BoundarylessModel I M) :
       mfderiv_zero_of_not_mdifferentiableAt h]
     simp only [ContinuousLinearMap.zero_comp]
 
+/-- Changing the source model does not change whether the derivative vanishes. -/
+@[simp]
+theorem mfderiv_source_eq_zero_iff (f : M → N) (x : BoundarylessModel I M) :
+    mfderiv 𝓘(𝕜, E) J (f ∘ (homeomorph I M).symm) x = 0 ↔
+      mfderiv I J f ((homeomorph I M).symm x) = 0 := by
+  rw [mfderiv_source]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
+  ext v
+  simpa using congrArg (fun L ↦ L ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm
+    (tangentSpaceCastModel I ((homeomorph I M).symm x) v))) h
+
 /-- Changing the target model preserves differentiability. -/
 @[simp]
 theorem mdifferentiableAt_target_iff (f : N → M) (x : N) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.XYIdealMaximal
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
 # Solutions of a Weierstrass equation are its degree-one affine places
