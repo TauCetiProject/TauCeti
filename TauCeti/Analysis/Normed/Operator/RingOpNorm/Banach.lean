@@ -98,9 +98,18 @@ scoped instance isUltrametricDist [IsUltrametricDist F] : IsUltrametricDist (E �
 
 /-- A scalar action on the target commuting with `R` acts contractively on the operators. For
 commutative `R` this makes `E →L[R] F` an `R`-module with contractive action. -/
-scoped instance isBoundedSMul {S : Type*} [SeminormedRing S] [Module S F] [IsBoundedSMul S F]
-    [SMulCommClass R S F] : IsBoundedSMul S (E →L[R] F) :=
-  IsBoundedSMul.of_norm_smul_le ringOpNorm_smul_le
+scoped instance isBoundedSMul {S : Type*} [SeminormedAddCommGroup S] [DistribSMul S F]
+    [IsBoundedSMul S F] [SMulCommClass R S F] : IsBoundedSMul S (E →L[R] F) where
+  dist_smul_pair' c f g := by
+    simpa [dist_eq_norm, ← smul_sub] using ringOpNorm_smul_le c (f - g)
+  dist_pair_smul' a b f := by
+    -- Without a right distributive law, bound `a • f - b • f` pointwise through the action on `F`.
+    rw [dist_zero_right, dist_eq_norm]
+    refine ringOpNorm_le_bound _ (by positivity) fun x ↦ ?_
+    calc ‖(a • f - b • f) x‖ = dist (a • f x) (b • f x) := by simp [dist_eq_norm]
+      _ ≤ dist a b * ‖f x‖ := by simpa using dist_pair_smul a b (f x)
+      _ ≤ dist a b * ‖f‖ * ‖x‖ := by
+        rw [mul_assoc]; gcongr; exact le_ringOpNorm f x
 
 /-- Evaluation `(f, x) ↦ f x` is jointly continuous for the operator norm. -/
 scoped instance continuousEval : ContinuousEval (E →L[R] F) E F where
