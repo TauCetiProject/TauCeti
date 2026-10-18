@@ -5,10 +5,12 @@ Authors: Kim Morrison
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Eval.Sign
 public import TauCeti.Algebra.Polynomial.Rolle
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Order.Interval.Set.Infinite
+public import Mathlib.Algebra.Polynomial.Degree.Lemmas
 public import Mathlib.Basic.Sign.Defs
 
 /-! # Thom sign conditions from polynomial Rolle
@@ -18,7 +20,9 @@ nonzero polynomial has no root between two distinct points at which all its
 derivatives have the same signs, and the signs of the positive-order derivatives
 distinguish roots of a nonzero polynomial, including multiple roots. No
 squarefreeness assumption is needed.
-The finite Thom encoding records derivatives 1 through `natDegree`. The last
+The finite Thom encoding records derivatives 1 through `natDegree`. The encoding of an
+iterated derivative is a restriction of the encoding of `p`, and strictly monotone ring
+embeddings preserve encodings. The last
 differing derivative sign and the next common sign determine the order of two points.
 The only extra premise on the ordered field is polynomial Rolle, supplied by
 `TauCeti.RealClosure.polynomialRolle_of_isRealClosed` over every real closed ordered field.
@@ -201,6 +205,65 @@ theorem exists_thomEncoding_ne (p : R[X]) {a b : R}
   · intro j hj
     simp only [Fin.lt_def] at hj
     simpa only [thomEncoding_apply] using ht (j.val + 1) (by omega)
+
+/-- **Restriction to a derivative.** Coordinate `i` of the Thom encoding of the `k`th derivative
+is coordinate `i + k` of the Thom encoding of `p`. -/
+theorem thomEncoding_iterate_derivative_apply (p : R[X]) (x : R) (k : ℕ)
+    (i : Fin (derivative^[k] p).natDegree) :
+    thomEncoding (derivative^[k] p) x i =
+      thomEncoding p x ⟨i.val + k, by have := natDegree_iterate_derivative p k; omega⟩ := by
+  simp only [thomEncoding_apply, derivativeSign_iterate_derivative, Nat.add_right_comm]
+
+/-- Coordinate `i` of the Thom encoding of `p'` is coordinate `i + 1` of that of `p`. -/
+theorem thomEncoding_derivative_apply (p : R[X]) (x : R) (i : Fin p.derivative.natDegree) :
+    thomEncoding p.derivative x i =
+      thomEncoding p x ⟨i.val + 1, by have := natDegree_derivative_le p; omega⟩ := by
+  simp only [thomEncoding_apply, derivativeSign_derivative]
+
+/-- Two points have the same Thom encoding for `p` exactly when the signs of the derivatives of
+orders `1, …, k` agree and the Thom encodings for the `k`th derivative agree. -/
+theorem thomEncoding_eq_iff_iterate_derivative (p : R[X]) (a b : R) (k : ℕ) :
+    thomEncoding p a = thomEncoding p b ↔
+      (∀ j, 0 < j → j ≤ k → derivativeSign p a j = derivativeSign p b j) ∧
+        thomEncoding (derivative^[k] p) a = thomEncoding (derivative^[k] p) b := by
+  simp only [thomEncoding_eq_iff, derivativeSign_iterate_derivative]
+  constructor
+  · exact fun h ↦ ⟨fun j hj _ ↦ h j hj, fun j hj ↦ h (j + k) (by omega)⟩
+  · rintro ⟨hlow, hhigh⟩ j hj
+    by_cases hjk : j ≤ k
+    · exact hlow j hj hjk
+    · simpa only [Nat.sub_add_cancel (by omega : k ≤ j)] using hhigh (j - k) (by omega)
+
+/-- Two points have the same Thom encoding for `p` exactly when `p'` has the same sign at both
+and they have the same Thom encoding for `p'`. -/
+theorem thomEncoding_eq_iff_derivative (p : R[X]) (a b : R) :
+    thomEncoding p a = thomEncoding p b ↔
+      derivativeSign p a 1 = derivativeSign p b 1 ∧
+        thomEncoding p.derivative a = thomEncoding p.derivative b := by
+  rw [thomEncoding_eq_iff_iterate_derivative p a b 1, Function.iterate_one]
+  refine and_congr_left' ⟨fun h ↦ h 1 one_pos le_rfl, fun h j hj hj1 ↦ ?_⟩
+  rwa [le_antisymm hj1 hj]
+
+section Map
+
+variable {S : Type*} [Semiring S] [LinearOrder S]
+
+/-- Strictly monotone ring embeddings preserve the signs of all derivatives. -/
+@[simp]
+theorem derivativeSign_map (p : R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) (k : ℕ) :
+    derivativeSign (p.map f) (f x) k = derivativeSign p x k := by
+  rw [derivativeSign_def, derivativeSign_def, iterate_derivative_map]
+  exact sign_eval_map _ f hf x
+
+/-- Strictly monotone ring embeddings preserve Thom encodings. The two encodings are words of
+the same length, since injective maps preserve the degree. -/
+theorem thomEncoding_map (p : R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    thomEncoding (p.map f) (f x) =
+      thomEncoding p x ∘ Fin.cast (natDegree_map_eq_of_injective hf.injective p) := by
+  funext i
+  simp [hf]
+
+end Map
 
 end Basic
 
