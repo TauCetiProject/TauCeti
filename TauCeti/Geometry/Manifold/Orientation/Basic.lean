@@ -88,6 +88,10 @@ theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
     Module.finrank ℝ (TangentSpace I x) = Fintype.card ι :=
   (TauCeti.finrank_tangentSpace (I := I) x).trans o.card_eq.symm
 
+theorem fact_finrank_tangentSpace {m : ℕ} (o : Orientation I M (Fin m)) (x : M) :
+    Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+  ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+
 /-- Reverse the tangent orientations by reversing the model orientation of a lift. -/
 def neg (o : Orientation I M ι) : Orientation I M ι :=
   lift (fun l ↦ mk (-l)) (fun l ↦

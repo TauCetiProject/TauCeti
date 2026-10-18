@@ -38,8 +38,7 @@ def complexAreaForm : ℂ [⋀^Fin 2]→L[ℝ] ℝ :=
 /-- Evaluation retains the actual normalized orientation volume form. -/
 theorem complexAreaForm_apply (v : Fin 2 → ℂ) :
     complexAreaForm v = Complex.orientation.volumeForm v := by
-  change Complex.orientation.volumeFormL v = _
-  exact Orientation.volumeFormL_apply _ _
+  simp [complexAreaForm]
 
 /-- The normalized volume coefficient in the actual positive complex basis is one. -/
 @[simp]
