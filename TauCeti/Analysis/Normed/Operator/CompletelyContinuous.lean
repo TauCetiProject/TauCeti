@@ -8,10 +8,7 @@ module
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm
 import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Topology.Algebra.InfiniteSum.Module
-import Mathlib.Topology.Algebra.InfiniteSum.NatInt
+import TauCeti.Analysis.Normed.Operator.Surjective
 
 /-!
 # Completely continuous operators over a coefficient ring
@@ -34,14 +31,15 @@ Completely continuous maps are closed under addition, scalar multiplication and 
 approximation, and over Tate scalars under composition on either side with continuous linear
 maps. The identity of a complete normed
 module is completely continuous exactly when the module is finitely generated: an approximant
-of finite rank within distance `1 / 2` of the identity is invertible by its Neumann series, so its
-range, which lies in a finitely generated submodule, is everything. Consequently a completely
+of finite rank within distance `1 / 2` of the identity is surjective
+(`ContinuousLinearMap.surjective_of_norm_sub_apply_le`), so its range, which lies in a finitely
+generated submodule, is everything. Consequently a completely
 continuous `u` with `(1 - u) ^ n = 0` forces the module to be finitely generated.
 
 ## Main definitions
 
 * `ContinuousLinearMap.IsCompletelyContinuous`: uniform approximability by continuous linear maps
-  of finite rank.
+  of finite rank, characterized by `ContinuousLinearMap.isCompletelyContinuous_iff`.
 
 ## Main results
 
@@ -54,8 +52,6 @@ continuous `u` with `(1 - u) ^ n = 0` forces the module to be finitely generated
   over a nontrivially normed field.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp`,
   `ContinuousLinearMap.IsCompletelyContinuous.comp_clm`: the ideal property over Tate scalars.
-* `ContinuousLinearMap.surjective_of_norm_sub_apply_le`: on a complete normed module, a
-  continuous linear endomorphism uniformly closer than `1` to the identity is surjective.
 * `ContinuousLinearMap.isCompletelyContinuous_id_iff`: the identity of a complete normed module is
   completely continuous if and only if the module is finitely generated.
 * `ContinuousLinearMap.IsCompletelyContinuous.finite_of_one_sub_pow_eq_zero`: a completely
@@ -88,6 +84,13 @@ range lies in a finitely generated submodule with `‖u x - v x‖ ≤ ε * ‖x
 def IsCompletelyContinuous (u : M →L[R] N) : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ v : M →L[R] N, (v : M →ₗ[R] N).IsFiniteRank ∧
     ∀ x, ‖u x - v x‖ ≤ ε * ‖x‖
+
+/-- Unfolding `ContinuousLinearMap.IsCompletelyContinuous`: `u` is completely continuous iff for
+every `ε > 0` some continuous linear map of finite rank is uniformly `ε`-close to `u`. -/
+theorem isCompletelyContinuous_iff {u : M →L[R] N} :
+    u.IsCompletelyContinuous ↔ ∀ ε : ℝ, 0 < ε → ∃ v : M →L[R] N,
+      (v : M →ₗ[R] N).IsFiniteRank ∧ ∀ x, ‖u x - v x‖ ≤ ε * ‖x‖ :=
+  Iff.rfl
 
 /-- A continuous linear map of finite rank is completely continuous. -/
 theorem _root_.LinearMap.IsFiniteRank.isCompletelyContinuous {u : M →L[R] N}
@@ -229,32 +232,6 @@ theorem isClosed_setOf_isCompletelyContinuous {K M N : Type*} [NontriviallyNorme
 section Complete
 
 variable {R M : Type*} [Ring R] [NormedAddCommGroup M] [Module R M] [CompleteSpace M]
-
-/-- **Neumann series.** On a complete normed module, a continuous linear endomorphism `v` with
-`‖x - v x‖ ≤ c * ‖x‖` for some `c < 1` is surjective: `y` is the image of `∑ₖ (1 - v) ^ k y`. -/
-theorem surjective_of_norm_sub_apply_le {v : M →L[R] M} {c : ℝ} (hc : c < 1)
-    (h : ∀ x, ‖x - v x‖ ≤ c * ‖x‖) : Function.Surjective v := by
-  intro y
-  set w : M →L[R] M := 1 - v
-  have hw (x : M) : ‖w x‖ ≤ max c 0 * ‖x‖ :=
-    (h x).trans (by gcongr; exact le_max_left _ _)
-  -- The Neumann series `∑ₖ wᵏ y` is dominated by a convergent geometric series.
-  have hbound (k : ℕ) : ‖(w ^ k) y‖ ≤ ‖y‖ * max c 0 ^ k := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [pow_succ', mul_apply_eq_comp]
-      calc ‖w ((w ^ k) y)‖ ≤ max c 0 * ‖(w ^ k) y‖ := hw _
-        _ ≤ max c 0 * (‖y‖ * max c 0 ^ k) := by gcongr
-        _ = ‖y‖ * max c 0 ^ (k + 1) := by ring
-  obtain ⟨s, hs⟩ := Summable.of_norm_bounded
-    ((summable_geometric_of_lt_one (le_max_right _ _) (max_lt hc one_pos)).mul_left ‖y‖) hbound
-  -- Shifting the series by one index and applying `w` give the same sum, so `w s = s - y`.
-  have h₁ : HasSum (fun k ↦ (w ^ (k + 1)) y) (s - y) := by
-    simpa using (hasSum_nat_add_iff' 1).mpr hs
-  have h₂ : HasSum (fun k ↦ (w ^ (k + 1)) y) (s - v s) := by
-    simpa [pow_succ', w] using hs.mapL w
-  exact ⟨s, (sub_right_injective (h₁.unique h₂)).symm⟩
 
 /-- **The identity criterion.** The identity of a complete normed module is completely continuous
 if and only if the module is finitely generated. -/

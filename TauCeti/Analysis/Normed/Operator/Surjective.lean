@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Completeness
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Isomorphisms
+import Mathlib.Topology.MetricSpace.Contracting
 
 /-!
 # Stability of surjectivity under small perturbations
@@ -34,6 +35,9 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   condition on continuous linear maps.
 * `LinearMap.surjective_add_of_norm_le`: a surjective linear map into a Banach space stays
   surjective under a perturbation bounded by `θ < 1` times the map.
+* `ContinuousLinearMap.surjective_of_norm_sub_apply_le`: over any ring, a continuous linear
+  endomorphism of a complete normed module uniformly closer than `1` to the identity is
+  surjective.
 -/
 
 public section
@@ -127,5 +131,24 @@ theorem surjective_add_of_norm_le (Q K : D →ₗ[𝕜] Y) (hQ : Surjective Q) {
   simp [hS]
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {R M : Type*} [Ring R] [NormedAddCommGroup M] [Module R M] [CompleteSpace M]
+
+/-- On a complete normed module over any ring, a continuous linear endomorphism `v` with
+`‖x - v x‖ ≤ c * ‖x‖` for some `c < 1` is surjective: `v s = y` for the fixed point `s` of the
+contraction `x ↦ x - v x + y`. -/
+theorem surjective_of_norm_sub_apply_le {v : M →L[R] M} {c : ℝ} (hc : c < 1)
+    (h : ∀ x, ‖x - v x‖ ≤ c * ‖x‖) : Surjective v := by
+  intro y
+  have hf : ContractingWith (Real.toNNReal c) (fun x ↦ x - v x + y) :=
+    ⟨Real.toNNReal_lt_one.mpr hc, LipschitzWith.of_dist_le' fun x z ↦ by
+      simpa [dist_eq_norm, map_sub, sub_sub_sub_comm] using h (x - z)⟩
+  have hs : _ - _ + y = _ := hf.fixedPoint_isFixedPt
+  rw [sub_add_eq_add_sub, sub_eq_iff_eq_add, add_right_inj] at hs
+  exact ⟨_, hs.symm⟩
+
+end ContinuousLinearMap
 
 end

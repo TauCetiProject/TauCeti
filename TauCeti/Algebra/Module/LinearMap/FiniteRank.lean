@@ -13,8 +13,10 @@ import Mathlib.RingTheory.Noetherian.Basic
 
 A linear map `f : M →ₗ[R] N` is of *finite rank* (`LinearMap.IsFiniteRank`) if its range is
 contained in a finitely generated submodule of `N`. This is the notion of finite image used for
-operators on Banach modules over a coefficient ring: the completely continuous operators are the
-operator-norm limits of continuous maps of finite rank.
+operators on Banach modules over a coefficient ring: the completely continuous operators
+(`ContinuousLinearMap.IsCompletelyContinuous`) are those that, for every `ε > 0`, are uniformly
+within `ε * ‖x‖` of a continuous map of finite rank; over Tate scalars this is approximation in
+the operator norm.
 
 Mathlib's `LinearMap.HasFiniteRange` asks the range itself to be finitely generated. Over a
 general ring a submodule of a finitely generated module need not be finitely generated, so that
