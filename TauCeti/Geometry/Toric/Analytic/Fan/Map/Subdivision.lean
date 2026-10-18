@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Subdivision
+public import TauCeti.Geometry.Toric.Algebraic.Fan.StarSubdivision
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Proper
 
 /-!
@@ -16,13 +16,15 @@ the original fan. When both fans are regular, the corresponding analytic map is 
 the real-linear map is the identity and each cone of the original fan is covered by the cones of
 the subdivision which it contains, so the cone-by-cone properness criterion applies.
 
-In particular, regular star subdivisions satisfying `Fan.IsSubdivision` induce proper analytic
-maps.
+In particular, the star subdivision of a regular cone along a nonempty set of its rays induces a
+proper analytic map to the realization of the fan of faces of the cone, the blow-down map.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.Toric.Fan.IsSubdivision.isProperMap_analyticMap`: the analytic map induced by a
   subdivision of regular fans is proper.
+* `TauCeti.Toric.Fan.isProperMap_analyticMap_starSubdivision`: the analytic map induced by a star
+  subdivision of a regular cone is proper.
 
 ## References
 
@@ -56,3 +58,21 @@ theorem isProperMap_analyticMap (h : Φ.IsSubdivision Ψ) (hΦ : Φ.IsRegular)
   simpa only [h.toFanHom_realMap, PointedCone.map_id] using hστ
 
 end TauCeti.Toric.Fan.IsSubdivision
+
+namespace TauCeti.Toric.Fan
+
+universe u
+
+variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
+  {τ : PointedCone ℝ V}
+
+/-- The star subdivision of a regular cone `τ` along a nonempty set `A` of its rays induces a
+proper analytic map to the realization of the fan of faces of `τ`, because the two fans have the
+same support. -/
+theorem isProperMap_analyticMap_starSubdivision (hi : IsIntegralLattice i)
+    (hτ : IsRegularCone i τ) {A : Finset (ToricRay τ)} (hA : A.Nonempty) :
+    IsProperMap ((starSubdivision_isSubdivision hi A hτ hA).toFanHom.analyticMap
+      (isRegular_starSubdivision hi A hτ) (isRegular_ofCone hi hτ)) :=
+  (starSubdivision_isSubdivision hi A hτ hA).isProperMap_analyticMap _ _
+
+end TauCeti.Toric.Fan
