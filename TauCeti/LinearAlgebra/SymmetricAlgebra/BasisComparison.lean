@@ -103,6 +103,15 @@ noncomputable def _root_.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
     (Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
       simp [Finsupp.degree_eq_weight_one, Finsupp.weight_apply, Function.id_def]))
 
+/-- The exponent vector of an unordered tuple records its multiplicities. -/
+@[simp]
+theorem _root_.TauCeti.Sym.equivFinsuppDegree_apply (ι : Type w) [DecidableEq ι] (n : ℕ)
+    (s : Sym ι n) : (Sym.equivFinsuppDegree ι n s).1 = (s : Multiset ι).toFinsupp := by
+  ext i
+  simp only [Sym.equivFinsuppDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
+    Equiv.refl_apply, Sym.coe_equivNatSum_apply_apply, Multiset.toFinsupp_apply]
+  congr 1
+
 variable {R M} in
 /-- A basis of a module induces the monomial basis on each homogeneous component of its
 symmetric algebra. The basis vectors are indexed by degree-`n` multisets of basis indices. -/
