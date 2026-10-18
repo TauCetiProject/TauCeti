@@ -53,26 +53,9 @@ theorem exists_kernel_of_ae_condExpKernel_arrayTail
     ∃ κ : ProbabilityTheory.Kernel unitInterval (ℕ × ℕ → α), IsMarkovKernel κ ∧
       (∀ᵐ u ∂(volume : Measure unitInterval), P (κ u)) ∧
       κ ∘ₘ (volume : Measure unitInterval) = ρ := by
-  have : Nonempty (ℕ × ℕ → α) := nonempty_of_isProbabilityMeasure ρ
-  let Q : ProbabilityMeasure (ℕ × ℕ → α) := ⟨ρ, inferInstance⟩
-  let f := unitIntervalCoding (ℕ × ℕ → α) Q
-  have hf : Measurable f := measurable_unitIntervalCoding Q
-  have hpres : MeasurePreserving f (volume : Measure unitInterval) ρ :=
-    ⟨hf, map_volume_unitIntervalCoding Q⟩
   have hm := arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
     (fun p _ _ => measurable_pi_apply p)
-  let K := condExpKernel ρ (arrayTail (fun p (x : ℕ × ℕ → α) => x p))
-  let κ := K.comap f (hf.mono le_rfl hm)
-  refine ⟨κ, inferInstance, hpres.quasiMeasurePreserving.ae hP, ?_⟩
-  -- Integrating the conditional law uses the tail-trimmed measure; the coding map
-  -- samples the ambient law, so pass between them only for tail-measurable integrands.
-  rw [← condExpKernel_comp_trim (μ := ρ) hm]
-  ext s hs
-  rw [Measure.bind_apply hs κ.aemeasurable,
-    Measure.bind_apply hs K.aemeasurable]
-  simp only [κ, ProbabilityTheory.Kernel.comap_apply]
-  rw [lintegral_trim hm (K.measurable_coe hs)]
-  exact hpres.lintegral_comp ((K.measurable_coe hs).mono hm le_rfl)
+  exact exists_kernel_of_ae_condExpKernel hm hP
 
 /-- **An array law is sampled by two independent uniform variables**, the first selecting a
 corner-tail conditional law and the second sampling from it. The coding is jointly measurable, and
@@ -84,19 +67,9 @@ theorem exists_coding_of_ae_condExpKernel_arrayTail
       Measurable (Function.uncurry f) ∧
       (∀ᵐ u ∂(volume : Measure unitInterval), P ((volume : Measure unitInterval).map (f u))) ∧
       ((volume : Measure unitInterval).prod volume).map (Function.uncurry f) = ρ := by
-  have : Nonempty (ℕ × ℕ → α) := nonempty_of_isProbabilityMeasure ρ
-  obtain ⟨κ, hκ, hgood, hmix⟩ := exists_kernel_of_ae_condExpKernel_arrayTail hP
-  obtain ⟨f, hf, hmap⟩ := ProbabilityTheory.Kernel.exists_measurable_map_eq_unitInterval κ
-  refine ⟨f, hf, ?_, ?_⟩
-  · simpa only [hmap] using hgood
-  · have hjoint := κ.map_prod_eq_compProd_of_map
-      (μ := (volume : Measure unitInterval)) volume f hf hmap
-    have hsnd := congrArg Measure.snd hjoint
-    rw [Measure.snd_compProd, hmix] at hsnd
-    have hpair : Measurable (fun p : unitInterval × unitInterval => (p.1, f p.1 p.2)) :=
-      measurable_fst.prodMk hf
-    rw [Measure.snd, Measure.map_map measurable_snd hpair] at hsnd
-    exact hsnd
+  have hm := arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
+    (fun p _ _ => measurable_pi_apply p)
+  exact exists_coding_of_ae_condExpKernel hm hP
 
 end TauCeti.Probability
 
