@@ -14,16 +14,17 @@ A family tending to zero along the cofinite filter is bounded. On a nonempty ind
 largest norm is attained, including when every term has norm zero. This turns the non-strict
 ultrametric bound for infinite sums into two useful sharp statements.
 
-First, if every term of a summable family has norm strictly less than a positive bound `B`, then
-the sum also has norm strictly less than `B`. Second, if one term has norm strictly larger than
-every other term, then the sum has exactly the norm of that dominant term. The statements include
-empty families and the zero family, and apply to every sum in a seminormed group without a
-Hausdorff assumption.
+For a family `f` with sum `a` in a seminormed ultrametric group,
+`HasSum.norm_lt_of_forall_norm_lt` shows that if every term has norm strictly less than a positive
+bound `B`, then `‖a‖ < B`. The strict bound includes empty families and families whose terms all
+have norm zero. The result `HasSum.norm_eq_of_forall_norm_lt` says that if one term has norm
+strictly larger than every other term, then `a` has exactly the norm of that dominant term. Both
+estimates apply to every `HasSum` limit without completeness or Hausdorff assumptions.
 
-Mathlib supplies the equivalence between summability and cofinite decay in a complete
-nonarchimedean group, as well as the non-strict bound
-`IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg`. The results here isolate the finiteness
-argument needed to make those bounds strict.
+Mathlib supplies the finite-sum estimate
+`IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg` and the term-removal identity
+`hasSum_ite_sub_hasSum`. The results here extend finite-sum bounds to strict bounds and
+dominant-term equalities for `HasSum` limits.
 -/
 
 public section
