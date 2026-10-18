@@ -330,15 +330,24 @@ lemma compressionMappingConeIso_hom_comp_coneProjection :
           (HomComplex.Cocycle.homOf ((-mappingCone.fst φ).rightShift 1 0 (zero_add 1))) ≫
         (compressionShiftIso n K 1).hom) := by
   ext r i hi
+  -- Mathlib's formulas for the third morphism of `mappingCone.triangle φ`, stated for the
+  -- underlying morphism `Cocycle.homOf _` appearing in the goal.
+  have h₁ : (mappingCone.inl φ).v (i + 1) i (by omega) ≫
+      (HomComplex.Cocycle.homOf ((-mappingCone.fst φ).rightShift 1 0 (zero_add 1))).f i =
+        -(K.shiftFunctorObjXIso 1 i (i + 1) rfl).inv :=
+    mappingCone.inl_v_triangle_mor₃_f φ (i + 1) i (by omega)
+  have h₂ : (mappingCone.inr φ).f i ≫
+      (HomComplex.Cocycle.homOf ((-mappingCone.fst φ).rightShift 1 0 (zero_add 1))).f i = 0 :=
+    mappingCone.inr_f_triangle_mor₃_f φ i
   apply mappingCone.ext_from φ (i + 1) i rfl
   · simp [-HomComplex.Cocycle.homOf_f,
       ιCompression_compressionMappingConeIso_hom_f_assoc n φ i (i + 1) rfl r (r + 1) hi (by simp),
       ιCompression_inlX_fstX n φ (i + 1) r (r + 1) (r + ((1 : ℤ) : ZMod n)) (by simp) (by simp),
-      mappingCone.inl_v_triangle_mor₃_homOf_f_assoc φ (i + 1) i rfl,
+      reassoc_of% h₁,
       CochainComplex.shiftFunctorObjXIso]
   · simp [-HomComplex.Cocycle.homOf_f,
       ιCompression_compressionMappingConeIso_hom_f_assoc n φ i (i + 1) rfl r (r + 1) hi (by simp),
-      mappingCone.inr_f_triangle_mor₃_homOf_f_assoc]
+      reassoc_of% h₂]
 
 /-- The compression of the mapping-cone triangle `K ⟶ L ⟶ mappingCone φ ⟶ K⟦1⟧` of `φ`: its
 morphisms are the compressions of `φ`, of `inr φ` and of the third morphism of

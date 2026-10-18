@@ -59,23 +59,6 @@ lemma inrCompHomotopy_hom (i j : ℤ) (hij : j + 1 = i) :
   rw [inl_v_eq_inlX f i j hij]
   exact homotopyCofiber.inrCompHomotopy_hom f _ i j hij
 
-/-- The formula for the left inclusion composed with the morphism constructed from the cocycle
-defining the third morphism of `mappingCone.triangle f`. -/
-@[reassoc]
-lemma inl_v_triangle_mor₃_homOf_f (i j : ℤ) (hij : j + 1 = i) :
-    (inl f).v i j (by omega) ≫
-        (HomComplex.Cocycle.homOf ((-fst f).rightShift 1 0 (zero_add 1))).f j =
-      -(K.shiftFunctorObjXIso 1 j i (by omega)).inv :=
-  inl_v_triangle_mor₃_f f i j (by omega)
-
-/-- The right inclusion composed with the morphism constructed from the cocycle defining the
-third morphism of `mappingCone.triangle f` is zero. -/
-@[reassoc]
-lemma inr_f_triangle_mor₃_homOf_f (i : ℤ) :
-    (inr f).f i ≫
-        (HomComplex.Cocycle.homOf ((-fst f).rightShift 1 0 (zero_add 1))).f i = 0 :=
-  inr_f_triangle_mor₃_f f i
-
 variable [HasZeroObject C]
 
 /-- The mapping cone of a morphism which becomes an isomorphism in the homotopy category is
