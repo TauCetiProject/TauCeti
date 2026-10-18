@@ -54,6 +54,7 @@ noncomputable def mappingConeTriangle : Triangle (CochainComplex.Bounded C) :=
 
 /-- The mapping-cone triangle of a morphism of bounded complexes is Mathlib's mapping-cone
 triangle of the underlying morphism of cochain complexes. -/
+@[expose, simps! hom_hom₁ hom_hom₂ hom_hom₃ inv_hom₁ inv_hom₂ inv_hom₃]
 noncomputable def ιMapTriangleMappingConeTriangleIso :
     (ι C).mapTriangle.obj (mappingConeTriangle φ) ≅
       CochainComplex.mappingCone.triangle φ.hom :=

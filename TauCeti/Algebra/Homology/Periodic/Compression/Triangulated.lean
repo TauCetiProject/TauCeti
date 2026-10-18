@@ -43,6 +43,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
 /-- Compression of bounded complexes carries the mapping-cone triangle of `φ`, with the shift
 datum `compressionFunctorShiftIso`, to the compression of the mapping-cone triangle of the
 underlying morphism of cochain complexes. -/
+@[expose, simps! hom_hom₁ hom_hom₂ hom_hom₃ inv_hom₁ inv_hom₂ inv_hom₃]
 noncomputable def compressionFunctorMapTriangleMappingConeTriangleIso
     {K L : CochainComplex.Bounded C} (φ : K ⟶ L) :
     (compressionFunctor n).mapTriangle.obj (CochainComplex.Bounded.mappingConeTriangle φ) ≅

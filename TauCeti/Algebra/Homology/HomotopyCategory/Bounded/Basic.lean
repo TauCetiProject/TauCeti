@@ -130,6 +130,18 @@ lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C
   · simp only [ComplexShape.up_Rel] at hj
     exact K.isZero_of_isStrictlyLE b _ (by lia)
 
+/-- The mapping cone of a morphism `K ⟶ L` is strictly bounded above by `n` when `K` is strictly
+bounded above by `n + 1` and `L` by `n`. This is the upper-bound counterpart of Mathlib's
+`CochainComplex.isStrictlyGE_mappingCone`. -/
+lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (n₁ n₂ n : ℤ) [K.IsStrictlyLE n₁] [L.IsStrictlyLE n₂] (hn₁ : n₁ ≤ n + 1 := by lia)
+    (hn₂ : n₂ ≤ n := by lia) :
+    (CochainComplex.mappingCone f).IsStrictlyLE n := by
+  rw [CochainComplex.isStrictlyLE_iff]
+  intro i hi
+  rw [CochainComplex.mappingCone.isZero_X_iff]
+  exact ⟨K.isZero_of_isStrictlyLE n₁ (i + 1) (by lia), L.isZero_of_isStrictlyLE n₂ i (by lia)⟩
+
 /-- The mapping cone of a morphism between bounded cochain complexes is bounded. If the source
 and target have bounds `(a₁, b₁)` and `(a₂, b₂)`, the cone has bounds
 `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. -/
@@ -138,12 +150,9 @@ lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
     CochainComplex.bounded C (CochainComplex.mappingCone f) := by
   obtain ⟨a₁, b₁, ha₁, hb₁⟩ := (CochainComplex.bounded_iff C K).1 hK
   obtain ⟨a₂, b₂, ha₂, hb₂⟩ := (CochainComplex.bounded_iff C L).1 hL
-  refine (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂,
-    CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _, ?_⟩
-  rw [CochainComplex.isStrictlyLE_iff]
-  intro i hi
-  rw [CochainComplex.mappingCone.isZero_X_iff]
-  exact ⟨K.isZero_of_isStrictlyLE b₁ (i + 1) (by lia), L.isZero_of_isStrictlyLE b₂ i (by lia)⟩
+  exact (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂,
+    CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _,
+    isStrictlyLE_mappingCone f b₁ b₂ _⟩
 
 end
 
