@@ -189,8 +189,9 @@ theorem mul_ofHomogeneous (i j : ℕ) :
       eqToHom (by rw [CommMon.toMon_X, ofHomogeneous_obj_X]) ≫ mul i j ≫
         eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
           (i + j)).symm :=
-  (GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
-    (Category.comp_id _)
+  Mon.mul_eq _ _ _ |>.trans
+    ((GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
+      (Category.comp_id _))
 
 /-- The unit of `ofHomogeneous` is the given one, up to the identification
 `ofHomogeneous_obj_X` of its degree-zero component with `M 0`. -/
@@ -199,8 +200,9 @@ theorem one_ofHomogeneous :
     (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.toMon.one =
       one ≫ eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
         0).symm :=
-  (congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
-    (GradedObject.Monoidal.oneOfDegreeZero_zero M one)).trans (Iso.inv_hom_id_assoc _ _)
+  Mon.one_eq _ |>.trans
+    ((congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
+      (GradedObject.Monoidal.oneOfDegreeZero_zero M one)).trans (Iso.inv_hom_id_assoc _ _))
 
 end Homogeneous
 
@@ -213,9 +215,13 @@ def homMk {A B : GradedQuasicoherentAlgebra X} (f : ∀ n, A.obj.X n ⟶ B.obj.X
     A ⟶ B :=
   have hf := GradedObject.isMonHom_of_homogeneous (X := A.obj.X) (Y := B.obj.X) f
     (by
+      rw [Mon.one_eq, Mon.one_eq] at one_f
       rw [← cancel_epi (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv]
       exact (Category.assoc _ _ _).symm.trans one_f)
-    (fun i j ↦ (Category.assoc _ _ _).symm.trans (mul_f i j).symm)
+    (fun i j ↦ by
+      have h := mul_f i j
+      rw [Mon.mul_eq, Mon.mul_eq] at h
+      exact (Category.assoc _ _ _).symm.trans h.symm)
   ObjectProperty.homMk (CommMon.homMk (Mon.Hom.mk' (M := A.obj.toMon) (N := B.obj.toMon) f
     hf.one_hom hf.mul_hom))
 
