@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 import TauCeti.Algebra.Homology.ModuleCat.Basic
+import Mathlib.Algebra.Homology.HomologicalComplexLimits
 
 /-!
 # Reduced cyclic cohomology of a unital algebra
@@ -376,75 +377,70 @@ theorem reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap :
   simp only [reducedCyclicCochainComplexι, Category.assoc, Iso.inv_hom_id_assoc]
   exact ModuleCat.hom_ext (LinearMap.ext fun phi ↦ phi.2)
 
-private def reducedCyclicCochainComplexLift
-    {K : CochainComplex (ModuleCat R) ℕ} (e : K ⟶ cyclicCochainComplex R A M)
-    (he : e ≫ scalarCyclicRestrictionComplexMap R A M = 0) :
-    K ⟶ reducedCyclicCochainComplex R A M where
-  f n := ModuleCat.ofHom (LinearMap.codRestrict (reducedCyclicCochains R A M n)
-    (e.f n ≫ (cyclicCochainComplexXIso R A M n).hom).hom fun x ↦ by
-      rw [mem_reducedCyclicCochains_iff]
-      have hn : e.f n ≫ (scalarCyclicRestrictionComplexMap R A M).f n = 0 := by
-        simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
-          congrArg (fun q ↦ q.f n) he
-      have hmap : e.f n ≫ (cyclicCochainComplexXIso R A M n).hom ≫
-          ModuleCat.ofHom (scalarCyclicRestriction R A M n) = 0 := by
-        rw [← scalarCyclicRestrictionComplexMap_f, ← Category.assoc, hn, zero_comp]
-      exact ConcreteCategory.congr_hom hmap x) ≫
-        (reducedCyclicCochainComplexXIso R A M n).inv
-  comm' := by
-    rintro n _ rfl
-    rw [← cancel_mono (reducedCyclicCochainComplexXIso R A M (n + 1)).hom]
-    simp only [Category.assoc, reducedCyclicCochainComplex_d, Iso.inv_hom_id_assoc,
-      Iso.inv_hom_id, Category.comp_id]
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro x
-    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp,
-      Function.comp_apply]
-    apply Subtype.ext
-    rw [coe_reducedCyclicHochschildCoboundary_apply, LinearMap.codRestrict_apply,
-      LinearMap.codRestrict_apply, LinearMap.comp_apply, LinearMap.comp_apply]
-    exact (cyclicCochainComplex_d_apply R A M n (e.f n x)).symm.trans
-      (congrArg (cyclicCochainComplexXIso R A M (n + 1)).hom
-        (HomologicalComplex.Hom.comm_apply e n (n + 1) x))
-
 /-- The reduced cyclic cochain complex is the kernel of scalar restriction on the full cyclic
 cochain complex. -/
 def reducedCyclicCochainComplexIsKernel :
     IsLimit (KernelFork.ofι (reducedCyclicCochainComplexι R A M)
-      (reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap R A M)) :=
-  KernelFork.IsLimit.ofι _ _
-    (fun e he ↦ reducedCyclicCochainComplexLift R A M e he)
-    (fun e he ↦ by
-      apply HomologicalComplex.hom_ext _ _
-      intro n
-      rw [← cancel_mono (cyclicCochainComplexXIso R A M n).hom]
-      simp only [reducedCyclicCochainComplexLift, reducedCyclicCochainComplexι,
-        HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id,
-        Category.comp_id]
-      exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl))
-    (fun e he m hm ↦ by
-      apply HomologicalComplex.hom_ext _ _
-      intro n
-      apply (cancel_mono (reducedCyclicCochainComplexXIso R A M n).hom).1
-      let _ : Mono (ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype) :=
-        (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
-      apply (cancel_mono (ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype)).1
-      have hn := congrArg (fun q ↦ q.f n) hm
+      (reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap R A M)) := by
+  apply HomologicalComplex.isLimitOfEval
+  intro n
+  refine (KernelFork.isLimitMapConeEquiv
+    (KernelFork.ofι (reducedCyclicCochainComplexι R A M)
+      (reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap R A M))
+    (HomologicalComplex.eval (ModuleCat R) (ComplexShape.up ℕ) n)).symm ?_
+  apply ModuleCat.isLimitKernelFork
+  · intro x
+    constructor
+    · intro hx
+      have hz : (cyclicCochainComplexXIso R A M n).hom x ∈
+          reducedCyclicCochains R A M n := by
+        rw [mem_reducedCyclicCochains_iff]
+        change ((scalarCyclicRestrictionComplexMap R A M).f n) x = 0 at hx
+        calc
+          scalarCyclicRestriction R A M n ((cyclicCochainComplexXIso R A M n).hom x) =
+              (cyclicCochainComplexXIso R R M n).hom
+                ((scalarCyclicRestrictionComplexMap R A M).f n x) :=
+            (ConcreteCategory.congr_hom
+              (scalarCyclicRestrictionComplexMap_f R A M n) x).symm
+          _ = 0 := by rw [hx, map_zero]
+      let z : reducedCyclicCochains R A M n :=
+        ⟨(cyclicCochainComplexXIso R A M n).hom x, hz⟩
+      refine ⟨(reducedCyclicCochainComplexXIso R A M n).inv z, ?_⟩
+      change (reducedCyclicCochainComplexι R A M).f n
+        ((reducedCyclicCochainComplexXIso R A M n).inv z) = x
+      apply (ModuleCat.mono_iff_injective
+        (cyclicCochainComplexXIso R A M n).hom).1 inferInstance
       calc
-        m.f n ≫ (reducedCyclicCochainComplexXIso R A M n).hom ≫
-            ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype =
-            e.f n ≫ (cyclicCochainComplexXIso R A M n).hom := by
-          simpa [HomologicalComplex.comp_f, reducedCyclicCochainComplexι,
-            Category.assoc] using congrArg
-              (fun q ↦ q ≫ (cyclicCochainComplexXIso R A M n).hom) hn
-        _ = (reducedCyclicCochainComplexLift R A M e he).f n ≫
-            (reducedCyclicCochainComplexXIso R A M n).hom ≫
-              ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype := by
-          symm
-          simp only [reducedCyclicCochainComplexLift, Category.assoc,
-            Iso.inv_hom_id_assoc]
-          exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl))
+        (cyclicCochainComplexXIso R A M n).hom
+            ((reducedCyclicCochainComplexι R A M).f n
+              ((reducedCyclicCochainComplexXIso R A M n).inv z)) =
+            ((reducedCyclicCochainComplexXIso R A M n).hom
+              ((reducedCyclicCochainComplexXIso R A M n).inv z)).1 :=
+          ConcreteCategory.congr_hom (reducedCyclicCochainComplexι_f R A M n) _
+        _ = z.1 := congrArg Subtype.val
+          ((reducedCyclicCochainComplexXIso R A M n).hom_inv_id_apply z)
+        _ = (cyclicCochainComplexXIso R A M n).hom x := rfl
+    · rintro ⟨y, rfl⟩
+      change ((reducedCyclicCochainComplexι R A M ≫
+        scalarCyclicRestrictionComplexMap R A M).f n) y = 0
+      rw [reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap]
+      rfl
+  · intro x y hxy
+    change (reducedCyclicCochainComplexι R A M).f n x =
+      (reducedCyclicCochainComplexι R A M).f n y at hxy
+    apply (ModuleCat.mono_iff_injective
+      (reducedCyclicCochainComplexXIso R A M n).hom).1 inferInstance
+    apply Subtype.ext
+    calc
+      ((reducedCyclicCochainComplexXIso R A M n).hom x).1 =
+          (cyclicCochainComplexXIso R A M n).hom
+            ((reducedCyclicCochainComplexι R A M).f n x) :=
+        (ConcreteCategory.congr_hom (reducedCyclicCochainComplexι_f R A M n) x).symm
+      _ = (cyclicCochainComplexXIso R A M n).hom
+          ((reducedCyclicCochainComplexι R A M).f n y) :=
+        congrArg (cyclicCochainComplexXIso R A M n).hom.hom hxy
+      _ = ((reducedCyclicCochainComplexXIso R A M n).hom y).1 :=
+        ConcreteCategory.congr_hom (reducedCyclicCochainComplexι_f R A M n) y
 
 end ComplexKernel
 
@@ -477,7 +473,11 @@ end Vanishing
 
 section GroundRing
 
-variable (R : Type*) (M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+variable (R : Type*) (M : Type*)
+
+section Cochains
+
+variable [CommSemiring R] [AddCommGroup M] [Module R M]
 
 /-- Restriction from the ground ring to its own scalar subalgebra is the identity. -/
 @[simp]
@@ -495,6 +495,12 @@ theorem scalarCyclicRestriction_self (n : ℕ) :
 theorem reducedCyclicCochains_self (n : ℕ) : reducedCyclicCochains R R M n = ⊥ := by
   rw [reducedCyclicCochains, scalarCyclicRestriction_self, LinearMap.ker_id]
 
+end Cochains
+
+section Complex
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
 /-- The reduced cyclic cochain complex of the ground ring is a zero object. -/
 theorem isZero_reducedCyclicCochainComplex_self :
     IsZero (reducedCyclicCochainComplex R R M) := by
@@ -509,12 +515,18 @@ theorem isZero_reducedCyclicCohomology_self (n : ℕ) :
   exact (HomologicalComplex.homologyFunctor (ModuleCat R) (ComplexShape.up ℕ) n).map_isZero
     (isZero_reducedCyclicCochainComplex_self R M)
 
+end Complex
+
 end GroundRing
 
 section ZeroAlgebra
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
-  [Subsingleton A] [AddCommGroup M] [Module R M]
+variable (R : Type*) (A : Type u) (M : Type*)
+
+section Cochains
+
+variable [CommSemiring R] [Semiring A] [Algebra R A] [Subsingleton A]
+  [AddCommGroup M] [Module R M]
 
 /-- Every reduced cyclic cochain on a zero algebra is zero. -/
 @[simp]
@@ -527,6 +539,13 @@ theorem reducedCyclicCochains_of_subsingleton (n : ℕ) :
   apply MultilinearMap.ext
   intro a
   simp [@Subsingleton.elim _ (Pi.instSubsingleton) a 0]
+
+end Cochains
+
+section Complex
+
+variable [CommRing R] [Semiring A] [Algebra R A] [Subsingleton A]
+  [AddCommGroup M] [Module R M]
 
 /-- The reduced cyclic cochain complex of a zero algebra is a zero object. -/
 theorem isZero_reducedCyclicCochainComplex_of_subsingleton :
@@ -541,6 +560,8 @@ theorem isZero_reducedCyclicCohomology_of_subsingleton (n : ℕ) :
     IsZero (reducedCyclicCohomology R A M n) := by
   exact (HomologicalComplex.homologyFunctor (ModuleCat R) (ComplexShape.up ℕ) n).map_isZero
     (isZero_reducedCyclicCochainComplex_of_subsingleton R A M)
+
+end Complex
 
 end ZeroAlgebra
 
