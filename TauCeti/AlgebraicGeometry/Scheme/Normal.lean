@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Normal schemes
@@ -87,18 +88,11 @@ class IsNormalScheme (X : Scheme.{u}) : Prop where
 
 attribute [instance] IsNormalScheme.isDomain_stalk IsNormalScheme.isIntegrallyClosed_stalk
 
-/-- Being an integrally closed domain is invariant under ring isomorphisms. -/
-private lemma isDomain_and_isIntegrallyClosed_of_ringEquiv {A B : Type*} [CommRing A]
-    [CommRing B] (e : A ≃+* B) (h : IsDomain A ∧ IsIntegrallyClosed A) :
-    IsDomain B ∧ IsIntegrallyClosed B := by
-  obtain ⟨_, _⟩ := h
-  exact ⟨e.symm.toMulEquiv.isDomain A, .of_equiv e⟩
-
 variable {X : Scheme.{u}}
 
 /-- A scheme is normal iff each of its local rings is an integrally closed domain; this is the
 definition, as a single condition per point. -/
-theorem isNormalScheme_iff_forall_stalk :
+@[simp] theorem isNormalScheme_iff_forall_stalk :
     IsNormalScheme X ↔
       ∀ x : X, IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
   ⟨fun _ _ ↦ ⟨inferInstance, inferInstance⟩, fun h ↦ ⟨fun x ↦ (h x).1, fun x ↦ (h x).2⟩⟩
@@ -191,7 +185,7 @@ instance IsNormalScheme.isReduced (X : Scheme.{u}) [IsNormalScheme X] : IsReduce
   isReduced_of_isReduced_stalk X
 
 /-- The spectrum of a domain `R` is normal exactly when `R` is integrally closed. -/
-theorem isNormalScheme_Spec_iff (R : CommRingCat.{u}) [IsDomain R] :
+@[simp] theorem isNormalScheme_Spec_iff (R : CommRingCat.{u}) [IsDomain R] :
     IsNormalScheme (Spec R) ↔ IsIntegrallyClosed R := by
   rw [isNormalScheme_Spec_iff_forall_localization]
   refine ⟨fun h ↦ .of_localization_maximal fun p _ _ ↦ (h p).2, fun _ p _ ↦ ?_⟩
@@ -216,8 +210,8 @@ theorem IsNormalScheme.isDiscreteValuationRing_stalk (X : Scheme.{u}) [IsLocally
     [IsNormalScheme X] (x : X) (hx : coheight x = 1) :
     IsDiscreteValuationRing (X.presheaf.stalk x) := by
   have hdim : ringKrullDim (X.presheaf.stalk x) = 1 := by
-    rw [ringKrullDim_stalk_eq_coheight, hx]
-    exact_mod_cast rfl
+    rw [ringKrullDim_stalk_eq_coheight]
+    simp [hx]
   exact TauCeti.IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
 
 end AlgebraicGeometry
