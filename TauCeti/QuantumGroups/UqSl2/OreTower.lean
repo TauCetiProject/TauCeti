@@ -75,6 +75,17 @@ def sigmaF : ℂ[T;T⁻¹] →ₐ[ℂ] ℂ[T;T⁻¹] :=
 theorem sigmaF_apply (a : ℂ[T;T⁻¹]) : sigmaF q a = rescale ℂ (Units.mk0 q Fact.out ^ 2) a :=
   (rfl)
 
+/-- `sigmaF` sends `Kⁿ` to `q²ⁿ Kⁿ`. -/
+@[simp]
+theorem sigmaF_T (n : ℤ) : sigmaF q (T n) = C (q ^ (2 * n)) * T n := by
+  rw [sigmaF_apply, rescale_T, zpow_mul]
+  simp
+
+/-- `sigmaF` fixes the constants. -/
+@[simp]
+theorem sigmaF_C (a : ℂ) : sigmaF q (C a) = C a :=
+  rescale_C _ a
+
 /-- The lower Borel part `ℂ[K, K⁻¹][F; σ_F]` of `UqSl2 q`, the Ore extension of the Laurent
 polynomials in `K` by a variable `F` with `F K = q² K F`. -/
 abbrev LowerBorel : Type := OreExtension (sigmaF q) 0

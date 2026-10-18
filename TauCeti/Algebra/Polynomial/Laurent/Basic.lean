@@ -386,22 +386,15 @@ past the evaluation of a Laurent polynomial `p` at `u` rescales `p` by `c`. -/
 theorem _root_.TauCeti.mul_laurentEval {B : Type*} [Semiring B] [Algebra A B] {u : Bˣ} {x : B}
     {c : Aˣ} (h : x * u = (c : A) • (u * x)) (p : A[T;T⁻¹]) :
     x * laurentEval u p = laurentEval u (rescale A c p) * x := by
-  -- First move `x` past the integer powers of `u`.
-  have hinv : x * ↑u⁻¹ = ((c⁻¹ : Aˣ) : A) • (↑u⁻¹ * x) := by
-    have h' : ↑u⁻¹ * x = (c : A) • (x * ↑u⁻¹) := by
-      simpa [mul_assoc, smul_mul_assoc, mul_smul_comm] using
-        congrArg (fun y : B => (↑u⁻¹ : B) * y * ↑u⁻¹) h
-    rw [h', smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
+  -- `x` semiconjugates `u` to `c u`, hence each `u ^ n` to `(c u) ^ n = cⁿ uⁿ`.
+  let v : Bˣ := Units.map (algebraMap A B).toMonoidHom c
+  have hv : Commute v u := Units.ext <| by simp [v, Algebra.commutes]
+  have hs : SemiconjBy x u ↑(v * u) := by
+    simpa [SemiconjBy, v, Algebra.smul_def, mul_assoc] using h
   have hpow (n : ℤ) : x * ↑(u ^ n) = ((c ^ n : Aˣ) : A) • (↑(u ^ n) * x) := by
-    induction n using Int.induction_on with
-    | zero => simp
-    | succ n ih =>
-      rw [zpow_add_one, zpow_add_one, Units.val_mul, ← mul_assoc, ih, smul_mul_assoc, mul_assoc,
-        h, mul_smul_comm, smul_smul, Units.val_mul, ← mul_assoc]
-    | pred n ih =>
-      rw [sub_eq_add_neg, zpow_add, zpow_add, zpow_neg_one, zpow_neg_one, Units.val_mul,
-        ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hinv, mul_smul_comm, smul_smul,
-        Units.val_mul, ← mul_assoc]
+    rw [(hs.units_zpow_right n).eq, hv.mul_zpow, Units.val_mul, mul_assoc, Algebra.smul_def]
+    rw [← map_zpow]
+    rfl
   induction p using LaurentPolynomial.induction_on' with
   | add p r hp hr => rw [map_add, map_add, map_add, mul_add, add_mul, hp, hr]
   | C_mul_T n a =>
