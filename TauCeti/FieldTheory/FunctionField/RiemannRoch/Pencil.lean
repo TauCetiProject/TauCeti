@@ -18,8 +18,8 @@ a pencil. If `deg (A - Z) > 2g - 2`, then every element of `L(A + D)` is
 In particular, for `D = (z)∞` and sufficiently large `n`,
 `L((n + 1)D) = L(nD) + z L(nD)`. Iteration expresses all higher sections using
 powers of `z` and a single finite-dimensional space of sections. This is the
-multiplication input for finite generation of the section ring of `D` over the
-polynomial algebra on its two sections `1, z`.
+multiplication input for finite generation of the section ring
+`TauCeti.Divisor.sectionRing D` over the polynomial algebra on its two sections `1, z`.
 
 The argument is the base-point-free pencil calculation: the intersection of
 `L(A)` and `z L(A)` is `L(A - Z)`, and Riemann–Roch computes the dimension of their
