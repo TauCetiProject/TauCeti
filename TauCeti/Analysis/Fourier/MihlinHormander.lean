@@ -25,7 +25,10 @@ The **Mihlin–Hörmander multiplier theorem**
 (`TauCeti.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`) says that if
 `2N > n`, then for every `1 < p < ∞` the `L²` Fourier multiplier `T_m`
 (`MeasureTheory.Lp.fourierMultiplierCLM`) is bounded in the `Lᵖ` norm, `‖T_m f‖_p ≤ C A ‖f‖_p`,
-with `C` independent of `m` and `A`. The symbols of the Riesz transforms and of
+with `C` independent of `m` and `A`. For a symbol of temperate growth, the multiplier on
+tempered distributions therefore maps every `f ∈ Lᵖ` to an `Lᵖ` function with the same bound
+(`TauCeti.exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le`), by density of
+the Schwartz functions in `Lᵖ`. The symbols of the Riesz transforms and of
 `∂_v ∂_w Δ⁻¹`, and more generally every symbol that is smooth away from the origin and
 homogeneous of degree `0`, satisfy Mihlin's condition of every order.
 
@@ -342,5 +345,85 @@ theorem exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le [Nontri
   gcongr
   · simp [← ofReal_norm]
   · exact hC hmc hmcA (c • m') hcm' f
+
+/-- **The Mihlin–Hörmander multiplier theorem on `Lᵖ`.** Let `V` be a real inner product space of
+finite dimension `n ≥ 1`, let `2N > n` and `1 < p < ∞`. There is a constant `C` such that for
+every symbol `m` of temperate growth satisfying Mihlin's condition of order `N` with constant `A`,
+
+`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` for every `k ≤ N` and every `ξ ≠ 0`,
+
+the Fourier multiplier `𝓕⁻ (m • 𝓕 f)` of the tempered distribution of any `f ∈ Lᵖ(V, F)` is an
+`Lᵖ` function `g` with `‖g‖_p ≤ C A ‖f‖_p`. -/
+theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [Nontrivial V]
+    {N : ℕ} (hN : finrank ℝ V < 2 * N) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    ∃ C : ℝ≥0, ∀ {m : V → ℂ}, m.HasTemperateGrowth → ∀ {A : ℝ≥0},
+      (∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ A / ‖ξ‖ ^ k) →
+      ∀ f : Lp F p (volume : Measure V), ∃ g : Lp F p (volume : Measure V),
+        TemperedDistribution.fourierMultiplierCLM F m (f : 𝓢'(V, F)) = g ∧
+          ‖g‖ ≤ C * A * ‖f‖ := by
+  obtain ⟨C, hC⟩ :=
+    exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := F) hN hp hp_top
+  refine ⟨C, fun {m} hm {A} hmA f ↦ ?_⟩
+  -- The symbol is bounded, by Mihlin's condition of order zero away from the origin.
+  have hm_bdd : MemLp m (∞ : ℝ≥0∞) volume := by
+    refine memLp_top_of_bound hm.1.continuous.aestronglyMeasurable A ?_
+    filter_upwards [Measure.ae_ne volume 0] with ξ hξ
+    simpa using hmA 0 (Nat.zero_le _) ξ hξ
+  -- On Schwartz functions the multiplier agrees with the `L²` multiplier, so it satisfies the
+  -- `Lᵖ` bound of `exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`.
+  set T : 𝓢(V, F) →L[ℂ] 𝓢(V, F) := SchwartzMap.fourierMultiplierCLM F m
+  have hS : ∀ φ : 𝓢(V, F), ‖(T φ).toLp p‖ ≤ C * A * ‖φ.toLp p‖ := by
+    intro φ
+    have h := hC hm.1.contDiffOn hmA (hm_bdd.toLp m) hm_bdd.coeFn_toLp (φ.toLp 2)
+    rw [SchwartzMap.toLp_fourierMultiplierCLM_eq hm hm_bdd,
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _),
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _)] at h
+    rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _),
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _)]
+    have hfin : eLpNorm (φ : V → F) p volume ≠ (∞ : ℝ≥0∞) := (φ.memLp p).eLpNorm_ne_top
+    calc _ ≤ ((C : ℝ≥0∞) * A * eLpNorm (φ : V → F) p volume).toReal :=
+          ENNReal.toReal_mono (by finiteness) h
+      _ = _ := by simp [ENNReal.toReal_mul]
+  -- Approximate `f` by Schwartz functions; by the bound, their images form a Cauchy sequence
+  -- in `Lᵖ`, whose limit is `g`.
+  obtain ⟨u, hu_range, hu⟩ := mem_closure_iff_seq_limit.mp
+    (SchwartzMap.denseRange_toLpCLM (F := F) (μ := volume) hp_top f)
+  choose φ hφ using hu_range
+  simp only [SchwartzMap.toLpCLM_apply] at hφ
+  have hcauchy : CauchySeq fun n ↦ (T (φ n)).toLp p (volume : Measure V) := by
+    have hdist : ∀ i j, dist ((T (φ i)).toLp p (volume : Measure V))
+        ((T (φ j)).toLp p (volume : Measure V)) ≤ C * A * dist (u i) (u j) := fun i j ↦ by
+      have hsub : ∀ a b : 𝓢(V, F), (a - b).toLp p (volume : Measure V) =
+          a.toLp p volume - b.toLp p volume := fun a b ↦ by
+        simpa using map_sub (SchwartzMap.toLpCLM ℝ F p (volume : Measure V)) a b
+      have h := hS (φ i - φ j)
+      rw [map_sub, hsub, hsub] at h
+      rwa [dist_eq_norm, dist_eq_norm, ← hφ i, ← hφ j]
+    refine Metric.cauchySeq_iff'.2 fun ε hε ↦ ?_
+    obtain ⟨n₀, hn₀⟩ := Metric.cauchySeq_iff'.1 hu.cauchySeq (ε / (C * A + 1)) (by positivity)
+    refine ⟨n₀, fun n hn ↦ (hdist n n₀).trans_lt ?_⟩
+    calc (C * A : ℝ) * dist (u n) (u n₀) ≤ C * A * (ε / (C * A + 1)) := by
+          gcongr
+          exact (hn₀ n hn).le
+      _ < ε := by
+          rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+          nlinarith
+  obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete hcauchy
+  refine ⟨g, ?_, le_of_tendsto_of_tendsto' hg.norm (hu.norm.const_mul _) fun n ↦ ?_⟩
+  · -- Both sides are limits of the same sequence of tempered distributions.
+    have hlim : Tendsto (fun n ↦ (((T (φ n)).toLp p (volume : Measure V) : Lp F p volume) :
+        𝓢'(V, F))) atTop (𝓝 (g : 𝓢'(V, F))) :=
+      ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto g).comp hg
+    have heq : ∀ n, (((T (φ n)).toLp p (volume : Measure V) : Lp F p volume) : 𝓢'(V, F)) =
+        TemperedDistribution.fourierMultiplierCLM F m (u n : 𝓢'(V, F)) := fun n ↦ by
+      rw [← hφ n, Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq,
+        TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
+    refine tendsto_nhds_unique ?_ hlim
+    simp only [heq]
+    exact ((TemperedDistribution.fourierMultiplierCLM F m ∘L
+      Lp.toTemperedDistributionCLM F volume p).continuous.tendsto f).comp hu
+  · rw [← hφ n]
+    exact hS (φ n)
 
 end TauCeti
