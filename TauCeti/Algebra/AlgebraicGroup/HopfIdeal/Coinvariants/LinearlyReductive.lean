@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CanonicalMap
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Fixed

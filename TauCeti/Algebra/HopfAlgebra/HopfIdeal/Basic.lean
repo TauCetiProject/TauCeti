@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.DFinsupp
 public import Mathlib.RingTheory.HopfAlgebra.Quotient
 public import TauCeti.Algebra.TensorProduct.Ideal
-import Mathlib.RingTheory.HopfAlgebra.Convolution
 import TauCeti.Algebra.HopfAlgebra.TensorShear
 
 /-!

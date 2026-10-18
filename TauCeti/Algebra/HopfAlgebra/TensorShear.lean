@@ -102,7 +102,8 @@ noncomputable def tensorShearMulLeftInvRight : H ⊗[R] H →ₐ[R] H ⊗[R] H :
   lift (Bialgebra.comulAlgHom R H) (includeRight.comp (HopfAlgebra.antipodeAlgHom R H))
     (fun _ _ ↦ .all _ _)
 
-/-- The mirror tensor shear multiplies the left coordinate by the inverse of the right one. -/
+/-- On pure tensors the mirror tensor shear is `a ⊗ b ↦ Δ(a) * (1 ⊗ S(b))`, the pullback along
+`(g, h) ↦ (g h, h⁻¹)`. -/
 @[simp]
 theorem tensorShearMulLeftInvRight_tmul (a b : H) :
     tensorShearMulLeftInvRight (R := R) (a ⊗ₜ[R] b) =
