@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Process.Array.Tail.Basic
 public import TauCeti.Probability.Kernel.Randomization
-public import Mathlib.Probability.Kernel.Condexp
 
 /-!
 # Uniform mixtures of array-tail conditional laws
