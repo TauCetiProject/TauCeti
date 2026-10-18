@@ -21,12 +21,16 @@ This file expresses the `L¹` distance between two almost everywhere measurable 
 the integral, over all levels, of the measure of the symmetric difference of their sublevel sets.
 It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
 `s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
-functions lies above the level.
+functions lies above the level. For `ℝ≥0∞`-valued functions the same one-sided form holds for the
+truncated difference `f - g`, with the positive levels where `f` lies above the level and `g` does
+not, and with no finiteness assumption.
 
 Finally, for `1 < p` it writes the power `|x - y| ^ p` as a mixture of *hinges*: it is the
 integral over the thresholds `r > 0`, with weight `p (p - 1) r ^ (p - 2)`, of
 `(y - x - r)⁺ + (x - y - r)⁺`. Integrated against a measure, this turns the `p`-th moment of a
-difference into a mixture of one-sided integrals of the form above.
+difference into a mixture of one-sided integrals of the form above. The same mixture writes an
+extended power `d ^ p`, `d : ℝ≥0∞`, through the truncated hinges `d - r`, and hence the `p`-th
+power integral of a truncated difference `f - g` through the integrals of `(f - r) - g`.
 
 ## Main statements
 
@@ -36,8 +40,13 @@ difference into a mixture of one-sided integrals of the form above.
   functions, level by level;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
+* `TauCeti.lintegral_tsub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
+  `f - g` of `ℝ≥0∞`-valued functions, level by level;
 * `TauCeti.ofReal_rpow_eq_lintegral_mul_ofReal_sub` and `TauCeti.edist_rpow_eq_lintegral` — a
-  power `d ^ p`, and the power `|x - y| ^ p` of a distance, as mixtures of hinges.
+  power `d ^ p`, and the power `|x - y| ^ p` of a distance, as mixtures of hinges;
+* `TauCeti.rpow_eq_lintegral_mul_tsub` and
+  `TauCeti.lintegral_tsub_rpow_eq_lintegral_mul_lintegral_tsub` — the same mixture for an extended
+  power `d ^ p`, and its integrated form for a truncated difference of `ℝ≥0∞`-valued functions.
 * `TauCeti.lintegral_ofReal_sub_sub_eq` and `TauCeti.lintegral_edist_rpow_eq` — their integrated
   forms for a measure on pairs of real variables.
 -/
@@ -228,6 +237,72 @@ theorem lintegral_ofReal_sub_eq_lintegral_measure (m : Measure α) [SFinite m] {
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       rw [hfa, hga]
 
+/-- Above the origin, Lebesgue measure gives the set of levels `t` with `ENNReal.ofReal t < a`
+the mass `a`. -/
+theorem volume_restrict_Ioi_setOf_ofReal_lt (a : ℝ≥0∞) :
+    volume.restrict (Ioi (0 : ℝ)) {t | ENNReal.ofReal t < a} = a := by
+  rw [Measure.restrict_apply (measurableSet_lt ENNReal.measurable_ofReal measurable_const)]
+  rcases eq_or_ne a ∞ with rfl | ha
+  · simp
+  have hset : {t : ℝ | ENNReal.ofReal t < a} ∩ Ioi 0 = Ioo 0 a.toReal := by
+    ext t
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_Ioi, mem_Ioo]
+    exact ⟨fun h ↦ ⟨h.2, (ENNReal.ofReal_lt_iff_lt_toReal h.2.le ha).1 h.1⟩,
+      fun h ↦ ⟨(ENNReal.ofReal_lt_iff_lt_toReal h.1.le ha).2 h.2, h.1⟩⟩
+  rw [hset, Real.volume_Ioo, sub_zero, ENNReal.ofReal_toReal ha]
+
+/-- The truncated difference `a - b` of two extended reals is the Lebesgue measure of the positive
+levels lying below `a` but not below `b`. -/
+theorem volume_restrict_Ioi_setOf_ofReal_lt_sdiff (a b : ℝ≥0∞) :
+    volume.restrict (Ioi (0 : ℝ)) ({t | ENNReal.ofReal t < a} \ {t | ENNReal.ofReal t < b}) =
+      a - b := by
+  rcases eq_or_ne b ∞ with rfl | hb
+  · simp
+  rcases le_total a b with h | h
+  · rw [tsub_eq_zero_of_le h, sdiff_eq_bot_iff.2 fun t ht ↦ lt_of_lt_of_le ht h, bot_eq_empty,
+      measure_empty]
+  · rw [measure_sdiff (fun t ht ↦ lt_of_lt_of_le ht h)
+        (measurableSet_lt ENNReal.measurable_ofReal measurable_const).nullMeasurableSet
+        (by rwa [volume_restrict_Ioi_setOf_ofReal_lt]),
+      volume_restrict_Ioi_setOf_ofReal_lt, volume_restrict_Ioi_setOf_ofReal_lt]
+
+private theorem lintegral_tsub_eq_lintegral_measure_sdiff_of_measurable (m : Measure α) [SFinite m]
+    {f g : α → ℝ≥0∞} (hf : Measurable f) (hg : Measurable g) :
+    ∫⁻ x, (f x - g x) ∂m = ∫⁻ t in Ioi (0 : ℝ),
+      m ({x | ENNReal.ofReal t < f x} \ {x | ENNReal.ofReal t < g x}) := by
+  set F : Set (α × ℝ) := {q | ENNReal.ofReal q.2 < f q.1} \ {q | ENNReal.ofReal q.2 < g q.1}
+  have hF : MeasurableSet F :=
+    (measurableSet_lt (ENNReal.measurable_ofReal.comp measurable_snd) (hf.comp measurable_fst)).diff
+      (measurableSet_lt (ENNReal.measurable_ofReal.comp measurable_snd) (hg.comp measurable_fst))
+  calc ∫⁻ x, (f x - g x) ∂m = ∫⁻ x, volume.restrict (Ioi (0 : ℝ)) (Prod.mk x ⁻¹' F) ∂m := by
+        refine lintegral_congr fun x ↦ ?_
+        simp only [F, preimage_sdiff, preimage_ofPred_eq, volume_restrict_Ioi_setOf_ofReal_lt_sdiff]
+    _ = m.prod (volume.restrict (Ioi (0 : ℝ))) F := (Measure.prod_apply hF).symm
+    _ = _ := Measure.prod_apply_symm hF
+
+/-- **The truncated difference of two extended functions, level by level.** For two almost
+everywhere measurable `f g : α → ℝ≥0∞`, the integral of `f - g` is the integral, over the positive
+levels `t`, of the measure of the set where `f` lies above `t` and `g` does not. Infinite values are
+allowed, with `∞ - ∞ = 0`. -/
+theorem lintegral_tsub_eq_lintegral_measure_sdiff (m : Measure α) [SFinite m]
+    {f g : α → ℝ≥0∞} (hf : AEMeasurable f m) (hg : AEMeasurable g m) :
+    ∫⁻ x, (f x - g x) ∂m = ∫⁻ t in Ioi (0 : ℝ),
+      m ({x | ENNReal.ofReal t < f x} \ {x | ENNReal.ofReal t < g x}) := by
+  calc
+    ∫⁻ x, (f x - g x) ∂m = ∫⁻ x, (hf.mk f x - hg.mk g x) ∂m := by
+      apply lintegral_congr_ae
+      filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with x hfx hgx
+      rw [hfx, hgx]
+    _ = ∫⁻ t in Ioi (0 : ℝ),
+        m ({x | ENNReal.ofReal t < hf.mk f x} \ {x | ENNReal.ofReal t < hg.mk g x}) :=
+      lintegral_tsub_eq_lintegral_measure_sdiff_of_measurable m hf.measurable_mk
+        hg.measurable_mk
+    _ = _ := by
+      refine lintegral_congr fun t ↦ measure_congr ?_
+      filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with x hfx hgx
+      simp only [mem_sdiff, mem_ofPred_eq]
+      rw [hfx, hgx]
+
 /-- The expected hinge cost `(y - x - r)⁺` is the integral, over the levels `a`, of the mass
 given to the quadrant `Iic a ×ˢ Ioi (a + r)`. -/
 theorem lintegral_ofReal_sub_sub_eq (m : Measure (ℝ × ℝ)) [SFinite m] (r : ℝ) :
@@ -277,6 +352,44 @@ theorem ofReal_rpow_eq_lintegral_mul_ofReal_sub {p d : ℝ} (hp : 1 < p) (hd : 0
         rw [Measure.restrict_apply' measurableSet_Ioo, hset, Real.volume_Ioo,
           ENNReal.ofReal_mul (by nlinarith : 0 ≤ p * (p - 1)), show p - 1 - 1 = p - 2 by ring]
         ring
+
+/-- **Extended powers are mixtures of hinges.** For `1 < p` and `d : ℝ≥0∞`,
+`d ^ p = ∫_{r > 0} p (p - 1) r ^ (p - 2) (d - r) dr`, with truncated subtraction in `ℝ≥0∞`.
+For `d = ∞` both sides are infinite. -/
+theorem rpow_eq_lintegral_mul_tsub {p : ℝ} (hp : 1 < p) (d : ℝ≥0∞) :
+    d ^ p = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1) * r ^ (p - 2)) * (d - ENNReal.ofReal r) := by
+  rcases eq_or_ne d ∞ with rfl | hd
+  · -- Every hinge of `∞` is infinite, and the weight is positive on `(0, ∞)`.
+    have htop : ∀ r ∈ Ioi (0 : ℝ),
+        ENNReal.ofReal (p * (p - 1) * r ^ (p - 2)) * (∞ - ENNReal.ofReal r) = ∞ := by
+      intro r (hr : 0 < r)
+      have hk : 0 < p * (p - 1) * r ^ (p - 2) := by
+        have := Real.rpow_pos_of_pos hr (p - 2)
+        have : 0 < p - 1 := by linarith
+        positivity
+      rw [ENNReal.top_sub ENNReal.ofReal_ne_top, ENNReal.mul_top (ENNReal.ofReal_pos.2 hk).ne']
+    rw [setLIntegral_congr_fun measurableSet_Ioi htop, ENNReal.top_rpow_of_pos (by linarith)]
+    simp
+  rw [← ENNReal.ofReal_toReal hd, ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg
+      (by linarith), ofReal_rpow_eq_lintegral_mul_ofReal_sub hp ENNReal.toReal_nonneg]
+  exact setLIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
+    rw [ENNReal.ofReal_sub _ hr.le]
+
+/-- The `p`-th power integral of a truncated difference of two extended functions, for `1 < p`, is
+the mixture, over the thresholds `r > 0` with weight `p (p - 1) r ^ (p - 2)`, of the integrals of
+the hinges `(f - r) - g`. -/
+theorem lintegral_tsub_rpow_eq_lintegral_mul_lintegral_tsub (m : Measure α) [SFinite m]
+    {f g : α → ℝ≥0∞} (hf : AEMeasurable f m) (hg : AEMeasurable g m) {p : ℝ} (hp : 1 < p) :
+    ∫⁻ x, (f x - g x) ^ p ∂m = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1) * r ^ (p - 2)) *
+      ∫⁻ x, (f x - ENNReal.ofReal r - g x) ∂m := by
+  simp_rw [rpow_eq_lintegral_mul_tsub hp]
+  rw [lintegral_lintegral_swap (by
+    have hfg : AEMeasurable (fun z : α × ℝ ↦ f z.1 - g z.1) (m.prod (volume.restrict (Ioi 0))) :=
+      (hf.sub hg).comp_fst
+    exact (Measurable.aemeasurable (by fun_prop)).mul (hfg.sub (by fun_prop)))]
+  refine lintegral_congr fun r ↦ ?_
+  simp_rw [fun x ↦ tsub_right_comm (a := f x) (b := g x) (c := ENNReal.ofReal r)]
+  exact lintegral_const_mul'' _ ((hf.sub_const _).sub hg)
 
 /-- **The power of a distance as a mixture of hinges.** For `1 < p`, the power `|x - y| ^ p` is
 the integral, over the thresholds `r > 0` with weight `p (p - 1) r ^ (p - 2)`, of the two hinges

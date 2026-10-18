@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.Topology.EMetricSpace.Weak
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
@@ -46,6 +47,14 @@ ball of measure `μ s` when that measure is finite, and the whole space when it 
 The Hardy--Littlewood inequality says that rearranging two nonnegative functions can only increase
 the integral of their product.
 
+Rearrangement is also **nonexpansive** in every `Lᵖ`, `1 ≤ p < ∞`: it does not increase
+`∫ edist f g ^ p`. For `p = 1` this is level by level: the superlevel sets of `f*` and `g*` are
+concentric, so the measure of the set where `f*` lies above a level and `g*` does not is the
+truncated difference of the two level measures, which is at most the measure of the corresponding
+set for `f` and `g`. For `1 < p` the power `(f - g) ^ p` is a mixture of the hinges
+`(f - r) - g` over thresholds `r > 0`, and rearrangement commutes with lowering `f` by `r`.
+The positive part `(f - g) ^ p` alone is already not increased; no finiteness is assumed.
+
 ## Main definitions and results
 
 * `TauCeti.schwarzRearrangement`: the Schwarz rearrangement of an `ℝ≥0∞`-valued function.
@@ -61,11 +70,17 @@ the integral of their product.
   seminorms, and preservation of every `Lᵖ` class.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
+* `TauCeti.schwarzRearrangement_tsub_const`: rearrangement commutes with lowering by a constant.
+* `TauCeti.addHaar_sdiff_setOf_lt_schwarzRearrangement`: differences of two rearranged superlevel
+  sets have the truncated difference of the original level measures.
+* `TauCeti.lintegral_tsub_rpow_schwarzRearrangement_le`,
+  `TauCeti.lintegral_edist_rpow_schwarzRearrangement_le`: `Lᵖ` contraction, `1 ≤ p`, for the
+  positive part of a difference and for the distance.
 
 ## References
 
 * E. H. Lieb and M. Loss, *Analysis*, 2nd ed., Graduate Studies in Mathematics **14**, AMS,
-  2001, Section 3.3.
+  2001, Section 3.3, and Theorem 3.5 for the nonexpansivity of rearrangement.
 -/
 
 public noncomputable section
@@ -199,6 +214,15 @@ theorem schwarzRearrangement_indicator (s : Set E) (c : ℝ≥0∞) :
   rw [lt_schwarzRearrangement_iff, hset]
   by_cases htc : t < c <;> by_cases hx : μ (ball (0 : E) ‖x‖) < μ s <;> simp [htc, hx]
 
+/-- Schwarz rearrangement commutes with truncated subtraction of a constant: lowering `f` by `c`
+lowers its rearrangement by `c`. -/
+@[simp]
+theorem schwarzRearrangement_tsub_const (f : E → ℝ≥0∞) (c : ℝ≥0∞) :
+    schwarzRearrangement μ (fun x ↦ f x - c) = fun x ↦ schwarzRearrangement μ f x - c := by
+  ext x
+  refine eq_of_forall_lt_iff fun t ↦ ?_
+  simp only [lt_schwarzRearrangement_iff, lt_tsub_iff_right]
+
 /-- At the origin the Schwarz rearrangement takes the value `essSup f μ`. -/
 @[simp]
 theorem schwarzRearrangement_apply_zero (f : E → ℝ≥0∞) :
@@ -270,6 +294,37 @@ theorem addHaar_inter_setOf_lt_schwarzRearrangement (f g : E → ℝ≥0∞) (s 
       rw [mem_ofPred_eq, lt_schwarzRearrangement_iff] at hx ⊢
       exact hx.trans_le h
     rw [inter_eq_right.2 hsub, addHaar_setOf_lt_schwarzRearrangement, min_eq_right h]
+
+/-- Two superlevel sets of Schwarz rearrangements are concentric, so the measure of their
+difference is the truncated difference of the two original superlevel measures. No measurability
+or finiteness hypothesis is needed. -/
+@[simp]
+theorem addHaar_sdiff_setOf_lt_schwarzRearrangement (f g : E → ℝ≥0∞) (s t : ℝ≥0∞) :
+    μ ({x | s < schwarzRearrangement μ f x} \ {x | t < schwarzRearrangement μ g x}) =
+      μ {x | s < f x} - μ {x | t < g x} := by
+  rcases le_total (μ {x | s < f x}) (μ {x | t < g x}) with h | h
+  · have hsub : {x | s < schwarzRearrangement μ f x} ⊆
+        {x | t < schwarzRearrangement μ g x} := by
+      intro x hx
+      rw [mem_ofPred_eq, lt_schwarzRearrangement_iff] at hx ⊢
+      exact hx.trans_le h
+    rw [sdiff_eq_bot_iff.2 hsub, bot_eq_empty, measure_empty, tsub_eq_zero_of_le h]
+  · have hsub : {x | t < schwarzRearrangement μ g x} ⊆
+        {x | s < schwarzRearrangement μ f x} := by
+      intro x hx
+      rw [mem_ofPred_eq, lt_schwarzRearrangement_iff] at hx ⊢
+      exact hx.trans_le h
+    rcases eq_or_ne (μ {x | t < g x}) ∞ with htop | htop
+    · -- Both rearranged superlevel sets have infinite measure, hence are the whole space.
+      have hall : ∀ x, t < schwarzRearrangement μ g x := fun x ↦ by
+        rw [lt_schwarzRearrangement_iff, htop]
+        exact measure_ball_lt_top
+      rw [htop, ENNReal.sub_top, show {x | t < schwarzRearrangement μ g x} = univ from
+        eq_univ_of_forall hall, sdiff_univ, measure_empty]
+    rw [measure_sdiff hsub
+        (measurableSet_lt measurable_const (measurable_schwarzRearrangement μ g)).nullMeasurableSet
+        (by rwa [addHaar_setOf_lt_schwarzRearrangement]),
+      addHaar_setOf_lt_schwarzRearrangement, addHaar_setOf_lt_schwarzRearrangement]
 
 /-- The Schwarz rearrangement is idempotent. -/
 @[simp]
@@ -364,6 +419,59 @@ theorem lintegral_mul_le_lintegral_schwarzRearrangement_mul {f g : E → ℝ≥0
     _ = ∫⁻ x, schwarzRearrangement μ f x * schwarzRearrangement μ g x ∂μ := by
       rw [schwarzRearrangement_congr_ae μ hf.ae_eq_mk.symm,
         schwarzRearrangement_congr_ae μ hg.ae_eq_mk.symm]
+
+/-- **`L¹` contraction of the positive part.** Schwarz rearrangement does not increase the
+integral of the truncated difference `f - g` of two a.e.-measurable functions. Infinite values and
+infinite integrals are allowed. -/
+theorem lintegral_tsub_schwarzRearrangement_le {f g : E → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
+    ∫⁻ x, (schwarzRearrangement μ f x - schwarzRearrangement μ g x) ∂μ ≤
+      ∫⁻ x, (f x - g x) ∂μ := by
+  rw [lintegral_tsub_eq_lintegral_measure_sdiff μ
+      (measurable_schwarzRearrangement μ f).aemeasurable
+      (measurable_schwarzRearrangement μ g).aemeasurable,
+    lintegral_tsub_eq_lintegral_measure_sdiff μ hf hg]
+  refine lintegral_mono fun t ↦ ?_
+  rw [addHaar_sdiff_setOf_lt_schwarzRearrangement]
+  exact le_measure_sdiff
+
+/-- **`Lᵖ` contraction of the positive part.** For `1 ≤ p`, Schwarz rearrangement does not
+increase the integral of the `p`-th power of the truncated difference `f - g` of two
+a.e.-measurable functions. Infinite values and infinite integrals are allowed. -/
+theorem lintegral_tsub_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ x, (schwarzRearrangement μ f x - schwarzRearrangement μ g x) ^ p ∂μ ≤
+      ∫⁻ x, (f x - g x) ^ p ∂μ := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simpa only [ENNReal.rpow_one] using lintegral_tsub_schwarzRearrangement_le μ hf hg
+  -- Write both sides as mixtures of hinges and compare the hinges threshold by threshold.
+  rw [lintegral_tsub_rpow_eq_lintegral_mul_lintegral_tsub μ
+      (measurable_schwarzRearrangement μ f).aemeasurable
+      (measurable_schwarzRearrangement μ g).aemeasurable hp,
+    lintegral_tsub_rpow_eq_lintegral_mul_lintegral_tsub μ hf hg hp]
+  refine lintegral_mono fun r ↦ mul_le_mul' le_rfl ?_
+  simpa only [schwarzRearrangement_tsub_const] using
+    lintegral_tsub_schwarzRearrangement_le μ (hf.sub_const (ENNReal.ofReal r)) hg
+
+/-- **`Lᵖ` contraction of Schwarz rearrangement.** For `1 ≤ p`, Schwarz rearrangement does not
+increase the `p`-th power integral of the distance between two a.e.-measurable functions:
+`∫ edist (f*) (g*) ^ p ≤ ∫ edist f g ^ p`. Infinite values and infinite integrals are allowed. -/
+theorem lintegral_edist_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ x, edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ^ p ∂μ ≤
+      ∫⁻ x, edist (f x) (g x) ^ p ∂μ := by
+  -- At most one of the two truncated differences is nonzero.
+  have hsplit (a b : ℝ≥0∞) : edist a b ^ p = (a - b) ^ p + (b - a) ^ p := by
+    have hp0 : 0 < p := by linarith
+    rw [ENNReal.edist_eq_max]
+    rcases le_total a b with h | h
+    · rw [tsub_eq_zero_of_le h, max_eq_right zero_le, ENNReal.zero_rpow_of_pos hp0, zero_add]
+    · rw [tsub_eq_zero_of_le h, max_eq_left zero_le, ENNReal.zero_rpow_of_pos hp0, add_zero]
+  simp_rw [hsplit]
+  rw [lintegral_add_left (by fun_prop),
+    lintegral_add_left' (by fun_prop : AEMeasurable (fun x ↦ (f x - g x) ^ p) μ)]
+  exact add_le_add (lintegral_tsub_rpow_schwarzRearrangement_le μ hf hg hp)
+    (lintegral_tsub_rpow_schwarzRearrangement_le μ hg hf hp)
 
 end AddHaar
 
