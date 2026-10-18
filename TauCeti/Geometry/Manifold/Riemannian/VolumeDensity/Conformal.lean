@@ -20,9 +20,10 @@ respect to that of `g`:
 `dV_ĝ = f ^ (N / 2) dV_g`,
 
 so that `∫ φ dV_ĝ = ∫ f ^ (N / 2) φ dV_g` for every function `φ` on `M`, and on a compact manifold
-`Vol(ĝ) = ∫ f ^ (N / 2) dV_g`. For the conformal factor `f = u ^ (4 / (N - 2))` of the Yamabe
-problem, with `u ≥ 0`, this is `Vol(ĝ) = ∫ u ^ (2 N / (N - 2)) dV_g`; when `N > 2` the exponent is
-the critical Sobolev exponent, while the identity itself holds in every dimension.
+`Vol(ĝ) = ∫ f ^ (N / 2) dV_g`. For a nonnegative `u` whose Yamabe conformal factor
+`f = u ^ (4 / (N - 2))` is `ContMDiff` and strictly positive, this is
+`Vol(ĝ) = ∫ u ^ (2 N / (N - 2)) dV_g`; when `N > 2` the exponent is the critical Sobolev
+exponent, while the identity itself holds in every dimension.
 
 The copies of `M` carry their Borel `σ`-algebras. The identities refine the pointwise
 comparison of chart densities `TauCeti.WithMetric.chartVolumeDensity_rescale`, and use no
@@ -153,8 +154,9 @@ theorem riemannianTotalVolume_rescale [CompactSpace M] :
   simpa only [integral_const, smul_eq_mul, mul_one, ← riemannianTotalVolume_def] using
     integral_riemannianVolume_rescale (hf := hf) (hf_pos := hf_pos) fun _ ↦ (1 : ℝ)
 
-/-- **Total volume of a Yamabe conformal metric.** On a compact manifold of real dimension `N`, the
-metric `u ^ (4 / (N - 2)) g` given by a nonnegative function `u` has total volume
+/-- **Total volume of a Yamabe conformal metric.** On a compact manifold of real dimension `N`,
+let `u` be nonnegative and suppose that `u ^ (4 / (N - 2))` is `ContMDiff` of order `n` and
+strictly positive. Then the metric `u ^ (4 / (N - 2)) g` has total volume
 `∫ u ^ (2 N / (N - 2)) dV_g`. When `N > 2` the exponent `2 N / (N - 2)` is the critical Sobolev
 exponent; the identity holds in every dimension. -/
 theorem riemannianTotalVolume_rescale_rpow [CompactSpace M] {u : M → ℝ} (hu : ∀ x, 0 ≤ u x)
