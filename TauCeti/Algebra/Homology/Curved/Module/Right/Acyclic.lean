@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Exact
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.LocalizingClosure
 
@@ -35,8 +34,6 @@ particular its preimage in the closed category is extension-closed in the sense 
 
 ## Main definitions
 
-* `TauCeti.CurvedDGRightModuleCat.coneDesc`: the closed map `cone(f) ⟶ M` induced by a closed map
-  `g` with `f ≫ g = 0`.
 * `TauCeti.CurvedDGRightModuleCat.totalization`: the totalization of a short complex of curved
   modules.
 * `TauCeti.CurvedDGRightModuleCat.totalizations`: the class of totalizations of short exact
@@ -47,10 +44,6 @@ particular its preimage in the closed category is extension-closed in the sense 
 
 ## Main results
 
-* `TauCeti.CurvedDGRightModuleCat.prop_cone`,
-  `TauCeti.CurvedDGRightModuleCat.prop_target_of_prop_cone`,
-  `TauCeti.CurvedDGRightModuleCat.prop_source_of_prop_cone`: the two-out-of-three property for
-  the source, target and cone of a closed map, in isomorphism-closed triangulated subcategories.
 * `TauCeti.CurvedDGRightModuleCat.prop_X₂_of_shortExact`,
   `TauCeti.CurvedDGRightModuleCat.prop_X₃_of_shortExact`,
   `TauCeti.CurvedDGRightModuleCat.prop_X₁_of_shortExact`: an isomorphism-closed triangulated
@@ -81,99 +74,6 @@ attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
-
-/-! ### Maps out of a cone -/
-
-section ConeDesc
-
-variable {K L M : CurvedDGRightModuleCat.{u, u, u} h}
-  (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) K ⟶
-    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) L)
-  (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) L ⟶
-    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
-  (hfg : f ≫ g = 0)
-
-/-- A closed map `g` killing the closed map `f` induces the closed map `cone(f) ⟶ M`
-sending `(x, y)` to `g y`. -/
-noncomputable def coneDesc :
-    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f) ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M :=
-  closedHomOf ((closedHom g).comp (LinearMap.snd Aᵐᵒᵖ K L))
-    (fun p x hx ↦ by rw [cone_grading] at hx; exact closedHom_mem g hx.2)
-    (fun x ↦ by
-      have hx : closedHom g (closedHom f x.1) = 0 := by
-        rw [← LinearMap.comp_apply, ← closedHom_comp, hfg, closedHom_zero, LinearMap.zero_apply]
-      -- Evaluate the second projection on the cone's product carrier.
-      change M.differential (closedHom g x.2) = closedHom g ((cone f).differential x).2
-      rw [cone_differential_apply, map_add, hx, zero_add, differential_closedHom])
-
-/-- The map out of the cone applies `g` to the second component. -/
-@[simp]
-theorem closedHom_coneDesc :
-    closedHom (coneDesc f g hfg) = (closedHom g).comp (LinearMap.snd Aᵐᵒᵖ K L) :=
-  closedHom_closedHomOf _ _ _
-
-/-- The cone inclusion followed by the induced map out of the cone is the original map. -/
-@[reassoc (attr := simp)]
-theorem coneInclusion_comp_coneDesc : coneInclusion f ≫ coneDesc f g hfg = g := by
-  apply closedHom_ext
-  intro x
-  rw [closedHom_comp, closedHom_coneDesc, closedHom_coneInclusion]
-  -- Evaluate the second projection after the second inclusion on the cone's product carrier.
-  rfl
-
-end ConeDesc
-
-/-! ### Two out of three for cones -/
-
-section Cone
-
-variable {M N : CurvedDGRightModuleCat.{u, u, u} h}
-  (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
-
-/-- The graded-split cone sequence `N ⟶ cone(f) ⟶ M[1]` gives a distinguished triangle of the
-curved homotopy category with these three objects. -/
-private theorem exists_mem_distTriang_cone :
-    ∃ T ∈ distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)),
-      T.obj₁ = DGHomotopyCategory.of R N ∧ T.obj₂ = DGHomotopyCategory.of R (cone f) ∧
-        T.obj₃ = (DGHomotopyCategory.of R M)⟦(1 : ℤ)⟧ :=
-  ⟨_, map_stableConflationTriangle_mem_distTriang _ (coneShortComplex_conflation f),
-    by simp, by simp, by simp⟩
-
-variable (Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
-  [Q.IsTriangulated] [Q.IsClosedUnderIsomorphisms]
-
-/-- An isomorphism-closed triangulated subcategory containing the source and target of a closed
-map contains its cone. -/
-theorem prop_cone (hM : Q (DGHomotopyCategory.of R M)) (hN : Q (DGHomotopyCategory.of R N)) :
-    Q (DGHomotopyCategory.of R (cone f)) := by
-  obtain ⟨T, hT, h₁, h₂, h₃⟩ := exists_mem_distTriang_cone f
-  rw [← h₂]
-  refine Q.ext_of_isTriangulatedClosed₂ T hT (h₁ ▸ hN) ?_
-  rw [h₃]
-  exact Q.le_shift 1 _ hM
-
-/-- An isomorphism-closed triangulated subcategory containing the source and the cone of a
-closed map contains its target. -/
-theorem prop_target_of_prop_cone (hM : Q (DGHomotopyCategory.of R M))
-    (hC : Q (DGHomotopyCategory.of R (cone f))) : Q (DGHomotopyCategory.of R N) := by
-  obtain ⟨T, hT, h₁, h₂, h₃⟩ := exists_mem_distTriang_cone f
-  rw [← h₁]
-  refine Q.ext_of_isTriangulatedClosed₁ T hT (h₂ ▸ hC) ?_
-  rw [h₃]
-  exact Q.le_shift 1 _ hM
-
-/-- An isomorphism-closed triangulated subcategory containing the target and the cone of a
-closed map contains its source. -/
-theorem prop_source_of_prop_cone (hN : Q (DGHomotopyCategory.of R N))
-    (hC : Q (DGHomotopyCategory.of R (cone f))) : Q (DGHomotopyCategory.of R M) := by
-  obtain ⟨T, hT, h₁, h₂, h₃⟩ := exists_mem_distTriang_cone f
-  have h := Q.ext_of_isTriangulatedClosed₃ T hT (h₁ ▸ hN) (h₂ ▸ hC)
-  rw [h₃] at h
-  exact (Q.prop_shift_iff_of_isStableUnderShift _ (1 : ℤ)).1 h
-
-end Cone
 
 /-! ### Totalizations -/
 
