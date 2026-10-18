@@ -27,7 +27,8 @@ The quotient construction supplies a universal property for tuples satisfying th
 We also package `K` as a unit and derive the commutation rules with `K⁻¹`; these are the
 basic presentation-level identities used when putting words into triangular order.  Establishing
 a PBW basis, and hence nontriviality of this presentation, requires additional Ore-extension
-arguments and is not part of the presentation API.
+arguments and is not part of the presentation API: `TauCeti.QuantumGroups.UqSl2.OreTower`
+identifies `UqSl2 q`, for nonzero `q`, with an iterated Ore extension of `ℂ[K, K⁻¹]`.
 
 ## Main definitions
 
