@@ -18,10 +18,8 @@ ring. Every centered local coordinate is a uniformizer. Thus Mathlib's discrete 
 and fractional-ideal theory applies to holomorphic germs, providing the local algebra for
 divisor sheaves and their point twists.
 
-The analytic ingredients are coordinate division and finite vanishing order. Together they
-factor every nonzero germ as a power of a centered coordinate times a unit. The coordinate
-may be any chart in the maximal differentiable atlas; no compactness, connectedness or
-Hausdorff hypothesis is needed.
+The coordinate may be any chart in the maximal differentiable atlas; no compactness,
+connectedness or Hausdorff hypothesis is needed.
 
 ## References
 
@@ -39,7 +37,7 @@ namespace OpenPartialHomeomorph
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (x : X)
 
-/-- A centered holomorphic coordinate is a uniformizer of the local ring of germs. -/
+/-- A centered holomorphic coordinate is irreducible in the local ring of germs. -/
 theorem irreducible_holomorphicCoordinateGerm (hx : x ∈ e.source) :
     Irreducible (holomorphicCoordinateGerm e he x hx) := by
   apply IsDiscreteValuationRing.irreducible_of_span_eq_maximalIdeal
