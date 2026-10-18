@@ -19,11 +19,8 @@ and `1`,
 
 `(μ.map g).quantile t = g (μ.quantile t)`,
 
-and the same holds for the upper quantile. Both directions of the defining Galois connection need
-the hypotheses: monotonicity gives `t ≤ cdf (μ.map g) (g (μ.quantile t))`, and left continuity of
-`g` at the quantile rules out a smaller point, because a nondecreasing map can only reach a value
-below `g (μ.quantile t)` on a set of mass smaller than `t`. Strict monotonicity is not needed: a
-flat piece of `g` merges values without changing which point is the `t`-quantile.
+and the same holds for the upper quantile. Strict monotonicity is not needed: a flat piece of `g`
+merges values without changing which point is the `t`-quantile.
 
 A nonincreasing map reverses the order of levels and exchanges the two quantiles. Negation is the
 basic case, `μ.neg.quantile t = -μ.upperQuantile (1 - t)`, and composing with it gives
@@ -69,43 +66,6 @@ public section
 open Filter MeasureTheory ProbabilityTheory Set Topology
 
 variable {μ : Measure ℝ} {s : Set ℝ} {t : ℝ}
-
-namespace Set.OrdConnected
-
-/-- A point `q` at which the level `t` lies between the left limit and the value of the cumulative
-distribution function lies in every interval of full mass: otherwise the interval lies entirely
-on one side of `q`, and the mass on that side is `0` or `1`. -/
-private theorem mem_of_measureReal_Iio_le_of_le_cdf [IsProbabilityMeasure μ]
-    (hs : s.OrdConnected) (hμs : ∀ᵐ x ∂μ, x ∈ s) {q : ℝ} (hIio : μ.real (Iio q) ≤ t)
-    (hIic : t ≤ cdf μ q) (h0 : 0 < t) (h1 : t < 1) : q ∈ s := by
-  by_contra hq
-  have hside : (∀ x ∈ s, x < q) ∨ ∀ x ∈ s, q < x := by
-    by_contra! h
-    obtain ⟨⟨a, ha, hqa⟩, b, hb, hbq⟩ := h
-    exact hq (hs.out hb ha ⟨hbq, hqa⟩)
-  rcases hside with hlt | hgt
-  · have hfull : μ (Iio q) = μ univ :=
-      (ae_mem_iff_measure_eq measurableSet_Iio.nullMeasurableSet).1 (hμs.mono hlt)
-    rw [measureReal_def, hfull, measure_univ, ENNReal.toReal_one] at hIio
-    exact hIio.not_gt h1
-  · have hnull : μ (Iic q) = 0 :=
-      measure_eq_zero_iff_ae_notMem.2 (hμs.mono fun x hx hxq ↦ (hgt x hx).not_ge hxq)
-    rw [cdf_eq_real, measureReal_def, hnull, ENNReal.toReal_zero] at hIic
-    exact hIic.not_gt h0
-
-/-- **Interior quantiles lie in every interval of full mass.** -/
-theorem quantile_mem [IsProbabilityMeasure μ] (hs : s.OrdConnected) (hμs : ∀ᵐ x ∂μ, x ∈ s)
-    (h0 : 0 < t) (h1 : t < 1) : μ.quantile t ∈ s :=
-  hs.mem_of_measureReal_Iio_le_of_le_cdf hμs (μ.measureReal_Iio_quantile_le h0 h1)
-    (μ.le_cdf_quantile h1) h0 h1
-
-/-- **Interior upper quantiles lie in every interval of full mass.** -/
-theorem upperQuantile_mem [IsProbabilityMeasure μ] (hs : s.OrdConnected)
-    (hμs : ∀ᵐ x ∂μ, x ∈ s) (h0 : 0 < t) (h1 : t < 1) : μ.upperQuantile t ∈ s :=
-  hs.mem_of_measureReal_Iio_le_of_le_cdf hμs (μ.measureReal_Iio_upperQuantile_le h0 h1)
-    (μ.le_cdf_upperQuantile h0 h1) h0 h1
-
-end Set.OrdConnected
 
 namespace MeasureTheory.Measure
 
@@ -228,20 +188,14 @@ private theorem map_eq_map_neg_comp (hs : s.OrdConnected)
       (∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s) ∧
       MonotoneOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) ∧ ContinuousOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) := by
   have hae : ∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s := by
-    rw [neg_def]
-    exact (ae_map_iff measurable_neg.aemeasurable (measurable_neg hs.measurableSet)).2
-      (hμs.mono fun x hx ↦ by simpa using hx)
+    exact μ.ae_neg_mem_preimage hs.measurableSet hμs
   have hmono : MonotoneOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) :=
     fun x hx y hy hxy ↦ hg hy hx (neg_le_neg hxy)
   refine ⟨?_, hs.preimage_anti fun _ _ ↦ neg_le_neg, hae, hmono,
     hgc.comp continuousOn_neg fun _ hx ↦ hx⟩
   have hgm : AEMeasurable (g ∘ Neg.neg) μ.neg := restrict_eq_self_of_ae_mem hae ▸
     aemeasurable_restrict_of_monotoneOn (measurable_neg hs.measurableSet) hmono
-  rw [neg_def] at hgm ⊢
-  rw [AEMeasurable.map_map_of_aemeasurable hgm measurable_neg.aemeasurable]
-  congr 1
-  ext x
-  simp
+  exact (μ.map_neg_comp hgm).symm
 
 /-- **Quantiles of a nonincreasing image.** If `g` is nonincreasing and continuous on an interval
 carrying all the mass of `μ`, then at every level strictly between `0` and `1` the quantile of the
