@@ -40,18 +40,6 @@ theorem weighted_def (μ : Measure α) (w : α → ℝ≥0) :
     μ.weighted w = (∫⁻ x, (w x : ℝ≥0∞) ∂μ)⁻¹ • μ.withDensity fun x => w x :=
   (rfl)
 
-/-- A weighted measure can equivalently put the normalizing constant inside its density. -/
-theorem weighted_eq_withDensity (μ : Measure α) {w : α → ℝ≥0} (hw : Measurable w) :
-    μ.weighted w = μ.withDensity fun x =>
-      (∫⁻ y, (w y : ℝ≥0∞) ∂μ)⁻¹ * w x := by
-  rw [weighted_def, ← withDensity_smul _ hw.coe_nnreal_ennreal]
-  rfl
-
-/-- The mass assigned by a weighted measure to a measurable set. -/
-theorem weighted_apply (μ : Measure α) (w : α → ℝ≥0) {s : Set α} (hs : MeasurableSet s) :
-    μ.weighted w s = (∫⁻ x, (w x : ℝ≥0∞) ∂μ)⁻¹ * ∫⁻ x in s, (w x : ℝ≥0∞) ∂μ := by
-  rw [weighted_def, Measure.smul_apply, smul_eq_mul, withDensity_apply _ hs]
-
 /-- Weighting is unchanged by replacing a weight almost everywhere. -/
 theorem weighted_congr {μ : Measure α} {w v : α → ℝ≥0} (h : w =ᵐ[μ] v) :
     μ.weighted w = μ.weighted v := by
@@ -59,7 +47,33 @@ theorem weighted_congr {μ : Measure α} {w v : α → ℝ≥0} (h : w =ᵐ[μ] 
     h.mono fun x hx => congrArg ((↑) : ℝ≥0 → ℝ≥0∞) hx
   rw [weighted_def, weighted_def, lintegral_congr_ae hcoe, withDensity_congr_ae hcoe]
 
+/-- A weighted measure can equivalently put the normalizing constant inside its density. -/
+theorem weighted_eq_withDensity (μ : Measure α) {w : α → ℝ≥0} (hw : AEMeasurable w μ) :
+    μ.weighted w = μ.withDensity fun x =>
+      (∫⁻ y, (w y : ℝ≥0∞) ∂μ)⁻¹ * w x := by
+  let w' := hw.mk w
+  have hww' : w =ᵐ[μ] w' := hw.ae_eq_mk
+  have hcoe : (fun x => (w x : ℝ≥0∞)) =ᵐ[μ] fun x => (w' x : ℝ≥0∞) :=
+    hww'.mono fun x hx => congrArg ((↑) : ℝ≥0 → ℝ≥0∞) hx
+  calc
+    μ.weighted w = μ.weighted w' := weighted_congr hww'
+    _ = μ.withDensity (fun x => (∫⁻ y, (w' y : ℝ≥0∞) ∂μ)⁻¹ * w' x) := by
+      rw [weighted_def, ← withDensity_smul _ hw.measurable_mk.coe_nnreal_ennreal]
+      rfl
+    _ = μ.withDensity (fun x => (∫⁻ y, (w y : ℝ≥0∞) ∂μ)⁻¹ * w x) := by
+      apply withDensity_congr_ae
+      have hlintegral : (∫⁻ y, (w y : ℝ≥0∞) ∂μ) = ∫⁻ y, (w' y : ℝ≥0∞) ∂μ :=
+        lintegral_congr_ae hcoe
+      filter_upwards [hww'] with x hx
+      rw [hlintegral, hx]
+
+/-- The mass assigned by a weighted measure to a measurable set. -/
+theorem weighted_apply (μ : Measure α) (w : α → ℝ≥0) {s : Set α} (hs : MeasurableSet s) :
+    μ.weighted w s = (∫⁻ x, (w x : ℝ≥0∞) ∂μ)⁻¹ * ∫⁻ x in s, (w x : ℝ≥0∞) ∂μ := by
+  rw [weighted_def, Measure.smul_apply, smul_eq_mul, withDensity_apply _ hs]
+
 /-- A zero total weight gives the zero measure. -/
+@[simp]
 theorem weighted_eq_zero_of_lintegral_eq_zero {μ : Measure α} {w : α → ℝ≥0}
     (h : ∫⁻ x, (w x : ℝ≥0∞) ∂μ = 0) : μ.weighted w = 0 := by
   have hdensity : μ.withDensity (fun x => (w x : ℝ≥0∞)) = 0 := by
@@ -114,41 +128,42 @@ theorem weighted_absolutelyContinuous {μ : Measure α} {w : α → ℝ≥0} : �
   exact (withDensity_absolutelyContinuous _ _).smul_left _
 
 /-- The Radon--Nikodym derivative of a weighted measure is its normalized weight. -/
-theorem rnDeriv_weighted (μ : Measure α) [SigmaFinite μ] {w : α → ℝ≥0} (hw : Measurable w) :
+theorem rnDeriv_weighted (μ : Measure α) [SigmaFinite μ] {w : α → ℝ≥0}
+    (hw : AEMeasurable w μ) :
     (μ.weighted w).rnDeriv μ =ᵐ[μ] fun x =>
       (∫⁻ y, (w y : ℝ≥0∞) ∂μ)⁻¹ * w x := by
   rw [weighted_eq_withDensity μ hw]
-  exact rnDeriv_withDensity μ
-    (measurable_const.mul hw.coe_nnreal_ennreal)
+  exact rnDeriv_withDensity₀ μ
+    (measurable_const.aemeasurable.mul hw.coe_nnreal_ennreal)
 
 /-- Integrability under a valid weighted law is weighted integrability under its base measure. -/
-theorem integrable_weighted_iff {μ : Measure α} {w : α → ℝ≥0} (hw : Measurable w)
+theorem integrable_weighted_iff {μ : Measure α} {w : α → ℝ≥0} (hw : AEMeasurable w μ)
     (hpos : 0 < ∫⁻ x, (w x : ℝ≥0∞) ∂μ)
     (hfin : ∫⁻ x, (w x : ℝ≥0∞) ∂μ ≠ ∞)
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : α → E} :
     Integrable g (μ.weighted w) ↔ Integrable (fun x => w x • g x) μ := by
   rw [weighted_def, integrable_inv_smul_measure hpos.ne' hfin,
-    integrable_withDensity_iff_integrable_smul hw]
+    integrable_withDensity_iff_integrable_smul₀ hw]
 
 /-- Integration against a weighted law is weighted integration divided by the total weight.
 
 This formula also covers a zero or infinite normalizing constant, when `μ.weighted w`
 is the zero measure. -/
-theorem integral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : Measurable w)
+theorem integral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : AEMeasurable w μ)
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (g : α → E) :
     ∫ x, g x ∂μ.weighted w =
       (∫⁻ x, (w x : ℝ≥0∞) ∂μ).toReal⁻¹ • ∫ x, w x • g x ∂μ := by
-  rw [weighted_def, integral_smul_measure, integral_withDensity_eq_integral_smul hw,
+  rw [weighted_def, integral_smul_measure, integral_withDensity_eq_integral_smul₀ hw,
     ENNReal.toReal_inv]
 
 /-- The nonnegative integral against a weighted law is the base integral of the product divided by
 the total weight. This also covers a zero or infinite total weight. -/
-theorem lintegral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : Measurable w)
-    (g : α → ℝ≥0∞) (hg : Measurable g) :
+theorem lintegral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : AEMeasurable w μ)
+    (g : α → ℝ≥0∞) :
     ∫⁻ x, g x ∂μ.weighted w =
       (∫⁻ x, (w x : ℝ≥0∞) ∂μ)⁻¹ * ∫⁻ x, (w x : ℝ≥0∞) * g x ∂μ := by
   rw [weighted_def, lintegral_smul_measure, smul_eq_mul,
-    lintegral_withDensity_eq_lintegral_mul _ hw.coe_nnreal_ennreal hg]
+    lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _ hw.coe_nnreal_ennreal (by simp)]
   rfl
 
 /-- Multiplying a weight by a positive constant does not change the weighted law. -/
@@ -175,15 +190,14 @@ theorem weighted_const_smul {μ : Measure α} {w : α → ℝ≥0} {c : ℝ≥0}
       rw [ENNReal.inv_mul_cancel (by exact_mod_cast hc) (by simp), one_mul]
 
 /-- Successive weightings multiply their weights when the first weighting is a probability law. -/
-theorem weighted_weighted {μ : Measure α} {w v : α → ℝ≥0} (hw : Measurable w)
-    (hv : Measurable v) (hwpos : 0 < ∫⁻ x, (w x : ℝ≥0∞) ∂μ)
+theorem weighted_weighted {μ : Measure α} {w v : α → ℝ≥0} (hw : AEMeasurable w μ)
+    (hv : AEMeasurable v μ) (hwpos : 0 < ∫⁻ x, (w x : ℝ≥0∞) ∂μ)
     (hwfin : ∫⁻ x, (w x : ℝ≥0∞) ∂μ ≠ ∞) :
     (μ.weighted w).weighted v = μ.weighted fun x => w x * v x := by
-  have hwv : Measurable fun x => w x * v x := hw.mul hv
   rw [weighted_def, weighted_def, weighted_def,
-    lintegral_smul_measure, lintegral_withDensity_eq_lintegral_mul _
+    lintegral_smul_measure, lintegral_withDensity_eq_lintegral_mul₀
       hw.coe_nnreal_ennreal hv.coe_nnreal_ennreal]
-  rw [withDensity_smul_measure, ← withDensity_mul _ hw.coe_nnreal_ennreal
+  rw [withDensity_smul_measure, ← withDensity_mul₀ hw.coe_nnreal_ennreal
     hv.coe_nnreal_ennreal]
   have hfun : ((fun x => (w x : ℝ≥0∞)) * fun x => (v x : ℝ≥0∞)) =
       fun x => ((w x * v x : ℝ≥0) : ℝ≥0∞) := by
@@ -224,7 +238,7 @@ theorem measurable_weighted (κ : Kernel β α) [IsSFiniteKernel κ] {w : β →
       (∫⁻ y, (w b y : ℝ≥0∞) ∂κ b)⁻¹ * (w b x : ℝ≥0∞) := by
     funext b
     rw [Kernel.withDensity_apply _ hρ, Measure.weighted_eq_withDensity]
-    exact hw.comp measurable_prodMk_left
+    exact (hw.comp measurable_prodMk_left).aemeasurable
   rw [h]
   exact (Kernel.withDensity κ _).measurable
 
