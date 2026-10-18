@@ -34,12 +34,10 @@ for étaleness over a field to finite separable field extensions.
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
   `lean/Pcf/Stacks/Purity/DiscriminantFiber.lean` and
   `lean/Pcf/Stacks/Purity/DiscriminantGlobal.lean`, namespace `Pcf.Stacks`:
-  `traceForm_nondegenerate_congr` is its `Algebra.traceForm_nondegenerate_of_algEquiv`, proved
-  here from Mathlib's `LinearMap.BilinForm.nondegenerate_congr_iff`;
+  `traceForm_nondegenerate_congr` is its `Algebra.traceForm_nondegenerate_of_algEquiv`;
   `traceForm_pi_nondegenerate_iff` combines its `Algebra.traceForm_pi_nondegenerate` and
-  `Algebra.traceForm_pi_nondegenerate_factors`, proved here from `TauCeti.Algebra.trace_pi`
-  instead of by induction on the index type; and `isReduced_of_traceForm_nondegenerate` is the
-  trace-pairing step of its `Algebra.isReduced_of_discr_ne_zero_of_basis`. The source proves
+  `Algebra.traceForm_pi_nondegenerate_factors`; `isReduced_of_traceForm_nondegenerate` is the
+  trace-pairing step of its `Algebra.isReduced_of_discr_ne_zero_of_basis`; and the source proves
   `discr_ne_zero_iff_traceForm_nondegenerate` inline (in its
   `Algebra.discr_ne_zero_of_formallyEtale_of_basis`).
 -/

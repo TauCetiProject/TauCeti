@@ -21,23 +21,6 @@ A finite-dimensional algebra over a field is étale iff its trace form is nondeg
 finite free algebra over any commutative ring is étale iff the discriminant of a basis is a unit
 (Stacks, Lemma 49.3.1 (0BJF), affine form).
 
-## Proof
-
-Over a field `K`, an étale algebra is a finite product of finite separable field extensions
-(`Algebra.Etale.iff_exists_algEquiv_prod`), whose trace forms are nondegenerate
-(`traceForm_nondegenerate`, Stacks 0BIL). Conversely a nondegenerate trace form makes the algebra
-reduced, so the algebra is the product of its residue fields; each factor inherits a
-nondegenerate trace form and is therefore separable (`traceForm_nondegenerate_tfae`).
-
-Over a base ring `A`, the discriminant of a basis `b` commutes with base change
-(`TauCeti.Algebra.discr_baseChange`). If it is a unit, its image in every field `K` over `A` is
-nonzero, so every fibre `K ⊗[A] B` is étale by the field case. A finite algebra whose base changes
-to fields are formally unramified is formally unramified
-(`Algebra.FormallyUnramified.of_formallyUnramified_baseChange_field`), and a finitely presented
-flat formally unramified algebra is étale. Conversely, the fibre of an étale algebra over each
-maximal ideal `𝔪` of `A` is étale over `A ⧸ 𝔪`, so the discriminant lies in no maximal ideal and is
-a unit.
-
 ## Main results
 
 * `TauCeti.Algebra.etale_iff_traceForm_nondegenerate`: a finite-dimensional algebra over a field is
@@ -50,7 +33,7 @@ a unit.
   a basis is a unit.
 * `TauCeti.Algebra.isUnit_algebraMap_discr_iff_etale_baseChange`: the discriminant of a basis maps
   to a unit in an `A`-algebra `A'` iff the base change to `A'` is étale.
-* `TauCeti.Algebra.isUnit_algebraMap_discr_iff_etale_localization`: the discriminant of a basis
+* `TauCeti.Algebra.isUnit_discr_localization_iff`: the discriminant of a basis
   is a unit at a prime `𝔭` iff the base change to `A_𝔭` is étale over `A_𝔭`.
 
 ## References
@@ -64,11 +47,10 @@ a unit.
   `etale_iff_traceForm_nondegenerate` combines its
   `Algebra.traceForm_nondegenerate_of_formallyEtale` and
   `Algebra.formallyEtale_of_discr_ne_zero_of_basis_global`; `etale_of_isUnit_discr` generalizes its
-  `Algebra.etale_of_isUnit_discr_of_basis_global` from a local base to any base, with the proof
-  through Tau Ceti's fibre criterion for unramifiedness in place of the source's
-  `Algebra.isUnramifiedAt_of_formallyEtale_fiber`; `etale_iff_isUnit_discr` adds the converse, its
+  `Algebra.etale_of_isUnit_discr_of_basis_global` from a local base to any base;
+  `etale_iff_isUnit_discr` adds the converse, its
   `Algebra.isUnit_discr_of_etale_of_basis`, likewise generalized from a local base to any base;
-  and `isUnit_algebraMap_discr_iff_etale_localization` extends its
+  and `isUnit_discr_localization_iff` extends its
   `Algebra.isUnit_map_discr_of_etale_baseChange` to an equivalence.
 -/
 
@@ -159,7 +141,7 @@ theorem Algebra.isUnit_algebraMap_discr_iff_etale_baseChange {A B ι : Type*} [C
 
 /-- The discriminant of a basis of a finite free algebra is a unit at a prime `𝔭` iff the base
 change to the localization `A_𝔭` is étale over `A_𝔭`. -/
-theorem Algebra.isUnit_algebraMap_discr_iff_etale_localization {A B ι : Type*} [CommRing A]
+theorem Algebra.isUnit_discr_localization_iff {A B ι : Type*} [CommRing A]
     [CommRing B] [Algebra A B] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B) (p : Ideal A)
     [p.IsPrime] :
     IsUnit (algebraMap A (Localization.AtPrime p) (Algebra.discr A b)) ↔

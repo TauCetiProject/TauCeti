@@ -30,7 +30,6 @@ statements about discriminants pass to residue fields and localizations of the b
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
   `lean/Pcf/Stacks/Purity/DiscriminantFiber.lean`: `traceMatrix_baseChange` and `discr_baseChange`
   are its `Pcf.Stacks.Algebra.traceMatrix_baseChange` and `Pcf.Stacks.Algebra.discr_baseChange`.
-  The proof here reuses `TauCeti.Algebra.trace_baseChange_tmul`.
 -/
 
 public section
