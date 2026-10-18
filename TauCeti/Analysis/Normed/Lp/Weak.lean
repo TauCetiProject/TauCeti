@@ -134,7 +134,7 @@ end NormedField
 section DenselyNormedField
 
 variable {𝕜 E ι : Type*} [DenselyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Fintype ι]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [Fintype ι]
   (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 /-- The weak `Lᵖ` norm is the supremum of scalar `Lᵖ` evaluations over the dual unit ball. -/
@@ -142,6 +142,11 @@ theorem weakLpNorm_eq_sSup (x : ι → E) :
     weakLpNorm (𝕜 := 𝕜) p x =
       sSup ((fun f : StrongDual 𝕜 E ↦ ‖WithLp.toLp p (fun i ↦ f (x i))‖) ''
         Metric.closedBall 0 1) := by
+  -- Mathlib's normed dual instance requires a normed source; scalar evaluations still separate.
+  let : NormedAddCommGroup (StrongDual 𝕜 E) :=
+    NormedAddCommGroup.ofSeparation fun f hf ↦ by
+      ext v
+      exact norm_le_zero_iff.mp (by simpa only [hf, zero_mul] using f.le_opNorm v)
   simpa only [weakLpNorm_apply, dualEvalLp_apply] using
     (dualEvalLp (𝕜 := 𝕜) p x).sSup_unitClosedBall_eq_norm.symm
 
