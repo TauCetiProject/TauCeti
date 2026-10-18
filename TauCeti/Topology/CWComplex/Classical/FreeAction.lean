@@ -163,39 +163,6 @@ lemma smul_closedCell_of_smul_openCell [ContinuousConstSMul G E] {n : ℕ} {g : 
     g • closedCell n i = closedCell n j := by
   rw [← closure_openCell_eq_closedCell, ← closure_openCell_eq_closedCell, ← closure_smul, h]
 
-/-- A map on a closed ball that agrees on its boundary with a map on the preceding skeleton
-descends along the characteristic map to the closed cell. -/
-private lemma exists_continuousMap_closedCell_comp_map {Y : Type*} [TopologicalSpace Y] {n : ℕ}
-    (r : cell (univ : Set E) n) (ψ : C(Fin n → ℝ, Y))
-    (f : C((skeletonLT (univ : Set E) n : Set E), Y))
-    (hψ : ∀ v (hv : v ∈ sphere (0 : Fin n → ℝ) 1),
-      ψ v = f ⟨map n r v, cellFrontier_subset_skeletonLT n r ⟨v, hv, rfl⟩⟩) :
-    ∃ L : C(closedCell n r, Y), ∀ v : closedBall (0 : Fin n → ℝ) 1,
-      L ⟨map n r v, v, v.2, rfl⟩ = ψ v := by
-  let q : C(closedBall (0 : Fin n → ℝ) 1, closedCell n r) :=
-    ⟨fun v ↦ ⟨map n r v, v, v.2, rfl⟩, (continuous_map_closedBall r).subtype_mk _⟩
-  have hq : IsQuotientMap q :=
-    .of_surjective_continuous (fun ⟨_, v, hv, hvz⟩ ↦ ⟨⟨v, hv⟩, Subtype.ext hvz⟩) q.continuous
-  have hwd : Function.FactorsThrough (fun v : closedBall (0 : Fin n → ℝ) 1 ↦ ψ v) q := by
-    intro a b hab
-    have hab' : map n r a = map n r b := congrArg Subtype.val hab
-    have hsph (c : closedBall (0 : Fin n → ℝ) 1) :
-        ‖(c : Fin n → ℝ)‖ < 1 ∨ (c : Fin n → ℝ) ∈ sphere (0 : Fin n → ℝ) 1 :=
-      (mem_closedBall_zero_iff.1 c.2).lt_or_eq.imp_right mem_sphere_zero_iff_norm.2
-    rcases hsph a with ha | ha <;> rcases hsph b with hb | hb
-    · simp only [((map_eq_map_iff ha hb).1 hab').2]
-    · exact absurd (hab' ▸ cellFrontier_subset_skeletonLT n r ⟨b, hb, rfl⟩)
-        (map_notMem_skeletonLT r ha)
-    · exact absurd (hab'.symm ▸ cellFrontier_subset_skeletonLT n r ⟨a, ha, rfl⟩)
-        (map_notMem_skeletonLT r hb)
-    · change ψ (a : Fin n → ℝ) = ψ (b : Fin n → ℝ)
-      rw [hψ a ha, hψ b hb]
-      exact congrArg f (Subtype.ext hab')
-  let L : C(closedCell n r, Y) :=
-    hq.lift ⟨fun v ↦ ψ v, by fun_prop⟩ hwd
-  refine ⟨L, fun v ↦ ?_⟩
-  exact DFunLike.congr_fun (hq.lift_comp ⟨fun v ↦ ψ v, by fun_prop⟩ hwd) v
-
 variable (G) in
 /-- A stage of the construction of a separating invariant function: a continuous function on the
 `n`-skeleton, invariant under the translations that preserve the skeleton, equal to `1` at `x`
@@ -261,8 +228,9 @@ private lemma SepStage.exists_extension (hxy : y ∉ MulAction.orbit G x) {n : �
   · rw [hψh v (.inl hv)]
     simp only [h, fn, ite_eq_left hv,
       dite_eq_left (cellFrontier_subset_skeletonLT n r ⟨v, hv, rfl⟩)]
-  · rw [hψh v (.inr (.inl ⟨hv, hvx⟩))]
-    simp only [h, ite_eq_right (hns hv), ite_eq_left (show v ∈ A from ⟨hv, hvx⟩)]
+  · have hvA : v ∈ A := ⟨hv, hvx⟩
+    rw [hψh v (.inr (.inl hvA))]
+    simp only [h, ite_eq_right (hns hv), ite_eq_left hvA]
   · -- A point mapped into both orbits would put `y` in the orbit of `x`.
     have hvA : v ∉ A := fun ⟨_, hvx⟩ ↦ by
       obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 hvx
