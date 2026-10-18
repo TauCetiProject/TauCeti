@@ -58,7 +58,7 @@ theorem const_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rfl
 
 /-- The tangent-space evaluation of a constant smooth two-form. -/
-@[simp] theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
     (v w : TangentSpace (modelWithCornersSelf ℝ V) x) :
     SmoothForm.eval₂ (const B hB) x v w =
@@ -78,7 +78,7 @@ theorem const_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   ring
 
 /-- The model-space evaluation of a constant smooth two-form. -/
-@[simp] theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x v w : V) :
     SmoothForm.eval₂ (const B hB) x ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = B v w := by

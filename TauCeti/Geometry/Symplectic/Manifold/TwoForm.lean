@@ -208,7 +208,7 @@ lemma constSmooth_apply (omegaForm : SymplecticForm V) (x v w : V) :
 
 /-- Under the canonical identification of a self-model tangent fiber with the model space,
 evaluating a constant smooth symplectic form is evaluating its defining bilinear form. -/
-@[simp] lemma fromTangentSpace_constSmooth_apply (omegaForm : SymplecticForm V) (x : V)
+lemma fromTangentSpace_constSmooth_apply (omegaForm : SymplecticForm V) (x : V)
     (v w : TangentSpace 𝓘(ℝ, V) x) :
     SmoothForm.eval₂ omegaForm.constSmooth x v w =
       omegaForm (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
