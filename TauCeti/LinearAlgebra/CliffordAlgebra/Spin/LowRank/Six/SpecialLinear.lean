@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.RepresentationTheory.Spin.Representation
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
@@ -14,6 +13,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Center
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -77,6 +77,93 @@ public section
 namespace TauCeti
 
 open _root_.CliffordAlgebra Module
+
+/-! ### Coordinate data -/
+
+section CoordinateData
+
+variable {R : Type*} [CommRing R]
+
+section Monomials
+
+variable {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- The ordered even monomials `1, e₀e₁, e₀e₂, e₁e₂`. -/
+noncomputable def spinSixEvenMonomial (b : Basis (Fin 3) R M) :
+    Fin 4 → ExteriorAlgebra R M :=
+  ![1, ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1),
+    ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 2),
+    ExteriorAlgebra.ι R (b 1) * ExteriorAlgebra.ι R (b 2)]
+
+/-- Evaluation of the ordered even-monomial coordinates. -/
+@[simp]
+theorem spinSixEvenMonomial_apply (b : Basis (Fin 3) R M) (j : Fin 4) :
+    spinSixEvenMonomial b j =
+      ![1, ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1),
+        ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 2),
+        ExteriorAlgebra.ι R (b 1) * ExteriorAlgebra.ι R (b 2)] j := by
+  rw [spinSixEvenMonomial]
+
+end Monomials
+
+section TransvectionVectors
+
+variable {V : Type*} [AddCommGroup V] [Module R V] {Q : QuadraticForm R V}
+  (P : SpinPolarizationData Q) (b : Basis (Fin 3) R P.W)
+
+/-- The first vector of the Eichler-transvection lift of an elementary matrix transvection on
+the even half-spin module. -/
+noncomputable def spinSixTransvectionFirstVector (i j : Fin 4) : V :=
+  !![(0 : V), (P.dualVector b 0 : V), (P.dualVector b 0 : V),
+      (P.dualVector b 1 : V);
+    (b 1 : V), 0, (b 1 : V), (b 0 : V);
+    (b 2 : V), (b 2 : V), 0, (b 0 : V);
+    (b 2 : V), (b 2 : V), (b 1 : V), 0] i j
+
+/-- Evaluation of the first vector of an elementary Spin-six transvection lift. -/
+theorem spinSixTransvectionFirstVector_apply (i j : Fin 4) :
+    spinSixTransvectionFirstVector P b i j =
+      !![(0 : V), (P.dualVector b 0 : V), (P.dualVector b 0 : V),
+          (P.dualVector b 1 : V);
+        (b 1 : V), 0, (b 1 : V), (b 0 : V);
+        (b 2 : V), (b 2 : V), 0, (b 0 : V);
+        (b 2 : V), (b 2 : V), (b 1 : V), 0] i j := by
+  rw [spinSixTransvectionFirstVector]
+
+/-- The second vector of the Eichler-transvection lift of an elementary matrix transvection on
+the even half-spin module. -/
+noncomputable def spinSixTransvectionSecondVector (i j : Fin 4) (c : R) : V :=
+  !![(0 : V), ((c • P.dualVector b 1 : P.W') : V),
+      ((c • P.dualVector b 2 : P.W') : V), ((c • P.dualVector b 2 : P.W') : V);
+    ((c • b 0 : P.W) : V), 0, (((-c) • P.dualVector b 2 : P.W') : V),
+      ((c • P.dualVector b 2 : P.W') : V);
+    ((c • b 0 : P.W) : V), (((-c) • P.dualVector b 1 : P.W') : V), 0,
+      (((-c) • P.dualVector b 1 : P.W') : V);
+    ((c • b 1 : P.W) : V), ((c • P.dualVector b 0 : P.W') : V),
+      (((-c) • P.dualVector b 0 : P.W') : V), 0] i j
+
+/-- Evaluation of the second vector of an elementary Spin-six transvection lift. -/
+theorem spinSixTransvectionSecondVector_apply (i j : Fin 4) (c : R) :
+    spinSixTransvectionSecondVector P b i j c =
+      !![(0 : V), ((c • P.dualVector b 1 : P.W') : V),
+          ((c • P.dualVector b 2 : P.W') : V), ((c • P.dualVector b 2 : P.W') : V);
+        ((c • b 0 : P.W) : V), 0, (((-c) • P.dualVector b 2 : P.W') : V),
+          ((c • P.dualVector b 2 : P.W') : V);
+        ((c • b 0 : P.W) : V), (((-c) • P.dualVector b 1 : P.W') : V), 0,
+          (((-c) • P.dualVector b 1 : P.W') : V);
+        ((c • b 1 : P.W) : V), ((c • P.dualVector b 0 : P.W') : V),
+          (((-c) • P.dualVector b 0 : P.W') : V), 0] i j := by
+  rw [spinSixTransvectionSecondVector]
+
+/-- The second vector of an elementary Spin-six transvection lift vanishes at parameter zero. -/
+@[simp]
+theorem spinSixTransvectionSecondVector_zero (i j : Fin 4) :
+    spinSixTransvectionSecondVector P b i j 0 = 0 := by
+  fin_cases i <;> fin_cases j <;> simp [spinSixTransvectionSecondVector_apply]
+
+end TransvectionVectors
+
+end CoordinateData
 
 variable {K : Type*} [Field K]
 
@@ -233,12 +320,6 @@ end Table
 
 /-! ### The even half and its monomial basis -/
 
-/-- The ordered even monomials `1, e₀e₁, e₀e₂, e₁e₂`. -/
-noncomputable def spinSixEvenMonomial : Fin 4 → ExteriorAlgebra K M :=
-  ![1, ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1),
-    ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 2),
-    ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2)]
-
 private theorem basis_empty_eq_one : b.ExteriorAlgebra ∅ = 1 := by
   rw [ExteriorAlgebra.basis_apply]
   simp only [ExteriorAlgebra.ιMulti_family]
@@ -281,6 +362,7 @@ noncomputable def spinSixEvenMonomialBasis : Basis (Fin 4) K N :=
     (by rw [hN, finrank_evenOdd_zero_eq_four b]; rfl)
 
 /-- The even-monomial basis has the prescribed exterior-algebra representatives. -/
+@[simp]
 theorem coe_spinSixEvenMonomialBasis (j : Fin 4) :
     (spinSixEvenMonomialBasis b hN j : ExteriorAlgebra K M) = spinSixEvenMonomial b j := by
   simp [spinSixEvenMonomialBasis]
@@ -599,29 +681,6 @@ attribute [local simp] baseAfterMatrix baseBeforeMatrix Matrix.transvection Matr
 move `e_a ∧ e_a'` back to `1`; mixed pairs exchange two of `e₀e₁, e₀e₂, e₁e₂`. -/
 
 omit [Invertible (2 : K)] in
-/-- The first vector of the Eichler-transvection lift of an elementary matrix transvection on
-the even half-spin module. -/
-noncomputable def spinSixTransvectionFirstVector (i j : Fin 4) : V :=
-  !![(0 : V), (P.dualVector b 0 : V), (P.dualVector b 0 : V),
-      (P.dualVector b 1 : V);
-    (b 1 : V), 0, (b 1 : V), (b 0 : V);
-    (b 2 : V), (b 2 : V), 0, (b 0 : V);
-    (b 2 : V), (b 2 : V), (b 1 : V), 0] i j
-
-omit [Invertible (2 : K)] in
-/-- The second vector of the Eichler-transvection lift of an elementary matrix transvection on
-the even half-spin module. -/
-noncomputable def spinSixTransvectionSecondVector (i j : Fin 4) (c : K) : V :=
-  !![(0 : V), ((c • P.dualVector b 1 : P.W') : V),
-      ((c • P.dualVector b 2 : P.W') : V), ((c • P.dualVector b 2 : P.W') : V);
-    ((c • b 0 : P.W) : V), 0, (((-c) • P.dualVector b 2 : P.W') : V),
-      ((c • P.dualVector b 2 : P.W') : V);
-    ((c • b 0 : P.W) : V), (((-c) • P.dualVector b 1 : P.W') : V), 0,
-      (((-c) • P.dualVector b 1 : P.W') : V);
-    ((c • b 1 : P.W) : V), ((c • P.dualVector b 0 : P.W') : V),
-      (((-c) • P.dualVector b 0 : P.W') : V), 0] i j
-
-omit [Invertible (2 : K)] in
 private theorem spinSixTransvectionFirstVector_isotropic {i j : Fin 4} (hij : i ≠ j) :
     Q (spinSixTransvectionFirstVector P b i j) = 0 := by
   fin_cases i <;> fin_cases j
@@ -646,6 +705,15 @@ noncomputable def spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) 
   spinTransvection (P.nondegenerate_of_line_eq_bot hline)
     (spinSixTransvectionFirstVector_isotropic P b hij)
     (spinSixTransvectionVectors_polar P b hij c)
+
+/-- The canonical lift of an elementary transvection with parameter zero is the identity. -/
+@[simp]
+theorem spinSixTransvectionLift_zero {i j : Fin 4} (hij : i ≠ j) :
+    spinSixTransvectionLift P hline b hij 0 = 1 := by
+  rw [spinSixTransvectionLift]
+  apply spinTransvection_eq_one_of_mem_span
+  rw [spinSixTransvectionSecondVector_zero]
+  exact Submodule.zero_mem _
 
 private abbrev SpinSixLiftHasMatrix (i j : Fin 4) (hij : i ≠ j) (c : K) : Prop :=
     LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
@@ -740,6 +808,7 @@ private theorem spinSixLiftHasMatrix_three_two (c : K) :
 
 include hline in
 /-- The half-spin matrix of the canonical lift is the elementary transvection it lifts. -/
+@[simp]
 theorem toMatrix_spinPlusAction_spinSixTransvectionLift {i j : Fin 4}
     (hij : i ≠ j) (c : K) :
     LinearMap.toMatrix (spinSixEvenMonomialBasis b (spinPlus_def P))
@@ -777,6 +846,7 @@ theorem toMatrix_spinPlusAction_spinSixTransvectionLift {i j : Fin 4}
   · exact (hij rfl).elim
 
 /-- The vector action of the canonical lift is its defining Eichler transvection. -/
+@[simp]
 theorem spinVectorAction_spinSixTransvectionLift_apply {i j : Fin 4} (hij : i ≠ j) (c : K)
     (x : V) :
     spinVectorAction Q (spinSixTransvectionLift P hline b hij c) x =
