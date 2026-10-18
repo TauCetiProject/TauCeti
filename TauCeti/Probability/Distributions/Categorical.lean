@@ -117,14 +117,11 @@ variable [Fintype I] [MeasurableSpace I]
 @[fun_prop]
 theorem measurable_categoricalMeasure :
     Measurable fun p : StdSimplex NNReal I ↦ categoricalMeasure p := by
-  rw [show (fun p : StdSimplex NNReal I ↦ categoricalMeasure p) = fun p ↦
-      Measure.sum fun i ↦ (p.weights i : ENNReal) • Measure.dirac i by
-    funext p
-    rw [categoricalMeasure_def, Measure.sum_fintype]]
-  apply TauCeti.MeasureTheory.measurable_sum_smul_dirac
-  intro i
-  exact measurable_coe_nnreal_ennreal.comp
-    ((measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights)
+  simpa only [categoricalMeasure_def, Measure.sum_fintype, id_eq] using
+    (TauCeti.MeasureTheory.measurable_sum_smul_dirac
+      (f := fun (p : StdSimplex NNReal I) i ↦ (p.weights i : ENNReal)) (g := id) fun i ↦
+      measurable_coe_nnreal_ennreal.comp
+        ((measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights))
 
 end Measurability
 
@@ -132,6 +129,20 @@ section Aggregation
 
 variable [Fintype I] [Fintype J] [MeasurableSpace I] [MeasurableSpace J]
   [MeasurableSingletonClass I] [MeasurableSingletonClass J]
+
+omit [Fintype J] [MeasurableSpace I] [MeasurableSpace J]
+  [MeasurableSingletonClass I] [MeasurableSingletonClass J] in
+private theorem coe_weights_map_apply [DecidableEq J]
+    (f : I → J) (p : StdSimplex NNReal I) (j : J) :
+    ((p.map f).weights j : ENNReal) =
+      ∑ i, if f i = j then (p.weights i : ENNReal) else 0 := by
+  classical
+  rw [StdSimplex.weights_map, Finsupp.mapDomain_fintype,
+    Finsupp.coe_finsetSum, Finset.sum_apply]
+  push_cast
+  apply Finset.sum_congr rfl
+  intro i _
+  by_cases hi : f i = j <;> simp [hi]
 
 /-- Mapping a categorical law along a map of category types adds weights over its fibres. -/
 @[simp]
@@ -143,14 +154,10 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
   intro j
   rw [Measure.map_apply hf (MeasurableSet.singleton j),
     categoricalMeasure_def, Measure.finsetSum_apply, categoricalMeasure_singleton,
-    StdSimplex.weights_map, Finsupp.mapDomain_fintype, Finsupp.coe_finsetSum, Finset.sum_apply]
+    coe_weights_map_apply]
   simp only [Measure.smul_apply, Measure.dirac_apply' _ (hf (MeasurableSet.singleton j)),
     Set.indicator, Set.mem_preimage, Set.mem_singleton_iff, Pi.one_apply, smul_eq_mul, mul_ite,
     mul_one, mul_zero]
-  push_cast
-  apply Finset.sum_congr rfl
-  intro i _
-  by_cases hi : f i = j <;> simp [hi]
 
 end Aggregation
 
