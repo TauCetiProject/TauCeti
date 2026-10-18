@@ -38,8 +38,7 @@ neither integral nor maps of Dedekind domains in general.
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
   `lean/Pcf/Bounding/SchemeDynamics.lean`: `ramificationIdx_pos_of_quasiFiniteAt` generalizes its
-  `Pcf.ramificationIdx_pos_of_quasiFinite`, stated there for a quasi-finite algebra. The proof
-  here goes through Mathlib's `Ideal.ramificationIdx_pos_of_mem_minimalPrimes`.
+  `Pcf.ramificationIdx_pos_of_quasiFinite`, stated there for a quasi-finite algebra.
 -/
 
 public section

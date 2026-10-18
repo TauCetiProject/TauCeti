@@ -14,9 +14,7 @@ Every element of a local ring `S` outside its maximal ideal is a unit, so the lo
 at its maximal ideal inverts only units and is `S` itself (Mathlib `IsLocalization.atUnits`).
 This file names that equivalence, as an isomorphism of `R`-algebras for any `R`-algebra
 structure on `S`, so that statements about `Localization.AtPrime (maximalIdeal S)` transfer to
-`S` along a single map. Before, the equivalence was built inline at each use; it is used in
-`TauCeti/RingTheory/Unramified/LocalRing.lean` and
-`TauCeti/RingTheory/RamificationInertia/QuasiFinite.lean`.
+`S` along a single map.
 
 ## Main definitions
 

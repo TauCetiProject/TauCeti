@@ -27,19 +27,19 @@ finite and dominant) the map is surjective, and when `f` is quasi-compact its fi
 
 ## Main definitions
 
-* `TauCeti.NormalSchemes.codimensionOneMap`: the map on codimension-one points induced by a
+* `Scheme.Hom.codimensionOneMap`: the map on codimension-one points induced by a
   morphism that preserves codimension one.
 
 ## Main results
 
-* `TauCeti.NormalSchemes.coheight_eq_one_of_coheight_apply_eq_one`: a point over a point of
+* `Scheme.Hom.coheight_eq_one_of_coheight_apply_eq_one`: a point over a point of
   codimension one has codimension one.
-* `TauCeti.NormalSchemes.codimensionOneMap_surjective`: for a surjective, locally quasi-finite
+* `Scheme.Hom.codimensionOneMap_surjective`: for a surjective, locally quasi-finite
   morphism of irreducible schemes, every codimension-one point of the target is the image of a
   codimension-one point.
-* `TauCeti.NormalSchemes.finite_codimensionOneMap_fiber`: the fibres of `codimensionOneMap` of a
+* `Scheme.Hom.finite_codimensionOneMap_fiber`: the fibres of `codimensionOneMap` of a
   quasi-compact locally quasi-finite morphism are finite.
-* `TauCeti.NormalSchemes.codimensionOneMap_comp`, `TauCeti.NormalSchemes.codimensionOneMap_id`:
+* `Scheme.Hom.codimensionOneMap_comp`, `Scheme.Hom.codimensionOneMap_id`:
   functoriality.
 
 ## References
@@ -54,16 +54,14 @@ finite and dominant) the map is surjective, and when `f` is quasi-compact its fi
   `lean/Pcf/Bounding/SchemeDynamics.lean`; `coheight_eq_one_of_coheight_apply_eq_one` is the
   scheme form of its `Pcf.height_eq_one_of_liesOver_heightOne`, in
   `lean/Pcf/Bounding/Divisors.lean`; and `finite_codimensionOneMap_fiber` is its
-  `Pcf.schemeDivisorMap_finite_fiber`, in `lean/Pcf/Bounding/SchemeWiring.lean`. The source proves
-  the codimension statements on affine charts through integral ring extensions; here they follow
-  from the specialization order.
+  `Pcf.schemeDivisorMap_finite_fiber`, in `lean/Pcf/Bounding/SchemeWiring.lean`.
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry Order
 
-namespace TauCeti.NormalSchemes
+namespace Scheme.Hom
 
 universe u
 
@@ -127,18 +125,18 @@ theorem finite_codimensionOneMap_fiber [LocallyQuasiFinite f] [QuasiCompact f]
 /-- The map on codimension-one points of a composite is the composite of the maps. -/
 theorem codimensionOneMap_comp {Z : Scheme.{u}} (g : Y ⟶ Z)
     (hf : ∀ x : X, coheight x = 1 → coheight (f x) = 1)
-    (hg : ∀ y : Y, coheight y = 1 → coheight (g y) = 1)
-    (hfg : ∀ x : X, coheight x = 1 → coheight ((f ≫ g) x) = 1) :
-    codimensionOneMap (f ≫ g) hfg = codimensionOneMap g hg ∘ codimensionOneMap f hf := by
+    (hg : ∀ y : Y, coheight y = 1 → coheight (g y) = 1) :
+    codimensionOneMap (f ≫ g) (fun x hx ↦ by simpa using hg (f x) (hf x hx)) =
+      codimensionOneMap g hg ∘ codimensionOneMap f hf := by
   funext x
   apply Subtype.ext
   simp
 
 /-- The map on codimension-one points of the identity is the identity. -/
-theorem codimensionOneMap_id (h : ∀ x : X, coheight x = 1 → coheight ((𝟙 X : X ⟶ X) x) = 1) :
-    codimensionOneMap (𝟙 X) h = id := by
+theorem codimensionOneMap_id :
+    codimensionOneMap (𝟙 X) (fun x hx ↦ by simpa using hx) = id := by
   funext x
   apply Subtype.ext
   simp
 
-end TauCeti.NormalSchemes
+end Scheme.Hom

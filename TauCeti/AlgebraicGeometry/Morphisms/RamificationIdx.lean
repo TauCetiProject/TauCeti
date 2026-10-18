@@ -24,12 +24,12 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
 
 ## Main definitions
 
-* `TauCeti.NormalSchemes.ramificationIdxAt`: the ramification index of a morphism at a point.
+* `Scheme.Hom.ramificationIdxAt`: the ramification index of a morphism at a point.
 
 ## Main results
 
-* `TauCeti.NormalSchemes.ramificationIdxAt_def`: the defining equation.
-* `TauCeti.NormalSchemes.ramificationIdxAt_pos`: the ramification index is positive at every
+* `Scheme.Hom.ramificationIdxAt_def`: the defining equation.
+* `Scheme.Hom.ramificationIdxAt_pos`: the ramification index is positive at every
   point where the morphism is quasi-finite.
 
 ## References
@@ -47,7 +47,7 @@ public section
 
 open AlgebraicGeometry
 
-namespace TauCeti.NormalSchemes
+namespace Scheme.Hom
 
 universe u
 
@@ -77,4 +77,4 @@ theorem ramificationIdxAt_pos {x : X} (hx : f.QuasiFiniteAt x) : 0 < ramificatio
   rw [ramificationIdxAt_def]
   exact Ideal.ramificationIdx_pos_of_quasiFiniteAt _
 
-end TauCeti.NormalSchemes
+end Scheme.Hom
