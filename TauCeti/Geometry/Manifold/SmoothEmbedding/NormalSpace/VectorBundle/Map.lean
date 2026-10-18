@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Map
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
@@ -59,13 +60,6 @@ private def pullbackTangentMap
     TotalSpace V' (g *ᵖ (TangentSpace J')) :=
   ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
     (mfderiv J J' v (f p.proj) p.2)⟩
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 V'] in
-/-- Over equal base points, `tangentSpaceCast` is heterogeneously the identity. -/
-private theorem heq_tangentSpaceCast {x y : N'} (hxy : x = y) (w : TangentSpace J' x) :
-    HEq (tangentSpaceCast J' x y w) w := by
-  subst hxy
-  rfl
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
   [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 V'] [TopologicalSpace M]
