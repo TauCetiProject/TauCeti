@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Homotopy.Cube.Basic
+public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
@@ -38,7 +39,9 @@ and `GenLoop.sphereEquiv` identifies generalized loops with pointed maps.  Two g
 homotopic relative to the boundary of the cube exactly when the corresponding maps are homotopic
 relative to the north pole (`GenLoop.homotopic_iff_toSphere`), so `πₙ(X, x)` is the set of
 pointed homotopy classes of maps `(Sⁿ, e_last) → (X, x)` (`HomotopyGroup.sphereEquiv`).  The
-identification is natural in based maps (`GenLoop.toSphere_map`).
+identification is natural in based maps (`GenLoop.toSphere_map`).  A class is trivial exactly
+when its map out of the sphere is null-homotopic, by a free homotopy that need not fix the north
+pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 
 ## Main declarations
 
@@ -56,6 +59,8 @@ identification is natural in based maps (`GenLoop.toSphere_map`).
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
   boundary of the cube is homotopy relative to the north pole, and `πₙ(X, x)` is the set of pointed
   homotopy classes of maps `Sⁿ → X`, the classes of `TauCeti.pointedHomotopySetoid`.
+* `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
+  corresponding map `Sⁿ → X` is freely null-homotopic.
 
 ## References
 
@@ -404,6 +409,13 @@ theorem toSphere_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X x) :
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp
 
+/-- The constant generalized loop corresponds to the constant map out of the sphere. -/
+@[simp]
+theorem toSphere_const : toSphere (const : Ω^ (Fin n) X x) = ContinuousMap.const _ x := by
+  ext s
+  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+  simp [const_apply]
+
 variable (n X x) in
 /-- **Generalized loops are pointed maps out of the sphere.**  The bijection between generalized
 loops `(I^n, ∂I^n) → (X, x)` and pointed maps `(Sⁿ, e_last) → (X, x)` out of the unit sphere of
@@ -431,6 +443,13 @@ lemma coe_sphereEquiv_apply (p : Ω^ (Fin n) X x) : (sphereEquiv n X x p).1 = to
 lemma coe_sphereEquiv_symm_apply
     (f : {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x}) :
     ((sphereEquiv n X x).symm f).1 = f.1.comp (cubeToSphere n) :=
+  (rfl)
+
+@[simp]
+lemma sphereEquiv_symm_apply_apply
+    (f : {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x})
+    (z : I^(Fin n)) :
+    (sphereEquiv n X x).symm f z = f.1 (cubeToSphere n z) :=
   (rfl)
 
 /-- **Homotopies of generalized loops are pointed homotopies of maps out of the sphere.**  Two
@@ -497,5 +516,25 @@ lemma sphereEquiv_mk (p : Ω^ (Fin n) X x) :
     sphereEquiv n X x ⟦p⟧ = ⟦GenLoop.sphereEquiv n X x p⟧ := by
   unfold sphereEquiv
   exact Quotient.congr_mk _ _ p
+
+/-- **A homotopy class is trivial exactly when its sphere map is null-homotopic.** The class of a
+generalized loop `p` is the identity of `πₙ(X, x)` if and only if the corresponding map
+`GenLoop.toSphere p : Sⁿ → X` is freely homotopic to a constant map. -/
+theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
+    (⟦p⟧ : HomotopyGroup (Fin n) X x) = (1 : HomotopyGroup (Fin n) X x) ↔
+      (GenLoop.toSphere p).Nullhomotopic := by
+  constructor
+  · intro h
+    have h' := (GenLoop.homotopic_iff_toSphere.1 (Quotient.exact (h.trans one_def))).homotopic
+    rw [GenLoop.toSphere_const] at h'
+    exact ⟨x, h'⟩
+  · intro h
+    -- `p` is the image under `GenLoop.toSphere p` of the tautological generalized loop of the
+    -- sphere, the one corresponding to its identity map.
+    have hp : GenLoop.map (GenLoop.toSphere p) (GenLoop.toSphere_sphereNorthPole p)
+        ((GenLoop.sphereEquiv n _ _).symm ⟨ContinuousMap.id _, ContinuousMap.id_apply _⟩) = p :=
+      GenLoop.ext _ _ fun z ↦ by simp
+    rw [← hp, ← map_mk]
+    exact map_eq_one_of_nullhomotopic h _ _
 
 end HomotopyGroup
