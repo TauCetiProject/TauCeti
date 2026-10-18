@@ -150,11 +150,12 @@ theorem coe_norm_eq_prod_quotient_out (hW : fixedField W.toSubgroup = E)
   refine (Fintype.prod_equiv f _ _ fun q ↦ ?_).symm
   conv_rhs => rw [← QuotientGroup.out_eq' q]
   -- `f` sends the coset of `g` to the embedding `e g ∘ φ`, read in the algebraic closure; the
-  -- first step, the coset of `g` to the coset of `e g`, is `Quotient.congr` on a representative.
+  -- first step, the coset of `g` to the coset of `e g`, is `Quotient.congr` on a representative,
+  -- and `e g` acts on `Kˢ` as `g` by `he`.
   rw [Equiv.trans_apply, Equiv.trans_apply,
     Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits_apply_apply]
-  exact congrArg (algebraMap _ _) (congrArg (· x)
-    (FieldTheory.fixingSubgroupQuotientEquivAlgHom_mk φ (e q.out))).symm
+  exact congrArg (algebraMap _ _) ((congrArg (· x)
+    (FieldTheory.fixingSubgroupQuotientEquivAlgHom_mk φ (e q.out))).trans (he q.out x)).symm
 
 end Relative
 
