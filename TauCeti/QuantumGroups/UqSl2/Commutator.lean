@@ -60,12 +60,19 @@ theorem e_mul_f_pow (hq : q - q⁻¹ ≠ 0) (r : ℕ) :
     -- The `K` and `K⁻¹` coefficients are two forms of the quantum-integer recurrence.
     have hk : (q - q⁻¹)⁻¹ + quantumInteger q (r + 1) * (q - q⁻¹)⁻¹ * q⁻¹ ^ 2 * q⁻¹ ^ r =
         quantumInteger q (r + 1 + 1) * (q - q⁻¹)⁻¹ * q⁻¹ ^ (r + 1) := by
-      simp only [quantumInteger_def, zpow_neg, zpow_add₀ hq0, zpow_natCast, inv_pow]
+      have h := quantumInteger_natCast_succ hq (r + 1)
+      push_cast at h
+      rw [h]
+      simp only [inv_pow]
       field_simp
       ring
     have hkInv : (q - q⁻¹)⁻¹ + quantumInteger q (r + 1) * (q - q⁻¹)⁻¹ * q ^ 2 * q ^ r =
         quantumInteger q (r + 1 + 1) * (q - q⁻¹)⁻¹ * q ^ (r + 1) := by
-      simp only [quantumInteger_def, zpow_neg, zpow_add₀ hq0, zpow_natCast]
+      have h := quantumInteger_natCast_succ (q := q⁻¹) (by rwa [inv_inv, ← neg_sub, neg_ne_zero])
+        (r + 1)
+      push_cast [quantumInteger_inv, inv_inv] at h
+      rw [h]
+      simp only [inv_pow]
       field_simp
       ring
     rw [pow_succ, ← mul_assoc, ih]
