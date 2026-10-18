@@ -38,34 +38,10 @@ namespace TauCeti.Probability
 
 variable {m s : ℝ}
 
-private lemma integrable_exp_mul_gumbel_source {t : ℝ} (ht : -1 < -(t * s)) :
-    Integrable (fun e : ℝ => exp (t * (m - s * log e))) (expMeasure 1) := by
-  rw [expMeasure]
-  have hint : Integrable (fun e : ℝ => e ^ (-(t * s))) (gammaMeasure 1 1) :=
-    (integrable_rpow_gammaMeasure_iff one_pos one_pos _).2 ht
-  refine (hint.const_mul (exp (t * m))).congr ?_
-  filter_upwards [ae_pos_gammaMeasure 1 1] with e he
-  rw [Real.rpow_def_of_pos he, ← Real.exp_add]
-  congr 1
-  ring
-
-private lemma memLp_gumbel_source (hs : 0 < s) :
+private lemma memLp_gumbel_source :
     MemLp (fun e : ℝ => m - s * log e) 2 (expMeasure 1) := by
-  let t := (2 * s)⁻¹
-  have ht : t ≠ 0 := inv_ne_zero (mul_ne_zero two_ne_zero hs.ne')
-  have hpos : Integrable (fun e : ℝ => exp ((0 + t) * (m - s * log e))) (expMeasure 1) := by
-    apply integrable_exp_mul_gumbel_source
-    dsimp [t]
-    field_simp
-    linarith
-  have hneg : Integrable (fun e : ℝ => exp ((0 - t) * (m - s * log e))) (expMeasure 1) := by
-    apply integrable_exp_mul_gumbel_source
-    dsimp [t]
-    field_simp
-    linarith
-  have habs := integrable_pow_abs_mul_exp_of_integrable_exp_mul ht hpos hneg 2
-  apply (memLp_two_iff_integrable_sq (by fun_prop)).2
-  simpa only [zero_mul, zero_add, exp_zero, mul_one, sq_abs] using habs
+  let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
+  exact (memLp_const m).sub ((memLp_log_expMeasure one_pos 2).const_mul s)
 
 /-- The identity belongs to `L²` under every Gumbel law, including the zero measure at a
 nonpositive scale. -/
@@ -73,7 +49,7 @@ theorem memLp_id_gumbelMeasure (m s : ℝ) : MemLp id 2 (gumbelMeasure m s) := b
   by_cases hs : 0 < s
   · rw [gumbelMeasure_of_pos hs,
       memLp_map_measure_iff aestronglyMeasurable_id (by fun_prop)]
-    refine (memLp_gumbel_source (m := m) hs).congr_norm (by fun_prop) ?_
+    refine (memLp_gumbel_source (m := m) (s := s)).congr_norm (by fun_prop) ?_
     filter_upwards with e
     simp only [Function.comp_apply, id_eq]
   · simp [gumbelMeasure_of_nonpos (le_of_not_gt hs)]

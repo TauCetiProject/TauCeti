@@ -45,8 +45,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
-* `integrable_log_expMeasure`, `integral_log_expMeasure` — integrability and the mean of the
-  logarithm under a positive-rate exponential law;
+* `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
+  integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
@@ -151,30 +151,23 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
 
+/-- The logarithm belongs to every finite `Lᵖ` space under a positive-rate exponential law. -/
+theorem memLp_log_expMeasure (hr : 0 < r) (p : ℝ≥0) : MemLp log p (expMeasure r) := by
+  apply memLp_of_mem_interior_integrableExpSet
+  apply interior_mono (s := Ioi (-1))
+  · intro t ht
+    rw [integrableExpSet, expMeasure]
+    refine ((integrable_rpow_gammaMeasure_iff one_pos hr t).2 ht).congr ?_
+    filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
+    rw [Real.rpow_def_of_pos hx]
+    congr 1
+    ring
+  · simp
+
 /-- The logarithm is integrable under every positive-rate exponential law. -/
 @[simp]
-theorem integrable_log_expMeasure (hr : 0 < r) : Integrable log (expMeasure r) := by
-  rw [expMeasure]
-  have hpos : Integrable (fun x : ℝ => x ^ (1 / 2 : ℝ)) (gammaMeasure 1 r) :=
-    (integrable_rpow_gammaMeasure_iff one_pos hr _).2 (by norm_num)
-  have hneg : Integrable (fun x : ℝ => x ^ (-1 / 2 : ℝ)) (gammaMeasure 1 r) :=
-    (integrable_rpow_gammaMeasure_iff one_pos hr _).2 (by norm_num)
-  have hpos' : Integrable (fun x : ℝ => exp ((0 + 1 / 2) * log x))
-      (gammaMeasure 1 r) := by
-    refine hpos.congr ?_
-    filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
-    rw [Real.rpow_def_of_pos hx]
-    ring_nf
-  have hneg' : Integrable (fun x : ℝ => exp ((0 - 1 / 2) * log x))
-      (gammaMeasure 1 r) := by
-    refine hneg.congr ?_
-    filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
-    rw [Real.rpow_def_of_pos hx]
-    ring_nf
-  have habs := integrable_pow_abs_mul_exp_of_integrable_exp_mul
-    (X := log) (v := 0) (t := (1 / 2 : ℝ)) (by norm_num) hpos' hneg' 1
-  rw [← integrable_norm_iff (by fun_prop)]
-  simpa only [zero_mul, zero_add, exp_zero, mul_one, pow_one, Real.norm_eq_abs] using habs
+theorem integrable_log_expMeasure (hr : 0 < r) : Integrable log (expMeasure r) :=
+  memLp_one_iff_integrable.mp (memLp_log_expMeasure hr 1)
 
 /-- The mean of the logarithm under an exponential law of positive rate `r` is
 `-γ - log r`. -/
