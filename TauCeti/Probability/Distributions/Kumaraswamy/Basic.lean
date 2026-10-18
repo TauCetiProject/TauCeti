@@ -106,6 +106,15 @@ theorem kumaraswamyPDFReal_pos (ha : 0 < a) (hb : 0 < b) (hx : x ∈ Ioo 0 1) :
   exact mul_pos (mul_pos (mul_pos ha hb) (Real.rpow_pos_of_pos hx.1 _))
     (Real.rpow_pos_of_pos (sub_pos.mpr hxa) _)
 
+/-- At valid parameters, the real Kumaraswamy density is positive exactly on the open unit
+interval. -/
+theorem kumaraswamyPDFReal_pos_iff (ha : 0 < a) (hb : 0 < b) :
+    0 < kumaraswamyPDFReal a b x ↔ x ∈ Ioo 0 1 := by
+  refine ⟨fun h ↦ ?_, kumaraswamyPDFReal_pos ha hb⟩
+  by_contra hx
+  rw [kumaraswamyPDFReal_of_notMem_Ioo hx] at h
+  exact h.false
+
 /-- The real Kumaraswamy density is nonnegative. -/
 theorem kumaraswamyPDFReal_nonneg (a b x : ℝ) : 0 ≤ kumaraswamyPDFReal a b x := by
   by_cases h : 0 < a ∧ 0 < b ∧ 0 < x ∧ x < 1
@@ -117,6 +126,23 @@ theorem kumaraswamyPDFReal_nonneg (a b x : ℝ) : 0 ≤ kumaraswamyPDFReal a b x
 theorem toReal_kumaraswamyPDF (a b x : ℝ) :
     (kumaraswamyPDF a b x).toReal = kumaraswamyPDFReal a b x :=
   ENNReal.toReal_ofReal (kumaraswamyPDFReal_nonneg a b x)
+
+/-- At valid parameters and inside the unit interval, the Kumaraswamy density has its classical
+formula. -/
+@[simp]
+theorem kumaraswamyPDF_of_mem_Ioo (ha : 0 < a) (hb : 0 < b) (hx : x ∈ Ioo 0 1) :
+    kumaraswamyPDF a b x = ENNReal.ofReal (a * b * x ^ (a - 1) * (1 - x ^ a) ^ (b - 1)) := by
+  rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_mem_Ioo ha hb hx]
+
+/-- The Kumaraswamy density vanishes outside the open unit interval. -/
+@[simp]
+theorem kumaraswamyPDF_of_notMem_Ioo (hx : x ∉ Ioo 0 1) (a b : ℝ) : kumaraswamyPDF a b x = 0 := by
+  rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_notMem_Ioo hx, ENNReal.ofReal_zero]
+
+/-- The Kumaraswamy density vanishes unless both shape parameters are positive. -/
+@[simp]
+theorem kumaraswamyPDF_of_not_pos (h : ¬ (0 < a ∧ 0 < b)) (x : ℝ) : kumaraswamyPDF a b x = 0 := by
+  rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_not_pos h, ENNReal.ofReal_zero]
 
 /-- The Kumaraswamy density is jointly measurable in both shape parameters and the sample
 point. -/
@@ -162,9 +188,7 @@ theorem kumaraswamyMeasure_eq_withDensity (a b : ℝ) :
 /-- At invalid parameters, the Kumaraswamy law is zero. -/
 @[simp]
 theorem kumaraswamyMeasure_of_not_pos (h : ¬ (0 < a ∧ 0 < b)) : kumaraswamyMeasure a b = 0 := by
-  have hpdf : kumaraswamyPDF a b = 0 := by
-    funext x
-    simp [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_not_pos h]
+  have hpdf : kumaraswamyPDF a b = 0 := funext (kumaraswamyPDF_of_not_pos h)
   rw [kumaraswamyMeasure_eq_withDensity, hpdf, withDensity_zero]
 
 /-- The Kumaraswamy law is its density against Lebesgue measure on the open unit interval. -/
@@ -175,8 +199,7 @@ theorem kumaraswamyMeasure_eq_withDensity_restrict_Ioo (a b : ℝ) :
   funext x
   by_cases hx : x ∈ Ioo 0 1
   · rw [indicator_of_mem hx]
-  · rw [indicator_of_notMem hx, kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_notMem_Ioo hx,
-      ENNReal.ofReal_zero]
+  · rw [indicator_of_notMem hx, kumaraswamyPDF_of_notMem_Ioo hx]
 
 /-- A Kumaraswamy law lies almost everywhere in the open unit interval, for all parameter
 values. -/
@@ -219,7 +242,7 @@ private theorem kumaraswamyPDF_eq_jacobian_mul_betaPDF (ha : 0 < a) (hb : 0 < b)
     kumaraswamyPDF a b x = ENNReal.ofReal |a * x ^ (a - 1)| * betaPDF 1 b (x ^ a) := by
   have hxa : x ^ a < 1 := Real.rpow_lt_one hx.1.le hx.2 ha
   have hjac : 0 < a * x ^ (a - 1) := mul_pos ha (Real.rpow_pos_of_pos hx.1 _)
-  rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_mem_Ioo ha hb hx,
+  rw [kumaraswamyPDF_of_mem_Ioo ha hb hx,
     betaPDF_of_pos_lt_one (Real.rpow_pos_of_pos hx.1 a) hxa, abs_of_pos hjac,
     ← ENNReal.ofReal_mul hjac.le, beta_comm, beta_one_right hb, sub_self, Real.rpow_zero]
   congr 1
@@ -246,6 +269,20 @@ theorem isProbabilityMeasure_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
   constructor
   rw [← preimage_univ (f := fun x : ℝ ↦ x ^ a), ← Measure.map_apply (by fun_prop) .univ,
     map_rpow_kumaraswamyMeasure ha hb, measure_univ]
+
+/-- The Kumaraswamy density has total mass one at positive parameters. -/
+theorem lintegral_kumaraswamyPDF_eq_one (ha : 0 < a) (hb : 0 < b) :
+    ∫⁻ x, kumaraswamyPDF a b x = 1 := by
+  have := isProbabilityMeasure_kumaraswamyMeasure ha hb
+  rw [← setLIntegral_univ, ← withDensity_apply _ .univ, ← kumaraswamyMeasure_eq_withDensity,
+    measure_univ]
+
+/-- The real Kumaraswamy density integrates to one at positive parameters. -/
+theorem integral_kumaraswamyPDFReal (ha : 0 < a) (hb : 0 < b) :
+    ∫ x, kumaraswamyPDFReal a b x = 1 := by
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (kumaraswamyPDFReal_nonneg a b))
+    (measurable_kumaraswamyPDFReal a b).aestronglyMeasurable]
+  simp only [← kumaraswamyPDF_eq_ofReal, lintegral_kumaraswamyPDF_eq_one ha hb, ENNReal.toReal_one]
 
 /-- The Kumaraswamy law is a probability measure exactly at positive parameters. -/
 @[simp]

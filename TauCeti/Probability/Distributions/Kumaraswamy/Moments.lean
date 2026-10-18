@@ -55,6 +55,12 @@ private theorem rpow_ae_eq_comp_rpow (ha : 0 < a) (b q : ℝ) :
   rw [Function.comp_apply, Real.rpow_zero, mul_one, ← Real.rpow_mul hx.1.le,
     mul_div_cancel₀ q ha.ne']
 
+/-- The Beta exponent `1 + q / a` of the pushed-forward moment is positive exactly above the
+threshold `-a`. -/
+private theorem zero_lt_one_add_div_iff (ha : 0 < a) : 0 < 1 + q / a ↔ -a < q := by
+  rw [one_add_div ha.ne', div_pos_iff_of_pos_right ha]
+  constructor <;> intro h <;> linarith
+
 /-- The real power `x ^ q` is integrable against the Kumaraswamy `(a, b)` law exactly when
 `-a < q`. -/
 @[simp]
@@ -64,7 +70,7 @@ theorem integrable_rpow_kumaraswamyMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
     (by fun_prop : Measurable fun y : ℝ ↦ y ^ (q / a) * (1 - y) ^ (0 : ℝ)).aestronglyMeasurable
     (by fun_prop), map_rpow_kumaraswamyMeasure ha hb,
     integrable_rpow_mul_one_sub_rpow_betaMeasure_iff zero_lt_one hb, add_zero,
-    ← neg_lt_iff_pos_add', lt_div_iff₀ ha, neg_one_mul]
+    zero_lt_one_add_div_iff ha]
   exact and_iff_left hb
 
 /-- The real-power moment of a Kumaraswamy `(a, b)` variable above the threshold `-a`. -/
@@ -75,7 +81,7 @@ theorem integral_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) (hq : -a < q)
   refine (integral_map (μ := kumaraswamyMeasure a b) (φ := fun x : ℝ ↦ x ^ a) (by fun_prop)
     hg.aestronglyMeasurable).symm.trans ?_
   rw [map_rpow_kumaraswamyMeasure ha hb, integral_rpow_mul_one_sub_rpow_betaMeasure zero_lt_one hb
-      (by rwa [← neg_lt_iff_pos_add', lt_div_iff₀ ha, neg_one_mul]) (by rwa [add_zero]),
+      ((zero_lt_one_add_div_iff ha).mpr hq) (by rwa [add_zero]),
     add_zero, beta_comm 1 b, beta_one_right hb]
   field_simp
 
