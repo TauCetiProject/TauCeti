@@ -15,10 +15,10 @@ import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.Algebra.MvPolynomial.CommRing
 -- Proof-only: substitution commutes with change of coefficients.
 import Mathlib.Algebra.MvPolynomial.Monad
--- Proof-only: Bézout's identity for `Finset.gcd` over the Euclidean domain `ℤ`.
-import Mathlib.Algebra.EuclideanDomain.Int
-import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.LinearCombination
+-- Proof-only: Bézout's identity and faithfulness of scalars, for uniqueness of the multiple.
+import TauCeti.Algebra.GCDMonoid.Finset
+import TauCeti.Algebra.MvPolynomial.Coeff
 
 /-!
 # The Lazard symmetric 2-cocycles `C_n(X, Y)`
@@ -47,7 +47,7 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`.
 
 ## Main definitions
 
-* `MvPolynomial.IsAddCocycle`: `f(X, Y) + f(X + Y, Z) = f(X, Y + Z) + f(Y, Z)`.
+* `MvPolynomial.IsAddCocycle₂`: `f(X, Y) + f(X + Y, Z) = f(X, Y + Z) + f(Y, Z)`.
 * `TauCeti.lazardGcd n`: the greatest common divisor `d_n` of the `n.choose i`, `0 < i < n`.
 * `TauCeti.lazardCocycle n R`: the polynomial `C_n(X, Y)` over `R`.
 
@@ -59,10 +59,10 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`.
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
   `n.choose i / d_n` when `i + j = n` and `i, j ≠ 0`, and `0` otherwise.
-* `TauCeti.lazardGcd_nsmul_lazardCocycle`: `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`.
+* `TauCeti.lazardGcd_nsmul_lazardCocycle`: `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ` for `n ≠ 0`.
 * `TauCeti.map_lazardCocycle`: `C_n` is compatible with ring homomorphisms.
 * `TauCeti.isHomogeneous_lazardCocycle`, `TauCeti.isSymmetric_lazardCocycle`,
-  `TauCeti.isAddCocycle_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
+  `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
   of degree `n`.
 * `TauCeti.smul_lazardCocycle_eq_zero_iff`: for `n ≥ 2`, `r • C_n = 0 ↔ r = 0`.
 
@@ -81,43 +81,43 @@ namespace MvPolynomial
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-section IsAddCocycle
+section IsAddCocycle₂
 
 /-- A two-variable polynomial `f(X, Y)` is an *additive 2-cocycle* if
 `f(X, Y) + f(X + Y, Z) = f(X, Y + Z) + f(Y, Z)` in `R[X, Y, Z]`. -/
-def IsAddCocycle (f : MvPolynomial (Fin 2) R) : Prop :=
+def IsAddCocycle₂ (f : MvPolynomial (Fin 2) R) : Prop :=
   (aeval ![X 0, X 1] f + aeval ![X 0 + X 1, X 2] f : MvPolynomial (Fin 3) R) =
     aeval ![X 0, X 1 + X 2] f + aeval ![X 1, X 2] f
 
-/-- Unfolding `MvPolynomial.IsAddCocycle`. -/
-theorem isAddCocycle_iff {f : MvPolynomial (Fin 2) R} :
-    f.IsAddCocycle ↔
+/-- Unfolding `MvPolynomial.IsAddCocycle₂`. -/
+theorem isAddCocycle₂_iff {f : MvPolynomial (Fin 2) R} :
+    f.IsAddCocycle₂ ↔
       (aeval ![X 0, X 1] f + aeval ![X 0 + X 1, X 2] f : MvPolynomial (Fin 3) R) =
         aeval ![X 0, X 1 + X 2] f + aeval ![X 1, X 2] f :=
   Iff.rfl
 
-namespace IsAddCocycle
+namespace IsAddCocycle₂
 
 variable {f g : MvPolynomial (Fin 2) R}
 
 /-- The zero polynomial is an additive 2-cocycle. -/
 @[simp]
-theorem zero : (0 : MvPolynomial (Fin 2) R).IsAddCocycle := by
-  simp [isAddCocycle_iff]
+theorem zero : (0 : MvPolynomial (Fin 2) R).IsAddCocycle₂ := by
+  simp [isAddCocycle₂_iff]
 
 /-- Additive 2-cocycles are closed under addition. -/
-theorem add (hf : f.IsAddCocycle) (hg : g.IsAddCocycle) : (f + g).IsAddCocycle := by
-  rw [isAddCocycle_iff] at *
+theorem add (hf : f.IsAddCocycle₂) (hg : g.IsAddCocycle₂) : (f + g).IsAddCocycle₂ := by
+  rw [isAddCocycle₂_iff] at *
   simp only [map_add]
   linear_combination hf + hg
 
 /-- Additive 2-cocycles are closed under scalar multiplication. -/
-theorem smul (r : R) (hf : f.IsAddCocycle) : (r • f).IsAddCocycle := by
-  rw [isAddCocycle_iff] at *
+theorem smul (r : R) (hf : f.IsAddCocycle₂) : (r • f).IsAddCocycle₂ := by
+  rw [isAddCocycle₂_iff] at *
   simp only [map_smul, ← smul_add, hf]
 
 /-- Additive 2-cocycles are preserved by a change of coefficients. -/
-theorem map (hf : f.IsAddCocycle) (φ : R →+* S) : (MvPolynomial.map φ f).IsAddCocycle := by
+theorem map (hf : f.IsAddCocycle₂) (φ : R →+* S) : (MvPolynomial.map φ f).IsAddCocycle₂ := by
   -- `map φ (aeval g f) = aeval (map φ ∘ g) (map φ f)`, by `aeval_eq_bind₁` and `map_bind₁`.
   have hmap (a b : MvPolynomial (Fin 3) R) :
       MvPolynomial.map φ (aeval ![a, b] f) =
@@ -125,23 +125,14 @@ theorem map (hf : f.IsAddCocycle) (φ : R →+* S) : (MvPolynomial.map φ f).IsA
     rw [aeval_eq_bind₁, aeval_eq_bind₁, map_bind₁]
     congr 2
     funext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
   have h := congrArg (MvPolynomial.map φ) hf
-  rw [isAddCocycle_iff]
+  rw [isAddCocycle₂_iff]
   simpa only [map_add, hmap, map_X] using h
 
-end IsAddCocycle
+end IsAddCocycle₂
 
-end IsAddCocycle
-
-/-- If some combination `∑ i ∈ s, p.coeff (m i) * c i` of coefficients of `p` is `1`, then
-`r • p = 0` forces `r = 0`. -/
-theorem eq_zero_of_smul_eq_zero_of_sum_coeff_mul_eq_one {σ ι : Type*} {p : MvPolynomial σ R}
-    (s : Finset ι) (m : ι → σ →₀ ℕ) (c : ι → R) (hc : ∑ i ∈ s, p.coeff (m i) * c i = 1) {r : R}
-    (h : r • p = 0) : r = 0 := by
-  calc r = ∑ i ∈ s, (r • p).coeff (m i) * c i := by
-        simp only [coeff_smul, smul_eq_mul, mul_assoc, ← Finset.mul_sum, hc, mul_one]
-    _ = 0 := by simp [h]
+end IsAddCocycle₂
 
 end MvPolynomial
 
@@ -151,26 +142,12 @@ open MvPolynomial
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-/-- Bézout's identity for natural numbers: if `f i`, `i ∈ s`, have greatest common divisor `1`,
-then some integer combination `∑ i ∈ s, f i * c i` is `1`. -/
-theorem exists_sum_natCast_mul_eq_one_of_gcd_eq_one {ι : Type*} {s : Finset ι} {f : ι → ℕ}
-    (h : s.gcd f = 1) : ∃ c : ι → ℤ, ∑ i ∈ s, (f i : ℤ) * c i = 1 := by
-  obtain ⟨c, hc⟩ := s.gcd_eq_sum_mul fun i => (f i : ℤ)
-  refine ⟨c, ?_⟩
-  rw [← hc]
-  have hdvd : (s.gcd fun i => (f i : ℤ)).natAbs ∣ 1 := by
-    rw [← h]
-    refine Finset.dvd_gcd fun i hi => ?_
-    rw [← Int.natAbs_natCast (f i)]
-    exact Int.natAbs_dvd_natAbs.2 (Finset.gcd_dvd hi)
-  rw [← Int.natAbs_of_nonneg Int.finsetGcd_nonneg, Nat.dvd_one.1 hdvd, Nat.cast_one]
-
 section lazardGcd
 
 /-- The greatest common divisor `d_n` of the binomial coefficients `n.choose i`, `0 < i < n`.
 For `n ≥ 2` it is the prime `p` if `n` is a power of `p`, and `1` otherwise
 (`lazardGcd_eq_minFac_of_isPrimePow`, `lazardGcd_eq_one_of_not_isPrimePow`); for `n < 2` the
-range is empty and `d_n = 0`. -/
+range is empty and `d_n = 0` (`lazardGcd_eq_zero_of_lt_two`). -/
 def lazardGcd (n : ℕ) : ℕ :=
   (Icc 1 (n - 1)).gcd n.choose
 
@@ -182,6 +159,18 @@ theorem lazardGcd_eq_minFac_of_isPrimePow {n : ℕ} (h : IsPrimePow n) : lazardG
 theorem lazardGcd_eq_one_of_not_isPrimePow {n : ℕ} (hn : 1 < n) (h : ¬IsPrimePow n) :
     lazardGcd n = 1 :=
   Choose.gcd_choose_eq_one_of_not_isPrimePow hn h
+
+/-- `d_0 = d_1 = 0`: the range `0 < i < n` is empty. -/
+theorem lazardGcd_eq_zero_of_lt_two {n : ℕ} (hn : n < 2) : lazardGcd n = 0 := by
+  rw [lazardGcd, Finset.Icc_eq_empty (by omega), Finset.gcd_empty]
+
+/-- `d ∣ d_n` if and only if `d` divides every `n.choose i`, `0 < i < n`. -/
+theorem dvd_lazardGcd_iff {n d : ℕ} :
+    d ∣ lazardGcd n ↔ ∀ i, 0 < i → i < n → d ∣ n.choose i := by
+  rw [lazardGcd, Finset.dvd_gcd_iff]
+  refine ⟨fun h i hi hin => h i (mem_Icc.2 ⟨hi, by omega⟩), fun h i hi => ?_⟩
+  rw [mem_Icc] at hi
+  exact h i (by omega) (by omega)
 
 /-- `d_n` divides `n.choose i` for `0 < i < n`. -/
 theorem lazardGcd_dvd_choose {n i : ℕ} (hi : 0 < i) (hin : i < n) : lazardGcd n ∣ n.choose i :=
@@ -205,8 +194,13 @@ end lazardGcd
 
 section lazardCocycle
 
+/-- The monomial `XⁱYʲ` has exponent `d` exactly when `d 0 = i` and `d 1 = j`. -/
+private theorem single_add_single_eq_iff {i j : ℕ} {d : Fin 2 →₀ ℕ} :
+    Finsupp.single 0 i + Finsupp.single 1 j = d ↔ d 0 = i ∧ d 1 = j := by
+  simp [Finsupp.ext_iff, Fin.forall_fin_two, eq_comm]
+
 /-- The **Lazard 2-cocycle** `C_n(X, Y)`, whose coefficient of `XⁱYⁿ⁻ⁱ` is `n.choose i / d_n` for
-`0 < i < n`, where `d_n = lazardGcd n`; thus `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`
+`0 < i < n`, where `d_n = lazardGcd n`; thus `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ` for `n ≠ 0`
 (`lazardGcd_nsmul_lazardCocycle`). Its coefficients are natural numbers, cast into `R`. For
 `n < 2` it is `0`. -/
 noncomputable def lazardCocycle (n : ℕ) (R : Type*) [CommRing R] : MvPolynomial (Fin 2) R :=
@@ -220,11 +214,8 @@ theorem coeff_lazardCocycle (n : ℕ) (d : Fin 2 →₀ ℕ) :
       if d 0 + d 1 = n ∧ d 0 ≠ 0 ∧ d 1 ≠ 0 then ((n.choose (d 0) / lazardGcd n : ℕ) : R)
       else 0 := by
   classical
-  have key (i : ℕ) : Finsupp.single 0 i + Finsupp.single 1 (n - i) = d ↔
-      d 0 = i ∧ d 1 = n - i := by
-    simp [Finsupp.ext_iff, Fin.forall_fin_two, eq_comm]
   rw [lazardCocycle, coeff_sum]
-  simp only [coeff_monomial, key]
+  simp only [coeff_monomial, single_add_single_eq_iff]
   split_ifs with h
   · rw [Finset.sum_eq_single (d 0)]
     · rw [ite_eq_left ⟨rfl, by omega⟩]
@@ -246,16 +237,16 @@ theorem map_lazardCocycle (φ : R →+* S) (n : ℕ) :
 theorem lazardCocycle_eq_zero_of_lt_two {n : ℕ} (hn : n < 2) : lazardCocycle n R = 0 := by
   rw [lazardCocycle, Finset.Icc_eq_empty (by omega), Finset.sum_empty]
 
-/-- `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`, where `d_n = lazardGcd n` is the greatest common divisor of
-the `n.choose i`, `0 < i < n`. -/
+/-- For `n ≠ 0`, `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`, where `d_n = lazardGcd n` is the greatest common
+divisor of the `n.choose i`, `0 < i < n`. -/
 theorem lazardGcd_nsmul_lazardCocycle {n : ℕ} (hn : n ≠ 0) :
     lazardGcd n • lazardCocycle n R = (X 0 + X 1) ^ n - X 0 ^ n - X 1 ^ n := by
   classical
   ext d
   have h0 : Finsupp.single 0 n = d ↔ d 0 = n ∧ d 1 = 0 := by
-    simp [Finsupp.ext_iff, Fin.forall_fin_two, eq_comm]
+    simpa using single_add_single_eq_iff (i := n) (j := 0) (d := d)
   have h1 : Finsupp.single 1 n = d ↔ d 0 = 0 ∧ d 1 = n := by
-    simp [Finsupp.ext_iff, Fin.forall_fin_two, eq_comm]
+    simpa using single_add_single_eq_iff (i := 0) (j := n) (d := d)
   rw [coeff_smul, coeff_lazardCocycle, coeff_sub, coeff_sub, coeff_add_pow, coeff_X_pow,
     coeff_X_pow]
   simp only [h0, h1, mem_antidiagonal]
@@ -307,11 +298,11 @@ private theorem isSymmetric_lazardCocycle_int (n : ℕ) : (lazardCocycle n ℤ).
   rw [Equiv.sum_comp e (fun i => (X i : MvPolynomial (Fin 2) ℤ)),
     Equiv.sum_comp e (fun i => (X i : MvPolynomial (Fin 2) ℤ) ^ n)]
 
-private theorem isAddCocycle_lazardCocycle_int (n : ℕ) : (lazardCocycle n ℤ).IsAddCocycle := by
+private theorem isAddCocycle₂_lazardCocycle_int (n : ℕ) : (lazardCocycle n ℤ).IsAddCocycle₂ := by
   obtain hn | hn := lt_or_ge n 2
   · rw [lazardCocycle_eq_zero_of_lt_two hn]
-    exact IsAddCocycle.zero
-  rw [isAddCocycle_iff]
+    exact IsAddCocycle₂.zero
+  rw [isAddCocycle₂_iff]
   apply smul_right_injective _ (lazardGcd_ne_zero hn)
   dsimp only
   simp only [smul_add, lazardGcd_nsmul_aeval_lazardCocycle (by omega : n ≠ 0)]
@@ -323,9 +314,9 @@ theorem isSymmetric_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsSymmetric :=
   exact (isSymmetric_lazardCocycle_int n).map _
 
 /-- `C_n` is an additive 2-cocycle. -/
-theorem isAddCocycle_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsAddCocycle := by
+theorem isAddCocycle₂_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsAddCocycle₂ := by
   rw [← map_lazardCocycle (Int.castRingHom R)]
-  exact (isAddCocycle_lazardCocycle_int n).map _
+  exact (isAddCocycle₂_lazardCocycle_int n).map _
 
 /-- For `n ≥ 2`, `r • C_n = 0 ↔ r = 0` in every commutative ring `R`, including rings with
 torsion. -/
@@ -333,7 +324,8 @@ torsion. -/
 theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
     r • lazardCocycle n R = 0 ↔ r = 0 := by
   refine ⟨fun h => ?_, fun h => by rw [h, zero_smul]⟩
-  obtain ⟨c, hc⟩ := exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
+  obtain ⟨c, hc⟩ :=
+    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
   refine eq_zero_of_smul_eq_zero_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
     (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_ h
   rw [← Int.cast_one, ← hc, Int.cast_sum]
