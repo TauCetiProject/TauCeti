@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Normed
+public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Analysis.Normed.Ring.MulUnit
 
 /-!
@@ -29,7 +30,8 @@ scaling law hold more generally for any unit `u` of positive norm with `‖u * x
 whatever the size of `‖u‖`.
 
 The existence of a multiplicative pseudo-uniformiser forces `‖1‖ = 1`, so a Tate ring is
-nonzero. An ultrametric Tate commutative ring is a Tate ring in the topological sense. A
+nonzero, and its powers provide a zero sequence of units (`TauCeti.HasZeroSequenceOfUnits`). An
+ultrametric Tate commutative ring is a Tate ring in the topological sense. A
 seminormed algebra with `‖1‖ = 1` over a normed field has a multiplicative pseudo-uniformiser
 given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially normed fields are Tate.
 
@@ -48,7 +50,8 @@ given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially norme
   `‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * ‖m‖` on modules with contractive action.
 * `TauCeti.NormedRing.PseudoUniformizer.existsUnique_norm_zpow_smul_mem_Ioc`: the shell
   `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1` determines `n` uniquely.
-* `TauCeti.NormedRing.PseudoUniformizer.isPseudoUniformizer` and
+* `TauCeti.NormedRing.PseudoUniformizer.isPseudoUniformizer`,
+  `TauCeti.NormedRing.IsTate.hasZeroSequenceOfUnits`, and
   `TauCeti.NormedRing.IsTate.isTateRing`: comparison with the topological notions.
 * `TauCeti.NormedRing.PseudoUniformizer.ofAlgebraMap`: small nonzero scalars of a normed field
   are multiplicative pseudo-uniformisers of norm-one algebras.
@@ -263,6 +266,11 @@ variable {R : Type*} [SeminormedRing R]
 /-- A Tate seminormed ring satisfies `‖1‖ = 1`. -/
 instance (priority := 100) normOneClass [IsTate R] : NormOneClass R :=
   (nonempty_pseudoUniformizer (R := R)).some.normOneClass
+
+/-- A Tate seminormed ring admits a zero sequence of units via the powers of any multiplicative
+pseudo-uniformiser. -/
+instance (priority := 100) hasZeroSequenceOfUnits [IsTate R] : HasZeroSequenceOfUnits R :=
+  (nonempty_pseudoUniformizer (R := R)).some.isPseudoUniformizer.hasZeroSequenceOfUnits
 
 /-- **An ultrametric Tate seminormed commutative ring is a Tate ring** in the topological sense:
 its closed unit ball is a ring of definition and a multiplicative pseudo-uniformiser is a
