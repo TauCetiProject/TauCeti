@@ -90,13 +90,6 @@ noncomputable def smoothTensorInducedGradedResolutionAugmentationApp
       (smoothTensorInducedGradedResolutionFunctor U hU s).obj A :=
   (smoothTensorInductionFunctor R G U hU s).map (smoothGradedResolutionAugmentationApp A)
 
-/-- The tensor-induced augmentation is tensor induction of the total-resolution augmentation. -/
-theorem smoothTensorInducedGradedResolutionAugmentationApp_eq
-    (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
-    smoothTensorInducedGradedResolutionAugmentationApp U hU s A =
-      (smoothTensorInductionFunctor R G U hU s).map (smoothGradedResolutionAugmentationApp A) :=
-  (rfl)
-
 /-- On a pure tensor, the tensor-induced augmentation applies the coinduced-resolution
 augmentation in every coset coordinate. -/
 @[simp]
@@ -105,6 +98,9 @@ theorem smoothTensorInducedGradedResolutionAugmentationApp_apply_tprod
     (smoothTensorInducedGradedResolutionAugmentationApp U hU s A).hom.hom
         (PiTensorProduct.tprod R x) =
       PiTensorProduct.tprod R fun i ↦ A.obj.gradedResolutionAugmentation (x i) :=
+  -- The discrete functor is sandwiched between `ofSmoothDiscrete` and `toSmoothDiscrete`, whose
+  -- round trips on maps are the identity by definition because `discreteRepEquivSmoothTopRep`
+  -- has identity unit and counit components.
   (Representation.IntertwiningMap.tensorInduced_apply_tprod
     ((ofSmoothDiscrete R U).map (smoothGradedResolutionAugmentationApp A)) s x).trans <|
       congrArg (PiTensorProduct.tprod R) <| funext fun i ↦
@@ -113,7 +109,7 @@ theorem smoothTensorInducedGradedResolutionAugmentationApp_apply_tprod
 /-- The tensor-induced coefficient augmentations, as a natural transformation into the
 tensor-induced total resolution: the right whiskering of `smoothGradedResolutionAugmentation` by
 smooth tensor induction. -/
-@[expose] noncomputable def smoothTensorInducedGradedResolutionAugmentation :
+noncomputable def smoothTensorInducedGradedResolutionAugmentation :
     smoothTensorInductionFunctor R G U hU s ⟶
       smoothTensorInducedGradedResolutionFunctor U hU s :=
   Functor.whiskerRight smoothGradedResolutionAugmentation
@@ -125,6 +121,13 @@ theorem smoothTensorInducedGradedResolutionAugmentation_app
     (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     (smoothTensorInducedGradedResolutionAugmentation U hU s).app A =
       smoothTensorInducedGradedResolutionAugmentationApp U hU s A :=
-  (rfl)
+  by
+    refine (congrArg (fun α ↦ α.app A)
+      (smoothTensorInducedGradedResolutionAugmentation.eq_1 U hU s)).trans ?_
+    change (smoothTensorInductionFunctor R G U hU s).map
+      (smoothGradedResolutionAugmentation.app A) = _
+    exact (congrArg (smoothTensorInductionFunctor R G U hU s).map
+      (smoothGradedResolutionAugmentation_app A)).trans
+        (smoothTensorInducedGradedResolutionAugmentationApp.eq_1 U hU s A).symm
 
 end TauCeti
