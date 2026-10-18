@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 import TauCeti.Analysis.Matrix.JointDiagonalization
+import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
 # Conjugacy of maximal tori in the unitary group
@@ -75,14 +76,14 @@ theorem exists_map_conj_eq_unitaryTorus {T : Subgroup (unitaryGroup n ℂ)}
     ∃ u : unitaryGroup n ℂ, T.map (MulAut.conj u).toMonoidHom = unitaryTorus n := by
   have := hT.isTorus.isMulCommutative
   obtain ⟨u, hu⟩ := exists_map_conj_le_unitaryTorus (H := T)
-  have hconj : Continuous (MulAut.conj u : unitaryGroup n ℂ → unitaryGroup n ℂ) := by
-    exact (IsTopologicalGroup.continuous_conj u).congr
-      fun g => (MulAut.conj_apply u g).symm
-  have hconj' : Continuous (MulAut.conj u).symm := by
-    exact (IsTopologicalGroup.continuous_conj u⁻¹).congr
-      fun g => by simp only [MulAut.conj_symm_apply, inv_inv]
-  exact ⟨u, (hT.map_mulEquiv (MulAut.conj u) hconj hconj').eq_of_le
-    isTorus_unitaryTorus hu⟩
+  let e := ContinuousAut.conj u
+  have he : e.toMulEquiv = MulAut.conj u := by
+    ext g : 1
+    exact (ContinuousAut.conj_apply u g).trans (MulAut.conj_apply u g).symm
+  refine ⟨u, ?_⟩
+  rw [← he] at hu ⊢
+  exact (hT.map_mulEquiv e.toMulEquiv e.continuous e.symm.continuous).eq_of_le
+    isTorus_unitaryTorus hu
 
 /-- The maximal tori of `U(n)` are exactly the conjugates of its diagonal torus. -/
 theorem isMaximalTorus_iff_exists_map_conj_eq_unitaryTorus
@@ -91,13 +92,13 @@ theorem isMaximalTorus_iff_exists_map_conj_eq_unitaryTorus
       ∃ u : unitaryGroup n ℂ, T.map (MulAut.conj u).toMonoidHom = unitaryTorus n := by
   refine ⟨exists_map_conj_eq_unitaryTorus, ?_⟩
   rintro ⟨u, hu⟩
-  have hconj : Continuous (MulAut.conj u : unitaryGroup n ℂ → unitaryGroup n ℂ) := by
-    exact (IsTopologicalGroup.continuous_conj u).congr
-      fun g => (MulAut.conj_apply u g).symm
-  have hconj' : Continuous (MulAut.conj u).symm := by
-    exact (IsTopologicalGroup.continuous_conj u⁻¹).congr
-      fun g => by simp only [MulAut.conj_symm_apply, inv_inv]
-  have h := isMaximalTorus_unitaryTorus.map_mulEquiv (MulAut.conj u).symm hconj' hconj
+  let e := ContinuousAut.conj u
+  have he : e.toMulEquiv = MulAut.conj u := by
+    ext g : 1
+    exact (ContinuousAut.conj_apply u g).trans (MulAut.conj_apply u g).symm
+  rw [← he] at hu
+  have h := isMaximalTorus_unitaryTorus.map_mulEquiv e.toMulEquiv.symm
+    e.symm.continuous e.continuous
   rw [← hu] at h
   simpa [Subgroup.map_map] using h
 

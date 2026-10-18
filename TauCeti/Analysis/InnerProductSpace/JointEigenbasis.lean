@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
 public import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Analysis.CStarAlgebra.Fuglede
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+import Mathlib.Tactic.Module
 
 /-!
 # A common orthonormal eigenbasis for commuting normal operators
@@ -84,14 +85,13 @@ theorem commute_realPart_and_imaginaryPart {T S : E →ₗ[ℂ] E}
   have h₂ := commute_star_right_of_isStarNormal h
   have h₃ := (commute_star_right_of_isStarNormal h.symm).symm
   have h₄ := h.star_star
-  simp only [realPart_apply_coe, imaginaryPart_apply_coe]
-  exact ⟨(((h.add_right h₂).add_left (h₃.add_right h₄)).smul_left _).smul_right _,
-    ((((h.sub_right h₂).add_left (h₃.sub_right h₄)).smul_left _).smul_right
-      (2⁻¹ : ℝ)).smul_right _,
-    ((((h.add_right h₂).sub_left (h₃.add_right h₄)).smul_left
-      (2⁻¹ : ℝ)).smul_left _).smul_right _,
-    (((((h.sub_right h₂).sub_left (h₃.sub_right h₄)).smul_left
-      (2⁻¹ : ℝ)).smul_left _).smul_right (2⁻¹ : ℝ)).smul_right _⟩
+  -- Expand multiplication, use the four commutation relations, then normalize scalars.
+  refine ⟨?_, ?_, ?_, ?_⟩
+  all_goals
+    simp only [realPart_apply_coe, imaginaryPart_apply_coe, commute_iff_eq,
+      smul_mul_assoc, mul_smul_comm, mul_add, add_mul, mul_sub, sub_mul,
+      h.eq, h₂.eq, h₃.eq, h₄.eq]
+    module
 
 /-- A commuting family of normal operators has a common orthonormal eigenbasis, indexed by
 any finite type of cardinality equal to the dimension. No finiteness of the family is needed. -/
