@@ -19,9 +19,8 @@ category `C` and every period `n`.
 Every distinguished triangle of `K^b(C)` is isomorphic to the image of the mapping-cone triangle
 of a morphism `φ` of bounded complexes. The compression functor sends that image to the class of
 the compression of the mapping-cone triangle of `φ`, with the shift datum descended from
-`TauCeti.PeriodicComplex.compressionShiftIso`
-(`TauCeti.PeriodicComplex.homotopyCompressionFunctorMapTriangleIso`), and this compression is the
-periodic mapping-cone triangle of the compression of `φ`, which is distinguished.
+`TauCeti.PeriodicComplex.compressionShiftIso`, and this compression is the periodic mapping-cone
+triangle of the compression of `φ`, which is distinguished.
 
 ## References
 
@@ -62,7 +61,7 @@ noncomputable def compressionFunctorMapTriangleMappingConeTriangleIso
 /-- The compression functor `K^b(C) ⥤ K_n(C)` sends the image of the mapping-cone triangle of a
 morphism `φ` of bounded complexes to the class of the compression of the mapping-cone triangle
 of `φ`. -/
-noncomputable def homotopyCompressionFunctorMapTriangleIso
+private noncomputable def homotopyCompressionFunctorMapTriangleIso
     {K L : CochainComplex.Bounded C} (φ : K ⟶ L) :
     (homotopyCompressionFunctor n).mapTriangle.obj
         ((HomotopyCategory.Bounded.quotient C).mapTriangle.obj
