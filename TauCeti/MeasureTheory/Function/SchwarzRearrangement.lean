@@ -8,8 +8,9 @@ module
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
--- Proof-only: the layer-cake formula for powers of `ℝ≥0∞`-valued functions.
+-- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.MeasureTheory.Integral.LayerCake
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -42,6 +43,8 @@ the case `p = ∞`. Rearrangement is monotone under a.e. inequality, idempotent,
 indicator of a set `s` to the indicator of `{x | μ (ball 0 ‖x‖) < μ s}`. In a nontrivial
 finite-dimensional real normed space with additive Haar measure, this set is the centered open
 ball of measure `μ s` when that measure is finite, and the whole space when it is infinite.
+The Hardy--Littlewood inequality says that rearranging two nonnegative functions can only increase
+the integral of their product.
 
 ## Main definitions and results
 
@@ -51,9 +54,13 @@ ball of measure `μ s` when that measure is finite, and the whole space when it 
 * `TauCeti.schwarzRearrangement_mono_ae`, `TauCeti.schwarzRearrangement_congr_ae`: order
   preservation and independence of the representative.
 * `TauCeti.addHaar_setOf_lt_schwarzRearrangement`: equimeasurability.
+* `TauCeti.addHaar_inter_setOf_lt_schwarzRearrangement`: intersections of two rearranged
+  superlevel sets have the smaller of the original level measures.
 * `TauCeti.lintegral_rpow_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
   `TauCeti.memLp_schwarzRearrangement_iff`: equality of integrals of powers and of `Lᵖ`
   seminorms, and preservation of every `Lᵖ` class.
+* `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
+  rearrangement inequality.
 
 ## References
 
@@ -242,6 +249,28 @@ theorem addHaar_setOf_lt_schwarzRearrangement (f : E → ℝ≥0∞) (t : ℝ≥
       exact isOpen_univ.measure_pos μ univ_nonempty
   · exact μ.addHaar_setOf_addHaar_ball_norm_lt _
 
+/-- Two superlevel sets of Schwarz rearrangements are concentric, so their intersection has the
+smaller of the two original superlevel measures. No measurability or finiteness hypothesis is
+needed. -/
+@[simp]
+theorem addHaar_inter_setOf_lt_schwarzRearrangement (f g : E → ℝ≥0∞) (s t : ℝ≥0∞) :
+    μ ({x | s < schwarzRearrangement μ f x} ∩
+        {x | t < schwarzRearrangement μ g x}) =
+      min (μ {x | s < f x}) (μ {x | t < g x}) := by
+  rcases le_total (μ {x | s < f x}) (μ {x | t < g x}) with h | h
+  · have hsub : {x | s < schwarzRearrangement μ f x} ⊆
+        {x | t < schwarzRearrangement μ g x} := by
+      intro x hx
+      rw [mem_ofPred_eq, lt_schwarzRearrangement_iff] at hx ⊢
+      exact hx.trans_le h
+    rw [inter_eq_left.2 hsub, addHaar_setOf_lt_schwarzRearrangement, min_eq_left h]
+  · have hsub : {x | t < schwarzRearrangement μ g x} ⊆
+        {x | s < schwarzRearrangement μ f x} := by
+      intro x hx
+      rw [mem_ofPred_eq, lt_schwarzRearrangement_iff] at hx ⊢
+      exact hx.trans_le h
+    rw [inter_eq_right.2 hsub, addHaar_setOf_lt_schwarzRearrangement, min_eq_right h]
+
 /-- The Schwarz rearrangement is idempotent. -/
 @[simp]
 theorem schwarzRearrangement_schwarzRearrangement (f : E → ℝ≥0∞) :
@@ -297,6 +326,44 @@ does, for every exponent `p ∈ [0, ∞]`. -/
 theorem memLp_schwarzRearrangement_iff (hf : AEMeasurable f μ) {p : ℝ≥0∞} :
     MemLp (schwarzRearrangement μ f) p μ ↔ MemLp f p μ := by
   rw [memLp_iff, memLp_iff, eLpNorm_schwarzRearrangement μ hf]
+
+private theorem lintegral_mul_le_lintegral_schwarzRearrangement_mul_of_measurable
+    {f g : E → ℝ≥0∞} (hf : Measurable f) (hg : Measurable g) :
+    (∫⁻ x, f x * g x ∂μ) ≤
+      ∫⁻ x, schwarzRearrangement μ f x * schwarzRearrangement μ g x ∂μ := by
+  rw [lintegral_mul_eq_lintegral_lintegral_measure_inter μ hf.aemeasurable hg.aemeasurable,
+    lintegral_mul_eq_lintegral_lintegral_measure_inter μ
+      (measurable_schwarzRearrangement μ f).aemeasurable
+      (measurable_schwarzRearrangement μ g).aemeasurable]
+  refine lintegral_mono fun t => lintegral_mono fun s => ?_
+  let A : Set E := {x | ENNReal.ofReal s < f x}
+  let B : Set E := {x | ENNReal.ofReal t < g x}
+  let A' : Set E := {x | ENNReal.ofReal s < schwarzRearrangement μ f x}
+  let B' : Set E := {x | ENNReal.ofReal t < schwarzRearrangement μ g x}
+  calc
+    μ (A ∩ B) ≤ min (μ A) (μ B) :=
+      le_min (measure_mono inter_subset_left) (measure_mono inter_subset_right)
+    _ = μ (A' ∩ B') := by
+      simp only [A, B, A', B', addHaar_inter_setOf_lt_schwarzRearrangement]
+
+/-- **Hardy--Littlewood rearrangement inequality.** For two nonnegative a.e.-measurable
+functions on a finite-dimensional real normed space, Schwarz rearrangement can only increase the
+integral of their product. The statement includes infinite integrals and dimension zero. -/
+theorem lintegral_mul_le_lintegral_schwarzRearrangement_mul {f g : E → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
+    (∫⁻ x, f x * g x ∂μ) ≤
+      ∫⁻ x, schwarzRearrangement μ f x * schwarzRearrangement μ g x ∂μ := by
+  let F := hf.mk f
+  let G := hg.mk g
+  calc
+    (∫⁻ x, f x * g x ∂μ) = ∫⁻ x, F x * G x ∂μ :=
+      lintegral_congr_ae (hf.ae_eq_mk.fun_mul hg.ae_eq_mk)
+    _ ≤ ∫⁻ x, schwarzRearrangement μ F x * schwarzRearrangement μ G x ∂μ :=
+      lintegral_mul_le_lintegral_schwarzRearrangement_mul_of_measurable μ
+        hf.measurable_mk hg.measurable_mk
+    _ = ∫⁻ x, schwarzRearrangement μ f x * schwarzRearrangement μ g x ∂μ := by
+      rw [schwarzRearrangement_congr_ae μ hf.ae_eq_mk.symm,
+        schwarzRearrangement_congr_ae μ hg.ae_eq_mk.symm]
 
 end AddHaar
 
