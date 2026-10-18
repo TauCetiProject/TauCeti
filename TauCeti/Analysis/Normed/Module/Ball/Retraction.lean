@@ -72,7 +72,8 @@ ball of radius `r` centred at the origin: vectors of norm at most `r` are fixed 
 pulled back along their ray to the sphere of radius `r`. -/
 noncomputable def radialRetraction (r : ℝ) (x : E) : E := min 1 (r / ‖x‖) • x
 
-/-- The radial retraction onto the closed ball of radius `r` centred at `x₀`. -/
+/-- Translate `radialRetraction r` to centre `x₀`: `x ↦ x₀ + radialRetraction r (x - x₀)`.
+When `0 ≤ r`, this is the radial retraction onto the closed ball of radius `r` centred at `x₀`. -/
 noncomputable def centeredRadialRetraction (x₀ : E) (r : ℝ) (x : E) : E :=
   x₀ + radialRetraction r (x - x₀)
 
