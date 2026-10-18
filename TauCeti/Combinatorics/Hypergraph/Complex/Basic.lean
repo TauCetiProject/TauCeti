@@ -95,10 +95,19 @@ theorem card_le_of_mem_toPreAbstractSimplicialComplex (C : HypergraphComplex r V
     (hs : s ∈ C.toPreAbstractSimplicialComplex) : s.card ≤ r :=
   hs.2.choose
 
-/-- Recover a finite grading from a bounded pre-abstract simplicial complex on a finite vertex
-type, adjoining the empty face. -/
-noncomputable def ofPreAbstractSimplicialComplex [Fintype V]
-    (K : PreAbstractSimplicialComplex V) (_hK : ∀ s ∈ K, s.card ≤ r) :
+end HypergraphComplex
+
+end TauCeti
+
+namespace PreAbstractSimplicialComplex
+
+open TauCeti
+
+variable {V : Type*}
+
+/-- The rank-`r` hypergraph complex of a pre-abstract simplicial complex on a finite vertex type:
+its faces of cardinality at most `r`, together with the adjoined empty face. -/
+noncomputable def toHypergraphComplex [Fintype V] (K : PreAbstractSimplicialComplex V) (r : ℕ) :
     HypergraphComplex r V := by
   classical
   exact {
@@ -116,49 +125,46 @@ noncomputable def ofPreAbstractSimplicialComplex [Fintype V]
         · exact Or.inr ((K.isRelLowerSet_faces hs).2 hts (Finset.nonempty_iff_ne_empty.mpr ht))
     empty_mem := by simp }
 
-/-- Membership in the grading recovered from a pre-abstract simplicial complex is membership in
-the original complex, except that the empty face is adjoined. -/
+/-- Membership in the rank-`r` hypergraph complex of a pre-abstract simplicial complex is
+membership in the original complex, except that the empty face is adjoined. -/
 @[simp]
-theorem mem_faces_ofPreAbstractSimplicialComplex [Fintype V]
-    (K : PreAbstractSimplicialComplex V) (hK : ∀ s ∈ K, s.card ≤ r)
+theorem mem_faces_toHypergraphComplex [Fintype V] (K : PreAbstractSimplicialComplex V) (r : ℕ)
     (k : ℕ) (hk : k ≤ r) (s : Finset V) :
-    s ∈ (ofPreAbstractSimplicialComplex K hK).faces k hk ↔
-      s.card = k ∧ (s = ∅ ∨ s ∈ K) := by
+    s ∈ (K.toHypergraphComplex r).faces k hk ↔ s.card = k ∧ (s = ∅ ∨ s ∈ K) := by
   classical
-  simp only [ofPreAbstractSimplicialComplex, mem_filter, mem_powersetCard, subset_univ,
-    true_and]
+  simp only [toHypergraphComplex, mem_filter, mem_powersetCard, subset_univ, true_and]
 
-/-- Forgetting the adjoined empty face recovers the bounded pre-abstract simplicial complex. -/
+/-- Forgetting the adjoined empty face recovers a pre-abstract simplicial complex whose faces have
+cardinality at most the rank. -/
 @[simp]
-theorem toPreAbstract_ofPreAbstract [Fintype V]
+theorem toPreAbstractSimplicialComplex_toHypergraphComplex [Fintype V] {r : ℕ}
     (K : PreAbstractSimplicialComplex V) (hK : ∀ s ∈ K, s.card ≤ r) :
-    (ofPreAbstractSimplicialComplex K hK).toPreAbstractSimplicialComplex = K := by
-  classical
+    (K.toHypergraphComplex r).toPreAbstractSimplicialComplex = K := by
   ext s
   constructor
   · rintro ⟨hs, hle, hface⟩
-    rcases (mem_faces_ofPreAbstractSimplicialComplex K hK s.card hle s).mp hface with
-      ⟨-, hs0 | hsK⟩
+    rcases (K.mem_faces_toHypergraphComplex r s.card hle s).mp hface with ⟨-, hs0 | hsK⟩
     · exact ((hs0 ▸ hs).ne_empty rfl).elim
     · exact hsK
   · intro hs
     refine ⟨(K.isRelLowerSet_faces hs).1, hK s hs, ?_⟩
-    exact (mem_faces_ofPreAbstractSimplicialComplex K hK s.card (hK s hs) s).mpr
-      ⟨rfl, Or.inr hs⟩
+    exact (K.mem_faces_toHypergraphComplex r s.card (hK s hs) s).mpr ⟨rfl, Or.inr hs⟩
+
+end PreAbstractSimplicialComplex
+
+namespace TauCeti.HypergraphComplex
+
+variable {r : ℕ} {V : Type*}
 
 /-- Adjoining the empty face after forgetting the grading recovers the original hypergraph
 complex. -/
 @[simp]
-theorem ofPreAbstract_toPreAbstract [Fintype V] (C : HypergraphComplex r V) :
-    ofPreAbstractSimplicialComplex C.toPreAbstractSimplicialComplex
-      (fun _ hs ↦ C.card_le_of_mem_toPreAbstractSimplicialComplex hs) = C := by
-  classical
-  ext k hk
-  rename_i s
+theorem toHypergraphComplex_toPreAbstractSimplicialComplex [Fintype V]
+    (C : HypergraphComplex r V) : C.toPreAbstractSimplicialComplex.toHypergraphComplex r = C := by
+  ext k hk s
   constructor
   · intro hface
-    rcases (mem_faces_ofPreAbstractSimplicialComplex C.toPreAbstractSimplicialComplex
-      (fun _ hs ↦ C.card_le_of_mem_toPreAbstractSimplicialComplex hs) k hk s).mp hface with
+    rcases (C.toPreAbstractSimplicialComplex.mem_faces_toHypergraphComplex r k hk s).mp hface with
       ⟨hcard, rfl | ⟨-, hle, hs⟩⟩
     · simp only [card_empty] at hcard
       subst k
@@ -167,15 +173,12 @@ theorem ofPreAbstract_toPreAbstract [Fintype V] (C : HypergraphComplex r V) :
   · intro hs
     have hcard := C.face_card k hk s hs
     subst k
-    apply (mem_faces_ofPreAbstractSimplicialComplex C.toPreAbstractSimplicialComplex
-      (fun _ hs ↦ C.card_le_of_mem_toPreAbstractSimplicialComplex hs) s.card hk s).mpr
+    apply (C.toPreAbstractSimplicialComplex.mem_faces_toHypergraphComplex r s.card hk s).mpr
     refine ⟨rfl, ?_⟩
     by_cases hs0 : s = ∅
     · exact Or.inl hs0
     · exact Or.inr ⟨Finset.nonempty_iff_ne_empty.mpr hs0, ⟨hk, hs⟩⟩
 
-end HypergraphComplex
-
-end TauCeti
+end TauCeti.HypergraphComplex
 
 end
