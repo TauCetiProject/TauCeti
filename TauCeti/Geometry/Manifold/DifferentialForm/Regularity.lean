@@ -345,6 +345,18 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     exact contDiffWithinAt_const
   exact hflat _ _ _
 
+/-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
+function into the space of alternating maps. -/
+theorem isSmoothForm_modelSpace_iff {n : WithTop ℕ∞} {φ : RoughForm 𝓘(ℝ, E) E F k} :
+    IsSmoothForm 𝓘(ℝ, E) n φ ↔ ContDiff ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ := by
+  have key (x : E) : ContDiffWithinAt ℝ n (φ.inChartAt x) (range 𝓘(ℝ, E))
+      (extChartAt 𝓘(ℝ, E) x x) ↔ ContDiffAt ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ x := by
+    simp only [RoughForm.inChartAt_modelSpace, modelWithCornersSelf_coe, range_id]
+    exact contDiffWithinAt_univ
+  exact ⟨fun h ↦ contDiff_iff_contDiffAt.mpr fun x ↦
+      (key x).mp (h.contDiffWithinAt_inChartAt_self x),
+    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).mpr h.contDiffAt⟩
+
 variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
