@@ -27,7 +27,7 @@ relations; see Wilfrid Hodges, *Model Theory* (1993), the treatment of back-and-
 
 public section
 
-universe u v w w'
+universe u v w w' o
 
 namespace TauCeti
 
@@ -74,7 +74,7 @@ theorem dropLast_succ (h : SameAtomicType (L := L) a b) (f : M → N) (g : N →
       .succ h f g (fun x => dropLast (fc x)) (fun y => dropLast (gc y)) := (rfl)
 
 /-- A winning `k`-round strategy implies back-and-forth equivalence at level `k`. -/
-theorem bfEquiv (s : EFStrategy L k a b) : BFEquiv (L := L) (k : Ordinal.{0}) n a b := by
+theorem bfEquiv (s : EFStrategy L k a b) : BFEquiv (L := L) (k : Ordinal.{o}) n a b := by
   induction k generalizing n with
   | zero =>
     cases s with
@@ -84,20 +84,19 @@ theorem bfEquiv (s : EFStrategy L k a b) : BFEquiv (L := L) (k : Ordinal.{0}) n 
     cases s with
     | succ h f g fc gc =>
       simpa only [Nat.cast_add, Nat.cast_one] using
-        (BFEquiv.add_one (k : Ordinal.{0}) a b).mpr
+        (BFEquiv.add_one (k : Ordinal.{o}) a b).mpr
           ⟨hprev, fun x => ⟨f x, ih (fc x)⟩, fun y => ⟨g y, ih (gc y)⟩⟩
 
 /-- Finite back-and-forth equivalence is exactly existence of a winning finite strategy. -/
-@[simp]
 theorem nonempty_iff_bfEquiv :
-    Nonempty (EFStrategy L k a b) ↔ BFEquiv (L := L) (k : Ordinal.{0}) n a b := by
+    Nonempty (EFStrategy L k a b) ↔ BFEquiv (L := L) (k : Ordinal.{o}) n a b := by
   classical
   refine ⟨fun ⟨s⟩ => s.bfEquiv, ?_⟩
   intro h
   induction k generalizing n with
   | zero => exact ⟨.zero (BFEquiv.zero.mp h)⟩
   | succ k ih =>
-    have hs := (BFEquiv.add_one (k : Ordinal.{0}) a b).mp
+    have hs := (BFEquiv.add_one (k : Ordinal.{o}) a b).mp
       (by simpa only [Nat.cast_add, Nat.cast_one] using h)
     exact ⟨.succ hs.1.sameAtomicType
       (fun x => Classical.choose (hs.2.1 x)) (fun y => Classical.choose (hs.2.2 y))
@@ -106,10 +105,9 @@ theorem nonempty_iff_bfEquiv :
 
 /-- An unrelated winning strategy for every finite length amounts only to level-`ω`
 back-and-forth equivalence. No compatibility between these strategies is imposed. -/
-@[simp]
 theorem nonempty_family_iff_bfEquiv_omega0 :
     Nonempty (∀ k : ℕ, EFStrategy L k a b) ↔
-      BFEquiv (L := L) (Ordinal.omega0 : Ordinal.{0}) n a b := by
+      BFEquiv (L := L) (Ordinal.omega0 : Ordinal.{o}) n a b := by
   classical
   rw [BFEquiv.limit Ordinal.isSuccLimit_omega0]
   constructor

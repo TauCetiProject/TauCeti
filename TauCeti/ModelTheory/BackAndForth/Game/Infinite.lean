@@ -72,7 +72,23 @@ structure CoherentEFStrategy where
 
 namespace CoherentEFStrategy
 
+attribute [simp] left_nil right_nil forth_left back_right
+
 variable {L a b}
+
+/-- A response to a move in the first structure preserves every earlier entry. -/
+@[simp]
+theorem forth_right_castSucc (s : CoherentEFStrategy L a b) (h : List (M ⊕ N)) (x : M)
+    (i : Fin (n + h.length)) : s.right (.inl x :: h) i.castSucc = s.right h i := by
+  rw [s.forth_right]
+  exact snoc_castSucc _ _ _
+
+/-- A response to a move in the second structure preserves every earlier entry. -/
+@[simp]
+theorem back_left_castSucc (s : CoherentEFStrategy L a b) (h : List (M ⊕ N)) (y : N)
+    (i : Fin (n + h.length)) : s.left (.inr y :: h) i.castSucc = s.left h i := by
+  rw [s.back_left]
+  exact snoc_castSucc _ _ _
 
 /-- A coherent strategy is determined by its paired positions at every history. -/
 @[ext]
@@ -233,7 +249,7 @@ variable {n : ℕ} {a : Fin n → M} {b : Fin n → N}
 
 -- Repeated entries cause no problem: the identity matching wins every finite game.
 example (a : Fin n → M) (k : ℕ) : Nonempty (EFStrategy L k a a) := by
-  simp
+  exact EFStrategy.nonempty_iff_bfEquiv.mpr (BFEquiv.refl (k : Ordinal.{0}) a)
 
 -- One strategy makes its responses before the future length of play is specified.
 example (s : CoherentEFStrategy L a b) : Nonempty (∀ k, EFStrategy L k a b) :=
@@ -241,20 +257,18 @@ example (s : CoherentEFStrategy L a b) : Nonempty (∀ k, EFStrategy L k a b) :=
 
 -- A separately chosen strategy at each length states only level-omega equivalence.
 example : Nonempty (∀ k, EFStrategy L k a b) ↔
-    BFEquiv (L := L) (Ordinal.omega0 : Ordinal.{0}) n a b := by
-  simp
+    BFEquiv (L := L) (Ordinal.omega0 : Ordinal.{0}) n a b :=
+  EFStrategy.nonempty_family_iff_bfEquiv_omega0
 
 -- Old entries never change when Spoiler chooses the left side.
 example (s : CoherentEFStrategy L a b) (h : List (M ⊕ N)) (x : M)
     (i : Fin (n + h.length)) : s.right (.inl x :: h) i.castSucc = s.right h i := by
-  rw [s.forth_right]
-  exact snoc_castSucc _ _ _
+  simp
 
 -- Nor when Spoiler chooses the right side.
 example (s : CoherentEFStrategy L a b) (h : List (M ⊕ N)) (y : N)
     (i : Fin (n + h.length)) : s.left (.inr y :: h) i.castSucc = s.left h i := by
-  rw [s.back_left]
-  exact snoc_castSucc _ _ _
+  simp
 
 -- Any isomorphism supplies a coherent strategy, without countability assumptions.
 example (e : M ≃[L] N) :
@@ -282,7 +296,8 @@ private noncomputable instance : nullaryLanguage.Structure (ULift Empty) where
 example : ¬ Nonempty (EFStrategy nullaryLanguage 0
     (Fin.elim0 : Fin 0 → Empty) (Fin.elim0 : Fin 0 → ULift Empty)) := by
   rintro ⟨s⟩
-  exact (s.bfEquiv.sameAtomicType.rel_iff (k := 0) ⟨rfl⟩ Fin.elim0).mp trivial
+  have h : BFEquiv (L := nullaryLanguage) (0 : Ordinal.{0}) 0 _ _ := s.bfEquiv
+  exact (h.sameAtomicType.rel_iff (k := 0) ⟨rfl⟩ Fin.elim0).mp trivial
 
 -- An infinite strategy must also pass the initial check, even with no legal moves.
 example : ¬ Nonempty (CoherentEFStrategy nullaryLanguage
