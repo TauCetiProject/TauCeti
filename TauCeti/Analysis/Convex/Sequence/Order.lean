@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Sequence.SlopeData
+public import TauCeti.Analysis.Convex.Sequence.SlopeData.Basic
 
 /-!
 # The order on height sequences and partial sums of slopes
