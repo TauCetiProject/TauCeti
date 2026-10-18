@@ -24,6 +24,7 @@ namespace TauCeti
 variable (R : Type*) [CommRing R]
 
 -- One selector for a two-sheet algebra gives its kernel, localization, and product split.
+-- Use the public names in the section-selector namespace explicitly.
 example : ∃ e : Fin 2 → R, IsIdempotentElem e ∧
     RingHom.ker (Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0) = Ideal.span {1 - e} ∧
     (let _ := (Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0).toRingHom.toAlgebra;
@@ -32,8 +33,10 @@ example : ∃ e : Fin 2 → R, IsIdempotentElem e ∧
       ∀ s, E s = (s 0, Ideal.Quotient.mk _ s) := by
   let σ := Pi.evalAlgHom R (fun _ : Fin 2 ↦ R) 0
   obtain ⟨e, he, _, hker⟩ := exists_isIdempotentElem_ker_eq_span R _ σ
-  exact ⟨e, he, hker, isLocalizationAway_of_ker_eq_span σ he hker,
-    prodOfKerEqSpan σ he hker, fun s ↦ prodOfKerEqSpan_apply σ he hker s⟩
+  exact ⟨e, he, hker,
+    TauCeti.Algebra.FormallyUnramified.isLocalizationAway_of_ker_eq_span σ he hker,
+    TauCeti.Algebra.FormallyUnramified.prodOfKerEqSpan σ he hker,
+    fun s ↦ TauCeti.Algebra.FormallyUnramified.prodOfKerEqSpan_apply σ he hker s⟩
 
 -- The identity section has zero kernel, so its complementary component is empty.
 example : ∃ e : R, IsIdempotentElem e ∧ e = 1 ∧ Ideal.span {1 - e} = ⊥ := by
