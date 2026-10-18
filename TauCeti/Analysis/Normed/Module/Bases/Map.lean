@@ -59,7 +59,6 @@ theorem map_map (b : GeneralSchauderBasis β 𝕜 E L) (e : E ≃L[𝕜] F) (f :
 
 /-- Finite coordinate projections of the transported basis are the conjugates of the
 original projections. -/
-@[simp]
 theorem map_proj_apply (b : GeneralSchauderBasis β 𝕜 E L) (e : E ≃L[𝕜] F)
     (s : Finset β) (x : F) : (b.map e).proj s x = e (b.proj s (e.symm x)) := by
   simp [proj_apply, map_sum, map_smul]
