@@ -46,13 +46,8 @@ theorem map_max_pi_gumbelMeasure {ι : Type*} [Fintype ι] [Nonempty ι] :
       gumbelMeasure (m + s * Real.log (Fintype.card ι)) s := by
   rcases le_or_gt s 0 with hs | hs
   · have hpi : Measure.pi (fun _ : ι => gumbelMeasure m s) = 0 := by
-      rw [show (fun _ : ι => gumbelMeasure m s) = fun _ => (0 : Measure ℝ) by
-        funext i
-        rw [gumbelMeasure_of_nonpos hs]]
-      apply Measure.measure_univ_eq_zero.mp
-      rw [Measure.pi_univ]
-      apply Finset.prod_eq_zero (Finset.mem_univ (Classical.choice inferInstance))
-      rfl
+      simp_rw [gumbelMeasure_of_nonpos hs]
+      exact Measure.measure_univ_eq_zero.mp (by simp [Measure.pi_univ])
     rw [hpi, Measure.map_zero, gumbelMeasure_of_nonpos hs]
   let _ : IsProbabilityMeasure (gumbelMeasure m s) :=
     isProbabilityMeasure_gumbelMeasure hs m
