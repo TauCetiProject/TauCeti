@@ -6,12 +6,10 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
-import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Coordinate
+public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Coordinate
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
-import TauCeti.RingTheory.RingHom.FaithfullyFlat
+public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
