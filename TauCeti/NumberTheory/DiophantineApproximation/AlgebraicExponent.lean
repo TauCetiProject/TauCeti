@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 public import TauCeti.NumberTheory.Height.Naive
--- Proof-only: Northcott finiteness for the naive height, and coefficient-length bounds.
-import TauCeti.Analysis.Polynomial.L1Norm
+-- Proof-only: Northcott finiteness for the naive height.
 import TauCeti.NumberTheory.Height.Counting
 
 /-!
@@ -30,8 +29,6 @@ by the roots of such polynomials.
   not change whether there are infinitely many approximations.
 * `algebraicApproximationExponent_mono`: `w*ₙ(ξ)` is monotone in `n`, and
   `algebraicApproximationExponent_zero`: it vanishes for `n = 0`.
-* `norm_aeval_primitiveMinpoly_le`: near a complex algebraic number `α` of degree `d`, its
-  primitive minimal polynomial satisfies `|F_α(z)| ≤ (d + 1) (2 + |z|) ^ d H(α) |z - α|`.
 * `algebraicApproximationExponent_le_mahlerExponent`: `w*ₙ(ξ) ≤ wₙ(ξ)` for every real `ξ`, with
   no hypothesis on `ξ`: the conjugates of an algebraic `ξ` are only finitely many approximations.
 * `algebraicApproximationExponent_one_add`: `w*₁(ξ) + 1 = μ(ξ)`, where `μ` is the irrationality
@@ -163,55 +160,10 @@ private theorem norm_coeffVec_le (n : ℕ) (P : ℤ[X]) : ‖coeffVec n P‖ ≤
 /-- Polynomials of degree at most `n` are determined by `coeffVec n`. -/
 private theorem coeffVec_injOn (n : ℕ) : Set.InjOn (coeffVec n) {P | P.natDegree ≤ n} := by
   intro P hP Q hQ h
-  ext i
+  refine (ext_iff_natDegree_le hP hQ).2 fun i hi ↦ ?_
   rcases i with _ | i
   · exact congrArg Prod.fst h
-  · by_cases hi : i < n
-    · exact congrFun (congrArg Prod.snd h) ⟨i, hi⟩
-    · rw [Set.mem_ofPred_eq] at hP hQ
-      rw [coeff_eq_zero_of_natDegree_lt (by omega), coeff_eq_zero_of_natDegree_lt (by omega)]
-
-/-- Near a complex algebraic number `α` of degree `d`, its primitive minimal polynomial `F_α` is
-small: `|F_α(z)| ≤ (d + 1) (2 + |z|) ^ d H(α) |z - α|` whenever `|z - α| ≤ 1`, where `H(α)` is the
-naive height of `α`. -/
-theorem norm_aeval_primitiveMinpoly_le {α z : ℂ} (hα : IsAlgebraic ℚ α) (hz : ‖z - α‖ ≤ 1) :
-    ‖aeval z (primitiveMinpoly α)‖ ≤ ((minpoly ℚ α).natDegree + 1) *
-      (2 + ‖z‖) ^ (minpoly ℚ α).natDegree * naiveHeight α * ‖z - α‖ := by
-  set d := (minpoly ℚ α).natDegree
-  set P := (primitiveMinpoly α).map (Int.castRingHom ℂ)
-  have hroot : P.IsRoot α := by
-    simpa [P, IsRoot, eval_map, aeval_def] using aeval_primitiveMinpoly hα
-  -- Dividing out the root `α` writes `F_α(z) = V(z) (z - α)`.
-  have hV : P /ₘ (X - C α) * (X - C α) ^ 1 = P := by
-    rw [pow_one, mul_comm]
-    exact mul_divByMonic_eq_iff_isRoot.2 hroot
-  have heval : aeval z (primitiveMinpoly α) = (P /ₘ (X - C α)).eval z * (z - α) := by
-    have h : P.eval z = (P /ₘ (X - C α)).eval z * (z - α) := by
-      conv_lhs => rw [← hV]
-      simp
-    rwa [aeval_def, algebraMap_int_eq, ← eval_map]
-  have hdeg : P.natDegree ≤ d := natDegree_map_le.trans (natDegree_primitiveMinpoly α).le
-  have hα₁ : 1 + ‖α‖ ≤ 2 + ‖z‖ := by
-    have := norm_le_norm_add_norm_sub' α z
-    rw [norm_sub_rev] at this
-    linarith
-  have hpow : (1 + ‖α‖) ^ P.natDegree ≤ (2 + ‖z‖) ^ d :=
-    (pow_le_pow_left₀ (by positivity) hα₁ _).trans
-      (pow_le_pow_right₀ (by linarith [norm_nonneg z]) hdeg)
-  have hl1 : P.l1Norm ≤ (d + 1) * naiveHeight α := by
-    rw [l1Norm_map _ _ fun x ↦ by simp [Int.norm_eq_abs]]
-    refine ((primitiveMinpoly α).l1Norm_le_natDegree_add_one_mul_supNorm).trans ?_
-    rw [naiveHeight_def, natDegree_primitiveMinpoly]
-  have hH : 0 ≤ (d + 1 : ℝ) * naiveHeight α :=
-    mul_nonneg (by positivity) (zero_le_one.trans (one_le_naiveHeight α))
-  calc ‖aeval z (primitiveMinpoly α)‖ = ‖(P /ₘ (X - C α)).eval z‖ * ‖z - α‖ := by
-        rw [heval, norm_mul]
-    _ ≤ P.l1Norm * (1 + ‖α‖) ^ P.natDegree * ‖z - α‖ := by
-        gcongr
-        exact norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq hV hz
-    _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d * ‖z - α‖ := by
-        gcongr
-    _ = (d + 1) * (2 + ‖z‖) ^ d * naiveHeight α * ‖z - α‖ := by ring
+  · exact congrFun (congrArg Prod.snd h) ⟨i, by omega⟩
 
 /-- If infinitely many algebraic numbers of degree at most `n` approximate `ξ` with exponent `w`,
 then for every `0 ≤ w' < w` infinitely many integer polynomials `P` of degree at most `n` satisfy
