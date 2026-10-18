@@ -458,7 +458,7 @@ include hG hD
 
 /-- Every orientation of a connected non-Dynkin graph carries a positive weight which is
 superadditive on its underlying multigraph. -/
-private theorem exists_pos_two_mul_le_sum_orientedQuiver :
+theorem exists_pos_two_mul_le_sum_orientedQuiver :
     ∃ δ : OrientedQuiver G o → ℝ, (∀ i, 0 < δ i) ∧ ∀ i, 2 * δ i ≤
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : ℝ) * δ j := by
   classical
