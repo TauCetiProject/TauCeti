@@ -42,6 +42,16 @@ variable {E H E' H' E'' H'' : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
   [TopologicalSpace M''] [ChartedSpace H'' M''] [IsManifold I'' 2 M'']
 
+/-- Pullback of smooth forms along a smooth map commutes with the exterior derivative. -/
+theorem SmoothForm.mextDerivₗ_mpullback {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) (φ : SmoothForm I' M' F k) :
+    mextDerivₗ I k (SmoothForm.mpullback f hf φ) =
+      SmoothForm.mpullback f hf (mextDerivₗ I' k φ) := by
+  apply Subtype.ext
+  rw [mextDerivₗ_apply, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, mextDerivₗ_apply]
+  exact (mpullback_mextDeriv (hf.of_le (by simp)) ((isSmoothBundleForm_def 1 φ.1).mpr
+    (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).of_le (by simp)))).symm
+
 namespace closedForms
 
 /-- Pullback of closed smooth forms along a smooth map. -/
@@ -49,17 +59,10 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
     closedForms I' M' k →ₗ[ℝ] closedForms I M k :=
   ((SmoothForm.mpullback f hf).domRestrict (closedForms I' M' k)).codRestrict
     (closedForms I M k) fun φ ↦ by
-      rw [mem_closedForms]
-      have hclosed := (mem_closedForms (I := I') (M := M') φ.1).mp φ.2
-      have hreg : IsSmoothBundleForm (I := I') (F := ℝ)
-          (V := Bundle.Trivial M' ℝ) 1 φ.1.1 := by
-        rw [isSmoothBundleForm_def]
-        exact ((isSmoothBundleForm_def ∞ φ.1.1).mp
-          (mem_smoothForms.mp φ.1.2)).of_le (by simp)
-      -- The codomain restriction hides the underlying smooth form from the naturality theorem.
-      change mextDeriv (SmoothForm.mpullback f hf φ.1).1 = 0
-      rw [SmoothForm.coe_mpullback, ← mpullback_mextDeriv (hf.of_le (by simp)) hreg,
-        hclosed, TauCeti.mpullback_zero]
+      have hclosed : mextDerivₗ I' k φ.1 = 0 :=
+        Subtype.ext (by rw [mextDerivₗ_apply, (mem_closedForms I' φ.1).mp φ.2, Submodule.coe_zero])
+      rw [mem_closedForms, LinearMap.domRestrict_apply, ← mextDerivₗ_apply,
+        SmoothForm.mextDerivₗ_mpullback, hclosed, map_zero, Submodule.coe_zero]
 
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
