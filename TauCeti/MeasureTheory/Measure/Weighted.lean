@@ -62,7 +62,6 @@ theorem weighted_congr {μ : Measure α} {w v : α → ℝ≥0} (h : w =ᵐ[μ] 
   rw [weighted_def, weighted_def, lintegral_congr_ae hcoe, withDensity_congr_ae hcoe]
 
 /-- A zero total weight gives the zero measure. -/
-@[simp]
 theorem weighted_eq_zero_of_lintegral_eq_zero {μ : Measure α} {w : α → ℝ≥0}
     (h : ∫⁻ x, (w x : ℝ≥0∞) ∂μ = 0) : μ.weighted w = 0 := by
   have hdensity : μ.withDensity (fun x => (w x : ℝ≥0∞)) = 0 := by
