@@ -52,6 +52,12 @@ theorem coe_spinGroupToEven_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
     (spinGroupToEven Q x : CliffordAlgebra Q) = x :=
   (rfl)
 
+/-- `spinGroupToEven` on an explicitly packaged Spin element. -/
+@[simp]
+theorem spinGroupToEven_mk (x : CliffordAlgebra Q) (hx : x ∈ spinGroup Q) :
+    spinGroupToEven Q ⟨x, hx⟩ = ⟨x, spinGroup.mem_even hx⟩ :=
+  Subtype.ext (coe_spinGroupToEven_apply Q _)
+
 /-- The product of two Clifford generators belongs to Spin when their norms multiply to one. -/
 theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
     (hxy : Q x * Q y = 1) :

@@ -7,10 +7,12 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Center
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 
 /-!
 # The Spin groups of a quadratic form and of its negative
@@ -60,15 +62,6 @@ section Products
 
 variable {Q : QuadraticForm R M}
 
-/-- Moving a vector `m` past `ι Q v` replaces it by `r • v - m`, where `r * Q v` is the polar
-pairing. This description is unchanged when `Q` is replaced by `-Q`. -/
-private theorem ι_mul_ι_eq_ι_smul_sub_mul_ι (v m : M) {r : R}
-    (hr : r * Q v = polar Q v m) :
-    ι Q v * ι Q m = ι Q (r • v - m) * ι Q v := by
-  rw [map_sub, map_smul, sub_mul, smul_mul_assoc, ι_sq_scalar, Algebra.smul_def,
-    ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
-    ← ι_mul_ι_add_swap, add_sub_cancel_right]
-
 /-- A product of vectors of invertible norm moves a vector past itself in the same way in the
 Clifford algebras of `Q` and of `-Q`. -/
 private theorem exists_prod_map_ι_mul_ι_eq (l : List M) (hl : ∀ v ∈ l, IsUnit (Q v)) (m : M) :
@@ -88,30 +81,6 @@ private theorem exists_prod_map_ι_mul_ι_eq (l : List M) (hl : ∀ v ∈ l, IsU
         ι_mul_ι_eq_ι_smul_sub_mul_ι v w hr, mul_assoc]
     · rw [List.map_cons, List.prod_cons, mul_assoc, h₂, ← mul_assoc,
         ι_mul_ι_eq_ι_smul_sub_mul_ι v w hr', mul_assoc]
-
-/-- On a product of `2k` vectors, `evenEquivEvenNeg` is the same product in the Clifford algebra of
-`-Q`, multiplied by `(-1) ^ k`. -/
-private theorem coe_evenEquivEvenNeg_prod_map_ι :
-    ∀ (l : List M), Even l.length → ∀ h : (l.map (ι Q)).prod ∈ even Q,
-      (evenEquivEvenNeg Q ⟨_, h⟩ : CliffordAlgebra (-Q)) =
-        (-1 : R) ^ (l.length / 2) • (l.map (ι (-Q))).prod
-  | [], _, h => by
-    have h₁ : (⟨_, h⟩ : even Q) = 1 := Subtype.ext (by simp)
-    rw [h₁, map_one]
-    simp
-  | [_], hl, _ => absurd hl (by simp)
-  | a :: b :: l, hl, h => by
-    have hl' : Even l.length := by simpa [Nat.even_add_one] using hl
-    have hsplit : (⟨_, h⟩ : even Q) =
-        (even.ι Q).bilin a b * ⟨_, prod_map_ι_mem_even_of_even_length hl'⟩ :=
-      Subtype.ext (by simp [mul_assoc])
-    have hlen : (a :: b :: l).length / 2 = l.length / 2 + 1 := by
-      simp only [List.length_cons]
-      omega
-    rw [hsplit, map_mul, evenEquivEvenNeg_apply, evenToNeg_ι,
-      Subalgebra.coe_mul, NegMemClass.coe_neg, coe_even_ι_bilin,
-      coe_evenEquivEvenNeg_prod_map_ι l hl' _, hlen]
-    simp [pow_succ, mul_assoc]
 
 variable [Invertible (2 : R)]
 
@@ -138,18 +107,12 @@ private theorem coe_evenToNeg_mem_spinGroup (Q' : QuadraticForm R M) (h : Q' = -
   have hstar : star (y : CliffordAlgebra (-Q)) =
       evenEquivEvenNeg Q (reverseEven Q (spinGroupToEven Q x)) := by
     rw [← reverse_eq_star_of_mem_even, ← coe_reverseEven_apply, evenEquivEvenNeg_reverseEven]
-  have hrev₁ : reverseEven Q (spinGroupToEven Q x) * spinGroupToEven Q x = 1 :=
-    Subtype.ext (by
-      rw [Subalgebra.coe_mul, coe_reverseEven_apply, reverse_eq_star_of_mem_even,
-        coe_spinGroupToEven_apply, spinGroup.coe_star_mul_self, Subalgebra.coe_one])
-  have hrev₂ : spinGroupToEven Q x * reverseEven Q (spinGroupToEven Q x) = 1 :=
-    Subtype.ext (by
-      rw [Subalgebra.coe_mul, coe_reverseEven_apply, reverse_eq_star_of_mem_even,
-        coe_spinGroupToEven_apply, spinGroup.mul_star_self_of_mem x.2, Subalgebra.coe_one])
   have hunit₁ : star (y : CliffordAlgebra (-Q)) * y = 1 := by
-    rw [hstar, ← Subalgebra.coe_mul, ← map_mul, hrev₁, map_one, Subalgebra.coe_one]
+    rw [hstar, ← Subalgebra.coe_mul, ← map_mul, reverseEven_spinGroupToEven_mul_self, map_one,
+      Subalgebra.coe_one]
   have hunit₂ : (y : CliffordAlgebra (-Q)) * star (y : CliffordAlgebra (-Q)) = 1 := by
-    rw [hstar, ← Subalgebra.coe_mul, ← map_mul, hrev₂, map_one, Subalgebra.coe_one]
+    rw [hstar, ← Subalgebra.coe_mul, ← map_mul, spinGroupToEven_mul_reverseEven, map_one,
+      Subalgebra.coe_one]
   refine spinGroup.mem_iff.mpr ⟨pinGroup.mem_iff.mpr ⟨?_, Unitary.mem_iff.mpr ⟨hunit₁, hunit₂⟩⟩,
     y.2⟩
   let u : (CliffordAlgebra (-Q))ˣ := ⟨y, star (y : CliffordAlgebra (-Q)), hunit₂, hunit₁⟩
@@ -165,12 +128,6 @@ private theorem coe_evenToNeg_mem_spinGroup (Q' : QuadraticForm R M) (h : Q' = -
           (by simpa using (hl _ List.mem_cons_self).neg)
       · simpa using (hl v (List.mem_cons_of_mem a hv)).neg
     · simp only [u, hy, List.map_cons, List.prod_cons, map_smul, smul_mul_assoc]
-
-omit [Invertible (2 : R)] in
-/-- `spinGroupToEven` on an explicitly packaged Spin element. -/
-private theorem spinGroupToEven_mk (x : CliffordAlgebra Q) (hx : x ∈ spinGroup Q) :
-    spinGroupToEven Q ⟨x, hx⟩ = ⟨x, spinGroup.mem_even hx⟩ :=
-  Subtype.ext (coe_spinGroupToEven_apply Q _)
 
 end Products
 
@@ -231,16 +188,9 @@ theorem spinVectorAction_spinGroupEquivNeg (x : spinGroup Q) :
   ext m
   obtain ⟨l, hl, hx, hy⟩ := exists_list_of_spinGroup x
   obtain ⟨w, h₁, h₂⟩ := exists_prod_map_ι_mul_ι_eq l hl m
-  have hQ : spinVectorAction Q x m = w := by
-    apply ι_injective Q
-    rw [ι_spinVectorAction_apply, hx, h₁, mul_assoc, ← hx, spinGroup.mul_star_self_of_mem x.2,
-      mul_one]
-  have hnegQ : spinVectorAction (-Q) (spinGroupEquivNeg Q x) m = w := by
-    apply ι_injective (-Q)
-    rw [ι_spinVectorAction_apply, coe_spinGroupEquivNeg_apply, hy, smul_mul_assoc, h₂,
-      ← mul_smul_comm, ← hy, ← coe_spinGroupEquivNeg_apply, mul_assoc,
-      spinGroup.mul_star_self_of_mem (spinGroupEquivNeg Q x).2, mul_one]
-  rw [hQ, hnegQ]
+  rw [spinVectorAction_eq_of_mul_ι_eq Q x (by rw [hx, h₁]),
+    spinVectorAction_eq_of_mul_ι_eq (-Q) _ (by
+      rw [coe_spinGroupEquivNeg_apply, hy, smul_mul_assoc, h₂, mul_smul_comm])]
 
 /-- The isomorphism `spinGroupEquivNeg` sends the central element `-1` to `-1`. -/
 @[simp]
