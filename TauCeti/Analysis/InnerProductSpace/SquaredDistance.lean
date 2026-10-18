@@ -19,9 +19,9 @@ first and second derivatives of the squared-distance function
 `x ↦ ‖i x - a‖ ^ 2`.
 
 A point is critical exactly when the displacement from `a` is orthogonal to the range of `Di`.
-The Hessian is the sum of the pullback metric term and the pairing of the displacement with
-`D²i`. For a holomorphic map between complex normed spaces, the latter terms cancel between `v`
-and `I • v`. Consequently the Levi diagonal is exactly `‖Di(v)‖²`, and a holomorphic immersion
+The Hessian is twice the sum of the pullback metric term and the pairing of the displacement
+with `D²i`. For a holomorphic map between complex normed spaces, the latter terms cancel between
+`v` and `I • v`. Consequently the Levi diagonal is exactly `‖Di(v)‖²`, and a holomorphic immersion
 pulls squared distance back to a strictly plurisubharmonic function.
 
 These formulas are the local inner-product-space calculation behind squared-distance
