@@ -90,7 +90,6 @@ theorem weighted_eq_zero_of_lintegral_eq_top {μ : Measure α} {w : α → ℝ�
   simp
 
 /-- Weighting by the zero function gives the zero measure. -/
-@[simp]
 theorem weighted_zero (μ : Measure α) : μ.weighted 0 = 0 := by
   apply weighted_eq_zero_of_lintegral_eq_zero
   simp
