@@ -146,26 +146,31 @@ private theorem sum_smul_starSubdivisionGenerator [Fintype (ToricRay τ)]
 
 end Generator
 
-section Regular
+section Independence
 
-variable (hτ : IsRegularCone i τ)
+variable (hτ : IsToricCone i τ)
 
-/-- Two linear combinations of the real ray generators of the star subdivision of a regular cone
-agree only if, at every ray `ρ`, the coefficient at `some ρ` plus, when `ρ ∈ A`, the coefficient
-at `none` agree: the primitive generators of `τ` are linearly independent. -/
-private theorem coeff_eq_of_sum_smul_eq [Fintype (ToricRay τ)] [DecidableEq (ToricRay τ)]
+/-- Two linear combinations of the real ray generators of the star subdivision agree only if, at
+every ray `ρ`, the coefficient at `some ρ` plus, when `ρ ∈ A`, the coefficient at `none` agree,
+provided that the primitive generators of `τ` are linearly independent. -/
+private theorem coeff_eq_of_sum_smul_eq
+    (hli : LinearIndependent ℝ (fun ρ ↦ i (primitiveGenerator hi hτ ρ)))
+    [Fintype (ToricRay τ)] [DecidableEq (ToricRay τ)]
     {c d : Option (ToricRay τ) → ℝ}
-    (h : ∑ k, c k • i (starSubdivisionGenerator hi A hτ.toIsToricCone k) =
-      ∑ k, d k • i (starSubdivisionGenerator hi A hτ.toIsToricCone k)) (ρ : ToricRay τ) :
+    (h : ∑ k, c k • i (starSubdivisionGenerator hi A hτ k) =
+      ∑ k, d k • i (starSubdivisionGenerator hi A hτ k)) (ρ : ToricRay τ) :
     c (some ρ) + (if ρ ∈ A then c none else 0) = d (some ρ) + (if ρ ∈ A then d none else 0) := by
   rw [sum_smul_starSubdivisionGenerator, sum_smul_starSubdivisionGenerator] at h
-  exact Fintype.linearIndependent_iffₛ.1 (hτ.linearIndependent_primitiveGenerator hi) _ _ h ρ
+  exact Fintype.linearIndependent_iffₛ.1 hli _ _ h ρ
 
-/-- Any family of ray generators of the star subdivision of a regular cone omitting a generator
-indexed by `A` is linearly independent over the reals. -/
-theorem linearIndepOn_starSubdivisionGenerator {S : Set (Option (ToricRay τ))}
+/-- If the primitive ray generators of a toric cone are linearly independent, then any family of
+ray generators of its star subdivision omitting a generator indexed by `A` is linearly independent
+over the reals. -/
+theorem linearIndepOn_starSubdivisionGenerator
+    (hli : LinearIndependent ℝ (fun ρ ↦ i (primitiveGenerator hi hτ ρ)))
+    {S : Set (Option (ToricRay τ))}
     (hS : ∃ ρ ∈ A, some ρ ∉ S) :
-    LinearIndepOn ℝ (fun k ↦ i (starSubdivisionGenerator hi A hτ.toIsToricCone k)) S := by
+    LinearIndepOn ℝ (fun k ↦ i (starSubdivisionGenerator hi A hτ k)) S := by
   classical
   have := ToricRay.finite_of_fg hτ.fg
   let _ := Fintype.ofFinite (ToricRay τ)
@@ -173,23 +178,26 @@ theorem linearIndepOn_starSubdivisionGenerator {S : Set (Option (ToricRay τ))}
   intro l hlS hl
   rw [Finsupp.mem_supported'] at hlS
   obtain ⟨ρ₀, hρ₀A, hρ₀S⟩ := hS
-  have h (ρ : ToricRay τ) := coeff_eq_of_sum_smul_eq hi A hτ (c := l) (d := 0) (by
+  have h (ρ : ToricRay τ) := coeff_eq_of_sum_smul_eq hi A hτ hli (c := l) (d := 0) (by
     simp only [Pi.zero_apply, zero_smul, Finset.sum_const_zero]
     rw [← hl, Finsupp.linearCombination_apply,
       Finsupp.sum_fintype _ _ fun k ↦
-        zero_smul ℝ (i (starSubdivisionGenerator hi A hτ.toIsToricCone k))]) ρ
+        zero_smul ℝ (i (starSubdivisionGenerator hi A hτ k))]) ρ
   have hnone : l none = 0 := by simpa [hρ₀A, hlS _ hρ₀S] using h ρ₀
   ext k
   cases k with
   | none => exact hnone
   | some ρ => simpa [hnone] using h ρ
 
-/-- Two cones of the star subdivision of a regular cone, each omitting a generator indexed by `A`,
-meet in the cone of the intersection of their index sets. -/
-theorem starSubdivisionCone_inf {S T : Set (Option (ToricRay τ))} (hS : ∃ ρ ∈ A, some ρ ∉ S)
+/-- If the primitive ray generators of a toric cone are linearly independent, then two cones of
+its star subdivision, each omitting a generator indexed by `A`, meet in the cone of the intersection
+of their index sets. -/
+theorem starSubdivisionCone_inf
+    (hli : LinearIndependent ℝ (fun ρ ↦ i (primitiveGenerator hi hτ ρ)))
+    {S T : Set (Option (ToricRay τ))} (hS : ∃ ρ ∈ A, some ρ ∉ S)
     (hT : ∃ ρ ∈ A, some ρ ∉ T) :
-    starSubdivisionCone hi A hτ.toIsToricCone S ⊓ starSubdivisionCone hi A hτ.toIsToricCone T =
-      starSubdivisionCone hi A hτ.toIsToricCone (S ∩ T) := by
+    starSubdivisionCone hi A hτ S ⊓ starSubdivisionCone hi A hτ T =
+      starSubdivisionCone hi A hτ (S ∩ T) := by
   classical
   have := ToricRay.finite_of_fg hτ.fg
   let _ := Fintype.ofFinite (ToricRay τ)
@@ -198,7 +206,7 @@ theorem starSubdivisionCone_inf {S T : Set (Option (ToricRay τ))} (hS : ∃ ρ 
       (starSubdivisionCone_mono hi A _ inter_subset_right))
   obtain ⟨c, hcS, hc0, hc⟩ := (mem_starSubdivisionCone_iff hi A _).1 hxS
   obtain ⟨d, hdT, hd0, hd⟩ := (mem_starSubdivisionCone_iff hi A _).1 hxT
-  have hcd := coeff_eq_of_sum_smul_eq hi A hτ (hc.trans hd.symm)
+  have hcd := coeff_eq_of_sum_smul_eq hi A hτ hli (hc.trans hd.symm)
   -- The coefficients at `none` agree: compare at a ray of `A` omitted by `S`, and at one omitted
   -- by `T`.
   obtain ⟨ρ₁, hρ₁A, hρ₁S⟩ := hS
@@ -219,6 +227,12 @@ theorem starSubdivisionCone_inf {S T : Set (Option (ToricRay τ))} (hS : ∃ ρ 
   · exact hcS k hk
   · rw [← hdc k]
     exact hdT k hk
+
+end Independence
+
+section Regular
+
+variable (hτ : IsRegularCone i τ)
 
 /-- A cone of the star subdivision of a regular cone omitting a generator indexed by `A` is
 regular: replacing that generator by the sum of the generators of `A` in an integral basis
@@ -295,10 +309,13 @@ noncomputable def starSubdivision : Fan i where
     simp [← PointedCone.Face.mem_toPointedCone, and_comm]
   inf_isFaceOf_left := by
     rintro _ _ ⟨S, hS, rfl⟩ ⟨T, hT, rfl⟩
-    rw [starSubdivisionCone_inf hi A hτ hS hT, starSubdivisionCone_eq_hull,
+    rw [starSubdivisionCone_inf hi A hτ.toIsToricCone
+      (hτ.linearIndependent_primitiveGenerator hi) hS hT, starSubdivisionCone_eq_hull,
       starSubdivisionCone_eq_hull]
     -- Inside the cone of `S`, the generators indexed by `S ∩ T` span a face.
-    have h := PointedCone.isFaceOf_hull_image (linearIndepOn_starSubdivisionGenerator hi A hτ hS)
+    have h := PointedCone.isFaceOf_hull_image
+      (linearIndepOn_starSubdivisionGenerator hi A hτ.toIsToricCone
+        (hτ.linearIndependent_primitiveGenerator hi) hS)
       (C := PointedCone.hull ℝ
         ((fun k ↦ i (starSubdivisionGenerator hi A hτ.toIsToricCone k)) '' S))
       (by rw [image_eq_range]) {k : S | k.1 ∈ T}
