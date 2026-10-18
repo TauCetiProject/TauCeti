@@ -47,6 +47,7 @@ theorem integrable_rpow_inverseGammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (q : �
 
 /-- **Real-power moments of a valid inverse-gamma law.** The `q`th moment exists for `q < a` and
 equals `r ^ q * Gamma (a - q) / Gamma a`. -/
+@[simp]
 theorem integral_rpow_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (hq : q < a) :
     ∫ x, x ^ q ∂inverseGammaMeasure a r =
       r ^ q * Real.Gamma (a - q) / Real.Gamma a := by
