@@ -1,0 +1,294 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
+public import Mathlib.Algebra.Group.Subgroup.Ker
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Tactic.Abel
+
+/-!
+# Arrow assignments and their excess
+
+A directed network on a vertex type `V` is described by an explicit arrow family
+`Q : V → V → Type*`, where `Q v w` is the type of arrows from `v` to `w`; parallel arrows,
+antiparallel arrows and loops are all allowed. An *arrow assignment* with values in an additive
+group `K` attaches a value of `K` to every arrow, with no sign or capacity constraint. Flows,
+pseudoflows, bounded assignments and residual updates are all arrow assignments subject to further
+conditions, and they share the additive calculus developed here.
+
+The *excess* of an assignment `f` at a vertex `v` is the total value on arrows entering `v` minus
+the total value on arrows leaving `v`. With this sign convention a demand vertex has positive
+excess and a supply vertex negative excess, and the value of an ordinary `s`–`t` flow is its excess
+at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing to the excess.
+
+## Main definitions
+
+* `TauCeti.Assignment Q K`: arrow assignments of the arrow family `Q` with values in `K`.
+* `TauCeti.arrowSum Q f S T`: the total value of `f` on the arrows from `S` to `T`.
+* `TauCeti.excessAt Q f v`: the excess of `f` at `v`.
+* `TauCeti.excessHom Q`: excess as an additive homomorphism `Assignment Q K →+ (V → K)`.
+* `TauCeti.IsCirculation f`: `f` has zero excess at every vertex.
+
+## Main results
+
+* `TauCeti.sum_excessAt_eq_arrowSum_sub`: the total excess on a vertex set `S` is the value
+  entering `S` minus the value leaving `S`.
+* `TauCeti.sum_excessAt`: the total excess over all vertices vanishes.
+* `TauCeti.excessAt_source_eq_neg_sink`: an assignment conserved away from `s` and `t` has opposite
+  excesses at `s` and `t`.
+* `TauCeti.isCirculation_iff_mem_ker`: circulations form the kernel of `excessHom`, and
+  `TauCeti.setOf_excessAt_eq_eq_vadd_ker` identifies every nonempty prescribed-excess fibre with a
+  translate of that kernel.
+* `TauCeti.map_excessAt` and `TauCeti.excessAt_comp_equiv`: excess commutes with additive maps of
+  coefficients and with transport along an identification of arrow families.
+
+## Implementation notes
+
+The arrow family is an explicit argument rather than a `Quiver` instance, so that several arrow
+families can coexist on one vertex type, and so that instance search finds `Fintype (Q v w)`
+directly. An assignment binds its endpoints strict-implicitly, as `∀ ⦃v w⦄, Q v w → K`: it is
+applied to an arrow as `f e`, while `f` on its own is not specialised to unknown endpoints.
+-/
+
+public section
+
+namespace TauCeti
+
+open Finset Pointwise
+
+universe u u' v v' w
+
+variable {V : Type u} (Q : V → V → Type v) (K : Type w)
+
+/-- An *arrow assignment* of the arrow family `Q` with values in `K`: a value `f e : K` for every
+arrow `e : Q v w`. It carries no sign, capacity or conservation constraint, and inherits the
+pointwise algebraic structure of `K`. -/
+abbrev Assignment := ∀ ⦃v w : V⦄, Q v w → K
+
+variable {Q K}
+
+section AddCommMonoid
+
+variable [AddCommMonoid K] [∀ v w, Fintype (Q v w)]
+
+/-- The total value of the assignment `f` on the arrows from a vertex of `S` to a vertex of `T`.
+Every arrow is counted once, so parallel arrows add; when `S` and `T` meet, loops at their common
+vertices are counted. -/
+def arrowSum (f : Assignment Q K) (S T : Finset V) : K :=
+  ∑ v ∈ S, ∑ w ∈ T, ∑ e : Q v w, f e
+
+theorem arrowSum_def (f : Assignment Q K) (S T : Finset V) :
+    arrowSum f S T = ∑ v ∈ S, ∑ w ∈ T, ∑ e : Q v w, f e :=
+  (rfl)
+
+@[simp]
+theorem arrowSum_zero (S T : Finset V) : arrowSum (0 : Assignment Q K) S T = 0 := by
+  simp [arrowSum_def]
+
+@[simp]
+theorem arrowSum_add (f g : Assignment Q K) (S T : Finset V) :
+    arrowSum (f + g) S T = arrowSum f S T + arrowSum g S T := by
+  simp [arrowSum_def, sum_add_distrib]
+
+@[simp]
+theorem arrowSum_empty_left (f : Assignment Q K) (T : Finset V) : arrowSum f ∅ T = 0 := by
+  simp [arrowSum_def]
+
+@[simp]
+theorem arrowSum_empty_right (f : Assignment Q K) (S : Finset V) : arrowSum f S ∅ = 0 := by
+  simp [arrowSum_def]
+
+theorem arrowSum_union_left [DecidableEq V] (f : Assignment Q K) {S S' : Finset V}
+    (h : Disjoint S S') (T : Finset V) :
+    arrowSum f (S ∪ S') T = arrowSum f S T + arrowSum f S' T := by
+  simp only [arrowSum_def, sum_union h]
+
+theorem arrowSum_union_right [DecidableEq V] (f : Assignment Q K) (S : Finset V) {T T' : Finset V}
+    (h : Disjoint T T') :
+    arrowSum f S (T ∪ T') = arrowSum f S T + arrowSum f S T' := by
+  simp only [arrowSum_def, sum_union h, sum_add_distrib]
+
+/-- Mapping the values of an assignment along an additive monoid homomorphism commutes with
+summing them over the arrows between two vertex sets. -/
+theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidHomClass F K L]
+    (φ : F) (f : Assignment Q K) (S T : Finset V) :
+    φ (arrowSum f S T) = arrowSum (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) S T := by
+  simp [arrowSum_def, map_sum]
+
+end AddCommMonoid
+
+section AddCommGroup
+
+variable [AddCommGroup K] [∀ v w, Fintype (Q v w)]
+
+@[simp]
+theorem arrowSum_neg (f : Assignment Q K) (S T : Finset V) :
+    arrowSum (-f) S T = -arrowSum f S T := by
+  simp [arrowSum_def]
+
+@[simp]
+theorem arrowSum_sub (f g : Assignment Q K) (S T : Finset V) :
+    arrowSum (f - g) S T = arrowSum f S T - arrowSum g S T := by
+  simp [arrowSum_def, sum_sub_distrib]
+
+variable [Fintype V]
+
+/-- The *excess* of the assignment `f` at the vertex `v`: the total value on arrows entering `v`
+minus the total value on arrows leaving `v`. Loops at `v` cancel. -/
+def excessAt (f : Assignment Q K) (v : V) : K :=
+  ∑ w, ∑ e : Q w v, f e - ∑ w, ∑ e : Q v w, f e
+
+theorem excessAt_def (f : Assignment Q K) (v : V) :
+    excessAt f v = ∑ w, ∑ e : Q w v, f e - ∑ w, ∑ e : Q v w, f e :=
+  (rfl)
+
+/-- The excess at `v` is the value entering `{v}` minus the value leaving `{v}`. -/
+theorem excessAt_eq_arrowSum_sub (f : Assignment Q K) (v : V) :
+    excessAt f v = arrowSum f univ {v} - arrowSum f {v} univ := by
+  simp [excessAt_def, arrowSum_def]
+
+@[simp]
+theorem excessAt_zero (v : V) : excessAt (0 : Assignment Q K) v = 0 := by
+  simp [excessAt_def]
+
+@[simp]
+theorem excessAt_add (f g : Assignment Q K) (v : V) :
+    excessAt (f + g) v = excessAt f v + excessAt g v := by
+  simp only [excessAt_def, Pi.add_apply, sum_add_distrib]
+  abel
+
+variable (Q K) in
+/-- Excess as an additive homomorphism from arrow assignments to vertex functions. -/
+def excessHom : Assignment Q K →+ (V → K) where
+  toFun f := excessAt f
+  map_zero' := funext excessAt_zero
+  map_add' f g := funext (excessAt_add f g)
+
+@[simp]
+theorem excessHom_apply (f : Assignment Q K) (v : V) : excessHom Q K f v = excessAt f v :=
+  (rfl)
+
+@[simp]
+theorem excessAt_neg (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt f v :=
+  congrFun (map_neg (excessHom Q K) f) v
+
+@[simp]
+theorem excessAt_sub (f g : Assignment Q K) (v : V) :
+    excessAt (f - g) v = excessAt f v - excessAt g v :=
+  congrFun (map_sub (excessHom Q K) f g) v
+
+/-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
+from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends
+in `S` cancel. -/
+theorem sum_excessAt_eq_arrowSum_sub [DecidableEq V] (f : Assignment Q K) (S : Finset V) :
+    ∑ v ∈ S, excessAt f v = arrowSum f Sᶜ S - arrowSum f S Sᶜ := by
+  have hin : ∀ v, ∑ w, ∑ e : Q w v, f e =
+      ∑ w ∈ S, ∑ e : Q w v, f e + ∑ w ∈ Sᶜ, ∑ e : Q w v, f e :=
+    fun v ↦ (sum_add_sum_compl S _).symm
+  have hout : ∀ v, ∑ w, ∑ e : Q v w, f e =
+      ∑ w ∈ S, ∑ e : Q v w, f e + ∑ w ∈ Sᶜ, ∑ e : Q v w, f e :=
+    fun v ↦ (sum_add_sum_compl S _).symm
+  simp only [excessAt_def, hin, hout, arrowSum_def, sum_sub_distrib, sum_add_distrib]
+  rw [sum_comm (s := S) (t := S), sum_comm (s := S) (t := Sᶜ)]
+  abel
+
+/-- The total excess of an assignment over all vertices is zero: every arrow enters exactly one
+vertex and leaves exactly one vertex. -/
+@[simp]
+theorem sum_excessAt (f : Assignment Q K) : ∑ v, excessAt f v = 0 := by
+  simp only [excessAt_def, sum_sub_distrib]
+  rw [sum_comm, sub_self]
+
+/-- If an assignment is conserved at every vertex other than `s` and `t`, then its excesses at `s`
+and `t` are opposite. In particular a flow loses at its source exactly what it delivers to its
+sink. -/
+theorem excessAt_source_eq_neg_sink (f : Assignment Q K) {s t : V}
+    (hconserve : ∀ v, v ≠ s → v ≠ t → excessAt f v = 0) :
+    excessAt f s = -excessAt f t := by
+  obtain rfl | hst := eq_or_ne s t
+  · -- when `s = t`, the excess at `s` is the total excess, which vanishes
+    have hs : excessAt f s = 0 := by
+      rw [← sum_excessAt f, Fintype.sum_eq_single s fun v hv ↦ hconserve v hv hv]
+    rw [hs, neg_zero]
+  · rw [eq_neg_iff_add_eq_zero, ← sum_excessAt f,
+      Fintype.sum_eq_add s t hst fun v hv ↦ hconserve v hv.1 hv.2]
+
+/-- Mapping the values of an assignment along an additive group homomorphism commutes with
+taking excess. -/
+theorem map_excessAt {L F : Type*} [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L]
+    (φ : F) (f : Assignment Q K) (v : V) :
+    φ (excessAt f v) = excessAt (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) v := by
+  simp [excessAt_def, map_sum]
+
+/-- Excess is invariant under transport along an identification `σ` of the vertices and
+identifications `τ` of the corresponding arrow types: pulling an assignment back along `τ` and
+taking excess at `v` agrees with taking excess at `σ v`. -/
+theorem excessAt_comp_equiv {W : Type u'} [Fintype W] {R : W → W → Type v'}
+    [∀ a b, Fintype (R a b)] (σ : V ≃ W) (τ : ∀ v w, Q v w ≃ R (σ v) (σ w))
+    (g : Assignment R K) (v : V) :
+    excessAt (fun ⦃a b⦄ (e : Q a b) ↦ g (τ a b e)) v = excessAt g (σ v) := by
+  simp only [excessAt_def, Equiv.sum_comp (τ _ _) (fun e ↦ g e)]
+  rw [Equiv.sum_comp σ (fun w ↦ ∑ e : R w (σ v), g e),
+    Equiv.sum_comp σ (fun w ↦ ∑ e : R (σ v) w, g e)]
+
+/-! ### Circulations and prescribed excess -/
+
+/-- A (signed) *circulation* is an arrow assignment conserved at every vertex: its excess vanishes
+everywhere. No sign or capacity constraint is imposed. -/
+def IsCirculation (f : Assignment Q K) : Prop :=
+  ∀ v, excessAt f v = 0
+
+theorem isCirculation_iff (f : Assignment Q K) : IsCirculation f ↔ ∀ v, excessAt f v = 0 :=
+  Iff.rfl
+
+/-- Circulations are exactly the kernel of the excess homomorphism. -/
+theorem isCirculation_iff_mem_ker (f : Assignment Q K) :
+    IsCirculation f ↔ f ∈ (excessHom Q K).ker := by
+  rw [isCirculation_iff, AddMonoidHom.mem_ker, funext_iff]
+  rfl
+
+@[simp]
+theorem isCirculation_zero : IsCirculation (0 : Assignment Q K) :=
+  fun _ ↦ excessAt_zero _
+
+theorem IsCirculation.add {f g : Assignment Q K} (hf : IsCirculation f)
+    (hg : IsCirculation g) : IsCirculation (f + g) :=
+  fun v ↦ by rw [excessAt_add, hf v, hg v, add_zero]
+
+theorem IsCirculation.neg {f : Assignment Q K} (hf : IsCirculation f) :
+    IsCirculation (-f) :=
+  fun v ↦ by rw [excessAt_neg, hf v, neg_zero]
+
+theorem IsCirculation.sub {f g : Assignment Q K} (hf : IsCirculation f)
+    (hg : IsCirculation g) : IsCirculation (f - g) :=
+  fun v ↦ by rw [excessAt_sub, hf v, hg v, sub_zero]
+
+/-- A circulation carries the same total value into any vertex set `S` as out of it. -/
+theorem IsCirculation.arrowSum_compl_eq [DecidableEq V] {f : Assignment Q K}
+    (hf : IsCirculation f) (S : Finset V) : arrowSum f Sᶜ S = arrowSum f S Sᶜ := by
+  rw [← sub_eq_zero, ← sum_excessAt_eq_arrowSum_sub, sum_eq_zero fun v _ ↦ hf v]
+
+/-- Given one assignment `f₀` with excess `b`, an assignment has excess `b` exactly when it differs
+from `f₀` by a circulation. -/
+theorem excessAt_eq_iff_isCirculation_sub {f₀ : Assignment Q K} {b : V → K}
+    (hf₀ : ∀ v, excessAt f₀ v = b v) (f : Assignment Q K) :
+    (∀ v, excessAt f v = b v) ↔ IsCirculation (f - f₀) := by
+  simp only [isCirculation_iff, excessAt_sub, hf₀, sub_eq_zero]
+
+/-- Every nonempty prescribed-excess fibre is a translate of the circulations: if `f₀` has excess
+`b`, the assignments with excess `b` are exactly `f₀ + c` for `c` in the kernel of `excessHom`. -/
+theorem setOf_excessAt_eq_eq_vadd_ker {f₀ : Assignment Q K} {b : V → K}
+    (hf₀ : ∀ v, excessAt f₀ v = b v) :
+    {f : Assignment Q K | ∀ v, excessAt f v = b v} =
+      f₀ +ᵥ ((excessHom Q K).ker : Set (Assignment Q K)) := by
+  ext f
+  rw [Set.mem_ofPred_eq, excessAt_eq_iff_isCirculation_sub hf₀, isCirculation_iff_mem_ker,
+    Set.mem_vadd_set_iff_neg_vadd_mem, SetLike.mem_coe, vadd_eq_add, neg_add_eq_sub]
+
+end AddCommGroup
+
+end TauCeti
