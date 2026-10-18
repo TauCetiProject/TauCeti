@@ -55,7 +55,7 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
 variable {Γ : Subgroup PSL(2, ℝ)} {p : ℍ} {n : ℕ} [NeZero n] {P : ConvexPolygon n}
 
-variable [DiscreteTopology Γ]
+variable [ProperlyDiscontinuousSMul Γ ℍ]
 
 /-- If side `i` of a Dirichlet polygon is the face of `h⁻¹` and side `j` the face of `h`, then
 `h` carries side `i` onto side `j` with the orientation reversed. The same orientation would put
@@ -116,10 +116,10 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
       hfrom.left_eq_of_extGeodesicSegment_eq (P.isGeodesicFromTo_sideGeodesic j) hseg⟩
 
 /-- **Sides of a Dirichlet polygon are paired along Dirichlet faces.** If the carrier of `P` is
-the Dirichlet domain of a discrete `Γ` centred at a point with trivial stabilizer, and `σ` is a
-side pairing of `P` by elements of `Γ`, then side `i` is the Dirichlet face of the inverse of
-the side-pairing map of `i`: the points of the domain equidistant from the centre and its
-translate by that inverse. -/
+the Dirichlet domain of a properly discontinuous `Γ`, centred at a point with trivial stabilizer,
+and `σ` is a side pairing of `P` by elements of `Γ`, then side `i` is the Dirichlet face of the
+inverse of the side-pairing map of `i`: the points of the domain equidistant from the centre and
+its translate by that inverse. -/
 theorem SidePairing.side_eq_dirichletFace (σ : P.SidePairing) (hmap : ∀ i, σ.map i ∈ Γ)
     (hP : P.carrier = dirichletDomain Γ p) (hp : p ∈ TauCeti.freeLocus Γ ℍ) (i : Fin n) :
     P.side i = dirichletFace p (⟨σ.map i, hmap i⟩ : Γ)⁻¹ := by
@@ -136,10 +136,10 @@ theorem SidePairing.side_eq_dirichletFace (σ : P.SidePairing) (hmap : ∀ i, σ
   rw [← hj, P.eq_of_nontrivial_side_inter_side (i := j) (j := i)
     (by rw [hj, inter_eq_right.2 hsub]; exact P.side_nontrivial i)]
 
-/-- **The side pairing of a Dirichlet polygon.** Let `Γ ≤ PSL(2, ℝ)` be discrete and let the
-carrier of a convex polygon `P`, possibly with ideal vertices, be the Dirichlet domain of `Γ`
-centred at a point with trivial stabilizer. Then `P` has exactly one side pairing whose maps lie
-in `Γ`: the element `g⁻¹` pairs the Dirichlet face of `g` with that of `g⁻¹`. -/
+/-- **The side pairing of a Dirichlet polygon.** Let `Γ ≤ PSL(2, ℝ)` act properly discontinuously
+and let the carrier of a convex polygon `P`, possibly with ideal vertices, be the Dirichlet domain
+of `Γ` centred at a point with trivial stabilizer. Then `P` has exactly one side pairing whose
+maps lie in `Γ`: the element `g⁻¹` pairs the Dirichlet face of `g` with that of `g⁻¹`. -/
 theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
     (hP : P.carrier = dirichletDomain Γ p) (hp : p ∈ TauCeti.freeLocus Γ ℍ) :
     ∃! σ : P.SidePairing, ∀ i, σ.map i ∈ Γ := by
