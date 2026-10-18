@@ -21,9 +21,8 @@ measures while still providing the characteristic forms used in stochastic-order
 
 ## Main results
 
-* `MeasureTheory.Measure.ae_fst_le_snd_quantileCoupling` shows that the common-uniform coupling is
-  ordered whenever the cdfs are ordered.
-* `TauCeti.IsCoupling.cdf_le_of_ae_fst_le_snd` proves the converse for an arbitrary coupling.
+* `TauCeti.IsCoupling.cdf_le_of_ae_fst_le_snd` shows that any coupling concentrated on ordered
+  pairs forces the reversed cdf inequality.
 * `MeasureTheory.Measure.exists_isCoupling_ae_fst_le_snd_iff_cdf_le` packages the coupling
   characterization.
 * `ProbabilityTheory.HasLaw.cdf_le_of_ae_le` gives the random-variable form of the converse.
@@ -38,20 +37,6 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Set
-
-namespace MeasureTheory.Measure
-
-/-- If the cdfs are ordered, the common-uniform quantile coupling is concentrated on ordered
-pairs. Thus the stochastic comparison is realized by random variables satisfying `X ≤ Y` almost
-surely. -/
-theorem ae_fst_le_snd_quantileCoupling (μ ν : Measure ℝ) (h : ∀ x, cdf ν x ≤ cdf μ x) :
-  ∀ᵐ z ∂μ.quantileCoupling ν, z.1 ≤ z.2 := by
-  rw [quantileCoupling_def]
-  refine (ae_map_iff (by fun_prop) (measurableSet_le measurable_fst measurable_snd)).2 ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
-  exact (cdf_le_iff_quantile_le μ ν).1 h u hu.1 hu.2
-
-end MeasureTheory.Measure
 
 namespace TauCeti
 
