@@ -385,45 +385,23 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [No
     calc _ ≤ ((C : ℝ≥0∞) * A * eLpNorm (φ : V → F) p volume).toReal :=
           ENNReal.toReal_mono (by finiteness) h
       _ = _ := by simp [ENNReal.toReal_mul]
-  -- Approximate `f` by Schwartz functions; by the bound, their images form a Cauchy sequence
-  -- in `Lᵖ`, whose limit is `g`.
-  obtain ⟨u, hu_range, hu⟩ := mem_closure_iff_seq_limit.mp
-    (SchwartzMap.denseRange_toLpCLM (F := F) (μ := volume) hp_top f)
-  choose φ hφ using hu_range
-  simp only [SchwartzMap.toLpCLM_apply] at hφ
-  have hcauchy : CauchySeq fun n ↦ (T (φ n)).toLp p (volume : Measure V) := by
-    have hdist : ∀ i j, dist ((T (φ i)).toLp p (volume : Measure V))
-        ((T (φ j)).toLp p (volume : Measure V)) ≤ C * A * dist (u i) (u j) := fun i j ↦ by
-      have hsub : ∀ a b : 𝓢(V, F), (a - b).toLp p (volume : Measure V) =
-          a.toLp p volume - b.toLp p volume := fun a b ↦ by
-        simpa using map_sub (SchwartzMap.toLpCLM ℝ F p (volume : Measure V)) a b
-      have h := hS (φ i - φ j)
-      rw [map_sub, hsub, hsub] at h
-      rwa [dist_eq_norm, dist_eq_norm, ← hφ i, ← hφ j]
-    refine Metric.cauchySeq_iff'.2 fun ε hε ↦ ?_
-    obtain ⟨n₀, hn₀⟩ := Metric.cauchySeq_iff'.1 hu.cauchySeq (ε / (C * A + 1)) (by positivity)
-    refine ⟨n₀, fun n hn ↦ (hdist n n₀).trans_lt ?_⟩
-    calc (C * A : ℝ) * dist (u n) (u n₀) ≤ C * A * (ε / (C * A + 1)) := by
-          gcongr
-          exact (hn₀ n hn).le
-      _ < ε := by
-          rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
-          nlinarith
-  obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete hcauchy
-  refine ⟨g, ?_, le_of_tendsto_of_tendsto' hg.norm (hu.norm.const_mul _) fun n ↦ ?_⟩
-  · -- Both sides are limits of the same sequence of tempered distributions.
-    have hlim : Tendsto (fun n ↦ (((T (φ n)).toLp p (volume : Measure V) : Lp F p volume) :
-        𝓢'(V, F))) atTop (𝓝 (g : 𝓢'(V, F))) :=
-      ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto g).comp hg
-    have heq : ∀ n, (((T (φ n)).toLp p (volume : Measure V) : Lp F p volume) : 𝓢'(V, F)) =
-        TemperedDistribution.fourierMultiplierCLM F m (u n : 𝓢'(V, F)) := fun n ↦ by
-      rw [← hφ n, Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq,
-        TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
-    refine tendsto_nhds_unique ?_ hlim
-    simp only [heq]
-    exact ((TemperedDistribution.fourierMultiplierCLM F m ∘L
-      Lp.toTemperedDistributionCLM F volume p).continuous.tendsto f).comp hu
-  · rw [← hφ n]
-    exact hS (φ n)
+  -- Extend `φ ↦ (T φ).toLp p` from the dense Schwartz functions to all of `Lᵖ`, by the bound.
+  set e : 𝓢(V, F) →ₗ[ℂ] Lp F p (volume : Measure V) :=
+    (SchwartzMap.toLpCLM ℂ F p (volume : Measure V)).toLinearMap
+  have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := volume) hp_top
+  set S : 𝓢(V, F) →ₗ[ℂ] Lp F p (volume : Measure V) := e ∘ₗ T.toLinearMap
+  have hSe : ∀ φ, ‖S φ‖ ≤ C * A * ‖e φ‖ := hS
+  refine ⟨S.extendOfNorm e f, ?_, LinearMap.norm_extendOfNorm_apply_le he _ hSe f⟩
+  -- Both sides are continuous in `f` and agree on the dense Schwartz functions.
+  refine congrFun (he.equalizer (g := fun f ↦ TemperedDistribution.fourierMultiplierCLM F m
+    (f : 𝓢'(V, F))) (h := fun f ↦ ((S.extendOfNorm e f : Lp F p volume) : 𝓢'(V, F)))
+    (TemperedDistribution.fourierMultiplierCLM F m ∘L
+      Lp.toTemperedDistributionCLM F volume p).continuous
+    ((Lp.toTemperedDistributionCLM F volume p).continuous.comp (S.extendOfNorm e).continuous)
+    (funext fun φ ↦ ?_)) f
+  simp only [Function.comp_apply, LinearMap.extendOfNorm_eq he ⟨_, hSe⟩]
+  simp only [S, e, T, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, SchwartzMap.toLpCLM_apply,
+    Lp.toTemperedDistribution_toLp_eq,
+    TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
 
 end TauCeti
