@@ -39,13 +39,15 @@ to.
 
 * `unitInterval.notMem_Ioo_prod_Ioo_iff`: the boundary of the square is the union of its four
   edges.
+* `unitInterval.image_prodMap_val_Ioo_prod_Ioo`: the inclusion `I × I → ℝ × ℝ` carries the open
+  unit square onto the open unit square.
 * `unitInterval.isSimplyConnected_Ioo_prod_Ioo`: the open unit square is simply connected.
 * `unitInterval.isPathConnected_Ioo_prod_Ioo_diff_singleton`: the open unit square with one point
   removed is path connected.
 * `unitInterval.radialPush_zero`, `unitInterval.radialPush_of_notMem`,
   `unitInterval.radialPush_one_notMem`, `unitInterval.continuousAt_radialPush`: the radial
   deformation starts at the identity, fixes the boundary, ends on the boundary, and is continuous
-  away from the centre.
+  away from the centre. It also fixes the centre (`unitInterval.radialPush_squareCentre`).
 -/
 
 public section
@@ -60,28 +62,16 @@ theorem notMem_Ioo_prod_Ioo_iff {q : I × I} :
   simp only [mem_prod, mem_Ioo, not_and_or, not_lt, le_zero_iff, ← or_assoc]
   simp only [le_one'.ge_iff_eq', or_assoc, eq_comm (a := (1 : I))]
 
-/-- The inclusion `I × I → ℝ × ℝ` is an embedding. -/
-private lemma isEmbedding_prodMap_val :
-    IsEmbedding (Prod.map Subtype.val Subtype.val : I × I → ℝ × ℝ) :=
-  IsEmbedding.subtypeVal.prodMap IsEmbedding.subtypeVal
-
 /-- The inclusion `I × I → ℝ × ℝ` carries the open unit square onto the open unit square. -/
-private lemma image_prodMap_val_Ioo_prod_Ioo :
+theorem image_prodMap_val_Ioo_prod_Ioo :
     Prod.map Subtype.val Subtype.val '' (Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) =
       Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 := by
-  rw [prodMap_image_prod]
-  have h : (Subtype.val : I → ℝ) '' Ioo 0 1 = Ioo 0 1 := by
-    ext a
-    constructor
-    · rintro ⟨b, hb, rfl⟩
-      exact hb
-    · intro ha
-      exact ⟨⟨a, ha.1.le, ha.2.le⟩, ha, rfl⟩
-  rw [h]
+  rw [prodMap_image_prod, image_subtype_val_Ioo, Icc.coe_zero, Icc.coe_one]
 
 /-- **The open unit square is simply connected.** -/
 theorem isSimplyConnected_Ioo_prod_Ioo : IsSimplyConnected (Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) := by
-  rw [← isEmbedding_prodMap_val.isSimplyConnected_image, image_prodMap_val_Ioo_prod_Ioo]
+  rw [← (IsEmbedding.subtypeVal.prodMap IsEmbedding.subtypeVal).isSimplyConnected_image,
+    image_prodMap_val_Ioo_prod_Ioo]
   have := ((convex_Ioo (0 : ℝ) 1).prod (convex_Ioo (0 : ℝ) 1)).contractibleSpace
     ⟨(1 / 2, 1 / 2), by norm_num, by norm_num⟩
   exact SimplyConnectedSpace.ofContractible _
@@ -92,8 +82,9 @@ convex set punctured at `p`, which deforms onto a small sphere about `p`
 theorem isPathConnected_Ioo_prod_Ioo_diff_singleton {p : I × I}
     (hp : p ∈ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) :
     IsPathConnected (Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1 \ {p}) := by
-  rw [isEmbedding_prodMap_val.isInducing.isPathConnected_iff,
-    image_sdiff isEmbedding_prodMap_val.injective, image_singleton, image_prodMap_val_Ioo_prod_Ioo]
+  rw [(IsInducing.subtypeVal.prodMap IsInducing.subtypeVal).isPathConnected_iff,
+    image_sdiff (Subtype.val_injective.prodMap Subtype.val_injective), image_singleton,
+    image_prodMap_val_Ioo_prod_Ioo]
   have hp' : Prod.map Subtype.val Subtype.val p ∈ Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 :=
     image_prodMap_val_Ioo_prod_Ioo ▸ mem_image_of_mem _ hp
   set u := Prod.map Subtype.val Subtype.val p
@@ -150,13 +141,9 @@ private lemma prodMap_val_clamp {z : ℝ × ℝ} (hz : z ∈ Icc (0 : ℝ) 1 ×�
   obtain ⟨a, b⟩ := z
   simp [clamp, projIcc_of_mem _ hz.1, projIcc_of_mem _ hz.2]
 
-private lemma prodMap_val_mem_Icc_prod_Icc (q : I × I) :
-    Prod.map Subtype.val Subtype.val q ∈ Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1 :=
-  ⟨q.1.2, q.2.2⟩
-
 private lemma starConvex_Icc_prod_Icc :
     StarConvex ℝ (Prod.map Subtype.val Subtype.val squareCentre) (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) :=
-  ((convex_Icc 0 1).prod (convex_Icc 0 1)).starConvex (prodMap_val_mem_Icc_prod_Icc _)
+  ((convex_Icc 0 1).prod (convex_Icc 0 1)).starConvex ⟨squareCentre.1.2, squareCentre.2.2⟩
 
 /-- In the sup norm, a point is at distance `1 / 2` from the centre exactly when one of its
 coordinates is at distance `1 / 2` from `1 / 2` and the other at most that. -/
@@ -206,8 +193,8 @@ private noncomputable abbrev realRadialHomotopy :=
 `ℝ × ℝ`. -/
 private def toPunctured {q : I × I} (hq : q ≠ squareCentre) :
     ↥(Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1 \ {Prod.map Subtype.val Subtype.val squareCentre}) :=
-  ⟨Prod.map Subtype.val Subtype.val q, prodMap_val_mem_Icc_prod_Icc q,
-    isEmbedding_prodMap_val.injective.ne hq⟩
+  ⟨Prod.map Subtype.val Subtype.val q, ⟨q.1.2, q.2.2⟩,
+    (Subtype.val_injective.prodMap Subtype.val_injective).ne hq⟩
 
 /-- The **radial deformation** of the unit square with its centre removed onto its boundary, at
 time `t`: a point `q` other than the centre moves along the ray from the centre through `q`, from
@@ -226,18 +213,23 @@ theorem radialPush_zero (q : I × I) : radialPush 0 q = q := by
     rw [symm_zero, ContinuousMap.Homotopy.apply_one]
     exact clamp_prodMap_val q
 
+/-- The radial deformation fixes the centre of the square. -/
+@[simp]
+theorem radialPush_squareCentre (t : I) : radialPush t squareCentre = squareCentre := by
+  simp [radialPush]
+
 /-- The radial deformation fixes the boundary of the square. -/
+@[simp]
 theorem radialPush_of_notMem {q : I × I} (hq : q ∉ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) (t : I) :
     radialPush t q = q := by
   have hqc : q ≠ squareCentre := fun h => hq (h ▸ squareCentre_mem_Ioo_prod_Ioo)
-  have hn : ‖Prod.map Subtype.val Subtype.val q - Prod.map Subtype.val Subtype.val squareCentre‖ =
-      1 / 2 := by
-    rw [← dist_eq_norm]
-    exact (prodMap_val_mem_sphere_iff q).2 hq
+  -- On the boundary, `q` is a point of the sphere of radius `1 / 2`, which the deformation fixes.
+  have hx : toPunctured hqc = TauCeti.sphereInclusionDiffSingleton (by norm_num)
+      sphere_subset_Icc_prod_Icc ⟨_, (prodMap_val_mem_sphere_iff q).2 hq⟩ :=
+    Subtype.ext (by rw [TauCeti.coe_sphereInclusionDiffSingleton_apply]; rfl)
   simp only [radialPush, hqc, ↓reduceDIte]
-  rw [StarConvex.coe_radialHomotopy_apply]
-  simp only [toPunctured, hn, div_self (by norm_num : (1 / 2 : ℝ) ≠ 0), mul_one, sub_add_cancel,
-    one_smul, add_sub_cancel]
+  rw [hx, StarConvex.radialHomotopy_apply_sphereInclusion,
+    TauCeti.coe_sphereInclusionDiffSingleton_apply]
   exact clamp_prodMap_val q
 
 /-- At time `1` the radial deformation sends every point other than the centre to the boundary

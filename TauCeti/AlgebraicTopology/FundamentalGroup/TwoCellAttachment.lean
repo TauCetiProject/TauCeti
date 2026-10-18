@@ -402,11 +402,9 @@ theorem cell_eq_incl_iff {i : ι} {q : I × I} {y : X} :
   · intro h
     have hq : (s, t) ∉ (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)) := fun hq =>
       incl_ne_cell hq y h.symm
-    rcases unitInterval.notMem_Ioo_prod_Ioo_iff.1 hq with rfl | h' | h' | h'
+    rcases unitInterval.notMem_Ioo_prod_Ioo_iff.1 hq with rfl | rfl | rfl | rfl
     · exact .inl ⟨rfl, incl_injective ((cell_apply_zero i t).symm.trans h)⟩
-    all_goals
-      refine .inr ⟨incl_injective (h.symm.trans ?_), by simp_all⟩
-      obtain rfl | rfl | rfl := (show s = 1 ∨ t = 0 ∨ t = 1 by simp_all) <;> simp
+    all_goals exact .inr ⟨incl_injective (h.symm.trans (by simp)), by simp⟩
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl | rfl⟩) <;> simp
 
 /-- **`X` is a closed subspace.** The inclusion of `X` into the space with the 2-cells attached is

@@ -21,10 +21,10 @@ lies in a single `U i` (`Path.exists_monotone_range_subpath_subset`), and then u
 homotopy between a path and the concatenation of its consecutive subpaths.
 
 Generation also pushes paths off simply connected sets. Suppose the cover consists of a set `V`
-together with simply connected sets `W i`, each meeting `V` in a path-connected set. Conjugating
-by paths inside the `W i` to points of `V` turns every morphism between points of `V` into the
-class of a path in `V`. This is how a loop in a space with 2-cells attached is pushed off one
-point of each open cell.
+together with simply connected sets `W i`, each meeting `V` in a path-connected set, and that
+distinct `W i` overlap only inside `V`. Conjugating by paths inside the `W i` to points of `V`
+turns every morphism between points of `V` into the class of a path in `V`. This is how a loop in
+a space with 2-cells attached is pushed off one point of each open cell.
 
 ## Main results
 
