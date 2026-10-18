@@ -50,15 +50,13 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- **A preconnected interiorless fibre of a map from a Jordan curve is a subsingleton.** Let `C`
 be a Jordan curve and `g : C → Y` a continuous map to a `T₁` space. If the fibre of `g` over `y` is
-preconnected and has empty interior in `C`, then it has at most one point.
-
-Continuity makes the fibre closed, hence compact because `C` is compact. Empty interior says its
-complement is dense. The fibre is therefore a nowhere-dense subcontinuum of the Jordan curve, so
-`TauCeti.IsJordanCurve.subsingleton_of_subset_closure_sdiff` makes it a subsingleton. -/
+preconnected and has empty interior in `C`, then it has at most one point. -/
 theorem IsJordanCurve.subsingleton_fiber_of_isPreconnected_of_interior_eq_empty
     (hC : IsJordanCurve C) (hg : Continuous g) {y : Y}
     (hpre : IsPreconnected {x | g x = y}) (hinterior : interior {x | g x = y} = ∅) :
     {x | g x = y}.Subsingleton := by
+  -- the fibre is closed, hence compact, and its complement is dense: it is a nowhere-dense
+  -- subcontinuum of the Jordan curve
   let _ : CompactSpace C := isCompact_iff_compactSpace.mp hC.isCompact
   have hJ : IsJordanCurve (univ : Set C) := by
     obtain ⟨e⟩ := isJordanCurve_iff.mp hC

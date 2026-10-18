@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Angle
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Frontiers of local half-planes and sectors
@@ -104,16 +105,6 @@ theorem mem_frontier_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ}
 
 /-! ### Preconnected approach regions at a side or a vertex -/
 
-/-- A set with preconnected traces on the balls `ball w δ`, `0 < δ ≤ ρ`, has preconnected approach
-regions at `w`. -/
-private theorem isPreconnectedApproachAt_of_isPreconnected_inter_ball {w : ℂ} {ρ : ℝ}
-    (hρ : 0 < ρ) (h : ∀ δ, 0 < δ → δ ≤ ρ → IsPreconnected (U ∩ ball w δ)) :
-    IsPreconnectedApproachAt U w :=
-  isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset fun ε hε =>
-    ⟨min ε ρ, lt_min hε hρ, U ∩ ball w (min ε ρ),
-      inter_subset_inter_right _ (ball_subset_ball (min_le_left _ _)),
-      h _ (lt_min hε hρ) (min_le_right _ _), subset_rfl⟩
-
 /-- If a set `U` coincides near `w` with the open half-plane `{0 < im ((z - q) / b)}`, then `U` has
 preconnected approach regions at `w`: its traces on small balls about `w` are convex. -/
 theorem isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos {w q b : ℂ} {ρ : ℝ} (hρ : 0 < ρ)
@@ -128,42 +119,6 @@ theorem isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos {w q b : ℂ} {ρ 
     rw [hU z (ball_subset_ball hδ hz), sub_div, sub_im, sub_pos, mem_ofPred_eq]
   rw [heq]
   exact (hconv.inter (convex_ball w δ)).isPreconnected
-
-/-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
-`{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by the punctured ball of radius `δ`, is
-the image of an open rectangle. -/
-private theorem image_polar_rectangle_eq {v b : ℂ} (hb : b ≠ 0) {δ α : ℝ} (hα : α ≤ Real.pi) :
-    (fun p : ℝ × ℝ => v + b * ((p.1 : ℂ) * (Complex.cos (p.2 : ℂ) + Complex.sin (p.2 : ℂ) * I))) ''
-        (Ioo 0 (δ / ‖b‖) ×ˢ Ioo (-α) α) =
-      {z | z ∈ ball v δ ∧ z ≠ v ∧ |((z - v) / b).arg| < α} := by
-  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
-  ext z
-  constructor
-  · rintro ⟨⟨r, θ⟩, ⟨⟨hr, hrδ⟩, hθ⟩, rfl⟩
-    have hdiv : (v + b * ((r : ℂ) * (Complex.cos (θ : ℂ) + Complex.sin (θ : ℂ) * I)) - v) / b =
-        (r : ℂ) * (Complex.cos (θ : ℂ) + Complex.sin (θ : ℂ) * I) := by
-      field_simp
-      ring
-    have hnorm : ‖v + b * ((r : ℂ) * (Complex.cos (θ : ℂ) + Complex.sin (θ : ℂ) * I)) - v‖ =
-        ‖b‖ * r := by
-      rw [add_sub_cancel_left, norm_mul, norm_mul, norm_real, norm_cos_add_sin_mul_I,
-        Real.norm_of_nonneg hr.le, mul_one]
-    refine ⟨?_, fun h => ?_, ?_⟩
-    · rw [mem_ball, dist_eq_norm, hnorm]
-      rwa [lt_div_iff₀' hb'] at hrδ
-    · beta_reduce at h
-      rw [h, sub_self, norm_zero] at hnorm
-      exact (mul_pos hb' hr).ne' hnorm.symm
-    · rw [hdiv, arg_mul_cos_add_sin_mul_I hr ⟨by linarith [hθ.1, hθ.2], by linarith [hθ.2]⟩]
-      exact abs_lt.mpr hθ
-  · rintro ⟨hzb, hzv, harg⟩
-    have hw : (z - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hzv) hb
-    refine ⟨(‖(z - v) / b‖, ((z - v) / b).arg), ⟨⟨norm_pos_iff.mpr hw, ?_⟩, abs_lt.mp harg⟩, ?_⟩
-    · rw [norm_div, div_lt_div_iff_of_pos_right hb', ← dist_eq_norm]
-      exact mem_ball.mp hzb
-    · simp only [norm_mul_cos_add_sin_mul_I]
-      field_simp
-      ring
 
 /-- If a set `U` coincides near `v`, away from `v` itself, with the open sector
 `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, then `U` has preconnected approach regions at
