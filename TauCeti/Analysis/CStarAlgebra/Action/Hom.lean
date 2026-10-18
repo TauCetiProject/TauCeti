@@ -190,10 +190,12 @@ theorem topologicalClosure (hS : S.IsInvariant α) : S.topologicalClosure.IsInva
   exact map_mem_closure (StarAlgEquiv.isometry (α g)).continuous ha fun x hx => hS g hx
 
 /-- The top star subalgebra is invariant under every C⋆-action. -/
+@[simp]
 theorem top (α : CStarAction G A) : (⊤ : NonUnitalStarSubalgebra ℂ A).IsInvariant α :=
   fun _ _ _ => Set.mem_univ _
 
 /-- The bottom star subalgebra is invariant under every C⋆-action. -/
+@[simp]
 theorem bot (α : CStarAction G A) : (⊥ : NonUnitalStarSubalgebra ℂ A).IsInvariant α := by
   intro g a ha
   rw [NonUnitalStarAlgebra.mem_bot] at ha ⊢
