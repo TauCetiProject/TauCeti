@@ -90,7 +90,6 @@ theorem mem_finiteRay_iff {m : Ideal R} {hm : m ≠ ⊥}
   · exact ⟨⟨x, hx⟩, Subtype.ext (Units.ext (by rw [coe_finiteRayHom, hxI]))⟩
 
 /-- The finite ray class group of a Dedekind domain modulo a nonzero ideal. -/
-@[expose]
 def FiniteRayClassGroup (m : Ideal R) (hm : m ≠ ⊥) (K : Type*) [Field K] [Algebra R K]
     [IsFractionRing R K] : Type _ :=
   idealsAway K (finiteRaySupport m hm) ⧸ finiteRay m hm
