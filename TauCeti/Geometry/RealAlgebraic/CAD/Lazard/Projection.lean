@@ -55,8 +55,8 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardProjection
     ∃ 𝓒, IsCAD (n + 1) 𝓒 ∧ image Fin.tail '' 𝓒 = 𝓓 ∧
       (∀ E ∈ 𝓒, ∃ d, IsAnalyticSubmanifold d E) ∧
       (∀ f ∈ F, ∀ E ∈ 𝓒, ∀ x ∈ E, ∀ y ∈ E,
-        (rename (finRotate (n + 1)).symm f).lazardValuation (Fin.snoc (Fin.tail x) (x 0)) =
-          (rename (finRotate (n + 1)).symm f).lazardValuation (Fin.snoc (Fin.tail y) (y 0))) ∧
+        f.lazardValuationReindex (finRotate (n + 1)).symm x =
+          f.lazardValuationReindex (finRotate (n + 1)).symm y) ∧
       ∀ f ∈ F, ∀ E ∈ 𝓒, SignInvariant (fun x ↦ eval x f) E := by
   classical
   let A := F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding
@@ -76,14 +76,9 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardProjection
   obtain ⟨𝓒, h𝓒, htail, ha, hv, hs⟩ :=
     h𝓓.exists_isCAD_lazardValuation_eq_of_lazardDelineation hanalytic hD
   have hmem (f : F) : finSuccEquiv ℝ n f.1 ∈ A := Finset.mem_map.2 ⟨f, f.2, rfl⟩
-  have hpoly (f : F) : G ⟨finSuccEquiv ℝ n f.1, hmem f⟩ =
-      rename (finRotate (n + 1)).symm f.1 := by
-    apply rename_injective _ (finRotate (n + 1)).injective
-    rw [hG]
-    simp only [rename_rename, Equiv.self_comp_symm, rename_id_apply,
-      AlgEquiv.symm_apply_apply]
   refine ⟨𝓒, h𝓒, htail, ha, fun f hf ↦ ?_, fun f hf E hE ↦ ?_⟩
-  · simpa only [hpoly ⟨f, hf⟩] using hv ⟨finSuccEquiv ℝ n f, hmem ⟨f, hf⟩⟩
+  · simpa only [hG, AlgEquiv.symm_apply_apply] using
+      hv ⟨finSuccEquiv ℝ n f, hmem ⟨f, hf⟩⟩
   · simpa only [hG, AlgEquiv.symm_apply_apply] using
       hs ⟨finSuccEquiv ℝ n f, hmem ⟨f, hf⟩⟩ E hE
 
