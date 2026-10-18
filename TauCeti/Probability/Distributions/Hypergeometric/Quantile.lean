@@ -61,38 +61,6 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_iff (hK : K ≤ N) (hn : n �
   · simpa only [hcumulative] using h
   · simpa only [hcumulative] using h
 
-private theorem hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower
-    (hK : K ≤ N) (hn : n ≤ N) {k : ℕ} (hk : k < n - (N - K)) :
-    (hypergeometricMeasure N K n).real (Iic k) = 0 := by
-  let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
-  rw [← Set.Iic_def, hypergeometricMeasure_real_Iic]
-  apply Finset.sum_eq_zero
-  intro j hj
-  rw [measureReal_eq_zero_iff, hypergeometricMeasure_singleton hK hn]
-  apply not_ne_iff.mp
-  intro hjne
-  have hsupp := (hypergeometricWeight_ne_zero_iff N K n j).mp hjne
-  have hjk : j ≤ k := by simpa using hj
-  omega
-
-private theorem hypergeometricMeasure_real_Iic_eq_one_of_upper_le
-    (hK : K ≤ N) (hn : n ≤ N) {k : ℕ} (hk : min K n ≤ k) :
-    (hypergeometricMeasure N K n).real (Iic k) = 1 := by
-  let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
-  rw [← probReal_univ (μ := hypergeometricMeasure N K n)]
-  apply measureReal_congr
-  have hle : ∀ᵐ j ∂hypergeometricMeasure N K n, j ≤ k := by
-    rw [ae_iff_of_countable (μ := hypergeometricMeasure N K n)]
-    intro j hj
-    have hweight : hypergeometricWeight N K n j ≠ 0 := by
-      rwa [hypergeometricMeasure_singleton hK hn] at hj
-    have hsupp := (hypergeometricWeight_ne_zero_iff N K n j).mp hweight
-    omega
-  filter_upwards [hle] with j hj
-  apply propext
-  simp only [mem_Iic, mem_univ, iff_true]
-  exact hj
-
 private theorem hypergeometricMeasure_real_singleton_pos (hK : K ≤ N) (hn : n ≤ N)
     {k : ℕ} (hk : k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K) :
     0 < (hypergeometricMeasure N K n).real {k} := by
