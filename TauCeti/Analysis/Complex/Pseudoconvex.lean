@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.Complex.LeviForm
 
 /-!
@@ -27,6 +28,13 @@ strictly plurisubharmonic function has Morse index at most `n`. The linear-algeb
 by restriction along holomorphic immersions and by post-composition with increasing convex
 functions of one real variable, and strict plurisubharmonicity is preserved by sums.
 
+Strong `q`-pseudoconvexity is stable under `C²` perturbations. For a fixed positive complex
+subspace this follows by testing the Levi diagonal on its compact real unit sphere. Consequently
+the bilinear forms with at least `dim_ℂ V - q` positive directions form an open set. If the
+second derivative of `f` varies continuously on a set `U`, its distance from the complement of
+this open set gives a continuous positive tolerance on `U` within which every perturbation remains
+strongly `q`-pseudoconvex.
+
 ## Main definitions
 
 * `TauCeti.IsStrictlyPlurisubharmonicAt f x`: the Levi form of `f` at `x` is positive definite.
@@ -46,6 +54,10 @@ functions of one real variable, and strict plurisubharmonicity is preserved by s
 * `TauCeti.IsStronglyPseudoconvexAt.scalar_comp`,
   `TauCeti.IsStrictlyPlurisubharmonicAt.scalar_comp`: post-composition with a function `φ` with
   `φ' > 0` and `φ'' ≥ 0`.
+* `TauCeti.isOpen_setOf_re_leviForm_posOnSubspace`: having an admissible Levi-positive complex
+  subspace is open on continuous bilinear forms.
+* `TauCeti.exists_continuousOn_pos_forall_isStronglyPseudoconvexAt`: strong
+  `q`-pseudoconvexity is open in the fine `C²` topology, with a varying positive tolerance.
 
 ## References
 
@@ -57,7 +69,7 @@ functions of one real variable, and strict plurisubharmonicity is preserved by s
 
 public section
 
-open Complex Function Module Topology
+open Complex Function Metric Module Set Topology
 
 namespace TauCeti
 
@@ -216,5 +228,109 @@ theorem IsStrictlyPlurisubharmonicAt.add (hf : IsStrictlyPlurisubharmonicAt f x)
     (hg' : ContDiffAt ℝ 2 g x) : IsStrictlyPlurisubharmonicAt (f + g) x := fun v hv ↦ by
   rw [leviForm_add hf' hg']
   simpa using add_pos (hf v hv) (hg v hv)
+
+/-! ### Perturbation openness -/
+
+/-- **Strong `q`-pseudoconvexity is open on bilinear forms.** On a finite-dimensional complex
+space, the continuous real bilinear forms whose Levi form is positive definite on some complex
+subspace of codimension at most `q` form an open set.
+
+The statement uses the additive dimension inequality from `IsStronglyPseudoconvexAt`, which also
+covers `q ≥ dim_ℂ V` without truncated subtraction. -/
+theorem isOpen_setOf_re_leviForm_posOnSubspace [FiniteDimensional ℂ V] (q : ℕ) :
+    IsOpen {B : V →L[ℝ] V →L[ℝ] ℝ |
+      ∃ P : Submodule ℂ V, finrank ℂ V ≤ finrank ℂ P + q ∧
+        ∀ v ∈ P, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re} := by
+  rw [isOpen_iff_mem_nhds]
+  intro B hB
+  obtain ⟨P, hP, hpos⟩ := hB
+  have : FiniteDimensional ℝ V := Module.Finite.trans ℂ V
+  have : FiniteDimensional ℝ P := Module.Finite.trans ℂ P
+  -- Positivity persists uniformly on the compact unit sphere of the chosen positive subspace.
+  have key : ∀ᶠ C in nhds B, ∀ v ∈ sphere (0 : P) 1,
+      0 < (C.toBilinForm.leviForm (v : V) v).re := by
+    refine (isCompact_sphere (0 : P) 1).eventually_forall_of_forall_eventually
+      fun v hv ↦ ?_
+    have hvnorm : ‖v‖ = 1 := mem_sphere_zero_iff_norm.mp hv
+    have hv0 : (v : V) ≠ 0 := by
+      exact Subtype.coe_ne_coe.mpr (norm_ne_zero_iff.mp (hvnorm ▸ one_ne_zero))
+    have hcont : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦
+        (z.1.toBilinForm.leviForm (z.2 : V) z.2).re := by
+      simp only [LinearMap.BilinForm.re_leviForm_apply]
+      have hv : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ (z.2 : V) :=
+        continuous_subtype_val.comp continuous_snd
+      have hvI : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ I • (z.2 : V) :=
+        continuous_const_smul I |>.comp hv
+      exact ((continuous_fst.clm_apply hv).clm_apply hv).add
+        ((continuous_fst.clm_apply hvI).clm_apply hvI) |>.div_const 4
+    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.2 hv0)
+  filter_upwards [key] with C hC
+  refine ⟨P, hP, fun v hv hv0 ↦ ?_⟩
+  let u : P := ⟨v, hv⟩
+  have hu0 : u ≠ 0 := Subtype.coe_ne_coe.mp hv0
+  have hnorm : ‖u‖ ≠ 0 := norm_ne_zero_iff.mpr hu0
+  let c : ℝ := ‖u‖⁻¹
+  have hmem : c • u ∈ sphere (0 : P) 1 := by
+    rw [mem_sphere_zero_iff_norm, norm_smul, Real.norm_of_nonneg
+      (inv_nonneg.mpr (norm_nonneg u)), inv_mul_cancel₀ hnorm]
+  have hc := hC (c • u) hmem
+  rw [LinearMap.BilinForm.re_leviForm_apply] at hc ⊢
+  simp only [c, u, Submodule.coe_smul_of_tower, smul_comm I, map_smul, LinearMap.smul_apply,
+    smul_eq_mul] at hc
+  have hfactor :
+      (‖(⟨v, hv⟩ : P)‖⁻¹ * (‖(⟨v, hv⟩ : P)‖⁻¹ * (C.toBilinForm v v)) +
+          ‖(⟨v, hv⟩ : P)‖⁻¹ * (‖(⟨v, hv⟩ : P)‖⁻¹ *
+            (C.toBilinForm (I • v) (I • v)))) / 4 =
+        ‖(⟨v, hv⟩ : P)‖⁻¹ ^ 2 *
+          ((C.toBilinForm v v + C.toBilinForm (I • v) (I • v)) / 4) := by ring
+  rw [hfactor] at hc
+  exact pos_of_mul_pos_right hc (sq_nonneg ‖(⟨v, hv⟩ : P)‖⁻¹)
+
+-- The metric on continuous bilinear forms is the operator-norm metric. A term is needed because
+-- the nested operator-norm instances are not reducibly equal.
+private theorem dist_eq_norm_sub_bilin (B B' : V →L[ℝ] V →L[ℝ] ℝ) :
+    dist B B' = ‖B - B'‖ :=
+  dist_eq_norm B B'
+
+/-- **Strong `q`-pseudoconvexity is open in the fine `C²` topology.** Let the second derivative
+of `f` vary continuously on `U`, and suppose `f` is strongly `q`-pseudoconvex at every point of
+`U`. Then there is a tolerance `ε`, continuous and positive on `U`, such that every function whose
+second derivative differs from that of `f` by less than `ε x` remains strongly
+`q`-pseudoconvex at `x`.
+
+No regularity of the perturbing function is required beyond the displayed pointwise control of its
+totalized second derivative. -/
+theorem exists_continuousOn_pos_forall_isStronglyPseudoconvexAt
+    [FiniteDimensional ℂ V] {U : Set V} {f : V → ℝ} (q : ℕ)
+    (hf : ContinuousOn (fun x ↦ fderiv ℝ (fderiv ℝ f) x) U)
+    (hpos : ∀ x ∈ U, IsStronglyPseudoconvexAt q f x) :
+    ∃ ε : V → ℝ, ContinuousOn ε U ∧ (∀ x ∈ U, 0 < ε x) ∧
+      ∀ g : V → ℝ, ∀ x ∈ U,
+        ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ < ε x →
+          IsStronglyPseudoconvexAt q g x := by
+  let S : Set (V →L[ℝ] V →L[ℝ] ℝ) :=
+    {B | ∃ P : Submodule ℂ V, finrank ℂ V ≤ finrank ℂ P + q ∧
+      ∀ v ∈ P, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re}
+  have hS : IsOpen S := isOpen_setOf_re_leviForm_posOnSubspace q
+  have hmem (x : V) (hx : x ∈ U) : fderiv ℝ (fderiv ℝ f) x ∈ S := by
+    simpa only [S, Set.mem_ofPred_eq, leviForm_def] using
+      (isStronglyPseudoconvexAt_iff.mp (hpos x hx))
+  rcases Sᶜ.eq_empty_or_nonempty with hempty | hne
+  · -- This occurs, for example, when `q ≥ dim_ℂ V`; then every positive tolerance works.
+    refine ⟨fun _ ↦ 1, continuousOn_const, fun _ _ ↦ one_pos, fun g x _ _ ↦ ?_⟩
+    have hg : fderiv ℝ (fderiv ℝ g) x ∈ S :=
+      (compl_empty_iff.mp hempty).symm ▸ mem_univ _
+    simpa only [isStronglyPseudoconvexAt_iff, S, Set.mem_ofPred_eq, leviForm_def] using hg
+  · -- Otherwise use the distance to the closed complement of the admissible forms.
+    refine ⟨fun x ↦ infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ,
+      (continuous_infDist_pt _).comp_continuousOn hf,
+      fun x hx ↦ (hS.isClosed_compl.notMem_iff_infDist_pos hne).mp
+        (not_not.mpr (hmem x hx)), fun g x _ hlt ↦ ?_⟩
+    have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
+        infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
+      (dist_comm _ _).trans_lt ((dist_eq_norm_sub_bilin _ _).trans_lt hlt)
+    have hg : fderiv ℝ (fderiv ℝ g) x ∈ S :=
+      not_not.mp (notMem_of_dist_lt_infDist hdist)
+    simpa only [isStronglyPseudoconvexAt_iff, S, Set.mem_ofPred_eq, leviForm_def] using hg
 
 end TauCeti
