@@ -83,8 +83,7 @@ theorem mem_range_rationalDifferentialStalk_iff_mem_range_map (x : X)
     refine ⟨(X.relativeDifferentialsStalkEquiv k x).symm
       (KaehlerDifferential.mapSemilinear e.symm.toAlgHom ξ), ?_⟩
     rw [rationalDifferentialStalk_symm_apply, ← h,
-      ← KaehlerDifferential.mapSemilinear_comp_apply, AlgEquiv.comp_symm,
-      KaehlerDifferential.mapSemilinear_id_apply]
+      KaehlerDifferential.mapSemilinear_apply_symm_apply]
 
 section Invertible
 
@@ -107,16 +106,8 @@ theorem exists_span_D_eq_top_of_isInvertible (x : X)
     TauCeti.IsLocalRing.exists_mem_span_singleton_eq_top_of_finrank_eq_one hrank
       (KaehlerDifferential.span_range_derivation k (X.presheaf.stalk x))
   -- Transport the generator along the identification of the stalk with the valuation ring.
-  let e := X.stalkToPlaceIntegersAlgEquiv (k := k) x
-  refine ⟨e a, eq_top_iff.mpr fun ξ _ ↦ ?_⟩
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-    (ha ▸ Submodule.mem_top : KaehlerDifferential.mapSemilinear e.symm.toAlgHom ξ ∈
-      Submodule.span (X.presheaf.stalk x) {KaehlerDifferential.D k (X.presheaf.stalk x) a})
-  refine Submodule.mem_span_singleton.mpr ⟨e c, ?_⟩
-  have h := congrArg (KaehlerDifferential.mapSemilinear e.toAlgHom) hc
-  rwa [KaehlerDifferential.mapSemilinear_smul, KaehlerDifferential.mapSemilinear_D,
-    ← KaehlerDifferential.mapSemilinear_comp_apply, AlgEquiv.comp_symm,
-    KaehlerDifferential.mapSemilinear_id_apply] at h
+  exact ⟨X.stalkToPlaceIntegersAlgEquiv (k := k) x a,
+    (KaehlerDifferential.span_singleton_D_apply_eq_top_iff _ a).mpr ha⟩
 
 variable (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
   {t : X.functionField} (ht : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ X.functionField]
