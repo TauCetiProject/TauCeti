@@ -34,6 +34,8 @@ infinite place, for instance an idele at one infinite place with any prescribed 
   `NumberField.InfinitePlace.Completion.isometry_ofReal`: the embedding preserves absolute values.
 * `NumberField.InfinitePlace.completionNormalizedAbsValue_ofReal`: the normalized absolute value
   of `ofReal w r` is `|r| ^ w.mult`.
+* `NumberField.InfinitePlace.exists_completionNormalizedAbsValue_eq`: every nonnegative real
+  number is a normalized absolute value.
 
 ## References
 
@@ -105,5 +107,13 @@ value raised to the multiplicity of `w`. -/
 theorem completionNormalizedAbsValue_ofReal (r : ℝ) :
     completionNormalizedAbsValue w (Completion.ofReal w r) = |r| ^ w.mult := by
   rw [completionNormalizedAbsValue_apply, Completion.norm_ofReal]
+
+/-- Every nonnegative real number is the normalized absolute value of an element of the completion
+at an infinite place, namely of the real number `t ^ (1 / m_w)`. -/
+theorem exists_completionNormalizedAbsValue_eq {t : ℝ} (ht : 0 ≤ t) :
+    ∃ x : w.Completion, completionNormalizedAbsValue w x = t :=
+  ⟨Completion.ofReal w (t ^ (w.mult : ℝ)⁻¹), by
+    rw [completionNormalizedAbsValue_ofReal, abs_of_nonneg (by positivity), ← Real.rpow_natCast,
+      ← Real.rpow_mul ht, inv_mul_cancel₀ (by exact_mod_cast w.mult_ne_zero), Real.rpow_one]⟩
 
 end NumberField.InfinitePlace
