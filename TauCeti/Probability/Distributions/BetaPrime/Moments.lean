@@ -103,9 +103,14 @@ theorem integrable_sq_betaPrimeMeasure_iff (ha : 0 < a) (hb : 0 < b) :
 @[simp]
 theorem integral_id_betaPrimeMeasure (ha : 0 < a) (hb : 1 < b) :
     ∫ x, x ∂betaPrimeMeasure a b = a / (b - 1) := by
+  let _ := isProbabilityMeasure_fisherSnedecorMeasure
+    (m := 2 * a) (n := 2 * b) (by positivity) (by linarith)
+  have h := integral_id_map_affine
+    (μ := fisherSnedecorMeasure (2 * a) (2 * b)) (a := 0) (b := a / b)
+    ((integrable_id_fisherSnedecorMeasure_iff (by positivity) (by linarith)).2 (by linarith))
+  simp only [zero_add] at h
   rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha (by linarith),
-    integral_map (by fun_prop) (by fun_prop), integral_const_mul,
-    integral_id_fisherSnedecorMeasure (by positivity) (by linarith)]
+    h, integral_id_fisherSnedecorMeasure (by positivity) (by linarith)]
   field_simp
 
 /-- The second raw moment of a beta-prime law. -/
@@ -126,9 +131,13 @@ theorem integral_sq_betaPrimeMeasure (ha : 0 < a) (hb : 2 < b) :
 theorem variance_id_betaPrimeMeasure (ha : 0 < a) (hb : 2 < b) :
     variance id (betaPrimeMeasure a b) =
       a * (a + b - 1) / ((b - 2) * (b - 1) ^ 2) := by
+  let _ := isProbabilityMeasure_fisherSnedecorMeasure
+    (m := 2 * a) (n := 2 * b) (by positivity) (by linarith)
+  have h := variance_id_map_affine
+    (μ := fisherSnedecorMeasure (2 * a) (2 * b)) (a := 0) (b := a / b)
+  simp only [zero_add] at h
   rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha (by linarith),
-    variance_id_map (by fun_prop), variance_const_mul, ← Function.id_def,
-    variance_id_fisherSnedecorMeasure (by positivity) (by linarith)]
+    h, variance_id_fisherSnedecorMeasure (by positivity) (by linarith)]
   have hb₁ : 2 * b - 2 = 2 * (b - 1) := by ring
   have hb₂ : 2 * b - 4 = 2 * (b - 2) := by ring
   rw [hb₁, hb₂]
@@ -136,19 +145,22 @@ theorem variance_id_betaPrimeMeasure (ha : 0 < a) (hb : 2 < b) :
 
 /-- Beta-prime laws have finite exponential moments exactly at nonpositive rates. -/
 @[simp]
+theorem integrable_exp_mul_id_betaPrimeMeasure_iff (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
+    Integrable (fun x : ℝ ↦ exp (t * x)) (betaPrimeMeasure a b) ↔ t ≤ 0 := by
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha hb,
+    integrable_map_measure (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, ← mul_assoc]
+  rw [integrable_exp_mul_id_fisherSnedecorMeasure_iff (by positivity) (by positivity),
+    mul_nonpos_iff]
+  simp [not_le_of_gt (div_pos ha hb), (div_pos ha hb).le]
+
+/-- The exact exponential-integrability domain of a valid beta-prime law is the
+nonpositive half-line. -/
+@[simp]
 theorem integrableExpSet_id_betaPrimeMeasure (ha : 0 < a) (hb : 0 < b) :
     integrableExpSet id (betaPrimeMeasure a b) = Iic 0 := by
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha hb]
-  have h := integrableExpSet_id_map_affine
-    (μ := fisherSnedecorMeasure (2 * a) (2 * b)) (a := 0) (b := a / b)
-  simp only [zero_add] at h
-  rw [h, integrableExpSet_id_fisherSnedecorMeasure (by positivity) (by positivity)]
   ext t
-  simp only [mem_preimage, mem_Iic]
-  constructor
-  · intro h
-    nlinarith [div_pos ha hb]
-  · exact mul_nonpos_of_nonneg_of_nonpos (div_pos ha hb).le
+  simpa [integrableExpSet, id_eq] using integrable_exp_mul_id_betaPrimeMeasure_iff ha hb t
 
 section RandomVariables
 
