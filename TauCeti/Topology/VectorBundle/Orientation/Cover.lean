@@ -27,7 +27,7 @@ of orientations of `F`, so the projection is a covering map
 fixed-point-free deck involution (`TauCeti.VectorBundleOrientationCover.deck`).
 
 A family of fibre orientations is an orientation of the bundle exactly when the associated
-section of the cover is continuous (`TauCeti.VectorBundleOrientation.continuous_mk` and
+section of the cover is continuous (`TauCeti.VectorBundleOrientation.continuous_mk_cover` and
 `TauCeti.VectorBundleOrientation.ofContinuous`), so a bundle is orientable if and only if its
 orientation double cover has a continuous section
 (`TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`). Over a connected base, a
@@ -90,6 +90,17 @@ structure VectorBundleOrientationCover (F : Type*) (E : B → Type*) [∀ b, Add
 
 namespace VectorBundleOrientationCover
 
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace (TotalSpace F E)] in
+/-- Two points of the orientation double cover over the same base point are equal exactly when
+their orientations are equal. -/
+theorem mk_eq_mk_iff {b : B} {o o' : Orientation ℝ (E b) ι} :
+    (⟨b, o⟩ : VectorBundleOrientationCover F E ι) = ⟨b, o'⟩ ↔ o = o' := by
+  constructor
+  · exact fun h ↦ eq_of_heq (VectorBundleOrientationCover.mk.inj h).2
+  · rintro rfl
+    rfl
+
 /-- The sheet of the orientation double cover read as the orientation `o` of the model fibre in
 the linear trivialization `e`: the orientations of fibres over `e.baseSet` that `e` transports
 to `o`. -/
@@ -97,6 +108,7 @@ def sheet (e : Trivialization F (π F E)) [e.IsLinear ℝ] (o : Orientation ℝ 
     Set (VectorBundleOrientationCover F E ι) :=
   {p | ∃ h : p.proj ∈ e.baseSet, e.mapOrientation ι h p.orientation = o}
 
+@[simp]
 theorem mem_sheet_iff {e : Trivialization F (π F E)} [e.IsLinear ℝ] {o : Orientation ℝ F ι}
     {p : VectorBundleOrientationCover F E ι} :
     p ∈ sheet e o ↔ ∃ h : p.proj ∈ e.baseSet, e.mapOrientation ι h p.orientation = o :=
@@ -132,6 +144,16 @@ theorem continuous_of_isOpen_preimage_sheet {X : Type*} [TopologicalSpace X]
   · exact hU.preimage hf
   · exact hsheet b o
 
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] in
+private theorem mk_neg_mem_sheet_iff {e : Trivialization F (π F E)} [e.IsLinear ℝ]
+    {o : Orientation ℝ F ι} {p : VectorBundleOrientationCover F E ι} :
+    (⟨p.proj, -p.orientation⟩ : VectorBundleOrientationCover F E ι) ∈ sheet e o ↔
+      p ∈ sheet e (-o) := by
+  simp only [mem_sheet_iff, Trivialization.mapOrientation_neg]
+  exact exists_congr fun _ ↦
+    ⟨fun h ↦ by rw [← h]; exact (neg_neg (G := Orientation ℝ F ι) _).symm,
+      fun h ↦ by rw [h]; exact neg_neg o⟩
+
 /-- The deck involution of the orientation double cover, reversing the orientation of the fibre
 and fixing the base point. -/
 def deck : VectorBundleOrientationCover F E ι ≃ₜ VectorBundleOrientationCover F E ι :=
@@ -140,10 +162,7 @@ def deck : VectorBundleOrientationCover F E ι ≃ₜ VectorBundleOrientationCov
     continuous_of_isOpen_preimage_sheet continuous_proj fun b o ↦ by
       convert isOpen_sheet_trivializationAt b (-o) using 1
       ext p
-      simp only [mem_preimage, mem_sheet_iff, Trivialization.mapOrientation_neg]
-      exact exists_congr fun _ ↦
-        ⟨fun h ↦ by rw [← h]; exact (neg_neg (G := Orientation ℝ F ι) _).symm,
-          fun h ↦ by rw [h]; exact neg_neg o⟩
+      exact mk_neg_mem_sheet_iff
   -- `simp [neg_neg]` does not fire: the negation on `Orientation` reached through
   -- `InvolutiveNeg` is only reducibly, not syntactically, the one in the goal.
   { toFun p := ⟨p.proj, -p.orientation⟩
@@ -153,25 +172,39 @@ def deck : VectorBundleOrientationCover F E ι ≃ₜ VectorBundleOrientationCov
     continuous_toFun := hneg
     continuous_invFun := hneg }
 
-@[simp]
 theorem deck_apply (p : VectorBundleOrientationCover F E ι) :
     deck p = ⟨p.proj, -p.orientation⟩ :=
   (rfl)
 
+@[simp]
 theorem proj_deck (p : VectorBundleOrientationCover F E ι) : (deck p).proj = p.proj :=
   (rfl)
+
+/-- The deck involution reverses the orientation of each point. -/
+@[simp]
+theorem orientation_deck (p : VectorBundleOrientationCover F E ι) :
+    (proj_deck p) ▸ (deck p).orientation = -p.orientation :=
+  (rfl)
+
+/-- The deck involution exchanges the two sheets determined by a linear trivialization. -/
+@[simp high]
+theorem deck_mem_sheet_iff {e : Trivialization F (π F E)} [e.IsLinear ℝ]
+    {o : Orientation ℝ F ι} {p : VectorBundleOrientationCover F E ι} :
+    deck p ∈ sheet e o ↔ p ∈ sheet e (-o) :=
+  mk_neg_mem_sheet_iff
 
 @[simp]
 theorem deck_symm : (deck : VectorBundleOrientationCover F E ι ≃ₜ _).symm = deck :=
   (rfl)
 
+@[simp]
 theorem deck_deck (p : VectorBundleOrientationCover F E ι) : deck (deck p) = p :=
   deck.symm_apply_apply p
 
 /-- The deck involution has no fixed points. -/
 theorem deck_ne_self (p : VectorBundleOrientationCover F E ι) : deck p ≠ p := fun h ↦ by
   obtain ⟨b, o⟩ := p
-  exact Module.Ray.ne_neg_self o (eq_of_heq (VectorBundleOrientationCover.mk.inj h).2).symm
+  exact Module.Ray.ne_neg_self o (mk_eq_mk_iff.1 h).symm
 
 variable [Fintype ι] [FiniteDimensional ℝ F]
 
@@ -293,7 +326,8 @@ theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundl
 /-- Over a preconnected base, a clopen subset of the orientation double cover that is invariant
 under the deck involution is empty or the whole cover, provided `ι` has cardinality the rank of
 the bundle. -/
-theorem eq_empty_or_eq_univ_of_isClopen [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ F)
+theorem eq_empty_or_eq_univ_of_isClopen_of_forall_deck_mem [PreconnectedSpace B]
+    (hι : Fintype.card ι = finrank ℝ F)
     {A : Set (VectorBundleOrientationCover F E ι)} (hA : IsClopen A)
     (hdeck : ∀ p ∈ A, deck p ∈ A) : A = ∅ ∨ A = univ := by
   -- `A` is a union of fibres, so its image in `B` is clopen: the projection is an open map.
@@ -328,11 +362,12 @@ theorem deck_mem_iff_notMem_of_isClopen [PreconnectedSpace B]
   -- The points both of whose fibre points lie in `C`, or both outside `C`, form clopen
   -- deck-invariant sets, which must be empty.
   refine ⟨fun hp' hp ↦ ?_, fun hp ↦ ?_⟩
-  · rcases eq_empty_or_eq_univ_of_isClopen hι (hC.inter (hC.preimage deck.continuous))
+  · rcases eq_empty_or_eq_univ_of_isClopen_of_forall_deck_mem hι
+      (hC.inter (hC.preimage deck.continuous))
         (fun q hq ↦ ⟨hq.2, by simpa only [mem_preimage, deck_deck] using hq.1⟩) with h | h
     · exact h.subset ⟨hp, hp'⟩
     · exact hCuniv (eq_univ_of_univ_subset (h.symm.subset.trans inter_subset_left))
-  · rcases eq_empty_or_eq_univ_of_isClopen hι
+  · rcases eq_empty_or_eq_univ_of_isClopen_of_forall_deck_mem hι
         (hC.compl.inter (hC.compl.preimage deck.continuous))
         (fun q hq ↦ ⟨hq.2, by simpa only [mem_preimage, deck_deck] using hq.1⟩) with h | h
     · exact not_not.1 fun hp' ↦ h.subset ⟨hp, hp'⟩
@@ -423,7 +458,8 @@ variable [Fintype ι] [FiniteDimensional ℝ F]
 
 /-- The section of the orientation double cover given by an orientation of the bundle is
 continuous, provided `ι` has cardinality the rank of the bundle. -/
-theorem continuous_mk (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) :
+theorem continuous_mk_cover (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) :
     Continuous fun b ↦ (⟨b, o b⟩ : VectorBundleOrientationCover F E ι) := by
   refine VectorBundleOrientationCover.continuous_of_isOpen_preimage_sheet continuous_id
     fun b o' ↦ isOpen_iff_mem_nhds.2 fun x ⟨hx, hxo⟩ ↦ ?_
@@ -436,7 +472,7 @@ continuous section. -/
 theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
     Nonempty (VectorBundleOrientation F E ι) ↔
       ∃ s : B → VectorBundleOrientationCover F E ι, Continuous s ∧ ∀ b, (s b).proj = b := by
-  refine ⟨fun ⟨o⟩ ↦ ⟨_, o.continuous_mk hι, fun _ ↦ rfl⟩, fun ⟨s, hs, hproj⟩ ↦ ?_⟩
+  refine ⟨fun ⟨o⟩ ↦ ⟨_, o.continuous_mk_cover hι, fun _ ↦ rfl⟩, fun ⟨s, hs, hproj⟩ ↦ ?_⟩
   -- A section is determined by its fibre orientations, transported along `(s b).proj = b`.
   have key (p : VectorBundleOrientationCover F E ι) (b : B) (h : p.proj = b) :
       (⟨b, h ▸ p.orientation⟩ : VectorBundleOrientationCover F E ι) = p := by
@@ -458,10 +494,10 @@ theorem isClopen_setOf_orientation_eq (hι : Fintype.card ι = finrank ℝ F)
     simp only [mem_compl_iff, mem_ofPred_eq, neg_apply]
     rcases VectorBundleOrientationCover.eq_or_eq_deck hι (p := ⟨b, o b⟩) (q := ⟨b, o'⟩) rfl
       with h | h
-    · obtain rfl : o' = o b := eq_of_heq (VectorBundleOrientationCover.mk.inj h).2
+    · obtain rfl : o' = o b := VectorBundleOrientationCover.mk_eq_mk_iff.1 h
       exact iff_of_false (· rfl) (Module.Ray.ne_neg_self _)
     · rw [VectorBundleOrientationCover.deck_apply] at h
-      obtain rfl : o' = -o b := eq_of_heq (VectorBundleOrientationCover.mk.inj h).2
+      obtain rfl : o' = -o b := VectorBundleOrientationCover.mk_eq_mk_iff.1 h
       exact iff_of_true (fun h' ↦ Module.Ray.ne_neg_self _ h'.symm) rfl
   exact ⟨isOpen_compl_iff.1 (hcompl ▸ (-o).isOpen_setOf_orientation_eq),
     o.isOpen_setOf_orientation_eq⟩
@@ -482,12 +518,9 @@ theorem nonempty_iff_not_connectedSpace [ConnectedSpace B] (hι : Fintype.card �
       exact Module.Ray.ne_neg_self (o b₀) hmem.symm
   · -- A nonempty proper clopen subset of the cover is the image of a continuous section.
     obtain ⟨p₀, -⟩ := VectorBundleOrientationCover.surjective_proj (F := F) (E := E) hι b₀
-    obtain ⟨C, hC, hC₀, hCuniv⟩ : ∃ C : Set (VectorBundleOrientationCover F E ι),
-        IsClopen C ∧ C.Nonempty ∧ C ≠ univ := by
-      by_contra! H
-      exact hnc (@ConnectedSpace.mk _ _
-        (preconnectedSpace_iff_clopen.2 fun C hC ↦
-          or_iff_not_imp_left.2 fun hne ↦ H C hC (nonempty_iff_ne_empty.2 hne)) ⟨p₀⟩)
+    rw [connectedSpace_iff_clopen] at hnc
+    push Not at hnc
+    obtain ⟨C, hC, hC₀, hCuniv⟩ := hnc ⟨p₀⟩
     obtain ⟨s, hs, hsproj, -⟩ :=
       VectorBundleOrientationCover.exists_section_of_isClopen hι hC hC₀ hCuniv
     exact (nonempty_iff_exists_section hι).2 ⟨s, hs, hsproj⟩
