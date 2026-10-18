@@ -29,7 +29,7 @@ coordinate families; reconstructed measures use Mathlib's `AbstractMeasure` carr
 existing `AbstractMeasure.finiteProjection`.
 
 The reconstruction API is in `TauCeti.AbstractMeasure`. In particular,
-`TauCeti.AbstractMeasure.unitCoordinates_ext μ ν h` proves uniqueness,
+`TauCeti.AbstractMeasure.ext_unitsToZModPow μ ν h` proves uniqueness,
 `TauCeti.AbstractMeasure.unitCoordinates_compatible μ` supplies compatibility, and
 `TauCeti.AbstractMeasure.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
 
@@ -49,7 +49,7 @@ namespace TauCeti.AbstractMeasure
 variable {p : ℕ} [Fact p.Prime]
 
 /-- Measures on the p-adic units are determined by their finite unit coordinates. -/
-theorem unitCoordinates_ext {R : Type*} [NormedCommRing R]
+theorem ext_unitsToZModPow {R : Type*} [NormedCommRing R]
     (μ ν : D(ℤ_[p]ˣ, R))
     (h : ∀ n, finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n) :
       C(ℤ_[p]ˣ, (ZMod (p ^ n))ˣ)) μ =
@@ -100,7 +100,7 @@ private def coordinateIntegralFun (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) : ℤ_
   ∑ a, g a * c n a
 
 include hc in
-private theorem coordinateIntegralFun_factor (f : LocallyConstant ℤ_[p]ˣ ℤ_[p])
+private theorem coordinateIntegralFun_eq_sum (f : LocallyConstant ℤ_[p]ˣ ℤ_[p])
     (n : ℕ) (g : (ZMod (p ^ n))ˣ → ℤ_[p])
     (hg : g ∘ PadicInt.unitsToZModPow n = f) :
     coordinateIntegralFun c f = ∑ a, g a * c n a := by
@@ -115,15 +115,15 @@ def unitCoordinateIntegral : LocallyConstant ℤ_[p]ˣ ℤ_[p] →ₗ[ℤ_[p]] �
     obtain ⟨n, b, hb⟩ := g.isLocallyConstant.exists_comp_unitsToZModPow_eq
     obtain ⟨a', ha'⟩ := exists_comp_unitsToZModPow_eq_of_le (Nat.le_max_left m n) ⟨a, ha⟩
     obtain ⟨b', hb'⟩ := exists_comp_unitsToZModPow_eq_of_le (Nat.le_max_right m n) ⟨b, hb⟩
-    rw [coordinateIntegralFun_factor c hc f _ a' ha',
-      coordinateIntegralFun_factor c hc g _ b' hb',
-      coordinateIntegralFun_factor c hc (f + g) (max m n) (a' + b') (by
+    rw [coordinateIntegralFun_eq_sum c hc f _ a' ha',
+      coordinateIntegralFun_eq_sum c hc g _ b' hb',
+      coordinateIntegralFun_eq_sum c hc (f + g) (max m n) (a' + b') (by
         exact funext fun u ↦ congrArg₂ (· + ·) (congrFun ha' u) (congrFun hb' u))]
     simp [add_mul, Finset.sum_add_distrib]
   map_smul' r f := by
     obtain ⟨n, g, hg⟩ := f.isLocallyConstant.exists_comp_unitsToZModPow_eq
-    rw [coordinateIntegralFun_factor c hc f n g hg,
-      coordinateIntegralFun_factor c hc (r • f) n (r • g) (by
+    rw [coordinateIntegralFun_eq_sum c hc f n g hg,
+      coordinateIntegralFun_eq_sum c hc (r • f) n (r • g) (by
         exact funext fun u ↦ congrArg (r • ·) (congrFun hg u))]
     simp [Finset.mul_sum, mul_assoc]
 
@@ -143,17 +143,17 @@ theorem unitCoordinateIntegral_smul (a : ℤ_[p]) (f : LocallyConstant ℤ_[p]ˣ
   map_smul _ _ _
 
 /-- Every finite-level presentation gives the same integral. -/
-theorem unitCoordinateIntegral_factor (f : LocallyConstant ℤ_[p]ˣ ℤ_[p])
+theorem unitCoordinateIntegral_eq_sum (f : LocallyConstant ℤ_[p]ˣ ℤ_[p])
     (n : ℕ) (g : (ZMod (p ^ n))ˣ → ℤ_[p])
     (hg : g ∘ PadicInt.unitsToZModPow n = f) :
     unitCoordinateIntegral c hc f = ∑ a, g a * c n a :=
-  coordinateIntegralFun_factor c hc f n g hg
+  coordinateIntegralFun_eq_sum c hc f n g hg
 
 /-- Integral coordinates make integration a contraction for the supremum norm on tests. -/
 theorem unitCoordinateIntegral_norm_le (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
     ‖unitCoordinateIntegral c hc f‖ ≤ ‖f.toContinuousMap‖ := by
   obtain ⟨n, g, hg⟩ := f.isLocallyConstant.exists_comp_unitsToZModPow_eq
-  rw [unitCoordinateIntegral_factor c hc f n g hg]
+  rw [unitCoordinateIntegral_eq_sum c hc f n g hg]
   refine norm_sum_le_of_forall_le_of_nonneg (norm_nonneg _) fun a _ ↦ ?_
   obtain ⟨u, rfl⟩ := PadicInt.unitsToZModPow_surjective n a
   calc
@@ -245,16 +245,16 @@ theorem finiteProjection_ofUnitCoordinates (n : ℕ) :
     ext u
     simp [fiberIndicator_apply, f, g, Pi.single_apply]
   rw [finiteProjection_apply, hf, ofUnitCoordinates_apply_locallyConstant,
-    unitCoordinateIntegral_factor c hc f n g rfl]
+    unitCoordinateIntegral_eq_sum c hc f n g rfl]
   simp [g, Pi.single_apply]
 
 include hc in
 /-- Every compatible integral family is the family of coordinates of exactly one measure. -/
-theorem existsUnique_ofUnitCoordinates :
+theorem existsUnique_finiteProjection_unitsToZModPow_eq :
     ∃! μ : D(ℤ_[p]ˣ, ℤ_[p]),
       ∀ n, finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ = c n := by
   refine ⟨ofUnitCoordinates c hc, finiteProjection_ofUnitCoordinates c hc, fun μ hμ ↦ ?_⟩
-  exact unitCoordinates_ext μ _ fun n ↦ (hμ n).trans
+  exact ext_unitsToZModPow μ _ fun n ↦ (hμ n).trans
     (finiteProjection_ofUnitCoordinates c hc n).symm
 
 /-- The total mass is the sole coefficient at depth zero. -/
@@ -290,7 +290,7 @@ theorem unitCoordinates_compatible {R : Type*} [TopologicalSpace R] [CommRing R]
 theorem ofUnitCoordinates_finiteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
     ofUnitCoordinates (fun n ↦ finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ)
       (unitCoordinates_compatible μ) = μ := by
-  apply unitCoordinates_ext
+  apply ext_unitsToZModPow
   intro n
   exact finiteProjection_ofUnitCoordinates _ _ n
 
@@ -298,7 +298,7 @@ theorem ofUnitCoordinates_finiteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
 @[simp]
 theorem ofUnitCoordinates_zero :
     ofUnitCoordinates (p := p) (fun _ ↦ 0) (by intros; simp) = 0 := by
-  apply unitCoordinates_ext
+  apply ext_unitsToZModPow
   intro n
   simp
 
@@ -310,7 +310,7 @@ theorem ofUnitCoordinates_add (d : ∀ n : ℕ, (ZMod (p ^ n))ˣ →₀ ℤ_[p])
     ofUnitCoordinates (fun n ↦ c n + d n) (by
       intro m n h; simp [Finsupp.mapDomain_add, hc m n h, hd m n h]) =
         ofUnitCoordinates c hc + ofUnitCoordinates d hd := by
-  apply unitCoordinates_ext
+  apply ext_unitsToZModPow
   intro n
   simp
 
@@ -319,7 +319,7 @@ theorem ofUnitCoordinates_add (d : ∀ n : ℕ, (ZMod (p ^ n))ˣ →₀ ℤ_[p])
 theorem ofUnitCoordinates_single (u : ℤ_[p]ˣ) (a : ℤ_[p]) :
     ofUnitCoordinates (fun n ↦ Finsupp.single (PadicInt.unitsToZModPow n u) a)
       (by intros; simp) = a • dirac ℤ_[p] u := by
-  apply unitCoordinates_ext
+  apply ext_unitsToZModPow
   intro n
   simp
 
