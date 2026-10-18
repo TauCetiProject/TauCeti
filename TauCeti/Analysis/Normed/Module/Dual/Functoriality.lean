@@ -10,11 +10,14 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 /-!
 # Functoriality of the continuous dual
 
-Precomposition by a bounded linear map is its Banach-space adjoint. This file records the
-contravariant identity and composition laws for modules with arbitrary topologies, proves that
-taking the adjoint preserves the operator norm over `ℝ` or `ℂ`, and packages this operation as a
-linear isometry between operator spaces. It also proves the naturality of the canonical map into
-the bidual.
+Precomposition by a continuous linear map acts contravariantly on continuous duals. This file
+records the identity and composition laws for modules with arbitrary topologies. For normed
+spaces, it proves that taking the adjoint preserves the operator norm over `ℝ` or `ℂ`, packages
+this operation as a linear isometry between operator spaces, and proves the naturality of the
+canonical map into the bidual.
+
+The norm-preservation proof uses Mathlib's canonical bidual isometry
+`NormedSpace.inclusionInDoubleDualLi`.
 
 These are the standard functorial properties of the continuous dual; see Rudin,
 *Functional Analysis*, Chapter 4.
@@ -80,7 +83,9 @@ theorem norm_precomp (T : E →L[𝕜] F) :
   have h : (ContinuousLinearMap.precomp 𝕜 T).flip =
       (NormedSpace.inclusionInDoubleDualLi (E := F) 𝕜).toContinuousLinearMap.comp T := by
     ext x f
-    rfl
+    simp only [flip_apply, precomp_apply, comp_apply]
+    -- The bidual isometry has inclusionInDoubleDual as its underlying continuous linear map.
+    exact (NormedSpace.dual_def 𝕜 F (T x) f).symm
   rw [← opNorm_flip, h]
   exact LinearIsometry.norm_toContinuousLinearMap_comp _
 
