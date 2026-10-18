@@ -36,7 +36,7 @@ nonzero integer solution has sup norm at least `|b| ^ m`, against Siegel's bound
   progressions of ratio `b`.
 * `TauCeti.Matrix.ker_mulVecLin_geomRecurrence`: over a commutative ring the kernel is the span
   of `(1, b, …, bᵐ)`.
-* `TauCeti.Matrix.norm_geomRecurrence`: the sup norm of the matrix is `max ‖b‖ 1`.
+* `TauCeti.Matrix.norm_geomRecurrence`: for `0 < m`, the sup norm of the matrix is `max ‖b‖ 1`.
 * `TauCeti.Matrix.pow_le_iSup_abs_of_mulVec_geomRecurrence_eq_zero`: over `ℤ`, every nonzero
   solution has sup norm at least `|b| ^ m`.
 * `TauCeti.Int.Matrix.not_forall_exists_ne_zero_int_vec_norm_le`: for `0 < m` and any exponent
@@ -92,11 +92,15 @@ theorem mulVec_geomRecurrence_eq_zero_iff {b : R} {m : ℕ} {x : Fin (m + 1) →
   · induction i using Fin.induction with
     | zero => simp
     | succ i ih =>
-      have hi := congrFun h i
-      rw [mulVec_geomRecurrence, Pi.zero_apply, sub_eq_zero] at hi
-      rw [← hi, ih, Fin.val_succ, Fin.val_castSucc, pow_succ', mul_assoc]
-  · rw [mulVec_geomRecurrence, h, h i.succ, Fin.val_succ, Fin.val_castSucc, pow_succ', mul_assoc,
-      sub_self, Pi.zero_apply]
+      have hi : b * x i.castSucc = x i.succ := by
+        simpa only [mulVec_geomRecurrence, Pi.zero_apply, sub_eq_zero] using congrFun h i
+      calc
+        x i.succ = b * x i.castSucc := hi.symm
+        _ = b * (b ^ (i.castSucc : ℕ) * x 0) := by rw [ih]
+        _ = b ^ (i.succ : ℕ) * x 0 := by
+          simp only [Fin.val_succ, Fin.val_castSucc, pow_succ', mul_assoc]
+  · simp only [mulVec_geomRecurrence, Pi.zero_apply, sub_eq_zero, h i.castSucc, h i.succ,
+      Fin.val_succ, Fin.val_castSucc, pow_succ', mul_assoc]
 
 /-- A solution of `b xᵢ = xᵢ₊₁` vanishes as soon as its first coordinate does. -/
 theorem eq_zero_of_mulVec_geomRecurrence_eq_zero {b : R} {m : ℕ} {x : Fin (m + 1) → R}
