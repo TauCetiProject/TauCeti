@@ -40,7 +40,7 @@ derived-subgroup theorem and the smooth-kernel criterion for faithfully flat hom
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d and Chapter 10.
 * A. Borel, *Linear Algebraic Groups*, §§2 and 3.
-* `LieIdeal.liftQ` and its injectivity/surjectivity API from `TauCeti.Algebra.Lie.Quotient`.
+* `LieHom.quotKerEquivOfSurjective` from `TauCeti.Algebra.Lie.Quotient`.
 -/
 
 public section
@@ -136,13 +136,11 @@ noncomputable def abelianizationLieEquiv [Algebra.Smooth k H] :
           (Bialgebra.CounitAlgebra k (coinvariants (isNormal_derivedDefiningIdeal H)) B) := by
   letI := (coinvariants (isNormal_derivedDefiningIdeal H)).hopfAlgebra
   let f := derivationCompLieHom (B := B) (coinvariantsι (isNormal_derivedDefiningIdeal H)).hom
-  let I := (isNormal_derivedDefiningIdeal H).lieIdeal (B := B)
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
-  have hker : f.ker = I := ker_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H
-  exact LieEquiv.ofBijective (I.liftQ f hker.ge)
-    ⟨I.liftQ_injective f hker.ge hker.le,
-      I.liftQ_surjective f hker.ge
-        (surjective_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H)⟩
+  have hker : f.ker = (isNormal_derivedDefiningIdeal H).lieIdeal (B := B) :=
+    ker_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H
+  exact hker ▸ f.quotKerEquivOfSurjective
+    (surjective_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H)
 
 /-- The tangent abelianization equivalence sends a tangent class to its restriction to
 the derived coinvariants, namely the differential of the quotient projection. -/
@@ -153,8 +151,13 @@ theorem abelianizationLieEquiv_apply_mk [Algebra.Smooth k H]
     abelianizationLieEquiv H (LieSubmodule.Quotient.mk d) =
       derivationComp (B := B) (coinvariantsι (isNormal_derivedDefiningIdeal H)).hom d := by
   let := (coinvariants (isNormal_derivedDefiningIdeal H)).hopfAlgebra
-  dsimp only [abelianizationLieEquiv, LieEquiv.ofBijective]
-  exact (LieIdeal.liftQ_apply _ _ _ d).trans (derivationCompLieHom_apply _ d)
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  dsimp only [abelianizationLieEquiv]
+  generalize ker_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H (B := B) = hker
+  generalize (isNormal_derivedDefiningIdeal H).lieIdeal (B := B) = I at hker ⊢
+  cases hker
+  exact (LieHom.quotKerEquivOfSurjective_apply_mk _ _ d).trans
+    (derivationCompLieHom_apply _ d)
 
 /-- The inverse tangent abelianization equivalence recovers the class of a tangent
 vector from its image under the quotient differential. -/
