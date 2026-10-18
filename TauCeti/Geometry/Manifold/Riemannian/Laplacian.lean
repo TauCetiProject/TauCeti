@@ -377,18 +377,26 @@ theorem divergence_eq_trace_fderiv_model_space
   let e := tangentSpaceCastModel (modelWithCornersSelf ℝ F) x
   let A : TangentSpace (modelWithCornersSelf ℝ F) x →ₗ[ℝ]
       TangentSpace (modelWithCornersSelf ℝ F) x :=
-    (e.symm.toLinearMap.comp ((fderiv ℝ V x).toLinearMap)).comp e.toLinearMap
+    e.symm.toLinearEquiv.conj (fderiv ℝ V x).toLinearMap
   have hconn := leviCivitaConnection_eq_fderiv_model_space (V := V) hV
+  have hconj (v : TangentSpace (modelWithCornersSelf ℝ F) x) :
+      e (A v) = fderiv ℝ V x (e v) := by
+    dsimp only [A]
+    rw [LinearEquiv.conj_apply_apply]
+    change e (e.symm (fderiv ℝ V x (e v))) = fderiv ℝ V x (e v)
+    rw [e.apply_symm_apply]
   have hA :
       (CovariantDerivative.leviCivitaConnection (modelWithCornersSelf ℝ F) F V x).toLinearMap =
         A := by
     ext v
     apply e.injective
-    have hAv : A v = e.symm (fderiv ℝ V x (e v)) := by
-      simp only [A, LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
-      rfl
-    rw [hAv, ContinuousLinearEquiv.apply_symm_apply]
-    exact hconn (e v)
+    calc
+      e ((CovariantDerivative.leviCivitaConnection
+          (modelWithCornersSelf ℝ F) F V x).toLinearMap v) =
+          fderiv ℝ V x (e v) := by
+        simpa only [e, ContinuousLinearMap.coe_coe,
+          ContinuousLinearEquiv.symm_apply_apply] using hconn (e v)
+      _ = e (A v) := (hconj v).symm
   rw [hA]
   exact (LinearMap.trace_conj' _ e.toLinearEquiv).symm
 
