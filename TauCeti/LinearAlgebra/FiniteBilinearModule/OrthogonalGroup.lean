@@ -16,7 +16,8 @@ The orthogonal group `O(A)` of a finite quadratic module consists of its additiv
 preserving the quadratic map. This file specializes the general quadratic-map orthogonal group to
 finite quadratic modules and records its action on the underlying module and its isotropic and
 Lagrangian subgroups. The imported generic orthogonal-group API transports this group across
-isometries of finite quadratic modules.
+isometries of finite quadratic modules, and `QuadraticMap.orthogonalGroupEquivIsometryEquiv`
+identifies its underlying type with the type `Isometry A A` of self-isometries of `A`.
 
 These actions are the group-theoretic interface used when discriminant-form automorphisms act on
 gluing data and primitive embeddings.
@@ -24,8 +25,6 @@ gluing data and primitive embeddings.
 ## Main definitions
 
 * `TauCeti.FiniteQuadraticModule.orthogonalGroup`: the group `O(A)`.
-* `TauCeti.FiniteQuadraticModule.orthogonalGroupEquivIsometry`: its underlying type is the type of
-  self-isometries of `A`.
 
 ## Main results
 
@@ -51,21 +50,6 @@ abbrev orthogonalGroup (A : FiniteQuadraticModule) : Subgroup (A ≃ₗ[ℤ] A) 
 
 variable {A : FiniteQuadraticModule}
 
-/-- The underlying type of `O(A)` is the type of self-isometries of `A`. -/
-def orthogonalGroupEquivIsometry (A : FiniteQuadraticModule) :
-    orthogonalGroup A ≃ Isometry A A :=
-  QuadraticMap.orthogonalGroupEquivIsometryEquiv A.quadratic
-
-@[simp]
-theorem orthogonalGroupEquivIsometry_apply (g : orthogonalGroup A) (x : A) :
-    orthogonalGroupEquivIsometry A g x = (g : A ≃ₗ[ℤ] A) x :=
-  congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv A.quadratic g) x
-
-@[simp]
-theorem orthogonalGroupEquivIsometry_symm_apply (e : Isometry A A) (x : A) :
-    (((orthogonalGroupEquivIsometry A).symm e : orthogonalGroup A) : A ≃ₗ[ℤ] A) x = e x :=
-  congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv_symm A.quadratic e) x
-
 /-- The orthogonal group of a finite quadratic module is finite. -/
 instance finite_orthogonalGroup (A : FiniteQuadraticModule) : Finite (orthogonalGroup A) := by
   apply Finite.of_injective (fun g : orthogonalGroup A ↦ fun x : A ↦ g • x)
@@ -82,28 +66,29 @@ theorem quadratic_smul (g : orthogonalGroup A) (x : A) :
 /-- Pointwise transport of an additive subgroup by an element of `O(A)` is its image under the
 corresponding self-isometry. -/
 theorem smul_eq_map_toAddEquiv (g : orthogonalGroup A) (H : AddSubgroup A) :
-    g • H = H.map (orthogonalGroupEquivIsometry A g).toAddEquiv := by
+    g • H = H.map (QuadraticMap.orthogonalGroupEquivIsometryEquiv A.quadratic g).toAddEquiv := by
   ext x
   simp only [AddSubgroup.mem_map]
+  have hg := congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv A.quadratic g)
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y, hy, orthogonalGroupEquivIsometry_apply g y⟩
+    exact ⟨y, hy, hg y⟩
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y, hy, (orthogonalGroupEquivIsometry_apply g y).symm⟩
+    exact ⟨y, hy, (hg y).symm⟩
 
 /-- The orthogonal group preserves quadratic-isotropic subgroups. -/
 @[simp]
 theorem isIsotropic_smul_iff (g : orthogonalGroup A) (H : AddSubgroup A) :
     A.IsIsotropic (g • H) ↔ A.IsIsotropic H := by
   rw [smul_eq_map_toAddEquiv]
-  exact Isometry.isIsotropic_map_iff A (orthogonalGroupEquivIsometry A g) H
+  exact Isometry.isIsotropic_map_iff A (QuadraticMap.orthogonalGroupEquivIsometryEquiv _ g) H
 
 /-- The orthogonal group preserves quadratic Lagrangian subgroups. -/
 @[simp]
 theorem isLagrangian_smul_iff (g : orthogonalGroup A) (H : AddSubgroup A) :
     A.IsLagrangian (g • H) ↔ A.IsLagrangian H := by
   rw [smul_eq_map_toAddEquiv]
-  exact Isometry.isLagrangian_map_iff A (orthogonalGroupEquivIsometry A g) H
+  exact Isometry.isLagrangian_map_iff A (QuadraticMap.orthogonalGroupEquivIsometryEquiv _ g) H
 
 /-- The action of the orthogonal group commutes with taking the orthogonal complement for the
 polar pairing. -/
@@ -111,9 +96,9 @@ polar pairing. -/
 theorem smul_orthogonalComplement (g : orthogonalGroup A) (H : AddSubgroup A) :
     g • A.toFiniteBilinearModule.orthogonalComplement H =
       A.toFiniteBilinearModule.orthogonalComplement (g • H) := by
-  rw [smul_eq_map_toAddEquiv, smul_eq_map_toAddEquiv,
-    ← (orthogonalGroupEquivIsometry A g).toFiniteBilinearModule_toAddEquiv]
-  exact (orthogonalGroupEquivIsometry A g).toFiniteBilinearModule.map_orthogonalComplement (H := H)
+  let e : Isometry A A := QuadraticMap.orthogonalGroupEquivIsometryEquiv A.quadratic g
+  rw [smul_eq_map_toAddEquiv, smul_eq_map_toAddEquiv, ← e.toFiniteBilinearModule_toAddEquiv]
+  exact e.toFiniteBilinearModule.map_orthogonalComplement (H := H)
 
 end TauCeti.FiniteQuadraticModule
 
