@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 
 /-!
 # Regularity of pair colors and of the lower skeleton
