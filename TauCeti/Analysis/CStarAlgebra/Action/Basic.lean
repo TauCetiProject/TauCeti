@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
-public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Dynamics.Flow.Basic
 
 /-!
 # Continuous actions on C⋆-algebras
@@ -19,8 +19,8 @@ continuity needed when an action is applied to a coefficient-valued convolution 
 
 Actions can be pulled back along continuous group homomorphisms and transported along
 star-algebra equivalences. The latter construction expresses conjugacy of dynamical systems.
-Membership in a subset invariant in the sense of Mathlib's `IsInvariant` is unchanged by any
-family of maps with inverses, in particular by the action.
+Membership in a subset invariant in the sense of Mathlib's `IsInvariant` is unchanged by the
+action.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 The joint-continuity argument uses Mathlib's `StarAlgEquiv.isometry` and
@@ -30,13 +30,6 @@ The joint-continuity argument uses Mathlib's `StarAlgEquiv.isometry` and
 public section
 
 namespace TauCeti
-
-/-- Membership in a subset invariant under a family of maps with inverses is unchanged by each
-map. -/
-theorem _root_.IsInvariant.apply_mem_iff {G X : Type*} [Inv G] {ϕ : G → X → X} {s : Set X}
-    (hs : IsInvariant ϕ s) (hϕ : ∀ g x, ϕ g⁻¹ (ϕ g x) = x) (g : G) (x : X) :
-    ϕ g x ∈ s ↔ x ∈ s :=
-  ⟨fun h ↦ hϕ g x ▸ hs g⁻¹ h, fun h ↦ hs g h⟩
 
 variable (G A : Type*) [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
 
