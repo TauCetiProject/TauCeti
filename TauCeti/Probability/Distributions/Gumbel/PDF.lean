@@ -112,6 +112,11 @@ theorem gumbelPDFReal_pos (hs : 0 < s) (m x : ℝ) : 0 < gumbelPDFReal m s x := 
   rw [gumbelPDFReal_of_pos hs]
   positivity
 
+/-- The `ℝ≥0∞`-valued Gumbel density is strictly positive at positive scale. -/
+theorem gumbelPDF_pos (hs : 0 < s) (m x : ℝ) : 0 < gumbelPDF m s x := by
+  rw [gumbelPDF_def, ENNReal.ofReal_pos]
+  exact gumbelPDFReal_pos hs m x
+
 /-- Converting the extended nonnegative Gumbel density to `ℝ` recovers `gumbelPDFReal`. -/
 @[simp]
 theorem toReal_gumbelPDF (m s x : ℝ) : (gumbelPDF m s x).toReal = gumbelPDFReal m s x := by
@@ -224,6 +229,16 @@ theorem integral_gumbelPDFReal_eq_one (hs : 0 < s) (m : ℝ) :
   rw [integral_toReal (measurable_gumbelPDF m s).aemeasurable
       (ae_of_all _ fun x ↦ lt_top_iff_ne_top.mpr (gumbelPDF_ne_top m s x)),
     lintegral_gumbelPDF_eq_one hs m, ENNReal.toReal_one]
+
+/-- The real-valued Gumbel density is integrable for every scale. -/
+theorem integrable_gumbelPDFReal (m s : ℝ) : Integrable (gumbelPDFReal m s) := by
+  rcases le_or_gt s 0 with hs | hs
+  · have hzero : gumbelPDFReal m s = 0 := funext (gumbelPDFReal_of_nonpos hs m)
+    rw [hzero]
+    exact integrable_zero ℝ ℝ volume
+  · apply Integrable.of_integral_ne_zero
+    rw [integral_gumbelPDFReal_eq_one hs m]
+    exact one_ne_zero
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
