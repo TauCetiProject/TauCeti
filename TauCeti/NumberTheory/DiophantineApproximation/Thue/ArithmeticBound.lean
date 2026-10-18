@@ -58,25 +58,11 @@ theorem exists_hasseDeriv_aeval_sub_lower_bound {F : Type*} [Field F] [CharZero 
     ∃ k : ℕ, k ≤ N ∧ k + (minpoly ℚ α).natDegree * (r - 1) ≤ 2 * N ∧
       (mulHeight₁ x ^ (N - k) * mulHeight₁ y)⁻¹ ≤
         |((aeval x (hasseDeriv k P) - y * aeval x (hasseDeriv k Q) : ℚ) : ℝ)| := by
-  have hmap (p : ℤ[X]) : p.map (Int.castRingHom F) =
-      (p.map (Int.castRingHom ℚ)).map (algebraMap ℚ F) := by
-    rw [Polynomial.map_map, RingHom.ext_int ((algebraMap ℚ F).comp _) (Int.castRingHom F)]
-  obtain ⟨k, hk, hne⟩ := exists_hasseDeriv_eval_ne_mul_of_dvd
-    (P := P.map (Int.castRingHom ℚ)) (Q := Q.map (Int.castRingHom ℚ)) hd
-    (hPQ.imp (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2
-      (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2)
-    (natDegree_map_le.trans hP) (natDegree_map_le.trans hQ) hN
-    (by simpa only [← hmap] using hdvd) x y
-  have hne' : aeval x (hasseDeriv k P) - y * aeval x (hasseDeriv k Q) ≠ 0 := by
-    simpa only [hasseDeriv_map, ← algebraMap_int_eq, eval_map_algebraMap, sub_ne_zero] using hne
-  have hkN : k ≤ N := by
-    by_contra! h
-    have hPk := hasseDeriv_eq_zero_of_lt_natDegree P k (hP.trans_lt h)
-    have hQk := hasseDeriv_eq_zero_of_lt_natDegree Q k (hQ.trans_lt h)
-    simp [hPk, hQk] at hne'
+  obtain ⟨k, hkN, hk, hne⟩ :=
+    exists_hasseDeriv_aeval_ne_mul_of_natDegree_le hd hPQ hP hQ hN hdvd x y
   have hden := one_le_den_pow_mul_abs_aeval_sub_mul
     ((natDegree_hasseDeriv_le P k).trans (Nat.sub_le_sub_right hP k))
-    ((natDegree_hasseDeriv_le Q k).trans (Nat.sub_le_sub_right hQ k)) hne'
+    ((natDegree_hasseDeriv_le Q k).trans (Nat.sub_le_sub_right hQ k)) (sub_ne_zero.2 hne)
   have hden' : (1 : ℝ) ≤ (x.den : ℝ) ^ (N - k) * y.den *
       |((aeval x (hasseDeriv k P) - y * aeval x (hasseDeriv k Q) : ℚ) : ℝ)| := by
     exact_mod_cast hden
@@ -119,11 +105,6 @@ theorem exists_thue_hasseDeriv_lower_bound {F : Type*} [Field F] [CharZero F]
     nlinarith
   obtain ⟨k, hkN, hk, hbound⟩ :=
     exists_hasseDeriv_aeval_sub_lower_bound hd hPQ hP hQ hN hdvd x y
-  refine ⟨k, hkN, ?_, hbound⟩
-  have hk' : (k : ℝ) + d * ((r : ℝ) - 1) ≤ 2 * N := by
-    have : ((k + d * (r - 1) : ℕ) : ℝ) ≤ ((2 * N : ℕ) : ℝ) := by exact_mod_cast hk
-    push_cast [Nat.cast_sub hr] at this
-    exact this
-  nlinarith
+  exact ⟨k, hkN, thue_order_le_of_add_mul_le hr hNle hk, hbound⟩
 
 end TauCeti
