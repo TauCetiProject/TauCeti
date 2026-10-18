@@ -263,11 +263,8 @@ private theorem matrixCochainExtension_cyclicOperator_pow (ι : Type*) [Fintype 
     matrixCochainExtension (R := R) ι n ((cyclicOperator R A M n ^ k) φ) =
       (cyclicOperator R (Matrix ι ι A) M n ^ k)
         (matrixCochainExtension (R := R) ι n φ) := by
-  induction k generalizing φ with
-  | zero => rfl
-  | succ k hk =>
-      rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply,
-        hk, matrixCochainExtension_cyclicOperator]
+  exact (LinearMap.congr_fun (Module.End.commute_pow_left_of_commute
+    (LinearMap.ext fun ψ => (matrixCochainExtension_cyclicOperator ι n ψ).symm) k) φ).symm
 
 omit [One A] in
 /-- Matrix extension commutes with the cyclic norm. -/
