@@ -36,9 +36,10 @@ Lie-group exponential.
   homomorphism that is a local diffeomorphism at the identity.
 * `TauCeti.Lie.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a homomorphism that is a
   local diffeomorphism at the identity is bijective.
-* `TauCeti.Lie.isLocalDiffeomorphAt_of_lieMap_bijective`: a smooth homomorphism with bijective Lie
-  map is a local diffeomorphism at the identity.
-* `TauCeti.Lie.isLocalDiffeomorphAt_iff_lieMap_bijective`: the corresponding characterization.
+* `ContMDiffMonoidMorphism.isLocalDiffeomorphAt_of_lieMap_bijective`: a smooth homomorphism with
+  bijective Lie map is a local diffeomorphism at the identity.
+* `ContMDiffMonoidMorphism.isLocalDiffeomorphAt_iff_lieMap_bijective`: the corresponding
+  characterization.
 -/
 
 public section
@@ -371,6 +372,10 @@ theorem lieMap_bijective_of_isLocalDiffeomorphAt [FiniteDimensional ℝ E] [Fini
     (h D₂)))), fun D' ↦ ⟨e.symm (L.symm (e' D')), e'.injective ((h _).trans
       (by simp only [LieEquiv.apply_symm_apply]; exact L.apply_symm_apply _))⟩⟩
 
+end TauCeti.Lie
+
+namespace ContMDiffMonoidMorphism
+
 /-- A smooth homomorphism with bijective Lie map is a local diffeomorphism at the identity. -/
 theorem isLocalDiffeomorphAt_of_lieMap_bijective
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
@@ -403,8 +408,12 @@ theorem isLocalDiffeomorphAt_iff_lieMap_bijective
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     IsLocalDiffeomorphAt I I' ∞ φ 1 ↔ Bijective (lieMap φ) :=
-  ⟨lieMap_bijective_of_isLocalDiffeomorphAt φ,
+  ⟨TauCeti.Lie.lieMap_bijective_of_isLocalDiffeomorphAt φ,
     isLocalDiffeomorphAt_of_lieMap_bijective φ⟩
+
+end ContMDiffMonoidMorphism
+
+namespace TauCeti.Lie
 
 /-- A smooth homomorphism that is a local diffeomorphism at the identity induces an equivalence of
 Lie algebras. -/
