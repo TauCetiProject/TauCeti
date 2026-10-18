@@ -44,14 +44,14 @@ variable {form form' : SmoothTwoForm I M}
 
 /-- A continuous alternating bilinear form defines a constant smooth two-form on its model space. -/
 def const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (_hB : ∀ v, B v v = 0) :
+    (B : V →L[ℝ] V →L[ℝ] ℝ) :
     SmoothTwoForm (modelWithCornersSelf ℝ V) V :=
   SmoothForm.const ((2⁻¹ : ℝ) • ContinuousAlternatingMap.alternatizeBilinCLM ℝ V ℝ B)
 
 /-- The degree-two constructor is the generic constant form in alternating-map coordinates. -/
 theorem const_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) :
-    const B hB = SmoothForm.const
+    (B : V →L[ℝ] V →L[ℝ] ℝ) :
+    const B = SmoothForm.const
       ((2⁻¹ : ℝ) • ContinuousAlternatingMap.alternatizeBilinCLM ℝ V ℝ B) := by
   rfl
 
@@ -59,7 +59,7 @@ theorem const_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
     (v w : TangentSpace (modelWithCornersSelf ℝ V) x) :
-    SmoothForm.eval₂ (const B hB) x v w =
+    SmoothForm.eval₂ (const B) x v w =
       B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   rw [const_eq, SmoothForm.eval₂_apply, SmoothForm.const_apply]
   simp only [ContinuousAlternatingMap.smul_apply]
@@ -78,7 +78,7 @@ theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- The model-space evaluation of a constant smooth two-form. -/
 theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x v w : V) :
-    SmoothForm.eval₂ (const B hB) x ((NormedSpace.fromTangentSpace x).symm v)
+    SmoothForm.eval₂ (const B) x ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = B v w := by
   simpa only [ContinuousLinearEquiv.apply_symm_apply] using
     (const_apply B hB x ((NormedSpace.fromTangentSpace x).symm v)

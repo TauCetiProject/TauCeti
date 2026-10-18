@@ -33,8 +33,8 @@ variable (form : SmoothTwoForm I M)
 
 /-- Constant forms on a model space are closed. -/
 theorem isClosed_const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) :
-    (const B hB : SmoothTwoForm (modelWithCornersSelf ℝ V) V).IsClosed := by
+    (B : V →L[ℝ] V →L[ℝ] ℝ) :
+    (const B : SmoothTwoForm (modelWithCornersSelf ℝ V) V).IsClosed := by
   rw [const_eq]
   exact SmoothForm.isClosed_const
     ((2⁻¹ : ℝ) • ContinuousAlternatingMap.alternatizeBilinCLM ℝ V ℝ B)

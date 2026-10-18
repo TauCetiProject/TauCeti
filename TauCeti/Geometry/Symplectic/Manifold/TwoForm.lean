@@ -193,7 +193,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 two-form on the corresponding model manifold. -/
 def constSmooth (omegaForm : SymplecticForm V) :
     SmoothTwoForm (modelWithCornersSelf ℝ V) V :=
-  SmoothTwoForm.const omegaForm.toBilinForm.toContinuousBilinearMap omegaForm.isAlt
+  SmoothTwoForm.const omegaForm.toBilinForm.toContinuousBilinearMap
 
 /-- A constant smooth symplectic form evaluates as its defining algebraic form. -/
 @[simp]
@@ -234,7 +234,7 @@ lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
 
 /-- A constant smooth symplectic form is closed. -/
 lemma isClosed_constSmooth (omegaForm : SymplecticForm V) : omegaForm.constSmooth.IsClosed :=
-  SmoothTwoForm.isClosed_const _ _
+  SmoothTwoForm.isClosed_const _
 
 /-- **A symplectic vector space is a symplectic manifold**: a constant smooth symplectic form is
 symplectic. -/

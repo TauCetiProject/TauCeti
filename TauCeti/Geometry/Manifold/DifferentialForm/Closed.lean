@@ -36,6 +36,17 @@ variable {form : SmoothForm I M F k}
 /-- A smooth form is closed when the generic manifold exterior derivative vanishes. -/
 def IsClosed (form : SmoothForm I M F k) : Prop := mextDeriv form.1 = 0
 
+/-- Closedness is exactly the vanishing of the manifold exterior derivative. -/
+theorem isClosed_def (form : SmoothForm I M F k) :
+    form.IsClosed ↔ mextDeriv form.1 = 0 :=
+  Iff.rfl
+
+/-- Closedness can equivalently be checked pointwise on the exterior derivative. -/
+theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) :
+    form.IsClosed ↔ ∀ x, mextDeriv form.1 x = 0 := by
+  rw [isClosed_def, funext_iff]
+  simp only [Pi.zero_apply]
+
 /-- The zero smooth form is closed. -/
 theorem isClosed_zero : (0 : SmoothForm I M F k).IsClosed := by
   change mextDeriv (0 : RoughForm I M F k) = 0
