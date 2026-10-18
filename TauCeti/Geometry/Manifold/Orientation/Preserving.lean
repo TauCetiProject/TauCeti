@@ -228,27 +228,33 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (x : M) :
     IsOrientationReversingAt (I := I) (I' := I) (M' := M) o (-o) id x := by
-  refine ⟨ContinuousLinearEquiv.refl ℝ _, ?_, ?_⟩
-  · rw [ContinuousLinearEquiv.coe_refl, mfderiv_id]
-  · have h_refl :
-        (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
-          LinearEquiv.refl ℝ (TangentSpace I x) := rfl
-    rw [h_refl, _root_.Orientation.map_refl]
-    rw [orientationAt_neg]
-    exact (Module.Ray.instInvolutiveNeg.neg_neg (o.orientationAt x)).symm
+  simp
 
 /-- The composition of two orientation-preserving maps preserves orientations at a point. The
-explicit differentiability hypotheses supply the manifold chain rule. -/
+derivative-equivalence witnesses supply the differentiability needed for the manifold chain rule. -/
 theorem IsOrientationPreservingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
     [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation I' M' ι} {o'' : Manifold.Orientation I'' M'' ι}
     {f : M → M'} {g : M' → M''} {x : M}
     (hgg : IsOrientationPreservingAt o' o'' g (f x))
-    (hgf : IsOrientationPreservingAt o o' f x)
-    (hg : MDifferentiableAt I' I'' g (f x)) (hf : MDifferentiableAt I I' f x) :
+    (hgf : IsOrientationPreservingAt o o' f x) :
     IsOrientationPreservingAt o o'' (g ∘ f) x := by
   obtain ⟨e, he, h⟩ := hgf
   obtain ⟨e', he', h'⟩ := hgg
+  have hf : MDifferentiableAt I I' f x :=
+    mdifferentiableAt_of_mfderiv_injective fun v w hvw => by
+      apply e.injective
+      change (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) v =
+        (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) w
+      rw [he]
+      exact hvw
+  have hg : MDifferentiableAt I' I'' g (f x) :=
+    mdifferentiableAt_of_mfderiv_injective fun v w hvw => by
+      apply e'.injective
+      change (e' : TangentSpace I' (f x) →L[ℝ] TangentSpace I'' (g (f x))) v =
+        (e' : TangentSpace I' (f x) →L[ℝ] TangentSpace I'' (g (f x))) w
+      rw [he']
+      exact hvw
   refine ⟨e.trans e', ?_, ?_⟩
   · rw [mfderiv_comp (x := x) hg hf, ← he', ← he]
     rfl
@@ -256,61 +262,52 @@ theorem IsOrientationPreservingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
     rfl
 
 /-- The composition of two orientation-reversing maps preserves orientations at a point. The
-explicit differentiability hypotheses supply the manifold chain rule. -/
+The result reuses the preserving composition through target-orientation negation. -/
 theorem IsOrientationReversingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
     [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation I' M' ι} {o'' : Manifold.Orientation I'' M'' ι}
     {f : M → M'} {g : M' → M''} {x : M}
     (hgg : IsOrientationReversingAt o' o'' g (f x))
-    (hgf : IsOrientationReversingAt o o' f x)
-    (hg : MDifferentiableAt I' I'' g (f x)) (hf : MDifferentiableAt I I' f x) :
+    (hgf : IsOrientationReversingAt o o' f x) :
     IsOrientationPreservingAt o o'' (g ∘ f) x := by
-  obtain ⟨e, he, h⟩ := hgf
-  obtain ⟨e', he', h'⟩ := hgg
-  refine ⟨e.trans e', ?_, ?_⟩
-  · rw [mfderiv_comp (x := x) hg hf, ← he', ← he]
-    rfl
-  · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, h,
-      _root_.Orientation.map_neg, h']
-    exact Module.Ray.instInvolutiveNeg.neg_neg (o''.orientationAt (g (f x)))
+  have hgg' : IsOrientationPreservingAt (-o') o'' g (f x) :=
+    (isOrientationPreservingAt_neg_left o' o'' g (f x)).2 hgg
+  have hgf' : IsOrientationPreservingAt o (-o') f x :=
+    (isOrientationPreservingAt_neg_right o o' f x).2 hgf
+  exact IsOrientationPreservingAt.comp hgg' hgf'
 
 /-- Composing an orientation-preserving map after an orientation-reversing map reverses
-orientations at a point. The explicit differentiability hypotheses supply the manifold chain
-rule. -/
+orientations at a point. The result reuses the preserving composition through orientation
+negations. -/
 theorem IsOrientationPreservingAt.comp_reversing [IsManifold I 1 M] [IsManifold I' 1 M']
     [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation I' M' ι} {o'' : Manifold.Orientation I'' M'' ι}
     {f : M → M'} {g : M' → M''} {x : M}
     (hgg : IsOrientationPreservingAt o' o'' g (f x))
-    (hgf : IsOrientationReversingAt o o' f x)
-    (hg : MDifferentiableAt I' I'' g (f x)) (hf : MDifferentiableAt I I' f x) :
+    (hgf : IsOrientationReversingAt o o' f x) :
     IsOrientationReversingAt o o'' (g ∘ f) x := by
-  obtain ⟨e, he, h⟩ := hgf
-  obtain ⟨e', he', h'⟩ := hgg
-  refine ⟨e.trans e', ?_, ?_⟩
-  · rw [mfderiv_comp (x := x) hg hf, ← he', ← he]
-    rfl
-  · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, h,
-      _root_.Orientation.map_neg, h']
-    simp only [Function.comp_apply]
+  have hgg' : IsOrientationPreservingAt (-o') (-o'') g (f x) := by
+    simpa only [isOrientationPreservingAt_neg_left, isOrientationReversingAt_neg_right] using hgg
+  have hgf' : IsOrientationPreservingAt o (-o') f x :=
+    (isOrientationPreservingAt_neg_right o o' f x).2 hgf
+  have h := IsOrientationPreservingAt.comp hgg' hgf'
+  exact (isOrientationPreservingAt_neg_right o o'' (g ∘ f) x).1 h
 
 /-- Composing an orientation-reversing map after an orientation-preserving map reverses
-orientations at a point. The explicit differentiability hypotheses supply the manifold chain
-rule. -/
+orientations at a point. The result reuses the preserving composition through orientation
+negations. -/
 theorem IsOrientationReversingAt.comp_preserving [IsManifold I 1 M] [IsManifold I' 1 M']
     [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation I' M' ι} {o'' : Manifold.Orientation I'' M'' ι}
     {f : M → M'} {g : M' → M''} {x : M}
     (hgg : IsOrientationReversingAt o' o'' g (f x))
-    (hgf : IsOrientationPreservingAt o o' f x)
-    (hg : MDifferentiableAt I' I'' g (f x)) (hf : MDifferentiableAt I I' f x) :
+    (hgf : IsOrientationPreservingAt o o' f x) :
     IsOrientationReversingAt o o'' (g ∘ f) x := by
-  obtain ⟨e, he, h⟩ := hgf
-  obtain ⟨e', he', h'⟩ := hgg
-  refine ⟨e.trans e', ?_, ?_⟩
-  · rw [mfderiv_comp (x := x) hg hf, ← he', ← he]
-    rfl
-  · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, h, h']
-    simp only [Function.comp_apply]
+  have hgg' : IsOrientationPreservingAt (-o') o'' g (f x) :=
+    (isOrientationPreservingAt_neg_left o' o'' g (f x)).2 hgg
+  have hgf' : IsOrientationPreservingAt (-o) (-o') f x := by
+    simpa only [isOrientationPreservingAt_neg_left, isOrientationReversingAt_neg_right] using hgf
+  have h := IsOrientationPreservingAt.comp hgg' hgf'
+  exact (isOrientationPreservingAt_neg_left o o'' (g ∘ f) x).1 h
 
 end TauCeti.Manifold.Orientation
