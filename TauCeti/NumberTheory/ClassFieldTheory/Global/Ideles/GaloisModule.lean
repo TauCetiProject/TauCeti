@@ -58,15 +58,10 @@ theorem idelesRep_ρ_apply {F E : Type} [Field F] [Field E] [NumberField E] [Alg
     (σ : Gal(E/F)) (a : (idelesRep F E).V) :
     (idelesRep F E).ρ σ a =
       .ofMul (Units.map (adeleEquiv E E σ.toRingEquiv).toMonoidHom
-        (Additive.toMul (α := IdeleGroup (RingOfIntegers E) E) a)) := by
-  change Additive (IdeleGroup (RingOfIntegers E) E) at a
-  change (Rep.ofMulDistribMulAction (Gal(E/F))
-    (IdeleGroup (RingOfIntegers E) E)).ρ σ a = _
-  rw [Rep.ofMulDistribMulAction_ρ_apply_apply]
-  exact congrArg Additive.ofMul <| Units.ext <|
-    (coe_idele_smul σ (Additive.toMul (α := IdeleGroup (RingOfIntegers E) E) a)).trans
-      (adeleGaloisAction_apply F E σ
-        (Additive.toMul (α := IdeleGroup (RingOfIntegers E) E) a))
+        (Additive.toMul (α := IdeleGroup (RingOfIntegers E) E) a)) :=
+  (Rep.ofMulDistribMulAction_ρ_apply_apply (G := IdeleGroup (RingOfIntegers E) E) σ a).trans <|
+    congrArg Additive.ofMul <| Units.ext <|
+      (coe_idele_smul σ _).trans (adeleGaloisAction_apply F E σ _)
 
 namespace NormalLayer
 
