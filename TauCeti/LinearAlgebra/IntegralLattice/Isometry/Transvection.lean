@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
@@ -19,16 +21,19 @@ lattice vector `w` with `B(u, w) = 0`, the Eichler transvection of the rational 
 `E_{u,w}(x) = x + B(x, u) • w - B(x, w) • u - (B(w, w) / 2 * B(x, u)) • u`.
 
 Every coefficient is an integer on lattice vectors as soon as `B(w, w)` is even, so these `w`
-form a subgroup `L.evenOrthogonal u` of `L` on which `w ↦ E_{u,w}` is a homomorphism into the
-special isometry group `SO(L)`. When `u` is not in the radical of the form, its kernel consists of
-the `w` in `ℚ ∙ u`.
+form a sublattice `L.evenOrthogonal u` of `L`, the intersection of `u^⊥` with the even-norm
+submodule. Since `E_{u,w + k • u} = E_{u,w}`, the map `w ↦ E_{u,w}` descends to a homomorphism
+from `L.evenOrthogonal u ⧸ ℤ ∙ u` into the special isometry group `SO(L)`. When `u` is not in the
+radical of the form, `E_{u,w}` is trivial exactly when `w ∈ ℚ ∙ u`; if moreover `u` is primitive,
+the homomorphism is injective.
 
 If `L` is nondegenerate of rank at least three and its rational space has a nonzero isotropic
 vector, then `L ∩ u^⊥` contains a vector outside `ℚ ∙ u`, whose Eichler transvection has infinite
 order. Hence `SO(L)`, and with it the isometry group `O(L)`, is infinite. This is the isotropic
 half of the infiniteness of `O(L)` for indefinite lattices of rank at least three; it contrasts
-with the finiteness of `O(L)` for definite lattices. In rank two every Eichler transvection is
-trivial (`QuadraticMap.transvection_eq_one_of_finrank_eq_two`), and the argument gives nothing.
+with the finiteness of `O(L)` for definite lattices. In rank two every Eichler transvection whose
+isotropic vector is outside the radical of the form is trivial
+(`QuadraticMap.transvection_eq_one_of_finrank_eq_two`), and the argument gives nothing.
 
 ## Main definitions
 
@@ -36,17 +41,21 @@ trivial (`QuadraticMap.transvection_eq_one_of_finrank_eq_two`), and the argument
   `B(w, w)` even.
 * `TauCeti.IntegralLattice.eichlerTransvection`: the Eichler transvection `E_{u,w}` as a
   self-isometry of `L`.
-* `TauCeti.IntegralLattice.eichlerTransvectionHom`: the homomorphism `w ↦ E_{u,w}` into `SO(L)`.
+* `TauCeti.IntegralLattice.eichlerTransvectionHom`: the homomorphism `w ↦ E_{u,w}` from
+  `L.evenOrthogonal u ⧸ ℤ ∙ u` into `SO(L)`.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.eichlerTransvection_apply`: the defining formula.
 * `TauCeti.IntegralLattice.eichlerTransvection_mem_specialOrthogonalGroup`: `E_{u,w} ∈ SO(L)`.
 * `TauCeti.IntegralLattice.eichlerTransvection_add`: `E_{u,w + w'} = E_{u,w} * E_{u,w'}`.
+* `TauCeti.IntegralLattice.eichlerTransvection_add_zsmul`: `E_{u,w + k • u} = E_{u,w}`.
 * `TauCeti.IntegralLattice.eichlerTransvection_eq_one_iff`: if `u` is not in the radical of the
   form, `E_{u,w} = 1` exactly when `w ∈ ℚ ∙ u`.
-* `TauCeti.IntegralLattice.not_isOfFinOrder_eichlerTransvection`: if `w ∉ ℚ ∙ u`, then `E_{u,w}`
-  has infinite order.
+* `TauCeti.IntegralLattice.eichlerTransvectionHom_injective`: if `u` is primitive and not in the
+  radical of the form, `w ↦ E_{u,w}` is injective on `L.evenOrthogonal u ⧸ ℤ ∙ u`.
+* `TauCeti.IntegralLattice.not_isOfFinOrder_eichlerTransvection`: if `u` is not in the radical of
+  the form and `w ∉ ℚ ∙ u`, then `E_{u,w}` has infinite order.
 * `TauCeti.IntegralLattice.infinite_specialOrthogonalGroup_of_not_anisotropic` and
   `TauCeti.IntegralLattice.infinite_isometry_of_not_anisotropic`: a nondegenerate lattice of rank
   at least three whose rational norm form is isotropic has infinite `SO(L)` and `O(L)`.
@@ -89,30 +98,22 @@ private theorem polarBilin_halfNorm (L : IntegralLattice V) : L.halfNorm.polarBi
 
 /-! ## Even vectors orthogonal to a lattice vector -/
 
-/-- The even vectors of `L` orthogonal to `u`: the `w ∈ L` with `B(u, w) = 0` and `B(w, w)` even.
-For isotropic `u` these are the parameters of the integral Eichler transvections `E_{u,w}`. -/
-noncomputable def evenOrthogonal (L : IntegralLattice V) (u : L) : AddSubgroup L where
-  carrier := {w | L.integralForm u w = 0 ∧ Even (L.integralNorm w)}
-  add_mem' {w w'} hw hw' := by
-    refine ⟨by rw [map_add, hw.1, hw'.1, add_zero], ?_⟩
-    rw [integralNorm_apply, LinearMap.map_add₂, map_add, map_add,
-      L.isSymm_integralForm.eq w' w, ← integralNorm_apply, ← integralNorm_apply]
-    have hww' : Even (L.integralForm w w' + L.integralForm w w') := ⟨_, rfl⟩
-    convert (hw.2.add hw'.2).add hww' using 1
-    ring
-  zero_mem' := by simp
-  neg_mem' {w} hw := by simpa [QuadraticMap.map_neg] using hw
+/-- The even vectors of `L` orthogonal to `u`: the `w ∈ L` with `B(u, w) = 0` and `B(w, w)` even,
+that is, the kernel of `B(u, -)` intersected with the even-norm submodule. For isotropic `u` these
+are the parameters of the integral Eichler transvections `E_{u,w}`. -/
+noncomputable def evenOrthogonal (L : IntegralLattice V) (u : L) : Submodule ℤ L :=
+  LinearMap.ker (L.integralForm u) ⊓ L.evenSubmodule
 
 @[simp]
 theorem mem_evenOrthogonal_iff {u w : L} :
-    w ∈ L.evenOrthogonal u ↔ L.integralForm u w = 0 ∧ Even (L.integralNorm w) :=
-  Iff.rfl
+    w ∈ L.evenOrthogonal u ↔ L.integralForm u w = 0 ∧ Even (L.integralNorm w) := by
+  rw [evenOrthogonal, Submodule.mem_inf, LinearMap.mem_ker, mem_evenSubmodule_iff]
 
 /-- Every multiple of an isotropic vector `u` is an even vector orthogonal to `u`. -/
 theorem zsmul_mem_evenOrthogonal {u : L} (hu : L.integralNorm u = 0) (k : ℤ) :
     k • u ∈ L.evenOrthogonal u := by
   have huu : L.integralForm u u = 0 := by rwa [← integralNorm_apply]
-  refine ⟨by rw [map_zsmul, huu, smul_zero], ?_⟩
+  refine mem_evenOrthogonal_iff.mpr ⟨by rw [map_zsmul, huu, smul_zero], ?_⟩
   rw [QuadraticMap.map_smul, hu, smul_zero]
   exact ⟨0, rfl⟩
 
@@ -128,7 +129,7 @@ private theorem halfNorm_eq_zero (hu : L.integralNorm u = 0) : L.halfNorm (u : V
 
 private theorem polar_halfNorm_eq_zero (w : L.evenOrthogonal u) :
     polar L.halfNorm (u : V) ((w : L) : V) = 0 := by
-  rw [polar_halfNorm, ← integralForm_cast, w.2.1, Int.cast_zero]
+  rw [polar_halfNorm, ← integralForm_cast, (mem_evenOrthogonal_iff.mp w.2).1, Int.cast_zero]
 
 /-- The ambient Eichler transvection of the rational half-norm, before restriction to `L`. -/
 private noncomputable abbrev ambientTransvection (hu : L.integralNorm u = 0)
@@ -139,7 +140,8 @@ private noncomputable abbrev ambientTransvection (hu : L.integralNorm u = 0)
 private theorem halfNorm_parameter (w : L.evenOrthogonal u) :
     L.halfNorm ((w : L) : V) = ((L.integralNorm w / 2 : ℤ) : ℚ) := by
   rw [halfNorm_apply, ← integralForm_cast, ← integralNorm_apply,
-    Int.cast_div (even_iff_two_dvd.mp w.2.2) (by norm_num), Int.cast_ofNat]
+    Int.cast_div (even_iff_two_dvd.mp (mem_evenOrthogonal_iff.mp w.2).2) (by norm_num),
+    Int.cast_ofNat]
 
 private theorem ambientTransvection_apply (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u)
     (x : V) :
@@ -211,21 +213,21 @@ theorem eichlerTransvection_apply_self (hu : L.integralNorm u = 0) (w : L.evenOr
     eichlerTransvection hu w u = u :=
   transvection_apply_self _ _
 
-/-- An Eichler transvection has determinant one: on the carrier it is the composite of the two
-integral linear transvections `x ↦ x + B(u, x) • w` and `x ↦ x + (k B(u, x) - B(w, x)) • u`,
-where `2k = B(w, w)`. -/
+/-- An Eichler transvection has determinant one. -/
 theorem det_eichlerTransvection (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) :
     Isometry.det L (eichlerTransvection hu w) = 1 := by
+  -- On the carrier, `E_{u,w}` is the composite of the integral linear transvections
+  -- `x ↦ x + B(u, x) • w` and `x ↦ x + (k B(u, x) - B(w, x)) • u`, where `2k = B(w, w)`.
+  obtain ⟨h₁, hw⟩ := mem_evenOrthogonal_iff.mp w.2
   have huu : L.integralForm u u = 0 := by rwa [← integralNorm_apply]
-  have hwu : L.integralForm w u = 0 := by rw [L.isSymm_integralForm.eq, w.2.1]
-  have h₁ : L.integralForm u (w : L) = 0 := w.2.1
+  have hwu : L.integralForm w u = 0 := by rw [L.isSymm_integralForm.eq, h₁]
   have h₂ : ((L.integralNorm w / 2) • L.integralForm u - L.integralForm w) u = 0 := by
     simp [hwu, huu]
   have hcarrier : (eichlerTransvection hu w).carrierEquiv =
       (LinearEquiv.transvection h₁).trans (LinearEquiv.transvection h₂) := by
     refine LinearEquiv.ext fun x ↦ ?_
     have hww : L.integralForm w w = 2 * (L.integralNorm w / 2) := by
-      rw [← integralNorm_apply, Int.mul_ediv_cancel' (even_iff_two_dvd.mp w.2.2)]
+      rw [← integralNorm_apply, Int.mul_ediv_cancel' (even_iff_two_dvd.mp hw)]
     simp only [eichlerTransvection_carrierEquiv_apply, LinearEquiv.trans_apply,
       LinearEquiv.transvection.apply, LinearMap.sub_apply, LinearMap.smul_apply, map_add,
       map_smul, h₁, hww, L.isSymm_integralForm.eq x, smul_eq_mul]
@@ -254,9 +256,10 @@ theorem eichlerTransvection_add (hu : L.integralNorm u = 0) (w w' : L.evenOrthog
   exact LinearEquiv.congr_fun (transvection_add (halfNorm_eq_zero hu)
     (polar_halfNorm_eq_zero w) (polar_halfNorm_eq_zero w')) x
 
-/-- The Eichler transvections with isotropic vector `u`, as a homomorphism from the even vectors
-orthogonal to `u` into the special isometry group. -/
-noncomputable def eichlerTransvectionHom (hu : L.integralNorm u = 0) :
+/-- The Eichler transvections with isotropic vector `u`, as a homomorphism out of the even
+vectors orthogonal to `u`. It descends to `L.evenOrthogonal u ⧸ ℤ ∙ u` as
+`eichlerTransvectionHom`. -/
+private noncomputable def eichlerTransvectionAddHom (hu : L.integralNorm u = 0) :
     L.evenOrthogonal u →+ Additive (specialOrthogonalGroup L) :=
   AddMonoidHom.mk' (fun w ↦ Additive.ofMul
       ⟨eichlerTransvection hu w, eichlerTransvection_mem_specialOrthogonalGroup hu w⟩)
@@ -264,26 +267,66 @@ noncomputable def eichlerTransvectionHom (hu : L.integralNorm u = 0) :
       apply Additive.toMul.injective
       exact Subtype.ext (eichlerTransvection_add hu w w')
 
-/-- The homomorphism sends `w` to the Eichler transvection `E_{u,w}`. -/
-@[simp]
-theorem coe_toMul_eichlerTransvectionHom (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) :
-    ((Additive.toMul (eichlerTransvectionHom hu w) : specialOrthogonalGroup L) : Isometry L L) =
-      eichlerTransvection hu w := (rfl)
+private theorem coe_toMul_eichlerTransvectionAddHom (hu : L.integralNorm u = 0)
+    (w : L.evenOrthogonal u) :
+    ((Additive.toMul (eichlerTransvectionAddHom hu w) : specialOrthogonalGroup L) :
+      Isometry L L) = eichlerTransvection hu w := (rfl)
 
 /-- The inverse of an Eichler transvection is the Eichler transvection of `-w`. -/
 @[simp]
 theorem eichlerTransvection_neg (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) :
     eichlerTransvection hu (-w) = (eichlerTransvection hu w)⁻¹ := by
   have h := congrArg (fun a ↦ ((Additive.toMul a : specialOrthogonalGroup L) : Isometry L L))
-    (map_neg (eichlerTransvectionHom hu) w)
-  simpa only [toMul_neg, Subgroup.coe_inv, coe_toMul_eichlerTransvectionHom] using h
+    (map_neg (eichlerTransvectionAddHom hu) w)
+  simpa only [toMul_neg, Subgroup.coe_inv, coe_toMul_eichlerTransvectionAddHom] using h
 
 /-- Integer multiples of the parameter give powers of an Eichler transvection. -/
 theorem eichlerTransvection_zsmul (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u) (n : ℤ) :
     eichlerTransvection hu (n • w) = eichlerTransvection hu w ^ n := by
   have h := congrArg (fun a ↦ ((Additive.toMul a : specialOrthogonalGroup L) : Isometry L L))
-    (map_zsmul (eichlerTransvectionHom hu) n w)
-  simpa only [toMul_zsmul, Subgroup.coe_zpow, coe_toMul_eichlerTransvectionHom] using h
+    (map_zsmul (eichlerTransvectionAddHom hu) n w)
+  simpa only [toMul_zsmul, Subgroup.coe_zpow, coe_toMul_eichlerTransvectionAddHom] using h
+
+/-- An Eichler transvection whose parameter is a rational multiple of `u` is the identity. -/
+theorem eichlerTransvection_eq_one_of_mem_span (hu : L.integralNorm u = 0)
+    {w : L.evenOrthogonal u} (hw : ((w : L) : V) ∈ ℚ ∙ (u : V)) : eichlerTransvection hu w = 1 := by
+  ext x
+  rw [Isometry.one_apply, eichlerTransvection_apply_eq]
+  exact LinearEquiv.congr_fun (transvection_eq_one_of_mem_span _ _ hw) x
+
+/-- An Eichler transvection depends on its parameter only modulo `ℤ ∙ u`:
+`E_{u,w + k • u} = E_{u,w}`. -/
+theorem eichlerTransvection_add_zsmul (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u)
+    (k : ℤ) :
+    eichlerTransvection hu (w + ⟨k • u, zsmul_mem_evenOrthogonal hu k⟩) =
+      eichlerTransvection hu w := by
+  rw [eichlerTransvection_add, eichlerTransvection_eq_one_of_mem_span hu
+    (w := ⟨k • u, zsmul_mem_evenOrthogonal hu k⟩)
+    (zsmul_mem (Submodule.mem_span_singleton_self (u : V)) k), mul_one]
+
+/-- **The Eichler transvections with isotropic vector `u`**, as a homomorphism from the parameter
+group `L.evenOrthogonal u ⧸ ℤ ∙ u` into the special isometry group, sending the class of `w` to
+`E_{u,w}`. It is injective when `u` is primitive and not in the radical of the form
+(`eichlerTransvectionHom_injective`). -/
+noncomputable def eichlerTransvectionHom (hu : L.integralNorm u = 0) :
+    (L.evenOrthogonal u ⧸ (ℤ ∙ u).comap (L.evenOrthogonal u).subtype) →+
+      Additive (specialOrthogonalGroup L) :=
+  QuotientAddGroup.lift _ (eichlerTransvectionAddHom hu) fun w hw ↦ by
+    -- Membership in the comapped span is membership of the underlying vector in `ℤ ∙ u`.
+    have hw' : (w : L) ∈ ℤ ∙ u := hw
+    obtain ⟨k, hk⟩ := Submodule.mem_span_singleton.mp hw'
+    apply Additive.toMul.injective
+    refine Subtype.ext ((coe_toMul_eichlerTransvectionAddHom hu w).trans
+      (eichlerTransvection_eq_one_of_mem_span hu ?_))
+    rw [← hk]
+    exact zsmul_mem (Submodule.mem_span_singleton_self (u : V)) k
+
+/-- The homomorphism sends the class of `w` to the Eichler transvection `E_{u,w}`. -/
+@[simp]
+theorem coe_toMul_eichlerTransvectionHom_mk (hu : L.integralNorm u = 0)
+    (w : L.evenOrthogonal u) :
+    ((Additive.toMul (eichlerTransvectionHom hu (Submodule.Quotient.mk w)) :
+      specialOrthogonalGroup L) : Isometry L L) = eichlerTransvection hu w := (rfl)
 
 /-- If `u` is not in the radical of the form (for instance, `u ≠ 0` and `L` is nondegenerate),
 then the Eichler transvection `E_{u,w}` is the identity exactly when `w` is a rational multiple
@@ -304,7 +347,34 @@ theorem eichlerTransvection_eq_one_iff (hu : L.integralNorm u = 0) (hu₀ : L.fo
     rw [Isometry.one_apply, eichlerTransvection_apply_eq]
     exact LinearEquiv.congr_fun h x
 
-/-- An Eichler transvection whose parameter is not a rational multiple of `u` has infinite order. -/
+/-- If `u` is primitive and not in the radical of the form, the Eichler transvections with
+isotropic vector `u` form a copy of the parameter group `L.evenOrthogonal u ⧸ ℤ ∙ u` inside
+`SO(L)`. -/
+theorem eichlerTransvectionHom_injective (hu : L.integralNorm u = 0) (hu₀ : L.form u ≠ 0)
+    (hprim : IsPrimitive u) : Function.Injective (eichlerTransvectionHom hu) := by
+  refine (injective_iff_map_eq_zero _).mpr fun q hq ↦ ?_
+  induction q using Submodule.Quotient.induction_on with | H w => ?_
+  have h := congrArg (fun a ↦ ((Additive.toMul a : specialOrthogonalGroup L) : Isometry L L)) hq
+  simp only [coe_toMul_eichlerTransvectionHom_mk, toMul_zero, OneMemClass.coe_one] at h
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp ((eichlerTransvection_eq_one_iff hu hu₀ w).mp h)
+  obtain ⟨f, hf⟩ := isPrimitive_def.mp hprim
+  -- Clearing the denominator of `c` and applying `f` with `f u = 1` shows that `c = f w`.
+  have hden : (c.den : ℤ) • (w : L) = c.num • u := Subtype.ext <| by
+    rw [Submodule.coe_smul_of_tower, Submodule.coe_smul_of_tower, ← hc,
+      ← Int.cast_smul_eq_zsmul ℚ, ← Int.cast_smul_eq_zsmul ℚ, smul_smul, Int.cast_natCast,
+      Rat.den_mul_eq_num]
+  have hnum : (c.den : ℤ) * f w = c.num := by
+    simpa [hf] using congrArg f hden
+  have hcf : c = (f w : ℚ) := by
+    rw [← Rat.num_div_den c, ← hnum, Int.cast_mul, Int.cast_natCast,
+      mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr c.den_nz)]
+  rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.coe_subtype,
+    Submodule.mem_span_singleton]
+  refine ⟨f w, Subtype.ext ?_⟩
+  rw [Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ, ← hcf, hc]
+
+/-- If `u` is not in the radical of the form, an Eichler transvection whose parameter is not a
+rational multiple of `u` has infinite order. -/
 theorem not_isOfFinOrder_eichlerTransvection (hu : L.integralNorm u = 0)
     (hu₀ : L.form u ≠ 0) {w : L.evenOrthogonal u} (hw : ((w : L) : V) ∉ ℚ ∙ (u : V)) :
     ¬ IsOfFinOrder (eichlerTransvection hu w) := by
@@ -321,18 +391,6 @@ end Transvection
 
 /-! ## Infinite isometry groups -/
 
-/-- Some nonzero integer multiple of every ambient vector lies in the lattice. -/
-private theorem exists_ne_zero_zsmul_mem_carrier (L : IntegralLattice V) (v : V) :
-    ∃ s : ℤ, s ≠ 0 ∧ s • v ∈ L.carrier := by
-  have hL : IsLocalizedModule (nonZeroDivisors ℤ) L.carrier.subtype :=
-    (isLocalizedModule_iff_isBaseChange (nonZeroDivisors ℤ) ℚ _).mpr
-      (Submodule.IsLattice.isBaseChange_subtype L.carrier)
-  obtain ⟨⟨x, s⟩, hs⟩ := hL.surj v
-  refine ⟨s, nonZeroDivisors.coe_ne_zero s, ?_⟩
-  rw [Submonoid.smul_def] at hs
-  rw [hs]
-  exact x.2
-
 /-- If `L` has rank at least three and `u` is not in the radical of the form, then some even
 lattice vector orthogonal to `u` is not a rational multiple of `u`. -/
 theorem exists_mem_evenOrthogonal_notMem_span (hrank : 3 ≤ Module.finrank ℤ L) {u : L}
@@ -341,9 +399,9 @@ theorem exists_mem_evenOrthogonal_notMem_span (hrank : 3 ≤ Module.finrank ℤ 
   obtain ⟨v, huv, hv⟩ := exists_polar_eq_zero_not_mem_span_of_finrank_ge_three L.halfNorm
     (L.polarBilin_halfNorm ▸ hu₀) (L.finrank_carrier ▸ hrank)
   rw [polar_halfNorm] at huv
-  obtain ⟨s, hs, hsv⟩ := L.exists_ne_zero_zsmul_mem_carrier v
+  obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier v
   -- Doubling makes the norm even; the scalar `2 * s` is nonzero, so `w` stays off the line.
-  refine ⟨(2 : ℤ) • ⟨s • v, hsv⟩, ⟨?_, ?_⟩, ?_⟩
+  refine ⟨(2 : ℤ) • ⟨s • v, hsv⟩, mem_evenOrthogonal_iff.mpr ⟨?_, ?_⟩, ?_⟩
   · apply Int.cast_injective (α := ℚ)
     simp [integralForm_cast, huv]
   · rw [QuadraticMap.map_smul, smul_eq_mul]
@@ -362,7 +420,7 @@ theorem infinite_specialOrthogonalGroup_of_not_anisotropic [L.IsNondegenerate]
     Infinite (specialOrthogonalGroup L) := by
   obtain ⟨v, hv, hv₀⟩ : ∃ v : V, L.norm v = 0 ∧ v ≠ 0 := by
     simpa [QuadraticMap.Anisotropic] using hiso
-  obtain ⟨s, hs, hsv⟩ := L.exists_ne_zero_zsmul_mem_carrier v
+  obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier v
   set u : L := ⟨s • v, hsv⟩
   have hsv' : (s : ℚ) • v = (u : V) := Int.cast_smul_eq_zsmul ℚ s v
   have hu₀ : L.form u ≠ 0 := by
