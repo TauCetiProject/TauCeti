@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.ExponentialBounds
+public import TauCeti.Algebra.Order.BigOperators.Fin
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.DeterminantIndex
 public import TauCeti.NumberTheory.Height.MvPolynomial
 public import TauCeti.NumberTheory.Height.Polynomial.RootMultiplicity
@@ -71,22 +73,6 @@ open scoped ENNReal Nat
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- Weights that at least halve at each step sum to at most twice the first one. -/
-private theorem sum_le_two_mul_zero {n : ℕ} {r : Fin (n + 1) → ℝ} (hr : ∀ i, 0 ≤ r i)
-    (h : ∀ i : Fin n, 2 * r i.succ ≤ r i.castSucc) : ∑ i, r i ≤ 2 * r 0 := by
-  induction n with
-  | zero =>
-    rw [Fin.sum_univ_one]
-    linarith [hr 0]
-  | succ n ih =>
-    have hs := ih (r := fun i ↦ r i.succ) (fun i ↦ hr _) fun i ↦ by
-      rw [Fin.succ_castSucc]
-      exact h i.succ
-    have h0 := h 0
-    rw [Fin.castSucc_zero] at h0
-    rw [Fin.sum_univ_succ]
-    linarith
-
 /-- The height of a determinant of Hasse derivatives in the form used by Roth's lemma: if the
 weights `r` sum to at most `2 r₀` and `m ≤ r₀ + 1`, the height of an `m × m` determinant of
 Hasse derivatives of `P` is at most `m (h(P) + 4 r₀ [K : ℚ])`. -/
@@ -132,9 +118,8 @@ private theorem weight_le_of_apply_last_eq_zero {n : ℕ} {r : Fin (n + 2) → �
   set c := (Fin.last n).castSucc
   -- Every variable that `μ` differentiates has weight at least `r c`.
   have hle : μ.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ μ.degree * (r c : ℝ≥0∞)⁻¹ := by
-    rw [Finsupp.weight_apply, Finsupp.sum, Finsupp.degree_apply, Nat.cast_sum, sum_mul]
-    refine sum_le_sum fun j hj ↦ ?_
-    rw [nsmul_eq_mul]
+    rw [← nsmul_eq_mul]
+    refine Finsupp.weight_le_degree_nsmul_of_mem_support μ fun j hj ↦ ?_
     gcongr
     refine hr (Fin.le_castSucc_iff.2 (Fin.lt_last_iff_ne_last.2 fun h ↦ ?_))
     exact Finsupp.mem_support_iff.1 hj (h ▸ hμ)
@@ -257,8 +242,9 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
     simpa using degreeOf_genWronskian_le μ f (Fin.last (n + 1)) 0 fun l ↦ (hf0 l).le
   have hWg : Wg ≠ 0 := Polynomial.hasseWronskian_ne_zero_of_linearIndependent hg
   -- The heights of the two Wronskians add up to at most `m (h(P) + 4 r₀ [K : ℚ])`.
-  have hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0 := sum_le_two_mul_zero (fun _ ↦ Nat.cast_nonneg _)
-    fun i ↦ by nlinarith [hratio i, Nat.cast_nonneg (α := ℝ) (r i.castSucc)]
+  have hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0 :=
+    Fin.sum_le_two_mul_of_two_mul_succ_le (fun _ ↦ Nat.cast_nonneg _) fun i ↦ by
+      nlinarith [hratio i, Nat.cast_nonneg (α := ℝ) (r i.castSucc)]
   have hheight := logHeight_det_hasseDeriv_le_mul hP hdeg hsum
     (hm'.trans (by have := hanti (Fin.zero_le (Fin.last (n + 1))); omega))
     (fun k l ↦ μ k + Finsupp.single (Fin.last (n + 1)) (l : ℕ))
