@@ -123,7 +123,8 @@ theorem resToImagAxis_mul (F G : ℍ → ℂ) :
   rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
 
 /-- The restriction commutes with scalar multiplication, by any scalar acting on `ℂ` and
-fixing `0` (in particular complex, real and rational scalars). -/
+fixing `0` (in particular complex, real and rational scalars). The scalar generality follows
+Mathlib's `Set.indicator_const_smul` and `Function.extend_smul`. -/
 @[simp]
 theorem resToImagAxis_smul {α : Type*} [SMulZeroClass α ℂ] (c : α) (F : ℍ → ℂ) :
     resToImagAxis (c • F) = c • resToImagAxis F := by
