@@ -71,6 +71,15 @@ private theorem realPlaneXDy_eq_liouvilleFormCLM :
   ext v
   simp [realPlaneXDyBilinear]
 
+/-- The constant coordinate one-form `dx` is smooth. -/
+theorem contDiff_realPlaneDx {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneDx :=
+  contDiff_const
+
+/-- The coordinate one-form `x dy` is smooth, being linear in the base point. -/
+theorem contDiff_realPlaneXDy {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneXDy := by
+  rw [realPlaneXDy_eq_liouvilleFormCLM]
+  exact ContinuousLinearMap.contDiff _
+
 /-- The exterior derivative of the constant coordinate one-form `dx` vanishes. -/
 @[simp]
 theorem extDeriv_realPlaneDx (p : ℝ × ℝ) : extDeriv realPlaneDx p = 0 := by
