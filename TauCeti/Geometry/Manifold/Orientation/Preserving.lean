@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
@@ -74,6 +75,58 @@ theorem isOrientationReversingAt_iff [IsManifold I 1 M] [IsManifold I' 1 M']
           _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) =
             -(o'.orientationAt (f x)) :=
   Iff.rfl
+
+/-- Given a continuous linear equivalence representing the derivative, preservation is exactly its
+orientation equation. -/
+theorem isOrientationPreservingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) (e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
+    (he : (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x) :
+    IsOrientationPreservingAt o o' f x ↔
+      _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = o'.orientationAt (f x) := by
+  constructor
+  · rintro ⟨e', he', h⟩
+    have heq : e' = e := by
+      ext v
+      exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace I' (f x) => L v)
+        (he'.trans he.symm)
+    simpa [heq] using h
+  · intro h
+    exact ⟨e, he, h⟩
+
+/-- Given a continuous linear equivalence representing the derivative, reversal is exactly its
+orientation equation with the opposite target orientation. -/
+theorem isOrientationReversingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I' 1 M']
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) (e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
+    (he : (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x) :
+    IsOrientationReversingAt o o' f x ↔
+      _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) =
+        -(o'.orientationAt (f x)) := by
+  constructor
+  · rintro ⟨e', he', h⟩
+    have heq : e' = e := by
+      ext v
+      exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace I' (f x) => L v)
+        (he'.trans he.symm)
+    simpa [heq] using h
+  · intro h
+    exact ⟨e, he, h⟩
+
+/-- Given a continuous linear equivalence representing the derivative, every map is either
+orientation-preserving or orientation-reversing at the point. -/
+theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
+    [IsManifold I' 1 M'] (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
+    (f : M → M') (x : M) (e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
+    (he : (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x) :
+    IsOrientationPreservingAt o o' f x ∨ IsOrientationReversingAt o o' f x := by
+  have hcard : Fintype.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
+    simpa only [TauCeti.finrank_tangentSpace] using o'.card_eq
+  rcases _root_.Orientation.eq_or_eq_neg
+    (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x))
+    (o'.orientationAt (f x)) hcard with h | h
+  · exact .inl ((isOrientationPreservingAt_iff_of_coe_eq o o' f x e he).2 h)
+  · exact .inr ((isOrientationReversingAt_iff_of_coe_eq o o' f x e he).2 h)
 
 /-- Negating the source orientation exchanges preservation and reversal. -/
 @[simp] theorem isOrientationPreservingAt_neg_left
@@ -146,13 +199,17 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation I' M' ι)
     (f : M → M') (x : M) :
     ¬(IsOrientationPreservingAt o o' f x ∧ IsOrientationReversingAt o o' f x) := by
-  rintro ⟨⟨e, he, hpres⟩, ⟨e', he', hrev⟩⟩
+  rintro ⟨hpres, hrev⟩
+  obtain ⟨e, he, _⟩ := (isOrientationPreservingAt_iff o o' f x).mp hpres
+  obtain ⟨e', he', _⟩ := (isOrientationReversingAt_iff o o' f x).mp hrev
   have heq : e = e' := by
     ext v
     exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace I' (f x) => L v)
       (he.trans he'.symm)
   subst e'
-  have h : o'.orientationAt (f x) = -(o'.orientationAt (f x)) := hpres.symm.trans hrev
+  have hpres' := (isOrientationPreservingAt_iff_of_coe_eq o o' f x e he).mp hpres
+  have hrev' := (isOrientationReversingAt_iff_of_coe_eq o o' f x e he).mp hrev
+  have h : o'.orientationAt (f x) = -(o'.orientationAt (f x)) := hpres'.symm.trans hrev'
   exact (Module.Ray.ne_neg_self _ h)
 
 /-- The identity map preserves every manifold orientation. -/
