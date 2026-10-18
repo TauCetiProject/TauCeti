@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
@@ -90,8 +91,7 @@ theorem conj_smul_apply_one_add_I_smul_apply_I (L : ℂ →ₗ[ℝ] F) (e : ℂ)
   simp only [mul_re, I_re, I_im, mul_im, zero_mul, one_mul, zero_sub, zero_add, ofReal_neg]
   match_scalars
   · ring
-  · ring_nf
-    simp [I_sq]
+  · linear_combination -(e.im : ℂ) * I_sq
 
 end LinearMap
 
