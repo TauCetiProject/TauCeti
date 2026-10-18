@@ -39,6 +39,14 @@ private theorem fractionRingAbsHom_algebraMap (v : AbsoluteValue R S) (a : R) :
     fractionRingAbsHom F v (algebraMap R F a) = v a := by
   exact Submonoid.LocalizationMap.lift_eq _ _ a
 
+private theorem fractionRingAbsHom_mul_denominator (v : AbsoluteValue R S)
+    {x : F} {a d : R} (h : x * algebraMap R F d = algebraMap R F a) :
+    fractionRingAbsHom F v x * v d = v a := by
+  calc
+    _ = fractionRingAbsHom F v (x * algebraMap R F d) := by
+      rw [map_mul, fractionRingAbsHom_algebraMap]
+    _ = v a := by rw [h, fractionRingAbsHom_algebraMap]
+
 variable [IsStrictOrderedRing S]
 
 private theorem fractionRingAbsHom_nonneg (v : AbsoluteValue R S) (x : F) :
@@ -56,9 +64,12 @@ noncomputable def fractionRingAbsoluteValue (v : AbsoluteValue R S) : AbsoluteVa
   add_le' x y := by
     obtain ⟨a, b, d, hx, hy⟩ := IsLocalization.surj₂ R⁰ F x y
     have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.2)
+    have hxy : (x + y) * algebraMap R F d = algebraMap R F (a + b) := by
+      rw [add_mul, hx, hy, map_add]
     apply (mul_le_mul_iff_left₀ hd).mp
-    simpa only [mul_add, ← fractionRingAbsHom_algebraMap F v, ← map_mul, hx, hy,
-      add_mul, ← map_add] using v.add_le a b
+    rw [fractionRingAbsHom_mul_denominator F v hxy, add_mul,
+      fractionRingAbsHom_mul_denominator F v hx, fractionRingAbsHom_mul_denominator F v hy]
+    exact v.add_le a b
 
 /-- The extension agrees with the absolute value on the original domain. -/
 @[simp]
@@ -79,9 +90,13 @@ theorem isNonarchimedean_fractionRingAbsoluteValue (v : AbsoluteValue R S)
   intro x y
   obtain ⟨a, b, d, hx, hy⟩ := IsLocalization.surj₂ R⁰ F x y
   have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.2)
+  have hxy : (x + y) * algebraMap R F d = algebraMap R F (a + b) := by
+    rw [add_mul, hx, hy, map_add]
+  change fractionRingAbsHom F v (x + y) ≤
+    max (fractionRingAbsHom F v x) (fractionRingAbsHom F v y)
   apply (mul_le_mul_iff_left₀ hd).mp
-  rw [max_mul_of_nonneg _ _ hd.le]
-  simpa only [← fractionRingAbsoluteValue_algebraMap F v, ← map_mul, add_mul, hx, hy,
-    ← map_add] using hv a b
+  rw [fractionRingAbsHom_mul_denominator F v hxy, max_mul_of_nonneg _ _ hd.le,
+    fractionRingAbsHom_mul_denominator F v hx, fractionRingAbsHom_mul_denominator F v hy]
+  exact hv a b
 
 end TauCeti
