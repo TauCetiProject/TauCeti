@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Defs.Unbundled
+public import Mathlib.Tactic.TypeStar
 
 /-!
 # Directed networks with finite bounds
@@ -49,7 +49,7 @@ abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*)
   TauCeti.Assignment N.Hom R
 
 /-- Construct an ordinary network with zero lower bounds from nonnegative capacities. -/
-@[expose] def ofCapacity {K : Type w} {V : Type u} [Zero K] [LE K]
+@[expose, reducible] def ofCapacity {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v)
     (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) : Network K V where
@@ -58,19 +58,26 @@ abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*)
   upper := capacity
   lower_le_upper := hcapacity
 
+/-- The arrow family of an ordinary network is its supplied arrow family. -/
+@[simp]
+theorem ofCapacity_Hom {K : Type w} {V : Type u} [Zero K] [LE K]
+    (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
+    (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) :
+    (ofCapacity Hom capacity hcapacity).Hom = Hom := rfl
+
 @[simp]
 theorem ofCapacity_lower {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
-    (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y} (e : Hom x y) :
-    (ofCapacity Hom capacity hcapacity).lower
-      (show (ofCapacity Hom capacity hcapacity).Hom x y from e) = 0 := rfl
+    (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y}
+    (e : (ofCapacity Hom capacity hcapacity).Hom x y) :
+    (ofCapacity Hom capacity hcapacity).lower e = 0 := rfl
 
 @[simp]
 theorem ofCapacity_upper {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
-    (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y} (e : Hom x y) :
-    (ofCapacity Hom capacity hcapacity).upper
-      (show (ofCapacity Hom capacity hcapacity).Hom x y from e) = capacity e := rfl
+    (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y}
+    (e : (ofCapacity Hom capacity hcapacity).Hom x y) :
+    (ofCapacity Hom capacity hcapacity).upper e = capacity e := rfl
 
 end Network
 
