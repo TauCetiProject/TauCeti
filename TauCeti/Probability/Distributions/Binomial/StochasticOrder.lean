@@ -39,7 +39,7 @@ open scoped unitInterval
 namespace TauCeti.Probability
 
 /-- Increasing the success probability decreases the cdf of a real-cast binomial law.
-The construction uses shared independent uniform trials, including at probabilities zero and one. -/
+This includes success probabilities zero and one. -/
 theorem cdf_map_cast_binomial_le_of_le_prob (n : ℕ) {p q : I} (hpq : p ≤ q) (x : ℝ) :
     cdf Bin(ℝ, n, q) x ≤ cdf Bin(ℝ, n, p) x := by
   classical
@@ -62,8 +62,8 @@ theorem cdf_map_cast_binomial_le_of_le_prob (n : ℕ) {p q : I} (hpq : p ≤ q) 
   exact ae_of_all _ fun z ↦ Nat.cast_le.mpr <| Finset.card_le_card <|
     Finset.monotone_filter_right _ fun _ _ hi ↦ hi.trans hpq
 
-/-- Adding trials decreases the cdf of a real-cast binomial law.
-The extra trials are independent and have the same success probability. -/
+/-- Adding trials decreases the cdf of a real-cast binomial law while keeping the success
+probability fixed. -/
 theorem cdf_map_cast_binomial_le_of_le_trials {n m : ℕ} (hnm : n ≤ m) (p : I) (x : ℝ) :
     cdf Bin(ℝ, m, p) x ≤ cdf Bin(ℝ, n, p) x := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hnm
@@ -95,7 +95,7 @@ theorem quantile_map_cast_binomial_le {n m : ℕ} {p q : I} (hnm : n ≤ m) (hpq
 
 /-- The common-uniform quantile coupling of binomial laws is almost surely ordered when
 both parameters increase. Its marginals are given by `Measure.isCoupling_quantileCoupling`. -/
-theorem ae_le_quantileCoupling_map_cast_binomial {n m : ℕ} {p q : I} (hnm : n ≤ m)
+theorem ae_fst_le_snd_quantileCoupling_map_cast_binomial {n m : ℕ} {p q : I} (hnm : n ≤ m)
     (hpq : p ≤ q) :
     ∀ᵐ z ∂Bin(ℝ, n, p).quantileCoupling Bin(ℝ, m, q), z.1 ≤ z.2 :=
   Measure.ae_fst_le_snd_quantileCoupling _ _ (cdf_map_cast_binomial_le hnm hpq)
