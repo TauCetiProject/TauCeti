@@ -71,8 +71,7 @@ theorem riemannianTotalVolume_pos [Nonempty M] :
   apply ENNReal.toReal_pos
   · have hsource : 0 < riemannianVolume I M (chartAt H α).source := by
       rw [riemannianVolume_apply_of_subset (α := α) (s := (chartAt H α).source) subset_rfl]
-      exact chartRiemannianVolume_pos_of_isOpen_subset_source α (chartAt H α).open_source
-        subset_rfl ⟨α, mem_chart_source H α⟩
+      exact chartRiemannianVolume_pos α
     have hmono : (chartAt H α).source ⊆ (Set.univ : Set M) := subset_univ _
     exact (lt_of_lt_of_le hsource (measure_mono hmono)).ne'
   · finiteness
