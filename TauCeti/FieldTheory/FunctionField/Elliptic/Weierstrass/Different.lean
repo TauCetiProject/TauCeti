@@ -193,7 +193,6 @@ theorem eq_of_isWeierstrassCoordinates {P' : Place k F} {W' : WeierstrassCurve k
 
 /-- Under the isomorphism `k(W) ≃ₐ[k] F` induced by Weierstrass coordinates generating `F`, the
 place at infinity of `k(W)` maps to `P`. -/
-@[simp]
 theorem map_infinity_functionFieldEquivOfAdjoinEqTop (hxy : k⟮x, y⟯ = ⊤) :
     (infinity W.toAffine).map
         (W.toAffine.functionFieldEquivOfAdjoinEqTop h.equation h.transcendental_x hxy) = P :=
