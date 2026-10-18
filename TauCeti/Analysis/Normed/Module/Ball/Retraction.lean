@@ -18,6 +18,12 @@ for turning a map that is only Lipschitz near the origin into a globally Lipschi
 it near the origin, and it is used that way to cut off the nonlinearity of a differential equation
 outside a small ball around an equilibrium.
 
+Translating gives `TauCeti.centeredRadialRetraction x₀ r`, the retraction onto the closed ball of
+radius `r` centred at an arbitrary point `x₀`, with the same API. Precomposing with it also
+globalizes Hölder maps: a map that is `α`-Hölder with constant `c` on the closed ball becomes
+globally `α`-Hölder with the same exponent and constant `c * 2 ^ α`. This is how variable
+coefficients that are only Hölder near a point are extended to the whole space.
+
 For `0 ≤ r`, the retraction is `2`-Lipschitz in any normed space, and `2` is the constant carried
 by `TauCeti.lipschitzWith_radialRetraction`; it is not optimal in every space (in a Hilbert space
 the retraction is the metric projection onto a convex set, hence `1`-Lipschitz) but the exact
@@ -33,8 +39,17 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
   identity.
 * `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
+* `TauCeti.dist_centeredRadialRetraction`: for `0 ≤ r`, the distance from the centre is
+  `min (dist x x₀) r`.
+* `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
+  `2`-Lipschitz.
+* `LipschitzOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
+  map that is Lipschitz on the closed ball globally Lipschitz, with twice the constant.
 * `LipschitzOnWith.comp_radialRetraction`: precomposing with it makes a map that is Lipschitz on
   the closed ball of radius `r` globally Lipschitz, with twice the constant.
+* `HolderOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
+  map that is `α`-Hölder on the closed ball globally `α`-Hölder, with constant multiplied by
+  `2 ^ α`.
 
 ## References
 
