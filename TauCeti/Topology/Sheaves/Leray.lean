@@ -62,50 +62,6 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X) (hU : ⨆ i, U i = 
 
 include hU
 
-/-- A sheaf on `X` satisfies the sheaf condition for a family of opens covering `X`, in the form
-used by the augmentation of the Čech complex. -/
-private lemma isSheafFor_ofArrows (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
-    (E : AddCommGrpCat.{u}ᵒᵖ) :
-    (Presieve.ofArrows U fun i ↦ isTerminalTop.from (U i)).IsSheafFor
-      (F.obj ⋙ coyoneda.obj E) := by
-  rw [Presieve.isSheafFor_iff_generate]
-  refine F.property E.unop _ fun x _ ↦ ?_
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (show x ∈ ⨆ i, U i by rw [hU]; trivial)
-  exact ⟨U i, isTerminalTop.from _, Sieve.le_generate _ _ _ (Presieve.ofArrows.mk i), hi⟩
-
-/-- The degree `0` Čech cohomology of a sheaf for a cover of `X` is the group of global sections,
-which is also the degree `0` sheaf cohomology. -/
-private def homologyZeroCechIso (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    ((cechComplexFunctor U).obj F.obj).homology 0 ≅
-      AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{u} F 0) :=
-  have : QuasiIsoAt (cechAugmentation U isTerminalTop F.obj) 0 :=
-    (quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop F.obj).2
-      (isSheafFor_ofArrows U hU F)
-  (asIso (HomologicalComplex.homologyMap (cechAugmentation U isTerminalTop F.obj) 0)).symm ≪≫
-    HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 _ ≪≫
-      ((_root_.CategoryTheory.Sheaf.H.equiv₀ F isTerminalTop).symm.toAddCommGrpIso)
-
-/-- The identification of degree `0` Čech cohomology with degree `0` sheaf cohomology is natural
-in the sheaf. -/
-private lemma homologyMap_comp_homologyZeroCechIso_hom
-    {P Q : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (g : P ⟶ Q) :
-    HomologicalComplex.homologyMap ((cechComplexFunctor U).map g.hom) 0 ≫
-        (homologyZeroCechIso U hU Q).hom =
-      (homologyZeroCechIso U hU P).hom ≫
-        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g 0) := by
-  have hP : QuasiIsoAt (cechAugmentation U isTerminalTop P.obj) 0 :=
-    (quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop P.obj).2 (isSheafFor_ofArrows U hU P)
-  have hQ : QuasiIsoAt (cechAugmentation U isTerminalTop Q.obj) 0 :=
-    (quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop Q.obj).2 (isSheafFor_ofArrows U hU Q)
-  rw [← cancel_epi (HomologicalComplex.homologyMap (cechAugmentation U isTerminalTop P.obj) 0)]
-  simp only [homologyZeroCechIso, Iso.trans_hom, Iso.symm_hom, asIso_inv,
-    ← HomologicalComplex.homologyMap_comp_assoc, cechAugmentation_naturality]
-  simp only [HomologicalComplex.homologyMap_comp, Category.assoc, IsIso.hom_inv_id_assoc,
-    HomologicalComplex.singleObjHomologySelfIso_hom_naturality_assoc]
-  congr 1
-  ext x
-  exact (_root_.CategoryTheory.Sheaf.H.equiv₀_symm_naturality isTerminalTop g x).symm
-
 /-- **Leray's theorem, in the form proved by induction.** If `F` has no cohomology in positive
 degrees on the finite products `U (a 0) × ⋯ × U (a m)` of members of the cover, then
 `Hⁿ(U, F) ≅ Hⁿ(X, F)`. -/
