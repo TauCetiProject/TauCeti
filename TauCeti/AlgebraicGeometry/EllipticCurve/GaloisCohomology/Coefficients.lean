@@ -19,6 +19,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
 
 -- Non-public: the nonvanishing of `m` in `Kˢ` is used only inside proofs.
 import TauCeti.Algebra.Algebra.NatCast
+-- Proof-only: a `ZMod 2`-module of cardinality four is a Klein four-group.
+import TauCeti.Algebra.Group.ElementaryTwoQuotient.KleinFour
 
 /-!
 # The Galois coefficient modules of an elliptic curve
@@ -279,15 +281,9 @@ theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
 /-- **`E(Kˢ)[2]` is a Klein four-group** when `2` is invertible in `K`: it has `2² = 4` points,
 each killed by `2`. -/
 theorem isAddKleinFour_torsionCoeff_two [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
-    IsAddKleinFour (W.TorsionCoeff 2) := by
-  have hcard : Nat.card (W.TorsionCoeff 2) = 4 := by
-    rw [natCard_torsionCoeff W h2]
-    norm_num
-  have : Nontrivial (W.TorsionCoeff 2) := by
-    rw [← Finite.one_lt_card_iff_nontrivial, hcard]
-    norm_num
-  refine ⟨hcard, (AddMonoid.exponent_eq_prime_iff Nat.prime_two).2 fun P hP ↦ ?_⟩
-  exact addOrderOf_eq_prime (Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.1 P.2)) hP
+    IsAddKleinFour (W.TorsionCoeff 2) :=
+  letI := AddSubgroup.torsionBy.zmodModule (A := W.PointCoeff) (n := 2)
+  TauCeti.isAddKleinFour_of_natCard_eq_four (natCard_torsionCoeff W h2)
 
 /-! ### Transport along an equality of curves -/
 
