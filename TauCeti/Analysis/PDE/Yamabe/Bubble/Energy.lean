@@ -19,7 +19,6 @@ Let `E` be a real inner product space of dimension `n > 2`, and let
 centred at `b` (`TauCeti.Yamabe.bubble`). With `aₙ = 4 (n - 1) / (n - 2)` and
 `pₙ = 2 n / (n - 2)`, this file proves:
 
-* the gradient formula `∇U(x) = -((n - 2) / (t² + ‖x - b‖²)) U(x) (x - b)`;
 * `U ∈ L^{pₙ}` and `dU ∈ L²` for every additive Haar measure, with
   `U ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`;
 * the **energy identity** `aₙ ∫ ‖dU‖² = n (n - 1) ∫ U ^ pₙ`, again for every additive Haar
@@ -36,15 +35,12 @@ of the sharp Euclidean Sobolev inequality, which is not proved here.
 The energy identity is proved in polar coordinates. Both integrands are radial about `b`, and
 the radial integrals are related by integrating the derivative of
 `r ↦ r ^ n (t² + r²) (2 t / (t² + r²)) ^ n`, which vanishes at `0` and at infinity exactly
-because `n > 2`. This avoids integrating `U ΔU` by parts on the whole space, which is not
-absolutely convergent in dimension three. The value of `∫ U ^ pₙ` follows from the integral of
-the Japanese bracket and Legendre's duplication formula.
+because `n > 2`. This gives the energy identity directly, without a whole-space integration by
+parts. The value of `∫ U ^ pₙ` follows from the integral of the Japanese bracket and Legendre's
+duplication formula.
 
 ## Main declarations
 
-* `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of
-  a bubble and the square of its norm.
-* `TauCeti.Yamabe.bubble_rpow_criticalExponent`: `U ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`.
 * `TauCeti.Yamabe.memLp_bubble`, `TauCeti.Yamabe.memLp_fderiv_bubble`: `U ∈ L^{pₙ}`, `dU ∈ L²`.
 * `TauCeti.Yamabe.conformalCoefficient_mul_integral_norm_fderiv_bubble_sq`: the energy identity.
 * `TauCeti.Yamabe.integral_bubble_rpow_criticalExponent`: the value of `∫ U ^ pₙ`.
@@ -65,75 +61,6 @@ open Filter InnerProductSpace MeasureTheory Metric Module Real Set Topology
 open scoped Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- In dimension `n ≠ 2`, the critical power of a bubble is
-`U_{t,b} ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`. -/
-theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 0 < t) (b x : E) :
-    bubble t b x ^ criticalExponent (finrank ℝ E) =
-      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
-  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
-  rw [bubble_apply, criticalExponent_def, ← Real.rpow_mul (by positivity),
-    ← Real.rpow_natCast _ (finrank ℝ E)]
-  congr 1
-  field_simp
-
-section Gradient
-
-variable [CompleteSpace E]
-
-/-- **The gradient of a bubble**:
-`∇U_{t,b}(x) = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) (x - b)`, where `n` is the dimension of
-`E`. -/
-theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
-    HasGradientAt (bubble t b)
-      (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b)) x := by
-  set k : ℝ := ((finrank ℝ E : ℝ) - 2) / 2
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
-  -- Write the bubble as `F ∘ q` with `q y = t² + ‖y - b‖²` and `F s = (2 t s⁻¹) ^ k`.
-  have hq : HasFDerivAt (fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2) (toDual ℝ E ((2 : ℝ) • (x - b))) x := by
-    refine (((hasStrictFDerivAt_norm_sq (x - b)).hasFDerivAt.comp x
-      ((hasFDerivAt_id x).sub_const b)).const_add (t ^ 2)).congr_fderiv ?_
-    ext v
-    simp
-  have hF : HasDerivAt (fun s : ℝ ↦ (2 * t * s⁻¹) ^ k)
-      (2 * t * -((t ^ 2 + ‖x - b‖ ^ 2) ^ 2)⁻¹ * k * (2 * t * (t ^ 2 + ‖x - b‖ ^ 2)⁻¹) ^ (k - 1))
-      (t ^ 2 + ‖x - b‖ ^ 2) :=
-    ((hasDerivAt_inv hQ.ne').const_mul (2 * t)).rpow_const (Or.inl (by positivity))
-  have hU : bubble t b = (fun s : ℝ ↦ (2 * t * s⁻¹) ^ k) ∘ fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2 := by
-    funext y
-    simp [bubble_apply, div_eq_mul_inv, k]
-  have h := hF.comp_hasFDerivAt x hq
-  rw [← hU, ← map_smul, smul_smul] at h
-  rw [hasGradientAt_iff_hasFDerivAt]
-  refine h.congr_fderiv ?_
-  congr 2
-  rw [bubble_apply, div_eq_mul_inv,
-    Real.rpow_sub_one (by positivity : 2 * t * (t ^ 2 + ‖x - b‖ ^ 2)⁻¹ ≠ 0)]
-  simp only [k]
-  field_simp
-
-/-- The gradient of a bubble, as a value of `gradient`. -/
-theorem gradient_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
-    ∇ (bubble t b) x =
-      -(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b) :=
-  (hasGradientAt_bubble ht b x).gradient
-
-/-- The squared norm of the differential of a bubble is the radial function
-`((n - 2) / (2 t)) ² ‖x - b‖² (2 t / (t² + ‖x - b‖²)) ^ n`. -/
-theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
-    ‖fderiv ℝ (bubble t b) x‖ ^ 2 = (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * ‖x - b‖ ^ 2 *
-      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
-  have hU2 : bubble t b x ^ 2 =
-      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E / (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ 2 := by
-    have ha : 0 < 2 * t / (t ^ 2 + ‖x - b‖ ^ 2) := by positivity
-    rw [bubble_apply, ← Real.rpow_mul_natCast ha.le, show ((finrank ℝ E : ℝ) - 2) / 2 * (2 : ℕ) =
-      (finrank ℝ E : ℝ) - 2 by push_cast; ring, Real.rpow_sub ha, Real.rpow_natCast, Real.rpow_two]
-  rw [(hasGradientAt_bubble ht b x).hasFDerivAt.fderiv, LinearIsometryEquiv.norm_map, norm_smul,
-    mul_pow, norm_neg, Real.norm_eq_abs, sq_abs, mul_pow, hU2]
-  field_simp
-
-end Gradient
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   (μ : Measure E) [μ.IsAddHaarMeasure]
@@ -205,77 +132,6 @@ theorem memLp_fderiv_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b :
     MemLp (fderiv ℝ (bubble t b)) 2 μ :=
   (memLp_two_iff_integrable_sq_norm ((contDiff_bubble (m := 1) ht.ne' b).continuous_fderiv
     one_ne_zero).aestronglyMeasurable).mpr (integrable_norm_fderiv_bubble_sq μ hn ht b)
-
-/-- The radial identity behind the energy identity: for `n > 2` and
-`ψ(r) = (2 t / (t² + r²)) ^ n`, `(n - 2) ∫₀^∞ r ^ (n - 1) r² ψ(r) = n t² ∫₀^∞ r ^ (n - 1) ψ(r)`.
-It comes from integrating the derivative of `r ↦ r ^ n (t² + r²) ψ(r)`, which vanishes at `0` and
-at infinity. -/
-private theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ} (ht : 0 < t)
-    (h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n) (Ioi 0))
-    (h₂ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n))
-      (Ioi 0)) :
-    ((n : ℝ) - 2) * ∫ r in Ioi 0, r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n) =
-      n * t ^ 2 * ∫ r in Ioi 0, r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-  simp only [show m + 3 - 1 = m + 2 by omega] at h₁ h₂ ⊢
-  have hQ : ∀ r : ℝ, 0 < t ^ 2 + r ^ 2 := fun r ↦ by positivity
-  set F : ℝ → ℝ := fun r ↦ r ^ (m + 3) * (t ^ 2 + r ^ 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)
-  have hderiv : ∀ r ∈ Ici (0 : ℝ), HasDerivAt F
-      (((m + 3 : ℕ) : ℝ) * t ^ 2 * (r ^ (m + 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)) -
-        (((m + 3 : ℕ) : ℝ) - 2) *
-          (r ^ (m + 2) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)))) r := by
-    intro r _
-    have hQr : t ^ 2 + r ^ 2 ≠ 0 := (hQ r).ne'
-    have hq : HasDerivAt (fun r : ℝ ↦ t ^ 2 + r ^ 2) (2 * r) r := by
-      simpa using (hasDerivAt_pow 2 r).const_add (t ^ 2)
-    have hψ : HasDerivAt (fun r : ℝ ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
-        (-(2 * ((m + 3 : ℕ) : ℝ) * r / (t ^ 2 + r ^ 2)) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
-        r := by
-      convert ((hasDerivAt_const r (2 * t)).div hq hQr).pow (m + 3) using 1
-      simp only [Pi.div_apply, show m + 3 - 1 = m + 2 by omega]
-      rw [pow_succ _ (m + 2)]
-      generalize (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 2) = X
-      field_simp
-      ring
-    convert ((hasDerivAt_pow (m + 3) r).mul hq).mul hψ using 1
-    simp only [Pi.mul_apply, show m + 3 - 1 = m + 2 by omega]
-    rw [pow_succ r (m + 2)]
-    generalize (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3) = P
-    generalize r ^ (m + 2) = R
-    push_cast
-    field_simp
-    ring
-  -- For `r > 0`, `F r = (2 t) ^ (m + 3) (r / (t² + r²)) ^ (m + 1) (r² / (t² + r²))`, which is at
-  -- most `(2 t) ^ (m + 3) r⁻¹ ^ (m + 1)`.
-  have htend : Tendsto F atTop (𝓝 0) := by
-    have hlim : Tendsto (fun r : ℝ ↦ (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1)) atTop (𝓝 0) := by
-      simpa using (tendsto_inv_atTop_zero.pow (m + 1)).const_mul ((2 * t) ^ (m + 3))
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
-      ((eventually_gt_atTop 0).mono fun r hr ↦ by positivity)
-      ((eventually_gt_atTop 0).mono fun r hr ↦ ?_)
-    · have hF : F r = (2 * t) ^ (m + 3) * (r / (t ^ 2 + r ^ 2)) ^ (m + 1) *
-          (r ^ 2 / (t ^ 2 + r ^ 2)) := by
-        have := (hQ r).ne'
-        simp only [F]
-        rw [div_pow, div_pow]
-        field_simp
-        ring
-      have h₁ : r / (t ^ 2 + r ^ 2) ≤ r⁻¹ := by
-        rw [div_le_iff₀ (hQ r), inv_mul_eq_div, le_div_iff₀ hr]
-        nlinarith [sq_nonneg t]
-      have h₂ : r ^ 2 / (t ^ 2 + r ^ 2) ≤ 1 := by
-        rw [div_le_one (hQ r)]
-        nlinarith [sq_nonneg t]
-      rw [hF]
-      calc (2 * t) ^ (m + 3) * (r / (t ^ 2 + r ^ 2)) ^ (m + 1) * (r ^ 2 / (t ^ 2 + r ^ 2))
-          ≤ (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1) * 1 := by gcongr
-        _ = (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1) := mul_one _
-  have h := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
-    ((h₁.const_mul _).sub (h₂.const_mul _)) htend
-  rw [integral_sub (h₁.const_mul _) (h₂.const_mul _), integral_const_mul, integral_const_mul,
-    show F 0 = 0 by simp [F], sub_zero] at h
-  push_cast at h ⊢
-  linarith
 
 /-- **The energy identity of a bubble**: in dimension `n > 2`,
 `aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) ∫ U_{t,b} ^ pₙ` for every additive Haar measure. -/
