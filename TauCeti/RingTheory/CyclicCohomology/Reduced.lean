@@ -112,11 +112,9 @@ theorem cyclicHochschildCoboundary_mem_reducedCyclicCochains {n : ℕ}
 
 /-- The Hochschild coboundary restricted to reduced cyclic cochains. -/
 def reducedCyclicHochschildCoboundary (n : ℕ) :
-    reducedCyclicCochains R A M n →ₗ[R] reducedCyclicCochains R A M (n + 1) where
-  toFun phi := ⟨cyclicHochschildCoboundary R A M n phi,
-    cyclicHochschildCoboundary_mem_reducedCyclicCochains R A M phi⟩
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
+    reducedCyclicCochains R A M n →ₗ[R] reducedCyclicCochains R A M (n + 1) :=
+  (cyclicHochschildCoboundary R A M n).restrict fun phi hphi ↦
+    cyclicHochschildCoboundary_mem_reducedCyclicCochains R A M ⟨phi, hphi⟩
 
 /-- The reduced Hochschild coboundary has the ordinary cyclic Hochschild coboundary as its
 underlying cochain. -/
@@ -206,9 +204,8 @@ variable (M) in
 /-- Pullback of reduced cyclic cochains along a unital algebra homomorphism. -/
 def reducedCyclicCochainsMap (f : A →ₐ[R] B) (n : ℕ) :
     reducedCyclicCochains R B M n →ₗ[R] reducedCyclicCochains R A M n :=
-  LinearMap.codRestrict (reducedCyclicCochains R A M n)
-    ((cyclicCochainsMap M f.toLinearMap n).comp (reducedCyclicCochains R B M n).subtype)
-    (cyclicCochainsMap_mem_reducedCyclicCochains (R := R) (M := M) f)
+  (cyclicCochainsMap M f.toLinearMap n).restrict fun phi hphi ↦
+    cyclicCochainsMap_mem_reducedCyclicCochains (R := R) (M := M) f ⟨phi, hphi⟩
 
 /-- The underlying cyclic cochain of a reduced pullback is ordinary pullback. -/
 @[simp]
