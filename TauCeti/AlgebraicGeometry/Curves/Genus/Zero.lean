@@ -104,9 +104,11 @@ theorem functionFieldMap_isoProjectiveLine_hom (e : RatFunc k ≃ₐ[k] X.functi
       e z := by
   simp only [isoProjectiveLine, Iso.trans_hom, Iso.symm_hom, twoChartModel.isoOfAlgEquiv_hom,
     Hom.functionFieldMap_comp, CommRingCat.comp_apply]
-  rw [projectiveLine.functionFieldMap_isoTwoChartModel_inv,
-    twoChartModel.functionFieldMap_homOfAlgHom_apply, functionFieldMap_isoTwoChartModel_hom,
-    AlgEquiv.coe_toAlgHom]
+  rw [(AlgEquiv.eq_symm_apply _).mpr
+      (projectiveLine.functionFieldEquiv_functionFieldMap_isoTwoChartModel_inv k z),
+    (AlgEquiv.eq_symm_apply _).mpr
+      (twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom ..),
+    functionFieldMap_isoTwoChartModel_hom, AlgEquiv.coe_toAlgHom]
 
 /-! ### Curves of genus zero -/
 

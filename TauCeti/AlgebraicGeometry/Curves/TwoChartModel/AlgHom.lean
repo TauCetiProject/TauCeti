@@ -132,15 +132,6 @@ theorem functionFieldEquiv_functionFieldMap_homOfAlgHom (z : F) :
   rw [functionFieldMap_homOfAlgHom]
   simp [functionFieldAlgHom]
 
-/-- The direct form of `functionFieldEquiv_functionFieldMap_homOfAlgHom`: pullback along
-`homOfAlgHom φ` is the composite of `φ` with the two inverse function-field identifications. -/
-theorem functionFieldMap_homOfAlgHom_apply (z : F) :
-    (homOfAlgHom hF hF' hx hx' hxt hx't φ).functionFieldMap
-        ((functionFieldEquiv hxt).symm z) =
-      (functionFieldEquiv hx't).symm (φ z) := by
-  apply (functionFieldEquiv hx't).injective
-  simp
-
 /-- **A dominant morphism of two-chart models is determined by its pullback of rational
 functions**: a dominant `k`-morphism `f : X' ⟶ X` is `homOfAlgHom φ` exactly when, under the
 identifications `k(X) ≃ F` and `k(X') ≃ F'`, its pullback of rational functions is `φ`. -/

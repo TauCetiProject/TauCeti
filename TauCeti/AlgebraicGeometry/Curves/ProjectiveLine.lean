@@ -142,14 +142,6 @@ theorem functionFieldEquiv_functionFieldMap_isoTwoChartModel_inv (z : RatFunc k)
   rw [AlgEquiv.symm_apply_apply, ← CommRingCat.comp_apply, ← Scheme.Hom.functionFieldMap_comp]
   simp
 
-/-- The direct form of `functionFieldEquiv_functionFieldMap_isoTwoChartModel_inv`: pullback along
-the inverse is the composite of the two inverse function-field identifications. -/
-theorem functionFieldMap_isoTwoChartModel_inv (z : RatFunc k) :
-    (isoTwoChartModel k).inv.functionFieldMap ((functionFieldEquiv k).symm z) =
-      (twoChartModel.functionFieldEquiv RatFunc.transcendental_X).symm z := by
-  apply (twoChartModel.functionFieldEquiv RatFunc.transcendental_X).injective
-  simp
-
 end projectiveLine
 
 /-! ### The projection of a two-chart model to the projective line -/
