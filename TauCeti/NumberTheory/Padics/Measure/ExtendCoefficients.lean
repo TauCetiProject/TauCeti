@@ -86,10 +86,8 @@ private theorem cylinderSum_comp (r : C(X, B)) (t : C(B, A)) (g : A → K) :
   classical
   have hfib (a : A) : finiteProjection (t.comp r) μ a =
       ∑ b ∈ Finset.univ.filter (t · = a), finiteProjection r μ b := by
-    simp only [finiteProjection_apply, ← map_sum]
-    congr 1
-    ext x
-    simp [fiberIndicator_apply, Finset.sum_apply]
+    rw [finiteProjection_comp, Finsupp.mapDomain_fintype, Finsupp.finsetSum_apply]
+    simp [Finsupp.single_apply, Finset.sum_ite]
   simp only [cylinderSum, hfib, map_sum, Finset.mul_sum, Function.comp_apply]
   rw [← Finset.sum_fiberwise Finset.univ t fun b ↦ g (t b) * j (finiteProjection r μ b)]
   refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b hb ↦ ?_
@@ -290,6 +288,26 @@ theorem extendCoefficients_map {Y : Type*} [TopologicalSpace Y] [CompactSpace Y]
   finiteProjection_ext _ _ fun n q ↦ by
     simp
 
+/-- For continuous `j`, the extension of coefficients of `μ` integrates `j ∘ f` to `j (μ f)` for
+every `f ∈ C(X, O)`. -/
+theorem extendCoefficients_apply_comp (hjc : Continuous j) (f : C(X, O)) :
+    extendCoefficients j hj μ ((⟨j, hjc⟩ : C(O, K)).comp f) = j (μ f) := by
+  -- The density argument only needs the canonical uniformity of the additive group of `O`.
+  let := IsTopologicalAddGroup.rightUniformSpace O
+  refine congrFun (LocallyConstant.denseRange_toContinuousMap.equalizer
+    ((map_continuous (extendCoefficients j hj μ)).comp (continuous_postcomp _))
+    (hjc.comp (map_continuous μ)) (funext fun φ ↦ ?_)) f
+  have hφ : (φ : C(X, O)) = (equivFnOfDiscrete.symm φ.lift).comp (quotientMap φ) := by
+    ext x
+    simp [lift_quotientMap]
+  have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ =
+      (equivFnOfDiscrete.symm (j ∘ φ.lift)).comp (quotientMap φ) := by
+    ext x
+    simp [lift_quotientMap]
+  simp only [Function.comp_apply]
+  rw [hjφ, extendCoefficients_apply_comp_eq_sum, hφ, apply_comp_eq_sum_finiteProjection, map_sum]
+  simp
+
 /-- A `K`-valued measure taking the value `j (μ f)` on every test function `j ∘ f` is the extension
 of coefficients of `μ`. -/
 theorem eq_extendCoefficients_of_apply_comp (hjc : Continuous j) {ν : D(X, K)}
@@ -327,24 +345,6 @@ section Normed
 variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*} [NormedField K]
   [CompleteSpace K] [IsUltrametricDist K] [NormedCommRing O] (j : O →+* K)
   (hj : ∀ a, ‖j a‖ ≤ 1)
-
-/-- For continuous `j`, the extension of coefficients of `μ` integrates `j ∘ f` to `j (μ f)` for
-every `f ∈ C(X, O)`. -/
-theorem extendCoefficients_apply_comp (hjc : Continuous j) (μ : D(X, O)) (f : C(X, O)) :
-    extendCoefficients j hj μ ((⟨j, hjc⟩ : C(O, K)).comp f) = j (μ f) := by
-  refine congrFun (LocallyConstant.denseRange_toContinuousMap.equalizer
-    ((map_continuous (extendCoefficients j hj μ)).comp (continuous_postcomp _))
-    (hjc.comp (map_continuous μ)) (funext fun φ ↦ ?_)) f
-  have hφ : (φ : C(X, O)) = (equivFnOfDiscrete.symm φ.lift).comp (quotientMap φ) := by
-    ext x
-    simp [lift_quotientMap]
-  have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ =
-      (equivFnOfDiscrete.symm (j ∘ φ.lift)).comp (quotientMap φ) := by
-    ext x
-    simp [lift_quotientMap]
-  simp only [Function.comp_apply]
-  rw [hjφ, extendCoefficients_apply_comp_eq_sum, hφ, apply_comp_eq_sum_finiteProjection, map_sum]
-  simp
 
 /-- Extension of coefficients along an injective `j` is injective. -/
 theorem extendCoefficients_injective (hinj : Function.Injective j) :
