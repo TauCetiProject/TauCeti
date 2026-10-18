@@ -117,9 +117,13 @@ private theorem arakelov_finite_mul_le {m n p : Type*} [Finite m] [Fintype n]
         (Finite.le_ciSup_of_le (j, q.2) le_rfl) (v.val.nonneg _)
         (Real.iSup_nonneg_of_nonnegHomClass v _)
 
+end TauCeti
+
 namespace Matrix
 
-variable {m n p : Type*} [Finite m] [Fintype n] [Finite p]
+open TauCeti
+
+variable {K : Type*} [Field K] [NumberField K] {m n p : Type*} [Finite m] [Fintype n] [Finite p]
 
 /-- The relative Arakelov height of the entries of a matrix product is at most the product of
 the relative Arakelov heights of the entries of its factors. This estimate has constant one,
@@ -172,14 +176,14 @@ theorem arakelovMulHeight_mul_le (A : Matrix m n K) (B : Matrix n p K) :
   apply mul_le_mul
   · rw [← Finset.prod_mul_distrib]
     exact Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun w _ ↦
-      arakelov_infinite_mul_le w A B
+      TauCeti.arakelov_infinite_mul_le w A B
   · rw [← finprod_mul_distrib (NumberField.FinitePlace.hasFiniteMulSupport_iSup ha)
       (NumberField.FinitePlace.hasFiniteMulSupport_iSup hb)]
     exact finprod_le_finprod₀ (NumberField.FinitePlace.hasFiniteMulSupport_iSup hc)
       (fun _ ↦ Real.iSup_nonneg_of_nonnegHomClass _ _)
       ((NumberField.FinitePlace.hasFiniteMulSupport_iSup ha).mul
         (NumberField.FinitePlace.hasFiniteMulSupport_iSup hb))
-      fun v ↦ arakelov_finite_mul_le v A B
+      fun v ↦ TauCeti.arakelov_finite_mul_le v A B
   · exact finprod_nonneg fun _ ↦ Real.iSup_nonneg_of_nonnegHomClass _ _
   · exact mul_nonneg (Finset.prod_nonneg fun _ _ ↦ by positivity)
       (Finset.prod_nonneg fun _ _ ↦ by positivity)
@@ -194,6 +198,10 @@ theorem arakelovLogHeight_mul_le (A : Matrix m n K) (B : Matrix n p K) :
   exact Real.log_le_log (arakelovMulHeight_pos _) (arakelovMulHeight_mul_le A B)
 
 end Matrix
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- Applying a matrix to a vector does not increase relative Arakelov height by more than the
 height of the matrix. Unlike the analogous sup-height bound, no cardinality factor and no
