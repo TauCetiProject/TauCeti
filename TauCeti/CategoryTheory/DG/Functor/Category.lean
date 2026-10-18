@@ -360,41 +360,12 @@ The closed degree-zero morphisms `F ⟶ G` of this DG category are the morphisms
 category of DG functors, whose components are maps from the tensor unit to the Hom complexes.
 -/
 
-/-- The closed degree-zero morphism represented by a map from the tensor unit to a Hom
-complex: its value at the generator of the unit. -/
-private noncomputable def unitApp {X Y : D}
-    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R X Y) : DGHom R 0 X Y :=
-  (a.f 0).hom
-    ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1)
-
-private theorem unitApp_eq_dgClosedHom {X Y : D}
-    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R X Y) :
-    unitApp R a = dgClosedHom R (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) a) :=
-  (dgClosedHom_def R _).symm
-
-private theorem unitApp_mem_dgCycles {X Y : D}
-    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R X Y) :
-    unitApp R a ∈ dgCycles R X Y := by
-  rw [unitApp_eq_dgClosedHom]
-  exact dgClosedHom_mem_dgCycles R _
-
-private theorem unitApp_homTo {X Y : D} (g : DGHom R 0 X Y) (hg : g ∈ dgCycles R X Y) :
-    unitApp R (ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ)
-      (dgClosedHomOf R g hg)) = g :=
-  (unitApp_eq_dgClosedHom R _).trans (dgClosedHom_dgClosedHomOf R g hg)
-
-private theorem homTo_dgClosedHomOf_of_eq {X Y : D} {g : DGHom R 0 X Y}
-    (hg : g ∈ dgCycles R X Y)
-    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R X Y) (h : g = unitApp R a) :
-    ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ) (dgClosedHomOf R g hg) = a := by
-  obtain rfl := h.trans (unitApp_eq_dgClosedHom R a)
-  exact congrArg (ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ))
-    (dgClosedHomOf_dgClosedHom R (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) a))
-
 /-- The closed components of a closed degree-zero DG natural transformation form a natural
 family: graded naturality at the tensor unit, evaluated in degree `p`. -/
-private theorem isNatural_unitApp {F G : DGFunctor R C D} (α : F ⟶ G) :
-    IsNatural (F := F) (G := G) (n := 0) fun X ↦ unitApp R (α.app X) := by
+private theorem isNatural_dgClosedHom_app {F G : DGFunctor R C D} (α : F ⟶ G) :
+    IsNatural (F := F) (G := G) (n := 0) fun X ↦
+      dgClosedHom R
+        (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) (α.app X)) := by
   intro X Y p m f h₁ h₂
   obtain rfl : p = m := by omega
   rw [mul_zero, Int.negOnePow_zero, one_smul]
@@ -417,9 +388,7 @@ private theorem isNatural_unitApp {F G : DGFunctor R C D} (α : F ⟶ G) :
     (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) (α.app X)) _ p
     (((G.toEnrichedFunctor.map X Y).f p).hom f)
   rw [EnrichedFunctor.dgMap_apply, EnrichedFunctor.dgMap_apply]
-  exact (congrArg (fun g ↦ dgComp R _ g h₁) (unitApp_eq_dgClosedHom R (α.app Y))).trans
-    (hl.symm.trans (hs.trans (hr.trans
-      (congrArg (fun g ↦ dgComp R g _ h₂) (unitApp_eq_dgClosedHom R (α.app X))).symm)))
+  exact hl.symm.trans (hs.trans hr)
 
 /-- The components of a closed morphism of DG functors are closed. -/
 theorem dgApp_mem_dgCycles {F G : DGFunctor R C D} {η : DGHom R 0 F G}
@@ -434,10 +403,13 @@ variable (F G : DGFunctor R C D)
 morphisms `F ⟶ G` of the category of DG functors correspond to the closed degree-zero morphisms
 `F ⟶ G` of the DG category of DG functors, componentwise. -/
 noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
-  toFun α := ⟨(dgHomEquiv R F G 0).symm ⟨fun X ↦ unitApp R (α.app X), isNatural_unitApp R α⟩,
-    (mem_dgCycles R).mpr (dgHom_ext R fun X ↦ by
-      rw [dgApp_dgDifferential, dgApp_dgHomEquiv_symm, map_zero]
-      exact (mem_dgCycles R).mp (unitApp_mem_dgCycles R (α.app X)))⟩
+  toFun α :=
+    ⟨(dgHomEquiv R F G 0).symm
+        ⟨fun X ↦ dgClosedHom R (ForgetEnrichment.homOf _ (α.app X)),
+          isNatural_dgClosedHom_app R α⟩,
+      (mem_dgCycles R).mpr (dgHom_ext R fun X ↦ by
+        rw [dgApp_dgDifferential, dgApp_dgHomEquiv_symm, map_zero]
+        exact (mem_dgCycles R).mp (dgClosedHom_mem_dgCycles R _))⟩
   invFun η :=
     { app X := ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ)
         (dgClosedHomOf R (dgApp R 0 X η.1) (dgApp_mem_dgCycles R η.2 X))
@@ -455,11 +427,19 @@ noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
         rw [← EnrichedFunctor.dgMap_apply, ← EnrichedFunctor.dgMap_apply,
           dgComp_dgMap_dgApp R η.1 f (add_zero p) (zero_add p), mul_zero, Int.negOnePow_zero,
           one_smul] }
-  left_inv α := GradedNatTrans.ext <| funext fun X ↦
-    homTo_dgClosedHomOf_of_eq R _ (α.app X) (dgApp_dgHomEquiv_symm R _ X)
+  left_inv α := GradedNatTrans.ext <| funext fun X ↦ by
+    change ForgetEnrichment.homTo _ (dgClosedHomOf R
+      (dgClosedHom R (ForgetEnrichment.homOf _ (α.app X))) _) = α.app X
+    exact (congrArg (ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ))
+      (dgClosedHomOf_dgClosedHom R (ForgetEnrichment.homOf _ (α.app X)))).trans
+        (ForgetEnrichment.homTo_homOf _ _)
   right_inv η := Subtype.ext <| dgHom_ext R fun X ↦ by
-    rw [dgApp_dgHomEquiv_symm]
-    exact unitApp_homTo R _ _
+    change dgClosedHom R (ForgetEnrichment.homOf _
+      (ForgetEnrichment.homTo _ (dgClosedHomOf R (dgApp R 0 X η.1) _))) = dgApp R 0 X η.1
+    exact (congrArg (dgClosedHom R)
+      (ForgetEnrichment.homOf_homTo _ (dgClosedHomOf R (dgApp R 0 X η.1)
+        (dgApp_mem_dgCycles R η.2 X)))).trans
+          (dgClosedHom_dgClosedHomOf R _ _)
 
 variable {F G}
 
@@ -469,7 +449,7 @@ closed morphisms underlying the components of `α`. -/
 theorem dgApp_homEquivDGCycles (α : F ⟶ G) (X : C) :
     dgApp R 0 X (homEquivDGCycles R F G α : DGHom R 0 F G) =
       dgClosedHom R (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) (α.app X)) :=
-  (dgApp_dgHomEquiv_symm R _ X).trans (unitApp_eq_dgClosedHom R _)
+  dgApp_dgHomEquiv_symm R _ X
 
 /-- The components of the DG natural transformation determined by a closed morphism `η` are the
 components of `η`, regarded as maps from the tensor unit. -/
