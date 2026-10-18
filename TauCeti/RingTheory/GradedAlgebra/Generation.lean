@@ -74,7 +74,7 @@ theorem finite_of_le_mul
 
 end Semiring
 
-variable [CommSemiring A] [Algebra R A]
+variable [Semiring A] [Algebra R A]
     (𝒜 : ℕ → Submodule R A) [DirectSum.Decomposition 𝒜] (N : ℕ)
 
 /-- An eventual recurrence `Aₙ₊₁ ⊆ U · Aₙ` with a finitely generated submodule `U` makes the
@@ -84,17 +84,22 @@ theorem finiteType_of_le_mul (U : Submodule R A) (hU : U.FG)
     (hfinite : ∀ i : Fin (N + 1), (𝒜 i).FG)
     (hstep : ∀ n, N ≤ n → 𝒜 (n + 1) ≤ U * 𝒜 n) :
     Algebra.FiniteType R A := by
-  let B := Algebra.adjoin R (U : Set A)
-  have hB : Algebra.FiniteType R B := by
-    apply (Subalgebra.fg_iff_finiteType B).mp
-    obtain ⟨s, hs⟩ := hU
-    dsimp [B]
-    rw [← hs, Algebra.adjoin_span]
-    exact Subalgebra.fg_adjoin_finset _
-  have hUB : U ≤ B.toSubmodule := fun _ hx ↦ Algebra.subset_adjoin hx
-  have hfiniteB : Module.Finite B A := finite_of_le_mul 𝒜 B N hfinite fun n hn ↦
+  obtain ⟨s, hs⟩ := hU.sup (Submodule.fg_iSup _ hfinite)
+  let B := Algebra.adjoin R (s : Set A)
+  have hgen : U ⊔ (⨆ i : Fin (N + 1), 𝒜 i) ≤ B.toSubmodule := by
+    rw [← hs]
+    exact Submodule.span_le.mpr Algebra.subset_adjoin
+  have hUB : U ≤ B.toSubmodule := le_sup_left.trans hgen
+  have hinit : (⨆ i : Fin (N + 1), 𝒜 i) ≤ B.toSubmodule := le_sup_right.trans hgen
+  have hspan := span_eq_top_of_le_mul 𝒜 B N fun n hn ↦
     (hstep n hn).trans (mul_le_mul_left hUB (𝒜 n))
-  let := hfiniteB
-  exact Algebra.FiniteType.trans hB (Module.Finite.finiteType A)
+  refine ⟨s, top_unique ?_⟩
+  intro x _
+  have hx : x ∈ Submodule.span B (↑(⨆ i : Fin (N + 1), 𝒜 i) : Set A) := by
+    rw [hspan]
+    trivial
+  exact Submodule.span_induction (fun _ hx ↦ hinit hx) B.zero_mem
+    (fun _ _ _ _ hx hy ↦ B.add_mem hx hy)
+    (fun b _ _ hx ↦ B.mul_mem b.property hx) hx
 
 end TauCeti.GradedAlgebra
