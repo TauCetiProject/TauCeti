@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Floor.Div
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.RingTheory.RamificationInertia.Basic
+public import TauCeti.Algebra.Order.Floor.Div
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
@@ -450,24 +450,6 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
   rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
   exact iInf_congr hterm
 
-/-- For `0 < e`, the bound `r ≤ e • a + i` on an extended natural number `a` is the bound
-`ceil((r - i) / e) ≤ a`. -/
-private theorem natCast_le_nsmul_add_iff_ceilDiv_le {e : ℕ} (he : 0 < e) (r i : ℕ) (a : ℕ∞) :
-    (r : ℕ∞) ≤ e • a + i ↔ (((r - i) ⌈/⌉ e : ℕ) : ℕ∞) ≤ a := by
-  cases a with
-  | top => simp [he.ne']
-  | coe v =>
-      rw [nsmul_eq_mul, ← Nat.cast_mul, ← Nat.cast_add, Nat.cast_le, Nat.cast_le,
-        ceilDiv_le_iff_le_mul he]
-      omega
-
-/-- For `i < e`, rounding `(e * ρ - i) / e` up gives back `ρ`. -/
-private theorem ceilDiv_mul_sub_of_lt {e i : ℕ} (hi : i < e) (ρ : ℕ) : (e * ρ - i) ⌈/⌉ e = ρ := by
-  rcases ρ with _ | ρ
-  · simp
-  · rw [Nat.ceilDiv_eq_add_pred_div]
-    refine Nat.div_eq_of_lt_le ?_ ?_ <;> rw [Nat.mul_comm] <;> grind
-
 /-- **Valuation balls in uniformizer coordinates.** For a uniformizer `ϖ` of `L` and `n ≤ e(L/K)`,
 the coefficient vectors `c : Fin n → 𝒪[K]` with `r ≤ v_L(∑ c i ϖ ^ i)` form the box whose `i`-th
 factor is the `ceil((r - i) / e(L/K))`-th power of the maximal ideal of `𝒪[K]`. -/
@@ -479,7 +461,7 @@ theorem le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible {ϖ : 𝒪[L]} (hϖ 
   rw [addVal_sum_algebraMap_mul_pow_of_irreducible hϖ hn c, le_iInf_iff]
   refine forall_congr' fun i ↦ ?_
   rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
-  exact natCast_le_nsmul_add_iff_ceilDiv_le ramificationIndex_pos _ _ _
+  exact TauCeti.ENat.natCast_le_nsmul_add_iff_ceilDiv_le ramificationIndex_pos _ _ _
 
 /-- **Valuation cubes in uniformizer coordinates.** At a radius `e(L/K) * ρ` divisible by the
 ramification index, the box of `le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible` is the cube
@@ -491,7 +473,7 @@ theorem ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducibl
       ∀ i : Fin n, c i ∈ 𝓂[K] ^ ρ := by
   rw [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible hϖ hn c]
   refine forall_congr' fun i ↦ ?_
-  rw [ceilDiv_mul_sub_of_lt (i.isLt.trans_le hn)]
+  rw [TauCeti.Nat.ceilDiv_mul_sub_of_lt (i.isLt.trans_le hn)]
 
 variable (K L) in
 /-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
