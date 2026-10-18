@@ -13,11 +13,11 @@ public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 
 This file defines the modified Bessel function of the first kind of real order `ν` at a real
 argument `x`,
-`I_ν(x) = (x / 2) ^ ν ₀F̃₁(; ν + 1; x ^ 2 / 4) = ∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`,
+`I_ν(x) = (x / 2) ^ ν ₀F₁(; ν + 1; x ^ 2 / 4) = ∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`,
 and develops its basic real-variable theory.
 
 The definition follows the shape of Mathlib's `Complex.besselJ`: `Real.besselI ν x` is the real
-part of `(x / 2) ^ ν * ₀F̃₁(; ν + 1; (x / 2) ^ 2)`, computed with the complex power and Mathlib's
+part of `(x / 2) ^ ν * ₀F₁(; ν + 1; (x / 2) ^ 2)`, computed with the complex power and Mathlib's
 regularized hypergeometric function `Complex.regularizedHGFun`. The regularization (dividing by
 `Γ(j + ν + 1)` rather than by a Pochhammer symbol) makes the series meaningful for every real `ν`.
 For `x ≥ 0`, or for an integer order, the complex power is real and `Real.besselI ν x` is the
@@ -30,7 +30,7 @@ von Mises–Fisher laws.
 ## Main declarations
 
 * `Real.besselI` — the modified Bessel function of the first kind `I_ν(x)`.
-* `Real.besselI_eq_rpow_mul` — `I_ν(x) = (x / 2) ^ ν * ₀F̃₁(; ν + 1; (x / 2) ^ 2)` with the real
+* `Real.besselI_eq_rpow_mul` — `I_ν(x) = (x / 2) ^ ν * ₀F₁(; ν + 1; (x / 2) ^ 2)` with the real
   power.
 * `Real.hasSum_besselI` — the series `∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))` for `x > 0`.
 * `Real.besselI_pos` — `I_ν(x) > 0` for `ν > -1` and `x > 0`.
@@ -59,8 +59,8 @@ open scoped Nat Topology
 namespace Real
 
 /-- The modified Bessel function of the first kind `I_ν(x)` of real order `ν` at a real argument
-`x`: the real part of `(x / 2) ^ ν * ₀F̃₁(; ν + 1; (x / 2) ^ 2)`, with the complex power and the
-regularized hypergeometric function `₀F̃₁`. -/
+`x`: the real part of `(x / 2) ^ ν * ₀F₁(; ν + 1; (x / 2) ^ 2)`, with the complex power and the
+regularized hypergeometric function `₀F₁`. -/
 @[pp_nodot]
 def besselI (ν x : ℝ) : ℝ :=
   (((x : ℂ) / 2) ^ (ν : ℂ) * Complex.regularizedHGFun 0 {(ν : ℂ) + 1} (((x : ℂ) / 2) ^ 2)).re
@@ -71,8 +71,8 @@ theorem besselI_def (ν x : ℝ) :
       (((x : ℂ) / 2) ^ (ν : ℂ) * Complex.regularizedHGFun 0 {(ν : ℂ) + 1} (((x : ℂ) / 2) ^ 2)).re :=
   (rfl)
 
-/-- `I_ν(x) = (x / 2) ^ ν * ₀F̃₁(; ν + 1; (x / 2) ^ 2)`, with the real power `Real.rpow` and the
-(real) value of `₀F̃₁` at a real argument. -/
+/-- `I_ν(x) = (x / 2) ^ ν * ₀F₁(; ν + 1; (x / 2) ^ 2)`, with the real power `Real.rpow` and the
+(real) value of `₀F₁` at a real argument. -/
 theorem besselI_eq_rpow_mul (ν x : ℝ) :
     besselI ν x =
       (x / 2) ^ ν * (Complex.regularizedHGFun 0 {((ν + 1 : ℝ) : ℂ)} ((x / 2) ^ 2 : ℝ)).re := by

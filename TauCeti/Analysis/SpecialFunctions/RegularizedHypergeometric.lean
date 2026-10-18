@@ -10,17 +10,17 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma
 
 /-!
-# The regularized hypergeometric function `₀F̃₁`
+# The regularized hypergeometric function `₀F₁`
 
 Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFun a b` as the sum
 of its power series. This file records that series as a `HasSum` statement and develops the
-function `₀F̃₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
+function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
 Bessel functions.
 
 For every complex `b` we prove the contiguous relation
-`₀F̃₁(; b; z) = b ₀F̃₁(; b + 1; z) + z ₀F̃₁(; b + 2; z)`.
+`₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
-it is jointly continuous in `(b, y)` and has derivative `₀F̃₁(; b + 1; y)` in `y`.
+it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
 Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a hypothesis on `b`.
 
 ## Main results
@@ -28,7 +28,7 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
 * `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
   everywhere when `a.card ≤ b.card`.
 * `Complex.regularizedHGFun_zero_singleton_eq_mul_add_mul` — the contiguous relation above.
-* `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F̃₁` at real
+* `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
@@ -43,7 +43,7 @@ open scoped Nat Topology
 
 namespace Complex
 
-/-- The coefficients of `₀F̃₁(; b; z)` are `1 / (n! Γ(b + n))`. -/
+/-- The coefficients of `₀F₁(; b; z)` are `1 / (n! Γ(b + n))`. -/
 @[simp]
 theorem regularizedHGFunCoeff_zero_singleton (b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff 0 {b} n = (n ! * Gamma (b + n))⁻¹ := by
@@ -58,7 +58,7 @@ theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z 
   simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
     mul_comm] using this
 
-/-- The contiguous relation `₀F̃₁(; b; z) = b ₀F̃₁(; b + 1; z) + z ₀F̃₁(; b + 2; z)`. -/
+/-- The contiguous relation `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`. -/
 theorem regularizedHGFun_zero_singleton_eq_mul_add_mul (b z : ℂ) :
     regularizedHGFun 0 {b} z =
       b * regularizedHGFun 0 {b + 1} z + z * regularizedHGFun 0 {b + 2} z := by
@@ -88,19 +88,19 @@ private theorem hasSum_ofReal_regularizedHGFun_zero_singleton (b y : ℝ) :
   push_cast [← Gamma_ofReal, regularizedHGFunCoeff_zero_singleton]
   ring
 
-/-- At real arguments, `₀F̃₁(; b; y)` is real. -/
+/-- At real arguments, `₀F₁(; b; y)` is real. -/
 theorem regularizedHGFun_zero_singleton_ofReal_im (b y : ℝ) :
     (regularizedHGFun 0 {(b : ℂ)} y).im = 0 := by
   refine (hasSum_im (hasSum_ofReal_regularizedHGFun_zero_singleton b y)).unique ?_
   simpa only [ofReal_im] using hasSum_zero
 
-/-- At real arguments, `₀F̃₁(; b; y)` is the sum of the real series `∑ yⁿ / (n! Γ(b + n))`. -/
+/-- At real arguments, `₀F₁(; b; y)` is the sum of the real series `∑ yⁿ / (n! Γ(b + n))`. -/
 theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     HasSum (fun n : ℕ => y ^ n / (n ! * Real.Gamma (b + n)))
       (regularizedHGFun 0 {(b : ℂ)} y).re := by
   simpa only [ofReal_re] using hasSum_re (hasSum_ofReal_regularizedHGFun_zero_singleton b y)
 
-/-- The real part of `₀F̃₁(; b; y)` is jointly continuous in the real parameter `b` and the real
+/-- The real part of `₀F₁(; b; y)` is jointly continuous in the real parameter `b` and the real
 argument `y`. -/
 theorem continuous_regularizedHGFun_zero_singleton_ofReal_re :
     Continuous fun p : ℝ × ℝ => (regularizedHGFun 0 {(p.1 : ℂ)} p.2).re := by
@@ -128,7 +128,7 @@ theorem continuous_regularizedHGFun_zero_singleton_ofReal_re :
         ≤ R ^ n * ((n ! : ℝ)⁻¹ * C) := by gcongr
       _ = C * (R ^ n / n !) := by ring
 
-/-- The derivative of `₀F̃₁(; b; y)` in a real argument `y` is `₀F̃₁(; b + 1; y)`. -/
+/-- The derivative of `₀F₁(; b; y)` in a real argument `y` is `₀F₁(; b + 1; y)`. -/
 theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     HasDerivAt (fun y : ℝ => (regularizedHGFun 0 {(b : ℂ)} y).re)
       (regularizedHGFun 0 {(b : ℂ) + 1} y).re y := by
