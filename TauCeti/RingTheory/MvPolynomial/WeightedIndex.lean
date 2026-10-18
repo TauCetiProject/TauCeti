@@ -34,6 +34,13 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
+* `Finsupp.weight_inv_natCast_eq_ofReal_sum_div`: for `d ≤ r`, the reciprocal weight of `d`
+  is the real sum `∑ j, d j / r j`.
+* `MvPolynomial.ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero`: for a polynomial with
+  partial degrees at most `r`, the index is at least a real threshold `t` once the jets `∂^d P`
+  with `d ≤ r` and `∑ j, d j / r j < t` vanish.
+* `MvPolynomial.le_sum_div_of_le_weightedIndex`: a nonzero jet `∂^d P` at a point where the
+  index is at least `t` has `d ≤ r` and real weight `t ≤ ∑ j, d j / r j`.
 * `MvPolynomial.weightedIndex_mul`: `Ind(P Q) = Ind(P) + Ind(Q)` without zero divisors.
 * `MvPolynomial.weightedIndex_le_weightedIndex_hasseDeriv_add`:
   `Ind(P) ≤ Ind(∂^d P) + ∑ j, d j / r j`.
@@ -42,12 +49,16 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 * `MvPolynomial.weightedIndex_rename`: renaming along an injective map preserves the index.
 * `MvPolynomial.weightedIndex_toMvPolynomial`: a univariate polynomial placed in the
   coordinate `i` has index `rootMultiplicity / r i`.
+* `MvPolynomial.exists_hasseDeriv_eval_ne_zero`: if a polynomial `P` has finite index at `b`,
+  some Hasse derivative `Q = ∂^d P` satisfies `Q(b) ≠ 0` and
+  `Ind_a(P) - Ind_b(P) ≤ Ind_a(Q)` at every other point `a`, and has the same partial degree
+  bounds and coefficients at most `2 ^ ∑ᵢ rᵢ` times as large.
 
 ## References
 
 * L. Pottmeyer, [*Diophantine Approximation*](https://esaga.uni-due.de/f/lukas.pottmeyer/DioApp.pdf)
   (2022), §2.6, Definition 2.6.2, Example 2.6.3 and Exercise 2.19; §3.4, Lemma 3.4.3 and
-  §§3.4.6–3.4.7.
+  §§3.4.6–3.4.7; §3.5, Lemma 3.5.7.
 -/
 
 public section
@@ -81,6 +92,34 @@ theorem weightedIndex_le {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
     weightedIndex r a P ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
   iInf_le_of_le d (iInf_le_of_le hd le_rfl)
 
+/-- For `d ≤ r`, the reciprocal weight of `d` defining the index is the real sum
+`∑ᵢ dᵢ / rᵢ`. -/
+theorem _root_.Finsupp.weight_inv_natCast_eq_ofReal_sum_div [Fintype σ] {r : σ → ℕ}
+    {d : σ →₀ ℕ} (hdr : ∀ i, d i ≤ r i) :
+    d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) = ENNReal.ofReal (∑ i, (d i : ℝ) / r i) := by
+  rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity, Finsupp.weight_apply,
+    Finsupp.sum_fintype _ _ (by simp)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rcases Nat.eq_zero_or_pos (d i) with h | h
+  · simp [h]
+  · rw [ENNReal.ofReal_div_of_pos (Nat.cast_pos.2 (h.trans_le (hdr i))),
+      ENNReal.ofReal_natCast, ENNReal.ofReal_natCast, nsmul_eq_mul, div_eq_mul_inv]
+
+/-- A nonzero jet of a polynomial with partial degrees `degreeOf i P ≤ r i` and index at least
+`t` satisfies `d ≤ r` and has weight `t ≤ ∑ᵢ dᵢ / rᵢ`, computed in `ℝ`. -/
+theorem le_sum_div_of_le_weightedIndex [Fintype σ] {P : MvPolynomial σ R} {r : σ → ℕ}
+    (hdeg : ∀ i, P.degreeOf i ≤ r i) {a : σ → R} {t : ℝ}
+    (ht : ENNReal.ofReal t ≤ weightedIndex r a P) {d : σ →₀ ℕ}
+    (hd : eval a (hasseDeriv d P) ≠ 0) :
+    (∀ i, d i ≤ r i) ∧ t ≤ ∑ i, (d i : ℝ) / r i := by
+  have hdr (i : σ) : d i ≤ r i := by
+    by_contra h
+    exact hd (by rw [hasseDeriv_eq_zero_of_degreeOf_lt (i := i) (by have := hdeg i; omega),
+      map_zero])
+  refine ⟨hdr, ?_⟩
+  exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ ↦ by positivity)).1
+    (ht.trans ((weightedIndex_le hd).trans_eq (Finsupp.weight_inv_natCast_eq_ofReal_sum_div hdr)))
+
 /-- An index lower bound is equivalent to the vanishing of all jets of strictly smaller
 weight. The strict inequality also covers the threshold `⊤`. -/
 theorem le_weightedIndex_iff (r : σ → ℕ) (a : σ → R) (P : MvPolynomial σ R)
@@ -96,6 +135,22 @@ theorem le_weightedIndex_iff (r : σ → ℕ) (a : σ → R) (P : MvPolynomial �
   · intro h
     refine le_iInf fun d ↦ le_iInf fun hd ↦ ?_
     exact le_of_not_gt fun ht ↦ hd (h d ht)
+
+/-- For a polynomial with partial degrees `degreeOf i P ≤ r i`, the index is at least a real
+threshold `t` as soon as the jets `∂^d P (a)` vanish for every `d ≤ r` of real weight
+`∑ᵢ dᵢ / rᵢ < t`. -/
+theorem ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero [Fintype σ] {P : MvPolynomial σ R}
+    {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {a : σ → R} {t : ℝ}
+    (h : ∀ d : σ →₀ ℕ, (∀ i, d i ≤ r i) → ∑ i, (d i : ℝ) / r i < t →
+      eval a (hasseDeriv d P) = 0) :
+    ENNReal.ofReal t ≤ weightedIndex r a P := by
+  refine le_iInf fun d ↦ le_iInf fun hd ↦ le_of_not_gt fun hlt ↦ hd ?_
+  by_cases hdr : ∀ i, d i ≤ r i
+  · rw [Finsupp.weight_inv_natCast_eq_ofReal_sum_div hdr] at hlt
+    exact h d hdr (ENNReal.ofReal_lt_ofReal_iff'.mp hlt).1
+  · push Not at hdr
+    obtain ⟨j, hj⟩ := hdr
+    rw [hasseDeriv_eq_zero_of_degreeOf_lt ((hdeg j).trans_lt hj), map_zero]
 
 @[simp]
 theorem weightedIndex_zero (r : σ → ℕ) (a : σ → R) :
@@ -436,5 +491,45 @@ theorem weightedIndex_le_sum_degreeOf [Fintype σ] (r : σ → ℕ) (a : σ → 
     ENNReal.div_le_div_right (by exact_mod_cast hj) (r j)
 
 end Ring
+
+section AbsoluteValue
+
+variable {F K S : Type*} [Fintype σ] [CommRing R] [CommRing F] [CommRing K] [Semiring S]
+  [PartialOrder S] [IsOrderedRing S] [IsDomain S]
+
+/-- **Choice of a nonvanishing Hasse derivative** (the proof of Pottmeyer, Lemma 3.5.7). Let `P`
+be a polynomial with partial degrees `degreeOf i P ≤ r i` and coefficients of absolute value at
+most `B`. If the index of the image of `P` under `g` at a point `b` is finite, then some Hasse
+derivative `Q = ∂^d P` does not vanish at `b` after applying `g`, loses at most the index at `b`
+from its index at every point `a` after applying `f`, still has partial degrees at most `r i`,
+and has coefficients of absolute value at most `2 ^ ∑ᵢ rᵢ * B`. -/
+theorem exists_hasseDeriv_eval_ne_zero {P : MvPolynomial σ R} {r : σ → ℕ}
+    (hdeg : ∀ i, P.degreeOf i ≤ r i) (abv : AbsoluteValue R S) {B : S}
+    (hB : ∀ μ, abv (P.coeff μ) ≤ B) (f : R →+* F) (a : σ → F) (g : R →+* K) {b : σ → K}
+    (hb : weightedIndex r b (P.map g) ≠ ⊤) :
+    ∃ d : σ →₀ ℕ, eval b ((hasseDeriv d P).map g) ≠ 0 ∧
+      weightedIndex r a (P.map f) - weightedIndex r b (P.map g) ≤
+        weightedIndex r a ((hasseDeriv d P).map f) ∧
+      (∀ i, (hasseDeriv d P).degreeOf i ≤ r i) ∧
+      ∀ μ, abv ((hasseDeriv d P).coeff μ) ≤ 2 ^ (∑ i, r i) * B := by
+  -- A jet of minimal weight at `b` is nonzero, and its weight is the index at `b`.
+  obtain ⟨d, hd, hbd⟩ := exists_weightedIndex_eq_weight (r := r)
+    (mt (weightedIndex_eq_top_of_taylor_eq_zero r) hb)
+  rw [hasseDeriv_map] at hd
+  refine ⟨d, hd, ?_, fun i ↦ (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hdeg i)),
+    fun μ ↦ ?_⟩
+  · rw [hbd, tsub_le_iff_right, ← hasseDeriv_map]
+    exact weightedIndex_le_weightedIndex_hasseDeriv_add r a d _
+  -- `|[X^μ] ∂^d P| ≤ 2 ^ |μ + d| |[X^(μ + d)] P|`, and `|μ + d| ≤ ∑ᵢ rᵢ` when
+  -- `[X^(μ + d)] P ≠ 0`.
+  refine (abv_coeff_hasseDeriv_le abv d μ P).trans ?_
+  by_cases hμ : P.coeff (μ + d) = 0
+  · simpa [hμ] using mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abv.nonneg _).trans (hB 0))
+  refine mul_le_mul (pow_le_pow_right₀ one_le_two ?_) (hB _) (abv.nonneg _)
+    (pow_nonneg zero_le_two _)
+  rw [Finsupp.degree_eq_sum]
+  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hμ)).trans (hdeg j)
+
+end AbsoluteValue
 
 end MvPolynomial
