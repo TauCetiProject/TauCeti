@@ -26,7 +26,7 @@ specialization of the integral toral closure is made.
   free base change carries the positive generated defining ideal onto its counterpart.
 * `TauCeti.DynkinType.geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeIso`:
   the coordinate-algebra comparison.
-* `TauCeti.DynkinType.baseChangeMap_geckGeneratedToPositiveCoordinateMap_comp`:
+* `TauCeti.DynkinType.baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp`:
   compatibility with restriction from the full generated subgroup.
 
 ## References
@@ -104,20 +104,35 @@ theorem baseChangeMap_geckPositiveGeneratedCoordinateMap_comp [Module.Free k K] 
 /-- Base change of the positive subgroup inside the full generated subgroup agrees with the
 positive subgroup inside the base-changed full generated subgroup. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_geckGeneratedToPositiveCoordinateMap_comp [Module.Free k K] :
-    CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedToPositiveCoordinateMap ht k) ≫
+theorem baseChangeMap_quotientMapOfLe_geckPositiveGenerated_comp [Module.Free k K] :
+    CommHopfAlgCat.baseChangeMap (K := K) (eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht k) ≫
+        CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra k (t.geckDim ht))
+          (t.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal ht k) ≫
+        eqToHom (t.geckPositiveGeneratedCoordinateHopfAlgebra_def ht k).symm) ≫
         (t.geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom =
       (t.geckGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom ≫
-        t.geckGeneratedToPositiveCoordinateMap ht K := by
+        eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht K) ≫
+        CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra K (t.geckDim ht))
+          (t.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal ht K) ≫
+        eqToHom (t.geckPositiveGeneratedCoordinateHopfAlgebra_def ht K).symm := by
   have hsurj := CommHopfAlgCat.baseChangeMap_surjective (K := K)
     (t.geckGeneratedCoordinateMap ht k) (t.geckGeneratedCoordinateMap_surjective ht k)
   let _ : Epi (CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateMap ht k)) :=
     ConcreteCategory.epi_of_surjective _ hsurj
   apply (cancel_epi
     (CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateMap ht k))).mp
-  rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
-    geckGeneratedCoordinateMap_comp_geckGeneratedToPositiveCoordinateMap]
-  simp
+  conv_lhs =>
+    rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
+      geckGeneratedCoordinateMap_def]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+      CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
+    rw [← geckPositiveGeneratedCoordinateMap_def]
+  rw [baseChangeMap_geckPositiveGeneratedCoordinateMap_comp, ← Category.assoc]
+  simp only [
+  baseChangeMap_geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateHopfAlgebraBaseChangeIso_hom]
+  simp only [geckGeneratedCoordinateMap_def, geckPositiveGeneratedCoordinateMap_def,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
 
 end
 

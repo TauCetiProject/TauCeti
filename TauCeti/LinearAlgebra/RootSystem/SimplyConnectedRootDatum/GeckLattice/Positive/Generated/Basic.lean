@@ -38,8 +38,6 @@ pinning of the Geck carrier.
   Hopf algebra.
 * `TauCeti.DynkinType.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal`: the
   positive generated subgroup is a closed subgroup of the full generated subgroup.
-* `TauCeti.DynkinType.geckGeneratedToPositiveCoordinateMap`: restriction from the full generated
-  subgroup to the positive generated subgroup, compatible with their ambient quotient maps.
 * `TauCeti.DynkinType.smoothCommHopfAlgProperty_geckPositiveGeneratedCoordinateHopfAlgebra`:
   smoothness over every field.
 * `geometricallyConnectedCommHopfAlgProperty_geckPositiveGeneratedCoordinateHopfAlgebra`:
@@ -218,35 +216,6 @@ theorem existsUnique_geckPositiveGeneratedCoordinateMap_comp_eq_generator
 instance : Algebra.FiniteType A (t.geckPositiveGeneratedCoordinateHopfAlgebra ht A) := by
   rw [geckPositiveGeneratedCoordinateHopfAlgebra_def]
   infer_instance
-
-/-- Restriction from the full generated Geck subgroup to its positive generated subgroup. -/
-def geckGeneratedToPositiveCoordinateMap :
-    t.geckGeneratedCoordinateHopfAlgebra ht A ⟶
-      t.geckPositiveGeneratedCoordinateHopfAlgebra ht A :=
-  (t.existsUnique_geckGeneratedCoordinateMap_comp_eq ht A
-    (t.geckPositiveGeneratedCoordinateMap ht A) (by
-      intro x hx
-      exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
-        (t.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal ht A hx))).choose
-
-/-- Restriction to the positive subgroup agrees with the two ambient quotient maps. -/
-@[reassoc (attr := simp)]
-theorem geckGeneratedCoordinateMap_comp_geckGeneratedToPositiveCoordinateMap :
-    t.geckGeneratedCoordinateMap ht A ≫ t.geckGeneratedToPositiveCoordinateMap ht A =
-      t.geckPositiveGeneratedCoordinateMap ht A :=
-  (t.existsUnique_geckGeneratedCoordinateMap_comp_eq ht A
-    (t.geckPositiveGeneratedCoordinateMap ht A) (by
-      intro x hx
-      exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
-        (t.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal ht A hx))).choose_spec.1
-
-/-- The positive generated subgroup is closed in the full generated subgroup. -/
-theorem geckGeneratedToPositiveCoordinateMap_surjective :
-    Function.Surjective (t.geckGeneratedToPositiveCoordinateMap ht A).hom := by
-  have h := t.geckPositiveGeneratedCoordinateMap_surjective ht A
-  rw [← t.geckGeneratedCoordinateMap_comp_geckGeneratedToPositiveCoordinateMap ht A,
-    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
-  exact h.of_comp
 
 /-! ## Geometry over fields -/
 
