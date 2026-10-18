@@ -78,18 +78,19 @@ theorem isMinOn_sup_inf [AddCommMonoid K] [PartialOrder K] [IsOrderedCancelAddMo
     [Lattice L] {f : L → K} (hf : IsSubmodular f) {s : Set L} (hs : IsSublattice s)
     {a b : L} (ha : a ∈ s) (hb : b ∈ s) (hamin : IsMinOn f s a) (hbmin : IsMinOn f s b) :
     IsMinOn f s (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
+  rw [isMinOn_iff] at hamin hbmin ⊢
   have hab := hf a b
   have hsup : a ⊔ b ∈ s := hs.supClosed ha hb
   have hinf : a ⊓ b ∈ s := hs.infClosed ha hb
   have hsup_le : f (a ⊔ b) ≤ f a := by
     have h : f (a ⊔ b) + f b ≤ f a + f b :=
-      (add_le_add_right (hbmin hinf) _).trans hab
+      (add_le_add_right (hbmin _ hinf) _).trans hab
     exact le_of_add_le_add_right h
   have hinf_le : f (a ⊓ b) ≤ f b := by
     have h : f a + f (a ⊓ b) ≤ f a + f b :=
-      (add_le_add_left (hamin hsup) _).trans hab
+      (add_le_add_left (hamin _ hsup) _).trans hab
     exact le_of_add_le_add_left h
-  exact ⟨fun _ hc ↦ hsup_le.trans (hamin hc), fun _ hc ↦ hinf_le.trans (hbmin hc)⟩
+  exact ⟨fun _ hc ↦ hsup_le.trans (hamin _ hc), fun _ hc ↦ hinf_le.trans (hbmin _ hc)⟩
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
 this set records both membership in the original domain and minimality there. -/
