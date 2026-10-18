@@ -15,9 +15,10 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Convergents and the irrationality exponent
 
-Let `ξ` be irrational and let `pₖ / qₖ = ξ.convergent k` be its convergents, written in lowest
+Let `pₖ / qₖ = ξ.convergent k` be the convergents of a real number `ξ`, written in lowest
 terms. This file identifies `qₖ` with the denominator continuant `Bₖ` of the continued fraction
-`GenContFract.of ξ` and transfers the continued-fraction error bounds to the reduced fractions:
+`GenContFract.of ξ` and transfers the continued-fraction error bounds to the reduced fractions,
+the lower one for irrational `ξ`:
 
 `1 / (qₖ (qₖ + qₖ₊₁)) < |ξ - pₖ / qₖ| ≤ 1 / (qₖ qₖ₊₁)`.
 
@@ -33,8 +34,8 @@ large denominator are convergents `pₖ / qₖ`, and the lower bound then forces
 
 ## Main results
 
-* `Real.den_convergent`, `Real.num_convergent`: for irrational `ξ`, the reduced denominator and
-  numerator of `ξ.convergent n` are the continuants `Bₙ` and `Aₙ`.
+* `Real.den_convergent`, `Real.num_convergent`: the reduced denominator and numerator of
+  `ξ.convergent n` are the continuants `Bₙ` and `Aₙ`.
 * `Real.fib_succ_le_den_convergent`, `Real.monotone_den_convergent`,
   `Real.tendsto_den_convergent`: growth of the denominators `qₙ`.
 * `Real.abs_sub_convergent_le`, `Real.one_div_lt_abs_sub_convergent`: the two error bounds.
@@ -62,50 +63,63 @@ theorem _root_.Irrational.not_of_terminatedAt (hξ : Irrational ξ) (n : ℕ) :
   obtain ⟨q, rfl⟩ := (terminates_iff_rat ξ).mp ⟨n, h⟩
   exact hξ.ne_rat q rfl
 
-/-- The `n`-th continuants of an irrational number are coprime integers `a` and `b > 0`, and the
+/-- The `n`-th continuants of a real number are coprime: before termination by the
+determinant formula, after termination since the continuants are stable. -/
+private theorem isCoprime_of_nums_dens (ξ : ℝ) (n : ℕ) {a b : ℤ} (ha : (of ξ).nums n = a)
+    (hb : (of ξ).dens n = b) : IsCoprime a b := by
+  induction n generalizing a b with
+  | zero =>
+    rw [zeroth_den_eq_one] at hb
+    obtain rfl : b = 1 := by exact_mod_cast hb.symm
+    exact isCoprime_one_right
+  | succ k ih =>
+    obtain ⟨a₀, b₀, h₀⟩ := exists_int_contsAux_eq ξ (k + 1)
+    have hA₀ : (of ξ).nums k = a₀ := by rw [num_eq_conts_a, nth_cont_eq_succ_nth_contAux, h₀]
+    have hB₀ : (of ξ).dens k = b₀ := by rw [den_eq_conts_b, nth_cont_eq_succ_nth_contAux, h₀]
+    by_cases ht : (of ξ).TerminatedAt k
+    · rw [nums_stable_of_terminated k.le_succ ht] at ha
+      rw [dens_stable_of_terminated k.le_succ ht] at hb
+      exact ih ha hb
+    -- `SimpContFract.of ξ` is `of ξ` bundled with its simplicity proof, so its determinant
+    -- formula applies to `of ξ`.
+    have hdet : (of ξ).nums k * (of ξ).dens (k + 1) - (of ξ).dens k * (of ξ).nums (k + 1) =
+        (-1) ^ (k + 1) := (SimpContFract.of ξ).determinant ht
+    rw [hA₀, hB₀, ha, hb] at hdet
+    have hdetZ : a₀ * b - b₀ * a = (-1) ^ (k + 1) := by exact_mod_cast hdet
+    set u : ℤ := (-1) ^ (k + 1)
+    have hu : u * u = 1 := by rw [← mul_pow]; simp
+    exact ⟨-b₀ * u, a₀ * u, by linear_combination u * hdetZ + hu⟩
+
+/-- The `n`-th continuants of a real number are coprime integers `a` and `b > 0`, and the
 `n`-th convergent is `a / b`. -/
-private theorem exists_int_nums_dens (hξ : Irrational ξ) (n : ℕ) :
+private theorem exists_int_nums_dens (ξ : ℝ) (n : ℕ) :
     ∃ a b : ℤ, (of ξ).nums n = a ∧ (of ξ).dens n = b ∧ 0 < b ∧
       Nat.Coprime a.natAbs b.natAbs ∧ ξ.convergent n = a / b := by
   obtain ⟨a, b, h⟩ := exists_int_contsAux_eq ξ (n + 1)
-  obtain ⟨a', b', h'⟩ := exists_int_contsAux_eq ξ (n + 2)
   have hA : (of ξ).nums n = a := by rw [num_eq_conts_a, nth_cont_eq_succ_nth_contAux, h]
   have hB : (of ξ).dens n = b := by rw [den_eq_conts_b, nth_cont_eq_succ_nth_contAux, h]
-  have hA' : (of ξ).nums (n + 1) = a' := by
-    rw [num_eq_conts_a, nth_cont_eq_succ_nth_contAux, h']
-  have hB' : (of ξ).dens (n + 1) = b' := by
-    rw [den_eq_conts_b, nth_cont_eq_succ_nth_contAux, h']
-  -- `SimpContFract.of ξ` is `of ξ` bundled with its simplicity proof, so its determinant formula
-  -- applies to `of ξ`.
-  have hdet : (of ξ).nums n * (of ξ).dens (n + 1) - (of ξ).dens n * (of ξ).nums (n + 1) =
-      (-1) ^ (n + 1) := (SimpContFract.of ξ).determinant (hξ.not_of_terminatedAt n)
-  rw [hA, hB, hA', hB'] at hdet
-  have hdetZ : a * b' - b * a' = (-1) ^ (n + 1) := by exact_mod_cast hdet
-  have hfib : ((Nat.fib (n + 1) : ℕ) : ℝ) ≤ b :=
-    hB ▸ succ_nth_fib_le_of_nth_den (Or.inr (hξ.not_of_terminatedAt (n - 1)))
-  have hb : 0 < b := by
-    have : (0 : ℝ) < Nat.fib (n + 1) := by exact_mod_cast Nat.fib_pos.mpr n.succ_pos
-    exact_mod_cast this.trans_le hfib
-  set u : ℤ := (-1) ^ (n + 1)
-  have hu : u * u = 1 := by rw [← mul_pow]; simp
-  have hcop : IsCoprime a b := ⟨b' * u, -a' * u, by linear_combination u * hdetZ + hu⟩
-  refine ⟨a, b, hA, hB, hb, Int.isCoprime_iff_gcd_eq_one.mp hcop, ?_⟩
+  have h1 : (1 : ℝ) ≤ b := by
+    rw [← hB, ← zeroth_den_eq_one (g := of ξ)]
+    exact monotone_nat_of_le_succ (fun n ↦ of_den_mono (v := ξ) (n := n)) n.zero_le
+  have hb : 0 < b := by exact_mod_cast zero_lt_one.trans_le h1
+  refine ⟨a, b, hA, hB, hb,
+    Int.isCoprime_iff_gcd_eq_one.mp (isCoprime_of_nums_dens ξ n hA hB), ?_⟩
   rw [← (Rat.cast_injective (α := ℝ)).eq_iff, ← convs_eq_convergent, conv_eq_num_div_den, hA, hB]
   simp
 
-/-- For irrational `ξ`, the reduced denominator of `ξ.convergent n` is the `n`-th denominator
-continuant `Bₙ` of the continued fraction of `ξ`. -/
-theorem den_convergent (hξ : Irrational ξ) (n : ℕ) :
+/-- The reduced denominator of `ξ.convergent n` is the `n`-th denominator continuant `Bₙ` of the
+continued fraction of `ξ`. -/
+theorem den_convergent (ξ : ℝ) (n : ℕ) :
     ((ξ.convergent n).den : ℝ) = (of ξ).dens n := by
-  obtain ⟨a, b, -, hB, hb, hcop, hconv⟩ := exists_int_nums_dens hξ n
+  obtain ⟨a, b, -, hB, hb, hcop, hconv⟩ := exists_int_nums_dens ξ n
   rw [hconv, hB]
   exact_mod_cast Rat.den_div_eq_of_coprime hb hcop
 
-/-- For irrational `ξ`, the reduced numerator of `ξ.convergent n` is the `n`-th numerator
-continuant `Aₙ` of the continued fraction of `ξ`. -/
-theorem num_convergent (hξ : Irrational ξ) (n : ℕ) :
+/-- The reduced numerator of `ξ.convergent n` is the `n`-th numerator continuant `Aₙ` of the
+continued fraction of `ξ`. -/
+theorem num_convergent (ξ : ℝ) (n : ℕ) :
     ((ξ.convergent n).num : ℝ) = (of ξ).nums n := by
-  obtain ⟨a, b, hA, -, hb, hcop, hconv⟩ := exists_int_nums_dens hξ n
+  obtain ⟨a, b, hA, -, hb, hcop, hconv⟩ := exists_int_nums_dens ξ n
   rw [hconv, Rat.num_div_eq_of_coprime hb hcop, hA]
 
 /-- The denominators of the convergents of an irrational number grow at least like the
@@ -113,15 +127,15 @@ Fibonacci numbers. -/
 theorem fib_succ_le_den_convergent (hξ : Irrational ξ) (n : ℕ) :
     Nat.fib (n + 1) ≤ (ξ.convergent n).den := by
   have := succ_nth_fib_le_of_nth_den (v := ξ) (Or.inr (hξ.not_of_terminatedAt (n - 1)))
-  rw [← den_convergent hξ] at this
+  rw [← den_convergent] at this
   exact_mod_cast this
 
-/-- The denominators of the convergents of an irrational number are monotone. -/
-theorem monotone_den_convergent (hξ : Irrational ξ) :
+/-- The denominators of the convergents of a real number are monotone. -/
+theorem monotone_den_convergent (ξ : ℝ) :
     Monotone fun n ↦ (ξ.convergent n).den :=
   monotone_nat_of_le_succ fun n ↦ by
     have := of_den_mono (v := ξ) (n := n)
-    rw [← den_convergent hξ, ← den_convergent hξ] at this
+    rw [← den_convergent, ← den_convergent] at this
     exact_mod_cast this
 
 /-- The denominators of the convergents of an irrational number tend to infinity. -/
@@ -131,18 +145,22 @@ theorem tendsto_den_convergent (hξ : Irrational ξ) :
     (Nat.le_succ n).trans ((Nat.le_fib_self (by omega)).trans (fib_succ_le_den_convergent hξ n)))
     tendsto_id
 
-/-- The error of the `n`-th convergent of an irrational number is at most `1 / (qₙ qₙ₊₁)`. -/
-theorem abs_sub_convergent_le (hξ : Irrational ξ) (n : ℕ) :
+/-- The error of the `n`-th convergent of a real number is at most `1 / (qₙ qₙ₊₁)`; it vanishes
+once the continued fraction has terminated. -/
+theorem abs_sub_convergent_le (ξ : ℝ) (n : ℕ) :
     |ξ - ξ.convergent n| ≤
       1 / ((ξ.convergent n).den * (ξ.convergent (n + 1)).den) := by
-  rw [den_convergent hξ, den_convergent hξ, ← convs_eq_convergent]
-  exact abs_sub_convs_le (hξ.not_of_terminatedAt n)
+  by_cases ht : (of ξ).TerminatedAt n
+  · rw [← convs_eq_convergent, ← of_correctness_of_terminatedAt ht, sub_self, abs_zero]
+    positivity
+  · rw [den_convergent, den_convergent, ← convs_eq_convergent]
+    exact abs_sub_convs_le ht
 
 /-- The error of the `n`-th convergent of an irrational number exceeds `1 / (qₙ (qₙ + qₙ₊₁))`. -/
 theorem one_div_lt_abs_sub_convergent (hξ : Irrational ξ) (n : ℕ) :
     1 / ((ξ.convergent n).den * ((ξ.convergent n).den + (ξ.convergent (n + 1)).den)) <
       |ξ - ξ.convergent n| := by
-  rw [den_convergent hξ, den_convergent hξ, ← convs_eq_convergent]
+  rw [den_convergent, den_convergent, ← convs_eq_convergent]
   exact one_div_lt_abs_sub_convs (hξ.not_of_terminatedAt n)
 
 end Real
@@ -177,7 +195,7 @@ private theorem liouvilleWith_one_add_of_frequently (hξ : Irrational ξ) {s : �
     rw [lt_div_iff₀ hlog] at hk
     rw [← Real.exp_log hq'0, Real.rpow_def_of_pos (by positivity), mul_comm]
     exact Real.exp_lt_exp.mpr hk
-  calc |ξ - ξ.convergent k| ≤ 1 / (q * q') := abs_sub_convergent_le hξ k
+  calc |ξ - ξ.convergent k| ≤ 1 / (q * q') := abs_sub_convergent_le ξ k
     _ < 1 / (q * q ^ s) := one_div_lt_one_div_of_lt (by positivity) (by gcongr)
     _ = q ^ (-(1 + s)) := by
       rw [Real.rpow_neg (by positivity), Real.rpow_add (by positivity), Real.rpow_one, one_div]
@@ -209,17 +227,6 @@ private theorem lt_log_div_log_of_rpow_lt {q q' p t : ℝ} (hq : 2 ≤ q) (hqq' 
   rw [lt_div_iff₀ hlog]
   nlinarith
 
-/-- An infinite set of rationals `r` with `|ξ - r| < r.den ^ (-p)`, `p ≥ 0`, contains members of
-arbitrarily large denominator. -/
-private theorem exists_le_den_of_infinite {p : ℝ} (hp : 0 ≤ p)
-    (hS : {r : ℚ | |ξ - r| < (r.den : ℝ) ^ (-p)}.Infinite) (N : ℕ) :
-    ∃ r : ℚ, |ξ - r| < (r.den : ℝ) ^ (-p) ∧ N ≤ r.den := by
-  obtain ⟨r, hr, hrN⟩ :=
-    (hS.sdiff ((Metric.isBounded_ball (x := ξ) (r := 1)).finite_setOf_rat_den_le N)).nonempty
-  refine ⟨r, hr, not_lt.mp fun h ↦ hrN ⟨h.le, ?_⟩⟩
-  rw [Metric.mem_ball, Real.dist_eq, abs_sub_comm]
-  exact hr.trans_le (Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast r.pos) (by linarith))
-
 /-- If infinitely many rationals `r` satisfy `|ξ - r| < r.den ^ (-p)` with `p > 2`, then
 infinitely often `log qₖ₊₁ / log qₖ` exceeds any `t < p - 1`: by Legendre's theorem these
 rationals are convergents, and the lower error bound forces `qₖ ^ (p - 1) < 2 qₖ₊₁`. -/
@@ -236,17 +243,17 @@ private theorem frequently_lt_log_div_log (hξ : Irrational ξ) {p : ℝ} (hp : 
       ((((Real.tendsto_log_atTop.comp hd).const_mul_atTop (by linarith)).eventually_gt_atTop
         _).and (eventually_gt_atTop _))
   obtain ⟨N, hN⟩ := eventually_atTop.mp hev
-  obtain ⟨r, hr, hNr⟩ := exists_le_den_of_infinite (by linarith) hS N
+  obtain ⟨r, hr, hNr⟩ := exists_le_den_of_infinite hS N
   obtain ⟨h2, hlog2, hK⟩ := hN r.den hNr
   -- Legendre's theorem identifies `r` with a convergent `pₖ / qₖ`, with `k ≥ K`.
   obtain ⟨k, rfl⟩ := exists_rat_eq_convergent
     (hr.trans_le (rpow_neg_le_one_div_two_mul_sq (by positivity) h2))
-  refine ⟨k, not_lt.mp fun hk ↦ (monotone_den_convergent hξ hk.le).not_gt hK, ?_⟩
+  refine ⟨k, not_lt.mp fun hk ↦ (monotone_den_convergent ξ hk.le).not_gt hK, ?_⟩
   -- The two error bounds give `qₖ ^ p < qₖ (qₖ + qₖ₊₁)`.
   have hpow := (one_div_lt_abs_sub_convergent hξ k).trans hr
   rw [Real.rpow_neg (by positivity), one_div,
     inv_lt_inv₀ (by positivity) (by positivity)] at hpow
-  refine lt_log_div_log_of_rpow_lt ?_ (by exact_mod_cast monotone_den_convergent hξ k.le_succ)
+  refine lt_log_div_log_of_rpow_lt ?_ (by exact_mod_cast monotone_den_convergent ξ k.le_succ)
     hpow hlog2
   exact_mod_cast (Nat.succ_le_of_lt (ξ.convergent K).pos).trans_lt hK
 
@@ -258,7 +265,7 @@ private theorem one_le_limsup_log_div_log (hξ : Irrational ξ) :
   filter_upwards [(tendsto_den_convergent hξ).eventually_ge_atTop 2] with k hk
   have hq2 : (2 : ℝ) ≤ (ξ.convergent k).den := by exact_mod_cast hk
   have hqq' : ((ξ.convergent k).den : ℝ) ≤ (ξ.convergent (k + 1)).den := by
-    exact_mod_cast monotone_den_convergent hξ k.le_succ
+    exact_mod_cast monotone_den_convergent ξ k.le_succ
   have hlog : 0 < Real.log (ξ.convergent k).den := Real.log_pos (by linarith)
   rw [← ENNReal.ofReal_one]
   refine ENNReal.ofReal_le_ofReal ((one_le_div₀ hlog).mpr ?_)
