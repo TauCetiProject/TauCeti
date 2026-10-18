@@ -22,7 +22,9 @@ added points, and which commutes with the extended projections to the Riemann sp
 (`TauCeti.FilledCover.fillMap_congr_apply`). The extension exists because the end of a filling
 chart is intrinsic to the cover (`TauCeti.FilledCover.map_chart_comap_nhds_zero`): it is the
 filter of points of the component going to infinity in `ℂ ∖ {0, 1}`, which `h` carries to the
-corresponding filter for `p'`. Thus the filled cover is functorial in isomorphisms of covers.
+corresponding filter for `p'`. Thus the filled cover is functorial in isomorphisms of covers:
+the extension respects identities and composition (`TauCeti.FilledCover.congr_refl`,
+`TauCeti.FilledCover.congr_trans`).
 
 ## Main declarations
 
@@ -33,6 +35,8 @@ corresponding filter for `p'`. Thus the filled cover is functorial in isomorphis
 * `TauCeti.FilledCover.congr`: the homeomorphism of filled covers extending an isomorphism of
   covers.
 * `TauCeti.FilledCover.fillMap_congr_apply`: it commutes with the extended projections.
+* `TauCeti.FilledCover.congr_refl`, `TauCeti.FilledCover.congr_trans`: the extension respects
+  identities and composition.
 
 ## References
 
@@ -94,20 +98,7 @@ section Homeomorph
 
 variable (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
   (h : E ≃ₜ F) (hh : p' ∘ h = p)
-include hp hh
-
-/-- A cover isomorphic to a covering map is a covering map. -/
-private theorem isCoveringMap_of_congr : IsCoveringMap p' :=
-  (IsCoveringMap.comp_homeomorph_iff h).1 (hh ▸ hp)
-
-omit hp in
-include hfin in
-/-- A cover isomorphic to a cover with a finite fibre has a finite fibre. -/
-private theorem finite_preimage_of_congr : Finite (p' ⁻¹' {z₀}) := by
-  rw [← h.image_preimage (p' ⁻¹' {z₀}), ← preimage_comp, hh]
-  exact Finite.Set.finite_image _ _
-
-include hfin
+include hp hfin hh
 
 /-- **An isomorphism of covers carries components onto components.** The image under `h` of the
 component of `p ⁻¹' D_q*` giving the added point `i` is the component of `p' ⁻¹' D_q*` giving the
@@ -117,8 +108,9 @@ theorem range_chart_congr (i : FilledPoint p) :
   rw [← h.image_preimage (range (chart p' _))]
   congr 1
   ext x
-  rw [mem_preimage, range_chart (isCoveringMap_of_congr hp h hh)
-    (finite_preimage_of_congr hfin h hh), range_chart hp hfin, FilledPoint.sigmaEquiv_congr]
+  rw [mem_preimage, range_chart ((IsCoveringMap.comp_homeomorph_iff h).1 (hh ▸ hp))
+    ((finite_coe_iff.1 (hh ▸ hfin)).of_preimage h.surjective).to_subtype,
+    range_chart hp hfin, FilledPoint.sigmaEquiv_congr]
   simp only [mem_ofPred_eq]
   generalize FilledPoint.sigmaEquiv p i = s
   obtain ⟨q, c⟩ := s
@@ -151,8 +143,8 @@ private theorem map_comp_chart_comap_nhds_zero (i : FilledPoint p) :
       comap p' (cocompact ThricePuncturedSphere) := by
     rw [← hh, ← comap_comap, map_comap_of_surjective h.surjective]
   rw [← map_map, map_chart_comap_nhds_zero hp hfin,
-    map_chart_comap_nhds_zero (isCoveringMap_of_congr hp h hh)
-      (finite_preimage_of_congr hfin h hh),
+    map_chart_comap_nhds_zero ((IsCoveringMap.comp_homeomorph_iff h).1 (hh ▸ hp))
+      ((finite_coe_iff.1 (hh ▸ hfin)).of_preimage h.surjective).to_subtype,
     range_chart_congr hp hfin, map_inf h.injective, map_principal, hcomap]
 
 /-- **Functoriality of the filled cover in isomorphisms of covers.** An isomorphism `h : E ≃ₜ F`
@@ -163,8 +155,8 @@ point of a component to the added point of its image component
 Riemann sphere (`TauCeti.FilledCover.fillMap_congr_apply`). -/
 def congr : FilledCover p ≃ₜ FilledCover p' :=
   PunctureFilling.congr (fun i ↦ (isOpenEmbedding_chart hp hfin i).continuous)
-    (fun i ↦ (isOpenEmbedding_chart (isCoveringMap_of_congr hp h hh)
-      (finite_preimage_of_congr hfin h hh) i).continuous)
+    (fun i ↦ (isOpenEmbedding_chart ((IsCoveringMap.comp_homeomorph_iff h).1 (hh ▸ hp))
+      ((finite_coe_iff.1 (hh ▸ hfin)).of_preimage h.surjective).to_subtype i).continuous)
     h (FilledPoint.congr h hh) (map_comp_chart_comap_nhds_zero hp hfin h hh)
 
 @[simp]
@@ -201,6 +193,29 @@ theorem fillMap_congr_apply (y : FilledCover p) :
   | center i => simp
 
 end Homeomorph
+
+section Functoriality
+
+variable {G : Type*} [TopologicalSpace G] {p'' : G → ThricePuncturedSphere}
+  (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
+
+/-- The identity isomorphism of covers extends to the identity of the filled cover. -/
+@[simp]
+theorem congr_refl :
+    congr hp hfin (Homeomorph.refl E) (p' := p) (by simp) = Homeomorph.refl _ := by
+  ext y
+  induction y using PunctureFilling.induction <;> simp
+
+/-- The extension of a composite of isomorphisms of covers is the composite of the extensions. -/
+theorem congr_trans (hp' : IsCoveringMap p') {z₁ : ThricePuncturedSphere}
+    (hfin' : Finite (p' ⁻¹' {z₁})) (h : E ≃ₜ F) (hh : p' ∘ h = p) (k : F ≃ₜ G)
+    (hk : p'' ∘ k = p') :
+    congr hp hfin (h.trans k) (by funext x; exact (congr_fun hk (h x)).trans (congr_fun hh x)) =
+      (congr hp hfin h hh).trans (congr hp' hfin' k hk) := by
+  ext y
+  induction y using PunctureFilling.induction <;> simp [FilledPoint.congr_trans h hh k hk]
+
+end Functoriality
 
 end FilledCover
 

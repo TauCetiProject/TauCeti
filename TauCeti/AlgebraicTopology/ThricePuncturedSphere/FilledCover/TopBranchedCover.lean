@@ -207,6 +207,11 @@ covers of `ℂ ∖ {0, 1}` extends to an isomorphism of their filled branched co
 the total space of `C` (`TauCeti.ConnectedCover.toTopBranchedCoverIso_apply_incl`). -/
 def toTopBranchedCoverIso (f : C.cover ≅ D.cover) :
     TopBranchedCover.Iso C.toTopBranchedCover D.toTopBranchedCover where
+  -- The homeomorphism `TopCat.homeoOfIso ((totalSpace _ _).mapIso f)` of total spaces is
+  -- definitionally `f.hom.hom.left` on points, since `homeoOfIso` and `Functor.mapIso` apply the
+  -- forward morphism and `CoveringSpace.FullSubcategory.totalSpace_map` holds by `rfl`. So the
+  -- commutation `FullSubcategory.w f.hom` of `f` with the projections is the hypothesis
+  -- `p' ∘ h = p` of `FilledCover.congr`.
   toHomeomorph := FilledCover.congr C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
     (TopCat.homeoOfIso ((CoveringSpace.FullSubcategory.totalSpace _ _).mapIso f))
     (funext (CategoryTheory.ConcreteCategory.congr_hom (CoveringSpace.FullSubcategory.w f.hom)))
@@ -217,6 +222,8 @@ def toTopBranchedCoverIso (f : C.cover ≅ D.cover) :
 @[simp]
 theorem toTopBranchedCoverIso_apply_incl (f : C.cover ≅ D.cover) (x : (C.cover : TopCat)) :
     (toTopBranchedCoverIso f).toHomeomorph (incl (chart _) x) = incl (chart _) (f.hom.hom.left x) :=
+  -- The homeomorphism of total spaces is `f.hom.hom.left` by definition, as in
+  -- `TauCeti.ConnectedCover.toTopBranchedCoverIso`.
   congr_apply_incl _ _ _ _ x
 
 end ConnectedCover
