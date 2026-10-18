@@ -59,11 +59,9 @@ theorem map_toRelationalConfiguration_mem_iff {μ : Measure (SimpleGraph ℕ)} :
     mem_exchangeableGraphProbabilityMeasures_iff]
   constructor
   · rintro ⟨hexch, hp⟩
-    have hp' : IsProbabilityMeasure μ := by
-      constructor
-      have h := hp.measure_univ
-      rwa [Measure.map_apply SimpleGraph.measurable_toRelationalConfiguration
-        MeasurableSet.univ, preimage_univ] at h
+    have hp' : IsProbabilityMeasure μ :=
+      (Measure.isProbabilityMeasure_map_iff
+        SimpleGraph.measurable_toRelationalConfiguration.aemeasurable).1 hp
     refine ⟨fun σ => ?_, hp'⟩
     apply SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_injective
     rw [Measure.map_map SimpleGraph.measurable_toRelationalConfiguration
