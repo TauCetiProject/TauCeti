@@ -78,6 +78,8 @@ theorem indepFun_matrix_multivariateGaussian_iff
     have hpair :=
       IsGaussian.hasGaussianLaw_id (μ := multivariateGaussian m S) |>.map_fun L
     refine hpair.indepFun_of_covariance_inner fun x y => ?_
+    -- Unfold the two projections of the product map `L` to expose the `A`- and `B`-images
+    -- expected by `covariance_inner_matrix_multivariateGaussian`.
     change cov[fun z => ⟪x, A.toEuclideanLin z⟫, fun z => ⟪y, B.toEuclideanLin z⟫;
       multivariateGaussian m S] = 0
     rw [covariance_inner_matrix_multivariateGaussian m hS, hcross]
