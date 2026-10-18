@@ -107,31 +107,6 @@ private theorem logHeight_det_hasseDeriv_le_mul {n m : ℕ} {r : Fin (n + 1) →
     nlinarith [mul_nonneg hm0 hr0]
   nlinarith [mul_le_mul_of_nonneg_left hkey hD]
 
-/-- The weight of a row `μ` of the generalized Wronskian in the inductive step of Roth's lemma.
-If `μ` does not differentiate in the last variable, `|μ| ≤ r_{n+1}` and `r_{n+1} ≤ σ rₙ` for
-decreasing weights `r`, then `∑ⱼ μⱼ / rⱼ ≤ σ`. -/
-private theorem weight_le_of_apply_last_eq_zero {n : ℕ} {r : Fin (n + 2) → ℕ} (hr : Antitone r)
-    (hr0 : 0 < r (Fin.last n).castSucc) {σ : ℝ}
-    (hσ : (r (Fin.last (n + 1)) : ℝ) ≤ σ * r (Fin.last n).castSucc) {μ : Fin (n + 2) →₀ ℕ}
-    (hμ : μ (Fin.last (n + 1)) = 0) (hμr : μ.degree ≤ r (Fin.last (n + 1))) :
-    μ.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ ENNReal.ofReal σ := by
-  set c := (Fin.last n).castSucc
-  -- Every variable that `μ` differentiates has weight at least `r c`.
-  have hle : μ.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ μ.degree * (r c : ℝ≥0∞)⁻¹ := by
-    rw [← nsmul_eq_mul]
-    refine Finsupp.weight_le_degree_nsmul_of_mem_support μ fun j hj ↦ ?_
-    gcongr
-    refine hr (Fin.le_castSucc_iff.2 (Fin.lt_last_iff_ne_last.2 fun h ↦ ?_))
-    exact Finsupp.mem_support_iff.1 hj (h ▸ hμ)
-  refine hle.trans ?_
-  have hc : (0 : ℝ) < r c := by exact_mod_cast hr0
-  calc (μ.degree : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ ≤ (r (Fin.last (n + 1)) : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ := by
-        gcongr
-    _ = ENNReal.ofReal (r (Fin.last (n + 1)) / r c) := by
-        rw [ENNReal.ofReal_div_of_pos hc, ENNReal.ofReal_natCast, ENNReal.ofReal_natCast,
-          div_eq_mul_inv]
-    _ ≤ ENNReal.ofReal σ := ENNReal.ofReal_le_ofReal ((div_le_iff₀ hc).2 hσ)
-
 /-- The closing inequality of the inductive step of Roth's lemma: if `θ < 1 / 2`, `σ ≤ θ ^ 2`
 and `t > 2 (n + 2) θ`, then `2 (n + 1) θ ^ 2 + σ < min ((t - σ) / 2) ((t - σ) ^ 2 / 2)`. -/
 private theorem lt_min_of_mul_lt {n : ℕ} {θ σ t : ℝ} (hθ : 0 < θ) (hθ' : θ < 1 / 2)
@@ -258,10 +233,29 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
   have hWfh := MvPolynomial.logHeight_nonneg Wf
   -- Lower bound: the indices of the two Wronskians add up to at least `m min (δ / 2) (δ² / 2)`,
   -- where `δ = t - σ`.
+  -- Each row `μ k` only differentiates in variables of weight `1 / rⱼ ≤ 1 / rₙ`, and
+  -- `|μ k| ≤ r_{n+1} ≤ σ rₙ`, so `∑ⱼ (μ k)ⱼ / rⱼ ≤ σ`.
+  have hwt (k : Fin m) : (μ k).weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ ENNReal.ofReal σ := by
+    set c := (Fin.last n).castSucc
+    have hc : (0 : ℝ) < r c := by exact_mod_cast hr c
+    refine ((μ k).weight_le_degree_nsmul_of_monotone
+      (fun a b h ↦ ENNReal.inv_le_inv.2 (by exact_mod_cast hanti h)) (i := c) fun j hj ↦
+        Fin.le_castSucc_iff.2 (Fin.lt_last_iff_ne_last.2 fun h ↦
+          Finsupp.mem_support_iff.1 hj (h ▸ hμl k))).trans ?_
+    rw [nsmul_eq_mul]
+    calc ((μ k).degree : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ ≤
+          (r (Fin.last (n + 1)) : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ := by
+          gcongr
+          have := hμ k
+          have := k.isLt
+          omega
+      _ = ENNReal.ofReal (r (Fin.last (n + 1)) / r c) := by
+          rw [ENNReal.ofReal_div_of_pos hc, ENNReal.ofReal_natCast, ENNReal.ofReal_natCast,
+            div_eq_mul_inv]
+      _ ≤ ENNReal.ofReal σ :=
+          ENNReal.ofReal_le_ofReal ((div_le_iff₀ hc).2 (by simpa using hratio (Fin.last n)))
   have hlow := ofReal_mul_min_le_weightedIndex_genWronskian_add hm' hμl hfv g hσ0.le
-    (t := t) (by rw [← hPfg, hPt]) fun k ↦
-      weight_le_of_apply_last_eq_zero hanti (hr _) (by simpa using hratio (Fin.last n)) (hμl k)
-        (by have := hμ k; have := k.isLt; omega)
+    (t := t) (by rw [← hPfg, hPt]) hwt
   -- Upper bound for `W_μ(f)`, by the induction hypothesis with weights `m rⱼ`.
   obtain ⟨W, hW⟩ := exists_rename_eq_of_vars_subset_range Wf Fin.castSucc
     (Fin.castSucc_injective _) fun j hj ↦

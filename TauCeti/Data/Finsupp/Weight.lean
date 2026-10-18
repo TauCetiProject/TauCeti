@@ -29,6 +29,8 @@ lexicographic order and weighted degree.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
 * `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
   the variables `s` occurring in `f`.
+* `Finsupp.weight_le_degree_nsmul_of_monotone`: for monotone weights `w`, if every variable
+  occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_gt_add_smul_add_weight_filter_lt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 -/
@@ -68,6 +70,12 @@ theorem weight_le_degree_nsmul_of_mem_support (f : σ →₀ ℕ) {w : σ → M}
 theorem weight_le_degree_nsmul (f : σ →₀ ℕ) {w : σ → M} {c : M} (hw : ∀ s, w s ≤ c) :
     weight w f ≤ degree f • c :=
   weight_le_degree_nsmul_of_mem_support f fun s _ ↦ hw s
+
+/-- If the weights `w` are monotone and every variable occurring in `f` is at most `i`, then the
+weight of `f` is at most its degree times `w i`. -/
+theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w : σ → M}
+    (hw : Monotone w) {i : σ} (hf : ∀ s ∈ f.support, s ≤ i) : weight w f ≤ degree f • w i :=
+  weight_le_degree_nsmul_of_mem_support f fun s hs ↦ hw (hf s hs)
 
 end Finsupp
 
