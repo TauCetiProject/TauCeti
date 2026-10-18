@@ -63,7 +63,7 @@ non-top value implies feasibility.
 * `TauCeti.mongeCost_zero_measure` and `TauCeti.mongeCost_eq_transportCost_zero_measure` — at
   zero mass, with a nonempty target type, both values vanish;
 * `TauCeti.mongeCost_eq_transportCost_of_normalized` — equality of the two values for the
-  normalized probability measures transfers to a nonzero finite source and its target;
+  measures rescaled by a nonzero finite source mass transfers to the source and its target;
 * `TauCeti.transportCost_lt_mongeCost_dirac` — the inequality is strict for a Dirac source and
   a target that is null on singletons, where
   `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the Monge problem infeasible
@@ -273,10 +273,11 @@ theorem mongeCost_eq_transportCost_zero_measure [Nonempty Y] (c : X × Y → ℝ
     mongeCost c (0 : Measure X) (0 : Measure Y) = transportCost c 0 0 :=
   le_antisymm ((mongeCost_zero_measure c).trans_le bot_le) (transportCost_le_mongeCost c 0 0)
 
-/-- Equality of the Monge and Kantorovich values for the probability measures obtained by
-normalizing a nonzero finite source `μ` and a target `ν` by the mass of `μ` transfers to `μ` and
-`ν` themselves. Combined with `TauCeti.mongeCost_eq_transportCost_zero_measure`, this reduces
-equality for finite measures of equal mass to the probability case. -/
+/-- Equality of the Monge and Kantorovich values for the measures obtained by rescaling a nonzero
+finite source `μ` and a target `ν` by the mass of `μ` transfers to `μ` and `ν` themselves. The
+rescaled source is a probability measure, and the rescaled target is one when `ν univ = μ univ`.
+Combined with `TauCeti.mongeCost_eq_transportCost_zero_measure`, this reduces equality for finite
+measures of equal mass to the probability case. -/
 theorem mongeCost_eq_transportCost_of_normalized [IsFiniteMeasure μ] (hμ : μ ≠ 0)
     (hnorm : mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) =
       transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν)) :
