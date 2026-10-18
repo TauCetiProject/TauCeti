@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Basic
 -- `Matrix.sum_sum_smul_congruence`, the regrouping the cup invariance below runs on two slots.
 import TauCeti.LinearAlgebra.Matrix.Congruence
+-- The entrywise identities for `Matrix.J` the relations below contract with.
+import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # The symplectic Brauer arc on a tensor power
@@ -309,7 +311,7 @@ theorem symplecticCupCapAt_comm (i j : Fin d) :
   refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
   conv_rhs => rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
-  rw [hstrand a b x y, J_apply_swap k n a b, J_apply_swap k n x y]
+  rw [hstrand a b x y, Matrix.J_apply_swap (Fin n) k a b, Matrix.J_apply_swap (Fin n) k x y]
   congr 1
   ring
 
@@ -373,7 +375,7 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
         PiTensorProduct.tprod k (Function.update
           (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
     rw [map_neg, map_sum, Finset.sum_congr rfl fun x _ => hterm x, ← Finset.sum_smul,
-      sum_sum_J_mul_J k n]
+      Matrix.sum_sum_J_mul_J, Fintype.card_fin]
     exact (neg_smul _ _).symm
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     Module.End.mul_apply, LinearMap.smul_apply, symplecticCupCapAt_tprod hij, map_smul, hT]
