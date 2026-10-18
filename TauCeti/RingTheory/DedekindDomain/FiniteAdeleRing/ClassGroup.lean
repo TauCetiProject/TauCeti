@@ -30,6 +30,8 @@ the everywhere-integral units together with the principal finite ideles.
   the invertible fractional ideals whose multiplicity at `v` is the `v`-adic order.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits`: the finite ideles whose components are units of
   the local integers at every place, that is, the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits`: the finite ideles whose components are local
+  units away from a prescribed set of places.
 * `IsDedekindDomain.FiniteAdeleRing.toClassGroup`: the induced homomorphism to `ClassGroup R`.
 
 ## Main results
@@ -39,6 +41,8 @@ the everywhere-integral units together with the principal finite ideles.
   of `toFractionalIdeal`.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits_eq_units_integralAdeles`: the
   everywhere-integral units are the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_units_sIntegralAdeles`: the analogous
+  description of the `S`-integral units.
 * `IsDedekindDomain.FiniteAdeleRing.toFractionalIdeal_surjective` and
   `IsDedekindDomain.FiniteAdeleRing.ker_toFractionalIdeal`: the fractional-ideal map is surjective
   with kernel the everywhere-integral units, so the invertible fractional ideals are the quotient
@@ -276,6 +280,85 @@ theorem integralUnits_eq_units_integralAdeles :
   ext x
   rw [mem_integralUnits_iff_forall_mem_adicCompletionIntegers, Submonoid.mem_units_iff]
   exact forall_and.trans (and_congr mem_integralAdeles.symm mem_integralAdeles.symm)
+
+/-! ### The `S`-integral units -/
+
+variable (R K) in
+/-- The **`S`-integral finite ideles**: the finite ideles whose components are units of the local
+integers at every place outside `S`. These are the unit group of the `S`-integral finite adeles
+`∏_{v ∈ S} K_v × ∏_{v ∉ S} 𝒪_v`. -/
+def sIntegralUnits (S : Set (HeightOneSpectrum R)) : Subgroup 𝔸ᶠ[R, K]ˣ where
+  carrier := {x | ∀ v ∉ S, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1}
+  one_mem' v _ := by rw [Units.val_one, one_apply, map_one]
+  mul_mem' hx hy v hv := by rw [Units.val_mul, mul_apply, map_mul, hx v hv, hy v hv, one_mul]
+  inv_mem' {x} hx v hv := by rw [valued_coe_units_inv_apply, hx v hv, inv_one]
+
+/-- A finite idele is `S`-integral exactly when its components outside `S` have valuation one. -/
+@[simp]
+theorem mem_sIntegralUnits_iff {S : Set (HeightOneSpectrum R)} {x : 𝔸ᶠ[R, K]ˣ} :
+    x ∈ sIntegralUnits R K S ↔
+      ∀ v ∉ S, Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 :=
+  Iff.rfl
+
+variable (R K) in
+/-- The `∅`-integral finite ideles are the everywhere-integral units. -/
+@[simp]
+theorem sIntegralUnits_empty : sIntegralUnits R K ∅ = integralUnits R K := by
+  ext x
+  simp
+
+variable (R K) in
+/-- Every finite idele is integral outside the set of all finite places. -/
+@[simp]
+theorem sIntegralUnits_univ : sIntegralUnits R K Set.univ = ⊤ := by
+  ext x
+  simp
+
+variable (R K) in
+/-- Allowing more non-integral places gives a larger group of `S`-integral finite ideles. -/
+theorem sIntegralUnits_mono : Monotone (sIntegralUnits R K) :=
+  fun _ _ hST _ hx v hv ↦ hx v fun hvS ↦ hv (hST hvS)
+
+/-- A finite idele is `S`-integral exactly when both it and its inverse are `S`-integral finite
+adeles. -/
+theorem mem_sIntegralUnits_iff_mem_sIntegralAdeles
+    {S : Set (HeightOneSpectrum R)} {x : 𝔸ᶠ[R, K]ˣ} :
+    x ∈ sIntegralUnits R K S ↔
+      (x : 𝔸ᶠ[R, K]) ∈ sIntegralAdeles R K S ∧
+        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) ∈ sIntegralAdeles R K S := by
+  simp only [mem_sIntegralUnits_iff, mem_sIntegralAdeles, valued_coe_units_inv_apply,
+    mem_adicCompletionIntegers]
+  constructor
+  · intro h
+    exact ⟨fun v hv ↦ (h v hv).le, fun v hv ↦ by rw [h v hv, inv_one]⟩
+  · rintro ⟨h₁, h₂⟩ v hv
+    have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
+      zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
+    exact le_antisymm (h₁ v hv) ((inv_le_one₀ hpos).mp (h₂ v hv))
+
+variable (R K) in
+/-- The `S`-integral finite ideles are the unit group of the `S`-integral finite adeles. -/
+theorem sIntegralUnits_eq_units_sIntegralAdeles (S : Set (HeightOneSpectrum R)) :
+    sIntegralUnits R K S = (sIntegralAdeles R K S).toSubmonoid.units := by
+  ext x
+  rw [mem_sIntegralUnits_iff_mem_sIntegralAdeles, Submonoid.mem_units_iff]
+  exact Iff.rfl
+
+/-- Every finite idele is `S`-integral for some finite set `S` of places. -/
+theorem exists_finset_mem_sIntegralUnits (x : 𝔸ᶠ[R, K]ˣ) :
+    ∃ S : Finset (HeightOneSpectrum R), x ∈ sIntegralUnits R K S := by
+  let T := Filter.eventually_cofinite.mp (eventually_valued_coe_units_apply_eq_one x)
+  refine ⟨T.toFinset, mem_sIntegralUnits_iff.mpr fun v hv ↦ ?_⟩
+  by_contra hne
+  exact hv (T.mem_toFinset.mpr hne)
+
+variable (R K) in
+/-- The finite idele group is the union of its `S`-integral subgroups over finite sets `S`. -/
+theorem iSup_sIntegralUnits :
+    ⨆ S : Finset (HeightOneSpectrum R), sIntegralUnits R K S = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦
+    let ⟨S, hS⟩ := exists_finset_mem_sIntegralUnits x
+    Subgroup.mem_iSup_of_mem S hS
 
 /-- The principal finite idele of a unit of `R` is an everywhere-integral unit. -/
 @[simp 1100] theorem unitEmbedding_map_algebraMap_mem_integralUnits (u : Rˣ) :
