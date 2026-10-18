@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Homogenize
+public import TauCeti.Analysis.Normed.Field.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Theorem
 
 import TauCeti.Data.Int.MaxAbs
@@ -52,62 +53,6 @@ public section
 open Filter Finset Height Polynomial Real Topology
 
 namespace TauCeti
-
-section NormedField
-
-variable {𝕜 : Type*} [NormedField 𝕜]
-
-/-- **Cramer's rule bound** for two linear forms `L = a x + b y` and `L' = a' x + b' y` in two
-variables: the determinant `D = a b' - b a'` satisfies
-`‖D‖ max(‖x‖, ‖y‖) ≤ (‖a‖ + ‖b‖ + ‖a'‖ + ‖b'‖) (‖L‖ + ‖L'‖)`. -/
-theorem norm_det_mul_max_norm_le (a b a' b' x y : 𝕜) :
-    ‖a * b' - b * a'‖ * max ‖x‖ ‖y‖ ≤
-      (‖a‖ + ‖b‖ + ‖a'‖ + ‖b'‖) * (‖a * x + b * y‖ + ‖a' * x + b' * y‖) := by
-  set L := a * x + b * y
-  set L' := a' * x + b' * y
-  have hx : (a * b' - b * a') * x = b' * L - b * L' := by ring
-  have hy : (a * b' - b * a') * y = a * L' - a' * L := by ring
-  have hL := norm_nonneg L
-  have hL' := norm_nonneg L'
-  rw [mul_max_of_nonneg _ _ (norm_nonneg _), ← norm_mul, ← norm_mul, hx, hy]
-  refine max_le ((norm_sub_le _ _).trans ?_) ((norm_sub_le _ _).trans ?_) <;>
-    simp only [norm_mul] <;> nlinarith [norm_nonneg a, norm_nonneg b, norm_nonneg a',
-      norm_nonneg b']
-
-/-- Among pairwise non-proportional linear forms `ℓ.1 x + ℓ.2 y`, `ℓ ∈ T`, in two variables, all
-but one are large at every point: there is `c > 0` such that if `ℓ₀ ∈ T` minimizes
-`‖ℓ.1 x + ℓ.2 y‖`, then every other `ℓ ∈ T` has `‖ℓ.1 x + ℓ.2 y‖ ≥ c max(‖x‖, ‖y‖)`. -/
-theorem exists_pos_mul_max_norm_le_norm_of_pairwise {T : Finset (𝕜 × 𝕜)}
-    (hT : (T : Set (𝕜 × 𝕜)).Pairwise fun ℓ ℓ' ↦ ℓ.1 * ℓ'.2 - ℓ.2 * ℓ'.1 ≠ 0) :
-    ∃ c : ℝ, 0 < c ∧ ∀ x y : 𝕜, ∀ ℓ₀ ∈ T,
-      (∀ ℓ ∈ T, ‖ℓ₀.1 * x + ℓ₀.2 * y‖ ≤ ‖ℓ.1 * x + ℓ.2 * y‖) →
-        ∀ ℓ ∈ T, ℓ ≠ ℓ₀ → c * max ‖x‖ ‖y‖ ≤ ‖ℓ.1 * x + ℓ.2 * y‖ := by
-  -- For each pair `ℓ ≠ ℓ₀`, every `c ≤ ‖D‖ / (2 N)` works, by `norm_det_mul_max_norm_le`.
-  have h : ∀ p ∈ T ×ˢ T, ∀ᶠ c in 𝓝[>] (0 : ℝ), p.1 ≠ p.2 → ∀ x y : 𝕜,
-      ‖p.2.1 * x + p.2.2 * y‖ ≤ ‖p.1.1 * x + p.1.2 * y‖ →
-        c * max ‖x‖ ‖y‖ ≤ ‖p.1.1 * x + p.1.2 * y‖ := by
-    rintro ⟨ℓ, ℓ₀⟩ hp
-    rw [Finset.mem_product] at hp
-    by_cases hne : ℓ = ℓ₀
-    · exact Eventually.of_forall fun _ h ↦ absurd hne h
-    set D := ℓ.1 * ℓ₀.2 - ℓ.2 * ℓ₀.1
-    set N := ‖ℓ.1‖ + ‖ℓ.2‖ + ‖ℓ₀.1‖ + ‖ℓ₀.2‖
-    have hD : 0 < ‖D‖ := norm_pos_iff.2 (hT hp.1 hp.2 hne)
-    have hN : 0 < N := by
-      have hND := norm_det_mul_max_norm_le ℓ.1 ℓ.2 ℓ₀.1 ℓ₀.2 1 0
-      simp only [norm_one, norm_zero, max_eq_left zero_le_one, mul_one, mul_zero,
-        add_zero] at hND
-      nlinarith [norm_nonneg ℓ.1, norm_nonneg ℓ₀.1]
-    filter_upwards [Ioc_mem_nhdsGT (div_pos hD (mul_pos two_pos hN))] with c hc _ x y hle
-    have key := norm_det_mul_max_norm_le ℓ.1 ℓ.2 ℓ₀.1 ℓ₀.2 x y
-    have hM : 0 ≤ max ‖x‖ ‖y‖ := (norm_nonneg x).trans (le_max_left _ _)
-    have hc' : c * (2 * N) ≤ ‖D‖ := (le_div_iff₀ (by positivity)).1 hc.2
-    nlinarith
-  obtain ⟨c, hc, hc₀⟩ := ((eventually_all_finset _).2 h).and self_mem_nhdsWithin |>.exists
-  exact ⟨c, hc₀, fun x y ℓ₀ hℓ₀ hmin ℓ hℓ hne ↦
-    hc ⟨ℓ, ℓ₀⟩ (Finset.mem_product.2 ⟨hℓ, hℓ₀⟩) hne x y (hmin ℓ hℓ)⟩
-
-end NormedField
 
 /-- **Roth's theorem for a linear form.** If `α ∈ ℂ` is algebraic and `κ > 2`, then there is
 `c > 0` with `‖x - α y‖ ≥ c max(|x|, |y|) ^ (1 - κ)` for all integers `x`, `y` with `x ≠ α y`. -/
@@ -249,19 +194,25 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     have hmap : ∀ P : MvPolynomial (Fin 2) ℤ,
         MvPolynomial.aeval ![Polynomial.X, 1] (P.map (Int.castRingHom ℂ)) =
           (MvPolynomial.aeval ![Polynomial.X, 1] P : ℤ[X]).map (Int.castRingHom ℂ) := fun P ↦ by
-      induction P using MvPolynomial.induction_on with
-      | C a => simp
-      | add p q hp hq => simp [hp, hq]
-      | mul_X p i hp =>
-        simp only [map_mul, MvPolynomial.map_X, MvPolynomial.aeval_X, hp, Polynomial.map_mul]
+      rw [← Polynomial.coe_mapRingHom, MvPolynomial.map_aeval, MvPolynomial.aeval_def,
+        MvPolynomial.eval₂_map]
+      congr 1
+      · ext n
+        simp
+      · funext i
         fin_cases i <;> simp
     intro α hα
     rw [hmap] at hα
     set f : ℤ[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
-    have hf₀ : f ≠ 0 := fun h ↦ Polynomial.ne_zero_of_mem_roots hα (by rw [h, Polynomial.map_zero])
-    refine (IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).1 ⟨f, hf₀, ?_⟩
-    rw [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, algebraMap_int_eq]
-    exact Polynomial.isRoot_of_mem_roots hα
+    have hroot : α ∈ f.rootSet ℂ := by
+      rw [Polynomial.mem_rootSet']
+      have hfmap : f.map (Int.castRingHom ℂ) ≠ 0 := Polynomial.ne_zero_of_mem_roots hα
+      rw [Polynomial.mem_roots hfmap] at hα
+      exact ⟨hfmap, by
+        simpa [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, algebraMap_int_eq] using hα⟩
+    have hinj : Function.Injective (algebraMap ℤ ℚ) := Int.cast_injective
+    exact (isAlgebraic_of_mem_rootSet hroot).extendScalars (R := ℤ) (S := ℚ)
+      hinj
   -- Each linear factor satisfies Roth's inequality: `X₁` trivially, `X₀ - α X₁` by Roth's theorem.
   have hL : ∀ ℓ ∈ T, ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, ℓ.1 * x + ℓ.2 * y ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖ℓ.1 * x + ℓ.2 * y‖ := by

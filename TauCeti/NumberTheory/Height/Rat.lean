@@ -115,7 +115,7 @@ theorem mulHeight₁_intCast_div_le (x : ℤ) {y : ℤ} (hy : y ≠ 0) :
     mulHeight₁ ((x : ℚ) / y) ≤ max |(x : ℝ)| |(y : ℝ)| := by
   have hv : ![(x : ℚ), y] = ((↑) : ℤ → ℚ) ∘ ![x, y] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
   rw [mulHeight₁_div_eq_mulHeight, hv]
   refine (mulHeight_le_max_abs (by simp [hy])).trans ?_
   rw [← Int.cast_abs, ← Int.cast_abs, ← Int.cast_max, Int.cast_le]
