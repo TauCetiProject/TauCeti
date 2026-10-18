@@ -223,12 +223,13 @@ private noncomputable def completedLocallyConstantIntegral
       simpa [gφ, U] using congrFun hφ.choose_spec.choose_spec y
     have hψU : ∀ y : Γ, gψ y = ψ y := fun y ↦ by
       simpa [gψ, U] using congrFun hψ.choose_spec.choose_spec y
-    rw [show completedLocallyConstantValue x (φ + ψ) =
-        completedCylinderSum x U (gφ + gψ) from
+    have h_add_value : completedLocallyConstantValue x (φ + ψ) =
+        completedCylinderSum x U (gφ + gψ) :=
       completedLocallyConstantValue_eq x _ U _ fun y ↦ by
         rw [Pi.add_apply, hφU, hψU]
         exact congrArg (fun f : C(Γ, ℤ_[p]) ↦ f y)
-          (map_add (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) φ ψ) |>.symm,
+          (map_add (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) φ ψ) |>.symm
+    rw [h_add_value,
       completedLocallyConstantValue_eq x φ U gφ hφU,
       completedLocallyConstantValue_eq x ψ U gψ hψU]
     simp [completedCylinderSum, add_mul]
@@ -237,12 +238,13 @@ private noncomputable def completedLocallyConstantIntegral
     let U := hφ.choose
     let g := hφ.choose_spec.choose
     have hφU : ∀ y : Γ, g y = φ y := fun y ↦ congrFun hφ.choose_spec.choose_spec y
-    rw [show completedLocallyConstantValue x (c • φ) =
-        completedCylinderSum x U (c • g) from
+    have h_smul_value : completedLocallyConstantValue x (c • φ) =
+        completedCylinderSum x U (c • g) :=
       completedLocallyConstantValue_eq x _ U _ fun y ↦ by
         rw [Pi.smul_apply, hφU]
         exact congrArg (fun f : C(Γ, ℤ_[p]) ↦ f y)
-          (map_smul (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) c φ) |>.symm,
+          (map_smul (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) c φ) |>.symm
+    rw [h_smul_value,
       completedLocallyConstantValue_eq x φ U g hφU]
     simp only [completedCylinderSum, Pi.smul_apply, smul_eq_mul]
     rw [Finsupp.mul_sum]
@@ -302,7 +304,7 @@ private def completedIntegralOnLocallyConstantTests
     have he : (e.symm f).toContinuousMap = f.val := by
       simpa only [LocallyConstant.toContinuousMapLinearMap_apply] using
         LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f
-    change ‖completedLocallyConstantIntegral x (e.symm f)‖ ≤ 1 * ‖f‖
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
     calc
       ‖completedLocallyConstantIntegral x (e.symm f)‖ ≤
           1 * ‖LocallyConstant.toContinuousMapLinearMap ℤ_[p] (e.symm f)‖ :=
