@@ -9,7 +9,8 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 public import TauCeti.Topology.Order.Sublevel
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import Mathlib.Geometry.Manifold.BumpFunction
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Dynamics.Flow.Conjugacy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -23,12 +24,14 @@ Let `f` be a smooth real function on a boundaryless finite-dimensional manifold 
 the sublevel `M_b = {f ≤ b}` deformation retracts onto `M_a = {f ≤ a}`, by a homotopy fixing
 `M_a` pointwise (`TauCeti.exists_sublevelDeformation`); in particular the inclusion of `M_a` into
 `M_b` is a homotopy equivalence (`TauCeti.exists_sublevelHomotopyEquiv`). The manifold itself need
-not be compact; it is assumed σ-compact, so that local fields can be glued by a partition of unity.
+not be compact, nor σ-compact.
 
 Following Milnor, the deformation is the flow of a vector field `X` with `df(X) = -1` on the band.
-Near each regular point a constant chart field, rescaled, has this property, and Mathlib's
-partition-of-unity theorem for fibrewise convex conditions glues these local fields into a smooth
-field which is `-1`-normalized on a neighbourhood of the band and vanishes outside a compact set
+Near each regular point a constant chart field, rescaled, has this property. Finitely many of these
+local fields, cut off by smooth bump functions, cover the compact band; their sum `Y` has
+`df(Y) = -g` for the sum `g` of the bump functions, and `g ≥ 1` near the band. Dividing `Y` by a
+smooth positive modification of `g` gives a smooth field which is `-1`-normalized on a
+neighbourhood of the band and vanishes outside a compact set
 (`TauCeti.exists_vectorField_mvfderiv_eq_neg_one`). The field is therefore complete, and `f`
 decreases at unit speed along its flow while the flow stays in the band
 (`TauCeti.apply_globalFlow_eq_sub`). Following each point of `M_b` until it reaches the level `a`
@@ -65,7 +68,7 @@ section VectorField
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [T2Space M] [SigmaCompactSpace M] {f : M → ℝ}
+  [T2Space M] {f : M → ℝ}
 
 /-- **A unit-speed descending field near a compact set of regular points.** If a compact set `K`
 contains no critical point of the smooth function `f`, there is a smooth vector field `X`, vanishing
@@ -76,41 +79,57 @@ theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘
       ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
       (∃ U, IsOpen U ∧ K ⊆ U ∧ ∀ x ∈ U, mvfderiv 𝓘(ℝ, E) f x (X x) = -1) ∧
       ∃ C, IsCompact C ∧ ∀ x ∉ C, X x = 0 := by
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
-  -- Regular points `W` near `K` with compact closure, and a smaller neighbourhood `U` of `K`.
-  obtain ⟨W, hWo, hKW, hWR, hWc⟩ :=
-    exists_open_between_and_isCompact_closure hK (isOpen_setOf_mfderiv_ne_zero hf) hreg
-  obtain ⟨U, hUo, hKU, hUW, -⟩ := exists_open_between_and_isCompact_closure hK hWo hKW
-  -- Ask for `df(X) = -1` on `closure U` and for `X = 0` off `W`; both conditions are convex.
-  let t : (y : M) → Set (TangentSpace 𝓘(ℝ, E) y) := fun y ↦
-    {v | y ∈ closure U → mvfderiv 𝓘(ℝ, E) f y v = -1} ∩ {v | y ∉ W → v = 0}
-  have ht : ∀ y, Convex ℝ (t y) := by
+  -- Near each `x ∈ K` take a local field `s x` with `df(s x) = -1` on `V x`, and a bump function
+  -- `ρ x` supported in the interior of `V x`.
+  choose V hV s hs hsf using fun x : K ↦ exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one hf
+    (hreg x x.2)
+  choose ρ hρ using fun x : K ↦
+    (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, E)) (x : M)).mem_iff.1
+      (interior_mem_nhds.2 (hV x))
+  -- Finitely many of the open sets where some `ρ x` is `1` cover `K`.
+  obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
+    fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
+  -- `Y = ∑ ρ i • s i` has `df(Y) = -g` with `g = ∑ ρ i`, and `g ≥ 1` near `K`; divide by `g`,
+  -- smoothly modified where `g < 1` so that it stays positive.
+  set g : M → ℝ := fun y ↦ ∑ i ∈ t, ρ i y with hg
+  set d : M → ℝ := fun y ↦ g y + (1 - Real.smoothTransition (g y)) with hd
+  set Y : (y : M) → TangentSpace 𝓘(ℝ, E) y := fun y ↦ ∑ i ∈ t, ((ρ i : M → ℝ) • s i) y with hY
+  have hg0 : ∀ y, 0 ≤ g y := fun y ↦ Finset.sum_nonneg fun i _ ↦ (ρ i).nonneg
+  have hd0 : ∀ y, d y ≠ 0 := by
     intro y
-    refine Convex.inter ?_ ?_
-    · by_cases hy : y ∈ closure U
-      · simp only [hy, forall_const]
-        exact (convex_singleton (-1 : ℝ)).linear_preimage (mvfderiv 𝓘(ℝ, E) f y).toLinearMap
-      · simp [hy, convex_univ]
-    · by_cases hy : y ∈ W
-      · simp [hy, convex_univ]
-      · simp only [hy, not_false_eq_true, forall_const]
-        exact convex_singleton 0
-  have hloc : ∀ y₀ : M, ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
-      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
-        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) V ∧ ∀ y ∈ V, s y ∈ t y := by
-    intro y₀
-    by_cases hy₀ : y₀ ∈ closure U
-    · obtain ⟨V, hV, s, hs, hsf⟩ :=
-        exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one hf (hWR (subset_closure (hUW hy₀)))
-      exact ⟨V ∩ W, Filter.inter_mem hV (hWo.mem_nhds (hUW hy₀)), s, hs.mono inter_subset_left,
-        fun y hy ↦ ⟨fun _ ↦ hsf y hy.1, fun hyW ↦ absurd hy.2 hyW⟩⟩
-    · exact ⟨(closure U)ᶜ, isClosed_closure.isOpen_compl.mem_nhds hy₀, fun _ ↦ 0,
-        Bundle.contMDiffOn_zeroSection ℝ (TangentSpace 𝓘(ℝ, E)),
-        fun y hy ↦ ⟨fun hyU ↦ absurd hyU hy, fun _ ↦ rfl⟩⟩
-  obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local 𝓘(ℝ, E)
-    (n := (⊤ : ℕ∞)) (TangentSpace 𝓘(ℝ, E)) t ht hloc
-  exact ⟨fun y ↦ s y, s.contMDiff, ⟨U, hUo, hKU, fun y hy ↦ (hs y).1 (subset_closure hy)⟩,
-    closure W, hWc, fun y hy ↦ (hs y).2 fun hyW ↦ hy (subset_closure hyW)⟩
+    have h1 := Real.smoothTransition.le_one (g y)
+    rcases (hg0 y).eq_or_lt with h | h
+    · simp [hd, ← h]
+    · exact (by linarith : 0 < d y).ne'
+  have hgC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ g := ContMDiff.sum fun i _ ↦ (ρ i).contMDiff
+  have hdC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ d :=
+    hgC.add (contMDiff_const.sub (Real.smoothTransition.contDiff.contMDiff.comp hgC))
+  have hYC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+      (fun y ↦ (⟨y, Y y⟩ : TangentBundle 𝓘(ℝ, E) M)) :=
+    ContMDiff.sum_section fun i _ ↦ ContMDiffOn.smul_section_of_tsupport
+      (ρ i).contMDiff.contMDiffOn isOpen_interior (hρ i).2 ((hs i).mono interior_subset)
+  have hdfY : ∀ y, mvfderiv 𝓘(ℝ, E) f y (Y y) = -g y := by
+    intro y
+    simp only [hY, hg, map_sum, Pi.smul_apply', map_smul, smul_eq_mul, ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    by_cases hy : ρ i y = 0
+    · simp [hy]
+    · rw [hsf i y (interior_subset ((hρ i).2 (subset_closure hy))), mul_neg_one]
+  refine ⟨fun y ↦ (d y)⁻¹ • Y y, ContMDiff.smul_section (hdC.inv₀ hd0) hYC,
+    ⟨⋃ i ∈ t, interior {y | ρ i y = 1}, isOpen_biUnion fun _ _ ↦ isOpen_interior, ht, ?_⟩,
+    ⋃ i ∈ t, tsupport (ρ i), t.isCompact_biUnion fun i _ ↦ (ρ i).hasCompactSupport, ?_⟩
+  · intro y hy
+    obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.1 hy
+    have h1 : 1 ≤ g y := by
+      have := Finset.single_le_sum (fun j _ ↦ (ρ j).nonneg) hi (f := fun j ↦ ρ j y)
+      rwa [(interior_subset hyi : ρ i y = 1)] at this
+    have hdg : d y = g y := by simp [hd, Real.smoothTransition.one_of_one_le h1]
+    rw [map_smul, hdfY, hdg, smul_eq_mul, mul_neg, inv_mul_cancel₀ (by linarith)]
+  · intro y hy
+    have h0 : ∀ i ∈ t, ρ i y = 0 := fun i hi ↦
+      image_eq_zero_of_notMem_tsupport fun h ↦ hy (mem_iUnion₂.2 ⟨i, hi, h⟩)
+    have hY0 : Y y = 0 := Finset.sum_eq_zero fun i hi ↦ by simp [h0 i hi]
+    simp [hY0]
 
 end VectorField
 
@@ -161,7 +180,7 @@ theorem apply_globalFlow_eq_sub [IsManifold I 1 M] [BoundarylessManifold I M]
   simp only [S, mem_ofPred_eq]
   linarith [hconst v hv]
 
-variable [I.Boundaryless] [IsManifold I ∞ M] [SigmaCompactSpace M]
+variable [I.Boundaryless] [IsManifold I ∞ M]
 
 /-- **A unit-speed descending flow across a band without critical points.** If `f` is smooth and
 the band `f⁻¹[a, b]` is compact and contains no critical point of `f`, there is a flow on `M` along
@@ -176,7 +195,6 @@ theorem exists_flow_apply_eq_sub (hf : ContMDiff I 𝓘(ℝ) ∞ f)
   let M' := BoundarylessModel I M
   set f' : M' → ℝ := f ∘ e.symm with hf'_def
   have : T2Space M' := e.symm.isEmbedding.t2Space
-  have : SigmaCompactSpace M' := e.symm.isClosedEmbedding.sigmaCompactSpace
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   have hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f' := by
     have h := (BoundarylessModel.diffeomorph I (M := M) ∞).symm.contMDiff
