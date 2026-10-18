@@ -300,7 +300,7 @@ theorem target_apply_ne_iff_mem_sideColumns_union (D : GridRectangleDecompositio
     z c ≠ x c ↔ c ∈ D.first.sideColumns ∪ D.second.sideColumns := by
   constructor
   · intro hne
-    contrapose! hne
+    contrapose hne
     rw [Finset.mem_union, not_or] at hne
     exact D.target_apply_of_notMem_sideColumns hne.1 hne.2
   · intro hc

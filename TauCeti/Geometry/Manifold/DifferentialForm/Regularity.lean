@@ -283,14 +283,13 @@ theorem IsSmoothForm.inChartAt_mextDeriv_eq [IsManifold I 2 M]
   φ.inChartAt_mextDeriv hz
     ((hφ.contDiffWithinAt_inChartAt_self _).differentiableWithinAt one_ne_zero)
 
-/-- Regularity of the coordinate expression in each point's own preferred chart implies
-regularity of the differential-form section. -/
-theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
-    {r : WithTop ℕ∞} {φ : RoughForm I M F k}
-    (hφ : ∀ x, ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
-    IsSmoothForm I r φ := by
-  rw [isSmoothForm_def]
-  intro x
+/-- Regularity of a form's coordinate expression in its own preferred chart implies pointwise
+regularity of its bundle section, including within the full model range at boundary points. -/
+theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
+    {r : WithTop ℕ∞} {φ : RoughForm I M F k} {x : M}
+    (hφ : ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) r
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
   rw [contMDiffAt_section x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have heq : (fun z ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
@@ -299,8 +298,30 @@ theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
           𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
     filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
     exact (φ.inChartAt_eq_trivializationAt x hz).symm
-  exact (hφ x).congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
+  exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
     (extChartAt_target_subset_range x (mem_extChartAt_target x)))
+
+/-- Regularity of the coordinate expression in each point's own preferred chart implies
+regularity of the differential-form section. -/
+theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
+    {r : WithTop ℕ∞} {φ : RoughForm I M F k}
+    (hφ : ∀ x, ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
+    IsSmoothForm I r φ := by
+  rw [isSmoothForm_def]
+  exact fun x ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self (hφ x)
+
+/-- The `0`-form of a function is a `C^n` form exactly when the function is `C^n`. -/
+@[simp]
+theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → F} :
+    IsSmoothForm I n (RoughForm.ofFunction I f) ↔ ContMDiff I 𝓘(ℝ, F) n f := by
+  have key : ∀ x, ContDiffWithinAt ℝ n ((RoughForm.ofFunction I f).inChartAt x) (range I)
+      (extChartAt I x x) ↔ ContMDiffAt I 𝓘(ℝ, F) n f x := fun x ↦ by
+    rw [RoughForm.inChartAt_ofFunction, contMDiffAt_iff_source,
+      contMDiffWithinAt_iff_contDiffWithinAt]
+    exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
+      |>.comp_contDiffWithinAt_iff
+  exact ⟨fun h x ↦ (key x).1 (h.contDiffWithinAt_inChartAt_self x),
+    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).2 (h x)⟩
 
 end Regularity
 
@@ -323,6 +344,18 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     rw [he]
     exact contDiffWithinAt_const
   exact hflat _ _ _
+
+/-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
+function into the space of alternating maps. -/
+@[simp] theorem isSmoothForm_modelSpace_iff {n : WithTop ℕ∞} {φ : RoughForm 𝓘(ℝ, E) E F k} :
+    IsSmoothForm 𝓘(ℝ, E) n φ ↔ ContDiff ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ := by
+  have key (x : E) : ContDiffWithinAt ℝ n (φ.inChartAt x) (range 𝓘(ℝ, E))
+      (extChartAt 𝓘(ℝ, E) x x) ↔ ContDiffAt ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ x := by
+    simp only [RoughForm.inChartAt_modelSpace, modelWithCornersSelf_coe, range_id]
+    exact contDiffWithinAt_univ
+  exact ⟨fun h ↦ contDiff_iff_contDiffAt.mpr fun x ↦
+      (key x).mp (h.contDiffWithinAt_inChartAt_self x),
+    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).mpr h.contDiffAt⟩
 
 variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/

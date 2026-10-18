@@ -1,0 +1,180 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
+public import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+
+/-!
+# Odd unimodular forms over local rings
+
+A symmetric unimodular form over a local ring is **odd** when it represents a unit. Such a form
+has an orthogonal basis whose self-pairings are all units. This is the diagonalization step for
+odd unimodular lattices over `ℤ₂`.
+
+The key point in residue characteristic two is that splitting off an arbitrary unit-norm vector
+can leave an even orthogonal complement. When that happens, a unit off-diagonal entry in the
+complement lets us replace the vector by one whose orthogonal complement again represents a unit.
+Induction can therefore continue without assuming that two is invertible.
+
+## Main results
+
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_isUnit_pair`: an odd unimodular form of rank at
+  least two represents units on two orthogonal vectors.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self`: an odd
+  unimodular form has a unit-diagonal orthogonal basis.
+
+## References
+
+* O. T. O'Meara, *Introduction to Quadratic Forms*, §93.
+* J. W. S. Cassels, *Rational Quadratic Forms*, Chapter 8.
+-/
+
+public section
+
+namespace LinearMap.BilinForm
+
+open Module TauCeti
+
+variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
+  {B : LinearMap.BilinForm R M}
+
+/-- **Two orthogonal unit values in an odd unimodular form.** A symmetric form of rank at least
+two whose Gram determinant is a unit and which represents a unit has two orthogonal vectors with
+unit self-pairings. The result needs no inverse of two. -/
+theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
+    (b : Basis (Fin (n + 2)) R M) (hdet : IsUnit (B.toMatrix b).det)
+    (hodd : ∃ x, IsUnit (B x x)) :
+    ∃ x y : M, IsUnit (B x x) ∧ IsUnit (B y y) ∧ B x y = 0 := by
+  classical
+  obtain ⟨x, hx⟩ := hodd
+  let v : Fin 1 → M := fun _ ↦ x
+  let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
+  have hG : ∀ i j, B (v i) (v j) = G i j := fun _ _ ↦ rfl
+  have hGdet : IsUnit G.det := by
+    rw [Matrix.det_fin_one]
+    exact hx
+  -- If the complement of the initial unit line has no unit norm, a unit off-diagonal entry there
+  -- supplies a replacement vector whose complement does have one.
+  obtain ⟨_, t, _w, _hw, hdetT⟩ := hB.exists_basis_orthogonal (m := n + 1) b hG hGdet
+  have hTdet : IsUnit ((B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).toMatrix
+      t).det := by
+    rw [hdetT] at hdet
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
+  by_cases hTodd : ∃ y : B.orthogonal (Submodule.span R (Set.range v)),
+      IsUnit (B.restrict _ y y)
+  · obtain ⟨y, hy⟩ := hTodd
+    refine ⟨x, y, hx, hy, ?_⟩
+    exact y.2 x (Submodule.subset_span (Set.mem_range_self 0))
+  · have hdiag (y : B.orthogonal (Submodule.span R (Set.range v))) :
+        ¬ IsUnit (B.restrict _ y y) := fun hy ↦ hTodd ⟨y, hy⟩
+    obtain ⟨i, -, hi⟩ :=
+      exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det
+        (B.restrict _) t (hdiag (t 0)) hTdet
+    let e : M := t 0
+    let f : M := t i
+    have hxe : B x e = 0 := (t 0).2 x (Submodule.subset_span (Set.mem_range_self 0))
+    have hxf : B x f = 0 := (t i).2 x (Submodule.subset_span (Set.mem_range_self 0))
+    have hee : ¬ IsUnit (B e e) := by
+      simpa only [e, LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
+        hdiag (t 0)
+    have hff : ¬ IsUnit (B f f) := by
+      simpa only [f, LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
+        hdiag (t i)
+    have hef : IsUnit (B e f) := by
+      simpa only [e, f, LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hi
+    -- Replacing `x` by `x + e` keeps a unit norm and creates a unit pairing with `f`.
+    let y := x + e
+    have hyy_eq : B y y = B x x + B e e := by
+      simp only [y, map_add, LinearMap.add_apply, hxe, hB.eq e x, zero_add, add_zero]
+    have hyy : IsUnit (B y y) := hyy_eq ▸ isUnit_add_of_isUnit_of_not_isUnit hx hee
+    have hyf : B y f = B e f := by
+      simp only [y, map_add, LinearMap.add_apply, hxf, zero_add]
+    have hyfu : IsUnit (B y f) := hyf ▸ hef
+    let a : R := (↑hyy.unit⁻¹ : R) * B y f
+    have ha : a * B y y = B y f := by
+      calc
+        a * B y y = (↑hyy.unit⁻¹ : R) * B y y * B y f := by simp only [a]; ring
+        _ = B y f := by rw [hyy.val_inv_mul, one_mul]
+    have hau : IsUnit a := hyy.unit⁻¹.isUnit.mul hyfu
+    let z := f - a • y
+    -- Orthogonally project `f` away from `y`; its remaining norm is still a unit.
+    have hyz : B y z = 0 := by
+      simp only [z, map_sub, map_smul, smul_eq_mul, ha, sub_self]
+    have hzz_eq : B z z = B f f - a * B y f := by
+      simp only [z, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
+        hB.eq f y]
+      rw [ha]
+      ring
+    have hzz : IsUnit (B z z) := hzz_eq ▸
+      isUnit_sub_of_not_isUnit_of_isUnit hff (hau.mul hyfu)
+    exact ⟨y, z, hyy, hzz, hyz⟩
+
+/-- **Odd unimodular forms are diagonalizable over a local ring.** If a symmetric form has a
+unit Gram determinant and represents a unit, then it has an orthogonal basis all of whose
+self-pairings are units.
+
+This is the odd counterpart of binary-block decomposition for even forms. In particular it
+applies to type-I unimodular Jordan constituents over `ℤ₂`. -/
+theorem IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self (hB : B.IsSymm)
+    {n : ℕ} (b : Basis (Fin n) R M) (hdet : IsUnit (B.toMatrix b).det)
+    (hodd : ∃ x, IsUnit (B x x)) :
+    ∃ c : Basis (Fin n) R M, B.iIsOrtho c ∧ ∀ i, IsUnit (B (c i) (c i)) := by
+  classical
+  induction n using Nat.strong_induction_on generalizing M with
+  | _ n ih =>
+    rcases n with _ | _ | m
+    · exact ⟨b, fun i ↦ i.elim0, fun i ↦ i.elim0⟩
+    · refine ⟨b, ?_, fun i ↦ ?_⟩
+      · intro i j hij
+        exact (hij (Fin.ext (by omega))).elim
+      have hi : i = 0 := Fin.ext (by omega)
+      subst i
+      rw [Matrix.det_fin_one] at hdet
+      simpa only [toMatrix_apply] using hdet
+    · obtain ⟨x, y, hx, hy, hxy⟩ := hB.exists_orthogonal_isUnit_pair b hdet hodd
+      let v : Fin 1 → M := fun _ ↦ x
+      let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
+      have hG : ∀ i j, B (v i) (v j) = G i j := fun _ _ ↦ rfl
+      have hGdet : IsUnit G.det := by
+        rw [Matrix.det_fin_one]
+        exact hx
+      obtain ⟨_, t, _w, _hw, hdetT⟩ :=
+        hB.exists_basis_orthogonal (m := m + 1) b hG hGdet
+      have hTdet : IsUnit ((B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).toMatrix
+          t).det := by
+        rw [hdetT] at hdet
+        exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
+      have hyMem : y ∈ B.orthogonal (Submodule.span R (Set.range v)) := by
+        rw [mem_orthogonal_iff]
+        intro z hz
+        obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (by simpa [v] using hz)
+        simp [hxy]
+      obtain ⟨d, hd, hdu⟩ := ih (m + 1) (by omega) (hB.restrict _) t hTdet
+        ⟨⟨y, hyMem⟩, hy⟩
+      have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
+      let e : B.orthogonal (Submodule.span R (Set.range v)) ≃ₗ[R] B.orthogonal (R ∙ x) :=
+        LinearEquiv.ofEq _ _ (congrArg B.orthogonal hvspan)
+      let d' := d.map e
+      have hd' : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho d' := by
+        rw [iIsOrtho_def] at hd ⊢
+        intro i j hij
+        simpa [d', e] using hd i j hij
+      have hdu' : ∀ i, IsUnit (B (d' i) (d' i)) := by
+        intro i
+        simpa [d', e] using hdu i
+      obtain ⟨c, hc, hc0, hcs⟩ :=
+        LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hB.isRefl
+          hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd) hd'
+      refine ⟨c, hc, fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i⟩
+      · simpa only [hc0] using hx
+      · rw [hcs]
+        exact hdu' j
+
+end LinearMap.BilinForm
+
+end

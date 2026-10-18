@@ -133,7 +133,7 @@ private theorem conjAction_comp_conjFamily (T : V →L[𝕜] W) (g : G) :
     (conjAction π ρ g : C(V →L[𝕜] W, V →L[𝕜] W)).comp (conjFamily π hπ ρ hρ T)
       = (conjFamily π hπ ρ hρ T).comp (ContinuousMap.mulRight g) := by
   ext h v
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, conjAction_apply,
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, conjAction_apply,
     ContinuousLinearMap.comp_apply, conjFamily_apply_apply, ContinuousMap.coe_mulRight,
     mul_inv_rev, map_mul ρ, map_mul π, mul_apply_eq_comp]
 
