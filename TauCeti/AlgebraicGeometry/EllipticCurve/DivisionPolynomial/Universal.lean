@@ -165,7 +165,7 @@ lemma isEllipticNet_polyToField_ψ :
           (polyToField (Polynomial.C curve.preΨ₄)) := by
     funext n; rw [ψ_eq_normEDS, _root_.map_normEDS]
   rw [h]
-  exact isEllipticNet_normEDS _ _ _
+  exact IsEllipticNet.normEDS _ _ _
 
 /-- **On the cusp curve at `(1, 1)`, the `n`-division polynomial evaluates to `n`.** -/
 lemma polyEval_cusp_ψ : polyEval (cusp ℤ) 1 1 (curve.ψ n) = n := by
