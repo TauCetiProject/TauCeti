@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Angle
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
@@ -244,14 +243,6 @@ theorem norm_le_abs_re_add_pi_of_im_mem_Icc {ζ : ℂ} (him : ζ.im ∈ Icc 0 Re
   have h := norm_le_abs_re_add_abs_im ζ
   rw [abs_of_nonneg him.1] at h
   linarith [him.2]
-
-/-- If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`. -/
-theorem tendsto_sub_div_of_tendsto_cobounded {α : Type*} {l : Filter α} {ζ : α → ℂ} {c b : ℂ}
-    (hb : b ≠ 0) (hζ : Filter.Tendsto ζ l (Bornology.cobounded ℂ)) :
-    Filter.Tendsto (fun a => (ζ a - c) / b) l (Bornology.cobounded ℂ) := by
-  simpa [div_eq_mul_inv, Function.comp_def] using
-    (Filter.tendsto_mul_right_cobounded (inv_ne_zero hb)).comp
-      ((tendsto_sub_const_cobounded c).comp hζ)
 
 /-- The imaginary part of the exponential coordinate `exp (π * I - ζ)` of the half-strip, which
 is positive on the open strip `0 < im ζ < π` and vanishes on its bounding lines. -/
