@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Gen
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
 import TauCeti.Algebra.Group.AffineSequence
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Linarith
 
 /-!
 # Affine D numerical types
