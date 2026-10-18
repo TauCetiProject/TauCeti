@@ -122,17 +122,8 @@ theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
 theorem integrable_expMeasure_iff_integrableOn_Ioi (hr : 0 < r) (g : ℝ → E) :
     Integrable g (expMeasure r) ↔
       IntegrableOn (fun x => (r * exp (-(r * x))) • g x) (Ioi 0) := by
-  have hpos : ∀ x ∈ Ioi (0 : ℝ), exponentialPDFReal r x • g x =
-      (r * exp (-(r * x))) • g x := fun x hx => by
-    simp only [exponentialPDFReal, gammaPDFReal, ite_eq_left hx.le, Real.rpow_one, Gamma_one,
-      div_one, sub_self, rpow_zero, mul_one]
-  have hneg : IntegrableOn (fun x => exponentialPDFReal r x • g x) (Iio 0) := by
-    refine integrableOn_zero.congr_fun (fun x hx => ?_) measurableSet_Iio
-    simp only [exponentialPDFReal, gammaPDFReal, ite_eq_right (not_le.mpr hx), zero_smul]
-  rw [integrable_expMeasure_iff hr, ← integrableOn_univ,
-    ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union, integrableOn_Ici_iff_integrableOn_Ioi]
-  exact ⟨fun h => h.2.congr_fun hpos measurableSet_Ioi,
-    fun h => ⟨hneg, h.congr_fun (fun x hx => (hpos x hx).symm) measurableSet_Ioi⟩⟩
+  rw [expMeasure, integrable_gammaMeasure_iff_integrableOn_Ioi one_pos hr]
+  simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one]
 
 /-- An integral against an exponential law is the set integral of the weighted integrand over
 `(0, ∞)`. -/
