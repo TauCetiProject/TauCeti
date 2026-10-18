@@ -8,8 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.Probability.Kernel.WithDensity
 
-import Mathlib.Probability.Kernel.MeasurableIntegral
-
 /-!
 # Measures weighted by a nonnegative function
 
@@ -111,10 +109,9 @@ theorem isZeroOrProbabilityMeasure_weighted {μ : Measure α} {w : α → ℝ≥
   infer_instance
 
 /-- A weighted measure is absolutely continuous with respect to its base measure. -/
-theorem weighted_absolutelyContinuous {μ : Measure α} {w : α → ℝ≥0} (hw : Measurable w) :
-    μ.weighted w ≪ μ := by
-  rw [weighted_eq_withDensity μ hw]
-  exact withDensity_absolutelyContinuous _ _
+theorem weighted_absolutelyContinuous {μ : Measure α} {w : α → ℝ≥0} : μ.weighted w ≪ μ := by
+  rw [weighted_def]
+  exact (withDensity_absolutelyContinuous _ _).smul_left _
 
 /-- The Radon--Nikodym derivative of a weighted measure is its normalized weight. -/
 theorem rnDeriv_weighted (μ : Measure α) [SigmaFinite μ] {w : α → ℝ≥0} (hw : Measurable w) :
@@ -144,9 +141,19 @@ theorem integral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : Measurabl
   rw [weighted_def, integral_smul_measure, integral_withDensity_eq_integral_smul hw,
     ENNReal.toReal_inv]
 
+/-- The nonnegative integral against a weighted law is the base integral of the product divided by
+the total weight. This also covers a zero or infinite total weight. -/
+theorem lintegral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : Measurable w)
+    (g : α → ℝ≥0∞) (hg : Measurable g) :
+    ∫⁻ x, g x ∂μ.weighted w =
+      (∫⁻ x, (w x : ℝ≥0∞) ∂μ)⁻¹ * ∫⁻ x, (w x : ℝ≥0∞) * g x ∂μ := by
+  rw [weighted_def, lintegral_smul_measure, smul_eq_mul,
+    lintegral_withDensity_eq_lintegral_mul _ hw.coe_nnreal_ennreal hg]
+  rfl
+
 /-- Multiplying a weight by a positive constant does not change the weighted law. -/
-theorem weighted_const_smul {μ : Measure α} {w : α → ℝ≥0} (hw : Measurable w)
-    {c : ℝ≥0} (hc : c ≠ 0) : μ.weighted (c • w) = μ.weighted w := by
+theorem weighted_const_smul {μ : Measure α} {w : α → ℝ≥0} {c : ℝ≥0} (hc : c ≠ 0) :
+    μ.weighted (c • w) = μ.weighted w := by
   have hfun : (fun x => ((c * w x : ℝ≥0) : ℝ≥0∞)) =
       fun x => (c : ℝ≥0∞) * (w x : ℝ≥0∞) := by
     funext x
@@ -156,8 +163,8 @@ theorem weighted_const_smul {μ : Measure α} {w : α → ℝ≥0} (hw : Measura
     rfl
   rw [weighted_def, weighted_def]
   simp only [Pi.smul_apply, smul_eq_mul]
-  rw [hfun, lintegral_const_mul _ hw.coe_nnreal_ennreal, hsmul,
-    withDensity_smul (c : ℝ≥0∞) hw.coe_nnreal_ennreal]
+  rw [hfun, lintegral_const_mul' _ _ (by simp), hsmul,
+    withDensity_smul' (c : ℝ≥0∞) _ (by simp)]
   rw [smul_smul]
   congr 1
   rw [ENNReal.mul_inv (Or.inl (by exact_mod_cast hc)) (Or.inl (by simp))]
