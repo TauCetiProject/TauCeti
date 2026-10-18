@@ -22,7 +22,8 @@ A linear order on the vertex type chooses one enumeration of each face.  This av
 cells and fixes the orientations of the characteristic maps.  The resulting open and closed
 cells themselves depend only on the underlying faces.  The equivalence `realizationCellEquiv`
 identifies the cells of `realizationCWComplex K` with `RealizationCell K`, through which its open
-cells, closed cells, and cell frontiers are described by barycentric supports. The CW
+cells, closed cells, and cell frontiers are described by barycentric supports.  In positive
+dimensions, each frontier is the union of its codimension-one closed cells.  The CW
 filtration stage `skeletonLT n` consists of points with at most `n` nonzero barycentric
 coordinates.
 
@@ -245,6 +246,20 @@ theorem cellFrontier_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι
     RelCWComplex.cellFrontier n ((realizationCellEquiv K n).symm c) =
       {x : Realization K | x.1.support ⊂ c.1.1} :=
   c.image_characteristicMap_sphere
+
+/-- The frontier of a positive-dimensional realization cell is the union of the closed cells
+obtained by deleting one vertex. -/
+theorem cellFrontier_realizationCellEquiv_symm_eq_iUnion_face
+    (K : AbstractSimplicialComplex ι) (c : RealizationCell K (n + 1)) :
+    letI := realizationCWComplex K
+    RelCWComplex.cellFrontier (n + 1) ((realizationCellEquiv K (n + 1)).symm c) =
+      ⋃ j : Fin (n + 2),
+        RelCWComplex.closedCell n ((realizationCellEquiv K n).symm (c.face j)) := by
+  let := realizationCWComplex K
+  ext x
+  simp only [cellFrontier_realizationCellEquiv_symm,
+    closedCell_realizationCellEquiv_symm, Set.mem_ofPred_eq, Set.mem_iUnion]
+  exact (c.exists_subset_face_iff_ssubset x.1.support).symm
 
 /-- Stage `n` of the CW filtration consists exactly of points with at most `n` nonzero
 barycentric coordinates. Stage zero is empty and stage infinity is the whole realization. -/

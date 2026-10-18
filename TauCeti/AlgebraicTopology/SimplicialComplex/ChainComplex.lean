@@ -25,7 +25,8 @@ signs are central, so the coefficient ring need not be commutative.
 
 The comparison with the cellular chain complex of the realization is separate.  Both complexes
 are indexed by `RealizationCell`, so that comparison reduces to computing the cellular incidence
-coefficients in these ordered coordinates.
+coefficients in these ordered coordinates.  The support of each simplicial cell boundary is
+identified explicitly with its codimension-one faces.
 
 ## Main definitions
 
@@ -67,6 +68,62 @@ def boundaryCell {n : ℕ}
     (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1)) :
     OrderedSimplicialChain K R n :=
   ∑ j : Fin (n + 2), (-1 : R) ^ (j : ℕ) • single (c.face j) 1
+
+/-- The coefficient of a codimension-one face in the boundary of a cell is its alternating
+sign. -/
+@[simp]
+theorem boundaryCell_apply_face {n : ℕ}
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1)) (j : Fin (n + 2)) :
+    boundaryCell R c (c.face j) = (-1 : R) ^ (j : ℕ) := by
+  classical
+  rw [boundaryCell, Finsupp.finsetSum_apply, Finset.sum_eq_single j]
+  · simp
+  · intro i _ hij
+    have hface : c.face i ≠ c.face j := fun h => hij (c.face_injective h)
+    simp [hface]
+  · simp
+
+/-- A cell which is not a codimension-one subface has coefficient zero in the boundary. -/
+theorem boundaryCell_apply_eq_zero_of_not_subset {n : ℕ}
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1))
+    (d : _root_.AbstractSimplicialComplex.RealizationCell K n)
+    (h : ¬ d.1.1 ⊆ c.1.1) : boundaryCell R c d = 0 := by
+  classical
+  rw [boundaryCell, Finsupp.finsetSum_apply]
+  apply Finset.sum_eq_zero
+  intro j _
+  have hface : c.face j ≠ d := by
+    intro hj
+    apply h
+    rw [← hj]
+    simpa only [_root_.AbstractSimplicialComplex.RealizationCell.face_val] using
+      Finset.erase_subset (c.vertexEmbedding j) c.1.1
+  simp [hface]
+
+/-- A cell has nonzero boundary coefficient exactly when it is a codimension-one subface. -/
+@[simp]
+theorem boundaryCell_apply_ne_zero_iff [Nontrivial R] {n : ℕ}
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1))
+    (d : _root_.AbstractSimplicialComplex.RealizationCell K n) :
+    boundaryCell R c d ≠ 0 ↔ d.1.1 ⊆ c.1.1 := by
+  constructor
+  · intro hne
+    by_contra hdc
+    exact hne (boundaryCell_apply_eq_zero_of_not_subset R c d hdc)
+  · intro hdc
+    obtain ⟨j, rfl⟩ := (c.exists_face_eq_iff_subset d).mpr hdc
+    rw [boundaryCell_apply_face]
+    exact (isUnit_neg_one.pow (j : ℕ)).ne_zero
+
+/-- The support of a cell boundary is precisely the set of its codimension-one faces. -/
+theorem support_boundaryCell [Nontrivial R] {n : ℕ}
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1)) :
+    (boundaryCell R c).support = Finset.univ.image c.face := by
+  classical
+  ext d
+  rw [Finsupp.mem_support_iff, boundaryCell_apply_ne_zero_iff, Finset.mem_image]
+  simp only [Finset.mem_univ, true_and]
+  exact (c.exists_face_eq_iff_subset d).symm
 
 /-- The explicit alternating-sum formula for the boundary of one cell. -/
 theorem boundaryCell_def {n : ℕ}
