@@ -25,14 +25,15 @@ bounds leave only finitely many choices for the integer vector.
 The main results identify the one-dimensional exponent of an irrational real number with its
 irrationality exponent, up to the expected shift by one, show that a rational family and an empty
 family have infinite exponent, and show that forgetting coordinates can only increase the
-exponent.
+exponent. Dirichlet's theorem gives the lower bound `1 / n` for a family of `n` real numbers
+(`inv_card_le_simultaneousExponent`).
 
 ## References
 
 * Y. Bugeaud, *Exponents of Diophantine approximation*, in *Dynamics and Analytic Number Theory*,
   London Math. Soc. Lecture Note Ser. 437, Cambridge Univ. Press (2016), §2, Definition 2.2.
   The exponent defined here is that simultaneous exponent, restated with positive denominators as
-  explained above.
+  explained above. The lower bound `1 / n` is the simultaneous half of Theorem 2.5.
 -/
 
 public section
@@ -153,6 +154,56 @@ theorem simultaneousExponent_eq_top_of_forall_rat [Finite ι] {θ : ι → ℝ}
 @[simp]
 theorem simultaneousExponent_of_isEmpty [IsEmpty ι] (θ : ι → ℝ) : simultaneousExponent θ = ⊤ :=
   simultaneousExponent_eq_top_of_forall_rat isEmptyElim
+
+/-! ### Dirichlet's lower bound -/
+
+/-- **Dirichlet's theorem, infinitely many denominators.** If some coordinate of a finite family
+`θ` is irrational, then infinitely many positive integers `q` admit integers `pᵢ` with
+`|q θᵢ - pᵢ| ≤ q ^ (-1 / n)` for every `i`, where `n` is the number of coordinates. -/
+theorem infinite_simultaneousApproximationDenominators_inv_card [Fintype ι] {θ : ι → ℝ}
+    {i₀ : ι} (hi₀ : Irrational (θ i₀)) :
+    (simultaneousApproximationDenominators θ (Fintype.card ι : ℝ)⁻¹).Infinite := by
+  have : Nonempty ι := ⟨i₀⟩
+  have hn : Fintype.card ι ≠ 0 := Fintype.card_ne_zero
+  refine Set.infinite_of_forall_exists_gt fun N ↦ ?_
+  -- The distances from `k θ i₀` to the nearest integer, `1 ≤ k ≤ N`, are positive, so Dirichlet's
+  -- theorem with a large parameter `Q` produces a denominator `q > N`.
+  have hpos (k : ℕ) (hk : k ∈ Finset.Icc 1 N) : 0 < |k * θ i₀ - round (k * θ i₀)| :=
+    abs_pos.mpr <| sub_ne_zero.mpr <|
+      (hi₀.natCast_mul (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hk).1)).ne_int _
+  obtain ⟨Q, hQ, hQN⟩ := ((eventually_gt_atTop 1).and <| (eventually_all_finset _).mpr
+    fun k hk ↦ tendsto_inv_atTop_zero.eventually (gt_mem_nhds (hpos k hk))).exists
+  have hQ₀ : 0 < Q := zero_lt_one.trans hQ
+  obtain ⟨p, q, hq, hqQ, hp⟩ := simultaneous_dirichlet θ hQ
+  lift q to ℕ using hq.le
+  simp only [Int.cast_natCast] at hqQ hp
+  have hq' : (0 : ℝ) < q := by exact_mod_cast hq
+  have hpq (i : ι) : |(q : ℝ) * θ i - p i| ≤ Q⁻¹ := by
+    rw [abs_sub_comm, mul_comm]
+    exact hp i
+  refine ⟨q, ⟨by exact_mod_cast hq, p, fun i ↦ (hpq i).trans ?_⟩, ?_⟩
+  · -- `q ≤ Q ^ n` gives `Q⁻¹ ≤ q ^ (-1 / n)`.
+    rw [Real.rpow_neg hq'.le]
+    refine inv_anti₀ (by positivity) ?_
+    calc (q : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ ≤ (Q ^ Fintype.card ι) ^ (Fintype.card ι : ℝ)⁻¹ := by
+          gcongr
+      _ = Q := Real.pow_rpow_inv_natCast hQ₀.le hn
+  · by_contra! hqN
+    exact (hQN q (Finset.mem_Icc.mpr ⟨by exact_mod_cast hq, hqN⟩)).not_ge
+      ((round_le _ (p i₀)).trans (hpq i₀))
+
+/-- **Dirichlet's lower bound for the simultaneous exponent.** Every family of `n` real numbers
+has simultaneous exponent at least `1 / n`. For the empty family both sides are `⊤`. -/
+theorem inv_card_le_simultaneousExponent [Fintype ι] (θ : ι → ℝ) :
+    (Fintype.card ι : ℝ≥0∞)⁻¹ ≤ simultaneousExponent θ := by
+  by_cases h : ∃ i, Irrational (θ i)
+  · obtain ⟨i, hi⟩ := h
+    have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 (Fintype.card_pos_iff.2 ⟨i⟩)
+    simpa [ENNReal.ofReal_inv_of_pos hn] using le_simultaneousExponent_of_infinite
+      (infinite_simultaneousApproximationDenominators_inv_card hi)
+  · rw [simultaneousExponent_eq_top_of_forall_rat fun i ↦ by
+      simpa [Irrational] using not_exists.mp h i]
+    exact le_top
 
 /-! ### One dimension -/
 
