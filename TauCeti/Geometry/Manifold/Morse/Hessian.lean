@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.Morse.Index
@@ -42,9 +43,12 @@ Morse index is the negative index of inertia of the critical Hessian.
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff`: definiteness
   tests for the extreme indices.
 * `TauCeti.criticalHessianMatrix`: the Gram matrix of the critical Hessian in a tangent-space
-  basis, with determinant and inertia comparisons.
+  basis, with determinant, inertia, and definiteness comparisons
+  (`TauCeti.criticalHessianMatrix_posDef_iff` and `TauCeti.neg_criticalHessianMatrix_posDef_iff`).
 * `TauCeti.exists_negDef_subspace_finrank_eq_manifoldMorseIndex`: the Morse
   index is attained by a negative-definite tangent subspace.
+* `TauCeti.exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg`: the Morse index of `-f` is
+  attained by a positive-definite tangent subspace.
 
 ## References
 
@@ -121,6 +125,14 @@ theorem criticalHessian_neg : criticalHessian I (-f) x = -criticalHessian I f x 
   rw [criticalHessian_def, criticalHessian_def, hfun, hfd, fderiv_neg]
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
+
+/-- The Morse index of `-f` is the positive inertia index of the critical Hessian of `f`. -/
+theorem manifoldMorseIndex_neg_eq_sigPos_criticalHessian :
+    manifoldMorseIndex I (-f) x = sigPos (criticalHessian I f x).toBilinForm.toQuadraticMap := by
+  have hneg : (-criticalHessian I f x).toBilinForm.toQuadraticMap =
+      -(criticalHessian I f x).toBilinForm.toQuadraticMap :=
+    QuadraticMap.ext fun _ ↦ rfl
+  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, criticalHessian_neg, hneg, sigNeg_neg]
 
 /-- On a normed space with its self-model, the critical Hessian is the second derivative. -/
 @[simp]
@@ -207,14 +219,9 @@ theorem criticalHessian_isInvertible_iff_det_ne_zero
     exact LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
       ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mpr h.injective)
   · intro h
-    let _ : IsNormableSpace ℝ (TangentSpace I x) := instIsNormableSpaceTangentSpace I x
-    let sem : SeminormedAddCommGroup (TangentSpace I x) :=
-      IsNormableSpace.toSeminormedAddCommGroup ℝ (TangentSpace I x)
-    let _ : NormedAddCommGroup (TangentSpace I x) :=
-      { sem with toMetricSpace := MetricSpace.ofT0PseudoMetricSpace (TangentSpace I x) }
-    let _ : NormedSpace ℝ (TangentSpace I x) :=
-      IsNormableSpace.toNormedSpace ℝ (TangentSpace I x)
-    exact ContinuousLinearMap.isInvertible_of_injective
+    -- The tangent space is the model space `E`, so invertibility follows from its normed structure.
+    let _ : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+    exact ContinuousLinearMap.isInvertible_of_injective (E := E)
       ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mp h.1)
 
 end Matrix
@@ -249,6 +256,36 @@ theorem exists_negDef_subspace_finrank_eq_manifoldMorseIndex :
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
   exact exists_finrank_eq_sigNeg_and_negDef _
 
+/-- A tangent subspace on which the critical Hessian is positive definite has dimension at most
+the Morse index of `-f`. -/
+theorem finrank_le_manifoldMorseIndex_neg_of_posDef_criticalHessian
+    {W : Submodule ℝ (TangentSpace I x)}
+    (hW : ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef) :
+    Module.finrank ℝ W ≤ manifoldMorseIndex I (-f) x := by
+  rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
+  exact le_sigPos_of_posDef _ hW
+
+/-- There is a positive-definite tangent subspace whose dimension is the Morse index of `-f`. -/
+theorem exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg :
+    ∃ W : Submodule ℝ (TangentSpace I x),
+      Module.finrank ℝ W = manifoldMorseIndex I (-f) x ∧
+        ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef := by
+  rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
+  exact exists_finrank_eq_sigPos_and_posDef _
+
+/-- At a nondegenerate critical point the Morse indices of `-f` and `f` add up to the dimension. -/
+theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_add_manifoldMorseIndex
+    (h : IsManifoldNondegenerateCriticalPoint I f x) :
+    manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
+  have hnondegenerate :
+      (criticalHessian I f x).toBilinForm.toQuadraticMap.Nondegenerate := by
+    rw [toQuadraticMap_toBilinForm_criticalHessian]
+    exact ((isManifoldNondegenerateCriticalPoint_iff I).mp h).hessianQuadraticForm_nondegenerate
+  rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian,
+    manifoldMorseIndex_eq_sigNeg_criticalHessian]
+  exact (QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _ hnondegenerate).trans
+    (finrank_tangentSpace x)
+
 /-- At a nondegenerate critical point, a tangent subspace on which the critical Hessian is positive
 definite has dimension at most the complementary index. -/
 theorem IsManifoldNondegenerateCriticalPoint.finrank_add_manifoldMorseIndex_le_of_posDef_restrict
@@ -256,18 +293,8 @@ theorem IsManifoldNondegenerateCriticalPoint.finrank_add_manifoldMorseIndex_le_o
     {W : Submodule ℝ (TangentSpace I x)}
     (hW : ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef) :
     Module.finrank ℝ W + manifoldMorseIndex I f x ≤ Module.finrank ℝ E := by
-  have hle : Module.finrank ℝ W ≤
-      sigPos (criticalHessian I f x).toBilinForm.toQuadraticMap :=
-    le_sigPos_of_posDef _ hW
-  have hnondegenerate :
-      (criticalHessian I f x).toBilinForm.toQuadraticMap.Nondegenerate := by
-    rw [toQuadraticMap_toBilinForm_criticalHessian]
-    exact ((isManifoldNondegenerateCriticalPoint_iff I).mp h).hessianQuadraticForm_nondegenerate
-  have hsum := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate
-    (criticalHessian I f x).toBilinForm.toQuadraticMap hnondegenerate
-  rw [← manifoldMorseIndex_eq_sigNeg_criticalHessian] at hsum
-  rw [finrank_tangentSpace] at hsum
-  omega
+  rw [← h.manifoldMorseIndex_neg_add_manifoldMorseIndex]
+  exact Nat.add_le_add_right (finrank_le_manifoldMorseIndex_neg_of_posDef_criticalHessian hW) _
 
 /-- At a nondegenerate critical point there is a positive-definite tangent subspace of dimension
 the dimension of the manifold minus the Morse index. -/
@@ -276,18 +303,9 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_posDef_subspace_finrank_add_
     ∃ W : Submodule ℝ (TangentSpace I x),
       Module.finrank ℝ W + manifoldMorseIndex I f x = Module.finrank ℝ E ∧
         ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef := by
-  obtain ⟨W, hWrank, hW⟩ := exists_finrank_eq_sigPos_and_posDef
-    (Q := (criticalHessian I f x).toBilinForm.toQuadraticMap)
-  refine ⟨W, ?_, hW⟩
-  rw [hWrank]
-  have hnondegenerate :
-      (criticalHessian I f x).toBilinForm.toQuadraticMap.Nondegenerate := by
-    rw [toQuadraticMap_toBilinForm_criticalHessian]
-    exact ((isManifoldNondegenerateCriticalPoint_iff I).mp h).hessianQuadraticForm_nondegenerate
-  simpa only [manifoldMorseIndex_eq_sigNeg_criticalHessian] using
-    (QuadraticForm.sigPos_add_sigNeg_of_nondegenerate
-      (criticalHessian I f x).toBilinForm.toQuadraticMap hnondegenerate).trans
-        (finrank_tangentSpace x)
+  obtain ⟨W, hWrank, hW⟩ := exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg (I := I)
+    (f := f) (x := x)
+  exact ⟨W, hWrank ▸ h.manifoldMorseIndex_neg_add_manifoldMorseIndex, hW⟩
 
 end Subspace
 
@@ -357,6 +375,31 @@ theorem criticalHessianMatrix_isSymm (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
   rw [criticalHessianMatrix,
     (criticalHessian I f x).toBilinForm.isSymm_toMatrix_iff_isSymm b]
   exact ⟨criticalHessian_apply_swap hf⟩
+
+/-- The matrix of the critical Hessian of a `C²` function is positive definite exactly when the
+critical Hessian is positive definite. -/
+theorem criticalHessianMatrix_posDef_iff (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (b : Module.Basis ι ℝ (TangentSpace I x)) :
+    (criticalHessianMatrix (I := I) (f := f) (x := x) b).PosDef ↔
+      ∀ v ≠ 0, 0 < criticalHessian I f x v v := by
+  simp only [Matrix.posDef_iff_dotProduct_mulVec, star_trivial, Matrix.isHermitian_iff_isSymm,
+    criticalHessianMatrix_isSymm hf b, true_and]
+  refine ⟨fun h v hv ↦ ?_, fun h c hc ↦ ?_⟩
+  · rw [criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec b]
+    exact h (by simpa using hv)
+  · have hpos := h _ (b.equivFun.symm.map_ne_zero_iff.mpr hc)
+    rwa [criticalHessian_eq_dotProduct_criticalHessianMatrix_mulVec b, ← b.equivFun_apply,
+      b.equivFun.apply_symm_apply] at hpos
+
+/-- The negated matrix of the critical Hessian of a `C²` function is positive definite exactly when
+the critical Hessian is negative definite. -/
+theorem neg_criticalHessianMatrix_posDef_iff (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (b : Module.Basis ι ℝ (TangentSpace I x)) :
+    (-criticalHessianMatrix (I := I) (f := f) (x := x) b).PosDef ↔
+      ∀ v ≠ 0, criticalHessian I f x v v < 0 := by
+  have hf' : ContMDiffAt I 𝓘(ℝ) 2 (-f) x := contDiff_neg.contMDiff.contMDiffAt.comp x hf
+  rw [← criticalHessianMatrix_neg, criticalHessianMatrix_posDef_iff hf' b]
+  simp only [criticalHessian_neg, neg_apply, neg_pos]
 
 /-- In a tangent-space basis, nondegeneracy of a critical point is equivalent to `C²` regularity,
 vanishing differential, and a nonzero determinant of the critical Hessian matrix. -/
