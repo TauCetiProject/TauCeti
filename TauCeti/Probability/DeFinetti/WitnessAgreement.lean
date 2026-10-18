@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- Public: the statement compares these two canonical witnesses under a contractable path law.
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 public import TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw
 -- Non-public: the default route's named witness theorem,
@@ -23,10 +23,10 @@ import TauCeti.Probability.Exchangeability.ConditionallyIID.Unique
 
 For the coordinate process on path space, two routes to de Finetti's theorem produce two canonical
 directing measures. The default and `L²` routes use the tail-conditioned witness
-`directingProbabilityMeasure`; the Koopman route uses `invariantConditionalProbabilityMeasure`,
-which conditions on the shift-invariant σ-algebra instead. This file shows that, under a
-contractable finite path law, the two random probability measures agree almost everywhere, so
-results stated for one witness transfer to the other.
+`tailConditionalProbabilityMeasure`; the Koopman route uses
+`invariantConditionalProbabilityMeasure`, which conditions on the shift-invariant σ-algebra instead.
+This file shows that, under a contractable finite path law, the two random probability measures
+agree almost everywhere, so results stated for one witness transfer to the other.
 
 The underlying σ-algebras are not identified: the invariant and tail measurable spaces can differ,
 already over `Bool` (`invariants_shift_lt_pathTail`). Nor are the witnesses equal pointwise. The
@@ -62,7 +62,7 @@ theorem ContractableLaw.invariantConditionalProbabilityMeasure_ae_eq_directingPr
     {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ]
     (hρ : ContractableLaw ρ) :
     invariantConditionalProbabilityMeasure ρ =ᵐ[ρ]
-      directingProbabilityMeasure ρ (fun n (x : ℕ → α) ↦ x n) := by
+      tailConditionalProbabilityMeasure ρ (fun n (x : ℕ → α) ↦ x n) := by
   -- Both are `ConditionallyIIDWith` witnesses for the coordinate process, whose path law is `ρ`.
   have hpath : pathLaw ρ (fun n (x : ℕ → α) => x n) = ρ := by simp [pathLaw_def]
   have hX : Contractable ρ fun n (x : ℕ → α) => x n :=

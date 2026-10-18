@@ -11,10 +11,11 @@ public import Mathlib.Data.Finsupp.Multiset
 /-!
 # Weights of finitely supported functions
 
-If every variable has weight at most `c`, then the weight of a monomial `f : σ →₀ ℕ` is at most
-`degree f • c`. With `c = -1` over `ℤ`, this says that a monomial all of whose variables have
-negative weight has weight at most minus its total degree, which is how negatively graded
-variables bound the degree of elements of powers of the ideal of the variables.
+If every variable occurring in a monomial `f : σ →₀ ℕ` has weight at most `c`, then the weight
+of `f` is at most `degree f • c`. With `c = -1` over `ℤ`, this says that a monomial all of whose
+variables have negative weight has weight at most minus its total degree, which is how
+negatively graded variables bound the degree of elements of powers of the ideal of the
+variables.
 
 The weight of a multiset multiplicity function is the sum of the weights of its entries.
 
@@ -22,12 +23,20 @@ Weights also respect scaling of the weight vector and decompose into contributio
 and after a chosen coordinate in a linear order. These identities support comparisons between
 lexicographic order and weighted degree.
 
+On a product `ι × κ` of blocks indexed by `ι`, the weight given by the indicator of block `b` is
+the degree in block `b`.
+
 ## Main results
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
+* `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
+  the variables `s` occurring in `f`.
+* `Finsupp.weight_le_degree_nsmul_of_monotone`: for monotone weights `w`, if every variable
+  occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_gt_add_smul_add_weight_filter_lt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
+* `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block is the degree in that block.
 -/
 
 public section
@@ -52,13 +61,25 @@ namespace Finsupp
 
 variable {σ M : Type*} [AddCommMonoid M] [Preorder M] [AddLeftMono M]
 
+/-- If every variable occurring in `f` has weight at most `c`, then the weight of `f` is at most
+its degree times `c`. -/
+theorem weight_le_degree_nsmul_of_mem_support (f : σ →₀ ℕ) {w : σ → M} {c : M}
+    (hw : ∀ s ∈ f.support, w s ≤ c) : weight w f ≤ degree f • c := by
+  rw [weight_apply, degree_apply, Finsupp.sum, ← Finset.sum_nsmul_assoc]
+  gcongr with s hs
+  exact hw s hs
+
 /-- If every variable has weight at most `c`, then the weight of `f` is at most its degree times
 `c`. -/
 theorem weight_le_degree_nsmul (f : σ →₀ ℕ) {w : σ → M} {c : M} (hw : ∀ s, w s ≤ c) :
-    weight w f ≤ degree f • c := by
-  rw [weight_apply, degree_apply, Finsupp.sum, ← Finset.sum_nsmul_assoc]
-  gcongr with s
-  exact hw s
+    weight w f ≤ degree f • c :=
+  weight_le_degree_nsmul_of_mem_support f fun s _ ↦ hw s
+
+/-- If the weights `w` are monotone and every variable occurring in `f` is at most `i`, then the
+weight of `f` is at most its degree times `w i`. -/
+theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w : σ → M}
+    (hw : Monotone w) {i : σ} (hf : ∀ s ∈ f.support, s ≤ i) : weight w f ≤ degree f • w i :=
+  weight_le_degree_nsmul_of_mem_support f fun s hs ↦ hw (hf s hs)
 
 end Finsupp
 
@@ -90,5 +111,24 @@ theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R 
     weight (s • c) w = s • weight c w := by
   simp only [weight_apply, smul_sum, Pi.smul_apply]
   exact sum_congr fun _ _ ↦ smul_comm _ s _
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The indicator weight of block `b` of a multi-index `e` on `ι × κ` is its degree
+`∑ l, e (b, l)` in block `b`. -/
+theorem weight_ite_fst_eq_sum {ι κ : Type*} [Fintype κ] [DecidableEq ι] (e : ι × κ →₀ ℕ)
+    (b : ι) : weight (fun p : ι × κ ↦ if p.1 = b then 1 else 0) e = ∑ l, e (b, l) := by
+  induction e using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg, Finsupp.add_apply, Finset.sum_add_distrib]
+  | single p n =>
+    obtain ⟨h, l⟩ := p
+    by_cases hb : h = b
+    · subst hb
+      classical
+      simp [Finsupp.weight_single, Finsupp.single_apply]
+    · simp [Finsupp.weight_single, hb]
 
 end Finsupp

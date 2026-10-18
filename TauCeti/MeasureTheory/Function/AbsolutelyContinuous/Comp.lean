@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Smooth maps composed with absolutely continuous curves
 
-Locally Lipschitz maps preserve the absolute continuity of metric-valued curves under composition.
+Locally Lipschitz maps preserve the absolute continuity of metric-valued curves under composition,
+and isometries moreover reflect it.
 In particular, a map that is continuously differentiable near every point of the compact trace of
 an absolutely continuous curve preserves absolute continuity.
 -/
@@ -32,6 +34,14 @@ theorem LocallyLipschitzOn.comp_absolutelyContinuousOnInterval
     (isCompact_uIcc.image_of_continuousOn hγ.continuousOn')
   exact hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
 
+/-- Post-composition with an isometry preserves and reflects the absolute continuity of a
+metric-valued curve. -/
+theorem Isometry.absolutelyContinuousOnInterval_comp_iff
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} (hf : Isometry f)
+    {γ : ℝ → X} {a b : ℝ} :
+    AbsolutelyContinuousOnInterval (f ∘ γ) a b ↔ AbsolutelyContinuousOnInterval γ a b := by
+  simp only [absolutelyContinuousOnInterval_iff, Function.comp_apply, hf.dist_eq]
+
 namespace AbsolutelyContinuousOnInterval
 
 /-- Composing an absolutely continuous curve with a map that is `C¹` at every point of its trace
@@ -46,5 +56,12 @@ theorem comp_of_contDiffAt {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
     obtain ⟨K, U, hU, hLip⟩ := (hφ x hx).exists_lipschitzOnWith
     exact ⟨K, U, mem_nhdsWithin_of_mem_nhds hU, hLip⟩
   exact hloc.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
+
+/-- The logarithm of an absolutely continuous real function that does not vanish on the interval
+is absolutely continuous. -/
+protected theorem log {f : ℝ → ℝ} {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) :
+    AbsolutelyContinuousOnInterval (fun t ↦ Real.log (f t)) a b :=
+  hf.comp_of_contDiffAt fun _ ⟨t, ht, hft⟩ ↦ Real.contDiffAt_log.2 (hft ▸ h0 t ht)
 
 end AbsolutelyContinuousOnInterval

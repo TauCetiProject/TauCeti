@@ -91,11 +91,11 @@ noncomputable def recutRightEqRightFirst
       D.pentagon.right) :
     GridPentagonRectangleDecomposition a s x z :=
   { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-    pentagon := GridPentagonBetween.ofRightEq
+    first := GridPentagonBetween.ofRightEq
       (D.recutOfIsEmpty hone hrectangle hpentagon).first
       (hfirst.trans D.pentagon.right_eq)
       (D.turn_mem_recut_first_of_right_eq_right hcommon hone hrectangle hpentagon hfirst)
-    rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second }
+    second := (D.recutOfIsEmpty hone hrectangle hpentagon).second }
 
 /-- Unfolding of `recutRightEqRightFirst`. This is the private `rfl` core of the
 characterization lemmas below: since the definition is not `@[expose]`d, an exported proof
@@ -110,12 +110,12 @@ private theorem recutRightEqRightFirst_unfold
       D.pentagon.right) :
     D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst =
       { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-        pentagon := GridPentagonBetween.ofRightEq
+        first := GridPentagonBetween.ofRightEq
           (D.recutOfIsEmpty hone hrectangle hpentagon).first
           (hfirst.trans D.pentagon.right_eq)
           (D.turn_mem_recut_first_of_right_eq_right hcommon hone hrectangle hpentagon
             hfirst)
-        rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
+        second := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
 
 /-- The middle grid state of the first promotion is the middle grid state of the underlying
 recut. -/
@@ -279,8 +279,8 @@ noncomputable def recutRightEqRightSecond
       D.pentagon.right) :
     GridRectanglePentagonDecomposition a s x z :=
   { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-    rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).first
-    pentagon := GridPentagonBetween.ofRightEq
+    first := (D.recutOfIsEmpty hone hrectangle hpentagon).first
+    second := GridPentagonBetween.ofRightEq
       (D.recutOfIsEmpty hone hrectangle hpentagon).second
       (hsecond.trans D.pentagon.right_eq)
       (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon hsecond) }
@@ -298,8 +298,8 @@ private theorem recutRightEqRightSecond_unfold
       D.pentagon.right) :
     D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond =
       { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-        rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).first
-        pentagon := GridPentagonBetween.ofRightEq
+        first := (D.recutOfIsEmpty hone hrectangle hpentagon).first
+        second := GridPentagonBetween.ofRightEq
           (D.recutOfIsEmpty hone hrectangle hpentagon).second
           (hsecond.trans D.pentagon.right_eq)
           (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon

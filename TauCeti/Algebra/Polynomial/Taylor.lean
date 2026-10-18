@@ -24,6 +24,8 @@ coefficient of the Taylor expansion.
   `p.rootMultiplicity r`.
 * `Polynomial.coeff_taylor_rootMultiplicity`, `Polynomial.trailingCoeff_taylor`: its trailing
   coefficient is `(p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r`.
+* `Polynomial.eval_hasseDeriv_rootMultiplicity_ne_zero`: for `p ≠ 0`, the Hasse derivative of
+  order `p.rootMultiplicity r` does not vanish at `r`.
 -/
 
 public section
@@ -53,5 +55,12 @@ coefficient. -/
 theorem trailingCoeff_taylor (p : R[X]) (r : R) :
     (taylor r p).trailingCoeff = (p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r := by
   rw [trailingCoeff, natTrailingDegree_taylor, coeff_taylor_rootMultiplicity]
+
+/-- For `p ≠ 0`, the Hasse derivative of `p` of order `p.rootMultiplicity r` does not vanish
+at `r`. -/
+theorem eval_hasseDeriv_rootMultiplicity_ne_zero {p : R[X]} (hp : p ≠ 0) (r : R) :
+    (hasseDeriv (p.rootMultiplicity r) p).eval r ≠ 0 := by
+  rw [← taylor_coeff, ← natTrailingDegree_taylor]
+  exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hp)
 
 end Polynomial

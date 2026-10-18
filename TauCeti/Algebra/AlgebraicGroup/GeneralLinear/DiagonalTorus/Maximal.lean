@@ -10,13 +10,16 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # Maximality of the diagonal torus in the general linear group
 
 Over any field, the diagonal torus of `GL_n` is a maximal torus. Over an algebraically closed
-field, it is moreover maximal among reduced commutative closed subgroup schemes. In Hopf
-coordinates, its defining ideal is the kernel of the surjective restriction morphism from
+field, it is moreover maximal among reduced commutative closed subgroup schemes. The defining
+ideal and its quotient presentation work over every commutative ring and commute with arbitrary
+base change. In Hopf coordinates, the defining ideal is the kernel of the surjective
+restriction morphism from
 `O(GL_n)` to the Laurent coordinate ring of the split torus.
 
 The proof compares algebraically closed points. A reduced commutative closed subgroup containing
@@ -63,16 +66,25 @@ universe u
 
 noncomputable section
 
-variable (k : Type u) [Field k] (n : ℕ)
+section Ring
+
+variable (k : Type u) [CommRing k] (n : ℕ)
 
 /-- The Hopf ideal defining the diagonal torus inside the coordinate Hopf algebra of `GL_n`.
 
 It is the ordinary kernel of the surjective restriction morphism to the split-torus coordinate
-ring, packaged as a Hopf ideal. -/
+ring, packaged as a Hopf ideal. This construction works over every commutative base ring. -/
 noncomputable def diagonalTorusDefiningIdeal :
     HopfIdeal k (coordinateHopfAlgebra k n) :=
   HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (N := n)).hom
     (diagonalTorusCoordinateMap_surjective k n)
+
+/-- The diagonal-torus defining ideal is the Hopf kernel of restriction to diagonal
+coordinates. -/
+theorem diagonalTorusDefiningIdeal_eq_ker :
+    diagonalTorusDefiningIdeal k n =
+      HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (N := n)).hom
+        (diagonalTorusCoordinateMap_surjective k n) := (rfl)
 
 /-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
 @[simp]
@@ -90,7 +102,7 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing k
         (SplitTorus.characterGroup (ULift.{u} (Fin n))) :=
   ObjectProperty.isoMk _ <|
-    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
       (diagonalTorusCoordinateMap_surjective k n)
 
 /-- The diagonal-torus quotient isomorphism identifies the quotient morphism with the canonical
@@ -103,13 +115,13 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
           (diagonalTorusDefiningIdeal k n) ≫
         (diagonalTorusCoordinateIso k n).hom =
       ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
 @[simp]
 theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
-    (K : Type u) [Field K] [Algebra k K] :
+    (K : Type u) [CommRing K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n)).map
         (coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
       diagonalTorusDefiningIdeal K n :=
@@ -133,6 +145,18 @@ theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
 grind_pattern splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
   diagonalTorusDefiningIdeal k n
 
+/-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
+theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
+    CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+        (diagonalTorusDefiningIdeal k n) A =
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
+        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
+  HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
+
+end Ring
+
+variable (k : Type u) [Field k] (n : ℕ)
+
 /-- The quotient coordinate Hopf algebra of the diagonal torus is a torus. -/
 theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
     torusCommHopfAlgProperty k
@@ -145,29 +169,7 @@ theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
 grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
   diagonalTorusDefiningIdeal k n
 
-/-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
-theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
-    CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
-        (diagonalTorusDefiningIdeal k n) A =
-      ((CommHopfAlgCat.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
-  HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
-
 variable [IsAlgClosed k]
-
-private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infinite F] :
-    Nontrivial Fˣ := by
-  let U := {x : F // x ∈ ({0} : Set F)ᶜ}
-  let _ : Infinite U := (Set.toFinite ({0} : Set F)).infinite_compl.to_subtype
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne U
-  refine ⟨Units.mk0 x (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using x.property),
-    Units.mk0 y (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using y.property), ?_⟩
-  intro h
-  apply hxy
-  apply Subtype.ext
-  exact congrArg Units.val h
 
 omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :

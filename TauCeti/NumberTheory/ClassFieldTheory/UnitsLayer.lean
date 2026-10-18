@@ -172,6 +172,16 @@ theorem layerGalEquiv_symm_restrictNormalHom (ι : L →ₐ[K] SeparableClosure 
     MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
     quotientFixingSubgroupFieldRangeEquiv_mk]
 
+/-- Read on the image of `ι` through `ι.equivFieldRange`, `layerGalEquiv ι` sends the class of
+`u` to the restriction of `u` to the image: its value at `x` is `u x`. -/
+theorem coe_autCongr_layerGalEquiv_mk_apply (ι : L →ₐ[K] SeparableClosure K)
+    (u : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground) (x : ι.fieldRange) :
+    ((ι.equivFieldRange.autCongr
+        (layerGalEquiv ι (u : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal)) x :
+          ι.fieldRange) : SeparableClosure K) = (u : AbsoluteGaloisGroup K) x := by
+  obtain ⟨y, rfl⟩ := ι.equivFieldRange.surjective x
+  simp [AlgEquiv.autCongr_apply]
+
 /-- **Changing the embedding conjugates the identification of the Galois group**: precomposing
 `ι` with `τ ∈ Gal(L/K)` changes `layerGalEquiv` by the inner automorphism of `τ`. -/
 theorem layerGalEquiv_comp (ι : L →ₐ[K] SeparableClosure K) (τ : Gal(L/K))

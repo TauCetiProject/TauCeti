@@ -43,13 +43,13 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page (F : ℤ → Subobject 
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) := by
   have hA := isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab n
     (fun m i _ _ hi => isZero_spectralObject_H_bot F hF i m
-      (isZero_homology_of_eq_bot F (le_bot_iff.mp (hFa ▸ hF hi)) m))
+      ((F i).isZero_homology_of_eq_bot (le_bot_iff.mp (hFa ▸ hF hi)) m))
     (fun m i _ _ hi => isZero_spectralObject_H_bot G hG i m
-      (isZero_homology_of_eq_bot G (le_bot_iff.mp (hGa ▸ hG hi)) m))
+      ((G i).isZero_homology_of_eq_bot (le_bot_iff.mp (hGa ▸ hG hi)) m))
     (fun m i _ _ hi => isZero_spectralObject_H_top F hF i m
-      (isZero_homology_cokernel_of_eq_top F (top_le_iff.mp (hFb ▸ hF hi)) m))
+      ((F i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hFb ▸ hF hi)) m))
     (fun m i _ _ hi => isZero_spectralObject_H_top G hG i m
-      (isZero_homology_cokernel_of_eq_top G (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h
+      ((G i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h
   have hc := (Iso.eq_inv_comp _).mpr
     (spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom α
       (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)) n).symm

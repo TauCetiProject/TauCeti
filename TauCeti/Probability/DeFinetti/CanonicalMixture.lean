@@ -44,7 +44,7 @@ these identifications a caller holding one of them cannot use the theorems state
 The witness that drives everything here is
 `Contractable.conditionallyIIDWith_directingProbabilityMeasure`: a contractable process with
 measurable coordinates, valued in a nonempty standard Borel state space, under a finite measure,
-has `directingProbabilityMeasure μ X` as a directing measure. No standard-Borel hypothesis is
+has `tailConditionalProbabilityMeasure μ X` as a directing measure. No standard-Borel hypothesis is
 imposed on the sample space `Ω`, so neither is one imposed below; a probability base measure is
 needed only because `deFinettiMeasure` is bundled as a `ProbabilityMeasure`.
 
@@ -61,7 +61,7 @@ asks for `∀ n, Measurable (X n)`.
 ## Why the `L²` route supplies the witness
 
 The theorems below carry no route suffix, yet the witness comes from the `L²` route. That is not a
-route claim: `deFinettiMeasure` is the law of `directingProbabilityMeasure μ X`, and the `L²`
+route claim: `deFinettiMeasure` is the law of `tailConditionalProbabilityMeasure μ X`, and the `L²`
 route's conditional summit is the one that names *that* object. The martingale route reaches the
 conditional summit through `conditionallyIIDWith_of_contractable_pathSpace`, whose witness lives on
 path space, and its mixture-side `mixedIIDWith_of_contractable` names the canonical directing

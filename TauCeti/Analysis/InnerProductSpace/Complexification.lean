@@ -50,6 +50,10 @@ self-adjoint operator, to operators on real Hilbert spaces.
   spaces.
 * `ContinuousLinearMap.complexifyL2StarAlgHom`: complexification of the bounded operators on a
   real Hilbert space, as a `⋆`-algebra homomorphism over `ℝ`.
+* `ContinuousLinearMap.isClosedEmbedding_complexifyL2StarAlgHom`: complexification of bounded
+  operators is a closed embedding.
+* `ContinuousLinearMap.isSelfAdjoint_complexifyL2_iff`: complexification preserves and reflects
+  self-adjointness.
 
 ## References
 
@@ -320,6 +324,22 @@ theorem complexifyL2ₗᵢ_apply (T : X →L[ℝ] Y) : complexifyL2ₗᵢ X Y T 
 @[simp]
 theorem complexifyL2StarAlgHom_apply [CompleteSpace X] (T : X →L[ℝ] X) :
     complexifyL2StarAlgHom X T = T.complexifyL2 := (rfl)
+
+variable (X) in
+/-- Complexification of the bounded operators on a real Hilbert space is a closed embedding. -/
+theorem isClosedEmbedding_complexifyL2StarAlgHom [CompleteSpace X] :
+    Topology.IsClosedEmbedding (complexifyL2StarAlgHom X) := by
+  have : ⇑(complexifyL2StarAlgHom X) = complexifyL2ₗᵢ X X := funext fun _ ↦ by simp
+  -- Naming the codomain lets its metric instance be synthesized before unification.
+  exact this ▸ (complexifyL2ₗᵢ X X).isometry.isClosedEmbedding
+    (γ := WithLp 2 (Complexification X) →L[ℂ] WithLp 2 (Complexification X))
+
+/-- A bounded operator on a real Hilbert space is self-adjoint exactly when its complexification
+is. -/
+@[simp]
+theorem isSelfAdjoint_complexifyL2_iff [CompleteSpace X] {T : X →L[ℝ] X} :
+    IsSelfAdjoint T.complexifyL2 ↔ IsSelfAdjoint T := by
+  simpa using (complexifyL2ₗᵢ X X).injective.isSelfAdjoint_apply_iff (complexifyL2StarAlgHom X)
 
 end InnerProductSpace
 

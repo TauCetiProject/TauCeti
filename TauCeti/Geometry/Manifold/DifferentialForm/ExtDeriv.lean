@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Const
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -28,7 +29,8 @@ definition meaningful at boundary and corner points.
 The file proves the basic calculus of this operator: locality in the set and in the form,
 additivity and homogeneity, agreement with Mathlib's `extDerivWithin` over the model space
 `𝓘(ℝ, E)`, and the identification of the exterior derivative of the `0`-form of a function with
-the manifold derivative `mvfderivWithin` of the function.
+the manifold derivative `mvfderivWithin` of the function. Consequently the `0`-form of a
+differentiable function is closed exactly when the function is locally constant.
 
 ## Main declarations
 
@@ -40,6 +42,8 @@ the manifold derivative `mvfderivWithin` of the function.
   space, the manifold exterior derivative is the flat one.
 * `TauCeti.mextDerivWithin_ofFunction`, `TauCeti.mextDeriv_ofFunction`: the exterior derivative
   of a function is its manifold derivative.
+* `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
+  exactly when the function is locally constant.
 
 ## References
 
@@ -100,6 +104,13 @@ theorem inChartAt_neg (φ : RoughForm I M F k) (x₀ : M) :
 theorem inChartAt_sub (φ η : RoughForm I M F k) (x₀ : M) :
     (φ - η).inChartAt x₀ = φ.inChartAt x₀ - η.inChartAt x₀ := by
   rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, sub_eq_add_neg]
+
+/-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
+theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
+    inChartAt (I := I) (fun x ↦ f x • φ x) α y =
+      f ((extChartAt I α).symm y) • φ.inChartAt α y := by
+  ext v
+  simp only [inChartAt_apply, ContinuousAlternatingMap.smul_apply]
 
 /-- At the centre of its own chart, the coordinate expression of a form is its value there. -/
 theorem inChartAt_extChartAt_self [IsManifold I 1 M] (φ : RoughForm I M F k) (x : M) :
@@ -337,5 +348,30 @@ theorem mextDeriv_ofFunction (f : M → F) (x : M) :
         (mvfderiv I f x) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_ofFunction f (uniqueMDiffWithinAt_univ I),
     mvfderivWithin_univ]
+
+/-- The exterior derivative of the `0`-form of a function vanishes at a point exactly when the
+manifold derivative of the function does. -/
+@[simp]
+theorem mextDeriv_ofFunction_apply_eq_zero_iff {f : M → F} {x : M} :
+    mextDeriv (RoughForm.ofFunction I f) x = 0 ↔ mfderiv I 𝓘(ℝ, F) f x = 0 := by
+  rw [mextDeriv_ofFunction]
+  constructor
+  · intro h
+    ext v
+    simpa [mvfderiv] using DFunLike.congr_fun h fun _ ↦ v
+  · intro h
+    ext v
+    simp [mvfderiv, h]
+
+/-- The `0`-form of a differentiable function is closed exactly when the function is locally
+constant. The manifold may have boundary or corners. -/
+theorem mextDeriv_ofFunction_eq_zero_iff [IsManifold I 1 M] {f : M → F}
+    (hf : MDifferentiable I 𝓘(ℝ, F) f) :
+    mextDeriv (RoughForm.ofFunction I f) = 0 ↔ IsLocallyConstant f := by
+  refine ⟨fun h ↦ hf.isLocallyConstant_of_mfderiv_eq_zero fun x ↦
+      mextDeriv_ofFunction_apply_eq_zero_iff.mp (congrFun h x),
+    fun h ↦ funext fun x ↦ mextDeriv_ofFunction_apply_eq_zero_iff.mpr ?_⟩
+  have hfx : f =ᶠ[𝓝 x] fun _ ↦ f x := (IsLocallyConstant.iff_eventually_eq f).mp h x
+  exact hfx.mfderiv_eq.trans (mfderiv_const ..)
 
 end TauCeti

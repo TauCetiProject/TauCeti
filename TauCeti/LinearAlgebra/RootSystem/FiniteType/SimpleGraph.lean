@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced
+import TauCeti.LinearAlgebra.Matrix.ZMatrix
 
 /-!
 # Simple graphs of finite type
@@ -32,6 +33,9 @@ simple graph has a positive definite form `2I - A` exactly when it is a Dynkin d
   Dynkin type whose Cartan matrix is simply laced is `2I - A` of its diagram.
 * `SimpleGraph.posDef_graphCartanMatrix_iff`: a connected graph has a positive definite `2I - A`
   exactly when it is isomorphic to the diagram of a valid simply-laced Dynkin type.
+* `SimpleGraph.exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso`: a connected graph which is
+  not a Dynkin diagram carries a positive weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex.
+* `SimpleGraph.exists_adj_of_not_exists_dynkinType_iso`: such a graph has no isolated vertex.
 
 ## References
 
@@ -57,13 +61,14 @@ theorem diagramGraph_graphCartanMatrix : diagramGraph (G.graphCartanMatrix ℤ) 
   · simp only [hij, hij.symm, ne_eq, not_false_eq_true, ↓reduceIte, true_and, G.adj_comm j i]
     split_ifs <;> simp_all
 
-variable {G} [Fintype V]
+variable {G} [Finite V]
 
 /-- **A positive definite graph Cartan matrix is of finite type.** If `2I - A` is positive
 definite over some linear ordered field, then the integer matrix `2I - A` is of finite type. -/
 theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] [StarRing R] [TrivialStar R] (h : (G.graphCartanMatrix R).PosDef) :
     IsFiniteType (G.graphCartanMatrix ℤ) := by
+  have : Fintype V := Fintype.ofFinite V
   refine isFiniteType_of_posDef_map_intCast (fun i ↦ by simp) (fun i j hij ↦ ?_) ?_
   · simp only [graphCartanMatrix_apply, hij, ↓reduceIte]
     split_ifs <;> simp
@@ -85,6 +90,7 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
   rw [← hcast, Rat.coe_castHom, Rat.cast_pos] at hpos
   rwa [star_trivial]
 
+omit [Finite V] in
 /-- **A connected graph of finite type is a simply-laced Dynkin diagram.** If the generalized
 Cartan matrix `2I - A` of a connected simple graph `G` is of finite type, then `G` is isomorphic to
 the diagram of the standard Cartan matrix of a valid Dynkin type, which is of type `A`, `D` or `E`:
@@ -120,7 +126,7 @@ theorem graphCartanMatrix_diagramGraph_cartanMatrix {t : DynkinType}
   have hzero := DynkinType.cartanMatrix_apply_eq_zero_iff_symm t i j
   rcases ht hij with h | h <;> simp [h] at hzero <;> simp [hij, h, hzero]
 
-omit [Fintype V] in
+omit [Finite V] in
 /-- **A graph isomorphic to the diagram of a simply-laced standard Cartan matrix has a positive
 definite `2I - A`.** The matrix `2I - A` of the diagram is the standard Cartan matrix
 (`SimpleGraph.graphCartanMatrix_diagramGraph_cartanMatrix`), which is positive definite, and an
@@ -137,10 +143,9 @@ theorem posDef_graphCartanMatrix_of_iso {t : DynkinType} (ht : t.cartanMatrix.Is
   rw [hrel]
   exact (t.posDef_map_intCast_cartanMatrix_of_isSimplyLaced ht).submatrix φ.injective
 
-omit [Fintype V] in
 /-- **A connected graph has a positive definite `2I - A` exactly when it is a simply-laced Dynkin
 diagram**, that is, isomorphic to the diagram of a valid Dynkin type of type `A`, `D` or `E`. -/
-theorem posDef_graphCartanMatrix_iff [Finite V] (hG : G.Connected) :
+theorem posDef_graphCartanMatrix_iff (hG : G.Connected) :
     (G.graphCartanMatrix ℚ).PosDef ↔ ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
       Nonempty (G ≃g diagramGraph t.cartanMatrix) := by
   have := Fintype.ofFinite V
@@ -148,5 +153,50 @@ theorem posDef_graphCartanMatrix_iff [Finite V] (hG : G.Connected) :
       (isFiniteType_graphCartanMatrix_of_posDef h),
     fun ⟨t, _, ht, ⟨φ⟩⟩ ↦ posDef_graphCartanMatrix_of_iso
       ((DynkinType.isSimplyLaced_cartanMatrix_iff t).mpr (.inl ht)) φ⟩
+
+/-! ### Superadditive weights on graphs of infinite type -/
+
+omit [Finite V] in
+/-- **A graph whose `2I - A` is not positive definite carries a superadditive weight**: a nonzero
+nonnegative real weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex. -/
+theorem exists_nonneg_two_mul_le_sum_of_not_posDef [Fintype V]
+    (h : ¬ (G.graphCartanMatrix ℝ).PosDef) :
+    ∃ δ : V → ℝ, 0 ≤ δ ∧ δ ≠ 0 ∧ ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j := by
+  obtain ⟨δ, hδ0, hδ, hMδ⟩ := Matrix.exists_nonneg_mulVec_nonpos_of_not_posDef
+    G.isSymm_graphCartanMatrix (fun i j hij ↦ by
+      simp only [graphCartanMatrix_apply, hij, ↓reduceIte]
+      split_ifs <;> norm_num) h
+  refine ⟨δ, hδ0, hδ, fun i ↦ ?_⟩
+  have hi := hMδ i
+  rw [Pi.zero_apply, graphCartanMatrix_mulVec_apply] at hi
+  linarith
+
+omit [Finite V] [DecidableEq V] in
+/-- **A connected non-Dynkin graph carries a positive superadditive weight.** If a connected finite
+simple graph `G` is not isomorphic to the diagram of any valid Dynkin type, then some real weight
+`δ`, positive at every vertex, satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex. -/
+theorem exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso [Fintype V] (hG : G.Connected)
+    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
+    ∃ δ : V → ℝ, (∀ i, 0 < δ i) ∧ ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j := by
+  classical
+  obtain ⟨δ, hδ0, hδ, hδle⟩ := exists_nonneg_two_mul_le_sum_of_not_posDef fun h ↦ hD <| by
+    obtain ⟨t, ht, -, hφ⟩ := exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
+      (isFiniteType_graphCartanMatrix_of_posDef h)
+    exact ⟨t, ht, hφ⟩
+  exact hG.exists_pos_two_mul_le_sum hδ0 hδ hδle
+
+omit [DecidableEq V] [DecidableRel G.Adj] in
+/-- **A connected non-Dynkin graph has no isolated vertex.** If a connected finite simple graph `G`
+is not isomorphic to the diagram of any valid Dynkin type, then every vertex has a neighbour. -/
+theorem exists_adj_of_not_exists_dynkinType_iso (hG : G.Connected)
+    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) (i : V) :
+    ∃ j, G.Adj i j := by
+  classical
+  have := Fintype.ofFinite V
+  obtain ⟨δ, hδ, hδle⟩ := exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso hG hD
+  -- The weight at `i` is positive, so the sum of the weights of its neighbours is nonzero.
+  obtain ⟨j, hj, -⟩ :=
+    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
+  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
 
 end SimpleGraph

@@ -103,6 +103,17 @@ variable (K) in
 abbrev ideleClassRep : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleClassGroup (𝓞 L) L)
 
+omit [NumberField K] in
+/-- `σ ∈ Aut(L/K)` acts on the class of an idele `a` in `ideleClassRep K L` as the class of the
+image of `a` under the ring automorphism `adeleEquiv L L σ` of the adele ring of `L`. -/
+theorem ideleClassRep_ρ_mk (σ : L ≃ₐ[K] L) (a : IdeleGroup (𝓞 L) L) :
+    (ideleClassRep K L).ρ σ (Additive.ofMul (a : IdeleClassGroup (𝓞 L) L)) =
+      Additive.ofMul ((Units.map (adeleEquiv L L σ.toRingEquiv).toMonoidHom a :
+        IdeleGroup (𝓞 L) L) : IdeleClassGroup (𝓞 L) L) :=
+  (Rep.ofMulDistribMulAction_ρ_apply_apply σ _).trans <|
+    congrArg (fun x : IdeleGroup (𝓞 L) L ↦ Additive.ofMul (x : IdeleClassGroup (𝓞 L) L))
+      (Units.ext ((coe_idele_smul σ a).trans (adeleGaloisAction_apply K L σ a)))
+
 /-! ### The maps -/
 
 /-- The principal `S`-idele of an `S`-unit, as a homomorphism `U_{L,S} → I_{L,S}`. -/

@@ -25,6 +25,9 @@ as alternating bilinear forms.
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
 trivialization or a global smooth alternating-bundle instance.
+
+The fixed-coefficient section and degree-two evaluation adapters generalize the corresponding
+declarations in `TauCeti.Geometry.Manifold.TwoForm.Basic`.
 -/
 
 public section
@@ -121,7 +124,157 @@ abbrev SmoothBundleForm (I : ModelWithCorners ℝ E H) (F : Type*)
     [IsManifold I 1 M] (k : ℕ) : Type _ :=
   ↥(smoothBundleForms (I := I) F V k)
 
+namespace SmoothBundleForm
+
+variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
+
+/-- The smooth section underlying a smooth bundle-valued differential form. -/
+def toContMDiffSection (φ : SmoothBundleForm I F V k) :
+    ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) :=
+  ⟨φ.1, φ.2⟩
+
+/-- Reconstruct a smooth bundle-valued form from its smooth section. -/
+def ofContMDiffSection
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) :
+    SmoothBundleForm I F V k :=
+  ⟨s, s.contMDiff⟩
+
+@[simp]
+theorem toContMDiffSection_apply (φ : SmoothBundleForm I F V k) (x : M) :
+    φ.toContMDiffSection x = φ.1 x :=
+  by
+    simp only [toContMDiffSection]
+    rfl
+
+/-- The section view and reconstruction are mutual inverses on forms. -/
+@[simp]
+theorem ofContMDiffSection_toContMDiffSection (φ : SmoothBundleForm I F V k) :
+    ofContMDiffSection φ.toContMDiffSection = φ := by
+  apply Subtype.ext
+  rfl
+
+/-- The section view and reconstruction are mutual inverses on sections. -/
+@[simp]
+theorem toContMDiffSection_ofContMDiffSection
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) :
+    (ofContMDiffSection s).toContMDiffSection = s := by
+  apply ContMDiffSection.ext
+  intro x
+  rfl
+
+/-- The section view determines a smooth bundle-valued form uniquely. -/
+theorem toContMDiffSection_injective :
+    Function.Injective
+      (toContMDiffSection : SmoothBundleForm I F V k →
+        ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+          (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) := by
+  exact Function.LeftInverse.injective ofContMDiffSection_toContMDiffSection
+
+@[simp]
+theorem zero_toContMDiffSection :
+    (0 : SmoothBundleForm I F V k).toContMDiffSection = 0 :=
+  by
+    apply ContMDiffSection.ext
+    intro x
+    rfl
+
+@[simp]
+theorem add_toContMDiffSection (φ ψ : SmoothBundleForm I F V k) :
+    (φ + ψ).toContMDiffSection = φ.toContMDiffSection + ψ.toContMDiffSection :=
+  by
+    apply ContMDiffSection.ext
+    intro x
+    rfl
+
+@[simp]
+theorem smul_toContMDiffSection (c : ℝ) (φ : SmoothBundleForm I F V k) :
+    (c • φ).toContMDiffSection = c • φ.toContMDiffSection :=
+  by
+    apply ContMDiffSection.ext
+    intro x
+    rfl
+
+@[simp]
+theorem neg_toContMDiffSection (φ : SmoothBundleForm I F V k) :
+    (-φ).toContMDiffSection = -φ.toContMDiffSection := by
+  apply ContMDiffSection.ext
+  intro x
+  rfl
+
+@[simp]
+theorem sub_toContMDiffSection (φ ψ : SmoothBundleForm I F V k) :
+    (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection := by
+  apply ContMDiffSection.ext
+  intro x
+  rfl
+
+end SmoothBundleForm
+
 section FixedCoefficients
+
+/-- A fixed-coefficient rough form is `C^n` when it is a `C^n` section of the existing
+alternating tangent bundle. Degree and coefficient space are inferred from the form. -/
+def IsSmoothForm (I : ModelWithCorners ℝ E H) [IsManifold I 1 M]
+    (n : WithTop ℕ∞) (φ : RoughForm I M F k) : Prop :=
+  IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) n φ
+
+/-- The fixed-coefficient regularity predicate is the existing section regularity predicate. -/
+theorem isSmoothForm_def [IsManifold I 1 M] (n : WithTop ℕ∞) (φ : RoughForm I M F k) :
+    IsSmoothForm I n φ ↔
+      ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+        (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  Iff.rfl
+
+/-- A regular fixed-coefficient form is a regular section of the alternating bundle. -/
+theorem IsSmoothForm.contMDiff [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  (isSmoothForm_def n φ).mp hφ
+
+/-- Addition preserves regularity of the actual fixed-coefficient bundle sections. -/
+theorem IsSmoothForm.add [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ ψ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (hψ : IsSmoothForm I n ψ) :
+    IsSmoothForm I n (φ + ψ) := by
+  rw [isSmoothForm_def]
+  exact hφ.contMDiff.add_section hψ.contMDiff
+
+/-- The zero differential form has every section regularity. -/
+theorem IsSmoothForm.zero [IsManifold I 1 M] (n : WithTop ℕ∞) :
+    IsSmoothForm I n (0 : RoughForm I M F k) := by
+  rw [isSmoothForm_def]
+  exact contMDiff_zeroSection ℝ (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)
+
+/-- Finite sums preserve section regularity of differential forms. -/
+theorem IsSmoothForm.sum [IsManifold I 1 M] {n : WithTop ℕ∞} {ι : Type*}
+    (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I n (φ i)) :
+    IsSmoothForm I n (∑ i ∈ s, φ i) := by
+  rw [isSmoothForm_def]
+  simpa only [Finset.sum_apply] using
+    ContMDiff.sum_section (fun i hi ↦ (hφ i hi).contMDiff)
+
+/-- Negation preserves regularity of the actual fixed-coefficient bundle section. -/
+theorem IsSmoothForm.neg [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) : IsSmoothForm I n (-φ) := by
+  rw [isSmoothForm_def]
+  exact hφ.contMDiff.neg_section
+
+/-- Constant scalar multiplication preserves regularity of the actual bundle section. -/
+theorem IsSmoothForm.smul [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (c : ℝ) :
+    IsSmoothForm I n (c • φ) := by
+  rw [isSmoothForm_def]
+  exact hφ.contMDiff.const_smul_section
+
+/-- Multiplication by a scalar `C^n` function preserves the regularity of a rough form. -/
+theorem IsSmoothForm.fun_smul [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ, ℝ) n f) : IsSmoothForm I n (fun x ↦ f x • φ x) := by
+  rw [isSmoothForm_def]
+  exact hf.smul_section hφ.contMDiff
 
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
@@ -148,6 +301,72 @@ namespace SmoothForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
+/-- The smooth section underlying a fixed-coefficient smooth form. -/
+def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
+    ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) :=
+  SmoothBundleForm.toContMDiffSection φ
+
+/-- Reconstruct a fixed-coefficient smooth form from its smooth section. -/
+def ofContMDiffSection {k : ℕ}
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
+    SmoothForm I M F k :=
+  SmoothBundleForm.ofContMDiffSection s
+
+@[simp]
+theorem toContMDiffSection_apply {k : ℕ} (φ : SmoothForm I M F k) (x : M) :
+    φ.toContMDiffSection x = φ.1 x :=
+  by
+    exact SmoothBundleForm.toContMDiffSection_apply φ x
+
+/-- The section view and reconstruction are mutual inverses on forms. -/
+@[simp]
+theorem ofContMDiffSection_toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
+    ofContMDiffSection φ.toContMDiffSection = φ :=
+  SmoothBundleForm.ofContMDiffSection_toContMDiffSection φ
+
+/-- The section view and reconstruction are mutual inverses on sections. -/
+@[simp]
+theorem toContMDiffSection_ofContMDiffSection {k : ℕ}
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
+    (ofContMDiffSection s).toContMDiffSection = s :=
+  SmoothBundleForm.toContMDiffSection_ofContMDiffSection s
+
+/-- The section view determines a smooth fixed-coefficient form uniquely. -/
+theorem toContMDiffSection_injective {k : ℕ} :
+    Function.Injective
+      (toContMDiffSection : SmoothForm I M F k →
+        ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+          (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :=
+  SmoothBundleForm.toContMDiffSection_injective
+
+@[simp]
+theorem zero_toContMDiffSection {k : ℕ} :
+    (0 : SmoothForm I M F k).toContMDiffSection = 0 :=
+  SmoothBundleForm.zero_toContMDiffSection
+
+@[simp]
+theorem add_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
+    (φ + ψ).toContMDiffSection = φ.toContMDiffSection + ψ.toContMDiffSection := by
+  exact SmoothBundleForm.add_toContMDiffSection φ ψ
+
+@[simp]
+theorem smul_toContMDiffSection {k : ℕ} (c : ℝ) (φ : SmoothForm I M F k) :
+    (c • φ).toContMDiffSection = c • φ.toContMDiffSection := by
+  exact SmoothBundleForm.smul_toContMDiffSection c φ
+
+@[simp]
+theorem neg_toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
+    (-φ).toContMDiffSection = -φ.toContMDiffSection :=
+  SmoothBundleForm.neg_toContMDiffSection φ
+
+@[simp]
+theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
+    (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection :=
+  SmoothBundleForm.sub_toContMDiffSection φ ψ
+
 /-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors.
 
 This ordered-pair view supplies the arguments for the algebraic bilinear-form conversion and
@@ -162,8 +381,9 @@ theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x)
 
 /-- The algebraic bilinear form represented by the value of a real degree-two smooth form.
 
-This generalizes the corresponding `SmoothTwoForm.bilinFormAt` construction from
-`TauCeti.Geometry.Manifold.TwoForm.Basic` to the generic smooth-form carrier. -/
+This generalizes `SmoothTwoForm.bilinFormAt` from
+`TauCeti.Geometry.Manifold.TwoForm.Basic`.  The view interoperates with APIs phrased in terms of
+`LinearMap.BilinForm`, including the symplectic constructions. -/
 def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     LinearMap.BilinForm ℝ (TangentSpace I x) :=
   MultilinearMap.toBilinForm (φ.1 x).toMultilinearMap
@@ -212,6 +432,30 @@ theorem ext {φ ψ : SmoothForm I M F 2}
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   simpa only [eval₂_apply] using h x (v 0) (v 1)
+
+section SectionView
+
+variable {k : ℕ}
+
+/-- The value of a smooth form as a continuous alternating map on the model fibre. -/
+def altAt (φ : SmoothForm I M F k) (x : M) : E [⋀^Fin k]→L[ℝ] F := φ.1 x
+
+@[simp]
+theorem altAt_apply (φ : SmoothForm I M F k) (x : M) (v : Fin k → E) :
+    φ.altAt x v = φ.1 x v :=
+  by
+    simp only [altAt]
+    rfl
+
+/-- The degree-two alternating-map view evaluated on a tuple agrees with ordered-pair evaluation. -/
+theorem altAt_apply_eval₂ (φ : SmoothForm I M F 2) (x : M) (v : Fin 2 → E) :
+    φ.altAt x v = φ.eval₂ x (v 0) (v 1) := by
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv]
+  simp only [altAt, eval₂]
+  rfl
+
+end SectionView
 
 end SmoothForm
 

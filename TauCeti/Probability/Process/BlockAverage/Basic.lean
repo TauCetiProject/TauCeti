@@ -34,7 +34,9 @@ content; the disjoint windows those theorems also accept are `disjointWindow` in
 `Process/DisjointWindow.lean`. `fixedStart_injective` gives injectivity at each length and
 `fixedStart_eventually_injective` the eventual form the limit theorems take.
 
-Integrability and conditional expectations of these averages live in
+Measurability of these averages lives in `TauCeti.Probability.Process.BlockAverage.Measurable`,
+and measurability with respect to future σ-algebras in `Process/BlockAverage/Tail.lean`.
+Integrability and conditional expectations live in
 `TauCeti.Probability.Process.BlockAverage.Measure`. Variance and covariance identities under
 contractability live in `Exchangeability/L2/BlockAverages.lean` and
 `Exchangeability/L2/LongTailAverages.lean`. Keeping the algebra separate lets averaging and

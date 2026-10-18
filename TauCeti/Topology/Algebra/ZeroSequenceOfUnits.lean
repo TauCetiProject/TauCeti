@@ -60,6 +60,11 @@ the two pointwise results only at their own.
   it produces some `v : Aˣ`, with no sequence and no term index. Being an absorption result it too
   needs only `[SMul A M]` and `0 • x = 0` at the given vector.
 
+The class also gives, with no action involved,
+`TauCeti.HasZeroSequenceOfUnits.nhdsWithin_isUnit_neBot`: zero is a limit of units, the hypothesis
+under which Mathlib's `Submodule.eq_top_of_nonempty_interior'` rules out proper submodules with
+nonempty interior.
+
 ## References
 
 * L. Henkel, *An Open Mapping Theorem for rings which have a zero sequence of units*,
@@ -156,6 +161,15 @@ theorem exists_unit_smul_mem (x : M) (h0 : (0 : A) • x = 0)
   obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
   obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x h0 hc hU
   exact ⟨u n, hn⟩
+
+/-- **Zero is a limit of units.** The terms of a zero sequence of units lie in `{x | IsUnit x}`
+and converge to `0`, so `0` is in the closure of the units. This is the form of the hypothesis
+taken by Mathlib's `Submodule.eq_top_of_nonempty_interior'`, and the analogue of
+`NormedField.nhdsWithin_isUnit_neBot`. -/
+instance nhdsWithin_isUnit_neBot : NeBot (𝓝[{x : A | IsUnit x}] 0) := by
+  obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
+  exact mem_closure_iff_nhdsWithin_neBot.mp <|
+    mem_closure_of_tendsto hu (Eventually.of_forall fun n ↦ (u n).isUnit)
 
 end HasZeroSequenceOfUnits
 

@@ -44,6 +44,14 @@ Humans can raise issues against the code, and leave implementation (and review) 
 - **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
+## Mathlib updates
+
+The hourly dependency updater selects the newest successfully built Mathlib master commit
+whose full cache it can verify. It opens one bot bump PR and keeps that target fixed while
+workers repair TauCeti, saving partial source repairs between sessions. Full CI, axiom audits,
+review, and Bors integration must pass before it lands. The next hourly run selects another
+recent target. Downstream-reports remains external reporting and does not control these updates.
+
 ## Relationship to Lean Pool
 
 Tau Ceti and [Lean Pool](https://github.com/Vilin97/lean-pool) are complementary. Lean Pool is
@@ -86,6 +94,12 @@ requires fresh approval. Both bors and CI check the approving account's current 
 repository admin role; removing that role invalidates its scope authority.
 Other users follow the existing review policy. See the
 [bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
+
+Stacked PRs are prohibited, including drafts: land prerequisites first, then rebase and
+submit a standalone diff. The trusted [no-stacking policy](scripts/stack-policy.md)
+checks current source evidence, comments and closes confirmed stacks, and blocks their
+bors admission. Keep/hold/human labels do not exempt stacks. Reviewers should follow
+the same policy; shared files, imports and roadmap areas alone do not establish stacking.
 
 ## Mathlib dependency
 

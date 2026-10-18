@@ -21,7 +21,8 @@ be separated by the norm of an element of `𝕜`. They are separated after raisi
 `NormedField.exists_pow_lt_norm_lt_pow` gives `m : ℕ` and `c : 𝕜` with `rᵐ < ‖c‖ < sᵐ`. Compare
 `NormedField.exists_lt_norm_lt`, which separates the radii themselves in a densely normed field.
 Over an algebraically closed field `m`-th roots exist, so the radii themselves are separated:
-`NormedField.exists_lt_norm_lt_of_isAlgClosed`.
+`NormedField.exists_lt_norm_lt_of_isAlgClosed`. Iterating, the norms of a sequence decrease
+strictly inside any interval `(r, s)`: `NormedField.exists_strictAnti_norm_mem_Ioo_of_isAlgClosed`.
 
 The same roots solve norm equations: over an algebraically closed normed field, for a multiset `s`
 containing `0` and any `c`, some `d` has `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖`
@@ -66,6 +67,27 @@ theorem exists_lt_norm_lt_of_isAlgClosed [IsAlgClosed 𝕜] {r s : ℝ} (hr₀ :
   rw [norm_pow] at hm hc
   exact ⟨d, (le_max_left _ _).trans_lt ((pow_lt_pow_iff_left₀ hr'.le (norm_nonneg d) hm₀).mp hm),
     (pow_lt_pow_iff_left₀ (norm_nonneg d) (hr'.trans hlt').le hm₀).mp hc⟩
+
+/-- **The norms of an algebraically closed nontrivially normed field contain a strictly decreasing
+sequence in any interval** `(r, s)` with `0 ≤ r < s`. -/
+theorem exists_strictAnti_norm_mem_Ioo_of_isAlgClosed [IsAlgClosed 𝕜] {r s : ℝ} (hr₀ : 0 ≤ r)
+    (hlt : r < s) : ∃ c : ℕ → 𝕜, StrictAnti (fun n ↦ ‖c n‖) ∧ ∀ n, ‖c n‖ ∈ Set.Ioo r s := by
+  -- `next y` has norm strictly between `r` and `‖y‖` whenever `r < ‖y‖`
+  have hnext (y : 𝕜) : ∃ z : 𝕜, r < ‖y‖ → r < ‖z‖ ∧ ‖z‖ < ‖y‖ := by
+    by_cases hy : r < ‖y‖
+    · obtain ⟨z, hz⟩ := exists_lt_norm_lt_of_isAlgClosed 𝕜 hr₀ hy
+      exact ⟨z, fun _ ↦ hz⟩
+    · exact ⟨0, fun h ↦ (hy h).elim⟩
+  choose next hnext using hnext
+  obtain ⟨c₀, hc₀⟩ := exists_lt_norm_lt_of_isAlgClosed 𝕜 hr₀ hlt
+  have hmem (n : ℕ) : r < ‖next^[n] c₀‖ ∧ ‖next^[n] c₀‖ < s := by
+    induction n with
+    | zero => exact hc₀
+    | succ n ih =>
+      rw [Function.iterate_succ_apply']
+      exact ⟨(hnext _ ih.1).1, (hnext _ ih.1).2.trans ih.2⟩
+  refine ⟨fun n ↦ next^[n] c₀, strictAnti_nat_of_succ_lt fun n ↦ ?_, hmem⟩
+  simpa only [Function.iterate_succ_apply'] using (hnext _ (hmem n).1).2
 
 /-- **Solving `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖` over an algebraically closed field**: if `0 ∈ s`, then
 for every `c` some `d` satisfies this equation. For a nonarchimedean norm its left side is the

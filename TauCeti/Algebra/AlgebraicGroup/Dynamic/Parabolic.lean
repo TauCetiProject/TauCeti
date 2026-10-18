@@ -107,12 +107,27 @@ variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
 theorem mapValue_conjugate {C : Type*} [CommSemiring C] [Algebra R C]
     (ψ : LaurentPolynomial A →ₐ[R] C) (g : WithConv (H →ₐ[R] A)) :
     AlgHom.mapValue ψ (conjugate A l g) =
-      pointsHom C l (Units.map ψ.toMonoidHom (MultiplicativeGroup.genericUnit A)) *
+      pointsHom C l (Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A)) *
         AlgHom.mapValue (ψ.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A))) g *
-        (pointsHom C l (Units.map ψ.toMonoidHom (MultiplicativeGroup.genericUnit A)))⁻¹ := by
+        (pointsHom C l (Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A)))⁻¹ := by
   rw [conjugate_apply, map_mul, map_mul, map_inv, genericPoint_eq_pointsHom,
     mapValue_pointsHom, constPoint_apply, ← AlgHom.mapValue_apply, AlgHom.mapValue_comp,
     MonoidHom.comp_apply]
+
+/-- Evaluating generic conjugation at the Laurent parameter one recovers the original point. -/
+theorem mapValue_laurentEval_one_conjugate (g : WithConv (H →ₐ[R] A)) :
+    AlgHom.mapValue ((laurentEval (R := A) (1 : Aˣ)).restrictScalars R)
+      (conjugate A l g) = g := by
+  set e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
+  rw [mapValue_conjugate]
+  have hu : Units.map e.toMonoidHom (LaurentPolynomial.genericUnit A) = 1 := by
+    ext
+    simp [e]
+  have hc : e.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) = AlgHom.id R A := by
+    ext a
+    simp [e]
+  rw [hu, hc]
+  simp
 
 /-- **Conjugation by the generic point is natural in the value algebra.** -/
 theorem mapValue_conjugate_mapAlgHom (g : WithConv (H →ₐ[R] A)) :
@@ -174,6 +189,31 @@ noncomputable def limit : parabolic A l →* WithConv (H →ₐ[R] A) :=
 /-- The limit is the extension over the origin, evaluated there. -/
 theorem limit_apply (g : parabolic A l) : limit A l g = evalZeroPoint A (extend A l g) := by
   rw [limit, MonoidHom.comp_apply]
+
+/-- The dynamic limit evaluates the constant coefficient of the conjugation family. -/
+theorem limit_apply_eq_coeff_conjugate (g : parabolic A l) (h : H) :
+    (limit A l g).ofConv h = ((conjugate A l g.1).ofConv h).coeff 0 := by
+  rw [← ofPolyPoint_extend g, ofPolyPoint_apply, limit_apply, evalZeroPoint_apply]
+  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    Polynomial.coe_toLaurentAlg, Polynomial.coe_aeval_eq_eval,
+    ← Polynomial.coeff_zero_eq_eval_zero, LaurentPolynomial.coeff_toLaurent]
+  exact (Finsupp.mapDomain_apply_of_injective
+    (Nat.castEmbedding (R := ℤ)).injective _ 0).symm
+
+/-- Evaluating the extending conjugation family at one recovers the original point. -/
+@[simp]
+theorem toConv_aeval_one_comp_extend (g : parabolic A l) :
+    toConv (((Polynomial.aeval (1 : A)).restrictScalars R).comp (extend A l g).ofConv) =
+      g.1 := by
+  rw [← AlgHom.mapValue_apply]
+  let e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
+  have he : e.comp (Polynomial.toLaurentAlg.restrictScalars R) =
+      (Polynomial.aeval (1 : A)).restrictScalars R := by
+    ext a <;> simp [e]
+  rw [← he, AlgHom.mapValue_comp, MonoidHom.comp_apply,
+    AlgHom.mapValue_apply (Polynomial.toLaurentAlg.restrictScalars R),
+    ← ofPolyPoint_apply, ofPolyPoint_extend]
+  exact mapValue_laurentEval_one_conjugate l g.1
 
 /-! ### The Levi and unipotent parts -/
 
@@ -245,7 +285,7 @@ theorem pointsHom_mem_levi (u : Aˣ) : pointsHom A l u ∈ levi A l := by
     rw [constPoint_apply, ← AlgHom.mapValue_apply]
     exact mapValue_pointsHom _ l u
   rw [mem_levi_iff, conjugate_apply, h, genericPoint_eq_pointsHom,
-    (pointsHom_commute (A := LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) v).eq,
+    (pointsHom_commute (A := LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) v).eq,
     mul_assoc,
     mul_inv_cancel, mul_one]
 
@@ -318,15 +358,15 @@ variable (R A) in
 private noncomputable def prodUnit : (LaurentPolynomial (LaurentPolynomial A))ˣ :=
   Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
       (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom
-        (MultiplicativeGroup.genericUnit A) *
-    MultiplicativeGroup.genericUnit (LaurentPolynomial A)
+        (LaurentPolynomial.genericUnit A) *
+    LaurentPolynomial.genericUnit (LaurentPolynomial A)
 
 variable (R A) in
 /-- The substitution `T ↦ T · T'`, as an `R`-algebra homomorphism
 `A[T;T⁻¹] → A[T;T⁻¹][T';T'⁻¹]`. -/
 private noncomputable def prodSubst :
     LaurentPolynomial A →ₐ[R] LaurentPolynomial (LaurentPolynomial A) :=
-  (MultiplicativeGroup.point (R := A) (prodUnit R A)).restrictScalars R
+  (laurentEval (R := A) (prodUnit R A)).restrictScalars R
 
 variable (R A) in
 /-- The substitution `X ↦ T · X`, as an `R`-algebra homomorphism `A[X] → A[X][T;T⁻¹]`. -/
@@ -346,17 +386,17 @@ private theorem scaleSubst_X :
 
 private theorem prodSubst_C (a : A) :
     prodSubst R A (LaurentPolynomial.C a) = LaurentPolynomial.C (LaurentPolynomial.C a) :=
-  MultiplicativeGroup.point_C (R := A) _ a
+  laurentEval_C (R := A) _ a
 
 private theorem prodSubst_T :
     prodSubst R A (LaurentPolynomial.T 1) =
       (prodUnit R A : LaurentPolynomial (LaurentPolynomial A)) :=
-  (MultiplicativeGroup.point_T (R := A) (prodUnit R A) 1).trans (by rw [zpow_one])
+  (laurentEval_T (R := A) (prodUnit R A) 1).trans (by rw [zpow_one])
 
 private theorem map_prodSubst_genericUnit :
-    Units.map (prodSubst R A).toMonoidHom (MultiplicativeGroup.genericUnit A) = prodUnit R A :=
+    Units.map (prodSubst R A).toMonoidHom (LaurentPolynomial.genericUnit A) = prodUnit R A :=
   Units.ext (by
-    rw [Units.coe_map, MultiplicativeGroup.genericUnit_val]
+    rw [Units.coe_map, LaurentPolynomial.genericUnit_val]
     exact prodSubst_T)
 
 private theorem prodSubst_comp_const :
@@ -423,8 +463,8 @@ theorem limit_mem_levi (g : parabolic A l) : limit A l g ∈ levi A l := by
       prodSubst_comp_const, prodUnit,
       mul_comm (Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
         (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom
-          (MultiplicativeGroup.genericUnit A))
-        (MultiplicativeGroup.genericUnit (LaurentPolynomial A))]
+          (LaurentPolynomial.genericUnit A))
+        (LaurentPolynomial.genericUnit (LaurentPolynomial A))]
   -- Specialize the generic identity at `X = 0`.
   rw [mem_levi_iff, limit_apply]
   simp only [evalZeroPoint_apply, constPoint_apply, ← AlgHom.mapValue_apply]
@@ -471,6 +511,16 @@ theorem conj_mem_unipotent {p u : WithConv (H →ₐ[R] A)} (hp : p ∈ paraboli
       (⟨p, hp⟩ : parabolic A l) * ⟨u, huP⟩ * (⟨p, hp⟩ : parabolic A l)⁻¹ := rfl
   rw [hsplit, map_mul, map_mul, map_inv, hu1, mul_one, mul_inv_cancel]
 
+/-- Generic conjugation carries a dynamic unipotent point to a dynamic unipotent point
+with Laurent-polynomial values. -/
+theorem conjugate_mem_unipotent {g : WithConv (H →ₐ[R] A)} (hg : g ∈ unipotent A l) :
+    conjugate A l g ∈ unipotent (LaurentPolynomial A) l := by
+  rw [conjugate_apply, genericPoint_eq_pointsHom]
+  apply conj_mem_unipotent
+    (levi_le_parabolic (pointsHom_mem_levi (LaurentPolynomial.genericUnit A)))
+  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
+    unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
+
 /-- The Levi decomposition of a point of the dynamic parabolic is unique. -/
 theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R] A)}
     (hu₁ : u₁ ∈ unipotent A l) (hu₂ : u₂ ∈ unipotent A l)
@@ -489,3 +539,35 @@ theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R]
 end Cocharacter
 
 end TauCeti
+
+namespace BialgHom
+
+open TauCeti TauCeti.Cocharacter
+
+universe u v w
+
+variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+variable {A : Type w} [CommSemiring A] [Algebra R A]
+
+/-- A dynamic Levi point commutes with every value of its cocharacter over the same algebra.
+The converse requires testing after extensions of the value algebra. -/
+theorem commute_pointsHom_of_mem_levi (l : H →ₐc[R] LaurentPolynomial R)
+    {g : WithConv (H →ₐ[R] A)} (hg : g ∈ levi A l) (t : Aˣ) :
+    Commute g (pointsHom A l t) := by
+  let ψ : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) t).restrictScalars R
+  have hconst : ψ.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) =
+      AlgHom.id R A := by
+    ext a
+    simp [ψ]
+  have hunit : Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A) = t := by
+    ext
+    simp [ψ]
+  have h := congrArg (AlgHom.mapValue (H := H) ψ) (mem_levi_iff.mp hg)
+  have heval : AlgHom.mapValue ψ (Cocharacter.constPoint A g) = g := by
+    ext a
+    simp [constPoint_apply, ψ]
+  simp only [mapValue_conjugate, hunit, hconst, AlgHom.mapValue_id,
+    MonoidHom.id_apply, heval] at h
+  exact ((mul_inv_eq_iff_eq_mul).mp h).symm
+
+end BialgHom

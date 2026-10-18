@@ -17,7 +17,8 @@ independently of any number-field or Legendre-symbol specialization.
 Two are properties of a single Frobenius element. The defining congruence has `#(R ⧸ Q ∩ R)` as
 its exponent, so it makes that residue ring finite and therefore forces `Q ≠ ⊥` over an infinite
 base. Iterating it `n` times replaces the exponent by its `n`-th power, which is what a Frobenius
-over an intermediate ring of residue degree `n` is required to satisfy.
+over an intermediate ring of residue degree `n` is required to satisfy. Multiplying a Frobenius
+by an element of the inertia subgroup, which acts trivially on `S ⧸ Q`, gives another Frobenius.
 
 For an ideal `p` of `R`, an element `σ` of the acting group cuts out the set of primes of `S` above
 `p` that admit `σ` as an arithmetic Frobenius. These sets need not be disjoint: at a ramified prime
@@ -36,6 +37,8 @@ each of them, which again carries hypotheses of its own, such as those of
   nonzero.
 * `IsArithFrobAt.mk_pow_smul` — the `n`-th power of a Frobenius element acts on the residue ring
   by the `q ^ n`-th power map.
+* `IsArithFrobAt.mul_of_mem_inertia` — a Frobenius element times an element of the inertia
+  subgroup is again a Frobenius element.
 * `Ideal.nonempty_frobenius_fiber_equiv_of_isConj` — conjugate elements have equipotent fibers
   above a fixed ideal of the base, as a bijection between them.
 * `Ideal.frobenius_fiber_card_eq_of_isConj` — the `Nat.card` form of that equipotence.
@@ -121,6 +124,22 @@ theorem _root_.IsArithFrobAt.mk_pow_smul {R S G : Type*} [CommRing R] [CommRing 
         Ideal.Quotient.mk Q x ^ Nat.card (R ⧸ Q.under R) := H.mk_apply x
     rw [pow_succ, mul_smul, ih (σ • x), hstep, ← pow_mul]
     ring
+
+/-- **A Frobenius times an inertia element is a Frobenius.** If `σ` is an arithmetic Frobenius at
+a prime `Q` and `τ` lies in the inertia subgroup of `Q`, then `σ * τ` is again an arithmetic
+Frobenius at `Q`: `τ` acts trivially on `S ⧸ Q`. Together with Mathlib's
+`IsArithFrobAt.mul_inv_mem_inertia`, this says that the Frobenius elements at `Q` form one coset
+of the inertia subgroup. -/
+theorem _root_.IsArithFrobAt.mul_of_mem_inertia {R S G : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [Group G] [MulSemiringAction G S] [SMulCommClass G R S] {Q : Ideal S}
+    [Q.IsPrime] {σ τ : G} (H : _root_.IsArithFrobAt R σ Q) (hτ : τ ∈ Q.inertia G) :
+    _root_.IsArithFrobAt R (σ * τ) Q := by
+  intro x
+  -- `σ` stabilizes `Q`, so it carries `τ • x - x ∈ Q` into `Q`
+  have hστ : σ • (τ • x - x) ∈ Q := by
+    rw [← (MulAction.mem_stabilizer_iff.mp H.mem_stabilizer : σ • Q = Q)]
+    exact Ideal.smul_mem_pointwise_smul _ _ _ (Ideal.mem_inertia.mp hτ x)
+  simpa [mul_smul, smul_sub] using Q.add_mem hστ (H x)
 
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
   [MulSemiringAction G S] [SMulCommClass G R S]

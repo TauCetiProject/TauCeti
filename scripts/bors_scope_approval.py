@@ -10,16 +10,10 @@ import json
 import pathlib
 import re
 import subprocess
-import urllib.request
 
-REPO = "TauCetiProject/TauCeti"
-OBSERVATION_URL = "https://bors.taucetiproject.org/repositories/1/active-batches?base=main"
+from bors_observation import REPO, observation, requested_batch, sha, valid_observation
 ALLOWED_ROOT = {"TauCeti.lean", "lake-manifest.json", "lean-toolchain",
                 "docbuild/docs/references.bib"}
-
-
-def sha(value):
-    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None
 
 
 def in_scope(path):
@@ -30,15 +24,6 @@ def github(path):
     endpoint = path if path.startswith("/") else f"repos/{REPO}/{path}"
     return json.loads(subprocess.check_output(["gh", "api", endpoint],
                                              text=True, timeout=45))
-
-
-def observation(batch_id=None):
-    url = OBSERVATION_URL + (f"&batch_id={batch_id}" if batch_id is not None else "")
-    request = urllib.request.Request(url, headers={
-        "Cache-Control": "no-cache", "User-Agent": "TauCetiScopeApproval/1.0"
-    })
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
 
 
 def current_pr(pr, head, api):
@@ -111,8 +96,7 @@ def paths(data, api):
 
 
 def verify(data, head, base, *, pr=None, batch_id=None, combined_paths=None, api=github):
-    if (not sha(head) or not sha(base) or data.get("schema") != "tauceti-bors.observation/v1"
-            or data.get("repo") != REPO or data.get("base") != "main"
+    if (not sha(head) or not sha(base) or not valid_observation(data,"main")
             or not isinstance(data.get("scope_approvals"), list)):
         return False
     approvals = data["scope_approvals"]
@@ -120,10 +104,9 @@ def verify(data, head, base, *, pr=None, batch_id=None, combined_paths=None, api
         live = current_pr(pr, head, api)
         return merge_base(live, head, api) == base and approved(approvals, pr, head, base, api)
 
-    batch = data.get("requested_batch")
-    if (type(batch_id) is not int or not isinstance(batch, dict) or batch.get("id") != batch_id
-            or batch.get("state") != "running" or batch.get("base") != "main"
-            or batch.get("head_sha") != head or batch.get("base_sha") != base):
+    try:
+        batch = requested_batch(data, head, base, batch_id=batch_id)
+    except ValueError:
         return False
     members = batch.get("members")
     if not isinstance(members, list) or not 0 < len(members) <= 128:

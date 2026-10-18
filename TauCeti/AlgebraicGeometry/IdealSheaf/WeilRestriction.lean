@@ -40,7 +40,11 @@ condition defining points of exact order `N` and Drinfeld level structures.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_le_ker_iff`: the universal property.
+* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_le_ker_iff`: the universal property;
+  `weilRestriction_le_ker_iff_of_isPullback` states it for any pullback square.
+* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_comap_le_ker_iff`: the condition that a
+  family parametrised by a finite locally free scheme lies in a closed subscheme is closed, and
+  this persists along any base change of the family.
 * `AlgebraicGeometry.Scheme.IdealSheafData.le_ker_pullback_snd_subschemeι_weilRestriction`: over
   the closed subscheme of `I.weilRestriction g`, the base change of `Y` lies in `V(I)`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_comap`: compatibility with base change.
@@ -200,6 +204,28 @@ theorem weilRestriction_le_ker_iff (I : Y.IdealSheafData) {T : Scheme.{u}} (t : 
         (((pullback.snd t g).ideal_ker_le _).trans
           ((pullback.snd t g).ker_app_le_ker_appLE inf_le_left))) ha
     simpa [Scheme.Hom.appLE] using this
+
+variable {g} in
+/-- The universal property of the Weil restriction, for a base change `Y'` of `Y` given by any
+pullback square: `f : S' ⟶ S` factors through the closed subscheme of `I.weilRestriction g`
+exactly when `Y' ⟶ Y` factors through `V(I)`. -/
+theorem weilRestriction_le_ker_iff_of_isPullback (I : Y.IdealSheafData) {S' Y' : Scheme.{u}}
+    {f : S' ⟶ S} {g' : Y' ⟶ S'} {gY : Y' ⟶ Y} (h : IsPullback g' gY f g) :
+    I.weilRestriction g ≤ f.ker ↔ I ≤ gY.ker := by
+  rw [weilRestriction_le_ker_iff, ← h.isoPullback_hom_snd, Scheme.Hom.ker_comp_of_isIso]
+
+variable {g} in
+/-- **Closed conditions on finite locally free families.** Let `k : Y ⟶ X` be a family over `S`
+parametrised by the finite locally free `g : Y ⟶ S`, and `J` an ideal sheaf on `X`. For a pullback
+square `Y' ⟶ Y` over `f : S' ⟶ S` and a morphism `k' : Y' ⟶ X'` lying over `k` along
+`gX : X' ⟶ X`, the base-changed family `k'` lies in the inverse image of `V(J)` exactly when `f`
+factors through the closed subscheme of the Weil restriction of `V(J.comap k)` along `g`. -/
+theorem weilRestriction_comap_le_ker_iff {X : Scheme.{u}} (J : X.IdealSheafData) (k : Y ⟶ X)
+    {S' Y' X' : Scheme.{u}} {f : S' ⟶ S} {g' : Y' ⟶ S'} {gY : Y' ⟶ Y}
+    (h : IsPullback g' gY f g) {k' : Y' ⟶ X'} {gX : X' ⟶ X} (w : k' ≫ gX = gY ≫ k) :
+    (J.comap k).weilRestriction g ≤ f.ker ↔ J.comap gX ≤ k'.ker := by
+  rw [weilRestriction_le_ker_iff_of_isPullback _ h, ← le_map_iff_comap_le, map_ker, ← w,
+    ← map_ker, le_map_iff_comap_le]
 
 /-- Over the closed subscheme of `I.weilRestriction g`, the base change of `Y` lies in the closed
 subscheme `V(I)`: the universal family of the Weil restriction. -/

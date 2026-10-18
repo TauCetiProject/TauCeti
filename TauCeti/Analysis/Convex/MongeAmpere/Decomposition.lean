@@ -9,47 +9,71 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Alexandrov
 import TauCeti.Analysis.Convex.Extrema
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
+import TauCeti.Analysis.Calculus.Gradient
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # Lebesgue decomposition of the Monge–Ampère measure
 
 Let `E` be a finite-dimensional real inner product space with an additive Haar measure `μ`, and
 let `f : E → EReal` be convex (convex real epigraph, never `⊥`), with `D` the interior of its
-effective domain. By Alexandrov's theorem, at almost every `x ∈ D` the subdifferential of `f` is
-differentiable, with a positive derivative `H x`, the Alexandrov Hessian of `f` at `x`: every
-subgradient `y'` at a point `x'` near `x` satisfies `y' = ∇F x + H x (x' - x) + o(‖x' - x‖)`. This
-file shows that the Alexandrov Hessian determines exactly the absolutely continuous part of the
-Aleksandrov Monge–Ampère measure `MA_f`:
+effective domain and `F x = (f x).toReal`. By Alexandrov's theorem, at almost every `x ∈ D` the
+subdifferential of `f` is differentiable, with a positive derivative `H x`, the Alexandrov Hessian
+of `f` at `x`: every subgradient `y'` at a point `x'` near `x` satisfies
+`y' = ∇F x + H x (x' - x) + o(‖x' - x‖)`. This file shows that the Alexandrov Hessian determines
+exactly the absolutely continuous part of the Monge–Ampère measure `MA_{f, g μ}` weighted by a
+measurable density `g`, `MA_{f, g μ}(s) = ∫_{∂f(s ∩ D)} g dμ`:
 
-  `MA_f = (MA_f)ˢ + det (H x) dx` on `D`,
+  `MA_{f, g μ} = (MA_{f, g μ})ˢ + g (∇F x) det (H x) dx` on `D`,
 
-where `(MA_f)ˢ` is singular with respect to `μ`. So `MA_f = g dx` gives `det (H x) = g x`
-almost everywhere: an Aleksandrov solution of the Monge–Ampère equation `det D²f = g` solves it
+where `(MA_{f, g μ})ˢ` is singular with respect to `μ`. For `g = 1` this is the decomposition
+`MA_f = (MA_f)ˢ + det (H x) dx` of the Aleksandrov measure. So `MA_f = h dx` gives `det (H x) = h x`
+almost everywhere: an Aleksandrov solution of the Monge–Ampère equation `det D²f = h` solves it
 almost everywhere. The converse fails, because the singular part is invisible to the Alexandrov
 Hessian: a cone has Alexandrov Hessian determinant `0` almost everywhere, yet its Monge–Ampère
 measure is a positive multiple of a Dirac mass (`TauCeti.mongeAmpereMeasure_mul_norm_sub`).
 
-The pointwise statement is that `MA_f(closedBall x r) / μ(closedBall x r) → det A` as `r → 0⁺`
-at every `x ∈ D` where the subdifferential has derivative `A`. Up to `o(r)`, the subgradients at
-points of `closedBall x r` lie in `∇F x + r • A (closedBall 0 1)`, which gives the upper bound.
-For the lower bound, `A` is coercive when `det A ≠ 0`, so for `s < 1` and small `r` the second-order
-expansion of `F` shows that, for each `p ∈ ∇F x + r • A (closedBall 0 s)`, the convex function
-`F - ⟪·, p⟫` is smaller somewhere in the ball than on its sphere; its minimum over the ball is
-then attained inside, where `p` is a subgradient. Lebesgue's differentiation theorem identifies
-the limit with the Radon–Nikodym derivative of `MA_f`, which is σ-finite and carried by `D`.
+For weighted measures this is the Jacobian equation of optimal transport. If the Monge–Ampère
+measure of `f` weighted by `ν₁ = g₁ dx` is `ν₀ = g₀ dx`, which is what it means for `f` to be a
+weak (Brenier) solution of the transport problem from `ν₀` to `ν₁`
+(`TauCeti.mongeAmpereMeasure_eq_of_hasLaw`), then `g₀ x = g₁ (∇F x) det (H x)` for almost every
+`x ∈ D`.
+
+The decomposition is proved by the change of variables formula. Off a null set of `D`, the
+subdifferential of `f` at `x` is the single gradient `∇F x`, and the gradient map has derivative
+`H x` within that set. If two such points `x₁ ≠ x₂` have the same gradient `y`, then `y` is a
+subgradient along the segment between them, so `H x₁ (x₂ - x₁) = 0`
+(`TauCeti.apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`). So the gradient is
+injective where `det (H x) ≠ 0`, where Mathlib's change of variables formula computes the weighted
+measure of its image, and it maps the set where `det (H x) = 0` to a null set
+(`TauCeti.withDensity_image_gradient_eq_setLIntegral`). The remaining part
+of `MA_{f, g μ}` lives on a `μ`-null subset of `D`, hence is singular.
+
+Separately, the density is identified pointwise: `MA_f(closedBall x r) / μ(closedBall x r) → det A`
+as `r → 0⁺` at every `x ∈ D` where the subdifferential has derivative `A`. Up to `o(r)`, the
+subgradients at points of `closedBall x r` lie in `∇F x + r • A (closedBall 0 1)`, which gives the
+upper bound. For the lower bound, `A` is coercive when `det A ≠ 0`, so for `s < 1` and small `r`
+the second-order expansion of `F` shows that, for each `p ∈ ∇F x + r • A (closedBall 0 s)`, the
+convex function `F - ⟪·, p⟫` is smaller somewhere in the ball than on its sphere; its minimum over
+the ball is then attained inside, where `p` is a subgradient.
 
 ## Main statements
 
 * `TauCeti.tendsto_mongeAmpereMeasure_closedBall_div` — the density of `MA_f` at a point where
   the subdifferential is differentiable with derivative `A` is `det A`;
-* `TauCeti.rnDeriv_mongeAmpereMeasure_ae_eq` — the Radon–Nikodym derivative of `MA_f` is the
-  determinant of the Alexandrov Hessian on `D`, and `0` off `D`;
-* `TauCeti.mongeAmpereMeasure_eq_singularPart_add_withDensity` and
+* `TauCeti.rnDeriv_mongeAmpereMeasure_withDensity_ae_eq` and
+  `TauCeti.rnDeriv_mongeAmpereMeasure_ae_eq` — the Radon–Nikodym derivative of `MA_{f, g μ}` is
+  `g (∇F x) det (H x)` on `D`, and `0` off `D`; for `g = 1` it is `det (H x)`;
+* `TauCeti.mongeAmpereMeasure_withDensity_eq_singularPart_add_withDensity`,
+  `TauCeti.mongeAmpereMeasure_eq_singularPart_add_withDensity` and
   `TauCeti.exists_mongeAmpereMeasure_eq_singularPart_add_withDensity` — **the Lebesgue
-  decomposition** `MA_f = (MA_f)ˢ + det (H x) dx`;
+  decomposition** `MA_{f, g μ} = (MA_{f, g μ})ˢ + g (∇F x) det (H x) dx`, and its case
+  `MA_f = (MA_f)ˢ + det (H x) dx`;
 * `TauCeti.ae_eq_indicator_ofReal_det_of_mongeAmpereMeasure_eq_withDensity` — an Aleksandrov
-  solution of `det D²f = g` satisfies `det (H x) = g x` almost everywhere.
+  solution of `det D²f = g` satisfies `det (H x) = g x` almost everywhere;
+* `TauCeti.rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_of_mongeAmpereMeasure_eq` — **the
+  Jacobian equation**: a weak solution of the transport problem from `g₀ dx` to `g₁ dx` satisfies
+  `g₀ x = g₁ (∇F x) det (H x)` almost everywhere.
 
 ## References
 
@@ -60,6 +84,9 @@ the limit with the Radon–Nikodym derivative of `MA_f`, which is σ-finite and 
 * L. C. Evans and R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised ed.,
   CRC Press, 2015, §6.4, for Alexandrov's theorem and the splitting of the Hessian measure of a
   convex function into absolutely continuous and singular parts.
+* R. J. McCann, *A convexity principle for interacting gases*, Adv. Math. 128 (1997), 153–179,
+  Theorem 4.4, for the Jacobian equation of a transport map given by a convex gradient.
+* C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, Springer, 2009, Chapter 11.
 -/
 
 public section
@@ -67,7 +94,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Measure Set Filter Metric Module Asymptotics
-open scoped Topology ENNReal InnerProductSpace Pointwise
+open scoped Topology ENNReal InnerProductSpace Pointwise Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → EReal}
@@ -285,38 +312,138 @@ theorem tendsto_mongeAmpereMeasure_closedBall_div (hf : Convex ℝ {p : E × ℝ
           addHaar_image_add_smul_div_addHaar_closedBall μ x y hr.1 _
       _ < b := hεb
 
-/-- On a ball whose closure lies in the interior of the effective domain, the Radon–Nikodym
-derivative of the Monge–Ampère measure is the determinant of the derivative of the
-subdifferential, at almost every point where the latter exists. -/
-private theorem ae_rnDeriv_mongeAmpereMeasure_eq_of_closedBall_subset
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E} {p : E}
-    {ρ : ℝ} (hK : closedBall p ρ ⊆ interior {x | f x ≠ ⊤}) :
-    ∀ᵐ x ∂μ, x ∈ ball p ρ → (∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
-      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) →
-      (mongeAmpereMeasure μ f).rnDeriv μ x = ENNReal.ofReal (H x).det := by
-  -- The derivative is that of the finite measure `MA_f` restricted to the closed ball, which is
-  -- computed by Lebesgue's differentiation theorem.
-  have := sigmaFinite_mongeAmpereMeasure μ f
-  have : IsFiniteMeasure ((mongeAmpereMeasure μ f).restrict (closedBall p ρ)) :=
-    ⟨by
-      rw [restrict_apply_univ]
-      exact mongeAmpereMeasure_lt_top μ hf hbot AbsolutelyContinuous.rfl
-        (isCompact_closedBall _ _) hK⟩
-  filter_upwards [Besicovitch.ae_tendsto_rnDeriv
-      ((mongeAmpereMeasure μ f).restrict (closedBall p ρ)) μ,
-    rnDeriv_restrict (mongeAmpereMeasure μ f) μ (measurableSet_closedBall (x := p) (ε := ρ))]
-    with x hx hxK hxb hexp
-  obtain ⟨y, hy⟩ := hexp
-  have heq : (fun r => (mongeAmpereMeasure μ f).restrict (closedBall p ρ) (closedBall x r) /
-      μ (closedBall x r)) =ᶠ[𝓝[>] 0]
-      fun r => mongeAmpereMeasure μ f (closedBall x r) / μ (closedBall x r) := by
-    obtain ⟨ε, hε, hεb⟩ := nhds_basis_closedBall.mem_iff.1 (isOpen_ball.mem_nhds hxb)
-    filter_upwards [Ioo_mem_nhdsGT hε] with r hr
-    rw [Measure.restrict_apply measurableSet_closedBall, inter_eq_left.2
-      ((closedBall_subset_closedBall hr.2.le).trans (hεb.trans ball_subset_closedBall))]
-  have h := tendsto_nhds_unique (hx.congr' heq) (tendsto_mongeAmpereMeasure_closedBall_div μ hf
-    hbot (hK (ball_subset_closedBall hxb)) hy)
-  rwa [hxK, indicator_of_mem (ball_subset_closedBall hxb)] at h
+/-- If almost every point `x` of the interior `D` of the effective domain has a first-order
+expansion of the subdifferential with derivative `H x`, then there is a measurable `S ⊆ D` of full
+measure in `D` on which the subdifferential is the single gradient, with the expansion centred at
+the gradient and `H x` positive, and on which `H` agrees with a measurable map. -/
+theorem exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
+    ∃ S, MeasurableSet S ∧ S ⊆ interior {x | f x ≠ ⊤} ∧ interior {x | f x ≠ ⊤} =ᵐ[μ] S ∧
+      (∀ x ∈ S, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+        (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+          ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
+      ∃ H' : E → E →L[ℝ] E, Measurable H' ∧ ∀ x ∈ S, H x = H' x := by
+  set D := interior {x | f x ≠ ⊤}
+  -- Remove from `D` a measurable null set `N` containing the points without an expansion.
+  set P : Set E := {x | x ∈ D ∧ ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+    ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖}
+  set N := toMeasurable μ (D \ P)
+  have hN : μ N = 0 := by
+    rw [measure_toMeasurable]
+    exact measure_eq_zero_iff_ae_notMem.2 (hH.mono fun x hx hx' => hx'.2 ⟨hx'.1, hx hx'.1⟩)
+  have hS₀m : MeasurableSet (D \ N) := measurableSet_interior.diff (measurableSet_toMeasurable _ _)
+  have hS₀ : ∀ x ∈ D \ N, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖ := fun x hx => by
+    obtain ⟨-, y, hy⟩ : x ∈ P :=
+      by_contra fun h => hx.2 (subset_toMeasurable _ _ ⟨hx.1, h⟩)
+    have hne := eventually_nonempty_subdifferential hf hbot (mem_interior_iff_mem_nhds.1 hx.1)
+    obtain rfl := (hasGradientAt_toReal_of_forall_mem_subdifferential_norm_sub_le hne hy).gradient
+    exact ⟨subdifferential_eq_singleton_gradient_of_forall_mem_subdifferential_norm_sub_le hne hy,
+      isPositive_of_forall_mem_subdifferential_norm_sub_le hne hy, hy⟩
+  -- `H` is the derivative of the gradient within `D \ N`, so it is a.e.-measurable there; remove
+  -- a further measurable null set `M` off which it agrees with a measurable map `H'`.
+  have hHm := aemeasurable_fderivWithin μ hS₀m fun x hx =>
+    hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
+      (fun x' hx' => by rw [(hS₀ x' hx').1]; exact mem_singleton _) (hS₀ x hx).2.2
+  set M := toMeasurable μ {x | x ∈ D \ N ∧ H x ≠ hHm.mk H x}
+  have hM : μ M = 0 := by
+    rw [measure_toMeasurable]
+    exact measure_eq_zero_iff_ae_notMem.2 (((ae_restrict_iff' hS₀m).1 hHm.ae_eq_mk).mono
+      fun x hx hx' => hx'.2 (hx hx'.1))
+  have hSD : (D \ N) \ M ⊆ D := sdiff_subset.trans sdiff_subset
+  have hDS : D \ ((D \ N) \ M) ⊆ N ∪ M := fun x hx => by
+    by_cases hxN : x ∈ N
+    · exact Or.inl hxN
+    · exact Or.inr (by_contra fun h => hx.2 ⟨⟨hx.1, hxN⟩, h⟩)
+  refine ⟨(D \ N) \ M, hS₀m.diff (measurableSet_toMeasurable _ _), hSD,
+    ae_eq_set.2 ⟨measure_mono_null hDS (measure_union_null hN hM),
+      by rw [sdiff_eq_empty.2 hSD, measure_empty]⟩,
+    fun x hx => hS₀ x hx.1, hHm.mk H, hHm.measurable_mk,
+    fun x hx => by_contra fun h => hx.2 (subset_toMeasurable _ _ ⟨hx.1, h⟩)⟩
+
+/-- The weighted Monge–Ampère measure `MA_{f, g μ}` is the sum of a measure singular with respect
+to `μ` and of `μ` with the a.e.-measurable density `det (H x) * g (∇F x)` on the interior `D` of
+the effective domain. Off a measurable set `S` of full measure in `D`, `MA_{f, g μ}` is carried by
+the null set `D \ S`; on `S` it is computed by `withDensity_image_gradient_eq_setLIntegral`. -/
+private theorem exists_mongeAmpereMeasure_withDensity_eq_add_withDensity
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {g : E → ℝ≥0∞} (hg : Measurable g) :
+    ∃ s : Measure E, s ⟂ₘ μ ∧
+      AEMeasurable ((interior {x | f x ≠ ⊤}).indicator fun x =>
+        ENNReal.ofReal (H x).det * g ((∇ fun x' => (f x').toReal) x)) μ ∧
+      mongeAmpereMeasure (μ.withDensity g) f = s + μ.withDensity
+        ((interior {x | f x ≠ ⊤}).indicator fun x =>
+          ENNReal.ofReal (H x).det * g ((∇ fun x' => (f x').toReal) x)) := by
+  set D := interior {x | f x ≠ ⊤}
+  set G := ∇ fun x' => (f x').toReal
+  set φ : E → ℝ≥0∞ := fun x => ENNReal.ofReal (H x).det * g (G x)
+  set ν := μ.withDensity g
+  have hν : ν ≪ μ := withDensity_absolutelyContinuous μ g
+  obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
+    exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient μ hf hbot hH
+  have hdet : Measurable fun x => (H' x).det :=
+    ContinuousLinearMap.continuous_det.measurable.comp hH'm
+  have hφ : AEMeasurable (D.indicator φ) μ := by
+    refine (aemeasurable_indicator_iff measurableSet_interior).2 ?_
+    rw [restrict_congr_set hDS]
+    refine ((ENNReal.measurable_ofReal.comp hdet).mul
+      (hg.comp (measurable_gradient fun x' => (f x').toReal))).aemeasurable.congr ?_
+    filter_upwards [ae_restrict_mem hSm] with x hx
+    simp only [φ, G, Pi.mul_apply, Function.comp_apply, hHS x hx]
+  -- On `S` the Monge–Ampère measure has density `φ`.
+  have hmain : (mongeAmpereMeasure ν f).restrict S = (μ.restrict S).withDensity φ := by
+    ext s hs
+    have ht : MeasurableSet (s ∩ S) := hs.inter hSm
+    have himage : subgradientImage (innerₗ E) f (s ∩ S ∩ D) = G '' (s ∩ S) := by
+      rw [inter_eq_left.2 (inter_subset_right.trans hSD)]
+      ext y
+      simp only [mem_subgradientImage_iff, mem_image]
+      refine exists_congr fun x => and_congr_right fun hx => ?_
+      rw [(hS x hx.2).1, mem_singleton_iff, eq_comm]
+    have htZ : s ∩ S ∩ {x | (H x).det ≠ 0} = s ∩ S ∩ {x | (H' x).det ≠ 0} := by
+      ext x
+      simp only [mem_inter_iff, mem_ofPred_eq]
+      exact and_congr_right fun hx => by rw [hHS x hx.2]
+    rw [restrict_apply hs, mongeAmpereMeasure_apply ν hf hbot hν ht, himage,
+      withDensity_apply _ hs, restrict_restrict hs]
+    exact withDensity_image_gradient_eq_setLIntegral μ hf ht
+      (htZ ▸ ht.inter ((measurableSet_singleton 0).compl.preimage hdet))
+      (fun x hx => hS x hx.2) g
+  -- Off `S`, the Monge–Ampère measure is carried by the `μ`-null set `D \ S`.
+  refine ⟨(mongeAmpereMeasure ν f).restrict Sᶜ, ⟨S ∪ Dᶜ, hSm.union measurableSet_interior.compl,
+    ?_, ?_⟩, hφ, ?_⟩
+  · rw [restrict_apply (hSm.union measurableSet_interior.compl)]
+    exact measure_mono_null (fun x hx => hx.1.resolve_left hx.2)
+      (mongeAmpereMeasure_compl_interior ν)
+  · rw [compl_union, compl_compl, inter_comm, ← Set.sdiff_eq]
+    exact (ae_eq_set.1 hDS).1
+  · rw [withDensity_indicator measurableSet_interior, restrict_congr_set hDS, ← hmain, add_comm,
+      restrict_add_restrict_compl hSm]
+
+/-- **The density of the weighted Monge–Ampère measure.** Let `f : E → EReal` be convex (convex
+real epigraph, never `⊥`) with `D` the interior of its effective domain and real representative
+`F`, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the subdifferential of
+`f` at `x`: `y' = y + H x (x' - x) + o(‖x' - x‖)` for some `y`, uniformly over the subgradients
+`y'` at points `x'` near `x`. By Alexandrov's theorem such `H` exists, and `H x` is then the
+Alexandrov Hessian of `f` at `x`. For every additive Haar measure `μ` and measurable `g`, the
+Radon–Nikodym derivative of the Monge–Ampère measure `MA_{f, g μ}(s) = ∫_{∂f(s ∩ D)} g dμ` with
+respect to `μ` is `det (H x) * g (∇F x)` on `D` and `0` off `D`, almost everywhere. -/
+theorem rnDeriv_mongeAmpereMeasure_withDensity_ae_eq (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {g : E → ℝ≥0∞} (hg : Measurable g) :
+    (mongeAmpereMeasure (μ.withDensity g) f).rnDeriv μ =ᵐ[μ]
+      (interior {x | f x ≠ ⊤}).indicator fun x =>
+        ENNReal.ofReal (H x).det * g ((∇ fun x' => (f x').toReal) x) := by
+  obtain ⟨s, hs, hφ, hadd⟩ :=
+    exists_mongeAmpereMeasure_withDensity_eq_add_withDensity μ hf hbot hH hg
+  exact (eq_rnDeriv₀ hφ hs hadd).symm
 
 /-- **The density of the Monge–Ampère measure is the determinant of the Alexandrov Hessian.** Let
 `f : E → EReal` be convex (convex real epigraph, never `⊥`), and let `H x` be, for almost every
@@ -325,62 +452,58 @@ private theorem ae_rnDeriv_mongeAmpereMeasure_eq_of_closedBall_subset
 `y'` at points `x'` near `x`. By Alexandrov's theorem such `H` exists, and `H x` is then the
 Alexandrov Hessian of `f` at `x`. For every additive Haar measure `μ`, the Radon–Nikodym
 derivative of the Aleksandrov Monge–Ampère measure `MA_f` with respect to `μ` is `det (H x)` on
-`D` and `0` off `D`, almost everywhere. -/
+`D` and `0` off `D`, almost everywhere. This is the case `g = 1` of
+`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`. -/
 theorem rnDeriv_mongeAmpereMeasure_ae_eq (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
     (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
     (mongeAmpereMeasure μ f).rnDeriv μ =ᵐ[μ]
       (interior {x | f x ≠ ⊤}).indicator fun x => ENNReal.ofReal (H x).det := by
-  have := sigmaFinite_mongeAmpereMeasure μ f
-  set D := interior {x | f x ≠ ⊤}
-  -- Off `D` the derivative vanishes, since `MA_f` does not charge `Dᶜ`.
-  have hoff : ∀ᵐ x ∂μ, x ∉ D → (mongeAmpereMeasure μ f).rnDeriv μ x = 0 := by
-    have h := rnDeriv_restrict (mongeAmpereMeasure μ f) μ
-      (measurableSet_interior (s := {x | f x ≠ ⊤})).compl
-    rw [Measure.restrict_eq_zero.2 (mongeAmpereMeasure_compl_interior μ)] at h
-    filter_upwards [h, rnDeriv_zero μ] with x hx hx₀ hxD
-    rw [← indicator_of_mem (mem_compl hxD) ((mongeAmpereMeasure μ f).rnDeriv μ), ← hx, hx₀,
-      Pi.zero_apply]
-  -- `D` is covered by countably many balls whose closures lie in `D`; on each of them the
-  -- derivative is computed by `ae_rnDeriv_mongeAmpereMeasure_eq_of_closedBall_subset`.
-  obtain ⟨ρ, hρ, hρD⟩ : ∃ ρ : E → ℝ, (∀ x ∈ D, 0 < ρ x) ∧ ∀ x ∈ D, closedBall x (ρ x) ⊆ D := by
-    choose! ρ hρ hρD using fun x (hx : x ∈ D) =>
-      nhds_basis_closedBall.mem_iff.1 (isOpen_interior.mem_nhds hx)
-    exact ⟨ρ, hρ, hρD⟩
-  obtain ⟨T, hTD, hTc, hDT⟩ := TopologicalSpace.countable_cover_nhdsWithin (s := D)
-    (f := fun x => ball x (ρ x)) fun x hx => mem_nhdsWithin_of_mem_nhds (ball_mem_nhds x (hρ x hx))
-  have hon : ∀ p ∈ T, ∀ᵐ x ∂μ, x ∈ ball p (ρ p) → (x ∈ D → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
-      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) →
-      (mongeAmpereMeasure μ f).rnDeriv μ x = ENNReal.ofReal (H x).det := fun p hp => by
-    filter_upwards [ae_rnDeriv_mongeAmpereMeasure_eq_of_closedBall_subset μ hf hbot
-      (H := H) (hρD p (hTD hp))] with x hx hxb hexp
-    exact hx hxb (hexp (hρD p (hTD hp) (ball_subset_closedBall hxb)))
-  filter_upwards [hoff, (ae_ball_iff hTc).2 hon, hH] with x h₁ h₂ h₃
-  by_cases hxD : x ∈ D
-  · rw [indicator_of_mem hxD]
-    obtain ⟨p, hp, hxp⟩ := mem_iUnion₂.1 (hDT hxD)
-    exact h₂ p hp hxp h₃
-  · rw [indicator_of_notMem hxD]
-    exact h₁ hxD
+  simpa [withDensity_one] using
+    rnDeriv_mongeAmpereMeasure_withDensity_ae_eq μ hf hbot hH (g := 1) measurable_const
+
+/-- **Lebesgue decomposition of the weighted Monge–Ampère measure.** Let `f : E → EReal` be convex
+(convex real epigraph, never `⊥`) with `D` the interior of its effective domain and real
+representative `F`, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the
+subdifferential of `f` at `x` (the Alexandrov Hessian, see
+`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Then for every additive Haar measure `μ` and
+measurable `g`, the Monge–Ampère measure weighted by `g μ` splits as
+`MA_{f, g μ} = (MA_{f, g μ})ˢ + det (H x) g (∇F x) dx` on `D`, where `(MA_{f, g μ})ˢ` is the part
+singular with respect to `μ`. -/
+theorem mongeAmpereMeasure_withDensity_eq_singularPart_add_withDensity
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {g : E → ℝ≥0∞} (hg : Measurable g) :
+    mongeAmpereMeasure (μ.withDensity g) f =
+      (mongeAmpereMeasure (μ.withDensity g) f).singularPart μ +
+        (μ.restrict (interior {x | f x ≠ ⊤})).withDensity fun x =>
+          ENNReal.ofReal (H x).det * g ((∇ fun x' => (f x').toReal) x) := by
+  obtain ⟨s, hs, hφ, hadd⟩ :=
+    exists_mongeAmpereMeasure_withDensity_eq_add_withDensity μ hf hbot hH hg
+  rw [withDensity_congr_ae hφ.ae_eq_mk] at hadd
+  rw [← withDensity_indicator measurableSet_interior, withDensity_congr_ae hφ.ae_eq_mk,
+    ← eq_singularPart hφ.measurable_mk hs hadd]
+  exact hadd
 
 /-- **Lebesgue decomposition of the Monge–Ampère measure.** Let `f : E → EReal` be convex
 (convex real epigraph, never `⊥`) with `D` the interior of its effective domain, and let `H x` be,
 for almost every `x ∈ D`, a first-order expansion of the subdifferential of `f` at `x` (the
 Alexandrov Hessian, see `rnDeriv_mongeAmpereMeasure_ae_eq`). Then for every additive Haar measure
-`μ`, the Aleksandrov Monge–Ampère measure splits as
-`MA_f = (MA_f)ˢ + det (H x) dx` on `D`, where `(MA_f)ˢ` is the part singular with respect to `μ`.
-So the Alexandrov Hessian determines exactly the absolutely continuous part of `MA_f`. -/
+`μ`, the Aleksandrov Monge–Ampère measure splits as `MA_f = (MA_f)ˢ + det (H x) dx` on `D`, where
+`(MA_f)ˢ` is the part singular with respect to `μ`. So the Alexandrov Hessian determines exactly
+the absolutely continuous part of `MA_f`. This is the case `g = 1` of
+`mongeAmpereMeasure_withDensity_eq_singularPart_add_withDensity`. -/
 theorem mongeAmpereMeasure_eq_singularPart_add_withDensity
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
     mongeAmpereMeasure μ f = (mongeAmpereMeasure μ f).singularPart μ +
       (μ.restrict (interior {x | f x ≠ ⊤})).withDensity fun x => ENNReal.ofReal (H x).det := by
-  have := sigmaFinite_mongeAmpereMeasure μ f
-  rw [← withDensity_indicator measurableSet_interior,
-    ← withDensity_congr_ae (rnDeriv_mongeAmpereMeasure_ae_eq μ hf hbot hH)]
-  exact haveLebesgueDecomposition_add _ _
+  simpa [withDensity_one] using
+    mongeAmpereMeasure_withDensity_eq_singularPart_add_withDensity μ hf hbot hH (g := 1)
+      measurable_const
 
 /-- **Lebesgue decomposition of the Monge–Ampère measure, with the Alexandrov Hessian.** For a
 convex `f : E → EReal` (convex real epigraph, never `⊥`) and an additive Haar measure `μ`, there is
@@ -425,5 +548,26 @@ theorem ae_eq_indicator_ofReal_det_of_mongeAmpereMeasure_eq_withDensity
   have h := rnDeriv_withDensity₀ μ hg
   rw [← hMA] at h
   exact h.symm.trans (rnDeriv_mongeAmpereMeasure_ae_eq μ hf hbot hH)
+
+/-- **The Monge–Ampère equation of a transport potential holds almost everywhere.** Let
+`f : E → EReal` be convex (convex real epigraph, never `⊥`) with `D` the interior of its effective
+domain and real representative `F`, and let `H x` be, for almost every `x ∈ D`, a first-order
+expansion of the subdifferential of `f` at `x` (the Alexandrov Hessian, see
+`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ` be an additive Haar measure, and let
+`ν₁ ≪ μ` have a Lebesgue decomposition with respect to `μ` (for instance, be σ-finite). If the
+Monge–Ampère measure of `f` weighted by `ν₁` is `ν₀`, that is, `f` is a weak solution of the
+transport equation from `ν₀` to `ν₁`, then the densities `g₀ = dν₀/dμ` and `g₁ = dν₁/dμ`
+satisfy the Jacobian equation `g₀ x = g₁ (∇F x) * det (H x)` for almost every `x ∈ D`, and
+`g₀ = 0` almost everywhere off `D`. -/
+theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_of_mongeAmpereMeasure_eq
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {ν₀ ν₁ : Measure E} [ν₁.HaveLebesgueDecomposition μ] (hν₁ : ν₁ ≪ μ)
+    (hMA : mongeAmpereMeasure ν₁ f = ν₀) :
+    ν₀.rnDeriv μ =ᵐ[μ] (interior {x | f x ≠ ⊤}).indicator fun x =>
+      ENNReal.ofReal (H x).det * ν₁.rnDeriv μ ((∇ fun x' => (f x').toReal) x) := by
+  have h := rnDeriv_mongeAmpereMeasure_withDensity_ae_eq μ hf hbot hH (measurable_rnDeriv ν₁ μ)
+  rwa [withDensity_rnDeriv_eq ν₁ μ hν₁, hMA] at h
 
 end TauCeti
