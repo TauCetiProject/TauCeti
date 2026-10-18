@@ -17,16 +17,11 @@ codings: agreement at `κ` gives agreement at every carrier `ι` coded into `κ`
 sentence along an `IndexCoding ι κ` preserves its meaning.
 
 Karp's theorem says that structures in a relational language are potentially isomorphic exactly
-when they satisfy the same infinitary sentences. The forward direction holds at every carrier: it
-passes to a tuple back-and-forth system and shows, by induction on formulas, that the two tuples
-of each of its pairs satisfy the same infinitary formulas. The converse holds at any carrier `κ`
-into which both structures are coded: the pairs of tuples agreeing on every formula with carrier
-`κ` form a tuple back-and-forth system. If an element had no match, then each candidate match
-would be separated from it by a formula; oriented to hold at the element, conjoined along the
-coding, and existentially quantified, these formulas would separate the original tuples. Full
-infinitary equivalence `InfEquivW` quantifies over all carriers outside the syntax, and the
-carrier `M ⊕ N` packages the converse. No countability is assumed, and the carrier and the
-universes of the two structures are independent.
+when they satisfy the same infinitary sentences. The forward direction holds at every carrier, and
+the converse at any carrier `κ` into which both structures are coded. Full infinitary equivalence
+`InfEquivW` quantifies over all carriers outside the syntax, and the carrier `M ⊕ N` packages the
+converse. No countability is assumed, and the carrier and the universes of the two structures are
+independent.
 
 The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Karp/CarrierTheorem.lean` at checkpoint
@@ -136,6 +131,8 @@ theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → 
                · exact x.elim
                · exact ⟨i, rfl⟩
     | func f _ => exact isEmptyElim f
+  -- Induct on formulas: atomic formulas use atomic-type agreement, and quantifiers use the forth
+  -- and back clauses.
   intro n φ
   induction φ with
   | falsum => intro _ _ _ _ _; simp only [BoundedFormulaInf.realize_falsum]
@@ -175,6 +172,7 @@ theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → 
 language satisfy the same infinitary sentences, at every carrier. -/
 theorem PotentialIso.infEquivAt (h : PotentialIso (L := L) M N) (κ : Type uκ) :
     InfEquivAt (L := L) κ M N := by
+  -- Pass to a tuple back-and-forth system, whose empty pair relates the two structures.
   obtain ⟨S, hS⟩ := h.exists_isTupleBFSystem
   intro φ
   simp only [SentenceInf.realize_def, FormulaInf.realize_def]
