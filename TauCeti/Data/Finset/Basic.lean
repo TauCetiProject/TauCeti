@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Set.PowersetCard
@@ -38,6 +39,10 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
+* `Finset.neg_one_pow_card_filter_lt_mul_insert` and
+  `Finset.neg_one_pow_card_filter_lt_mul_erase` show that inserting a new element and deleting an
+  existing element of an ordered finset in either order, or deleting two distinct elements in
+  either order, gives opposite Koszul signs.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -51,6 +56,8 @@ import Mathlib.Tactic.NoncommRing
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
   over a pair of finite types, to the values of its summand at the two points where it is
   supported, and at the four cells of a rectangle.
+* `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
+  has distinct coordinates.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -165,6 +172,12 @@ end TauCeti
 namespace Finset
 
 open scoped symmDiff
+
+/-- Every pair in the product of disjoint finsets has distinct coordinates. -/
+theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : Disjoint s t) :
+    (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
+  filter_true_of_mem fun _ hp =>
+    hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
 
 /-- **The symmetric difference and the intersection account for both cardinalities.** The
 symmetric difference is the union minus the intersection, and the union and the intersection
@@ -385,6 +398,48 @@ theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] 
     exact hsign _ _
   rw [sum_congr rfl hterm, ← mul_sum, sum_Icc_neg_one_pow_card_sub_card_left]
   split_ifs with h <;> simp [h]
+
+/-- **Inserting a new element and deleting an existing element of an ordered finset in either order
+gives opposite Koszul signs.** For `c ∉ s` and `k ∈ s` in a linear order, the sign of inserting `c`
+into `s` and then deleting `k` is the opposite of the sign of deleting `k` from `s` and then
+inserting `c`. -/
+theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [Ring R]
+    {s : Finset α} {c k : α} (hc : c ∉ s) (hk : k ∈ s) :
+    (-1 : R) ^ ({j ∈ s | j < c}).card * (-1) ^ ({j ∈ insert c s | j < k}).card =
+      -((-1) ^ ({j ∈ s | j < k}).card * (-1) ^ ({j ∈ s.erase k | j < c}).card) := by
+  have hck : c ≠ k := fun h ↦ hc (h ▸ hk)
+  rcases hck.lt_or_gt with h | h
+  · have hcs : c ∉ {j ∈ s | j < k} := by simp [hc]
+    have hkc : k ∉ {j ∈ s | j < c} := by simp [h.not_gt]
+    simp only [filter_insert, h, ↓reduceIte, card_insert_of_notMem hcs, filter_erase,
+      erase_eq_of_notMem hkc, pow_succ]
+    simp [← pow_add, add_comm]
+  · have hkc : k ∈ {j ∈ s | j < c} := mem_filter.2 ⟨hk, h⟩
+    simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase, ← card_erase_add_one hkc,
+      pow_succ]
+    simp [← pow_add, add_comm]
+
+/-- **Deleting two distinct elements of an ordered finset in either order gives opposite Koszul
+signs.** -/
+theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Ring R]
+    {s : Finset α} {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i ≠ j) :
+    (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card =
+      -((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase j | k < i}).card) := by
+  have herase (t : Finset α) : {k ∈ t.erase i | k < i} = {k ∈ t | k < i} := by
+    rw [filter_erase, erase_eq_of_notMem (by simp)]
+  have h := neg_one_pow_card_filter_lt_mul_insert (R := R) (notMem_erase i s)
+    (mem_erase.2 ⟨hij.symm, hj⟩)
+  rw [insert_erase hi, erase_right_comm, herase, herase] at h
+  calc (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card
+    _ = ((-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s | k < j}).card) *
+          ((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card) := by
+        simp only [← pow_add]
+        exact neg_one_pow_congr (by grind)
+    _ = -((-1 : R) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase j | k < i}).card) := by
+        rw [h, neg_mul]
+        congr 1
+        simp only [← pow_add]
+        exact neg_one_pow_congr (by grind)
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/

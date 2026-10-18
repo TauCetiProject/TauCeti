@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Pullback
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Comparison
 
 /-!
 # The exterior-power pullback comparison for sheaves of modules
@@ -25,7 +25,7 @@ for each model of pullback: `SheafOfModules.pullbackPushforwardAdjunction φ` gi
 `SheafOfModules.pullback φ`, and, for a morphism of schemes `f`,
 `AlgebraicGeometry.Scheme.Modules.pullbackPushforwardAdjunction f` gives it for
 `AlgebraicGeometry.Scheme.Modules.pullback f`. Both maps are characterized on sheafified wedges
-of sections. No invertibility assertion is made here.
+of sections. In degree one the comparison is an isomorphism, for every such adjunction.
 
 ## Main declarations
 
@@ -39,9 +39,11 @@ of sections. No invertibility assertion is made here.
   sheafified wedges by `pullbackExteriorPowerComparison_app_val_app_unit_mk`.
 
 The construction transfers the presheaf-level comparisons of
-`TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Pullback` to sheaves, using the
-pushforward of underlying presheaves `TauCeti.SheafOfModules.presheafPushforward` as in the lax
-monoidal structure of `TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward`.
+`TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Pullback` to sheaves by the general
+sheafification `TauCeti.SheafOfModules.sheafifyPushforwardComparison` of sectionwise pushforward
+comparisons, which uses the pushforward of underlying presheaves
+`TauCeti.SheafOfModules.presheafPushforward` as in the lax monoidal structure of
+`TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward`.
 
 ## References
 
@@ -67,81 +69,17 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {F : C ⥤ D} [F.IsContinuous J K] {S : Sheaf J CommRingCat.{u}} {R : Sheaf K CommRingCat.{u}}
   (φ : ringCatSheaf S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj (ringCatSheaf R))
 
-/-- The presheaf map transposed to the pushforward comparison: the sectionwise comparison followed
-by the pushforward of the sheafification unit of `⋀ⁿ M`. -/
-private def pushforwardExteriorPowerPresheafMap (n : ℕ)
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    (PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) n).obj
-        ((_root_.SheafOfModules.pushforward φ).obj M).val ⟶
-      (_root_.SheafOfModules.forget _).obj ((_root_.SheafOfModules.pushforward φ).obj
-        ((_root_.SheafOfModules.exteriorPower R n).obj M)) :=
-  (PresheafOfModules.pushforwardExteriorPowerComparison (commRingCatHom φ) n).app M.val ≫
-    (presheafPushforward φ).map
-      ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val) ≫
-        (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.exteriorPowerIso n M).inv)
-
-omit [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
-private lemma pushforwardExteriorPowerPresheafMap_naturality (n : ℕ)
-    {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ N) :
-    (PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) n).map
-        ((_root_.SheafOfModules.pushforward φ).map f).val ≫
-      pushforwardExteriorPowerPresheafMap φ n N =
-    pushforwardExteriorPowerPresheafMap φ n M ≫
-      (_root_.SheafOfModules.forget _).map ((_root_.SheafOfModules.pushforward φ).map
-        ((_root_.SheafOfModules.exteriorPower R n).map f)) := by
-  -- Naturality of the sectionwise comparison moves `⋀ⁿ f` past it; naturality of the
-  -- sheafification unit (`hk`) then moves it past the unit of `⋀ⁿ M`.
-  have h := (PresheafOfModules.pushforwardExteriorPowerComparison (commRingCatHom φ) n).naturality
-    f.val
-  have hu := (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.naturality
-    ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).map f.val)
-  have hk : (PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).map f.val ≫
-      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj N.val) ≫
-        (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.exteriorPowerIso n N).inv =
-      ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val) ≫
-        (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.exteriorPowerIso n M).inv) ≫
-        (_root_.SheafOfModules.forget _).map ((_root_.SheafOfModules.exteriorPower R n).map f) := by
-    have e : (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.exteriorPowerIso n M).inv ≫
-        (_root_.SheafOfModules.forget _).map ((_root_.SheafOfModules.exteriorPower R n).map f) =
-        (_root_.SheafOfModules.forget _).map ((PresheafOfModules.sheafification (𝟙 _)).map
-          ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).map f.val)) ≫
-        (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.exteriorPowerIso n N).inv := by
-      rw [← Functor.map_comp, ← Functor.map_comp, _root_.SheafOfModules.exteriorPower_map,
-        Iso.inv_hom_id_assoc]
-    -- Reassociate by hand: the categories of presheaves of modules over `S.obj` and
-    -- `(ringCatSheaf S).obj` agree only up to unfolding `sheafCompose`, which defeats `rw`.
-    exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hu)).trans
-      ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) e.symm).trans (Category.assoc _ _ _).symm))
-  rw [pushforwardExteriorPowerPresheafMap, pushforwardExteriorPowerPresheafMap,
-    forget_map_pushforward_map]
-  refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h)).trans ?_
-  refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-    ((presheafPushforward φ).map_comp _ _).symm).trans ?_)
-  refine (congrArg (fun g ↦ _ ≫ (presheafPushforward φ).map g) hk).trans ?_
-  exact (congrArg (_ ≫ ·) ((presheafPushforward φ).map_comp _ _)).trans
-    (Category.assoc _ _ _).symm
-
-/-- The canonical natural map `⋀ⁿ (φ_* M) ⟶ φ_* (⋀ⁿ M)`. On sections it sends the sheafified
-wedge of sections of `M` to their sheafified wedge over the target coefficient ring
+/-- The canonical natural map `⋀ⁿ (φ_* M) ⟶ φ_* (⋀ⁿ M)`: the sheafification
+`sheafifyPushforwardComparison` of the sectionwise exterior-power comparison. On sections it sends
+the sheafified wedge of sections of `M` to their sheafified wedge over the target coefficient ring
 (`pushforwardExteriorPowerComparison_app_val_app_mk`). -/
 def pushforwardExteriorPowerComparison (n : ℕ) :
     _root_.SheafOfModules.pushforward φ ⋙ _root_.SheafOfModules.exteriorPower S n ⟶
-      _root_.SheafOfModules.exteriorPower R n ⋙ _root_.SheafOfModules.pushforward φ where
-  app M := (_root_.SheafOfModules.exteriorPowerIso n _).hom ≫
-    ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).homEquiv _ _).symm
-      (pushforwardExteriorPowerPresheafMap φ n M)
-  naturality M N f := by
-    rw [Functor.comp_map, Functor.comp_map, _root_.SheafOfModules.exteriorPower_map,
-      Category.assoc, Category.assoc, Iso.inv_hom_id_assoc]
-    -- Both sides are transposes along sheafification; compare the presheaf maps.
-    let adj := PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)
-    exact (congrArg (_ ≫ ·) ((adj.homEquiv_naturality_left_symm _ _).symm.trans
-        ((congrArg _ (pushforwardExteriorPowerPresheafMap_naturality φ n f)).trans
-          (adj.homEquiv_naturality_right_symm _ _)))).trans
-      (Category.assoc _ _ _).symm
+      _root_.SheafOfModules.exteriorPower R n ⋙ _root_.SheafOfModules.pushforward φ :=
+  sheafifyPushforwardComparison φ (_root_.SheafOfModules.exteriorPowerIso n)
+    (_root_.SheafOfModules.exteriorPower_map n) (_root_.SheafOfModules.exteriorPowerIso n)
+    (_root_.SheafOfModules.exteriorPower_map n)
+    (PresheafOfModules.pushforwardExteriorPowerComparison (commRingCatHom φ) n)
 
 /-- On underlying presheaves, the pushforward comparison restricted along the sheafification unit
 is the sectionwise comparison followed by the pushforward of the sheafification unit of `⋀ⁿ M`.
@@ -161,11 +99,8 @@ theorem unit_comp_forget_map_pushforwardExteriorPowerComparison_app (n : ℕ)
         ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
           ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val) ≫
           (_root_.SheafOfModules.forget _).map
-            (_root_.SheafOfModules.exteriorPowerIso n M).inv) := by
-  rw [pushforwardExteriorPowerComparison, Iso.inv_hom_id_assoc]
-  exact ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).homEquiv_unit
-    _ _ _).symm.trans
-    (Equiv.apply_symm_apply _ _)
+            (_root_.SheafOfModules.exteriorPowerIso n M).inv) :=
+  unit_comp_forget_map_sheafifyPushforwardComparison_app φ _ _ _ _ _ M
 
 /-- On sections over `U`, the pushforward comparison sends the sheafified wedge `m₁ ∧ ⋯ ∧ mₙ` of
 sections of `φ_* M` to the sheafified wedge of the same sections of `M` over `F U`, balanced over
@@ -203,6 +138,26 @@ theorem pushforwardExteriorPowerComparison_app_val_app_mk (n : ℕ)
         (F.op.obj U) x)
     (PresheafOfModules.pushforwardExteriorPowerComparison_app_app_mk (commRingCatHom φ) n M.val U m)
 
+/-- In degree one, the exterior-power comparison of pushforward is the identity of `φ_* M`, read
+through the identifications `⋀¹ M ≅ M`. -/
+-- Not `@[simp]`: `exteriorPowerOneIso_hom_app` unfolds the left-hand side.
+@[reassoc]
+theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    (pushforwardExteriorPowerComparison φ 1).app M ≫
+        (_root_.SheafOfModules.pushforward φ).map
+          ((_root_.SheafOfModules.exteriorPowerOneIso R).hom.app M) =
+      (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M) :=
+  sheafifyPushforwardComparison_app_comp_pushforward_map φ _ _ _ _ _ M
+    (oS := (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
+      ((_root_.SheafOfModules.pushforward φ).obj M).val)
+    (oR := (PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val)
+    (by rw [_root_.SheafOfModules.exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc])
+    (by rw [_root_.SheafOfModules.exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc])
+    (PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+      (commRingCatHom φ) M.val)
+
 variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
     _root_.SheafOfModules.{u} (ringCatSheaf R)} (adj : G ⊣ _root_.SheafOfModules.pushforward φ)
 
@@ -211,8 +166,15 @@ variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
 `pushforwardExteriorPowerComparison φ n` under `adj`. -/
 def pullbackExteriorPowerComparison (n : ℕ) :
     _root_.SheafOfModules.exteriorPower S n ⋙ G ⟶ G ⋙ _root_.SheafOfModules.exteriorPower R n :=
-  ((mateEquiv adj adj).symm (TwoSquare.mk _ _ _ _
-    (pushforwardExteriorPowerComparison φ n))).natTrans
+  (mateEquiv adj adj).symm (pushforwardExteriorPowerComparison φ n)
+
+/-- The mate of the exterior-power pullback comparison is the sectionwise pushforward
+comparison. -/
+-- Not a simp lemma: `mateEquiv_apply` expands its left-hand side first.
+theorem mateEquiv_pullbackExteriorPowerComparison (n : ℕ) :
+    mateEquiv adj adj (pullbackExteriorPowerComparison adj n) =
+      pushforwardExteriorPowerComparison φ n :=
+  Equiv.apply_symm_apply _ _
 
 /-- The adjunction equation characterizing the pullback comparison. -/
 @[reassoc (attr := simp)]
@@ -259,6 +221,34 @@ theorem pullbackExteriorPowerComparison_app_val_app_unit_mk (n : ℕ)
   refine (congrArg (((pushforwardExteriorPowerComparison φ n).app (G.obj M)).val.app U)
     (_root_.SheafOfModules.exteriorPower_map_val_app_mk n (adj.unit.app M) U m)).trans ?_
   exact pushforwardExteriorPowerComparison_app_val_app_mk φ n (G.obj M) U _
+
+/-- In degree one, the pullback comparison is the identity of `φ^* M`, read through the
+identifications `⋀¹ M ≅ M`. In particular it is an isomorphism in degree one. -/
+-- Not `@[simp]`: `exteriorPowerOneIso_hom_app` unfolds the left-hand side.
+@[reassoc]
+theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf S)) :
+    (pullbackExteriorPowerComparison adj 1).app M ≫
+        (_root_.SheafOfModules.exteriorPowerOneIso R).hom.app
+          ((G).obj M) =
+      (G).map
+        ((_root_.SheafOfModules.exteriorPowerOneIso S).hom.app M) := by
+  apply (adj.homEquiv _ _).injective
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp,
+    unit_comp_pushforward_pullbackExteriorPowerComparison_assoc,
+    pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso]
+  exact ((_root_.SheafOfModules.exteriorPowerOneIso S).hom.naturality _).trans
+    (adj.unit.naturality _)
+
+/-- The pullback comparison is an isomorphism in degree one. -/
+instance isIso_pullbackExteriorPowerComparison_one :
+    IsIso (pullbackExteriorPowerComparison adj 1) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro M
+  rw [(Iso.eq_comp_inv ((_root_.SheafOfModules.exteriorPowerOneIso R).app _)).mpr
+    (pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso adj M)]
+  infer_instance
+
 
 end
 

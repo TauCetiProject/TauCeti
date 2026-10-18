@@ -150,7 +150,7 @@ are `1`. -/
   have hf : (X ^ n - C a).Monic := monic_X_pow_sub_C a hn
   have h := hf.resultant_deriv
   rw [natDegree_X_pow_sub_C, derivative_sub, derivative_X_pow, derivative_C, sub_zero,
-    resultant_C_mul_right, resultant_X_pow_right _ _ _ natDegree_X_pow_sub_C.le,
+    resultant_C_mul_right, resultant_X_pow_right _ _ _ (natDegree_X_pow_sub_C a).le,
     coeff_sub, coeff_X_pow, coeff_C_zero, (Nat.even_mul_pred_self n).neg_one_pow, one_mul] at h
   simp only [Ne.symm hn, ↓reduceIte, zero_sub] at h
   -- The sign `(-1) ^ (n (n - 1) / 2)` squares to `1`, so it can be moved across the identity.

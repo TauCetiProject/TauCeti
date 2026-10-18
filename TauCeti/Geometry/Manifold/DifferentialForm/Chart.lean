@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
 
@@ -41,6 +42,19 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
 namespace RoughForm
+
+/-- Evaluating a chart expression at a chart image transports each argument through the
+actual tangent coordinate change. -/
+theorem inChartAt_chart_apply [IsManifold I 1 M]
+    (φ : RoughForm I M F k) (α : M) {x : M}
+    (hx : x ∈ (extChartAt I α).source) (v : Fin k → E) :
+    φ.inChartAt α (extChartAt I α x) v =
+      φ x (fun i ↦ tangentCoordChange I α x x (v i)) := by
+  rw [RoughForm.inChartAt_apply]
+  have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
+  rw [← TangentBundle.symmL_trivializationAt hx', TangentBundle.symmL_trivializationAt_eq_core hx']
+  rw [(extChartAt I α).left_inv hx]
+  rfl
 
 /-- On an overlap of two preferred charts, a rough form read in the first chart is the pullback of
 its expression in the second chart by the coordinate change. -/
@@ -214,6 +228,18 @@ theorem inChartAt_mextDeriv [IsManifold I 2 M]
   simpa only [preimage_univ, univ_inter, mextDerivWithin_univ] using
     φ.inChartAt_mextDerivWithin (s := univ) (uniqueMDiffOn_univ (I := I)) hz (mem_univ _)
       (by simp) (by simpa only [preimage_univ, univ_inter] using hφ)
+
+/-- The scalar coefficient of a manifold top form transforms by the signed Jacobian between
+preferred charts, including derivatives taken within the model range at the boundary. -/
+theorem inChartAt_apply_basis_eq_det_mul [IsManifold I 1 M] (φ : RoughForm I M ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) {x₀ x : M} {z : E}
+    (hz : z ∈ (extChartAt I x₀).target)
+    (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source) :
+    φ.inChartAt x₀ z b =
+      (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z).toLinearMap.det *
+        φ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z)) b := by
+  rw [φ.inChartAt_eq_compContinuousLinearMap hz hx,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply_basis]
 
 end RoughForm
 

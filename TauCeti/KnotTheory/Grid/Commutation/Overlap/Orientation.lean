@@ -47,42 +47,6 @@ namespace TauCeti.GridDiagram
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 
 open scoped Classical in
-private theorem sum_overlap_eq_sameSide_add_mixedSide
-    {α M : Type*} [AddCommMonoid M] {x z : GridState n}
-    (S : Finset α) (underlying : α → GridRectangleDecomposition x z)
-    (w : α → M) (hzx : z ≠ x) :
-    ∑ D ∈ S.filter (fun D => ¬(underlying D).HasDisjointSides), w D =
-      (∑ D ∈ S.filter (fun D => (underlying D).HasSameSideOverlap), w D) +
-        ∑ D ∈ S.filter (fun D => (underlying D).HasMixedSideOverlap), w D := by
-  classical
-  have horientation (D : α) :
-      ¬(underlying D).HasDisjointSides ↔
-        (underlying D).HasSameSideOverlap ∨ (underlying D).HasMixedSideOverlap := by
-    constructor
-    · intro hdisjoint
-      have hone := ((underlying D).hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left
-        hdisjoint
-      exact (underlying D).hasSameSideOverlap_or_hasMixedSideOverlap hone
-    · rintro (hsame | hmixed)
-      · exact (underlying D).not_hasDisjointSides_of_hasOneCommonSide
-          ((underlying D).hasSameSideOverlap_iff.mp hsame).1
-      · exact (underlying D).not_hasDisjointSides_of_hasOneCommonSide
-          ((underlying D).hasMixedSideOverlap_iff.mp hmixed).1
-  have hunion :
-      S.filter (fun D => ¬(underlying D).HasDisjointSides) =
-        S.filter (fun D => (underlying D).HasSameSideOverlap) ∪
-          S.filter (fun D => (underlying D).HasMixedSideOverlap) := by
-    ext D
-    simp only [Finset.mem_filter, Finset.mem_union, ← and_or_left, horientation]
-  have hdisjoint : Disjoint
-      (S.filter (fun D => (underlying D).HasSameSideOverlap))
-      (S.filter (fun D => (underlying D).HasMixedSideOverlap)) := by
-    rw [Finset.disjoint_filter]
-    intro D _ hsame
-    exact (underlying D).not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
-  rw [hunion, Finset.sum_union hdisjoint]
-
-open scoped Classical in
 /-- The off-diagonal rectangle--pentagon overlap sum is the sum of its same-side and mixed-side
 parts. -/
 theorem sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide
@@ -93,7 +57,7 @@ theorem sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide
       (∑ D ∈ S.filter (fun D => D.toRectangleDecomposition.HasSameSideOverlap), w D) +
         ∑ D ∈ S.filter (fun D => D.toRectangleDecomposition.HasMixedSideOverlap), w D := by
   simpa only [GridRectanglePentagonDecomposition.hasDisjointSides_def] using
-    sum_overlap_eq_sameSide_add_mixedSide S
+    GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide S
       GridRectanglePentagonDecomposition.toRectangleDecomposition w hzx
 
 open scoped Classical in
@@ -107,7 +71,7 @@ theorem sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide
       (∑ D ∈ S.filter (fun D => D.toRectangleDecomposition.HasSameSideOverlap), w D) +
         ∑ D ∈ S.filter (fun D => D.toRectangleDecomposition.HasMixedSideOverlap), w D := by
   simpa only [GridPentagonRectangleDecomposition.hasDisjointSides_def] using
-    sum_overlap_eq_sameSide_add_mixedSide S
+    GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide S
       GridPentagonRectangleDecomposition.toRectangleDecomposition w hzx
 
 open scoped Classical in
@@ -122,7 +86,7 @@ theorem sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide
           D.toGridRectangleDecomposition.HasSameSideOverlap), w D) +
         ∑ D ∈ S.filter (fun D =>
           D.toGridRectangleDecomposition.HasMixedSideOverlap), w D := by
-  exact sum_overlap_eq_sameSide_add_mixedSide S
+  exact GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide S
     GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition w hzx
 
 open scoped Classical in
@@ -137,7 +101,7 @@ theorem sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide
           D.toGridRectangleDecomposition.HasSameSideOverlap), w D) +
         ∑ D ∈ S.filter (fun D =>
           D.toGridRectangleDecomposition.HasMixedSideOverlap), w D := by
-  exact sum_overlap_eq_sameSide_add_mixedSide S
+  exact GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide S
     GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition w hzx
 
 variable (R : Type*) [CommSemiring R] [IsCancelAdd R] [CharP R 2]
@@ -187,24 +151,28 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_oriented_overlap :
     · subst z
       have hrp : (G.rectanglePentagonDecompositions C x x).filter
           (fun D => ¬D.HasDisjointSides) = G.rectanglePentagonDecompositions C x x :=
-        Finset.filter_true_of_mem fun D _ hD =>
-          D.toRectangleDecomposition.target_ne_source_of_hasDisjointSides
-            (D.hasDisjointSides_def.mp hD) rfl
+        by simpa only [GridRectanglePentagonDecomposition.hasDisjointSides_def] using
+          GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self
+            (G.rectanglePentagonDecompositions C x x)
+            GridRectanglePentagonDecomposition.toRectangleDecomposition
       have hpr : (G.pentagonRectangleDecompositions C x x).filter
           (fun D => ¬D.HasDisjointSides) = G.pentagonRectangleDecompositions C x x :=
-        Finset.filter_true_of_mem fun D _ hD =>
-          D.toRectangleDecomposition.target_ne_source_of_hasDisjointSides
-            (D.hasDisjointSides_def.mp hD) rfl
+        by simpa only [GridPentagonRectangleDecomposition.hasDisjointSides_def] using
+          GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self
+            (G.pentagonRectangleDecompositions C x x)
+            GridPentagonRectangleDecomposition.toRectangleDecomposition
       have hrip : (G.rectangleInitialPentagonDecompositions C x x).filter
           (fun D => ¬D.toGridRectangleDecomposition.HasDisjointSides) =
             G.rectangleInitialPentagonDecompositions C x x :=
-        Finset.filter_true_of_mem fun D _ hD =>
-          D.toGridRectangleDecomposition.target_ne_source_of_hasDisjointSides hD rfl
+        GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self
+          (G.rectangleInitialPentagonDecompositions C x x)
+          GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition
       have hipr : (G.initialPentagonRectangleDecompositions C x x).filter
           (fun D => ¬D.toGridRectangleDecomposition.HasDisjointSides) =
             G.initialPentagonRectangleDecompositions C x x :=
-        Finset.filter_true_of_mem fun D _ hD =>
-          D.toGridRectangleDecomposition.target_ne_source_of_hasDisjointSides hD rfl
+        GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self
+          (G.initialPentagonRectangleDecompositions C x x)
+          GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition
       simpa only [hrp, hpr, hrip, hipr] using
         G.sum_rectanglePentagonWeight_add_sum_rectangleInitialPentagonWeight_self C R x
     · simpa only [G.sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,

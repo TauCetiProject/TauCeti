@@ -137,7 +137,7 @@ lemma toAlgebraicCycle_inj {D E : SchemeWeilDivisor X} :
 
 /-- Algebraic cycles with finite support contained in codimension one. -/
 def finiteCodimensionOneCycles (X : Scheme.{u}) : AddSubgroup (AlgebraicCycle X ℤ) where
-  carrier C := C.support.Finite ∧ ∀ x ∈ C.support, coheight x = 1
+  carrier := {C | C.support.Finite ∧ ∀ x ∈ C.support, coheight x = 1}
   zero_mem' :=
     ⟨by simp [Function.locallyFinsuppWithin.support],
       fun _ hx ↦ by simp at hx⟩

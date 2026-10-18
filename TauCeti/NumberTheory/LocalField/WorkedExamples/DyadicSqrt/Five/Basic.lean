@@ -17,7 +17,7 @@ import TauCeti.RingTheory.Norm.Quadratic
 
 Since `5` is not a square in `ℚ_2`, adjoining a root of `X² − 5` gives a quadratic extension
 `ℚ_2(√5)` of `ℚ_2`. This file equips it with the structure of a nonarchimedean local field
-extending `ℚ_2`, through the spectral norm of `TauCeti.finiteExtensionValuativeRel`, and computes
+extending `ℚ_2`, through the spectral norm of `TauCeti.algebraicExtensionValuativeRel`, and computes
 its Frobenius.
 
 The extension is unramified: the golden ratio `φ = (1 + √5) / 2` is a root of `X² − X − 1`, whose
@@ -69,7 +69,7 @@ open Polynomial ValuativeRel
 namespace TauCeti
 
 /-- The field `ℚ_2(√5)`, obtained from `ℚ_2` by adjoining a root of `X² − 5`. It carries the
-nonarchimedean local field structure of `TauCeti.finiteExtensionValuativeRel`, which is the
+nonarchimedean local field structure of `TauCeti.algebraicExtensionValuativeRel`, which is the
 unique one extending that of `ℚ_2`. -/
 def DyadicSqrtFive : Type := AdjoinRoot (X ^ 2 - C 5 : ℚ_[2][X])
 
@@ -94,13 +94,13 @@ instance : FiniteDimensional ℚ_[2] DyadicSqrtFive := powerBasis.finite
 instance : CharZero DyadicSqrtFive :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[2] DyadicSqrtFive).injective
 
-instance : ValuativeRel DyadicSqrtFive := finiteExtensionValuativeRel ℚ_[2] DyadicSqrtFive
+instance : ValuativeRel DyadicSqrtFive := algebraicExtensionValuativeRel ℚ_[2] DyadicSqrtFive
 
 instance : TopologicalSpace DyadicSqrtFive :=
-  finiteExtensionNormedFieldTopology ℚ_[2] DyadicSqrtFive
+  algebraicExtensionNormedFieldTopology ℚ_[2] DyadicSqrtFive
 
 instance : ValuativeExtension ℚ_[2] DyadicSqrtFive :=
-  finiteExtension_valuativeExtension ℚ_[2] DyadicSqrtFive
+  algebraicExtension_valuativeExtension ℚ_[2] DyadicSqrtFive
 
 instance : IsNonarchimedeanLocalField DyadicSqrtFive :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicSqrtFive
@@ -212,14 +212,9 @@ theorem frobeniusAlgEquiv_sqrtFive :
 theorem exists_eq_add_mul_sqrtFive (y : DyadicSqrtFive) :
     ∃ a b : ℚ_[2], y = algebraMap ℚ_[2] DyadicSqrtFive a +
       algebraMap ℚ_[2] DyadicSqrtFive b * sqrtFive := by
-  -- `√5` lies outside `ℚ_2`, since Frobenius moves it.
-  have hθ : sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
-    rintro ⟨c, hc⟩
-    have h := congrArg (frobeniusAlgEquiv (K := ℚ_[2]) (L := DyadicSqrtFive)) hc
-    rw [AlgEquiv.commutes, hc, frobeniusAlgEquiv_sqrtFive, self_eq_neg] at h
-    simpa [h] using sqrtFive_sq
   obtain ⟨b, a, rfl⟩ :=
-    Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ_[2] DyadicSqrtFive hθ y
+    Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ_[2] DyadicSqrtFive
+      sqrtFive_not_mem y
   exact ⟨a, b, rfl⟩
 
 /-- **The norm form of `ℚ_2(√5)/ℚ_2`.** The norm of `a + b√5` is `a² − 5b²`. -/

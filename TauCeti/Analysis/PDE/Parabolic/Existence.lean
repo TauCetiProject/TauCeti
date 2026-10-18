@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
+public import TauCeti.Analysis.Sobolev.WeakDeriv.GelfandTriple
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -17,10 +18,13 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.Lions
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Pettis
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Existence for linear parabolic equations
@@ -46,11 +50,18 @@ modulo `(range ι)ᗮ`; it encodes `u(a) = u₀` itself only when `ι` has dense
 genuine Gelfand triple. This file proves that the variational formulation has a
 solution `u ∈ L²(a, b; V)` (`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`).
 
-That `u` is then a weak solution in the sense of
-`TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`, with weak time derivative
-`u' = f - A u ∈ L²(a, b; V*)` and a continuous representative whose value at `t = a` agrees
-with `u₀` modulo `(range ι)ᗮ` (so equals `u₀` itself when `ι` has dense range), is not proved
-here.
+When `V` is moreover separable, every solution `u` of the variational formulation is a weak
+solution in the sense of `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`: its weak time
+derivative is `u' = f - A u ∈ L²(a, b; V*)`
+(`TauCeti.hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner`), and the value at
+`t = a` of a continuous representative of `ι ∘ u` agrees with `u₀` modulo `(range ι)ᗮ`
+(`TauCeti.gelfandDual_eq_of_forall_setIntegral_eq_add_inner`). For a Gelfand triple this gives
+existence of a weak solution of `u' + A(t) u = f`, `u(a) = u₀`
+(`TauCeti.exists_hasWeakLineDerivOn_gelfandDual`), which the energy estimate in
+`TauCeti.Analysis.PDE.Parabolic.EnergyEstimate` shows to be unique when `β ≥ 0`. Separability
+makes `t ↦ A(t) u(t)` strongly measurable as a function into `V*`
+(`MeasureTheory.MemLp.clm_apply_of_forall_aestronglyMeasurable`, a consequence of Pettis'
+theorem), which a weak derivative in `L²(a, b; V*)` needs.
 
 ## The proof
 
@@ -75,7 +86,11 @@ measurable on `(a, b)` for all `u, v ∈ V` as in Lions and Showalter, and essen
 strongly measurable as maps into `V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for
 `u ∈ L²(a, b; V)` then follows from
 `MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`, which approximates `(u, φ)`
-with simple functions, so no separability of `V` is needed.
+with simple functions, so the variational existence theorem needs no separability of `V`.
+
+For the weak derivative, test the variational formulation against `φ(t) = ψ(t) v` with `ψ`
+smooth and compactly supported in `(a, b)`. For the initial value, test it against
+`φ(t) = (b - t) / (b - a) v` and integrate by parts against the primitive of `u'`.
 
 ## Main declarations
 
@@ -84,6 +99,14 @@ with simple functions, so no separability of `V` is needed.
 * `TauCeti.exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq`: the same, with the
   hypotheses and the conclusion stated for bilinear functionals `B(t)` that agree with `A(t)` for
   almost every `t`.
+* `TauCeti.hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner`: a solution of the
+  variational formulation has weak time derivative `f - A u`.
+* `TauCeti.gelfandDual_eq_of_forall_setIntegral_eq_add_inner`: its continuous representative
+  takes the initial value `u₀` modulo `(range ι)ᗮ`.
+* `TauCeti.exists_hasWeakLineDerivOn_gelfandDual`: existence of a weak solution of
+  `u' + A(t) u = f`, `u(a) = u₀`, in a Gelfand triple.
+* `TauCeti.exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq`: the same, with the hypotheses and the
+  equation stated for bilinear functionals `B(t)` that agree with `A(t)` for almost every `t`.
 
 ## References
 
@@ -497,5 +520,216 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq [CompleteSpace V]
   refine integral_congr_ae ?_
   filter_upwards [hAB] with t hABt
   rw [hABt]
+
+/-! ### The variational solution is a weak solution -/
+
+section WeakSolution
+
+variable {ι : V →L[ℝ] H} {u : ℝ → V} {u₀ : H}
+
+/-- **The variational formulation gives the weak time derivative.** Let `V` be a separable Hilbert
+space, let `A(t) : V →L[ℝ] V*` be weakly measurable and essentially bounded on `(a, b)`, and let
+`f ∈ L²(a, b; V*)`. If `u ∈ L²(a, b; V)` satisfies the variational formulation
+
+`∫ₐᵇ (A(t) u(t) φ(t) - ⟪ι u(t), ι φ'(t)⟫) dt = ∫ₐᵇ f(t) φ(t) dt + ⟪u₀, ι φ(a)⟫`
+
+for every `C¹` function `φ : ℝ → V` with `φ(b) = 0`, then `u' = f - A u` is the weak time
+derivative of `ι.gelfandDual ∘ ι ∘ u` on `(a, b)`: `u` is a weak solution of `u' + A(t) u = f`. -/
+theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [CompleteSpace V]
+    [TopologicalSpace.SeparableSpace V]
+    (hA : ∀ u v, AEStronglyMeasurable (fun t => A t u v) (volume.restrict (Ioo a b)))
+    (hA_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t‖ ≤ Λ)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (hu : MemLp u 2 (volume.restrict (Ioo a b)))
+    (hvar : ∀ φ : ℝ → V, ContDiff ℝ 1 φ → φ b = 0 →
+      ∫ t in Ioo a b, (A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ) =
+        (∫ t in Ioo a b, f t (φ t)) + ⟪u₀, ι (φ a)⟫_ℝ) :
+    HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t => ι.gelfandDual (ι (u t)))
+      (fun t => f t - A t (u t)) 1 := by
+  set μ := volume.restrict (Ioo a b)
+  have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 measure_Ioo_lt_top.ne
+  have hloc {g : ℝ → StrongDual ℝ V} (hg : MemLp g 2 μ) : LocallyIntegrableOn g (Ioo a b) :=
+    IntegrableOn.locallyIntegrableOn (hg.integrable one_le_two)
+  have hG : LocallyIntegrableOn (fun t => ι.gelfandDual (ι (u t))) (Ioo a b) :=
+    hloc ((ι.gelfandDual.comp ι).comp_memLp' hu)
+  have hAu := hloc (hu.clm_apply_of_forall_aestronglyMeasurable hA hA_bound)
+  have hf' := hloc hf
+  have hg : LocallyIntegrableOn (fun t => f t - A t (u t)) (Ioo a b) := hf'.sub hAu
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hG, hg, fun φ => ?_⟩
+  set ψ : ℝ → ℝ := (φ : ℝ → ℝ) with hψ_def
+  have hψ : ContDiff ℝ 1 ψ := φ.contDiff.of_le (by simp)
+  have hψ0 : ∀ t ∉ Ioo a b, ψ t = 0 := fun t ht =>
+    image_eq_zero_of_notMem_tsupport fun h => ht (φ.tsupport_subset h)
+  -- Both sides are integrals over `(a, b)`; compare them on each `v ∈ V`.
+  rw [← setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul,
+    ← setIntegral_smul_eq_integral_smul]
+  ext v
+  have hI {g : ℝ → StrongDual ℝ V} (hg : LocallyIntegrableOn g (Ioo a b)) :
+      Integrable (fun t => ψ t * g t v) μ := by
+    simpa using ((integrable_smul_of_locallyIntegrableOn hg φ).restrict
+      (s := Ioo a b)).apply_continuousLinearMap v
+  have hI' : Integrable (fun t => deriv ψ t * ⟪ι (u t), ι v⟫_ℝ) μ := by
+    simpa [ContinuousLinearMap.gelfandDual_apply, lineDeriv_one] using
+      ((integrable_lineDeriv_smul_of_locallyIntegrableOn hG φ 1).restrict
+        (s := Ioo a b)).apply_continuousLinearMap v
+  rw [ContinuousLinearMap.integral_apply
+      ((integrable_lineDeriv_smul_of_locallyIntegrableOn hG φ 1).restrict) v,
+    neg_apply, ContinuousLinearMap.integral_apply
+      ((integrable_smul_of_locallyIntegrableOn hg φ).restrict) v]
+  -- Test the variational formulation against `ψ v`.
+  have h := hvar (fun t => ψ t • v) (hψ.smul contDiff_const) (by simp [hψ0 b (by simp)])
+  have hd : ∀ t, deriv (fun s => ψ s • v) t = deriv ψ t • v := fun t =>
+    deriv_smul_const ((hψ.differentiable one_ne_zero) t) v
+  simp only [hd, hψ0 a (by simp), zero_smul, map_zero, inner_zero_right, add_zero, map_smul,
+    smul_eq_mul, inner_smul_right] at h
+  rw [integral_sub (hI hAu) hI'] at h
+  simp only [TopologicalSpace.Opens.coe_mk, ← hψ_def, smul_apply, sub_apply,
+    ContinuousLinearMap.gelfandDual_apply, smul_eq_mul, mul_sub, lineDeriv_one]
+  rw [integral_sub (hI hf') (hI hAu)]
+  linarith
+
+/-- **The variational formulation gives the initial value.** In the setting of
+`TauCeti.hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner`, let `a < b` and let
+`w` be a representative of `ι ∘ u` continuous on `[a, b]`. Then `w a` agrees with `u₀` modulo
+`(range ι)ᗮ`: `⟪w a, ι v⟫ = ⟪u₀, ι v⟫` for every `v ∈ V`. -/
+theorem gelfandDual_eq_of_forall_setIntegral_eq_add_inner [CompleteSpace V]
+    [TopologicalSpace.SeparableSpace V] {w : ℝ → H} (hab : a < b)
+    (hA : ∀ u v, AEStronglyMeasurable (fun t => A t u v) (volume.restrict (Ioo a b)))
+    (hA_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t‖ ≤ Λ)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (hu : MemLp u 2 (volume.restrict (Ioo a b)))
+    (hvar : ∀ φ : ℝ → V, ContDiff ℝ 1 φ → φ b = 0 →
+      ∫ t in Ioo a b, (A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ) =
+        (∫ t in Ioo a b, f t (φ t)) + ⟪u₀, ι (φ a)⟫_ℝ)
+    (hw : ContinuousOn w (Icc a b)) (hae : (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w) :
+    ι.gelfandDual (w a) = ι.gelfandDual u₀ := by
+  set μ := volume.restrict (Ioo a b)
+  have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 measure_Ioo_lt_top.ne
+  have hd := hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner hA hA_bound hf hu
+    hvar
+  have hAu := hu.clm_apply_of_forall_aestronglyMeasurable hA hA_bound
+  set g : ℝ → StrongDual ℝ V := fun t => f t - A t (u t) with hg_def
+  have hg : MemLp g 2 μ := hf.sub hAu
+  have hgi : IntervalIntegrable g volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 (hg.integrable one_le_two)
+  -- `ξ` is a continuous representative of `ι.gelfandDual ∘ ι ∘ u`, whose weak derivative is `g`.
+  set ξ : ℝ → StrongDual ℝ V := fun t => ι.gelfandDual (w t)
+  have hξ : ContinuousOn ξ (Icc a b) := ι.gelfandDual.continuous.comp_continuousOn hw
+  have hξae : (fun t => ι.gelfandDual (ι (u t))) =ᵐ[μ] ξ := hae.fun_comp ι.gelfandDual
+  -- Test against `θ v`, where `θ` decreases affinely from `θ a = 1` to `θ b = 0`.
+  set θ : ℝ → ℝ := fun t => (b - t) / (b - a) with hθ_def
+  have hθ : ContDiff ℝ 1 θ := (contDiff_const.sub contDiff_id).div_const _
+  have hθd : Continuous (deriv θ) := hθ.continuous_deriv le_rfl
+  have hθa : θ a = 1 := div_self (sub_ne_zero.2 hab.ne')
+  have hθb : θ b = 0 := by simp [hθ_def]
+  -- Integrating by parts gives `∫ₐᵇ θ' ξ = -ξ a - ∫ₐᵇ θ g`.
+  have hK : ∫ t in a..b, deriv θ t • ξ t = -ξ a - ∫ t in a..b, θ t • g t := by
+    rw [hd.integral_deriv_smul_eq_sub (hg.integrable one_le_two) hξ hξae hab.le hθ, hθa, hθb,
+      zero_smul, one_smul, zero_sub]
+  refine ContinuousLinearMap.ext fun v => ?_
+  -- Evaluate at `v` and pass to integrals over `(a, b)`.
+  have hKv := congrArg (fun L : StrongDual ℝ V => L v) hK
+  rw [ContinuousLinearMap.intervalIntegral_apply
+      (hθd.continuousOn.smul (uIcc_of_le hab.le ▸ hξ)).intervalIntegrable v, sub_apply, neg_apply,
+    ContinuousLinearMap.intervalIntegral_apply
+      (hgi.continuousOn_smul hθ.continuous.continuousOn) v,
+    intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_of_le hab.le,
+    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo] at hKv
+  have hQ : ∫ t in Ioo a b, (deriv θ t • ξ t) v = ∫ t in Ioo a b, deriv θ t * ⟪ι (u t), ι v⟫_ℝ := by
+    refine integral_congr_ae ?_
+    filter_upwards [hξae] with t ht
+    rw [smul_apply, ← ht, ContinuousLinearMap.gelfandDual_apply, smul_eq_mul]
+  rw [hQ] at hKv
+  simp only [smul_apply, smul_eq_mul, hg_def, sub_apply, mul_sub, ξ,
+    ContinuousLinearMap.gelfandDual_apply] at hKv
+  have hI {F : ℝ → StrongDual ℝ V} {c : ℝ → ℝ} (hc : Continuous c) (hF : MemLp F 2 μ) :
+      Integrable (fun t => c t * F t v) μ := by
+    have hcF : MemLp (fun t => c t • F t) 2 μ :=
+      (hc.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+        Ioo_subset_Icc_self).smul hF
+    simpa using (hcF.integrable one_le_two).apply_continuousLinearMap v
+  have hIQ : Integrable (fun t => deriv θ t * ⟪ι (u t), ι v⟫_ℝ) μ := by
+    simpa [ContinuousLinearMap.gelfandDual_apply] using
+      hI (F := fun t => ι.gelfandDual (ι (u t))) hθd ((ι.gelfandDual.comp ι).comp_memLp' hu)
+  rw [integral_sub (hI hθ.continuous hf) (hI hθ.continuous hAu)] at hKv
+  -- Test the variational formulation against `θ v`.
+  have h := hvar (fun t => θ t • v) (hθ.smul contDiff_const) (by simp [hθb])
+  have hd' : ∀ t, deriv (fun s => θ s • v) t = deriv θ t • v := fun t =>
+    deriv_smul_const ((hθ.differentiable one_ne_zero) t) v
+  simp only [hd', hθa, one_smul, map_smul, smul_eq_mul, inner_smul_right] at h
+  rw [integral_sub (hI hθ.continuous hAu) hIQ] at h
+  simp only [ContinuousLinearMap.gelfandDual_apply]
+  linarith
+
+/-- **Existence of weak solutions for linear parabolic equations.** Let `V ↪ H ↪ V*` be a Gelfand
+triple: `V` a separable Hilbert space, `H` a Hilbert space and `ι : V →L[ℝ] H` with dense range.
+Let `A(t) : V →L[ℝ] V*` be weakly measurable (`t ↦ A(t) u v` almost everywhere strongly
+measurable on `(a, b)` for all `u, v`), bounded by `Λ` and satisfy **Gårding's inequality**
+`α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` with `α > 0`, for almost every `t ∈ (a, b)`. Then for every
+`f ∈ L²(a, b; V*)` and `u₀ ∈ H` there is a weak solution of
+
+`u' + A(t) u = f`, `u(a) = u₀`:
+
+a `u ∈ L²(a, b; V)` such that `u' = f - A u ∈ L²(a, b; V*)` is the weak time derivative of
+`ι.gelfandDual ∘ ι ∘ u` on `(a, b)`, and a representative `w` of `ι ∘ u` continuous on `[a, b]`
+with `w a = u₀`. For `β ≥ 0` it is unique: see `TauCeti.HasWeakLineDerivOn.eqOn_of_gelfandDual`
+and `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`. -/
+theorem exists_hasWeakLineDerivOn_gelfandDual [CompleteSpace V] [TopologicalSpace.SeparableSpace V]
+    [CompleteSpace H] (hι : DenseRange ι) (hab : a ≤ b)
+    (hA : ∀ u v, AEStronglyMeasurable (fun t => A t u v) (volume.restrict (Ioo a b)))
+    (hA_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t‖ ≤ Λ) (hα : 0 < α)
+    (hA_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ A t v v)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (u₀ : H) :
+    ∃ u : ℝ → V, ∃ w : ℝ → H, MemLp u 2 (volume.restrict (Ioo a b)) ∧
+      MemLp (fun t => f t - A t (u t)) 2 (volume.restrict (Ioo a b)) ∧
+      HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t => ι.gelfandDual (ι (u t)))
+        (fun t => f t - A t (u t)) 1 ∧
+      ContinuousOn w (Icc a b) ∧ (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w ∧
+      w a = u₀ := by
+  obtain ⟨u, hu, hvar⟩ :=
+    exists_memLp_forall_setIntegral_eq_add_inner hab hA hA_bound hα hA_garding hf u₀
+  have hd := hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner hA hA_bound hf hu
+    hvar
+  have hg := hf.sub (hu.clm_apply_of_forall_aestronglyMeasurable hA hA_bound)
+  rcases hab.eq_or_lt with rfl | hab
+  · exact ⟨u, fun _ => u₀, hu, hg, hd, continuousOn_const, by simp [Filter.EventuallyEq], rfl⟩
+  obtain ⟨w, hw, hae⟩ := hd.exists_continuousOn_ae_eq_of_gelfandDual hu hg
+  exact ⟨u, w, hu, hg, hd, hw, hae, ι.gelfandDual_injective hι
+    (gelfandDual_eq_of_forall_setIntegral_eq_add_inner hab hA hA_bound hf hu hvar hw hae)⟩
+
+/-- `TauCeti.exists_hasWeakLineDerivOn_gelfandDual` with the operators `A(t)` known only through a
+family of bilinear functionals `B(t)` that they agree with for almost every `t`, as in
+`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq`: measurability, boundedness and
+Gårding's inequality are hypotheses on `B`, and the equation `u' + A(t) u = f` is stated tested
+against every `v ∈ V`, as `u'(t)(v) + B(t)(u(t), v) = f(t)(v)` for almost every `t`. -/
+theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
+    [TopologicalSpace.SeparableSpace V] [CompleteSpace H] (hι : DenseRange ι) (hab : a ≤ b)
+    {B : ℝ → V → V → ℝ} (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
+    (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
+    (hΛ : 0 ≤ Λ)
+    (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
+    (hα : 0 < α)
+    (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (u₀ : H) :
+    ∃ u : ℝ → V, ∃ u' : ℝ → StrongDual ℝ V, ∃ w : ℝ → H,
+      MemLp u 2 (volume.restrict (Ioo a b)) ∧ MemLp u' 2 (volume.restrict (Ioo a b)) ∧
+      HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t => ι.gelfandDual (ι (u t))) u' 1 ∧
+      (∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, u' t v + B t (u t) v = f t v) ∧
+      ContinuousOn w (Icc a b) ∧ (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w ∧
+      w a = u₀ := by
+  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ := exists_hasWeakLineDerivOn_gelfandDual (A := A) hι hab
+    (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
+    (by
+      filter_upwards [hAB, hB_bound] with t hABt hBt
+      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      rw [hABt, mul_assoc]
+      exact hBt u v)
+    hα (by
+      filter_upwards [hAB, hB_garding] with t hABt hBt v
+      rw [hABt]
+      exact hBt v) hf u₀
+  refine ⟨u, fun t => f t - A t (u t), w, hu, hu', hd, ?_, hw, hae, hw₀⟩
+  filter_upwards [hAB] with t hABt v
+  rw [sub_apply, ← hABt, sub_add_cancel]
+
+end WeakSolution
 
 end TauCeti

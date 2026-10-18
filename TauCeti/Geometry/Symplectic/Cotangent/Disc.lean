@@ -55,9 +55,8 @@ theorem integral_strongDualCotangentSymplecticForm_disc (hr : 0 ≤ r)
       -(∫ θ in -π..π, cotangentLiouvilleForm (u (circleMap z₀ r θ))
         (fun _ ↦ deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)) := by
   let B : (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
-    ((ContinuousLinearMap.compL ℝ (V × StrongDual ℝ V) V ℝ).flip
-      (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))).comp
-      (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V))
+    (ContinuousLinearMap.id ℝ (StrongDual ℝ V)).bilinearComp
+      (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)) (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))
   have hB (x v : V × StrongDual ℝ V) : B x v = x.2 v.1 := by simp [B]
   have hset : {z : ℂ | 0 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r} = closedBall z₀ r := by
     ext z

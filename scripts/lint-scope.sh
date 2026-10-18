@@ -18,7 +18,9 @@
 #   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
 #                    the exact head being built, so the scope is bound to that immutable commit
 #   HEAD_REPO        for any PR build above, its head repository (owner/name), possibly a fork
-#   SCOPE_REPO       exact candidate checkout, with its .git/objects available locally
+#   SCOPE_REPO       tested candidate checkout, with its .git/objects available locally
+#   TESTED_BASE, TESTED_HEAD  optional local B/T endpoints for a prospective integration;
+#                    BASE/HEAD still select immutable raw-head GitHub policy metadata
 # Output: if scoped, OUT_DIR/modules.txt lists the changed TauCeti modules (possibly none) and
 # `LINT_ONLY_MODULES=OUT_DIR/modules.txt` is appended to $GITHUB_ENV; if not,
 # `LINT_ONLY_MODULES=` is. OUT_DIR/unmatched.txt lists every changed `.lean` file that is not one of
@@ -95,7 +97,10 @@ merge_base=$(jq -r '.merge_base_commit.sha // empty' <<<"$compare")
 [[ "$merge_base" =~ ^[0-9a-f]{40}$ ]] || full "no exact merge base"
 [ -n "${SCOPE_REPO:-}" ] || full "no local candidate checkout"
 tool_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-if ! python3 "$tool_dir/lint_scope_files.py" "$SCOPE_REPO" "$merge_base" "$HEAD" \
+# Label/review identity above stays raw H. The local module list follows T vs B
+# when the build prepared an integration; deleted/renamed modules then match the
+# actual checked-out sources. Other callers keep their existing exact-head contract.
+if ! python3 "$tool_dir/lint_scope_files.py" "$SCOPE_REPO" "${TESTED_BASE:-$merge_base}" "${TESTED_HEAD:-$HEAD}" \
     > "$OUT_DIR/files.nul"; then
   full "the immutable local diff is unavailable"
 fi

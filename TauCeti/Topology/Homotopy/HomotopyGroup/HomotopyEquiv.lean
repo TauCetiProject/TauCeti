@@ -43,6 +43,8 @@ the `[Fintype N]` that the cube radius uses.
 * `TauCeti.homotopyGroupTransport_map`: **freely homotopic maps induce the same map on homotopy
   groups, up to transport along the trace of the homotopy.**
 * `TauCeti.homotopyGroupTransport_map_map`: the case of a round trip `g ∘ f ≃ id`.
+* `HomotopyGroup.map_eq_one_of_nullhomotopic`: in positive dimensions a null-homotopic map
+  induces the trivial map on homotopy groups.
 * `HomotopyGroup.map_bijective_of_homotopyEquiv`: a homotopy equivalence induces a bijection on
   homotopy groups.
 * `HomotopyGroup.equivOfHomotopyEquiv`, `HomotopyGroup.mulEquivOfHomotopyEquiv`: that bijection,
@@ -79,8 +81,8 @@ def homotopyAlongMap {f g : C(X, Y)} (H : f.Homotopy g) {x : X} {y₀ y₁ : Y} 
     HomotopyAlong ((H.evalAt x).cast hf.symm hg.symm) (_root_.GenLoop.map f hf p)
       (_root_.GenLoop.map g hg p) where
   toContinuousMap := ⟨fun tz => H (tz.1, p tz.2), by fun_prop⟩
-  map_zero_left z := H.apply_zero (p z)
-  map_one_left z := H.apply_one (p z)
+  map_zero_left z := (H.apply_zero (p z)).trans (_root_.GenLoop.map_apply f hf p z).symm
+  map_one_left z := (H.apply_one (p z)).trans (_root_.GenLoop.map_apply g hg p z).symm
   map_boundary t z hz := congrArg (fun w => H (t, w)) (_root_.GenLoop.boundary p z hz)
 
 /-- **Freely homotopic maps agree on generalized loops, up to transport along the trace of the
@@ -143,6 +145,19 @@ theorem map_comp_map_bijective_of_homotopy_id {f : C(X, Y)} {g : C(Y, X)}
     exact TauCeti.homotopyGroupTransport_map_map H x a
   rw [hfun]
   exact Equiv.bijective _
+
+/-- **A null-homotopic map is trivial on homotopy groups in positive dimensions.** A free
+null-homotopy of `f` to a constant map moves the base point along a path, and base-point change
+along that path, a group isomorphism, carries the map induced by `f` to the trivial one. -/
+theorem map_eq_one_of_nullhomotopic [Nonempty N] [DecidableEq N] {f : C(X, Y)}
+    (hf : f.Nullhomotopic) {x : X} {y : Y} (hfx : f x = y) (a : HomotopyGroup N X x) :
+    map f hfx a = 1 := by
+  have : Fintype N := Fintype.ofFinite N
+  obtain ⟨c, ⟨H⟩⟩ := hf
+  apply (TauCeti.homotopyGroupMulEquivOfPath ((H.evalAt x).cast hfx.symm rfl)).injective
+  rw [_root_.map_one, TauCeti.homotopyGroupMulEquivOfPath_apply,
+    TauCeti.homotopyGroupTransport_map H hfx rfl]
+  exact map_continuousMap_const_apply_eq_one c rfl a
 
 /-- **A homotopy equivalence induces a bijection on homotopy groups.** -/
 theorem map_bijective_of_homotopyEquiv (e : X ≃ₕ Y) (x : X) :

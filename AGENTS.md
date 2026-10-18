@@ -56,6 +56,13 @@ scope do not coincide.
   references in comments without double quotes. A local syntax rule needed for elaboration performance
   should document the concrete need at its declaration.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
+- Stacked PRs are prohibited, including drafts and PRs labelled keep/hold/human.
+  Wait for each prerequisite to land on main before opening its dependent PR;
+  then rebase onto current main and include only the new work. Targeting main
+  while carrying another unmerged PR's commits or content is still stacking.
+  The trusted [no-stacking policy](scripts/stack-policy.md) comments and closes
+  confirmed stacks without deleting their branches. Ordinary independent PRs
+  may touch the same files or share roadmap areas.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
   in-repository use and remove the obsolete names and module paths in the same PR. Do not add or

@@ -28,7 +28,12 @@ evaluated on `K`-algebras.
 ## Main declarations
 
 * `CommHopfAlgCat.baseChange`: the bundled Hopf `K`-algebra `K ⊗[k] H`.
+* `CommHopfAlgCat.baseChangeAlgEquiv`: the underlying algebra of base change, available as
+  `H.baseChangeAlgEquiv`.
 * `CommHopfAlgCat.baseChangeMap`: scalar extension of a coordinate morphism.
+* `CommHopfAlgCat.baseChangeMap_injective_hom`: scalar extension along an injective algebra map
+  distinguishes coordinate morphisms whose target is flat over the ground ring.
+* `CommHopfAlgCat.baseChangeMap_unit_comp_counit`: base change preserves the trivial morphism.
 * `CommHopfAlgCat.baseChangeMap_surjective`: base change preserves surjectivity.
 * `CommHopfAlgCat.baseChangeMap_surjective_of_iso`: surjectivity in isomorphic presentations.
 * `CommHopfAlgCat.baseChangeMap_injective`: flat base change preserves injectivity.
@@ -66,6 +71,15 @@ noncomputable abbrev baseChange (H : _root_.CommHopfAlgCat.{v} k) :
     _root_.CommHopfAlgCat.{max w v} K :=
   _root_.CommHopfAlgCat.of K (K ⊗[k] H)
 
+/-- The underlying algebra of `TauCeti.CommHopfAlgCat.baseChange H` is `K ⊗[k] H`.
+
+The constructor bundles this tensor product directly, so this equivalence is the identity.
+Using this interface keeps the choice of bundled carrier local to the constructor. -/
+noncomputable def _root_.CommHopfAlgCat.baseChangeAlgEquiv
+    (H : _root_.CommHopfAlgCat.{v} k) :
+    (TauCeti.CommHopfAlgCat.baseChange (K := K) H : Type (max w v)) ≃ₐ[K] K ⊗[k] (H : Type v) :=
+  AlgEquiv.refl
+
 /-- Scalar extension of a morphism of commutative Hopf algebras. -/
 noncomputable abbrev baseChangeMap {H L : _root_.CommHopfAlgCat.{v} k}
     (φ : H ⟶ L) : baseChange (K := K) H ⟶ baseChange (K := K) L :=
@@ -87,6 +101,34 @@ lemma baseChangeMap_apply_tmul {H L : _root_.CommHopfAlgCat.{v} k}
     (baseChangeMap (K := K) φ).hom (s ⊗ₜ[k] h) = s ⊗ₜ[k] φ.hom h := by
   rw [hom_baseChangeMap, _root_.Bialgebra.TensorProduct.map_tmul,
     _root_.BialgHom.id_apply]
+
+/-- Scalar extension along an injective algebra map distinguishes coordinate morphisms
+whose target is flat over the ground ring. In particular this applies to field extensions. -/
+theorem baseChangeMap_injective_hom {H L : _root_.CommHopfAlgCat.{v} k} [Module.Flat k L]
+    (hK : Function.Injective (algebraMap k K)) :
+    Function.Injective (baseChangeMap (K := K) (H := H) (L := L)) := by
+  intro f g h
+  apply _root_.CommHopfAlgCat.hom_ext
+  ext x
+  apply Algebra.TensorProduct.includeRight_injective hK
+  have hx := congrArg (fun φ => φ.hom (1 ⊗ₜ[k] x)) h
+  rw [baseChangeMap_apply_tmul, baseChangeMap_apply_tmul] at hx
+  exact hx
+
+/-- Scalar extension preserves the trivial morphism, the unit composed with the counit. -/
+@[simp]
+theorem baseChangeMap_unit_comp_counit {H L : _root_.CommHopfAlgCat.{v} k} :
+    baseChangeMap (K := K) (_root_.CommHopfAlgCat.ofHom
+      ((Bialgebra.unitBialgHom k L).comp (Bialgebra.counitBialgHom k H))) =
+      _root_.CommHopfAlgCat.ofHom
+        ((Bialgebra.unitBialgHom K (baseChange (K := K) L)).comp
+          (Bialgebra.counitBialgHom K (baseChange (K := K) H))) := by
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply _root_.BialgHom.coe_toAlgHom_injective
+  apply Algebra.TensorProduct.ext'
+  intro s x
+  simp [Bialgebra.unitBialgHom, Algebra.algebraMap_eq_smul_one,
+    Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
 
 /-- Base change along `k → K` preserves surjectivity of a morphism of commutative Hopf
 algebras. -/
@@ -240,15 +282,15 @@ lemma baseChangePointsMulEquiv_mapValue
 lemma baseChangePointsMulEquiv_mapDomain {H L : _root_.CommHopfAlgCat.{v} k}
     (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
     baseChangePointsMulEquiv (K := K) A H
-        (AlgHom.mapDomain (A := A) ((baseChangeMap (K := K) φ).hom) f) =
-      AlgHom.mapDomain
+        (BialgHom.mapDomain (A := A) ((baseChangeMap (K := K) φ).hom) f) =
+      BialgHom.mapDomain
         (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         φ.hom
         (baseChangePointsMulEquiv (K := K) A L f) := by
   let : Algebra k A := Algebra.compHom A (algebraMap k K)
   let : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   simpa [baseChangePointsMulEquiv, hom_baseChangeMap]
-    using AlgHom.baseChangePointsMulEquiv_symm_mapDomain (k := k) (K := K)
+    using BialgHom.baseChangePointsMulEquiv_symm_mapDomain (k := k) (K := K)
       (A := H) (B := L) (R := A) φ.hom f
 
 variable {H : _root_.CommHopfAlgCat.{v} k} {L : _root_.CommHopfAlgCat.{max w v} K}
@@ -262,7 +304,7 @@ noncomputable def baseChangeIsoPointsMulEquiv (e : L ≅ baseChange (K := K) H)
     HopfAlgebra.points (R := K) (H := L) A ≃*
       HopfAlgebra.points (R := k) (H := H)
         (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
-  (AlgHom.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm)).trans
+  (BialgEquiv.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm)).trans
     (baseChangePointsMulEquiv (K := K) A H)
 
 /-- The presented point equivalence evaluates a point of `L` at the image of `1 ⊗ h` under the
@@ -272,7 +314,7 @@ lemma baseChangeIsoPointsMulEquiv_apply_apply (e : L ≅ baseChange (K := K) H)
     (A : CommAlgCat.{x} K) (f : HopfAlgebra.points (R := K) (H := L) A) (h : H) :
     (baseChangeIsoPointsMulEquiv e A f).ofConv h = f.ofConv (e.inv (1 ⊗ₜ[k] h)) := by
   rw [baseChangeIsoPointsMulEquiv, MulEquiv.trans_apply, baseChangePointsMulEquiv_apply_apply,
-    AlgHom.mapDomainMulEquiv_apply, AlgHom.mapDomain_apply_apply]
+    BialgEquiv.mapDomainMulEquiv_apply, BialgHom.mapDomain_apply_apply]
   exact congrArg f.ofConv (_root_.CommHopfAlgCat.ofIso_apply e.symm _)
 
 /-- Point transport through a scalar-extension presentation commutes with a compatible square of
@@ -319,13 +361,13 @@ lemma baseChangeIsoPointsMulEquiv_mapPoints (e : L ≅ baseChange (K := K) H)
   -- Transport along `e` is a pre-composition in the coordinate Hopf algebra, so it commutes with
   -- the post-composition by `χ` in the value algebra. The bundled `mapDomainMulEquiv` and
   -- `mapPoints` are unfolded to `mapDomain` and `mapValue` to reach `mapValue_mapDomain`.
-  have h : AlgHom.mapDomainMulEquiv (A := B) (_root_.CommHopfAlgCat.ofIso e.symm)
+  have h : BialgEquiv.mapDomainMulEquiv (A := B) (_root_.CommHopfAlgCat.ofIso e.symm)
         (HopfAlgebra.mapPoints (H := L) χ f) =
       HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ
-        (AlgHom.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm) f) := by
-    simp only [AlgHom.mapDomainMulEquiv_apply, HopfAlgebra.mapPoints]
+        (BialgEquiv.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm) f) := by
+    simp only [BialgEquiv.mapDomainMulEquiv_apply, HopfAlgebra.mapPoints]
     exact DFunLike.congr_fun
-      (AlgHom.mapValue_mapDomain (_root_.CommHopfAlgCat.ofIso e.symm).toBialgHom χ.hom) f
+      (BialgHom.mapValue_mapDomain (_root_.CommHopfAlgCat.ofIso e.symm).toBialgHom χ.hom) f
   simp only [baseChangeIsoPointsMulEquiv, MulEquiv.trans_apply, h]
   rw [baseChangePointsMulEquiv_mapValue]
 

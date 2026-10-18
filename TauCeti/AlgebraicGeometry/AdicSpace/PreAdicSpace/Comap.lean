@@ -45,6 +45,8 @@ spaces. This applies, for instance, to the Frobenius automorphism of `Spa(A_inf,
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_id`,
   `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_comp`: the construction is
   contravariantly functorial.
+* `presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpaceComap`: on the germs
+  of a rational open, the stalk maps are the base change of completed rational localisations.
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComapIso_hom_toHom`: the isomorphism is
   the map of adic spectra on points and the transport of the structure presheaf on sections.
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComapIso_inv_base`: on points, its inverse
@@ -577,6 +579,45 @@ theorem presentationLimitPreAdicSpaceComap_toHom
     (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf).toHom =
       presentationLimitPresheafedSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf := by
   rw [presentationLimitPreAdicSpaceComap]
+
+/-- **The stalk maps on rational germs.** Let `R(p)` be a rational open of `Spa(A, A⁺)` and let
+`q = (φ(T), φ(s))` present its preimage `R(φ(T)/φ(s))` in `Spa(B, B⁺)`. At a point `x` of that
+preimage, the stalk map of the morphism induced by `φ` carries the germ of an element of `A⟨p⟩`
+to the germ of its image under the base change `A⟨p⟩ → B⟨q⟩`. -/
+theorem presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpaceComap
+    [DecidableEq B] (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    (q : Presentation P') (hq : IsOpen (Ideal.span (q.num : Set B) : Set B))
+    (hnum : q.num = p.num.image φ) (hden : q.den = φ p.den) (x : spa Bplus)
+    (hy : (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP'
+      hsheaf).base x ∈ spaBasicOpen Aplus p.num p.den)
+    (hx : x ∈ spaBasicOpen Bplus q.num q.den) :
+    presentationLimitRationalGerm hAplus p hp _ hy ≫
+        (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP'
+          hsheaf).stalkMap x =
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          (p.mapHom φ hφ q hden fun _ ht ↦ hnum ▸ Finset.mem_image_of_mem φ ht) ≫
+        presentationLimitRationalGerm hBplus q hq x hx := by
+  -- `q` is the presentation of the index of `R(φ(p))` induced by `p`
+  obtain rfl : q = (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres := by
+    ext1
+    · rw [hnum, PresentationIndex.map_pres_num]
+      -- the two images may use different decidable-equality instances on `B`
+      convert rfl
+    · rw [hden, PresentationIndex.map_pres_den]
+  -- forgetting the topology on sections of the induced morphism gives `ringPresheafedSpaceHom`
+  exact (congrArg (presentationLimitRationalGerm hAplus p hp _ hy ≫ ·)
+    (PreAdicSpace.Hom.stalkMap_def
+      (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf) x)).trans
+    ((isBaseChangeOnRational_presentationLimitPresheafComap φ hφ hopen hplus hAplus hBplus
+      hsheaf).presentationLimitRationalGerm_comp_stalkMap p hp x hy hx)
 
 /-! ### Functoriality -/
 

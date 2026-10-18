@@ -30,6 +30,8 @@ discreteness of `Γ` is assumed.
 
 * `ConvexPolygon.SidePairing.orderOf_cycleMap_mul_cycleAngleSum`: the order of the cycle
   transformation at a finite vertex times its cycle angle sum is `2π`.
+* `ConvexPolygon.SidePairing.cycleAngleSum_eq_two_pi_div`: equivalently, the cycle angle sum at
+  a finite vertex is `2π` divided by the finite order of the cycle transformation.
 * `ConvexPolygon.SidePairing.exists_partialCycleMap_eq_of_smul_vertex_eq`: every transformation
   identifying two finite vertices occurs among the partial cycle products around the first.
 * `ConvexPolygon.SidePairing.smul_eq_self_iff_mem_zpowers_cycleMap`: an element of `Γ` fixes
@@ -208,6 +210,54 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
     (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]
   exact hSt
 
+/-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
+has finite order. -/
+theorem orderOf_cycleMap_ne_zero {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    orderOf (σ.cycleMap j) ≠ 0 := by
+  intro h0
+  have h := σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj
+  rw [h0, Nat.cast_zero, zero_mul] at h
+  exact Real.two_pi_pos.ne h
+
+/-- At a finite vertex of a polygon with disjoint translated interiors, the cycle angle sum is
+`2π` divided by the order of the cycle transformation. -/
+theorem cycleAngleSum_eq_two_pi_div {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    σ.cycleAngleSum j = 2 * π / orderOf (σ.cycleMap j) := by
+  rw [eq_div_iff (Nat.cast_ne_zero.2 (σ.orderOf_cycleMap_ne_zero hz hmap hdisj)), mul_comm,
+    σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj]
+
+/-- The tiles containing a finite vertex are exactly the inverse partial cycle tiles before
+one full turn. This classifies all tiles at the vertex, without assuming that its preimage
+under the tile transformation is a vertex. -/
+theorem mem_smul_carrier_iff_exists_inv_partialCycleMap_eq {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {g : PSL(2, ℝ)} (hg : g ∈ Γ) :
+    z ∈ g • P.carrier ↔
+      ∃ m < orderOf (σ.cycleMap j) * σ.cycleLength j,
+        (σ.partialCycleMap j m)⁻¹ = g := by
+  refine ⟨fun hzmem ↦ ?_, fun ⟨m, _, hm⟩ ↦ ?_⟩
+  · have hcov := σ.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum hz
+      (σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj).ge
+    have hzcl : z ∈ closure (g • interior P.carrier) := by
+      rwa [closure_smul, P.closure_interior_carrier]
+    obtain ⟨v, hvU, hvg⟩ := mem_closure_iff.1 hzcl _ isOpen_interior hcov
+    obtain ⟨m, hm, hvm⟩ := mem_iUnion₂.1 (interior_subset hvU)
+    exact ⟨m, Finset.mem_range.1 hm,
+      (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg
+        (Γ.inv_mem (σ.partialCycleMap_mem hmap j m)) ⟨v, hvg, hvm⟩).symm⟩
+  · rw [← hm, mem_smul_set_iff_inv_smul_mem, inv_inv]
+    have hvertex : P.vertex (σ.next^[m] j) = .inl (σ.partialCycleMap j m • z) := by
+      rw [← σ.partialCycleMap_smul_vertex, hz, Sum.smul_inl]
+    exact P.vertex_mem_carrier hvertex
+
 /-- Every element identifying two finite vertices of a polygon with disjoint translated interiors
 is a partial cycle product. The product occurs before the cycle has made one full turn, namely
 before `orderOf (cycleMap j) * cycleLength j` steps. -/
@@ -219,20 +269,13 @@ theorem exists_partialCycleMap_eq_of_smul_vertex_eq {j k : Fin n} {z w : ℍ}
     {g : PSL(2, ℝ)} (hg : g ∈ Γ) (hgz : g • z = w) :
     ∃ m < orderOf (σ.cycleMap j) * σ.cycleLength j,
       σ.partialCycleMap j m = g ∧ σ.next^[m] j = k := by
-  -- The cycle tiles cover a neighbourhood of `z` after exactly one full turn.
-  have hcov := σ.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum hz
-    (σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj).ge
-  -- The interior of `g⁻¹ • P` accumulates at `z`, so it meets one of those tiles.
-  have hzcl : z ∈ closure (g⁻¹ • interior P.carrier) := by
-    rw [closure_smul, P.closure_interior_carrier, mem_smul_set_iff_inv_smul_mem, inv_inv, hgz]
+  have hzmem : z ∈ g⁻¹ • P.carrier := by
+    rw [mem_smul_set_iff_inv_smul_mem, inv_inv, hgz]
     exact P.vertex_mem_carrier hw
-  obtain ⟨v, hvU, hvg⟩ := mem_closure_iff.1 hzcl _ isOpen_interior hcov
-  obtain ⟨m, hm, hvm⟩ := mem_iUnion₂.1 (interior_subset hvU)
-  have heq : g⁻¹ = (σ.partialCycleMap j m)⁻¹ :=
-    P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj (Γ.inv_mem hg)
-      (Γ.inv_mem (σ.partialCycleMap_mem hmap j m)) ⟨v, hvg, hvm⟩
-  have hmg : σ.partialCycleMap j m = g := (inv_injective heq).symm
-  refine ⟨m, Finset.mem_range.1 hm, hmg, P.vertex_injective ?_⟩
+  obtain ⟨m, hm, heq⟩ :=
+    (σ.mem_smul_carrier_iff_exists_inv_partialCycleMap_eq hz hmap hdisj (Γ.inv_mem hg)).1 hzmem
+  have hmg : σ.partialCycleMap j m = g := inv_injective heq
+  refine ⟨m, hm, hmg, P.vertex_injective ?_⟩
   rw [← σ.partialCycleMap_smul_vertex, hmg, hz, Sum.smul_inl, hgz, hw]
 
 /-- **The stabilizer of a finite vertex of a fundamental polygon.** Let `Γ` contain the

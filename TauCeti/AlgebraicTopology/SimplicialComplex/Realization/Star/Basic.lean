@@ -151,8 +151,8 @@ even when the ambient vertex type is infinite. -/
 theorem isCompact_geometricLink_of_finite
     (hfin : (PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
     IsCompact (geometricLink K v) := by
-  rw [Set.ext (mem_geometricLink_iff K v)]
-  exact K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.link_le hfin
+  convert K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.link_le hfin using 1
+  exact Set.ext (mem_geometricLink_iff K v)
 
 /-- The apex, regarded as a point of its geometric closed star. -/
 def starApex : closedStarRealization K {v} :=

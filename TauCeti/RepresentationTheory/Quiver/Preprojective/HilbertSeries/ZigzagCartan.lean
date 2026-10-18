@@ -43,7 +43,9 @@ H_{Π(Q)}(t) = C_G(-t)⁻¹.
 It holds for every orientation of `G` at which every Koszul complex is a resolution, and this file
 proves it unconditionally for every orientation without sinks. A connected graph has an orientation
 without sinks exactly when it is not a tree, so the non-Dynkin trees, such as `D~ₙ` and `E₆~`,
-`E₇~`, `E₈~`, are covered only through the conditional form.
+`E₇~`, `E₈~`, are covered here only through the conditional form. The theorem of Etingof and Eu
+discharges it for every orientation of a connected non-Dynkin graph
+(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso`).
 
 ## Main results
 
@@ -133,7 +135,7 @@ variable (k : Type w) [Field k] {V : Type u} {G : SimpleGraph V} (o : Orientatio
 /-- **Over a graph without isolated vertices, the zigzag graded Cartan matrix at `q = -X` is the
 denominator of the preprojective Hilbert series** of any orientation, read through the
 identification of the vertices of the oriented quiver with those of `G`. -/
-private theorem zigzagGradedCartanMatrix_map_aeval_neg_X_eq_submatrix [Finite V]
+theorem zigzagGradedCartanMatrix_map_aeval_neg_X_eq_submatrix [Finite V]
     [DecidableEq (OrientedQuiver G o)] (hns : ∀ i : V, ∃ j, G.Adj i j) :
     (zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)) =
       (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix (OrientedQuiver G o) (OrientedQuiver G o) ℤ⟦X⟧) -

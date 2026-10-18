@@ -117,7 +117,7 @@ theorem exists_contDiffOn_moserField (hL : L.IsInvertible) {n : WithTop ℕ∞}
     intro p hp
     exact (hA p hp).contDiffAt_map_inverse.comp_contDiffWithinAt p (hAs p hp)
   have hXs : ContDiffOn ℝ n X (T ×ˢ U) :=
-    hinv.clm_apply (hα.comp contDiffOn_snd (fun p hp ↦ hUW hp.2)).neg
+    hinv.clm_apply (hα.comp contDiffOn_snd (fun p (hp : p ∈ T ×ˢ U) ↦ hUW hp.2)).neg
   refine ⟨T, U, X, hT, hU, hIT, hxU, hUW, hXs, ?_⟩
   intro p hp v
   simp only [A, X, ← neg_apply]
