@@ -74,11 +74,7 @@ private theorem map_comul_mem_leftTensorIdeal {x : H} (hx : x ∈ I) :
   have h := Ideal.mem_map_of_mem (Algebra.TensorProduct.map (AlgHom.id R H)
     (Ideal.Quotient.mkₐ R I.toIdeal) : H ⊗[R] H →+* H ⊗[R] (H ⧸ I.toIdeal)) (I.comul_mem hx)
   have hbot : Ideal.map (Ideal.Quotient.mkₐ R I.toIdeal).toRingHom I.toIdeal = ⊥ := by
-    rw [Ideal.map_eq_bot_iff_le_ker]
-    intro y hy
-    rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact hy
+    exact Ideal.map_quotient_self I.toIdeal
   rw [Ideal.map_sup, AlgHom.map_tensor_leftTensorIdeal, AlgHom.map_tensor_rightTensorIdeal,
     hbot, Ideal.rightTensorIdeal_def, Ideal.map_bot, sup_bot_eq] at h
   simpa using h
