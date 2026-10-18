@@ -37,6 +37,10 @@ sum of its values at the original pair. -/
 def IsSubmodular [Add K] [LE K] [Lattice L] (f : L → K) : Prop :=
   ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b
 
+/-- A function is submodular exactly when it satisfies the submodular inequality at every pair. -/
+theorem isSubmodular_def [Add K] [LE K] [Lattice L] (f : L → K) :
+    IsSubmodular f ↔ ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b := Iff.rfl
+
 /-- A constant function on a lattice is submodular. -/
 theorem isSubmodular_const [Add K] [Preorder K] [Lattice L] (c : K) :
     IsSubmodular (fun _ : L ↦ c) := by
@@ -44,6 +48,11 @@ theorem isSubmodular_const [Add K] [Preorder K] [Lattice L] (c : K) :
   exact le_rfl
 
 namespace IsSubmodular
+
+/-- Extract the submodular inequality at a pair of lattice elements. -/
+protected theorem apply [Add K] [LE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
+    (a b : L) : f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b :=
+  (isSubmodular_def f).mp hf a b
 
 /-- The pointwise sum of two submodular functions is submodular. -/
 theorem add [AddCommMonoid K] [PartialOrder K] [IsOrderedAddMonoid K] [Lattice L]
