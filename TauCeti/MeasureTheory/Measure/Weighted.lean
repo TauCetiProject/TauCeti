@@ -190,14 +190,22 @@ theorem weighted_const_smul {μ : Measure α} {w : α → ℝ≥0} {c : ℝ≥0}
 
 /-- Successive weightings multiply their weights when the first weighting is a probability law. -/
 theorem weighted_weighted {μ : Measure α} {w v : α → ℝ≥0} (hw : AEMeasurable w μ)
-    (hv : AEMeasurable v μ) (hwpos : 0 < ∫⁻ x, (w x : ℝ≥0∞) ∂μ)
+    (hwpos : 0 < ∫⁻ x, (w x : ℝ≥0∞) ∂μ)
     (hwfin : ∫⁻ x, (w x : ℝ≥0∞) ∂μ ≠ ∞) :
     (μ.weighted w).weighted v = μ.weighted fun x => w x * v x := by
   rw [weighted_def, weighted_def, weighted_def,
-    lintegral_smul_measure, lintegral_withDensity_eq_lintegral_mul₀
-      hw.coe_nnreal_ennreal hv.coe_nnreal_ennreal]
-  rw [withDensity_smul_measure, ← withDensity_mul₀ hw.coe_nnreal_ennreal
-    hv.coe_nnreal_ennreal]
+    lintegral_smul_measure, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _
+      hw.coe_nnreal_ennreal (by simp)]
+  rw [withDensity_smul_measure]
+  have hdensity :
+      (μ.withDensity fun x => (w x : ℝ≥0∞)).withDensity (fun x => (v x : ℝ≥0∞)) =
+        μ.withDensity fun x => ((w x * v x : ℝ≥0) : ℝ≥0∞) := by
+    ext s hs
+    rw [withDensity_apply _ hs, withDensity_apply _ hs,
+      setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _
+        hw.coe_nnreal_ennreal.restrict _ hs (by simp)]
+    rfl
+  rw [hdensity]
   have hfun : ((fun x => (w x : ℝ≥0∞)) * fun x => (v x : ℝ≥0∞)) =
       fun x => ((w x * v x : ℝ≥0) : ℝ≥0∞) := by
     funext x
