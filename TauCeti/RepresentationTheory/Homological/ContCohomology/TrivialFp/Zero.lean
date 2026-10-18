@@ -48,6 +48,7 @@ instance : Module.Finite (ZMod p) (cohomFp p G 0) :=
   Module.Finite.equiv (cohomFpZeroLinearEquiv p G).symm
 
 /-- Zeroth continuous cohomology with trivial `ZMod p` coefficients has dimension one. -/
+@[simp]
 theorem finrank_cohomFp_zero : Module.finrank (ZMod p) (cohomFp p G 0) = 1 :=
   (cohomFpZeroLinearEquiv p G).finrank_eq.trans (CommSemiring.finrank_self (ZMod p))
 
