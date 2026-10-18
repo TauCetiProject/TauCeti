@@ -70,7 +70,7 @@ rearrangement, which gives the case `p = ∞`.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
-* `TauCeti.addHaar_setOf_lt_schwarzRearrangement_sdiff`: differences of two rearranged
+* `TauCeti.addHaar_sdiff_setOf_lt_schwarzRearrangement`: differences of two rearranged
   superlevel sets have the truncated difference of the original level measures.
 * `TauCeti.lintegral_sub_rpow_schwarzRearrangement_le`,
   `TauCeti.lintegral_edist_rpow_schwarzRearrangement_le`,
@@ -392,6 +392,7 @@ private theorem addHaar_ball_norm_lt_univ (x : E) : μ (ball (0 : E) ‖x‖) < 
     exact measure_ball_lt_top
 
 /-- Adding a constant commutes with Schwarz rearrangement. -/
+@[simp]
 theorem schwarzRearrangement_add_const (f : E → ℝ≥0∞) (c : ℝ≥0∞) :
     schwarzRearrangement μ (fun x ↦ f x + c) = fun x ↦ schwarzRearrangement μ f x + c := by
   ext x
@@ -412,7 +413,7 @@ theorem schwarzRearrangement_add_const (f : E → ℝ≥0∞) (c : ℝ≥0∞) :
 truncated difference of the two original level measures, since the two sets are concentric. No
 measurability or finiteness hypothesis is needed. -/
 @[simp]
-theorem addHaar_setOf_lt_schwarzRearrangement_sdiff (f g : E → ℝ≥0∞) (s t : ℝ≥0∞) :
+theorem addHaar_sdiff_setOf_lt_schwarzRearrangement (f g : E → ℝ≥0∞) (s t : ℝ≥0∞) :
     μ ({x | s < schwarzRearrangement μ f x} \ {x | t < schwarzRearrangement μ g x}) =
       μ {x | s < f x} - μ {x | t < g x} := by
   rcases le_total (μ {x | s < f x}) (μ {x | t < g x}) with h | h
@@ -439,7 +440,7 @@ private theorem lintegral_sub_schwarzRearrangement_le {f g : E → ℝ≥0∞} (
       (measurable_schwarzRearrangement μ g).aemeasurable,
     lintegral_sub_eq_lintegral_measure_sdiff μ hf hg]
   refine lintegral_mono fun s ↦ ?_
-  rw [addHaar_setOf_lt_schwarzRearrangement_sdiff]
+  rw [addHaar_sdiff_setOf_lt_schwarzRearrangement]
   exact le_measure_sdiff
 
 /-- One-sided `L¹` contraction for the hinge `(f - g - c)⁺`, by rearranging `g + c`. -/

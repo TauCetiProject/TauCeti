@@ -277,8 +277,10 @@ private theorem lintegral_sub_eq_lintegral_measure_sdiff_of_measurable (m : Meas
       (measurableSet_lt (ENNReal.measurable_ofReal.comp measurable_snd) (hg.comp measurable_fst))
   calc ∫⁻ x, (f x - g x) ∂m = ∫⁻ x, volume.restrict (Ioi (0 : ℝ)) (Prod.mk x ⁻¹' F) ∂m := by
         refine lintegral_congr fun x ↦ ?_
-        rw [← volume_restrict_Ioi_setOf_ofReal_lt_sdiff]
-        rfl
+        have hsection : Prod.mk x ⁻¹' F =
+            {s : ℝ | ENNReal.ofReal s < f x} \ {s | ENNReal.ofReal s < g x} := by
+          ext; simp [hFdef]
+        rw [hsection, volume_restrict_Ioi_setOf_ofReal_lt_sdiff]
     _ = m.prod (volume.restrict (Ioi (0 : ℝ))) F := (Measure.prod_apply hF).symm
     _ = ∫⁻ s in Ioi (0 : ℝ),
           m ({x | ENNReal.ofReal s < f x} \ {x | ENNReal.ofReal s < g x}) :=
