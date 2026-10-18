@@ -1,0 +1,145 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.ModularForms.Cusps.Residue
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Count
+import Mathlib.Data.Nat.Squarefree
+
+/-!
+# Constant terms at squarefree level
+
+For squarefree `N`, a cusp of `Γ₀(N)` is determined by the gcd of its denominator with `N`.
+Consequently constant terms at the representatives `1/d`, for `d ∣ N`, detect cuspidality.
+The map recording these constant terms has proper image in weight two, by the residue
+relation. These facts allow boundary interpolation by corrected Eisenstein series.
+
+## References
+
+* F. Diamond and J. Shurman, *A First Course in Modular Forms*, §§3.1 and 3.8.
+
+The cusp classification uses `TauCeti.gamma0CuspLabel_eq_iff_exists_dvd`.
+-/
+
+public noncomputable section
+
+open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup ModularGroup
+open scoped MatrixGroups
+
+namespace TauCeti
+
+open _root_.ModularForm TauCeti.ModularForm
+
+variable {N : ℕ} [NeZero N] {k : ℤ}
+
+/-- At squarefree level, equal denominator gcds give equal cusp constant terms. -/
+theorem constantTermAt_eq_of_gcd_eq_of_squarefree
+    (hN : Squarefree N) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k)
+    {γ γ' : SL(2, ℤ)} (h : Int.gcd (γ 1 0) N = Int.gcd (γ' 1 0) N) :
+    constantTermAt γ f = constantTermAt γ' f := by
+  have hmod (g : N.divisors) : Nat.gcd g.val (N / g.val) = 1 := by
+    apply Nat.coprime_iff_gcd_eq_one.mp
+    apply Nat.coprime_of_squarefree_mul
+    rwa [Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors g.property)]
+  have hlabel : TauCeti.gamma0CuspLabel N γ = TauCeti.gamma0CuspLabel N γ' := by
+    apply Sigma.ext (Subtype.ext (by simpa using h))
+    -- Once the divisor is fixed, its residue label lives in the trivial unit group modulo one.
+    generalize hγ : TauCeti.gamma0CuspLabel N γ = a
+    generalize hγ' : TauCeti.gamma0CuspLabel N γ' = b
+    have hab : a.1 = b.1 := by
+      rw [← hγ, ← hγ']
+      exact Subtype.ext (by simpa using h)
+    obtain ⟨a, x⟩ := a
+    obtain ⟨b, y⟩ := b
+    dsimp only at hab
+    subst b
+    have : Subsingleton (ZMod (Nat.gcd a.val (N / a.val)))ˣ := by
+      rw [hmod a]
+      infer_instance
+    exact heq_of_eq (Subsingleton.elim _ _)
+  obtain ⟨j, hj⟩ := (TauCeti.gamma0CuspLabel_eq_iff_exists_dvd γ γ').mp hlabel
+  let δ := γ * T ^ (-j) * γ'⁻¹
+  have hδ : δ ∈ Gamma0 N := by
+    rw [mem_Gamma0_iff_dvd]
+    convert hj using 1
+    simp only [δ, Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv,
+      adjugate_fin_two, coe_T_zpow, Matrix.mul_apply,
+      Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
+      cons_val_fin_one]
+    ring
+  have hγ : γ = δ * γ' * T ^ j := by simp [δ, mul_assoc]
+  rw [hγ, constantTermAt_mul_T_zpow,
+    constantTermAt_mul_left (Subgroup.mem_map_of_mem _ hδ)]
+
+/-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
+def constantTermsAtDivisors :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
+  LinearMap.pi fun d ↦ constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+
+/-- Evaluation of the divisor-indexed constant-term map. -/
+@[simp]
+theorem constantTermsAtDivisors_apply
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : N.divisors) :
+    constantTermsAtDivisors f d =
+      constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ f :=
+  (rfl)
+
+/-- At squarefree level, the divisor-indexed values recover every cusp constant term. -/
+theorem constantTermAt_eq_constantTermsAtDivisors
+    (hN : Squarefree N) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (γ : SL(2, ℤ)) :
+    constantTermAt γ f = constantTermsAtDivisors f
+      ⟨Int.gcd (γ 1 0) N,
+        Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩⟩ := by
+  rw [constantTermsAtDivisors_apply]
+  apply constantTermAt_eq_of_gcd_eq_of_squarefree hN f
+  simp [Int.gcd_natCast_natCast, Nat.gcd_eq_left
+    (Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right (γ 1 0) N))]
+
+/-- At squarefree level the kernel of the divisor-indexed constant terms is the cusp space. -/
+@[simp]
+theorem ker_constantTermsAtDivisors_of_squarefree (hN : Squarefree N) :
+    LinearMap.ker (constantTermsAtDivisors (N := N) (k := k)) =
+      cuspFormSubmodule ((Gamma0 N).map (mapGL ℝ)) k := by
+  ext f
+  rw [LinearMap.mem_ker, mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
+  constructor
+  · intro h γ
+    rw [constantTermAt_eq_constantTermsAtDivisors hN f γ, h]
+    rfl
+  · intro h
+    ext d
+    exact h _
+
+/-- In weight two, not every divisor-indexed boundary vector occurs at squarefree level. -/
+theorem range_constantTermsAtDivisors_ne_top_of_squarefree (hN : Squarefree N) :
+    LinearMap.range (constantTermsAtDivisors (N := N) (k := 2)) ≠ ⊤ := by
+  classical
+  intro htop
+  obtain ⟨f, hf⟩ := LinearMap.range_eq_top.mp htop (1 : N.divisors → ℂ)
+  have hall (γ : SL(2, ℤ)) : constantTermAt γ f = 1 := by
+    rw [constantTermAt_eq_constantTermsAtDivisors hN f γ, hf]
+    rfl
+  have horbit (c : TauCeti.ModularForm.CuspTranslationOrbit ((Gamma0 N).map (mapGL ℝ))) :
+      TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f c = 1 := by
+    induction c using Quotient.inductionOn with
+    | h q =>
+      induction q using Quotient.inductionOn with
+      | h x =>
+        obtain ⟨γ, hγ⟩ := x.property
+        have hx : x = (mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
+        rw [hx, TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL]
+        exact hall _
+  have hsum :=
+    weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero f
+  simp only [horbit, mul_one] at hsum
+  have hpos : 0 < ∑ c : TauCeti.ModularForm.CuspTranslationOrbit ((Gamma0 N).map (mapGL ℝ)),
+      TauCeti.ModularForm.cuspTranslationOrbitWidth c :=
+    Finset.sum_pos (fun c _ ↦ TauCeti.ModularForm.cuspTranslationOrbitWidth_pos c)
+      Finset.univ_nonempty
+  rw [← Nat.cast_sum, Nat.cast_eq_zero] at hsum
+  omega
+
+end TauCeti
