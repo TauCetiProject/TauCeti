@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Formula
 
 /-!
 # Identities among the division polynomials
@@ -40,6 +41,11 @@ a curve in characteristic-≠-2 normal form.
   `sψ₂ = a₄ + 2a₂x - a₁y + 3x²`, where `ψ₂ = 2y + a₁x + a₃`, then
   `(a₂ - sa₁ + 3x - s²) ψ₂² = Ψ₃(x)`. The factor `a₂ - sa₁ + 3x - s²` is the coefficient `a₂` of
   `W` after the change of variables `(1, x, s, y)`.
+* `WeierstrassCurve.Projective.dblXYZ_some`: the cleared form of the same computation in projective
+  coordinates. If `(x, y)` lies on `W`, Mathlib's doubling formula at `[x : y : 1]` is
+  `ψ₂³ • [x : -y - a₁x - a₃ : 1] - Ψ₃(x) • [ψ₂ : W_X - a₁ψ₂ : 0]`, where `W_X` is the partial
+  derivative of the Weierstrass equation in `x`. So, when `ψ₂` is a unit, twice `(x, y)` is
+  `-(x, y)` exactly when `Ψ₃(x) = 0`.
 * `WeierstrassCurve.eval_variableChange_Ψ₂Sq`: after a change of variables `C`, the polynomial
   `Ψ₂Sq` becomes `u⁻⁶ Ψ₂Sq(u²x + r)`.
 * `WeierstrassCurve.eval_variableChange_Ψ₃`: after a change of variables `C`, the polynomial
@@ -55,7 +61,9 @@ does not ask that the pair lie on the curve.
 The last three evaluate `Ψ₃` and `ψ₂` at a point and are what reduces a Weierstrass curve to Tate
 normal form (`TauCeti/AlgebraicGeometry/EllipticCurve/TateNormalForm.lean`): once the point is
 moved to `(0, 0)` with horizontal tangent, `b₈ = a₂a₃²`, so the normalisation `a₂ = a₃` is read off
-`Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` asks that the point lie on the curve.
+`Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` and `Projective.dblXYZ_some` ask that the point lie on the
+curve. The latter is what identifies the sections of the projective model killed by `3` over an
+arbitrary base ring (`TauCeti/AlgebraicGeometry/EllipticCurve/Scheme/MulBy/ThreeTorsion.lean`).
 
 The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
 an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
@@ -175,6 +183,38 @@ theorem a₂_mul_ψ₂_sq_eq_eval_Ψ₃ {W : WeierstrassCurve R} {x y : R} (h : 
   rw [eval_Ψ₃, b₂, b₄, b₆, b₈]
   linear_combination (-W.a₁ * (2 * y + W.a₁ * x + W.a₃) - (s * (2 * y + W.a₁ * x + W.a₃) +
     (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2))) * hs + (W.a₁ ^ 2 + 4 * W.a₂ + 12 * x) * h
+
+/-- **The projective doubling formula at an affine point, through `Ψ₃`.** If `(x, y)` lies on
+`W`, then Mathlib's doubling formula `dblXYZ` at the point representative `[x : y : 1]` is
+
+`ψ₂³ • [x : -y - a₁x - a₃ : 1] - Ψ₃(x) • [ψ₂ : W_X - a₁ψ₂ : 0]`,
+
+where `ψ₂ = 2y + a₁x + a₃` and `W_X = a₁y - (3x² + 2a₂x + a₄)` are the two partial derivatives of
+the Weierstrass equation at `(x, y)`. The first term is `ψ₂³` times the representative of
+`-(x, y)`. -/
+theorem Projective.dblXYZ_some {W : WeierstrassCurve R} {x y : R} (h : W.toAffine.Equation x y) :
+    W.toProjective.dblXYZ ![x, y, 1] =
+      W.ψ₂.evalEval x y ^ 3 • ![x, W.toAffine.negY x y, 1] +
+        (-W.Ψ₃.eval x) • ![W.ψ₂.evalEval x y,
+          W.toAffine.polynomialX.evalEval x y - W.a₁ * W.ψ₂.evalEval x y, 0] := by
+  have hE : W.toProjective.Equation ![x, y, 1] := (Projective.equation_some _ _).mpr h
+  have hX := Projective.dblX_eq' hE
+  have hY := Projective.negDblY_eq' hE
+  have h' := (Affine.equation_iff' x y).mp h
+  simp only [Projective.eval_polynomialX, Projective.negY, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at hX hY
+  simp only [ψ₂, Affine.evalEval_polynomialY, Affine.evalEval_polynomialX, eval_Ψ₃, b₂, b₄, b₆, b₈]
+  -- `(-(a₁² + 4a₂) - 12x) · h'` exhibits `W_X² - a₁W_Xψ₂ - a₂ψ₂² - 3xψ₂²` as `-Ψ₃(x)` on the
+  -- curve, and `dblX_eq'`, `negDblY_eq'` give the coordinates of `dblXYZ` through that combination
+  ext i
+  fin_cases i
+  · simp [Projective.dblXYZ]
+    linear_combination hX + (2 * y + W.a₁ * x + W.a₃) * ((-(W.a₁ ^ 2 + 4 * W.a₂) - 12 * x) * h')
+  · simp [Projective.dblXYZ, Projective.dblY, Projective.dblZ, Projective.negY]
+    linear_combination -hY - W.a₁ * hX + (W.a₁ * y - (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) -
+      W.a₁ * (2 * y + W.a₁ * x + W.a₃)) * ((-(W.a₁ ^ 2 + 4 * W.a₂) - 12 * x) * h')
+  · simp [Projective.dblXYZ, Projective.dblZ, Projective.negY]
+    ring
 
 /-- `x = u⁻² (u² x)` for the scaling `u` of a change of variables. -/
 private theorem VariableChange.eq_inv_sq_mul (C : VariableChange R) (x : R) :
