@@ -18,7 +18,8 @@ The fppf quotient of a geometrically reduced finite-type affine group by its sch
 center is represented by the Hopf algebra of center-coinvariant functions. For a semisimple
 group, this file gives that finite-type coordinate Hopf algebra and its projection canonical
 names, records its scheme-theoretic kernel, and identifies its functor of points with the fppf
-center quotient.
+center quotient. A faithfully flat homomorphism with kernel the full center induces an
+isomorphism to this represented quotient.
 
 For a semisimple group, the center is finite. The represented center quotient is therefore the
 target of a central isogeny and is again semisimple. Proving that its scheme-theoretic center is
@@ -121,6 +122,20 @@ theorem exists_comp_centerQuotientι_iff (hH : semisimpleCommHopfAlgProperty k H
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.exists_comp_coinvariantsι_iff
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f
+
+/-- A faithfully flat map with kernel the source center identifies its target with the
+represented center quotient on coordinate algebras. -/
+theorem isIso_liftCenterQuotient_of_faithfullyFlat
+    (hH : semisimpleCommHopfAlgProperty k H)
+    {K : _root_.CommHopfAlgCat.{u} k} (f : K ⟶ H.obj)
+    (hf : (f.hom.toAlgHom : K →+* H).FaithfullyFlat)
+    (hker : CommHopfAlgCat.kernelHopfIdeal f = CommHopfAlgCat.centerDefiningIdeal H.obj) :
+    IsIso (hH.liftCenterQuotient f hker.le) := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  have hbij := CommHopfAlgCat.bijective_liftCoinvariants_of_faithfullyFlat
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf hker
+  exact (CommHopfAlgCat.isIsogeny_of_bijective _ hbij).isIso_iff_surjective.mpr hbij.2
 
 /-- The represented center-quotient projection has the full scheme-theoretic center as its
 kernel, including any nonreduced structure. -/

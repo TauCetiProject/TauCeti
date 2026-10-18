@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 
 /-!
 # The Chevalley involution of Geck's Lie algebra
@@ -146,6 +147,14 @@ private theorem geckHeightMatrix_mul_self :
   ext i j
   simp [geckHeightSign_mul_self]
 
+private theorem geckHeightMatrix_conj_self (x : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R) :
+    geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) * geckHeightMatrix b = x :=
+  calc
+    geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) * geckHeightMatrix b =
+        (geckHeightMatrix b * geckHeightMatrix b) * x *
+          (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
+    _ = x := by rw [geckHeightMatrix_mul_self]; simp
+
 /-- Conjugation by the height-parity matrix. This is kept private; the public construction is its
 composition with Geck's opposition involution. -/
 private def geckHeightConj :
@@ -161,20 +170,8 @@ private def geckHeightConj :
     nth_rw 2 [← one_mul x]
     simp only [← geckHeightMatrix_mul_self b]
     noncomm_ring
-  left_inv x := by
-    calc
-      geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) *
-          geckHeightMatrix b =
-          (geckHeightMatrix b * geckHeightMatrix b) * x *
-            (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
-      _ = x := by rw [geckHeightMatrix_mul_self]; simp
-  right_inv x := by
-    calc
-      geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) *
-          geckHeightMatrix b =
-          (geckHeightMatrix b * geckHeightMatrix b) * x *
-            (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
-      _ = x := by rw [geckHeightMatrix_mul_self]; simp
+  left_inv := geckHeightMatrix_conj_self b
+  right_inv := geckHeightMatrix_conj_self b
 
 private theorem geckHeightConj_apply (A : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R)
     (i j : b.support ⊕ ι) :
@@ -289,14 +286,9 @@ private theorem geckHeightConj_mem_lieAlgebra {x : Matrix (b.support ⊕ ι) (b.
       exact LieSubalgebra.lie_mem _ hx hy
 
 private theorem geckHeightConj_map_lieAlgebra :
-    (lieAlgebra b).map (geckHeightConj b) = lieAlgebra b := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact geckHeightConj_mem_lieAlgebra b hy
-  · intro hx
-    refine ⟨geckHeightConj b x, geckHeightConj_mem_lieAlgebra b hx, ?_⟩
-    exact (geckHeightConj b).apply_symm_apply x
+    (lieAlgebra b).map (geckHeightConj b) = lieAlgebra b :=
+  LieSubalgebra.map_eq_self_of_involutive (geckHeightConj b) (geckHeightMatrix_conj_self b)
+    fun _ ↦ geckHeightConj_mem_lieAlgebra b
 
 private def geckHeightInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (geckHeightConj b).ofSubalgebras _ _ (geckHeightConj_map_lieAlgebra b)
@@ -304,14 +296,13 @@ private def geckHeightInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
 /-! ## The signed Chevalley involution -/
 
 private theorem geckOpposition_map_lieAlgebra :
-    (lieAlgebra b).map (ωConj b) = lieAlgebra b := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ωConj_mem_of_mem hy
-  · intro hx
-    refine ⟨ωConj b x, ωConj_mem_of_mem hx, ?_⟩
-    exact (ωConj b).apply_symm_apply x
+    (lieAlgebra b).map (ωConj b) = lieAlgebra b :=
+  LieSubalgebra.map_eq_self_of_involutive (ωConj b)
+    (fun x ↦
+      calc
+        ωConj b (ωConj b x) = ω b * (ω b * x * ω b) * ω b := rfl
+        _ = x := by simp only [← mul_assoc, ω_mul_ω, one_mul]; simp [mul_assoc])
+    fun _ ↦ ωConj_mem_of_mem
 
 private def geckOppositionInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (ωConj b).ofSubalgebras _ _ (geckOpposition_map_lieAlgebra b)
@@ -373,7 +364,7 @@ private theorem geckOppositionInvolution_f (i : b.support) :
 /-- The Chevalley involution of Geck's matrix Lie algebra. It is the composition of the opposition
 involution with the height-parity involution, and therefore sends the simple generators by
 `hᵢ ↦ -hᵢ`, `eᵢ ↦ -fᵢ`, and `fᵢ ↦ -eᵢ`. -/
-noncomputable def geckChevalleyInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
+def geckChevalleyInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (geckOppositionInvolution b).trans (geckHeightInvolution b)
 
 /-- The Chevalley involution sends a simple Cartan generator to its negative. -/

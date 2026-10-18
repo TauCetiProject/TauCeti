@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Height.Affine
 public import TauCeti.NumberTheory.Height.NumberField
 import TauCeti.NumberTheory.NumberField.AdjoinPair
 
@@ -26,9 +27,16 @@ is invariant under homomorphisms of fields of characteristic zero, and it is unc
 algebraic scalars.
 The absolute height of an element `x` is that of the pair `(x, 1)`.
 
+Prepending the coordinate `1` gives the absolute affine logarithmic height
+`TauCeti.absoluteLogHeightAff x = log H(1, x)` of a tuple `x : Fin n → F`, the absolute
+counterpart of the relative affine height `Height.logHeightAff`. It is not invariant under
+scaling, and is the height that measures perturbations in quantitative forms of the subspace
+theorem.
+
 ## Main definitions
 
 * `TauCeti.absoluteProjectiveTupleHeight`: the absolute multiplicative height of a finite tuple.
+* `TauCeti.absoluteLogHeightAff`: the absolute affine logarithmic height of a tuple.
 
 ## Main results
 
@@ -39,11 +47,18 @@ The absolute height of an element `x` is that of the pair `(x, 1)`.
 * `TauCeti.absoluteProjectiveTupleHeight_smul`: invariance under nonzero algebraic scalars.
 * `TauCeti.absoluteProjectiveTupleHeight_pow`: `H(x ^ n) = H(x) ^ n`, coordinatewise.
 * `TauCeti.absMulHeight₁_eq_absoluteProjectiveTupleHeight`: `H(x) = H(x, 1)`.
+* `TauCeti.absoluteLogHeightAff_eq`: over a number field `K`,
+  `h_aff(x) = Height.logHeight (Fin.cons 1 x) / [K : ℚ]`.
+* `TauCeti.absoluteLogHeightAff_eq_logHeightAff_div`: over a number field `K`,
+  `h_aff(x) = Height.logHeightAff x / [K : ℚ]`.
+* `TauCeti.absoluteLogHeightAff_fin_one`: `h_aff(x) = h(x)` for a one-element tuple.
 
 ## References
 
 * X. Wu, *Diophantine geometry, week 08: arithmetic heights* (2023), §2, Lemma 2.5 and
   Definition 2.7.
+* J.-H. Evertse, H. P. Schlickewei and W. M. Schmidt, *Linear equations in variables which lie
+  in a multiplicative group*, Ann. of Math. 155 (2002), §2, for the affine height of a tuple.
 -/
 
 public section
@@ -239,6 +254,92 @@ theorem absMulHeight₁_eq_absoluteProjectiveTupleHeight (x : F) :
   · rw [absMulHeight₁, dite_eq_right hx,
       absoluteProjectiveTupleHeight_of_not_isIntegral (x := ![x, 1]) (i := 0) hx]
 
+/-! ### The absolute affine logarithmic height -/
+
+section Affine
+
+variable {n : ℕ}
+
+/-- The **absolute affine logarithmic height** `h_aff(x)` of a tuple `x : Fin n → F` in a field of
+characteristic zero: the logarithm of the absolute height of the tuple `(1, x)` obtained by
+prepending the coordinate `1`. Over a number field `K` containing the coordinates it is
+`Height.logHeight (Fin.cons 1 x) / [K : ℚ]` (`TauCeti.absoluteLogHeightAff_eq`).
+
+Unlike the absolute height of `x`, it is not invariant under scaling: `(1/3, 1/3)` has absolute
+projective height `1` but absolute affine logarithmic height `log 3`. A tuple with a
+transcendental coordinate has the junk value `0`. -/
+noncomputable def absoluteLogHeightAff (x : Fin n → F) : ℝ :=
+  Real.log (absoluteProjectiveTupleHeight (Fin.cons 1 x : Fin (n + 1) → F))
+
+/-- The defining formula of `TauCeti.absoluteLogHeightAff`. -/
+theorem absoluteLogHeightAff_def (x : Fin n → F) :
+    absoluteLogHeightAff x =
+      Real.log (absoluteProjectiveTupleHeight (Fin.cons 1 x : Fin (n + 1) → F)) :=
+  (rfl)
+
+/-- The absolute affine logarithmic height is nonnegative. -/
+theorem absoluteLogHeightAff_nonneg (x : Fin n → F) : 0 ≤ absoluteLogHeightAff x :=
+  Real.log_nonneg (one_le_absoluteProjectiveTupleHeight _)
+
+/-- The absolute affine logarithmic height is invariant under homomorphisms of fields of
+characteristic zero. -/
+@[simp]
+theorem absoluteLogHeightAff_comp (f : F →+* F') (x : Fin n → F) :
+    absoluteLogHeightAff (f ∘ x) = absoluteLogHeightAff x := by
+  have h : (Fin.cons 1 (f ∘ x) : Fin (n + 1) → F') = f ∘ Fin.cons 1 x := by
+    funext i
+    cases i using Fin.cases <;> simp
+  rw [absoluteLogHeightAff_def, absoluteLogHeightAff_def, h, absoluteProjectiveTupleHeight_comp]
+
+/-- **Computation in a number field.** For a tuple `x` in a number field `K`, the absolute affine
+logarithmic height is the logarithmic height of `(1, x)` relative to `K` divided by `[K : ℚ]`.
+With `TauCeti.absoluteLogHeightAff_comp` this computes `absoluteLogHeightAff (f ∘ x)` for every
+embedding `f` of `K` into a field of characteristic zero. -/
+theorem absoluteLogHeightAff_eq {K : Type*} [Field K] [NumberField K] (x : Fin n → K) :
+    absoluteLogHeightAff x = logHeight (Fin.cons 1 x : Fin (n + 1) → K) / finrank ℚ K := by
+  rw [absoluteLogHeightAff_def, absoluteProjectiveTupleHeight_eq, Real.log_rpow (mulHeight_pos _),
+    logHeight_eq_log_mulHeight, inv_mul_eq_div]
+
+/-- For a tuple `x` in a number field `K`, the absolute affine logarithmic height is the affine
+logarithmic height `Height.logHeightAff x` relative to `K` divided by `[K : ℚ]`. The two differ
+only in where the coordinate `1` is placed, so this is a re-indexing.
+With `TauCeti.absoluteLogHeightAff_comp` it computes `absoluteLogHeightAff (f ∘ x)` for every
+embedding `f` of `K` into a field of characteristic zero, such as an algebraic closure of `ℚ`. -/
+theorem absoluteLogHeightAff_eq_logHeightAff_div {K : Type*} [Field K] [NumberField K]
+    (x : Fin n → K) : absoluteLogHeightAff x = logHeightAff x / finrank ℚ K := by
+  rw [absoluteLogHeightAff_eq, logHeight_cons_one]
+
+/-- The zero tuple has absolute affine logarithmic height `0`. -/
+@[simp]
+theorem absoluteLogHeightAff_zero : absoluteLogHeightAff (0 : Fin n → F) = 0 := by
+  have h : (0 : Fin n → F) = algebraMap ℚ F ∘ (0 : Fin n → ℚ) := by
+    ext
+    simp
+  rw [h, absoluteLogHeightAff_comp, absoluteLogHeightAff_eq_logHeightAff_div, logHeightAff_zero,
+    zero_div]
+
+/-- The tuple of ones has absolute affine logarithmic height `0`. -/
+@[simp]
+theorem absoluteLogHeightAff_one : absoluteLogHeightAff (1 : Fin n → F) = 0 := by
+  have h : (1 : Fin n → F) = algebraMap ℚ F ∘ (1 : Fin n → ℚ) := by
+    ext
+    simp
+  rw [h, absoluteLogHeightAff_comp, absoluteLogHeightAff_eq_logHeightAff_div, logHeightAff_one,
+    zero_div]
+
+/-- The absolute affine logarithmic height of `![x]` is the absolute logarithmic height of `x`:
+with the coordinate `1` prepended, the height of a one-element tuple recovers the height of its
+entry. -/
+@[simp]
+theorem absoluteLogHeightAff_fin_one (x : F) : absoluteLogHeightAff ![x] = absLogHeight₁ x := by
+  have h : (Fin.cons 1 ![x] : Fin 2 → F) = ![x, 1] ∘ Equiv.swap 0 1 := by
+    funext i
+    fin_cases i <;> rfl
+  rw [absoluteLogHeightAff_def, h, absoluteProjectiveTupleHeight_comp_equiv, absLogHeight₁,
+    absMulHeight₁_eq_absoluteProjectiveTupleHeight]
+
+end Affine
+
 /-- The rational pair `(2 / 3, 1)` has absolute height `3`, in agreement with
 `NumberField.absMulHeight₁ (2 / 3) = 3`. -/
 example : absoluteProjectiveTupleHeight ![(2 / 3 : ℚ), 1] = 3 := by
@@ -267,5 +368,19 @@ example : absoluteProjectiveTupleHeight ![(1 / 3 : ℚ), 1 / 3] = 1 ∧
       Rat.mulHeight_eq_max_abs_of_gcd_eq_one (by decide),
       le_antisymm (ciSup_le fun i ↦ by fin_cases i <;> simp) (Finite.le_ciSup_of_le 0 le_rfl)]
     norm_num
+
+/-- The tuple `(1/3, 1/3)` has absolute projective height `1` (above), but absolute affine
+logarithmic height `log 3`, the absolute logarithmic height of `1/3`. -/
+example : absoluteLogHeightAff ![(1 / 3 : ℚ), 1 / 3] = Real.log 3 := by
+  have h : (Fin.cons 1 ![(1 / 3 : ℚ), 1 / 3] : Fin 3 → ℚ) =
+      (1 / 3 : ℚ) • ((↑) ∘ ![(3 : ℤ), 1, 1]) := by
+    ext i
+    fin_cases i <;> norm_num
+  rw [absoluteLogHeightAff_def, h,
+    absoluteProjectiveTupleHeight_smul _ (by norm_num) (.of_finite ℚ _),
+    absoluteProjectiveTupleHeight_eq, finrank_self,
+    Rat.mulHeight_eq_max_abs_of_gcd_eq_one (by decide),
+    le_antisymm (ciSup_le fun i ↦ by fin_cases i <;> simp) (Finite.le_ciSup_of_le 0 le_rfl)]
+  norm_num
 
 end TauCeti

@@ -38,6 +38,10 @@ that `P(s, x) = u`. It is extended by `0` outside that parameter range.
   `TauCeti.measurable_inverseRegularizedGamma` give regularity, endpoint limits, and joint
   measurability;
 * `TauCeti.inverseRegularizedGamma_one` evaluates the inverse at shape `1`.
+* `TauCeti.Probability.quantile_gammaMeasure` gives the quantile of a Gamma law of arbitrary
+  positive rate by scaling `TauCeti.inverseRegularizedGamma`;
+* `TauCeti.Probability.tendsto_quantile_gammaMeasure_nhdsGT_zero` and
+  `TauCeti.Probability.tendsto_quantile_gammaMeasure_nhdsLT_one` give its endpoint limits.
 
 ## References
 
@@ -256,6 +260,46 @@ theorem inverseRegularizedGamma_one (hu : u ∈ Ioo 0 1) :
   rw [inverseRegularizedGamma_eq_iff one_pos hu,
     regularizedGamma_one (neg_nonneg.2 (Real.log_nonpos h1u.le (by linarith [hu.1]))),
     neg_neg, Real.exp_log h1u, sub_sub_cancel]
+
+namespace Probability
+
+variable {a r : ℝ}
+
+/-- The quantile of a Gamma law with positive shape `a` and rate `r` is
+`P⁻¹(a, u) / r`, where `P⁻¹` is the inverse regularized lower incomplete Gamma function. -/
+theorem quantile_gammaMeasure (ha : 0 < a) (hr : 0 < r) (hu : u ∈ Ioo 0 1) :
+    (gammaMeasure a r).quantile u = inverseRegularizedGamma a u / r := by
+  apply le_antisymm
+  · rw [Measure.quantile_le_iff _ hu.1 hu.2, cdf_gammaMeasure_eq ha hr,
+      mul_div_cancel₀ _ hr.ne', regularizedGamma_inverseRegularizedGamma ha hu]
+  · rw [div_le_iff₀ hr]
+    exact (inverseRegularizedGamma_le_iff ha hu).2 <| by
+      simpa only [cdf_gammaMeasure_eq ha hr, mul_comm] using Measure.le_cdf_quantile
+        (gammaMeasure a r) hu.2
+
+/-- The quantile of a positive-parameter Gamma law tends to the lower support endpoint `0` as
+the level tends to `0` from above. -/
+theorem tendsto_quantile_gammaMeasure_nhdsGT_zero (ha : 0 < a) (hr : 0 < r) :
+    Tendsto (fun u ↦ (gammaMeasure a r).quantile u) (𝓝[>] 0) (𝓝[>] 0) := by
+  have hlim : Tendsto (fun u ↦ inverseRegularizedGamma a u / r) (𝓝[>] 0) (𝓝[>] 0) := by
+    simpa only [div_eq_inv_mul, mul_comm, mul_zero] using
+      Filter.TendstoNhdsWithinIoi.const_mul (inv_pos.mpr hr)
+        (tendsto_inverseRegularizedGamma_nhdsGT_zero ha)
+  apply hlim.congr'
+  filter_upwards [Ioo_mem_nhdsGT one_pos] with u hu
+  exact (quantile_gammaMeasure ha hr hu).symm
+
+/-- The quantile of a positive-parameter Gamma law tends to infinity as the level tends to `1`
+from below. -/
+theorem tendsto_quantile_gammaMeasure_nhdsLT_one (ha : 0 < a) (hr : 0 < r) :
+    Tendsto (fun u ↦ (gammaMeasure a r).quantile u) (𝓝[<] 1) atTop := by
+  have hlim : Tendsto (fun u ↦ inverseRegularizedGamma a u / r) (𝓝[<] 1) atTop :=
+    (tendsto_inverseRegularizedGamma_nhdsLT_one ha).atTop_div_const hr
+  apply hlim.congr'
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  exact (quantile_gammaMeasure ha hr hu).symm
+
+end Probability
 
 end TauCeti
 

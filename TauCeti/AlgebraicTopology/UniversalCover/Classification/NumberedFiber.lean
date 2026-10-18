@@ -699,6 +699,12 @@ theorem nonempty_equiv_fin_of_mem_connectedComponent (c : ConnectedCover x n) {y
   (c.cover.isCoveringMap_proj.isClopen_setOf_nonempty_fiber_equiv (Fin n)).connectedComponent_subset
     c.nonempty_equiv_fin hy
 
+/-- The fibre of a connected cover over its basepoint is finite. -/
+theorem finite_proj_preimage_singleton (c : ConnectedCover x n) :
+    Finite (⇑c.cover.proj ⁻¹' {x}) :=
+  let ⟨ν⟩ := c.nonempty_equiv_fin
+  .of_equiv _ ν.symm
+
 variable [PreconnectedSpace X]
 
 /-- A connected cover of a preconnected space has positive degree. -/

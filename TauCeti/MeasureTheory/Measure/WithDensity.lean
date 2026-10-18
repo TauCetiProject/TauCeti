@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Pushing a weighted measure forward
@@ -36,6 +38,8 @@ measure finite.
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
   equivalence is the image measure weighted by the transported weight.
+* `TauCeti.Probability.map_abs_withDensity`: the image of a weighted Lebesgue measure under
+  absolute value has the folded density.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
@@ -76,6 +80,33 @@ theorem map_withDensity (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0
   simp only [MeasurableEquiv.symm_apply_apply]
 
 end MeasurableEquiv
+
+namespace TauCeti.Probability
+
+open Set
+
+/-- **The folded density.** If `μ` has density `f` with respect to Lebesgue measure, then the
+folded law has density `f x + f (-x)` on the positive half-line and `0` elsewhere. -/
+theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    (volume.withDensity f).map (|·|) =
+      volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
+  have hvolume : volume.map (fun x : ℝ => -x) = volume := by
+    exact Measure.map_neg_eq_self (volume : Measure ℝ)
+  have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
+    have h := MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
+    have hvolume' : volume.map (MeasurableEquiv.neg ℝ) = volume := hvolume
+    rw [hvolume'] at h
+    simpa [Measure.neg_def] using h
+  rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
+    restrict_withDensity measurableSet_Ici,
+    restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
+    ← withDensity_indicator measurableSet_Ioi, ← withDensity_indicator measurableSet_Ioi,
+    ← withDensity_add_left (hf.indicator measurableSet_Ioi)]
+  congr 1
+  ext x
+  by_cases hx : x ∈ Ioi 0 <;> simp [hx]
+
+end TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
