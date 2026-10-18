@@ -68,15 +68,6 @@ abbrev rationalKernelPoint (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   AlgHom.kernelPoint g.ofConv
 
 omit [IsAlgClosed k] in
-/-- A rational kernel point belongs to a basic open exactly when the point evaluates its
-defining element to a nonzero scalar. Use for explicit rewriting; general kernel-point
-simplification already handles this case. -/
-theorem rationalKernelPoint_mem_basicOpen_iff (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (a : H) :
-    rationalKernelPoint H g ∈ PrimeSpectrum.basicOpen a ↔ g.ofConv a ≠ 0 :=
-  _root_.AlgHom.kernelPoint_mem_basicOpen_iff _ a
-
-omit [IsAlgClosed k] in
 /-- The prime-spectrum point underlying the identity rational point is the augmentation point. -/
 @[simp]
 theorem rationalKernelPoint_one (H : FiniteTypeCommHopfAlgCat.{u, u} k) :

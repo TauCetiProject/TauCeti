@@ -35,12 +35,4 @@ this is the identity point of the represented affine group. -/
 abbrev augmentationPoint : Spec (CommRingCat.of H) :=
   AlgHom.kernelPoint (_root_.Bialgebra.counitAlgHom k H)
 
-/-- The augmentation point belongs to a basic open exactly when the counit is nonzero on
-its defining element. Use for explicit rewriting; general kernel-point simplification already
-handles this case. -/
-theorem augmentationPoint_mem_basicOpen_iff (a : H) :
-    (augmentationPoint k H : PrimeSpectrum H) ∈ PrimeSpectrum.basicOpen a ↔
-      _root_.Bialgebra.counitAlgHom k H a ≠ 0 :=
-  _root_.AlgHom.kernelPoint_mem_basicOpen_iff _ a
-
 end TauCeti.Bialgebra

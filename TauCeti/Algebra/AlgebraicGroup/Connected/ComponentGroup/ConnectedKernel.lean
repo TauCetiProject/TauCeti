@@ -84,15 +84,16 @@ theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
     PrimeSpectrum.isClopen_iff.mpr ⟨a, hidem, rfl⟩
   have hidentity : (Bialgebra.augmentationPoint k Q : PrimeSpectrum Q) ∈
       PrimeSpectrum.basicOpen a :=
-    (Bialgebra.augmentationPoint_mem_basicOpen_iff k Q a).mpr (hε.trans_ne one_ne_zero)
+    (AlgHom.kernelPoint_mem_basicOpen_iff (Bialgebra.counitAlgHom k Q) a).mpr
+      (hε.trans_ne one_ne_zero)
   have hnonzero : h.ofConv a ≠ 0 :=
-    (rationalKernelPoint_mem_basicOpen_iff Q h a).mp
+    (AlgHom.kernelPoint_mem_basicOpen_iff h.ofConv a).mp
       (hopen.connectedComponent_subset hidentity hmem)
   -- Pull back to the source to detect the kernel of the component homomorphism.
   have hsource : rationalKernelPoint G g ∈
       connectedComponent zG := by
     rw [← PrimeSpectrum.basicOpen_connectedComponentIdempotent zG]
-    apply (rationalKernelPoint_mem_basicOpen_iff G g _).mpr
+    apply (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv _).mpr
     have hg : g.ofConv (f.hom.hom a) ≠ 0 := by
       simpa only [h, BialgHom.mapDomain_apply, WithConv.ofConv_toConv,
         AlgHom.comp_apply, BialgHom.coe_toAlgHom] using hnonzero
