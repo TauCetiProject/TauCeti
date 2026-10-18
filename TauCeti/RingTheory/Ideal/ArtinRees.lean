@@ -8,11 +8,13 @@ module
 public import Mathlib.RingTheory.Filtration
 
 /-!
-# Lifting through a surjection with control on the `I`-adic filtration
+# Consequences of the Artin–Rees lemma for `I`-adic filtrations
 
 Mathlib's Artin–Rees lemma, `Ideal.exists_pow_inf_eq_pow_smul`, compares the `I`-adic filtration
-of a module with the filtration it induces on a submodule. This file draws the lifting consequence
-that the adic theory uses.
+of a module with the filtration it induces on a submodule. This file draws two consequences that
+the adic theory uses: lifting through a surjection with control on the filtration, and the
+comparison of the induced and intrinsic `I`-adic filtrations of a submodule of a finitely
+generated submodule.
 
 Fix a submodule `N` of a finite module `M` over a noetherian ring. Then **one shift `k₀` serves
 every surjection onto `N` and every depth at once**: for any module `P` and any surjection
@@ -37,6 +39,9 @@ the Huber development that consumes it.
 * `TauCeti.ArtinRees.exists_controlled_lift`: there is a shift depending only on `I` and the
   submodule — quantified before the surjection — for which every surjection onto that submodule
   admits lifts with control on the `I`-adic filtration.
+* `TauCeti.ArtinRees.exists_pow_smul_inf_le_pow_smul`: for `L ≤ N₀` with `N₀` finitely
+  generated, the filtration `I ^ m • N₀ ⊓ L` is cofinal in `I ^ n • L`; this is the form used to
+  compare natural topologies of finite modules over Huber rings.
 
 ## Provenance
 
@@ -94,6 +99,23 @@ theorem exists_controlled_lift [IsNoetherianRing R] [Module.Finite R M] (I : Ide
     rw [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hφ]
   rw [← hmap] at hv_top
   exact Submodule.mem_map.mp hv_top
+
+/-- **The `I`-adic filtration of a finitely generated submodule induces the `I`-adic filtration
+on a smaller submodule.** If `N₀` is a finitely generated submodule over a noetherian ring and
+`L ≤ N₀`, then every `I ^ n • L` contains `I ^ m • N₀ ⊓ L` for some `m`. The ambient module need
+not be finite: only `N₀` is, so Artin–Rees is applied inside `N₀`. -/
+theorem exists_pow_smul_inf_le_pow_smul [IsNoetherianRing R] (I : Ideal R)
+    {N₀ L : Submodule R M} (hN₀ : N₀.FG) (hL : L ≤ N₀) (n : ℕ) :
+    ∃ m : ℕ, I ^ m • N₀ ⊓ L ≤ I ^ n • L := by
+  have : Module.Finite R N₀ := Module.Finite.iff_fg.mpr hN₀
+  obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul (L.comap N₀.subtype)
+  refine ⟨n + k, ?_⟩
+  have hL' : (L.comap N₀.subtype).map N₀.subtype = L := by
+    rw [Submodule.map_comap_subtype, inf_eq_right.mpr hL]
+  have hle := Submodule.map_mono (f := N₀.subtype)
+    ((hk (n + k) (Nat.le_add_left k n)).trans_le (Submodule.smul_mono le_rfl inf_le_right))
+  rwa [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_smul'', Submodule.map_top,
+    Submodule.range_subtype, Nat.add_sub_cancel, Submodule.map_smul'', hL'] at hle
 
 end TauCeti.ArtinRees
 
