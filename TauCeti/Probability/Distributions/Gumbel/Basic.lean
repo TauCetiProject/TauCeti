@@ -145,7 +145,6 @@ theorem support_gumbelMeasure (hs : 0 < s) (m : ℝ) :
   exact Measure.support_eq_univ_of_strictMono_cdf _ (strictMono_cdf_gumbelMeasure hs m)
 
 /-- A nonpositive-scale Gumbel measure has empty topological support. -/
-@[simp]
 theorem support_gumbelMeasure_of_nonpos (hs : s ≤ 0) (m : ℝ) :
     (gumbelMeasure m s).support = ∅ := by
   rw [gumbelMeasure_of_nonpos hs, Measure.support_zero]
