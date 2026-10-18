@@ -124,18 +124,6 @@ open scoped Topology.Homotopy
 
 variable {X : TopCat.{u}} {ι : Type u} {n : ℕ} [NeZero n] {x : X}
 
-/-- The attaching map `∂𝔻 (n + 1) ⟶ X` of the `(n + 1)`-cell that kills the class of a generalized
-loop `p`: the pointed map `Sⁿ → X` corresponding to `p` (`GenLoop.toSphere`), with its source
-written as Mathlib's sphere `TopCat.diskBoundary (n + 1)`. -/
-def GenLoop.diskBoundaryMap (p : Ω^ (Fin n) X x) : TopCat.diskBoundary.{u} (n + 1) ⟶ X :=
-  TopCat.ofHom ((GenLoop.toSphere p).comp ⟨ULift.down, continuous_uliftDown⟩)
-
-@[simp]
-theorem GenLoop.diskBoundaryMap_apply (p : Ω^ (Fin n) X x)
-    (s : TopCat.diskBoundary.{u} (n + 1)) :
-    GenLoop.diskBoundaryMap p s = GenLoop.toSphere p s.down :=
-  (rfl)
-
 /-- **Attaching a cell along a generalized loop kills its class.** After attaching
 `(n + 1)`-cells along the generalized loops `p i`, the class of each `p i` maps to the identity
 of `πₙ`. -/

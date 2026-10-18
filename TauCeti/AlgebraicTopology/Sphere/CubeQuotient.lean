@@ -56,6 +56,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
   sphere.
+* `TauCeti.GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
+  Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
   boundary of the cube is homotopy relative to the north pole, and `πₙ(X, x)` is the set of pointed
   homotopy classes of maps `Sⁿ → X`, the classes of `TauCeti.pointedHomotopySetoid`.
@@ -494,6 +496,25 @@ theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
         (Set.mem_singleton_iff.2 (cubeToSphere_eq_sphereNorthPole_iff.2 hz))
 
 end GenLoop
+
+namespace TauCeti.GenLoop
+
+universe u
+
+variable {n : ℕ} [NeZero n] {X : TopCat.{u}} {x : X}
+
+/-- The attaching map `∂𝔻 (n + 1) ⟶ X` of the `(n + 1)`-cell that kills the class of a generalized
+loop `p`: the pointed map `Sⁿ → X` corresponding to `p` (`GenLoop.toSphere`), with its source
+written as Mathlib's sphere `TopCat.diskBoundary (n + 1)`. -/
+def diskBoundaryMap (p : Ω^ (Fin n) X x) : TopCat.diskBoundary.{u} (n + 1) ⟶ X :=
+  TopCat.ofHom ((GenLoop.toSphere p).comp ⟨ULift.down, continuous_uliftDown⟩)
+
+@[simp]
+theorem diskBoundaryMap_apply (p : Ω^ (Fin n) X x) (s : TopCat.diskBoundary.{u} (n + 1)) :
+    diskBoundaryMap p s = GenLoop.toSphere p s.down :=
+  (rfl)
+
+end TauCeti.GenLoop
 
 namespace HomotopyGroup
 
