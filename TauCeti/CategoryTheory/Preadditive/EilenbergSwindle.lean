@@ -13,10 +13,10 @@ public import Mathlib.CategoryTheory.Retract
 
 Let `X` be a retract of an object `Y` of a preadditive category, and let `Y^(ℕ)` be the
 coproduct of countably many copies of `Y`. Then `X ⊞ Y^(ℕ) ≅ Y^(ℕ)`. Writing `e` for the
-idempotent of `Y` determined by the retraction, `Y` splits as `X ⊕ X'` where `X'` is the image of
-`1 - e`; the isomorphism moves the extra copy of `X` into slot `0` and moves the copy of `X` in
-slot `n` to slot `n + 1`, leaving the copies of `X'` in place. It is written using only `e` and
-`1 - e`, so no splitting of `1 - e` has to exist.
+idempotent of `Y` determined by the retraction, if `1 - e` splits with image `X'`, one can picture
+`Y` as `X ⊕ X'`: the isomorphism moves the extra copy of `X` into slot `0` and moves the copy of
+`X` in slot `n` to slot `n + 1`, leaving the copies of `X'` in place. The actual construction uses
+only `e` and `1 - e`, so no splitting of `1 - e` has to exist.
 
 This is the categorical form of the Eilenberg swindle. Its main use is that a triangulated
 subcategory closed under countable coproducts is closed under direct summands.
