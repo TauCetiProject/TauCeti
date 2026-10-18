@@ -59,6 +59,8 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
+* `TauCeti.isManifoldStrictlyPlurisubharmonicAt_iff_criticalHessian`: strict plurisubharmonicity
+  in terms of the real critical Hessian.
 * `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.scalar_comp` and
   `TauCeti.IsManifoldStronglyPseudoconvexAt.scalar_comp`: increasing convex post-composition
   preserves the corresponding positivity conditions.
@@ -354,6 +356,23 @@ theorem isManifoldStronglyPseudoconvexAt_iff [FiniteDimensional ℂ E] {q : ℕ}
     IsManifoldStronglyPseudoconvexAt E q f x ↔ ∃ P : Submodule ℂ E,
       finrank ℂ E ≤ finrank ℂ P + q ∧ ∀ v ∈ P, v ≠ 0 → 0 < (manifoldLeviForm E f x v v).re :=
   isStronglyPseudoconvexAt_iff
+
+/-- Strict plurisubharmonicity on a complex manifold in terms of the real critical Hessian: `f` is
+strictly plurisubharmonic at `x` exactly when `Hess f(v, v) + Hess f(I • v, I • v) > 0` for every
+`v ≠ 0`. -/
+theorem isManifoldStrictlyPlurisubharmonicAt_iff_criticalHessian :
+    IsManifoldStrictlyPlurisubharmonicAt E f x ↔ ∀ v : E, v ≠ 0 →
+      0 < criticalHessian 𝓘(ℝ, E) f x v v + criticalHessian 𝓘(ℝ, E) f x (I • v) (I • v) := by
+  simp only [isManifoldStrictlyPlurisubharmonicAt_iff, re_manifoldLeviForm_apply]
+  exact forall₂_congr fun _ _ ↦ div_pos_iff_of_pos_right (by norm_num)
+
+/-- Strong `q`-pseudoconvexity on a complex manifold is weaker for larger `q`. -/
+theorem IsManifoldStronglyPseudoconvexAt.mono [FiniteDimensional ℂ E] {q r : ℕ}
+    (h : IsManifoldStronglyPseudoconvexAt E q f x) (hqr : q ≤ r) :
+    IsManifoldStronglyPseudoconvexAt E r f x := by
+  rw [isManifoldStronglyPseudoconvexAt_iff] at h ⊢
+  obtain ⟨P, hP, hpos⟩ := h
+  exact ⟨P, by omega, hpos⟩
 
 /-- Strong `0`-pseudoconvexity on a complex manifold is strict plurisubharmonicity. -/
 @[simp]
