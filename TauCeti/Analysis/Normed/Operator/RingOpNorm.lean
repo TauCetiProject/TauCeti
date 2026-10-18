@@ -26,7 +26,7 @@ scalars the operator norm is therefore the least uniform bound, and the usual no
 ultrametric, composition and scalar laws follow.
 
 Over a nontrivially normed field the scoped norm is definitionally Mathlib's operator norm
-(`ContinuousLinearMap.ringOpNorm_eq_norm`). The scope should not be opened over a field, where it
+(`ContinuousLinearMap.ringOpNorm_eq_opNorm`). The scope should not be opened over a field, where it
 would duplicate Mathlib's instance.
 
 ## Main definitions
@@ -310,11 +310,11 @@ theorem ringOpNorm_toSpanSingleton (v : E) : ‖ContinuousLinearMap.toSpanSingle
 end SpanSingleton
 
 /-- Over a nontrivially normed field, the operator norm over ring scalars is Mathlib's operator
-norm. -/
-theorem ringOpNorm_eq_norm {K L E F : Type*} [NontriviallyNormedField K]
+norm `ContinuousLinearMap.opNorm`. -/
+theorem ringOpNorm_eq_opNorm {K L E F : Type*} [NontriviallyNormedField K]
     [NontriviallyNormedField L] {σ : K →+* L} [SeminormedAddCommGroup E] [NormedSpace K E]
     [SeminormedAddCommGroup F] [NormedSpace L F] (f : E →SL[σ] F) :
-    ringOpNorm f = ‖f‖ :=
+    ringOpNorm f = opNorm f :=
   (rfl)
 
 end ContinuousLinearMap
