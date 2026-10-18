@@ -136,14 +136,6 @@ private lemma functorHomEquiv_comp_ι_app_apply (g : Y ⟶ (PointedSSet.ihom X).
       (g.right ≫ (basedMaps X Z).ι)).app n (x, y) =
       (g.right.app n y : (basedMaps X Z).obj n).1.app n (𝟙 n) x := (rfl)
 
-variable {X Y} in
-/-- The simplicial operator of `Map_*(X, Z)` along `f` precomposes the components of a based map
-with `f`. -/
-private lemma ihom_obj_right_map_coe_app_apply {n m k : SimplexCategoryᵒᵖ} (f : n ⟶ m)
-    (φ : ((PointedSSet.ihom X).obj Z).right.obj n) (g : m ⟶ k) (x : X.right.obj k) :
-    dsimp% (((PointedSSet.ihom X).obj Z).right.map f φ : (basedMaps X Z).obj m).1.app k g x =
-      (φ : (basedMaps X Z).obj n).1.app k (f ≫ g) x := (rfl)
-
 variable (Z)
 
 /-- Currying identifies based maps `X ⊗ Y ⟶ Z` out of the smash product with based maps
@@ -181,7 +173,11 @@ def tensorHomEquiv : (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (PointedSSet.ihom X).obj Z) wher
     -- naturality square itself again and reduce it to `True`, so it is applied directly.
     refine (congrArg (fun φ : (basedMaps X Z).obj m ↦ φ.1.app m (𝟙 m) x)
       (NatTrans.naturality_apply g.right f y)).trans ?_
-    simp [ihom_obj_right_map_coe_app_apply]
+    -- The simplicial operator of `Map_*(X, Z)` along `f` precomposes with `f`, so the goal is
+    -- `Category.comp_id f` under the component; `ihom_obj_right_map_coe_app_apply` states this
+    -- for `ihom X`, which is only available once the instance below is built.
+    exact congrArg (fun h ↦ (g.right.app n y : (basedMaps X Z).obj n).1.app m h x)
+      (Category.comp_id f)
 
 variable {X Y Z}
 
@@ -247,6 +243,14 @@ lemma ihom_obj_right_coe_app_point {n m : SimplexCategoryᵒᵖ} (φ : ((ihom X)
     (f : n ⟶ m) :
     dsimp% (φ : (basedMaps X Y).obj n).1.app m f (X.point m) = Y.point m :=
   basedMaps_app_point φ f
+
+/-- The simplicial operator of `Map_*(X, Y)` along `f` precomposes the components of a based map
+with `f`. -/
+@[simp]
+lemma ihom_obj_right_map_coe_app_apply {n m k : SimplexCategoryᵒᵖ} (f : n ⟶ m)
+    (φ : ((ihom X).obj Y).right.obj n) (g : m ⟶ k) (x : X.right.obj k) :
+    dsimp% (((ihom X).obj Y).right.map f φ : (basedMaps X Y).obj m).1.app k g x =
+      (φ : (basedMaps X Y).obj n).1.app k (f ≫ g) x := (rfl)
 
 /-- The basepoint of `Map_*(X, Y)` is the constant map to the basepoint of `Y`. -/
 @[simp]
