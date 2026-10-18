@@ -169,20 +169,6 @@ theorem starSubdivisionCone_le (S : Set (Option (ToricRay τ))) :
   rintro _ ⟨_, ⟨k, -, rfl⟩, rfl⟩
   exact starSubdivisionGenerator_mem hi A hτ k
 
-/-- A face of a toric cone `τ` containing the sum of the primitive generators of all rays of `τ`
-contains `τ`: by the face property it contains every primitive generator, and these span `τ`. -/
-theorem IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem {F : PointedCone ℝ V}
-    (hF : F.IsFaceOf τ)
-    (hu : i (∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl τ) hτ.fg,
-      primitiveGenerator hi hτ ρ) ∈ F) : τ ≤ F := by
-  have hsum : ∑ ν : ToricRay.faceFinset (PointedCone.IsFaceOf.refl τ) hτ.fg,
-      i (primitiveGenerator hi hτ ν) ∈ F := by
-    rwa [Finset.sum_coe_sort _ fun ν ↦ i (primitiveGenerator hi hτ ν), ← map_sum]
-  refine (hτ.hull_primitiveGenerator hi).ge.trans (Submodule.span_le.2 ?_)
-  rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
-  exact hF.mem_of_sum_mem (fun ν ↦ ν.1.1.isFaceOf.le (primitiveGenerator_mem hi hτ ν.1)) hsum
-    ⟨ρ, (ToricRay.mem_faceFinset _ _).2 ρ.1.isFaceOf.le⟩
-
 /-- Viewing a set `B` of rays of a face `τ₀` of `τ` as rays of `τ` does not change the ray
 generators of the star subdivision along `B`. -/
 @[simp]
@@ -770,7 +756,7 @@ noncomputable def starSubdivisionAlongRay (hσ0 : σ ≠ ⊥) : (Φ.starSubdivis
       ((isRegular_iff.1 hΦ _ hσ).linearIndependent_primitiveGenerator Φ.lattice)
       (S := {none}) ⟨ρ, hρ, by simp⟩).ne_zero (mem_singleton none)
     rw [starSubdivisionGenerator_none] at h
-    rw [Submodule.span_span_of_tower, finrank_span_singleton h]⟩
+    exact PointedCone.finrank_span_coe_hull_singleton h⟩
 
 /-- The cone of `Fan.starSubdivisionAlongRay` is the ray through the sum of the primitive generators
 of the rays of `σ`. -/
