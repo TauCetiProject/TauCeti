@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import TauCeti.Geometry.Symplectic.Cotangent.Fiberwise
 public import TauCeti.Geometry.Symplectic.Liouville.Plane
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Liouville vector fields
@@ -117,10 +118,11 @@ section ModelSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- On a normed space, for a `C²` one-form `α` and a `C¹` vector field `Z`, `Z` is a Liouville
-vector field of `dα` exactly when the one-form `x ↦ ι_{Z x} dα_x` is again a primitive of `dα`. -/
+/-- On a normed space, for a `C²` one-form `α` and a differentiable vector field `Z`, `Z` is a
+Liouville vector field of `dα` exactly when the one-form `x ↦ ι_{Z x} dα_x` is again a primitive
+of `dα`. -/
 theorem isLiouvilleVectorField_extDeriv_iff {α : E → E [⋀^Fin 1]→L[ℝ] ℝ} {Z : E → E}
-    (hα : ContDiff ℝ 2 α) (hZ : ContDiff ℝ 1 Z) :
+    (hα : ContDiff ℝ 2 α) (hZ : Differentiable ℝ Z) :
     IsLiouvilleVectorField (I := 𝓘(ℝ, E)) (extDeriv α) Z ↔
       extDeriv (fun x ↦ (extDeriv α x).curryLeft (Z x)) = extDeriv α := by
   have hd : mextDeriv (I := 𝓘(ℝ, E)) (M := E) (F := ℝ) α = extDeriv α :=
@@ -130,7 +132,7 @@ theorem isLiouvilleVectorField_extDeriv_iff {α : E → E [⋀^Fin 1]→L[ℝ] �
     rw [hd]
     exact RoughForm.interior_modelSpace Z _
   have h := isLiouvilleVectorField_mextDeriv_iff (isSmoothForm_modelSpace_iff.mpr hα)
-    ((contMDiff_vectorSpace_iff_contDiff.mpr hZ).mdifferentiable one_ne_zero)
+    fun x ↦ mdifferentiableAt_vectorSpace_iff_differentiableAt.mpr (hZ x)
   have he := funext (mextDeriv_eq_extDeriv (fun x ↦ (extDeriv α x).curryLeft (Z x)))
   rw [hι, hd] at h
   rw [h]
@@ -144,23 +146,13 @@ section Cotangent
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- On the linear cotangent space, the radial field `p ∂_p` satisfies `ι_{p ∂_p} d(-λ) = -λ`
-for the tautological form `λ = p dq`. -/
-theorem curryLeft_extDeriv_neg_cotangentLiouvilleForm (x : V × StrongDual ℝ V) :
-    (extDeriv (-cotangentLiouvilleForm) x).curryLeft (cotangentLiouvilleField x) =
-      -cotangentLiouvilleForm x := by
-  have h := extDeriv_smul (x := x) (-1 : ℝ) (cotangentLiouvilleForm (V := V))
-  rw [neg_one_smul, neg_one_smul] at h
-  ext v
-  simp [h]
-
 /-- On the linear cotangent space, the radial field `p ∂_p` is a Liouville vector field of the
 canonical symplectic form `d(-λ) = -dλ`, as the Liouville field of its primitive `-λ`. -/
 theorem isLiouvilleVectorField_cotangentLiouvilleField :
     IsLiouvilleVectorField (I := 𝓘(ℝ, V × StrongDual ℝ V)) (extDeriv (-cotangentLiouvilleForm))
       cotangentLiouvilleField :=
   (isLiouvilleVectorField_extDeriv_iff contDiff_cotangentLiouvilleForm.neg
-    cotangentLiouvilleField.contDiff).mpr <| congrArg extDeriv <| funext fun x ↦
+    cotangentLiouvilleField.differentiable).mpr <| congrArg extDeriv <| funext fun x ↦
       (curryLeft_extDeriv_neg_cotangentLiouvilleForm x).trans
         (Pi.neg_apply cotangentLiouvilleForm x).symm
 
@@ -172,23 +164,6 @@ end TauCeti
 
 namespace Prod
 
-/-- On the plane, `ι_Z d(x dy) = x dy - dx` for the vector field `Z = x ∂_x + ∂_y`. -/
-theorem curryLeft_extDeriv_realPlaneXDy (p : ℝ × ℝ) :
-    (extDeriv realPlaneXDy p).curryLeft (p.1, 1) = realPlaneXDy p - realPlaneDx p := by
-  ext v
-  rw [extDeriv_realPlaneXDy, ContinuousAlternatingMap.curryLeft_apply_apply,
-    show Matrix.vecCons ((p.1, 1) : ℝ × ℝ) v = ![(p.1, 1), v 0] by
-      funext i; fin_cases i <;> rfl]
-  simp
-
-/-- On the plane, the vector field `Z = x ∂_x + ∂_y` is not the Liouville field of the primitive
-`x dy` of `dx ∧ dy`: `ι_Z d(x dy) ≠ x dy` at every point. -/
-theorem curryLeft_extDeriv_realPlaneXDy_ne (p : ℝ × ℝ) :
-    (extDeriv realPlaneXDy p).curryLeft (p.1, 1) ≠ realPlaneXDy p := by
-  rw [curryLeft_extDeriv_realPlaneXDy, Ne, sub_eq_self]
-  intro h
-  simpa using congrArg (fun f ↦ f ![(1, 0)]) h
-
 /-- On the plane, the vector field `Z = x ∂_x + ∂_y` is a Liouville vector field of
 `d(x dy) = dx ∧ dy`, although it is not the Liouville field of the primitive `x dy`
 (`Prod.curryLeft_extDeriv_realPlaneXDy_ne`): it is the Liouville field of the primitive
@@ -197,13 +172,17 @@ theorem isLiouvilleVectorField_extDeriv_realPlaneXDy :
     TauCeti.IsLiouvilleVectorField (I := 𝓘(ℝ, ℝ × ℝ)) (extDeriv realPlaneXDy)
       fun p ↦ (p.1, 1) := by
   rw [TauCeti.isLiouvilleVectorField_extDeriv_iff contDiff_realPlaneXDy
-    (contDiff_fst.prodMk contDiff_const), funext curryLeft_extDeriv_realPlaneXDy]
+    (differentiable_fst.prodMk (differentiable_const _)), funext curryLeft_extDeriv_realPlaneXDy]
+  -- Write `x dy - dx` as a linear combination of forms, so that `d` splits over it.
+  have hsub : (fun x ↦ realPlaneXDy x - realPlaneDx x) =
+      realPlaneXDy + (-1 : ℝ) • realPlaneDx := by
+    funext x
+    simp only [Pi.add_apply, Pi.smul_apply]
+    module
   funext p
-  rw [show (fun x ↦ realPlaneXDy x - realPlaneDx x) = realPlaneXDy + (-1 : ℝ) • realPlaneDx by
-      funext x
-      rw [Pi.add_apply, Pi.smul_apply, neg_one_smul ℝ (realPlaneDx x), sub_eq_add_neg],
+  rw [hsub,
     extDeriv_add ((contDiff_realPlaneXDy (n := 1)).differentiable one_ne_zero).differentiableAt
-      (((contDiff_realPlaneDx (n := 1)).differentiable one_ne_zero).differentiableAt.const_smul _),
-    extDeriv_smul, extDeriv_realPlaneDx, smul_zero, add_zero]
+      (((contDiff_realPlaneDx (n := 1)).differentiable one_ne_zero).differentiableAt.const_smul _)]
+  simp [extDeriv_smul]
 
 end Prod

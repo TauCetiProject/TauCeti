@@ -18,6 +18,10 @@ derivatives fix the standard planar sign convention:
 
 `d(dx) = 0` and `d(x dy) = dx ∧ dy`.
 
+Contracting `d(x dy)` with the vector field `Z = x ∂_x + ∂_y` gives `x dy - dx`
+(`Prod.curryLeft_extDeriv_realPlaneXDy`), which differs from `x dy`
+(`Prod.curryLeft_extDeriv_realPlaneXDy_ne`).
+
 The computation of `d(x dy)` reuses the radial primitive calculation for a continuous bilinear
 form from
 `TauCeti.Geometry.Symplectic.Liouville.Linear`.
@@ -105,5 +109,21 @@ theorem extDeriv_realPlaneXDy (p : ℝ × ℝ) :
   rw [show v = ![v 0, v 1] by funext i; fin_cases i <;> rfl]
   simp [realPlaneXDyBilinear]
   ring_nf
+
+/-- For the vector field `Z = x ∂_x + ∂_y`, `ι_Z d(x dy) = x dy - dx`. -/
+theorem curryLeft_extDeriv_realPlaneXDy (p : ℝ × ℝ) :
+    (extDeriv realPlaneXDy p).curryLeft (p.1, 1) = realPlaneXDy p - realPlaneDx p := by
+  ext v
+  -- Write the single vector as the one-entry tuple `![v 0]` so the wedge evaluation applies.
+  rw [← Matrix.cons_head_tail v, Matrix.empty_eq (Matrix.vecTail v)]
+  simp
+
+/-- The vector field `Z = x ∂_x + ∂_y` is not the Liouville field of the primitive `x dy` of
+`dx ∧ dy`: `ι_Z d(x dy) ≠ x dy` at every point. -/
+theorem curryLeft_extDeriv_realPlaneXDy_ne (p : ℝ × ℝ) :
+    (extDeriv realPlaneXDy p).curryLeft (p.1, 1) ≠ realPlaneXDy p := by
+  rw [curryLeft_extDeriv_realPlaneXDy, Ne, sub_eq_self]
+  intro h
+  simpa using congrArg (fun f ↦ f ![(1, 0)]) h
 
 end Prod
