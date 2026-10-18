@@ -157,7 +157,9 @@ end Aggregation
 section Multinomial
 
 variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
-local instance : DecidableEq I := Classical.decEq I
+
+/-- Classical decidable equality used to form one-hot vectors on a finite category type. -/
+local instance categoricalDecidableEq : DecidableEq I := Classical.decEq I
 
 /-- Encoding a categorical outcome as the one-hot vector `Pi.single i 1` gives the multinomial
 law with one trial. -/
