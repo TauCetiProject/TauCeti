@@ -110,14 +110,9 @@ theorem charPowerSeries_blockDiagonal' {o : Type*} {m : o → Type*}
   have hF (i : o) : Tendsto (F i) atTop (𝓝 (A i).charPowerSeries) :=
     (TauCeti.tendsto_charpolyRev_finiteCompression (hA i)).comp
       (tendsto_finset_preimage_atTop_atTop sigma_mk_injective)
-  have hprod (s : Finset o) :
-      Tendsto (fun S ↦ ∏ i ∈ s, F i S) atTop (𝓝 (∏ i ∈ s, (A i).charPowerSeries)) := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | @insert i s hi ih => simpa [Finset.prod_insert hi] using (hF i).mul ih
   have hright : Tendsto (fun S ↦ ∏ i, F i S) atTop
       (𝓝 (∏ i, (A i).charPowerSeries)) := by
-    simpa using hprod Finset.univ
+    simpa using tendsto_finsetProd Finset.univ (fun i _ ↦ hF i)
   apply tendsto_nhds_unique (TauCeti.tendsto_charpolyRev_finiteCompression hM)
   apply hright.congr'
   filter_upwards [] with S
