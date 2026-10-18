@@ -105,12 +105,12 @@ theorem nakagamiPDF_of_not_pos (h : ¬ (0 < m ∧ 0 < Ω ∧ 0 < x)) :
   simp [nakagamiPDF_eq_ofReal, nakagamiPDFReal_of_not_pos h]
 
 /-- The real Nakagami density vanishes on the nonpositive half-line. -/
-@[simp]
+@[simp high]
 theorem nakagamiPDFReal_of_nonpos (hx : x ≤ 0) : nakagamiPDFReal m Ω x = 0 :=
   nakagamiPDFReal_of_not_pos (by grind)
 
 /-- The extended Nakagami density vanishes on the nonpositive half-line. -/
-@[simp]
+@[simp high]
 theorem nakagamiPDF_of_nonpos (hx : x ≤ 0) : nakagamiPDF m Ω x = 0 :=
   nakagamiPDF_of_not_pos (by grind)
 
