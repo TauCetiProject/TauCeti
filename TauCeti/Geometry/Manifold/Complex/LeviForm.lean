@@ -19,11 +19,11 @@ Let `M` be a complex manifold modelled on `𝓘(ℂ, E)`, and let `f : M → ℝ
 coordinate expression of `f` in the preferred chart at `x`. It is a sesquilinear form on the model
 space `E`, which is the tangent space at `x`.
 
-Unlike the real Hessian, the Levi form is intrinsic at every point: in any holomorphic chart `e`
-at `x`, the Levi form of the coordinate expression `f ∘ e.symm`, evaluated on the images of tangent
-vectors under the derivative of `e`, is `TauCeti.manifoldLeviForm E f x`. This is because the second
-derivative of a holomorphic chart transition is complex bilinear and does not contribute to the
-Levi form.
+Unlike the real Hessian, the Levi form of a function which is real `C²` at `x` is intrinsic at
+every point: in any chart `e` at `x` of the holomorphic `C²` maximal atlas, the Levi form of the
+coordinate expression `f ∘ e.symm`, evaluated on the images of tangent vectors under the derivative
+of `e`, is `TauCeti.manifoldLeviForm E f x`. This is because the second derivative of a holomorphic
+chart transition is complex bilinear and does not contribute to the Levi form.
 
 The underlying real manifold of `M` is modelled on `𝓘(ℝ, E)`, with the same charts, and its
 holomorphic charts are real `C²` charts (`IsManifold.maximalAtlas_subset_restrictScalars`). Its
@@ -42,8 +42,9 @@ Morse index is at most `dim_ℂ E + q`.
 
 ## Main results
 
-* `TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas`: the Levi form of the coordinate
-  expression in any holomorphic chart is the manifold Levi form.
+* `TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas`: for `f` real `C²` at `x`, the Levi
+  form of the coordinate expression in any holomorphic `C²` chart at `x` is the manifold Levi
+  form.
 * `TauCeti.re_manifoldLeviForm_apply`, `TauCeti.im_manifoldLeviForm_apply`: the real and imaginary
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
@@ -76,8 +77,8 @@ variable (E) in
 /-- The **Levi form** of a real function `f` on a complex manifold at `x`: the Levi form of the
 coordinate expression of `f` in the preferred chart at `x`. It is a sesquilinear form on the model
 space `E`, which is the tangent space `TangentSpace 𝓘(ℂ, E) x`. By
-`TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas` it may be computed in any holomorphic
-chart. -/
+`TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas`, when `f` is real `C²` at `x` it may be
+computed in any chart at `x` of the holomorphic `C²` maximal atlas. -/
 def manifoldLeviForm (f : M → ℝ) (x : M) : E →ₗ⋆[ℂ] E →ₗ[ℂ] ℂ :=
   leviForm (f ∘ (chartAt E x).symm) (chartAt E x x)
 
