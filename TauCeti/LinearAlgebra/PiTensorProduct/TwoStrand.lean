@@ -9,6 +9,8 @@ public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+-- `Matrix.sum_sum_smul_congruence`, the scalar regrouping behind the congruence below.
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # Pure tensors on two strands
@@ -28,11 +30,8 @@ tensor square is being used for, so they live here rather than in any one consum
   vectors is pushed through `PiTensorProduct.map` and the result is wanted coefficientwise.
 * `Matrix.piTensorProductMap_bivector`: the same for a whole bivector `∑ x y, K x y • ⨂ₜ`, which
   becomes the bivector of the congruate `A * K * Aᵀ`. `A` may be rectangular, so the result is
-  indexed by its row type.
-* `Matrix.sum_sum_smul_congruence`: the scalar regrouping behind the previous one, stated for an
-  arbitrary family `T a b` in a module in place of the pure tensors. Use it for the same
-  computation on two slots of a larger tensor power, where the two slots cannot be split off as a
-  tensor square.
+  indexed by its row type. The scalar regrouping behind it is `Matrix.sum_sum_smul_congruence`,
+  which has no tensor content and lives in `TauCeti/LinearAlgebra/Matrix/Congruence.lean`.
 -/
 
 public section
@@ -87,39 +86,6 @@ theorem piTensorProductMap_tprod_single {ι κ R : Type*} [Fintype ι] [Decidabl
     TauCeti.tprod_fin_two _
   rw [MultilinearMap.map_smul_univ, hr, Fin.prod_univ_two]
   simp
-
-/-- **Congruence on a bivector-shaped sum.** Expanding the two weights of a bivector of `K` along
-the rows of `A` turns `K` into the congruate `A * K * Aᵀ`. The family `T` plays the role of the
-pure tensors in `Matrix.piTensorProductMap_bivector` but is arbitrary, so the same regrouping
-serves two slots of a larger tensor power, where those two slots cannot be split off as a tensor
-square. -/
-theorem sum_sum_smul_congruence {ι κ R M : Type*} [Fintype ι] [Fintype κ] [CommSemiring R]
-    [AddCommMonoid M] [Module R M] (A : Matrix κ ι R) (K : Matrix ι ι R) (T : κ → κ → M) :
-    ∑ x : ι, ∑ y : ι, K x y • ∑ a : κ, ∑ b : κ, (A a x * A b y) • T a b =
-      ∑ a : κ, ∑ b : κ, (A * K * Aᵀ) a b • T a b := by
-  have hcoef : ∀ a b : κ, ∑ x : ι, ∑ y : ι, K x y * (A a x * A b y) = (A * K * Aᵀ) a b := by
-    intro a b
-    rw [Matrix.mul_apply, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun y _ => ?_
-    rw [Matrix.mul_apply, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    simp only [Matrix.transpose_apply]
-    ring
-  calc ∑ x : ι, ∑ y : ι, K x y • ∑ a : κ, ∑ b : κ, (A a x * A b y) • T a b
-      = ∑ x : ι, ∑ y : ι, ∑ a : κ, ∑ b : κ, (K x y * (A a x * A b y)) • T a b := by
-        simp only [Finset.smul_sum, smul_smul]
-    -- move the two outer sums past the two inner ones, one adjacent swap at a time
-    _ = ∑ x : ι, ∑ a : κ, ∑ y : ι, ∑ b : κ, (K x y * (A a x * A b y)) • T a b :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : κ, ∑ x : ι, ∑ y : ι, ∑ b : κ, (K x y * (A a x * A b y)) • T a b := Finset.sum_comm
-    _ = ∑ a : κ, ∑ x : ι, ∑ b : κ, ∑ y : ι, (K x y * (A a x * A b y)) • T a b :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : κ, ∑ b : κ, ∑ x : ι, ∑ y : ι, (K x y * (A a x * A b y)) • T a b :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : κ, ∑ b : κ, (A * K * Aᵀ) a b • T a b := by
-        refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
-        simp only [← Finset.sum_smul]
-        rw [hcoef a b]
 
 /-- Applying a matrix `A` in both tensor factors turns the bivector of `K` into the bivector of the
 congruate `A * K * Aᵀ`. It is the computation behind the invariance of the Brauer cup. -/

@@ -8,6 +8,8 @@ module
 -- `TauCeti.tprod_update_pair_expand`, the standard-basis expansion at two slots.
 public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Basic
+-- `Matrix.sum_sum_smul_congruence`, the regrouping the cup invariance below runs on two slots.
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The symplectic Brauer arc on a tensor power
@@ -144,14 +146,6 @@ noncomputable def symplecticCupCapAt (i j : Fin d) :
       PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y)
 
 variable {k n d}
-
-/-- The form on a pair of standard basis vectors reads off the matrix entry of `J`. This is the
-general-slot counterpart of `TauCeti.symplecticCap_tprod_single`, which reads the same entry off
-the cap on the tensor square. -/
-private theorem stdSymplecticBilinForm_single_single (x y : Fin n ⊕ Fin n) :
-    stdSymplecticBilinForm k n (Pi.single x (1 : k)) (Pi.single y (1 : k)) =
-      Matrix.J (Fin n) k x y := by
-  simp [stdSymplecticBilinForm_apply]
 
 /-! ### The value on a pure tensor -/
 
