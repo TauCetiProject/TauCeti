@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.Abelian.Basic
-public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.FieldTheory.Galois.Quotient
 
 /-!
@@ -207,7 +206,8 @@ def topologicalAbelianizationEquivMaximalAbelianExtension :
 /-- The isomorphism `Gal(Ω/K)^{ab} ≃ₜ* Gal(K^{ab}/K)` sends the class of `σ` to its restriction to
 `K^{ab}`. -/
 @[simp]
-theorem topologicalAbelianizationEquivMaximalAbelianExtension_mk (σ : Gal(Ω/K)) :
+theorem _root_.AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_mk
+    (σ : Gal(Ω/K)) :
     topologicalAbelianizationEquivMaximalAbelianExtension K Ω (σ : TopologicalAbelianization _) =
       AlgEquiv.restrictNormalHom (maximalAbelianExtension K Ω) σ := by
   rw [topologicalAbelianizationEquivMaximalAbelianExtension, ContinuousMulEquiv.trans_apply,
@@ -218,12 +218,13 @@ theorem topologicalAbelianizationEquivMaximalAbelianExtension_mk (σ : Gal(Ω/K)
 `K^{ab}` back to the class of `σ`; with `AlgEquiv.restrictNormalHom_surjective` this computes it
 on every element. -/
 @[simp]
-theorem topologicalAbelianizationEquivMaximalAbelianExtension_symm_restrictNormalHom
+theorem _root_.AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_symm_restrictNormalHom
     (σ : Gal(Ω/K)) :
     (topologicalAbelianizationEquivMaximalAbelianExtension K Ω).symm
         (AlgEquiv.restrictNormalHom (maximalAbelianExtension K Ω) σ) =
       (σ : TopologicalAbelianization _) := by
-  rw [ContinuousMulEquiv.symm_apply_eq, topologicalAbelianizationEquivMaximalAbelianExtension_mk]
+  rw [ContinuousMulEquiv.symm_apply_eq,
+    AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_mk]
 
 end Normal
 
