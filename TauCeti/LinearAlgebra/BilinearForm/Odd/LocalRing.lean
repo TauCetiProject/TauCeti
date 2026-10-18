@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
+public import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -37,34 +38,14 @@ public section
 
 namespace LinearMap.BilinForm
 
-open Module
+open Module TauCeti
 
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   {B : LinearMap.BilinForm R M}
 
-private theorem isUnit_add_of_isUnit_of_not_isUnit {a b : R} (ha : IsUnit a)
-    (hb : ¬ IsUnit b) : IsUnit (a + b) := by
-  by_contra hab
-  have hsum := IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hab)
-    (mem_nonunits_iff.mpr ((IsUnit.neg_iff b).not.mpr hb))
-  have ha' : a ∈ nonunits R := by
-    convert hsum using 1
-    ring
-  exact (mem_nonunits_iff.mp ha') ha
-
-private theorem isUnit_sub_of_not_isUnit_of_isUnit {a b : R} (ha : ¬ IsUnit a)
-    (hb : IsUnit b) : IsUnit (a - b) := by
-  have h := isUnit_add_of_isUnit_of_not_isUnit hb
-    ((IsUnit.neg_iff a).not.mpr ha)
-  simpa only [sub_eq_add_neg, neg_add_rev, neg_neg] using h.neg
-
 /-- **Two orthogonal unit values in an odd unimodular form.** A symmetric form of rank at least
 two whose Gram determinant is a unit and which represents a unit has two orthogonal vectors with
-unit self-pairings.
-
-The result needs no inverse of two. If the orthogonal complement of an initial unit-norm vector
-does not itself represent a unit, a unit off-diagonal Gram entry in that complement supplies a
-replacement vector whose complement does. -/
+unit self-pairings. The result needs no inverse of two. -/
 theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
     (b : Basis (Fin (n + 2)) R M) (hdet : IsUnit (B.toMatrix b).det)
     (hodd : ∃ x, IsUnit (B x x)) :
@@ -77,7 +58,8 @@ theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
   have hGdet : IsUnit G.det := by
     rw [Matrix.det_fin_one]
     exact hx
-  -- Split off the first unit line and inspect its unimodular orthogonal complement.
+  -- If the complement of the initial unit line has no unit norm, a unit off-diagonal entry there
+  -- supplies a replacement vector whose complement does have one.
   obtain ⟨_, t, _w, _hw, hdetT⟩ := hB.exists_basis_orthogonal (m := n + 1) b hG hGdet
   have hTdet : IsUnit ((B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).toMatrix
       t).det := by
