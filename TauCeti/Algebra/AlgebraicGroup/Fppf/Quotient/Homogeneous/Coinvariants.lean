@@ -54,7 +54,8 @@ subgroup is affine: this is the affine direction of Matsushima's criterion.
   **16** (1960), 205--218.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§14--16.
 
-The descent argument follows the representation of homogeneous quotients by projective orbits in
+The descent argument is `CommHopfAlgCat.isIso_fppfHomogeneousQuotientHomEquiv_symm`, shared with
+the representation of homogeneous quotients by projective orbits in
 `TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Quotient`.
 -/
 
@@ -146,38 +147,10 @@ theorem isIso_fppfHomogeneousQuotientToCoinvariantsPoints [Module.Flat R H]
     (hfp : I.coinvariants.val.toRingHom.FinitePresentation) :
     IsIso I.fppfHomogeneousQuotientToCoinvariantsPoints := by
   have := I.isLocallySurjective_toCoinvariantsPoints hflat hfp
-  let J := CommAlgCat.fppfTopology R
-  let P := CommHopfAlgCat.homogeneousQuotientPresheaf H I
-  let e := CommHopfAlgCat.homogeneousQuotientPresheafHomEquiv H I
-    (J.uliftYoneda.{u + 1}.obj (op (CommAlgCat.of R I.coinvariants))).obj
-  let ψ := e.symm ⟨I.toCoinvariantsPoints, I.toCoinvariantsPoints_app_mul⟩
-  have hψ : CommHopfAlgCat.homogeneousQuotientPresheafProjection H I ≫ ψ =
-      I.toCoinvariantsPoints := by
-    simpa only [e, CommHopfAlgCat.homogeneousQuotientPresheafHomEquiv_apply] using
-      congrArg Subtype.val (e.apply_symm_apply
-        ⟨I.toCoinvariantsPoints, I.toCoinvariantsPoints_app_mul⟩)
-  -- On the coset presheaf restriction is injective: its fibres are exactly the cosets.
-  have hinj : Presheaf.IsLocallyInjective J ψ := by
-    refine Presheaf.isLocallyInjective_of_injective J ψ fun A q₁ q₂ hq ↦ ?_
-    obtain ⟨x₁, rfl⟩ := CommHopfAlgCat.homogeneousQuotientPresheafProjection_surjective H I A q₁
-    obtain ⟨x₂, rfl⟩ := CommHopfAlgCat.homogeneousQuotientPresheafProjection_surjective H I A q₂
-    have h := (congrArg (fun α ↦ α.app A x₁) hψ).symm.trans
-      (hq.trans (congrArg (fun α ↦ α.app A x₂) hψ))
-    have hc : x₁.down.ofConv.comp I.coinvariants.val = x₂.down.ofConv.comp I.coinvariants.val :=
-      congrArg (fun t ↦ t.down.unop.hom) h
-    exact (CommHopfAlgCat.homogeneousQuotientPresheafProjection_eq_iff H I A _ _).mpr
-      ((inv_mul_mem_quotientPointsSubgroup_iff_comp_val_eq hI _ _).mpr hc)
-  -- The descended map restricts to `ψ` along the unit of sheafification.
-  have hfac : (toSheafify J P ≫ eqToHom (CommHopfAlgCat.fppfHomogeneousQuotient_obj H I).symm) ≫
-      I.fppfHomogeneousQuotientToCoinvariantsPoints.hom = ψ := by
-    apply CommHopfAlgCat.homogeneousQuotientPresheaf_hom_ext
-    rw [hψ, ← Category.assoc, ← CommHopfAlgCat.fppfHomogeneousQuotientProjection_def,
-      fppfHomogeneousQuotientProjection_comp_toCoinvariantsPoints]
-  refine (GrothendieckTopology.W_sheafToPresheaf_map_iff_isIso J _).mp
-    ((J.W_iff_isLocallyBijective _).mpr ⟨?_, ?_⟩)
-  · exact Presheaf.isLocallyInjective_of_isLocallyInjective_of_isLocallySurjective_fac J ψ hfac
-  · exact Presheaf.isLocallySurjective_of_isLocallySurjective_fac J
-      (fppfHomogeneousQuotientProjection_comp_toCoinvariantsPoints I)
+  -- The fibres of restriction to the coinvariants are exactly the cosets.
+  exact CommHopfAlgCat.isIso_fppfHomogeneousQuotientHomEquiv_symm H I _ _ _ fun A g g' h ↦
+    (inv_mul_mem_quotientPointsSubgroup_iff_comp_val_eq hI _ _).mpr
+      (congrArg (fun t ↦ t.down.unop.hom) h)
 
 end Ring
 
