@@ -20,9 +20,11 @@ For finite actual edge sets, `Graph.internalEdges` and `Graph.incidentEdges` pro
 sets of edges internal to, or incident with, a finite set of actual vertices.  These are the
 counting objects used by degree arguments and by orientation constraints.  The comparison with
 `SimpleGraph.degree` shows that the multigraph count specializes to the usual simple-graph degree.
+The edge-deletion results record that surviving incident edges together with deleted incident
+edges account for the original incidence count.
 -/
 
-@[expose] public section
+public section
 
 open Set
 
@@ -32,23 +34,15 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} (G : Graph α β)
 
-/-- The number of nonloop edge identities incident to an actual vertex of a multigraph.
+/-- The number of nonloop edge identities incident to a vertex of a multigraph.
 Parallel edges are counted separately. -/
-noncomputable def nonloopIncidenceCount (x : G.vertexSet) : ℕ :=
-  (G.incidenceSet x.1 \ G.loopSet x.1).ncard
+noncomputable def nonloopIncidenceCount (x : α) : ℕ :=
+  (G.incidenceSet x \ G.loopSet x).ncard
 
-/-- The number of edge identities incident to an actual vertex of a multigraph, counting each
+/-- The number of edge identities incident to a vertex of a multigraph, counting each
 loop once and counting parallel edges separately. -/
-noncomputable def incidenceCount (x : G.vertexSet) : ℕ :=
-  (G.incidenceSet x.1).ncard
-
-theorem nonloopIncidenceCount_def (x : G.vertexSet) :
-    G.nonloopIncidenceCount x = (G.incidenceSet x.1 \ G.loopSet x.1).ncard :=
-  rfl
-
-theorem incidenceCount_def (x : G.vertexSet) :
-    G.incidenceCount x = (G.incidenceSet x.1).ncard :=
-  rfl
+noncomputable def incidenceCount (x : α) : ℕ :=
+  (G.incidenceSet x).ncard
 
 /-- The incidence set of a vertex is finite when the graph has finitely many actual edges. -/
 theorem finite_incidenceSet [Finite G.edgeSet] (x : α) : (G.incidenceSet x).Finite :=
@@ -59,10 +53,10 @@ theorem finite_loopSet [Finite G.edgeSet] (x : α) : (G.loopSet x).Finite :=
   (G.finite_incidenceSet x).subset (G.loopSet_subset_incidenceSet x)
 
 /-- The incident edges split into the nonloop incident edges and the loops at the vertex. -/
-theorem nonloopIncidenceCount_add_ncard_loopSet [Finite G.edgeSet] (x : G.vertexSet) :
-    G.nonloopIncidenceCount x + (G.loopSet x.1).ncard = G.incidenceCount x := by
-  exact Set.ncard_sdiff_add_ncard_of_subset (G.loopSet_subset_incidenceSet x.1)
-    (G.finite_incidenceSet x.1)
+theorem nonloopIncidenceCount_add_ncard_loopSet [Finite G.edgeSet] (x : α) :
+    G.nonloopIncidenceCount x + (G.loopSet x).ncard = G.incidenceCount x := by
+  exact Set.ncard_sdiff_add_ncard_of_subset (G.loopSet_subset_incidenceSet x)
+    (G.finite_incidenceSet x)
 
 /-- A loopless multigraph has no loops at any vertex. -/
 @[simp]
@@ -73,43 +67,47 @@ theorem loopSet_eq_empty [G.Loopless] (x : α) : G.loopSet x = ∅ := by
 /-- On a loopless multigraph, counting all incident edges is the same as counting nonloop
 incident edges. -/
 @[simp]
-theorem nonloopIncidenceCount_eq_incidenceCount [G.Loopless] (x : G.vertexSet) :
+theorem nonloopIncidenceCount_eq_incidenceCount [G.Loopless] (x : α) :
     G.nonloopIncidenceCount x = G.incidenceCount x := by
   simp [nonloopIncidenceCount, incidenceCount]
 
 /-- Deleting edges removes precisely the deleted members of a vertex's incidence set. -/
+@[simp]
 theorem incidenceSet_deleteEdges (F : Set β) (x : α) :
     (G.deleteEdges F).incidenceSet x = G.incidenceSet x \ F := by
   ext e
   simp [incidenceSet]
 
+/-- Deleting edges removes precisely the deleted members of a vertex's loop set. -/
+@[simp]
+theorem loopSet_deleteEdges (F : Set β) (x : α) :
+    (G.deleteEdges F).loopSet x = G.loopSet x \ F := by
+  ext e
+  simp
+
 /-- The incidence count after edge deletion counts exactly the surviving incident edges. -/
-theorem incidenceCount_deleteEdges (F : Set β) (x : G.vertexSet) :
-    (G.deleteEdges F).incidenceCount x = (G.incidenceSet x.1 \ F).ncard := by
+theorem incidenceCount_deleteEdges (F : Set β) (x : α) :
+    (G.deleteEdges F).incidenceCount x = (G.incidenceSet x \ F).ncard := by
   unfold incidenceCount
   rw [incidenceSet_deleteEdges]
 
 /-- For a finite actual edge set, the surviving and deleted incident-edge counts add to the
 original incidence count. -/
 theorem incidenceCount_deleteEdges_add_ncard_inter [Finite G.edgeSet]
-    (F : Set β) (x : G.vertexSet) :
-    (G.deleteEdges F).incidenceCount x + (G.incidenceSet x.1 ∩ F).ncard =
+    (F : Set β) (x : α) :
+    (G.deleteEdges F).incidenceCount x + (G.incidenceSet x ∩ F).ncard =
       G.incidenceCount x := by
   rw [incidenceCount_deleteEdges, incidenceCount]
   rw [add_comm]
-  exact Set.ncard_inter_add_ncard_sdiff_eq_ncard (G.incidenceSet x.1) F
-    (G.finite_incidenceSet x.1)
+  exact Set.ncard_inter_add_ncard_sdiff_eq_ncard (G.incidenceSet x) F
+    (G.finite_incidenceSet x)
 
 /-- Deleting edges removes precisely the deleted members of a vertex's nonloop incidence set. -/
-theorem nonloopIncidenceCount_deleteEdges (F : Set β) (x : G.vertexSet) :
+theorem nonloopIncidenceCount_deleteEdges (F : Set β) (x : α) :
     (G.deleteEdges F).nonloopIncidenceCount x =
-      ((G.incidenceSet x.1 \ G.loopSet x.1) \ F).ncard := by
+      ((G.incidenceSet x \ G.loopSet x) \ F).ncard := by
   unfold nonloopIncidenceCount
-  rw [incidenceSet_deleteEdges]
-  have hloop : (G.deleteEdges F).loopSet x.1 = G.loopSet x.1 \ F := by
-    ext e
-    simp
-  rw [hloop]
+  rw [incidenceSet_deleteEdges, loopSet_deleteEdges]
   congr 1
   ext e
   simp only [mem_sdiff]
@@ -117,58 +115,72 @@ theorem nonloopIncidenceCount_deleteEdges (F : Set β) (x : G.vertexSet) :
 
 /-! ## Basic examples -/
 
-/-- A graph with no edges has incidence count zero at every actual vertex. -/
+/-- A graph with no edges has an empty incidence set at every vertex. -/
 @[simp]
-theorem incidenceCount_noEdge (X : Set α) (x : (Graph.noEdge X β).vertexSet) :
-    (Graph.noEdge X β).incidenceCount x = 0 := by
-  simp [incidenceCount, incidenceSet, Inc]
+theorem incidenceSet_noEdge (X : Set α) (x : α) :
+    (Graph.noEdge X β).incidenceSet x = ∅ := by
+  ext e
+  simp
 
-/-- A graph with no edges has nonloop incidence count zero at every actual vertex. -/
-theorem nonloopIncidenceCount_noEdge (X : Set α) (x : (Graph.noEdge X β).vertexSet) :
-    (Graph.noEdge X β).nonloopIncidenceCount x = 0 := by
-  simp [nonloopIncidenceCount, incidenceSet, loopSet, Inc, IsLoopAt]
+/-- A graph with no edges has incidence count zero at every vertex. -/
+@[simp]
+theorem incidenceCount_noEdge (X : Set α) (x : α) :
+    (Graph.noEdge X β).incidenceCount x = 0 := by
+  simp [incidenceCount]
+
+/-- Every edge identity of a banana graph is incident to its left endpoint. -/
+@[simp]
+theorem incidenceSet_banana_left (x y : α) (E : Set β) :
+    (Graph.banana x y E).incidenceSet x = E := by
+  ext e
+  simp
+
+/-- Every edge identity of a bouquet is incident to its unique vertex. -/
+@[simp]
+theorem incidenceSet_bouquet (x : α) (E : Set β) :
+    (Graph.bouquet x E).incidenceSet x = E := by
+  ext e
+  simp
+
+/-- Every edge identity of a bouquet is a loop at its unique vertex. -/
+@[simp]
+theorem loopSet_bouquet (x : α) (E : Set β) :
+    (Graph.bouquet x E).loopSet x = E := by
+  ext e
+  simp
+
+/-- A banana graph with distinct endpoints has no loops at its left endpoint. -/
+@[simp]
+theorem loopSet_banana_left (x y : α) (E : Set β) (hxy : x ≠ y) :
+    (Graph.banana x y E).loopSet x = ∅ := by
+  ext e
+  simp [hxy]
 
 /-- Every edge identity of a banana graph is incident to its left endpoint. -/
 @[simp]
 theorem incidenceCount_banana_left (x y : α) (E : Set β) :
-    (Graph.banana x y E).incidenceCount ⟨x, by simp⟩ = E.ncard := by
-  rw [incidenceCount]
-  congr 1
-  ext e
-  simp
+    (Graph.banana x y E).incidenceCount x = E.ncard := by
+  simp [incidenceCount]
 
 /-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
 number of actual edges. -/
+@[simp]
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
-    (Graph.bouquet x E).incidenceCount ⟨x, by simp⟩ = E.ncard := by
-  exact incidenceCount_banana_left x x E
+    (Graph.bouquet x E).incidenceCount x = E.ncard := by
+  simp [incidenceCount]
 
 /-- A bouquet has no nonloop incident edges, independently of how many loops it has. -/
 @[simp]
 theorem nonloopIncidenceCount_bouquet (x : α) (E : Set β) :
-    (Graph.bouquet x E).nonloopIncidenceCount ⟨x, by simp⟩ = 0 := by
-  rw [nonloopIncidenceCount]
-  have hi : (Graph.bouquet x E).incidenceSet x = E := by
-    ext e
-    simp
-  have hl : (Graph.bouquet x E).loopSet x = E := by
-    ext e
-    simp
-  rw [hi, hl, sdiff_self, ncard_empty]
+    (Graph.bouquet x E).nonloopIncidenceCount x = 0 := by
+  simp [nonloopIncidenceCount]
 
 /-- When the endpoints of a banana graph are distinct, every edge is nonloop and is counted at
 the left endpoint. -/
 @[simp]
 theorem nonloopIncidenceCount_banana_left (x y : α) (E : Set β) (hxy : x ≠ y) :
-    (Graph.banana x y E).nonloopIncidenceCount ⟨x, by simp⟩ = E.ncard := by
-  rw [nonloopIncidenceCount]
-  have hi : (Graph.banana x y E).incidenceSet x = E := by
-    ext e
-    simp
-  have hl : (Graph.banana x y E).loopSet x = ∅ := by
-    ext e
-    simp [hxy]
-  rw [hi, hl, sdiff_empty]
+    (Graph.banana x y E).nonloopIncidenceCount x = E.ncard := by
+  simp [nonloopIncidenceCount, hxy]
 
 section FiniteEdges
 
@@ -251,43 +263,53 @@ theorem incidentEdges_mono {S T : Finset G.vertexSet} (hST : S ⊆ T) :
   rintro ⟨x, hx, hex⟩
   exact ⟨x, hST hx, hex⟩
 
+omit [Fintype G.edgeSet] in
+private theorem card_eq_ncard_of_map_val_eq (s : Finset G.edgeSet) (A : Set β)
+    (h : (s.map (Function.Embedding.subtype _) : Set β) = A) : s.card = A.ncard := by
+  calc
+    s.card = (s.map (Function.Embedding.subtype _)).card := (Finset.card_map _).symm
+    _ = (s.map (Function.Embedding.subtype _) : Set β).ncard :=
+      (Set.ncard_coe_finset _).symm
+    _ = A.ncard := congrArg Set.ncard h
+
 /-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
 theorem card_incidentEdges_singleton (x : G.vertexSet) :
-    (G.incidentEdges {x}).card = G.incidenceCount x := by
-  let hI : (G.incidenceSet x.1).Finite := G.finite_incidenceSet x.1
-  rw [incidenceCount, Set.ncard_eq_toFinset_card (G.incidenceSet x.1) hI]
-  apply Finset.card_bij (fun e _ ↦ (e.1 : β))
-  · intro e he
-    obtain ⟨y, hy, hey⟩ := G.mem_incidentEdges.mp he
+    (G.incidentEdges {x}).card = G.incidenceCount x.1 := by
+  rw [incidenceCount]
+  apply G.card_eq_ncard_of_map_val_eq
+  ext e
+  constructor
+  · intro he
+    simp only [Finset.mem_coe, Finset.mem_map] at he
+    obtain ⟨e', he', rfl⟩ := he
+    obtain ⟨y, hy, hey⟩ := G.mem_incidentEdges.mp he'
     simp only [Finset.mem_singleton] at hy
     subst y
-    exact hI.mem_toFinset.mpr hey
-  · intro e₁ h₁ e₂ h₂ he
-    exact Subtype.ext he
-  · intro e he
-    have hf : e ∈ G.incidenceSet x.1 := hI.mem_toFinset.mp he
-    have heG := G.incidenceSet_subset_edgeSet x.1 hf
+    exact hey
+  · intro he
+    have heG := G.incidenceSet_subset_edgeSet x.1 he
+    simp only [Finset.mem_coe, Finset.mem_map]
     refine ⟨⟨e, heG⟩, ?_, rfl⟩
-    exact G.mem_incidentEdges.mpr ⟨x, by simp, hf⟩
+    exact G.mem_incidentEdges.mpr ⟨x, by simp, he⟩
 
-/-- The internal edges of a singleton are precisely the loops at its vertex. -/
+/-- The number of internal edges of a singleton is the number of loops at its vertex. -/
 theorem card_internalEdges_singleton (x : G.vertexSet) :
     (G.internalEdges {x}).card = (G.loopSet x.1).ncard := by
-  let hL : (G.loopSet x.1).Finite := G.finite_loopSet x.1
-  rw [Set.ncard_eq_toFinset_card (G.loopSet x.1) hL]
-  apply Finset.card_bij (fun e _ ↦ (e.1 : β))
-  · intro e he
-    obtain ⟨y, hy, z, hz, heyz⟩ := G.mem_internalEdges.mp he
+  apply G.card_eq_ncard_of_map_val_eq
+  ext e
+  constructor
+  · intro he
+    simp only [Finset.mem_coe, Finset.mem_map] at he
+    obtain ⟨e', he', rfl⟩ := he
+    obtain ⟨y, hy, z, hz, heyz⟩ := G.mem_internalEdges.mp he'
     simp only [Finset.mem_singleton] at hy hz
     subst y
     subst z
-    exact hL.mem_toFinset.mpr heyz
-  · intro e₁ h₁ e₂ h₂ he
-    exact Subtype.ext he
-  · intro e he
-    have hloop : G.IsLoopAt e x.1 := hL.mem_toFinset.mp he
-    refine ⟨⟨e, hloop.edge_mem⟩, ?_, rfl⟩
-    exact G.mem_internalEdges.mpr ⟨x, by simp, x, by simp, hloop⟩
+    exact heyz
+  · intro he
+    simp only [Finset.mem_coe, Finset.mem_map]
+    refine ⟨⟨e, he.edge_mem⟩, ?_, rfl⟩
+    exact G.mem_internalEdges.mpr ⟨x, by simp, x, by simp, he⟩
 
 end
 
@@ -297,8 +319,15 @@ section SimpleGraph
 
 variable (H : SimpleGraph α)
 
+/-- The multigraph associated to a simple graph is loopless. -/
+instance : (Graph.ofSimpleGraph H).Loopless where
+  not_isLoopAt e x := by
+    rintro ⟨rfl, he⟩
+    exact H.irrefl ((SimpleGraph.mem_edgeSet H).mp he)
+
 /-- The multigraph incidence set of `Graph.ofSimpleGraph H` is the usual simple-graph incidence
 set. -/
+@[simp]
 theorem incidenceSet_ofSimpleGraph (x : α) :
     (Graph.ofSimpleGraph H).incidenceSet x = H.incidenceSet x := by
   ext e
@@ -306,25 +335,17 @@ theorem incidenceSet_ofSimpleGraph (x : α) :
     SimpleGraph.incidenceSet, Set.mem_sep_iff, Sym2.mem_iff_exists]
   tauto
 
-/-- The multigraph made from a simple graph has no loops at any vertex. -/
-theorem loopSet_ofSimpleGraph (x : α) : (Graph.ofSimpleGraph H).loopSet x = ∅ := by
-  rw [Set.eq_empty_iff_forall_notMem]
-  intro e he
-  rcases he with ⟨rfl, he⟩
-  exact H.irrefl he
-
 /-- The incidence count on `Graph.ofSimpleGraph H` is the degree in `H`. -/
 @[simp]
 theorem incidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
-    (Graph.ofSimpleGraph H).incidenceCount ⟨x, Set.mem_univ x⟩ = H.degree x := by
+    (Graph.ofSimpleGraph H).incidenceCount x = H.degree x := by
   rw [incidenceCount, incidenceSet_ofSimpleGraph, SimpleGraph.ncard_incidenceSet]
 
 /-- The nonloop incidence count on `Graph.ofSimpleGraph H` is the degree in `H`. -/
 @[simp]
 theorem nonloopIncidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
-    (Graph.ofSimpleGraph H).nonloopIncidenceCount ⟨x, Set.mem_univ x⟩ = H.degree x := by
-  rw [nonloopIncidenceCount, incidenceSet_ofSimpleGraph, loopSet_ofSimpleGraph]
-  simp
+    (Graph.ofSimpleGraph H).nonloopIncidenceCount x = H.degree x := by
+  rw [nonloopIncidenceCount_eq_incidenceCount, incidenceCount_ofSimpleGraph]
 
 end SimpleGraph
 
