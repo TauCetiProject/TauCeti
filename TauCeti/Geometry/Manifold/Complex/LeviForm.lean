@@ -59,6 +59,9 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
+* `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.scalar_comp` and
+  `TauCeti.IsManifoldStronglyPseudoconvexAt.scalar_comp`: increasing convex post-composition
+  preserves the corresponding positivity conditions.
 * `TauCeti.re_manifoldLeviForm_apply_of_mem_maximalAtlas` and
   `TauCeti.im_manifoldLeviForm_apply_of_mem_maximalAtlas`: at a critical point, the real and
   imaginary parts may be computed from the real Hessian in any real `C²` chart.
@@ -349,12 +352,47 @@ theorem isManifoldStronglyPseudoconvexAt_iff [FiniteDimensional ℂ E] {q : ℕ}
       finrank ℂ E ≤ finrank ℂ P + q ∧ ∀ v ∈ P, v ≠ 0 → 0 < (manifoldLeviForm E f x v v).re :=
   isStronglyPseudoconvexAt_iff
 
+/-- Strong `0`-pseudoconvexity on a complex manifold is strict plurisubharmonicity. -/
+@[simp]
+theorem isManifoldStronglyPseudoconvexAt_zero_iff [FiniteDimensional ℂ E] :
+    IsManifoldStronglyPseudoconvexAt E 0 f x ↔
+      IsManifoldStrictlyPlurisubharmonicAt E f x := by
+  rw [isManifoldStronglyPseudoconvexAt_iff, isManifoldStrictlyPlurisubharmonicAt_iff]
+  constructor
+  · rintro ⟨P, hP, hpos⟩ v hv
+    have hP : P = ⊤ := Submodule.eq_top_of_finrank_eq (le_antisymm P.finrank_le hP)
+    exact hpos v (hP ▸ Submodule.mem_top) hv
+  · exact fun h ↦ ⟨⊤, by simp, fun v _ hv ↦ h v hv⟩
+
 /-- A strictly plurisubharmonic function on a complex manifold is strongly `q`-pseudoconvex for
 every `q`. -/
 theorem IsManifoldStrictlyPlurisubharmonicAt.isManifoldStronglyPseudoconvexAt
     [FiniteDimensional ℂ E] (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (q : ℕ) :
     IsManifoldStronglyPseudoconvexAt E q f x :=
   IsStrictlyPlurisubharmonicAt.isStronglyPseudoconvexAt h q
+
+/-- Post-composition with a function `φ` of one real variable with `φ'(f x) > 0` and
+`φ''(f x) ≥ 0` preserves strict plurisubharmonicity on a complex manifold at `x`. -/
+theorem IsManifoldStrictlyPlurisubharmonicAt.scalar_comp {φ : ℝ → ℝ}
+    (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (hφ : ContDiffAt ℝ 2 φ (f x))
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hφ₁ : 0 < deriv φ (f x))
+    (hφ₂ : 0 ≤ iteratedDeriv 2 φ (f x)) :
+    IsManifoldStrictlyPlurisubharmonicAt E (φ ∘ f) x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_iff] at h ⊢
+  exact fun v hv ↦ (mul_pos hφ₁ (h v hv)).trans_le
+    (le_re_manifoldLeviForm_scalar_comp_apply_self hφ hf hφ₂ v)
+
+/-- Post-composition with a function `φ` of one real variable with `φ'(f x) > 0` and
+`φ''(f x) ≥ 0` preserves strong `q`-pseudoconvexity on a complex manifold at `x`. -/
+theorem IsManifoldStronglyPseudoconvexAt.scalar_comp [FiniteDimensional ℂ E] {q : ℕ}
+    {φ : ℝ → ℝ} (h : IsManifoldStronglyPseudoconvexAt E q f x)
+    (hφ : ContDiffAt ℝ 2 φ (f x)) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
+    (hφ₁ : 0 < deriv φ (f x)) (hφ₂ : 0 ≤ iteratedDeriv 2 φ (f x)) :
+    IsManifoldStronglyPseudoconvexAt E q (φ ∘ f) x := by
+  rw [isManifoldStronglyPseudoconvexAt_iff] at h ⊢
+  obtain ⟨P, hP, hpos⟩ := h
+  exact ⟨P, hP, fun v hv hv0 ↦ (mul_pos hφ₁ (hpos v hv hv0)).trans_le
+    (le_re_manifoldLeviForm_scalar_comp_apply_self hφ hf hφ₂ v)⟩
 
 variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
 
