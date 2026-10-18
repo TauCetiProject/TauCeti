@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 import Mathlib.Data.Fintype.Option
-import Mathlib.Logic.Equiv.Sum
+import TauCeti.LinearAlgebra.PiTensorProduct.Option
 
 /-!
 # Indexed tensor products of binary tensor products
@@ -32,9 +32,6 @@ Finiteness of `ι` is needed: over an infinite index type, a multilinear map out
 ## Main definitions
 
 * `PiTensorProduct.tensorDistribEquiv`: the equivalence `⨂ᵢ (Mᵢ ⊗ Nᵢ) ≃ (⨂ᵢ Mᵢ) ⊗ (⨂ᵢ Nᵢ)`.
-* `PiTensorProduct.optionEquiv`: splitting off the factor at `none` of a tensor product indexed
-  by `Option α`, the inductive step in the constructions of `tensorDistribEquiv` and
-  `PiTensorProduct.sigmaEquiv`.
 
 ## Main results
 
@@ -56,31 +53,6 @@ namespace PiTensorProduct
 universe u v w x y
 
 variable {R : Type u} [CommSemiring R]
-
-/-- A tensor product indexed by `Option α` is the tensor product of the factors indexed by `α`
-with the factor at `none`. -/
-noncomputable def optionEquiv {α : Type x} (P : Option α → Type v)
-    [∀ o, AddCommMonoid (P o)] [∀ o, Module R (P o)] :
-    (⨂[R] o, P o) ≃ₗ[R] (⨂[R] i : α, P (some i)) ⊗[R] P none :=
-  (reindex R P (Equiv.optionEquivSumPUnit.{x, x} α)).trans
-    ((tmulEquivDep R (fun z ↦ P ((Equiv.optionEquivSumPUnit.{x, x} α).symm z))).symm.trans
-      (TensorProduct.congr (LinearEquiv.refl R _) (subsingletonEquiv PUnit.unit)))
-
-/-- Splitting off the factor at `none` of a pure tensor. -/
-@[simp]
-theorem optionEquiv_tprod {α : Type x} (P : Option α → Type v)
-    [∀ o, AddCommMonoid (P o)] [∀ o, Module R (P o)] (m : ∀ o, P o) :
-    optionEquiv P (tprod R m) = tprod R (fun i ↦ m (some i)) ⊗ₜ m none := by
-  simp only [optionEquiv, LinearEquiv.trans_apply, reindex_tprod, tmulEquivDep_symm_apply]
-  exact (TensorProduct.congr_tmul _ _ _ _).trans
-    (congrArg _ (subsingletonEquiv_apply_tprod PUnit.unit _))
-
-/-- Reattaching the factor at `none` to a pure tensor. -/
-@[simp]
-theorem optionEquiv_symm_tmul {α : Type x} (P : Option α → Type v)
-    [∀ o, AddCommMonoid (P o)] [∀ o, Module R (P o)] (m : ∀ o, P o) :
-    (optionEquiv P).symm (tprod R (fun i ↦ m (some i)) ⊗ₜ m none) = tprod R m := by
-  rw [LinearEquiv.symm_apply_eq, optionEquiv_tprod]
 
 private theorem exists_tensorDistribEquiv (ι : Type x) [Finite ι] :
     ∀ (M : ι → Type v) (N : ι → Type w) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
-import TauCeti.LinearAlgebra.PiTensorProduct.TensorProduct
+import TauCeti.LinearAlgebra.PiTensorProduct.Option
 import Mathlib.Data.Fintype.Option
+import Mathlib.LinearAlgebra.TensorProduct.Map
 
 /-!
 # Regrouping tensor products over a dependent sum
