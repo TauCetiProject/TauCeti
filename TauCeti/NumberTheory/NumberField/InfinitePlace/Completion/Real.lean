@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
@@ -19,11 +21,14 @@ Let `w` be an infinite place of a field `K`. The completion `w.Completion` is a 
 This file defines the resulting ring homomorphism `Completion.ofReal w : ℝ →+* w.Completion`. It
 is characterized by `Completion.extensionEmbedding_ofReal`, it is an isometry onto its image, and
 its normalized absolute value is `|r| ^ w.mult`. It supplies the positive real scalars at an
-infinite place, for instance an idele at one infinite place with any prescribed idele norm.
+infinite place, for instance an idele at one infinite place with any prescribed idele norm: the
+unit `completionNormSection w t = t ^ (1 / m_w)` has normalized absolute value `t`.
 
 ## Main definitions
 
 * `NumberField.InfinitePlace.Completion.ofReal`: the embedding `ℝ →+* w.Completion`.
+* `NumberField.InfinitePlace.completionNormSection`: the positive real number `t ^ (1 / m_w)`
+  as a unit of the completion `K_w`, a continuous homomorphism `ℝ>0 →ₜ* K_wˣ`.
 
 ## Main results
 
@@ -36,6 +41,8 @@ infinite place, for instance an idele at one infinite place with any prescribed 
   of `ofReal w r` is `|r| ^ w.mult`.
 * `NumberField.InfinitePlace.exists_completionNormalizedAbsValue_eq`: every nonnegative real
   number is a normalized absolute value.
+* `NumberField.InfinitePlace.completionNormalizedAbsValue_completionNormSection`: the normalized
+  absolute value of `completionNormSection w t` is `t`.
 
 ## References
 
@@ -44,6 +51,8 @@ infinite place, for instance an idele at one infinite place with any prescribed 
 
 public section
 noncomputable section
+
+open scoped NNReal
 
 namespace NumberField.InfinitePlace
 
@@ -115,5 +124,31 @@ theorem exists_completionNormalizedAbsValue_eq {t : ℝ} (ht : 0 ≤ t) :
   ⟨Completion.ofReal w (t ^ (w.mult : ℝ)⁻¹), by
     rw [completionNormalizedAbsValue_ofReal, abs_of_nonneg (by positivity), ← Real.rpow_natCast,
       ← Real.rpow_mul ht, inv_mul_cancel₀ (by exact_mod_cast w.mult_ne_zero), Real.rpow_one]⟩
+
+/-! ### The positive real units of norm `t` -/
+
+/-- The positive real number `t ^ (1 / m_w)` as a unit of the completion at the infinite place
+`w`, where `m_w` is the multiplicity of `w`. Its normalized absolute value is `t`
+(`completionNormalizedAbsValue_completionNormSection`). -/
+def completionNormSection : ℝ≥0ˣ →ₜ* w.Completionˣ where
+  toMonoidHom := Units.map <|
+    ((Completion.ofReal w).toMonoidHom.comp NNReal.toRealHom.toMonoidHom).comp
+      (NNReal.rpowMonoidHom (w.mult : ℝ)⁻¹)
+  continuous_toFun := Continuous.units_map _ <|
+    (Completion.continuous_ofReal w).comp <| NNReal.continuous_coe.comp <|
+      NNReal.continuous_rpow_const (by positivity)
+
+/-- The underlying element of `completionNormSection w t` is the real number `t ^ (1 / m_w)`. -/
+@[simp]
+theorem coe_completionNormSection (t : ℝ≥0ˣ) :
+    (completionNormSection w t : w.Completion) =
+      Completion.ofReal w ((t : ℝ≥0) ^ (w.mult : ℝ)⁻¹ : ℝ≥0) :=
+  (rfl)
+
+/-- The normalized absolute value of `completionNormSection w t` is `t`. -/
+theorem completionNormalizedAbsValue_completionNormSection (t : ℝ≥0ˣ) :
+    completionNormalizedAbsValue w (completionNormSection w t) = (t : ℝ≥0) := by
+  rw [coe_completionNormSection, completionNormalizedAbsValue_ofReal, NNReal.abs_eq,
+    ← NNReal.coe_pow, NNReal.rpow_inv_natCast_pow _ w.mult_ne_zero]
 
 end NumberField.InfinitePlace

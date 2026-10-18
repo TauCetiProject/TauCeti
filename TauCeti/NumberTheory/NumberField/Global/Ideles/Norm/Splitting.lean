@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.One
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.KerProdEquiv
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
@@ -17,8 +15,9 @@ public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 The idele class norm `‖·‖ : C_K → ℝ>0` of a number field `K` has a continuous homomorphic
 section. Fix an infinite place `w` of `K`, with multiplicity `m_w ∈ {1, 2}`. The idele whose
-`w`-coordinate is the positive real number `t ^ (1 / m_w)` and whose other coordinates are `1` has
-idele norm `t`, because the normalized absolute value at `w` is `|·| ^ m_w`.
+`w`-coordinate is the positive real number `t ^ (1 / m_w)` and whose other coordinates are `1`
+(`TauCeti.GlobalNumberFields.ideleNormSection`) has idele norm `t`, because the normalized absolute
+value at `w` is `|·| ^ m_w`; its class is a section of the idele class norm.
 
 A continuous map with a continuous right inverse is a quotient map, and a quotient homomorphism of
 topological groups is open. So the idele norm and the idele class norm are open quotient maps,
@@ -30,11 +29,8 @@ topological group: `C_K ≃ C_K¹ × ℝ>0`.
 
 ## Main definitions
 
-* `NumberField.InfinitePlace.completionNormSection`: the positive real number `t ^ (1 / m_w)`
-  as a unit of the completion `K_w`.
-* `TauCeti.GlobalNumberFields.ideleNormSection` and
-  `TauCeti.GlobalNumberFields.ideleClassNormSection`: the resulting continuous sections of the
-  idele norm and of the idele class norm.
+* `TauCeti.GlobalNumberFields.ideleClassNormSection`: the continuous section of the idele class
+  norm at an infinite place, the class of `TauCeti.GlobalNumberFields.ideleNormSection`.
 * `TauCeti.GlobalNumberFields.quotientNormOneEquiv`: the isomorphism of
   topological groups `C_K / C_K¹ ≃ₜ* ℝ>0` induced by the idele class norm.
 * `TauCeti.GlobalNumberFields.normOneProdEquiv`: the splitting
@@ -43,9 +39,8 @@ topological group: `C_K ≃ C_K¹ × ℝ>0`.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.ideleNorm_ideleNormSection` and
-  `TauCeti.GlobalNumberFields.ideleClassNorm_ideleClassNormSection`: the sections are right
-  inverse to the norms.
+* `TauCeti.GlobalNumberFields.ideleClassNorm_ideleClassNormSection`: the section is right
+  inverse to the idele class norm.
 * `TauCeti.GlobalNumberFields.isOpenQuotientMap_ideleNorm` and
   `TauCeti.GlobalNumberFields.isOpenQuotientMap_ideleClassNorm`: the norms are open quotient maps.
 * `TauCeti.GlobalNumberFields.quotientNormOneEquiv_mk`: the norm quotient
@@ -63,63 +58,11 @@ noncomputable section
 open IsDedekindDomain NumberField NumberField.InfinitePlace
 open scoped NNReal
 
-namespace NumberField.InfinitePlace
-
-variable {K : Type*} [Field K]
-
-/-! ### The section at one infinite place -/
-
-/-- The positive real number `t ^ (1 / m_w)` as a unit of the completion at the infinite place
-`w`, where `m_w` is the multiplicity of `w`. Its normalized absolute value is `t`
-(`completionNormalizedAbsValue_completionNormSection`). -/
-def completionNormSection (w : InfinitePlace K) : ℝ≥0ˣ →ₜ* w.Completionˣ where
-  toMonoidHom := Units.map <|
-    ((Completion.ofReal w).toMonoidHom.comp NNReal.toRealHom.toMonoidHom).comp
-      (NNReal.rpowMonoidHom (w.mult : ℝ)⁻¹)
-  continuous_toFun := Continuous.units_map _ <|
-    (Completion.continuous_ofReal w).comp <| NNReal.continuous_coe.comp <|
-      NNReal.continuous_rpow_const (by positivity)
-
-/-- The underlying element of `completionNormSection w t` is the real number `t ^ (1 / m_w)`. -/
-@[simp]
-theorem coe_completionNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
-    (completionNormSection w t : w.Completion) =
-      Completion.ofReal w ((t : ℝ≥0) ^ (w.mult : ℝ)⁻¹ : ℝ≥0) :=
-  (rfl)
-
-/-- The normalized absolute value of `completionNormSection w t` is `t`. -/
-theorem completionNormalizedAbsValue_completionNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
-    completionNormalizedAbsValue w (completionNormSection w t) = (t : ℝ≥0) := by
-  rw [coe_completionNormSection, completionNormalizedAbsValue_ofReal, NNReal.abs_eq,
-    ← NNReal.coe_pow, NNReal.rpow_inv_natCast_pow _ w.mult_ne_zero]
-
-end NumberField.InfinitePlace
-
 namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-variable (K) in
-/-- The continuous section of the idele norm at the infinite place `w`: the idele whose
-`w`-coordinate is the positive real number `t ^ (1 / m_w)` and whose other coordinates are `1`. -/
-def ideleNormSection (w : InfinitePlace K) : ℝ≥0ˣ →ₜ* IdeleGroup (𝓞 K) K where
-  toMonoidHom := (IdeleGroup.ofCompletion (𝓞 K) K w).comp (completionNormSection w)
-  continuous_toFun :=
-    (IdeleGroup.continuous_ofCompletion (𝓞 K) K w).comp (completionNormSection w).continuous
-
-/-- The section of the idele norm at `w` is concentrated at `w`, with coordinate
-`completionNormSection w t`. -/
-theorem ideleNormSection_apply (w : InfinitePlace K) (t : ℝ≥0ˣ) :
-    ideleNormSection K w t = IdeleGroup.ofCompletion (𝓞 K) K w (completionNormSection w t) :=
-  (rfl)
-
-/-- **The section is right inverse to the idele norm.** -/
-@[simp]
-theorem ideleNorm_ideleNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
-    ideleNorm (ideleNormSection K w t) = t :=
-  Units.ext <| NNReal.eq <| by
-    rw [ideleNormSection_apply, coe_ideleNorm_ofCompletion,
-      completionNormalizedAbsValue_completionNormSection]
+/-! ### The section at one infinite place -/
 
 variable (K) in
 /-- The continuous section of the idele class norm at the infinite place `w`: the class of
@@ -200,20 +143,22 @@ def normOneProdEquiv (w : InfinitePlace K) :
 @[simp]
 theorem coe_normOneProdEquiv_fst (w : InfinitePlace K) (c : IdeleClassGroup (𝓞 K) K) :
     ((normOneProdEquiv w c).1 : IdeleClassGroup (𝓞 K) K) =
-      c * (ideleClassNormSection K w (ideleClassNorm c))⁻¹ :=
-  (rfl)
+      c * (ideleClassNormSection K w (ideleClassNorm c))⁻¹ := by
+  rw [normOneProdEquiv, ContinuousMulEquiv.coe_kerProdOfRightInverse_apply_fst]
+  rfl
 
 /-- The `ℝ>0` component of the splitting is the idele class norm. -/
 @[simp]
 theorem normOneProdEquiv_snd (w : InfinitePlace K) (c : IdeleClassGroup (𝓞 K) K) :
-    (normOneProdEquiv w c).2 = ideleClassNorm c :=
-  (rfl)
+    (normOneProdEquiv w c).2 = ideleClassNorm c := by
+  rw [normOneProdEquiv, ContinuousMulEquiv.kerProdOfRightInverse_apply_snd]
+  rfl
 
 /-- The inverse of the splitting multiplies a norm-one idele class by the section at `w`. -/
 @[simp]
 theorem normOneProdEquiv_symm_apply (w : InfinitePlace K) (p : normOne K × ℝ≥0ˣ) :
-    (normOneProdEquiv w).symm p = p.1 * ideleClassNormSection K w p.2 :=
-  (rfl)
+    (normOneProdEquiv w).symm p = p.1 * ideleClassNormSection K w p.2 := by
+  rw [normOneProdEquiv, ContinuousMulEquiv.kerProdOfRightInverse_symm_apply]
 
 end NormQuotient
 

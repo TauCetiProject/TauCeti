@@ -32,29 +32,30 @@ its own name can be used directly.
 
 public section
 
+/-- The kernel part `x · s(f x)⁻¹` of `x` lies in the kernel `N` of `f`. -/
+@[to_additive /-- The kernel part `x - s(f x)` of `x` lies in the kernel `N` of `f`. -/]
+theorem MonoidHom.mul_inv_apply_mem_of_rightInverse {G H : Type*} [Group G] [Group H]
+    (f : G →* H) (s : H →* G) (hs : Function.RightInverse s f) {N : Subgroup G}
+    (hN : ∀ x, x ∈ N ↔ f x = 1) (x : G) : x * (s (f x))⁻¹ ∈ N := by
+  rw [hN, map_mul, map_inv, hs, mul_inv_cancel]
+
 namespace ContinuousMulEquiv
 
 variable {G H : Type*} [CommGroup G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
   [IsTopologicalGroup G] (f : G →ₜ* H) (s : H →ₜ* G) (hs : Function.RightInverse s f)
   {N : Subgroup G} (hN : ∀ x, x ∈ N ↔ f x = 1)
 
-omit [IsTopologicalGroup G] in
-include hs hN in
-/-- The kernel part `x · s(f x)⁻¹` of `x` lies in the kernel `N` of `f`. -/
-@[to_additive /-- The kernel part `x - s(f x)` of `x` lies in the kernel `N` of `f`. -/]
-theorem mul_inv_apply_mem_of_rightInverse (x : G) : x * (s (f x))⁻¹ ∈ N := by
-  rw [hN, map_mul, map_inv, hs, mul_inv_cancel]
-
 /-- **Splitting along a continuous section.** For a continuous homomorphism `f : G →ₜ* H` of a
 commutative topological group with a continuous homomorphic right inverse `s`, the map
 `x ↦ (x · s(f x)⁻¹, f x)` is an isomorphism of topological groups `G ≃ₜ* N × H`, where `N` is the
 kernel of `f`. -/
-@[expose, to_additive kerProdOfRightInverse /-- **Splitting along a continuous section.** For a
+@[to_additive kerProdOfRightInverse /-- **Splitting along a continuous section.** For a
 continuous homomorphism `f : G →ₜ+ H` of a commutative topological additive group with a
 continuous homomorphic right inverse `s`, the map `x ↦ (x - s(f x), f x)` is an isomorphism of
 topological additive groups `G ≃ₜ+ N × H`, where `N` is the kernel of `f`. -/]
 def kerProdOfRightInverse : G ≃ₜ* N × H where
-  toFun x := (⟨x * (s (f x))⁻¹, mul_inv_apply_mem_of_rightInverse f s hs hN x⟩, f x)
+  toFun x := (⟨x * (s (f x))⁻¹,
+    f.toMonoidHom.mul_inv_apply_mem_of_rightInverse s.toMonoidHom hs hN x⟩, f x)
   invFun p := p.1 * s p.2
   left_inv x := by simp
   right_inv p := by
