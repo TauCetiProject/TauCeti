@@ -24,10 +24,12 @@ nonzero.  The presentation-level identities below hold for every `q`; when `q = 
 relations force `E = F = 0`.
 
 The quotient construction supplies a universal property for tuples satisfying these relations.
-We also package `K` as a unit and derive the commutation rules with `K⁻¹`; these are the
-basic presentation-level identities used when putting words into triangular order.  Establishing
-a PBW basis, and hence nontriviality of this presentation, requires additional Ore-extension
-arguments and is not part of the presentation API.
+Since the generators generate the algebra, a complex-linear map between `UqSl2 q`-modules that
+commutes with `E`, `F` and `K` is `UqSl2 q`-linear. We also package `K` as a unit and derive the
+commutation rules with `K⁻¹`; these are the basic presentation-level identities used when putting
+words into triangular order.  Establishing a PBW basis, and hence nontriviality of this
+presentation, requires additional Ore-extension arguments and is not part of the presentation
+API.
 
 ## Main definitions
 
@@ -294,6 +296,29 @@ theorem adjoin_range_generator (q : ℂ) :
     simp
   rw [h, AlgHom.range_eq_top]
   exact RingQuot.mkAlgHom_surjective ℂ (Rel q)
+
+/-- A complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K` commutes
+with every element of `UqSl2 q`; commuting with `K⁻¹` is automatic. -/
+theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V] [Module ℂ V]
+    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] [AddCommGroup W] [Module ℂ W]
+    [Module (UqSl2 q) W] [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[ℂ] W)
+    (he : ∀ x, φ (e q • x) = e q • φ x) (hf : ∀ x, φ (f q • x) = f q • φ x)
+    (hk : ∀ x, φ (k q • x) = k q • φ x) (a : UqSl2 q) (x : V) : φ (a • x) = a • φ x := by
+  have hkInv (x : V) : φ (kInv q • x) = kInv q • φ x := by
+    calc φ (kInv q • x) = (kInv q * k q) • φ (kInv q • x) := by rw [kInv_mul_k, one_smul]
+      _ = kInv q • φ ((k q * kInv q) • x) := by rw [mul_smul, ← hk, ← mul_smul]
+      _ = kInv q • φ x := by rw [k_mul_kInv, one_smul]
+  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
+    rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction generalizing x with
+  | mem a ha =>
+    obtain ⟨g, rfl⟩ := ha
+    cases g
+    exacts [he x, hf x, hk x, hkInv x]
+  | algebraMap c => rw [algebraMap_smul, algebraMap_smul, map_smul]
+  | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
+  | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where
