@@ -260,7 +260,8 @@ cutoff and the original quantile. -/
     (fun _ _ h ↦ max_le_max le_rfl h) (by fun_prop) hu.1 hu.2
 
 /-- Integrability after lower censoring is exactly integrability on the unchanged upper tail. -/
-theorem integrable_map_coe_projIci_iff [IsFiniteMeasure μ] (l : ℝ) {f : ℝ → ℝ} :
+theorem integrable_map_coe_projIci_iff {E : Type*} [NormedAddCommGroup E]
+    [IsFiniteMeasure μ] (l : ℝ) {f : ℝ → E} :
     Integrable f (μ.map fun x : ℝ ↦ (Set.projIci l x : ℝ)) ↔
       Integrable f (μ.restrict (Ioi l)) := by
   rw [map_coe_projIci μ l, integrable_add_measure]
@@ -272,30 +273,31 @@ theorem integrable_map_coe_projIci_iff [IsFiniteMeasure μ] (l : ℝ) {f : ℝ �
 
 /-- Integration under lower censoring is the endpoint contribution plus the unchanged upper-tail
 integral. -/
-theorem integral_map_coe_projIci [IsFiniteMeasure μ] (l : ℝ) {f : ℝ → ℝ}
+theorem integral_map_coe_projIci {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] [IsFiniteMeasure μ] (l : ℝ) {f : ℝ → E}
     (hf : Integrable f (μ.restrict (Ioi l))) :
     ∫ x, f x ∂(μ.map fun y : ℝ ↦ (Set.projIci l y : ℝ)) =
-      μ.real (Iic l) * f l + ∫ x in Ioi l, f x ∂μ := by
+      μ.real (Iic l) • f l + ∫ x in Ioi l, f x ∂μ := by
   have hint := (integrable_map_coe_projIci_iff μ l).2 hf
   rw [map_coe_projIci μ l, integrable_add_measure] at hint
   rw [map_coe_projIci μ l, integral_add_measure hint.1 hint.2]
-  simp only [integral_smul_measure, integral_dirac, smul_eq_mul, Measure.real]
+  simp only [integral_smul_measure, integral_dirac, Measure.real]
 
-/-- The mean after lower censoring is the lower endpoint contribution plus the unchanged
-upper-tail contribution. -/
+/-- The first moment after lower censoring is the lower endpoint contribution plus the unchanged
+upper-tail integral. -/
 theorem integral_id_map_coe_projIci [IsFiniteMeasure μ] (l : ℝ)
-    (h : Integrable id μ) :
+    (h : Integrable id (μ.restrict (Ioi l))) :
     ∫ x, x ∂(μ.map fun y : ℝ ↦ (Set.projIci l y : ℝ)) =
       μ.real (Iic l) * l + ∫ x in Ioi l, x ∂μ := by
-  simpa using integral_map_coe_projIci μ l (f := id) h.restrict
+  simpa using integral_map_coe_projIci μ l (f := id) h
 
 /-- The second moment after lower censoring is the lower endpoint contribution plus the unchanged
 upper-tail contribution. -/
 theorem integral_sq_map_coe_projIci [IsFiniteMeasure μ] (l : ℝ)
-    (h : Integrable (fun x : ℝ ↦ x ^ 2) μ) :
+    (h : Integrable (fun x : ℝ ↦ x ^ 2) (μ.restrict (Ioi l))) :
     ∫ x, x ^ 2 ∂(μ.map fun y : ℝ ↦ (Set.projIci l y : ℝ)) =
       μ.real (Iic l) * l ^ 2 + ∫ x in Ioi l, x ^ 2 ∂μ :=
-  integral_map_coe_projIci μ l h.restrict
+  integral_map_coe_projIci μ l h
 
 /-! ### Upper censoring -/
 
@@ -359,7 +361,8 @@ cutoff and the original quantile. -/
     (fun _ _ h ↦ min_le_min le_rfl h) (by fun_prop) hu.1 hu.2
 
 /-- Integrability after upper censoring is exactly integrability on the unchanged lower tail. -/
-theorem integrable_map_coe_projIic_iff [IsFiniteMeasure μ] (r : ℝ) {f : ℝ → ℝ} :
+theorem integrable_map_coe_projIic_iff {E : Type*} [NormedAddCommGroup E]
+    [IsFiniteMeasure μ] (r : ℝ) {f : ℝ → E} :
     Integrable f (μ.map fun x : ℝ ↦ (Set.projIic r x : ℝ)) ↔
       Integrable f (μ.restrict (Iio r)) := by
   rw [map_coe_projIic μ r, integrable_add_measure]
@@ -371,29 +374,30 @@ theorem integrable_map_coe_projIic_iff [IsFiniteMeasure μ] (r : ℝ) {f : ℝ �
 
 /-- Integration under upper censoring is the unchanged lower-tail integral plus the endpoint
 contribution. -/
-theorem integral_map_coe_projIic [IsFiniteMeasure μ] (r : ℝ) {f : ℝ → ℝ}
+theorem integral_map_coe_projIic {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] [IsFiniteMeasure μ] (r : ℝ) {f : ℝ → E}
     (hf : Integrable f (μ.restrict (Iio r))) :
     ∫ x, f x ∂(μ.map fun y : ℝ ↦ (Set.projIic r y : ℝ)) =
-      (∫ x in Iio r, f x ∂μ) + μ.real (Ici r) * f r := by
+      (∫ x in Iio r, f x ∂μ) + μ.real (Ici r) • f r := by
   have hint := (integrable_map_coe_projIic_iff μ r).2 hf
   rw [map_coe_projIic μ r, integrable_add_measure] at hint
   rw [map_coe_projIic μ r, integral_add_measure hint.1 hint.2]
-  simp only [integral_smul_measure, integral_dirac, smul_eq_mul, Measure.real]
+  simp only [integral_smul_measure, integral_dirac, Measure.real]
 
-/-- The mean after upper censoring is the unchanged lower-tail contribution plus the upper
+/-- The first moment after upper censoring is the unchanged lower-tail integral plus the upper
 endpoint contribution. -/
 theorem integral_id_map_coe_projIic [IsFiniteMeasure μ] (r : ℝ)
-    (h : Integrable id μ) :
+    (h : Integrable id (μ.restrict (Iio r))) :
     ∫ x, x ∂(μ.map fun y : ℝ ↦ (Set.projIic r y : ℝ)) =
       (∫ x in Iio r, x ∂μ) + μ.real (Ici r) * r := by
-  simpa using integral_map_coe_projIic μ r (f := id) h.restrict
+  simpa using integral_map_coe_projIic μ r (f := id) h
 
 /-- The second moment after upper censoring is the unchanged lower-tail contribution plus the
 upper endpoint contribution. -/
 theorem integral_sq_map_coe_projIic [IsFiniteMeasure μ] (r : ℝ)
-    (h : Integrable (fun x : ℝ ↦ x ^ 2) μ) :
+    (h : Integrable (fun x : ℝ ↦ x ^ 2) (μ.restrict (Iio r))) :
     ∫ x, x ^ 2 ∂(μ.map fun y : ℝ ↦ (Set.projIic r y : ℝ)) =
       (∫ x in Iio r, x ^ 2 ∂μ) + μ.real (Ici r) * r ^ 2 :=
-  integral_map_coe_projIic μ r h.restrict
+  integral_map_coe_projIic μ r h
 
 end MeasureTheory.Measure
