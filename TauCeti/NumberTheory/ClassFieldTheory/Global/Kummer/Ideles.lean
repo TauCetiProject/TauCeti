@@ -67,6 +67,18 @@ theorem mem_auxiliaryKummerIdeleSubgroup_one_iff
       ∀ v ∉ S, v ∉ T → Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
   simp
 
+/-- At exponent one, membership in the auxiliary Kummer subgroup is the unit condition outside
+the union `S ∪ T`. -/
+theorem mem_auxiliaryKummerIdeleSubgroup_one_iff_union
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (x : IdeleGroup (𝓞 K) K) :
+    x ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
+      ∀ v ∉ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T),
+        Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
+  rw [mem_auxiliaryKummerIdeleSubgroup_one_iff]
+  constructor
+  · exact fun h v hv ↦ h v (fun hvS ↦ hv (Or.inl hvS)) fun hvT ↦ hv (Or.inr hvT)
+  · exact fun h v hvS hvT ↦ h v fun hv ↦ hv.elim hvS hvT
+
 /-- Every auxiliary Kummer idele is an `(S ∪ T)`-idele. -/
 theorem auxiliaryKummerIdeleSubgroup_le_one
     (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
@@ -181,15 +193,14 @@ private theorem principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one
       (((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K).map
         (IdeleGroup.unitEmbedding (𝓞 K) K) := by
   ext x
-  rw [Subgroup.mem_inf, mem_auxiliaryKummerIdeleSubgroup_one_iff, Subgroup.mem_map]
+  rw [Subgroup.mem_inf, Subgroup.mem_map]
   constructor
   · rintro ⟨hP, hx⟩
     exact (IdeleGroup.mem_principalSubgroup_iff_exists_mem_unit
-      fun v hv ↦ hx v (fun h ↦ hv (Or.inl h)) fun h ↦ hv (Or.inr h)).1 hP
+      ((mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mp hx)).1 hP
   · rintro ⟨a, ha, rfl⟩
-    exact ⟨⟨a, rfl⟩, fun v hvS hvT ↦
-      (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K) a).2 ha v
-        (by simp [hvS, hvT])⟩
+    exact ⟨⟨a, rfl⟩, (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).2 <|
+      (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K) a).2 ha⟩
 
 /-- **The index of the auxiliary Kummer idele classes.** If the classes of `S ∪ T` generate the
 ideal class group, then
@@ -213,8 +224,7 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
     intro c
     obtain ⟨x, hx, hc⟩ :=
       IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
-    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).mpr
-      (fun v hvS hvT ↦ hx v (by simp [hvS, hvT]))⟩, hc⟩
+    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mpr hx⟩, hc⟩
   have hmap : (E.subgroupOf I).map f = auxiliaryKummerIdeleClassSubgroup S T n := by
     dsimp only [f]
     rw [auxiliaryKummerIdeleClassSubgroup, ← Subgroup.map_map,
@@ -223,10 +233,18 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
   have hker : f.ker = (IdeleGroup.principalSubgroup (𝓞 K) K ⊓ I).subgroupOf I := by
     rw [Subgroup.inf_subgroupOf_right, ← MonoidHom.comap_ker, QuotientGroup.ker_mk',
       Subgroup.comap_subtype]
+  -- The first isomorphism theorem computes the index of the image from the kernel of `f`.
+  have himage : (auxiliaryKummerIdeleClassSubgroup S T n).index =
+      (E.subgroupOf I ⊔ f.ker).index := by
+    rw [← hmap, Subgroup.index_map, f.range_eq_top_of_surjective hf, Subgroup.index_top, mul_one]
+  -- Multiplicativity splits the index of `E` at the intermediate subgroup `E ⊔ ker f`.
+  have hmul : (E.subgroupOf I).relIndex f.ker * (E.subgroupOf I ⊔ f.ker).index =
+      (E.subgroupOf I).index := by
+    rw [← Subgroup.relIndex_sup_left]
+    exact Subgroup.relIndex_mul_index le_sup_left
   rw [Subgroup.relIndex_comap, ← principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one,
-    ← Subgroup.relIndex_subgroupOf inf_le_right, ← hker, ← Subgroup.relIndex_sup_left, ← hmap,
-    Subgroup.index_map, f.range_eq_top_of_surjective hf, Subgroup.index_top, mul_one, mul_comm,
-    Subgroup.relIndex_mul_index le_sup_left, Subgroup.relIndex]
+    ← Subgroup.relIndex_subgroupOf inf_le_right, ← hker, himage, mul_comm, hmul,
+    Subgroup.relIndex]
 
 /-- If the classes of `S ∪ T` generate the ideal class group, the index of the auxiliary Kummer
 idele-class subgroup divides the product of the local power-class counts. -/

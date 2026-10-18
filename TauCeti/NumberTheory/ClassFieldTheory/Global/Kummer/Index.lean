@@ -62,25 +62,6 @@ namespace TauCeti.ClassFieldTheory
 
 variable {K : Type} [Field K] [NumberField K]
 
-/-- If the `S`-units surject onto the local unit `n`-th power classes at `T`, then every family
-of local units at the places of `T` agrees with a single `S`-unit up to `n`-th powers. -/
-private theorem exists_mem_unit_of_unitLocalPowerClassMap_surjective
-    {S T : Finset (HeightOneSpectrum (𝓞 K))}
-    {hST : Disjoint (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set (HeightOneSpectrum (𝓞 K)))}
-    {n : ℕ} (hsurj : Function.Surjective
-      (Set.unitLocalPowerClassMap (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) hST n))
-    (y : (v : T) → (v.1.adicCompletion K)ˣ) (hy : ∀ v, Valued.v (y v : v.1.adicCompletion K) = 1) :
-    ∃ u ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K, ∀ v : T,
-      (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
-        (powMonoidHom n).range := by
-  obtain ⟨u, hu⟩ := hsurj fun v ↦
-    QuotientGroup.mk
-      ⟨y v, (HeightOneSpectrum.mem_unitFiltration_zero_adicCompletion_iff v.1).2 (hy v)⟩
-  refine ⟨u, u.2, fun v ↦ ?_⟩
-  obtain ⟨b, hb⟩ := QuotientGroup.eq.1 ((Set.unitLocalPowerClassMap_apply _ _ _ _ _ _).symm.trans
-    (congrFun hu v))
-  exact ⟨b, congrArg Subtype.val hb⟩
-
 variable {p : ℕ} [HasEnoughRootsOfUnity K p]
 
 /-- **A principal idele in the auxiliary Kummer subgroup comes from a `p`-th power.** Let `S`
@@ -114,7 +95,7 @@ private theorem mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdele
   have hpow {M : Type} [CommMonoid M] (f : Kˣ →* Mˣ)
       (hf : f a ∈ (powMonoidHom p : Mˣ →* Mˣ).range) (b : Kˣ) (hb : b ∈ Δ) :
       f b ∈ (powMonoidHom p : Mˣ →* Mˣ).range :=
-    Subgroup.zpowers_le.2 (show a ∈ (powMonoidHom p : Mˣ →* Mˣ).range.comap f from hf) hb
+    Subgroup.zpowers_le.2 (Subgroup.mem_comap.2 hf) hb
   have hroots (b : Kˣ) (_ : b ∈ Δ) : ∃ x : AlgebraicClosure K, x ^ p = algebraMap K _ b :=
     IsAlgClosed.exists_pow_nat_eq _ hp.pos
   have hdeg := finrank_kummerField hroots
@@ -124,8 +105,9 @@ private theorem mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdele
   have hnorm := ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit
     (E := AlgebraicClosure K) S T (Finset.disjoint_coe.1 hST) hcl hpS
     (Subgroup.zpowers_le.2 <|
-      (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K) a).1
-        fun v hv ↦ hmem.2.2 v (fun h ↦ hv (Or.inl h)) fun h ↦ hv (Or.inr h))
+      (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K) a).1 <|
+        (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).1 <|
+          auxiliaryKummerIdeleSubgroup_le_one S T p ha)
     (fun v hv b hb ↦ by
       obtain ⟨c, hc⟩ := hpow _ (HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v a ▸ hmem.1 v hv)
         b hb
@@ -134,7 +116,7 @@ private theorem mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdele
       obtain ⟨c, hc⟩ := hpow _
         (InfinitePlace.ideleInfiniteCoord_unitEmbedding (R := 𝓞 K) w a ▸ hmem.2.1 w) b hb
       exact ⟨c, by simpa using congrArg Units.val hc⟩)
-    (hdeg ▸ hdvd) (exists_mem_unit_of_unitLocalPowerClassMap_surjective hsurj)
+    (hdeg ▸ hdvd) (Set.exists_mem_unit_of_unitLocalPowerClassMap_surjective _ _ _ hsurj)
   have h1 := finrank_eq_one_of_surjective_ideleClassNormMap K _ hnorm
   rw [hdeg, Subgroup.relIndex_eq_one] at h1
   exact h1 (Subgroup.mem_zpowers a)
@@ -155,15 +137,21 @@ theorem unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_iff
     IdeleGroup.unitEmbedding (𝓞 K) K a ∈ auxiliaryKummerIdeleSubgroup S T p ↔
       a ∈ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K ∧
         a ∈ (powMonoidHom p : Kˣ →* Kˣ).range := by
-  rw [← IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K),
-    mem_auxiliaryKummerIdeleSubgroup_iff]
-  refine ⟨fun ha ↦ ⟨fun v hv ↦ ha.2.2 v (fun h ↦ hv (Or.inl h)) fun h ↦ hv (Or.inr h),
-    mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdeleSubgroup hp hST hcl hpS hsurj
-      ((mem_auxiliaryKummerIdeleSubgroup_iff S T p _).2 ha)⟩, ?_⟩
+  constructor
+  · intro ha
+    refine ⟨(IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
+      (R := 𝓞 K) a).1 ((mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).1
+        (auxiliaryKummerIdeleSubgroup_le_one S T p ha)), ?_⟩
+    exact mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdeleSubgroup
+      hp hST hcl hpS hsurj ha
   rintro ⟨hunit, b, rfl⟩
+  rw [mem_auxiliaryKummerIdeleSubgroup_iff]
   refine ⟨fun v _ ↦ ⟨Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom b, ?_⟩,
     fun w ↦ ⟨Units.map (algebraMap K w.Completion).toMonoidHom b, ?_⟩,
-    fun v hvS hvT ↦ hunit v (by simp [hvS, hvT])⟩
+    ((mem_auxiliaryKummerIdeleSubgroup_one_iff S T _).1 <|
+      (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T _).2 <|
+        (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
+          (R := 𝓞 K) (b ^ p)).2 hunit)⟩
   · simp [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding]
   · simp [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
 
