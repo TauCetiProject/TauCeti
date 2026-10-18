@@ -90,7 +90,7 @@ measure. -/]
 theorem ae_inv_mem_preimage {G : Type*} [MeasurableSpace G] [InvolutiveInv G] [MeasurableInv G]
     (μ : Measure G) {s : Set G} (hs : MeasurableSet s) (hμs : ∀ᵐ x ∂μ, x ∈ s) :
     ∀ᵐ x ∂μ.inv, x ∈ Inv.inv ⁻¹' s := by
-  change ∀ᵐ x ∂μ.inv, x⁻¹ ∈ s
+  simp only [Set.mem_preimage]
   rw [inv_def, ae_map_iff measurable_inv.aemeasurable (measurable_inv hs)]
   simpa only [inv_inv] using hμs
 
