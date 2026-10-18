@@ -155,7 +155,6 @@ theorem mapHomotopy_val (s : I) (p : MappingPathFiber f k) :
       (A (s, p.val.1), ⟨fun t ↦ H (s, p.val.2 t), by fun_prop⟩) := (rfl)
 
 /-- The induced homotopy lies over the supplied homotopy of source maps. -/
-@[simp]
 theorem proj_mapHomotopy (s : I) (p : MappingPathFiber f k) :
     proj f' k' (mapHomotopy A H hs hk (s, p)) = A (s, proj f k p) := by
   simp
