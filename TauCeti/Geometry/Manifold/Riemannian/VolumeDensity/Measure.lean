@@ -177,49 +177,8 @@ theorem setLIntegral_chartRiemannianVolume
   · rw [d.eq_on_target (htarget hy)]
     exact ENNReal.ofReal_lt_top
 
-/-- A chart volume gives positive mass to the source of a boundaryless chart. -/
-theorem chartRiemannianVolume_pos [I.Boundaryless]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
-    0 < chartRiemannianVolume (I := I) α (chartAt H α).source := by
-  let e := extChartAt I α
-  let t := e.target
-  let d := chartVolumeDensityData (I := I) α
-  have ht : IsOpen t := by
-    exact isOpen_extChartAt_target α
-  have htn : t.Nonempty := by
-    exact ⟨e α, mem_extChartAt_target α⟩
-  have hmeasure : 0 < (Module.finBasis ℝ E).addHaar t :=
-    ht.measure_pos (Module.finBasis ℝ E).addHaar htn
-  have hsupport : t ⊆ Function.support d.toFun := by
-    intro y hy
-    have hbase : e.symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-      rw [TangentBundle.trivializationAt_baseSet α, ← extChartAt_source I α]
-      exact e.map_target hy
-    have hpos : 0 < chartVolumeDensity (I := I) α (e.symm y) :=
-      chartVolumeDensity_pos α hbase
-    -- Unfold `Function.support` so the density's nonvanishing is explicit.
-    change d.toFun y ≠ 0
-    rw [d.eq_on_target hy]
-    exact (ENNReal.ofReal_pos.mpr hpos).ne'
-  have hpos : 0 < ∫⁻ y in t, d.toFun y ∂(Module.finBasis ℝ E).addHaar := by
-    rw [setLIntegral_pos_iff d.measurable_toFun]
-    rw [inter_eq_right.mpr hsupport]
-    exact hmeasure
-  rw [chartRiemannianVolume_apply α (chartAt H α).open_source.measurableSet]
-  have himage : e '' ((chartAt H α).source ∩ e.source) = t := by
-    rw [← extChartAt_source I α, inter_self, e.image_source_eq_target]
-  rw [himage]
-  have heq : (∫⁻ y in t, d.toFun y ∂(Module.finBasis ℝ E).addHaar) =
-      ∫⁻ y in t, ENNReal.ofReal (chartVolumeDensity (I := I) α (e.symm y))
-        ∂(Module.finBasis ℝ E).addHaar := by
-    apply setLIntegral_congr_fun ht.measurableSet
-    intro y hy
-    simpa [e] using d.eq_on_target hy
-  rw [← heq]
-  exact hpos
-
-/-- A nonempty open subset of a boundaryless chart source has positive chart volume. -/
-theorem chartRiemannianVolume_pos_of_isOpen_subset_source [I.Boundaryless]
+/-- A nonempty open subset of a chart source has positive chart volume. -/
+theorem chartRiemannianVolume_pos_of_isOpen_subset_source
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M)
     {s : Set M} (hs : IsOpen s) (hsub : s ⊆ (chartAt H α).source) (hne : s.Nonempty) :
     0 < chartRiemannianVolume (I := I) α s := by
@@ -227,23 +186,28 @@ theorem chartRiemannianVolume_pos_of_isOpen_subset_source [I.Boundaryless]
   let d := chartVolumeDensityData (I := I) α
   have hsub' : s ⊆ e.source := by
     simpa only [e, extChartAt_source] using hsub
-  have himage_open : IsOpen (e '' s) := by
-    rw [e.image_eq_target_inter_inv_preimage hsub']
-    exact (continuousOn_extChartAt_symm α).isOpen_inter_preimage
-      (isOpen_extChartAt_target α) hs
-  have himage_nonempty : (e '' s).Nonempty := hne.image e
   have hmeasure : 0 < (Module.finBasis ℝ E).addHaar (e '' s) :=
-    himage_open.measure_pos _ himage_nonempty
+    by
+      rw [e.image_eq_target_inter_inv_preimage hsub']
+      apply Measure.measure_pos_of_nonempty_interior
+      obtain ⟨z, hz⟩ := hne
+      refine Set.Nonempty.of_closure ⟨e z, ?_⟩
+      simpa only [inter_comm] using
+        (extChartAt_mem_closure_interior (I := I) (x₀ := α)
+          (subset_closure (mem_interior_iff_mem_nhds.mpr (hs.mem_nhds hz))) (hsub' hz))
   rw [chartRiemannianVolume_apply α hs.measurableSet]
   have himage : e '' (s ∩ e.source) = e '' s := by
     rw [inter_eq_left.mpr hsub']
   rw [himage]
+  have himage_measurable : MeasurableSet (e '' s) := by
+    rw [← himage]
+    simpa only [e, inter_comm] using hs.measurableSet_image_extChartAt_source_inter α
   have heq :
       (∫⁻ y in e '' s,
           ENNReal.ofReal (chartVolumeDensity (I := I) α (e.symm y))
             ∂(Module.finBasis ℝ E).addHaar) =
         ∫⁻ y in e '' s, d.toFun y ∂(Module.finBasis ℝ E).addHaar := by
-    apply setLIntegral_congr_fun himage_open.measurableSet
+    apply setLIntegral_congr_fun himage_measurable
     rintro y ⟨z, hz, rfl⟩
     exact (d.eq_on_target (e.map_source (hsub' hz))).symm
   rw [heq, setLIntegral_pos_iff d.measurable_toFun]
@@ -258,6 +222,13 @@ theorem chartRiemannianVolume_pos_of_isOpen_subset_source [I.Boundaryless]
       exact hsub' hz))).ne'
   rw [inter_eq_right.mpr hsupport]
   exact hmeasure
+
+/-- A chart volume gives positive mass to the source of a chart. -/
+theorem chartRiemannianVolume_pos
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
+    0 < chartRiemannianVolume (I := I) α (chartAt H α).source := by
+  exact chartRiemannianVolume_pos_of_isOpen_subset_source α (chartAt H α).open_source
+    subset_rfl ⟨α, mem_chart_source H α⟩
 
 /-- A chart volume measure is supported on the source of its chart. -/
 @[simp]

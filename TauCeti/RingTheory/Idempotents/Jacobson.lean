@@ -11,18 +11,21 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Idempotents modulo an ideal in the Jacobson radical
 
-In a commutative ring, an idempotent `e` in the Jacobson radical is zero: `1 - e` is a unit and
-`e (1 - e) = 0`. Consequently idempotents are determined by their residues modulo any ideal `I`
-contained in the Jacobson radical. If `e` and `e'` are idempotents with `e - e'` in `I`, then
-`e (1 - e')` and `(1 - e) e'` are idempotents in the Jacobson radical, hence zero, and
-`e - e' = e (1 - e') - (1 - e) e' = 0`.
+In any ring, an idempotent `e` in the Jacobson radical is zero: `1 - e` has a left inverse and
+`(1 - e) e = 0`. Consequently, in a commutative ring, idempotents are determined by their
+residues modulo any ideal `I` contained in the Jacobson radical. If `e` and `e'` are idempotents
+with `e - e'` in `I`, then `e (1 - e')` and `(1 - e) e'` are idempotents in the Jacobson radical,
+hence zero, and `e - e' = e (1 - e') - (1 - e) e' = 0`.
 
 This is the uniqueness half of lifting idempotents along a Henselian pair, and it needs no
-Henselian hypothesis.
+Henselian hypothesis. The second step needs commutativity: for example, in the upper triangular
+`2 × 2` matrices over a field, `E₁₁` and `E₁₁ + E₁₂` are distinct idempotents whose difference
+lies in the Jacobson radical.
 
 ## Main results
 
-* `IsIdempotentElem.eq_zero_of_mem_jacobson_bot`: an idempotent in the Jacobson radical is zero.
+* `IsIdempotentElem.eq_zero_of_mem_jacobson_bot`: an idempotent in the Jacobson radical
+  `Ideal.jacobson ⊥` of a not necessarily commutative ring is zero.
 * `IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot`: idempotents congruent modulo an ideal in
   the Jacobson radical are equal.
 * `Ideal.injOn_quotient_mk_isIdempotentElem`: modulo an ideal in the Jacobson radical, the quotient
@@ -44,14 +47,18 @@ Henselian hypothesis.
 
 public section
 
-variable {R : Type*} [CommRing R]
+/-- An idempotent in the Jacobson radical `Ideal.jacobson ⊥` of a (not necessarily commutative)
+ring is zero. -/
+theorem IsIdempotentElem.eq_zero_of_mem_jacobson_bot {R : Type*} [Ring R] {e : R}
+    (he : IsIdempotentElem e) (hJ : e ∈ Ideal.jacobson (⊥ : Ideal R)) : e = 0 := by
+  obtain ⟨z, hz⟩ := Ideal.exists_mul_add_sub_mem_of_mem_jacobson (-e) (neg_mem hJ)
+  have hz' : z * (1 - e) = 1 := by
+    rw [← neg_add_eq_sub]
+    exact sub_eq_zero.mp ((Submodule.mem_bot R).mp hz)
+  calc e = z * (1 - e) * e := by rw [hz', one_mul]
+    _ = 0 := by rw [mul_assoc, he.one_sub_mul_self, mul_zero]
 
-/-- An idempotent in the Jacobson radical is zero: `1 - e` is a unit and `e (1 - e) = 0`. -/
-theorem IsIdempotentElem.eq_zero_of_mem_jacobson_bot {e : R} (he : IsIdempotentElem e)
-    (hJ : e ∈ Ideal.jacobson (⊥ : Ideal R)) : e = 0 := by
-  have hu : IsUnit (1 - e) := by
-    simpa [sub_eq_add_neg, add_comm] using Ideal.mem_jacobson_bot.mp hJ (-1)
-  exact hu.mul_right_cancel (by simpa using he.mul_one_sub_self)
+variable {R : Type*} [CommRing R]
 
 /-- **Idempotent lifts are unique modulo the Jacobson radical.** Idempotents that are congruent
 modulo an ideal contained in the Jacobson radical are equal. -/

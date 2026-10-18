@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Scott.Stabilization
+public import TauCeti.ModelTheory.Scott.Rank
 import Mathlib.Logic.Equiv.Fintype
 
 /-!
@@ -13,8 +13,8 @@ import Mathlib.Logic.Equiv.Fintype
 
 Every structure in the empty language stabilizes internally at zero: tuples with the same
 equality pattern are carried to one another by a permutation. The least internal stabilization
-ordinal is therefore zero, for finite, infinite, and empty sets alike. This gives the
-stabilization input for computing their internal Scott rank.
+ordinal and every tuple's orbit rank are therefore zero, for finite, infinite, and
+empty sets alike. Their internal Scott rank is one.
 
 The permutation extension uses Mathlib's `Equiv.Perm.exists_extending_pair`, applied to the
 finite range of a tuple rather than its possibly repeated entries.
@@ -66,5 +66,18 @@ theorem selfStabilizesCompletely_empty :
 theorem selfStabilizationOrdinal_empty :
     selfStabilizationOrdinal (L := Language.empty) M = 0 :=
   le_antisymm (selfStabilizationOrdinal_le M (selfStabilizesCompletely_empty M)) bot_le
+
+/-- Every finite tuple in a pure set has orbit rank zero. -/
+@[simp]
+theorem orbitRank_empty {n : ℕ} (a : Fin n → M) :
+    orbitRank (L := Language.empty) a = 0 := by
+  apply le_antisymm _ bot_le
+  simpa using orbitRank_le_selfStabilizationOrdinal (L := Language.empty) a
+
+/-- Every pure set has internal Scott rank one, including finite and empty sets. -/
+@[simp]
+theorem internalScottRank_empty : internalScottRank (L := Language.empty) M = 1 := by
+  apply le_antisymm _ one_le_internalScottRank
+  simp
 
 end TauCeti

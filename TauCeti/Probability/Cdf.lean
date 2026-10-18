@@ -34,8 +34,15 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
+* `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
+  its cdf;
+* `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
+  evaluate the cdf of the image of a real law under absolute value, and
+  `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
+* `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
+  lies in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
 
@@ -60,6 +67,39 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
+`1 - cdf μ x`. -/
+theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
+    (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
+  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
+    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+
+/-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
+`[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
+theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
+    cdf (μ.map (|·|)) x = cdf μ x - μ.real (Iio (-x)) := by
+  have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
+    ext y
+    simp [abs_le, and_comm]
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
+      measurableSet_Iio, cdf_eq_real]
+
+/-- The image of `μ` under absolute value puts no mass on the negative half-line. -/
+theorem cdf_map_abs_of_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : x < 0) :
+    cdf (μ.map (|·|)) x = 0 := by
+  have hpre : (|·|) ⁻¹' Iic x = ∅ :=
+    eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_empty]
+
+/-- The cdf of the image of a symmetric law under absolute value at `x ≥ 0` is
+`2 * cdf μ x - 1`. -/
+theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
+  rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
+  ring
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
@@ -185,6 +225,31 @@ theorem cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullS
     exact hνS
 
 end MeasureTheory.Measure
+
+namespace Set.OrdConnected
+
+/-- A point `q` at which the level `t` lies between the left limit and the value of the cumulative
+distribution function lies in every interval of full mass: otherwise the interval lies entirely
+on one side of `q`, and the mass on that side is `0` or `1`. -/
+theorem mem_of_measureReal_Iio_le_of_le_cdf {μ : Measure ℝ} {s : Set ℝ} {t : ℝ}
+    [IsProbabilityMeasure μ] (hs : s.OrdConnected) (hμs : ∀ᵐ x ∂μ, x ∈ s) {q : ℝ}
+    (hIio : μ.real (Iio q) ≤ t) (hIic : t ≤ cdf μ q) (h0 : 0 < t) (h1 : t < 1) : q ∈ s := by
+  by_contra hq
+  have hside : (∀ x ∈ s, x < q) ∨ ∀ x ∈ s, q < x := by
+    by_contra! h
+    obtain ⟨⟨a, ha, hqa⟩, b, hb, hbq⟩ := h
+    exact hq (hs.out hb ha ⟨hbq, hqa⟩)
+  rcases hside with hlt | hgt
+  · have hfull : μ (Iio q) = μ univ :=
+      (ae_mem_iff_measure_eq measurableSet_Iio.nullMeasurableSet).1 (hμs.mono hlt)
+    rw [measureReal_def, hfull, measure_univ, ENNReal.toReal_one] at hIio
+    exact hIio.not_gt h1
+  · have hnull : μ (Iic q) = 0 :=
+      measure_eq_zero_iff_ae_notMem.2 (hμs.mono fun x hx hxq ↦ (hgt x hx).not_ge hxq)
+    rw [cdf_eq_real, measureReal_def, hnull, ENNReal.toReal_zero] at hIic
+    exact hIic.not_gt h0
+
+end Set.OrdConnected
 
 namespace TauCeti.Probability
 

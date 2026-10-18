@@ -23,7 +23,8 @@ is derived, not assumed.
 This file proves the elementary theory of that law: it is a probability measure, it is carried by
 the positive half-line, its density against Lebesgue measure is
 `(x * √(2 * π * v))⁻¹ * exp (-(log x - m) ^ 2 / (2 * v))` for `v ≠ 0`, its cdf is the
-error-function formula in `log x`, all of its raw moments are `exp (n * m + n ^ 2 * v / 2)`, its
+error-function formula in `log x`, all of its real-power moments are
+`exp (q * m + q ^ 2 * v / 2)`, its
 exponential moments exist exactly for nonpositive `t`, and the family is measurable in its
 parameters.
 
@@ -45,9 +46,9 @@ hence the general mean and variance, need no hypothesis on `v` at all.
 * `logNormalMeasure_eq_withDensity`, `hasPDF_of_hasLaw_logNormalMeasure` and
   `rnDeriv_logNormalMeasure` — the density, the `HasPDF` bridge and the Radon–Nikodym derivative;
 * `cdf_logNormalMeasure_eq` and `cdf_logNormalMeasure_zero_var` — the cdf and its boundary form;
-* `integral_pow_logNormalMeasure`, `integral_id_logNormalMeasure` and
-  `variance_id_logNormalMeasure` — the raw moments `exp (n * m + n ^ 2 * v / 2)`, the mean
-  `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
+* `integral_rpow_logNormalMeasure`, `integral_id_logNormalMeasure` and
+  `variance_id_logNormalMeasure` — the real-power moments `exp (q * m + q ^ 2 * v / 2)`, the
+  mean `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
 * `integrableExpSet_id_logNormalMeasure` — the exponential moments exist exactly for `t ≤ 0`, with
   `not_integrable_exp_mul_logNormalMeasure` the matching non-integrability for `t > 0`;
 * `integral_id_logNormalMeasure_zero_var` and `variance_id_logNormalMeasure_zero_var` — the
@@ -60,8 +61,9 @@ hence the general mean and variance, need no hypothesis on `v` at all.
 ## Implementation
 
 Everything except the density and the failure of the exponential moments is read off the Gaussian
-law through the pushforward. The moments are the Gaussian moment-generating function evaluated at
-natural numbers, the cdf is the Gaussian cdf at `log x` because `exp ⁻¹' Iic x = Iic (log x)` for
+law through the pushforward. The real-power moments are the Gaussian moment-generating function
+evaluated at real exponents, the cdf is the Gaussian cdf at `log x` because
+`exp ⁻¹' Iic x = Iic (log x)` for
 `0 < x`, and the boundary law is `Measure.map_dirac`.
 
 The density is the one genuine change of variables. Since `Real.exp` is injective with derivative
@@ -278,26 +280,39 @@ theorem cdf_logNormalMeasure_zero_var (m x : ℝ) :
 
 /-! ### Moments -/
 
-/-- Every power of a log-normal variable is integrable. -/
-theorem integrable_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    Integrable (fun x => x ^ n) (logNormalMeasure m v) := by
+/-- Every real power of a log-normal variable is integrable. -/
+theorem integrable_rpow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
+    Integrable (fun x => x ^ q) (logNormalMeasure m v) := by
   rw [logNormalMeasure_map_exp,
     integrable_map_measure (by fun_prop) measurable_exp.aemeasurable]
-  simpa only [Function.comp_def, Real.exp_nat_mul] using
-    integrable_exp_mul_gaussianReal (μ := m) (v := v) n
+  simpa only [Function.comp_def, ← Real.exp_mul, mul_comm] using
+    integrable_exp_mul_gaussianReal (μ := m) (v := v) q
 
-/-- **The raw moments of the log-normal law.** They are the Gaussian moment-generating function
-evaluated at natural numbers, and the formula is valid at the boundary `v = 0` as well. -/
-theorem integral_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    ∫ x, x ^ n ∂logNormalMeasure m v = Real.exp ((n : ℝ) * m + (n : ℝ) ^ 2 * (v : ℝ) / 2) := by
+/-- **The real-power moments of the log-normal law.** They are the Gaussian moment-generating
+function evaluated at the exponent, and the formula includes negative powers and the boundary
+`v = 0`. -/
+theorem integral_rpow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
+    ∫ x, x ^ q ∂logNormalMeasure m v = Real.exp (q * m + q ^ 2 * (v : ℝ) / 2) := by
   rw [logNormalMeasure_map_exp, integral_map measurable_exp.aemeasurable (by fun_prop)]
-  have h : ∫ y, Real.exp y ^ n ∂gaussianReal m v = mgf id (gaussianReal m v) n := by
+  have h : ∫ y, Real.exp y ^ q ∂gaussianReal m v = mgf id (gaussianReal m v) q := by
     rw [mgf]
     refine integral_congr_ae (ae_of_all _ fun y => ?_)
     simp only [id_eq]
-    rw [← Real.exp_nat_mul]
+    rw [← Real.exp_mul]
+    congr 1
+    ring
   rw [h, mgf_id_gaussianReal]
   ring_nf
+
+/-- Every natural power of a log-normal variable is integrable. -/
+theorem integrable_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    Integrable (fun x => x ^ n) (logNormalMeasure m v) := by
+  simpa only [Real.rpow_natCast] using integrable_rpow_logNormalMeasure m v (n : ℝ)
+
+/-- The natural raw moments of the log-normal law. -/
+theorem integral_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    ∫ x, x ^ n ∂logNormalMeasure m v = Real.exp ((n : ℝ) * m + (n : ℝ) ^ 2 * (v : ℝ) / 2) := by
+  simpa only [Real.rpow_natCast] using integral_rpow_logNormalMeasure m v (n : ℝ)
 
 /-- The mean of the log-normal law is `exp (m + v / 2)`. -/
 theorem integral_id_logNormalMeasure (m : ℝ) (v : ℝ≥0) :
