@@ -179,6 +179,7 @@ theorem dgClosedHom_comp
 
 /-- Enriched postcomposition `eHomWhiskerLeft` with an underlying morphism `g` postcomposes a
 homogeneous morphism with the closed component of `g`. -/
+@[simp]
 theorem eHomWhiskerLeft_f_apply (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C)
     {Y Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (g : Y ⟶ Z) (p : ℤ)
     (f : DGHom R p (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
@@ -193,6 +194,7 @@ theorem eHomWhiskerLeft_f_apply (X : ForgetEnrichment (CochainComplex (ModuleCat
 
 /-- Enriched precomposition `eHomWhiskerRight` with an underlying morphism `g` precomposes a
 homogeneous morphism with the closed component of `g`. -/
+@[simp]
 theorem eHomWhiskerRight_f_apply {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
     (g : X ⟶ Y) (Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) (p : ℤ)
     (f : DGHom R p (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)
