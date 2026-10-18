@@ -33,7 +33,7 @@ dimension `n + 1`. Attaching the cells is a relative CW complex
 apply; `f` is a closed embedding, which identifies `X` with its range.
 
 When `n ≥ 1`, attaching cells kills chosen classes of `π_n(X, x)`. A generalized loop `p`
-representing a class gives the attaching map `TauCeti.GenLoop.diskBoundaryMap p`, the
+representing a class gives the attaching map `GenLoop.diskBoundaryMap p`, the
 corresponding pointed map `Sⁿ → X`. It becomes null-homotopic in `Y`
 (`TauCeti.cellAttachment_attachingMap_nullhomotopic`), so the class of `p` maps to the identity
 (`TauCeti.map_cellAttachmentIncl_mk_eq_one`). If the classes of the attaching loops generate
