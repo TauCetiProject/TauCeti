@@ -98,14 +98,9 @@ theorem preprojectiveMk_ofArrow_mul_eq_zero_iff (hQ : ∀ u : Q, ∃ w, Nonempty
     (fun u => localPreprojectiveRelator_eq_sum_ofArrow_mul (Q := Q) k u) hπ
     (preprojectiveMk_surjective k Q) (Symmetrify.of.obj (V := Q) v) hy'
   -- The chosen arrow at `v` is `a`, read in the doubled quiver.
-  have hσ : σ v = ⟨w, a⟩ := Function.update_self ..
-  have ha : ∀ s : Σ w : Q, (v ⟶ w), s = ⟨w, a⟩ →
-      (ofArrow (Symmetrify.of.map s.2) : pathAlgebra k (Symmetrify Q)) =
-        ofArrow (Symmetrify.of.map a) := by
-    rintro _ rfl
-    rfl
-  rw [← key]
-  exact Iff.of_eq (congrArg (fun f => preprojectiveMk k Q f * y = 0) (ha (σ v) hσ).symm)
+  -- `chosenArrow σ (Symmetrify.of.obj v)` unfolds to `Symmetrify.of.map (σ v).2`.
+  exact eq_zero_of_chosenArrow_mul_eq_zero k σ v hy
+    (congr(preprojectiveMk k Q (ofArrow (Symmetrify.of.map ($hσ).2)) * y).trans h)
 
 /-- **Exactness of the Koszul complex at its left end, for a quiver without sinks.** If every vertex
 of `Q` is the tail of an arrow and `y = e_v y`, then `b* y = 0` for every arrow `b` of the doubled
