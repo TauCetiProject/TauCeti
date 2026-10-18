@@ -25,6 +25,8 @@ The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`
 one.
 
 Normal square matrices induce normal operators on Euclidean space.
+The instance `TauCeti.isStarNormal_toEuclideanLin` supplies this normality automatically
+from `IsStarNormal A`.
 
 An invertible square matrix induces not just a map but a continuous linear equivalence, whose
 inverse is the map of the inverse matrix. That is the form a substitution needs: it supplies the

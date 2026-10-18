@@ -22,6 +22,12 @@ commutative group of unitary operators to be diagonalized by one change of basis
 The construction uses Mathlib's joint-eigenspace decomposition for symmetric operators,
 applied to all real and imaginary parts. Fuglede's theorem ensures these parts commute.
 
+The operator lemmas live in `TauCeti`: use
+`TauCeti.apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart T ha hb`,
+`TauCeti.commute_star_right_of_isStarNormal h`, and
+`TauCeti.commute_realPart_and_imaginaryPart h` with explicit arguments.
+Normality of `T.toContinuousLinearMap` is available through instance synthesis.
+
 ## References
 
 * S. Axler, *Linear Algebra Done Right*, 3rd ed., Springer (2015), Chapter 7.
