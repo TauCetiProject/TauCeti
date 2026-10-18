@@ -12,6 +12,7 @@ public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
 public import TauCeti.Probability.Distributions.Uniform.Basic
+public import TauCeti.Probability.Quantile
 import TauCeti.Probability.Distributions.Beta.Cdf
 import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Binomial.Tail
@@ -45,7 +46,11 @@ independent `μ`-distributed entries, with random-variable forms for an independ
   `TauCeti.Probability.measureReal_setOf_orderStatistic_le_iid`;
 * `TauCeti.Probability.map_orderStatistic_pi_uniformMeasure` — the `k`-th order statistic of `n`
   independent unit uniforms has the law `betaMeasure (k + 1) (n - k)`, with the random-variable
-  form `TauCeti.Probability.hasLaw_orderStatistic_iid_uniformMeasure`.
+  form `TauCeti.Probability.hasLaw_orderStatistic_iid_uniformMeasure`;
+* `TauCeti.Probability.map_orderStatistic_pi_eq_map_betaMeasure_quantile` — the `k`-th order
+  statistic of an iid sample from any real probability law `μ` is obtained by applying
+  `μ.quantile` to a beta variable, with random-variable form
+  `TauCeti.Probability.hasLaw_orderStatistic_iid_map_betaMeasure_quantile`.
 
 ## References
 
@@ -145,6 +150,58 @@ theorem hasLaw_orderStatistic_iid_uniformMeasure (hindep : iIndepFun X P)
     HasLaw (fun ω => orderStatistic k fun i => X i ω)
       (betaMeasure ((k : ℝ) + 1) ((n : ℝ) - k)) P := by
   rw [← map_orderStatistic_pi_uniformMeasure]
+  exact (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp (hindep.hasLaw_pi hlaw)
+
+/-! ### Quantile construction -/
+
+/-- **Quantile construction of an order statistic.** The `k`-th order statistic of an iid sample
+from a real probability law `μ` has the law obtained by applying `μ.quantile` to a beta variable
+with parameters `k + 1` and `n - k`. This allows atoms and discontinuous quantiles. -/
+theorem map_orderStatistic_pi_eq_map_betaMeasure_quantile [IsProbabilityMeasure μ] (k : Fin n) :
+    (Measure.pi fun _ : Fin n => μ).map (orderStatistic k) =
+      (betaMeasure ((k : ℝ) + 1) ((n : ℝ) - k)).map μ.quantile := by
+  let U := uniformMeasure 0 1
+  have hU : U = volume.restrict (Ioo (0 : ℝ) 1) := by
+    dsimp [U]
+    rw [uniformMeasure_eq_smul]
+    norm_num
+    exact MeasureTheory.restrict_Ioo_eq_restrict_Ioc.symm
+  have hquantile : U.map μ.quantile = μ := by
+    rw [hU]
+    exact μ.map_quantile_volume_Ioo
+  have hmemU : ∀ᵐ u ∂U, u ∈ Ioo (0 : ℝ) 1 := by
+    rw [hU]
+    exact ae_restrict_mem measurableSet_Ioo
+  have hmem : ∀ᵐ u ∂Measure.pi (fun _ : Fin n => U), ∀ i, u i ∈ Ioo (0 : ℝ) 1 :=
+    ae_all_iff.mpr fun i => Measure.tendsto_eval_ae_ae.eventually hmemU
+  calc
+    (Measure.pi fun _ : Fin n => μ).map (orderStatistic k) =
+        ((Measure.pi fun _ : Fin n => U).map fun u i => μ.quantile (u i)).map
+          (orderStatistic k) := by
+      rw [Measure.pi_map_pi fun _ => μ.measurable_quantile.aemeasurable, hquantile]
+    _ = (Measure.pi fun _ : Fin n => U).map
+        (fun u => orderStatistic k (fun i => μ.quantile (u i))) := by
+      rw [Measure.map_map (measurable_orderStatistic k) (by fun_prop)]
+      exact Measure.map_congr (.of_forall fun _ => rfl)
+    _ = (Measure.pi fun _ : Fin n => U).map (fun u => μ.quantile (orderStatistic k u)) := by
+      apply Measure.map_congr
+      filter_upwards [hmem] with u hu
+      exact orderStatistic_comp_of_monotoneOn μ.quantile μ.monotoneOn_quantile hu k
+    _ = ((Measure.pi fun _ : Fin n => U).map (orderStatistic k)).map μ.quantile := by
+      rw [Measure.map_map μ.measurable_quantile (measurable_orderStatistic k)]
+      exact Measure.map_congr (.of_forall fun _ => rfl)
+    _ = (betaMeasure ((k : ℝ) + 1) ((n : ℝ) - k)).map μ.quantile := by
+      dsimp [U]
+      rw [map_orderStatistic_pi_uniformMeasure]
+
+/-- The random-variable form of
+`TauCeti.Probability.map_orderStatistic_pi_eq_map_betaMeasure_quantile`: the `k`-th order
+statistic of an iid sample from `μ` has the beta-quantile pushforward law. -/
+theorem hasLaw_orderStatistic_iid_map_betaMeasure_quantile [IsProbabilityMeasure μ]
+    (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) :
+    HasLaw (fun ω => orderStatistic k fun i => X i ω)
+      ((betaMeasure ((k : ℝ) + 1) ((n : ℝ) - k)).map μ.quantile) P := by
+  rw [← map_orderStatistic_pi_eq_map_betaMeasure_quantile]
   exact (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp (hindep.hasLaw_pi hlaw)
 
 end Law

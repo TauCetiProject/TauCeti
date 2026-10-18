@@ -27,7 +27,8 @@ measurable whenever the binary minimum and maximum operations are measurable.
 
 ## Main results
 
-* `TauCeti.orderStatistic_comp_of_monotone` — order statistics commute with monotone maps;
+* `TauCeti.orderStatistic_comp_of_monotoneOn`, `TauCeti.orderStatistic_comp_of_monotone` — order
+  statistics commute with maps that are monotone on the entries of the tuple;
 * `TauCeti.orderStatistic_le_iff`, `TauCeti.orderStatistic_lt_iff` — the counting
   characterizations;
 * `TauCeti.orderStatistic_zero`, `TauCeti.orderStatistic_last` — the extreme order statistics
@@ -55,13 +56,24 @@ def orderStatistic (k : Fin n) (x : Fin n → α) : α :=
 theorem orderStatistic_def (k : Fin n) (x : Fin n → α) :
     orderStatistic k x = x (Tuple.sort x k) := (rfl)
 
+/-- Applying a map that is monotone on every entry of a tuple commutes with taking an order
+statistic. No behavior is required away from those entries. -/
+theorem orderStatistic_comp_of_monotoneOn {β : Type*} [LinearOrder β] {s : Set α} (f : α → β)
+    (hf : MonotoneOn f s) (hx : ∀ i, x i ∈ s) (k : Fin n) :
+    orderStatistic k (f ∘ x) = f (orderStatistic k x) := by
+  rw [orderStatistic_def, orderStatistic_def]
+  have hmono : Monotone (f ∘ x ∘ Tuple.sort x) := by
+    intro i j hij
+    exact hf (hx _) (hx _) (Tuple.monotone_sort x hij)
+  exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort (f ∘ x))
+    hmono) k
+
 /-- Applying a monotone map to every entry commutes with taking an order statistic. -/
 theorem orderStatistic_comp_of_monotone {β : Type*} [LinearOrder β] (f : α → β)
     (hf : Monotone f) (k : Fin n) (x : Fin n → α) :
-    orderStatistic k (f ∘ x) = f (orderStatistic k x) := by
-  rw [orderStatistic_def, orderStatistic_def]
-  exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort (f ∘ x))
-    (hf.comp (Tuple.monotone_sort x))) k
+    orderStatistic k (f ∘ x) = f (orderStatistic k x) :=
+  orderStatistic_comp_of_monotoneOn f (hf.monotoneOn (s := Set.univ))
+    (fun _ ↦ Set.mem_univ _) k
 
 /-- The order statistics of a tuple do not depend on the order in which its entries are
 listed. -/
