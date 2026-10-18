@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.Probability.Quantile
 
@@ -153,7 +153,7 @@ theorem upperQuantile_map_of_monotone [IsProbabilityMeasure μ] (hg : Monotone g
 
 /-- **Quantiles of the reflected law.** The quantile of the law of `-X` at a level strictly between
 `0` and `1` is minus the upper quantile of the law of `X` at the complementary level. -/
-theorem quantile_neg [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+@[simp] theorem quantile_neg [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
     μ.neg.quantile t = -μ.upperQuantile (1 - t) := by
   refine eq_of_forall_ge_iff fun y ↦ ?_
   have hpre : (Neg.neg ⁻¹' Iic y : Set ℝ) = (Iio (-y))ᶜ := by
@@ -167,7 +167,7 @@ theorem quantile_neg [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
 
 /-- **Upper quantiles of the reflected law.** The upper quantile of the law of `-X` at a level
 strictly between `0` and `1` is minus the quantile of the law of `X` at the complementary level. -/
-theorem upperQuantile_neg [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+@[simp] theorem upperQuantile_neg [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
     μ.neg.upperQuantile t = -μ.quantile (1 - t) := by
   refine eq_of_forall_le_iff fun y ↦ ?_
   have hpre : (Neg.neg ⁻¹' Iio y : Set ℝ) = (Iic (-y))ᶜ := by
@@ -238,40 +238,41 @@ theorem upperQuantile_map_of_antitone [IsProbabilityMeasure μ] (hg : Antitone g
 /-! ### Elementary maps -/
 
 /-- The quantile of the law of `exp X` is the exponential of the quantile of the law of `X`. -/
-theorem quantile_map_exp [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+@[simp] theorem quantile_map_exp [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
     (μ.map Real.exp).quantile t = Real.exp (μ.quantile t) :=
   quantile_map_of_monotone Real.exp_monotone Real.continuous_exp h0 h1
 
 /-- The upper quantile of the law of `exp X` is the exponential of the upper quantile of the law
 of `X`. -/
-theorem upperQuantile_map_exp [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+@[simp] theorem upperQuantile_map_exp [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
     (μ.map Real.exp).upperQuantile t = Real.exp (μ.upperQuantile t) :=
   upperQuantile_map_of_monotone Real.exp_monotone Real.continuous_exp h0 h1
 
 /-- For a law carried by the positive half-line, the quantile of the law of `log X` is the
 logarithm of the quantile of the law of `X`. -/
-theorem quantile_map_log [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
+@[simp] theorem quantile_map_log [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
     (h1 : t < 1) : (μ.map Real.log).quantile t = Real.log (μ.quantile t) :=
   quantile_map_of_monotoneOn ordConnected_Ioi hμ Real.strictMonoOn_log.monotoneOn
     (Real.continuousOn_log.mono fun _ hx ↦ (ne_of_gt hx)) h0 h1
 
 /-- For a law carried by the positive half-line, the upper quantile of the law of `log X` is the
 logarithm of the upper quantile of the law of `X`. -/
-theorem upperQuantile_map_log [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
+@[simp] theorem upperQuantile_map_log [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
     (h1 : t < 1) : (μ.map Real.log).upperQuantile t = Real.log (μ.upperQuantile t) :=
   upperQuantile_map_of_monotoneOn ordConnected_Ioi hμ Real.strictMonoOn_log.monotoneOn
     (Real.continuousOn_log.mono fun _ hx ↦ (ne_of_gt hx)) h0 h1
 
 /-- For a law carried by the nonnegative half-line and a nonnegative exponent `r`, the quantile of
 the law of `X ^ r` is the `r`-th power of the quantile of the law of `X`. -/
-theorem quantile_map_rpow [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 ≤ x) {r : ℝ} (hr : 0 ≤ r)
+@[simp] theorem quantile_map_rpow [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 ≤ x) {r : ℝ}
+    (hr : 0 ≤ r)
     (h0 : 0 < t) (h1 : t < 1) : (μ.map (· ^ r)).quantile t = μ.quantile t ^ r :=
   quantile_map_of_monotoneOn ordConnected_Ici hμ (Real.monotoneOn_rpow_Ici_of_exponent_nonneg hr)
     (Real.continuous_rpow_const hr).continuousOn h0 h1
 
 /-- For a law carried by the nonnegative half-line and a nonnegative exponent `r`, the upper
 quantile of the law of `X ^ r` is the `r`-th power of the upper quantile of the law of `X`. -/
-theorem upperQuantile_map_rpow [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 ≤ x) {r : ℝ}
+@[simp] theorem upperQuantile_map_rpow [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 ≤ x) {r : ℝ}
     (hr : 0 ≤ r) (h0 : 0 < t) (h1 : t < 1) :
     (μ.map (· ^ r)).upperQuantile t = μ.upperQuantile t ^ r :=
   upperQuantile_map_of_monotoneOn ordConnected_Ici hμ
@@ -280,26 +281,26 @@ theorem upperQuantile_map_rpow [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 
 
 /-- The quantile of the law of `√X` is the square root of the quantile of the law of `X`. Since
 `Real.sqrt` is nondecreasing and continuous on the whole line, no support hypothesis is needed. -/
-theorem quantile_map_sqrt [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+@[simp] theorem quantile_map_sqrt [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
     (μ.map Real.sqrt).quantile t = √(μ.quantile t) :=
   quantile_map_of_monotone (fun _ _ ↦ Real.sqrt_le_sqrt) Real.continuous_sqrt h0 h1
 
 /-- The upper quantile of the law of `√X` is the square root of the upper quantile of the law
 of `X`. -/
-theorem upperQuantile_map_sqrt [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+@[simp] theorem upperQuantile_map_sqrt [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
     (μ.map Real.sqrt).upperQuantile t = √(μ.upperQuantile t) :=
   upperQuantile_map_of_monotone (fun _ _ ↦ Real.sqrt_le_sqrt) Real.continuous_sqrt h0 h1
 
 /-- For a law carried by the positive half-line, the quantile of the law of `X⁻¹` is the
 reciprocal of the upper quantile of the law of `X` at the complementary level. -/
-theorem quantile_map_inv [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
+@[simp] theorem quantile_map_inv [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
     (h1 : t < 1) : (μ.map (·⁻¹)).quantile t = (μ.upperQuantile (1 - t))⁻¹ :=
   quantile_map_of_antitoneOn ordConnected_Ioi hμ (fun _ hx _ _ hxy ↦ inv_anti₀ hx hxy)
     (continuousOn_inv₀.mono fun _ hx ↦ (ne_of_gt hx)) h0 h1
 
 /-- For a law carried by the positive half-line, the upper quantile of the law of `X⁻¹` is the
 reciprocal of the quantile of the law of `X` at the complementary level. -/
-theorem upperQuantile_map_inv [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
+@[simp] theorem upperQuantile_map_inv [IsProbabilityMeasure μ] (hμ : ∀ᵐ x ∂μ, 0 < x) (h0 : 0 < t)
     (h1 : t < 1) : (μ.map (·⁻¹)).upperQuantile t = (μ.quantile (1 - t))⁻¹ :=
   upperQuantile_map_of_antitoneOn ordConnected_Ioi hμ (fun _ hx _ _ hxy ↦ inv_anti₀ hx hxy)
     (continuousOn_inv₀.mono fun _ hx ↦ (ne_of_gt hx)) h0 h1
