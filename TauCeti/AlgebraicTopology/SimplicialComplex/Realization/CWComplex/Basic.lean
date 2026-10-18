@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.CharacteristicMap
 
 /-!
@@ -41,33 +42,9 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι]
 
-/-- The `n`-dimensional cells of the realization of `K`: its faces with `n + 1` vertices. -/
-abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
-  {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
-
 namespace RealizationCell
 
 variable {K : AbstractSimplicialComplex ι} {n : ℕ}
-
-/-- The increasing enumeration of the vertices of a simplicial cell. -/
-def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
-  (c.1.1.orderEmbOfFin c.2).toEmbedding
-
-/-- The chosen vertex enumeration is strictly increasing. -/
-theorem strictMono_vertexEmbedding (c : RealizationCell K n) : StrictMono c.vertexEmbedding :=
-  (c.1.1.orderEmbOfFin c.2).strictMono
-
-/-- Every enumerated vertex belongs to the cell's face. -/
-@[simp]
-theorem vertexEmbedding_mem (c : RealizationCell K n) (i : Fin (n + 1)) :
-    c.vertexEmbedding i ∈ c.1.1 :=
-  Finset.orderEmbOfFin_mem c.1.1 c.2 i
-
-/-- The increasing enumeration has the cell's face as its image. -/
-@[simp]
-theorem image_vertexEmbedding (c : RealizationCell K n) :
-    Finset.univ.image c.vertexEmbedding = c.1.1 :=
-  Finset.image_orderEmbOfFin_univ c.1.1 c.2
 
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
