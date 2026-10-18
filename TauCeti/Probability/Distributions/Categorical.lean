@@ -88,11 +88,6 @@ theorem categoricalMeasure_real_singleton (p : StdSimplex NNReal I) (i : I) :
   rw [measureReal_def, categoricalMeasure_singleton]
   simp
 
-/-- A category has nonzero mass exactly when its simplex weight is nonzero. -/
-theorem categoricalMeasure_singleton_ne_zero_iff (p : StdSimplex NNReal I) (i : I) :
-    categoricalMeasure p {i} ≠ 0 ↔ p.weights i ≠ 0 := by
-  simp
-
 /-- Every function on a finite category type is integrable under a categorical law. -/
 theorem integrable_categoricalMeasure {E : Type*} [NormedAddGroup E]
     (g : I → E) (p : StdSimplex NNReal I) : Integrable g (categoricalMeasure p) := by
