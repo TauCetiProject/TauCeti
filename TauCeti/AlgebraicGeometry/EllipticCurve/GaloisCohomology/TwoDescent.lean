@@ -12,7 +12,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairi
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
-public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 
 /-!
 # The Kummer map of multiplication by two is `x - e`
@@ -60,9 +59,6 @@ unit is the image of the Kummer cocycle `σ ↦ σ Q - Q` of `P`.
 
 ## Main results
 
-* `WeierstrassCurve.isAddKleinFour_torsionCoeff_two`: `E(Kˢ)[2]` is a Klein four-group.
-* `WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne`: the Weil pairing of two distinct
-  points of order two is the nontrivial element of `μ₂`.
 * `WeierstrassCurve.coe_toMul_twoTorsionCharacter`: the character is `1` on `{O, T}` and `-1` off
   it.
 * `WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`: the character is `e₂(·, T)`.
@@ -81,46 +77,6 @@ noncomputable section
 open TauCeti TauCeti.ContCohomology
 
 namespace WeierstrassCurve
-
-/-! ### The group `E(Kˢ)[2]` and its Weil pairing -/
-
-section TwoTorsion
-
-variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
-
-/-- **`E(Kˢ)[2]` is a Klein four-group** when `2` is invertible in `K`: it has `2² = 4` points,
-each killed by `2`. -/
-theorem isAddKleinFour_torsionCoeff_two (h2 : IsUnit ((2 : ℕ) : K)) :
-    IsAddKleinFour (W.TorsionCoeff 2) := by
-  have hcard : Nat.card (W.TorsionCoeff 2) = 4 := by
-    rw [natCard_torsionCoeff W h2]
-    norm_num
-  have : Nontrivial (W.TorsionCoeff 2) := by
-    rw [← Finite.one_lt_card_iff_nontrivial, hcard]
-    norm_num
-  refine ⟨hcard, (AddMonoid.exponent_eq_prime_iff Nat.prime_two).2 fun P hP ↦ ?_⟩
-  exact addOrderOf_eq_prime (Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.1 P.2)) hP
-
-variable {W} in
-/-- **The Weil pairing of two distinct points of order two is `-1`**: on `E(Kˢ)[2]`, for `2`
-invertible in `K`, `e₂(T, S)` is the nontrivial element of `μ₂` whenever `T` and `S` are distinct
-and nonzero. -/
-theorem torsionCoeffWeilPairing_two_eq_mu2NegOne (h2 : IsUnit ((2 : ℕ) : K))
-    {T S : W.TorsionCoeff 2} (hT : T ≠ 0) (hS : S ≠ 0) (hTS : T ≠ S) :
-    W.torsionCoeffWeilPairing 2 h2 T S = mu2NegOne := by
-  have := W.isAddKleinFour_torsionCoeff_two h2
-  refine (eq_zero_or_eq_mu2NegOne _).resolve_left fun h ↦ hT ?_
-  refine W.torsionCoeffWeilPairing_nondegenerate 2 h2 fun Q ↦ ?_
-  by_cases hQ : Q = 0
-  · rw [hQ, map_zero]
-  by_cases hQT : Q = T
-  · rw [hQT, torsionCoeffWeilPairing_self]
-  by_cases hQS : Q = S
-  · rw [hQS, h]
-  rw [IsAddKleinFour.eq_add_of_ne_all hT hS hTS hQ hQT hQS, map_add, h,
-    torsionCoeffWeilPairing_self, add_zero]
-
-end TwoTorsion
 
 /-! ### The character `E(Kˢ)[2] → μ₂` attached to `T` -/
 
