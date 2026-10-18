@@ -1,0 +1,248 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.ChartedSpace
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Map
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.Topology.Covering.Clopen
+
+/-!
+# The filled cover as a topological branched cover of the sphere
+
+Let `p : E → ℂ ∖ {0, 1}` be a covering map with finite fibres, and let
+`TauCeti.FilledCover.fillMap p : FilledCover p → OnePoint ℂ` be its extension to the filled
+cover, sending the added point of each component of `p ⁻¹' D_q*` to its puncture `q`. This file
+proves the two local properties of `fillMap p` that make it a branched cover with branch values in
+`{0, 1, ∞}`:
+
+* over the complement of the three marked points it is a covering map, whose fibre over a point
+  `z` of `ℂ ∖ {0, 1}` is the fibre of `p` over `z`;
+* at the added point of a component `i`, it is `w ↦ w ^ e` for `e = FilledCover.degree p i`, in
+  the chart of the filled cover centred at that point and the inverse of the standard sphere
+  coordinate `TauCeti.ThricePuncturedSphere.Puncture.sphereCoordInv` at the puncture.
+
+Consequently every connected degree-`n` cover `C` of `ℂ ∖ {0, 1}` fills to a topological branched
+cover of degree `n` (`TauCeti.ConnectedCover.toTopBranchedCover`), whose local degree at the added
+point of a component is the local degree of that component. Deleting the marked fibres again
+recovers `C` up to isomorphism (`TauCeti.ConnectedCover.connectedCoverIso`), so the restriction
+map from isomorphism classes of topological branched covers of degree `n` to isomorphism classes
+of connected degree-`n` covers of `ℂ ∖ {0, 1}` is surjective
+(`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`).
+
+## Main results
+
+* `TauCeti.FilledCover.fillMap_preimage_toOnePoint`: the fibre of `fillMap p` over a point of
+  `ℂ ∖ {0, 1}` is the fibre of `p`.
+* `TauCeti.FilledCover.isCoveringMapOn_fillMap`: off the marked points, `fillMap p` is a
+  covering map.
+* `TauCeti.FilledCover.isLocalPowerAt_fillMap_center`: at the added point of a component,
+  `fillMap p` is locally the power map of exponent the local degree of the component.
+* `TauCeti.ConnectedCover.toTopBranchedCover`: the filled cover of a connected degree-`n` cover,
+  as a topological branched cover of degree `n`.
+* `TauCeti.ConnectedCover.localDegree_toTopBranchedCover_center`: its local degrees at the added
+  points.
+* `TauCeti.ConnectedCover.connectedCoverIso`: deleting the marked fibres of the filled cover
+  gives back the original cover.
+* `TauCeti.TopBranchedCover.IsoClass.restrict_surjective`: every connected degree-`n` cover of
+  `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
+
+## References
+
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
+  §1.2.7 (Lemma 1.80: a finite unramified cover of a punctured surface extends to a branched
+  cover of the compact surface).
+* O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
+  §8, Theorem 8.4.
+-/
+
+public noncomputable section
+
+namespace TauCeti
+
+open Function Metric Set Topology ThricePuncturedSphere PunctureFilling
+
+namespace FilledCover
+
+variable {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere}
+
+/-- The fibre of the extended projection over a point `z` of `ℂ ∖ {0, 1}` is the fibre of `p`
+over `z`: no added point lies over `z`. -/
+theorem fillMap_preimage_toOnePoint (z : ThricePuncturedSphere) :
+    fillMap p ⁻¹' {toOnePoint z} = incl (chart p) '' (p ⁻¹' {z}) := by
+  ext y
+  induction y using PunctureFilling.induction with
+  | incl x => simp [Subtype.ext_iff]
+  | center i =>
+    have h : center (chart p) i ∉ fillMap p ⁻¹' range toOnePoint := by
+      rw [preimage_range_toOnePoint]
+      rintro ⟨x, hx⟩
+      exact incl_ne_center x i hx
+    refine iff_of_false (fun hz => h ⟨z, (mem_singleton_iff.1 hz).symm⟩) ?_
+    rintro ⟨x, -, hx⟩
+    exact incl_ne_center x i hx
+
+/-- The fibre of the extended projection over a point `z` of `ℂ ∖ {0, 1}` has as many points as
+the fibre of `p` over `z`. -/
+theorem natCard_fillMap_preimage_toOnePoint (z : ThricePuncturedSphere) :
+    Nat.card (fillMap p ⁻¹' {toOnePoint z}) = Nat.card (p ⁻¹' {z}) := by
+  rw [fillMap_preimage_toOnePoint, Nat.card_image_of_injective incl_injective]
+
+variable (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
+include hp hfin
+
+/-- **Off the marked points, the extended projection is a covering map.** -/
+theorem isCoveringMapOn_fillMap : IsCoveringMapOn (fillMap p) markedᶜ := by
+  rw [← range_toOnePoint]
+  refine .of_isCoveringMap_restrictPreimage _ isOpenEmbedding_toOnePoint.isOpen_range ?_
+    (isCoveringMap_restrictPreimage_fillMap hp hfin)
+  rw [preimage_range_toOnePoint]
+  exact isOpen_range_incl
+
+/-- **The local model at a filled point.** At the added point of the component `i` over the
+puncture `q`, the extended projection is `w ↦ w ^ degree p i`, in the chart of the filled cover
+centred at that point and the inverse of the extended coordinate `q.sphereCoordInv` of the sphere
+at `q`. -/
+theorem isLocalPowerAt_fillMap_center (i : FilledPoint p) :
+    IsLocalPowerAt (fillMap p) (center (chart p) i) (degree p i) := by
+  let := chartedSpace hp hfin
+  have hq := (FilledPoint.sigmaEquiv p i).1.isOpenEmbedding_sphereCoordInv
+  refine isLocalPowerAt_iff.2 ⟨chartAt ℂ (center (chart p) i),
+    (hq.toOpenPartialHomeomorph _).symm, mem_chart_source ℂ _, ?_,
+    chartAt_center_apply_center hp hfin i, ?_, fun w hw => ?_⟩
+  · intro y hy
+    rw [chartAt_center_source hp hfin] at hy
+    obtain ⟨w, rfl⟩ := hy
+    rw [OpenPartialHomeomorph.symm_source, IsOpenEmbedding.toOpenPartialHomeomorph_target,
+      fillMap_disc hp hfin]
+    exact mem_range_self _
+  · rw [fillMap_center, ← Puncture.sphereCoordInv_apply_zero]
+    exact hq.toOpenPartialHomeomorph_left_inv
+  · rw [chartAt_center_target] at hw
+    lift w to ball (0 : ℂ) 1 using hw
+    rw [chartAt_center_symm_apply, fillMap_disc hp hfin]
+    exact hq.toOpenPartialHomeomorph_left_inv
+
+end FilledCover
+
+namespace ConnectedCover
+
+open FilledCover
+
+variable {n : ℕ} (C : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n)
+
+/-- **The filled cover as a topological branched cover.** Filling the punctures of a connected
+degree-`n` cover `C` of `ℂ ∖ {0, 1}`, and extending its projection to the added points, gives a
+topological branched cover of the sphere of degree `n` with branch values in `{0, 1, ∞}`. Its
+total space is `FilledCover C.cover.proj` and its projection is `FilledCover.fillMap`
+(`TauCeti.ConnectedCover.toTopBranchedCover_π_apply`). -/
+-- The body is exposed so that the total space of the branched cover is the filled cover by
+-- definition.
+@[expose]
+def toTopBranchedCover : TopBranchedCover n where
+  Z := FilledCover ⇑C.cover.proj
+  instCompactSpace :=
+    FilledCover.compactSpace C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
+  instConnectedSpace := PunctureFilling.connectedSpace
+  instT2Space := FilledCover.t2Space C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
+  instSecondCountableTopology :=
+    letI := FilledCover.chartedSpace C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
+    letI := FilledCover.compactSpace C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
+    ChartedSpace.secondCountable_of_sigmaCompact ℂ _
+  π := ⟨fillMap _, continuous_fillMap C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton⟩
+  surjective := surjective_fillMap C.cover.isCoveringMap_proj.surjective
+  isCoveringMapOn :=
+    isCoveringMapOn_fillMap C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
+  natCard_preimage_singleton y hy := by
+    rw [← mem_compl_iff, ← range_toOnePoint] at hy
+    obtain ⟨z, rfl⟩ := hy
+    obtain ⟨ν⟩ := C.nonempty_equiv_fin_of_mem_connectedComponent
+      (y := z) (by simp [PreconnectedSpace.connectedComponent_eq_univ])
+    exact (natCard_fillMap_preimage_toOnePoint z).trans ((Nat.card_congr ν).trans (Nat.card_fin n))
+  exists_isLocalPowerAt_of_mem_marked y hy := by
+    induction y using PunctureFilling.induction with
+    | incl x =>
+      rw [ContinuousMap.coe_mk, fillMap_incl, ← notMem_compl_iff, ← range_toOnePoint] at hy
+      exact absurd (mem_range_self _) hy
+    | center i =>
+      exact ⟨_, isLocalPowerAt_fillMap_center C.cover.isCoveringMap_proj
+        C.finite_proj_preimage_singleton i⟩
+
+/-- The projection of the filled branched cover is the extension of the projection of `C`. -/
+@[simp]
+theorem toTopBranchedCover_π_apply (y : FilledCover ⇑C.cover.proj) :
+    C.toTopBranchedCover.π y = fillMap _ y :=
+  (rfl)
+
+/-- The local degree of the filled branched cover at the added point of a component is the local
+degree `FilledCover.degree` of that component. -/
+@[simp]
+theorem localDegree_toTopBranchedCover_center (i : FilledPoint ⇑C.cover.proj) :
+    C.toTopBranchedCover.localDegree (center (chart _) i) = degree _ i :=
+  C.toTopBranchedCover.localDegree_eq_iff.2
+    (isLocalPowerAt_fillMap_center C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton i)
+
+/-- The total space of `C` is homeomorphic to the total space of the cover obtained by deleting
+the marked fibres from its filled branched cover, by the inclusion `E ↪ FilledCover`. -/
+def connectedCoverHomeomorph :
+    (C.cover : TopCat) ≃ₜ (C.toTopBranchedCover.connectedCover.cover : TopCat) :=
+  (unpuncturedHomeomorph C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton).trans
+    C.toTopBranchedCover.connectedCoverHomeomorph.symm
+
+/-- The homeomorphism `TauCeti.ConnectedCover.connectedCoverHomeomorph` is the inclusion of the
+total space of `C` into its filled cover. -/
+@[simp]
+theorem coe_connectedCoverHomeomorph_apply (x : (C.cover : TopCat)) :
+    (C.toTopBranchedCover.connectedCoverHomeomorph (C.connectedCoverHomeomorph x) :
+      C.toTopBranchedCover.Z) = incl (chart _) x :=
+  (congrArg Subtype.val (Homeomorph.apply_symm_apply _ _)).trans
+    (coe_unpuncturedHomeomorph C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton x)
+
+/-- **Deleting the marked fibres of the filled cover recovers the cover.** The connected cover of
+`ℂ ∖ {0, 1}` underlying the filled branched cover of `C` is isomorphic to `C`, by the inclusion of
+the total space of `C` into its filled cover. -/
+def connectedCoverIso : C.cover ≅ C.toTopBranchedCover.connectedCover.cover :=
+  CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo C.connectedCoverHomeomorph) (by
+    ext1 x
+    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_coe,
+      ← TopBranchedCover.restrict_connectedCoverHomeomorph]
+    apply isOpenEmbedding_toOnePoint.injective
+    rw [toOnePoint_apply, TopBranchedCover.coe_restrict_apply, coe_connectedCoverHomeomorph_apply]
+    exact fillMap_incl _ x)
+
+/-- The map of total spaces underlying `TauCeti.ConnectedCover.connectedCoverIso`. -/
+@[simp]
+theorem connectedCoverIso_hom_hom_left :
+    C.connectedCoverIso.hom.hom.left = (TopCat.isoOfHomeo C.connectedCoverHomeomorph).hom :=
+  CoveringSpace.FullSubcategory.isoMk_hom_hom_left _ _
+
+/-- The inverse map of total spaces underlying `TauCeti.ConnectedCover.connectedCoverIso`. -/
+@[simp]
+theorem connectedCoverIso_inv_hom_left :
+    C.connectedCoverIso.inv.hom.left = (TopCat.isoOfHomeo C.connectedCoverHomeomorph).inv :=
+  CoveringSpace.FullSubcategory.isoMk_inv_hom_left _ _
+
+end ConnectedCover
+
+/-- Restricting the filled branched cover of `C` over `ℂ ∖ {0, 1}` gives back the isomorphism
+class of `C`. -/
+@[simp]
+theorem ConnectedCoverClass.mk_connectedCover_toTopBranchedCover {n : ℕ}
+    (C : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    mk C.toTopBranchedCover.connectedCover = mk C :=
+  (mk_eq_mk_iff.2 ⟨C.connectedCoverIso⟩).symm
+
+/-- **Every connected degree-`n` cover of `ℂ ∖ {0, 1}` extends to a topological branched cover of
+the sphere**: restriction over `ℂ ∖ {0, 1}` is surjective on isomorphism classes, the filled cover
+`TauCeti.ConnectedCover.toTopBranchedCover` providing a preimage of each class. -/
+theorem TopBranchedCover.IsoClass.restrict_surjective {n : ℕ} :
+    Surjective (IsoClass.restrict : IsoClass.{0} n → _) := by
+  intro c
+  obtain ⟨C, rfl⟩ := ConnectedCoverClass.mk_surjective c
+  exact ⟨.mk C.toTopBranchedCover, by simp⟩
+
+end TauCeti
