@@ -65,6 +65,7 @@ end AlgEquiv
 
 /-- The trace form of a finite product of finite free algebras is nondegenerate iff the trace form
 of every factor is. -/
+@[simp]
 theorem Algebra.traceForm_pi_nondegenerate_iff {ι : Type*} [Finite ι] (L : ι → Type*)
     [∀ i, CommRing (L i)] [∀ i, Algebra K (L i)] [∀ i, Module.Free K (L i)]
     [∀ i, Module.Finite K (L i)] :
