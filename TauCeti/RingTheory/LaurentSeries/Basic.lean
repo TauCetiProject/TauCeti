@@ -6,22 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.HahnSeries.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
-# Scalar towers, the product rule, and residues of `φⁿ dφ` for Laurent series
+# The algebra action, the product rule, and residues of `φⁿ dφ` for Laurent series
 
 For an `R`-algebra `A`, the `R`-algebra structure on `A⸨X⸩` is the one inherited from `A⟦X⟧`
 through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by the image of a
 constant power series. This is propositionally, but not definitionally, equal to the coefficientwise
 action `HahnSeries.instSMul` found by default.
 
-This file records that the algebra actions form a scalar tower `R → A⟦X⟧ → A⸨X⸩`. This is what
+The scalar tower `S → A⟦X⟧ → A⸨X⸩` for any `A⟦X⟧`-algebra `S` (in particular `R` and `A[X]`)
+is imported from `TauCeti.RingTheory.HahnSeries.PowerSeries`; the tower over `R` is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
-`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. Over a field `K`, it also records that
-a nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is
-a unit of `K⟦X⟧`.
+`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. This file shows that the algebra action
+of `R` on `A⸨X⸩` agrees with the coefficientwise action, and records that, over a field `K`, a
+nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is a
+unit of `K⟦X⟧`.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -40,8 +43,6 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 
 ## Main results
 
-* `TauCeti.LaurentSeries.isScalarTower_powerSeries`: the algebra actions of `R` on `A⟦X⟧` and
-  `A⸨X⸩` form a scalar tower.
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
@@ -71,13 +72,6 @@ open scoped LaurentSeries PowerSeries
 namespace TauCeti.LaurentSeries
 
 variable {R : Type*} [CommSemiring R]
-
-/-- For an `R`-algebra `A`, the scalars of `R` on `A⸨X⸩` factor through `A⟦X⟧`. The scalar
-actions are stated through the algebra structures, since the `R`-algebra structure on `A⸨X⸩` is
-the one inherited from `A⟦X⟧` rather than the coefficientwise action. -/
-instance isScalarTower_powerSeries {A : Type*} [CommSemiring A] [Algebra R A] :
-    @IsScalarTower R A⟦X⟧ A⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-  .of_algebraMap_eq' rfl
 
 /-- Multiplying a Laurent series by a constant of the `R`-algebra structure on `R⸨X⸩` multiplies
 each coefficient by that constant. -/

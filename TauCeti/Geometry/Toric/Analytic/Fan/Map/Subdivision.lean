@@ -17,7 +17,8 @@ the real-linear map is the identity and each cone of the original fan is covered
 the subdivision which it contains, so the cone-by-cone properness criterion applies.
 
 In particular, the star subdivision of a regular cone along a nonempty set of its rays induces a
-proper analytic map to the realization of the fan of faces of the cone, the blow-down map.
+proper analytic map to the realization of the fan of faces of the cone, the blow-down map, and so
+does the star subdivision of a regular fan along a nonzero cone of the fan.
 
 ## Main declarations
 
@@ -25,6 +26,8 @@ proper analytic map to the realization of the fan of faces of the cone, the blow
   subdivision of regular fans is proper.
 * `TauCeti.Toric.Fan.isProperMap_analyticMap_starSubdivision`: the analytic map induced by a star
   subdivision of a regular cone is proper.
+* `TauCeti.Toric.Fan.isProperMap_analyticMap_starSubdivisionAlong`: the analytic map induced by the
+  star subdivision of a regular fan along a nonzero cone is proper.
 
 ## References
 
@@ -74,5 +77,13 @@ theorem isProperMap_analyticMap_starSubdivision (hi : IsIntegralLattice i)
     IsProperMap ((starSubdivision_isSubdivision hi A hτ hA).toFanHom.analyticMap
       (isRegular_starSubdivision hi A hτ) (isRegular_ofCone hi hτ)) :=
   (starSubdivision_isSubdivision hi A hτ hA).isProperMap_analyticMap _ _
+
+/-- The star subdivision of a regular fan `Φ` along a nonzero cone `σ` of `Φ` induces a proper
+analytic map to the realization of `Φ`, because the two fans have the same support. -/
+theorem isProperMap_analyticMap_starSubdivisionAlong (Φ : Fan i) (hΦ : Φ.IsRegular)
+    {σ : PointedCone ℝ V} (hσ : σ ∈ Φ.cones) (hσ0 : σ ≠ ⊥) :
+    IsProperMap ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.analyticMap
+      (Φ.isRegular_starSubdivisionAlong hΦ hσ) hΦ) :=
+  (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).isProperMap_analyticMap _ _
 
 end TauCeti.Toric.Fan

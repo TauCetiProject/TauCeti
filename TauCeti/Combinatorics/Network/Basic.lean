@@ -22,8 +22,10 @@ universe u v w
 
 namespace TauCeti
 
-/-- An assignment gives a value to every arrow in an explicitly supplied arrow family. -/
-abbrev Assignment (Hom : V → V → Type v) (K : Type w) := ∀ {x y : V}, Hom x y → K
+/-- An assignment gives a value to every arrow in an explicitly supplied arrow family. The
+endpoints are strict-implicit so that applying an assignment to an arrow infers them from the
+arrow. -/
+abbrev Assignment (Hom : V → V → Type v) (K : Type w) := ∀ ⦃x y : V⦄, Hom x y → K
 
 /-- A directed network with finite lower and upper bounds on every arrow.
 
@@ -52,7 +54,7 @@ abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*)
     (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) : Network K V where
   Hom := Hom
-  lower _ := 0
+  lower := fun {_ _} _ => 0
   upper := capacity
   lower_le_upper := hcapacity
 
@@ -60,13 +62,15 @@ abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*)
 theorem ofCapacity_lower {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y} (e : Hom x y) :
-    (ofCapacity Hom capacity hcapacity).lower e = 0 := rfl
+    (ofCapacity Hom capacity hcapacity).lower
+      (show (ofCapacity Hom capacity hcapacity).Hom x y from e) = 0 := rfl
 
 @[simp]
 theorem ofCapacity_upper {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y} (e : Hom x y) :
-    (ofCapacity Hom capacity hcapacity).upper e = capacity e := rfl
+    (ofCapacity Hom capacity hcapacity).upper
+      (show (ofCapacity Hom capacity hcapacity).Hom x y from e) = capacity e := rfl
 
 end Network
 
