@@ -134,6 +134,14 @@ theorem internalScottRank_def :
     internalScottRank (L := L) M =
       ⨆ p : Σ n, Fin n → M, orbitRank (L := L) p.2 + 1 := (rfl)
 
+/-- The internal Scott rank is at most `α` exactly when every finite tuple has orbit rank
+strictly below `α`. -/
+@[simp]
+theorem internalScottRank_le_iff (α : Ordinal.{w}) :
+    internalScottRank (L := L) M ≤ α ↔
+      ∀ n (a : Fin n → M), orbitRank (L := L) a < α := by
+  simp only [internalScottRank_def, Ordinal.iSup_add_one_le_iff, Sigma.forall]
+
 variable {M}
 
 /-- Every tuple's orbit rank is strictly below the internal Scott rank. -/

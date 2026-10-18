@@ -78,6 +78,6 @@ theorem orbitRank_empty {n : ℕ} (a : Fin n → M) :
 @[simp]
 theorem internalScottRank_empty : internalScottRank (L := Language.empty) M = 1 := by
   apply le_antisymm _ one_le_internalScottRank
-  simpa using internalScottRank_le_succ_selfStabilizationOrdinal (L := Language.empty) (M := M)
+  simp
 
 end TauCeti
