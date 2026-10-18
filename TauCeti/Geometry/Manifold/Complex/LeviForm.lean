@@ -150,6 +150,20 @@ theorem isSymm_manifoldLeviForm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) 
     (manifoldLeviForm E f x).IsSymm :=
   isSymm_leviForm (contDiffAt_comp_chartAt_symm hf)
 
+/-! ### Algebraic rules -/
+
+/-- **The sum rule** for the Levi form on a complex manifold. -/
+theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
+    (hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 g x) :
+    manifoldLeviForm E (f + g) x = manifoldLeviForm E f x + manifoldLeviForm E g x :=
+  leviForm_add (contDiffAt_comp_chartAt_symm hf) (contDiffAt_comp_chartAt_symm hg)
+
+/-- Negating a function negates its Levi form on a complex manifold. -/
+@[simp]
+theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
+    manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
+  leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
 /-! ### Independence of the holomorphic chart -/
 
 section Chart
