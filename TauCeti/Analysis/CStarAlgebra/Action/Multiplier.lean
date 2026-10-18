@@ -18,7 +18,8 @@ given by `(α g ∘ L ∘ α g⁻¹, α g ∘ R ∘ α g⁻¹)`, and it restrict
 
 The extended action is generally not point-norm continuous; for instance, translation on
 `C₀(ℝ)` does not act norm-continuously on `C_b(ℝ)`. It is strictly continuous: for every
-multiplier `m` and every `a : A`, both `g ↦ α̃_g(m) a` and `g ↦ a α̃_g(m)` are norm continuous.
+multiplier `m` and every `a : A`, both `g ↦ α.multiplier g m * a` and
+`g ↦ a * α.multiplier g m` are norm continuous.
 Mathlib has no strict topology on `𝓜(ℂ, A)`, so this continuity is stated pointwise. No
 continuity of inversion in `G` is assumed. This is the form in which multiplier-valued
 covariant homomorphisms and unitary group maps into multiplier algebras are compared with
