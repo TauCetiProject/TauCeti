@@ -239,10 +239,13 @@ private theorem mem_cyclicCoboundaries_iff_complex (n : ℕ) (φ : cyclicCochain
   | zero =>
     rw [cyclicCoboundaries_zero, Submodule.mem_bot, CochainComplex.prev_nat_zero]
     rw [(cyclicCochainComplex R A M).shape 0 0 (by simp)]
-    change φ = 0 ↔ ∃ _ : cyclicCochains R A M 0, 0 = φ
     constructor
-    · exact fun hφ ↦ ⟨0, hφ.symm⟩
-    · exact fun ⟨_, hφ⟩ ↦ hφ.symm
+    · rintro rfl
+      exact ⟨0, by rw [map_zero, map_zero]⟩
+    · rintro ⟨y, hy⟩
+      apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M 0).inv).1 inferInstance
+      rw [← hy]
+      simp only [ModuleCat.hom_zero, LinearMap.zero_apply, map_zero]
   | succ n =>
     rw [cyclicCoboundaries_succ, LinearMap.mem_range, CochainComplex.prev_nat_succ]
     constructor
