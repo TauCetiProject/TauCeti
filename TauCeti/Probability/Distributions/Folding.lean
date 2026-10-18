@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Measure.WithDensity
-public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Density
-public import TauCeti.Probability.Quantile
 
 /-!
 # Folding a real law
