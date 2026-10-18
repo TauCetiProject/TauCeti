@@ -153,6 +153,30 @@ theorem charpolyRev_fromBlocks_zero₁₂ (A : Matrix ι ι R) (C' : Matrix κ �
   rw [← charpolyRev_transpose, fromBlocks_transpose, transpose_zero,
     charpolyRev_fromBlocks_zero₂₁, charpolyRev_transpose, charpolyRev_transpose]
 
+omit [Fintype ι] [Fintype κ] in
+/-- Compressing an upper block-triangular matrix to a disjoint sum of finite coordinate sets
+gives the product of the reversed characteristic polynomials of its diagonal compressions. -/
+@[simp]
+theorem charpolyRev_submatrix_fromBlocks_zero₂₁
+    (A : Matrix ι ι R) (B : Matrix ι κ R) (D : Matrix κ κ R)
+    (s : Finset ι) (t : Finset κ) :
+    ((fromBlocks A B 0 D).submatrix
+      (Subtype.val : s.disjSum t → ι ⊕ κ) Subtype.val).charpolyRev =
+      (A.submatrix (Subtype.val : s → ι) Subtype.val).charpolyRev *
+        (D.submatrix (Subtype.val : t → κ) Subtype.val).charpolyRev := by
+  let e : s.disjSum t ≃ s ⊕ t :=
+    Equiv.subtypeSum.trans (Equiv.sumCongr
+      (Equiv.subtypeEquivRight fun _ ↦ Finset.inl_mem_disjSum)
+      (Equiv.subtypeEquivRight fun _ ↦ Finset.inr_mem_disjSum))
+  rw [← charpolyRev_reindex e]
+  have hmatrix : reindex e e ((fromBlocks A B 0 D).submatrix
+      (Subtype.val : s.disjSum t → ι ⊕ κ) Subtype.val) =
+      fromBlocks (A.submatrix Subtype.val Subtype.val)
+        (B.submatrix Subtype.val Subtype.val) 0 (D.submatrix Subtype.val Subtype.val) := by
+    ext i j
+    rcases i with i | i <;> rcases j with j | j <;> rfl
+  rw [hmatrix, charpolyRev_fromBlocks_zero₂₁]
+
 /-- `det (1 - X A)` of a block-triangular matrix is the product of `det (1 - X A_a)` over its
 diagonal blocks `A_a`. -/
 theorem BlockTriangular.charpolyRev {α : Type*} [LinearOrder α] {b : ι → α} {A : Matrix ι ι R}
