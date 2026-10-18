@@ -60,6 +60,8 @@ natural family, a family indexed by the objects of `C`, is again a module in tha
 
 ## References
 
+* `TauCeti.CategoryTheory.DG.AdditiveClosure`, whose explicit construction through
+  `DGCategoryData.toDGCategory` is followed here.
 * B. Keller, *Deriving DG categories*, Section 1.
 * V. Drinfeld, *DG quotients of DG categories*, Section 2.
 -/
@@ -313,8 +315,9 @@ theorem dgApp_apply {F G : DGFunctor R C D} {n : ℤ} (η : DGHom R n F G) (X : 
 /-- The components of the morphism determined by a natural family are the members of the
 family. -/
 @[simp]
-theorem dgApp_dgHomEquiv_symm {F G : DGFunctor R C D} {n : ℤ} (η : natTransSubmodule F G n)
-    (X : C) : dgApp R n X ((dgHomEquiv R F G n).symm η) = η.1 X :=
+theorem dgApp_dgHomEquiv_symm_apply {F G : DGFunctor R C D} {n : ℤ}
+    (η : natTransSubmodule F G n) (X : C) :
+    dgApp R n X ((dgHomEquiv R F G n).symm η) = η.1 X :=
   (rfl)
 
 /-- The components of a morphism of DG functors form a natural family. -/
@@ -408,7 +411,7 @@ noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
         ⟨fun X ↦ dgClosedHom R (ForgetEnrichment.homOf _ (α.app X)),
           isNatural_dgClosedHom_app R α⟩,
       (mem_dgCycles R).mpr (dgHom_ext R fun X ↦ by
-        rw [dgApp_dgDifferential, dgApp_dgHomEquiv_symm, map_zero]
+        rw [dgApp_dgDifferential, dgApp_dgHomEquiv_symm_apply, map_zero]
         exact (mem_dgCycles R).mp (dgClosedHom_mem_dgCycles R _))⟩
   invFun η :=
     { app X := ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ)
@@ -428,12 +431,16 @@ noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
           dgComp_dgMap_dgApp R η.1 f (add_zero p) (zero_add p), mul_zero, Int.negOnePow_zero,
           one_smul] }
   left_inv α := GradedNatTrans.ext <| funext fun X ↦ by
+    -- Reducing the equivalence application and its subtype coercions exposes the two canonical
+    -- conversions from an enriched component to a closed DG morphism and back.
     change ForgetEnrichment.homTo _ (dgClosedHomOf R
       (dgClosedHom R (ForgetEnrichment.homOf _ (α.app X))) _) = α.app X
     exact (congrArg (ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ))
       (dgClosedHomOf_dgClosedHom R (ForgetEnrichment.homOf _ (α.app X)))).trans
         (ForgetEnrichment.homTo_homOf _ _)
   right_inv η := Subtype.ext <| dgHom_ext R fun X ↦ by
+    -- Componentwise extensionality reduces the equivalence wrappers to the reverse round trip:
+    -- first `homTo`/`homOf`, then `dgClosedHomOf`/`dgClosedHom`.
     change dgClosedHom R (ForgetEnrichment.homOf _
       (ForgetEnrichment.homTo _ (dgClosedHomOf R (dgApp R 0 X η.1) _))) = dgApp R 0 X η.1
     exact (congrArg (dgClosedHom R)
@@ -446,10 +453,10 @@ variable {F G}
 /-- The components of the closed morphism determined by a DG natural transformation `α` are the
 closed morphisms underlying the components of `α`. -/
 @[simp]
-theorem dgApp_homEquivDGCycles (α : F ⟶ G) (X : C) :
+theorem dgApp_homEquivDGCycles_apply (α : F ⟶ G) (X : C) :
     dgApp R 0 X (homEquivDGCycles R F G α : DGHom R 0 F G) =
       dgClosedHom R (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ) (α.app X)) :=
-  dgApp_dgHomEquiv_symm R _ X
+  dgApp_dgHomEquiv_symm_apply R _ X
 
 /-- The components of the DG natural transformation determined by a closed morphism `η` are the
 components of `η`, regarded as maps from the tensor unit. -/
@@ -466,7 +473,7 @@ functors. -/
 theorem homEquivDGCycles_id :
     (homEquivDGCycles R F F (𝟙 F) : DGHom R 0 F F) = dgId R F :=
   dgHom_ext R fun X ↦ by
-    rw [dgApp_homEquivDGCycles, dgApp_dgId]
+    rw [dgApp_homEquivDGCycles_apply, dgApp_dgId]
     exact (congrArg (fun a ↦ dgClosedHom R (ForgetEnrichment.homOf _ a))
       (DGNatTrans.id_app F.toEnrichedFunctor X)).trans
       ((congrArg (dgClosedHom R) (ForgetEnrichment.homOf_eId _ _)).trans (dgClosedHom_id R _))
@@ -479,8 +486,8 @@ theorem homEquivDGCycles_comp {H : DGFunctor R C D} (α : F ⟶ G) (β : G ⟶ H
       dgCompZero R (homEquivDGCycles R F G α : DGHom R 0 F G)
         (homEquivDGCycles R G H β : DGHom R 0 G H) :=
   dgHom_ext R fun X ↦ by
-    rw [dgCompZero_def, dgApp_dgComp, dgApp_homEquivDGCycles, dgApp_homEquivDGCycles,
-      dgApp_homEquivDGCycles]
+    rw [dgCompZero_def, dgApp_dgComp, dgApp_homEquivDGCycles_apply,
+      dgApp_homEquivDGCycles_apply, dgApp_homEquivDGCycles_apply]
     exact (congrArg (fun a ↦ dgClosedHom R (ForgetEnrichment.homOf _ a))
       (DGNatTrans.comp_app α β X)).trans ((dgClosedHom_comp R _ _).trans (dgCompZero_def R _ _))
 
