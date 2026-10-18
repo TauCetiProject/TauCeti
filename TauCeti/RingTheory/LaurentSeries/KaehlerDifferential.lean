@@ -32,9 +32,9 @@ its universal derivation `d = TauCeti.ContinuousKaehlerDifferential.D K`, and sh
   `ℓ : Ω¹_cont(F/K) → M` an `F`-linear map, which is automatically continuous. Conversely every
   `ℓ ∘ d` is continuous. So `d` is the universal continuous derivation.
 
-The case `M = F` is `Derivation.eq_smul_laurentSeriesDerivation`; the general case reduces to it
-through the coordinate functionals of a basis of `M`, which are continuous for the module
-topology.
+The classification of such derivations is
+`Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul`, from
+`LaurentSeries.ContinuousDerivation`.
 
 ## Main definitions
 
@@ -47,8 +47,6 @@ topology.
 
 ## Main results
 
-* `Derivation.apply_eq_laurentSeriesDerivation_smul`: a continuous `K`-derivation `δ` of `F` into
-  a module with its module topology satisfies `δ f = D f • δ X`.
 * `TauCeti.ContinuousKaehlerDifferential.continuous_D`: the universal derivation is continuous.
 * `TauCeti.ContinuousKaehlerDifferential.existsUnique_compDer_eq`: every continuous derivation
   factors uniquely through `d`.
@@ -59,39 +57,14 @@ public section
 open HahnSeries
 open scoped LaurentSeries
 
-namespace Derivation
-
-variable {K : Type*} [Field K] {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
-  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [IsModuleTopology K⸨X⸩ M]
-
-/-- **Continuous derivations of Laurent series into a topological module.** A `K`-derivation
-`δ : K⸨X⸩ → M` into a `K⸨X⸩`-module with its module topology that is continuous for the valuation
-topology satisfies `δ f = D f • δ X`, where `D` is the formal derivative. -/
-theorem apply_eq_laurentSeriesDerivation_smul (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
-    (f : K⸨X⸩) : δ f = TauCeti.laurentSeriesDerivation K f • δ (single 1 1) := by
-  let b := Module.Free.chooseBasis K⸨X⸩ M
-  refine b.ext_elem fun i ↦ ?_
-  -- Each coordinate of `δ` is a continuous derivation of `K⸨X⸩` into itself.
-  have hc : Continuous ((b.coord i).compDer δ) :=
-    (IsModuleTopology.continuous_of_linearMap (b.coord i)).comp hδ
-  simpa [mul_comm] using congr($(((b.coord i).compDer δ).eq_smul_laurentSeriesDerivation hc) f)
-
-/-- A `K`-derivation of `K⸨X⸩` into a `K⸨X⸩`-module with its module topology is continuous if and
-only if it is `f ↦ D f • m` for some `m`, where `D` is the formal derivative. -/
-theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Derivation K K⸨X⸩ M} :
-    Continuous δ ↔ ∃ m : M, ∀ f, δ f = TauCeti.laurentSeriesDerivation K f • m := by
-  refine ⟨fun hδ ↦ ⟨_, δ.apply_eq_laurentSeriesDerivation_smul hδ⟩, ?_⟩
-  rintro ⟨m, hm⟩
-  have h : (δ : K⸨X⸩ → M) = fun f ↦ LaurentSeries.derivative K f • m :=
-    funext fun f ↦ by simp [hm]
-  rw [h]
-  exact LaurentSeries.continuous_derivative.smul continuous_const
-
-end Derivation
-
 namespace TauCeti
 
 variable (K : Type*) [Field K]
+
+/-- The map `f dg ↦ f * D g` from the Kähler differentials is surjective: `f dX ↦ f`. -/
+theorem laurentSeriesDerivation_liftKaehlerDifferential_surjective :
+    Function.Surjective (laurentSeriesDerivation K).liftKaehlerDifferential :=
+  fun f ↦ ⟨f • KaehlerDifferential.D K K⸨X⸩ (single 1 1), by simp⟩
 
 /-- The **continuous Kähler differentials** `Ω¹_cont(K⸨X⸩/K)`: the quotient of the Kähler
 differentials `Ω[K⸨X⸩⁄K]` by the kernel of the `K⸨X⸩`-linear map `f dg ↦ f * D g` induced by the
@@ -125,8 +98,8 @@ noncomputable instance : TopologicalSpace (ContinuousKaehlerDifferential K) :=
 
 instance : IsModuleTopology K⸨X⸩ (ContinuousKaehlerDifferential K) := ⟨rfl⟩
 
-instance : ContinuousAdd (ContinuousKaehlerDifferential K) :=
-  IsModuleTopology.toContinuousAdd K⸨X⸩ _
+instance : IsTopologicalAddGroup (ContinuousKaehlerDifferential K) :=
+  IsModuleTopology.isTopologicalAddGroup K⸨X⸩ _
 
 /-- The quotient map from the Kähler differentials to the continuous differentials. -/
 noncomputable def mk : Ω[K⸨X⸩⁄K] →ₗ[K⸨X⸩] ContinuousKaehlerDifferential K :=
@@ -148,11 +121,6 @@ noncomputable def D : Derivation K K⸨X⸩ (ContinuousKaehlerDifferential K) :=
 theorem D_apply (f : K⸨X⸩) : D K f = mk K (KaehlerDifferential.D K K⸨X⸩ f) :=
   (rfl)
 
-/-- The map `f dg ↦ f * D g` from the Kähler differentials is surjective: `f dX ↦ f`. -/
-theorem surjective_liftKaehlerDifferential :
-    Function.Surjective (laurentSeriesDerivation K).liftKaehlerDifferential :=
-  fun f ↦ ⟨f • KaehlerDifferential.D K K⸨X⸩ (single 1 1), by simp⟩
-
 /-- **Continuous one-forms are multiples of `dX`.** The equivalence `Ω¹_cont(K⸨X⸩/K) ≃ K⸨X⸩`
 induced by the formal derivative, sending `f dg` to `f * D g` and `d X` to `1`. It is a
 homeomorphism for the module topology on the differentials and the valuation topology on
@@ -161,7 +129,7 @@ noncomputable def equivLaurentSeries :
     ContinuousKaehlerDifferential K ≃L[K⸨X⸩] K⸨X⸩ :=
   let e : ContinuousKaehlerDifferential K ≃ₗ[K⸨X⸩] K⸨X⸩ :=
     (laurentSeriesDerivation K).liftKaehlerDifferential.quotKerEquivOfSurjective
-      (surjective_liftKaehlerDifferential K)
+      (laurentSeriesDerivation_liftKaehlerDifferential_surjective K)
   { e with
     continuous_toFun := IsModuleTopology.continuous_of_linearMap e.toLinearMap
     continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }
