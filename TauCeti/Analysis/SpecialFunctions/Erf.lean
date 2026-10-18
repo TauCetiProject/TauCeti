@@ -37,14 +37,13 @@ derivative is the fundamental theorem of calculus for a continuous integrand.
 * `TauCeti.Real.strictMono_erf` — it is strictly monotone.
 * `TauCeti.Real.tendsto_erf_atTop` and `TauCeti.Real.tendsto_erf_atBot` — its limits are `1` and
   `-1`, whence `TauCeti.Real.abs_erf_lt_one`.
-* `TauCeti.Real.range_erf` and `TauCeti.Real.erfOrderIso` — the range of `erf` is `(-1, 1)`, and
+* `Real.range_erf` and `Real.erfOrderIso` — the range of `erf` is `(-1, 1)`, and
   `erf` is an order isomorphism onto it.
-* `TauCeti.Real.erfInv` — the inverse error function, `0` outside `(-1, 1)`, with the inverse
-  identities `TauCeti.Real.erf_erfInv` and `TauCeti.Real.erfInv_erf` and the characterization
-  `TauCeti.Real.erfInv_le_iff`.
-* `TauCeti.Real.strictMonoOn_erfInv`, `TauCeti.Real.continuousOn_erfInv`,
-  `TauCeti.Real.measurable_erfInv`, `TauCeti.Real.hasDerivAt_erfInv`,
-  `TauCeti.Real.tendsto_erfInv_nhdsLT_one` and `TauCeti.Real.tendsto_erfInv_nhdsGT_neg_one` —
+* `Real.erfInv` — the inverse error function, `0` outside `(-1, 1)`, with the inverse identities
+  `Real.erf_erfInv` and `Real.erfInv_erf` and the characterization `Real.erfInv_le_iff`.
+* `Real.strictMonoOn_erfInv`, `Real.continuousOn_erfInv`, `Real.measurable_erfInv`,
+  `Real.hasDerivAt_erfInv`, `Real.tendsto_erfInv_nhdsLT_one` and
+  `Real.tendsto_erfInv_nhdsGT_neg_one` —
   monotonicity, regularity, the derivative, and the limits `±∞` at `±1`.
 -/
 
@@ -216,7 +215,18 @@ theorem erfc_pos (x : ℝ) : 0 < erfc x := by
 theorem erfc_lt_two (x : ℝ) : erfc x < 2 := by
   rw [erfc_def]; linarith [neg_one_lt_erf x]
 
+end Real
+
+end TauCeti
+
+namespace Real
+
+open TauCeti.Real
+
 /-! ## The inverse error function -/
+
+/- The construction below follows Mathlib's `Real.tanOrderIso` and its totalized inverse
+`Real.arctan`. -/
 
 /-- The error function maps the real line onto the open interval `(-1, 1)`. -/
 @[simp]
@@ -232,7 +242,7 @@ theorem range_erf : range erf = Ioo (-1) 1 := by
 def erfOrderIso : ℝ ≃o Ioo (-1 : ℝ) 1 :=
   (strictMono_erf.orderIso erf).trans (Set.orderIsoOfEq _ _ range_erf)
 
-/-- `TauCeti.Real.erfOrderIso` evaluates to the error function. -/
+/-- `Real.erfOrderIso` evaluates to the error function. -/
 @[simp]
 theorem coe_erfOrderIso_apply (x : ℝ) : (erfOrderIso x : ℝ) = erf x := (rfl)
 
@@ -243,7 +253,7 @@ def erfInv (y : ℝ) : ℝ :=
 
 variable {x y : ℝ}
 
-/-- On `(-1, 1)`, the inverse error function is the inverse of `TauCeti.Real.erfOrderIso`. -/
+/-- On `(-1, 1)`, the inverse error function is the inverse of `Real.erfOrderIso`. -/
 @[simp]
 theorem erfOrderIso_symm_apply (y : Ioo (-1 : ℝ) 1) : erfOrderIso.symm y = erfInv y := by
   rw [erfInv, dite_eq_left y.2]
@@ -282,16 +292,16 @@ theorem erfInv_le_iff (hy : y ∈ Ioo (-1) 1) : erfInv y ≤ x ↔ y ≤ erf x :
   conv_rhs => rw [← erf_erfInv hy]
   exact strictMono_erf.le_iff_le.symm
 
-/-- The strict form of `TauCeti.Real.erfInv_le_iff`. -/
+/-- The strict form of `Real.erfInv_le_iff`. -/
 theorem erfInv_lt_iff (hy : y ∈ Ioo (-1) 1) : erfInv y < x ↔ y < erf x := by
   conv_rhs => rw [← erf_erfInv hy]
   exact strictMono_erf.lt_iff_lt.symm
 
-/-- The negation of `TauCeti.Real.erfInv_le_iff`. -/
+/-- The negation of `Real.erfInv_le_iff`. -/
 theorem lt_erfInv_iff (hy : y ∈ Ioo (-1) 1) : x < erfInv y ↔ erf x < y := by
   simpa only [not_le] using (erfInv_le_iff hy).not
 
-/-- The negation of `TauCeti.Real.erfInv_lt_iff`. -/
+/-- The negation of `Real.erfInv_lt_iff`. -/
 theorem le_erfInv_iff (hy : y ∈ Ioo (-1) 1) : x ≤ erfInv y ↔ erf x ≤ y := by
   simpa only [not_lt] using (erfInv_lt_iff hy).not
 
@@ -359,5 +369,3 @@ theorem hasDerivAt_erfInv (hy : y ∈ Ioo (-1) 1) :
   (hasStrictDerivAt_erfInv hy).hasDerivAt
 
 end Real
-
-end TauCeti

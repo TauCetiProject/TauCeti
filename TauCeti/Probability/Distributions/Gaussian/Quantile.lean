@@ -12,7 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Cdf
 # The quantile function of a real Gaussian law
 
 This file computes `MeasureTheory.Measure.quantile (gaussianReal m v)` in closed form through the
-inverse error function `TauCeti.Real.erfInv`. For a level `0 < u < 1` the quantile is
+inverse error function `Real.erfInv`. For a level `0 < u < 1` the quantile is
 `m + √(2 * v) * erfInv (2 * u - 1)`, which inverts the cdf `(1 + erf ((x - m) / √(2 * v))) / 2`.
 At the singular boundary `v = 0` the law is the Dirac mass at `m` and the same formula gives the
 constant quantile `m`.
