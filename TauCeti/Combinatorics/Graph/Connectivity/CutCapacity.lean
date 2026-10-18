@@ -61,7 +61,6 @@ theorem crosses_compl (p : Sym2 V) (S : Set V) : p.Crosses Sᶜ ↔ p.Crosses S 
       tauto
 
 /-- A diagonal unordered pair crosses no set. -/
-@[simp]
 theorem not_crosses_diag (x : V) (S : Set V) : ¬s(x, x).Crosses S := by
   simp
 
