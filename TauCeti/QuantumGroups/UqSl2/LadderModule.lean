@@ -10,7 +10,6 @@ public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
-import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Tactic
 
 /-!
