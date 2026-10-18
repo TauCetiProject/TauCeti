@@ -16,9 +16,10 @@ which has Gamma law with the sum of the shapes and the original rate. In particu
 normalized law does not depend on the common rate. The total is almost surely positive, so the
 zero-denominator value of `dirichletNormalize` does not contribute to any of these laws.
 
-The primary result is `map_normalize_sum_pi_gammaMeasure`. The random-variable versions give
-the joint law, the Dirichlet marginal, and independence. These identities allow one to separate
-the proportions and magnitude of a Gamma vector, including when there is only one coordinate.
+The primary result is `map_dirichletNormalize_sum_pi_gammaMeasure`. The random-variable versions
+give the joint law, the Dirichlet marginal, and independence. These identities allow one to
+separate the proportions and magnitude of a Gamma vector, including when there is only one
+coordinate.
 
 The proof uses the change of variables in `Dirichlet.Density`: the total and the deleted
 coordinates have a product density. Common-rate scaling then gives the result at every positive
@@ -40,7 +41,7 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
 
-private theorem map_normalize_sum_pi_gammaMeasure_one {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+private theorem map_dirichletNormalize_sum_pi_gammaMeasure_one {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     (Measure.pi fun i ↦ gammaMeasure (a i) 1).map
         (fun x ↦ (dirichletNormalize x, ∑ i, x i)) =
       (dirichletMeasure a).prod (gammaMeasure (∑ i, a i) 1) := by
@@ -55,13 +56,7 @@ private theorem map_normalize_sum_pi_gammaMeasure_one {a : ι → ℝ} (ha : ∀
         ((fun z ↦ (dirichletChart i₀ z.2, z.1)) ∘ dirichletChartCoords i₀) := by
       rw [← hsplit.map_eq, Measure.map_map
         (hchart.comp (measurable_dirichletChartCoords i₀)) hsplit.measurable]
-      apply Measure.map_congr
-      filter_upwards [ae_pos_pi_gammaMeasure a fun _ ↦ 1] with x hx
-      apply Prod.ext
-      · exact dirichletNormalize_eq_dirichletChart i₀
-          (Finset.sum_pos (fun i _ ↦ hx i) Finset.univ_nonempty).ne'
-      · simp [Function.comp_apply, Equiv.piSplitAt_apply,
-          ← Fintype.sum_eq_add_sum_subtype_ne (fun i ↦ x i) i₀]
+      exact Measure.map_congr (ae_dirichletNormalize_sum_eq_dirichletChart a (fun _ ↦ 1) i₀)
     _ = ((gammaMeasure (∑ i, a i) 1).prod
           ((volume : Measure ({i // i ≠ i₀} → ℝ)).withDensity (dirichletChartPDF a i₀))).map
         (fun z ↦ (dirichletChart i₀ z.2, z.1)) := by
@@ -77,7 +72,7 @@ private theorem map_normalize_sum_pi_gammaMeasure_one {a : ι → ℝ} (ha : ∀
 
 /-- The normalized coordinates and the total of independent Gamma laws at a common positive
 rate have the product of a Dirichlet law and a Gamma law. -/
-theorem map_normalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
+theorem map_dirichletNormalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
     (ha : ∀ i, 0 < a i) (hr : 0 < r) :
     (Measure.pi fun i ↦ gammaMeasure (a i) r).map
         (fun x ↦ (dirichletNormalize x, ∑ i, x i)) =
@@ -100,7 +95,8 @@ theorem map_normalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
       rw [← hscale, Measure.map_map (by fun_prop) (by fun_prop), Function.comp_def, hcomm]
     _ = ((dirichletMeasure a).prod (gammaMeasure (∑ i, a i) 1)).map
         (Prod.map id (r⁻¹ * ·)) := by
-      rw [← Measure.map_map (by fun_prop) (by fun_prop), map_normalize_sum_pi_gammaMeasure_one ha]
+      rw [← Measure.map_map (by fun_prop) (by fun_prop),
+        map_dirichletNormalize_sum_pi_gammaMeasure_one ha]
     _ = _ := by
       rw [← Measure.map_prod_map _ _ measurable_id (measurable_const_mul r⁻¹), Measure.map_id,
         gammaMeasure_map_const_mul hA one_pos (inv_pos.mpr hr)]
@@ -108,12 +104,12 @@ theorem map_normalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
 
 /-- Normalizing independent Gamma coordinates gives a Dirichlet law at every common positive
 rate. -/
-theorem map_normalize_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
+theorem map_dirichletNormalize_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
     (ha : ∀ i, 0 < a i) (hr : 0 < r) :
     (Measure.pi fun i ↦ gammaMeasure (a i) r).map dirichletNormalize = dirichletMeasure a := by
   have hA : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty
   let _ := isProbabilityMeasure_gammaMeasure hA hr
-  have h := congrArg (Measure.map Prod.fst) (map_normalize_sum_pi_gammaMeasure ha hr)
+  have h := congrArg (Measure.map Prod.fst) (map_dirichletNormalize_sum_pi_gammaMeasure ha hr)
   rw [Measure.map_map measurable_fst (by fun_prop)] at h
   simpa only [Function.comp_def, Measure.map_fst_prod, measure_univ, one_smul] using h
 
@@ -122,28 +118,28 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω
 
 /-- The proportions and total of independent Gamma random variables have the joint
 Dirichlet–Gamma product law. -/
-theorem hasLaw_normalize_sum_gammaMeasure_of_iIndepFun (ha : ∀ i, 0 < a i) (hr : 0 < r)
+theorem hasLaw_dirichletNormalize_sum_gammaMeasure_of_iIndepFun (ha : ∀ i, 0 < a i) (hr : 0 < r)
     (h_ind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
     HasLaw (fun ω ↦ (dirichletNormalize (fun i ↦ X i ω), ∑ i, X i ω))
       ((dirichletMeasure a).prod (gammaMeasure (∑ i, a i) r)) P := by
   have hmap : HasLaw (fun x : ι → ℝ ↦ (dirichletNormalize x, ∑ i, x i))
       ((dirichletMeasure a).prod (gammaMeasure (∑ i, a i) r))
       (Measure.pi fun i ↦ gammaMeasure (a i) r) :=
-    ⟨by fun_prop, map_normalize_sum_pi_gammaMeasure ha hr⟩
+    ⟨by fun_prop, map_dirichletNormalize_sum_pi_gammaMeasure ha hr⟩
   exact hmap.fun_comp (h_ind.hasLaw_pi hX)
 
 /-- The normalized vector of independent Gamma random variables has Dirichlet law. -/
-theorem hasLaw_normalize_gammaMeasure_of_iIndepFun (ha : ∀ i, 0 < a i) (hr : 0 < r)
+theorem hasLaw_dirichletNormalize_gammaMeasure_of_iIndepFun (ha : ∀ i, 0 < a i) (hr : 0 < r)
     (h_ind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
     HasLaw (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) (dirichletMeasure a) P := by
   have hmap : HasLaw dirichletNormalize (dirichletMeasure a)
       (Measure.pi fun i ↦ gammaMeasure (a i) r) :=
-    ⟨measurable_dirichletNormalize.aemeasurable, map_normalize_pi_gammaMeasure ha hr⟩
+    ⟨measurable_dirichletNormalize.aemeasurable, map_dirichletNormalize_pi_gammaMeasure ha hr⟩
   exact hmap.fun_comp (h_ind.hasLaw_pi hX)
 
 /-- The normalized vector of independent Gamma random variables is independent of their total.
 This includes a one-coordinate family, whose normalized vector is constant. -/
-theorem indepFun_normalize_sum_of_hasLaw_gammaMeasure (ha : ∀ i, 0 < a i) (hr : 0 < r)
+theorem indepFun_dirichletNormalize_sum_of_hasLaw_gammaMeasure (ha : ∀ i, 0 < a i) (hr : 0 < r)
     (h_ind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
     IndepFun (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) (fun ω ↦ ∑ i, X i ω) P := by
   let _ : IsProbabilityMeasure P := h_ind.isProbabilityMeasure
@@ -151,7 +147,7 @@ theorem indepFun_normalize_sum_of_hasLaw_gammaMeasure (ha : ∀ i, 0 < a i) (hr 
     h_ind.hasLaw_sum_gammaMeasure hr Finset.univ_nonempty
       (fun i _ ↦ ha i) (fun i _ ↦ hX i)
   exact (indepFun_iff_hasLaw_prodMk_prod
-    (hasLaw_normalize_gammaMeasure_of_iIndepFun ha hr h_ind hX) hsum).2
-      (hasLaw_normalize_sum_gammaMeasure_of_iIndepFun ha hr h_ind hX)
+    (hasLaw_dirichletNormalize_gammaMeasure_of_iIndepFun ha hr h_ind hX) hsum).2
+      (hasLaw_dirichletNormalize_sum_gammaMeasure_of_iIndepFun ha hr h_ind hX)
 
 end TauCeti.Probability
