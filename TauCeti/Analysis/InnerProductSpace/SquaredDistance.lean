@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
-public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Analysis.Complex.Pseudoconvex
 
 /-!
