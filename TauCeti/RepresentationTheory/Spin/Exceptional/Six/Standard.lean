@@ -14,9 +14,9 @@ import TauCeti.RepresentationTheory.Intertwining
 # The standard half-spin modules in dimension six
 
 The matrix-product model of the even Clifford algebra of three hyperbolic planes reads its first
-factor on the even half-spin module. Under the resulting equivalence `Spin₆ ≃ SL₄`, this realizes
-the even half-spin representation as the standard four-dimensional representation. The odd
-half-spin representation is its dual by reversal.
+factor on the even half-spin module. Under the resulting equivalence `Spin₆ ≃ SL₄`, this
+realizes the even half-spin representation as the standard four-dimensional representation. The
+odd half-spin representation is its dual by reversal.
 
 The comparison is stated over any field of characteristic different from two. It uses the
 canonical split polarization of `splitEvenForm K 3`, so the chosen coordinates agree with the
@@ -41,7 +41,35 @@ namespace TauCeti
 
 open Module
 
-universe u
+universe u v
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V}
+
+/-- A matrix formula for the even half-spin action identifies that representation with the
+standard representation pulled back along the corresponding special-linear equivalence. -/
+theorem nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action
+    {n : ℕ} {P : SpinPolarizationData Q} (hline : P.line = ⊥)
+    (b : Basis (Fin n) K (spinPlus Q P))
+    (f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin n) K)
+    (hmatrix : ∀ s : spinGroup Q,
+      (f s : Matrix (Fin n) (Fin n) K) =
+        LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s))) :
+    Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
+      ((stdSLRep K n).comp f.toMonoidHom)) := by
+  let ep : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
+    LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
+  refine ⟨Representation.Equiv.ofBasisAction _ _ ep.symm b
+    (fun s ↦ spinPlusAction Q P hline (spinGroupToEven Q s)) ?_ ?_⟩
+  · intro s x
+    apply Subtype.ext
+    simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
+      (coe_spinPlusAction_spinGroupToEven_apply P hline s (ep.symm x)).symm
+  · intro s x
+    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, stdSLRep_apply_apply]
+    rw [hmatrix]
+    exact LinearMap.toMatrix_mulVec_repr b b
+      (spinPlusAction Q P hline (spinGroupToEven Q s)) x
 
 variable (K : Type u) [Field K]
 
@@ -109,23 +137,9 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdSLRep :
   let hline := splitEvenPolarization_line K 3
   let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
     (hyperbolicSix_spinPlus_finrank K)
-  let ep : spinPlus (splitEvenForm K 3) P ≃ₗ[K]
-      (spinPlusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
-  refine ⟨Representation.Equiv.ofBasisAction _
-    ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom) ep.symm b
-    (fun g ↦ spinPlusAction (splitEvenForm K 3) P hline
-      (spinGroupToEven (splitEvenForm K 3) g)) ?_ ?_⟩
-  · intro g s
-    apply Subtype.ext
-    simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-      (coe_spinPlusAction_spinGroupToEven_apply P hline g (ep.symm s)).symm
-  · intro g s
-    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, stdSLRep_apply_apply]
-    rw [hyperbolicSixSpinEquivSpecialLinear_eq_toMatrix]
-    exact LinearMap.toMatrix_mulVec_repr b b
-      (spinPlusAction (splitEvenForm K 3) P hline
-        (spinGroupToEven (splitEvenForm K 3) g)) s
+  exact nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b
+    (hyperbolicSixSpinEquivSpecialLinear K)
+      (hyperbolicSixSpinEquivSpecialLinear_eq_toMatrix K)
 
 /-- For three hyperbolic planes, the even half-spin representation is the standard
 four-dimensional representation pulled back along `hyperbolicSixSpinEquivSpecialLinear`, and the

@@ -10,33 +10,38 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 import TauCeti.RepresentationTheory.Intertwining
-import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
+import TauCeti.RepresentationTheory.Spin.Exceptional.Six.Standard
 
 /-!
 # The standard half-spin modules of a polarized six-dimensional space
 
-Polarization identifies the even Clifford algebra of a six-dimensional quadratic space with a
-product of two four-by-four matrix algebras. Its first factor gives an equivalence from the Spin
-group to `SL₄`, under which the even half-spin module is the standard representation. The odd
-half-spin module is its dual.
+Over a field of characteristic different from two, polarization identifies the even Clifford
+algebra of a six-dimensional quadratic space with a product of two four-by-four matrix algebras.
+Its first factor gives an equivalence from the Spin group to `SL₄`, under which the even
+half-spin module is the standard representation. The odd half-spin module is its dual.
 
 This packages the group equivalence and both representation equivalences together, ensuring that
 all three use the same noncanonical choice of basis for the even half-spin module.
 
 ## Main result
 
-* `exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_std_dual_of_finrank_eq_six`:
-  a polarization of a six-dimensional quadratic space identifies its Spin group with `SL₄`, its
-  even half-spin representation with the standard module, and its odd half-spin representation
-  with the dual standard module.
-* `exists_polarized_spinGroupEquivSL4_and_halfSpin_equiv_std_dual_of_finrank_eq_six`: over a
-  separably closed field, a nondegenerate six-dimensional quadratic space admits such a
-  polarization and comparison.
+* `exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual`:
+  a polarization of a six-dimensional quadratic space over a field of characteristic different
+  from two identifies its Spin group with `SL₄`, its even half-spin representation with the
+  standard module, and its odd half-spin representation with the dual standard module.
+* `exists_polarized_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual`:
+  over a separably closed field of characteristic different from two, a nondegenerate
+  six-dimensional quadratic space admits such a polarization and comparison.
 
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 20.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
+* `TauCeti.RepresentationTheory.Spin.Exceptional.Six.Standard` supplies the split half-spin
+  comparison generalized here.
+* `TauCeti.RepresentationTheory.Spin.Exceptional.Six.Group` supplies the arbitrary-form group
+  endpoint; `SpecialLinear` and `HalfSpinDual` supply the group construction and half-spin
+  duality used below.
 -/
 
 public section
@@ -50,10 +55,15 @@ universe u v
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V}
 
-/-- A polarization of a six-dimensional quadratic space identifies its Spin group with `SL₄` so
-that the even half-spin representation is standard and the odd half-spin representation is its
-dual. The group and representation equivalences use the same noncanonical basis choice. -/
-theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_std_dual_of_finrank_eq_six
+-- Formal lineage: the split comparison was introduced in Tau Ceti PR #16324, and the
+-- arbitrary-form group endpoint in `Six.Group` was introduced in Tau Ceti PR #17008.
+
+/-- Over a field of characteristic different from two, a polarization of a six-dimensional
+quadratic space identifies its Spin group with `SL₄` so that the even half-spin representation
+is standard and the odd half-spin representation is its dual. The group and representation
+equivalences use the same noncanonical basis choice. -/
+theorem
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
     [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6) :
     ∃ hline : P.line = ⊥, ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K,
       Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
@@ -128,37 +138,19 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_std_dual
       exact LinearEquiv.apply_symm_apply (LinearMap.toMatrix b b)
         (A : Matrix (Fin 4) (Fin 4) K)
   let φ := MulEquiv.ofBijective f hf_bijective
-  let ep : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
-  let eplus :
-      (spinPlusSubrep P hline).toRepresentation.Equiv
-        ((stdSLRep K 4).comp φ.toMonoidHom) :=
-    Representation.Equiv.ofBasisAction _ _ ep.symm b
-      (fun s ↦ spinPlusAction Q P hline (spinGroupToEven Q s))
-      (fun s x ↦ by
-        apply Subtype.ext
-        simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-          (coe_spinPlusAction_spinGroupToEven_apply P hline s (ep.symm x)).symm)
-      (fun s x ↦ by
-        simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, stdSLRep_apply_apply]
-        have hφ : (φ s : Matrix (Fin 4) (Fin 4) K) =
-            LinearMap.toMatrix b b
-              (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
-          rw [MulEquiv.ofBijective_apply]
-          exact hu s
-        rw [hφ]
-        exact LinearMap.toMatrix_mulVec_repr b b
-          (spinPlusAction Q P hline (spinGroupToEven Q s)) x)
+  obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b φ
+    (fun s ↦ by rw [MulEquiv.ofBijective_apply]; exact hu s)
   obtain ⟨hline', ⟨eminus⟩⟩ :=
     exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six P hV
   have hh : hline' = hline := Subsingleton.elim _ _
   cases hh
   exact ⟨hline, φ, ⟨eplus⟩, ⟨eminus.trans eplus.dual⟩⟩
 
-/-- A nondegenerate six-dimensional quadratic space over a separably closed field admits a
-polarization and an equivalence from its Spin group to `SL₄` under which the half-spin
-representations are the standard module and its dual. -/
-theorem exists_polarized_spinGroupEquivSL4_and_halfSpin_equiv_std_dual_of_finrank_eq_six
+/-- A nondegenerate six-dimensional quadratic space over a separably closed field of
+characteristic different from two admits a polarization and an equivalence from its Spin group to
+`SL₄` under which the half-spin representations are the standard module and its dual. -/
+theorem
+    exists_polarized_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
     [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
     ∃ P : SpinPolarizationData Q, ∃ hline : P.line = ⊥,
       ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K,
@@ -169,7 +161,7 @@ theorem exists_polarized_spinGroupEquivSL4_and_halfSpin_equiv_std_dual_of_finran
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let P := SpinPolarizationData.ofNondegenerate Q hQ
   obtain ⟨hline, f, hplus, hminus⟩ :=
-    exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_std_dual_of_finrank_eq_six
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
       P hV
   exact ⟨P, hline, f, hplus, hminus⟩
 
