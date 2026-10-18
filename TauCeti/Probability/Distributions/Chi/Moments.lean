@@ -43,7 +43,7 @@ private theorem mul_sqrt_rpow_ae_eq_gammaMeasure (hs : 0 < s) (q : ℝ) :
 @[simp]
 theorem integrable_rpow_chiMeasure_iff (hk : 0 < k) (hs : 0 < s) (q : ℝ) :
     Integrable (fun x : ℝ ↦ x ^ q) (chiMeasure k s) ↔ -k < q := by
-  rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
+  rw [chiMeasure_eq_map_gammaMeasure hk hs,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def]
   rw [integrable_congr (mul_sqrt_rpow_ae_eq_gammaMeasure hs q),
@@ -55,11 +55,11 @@ theorem integrable_rpow_chiMeasure_iff (hk : 0 < k) (hs : 0 < s) (q : ℝ) :
 theorem integral_rpow_chiMeasure (hk : 0 < k) (hs : 0 < s) (hq : -k < q) :
     ∫ x, x ^ q ∂chiMeasure k s =
       s ^ q * (2 : ℝ) ^ (q / 2) * Real.Gamma ((k + q) / 2) / Real.Gamma (k / 2) := by
-  rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
+  rw [chiMeasure_eq_map_gammaMeasure hk hs,
     integral_map (by fun_prop) (by fun_prop)]
   rw [integral_congr_ae (mul_sqrt_rpow_ae_eq_gammaMeasure hs q), integral_const_mul,
     integral_rpow_gammaMeasure (half_pos hk) one_half_pos (by linarith : -(k / 2) < q / 2)]
-  rw [one_div, inv_rpow (by norm_num), rpow_neg (by norm_num), inv_inv]
+  simp only [rpow_neg_eq_inv_rpow, inv_div, div_one]
   rw [show k / 2 + q / 2 = (k + q) / 2 by ring]
   ring
 
@@ -127,7 +127,7 @@ theorem integrable_exp_mul_chiMeasure (k s t : ℝ) :
   · simp [chiMeasure_of_neg hk]
   · rw [chiMeasure_zero hs]
     exact integrable_dirac (by simp)
-  · rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
+  · rw [chiMeasure_eq_map_gammaMeasure hk hs,
       integrable_map_measure (by fun_prop) (by fun_prop)]
     simp only [Function.comp_def]
     have hdom := (integrable_exp_mul_id_gammaMeasure (half_pos hk) one_half_pos

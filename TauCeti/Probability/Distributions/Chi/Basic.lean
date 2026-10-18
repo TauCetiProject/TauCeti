@@ -45,9 +45,14 @@ def chiMeasure (k s : ℝ) : Measure ℝ :=
   if 0 < s then (chiSquaredMeasure k).map (fun x ↦ s * √x) else 0
 
 /-- The defining square-root pushforward at positive scale. -/
-theorem chiMeasure_of_pos (hs : 0 < s) :
+theorem chiMeasure_of_scale_pos (hs : 0 < s) :
     chiMeasure k s = (chiSquaredMeasure k).map (fun x ↦ s * √x) := by
   simp only [chiMeasure, ite_eq_left hs]
+
+/-- At positive degrees and scale, the chi law is the scaled square-root image of a Gamma law. -/
+theorem chiMeasure_eq_map_gammaMeasure (hk : 0 < k) (hs : 0 < s) :
+    chiMeasure k s = (gammaMeasure (k / 2) (1 / 2)).map (fun x ↦ s * √x) := by
+  rw [chiMeasure_of_scale_pos hs, chiSquaredMeasure_eq_gammaMeasure hk]
 
 /-- Nonpositive scale gives the zero measure. -/
 @[simp]
@@ -62,12 +67,12 @@ theorem chiMeasure_of_neg (hk : k < 0) : chiMeasure k s = 0 := by
 /-- At degree zero and positive scale, the chi law is the point mass at zero. -/
 @[simp]
 theorem chiMeasure_zero (hs : 0 < s) : chiMeasure 0 s = Measure.dirac 0 := by
-  simp [chiMeasure_of_pos hs, Measure.map_dirac]
+  simp [chiMeasure_of_scale_pos hs, Measure.map_dirac]
 
 /-- Nonnegative degrees and positive scale give a probability measure. -/
 theorem isProbabilityMeasure_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
     IsProbabilityMeasure (chiMeasure k s) := by
-  rw [chiMeasure_of_pos hs]
+  rw [chiMeasure_of_scale_pos hs]
   let _ := isProbabilityMeasure_chiSquaredMeasure hk
   infer_instance
 
@@ -148,6 +153,12 @@ theorem measurable_uncurry_chiPDFReal :
   unfold chiPDFReal
   exact Measurable.ite (by measurability) (by fun_prop) measurable_const
 
+/-- The real chi density is measurable in its coordinate. -/
+@[fun_prop]
+theorem measurable_chiPDFReal (k s : ℝ) : Measurable (chiPDFReal k s) := by
+  exact measurable_uncurry_chiPDFReal.comp
+    (show Measurable fun x : ℝ ↦ ((k, s), x) by fun_prop)
+
 /-- The extended chi density is jointly measurable in degrees, scale, and coordinate. -/
 @[fun_prop]
 theorem measurable_uncurry_chiPDF :
@@ -174,7 +185,7 @@ theorem chiMeasure_eq_withDensity (hk : 0 < k) (hs : 0 < s) :
   have hpush : (chiSquaredMeasure k).map (fun x ↦ s * √x) =
       ((chiSquaredMeasure k).map Real.sqrt).map (fun x ↦ s * x) := by
     exact (Measure.map_map (by fun_prop) (by fun_prop)).symm
-  rw [chiMeasure_of_pos hs, hpush, hstandard]
+  rw [chiMeasure_of_scale_pos hs, hpush, hstandard]
   have hmap := map_affine_withDensity_volume (a := 0) (b := s)
     (chiPDF k 1) hs.ne'
   simp only [zero_add] at hmap
@@ -244,7 +255,7 @@ theorem ae_pos_chiMeasure (hk : 0 < k) :
   by_cases hs : 0 < s
   swap
   · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
-  rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk]
+  rw [chiMeasure_eq_map_gammaMeasure hk hs]
   apply (ae_map_iff (by fun_prop) measurableSet_Ioi).2
   filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
   exact mul_pos hs (Real.sqrt_pos.2 hx)
@@ -257,7 +268,7 @@ theorem chiMeasure_map_const_mul (hc : 0 < c) :
   swap
   · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs),
       chiMeasure_of_scale_nonpos (mul_nonpos_of_nonneg_of_nonpos hc.le (le_of_not_gt hs))]
-  rw [chiMeasure_of_pos hs, chiMeasure_of_pos (mul_pos hc hs),
+  rw [chiMeasure_of_scale_pos hs, chiMeasure_of_scale_pos (mul_pos hc hs),
     Measure.map_map (by fun_prop) (by fun_prop)]
   congr 1
   ext x
@@ -267,7 +278,7 @@ theorem chiMeasure_map_const_mul (hc : 0 < c) :
 theorem hasLaw_chiMeasure_of_hasLaw_chiSquaredMeasure (hs : 0 < s)
     (hX : HasLaw X (chiSquaredMeasure k) P) :
     HasLaw (fun ω ↦ s * √(X ω)) (chiMeasure k s) P := by
-  rw [chiMeasure_of_pos hs]
+  rw [chiMeasure_of_scale_pos hs]
   exact (hasLaw_map (X := fun x : ℝ ↦ s * √x) (by fun_prop)).fun_comp hX
 
 /-- Squaring a chi variable gives the squared scale times a chi-squared variable. -/
@@ -277,7 +288,7 @@ theorem chiMeasure_map_sq (hs : 0 < s) :
   rcases lt_trichotomy k 0 with hk | rfl | hk
   · simp [chiMeasure_of_neg hk, chiSquaredMeasure_of_neg hk]
   · simp [chiMeasure_zero hs, Measure.map_dirac]
-  · rw [chiMeasure_of_pos hs, chiSquaredMeasure_eq_gammaMeasure hk,
+  · rw [chiMeasure_eq_map_gammaMeasure hk hs, chiSquaredMeasure_eq_gammaMeasure hk,
       Measure.map_map (by fun_prop) (by fun_prop)]
     apply Measure.map_congr
     filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
@@ -291,7 +302,7 @@ theorem cdf_chiMeasure_eq (hk : 0 < k) (hs : 0 < s) (x : ℝ) :
       if x < 0 then 0 else regularizedGamma (k / 2) ((x / s) ^ 2 / 2) := by
   let _ := isProbabilityMeasure_chiMeasure hk.le hs
   let _ := isProbabilityMeasure_chiSquaredMeasure hk.le
-  rw [cdf_eq_real, chiMeasure_of_pos hs,
+  rw [cdf_eq_real, chiMeasure_of_scale_pos hs,
     map_measureReal_apply (by fun_prop) measurableSet_Iic]
   by_cases hx : x < 0
   · have hpre : (fun y : ℝ ↦ s * √y) ⁻¹' Iic x = ∅ := by

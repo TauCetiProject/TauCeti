@@ -38,7 +38,7 @@ including the zero-degree boundary. -/
 theorem quantile_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     (chiMeasure k s).quantile u = s * √(2 * inverseRegularizedGamma (k / 2) u) := by
   let _ := isProbabilityMeasure_chiSquaredMeasure hk
-  rw [chiMeasure_of_pos hs, Measure.quantile_map_of_monotone
+  rw [chiMeasure_of_scale_pos hs, Measure.quantile_map_of_monotone
     (fun x y hxy ↦ mul_le_mul_of_nonneg_left (sqrt_le_sqrt hxy) hs.le)
     (by fun_prop) hu.1 hu.2, quantile_chiSquaredMeasure hk hu]
 
