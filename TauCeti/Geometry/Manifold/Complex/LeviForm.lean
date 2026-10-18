@@ -105,35 +105,6 @@ theorem manifoldLeviForm_congr_of_eventuallyEq {g : M → ℝ} (hfg : f =ᶠ[�
 
 /-! ### Comparison with the real critical Hessian -/
 
-/-- The real second derivative of `f` in the preferred chart is the critical Hessian of `f` on the
-real manifold underlying `M`. -/
-private theorem fderiv_fderiv_comp_chartAt_symm (v w : E) :
-    fderiv ℝ (fderiv ℝ (f ∘ (chartAt E x).symm)) (chartAt E x x) v w =
-      criticalHessian 𝓘(ℝ, E) f x v w := by
-  have hext : ((extChartAt 𝓘(ℝ, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hext' : extChartAt 𝓘(ℝ, E) x x = chartAt E x x := by simp
-  have h : fderiv ℝ (fderiv ℝ (f ∘ (chartAt E x).symm)) (chartAt E x x) =
-      criticalHessian 𝓘(ℝ, E) f x := by
-    rw [criticalHessian_def, hext, hext']
-  -- `criticalHessian` is a form on `TangentSpace 𝓘(ℝ, E) x`, which is `E` by definition.
-  exact congr($h v w)
-
-/-- The coordinate expression in the preferred chart of a function which is `C²` at `x` is `C²`
-at the chart image of `x`. -/
-private theorem contDiffAt_comp_chartAt_symm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) :
-    ContDiffAt ℝ 2 (f ∘ (chartAt E x).symm) (chartAt E x x) := by
-  have hext : ((extChartAt 𝓘(ℝ, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hext' : extChartAt 𝓘(ℝ, E) x x = chartAt E x x := by simp
-  simpa only [hext, hext'] using hf.contDiffAt_comp_extChartAt_symm
-
-/-- The real derivative of `f` in the preferred chart is the derivative `mvfderiv` of `f` on the
-real manifold underlying `M`. -/
-private theorem fderiv_comp_chartAt_symm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) :
-    fderiv ℝ (f ∘ (chartAt E x).symm) (chartAt E x x) = mvfderiv 𝓘(ℝ, E) f x := by
-  have hext : ((extChartAt 𝓘(ℝ, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hext' : extChartAt 𝓘(ℝ, E) x x = chartAt E x x := by simp
-  rw [(hf.mdifferentiableAt (by norm_num)).mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
-
 /-- The real part of the Levi form is one quarter of the `I`-invariant part of the critical
 Hessian. -/
 @[simp]
@@ -197,7 +168,8 @@ theorem manifoldLeviForm_mul_apply {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E
               (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w) := by
   have h := leviForm_mul_apply (contDiffAt_comp_chartAt_symm hf)
     (contDiffAt_comp_chartAt_symm hg) v w
-  rwa [fderiv_comp_chartAt_symm hf, fderiv_comp_chartAt_symm hg, comp_apply, comp_apply,
+  rwa [fderiv_comp_chartAt_symm (hf.mdifferentiableAt (by norm_num)),
+    fderiv_comp_chartAt_symm (hg.mdifferentiableAt (by norm_num)), comp_apply, comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **The composition rule** for the Levi form on a complex manifold, for post-composition with a
@@ -214,7 +186,7 @@ theorem manifoldLeviForm_scalar_comp_apply {φ : ℝ → ℝ} (hφ : ContDiffAt 
   have hφ' : ContDiffAt ℝ 2 φ ((f ∘ (chartAt E x).symm) (chartAt E x x)) := by
     rwa [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
   have h := leviForm_scalar_comp_apply hφ' (contDiffAt_comp_chartAt_symm hf) v w
-  rwa [fderiv_comp_chartAt_symm hf, comp_apply,
+  rwa [fderiv_comp_chartAt_symm (hf.mdifferentiableAt (by norm_num)), comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **Post-composition with a convex function** on a complex manifold. If `φ'' ≥ 0` at `f x`, then

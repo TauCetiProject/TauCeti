@@ -28,6 +28,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 ## Main declarations
 
 * `TauCeti.criticalHessian`: the Hessian at a point, as a bilinear form on its tangent space.
+* `TauCeti.fderiv_fderiv_comp_chartAt_symm`: on a manifold modelled on a real normed space, the
+  second derivative in the preferred chart is the critical Hessian.
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
@@ -76,6 +78,20 @@ def criticalHessian (I : ModelWithCorners ℝ E H) (f : M → ℝ) (x : M) :
 theorem criticalHessian_def :
     criticalHessian I f x = fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x) :=
   (rfl)
+
+/-- On a manifold modelled on a real normed space, the second derivative in the preferred chart is
+the critical Hessian. -/
+theorem fderiv_fderiv_comp_chartAt_symm {N : Type*} [TopologicalSpace N] [ChartedSpace E N]
+    {u : N → ℝ} {y : N} (v w : E) :
+    fderiv ℝ (fderiv ℝ (u ∘ (chartAt E y).symm)) (chartAt E y y) v w =
+      criticalHessian 𝓘(ℝ, E) u y v w := by
+  have hext : ((extChartAt 𝓘(ℝ, E) y).symm : E → N) = (chartAt E y).symm := by ext; simp
+  have hext' : extChartAt 𝓘(ℝ, E) y y = chartAt E y y := by simp
+  have h : fderiv ℝ (fderiv ℝ (u ∘ (chartAt E y).symm)) (chartAt E y y) =
+      criticalHessian 𝓘(ℝ, E) u y := by
+    rw [criticalHessian_def, hext, hext']
+  -- `criticalHessian` is a form on `TangentSpace 𝓘(ℝ, E) y`, which is `E` by definition.
+  exact congr($h v w)
 
 /-- The diagonal of the critical Hessian is the Hessian quadratic form of the preferred coordinate
 expression. -/
