@@ -11,7 +11,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Center.Lie
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.CenterQuotient
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Smooth
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Tangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.FormallySmooth
