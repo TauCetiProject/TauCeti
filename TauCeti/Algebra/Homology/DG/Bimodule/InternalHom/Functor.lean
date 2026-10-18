@@ -80,7 +80,6 @@ private def mapLinearMap (u : M' ⟶ M) (v : N ⟶ N') :
   map_add' f g := ext fun x ↦ by simp
   map_smul' a f := ext fun x ↦ by simp
 
-@[simp]
 private theorem mapLinearMap_apply (u : M' ⟶ M) (v : N ⟶ N')
     (f : InternalHom 𝒜 B M.grading N.grading) (x : M') :
     mapLinearMap u v f x = v (f (u x)) := by
@@ -92,7 +91,7 @@ private theorem mapLinearMap_mem (u : M' ⟶ M) (v : N ⟶ N') {p : ℤ}
   rw [mem_grading_iff]
   convert comp_mem_cochains u v (mem_grading_iff.1 hf) using 1
   ext x
-  simp
+  simp [mapLinearMap_apply]
 
 /-- Precompose with a DG bimodule morphism and postcompose with a DG right-module morphism.
 The resulting map of internal Homs is a morphism of DG right `A`-modules. -/
@@ -113,6 +112,7 @@ noncomputable def map (u : M' ⟶ M) (v : N ⟶ N') :
 
 /-- The induced map sends `f` to `v ∘ f ∘ u`, with no extra sign since `u` and `v` have
  degree zero. -/
+@[simp↓]
 theorem map_apply (u : M' ⟶ M) (v : N ⟶ N')
     (f : M.internalHomObj N) (x : M') :
     map u v f x = v (f (u x)) := mapLinearMap_apply u v f x
@@ -209,6 +209,15 @@ theorem internalHom_map (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB)
     {N N' : DGRightModuleCat.{uR, uB, uN} hB} (v : N ⟶ N') :
     M.internalHom.map v = InternalHom.map (𝟙 M) v := (rfl)
 
+/-- The internal-Hom functor acts by postcomposition on elements. -/
+@[simp↓]
+theorem internalHom_map_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB)
+    {N N' : DGRightModuleCat.{uR, uB, uN} hB} (v : N ⟶ N')
+    (f : M.internalHomObj N) (x : M) :
+    M.internalHom.map v f x = v (f x) := by
+  rw [internalHom_map, InternalHom.map_apply]
+  simp
+
 instance (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
     (internalHom.{uR, uA, uB, uM, uN} M).Additive where
   map_add := by intros; exact InternalHom.map_add_right _ _ _
@@ -246,6 +255,15 @@ theorem internalHomFunctor_obj (M : (DGBimoduleCat.{uR, uA, uB, uM} hA hB)ᵒᵖ
 theorem internalHomFunctor_map_app {M M' : DGBimoduleCat.{uR, uA, uB, uM} hA hB}
     (u : Opposite.op M ⟶ Opposite.op M') (N : DGRightModuleCat.{uR, uB, uN} hB) :
     (internalHomFunctor.map u).app N = InternalHom.map u.unop (𝟙 N) := (rfl)
+
+/-- The contravariant internal-Hom component acts by precomposition on elements. -/
+@[simp↓]
+theorem internalHomFunctor_map_app_apply {M M' : DGBimoduleCat.{uR, uA, uB, uM} hA hB}
+    (u : Opposite.op M ⟶ Opposite.op M') (N : DGRightModuleCat.{uR, uB, uN} hB)
+    (f : M.internalHomObj N) (x : M') :
+    (internalHomFunctor.map u).app N f x = f (u.unop x) := by
+  rw [internalHomFunctor_map_app, InternalHom.map_apply]
+  simp
 
 instance : (internalHomFunctor.{uR, uA, uB, uM, uN} (hA := hA) (hB := hB)).Additive where
   map_add := by
