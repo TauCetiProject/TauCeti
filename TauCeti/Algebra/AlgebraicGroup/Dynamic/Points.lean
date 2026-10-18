@@ -150,6 +150,24 @@ theorem evalZeroPoint_constPolyPoint (g : WithConv (H →ₐ[R] A)) :
   ext h
   simp [evalZeroPoint_apply, constPolyPoint_apply]
 
+variable {K : Type*} [Semiring K] [Bialgebra R K]
+
+/-- Inclusion of polynomial-valued points commutes with a group homomorphism. -/
+theorem mapDomain_ofPolyPoint (φ : H →ₐc[R] K)
+    (F : WithConv (K →ₐ[R] Polynomial A)) :
+    BialgHom.mapDomain φ (ofPolyPoint A F) =
+      ofPolyPoint A (BialgHom.mapDomain φ F) := by
+  ext h
+  simp [ofPolyPoint_apply, BialgHom.mapDomain_apply]
+
+/-- Evaluation at the origin commutes with a group homomorphism. -/
+theorem mapDomain_evalZeroPoint (φ : H →ₐc[R] K)
+    (F : WithConv (K →ₐ[R] Polynomial A)) :
+    BialgHom.mapDomain φ (evalZeroPoint A F) =
+      evalZeroPoint A (BialgHom.mapDomain φ F) := by
+  ext h
+  simp [evalZeroPoint_apply, BialgHom.mapDomain_apply]
+
 /-! ### Multiplicative-group morphisms on points -/
 
 variable (A) in
