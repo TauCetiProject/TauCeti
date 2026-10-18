@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.Boundary
+public import TauCeti.Analysis.Calculus.Morse.Boundary.Basic
 
 /-!
 # The Morse-index grading of the mod-two boundary

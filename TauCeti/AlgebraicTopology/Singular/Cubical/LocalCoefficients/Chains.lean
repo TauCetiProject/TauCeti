@@ -102,6 +102,13 @@ def ofCube {n : ℕ} (c : SingularCube X n) :
   DirectSum.lof R _ (fun c : SingularCube X n ↦ L.obj (FundamentalGroupoid.mk (c 0))) c
 
 open scoped Classical in
+/-- The inclusion of the summand of a singular cube is the direct-sum inclusion. -/
+theorem ofCube_eq_lof {n : ℕ} (c : SingularCube X n) :
+    ofCube L c =
+      DirectSum.lof R _ (fun c : SingularCube X n ↦ L.obj (FundamentalGroupoid.mk (c 0))) c := by
+  rw [ofCube]
+
+open scoped Classical in
 /-- The linear map out of the cubical chains with prescribed values on each summand. -/
 def desc {n : ℕ} {N : Type*} [AddCommGroup N] [Module R N]
     (φ : ∀ c : SingularCube X n, L.obj (FundamentalGroupoid.mk (c 0)) →ₗ[R] N) :

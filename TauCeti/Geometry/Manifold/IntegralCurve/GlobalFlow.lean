@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
+public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Geometry.Manifold.Diffeomorph
 
@@ -15,7 +15,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 A `C¹` vector field `v` on a boundaryless manifold is **complete** when its maximal integral curves
 are all defined for all time. Its maximal integral curves then assemble into a flow of `ℝ` on the
 manifold, and this file packages them as a Mathlib `Flow`. Every `C¹` vector field on a compact
-boundaryless manifold is complete (`maximalIntegralCurveInterval_eq_univ_of_compactSpace`).
+boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
 ## Main declarations
 
@@ -49,19 +49,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 `t` of the integral curve of `v` through `x`. -/
 noncomputable def globalFlow (v : (x : M) → TangentSpace I x)
     (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hcomplete : ∀ x, maximalIntegralCurveInterval v x = univ) : Flow ℝ M where
+    (hcomplete : IsCompleteVectorField v) : Flow ℝ M where
   toFun t x := maximalIntegralCurve v x t
   cont' := by
     have h := contMDiffOn_maximalIntegralCurve (n := 1) le_rfl hv
-    rw [maximalIntegralCurveFlowDomain_eq_univ hcomplete, contMDiffOn_univ] at h
+    rw [maximalIntegralCurveFlowDomain_eq_univ
+      hcomplete.maximalIntegralCurveInterval_eq_univ, contMDiffOn_univ] at h
     exact h.continuous.comp continuous_swap
   map_add' t₁ t₂ x := by
-    rw [add_comm, maximalIntegralCurve_add hv (by rw [hcomplete]; trivial)
-      (by rw [hcomplete]; trivial)]
-  map_zero' x := maximalIntegralCurve_zero (hcomplete x ▸ mem_univ 0)
+    rw [add_comm, maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval _ _)
+      (hcomplete.mem_maximalIntegralCurveInterval _ _)]
+  map_zero' x := maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)
 
 variable (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-  (hcomplete : ∀ x, maximalIntegralCurveInterval v x = univ)
+  (hcomplete : IsCompleteVectorField v)
 include hv hcomplete
 
 /-- The flow at time `t` is the maximal integral curve at time `t`. -/
@@ -74,7 +75,8 @@ theorem globalFlow_apply (t : ℝ) (x : M) :
 theorem isMIntegralCurve_globalFlow (x : M) :
     IsMIntegralCurve (fun t ↦ globalFlow v hv hcomplete t x) v := by
   simp only [globalFlow_apply]
-  rw [isMIntegralCurve_iff_isMIntegralCurveOn, ← hcomplete x]
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn,
+    ← hcomplete.maximalIntegralCurveInterval_eq_univ x]
   exact isMIntegralCurveOn_maximalIntegralCurve hv
 
 /-- Every integral curve of the field is an orbit of the flow. -/
@@ -94,7 +96,8 @@ theorem contMDiff_globalFlow_uncurry {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n
     ContMDiff (𝓘(ℝ, ℝ).prod I) I n
       (fun p : ℝ × M ↦ globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete p.1 p.2) := by
   have h := contMDiffOn_maximalIntegralCurve hn hvn
-  rw [maximalIntegralCurveFlowDomain_eq_univ hcomplete, contMDiffOn_univ] at h
+  rw [maximalIntegralCurveFlowDomain_eq_univ
+    hcomplete.maximalIntegralCurveInterval_eq_univ, contMDiffOn_univ] at h
   simp only [globalFlow_apply]
   exact h.comp (contMDiff_snd.prodMk contMDiff_fst)
 

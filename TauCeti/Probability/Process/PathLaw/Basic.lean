@@ -50,7 +50,11 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω α β ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+variable {Ω α β ι : Type*}
+
+section
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The finite-dimensional law of a family along a coordinate selection `k`.
 
@@ -71,25 +75,10 @@ def prefixLaw (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) : Measure (Fin
 def pathLaw (μ : Measure Ω) (X : ℕ → Ω → α) : Measure (ℕ → α) :=
   μ.map fun ω i => X i ω
 
-/-- Projection from path space to the first `n` coordinates. -/
-@[expose]
-def prefixProj (α : Type*) (n : ℕ) (x : ℕ → α) : Fin n → α :=
-  fun i => x i.val
-
-/-- The left shift on one-sided path space. -/
-@[expose]
-def shift (α : Type*) (x : ℕ → α) : ℕ → α :=
-  fun n => x (n + 1)
-
-/-- Reindex a one-sided path by a permutation of time. -/
-@[expose]
-def permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
-  fun n => x (π n)
-
 @[simp]
 theorem blockLaw_def (μ : Measure Ω) (X : ι → Ω → α) {m : ℕ} (k : Fin m → ι) :
-    blockLaw μ X k = μ.map (fun ω i => X (k i) ω) :=
-  (rfl)
+    blockLaw μ X k = μ.map (fun ω i => X (k i) ω) := by
+  rfl
 
 -- Annotated `@[grind =>]` rather than `@[simp]`: `blockLaw_def` already simp-normalizes
 -- `blockLaw μ X k` to `μ.map …` (so a `@[simp]` here would be shadowed), and the preimage form
@@ -172,30 +161,44 @@ theorem pathLaw_congr {μ : Measure Ω} {X Y : ℕ → Ω → α} (h : ∀ i, X 
 theorem pathLaw_coord (ρ : Measure (ℕ → α)) : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ := by
   rw [pathLaw_def]; exact Measure.map_id'
 
-omit [MeasurableSpace α] in
+end
+
+/-- Projection from path space to the first `n` coordinates. -/
+@[expose]
+def prefixProj (α : Type*) (n : ℕ) (x : ℕ → α) : Fin n → α :=
+  fun i => x i.val
+
 @[simp]
 theorem prefixProj_apply (n : ℕ) (x : ℕ → α) (i : Fin n) :
     prefixProj α n x i = x i.val :=
   rfl
 
-omit [MeasurableSpace α] in
+/-- The left shift on one-sided path space. -/
+@[expose]
+def shift (α : Type*) (x : ℕ → α) : ℕ → α :=
+  fun n => x (n + 1)
+
 @[simp]
 theorem shift_apply (x : ℕ → α) (n : ℕ) : shift α x n = x (n + 1) :=
   rfl
 
-omit [MeasurableSpace α] in
+/-- Reindex a one-sided path by a permutation of time. -/
+@[expose]
+def permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
+  fun n => x (π n)
+
 @[simp]
 theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
     permReindex π x n = x (π n) :=
   rfl
 
-omit [MeasurableSpace α] in
 /-- Composing `permReindex π` after `permReindex σ` reindexes by `σ * π`. -/
 @[simp]
 theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
-    permReindex (α := α) π (permReindex (α := α) σ x) =
-      permReindex (α := α) (σ * π) x := by
+    permReindex π (permReindex σ x) = permReindex (σ * π) x :=
   rfl
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The prefix projection is measurable. -/
 theorem measurable_prefixProj (n : ℕ) : Measurable (prefixProj α n) := by
@@ -222,7 +225,8 @@ def prefixSplitEquiv (r : ℕ) : (ℕ → α) ≃ᵐ (Fin r → α) × (ℕ → 
 -- equivalence is derived from here, so the fragile step is isolated rather than repeated.
 @[simp]
 theorem prefixSplitEquiv_apply (r : ℕ) (f : ℕ → α) :
-    prefixSplitEquiv r f = (fun i : Fin r => f (i : ℕ), fun j : ℕ => f (r + j)) := (rfl)
+    prefixSplitEquiv r f = (fun i : Fin r => f (i : ℕ), fun j : ℕ => f (r + j)) := by
+  rfl
 
 /-- The inverse of `prefixSplitEquiv` glues a prefix/tail pair into a sequence: coordinates below
 `r` come from the prefix `p.1`, the rest (reindexed by `· - r`) from the tail `p.2`. -/
@@ -299,7 +303,6 @@ theorem map_blockLaw_reindex (μ : Measure Ω) {X : ι → Ω → α} {n p : ℕ
       (AEMeasurable.of_eval hXk)]
   rfl
 
-omit [MeasurableSpace Ω] in
 /-- Reindexing the coordinates of path space along `φ` is measurable. -/
 theorem measurable_reindex (φ : ℕ → ℕ) :
     Measurable (fun x : ℕ → α => fun k => x (φ k)) :=
