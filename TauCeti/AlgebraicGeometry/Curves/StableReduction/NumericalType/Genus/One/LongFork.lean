@@ -47,8 +47,6 @@ public section
 
 namespace TauCeti.NumericalType
 
-open Finset
-
 universe u
 
 variable {T : NumericalType.{u}} {t : ℕ} {c : ℕ → T.Component} {branch : T.Component}
@@ -99,44 +97,6 @@ theorem isGenusOneLongForkShape_iff : T.IsGenusOneLongForkShape t c branch ↔
 
 namespace IsSelfIntersectionMinusTwoFork
 
-private lemma components_eq_univ (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (hcard : Fintype.card T.Component = t + 1) :
-    insert branch ((range t).image c) = (univ : Finset T.Component) := by
-  apply eq_univ_of_card
-  rw [card_insert_of_notMem (by
-    intro h
-    obtain ⟨i, hi, hci⟩ := mem_image.mp h
-    exact hf.branch_ne i (mem_range.mp hi) hci.symm),
-    card_image_of_injOn (by
-      intro i hi j hj hij
-      exact hf.injOn i (mem_range.mp hi) j (mem_range.mp hj) hij), card_range]
-  exact hcard.symm
-
-private lemma fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (hcard : Fintype.card T.Component = t + 1) (i : T.Component) :
-    (T.multiplicity branch : ℤ) * T.intersection i branch +
-      ∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection i (c j) = 0 := by
-  classical
-  have h := T.fiber_relation i
-  rw [← hf.components_eq_univ hcard, sum_insert, sum_image] at h
-  · exact h
-  · intro j hj k hk hjk
-    exact hf.injOn j (mem_range.mp hj) k (mem_range.mp hk) hjk
-  · intro hbranch
-    obtain ⟨j, hj, hbj⟩ := mem_image.mp hbranch
-    exact hf.branch_ne j (mem_range.mp hj) hbj.symm
-
-private lemma subfork (hf : T.IsSelfIntersectionMinusTwoFork t c branch) (ht : 4 < t) :
-    T.IsSelfIntersectionMinusTwoFork (t - 1) (fun i ↦ c (i + 1)) branch where
-  toIsSelfIntersectionMinusTwoChain :=
-    by simpa [Nat.add_comm] using
-      hf.toIsSelfIntersectionMinusTwoChain.shift (r := 1) (s := t - 1) (by omega)
-  two_lt := by omega
-  branch_ne i hi := hf.branch_ne (i + 1) (by omega)
-  branch_intersection_self := hf.branch_intersection_self
-  branch_intersection_pos := by
-    simpa only [show t - 1 - 2 + 1 = t - 2 by omega] using hf.branch_intersection_pos
-
 private lemma end_multiplicities (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     (hcard : Fintype.card T.Component = t + 1) (ht : 4 < t) {W : ℤ} (hW : 0 < W)
     (hw : ∀ i, 0 < i → i < t → (T.weight (c i) : ℤ) = W)
@@ -146,97 +106,28 @@ private lemma end_multiplicities (hf : T.IsSelfIntersectionMinusTwoFork t c bran
     (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity branch ∧
       (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity branch ∧
       (T.multiplicity (c (t - 3)) : ℤ) = 2 * T.multiplicity branch := by
-  have hchainCard : t < Fintype.card T.Component := by rw [hcard]; omega
   have hlastEdge : T.intersection (c (t - 2)) (c (t - 1)) = W := by
     simpa only [show t - 2 + 1 = t - 1 by omega] using hedge (t - 2) (by omega) (by omega)
   have hpreviousEdge : T.intersection (c (t - 3)) (c (t - 2)) = W := by
     simpa only [show t - 3 + 1 = t - 2 by omega] using hedge (t - 3) (by omega) (by omega)
-  have hbranch := hf.fiber_relation hcard branch
-  have hbranchSum :
-      (∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection branch (c j)) =
-        T.multiplicity (c (t - 2)) * T.intersection branch (c (t - 2)) := by
-    apply sum_eq_single (t - 2)
-    · intro j hj hjne
-      rw [T.intersection_comm,
-        hf.branch_intersection_eq_zero (mem_range.mp hj) hjne, mul_zero]
-    · exact fun h ↦ absurd (mem_range.mpr (by omega)) h
-  rw [hbranchSum, hf.branch_intersection_self, hbranchWeight,
-    T.intersection_comm branch, hbranchEdge] at hbranch
+  have hbranch := hf.branch_fiber_relation hcard
+  rw [hf.branch_intersection_self, hbranchWeight, T.intersection_comm branch,
+    hbranchEdge] at hbranch
   have hpenultimate : (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity branch := by
     apply mul_left_cancel₀ hW.ne'
     linear_combination hbranch
-  have hlastRel := hf.fiber_relation hcard (c (t - 1))
-  have hlastSum :
-      (∑ j ∈ range t, (T.multiplicity (c j) : ℤ) *
-        T.intersection (c (t - 1)) (c j)) =
-      T.intersection (c (t - 1)) (c (t - 2)) * T.multiplicity (c (t - 2)) +
-        T.intersection (c (t - 1)) (c (t - 1)) * T.multiplicity (c (t - 1)) := by
-    calc
-      _ = ∑ j ∈ range t, T.intersection (c (t - 1)) (c j) *
-          T.multiplicity (c j) := by
-        apply sum_congr rfl
-        intro j hj
-        rw [mul_comm]
-      _ = _ := hf.toIsSelfIntersectionMinusTwoChain.right_sum_eq hchainCard (by omega)
-        (fun j ↦ (T.multiplicity (c j) : ℤ))
-  rw [hf.branch_intersection_eq_zero (by omega) (by omega), mul_zero, zero_add, hlastSum,
-    T.intersection_comm (c (t - 1)) (c (t - 2)),
-    hlastEdge,
+  have hlastRel := hf.right_fiber_relation hcard
+  rw [T.intersection_comm (c (t - 1)) (c (t - 2)), hlastEdge,
     hf.intersection_self (t - 1) (by omega), hw (t - 1) (by omega) (by omega)] at hlastRel
   have hlast : (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity branch := by
     nlinarith [hlastRel, hpenultimate]
-  have hforkRel := hf.fiber_relation hcard (c (t - 2))
-  have hforkSum :
-      (∑ j ∈ range t, (T.multiplicity (c j) : ℤ) *
-        T.intersection (c (t - 2)) (c j)) =
-      T.intersection (c (t - 2)) (c (t - 2 - 1)) * T.multiplicity (c (t - 2 - 1)) +
-          T.intersection (c (t - 2)) (c (t - 2)) * T.multiplicity (c (t - 2)) +
-        T.intersection (c (t - 2)) (c (t - 2 + 1)) * T.multiplicity (c (t - 2 + 1)) := by
-    calc
-      _ = ∑ j ∈ range t, T.intersection (c (t - 2)) (c j) *
-          T.multiplicity (c j) := by
-        apply sum_congr rfl
-        intro j hj
-        rw [mul_comm]
-      _ = _ := hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard
-        (fun j ↦ (T.multiplicity (c j) : ℤ)) (i := t - 2) (by omega) (by omega)
-  rw [hbranchEdge, hforkSum,
-    show t - 2 - 1 = t - 3 by omega,
-    show t - 2 + 1 = t - 1 by omega,
-    T.intersection_comm (c (t - 2)) (c (t - 3)),
-    hpreviousEdge,
+  have hforkRel := hf.fork_fiber_relation hcard
+  rw [T.intersection_comm (c (t - 2)) (c (t - 3)), hpreviousEdge,
     hf.intersection_self (t - 2) (by omega), hw (t - 2) (by omega) (by omega),
-    hlastEdge] at hforkRel
+    hlastEdge, hbranchEdge] at hforkRel
   have hprevious : (T.multiplicity (c (t - 3)) : ℤ) = 2 * T.multiplicity branch := by
     nlinarith [hforkRel, hpenultimate, hlast]
   exact ⟨hpenultimate, hlast, hprevious⟩
-
-private lemma interior_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (hcard : Fintype.card T.Component = t + 1) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t)
-    (hifork : i ≠ t - 2) :
-    (T.multiplicity (c (i - 1)) : ℤ) * T.intersection (c i) (c (i - 1)) +
-        T.multiplicity (c i) * T.intersection (c i) (c i) +
-      T.multiplicity (c (i + 1)) * T.intersection (c i) (c (i + 1)) = 0 := by
-  have hchainCard : t < Fintype.card T.Component := by rw [hcard]; omega
-  have h := hf.fiber_relation hcard (c i)
-  have hsum :
-      (∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection (c i) (c j)) =
-        (T.multiplicity (c (i - 1)) : ℤ) * T.intersection (c i) (c (i - 1)) +
-            T.multiplicity (c i) * T.intersection (c i) (c i) +
-          T.multiplicity (c (i + 1)) * T.intersection (c i) (c (i + 1)) := by
-    calc
-      _ = ∑ j ∈ range t, T.intersection (c i) (c j) * T.multiplicity (c j) := by
-        apply sum_congr rfl
-        intro j hj
-        rw [mul_comm]
-      _ = T.intersection (c i) (c (i - 1)) * T.multiplicity (c (i - 1)) +
-            T.intersection (c i) (c i) * T.multiplicity (c i) +
-          T.intersection (c i) (c (i + 1)) * T.multiplicity (c (i + 1)) :=
-        hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard
-          (fun j ↦ (T.multiplicity (c j) : ℤ)) hi hit
-      _ = _ := by ac_rfl
-  rw [hf.branch_intersection_eq_zero (by omega) hifork, mul_zero, zero_add, hsum] at h
-  exact h
 
 /-- An exhaustive fork of at least five chain components has one of the two arbitrary-length
 fork shapes in cases (29) and (30) of Stacks, Tag 0C8T. -/
@@ -246,7 +137,7 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   have hchainCard : t < Fintype.card T.Component := by rw [hcard]; omega
   let c' : ℕ → T.Component := fun i ↦ c (i + 1)
   have hf' : T.IsSelfIntersectionMinusTwoFork (t - 1) c' branch := by
-    simpa only [c'] using hf.subfork ht
+    simpa only [c'] using hf.tail (by omega)
   obtain ⟨w, hw', hbranchWeight, hedge', hbranchEdge⟩ :=
     hf'.exists_weight_intersection_eq (by rw [hcard]; omega)
   let W : ℤ := w
@@ -272,23 +163,7 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact T.intersection_eq_max_weight (by rw [hcard]; omega)
       (hf.intersection_self 0 (by omega)) (hf.intersection_self 1 (by omega))
       (hf.intersection_succ_pos 0 (by omega))
-  have hleftRel := hf.fiber_relation hcard (c 0)
-  have hleftSum :
-      (∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection (c 0) (c j)) =
-        T.multiplicity (c 0) * T.intersection (c 0) (c 0) +
-          T.multiplicity (c 1) * T.intersection (c 0) (c 1) := by
-    calc
-      _ = ∑ j ∈ range t, T.intersection (c 0) (c j) * T.multiplicity (c j) := by
-        apply sum_congr rfl
-        intro j hj
-        rw [mul_comm]
-      _ = T.intersection (c 0) (c 0) * T.multiplicity (c 0) +
-          T.intersection (c 0) (c 1) * T.multiplicity (c 1) :=
-        hf.toIsSelfIntersectionMinusTwoChain.left_sum_eq hchainCard (by omega)
-          (fun j ↦ (T.multiplicity (c j) : ℤ))
-      _ = _ := by ac_rfl
-  rw [hf.branch_intersection_eq_zero (by omega) (by omega), mul_zero, zero_add, hleftSum]
-    at hleftRel
+  have hleftRel := hf.left_fiber_relation hcard
   obtain ⟨hpenultimate, hlast, hprevious⟩ :=
     hf.end_multiplicities hcard ht hW hw hedge hbranchWeight' hbranchEdge'
   have hrec (i : ℕ) (hi : i + 3 < t)
