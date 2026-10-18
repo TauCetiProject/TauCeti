@@ -25,7 +25,7 @@ public section
 
 open TensorProduct
 
-namespace TauCeti.AddMonoidAlgebra
+namespace AddMonoidAlgebra
 
 variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
 variable {M : Type*} [AddCommMonoid M]
@@ -55,4 +55,4 @@ theorem scalarTensorBialgEquiv_symm_single (m : M) (s : S) :
   rw [BialgEquiv.apply_symm_apply, scalarTensorBialgEquiv_tmul]
   simp
 
-end TauCeti.AddMonoidAlgebra
+end AddMonoidAlgebra
