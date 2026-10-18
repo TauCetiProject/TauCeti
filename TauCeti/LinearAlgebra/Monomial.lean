@@ -52,21 +52,28 @@ def monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) : (ι → R) ≃ₗ[R] (κ �
   (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.smulOfUnit (M := R) (u i)).trans
     (LinearEquiv.funCongrLeft R R e.symm)
 
+/-- At a target coordinate, a monomial equivalence multiplies the corresponding source
+coordinate by its assigned unit. -/
 @[simp]
 theorem monomialEquiv_apply (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) (j : κ) :
     monomialEquiv u e x j = u (e.symm j) * x (e.symm j) :=
   (rfl)
 
-@[simp]
+/-- The inverse monomial equivalence reads the relabelled coordinate and multiplies it by
+the inverse of the source coordinate's unit. -/
 theorem monomialEquiv_symm_apply (u : ι → Rˣ) (e : ι ≃ κ) (y : κ → R) (i : ι) :
     (monomialEquiv u e).symm y i = ↑(u i)⁻¹ * y (e i) :=
   (rfl)
 
 /-- With trivial scalars a monomial equivalence is a bare relabelling of coordinates. -/
+@[simp]
 theorem monomialEquiv_one (e : ι ≃ κ) :
     monomialEquiv (1 : ι → Rˣ) e = LinearEquiv.funCongrLeft R R e.symm :=
   LinearEquiv.ext fun x ↦ funext fun j ↦ by simp
 
+/-- Composing monomial equivalences multiplies their coordinate units after relabelling
+and composes their coordinate equivalences. -/
+@[simp]
 theorem monomialEquiv_trans (u : ι → Rˣ) (e : ι ≃ κ) (v : κ → Rˣ) (f : κ ≃ μ) :
     (monomialEquiv u e).trans (monomialEquiv v f) =
       monomialEquiv (fun i ↦ u i * v (e i)) (e.trans f) := by
@@ -75,9 +82,12 @@ theorem monomialEquiv_trans (u : ι → Rˣ) (e : ι ≃ κ) (v : κ → Rˣ) (f
     Equiv.apply_symm_apply, Units.val_mul]
   ring
 
+/-- Inverting a monomial equivalence inverts and relabels its coordinate units and inverts
+its coordinate equivalence. -/
+@[simp]
 theorem monomialEquiv_symm (u : ι → Rˣ) (e : ι ≃ κ) :
     (monomialEquiv u e).symm = monomialEquiv (fun j ↦ (u (e.symm j))⁻¹) e.symm :=
-  LinearEquiv.ext fun y ↦ funext fun i ↦ by simp
+  LinearEquiv.ext fun y ↦ funext fun i ↦ by simp [monomialEquiv_symm_apply]
 
 /-- A monomial equivalence transports support along its coordinate equivalence. -/
 @[simp]
@@ -88,7 +98,7 @@ theorem support_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
   simp [Units.mul_right_eq_zero]
 
 /-- A monomial equivalence is coordinatewise rescaling followed by reindexing. -/
-theorem monomialEquiv_eq_comp (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
+theorem monomialEquiv_apply_eq_comp (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
     (monomialEquiv u e x : κ → R) = (fun i ↦ (u i : R) * x i) ∘ e.symm :=
   funext fun j ↦ by simp
 
@@ -105,7 +115,8 @@ theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
   have hdot (x y : ι → R) :
       monomialEquiv u e x ⬝ᵥ monomialEquiv u e y =
         (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) := by
-    rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, comp_equiv_dotProduct_comp_equiv]
+    rw [monomialEquiv_apply_eq_comp, monomialEquiv_apply_eq_comp,
+      comp_equiv_dotProduct_comp_equiv]
   constructor
   · intro h i
     have hi := h (Pi.single i 1) (Pi.single i 1)

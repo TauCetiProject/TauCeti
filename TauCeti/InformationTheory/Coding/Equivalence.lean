@@ -84,7 +84,7 @@ variable [Fintype ι] [Fintype κ] [DecidableEq R]
 @[simp]
 theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
     hammingNorm (monomialEquiv u e x) = hammingNorm x := by
-  rw [monomialEquiv_eq_comp, Equiv.hammingNorm_comp]
+  rw [monomialEquiv_apply_eq_comp, Equiv.hammingNorm_comp]
   exact hammingNorm_comp (fun i (c : R) ↦ (u i : R) * c)
     (fun i ↦ (u i).isUnit.mul_right_injective) fun _ ↦ mul_zero _
 
@@ -92,7 +92,7 @@ theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R
 @[simp]
 theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι → R) :
     hammingDist (monomialEquiv u e x) (monomialEquiv u e y) = hammingDist x y := by
-  rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, Equiv.hammingDist_comp]
+  rw [monomialEquiv_apply_eq_comp, monomialEquiv_apply_eq_comp, Equiv.hammingDist_comp]
   exact hammingDist_comp (fun i (c : R) ↦ (u i : R) * c)
     fun i ↦ (u i).isUnit.mul_right_injective
 
