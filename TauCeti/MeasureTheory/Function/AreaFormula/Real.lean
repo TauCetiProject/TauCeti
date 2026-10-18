@@ -35,6 +35,17 @@ variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteD
   [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V]
   {f : U → V} {s : Set U} {g : U → ℝ≥0} {K : ℝ≥0}
 
+/-- If the weighted Jacobian has finite integral, then so does the extended weighted
+multiplicity on the target. This is the extended area formula read through the finiteness
+hypothesis, and is the common input for the real-valued results below. -/
+theorem lintegral_tsum_fiber_ne_top
+    (hf : LipschitzWith K f) (hs : NullMeasurableSet s volume) (hg : Measurable g)
+    (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).normDet * (g x : ℝ)) s) :
+    ∫⁻ y, ∑' x : ↥(s ∩ f ⁻¹' {y}), (g x : ℝ≥0∞) ∂μHE[finrank ℝ U] ≠ ∞ := by
+  rw [← hf.lintegral_normDet_fderiv_mul_eq_lintegral_tsum hs hg.coe_nnreal_ennreal]
+  simpa only [ENNReal.ofReal_mul (LinearMap.normDet_nonneg _), ENNReal.ofReal_coe_nnreal]
+    using hint.lintegral_lt_top.ne
+
 /-- If the weighted Jacobian has finite integral, then the real weights on almost every fiber
 are summable. This is the finiteness statement needed before passing from the extended area
 formula to an ordinary integral. -/
@@ -45,17 +56,14 @@ theorem ae_summable_fiber
   let G : V → ℝ≥0∞ := fun y ↦ ∑' x : ↥(s ∩ f ⁻¹' {y}), (g x : ℝ≥0∞)
   have hg' : Measurable fun x ↦ (g x : ℝ≥0∞) := hg.coe_nnreal_ennreal
   have hG : AEMeasurable G μHE[finrank ℝ U] := hf.aemeasurable_tsum_fiber hs hg'
-  have harea := hf.lintegral_normDet_fderiv_mul_eq_lintegral_tsum hs hg'
-  have hfinite : ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).normDet * (g x : ℝ≥0∞) ≠ ∞ := by
-    simpa only [ENNReal.ofReal_mul (LinearMap.normDet_nonneg _), ENNReal.ofReal_coe_nnreal]
-      using hint.lintegral_lt_top.ne
-  have hGfinite : ∫⁻ y, G y ∂μHE[finrank ℝ U] ≠ ∞ := harea ▸ hfinite
+  have hGfinite : ∫⁻ y, G y ∂μHE[finrank ℝ U] ≠ ∞ := hf.lintegral_tsum_fiber_ne_top hs hg hint
   filter_upwards [ae_lt_top' hG hGfinite] with y hy
   exact ENNReal.tsum_coe_ne_top_iff_summable_coe.mp hy.ne
 
 /-- Under the finite-integral hypothesis, the real weighted multiplicity is integrable on the
-target. Infinite fibers cause no totalization issue: the preceding finiteness result shows that
-they occur only on a Hausdorff-null set. -/
+target. Nonsummable fiber weights cause no totalization issue: by
+`LipschitzWith.ae_summable_fiber` they occur only on a Hausdorff-null set. Fibers themselves may
+be infinite, e.g. where the weight vanishes. -/
 theorem integrable_tsum_fiber
     (hf : LipschitzWith K f) (hs : NullMeasurableSet s volume) (hg : Measurable g)
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).normDet * (g x : ℝ)) s) :
@@ -64,11 +72,7 @@ theorem integrable_tsum_fiber
   let G : V → ℝ≥0∞ := fun y ↦ ∑' x : ↥(s ∩ f ⁻¹' {y}), (g x : ℝ≥0∞)
   have hg' : Measurable fun x ↦ (g x : ℝ≥0∞) := hg.coe_nnreal_ennreal
   have hG : AEMeasurable G μHE[finrank ℝ U] := hf.aemeasurable_tsum_fiber hs hg'
-  have harea := hf.lintegral_normDet_fderiv_mul_eq_lintegral_tsum hs hg'
-  have hfinite : ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).normDet * (g x : ℝ≥0∞) ≠ ∞ := by
-    simpa only [ENNReal.ofReal_mul (LinearMap.normDet_nonneg _), ENNReal.ofReal_coe_nnreal]
-      using hint.lintegral_lt_top.ne
-  have hGfinite : ∫⁻ y, G y ∂μHE[finrank ℝ U] ≠ ∞ := harea ▸ hfinite
+  have hGfinite : ∫⁻ y, G y ∂μHE[finrank ℝ U] ≠ ∞ := hf.lintegral_tsum_fiber_ne_top hs hg hint
   refine (integrable_toReal_of_lintegral_ne_top hG hGfinite).congr ?_
   exact Filter.Eventually.of_forall fun y ↦ by
     simpa only [ENNReal.coe_toReal] using
@@ -93,10 +97,7 @@ theorem integral_normDet_fderiv_mul_eq_integral_tsum
   have hg' : Measurable fun x ↦ (g x : ℝ≥0∞) := hg.coe_nnreal_ennreal
   have hG : AEMeasurable G μHE[finrank ℝ U] := hf.aemeasurable_tsum_fiber hs hg'
   have harea := hf.lintegral_normDet_fderiv_mul_eq_lintegral_tsum hs hg'
-  have hfinite : ∫⁻ x in s, A x ≠ ∞ := by
-    simpa only [A, ENNReal.ofReal_mul (LinearMap.normDet_nonneg _),
-      ENNReal.ofReal_coe_nnreal] using hint.lintegral_lt_top.ne
-  have hGfinite : ∫⁻ y, G y ∂μHE[finrank ℝ U] ≠ ∞ := harea ▸ hfinite
+  have hGfinite : ∫⁻ y, G y ∂μHE[finrank ℝ U] ≠ ∞ := hf.lintegral_tsum_fiber_ne_top hs hg hint
   have hGpoint : ∀ᵐ y ∂μHE[finrank ℝ U], G y < ∞ := ae_lt_top' hG hGfinite
   calc
     ∫ x in s, (fderiv ℝ f x).normDet * (g x : ℝ) =
