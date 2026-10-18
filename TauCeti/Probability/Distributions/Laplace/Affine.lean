@@ -16,7 +16,8 @@ location `a + c * m` and scale `|c| * b`, provided `c ≠ 0`. In particular, a n
 slope reflects the location and rescales the scale by its absolute value.
 
 The density and measure identities below hold for every scale parameter: nonpositive scales
-give the zero law on both sides. For a positive input scale, a zero slope instead gives
+give zero on both sides. The density identities also hold at slope zero, where both sides
+vanish. For a positive input scale, a zero slope instead gives
 `Measure.dirac a` by `MeasureTheory.Measure.map_const`; it is not a scale-zero Laplace law.
 
 The measure identity specializes `TauCeti.Probability.map_affine_withDensity_volume` using
@@ -34,11 +35,14 @@ open MeasureTheory ProbabilityTheory
 
 namespace TauCeti.Probability
 
-/-- The real Laplace density transforms with the absolute inverse slope under any nonconstant
-affine change of variables, including at invalid scales. -/
-theorem laplacePDFReal_affine (m b a : ℝ) {c : ℝ} (hc : c ≠ 0) (x : ℝ) :
+/-- The real Laplace density satisfies the affine scaling identity at every slope and scale.
+At slope zero, both sides vanish. -/
+theorem laplacePDFReal_affine (m b a c x : ℝ) :
     laplacePDFReal (a + c * m) (|c| * b) x =
       |c|⁻¹ * laplacePDFReal m b ((x - a) / c) := by
+  by_cases hc : c = 0
+  · subst c
+    simp
   by_cases hb : 0 < b
   · have hsub : (x - a) / c - m = (x - (a + c * m)) / c := by
       field_simp
@@ -52,14 +56,14 @@ theorem laplacePDFReal_affine (m b a : ℝ) {c : ℝ} (hc : c ≠ 0) (x : ℝ) :
   · have hcb : |c| * b ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (abs_nonneg c) (le_of_not_gt hb)
     simp [laplacePDFReal_of_nonpos (le_of_not_gt hb), laplacePDFReal_of_nonpos hcb]
 
-/-- Affine transport of a Laplace density yields the Laplace density at the transformed
-location and scale. -/
+/-- Applying `affineDensity` to a Laplace density yields the Laplace density at the transformed
+location and scale. This also holds at slope zero, where both sides vanish. -/
 -- Prefer the Laplace normal form to the generic expansion by affineDensity_apply.
 @[simp 1100]
-theorem affineDensity_laplacePDF (m b a : ℝ) {c : ℝ} (hc : c ≠ 0) (x : ℝ) :
+theorem affineDensity_laplacePDF (m b a c x : ℝ) :
     affineDensity a c (laplacePDF m b) x = laplacePDF (a + c * m) (|c| * b) x := by
   rw [affineDensity_apply, laplacePDF_eq_ofReal, laplacePDF_eq_ofReal,
-    laplacePDFReal_affine m b a hc, ENNReal.ofReal_mul (inv_nonneg.mpr (abs_nonneg c))]
+    laplacePDFReal_affine m b a c, ENNReal.ofReal_mul (inv_nonneg.mpr (abs_nonneg c))]
 
 /-- A nonconstant affine image of a Laplace law has transformed location `a + c * m` and
 scale `|c| * b`. This includes the nonpositive-scale zero laws. -/
@@ -71,7 +75,7 @@ theorem laplaceMeasure_map_affine (m b a : ℝ) {c : ℝ} (hc : c ≠ 0) :
     laplaceMeasure_eq_withDensity]
   congr 1
   ext x
-  exact affineDensity_laplacePDF m b a hc x
+  exact affineDensity_laplacePDF m b a c x
 
 /-- Affine transport of a Laplace random variable, with no assumptions on its source measure
 or on the sign of the nonzero slope. -/
