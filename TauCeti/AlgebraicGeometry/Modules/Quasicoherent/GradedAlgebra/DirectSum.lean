@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.GradedObject.Total
+public import TauCeti.CategoryTheory.Monoidal.Mon
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # The direct-sum algebra of a graded quasicoherent algebra
@@ -18,8 +20,8 @@ commutative `𝒪_X`-algebra `⨁ₙ Aₙ`: its underlying module is the direct 
 homogeneous components, the product of homogeneous sections of degrees `i` and `j` is their
 homogeneous product in degree `i + j`, and the unit is the unit of `A₀`. A graded algebra
 morphism induces the direct sum of its components. This forgets the grading, and it is the
-algebra whose relative spectrum is the affine scheme attached to a graded quasicoherent algebra,
-for instance the linear scheme of a quasicoherent sheaf.
+algebra whose relative spectrum is the scheme affine over `X` attached to a graded quasicoherent
+algebra, for instance the linear scheme of a quasicoherent sheaf.
 
 The construction is the image of `A` under the lax braided monoidal functor
 `CategoryTheory.GradedObject.total`, which sends a graded object to the coproduct of its
@@ -70,24 +72,6 @@ def toQuasicoherentAlgebra : GradedQuasicoherentAlgebra X ⥤ QuasicoherentAlgeb
     ((isGradedQuasicoherentAlgebra X).ι ⋙ (GradedObject.total ℕ X.Modules).mapCommMon)
     fun A ↦ inferInstanceAs (∐ fun n ↦ A.obj.X n).IsQuasicoherent
 
-/-- A functor `G` given by the lift of `F` through a full subcategory acts on morphisms as `F`,
-up to the identifications of the underlying objects. -/
-private theorem lift_map_hom_of_eq {C D : Type*} [Category C] [Category D] {P : ObjectProperty D}
-    {F : C ⥤ D} {hF : ∀ A, P (F.obj A)} {G : C ⥤ P.FullSubcategory} (hG : G = P.lift F hF)
-    {A B : C} (f : A ⟶ B) (hA : (G.obj A).obj = F.obj A) (hB : (G.obj B).obj = F.obj B) :
-    (G.map f).hom = eqToHom hA ≫ F.map f ≫ eqToHom hB.symm := by
-  subst hG
-  rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id, ObjectProperty.lift_map,
-    ObjectProperty.homMk_hom]
-
-/-- The morphism of underlying objects of an `eqToHom` between commutative monoid objects is an
-`eqToHom`. -/
-private theorem commMon_eqToHom_hom_hom {D : Type*} [Category D] [MonoidalCategory D]
-    [BraidedCategory D] {B C : CommMon D} (h : B = C) (h' : B.X = C.X) :
-    (eqToHom h).hom.hom = eqToHom h' := by
-  subst h
-  rw [eqToHom_refl, eqToHom_refl, CommMon.id_hom]
-
 private theorem toQuasicoherentAlgebra_obj_obj (A : GradedQuasicoherentAlgebra X) :
     (toQuasicoherentAlgebra.obj A).obj =
       ((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj) := by
@@ -105,8 +89,8 @@ private theorem toQuasicoherentAlgebra_map_hom {A B : GradedQuasicoherentAlgebra
       eqToHom (toQuasicoherentAlgebra_obj_obj A) ≫
         (GradedObject.total ℕ X.Modules).mapCommMon.map f.hom ≫
           eqToHom (toQuasicoherentAlgebra_obj_obj B).symm :=
-  lift_map_hom_of_eq toQuasicoherentAlgebra.eq_1 f (toQuasicoherentAlgebra_obj_obj A)
-    (toQuasicoherentAlgebra_obj_obj B)
+  ObjectProperty.lift_map_hom_of_eq toQuasicoherentAlgebra.eq_1 f
+    (toQuasicoherentAlgebra_obj_obj A) (toQuasicoherentAlgebra_obj_obj B)
 
 private theorem toQuasicoherentAlgebra_map_hom_hom_hom
     {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) :

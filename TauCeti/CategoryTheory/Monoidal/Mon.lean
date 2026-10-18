@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.CommMon_
 public import Mathlib.CategoryTheory.Monoidal.Grp
 public import Mathlib.CategoryTheory.Monoidal.Mon
 
@@ -18,6 +19,8 @@ This file provides general-purpose facts about monoid objects and their commutat
 * `TauCeti.isCommMonObj_of_grp_iso`: commutativity of a group object is preserved by isomorphism.
 * `TauCeti.isCommMonObj_of_mono`: a monoid subobject of a commutative monoid object is commutative.
 * `TauCeti.monObj_eq_of_mono`: a monomorphism admits at most one compatible monoid structure.
+* `TauCeti.commMon_eqToHom_hom_hom`: the underlying morphism of an `eqToHom` between commutative
+  monoid objects is an `eqToHom`.
 -/
 
 public section
@@ -59,5 +62,14 @@ theorem isCommMonObj_of_mono
   mul_comm := by
     apply (cancel_mono i).1
     simp [IsMonHom.mul_hom, ← BraidedCategory.braiding_naturality_assoc]
+
+/-- The morphism of underlying objects of an `eqToHom` between commutative monoid objects is an
+`eqToHom`. -/
+theorem commMon_eqToHom_hom_hom
+    {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
+    {A B : CommMon C} (h : A = B) (h' : A.X = B.X) :
+    (eqToHom h).hom.hom = eqToHom h' := by
+  subst h
+  rw [eqToHom_refl, eqToHom_refl, CommMon.id_hom]
 
 end TauCeti
