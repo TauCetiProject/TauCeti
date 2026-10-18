@@ -19,15 +19,9 @@ For any weight `w : Fin N → ℤ`, the dynamic parabolic `P(w)` has block-diago
 Levi quotient and weight-unipotent kernel `U(w)`. This file identifies that kernel with the
 unipotent radical of `P(w)`, including repeated weights, rank zero, and every characteristic.
 
-The normality and kernel calculation come from the represented dynamic Levi decomposition.
-The weight-unipotent coordinate algebra is polynomial, hence smooth and geometrically connected,
-and its points are unipotent. The Levi quotient is reductive even when weights repeat,
-and the limit has a section, so the reductive-quotient criterion gives the equality of Hopf ideals.
-The section makes the limit schematically dominant, as required by that criterion.
-The reductivity input is
-`GeneralLinear.reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra`;
-the kernel comparison is
-`FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive`.
+The identification describes unipotent radicals for block parabolics with arbitrary weight
+multiplicities. Specializing to the standard upper-triangular group identifies its unipotent
+radical with the upper-unitriangular subgroup.
 
 ## Main declaration
 
@@ -108,6 +102,9 @@ where the canonical weight-unipotent ideal is defined. -/
         (weightParabolicLimitCoordinateMap_comp_weightLeviToParabolicCoordinateMap k w)
   have hker : CommHopfAlgCat.kernelHopfIdeal f = I :=
     kernelHopfIdeal_weightParabolicLimitCoordinateMap k w
+  -- The central formal inputs are
+  -- `unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive` and
+  -- `reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra`.
   have hRaw : FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H = I := by
     rw [← hker]
     exact unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive
