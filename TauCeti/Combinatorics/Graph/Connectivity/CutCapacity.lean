@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
+public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 
 /-!
@@ -33,39 +34,6 @@ namespace Graph
 
 variable {V E K : Type*} (G : Graph V E)
 
-private theorem edgeEnds_spec_nonempty (e : G.edgeSet) :
-    Nonempty {p : Sym2 G.vertexSet //
-      ∀ x y : G.vertexSet, p = s(x, y) ↔ G.IsLink e.1 x.1 y.1} := by
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
-  refine ⟨⟨s(⟨x, hxy.left_mem⟩, ⟨y, hxy.right_mem⟩), ?_⟩⟩
-  intro u v
-  rw [Sym2.eq_iff]
-  simpa only [Subtype.ext_iff] using hxy.isLink_iff.symm
-
-/-- The unordered pair of actual vertices at the ends of an actual edge. -/
-noncomputable def edgeEnds (e : G.edgeSet) : Sym2 G.vertexSet :=
-  (Classical.choice (edgeEnds_spec_nonempty G e)).1
-
-/-- `edgeEnds` records exactly the `IsLink` relation of an actual edge. -/
-@[simp]
-theorem edgeEnds_eq_iff_isLink (e : G.edgeSet) (x y : G.vertexSet) :
-    G.edgeEnds e = s(x, y) ↔ G.IsLink e.1 x.1 y.1 := by
-  classical
-  exact (Classical.choice (edgeEnds_spec_nonempty G e)).2 x y
-
-/-- The vertices in `edgeEnds e` are exactly the vertices incident to `e`. -/
-@[simp]
-theorem mem_edgeEnds_iff (e : G.edgeSet) (x : G.vertexSet) :
-    x ∈ G.edgeEnds e ↔ G.Inc e.1 x.1 := by
-  constructor
-  · rw [Sym2.mem_iff_exists]
-    rintro ⟨y, hy⟩
-    exact ((G.edgeEnds_eq_iff_isLink e x y).1 hy).inc_left
-  · rintro ⟨y, hxy⟩
-    rw [Sym2.mem_iff_exists]
-    let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
-    exact ⟨y', (G.edgeEnds_eq_iff_isLink e x y').2 hxy⟩
-
 /-- An actual edge crosses a vertex cut exactly when its unordered pair of ends crosses the
 corresponding cut of actual vertices. -/
 theorem edgeEnds_crosses_iff_mem_edgeCut (e : G.edgeSet) (S : Finset G.vertexSet) :
@@ -76,9 +44,10 @@ theorem edgeEnds_crosses_iff_mem_edgeCut (e : G.edgeSet) (S : Finset G.vertexSet
   let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
   let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
   have hend : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
-  rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, show x = x'.1 from rfl,
-    show y = y'.1 from rfl, Subtype.val_injective.mem_set_image,
-    Subtype.val_injective.mem_set_image]
+  have hx' : x'.1 = x := rfl
+  have hy' : y'.1 = y := rfl
+  rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, ← hx', ← hy',
+    Subtype.val_injective.mem_set_image, Subtype.val_injective.mem_set_image]
 
 open Classical in
 /-- The capacity of a cut in a weighted multigraph. Each actual crossing edge is counted once. -/
@@ -87,14 +56,19 @@ noncomputable def edgeCutCapacity [Fintype G.edgeSet] [AddCommMonoid K]
   ∑ e : G.edgeSet,
     if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0
 
-open Classical in
 /-- The defining finite-sum formula for `edgeCutCapacity`. -/
 theorem edgeCutCapacity_def [Fintype G.edgeSet] [AddCommMonoid K]
-    (c : G.edgeSet → K) (S : Finset G.vertexSet) :
+    (c : G.edgeSet → K) (S : Finset G.vertexSet)
+    [DecidablePred fun e : G.edgeSet ↦
+      e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet))] :
     G.edgeCutCapacity c S =
       ∑ e : G.edgeSet,
-        if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0 :=
-  (rfl)
+        if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0 := by
+  classical
+  apply sum_congr rfl
+  intro e _
+  by_cases he : e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) <;>
+    simp [he]
 
 open Classical in
 /-- Aggregate edge weights by the unordered pair of their distinct ends. The capacity of every
@@ -103,13 +77,34 @@ noncomputable def pairCapacity [Fintype G.edgeSet] [AddCommMonoid K]
     (c : G.edgeSet → K) (p : Sym2 G.vertexSet) : K :=
   ∑ e : G.edgeSet, if ¬p.IsDiag ∧ G.edgeEnds e = p then c e else 0
 
-open Classical in
 /-- The defining finite-sum formula for `pairCapacity`. -/
 theorem pairCapacity_def [Fintype G.edgeSet] [AddCommMonoid K]
-    (c : G.edgeSet → K) (p : Sym2 G.vertexSet) :
+    (c : G.edgeSet → K) (p : Sym2 G.vertexSet)
+    [DecidablePred fun e : G.edgeSet ↦ ¬p.IsDiag ∧ G.edgeEnds e = p] :
     G.pairCapacity c p =
-      ∑ e : G.edgeSet, if ¬p.IsDiag ∧ G.edgeEnds e = p then c e else 0 :=
-  (rfl)
+      ∑ e : G.edgeSet, if ¬p.IsDiag ∧ G.edgeEnds e = p then c e else 0 := by
+  classical
+  apply sum_congr rfl
+  intro e _
+  by_cases he : ¬p.IsDiag ∧ G.edgeEnds e = p <;> simp [he]
+
+/-- On a pair of distinct vertices, `pairCapacity` sums exactly the weights of edges linking
+those vertices. -/
+theorem pairCapacity_mk_of_ne [Fintype G.edgeSet] [AddCommMonoid K]
+    (c : G.edgeSet → K) {x y : G.vertexSet} (hxy : x ≠ y)
+    [DecidablePred fun e : G.edgeSet ↦ G.IsLink e.1 x.1 y.1] :
+    G.pairCapacity c s(x, y) =
+      ∑ e : G.edgeSet, if G.IsLink e.1 x.1 y.1 then c e else 0 := by
+  classical
+  simp [pairCapacity_def, hxy, G.edgeEnds_eq_iff_isLink]
+
+/-- Aggregated pair capacity vanishes on a diagonal pair. -/
+@[simp]
+theorem pairCapacity_mk_self [Fintype G.edgeSet] [AddCommMonoid K]
+    (c : G.edgeSet → K) (x : G.vertexSet) :
+    G.pairCapacity c s(x, x) = 0 := by
+  classical
+  simp [pairCapacity_def]
 
 /-- Aggregated pair capacity vanishes on diagonal pairs, independently of loop weights. -/
 theorem pairCapacity_eq_zero_of_isDiag [Fintype G.edgeSet] [AddCommMonoid K]
