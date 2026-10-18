@@ -12,8 +12,8 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile.Basic
 
 One real probability law is stochastically below another when its cumulative distribution
 function is everywhere larger. This file keeps that comparison as a pointwise inequality rather
-than introducing a second order on measures. It proves that the comparison is equivalent to the
-opposite pointwise comparison of the two quantile functions on `(0, 1)`.
+than introducing a second order on measures. It uses the equivalence between that comparison and
+the opposite pointwise comparison of the two quantile functions on `(0, 1)`.
 
 The equivalence has a concrete coupling interpretation. The monotone quantile coupling reads both
 quantiles from the same uniform variable, and is concentrated on ordered pairs exactly when the cdf
@@ -21,15 +21,12 @@ comparison holds. Conversely, any coupling concentrated on ordered pairs implies
 cdf inequality. Thus the quantile construction supplies a canonical ordered coupling without a new
 coupling structure.
 
-The comparison is reflexive, transitive, antisymmetric, and preserved by measurable nondecreasing
-maps. Later distribution-specific monotonicity results can therefore work either with cdfs,
-quantiles, or explicit ordered couplings according to which form their construction naturally
-provides.
+The comparison is preserved by nondecreasing maps. Later distribution-specific monotonicity
+results can therefore work either with cdfs, quantiles, or explicit ordered couplings according to
+which form their construction naturally provides.
 
 ## Main results
 
-* `MeasureTheory.Measure.cdf_le_iff_quantile_le` — cdf comparison is equivalent to quantile
-  comparison at every interior probability level;
 * `TauCeti.IsCoupling.cdf_le_of_ae_fst_le_snd` — every almost surely ordered coupling implies the
   cdf comparison;
 * `MeasureTheory.Measure.ae_fst_le_snd_quantileCoupling_iff` — the monotone quantile coupling is
@@ -45,59 +42,6 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Set
-
-namespace MeasureTheory.Measure
-
-variable {μ ν κ : Measure ℝ}
-
-/-- **CDF comparison is equivalent to quantile comparison.** For probability laws `μ` and `ν`,
-`cdf ν ≤ cdf μ` pointwise exactly when the lower quantile of `μ` is at most that of `ν` at every
-level strictly between zero and one.
-
-The reversal is the usual convention for first-order stochastic dominance: a law shifted to the
-right has a smaller cdf and larger quantiles. -/
-theorem cdf_le_iff_quantile_le :
-    (∀ x, cdf ν x ≤ cdf μ x) ↔
-      ∀ t ∈ Ioo (0 : ℝ) 1, μ.quantile t ≤ ν.quantile t := by
-  constructor
-  · intro h t ht
-    rw [quantile_le_iff μ ht.1 ht.2]
-    exact (le_cdf_quantile ν ht.2).trans (h _)
-  · intro h x
-    by_contra hle
-    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
-    let t := (cdf μ x + cdf ν x) / 2
-    have ht0 : 0 < t := by
-      dsimp [t]
-      linarith [cdf_nonneg μ x, cdf_nonneg ν x]
-    have ht1 : t < 1 := by
-      dsimp [t]
-      linarith [cdf_le_one μ x, cdf_le_one ν x]
-    have hνx : ν.quantile t ≤ x := by
-      rw [quantile_le_iff ν ht0 ht1]
-      dsimp [t]
-      linarith
-    have hμx : μ.quantile t ≤ x := (h t ⟨ht0, ht1⟩).trans hνx
-    have htμ : t ≤ cdf μ x := (quantile_le_iff μ ht0 ht1).mp hμx
-    dsimp [t] at htμ
-    linarith
-
-/-- Pointwise cdf comparison is reflexive. -/
-theorem cdf_le_refl (μ : Measure ℝ) : ∀ x, cdf μ x ≤ cdf μ x := fun _ => le_rfl
-
-/-- Pointwise cdf comparisons compose. -/
-theorem cdf_le_trans (hμν : ∀ x, cdf ν x ≤ cdf μ x)
-    (hνκ : ∀ x, cdf κ x ≤ cdf ν x) : ∀ x, cdf κ x ≤ cdf μ x :=
-  fun x => (hνκ x).trans (hμν x)
-
-/-- Two real probability laws are equal when their cdfs bound one another pointwise. -/
-theorem eq_of_cdf_le_of_cdf_le [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    (hμν : ∀ x, cdf μ x ≤ cdf ν x) (hνμ : ∀ x, cdf ν x ≤ cdf μ x) : μ = ν := by
-  apply Measure.eq_of_cdf μ ν
-  ext x
-  exact le_antisymm (hμν x) (hνμ x)
-
-end MeasureTheory.Measure
 
 namespace TauCeti.IsCoupling
 
@@ -149,9 +93,7 @@ theorem cdf_le_iff_exists_ae_le_coupling [IsProbabilityMeasure μ] [IsProbabilit
 
 /-- Stochastic comparison is preserved by a nondecreasing real map. If
 `cdf ν ≤ cdf μ`, then the image of `μ` remains stochastically below the image of `ν`.
-
-The proof maps the canonical ordered quantile coupling coordinatewise and then applies
-`TauCeti.IsCoupling.cdf_le_of_ae_fst_le_snd`; no continuity or strict monotonicity is needed. -/
+Monotonicity alone suffices; neither continuity nor strict monotonicity is required. -/
 theorem cdf_map_le_cdf_map_of_monotone [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     {f : ℝ → ℝ} (hmono : Monotone f) (h : ∀ x, cdf ν x ≤ cdf μ x) :
     ∀ x, cdf (ν.map f) x ≤ cdf (μ.map f) x := by
