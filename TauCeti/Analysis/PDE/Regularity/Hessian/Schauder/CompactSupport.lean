@@ -46,50 +46,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- Radial retraction onto a ball with an arbitrary centre is `2`-Lipschitz. -/
-private theorem lipschitzWith_centeredRadialRetraction {x₀ : E} {R : ℝ} (hR : 0 ≤ R) :
-    LipschitzWith 2 (fun x : E => x₀ + TauCeti.radialRetraction R (x - x₀)) := by
-  apply LipschitzWith.of_dist_le_mul
-  intro x y
-  simpa only [dist_eq_norm, add_sub_add_left_eq_sub, NNReal.coe_ofNat, sub_sub_sub_cancel_right]
-    using (TauCeti.lipschitzWith_radialRetraction hR).dist_le_mul (x - x₀) (y - x₀)
-
-/-- The centred radial retraction fixes its closed ball. -/
-private theorem centeredRadialRetraction_eq_self {x₀ x : E} {R : ℝ}
-    (hx : x ∈ closedBall x₀ R) :
-    x₀ + TauCeti.radialRetraction R (x - x₀) = x := by
-  rw [TauCeti.radialRetraction_of_norm_le]
-  · abel
-  · simpa only [mem_closedBall, dist_eq_norm] using hx
-
-/-- The centred radial retraction takes values in its closed ball. -/
-private theorem centeredRadialRetraction_mem_closedBall {x₀ : E} {R : ℝ} (hR : 0 ≤ R)
-    (x : E) : x₀ + TauCeti.radialRetraction R (x - x₀) ∈ closedBall x₀ R := by
-  rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
-  simpa only [norm_radialRetraction hR] using min_le_right ‖x - x₀‖ R
-
-/-- Composing a Hölder function on a closed ball with the centred radial retraction gives a global
-Hölder function with the same exponent and `2ᵅ` times the Hölder constant. -/
-private theorem holderOnWith_comp_centeredRadialRetraction {F : Type*} [PseudoEMetricSpace F]
-    {f : E → F} {L α : ℝ≥0} {x₀ : E} {R : ℝ}
-    (hf : HolderOnWith L α f (closedBall x₀ R)) (hR : 0 ≤ R) :
-    HolderWith (L * 2 ^ (α : ℝ)) α
-      (fun x => f (x₀ + TauCeti.radialRetraction R (x - x₀))) := by
-  simpa only [mul_one, Function.comp_def] using hf.comp_holderWith
-    (lipschitzWith_centeredRadialRetraction hR).holderWith
-    (fun x => centeredRadialRetraction_mem_closedBall hR x)
-
-/-- A Hölder function, radially retracted to a ball of radius `R`, stays within `L Rᵅ` of its
-value at the centre. -/
-private theorem norm_comp_centeredRadialRetraction_sub_le {f : E → ℝ} {L α : ℝ≥0}
-    {x₀ : E} {R : ℝ} (hf : HolderOnWith L α f (closedBall x₀ R)) (hR : 0 ≤ R)
-    (x : E) :
-    |f (x₀ + TauCeti.radialRetraction R (x - x₀)) - f x₀| ≤ L * R ^ (α : ℝ) := by
-  have hmem := centeredRadialRetraction_mem_closedBall (x₀ := x₀) hR x
-  have hdist : dist (x₀ + TauCeti.radialRetraction R (x - x₀)) x₀ ≤ R :=
-    mem_closedBall.1 hmem
-  exact (hf.dist_le hmem (mem_closedBall_self hR)).trans (by gcongr)
-
 /-- **Schauder estimate for a Hessian supported in a ball.** Let `0 < α < 1`. There is
 `C > 0`, depending only on dimension and `α`, with the following property. Let `a` be
 `α`-Hölder entrywise with constant `L` on the support ball, and suppose `a x₀` has
@@ -99,7 +55,7 @@ with `λ > 0`. Put
 `Lu = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`.
 
 If the Hessian of a global `C²` function `u` is supported in the closed ball of radius `R`
-about `x₀`, belongs to `L²`, and is globally `α`-Hölder a priori, then the scale condition
+about `x₀` and is globally `α`-Hölder a priori, then the scale condition
 
 `2 κ (n+1)² (L Rᵅ + 2ᵅ L rᵅ) ≤ λ`,
 
@@ -121,7 +77,6 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
         (L * R ^ (α : ℝ) + (L * 2 ^ (α : ℝ)) * r ^ (α : ℝ)) ≤ lam →
       (∀ i j, HolderOnWith L α (fun x => a x i j) (closedBall x₀ R)) →
       ∀ {u : E → ℝ}, ContDiff ℝ 2 u → MemHolder α (iteratedFDeriv ℝ 2 u) →
-      MemLp (iteratedFDeriv ℝ 2 u) 2 volume →
       Function.support (iteratedFDeriv ℝ 2 u) ⊆ closedBall x₀ R →
       HolderWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) →
@@ -135,18 +90,21 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
     exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_sub_le
       hα hα1 (n := n)
   refine ⟨C₀, hC₀, fun {a x₀ lam Lam} hlam hEll hEll' {L K R r} hR hr hsmall hL
-    {u} hu hH hH2 hsupp hf => ?_⟩
-  let q : E → E := fun x => x₀ + TauCeti.radialRetraction R (x - x₀)
+    {u} hu hH hsupp hf => ?_⟩
+  let q : E → E := TauCeti.centeredRadialRetraction x₀ R
   let a' : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ := fun x => a (q x)
   have hq_eq {x : E} (hx : x ∈ closedBall x₀ R) : q x = x :=
-    centeredRadialRetraction_eq_self hx
+    TauCeti.centeredRadialRetraction_of_mem_closedBall hx
   have ha'_holder (i j : Fin (n + 1)) :
       HolderWith (L * 2 ^ (α : ℝ)) α (fun x => a' x i j) := by
-    simpa only [a', q] using holderOnWith_comp_centeredRadialRetraction (hL i j) hR
+    simpa only [a', q, Function.comp_def] using (hL i j).comp_centeredRadialRetraction hR
   have ha'_close (x : E) (i j : Fin (n + 1)) :
       |a' x i j - a x₀ i j| ≤ L * R ^ (α : ℝ) := by
-    simpa only [a', q] using
-      norm_comp_centeredRadialRetraction_sub_le (hL i j) hR x
+    have hmem := TauCeti.centeredRadialRetraction_mem_closedBall (x₀ := x₀) hR x
+    have hdist : dist (TauCeti.centeredRadialRetraction x₀ R x) x₀ ≤ R :=
+      mem_closedBall.1 hmem
+    simpa only [a', q, Real.dist_eq] using
+      ((hL i j).dist_le hmem (mem_closedBall_self hR)).trans (by gcongr)
   have hf' : HolderWith K α (fun x => ∑ i, ∑ j, a' x i j •
       fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1)
         (EuclideanSpace.single j 1)) := by
@@ -162,6 +120,9 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
         simpa only [iteratedFDeriv_two_apply, zero_apply, Matrix.cons_val_zero,
           Matrix.cons_val_one] using hzero'
       simp [hentry]
+  have hH2 : MemLp (iteratedFDeriv ℝ 2 u) 2 volume :=
+    (hu.continuous_iteratedFDeriv (by norm_num)).memLp_of_hasCompactSupport
+      (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall x₀ R) hsupp)
   let ε : ℝ≥0 := (L * R ^ (α : ℝ)).toNNReal
   have hε : (ε : ℝ) = L * R ^ (α : ℝ) := by
     exact Real.coe_toNNReal _ (mul_nonneg L.coe_nonneg (Real.rpow_nonneg hR _))

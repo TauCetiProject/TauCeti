@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Topology.MetricSpace.Lipschitz
+public import Mathlib.Topology.MetricSpace.Holder
 
 /-!
 # The radial retraction onto a closed ball
@@ -27,6 +27,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
 
 * `TauCeti.radialRetraction`: scaling by `min 1 (r / ‖x‖)`; when `0 ≤ r`, this is the retraction
   onto the closed ball of radius `r` centred at the origin.
+* `TauCeti.centeredRadialRetraction`: the corresponding retraction onto a closed ball with an
+  arbitrary centre.
 * `TauCeti.norm_radialRetraction`: for `0 ≤ r`, its norm is `min ‖x‖ r`.
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
   identity.
@@ -55,6 +57,10 @@ ball of radius `r` centred at the origin: vectors of norm at most `r` are fixed 
 pulled back along their ray to the sphere of radius `r`. -/
 noncomputable def radialRetraction (r : ℝ) (x : E) : E := min 1 (r / ‖x‖) • x
 
+/-- The radial retraction onto the closed ball of radius `r` centred at `x₀`. -/
+noncomputable def centeredRadialRetraction (x₀ : E) (r : ℝ) (x : E) : E :=
+  x₀ + radialRetraction r (x - x₀)
+
 @[simp]
 theorem radialRetraction_zero (r : ℝ) : radialRetraction r (0 : E) = 0 := by
   simp [radialRetraction]
@@ -65,6 +71,14 @@ theorem radialRetraction_of_norm_le (h : ‖x‖ ≤ r) : radialRetraction r x =
   rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
   · rw [radialRetraction, norm_eq_zero.1 hx.symm, smul_zero]
   · rw [radialRetraction, min_eq_left ((le_div_iff₀ hx).2 (by linarith)), one_smul]
+
+/-- The centred radial retraction fixes its closed ball. -/
+@[simp]
+theorem centeredRadialRetraction_of_mem_closedBall {x₀ : E} (hx : x ∈ closedBall x₀ r) :
+    centeredRadialRetraction x₀ r x = x := by
+  rw [centeredRadialRetraction, radialRetraction_of_norm_le]
+  · abel
+  · simpa only [mem_closedBall, dist_eq_norm] using hx
 
 /-- The radial retraction agrees with the identity on a neighborhood of every point in the open
 ball. -/
@@ -93,6 +107,12 @@ theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
     radialRetraction r x ∈ closedBall (0 : E) r := by
   rw [mem_closedBall_zero_iff, norm_radialRetraction hr]
   exact min_le_right _ _
+
+/-- The centred radial retraction takes values in its closed ball. -/
+theorem centeredRadialRetraction_mem_closedBall {x₀ : E} (hr : 0 ≤ r) (x : E) :
+    centeredRadialRetraction x₀ r x ∈ closedBall x₀ r := by
+  rw [centeredRadialRetraction, mem_closedBall, dist_eq_norm, add_sub_cancel_left]
+  simpa only [norm_radialRetraction hr] using min_le_right ‖x - x₀‖ r
 
 /-- The radial retraction is idempotent for nonnegative radius. -/
 theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
@@ -159,6 +179,15 @@ theorem lipschitzWith_radialRetraction (hr : 0 ≤ r) :
   · exact norm_radialRetraction_sub_le hr h
   · simpa only [norm_sub_rev] using norm_radialRetraction_sub_le hr h
 
+/-- Radial retraction onto a ball with an arbitrary centre is `2`-Lipschitz. -/
+theorem lipschitzWith_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
+    LipschitzWith 2 (centeredRadialRetraction x₀ r) := by
+  apply LipschitzWith.of_dist_le_mul
+  intro x y
+  simpa only [centeredRadialRetraction, dist_eq_norm, add_sub_add_left_eq_sub, NNReal.coe_ofNat,
+    sub_sub_sub_cancel_right] using
+    (lipschitzWith_radialRetraction hr).dist_le_mul (x - x₀) (y - x₀)
+
 end TauCeti
 
 /-- Precomposing with the radial retraction turns a map that is Lipschitz on the closed ball of
@@ -171,3 +200,13 @@ theorem LipschitzOnWith.comp_radialRetraction {E F : Type*} [NormedAddCommGroup 
   lipschitzOnWith_univ.1 <| hf.comp
     (lipschitzOnWith_univ.2 (TauCeti.lipschitzWith_radialRetraction hr))
     (TauCeti.mapsTo_radialRetraction hr)
+
+/-- Composing a Hölder function on a closed ball with the centred radial retraction gives a global
+Hölder function with the same exponent and `2ᵅ` times the Hölder constant. -/
+theorem HolderOnWith.comp_centeredRadialRetraction {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [PseudoEMetricSpace F] {f : E → F} {c α : ℝ≥0} {x₀ : E} {r : ℝ}
+    (hf : HolderOnWith c α f (closedBall x₀ r)) (hr : 0 ≤ r) :
+    HolderWith (c * 2 ^ (α : ℝ)) α (f ∘ TauCeti.centeredRadialRetraction x₀ r) := by
+  simpa only [mul_one] using hf.comp_holderWith
+    (TauCeti.lipschitzWith_centeredRadialRetraction hr).holderWith
+    (TauCeti.centeredRadialRetraction_mem_closedBall hr)
