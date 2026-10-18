@@ -168,6 +168,7 @@ theorem charpolyRev_blockDiagonal' {o : Type*} {m : o → Type*} [Fintype o] [De
 
 /-- A finite compression of a dependent block-diagonal matrix factors over the compressed
 blocks. The block at `i` is restricted to the coordinates of the compression lying over `i`. -/
+@[simp]
 theorem charpolyRev_submatrix_blockDiagonal' {o : Type*} {m : o → Type*}
     [Fintype o] [DecidableEq o] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R)
     (S : Finset (Σ i, m i)) :
