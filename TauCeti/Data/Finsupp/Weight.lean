@@ -23,6 +23,9 @@ Weights also respect scaling of the weight vector and decompose into contributio
 and after a chosen coordinate in a linear order. These identities support comparisons between
 lexicographic order and weighted degree.
 
+On a product `ι × κ` of blocks indexed by `ι`, the weight given by the indicator of block `b` is
+the degree in block `b`.
+
 ## Main results
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
@@ -33,6 +36,7 @@ lexicographic order and weighted degree.
   occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_gt_add_smul_add_weight_filter_lt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
+* `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block is the degree in that block.
 -/
 
 public section
@@ -107,5 +111,24 @@ theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R 
     weight (s • c) w = s • weight c w := by
   simp only [weight_apply, smul_sum, Pi.smul_apply]
   exact sum_congr fun _ _ ↦ smul_comm _ s _
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The indicator weight of block `b` of a multi-index `e` on `ι × κ` is its degree
+`∑ l, e (b, l)` in block `b`. -/
+theorem weight_ite_fst_eq_sum {ι κ : Type*} [Fintype κ] [DecidableEq ι] (e : ι × κ →₀ ℕ)
+    (b : ι) : weight (fun p : ι × κ ↦ if p.1 = b then 1 else 0) e = ∑ l, e (b, l) := by
+  induction e using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg, Finsupp.add_apply, Finset.sum_add_distrib]
+  | single p n =>
+    obtain ⟨h, l⟩ := p
+    by_cases hb : h = b
+    · subst hb
+      classical
+      simp [Finsupp.weight_single, Finsupp.single_apply]
+    · simp [Finsupp.weight_single, hb]
 
 end Finsupp
