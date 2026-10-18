@@ -367,6 +367,22 @@ theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
     (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection :=
   SmoothBundleForm.sub_toContMDiffSection φ ψ
 
+/-- The rough form underlying a sum of smooth forms is the sum of their rough forms. -/
+theorem add_toRoughForm {k : ℕ} (φ ψ : SmoothForm I M F k) :
+    (φ + ψ).1 = φ.1 + ψ.1 :=
+  rfl
+
+/-- The rough form underlying a scalar multiple of a smooth form is the scalar multiple of its rough
+form. -/
+theorem smul_toRoughForm {k : ℕ} (c : ℝ) (φ : SmoothForm I M F k) :
+    (c • φ).1 = c • φ.1 :=
+  rfl
+
+/-- The rough form underlying the negation of a smooth form is the negation of its rough form. -/
+theorem neg_toRoughForm {k : ℕ} (φ : SmoothForm I M F k) :
+    (-φ).1 = -φ.1 :=
+  rfl
+
 /-- The constant smooth form whose value is the alternating map `A` in model-space coordinates. -/
 def const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
