@@ -67,10 +67,7 @@ theorem isProbabilityMeasure_nakagamiMeasure_iff :
   constructor
   · intro hp
     by_contra h
-    rw [nakagamiMeasure_of_not_pos h] at hp
-    have hone := @IsProbabilityMeasure.measure_univ ℝ _ (0 : Measure ℝ) hp
-    have hzero_eq_one : (0 : ℝ≥0∞) = 1 := hone
-    exact zero_ne_one hzero_eq_one
+    exact IsProbabilityMeasure.ne_zero _ (nakagamiMeasure_of_not_pos h)
   · rintro ⟨hm, hΩ⟩
     exact isProbabilityMeasure_nakagamiMeasure hm hΩ
 
@@ -106,6 +103,23 @@ theorem nakagamiPDFReal_of_not_pos (h : ¬ (0 < m ∧ 0 < Ω ∧ 0 < x)) :
 theorem nakagamiPDF_of_not_pos (h : ¬ (0 < m ∧ 0 < Ω ∧ 0 < x)) :
     nakagamiPDF m Ω x = 0 := by
   simp [nakagamiPDF_eq_ofReal, nakagamiPDFReal_of_not_pos h]
+
+/-- The real Nakagami density vanishes on the nonpositive half-line. -/
+@[simp]
+theorem nakagamiPDFReal_of_nonpos (hx : x ≤ 0) : nakagamiPDFReal m Ω x = 0 :=
+  nakagamiPDFReal_of_not_pos (by grind)
+
+/-- The extended Nakagami density vanishes on the nonpositive half-line. -/
+@[simp]
+theorem nakagamiPDF_of_nonpos (hx : x ≤ 0) : nakagamiPDF m Ω x = 0 :=
+  nakagamiPDF_of_not_pos (by grind)
+
+/-- The extended Nakagami density at positive parameters and coordinate. -/
+@[simp]
+theorem nakagamiPDF_of_pos (hm : 0 < m) (hΩ : 0 < Ω) (hx : 0 < x) :
+    nakagamiPDF m Ω x = ENNReal.ofReal
+      (2 * (m / Ω) ^ m / Real.Gamma m * x ^ (2 * m - 1) * exp (-(m / Ω * x ^ 2))) := by
+  rw [nakagamiPDF_eq_ofReal, nakagamiPDFReal_of_pos hm hΩ hx]
 
 /-- The real Nakagami density is nonnegative everywhere. -/
 theorem nakagamiPDFReal_nonneg (m Ω x : ℝ) : 0 ≤ nakagamiPDFReal m Ω x := by
@@ -171,6 +185,20 @@ theorem nakagamiMeasure_eq_withDensity (m Ω : ℝ) :
       ext x
       exact nakagamiPDF_of_not_pos (by tauto)
     simp [hz]
+
+/-- At positive parameters the extended Nakagami density integrates to one. -/
+theorem lintegral_nakagamiPDF_eq_one (hm : 0 < m) (hΩ : 0 < Ω) :
+    ∫⁻ x, nakagamiPDF m Ω x = 1 := by
+  let _ := isProbabilityMeasure_nakagamiMeasure hm hΩ
+  simpa [nakagamiMeasure_eq_withDensity, withDensity_apply] using
+    (measure_univ (μ := nakagamiMeasure m Ω))
+
+/-- At positive parameters the real Nakagami density integrates to one. -/
+theorem integral_nakagamiPDFReal (hm : 0 < m) (hΩ : 0 < Ω) :
+    ∫ x, nakagamiPDFReal m Ω x = 1 := by
+  simp only [integral_eq_lintegral_of_nonneg_ae (.of_forall (nakagamiPDFReal_nonneg m Ω))
+      (measurable_nakagamiPDFReal m Ω).aestronglyMeasurable,
+    ← nakagamiPDF_eq_ofReal, lintegral_nakagamiPDF_eq_one hm hΩ, ENNReal.toReal_one]
 
 /-- Joint Giry measurability includes all invalid parameter values. -/
 @[fun_prop]
