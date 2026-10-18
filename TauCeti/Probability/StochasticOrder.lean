@@ -45,8 +45,7 @@ namespace MeasureTheory.Measure
 
 /-- Reversed pointwise comparison of the cdfs of two real probability laws is equivalent to
 pointwise comparison of their quantiles at every level strictly between zero and one. -/
-theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] :
+theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
     (∀ x, cdf ν x ≤ cdf μ x) ↔
       ∀ u, 0 < u → u < 1 → μ.quantile u ≤ ν.quantile u := by
   constructor
@@ -76,8 +75,7 @@ theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
 /-- If the cdfs are ordered, the common-uniform quantile coupling is concentrated on ordered
 pairs. Thus the stochastic comparison is realized by random variables satisfying `X ≤ Y` almost
 surely. -/
-theorem ae_fst_le_snd_quantileCoupling (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (h : ∀ x, cdf ν x ≤ cdf μ x) :
+theorem ae_fst_le_snd_quantileCoupling (μ ν : Measure ℝ) (h : ∀ x, cdf ν x ≤ cdf μ x) :
   ∀ᵐ z ∂μ.quantileCoupling ν, z.1 ≤ z.2 := by
   rw [quantileCoupling_def]
   refine (ae_map_iff (by fun_prop) (measurableSet_le measurable_fst measurable_snd)).2 ?_
