@@ -84,6 +84,8 @@ computes the index of the Kummer idele subgroup in the proof of the second inequ
 
 * `TauCeti.GlobalNumberFields.exists_unitEmbedding_mul_mem_range_powMonoidHom`: every idele is,
   up to a principal idele, an `n`-th power at the places of `S` and at the infinite places.
+* `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits_baseChange`: an `[L : K]`-th
+  power is a norm from `F ⊗[K] L`.
 * `TauCeti.GlobalNumberFields.range_normUnits_adicCompletion_eq_top_of_finrank_eq_one`: every unit
   of `K_v` is a local norm when some place above `v` has local degree one.
 * `TauCeti.GlobalNumberFields.ideleClassNormMap_surjective_of_forall_range_normUnits_eq_top` and
@@ -174,6 +176,7 @@ end Approximation
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
+
 variable (L) in
 /-- **Every unit of `K_v` is a local norm when some place above `v` has local degree one.** The
 norm from `K_v ⊗[K] L` is then onto, the factor `L_w = K_v` alone providing every unit. -/
@@ -203,13 +206,10 @@ theorem ideleClassNormMap_surjective_of_forall_range_normUnits_eq_top
   obtain ⟨α, hfin, hinf⟩ := exists_unitEmbedding_mul_mem_range_powMonoidHom S
     (Module.finrank_pos (R := K) (M := L)).ne' x
   -- A `[L : K]`-th power of a local unit is a local norm.
-  have hpow {F : Type _} [Field F] [Algebra K F] {y : Fˣ}
-      (hy : y ∈ (powMonoidHom (Module.finrank K L) : Fˣ →* Fˣ).range) :
-      y ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range :=
-    Algebra.range_powMonoidHom_le_range_normUnits F (by rw [Module.finrank_baseChange]) hy
+  have hpow := Algebra.range_powMonoidHom_le_range_normUnits_baseChange K L
   obtain ⟨z, hz⟩ := (mem_range_ideleNormMap_iff K L _).mpr
-    ⟨fun v ↦ if hv : v ∈ S then hpow (hfin v hv) else by simp [hS v hv],
-      fun w ↦ hpow (hinf w)⟩
+    ⟨fun v ↦ if hv : v ∈ S then hpow _ (hfin v hv) else by simp [hS v hv],
+      fun w ↦ hpow _ (hinf w)⟩
   refine ⟨(z : IdeleClassGroup (𝓞 L) L), ?_⟩
   rw [ContinuousMonoidHom.coe_toMonoidHom] at hz
   have hα : IdeleGroup.unitEmbedding (𝓞 K) K α ∈ IdeleGroup.principalSubgroup (𝓞 K) K :=

@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 
@@ -345,8 +346,25 @@ theorem laplaceBeltrami_eq_laplacian
   rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x b,
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := e.apply_symm_apply u
+  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
+    -- Expose the inverse `LinearEquiv` carried by the isometry equivalence.
+    change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
+    rw [show e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv by
+      dsimp [e]
+      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
+    exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
   simpa only [b, OrthonormalBasis.map_apply, he] using
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
+
+/-- The squared norm has constant flat Laplace--Beltrami operator. -/
+@[simp] theorem laplaceBeltrami_norm_sq
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
+      2 * Module.finrank ℝ F := by
+  rw [laplaceBeltrami_eq_laplacian]
+  · exact TauCeti.laplacian_norm_sq x
+  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
+      (by norm_num)).differentiable (by norm_num)) x
 
 end TauCeti.Manifold

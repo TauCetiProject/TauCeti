@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.CharacteristicMap
 
 /-!
@@ -41,27 +42,19 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι]
 
-/-- The `n`-dimensional cells of the realization of `K`: its faces with `n + 1` vertices. -/
-abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
-  {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
-
 namespace RealizationCell
 
 variable {K : AbstractSimplicialComplex ι} {n : ℕ}
 
-/-- The increasing enumeration of the vertices of a simplicial cell. -/
-def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
-  (c.1.1.orderEmbOfFin c.2).toEmbedding
-
-/-- The increasing enumeration has the cell's face as its image. -/
-@[simp]
-theorem image_vertexEmbedding (c : RealizationCell K n) :
-    Finset.univ.image c.vertexEmbedding = c.1.1 :=
-  Finset.image_orderEmbOfFin_univ c.1.1 c.2
-
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
   simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2)
+
+/-- A cell's characteristic map uses its increasing vertex enumeration. -/
+theorem characteristicMap_def (c : RealizationCell K n) :
+    c.characteristicMap =
+      simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2) :=
+  (rfl)
 
 /-- The source of a simplicial cell's characteristic map is the open unit ball. -/
 @[simp]
