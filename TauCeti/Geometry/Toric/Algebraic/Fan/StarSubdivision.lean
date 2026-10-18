@@ -561,10 +561,8 @@ private theorem inf_mem_starSubdivisionAlongLocal {τ D : PointedCone ℝ V} (h�
     (hστ : σ ≤ τ) (hD : D ∈ Φ.cones) (hσD : ¬σ ≤ D) :
     τ ⊓ D ∈ (starSubdivisionAlongLocal Φ hΦ hσ hτ hστ).cones :=
   mem_starSubdivision_cones_of_isFaceOf _ _ _ (Φ.inf_isFaceOf_left hτ hD)
-    (by
-      by_contra! h
-      exact hσD (((ToricRay.le_iff_forall_mem_faceFinset _ _ (Φ.isToricCone hσ).salient).2
-        h).trans inf_le_right))
+    (ToricRay.exists_mem_faceFinset_not_le_of_not_le _ _ (Φ.isToricCone hσ).salient
+      fun h ↦ hσD (h.trans inf_le_right))
 
 private theorem starSubdivisionAlongCones_inf_isFaceOf {C D : PointedCone ℝ V}
     (hC : C ∈ starSubdivisionAlongCones Φ hΦ hσ) (hD : D ∈ starSubdivisionAlongCones Φ hΦ hσ) :
@@ -684,10 +682,8 @@ theorem starSubdivisionAlong_ofCone (hi : IsIntegralLattice i) {τ : PointedCone
     hστ.le, hC⟩⟩
   rintro (⟨hC, hσC⟩ | ⟨τ₀, hτ₀, _, hC⟩)
   · exact mem_starSubdivision_cones_of_isFaceOf hi _ hτ ((mem_ofCone_cones hi _).1 hC)
-      (by
-        by_contra! h
-        exact hσC ((ToricRay.le_iff_forall_mem_faceFinset _ _
-          (hτ.toIsToricCone.of_isFaceOf hστ).salient).2 h))
+      (ToricRay.exists_mem_faceFinset_not_le_of_not_le _ _
+        (hτ.toIsToricCone.of_isFaceOf hστ).salient hσC)
   · -- A cone of the star subdivision of a face `τ₀` of `τ` containing `σ` is one for `τ`.
     have hτ₀τ := (mem_ofCone_cones hi _).1 hτ₀
     have h := mem_starSubdivision_cones_map_faceEmbedding hi hτ hτ₀τ _ hC

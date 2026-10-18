@@ -470,6 +470,12 @@ theorem mem_faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) {ρ : ToricRay σ} :
     ρ ∈ faceFinset hτ hfg ↔ ρ.toPointedCone ≤ τ := by
   rw [faceFinset, Set.Finite.mem_toFinset, range_faceEmbedding, Set.mem_ofPred_eq]
 
+/-- A ray of a face `τ` of `σ`, viewed as a ray of `σ`, lies in `faceFinset` of `τ`. -/
+@[simp]
+theorem faceEmbedding_mem_faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) (ρ : ToricRay τ) :
+    faceEmbedding hτ ρ ∈ faceFinset hτ hfg :=
+  (mem_faceFinset hτ hfg).2 ρ.1.isFaceOf.le
+
 /-- For faces `υ ≤ τ ≤ σ`, the rays of `σ` contained in `υ` are the rays of `τ` contained in `υ`,
 viewed as rays of `σ`. -/
 theorem faceFinset_eq_map {υ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) (hυτ : υ.IsFaceOf τ)
