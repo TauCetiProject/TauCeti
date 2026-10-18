@@ -159,11 +159,8 @@ theorem map_connectedComponentsIdempotent_eq_zero
     rw [rationalComponentMap_apply]
     apply (PrimeSpectrum.mem_basicOpen_connectedComponentsIdempotent C
       (rationalKernelPoint H g)).mp
-    rw [PrimeSpectrum.mem_basicOpen]
-    intro hmem
-    have : g.ofConv (PrimeSpectrum.connectedComponentsIdempotent C) = 0 := by
-      simpa [RingHom.mem_ker] using hmem
-    exact zero_ne_one (this.symm.trans hone)
+    exact (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv _).mpr
+      (hone.trans_ne one_ne_zero)
 
 /-- Evaluation of a component-indexed function at a rational point is evaluation at the
 connected component containing that point. -/
