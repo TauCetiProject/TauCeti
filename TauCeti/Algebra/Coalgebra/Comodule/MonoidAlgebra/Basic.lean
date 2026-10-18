@@ -153,6 +153,21 @@ theorem tensorCoeffEquiv_symm_single (g : G) (v : V) :
   classical
   simp [tensorCoeffEquiv, LinearEquiv.symm_lTensor]
 
+/-- Contracting the last leg of the comultiplication against a basis coefficient leaves
+that coefficient times the corresponding group-like basis vector. -/
+@[simp]
+theorem tensorComponent_monoidCoeff_comul (g : G) (a : MonoidAlgebra R G) :
+    LinearMap.tensorComponent (monoidCoeff R G g) (Coalgebra.comul a) =
+      a.coeff g • MonoidAlgebra.single g (1 : R) := by
+  classical
+  have h : LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ Coalgebra.comul =
+      (monoidCoeff R G g).smulRight (MonoidAlgebra.single g (1 : R)) := by
+    refine MonoidAlgebra.lhom_ext' fun h ↦ ?_
+    ext r
+    by_cases hh : h = g <;> simp [MonoidAlgebra.comul_single, hh]
+  simpa only [LinearMap.comp_apply, LinearMap.smulRight_apply, monoidCoeff_apply] using
+    LinearMap.congr_fun h a
+
 end Component
 
 /-! ## The weight components of a comodule -/
