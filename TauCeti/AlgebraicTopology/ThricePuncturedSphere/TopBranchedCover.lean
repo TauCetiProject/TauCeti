@@ -264,24 +264,25 @@ theorem nonempty_restrict_preimage_singleton_equiv (z : ThricePuncturedSphere) :
   exact ⟨(Finite.equivFin _).trans (finCongr (X.natCard_restrict_preimage_singleton z))⟩
 
 /-- The connected degree-`n` cover of the thrice-punctured sphere obtained by deleting the
-fibres over the three marked points.
-
-The definition is exposed so its total space and projection reduce to the restricted cover. -/
-@[expose]
+fibres over the three marked points. -/
 def connectedCover : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n where
   cover := ConnectedCoveringSpace.mk
     (TopCat.ofHom ⟨X.restrict, X.isCoveringMap_restrict.continuous⟩)
     X.isCoveringMap_restrict
   nonempty_equiv_fin := X.nonempty_restrict_preimage_singleton_equiv basePt
 
-@[simp]
-theorem connectedCover_coe : (X.connectedCover.cover : TopCat) =
-    TopCat.of (X.π ⁻¹' range toOnePoint) :=
-  rfl
+/-- The canonical identification of the packaged connected cover's total space with the
+complement of the marked fibres. -/
+def connectedCoverHomeomorph :
+    (X.connectedCover.cover : TopCat) ≃ₜ X.π ⁻¹' range toOnePoint := by
+  unfold connectedCover
+  exact Homeomorph.refl _
 
-@[simp]
-theorem connectedCover_proj : X.connectedCover.cover.proj =
-    TopCat.ofHom ⟨X.restrict, X.isCoveringMap_restrict.continuous⟩ :=
+/-- Under the canonical identification, the packaged cover's projection is the restricted
+branched-cover projection. -/
+theorem restrict_connectedCoverHomeomorph (z : (X.connectedCover.cover : TopCat)) :
+    X.restrict (X.connectedCoverHomeomorph z) = X.connectedCover.cover.proj z := by
+  unfold connectedCoverHomeomorph connectedCover
   rfl
 
 /-- **The local degrees over any point add up to the degree.** Over an unmarked point this is the
@@ -402,21 +403,33 @@ theorem restrict_restrict (ι : Iso X Y) (z : X.π ⁻¹' range toOnePoint) :
   apply isOpenEmbedding_toOnePoint.injective
   simp only [toOnePoint_apply, TopBranchedCover.coe_restrict_apply, coe_restrict_apply, π_apply]
 
+/-- The homeomorphism between the packaged total spaces induced by restriction of an isomorphism
+of topological branched covers, expressed through their canonical identifications with the
+complements of the marked fibres. -/
+def connectedCoverHomeomorph (ι : Iso X Y) :
+    (X.connectedCover.cover : TopCat) ≃ₜ (Y.connectedCover.cover : TopCat) :=
+  X.connectedCoverHomeomorph.trans (ι.restrict.trans Y.connectedCoverHomeomorph.symm)
+
 /-- The restriction of an isomorphism of topological branched covers is an isomorphism of the
 associated connected covers of the thrice-punctured sphere. -/
 def connectedCoverIso (ι : Iso X Y) : X.connectedCover.cover ≅ Y.connectedCover.cover :=
-  CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo ι.restrict) (by
+  CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo ι.connectedCoverHomeomorph) (by
     ext z
-    exact congrArg Subtype.val (ι.restrict_restrict z))
+    change Subtype.val (Y.connectedCover.cover.proj (ι.connectedCoverHomeomorph z)) =
+      Subtype.val (X.connectedCover.cover.proj z)
+    exact congrArg Subtype.val <| by
+      rw [← Y.restrict_connectedCoverHomeomorph]
+      simp only [connectedCoverHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
+      rw [ι.restrict_restrict, X.restrict_connectedCoverHomeomorph])
 
 @[simp]
 theorem connectedCoverIso_hom_hom_left (ι : Iso X Y) :
-    ι.connectedCoverIso.hom.hom.left = (TopCat.isoOfHomeo ι.restrict).hom :=
+    ι.connectedCoverIso.hom.hom.left = (TopCat.isoOfHomeo ι.connectedCoverHomeomorph).hom :=
   CoveringSpace.FullSubcategory.isoMk_hom_hom_left _ _
 
 @[simp]
 theorem connectedCoverIso_inv_hom_left (ι : Iso X Y) :
-    ι.connectedCoverIso.inv.hom.left = (TopCat.isoOfHomeo ι.restrict).inv :=
+    ι.connectedCoverIso.inv.hom.left = (TopCat.isoOfHomeo ι.connectedCoverHomeomorph).inv :=
   CoveringSpace.FullSubcategory.isoMk_inv_hom_left _ _
 
 /-- Isomorphisms of branched covers preserve local degrees. -/
