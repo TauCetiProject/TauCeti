@@ -21,12 +21,7 @@ exactly of the tangent vectors whose matrix entries have nonnegative weight diff
 positive weight difference. These are equations on the differential of the given closed
 immersion, with no smoothness, field, or finite-type assumptions.
 
-First identify the abstract dynamic defining ideals of a diagonal cocharacter with the
-explicit matrix ideals. The closed-immersion identities from
-`Dynamic.ClosedImmersion.Ideals` then reduce the tangent calculations to
-`GeneralLinear.Weight.Parabolic.Tangent` and `GeneralLinear.Weight.Unipotent.Tangent`.
-Because these are identities of Hopf ideals, they also apply to nonreduced subgroups and
-coefficient algebras.
+These criteria also apply to nonreduced subgroups and coefficient algebras.
 
 ## References
 
@@ -56,6 +51,8 @@ theorem mem_lieSubalgebra_parabolicDefiningHopfIdeal_iff_of_weightCocharacter
     d ∈ (parabolicDefiningHopfIdeal l).lieSubalgebra (B := B) ↔
       (tangentMatrix N (derivationCompLieHom (B := B) φ d)).BlockTriangular
         (OrderDual.toDual ∘ w) := by
+  -- Combine the closed-immersion identities from Dynamic.ClosedImmersion.Ideals
+  -- with the matrix criterion in GeneralLinear.Weight.Parabolic.Tangent.
   rw [φ.parabolicDefiningHopfIdeal_eq_map_of_surjective hφ l, hl,
     parabolicDefiningHopfIdeal_weightCocharacter]
   exact mem_lieSubalgebra_map_weightParabolicDefiningHopfIdeal_iff w φ d
@@ -69,6 +66,8 @@ theorem mem_lieSubalgebra_unipotentDefiningHopfIdeal_iff_of_weightCocharacter
     (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
     d ∈ l.unipotentDefiningHopfIdeal.lieSubalgebra (B := B) ↔
       ∀ i j, w i ≤ w j → tangentMatrix N (derivationCompLieHom (B := B) φ d) i j = 0 := by
+  -- Combine the closed-immersion identities from Dynamic.ClosedImmersion.Ideals
+  -- with the matrix criterion in GeneralLinear.Weight.Unipotent.Tangent.
   rw [φ.unipotentDefiningHopfIdeal_eq_map_of_surjective hφ l, hl,
     unipotentDefiningHopfIdeal_weightCocharacter]
   exact mem_lieSubalgebra_map_weightUnipotentDefiningHopfIdeal_iff w φ d

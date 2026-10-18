@@ -17,9 +17,8 @@ scheme-theoretic inverse images of the corresponding ambient subgroups. This fil
 that compatibility as equality of defining Hopf ideals. In particular, differentiating these
 equalities allows a faithful matrix representation to compute dynamic tangent spaces.
 
-The proof uses the all-algebra point criteria of `Dynamic.ClosedImmersion.Parabolic` and
-`HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq`. Testing every value algebra retains the
-infinitesimal structure; no reducedness or smoothness assumption is required.
+The comparison retains the infinitesimal structure; no reducedness or smoothness
+assumption is required.
 
 ## References
 
@@ -43,6 +42,8 @@ theorem parabolicDefiningHopfIdeal_eq_map_of_surjective
     (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
     (l : K →ₐc[R] LaurentPolynomial R) :
     parabolicDefiningHopfIdeal l = (parabolicDefiningHopfIdeal (l.comp φ)).map φ := by
+  -- Use the all-algebra point criteria of Dynamic.ClosedImmersion.Parabolic and
+  -- HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq.
   apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
     (H := _root_.CommHopfAlgCat.of R K)
   intro A

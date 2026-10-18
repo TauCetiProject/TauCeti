@@ -17,9 +17,6 @@ The Lie algebra of the weight-unipotent subgroup of `GL_N` consists of matrices 
 occur. The inverse-image criterion applies the same equations to the differential of any
 homomorphism into `GL_N`, over arbitrary commutative base and coefficient rings.
 
-This uses the generator criterion `HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span`
-and the tangent-matrix map of `GeneralLinear.Tangent`, as in the weight-parabolic calculation.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§10 and 13.
@@ -38,6 +35,8 @@ theorem mem_lieSubalgebra_weightUnipotentDefiningHopfIdeal_iff (w : Fin N → �
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R N) B)) :
     d ∈ HopfIdeal.lieSubalgebra (B := B) (weightUnipotentDefiningHopfIdeal R w) ↔
       ∀ i j, w i ≤ w j → tangentMatrix N d i j = 0 := by
+  -- Use HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span and the tangent-matrix map
+  -- of GeneralLinear.Tangent, as in the weight-parabolic calculation.
   rw [HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span _
     (weightUnipotentDefiningHopfIdeal_toIdeal R w)]
   have hentry (i j : Fin N) :
