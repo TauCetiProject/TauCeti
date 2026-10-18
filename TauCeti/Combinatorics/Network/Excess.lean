@@ -15,10 +15,11 @@ public import Mathlib.Tactic.Abel
 
 A directed network on a vertex type `V` is described by an explicit arrow family
 `Q : V → V → Type*`, where `Q v w` is the type of arrows from `v` to `w`; parallel arrows,
-antiparallel arrows and loops are all allowed. An *arrow assignment* with values in an additive
-group `K` attaches a value of `K` to every arrow, with no sign or capacity constraint. Flows,
-pseudoflows, bounded assignments and residual updates are all arrow assignments subject to further
-conditions, and they share the additive calculus developed here.
+antiparallel arrows and loops are all allowed. An *arrow assignment* with values in a type `K`
+attaches a value of `K` to every arrow, with no sign or capacity constraint. Flows, pseudoflows,
+bounded assignments and residual updates are all arrow assignments subject to further conditions,
+and they share the additive calculus developed here. Arrow sums only need `K` to be an additive
+commutative monoid, while excess needs an additive commutative group.
 
 The *excess* of an assignment `f` at a vertex `v` is the total value on arrows entering `v` minus
 the total value on arrows leaving `v`. With this sign convention a demand vertex has positive
@@ -286,8 +287,12 @@ theorem setOf_excessAt_eq_eq_vadd_ker {f₀ : Assignment Q K} {b : V → K}
     {f : Assignment Q K | ∀ v, excessAt f v = b v} =
       f₀ +ᵥ ((excessHom Q K).ker : Set (Assignment Q K)) := by
   ext f
-  rw [Set.mem_ofPred_eq, excessAt_eq_iff_isCirculation_sub hf₀, isCirculation_iff_mem_ker,
-    Set.mem_vadd_set_iff_neg_vadd_mem, SetLike.mem_coe, vadd_eq_add, neg_add_eq_sub]
+  refine (excessAt_eq_iff_isCirculation_sub hf₀ f).trans ?_
+  rw [isCirculation_iff_mem_ker]
+  constructor
+  · exact fun h ↦ ⟨f - f₀, h, add_sub_cancel f₀ f⟩
+  · rintro ⟨c, hc, rfl⟩
+    simpa using hc
 
 end AddCommGroup
 
