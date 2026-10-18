@@ -128,13 +128,6 @@ theorem coe_compMeasurePreservingₗᵢ (T : Ω → Ω) (hT : MeasurePreserving 
   funext g
   exact compMeasurePreservingₗ_apply T hT g
 
-/-- Characterization of fixed points of the `Lᵖ` composition isometry using representatives. -/
-@[simp]
-theorem compMeasurePreservingₗᵢ_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
-    (g : Lp E p μ) : Lp.compMeasurePreservingₗᵢ 𝕜 T hT g = g ↔ (g : Ω → E) ∘ T =ᵐ[μ] g := by
-  change Lp.compMeasurePreserving T hT g = g ↔ _
-  exact compMeasurePreserving_eq_self_iff hT g
-
 /-- The fixed space is the equalizer of the continuous `Lᵖ` composition operator and the
 identity. -/
 theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
