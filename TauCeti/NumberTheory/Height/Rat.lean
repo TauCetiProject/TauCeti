@@ -19,7 +19,7 @@ largest absolute value is still an upper bound for the height:
 `H(x) ≤ maxᵢ |xᵢ|`, with equality if `gcd(x) = 1`.
 
 The same holds for finitely supported integer vectors, and hence for the coefficient heights of
-integer polynomials viewed over `ℚ`: for a nonzero `P ∈ ℤ[X₁, …, Xₙ]`,
+integer polynomials viewed over `ℚ`: for every `P ∈ ℤ[X₁, …, Xₙ]`,
 `h(P) ≤ log maxμ |Pμ|`, with equality if the coefficients of `P` are coprime.
 
 This is how an integer auxiliary polynomial with coefficients bounded by `B`, such as the one of
@@ -33,7 +33,7 @@ height estimates such as Roth's lemma.
   and the equality for coprime entries, for finitely supported integer vectors.
 * `Finsupp.mulHeight_mapRange_intCast_le_of_abs_le`: `H(x) ≤ B` if all entries of the nonzero
   integer vector `x` are bounded by `B` in absolute value.
-* `MvPolynomial.logHeight_map_intCast_le`, `MvPolynomial.logHeight_map_intCast_eq`: for a nonzero
+* `MvPolynomial.logHeight_map_intCast_le`, `MvPolynomial.logHeight_map_intCast_eq`: for an
   integer polynomial, `h(P) ≤ log maxμ |Pμ|`, with equality for coprime coefficients.
 * `MvPolynomial.logHeight_map_intCast_le_log`: `h(P) ≤ log B` if all coefficients of the nonzero
   integer polynomial `P` are bounded by `B` in absolute value.
@@ -78,10 +78,12 @@ theorem mulHeight_le_max_abs {x : ι → ℤ} (hx : x ≠ 0) :
   rw [hxy i (Finset.mem_univ i), abs_mul]
   exact le_mul_of_one_le_left (abs_nonneg _) (Int.one_le_abs hg)
 
-/-- The logarithmic height of a nonzero tuple of integers, viewed as rational numbers, is at most
-the logarithm of the largest absolute value of its entries. -/
-theorem logHeight_le_max_abs {x : ι → ℤ} (hx : x ≠ 0) :
+/-- The logarithmic height of a tuple of integers, viewed as rational numbers, is at most the
+logarithm of the largest absolute value of its entries. -/
+theorem logHeight_le_max_abs (x : ι → ℤ) :
     logHeight (((↑) : ℤ → ℚ) ∘ x) ≤ Real.log ↑(⨆ i, |x i|) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · cases isEmpty_or_nonempty ι <;> simp [iSup_of_empty', Int.csSup_empty]
   rw [logHeight_eq_log_mulHeight]
   exact Real.log_le_log (mulHeight_pos _) (mulHeight_le_max_abs hx)
 
@@ -168,11 +170,13 @@ theorem mulHeight_map_intCast_eq (hP : P.support.gcd P.coeff = 1) :
   rw [mulHeight_map_intCast_eq_finsupp]
   exact Finsupp.mulHeight_mapRange_intCast_eq hP
 
-/-- **Pottmeyer, §3.5.2.** The logarithmic height over `ℚ` of a nonzero integer polynomial is at
-most the logarithm of the largest absolute value of its coefficients. -/
-theorem logHeight_map_intCast_le (hP : P ≠ 0) :
+/-- **Pottmeyer, §3.5.2.** The logarithmic height over `ℚ` of an integer polynomial is at most
+the logarithm of the largest absolute value of its coefficients. -/
+theorem logHeight_map_intCast_le (P : MvPolynomial σ ℤ) :
     (P.map (Int.castRingHom ℚ)).logHeight ≤
       Real.log ((P.support.sup fun m ↦ (P.coeff m).natAbs : ℕ) : ℝ) := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
   rw [logHeight_eq_log_mulHeight]
   exact Real.log_le_log (mulHeight_pos _) (mulHeight_map_intCast_le hP)
 
@@ -220,11 +224,13 @@ theorem mulHeight_map_intCast_eq (hP : P.IsPrimitive) :
   rw [mulHeight_map_intCast_eq_finsupp]
   exact Finsupp.mulHeight_mapRange_intCast_eq (isPrimitive_iff_content_eq_one.mp hP)
 
-/-- The logarithmic height over `ℚ` of a nonzero integer polynomial is at most the logarithm of
-the largest absolute value of its coefficients. -/
-theorem logHeight_map_intCast_le (hP : P ≠ 0) :
+/-- The logarithmic height over `ℚ` of an integer polynomial is at most the logarithm of the
+largest absolute value of its coefficients. -/
+theorem logHeight_map_intCast_le (P : ℤ[X]) :
     (P.map (Int.castRingHom ℚ)).logHeight ≤
       Real.log ((P.support.sup fun n ↦ (P.coeff n).natAbs : ℕ) : ℝ) := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
   rw [logHeight_eq_log_mulHeight]
   exact Real.log_le_log (mulHeight_pos _) (mulHeight_map_intCast_le hP)
 
