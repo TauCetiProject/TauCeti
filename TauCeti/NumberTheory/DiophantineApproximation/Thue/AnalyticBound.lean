@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.L1Norm
-public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Values of Thue's auxiliary polynomials near `α`
