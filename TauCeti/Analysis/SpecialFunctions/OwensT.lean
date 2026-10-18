@@ -72,13 +72,14 @@ theorem owensT_def (h a : ℝ) :
     owensT h a = (2 * π)⁻¹ * ∫ t in (0 : ℝ)..a, rexp (-h ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2) :=
   (rfl)
 
-/-- Differentiation in `h` under the integral sign defining Owen's T function, with the constant
-bound `|h| + 1` on the derivative of the integrand near `h`. -/
+/-- The derivative in `h` of the integral defining Owen's T function is
+`∫ t in 0..a, -h * exp (-h ^ 2 * (1 + t ^ 2) / 2)`. -/
 theorem hasDerivAt_intervalIntegral_owensT (h a : ℝ) :
     HasDerivAt (fun x => ∫ t in (0 : ℝ)..a, rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2))
       (∫ t in (0 : ℝ)..a, -h * rexp (-h ^ 2 * (1 + t ^ 2) / 2)) h := by
   have hFc (x : ℝ) : Continuous fun t : ℝ => rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2) :=
     Continuous.div (by fun_prop) (by fun_prop) fun _ => by positivity
+  -- Near `h`, the derivative of the integrand is dominated by the constant `|h| + 1`.
   refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (F := fun x t => rexp (-x ^ 2 * (1 + t ^ 2) / 2) / (1 + t ^ 2))
     (F' := fun x t => -x * rexp (-x ^ 2 * (1 + t ^ 2) / 2))
