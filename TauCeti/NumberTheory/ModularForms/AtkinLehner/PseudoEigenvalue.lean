@@ -305,6 +305,7 @@ theorem atkinLehnerTransform_self (f : Newform N k) (h : N ∥ N) :
 Atkin–Li matrix `atkinLiMatrix N N` is `γ W_N` for the Fricke matrix `W_N` and a matrix
 `γ ∈ Γ₀(N)` with lower-right entry `-1` modulo `N`, so `𝒲_N f` computed with the Atkin–Li matrix
 is `χ(-1)` times the normalized Fricke operator applied to `f`. -/
+@[simp]
 theorem atkinLehnerPseudoEigenvalue_self (f : Newform N k) (h : N ∥ N) :
     f.atkinLehnerPseudoEigenvalue h = f.χ (-1) * f.frickePseudoEigenvalue := by
   have hbez : (1 : ℤ) = N * Nat.gcdA N (N / N) + Nat.gcdB N (N / N) := by
