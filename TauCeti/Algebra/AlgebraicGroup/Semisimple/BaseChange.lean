@@ -71,6 +71,8 @@ theorem of_baseChange
     ((smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H.obj))
     (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K H.obj hH.geometricallyConnected)
 
+-- The defining simp lemma `semisimpleCommHopfAlgProperty_iff` already expands the left-hand side,
+-- so adding this equivalence to the simp set would violate simpNF.
 /-- In characteristic zero, a finite-type affine group is semisimple exactly when it becomes
 semisimple after a field extension. The extension may be arbitrary. -/
 theorem baseChange_iff (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
