@@ -26,25 +26,26 @@ scalars the operator norm is therefore the least uniform bound, and the usual no
 ultrametric, composition and scalar laws follow.
 
 Over a nontrivially normed field the scoped norm is definitionally Mathlib's operator norm
-(`TauCeti.RingOpNorm.opNorm_eq_norm`). The scope should not be opened over a field, where it would
-duplicate Mathlib's instance.
+(`ContinuousLinearMap.ringOpNorm_eq_norm`). The scope should not be opened over a field, where it
+would duplicate Mathlib's instance.
 
 ## Main definitions
 
-* `TauCeti.RingOpNorm.opNorm`: the infimum of the uniform bounds of a continuous semilinear map,
-  installed as the scoped instance `TauCeti.RingOpNorm.hasOpNorm`.
+* `ContinuousLinearMap.ringOpNorm`: the infimum of the uniform bounds of a continuous semilinear
+  map, installed as the scoped instance `TauCeti.RingOpNorm.hasOpNorm`.
 
 ## Main results
 
-* `TauCeti.RingOpNorm.isLeast_opNorm`: if a uniform bound exists, the operator norm is the least
-  one.
+* `ContinuousLinearMap.isLeast_ringOpNorm`: if a uniform bound exists, the operator norm is the
+  least one.
 * `TauCeti.NormedRing.IsTate.bound_of_continuous`: over Tate scalars every continuous linear map
   between seminormed modules with contractive scalar actions has a uniform bound.
-* `TauCeti.RingOpNorm.le_opNorm`: `‖f x‖ ≤ ‖f‖ * ‖x‖` over Tate scalars.
-* `TauCeti.RingOpNorm.opNorm_add_le`, `TauCeti.RingOpNorm.opNorm_add_le_max`,
-  `TauCeti.RingOpNorm.opNorm_comp_le`, `TauCeti.RingOpNorm.opNorm_smul_le`: the norm laws.
-* `TauCeti.RingOpNorm.norm_toSpanSingleton`: right multiplication by `v` has norm `‖v‖` over a
-  norm-one ring; in particular multiplication by `a` on a norm-one commutative ring has norm `‖a‖`.
+* `ContinuousLinearMap.le_ringOpNorm`: `‖f x‖ ≤ ‖f‖ * ‖x‖` over Tate scalars.
+* `ContinuousLinearMap.ringOpNorm_add_le`, `ContinuousLinearMap.ringOpNorm_add_le_max`,
+  `ContinuousLinearMap.ringOpNorm_comp_le`, `ContinuousLinearMap.ringOpNorm_smul_le`: the norm laws.
+* `ContinuousLinearMap.ringOpNorm_toSpanSingleton`: right multiplication by `v` has norm `‖v‖`
+  over a norm-one ring; in particular multiplication by `a` on a norm-one commutative ring has norm
+  `‖a‖`.
 
 ## References
 
@@ -52,7 +53,8 @@ duplicate Mathlib's instance.
   arXiv:1604.07739, §2.1.
 * P. Schneider, *Nonarchimedean Functional Analysis*, Springer, 2002, §3.
 
-The formula and the names follow Mathlib's `Mathlib/Analysis/Normed/Operator/Basic.lean`.
+The formula and API shape follow Mathlib's `Mathlib/Analysis/Normed/Operator/Basic.lean`; the
+`ringOpNorm` prefix distinguishes this scoped ring-scalar API from Mathlib's field-scalar API.
 -/
 
 public section
@@ -107,7 +109,9 @@ theorem bound_of_continuous (f : 𝓕) (hf : Continuous f) :
 
 end NormedRing.IsTate
 
-namespace RingOpNorm
+end TauCeti
+
+namespace ContinuousLinearMap
 
 section Semiring
 
@@ -119,70 +123,96 @@ variable {R S T E F G : Type*} [Semiring R] [Semiring S] [Semiring T]
 /-- The **operator norm** of a continuous semilinear map between seminormed modules over
 semirings: the infimum of its uniform bounds. It is the formula of Mathlib's
 `ContinuousLinearMap.opNorm` without the assumption that the scalars form a field. -/
-noncomputable def opNorm (f : E →SL[σ] F) : ℝ :=
+noncomputable def ringOpNorm (f : E →SL[σ] F) : ℝ :=
   sInf {c | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖}
+
+end Semiring
+
+end ContinuousLinearMap
+
+namespace TauCeti.RingOpNorm
+
+variable {R S E F : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
+  [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module S F]
 
 /-- The operator norm over ring scalars, as a scoped instance. -/
 noncomputable scoped instance hasOpNorm : Norm (E →SL[σ] F) :=
-  ⟨opNorm⟩
+  ⟨ContinuousLinearMap.ringOpNorm⟩
+
+end TauCeti.RingOpNorm
+
+open scoped TauCeti.RingOpNorm
+
+namespace ContinuousLinearMap
+
+section Semiring
+
+variable {R S T E F G : Type*} [Semiring R] [Semiring S] [Semiring T]
+  {σ : R →+* S} {τ : S →+* T} {ρ : R →+* T} [RingHomCompTriple σ τ ρ]
+  [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module S F]
+  [SeminormedAddCommGroup G] [Module T G]
 
 /-- The operator norm is the infimum of the nonnegative uniform bounds. -/
-theorem norm_def (f : E →SL[σ] F) : ‖f‖ = sInf {c | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖} :=
+theorem ringOpNorm_def (f : E →SL[σ] F) :
+    ‖f‖ = sInf {c | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖} :=
   (rfl)
 
 /-- The set of nonnegative uniform bounds is bounded below. -/
-theorem bounds_bddBelow {f : E →SL[σ] F} : BddBelow {c | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖} :=
+theorem ringOpNorm_bounds_bddBelow {f : E →SL[σ] F} :
+    BddBelow {c | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖} :=
   ⟨0, fun _ ⟨hn, _⟩ ↦ hn⟩
 
 /-- The operator norm is nonnegative. -/
-theorem opNorm_nonneg (f : E →SL[σ] F) : 0 ≤ ‖f‖ :=
+theorem ringOpNorm_nonneg (f : E →SL[σ] F) : 0 ≤ ‖f‖ :=
   Real.sInf_nonneg fun _ ↦ And.left
 
 /-- If one controls the norm of every `f x`, then one controls the norm of `f`. -/
-theorem opNorm_le_bound (f : E →SL[σ] F) {M : ℝ} (hMp : 0 ≤ M) (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) :
-    ‖f‖ ≤ M :=
-  csInf_le bounds_bddBelow ⟨hMp, hM⟩
+theorem ringOpNorm_le_bound (f : E →SL[σ] F) {M : ℝ} (hMp : 0 ≤ M)
+    (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) : ‖f‖ ≤ M :=
+  csInf_le ringOpNorm_bounds_bddBelow ⟨hMp, hM⟩
 
 /-- **The bound at the infimum**: if `f` has some uniform bound, then its operator norm is its
 least nonnegative uniform bound. -/
-theorem isLeast_opNorm (f : E →SL[σ] F) (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) :
+theorem isLeast_ringOpNorm (f : E →SL[σ] F) (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) :
     IsLeast {c | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖} ‖f‖ := by
   obtain ⟨C, hC⟩ := h
-  refine IsClosed.isLeast_csInf ?_ ⟨max C 0, le_max_right _ _, fun x ↦ ?_⟩ bounds_bddBelow
+  refine IsClosed.isLeast_csInf ?_ ⟨max C 0, le_max_right _ _, fun x ↦ ?_⟩
+    ringOpNorm_bounds_bddBelow
   · simp only [ofPred_and, ofPred_forall]
     exact isClosed_Ici.inter <| isClosed_iInter fun _ ↦ isClosed_le (by fun_prop) (by fun_prop)
   · exact (hC x).trans (by gcongr; exact le_max_left _ _)
 
 /-- If `f` has some uniform bound, then `‖f x‖ ≤ ‖f‖ * ‖x‖`. -/
-theorem le_opNorm_of_exists_bound (f : E →SL[σ] F) (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) (x : E) :
-    ‖f x‖ ≤ ‖f‖ * ‖x‖ :=
-  (isLeast_opNorm f h).1.2 x
+theorem le_ringOpNorm_of_exists_bound (f : E →SL[σ] F)
+    (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) (x : E) : ‖f x‖ ≤ ‖f‖ * ‖x‖ :=
+  (isLeast_ringOpNorm f h).1.2 x
 
 /-- A nonnegative uniform bound below every other one is the operator norm. -/
-theorem opNorm_eq_of_bounds {f : E →SL[σ] F} {M : ℝ} (hM₀ : 0 ≤ M)
+theorem ringOpNorm_eq_of_bounds {f : E →SL[σ] F} {M : ℝ} (hM₀ : 0 ≤ M)
     (h_above : ∀ x, ‖f x‖ ≤ M * ‖x‖) (h_below : ∀ N ≥ 0, (∀ x, ‖f x‖ ≤ N * ‖x‖) → M ≤ N) :
     ‖f‖ = M :=
-  le_antisymm (opNorm_le_bound f hM₀ h_above)
-    ((le_csInf_iff bounds_bddBelow ⟨M, hM₀, h_above⟩).mpr fun N ⟨hN₀, hN⟩ ↦ h_below N hN₀ hN)
+  le_antisymm (ringOpNorm_le_bound f hM₀ h_above)
+    ((le_csInf_iff ringOpNorm_bounds_bddBelow ⟨M, hM₀, h_above⟩).mpr
+      fun N ⟨hN₀, hN⟩ ↦ h_below N hN₀ hN)
 
 /-- The norm of the `0` operator is `0`. -/
 @[simp]
-theorem opNorm_zero : ‖(0 : E →SL[σ] F)‖ = 0 :=
-  le_antisymm (opNorm_le_bound _ le_rfl fun _ ↦ by simp) (opNorm_nonneg _)
+theorem ringOpNorm_zero : ‖(0 : E →SL[σ] F)‖ = 0 :=
+  le_antisymm (ringOpNorm_le_bound _ le_rfl fun _ ↦ by simp) (ringOpNorm_nonneg _)
 
 /-- The norm of the identity is at most `1`. -/
-theorem norm_id_le : ‖ContinuousLinearMap.id R E‖ ≤ 1 :=
-  opNorm_le_bound _ zero_le_one fun x ↦ by simp
+theorem ringOpNorm_id_le : ‖ContinuousLinearMap.id R E‖ ≤ 1 :=
+  ringOpNorm_le_bound _ zero_le_one fun x ↦ by simp
 
 /-- A composition of maps with uniform bounds is bounded by the product of their operator
 norms. -/
-theorem opNorm_comp_le_of_exists_bound (g : F →SL[τ] G) (f : E →SL[σ] F)
+theorem ringOpNorm_comp_le_of_exists_bound (g : F →SL[τ] G) (f : E →SL[σ] F)
     (hg : ∃ C, ∀ y, ‖g y‖ ≤ C * ‖y‖) (hf : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) :
     ‖g.comp f‖ ≤ ‖g‖ * ‖f‖ :=
-  opNorm_le_bound _ (mul_nonneg (opNorm_nonneg g) (opNorm_nonneg f)) fun x ↦ by
+  ringOpNorm_le_bound _ (mul_nonneg (ringOpNorm_nonneg g) (ringOpNorm_nonneg f)) fun x ↦ by
     rw [ContinuousLinearMap.comp_apply, mul_assoc]
-    exact (le_opNorm_of_exists_bound g hg _).trans
-      (by gcongr; exacts [opNorm_nonneg g, le_opNorm_of_exists_bound f hf x])
+    exact (le_ringOpNorm_of_exists_bound g hg _).trans
+      (by gcongr; exacts [ringOpNorm_nonneg g, le_ringOpNorm_of_exists_bound f hf x])
 
 end Semiring
 
@@ -193,70 +223,73 @@ variable {R S E F : Type*} [Ring R] [Ring S] {σ : R →+* S}
 
 /-- The operator norm is invariant under negation. -/
 @[simp]
-theorem opNorm_neg (f : E →SL[σ] F) : ‖-f‖ = ‖f‖ := by
-  simp only [norm_def, neg_apply, norm_neg]
+theorem ringOpNorm_neg (f : E →SL[σ] F) : ‖-f‖ = ‖f‖ := by
+  simp only [ringOpNorm_def, neg_apply, norm_neg]
 
 end Ring
 
 section Tate
 
-variable {R E F G : Type*} [SeminormedRing R] [NormedRing.IsTate R]
+variable {R E F G : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
   [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
   [SeminormedAddCommGroup G] [Module R G] [IsBoundedSMul R G]
 
 /-- Over Tate scalars every continuous linear map has a uniform bound. -/
-theorem bound (f : E →L[R] F) : ∃ C, 0 < C ∧ ∀ x, ‖f x‖ ≤ C * ‖x‖ :=
-  NormedRing.IsTate.bound_of_continuous f f.continuous
+theorem ringOpNorm_bound (f : E →L[R] F) : ∃ C, 0 < C ∧ ∀ x, ‖f x‖ ≤ C * ‖x‖ :=
+  TauCeti.NormedRing.IsTate.bound_of_continuous f f.continuous
 
 /-- **The fundamental property of the operator norm** over Tate scalars:
 `‖f x‖ ≤ ‖f‖ * ‖x‖`. -/
-theorem le_opNorm (f : E →L[R] F) (x : E) : ‖f x‖ ≤ ‖f‖ * ‖x‖ :=
-  le_opNorm_of_exists_bound f ((bound f).imp fun _ h ↦ h.2) x
+theorem le_ringOpNorm (f : E →L[R] F) (x : E) : ‖f x‖ ≤ ‖f‖ * ‖x‖ :=
+  le_ringOpNorm_of_exists_bound f ((ringOpNorm_bound f).imp fun _ h ↦ h.2) x
 
 /-- A bound on the operator norm bounds every value. -/
-theorem le_of_opNorm_le (f : E →L[R] F) {c : ℝ} (h : ‖f‖ ≤ c) (x : E) : ‖f x‖ ≤ c * ‖x‖ :=
-  (le_opNorm f x).trans (by gcongr)
+theorem le_of_ringOpNorm_le (f : E →L[R] F) {c : ℝ} (h : ‖f‖ ≤ c) (x : E) :
+    ‖f x‖ ≤ c * ‖x‖ :=
+  (le_ringOpNorm f x).trans (by gcongr)
 
 /-- Over Tate scalars, `‖f‖ ≤ M` exactly when `M` is a uniform bound for `f`. -/
-theorem opNorm_le_iff {f : E →L[R] F} {M : ℝ} (hMp : 0 ≤ M) :
+theorem ringOpNorm_le_iff {f : E →L[R] F} {M : ℝ} (hMp : 0 ≤ M) :
     ‖f‖ ≤ M ↔ ∀ x, ‖f x‖ ≤ M * ‖x‖ :=
-  ⟨le_of_opNorm_le f, opNorm_le_bound f hMp⟩
+  ⟨le_of_ringOpNorm_le f, ringOpNorm_le_bound f hMp⟩
 
 /-- The operator norm is an upper bound for the ratios `‖f x‖ / ‖x‖`. -/
-theorem ratio_le_opNorm (f : E →L[R] F) (x : E) : ‖f x‖ / ‖x‖ ≤ ‖f‖ :=
-  div_le_of_le_mul₀ (norm_nonneg _) (opNorm_nonneg f) (le_opNorm f x)
+theorem ratio_le_ringOpNorm (f : E →L[R] F) (x : E) : ‖f x‖ / ‖x‖ ≤ ‖f‖ :=
+  div_le_of_le_mul₀ (norm_nonneg _) (ringOpNorm_nonneg f) (le_ringOpNorm f x)
 
 /-- The operator norm satisfies the triangle inequality. -/
-theorem opNorm_add_le (f g : E →L[R] F) : ‖f + g‖ ≤ ‖f‖ + ‖g‖ :=
-  opNorm_le_bound _ (add_nonneg (opNorm_nonneg f) (opNorm_nonneg g)) fun x ↦
-    (norm_add_le_of_le (le_opNorm f x) (le_opNorm g x)).trans_eq (add_mul _ _ _).symm
+theorem ringOpNorm_add_le (f g : E →L[R] F) : ‖f + g‖ ≤ ‖f‖ + ‖g‖ :=
+  ringOpNorm_le_bound _ (add_nonneg (ringOpNorm_nonneg f) (ringOpNorm_nonneg g)) fun x ↦
+    (norm_add_le_of_le (le_ringOpNorm f x) (le_ringOpNorm g x)).trans_eq (add_mul _ _ _).symm
 
 /-- The operator norm is ultrametric when the target is. -/
-theorem opNorm_add_le_max [IsUltrametricDist F] (f g : E →L[R] F) :
+theorem ringOpNorm_add_le_max [IsUltrametricDist F] (f g : E →L[R] F) :
     ‖f + g‖ ≤ max ‖f‖ ‖g‖ :=
-  opNorm_le_bound _ ((opNorm_nonneg f).trans (le_max_left _ _)) fun x ↦ by
+  ringOpNorm_le_bound _ ((ringOpNorm_nonneg f).trans (le_max_left _ _)) fun x ↦ by
     rw [add_apply, max_mul_of_nonneg _ _ (norm_nonneg x)]
-    exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le_max (le_opNorm f x) (le_opNorm g x))
+    exact (IsUltrametricDist.norm_add_le_max _ _).trans
+      (max_le_max (le_ringOpNorm f x) (le_ringOpNorm g x))
 
 /-- The operator norm is submultiplicative. -/
-theorem opNorm_comp_le (g : F →L[R] G) (f : E →L[R] F) : ‖g.comp f‖ ≤ ‖g‖ * ‖f‖ :=
-  opNorm_comp_le_of_exists_bound g f ((bound g).imp fun _ h ↦ h.2)
-    ((bound f).imp fun _ h ↦ h.2)
+theorem ringOpNorm_comp_le (g : F →L[R] G) (f : E →L[R] F) : ‖g.comp f‖ ≤ ‖g‖ * ‖f‖ :=
+  ringOpNorm_comp_le_of_exists_bound g f ((ringOpNorm_bound g).imp fun _ h ↦ h.2)
+    ((ringOpNorm_bound f).imp fun _ h ↦ h.2)
 
 /-- If some vector has nonzero norm, then the identity has norm `1`. -/
 @[simp]
-theorem norm_id [NontrivialTopology E] : ‖ContinuousLinearMap.id R E‖ = 1 := by
-  refine le_antisymm norm_id_le ?_
+theorem ringOpNorm_id [NontrivialTopology E] : ‖ContinuousLinearMap.id R E‖ = 1 := by
+  refine le_antisymm ringOpNorm_id_le ?_
   obtain ⟨x, hx⟩ := exists_norm_ne_zero E
-  simpa [div_self hx] using ratio_le_opNorm (ContinuousLinearMap.id R E) x
+  simpa [div_self hx] using ratio_le_ringOpNorm (ContinuousLinearMap.id R E) x
 
 /-- Scalar multiplication of operators is contractive for the operator norm. -/
-theorem opNorm_smul_le {S : Type*} [SeminormedRing S] [Module S F] [IsBoundedSMul S F]
+theorem ringOpNorm_smul_le {S : Type*} [SeminormedAddCommGroup S] [DistribSMul S F]
+    [IsBoundedSMul S F]
     [SMulCommClass R S F] (c : S) (f : E →L[R] F) : ‖c • f‖ ≤ ‖c‖ * ‖f‖ :=
-  opNorm_le_bound _ (mul_nonneg (norm_nonneg c) (opNorm_nonneg f)) fun x ↦ by
+  ringOpNorm_le_bound _ (mul_nonneg (norm_nonneg c) (ringOpNorm_nonneg f)) fun x ↦ by
     rw [smul_apply, mul_assoc]
-    exact (norm_smul_le c (f x)).trans (by gcongr; exact le_opNorm f x)
+    exact (norm_smul_le c (f x)).trans (by gcongr; exact le_ringOpNorm f x)
 
 end Tate
 
@@ -268,21 +301,19 @@ variable {R E : Type*} [SeminormedRing R] [NormOneClass R]
 /-- **Right multiplication by `v` has norm `‖v‖`** over a norm-one ring: the map `a ↦ a • v`
 from `R` to `E`. For `E = R` commutative, this is multiplication by `v`. -/
 @[simp]
-theorem norm_toSpanSingleton (v : E) : ‖ContinuousLinearMap.toSpanSingleton R v‖ = ‖v‖ := by
-  refine opNorm_eq_of_bounds (norm_nonneg v) (fun a ↦ ?_) fun N _ hN ↦ ?_
+theorem ringOpNorm_toSpanSingleton (v : E) : ‖ContinuousLinearMap.toSpanSingleton R v‖ = ‖v‖ := by
+  refine ringOpNorm_eq_of_bounds (norm_nonneg v) (fun a ↦ ?_) fun N _ hN ↦ ?_
   · simpa [mul_comm] using norm_smul_le a v
   · simpa using hN 1
 
 end SpanSingleton
 
-end RingOpNorm
-
 /-- Over a nontrivially normed field, the operator norm over ring scalars is Mathlib's operator
 norm. -/
-theorem RingOpNorm.opNorm_eq_norm {K L E F : Type*} [NontriviallyNormedField K]
+theorem ringOpNorm_eq_norm {K L E F : Type*} [NontriviallyNormedField K]
     [NontriviallyNormedField L] {σ : K →+* L} [SeminormedAddCommGroup E] [NormedSpace K E]
     [SeminormedAddCommGroup F] [NormedSpace L F] (f : E →SL[σ] F) :
-    RingOpNorm.opNorm f = ‖f‖ :=
+    ringOpNorm f = ‖f‖ :=
   (rfl)
 
-end TauCeti
+end ContinuousLinearMap
