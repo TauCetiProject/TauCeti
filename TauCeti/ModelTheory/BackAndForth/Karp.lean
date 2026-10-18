@@ -9,26 +9,33 @@ public import TauCeti.ModelTheory.BackAndForth.Presentation
 public import TauCeti.ModelTheory.Infinitary.Reindex
 
 /-!
-# Infinitary equivalence and the forward direction of Karp's theorem
+# Infinitary equivalence and Karp's theorem
 
 `InfEquivAt κ M N` says that `M` and `N` satisfy the same `L_{∞ω}` sentences whose conjunctions and
 disjunctions are indexed by the carrier `κ`. Agreement transports contravariantly along index
 codings: agreement at `κ` gives agreement at every carrier `ι` coded into `κ`, since recoding a
 sentence along an `IndexCoding ι κ` preserves its meaning.
 
-The forward direction of Karp's theorem holds at every carrier: potentially isomorphic
-structures in a relational language satisfy the same infinitary sentences. The proof passes to a
-tuple back-and-forth system and shows, by induction on formulas, that the two tuples of each of
-its pairs satisfy the same infinitary formulas. No countability is assumed, and the carrier and
-the universes of the two structures are independent.
+Karp's theorem says that structures in a relational language are potentially isomorphic exactly
+when they satisfy the same infinitary sentences. The forward direction holds at every carrier: it
+passes to a tuple back-and-forth system and shows, by induction on formulas, that the two tuples
+of each of its pairs satisfy the same infinitary formulas. The converse holds at any carrier `κ`
+into which both structures are coded: the pairs of tuples agreeing on every formula with carrier
+`κ` form a tuple back-and-forth system. If an element had no match, then each candidate match
+would be separated from it by a formula; oriented to hold at the element, conjoined along the
+coding, and existentially quantified, these formulas would separate the original tuples. Full
+infinitary equivalence `InfEquivW` quantifies over all carriers outside the syntax, and the
+carrier `M ⊕ N` packages the converse. No countability is assumed, and the carrier and the
+universes of the two structures are independent.
 
-This is the forward half of Carol Karp, *Finite-quantifier equivalence* (1965). Cameron Freer's
+The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Karp/CarrierTheorem.lean` at checkpoint
 `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`, proves both directions at a common carrier.
 
 ## Main definitions
 
 * `TauCeti.InfEquivAt`: agreement on all sentences with a given branching carrier.
+* `TauCeti.InfEquivW`: agreement at every carrier in the universe of `M ⊕ N`.
 
 ## Main results
 
@@ -37,6 +44,10 @@ This is the forward half of Carol Karp, *Finite-quantifier equivalence* (1965). 
   satisfy the same infinitary formulas.
 * `TauCeti.PotentialIso.infEquivAt`: potentially isomorphic structures satisfy the same
   infinitary sentences at every carrier.
+* `TauCeti.exists_realize_snoc_iff`: tuples agreeing on every formula with a carrier into which
+  the second structure is coded admit matching one-element extensions.
+* `TauCeti.karp_theorem_at`: Karp's theorem at a common carrier.
+* `TauCeti.karp_theorem`: Karp's theorem for full infinitary equivalence.
 -/
 
 public section
@@ -59,6 +70,16 @@ theorem infEquivAt_iff {κ : Type uκ} :
     InfEquivAt (L := L) κ M N ↔ ∀ φ : L.SentenceInf κ, φ.Realize M ↔ φ.Realize N :=
   Iff.rfl
 
+/-- `M` and `N` satisfy the same `L_{∞ω}` sentences at every carrier in the universe of `M ⊕ N`.
+The carriers are quantified outside the syntax. -/
+def InfEquivW (M : Type w) (N : Type w') [L.Structure M] [L.Structure N] : Prop :=
+  ∀ κ : Type (max w w'), InfEquivAt (L := L) κ M N
+
+/-- Full infinitary equivalence is agreement at every carrier in the universe of `M ⊕ N`. -/
+theorem infEquivW_iff :
+    InfEquivW (L := L) M N ↔ ∀ κ : Type (max w w'), InfEquivAt (L := L) κ M N :=
+  Iff.rfl
+
 /-- Agreement at a carrier `κ` gives agreement at every carrier `ι` coded into `κ`. -/
 theorem InfEquivAt.of_reindex {ι : Type uι} {κ : Type uκ} (c : IndexCoding ι κ)
     (h : InfEquivAt (L := L) κ M N) : InfEquivAt (L := L) ι M N := by
@@ -66,6 +87,38 @@ theorem InfEquivAt.of_reindex {ι : Type uι} {κ : Type uκ} (c : IndexCoding �
   have := h (BoundedFormulaInf.reindex c φ)
   simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_reindex] using this
+
+/-- **Matching one more element.** If two tuples agree on every infinitary formula with carrier
+`κ` and the second structure is coded into `κ`, then every one-element extension of the first
+tuple is matched by a one-element extension of the second that again agrees on every such
+formula. -/
+theorem exists_realize_snoc_iff {κ : Type uκ} (cN : IndexCoding N κ) {n : ℕ} {a : Fin n → M}
+    {b : Fin n → N}
+    (hab : ∀ φ : L.BoundedFormulaInf κ Empty n, φ.Realize Empty.elim a ↔ φ.Realize Empty.elim b)
+    (x : M) : ∃ y : N, ∀ φ : L.BoundedFormulaInf κ Empty (n + 1),
+      φ.Realize Empty.elim (Fin.snoc a x) ↔ φ.Realize Empty.elim (Fin.snoc b y) := by
+  classical
+  by_contra hne
+  -- Each candidate match `y` is separated from `x` by a formula, oriented to hold at `x`.
+  choose φ hφ using fun y => not_forall.1 fun h => hne ⟨y, h⟩
+  let ψ (y : N) : L.BoundedFormulaInf κ Empty (n + 1) :=
+    if (φ y).Realize Empty.elim (Fin.snoc a x) then φ y else (φ y).not
+  have hψa (y : N) : (ψ y).Realize Empty.elim (Fin.snoc a x) := by
+    by_cases h : (φ y).Realize Empty.elim (Fin.snoc a x)
+    · simp only [ψ, h, ↓reduceIte]
+    · simpa only [ψ, h, ↓reduceIte, BoundedFormulaInf.realize_not] using h
+  have hψb (y : N) : ¬ (ψ y).Realize Empty.elim (Fin.snoc b y) := by
+    by_cases h : (φ y).Realize Empty.elim (Fin.snoc a x)
+    · simp only [ψ, h, ↓reduceIte]
+      exact fun hb => hφ y (iff_of_true h hb)
+    · simp only [ψ, h, ↓reduceIte, BoundedFormulaInf.realize_not, not_not]
+      by_contra hb
+      exact hφ y (iff_of_false h hb)
+  -- Some `x` satisfies every oriented formula, but no candidate match does.
+  have := hab (BoundedFormulaInf.iInfAlong cN ψ).ex
+  simp only [BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_iInfAlong] at this
+  obtain ⟨y, hy⟩ := this.1 ⟨x, hψa⟩
+  exact hψb y (hy y)
 
 variable [L.IsRelational]
 
@@ -128,5 +181,47 @@ theorem PotentialIso.infEquivAt (h : PotentialIso (L := L) M N) (κ : Type uκ) 
   rw [Subsingleton.elim (default : Fin 0 → M) Fin.elim0,
     Subsingleton.elim (default : Fin 0 → N) Fin.elim0]
   exact hS.realize_iff φ hS.empty_mem _ _
+
+/-! ### The converse -/
+
+variable {κ : Type uκ}
+
+/-- **Karp's theorem, converse direction.** Structures in a relational language that are both coded
+into a carrier `κ` and satisfy the same infinitary sentences with carrier `κ` are potentially
+isomorphic. -/
+theorem InfEquivAt.potentialIso (cM : IndexCoding M κ) (cN : IndexCoding N κ)
+    (h : InfEquivAt (L := L) κ M N) : PotentialIso (L := L) M N := by
+  -- The pairs of tuples agreeing on every formula with carrier `κ` form a tuple system.
+  let S : Set (Σ n, (Fin n → M) × (Fin n → N)) := {p | ∀ φ : L.BoundedFormulaInf κ Empty p.1,
+    φ.Realize Empty.elim p.2.1 ↔ φ.Realize Empty.elim p.2.2}
+  refine IsTupleBFSystem.potentialIso (S := S) ⟨?_, ?_, ?_, ?_⟩
+  · intro φ
+    have := infEquivAt_iff.1 h φ
+    simp only [SentenceInf.realize_def, FormulaInf.realize_def] at this
+    rwa [Subsingleton.elim (default : Fin 0 → M) Fin.elim0,
+      Subsingleton.elim (default : Fin 0 → N) Fin.elim0] at this
+  · intro n a b hab
+    rw [sameAtomicType_iff]
+    refine ⟨fun i j => ?_, fun r f => ?_⟩
+    · simpa using hab (.equal (Term.var (Sum.inr i)) (Term.var (Sum.inr j)))
+    · simpa [Function.comp_def] using hab (.rel r fun k => Term.var (Sum.inr (f k)))
+  · intro n a b hab x
+    exact exists_realize_snoc_iff cN hab x
+  · intro n a b hab y
+    obtain ⟨x, hx⟩ := exists_realize_snoc_iff cM (fun φ => (hab φ).symm) y
+    exact ⟨x, fun φ => (hx φ).symm⟩
+
+/-- **Karp's theorem at a common carrier.** Structures in a relational language that are both
+coded into `κ` are potentially isomorphic exactly when they satisfy the same infinitary sentences
+with carrier `κ`. -/
+theorem karp_theorem_at (cM : IndexCoding M κ) (cN : IndexCoding N κ) :
+    PotentialIso (L := L) M N ↔ InfEquivAt (L := L) κ M N :=
+  ⟨fun h => h.infEquivAt κ, InfEquivAt.potentialIso cM cN⟩
+
+/-- **Karp's theorem.** Structures in a relational language are potentially isomorphic exactly when
+they satisfy the same infinitary sentences. The converse uses the carrier `M ⊕ N`. -/
+theorem karp_theorem : PotentialIso (L := L) M N ↔ InfEquivW (L := L) M N :=
+  ⟨fun h κ => h.infEquivAt κ,
+    fun h => (h (M ⊕ N)).potentialIso (IndexCoding.sumInl M N) (IndexCoding.sumInr M N)⟩
 
 end TauCeti
