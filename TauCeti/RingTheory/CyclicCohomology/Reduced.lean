@@ -390,20 +390,18 @@ def reducedCyclicCochainComplexIsKernel :
     (cyclicCochainComplexXIso R A M n).symm
     (cyclicCochainComplexXIso R R M n).symm
     (reducedCyclicCochainComplexXIso R A M n).symm ?_ ?_
-  · change (cyclicCochainComplexXIso R A M n).inv ≫
-      (scalarCyclicRestrictionComplexMap R A M).f n =
-        ModuleCat.ofHom (scalarCyclicRestriction R A M n) ≫
-          (cyclicCochainComplexXIso R R M n).inv
-    rw [← cancel_mono (cyclicCochainComplexXIso R R M n).hom]
+  · rw [Iso.symm_hom, Iso.symm_hom, HomologicalComplex.eval_map,
+      ← cancel_mono (cyclicCochainComplexXIso R R M n).hom]
     simp only [Category.assoc, scalarCyclicRestrictionComplexMap_f,
       Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
-  · change (reducedCyclicCochainComplexXIso R A M n).inv ≫
-      (reducedCyclicCochainComplexι R A M).f n =
-        ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype ≫
-          (cyclicCochainComplexXIso R A M n).inv
-    rw [← cancel_mono (cyclicCochainComplexXIso R A M n).hom]
-    simp only [Category.assoc, reducedCyclicCochainComplexι_f,
-      Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
+  · -- Evaluating the kernel forks exposes the concrete kernel `LinearMap.ker` of scalar
+    -- restriction, which is `reducedCyclicCochains` only after unfolding that definition. That
+    -- kernel occurs in implicit object arguments, so rewriting cannot replace it and the final
+    -- step uses the component theorem up to this definitional unfolding.
+    dsimp only [Iso.symm_hom, KernelFork.map, Fork.ofι_pt, KernelFork.ι_ofι,
+      HomologicalComplex.eval_map, HomologicalComplex.eval_obj, ModuleCat.kernelCone,
+      ModuleCat.hom_ofHom]
+    exact (Iso.eq_comp_inv _).2 (reducedCyclicCochainComplexι_f R A M n)
 
 end ComplexKernel
 
