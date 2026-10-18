@@ -23,7 +23,8 @@ bound is applied at a good rational approximation `ξ₁` of `α`: there
 `Dᵏ P (ξ₁) - ξ₂ Dᵏ Q (ξ₁) = V (ξ₁) (ξ₁ - α) ^ (r - k) + (α - ξ₂) Dᵏ Q (ξ₁)`. The factors
 `V (ξ₁)` and `Dᵏ Q (ξ₁)` are at most `C₂ ^ r`, while `ξ₁ - α` and `α - ξ₂` are small.
 
-The statements hold over any seminormed commutative ring whose norm preserves one, such as `ℂ`.
+The derivative bound holds over any seminormed ring whose norm preserves one. The quotient bound
+also assumes commutativity, as in the motivating example `ℂ`.
 
 ## Main results
 
@@ -41,15 +42,9 @@ open Polynomial
 
 namespace TauCeti
 
-variable {R : Type*} [SeminormedCommRing R] [NormOneClass R]
+section SeminormedRing
 
-/-- The coefficient length of a Hasse derivative of `P` is at most `(2 ^ δ) ^ r C₁ ^ r` when
-`P` has degree at most `δ r` and coefficient length at most `C₁ ^ r`. -/
-private theorem l1Norm_hasseDeriv_le_pow {P : R[X]} {k r : ℕ} {δ C₁ : ℝ}
-    (hP : (P.natDegree : ℝ) ≤ δ * r) (hPC : P.l1Norm ≤ C₁ ^ r) :
-    (hasseDeriv k P).l1Norm ≤ (2 ^ δ) ^ r * C₁ ^ r :=
-  (P.l1Norm_hasseDeriv_le k).trans <|
-    mul_le_mul (Real.pow_le_rpow_pow_of_le_mul one_le_two hP) hPC P.l1Norm_nonneg (by positivity)
+variable {R : Type*} [SeminormedRing R] [NormOneClass R]
 
 /-- **Values of Hasse derivatives near `α`** (Evertse, Lemma 6.13). Let `Q` have degree at most
 `δ r` and coefficient length at most `C₁ ^ r`. Then every Hasse derivative `Dᵏ Q` is bounded by
@@ -78,6 +73,12 @@ theorem norm_eval_hasseDeriv_le_pow_of_norm_sub_le_one {Q : R[X]} {α z : R} {k 
         gcongr
         linarith
     _ = (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r := by ring
+
+end SeminormedRing
+
+section SeminormedCommRing
+
+variable {R : Type*} [SeminormedCommRing R] [NormOneClass R]
 
 /-- **Values of Thue's quotient polynomial near `α`** (Evertse, Lemma 6.13). Let `r > 0`, let
 `P` and `Q` have degree at most `δ r` and coefficient length at most `C₁ ^ r`, and suppose that
@@ -117,5 +118,7 @@ theorem norm_eval_le_pow_of_hasseDeriv_sub_eq_mul {P Q V : R[X]} {α z : R} {k m
     _ = (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r := by
       rw [Real.rpow_add (by linarith), Real.rpow_one, mul_pow, mul_pow, mul_pow]
       ring
+
+end SeminormedCommRing
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The coefficient l¹-norm of a polynomial
@@ -27,7 +28,8 @@ coefficients.
 * `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound.
 * `Polynomial.l1Norm_comp_le` and `Polynomial.l1Norm_comp_X_add_C_le`: the composition and
   translation bounds.
-* `Polynomial.l1Norm_hasseDeriv_le`: the Hasse derivative bound.
+* `Polynomial.l1Norm_hasseDeriv_le` and `Polynomial.l1Norm_hasseDeriv_le_pow`: Hasse derivative
+  bounds in terms of the degree and coefficient length.
 * `Polynomial.l1Norm_mul_X_pow` and `Polynomial.l1Norm_map`: invariance under shifts and
   norm-preserving coefficient maps.
 * `Polynomial.norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq`: the values near `a` of the
@@ -128,8 +130,8 @@ theorem l1Norm_mul_X_pow (P : R[X]) (n : ℕ) : (P * X ^ n).l1Norm = P.l1Norm :=
     · exact absurd rfl hd
 
 /-- A norm-preserving ring homomorphism preserves the coefficient l¹-norm. -/
-theorem l1Norm_map {S : Type*} [SeminormedRing S] (f : R →+* S) (hf : ∀ x, ‖f x‖ = ‖x‖)
-    (P : R[X]) : (P.map f).l1Norm = P.l1Norm := by
+theorem l1Norm_map (P : R[X]) {S : Type*} [SeminormedRing S] (f : R →+* S)
+    (hf : ∀ x, ‖f x‖ = ‖x‖) : (P.map f).l1Norm = P.l1Norm := by
   rw [l1Norm_eq_sum_of_support_subset _ (support_map_subset f P), l1Norm_eq_sum_support]
   simp only [coeff_map, hf]
 
@@ -287,6 +289,14 @@ theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
       P.sum_support_norm_coeff_mul_le _ fun i hi ↦ by
         exact_mod_cast (Nat.choose_le_two_pow i k).trans
           (Nat.pow_le_pow_right (by omega) (le_natDegree_of_mem_supp i hi))
+
+/-- The coefficient length of a Hasse derivative of `P` is at most `(2 ^ δ) ^ r C₁ ^ r` when
+`P` has degree at most `δ r` and coefficient length at most `C₁ ^ r`. -/
+theorem l1Norm_hasseDeriv_le_pow [NormOneClass R] {P : R[X]} {k r : ℕ} {δ C₁ : ℝ}
+    (hP : (P.natDegree : ℝ) ≤ δ * r) (hPC : P.l1Norm ≤ C₁ ^ r) :
+    (hasseDeriv k P).l1Norm ≤ (2 ^ δ) ^ r * C₁ ^ r :=
+  (P.l1Norm_hasseDeriv_le k).trans <|
+    mul_le_mul (Real.pow_le_rpow_pow_of_le_mul one_le_two hP) hPC P.l1Norm_nonneg (by positivity)
 
 section CommRing
 
