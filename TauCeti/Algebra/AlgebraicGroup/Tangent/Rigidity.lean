@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Equalizer
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
@@ -15,7 +16,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 public import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
-# Triviality of homomorphisms with zero differential
+# Homomorphisms determined by their differentials
+
+Two homomorphisms from a connected finite-type affine group over an algebraically closed field
+of characteristic zero agree if their differentials agree. Their scheme-theoretic equalizer
+has the full Lie algebra. Cartier's theorem makes it smooth, so it is the whole source group.
 
 A homomorphism from a connected finite-type affine group over an algebraically closed field
 of characteristic zero is trivial if its differential at the identity is zero. Indeed, the
@@ -51,6 +56,25 @@ universe u
 variable {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
 variable {H : _root_.CommHopfAlgCat.{u} k} {K : FiniteTypeCommHopfAlgCat.{u, u} k}
 variable [ConnectedSpace (PrimeSpectrum K)]
+
+/-- Two homomorphisms from a connected finite-type affine group over an algebraically closed
+field of characteristic zero agree if their differentials at the identity agree. The target
+group need not be of finite type. -/
+theorem _root_.CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq
+    (f g : H ⟶ K.obj)
+    (hfg : derivationCompLieHom (B := k) f.hom = derivationCompLieHom (B := k) g.hom) :
+    f = g := by
+  let _ : Algebra.Smooth k K :=
+    (smoothCommHopfAlgProperty_iff K.obj).mp (smoothCommHopfAlgProperty_of_charZero k K.obj)
+  let I := equalizerHopfIdeal f g
+  let _ : Algebra.Smooth k (K ⧸ I.toIdeal) :=
+    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
+      (_root_.CommHopfAlgCat.of k (K ⧸ I.toIdeal)))
+  apply (equalizerHopfIdeal_eq_bot_iff f g).mp
+  apply HopfIdeal.eq_bot_of_lieSubalgebra_eq_top I
+  ext d
+  simp only [I, equalizerHopfIdeal_def, HopfIdeal.mem_lieSubalgebra_equalizer_iff,
+    hfg, LieSubalgebra.mem_top]
 
 /-- Over an algebraically closed field of characteristic zero, a morphism from a connected
 finite-type affine group with zero differential is trivial. The target group need not be
