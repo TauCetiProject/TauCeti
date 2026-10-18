@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
-import TauCeti.Geometry.Manifold.Connected
 import TauCeti.GroupTheory.GroupAction.Free
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
@@ -83,7 +82,6 @@ sphere.
   degree and isomorphic monodromy triples.
 * `TauCeti.AnalyticBelyiPair.isoSetoid`, `TauCeti.AnalyticBelyiPair.toIsoClass`: isomorphism of
   pairs of degree `n`, and the permutation triple of an isomorphism class of such pairs.
-* `TauCeti.AnalyticBelyiPair.dense_preimage_range`: the points over `ℂ ∖ {0, 1}` are dense.
 * `TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`: an isomorphism of pairs is determined by the
   image of one point over `ℂ ∖ {0, 1}`.
 * `TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`: there are finitely many isomorphisms of
@@ -311,22 +309,8 @@ theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
 /-- **The cover attached to an analytic Belyi pair is path connected.** Its total space is the
 connected surface `X` with the finitely many points over `0`, `1` and `∞` removed. -/
 instance instPathConnectedSpacePreimageRange :
-    PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
-  have hfin : (P.β ⁻¹' marked).Finite := (P.toTopBranchedCover rfl).finite_preimage_marked
-  have hconn := isConnected_compl_of_finite_of_one_lt_rank
-    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) hfin
-  rw [← preimage_compl, ← range_toOnePoint] at hconn
-  have := ChartedSpace.locallyPathConnectedSpace ℂ P.X
-  have := (isOpenEmbedding_toOnePoint.isOpen_range.preimage
-    P.β.holomorphic.continuous).locallyPathConnectedSpace
-  have := isConnected_iff_connectedSpace.1 hconn
-  exact pathConnectedSpace_iff_connectedSpace.2 this
-
-/-- **The cover attached to an analytic Belyi pair is dense in its surface**: the points of `X`
-over `ℂ ∖ {0, 1}` are the complement of the finitely many points over `0`, `1` and `∞`, none of
-which is isolated. -/
-theorem dense_preimage_range : Dense (P.β ⁻¹' range toOnePoint) :=
-  (P.toTopBranchedCover rfl).dense_preimage_range
+    PathConnectedSpace (P.β ⁻¹' range toOnePoint) :=
+  (P.toTopBranchedCover rfl).instPathConnectedSpacePreimageRange
 
 /-- The permutation triple of an analytic Belyi pair is connected. -/
 theorem isConnected_isoClass : P.isoClass.IsConnected := by
