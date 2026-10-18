@@ -115,8 +115,7 @@ theorem _root_.FirstOrder.Language.IsExtensionPair.potentialIso (hMN : L.IsExten
     obtain ⟨g, hm, hfg⟩ := hMN f m
     exact ⟨g, Set.mem_univ g, hm, hfg⟩
   · intro f _ n
-    obtain ⟨g, hn, hfg⟩ := hNM f.symm n
-    refine ⟨g.symm, Set.mem_univ _, hn, ?_⟩
-    exact PartialEquiv.monotone_symm hfg
+    obtain ⟨g, hn, hfg⟩ := hNM.cod f n
+    exact ⟨g, Set.mem_univ g, hn, hfg⟩
 
 end TauCeti
