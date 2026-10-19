@@ -39,10 +39,7 @@ theorem map_nsmulSeries (F : FormalGroup R) (f : R →+* S) (n : ℕ) :
   | succ n ih =>
       rw [nsmulSeries_succ, nsmulSeries_succ]
       let a : Fin 2 → PowerSeries R := ![F.nsmulSeries n, PowerSeries.X]
-      have ha : HasSubst a := hasSubst_of_constantCoeff_zero fun i ↦ by
-        fin_cases i
-        · exact F.constantCoeff_nsmulSeries n
-        · exact PowerSeries.constantCoeff_X
+      have ha : HasSubst a := F.hasSubst_nsmulSeries_X n
       rw [map_toPowerSeries]
       -- `PowerSeries.map` is by definition `MvPowerSeries.map` in the unique variable
       change MvPowerSeries.map f (subst a F.toPowerSeries) = _
