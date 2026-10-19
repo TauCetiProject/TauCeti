@@ -75,7 +75,8 @@ end TauCeti.EisensteinSeries
 namespace TauCeti
 
 /-- At squarefree level, weight-two modular forms have dimension `τ(N) - 1` more than cusp
-forms, where `τ(N)` is the number of positive divisors of `N`. -/
+forms, where `τ(N)` is the number of positive divisors of `N`. For prime `N`, this difference
+is one, as in `ModularForm.finrank_weight_two_Gamma0_prime`; for `N = 1`, it is zero. -/
 theorem finrank_weight_two_Gamma0_of_squarefree {N : ℕ} [NeZero N] (hN : Squarefree N) :
     Module.finrank ℂ (ModularForm ((Gamma0 N).map (mapGL ℝ)) 2) =
       Module.finrank ℂ (CuspForm ((Gamma0 N).map (mapGL ℝ)) 2) +
