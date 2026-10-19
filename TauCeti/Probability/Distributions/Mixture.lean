@@ -107,8 +107,8 @@ theorem cgf_bind (rho : Measure A) {K : A → Measure B} (hK : AEMeasurable K rh
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The characteristic function of a finite mixture is the integral of the component
-characteristic functions. -/
+/-- The characteristic function of a mixture of finite total mass is the integral of the
+component characteristic functions. -/
 theorem charFun_bind (rho : Measure A) {K : A → Measure E} (hK : AEMeasurable K rho)
     [IsFiniteMeasure (rho.bind K)] (t : E) :
     charFun (rho.bind K) t = ∫ a, charFun (K a) t ∂rho := by
@@ -154,8 +154,8 @@ theorem cgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
     cgf id (kappa ∘ₘ rho) t = Real.log (∫ a, mgf id (kappa a) t ∂rho) := by
   exact Measure.cgf_bind rho kappa.aemeasurable id t ht
 
-/-- The characteristic function of a finite mixture on a real inner product space is the integral
-of the component characteristic functions. -/
+/-- The characteristic function of the composition of a finite kernel with a finite mixing
+measure is the integral of the component characteristic functions. -/
 theorem charFun_comp {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [MeasurableSpace E] [BorelSpace E] (kappa : Kernel A E) [IsFiniteKernel kappa]
     (rho : Measure A) [IsFiniteMeasure rho] (t : E) :
