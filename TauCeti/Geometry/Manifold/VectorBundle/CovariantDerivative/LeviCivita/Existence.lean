@@ -119,7 +119,7 @@ theorem isLeviCivitaConnection_leviCivitaConnection :
 
 /-- For a positive metric, the nondegenerate Koszul construction agrees with Mathlib's
 Riemannian Levi-Civita connection on differentiable vector fields. -/
-theorem leviCivitaConnection_eq_of_apply_eq_inner
+theorem leviCivitaConnection_apply_eq_of_apply_eq_inner
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (hg : ∀ x (v w : TangentSpace I x), g x v w = inner ℝ v w)
