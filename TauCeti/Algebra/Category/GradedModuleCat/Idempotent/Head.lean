@@ -51,6 +51,9 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk`,
   `TauCeti.gradedPositiveMulQuotientLift_unique`: the universal property of `Ae / A₊e`.
 * `TauCeti.smulGradedDimension_gradedIdempotentHead`: the graded dimension of `eⱼ • Sᵢ` is `δᵢⱼ`.
+* `TauCeti.finrank_gradedIdempotentHead`, `TauCeti.isSimpleModule_gradedIdempotentHead`, and
+  `TauCeti.isEmpty_linearEquiv_gradedIdempotentHead`: the underlying heads are one-dimensional,
+  simple, and pairwise nonisomorphic.
 * `TauCeti.simple_gradedIdempotentHead`: each graded head `Sᵢ` is a simple graded module.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedIdempotentHead`: every simple finite graded module
   is isomorphic to a shift of some `Sᵢ`.
@@ -406,6 +409,35 @@ theorem smulGradedDimension_gradedIdempotentHead [Module.Finite k A] [DecidableE
 
 
 /-! ### Simplicity and exhaustiveness -/
+
+include hneg he hspan in
+/-- The underlying vector space of the head of `A eᵢ` is one-dimensional. -/
+theorem finrank_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
+    Module.finrank k (gradedPositiveMulQuotient 𝒜 (he₀ i)) = 1 := by
+  have htop : Submodule.span k {headGenerator e he₀ i} = ⊤ := by
+    apply top_unique
+    intro y _
+    obtain ⟨c, rfl⟩ := exists_eq_smul_headGenerator hneg he he₀ hspan i y
+    exact Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _)
+  rw [← finrank_top, ← htop, finrank_span_singleton (headGenerator_ne_zero hneg he₀ i hne)]
+
+include hneg he hspan in
+/-- Forgetting the grading of an idempotent head still gives a simple module. -/
+theorem isSimpleModule_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
+    IsSimpleModule A (gradedPositiveMulQuotient 𝒜 (he₀ i)) where
+  __ := is_simple_module_of_finrank_eq_one (finrank_gradedIdempotentHead hneg he he₀ hspan i hne)
+
+include hneg he hspan in
+/-- Distinct nonzero orthogonal idempotents give nonisomorphic underlying heads. -/
+theorem isEmpty_linearEquiv_gradedIdempotentHead {i j : I} (hij : i ≠ j) (hi : e i ≠ 0) :
+    IsEmpty (gradedPositiveMulQuotient 𝒜 (he₀ i) ≃ₗ[A]
+      gradedPositiveMulQuotient 𝒜 (he₀ j)) := by
+  classical
+  refine ⟨fun f => headGenerator_ne_zero hneg he₀ i hi (f.injective ?_)⟩
+  obtain ⟨c, hc⟩ := exists_eq_smul_headGenerator hneg he he₀ hspan j
+    (f (headGenerator e he₀ i))
+  have h := f.map_smul (e i) (headGenerator e he₀ i)
+  simpa [smul_headGenerator he he₀, hc, hij, smul_comm (e i) c] using h
 
 include hneg he hspan in
 /-- **The graded head `Sᵢ` of `A eᵢ` is a simple graded module.** It is one-dimensional, spanned by
