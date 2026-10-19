@@ -24,6 +24,8 @@ hypotheses are needed.
 
 * V. Rödl and M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*.
 * B. Nagle, V. Rödl and M. Schacht, *The counting lemma for regular k-uniform hypergraphs*.
+* C. Terry, *Growth of regular partitions 4: strong regularity and the pairs partition*,
+  arXiv:2404.02030.
 -/
 
 public section
@@ -104,7 +106,6 @@ noncomputable def support (Q : Subpolyad3 P) :
   subpolyadSupport P Q.pair₀₁ Q.pair₀₂ Q.pair₁₂
 
 /-- Membership in the support of a subpolyad. -/
-@[simp]
 theorem mem_support (Q : Subpolyad3 P) (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ Q.support ↔ x ∈ P.support ∧
       coordPair x 0 1 (by decide) ∈ Q.pair₀₁ ∧
@@ -118,6 +119,7 @@ theorem support_subset (Q : Subpolyad3 P) : Q.support ⊆ P.support :=
 
 /-- For a bundled subpolyad, membership in the three selected pair graphs already implies
 membership in the parent support. -/
+@[simp]
 theorem mem_support_iff_coordPair_mem (Q : Subpolyad3 P)
     (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ Q.support ↔ coordPair x 0 1 (by decide) ∈ Q.pair₀₁ ∧
