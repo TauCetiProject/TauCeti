@@ -505,14 +505,6 @@ theorem IsGeodesicFromTo.extGeodesicReflection_right {g : PSL(2, ℝ)} {p q : �
   · rw [extGeodesicReflection_inl, (geodesicReflection_apply_eq_self_iff g w).2 hg.right_mem_range]
   · rw [extGeodesicReflection_inr, ← hg.smul_infty_eq, inv_smul_smul, J_smul_infty]
 
-private theorem sideForm_one (z : ℂ) : sideForm 1 z = z.re := by
-  rw [← QuotientGroup.mk_one, sideForm_mk]
-  simp
-
-private theorem sideForm_pslS (z : ℂ) : sideForm pslS z = -z.re := by
-  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply, sideForm_mk]
-  simp [ModularGroup.coe_S]
-
 /-- Reflection in the imaginary axis carries its left side onto the left side of the reversed
 axis. -/
 private theorem extGeodesicReflection_one_mem_extLeftHalfPlane_pslS_iff (p : ℍ ⊕ OnePoint ℝ) :
@@ -603,17 +595,6 @@ theorem extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_iff (g : PSL(2
     hk'.extLeftHalfPlane_eq (isGeodesicFromTo_geodesicFromTo hne), extGeodesicReflection_apply,
     Set.smul_mem_smul_set_iff, extGeodesicReflection_one_mem_extLeftHalfPlane_iff,
     extLeftHalfPlane_geodesicFromTo_smul g⁻¹ hpq, Set.smul_mem_smul_set_iff]
-
-/-- A point of `ℍ` is weakly to the left of the geodesic from `p` to `q` exactly when it is not
-strictly to the left of the reversed geodesic. -/
-private theorem mem_closure_leftHalfPlane_geodesicFromTo_iff {p q : ℍ ⊕ OnePoint ℝ}
-    (hpq : p ≠ q) (z : ℍ) :
-    z ∈ closure (leftHalfPlane (geodesicFromTo p q)) ↔
-      .inl z ∉ extLeftHalfPlane (geodesicFromTo q p) := by
-  rw [(isGeodesicFromTo_mul_pslS_iff.2 (isGeodesicFromTo_geodesicFromTo hpq)).extLeftHalfPlane_eq
-      (isGeodesicFromTo_geodesicFromTo hpq.symm),
-    inl_mem_extLeftHalfPlane_iff, leftHalfPlane_mul_pslS, mem_closure_leftHalfPlane_iff,
-    mem_rightHalfPlane_iff, not_lt]
 
 /-- A point of `ℍ` is weakly to the left of the geodesic from `p` to `q` exactly when its mirror
 image is weakly to the left of the geodesic from the mirror image of `q` to that of `p`. -/

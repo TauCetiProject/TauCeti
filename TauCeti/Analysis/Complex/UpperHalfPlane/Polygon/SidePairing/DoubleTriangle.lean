@@ -235,7 +235,8 @@ theorem doubleTriangleSidePairing_pair :
     (P.doubleTriangleSidePairing h₀ h₁).pair = Fin.revPerm :=
   (rfl)
 
-/-- The side-pairing maps of the double of a triangle are products of reflections in its sides. -/
+/-- The side-pairing maps of the double of a triangle are products of reflections in the sides of
+the original triangle `P`. -/
 @[simp]
 theorem doubleTriangleSidePairing_map :
     (P.doubleTriangleSidePairing h₀ h₁).map =
