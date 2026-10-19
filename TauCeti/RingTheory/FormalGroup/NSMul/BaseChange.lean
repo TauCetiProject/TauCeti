@@ -43,9 +43,9 @@ theorem map_nsmulSeries (F : FormalGroup R) (f : R →+* S) (n : ℕ) :
         fin_cases i
         · exact F.constantCoeff_nsmulSeries n
         · exact PowerSeries.constantCoeff_X
-      change MvPowerSeries.map f (subst a F.toPowerSeries) =
-        subst ![(F.map f).nsmulSeries n, PowerSeries.X]
-          (MvPowerSeries.map f F.toPowerSeries)
+      rw [map_toPowerSeries]
+      -- `PowerSeries.map` is by definition `MvPowerSeries.map` in the unique variable
+      change MvPowerSeries.map f (subst a F.toPowerSeries) = _
       rw [MvPowerSeries.map_subst ha]
       congr 1
       funext i

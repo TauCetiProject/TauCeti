@@ -34,20 +34,21 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 @[simp]
 theorem map_id (F : FormalGroup R) : F.map (RingHom.id R) = F := by
   ext
-  simp [FormalGroup.map]
+  simp
 
 /-- Successive base changes of a formal group law agree with base change along the composite. -/
 @[simp]
 theorem map_comp (F : FormalGroup R) (f : R →+* S) (g : S →+* T) :
     (F.map f).map g = F.map (g.comp f) := by
   ext
-  simp [FormalGroup.map]
+  simp
 
 /-- A base change of a commutative formal group law is commutative. -/
 instance isComm_map (F : FormalGroup R) [F.IsComm] (f : R →+* S) : (F.map f).IsComm where
   comm := by
     have h := congrArg (MvPowerSeries.map f) (IsComm.comm (F := F))
     rw [MvPowerSeries.map_subst HasSubst.X_X] at h
+    rw [map_toPowerSeries]
     calc
       _ = subst (fun i ↦ MvPowerSeries.map f (![X 1, X 0] i))
           (MvPowerSeries.map f F.toPowerSeries) := h
@@ -60,12 +61,12 @@ instance isComm_map (F : FormalGroup R) [F.IsComm] (f : R →+* S) : (F.map f).I
 @[simp]
 theorem map_𝔾ₐ (f : R →+* S) : (𝔾ₐ (R := R)).map f = 𝔾ₐ := by
   ext
-  simp [FormalGroup.map, FormalGroup.𝔾ₐ]
+  simp [FormalGroup.𝔾ₐ]
 
 /-- The multiplicative formal group law is unchanged by base change. -/
 @[simp]
 theorem map_𝔾ₘ (f : R →+* S) : (𝔾ₘ (R := R)).map f = 𝔾ₘ := by
   ext
-  simp [FormalGroup.map, FormalGroup.𝔾ₘ]
+  simp [FormalGroup.𝔾ₘ]
 
 end FormalGroup
