@@ -25,6 +25,11 @@ functions `f` such that `f (u * x)` is uniformly close to `f x` for all `u` near
 structure and the pointwise order of `G →ᵇ ℝ`, and it is a lattice for the pointwise maximum and
 minimum. This is the function space on which invariant means of a topological group are defined.
 
+The group acts on `UCB G` by left translation `(L_g f) x = f (g⁻¹ * x)`, so that
+`L_(g * h) = L_g ∘ L_h`; invariant means are taken with respect to this action. Left translation
+preserves `ucb G` because conjugation by `g` is continuous. Right translations
+`(R_g f) x = f (x * g)` also preserve `ucb G` and commute with left translations.
+
 No separation, local compactness or countability hypothesis on `G` is used. Bekka, de la Harpe and
 Valette call this condition *left* uniform continuity, while it is uniform continuity for Mathlib's
 *right* uniformity `IsTopologicalGroup.rightUniformSpace`, whose entourages compare `(x, y)` through
@@ -35,6 +40,9 @@ general group can differ, so no `IsUniformGroup` structure is used.
 
 * `TauCeti.ucb G`: the subalgebra of `G →ᵇ ℝ` defined by the condition above.
 * `TauCeti.UCB G`: its carrier type, a real Banach algebra and lattice.
+* `TauCeti.UCB.translate`: left translation `L_g`, a homomorphism from `G` to the linear isometry
+  equivalences of `UCB G`.
+* `TauCeti.UCB.rightTranslate`: right translation `R_g`, likewise.
 
 ## Main results
 
@@ -45,6 +53,8 @@ general group can differ, so no `IsUniformGroup` structure is used.
 * `TauCeti.isClosed_ucb`: `ucb G` is closed under uniform limits, so `UCB G` is complete.
 * `TauCeti.sup_mem_ucb`, `TauCeti.inf_mem_ucb`, `TauCeti.abs_mem_ucb`: closure under the lattice
   operations.
+* `TauCeti.UCB.continuous_translate_apply`: each orbit `g ↦ L_g f` is continuous in supremum norm.
+* `TauCeti.UCB.commute_translate_rightTranslate`: left and right translations commute.
 
 ## References
 
@@ -235,5 +245,170 @@ theorem abs_apply_le_norm (f : UCB G) (x : G) : |(f : G →ᵇ ℝ) x| ≤ ‖f�
 end UCB
 
 end UCB
+
+section Translate
+
+/-- Left translation by `g` preserves `ucb G`: since conjugation by `g` is continuous, small left
+multiplication commutes past `g` up to a small left multiplication. -/
+theorem compContinuous_mulLeft_mem_ucb (g : G) {f : G →ᵇ ℝ} (hf : f ∈ ucb G) :
+    f.compContinuous (ContinuousMap.mulLeft g) ∈ ucb G := by
+  have hconj : Tendsto (fun u => g * u * g⁻¹) (𝓝 1) (𝓝 1) :=
+    (IsTopologicalGroup.continuous_conj g).tendsto' 1 1 (by simp)
+  intro ε hε
+  filter_upwards [hconj.eventually (hf ε hε)] with u hu x
+  simpa [mul_assoc] using hu (g * x)
+
+/-- Right translation by `g` preserves `ucb G`. -/
+theorem compContinuous_mulRight_mem_ucb (g : G) {f : G →ᵇ ℝ} (hf : f ∈ ucb G) :
+    f.compContinuous (ContinuousMap.mulRight g) ∈ ucb G := by
+  intro ε hε
+  filter_upwards [hf ε hε] with u hu x
+  simpa [mul_assoc] using hu (x * g)
+
+namespace UCB
+
+/-- Precomposition with mutually inverse continuous self-maps of `G` which preserve `ucb G`, as a
+linear isometry equivalence of `UCB G`. -/
+private def compEquiv (φ ψ : C(G, G)) (hφψ : ∀ x, φ (ψ x) = x) (hψφ : ∀ x, ψ (φ x) = x)
+    (hφ : ∀ f ∈ ucb G, f.compContinuous φ ∈ ucb G) (hψ : ∀ f ∈ ucb G, f.compContinuous ψ ∈ ucb G) :
+    UCB G ≃ₗᵢ[ℝ] UCB G where
+  toFun f := ⟨(f : G →ᵇ ℝ).compContinuous φ, hφ _ f.2⟩
+  invFun f := ⟨(f : G →ᵇ ℝ).compContinuous ψ, hψ _ f.2⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv f := UCB.ext fun x => by simp [hφψ]
+  right_inv f := UCB.ext fun x => by simp [hψφ]
+  norm_map' f := by
+    simp only [LinearEquiv.coe_mk, AddSubgroupClass.coe_norm]
+    refine le_antisymm (BoundedContinuousFunction.norm_compContinuous_le _ _) ?_
+    calc ‖(f : G →ᵇ ℝ)‖
+        = ‖((f : G →ᵇ ℝ).compContinuous φ).compContinuous ψ‖ := by
+          congr 1
+          ext x
+          simp [hφψ]
+      _ ≤ ‖(f : G →ᵇ ℝ).compContinuous φ‖ := BoundedContinuousFunction.norm_compContinuous_le _ _
+
+private theorem coe_compEquiv (φ ψ : C(G, G)) (hφψ : ∀ x, φ (ψ x) = x) (hψφ : ∀ x, ψ (φ x) = x)
+    (hφ : ∀ f ∈ ucb G, f.compContinuous φ ∈ ucb G) (hψ : ∀ f ∈ ucb G, f.compContinuous ψ ∈ ucb G)
+    (f : UCB G) : (compEquiv φ ψ hφψ hψφ hφ hψ f : G →ᵇ ℝ) = (f : G →ᵇ ℝ).compContinuous φ :=
+  rfl
+
+/-- Left translation `L_g f = f (g⁻¹ * ·)` on `UCB G`, as a monoid homomorphism from `G` to the
+group of linear isometry equivalences of `UCB G`, so that `L_(g * h) = L_g ∘ L_h`. -/
+def translate : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
+  toFun g := compEquiv (.mulLeft g⁻¹) (.mulLeft g) (by simp) (by simp)
+    (fun _ => compContinuous_mulLeft_mem_ucb g⁻¹) (fun _ => compContinuous_mulLeft_mem_ucb g)
+  map_one' := by
+    ext f x
+    simp [coe_compEquiv]
+  map_mul' g h := by
+    ext f x
+    simp [coe_compEquiv, mul_assoc]
+
+theorem coe_translate (g : G) (f : UCB G) :
+    (translate g f : G →ᵇ ℝ) = (f : G →ᵇ ℝ).compContinuous (.mulLeft g⁻¹) :=
+  (rfl)
+
+@[simp]
+theorem translate_apply (g : G) (f : UCB G) (x : G) :
+    (translate g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (g⁻¹ * x) :=
+  (rfl)
+
+/-- Composition of left translations: `L_g (L_h f) = L_(g * h) f`. -/
+@[simp]
+theorem translate_translate (g h : G) (f : UCB G) :
+    translate g (translate h f) = translate (g * h) f := by
+  ext x
+  simp
+
+/-- The inverse of `L_g` is `L_(g⁻¹)`. -/
+@[simp]
+theorem translate_symm (g : G) : (translate g).symm = translate g⁻¹ := by
+  ext f x
+  simp
+
+/-- Left translation preserves and reflects the pointwise order. -/
+@[simp]
+theorem translate_le_translate_iff (g : G) {f f' : UCB G} :
+    translate g f ≤ translate g f' ↔ f ≤ f' := by
+  simp only [le_def, translate_apply]
+  exact ⟨fun h x => by simpa using h (g * x), fun h x => h _⟩
+
+@[simp]
+theorem translate_nonneg_iff (g : G) {f : UCB G} : 0 ≤ translate g f ↔ 0 ≤ f := by
+  simp only [le_def, translate_apply, ZeroMemClass.coe_zero, BoundedContinuousFunction.coe_zero,
+    Pi.zero_apply]
+  exact ⟨fun h x => by simpa using h (g * x), fun h x => h _⟩
+
+/-- Left translation fixes constant functions. -/
+@[simp]
+theorem translate_algebraMap (g : G) (c : ℝ) :
+    translate g (algebraMap ℝ (UCB G) c) = algebraMap ℝ (UCB G) c := by
+  ext x
+  simp
+
+@[simp]
+theorem translate_apply_one (g : G) : translate g (1 : UCB G) = 1 := by
+  simpa using translate_algebraMap g 1
+
+/-- The left-translation orbit `u ↦ L_u f` of `f ∈ UCB G` tends to `f` in supremum norm as
+`u → 1`. -/
+theorem tendsto_translate_nhds_one (f : UCB G) :
+    Tendsto (fun u => translate u f) (𝓝 1) (𝓝 f) := by
+  refine tendsto_subtype_rng.2 ?_
+  simp only [coe_translate]
+  exact (mem_ucb_iff_tendsto.1 f.2).comp (continuous_inv.tendsto' 1 1 inv_one)
+
+/-- The left-translation orbit `g ↦ L_g f` of `f ∈ UCB G` is continuous in supremum norm. -/
+theorem continuous_translate_apply (f : UCB G) : Continuous fun g => translate g f := by
+  refine continuous_iff_continuousAt.2 fun h => ?_
+  have := ((translate h).continuous.tendsto f).comp <| (tendsto_translate_nhds_one f).comp <|
+    (continuous_const_mul h⁻¹).tendsto' h 1 (inv_mul_cancel h)
+  simpa [ContinuousAt, Function.comp_def] using this
+
+/-- Right translation `R_g f = f (· * g)` on `UCB G`, as a monoid homomorphism from `G` to the
+group of linear isometry equivalences of `UCB G`, so that `R_(g * h) = R_g ∘ R_h`. -/
+def rightTranslate : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
+  toFun g := compEquiv (.mulRight g) (.mulRight g⁻¹) (by simp) (by simp)
+    (fun _ => compContinuous_mulRight_mem_ucb g) (fun _ => compContinuous_mulRight_mem_ucb g⁻¹)
+  map_one' := by
+    ext f x
+    simp [coe_compEquiv]
+  map_mul' g h := by
+    ext f x
+    simp [coe_compEquiv, mul_assoc]
+
+@[simp]
+theorem rightTranslate_apply (g : G) (f : UCB G) (x : G) :
+    (rightTranslate g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (x * g) :=
+  (rfl)
+
+/-- Composition of right translations: `R_g (R_h f) = R_(g * h) f`. -/
+@[simp]
+theorem rightTranslate_rightTranslate (g h : G) (f : UCB G) :
+    rightTranslate g (rightTranslate h f) = rightTranslate (g * h) f := by
+  ext x
+  simp [mul_assoc]
+
+/-- The inverse of `R_g` is `R_(g⁻¹)`. -/
+@[simp]
+theorem rightTranslate_symm (g : G) : (rightTranslate g).symm = rightTranslate g⁻¹ := by
+  ext f x
+  simp
+
+/-- Left and right translations of `UCB G` commute. -/
+theorem translate_rightTranslate (g h : G) (f : UCB G) :
+    translate g (rightTranslate h f) = rightTranslate h (translate g f) := by
+  ext x
+  simp [mul_assoc]
+
+/-- Left and right translations of `UCB G` commute in the group of linear isometry
+equivalences. -/
+theorem commute_translate_rightTranslate (g h : G) : Commute (translate g) (rightTranslate h) :=
+  LinearIsometryEquiv.ext fun f => translate_rightTranslate g h f
+
+end UCB
+
+end Translate
 
 end TauCeti
