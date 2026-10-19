@@ -18,14 +18,7 @@ defining ideal.
 
 The statement is about the closed subgroup scheme, not only about its points over a field. It
 holds over every base ring, including `𝔽₂`, where the group of rational diagonal matrices is
-trivial and its centralizer in `GL_n(𝔽₂)` is everything. The scheme-theoretic centralizer tests
-commutation with the universal point of `T` over `A ⊗[R] R[ℤⁿ]`, through
-`BialgHom.centralizerHopfIdeal_le_ker_iff_commute_of_injective`. The diagonal entries
-`t₀, …, tₙ₋₁` of that universal point are distinct basis elements of the Laurent coordinate ring
-over every base, so comparing the coefficients of `m tⱼ = tᵢ m` for an off-diagonal entry `m`
-shows that `m = 0`. The points of the diagonal-torus ideal are the diagonal matrices
-(`mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff`), and applying this to the quotient
-by the centralizer ideal gives the reverse containment of ideals.
+trivial and its centralizer in `GL_n(𝔽₂)` is everything.
 
 The generic quotient of the normalizer of a diagonalizable subgroup by its centralizer, in
 `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Quotient`, is therefore the
@@ -53,12 +46,9 @@ universe u w
 
 variable {R : Type u} [CommRing R] {n : ℕ}
 
-/-- A point of `GL_n` killing the centralizer ideal of the diagonal torus is a diagonal matrix.
-The public form of this statement is `centralizerHopfIdeal_diagonalTorusCoordinateMap`.
-
-Such a point commutes with the universal point of the diagonal torus over the extension
-`A ⊗[R] R[ℤⁿ]` of its value algebra. Comparing coefficients at the coordinate characters forces
-every off-diagonal entry to vanish. No hypothesis on `R` or on the value algebra is needed. -/
+/-- A point of `GL_n` killing the centralizer ideal of the diagonal torus is a diagonal matrix,
+over every base ring and every value algebra. The public form of this statement is
+`centralizerHopfIdeal_diagonalTorusCoordinateMap`. -/
 private theorem isDiag_pointsMulEquiv_of_centralizerHopfIdeal_le_ker
     {A : Type w} [CommRing A] [Algebra R A]
     {g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)}
@@ -66,6 +56,10 @@ private theorem isDiag_pointsMulEquiv_of_centralizerHopfIdeal_le_ker
         (diagonalTorusCoordinateMap (R := R) (N := n)).hom).toIdeal ≤ RingHom.ker g.ofConv) :
     ((pointsMulEquiv n g : Matrix.GeneralLinearGroup (Fin n) A) :
       Matrix (Fin n) (Fin n) A).IsDiag := by
+  -- Such a point commutes with the universal point of the diagonal torus over the extension
+  -- `A ⊗[R] R[ℤⁿ]` of its value algebra. The diagonal entries of that universal point are
+  -- distinct basis elements of the Laurent coordinate ring, so comparing coefficients at the
+  -- coordinate characters forces every off-diagonal entry to vanish.
   intro i j hij
   let X := Multiplicative (ULift.{u} (Fin n) →₀ ℤ)
   let B := A ⊗[R] MonoidAlgebra R X
@@ -114,6 +108,8 @@ diagonal-torus coordinate morphism equals the diagonal-torus defining ideal. -/
 theorem centralizerHopfIdeal_diagonalTorusCoordinateMap :
     BialgHom.centralizerHopfIdeal (diagonalTorusCoordinateMap (R := R) (N := n)).hom =
       diagonalTorusDefiningIdeal R n := by
+  -- The centralizer contains the torus; conversely, the quotient by the centralizer ideal is a
+  -- diagonal point, so it kills the diagonal-torus ideal.
   refine le_antisymm ?_ fun x hx ↦ ?_
   · rw [diagonalTorusDefiningIdeal_eq_ker]
     exact BialgHom.centralizerHopfIdeal_le_kerOfSurjective _
@@ -126,12 +122,13 @@ theorem centralizerHopfIdeal_diagonalTorusCoordinateMap :
     rw [RingHom.mem_ker, ofConv_toConv, Ideal.Quotient.mkₐ_eq_mk,
       Ideal.Quotient.eq_zero_iff_mem]
     exact hy
-  let A := CommAlgCat.of R (coordinateHopfAlgebra R n ⧸ C.toIdeal)
+  let A := coordinateHopfAlgebra R n ⧸ C.toIdeal
   have hmem : g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R n)
-      (diagonalTorusDefiningIdeal R n) A :=
+      (diagonalTorusDefiningIdeal R n) (CommAlgCat.of R A) :=
     (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff R n A g).mpr
       (isDiag_pointsMulEquiv_of_centralizerHopfIdeal_le_ker (A := A) hg)
-  have hx0 := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ A g).mp hmem x hx
+  have hx0 :=
+    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ (CommAlgCat.of R A) g).mp hmem x hx
   rw [ofConv_toConv, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem] at hx0
   exact HopfIdeal.mem_toIdeal.mp hx0
 

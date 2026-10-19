@@ -157,24 +157,26 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k)
 
 /-- **The points of the diagonal torus are the diagonal matrices.** Over every value algebra, a
 point of `GL_n` kills `diagonalTorusDefiningIdeal` exactly when its matrix is diagonal. -/
-theorem mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff (A : CommAlgCat.{w} k)
-    (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) :
+@[simp↓]
+theorem mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff
+    (A : Type w) [CommRing A] [Algebra k A]
+    (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) (CommAlgCat.of k A)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
-        (diagonalTorusDefiningIdeal k n) A ↔
+        (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k A) ↔
       ((pointsMulEquiv n g : Matrix.GeneralLinearGroup (Fin n) A) :
         Matrix (Fin n) (Fin n) A).IsDiag := by
   rw [diagonalTorusDefiningIdeal_eq_ker,
     HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor]
   constructor
   · rintro ⟨t, rfl⟩
-    rw [mapPointsFunctor_diagonalTorusCoordinateMap_app A t]
+    rw [mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k A) t]
     exact TauCeti.mem_diagonalTorus_iff.mp (TauCeti.mem_diagonalTorus_iff_exists_diagGL.mpr
       ⟨_, (pointsMulEquiv_diagonalTorusPoints t).symm⟩)
   · intro hg
     obtain ⟨s, hs⟩ := TauCeti.mem_diagonalTorus_iff_exists_diagGL.mp
       (TauCeti.mem_diagonalTorus_iff.mpr hg)
     refine ⟨(SplitTorus.pointsMulEquiv (R := k) (A := A)).symm fun i ↦ s i.down,
-      (mapPointsFunctor_diagonalTorusCoordinateMap_app A _).trans ?_⟩
+      (mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k A) _).trans ?_⟩
     apply (pointsMulEquiv (R := k) (A := A) n).injective
     rw [pointsMulEquiv_diagonalTorusPoints, ← hs]
     congr 1
@@ -208,8 +210,7 @@ private theorem diagonalTorus_le_map_quotientPointsSubgroup :
           (pointsMulEquiv (R := k) (A := k) n).toMonoidHom := by
   intro m hm
   refine ⟨(pointsMulEquiv (R := k) (A := k) n).symm m, ?_, MulEquiv.apply_symm_apply _ m⟩
-  refine (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff k n
-    (CommAlgCat.of k k) _).mpr ?_
+  refine (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff k n k _).mpr ?_
   rw [MulEquiv.apply_symm_apply]
   exact TauCeti.mem_diagonalTorus_iff.mp hm
 
