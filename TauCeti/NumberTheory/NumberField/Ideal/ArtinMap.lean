@@ -84,7 +84,7 @@ noncomputable def artinElement (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ)
     (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q) : L ≃ₐ[K] L :=
-  letI := isMulCommutative_galoisGroup_of_commute hab
+  letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   ConjClasses.mkEquiv.symm (artinSymbol (L := L) 𝔭 hur)
 
 /-- At an unramified prime, the Artin automorphism represents the Artin symbol. -/
@@ -92,7 +92,7 @@ theorem artinSymbol_eq_mk_artinElement (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q) :
     artinSymbol (L := L) 𝔭 hur = ConjClasses.mk (artinElement hab 𝔭 hur) := by
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   exact (ConjClasses.mkEquiv.apply_symm_apply _).symm
 
 include hab in
@@ -103,7 +103,7 @@ theorem isArithFrobAt_artinElement (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
       Algebra.IsUnramifiedAt (𝓞 K) Q)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭] :
     IsArithFrobAt (𝓞 K) (artinElement hab 𝔭 hur) Q := by
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot (NeZero.ne 𝔭) Q)
   have hconj : IsConj (artinElement hab 𝔭 hur) σ :=
@@ -179,7 +179,7 @@ theorem artinElementAway_eq_of_isArithFrobAt {v : HeightOneSpectrum (𝓞 K)} (h
 the unique factorization of an invertible fractional ideal, on the group of fractional ideals
 with multiplicity zero at every prime of `S`. -/
 noncomputable def artinHomAway : idealsAway K S →* (L ≃ₐ[K] L) :=
-  letI := isMulCommutative_galoisGroup_of_commute hab
+  letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   MonoidHom.mk' (fun I ↦ ∏ᶠ v : HeightOneSpectrum (𝓞 K), artinElementAway hab S hur v ^
       FractionalIdeal.count K v ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K))
     fun I J ↦ by
@@ -195,11 +195,11 @@ factors being trivial. It is taken in the commutative structure that `hab` itsel
 no bundled commutativity is asked of the caller. -/
 theorem artinHomAway_apply (I : idealsAway K S) :
     artinHomAway (L := L) hab S hur I =
-      letI := isMulCommutative_galoisGroup_of_commute hab
+      letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
       ∏ᶠ v : HeightOneSpectrum (𝓞 K), artinElementAway hab S hur v ^ FractionalIdeal.count K v
         ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :=
   -- The defining equation of the `MonoidHom.mk'` that `artinHomAway` is built from: the `letI`
-  -- above is the same named instance term as the one in the definition, so this is `rfl`.
+  -- above supplies the same commutative structure as the one in the definition.
   (rfl)
 
 /-- **The value of the Artin map at a prime outside `S` is its local Artin automorphism.** -/
@@ -208,7 +208,7 @@ theorem artinHomAway_apply_eq_artinElementAway (I : idealsAway K S)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     artinHomAway (L := L) hab S hur I = artinElementAway hab S hur v := by
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   rw [artinHomAway_apply hab S hur I, finprod_eq_single _ v, hI,
     FractionalIdeal.count_self, zpow_one]
   intro w hw
@@ -275,8 +275,8 @@ theorem artinHomAway_restrict (M : Type*) [Field M] [NumberField M] [Algebra K M
   intro I v hv hI P hPp hPl τ hτ
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
-  let _ := isMulCommutative_galoisGroup_of_commute
-    (commute_of_tower (K := K) (L := L) (M := M) hab)
+  have : IsMulCommutative (M ≃ₐ[K] M) :=
+    .of_comm fun σ τ ↦ (commute_of_tower (K := K) (L := L) hab σ τ).eq
   rw [MonoidHom.comp_apply, artinHomAway_apply_prime hab S hur I v hv hI Q σ hσ]
   -- Both sides represent the Artin symbol of `v` for `M/K`, which is the image of the one for
   -- `L/K` under restriction; in a commutative group a class has only one representative.

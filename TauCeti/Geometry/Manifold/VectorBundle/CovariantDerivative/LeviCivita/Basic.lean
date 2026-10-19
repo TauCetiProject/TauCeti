@@ -54,8 +54,6 @@ the vanishing of the endomorphism-valued one-form `CovariantDerivative.differenc
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "The Levi-Civita connection".
 * [mathlib4#36845](https://github.com/leanprover-community/mathlib4/pull/36845): the first-slot
   tensoriality and second-slot Leibniz identities follow its design.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 2, Thm. 3.6.
@@ -86,7 +84,8 @@ variable {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)] [FiberBundle F V]
 
 variable {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
-  [∀ x, NormedAddCommGroup (V' x)] [∀ x, NormedSpace ℝ (V' x)] [FiberBundle F' V']
+  [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)] [∀ x, TopologicalSpace (V' x)]
+  [FiberBundle F' V']
 
 variable (F F') in
 /-- Two continuous linear maps between fibres are equal if their values on differentiable sections
