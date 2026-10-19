@@ -148,7 +148,7 @@ theorem cutDist_le_eLpNorm_one_toReal (U W : Graphon Ω μ) :
       ((fun z : Ω × Ω ↦ U z.1 z.2) - fun z : Ω × Ω ↦ W z.1 z.2)
       1 (μ.prod μ)).toReal := by
   refine (cutDist_le_cutNorm_sub U W).trans ((cutNorm_le_toReal_eLpNorm μ _).trans_eq ?_)
-  congr 2
+  simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, Pi.sub_def]
 
 /-- A graphon sequence with an `L¹` Cauchy modulus tending to zero converges in cut distance to a
 strict graphon. This is the cut-distance consequence of
