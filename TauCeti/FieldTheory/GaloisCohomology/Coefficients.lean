@@ -14,6 +14,7 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 -- Non-public: the roots of unity of a separably closed field are used only inside a proof.
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
@@ -383,10 +384,9 @@ theorem mem_H0_kummerCoeff_iff {x : KummerCoeff K n} :
       intro σ
       rw [← kummerCoeffIncl_equivariant, hx σ]
     obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.mp hu
-    have ha' : Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a =
-        (x.toMul : (SeparableClosure K)ˣ) := ha
+    rw [toMul_kummerCoeffIncl] at ha
     have hpow : a ^ n = 1 := Units.map_injective (algebraMap K (SeparableClosure K)).injective
-      (by rw [map_pow, map_one, ha']; exact (mem_rootsOfUnity n _).mp x.toMul.2)
+      (by rw [map_pow, map_one, ha]; exact (mem_rootsOfUnity n _).mp x.toMul.2)
     exact ⟨⟨a, (mem_rootsOfUnity n a).mpr hpow⟩, Subtype.ext ha⟩
   · rintro ⟨a, ha⟩
     rw [FixedPoints.mem_addSubgroup]
@@ -404,10 +404,10 @@ def baseRootsOfUnityEquivInvariants :
   AddEquiv.ofBijective
     ((MonoidHom.toAdditive (restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n)).codRestrict
       _ fun a ↦ (mem_H0_kummerCoeff_iff n).mpr ⟨a.toMul, rfl⟩)
-    ⟨fun a b h ↦ Additive.toMul.injective <| Subtype.ext <|
-        Units.map_injective (algebraMap K (SeparableClosure K)).injective
+    ⟨fun a b h ↦ Additive.toMul.injective <|
+        restrictRootsOfUnity_injective _ n (algebraMap K (SeparableClosure K)).injective
           (congrArg (fun x : H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) ↦
-            ((x : KummerCoeff K n).toMul : (SeparableClosure K)ˣ)) h),
+            (x : KummerCoeff K n).toMul) h),
       fun x ↦ by
         obtain ⟨a, ha⟩ := (mem_H0_kummerCoeff_iff n).mp x.2
         exact ⟨Additive.ofMul a, Subtype.ext (Additive.toMul.injective ha)⟩⟩

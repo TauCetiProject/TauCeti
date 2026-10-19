@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Descent
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
@@ -25,8 +25,8 @@ and makes an isogeny adjoint to its dual.
 Over a separably closed base it agrees with the geometric pairing and is nondegenerate.
 Over a general base the rational torsion subgroup can be isotropic.
 
-The geometric pairing is the divisor construction in `WeilPairing/Basic.lean`; no new choices
-of divisors or functions enter the descent.
+The geometric pairing is the divisor construction in `Isogeny/MulByInt/WeilPairing/Basic.lean`;
+no new choices of divisors or functions enter the descent.
 
 ## References
 
@@ -44,19 +44,6 @@ open scoped WeierstrassCurve _root_.AddSubgroup
 
 variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic]
   (m : ℕ) (hm : IsUnit (m : K))
-
--- This adapter reads a rational torsion point in the geometric construction used below.
-omit [W.IsElliptic] in
-open scoped Classical in
-private theorem torsionByCongr_symm_baseTorsionCoeff (P : W.toAffine.Point[(m : ℤ)]) :
-    (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm (W.baseTorsionCoeff m P) =
-      W.torsionMapAlong (algebraMap K (SeparableClosure K)) m P := by
-  apply Subtype.ext
-  simp only [AddEquiv.torsionByCongr_symm_apply_coe, WeierstrassCurve.coe_baseTorsionCoeff,
-    WeierstrassCurve.coe_torsionMapAlong_apply,
-    WeierstrassCurve.basePointCoeff_eq_pointCoeffEquiv_mapAlong]
-  -- `mapAlong` targets `W.map`, whereas the coefficient equivalence uses `W⁄Kˢ`.
-  exact W.pointCoeffEquiv.symm_apply_apply _
 
 /-- The Weil pairing of rational torsion points, with its value descended to the base field. -/
 def rationalWeilPairing :
@@ -94,6 +81,17 @@ theorem restrictRootsOfUnity_rationalWeilPairing
   rw [← coe_baseRootsOfUnityEquivInvariants]
   simp [rationalWeilPairing]
 
+/-- Equality with a rational Weil pairing value can be checked in the separable closure. -/
+theorem rationalWeilPairing_eq_iff (P Q : W.toAffine.Point[(m : ℤ)])
+    (a : Additive (rootsOfUnity m K)) :
+    rationalWeilPairing W m hm P Q = a ↔
+      W.torsionCoeffWeilPairing m hm (W.baseTorsionCoeff m P) (W.baseTorsionCoeff m Q) =
+        Additive.ofMul (restrictRootsOfUnity (algebraMap K (SeparableClosure K)) m a.toMul) := by
+  rw [← restrictRootsOfUnity_rationalWeilPairing]
+  exact ⟨fun h ↦ by rw [h], fun h ↦ Additive.toMul.injective <|
+    restrictRootsOfUnity_injective _ _ (algebraMap K (SeparableClosure K)).injective
+      (congrArg Additive.toMul h)⟩
+
 /-- The comparison with the geometric pairing uniquely determines the rational Weil pairing. -/
 theorem rationalWeilPairing_unique
     (b : W.toAffine.Point[(m : ℤ)] →+
@@ -106,11 +104,7 @@ theorem rationalWeilPairing_unique
   intro P
   apply AddMonoidHom.ext
   intro Q
-  apply Additive.toMul.injective
-  apply Subtype.ext
-  apply Units.map_injective (algebraMap K (SeparableClosure K)).injective
-  exact congrArg (fun x : KummerCoeff K m ↦ (x.toMul : (SeparableClosure K)ˣ))
-    ((hb P Q).trans (restrictRootsOfUnity_rationalWeilPairing W m hm P Q).symm)
+  exact ((rationalWeilPairing_eq_iff W m hm P Q (b P Q)).2 (hb P Q).symm).symm
 
 /-- Over a separably closed base, descent recovers the original divisor-defined Weil pairing. -/
 @[simp]
@@ -118,12 +112,9 @@ theorem rationalWeilPairing_eq_weilPairing [IsSepClosed K] [NeZero m]
     (P Q : W.toAffine.Point[(m : ℤ)]) :
     rationalWeilPairing W m hm P Q = weilPairing W m hm.ne_zero P Q := by
   classical
-  apply (baseRootsOfUnityEquivInvariants K m).injective
-  apply Subtype.ext
-  rw [coe_baseRootsOfUnityEquivInvariants, restrictRootsOfUnity_rationalWeilPairing,
-    W.torsionCoeffWeilPairing_apply m hm hm.natCast_ne_zero_of_algebra,
-    torsionByCongr_symm_baseTorsionCoeff, torsionByCongr_symm_baseTorsionCoeff,
-    coe_baseRootsOfUnityEquivInvariants]
+  apply (rationalWeilPairing_eq_iff W m hm P Q _).2
+  rw [W.torsionCoeffWeilPairing_apply m hm hm.natCast_ne_zero_of_algebra,
+    W.torsionByCongr_symm_baseTorsionCoeff, W.torsionByCongr_symm_baseTorsionCoeff]
   -- The base-change curve and `W.map (algebraMap K Kˢ)` agree at default transparency.
   exact W.weilPairing_torsionMapAlong (algebraMap K (SeparableClosure K)) m hm.ne_zero P Q
 
@@ -138,10 +129,8 @@ theorem rationalWeilPairing_nondegenerate [IsSepClosed K] {P : W.toAffine.Point[
 @[simp]
 theorem rationalWeilPairing_self (P : W.toAffine.Point[(m : ℤ)]) :
     rationalWeilPairing W m hm P P = 0 := by
-  apply (baseRootsOfUnityEquivInvariants K m).injective
-  apply Subtype.ext
-  rw [coe_baseRootsOfUnityEquivInvariants, restrictRootsOfUnity_rationalWeilPairing,
-    W.torsionCoeffWeilPairing_self, map_zero, ZeroMemClass.coe_zero]
+  apply (rationalWeilPairing_eq_iff W m hm P P 0).2
+  simp only [W.torsionCoeffWeilPairing_self, toMul_zero, map_one, ofMul_one]
 
 /-- Interchanging the arguments of the rational Weil pairing inverts its value. -/
 theorem rationalWeilPairing_swap (P Q : W.toAffine.Point[(m : ℤ)]) :
@@ -169,11 +158,9 @@ theorem rationalWeilPairing_pointMap
       (W⁄L).baseTorsionCoeff m P' := Subtype.ext (by simp [hP])
   have hQ' : W.torsionCoeffBaseChange τ m (W.baseTorsionCoeff m Q) =
       (W⁄L).baseTorsionCoeff m Q' := Subtype.ext (by simp [hQ])
-  apply (baseRootsOfUnityEquivInvariants L m).injective
-  apply Subtype.ext
-  rw [coe_baseRootsOfUnityEquivInvariants, restrictRootsOfUnity_rationalWeilPairing,
-    ← hP', ← hQ', W.torsionCoeffWeilPairing_torsionCoeffBaseChange hm τ,
-    ← restrictRootsOfUnity_rationalWeilPairing, coe_baseRootsOfUnityEquivInvariants]
+  apply (rationalWeilPairing_eq_iff (W⁄L) m _ P' Q' _).2
+  rw [← hP', ← hQ', W.torsionCoeffWeilPairing_torsionCoeffBaseChange hm τ,
+    ← restrictRootsOfUnity_rationalWeilPairing]
   apply Additive.toMul.injective
   apply Subtype.ext
   apply Units.ext
@@ -199,11 +186,12 @@ theorem rationalWeilPairing_eq_rationalWeilPairing_dual (φ : Isogeny W₁.toAff
     rationalWeilPairing W₂ m hm S' T = rationalWeilPairing W₁ m hm S T' := by
   classical
   have := hm.neZero_natCast
-  apply (baseRootsOfUnityEquivInvariants K m).injective
-  apply Subtype.ext
-  simp only [coe_baseRootsOfUnityEquivInvariants, restrictRootsOfUnity_rationalWeilPairing,
+  apply (rationalWeilPairing_eq_iff W₂ m hm S' T _).2
+  simp only [restrictRootsOfUnity_rationalWeilPairing,
     WeierstrassCurve.torsionCoeffWeilPairing_apply _ _ _ hm.natCast_ne_zero_of_algebra,
-    torsionByCongr_symm_baseTorsionCoeff]
+    WeierstrassCurve.torsionByCongr_symm_baseTorsionCoeff]
+  -- The geometric pairing uses `W⁄Kˢ`, definitionally `W.map (algebraMap K Kˢ)`;
+  -- the mapped isogeny and its point maps use the latter presentation.
   refine (φ.map (algebraMap K (SeparableClosure K))).weilPairing_eq_weilPairing_dual m
     hm.natCast_ne_zero_of_algebra ?_ ?_
   · simp only [← Hom.ofIsogeny_map, WeierstrassCurve.coe_torsionMapAlong_apply,
