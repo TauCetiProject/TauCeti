@@ -17,31 +17,31 @@ Let `J` be a `C²` almost complex structure, written as a matrix-valued function
 Curves are solutions `u : ℂ → V` of the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`, and their
 energy is the real-direction energy `∫ ‖∂ₛu‖²`, as in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue`. The mean-value inequality there
-provides a threshold `ħ > 0` such that a curve with energy less than `ħ` on a disk of radius `r`
+provides a threshold `δ > 0` such that a curve with energy less than `δ` on a disk of radius `r`
 satisfies `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²` at the centre. This file draws the two
 consequences of this estimate that control bubbling in Gromov compactness.
 
-* **Energy quantization.** A `J`-holomorphic plane with image in `K` and energy less than `ħ` is
+* **Energy quantization.** A `J`-holomorphic plane with image in `K` and energy less than `δ` is
   constant: applying the mean-value inequality on disks of every radius `r` about a point bounds
-  `‖∂ₛu‖²` there by `8 ħ / (π r²)`, which tends to zero. Equivalently, every nonconstant plane
-  has energy at least `ħ`. A `J`-holomorphic sphere restricts to a plane with the same energy, so
+  `‖∂ₛu‖²` there by `8 δ / (π r²)`, which tends to zero. Equivalently, every nonconstant plane
+  has energy at least `δ`. A `J`-holomorphic sphere restricts to a plane with the same energy, so
   the same threshold bounds the energy of nonconstant spheres from below.
 * **Energy concentration.** If the derivatives of a family of curves on a disk `B_r(z₀)` blow up
   at points converging to `z₀`, then eventually every disk `B_ε(z₀)`, `0 < ε ≤ r`, carries energy
-  at least `ħ`. Otherwise the mean-value inequality on the disk of radius `ε / 2` about the
+  at least `δ`. Otherwise the mean-value inequality on the disk of radius `ε / 2` about the
   blow-up point would bound the derivative there.
 
-In the bubbling analysis the second statement bounds by `E / ħ` the number of points at which a
+In the bubbling analysis the second statement bounds by `E / δ` the number of points at which a
 sequence of curves with energy at most `E` blows up, and the first gives every bubble energy at
-least `ħ`. Neither the counting argument nor the rescaling that produces bubbles is carried out
+least `δ`. Neither the counting argument nor the rescaling that produces bubbles is carried out
 here.
 
 ## Main results
 
 * `TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne`: a nonconstant
-  `J`-holomorphic plane with image in `K` has energy at least `ħ`.
+  `J`-holomorphic plane with image in `K` has energy at least `δ`.
 * `TauCeti.exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball`: energy at least
-  `ħ` concentrates near every point at which the derivatives of a family of `J`-holomorphic
+  `δ` concentrates near every point at which the derivatives of a family of `J`-holomorphic
   curves blow up.
 
 ## References
@@ -62,16 +62,16 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V}
 
 /-- **Energy quantization for `J`-holomorphic planes.** Let `J` be `C²` on an open set `W`
-containing a compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `ħ > 0` such that
+containing a compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `δ > 0` such that
 every nonconstant `C³` solution `u : ℂ → V` of `∂ₜu = J(u) ∂ₛu` with image in `K` and integrable
-energy density has energy `∫ ‖∂ₛu‖² ≥ ħ`. -/
+energy density has energy `∫ ‖∂ₛu‖² ≥ δ`. -/
 theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ ħ > 0, ∀ ⦃u : ℂ → V⦄, ContDiff ℝ 3 u →
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄, ContDiff ℝ 3 u →
       (∀ z, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) → range u ⊆ K →
       Integrable (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) → ∀ ⦃z w : ℂ⦄, u z ≠ u w →
-      ħ ≤ ∫ y, ‖fderiv ℝ u y 1‖ ^ 2 := by
+      δ ≤ ∫ y, ‖fderiv ℝ u y 1‖ ^ 2 := by
   obtain ⟨δ, hδ, hmean⟩ :=
     exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
       hW hJ hK hKW hJsq
@@ -110,20 +110,20 @@ theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
   exact hzw (is_const_of_fderiv_eq_zero (hu.differentiable (by norm_num)) hfderiv z w)
 
 /-- **Energy concentration at blow-up points.** Let `J` be `C²` on an open set `W` containing a
-compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `ħ > 0` with the following
+compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `δ > 0` with the following
 property. Let `uᵢ` be a family of `C³` solutions of `∂ₜu = J(u) ∂ₛu` on a disk `B_r(z₀)`, with
 image in `K` and integrable energy density, and let `zᵢ → z₀` be points at which the differentials
-blow up, `‖duᵢ(zᵢ)‖ → ∞`. Then for every `0 < ε ≤ r`, eventually `∫_{B_ε(z₀)} ‖∂ₛuᵢ‖² ≥ ħ`. -/
+blow up, `‖duᵢ(zᵢ)‖ → ∞`. Then for every `0 < ε ≤ r`, eventually `∫_{B_ε(z₀)} ‖∂ₛuᵢ‖² ≥ δ`. -/
 theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ ħ > 0, ∀ ⦃ι : Type*⦄ ⦃l : Filter ι⦄ ⦃u : ι → ℂ → V⦄ ⦃z : ι → ℂ⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄,
+    ∃ δ > 0, ∀ ⦃ι : Type*⦄ ⦃l : Filter ι⦄ ⦃u : ι → ℂ → V⦄ ⦃z : ι → ℂ⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄,
       (∀ i, ContDiffOn ℝ 3 (u i) (ball z₀ r)) →
       (∀ i, ∀ y ∈ ball z₀ r, fderiv ℝ (u i) y I = J (u i y) (fderiv ℝ (u i) y 1)) →
       (∀ i, MapsTo (u i) (ball z₀ r) K) →
       (∀ i, IntegrableOn (fun y ↦ ‖fderiv ℝ (u i) y 1‖ ^ 2) (ball z₀ r)) →
       Tendsto z l (𝓝 z₀) → Tendsto (fun i ↦ ‖fderiv ℝ (u i) (z i)‖) l atTop →
-      ∀ ε, 0 < ε → ε ≤ r → ∀ᶠ i in l, ħ ≤ ∫ y in ball z₀ ε, ‖fderiv ℝ (u i) y 1‖ ^ 2 := by
+      ∀ ε, 0 < ε → ε ≤ r → ∀ᶠ i in l, δ ≤ ∫ y in ball z₀ ε, ‖fderiv ℝ (u i) y 1‖ ^ 2 := by
   obtain ⟨δ, hδ, hmean⟩ :=
     exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
       hW hJ hK hKW hJsq
