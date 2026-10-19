@@ -64,15 +64,16 @@ theorem generalizedParetoPDFReal_of_nonpos (hs : s ≤ 0) (ξ x : ℝ) :
   simp [generalizedParetoPDFReal, not_lt.mpr hs]
 
 /-- The generalized Pareto density vanishes outside its open support. -/
-theorem generalizedParetoPDFReal_of_not_mem (hx : ¬ (0 < x ∧ 0 < 1 + ξ * x / s)) :
+theorem generalizedParetoPDFReal_of_notMem (hx : x ∉ {x | 0 < x ∧ 0 < 1 + ξ * x / s}) :
     generalizedParetoPDFReal s ξ x = 0 := by
+  simp only [mem_ofPred_eq] at hx
   simp [generalizedParetoPDFReal, hx]
 
 /-- The chosen density vanishes on the nonpositive half-line, including its lower endpoint. -/
 @[simp]
 theorem generalizedParetoPDFReal_of_nonpos_arg (hx : x ≤ 0) (s ξ : ℝ) :
     generalizedParetoPDFReal s ξ x = 0 :=
-  generalizedParetoPDFReal_of_not_mem (by grind)
+  generalizedParetoPDFReal_of_notMem (by grind)
 
 /-- The extended density vanishes at nonpositive scale. -/
 @[simp]
@@ -115,6 +116,12 @@ theorem generalizedParetoPDFReal_pos_iff :
   · exact iff_of_true (div_pos (Real.exp_pos _) h.1) h
   · exact iff_of_true (div_pos (Real.rpow_pos_of_pos h.2.2 _) h.1) h
   · simp [h]
+
+/-- The extended density is positive exactly on its open support at positive scale. -/
+@[simp]
+theorem generalizedParetoPDF_pos_iff :
+    0 < generalizedParetoPDF s ξ x ↔ 0 < s ∧ 0 < x ∧ 0 < 1 + ξ * x / s := by
+  rw [generalizedParetoPDF_eq_ofReal, ENNReal.ofReal_pos, generalizedParetoPDFReal_pos_iff]
 
 /-- Converting the extended density back to `ℝ` recovers the real density. -/
 @[simp]
@@ -167,15 +174,18 @@ private theorem hasDerivAt_transform (s ξ e : ℝ) :
       simp only [id_eq, mul_one]
     field_simp
 
+private theorem strictMono_transform (hs : 0 < s) (ξ : ℝ) :
+    StrictMono (generalizedParetoMap s ξ) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_transform s ξ)
+    (fun _ ↦ mul_pos hs (Real.exp_pos _))
+
 private theorem transform_pos (hs : 0 < s) (ξ : ℝ) {e : ℝ} (he : 0 < e) :
     0 < generalizedParetoMap s ξ e := by
-  have hmono := strictMono_of_hasDerivAt_pos (hasDerivAt_transform s ξ)
-    (fun _ ↦ mul_pos hs (Real.exp_pos _))
   have hzero : generalizedParetoMap s ξ 0 = 0 := by
     by_cases hξ : ξ = 0
     · simp [hξ]
     · simp [generalizedParetoMap_of_shape_ne_zero hξ]
-  simpa only [hzero] using hmono he
+  simpa only [hzero] using strictMono_transform hs ξ he
 
 private theorem transform_base (hs : 0 < s) (ξ e : ℝ) :
     1 + ξ * generalizedParetoMap s ξ e / s = Real.exp (ξ * e) := by
@@ -194,7 +204,7 @@ private theorem image_transform (hs : 0 < s) (ξ : ℝ) :
   · rintro ⟨hx, hb⟩
     by_cases hξ : ξ = 0
     · subst ξ
-      exact ⟨x / s, div_pos hx hs, by simp; field_simp⟩
+      exact ⟨x / s, div_pos hx hs, by rw [generalizedParetoMap_zero, mul_div_cancel₀ _ hs.ne']⟩
     · refine ⟨Real.log (1 + ξ * x / s) / ξ, ?_, ?_⟩
       · rcases lt_or_gt_of_ne hξ with hξ | hξ
         · exact div_pos_of_neg_of_neg (Real.log_neg hb (by
@@ -213,18 +223,22 @@ private theorem transform_weight (hs : 0 < s) (ξ : ℝ) {e : ℝ} (he : 0 < e) 
         generalizedParetoPDF s ξ (generalizedParetoMap s ξ e) = exponentialPDF 1 e := by
   have hb := transform_base hs ξ e
   have hx := transform_pos hs ξ he
-  rw [generalizedParetoPDF, generalizedParetoPDFReal,
-    ite_eq_left ⟨hs, hx, by rw [hb]; exact Real.exp_pos _⟩,
-    abs_of_pos (mul_pos hs (Real.exp_pos _)), ← ENNReal.ofReal_mul (by positivity),
+  rw [generalizedParetoPDF_eq_ofReal, abs_of_pos (mul_pos hs (Real.exp_pos _)),
     exponentialPDF_of_nonneg he.le]
-  congr 1
   by_cases hξ : ξ = 0
-  · simp only [hξ, ite_true, generalizedParetoMap_zero, zero_mul, Real.exp_zero,
+  · subst ξ
+    rw [generalizedParetoPDFReal_zero hs, ite_eq_left hx,
+      ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    simp only [generalizedParetoMap_zero, zero_mul, Real.exp_zero,
       mul_one, one_mul]
     have hquot : -(s * e) / s = -e := by field_simp
     rw [hquot]
     field_simp
-  · rw [ite_eq_right hξ, hb, ← Real.exp_mul]
+  · rw [generalizedParetoPDFReal_of_shape_ne_zero hs hξ hx (hb ▸ Real.exp_pos _),
+      ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    rw [hb, ← Real.exp_mul]
     have hexp : ξ * e + ξ * e * (-ξ⁻¹ - 1) = -e := by field_simp; ring
     calc
       s * Real.exp (ξ * e) * (Real.exp (ξ * e * (-ξ⁻¹ - 1)) / s) =
@@ -248,8 +262,7 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
       (φ' := fun e ↦ s * Real.exp (ξ * e)) (f := generalizedParetoPDF s ξ)
       measurableSet_Ioi (measurable_generalizedParetoMap_right s ξ)
       (fun e _ ↦ (hasDerivAt_transform s ξ e).hasDerivWithinAt)
-      ((strictMono_of_hasDerivAt_pos (hasDerivAt_transform s ξ)
-        (fun _ ↦ mul_pos hs (Real.exp_pos _))).injective.injOn)
+      (strictMono_transform hs ξ).injective.injOn
     have hw : (fun e ↦ ENNReal.ofReal |s * Real.exp (ξ * e)| *
         generalizedParetoPDF s ξ (generalizedParetoMap s ξ e)) =ᵐ[volume.restrict (Ioi 0)]
           exponentialPDF 1 := by
@@ -263,7 +276,7 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
     by_cases hx : x ∈ A
     · exact indicator_of_mem hx _
     · rw [indicator_of_notMem hx, generalizedParetoPDF,
-        generalizedParetoPDFReal_of_not_mem hx, ENNReal.ofReal_zero]
+        generalizedParetoPDFReal_of_notMem hx, ENNReal.ofReal_zero]
 
 /-- The extended generalized Pareto density has integral one at positive scale. -/
 theorem lintegral_generalizedParetoPDF_eq_one (hs : 0 < s) (ξ : ℝ) :
@@ -292,6 +305,29 @@ theorem integrable_generalizedParetoPDFReal (s ξ : ℝ) :
   · apply Integrable.of_integral_ne_zero
     rw [integral_generalizedParetoPDFReal_eq_one hs ξ]
     exact one_ne_zero
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Integrability against a generalized Pareto law is equivalent to Lebesgue integrability of
+the density-weighted function, at every scale and shape. -/
+theorem integrable_generalizedParetoMeasure_iff (s ξ : ℝ) {g : ℝ → E} :
+    Integrable g (generalizedParetoMeasure s ξ) ↔
+      Integrable fun y ↦ generalizedParetoPDFReal s ξ y • g y := by
+  rw [generalizedParetoMeasure_eq_withDensity, funext (generalizedParetoPDF_eq_ofReal s ξ)]
+  exact integrable_withDensity_ofReal_iff (measurable_generalizedParetoPDFReal s ξ).aemeasurable
+    (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ))
+
+/-- An integral against a generalized Pareto law equals the density-weighted Lebesgue integral,
+at every scale and shape. -/
+theorem integral_generalizedParetoMeasure_eq (s ξ : ℝ) (g : ℝ → E) :
+    ∫ y, g y ∂generalizedParetoMeasure s ξ = ∫ y, generalizedParetoPDFReal s ξ y • g y := by
+  rw [generalizedParetoMeasure_eq_withDensity, funext (generalizedParetoPDF_eq_ofReal s ξ)]
+  exact integral_withDensity_ofReal (measurable_generalizedParetoPDFReal s ξ).aemeasurable
+    (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ)) g
+
+end Transfer
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
