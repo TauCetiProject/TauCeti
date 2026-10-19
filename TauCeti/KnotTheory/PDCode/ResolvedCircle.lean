@@ -134,7 +134,6 @@ theorem mk_smoothingTurn (x : Fin (4 * n)) :
   Quotient.sound (.symm _ _ (.rel _ _ (Or.inr rfl)))
 
 /-- Traversal stays on a circle. -/
-@[simp]
 theorem mk_statePerm (x : Fin (4 * n)) :
     (⟦D.statePerm s x⟧ : D.CrossingCircle s) = ⟦x⟧ := by
   simp
