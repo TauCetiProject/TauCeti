@@ -245,20 +245,13 @@ end Transfer
 interval. -/
 theorem support_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     (kumaraswamyMeasure a b).support = Icc 0 1 := by
-  refine subset_antisymm (Measure.support_subset_of_isClosed isClosed_Icc
-    (ae_mem_Icc_kumaraswamyMeasure a b)) fun x hx ↦ ?_
-  rw [Measure.mem_support_iff_forall]
-  intro U hU
-  obtain ⟨V, hVU, hVo, hxV⟩ := mem_nhds_iff.mp hU
-  have hne : (V ∩ Ioo 0 1).Nonempty :=
-    mem_closure_iff.mp (by rwa [closure_Ioo zero_ne_one]) V hVo hxV
-  refine lt_of_lt_of_le ?_ (measure_mono hVU)
-  rw [pos_iff_ne_zero, kumaraswamyMeasure_eq_withDensity, Ne,
-    withDensity_apply_eq_zero' (measurable_kumaraswamyPDF a b).aemeasurable]
-  refine (lt_of_lt_of_le ((hVo.inter isOpen_Ioo).measure_pos volume hne)
-    (measure_mono ?_)).ne'
-  rintro y ⟨hyV, hy⟩
-  exact ⟨by simpa [kumaraswamyPDF_eq_ofReal] using kumaraswamyPDFReal_pos ha hb hy, hyV⟩
+  rw [kumaraswamyMeasure_eq_withDensity]
+  refine support_withDensity_volume_eq_Icc
+    (measurable_kumaraswamyPDF a b).aemeasurable ?_ ?_
+  · intro x hx
+    simpa [kumaraswamyPDF_eq_ofReal] using kumaraswamyPDFReal_pos ha hb hx
+  · rw [← kumaraswamyMeasure_eq_withDensity]
+    exact ae_mem_Icc_kumaraswamyMeasure a b
 
 /-! ### The power map to the Beta `(1, b)` law -/
 

@@ -31,6 +31,8 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
   Lebesgue
   measure on the open unit interval;
 * `TauCeti.Probability.support_betaMeasure` — the exact topological support at positive shapes;
+* `TauCeti.Probability.integrable_pow_betaMeasure` and
+  `TauCeti.Probability.integrable_pow_abs_betaMeasure` — integrability of natural powers;
 * `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff` — the exact integrability
   criterion for mixed real powers;
 * `TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure` — the mixed real-power moments
@@ -130,24 +132,14 @@ interval. -/
 @[simp]
 theorem support_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
     (betaMeasure α β).support = Icc 0 1 := by
-  refine subset_antisymm (Measure.support_subset_of_isClosed isClosed_Icc
-    (ae_mem_Icc_betaMeasure α β)) fun x hx ↦ ?_
-  rw [Measure.mem_support_iff_forall]
-  intro U hU
-  obtain ⟨V, hVU, hVo, hxV⟩ := mem_nhds_iff.mp hU
-  have hne : (V ∩ Ioo 0 1).Nonempty :=
-    mem_closure_iff.mp (by rwa [closure_Ioo zero_ne_one]) V hVo hxV
-  have hmeas : Measurable (betaPDF α β) :=
-    (measurable_betaPDFReal α β).ennreal_ofReal
-  refine lt_of_lt_of_le ?_ (measure_mono hVU)
-  rw [pos_iff_ne_zero, betaMeasure, Ne, withDensity_apply_eq_zero' hmeas.aemeasurable]
-  refine (lt_of_lt_of_le ((hVo.inter isOpen_Ioo).measure_pos volume hne)
-    (measure_mono ?_)).ne'
-  rintro y ⟨hyV, hy⟩
-  refine ⟨?_, hyV⟩
-  change betaPDF α β y ≠ 0
-  simpa only [betaPDF] using
-    (ENNReal.ofReal_pos.2 (betaPDFReal_pos hy.1 hy.2 hα hβ)).ne'
+  rw [betaMeasure]
+  refine support_withDensity_volume_eq_Icc
+    (measurable_betaPDFReal α β).ennreal_ofReal.aemeasurable ?_ ?_
+  · intro x hx
+    simpa only [betaPDF] using
+      (ENNReal.ofReal_pos.2 (betaPDFReal_pos hx.1 hx.2 hα hβ)).ne'
+  · rw [← betaMeasure]
+    exact ae_mem_Icc_betaMeasure α β
 
 private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ}
     (hx : x ∈ Ioo (0 : ℝ) 1) :
@@ -280,5 +272,18 @@ theorem integrableExpSet_id_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < 
   simp only [Set.mem_univ, iff_true, integrableExpSet, Set.mem_ofPred_eq, id_eq]
   exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
     (ae_mem_Icc_betaMeasure α β)
+
+/-- Every natural power is integrable against a beta law with positive shape parameters. -/
+theorem integrable_pow_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
+    Integrable (fun x : ℝ ↦ x ^ n) (betaMeasure α β) := by
+  apply integrable_pow_of_mem_interior_integrableExpSet (X := id) _ n
+  simp only [integrableExpSet_id_betaMeasure hα hβ, interior_univ, mem_univ]
+
+/-- Every natural power of the absolute value is integrable against a beta law with positive
+shape parameters. -/
+theorem integrable_pow_abs_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
+    Integrable (fun x : ℝ ↦ |x| ^ n) (betaMeasure α β) := by
+  apply integrable_pow_abs_of_mem_interior_integrableExpSet (X := id) _ n
+  simp only [integrableExpSet_id_betaMeasure hα hβ, interior_univ, mem_univ]
 
 end TauCeti.Probability

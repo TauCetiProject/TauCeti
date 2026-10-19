@@ -13,8 +13,7 @@ public import TauCeti.Probability.Distributions.Beta.Basic
 The arcsine distribution on the unit interval is the beta distribution with both shape
 parameters equal to one half. This file records the measure-level definition, its exact
 topological support, natural moments, mean, variance, and exponential-integrability domain.
-These results let later density, distribution-function, and geometric constructions reuse the
-existing beta theory without introducing a second measure.
+Defining the law as a beta measure makes these results direct specializations of the beta theory.
 
 ## References
 
@@ -58,11 +57,9 @@ theorem support_arcsineMeasure : arcsineMeasure.support = Icc 0 1 := by
 /-- Every natural power is integrable against the arcsine law. -/
 theorem integrable_pow_arcsineMeasure (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) arcsineMeasure := by
-  apply Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop)
-  filter_upwards [ae_mem_Ioo_arcsineMeasure] with x hx
-  simpa only [norm_pow, Real.norm_eq_abs, norm_one] using
-    pow_le_one₀ (abs_nonneg x)
-      (abs_le.mpr ⟨(show (-1 : ℝ) ≤ 0 by norm_num).trans hx.1.le, hx.2.le⟩)
+  simpa only [arcsineMeasure] using
+    integrable_pow_betaMeasure (show (0 : ℝ) < 1 / 2 by norm_num)
+      (show (0 : ℝ) < 1 / 2 by norm_num) n
 
 /-- The natural moments of the arcsine law, inherited from its beta realization. -/
 @[simp]

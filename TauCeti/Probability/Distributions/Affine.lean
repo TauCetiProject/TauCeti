@@ -46,6 +46,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
+* `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
+  topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
   probability law, intercept, and slope;
 * `TauCeti.Probability.affineDensity`,
@@ -95,6 +97,29 @@ theorem map_affine_map_affine (a b c d : ℝ) :
   ext x
   simp only [Function.comp_apply]
   ring
+
+/-- **Support of an affine image.** A nonconstant affine pushforward has support equal to the
+affine image of the original support. -/
+theorem support_map_affine (hb : b ≠ 0) :
+    (μ.map fun x ↦ a + b * x).support = (fun x ↦ a + b * x) '' μ.support := by
+  let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
+  have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
+    funext x
+    simp [e, smul_eq_mul]
+  rw [← he]
+  apply Set.Subset.antisymm
+  · have hclosed : IsClosed (e '' μ.support) := e.isClosedMap _ Measure.isClosed_support
+    refine Measure.support_subset_of_isClosed hclosed ?_
+    change ∀ᵐ y ∂μ.map e, y ∈ e '' μ.support
+    apply (ae_map_iff e.measurable.aemeasurable hclosed.measurableSet).2
+    have hsupp : μ.support ∈ ae μ := Measure.support_mem_ae
+    filter_upwards [hsupp] with x hx
+    exact ⟨x, hx, rfl⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [Measure.support_eq_forall_isOpen] at hx ⊢
+    intro U hex hU
+    rw [Measure.map_apply e.measurable hU.measurableSet]
+    exact hx (e ⁻¹' U) hex (hU.preimage e.continuous)
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]

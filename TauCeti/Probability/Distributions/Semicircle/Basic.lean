@@ -14,8 +14,8 @@ public import TauCeti.Probability.Distributions.Beta.Basic
 The unit-radius semicircle distribution is the image of the beta distribution with shape
 parameters `(3 / 2, 3 / 2)` under the affine map `x ↦ -1 + 2 * x`. This file develops the
 measure-level construction and its elementary consequences: normalization, exact topological
-support, mean, variance, and exponential-integrability domain. The affine realization is the
-bridge to later density, cdf, quantile, and unit-ball coordinate formulas.
+support, the almost-sure carrier `(-1, 1)`, natural moments as a binomial expansion of beta
+moments, mean, variance, and exponential-integrability domain.
 
 ## References
 
@@ -58,39 +58,16 @@ theorem ae_mem_Ioo_semicircleMeasure : ∀ᵐ x ∂semicircleMeasure, x ∈ Ioo 
 /-- The topological support of the unit-radius semicircle law is `[-1, 1]`. -/
 @[simp]
 theorem support_semicircleMeasure : semicircleMeasure.support = Icc (-1) 1 := by
-  refine subset_antisymm (Measure.support_subset_of_isClosed isClosed_Icc
-    (ae_mem_Ioo_semicircleMeasure.mono fun _ hx ↦ Ioo_subset_Icc_self hx)) fun x hx ↦ ?_
-  rw [Measure.mem_support_iff_forall]
-  intro U hU
-  obtain ⟨V, hVU, hVo, hxV⟩ := mem_nhds_iff.mp hU
-  let y := (x + 1) / 2
-  have hy : y ∈ Icc (0 : ℝ) 1 := by
-    dsimp [y]
-    constructor <;> linarith [hx.1, hx.2]
-  have hySupport : y ∈ (betaMeasure (3 / 2) (3 / 2)).support := by
-    rw [support_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
+  rw [semicircleMeasure, support_map_affine (by norm_num),
+    support_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
       (show (0 : ℝ) < 3 / 2 by norm_num)]
-    exact hy
-  have hpreOpen : IsOpen ((fun z : ℝ ↦ -1 + 2 * z) ⁻¹' V) := hVo.preimage (by fun_prop)
-  have hyPre : y ∈ (fun z : ℝ ↦ -1 + 2 * z) ⁻¹' V := by
-    change -1 + 2 * y ∈ V
-    convert hxV using 1
-    dsimp [y]
+  ext x
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨by linarith [hy.1], by linarith [hy.2]⟩
+  · intro hx
+    refine ⟨(x + 1) / 2, ⟨by linarith [hx.1], by linarith [hx.2]⟩, ?_⟩
     ring
-  rw [Measure.support_eq_forall_isOpen] at hySupport
-  have hpos : 0 < betaMeasure (3 / 2) (3 / 2) ((fun z : ℝ ↦ -1 + 2 * z) ⁻¹' V) :=
-    hySupport _ hyPre hpreOpen
-  refine lt_of_lt_of_le ?_ (measure_mono hVU)
-  rw [semicircleMeasure, Measure.map_apply (by fun_prop) hVo.measurableSet]
-  exact hpos
-
-/-- Every natural power is integrable against the semicircle law. -/
-theorem integrable_pow_semicircleMeasure (n : ℕ) :
-    Integrable (fun x : ℝ ↦ x ^ n) semicircleMeasure := by
-  apply Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop)
-  filter_upwards [ae_mem_Ioo_semicircleMeasure] with x hx
-  simpa only [norm_pow, Real.norm_eq_abs, norm_one] using
-    pow_le_one₀ (abs_nonneg x) (abs_le.mpr ⟨hx.1.le, hx.2.le⟩)
 
 /-- The natural moments of the semicircle law, as the affine binomial expansion of the moments
 of its beta realization. -/
@@ -102,11 +79,8 @@ theorem integral_pow_semicircleMeasure (n : ℕ) :
   let μ := betaMeasure (3 / 2) (3 / 2)
   let _ : IsProbabilityMeasure μ := isProbabilityMeasureBeta (by norm_num) (by norm_num)
   have habs : Integrable (fun x : ℝ ↦ |x| ^ n) μ := by
-    apply Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop)
-    filter_upwards [ae_mem_Icc_betaMeasure (3 / 2) (3 / 2)] with x hx
-    simpa [Real.norm_eq_abs] using
-      pow_le_one₀ (abs_nonneg x)
-        (abs_le.mpr ⟨(show (-1 : ℝ) ≤ 0 by norm_num).trans hx.1, hx.2⟩)
+    exact integrable_pow_abs_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
+      (show (0 : ℝ) < 3 / 2 by norm_num) n
   have hmoment := moment_id_map_affine (μ := μ) (a := -1) (b := 2) habs
   simpa only [semicircleMeasure, moment, Pi.pow_apply, id_eq, μ,
     integral_pow_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
@@ -144,5 +118,11 @@ theorem integrableExpSet_id_semicircleMeasure :
     integrableExpSet_id_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
       (show (0 : ℝ) < 3 / 2 by norm_num)]
   simp
+
+/-- Every natural power is integrable against the semicircle law. -/
+theorem integrable_pow_semicircleMeasure (n : ℕ) :
+    Integrable (fun x : ℝ ↦ x ^ n) semicircleMeasure := by
+  apply integrable_pow_of_mem_interior_integrableExpSet (X := id) _ n
+  simp only [integrableExpSet_id_semicircleMeasure, interior_univ, mem_univ]
 
 end TauCeti.Probability

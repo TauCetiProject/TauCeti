@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Density
 public import Mathlib.Probability.HasLaw
+public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
 # Densities from laws presented as `withDensity`
@@ -38,6 +39,8 @@ family can import it without acquiring the others.
 * `integral_withDensity_ofReal` — and its integral is the integral of the `f`-weighted integrand;
 * `measureReal_withDensity_ofReal` — the real mass of a measurable set on which the density `f` is
   nonnegative and integrable is its integral over that set.
+* `support_withDensity_volume_eq_Icc` — a law carried by `[0, 1]` whose density is positive on
+  `(0, 1)` has topological support `[0, 1]`.
 
 The density bridges are stated for an arbitrary codomain and codomain measure, since neither proof
 uses anything about `ℝ` or `volume`, and both ask only for `AEMeasurable f μ`.
@@ -125,6 +128,27 @@ theorem measureReal_withDensity_ofReal (hnn : 0 ≤ᵐ[μ.restrict s] ρ)
   exact ENNReal.toReal_ofReal (integral_nonneg_of_ae hnn)
 
 end RealDensity
+
+/-- A measure with a Lebesgue density that is nonzero throughout `(0, 1)` and is almost surely
+carried by `[0, 1]` has topological support `[0, 1]`. -/
+theorem support_withDensity_volume_eq_Icc {f : ℝ → ℝ≥0∞}
+    (hf : AEMeasurable f volume) (hpos : ∀ x ∈ Set.Ioo (0 : ℝ) 1, f x ≠ 0)
+    (hmem : ∀ᵐ x ∂volume.withDensity f, x ∈ Set.Icc (0 : ℝ) 1) :
+    (volume.withDensity f).support = Set.Icc 0 1 := by
+  refine Set.Subset.antisymm (Measure.support_subset_of_isClosed isClosed_Icc hmem) fun x hx ↦ ?_
+  rw [Measure.mem_support_iff_forall]
+  intro U hU
+  obtain ⟨V, hVU, hVo, hxV⟩ := mem_nhds_iff.mp hU
+  have hne : (V ∩ Set.Ioo 0 1).Nonempty :=
+    mem_closure_iff.mp (by rwa [closure_Ioo zero_ne_one]) V hVo hxV
+  refine lt_of_lt_of_le ?_ (measure_mono hVU)
+  rw [pos_iff_ne_zero, Ne, withDensity_apply_eq_zero' hf]
+  refine (lt_of_lt_of_le ((hVo.inter isOpen_Ioo).measure_pos volume hne)
+    (measure_mono ?_)).ne'
+  rintro y ⟨hyV, hy⟩
+  refine ⟨?_, hyV⟩
+  rw [Set.mem_ofPred_eq]
+  exact hpos y hy
 
 end Probability
 
