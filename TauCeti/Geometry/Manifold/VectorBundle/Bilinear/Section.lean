@@ -127,7 +127,7 @@ theorem symmetrizeBilinearSection_apply
   ring
 
 /-- Symmetrization takes values in the symmetric sections. -/
-@[simp]
+@[simp↓]
 theorem symmetrizeBilinearSection_mem
     (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :
     symmetrizeBilinearSection b ∈ symmetricBilinearSections := by

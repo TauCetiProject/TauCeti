@@ -301,11 +301,6 @@ theorem existsUnique_isRecut (D : GridRectangleDecomposition x z) (hone : D.HasO
 
 /-! ### The recut of the recut -/
 
-/-- A column read off the row it occupies after a column swap. -/
-private theorem eq_swap_of_swapColumns_apply_eq {a b c d : Fin n}
-    (h : x.swapColumns a b c = x d) : c = Equiv.swap a b d :=
-  Equiv.swap_apply_eq_iff.mp (x.toPerm.injective (by rwa [GridState.swapColumns_apply] at h))
-
 /-- The recut of a decomposition whose two rectangles share their initial side column
 carries the side data describing the original decomposition as its own recut. The common column
 of the recut is mixed, so which of the two mixed alternatives holds is decided by the cyclic
@@ -458,9 +453,9 @@ private theorem isRecut_symm_of_left_eq_right {D E : GridRectangleDecomposition 
     have hxEr₁ : x E.first.right = x D.first.left := by exact hEt₁
     have hEr₁ : E.first.right = D.first.left := x.toPerm.injective hxEr₁
     have hEl₂ : E.second.left = Equiv.swap D.second.left D.first.left D.first.left :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
     have hEr₂ : E.second.right = Equiv.swap D.second.left D.first.left D.first.right :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEt₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEt₂)
     rw [Equiv.swap_apply_right] at hEl₂
     rw [Equiv.swap_apply_of_ne_of_ne hother D.first.left_ne_right.symm] at hEr₂
     refine Or.inl ⟨hEl₁.trans hEl₂.symm, hEr₂.symm, ?_, Or.inl ⟨?_, ?_, ?_, ?_⟩⟩
@@ -480,9 +475,9 @@ private theorem isRecut_symm_of_left_eq_right {D E : GridRectangleDecomposition 
     have hxEr₁ : x E.first.right = x D.first.right := by exact hEt₁
     have hEr₁ : E.first.right = D.first.right := x.toPerm.injective hxEr₁
     have hEl₂ : E.second.left = Equiv.swap D.second.left D.first.right D.first.left :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
     have hEr₂ : E.second.right = Equiv.swap D.second.left D.first.right D.second.left :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEt₂.trans hDbot₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEt₂.trans hDbot₂)
     rw [Equiv.swap_apply_of_ne_of_ne hvm.symm D.first.left_ne_right] at hEl₂
     rw [Equiv.swap_apply_left] at hEr₂
     refine Or.inr (Or.inl ⟨hEr₁.trans hEr₂.symm, hEl₂.symm, ?_, Or.inr ⟨?_, ?_, ?_, ?_⟩⟩)
@@ -525,9 +520,9 @@ private theorem isRecut_symm_of_right_eq_left {D E : GridRectangleDecomposition 
     have hxEr₁ : x E.first.right = x D.second.right := by exact hE₁.trans hDtop₂
     have hEr₁ : E.first.right = D.second.right := x.toPerm.injective hxEr₁
     have hEl₂ : E.second.left = Equiv.swap D.first.right D.second.right D.first.left :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂)
     have hEr₂ : E.second.right = Equiv.swap D.first.right D.second.right D.first.right :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
     rw [Equiv.swap_apply_of_ne_of_ne D.first.left_ne_right hother] at hEl₂
     rw [Equiv.swap_apply_left] at hEr₂
     refine Or.inr (Or.inl ⟨hEr₁.trans hEr₂.symm, hEl₂.symm, ?_, Or.inl ⟨?_, ?_, ?_, ?_⟩⟩)
@@ -547,9 +542,9 @@ private theorem isRecut_symm_of_right_eq_left {D E : GridRectangleDecomposition 
     have hxEr₁ : x E.first.right = x D.second.right := by exact hE₁.trans hDtop₂
     have hEr₁ : E.first.right = D.second.right := x.toPerm.injective hxEr₁
     have hEl₂ : E.second.left = Equiv.swap D.first.left D.second.right D.second.right :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂.trans hDtop₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂.trans hDtop₂)
     have hEr₂ : E.second.right = Equiv.swap D.first.left D.second.right D.first.right :=
-      eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
+      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
     rw [Equiv.swap_apply_right] at hEl₂
     rw [Equiv.swap_apply_of_ne_of_ne D.first.left_ne_right.symm hvm.symm] at hEr₂
     refine Or.inl ⟨hEl₁.trans hEl₂.symm, hEr₂.symm, hEr₁.symm, Or.inr ⟨?_, ?_, ?_, ?_⟩⟩
