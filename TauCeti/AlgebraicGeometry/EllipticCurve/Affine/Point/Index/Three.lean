@@ -12,7 +12,9 @@ public import Mathlib.RingTheory.Henselian
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: the coordinates of a solution in `(ϖ)` on the normal form at `IV*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
--- Proof-only: a root modulo `ϖ` of a quadratic with discriminant prime to `ϖ` is simple.
+-- Proof-only: lifting roots of a quadratic with unit discriminant.
+import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+-- Proof-only: divisibility and the derivative of a quadratic.
 import TauCeti.Algebra.QuadraticDiscriminant
 -- Proof-only: index three from a covering by three cosets.
 import TauCeti.GroupTheory.Index.Three
@@ -290,23 +292,10 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
   -- lift the root of the residue quadratic by Hensel's lemma
   obtain ⟨t, ht⟩ := hroot
   obtain ⟨t₀, rfl⟩ := residue_surjective t
-  set f : v.valuationSubring[X] := X ^ 2 + C A₃ * X - C A₆ with hf
-  have hmon : f.Monic := by
-    rw [hf]
-    monicity!
-  have heval (z : v.valuationSubring) : f.eval z = z ^ 2 + A₃ * z - A₆ := by
-    simp [hf]
-  have hder (z : v.valuationSubring) : f.derivative.eval z = 2 * z + A₃ := by
-    simp [hf, one_add_one_eq_two]
-  have hq₀ : ϖ ∣ t₀ ^ 2 + A₃ * t₀ - A₆ :=
-    (mem_maximalIdeal_iff_dvd hϖ).1 ((residue_eq_zero_iff _).1 (by simpa using ht))
-  obtain ⟨Y, hY, -⟩ := HenselianLocalRing.is_henselian f hmon t₀
-    ((mem_maximalIdeal_iff_dvd hϖ).2 (heval t₀ ▸ hq₀)) (by
-      rw [hder, ← residue_ne_zero_iff_isUnit, Ne, residue_eq_zero_iff, mem_maximalIdeal_iff_dvd hϖ]
-      exact not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul hb hq₀)
-  have hY : Y ^ 2 + A₃ * Y - A₆ = 0 := heval Y ▸ hY.eq_zero
-  have hY' : ¬ ϖ ∣ 2 * Y + A₃ :=
-    not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul hb (hY ▸ dvd_zero ϖ)
+  obtain ⟨Y, hY, -, hu⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
+    ((TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).2 hb)
+    ((residue_eq_zero_iff _).1 (by simpa using ht))
+  have hY' : ¬ ϖ ∣ 2 * Y + A₃ := (TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).1 hu
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular 0 (ϖ ^ 2 * Y) := by
     rw [nonsingular_iff']
     refine ⟨by

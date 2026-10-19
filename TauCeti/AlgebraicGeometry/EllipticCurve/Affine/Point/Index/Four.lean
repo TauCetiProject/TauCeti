@@ -321,24 +321,8 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
     exact hb₆ ⟨e, by rw [b₆, h₃, h₆]; linear_combination ϖ ^ (2 * k + 4) * he⟩
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
   obtain ⟨Y₀, rfl⟩ := residue_surjective t
-  set f : v.valuationSubring[X] := X ^ 2 + C A₃ * X - C A₆ with hf
-  have hmon : f.Monic := by
-    rw [hf]
-    monicity!
-  have hf₀ : f.eval Y₀ ∈ maximalIdeal v.valuationSubring := by
-    rw [← residue_eq_zero_iff]
-    simpa [hf] using ht
-  have hf₁ : IsUnit (f.derivative.eval Y₀) := by
-    have hd : f.derivative.eval Y₀ = 2 * Y₀ + A₃ := by
-      simp [hf, one_add_one_eq_two]
-    rw [hd]
-    exact TauCeti.IsLocalRing.isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD
-      (by simpa [hf] using hf₀)
-  obtain ⟨Y, hY, -⟩ := HenselianLocalRing.is_henselian f hmon Y₀ hf₀ hf₁
-  have hY' : Y ^ 2 + A₃ * Y - A₆ = 0 := by simpa [hf] using hY.eq_zero
-  have hu : IsUnit (2 * Y + A₃) :=
-    TauCeti.IsLocalRing.isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD
-      (by rw [hY']; exact zero_mem _)
+  obtain ⟨Y, hY', -, hu⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
+    ((residue_eq_zero_iff _).1 (by simpa using ht))
   -- the point `(0, ϖ^(k+2) Y)`
   have hns : Wo.toAffine.Nonsingular 0 (ϖ ^ (k + 2) * Y) := by
     rw [nonsingular_iff']
@@ -418,9 +402,11 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
   have hX₀ : ϖ ∣ A₂ * X₀ ^ 2 + A₄ * X₀ + A₆ := by
     rw [← mem_maximalIdeal_iff_dvd hϖ, ← residue_eq_zero_iff]
     simpa using ht
-  obtain ⟨X, hX, -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal f
+  obtain ⟨X, hX, -⟩ := Polynomial.exists_isRoot_sub_mem f
     (a₀ := X₀) (by rw [heval, mem_maximalIdeal_iff_dvd hϖ]; exact dvd_add (dvd_mul_right _ _) hX₀)
-    (by rw [hder]; exact isUnit_add_of_dvd hϖ (hsimple X₀ hX₀) (dvd_mul_right _ _))
+    ((show IsUnit (f.derivative.eval X₀) from by
+      rw [hder]
+      exact isUnit_add_of_dvd hϖ (hsimple X₀ hX₀) (dvd_mul_right _ _)).map _)
   have hroot := hX.eq_zero
   rw [heval] at hroot
   have hu : IsUnit (2 * A₂ * X + A₄ + ϖ * (3 * ϖ ^ k * X ^ 2)) :=

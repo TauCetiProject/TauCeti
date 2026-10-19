@@ -477,22 +477,8 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IV
   obtain ⟨hm₃, hm₄, hm₆, hp, hD, -⟩ := isTateTerminal_IV_data v hϖ h h₃ h₄ h₆
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
   obtain ⟨Y₀, rfl⟩ := residue_surjective t
-  set f : 𝒪[X] := X ^ 2 + C A₃ * X - C A₆ with hf
-  have hmon : f.Monic := by
-    rw [hf]
-    monicity!
-  have hf₀ : f.eval Y₀ ∈ maximalIdeal 𝒪 := by
-    rw [← residue_eq_zero_iff]
-    simpa [hf] using ht
-  have hf₁ : IsUnit (f.derivative.eval Y₀) := by
-    have hd : f.derivative.eval Y₀ = 2 * Y₀ + A₃ := by
-      simp [hf, one_add_one_eq_two]
-    rw [hd]
-    exact isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD (by simpa [hf] using hf₀)
-  obtain ⟨Y, hY, -⟩ := HenselianLocalRing.is_henselian f hmon Y₀ hf₀ hf₁
-  have hY' : Y ^ 2 + A₃ * Y - A₆ = 0 := by simpa [hf] using hY.eq_zero
-  have hu : IsUnit (2 * Y + A₃) :=
-    isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD (by rw [hY']; exact zero_mem _)
+  obtain ⟨Y, hY', -, hu⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
+    ((residue_eq_zero_iff _).1 (by simpa using ht))
   -- the point `(0, ϖ Y)`
   have hns : Wo.toAffine.Nonsingular 0 (ϖ * Y) := by
     rw [nonsingular_iff']
