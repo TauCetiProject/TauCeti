@@ -26,6 +26,10 @@ in which a Riemannian volume density is expressed, into integrals against the vo
 
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
+* `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
+  Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
+* `MeasureTheory.Measure.addHaar_setOf_fst_eq`: a hyperplane `{a} × E` of the Euclidean product
+  `ℝ × E` is null for every additive Haar measure.
 
 ## References
 
@@ -71,3 +75,39 @@ theorem volume_eq_smul_addHaar (b : Basis ι ℝ E) :
   exact Measure.addHaarMeasure_unique volume b.parallelepiped
 
 end Module.Basis
+
+namespace AffineIsometryEquiv
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- Every affine isometry between finite-dimensional real inner product spaces preserves the
+volume measure: it is a linear isometry followed by a translation. -/
+theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
+  have hf : ⇑f = fun x => f.linearIsometryEquiv x + f 0 := funext fun x => by
+    simpa using f.map_vadd 0 x
+  rw [hf]
+  exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
+
+end AffineIsometryEquiv
+
+namespace MeasureTheory.Measure
+
+/-- The hyperplane `{a} × E` of the Euclidean product `ℝ × E` is a null set for every additive
+Haar measure. -/
+theorem addHaar_setOf_fst_eq (μ : Measure (WithLp 2 (ℝ × E))) [μ.IsAddHaarMeasure] (a : ℝ) :
+    μ {x | x.fst = a} = 0 := by
+  let s : AffineSubspace ℝ (WithLp 2 (ℝ × E)) :=
+    AffineSubspace.mk' (WithLp.toLp 2 (a, 0)) (LinearMap.ker (WithLp.fstL 2 ℝ ℝ E).toLinearMap)
+  have hs : (s : Set (WithLp 2 (ℝ × E))) = {x | x.fst = a} := by
+    ext x
+    simp [s, sub_eq_zero]
+  have hne : s ≠ ⊤ := by
+    intro h
+    have hmem : WithLp.toLp 2 (a + 1, (0 : E)) ∈ s := h ▸ AffineSubspace.mem_top ℝ _ _
+    rw [← SetLike.mem_coe, hs] at hmem
+    simp at hmem
+  rw [← hs]
+  exact addHaar_affineSubspace μ s hne
+
+end MeasureTheory.Measure

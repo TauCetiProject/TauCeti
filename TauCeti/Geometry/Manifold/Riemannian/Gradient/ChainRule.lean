@@ -55,58 +55,58 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimens
   {φ : M → N} {g : N → ℝ} {t : Set N}
 
 /-- The relative gradient chain rule in inner-product form. -/
-theorem inner_riemannianGradientWithin_comp (hg : MDifferentiableWithinAt I' 𝓘(ℝ) g t (φ x))
+theorem inner_mgradientWithin_comp (hg : MDifferentiableWithinAt I' 𝓘(ℝ) g t (φ x))
     (hφ : MDifferentiableWithinAt I I' φ s x) (hφt : MapsTo φ s t)
     (hs : UniqueMDiffWithinAt I s x) (v : TangentSpace I x) :
-    inner ℝ (riemannianGradientWithin I (g ∘ φ) s x) v =
-      inner ℝ (riemannianGradientWithin I' g t (φ x)) (mfderivWithin I I' φ s x v) := by
-  simp only [inner_riemannianGradientWithin_left]
+    inner ℝ (mgradientWithin I (g ∘ φ) s x) v =
+      inner ℝ (mgradientWithin I' g t (φ x)) (mfderivWithin I I' φ s x v) := by
+  simp only [inner_mgradientWithin_left]
   rw [mvfderivWithin_comp x hg hφ hφt hs, ContinuousLinearMap.comp_apply]
 
 /-- The relative gradient of a composite is the source Riesz dual of the pullback of the
 metric dual of the target gradient. This is the metric-adjoint chain rule. -/
-theorem riemannianGradientWithin_comp (hg : MDifferentiableWithinAt I' 𝓘(ℝ) g t (φ x))
+theorem mgradientWithin_comp (hg : MDifferentiableWithinAt I' 𝓘(ℝ) g t (φ x))
     (hφ : MDifferentiableWithinAt I I' φ s x) (hφt : MapsTo φ s t)
     (hs : UniqueMDiffWithinAt I s x) :
-    riemannianGradientWithin I (g ∘ φ) s x =
-      rieszDual x ((innerSL ℝ (riemannianGradientWithin I' g t (φ x))).comp
+    mgradientWithin I (g ∘ φ) s x =
+      rieszDual x ((innerSL ℝ (mgradientWithin I' g t (φ x))).comp
         (mfderivWithin I I' φ s x)) := by
   apply eq_rieszDual_iff_inner_eq.mpr
   intro v
   simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply] using
-    inner_riemannianGradientWithin_comp hg hφ hφt hs v
+    inner_mgradientWithin_comp hg hφ hφt hs v
 
 /-- The gradient chain rule in inner-product form on the whole manifold. -/
-theorem inner_riemannianGradient_comp (hg : MDifferentiableAt I' 𝓘(ℝ) g (φ x))
+theorem inner_mgradient_comp (hg : MDifferentiableAt I' 𝓘(ℝ) g (φ x))
     (hφ : MDifferentiableAt I I' φ x) (v : TangentSpace I x) :
-    inner ℝ (riemannianGradient I (g ∘ φ) x) v =
-      inner ℝ (riemannianGradient I' g (φ x)) (mfderiv I I' φ x v) := by
-  simpa only [riemannianGradientWithin_univ, mfderivWithin_univ] using
-    inner_riemannianGradientWithin_comp hg.mdifferentiableWithinAt
+    inner ℝ (mgradient I (g ∘ φ) x) v =
+      inner ℝ (mgradient I' g (φ x)) (mfderiv I I' φ x v) := by
+  simpa only [mgradientWithin_univ, mfderivWithin_univ] using
+    inner_mgradientWithin_comp hg.mdifferentiableWithinAt
       hφ.mdifferentiableWithinAt (mapsTo_univ φ univ) (uniqueMDiffWithinAt_univ I) v
 
 /-- The metric-adjoint gradient chain rule on the whole manifold. -/
-theorem riemannianGradient_comp (hg : MDifferentiableAt I' 𝓘(ℝ) g (φ x))
+theorem mgradient_comp (hg : MDifferentiableAt I' 𝓘(ℝ) g (φ x))
     (hφ : MDifferentiableAt I I' φ x) :
-    riemannianGradient I (g ∘ φ) x =
-      rieszDual x ((innerSL ℝ (riemannianGradient I' g (φ x))).comp (mfderiv I I' φ x)) := by
-  simpa only [riemannianGradientWithin_univ, mfderivWithin_univ] using
-    riemannianGradientWithin_comp hg.mdifferentiableWithinAt hφ.mdifferentiableWithinAt
+    mgradient I (g ∘ φ) x =
+      rieszDual x ((innerSL ℝ (mgradient I' g (φ x))).comp (mfderiv I I' φ x)) := by
+  simpa only [mgradientWithin_univ, mfderivWithin_univ] using
+    mgradientWithin_comp hg.mdifferentiableWithinAt hφ.mdifferentiableWithinAt
       (mapsTo_univ φ univ) (uniqueMDiffWithinAt_univ I)
 
 end Composition
 
 /-- Scalar postcomposition multiplies the relative gradient by the scalar derivative.
 The outer derivative may itself be taken within a subset of the real line. -/
-theorem riemannianGradientWithin_comp_hasDerivWithinAt {g : ℝ → ℝ} {g' : ℝ} {t : Set ℝ}
+theorem mgradientWithin_comp_hasDerivWithinAt {g : ℝ → ℝ} {g' : ℝ} {t : Set ℝ}
     (hg : HasDerivWithinAt g g' t (f x)) (hf : MDifferentiableWithinAt I 𝓘(ℝ) f s x)
     (hst : MapsTo f s t) (hs : UniqueMDiffWithinAt I s x) :
-    riemannianGradientWithin I (g ∘ f) s x = g' • riemannianGradientWithin I f s x := by
+    mgradientWithin I (g ∘ f) s x = g' • mgradientWithin I f s x := by
   apply ext_inner_right ℝ
   intro v
   have hcomp := (hg.hasFDerivWithinAt.hasMFDerivWithinAt.comp x
     hf.hasMFDerivWithinAt hst).mfderivWithin hs
-  simp only [inner_riemannianGradientWithin_left, real_inner_smul_left]
+  simp only [inner_mgradientWithin_left, real_inner_smul_left]
   -- On a scalar target, `mvfderivWithin`'s tangent identification is the identity.
   have hcomp' := congrArg (fun L ↦ NormedSpace.fromTangentSpace (g (f x)) (L v)) hcomp
   convert! hcomp' using 1
@@ -116,31 +116,31 @@ theorem riemannianGradientWithin_comp_hasDerivWithinAt {g : ℝ → ℝ} {g' : �
   rfl
 
 /-- Scalar postcomposition multiplies the relative gradient by the ordinary scalar derivative. -/
-theorem riemannianGradientWithin_comp_hasDerivAt {g : ℝ → ℝ} {g' : ℝ}
+theorem mgradientWithin_comp_hasDerivAt {g : ℝ → ℝ} {g' : ℝ}
     (hg : HasDerivAt g g' (f x)) (hf : MDifferentiableWithinAt I 𝓘(ℝ) f s x)
     (hs : UniqueMDiffWithinAt I s x) :
-    riemannianGradientWithin I (g ∘ f) s x = g' • riemannianGradientWithin I f s x :=
-  riemannianGradientWithin_comp_hasDerivWithinAt hg.hasDerivWithinAt hf
+    mgradientWithin I (g ∘ f) s x = g' • mgradientWithin I f s x :=
+  mgradientWithin_comp_hasDerivWithinAt hg.hasDerivWithinAt hf
     (mapsTo_univ f s) hs
 
 /-- Scalar postcomposition multiplies the gradient by the scalar derivative. -/
-theorem riemannianGradient_comp_hasDerivAt {g : ℝ → ℝ} {g' : ℝ}
+theorem mgradient_comp_hasDerivAt {g : ℝ → ℝ} {g' : ℝ}
     (hg : HasDerivAt g g' (f x)) (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
-    riemannianGradient I (g ∘ f) x = g' • riemannianGradient I f x := by
-  simpa only [riemannianGradientWithin_univ] using
-    riemannianGradientWithin_comp_hasDerivAt hg hf.mdifferentiableWithinAt
+    mgradient I (g ∘ f) x = g' • mgradient I f x := by
+  simpa only [mgradientWithin_univ] using
+    mgradientWithin_comp_hasDerivAt hg hf.mdifferentiableWithinAt
       (uniqueMDiffWithinAt_univ I)
 
 /-- The relative gradient chain rule for differentiable scalar postcomposition. -/
-theorem riemannianGradientWithin_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x))
+theorem mgradientWithin_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x))
     (hf : MDifferentiableWithinAt I 𝓘(ℝ) f s x) (hs : UniqueMDiffWithinAt I s x) :
-    riemannianGradientWithin I (g ∘ f) s x = deriv g (f x) • riemannianGradientWithin I f s x :=
-  riemannianGradientWithin_comp_hasDerivAt hg.hasDerivAt hf hs
+    mgradientWithin I (g ∘ f) s x = deriv g (f x) • mgradientWithin I f s x :=
+  mgradientWithin_comp_hasDerivAt hg.hasDerivAt hf hs
 
 /-- The gradient chain rule for differentiable scalar postcomposition. -/
-theorem riemannianGradient_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x))
+theorem mgradient_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x))
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
-    riemannianGradient I (g ∘ f) x = deriv g (f x) • riemannianGradient I f x :=
-  riemannianGradient_comp_hasDerivAt hg.hasDerivAt hf
+    mgradient I (g ∘ f) x = deriv g (f x) • mgradient I f x :=
+  mgradient_comp_hasDerivAt hg.hasDerivAt hf
 
 end TauCeti.Manifold

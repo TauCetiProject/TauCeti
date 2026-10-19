@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.SingleHomology
@@ -109,7 +109,9 @@ lemma shortExact_map_cyclesShortComplex (i j : ι) (hij : c.Rel i j) {Y : D}
   have : Epi ((K.obj Y).toCycles i j) :=
     HomologicalComplex.epi_toCycles_of_exactAt hY (c.prev_eq' hij)
   exact
-    { exact := (K.obj Y).exact_iCycles_toCycles i j (c.next_eq' hij)
+    { exact := by
+        simpa only [HomologicalComplex.cyclesShortComplex_def] using
+          (K.obj Y).cyclesShortComplex_exact i j (c.next_eq' hij)
       mono_f := inferInstanceAs (Mono ((K.obj Y).iCycles i))
       epi_g := inferInstanceAs (Epi ((K.obj Y).toCycles i j)) }
 

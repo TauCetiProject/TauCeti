@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.KummerExtension
 public import TauCeti.Algebra.Polynomial.XPowSubC
 public import TauCeti.FieldTheory.Kummer.Character
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Radical extensions over a field with enough roots of unity
@@ -23,13 +24,14 @@ This explicit generator is the one for which the Kummer character of `b`, read t
 sends `g ^ i` to `(n / d) · i` for `0 ≤ i < d`; it is how the carry cocycle of a cyclic extension
 is compared with the cup product of Kummer classes.
 
-The generator multiplies `s ^ d` by `ζ ^ n = 1`, so `s ^ d` is some `c ∈ K` with
-`c ^ (n / d) = b`. Hence `d = n` as soon as `b` is not a `p`-th power in `K` for any prime
-`p ∣ n`, and this gives Kummer's irreducibility criterion: with a primitive `n`-th root of unity in
-`K`, `Xⁿ - b` is irreducible if and only if `b` is not such a power. Mathlib proves the
-criterion for odd `n` only, where no root of unity is needed. With it, Mathlib's `autEquivZmod`
-identifies `Gal(L/K)` with `ZMod n`, the class of `i` acting by `s ↦ ζ ^ i • s`: a nondegenerate
-radical extension is cyclic of degree `n` (Stichtenoth, Proposition 3.7.3(a)).
+The degree is controlled by the radicand: `s ^ d` lies in `K`, so `b = (s ^ d) ^ (n / d)` is an
+`(n / d)`-th power in `K`. Hence if `b` is not a `p`-th power in `K` for any prime `p` dividing
+`n`, then `[L : K] = n` and `Xⁿ - b` is irreducible. Mathlib proves this irreducibility criterion
+for odd `n` without roots of unity (`X_pow_sub_C_irreducible_iff_forall_prime_of_odd`); for even
+`n` it fails in general (`X⁴ + 4` is reducible over `ℚ`), and a primitive `n`-th root of unity in
+`K` is what restores it. Together with Mathlib's `autEquivZmod`, this makes `L/K` cyclic of order
+`n` with `Gal(L/K)` acting on `s` through the `n`-th roots of unity: Kummer extensions in the
+sense of Stichtenoth, Proposition 3.7.3.
 
 ## Main results
 
@@ -38,17 +40,19 @@ radical extension is cyclic of degree `n` (Stichtenoth, Proposition 3.7.3(a)).
 * `TauCeti.isGalois_of_pow_eq_of_adjoin_eq_top`: `L/K` is Galois.
 * `TauCeti.exists_forall_mem_zpowers_apply_eq`: `[L : K]` divides `n`, and some `g` generating
   `Gal(L/K)` satisfies `g s = ζ ^ (n / [L : K]) • s`.
+* `TauCeti.isCyclic_of_pow_eq_of_adjoin_eq_top`: `Gal(L/K)` is cyclic.
 * `TauCeti.exists_pow_finrank_eq_algebraMap`: `s ^ [L : K]` is some `c ∈ K` with
   `c ^ (n / [L : K]) = b`.
 * `TauCeti.finrank_eq_of_pow_eq_of_adjoin_eq_top`: `[L : K] = n` when `b` is not a `p`-th power
   for any prime `p ∣ n`.
-* `TauCeti.X_pow_sub_C_irreducible_iff_of_isPrimitiveRoot` and
-  `TauCeti.X_pow_sub_C_irreducible_iff_forall_prime_of_isPrimitiveRoot`: Kummer's irreducibility
-  criterion for `Xⁿ - b`, for every `n`.
+* `TauCeti.X_pow_sub_C_irreducible_of_isPrimitiveRoot`: `Xⁿ - b` is then irreducible, and
+  `TauCeti.X_pow_sub_C_irreducible_iff_forall_prime_of_isPrimitiveRoot`,
+  `TauCeti.X_pow_sub_C_irreducible_iff_of_isPrimitiveRoot` are the resulting criteria.
 
 ## References
 
-* S. Lang, *Algebra*, Graduate Texts in Mathematics 211, Springer (2002), Chapter VI, §6.
+* S. Lang, *Algebra*, Graduate Texts in Mathematics 211, Springer (2002), Chapter VI, §6 and
+  §9, Theorem 9.1.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Proposition 3.7.3.
 -/
@@ -73,8 +77,7 @@ theorem isSplittingField_X_pow_sub_C_of_adjoin_eq_top (hs : s ^ n = algebraMap K
     exact X_pow_sub_C_splits_of_isPrimitiveRoot (hζ.map_of_injective (algebraMap K L).injective) hs
   · rw [eq_top_iff, ← IntermediateField.top_toSubalgebra, ← hgen,
       IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-        (isAlgebraic_iff_isIntegral.2 (IsIntegral.of_pow (NeZero.pos n)
-          (hs ▸ isIntegral_algebraMap)))]
+        (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic]
     exact Algebra.adjoin_mono (Set.singleton_subset_iff.2
       ((Polynomial.mem_rootSet_X_pow_sub_C (NeZero.ne n)).2 hs))
 
@@ -163,95 +166,101 @@ theorem exists_forall_mem_zpowers_apply_eq [FiniteDimensional K L] (hb : b ≠ 0
   exact Subgroup.mem_top σ
 
 include hζ in
+/-- **A radical extension `K(ⁿ√b)` is cyclic** when `K` contains a primitive `n`-th root of unity
+and `b ≠ 0`, whether or not `Xⁿ - b` is irreducible. -/
+theorem isCyclic_of_pow_eq_of_adjoin_eq_top [FiniteDimensional K L] (hb : b ≠ 0)
+    (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) : IsCyclic (L ≃ₐ[K] L) :=
+  let ⟨g, hg, _⟩ := exists_forall_mem_zpowers_apply_eq hζ hb hs hgen
+  ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
+
+include hζ in
 /-- **A radical extension extracts a root of `b` of the order of its degree.** Let `L = K(s)` with
-`sⁿ = b ≠ 0`, and let `K` contain a primitive `n`-th root of unity. Then `s ^ [L : K]` lies in
-`K`: it is some `c ∈ K` with `c ^ (n / [L : K]) = b`. -/
+`sⁿ = b ≠ 0`, where `K` contains a primitive `n`-th root of unity. Then `s ^ [L : K]` lies in `K`:
+it is some `c ∈ K` with `c ^ (n / [L : K]) = b`. -/
 theorem exists_pow_finrank_eq_algebraMap [FiniteDimensional K L] (hb : b ≠ 0)
     (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
     ∃ c : K, s ^ finrank K L = algebraMap K L c ∧ c ^ (n / finrank K L) = b := by
   have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hb hs hgen
-  obtain ⟨g, hg, hdn, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hb hs hgen
-  set d := finrank K L
-  -- the generator `g` multiplies `s ^ d` by `ζ ^ n = 1`, so every automorphism fixes it
-  have hgfix : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (s ^ d) := by
-    simp [MulAction.mem_stabilizer_iff, hgs, mul_pow, ← map_pow, ← pow_mul,
-      Nat.div_mul_cancel hdn, hζ.pow_eq_one]
-  have hfix (σ : L ≃ₐ[K] L) : σ (s ^ d) = s ^ d :=
-    (Subgroup.zpowers_le.2 hgfix) (hg σ)
-  obtain ⟨c, hc⟩ := IntermediateField.mem_bot.1 ((IsGalois.mem_bot_iff_fixed _).2 hfix)
+  obtain ⟨g, hg, hdvd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hb hs hgen
+  set m := finrank K L
+  -- `s ^ m` is fixed by the generator `g` of `Gal(L/K)`, hence lies in `K`
+  have hζm : (ζ ^ (n / m)) ^ m = 1 := by rw [← pow_mul, Nat.div_mul_cancel hdvd, hζ.pow_eq_one]
+  have hfix : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (s ^ m) := by
+    simp [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, hgs, mul_pow, ← map_pow, hζm]
+  obtain ⟨c, hc⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (s ^ m)).2 fun σ ↦
+    Subgroup.zpowers_le.2 hfix (hg σ)
   refine ⟨c, hc.symm, (algebraMap K L).injective ?_⟩
-  rw [map_pow, hc, ← pow_mul, Nat.mul_div_cancel' hdn, hs]
+  rw [map_pow, hc, ← pow_mul, Nat.mul_div_cancel' hdvd, hs]
 
+omit [NeZero n] in
+/-- If `sⁿ = b` and `b` is not a `p`-th power in `K` for any prime `p` dividing `n`, then
+`n ≠ 0`: for `n = 0` the radicand `b = s ^ 0 = 1` would be a square. -/
+theorem neZero_of_forall_prime_pow_ne (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b)
+    (hs : s ^ n = algebraMap K L b) : NeZero n := ⟨by
+  rintro rfl
+  rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap K L).injective] at hs
+  exact hb 2 Nat.prime_two (dvd_zero 2) 1 (by rw [one_pow, hs])⟩
+
+omit [NeZero n] in
 include hζ in
-/-- **A nondegenerate radical extension has full degree** (Stichtenoth, Proposition 3.7.3(a)).
-Let `L = K(s)` with `sⁿ = b`, and let `K` contain a primitive `n`-th root of unity. If `b` is not
-a `p`-th power in `K` for any prime `p ∣ n`, then `[L : K] = n`. -/
-theorem finrank_eq_of_pow_eq_of_adjoin_eq_top (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b)
-    (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) : finrank K L = n := by
-  have hint : IsIntegral K s := IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)
-  have : FiniteDimensional K L := by
-    have := IntermediateField.adjoin.finiteDimensional hint
-    rw [hgen] at this
-    exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
-  by_cases hb0 : b = 0
-  · -- then `n = 1`, since `b = 0 ^ n`, and `s = 0`
-    have hn : n = 1 := by
+/-- **A nondegenerate radical extension has full degree.** Let `L = K(s)` with `sⁿ = b`, where `K`
+contains a primitive `n`-th root of unity. If `b` is not a `p`-th power in `K` for any prime `p`
+dividing `n`, then `[L : K] = n`. -/
+theorem finrank_eq_of_pow_eq_of_adjoin_eq_top
+    (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b) (hs : s ^ n = algebraMap K L b)
+    (hgen : K⟮s⟯ = ⊤) : finrank K L = n := by
+  have := neZero_of_forall_prime_pow_ne hb hs
+  rcases eq_or_ne b 0 with rfl | hb0
+  · -- `b = 0` forces `n = 1`, and then `s = 0` generates `K`
+    obtain rfl : n = 1 := by
       by_contra hn
       obtain ⟨p, hp, hpn⟩ := Nat.exists_prime_and_dvd hn
-      exact hb p hp hpn 0 (by rw [hb0, zero_pow hp.ne_zero])
-    rw [hb0, map_zero, pow_eq_zero_iff (NeZero.ne n)] at hs
-    rw [hs, IntermediateField.adjoin_zero, IntermediateField.bot_eq_top_iff_finrank_eq_one] at hgen
-    rw [hgen, hn]
-  obtain ⟨-, -, hdn, -⟩ := exists_forall_mem_zpowers_apply_eq hζ hb0 hs hgen
-  obtain ⟨c, -, hc⟩ := exists_pow_finrank_eq_algebraMap hζ hb0 hs hgen
-  by_contra hne
-  -- a prime `p` dividing `n / [L : K] ≠ 1` makes `b` a `p`-th power
-  obtain ⟨p, hp, hpm⟩ := Nat.exists_prime_and_dvd
-    (fun h ↦ hne (Nat.eq_of_dvd_of_div_eq_one hdn h))
-  refine hb p hp (hpm.trans (Nat.div_dvd_of_dvd hdn)) (c ^ (n / finrank K L / p)) ?_
-  rw [← pow_mul, Nat.div_mul_cancel hpm, hc]
+      exact hb p hp hpn 0 (zero_pow hp.ne_zero)
+    rw [pow_one, map_zero] at hs
+    rw [← IntermediateField.finrank_top', ← hgen, hs, adjoin_zero, IntermediateField.finrank_bot]
+  have hint : IsIntegral K s := IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)
+  have := (PowerBasis.ofAdjoinSimpleEqTop hint hgen).finite
+  obtain ⟨-, -, hdvd, -⟩ := exists_forall_mem_zpowers_apply_eq hζ hb0 hs hgen
+  obtain ⟨c, -, hbc⟩ := exists_pow_finrank_eq_algebraMap hζ hb0 hs hgen
+  set m := finrank K L
+  -- nondegeneracy forces `n / m = 1`
+  have h1 : n / m = 1 := by
+    by_contra h
+    obtain ⟨p, hp, e, he⟩ := Nat.exists_prime_and_dvd h
+    refine hb p hp ((Dvd.intro e he.symm).trans (Nat.div_dvd_of_dvd hdvd)) (c ^ e) ?_
+    rw [← pow_mul, mul_comm, ← he, hbc]
+  rw [← Nat.div_mul_cancel hdvd, h1, one_mul]
 
 include hζ in
-/-- **Irreducibility of `Xⁿ - b` with enough roots of unity**: if `K` contains a primitive `n`-th
-root of unity and `b` is not a `p`-th power in `K` for any prime `p ∣ n`, then `Xⁿ - b` is
-irreducible. Unlike Mathlib's `X_pow_sub_C_irreducible_of_odd`, `n` may be even. -/
+/-- **Irreducibility of `Xⁿ - b` with roots of unity**: if `K` contains a primitive `n`-th root of
+unity and `b` is not a `p`-th power in `K` for any prime `p` dividing `n`, then `Xⁿ - b` is
+irreducible over `K`. Unlike Mathlib's `X_pow_sub_C_irreducible_of_odd`, `n` may be even. -/
 theorem X_pow_sub_C_irreducible_of_isPrimitiveRoot
     (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b) : Irreducible (X ^ n - C b) := by
-  have hmonic := monic_X_pow_sub_C b (NeZero.ne n)
-  have hdeg : (X ^ n - C b).natDegree = n := natDegree_X_pow_sub_C
-  obtain ⟨p, hp, hpdvd⟩ := WfDvdMonoid.exists_irreducible_factor
-    (not_isUnit_of_natDegree_pos _ (by rw [hdeg]; exact Nat.pos_of_ne_zero (NeZero.ne n)))
-    hmonic.ne_zero
-  have := Fact.mk hp
-  -- a root `s` of an irreducible factor generates an extension of degree `n`
-  set s := AdjoinRoot.root p
-  have hs : s ^ n = algebraMap K (AdjoinRoot p) b := by
-    simpa [sub_eq_zero, AdjoinRoot.algebraMap_eq] using (AdjoinRoot.mk_eq_zero (f := p)).2 hpdvd
-  have hgen := IntermediateField.adjoin_root_eq_top p
-  have : FiniteDimensional K (AdjoinRoot p) := (AdjoinRoot.powerBasis hp.ne_zero).finite
+  let L := SplittingField (X ^ n - C b)
+  set α := rootOfSplitsXPowSubC (NeZero.pos n) b L
+  have hgen := AdjoinSimple.adjoin_gen_eq_top (F := K) α
+  have hs : AdjoinSimple.gen K α ^ n = algebraMap K K⟮α⟯ b :=
+    Subtype.ext (by simpa using rootOfSplitsXPowSubC_pow b L)
   have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζ hb hs hgen
-  -- so `Xⁿ - b` is the minimal polynomial of `s`
-  rw [← hfin] at hs ⊢
-  exact irreducible_X_pow_sub_C_of_root_adjoin_eq_top hs hgen
+  have : FiniteDimensional K K⟮α⟯ := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
+  have H := irreducible_X_pow_sub_C_of_root_adjoin_eq_top (by rwa [hfin]) hgen
+  rwa [hfin] at H
 
 include hζ in
-/-- **Kummer's irreducibility criterion with enough roots of unity**: if `K` contains a primitive
-`n`-th root of unity, then `Xⁿ - b` is irreducible if and only if `b` is not a `d`-th power in `K`
-for any divisor `d ≠ 1` of `n`. Mathlib's `X_pow_sub_C_irreducible_iff_of_odd` is the analogue for
-odd `n` without roots of unity. -/
-theorem X_pow_sub_C_irreducible_iff_of_isPrimitiveRoot :
-    Irreducible (X ^ n - C b) ↔ ∀ d, d ∣ n → d ≠ 1 → ∀ c : K, c ^ d ≠ b :=
-  ⟨fun H _ ↦ pow_ne_of_irreducible_X_pow_sub_C H, fun H ↦
-    X_pow_sub_C_irreducible_of_isPrimitiveRoot hζ fun p hp hpn ↦ H p hpn hp.ne_one⟩
-
-include hζ in
-/-- **Kummer's irreducibility criterion with enough roots of unity, prime form**: if `K` contains
-a primitive `n`-th root of unity, then `Xⁿ - b` is irreducible if and only if `b` is not a `p`-th
-power in `K` for any prime `p ∣ n`. Mathlib's `X_pow_sub_C_irreducible_iff_forall_prime_of_odd` is
-the analogue for odd `n` without roots of unity. -/
+/-- When `K` contains a primitive `n`-th root of unity, `Xⁿ - b` is irreducible exactly when `b`
+is not a `p`-th power in `K` for any prime `p` dividing `n`. -/
 theorem X_pow_sub_C_irreducible_iff_forall_prime_of_isPrimitiveRoot :
     Irreducible (X ^ n - C b) ↔ ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b :=
   ⟨fun H _ hp hpn ↦ pow_ne_of_irreducible_X_pow_sub_C H hpn hp.ne_one,
     X_pow_sub_C_irreducible_of_isPrimitiveRoot hζ⟩
+
+include hζ in
+/-- When `K` contains a primitive `n`-th root of unity, `Xⁿ - b` is irreducible exactly when `b`
+is not a `d`-th power in `K` for any divisor `d ≠ 1` of `n`. -/
+theorem X_pow_sub_C_irreducible_iff_of_isPrimitiveRoot :
+    Irreducible (X ^ n - C b) ↔ ∀ d, d ∣ n → d ≠ 1 → ∀ c : K, c ^ d ≠ b :=
+  ⟨fun H _ ↦ pow_ne_of_irreducible_X_pow_sub_C H,
+    fun H ↦ X_pow_sub_C_irreducible_of_isPrimitiveRoot hζ fun p hp hpn ↦ H p hpn hp.ne_one⟩
 
 end TauCeti

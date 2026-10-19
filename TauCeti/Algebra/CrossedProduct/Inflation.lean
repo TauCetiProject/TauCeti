@@ -414,7 +414,7 @@ inflated cocycle. -/
 private theorem cocyclesMap2_finiteLevelZ2_apply (c : TwoCocycle K L)
     (g h : AbsoluteGaloisGroup K) :
     (cocyclesMap2 _ _ _ _
-      (ContinuousMonoidHom.quotientMk
+      (Subgroup.quotientMkContinuousMonoidHom
         (galoisOpenNormalSubgroup K L L.val).toSubgroup)
       (FixedPoints.addSubgroup
         (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K)).subtype
@@ -424,8 +424,8 @@ private theorem cocyclesMap2_finiteLevelZ2_apply (c : TwoCocycle K L)
         AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, h) =
       (c.inflateZ2 L : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K)
         (g, h) := by
-  rw [cocyclesMap2_apply, AddSubgroup.subtype_apply, ContinuousMonoidHom.quotientMk_apply,
-    ContinuousMonoidHom.quotientMk_apply, finiteLevelZ2_apply, ← galoisQuotientHom_apply,
+  rw [cocyclesMap2_apply, AddSubgroup.subtype_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, finiteLevelZ2_apply, ← galoisQuotientHom_apply,
     ← galoisQuotientHom_apply, galoisQuotientHom_mk, galoisQuotientHom_mk, coe_inflateZ2]
   simp only [coe_toCocycles₂, inflate_toFun]
 
@@ -496,7 +496,8 @@ theorem exists_galoisCocycle_inflateZ2
   have hinfl := TwoCocycle.cocyclesMap2_finiteLevelZ2_apply L c.cocycle g h
   rw [TwoCocycle.finiteLevelZ2_ofFiniteLevelZ2] at hinfl
   rw [← hinfl, cocyclesMap2_apply]
-  exact hy g h
+  simpa only [Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
+    using hy g h
 
 /-- **Every continuous degree-two class of the absolute Galois group is inflated from a finite
 Galois cocycle.** -/

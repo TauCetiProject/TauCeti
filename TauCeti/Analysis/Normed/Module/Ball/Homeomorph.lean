@@ -44,8 +44,13 @@ valued in the closed unit ball.
   `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
-* `TauCeti.sphereHomeomorphOfFinrankEq`: the unit spheres of two finite-dimensional real normed
-  spaces of the same dimension are homeomorphic.
+* `TauCeti.sphereHomeomorphOfFinrankEq` and `TauCeti.closedBallHomeomorphOfFinrankEq`: the unit
+  spheres, and the closed unit balls, of two finite-dimensional real normed spaces of the same
+  dimension are homeomorphic.
+* `TauCeti.nonempty_homeomorph_closedBall_of_convex`: a compact convex set with nonempty interior
+  is homeomorphic to a closed ball of the same dimension.
+* `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
+  homeomorphic to the closed unit ball of any two-dimensional real normed space.
 -/
 
 public section
@@ -233,7 +238,7 @@ theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [
 
 end Cube
 
-section Sphere
+section FinrankEq
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
@@ -255,6 +260,48 @@ theorem coe_sphereHomeomorphOfFinrankEq_apply (hEF : Module.finrank ℝ E = Modu
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
 
-end Sphere
+/-- The closed unit balls of two finite-dimensional real normed spaces of the same dimension are
+homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph` applied to
+`ContinuousLinearEquiv.ofFinrankEq`. -/
+def closedBallHomeomorphOfFinrankEq (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
+    closedBall (0 : E) 1 ≃ₜ closedBall (0 : F) 1 :=
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hEF
+  (L.unitBallHomeomorph.image _).trans (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)
+
+/-- `TauCeti.closedBallHomeomorphOfFinrankEq` is the restriction of
+`ContinuousLinearEquiv.unitBallHomeomorph` to the closed unit ball. -/
+@[simp]
+theorem coe_closedBallHomeomorphOfFinrankEq_apply
+    (hEF : Module.finrank ℝ E = Module.finrank ℝ F) (x : closedBall (0 : E) 1) :
+    (closedBallHomeomorphOfFinrankEq hEF x : F) =
+      (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
+  (rfl)
+
+/-- **Convex bodies are balls.** A compact convex set with nonempty interior in a
+finite-dimensional real normed space is homeomorphic to the closed unit ball of any real normed
+space of the same dimension. -/
+theorem nonempty_homeomorph_closedBall_of_convex {s : Set E} (hc : Convex ℝ s)
+    (hs : IsCompact s) (hn : (interior s).Nonempty)
+    (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
+    Nonempty (s ≃ₜ closedBall (0 : F) 1) := by
+  obtain ⟨h, -, hcl, -⟩ :=
+    exists_homeomorph_image_interior_closure_frontier_eq_unitBall hc hn hs.isBounded
+  rw [hs.isClosed.closure_eq] at hcl
+  exact ⟨((h.image s).trans (Homeomorph.setCongr hcl)).trans
+    (closedBallHomeomorphOfFinrankEq hEF)⟩
+
+end FinrankEq
+
+/-- A product of two nondegenerate closed real intervals is homeomorphic to the closed unit ball
+of any two-dimensional real normed space. -/
+theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {a b c d : ℝ} (hab : a < b) (hcd : c < d)
+    (hF : Module.finrank ℝ F = 2) :
+    Nonempty ((Icc a b ×ˢ Icc c d) ≃ₜ closedBall (0 : F) 1) :=
+  nonempty_homeomorph_closedBall_of_convex ((convex_Icc _ _).prod (convex_Icc _ _))
+    (isCompact_Icc.prod isCompact_Icc)
+    (by rw [interior_prod_eq, interior_Icc, interior_Icc]
+        exact (nonempty_Ioo.mpr hab).prod (nonempty_Ioo.mpr hcd))
+    (by simp [hF])
 
 end TauCeti

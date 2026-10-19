@@ -77,7 +77,8 @@ theorem delta_infl (N : Subgroup G) [N.Normal]
         S.delta n := by
   rw [coeffMap_ofDiscreteModuleQuotient_comp_infl,
     coeffMap_ofDiscreteModuleQuotient_comp_infl_assoc]
-  exact SN.delta_map S (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N A).subtype
+  exact SN.delta_map S (Subgroup.quotientMkContinuousMonoidHom N) (FixedPoints.addSubgroup N
+    A).subtype
     (FixedPoints.addSubgroup N B).subtype (FixedPoints.addSubgroup N C).subtype
     N.fixedPoints_subtype_quotientMk_smul N.fixedPoints_subtype_quotientMk_smul
     N.fixedPoints_subtype_quotientMk_smul hincl hproj n

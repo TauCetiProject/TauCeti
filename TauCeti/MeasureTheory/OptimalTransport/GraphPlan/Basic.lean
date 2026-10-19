@@ -59,10 +59,13 @@ with measurable singletons.
   `∫⁻ z, c z ∂graphPlan T μ = ∫⁻ x, c (x, T x) ∂μ`, which feeds the Monge-to-Kantorovich
   inequality `TauCeti.transportCost_le_lintegral_of_hasLaw` in
   `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`, and its Bochner version
-  `TauCeti.integral_graphPlan`;
+  `TauCeti.integral_graphPlan`, together with its almost-everywhere counterpart
+  `TauCeti.ae_graphPlan_iff`;
 * `TauCeti.eq_graphPlan_iff` — a plan is the graph plan of `T` exactly when it is concentrated
   on the graph of `T`, with `TauCeti.graphPlan_eq_graphPlan_iff` the uniqueness of the map that
   induces a given deterministic plan;
+* `TauCeti.eq_graphPlan_of_absolutelyContinuous` — a plan absolutely continuous with respect to
+  the graph plan of `T` is itself a graph plan of `T`;
 * `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
   of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
 * `TauCeti.eq_dirac_of_hasLaw_dirac` — a transport map out of a Dirac measure forces the target
@@ -273,6 +276,15 @@ theorem map_prodMap_id_graphPlan {R : Y → Z} (hR : AEMeasurable R (μ.map T))
   rw [graphPlan_def, AEMeasurable.map_map_of_aemeasurable hR' (aemeasurable_prodMk_self hT)]
   rfl
 
+/-- Pushing the graph plan of `T` forward along `f` is pushing `μ` forward along
+`x ↦ f (x, T x)`. -/
+theorem map_graphPlan (hT : AEMeasurable T μ) {f : X × Y → Z}
+    (hf : AEMeasurable f (graphPlan T μ)) :
+    (graphPlan T μ).map f = μ.map fun x ↦ f (x, T x) := by
+  rw [graphPlan_def] at hf ⊢
+  rw [AEMeasurable.map_map_of_aemeasurable hf (aemeasurable_prodMk_self hT)]
+  rfl
+
 /-- Reparametrizing the source measure pushes the graph plan through the first coordinate. -/
 theorem graphPlan_map {f : Z → X} {μ : Measure Z} (hf : AEMeasurable f μ)
     (hT : AEMeasurable T (μ.map f)) :
@@ -311,6 +323,19 @@ theorem integral_graphPlan {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     (hT : AEMeasurable T μ) (hf : AEStronglyMeasurable f (graphPlan T μ)) :
     ∫ z, f z ∂graphPlan T μ = ∫ x, f (x, T x) ∂μ :=
   integral_map (aemeasurable_prodMk_self hT) hf
+
+/-- A property holding almost everywhere for the graph plan of `T` holds at the graph points
+`(x, T x)` for `μ`-almost every `x`. -/
+theorem ae_of_ae_graphPlan (hT : AEMeasurable T μ) {P : X × Y → Prop}
+    (h : ∀ᵐ z ∂graphPlan T μ, P z) : ∀ᵐ x ∂μ, P (x, T x) :=
+  ae_of_ae_map (aemeasurable_prodMk_self hT) h
+
+/-- A measurable property holds almost everywhere for the graph plan of `T` exactly when it
+holds at the graph points `(x, T x)` for `μ`-almost every `x`. -/
+theorem ae_graphPlan_iff (hT : AEMeasurable T μ) {P : X × Y → Prop}
+    (hP : MeasurableSet {z | P z}) :
+    (∀ᵐ z ∂graphPlan T μ, P z) ↔ ∀ᵐ x ∂μ, P (x, T x) :=
+  ae_map_iff (aemeasurable_prodMk_self hT) hP
 
 end ChangeOfVariables
 
@@ -375,6 +400,16 @@ theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
   ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
 
+/-- **A plan dominated by a graph plan is a graph plan of the same map.** If `π` is absolutely
+continuous with respect to the graph plan of `T` over `μ`, then `π` is carried by the graph of `T`,
+so it is the graph plan of `T` over its own first marginal. -/
+theorem eq_graphPlan_of_absolutelyContinuous (hT : AEMeasurable T μ)
+    (h : π ≪ graphPlan T μ) : π = graphPlan T π.fst := by
+  -- `Measure.fst` is by definition the pushforward along `Prod.fst`.
+  have hfst : π.fst ≪ (graphPlan T μ).fst := h.map measurable_fst
+  rw [fst_graphPlan hT] at hfst
+  exact eq_graphPlan_of_ae_snd_eq (hT.mono_ac hfst) (h.ae_le (ae_snd_eq_graphPlan hT))
+
 /-- **Inverse graph plans come from inverse maps.** If exchanging the coordinates of the graph
 plan of `T : X → Y` over `μ` gives the graph plan of `R : Y → X` over `ν`, then `R ∘ T = id`
 `μ`-almost everywhere and `T ∘ R = id` `ν`-almost everywhere. -/
@@ -387,17 +422,16 @@ theorem comp_ae_eq_id_of_map_swap_graphPlan_eq [MeasurableEq X] {R : Y → X} {�
     have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.2 = R w.1 := by
       rw [h]
       exact ae_snd_eq_graphPlan hR
-    have h₂ := ae_of_ae_map measurable_swap.aemeasurable h₁
-    rw [graphPlan_def] at h₂
-    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hT) h₂] with x hx
+    filter_upwards [ae_of_ae_graphPlan hT (ae_of_ae_map measurable_swap.aemeasurable h₁)]
+      with x hx
     simpa using hx.symm
   · -- `R` is a right inverse: push the graph of `T` forward along the exchange, which is a
     -- measurable equivalence, then read it back along the graph of `R`.
     have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.1 = T w.2 :=
       (MeasurableEquiv.map_ae MeasurableEquiv.prodComm (graphPlan T μ)).ge
         (ae_snd_eq_graphPlan hT)
-    rw [h, graphPlan_def] at h₁
-    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hR) h₁] with y hy
+    rw [h] at h₁
+    filter_upwards [ae_of_ae_graphPlan hR h₁] with y hy
     simpa using hy.symm
 
 end Determinism

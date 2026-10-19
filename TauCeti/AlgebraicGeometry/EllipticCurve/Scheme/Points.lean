@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Unimodular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 -- Proof-only: the body of the zero section `projModelZero` is not exposed.
 import all TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 
@@ -79,6 +80,8 @@ zero section corresponding to the point at infinity.
   `WeierstrassCurve.projModelAffinePoint_projModelVariableChangeIso_hom`: the point `[x : y : 1]`
   determines `x` and `y`, and a change of variables sends it to
   `[u²x + r : u³y + u²sx + t : 1]`.
+* `WeierstrassCurve.projModelAffinePoint_apply_eq_iff`: over a point `s` of `Spec R`, the points
+  `[x : y : 1]` and `[x' : y' : 1]` agree exactly when `x ≡ x'` and `y ≡ y'` modulo `s`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelPoint`: the section with homogeneous
   coordinates `P` corresponds to the class of `P`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelZero`: the zero section corresponds to
@@ -398,7 +401,8 @@ theorem projModelPoint_projModelVariableChangeIso_hom {C : VariableChange R}
   have hF : ((C • W).toProjective.evalHom g hP).comp (variableChangeGradedHom W C).toRingHom =
       W.toProjective.evalHom g hQ := by
     refine Projective.eq_evalHom _ _ _ (RingHom.ext fun r ↦ ?_) (funext fun k ↦ ?_)
-    · simpa [variableChangeGradedHom_apply] using
+    · simpa only [RingHom.comp_apply, GradedRingHom.coe_toRingHom,
+        variableChangeGradedHom_apply, AlgEquiv.commutes] using
         RingHom.congr_fun ((C • W).toProjective.evalHom_comp_algebraMap g hP) r
     · simp [variableChangeGradedHom_apply, Projective.coord, mulVec, dotProduct]
   -- the image of `Xⱼ` under the change of variables takes the unit value `Qⱼ` at `P`
@@ -511,6 +515,31 @@ theorem projModelAffinePoint_inj {x' y' : R} {h' : W.toAffine.Equation x' y'} :
   rw [projModelAffinePoint_def, projModelAffinePoint_def,
     projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
   simp
+
+/-- Over a point `s` of `Spec R`, the points `[x : y : 1]` and `[x' : y' : 1]` agree exactly when
+`x ≡ x'` and `y ≡ y'` modulo `s`. -/
+theorem projModelAffinePoint_apply_eq_iff {x' y' : R} (h' : W.toAffine.Equation x' y')
+    (s : Spec (.of R)) :
+    W.projModelAffinePoint h s = W.projModelAffinePoint h' s ↔
+      x - x' ∈ s.asIdeal ∧ y - y' ∈ s.asIdeal := by
+  have := s.isPrime
+  let g := algebraMap R s.asIdeal.ResidueField
+  -- the closed point `t` of `Spec κ(s)` lies over `s`
+  let t : Spec (.of s.asIdeal.ResidueField) := ⟨⊥, Ideal.isPrime_bot⟩
+  have ht : Spec.map (CommRingCat.ofHom g) t = s := by
+    refine PrimeSpectrum.ext ?_
+    rw [Spec.map_apply, PrimeSpectrum.comap_asIdeal, CommRingCat.hom_ofHom,
+      ← RingHom.ker_eq_comap_bot, Ideal.ker_algebraMap_residueField]
+  -- two sections agree over `s` exactly when they agree as points with values in `κ(s)`
+  conv_lhs => rw [← ht]
+  rw [← TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section
+    (projModelAffinePoint_projModelOver h) (projModelAffinePoint_projModelOver h'),
+    projModelAffinePoint_def, projModelAffinePoint_def,
+    SpecMap_projModelPoint, SpecMap_projModelPoint,
+    projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
+  simp only [true_and, ← Ideal.algebraMap_residueField_eq_zero, map_sub, sub_eq_zero]
+  refine ⟨fun h ↦ ⟨congrFun h 0, congrFun h 1⟩, fun ⟨hx, hy⟩ ↦ funext fun k ↦ ?_⟩
+  fin_cases k <;> simp [hx, hy, g]
 
 /-- Transport of the point `[x : y : 1]` along an equality of Weierstrass curves. -/
 @[reassoc (attr := simp)]

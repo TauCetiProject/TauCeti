@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.Algebra.CharP.Two
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The singular points of a Weierstrass model

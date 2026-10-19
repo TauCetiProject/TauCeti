@@ -37,11 +37,21 @@ formulas turn operator-norm estimates for `A` into estimates for its blocks.
 * `Submodule.commute_reflection_iff`: `R_U` commutes with `A` exactly when `P_U` does.
 * `Submodule.offDiagBlock_eq_zero_iff`, `Submodule.diagBlock_eq_self_iff`: `A` is block
   diagonal exactly when `P_U` commutes with `A`.
+* `Submodule.le_re_inner_comp_starProjection_add_smul_apply_self`,
+  `Submodule.re_inner_comp_starProjection_add_smul_apply_self_le`: extending an operator from an
+  invariant subspace `U` by the scalar `r` on `Uᗮ` to the block-diagonal operator
+  `A P_U + r P_{Uᗮ}` preserves a lower (upper) bound `r` on its quadratic form.
 
 ## References
 
 * C. Davis, W. M. Kahan, *The rotation of eigenvectors by a perturbation. III*,
   SIAM J. Numer. Anal. **7** (1970).
+
+## Acknowledgements
+
+The block-diagonal extension lemmas belong to the `sin Θ` lineage adapted from the
+[Spectra Formalization Project](https://github.com/adambornemann-glitch/Spectra)
+(Adam Bornemann; Apache-2.0) at upstream revision `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63`.
 -/
 
 public section
@@ -245,5 +255,54 @@ theorem diagBlock_orthogonal (A : E →L[𝕜] E) : Uᗮ.diagBlock A = U.diagBlo
 theorem offDiagBlock_orthogonal (A : E →L[𝕜] E) : Uᗮ.offDiagBlock A = U.offDiagBlock A := by
   simp only [offDiagBlock, starProjection_orthogonal', ← ContinuousLinearMap.mul_def]
   noncomm_ring
+
+section Extension
+
+open ContinuousLinearMap
+open scoped InnerProductSpace
+
+/-- If `U` is invariant under `A` and the quadratic form of `A` on `U` is bounded below by `r`, then
+the quadratic form of `A P_U + r P_{Uᗮ}` is bounded below by `r` on all of `E`. -/
+theorem le_re_inner_comp_starProjection_add_smul_apply_self {A : E →L[𝕜] E}
+    (hU : ∀ x ∈ U, A x ∈ U) {r : ℝ}
+    (hA : ∀ x ∈ U, r * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜) (x : E) :
+    r * ‖x‖ ^ 2 ≤
+      RCLike.re ⟪(A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x, x⟫_𝕜 := by
+  set u := U.starProjection x
+  set v := Uᗮ.starProjection x
+  have hu : u ∈ U := U.starProjection_apply_mem x
+  have hv : v ∈ Uᗮ := Uᗮ.starProjection_apply_mem x
+  -- Split `x = u + v` along `U ⊕ Uᗮ`; the cross terms vanish because `A u ∈ U`.
+  have hx : x = u + v := (U.starProjection_add_starProjection_orthogonal x).symm
+  have hAuv : ⟪A u, v⟫_𝕜 = 0 := inner_right_of_mem_orthogonal (hU u hu) hv
+  have hvu : ⟪v, u⟫_𝕜 = 0 := inner_left_of_mem_orthogonal hu hv
+  have hre : RCLike.re ⟪(A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x, x⟫_𝕜 =
+      RCLike.re ⟪A u, u⟫_𝕜 + r * ‖v‖ ^ 2 := by
+    have happ : (A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x = A u + (r : 𝕜) • v := by
+      simp only [add_apply, comp_apply, smul_apply, u, v]
+    rw [happ]
+    conv_lhs => rw [hx]
+    simp [inner_add_left, inner_add_right, inner_smul_left, hAuv, hvu, inner_self_eq_norm_sq_to_K]
+  rw [hre, norm_sq_eq_add_norm_sq_starProjection x U, mul_add]
+  exact add_le_add_left (hA u hu) _
+
+/-- If `U` is invariant under `B` and the quadratic form of `B` on `U` is bounded above by `r`, then
+the quadratic form of `B P_U + r P_{Uᗮ}` is bounded above by `r` on all of `E`. -/
+theorem re_inner_comp_starProjection_add_smul_apply_self_le {B : E →L[𝕜] E}
+    (hU : ∀ x ∈ U, B x ∈ U) {r : ℝ}
+    (hB : ∀ x ∈ U, RCLike.re ⟪B x, x⟫_𝕜 ≤ r * ‖x‖ ^ 2) (x : E) :
+    RCLike.re ⟪(B ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x, x⟫_𝕜 ≤
+      r * ‖x‖ ^ 2 := by
+  -- Apply the lower bound to `-B` and the bound `-r`.
+  have h := U.le_re_inner_comp_starProjection_add_smul_apply_self (A := -B) (r := -r)
+    (fun x hx ↦ by simpa using U.neg_mem (hU x hx))
+    (fun x hx ↦ by simpa [inner_neg_left] using hB x hx) x
+  have heq : (-B) ∘L U.starProjection + ((-r : ℝ) : 𝕜) • Uᗮ.starProjection =
+      -(B ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) := by
+    rw [neg_comp, RCLike.ofReal_neg, neg_smul, neg_add]
+  rw [heq, neg_apply, inner_neg_left, map_neg] at h
+  linarith
+
+end Extension
 
 end Submodule

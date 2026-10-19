@@ -43,10 +43,6 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure
 * `TauCeti.RootsOfUnityGroup.algHom_ext`: an algebra map out of the coordinate ring is determined
   by its value on the standard generator.
 
-This is a worked-example check for the reductive-groups roadmap, Layer 4:
-"`μ_n = D(ℤ/n)`" in the diagonalizable-groups lane, together with the Layer 0 functor-of-points
-calculation.
-
 ## References
 
 The diagonalizable-group points calculation is Tau Ceti's

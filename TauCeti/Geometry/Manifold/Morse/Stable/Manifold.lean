@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
 public import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.Complemented
 
 /-!
@@ -50,8 +51,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → ℝ} {x : M} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
 namespace MorseChart
@@ -63,7 +64,6 @@ noncomputable def negativeCoord : E →ₗ[ℝ] ({i // φ.weight i < 0} → ℝ)
   LinearMap.funLeft ℝ ℝ (Subtype.val : {i // φ.weight i < 0} → Fin (Module.finrank ℝ E)) ∘ₗ
     (φ.coord : E →ₗ[ℝ] (Fin (Module.finrank ℝ E) → ℝ))
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The coordinates of negative weight of a vector. -/
 @[simp]
 theorem negativeCoord_apply (v : E) (i : {i // φ.weight i < 0}) :
@@ -75,7 +75,6 @@ vanish. -/
 noncomputable def stableSubspace : Submodule ℝ E :=
   LinearMap.ker φ.negativeCoord
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- A vector lies in the stable subspace when its coordinates of negative weight vanish. -/
 @[simp]
 theorem mem_stableSubspace {v : E} :
@@ -83,7 +82,23 @@ theorem mem_stableSubspace {v : E} :
   rw [stableSubspace, LinearMap.mem_ker, negativeCoord, funext_iff]
   simp [LinearMap.funLeft_apply]
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The diagonal form `Σᵢ wᵢ (L u)ᵢ²` of a Morse chart is positive on the nonzero vectors of the
+stable subspace, where the coordinates of negative weight vanish. -/
+theorem sum_weight_mul_coord_sq_pos {u : E} (hu : u ∈ φ.stableSubspace) (hu0 : u ≠ 0) :
+    0 < ∑ i, φ.weight i * φ.coord u i ^ 2 := by
+  -- Each term is `(L u)ᵢ²`: for a negative weight, the coordinate vanishes.
+  have hterm (i : Fin (Module.finrank ℝ E)) : φ.weight i * φ.coord u i ^ 2 = φ.coord u i ^ 2 := by
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+    · simp [φ.mem_stableSubspace.1 hu i (by rw [hi]; norm_num)]
+    · rw [hi, one_mul]
+  obtain ⟨j, hj⟩ : ∃ j, φ.coord u j ≠ 0 := by
+    by_contra! h
+    exact hu0 (φ.coord.injective (funext fun i ↦ by simpa using h i))
+  simp only [hterm]
+  exact Finset.sum_pos' (fun i _ ↦ sq_nonneg _) ⟨j, Finset.mem_univ j, by positivity⟩
+
+variable [FiniteDimensional ℝ E]
+
 /-- The stable subspace has dimension `n - k`, where `k` is the Morse index. -/
 theorem finrank_stableSubspace_add_manifoldMorseIndex :
     Module.finrank ℝ φ.stableSubspace + manifoldMorseIndex 𝓘(ℝ, E) f x =
@@ -100,27 +115,11 @@ theorem finrank_stableSubspace_add_manifoldMorseIndex :
   rw [stableSubspace]
   omega
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- The diagonal form `Σᵢ wᵢ (L u)ᵢ²` of a Morse chart is positive on the nonzero vectors of the
-stable subspace, where the coordinates of negative weight vanish. -/
-theorem sum_weight_mul_coord_sq_pos {u : E} (hu : u ∈ φ.stableSubspace) (hu0 : u ≠ 0) :
-    0 < ∑ i, φ.weight i * φ.coord u i ^ 2 := by
-  -- Each term is `(L u)ᵢ²`: for a negative weight, the coordinate vanishes.
-  have hterm (i : Fin (Module.finrank ℝ E)) : φ.weight i * φ.coord u i ^ 2 = φ.coord u i ^ 2 := by
-    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
-    · simp [φ.mem_stableSubspace.1 hu i (by rw [hi]; norm_num)]
-    · rw [hi, one_mul]
-  obtain ⟨j, hj⟩ : ∃ j, φ.coord u j ≠ 0 := by
-    by_contra! h
-    exact hu0 (φ.coord.injective (funext fun i ↦ by simpa using h i))
-  simp only [hterm]
-  exact Finset.sum_pos' (fun i _ ↦ sq_nonneg _) ⟨j, Finset.mem_univ j, by positivity⟩
-
 end MorseChart
 
 namespace IsAdaptedPseudoGradient
 
-variable [CompactSpace M] [T2Space M]
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
 /-- **Slice charts for the stable manifold.** Let `φ` be a Morse chart at `x` in which `X` is
 linear. Every point of `W^s(x)` lies in the source of a chart of the maximal atlas that flattens

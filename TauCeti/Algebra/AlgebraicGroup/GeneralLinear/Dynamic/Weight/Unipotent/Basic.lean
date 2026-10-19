@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Unipotent.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Representability
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 
 /-!
@@ -21,6 +22,9 @@ space.
 Together with the weight-parabolic and weight-Levi representing isomorphisms, this supplies all
 three scheme-level pieces attached to an arbitrary diagonal weight cocharacter.
 
+The dynamic defining Hopf ideal equals the explicit matrix ideal, so the comparison
+also identifies the infinitesimal subgroup structure.
+
 ## Main declarations
 
 * `TauCeti.GeneralLinear.Dynamic.mem_weightUnipotentDefiningPointsSubgroup_iff`: membership in
@@ -32,10 +36,6 @@ three scheme-level pieces attached to an arbitrary diagonal weight cocharacter.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This completes representability of the parabolic, Levi, and unipotent functors attached to a
-weight cocharacter in the dynamic route of Layer 7, "Structure theory", of the ReductiveGroups
-roadmap.
 -/
 
 public section
@@ -132,5 +132,18 @@ theorem quotientPointsHom_weightUnipotentPointsIso_inv_app_apply (w : Fin N → 
       (fun B ↦ Cocharacter.unipotent B (weightCocharacter (R := R) w))
       (mem_weightUnipotentSubgroup_iff R w)
       (CommAlgCat.of R A) g) using 1
+
+/-- The dynamic unipotent ideal of a diagonal weight cocharacter equals the explicit
+weight-unipotent matrix ideal, including its scheme structure. -/
+@[simp]
+theorem unipotentDefiningHopfIdeal_weightCocharacter (w : Fin N → ℤ) :
+    (weightCocharacter (R := R) w).unipotentDefiningHopfIdeal =
+      weightUnipotentDefiningHopfIdeal R w := by
+  apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
+    (H := coordinateHopfAlgebra R N)
+  intro A
+  ext g
+  rw [BialgHom.quotientPointsSubgroup_unipotentDefiningHopfIdeal]
+  exact (mem_weightUnipotentDefiningPointsSubgroup_iff R w g).symm
 
 end TauCeti.GeneralLinear.Dynamic

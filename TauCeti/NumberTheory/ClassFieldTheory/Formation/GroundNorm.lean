@@ -142,6 +142,7 @@ theorem levelNorm_self (h : W ≤ W) : F.levelNorm h = AddMonoidHom.id (F.level 
   simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, ← Nat.card_eq_fintype_card]
 
 /-- **The norm of an element of the larger level `A^W` is its multiple by the index `[W : W']`.** -/
+@[simp]
 theorem levelNorm_inclusion (h : W' ≤ W) (x : F.level W) :
     F.levelNorm h (Submodule.inclusion (F.level_antitone h) x) =
       W'.toSubgroup.relIndex W.toSubgroup • x := by

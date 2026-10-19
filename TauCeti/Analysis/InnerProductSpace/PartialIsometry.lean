@@ -31,6 +31,9 @@ orthogonal projection onto `(ker u)ᗮ`, or merely some star projection.
   the orthogonal complement of its kernel.
 * `ContinuousLinearMap.IsPartialIsometry.adjoint_comp_self_eq_starProjection`: the initial
   projection `u† u` of a bounded partial isometry is the orthogonal projection onto `(ker u)ᗮ`.
+* `ContinuousLinearMap.IsPartialIsometry.comp_adjoint_eq_starProjection`: the final projection
+  `u u†` is the orthogonal projection onto the closure of the range of `u`, and
+  `ContinuousLinearMap.IsPartialIsometry.isClosed_range`: that range is closed.
 * `ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self`,
   `LinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self`: a map is a partial isometry
   iff `u† u` is a star projection.
@@ -197,6 +200,25 @@ theorem isPartialIsometry_iff_norm_map :
 theorem IsPartialIsometry.norm_map (hu : u.IsPartialIsometry) {x : E} (hx : x ∈ u.kerᗮ) :
     ‖u x‖ = ‖x‖ :=
   isPartialIsometry_iff_norm_map.mp hu x hx
+
+/-- The final projection `u u†` of a bounded partial isometry is the orthogonal projection onto
+its final space, the closure of its range. -/
+theorem IsPartialIsometry.comp_adjoint_eq_starProjection (hu : u.IsPartialIsometry) :
+    u ∘L u† = u.range.topologicalClosure.starProjection := by
+  have hK : (u†).kerᗮ = u.range.topologicalClosure := by rw [orthogonal_ker, adjoint_adjoint]
+  simpa only [adjoint_adjoint, hK] using hu.adjoint.adjoint_comp_self_eq_starProjection
+
+/-- A bounded partial isometry has closed range. -/
+theorem IsPartialIsometry.isClosed_range (hu : u.IsPartialIsometry) :
+    IsClosed (u.range : Set F) := by
+  -- The closure of the range is the range of the final projection `u u†`, hence lies in the
+  -- range of `u`.
+  rw [← closure_subset_iff_isClosed, ← Submodule.topologicalClosure_coe]
+  intro y hy
+  rw [SetLike.mem_coe, ← Submodule.range_starProjection u.range.topologicalClosure,
+    ← hu.comp_adjoint_eq_starProjection] at hy
+  obtain ⟨z, rfl⟩ := hy
+  exact ⟨(u†) z, rfl⟩
 
 end Complete
 

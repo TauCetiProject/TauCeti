@@ -21,17 +21,18 @@ The density input is `SchwartzMap.dense_hasCompactSupport`. See L. Hörmander,
 
 public section
 
-namespace TauCeti
+namespace TemperedDistribution
 
 open scoped SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  [FiniteDimensional ℝ E] [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [T2Space F]
 
 /-- Real-valued compactly supported Schwartz functions determine a complex-linear tempered
-distribution. The real functions are embedded in complex Schwartz space by `Complex.ofRealCLM`.
+distribution with values in a Hausdorff complex module. The real functions are embedded in
+complex Schwartz space by `Complex.ofRealCLM`.
 -/
-theorem temperedDistribution_ext_real {u v : 𝓢'(E, F)}
+theorem ext_real {u v : 𝓢'(E, F)}
     (h : ∀ φ : 𝓢(E, ℝ), HasCompactSupport φ →
       u (φ.postcompCLM Complex.ofRealCLM) = v (φ.postcompCLM Complex.ofRealCLM)) : u = v := by
   have hreal : ∀ φ : 𝓢(E, ℝ),
@@ -44,11 +45,8 @@ theorem temperedDistribution_ext_real {u v : 𝓢'(E, F)}
   have hsplit : φ = (φ.postcompCLM Complex.reCLM).postcompCLM Complex.ofRealCLM +
       Complex.I • (φ.postcompCLM Complex.imCLM).postcompCLM Complex.ofRealCLM := by
     ext x
-    simp only [add_apply, smul_apply, SchwartzMap.postcompCLM_apply,
-      Complex.reCLM_apply, Complex.imCLM_apply, Complex.ofRealCLM_apply, smul_eq_mul]
-    rw [mul_comm]
-    exact (Complex.re_add_im (φ x)).symm
+    simpa [mul_comm] using (Complex.re_add_im (φ x)).symm
   rw [hsplit]
   simp only [map_add, map_smul, hreal]
 
-end TauCeti
+end TemperedDistribution

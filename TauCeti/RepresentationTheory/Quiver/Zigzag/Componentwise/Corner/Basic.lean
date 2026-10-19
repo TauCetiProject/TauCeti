@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Multiplication
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # Corners of the componentwise zigzag algebra
@@ -28,11 +28,6 @@ namespace TauCeti
 variable (k : Type*) [CommRing k] {V : Type*} (G : SimpleGraph V) [Finite V]
 
 local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
-
-/-- Each vertex basis element of the componentwise zigzag algebra is idempotent. -/
-theorem isIdempotentElem_zigzagAlgebraBasis_inl (i : V) :
-    IsIdempotentElem (zigzagAlgebraBasis k G (Sum.inl i)) := by
-  simp [IsIdempotentElem]
 
 /-- Distinct nonadjacent vertex idempotents cut out a zero corner of the public
 zigzag algebra, including its isolated-vertex dual-number factors. -/
