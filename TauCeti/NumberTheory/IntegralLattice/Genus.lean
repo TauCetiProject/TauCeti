@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
@@ -69,6 +70,18 @@ theorem localIntegralForm_equivalent (h : L.SameGenus M) (p : ℕ) [Fact p.Prime
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) :=
   (sameGenus_iff L M).mp h |>.2 p
 
+/-- Lattices in the same genus have equal ranks. -/
+theorem finrank_eq (h : L.SameGenus M) : Module.finrank ℤ L = Module.finrank ℤ M :=
+  L.finrank_eq_of_signature_eq h.signature_eq
+
+/-- Positive definiteness is a property of the genus. -/
+theorem isPosDef_iff (h : L.SameGenus M) : L.IsPosDef ↔ M.IsPosDef := by
+  have hsig : (L.sigPos, L.sigNull, L.sigNeg) = (M.sigPos, M.sigNull, M.sigNeg) :=
+    h.signature_eq
+  simp only [Prod.mk.injEq] at hsig
+  rw [isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero,
+    isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero, hsig.2.1, hsig.2.2]
+
 /-- Every integral lattice belongs to its own genus. -/
 @[refl, simp]
 theorem refl (L : IntegralLattice V) : L.SameGenus L :=
@@ -100,6 +113,23 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
   rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
     M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, discriminant_def,
     discriminant_def, habs]
+
+/-- Scaling by a common nonzero integer preserves the genus relation. -/
+theorem smul {n : ℤ} (hn : n ≠ 0) (h : L.SameGenus M) : (n • L).SameGenus (n • M) := by
+  refine (sameGenus_iff _ _).mpr ⟨?_, fun p _ ↦ ?_⟩
+  · rcases hn.lt_or_gt with hneg | hpos
+    · have hsig : (L.sigPos, L.sigNull, L.sigNeg) = (M.sigPos, M.sigNull, M.sigNeg) :=
+        h.signature_eq
+      simp only [Prod.mk.injEq] at hsig
+      rw [signature_smul_of_neg hneg, signature_smul_of_neg hneg, hsig.1, hsig.2.1, hsig.2.2]
+    · rw [signature_smul_of_pos hpos, signature_smul_of_pos hpos]
+      exact h.signature_eq
+  · obtain ⟨e⟩ := h.localIntegralForm_equivalent p
+    rw [localIntegralForm_smul, localIntegralForm_smul]
+    exact ⟨{ e.toLinearEquiv with
+      map_app' x y := by
+        simp only [LinearMap.smul_apply]
+        exact congrArg _ (e.map_app' x y) }⟩
 
 end SameGenus
 
