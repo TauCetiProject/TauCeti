@@ -100,12 +100,12 @@ instance isPivotal_comp {E : Type*} [Category* E] [MonoidalCategory E] [RigidCat
     [PivotalCategory E] (G : D ⥤ E) [G.Monoidal] [F.IsPivotal] [G.IsPivotal] :
     (F ⋙ G).IsPivotal where
   map_pivotalIsoApp_hom X := by
-    rw [mapRightDualIso_comp, mapRightDualIso_comp]
-    dsimp only [Functor.comp_obj, Functor.comp_map, Iso.trans_hom, Iso.trans_inv,
-      Functor.mapIso_hom, Functor.mapIso_inv]
-    rw [IsPivotal.map_pivotalIsoApp_hom, G.map_comp, G.map_comp, IsPivotal.map_pivotalIsoApp_hom,
-      comp_rightAdjointMate, Category.assoc, Category.assoc, Category.assoc,
-      reassoc_of% (mapRightDualIso_inv_naturality (F := G) (F.mapRightDualIso X).hom)]
+    -- Expand the comparisons of `F ⋙ G` and the images of `φ` under `F` and then `G`.
+    simp only [mapRightDualIso_comp, Iso.trans_hom, Iso.trans_inv, Functor.mapIso_hom,
+      Functor.mapIso_inv, Functor.comp_map, IsPivotal.map_pivotalIsoApp_hom, Functor.map_comp,
+      comp_rightAdjointMate, Category.assoc, Functor.comp_obj]
+    -- The comparison `δ` of `G` slides past the image of that of `F`.
+    rw [reassoc_of% (mapRightDualIso_inv_naturality (F := G) (F.mapRightDualIso X).hom)]
 
 /-- **A pivotal functor preserves the right trace**: the right trace of `F.map f` is the image of
 the right trace of `f`, read in `𝟙_ D ⟶ 𝟙_ D` through the unit comparison of `F`. -/
@@ -165,12 +165,15 @@ theorem map_drinfeldIso_hom_comp_mapRightDualIso_hom (X : C) :
     F.map (drinfeldIso X).hom ≫ (F.mapRightDualIso Xᘁ).hom =
       (drinfeldIso (F.obj X)).hom ≫ ((F.mapRightDualIso X).hom)ᘁ := by
   refine ExactPairing.rightHom_ext (X := F.obj Xᘁ) ?_
-  -- Both sides evaluate to the braided evaluation of `(F.obj X, F.obj Xᘁ)`.
-  rw [comp_whiskerRight_assoc, mapRightDualIso_hom_whiskerRight_evaluation, μ_natural_left_assoc,
-    ← F.map_comp_assoc, drinfeldIso_hom_comp_evaluation, F.map_comp_assoc,
-    LaxBraided.braided_assoc, ← mapRightDualIso_hom_whiskerRight_evaluation,
-    comp_whiskerRight_assoc, rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
-    drinfeldIso_hom_comp_evaluation, BraidedCategory.braiding_naturality_right_assoc]
+  -- Both sides evaluate to the braided evaluation of `(F.obj X, F.obj Xᘁ)`: on the left, this is
+  -- the image of the corresponding identity in `C`.
+  have h : F.map ((drinfeldIso X).hom ▷ Xᘁ) ≫ F.map (ε_ Xᘁ Xᘁᘁ) =
+      F.map (β_ X Xᘁ).hom ≫ F.map (ε_ X Xᘁ) := by
+    rw [← F.map_comp, drinfeldIso_hom_comp_evaluation, F.map_comp]
+  simp only [comp_whiskerRight, Category.assoc, mapRightDualIso_hom_whiskerRight_evaluation,
+    rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc, μ_natural_left_assoc,
+    reassoc_of% h, LaxBraided.braided_assoc, drinfeldIso_hom_comp_evaluation,
+    BraidedCategory.braiding_naturality_right_assoc]
 
 end Braided
 
