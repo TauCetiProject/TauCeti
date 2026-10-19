@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.ContinuousLevelSlice
+public import TauCeti.Dynamics.Flow.ConnectingOrbit
 public import Mathlib.Topology.ContinuousMap.Basic
 import Mathlib.Topology.Homeomorph.Quotient
 
@@ -36,26 +37,8 @@ The characterization lemmas share their definitions' receiver namespaces.
 public section
 
 open Set Topology
+
 namespace Flow
-
-section OrbitRelation
-
-variable {E : Type*} [TopologicalSpace E] {φ : _root_.Flow ℝ E} {p q : E}
-
-/-- Time translation on connecting points, obtained by restricting the ambient orbit relation.
-The topology on its quotient is the quotient of the connecting set's subspace topology. -/
-def connectingOrbitSetoid (φ : _root_.Flow ℝ E) (p q : E) :
-    Setoid ↥(unstableSet φ p ∩ stableSet φ q) :=
-  (@AddAction.orbitRel ℝ E _ φ.toAddAction).comap Subtype.val
-
-/-- Connecting points are related exactly when one is a time translate of the other. -/
-@[simp]
-theorem connectingOrbitSetoid_apply
-    (x y : ↥(unstableSet φ p ∩ stableSet φ q)) :
-    connectingOrbitSetoid φ p q x y ↔ ∃ t : ℝ, φ t y.1 = x.1 :=
-  Iff.rfl
-
-end OrbitRelation
 
 namespace IsNegativeGradient
 
