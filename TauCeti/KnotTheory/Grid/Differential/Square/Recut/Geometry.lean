@@ -46,23 +46,6 @@ namespace TauCeti.GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-/-- The side columns of a decomposition whose intermediate state swaps two rows of the source,
-read off from the rows of its corners. -/
-private theorem sides_of_middle_eq_swapRows {E : GridRectangleDecomposition x z}
-    {a b c d e f : Fin n} (hmiddle : E.middle = x.swapRows (x a) (x b))
-    (hfirstBottom : E.first.bottom = x c) (hfirstTop : E.first.top = x d)
-    (hsecondBottom : E.second.bottom = x e) (hsecondTop : E.second.top = x f) :
-    E.first.left = c ∧ E.first.right = d ∧
-      E.second.left = Equiv.swap a b e ∧ E.second.right = Equiv.swap a b f := by
-  rw [← GridState.swapColumns_eq_swapRows] at hmiddle
-  refine ⟨x.toPerm.injective hfirstBottom, x.toPerm.injective hfirstTop,
-    GridState.eq_swap_of_swapColumns_apply_eq (x := x) ?_,
-    GridState.eq_swap_of_swapColumns_apply_eq (x := x) ?_⟩
-  · rw [← hmiddle]
-    exact hsecondBottom
-  · rw [← hmiddle]
-    exact hsecondTop
-
 /-- The complete geometry of a recut when the first rectangle's initial side is the second
 rectangle's terminal side. The row containing the remaining corner selects whether the recut
 rectangles share their initial or terminal side. -/
