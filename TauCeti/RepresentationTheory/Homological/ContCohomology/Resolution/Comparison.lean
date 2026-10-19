@@ -31,9 +31,10 @@ The comparison `TopRep.ResolutionContraction.comparison` is built degree by degr
 into a coinduced representation: `F⁰ v x = x • proj (x⁻¹ • v)` and
 `Fⁿ⁺¹ v x = Fⁿ (x • hom n (x⁻¹ • v))`. The conjugate `x • hom n (x⁻¹ • -)` of the contraction is
 again a contraction, and this is what makes `F` commute with the differentials. For a locally
-compact group, any two chain maps `J ⟶ TopRep.resolution' X` agreeing on the augmentation are
-homotopic (`TopRep.ResolutionContraction.homotopy`): an equivariant map into a coinduced term that
-vanishes on the image of the previous differential extends along the next one
+compact group, any two chain maps from `J` into a coinduced resolution `TopRep.resolution' Z`
+agreeing on the augmentation are homotopic (`TopRep.ResolutionContraction.homotopy`), for any
+`Z`: an equivariant map into a coinduced term that vanishes on the image of the previous
+differential extends along the next one
 (`TopRep.ResolutionContraction.desc`), which builds the homotopy degree by degree. Consequently the
 map `Hⁿ(Jᴳ) → Hⁿ(G, X)` on the cohomology of invariants does not depend on the choice of comparison.
 
@@ -43,7 +44,8 @@ The coinduced resolution is itself contracted by evaluation at `1`
 
 A cocycle on a complex built from other resolutions, such as the tensor-induced resolution of an
 open subgroup in Evens' multiplicative transfer, defines a class in continuous cohomology through
-this comparison.
+this comparison; the resulting maps and classes are in
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cohomology`.
 
 ## Main definitions
 
@@ -51,7 +53,7 @@ this comparison.
   topological representations onto the augmentation `X → J⁰`.
 * `TopRep.ResolutionContraction.comparison`: the equivariant comparison map from `J` to the
   shifted coinduced resolution of `X`.
-* `TopRep.ResolutionContraction.homotopy`: two chain maps into the coinduced resolution agreeing
+* `TopRep.ResolutionContraction.homotopy`: two chain maps into a coinduced resolution agreeing
   on the augmentation are homotopic.
 * `TopRep.resolutionContraction`: the contraction of the coinduced resolution by evaluation at `1`.
 
@@ -60,7 +62,8 @@ this comparison.
 * `TopRep.ResolutionContraction.ι_comp_comparison_f_zero`: the comparison lies over the identity
   of `X`, carrying the augmentation `ι` to the constant functions.
 * `TopRep.ResolutionContraction.comparison_f_zero_apply_apply` and
-  `TopRep.ResolutionContraction.comparison_f_succ_apply_apply`: the pointwise formulas.
+  `TopRep.ResolutionContraction.comparison_f_succ_apply_apply`: the pointwise formulas, and
+  `TopRep.ResolutionContraction.d_comparison_f_apply`: commutation with the differentials.
 * `TopRep.ResolutionContraction.homologyMap_eq_homologyMap_comparison`: every chain map over the
   identity of `X` induces the same map on the cohomology of invariants as the comparison.
 * `TopRep.comparison_resolutionContraction`: evaluation at `1` compares the coinduced resolution
@@ -211,9 +214,15 @@ theorem ι_comp_comparison_f_zero : c.ι ≫ c.comparison.f 0 = d X 0 := by
     ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_apply]
   exact c.comparisonF_zero_ι a
 
+/-- The comparison commutes with the differentials, on elements. -/
+theorem d_comparison_f_apply (n : ℕ) (v : (J.X n).V) :
+    (d X (n + 1)).hom ((c.comparison.f n).hom v) =
+      (c.comparison.f (n + 1)).hom ((J.d n (n + 1)).hom v) :=
+  c.d_comparisonF n v
+
 section Homotopy
 
-variable [LocallyCompactSpace G] {Y : TopRep.{max v w} k G}
+variable [LocallyCompactSpace G] {Y Z : TopRep.{max v w} k G}
 
 /-- The extension of an equivariant map `r : Jⁿ ⟶ C(G, Y)` along the differential
 `Jⁿ → Jⁿ⁺¹`: the lift to the coinduced representation of `v ↦ r (hom n v) 1`. When `r` vanishes
@@ -264,27 +273,30 @@ theorem d_comp_desc_succ (n : ℕ) (r : J.X (n + 1) ⟶ coind₁ Y) (hr : J.d n 
         c.desc_apply_one (n + 1) r _
     _ = r.hom v 1 := by rw [h, map_sub, hr', sub_zero]
 
-/-- **A chain map into the coinduced resolution killing the augmentation is null-homotopic**,
-by an equivariant homotopy whose components are built degree by degree with `desc`. -/
-noncomputable def nullHomotopy (e : J ⟶ resolution' X) (he : c.ι ≫ e.f 0 = 0) : Homotopy e 0 :=
-  Homotopy.mkCoinductive e (c.desc (Y := resolutionX X 0) 0 (e.f 0))
+/-- **A chain map into a coinduced resolution killing the augmentation is null-homotopic**,
+by an equivariant homotopy whose components are built degree by degree with `desc`. The target
+is the coinduced resolution of any `Z`, not only of `X`. -/
+noncomputable def nullHomotopy (e : J ⟶ resolution' Z) (he : c.ι ≫ e.f 0 = 0) : Homotopy e 0 :=
+  Homotopy.mkCoinductive e (c.desc (Y := resolutionX Z 0) 0 (e.f 0))
     (c.d_comp_desc_zero _ he).symm
-    (c.desc (Y := resolutionX X 1) 1 (e.f 1 - c.desc 0 (e.f 0) ≫ (resolution' X).d 0 1))
+    (c.desc (Y := resolutionX Z 1) 1 (e.f 1 - c.desc 0 (e.f 0) ≫ (resolution' Z).d 0 1))
     (by
-      rw [c.d_comp_desc_succ (Y := resolutionX X 1) 0 _ ?_, add_sub_cancel]
+      rw [c.d_comp_desc_succ (Y := resolutionX Z 1) 0 _ ?_, add_sub_cancel]
       rw [Preadditive.comp_sub, ← e.comm 0 1, ← Category.assoc,
-        c.d_comp_desc_zero (Y := resolutionX X 0) _ he, sub_self])
-    fun n ⟨f, f', hf⟩ ↦ ⟨c.desc (Y := resolutionX X (n + 2)) (n + 2)
-        (e.f (n + 2) - f' ≫ (resolution' X).d (n + 1) (n + 2)), by
-      rw [c.d_comp_desc_succ (Y := resolutionX X (n + 2)) (n + 1) _ ?_, add_sub_cancel]
+        c.d_comp_desc_zero (Y := resolutionX Z 0) _ he, sub_self])
+    fun n ⟨f, f', hf⟩ ↦ ⟨c.desc (Y := resolutionX Z (n + 2)) (n + 2)
+        (e.f (n + 2) - f' ≫ (resolution' Z).d (n + 1) (n + 2)), by
+      rw [c.d_comp_desc_succ (Y := resolutionX Z (n + 2)) (n + 1) _ ?_, add_sub_cancel]
       rw [Preadditive.comp_sub, ← e.comm (n + 1) (n + 2), ← Category.assoc, hf,
         Preadditive.add_comp, Category.assoc, HomologicalComplex.d_comp_d, Limits.comp_zero,
         zero_add]
       exact sub_self _⟩
 
 /-- **Uniqueness of comparisons up to homotopy.** Two chain maps from `J` to the coinduced
-resolution of `X` that agree on the augmentation `ι` are homotopic. -/
-noncomputable def homotopy (φ ψ : J ⟶ resolution' X) (h : c.ι ≫ φ.f 0 = c.ι ≫ ψ.f 0) :
+resolution of `Z` that agree on the augmentation `ι` are homotopic. Taking `Z = X` gives
+uniqueness of the comparison; other `Z` compare chain maps lying over a coefficient morphism
+`X ⟶ Z`. -/
+noncomputable def homotopy (φ ψ : J ⟶ resolution' Z) (h : c.ι ≫ φ.f 0 = c.ι ≫ ψ.f 0) :
     Homotopy φ ψ :=
   Homotopy.equivSubZero.symm <| c.nullHomotopy (φ - ψ) <| by
     rw [HomologicalComplex.sub_f_apply, Preadditive.comp_sub, h, sub_self]

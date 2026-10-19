@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Chain
 /-!
 # Compression of cubical chains with local coefficients
 
-Let `D` be a `TauCeti.SubspaceCubeDeformation A`: a deformation of every singular cube of `X` into
+Let `D` be a `TauCeti.SubspaceCubeDeformation A ⊤`: a deformation of every singular cube of `X` into
 a subspace `A`, compatible with faces and degeneracies and fixing the cubes of `A`. For every local
 coefficient system `L` on `X`, this file shows that **the inclusion of `A` induces a chain homotopy
 equivalence from the normalized cubical chains of `A` with coefficients in the restriction of `L`
@@ -93,13 +93,14 @@ namespace SubspaceCubeDeformation
 
 section Transport
 
-variable {X : Type*} [TopologicalSpace X] {A : Set X} (D : SubspaceCubeDeformation A)
+variable {X : Type*} [TopologicalSpace X] {A : Set X} (D : SubspaceCubeDeformation A ⊤)
 
 /-- The **transport along the track of the origin** of the singular cube `c`: the class of the
 path traced by the origin of `c` during its deformation into `A`. -/
 def originTransport {m : ℕ} (c : SingularCube X m) :
     FundamentalGroupoid.mk (c 0) ⟶ FundamentalGroupoid.mk ((D.retract c 0 : A) : X) :=
-  FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk ((D.cubeHomotopy c).evalAt 0))
+  FundamentalGroupoid.fromPath
+    (Path.Homotopic.Quotient.mk (((D.cubeHomotopy c).evalAt 0).cast rfl (by simp)))
 
 /-- The edge of the cube `I^(m+1)` along the first coordinate. -/
 private def firstEdge (m : ℕ) : Path (0 : Fin (m + 1) → I) (Fin.cons 1 0) where
@@ -245,7 +246,7 @@ end Transport
 
 section Chains
 
-variable {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (D : SubspaceCubeDeformation A)
+variable {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (D : SubspaceCubeDeformation A ⊤)
   (L : LocalCoefficientSystem.{u, v, w} R X)
 
 /-- Equal cubes, with coefficients transported along corresponding morphisms, are equal
@@ -390,9 +391,9 @@ private theorem ofSubcube_sweep_face_zero_one {m : ℕ} (c : SingularCube X m)
   refine Eq.trans ?_ (TwistedCubicalChain.map_ofCube _ _).symm
   refine TwistedCubicalChain.ofCube_congr L ?_ (map_apply_heq L (congrArg _ ?_)
     (D.eqToHom_comp_pathClass_face_zero_one_heq c) a)
-  · rw [comp_face_id, face_zero_one_sweep]
+  · rw [comp_face_id, face_zero_one_sweep, subtypeVal_comp_retract]
   · rw [← ContinuousMap.comp_apply, comp_face_id, face_zero_one_sweep]
-    rfl
+    simp
 
 /-- The spatial faces of the swept cube are the swept faces. -/
 private theorem ofSubcube_sweep_face_succ {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1))
@@ -537,7 +538,7 @@ end Chains
 
 section ChainComplex
 
-variable {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (D : SubspaceCubeDeformation A)
+variable {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (D : SubspaceCubeDeformation A ⊤)
   (L : LocalCoefficientSystem.{u, v, w} R X)
 
 /-- The retraction onto the cubes of `A`, as a chain map from the normalized cubical chains of `X`
@@ -653,7 +654,7 @@ theorem normalizedTwistedCubicalChainComplexHomotopyEquiv_inv :
 
 /-- **The inclusion of `A` induces a quasi-isomorphism of normalized cubical chains with local
 coefficients.** -/
-theorem quasiIso_normalizedTwistedCubicalChainComplexMap (D : SubspaceCubeDeformation A) :
+theorem quasiIso_normalizedTwistedCubicalChainComplexMap (D : SubspaceCubeDeformation A ⊤) :
     QuasiIso
       (normalizedTwistedCubicalChainComplexMap (X := TopCat.of A) (ContinuousMap.subtypeVal A) L) :=
   inferInstanceAs (QuasiIso (D.normalizedTwistedCubicalChainComplexHomotopyEquiv L).hom)
@@ -674,7 +675,7 @@ theorem quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomoto
     (L : LocalCoefficientSystem.{u, v, w} R X) :
     QuasiIso
       (normalizedTwistedCubicalChainComplexMap (X := TopCat.of A) (ContinuousMap.subtypeVal A) L) :=
-  (nonempty_subspaceCubeDeformation_of_relHomotopyGroup h₀ h).some
+  (nonempty_subspaceCubeDeformation_of_relHomotopyGroup h₀ fun k _ ↦ h k).some
     |>.quasiIso_normalizedTwistedCubicalChainComplexMap L
 
 end TauCeti
