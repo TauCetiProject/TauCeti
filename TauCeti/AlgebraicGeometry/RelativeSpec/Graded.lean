@@ -82,13 +82,7 @@ def gradedRelativeSpecEquiv :
       unitIso := (relativeSpecCounit X).symm
       counitIso := (relativeSpecUnit X).symm
       functor_unitIso_comp V := by
-        -- This is the algebraic triangle identity of `relativeSpecEquiv`, inverted.
-        have h : (affineFunctions X).map ((relativeSpecCounit X).hom.app V) =
-            (relativeSpecUnit X).inv.app _ := by
-          simpa using (Iso.hom_comp_eq_id ((relativeSpecUnit X).app _)).1
-            (affineFunctions_unit_counit X V)
-        rw [Iso.symm_hom, Iso.symm_hom, ← h, ← Functor.map_comp, Iso.inv_hom_id_app]
-        exact (affineFunctions X).map_id V }
+        simp [← affineFunctions_map_relativeSpecCounit_hom_app, ← Functor.map_comp] }
     GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.op
 
 /-- Relative Spec of the direct-sum algebra of a graded quasicoherent algebra, with its grading
