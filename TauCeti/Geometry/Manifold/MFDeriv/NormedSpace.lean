@@ -18,6 +18,8 @@ with `F`, so one vanishes exactly when the other does.
 ## Main results
 
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
+  some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 -/
 
@@ -51,6 +53,13 @@ theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [mvfderiv, h]⟩
   ext u
   simpa [mvfderiv] using congrArg (fun L ↦ L u) h
+
+/-- A vector-valued function whose derivative does not vanish on some tangent vector is
+differentiable there. -/
+theorem mdifferentiableAt_of_mvfderiv_apply_ne_zero {g : M → F} {x : M} {v : TangentSpace I x}
+    (h : mvfderiv I g x v ≠ 0) : MDifferentiableAt I 𝓘(𝕜, F) g x := by
+  by_contra hnd
+  simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hnd] at h
 
 /-- The derivative of `-g` vanishes at `x` if and only if the derivative of `g` does. -/
 @[simp]

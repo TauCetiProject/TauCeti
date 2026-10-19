@@ -282,7 +282,8 @@ theorem evenAutSubgroup_eq_fixingSubgroup (hchar : ringChar F ≠ 2)
     rw [← map_ofNat (algebraMap F E) 2]
     exact (map_ne_zero_iff _ (algebraMap F E).injective).mpr (Ring.two_ne_zero hchar)
   refine le_antisymm ?_ fun ϕ hϕ ↦ ?_
-  · rw [← IntermediateField.le_iff_le, IntermediateField.adjoin_simple_le_iff,
+  · rw [← IntermediateField.le_fixedField_iff_le_fixingSubgroup,
+      IntermediateField.adjoin_simple_le_iff,
       IntermediateField.mem_fixedField_iff]
     intro ϕ hϕ
     rw [mem_evenAutSubgroup] at hϕ

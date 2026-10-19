@@ -9,19 +9,23 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Probability.CDF
 
 /-!
-# Elementary real-measure identities and the squaring map
+# Elementary real-measure identities and maps
 
-This file records elementary identities about measures on the real line. In particular, squaring
-loses the sign of a real number and nothing else, so it determines a measure on the line as soon as
-the measure cannot tell the two signs apart. For a reflection-invariant finite measure, the
-pushforward under squaring is a complete invariant: the square records the mass of intervals
-symmetric about zero, while reflection invariance makes the two complementary tails equal. For a
-measure carried by the nonnegative half-line, squaring is undone by `Real.sqrt`, so the pushforward
-determines the measure outright.
+This file records elementary identities about measures on the real line. The absolute-value map
+folds the negative half-line onto the positive half-line. Squaring loses the sign of a real number
+and nothing else, so it determines a measure on the line as soon as the measure cannot tell the two
+signs apart. For a reflection-invariant finite measure, the pushforward under squaring is a complete
+invariant: the square records the mass of intervals symmetric about zero, while reflection
+invariance makes the two complementary tails equal. For a measure carried by the nonnegative
+half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the measure outright.
 
 ## Main results
 
 * `TauCeti.volume_Ioc_inter_Ioo_zero_one` — the portion of an interval in the open unit interval;
+* `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
+  absolute value into the two half-lines;
+* `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
+  at zero;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -31,6 +35,37 @@ determines the measure outright.
 public section
 
 open MeasureTheory ProbabilityTheory Set
+
+private theorem measurable_abs : Measurable fun x : ℝ => |x| := continuous_abs.measurable
+
+namespace MeasureTheory.Measure
+
+/-- **The folded law.** Folding keeps the nonnegative half of `μ` in place and reflects its
+negative half onto the positive half-line. -/
+theorem map_abs_eq_restrict_add_restrict (μ : Measure ℝ) :
+    μ.map (|·|) = μ.restrict (Ici 0) + μ.neg.restrict (Ioi 0) := by
+  ext s hs
+  have hpre : (|·|) ⁻¹' s = (s ∩ Ici 0) ∪ (-s ∩ Iio 0) := by
+    ext x
+    rcases le_or_gt 0 x with hx | hx
+    · simp [hx, abs_of_nonneg hx, not_lt.2 hx]
+    · simp [hx, abs_of_neg hx, not_le.2 hx]
+  have hdisj : Disjoint (s ∩ Ici 0) (-s ∩ Iio 0) :=
+    disjoint_left.2 fun x hx hx' => not_le.2 hx'.2 hx.2
+  rw [Measure.map_apply measurable_abs hs, hpre,
+    measure_union hdisj (hs.neg.inter measurableSet_Iio), Measure.add_apply,
+    Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.neg_apply,
+    (by ext x; simp : -(s ∩ Ioi (0 : ℝ)) = -s ∩ Iio 0)]
+
+/-- The atom of the folded law at `0` is the atom of `μ` at `0`. -/
+@[simp]
+theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
+  rw [Measure.map_apply measurable_abs (measurableSet_singleton 0)]
+  congr 1
+  ext x
+  simp
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 

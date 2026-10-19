@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 public import Mathlib.GroupTheory.Coset.Defs
-public import Mathlib.CategoryTheory.Sites.LocallySurjective
+public import Mathlib.CategoryTheory.Sites.LocallyBijective
 
 /-!
 # Fppf homogeneous quotients
@@ -16,7 +16,8 @@ public import Mathlib.CategoryTheory.Sites.LocallySurjective
 For an affine group `G` and a closed subgroup `N`, the fppf homogeneous quotient `G/N`
 is the sheafification of the presheaf of left cosets `A ↦ G(A)/N(A)`. No normality is
 required. Maps from this sheaf to an fppf sheaf are exactly natural maps from `G`
-that are invariant under right multiplication by `N`.
+that are invariant under right multiplication by `N`. Such a map descends to an isomorphism
+`G/N ≅ F` when it is locally surjective and its fibres are exactly the left cosets of `N`.
 
 The construction admits nonreduced groups and value algebras, over any commutative base
 ring. It supplies the quotient sheaf whose representability as a homogeneous space can
@@ -321,6 +322,50 @@ theorem fppfHomogeneousQuotientHomEquiv_symm_apply
         ((fppfHomogeneousQuotientHomEquiv H I F).symm ⟨f, hf⟩).hom = f := by
   exact (fppfHomogeneousQuotientHomEquiv_apply H I F _).symm.trans
     (congrArg Subtype.val ((fppfHomogeneousQuotientHomEquiv H I F).apply_symm_apply ⟨f, hf⟩))
+
+/-- **Recognising a homogeneous quotient.** A natural map from `G` to an fppf sheaf `F` which is
+invariant under right multiplication by `N`, locally surjective, and whose fibres are exactly the
+left cosets of `N`, descends to an isomorphism `G/N ≅ F`. -/
+theorem isIso_fppfHomogeneousQuotientHomEquiv_symm
+    (F : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1)))
+    (f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ F.obj)
+    (hf : ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+      (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+      (n : quotientPointsSubgroup H I A.unop.unop),
+      f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g))
+    [Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R) f]
+    (hcoset : ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+      (g g' : HopfAlgebra.points (R := R) (H := H) A.unop.unop),
+      f.app A (ULift.up g) = f.app A (ULift.up g') →
+        g⁻¹ * g' ∈ quotientPointsSubgroup H I A.unop.unop) :
+    IsIso ((fppfHomogeneousQuotientHomEquiv H I F).symm ⟨f, hf⟩) := by
+  let J := CommAlgCat.fppfTopology R
+  let e := homogeneousQuotientPresheafHomEquiv H I F.obj
+  let ψ := e.symm ⟨f, hf⟩
+  have hψ : homogeneousQuotientPresheafProjection H I ≫ ψ = f := by
+    simpa only [e, homogeneousQuotientPresheafHomEquiv_apply] using
+      congrArg Subtype.val (e.apply_symm_apply ⟨f, hf⟩)
+  -- On the coset presheaf the descended map is injective: its fibres are exactly the cosets.
+  have hinj : Presheaf.IsLocallyInjective J ψ := by
+    refine Presheaf.isLocallyInjective_of_injective J ψ fun A q₁ q₂ hq ↦ ?_
+    obtain ⟨x₁, rfl⟩ := homogeneousQuotientPresheafProjection_surjective H I A q₁
+    obtain ⟨x₂, rfl⟩ := homogeneousQuotientPresheafProjection_surjective H I A q₂
+    have h := (congrArg (fun α ↦ α.app A x₁) hψ).symm.trans
+      (hq.trans (congrArg (fun α ↦ α.app A x₂) hψ))
+    exact (homogeneousQuotientPresheafProjection_eq_iff H I A _ _).mpr
+      (hcoset A x₁.down x₂.down h)
+  -- The descended sheaf map restricts to `ψ` along the unit of sheafification.
+  have hfac : (toSheafify J (homogeneousQuotientPresheaf H I) ≫
+      eqToHom (fppfHomogeneousQuotient_obj H I).symm) ≫
+        ((fppfHomogeneousQuotientHomEquiv H I F).symm ⟨f, hf⟩).hom = ψ := by
+    apply homogeneousQuotientPresheaf_hom_ext
+    rw [hψ, ← Category.assoc, ← fppfHomogeneousQuotientProjection_def,
+      fppfHomogeneousQuotientHomEquiv_symm_apply]
+  refine (GrothendieckTopology.W_sheafToPresheaf_map_iff_isIso J _).mp
+    ((J.W_iff_isLocallyBijective _).mpr ⟨?_, ?_⟩)
+  · exact Presheaf.isLocallyInjective_of_isLocallyInjective_of_isLocallySurjective_fac J ψ hfac
+  · exact Presheaf.isLocallySurjective_of_isLocallySurjective_fac J
+      (fppfHomogeneousQuotientHomEquiv_symm_apply H I F f hf)
 
 end
 

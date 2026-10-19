@@ -11,6 +11,9 @@ public import Mathlib.CategoryTheory.Sites.InducedTopology
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+public import Mathlib.RingTheory.RingHom.FinitePresentation
+import Mathlib.RingTheory.FiniteStability
 
 /-!
 # The affine fppf site
@@ -31,6 +34,8 @@ The induced affine topology is subcanonical by full faithfulness of the relative
   among schemes over `Spec R`, so a sieve is an affine fppf cover exactly when its image is.
 * `TauCeti.CommAlgCat.generate_singleton_op_mem_fppfTopology`: a faithfully flat, finitely
   presented algebra map is an affine fppf cover.
+* `AlgHom.exists_faithfullyFlat_lift`: points lift along a faithfully flat, finitely presented
+  algebra map after a faithfully flat, finitely presented extension of the value algebra.
 
 This advances the cross-cutting sheaves-and-descent prerequisite in the ReductiveGroups roadmap.
 -/
@@ -38,6 +43,7 @@ This advances the cross-cutting sheaves-and-descent prerequisite in the Reductiv
 public section
 
 open CategoryTheory AlgebraicGeometry
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -140,3 +146,45 @@ theorem generate_singleton_op_mem_fppfTopology {R : Type u} [CommRing R]
 end CommAlgCat
 
 end TauCeti
+
+namespace AlgHom
+
+open TauCeti
+
+universe u
+
+/-- **Points lift fppf locally along a faithfully flat, finitely presented algebra map.** If
+`f : B →ₐ[R] K` is faithfully flat and of finite presentation, then every `A`-valued point `y` of
+`Spec B` lifts to a point of `Spec K` after the faithfully flat, finitely presented base change
+`A ⟶ A ⊗[B] K`. -/
+theorem exists_faithfullyFlat_lift {R B K : Type u} [CommRing R] [CommRing B] [CommRing K]
+    [Algebra R B] [Algebra R K] (f : B →ₐ[R] K) (hflat : f.toRingHom.FaithfullyFlat)
+    (hfp : f.toRingHom.FinitePresentation) {A : CommAlgCat.{u} R} (y : B →ₐ[R] A) :
+    ∃ (A' : CommAlgCat.{u} R) (φ : A ⟶ A') (z : K →ₐ[R] A'),
+      φ.hom.toRingHom.FaithfullyFlat ∧ φ.hom.toRingHom.FinitePresentation ∧
+        z.comp f = φ.hom.comp y := by
+  let _ : Algebra B A := y.toRingHom.toAlgebra
+  let _ : Algebra B K := f.toRingHom.toAlgebra
+  have : Module.FaithfullyFlat B K := hflat
+  have : Algebra.FinitePresentation B K := hfp
+  let _ : Algebra R (A ⊗[B] K) :=
+    ((algebraMap A (A ⊗[B] K)).comp (algebraMap R A)).toAlgebra
+  -- The pushout square `B ⟶ A ⟶ A ⊗[B] K ⟵ K ⟵ B`, evaluated at `b`.
+  have hsq (b : B) : (1 : A) ⊗ₜ[B] f b = y b ⊗ₜ[B] (1 : K) :=
+    (RingHom.congr_fun (Algebra.TensorProduct.includeLeftRingHom_comp_algebraMap
+      (R := B) (A := A) (B := K)) b).symm
+  let φ : A →ₐ[R] A ⊗[B] K :=
+    { Algebra.TensorProduct.includeLeftRingHom with commutes' := fun _ ↦ rfl }
+  let z : K →ₐ[R] A ⊗[B] K :=
+    { Algebra.TensorProduct.includeRight.toRingHom with
+      commutes' := fun r ↦ by
+        -- Unfold `includeRight` and the `R`-algebra structure on `A ⊗[B] K`, which was defined
+        -- through `includeLeft`, to their values on pure tensors.
+        change (1 : A) ⊗ₜ[B] algebraMap R K r = algebraMap R A r ⊗ₜ[B] (1 : K)
+        rw [← f.commutes r, hsq, AlgHom.commutes] }
+  refine ⟨CommAlgCat.of R (A ⊗[B] K), CommAlgCat.ofHom φ, z, ?_, ?_, ?_⟩
+  · exact RingHom.faithfullyFlat_algebraMap_iff.2 inferInstance
+  · exact RingHom.finitePresentation_algebraMap.2 inferInstance
+  · exact AlgHom.ext hsq
+
+end AlgHom
