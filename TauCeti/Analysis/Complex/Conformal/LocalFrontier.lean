@@ -386,48 +386,51 @@ theorem isPreconnected_far_halfStripExterior (ρ : ℝ) (c b : ℂ) :
   have hHd : Hd ⊆ D := fun ζ (hζ : ζ.im < -|R|) => ⟨by
     have : |R| < |ζ.im| := by linarith [neg_le_abs ζ.im]
     linarith [abs_im_le_norm ζ], Or.inr fun h => by linarith [h.1]⟩
+  have hleft : -|R| - 1 < -|R| := by linarith
   have hB : IsPreconnected (L ∪ Hu ∪ Hd) := by
     refine ((convex_halfSpace_re_lt _).isPreconnected.union' ?_
       (convex_halfSpace_im_gt _).isPreconnected).union' ?_ (convex_halfSpace_im_lt _).isPreconnected
     · exact ⟨⟨-|R| - 1, |R| + Real.pi + 1⟩, by simp, by simp⟩
-    · exact ⟨⟨-|R| - 1, -|R| - 1⟩, Or.inl (show (-|R| - 1 : ℝ) < -|R| by linarith),
-        show (-|R| - 1 : ℝ) < -|R| by linarith⟩
+    · exact ⟨⟨-|R| - 1, -|R| - 1⟩, Or.inl hleft, hleft⟩
   -- every point of `D` is joined to them by a horizontal or vertical ray in `D`
   have hray (y : ℂ) (hy : y ∈ D) : ∃ C : Set ℂ, Convex ℝ C ∧ y ∈ C ∧ C ⊆ D ∧
       (C ∩ (L ∪ Hu ∪ Hd)).Nonempty := by
     rcases hy.2 with hre | him
     · -- to the left, into `L`
+      have hle : y.re - |R| - 1 ≤ y.re := by linarith
+      have hlt : y.re - |R| - 1 < -|R| := by linarith
       refine ⟨{ζ | ζ.re ≤ y.re} ∩ {ζ | y.im ≤ ζ.im} ∩ {ζ | ζ.im ≤ y.im},
         ((convex_halfSpace_re_le _).inter (convex_halfSpace_im_ge _)).inter
           (convex_halfSpace_im_le _), by simp,
         fun ζ ⟨⟨(h₁ : _ ≤ _), (h₂ : _ ≤ _)⟩, (h₃ : _ ≤ _)⟩ =>
           ⟨hnorm hy ?_ ?_, Or.inl (h₁.trans_lt hre)⟩,
-        ⟨⟨y.re - |R| - 1, y.im⟩, ⟨⟨show y.re - |R| - 1 ≤ y.re by linarith, by simp⟩, by simp⟩,
-          Or.inl (Or.inl (show y.re - |R| - 1 < -|R| by linarith))⟩⟩
+        ⟨⟨y.re - |R| - 1, y.im⟩, ⟨⟨hle, by simp⟩, by simp⟩, Or.inl (Or.inl hlt)⟩⟩
       · rw [abs_of_neg hre, abs_of_neg (h₁.trans_lt hre)]
         exact neg_le_neg h₁
       · rw [le_antisymm h₃ h₂]
     rw [mem_Icc, not_and_or, not_le, not_le] at him
     rcases him with him | him
     · -- downwards, into `Hd`
+      have hle : y.im - |R| - 1 ≤ y.im := by linarith
+      have hlt : y.im - |R| - 1 < -|R| := by linarith
       refine ⟨{ζ | y.re ≤ ζ.re} ∩ {ζ | ζ.re ≤ y.re} ∩ {ζ | ζ.im ≤ y.im},
         ((convex_halfSpace_re_ge _).inter (convex_halfSpace_re_le _)).inter
           (convex_halfSpace_im_le _), by simp,
         fun ζ ⟨⟨(h₁ : _ ≤ _), (h₂ : _ ≤ _)⟩, (h₃ : _ ≤ _)⟩ =>
           ⟨hnorm hy ?_ ?_, Or.inr fun h => by linarith [h.1]⟩,
-        ⟨⟨y.re, y.im - |R| - 1⟩, ⟨⟨by simp, by simp⟩, show y.im - |R| - 1 ≤ y.im by linarith⟩,
-          Or.inr (show y.im - |R| - 1 < -|R| by linarith)⟩⟩
+        ⟨⟨y.re, y.im - |R| - 1⟩, ⟨⟨by simp, by simp⟩, hle⟩, Or.inr hlt⟩⟩
       · rw [le_antisymm h₂ h₁]
       · rw [abs_of_neg him, abs_of_neg (h₃.trans_lt him)]
         exact neg_le_neg h₃
     · -- upwards, into `Hu`
+      have hle : y.im ≤ y.im + |R| + 1 := by linarith
+      have hlt : |R| + Real.pi < y.im + |R| + 1 := by linarith
       refine ⟨{ζ | y.re ≤ ζ.re} ∩ {ζ | ζ.re ≤ y.re} ∩ {ζ | y.im ≤ ζ.im},
         ((convex_halfSpace_re_ge _).inter (convex_halfSpace_re_le _)).inter
           (convex_halfSpace_im_ge _), by simp,
         fun ζ ⟨⟨(h₁ : _ ≤ _), (h₂ : _ ≤ _)⟩, (h₃ : _ ≤ _)⟩ =>
           ⟨hnorm hy ?_ ?_, Or.inr fun h => by linarith [h.2]⟩,
-        ⟨⟨y.re, y.im + |R| + 1⟩, ⟨⟨by simp, by simp⟩, show y.im ≤ y.im + |R| + 1 by linarith⟩,
-          Or.inl (Or.inr (show |R| + Real.pi < y.im + |R| + 1 by linarith))⟩⟩
+        ⟨⟨y.re, y.im + |R| + 1⟩, ⟨⟨by simp, by simp⟩, hle⟩, Or.inl (Or.inr hlt)⟩⟩
       · rw [le_antisymm h₂ h₁]
       · rw [abs_of_pos (by linarith), abs_of_pos (by linarith)]
         exact h₃
@@ -435,7 +438,7 @@ theorem isPreconnected_far_halfStripExterior (ρ : ℝ) (c b : ℂ) :
     refine isPreconnected_of_forall ⟨-|R| - 1, 0⟩ fun y hy => ?_
     obtain ⟨C, hC, hyC, hCD, hCB⟩ := hray y hy
     exact ⟨C ∪ (L ∪ Hu ∪ Hd), union_subset hCD (union_subset (union_subset hL hHu) hHd),
-      Or.inr (Or.inl (Or.inl (show -|R| - 1 < -|R| by linarith))), Or.inl hyC,
+      Or.inr (Or.inl (Or.inl hleft)), Or.inl hyC,
       hC.isPreconnected.union' hCB hB⟩
   -- then transport `D` by the affine map `ζ ↦ c + b * ζ`
   convert hD.image (fun ζ => c + b * ζ) (by fun_prop) using 1

@@ -33,12 +33,9 @@ opening `2 * π`, with turning exponent `-3`, in the Schwarz--Christoffel formul
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`, so they apply to
 polygonal domains with several ends, one of which has opening `2 * π`.
 
-Unlike a half-strip or a sector, the exterior of a half-strip has no elementary straightening
-coordinate that is real on its two sides, so reflection does not show that `x` is an isolated
-zero of `g`; this is a hypothesis here.  It holds, for instance, when `g` has only finitely many
-real zeros.  The image is identified by a crosscut argument: `f` is bounded on a small semicircle
-about `x`, and the far part of the exterior of the half-strip is preconnected
-(`TauCeti.isPreconnected_far_halfStripExterior`), so its preimage stays inside the semicircle.
+That `x` is an isolated zero of `g` is an explicit hypothesis, in the form produced by
+`TauCeti.eventually_ne_zero_of_real_on_axis`; it holds, for instance, when `g` has only finitely
+many real zeros.
 
 ## Main results
 
