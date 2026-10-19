@@ -298,9 +298,9 @@ theorem divergence_smul (c : ℝ) (X : (x : M) → TangentSpace I x) (x : M)
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c hX,
     ContinuousLinearMap.toLinearMap_smul]
 
-/-- Product rule for the divergence: at a point where `f` and `X` are differentiable,
-`div (f • X) = f * div X + df(X)`. This is the pointwise input for integrating the
-Laplace--Beltrami operator by parts. -/
+/-- Product rule for the divergence at a point where `f` and `X` are differentiable:
+`divergence I (f • X) x = f x * divergence I X x + mvfderiv I f x (X x)`.
+This is the pointwise input for integrating the Laplace--Beltrami operator by parts. -/
 theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I x) (x : M)
     (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x) :
@@ -311,8 +311,7 @@ theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I
   rw [ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul, map_add,
     map_smul]
   simp only [ContinuousLinearMap.smulRight, LinearMap.trace_smulRight, smul_eq_mul, divergence]
-  -- The coercion from a continuous linear map to its linear map is its `toLinearMap` field.
-  rfl
+  simp [mvfderiv]
 
 /-- The Hessian of a constant function is zero. -/
 @[simp]
