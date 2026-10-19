@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
 /-!
 # The simplicial circle as `Δ[1]/∂Δ[1]`
@@ -19,6 +20,9 @@ the pushout of the boundary inclusion `∂Δ[1] ⟶ Δ[1]` along the collapse `�
 interval with its boundary collapsed to the basepoint.
 
 Like Mathlib's `SSet.S1`, everything in this file lives in universe `0`.
+
+The final section equips the interval and circle with their distinguished vertices.  It gives
+the quotient as a based map and packages its universal property directly in `PointedSSet`.
 -/
 
 public section
@@ -98,5 +102,87 @@ lemma isPushout : IsPushout (SSet.boundary 1).ι boundaryCollapse quotient basep
     (fun _ _ hm _ ↦ hom_ext (by simpa using hm))⟩
 
 end SSet.S1
+
+namespace PointedSSet
+
+/-- The simplicial interval pointed at its zeroth vertex. Its underlying simplicial set is
+definitionally `Δ[1]`. -/
+noncomputable abbrev interval : PointedSSet.{0} :=
+  Under.mk (SSet.stdSimplex.δ 0)
+
+/-- The simplicial circle pointed at the image of either endpoint of the interval. Its underlying
+simplicial set is definitionally Mathlib's `SSet.S1`. -/
+noncomputable abbrev circle : PointedSSet.{0} :=
+  Under.mk SSet.S1.basepoint
+
+@[simp]
+lemma interval_hom : interval.hom = SSet.stdSimplex.δ 0 := (rfl)
+
+@[simp]
+lemma circle_right : circle.right = SSet.S1 := (rfl)
+
+@[simp]
+lemma circle_hom : circle.hom = SSet.S1.basepoint := (rfl)
+
+/-- The quotient from the pointed interval to the pointed simplicial circle. -/
+noncomputable def circleQuotient : interval ⟶ circle :=
+  Under.homMk SSet.S1.quotient (SSet.S1.δ_quotient 0)
+
+@[simp]
+lemma circleQuotient_right : circleQuotient.right = SSet.S1.quotient := (rfl)
+
+/-- A based map from the interval which also sends its other endpoint to the basepoint descends
+to a based map from the simplicial circle. -/
+noncomputable def circleDesc {X : PointedSSet.{0}} (f : interval ⟶ X)
+    (h : SSet.stdSimplex.δ 1 ≫ f.right = X.hom) : circle ⟶ X :=
+  Under.homMk (SSet.S1.desc f.right ((Under.w f).trans h.symm)) (by
+    -- Expose the underlying circle so that the unpointed quotient computation applies.
+    change SSet.S1.basepoint ≫ SSet.S1.desc f.right _ = X.hom
+    rw [SSet.S1.basepoint, Category.assoc, SSet.S1.quotient_desc]
+    exact Under.w f)
+
+/-- Descending a based interval map and then pulling back along the circle quotient recovers the
+original map. -/
+@[simp]
+lemma circleQuotient_circleDesc {X : PointedSSet.{0}} (f : interval ⟶ X)
+    (h : SSet.stdSimplex.δ 1 ≫ f.right = X.hom) :
+    circleQuotient ≫ circleDesc f h = f := by
+  apply Under.UnderMorphism.ext
+  -- Reduce the based maps to the universal property of the underlying circle quotient.
+  change SSet.S1.quotient ≫ SSet.S1.desc f.right _ = f.right
+  exact SSet.S1.quotient_desc _ _
+
+/-- Based maps out of the simplicial circle are determined by their pullback to the pointed
+interval. -/
+@[ext]
+lemma circleHom_ext {X : PointedSSet.{0}} {f g : circle ⟶ X}
+    (h : circleQuotient ≫ f = circleQuotient ≫ g) : f = g := by
+  apply Under.UnderMorphism.ext
+  apply SSet.S1.hom_ext
+  exact congrArg Under.Hom.right h
+
+/-- Based maps from the simplicial circle are equivalent to based maps from the interval which
+send the remaining endpoint to the basepoint. -/
+noncomputable def circleHomEquiv (X : PointedSSet.{0}) :
+    (circle ⟶ X) ≃
+      {f : interval ⟶ X // SSet.stdSimplex.δ 1 ≫ f.right = X.hom} where
+  toFun f := ⟨circleQuotient ≫ f, by
+    -- Expose the underlying quotient before using the second-endpoint equation.
+    change SSet.stdSimplex.δ 1 ≫ SSet.S1.quotient ≫ f.right = X.hom
+    simpa only [← Category.assoc, SSet.S1.δ_quotient, circle_hom] using Under.w f⟩
+  invFun f := circleDesc f.1 f.2
+  left_inv f := circleHom_ext (circleQuotient_circleDesc _ _)
+  right_inv f := Subtype.ext (circleQuotient_circleDesc _ _)
+
+@[simp]
+lemma circleHomEquiv_apply (X : PointedSSet.{0}) (f : circle ⟶ X) :
+    (circleHomEquiv X f).1 = circleQuotient ≫ f := (rfl)
+
+@[simp]
+lemma circleHomEquiv_symm_apply (X : PointedSSet.{0})
+    (f : {f : interval ⟶ X // SSet.stdSimplex.δ 1 ≫ f.right = X.hom}) :
+    (circleHomEquiv X).symm f = circleDesc f.1 f.2 := (rfl)
+
+end PointedSSet
 
 end TauCeti
