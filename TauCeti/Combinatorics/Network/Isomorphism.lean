@@ -155,13 +155,11 @@ theorem symm_vertexEquiv_apply (e : N ≃ₙ N') (x : W) :
   (rfl)
 
 /-- Applying the inverse vertex equivalence after the forward one fixes a vertex. -/
-@[simp]
 theorem symm_vertexEquiv_apply_vertexEquiv (e : N ≃ₙ N') (x : V) :
     e.symm.vertexEquiv (e.vertexEquiv x) = x := by
   simp
 
 /-- Applying the forward vertex equivalence after the inverse one fixes a vertex. -/
-@[simp]
 theorem vertexEquiv_apply_symm_vertexEquiv (e : N ≃ₙ N') (x : W) :
     e.vertexEquiv (e.symm.vertexEquiv x) = x := by
   simp
