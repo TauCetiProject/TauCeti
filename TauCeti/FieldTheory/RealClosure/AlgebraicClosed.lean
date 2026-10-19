@@ -18,8 +18,8 @@ then proves algebraic closedness of that square-closed field. In particular,
 `isAlgClosed_quadraticAlgebra` proves that `R[i] = QuadraticAlgebra R (-1) 0` is
 algebraically closed. `Polynomial.natDegree_le_two_of_irreducible` bounds irreducible degrees
 by two; the polynomial IVT development uses this bound.
-Open `scoped TauCeti.RealClosure` to enable the field and algebraic-closedness
-instances on this quadratic algebra.
+Open `scoped TauCeti.RealClosure` to enable the algebraic-closedness instance on this
+quadratic algebra.
 
 The proof puts finite extensions inside a finite normal closure. The 2-group argument
 then applies to the Galois group over a square-closed intermediate field.

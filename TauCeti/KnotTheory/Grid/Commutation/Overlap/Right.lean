@@ -46,6 +46,8 @@ The two subcases give different decomposition shapes:
 * `TauCeti.GridRectanglePentagonDecomposition.isRecut_recutRightEqRightFirst`
   (and the `...Second` analogue): both promotions retain the recut relation after
   forgetting the pentagon turn row.
+* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightSecond_inj`: the
+  second promotion determines the original decomposition.
 * `TauCeti.GridRectanglePentagonDecomposition.coveredSquares_union_recutRightEqRightFirst`
   (and the `...Second` analogue): both promotions cover the original region.
 * `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightFirst_rectangle_geometry`
@@ -89,11 +91,11 @@ noncomputable def recutRightEqRightFirst
       D.pentagon.right) :
     GridPentagonRectangleDecomposition a s x z :=
   { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-    pentagon := GridPentagonBetween.ofRightEq
+    first := GridPentagonBetween.ofRightEq
       (D.recutOfIsEmpty hone hrectangle hpentagon).first
       (hfirst.trans D.pentagon.right_eq)
       (D.turn_mem_recut_first_of_right_eq_right hcommon hone hrectangle hpentagon hfirst)
-    rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second }
+    second := (D.recutOfIsEmpty hone hrectangle hpentagon).second }
 
 /-- Unfolding of `recutRightEqRightFirst`. This is the private `rfl` core of the
 characterization lemmas below: since the definition is not `@[expose]`d, an exported proof
@@ -108,12 +110,12 @@ private theorem recutRightEqRightFirst_unfold
       D.pentagon.right) :
     D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst =
       { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-        pentagon := GridPentagonBetween.ofRightEq
+        first := GridPentagonBetween.ofRightEq
           (D.recutOfIsEmpty hone hrectangle hpentagon).first
           (hfirst.trans D.pentagon.right_eq)
           (D.turn_mem_recut_first_of_right_eq_right hcommon hone hrectangle hpentagon
             hfirst)
-        rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
+        second := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
 
 /-- The middle grid state of the first promotion is the middle grid state of the underlying
 recut. -/
@@ -277,8 +279,8 @@ noncomputable def recutRightEqRightSecond
       D.pentagon.right) :
     GridRectanglePentagonDecomposition a s x z :=
   { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-    rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).first
-    pentagon := GridPentagonBetween.ofRightEq
+    first := (D.recutOfIsEmpty hone hrectangle hpentagon).first
+    second := GridPentagonBetween.ofRightEq
       (D.recutOfIsEmpty hone hrectangle hpentagon).second
       (hsecond.trans D.pentagon.right_eq)
       (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon hsecond) }
@@ -296,8 +298,8 @@ private theorem recutRightEqRightSecond_unfold
       D.pentagon.right) :
     D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond =
       { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-        rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).first
-        pentagon := GridPentagonBetween.ofRightEq
+        first := (D.recutOfIsEmpty hone hrectangle hpentagon).first
+        second := GridPentagonBetween.ofRightEq
           (D.recutOfIsEmpty hone hrectangle hpentagon).second
           (hsecond.trans D.pentagon.right_eq)
           (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon
@@ -476,6 +478,34 @@ theorem isRecut_recutRightEqRightFirst
   rw [D.recutRightEqRightFirst_toRectangleDecomposition hcommon hone hrectangle hpentagon hfirst]
   exact D.isRecut_recutOfIsEmpty hone hrectangle hpentagon
 
+/-- Any pentagon--rectangle recut of an empty common-terminal-side rectangle--pentagon domain
+is its first promotion. In particular, the first underlying recut rectangle inherits the
+pentagon's terminal side. -/
+theorem exists_recutRightEqRightFirst_eq_of_isRecut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hr : D.rectangle.IsEmpty) (hp : D.pentagon.IsEmpty)
+    (hrecut : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+    ∃ hfirst : (D.recutOfIsEmpty hone hr hp).first.right = D.pentagon.right,
+      D.recutRightEqRightFirst hcommon hone hr hp hfirst = E := by
+  have hf : D.toRectangleDecomposition.first.IsEmpty := by
+    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_first_toGridRectangle] using hr
+  have hs : D.toRectangleDecomposition.second.IsEmpty := by
+    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle] using hp
+  have heq := (D.toRectangleDecomposition.existsUnique_isRecut hone hf hs).unique
+    (D.isRecut_recutOfIsEmpty hone hr hp) hrecut
+  have hfirst : (D.recutOfIsEmpty hone hr hp).first.right = D.pentagon.right := by
+    rw [heq]
+    simp [E.pentagon.right_eq, D.pentagon.right_eq]
+  refine ⟨hfirst, ?_⟩
+  apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
+  exact (D.toRectangleDecomposition.existsUnique_isRecut hone hf hs).unique
+    (D.isRecut_recutRightEqRightFirst _ _ _ _ _) hrecut
+
 /-- The pentagon promoted from the first recut rectangle remains empty. -/
 @[simp]
 theorem isEmpty_pentagon_recutRightEqRightFirst
@@ -585,6 +615,54 @@ theorem isRecut_recutRightEqRightSecond
         hrectangle hpentagon hsecond).toRectangleDecomposition := by
   rw [D.recutRightEqRightSecond_toRectangleDecomposition hcommon hone hrectangle hpentagon hsecond]
   exact D.isRecut_recutOfIsEmpty hone hrectangle hpentagon
+
+/-- The terminal-side second-rectangle promotion does not identify distinct terms: equality
+of the promoted recuts is equivalent to equality of the original decompositions. -/
+@[simp]
+theorem recutRightEqRightSecond_inj
+    (D E : GridRectanglePentagonDecomposition a s x z)
+    (hcommonD : D.rectangle.right = D.pentagon.right)
+    (hcommonE : E.rectangle.right = E.pentagon.right)
+    (honeD : D.toRectangleDecomposition.HasOneCommonSide)
+    (honeE : E.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangleD : D.rectangle.IsEmpty) (hpentagonD : D.pentagon.IsEmpty)
+    (hrectangleE : E.rectangle.IsEmpty) (hpentagonE : E.pentagon.IsEmpty)
+    (hsecondD : (D.recutOfIsEmpty honeD hrectangleD hpentagonD).second.right =
+      D.pentagon.right)
+    (hsecondE : (E.recutOfIsEmpty honeE hrectangleE hpentagonE).second.right =
+      E.pentagon.right) :
+    D.recutRightEqRightSecond hcommonD honeD hrectangleD hpentagonD hsecondD =
+        E.recutRightEqRightSecond hcommonE honeE hrectangleE hpentagonE hsecondE ↔ D = E := by
+  constructor
+  · intro h
+    have hD := D.isRecut_recutRightEqRightSecond
+      hcommonD honeD hrectangleD hpentagonD hsecondD
+    have hE := E.isRecut_recutRightEqRightSecond
+      hcommonE honeE hrectangleE hpentagonE hsecondE
+    rw [← h] at hE
+    have hfirstD : D.toRectangleDecomposition.first.IsEmpty := by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        toRectangleDecomposition_first_toGridRectangle] using hrectangleD
+    have hlastD : D.toRectangleDecomposition.second.IsEmpty := by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle]
+        using hpentagonD
+    have hfirstE : E.toRectangleDecomposition.first.IsEmpty := by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        toRectangleDecomposition_first_toGridRectangle] using hrectangleE
+    have hlastE : E.toRectangleDecomposition.second.IsEmpty := by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle]
+        using hpentagonE
+    have hbackD := hD.symm honeD hfirstD hlastD
+    have hbackE := hE.symm honeE hfirstE hlastE
+    have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
+      (D.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
+    apply toRectangleDecomposition_injective
+    exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
+      hD.isEmpty_first hD.isEmpty_second).unique hbackD hbackE
+  · rintro rfl
+    rfl
 
 /-- The first rectangle in the second-branch promotion remains empty. -/
 @[simp]

@@ -59,26 +59,26 @@ from the empty set, transported to the full group of invertible fractional ideal
 noncomputable def unramifiedArtinHom :
     (FractionalIdeal (𝓞 K)⁰ K)ˣ →* (L ≃ₐ[K] L) :=
   (artinHomAway (L := L) hab ∅ (fun v _ Q _ _ ↦ hur v Q)).comp
-    idealsAwayEmptyEquiv.symm.toMonoidHom
+    (idealsAwayEmptyEquiv K).symm.toMonoidHom
 
 /-- The unrestricted Artin map is the Artin map away from the empty set under the canonical
 equivalence of their domains. -/
 theorem unramifiedArtinHom_apply (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     unramifiedArtinHom (L := L) hab hur I =
       artinHomAway (L := L) hab ∅ (fun v _ Q _ _ ↦ hur v Q)
-        (idealsAwayEmptyEquiv.symm I) :=
+        ((idealsAwayEmptyEquiv K).symm I) :=
   (rfl)
 
 /-- **The unrestricted Artin map is the product of local Artin automorphisms.** The exponent at a
 finite prime is its multiplicity in the fractional ideal. -/
 theorem unramifiedArtinHom_apply_eq_finprod (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     unramifiedArtinHom (L := L) hab hur I =
-      letI := isMulCommutative_galoisGroup_of_commute hab
+      letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
       ∏ᶠ v : HeightOneSpectrum (𝓞 K),
         artinElement hab v.asIdeal (hur v) ^
           FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
   rw [unramifiedArtinHom_apply, artinHomAway_apply]
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   rw [coe_idealsAwayEmptyEquiv_symm_apply]
   apply finprod_congr
   intro v
@@ -90,15 +90,15 @@ theorem unramifiedArtinHom_apply_prime (v : HeightOneSpectrum (𝓞 K))
     (σ : L ≃ₐ[K] L) (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     unramifiedArtinHom (L := L) hab hur (v.unitOfPrime K) = σ := by
   rw [unramifiedArtinHom_apply]
-  have hprime : (((idealsAwayEmptyEquiv.symm (v.unitOfPrime K) :
-      idealsAway (K := K) ∅) : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+  have hprime : ((((idealsAwayEmptyEquiv K).symm (v.unitOfPrime K) :
+      idealsAway K ∅) : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
         FractionalIdeal (𝓞 K)⁰ K) = v.asIdeal :=
     congrArg (fun I : (FractionalIdeal (𝓞 K)⁰ K)ˣ ↦
       (I : FractionalIdeal (𝓞 K)⁰ K))
         (coe_idealsAwayEmptyEquiv_symm_apply (v.unitOfPrime K)) |>.trans
           (v.coe_unitOfPrime K)
   exact artinHomAway_apply_prime hab ∅ (fun w _ P _ _ ↦ hur w P)
-    (idealsAwayEmptyEquiv.symm (v.unitOfPrime K)) v (by simp)
+    ((idealsAwayEmptyEquiv K).symm (v.unitOfPrime K)) v (by simp)
     hprime Q σ hσ
 
 /-- **Prime values determine the unrestricted Artin map.** A homomorphism on fractional ideals
@@ -109,18 +109,18 @@ theorem unramifiedArtinHom_eq_of_apply_prime
       (_ : Q.IsPrime) (_ : Q.LiesOver v.asIdeal) (σ : L ≃ₐ[K] L),
         IsArithFrobAt (𝓞 K) σ Q → φ (v.unitOfPrime K) = σ) :
     φ = unramifiedArtinHom (L := L) hab hur := by
-  have key : φ.comp idealsAwayEmptyEquiv.toMonoidHom =
+  have key : φ.comp (idealsAwayEmptyEquiv K).toMonoidHom =
       artinHomAway (L := L) hab ∅ (fun v _ Q _ _ ↦ hur v Q) := by
     refine artinHomAway_eq_of_apply_prime hab ∅ (fun v _ Q _ _ ↦ hur v Q) _ ?_
     intro I v _ hI Q hQp hQl σ hσ
-    have hunit : idealsAwayEmptyEquiv I = v.unitOfPrime K :=
+    have hunit : idealsAwayEmptyEquiv K I = v.unitOfPrime K :=
       (idealsAwayEmptyEquiv_apply I).trans <|
         Units.ext (hI.trans (v.coe_unitOfPrime K).symm)
     rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hunit]
     exact hφ v Q hQp hQl σ hσ
   apply MonoidHom.ext
   intro I
-  have hI := DFunLike.congr_fun key (idealsAwayEmptyEquiv.symm I)
+  have hI := DFunLike.congr_fun key ((idealsAwayEmptyEquiv K).symm I)
   simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply,
     unramifiedArtinHom_apply] using hI
 
@@ -148,7 +148,7 @@ theorem unramifiedArtinHom_restrict (M : Type*) [Field M] [NumberField M] [Algeb
   intro I
   have h := DFunLike.congr_fun
     (artinHomAway_restrict (L := L) hab ∅ (fun v _ Q _ _ ↦ hur v Q) M)
-    (idealsAwayEmptyEquiv.symm I)
+    ((idealsAwayEmptyEquiv K).symm I)
   simpa only [MonoidHom.comp_apply, unramifiedArtinHom_apply] using h
 
 end Restrict

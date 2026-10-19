@@ -149,12 +149,12 @@ theorem commonKernelHopfIdeal_toIdeal_le_ker_weightTorusBaseChangeCoordinateMap
     toConv (AlgHom.id A T)
   have hs : kostantTorusPoints M b wt (CommAlgCat.of ℤ T) (SplitTorus.pointsMulEquiv q) ∈
       kostantElementarySubgroup e h ρ M hM hnil (CommAlgCat.of ℤ T) := huniv
-  have hpoint : (CommHopfAlgCat.mapPointsFunctor
+  have hpoint : (CommHopfAlgCat.Hom.mapPointsFunctor
       (GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A wt)).app B q =
       toConv (GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A wt).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, WithConv.ofConv_toConv, AlgHom.id_comp]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, WithConv.ofConv_toConv, AlgHom.id_comp]
   have hmatrix : GeneralLinear.pointsMulEquiv n
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A wt)).app B q) =
       kostantTorusMatrix M b wt (SplitTorus.pointsMulEquiv q) := by
     rw [GeneralLinear.weightTorusBaseChangeCoordinateMap_eq,

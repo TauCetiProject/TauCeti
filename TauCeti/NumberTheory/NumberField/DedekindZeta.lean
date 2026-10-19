@@ -12,12 +12,10 @@ import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.Linearity
-import TauCeti.Analysis.Asymptotics.InvSubOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
-import TauCeti.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.LSeries.SumCoeff
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.Asymptotic
 
@@ -45,7 +43,10 @@ Galois extension, whose bad primes are the ramified ones.
 
 The continuation has no zeros on the line `Re s = 1`. Off the pole this is the classical `3-4-1`
 argument: the Euler product gives `1 ≤ ‖ζ_K(σ) ^ 3 ζ_K(σ + it) ^ 4 ζ_K(σ + 2it)‖` for `σ > 1`,
-which a zero at `1 + it` would contradict as `σ → 1⁺`. Consequently `(s - 1) ζ_K(s)` continues
+which a zero at `1 + it` would contradict as `σ → 1⁺`. It is the case of the trivial weight of the
+criterion `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries` for unitary ideal weights, whose
+pointwise square is again the trivial weight, so `ζ_K` itself supplies the continuation of the
+square's `L`-series. Consequently `(s - 1) ζ_K(s)` continues
 holomorphically to `Re s > 1 - 1 / d` without zeros on `Re s ≥ 1`, and
 `-ζ_K'(s) / ζ_K(s) - 1 / (s - 1)`, the negative logarithmic derivative of `ζ_K(s)` with its pole
 removed, extends continuously from `Re s > 1` to `Re s ≥ 1`. This is the boundary behaviour a
@@ -228,22 +229,14 @@ theorem ne_zero_of_eqOn_dedekindZeta {f : ℂ → ℂ} {s : ℂ} (hs : s.re = 1)
       (continuousAt_const.div (continuousAt_id.sub continuousAt_const) (sub_ne_zero.mpr hs₂1))
   have hTζ : Set.EqOn T (dedekindZeta K) {z | 1 < z.re} := fun z hz ↦ by
     simp only [T, hGζ z hz, sub_add_cancel]
-  -- Write `s = 1 + it`, so that `2s - 1 = 1 + 2it`. The `3-4-1` bound for the trivial weight and
-  -- the simple pole of `ζ_K` at `s = 1` are the inputs of `LSeries.ne_zero_of_threeFourOne`.
-  have hs' : s = 1 + Complex.I * s.im := by
-    conv_lhs => rw [← Complex.re_add_im s, hs, Complex.ofReal_one, mul_comm]
-  have hs₂ : 2 * s - 1 = 1 + 2 * Complex.I * s.im := by
-    conv_lhs => rw [hs']
-    ring
-  rw [hs'] at hf ⊢
-  rw [hs₂] at hT
-  refine LSeries.ne_zero_of_threeFourOne (f₀ := dedekindZeta K) ?_ ?_ hf hT
-  · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-    rw [hfζ (by simpa using hσ), hTζ (by simpa using hσ)]
-    simpa [← dedekindZeta_eq_LSeries_normCoeff_one] using
-      (1 : UnitaryIdealWeight K).norm_dedekindZeta_threeFourOne_ge_one hσ s.im
-  · exact isBigO_inv_sub_one_of_tendsto_sub_one_mul <| by
-      simpa using tendsto_sub_one_mul_dedekindZeta_nhdsGT K
+  -- `ζ_K` is the `L`-series of the trivial unitary weight, whose pointwise square is itself; so
+  -- the `3-4-1` criterion for unitary weights applies, with `T` continuing the square's series.
+  have hζ : LSeries (normCoeff K (1 : UnitaryIdealWeight K).toIdealArithmeticFunction) =
+      dedekindZeta K := by
+    funext z
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_one, dedekindZeta_eq_LSeries_normCoeff_one]
+  exact (1 : UnitaryIdealWeight K).ne_zero_of_eqOn_LSeries hs hf (by rwa [hζ]) hT
+    (by rwa [one_pow, hζ])
 
 /-- **The regularized logarithmic derivative of the Dedekind zeta function.** The function
 `-ζ_K'(s) / ζ_K(s) - 1 / (s - 1)` extends from `Re s > 1` to a function continuous on

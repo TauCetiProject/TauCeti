@@ -13,8 +13,10 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 
 For a closed subgroup of a finite-dimensional Lie group, the complementary exponential-product
 map is a local chart at the identity.  The local Cartan membership criterion and the transverse
-separation lemma identify the subgroup in this chart with the zero-complement slice.  Translating
-this identity chart gives the corresponding local models at other subgroup points.
+separation lemma identify the subgroup in this chart with the zero-complement slice, whose
+tangential factor is the Lie algebra that `TauCeti.Lie.lieSubalgebraOfSubgroup` assigns to the
+subgroup.  Translating this identity chart gives the corresponding local models at other subgroup
+points.
 
 The complement, transverse separation radius, and local product chart are supplied by
 `TauCeti.Lie.exists_complement_data_of_isClosed_subgroup`.
@@ -50,16 +52,20 @@ attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- A closed subgroup is the zero-complement slice in a smooth complementary exponential chart
-at `1`. -/
+at `1`, the tangential factor of the chart being its Lie algebra. -/
 theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-    ∃ (p q : _root_.Submodule ℝ (LeftInvariantDerivation I G))
-      (Φ : OpenPartialHomeomorph G (p × q)),
-      IsCompl p q ∧ (1 : G) ∈ Φ.source ∧
-        IsSliceChart Φ ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G) ∧
-        ContMDiffOn I 𝓘(ℝ, p × q) ∞ Φ Φ.source ∧
-        ContMDiffOn 𝓘(ℝ, p × q) I ∞ Φ.symm Φ.target := by
+    ∃ (q : _root_.Submodule ℝ (LeftInvariantDerivation I G))
+      (Φ : OpenPartialHomeomorph G
+        ((lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q)),
+      IsCompl (lieSubalgebraOfSubgroup (I := I) K).toSubmodule q ∧ (1 : G) ∈ Φ.source ∧
+        IsSliceChart Φ
+          ((univ : Set (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ×ˢ ({0} : Set q))
+          (K : Set G) ∧
+        ContMDiffOn I 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) ∞ Φ Φ.source ∧
+        ContMDiffOn 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) I ∞ Φ.symm
+          Φ.target := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   dsimp only
   let p : _root_.Submodule ℝ (LeftInvariantDerivation I G) :=
@@ -132,7 +138,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     change ContMDiffOn 𝓘(ℝ, p × q) I ∞ hf.localInverse.invFun
       (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).target
     exact hf.localInverse.contMDiffOn_invFun.mono hΦ_target
-  refine ⟨p, q, Φ, hpq, h1, ?_, hΦ_contMDiff, hΦ_symm_contMDiff⟩
+  refine ⟨q, Φ, hpq, h1, ?_, hΦ_contMDiff, hΦ_symm_contMDiff⟩
   -- Unfold the local name `Φ`; the remaining chart equality uses the coercion fact above.
   change IsSliceChart (Φ₀.restrOpen V hV)
     ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)

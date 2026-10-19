@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
-public import Mathlib.NumberTheory.NumberField.DirichletDensity
+public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds
 -- `NumberField.Set.HasDirichletDensity` is not exposed and Mathlib exports no lemma unfolding it;
 -- its defining limit is needed to compare it with the logarithmic normalization.
 import all Mathlib.NumberTheory.NumberField.DirichletDensity
@@ -49,6 +49,9 @@ The proof has two inputs, and neither suffices alone.
   `P(s) / log (1 / (s - 1)) → 1` as `s → 1⁺`.
 * `NumberField.Set.hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one`: a set of primes has
   Dirichlet density `δ` exactly when `P_S(s) / log (1 / (s - 1)) → δ`.
+* `NumberField.Set.isLowerDirichletDensityBound_iff_eventually_lt_div_log_one_div_sub_one` and
+  `NumberField.Set.isUpperDirichletDensityBound_iff_eventually_div_log_one_div_sub_one_lt`: the
+  same comparison for one-sided Dirichlet-density bounds.
 * `NumberField.Set.ofReal_primeIdealZetaSum`: `P_S(t)`, cast to `ℂ`, is the complex sum over all
   primes of the indicator of `S` against `N(𝔭) ^ (-t)`.
 
@@ -207,6 +210,72 @@ theorem hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one
     refine (div_one δ ▸ h.div hratio one_ne_zero).congr' ?_
     filter_upwards [hL] with s hs
     rw [Pi.div_apply, div_div_div_cancel_right₀ hs.ne']
+
+/-- The ratio normalization `P_S(s) / P(s)` and the logarithmic normalization
+`P_S(s) / log (1 / (s - 1))` of the prime sum over `S` differ by `o(1)` as `s → 1⁺`, since the
+first ratio lies in `[0, 1]` and `P(s) / log (1 / (s - 1)) → 1`. -/
+private theorem tendsto_div_log_one_div_sub_one_sub_div_univ
+    (S : Set (HeightOneSpectrum (𝓞 K))) :
+    Tendsto (fun s : ℝ ↦ S.primeIdealZetaSum s / Real.log (1 / (s - 1)) -
+      S.primeIdealZetaSum s / (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s)
+      (𝓝[>] 1) (𝓝 0) := by
+  have hratio := tendsto_primeIdealZetaSum_univ_div_log_one_div_sub_one (K := K)
+  have hP : ∀ᶠ s in 𝓝[>] (1 : ℝ),
+      0 < (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s :=
+    tendsto_primeIdealZetaSum_univ_atTop.eventually_gt_atTop 0
+  have hlim : Tendsto (fun s : ℝ ↦
+      (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s / Real.log (1 / (s - 1)) - 1)
+      (𝓝[>] 1) (𝓝 0) := by
+    simpa using hratio.sub_const 1
+  refine squeeze_zero_norm' ?_ (by simpa only [norm_zero] using hlim.norm)
+  filter_upwards [hP] with s hs
+  -- The difference is the ratio `P_S / P ∈ [0, 1]` times `P / log (1 / (s - 1)) - 1`.
+  have heq : S.primeIdealZetaSum s / Real.log (1 / (s - 1)) -
+      S.primeIdealZetaSum s / (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s =
+      S.primeIdealZetaSum s / (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s *
+        ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s /
+          Real.log (1 / (s - 1)) - 1) := by
+    rw [mul_sub, mul_one, div_mul_div_cancel₀ hs.ne']
+  rw [heq, norm_mul, Real.norm_of_nonneg (primeIdealZetaSum_div_univ_nonneg S s)]
+  exact mul_le_of_le_one_left (norm_nonneg (_ : ℝ)) (primeIdealZetaSum_div_univ_le_one S s)
+
+/-- **Lower Dirichlet-density bounds in logarithmic normalization.** `δ` is a lower
+Dirichlet-density bound for `S` exactly when, for every `ε > 0`, eventually as `s → 1⁺`,
+`δ - ε < P_S(s) / log (1 / (s - 1))`. -/
+theorem isLowerDirichletDensityBound_iff_eventually_lt_div_log_one_div_sub_one
+    (S : Set (HeightOneSpectrum (𝓞 K))) (δ : ℝ) :
+    IsLowerDirichletDensityBound S δ ↔ ∀ ε, 0 < ε → ∀ᶠ s : ℝ in 𝓝[>] 1,
+      δ - ε < S.primeIdealZetaSum s / Real.log (1 / (s - 1)) := by
+  have hdiff := tendsto_div_log_one_div_sub_one_sub_div_univ S
+  rw [isLowerDirichletDensityBound_iff]
+  constructor
+  · intro h ε hε
+    filter_upwards [h (ε / 2) (half_pos hε),
+      (tendsto_order.1 hdiff).1 (-(ε / 2)) (by linarith)] with s hs hd
+    linarith
+  · intro h ε hε
+    filter_upwards [h (ε / 2) (half_pos hε),
+      (tendsto_order.1 hdiff).2 (ε / 2) (half_pos hε)] with s hs hd
+    linarith
+
+/-- **Upper Dirichlet-density bounds in logarithmic normalization.** `δ` is an upper
+Dirichlet-density bound for `S` exactly when, for every `ε > 0`, eventually as `s → 1⁺`,
+`P_S(s) / log (1 / (s - 1)) < δ + ε`. -/
+theorem isUpperDirichletDensityBound_iff_eventually_div_log_one_div_sub_one_lt
+    (S : Set (HeightOneSpectrum (𝓞 K))) (δ : ℝ) :
+    IsUpperDirichletDensityBound S δ ↔ ∀ ε, 0 < ε → ∀ᶠ s : ℝ in 𝓝[>] 1,
+      S.primeIdealZetaSum s / Real.log (1 / (s - 1)) < δ + ε := by
+  have hdiff := tendsto_div_log_one_div_sub_one_sub_div_univ S
+  rw [isUpperDirichletDensityBound_iff]
+  constructor
+  · intro h ε hε
+    filter_upwards [h (ε / 2) (half_pos hε),
+      (tendsto_order.1 hdiff).2 (ε / 2) (half_pos hε)] with s hs hd
+    linarith
+  · intro h ε hε
+    filter_upwards [h (ε / 2) (half_pos hε),
+      (tendsto_order.1 hdiff).1 (-(ε / 2)) (by linarith)] with s hs hd
+    linarith
 
 open scoped Classical in
 /-- **The prime-ideal zeta sum as a complex indicator sum.** For real `t`, the sum `P_S(t)` of

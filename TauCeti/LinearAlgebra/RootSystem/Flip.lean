@@ -30,11 +30,7 @@ and the Cartan matrix of a base, which is where flipping is used.
 
 ## References
 
-This file supplies the root-pairing half of the duality item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, which records that
-`DynkinType.cartanMatrix (.B n)` is the transpose of `DynkinType.cartanMatrix (.C n)` and that the
-two types are "identified only after `flip` (duality)"; the classification side of that item is
-`TauCeti.LinearAlgebra.RootSystem.Duality`.
+The classification side of this duality is `TauCeti.LinearAlgebra.RootSystem.Duality`.
 -/
 
 public section

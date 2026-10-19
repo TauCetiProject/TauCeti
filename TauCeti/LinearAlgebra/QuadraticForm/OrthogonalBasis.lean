@@ -32,6 +32,9 @@ pairwise orthogonal vectors that the Clifford-algebra API asks for.
   finite-dimensional space has an orthogonal basis none of whose members is isotropic.
 * `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the same basis read as a spanning list
   of pairwise orthogonal, non-isotropic vectors whose length is the dimension.
+* `QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`: conversely, a spanning
+  list of pairwise orthogonal, non-isotropic vectors is a basis, so the form is nondegenerate and
+  the list has the length of the dimension.
 -/
 
 public section
@@ -40,8 +43,11 @@ namespace QuadraticMap
 
 open Module
 
-variable {F V : Type*} [Field F] [AddCommGroup V] [Module F V]
-  [Invertible (2 : F)] [FiniteDimensional F V] {Q : QuadraticForm F V}
+variable {F V : Type*} [Field F] [AddCommGroup V] [Module F V] {Q : QuadraticForm F V}
+
+section FiniteDimensional
+
+variable [Invertible (2 : F)] [FiniteDimensional F V]
 
 /-- **A nondegenerate quadratic form has an anisotropic orthogonal basis.** Mathlib's
 `LinearMap.BilinForm.exists_orthogonal_basis` supplies the orthogonality, and
@@ -74,5 +80,37 @@ theorem Nondegenerate.exists_list_pairwise_isOrtho (hQ : Q.Nondegenerate) :
   · rintro v hv
     obtain ⟨i, rfl⟩ := List.mem_ofFn.mp hv
     exact haniso i
+
+end FiniteDimensional
+
+/-- **An anisotropic orthogonal spanning list is a basis**, the converse of
+`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the form is nondegenerate and the list
+has the length of the dimension. No finiteness is assumed; the list itself makes the space
+finite-dimensional. -/
+theorem nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho [NeZero (2 : F)] {l : List V}
+    (hl : l.Pairwise Q.IsOrtho) (hspan : Submodule.span F {x : V | x ∈ l} = ⊤)
+    (hQl : ∀ v ∈ l, Q v ≠ 0) :
+    Q.Nondegenerate ∧ l.length = finrank F V := by
+  let _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+  let v : Fin l.length → V := fun i ↦ l[i]
+  have hortho : LinearMap.BilinForm.iIsOrtho Q.polarBilin v := by
+    intro i j hij
+    refine isOrtho_polarBilin.mpr ?_
+    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
+    · exact List.pairwise_iff_getElem.mp hl i j i.isLt j.isLt h
+    · exact isOrtho_comm.mp (List.pairwise_iff_getElem.mp hl j i j.isLt i.isLt h)
+  have hself : ∀ i, Q.polarBilin (v i) (v i) ≠ 0 := fun i ↦ by
+    rw [polarBilin_apply_apply, polar_self, two_smul, ← two_mul]
+    exact mul_ne_zero (NeZero.ne 2) (hQl _ (List.getElem_mem _))
+  have hrange : Set.range v = {x : V | x ∈ l} := by
+    ext x
+    simp [v, List.mem_iff_getElem, Fin.exists_iff]
+  let b : Basis (Fin l.length) F V :=
+    Basis.mk (LinearMap.BilinForm.linearIndependent_of_iIsOrtho hortho hself)
+      (by rw [hrange, hspan])
+  have hb : ⇑b = v := Basis.coe_mk _ _
+  refine ⟨nondegenerate_polar_iff.mp ?_, by simpa using (finrank_eq_card_basis b).symm⟩
+  exact (LinearMap.BilinForm.iIsOrtho.nondegenerate_iff_not_isOrtho_basis_self _ b
+    (hb ▸ hortho)).mpr (hb ▸ hself)
 
 end QuadraticMap

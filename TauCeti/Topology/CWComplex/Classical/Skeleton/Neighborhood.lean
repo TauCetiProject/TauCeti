@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 public import Mathlib.Topology.Homotopy.Basic
-public import TauCeti.Analysis.Normed.Module.Ball.Retraction
-public import TauCeti.Topology.CWComplex.Classical.Quotient
-public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
 
 /-!
 # The skeleton with the cores of its top cells removed
@@ -63,87 +62,9 @@ noncomputable section
 
 open Metric Set Topology Topology.RelCWComplex unitInterval
 
-universe u v
+universe u
 
 namespace TauCeti
-
-section Radial
-
-variable {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The scalar form of the straight-line homotopy to the scaled radial retraction. -/
-private def radialFactor (t : I) (y : E) : ℝ := (1 - (t : ℝ)) + (t : ℝ) * (max ‖y‖ 2⁻¹)⁻¹
-
-/-- The radial push of the closed unit ball, interpolating with the scaled radial retraction. -/
-private def radialPush (t : I) (y : E) : E :=
-  (1 - (t : ℝ)) • y + (t : ℝ) • ((2 : ℝ) • radialRetraction 2⁻¹ y)
-
-omit [NormedSpace ℝ E] in
-private lemma max_norm_pos (y : E) : 0 < max ‖y‖ (2 : ℝ)⁻¹ :=
-  lt_of_lt_of_le (by norm_num) (le_max_right _ _)
-
-private lemma continuous_radialPush : Continuous fun p : I × E ↦ radialPush p.1 p.2 := by
-  unfold radialPush
-  refine ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
-    continuous_snd).add ?_
-  refine (continuous_subtype_val.comp continuous_fst).smul ?_
-  exact ((lipschitzWith_radialRetraction (E := E) (r := 2⁻¹)
-    (by norm_num)).continuous.comp continuous_snd).const_smul (2 : ℝ)
-
-private lemma radialPush_eq_factor (t : I) (y : E) :
-    radialPush t y = radialFactor t y • y := by
-  have hret : (2 : ℝ) • radialRetraction (2⁻¹ : ℝ) y =
-      (max ‖y‖ 2⁻¹)⁻¹ • y := by
-    rcases le_total ‖y‖ (2⁻¹ : ℝ) with h | h
-    · rw [radialRetraction_of_norm_le h, max_eq_right h]
-      simp [two_smul]
-    · rw [radialRetraction_of_le_norm h, max_eq_left h]
-      simp [div_eq_mul_inv, smul_smul]
-  rw [radialPush, hret, smul_smul, ← add_smul]
-  rfl
-
-private lemma radialPush_zero (y : E) : radialPush 0 y = y := by
-  simp [radialPush]
-
-omit [NormedSpace ℝ E] in
-private lemma one_le_radialFactor (t : I) {y : E} (hy : ‖y‖ ≤ 1) : 1 ≤ radialFactor t y := by
-  have h : 1 ≤ (max ‖y‖ (2 : ℝ)⁻¹)⁻¹ :=
-    one_le_inv₀ (max_norm_pos y) |>.2 (max_le hy (by norm_num))
-  have ht := t.2.1
-  unfold radialFactor
-  nlinarith
-
-private lemma norm_radialPush (t : I) {y : E} (hy : ‖y‖ ≤ 1) :
-    ‖radialPush t y‖ = radialFactor t y * ‖y‖ := by
-  rw [radialPush_eq_factor, norm_smul,
-    Real.norm_of_nonneg (by linarith [one_le_radialFactor t hy])]
-
-private lemma norm_le_norm_radialPush (t : I) {y : E} (hy : ‖y‖ ≤ 1) :
-    ‖y‖ ≤ ‖radialPush t y‖ := by
-  rw [norm_radialPush t hy]
-  exact le_mul_of_one_le_left (norm_nonneg y) (one_le_radialFactor t hy)
-
-private lemma norm_radialPush_le_one (t : I) {y : E} (hy : ‖y‖ ≤ 1) : ‖radialPush t y‖ ≤ 1 := by
-  rw [norm_radialPush t hy, radialFactor, add_mul, mul_assoc]
-  have h : (max ‖y‖ (2 : ℝ)⁻¹)⁻¹ * ‖y‖ ≤ 1 := by
-    rw [inv_mul_le_iff₀ (max_norm_pos y), mul_one]
-    exact le_max_left _ _
-  have ht := t.2.1
-  have ht' := t.2.2
-  nlinarith [norm_nonneg y]
-
-private lemma radialPush_of_norm_eq_one (t : I) {y : E} (hy : ‖y‖ = 1) : radialPush t y = y := by
-  rw [radialPush_eq_factor]
-  have h : max ‖y‖ (2 : ℝ)⁻¹ = 1 := by rw [hy]; norm_num
-  simp [radialFactor, h]
-
-private lemma norm_radialPush_one {y : E} (hy : (2 : ℝ)⁻¹ ≤ ‖y‖) : ‖radialPush 1 y‖ = 1 := by
-  have h : ‖(2 : ℝ) • radialRetraction 2⁻¹ y‖ = 1 := by
-    rw [norm_smul, norm_radialRetraction (by norm_num : 0 ≤ (2 : ℝ)⁻¹), min_eq_right hy]
-    norm_num
-  simpa [radialPush] using h
-
-end Radial
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
 
@@ -232,94 +153,56 @@ theorem skeletonLT_subset_interior_skeletonNeighborhood (n : ℕ) :
     exact map_notMem_skeletonLT j ((mem_closedBall_zero_iff.1 hy).trans_lt (by norm_num))
       (hxy ▸ hx)
 
-/-- The radial push of the `n`-cells at time `t`, as a map of `X`: a point of an open `n`-cell is
-pushed through the characteristic map, and every other point is fixed. -/
-private def pushVal (n : ℕ) (p : I × X) : X :=
-  open Classical in
-  if h : ∃ (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 1 ∧ map n j y = p.2 then
-    map n h.choose (radialPush p.1 h.choose_spec.choose)
-  else p.2
+/-- The radial push `TauCeti.radialPush 2⁻¹` of the closed unit ball, as a continuous map. -/
+private def radialPushMap (n : ℕ) : C(I × (Fin n → ℝ), Fin n → ℝ) :=
+  ⟨fun q ↦ radialPush 2⁻¹ q.1 q.2, continuous_radialPush (by norm_num)⟩
 
-omit [T2Space X] in
-private lemma pushVal_of_notMem {n : ℕ} {t : I} {x : X}
-    (hx : ∀ (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 1 → map n j y ≠ x) :
-    pushVal (C := C) n (t, x) = x := by
-  rw [pushVal, dite_eq_right fun ⟨j, y, hy, h⟩ ↦ hx j y hy h]
+private lemma radialPushMap_of_norm_eq_one (n : ℕ) (t : I) (y : Fin n → ℝ) (hy : ‖y‖ = 1) :
+    radialPushMap n (t, y) = y :=
+  radialPush_of_norm_eq_one (by norm_num) (by norm_num) t hy
 
-private lemma pushVal_of_mem_skeletonLT {n : ℕ} (t : I) {x : X}
-    (hx : x ∈ (skeletonLT C (n : ℕ∞) : Set X)) : pushVal (C := C) n (t, x) = x :=
-  pushVal_of_notMem fun j _ hy h ↦ map_notMem_skeletonLT j hy (h ▸ hx)
+private lemma norm_radialPushMap_le_one (n : ℕ) (t : I) (y : Fin n → ℝ) (hy : ‖y‖ ≤ 1) :
+    ‖radialPushMap n (t, y)‖ ≤ 1 :=
+  norm_radialPush_le_one (by norm_num) (by norm_num) t hy
 
 /-- Through the characteristic map of an `n`-cell, the radial push of the cells is the radial
 push of the closed unit ball. -/
-private lemma pushVal_map {n : ℕ} (t : I) (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
-    pushVal (C := C) n (t, map n j y) = map n j (radialPush t y) := by
-  rcases hy.lt_or_eq with hy | hy
-  · have h : ∃ (i : cell C n) (z : Fin n → ℝ), ‖z‖ < 1 ∧ map n i z = map n j y :=
-      ⟨j, y, hy, rfl⟩
-    obtain ⟨hij, hz⟩ := (map_eq_map_iff h.choose_spec.choose_spec.1 hy).1
-      h.choose_spec.choose_spec.2
-    rw [pushVal, dite_eq_left h]
-    rw [hz, hij]
-  · rw [radialPush_of_norm_eq_one t hy]
-    exact pushVal_of_mem_skeletonLT t
-      (cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)
+private lemma cellDeformation_radialPushMap_map {n : ℕ} (t : I) (j : cell C n) {y : Fin n → ℝ}
+    (hy : ‖y‖ ≤ 1) :
+    cellDeformation (univ : Set (cell C n)) (radialPushMap n) (t, map n j y) =
+      map n j (radialPush 2⁻¹ t y) :=
+  cellDeformation_map (radialPushMap_of_norm_eq_one n) (mem_univ j) t hy
 
-/-- An open `n`-cell point belongs to the skeletal neighborhood exactly when it lies outside
+/-- A point of a closed `n`-cell belongs to the skeletal neighborhood exactly when it lies outside
 the inner half of its cell. -/
 @[simp]
 lemma map_mem_skeletonNeighborhood_iff {n : ℕ} (j : cell C n) {y : Fin n → ℝ}
-    (hy : ‖y‖ < 1) : map n j y ∈ skeletonNeighborhood C n ↔ (2 : ℝ)⁻¹ ≤ ‖y‖ := by
-  constructor
-  · intro h
-    exact not_lt.1 fun hlt ↦ (mem_skeletonNeighborhood.1 h).2 j y hlt rfl
-  · intro h
-    refine mem_skeletonNeighborhood.2 ⟨map_mem_skeletonLT_succ j hy.le, ?_⟩
-    intro i z hz heq
-    obtain ⟨_, rfl⟩ := (map_eq_map_iff (hz.trans (by norm_num)) hy).1 heq
-    exact (not_lt.2 h) hz
-
-private lemma pushVal_mem {n : ℕ} (t : I) {x : X}
-    (hx : x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
-    pushVal (C := C) n (t, x) ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
-  obtain hx' | ⟨j, y, hy, rfl⟩ := mem_skeletonLT_or_exists_map hx
-  · rwa [pushVal_of_mem_skeletonLT t hx']
-  · rw [pushVal_map t j hy.le]
-    exact map_mem_skeletonLT_succ j (norm_radialPush_le_one t hy.le)
-
-private lemma continuous_pushVal (n : ℕ) :
-    Continuous fun p : I × (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) ↦
-      pushVal (C := C) n (p.1, p.2) := by
-  rw [continuous_prod_complex_iff]
-  refine ⟨fun m ⟨j, hj⟩ ↦ ?_, ?_⟩
-  · have hm : m < n + 1 := by
-      simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hj
-    rcases (Nat.lt_succ_iff.1 hm).lt_or_eq with hm | rfl
-    · -- A cell of dimension below `n` lies in `skeletonLT C n`, which the push fixes.
-      refine ((continuousOn m j).comp_continuous (continuous_subtype_val.comp continuous_snd)
-        fun p ↦ p.2.2).congr fun p ↦ (pushVal_of_mem_skeletonLT p.1 ?_).symm
-      exact skeletonLT_mono (mod_cast hm) (closedCell_subset_skeletonLT m j ⟨p.2, p.2.2, rfl⟩)
-    · -- On an `n`-cell the push is the radial push of the closed unit ball.
-      have hball (p : I × closedBall (0 : Fin m → ℝ) 1) :
-          ‖radialPush p.1 (p.2 : Fin m → ℝ)‖ ≤ 1 :=
-        norm_radialPush_le_one p.1 (mem_closedBall_zero_iff.1 p.2.2)
-      refine ((continuousOn m j).comp_continuous (continuous_radialPush.comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
-        fun p ↦ mem_closedBall_zero_iff.2 (hball p)).congr fun p ↦ ?_
-      exact (pushVal_map p.1 j (mem_closedBall_zero_iff.1 p.2.2)).symm
-  · -- The base lies in `skeletonLT C n`, which the push fixes.
-    exact (continuous_subtype_val.comp continuous_snd).congr fun p ↦
-      (pushVal_of_mem_skeletonLT p.1 ((skeletonLT C n).base_subset p.2.2)).symm
+    (hy : ‖y‖ ≤ 1) : map n j y ∈ skeletonNeighborhood C n ↔ (2 : ℝ)⁻¹ ≤ ‖y‖ := by
+  rcases hy.lt_or_eq with hy | hy
+  · constructor
+    · intro h
+      exact not_lt.1 fun hlt ↦ (mem_skeletonNeighborhood.1 h).2 j y hlt rfl
+    · intro h
+      refine mem_skeletonNeighborhood.2 ⟨map_mem_skeletonLT_succ j hy.le, ?_⟩
+      intro i z hz heq
+      obtain ⟨_, rfl⟩ := (map_eq_map_iff (hz.trans (by norm_num)) hy).1 heq
+      exact (not_lt.2 h) hz
+  · -- A point of the boundary sphere lands in the cell frontier, inside `Xⁿ⁻¹`.
+    refine iff_of_true (skeletonLT_subset_skeletonNeighborhood n ?_) (by rw [hy]; norm_num)
+    exact cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩
 
 variable (C) in
 /-- The radial push of the `n`-cells as a homotopy of `skeletonLT C (n + 1)`. -/
 private def pushMap (n : ℕ) :
     C(I × (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X), (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
-  ⟨fun p ↦ ⟨pushVal (C := C) n (p.1, p.2), pushVal_mem p.1 p.2.2⟩,
-    (continuous_pushVal n).subtype_mk _⟩
+  ⟨fun p ↦ ⟨cellDeformation (univ : Set (cell C n)) (radialPushMap n) (p.1, p.2),
+      cellDeformation_mem (norm_radialPushMap_le_one n) p.1 p.2.2⟩,
+    (continuous_cellDeformation univ (radialPushMap_of_norm_eq_one n)
+      (norm_radialPushMap_le_one n)).subtype_mk _⟩
 
 private lemma pushMap_apply_coe {n : ℕ} (p : I × (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
-    (pushMap C n p : X) = pushVal (C := C) n (p.1, (p.2 : X)) :=
+    (pushMap C n p : X) =
+      cellDeformation (univ : Set (cell C n)) (radialPushMap n) (p.1, (p.2 : X)) :=
   (rfl)
 
 variable (C) in
@@ -343,33 +226,31 @@ def skeletonNeighborhoodHomotopy (n : ℕ) :
   map_zero_left x := by
     refine Subtype.ext ?_
     obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
-    · exact pushVal_of_mem_skeletonLT 0 hx
+    · exact cellDeformation_of_mem_skeletonLT hx
     · rw [ContinuousMap.toFun_eq_coe, pushMap_apply_coe, ContinuousMap.id_apply, ← hxy,
-        pushVal_map 0 j hy.le, radialPush_zero]
+        cellDeformation_radialPushMap_map 0 j hy.le, radialPush_zero]
   map_one_left _ := rfl
 
 private lemma coe_skeletonNeighborhoodHomotopy_apply {n : ℕ} (t : I)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
-    (skeletonNeighborhoodHomotopy C n (t, x) : X) = pushVal (C := C) n (t, (x : X)) :=
+    (skeletonNeighborhoodHomotopy C n (t, x) : X) =
+      cellDeformation (univ : Set (cell C n)) (radialPushMap n) (t, (x : X)) :=
   (rfl)
 
-/-- On a closed `n`-cell, the skeletal deformation is the straight-line homotopy to the
-scaled radial retraction, read through the characteristic map. -/
+/-- On a closed `n`-cell, the skeletal deformation is the straight-line homotopy
+`TauCeti.radialPush 2⁻¹` to the scaled radial retraction, read through the characteristic map. -/
 lemma skeletonNeighborhoodHomotopy_map {n : ℕ} (t : I) (j : cell C n)
     {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) (hx : (x : X) = map n j y) :
-    ((skeletonNeighborhoodHomotopy C n (t, x) : X)) =
-      map n j ((1 - (t : ℝ)) • y + (t : ℝ) •
-        ((2 : ℝ) • radialRetraction 2⁻¹ y)) := by
-  rw [coe_skeletonNeighborhoodHomotopy_apply, hx, pushVal_map t j hy]
-  rfl
+    ((skeletonNeighborhoodHomotopy C n (t, x) : X)) = map n j (radialPush 2⁻¹ t y) := by
+  rw [coe_skeletonNeighborhoodHomotopy_apply, hx, cellDeformation_radialPushMap_map t j hy]
 
 /-- The deformation fixes `Xⁿ⁻¹ = skeletonLT C n` pointwise. -/
 @[simp]
 lemma skeletonNeighborhoodHomotopy_apply_of_mem {n : ℕ} (t : I)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) (hx : (x : X) ∈ (skeletonLT C n : Set X)) :
     skeletonNeighborhoodHomotopy C n (t, x) = x :=
-  Subtype.ext (pushVal_of_mem_skeletonLT t hx)
+  Subtype.ext (cellDeformation_of_mem_skeletonLT hx)
 
 /-- The endpoint of the deformation fixes `Xⁿ⁻¹ = skeletonLT C n` pointwise. -/
 @[simp]
@@ -389,15 +270,17 @@ lemma skeletonNeighborhoodHomotopy_mem {n : ℕ} (t : I)
   · rw [skeletonNeighborhoodHomotopy_apply_of_mem t x hx']
     exact hx
   have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNeighborhood.1 hx).2 j y h hxy
-  rw [coe_skeletonNeighborhoodHomotopy_apply, ← hxy, pushVal_map t j hy.le]
-  set z := radialPush t y
-  have hz : ‖y‖ ≤ ‖z‖ := norm_le_norm_radialPush t hy.le
-  rcases (norm_radialPush_le_one t hy.le).lt_or_eq with hz1 | hz1
+  rw [coe_skeletonNeighborhoodHomotopy_apply, ← hxy,
+    cellDeformation_radialPushMap_map t j hy.le]
+  have hz : ‖y‖ ≤ ‖radialPush 2⁻¹ t y‖ :=
+    norm_le_norm_radialPush (by norm_num) (by norm_num) t hy.le
+  rcases (norm_radialPush_le_one (r := 2⁻¹) (by norm_num) (by norm_num) t hy.le).lt_or_eq with
+      hz1 | hz1
   · refine mem_skeletonNeighborhood.2 ⟨map_mem_skeletonLT_succ j hz1.le, fun i w hw h ↦ ?_⟩
     obtain ⟨-, rfl⟩ := (map_eq_map_iff (hw.trans (by norm_num)) hz1).1 h
     linarith
   · exact skeletonLT_subset_skeletonNeighborhood n
-      (cellFrontier_subset_skeletonLT n j ⟨z, mem_sphere_zero_iff_norm.2 hz1, rfl⟩)
+      (cellFrontier_subset_skeletonLT n j ⟨_, mem_sphere_zero_iff_norm.2 hz1, rfl⟩)
 
 /-- The endpoint of the deformation sends `TauCeti.skeletonNeighborhood C n` into
 `Xⁿ⁻¹ = skeletonLT C n`. -/
@@ -410,8 +293,8 @@ lemma skeletonNeighborhoodEndpoint_mem {n : ℕ} (x : (skeletonLT C ((n + 1 : �
     exact hx'
   have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNeighborhood.1 hx).2 j y h hxy
   rw [← (skeletonNeighborhoodHomotopy C n).apply_one, coe_skeletonNeighborhoodHomotopy_apply, ← hxy,
-    pushVal_map 1 j hy.le]
+    cellDeformation_radialPushMap_map 1 j hy.le]
   exact cellFrontier_subset_skeletonLT n j
-    ⟨_, mem_sphere_zero_iff_norm.2 (norm_radialPush_one hy2), rfl⟩
+    ⟨_, mem_sphere_zero_iff_norm.2 (norm_radialPush_one (by norm_num) hy2), rfl⟩
 
 end TauCeti

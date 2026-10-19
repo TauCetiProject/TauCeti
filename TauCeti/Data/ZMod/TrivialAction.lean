@@ -14,7 +14,7 @@ public import Mathlib.Data.ZMod.Defs
 The trivial action `g • m = m` of a monoid `F` on `ZMod n`, as a `DistribMulAction`. It is the
 coefficient action that a statement about the cohomology of trivial `ZMod n`-coefficients installs
 locally when no action of `F` appears in its conclusion; the statements of
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank` that carry an action of `F` on
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank` that carry an action of `F` on
 `ZMod n` as an instance together with the hypothesis that it is trivial then apply to it.
 
 ## Main definitions

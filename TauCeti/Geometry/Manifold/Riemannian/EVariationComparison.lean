@@ -98,10 +98,9 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
-  [Bundle.RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+  [Bundle.RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {a b : ℝ}
 
-omit [IsRiemannianManifold I M] in
 /-- The finite-partition argument underlying the comparison with Riemannian path length. It is
 separated from the regularity assumptions so that both `C¹` and piecewise-`C¹` curves use the
 same telescoping proof. -/
@@ -124,6 +123,8 @@ private theorem eVariationOn_le_pathELength_of_edist_le
         (fun i ↦ Manifold.pathELength I γ (u i) (u (i + 1))) n]
       exact sum_pathELength_eq (fun i : Fin (n + 1) ↦ u i) fun i ↦ hu (Nat.le_succ i)
     _ ≤ Manifold.pathELength I γ a b := Manifold.pathELength_mono (hus 0).1 (hus n).2
+
+variable [IsRiemannianManifold I M]
 
 /-- **The total variation of a `C¹` curve is bounded by its Riemannian path length.** If `γ` is
 `C¹` on `[a, b]`, then `eVariationOn γ (Icc a b) ≤ Manifold.pathELength I γ a b`. -/

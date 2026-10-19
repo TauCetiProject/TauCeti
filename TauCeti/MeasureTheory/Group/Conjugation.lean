@@ -29,6 +29,10 @@ Only conjugation-invariance, `SMulInvariantMeasure (ConjAct G) G μ`, is asked o
 theory; two-sided translation invariance appears just once, as the hypothesis under which
 `TauCeti.instSMulInvariantMeasureConjAct` supplies it.
 
+The statements about the conjugation action itself (its measurability, its invariant measures and
+its action on `Lp`) need only a `DivInvMonoid`, the level at which Mathlib defines that action;
+the class functions are developed over a group.
+
 The condition is on the *class*, not on a representative, and that is the point of packaging it
 this way rather than as a pointwise slogan: pointwise conjugation-invariance of a function is not
 stable under changing it on a null set, so it does not descend to `Lp` at all.  What descends is
@@ -70,7 +74,11 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+variable {G E : Type*} [MeasurableSpace G] [NormedAddCommGroup E] {p : ℝ≥0∞} {μ : Measure G}
+
+section DivInvMonoid
+
+variable [DivInvMonoid G] [MeasurableMul G]
 
 /-- Conjugation by a fixed element is measurable, so the conjugation action of `ConjAct G` on `G`
 has measurable orbit maps. -/
@@ -79,10 +87,9 @@ instance instMeasurableConstSMulConjAct : MeasurableConstSMul (ConjAct G) G wher
     simp only [ConjAct.smul_def]
     exact (measurable_id.const_mul _).mul_const _
 
-/-- **A two-sided invariant measure is invariant under conjugation.**  Conjugation by `h` is left
-translation by `h` followed by right translation by `h⁻¹`. -/
-instance instSMulInvariantMeasureConjAct {μ : Measure G} [μ.IsMulLeftInvariant]
-    [μ.IsMulRightInvariant] : SMulInvariantMeasure (ConjAct G) G μ where
+/-- **A two-sided invariant measure is invariant under conjugation.** -/
+instance instSMulInvariantMeasureConjAct [μ.IsMulLeftInvariant] [μ.IsMulRightInvariant] :
+    SMulInvariantMeasure (ConjAct G) G μ where
   measure_preimage_smul c s hs := by
     simp only [ConjAct.smul_def]
     exact ((measurePreserving_mul_right μ (ConjAct.ofConjAct c)⁻¹).comp
@@ -95,8 +102,7 @@ theorem measurePreserving_conj (μ : Measure G) [SMulInvariantMeasure (ConjAct G
     MeasurePreserving (fun g ↦ h * g * h⁻¹) μ μ :=
   measurePreserving_smul (ConjAct.toConjAct h) μ
 
-variable {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {μ : Measure G}
-  [SMulInvariantMeasure (ConjAct G) G μ]
+variable [SMulInvariantMeasure (ConjAct G) G μ]
 
 /-- The action of `(ConjAct G)ᵈᵐᵃ` on `Lp E p μ` is precomposition with conjugation: the class of
 `f` is sent to the class of `g ↦ f (h * g * h⁻¹)`. -/
@@ -104,6 +110,22 @@ theorem conjAct_smul_Lp_ae_eq (h : G) (f : Lp E p μ) :
     DomMulAct.mk (ConjAct.toConjAct h) • f =ᵐ[μ] fun g ↦ f (h * g * h⁻¹) := by
   simpa only [Equiv.symm_apply_apply, ConjAct.smul_def, ConjAct.ofConjAct_toConjAct] using
     DomMulAct.smul_Lp_ae_eq (DomMulAct.mk (ConjAct.toConjAct h)) f
+
+/-- **Precomposition by conjugation is the `(ConjAct G)ᵈᵐᵃ`-action.** -/
+@[simp]
+theorem compMeasurePreserving_conj_eq_smul (h : G) (f : Lp E p μ) :
+    Lp.compMeasurePreserving (fun g ↦ h * g * h⁻¹) (measurePreserving_conj μ h) f =
+      DomMulAct.mk (ConjAct.toConjAct h) • f :=
+  Lp.ext ((Lp.coeFn_compMeasurePreserving f (measurePreserving_conj μ h)).trans
+    (conjAct_smul_Lp_ae_eq h f).symm)
+
+end DivInvMonoid
+
+variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+section Group
+
+variable [Group G] [MeasurableMul G] [SMulInvariantMeasure (ConjAct G) G μ]
 
 /-- **The class functions in `Lp`.**  The submodule of `Lp E p μ` fixed by every conjugation,
 for a conjugation-invariant measure `μ` on a group `G`.
@@ -120,13 +142,14 @@ def classFunctionLp (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E] [M
   zero_mem' c := DomMulAct.smul_Lp_zero c
   smul_mem' a _ hf c := by rw [smul_comm, hf c]
 
-variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-
+variable {𝕜} in
+/-- Membership of `classFunctionLp` is invariance under the action of `(ConjAct G)ᵈᵐᵃ`. -/
 @[simp]
 theorem mem_classFunctionLp_iff {f : Lp E p μ} :
     f ∈ classFunctionLp 𝕜 E p μ ↔ ∀ c : (ConjAct G)ᵈᵐᵃ, c • f = f :=
   Iff.rfl
 
+variable {𝕜} in
 /-- **Membership of `classFunctionLp`, read on representatives.**  A class lies in
 `classFunctionLp` exactly when each of its conjugates agrees with it almost everywhere. -/
 theorem mem_classFunctionLp_iff_ae {f : Lp E p μ} :
@@ -146,21 +169,17 @@ section Topology
 -- membership of `classFunctionLp` is an algebraic condition, meaningful for every exponent.
 variable [Fact (1 ≤ p)]
 
-/-- **The class functions form a closed subspace.**  Each conjugation acts on `Lp` by an isometry,
-so the set where it agrees with the identity is closed, and `classFunctionLp` is their
-intersection. -/
+/-- **The class functions form a closed subspace.** -/
 theorem isClosed_classFunctionLp : IsClosed (classFunctionLp 𝕜 E p μ : Set (Lp E p μ)) := by
   have : (classFunctionLp 𝕜 E p μ : Set (Lp E p μ)) =
       ⋂ c : (ConjAct G)ᵈᵐᵃ, {f : Lp E p μ | c • f = f} := by
     ext f
-    simp [classFunctionLp]
+    simp
   rw [this]
   exact isClosed_iInter fun c ↦ isClosed_eq (continuous_const_smul c) continuous_id
 
-/-- **The class functions are complete.**  A closed subspace of the complete space `Lp E p μ`.
-Completeness is what makes the intended specialization `classFunctionLp ℂ ℂ 2 μ` a Hilbert space,
-which is the setting in which the characters of a compact group are expected to form an
-orthonormal basis. -/
+/-- **The class functions are complete.**  In particular `classFunctionLp 𝕜 𝕜 2 μ` is a Hilbert
+space for `RCLike 𝕜`. -/
 instance instCompleteSpaceClassFunctionLp [CompleteSpace E] :
     CompleteSpace (classFunctionLp 𝕜 E p μ) :=
   (isClosed_classFunctionLp 𝕜).completeSpace_coe
@@ -168,17 +187,12 @@ instance instCompleteSpaceClassFunctionLp [CompleteSpace E] :
 end Topology
 
 /-- **A genuinely invariant representative makes a class function.**  If some representative `F` of
-`f` is constant on conjugacy classes on the nose, then `f` is a class function.  Only the
-representative is
-asked to be invariant pointwise: the null set on which `f` and `F` disagree pulls back along
-conjugation to a null set, because conjugation preserves `μ`. -/
+`f` is constant on conjugacy classes on the nose, then `f` is a class function. -/
 theorem mem_classFunctionLp_of_ae_eq_of_conj_invariant {f : Lp E p μ} {F : G → E} (hF : ⇑f =ᵐ[μ] F)
     (hFconj : ∀ g h : G, F (h * g * h⁻¹) = F g) : f ∈ classFunctionLp 𝕜 E p μ := by
-  rw [mem_classFunctionLp_iff_ae]
-  intro h
-  have hconj := (measurePreserving_conj μ h).quasiMeasurePreserving.ae_eq_comp hF
-  refine hconj.trans (Filter.EventuallyEq.trans ?_ hF.symm)
-  exact Filter.Eventually.of_forall fun g ↦ hFconj g h
+  refine mem_classFunctionLp_iff_ae.2 fun h ↦ ?_
+  refine ((measurePreserving_conj μ h).quasiMeasurePreserving.ae_eq_comp hF).trans ?_
+  exact Filter.EventuallyEq.trans (.of_eq (funext fun g ↦ hFconj g h)) hF.symm
 
 /-- A constant is a class function. -/
 theorem const_mem_classFunctionLp [IsFiniteMeasure μ] (a : E) :
@@ -224,34 +238,20 @@ theorem conjLpₗᵢ_symm (h : G) :
     (measurePreserving_conj μ h⁻¹) (measurePreserving_conj μ h)
     (.of_eq (funext fun g ↦ by simp [mul_assoc])) f).symm
 
-omit [Fact (1 ≤ p)] in
-/-- **Precomposition by conjugation is the `(ConjAct G)ᵈᵐᵃ`-action.**  The two are the same
-operation, so a statement proved for either transfers to the other; `classFunctionLp` is phrased
-with the action, while `TauCeti.conjLpₗᵢ_apply` connects this statement to the bundled linear
-isometry that gives inner-product preservation on `L²`. -/
-@[simp]
-theorem compMeasurePreserving_conj_eq_smul (h : G) (f : Lp E p μ) :
-    Lp.compMeasurePreserving (fun g ↦ h * g * h⁻¹) (measurePreserving_conj μ h) f =
-      DomMulAct.mk (ConjAct.toConjAct h) • f :=
-  Lp.ext ((Lp.coeFn_compMeasurePreserving f (measurePreserving_conj μ h)).trans
-    (conjAct_smul_Lp_ae_eq h f).symm)
-
 /-- **A class function is fixed by every conjugation isometry.**  This is the definition of
 `TauCeti.classFunctionLp`, read on the bundled operation. -/
 theorem conjLpₗᵢ_apply_of_mem_classFunctionLp {f : Lp E p μ} (hf : f ∈ classFunctionLp 𝕜 E p μ)
     (h : G) : conjLpₗᵢ 𝕜 h f = f :=
-  Lp.ext ((coeFn_conjLpₗᵢ h f).trans (mem_classFunctionLp_iff_ae 𝕜 |>.1 hf h))
+  Lp.ext ((coeFn_conjLpₗᵢ h f).trans (mem_classFunctionLp_iff_ae.1 hf h))
 
 end Isometry
 
+end Group
+
 /-- On a commutative group every element of `Lp` is a class function: conjugation is trivial. -/
-theorem classFunctionLp_eq_top_of_commGroup {G : Type*} [CommGroup G] [MeasurableSpace G]
-    [MeasurableMul G] {μ : Measure G} [SMulInvariantMeasure (ConjAct G) G μ] :
-    classFunctionLp 𝕜 E p μ = ⊤ := by
-  refine eq_top_iff.2 fun f _ ↦ ?_
-  rw [mem_classFunctionLp_iff_ae]
-  intro h
-  refine Filter.Eventually.of_forall fun g ↦ ?_
-  simp [mul_comm h g, mul_assoc]
+theorem classFunctionLp_eq_top_of_commGroup [CommGroup G] [MeasurableMul G]
+    [SMulInvariantMeasure (ConjAct G) G μ] : classFunctionLp 𝕜 E p μ = ⊤ :=
+  eq_top_iff.2 fun _ _ ↦ mem_classFunctionLp_of_ae_eq_of_conj_invariant 𝕜 .rfl fun g h ↦ by
+    rw [mul_comm h, mul_inv_cancel_right]
 
 end TauCeti

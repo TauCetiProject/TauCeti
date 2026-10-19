@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
+public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
+public import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # Brown's bicollaring theorem for locally flat spheres
@@ -40,6 +41,10 @@ side is included in the statement.
 * `TauCeti.BrownBicollaring.exists_isOpen_sdiff_range_eq_union`: granting Brown's theorem, a
   locally flat sphere is two-sided, so it separates a neighbourhood of itself into two disjoint
   nonempty open sides.
+* `TauCeti.IsLocallyFlat.isBicollared_of_not_isPreconnected_compl_range`: for `n ≥ 1`, a locally
+  flat `n`-sphere in the `(n + 1)`-sphere whose complement is disconnected is bicollared. By the
+  Jordan–Brouwer separation theorem the complement is always disconnected, and this is how Brown
+  proves the theorem.
 
 ## References
 
@@ -100,5 +105,22 @@ theorem BrownBicollaring.exists_isOpen_sdiff_range_eq_union {n : ℕ} (h : Brown
   haveI : Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   (h f hf).exists_isOpen_sdiff_range_eq_union
+
+/-- **Brown's bicollaring theorem for separating spheres.** For `n ≥ 1`, a locally flat embedding
+of the `n`-sphere in the `(n + 1)`-sphere whose image has disconnected complement is bicollared.
+
+The Jordan–Brouwer separation theorem says that the complement is always disconnected, so this
+reduces `TauCeti.BrownBicollaring n` to it. The hypothesis `n ≠ 0` makes the source sphere
+connected; the `0`-sphere is two points. -/
+theorem IsLocallyFlat.isBicollared_of_not_isPreconnected_compl_range {n : ℕ} (hn : n ≠ 0)
+    {f : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
+      sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1}
+    (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f) (hsep : ¬ IsPreconnected (range f)ᶜ) :
+    IsBicollared f :=
+  haveI := ChartedSpace.locallyConnectedSpace (EuclideanSpace ℝ (Fin n))
+    (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
+  haveI := connectedSpace_euclideanSphere (m := n + 1) (by omega)
+  haveI := connectedSpace_euclideanSphere (m := n + 2) (by omega)
+  hf.isLocallyBicollared.isBicollared_of_not_isPreconnected_compl_range hf.injective hsep
 
 end TauCeti

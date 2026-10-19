@@ -34,6 +34,10 @@ and [Stacks, Lemma 55.5.7](https://stacks.math.columbia.edu/tag/0C87).
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.exists_weight_intersection_eq`: the
   weights and intersections of a proper fork whose chain has length at least three are all the
   simply-laced ones.
+* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.fiber_relation` and its row versions
+  `left_fiber_relation`, `interior_fiber_relation`, `fork_fiber_relation`,
+  `right_fiber_relation` and `branch_fiber_relation`: the fibre relations of a fork exhausting a
+  numerical type.
 -/
 
 public section
@@ -171,7 +175,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   have ha₂₁ : T.intersection (c (t - 2)) (c (t - 1)) = w := by
     have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
     simpa only [hpenultimate_succ] using hedge (t - 2) (by omega) (by omega)
-  have hchainSum {i : ℕ} (hi : i < t) :
+  have hchainSum {i : ℕ} :
       (∑ j ∈ range t, T.intersection (c i) (d j) * y j) =
         ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
     Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
@@ -193,14 +197,14 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact le_of_eq (by ring)
   have hleftRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d 0) (d j) * y j := by
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.left_sum_eq hchainCard (by omega) y,
       hy0, hyInterior (i := 1) (by omega) (by omega)]
     rw [hf.branch_intersection_eq_zero (by omega) (by omega), zero_mul, add_zero]
     exact hrow0.ge
   have hnextLeftRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d 1) (d j) * y j := by
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
         (i := 1) (by omega) (by omega),
       hy0, hyInterior (i := 1) (by omega) (by omega),
@@ -211,7 +215,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d (t - 2)) (d j) * y j := by
     have hthird_last : t - 2 - 1 = t - 3 := by omega
     have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
         (i := t - 2) (by omega) (by omega),
       hthird_last, hpenultimate_succ,
@@ -222,7 +226,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact le_of_eq (by ring)
   have hlastRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d (t - 1)) (d j) * y j := by
-    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
+    rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum,
       hf.toIsSelfIntersectionMinusTwoChain.right_sum_eq hchainCard (by omega) y,
       hyInterior (i := t - 2) (by omega) (by omega), hyLast,
       T.intersection_comm, ha₂₁, hf.intersection_self (t - 1) (by omega), hw₁]
@@ -316,7 +320,7 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       affine_sum_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hyLast hyt
         hinterior hedge hwb hw₁ ha₂b hrow0 hrow1
     exact (T.not_forall_sum_intersection_mul_nonneg_of_pos hinj hcard
-      (y := y) (fun i hi ↦ by simp only [y]; split_ifs <;> omega)
+      (y := y) (fun i _ ↦ by simp only [y]; split_ifs <;> omega)
       ⟨0, by omega, by rw [hy0]; exact hαpos⟩) hrow
 
 private theorem exists_weight_intersection_eq_of_four_lt
@@ -447,6 +451,126 @@ theorem exists_weight_intersection_eq (hf : T.IsSelfIntersectionMinusTwoFork t c
     · exact exists_weight_intersection_eq_three hf hcard
     · exact exists_weight_intersection_eq_four hf hcard
   · exact exists_weight_intersection_eq_of_four_lt hf hcard (by omega)
+
+/-- Removing the unbranched endpoint of a fork whose chain has length at least four gives a fork
+on the remaining components. -/
+lemma tail (hf : T.IsSelfIntersectionMinusTwoFork t c branch) (ht : 3 < t) :
+    T.IsSelfIntersectionMinusTwoFork (t - 1) (fun i ↦ c (i + 1)) branch where
+  toIsSelfIntersectionMinusTwoChain :=
+    by simpa [Nat.add_comm] using
+      hf.toIsSelfIntersectionMinusTwoChain.shift (r := 1) (s := t - 1) (by omega)
+  two_lt := by omega
+  branch_ne i hi := hf.branch_ne (i + 1) (by omega)
+  branch_intersection_self := hf.branch_intersection_self
+  branch_intersection_pos := by
+    have ht₂ : t - 1 - 2 + 1 = t - 2 := by omega
+    simpa only [ht₂] using hf.branch_intersection_pos
+
+/-- The chain components of a fork together with its extra leaf exhaust a numerical type with
+`t + 1` components. -/
+lemma insert_image_range_eq_univ (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) :
+    insert branch ((range t).image c) = (univ : Finset T.Component) := by
+  apply eq_univ_of_card
+  rw [card_insert_of_notMem (by
+    intro h
+    obtain ⟨i, hi, hci⟩ := mem_image.mp h
+    exact hf.branch_ne i (mem_range.mp hi) hci.symm),
+    card_image_of_injOn (by
+      intro i hi j hj hij
+      exact hf.injOn i (mem_range.mp hi) j (mem_range.mp hj) hij), card_range]
+  exact hcard.symm
+
+/-- For a fork exhausting a numerical type, the fibre relation at any component splits into the
+term of the extra leaf and a sum over the chain. -/
+lemma fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) (i : T.Component) :
+    (T.multiplicity branch : ℤ) * T.intersection i branch +
+      ∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection i (c j) = 0 := by
+  classical
+  have h := T.fiber_relation i
+  rw [← hf.insert_image_range_eq_univ hcard, sum_insert, sum_image] at h
+  · exact h
+  · intro j hj k hk hjk
+    exact hf.injOn j (mem_range.mp hj) k (mem_range.mp hk) hjk
+  · intro hbranch
+    obtain ⟨j, hj, hbj⟩ := mem_image.mp hbranch
+    exact hf.branch_ne j (mem_range.mp hj) hbj.symm
+
+/-- The chain part of the fibre relation of an exhaustive fork, with the intersection numbers on
+the left of each term as in the chain row lemmas. -/
+private lemma sum_range_intersection_mul_multiplicity
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) (i : T.Component) :
+    ∑ j ∈ range t, T.intersection i (c j) * (T.multiplicity (c j) : ℤ) =
+      -((T.multiplicity branch : ℤ) * T.intersection i branch) := by
+  simp_rw [mul_comm (T.intersection i _)]
+  linarith [hf.fiber_relation hcard i]
+
+/-- For a fork exhausting a numerical type, the fibre relation at the unbranched endpoint has
+only its diagonal and adjacent terms. -/
+lemma left_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) :
+    (T.multiplicity (c 0) : ℤ) * T.intersection (c 0) (c 0) +
+      T.multiplicity (c 1) * T.intersection (c 0) (c 1) = 0 := by
+  have ht := hf.two_lt
+  have h := hf.sum_range_intersection_mul_multiplicity hcard (c 0)
+  rw [hf.left_sum_eq (by omega) (by omega),
+    hf.branch_intersection_eq_zero (by omega) (by omega)] at h
+  linarith
+
+/-- For a fork exhausting a numerical type, the fibre relation at an interior chain component
+other than the branch point has only its diagonal and two adjacent terms. -/
+lemma interior_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t)
+    (hifork : i ≠ t - 2) :
+    (T.multiplicity (c (i - 1)) : ℤ) * T.intersection (c i) (c (i - 1)) +
+        T.multiplicity (c i) * T.intersection (c i) (c i) +
+      T.multiplicity (c (i + 1)) * T.intersection (c i) (c (i + 1)) = 0 := by
+  have h := hf.sum_range_intersection_mul_multiplicity hcard (c i)
+  rw [hf.interior_sum_eq (by omega) _ hi hit,
+    hf.branch_intersection_eq_zero (by omega) hifork] at h
+  linarith
+
+/-- For a fork exhausting a numerical type, the fibre relation at the branch point `c (t - 2)`
+has its diagonal term, its two chain neighbours and the extra leaf. -/
+lemma fork_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) :
+    (T.multiplicity (c (t - 3)) : ℤ) * T.intersection (c (t - 2)) (c (t - 3)) +
+          T.multiplicity (c (t - 2)) * T.intersection (c (t - 2)) (c (t - 2)) +
+        T.multiplicity (c (t - 1)) * T.intersection (c (t - 2)) (c (t - 1)) +
+      T.multiplicity branch * T.intersection (c (t - 2)) branch = 0 := by
+  have ht := hf.two_lt
+  have h := hf.sum_range_intersection_mul_multiplicity hcard (c (t - 2))
+  have ht₃ : t - 2 - 1 = t - 3 := by omega
+  have ht₁ : t - 2 + 1 = t - 1 := by omega
+  rw [hf.interior_sum_eq (by omega) _ (i := t - 2) (by omega) (by omega), ht₃, ht₁] at h
+  linarith
+
+/-- For a fork exhausting a numerical type, the fibre relation at the terminal chain component
+has only its diagonal and adjacent terms. -/
+lemma right_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) :
+    (T.multiplicity (c (t - 2)) : ℤ) * T.intersection (c (t - 1)) (c (t - 2)) +
+      T.multiplicity (c (t - 1)) * T.intersection (c (t - 1)) (c (t - 1)) = 0 := by
+  have ht := hf.two_lt
+  have h := hf.sum_range_intersection_mul_multiplicity hcard (c (t - 1))
+  rw [hf.right_sum_eq (by omega) (by omega),
+    hf.branch_intersection_eq_zero (by omega) (by omega)] at h
+  linarith
+
+/-- For a fork exhausting a numerical type, the fibre relation at the extra leaf has only its
+diagonal term and the branch point. -/
+lemma branch_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) :
+    (T.multiplicity (c (t - 2)) : ℤ) * T.intersection branch (c (t - 2)) +
+      T.multiplicity branch * T.intersection branch branch = 0 := by
+  have ht := hf.two_lt
+  have h := hf.sum_range_intersection_mul_multiplicity hcard branch
+  rw [sum_eq_single (t - 2) (fun j hj hjne ↦ by
+      rw [T.intersection_comm, hf.branch_intersection_eq_zero (mem_range.mp hj) hjne, zero_mul])
+    (fun h ↦ absurd (mem_range.mpr (by omega)) h)] at h
+  linarith
 
 end IsSelfIntersectionMinusTwoFork
 

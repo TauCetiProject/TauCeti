@@ -177,8 +177,7 @@ theorem e_baseChangeBase (i : (t.rationalBase ht).support) :
       (e (P := t.rationalRootSystem ht) (b := t.rationalBase ht) i).map
         (algebraMap ℚ K) := by
   classical
-  have hpi : Function.Injective (Pi.algebraMap (Fin t.rank) ℚ K) := fun x y hxy ↦
-    funext fun k ↦ FaithfulSMul.algebraMap_injective ℚ K (congrFun hxy k)
+  have hpi := piAlgebraMap_injective (κ := Fin t.rank) (R := ℚ) K
   have hs (j : (t.rationalBase ht).support) :
       (t.supportBaseChangeEquiv ht K).symm j =
         (t.supportBaseChangeEquiv ht K).symm i ↔ j = i :=
@@ -201,8 +200,7 @@ theorem f_baseChangeBase (i : (t.rationalBase ht).support) :
       (f (P := t.rationalRootSystem ht) (b := t.rationalBase ht) i).map
         (algebraMap ℚ K) := by
   classical
-  have hpi : Function.Injective (Pi.algebraMap (Fin t.rank) ℚ K) := fun x y hxy ↦
-    funext fun k ↦ FaithfulSMul.algebraMap_injective ℚ K (congrFun hxy k)
+  have hpi := piAlgebraMap_injective (κ := Fin t.rank) (R := ℚ) K
   have hs (j : (t.rationalBase ht).support) :
       (t.supportBaseChangeEquiv ht K).symm j =
         (t.supportBaseChangeEquiv ht K).symm i ↔ j = i :=

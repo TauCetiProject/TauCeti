@@ -48,8 +48,6 @@ supply the injection and the count of conjugacy classes.
 
 * C. W. Curtis and I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*,
   §25 and §41.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 3, the group-algebra center and the count of irreducibles.
 -/
 
 public section

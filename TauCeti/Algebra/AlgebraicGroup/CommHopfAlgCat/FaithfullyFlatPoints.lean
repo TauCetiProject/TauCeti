@@ -19,7 +19,9 @@ points valued in every algebraically closed field over `R`.
 The algebraic point-lifting theorem is
 `AlgHom.surjective_comp_right_of_faithfullyFlat`. The result here records it in the group-valued
 functor-of-points API, where precomposition is the component of
-`CommHopfAlgCat.mapPointsFunctor f`.
+`CommHopfAlgCat.Hom.mapPointsFunctor f`. Applied to the faithfully flat morphism from an affine
+group onto its scheme-theoretic image, it lets properties of source points descend to all
+image points.
 
 ## Main declaration
 
@@ -30,10 +32,6 @@ functor-of-points API, where precomposition is the component of
 
 * The Stacks Project, Tag 00HQ, Lemma 10.39.16.
 * The Stacks Project, Tag 00FV, *Hilbert Nullstellensatz*.
-
-This is the group-valued point-lifting interface used in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. Applied to the faithfully flat morphism from an affine group onto its
-scheme-theoretic image, it lets properties of source points descend to all image points.
 -/
 
 public section
@@ -56,13 +54,13 @@ bare algebra maps, so it can be used directly with group-theoretic point propert
 theorem mapPointsFunctor_app_surjective_of_faithfullyFlat (f : H ⟶ K)
     (hfinite : f.hom.toAlgHom.FiniteType)
     (hflat : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of R L)) := by
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R L)) := by
   intro p
   obtain ⟨q, hq⟩ := AlgHom.surjective_comp_right_of_faithfullyFlat
     f.hom.toAlgHom hfinite hflat p.ofConv
   refine ⟨WithConv.toConv q, ?_⟩
   apply WithConv.ofConv_injective
-  rw [mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   simpa only [WithConv.ofConv_toConv] using hq
 
 end TauCeti.CommHopfAlgCat

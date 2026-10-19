@@ -14,7 +14,7 @@ import TauCeti.RepresentationTheory.Irreducible
 
 The conjugate `conj χ_π` of the character of a continuous representation `π` of a compact group is
 a class function, so it acts on a finite-dimensional irreducible representation by a scalar
-(`TauCeti.ContRepresentation.integratedOperator_eq_smul_id`, from
+(`ContRepresentation.integratedOperator_eq_smul_id`, from
 `TauCeti/RepresentationTheory/Compact/Integrated.lean`). Its Haar integral against another character
 `χ_ρ` is the `L²` inner product of the two characters, so the character orthogonality relations of
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` evaluate that scalar. This file records
@@ -30,40 +30,40 @@ on a reducible representation is carried out in
 
 ## Main results
 
-* `TauCeti.ContRepresentation.integral_star_character_mul_character`: pairing a character with the
+* `ContRepresentation.integral_star_character_mul_character`: pairing a character with the
   conjugate of another one is the `L²` inner product of the two characters.
-* `TauCeti.ContRepresentation.integratedOperator_star_character_self`: `conj χ_π` acts on `V_π` by
+* `ContRepresentation.integratedOperator_star_character_self`: `conj χ_π` acts on `V_π` by
   the scalar `(dim V_π)⁻¹`, so that, by
-  `TauCeti.ContRepresentation.finrank_smul_integratedOperator_star_character_self`, the kernel
+  `ContRepresentation.finrank_smul_integratedOperator_star_character_self`, the kernel
   `dim V_π · conj χ_π` acts as the identity on `V_π`.
-* `TauCeti.ContRepresentation.integratedOperator_star_character_eq_zero`: for `π` unitary,
+* `ContRepresentation.integratedOperator_star_character_eq_zero`: for `π` unitary,
   `conj χ_π` acts as zero on a representation admitting no nonzero continuous intertwiner into
   `π`.
 
 ## Implementation notes
 
-The scalar in `TauCeti.ContRepresentation.integratedOperator_eq_smul_id` is
+The scalar in `ContRepresentation.integratedOperator_eq_smul_id` is
 `(dim V)⁻¹ · ∫ f · χ_π`, not `∫ f · conj χ_π`: the integrand pairs the acting function with the
 character itself, and the conjugation appears only here, where the acting function is specialized
-to `conj χ_π` and `TauCeti.ContRepresentation.integral_star_character_mul_character` identifies the
+to `conj χ_π` and `ContRepresentation.integral_star_character_mul_character` identifies the
 integral with Mathlib's sesquilinear `L²` inner product of the two characters.
 
 ## References
 
-This is the block-projection item of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-"averaging against `dim V_π · conj χ_π`", and the operator half of its Layer 6 item "characters span
-the class functions". The mathematical development follows Daniel Bump, *Lie Groups*, second
+These character-weighted averages give the operators used for isotypic projection and
+class-function completeness. The mathematical development follows Daniel Bump, *Lie Groups*, second
 edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*,
 Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory
 open scoped InnerProductSpace
 
-namespace TauCeti
+open TauCeti
 
 namespace ContRepresentation
 
@@ -90,19 +90,18 @@ include hπ
 omit [IsAlgClosed 𝕜] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] in
 /-- The conjugate of a character is a class function: the hypothesis in the shape that
-`TauCeti.ContRepresentation.integratedOperator_eq_smul_id` takes. -/
+`ContRepresentation.integratedOperator_eq_smul_id` takes. -/
 private theorem star_character_conj (g h : G) :
     (star (character π hπ)) (h * g * h⁻¹) = (star (character π hπ)) g := by
   rw [ContinuousMap.star_apply, ContinuousMap.star_apply, character_conj π hπ g h]
 
-include hρ
-
+include hρ in
 omit [IsAlgClosed 𝕜] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [NormedSpace ℝ W]
   [SMulCommClass ℝ 𝕜 W] in
 /-- Pairing a representation's character with the conjugate of another one's is the `L²` inner
 product of the two characters, in Mathlib's convention `⟪F, H⟫ = ∫ H · conj F`. This is what turns
 the character orthogonality relations into statements about
-`TauCeti.ContRepresentation.integratedOperator`. -/
+`ContRepresentation.integratedOperator`. -/
 theorem integral_star_character_mul_character :
     ∫ g, (star (character π hπ)) g * character ρ hρ g ∂haarProb G
       = ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜 := by
@@ -112,6 +111,7 @@ theorem integral_star_character_mul_character :
   beta_reduce
   rw [ContinuousMap.star_apply, RCLike.star_def, mul_comm]
 
+include hρ in
 omit [IsAlgClosed 𝕜] in
 /-- **The character projection kills an inequivalent representation.** If `π` is unitary and there
 is no nonzero continuous intertwiner `ρ → π`, the conjugate character of `π` acts as zero on `ρ`.
@@ -124,9 +124,9 @@ theorem integratedOperator_star_character_eq_zero (hunitary : IsUnitary π)
     integratedOperator ρ hρ (star (character π hπ)) = 0 := by
   -- The operator is not evaluated as a scalar -- which would need Schur's scalar lemma, hence an
   -- algebraically closed `𝕜` -- but paired against a vector, which turns it into the second Schur
-  -- orthogonality relation (`TauCeti.ContRepresentation.schur_orthogonality_distinct`) summed over
+  -- orthogonality relation (`ContRepresentation.schur_orthogonality_distinct`) summed over
   -- the diagonal matrix coefficients that make up `conj χ_π`
-  -- (`TauCeti.ContRepresentation.star_character`).
+  -- (`ContRepresentation.star_character`).
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have key : ∀ w, ⟪w, integratedOperator ρ hρ (star (character π hπ)) v⟫_𝕜 = 0 := by
     intro w
@@ -147,15 +147,13 @@ theorem integratedOperator_star_character_eq_zero (hunitary : IsUnitary π)
     rw [inner_smul_right, matrixCoeff_apply, inner_conj_symm]
   simpa using inner_self_eq_zero.mp (key _)
 
-omit hρ
-
 /-- **The conjugate character acts on its own representation by the inverse dimension.** For a
 finite-dimensional irreducible unitary representation of dimension `d`, the integrated operator of
 `conj χ_π` on `V_π` is `d⁻¹ • id`.
 
 The scalar is `d⁻¹` rather than `1` exactly because the character has `L²` norm one: the projection
 kernel that acts as the identity is `d · conj χ_π`, which is
-`TauCeti.ContRepresentation.finrank_smul_integratedOperator_star_character_self`. -/
+`ContRepresentation.finrank_smul_integratedOperator_star_character_self`. -/
 theorem integratedOperator_star_character_self (hunitary : IsUnitary π)
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     integratedOperator π hπ (star (character π hπ))
@@ -166,7 +164,7 @@ theorem integratedOperator_star_character_self (hunitary : IsUnitary π)
 
 /-- **The block projection, normalized.** For a finite-dimensional irreducible unitary `π`, the
 kernel `dim V_π · conj χ_π` acts as the identity on `V_π`; together with
-`TauCeti.ContRepresentation.integratedOperator_star_character_eq_zero`, which makes it act as zero
+`ContRepresentation.integratedOperator_star_character_eq_zero`, which makes it act as zero
 on a representation with no nonzero intertwiner into `π`, these are the two blockwise identities
 that characterize the isotypic projector attached to `π`. Assembling them into a
 projector on a reducible representation is done in
@@ -184,5 +182,3 @@ theorem finrank_smul_integratedOperator_star_character_self (hunitary : IsUnitar
 end Projection
 
 end ContRepresentation
-
-end TauCeti

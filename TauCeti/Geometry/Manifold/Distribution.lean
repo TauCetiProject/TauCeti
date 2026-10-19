@@ -26,10 +26,14 @@ while its regularity and involutivity are predicates on that family.
 
 ## Main definitions
 
+* `TauCeti.distributionModelFiber`: a tangent-space fibre of a distribution on a normed space,
+  transported to the model vector space.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
+* `TauCeti.IsDistributionFrameOn.basis`: the basis of a fibre of `D` given by a local frame.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
 * `TauCeti.IsInvolutiveDistribution I D`: `D` is involutive.
+* `TauCeti.IsInvolutiveDistributionOn I D s`: `D` is involutive on `s`.
 * `TauCeti.standardContactDistribution 𝕜`: the kernel of `dz - x dy` on `𝕜³`.
 
 ## Main results
@@ -40,6 +44,12 @@ while its regularity and involutivity are predicates on that family.
   fibres.
 * `TauCeti.isContMDiffDistribution_top` and `TauCeti.isInvolutiveDistribution_top`: the whole
   tangent bundle is a `C^n` involutive distribution.
+* `TauCeti.IsInvolutiveDistribution.isInvolutiveDistributionOn`: an involutive distribution is
+  involutive on every set.
+* `TauCeti.mlieBracket_sum_smul_mem`: if vector fields differentiable at `x` have values and
+  pairwise Lie brackets at `x` in a subspace `D` of the tangent space there, then so does the Lie
+  bracket of any two of their combinations with coefficients differentiable at `x`. This is the
+  computation behind the frame criterion for involutivity.
 * `TauCeti.isContMDiffDistribution_const` and `TauCeti.isInvolutiveDistribution_const`: a fixed
   finite-dimensional (respectively closed) subspace `S` of a normed space `E`, taken at every
   point, is a `C^n` (respectively involutive) distribution on `E`.
@@ -74,6 +84,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω} {k : ℕ} {ι : Type*}
+
+section ModelFiber
+
+/-- The fibre of a distribution on a normed space, transported from the tangent space to the model
+vector space by its canonical identification. -/
+noncomputable def distributionModelFiber
+    (D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)) (p : E) : Submodule 𝕜 E :=
+  (D p).map (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearMap
+
+/-- Membership in `distributionModelFiber`, expressed in the original tangent-space fibre. -/
+@[simp]
+theorem mem_distributionModelFiber
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} {p v : E} :
+    v ∈ distributionModelFiber D p ↔
+      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm v ∈ D p := by
+  unfold distributionModelFiber
+  convert Submodule.mem_map_equiv (p := D p)
+    (e := (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearEquiv) (x := v) using 1
+  rfl
+
+/-- On a normed space, transporting a distribution fibre through the canonical tangent-model
+identification leaves the submodule unchanged. -/
+theorem distributionModelFiber_eq
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) :
+    distributionModelFiber D p = D p := by
+  -- Mathlib's canonical tangent-model identification is definitionally the identity linear map.
+  unfold distributionModelFiber
+  exact Submodule.map_id (D p)
+
+end ModelFiber
 
 section Frame
 
@@ -119,6 +159,37 @@ theorem finrank_eq [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (
   rw [← hX.span_eq hx]
   exact finrank_span_eq_card (hX.linearIndependent hx)
 
+/-- At a point `y` of `U`, a local frame of `D` on `U` is a basis of the fibre `D y`. -/
+def basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) : Basis ι 𝕜 (D y) :=
+  (Basis.span (hX.linearIndependent hy)).map (LinearEquiv.ofEq _ _ (hX.span_eq hy))
+
+@[simp]
+theorem coe_basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) (i : ι) :
+    (hX.basis hy i : TangentSpace I y) = X i y := by
+  simp [basis]
+
+/-- A `C^n` local frame `X` of a distribution on a normed space `V`, on a set `U`, gives a
+`C^n` family of continuous linear maps `Φ p : (ι → 𝕜) →L[𝕜] V`, namely `c ↦ ∑ i, c i • X i p`,
+which on `U` is injective with range `D p`. -/
+theorem exists_contDiffOn_clm {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] {ι : Type*} [Fintype ι] {n : ℕ∞ω} {D : V → Submodule 𝕜 V}
+    {X : ι → V → V} {U : Set V} (hX : IsDistributionFrameOn 𝓘(𝕜, V) n D X U) :
+    ∃ Φ : V → (ι → 𝕜) →L[𝕜] V, ContDiffOn 𝕜 n Φ U ∧
+      ∀ p ∈ U, Injective (Φ p) ∧ LinearMap.range (Φ p : (ι → 𝕜) →ₗ[𝕜] V) = D p := by
+  classical
+  refine ⟨fun p ↦ ∑ i, (ContinuousLinearMap.proj i).smulRight (X i p), ?_, fun p hp ↦ ?_⟩
+  · exact ContDiffOn.sum fun i _ ↦ contDiffOn_const.smulRight
+      (contMDiffOn_vectorSpace_iff_contDiffOn.1 (hX.contMDiffOn i))
+  · -- As a linear map, `Φ p` is the linear combination map of the frame at `p`.
+    have hΦ : ((∑ i, (ContinuousLinearMap.proj i).smulRight (X i p) : (ι → 𝕜) →L[𝕜] V) :
+        (ι → 𝕜) →ₗ[𝕜] V) = Fintype.linearCombination 𝕜 (X · p) := by
+      ext c
+      simp [Fintype.linearCombination_apply]
+    beta_reduce
+    rw [← ContinuousLinearMap.coe_coe, hΦ, Fintype.range_linearCombination]
+    exact ⟨linearIndependent_iff_injective_fintypeLinearCombination.1 (hX.linearIndependent hp),
+      hX.span_eq hp⟩
+
 end IsDistributionFrameOn
 
 /-- The local frames of the distribution `⊤` are exactly the local frames of the tangent bundle. -/
@@ -139,6 +210,12 @@ def IsContMDiffDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) : 
     ∃ X : Fin k → Π y : M, TangentSpace I y, IsDistributionFrameOn I n D X U
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
+
+/-- The defining property of a `C^n` distribution of rank `k`. -/
+theorem isContMDiffDistribution_iff : IsContMDiffDistribution I n k D ↔
+    ∀ x : M, ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
+      ∃ X : Fin k → Π y : M, TangentSpace I y, IsDistributionFrameOn I n D X U :=
+  Iff.rfl
 
 /-- A distribution has rank `k` and class `C^n` as soon as every point has a neighbourhood, not
 necessarily open, on which it has a `C^n` local frame of `k` vector fields. -/
@@ -206,7 +283,30 @@ def IsInvolutiveDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) :
     MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) → (∀ x ∈ U, W x ∈ D x) →
       ∀ x ∈ U, mlieBracket I V W x ∈ D x
 
+variable (I) in
+/-- `D` is involutive on `s`: whenever two vector fields are differentiable and tangent to `D` on
+an open subset of `s`, their Lie bracket is tangent to `D` there. -/
+def IsInvolutiveDistributionOn (D : Π x : M, Submodule 𝕜 (TangentSpace I x))
+    (s : Set M) : Prop :=
+  ∀ ⦃U : Set M⦄, IsOpen U → U ⊆ s → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+    MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) →
+      (∀ x ∈ U, W x ∈ D x) → ∀ x ∈ U, mlieBracket I V W x ∈ D x
+
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
+
+/-- The defining property of an involutive distribution. -/
+theorem isInvolutiveDistribution_iff : IsInvolutiveDistribution I D ↔
+    ∀ ⦃U : Set M⦄, IsOpen U → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+      MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) → (∀ x ∈ U, W x ∈ D x) →
+        ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
+  Iff.rfl
+
+/-- The defining property of a distribution that is involutive on a set. -/
+theorem isInvolutiveDistributionOn_iff {s : Set M} : IsInvolutiveDistributionOn I D s ↔
+    ∀ ⦃U : Set M⦄, IsOpen U → U ⊆ s → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+      MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) →
+        (∀ x ∈ U, W x ∈ D x) → ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
+  Iff.rfl
 
 /-- The Lie bracket of two vector fields that are differentiable and tangent to an involutive
 distribution on an open set is tangent to it there. -/
@@ -215,6 +315,36 @@ theorem IsInvolutiveDistribution.mlieBracket_mem (hD : IsInvolutiveDistribution 
     (hW : MDiff[U] (T% W)) (hVD : ∀ x ∈ U, V x ∈ D x) (hWD : ∀ x ∈ U, W x ∈ D x) {x : M}
     (hx : x ∈ U) : mlieBracket I V W x ∈ D x :=
   hD hU hV hW hVD hWD x hx
+
+/-- The Lie bracket of two vector fields that are differentiable and tangent to a distribution on
+an open subset of its involutivity set is tangent to the distribution there. -/
+theorem IsInvolutiveDistributionOn.mlieBracket_mem {s U : Set M}
+    (hD : IsInvolutiveDistributionOn I D s) (hU : IsOpen U) (hUs : U ⊆ s)
+    {V W : Π x : M, TangentSpace I x} (hV : MDiff[U] (T% V))
+    (hW : MDiff[U] (T% W)) (hVD : ∀ x ∈ U, V x ∈ D x)
+    (hWD : ∀ x ∈ U, W x ∈ D x) {x : M} (hx : x ∈ U) :
+    mlieBracket I V W x ∈ D x :=
+  hD hU hUs hV hW hVD hWD x hx
+
+/-- An involutive distribution is involutive on every set. -/
+theorem IsInvolutiveDistribution.isInvolutiveDistributionOn
+    (hD : IsInvolutiveDistribution I D) (s : Set M) :
+    IsInvolutiveDistributionOn I D s :=
+  fun _ hU _ _ _ hV hW hVD hWD _x hx ↦ hD.mlieBracket_mem hU hV hW hVD hWD hx
+
+/-- A distribution that is involutive on `s` is involutive on every subset of `s`. -/
+theorem IsInvolutiveDistributionOn.mono {s t : Set M}
+    (hD : IsInvolutiveDistributionOn I D s) (ht : t ⊆ s) :
+    IsInvolutiveDistributionOn I D t :=
+  fun _ hU hUt _ _ hV hW hVD hWD ↦ hD hU (hUt.trans ht) hV hW hVD hWD
+
+/-- Involutivity on the whole manifold is equivalent to involutivity. -/
+@[simp]
+theorem isInvolutiveDistributionOn_univ :
+    IsInvolutiveDistributionOn I D univ ↔ IsInvolutiveDistribution I D := by
+  refine ⟨fun hD U hU V W hV hW hVD hWD ↦
+    hD hU (subset_univ U) hV hW hVD hWD, fun hD ↦ ?_⟩
+  exact hD.isInvolutiveDistributionOn univ
 
 /-- The whole tangent bundle is involutive. -/
 theorem isInvolutiveDistribution_top : IsInvolutiveDistribution I (fun _ : M ↦ ⊤) :=
@@ -232,6 +362,62 @@ theorem isInvolutiveDistribution_const {S : Submodule 𝕜 E} (hS : IsClosed (S 
   rw [mlieBracket_eq_lieBracket]
   -- `lieBracket 𝕜 V W x` is by definition `fderiv 𝕜 W x (V x) - fderiv 𝕜 V x (W x)`.
   exact S.sub_mem (hWS _) (hVS _)
+
+section Combination
+
+variable {X : ι → Π x : M, TangentSpace I x} {x : M}
+
+/-- A finite combination of vector fields differentiable at `x`, with coefficients differentiable
+at `x`, is differentiable at `x`. -/
+private theorem mdifferentiableAt_sum_smul {s : Finset ι} {f : ι → M → 𝕜}
+    (hf : ∀ i ∈ s, MDiffAt (f i) x) (hX : ∀ i ∈ s, MDiffAt (T% (X i)) x) :
+    MDiffAt (T% (∑ i ∈ s, f i • X i)) x := by
+  rw [Finset.sum_fn]
+  exact MDifferentiableAt.sum_section fun i hi ↦ (hf i hi).smul_section (hX i hi)
+
+/-- Let the vector fields `X i` be differentiable at `x`, with values at `x` and pairwise Lie
+brackets at `x` in a subspace `D` of the tangent space there. Then the Lie bracket at `x` of two
+combinations `∑ i, f i • X i` and `∑ j, g j • X j` whose coefficients are differentiable at `x`
+also lies in `D`.
+
+This is the pointwise computation behind the classical criterion for involutivity: a distribution
+whose local frames are closed under the Lie bracket is involutive. -/
+theorem mlieBracket_sum_smul_mem [IsManifold I 2 M] [CompleteSpace E]
+    {D : Submodule 𝕜 (TangentSpace I x)} {s : Finset ι}
+    (hX : ∀ i ∈ s, MDiffAt (T% (X i)) x) (hXD : ∀ i ∈ s, X i x ∈ D)
+    (hXX : ∀ i ∈ s, ∀ j ∈ s, mlieBracket I (X i) (X j) x ∈ D) {f g : ι → M → 𝕜}
+    (hf : ∀ i ∈ s, MDiffAt (f i) x) (hg : ∀ i ∈ s, MDiffAt (g i) x) :
+    mlieBracket I (∑ i ∈ s, f i • X i) (∑ j ∈ s, g j • X j) x ∈ D := by
+  classical
+  -- Expand the right-hand combination against a vector field `Y` whose brackets with the frame
+  -- lie in `D`.
+  have right {Y : Π x : M, TangentSpace I x} (hY : ∀ j ∈ s, mlieBracket I Y (X j) x ∈ D) :
+      ∀ t ⊆ s, mlieBracket I Y (∑ j ∈ t, g j • X j) x ∈ D := by
+    intro t hts
+    induction t using Finset.induction_on with
+    | empty => simp [mlieBracket_zero_right]
+    | insert a t hat ih =>
+      obtain ⟨ha, ht⟩ := Finset.insert_subset_iff.mp hts
+      rw [Finset.sum_insert hat, mlieBracket_add_right ((hg a ha).smul_section (hX a ha))
+        (mdifferentiableAt_sum_smul (fun i hi ↦ hg i (ht hi)) fun i hi ↦ hX i (ht hi)),
+        mlieBracket_smul_right (hg a ha) (hX a ha)]
+      exact D.add_mem (D.add_mem (D.smul_mem _ (hXD a ha)) (D.smul_mem _ (hY a ha))) (ih ht)
+  -- Then expand the left-hand combination, reducing to brackets of frame fields with the
+  -- right-hand combination.
+  have left : ∀ t ⊆ s, mlieBracket I (∑ i ∈ t, f i • X i) (∑ j ∈ s, g j • X j) x ∈ D := by
+    intro t hts
+    induction t using Finset.induction_on with
+    | empty => simp [mlieBracket_zero_left]
+    | insert a t hat ih =>
+      obtain ⟨ha, ht⟩ := Finset.insert_subset_iff.mp hts
+      rw [Finset.sum_insert hat, mlieBracket_add_left ((hf a ha).smul_section (hX a ha))
+        (mdifferentiableAt_sum_smul (fun i hi ↦ hf i (ht hi)) fun i hi ↦ hX i (ht hi)),
+        mlieBracket_smul_left (hf a ha) (hX a ha)]
+      exact D.add_mem (D.add_mem (D.smul_mem _ (hXD a ha))
+        (D.smul_mem _ (right (hXX a ha) s subset_rfl))) (ih ht)
+  exact left s subset_rfl
+
+end Combination
 
 end Involutive
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 public import TauCeti.RingTheory.PowerSeries.Log
+import Mathlib.RingTheory.PowerSeries.WellKnown
 
 /-!
 # Formal logarithmic-derivative coefficients of an ideal Euler product

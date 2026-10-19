@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RamificationInertia.Basic
-public import TauCeti.NumberTheory.LocalField.IntegerRing
+public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 
 /-!

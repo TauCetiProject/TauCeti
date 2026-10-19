@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
-public import TauCeti.LinearAlgebra.LinearPMap.SmulSub
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.SmulSub
+public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 
 /-!
 # Dissipative operators
@@ -30,7 +29,7 @@ and expanding a Neumann series propagates the range condition from `lambda` to e
 `mu ∈ (0, 2 lambda)`, and iterating that step along the geometric sequence `(3/2)^n lambda`
 covers all of `(0, ∞)`, so `mu • I - A : D(A) → X` is bijective for every `mu > 0`.
 Equivalently, every positive `mu` belongs to the resolvent set, and the resolvent satisfies
-`‖R(mu, A)‖ ≤ 1 / mu`.
+`‖R(mu, A)‖ ≤ 1 / mu`; conversely, these resolvent conditions imply m-dissipativity.
 
 The file then connects dissipativity to C₀-semigroups. For a semigroup with growth bound
 `(ω, M)` and `lambda > ω`, the Laplace-transform resolvent turns the bound `‖R(lambda)‖ ≤
@@ -53,6 +52,8 @@ dissipative.
 * `TauCeti.Semigroups.IsMDissipative.mem_resolventSet` and
   `TauCeti.Semigroups.IsMDissipative.norm_resolvent_le`: every positive real is a resolvent
   point, with the contraction bound `‖R(lambda, A)‖ ≤ 1 / lambda`.
+* `TauCeti.Semigroups.isMDissipative_iff_forall_mem_resolventSet_and_norm_resolvent_le`:
+  conversely, these resolvent conditions characterize m-dissipativity.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.norm_le_norm_smul_sub_generator`: the
   resolvent-range inequality at a general growth bound `(ω, M)`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.smul_sub_generator_bijective`:
@@ -202,31 +203,23 @@ private theorem IsDissipative.exists_bounded_rightInverse {A : X →ₗ.[ℝ] X}
     (hrange : Function.Surjective fun x : A.domain => lambda • (x : X) - A x) :
     ∃ (g : X → A.domain) (J : X →L[ℝ] X), ‖J‖ ≤ lambda⁻¹ ∧ (∀ y : X, (g y : X) = J y) ∧
       ∀ y : X, lambda • (g y : X) - A (g y) = y := by
-  -- `lambda • I - A`, packaged as a linear equivalence `D(A) ≃ₗ X`
-  have hbij : Function.Bijective (A.smulSub lambda) := by
-    constructor
-    · intro x y h
-      exact hA.smul_sub_injective hlambda (by simpa [A.smulSub_apply] using h)
-    · intro y
-      obtain ⟨x, hx⟩ := hrange y
-      exact ⟨x, by simpa [A.smulSub_apply] using hx⟩
-  let e : A.domain ≃ₗ[ℝ] X := LinearEquiv.ofBijective (A.smulSub lambda) hbij
-  have he : ∀ y : X, lambda • ((e.symm y : A.domain) : X) - A (e.symm y) = y := by
-    intro y
-    rw [← A.smulSub_apply]
-    exact e.apply_symm_apply y
-  -- its inverse, bounded by `1 / lambda` through dissipativity
-  set J : X →ₗ[ℝ] X := A.domain.subtype ∘ₗ (e.symm : X →ₗ[ℝ] A.domain) with hJ_def
-  have hJapp : ∀ y : X, J y = ((e.symm y : A.domain) : X) := fun y => by
-    rw [hJ_def, LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe]
-  have hJbound : ∀ y : X, ‖J y‖ ≤ lambda⁻¹ * ‖y‖ := by
-    intro y
-    rw [hJapp]
-    have := hA.norm_le_of_smul_sub_eq hlambda (x := e.symm y) (y := y) (he y)
-    rwa [div_eq_inv_mul] at this
-  refine ⟨fun y => e.symm y, J.mkContinuous lambda⁻¹ hJbound,
-    J.mkContinuous_norm_le (by positivity) hJbound, fun y => ?_, he⟩
-  rw [LinearMap.mkContinuous_apply, hJapp]
+  have hmem := LinearPMap.mem_resolventSet_of_surjective_of_norm_le
+    hrange hlambda (hA lambda hlambda)
+  have hR := LinearPMap.isResolventAt_resolvent hmem
+  exact ⟨fun y => ⟨A.resolvent lambda y, LinearPMap.resolvent_mem_domain hmem y⟩,
+    A.resolvent lambda, hR.norm_le_inv hlambda (hA lambda hlambda),
+    fun _ => rfl, hR.smul_sub_apply⟩
+
+/-- **m-dissipativity from resolvent bounds.** If every `lambda > 0` lies in the resolvent set
+of `A` and `‖R(lambda, A)‖ ≤ 1 / lambda`, then `A` is m-dissipative: the resolvent bound is the
+dissipativity inequality, and any one resolvent point supplies the range condition. -/
+theorem isMDissipative_of_forall_norm_resolvent_le {A : X →ₗ.[ℝ] X}
+    (hres : ∀ lambda : ℝ, 0 < lambda → lambda ∈ LinearPMap.resolventSet A)
+    (hnorm : ∀ lambda : ℝ, 0 < lambda → ‖LinearPMap.resolvent A lambda‖ ≤ lambda⁻¹) :
+    IsMDissipative A :=
+  ⟨fun lambda hlambda => ((LinearPMap.isResolventAt_resolvent (hres lambda hlambda)).norm_le_inv_iff
+      hlambda).mp (hnorm lambda hlambda),
+    1, one_pos, (LinearPMap.isResolventAt_resolvent (hres 1 one_pos)).smul_sub_surjective⟩
 
 section CompleteSpace
 
@@ -309,24 +302,11 @@ private theorem IsMDissipative.exists_isResolventAt_norm_le {A : X →ₗ.[ℝ] 
     (hA : IsMDissipative A)
     {lambda : ℝ} (hlambda : 0 < lambda) :
     ∃ R : X →L[ℝ] X, LinearPMap.IsResolventAt A lambda R ∧ ‖R‖ ≤ lambda⁻¹ := by
-  obtain ⟨g, R, hRnorm, hgR, hright⟩ := hA.isDissipative.exists_bounded_rightInverse hlambda
-    (hA.smul_sub_surjective hlambda)
-  have hleft : ∀ x : A.domain, R (lambda • (x : X) - A x) = (x : X) := by
-    intro x
-    rw [← hgR]
-    exact congrArg Subtype.val (hA.isDissipative.smul_sub_injective hlambda (hright _))
-  have hmem : ∀ y : X, R y ∈ A.domain := by
-    intro y
-    rw [← hgR]
-    exact (g y).property
-  have hrightR : ∀ y : X, lambda • R y - A ⟨R y, hmem y⟩ = y := by
-    intro y
-    have hsubtype : (⟨R y, hmem y⟩ : A.domain) = g y := Subtype.ext (hgR y).symm
-    calc
-      lambda • R y - A ⟨R y, hmem y⟩ = lambda • (g y : X) - A (g y) :=
-        congrArg₂ (fun u v : X => lambda • u - v) (hgR y).symm (congrArg A hsubtype)
-      _ = y := hright y
-  exact ⟨R, ⟨hmem, hrightR, hleft⟩, hRnorm⟩
+  have hmem := LinearPMap.mem_resolventSet_of_surjective_of_norm_le
+    (hA.smul_sub_surjective hlambda) hlambda (hA.isDissipative lambda hlambda)
+  have hR := LinearPMap.isResolventAt_resolvent hmem
+  exact ⟨LinearPMap.resolvent A lambda, hR,
+    hR.norm_le_inv hlambda (hA.isDissipative lambda hlambda)⟩
 
 /-- Every positive real lies in the resolvent set of an m-dissipative operator. -/
 theorem IsMDissipative.mem_resolventSet {A : X →ₗ.[ℝ] X} (hA : IsMDissipative A)
@@ -353,6 +333,15 @@ theorem IsMDissipative.mul_norm_resolvent_le_one {A : X →ₗ.[ℝ] X} (hA : Is
       gcongr
       exact hA.norm_resolvent_le hlambda
     _ = 1 := mul_inv_cancel₀ hlambda.ne'
+
+/-- **m-dissipativity in resolvent form.** On a real Banach space, an operator is m-dissipative
+exactly when every `lambda > 0` lies in its resolvent set, with `‖R(lambda, A)‖ ≤ 1 / lambda`. -/
+theorem isMDissipative_iff_forall_mem_resolventSet_and_norm_resolvent_le {A : X →ₗ.[ℝ] X} :
+    IsMDissipative A ↔
+      (∀ lambda : ℝ, 0 < lambda → lambda ∈ LinearPMap.resolventSet A) ∧
+        ∀ lambda : ℝ, 0 < lambda → ‖LinearPMap.resolvent A lambda‖ ≤ lambda⁻¹ :=
+  ⟨fun hA => ⟨fun _ => hA.mem_resolventSet, fun _ => hA.norm_resolvent_le⟩,
+    fun ⟨hres, hnorm⟩ => isMDissipative_of_forall_norm_resolvent_le hres hnorm⟩
 
 end CompleteSpace
 

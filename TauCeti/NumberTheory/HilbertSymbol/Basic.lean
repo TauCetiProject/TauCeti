@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The norm-equation Hilbert symbol
@@ -14,7 +15,8 @@ public import TauCeti.FieldTheory.SquareClassGroup.Basic
 `TauCeti.hilbertSymbol a b` is the sign `+1` when `b = x² - a y²` is solvable, and
 `-1` otherwise. The definition makes sense over any field. This file supplies the
 field-generic part of its theory: the quadratic-algebra norm and quaternion splitting
-criteria, symmetry, square rescaling, and the elementary split values.
+criteria, symmetry, square rescaling, invariance under isomorphisms of fields, and the elementary
+split values.
 
 The comparison theorems reuse the four-fold splitting criterion in
 `TauCeti.Algebra.Quaternion.SplittingCriterion`. No local classification enters the
@@ -22,7 +24,8 @@ definition. In particular, no bimultiplicativity is asserted over an arbitrary f
 that property needs a local norm-index theorem.
 
 The symbol factors through square classes, so its value can be computed from any unit
-representatives.
+representatives. Inverting either parameter preserves its square class and hence the symbol,
+as expressed by `TauCeti.hilbertSymbol_inv_left` and `TauCeti.hilbertSymbol_inv_right`.
 
 ## References
 
@@ -154,6 +157,39 @@ theorem hilbertSymbol_congr_sq (a a' b b' : Kˣ)
     simp [pow_two, div_eq_mul_inv, mul_assoc, mul_left_comm]
   rw [ha', hb', hilbertSymbol_mul_sq_left, hilbertSymbol_mul_sq_right]
 
+/-- Inverting the first argument does not change the Hilbert symbol. -/
+@[simp]
+theorem hilbertSymbol_inv_left (a b : Kˣ) :
+    hilbertSymbol a⁻¹ b = hilbertSymbol a b := by
+  apply hilbertSymbol_congr_sq
+  · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
+  · exact IsSquare.mul_self b
+
+/-- Inverting the second argument does not change the Hilbert symbol. -/
+@[simp]
+theorem hilbertSymbol_inv_right (a b : Kˣ) :
+    hilbertSymbol a b⁻¹ = hilbertSymbol a b := by
+  apply hilbertSymbol_congr_sq
+  · exact IsSquare.mul_self a
+  · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
+
+/-- The Hilbert symbol is invariant under a ring isomorphism of fields: the norm equation
+`b = x² - a y²` is solvable over `K` exactly when its image is solvable over `L`. -/
+@[simp]
+theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) (a b : Kˣ) :
+    hilbertSymbol (Units.map (e : K →* L) a) (Units.map (e : K →* L) b) = hilbertSymbol a b := by
+  classical
+  have he : (∃ x y : L, ((Units.map (e : K →* L) b : Lˣ) : L) =
+      x ^ 2 - (Units.map (e : K →* L) a : Lˣ) * y ^ 2) ↔
+      ∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2 := by
+    simp only [Units.coe_map, MonoidHom.coe_ofClass]
+    constructor
+    · rintro ⟨x, y, h⟩
+      exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+    · rintro ⟨x, y, h⟩
+      exact ⟨e x, e y, by simp [h]⟩
+  simp only [hilbertSymbol_def, he]
+
 -- The quotient-representative construction follows
 -- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.
 /-- The Hilbert symbol on square classes of a field. -/
@@ -184,6 +220,12 @@ theorem hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix (a b : Kˣ) :
       Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] Matrix (Fin 2) (Fin 2) K) := by
   rw [hilbertSymbol_eq_one_iff,
     QuaternionAlgebra.nonempty_algEquiv_matrix_iff_exists_eq_sq_sub_mul_sq]
+
+/-- The negative sign is equivalent to `ℍ[K,a,b]` being a division algebra. -/
+theorem hilbertSymbol_eq_neg_one_iff_forall_isUnit (a b : Kˣ) :
+    hilbertSymbol a b = -1 ↔ ∀ x : ℍ[K,(a : K),(b : K)], x ≠ 0 → IsUnit x := by
+  rw [← Int.units_ne_iff_eq_neg, Ne, hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix,
+    QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_forall_isUnit, not_not]
 
 /-- The positive sign is equivalent to isotropy of the ternary form `⟨1,-a,-b⟩`. -/
 theorem hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares (a b : Kˣ) :

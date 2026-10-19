@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 -- Non-public: the logarithmic derivative of a principal power is used only in a proof.
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Principal powers of `z - x` on the upper half-plane
@@ -22,6 +23,9 @@ Negating the base, replacing `z - x` by `x - z`, multiplies the power by the con
 `exp (π r i)` -- unimodular when `r` is real -- because the two bases lie on opposite sides of the
 real axis.
 
+Principal powers also commute with division of two upper-half-plane points: their arguments
+differ by less than `π`, so their quotient introduces no branch jump.
+
 These are the basic branch facts for a factor of a product of principal powers with real base
 points, such as the Schwarz--Christoffel integrand.
 
@@ -32,6 +36,7 @@ points, such as the Schwarz--Christoffel integrand.
 * `TauCeti.sub_cpow_ne_zero_of_im_pos`
 * `TauCeti.sub_cpow_eq_exp_mul_sub_cpow_of_im_pos`
 * `TauCeti.logDeriv_sub_cpow_of_im_pos`
+* `TauCeti.div_cpow_of_im_pos`
 -/
 
 public section
@@ -39,6 +44,21 @@ public section
 open Complex
 
 namespace TauCeti
+
+/-- Principal complex powers commute with division when both bases have positive imaginary
+part. Their arguments differ by less than `π`, so the quotient introduces no branch jump. -/
+lemma div_cpow_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) (r : ℂ) :
+    (x / y) ^ r = x ^ r / y ^ r := by
+  have hx0 : x ≠ 0 := fun h => by simp [h] at hx
+  have hy0 : y ≠ 0 := fun h => by simp [h] at hy
+  have hlog : Complex.log (x / y) = Complex.log x - Complex.log y := by
+    apply Complex.ext
+    · simp only [Complex.log_re, norm_div, Complex.sub_re]
+      exact Real.log_div (norm_ne_zero_iff.mpr hx0) (norm_ne_zero_iff.mpr hy0)
+    · simp only [Complex.log_im, Complex.sub_im]
+      exact Complex.arg_div_of_im_pos hx hy
+  rw [Complex.cpow_def_of_ne_zero (div_ne_zero hx0 hy0), hlog, sub_mul,
+    Complex.exp_sub, Complex.cpow_def_of_ne_zero hx0, Complex.cpow_def_of_ne_zero hy0]
 
 /-- Translating a point with positive imaginary part by a real number leaves it in the slit
 plane. -/

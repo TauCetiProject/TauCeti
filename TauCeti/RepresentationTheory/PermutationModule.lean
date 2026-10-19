@@ -43,20 +43,20 @@ namespace TauCeti
 
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
 
-variable {R : Type*} [CommSemiring R] {G : Type*} [Monoid G] {X : Type*} [MulAction G X]
+variable {R : Type*} {G : Type*} [Monoid G] {X : Type*} [MulAction G X]
 
-/-- **Pushing the support forward commutes with the coefficientwise scalars.** This is what makes
-the permutation module `X →₀ R`, with the action of `Finsupp.comapDistribMulAction`, a
-representation of `G` over `R`. Like that action it is not a global instance; a consumer who wants
+/-- **Pushing the support forward commutes with the coefficientwise scalars**, for any distributive
+scalar action on the coefficients. For `X →₀ R` over a commutative semiring `R`, this is what makes
+the permutation module, with the action of `Finsupp.comapDistribMulAction`, a representation of `G`
+over `R`. Like that action it is not a global instance; a consumer who wants
 `Representation.ofDistribMulAction` installs both with `attribute [local instance]`. -/
-theorem comapSMulCommClass : SMulCommClass G R (X →₀ R) where
-  smul_comm g r f := by
-    simp only [Finsupp.comapSMul_def]
-    exact Finsupp.mapDomain_smul (f := (g • ·)) r f
+theorem comapSMulCommClass {S M : Type*} [AddCommMonoid M] [DistribSMul S M] :
+    SMulCommClass G S (X →₀ M) where
+  smul_comm g s f := by simp only [Finsupp.comapSMul_def, Finsupp.mapDomain_smul]
 
 attribute [local instance] comapSMulCommClass
 
-variable (R G X)
+variable (R G X) [CommSemiring R]
 
 /-- **The permutation module on a `G`-set is the permutation representation.** The `G`-module
 `X →₀ R`, whose action pushes the support forward (`Finsupp.comapDistribMulAction`), is
@@ -67,7 +67,7 @@ noncomputable def ofDistribMulActionComapEquiv :
       (_root_.Representation.ofMulAction R G X) :=
   _root_.Representation.Equiv.mk (MonoidAlgebra.coeffLinearEquiv R).symm fun g => by
     ext x r
-    simp [Finsupp.comapSMul_def]
+    simp
 
 variable {R X}
 
@@ -75,15 +75,13 @@ variable {R X}
 @[simp]
 theorem ofDistribMulActionComapEquiv_single (x : X) (r : R) :
     ofDistribMulActionComapEquiv R G X (Finsupp.single x r) = MonoidAlgebra.single x r := by
-  simp only [ofDistribMulActionComapEquiv, _root_.Representation.Equiv.mk_apply,
-    MonoidAlgebra.coeffLinearEquiv_symm_apply, MonoidAlgebra.ofCoeff_single]
+  simp [ofDistribMulActionComapEquiv]
 
 /-- `TauCeti.ofDistribMulActionComapEquiv` reads a coefficient back off `R[X]`. -/
 @[simp]
 theorem ofDistribMulActionComapEquiv_symm_single (x : X) (r : R) :
     (ofDistribMulActionComapEquiv R G X).symm (MonoidAlgebra.single x r) = Finsupp.single x r := by
-  rw [← ofDistribMulActionComapEquiv_single (G := G) x r,
-    _root_.Representation.Equiv.symm_apply_apply]
+  simp [ofDistribMulActionComapEquiv]
 
 end TauCeti
 

@@ -36,15 +36,15 @@ variable (hΦ : Φ.IsRegular)
 
 /-- The transition between the two overlap loci of two cones, as a morphism of spaces. -/
 noncomputable def analyticOverlapTransition (σ τ : Φ.cones) :
-    (Opens.toTopCat ((Φ.analyticAffineChartDiagram hΦ).obj σ)).obj
+    (Opens.toTopCat ((Φ.analyticAffineChartDiagram).obj σ)).obj
         (Φ.analyticOverlapOpens hΦ σ τ) ⟶
-      (Opens.toTopCat ((Φ.analyticAffineChartDiagram hΦ).obj τ)).obj
+      (Opens.toTopCat ((Φ.analyticAffineChartDiagram).obj τ)).obj
         (Φ.analyticOverlapOpens hΦ τ σ) :=
   TopCat.ofHom (Φ.analyticOverlapHomeomorph hΦ σ τ)
 
 /-- A transition applies as the overlap homeomorphism it is built from. -/
 @[simp] theorem analyticOverlapTransition_apply (σ τ : Φ.cones)
-    (x : (Opens.toTopCat ((Φ.analyticAffineChartDiagram hΦ).obj σ)).obj
+    (x : (Opens.toTopCat ((Φ.analyticAffineChartDiagram).obj σ)).obj
       (Φ.analyticOverlapOpens hΦ σ τ)) :
     Φ.analyticOverlapTransition hΦ σ τ x = Φ.analyticOverlapHomeomorph hΦ σ τ x :=
   (TopCat.ofHom_apply _ _).trans rfl

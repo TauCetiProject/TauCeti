@@ -78,7 +78,7 @@ presheaves are built from the same pair of definition `P`.
 Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
 restriction along a containment is reindexing, and the two functor laws hold. On a rational open
 `U` the value is identified with `A_U` in
-`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational`, when `A⁺` consists of
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic`, when `A⁺` consists of
 power-bounded elements.
 
 ## References
@@ -370,6 +370,17 @@ theorem presentationLimitπToPresentation_eq (Aplus : Subring A) (V : Opens ↥(
     presentationLimitπToPresentation Aplus V i =
       presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i) := (rfl)
 
+/-- **Projections at equal indices agree**, after transporting their codomains to a common
+object. -/
+theorem presentationLimitπToPresentation_comp_eqToHom_congr
+    {i j : PresentationIndex (P := P) Aplus V} (h : i = j) {X : CompleteSeparatedTopCommRingCat.{v}}
+    (e : i.pres.completionLocObj = X)
+    (e' : j.pres.completionLocObj = X) :
+    presentationLimitπToPresentation Aplus V i ≫ eqToHom e =
+      presentationLimitπToPresentation Aplus V j ≫ eqToHom e' := by
+  subst h
+  rfl
+
 /-- **Projections are compatible with refinement**: projecting then restricting along a refinement
 is projecting at the finer index. -/
 -- These three are not restatements of Mathlib's limit API for their own sake: `presentationLimit`
@@ -525,6 +536,14 @@ theorem presentationLimitMap_comp {U V W : Opens ↥(spa Aplus)} (h₁ : W ≤ V
   simp only [Category.assoc, presentationLimitMap_comp_π]
   erw [presentationLimitMap_comp_π]
   rfl
+
+/-- **Successive restrictions compose, on sections**: `presentationLimitMap_comp` evaluated at a
+section `z` over `V`. -/
+theorem presentationLimitMap_apply_presentationLimitMap_apply {U V W : Opens ↥(spa Aplus)}
+    (h₁ : W ≤ V) (h₂ : U ≤ W) (z : presentationLimit (P := P) Aplus V) :
+    (presentationLimitMap (P := P) h₂).hom.1 ((presentationLimitMap (P := P) h₁).hom.1 z) =
+      (presentationLimitMap (P := P) (h₂.trans h₁)).hom.1 z :=
+  ConcreteCategory.congr_hom (presentationLimitMap_comp h₁ h₂) z
 
 /-- **A transport between presentation limits along an equality of opens is a restriction
 map**: the `eqToHom` of `presentationLimit V = presentationLimit W` induced by `V = W` is the

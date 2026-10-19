@@ -58,22 +58,12 @@ theorem exists_integerUnit_not_isSquare_residue (h2 : IsUnit (2 : 𝒪[K])) :
   have hs' : IsSquare aunit := by simpa only [hu] using hs
   exact (isSquare_units_val_iff).mpr hs'
 
-/-- A uniformizer has nonsquare class: its normalized valuation is odd. -/
-theorem not_isSquare_uniformizer {π : Kˣ} (hπ : IsUniformizer (K := K) π) :
-    ¬IsSquare π := by
-  intro hs
-  obtain ⟨n, hn⟩ := normalizedValuation_even_of_isSquare hs
-  have hp : (normalizedValuation K π).toAdd = 1 := by
-    rw [isUniformizer_def] at hπ
-    simp [hπ]
-  omega
-
 /-- Multiplying an integer unit by a uniformizer gives another nonsquare class. -/
 theorem not_isSquare_integerUnit_mul_uniformizer (u : 𝒪[K]ˣ) {π : Kˣ}
     (hπ : IsUniformizer (K := K) π) :
     ¬IsSquare (Units.map ((Subring.subtype 𝒪[K] : 𝒪[K] →+* K).toMonoidHom) u * π) := by
   intro hs
-  obtain ⟨n, hn⟩ := normalizedValuation_even_of_isSquare hs
+  obtain ⟨n, hn⟩ := even_toAdd_normalizedValuation_of_isSquare hs
   have hu : normalizedValuation K
       (Units.map ((Subring.subtype 𝒪[K] : 𝒪[K] →+* K).toMonoidHom) u) = 1 :=
     normalizedValuation_integerUnits u
@@ -102,7 +92,7 @@ theorem squareClass_eq_representative_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) 
     exact (isSquare_unitsMap_subtype_iff h2 u).not.mpr hu
   have hp0 : squareClass π ≠ 0 := by
     rw [ne_eq, squareClass_eq_zero_iff]
-    exact not_isSquare_uniformizer hπ
+    exact not_isSquare_of_isUniformizer hπ
   have hup0 : squareClass (uK * π) ≠ 0 := by
     rw [ne_eq, squareClass_eq_zero_iff]
     exact not_isSquare_integerUnit_mul_uniformizer u hπ

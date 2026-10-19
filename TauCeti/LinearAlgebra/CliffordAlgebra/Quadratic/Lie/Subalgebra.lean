@@ -8,6 +8,7 @@ module
 import Mathlib.Tactic.NoncommRing
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
+import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 
 /-!
@@ -66,11 +67,6 @@ scope.
 * `CliffordAlgebra.adjoin_quadraticLieSubalgebra` and
   `CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra_eq_top`: the quadratic elements
   generate the even subalgebra as an algebra.
-
-## References
-
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 9, "the abstract quadratic realization".
 -/
 
 public section
@@ -86,13 +82,6 @@ section CommRing
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
-
-omit [Invertible (2 : R)] in
-/-- Bracketing with a fixed element of an associative ring is a derivation. -/
-private theorem lie_mul (x y z : CliffordAlgebra Q) :
-    ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
-  simp only [Ring.lie_def]
-  noncomm_ring
 
 omit [Invertible (2 : R)] in
 /-- The commutator of a product of two Clifford generators with a third generator. -/
@@ -149,7 +138,12 @@ generator at a time — the derivation property, written on the half-normalized 
 private theorem lie_bivector_of_lie_ι {x : CliffordAlgebra Q} {c d c' d' : M}
     (hc : ⁅x, ι Q c⁆ = ι Q c') (hd : ⁅x, ι Q d⁆ = ι Q d') :
     ⁅x, bivector Q c d⁆ = bivector Q c' d + bivector Q c d' := by
-  simp only [bivector_def, lie_smul, lie_sub, lie_mul, hc, hd]
+  have hcd := TauCeti.derivationLieAlgebra.leibniz
+    (TauCeti.innerDerivation R x) (ι Q c) (ι Q d)
+  have hdc := TauCeti.derivationLieAlgebra.leibniz
+    (TauCeti.innerDerivation R x) (ι Q d) (ι Q c)
+  simp only [TauCeti.coe_innerDerivation, LieAlgebra.ad_apply] at hcd hdc
+  simp only [bivector_def, lie_smul, lie_sub, hcd, hdc, hc, hd]
   module
 
 /-- **The bracket of two Clifford bivectors.** Bracketing with `bivector Q a b` is a
@@ -165,7 +159,7 @@ theorem lie_bivector_bivector (a b c d : M) :
   lie_bivector_of_lie_ι Q (bivector_lie_ι Q a b c) (bivector_lie_ι Q a b d)
 
 /-- The set of Clifford bivectors of `Q`, indexed by pairs of vectors. -/
-private def bivectorSet : Set (CliffordAlgebra Q) :=
+private noncomputable def bivectorSet : Set (CliffordAlgebra Q) :=
   Set.range fun p : M × M => bivector Q p.1 p.2
 
 private theorem bivector_mem_span (a b : M) :

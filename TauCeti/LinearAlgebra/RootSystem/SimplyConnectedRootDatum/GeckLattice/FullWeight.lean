@@ -30,11 +30,10 @@ stated against the finite-ordinal weights `TauCeti.DynkinType.geckWeightFin` tha
 consumes, so the bridge to the merged spanning results is the reindexing lemma
 `TauCeti.DynkinType.range_geckWeightFin`.
 
-Nothing here asserts that the Geck carrier is reductive, that its weight torus is a *maximal*
-torus, or that the carrier realizes the pinned root datum; those remain Layer 9 work. Neither does
-anything here bear on the other six valid diagrams, where the Geck weights generate only the
-proper root sublattice, so that a larger admissible lattice is needed before the same two
-statements can hold.
+Nothing here asserts that the Geck carrier is reductive, that its weight torus is a *maximal* torus,
+or that the carrier realizes the pinned root datum. Neither does anything here bear on the other six
+valid diagrams, where the Geck weights generate only the proper root sublattice, so that a larger
+admissible lattice is needed before the same two statements can hold.
 
 ## Main results
 
@@ -54,11 +53,6 @@ of an admissible lattice, and its role in separating the simply connected and ad
 follow J. E. Humphreys, *Linear Algebraic Groups*, §27, and J. C. Jantzen, *Representations of
 Algebraic Groups*, II.1. The unimodularity of the `E₈`, `F₄` and `G₂` Cartan matrices is Bourbaki,
 *Lie Groups and Lie Algebras, Chapters 4--6*, Plates VII--IX.
-
-This advances "Pinnings" and "Points over an algebraically closed field" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, the pinned simply connected ambient group of a valid
-Lie-type index.
 -/
 
 public section

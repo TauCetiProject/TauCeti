@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Kummer.Character
-public import TauCeti.NumberTheory.LocalField.Unramified.Inertia
+public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.NumberTheory.LocalField.WildInertia

@@ -41,6 +41,8 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
   together with its own two corners.
 * `TauCeti.GridRectangleBetween.card_pointSet_inter`: the two states share exactly `n - 2`
   grid points.
+* `TauCeti.GridState.rectangle_induction_on`: any two grid states are joined by a sequence of
+  rectangle moves.
 
 ## References
 
@@ -228,5 +230,28 @@ theorem card_pointSet_inter : (x.pointSet ∩ y.pointSet).card = n - 2 := by
     GridState.card_pointSet_inter_swapColumns x R.left_ne_right
 
 end GridRectangleBetween
+
+namespace GridState
+
+variable {n : ℕ}
+
+/-- **Any two grid states are joined by rectangle moves.** A property of grid states that holds
+at one state `x₀` and passes from the source to the target of every oriented rectangle holds at
+every state: every grid state is reached from `x₀` by a sequence of column transpositions, and
+each column transposition is a rectangle move. -/
+theorem rectangle_induction_on {P : GridState n → Prop} (x₀ : GridState n) (h₀ : P x₀)
+    (h : ∀ x y, GridRectangleBetween x y → P x → P y) (x : GridState n) : P x := by
+  have key : ∀ σ : Equiv.Perm (Fin n), P (x₀.relabelColumns σ) := by
+    intro σ
+    induction σ using Equiv.Perm.swap_induction_on with
+    | one => simpa [Equiv.Perm.one_def] using h₀
+    | swap_mul f a b hab hf =>
+      refine h _ _ (GridRectangleBetween.ofSwapColumns _ _ a b hab ?_) hf
+      rw [swapColumns, relabelColumns_relabelColumns, Equiv.Perm.mul_def]
+  convert key (x.toPerm.trans x₀.toPerm.symm).symm
+  ext c
+  simp [relabelColumns]
+
+end GridState
 
 end TauCeti

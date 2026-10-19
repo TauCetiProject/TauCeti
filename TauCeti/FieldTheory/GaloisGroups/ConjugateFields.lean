@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.ConjugateFields
 public import TauCeti.FieldTheory.GaloisGroups.Embeddings
+import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Conjugate fields of a polynomial root
@@ -55,7 +56,7 @@ open scoped Pointwise
 variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
 /-- The distinct conjugates of `F⟮x⟯` inside its normal closure. -/
-def conjugateSimpleFields (x : E) :
+noncomputable def conjugateSimpleFields (x : E) :
     Set (IntermediateField F (normalClosure F F⟮x⟯ E)) :=
   IntermediateField.conjugateFields (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))
 

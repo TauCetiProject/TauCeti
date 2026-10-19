@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
+public import TauCeti.Topology.Algebra.Group.Basic
 
 /-!
 # Continuous automorphisms and continuous outer automorphisms
@@ -18,12 +19,19 @@ group under composition, `ContinuousAut G`. Its multiplication is `(φ * ψ) x =
 Mathlib's `MulAut`, and forgetting continuity is an injective homomorphism
 `ContinuousAut.toMulAut : ContinuousAut G →* MulAut G`.
 
+The group `ContinuousAut G` acts faithfully on `G` by evaluation. This is a
+`MulDistribMulAction`, and each individual automorphism acts continuously.
+
 When `G` is a group whose multiplication is separately continuous, every inner automorphism
 `x ↦ g * x * g⁻¹` is continuous, which gives the homomorphism
 `ContinuousAut.conj : G →* ContinuousAut G`, lifting `MulAut.conj`. Its kernel is the centre of `G`
 and its range is normal, so the quotient `ContinuousOut G` is the group of continuous outer
 automorphisms. An automorphism that is inner as an abstract automorphism is the continuous inner
 automorphism by the same element, so its class in `ContinuousOut G` is trivial.
+
+More generally, conjugation by `g` restricts to a continuous automorphism of every normal subgroup
+`N`, which gives `ContinuousAut.conjNormal : G →* ContinuousAut N`, lifting `MulAut.conjNormal`,
+with kernel the centralizer of `N`.
 
 For a profinite group an abstract automorphism need not be continuous, so `ContinuousAut G` can be
 a proper subgroup of `MulAut G`. It is the group on which the congruence topology of a
@@ -34,7 +42,10 @@ outer Galois action on a profinite fundamental group.
 
 * `TauCeti.ContinuousAut G`: the group `G ≃ₜ* G` of continuous automorphisms.
 * `TauCeti.ContinuousAut.toMulAut`: the forgetful homomorphism `ContinuousAut G →* MulAut G`.
+* `TauCeti.ContinuousAut.smul_def`: the action of a continuous automorphism is evaluation.
 * `TauCeti.ContinuousAut.conj`: the inner automorphisms, `conj g x = g * x * g⁻¹`.
+* `TauCeti.ContinuousAut.conjNormal`: conjugation on a normal subgroup,
+  `conjNormal g n = g * n * g⁻¹`.
 * `TauCeti.ContinuousOut G`: the quotient of `ContinuousAut G` by the inner automorphisms, with
   quotient map `TauCeti.ContinuousOut.mk`.
 * `TauCeti.ContinuousOut.mulEquivOfIsMulCommutative`: for commutative `G`, the outer automorphism
@@ -47,6 +58,10 @@ outer Galois action on a profinite fundamental group.
 * `TauCeti.ContinuousAut.ker_conj`: the kernel of `conj` is the centre of `G`, so `conj` is
   injective exactly when the centre is trivial (`conj_injective_iff`) and trivial exactly when `G`
   is commutative (`range_conj_eq_bot_iff`).
+* `TauCeti.ContinuousAut.ker_conjNormal`: the kernel of conjugation on a normal subgroup `N` is
+  the centralizer of `N`.
+* `TauCeti.ContinuousAut.conjNormal_coe`: conjugation by an element of `N` is the inner
+  automorphism of `N` by that element.
 * `TauCeti.ContinuousAut.mul_conj_mul_inv`: `φ * conj g * φ⁻¹ = conj (φ g)`, so the range of
   `conj` is normal.
 * `TauCeti.ContinuousAut.eq_conj_of_toMulAut_eq_conj`: an automorphism that is inner as an abstract
@@ -136,6 +151,29 @@ theorem toMulAut_injective : Function.Injective (toMulAut : ContinuousAut G →*
 
 end Mul
 
+section Monoid
+
+variable (G : Type*) [Monoid G] [TopologicalSpace G]
+
+/-- Continuous automorphisms act on their underlying monoid by evaluation. -/
+instance : MulDistribMulAction (ContinuousAut G) G :=
+  MulDistribMulAction.compHom G toMulAut
+
+/-- The action of a continuous automorphism is its evaluation. -/
+@[simp]
+theorem smul_def (φ : ContinuousAut G) (x : G) : φ • x = φ x :=
+  (rfl)
+
+/-- The evaluation action of continuous automorphisms is faithful. -/
+instance : FaithfulSMul (ContinuousAut G) G where
+  eq_of_smul_eq_smul h := ContinuousMulEquiv.ext h
+
+/-- Each continuous automorphism acts continuously on its underlying monoid. -/
+instance : ContinuousConstSMul (ContinuousAut G) G where
+  continuous_const_smul φ := φ.continuous
+
+end Monoid
+
 section Group
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
@@ -206,6 +244,57 @@ theorem toMulAut_mem_range_conj_iff {φ : ContinuousAut G} :
     toMulAut φ ∈ (MulAut.conj : G →* MulAut G).range ↔ φ ∈ (conj : G →* ContinuousAut G).range :=
   ⟨fun ⟨g, hg⟩ ↦ ⟨g, (eq_conj_of_toMulAut_eq_conj hg.symm).symm⟩,
     fun ⟨g, hg⟩ ↦ ⟨g, hg ▸ (toMulAut_conj g).symm⟩⟩
+
+section Normal
+
+variable {N : Subgroup G} [N.Normal]
+
+/-- Conjugation of `G` on a normal subgroup `N`, as continuous automorphisms of `N` with the
+subspace topology: `conjNormal g n = g * n * g⁻¹`. This lifts `MulAut.conjNormal` along `toMulAut`
+(`toMulAut_conjNormal`). -/
+def conjNormal : G →* ContinuousAut N where
+  toFun g :=
+    { MulAut.conjNormal g with
+      continuous_toFun := continuous_induced_rng.mpr <|
+        ((continuous_subtype_val.const_mul g).mul_const g⁻¹).congr
+          fun n ↦ (MulAut.conjNormal_apply g n).symm
+      continuous_invFun := continuous_induced_rng.mpr <|
+        ((continuous_subtype_val.const_mul g⁻¹).mul_const g).congr
+          fun n ↦ (MulAut.conjNormal_symm_apply g n).symm }
+  map_one' := toMulAut_injective (map_one MulAut.conjNormal)
+  map_mul' a b := toMulAut_injective (map_mul MulAut.conjNormal a b)
+
+@[simp]
+theorem conjNormal_apply (g : G) (n : N) : (conjNormal g n : G) = g * n * g⁻¹ :=
+  MulAut.conjNormal_apply g n
+
+@[simp]
+theorem conjNormal_symm_apply (g : G) (n : N) : ((conjNormal g).symm n : G) = g⁻¹ * n * g :=
+  MulAut.conjNormal_symm_apply g n
+
+theorem conjNormal_inv_apply (g : G) (n : N) : ((conjNormal g)⁻¹ n : G) = g⁻¹ * n * g :=
+  MulAut.conjNormal_symm_apply g n
+
+@[simp]
+theorem toMulAut_conjNormal (g : G) :
+    toMulAut (conjNormal g : ContinuousAut N) = MulAut.conjNormal g :=
+  (rfl)
+
+/-- Conjugation by an element of `N` is the inner automorphism of `N` by that element. -/
+@[simp]
+theorem conjNormal_coe (n : N) : conjNormal (n : G) = conj n :=
+  ContinuousMulEquiv.ext fun m ↦ Subtype.ext (by simp)
+
+/-- The kernel of conjugation on a normal subgroup `N` is the centralizer of `N`. -/
+theorem ker_conjNormal :
+    (conjNormal : G →* ContinuousAut N).ker = Subgroup.centralizer (N : Set G) := by
+  ext g
+  simp only [MonoidHom.mem_ker, ContinuousMulEquiv.ext_iff, one_apply, Subtype.ext_iff,
+    conjNormal_apply, Subgroup.mem_centralizer_iff, Subtype.forall, SetLike.mem_coe,
+    mul_inv_eq_iff_eq_mul]
+  exact forall₂_congr fun _ _ ↦ eq_comm
+
+end Normal
 
 end Group
 

@@ -18,9 +18,8 @@ top of `Pathwise.lean` and `Reverse.lean`.
 
 ## Main results
 
-- `exists_lintegral_upcrossings_condExp_le` (roadmap alias `upcrossings_bdd_uniform`): a uniform
-  crossing bound for the antitone conditional-expectation sequence `n ↦ μ[f | 𝔽 n]`, for integrable
-  `f`.
+- `exists_lintegral_upcrossings_condExp_le`: a uniform crossing bound for the antitone
+  conditional-expectation sequence `n ↦ μ[f | 𝔽 n]`, for integrable `f`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -88,8 +87,8 @@ conditional-expectation process.
 
 For an integrable `f` and the process obtained by reversing an antitone filtration, the expected
 number of upcrossings is uniformly bounded, independent of the time horizon `N`, by Doob's
-upcrossing inequality. The public `upcrossings_bdd_uniform` transfers this surrogate bound to the
-genuine antitone sequence `n ↦ μ[f | 𝔽 n]`. -/
+upcrossing inequality. The public `exists_lintegral_upcrossings_condExp_le` transfers this
+surrogate bound to the genuine antitone sequence `n ↦ μ[f | 𝔽 n]`. -/
 private lemma lintegral_upcrossings_revCEFinite_bdd [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) (a b : ℝ) (hab : a < b) :
@@ -244,9 +243,5 @@ theorem exists_lintegral_upcrossings_condExp_le [IsFiniteMeasure μ] (h_antitone
     fun n => stronglyMeasurable_condExp.mono (h_le n)
   -- Upgrade the per-horizon bound to the total upcrossings integral (monotone convergence in `N`).
   exact lintegral_upcrossings_le_of_forall_lintegral_upcrossingsBefore_le h_adapted hab h_N_bound
-
-/-- Roadmap Layer 4 target name (`TauCetiRoadmap/Exchangeability`) for the uniform upcrossing bound
-`exists_lintegral_upcrossings_condExp_le`. -/
-alias upcrossings_bdd_uniform := exists_lintegral_upcrossings_condExp_le
 
 end MeasureTheory

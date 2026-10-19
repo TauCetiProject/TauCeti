@@ -451,7 +451,7 @@ theorem zero_comp (f : Hom source target) : (0 : Hom target third).comp f = 0 :=
 /-- Composing with a zero morphism on the right gives zero. -/
 @[simp]
 theorem comp_zero (g : Hom target third) : g.comp (0 : Hom source target) = 0 := by
-  ext x
+  ext _
   exact g.toIntLinearMap.map_zero
 
 end Hom

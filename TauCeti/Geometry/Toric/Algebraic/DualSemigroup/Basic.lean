@@ -121,16 +121,24 @@ noncomputable def dualSemigroupMap (hi : IsIntegralLattice i) (hi' : IsIntegralL
     exact (mem_dualSemigroup hi' m).1 hm (hστ hx)
 
 /-- The map on dual semigroups is precomposition by the underlying map of lattices. -/
-@[simp]
 theorem dualSemigroupMap_apply (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
     (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
     (hστ : Set.MapsTo g σ τ) (m : dualSemigroup hi' τ) (n : N) :
     (dualSemigroupMap hi hi' f g hfg hστ m : N →+ ℤ) n = (m : N' →+ ℤ) (f n) :=
   by simp [dualSemigroupMap, AddMonoidHom.restrict]
 
+/-- The underlying character of the image of a character under the map on dual semigroups is
+its precomposition with the underlying map of lattices. -/
+@[simp]
+theorem coe_dualSemigroupMap (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) (m : dualSemigroup hi' τ) :
+    (dualSemigroupMap hi hi' f g hfg hστ m : N →+ ℤ) = (m : N' →+ ℤ).comp f := by
+  ext n
+  simp [dualSemigroupMap_apply]
+
 /-- Along the identity of a lattice, a cone inclusion `σ ≤ σ'` induces the inclusion of dual
 semigroups: the image of a character is the same character. -/
-@[simp]
 theorem coe_dualSemigroupMap_id (hi : IsIntegralLattice i) {σ' : PointedCone ℝ V}
     (hσσ' : Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) σ σ') (m : dualSemigroup hi σ') :
     (dualSemigroupMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) hσσ' m : N →+ ℤ) =
@@ -159,5 +167,43 @@ theorem dualSemigroupMap_comp (hi : IsIntegralLattice i) (hi' : IsIntegralLattic
         (dualSemigroupMap hi' hi'' f' g' hf'g' hτυ) := by
   ext m n
   simp only [dualSemigroupMap_apply, AddMonoidHom.comp_apply]
+
+/-- A lattice equivalence carrying one cone onto another identifies their dual semigroups
+contravariantly, by precomposition of characters. -/
+noncomputable def dualSemigroupEquiv (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (f : N ≃+ N') (e : V ≃ₗ[ℝ] V') (hfe : ∀ n, e (i n) = i' (f n))
+    (hστ : σ.map (e : V →ₗ[ℝ] V') = τ) : dualSemigroup hi' τ ≃+ dualSemigroup hi σ := by
+  have hforward : Set.MapsTo e σ τ := fun x hx ↦ by
+    rw [← hστ]
+    exact Submodule.mem_map_of_mem hx
+  have hbackward : Set.MapsTo e.symm τ σ := by
+    intro y hy
+    rw [← hστ, SetLike.mem_coe, PointedCone.mem_map] at hy
+    obtain ⟨x, hx, rfl⟩ := hy
+    simpa using hx
+  have hsymm : ∀ n, e.symm (i' n) = i (f.symm n) := fun n ↦ by
+    apply e.injective
+    simp [hfe]
+  exact
+    { toFun := dualSemigroupMap hi hi' f.toAddMonoidHom e.toLinearMap hfe hforward
+      invFun := dualSemigroupMap hi' hi f.symm.toAddMonoidHom e.symm.toLinearMap hsymm hbackward
+      left_inv := fun m ↦ by ext n; simp
+      right_inv := fun m ↦ by ext n; simp
+      map_add' := fun m n ↦ map_add _ m n }
+
+/-- The dual-semigroup equivalence precomposes with the integral lattice equivalence. -/
+@[simp]
+theorem dualSemigroupEquiv_apply (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (f : N ≃+ N') (e : V ≃ₗ[ℝ] V') (hfe : ∀ n, e (i n) = i' (f n))
+    (hστ : σ.map (e : V →ₗ[ℝ] V') = τ) (m : dualSemigroup hi' τ) (n : N) :
+    (dualSemigroupEquiv hi hi' f e hfe hστ m : N →+ ℤ) n = (m : N' →+ ℤ) (f n) := (rfl)
+
+/-- The inverse dual-semigroup equivalence precomposes with the inverse lattice equivalence. -/
+@[simp]
+theorem dualSemigroupEquiv_symm_apply (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (f : N ≃+ N') (e : V ≃ₗ[ℝ] V') (hfe : ∀ n, e (i n) = i' (f n))
+    (hστ : σ.map (e : V →ₗ[ℝ] V') = τ) (m : dualSemigroup hi σ) (n : N') :
+    ((dualSemigroupEquiv hi hi' f e hfe hστ).symm m : N' →+ ℤ) n =
+      (m : N →+ ℤ) (f.symm n) := (rfl)
 
 end TauCeti.Toric

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ObjectProperty.CompleteLattice
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Naturality
-public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
+public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.Basic
 
 /-!
 # Geometric semisimple points of affine groups
@@ -31,9 +31,6 @@ that this object property is invariant under isomorphisms and closed under tenso
 
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 * J. S. Milne, *Algebraic Groups* (2017), §12.c.
-
-This supplies generic geometric semisimple-point infrastructure used by Layer 4 of the
-ReductiveGroups roadmap.
 -/
 
 public section

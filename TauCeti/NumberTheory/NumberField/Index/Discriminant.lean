@@ -66,7 +66,7 @@ theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
   have hcard : Fintype.card (Free.ChooseBasisIndex ℤ (𝓞 K)) = Fintype.card (Fin pb.dim) := by
     rw [Fintype.card_fin, ← pb.finrank, hfin, finrank_eq_card_chooseBasisIndex]
   set b : Basis (Fin pb.dim) ℤ (𝓞 K) :=
-    (_root_.NumberField.RingOfIntegers.basis K).reindex (Fintype.equivOfCardEq hcard) with hb
+    (_root_.NumberField.RingOfIntegers.basis K).reindex (Fintype.equivOfCardEq hcard)
   set u : Fin pb.dim → 𝓞 K := fun i => (pb.basis i : 𝓞 K) with hu
   set P : Matrix (Fin pb.dim) (Fin pb.dim) ℤ := b.toMatrix u with hP
   -- The determinant of the change of basis is the index, up to sign.

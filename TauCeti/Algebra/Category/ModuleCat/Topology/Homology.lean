@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Topology.Homology
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import TauCeti.Topology.Algebra.Module.Quotient
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Homology in `TopModuleCat` as a concrete subquotient

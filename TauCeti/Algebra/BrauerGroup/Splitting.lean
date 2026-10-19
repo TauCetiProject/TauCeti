@@ -60,7 +60,8 @@ hence of the hypothesis that `TauCeti.BrauerGroup.orderOf_mk_eq_two` needs to sh
 * `TauCeti.isBrauerTrivial_iff_finrank_eq_one`: **a central division algebra is Brauer trivial
   exactly when it is the base field**, with `TauCeti.baseFieldAlgEquivOfIsBrauerTrivial` the
   isomorphism this produces and `TauCeti.BrauerGroup.mk_eq_one_iff_finrank_eq_one` the form for
-  classes.
+  classes. Its easy direction holds for every central simple algebra:
+  `TauCeti.BrauerGroup.mk_eq_one_of_finrank_eq_one`.
 
 ## Implementation notes
 
@@ -162,6 +163,17 @@ theorem BrauerGroup.mk_eq_one_iff_isSplittingField :
 
 end CentralSimple
 
+/-! ### One-dimensional algebras -/
+
+/-- **A one-dimensional central simple algebra has identity Brauer class**: the structure map
+identifies it with the base field. -/
+theorem BrauerGroup.mk_eq_one_of_finrank_eq_one {K : Type u} [Field K] (A : CSA.{u, u} K)
+    (h : Module.finrank K A = 1) : BrauerGroup.mk A = 1 :=
+  (BrauerGroup.mk_eq_mk_of_algEquiv (A := A) (B := CSA.base K)
+    (AlgEquiv.ofBijective (_root_.Algebra.ofId K A)
+      (_root_.Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h)).symm).trans
+    BrauerGroup.mk_base
+
 /-! ### The Brauer class of a central division algebra -/
 
 section DivisionRing
@@ -190,10 +202,7 @@ theorem isBrauerTrivial_iff_finrank_eq_one :
     have hn : n = 1 := by exact_mod_cast hlen.symm
     subst hn
     rw [e.toLinearEquiv.finrank_eq, Module.finrank_matrix, Fintype.card_fin, Module.finrank_self]
-  · intro h
-    exact IsBrauerEquivalent.of_algEquiv K (A := CSA.of K D) (B := CSA.base K)
-      (AlgEquiv.ofBijective (_root_.Algebra.ofId K D)
-        (_root_.Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h)).symm
+  · exact fun h => BrauerGroup.mk_eq_one_iff.1 (BrauerGroup.mk_eq_one_of_finrank_eq_one _ h)
 
 /-- **A Brauer-trivial central division algebra is the base field**, as an isomorphism of
 `K`-algebras. This is the division-algebra companion of `TauCeti.baseFieldAlgEquivOfFinite`, with

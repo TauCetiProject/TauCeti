@@ -108,34 +108,6 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 include hAplus hT
 
--- `presentationLimitMap_comp_presentationLimitLocIso_hom` evaluated at a section, restated with
--- `.hom.1` so that `rw` and `simp` match the `.hom.1` terms below.
-private theorem presentationLimitLocIso_hom_presentationLimitMap_apply {V V' : Opens ↥(spa Aplus)}
-    (hV : V ∈ spaRationalOpens Aplus) (hV' : V' ∈ spaRationalOpens Aplus)
-    (hVW : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V) (x : presentationLimit (P := P) Aplus V) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' (h.trans hVW)).hom.hom.1
-        ((presentationLimitMap (P := P) h).hom.1 x) =
-      (presentationLimitMap (P := completionLocalization P T s S hden)
-        (locOpensComap_mono P Aplus T s S hden h)).hom.1
-          ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 x) :=
-  ConcreteCategory.congr_hom (presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S
-    hden hAplus hT hV hV' hVW h) x
-
--- `presentationLimitLocIso` is a bijection on sections, stated for `.hom.hom.1`.
-private theorem bijective_presentationLimitLocIso_hom {V : Opens ↥(spa Aplus)}
-    (hV : V ∈ spaRationalOpens Aplus) (hVW : V ≤ spaBasicOpen Aplus T s) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    Function.Bijective (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 :=
-  ⟨Function.LeftInverse.injective
-      (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom_inv_id_apply,
-    Function.RightInverse.surjective
-      (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).inv_hom_id_apply⟩
-
 /-- **Injectivity transported along rational localization.** Restriction from `R(T/s)` to rational
 opens `U i ⊆ R(T/s)` is injective as soon as restriction from the pullback of `R(T/s)` to the
 pullbacks of the `U i` is injective. -/

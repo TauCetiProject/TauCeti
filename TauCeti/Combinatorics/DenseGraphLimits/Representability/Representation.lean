@@ -12,14 +12,14 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Representability.HomDensity
 /-!
 # The Lovász–Szegedy characterization of homomorphism densities
 
-A graph parameter is the homomorphism density `t(·, W)` of a graphon `W` on the unit interval if and
-only if it is isomorphism invariant, multiplicative, normalized and reflection positive
-(`lovasz_szegedy_representability`).
+A graph parameter is the homomorphism density `t(·, W)` of a graphon `W` on an atomless standard
+Borel probability space `(Ω, μ)`, such as the unit interval, if and only if it is isomorphism
+invariant, multiplicative, normalized and reflection positive (`lovasz_szegedy_representability`).
 
 The hard direction is `exists_graphon_of_representability_axioms`: a parameter `f` satisfying the
-four axioms is `t(·, W)` for a graphon `W` on the unit interval.  The easy direction is that
-`t(·, W)` satisfies them, for a graphon on any probability space
-(`isReflectionPositive_homDensityParam` and its three companions).
+four axioms is `t(·, W)` for a graphon `W` on `(Ω, μ)`.  The easy direction is that `t(·, W)`
+satisfies them, for a graphon on any probability space (`isReflectionPositive_homDensityParam` and
+its three companions).
 
 As a consequence such a parameter takes values in `[0, 1]`
 (`graphParam_mem_Icc_of_representability_axioms`): boundedness follows from the four axioms and is
@@ -28,10 +28,11 @@ not one of them.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.lovasz_szegedy_representability` — **a graph parameter is `t(·, W)`
-  for a graphon `W` on the unit interval iff it satisfies the four representability axioms.**
+  for a graphon `W` on an atomless standard Borel carrier iff it satisfies the four
+  representability axioms.**
 * `TauCeti.DenseGraphLimits.exists_graphon_of_representability_axioms` — the hard direction: a
   graph parameter satisfying the four representability axioms is `t(·, W)` for a graphon `W` on
-  the unit interval.
+  every atomless standard Borel carrier.
 * `TauCeti.DenseGraphLimits.graphParam_mem_Icc_of_representability_axioms` — such a parameter
   takes values in `[0, 1]`.
 
@@ -51,14 +52,17 @@ open MeasureTheory
 
 namespace TauCeti.DenseGraphLimits
 
+variable {Ω : Type*} [MeasurableSpace Ω] [StandardBorelSpace Ω] (μ : Measure Ω)
+  [IsProbabilityMeasure μ] [NullSingletonClass μ]
+
 /-- **Representability, hard direction.** An isomorphism-invariant, multiplicative, normalized,
-reflection-positive graph parameter is the homomorphism density of a graphon on the unit
-interval. -/
+reflection-positive graph parameter is the homomorphism density of a graphon on every atomless
+standard Borel carrier `(Ω, μ)`, such as the unit interval. -/
 theorem exists_graphon_of_representability_axioms (f : GraphParam) (hiso : IsIsoInvariant f)
     (hmul : IsMultiplicative f) (hnorm : IsNormalized f) (hrp : IsReflectionPositive f) :
-    ∃ W : Graphon unitInterval (volume : Measure unitInterval),
+    ∃ W : Graphon Ω μ,
       ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj], f n F = homDensity F W := by
-  obtain ⟨W, hW⟩ := exists_graphon_of_isDissociated _
+  obtain ⟨W, hW⟩ := exists_graphon_of_isDissociated μ _
     (isDissociated_paramExchangeableLaw f hiso hmul hnorm hrp)
   refine ⟨W, fun n F _ => ?_⟩
   rw [← paramExchangeableLaw_upperMass f hiso hmul hnorm hrp F, hW,
@@ -69,19 +73,21 @@ theorem graphParam_mem_Icc_of_representability_axioms (f : GraphParam) (hiso : I
     (hmul : IsMultiplicative f) (hnorm : IsNormalized f) (hrp : IsReflectionPositive f)
     (n : ℕ) (F : SimpleGraph (Fin n)) : f n F ∈ Set.Icc (0 : ℝ) 1 := by
   classical
-  obtain ⟨W, hW⟩ := exists_graphon_of_representability_axioms f hiso hmul hnorm hrp
+  obtain ⟨W, hW⟩ :=
+    exists_graphon_of_representability_axioms (volume : Measure unitInterval) f hiso hmul hnorm hrp
   rw [hW n F]
   exact ⟨homDensity_nonneg F W, homDensity_le_one F W⟩
 
 /-- **The Lovász–Szegedy characterization of homomorphism densities.** A graph parameter is the
-homomorphism density of a graphon on the unit interval if and only if it is isomorphism invariant,
-multiplicative, normalized and reflection positive. -/
+homomorphism density of a graphon on an atomless standard Borel carrier `(Ω, μ)`, such as the unit
+interval, if and only if it is isomorphism invariant, multiplicative, normalized and reflection
+positive. -/
 theorem lovasz_szegedy_representability (f : GraphParam) :
-    (∃ W : Graphon unitInterval (volume : Measure unitInterval),
+    (∃ W : Graphon Ω μ,
         ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj], f n F = homDensity F W) ↔
       IsIsoInvariant f ∧ IsMultiplicative f ∧ IsNormalized f ∧ IsReflectionPositive f := by
   refine ⟨fun ⟨W, hW⟩ => ?_, fun ⟨hiso, hmul, hnorm, hrp⟩ =>
-    exists_graphon_of_representability_axioms f hiso hmul hnorm hrp⟩
+    exists_graphon_of_representability_axioms μ f hiso hmul hnorm hrp⟩
   have hf : f = homDensityParam W := by
     classical
     funext n F

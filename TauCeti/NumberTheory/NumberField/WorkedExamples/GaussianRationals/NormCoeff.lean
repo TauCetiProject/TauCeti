@@ -25,6 +25,9 @@ pointwise product `1 * 1` of the trivial function with itself is `1`, whose coef
 
 * `TauCeti.NumberField.GaussianRationals.dedekindZetaCoeff_five`: `ℚ(i)` has two integral
   ideals of absolute norm `5`.
+* `TauCeti.NumberField.GaussianRationals.exists_normCoeff_eq_zero_not_forall_nonneg`: those two
+  ideals carry a nonzero ideal arithmetic function with a negative value and vanishing norm
+  coefficients.
 Together with `TauCeti.normCoeff_one_apply` and
 `TauCeti.not_forall_normCoeff_mul_eq_pmul`, this gives the trivial ideal weight's coefficient
 at `5` and the failure of a pointwise-product formula over `ℚ(i)`.
@@ -33,7 +36,7 @@ at `5` and the failure of a pointwise-product formula over `ℚ(i)`.
 public section
 
 open Polynomial NumberField Ideal
-open scoped NumberField
+open scoped NumberField ComplexOrder
 
 namespace TauCeti.NumberField.GaussianRationals
 
@@ -55,5 +58,18 @@ theorem dedekindZetaCoeff_five (hmin : minpoly ℤ θ = X ^ 2 + 1)
   rw [← card_normFiber_eq_dedekindZetaCoeff K (by norm_num),
     ← Finset.card_map (Function.Embedding.subtype _), hfiber,
     Finset.card_pair (span_two_add_ne_span_two_sub hmin)]
+
+/-- **Rejection test over `ℚ(i)`.** The two integral ideals of absolute norm `5` carry the
+two-summand witness `-1 + 1 = 0` of `TauCeti.exists_forall_normCoeff_nonneg_not_forall_nonneg`: a
+nonzero ideal arithmetic function with a negative value whose norm coefficients all vanish. -/
+theorem exists_normCoeff_eq_zero_not_forall_nonneg (hmin : minpoly ℤ θ = X ^ 2 + 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    ∃ f : IdealArithmeticFunction K, f ≠ 0 ∧ normCoeff K f = 0 ∧ ¬ ∀ I, 0 ≤ f I := by
+  have hcard : 1 < (normFiber K 5).card := by
+    rw [card_normFiber_eq_dedekindZetaCoeff K (by norm_num), dedekindZetaCoeff_five hmin hgen]
+    norm_num
+  obtain ⟨A, hA, B, hB, hAB⟩ := Finset.one_lt_card.mp hcard
+  exact exists_forall_normCoeff_nonneg_not_forall_nonneg K hAB
+    (((mem_normFiber K).mp hA).trans ((mem_normFiber K).mp hB).symm)
 
 end TauCeti.NumberField.GaussianRationals

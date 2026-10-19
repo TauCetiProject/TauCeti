@@ -53,6 +53,13 @@ theorem _root_.MonoidHom.coe_cpowCharacter_apply (f : G →* NNRealˣ) (hf : Con
     unfold MonoidHom.cpowCharacter
     rfl
 
+/-- The absolute value of `f.cpowCharacter hf s` at `x` is `(f x) ^ re s`. -/
+theorem _root_.MonoidHom.norm_coe_cpowCharacter_apply (f : G →* NNRealˣ) (hf : Continuous f)
+    (s : ℂ) (x : G) :
+    ‖(f.cpowCharacter hf s x : ℂ)‖ = ((f x : NNReal) : ℝ) ^ s.re := by
+  rw [MonoidHom.coe_cpowCharacter_apply,
+    Complex.norm_cpow_eq_rpow_re_of_pos (NNReal.coe_pos.mpr (f x).ne_zero.bot_lt)]
+
 /-- The exponent `0` gives the trivial character. -/
 @[simp]
 theorem _root_.MonoidHom.cpowCharacter_zero (f : G →* NNRealˣ) (hf : Continuous f) :
@@ -86,6 +93,11 @@ theorem coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
   simp only [normCpowCharacter, MonoidHom.coe_cpowCharacter_apply, Units.coe_map,
     MonoidHom.coe_mk, ZeroHom.toFun_eq_coe, MonoidWithZeroHom.toZeroHom_coe, OneHom.coe_mk,
     nnnormHom_apply, coe_nnnorm]
+
+/-- The absolute value of `normCpowCharacter 𝕜 s` at `x` is `‖x‖ ^ re s`. -/
+theorem norm_coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
+    ‖(normCpowCharacter 𝕜 s x : ℂ)‖ = ‖(x : 𝕜)‖ ^ s.re :=
+  MonoidHom.norm_coe_cpowCharacter_apply _ _ s x
 
 /-- The exponent `0` gives the trivial character. -/
 @[simp]

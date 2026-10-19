@@ -5,48 +5,56 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RepresentationTheory.Quiver.Radical
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
 # The vertex idempotents of a path algebra are primitive
 
-When the trivial path is the only path from `v` to `v`, the corner ring `eᵥ kQ eᵥ` of the vertex
-idempotent at `v` is as small as it can be: `eᵥ f eᵥ` is a scalar multiple of `eᵥ`
-(`TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`), so the corner ring is a copy of `k`. As soon
-as `0` and `1` are the only idempotents of `k` — that is, as soon as `1` is a primitive idempotent
-of `k`, which holds over a domain and over a local ring (`TauCeti.isPrimitiveIdempotent_one`) — the
-only idempotents of that corner are therefore `0` and `eᵥ`, which is exactly primitivity of `eᵥ`.
+Let `Q` be a quiver with finitely many vertices and `k` a semiring in which `1` is a primitive
+idempotent — a domain or a local ring, say (`TauCeti.isPrimitiveIdempotent_one`). Then every
+vertex idempotent `eᵥ` of the path algebra `kQ` is primitive: it is not the sum of two nonzero
+orthogonal idempotents. Read through
+`TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`, this says that the left ideal
+`kQ eᵥ` — the indecomposable projective `Pᵥ` — is an indecomposable module, and it is the input to
+the primitive-idempotent decomposition of `1 = ∑ᵥ eᵥ`
+(`TauCeti.PathAlgebra.completeOrthogonalIdempotents_vertexIdempotent`).
 
-The path hypothesis is local to `v`, cycles elsewhere in the quiver being irrelevant; an acyclic
-quiver supplies it at every vertex through `TauCeti.Quiver.IsAcyclic.eq_nil`.
+No hypothesis is placed on the paths at `v`: oriented cycles through `v` are allowed. For the
+quiver with a single vertex and a single loop at it, where `kQ` is the polynomial ring `k[X]`
+(`TauCeti.PathAlgebra.oneLoopAlgEquiv`) and the one vertex idempotent is `1`, the statement is that
+`1` is primitive in `k[X]`. Over a coefficient *ring*, where every idempotent has a complement,
+that in turn says that `k[X]` has no idempotent other than `0` and `1`
+(`TauCeti.isPrimitiveIdempotent_one_iff`); over a semiring it is the weaker statement that `1`
+admits no splitting into two nonzero orthogonal idempotents.
 
-Read through `TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`, this says that the left
-ideal `kQ eᵥ` — the indecomposable projective `Pᵥ` — is an indecomposable module. That the
-corresponding *representation* `TauCeti.indecProjRep` is indecomposable is already known
-categorically (`TauCeti.Quiver.Representation.indecomposable_indecProjRep`); the statement here is
-the module-level one, about the left ideal of `kQ` itself, and it is the input to the
-primitive-idempotent decomposition of `1 = ∑ᵥ eᵥ`.
+What replaces that hypothesis is the length filtration of the path algebra (`TauCeti.pathSpan`),
+which is where the two coordinate facts this file rests on come from. Reading the coordinate on the
+trivial path at `v` is a multiplicative map `kQ → k` (`TauCeti.pathAlgebraBasis_repr_mul_nil`),
+because a concatenation is that trivial path only when both its factors are; and the arrow ideal —
+the first step of the filtration, the elements whose coordinates on the trivial paths all vanish —
+contains no nonzero idempotent
+(`TauCeti.eq_zero_of_isIdempotentElem_of_mem_pathSpan_one`). Among the trivial paths, only the one
+at `v` can carry a nonzero coordinate of an element of the corner `eᵥ kQ eᵥ`, a vertex idempotent
+on the left confining the coordinates to the paths ending at `v`
+(`TauCeti.pathAlgebraBasis_repr_vertexIdempotent_mul`). So the trivial-path coordinates of
+the two summands of a decomposition of `eᵥ` decompose `1` in `k`, and the summand whose coordinate
+primitivity of `1` kills lies in the arrow ideal, hence is zero.
 
-The path hypothesis is what the proof needs, not what the statement needs. With an oriented cycle
-through `v` the corner ring is the monoid algebra of the monoid of paths `v → v`, which is free on
-the loops at `v` that do not return to `v` in between; a free associative algebra over a domain is
-a domain, so `0` and `eᵥ` remain its only idempotents and `eᵥ` remains primitive — for the one-loop
-quiver, where `kQ ≅ k[X]` and the single vertex idempotent is `1`, this is just that `k[X]` is a
-domain. What the hypothesis buys is the scalar corner computation run here, which is unavailable in
-that generality.
+The acyclic-at-`v` form of the theorem instead computed the corner `eᵥ kQ eᵥ` outright as a copy of
+`k` (`TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`), which is where the path hypothesis was
+needed; that computation plays no part here.
 
 ## Main results
 
 * `TauCeti.isPrimitiveIdempotent_vertexIdempotent`: **a vertex idempotent of the path algebra of a
-  finite quiver is primitive** as soon as the trivial path is the only path at its vertex and `1`
-  is primitive in the coefficient ring.
+  quiver with finitely many vertices is primitive** as soon as `1` is primitive in the coefficient
+  semiring.
 * `TauCeti.isIndecomposableModule_span_singleton_vertexIdempotent`: consequently the left ideal
   `kQ eᵥ` is an indecomposable `kQ`-module.
 
-Primitivity of `eᵥ` is a semiring-level statement, and is proved here directly from the definition,
-transporting a decomposition of `eᵥ` to one of `1` in the coefficient ring. Additive inverses enter
-only with the corollary, the module characterization asking for a ring.
+Primitivity of `eᵥ` is a semiring-level statement. Additive inverses enter only with the corollary,
+the module characterization asking for a ring.
 
 ## References
 
@@ -69,50 +77,68 @@ section Semiring
 
 variable [Semiring k]
 
-/-- **A vertex idempotent with no nontrivial path at its vertex is primitive.** Both summands of a
-decomposition of `eᵥ` lie in the corner ring `eᵥ kQ eᵥ`, hence are the trivial path at `v` carrying
-a scalar coefficient; reading off those coefficients turns the decomposition into a decomposition
-of `1` in the coefficient ring, where `1` is primitive. -/
-theorem isPrimitiveIdempotent_vertexIdempotent (hk : IsPrimitiveIdempotent (1 : k)) (v : Q)
-    (h : ∀ p : Quiver.Path v v, p = Quiver.Path.nil) :
+omit [Finite Q] in
+/-- The coordinate on the trivial path at `v` of an element of the corner `eᵥ kQ eᵥ` is its only
+coordinate on a trivial path: every other trivial path fails to end at `v`. -/
+private theorem mem_pathSpan_one_of_corner {v : Q} {f : pathAlgebra k Q}
+    (hf : vertexIdempotent k v * f = f)
+    (hv : (pathAlgebraBasis k Q).repr f ⟨v, v, _root_.Quiver.Path.nil⟩ = 0) :
+    f ∈ pathSpan k Q 1 := by
+  refine mem_pathSpan_iff.2 fun x hx => ?_
+  by_contra hlen
+  obtain ⟨a, b, p⟩ := x
+  have hzero : p.length = 0 := Nat.le_zero.1 (Nat.not_lt.1 hlen)
+  obtain rfl : a = b := p.eq_of_length_zero hzero
+  obtain rfl : p = _root_.Quiver.Path.nil := p.eq_nil_of_length_zero hzero
+  rcases eq_or_ne a v with rfl | hav
+  · exact hx hv
+  · have hcoord : (pathAlgebraBasis k Q).repr (vertexIdempotent k v * f)
+        (⟨a, a, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) = 0 := by
+      classical
+      rw [pathAlgebraBasis_repr_vertexIdempotent_mul]
+      simp [hav]
+    exact hx (hf ▸ hcoord)
+
+/-- **A vertex idempotent of a path algebra is primitive.** In a decomposition of `eᵥ` into
+orthogonal idempotents, the two coordinates on the trivial path at `v` decompose `1` in the
+coefficient semiring, so one of them vanishes; the corresponding summand then has no coordinate on
+any trivial path, and an idempotent of the arrow ideal is zero. -/
+theorem isPrimitiveIdempotent_vertexIdempotent (hk : IsPrimitiveIdempotent (1 : k)) (v : Q) :
     IsPrimitiveIdempotent (vertexIdempotent k v : pathAlgebra k Q) := by
   have := hk.nontrivial
-  have hmul : ∀ a b : k, (single ⟨v, v, Quiver.Path.nil⟩ a *
-      single ⟨v, v, Quiver.Path.nil⟩ b : pathAlgebra k Q)
-        = single ⟨v, v, Quiver.Path.nil⟩ (a * b) := fun a b ↦ by
-    rw [single_mul_single_of_comp, Quiver.Path.comp_nil]
-  have hinj : ∀ a b : k, (single ⟨v, v, Quiver.Path.nil⟩ a : pathAlgebra k Q)
-      = single ⟨v, v, Quiver.Path.nil⟩ b → a = b := fun a b hab ↦ by
-    simpa using congrArg
-      (fun g : pathAlgebra k Q ↦ (pathAlgebraBasis k Q).repr g ⟨v, v, Quiver.Path.nil⟩) hab
-  have hcorner : ∀ f : pathAlgebra k Q, vertexIdempotent k v * f = f →
-      f * vertexIdempotent k v = f → ∃ c : k, f = single ⟨v, v, Quiver.Path.nil⟩ c :=
-    fun f hef hfe ↦ ⟨_, by
-      have hf := vertexIdempotent_mul_mul_vertexIdempotent v h f
-      rwa [hef, hfe, vertexIdempotent_eq_single, smul_single, mul_one] at hf⟩
   refine ⟨vertexIdempotent_mul_self v, vertexIdempotent_ne_zero v, ?_⟩
   intro f₁ f₂ h₁ h₂ h₁₂ h₂₁ hsum
-  obtain ⟨c₁, rfl⟩ := hcorner f₁ (by rw [← hsum, add_mul, h₁.eq, h₂₁, add_zero])
-    (by rw [← hsum, mul_add, h₁.eq, h₁₂, add_zero])
-  obtain ⟨c₂, rfl⟩ := hcorner f₂ (by rw [← hsum, add_mul, h₁₂, h₂.eq, zero_add])
-    (by rw [← hsum, mul_add, h₂₁, h₂.eq, zero_add])
-  have hc₁ : c₁ * c₁ = c₁ := hinj _ _ (by rw [← hmul]; exact h₁.eq)
-  have hc₂ : c₂ * c₂ = c₂ := hinj _ _ (by rw [← hmul]; exact h₂.eq)
-  have hc₁₂ : c₁ * c₂ = 0 := hinj _ _ (by rw [← hmul, h₁₂, single_zero])
-  have hc₂₁ : c₂ * c₁ = 0 := hinj _ _ (by rw [← hmul, h₂₁, single_zero])
-  have hcsum : c₁ + c₂ = 1 := hinj _ _ (by rw [single_add, hsum, vertexIdempotent_eq_single])
-  exact (hk.eq_zero_or_eq_zero_of_add hc₁ hc₂ hc₁₂ hc₂₁ hcsum).imp
-    (fun hz ↦ by rw [hz, single_zero]) fun hz ↦ by rw [hz, single_zero]
+  set c₁ := (pathAlgebraBasis k Q).repr f₁ ⟨v, v, _root_.Quiver.Path.nil⟩ with hc₁def
+  set c₂ := (pathAlgebraBasis k Q).repr f₂ ⟨v, v, _root_.Quiver.Path.nil⟩ with hc₂def
+  have hcorner₁ : vertexIdempotent k v * f₁ = f₁ := by
+    rw [← hsum, add_mul, h₁.eq, h₂₁, add_zero]
+  have hcorner₂ : vertexIdempotent k v * f₂ = f₂ := by
+    rw [← hsum, add_mul, h₁₂, h₂.eq, zero_add]
+  have hsq₁ : c₁ * c₁ = c₁ := by rw [hc₁def, ← pathAlgebraBasis_repr_mul_nil, h₁.eq]
+  have hsq₂ : c₂ * c₂ = c₂ := by rw [hc₂def, ← pathAlgebraBasis_repr_mul_nil, h₂.eq]
+  have hmul₁₂ : c₁ * c₂ = 0 := by
+    rw [hc₁def, hc₂def, ← pathAlgebraBasis_repr_mul_nil, h₁₂, map_zero,
+      Finsupp.zero_apply]
+  have hmul₂₁ : c₂ * c₁ = 0 := by
+    rw [hc₁def, hc₂def, ← pathAlgebraBasis_repr_mul_nil, h₂₁, map_zero,
+      Finsupp.zero_apply]
+  have hone : c₁ + c₂ = 1 := by
+    rw [hc₁def, hc₂def, ← Finsupp.add_apply, ← map_add, hsum, vertexIdempotent_eq_single,
+      pathAlgebraBasis_repr_single, Finsupp.single_eq_same]
+  refine (hk.eq_zero_or_eq_zero_of_add hsq₁ hsq₂ hmul₁₂ hmul₂₁ hone).imp (fun hz => ?_) fun hz => ?_
+  · exact eq_zero_of_isIdempotentElem_of_mem_pathSpan_one h₁
+      (mem_pathSpan_one_of_corner hcorner₁ hz)
+  · exact eq_zero_of_isIdempotentElem_of_mem_pathSpan_one h₂
+      (mem_pathSpan_one_of_corner hcorner₂ hz)
 
 end Semiring
 
-/-- **The indecomposable projective `Pᵥ = kQ eᵥ` is an indecomposable module**, when the trivial
-path is the only path from `v` to itself: its generator is then a primitive idempotent. -/
+/-- **The indecomposable projective `Pᵥ = kQ eᵥ` is an indecomposable module**: its generator is a
+primitive idempotent. -/
 theorem isIndecomposableModule_span_singleton_vertexIdempotent [Ring k]
-    (hk : IsPrimitiveIdempotent (1 : k)) (v : Q)
-    (h : ∀ p : Quiver.Path v v, p = Quiver.Path.nil) :
+    (hk : IsPrimitiveIdempotent (1 : k)) (v : Q) :
     IsIndecomposableModule (pathAlgebra k Q)
       (Ideal.span {(vertexIdempotent k v : pathAlgebra k Q)}) :=
-  (isPrimitiveIdempotent_vertexIdempotent hk v h).isIndecomposableModule
+  (isPrimitiveIdempotent_vertexIdempotent hk v).isIndecomposableModule
 
 end TauCeti

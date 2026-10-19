@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Subgroups
 import Mathlib.RingTheory.ZMod.UnitsCyclic
 import Mathlib.Tactic.NormNum.Prime

@@ -63,8 +63,7 @@ theorem mem_ramifiedPrimes_of_natCast_mem (F : Type*) [Field F] [NumberField F]
       simpa [Ideal.span_singleton_le_iff_mem, Ideal.mem_comap] using hpQ
     have := hur Q.1
     have he := Ideal.ramificationIdx_eq_one_of_isUnramifiedAt (R := 𝓞 ℚ) (p := Q.1)
-    rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q.1
-      (Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q.1),
+    rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q.1,
       IsCyclotomicExtension.Rat.ramificationIdx_eq n F Q.1 hnm hpm] at he
     have hp2 : p = 2 := by
       have := Nat.eq_one_of_mul_eq_one_left he

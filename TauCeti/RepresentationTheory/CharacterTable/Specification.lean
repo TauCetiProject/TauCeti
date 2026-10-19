@@ -49,38 +49,35 @@ orthonormality forbids repetitions, so the matching is a permutation.
   becomes the characterization `TauCeti.isCharacterTableSpec_iff_exists_perm` of the matrices
   satisfying it, and `TauCeti.IsCharacterTableSpec.exists_perm_eq`: any two of them differ by a
   permutation of rows.
+* `TauCeti.IsCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree`: the identity column of
+  such a matrix sums to the sum of the character degrees.
 * `TauCeti.IsCharacterTableSpec.exists_eq_characterTable`: the row-by-row form of uniqueness, that
   every row is a row of the character table.
 
 ## Implementation notes
 
-The specification is stated over `ℂ`, where the roadmap pins it: its orthonormality condition is
-the Hermitian one, which is the form the algorithm checks. The normalized row
-`TauCeti.centralCharacterRow` needs no such restriction and is defined over any field, so that
-`TauCeti.centralCharacterRow_characterTable` (the normalized rows of the character table are the
-rows of the central character table) is available wherever the two tables are. Normalizing reads
-only the row it is given, so it is also defined for a matrix with any row index type, and only
-`TauCeti.centralCharacterRow_characterTable` and the specification itself ask for the character
-table's.
+The specification is stated over `ℂ`: its orthonormality condition is the Hermitian one, which is
+the form the algorithm checks. The normalized row `TauCeti.centralCharacterRow` needs no such
+restriction and is defined over any field, so that `TauCeti.centralCharacterRow_characterTable` (the
+normalized rows of the character table are the rows of the central character table) is available
+wherever the two tables are. Normalizing reads only the row it is given, so it is also defined for a
+matrix with any row index type, and only `TauCeti.centralCharacterRow_characterTable` and the
+specification itself ask for the character table's.
 
-The group is an explicit argument of `TauCeti.IsCharacterTableSpec`, as the roadmap pins it: the
-specification is read as a statement about `G`, and `IsCharacterTableSpec G M` says what it says
-without having to recover `G` from the type of `M`.
+The group is an explicit argument of `TauCeti.IsCharacterTableSpec`: the specification is read as a
+statement about `G`, and `IsCharacterTableSpec G M` says what it says without having to recover `G`
+from the type of `M`.
 
-Three of the four conditions do the work in `TauCeti.characterTable_unique_rows`: the positivity
-and integrality of the degrees, row orthonormality, and the eigenrow condition. The divisibility
-`dᵢ ∣ |G|` and the identity `∑ dᵢ² = |G|` are part of the checker as the roadmap pins it, being
-what the algorithm tests after the eigenvector search and before lifting; they are recorded here
-because the character table satisfies them, not because uniqueness needs them.
+Three of the four conditions do the work in `TauCeti.characterTable_unique_rows`: the positivity and
+integrality of the degrees, row orthonormality, and the eigenrow condition. The divisibility
+`dᵢ ∣ |G|` and the identity `∑ dᵢ² = |G|` are part of the checker, being what the algorithm tests
+after the eigenvector search and before lifting; they are recorded here because the character table
+satisfies them, not because uniqueness needs them.
 
 ## References
 
-This is the specification and the labeled uniqueness of Layer 5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-(`IsCharacterTableSpec`, `isCharacterTableSpec_characterTable` and `characterTable_unique_rows` in
-that roadmap's `Suggested.lean`). See J. D. Dixon, *High speed computation of group characters*,
-Numer. Math. 10 (1967) 446-450, and I. M. Isaacs, *Character Theory of Finite Groups* (1976),
-Chapter 3.
+See J. D. Dixon, *High speed computation of group characters*, Numer. Math. 10 (1967) 446-450, and
+I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 3.
 -/
 
 public section
@@ -258,7 +255,7 @@ Its normalized row is a normalized common left eigenrow of the class-multiplicat
 the central character of some irreducible; the self-pairing of the row then forces the degree of
 that irreducible to be the identity entry of the row, and the two rows agree class by class. -/
 theorem exists_eq_characterTable : ∃ j, ∀ C, M i C = characterTable ℂ G j C := by
-  obtain ⟨d, hdpos, hMd, -⟩ := hM.exists_degree i
+  obtain ⟨d, _, hMd, -⟩ := hM.exists_degree i
   obtain ⟨j, hj⟩ := (isClassEigenrow_iff_exists_centralCharacterTable_eq
     (centralCharacterRow_mk_one (hM.apply_mk_one_ne_zero i))).mp (hM.row_eigen i)
   have he : (characterDegree ℂ j : ℂ) ≠ 0 :=
@@ -338,6 +335,15 @@ theorem IsCharacterTableSpec.exists_perm_eq
   obtain ⟨σ, rfl⟩ := isCharacterTableSpec_iff_exists_perm.mp hM
   obtain ⟨τ, rfl⟩ := isCharacterTableSpec_iff_exists_perm.mp hN
   exact ⟨τ⁻¹ * σ, by ext i C; simp⟩
+
+/-- **The identity column of a matrix satisfying the specification sums to the sum of the character
+degrees**: it is the identity column of the character table with its rows permuted. -/
+theorem IsCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree
+    (hM : IsCharacterTableSpec G M) :
+    ∑ i, M i (ConjClasses.mk 1) = ∑ i, (characterDegree ℂ (G := G) i : ℂ) := by
+  obtain ⟨σ, rfl⟩ := characterTable_unique_rows hM
+  simp only [Matrix.submatrix_apply, id_eq, characterTable_one]
+  exact Equiv.sum_comp σ fun i => (characterDegree ℂ (G := G) i : ℂ)
 
 end Spec
 

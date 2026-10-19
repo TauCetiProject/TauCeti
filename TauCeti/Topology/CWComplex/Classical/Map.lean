@@ -60,14 +60,22 @@ lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
       ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1, hf n x.2⟩ := by
   simp [skeletonMap]
 
-/-- Restriction of a cellular map commutes with the inclusions of consecutive skeleta. -/
+/-- Restriction of a cellular map commutes with inclusions of skeleta. -/
 @[reassoc]
-lemma skeletonMap_comp_inclusion (n : ℕ) :
+lemma skeletonMap_comp_inclusion {n m : ℕ} (h : n ≤ m) :
     skeletonMap C C' hf n ≫
-      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C')
-        (mod_cast n.le_succ))) =
-    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C)
-      (mod_cast n.le_succ))) ≫ skeletonMap C C' hf (n + 1) := by
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C') (mod_cast h))) =
+    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C) (mod_cast h))) ≫
+      skeletonMap C C' hf m := by
+  ext x
+  rfl
+
+/-- Restriction of a cellular map commutes with inclusion of a skeleton into the complex. -/
+@[reassoc]
+lemma skeletonMap_comp_inclusion_complex (n : ℕ) :
+    skeletonMap C C' hf n ≫
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C' n).subset_complex) =
+    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C n).subset_complex) ≫ f := by
   ext x
   rfl
 

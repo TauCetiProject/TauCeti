@@ -250,14 +250,14 @@ theorem toWeilDivisorHom_apply (D : CartierDivisor X) :
 divisors. -/
 @[simp]
 theorem toWeilDivisor_principalCartierDivisor (g : Additive X.functionFieldˣ) :
-    (principalCartierDivisorAddHom X g).toWeilDivisor =
+    (principalCartierDivisor X g.toMul).toWeilDivisor =
       (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g := by
   apply WeilDivisor.ext
   intro x
   let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, by simp⟩⟩
   rw [coeff_toWeilDivisor,
     orderAt_eq_of_restrict_eq_rationalUnitClass _ x ⊤ (by simp) g
-      (principalCartierDivisorAddHom_restrict X g ⊤),
+      (principalCartierDivisor_restrict X g.toMul ⊤),
     WeilDivisor.OrderSystem.coeff_principalDivisor,
     WeilDivisor.OrderSystem.ofScheme_ord]
 

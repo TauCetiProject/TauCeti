@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
@@ -17,8 +18,13 @@ coordinate topology through that basis. This identifies the canonical topology u
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
 module topology of a finite-dimensional space is Hausdorff and locally compact, and every subspace
-of a finite-dimensional space is closed. No norm or completeness hypothesis on the scalars is
-needed.
+of a finite-dimensional space is closed; over σ-compact scalars it is σ-compact. No norm or
+completeness hypothesis on the scalars is needed.
+
+Separation of the scalars cannot be dropped from the Hausdorff and closed-subspace statements:
+over a semiring with the indiscrete topology, the module topology of every module is indiscrete
+(`IndiscreteTopology.of_continuousSMul`), so `IsModuleTopology` on its own does not replace the
+separation of the scalars.
 
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
@@ -63,6 +69,12 @@ theorem locallyCompactSpace (b : _root_.Module.Basis ι K V) [LocallyCompactSpac
     LocallyCompactSpace V :=
   (equivFunHomeomorph b).isOpenEmbedding.locallyCompactSpace
 
+/-- The module topology is σ-compact when the scalars are σ-compact and the module has a finite
+basis. -/
+theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K] :
+    SigmaCompactSpace V :=
+  (equivFunHomeomorph b).isClosedEmbedding.sigmaCompactSpace
+
 end ModuleTopology
 
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
@@ -84,6 +96,14 @@ theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
   let b := Module.finBasis K V
   exact ModuleTopology.locallyCompactSpace b
 
+/-- The module topology of a finite-dimensional space over a σ-compact division ring equipped
+with a topological semiring structure is σ-compact. -/
+theorem sigmaCompactSpace_moduleTopology [SigmaCompactSpace K] :
+    @SigmaCompactSpace V (moduleTopology K V) := by
+  let _ : TopologicalSpace V := moduleTopology K V
+  let b := Module.finBasis K V
+  exact ModuleTopology.sigmaCompactSpace b
+
 /-- Every subspace of a finite-dimensional space over a Hausdorff division ring equipped with a
 topological semiring structure is closed for the module topology. -/
 theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSpace V]
@@ -95,5 +115,16 @@ theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSp
     simp [Submodule.Quotient.mk_eq_zero]
   rw [hW]
   exact isClosed_singleton.preimage (IsModuleTopology.continuous_of_linearMap W.mkQ)
+
+/-- A space on which scalars with the indiscrete topology act continuously, with zero, is
+indiscrete. In particular, over a semiring with the indiscrete topology, the module topology of
+any module is indiscrete. -/
+theorem _root_.IndiscreteTopology.of_continuousSMul (R M : Type*) [MonoidWithZero R]
+    [TopologicalSpace R] [IndiscreteTopology R] [Zero M] [MulActionWithZero R M]
+    [TopologicalSpace M] [ContinuousSMul R M] : IndiscreteTopology M := by
+  -- The indiscrete scalars `0` and `1` are inseparable, so `0 = 0 • x` and `x = 1 • x` are.
+  have h (x : M) : Inseparable (0 : M) x := by
+    simpa using (Inseparable.all (0 : R) 1).smul (.refl x)
+  exact .of_forall_inseparable fun x y ↦ (h x).symm.trans (h y)
 
 end TauCeti

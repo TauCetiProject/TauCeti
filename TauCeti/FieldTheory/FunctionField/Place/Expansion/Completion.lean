@@ -1,0 +1,187 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.FieldTheory.FunctionField.Place.Expansion.PowerSeries
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
+public import Mathlib.RingTheory.PowerSeries.PiTopology
+
+/-!
+# The completed valuation ring at a rational place
+
+Uniformizer expansion identifies the completed valuation ring at a rational place with
+`k[[T]]`. Every coefficient sequence is realized: its polynomial partial sums are Cauchy,
+and their limit has the prescribed finite expansions. The isomorphism sends a chosen
+uniformizer to `T`, identifies the order filtrations, and restricts on the valuation ring
+of `F` to the uniformizer expansion before completion. With the constants discrete and
+power series given their coefficientwise topology, it is also a homeomorphism.
+
+## References
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Section IV.2.
+-/
+
+public section
+
+open Filter Topology
+open scoped BigOperators WithZero
+
+namespace TauCeti.Place
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
+
+/-- Every power series over the constants is the uniformizer expansion of an element of
+the completed valuation ring at a rational place. -/
+theorem completionPlace_powerSeriesExpansion_surjective :
+    Function.Surjective (P.completionPlace.powerSeriesExpansion
+      (by simpa using hP) (by simpa using ht :
+        P.completionPlace.ord (P.completionEmbedding t) = 1)) :=
+  P.completionPlace.powerSeriesExpansion_surjective _ _ fun _ ↦
+    P.exists_forall_sub_mem_completionPlace_filtration
+
+/-- Uniformizer expansion identifies the completed valuation ring at a rational place with
+the power-series ring over the constants. -/
+noncomputable def completionIntegersEquivPowerSeries :
+    P.completionPlace.integers ≃ₐ[k] PowerSeries k :=
+  AlgEquiv.ofBijective (P.completionPlace.powerSeriesExpansion
+    (by simpa using hP) (by simpa using ht :
+      P.completionPlace.ord (P.completionEmbedding t) = 1))
+    ⟨P.completionPlace.powerSeriesExpansion_injective _ _,
+      P.completionPlace_powerSeriesExpansion_surjective hP ht⟩
+
+/-- The completed-ring isomorphism is the uniformizer expansion map. -/
+theorem completionIntegersEquivPowerSeries_apply (x : P.completionPlace.integers) :
+    P.completionIntegersEquivPowerSeries hP ht x =
+      P.completionPlace.powerSeriesExpansion (by simpa using hP)
+        (by simpa using ht : P.completionPlace.ord (P.completionEmbedding t) = 1) x := (rfl)
+
+/-- The inverse isomorphism realizes a power series to every finite order. -/
+theorem sub_sum_coeff_completionIntegersEquivPowerSeries_symm_mem_filtration
+    (f : PowerSeries k) (n : ℕ) :
+    ((P.completionIntegersEquivPowerSeries hP ht).symm f : P.Completion) -
+      ∑ i : Fin n, algebraMap k P.Completion (PowerSeries.coeff i f) *
+        P.completionEmbedding t ^ (i : ℕ) ∈ P.completionPlace.filtration n := by
+  have h := P.completionPlace.sub_sum_coeff_powerSeriesExpansion_mem_filtration
+    (by simpa using hP) (by simpa using ht :
+      P.completionPlace.ord (P.completionEmbedding t) = 1) n
+    ((P.completionIntegersEquivPowerSeries hP ht).symm f)
+  rw [← P.completionIntegersEquivPowerSeries_apply hP ht,
+    AlgEquiv.apply_symm_apply] at h
+  exact h
+
+/-- On integral functions of the original field, uniformizer expansion in the completion is
+uniformizer expansion before completion. -/
+@[simp]
+theorem completionIntegersEquivPowerSeries_completionIntegersEmbedding (x : P.integers) :
+    P.completionIntegersEquivPowerSeries hP ht (P.completionIntegersEmbedding x) =
+      P.powerSeriesExpansion hP ht x := by
+  ext n
+  rw [P.completionIntegersEquivPowerSeries_apply hP ht,
+    P.completionPlace.coeff_powerSeriesExpansion _ _ (n + 1) _ ⟨n, by omega⟩,
+    P.coeff_powerSeriesExpansion hP ht (n + 1) x ⟨n, by omega⟩]
+  have h := P.sub_sum_truncatedExpansion_mem_filtration hP ht (n + 1) x
+  rw [← P.completionEmbedding_mem_filtration_iff] at h
+  exact congrFun ((P.completionPlace.truncatedExpansion_eq_iff _ _ (n + 1) _ _).mpr
+    (by simpa only [completionIntegersEmbedding_apply, map_sub, map_sum, map_mul,
+      map_pow, AlgHom.commutes] using h)) _
+
+/-- The chosen uniformizer maps to the power-series variable. -/
+theorem completionIntegersEquivPowerSeries_uniformizer :
+    P.completionIntegersEquivPowerSeries hP ht
+      (P.completionIntegersEmbedding
+        ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩) = PowerSeries.X := by
+  rw [completionIntegersEquivPowerSeries_completionIntegersEmbedding,
+    powerSeriesExpansion_uniformizer]
+
+section Topology
+
+variable [TopologicalSpace k] [DiscreteTopology k]
+open scoped PowerSeries.WithPiTopology
+
+/-- Uniformizer expansion is continuous for the valuation topology on the completed ring
+and the coefficientwise topology on power series over the discrete constant field. -/
+theorem continuous_completionIntegersEquivPowerSeries :
+    Continuous (P.completionIntegersEquivPowerSeries hP ht) := by
+  apply continuous_iff_continuousAt.mpr
+  intro x
+  rw [ContinuousAt, PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
+  intro n
+  rw [nhds_discrete k, tendsto_pure]
+  obtain ⟨s, hs0, hs⟩ := P.exists_ne_zero_ord_eq (n + 1 : ℕ)
+  have hs' : Valued.v.restrict (P.completionEmbedding s) ≠ 0 := by simp [hs0]
+  have hU : {y : P.Completion | y - (x : P.Completion) ∈
+      P.completionPlace.filtration (n + 1 : ℕ)} ∈ 𝓝 (x : P.Completion) := by
+    apply Valued.mem_nhds.mpr
+    refine ⟨Units.mk0 _ hs', fun y hy ↦ ?_⟩
+    simp only [Set.mem_ofPred_eq] at hy ⊢
+    rw [P.completionPlace.mem_filtration_iff, completionPlace_valuation]
+    rw [Units.val_mk0, Valuation.restrict_lt_iff, valuation_completionEmbedding,
+      P.valuation_eq_exp_neg_ord hs0, hs] at hy
+    exact hy.le
+  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds hU] with y hy
+  have hc := (P.completionPlace.sub_mem_filtration_iff_coeff_powerSeriesExpansion_eq
+    (by simpa using hP) (by simpa using ht :
+      P.completionPlace.ord (P.completionEmbedding t) = 1) (n + 1) y x).mp hy n (by omega)
+  simpa only [P.completionIntegersEquivPowerSeries_apply hP ht] using hc
+
+/-- Realizing a power series in the completed valuation ring is continuous: agreement of
+finitely many coefficients gives approximation to any prescribed valuation precision. -/
+theorem continuous_completionIntegersEquivPowerSeries_symm :
+    Continuous (P.completionIntegersEquivPowerSeries hP ht).symm := by
+  apply continuous_induced_rng.mpr
+  apply continuous_iff_continuousAt.mpr
+  intro f
+  apply tendsto_iff_forall_eventually_mem.mpr
+  intro U hU
+  obtain ⟨γ, hγ⟩ := Valued.mem_nhds.mp hU
+  obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
+    (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
+  have hc : ∀ᶠ g in 𝓝 f, ∀ i : Fin n,
+      PowerSeries.coeff i g = PowerSeries.coeff i f := by
+    apply Filter.eventually_all.mpr
+    intro i
+    have hi := (PowerSeries.WithPiTopology.continuous_coeff k i).continuousAt (x := f)
+    rw [ContinuousAt, nhds_discrete k, tendsto_pure] at hi
+    exact hi
+  filter_upwards [hc] with g hg
+  apply hγ
+  simp only [Set.mem_ofPred_eq]
+  rw [Valuation.restrict_lt_iff_lt_embedding]
+  have hmem := (P.completionPlace.sub_mem_filtration_iff_coeff_powerSeriesExpansion_eq
+    (by simpa using hP) (by simpa using ht :
+      P.completionPlace.ord (P.completionEmbedding t) = 1) n
+    ((P.completionIntegersEquivPowerSeries hP ht).symm g)
+    ((P.completionIntegersEquivPowerSeries hP ht).symm f)).mpr (fun i hi ↦ by
+      simpa only [← P.completionIntegersEquivPowerSeries_apply hP ht,
+        AlgEquiv.apply_symm_apply] using hg ⟨i, hi⟩)
+  simpa only [completionPlace_valuation, Function.comp_apply] using
+    (P.completionPlace.mem_filtration_iff.mp hmem).trans_lt hn
+
+/-- The completed valuation ring at a rational place is topologically `k[[T]]`, with `k`
+discrete and the power-series ring carrying its coefficientwise topology. -/
+noncomputable def completionIntegersHomeomorphPowerSeries :
+    P.completionPlace.integers ≃ₜ PowerSeries k where
+  toEquiv := (P.completionIntegersEquivPowerSeries hP ht).toEquiv
+  continuous_toFun := P.continuous_completionIntegersEquivPowerSeries hP ht
+  continuous_invFun := P.continuous_completionIntegersEquivPowerSeries_symm hP ht
+
+/-- The topological identification uses the same uniformizer expansion as the algebraic one. -/
+@[simp]
+theorem completionIntegersHomeomorphPowerSeries_apply (x : P.completionPlace.integers) :
+    P.completionIntegersHomeomorphPowerSeries hP ht x =
+      P.completionIntegersEquivPowerSeries hP ht x := (rfl)
+
+/-- The inverse topological identification is the inverse algebraic identification. -/
+@[simp]
+theorem completionIntegersHomeomorphPowerSeries_symm_apply (f : PowerSeries k) :
+    (P.completionIntegersHomeomorphPowerSeries hP ht).symm f =
+      (P.completionIntegersEquivPowerSeries hP ht).symm f := (rfl)
+
+end Topology
+
+end TauCeti.Place

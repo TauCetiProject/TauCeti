@@ -22,9 +22,7 @@ The coordinate algebra is a polynomial algebra and its coordinate `x` has counit
 not linearly reductive over any field.
 
 This is the worked example that gives the triviality theorem content: unipotent groups other than
-the trivial one exist, so complete reducibility genuinely fails for them. It is also the promised
-counterexample on the linear-reductivity side of Layer 6 of the ReductiveGroups roadmap, matching
-the diagonalizable groups on the positive side.
+the trivial one exist, so complete reducibility genuinely fails for them.
 
 ## Main results
 

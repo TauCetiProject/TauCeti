@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.RingTheory.Polynomial.IsIntegral
+public import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 
 import Mathlib.FieldTheory.PrimitiveElement
 
@@ -41,6 +41,8 @@ element of `F · k'` separable over `k'` already lies in `k'`.
 * `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable`: a linearly
   independent family in `F` stays linearly independent after extending scalars from `k` to a
   separable extension `k'`.
+* `TauCeti.relfinrank_sup_adjoin_simple_eq_relfinrank_adjoin_simple_of_isIntegrallyClosedIn`:
+  `[F · k' : k'(x)] = [F : k(x)]` for `x ∈ F` and finite separable `k'/k`.
 * `TauCeti.IntermediateField.eq_of_le_of_adjoin_le_of_isIntegrallyClosedIn`: a finite separable
   extension of `k` inside `E` is determined by its compositum with `F`.
 * `TauCeti.mem_range_algebraMap_of_mem_adjoin_of_isSeparable_of_isIntegrallyClosedIn`: an element
@@ -51,7 +53,8 @@ element of `F · k'` separable over `k'` already lies in `k'`.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section III.6.  This is the field theory behind the persistence of linear independence under a
   constant field extension (Proposition 3.6.1(b)) and behind the determination of the constant
-  field of a constant field extension (Proposition 3.6.1(a)); it is stated here for an arbitrary
+  field of a constant field extension (Proposition 3.6.1(a)) and the degree identity
+  (Proposition 3.6.1(c)); it is stated here for an arbitrary
   extension `F / k` with `k` relatively algebraically closed, with no function field involved.
 -/
 
@@ -134,28 +137,15 @@ Consequently the compositum of `F` and `k'` inside `E` behaves like `F ⊗[k] k'
 Proposition 3.6.1(b), for separable constant field extensions. -/
 theorem linearDisjoint_fieldRange_of_isIntegrallyClosedIn
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] :
-    (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
-  set K := (IsScalarTower.toAlgHom k k' E).fieldRange
-  have : Algebra.IsSeparable k K :=
-    AlgEquiv.Algebra.isSeparable (IsScalarTower.toAlgHom k k' E).equivFieldRange
-  let b := Module.Basis.ofVectorSpace k K
-  refine .of_basis_left b (linearIndependent_iff_finset_linearIndependent.2 fun s ↦ ?_)
-  -- the finitely many basis vectors indexed by `s` generate a finite separable subextension
-  let K₀ : IntermediateField k E := adjoin k (Set.range fun i : s ↦ (b i : E))
-  have hK₀ : K₀ ≤ K := adjoin_le_iff.2 (Set.range_subset_iff.2 fun i ↦ (b i).2)
-  have : FiniteDimensional k K₀ := finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
-    hi ▸ (Algebra.IsIntegral.isIntegral (b i)).map K.val
-  have : Algebra.IsSeparable k K₀ := Algebra.IsSeparable.of_algHom k K (inclusion hK₀)
-  let v : s → K₀ := fun i ↦ ⟨b i, subset_adjoin k _ ⟨i, rfl⟩⟩
-  have hb : LinearIndependent k (K.val ∘ b) :=
-    b.linearIndependent.map' K.val.toLinearMap (LinearMap.ker_eq_bot.2 Subtype.val_injective)
-  have hv : LinearIndependent k v :=
-    .of_comp K₀.val.toLinearMap (hb.comp _ Subtype.val_injective)
-  have h := LinearDisjoint.linearIndependent_left
-    (linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hex K₀) hv
-  convert h using 1
-  ext i
-  simp only [Function.comp_apply, IntermediateField.coe_val, v]
+    (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F :=
+  linearDisjoint_fieldRange_of_forall_finiteDimensional fun M _ ↦ by
+    -- the image of a finite separable subextension is a finite separable subfield of `E`
+    let e := (IsScalarTower.toAlgHom k M E).equivFieldRange
+    have : FiniteDimensional k (IsScalarTower.toAlgHom k M E).fieldRange :=
+      e.toLinearEquiv.finiteDimensional
+    have : Algebra.IsSeparable k (IsScalarTower.toAlgHom k M E).fieldRange :=
+      AlgEquiv.Algebra.isSeparable e
+    exact linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hex _
 
 /-- A linearly independent family of separable elements over a relatively algebraically closed
 field `k` remains linearly independent after extending scalars to `F` inside a common overfield.
@@ -199,9 +189,7 @@ which extends scalars on the other side of the linearly disjoint pair `F`, `k'`.
 theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] {ι : Type*} {v : ι → F}
     (hv : LinearIndependent k v) : LinearIndependent k' (algebraMap F E ∘ v) :=
-  ((linearDisjoint_fieldRange_of_isIntegrallyClosedIn (E := E) hex).linearIndependent_right'
-    hv).map_of_injective_injective (IsScalarTower.toAlgHom k k' E).equivFieldRange
-    (AddMonoidHom.id E) (by simp) (by simp) fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
+  (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex).linearIndependent_algebraMap_comp hv
 
 /-! ### Constants of the compositum -/
 
@@ -260,6 +248,43 @@ theorem mem_range_algebraMap_of_mem_adjoin_of_isSeparable_of_isIntegrallyClosedI
   have hle : adjoin k (T : Set E) ≤ (IsScalarTower.toAlgHom k k' E).fieldRange :=
     adjoin_le_iff.2 (by rwa [AlgHom.coe_fieldRange, IsScalarTower.coe_toAlgHom'])
   exact AlgHom.mem_fieldRange.1 (hle (heq ▸ subset_adjoin k _ (Set.mem_insert z _)))
+
+/-- For `k` relatively algebraically closed in `F`, `A/k` finite separable, and `E = A · F`
+(inside `E`), the degrees satisfy `[E : A(x)] = [F : k(x)]` for every `x ∈ F`.
+This is the finite separable case of Stichtenoth, *Algebraic Function Fields and Codes*, second
+edition, Proposition 3.6.1(c).
+
+For the scalar-tower formulation with `constantCompositum`, see
+`TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top` in
+`TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree`. -/
+theorem relfinrank_sup_adjoin_simple_eq_relfinrank_adjoin_simple_of_isIntegrallyClosedIn
+    (hex : IsIntegrallyClosedIn k F) (A : IntermediateField k E)
+    [FiniteDimensional k A] [Algebra.IsSeparable k A]
+    (h : A ⊔ (IsScalarTower.toAlgHom k F E).fieldRange = ⊤) (x : F) :
+    IntermediateField.relfinrank (A ⊔ k⟮algebraMap F E x⟯) ⊤ =
+      IntermediateField.relfinrank (k⟮x⟯ : IntermediateField k F) ⊤ := by
+  let f : F →ₐ[k] E := IsScalarTower.toAlgHom k F E
+  let B : IntermediateField k E := f.fieldRange
+  let C : IntermediateField k E := k⟮algebraMap F E x⟯
+  have hx : algebraMap F E x ∈ B := ⟨x, rfl⟩
+  have hexB : IsIntegrallyClosedIn k B := (f.equivFieldRange.isIntegrallyClosedIn).mp hex
+  have hCB : C ≤ B := IntermediateField.adjoin_simple_le_iff.mpr hx
+  have hld : A.LinearDisjoint B :=
+    linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hexB A
+  have hdegree := A.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB hld
+  -- Fold the local abbreviations `f` and `B` into the compositum hypothesis.
+  change A ⊔ B = ⊤ at h
+  rw [h] at hdegree
+  -- Fold the local abbreviation `C` into the degree comparison goal.
+  change IntermediateField.relfinrank (A ⊔ C) ⊤ =
+    IntermediateField.relfinrank (k⟮x⟯ : IntermediateField k F) ⊤
+  rw [hdegree]
+  have hC : (k⟮x⟯ : IntermediateField k F).map f = C := by
+    simp only [C, IntermediateField.adjoin_map, Set.image_singleton, f,
+      IsScalarTower.toAlgHom_apply]
+  have hrank := IntermediateField.relfinrank_map_map (k⟮x⟯ : IntermediateField k F) ⊤ f
+  rw [hC, ← AlgHom.fieldRange_eq_map] at hrank
+  simpa only [C] using hrank
 
 end Field
 

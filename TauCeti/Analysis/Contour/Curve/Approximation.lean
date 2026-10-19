@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Topology.Connected.PathConnected
 import Mathlib.Analysis.SpecialFunctions.Bernstein
 import Mathlib.Analysis.Calculus.ContDiff.Polynomial
 import Mathlib.Topology.ContinuousMap.Compact
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Smooth endpoint-preserving approximation of continuous complex curves
@@ -23,6 +25,8 @@ their smoothness and their endpoint values immediate.
 
 * `TauCeti.Contour.exists_contDiff_eq_endpoints_dist_lt` — the endpoint-preserving smooth
   approximation.
+* `JoinedIn.exists_contDiff_mapsTo` — two points joined by a path in an open set are joined by a
+  smooth curve that stays in the set.
 
 This is the regularization step that lets the merely continuous intermediate paths of a path
 homotopy be compared with the piecewise-`C¹` winding number.
@@ -74,6 +78,19 @@ theorem exists_contDiff_eq_endpoints_dist_lt (f : C(I, ℂ)) {ε : ℝ} (hε : 0
   · intro t
     rw [bernsteinCurve_apply]
     exact (ContinuousMap.dist_apply_le_dist t).trans_lt (hN n hnN)
+
+/-- **Smoothing a path inside an open set.** Two points joined by a path in an open set `U ⊆ ℂ`
+are joined by a smooth curve on `ℝ` that maps the unit interval into `U`. -/
+theorem _root_.JoinedIn.exists_contDiff_mapsTo {U : Set ℂ} {z w : ℂ} (h : JoinedIn U z w)
+    (hU : IsOpen U) :
+    ∃ γ : ℝ → ℂ, ContDiff ℝ ⊤ γ ∧ γ 0 = z ∧ γ 1 = w ∧ Set.MapsTo γ (Set.Icc 0 1) U := by
+  obtain ⟨π, hπ⟩ := h
+  obtain ⟨δ, hδ, hthick⟩ := (isCompact_range π.continuous).exists_thickening_subset_open hU
+    (Set.range_subset_iff.2 hπ)
+  obtain ⟨γ, hγ, hγ0, hγ1, hγδ⟩ := exists_contDiff_eq_endpoints_dist_lt π.toContinuousMap hδ
+  refine ⟨γ, hγ, hγ0.trans π.source, hγ1.trans π.target, fun t ht => hthick ?_⟩
+  rw [Metric.mem_thickening_iff]
+  exact ⟨π ⟨t, ht⟩, ⟨_, rfl⟩, by simpa using hγδ ⟨t, ht⟩⟩
 
 end TauCeti.Contour
 

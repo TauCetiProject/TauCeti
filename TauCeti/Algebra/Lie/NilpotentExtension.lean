@@ -36,6 +36,7 @@ enters only in the variants whose hypothesis on `H` is the pointwise one,
   of `y` and `H` acts nilpotently on `M`.
 * `LieSubalgebra.mem_lieSpan_insert_iff`: the elements of that Lie span are exactly the
   `t • y + h` with `h ∈ H`, with intro form `LieSubalgebra.smul_add_mem_lieSpan_insert`.
+* `LieSubalgebra.lt_lieSpan_insert`: that Lie span lies strictly above `H` when `y ∉ H`.
 * `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert` and
   `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall`: the pointwise readings, the
   second one taking the pointwise hypothesis on `H` as well, together with the `t • y + h` reading
@@ -98,6 +99,14 @@ subalgebra spanned by `H` together with `y`. -/
 theorem smul_add_mem_lieSpan_insert (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer)
     (t : R) {h : L} (hh : h ∈ H) : t • y + h ∈ lieSpan R L (insert y (H : Set L)) :=
   (H.mem_lieSpan_insert_iff hy).mpr ⟨t, h, hh, rfl⟩
+
+/-- A Lie subalgebra `H` lies strictly below the Lie span of `H` together with an element `y ∉ H`.
+No normalizing hypothesis is needed. -/
+theorem lt_lieSpan_insert (H : LieSubalgebra R L) {y : L} (hy : y ∉ H) :
+    H < lieSpan R L (insert y (H : Set L)) :=
+  IsConcreteLE.lt_iff_le_and_exists.mpr
+    ⟨fun _ hh => subset_lieSpan (Set.mem_insert_of_mem _ hh),
+      y, subset_lieSpan (Set.mem_insert _ _), hy⟩
 
 /-- **The nilpotent-extension lemma.**  If a Lie subalgebra `H` acts nilpotently on `M`, and an
 element `y` normalizing `H` acts nilpotently on `M`, then the Lie subalgebra spanned by `y` and `H`

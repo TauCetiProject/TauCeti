@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Basic
 public import TauCeti.AlgebraicGeometry.Rigidity
+import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 
 /-!
 # Morphisms of abelian varieties preserving the identity are homomorphisms

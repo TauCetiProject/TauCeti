@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.Presentation.Serre
 # Serre relations in the standard split Lie algebra of type B
 
 The Bourbaki-numbered matrices in
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators` give explicit positive-root,
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators` give explicit positive-root,
 negative-root, and coroot generators for the standard integral split orthogonal Lie algebra of
 type `B`. This file proves the two families of Serre relations not supplied by the Cartan-action
 computations:
@@ -70,7 +70,7 @@ private theorem lie_typeBSimpleRootMatrix_typeBSimpleNegativeRootMatrix_of_ne
       | cast j₀ =>
           simp only [typeBSimpleRootMatrix_last, typeBSimpleNegativeRootMatrix_castSucc]
           rcases j₀ with ⟨j, hj⟩
-          rw [typeBShortRootMatrix_lie_longRootMatrix]
+          rw [typeBShortRootMatrix_lie_differenceRootMatrix]
           simp only [Fin.succ_mk, Fin.castSucc_mk, neg_eq_zero]
           split_ifs with h
           · simp only [Fin.ext_iff, Fin.val_last] at h
@@ -80,25 +80,15 @@ private theorem lie_typeBSimpleRootMatrix_typeBSimpleNegativeRootMatrix_of_ne
       induction j using Fin.lastCases with
       | last =>
           simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleNegativeRootMatrix_last]
-          rcases i₀ with ⟨i, hi⟩
-          calc
-            ⁅typeBLongRootMatrix (K := K) (⟨i, hi⟩ : Fin n).castSucc
-                (⟨i, hi⟩ : Fin n).succ (ne_of_lt Fin.castSucc_lt_succ),
-                typeBShortNegativeRootMatrix (Fin.last n)⁆ =
-                -⁅typeBShortNegativeRootMatrix (K := K) (Fin.last n),
-                  typeBLongRootMatrix (⟨i, hi⟩ : Fin n).castSucc
-                    (⟨i, hi⟩ : Fin n).succ (ne_of_lt Fin.castSucc_lt_succ)⁆ :=
-                      (lie_skew _ _).symm
-            _ = 0 := by
-              rw [typeBShortNegativeRootMatrix_lie_longRootMatrix]
-              simp only [neg_eq_zero]
-              split_ifs with h
-              · exact (hij h.symm).elim
-              · rfl
+          rw [← lie_skew, typeBShortNegativeRootMatrix_lie_differenceRootMatrix]
+          simp only [neg_eq_zero]
+          split_ifs with h
+          · exact (hij h.symm).elim
+          · rfl
       | cast j₀ =>
           have hij₀ : i₀ ≠ j₀ := fun h ↦ hij (congrArg Fin.castSucc h)
           simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleNegativeRootMatrix_castSucc]
-          apply typeBLongRootMatrix_lie_longRootMatrix_of_ne
+          apply typeBDifferenceRootMatrix_lie_differenceRootMatrix_of_ne
           · intro h
             apply hij₀
             apply Fin.ext
@@ -125,7 +115,7 @@ private theorem lie_typeBSimpleRootMatrix_castSucc_of_nonadjacent
     ⁅typeBSimpleRootMatrix (K := K) i.castSucc,
       typeBSimpleRootMatrix (K := K) j.castSucc⁆ = 0 := by
   simp only [typeBSimpleRootMatrix_castSucc]
-  apply typeBLongRootMatrix_lie_longRootMatrix_of_ne
+  apply typeBDifferenceRootMatrix_lie_differenceRootMatrix_of_ne
   · intro h
     have hval := congrArg Fin.val h
     simp only [Fin.val_succ, Fin.val_castSucc] at hval
@@ -139,9 +129,9 @@ private theorem lie_typeBSimpleRootMatrix_castSucc_of_adjacent
     (i j : Fin n) (hij : i.val + 1 = j.val) (hout : i.castSucc ≠ j.succ) :
     ⁅typeBSimpleRootMatrix (K := K) i.castSucc,
       typeBSimpleRootMatrix (K := K) j.castSucc⁆ =
-        typeBLongRootMatrix i.castSucc j.succ hout := by
+        typeBDifferenceRootMatrix i.castSucc j.succ hout := by
   simp only [typeBSimpleRootMatrix_castSucc]
-  exact typeBLongRootMatrix_lie_longRootMatrix_chain (K := K)
+  exact typeBDifferenceRootMatrix_lie_differenceRootMatrix_chain (K := K)
     i.castSucc i.succ j.castSucc j.succ (ne_of_lt i.castSucc_lt_succ)
     (ne_of_lt j.castSucc_lt_succ) (Fin.ext hij) hout
 
@@ -157,7 +147,7 @@ private theorem lie_lie_typeBSimpleRootMatrix_castSucc (i j : Fin n) :
       omega
     rw [lie_typeBSimpleRootMatrix_castSucc_of_adjacent (K := K) i j hij hout]
     simp only [typeBSimpleRootMatrix_castSucc]
-    apply typeBLongRootMatrix_lie_longRootMatrix_of_ne
+    apply typeBDifferenceRootMatrix_lie_differenceRootMatrix_of_ne
     · intro h
       have hval := congrArg Fin.val h
       simp only [Fin.val_succ, Fin.val_castSucc] at hval
@@ -172,12 +162,12 @@ private theorem lie_lie_typeBSimpleRootMatrix_castSucc (i j : Fin n) :
       have hinner :
           ⁅typeBSimpleRootMatrix (K := K) i.castSucc,
             typeBSimpleRootMatrix (K := K) j.castSucc⁆ =
-              -typeBLongRootMatrix j.castSucc i.succ hout := by
+              -typeBDifferenceRootMatrix j.castSucc i.succ hout := by
         rw [← lie_typeBSimpleRootMatrix_castSucc_of_adjacent (K := K) j i hji hout]
         exact (lie_skew _ _).symm
       rw [hinner, lie_neg]
       simp only [typeBSimpleRootMatrix_castSucc, neg_eq_zero]
-      apply typeBLongRootMatrix_lie_longRootMatrix_of_ne
+      apply typeBDifferenceRootMatrix_lie_differenceRootMatrix_of_ne
       · intro h
         have hval := congrArg Fin.val h
         simp only [Fin.val_succ, Fin.val_castSucc] at hval
@@ -212,7 +202,7 @@ private theorem lie_typeBSimpleRootMatrix_last_castSucc_of_nonadjacent
     ⁅typeBSimpleRootMatrix (K := K) (Fin.last n),
       typeBSimpleRootMatrix (K := K) j.castSucc⁆ = 0 := by
   simp only [typeBSimpleRootMatrix_last, typeBSimpleRootMatrix_castSucc]
-  rw [typeBShortRootMatrix_lie_longRootMatrix]
+  rw [typeBShortRootMatrix_lie_differenceRootMatrix]
   simp only [neg_eq_zero]
   split_ifs with h
   · have hval := congrArg Fin.val h
@@ -241,7 +231,7 @@ private theorem ad_sq_lie_typeBSimpleRootMatrix_last_castSucc
         typeBSimpleRootMatrix (K := K) j.castSucc⁆ = 0 := by
   simp only [pow_two, Module.End.mul_apply, LieAlgebra.ad_apply,
     typeBSimpleRootMatrix_last, typeBSimpleRootMatrix_castSucc]
-  rw [typeBShortRootMatrix_lie_longRootMatrix]
+  rw [typeBShortRootMatrix_lie_differenceRootMatrix]
   have hlast : Fin.last n = j.succ := Fin.ext (by simp only [Fin.val_last, Fin.val_succ]; omega)
   rw [ite_eq_left hlast]
   simp only [lie_neg, neg_eq_zero]
@@ -259,22 +249,11 @@ private theorem lie_lie_typeBSimpleRootMatrix_castSucc_last
         typeBSimpleRootMatrix (K := K) (Fin.last n)⁆ =
           typeBShortRootMatrix i.castSucc := by
     simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleRootMatrix_last]
-    calc
-      ⁅typeBLongRootMatrix (K := K) i.castSucc i.succ hne,
-          typeBShortRootMatrix (Fin.last n)⁆ =
-          -⁅typeBShortRootMatrix (K := K) (Fin.last n),
-            typeBLongRootMatrix i.castSucc i.succ hne⁆ := (lie_skew _ _).symm
-      _ = typeBShortRootMatrix i.castSucc := by
-        rw [typeBShortRootMatrix_lie_longRootMatrix, ite_eq_left hlast]
-        simp
+    rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix, ite_eq_left hlast, neg_neg]
   rw [hinner]
   simp only [typeBSimpleRootMatrix_castSucc]
-  calc
-    ⁅typeBLongRootMatrix (K := K) i.castSucc i.succ hne,
-        typeBShortRootMatrix i.castSucc⁆ =
-        -⁅typeBShortRootMatrix (K := K) i.castSucc,
-          typeBLongRootMatrix i.castSucc i.succ hne⁆ := (lie_skew _ _).symm
-    _ = 0 := by rw [typeBShortRootMatrix_lie_longRootMatrix]; simp [hne]
+  rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix]
+  simp [hne]
 
 /- The four `Fin.lastCases` branches separate ordinary long-root nodes from the terminal short-root
 node. Only the positive orientation is computed: the sign-reindexing below transports it to the
@@ -323,7 +302,7 @@ private theorem typeBSignReindex_typeBSimpleRootMatrix (i : Fin (n + 1)) :
       typeBShortNegativeRootMatrix_def]
   · simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleNegativeRootMatrix_castSucc]
     simp [typeBSignEquiv, Matrix.reindex_apply,
-      Matrix.submatrix_sub, Matrix.submatrix_single_equiv, typeBLongRootMatrix_def]
+      Matrix.submatrix_sub, Matrix.submatrix_single_equiv, typeBDifferenceRootMatrix_def]
 
 private theorem ad_pow_lie_typeBSimpleNegativeRootMatrix (i j : Fin (n + 1)) :
     (ad K (Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1))

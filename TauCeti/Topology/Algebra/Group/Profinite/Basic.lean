@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Profinite groups: quotients by normal subgroups, and open subgroups
@@ -301,7 +302,7 @@ theorem connectedComponent_one (hN : IsClosed (N : Set G)) :
     have hy' : y ∈ ⋂ U : OpenNormalSubgroup G,
         (QuotientGroup.mk : G → G ⧸ N) '' (U : Set G) :=
       Set.mem_iInter.mpr fun U =>
-        IsClopen.connectedComponent_subset (isClopen_image_mk U.toOpenSubgroup)
+        IsClopen.connectedComponent_subset (OpenSubgroup.isClopen_image_mk U.toOpenSubgroup)
         ⟨1, U.one_mem', QuotientGroup.mk_one N⟩ hy
     rw [key, himg] at hy'
     exact hy'

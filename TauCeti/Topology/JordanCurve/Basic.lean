@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Topology.LocallyConnected
 import Mathlib.Analysis.Convex.GaugeRescale
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
@@ -241,19 +242,6 @@ lemma jordanParam_apply_apply (e : C ≃ₜ Circle) (hp : p ∈ C) :
 
 /-! ## The model curve: a circle in `ℂ` -/
 
-/-- `Circle` is *by definition* the unit sphere of `ℂ`, but it is a `def` rather than an
-abbreviation, so its topology is only definitionally the subtype topology. This identification is
-the one place where that unfolding happens; the lemmas below then compute with the unit sphere
-alone. -/
-private noncomputable def unitSphereCircleHomeomorph : sphere (0 : ℂ) 1 ≃ₜ Circle :=
-  Homeomorph.refl _
-
-private lemma coe_unitSphereCircleHomeomorph (z : sphere (0 : ℂ) 1) :
-    (unitSphereCircleHomeomorph z : ℂ) = (z : ℂ) := rfl
-
-private lemma coe_unitSphereCircleHomeomorph_symm (z : Circle) :
-    ((unitSphereCircleHomeomorph.symm z : sphere (0 : ℂ) 1) : ℂ) = (z : ℂ) := rfl
-
 /-- The affine parametrization `w ↦ (w - c) / r` of a circle of centre `c` and positive radius `r`
 in `ℂ` by the unit circle. It is the restriction to the spheres of the inverse of Mathlib's ambient
 `affineHomeomorph r c`, so only the membership equivalence is proved here. -/
@@ -262,21 +250,21 @@ noncomputable def sphereCircleHomeomorph (c : ℂ) (hr : 0 < r) : sphere c r ≃
   (((affineHomeomorph (r : ℂ) c hr0).symm).subtype fun w => by
       rw [affineHomeomorph_symm_apply]
       simp [mem_sphere_iff_norm, abs_of_pos hr, div_eq_one_iff_eq, hr.ne']).trans
-    unitSphereCircleHomeomorph
+    Circle.homeomorphSphere.symm
 
 /-- The parametrization of `sphere c r` by the unit circle divides out the affine change of
 coordinates. -/
 @[simp]
 lemma coe_sphereCircleHomeomorph_apply (c : ℂ) (hr : 0 < r) (w : sphere c r) :
     (sphereCircleHomeomorph c hr w : ℂ) = ((w : ℂ) - c) / r := by
-  simp [sphereCircleHomeomorph, coe_unitSphereCircleHomeomorph]
+  simp [sphereCircleHomeomorph]
 
 /-- The inverse parametrization of `sphere c r` by the unit circle is the affine change of
 coordinates. -/
 @[simp]
 lemma coe_sphereCircleHomeomorph_symm_apply (c : ℂ) (hr : 0 < r) (z : Circle) :
     (((sphereCircleHomeomorph c hr).symm z : sphere c r) : ℂ) = c + r * (z : ℂ) := by
-  simp [sphereCircleHomeomorph, coe_unitSphereCircleHomeomorph_symm, add_comm]
+  simp [sphereCircleHomeomorph, add_comm]
 
 /-- A circle of positive radius in `ℂ` is a Jordan curve. -/
 theorem isJordanCurve_sphere (c : ℂ) (hr : 0 < r) : IsJordanCurve (sphere c r) :=

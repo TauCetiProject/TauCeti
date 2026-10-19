@@ -76,7 +76,9 @@ Boundarylessness of the ambient manifold is used only through `ModelWithCorners.
 Without it, the ambient chart composed with the model is a `PartialEquiv` whose target is a piece
 of a half-space rather than an open set, and the statement to prove would be one about a manifold
 with boundary as ambient space, where flatness at a boundary point of the ambient space is a
-genuinely different condition.
+genuinely different condition. For neat embeddings of manifolds modelled on Euclidean
+half-spaces that statement is `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`,
+in `TauCeti.Geometry.Manifold.LocallyFlat.Neat`.
 
 The immersion hypothesis is taken in the form `Manifold.IsImmersionOfComplement`, which fixes the
 complement `F` globally, rather than `Manifold.IsImmersion`, which merely asserts one exists:

@@ -25,6 +25,7 @@ isogeny is unramified, so every place above a rational place is again rational.
 ## Main results
 
 * `TauCeti.Isogeny.ncard_fiber_toPointHom_eq_degree`: every point fibre has size `deg φ`.
+* `TauCeti.Isogeny.finite_setOf_toPointHom_eq`: every point fibre is finite.
 * `TauCeti.Isogeny.toPointHom_surjective`: a separable isogeny is surjective on points over
   a separably closed field.
 * `TauCeti.Isogeny.card_ker_toPointHom_eq_degree`: the point kernel has cardinality `deg φ`.
@@ -44,11 +45,6 @@ open WeierstrassCurve.Affine
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
-
-local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
-local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
-local instance : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
 /-- Every fibre of a separable isogeny's class-group point map has cardinality equal to its
 degree over a separably closed field. -/
@@ -83,6 +79,10 @@ theorem ncard_fiber_toPointHom_eq_degree (Q : W₂.Point) :
       rw [hP]
       exact hv
   exact hbij.ncard_eq.trans (φ.ncard_setOf_restrict_eq_degree (fun _ ↦ rfl) vQ)
+
+/-- **Every fibre of a separable isogeny's point map is finite** over a separably closed field. -/
+theorem finite_setOf_toPointHom_eq (Q : W₂.Point) : {P : W₁.Point | φ.toPointHom P = Q}.Finite :=
+  Set.finite_of_ncard_ne_zero (by rw [φ.ncard_fiber_toPointHom_eq_degree Q]; exact φ.degree_ne_zero)
 
 /-- A separable isogeny is surjective on points over a separably closed field. -/
 theorem toPointHom_surjective : Function.Surjective φ.toPointHom := by

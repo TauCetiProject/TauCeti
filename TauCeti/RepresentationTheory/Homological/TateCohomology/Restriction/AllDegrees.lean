@@ -8,16 +8,19 @@ module
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Positive
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Trans
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
+public import Mathlib.GroupTheory.Torsion
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 
 /-!
 # Restriction and corestriction in every Tate degree
 
 For a subgroup `H` of a finite group `G`, the separate constructions of restriction and
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
-every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
-maps are the group-change operations used in the restriction law for the Tate cup product.
-In negative degrees, restriction is natural in the coefficient representation
-(`res_natural_of_neg`).
+every integer degree. Their composite is multiplication by the index `[G : H]`; for the trivial
+subgroup, whose Tate cohomology vanishes, this shows that every Tate cohomology group of `G` is
+killed by `|G|` (`natCard_nsmul_eq_zero`), hence torsion (`isAddTorsion_tateCohomology`). These
+uniform maps are the group-change operations used in the restriction law for the Tate cup product.
+Restriction is natural in the coefficient representation in every degree (`res_natural`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
 `ClassFieldTheory.LayerRestriction.tateCor_trans`.
@@ -71,17 +74,30 @@ theorem res_neg_one (M : Rep.{u} R G) (H : Subgroup G) :
 theorem res_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     res M H (Int.negSucc (n + 1)) = negSuccRes M H (n + 1) := by rfl
 
-/-- **Tate restriction in negative degrees is natural in the coefficient representation.** -/
+/-- Tate restriction is natural in the coefficient representation, in every integer degree. -/
 @[reassoc]
-theorem res_natural_of_neg {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) {r : ℤ}
-    (hr : r < 0) :
+theorem res_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) (r : ℤ) :
     (tateCohomologyFunctor r).map f ≫ res N H r =
-      res M H r ≫ (tateCohomologyFunctor r).map ((Rep.resFunctor H.subtype).map f) := by
-  obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hr.le
-  rcases n with _ | _ | n
-  · simp at hr
-  · exact HNegOneRes_natural M H f
-  · exact negSuccRes_natural M H f (n + 1)
+      res M H r ≫ (tateCohomologyFunctor r).map (Rep.resMap H.subtype f) := by
+  rcases r with n | n
+  · cases n with
+    | zero =>
+      have h0 : (tateCohomologyFunctor 0).map f ≫ H0Res N H =
+          H0Res M H ≫ (tateCohomologyFunctor 0).map (Rep.resMap H.subtype f) := by
+        ext x
+        induction x using H0_induction_on with
+        | h x =>
+          rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
+            H0π_comp_tateCohomologyFunctor_map_apply, H0π_comp_H0Res_apply,
+            H0π_comp_H0Res_apply, H0π_comp_tateCohomologyFunctor_map_apply]
+          congr 1
+      exact h0
+    | succ n =>
+      simp only [Int.ofNat_eq_natCast, Int.natCast_add, Int.cast_ofNat_Int, res_ofNat_succ]
+      exact posRes_natural M H f n
+  · cases n with
+    | zero => exact HNegOneRes_natural M H f
+    | succ n => exact negSuccRes_natural M H f (n + 1)
 
 /-- Corestriction of Tate cohomology from a subgroup of a finite group, in every integer
 degree. -/
@@ -177,5 +193,23 @@ theorem res_comp_cor (M : Rep.{u} R G) (H : Subgroup G) (r : ℤ) :
     cases n with
     | zero => exact HNegOneRes_comp_HNegOneCor M H
     | succ n => exact negSuccRes_comp_negSuccCor M H (n + 1)
+
+/-- **Tate cohomology of a finite group is killed by the order of the group**: every class in
+every degree is annihilated by `Nat.card G`. -/
+theorem natCard_nsmul_eq_zero {A : Rep.{u} R G} {n : ℤ} (x : tateCohomology A n) :
+    Nat.card G • x = 0 := by
+  -- Restriction to the trivial subgroup followed by corestriction is multiplication by `|G|`, and
+  -- the Tate cohomology of the trivial group vanishes.
+  -- The identity of the restriction of `A` to the trivial subgroup is its own norm. The explicit
+  -- instance `Subgroup.fintypeOfFinite` is the one `res` and `cor` are stated with.
+  have hbot := @isZero_of_forall_eq_sum R (⊥ : Subgroup G) _ _ (Subgroup.fintypeOfFinite ⊥)
+    (Rep.res (⊥ : Subgroup G).subtype A) LinearMap.id (fun x ↦ by simp) n
+  rw [← Subgroup.index_bot, ← res_comp_cor_apply,
+    (ModuleCat.subsingleton_of_isZero hbot).elim (res A ⊥ n x) 0, map_zero]
+
+/-- Every Tate cohomology group of a finite group is torsion, being killed by `Nat.card G`. -/
+theorem isAddTorsion_tateCohomology (A : Rep.{u} R G) (n : ℤ) :
+    IsAddTorsion (tateCohomology A n) :=
+  ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩
 
 end TauCeti.TateCohomology

@@ -110,7 +110,7 @@ private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0
       (coindBotUnit_comp_dimensionShiftUpπ P))
     (by simpa only [dimensionShiftUpSES_def] using
       dimensionShiftUpSES_tensorLeft_shortExact P (M ⊗ N))
-    (haveI := hN.epi_g; Rep.shortExact_map_tensorLeft_of_leftInverse hN.exact M _
+    (haveI := hN.epi_g; Rep.shortExact_map_tensorLeft_of_leftInverse hN.exact M
       (Rep.leftInverse_whiskerLeft N (coindBotUnit P) (leftInverse_coindBotUnit P))) r
     (cup (M ⊗ N) (dimensionShiftUp P) (p + q) s r h (cup M N p q (p + q) rfl x y) z)
   rw [cup_dimensionShiftUpIso_hom (M ⊗ N) P hs h rfl, cup_dimensionShiftUpIso_hom N P hs h₂ rfl,
@@ -144,7 +144,7 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
   have hMN : (((ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
       (dimensionShiftDownι_comp_indBotCounit P)).map (tensorLeft N)).map
         (tensorLeft M)).ShortExact :=
-    haveI := hN.epi_g; Rep.shortExact_map_tensorLeft_of_leftInverse hN.exact M _ hρN
+    haveI := hN.epi_g; Rep.shortExact_map_tensorLeft_of_leftInverse hN.exact M hρN
   -- The connecting map of the tensor product of this sequence with `N` and then `M` is injective:
   -- the middle term `M ⊗ (N ⊗ Ind_⊥^G P)` has vanishing Tate cohomology.
   have hz : ∀ i, IsZero (tateCohomology (M ⊗ N ⊗ indBot k G P.V) i) := fun i ↦

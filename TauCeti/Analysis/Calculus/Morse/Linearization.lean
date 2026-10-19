@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Calculus.Morse.Basic
--- Private: strict differentiability, the gradient/Fréchet-derivative norm comparison, and the
--- mean value inequality are used only to prove the local estimates below.
+-- Private: symmetry of the second derivative, strict differentiability, the
+-- gradient/Fréchet-derivative norm comparison, and the mean value inequality are used only in
+-- proofs below.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
@@ -20,7 +22,8 @@ import TauCeti.Analysis.Calculus.Gradient
 The stable-manifold theorem starts with the derivative of the vector field at an equilibrium. For
 a gradient field on a real Hilbert space, the second derivative of the function naturally takes
 values in the continuous dual. The Riesz equivalence turns it into an endomorphism of the original
-space: `TauCeti.hessianOperator`.
+space, which is the derivative of the gradient: `TauCeti.hessianOperator`, the order-one field of
+`TauCeti.iteratedGradientChain`.
 
 At a twice continuously differentiable point this operator is self-adjoint, by symmetry of the
 second derivative. At a nondegenerate critical point it is invertible, and the negative-gradient
@@ -37,6 +40,7 @@ results that identify the operator as the derivative of the gradient and prove s
 ## Main declarations
 
 * `TauCeti.hessianOperator`: the Riesz-represented Hessian as an endomorphism of the Hilbert space.
+* `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
@@ -76,36 +80,48 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f g : E → ℝ} {x : E}
 
-/-- The Hessian of `f` at `x`, represented as an endomorphism of the Hilbert space using the Riesz
-equivalence. Its inner product with `w` is the second derivative of `f` evaluated on `v, w`.
+/-- The Hessian of `f` at `x` as an endomorphism of the Hilbert space: the order-one field
+`TauCeti.iteratedGradientChain f 1` of the iterated-gradient chain, that is, the Fréchet derivative
+of the gradient. Its inner product with `w` is the second derivative of `f` evaluated on `v, w`.
 
 The definition is meaningful without regularity because Mathlib's Fréchet derivative is
 totalized by zero. Twice continuous differentiability is assumed when this operator is used as
 the derivative of the gradient. -/
-noncomputable def hessianOperator (f : E → ℝ) (x : E) : E →L[ℝ] E :=
-  (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
-    fderiv ℝ (fderiv ℝ f) x
+def hessianOperator (f : E → ℝ) (x : E) : E →L[ℝ] E :=
+  iteratedGradientChain f 1 x
+
+/-- The Fréchet derivative of the gradient is the Hessian operator, with no regularity assumption:
+both sides use Mathlib's totalized derivatives. -/
+theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x := by
+  rw [hessianOperator, iteratedGradientChain_succ, iteratedGradientChain_zero]
+
+/-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
+associates with the second derivative of `f`, viewed as a bilinear form. -/
+theorem hessianOperator_eq_continuousLinearMapOfBilin (f : E → ℝ) (x : E) :
+    hessianOperator f x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) := by
+  rw [← fderiv_gradient]
+  exact (toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
+
+/-- The inner-product characterization of the Hessian operator. -/
+@[simp]
+theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
+    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
+  rw [hessianOperator_eq_continuousLinearMapOfBilin]
+  exact continuousLinearMapOfBilin_apply _ _ _
 
 /-- Applying the Riesz map to the Hessian operator recovers the dual-valued second derivative. -/
 @[simp]
 theorem toDual_hessianOperator (f : E → ℝ) (x : E) :
     (InnerProductSpace.toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap ∘L
       hessianOperator f x = fderiv ℝ (fderiv ℝ f) x := by
-  ext v
-  simp [hessianOperator]
-
-/-- The inner-product characterization of the Hessian operator. -/
-@[simp]
-theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
-    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
-  simp only [hessianOperator, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-  exact InnerProductSpace.toDual_symm_apply
+  ext v w
+  simp
 
 /-- The Hessian operator depends only on the germ of the function at the point. -/
 theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianOperator f x = hessianOperator g x := by
-  rw [hessianOperator, hessianOperator, hfg.fderiv.fderiv_eq]
+  rw [hessianOperator_eq_continuousLinearMapOfBilin, hessianOperator_eq_continuousLinearMapOfBilin,
+    hfg.fderiv.fderiv_eq]
 
 end TauCeti
 
@@ -134,18 +150,17 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
 the Hessian operator. -/
 theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (∇ f) (hessianOperator f x) x := by
-  have hfd : HasFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) x) x :=
-    ContDiffAt.hasFDerivAt_fderiv hf le_rfl
-  have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x hfd
+  have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x
+    (hf.hasFDerivAt_fderiv le_rfl)
   -- The composed function is the gradient, by the defining property `toDual_gradient` of `∇ f`.
   have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f := by
     funext y
     simp only [Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
     exact ((InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient).symm
   rw [hfun] at h
-  -- The composed derivative is the Hessian operator, by its definition.
-  rw [hessianOperator]
-  exact h
+  -- The derivative of the gradient is the Hessian operator by `fderiv_gradient`.
+  rw [← fderiv_gradient]
+  exact h.differentiableAt.hasFDerivAt
 
 /-- The negative-gradient vector field is differentiable at a twice continuously differentiable
 point, with derivative minus the Hessian operator. -/
@@ -169,7 +184,7 @@ vanishes, so `R_x` is exactly the first-order Taylor remainder. At a twice conti
 differentiable point its derivative at `x` is zero. The small local Lipschitz estimate for this
 remainder is the nonlinear input to the Lyapunov--Perron construction of stable and unstable
 manifolds. -/
-noncomputable def negativeGradientRemainder (f : E → ℝ) (x y : E) : E :=
+def negativeGradientRemainder (f : E → ℝ) (x y : E) : E :=
   (-∇ f) y + hessianOperator f x (y - x)
 
 /-- Evaluation of the negative-gradient remainder. -/
@@ -238,20 +253,18 @@ Unlike the one-point little-o estimate, this controls the difference of the rema
 nearby points. It is therefore the estimate that makes the Lyapunov--Perron operator a contraction
 after its linear stable and unstable parts have been split. -/
 theorem exists_lipschitzOnWith_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x)
-    (epsilon : ℝ≥0) (hepsilon : 0 < epsilon) :
-    ∃ (r : ℝ), r > 0 ∧
-      LipschitzOnWith epsilon (negativeGradientRemainder f x) (Metric.closedBall x r) := by
+    (ε : ℝ≥0) (hε : 0 < ε) :
+    ∃ r > 0, LipschitzOnWith ε (negativeGradientRemainder f x) (Metric.closedBall x r) := by
   obtain ⟨s, hs, hlip⟩ := hf.hasStrictFDerivAt_negativeGradientRemainder
-    |>.exists_lipschitzOnWith_of_nnnorm_lt epsilon (by simpa using hepsilon)
-  obtain ⟨r, hr, hrs⟩ := Metric.mem_nhds_iff.1 hs
-  refine ⟨r / 2, half_pos hr, hlip.mono fun y hy ↦ hrs ?_⟩
-  exact (Metric.mem_closedBall.1 hy).trans_lt (half_lt_self hr)
+    |>.exists_lipschitzOnWith_of_nnnorm_lt ε (by simpa using hε)
+  obtain ⟨r, hr, hrs⟩ := Metric.nhds_basis_closedBall.mem_iff.mp hs
+  exact ⟨r, hr, hlip.mono hrs⟩
 
 /-- At a critical point of a twice continuously differentiable function, the negative-gradient
 field differs from its linearization by a term of order `o(‖y - x‖)`. This is the nonlinear
 remainder controlled in the local stable-manifold argument. -/
 theorem neg_gradient_sub_linearization_isLittleO (hf : ContDiffAt ℝ 2 f x) (hgrad : ∇ f x = 0) :
-    (fun y ↦ (-∇ f) y + hessianOperator f x (y - x)) =o[nhds x]
+    (fun y ↦ (-∇ f) y + hessianOperator f x (y - x)) =o[𝓝 x]
       (fun y ↦ y - x) := by
   have hrem := hf.hasFDerivAt_negativeGradientRemainder.isLittleO
   rw [negativeGradientRemainder_self hgrad] at hrem
@@ -262,18 +275,8 @@ above by a multiple of the distance to that point: it vanishes at the point and 
 there. -/
 theorem exists_norm_gradient_le_mul_norm_sub (hf : ContDiffAt ℝ 2 f x) (hgrad : ∇ f x = 0) :
     ∃ C > 0, ∀ᶠ y in 𝓝 x, ‖∇ f y‖ ≤ C * ‖y - x‖ := by
-  refine ⟨‖hessianOperator f x‖ + 1, by positivity, ?_⟩
-  filter_upwards [(hf.neg_gradient_sub_linearization_isLittleO hgrad).def one_pos] with y hy
-  rw [one_mul] at hy
-  have h2 : ‖hessianOperator f x (y - x)‖ ≤ ‖hessianOperator f x‖ * ‖y - x‖ :=
-    (hessianOperator f x).le_opNorm _
-  have h1 : ‖∇ f y‖ ≤ ‖(-∇ f) y + hessianOperator f x (y - x)‖
-      + ‖hessianOperator f x (y - x)‖ := by
-    calc ‖∇ f y‖ = ‖(-∇ f) y‖ := by simp
-      _ = ‖((-∇ f) y + hessianOperator f x (y - x)) - hessianOperator f x (y - x)‖ := by
-          rw [add_sub_cancel_right]
-      _ ≤ _ := norm_sub_le _ _
-  nlinarith
+  simpa only [hgrad, sub_zero] using
+    Asymptotics.isBigO_iff'.1 hf.hasFDerivAt_gradient.isBigO_sub
 
 /-- Near a critical point of a twice continuously differentiable function the absolute energy
 difference `|f y - f x|` is bounded by a multiple of the squared distance to that point. This is
@@ -291,10 +294,8 @@ theorem exists_abs_sub_le_mul_norm_sub_sq (hf : ContDiffAt ℝ 2 f x) (hgrad : �
   have hsub : Metric.closedBall x ‖y - x‖ ⊆ Metric.ball x r := fun z hz ↦
     lt_of_le_of_lt (Metric.mem_closedBall.1 hz) hyr
   have hkey : ‖f y - f x‖ ≤ C * ‖y - x‖ * ‖y - x‖ := by
-    refine Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le
-      (s := Metric.closedBall x ‖y - x‖) (f' := fun z ↦ fderiv ℝ f z)
-      (fun z hz ↦ ?_) (fun z hz ↦ ?_) (convex_closedBall x ‖y - x‖) ?_ ?_
-    · exact ((hball (hsub hz)).2).hasFDerivAt.hasFDerivWithinAt
+    refine Convex.norm_image_sub_le_of_norm_fderiv_le (s := Metric.closedBall x ‖y - x‖)
+      (fun z hz ↦ (hball (hsub hz)).2) (fun z hz ↦ ?_) (convex_closedBall x ‖y - x‖) ?_ ?_
     · rw [← norm_gradient_eq_norm_fderiv]
       refine ((hball (hsub hz)).1).trans (mul_le_mul_of_nonneg_left ?_ hC.le)
       have hz' := Metric.mem_closedBall.1 hz
@@ -351,7 +352,7 @@ theorem IsNondegenerateCriticalPoint.isInvertible_neg_hessianOperator
 /-- The nonlinear-remainder estimate at a nondegenerate critical point. -/
 theorem IsNondegenerateCriticalPoint.neg_gradient_sub_linearization_isLittleO
     (h : IsNondegenerateCriticalPoint f x) :
-    (fun y ↦ (-∇ f) y + hessianOperator f x (y - x)) =o[nhds x]
+    (fun y ↦ (-∇ f) y + hessianOperator f x (y - x)) =o[𝓝 x]
       (fun y ↦ y - x) :=
   h.contDiffAt.neg_gradient_sub_linearization_isLittleO h.gradient_eq_zero
 
@@ -362,39 +363,18 @@ theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_gradient
     (h : IsNondegenerateCriticalPoint f x) :
     ∃ c > 0, ∀ᶠ y in 𝓝 x, c * ‖y - x‖ ≤ ‖∇ f y‖ := by
   obtain ⟨A, hA⟩ := h.isInvertible_hessianOperator
-  set M : ℝ := ‖(A.symm : E →L[ℝ] E)‖ + 1 with hMdef
-  have hMpos : 0 < M := by positivity
-  have hlow : ∀ v : E, ‖v‖ ≤ M * ‖hessianOperator f x v‖ := by
-    intro v
-    have h1 : ‖v‖ ≤ ‖(A.symm : E →L[ℝ] E)‖ * ‖(A : E →L[ℝ] E) v‖ := by
-      conv_lhs => rw [← A.symm_apply_apply v]
-      exact (A.symm : E →L[ℝ] E).le_opNorm _
-    rw [← hA]
-    nlinarith [norm_nonneg ((A : E →L[ℝ] E) v)]
-  have h2M : (0 : ℝ) < 2 * M := by positivity
-  have hinv : (0 : ℝ) < (2 * M)⁻¹ := by positivity
-  refine ⟨(2 * M)⁻¹, hinv, ?_⟩
-  filter_upwards [h.neg_gradient_sub_linearization_isLittleO.def hinv] with y hy
-  set R : ℝ := ‖(-∇ f) y + hessianOperator f x (y - x)‖ with hRdef
-  have hR : 2 * M * R ≤ ‖y - x‖ := by
-    calc 2 * M * R ≤ 2 * M * ((2 * M)⁻¹ * ‖y - x‖) :=
-          mul_le_mul_of_nonneg_left hy h2M.le
-      _ = ‖y - x‖ := by field_simp
-  have h1 : ‖y - x‖ ≤ M * ‖hessianOperator f x (y - x)‖ := hlow _
-  have h2 : ‖hessianOperator f x (y - x)‖ ≤ R + ‖∇ f y‖ := by
-    calc ‖hessianOperator f x (y - x)‖
-        = ‖((-∇ f) y + hessianOperator f x (y - x)) - (-∇ f) y‖ := by
-            rw [add_sub_cancel_left]
-      _ ≤ ‖(-∇ f) y + hessianOperator f x (y - x)‖ + ‖(-∇ f) y‖ := norm_sub_le _ _
-      _ = R + ‖∇ f y‖ := by simp [hRdef]
-  have h3 : M * ‖hessianOperator f x (y - x)‖ ≤ M * (R + ‖∇ f y‖) :=
-    mul_le_mul_of_nonneg_left h2 hMpos.le
-  rw [inv_mul_le_iff₀ h2M]
-  nlinarith
+  have hd : HasFDerivAt (∇ f) (A : E →L[ℝ] E) x := by
+    rw [hA]
+    exact h.contDiffAt.hasFDerivAt_gradient
+  have hb := A.isBigO_sub_rev (𝓝 x) x
+  have he : Asymptotics.IsEquivalent (𝓝 x) (fun y ↦ ∇ f y - ∇ f x) (fun y ↦ A (y - x)) :=
+    hd.isLittleO.trans_isBigO hb
+  simpa only [h.gradient_eq_zero, sub_zero] using
+    Asymptotics.isBigO_iff''.1 (hb.trans he.isBigO_symm)
 
 /-- **The Morse form of Łojasiewicz's gradient inequality.** Near a nondegenerate critical point
 the absolute energy difference is bounded by a multiple of the squared norm of the gradient;
-equivalently the Łojasiewicz inequality holds there with the optimal exponent `1 / 2`.
+equivalently the Łojasiewicz inequality holds there with exponent `1 / 2`.
 Smoothness alone does not guarantee such an inequality, and a gradient trajectory can spiral
 forever without converging. -/
 theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_gradient_sq
@@ -434,10 +414,10 @@ theorem isNondegenerateCriticalPoint_iff_neg_gradient_linearization :
   constructor
   · intro h
     refine ⟨h.contDiffAt, by simp [h.gradient_eq_zero], ?_⟩
-    rw [(ContDiffAt.hasFDerivAt_neg_gradient h.contDiffAt).fderiv]
+    rw [fderiv_neg, fderiv_gradient]
     exact h.isInvertible_neg_hessianOperator
   · rintro ⟨hf, hzero, hinv⟩
-    rw [(ContDiffAt.hasFDerivAt_neg_gradient hf).fderiv,
+    rw [fderiv_neg, fderiv_gradient,
       isInvertible_neg_hessianOperator_iff] at hinv
     rw [isNondegenerateCriticalPoint_iff_gradient]
     refine ⟨hf, ?_, hinv⟩

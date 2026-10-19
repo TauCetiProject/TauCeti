@@ -35,8 +35,9 @@ extensions.
 
 * `TauCeti.FiniteDVRExtension.exists_isPrime_liesOver_comap_mapIntegralClosure_eq`: the chosen
   place lifts along any embedding of the extension field.
-* `TauCeti.FiniteDVRExtension.nonempty_binaryCofan_of_isGalois`: chosen extensions whose fields
-  embed in a common finite Galois extension of `K` admit a common refinement with that field.
+* `TauCeti.FiniteDVRExtension.exists_binaryCofan_of_isGalois`: chosen extensions whose fields
+  embed in a common finite Galois extension of `K` admit a common refinement with an explicit
+  identification of its extension field with that field.
 * `TauCeti.FiniteDVRExtension.nonempty_binaryCofan`: any two chosen extensions admit a common
   refinement.
 
@@ -60,29 +61,29 @@ namespace FiniteDVRExtension
 variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   [Field K] [Algebra R K] [IsFractionRing R K] (E F : FiniteDVRExtension R K)
 
-/-- The chosen place of a chosen extension lifts along any `K`-embedding of its extension field
-into a further field `L` over `R`: some prime of the integral closure of `R` in `L` lies above the
-closed point of `R` and restricts to the chosen place. -/
-theorem exists_isPrime_liesOver_comap_mapIntegralClosure_eq (L : Type*) [Field L] [Algebra K L]
-    [Algebra R L] [IsScalarTower R K L] (k : E.extensionField →ₐ[K] L) :
+/-- The chosen place of a chosen extension lifts along any `R`-algebra embedding of its extension
+field into a nontrivial commutative ring `L`: some prime of the integral closure of `R` in `L`
+lies above the closed point of `R` and restricts to the chosen place. -/
+theorem exists_isPrime_liesOver_comap_mapIntegralClosure_eq (L : Type*) [CommRing L] [Nontrivial L]
+    [Algebra R L] (k : E.extensionField →ₐ[R] L) :
     ∃ Q : Ideal (_root_.integralClosure R L), Q.IsPrime ∧ Q.LiesOver (maximalIdeal R) ∧
-      Q.comap (k.restrictScalars R).mapIntegralClosure = E.prime := by
+      Q.comap k.mapIntegralClosure = E.prime := by
   obtain ⟨Q, hQ, hQE⟩ :=
-    E.prime.exists_isPrime_comap_mapIntegralClosure_eq (k.restrictScalars R).injective
+    E.prime.exists_isPrime_comap_mapIntegralClosure_eq k.injective
   refine ⟨Q, hQ, ⟨?_⟩, hQE⟩
   rw [← E.under_prime, ← hQE]
   exact Ideal.ext fun x => by simp only [Ideal.under_def, Ideal.mem_comap, AlgHom.commutes]
 
 /-- Chosen extensions whose extension fields embed over `K` into a common finite Galois extension
-`N` of `K` admit a common refinement, with extension field `N`: lying over gives a prime of the
-integral closure of `R` in `N` above each chosen place, and Galois transitivity twists the second
-embedding until the two primes agree. -/
-theorem nonempty_binaryCofan_of_isGalois (N : Type u) [Field N] [Algebra K N]
+`N` of `K` admit a common refinement whose extension field is `K`-isomorphic to `N`. -/
+theorem exists_binaryCofan_of_isGalois (N : Type u) [Field N] [Algebra K N]
     [FiniteDimensional K N] [IsGalois K N] [Algebra R N] [IsScalarTower R K N]
     (k₁ : E.extensionField →ₐ[K] N) (k₂ : F.extensionField →ₐ[K] N) :
-    Nonempty (Limits.BinaryCofan E F) := by
-  obtain ⟨Q₁, hQ₁, hQ₁R, hQ₁E⟩ := E.exists_isPrime_liesOver_comap_mapIntegralClosure_eq N k₁
-  obtain ⟨Q₂, hQ₂, hQ₂R, hQ₂F⟩ := F.exists_isPrime_liesOver_comap_mapIntegralClosure_eq N k₂
+    ∃ P : Limits.BinaryCofan E F, Nonempty (P.pt.extensionField ≃ₐ[K] N) := by
+  obtain ⟨Q₁, hQ₁, hQ₁R, hQ₁E⟩ :=
+    E.exists_isPrime_liesOver_comap_mapIntegralClosure_eq N (k₁.restrictScalars R)
+  obtain ⟨Q₂, hQ₂, hQ₂R, hQ₂F⟩ :=
+    F.exists_isPrime_liesOver_comap_mapIntegralClosure_eq N (k₂.restrictScalars R)
   -- twist the second embedding by a Galois automorphism carrying `Q₂` to `Q₁`
   obtain ⟨σ, hσ⟩ := Ideal.exists_comap_galRestrict_eq R K N (_root_.integralClosure R N)
     (p := maximalIdeal R) ⟨hQ₁, hQ₁R⟩ ⟨hQ₂, hQ₂R⟩
@@ -101,15 +102,14 @@ theorem nonempty_binaryCofan_of_isGalois (N : Type u) [Field N] [Algebra K N]
   obtain ⟨e, he⟩ := exists_algEquiv_comap_prime_eq R K N Q₁
   refine ⟨Limits.BinaryCofan.mk (P := of R K N Q₁)
     (Hom.ofAlgHom ((e.symm : N →ₐ[K] _).comp k₁) ?_)
-    (Hom.ofAlgHom ((e.symm : N →ₐ[K] _).comp ((σ : N →ₐ[K] N).comp k₂)) ?_)⟩
+    (Hom.ofAlgHom ((e.symm : N →ₐ[K] _).comp ((σ : N →ₐ[K] N).comp k₂)) ?_), ⟨e⟩⟩
   · rw [AlgHom.restrictScalars_comp, AlgHom.mapIntegralClosure_comp,
       ← Ideal.comap_comapₐ, he, hQ₁E]
   · rw [AlgHom.restrictScalars_comp, AlgHom.mapIntegralClosure_comp,
       ← Ideal.comap_comapₐ, he, hQ₁F]
 
 /-- Any two chosen finite extensions of a discrete valuation ring admit a common refinement: a
-chosen extension receiving maps from both. Its extension field is the Galois closure of the
-compositum of the two extension fields inside a separable closure of `K`. -/
+chosen extension receiving maps from both, respecting the field embeddings and chosen places. -/
 theorem nonempty_binaryCofan : Nonempty (Limits.BinaryCofan E F) := by
   let Ω := separableClosure K (AlgebraicClosure K)
   have : IsSepClosed Ω := IsSepClosure.sep_closed K
@@ -121,9 +121,10 @@ theorem nonempty_binaryCofan : Nonempty (Limits.BinaryCofan E F) := by
   have : FiniteDimensional K j₂.fieldRange := j₂.toLinearMap.finiteDimensional_range
   let N : IntermediateField K Ω := IntermediateField.normalClosure K L₀ Ω
   have hL₀ : L₀ ≤ N := IntermediateField.le_normalClosure L₀
-  exact nonempty_binaryCofan_of_isGalois E F N
+  obtain ⟨P, -⟩ := exists_binaryCofan_of_isGalois E F N
     ((IntermediateField.inclusion (le_sup_left.trans hL₀)).comp j₁.equivFieldRange.toAlgHom)
     ((IntermediateField.inclusion (le_sup_right.trans hL₀)).comp j₂.equivFieldRange.toAlgHom)
+  exact ⟨P⟩
 
 end FiniteDVRExtension
 

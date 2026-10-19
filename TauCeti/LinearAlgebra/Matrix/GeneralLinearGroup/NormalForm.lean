@@ -137,7 +137,7 @@ private theorem diagGL_pair_eq_scalar {a b : Fˣ} (hab : a = b) :
 /-- `TauCeti.notMem_range_scalar_diagGL` for the pair the normal forms are written against. -/
 private theorem notMem_range_scalar_diagGL_pair {a b : Fˣ} (hab : a ≠ b) :
     (diagGL ![a, b] : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)) :=
-  notMem_range_scalar_diagGL (t := ![a, b]) (by simpa using hab)
+  notMem_range_scalar_diagGL (t := ![a, b]) (i := 0) (j := 1) (by simpa using hab)
 
 /-- `TauCeti.notMem_range_scalar_jordanGL` for the off-diagonal entry `1`. -/
 private theorem notMem_range_scalar_jordanGL_one (a : Fˣ) :

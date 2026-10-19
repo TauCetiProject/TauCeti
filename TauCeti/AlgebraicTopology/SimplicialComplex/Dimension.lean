@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
+import Mathlib.Data.Nat.Cast.Order.Basic
 
 /-!
 # The dimension of an abstract simplicial complex
@@ -82,6 +83,21 @@ theorem le_dimension (hσ : σ ∈ K) : ((σ.card - 1 : ℕ) : WithBot ℕ∞) �
 theorem dimension_le_iff {n : WithBot ℕ∞} :
     dimension K ≤ n ↔ ∀ σ ∈ K, ((σ.card - 1 : ℕ) : WithBot ℕ∞) ≤ n := by
   simp only [dimension, iSup_le_iff]
+
+/-- A precomplex has dimension at most zero exactly when every face is a singleton.
+The void complex is allowed. -/
+theorem dimension_le_zero_iff :
+    dimension K ≤ 0 ↔ ∀ σ ∈ K, ∃ v, σ = {v} := by
+  constructor
+  · intro h σ hσ
+    have hle := (dimension_le_iff.mp h) σ hσ
+    have hcard : σ.card - 1 ≤ 0 := by exact_mod_cast hle
+    have hpos := Finset.card_pos.mpr (K.isRelLowerSet_faces hσ).1
+    exact Finset.card_eq_one.mp (by omega)
+  · intro h
+    refine dimension_le_iff.mpr fun σ hσ => ?_
+    obtain ⟨v, rfl⟩ := h σ hσ
+    simp
 
 /-- Dimension is monotone in the complex. -/
 theorem dimension_mono (h : K ≤ L) : dimension K ≤ dimension L :=

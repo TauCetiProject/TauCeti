@@ -150,7 +150,7 @@ theorem eq_one_of_smul_eq_self_of_smul_eq_self {q : PSL(2, ℝ)} {z w : ℍ} (hz
 
 /-- **The stabilizer of `I` is the rotation group**: every element of `PSL(2, ℝ)` fixing `I` is the
 class of a rotation `Matrix.SpecialLinearGroup.rotation θ`.
-Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 8), §1 p. 6:
+Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 10), §1 p. 6:
 `K = SO(2)` is the stabiliser of `i` in `SL(2, ℝ)`. -/
 theorem exists_rotation_eq_of_smul_I_eq_I {q : PSL(2, ℝ)}
     (hq : q • UpperHalfPlane.I = UpperHalfPlane.I) :

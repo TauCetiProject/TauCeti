@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Setoid.Basic
+public import Mathlib.Order.Setoid.Basic
 
 /-!
 # Setoid quotient helpers

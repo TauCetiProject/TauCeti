@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.Semisimple.Wedderburn.Presentation
 -- matrix ring is what assembles a presentation realizing the intrinsic block data,
 -- Wedderburn--Artin supplies the semisimplicity of endomorphism rings it rests on,
 -- `RegularIsotypicComponent` identifies the blocks with all simple-module classes, and
--- `TauCeti.wedderburn_blocks_unique` compares an arbitrary presentation with that intrinsic-data
+-- `RingEquiv.wedderburn_blocks_unique` compares an arbitrary presentation with that intrinsic-data
 -- presentation.
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.SimpleModule.WedderburnArtin
@@ -25,7 +25,7 @@ import TauCeti.RingTheory.Semisimple.Wedderburn.Uniqueness
 # The intrinsic data of a Wedderburn block
 
 Artin--Wedderburn presents a semisimple ring `R` as a finite product of matrix rings over division
-rings, `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)`, and `TauCeti.wedderburn_blocks_unique` says that two presentations
+rings, `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)`, and `RingEquiv.wedderburn_blocks_unique` says that two presentations
 differ only by a permutation of the blocks.  That is uniqueness *between* presentations; it does
 not say what the surviving data `nᵢ` and `Dᵢ` **are**.  This file answers that: each block is the
 block of a simple `R`-module `S`, and then
@@ -273,7 +273,8 @@ theorem WedderburnPresentation.exists_equiv_degree_eq_blockMultiplicity
   -- instances by the comparison below
   have hsimple := simple
   have hdegree := pos
-  obtain ⟨σ, hσ⟩ := wedderburn_blocks_unique P.equiv g
-  exact ⟨n, S, σ, simple, hne, hall, fun i ↦ ⟨(hσ i).1.trans (hmult _), (hσ i).2⟩⟩
+  obtain ⟨σ, hσ⟩ := P.equiv.wedderburn_blocks_unique g
+  exact ⟨n, S, σ, simple, hne, hall, fun i ↦
+    ⟨(by simpa using (hσ i).1 : P.degree i = d (σ i)).trans (hmult _), (hσ i).2⟩⟩
 
 end TauCeti

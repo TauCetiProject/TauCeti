@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.ConjugationTransfer
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Automorphism
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Identity
 
@@ -27,12 +28,19 @@ rests on Burnside's basis theorem and the Hopf property). The identity says exac
 of `x_0 ⋯ x_{r-1}` is the inverse of the conjugate `d⁻¹ * z ^ u * d`, which is the value on the
 cusp.
 
+The same automorphism carries every conjugate `q * z * q⁻¹` of the cusp to a conjugate of its
+`u`-th power, with the conjugator `q * d * (φ q)⁻¹` computed by the conjugation-transfer lemma
+`TauCeti.map_conj_eq_conj_of_map_eq_conj`. This covers any other convention for the last
+peripheral element, such as `(x_1 x_0)⁻¹ = x_0⁻¹ * z * x_0` in rank two.
+
 The assignment `u ↦ φ` is not canonical: it depends on the choice of conjugators.
 
 ## Main results
 
 * `TauCeti.Peripheral.exists_peripheralAut`: **the peripheral-power theorem**, the existence of
   a continuous automorphism with prescribed normalized conjugators, for every unit exponent.
+* `TauCeti.Peripheral.exists_peripheralAut_conj_cusp`: the same, with the value on every
+  conjugate of the cusp.
 * `TauCeti.Peripheral.exists_isPeripheralAut`: for every unit `u`, the basis of a free pro-`p`
   group admits a peripheral automorphism of exponent `u`.
 
@@ -70,6 +78,21 @@ theorem exists_peripheralAut (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)
   -- `d⁻¹ * cusp x ^ u * d`.
   rw [map_cusp, hφx, cusp_def]
   exact inv_eq_of_mul_eq_one_right ((defect_def ..).symm.trans hcd)
+
+/-- **The peripheral-power theorem for the conjugates of the cusp.** For every unit `u ∈ ℤ_pˣ`
+there are a continuous automorphism `φ` of `F`, conjugators `c` on the basis `x = basis e`, with
+`c 0 = 1` in positive rank, and `d : F`, such that `φ (x i) = (c i)⁻¹ * x i ^ u * c i` for every
+`i` and, for every `q : F`, `φ` carries the conjugate `y = q * cusp x * q⁻¹` of the cusp to
+`d'⁻¹ * y ^ u * d'` with `d' = q * d * (φ q)⁻¹`. At `q = 1` the conjugator is `d`. -/
+theorem exists_peripheralAut_conj_cusp (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r))
+    (u : ℤ_[p]ˣ) :
+    ∃ (φ : ContinuousAut F) (c : Fin r → F) (d : F), (∀ h0 : 0 < r, c ⟨0, h0⟩ = 1) ∧
+      (∀ i, φ (basis e i) = (c i)⁻¹ * hF.padicPow (basis e i) u * c i) ∧
+      ∀ q : F, φ (q * cusp (basis e) * q⁻¹) =
+        (q * d * (φ q)⁻¹)⁻¹ * hF.padicPow (q * cusp (basis e) * q⁻¹) u * (q * d * (φ q)⁻¹) := by
+  obtain ⟨φ, c, d, hc0, hc, hd⟩ := exists_peripheralAut hF e u
+  exact ⟨φ, c, d, hc0, hc,
+    map_conj_eq_conj_of_map_eq_conj φ (hF.padicPow · u) (hF.conj_padicPow · · u) hd⟩
 
 /-- For every unit `u ∈ ℤ_pˣ`, the basis of a free pro-`p` group admits a continuous
 automorphism that is peripheral of exponent `u`. -/

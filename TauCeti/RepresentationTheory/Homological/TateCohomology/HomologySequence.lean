@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 
 /-!
@@ -20,7 +21,13 @@ vanishes the induced map is surjective in degree `n` and injective in degree `n 
 conversely surjectivity in degree `n` together with injectivity in degree `n + 1` forces
 `Ĥⁿ(G, X₃)` to vanish. These are the two halves of the argument that a morphism of
 representations inducing isomorphisms in three consecutive degrees on every subgroup induces
-isomorphisms in every degree.
+isomorphisms in every degree. Likewise, vanishing of the Tate cohomology of two of the three terms,
+in the degrees the long exact sequence connects, forces it for the third, and vanishing of the
+Tate cohomology of `X₂` in two consecutive degrees makes the connecting map bijective.
+
+Finally, for a `3 × 3` diagram of representations with short exact rows and columns, the two
+composites of connecting maps between opposite corners differ by a sign. This is the sign rule
+relating the compatibility of the cup product with connecting maps in its two variables.
 
 ## Main statements
 
@@ -30,6 +37,14 @@ isomorphisms in every degree.
   makes the map induced by `X₁ ⟶ X₂` surjective in that degree and injective in the next.
 * `TauCeti.TateCohomology.isZero_X₃_of_surjective_of_injective`: the converse, from two
   consecutive degrees.
+* `TauCeti.TateCohomology.isZero_X₁_of_surjective_of_injective`: surjectivity in degree `n - 1` and
+  injectivity in degree `n` of the map induced by `X₂ ⟶ X₃` force `H-hat^n(G, X₁)` to vanish.
+* `TauCeti.TateCohomology.isZero_X₂_of_isZero_X₁_of_isZero_X₃`,
+  `TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁`,
+  `TauCeti.TateCohomology.isZero_X₁_of_isZero_X₃_of_isZero_X₂`: two-out-of-three for the
+  vanishing of Tate cohomology along a short exact sequence.
+* `TauCeti.TateCohomology.δ_comp_δ_eq_neg`: the connecting maps of a `3 × 3` diagram of
+  representations with short exact rows and columns anticommute.
 -/
 
 public section
@@ -42,8 +57,7 @@ namespace TauCeti.TateCohomology
 
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G] {S : ShortComplex (Rep k G)}
   (hS : S.ShortExact)
-include hS
-
+include hS in
 /-- Exactness of `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂) ⟶ Ĥⁿ(G, X₃)`, the middle term of the long exact
 sequence in Tate cohomology of a short exact sequence of representations. -/
 theorem _root_.TateCohomology.exact₂ (n : ℤ) :
@@ -51,12 +65,14 @@ theorem _root_.TateCohomology.exact₂ (n : ℤ) :
       (by rw [← Functor.map_comp, S.zero, Functor.map_zero])).Exact :=
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).homology_exact₂ n
 
+include hS in
 /-- If `Ĥⁿ(G, X₃) = 0`, the map `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂)` induced by `X₁ ⟶ X₂` is surjective. -/
 theorem map_f_surjective_of_isZero_X₃ (n : ℤ) (h : IsZero (tateCohomology S.X₃ n)) :
     Function.Surjective ((tateCohomologyFunctor n).map S.f) := by
   rw [← ModuleCat.epi_iff_surjective]
   exact (_root_.TateCohomology.exact₂ hS n).epi_f (h.eq_zero_of_tgt _)
 
+include hS in
 /-- If `Ĥᵐ(G, X₃) = 0`, the map `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂)` induced by `X₁ ⟶ X₂` is injective in
 the next degree `n = m + 1`. -/
 theorem map_f_injective_of_isZero_X₃ (m n : ℤ) (hmn : m + 1 = n)
@@ -66,6 +82,7 @@ theorem map_f_injective_of_isZero_X₃ (m n : ℤ) (hmn : m + 1 = n)
   rw [← ModuleCat.mono_iff_injective]
   exact (_root_.TateCohomology.exact₁ hS m).mono_g (h.eq_zero_of_src _)
 
+include hS in
 /-- If the map induced by `X₁ ⟶ X₂` on Tate cohomology is surjective in degree `m` and injective
 in degree `n = m + 1`, then `Ĥᵐ(G, X₃) = 0`. -/
 theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
@@ -79,5 +96,88 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   -- `hj : (ComplexShape.up ℤ).Rel m j`, which is `m + 1 = j`.
   obtain rfl : m + 1 = j := hj
   exact (ModuleCat.mono_iff_injective _).2 hinj
+
+include hS in
+/-- If the map induced by `X₂ ⟶ X₃` on Tate cohomology is surjective in degree `m` and injective
+in degree `n = m + 1`, then `H-hat^n(G, X₁) = 0`. -/
+theorem isZero_X₁_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
+    (hsurj : Function.Surjective ((tateCohomologyFunctor m).map S.g))
+    (hinj : Function.Injective ((tateCohomologyFunctor n).map S.g)) :
+    IsZero (tateCohomology S.X₁ n) := by
+  subst hmn
+  refine (HomologicalComplex.exactAt_iff_isZero_homology _ _).1
+    ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).exactAt_X₁ (m + 1)
+      ((ModuleCat.mono_iff_injective _).2 hinj) fun j hj ↦ ?_)
+  -- `hj : (ComplexShape.up ℤ).Rel j (m + 1)`, which is `j + 1 = m + 1`.
+  obtain rfl : j = m := add_right_cancel hj
+  exact (ModuleCat.epi_iff_surjective _).2 hsurj
+
+include hS in
+/-- If `Ĥⁿ(G, X₁) = 0` and `Ĥⁿ(G, X₃) = 0`, then `Ĥⁿ(G, X₂) = 0`. -/
+theorem isZero_X₂_of_isZero_X₁_of_isZero_X₃ (n : ℤ) (h₁ : IsZero (tateCohomology S.X₁ n))
+    (h₃ : IsZero (tateCohomology S.X₃ n)) : IsZero (tateCohomology S.X₂ n) :=
+  (_root_.TateCohomology.exact₂ hS n).isZero_of_both_isZero h₁ h₃
+
+include hS in
+/-- If `Ĥᵐ(G, X₂) = 0` and `Ĥⁿ(G, X₁) = 0` in the next degree `n = m + 1`, then
+`Ĥᵐ(G, X₃) = 0`. -/
+theorem isZero_X₃_of_isZero_X₂_of_isZero_X₁ (m n : ℤ) (hmn : m + 1 = n)
+    (h₂ : IsZero (tateCohomology S.X₂ m)) (h₁ : IsZero (tateCohomology S.X₁ n)) :
+    IsZero (tateCohomology S.X₃ m) := by
+  subst hmn
+  exact (_root_.TateCohomology.exact₃ hS m).isZero_of_both_isZero h₂ h₁
+
+include hS in
+/-- If `Ĥᵐ(G, X₃) = 0` and `Ĥⁿ(G, X₂) = 0` in the next degree `n = m + 1`, then
+`Ĥⁿ(G, X₁) = 0`. -/
+theorem isZero_X₁_of_isZero_X₃_of_isZero_X₂ (m n : ℤ) (hmn : m + 1 = n)
+    (h₃ : IsZero (tateCohomology S.X₃ m)) (h₂ : IsZero (tateCohomology S.X₂ n)) :
+    IsZero (tateCohomology S.X₁ n) := by
+  subst hmn
+  exact (_root_.TateCohomology.exact₁ hS m).isZero_of_both_isZero h₃ h₂
+
+include hS in
+/-- If `Ĥⁿ(G, X₂) = 0` and `Ĥⁿ⁺¹(G, X₂) = 0`, the connecting map
+`Ĥⁿ(G, X₃) ⟶ Ĥⁿ⁺¹(G, X₁)` is bijective. -/
+theorem δ_bijective_of_isZero_X₂ (n : ℤ) (h₀ : IsZero (tateCohomology S.X₂ n))
+    (h₁ : IsZero (tateCohomology S.X₂ (n + 1))) :
+    Function.Bijective (_root_.TateCohomology.δ hS n) :=
+  ConcreteCategory.bijective_of_isIso
+    ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).δIso n (n + 1) rfl h₀ h₁).hom
+
+/-- **The connecting maps of a `3 × 3` diagram anticommute in Tate cohomology.** Let `D` be a
+`3 × 3` diagram of representations, presented as a short complex `D.X₁ ⟶ D.X₂ ⟶ D.X₃` of short
+complexes, all of whose rows `D.Xᵢ` and columns `D.map π_j` are short exact. Then the two composites
+of connecting maps `Ĥⁿ(G, X₃₃) ⟶ Ĥⁿ⁺²(G, X₁₁)`, through the third row and the first column, and
+through the third column and the first row, differ by a sign. -/
+theorem δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (Rep k G)))
+    (h₁ : D.X₁.ShortExact) (h₂ : D.X₂.ShortExact) (h₃ : D.X₃.ShortExact)
+    (h₁' : (D.map ShortComplex.π₁).ShortExact) (h₂' : (D.map ShortComplex.π₂).ShortExact)
+    (h₃' : (D.map ShortComplex.π₃).ShortExact) (n : ℤ) :
+    _root_.TateCohomology.δ h₃ n ≫ _root_.TateCohomology.δ h₁' (n + 1) =
+      -(_root_.TateCohomology.δ h₃' n ≫ _root_.TateCohomology.δ h₁ (n + 1)) := by
+  -- The image of `D` under the Tate complex functor, a `3 × 3` diagram of cochain complexes.
+  let F := (tateComplexFunctor k G).mapShortComplex
+  let D' := ShortComplex.mk (F.map D.f) (F.map D.g) (by
+    rw [← F.map_comp, D.zero]
+    apply ShortComplex.hom_ext <;> exact (tateComplexFunctor k G).map_zero _ _)
+  have hh₁ : D'.X₁.ShortExact := _root_.TateCohomology.map_tateComplexFunctor_shortExact h₁
+  have hh₂ : D'.X₂.ShortExact := _root_.TateCohomology.map_tateComplexFunctor_shortExact h₂
+  have hh₃ : D'.X₃.ShortExact := _root_.TateCohomology.map_tateComplexFunctor_shortExact h₃
+  have hh₁' : (D'.map ShortComplex.π₁).ShortExact :=
+    _root_.TateCohomology.map_tateComplexFunctor_shortExact h₁'
+  have hh₂' : (D'.map ShortComplex.π₂).ShortExact :=
+    _root_.TateCohomology.map_tateComplexFunctor_shortExact h₂'
+  have hh₃' : (D'.map ShortComplex.π₃).ShortExact :=
+    _root_.TateCohomology.map_tateComplexFunctor_shortExact h₃'
+  -- Restate each Tate connecting map as the one of `D'`, so that matching the two statements does
+  -- not have to unfold the Tate complex functor through the composites.
+  have e₃ : _root_.TateCohomology.δ h₃ n = hh₃.δ n (n + 1) rfl := rfl
+  have e₁' : _root_.TateCohomology.δ h₁' (n + 1) = hh₁'.δ (n + 1) (n + 1 + 1) rfl := rfl
+  have e₃' : _root_.TateCohomology.δ h₃' n = hh₃'.δ n (n + 1) rfl := rfl
+  have e₁ : _root_.TateCohomology.δ h₁ (n + 1) = hh₁.δ (n + 1) (n + 1 + 1) rfl := rfl
+  rw [e₃, e₁', e₃', e₁]
+  exact HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg D' hh₁ hh₂ hh₃ hh₁' hh₂' hh₃'
+    n (n + 1) (n + 1 + 1) rfl rfl
 
 end TauCeti.TateCohomology

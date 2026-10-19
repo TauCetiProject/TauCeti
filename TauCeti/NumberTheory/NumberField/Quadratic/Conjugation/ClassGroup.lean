@@ -19,7 +19,8 @@ genus-theoretic mechanism `I · σI` principal), and concludes that `σ` therefo
 the maximal elementary-2 quotient `Cl(𝓞 K)/Cl(𝓞 K)²`.
 
 The reduction has two moves. First the general **bridge** `ClassGroup.mulEquiv_mk0` (in
-`ClassGroup/Equiv.lean`): for a ring isomorphism `f : R ≃+* R'` of Dedekind domains,
+`Mathlib/RingTheory/ClassGroup/ExtendedHom.lean`): for a ring isomorphism `f : R ≃+* R'` of
+Dedekind domains,
 `ClassGroup.mulEquiv f` sends the class of an ideal to the class of its pushforward `Ideal.map f`.
 Second the **inversion**: the ideal class of `σI` is the inverse of the class of `I` because
 `I · σI` is principal — the norm-principality theorem

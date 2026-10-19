@@ -27,6 +27,8 @@ many indecomposables. Applications to loops and parallel arrows are in
 ## Main results
 
 * `TauCeti.IsFiniteRepType.of_quiverEmbedding`: finite representation type passes to subquivers.
+* `TauCeti.isFiniteRepType_iff_of_homEquiv`: finite representation type is invariant under
+  isomorphism of quivers.
 
 ## References
 
@@ -65,5 +67,23 @@ theorem IsFiniteRepType.of_quiverEmbedding (h : IsFiniteRepType.{u, v, w, max v'
   rw [← toSkeleton_fromSkeleton_obj a, ← toSkeleton_fromSkeleton_obj b]
   exact (ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso P (hM a) (hM b)).mpr
     ((φ.nonempty_extendByZeroRep_iso_iff _ _).mp hiso)
+
+/-- The quiver embedding which is the identity on vertices, given a correspondence between the
+arrows of two quiver structures on the same vertices. -/
+private def quiverEmbeddingOfHomEquiv {V : Type v} {q q' : Quiver.{w} V}
+    (e : ∀ a b : V, @Quiver.Hom V q a b ≃ @Quiver.Hom V q' a b) :
+    @QuiverEmbedding V q V q' :=
+  @QuiverEmbedding.mk V q V q' (@Prefunctor.mk V q V q' id fun {a b} ↦ e a b)
+    Function.injective_id fun {a b} ↦ (e a b).injective
+
+/-- **Finite representation type is invariant under isomorphism of quivers.** Two quiver
+structures on the same vertices whose arrows between any two vertices correspond have finite
+representation type together. -/
+theorem isFiniteRepType_iff_of_homEquiv {V : Type v} {q q' : Quiver.{w} V}
+    (e : ∀ a b : V, @Quiver.Hom V q a b ≃ @Quiver.Hom V q' a b) :
+    @IsFiniteRepType.{u, v, w, max v t} k V _ q ↔ @IsFiniteRepType.{u, v, w, max v t} k V _ q' :=
+  ⟨fun h ↦ @IsFiniteRepType.of_quiverEmbedding _ _ _ q' _ q h
+      (quiverEmbeddingOfHomEquiv fun a b ↦ (e a b).symm),
+    fun h ↦ @IsFiniteRepType.of_quiverEmbedding _ _ _ q _ q' h (quiverEmbeddingOfHomEquiv e)⟩
 
 end TauCeti

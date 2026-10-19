@@ -31,6 +31,9 @@ deliberately not an instance; see its docstring.
 
 * `TauCeti.isManifold_symChartedSpace`: the symmetric power of a Hausdorff complex curve is a
   complex analytic manifold for its elementary-symmetric charts.
+* `TauCeti.analyticAt_symChartAt_symm_trans`: the transition between two chosen
+  elementary-symmetric charts is analytic, so that analyticity of a map into the symmetric power
+  can be checked in any of them (`TauCeti.analyticAt_symChartAt_comp_of_analyticAt`).
 -/
 
 public section
@@ -62,6 +65,36 @@ theorem isManifold_symChartedSpace :
     hWdisj e e' hq hr fun _ _ i j z hz _ =>
       analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
           (IsManifold.chart_mem_maximalAtlas _) (hVsub i hz.1) (hWsub j hz.2)
+
+/-- **The transition between two chosen elementary-symmetric charts is analytic.** For tuples `s`,
+`s'` of a complex curve, the change of coordinates from `symChartAt s` to `symChartAt s'` is
+analytic at the coordinates of every tuple lying in both chart sources. -/
+theorem analyticAt_symChartAt_symm_trans {s s' x : Sym α n}
+    (hs : x ∈ (symChartAt (K := ℂ) s).source) (hs' : x ∈ (symChartAt (K := ℂ) s').source) :
+    AnalyticAt ℂ (fun c => symChartAt (K := ℂ) s' ((symChartAt (K := ℂ) s).symm c))
+      (symChartAt (K := ℂ) s x) := by
+  obtain ⟨V, m, hm, hVo, hVsub, hVdisj, e, hq, h⟩ := symChartAt_spec (K := ℂ) s
+  obtain ⟨W, p, hp, hWo, hWsub, hWdisj, e', hr, h'⟩ := symChartAt_spec (K := ℂ) s'
+  rw [h] at hs ⊢
+  rw [h'] at hs' ⊢
+  exact analyticAt_symOpenPartialHomeomorph_transition _ _ V m hm W p hp hVo hVsub hVdisj hWo
+    hWsub hWdisj e e' hq hr hs hs' fun i j z hz _ =>
+      analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
+        (IsManifold.chart_mem_maximalAtlas _) (hVsub i hz.1) (hWsub j hz.2)
+
+/-- **Analyticity of a map into a symmetric power does not depend on the elementary-symmetric
+chart.** If `f` is continuous at `w` and its coordinates in the chosen chart at `s` are analytic at
+`w`, then so are its coordinates in the chosen chart at any `s'` whose source contains `f w`. -/
+theorem analyticAt_symChartAt_comp_of_analyticAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {f : E → Sym α n} {w : E} {s s' : Sym α n} (hf : ContinuousAt f w)
+    (hs : f w ∈ (symChartAt (K := ℂ) s).source) (hs' : f w ∈ (symChartAt (K := ℂ) s').source)
+    (ha : AnalyticAt ℂ (fun t => symChartAt (K := ℂ) s (f t)) w) :
+    AnalyticAt ℂ (fun t => symChartAt (K := ℂ) s' (f t)) w := by
+  refine ((analyticAt_symChartAt_symm_trans hs hs').comp
+    (f := fun t => symChartAt (K := ℂ) s (f t)) ha).congr ?_
+  filter_upwards [hf.preimage_mem_nhds ((symChartAt (K := ℂ) s).open_source.mem_nhds hs)]
+    with t ht
+  exact congrArg (symChartAt (K := ℂ) s') ((symChartAt (K := ℂ) s).left_inv ht)
 
 end TauCeti
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- Proof-only: fractional ideals appear in the private rank-one helper, not in any statement.
+import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.FractionalIdeal.Operations
 public import TauCeti.RingTheory.Length
 import TauCeti.LinearAlgebra.Dual.Lemmas

@@ -32,12 +32,14 @@ namespace TauCeti.Semigroups
 
 /-! ## Strongly Continuous Semigroups -/
 
-variable (X : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable (X : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- A strongly continuous one-parameter semigroup (C₀-semigroup) on a Banach space.
+/-- A strongly continuous one-parameter semigroup (C₀-semigroup) on a normed space `X`.
 
 The semigroup is indexed by nonnegative real time. The axioms are `S 0 = Id`,
-`S (s + t) = S s ∘ S t`, and strong continuity at `0`. -/
+`S (s + t) = S s ∘ S t`, and strong continuity at `0`. Note that the C₀-semigroup theory
+proper (uniform boundedness, continuity of orbits at positive times) additionally
+needs `X` complete. -/
 structure StronglyContinuousSemigroup where
   /-- The semigroup operator at time `t : ℝ≥0`. -/
   toFun : ℝ≥0 → X →L[ℝ] X
@@ -52,7 +54,6 @@ variable {X}
 
 namespace StronglyContinuousSemigroup
 
-omit [CompleteSpace X] in
 instance instFunLike : FunLike (StronglyContinuousSemigroup X) ℝ≥0 (X →L[ℝ] X) where
   coe := toFun
   coe_injective := by
@@ -61,33 +62,28 @@ instance instFunLike : FunLike (StronglyContinuousSemigroup X) ℝ≥0 (X →L[�
     cases T
     congr
 
-omit [CompleteSpace X] in
 @[ext]
 theorem ext {S T : StronglyContinuousSemigroup X} (h : ∀ t, S t = T t) : S = T :=
   DFunLike.ext _ _ h
 
-omit [CompleteSpace X] in
 /-- The native nonnegative-time operator at zero is the identity. -/
 @[simp]
 theorem map_zero (S : StronglyContinuousSemigroup X) :
     S 0 = ContinuousLinearMap.id ℝ X :=
   S.map_zero'
 
-omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.map_zero`. -/
 theorem map_zero_apply (S : StronglyContinuousSemigroup X) (x : X) :
     S 0 x = x := by
   rw [S.map_zero]
   rfl
 
-omit [CompleteSpace X] in
 /-- The native nonnegative-time semigroup law. -/
 @[simp]
 theorem map_add (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) :
     S (s + t) = (S s).comp (S t) :=
   S.map_add' s t
 
-omit [CompleteSpace X] in
 /-- **The operator at a natural multiple of a time is a power.** `S (k • t) = (S t) ^ k`.
 
 Not a `simp` lemma: `nsmul_eq_mul` rewrites the left-hand side to `S (↑k * t)`, so tagging this
@@ -99,7 +95,6 @@ theorem map_nsmul (S : StronglyContinuousSemigroup X) (t : ℝ≥0) (k : ℕ) :
   | succ k ih =>
     rw [succ_nsmul', S.map_add, ih, pow_succ', ContinuousLinearMap.mul_def]
 
-omit [CompleteSpace X] in
 /-- **The power identity in simp normal form.** `S (↑k * t) = (S t) ^ k`.
 
 This is `map_nsmul` with the left-hand side normalised: `nsmul_eq_mul` rewrites `k • t` to
@@ -109,7 +104,6 @@ theorem map_natCast_mul (S : StronglyContinuousSemigroup X) (t : ℝ≥0) (k : �
     S ((k : ℝ≥0) * t) = (S t) ^ k := by
   simpa [nsmul_eq_mul] using S.map_nsmul t k
 
-omit [CompleteSpace X] in
 /-- **The multi-step operator-norm bound.** If `‖S t‖ ≤ M`, then `‖S (k • t)‖ ≤ M ^ k` at every
 natural multiple of `t`. -/
 theorem norm_map_nsmul_le_pow (S : StronglyContinuousSemigroup X) (t : ℝ≥0) {M : ℝ}
@@ -119,14 +113,12 @@ theorem norm_map_nsmul_le_pow (S : StronglyContinuousSemigroup X) (t : ℝ≥0) 
   · simpa [ContinuousLinearMap.one_def] using ContinuousLinearMap.norm_id_le
   · exact (norm_pow_le' _ hk).trans (pow_le_pow_left₀ (norm_nonneg _) hMt k)
 
-omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.map_add`. -/
 theorem map_add_apply (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) (x : X) :
     S (s + t) x = S s (S t x) := by
   rw [S.map_add]
   rfl
 
-omit [CompleteSpace X] in
 /-- **The increment of a semigroup over `[a, b]` factors through its value at `a`.** -/
 theorem sub_eq_comp_sub_one_of_le (S : StronglyContinuousSemigroup X) {a b : ℝ≥0} (hab : a ≤ b) :
     S b - S a = (S a).comp (S (b - a) - 1) := by
@@ -135,31 +127,26 @@ theorem sub_eq_comp_sub_one_of_le (S : StronglyContinuousSemigroup X) {a b : ℝ
   rw [hmap, ContinuousLinearMap.comp_sub, ContinuousLinearMap.one_def,
     ContinuousLinearMap.comp_id]
 
-omit [CompleteSpace X] in
 /-- Submultiplicativity of the native nonnegative-time operator norm. -/
 theorem norm_map_add_le (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) :
     ‖S (s + t)‖ ≤ ‖S s‖ * ‖S t‖ := by
   rw [S.map_add]
   exact ContinuousLinearMap.opNorm_comp_le _ _
 
-omit [CompleteSpace X] in
 /-- Strong continuity at zero for the native nonnegative-time action. -/
 theorem continuousAt_zero (S : StronglyContinuousSemigroup X) (x : X) :
     ContinuousAt (fun t : ℝ≥0 => S t x) 0 :=
   S.continuousAt_zero' x
 
-omit [CompleteSpace X] in
 /-- Tendsto form of `StronglyContinuousSemigroup.continuousAt_zero`. -/
 theorem continuousAt_zero_tendsto (S : StronglyContinuousSemigroup X) (x : X) :
     Filter.Tendsto (fun t : ℝ≥0 => S t x) (nhds 0) (nhds x) := by
   simpa using (S.continuousAt_zero x).tendsto
 
-omit [CompleteSpace X] in
 /-- The semigroup as a function of real time, extended by `id` for `t < 0`. -/
 noncomputable def realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) : X →L[ℝ] X :=
   S t.toNNReal
 
-omit [CompleteSpace X] in
 /-- The real-time operator is the native semigroup operator at the nonnegative part of `t`.
 
 This is not a `simp` lemma: the simp normal form keeps `realOperator` folded, so that the more
@@ -168,13 +155,11 @@ theorem realOperator_def (S : StronglyContinuousSemigroup X) (t : ℝ) :
     S.realOperator t = S t.toNNReal := by
   rw [realOperator]
 
-omit [CompleteSpace X] in
 @[simp]
 lemma realOperator_coe (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
     S.realOperator t = S t := by
   rw [realOperator, Real.toNNReal_coe]
 
-omit [CompleteSpace X] in
 /-- The real-time operator at zero is the identity: `S.realOperator 0 = id`. -/
 @[simp]
 theorem realOperator_zero (S : StronglyContinuousSemigroup X) :
@@ -182,20 +167,17 @@ theorem realOperator_zero (S : StronglyContinuousSemigroup X) :
   rw [realOperator, Real.toNNReal_zero]
   exact S.map_zero'
 
-omit [CompleteSpace X] in
 /-- The real-time shim satisfies the semigroup law at nonnegative real times. -/
 theorem realOperator_add (S : StronglyContinuousSemigroup X) (s t : ℝ) (hs : 0 ≤ s) (ht : 0 ≤ t) :
     S.realOperator (s + t) = (S.realOperator s).comp (S.realOperator t) := by
   rw [realOperator, realOperator, realOperator, Real.toNNReal_add hs ht]
   exact S.map_add' s.toNNReal t.toNNReal
 
-omit [CompleteSpace X] in
 /-- The semigroup law at nonnegative real times, applied to a vector. -/
 theorem realOperator_add_apply (S : StronglyContinuousSemigroup X) (s t : ℝ) (hs : 0 ≤ s)
     (ht : 0 ≤ t) (x : X) : S.realOperator (s + t) x = S.realOperator s (S.realOperator t x) := by
   rw [S.realOperator_add s t hs ht, ContinuousLinearMap.comp_apply]
 
-omit [CompleteSpace X] in
 /-- Submultiplicativity of the real-time operator norm at nonnegative times: the semigroup law
 `S.realOperator (s + t) = S.realOperator s ∘ S.realOperator t` bounds the norm of the composite
 by the product of the norms. -/
@@ -205,7 +187,6 @@ theorem norm_realOperator_add_le (S : StronglyContinuousSemigroup X) (s t : ℝ)
   rw [realOperator, realOperator, realOperator, Real.toNNReal_add hs ht]
   exact S.norm_map_add_le s.toNNReal t.toNNReal
 
-omit [CompleteSpace X] in
 /-- Strong continuity at zero of `t ↦ S.realOperator t x` along `0 ≤ t`. -/
 theorem realOperator_continuousWithinAt_zero (S : StronglyContinuousSemigroup X) (x : X) :
     ContinuousWithinAt (fun t => S.realOperator t x) (Set.Ici 0) 0 := by
@@ -235,7 +216,6 @@ variable {X}
 
 namespace ContractionSemigroup
 
-omit [CompleteSpace X] in
 instance instFunLike : FunLike (ContractionSemigroup X) ℝ≥0 (X →L[ℝ] X) where
   coe S := S.toStronglyContinuousSemigroup
   coe_injective := by
@@ -248,12 +228,10 @@ instance instFunLike : FunLike (ContractionSemigroup X) ℝ≥0 (X →L[ℝ] X) 
         cases hST
         congr
 
-omit [CompleteSpace X] in
 @[ext]
 theorem ext {S T : ContractionSemigroup X} (h : ∀ t, S t = T t) : S = T :=
   DFunLike.ext _ _ h
 
-omit [CompleteSpace X] in
 @[simp]
 theorem toStronglyContinuousSemigroup_apply (S : ContractionSemigroup X) (t : ℝ≥0) :
     S.toStronglyContinuousSemigroup t = S t :=
@@ -263,7 +241,6 @@ end ContractionSemigroup
 
 /-! ## Basic Properties -/
 
-omit [CompleteSpace X] in
 /-- A contraction semigroup is contractive at nonnegative real times. -/
 theorem ContractionSemigroup.contracting_real (S : ContractionSemigroup X)
     (t : ℝ) (ht : 0 ≤ t) : ‖S.realOperator t‖ ≤ 1 := by
@@ -271,14 +248,12 @@ theorem ContractionSemigroup.contracting_real (S : ContractionSemigroup X)
   rw [← ht_coe, StronglyContinuousSemigroup.realOperator_coe]
   exact S.contracting t.toNNReal
 
-omit [CompleteSpace X] in
 /-- `S(t) x` at `t = 0` equals `x`, pointwise version. -/
 theorem StronglyContinuousSemigroup.realOperator_zero_apply
     (S : StronglyContinuousSemigroup X) (x : X) :
     S.realOperator 0 x = x := by
   rw [S.realOperator_zero, ContinuousLinearMap.id_apply]
 
-omit [CompleteSpace X] in
 /-- A pointwise orbit bound `‖S.realOperator t x‖ ≤ B` valid on the initial interval `[0, δ)`
 propagates, via the semigroup law, to the geometric bound `(max ‖S.realOperator δ‖ 1) ^ k * B`
 on `[0, (k + 1) * δ)`. -/
@@ -324,7 +299,6 @@ private theorem StronglyContinuousSemigroup.norm_realOperator_apply_le_pow_mul_o
               (by positivity) (by positivity)
         _ = L ^ (k + 1) * B := by ring
 
-omit [CompleteSpace X] in
 /-- Pointwise boundedness on `[0, 1]`, the hypothesis needed for Banach-Steinhaus. -/
 private theorem StronglyContinuousSemigroup.pointwiseBoundedOnUnitInterval
     (S : StronglyContinuousSemigroup X) :
@@ -353,10 +327,51 @@ private theorem StronglyContinuousSemigroup.pointwiseBoundedOnUnitInterval
   rintro ⟨t, ht0, ht1⟩
   exact S.norm_realOperator_apply_le_pow_mul_of_near_zero x hδ_pos h_near N t ht0 (by linarith)
 
+private theorem StronglyContinuousSemigroup.strongContWithinAt_right
+    (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) (ht₀ : 0 ≤ t₀) :
+    Filter.Tendsto (fun t => S.realOperator t x)
+      (nhdsWithin t₀ (Set.Ici t₀)) (nhds (S.realOperator t₀ x)) := by
+  have h_sub_tendsto : Filter.Tendsto (fun t => t - t₀)
+      (nhdsWithin t₀ (Set.Ici t₀)) (nhdsWithin 0 (Set.Ici 0)) := by
+    apply tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
+    · have : Filter.Tendsto (fun t => t - t₀) (nhds t₀) (nhds 0) := by
+        have h := Filter.Tendsto.sub_const (Filter.tendsto_id (α := ℝ).mono_left
+          (le_refl (nhds t₀))) t₀
+        simp only [id, sub_self] at h; exact h
+      exact this.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      simp only [Set.mem_Ici] at ht ⊢; linarith
+  have h_inner : Filter.Tendsto (fun t => S.realOperator (t - t₀) x)
+      (nhdsWithin t₀ (Set.Ici t₀)) (nhds x) :=
+    by
+      have h_zero : Filter.Tendsto ((fun t => S.realOperator t x) ∘ fun t => t - t₀)
+          (nhdsWithin t₀ (Set.Ici t₀)) (nhds x) := by
+        simpa using (S.realOperator_continuousWithinAt_zero x).tendsto.comp h_sub_tendsto
+      exact h_zero.congr fun _ => rfl
+  have h_outer : Filter.Tendsto (fun t => S.realOperator t₀ (S.realOperator (t - t₀) x))
+      (nhdsWithin t₀ (Set.Ici t₀)) (nhds (S.realOperator t₀ x)) :=
+    ((S.realOperator t₀).cont.tendsto x).comp h_inner
+  apply h_outer.congr'
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  simp only [Set.mem_Ici] at ht
+  have ht_nn : 0 ≤ t - t₀ := by linarith
+  rw [← S.realOperator_add_apply t₀ (t - t₀) ht₀ ht_nn, add_sub_cancel]
+
+/-! ## Results requiring completeness
+
+When `X` is complete, pointwise boundedness on `[0, 1]` implies uniform operator-norm
+boundedness on `[0, 1]` via the Banach--Steinhaus theorem. From this, uniform boundedness on
+compact intervals and left-continuity (and thus full continuity) of orbits follow. -/
+
+section CompleteSpace
+
+variable [CompleteSpace X]
+
 /-- The operator norm of a C₀-semigroup is bounded on `[0, 1]`.
 
 One direction of [EN] Prop. I.5.3: strong continuity implies uniform boundedness
-on compact intervals. -/
+on compact intervals. This rests on the Banach--Steinhaus theorem and therefore
+requires `X` to be complete. -/
 theorem StronglyContinuousSemigroup.normBoundedOnUnitInterval (S : StronglyContinuousSemigroup X) :
     ∃ (M : ℝ), 1 ≤ M ∧
       ∀ (t : ℝ), 0 ≤ t → t ≤ 1 → ‖S.realOperator t‖ ≤ M := by
@@ -439,37 +454,6 @@ private theorem StronglyContinuousSemigroup.strongContWithinAt_left
         rwa [abs_of_nonneg ht₀t_nn] at ht_dist
     _ = ε := mul_div_cancel₀ ε (ne_of_gt hC_pos)
 
-omit [CompleteSpace X] in
-private theorem StronglyContinuousSemigroup.strongContWithinAt_right
-    (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) (ht₀ : 0 ≤ t₀) :
-    Filter.Tendsto (fun t => S.realOperator t x)
-      (nhdsWithin t₀ (Set.Ici t₀)) (nhds (S.realOperator t₀ x)) := by
-  have h_sub_tendsto : Filter.Tendsto (fun t => t - t₀)
-      (nhdsWithin t₀ (Set.Ici t₀)) (nhdsWithin 0 (Set.Ici 0)) := by
-    apply tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
-    · have : Filter.Tendsto (fun t => t - t₀) (nhds t₀) (nhds 0) := by
-        have h := Filter.Tendsto.sub_const (Filter.tendsto_id (α := ℝ).mono_left
-          (le_refl (nhds t₀))) t₀
-        simp only [id, sub_self] at h; exact h
-      exact this.mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      simp only [Set.mem_Ici] at ht ⊢; linarith
-  have h_inner : Filter.Tendsto (fun t => S.realOperator (t - t₀) x)
-      (nhdsWithin t₀ (Set.Ici t₀)) (nhds x) :=
-    by
-      have h_zero : Filter.Tendsto ((fun t => S.realOperator t x) ∘ fun t => t - t₀)
-          (nhdsWithin t₀ (Set.Ici t₀)) (nhds x) := by
-        simpa using (S.realOperator_continuousWithinAt_zero x).tendsto.comp h_sub_tendsto
-      exact h_zero.congr fun _ => rfl
-  have h_outer : Filter.Tendsto (fun t => S.realOperator t₀ (S.realOperator (t - t₀) x))
-      (nhdsWithin t₀ (Set.Ici t₀)) (nhds (S.realOperator t₀ x)) :=
-    ((S.realOperator t₀).cont.tendsto x).comp h_inner
-  apply h_outer.congr'
-  filter_upwards [self_mem_nhdsWithin] with t ht
-  simp only [Set.mem_Ici] at ht
-  have ht_nn : 0 ≤ t - t₀ := by linarith
-  rw [← S.realOperator_add_apply t₀ (t - t₀) ht₀ ht_nn, add_sub_cancel]
-
 /-- Strong continuity at every `t₀ ≥ 0`, not just at 0
 ([EN] Prop. I.5.3, [Linares] Cor. 1).
 
@@ -516,6 +500,8 @@ theorem StronglyContinuousSemigroup.realOperator_continuousAt_of_pos
     (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
     ContinuousAt (fun u : ℝ => S.realOperator u x) t :=
   (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
+
+end CompleteSpace
 
 end TauCeti.Semigroups
 

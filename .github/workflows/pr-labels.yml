@@ -82,16 +82,13 @@ jobs:
       # the version proposed by the PR.
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/pr_status
+          # The policy checkout below is a local action, so it must come from this trusted checkout.
+          sparse-checkout: |
+            scripts/pr_status
+            .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
-        with:
-          repository: TauCetiProject/TauCetiReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
-          sparse-checkout: runner
-          persist-credentials: false
+        uses: ./.github/actions/checkout-merge-policy
 
       - name: Reconcile status label
         env:
@@ -124,16 +121,13 @@ jobs:
           permission-contents: read
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/pr_status
+          # The policy checkout below is a local action, so it must come from this trusted checkout.
+          sparse-checkout: |
+            scripts/pr_status
+            .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
-        with:
-          repository: TauCetiProject/TauCetiReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
-          sparse-checkout: runner
-          persist-credentials: false
+        uses: ./.github/actions/checkout-merge-policy
 
       - name: Reconcile open PRs
         env:

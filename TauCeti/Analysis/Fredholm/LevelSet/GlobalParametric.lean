@@ -64,6 +64,14 @@ def IsRegularParameter (f : E × Λ → F) (c : F) (l : Λ) : Prop :=
   ∀ x, f (x, l) = c →
     Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ))
 
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A parameter is regular exactly when the fixed-parameter derivatives are surjective
+at all solutions of the level equation. -/
+theorem isRegularParameter_iff {f : E × Λ → F} {c : F} {l : Λ} :
+    IsRegularParameter f c l ↔ ∀ x, f (x, l) = c →
+      Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
+  (Iff.rfl)
+
 /-- **Global parametric transversality.** The non-regular parameters of a sufficiently smooth
 universal Fredholm equation form a meagre set.
 

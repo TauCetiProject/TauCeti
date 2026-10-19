@@ -61,7 +61,7 @@ private theorem isGeodesicCurveOn_comp (Φ : RiemannianIsometry I J M N)
   uniqueDiffOn := h.uniqueDiffOn
   contMDiffOn :=
     (Φ.toDiffeomorph.contMDiff.of_le (by norm_num)).comp_contMDiffOn h.contMDiffOn
-  alongCurveWithin_curveVelocityWithin_eq_zero t ht := by
+  accelerationWithin_eq_zero t ht := by
     have hvelocity (r : ℝ) (hr : r ∈ s) :
         curveVelocityWithin J (Φ ∘ γ) s r =
           mfderiv I J Φ (γ r) (curveVelocityWithin I γ s r) :=
@@ -80,9 +80,9 @@ private theorem isGeodesicCurveOn_comp (Φ : RiemannianIsometry I J M N)
       (h.mdifferentiableOn t ht) hsourceCoord
     have hmappedZero : alongCurveWithin (leviCivitaConnection J N) (Φ ∘ γ)
         (fun r ↦ mfderiv I J Φ (γ r) (curveVelocityWithin I γ s r)) s t = 0 := by
-      rw [h.alongCurveWithin_curveVelocityWithin_eq_zero t ht, map_zero] at hnaturality
+      rw [← accelerationWithin_def, h.accelerationWithin_eq_zero t ht, map_zero] at hnaturality
       exact hnaturality.symm
-    rw [alongCurveWithin_congr (leviCivitaConnection J N) (Φ ∘ γ)
+    rw [accelerationWithin_def, alongCurveWithin_congr (leviCivitaConnection J N) (Φ ∘ γ)
       (curveVelocityWithin J (Φ ∘ γ) s) hvelocity_eventually (hvelocity t ht)]
     exact hmappedZero
 

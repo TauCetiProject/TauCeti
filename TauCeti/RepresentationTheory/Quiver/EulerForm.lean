@@ -9,10 +9,13 @@ public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
+public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.RepresentationTheory.Quiver.FirstArrow
 public import TauCeti.RepresentationTheory.Quiver.LastArrow
 import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # Euler and Tits forms of a finite quiver
@@ -30,7 +33,12 @@ The last section evaluates both forms on the simple dimension vectors `αᵢ = P
 in particular `TauCeti.titsPolarForm_single_single` computes the Gram matrix of the polarized
 Tits form as `2·I - (A + Aᵀ)`, for `A` the matrix of arrow counts, and
 `TauCeti.titsForm_posDef_iff_posDef_toMatrix` says that the Tits form is positive definite exactly
-when this matrix is.
+when this matrix is. When there is no loop and at most one arrow between any two vertices, counting
+both directions, `A + Aᵀ` is the adjacency matrix of the underlying graph, so the Gram matrix is
+the matrix `2I - A` of that graph (`TauCeti.toMatrix_titsPolarForm_eq_graphCartanMatrix`), and
+positive definiteness of the Tits form is a property of the underlying graph alone
+(`TauCeti.titsForm_posDef_iff_posDef_graphCartanMatrix`). A positive definite Tits form forces this
+arrow condition (`TauCeti.card_hom_add_card_hom_le_one_of_titsForm_posDef`).
 
 The definitions follow the Layer 4 signatures in
 `TauCetiRoadmap/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Suggested.lean`.
@@ -302,5 +310,55 @@ public theorem titsForm_posDef_iff_posDef_toMatrix :
   refine forall₂_congr fun d _ ↦ ?_
   rw [LinearMap.BilinMap.toQuadraticMap_apply, titsPolarForm_def, ← titsForm_def]
   omega
+
+omit [DecidableEq Q] in
+/-- **A positive definite Tits form allows at most one arrow between two vertices**, counting both
+directions, and no loop: `q(αᵢ + αⱼ) = 2 - #(i ⟶ j) - #(j ⟶ i)` for distinct `i` and `j`, and
+`q(αᵢ) = 1 - #(i ⟶ i)`. -/
+public theorem card_hom_add_card_hom_le_one_of_titsForm_posDef (hpd : (titsForm Q).PosDef)
+    (i j : Q) : Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) ≤ 1 := by
+  classical
+  rcases eq_or_ne i j with rfl | hij
+  · have := isEmpty_hom_self_of_titsForm_posDef Q hpd i
+    simp
+  have hne : (Pi.single i 1 + Pi.single j 1 : Q → ℤ) ≠ 0 := fun h ↦ by
+    simpa [Pi.single_apply, hij] using congrFun h i
+  have hpos := hpd _ hne
+  rw [titsForm_add, titsForm_single_of_isEmpty Q (isEmpty_hom_self_of_titsForm_posDef Q hpd i),
+    titsForm_single_of_isEmpty Q (isEmpty_hom_self_of_titsForm_posDef Q hpd j),
+    titsPolarForm_single_single, ite_eq_right_iff.mpr fun h ↦ absurd h hij] at hpos
+  omega
+
+variable [DecidableRel (Quiver.underlyingGraph Q).Adj]
+
+/-- **The Gram matrix of the Tits form of a simple quiver is `2I - A` of its underlying graph.** If
+there is no loop and at most one arrow between any two vertices, counting both directions, then the
+matrix `2·I - (A + Aᵀ)` of the polarized Tits form in the simple dimension vectors is the matrix
+`2I - A` of the underlying graph. -/
+public theorem toMatrix_titsPolarForm_eq_graphCartanMatrix
+    (h : ∀ i j : Q, Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) ≤ 1) :
+    (titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q) =
+      (Quiver.underlyingGraph Q).graphCartanMatrix ℤ := by
+  ext i j
+  rw [LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, Pi.basisFun_apply,
+    titsPolarForm_single_single, SimpleGraph.graphCartanMatrix_apply]
+  have hij := h i j
+  rcases eq_or_ne i j with rfl | hne
+  · simp only [↓reduceIte]
+    omega
+  simp only [hne, ↓reduceIte, Quiver.underlyingGraph_adj, ne_eq, not_false_eq_true, true_and,
+    ← Fintype.card_pos_iff]
+  split_ifs <;> omega
+
+/-- **For a simple quiver the Tits form is positive definite exactly when `2I - A` of the
+underlying graph is.** If there is no loop and at most one arrow between any two vertices, counting
+both directions, then twice the Tits form is the form of the matrix `2I - A` of the underlying
+graph (`TauCeti.toMatrix_titsPolarForm_eq_graphCartanMatrix`). -/
+public theorem titsForm_posDef_iff_posDef_graphCartanMatrix
+    (h : ∀ i j : Q, Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) ≤ 1) :
+    (titsForm Q).PosDef ↔ ((Quiver.underlyingGraph Q).graphCartanMatrix ℚ).PosDef := by
+  rw [titsForm_posDef_iff_posDef_toMatrix, toMatrix_titsPolarForm_eq_graphCartanMatrix Q h,
+    ← Matrix.posDef_map_intCast_iff,
+    ← SimpleGraph.graphCartanMatrix_map _ (Int.castRingHom ℚ), Int.coe_castRingHom]
 
 end TauCeti

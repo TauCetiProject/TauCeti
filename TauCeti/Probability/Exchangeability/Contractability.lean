@@ -10,10 +10,10 @@ public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.Probability.IdentDistrib
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import TauCeti.Data.Fin.StrictMono
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
-import TauCeti.Probability.Exchangeability.FiniteMarginals
+import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 
 /-!
 # Contractability API
@@ -30,7 +30,8 @@ converse characterization `contractable_iff_forall_map_reindex_pathLaw`.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
-combinatorial core now lives in `PermutationExtension.lean`. `Contractable.pairLaw_eq` is adapted
+combinatorial core, `StrictMono.exists_strictMono_nat_extending_fin`, now lives in
+`TauCeti.Data.Fin.StrictMono`. `Contractable.pairLaw_eq` is adapted
 from `DeFinetti/ViaMartingale/FutureRectangles.lean` (`contractable_dist_eq`) in the same repo,
 reproved via the reindexing route below rather than the reference's rectangle π-system.
 -/
@@ -154,8 +155,7 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
     {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
     blockLaw μ X k = prefixLaw μ X n := by
-  set N := max n (Finset.univ.sup k + 1) with hN
-  have hnN : n ≤ N := le_max_left _ _
+  set N := max n (Finset.univ.sup k + 1)
   have hk_bound : ∀ i, k i < N := by
     intro i
     have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
@@ -200,7 +200,7 @@ theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ �
   · intro hX φ hφ
     exact (hX.measurePreserving_reindex hX_meas hφ).map_eq
   · intro hX m k hk
-    obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
+    obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
     have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
     rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
       map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
@@ -257,28 +257,18 @@ private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure 
       μ.map (fun ω (i : ℕ) ↦ X (φ i) ω) = pathLaw μ X :=
     fun φ hφ ↦ hX.map_reindex_pathLaw_eq hX_ae hφ
   -- the selection `(h, g 0, g 1, …)` is strictly monotone, and splitting it recovers the pair
-  set φ : ℕ → ℕ := fun i ↦ if i = 0 then h else g (i - 1) with hφdef
-  have hφmono : StrictMono φ := by
-    intro a b hab
-    simp only [hφdef]
-    rcases Nat.eq_zero_or_pos a with ha | ha
-    · subst ha
-      rw [ite_eq_left rfl, ite_eq_right (by omega : b ≠ 0)]
-      exact hh.trans_le (hg.monotone (Nat.zero_le _))
-    · rw [ite_eq_right (by omega : a ≠ 0), ite_eq_right (by omega : b ≠ 0)]
-      exact hg (by omega : a - 1 < b - 1)
-  have hφ0 : φ 0 = h := by simp [hφdef]
-  -- the tail-index identity, stated explicitly rather than left to definitional reduction
-  have hφsucc : ∀ n, φ (n + 1) = g n := by
-    intro n
-    simp only [hφdef]
-    rw [ite_eq_right (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
+  let φ : ℕ → ℕ := fun
+    | 0 => h
+    | n + 1 => g n
+  have hφmono : StrictMono φ := strictMono_nat_of_lt_succ fun
+    | 0 => hh
+    | n + 1 => hg n.lt_succ_self
   have hpath_ae : AEMeasurable (fun ω (i : ℕ) ↦ X (φ i) ω) μ :=
     AEMeasurable.of_eval fun i ↦ hX_ae (φ i)
+  -- `φ 0 = h` and `φ (n + 1) = g n` hold by the defining equations of `φ`
   have hfun : (fun ω ↦ (X h ω, fun n ↦ X (g n) ω))
-      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) := by
-    funext ω
-    simp only [headTail, Function.comp_apply, hφ0, hφsucc]
+      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) :=
+    rfl
   rw [hfun, ← AEMeasurable.map_map_of_aemeasurable hheadTail_meas.aemeasurable hpath_ae,
     hreindex φ hφmono]
 

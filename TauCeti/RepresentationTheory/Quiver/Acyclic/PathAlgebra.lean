@@ -22,7 +22,7 @@ has no oriented cycle, whatever the quiver. For a finite quiver with finite arro
 conditions therefore agree, and finite-dimensionality of `kQ` *is* acyclicity of `Q`. The loop
 quiver is the boundary case, where the path algebra is the additive monoid algebra of `ℕ` — the
 polynomial ring, over a commutative base — and
-`TauCeti.not_finiteDimensional_pathAlgebra_oneLoop` records the failure directly.
+`TauCeti.not_module_finite_pathAlgebra_oneLoop` records the failure directly.
 
 This is the only place the generic path algebra of
 `TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic` meets acyclicity, which is why it is a

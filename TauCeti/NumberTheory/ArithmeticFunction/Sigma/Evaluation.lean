@@ -7,12 +7,15 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Evaluating divisor-sum series
 
 The integral divisor-sum series converges at a parameter of norm less than one in a complete
-non-archimedean normed ring. Its value is the sum of its evaluated coefficients.
+non-archimedean normed ring with `‖1‖ = 1`. Its value is the sum of its evaluated coefficients.
+In a commutative target ring, `evalIntSeries_divisorSumSeries` identifies evaluation of the formal
+series `divisorSumSeries k` under `evalIntSeries` with its analytic value `divisorSumAt k q`.
 -/
 
 public section
@@ -39,6 +42,21 @@ omit [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K] in
 theorem divisorSumAt_def (k : ℕ) (q : K) :
     divisorSumAt k q = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by
   simp only [divisorSumAt]
+
+/-- Continuous ring homomorphisms commute with convergent divisor-sum series. -/
+theorem map_divisorSumAt {L : Type*} [NormedRing L] (f : K →+* L) (hf : Continuous f)
+    (k : ℕ) (q : K) (hq : ‖q‖ < 1) : f (divisorSumAt k q) = divisorSumAt k (f q) := by
+  rw [divisorSumAt_def, divisorSumAt_def,
+    Summable.map_tsum (summable_divisorSumSeries k hq) f hf]
+  apply tsum_congr
+  intro n
+  simp
+
+/-- Evaluating the integral divisor-sum series gives its convergent analytic value. -/
+@[simp] theorem evalIntSeries_divisorSumSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K] (k : ℕ) (q : K) (hq : ‖q‖ < 1) :
+    evalIntSeries q hq (divisorSumSeries k) = divisorSumAt k q := by
+  simp only [evalIntSeries_apply, coeff_divisorSumSeries, divisorSumAt_def]
 
 end TauCeti
 

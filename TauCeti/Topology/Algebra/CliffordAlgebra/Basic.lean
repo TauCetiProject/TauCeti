@@ -42,6 +42,8 @@ actions. A basis appears only in the proof that the topology is Hausdorff.
 * `CliffordAlgebra.instT2SpaceCliffordAlgebra` proves the topology is Hausdorff.
 * `CliffordAlgebra.instLocallyCompactSpaceCliffordAlgebra` proves the topology is locally compact
   for a finite-dimensional space over a locally compact field in which `2` is invertible.
+* `CliffordAlgebra.instSigmaCompactSpaceCliffordAlgebra` proves the topology is σ-compact under
+  the same hypotheses with σ-compact in place of locally compact.
 * `CliffordAlgebra.isClosedEmbedding_algebraMap` identifies the scalar field as a closed
   subspace over a complete normed field.
 * `CliffordAlgebra.continuous_reverse` and `CliffordAlgebra.continuous_involute` prove continuity
@@ -160,6 +162,20 @@ instance instLocallyCompactSpaceCliffordAlgebra (Q : QuadraticForm K V) :
   locallyCompactSpace_moduleTopology
 
 end LocallyCompact
+
+section SigmaCompact
+
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [SigmaCompactSpace K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V]
+
+/-- The Clifford algebra of a finite-dimensional space over a σ-compact field in which `2` is
+invertible is σ-compact for its module topology, being finite-dimensional. -/
+instance instSigmaCompactSpaceCliffordAlgebra (Q : QuadraticForm K V) :
+    SigmaCompactSpace (CliffordAlgebra Q) :=
+  sigmaCompactSpace_moduleTopology
+
+end SigmaCompact
 
 section ScalarEmbedding
 

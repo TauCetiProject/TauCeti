@@ -42,6 +42,8 @@ polygon and does not meet its sides.
 
 * `TauCeti.isLocalHomeomorphOn_schwarzChristoffelPrimitive` -- the primitive is a local
   homeomorphism on the upper half-plane.
+* `TauCeti.isCoveringMapOn_schwarzChristoffelPrimitive_of_isCompact_preimage` -- on `ℍ`, the
+  primitive is a covering map over every open set where it is proper.
 * `TauCeti.isCoveringMapOn_schwarzChristoffelPrimitive` -- on `ℍ`, the primitive is a covering
   map over the complement of the compactified boundary path.
 * `TauCeti.bijOn_schwarzChristoffelPrimitive_of_subset` -- the primitive maps the upper
@@ -79,24 +81,22 @@ theorem isLocalHomeomorphOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀
   exact ⟨hf.toOpenPartialHomeomorph _, hf.mem_toOpenPartialHomeomorph_source, fun w _ => by
     rw [hf.toOpenPartialHomeomorph_coe]⟩
 
-/-- **The Schwarz--Christoffel primitive is a covering map off its boundary path.**  Viewed as a
-map on `ℍ`, the primitive is a covering map over the complement of the compactified boundary
-path, provided every finite prevertex is integrable and the total exponent is less than `-1`. -/
-theorem isCoveringMapOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPlane)
-    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
-    IsCoveringMapOn (fun τ : ℍ => schwarzChristoffelPrimitive a e z₀ τ)
-      (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ := by
+/-- **The Schwarz--Christoffel primitive is a covering map over an open set where it is
+proper.**  Viewed as a map on `ℍ`, the primitive is a covering map over every open set `U` such
+that the points of the upper half-plane sent into any compact subset of `U` form a compact set.
+No assumption on the exponents is needed: the primitive is always a local homeomorphism. -/
+theorem isCoveringMapOn_schwarzChristoffelPrimitive_of_isCompact_preimage (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) {U : Set ℂ} (hU : IsOpen U)
+    (hK : ∀ K ⊆ U, IsCompact K →
+      IsCompact (upperHalfPlaneSet ∩ schwarzChristoffelPrimitive a e z₀ ⁻¹' K)) :
+    IsCoveringMapOn (fun τ : ℍ => schwarzChristoffelPrimitive a e z₀ τ) U := by
   set F := schwarzChristoffelPrimitive a e z₀
-  have hP : IsClosed (range (schwarzChristoffelCompactifiedBoundary a e z₀)) :=
-    (isCompact_range
-      (continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty)).isClosed
   have hloc : IsLocalHomeomorph fun τ : ℍ => F τ :=
     isLocalHomeomorph_iff_isLocalHomeomorphOn_univ.mpr <|
       (isLocalHomeomorphOn_schwarzChristoffelPrimitive a e z₀).comp
         isOpenEmbedding_coe.isLocalHomeomorph.isLocalHomeomorphOn fun τ _ => τ.im_pos
-  refine IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage hP.isOpen_compl
-    hloc.isLocalHomeomorphOn
-    fun K hKP hK => ?_
+  refine IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage hU hloc.isLocalHomeomorphOn
+    fun K hKU hK' => ?_
   rw [isOpenEmbedding_coe.isEmbedding.isCompact_iff]
   have himage : ((↑) : ℍ → ℂ) '' ((fun τ : ℍ => F τ) ⁻¹' K) = upperHalfPlaneSet ∩ F ⁻¹' K := by
     ext z
@@ -104,8 +104,21 @@ theorem isCoveringMapOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : U
     rintro ⟨τ, hτ, rfl⟩
     exact ⟨τ.im_pos, hτ⟩
   rw [himage]
-  exact isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive a e z₀ hfinite
-    hinfty hK.isClosed (subset_compl_iff_disjoint_right.mp hKP)
+  exact hK K hKU hK'
+
+/-- **The Schwarz--Christoffel primitive is a covering map off its boundary path.**  Viewed as a
+map on `ℍ`, the primitive is a covering map over the complement of the compactified boundary
+path, provided every finite prevertex is integrable and the total exponent is less than `-1`. -/
+theorem isCoveringMapOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
+    IsCoveringMapOn (fun τ : ℍ => schwarzChristoffelPrimitive a e z₀ τ)
+      (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ := by
+  have hP : IsClosed (range (schwarzChristoffelCompactifiedBoundary a e z₀)) :=
+    (isCompact_range
+      (continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty)).isClosed
+  exact isCoveringMapOn_schwarzChristoffelPrimitive_of_isCompact_preimage a e z₀ hP.isOpen_compl
+    fun K hKP hK => isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive a e z₀
+      hfinite hinfty hK.isClosed (subset_compl_iff_disjoint_right.mp hKP)
 
 /-- **The Schwarz--Christoffel primitive is a bijection onto a simply connected region avoiding
 its boundary path.**  If the image of the upper half-plane lies in a simply connected set `W`
@@ -117,20 +130,14 @@ theorem bijOn_schwarzChristoffelPrimitive_of_subset (a e : ι → ℝ) (z₀ : U
     (hWP : Disjoint W (range (schwarzChristoffelCompactifiedBoundary a e z₀)))
     (hFW : schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet ⊆ W) :
     BijOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet W := by
-  set F := schwarzChristoffelPrimitive a e z₀
   have hW : IsPreconnected W := isPreconnected_iff_preconnectedSpace.mpr inferInstance
   have himage := image_schwarzChristoffelPrimitive_eq_of_subset a e z₀ hfinite hinfty hW hWP hFW
   refine ⟨himage ▸ mapsTo_image _ _, fun z hz w hw hzw => ?_, himage ▸ surjOn_image _ _⟩
-  -- Over `W`, the primitive restricts to a covering map with total space all of `ℍ`.
-  have hcov := ((isCoveringMapOn_schwarzChristoffelPrimitive a e z₀ hfinite hinfty).mono
-    (subset_compl_iff_disjoint_right.mpr hWP)).isCoveringMap_restrictPreimage
-  have hpre : (fun τ : ℍ => F τ) ⁻¹' W = univ :=
-    preimage_eq_univ_iff.mpr <| range_subset_iff.mpr fun τ =>
-      hFW (mem_image_of_mem F τ.im_pos)
-  have : PathConnectedSpace ((fun τ : ℍ => F τ) ⁻¹' W) :=
-    isPathConnected_iff_pathConnectedSpace.mp (hpre ▸ isPathConnected_univ)
-  have h := hcov.injective (a₁ := ⟨⟨z, hz⟩, hpre ▸ mem_univ _⟩)
-    (a₂ := ⟨⟨w, hw⟩, hpre ▸ mem_univ _⟩) (Subtype.ext hzw)
-  exact congrArg (fun τ : (fun τ : ℍ => F τ) ⁻¹' W => ((τ : ℍ) : ℂ)) h
+  -- The path-connected `ℍ` covers the simply connected `W`, so the covering is trivial.
+  exact congrArg ((↑) : ℍ → ℂ) <|
+    (isCoveringMapOn_schwarzChristoffelPrimitive a e z₀ hfinite hinfty).injective_of_range_subset
+      (subset_compl_iff_disjoint_right.mpr hWP)
+      (range_subset_iff.mpr fun τ => hFW (mem_image_of_mem _ τ.im_pos))
+      (a₁ := ⟨z, hz⟩) (a₂ := ⟨w, hw⟩) hzw
 
 end TauCeti

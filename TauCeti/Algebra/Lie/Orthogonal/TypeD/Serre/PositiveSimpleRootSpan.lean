@@ -57,9 +57,7 @@ theorem positiveSimpleRootLieSpan_le_lieAnnihilator
     [LieRingModule (Matrix.ToLieAlgebra ℚ (CartanMatrix.D n)) M]
     [LieModule ℚ (Matrix.ToLieAlgebra ℚ (CartanMatrix.D n)) M]
     (v : M) (hv : ∀ i : Fin n, ⁅TauCeti.serreE ℚ (CartanMatrix.D n) i, v⁆ = 0) :
-    positiveSimpleRootLieSpan n ≤ TauCeti.lieAnnihilator ℚ _ v := by
-  rw [positiveSimpleRootLieSpan_le_iff]
-  intro i
-  exact (TauCeti.mem_lieAnnihilator ℚ _).mpr (hv i)
+    positiveSimpleRootLieSpan n ≤ TauCeti.lieAnnihilator ℚ _ v :=
+  TauCeti.lieSpan_le_lieAnnihilator ℚ _ (by rintro - ⟨i, rfl⟩; exact hv i)
 
 end TauCeti.TypeDStd

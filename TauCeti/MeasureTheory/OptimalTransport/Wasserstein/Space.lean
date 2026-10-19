@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.DiracProba
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
 # Finite-distance Wasserstein spaces
@@ -65,7 +66,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -410,6 +411,32 @@ theorem wassersteinEDist_ne_top
   (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd
     (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
 
+/-- **`P_p(X)` is convex.** For weights with `a + b = 1`, the mixture `a • μ + b • ν` of two laws
+of `P_p(X)` is again a law of `P_p(X)`. -/
+theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] {a b : ℝ≥0∞} (hab : a + b = 1)
+    (μ ν : WassersteinSpace p X) :
+    ∃ ρ : WassersteinSpace p X, ((ρ : ProbabilityMeasure X) : Measure X) =
+      a • ((μ : ProbabilityMeasure X) : Measure X) +
+        b • ((ν : ProbabilityMeasure X) : Measure X) := by
+  obtain ⟨ha, hb⟩ := ENNReal.add_ne_top.1 (hab ▸ ENNReal.one_ne_top)
+  have := Measure.smul_finite ((μ : ProbabilityMeasure X) : Measure X) ha
+  have := Measure.smul_finite ((ν : ProbabilityMeasure X) : Measure X) hb
+  have hmom :=
+    ((hasFiniteMoment μ).smul_measure ha).add_measure ((hasFiniteMoment ν).smul_measure hb)
+  exact ⟨mk ((μ : ProbabilityMeasure X).convexComb hab ν)
+    (by rwa [ProbabilityMeasure.toMeasure_convexComb]), by simp⟩
+
+/-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
+point of `P_p(X)`. -/
+theorem sum_mul_wassersteinEDist_rpow_ne_top [BorelSpace X] [SecondCountableTopology X]
+    {J : Type*} [Fintype J] {w : J → ℝ≥0} (μ : J → WassersteinSpace p X)
+    (z : WassersteinSpace p X) :
+    ∑ j, (w j : ℝ≥0∞) * wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
+      ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal ≠ ∞ :=
+  ENNReal.sum_ne_top.2 fun _ _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
+      (wassersteinEDist_ne_top measurable_edist _ _))
+
 variable [StandardBorelSpace X]
 
 /-- The Wasserstein extended distance equips finite-moment laws with a pseudoemetric space
@@ -553,5 +580,102 @@ noncomputable instance instMetricSpace : MetricSpace (WassersteinSpace p X) wher
 end Metric
 
 end WassersteinSpace
+
+section SecondMoment
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E]
+
+/-- Laws with finite second moment have finite transport cost for `‖x - y‖ ^ 2 / 2`: the cost is
+at most `‖x - y‖ ^ 2`, whose transport cost is the square of their finite `2`-Wasserstein
+distance. -/
+theorem transportCost_norm_sub_sq_div_two_ne_top (μ ν : WassersteinSpace 2 E) :
+    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) ≠ ∞ := by
+  refine ne_top_of_le_ne_top ?_ (transportCost_mono (c' := fun z : E × E ↦ edist z.1 z.2 ^
+    (2 : ℝ≥0∞).toReal) fun z => ?_)
+  · rw [← wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+      ENNReal.ofNat_ne_top]
+    exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
+      (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν)
+  · beta_reduce
+    rw [ENNReal.toReal_ofNat, edist_dist, dist_eq_norm,
+      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two, Real.rpow_two]
+    exact ENNReal.ofReal_le_ofReal (half_le_self (by positivity))
+
+variable [CompleteSpace E]
+
+/-- The squared quadratic Wasserstein distance between two laws of `P₂(E)` is at most the
+quadratic cost `∫ ‖x - y‖² dπ` of any of their couplings `π`. -/
+theorem WassersteinSpace.dist_sq_le_integral {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsCoupling π ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₁ : ProbabilityMeasure E) : Measure E)) :
+    dist ν₀ ν₁ ^ 2 ≤ ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
+  have hW := wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero ENNReal.ofNat_ne_top hπ
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hW
+  rw [lintegral_edist_sq_eq_ofReal_integral hi, ← WassersteinSpace.edist_def, edist_dist,
+    ← ENNReal.ofReal_pow dist_nonneg] at hW
+  exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ by positivity)).1 hW
+
+/-- An optimal coupling `π` of two laws of `P₂(E)` for the quadratic cost realizes their squared
+quadratic Wasserstein distance as its quadratic cost: `dist ν₀ ν₁ ^ 2 = ∫ ‖x - y‖² dπ`. -/
+theorem WassersteinSpace.dist_sq_eq_integral {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E)) :
+    dist ν₀ ν₁ ^ 2 = ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
+  have hW := hπ.lintegral_eq
+  have hc := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+    ENNReal.ofNat_ne_top ((ν₀ : ProbabilityMeasure E) : Measure E)
+    ((ν₁ : ProbabilityMeasure E) : Measure E)
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hW hc
+  rw [← hc, lintegral_edist_sq_eq_ofReal_integral hi, ← WassersteinSpace.edist_def, edist_dist,
+    ← ENNReal.ofReal_pow dist_nonneg] at hW
+  exact ((ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun _ ↦ by positivity)
+    (sq_nonneg _)).1 hW).symm
+
+/-- A coupling `π` of two laws of `P₂(E)` whose quadratic cost `∫ ‖x - y‖² dπ` is at most their
+squared quadratic Wasserstein distance is an optimal coupling for the quadratic cost. This is the
+converse of `TauCeti.WassersteinSpace.dist_sq_eq_integral`. -/
+theorem WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsCoupling π ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₁ : ProbabilityMeasure E) : Measure E))
+    (h : ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π ≤ dist ν₀ ν₁ ^ 2) :
+    IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E) := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
+  refine isOptimalCoupling_iff.2 ⟨hπ, fun σ hσ ↦ ?_⟩
+  have : IsProbabilityMeasure σ := hσ.isProbabilityMeasure
+  have hiσ := integrable_norm_sub_sq_of_hasFiniteMoment (hσ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hσ.snd_eq ▸ ν₁.hasFiniteMoment)
+  simp only [ENNReal.rpow_two]
+  rw [lintegral_edist_sq_eq_ofReal_integral hi, lintegral_edist_sq_eq_ofReal_integral hiσ]
+  exact ENNReal.ofReal_le_ofReal (h.trans (WassersteinSpace.dist_sq_le_integral hσ))
+
+/-- The `L²(π)` norm of the displacement `(x, y) ↦ y - x` of an optimal coupling `π` of two laws of
+`P₂(E)` for the quadratic cost is their quadratic Wasserstein distance. -/
+theorem WassersteinSpace.norm_toLp_sub_eq_dist {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E))
+    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 π) :
+    ‖hd.toLp _‖ = dist ν₀ ν₁ := by
+  rw [Lp.norm_toLp, hd.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity)]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two, norm_sub_rev _ (Prod.fst _),
+    ← WassersteinSpace.dist_sq_eq_integral hπ]
+  exact Real.pow_rpow_inv_natCast dist_nonneg two_ne_zero
+
+end SecondMoment
 
 end TauCeti

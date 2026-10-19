@@ -21,6 +21,9 @@ of `ℤ`, the point `z` corresponding to the character `n ↦ zⁿ`, so the theo
 theorem for the discrete group `ℤ`: the positive-definite functions on `ℤ` are exactly the
 Fourier–Stieltjes transforms `MeasureTheory.FiniteMeasure.pontryaginMeasureTransform` of finite
 measures on its dual, identified with the circle by `TauCeti.circleEquivPontryaginDualInt`.
+In that Pontryagin form it is the case `G = ℤ` of
+`TauCeti.isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq` in
+`TauCeti.Analysis.Bochner.DiscreteGroup`.
 Every function on the discrete group `ℤ` is continuous, so no continuity hypothesis appears.
 
 The measure is obtained from Fejér means. For `N ≥ 1` the trigonometric polynomial
@@ -43,8 +46,6 @@ has moments `φ n`.
 * `MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt`: the
   Fourier–Stieltjes transform of a measure carried from the circle to the dual of `ℤ` is its moment
   sequence.
-* `TauCeti.isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq_int`: the same
-  characterization in Pontryagin form, Bochner's theorem for the group `ℤ`.
 
 ## References
 
@@ -252,20 +253,6 @@ theorem
     integral_map (map_continuous circleEquivPontryaginDualInt).aemeasurable
       (PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable]
   simp
-
-/-- **Bochner's theorem on `ℤ`**, in Pontryagin form: a function on `ℤ` is positive definite if
-and only if it is the Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of
-`ℤ`. -/
-theorem isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq_int (φ : ℤ → ℂ) :
-    IsPositiveDefiniteSub φ ↔
-      ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative ℤ)),
-        μ.pontryaginMeasureTransform = φ := by
-  refine ⟨fun hφ ↦ ?_, fun ⟨μ, hμ⟩ ↦ hμ ▸ μ.isPositiveDefiniteSub_pontryaginMeasureTransform⟩
-  obtain ⟨μ, hμ, hrep⟩ := exists_isFiniteMeasure_integral_zpow_eq φ hφ
-  refine ⟨FiniteMeasure.map (⟨μ, hμ⟩ : FiniteMeasure Circle) circleEquivPontryaginDualInt,
-    funext fun n ↦ ?_⟩
-  exact (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt _ n).trans
-    (hrep n).symm
 
 end Pontryagin
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Data.ENat.LeastBound
 public import TauCeti.Topology.Algebra.Group.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Cohomological dimension of a topological group

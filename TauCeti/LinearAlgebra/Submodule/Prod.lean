@@ -11,15 +11,45 @@ public import Mathlib.Order.SupIndep
 /-!
 # Products of submodules
 
-Products of submodules preserve indexed suprema and independence of families of submodules.
+Products of submodules preserve indexed suprema and independence of families of submodules, and
+the two coordinate copies `Submodule.fst` and `Submodule.snd` of the factors of a product module
+are cut out by the vanishing of the other coordinate and are complementary.
 
 ## Main declarations
 
 * `TauCeti.iSup_prod_submodule`: products commute with indexed suprema.
 * `TauCeti.iSupIndep.prod`: products of independent families are independent.
+* `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
+  factors.
+* `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
 -/
 
 public section
+
+namespace Submodule
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [Module R M]
+  [Module R N]
+
+/-- A vector of a product module lies in the copy of the first factor exactly when its second
+coordinate vanishes. -/
+@[simp]
+theorem mem_fst_iff {x : M × N} : x ∈ Submodule.fst R M N ↔ x.2 = 0 :=
+  mem_comap.trans (mem_bot R)
+
+/-- A vector of a product module lies in the copy of the second factor exactly when its first
+coordinate vanishes. -/
+@[simp]
+theorem mem_snd_iff {x : M × N} : x ∈ Submodule.snd R M N ↔ x.1 = 0 :=
+  mem_comap.trans (mem_bot R)
+
+variable (R M N)
+
+/-- The copies of the two factors of a product module are complementary submodules. -/
+theorem isCompl_fst_snd : IsCompl (Submodule.fst R M N) (Submodule.snd R M N) :=
+  .of_eq (fst_inf_snd R M N) (fst_sup_snd R M N)
+
+end Submodule
 
 namespace TauCeti
 

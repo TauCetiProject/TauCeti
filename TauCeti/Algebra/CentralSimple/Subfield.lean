@@ -13,6 +13,9 @@ module
 public import TauCeti.Algebra.CentralSimple.Splitting
 -- `TauCeti.Bimodule` supplies the left-right action transported to the orientation used here.
 public import TauCeti.Algebra.CentralSimple.Bimodule
+public import TauCeti.Algebra.Algebra.Opposite
+import TauCeti.RingTheory.Semisimple.EndAlgebra
+public import Mathlib.RingTheory.TensorProduct.Maps
 -- Non-public: none of these appears in the type of an exported declaration. The tower law and the
 -- dimension of an endomorphism algebra, the injective-implies-surjective criterion, the matrix
 -- form of an endomorphism algebra and the faithfulness of a module over a simple ring are used
@@ -99,8 +102,8 @@ Nothing here needs `A` to be a division algebra: the classical statement is abou
 subfield of a central *division* algebra, but the argument only uses simplicity of `L ⊗[K] A`, so
 it is stated for every finite-dimensional central simple `A`. What a division algebra adds is the
 *existence* of a subfield attaining the bound, which is a separate question, settled by
-`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg` in
-`TauCeti/Algebra/CentralSimple/MaximalSubfield.lean`.
+`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg` in
+`TauCeti/Algebra/CentralSimple/MaximalSubfield/Separable.lean`.
 
 ## References
 
@@ -124,12 +127,6 @@ section Defs
 variable {K L A : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
-local macro "rightAlgHom% " f:term : term =>
-  `(($f).toOpposite fun x y ↦ by simp [commute_iff_eq, ← map_mul, mul_comm])
-
-local macro "opOpMap%" : term =>
-  `(Algebra.TensorProduct.map (AlgHom.id K L) (AlgEquiv.opOp K A).toAlgHom)
-
 /-- `A` regarded as a module over the scalar extension `L ⊗[K] A`, along a `K`-algebra homomorphism
 `f : L →ₐ[K] A` out of a **commutative** algebra: the pure tensor `l ⊗ₜ a` acts by
 `x ↦ a * x * f l`.
@@ -138,41 +135,51 @@ Equivalently this is the `A`-`L`-bimodule `A`, with `A` acting on the left by mu
 `L` on the right through `f`; commutativity of `L` is what lets the right action be packaged as a
 left action of `L ⊗[K] A` with no opposite algebra. It is a type synonym for `A` so that `A` itself
 is left without an `L ⊗[K] A`-action, and so that different subfields can act at the same time. -/
-@[expose] def BaseChangeModule (f : L →ₐ[K] A) : Type _ := Bimodule (rightAlgHom% f)
+@[expose] def BaseChangeModule (f : L →ₐ[K] A) : Type _ :=
+  Bimodule (f.toOppositeOfComm)
 
 namespace BaseChangeModule
 
 variable (f : L →ₐ[K] A)
 
 instance : AddCommMonoid (BaseChangeModule f) :=
-  inferInstanceAs (AddCommMonoid (Bimodule (rightAlgHom% f)))
+  inferInstanceAs (AddCommMonoid (Bimodule (f.toOppositeOfComm)))
 
 -- Conditional, so that the endomorphism ring of `BaseChangeModule f` is a ring and not merely a
 -- semiring when `A` is one; nothing in the construction itself needs the negation.
 instance {A : Type*} [Ring A] [Algebra K A] (f : L →ₐ[K] A) : AddCommGroup (BaseChangeModule f) :=
-  inferInstanceAs (AddCommGroup (Bimodule (rightAlgHom% f)))
+  inferInstanceAs (AddCommGroup (Bimodule (f.toOppositeOfComm)))
 
 instance : Module K (BaseChangeModule f) :=
-  inferInstanceAs (Module K (Bimodule (rightAlgHom% f)))
+  inferInstanceAs (Module K (Bimodule (f.toOppositeOfComm)))
 
 instance [Nontrivial A] : Nontrivial (BaseChangeModule f) :=
-  inferInstanceAs (Nontrivial (Bimodule (rightAlgHom% f)))
+  inferInstanceAs (Nontrivial (Bimodule (f.toOppositeOfComm)))
 
 instance [Module.Finite K A] : Module.Finite K (BaseChangeModule f) :=
-  Module.Finite.equiv ((MulOpposite.opLinearEquiv K).trans (Bimodule.of (rightAlgHom% f)))
+  Module.Finite.equiv ((MulOpposite.opLinearEquiv K).trans (Bimodule.of (f.toOppositeOfComm)))
 
 /-- `BaseChangeModule f` is `A` again as a `K`-module: only the `L ⊗[K] A`-action is new. -/
 def of : A ≃ₗ[K] BaseChangeModule f :=
-  (MulOpposite.opLinearEquiv K).trans (Bimodule.of (rightAlgHom% f))
+  (MulOpposite.opLinearEquiv K).trans (Bimodule.of (f.toOppositeOfComm))
+
+/-- Linear maps out of `BaseChangeModule f` are determined by their values on `of f x`. -/
+@[ext]
+theorem linearMap_ext {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R (BaseChangeModule f)]
+    [Module R M] {φ ψ : BaseChangeModule f →ₗ[R] M} (h : ∀ x, φ (of f x) = ψ (of f x)) :
+    φ = ψ :=
+  LinearMap.ext fun x ↦ by rw [← (of f).apply_symm_apply x, h]
 
 noncomputable instance : Module (L ⊗[K] A) (BaseChangeModule f) :=
-  Module.compHom (M := Bimodule (rightAlgHom% f)) opOpMap%.toRingHom
+  Module.compHom (M := Bimodule (f.toOppositeOfComm))
+    (Algebra.TensorProduct.lTensor (S := K) L (AlgEquiv.opOp K A).toAlgHom).toRingHom
 
 /-- The action of `L ⊗[K] A` on `A` defining `BaseChangeModule f`, as a `K`-algebra homomorphism
 into `Module.End K A`, transported from `TauCeti.Bimodule.toEnd`. -/
 noncomputable def toEnd : L ⊗[K] A →ₐ[K] Module.End K A :=
   ((MulOpposite.opLinearEquiv K).conjAlgEquiv K).symm.toAlgHom.comp
-    ((Bimodule.toEnd (rightAlgHom% f)).comp opOpMap%)
+    ((Bimodule.toEnd (f.toOppositeOfComm)).comp
+      (Algebra.TensorProduct.lTensor (S := K) L (AlgEquiv.opOp K A).toAlgHom))
 
 /-- A pure tensor `l ⊗ₜ a` acts on `x : A` through `toEnd f` by `x ↦ a * x * f l`. -/
 @[simp]
@@ -183,8 +190,9 @@ theorem toEnd_tmul_apply (l : L) (a x : A) : toEnd f (l ⊗ₜ a) x = a * x * f 
 equation of the module structure, and the single place it is unfolded: everything else rewrites
 with it instead of reasoning up to definitional equality. -/
 theorem smul_def (r : L ⊗[K] A) (x : A) : r • of f x = of f (toEnd f r x) := by
-  change opOpMap% r • Bimodule.of (rightAlgHom% f) (MulOpposite.op x) =
-    Bimodule.of (rightAlgHom% f) (MulOpposite.op (toEnd f r x))
+  change Algebra.TensorProduct.lTensor (S := K) L (AlgEquiv.opOp K A).toAlgHom r •
+      Bimodule.of (f.toOppositeOfComm) (MulOpposite.op x) =
+    Bimodule.of (f.toOppositeOfComm) (MulOpposite.op (toEnd f r x))
   rw [Bimodule.smul_def]
   rfl
 
@@ -350,6 +358,134 @@ theorem bijective_of_finrank_eq_deg {L' : Type*} [Field L'] [Algebra K L']
 end Algebra
 
 end Field
+
+section RightMultiplication
+
+open Module
+
+section Semiring
+
+variable {K : Type*} [CommSemiring K] {A : Type*} [Semiring A] [Algebra K A]
+  (L : Type*) [CommSemiring L] [Algebra K L] {B : Type*} [Semiring B]
+  [Algebra L B] [Algebra K B] [IsScalarTower K L B]
+
+/-! ### Right multiplication through `g` -/
+
+namespace BaseChangeModule
+
+variable (g : B →ₐ[K] A)
+
+/-- The action of `L ⊗[K] A` on `A` through `g ∘ algebraMap L B` commutes with right
+multiplication by the image of `g`. -/
+theorem toEnd_mul_apply (r : L ⊗[K] A) (x : A) (b : B) :
+    toEnd (g.comp (IsScalarTower.toAlgHom K L B)) r (x * g b) =
+      toEnd (g.comp (IsScalarTower.toAlgHom K L B)) r x * g b := by
+  induction r using TensorProduct.inductionOn with
+  | tmul l a =>
+    simp only [toEnd_tmul_apply, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', mul_assoc,
+      ← map_mul, Algebra.commutes]
+  | add r s hr hs => simp only [map_add, LinearMap.add_apply, hr, hs, add_mul]
+
+/-- Right multiplication by `g b`, as an endomorphism of the `L ⊗[K] A`-module `A`. -/
+noncomputable def mulRight (b : B) :
+    Module.End (L ⊗[K] A) (BaseChangeModule (g.comp (IsScalarTower.toAlgHom K L B))) where
+  toFun x := of _ ((of _).symm x * g b)
+  map_add' x y := by simp only [map_add, add_mul]
+  map_smul' r x := by
+    obtain ⟨x, rfl⟩ := (of (g.comp (IsScalarTower.toAlgHom K L B))).surjective x
+    simp only [smul_def, LinearEquiv.symm_apply_apply, toEnd_mul_apply L, RingHom.id_apply]
+
+/-- Right multiplication through `g` agrees with multiplication on underlying elements. -/
+@[simp]
+theorem mulRight_of (b : B) (x : A) :
+    mulRight L g b (of _ x) = of _ (x * g b) := by
+  simp only [mulRight, LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.symm_apply_apply]
+
+/-- Right multiplication through `g`, as an `L`-algebra homomorphism out of `Bᵐᵒᵖ`. -/
+noncomputable def mulRightAlgHom :
+    Bᵐᵒᵖ →ₐ[L]
+      Module.End (L ⊗[K] A) (BaseChangeModule (g.comp (IsScalarTower.toAlgHom K L B))) where
+  toFun b := mulRight L g b.unop
+  map_one' := by
+    ext x
+    rw [MulOpposite.unop_one, mulRight_of, map_one g, mul_one, Module.End.one_apply]
+  map_mul' b c := by
+    ext x
+    rw [MulOpposite.unop_mul, Module.End.mul_apply, mulRight_of, mulRight_of, mulRight_of,
+      map_mul g, mul_assoc]
+  map_zero' := by
+    ext x
+    rw [MulOpposite.unop_zero, mulRight_of, map_zero g, mul_zero, map_zero, LinearMap.zero_apply]
+  map_add' b c := by
+    ext x
+    rw [MulOpposite.unop_add, LinearMap.add_apply, mulRight_of, mulRight_of, mulRight_of, map_add g,
+      mul_add, map_add]
+  commutes' l := by
+    ext x
+    simp only [MulOpposite.algebraMap_apply, MulOpposite.unop_op, mulRight_of,
+      Module.algebraMap_end_apply, lsmul_of, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom']
+
+
+/-- Evaluating the right-multiplication homomorphism gives multiplication on underlying elements. -/
+@[simp]
+theorem mulRightAlgHom_of (b : Bᵐᵒᵖ) (x : A) :
+    mulRightAlgHom L g b (of _ x) = of _ (x * g b.unop) :=
+  mulRight_of L g b.unop x
+
+end BaseChangeModule
+
+end Semiring
+
+/-! ### The centralizer of the subfield -/
+
+section FiniteDimensional
+
+variable {K : Type*} [Field K] {A : Type*} [Ring A] [Algebra K A] (L : Type*) [Field L]
+  [Algebra K L] {B : Type*} [Ring B] [Algebra L B] [Algebra K B] [IsScalarTower K L B]
+
+variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A] [IsSimpleRing B]
+
+namespace BaseChangeModule
+
+variable (g : B →ₐ[K] A)
+
+/-- When `[L : K] · dim_K B = dim_K A`, that is when `g` maps `B` onto the centralizer of the image
+of `L`, right multiplication through `g` is an isomorphism `Bᵐᵒᵖ ≃ End_{L ⊗[K] A} A`. -/
+theorem mulRightAlgHom_bijective
+    (hdim : finrank K L * finrank K B = finrank K A) : Function.Bijective (mulRightAlgHom L g) := by
+  have : FiniteDimensional K B :=
+    FiniteDimensional.of_injective g.toLinearMap g.toRingHom.injective
+  have : FiniteDimensional L B := Module.Finite.of_restrictScalars_finite K L B
+  have hinj : Function.Injective (mulRightAlgHom L g) := (mulRightAlgHom L g).toRingHom.injective
+  refine ⟨hinj, ?_⟩
+  set f := g.comp (IsScalarTower.toAlgHom K L B)
+  -- With `d = [L : K]`, `e = dim_L B` and `n = dim_K A`, the dimension hypothesis reads
+  -- `d * d * e = n`, the tower law gives `dim_L A = d * e`, and the dimension of the
+  -- endomorphism algebra `X` satisfies `X * n = (d * e)²`; so `X = e`.
+  have : FiniteDimensional K L := FiniteDimensional.of_injective f.toLinearMap f.toRingHom.injective
+  have hn := hdim
+  rw [← Module.finrank_mul_finrank K L B, ← mul_assoc] at hn
+  have hV : finrank L (BaseChangeModule f) = finrank K L * finrank L B :=
+    Nat.eq_of_mul_eq_mul_left finrank_pos ((finrank_mul_finrank f).trans (by rw [← hn, mul_assoc]))
+  have hE := IsSimpleRing.finrank_end_mul_finrank_eq_sq L (R := L ⊗[K] A) (M := BaseChangeModule f)
+  rw [Module.finrank_baseChange, hV, ← hn] at hE
+  have hX : finrank L (Module.End (L ⊗[K] A) (BaseChangeModule f)) = finrank L Bᵐᵒᵖ := by
+    rw [← (MulOpposite.opLinearEquiv L).finrank_eq]
+    refine Nat.eq_of_mul_eq_mul_right (m := finrank K L * finrank K L * finrank L B) ?_ ?_
+    · rw [hn]
+      exact finrank_pos
+    · rw [hE]
+      ring
+  have : FiniteDimensional L (Module.End (L ⊗[K] A) (BaseChangeModule f)) :=
+    Module.finite_of_finrank_pos (hX ▸ finrank_pos)
+  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (f := (mulRightAlgHom L g).toLinearMap) hX.symm).1 hinj
+
+end BaseChangeModule
+
+end FiniteDimensional
+
+end RightMultiplication
 
 /-! ### Worked example: the complex numbers inside the real quaternions -/
 

@@ -12,9 +12,8 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
 # Boundary maximum principles for strictly subharmonic functions
 
 `TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr` proves the local second-derivative
-obstruction: a `C²` scalar function with `0 < Δ f x` has no local maximum at `x`.  This file
-turns that local statement into the compact-set boundary form used as the first maximum-principle
-handoff in the PDE roadmap.
+obstruction: a `C²` scalar function with `0 < Δ f x` has no local maximum at `x`. This file turns
+that local statement into the compact-set boundary form.
 
 The compact-to-boundary handoff uses Mathlib's `IsCompact.exists_isMaxOn` /
 `IsCompact.exists_isMinOn` extreme-value APIs and `IsMaxOn.isLocalMax` /

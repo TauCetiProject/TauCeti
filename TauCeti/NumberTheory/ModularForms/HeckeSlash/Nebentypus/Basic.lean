@@ -104,7 +104,7 @@ variable [NeZero N]
 /-- The enumeration `∑` needs, obtained from the ambient `Finite` instance by choice. As in
 `HeckeSlash/Basic.lean` it is `local` and `noncomputable`: nothing below depends on which
 enumeration is chosen, so no declaration should carry one as data. -/
-noncomputable local instance :
+noncomputable local instance fintypeDecompQuotientGamma0 :
     Fintype (DecompQuotient ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ))
       (D.out : GL (Fin 2) ℚ)⁻¹) :=
   Fintype.ofFinite _

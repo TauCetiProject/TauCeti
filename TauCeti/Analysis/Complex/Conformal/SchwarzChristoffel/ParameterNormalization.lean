@@ -51,7 +51,7 @@ whose `j`-th prevertex has absolute value `1`.  Its sign is the remaining real-o
 positive affine normalization. -/
 theorem exists_bijOn_normalized_schwarzChristoffelPrimitive_of_isJordanCurve_frontier
     (e : ι → ℝ) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Function.Injective v)
     (hside : ∀ w ∈ frontier U, (∀ k, w ≠ v k) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ Metric.ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
@@ -64,7 +64,7 @@ theorem exists_bijOn_normalized_schwarzChristoffelPrimitive_of_isJordanCurve_fro
         BijOn (fun z ↦ A * schwarzChristoffelPrimitive a e z₀ z + B)
           upperHalfPlaneSet U ∧
         ∀ k, A * schwarzChristoffelVertex a e z₀ k + B = v k := by
-  obtain ⟨a, ha, A, hA, B, hbij, hvertex⟩ :=
+  obtain ⟨a, ha, A, _, B, hbij, hvertex⟩ :=
     exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier
       e he z₀ hUo hUc hUb hUJ hv hside hcorner
   have hgap : a j - a i ≠ 0 := sub_ne_zero.mpr (ha.ne hij.symm)

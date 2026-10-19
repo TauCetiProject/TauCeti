@@ -39,8 +39,9 @@ and the mixture of a Dirac mass at `⟦W⟧` is the sampling law of `W`.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.sampleGraph_eq_of_cutDist_eq_zero` — graphons at cut distance zero,
-  on arbitrary carriers, have the same sampling laws;
+* `TauCeti.DenseGraphLimits.sampleGraph_eq_of_cutDist_eq_zero` and
+  `TauCeti.DenseGraphLimits.sampleExchangeableLaw_eq_of_cutDist_eq_zero` — graphons at cut distance
+  zero, on arbitrary carriers, have the same sampling laws;
 * `TauCeti.DenseGraphLimits.measurable_sampleGraphOnSpace` — the sampling law depends measurably
   on the graphon class;
 * `TauCeti.DenseGraphLimits.upperMass_mixtureExchangeableLaw` — the upper mass of a pattern under
@@ -79,6 +80,13 @@ determined by its upper-ray masses, which are homomorphism densities. -/
 theorem sampleGraph_eq_of_cutDist_eq_zero (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
     (h : cutDist U W = 0) (n : ℕ) : sampleGraph U n = sampleGraph W n :=
   sampleGraph_eq_of_forall_homDensity_eq U W n (forall_homDensity_eq_of_cutDist_eq_zero U W h n)
+
+/-- Two graphons, on arbitrary probability carriers, at cut distance zero have the same exchangeable
+sampling law. -/
+theorem sampleExchangeableLaw_eq_of_cutDist_eq_zero (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
+    (h : cutDist U W = 0) : sampleExchangeableLaw U = sampleExchangeableLaw W :=
+  ExchangeableGraphLaw.ext fun n => by
+    simp only [sampleExchangeableLaw_law, sampleGraph_eq_of_cutDist_eq_zero U W h]
 
 end CrossCarrier
 
@@ -137,17 +145,12 @@ against the descended sampling law. -/
 def mixtureExchangeableLaw (P : ProbabilityMeasure (GraphonSpace Ω μ)) :
     ExchangeableGraphLaw where
   law k := (P : Measure (GraphonSpace Ω μ)).bind (sampleGraphOnSpace k)
-  prob k := ⟨by
-    rw [Measure.bind_apply MeasurableSet.univ (measurable_sampleGraphOnSpace k).aemeasurable]
-    simp⟩
+  prob k := isProbabilityMeasure_bind (measurable_sampleGraphOnSpace k).aemeasurable
+    (ae_of_all _ fun _ => inferInstance)
   consistent {k l} f := by
-    ext s hs
-    have hf := SimpleGraph.measurable_comap (V := Fin k) ⇑f
-    rw [Measure.map_apply hf hs,
-      Measure.bind_apply (hf hs) (measurable_sampleGraphOnSpace l).aemeasurable,
-      Measure.bind_apply hs (measurable_sampleGraphOnSpace k).aemeasurable]
-    refine lintegral_congr fun x => ?_
-    rw [← Measure.map_apply hf hs, sampleGraphOnSpace_map_comap]
+    rw [Measure.map_bind (measurable_sampleGraphOnSpace l).aemeasurable
+      (SimpleGraph.measurable_comap (V := Fin k) ⇑f).aemeasurable]
+    simp only [sampleGraphOnSpace_map_comap]
 
 /-- The level-`k` marginal of a mixture law is the bind of the mixing measure against the
 descended sampling law. -/

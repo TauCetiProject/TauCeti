@@ -53,13 +53,17 @@ Frobenius corresponding to `1`.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: for `p ∤ m`, the `m`-th roots of a unit of
   `𝒪[K]` are unramified.
 * `TauCeti.isGalois_maximalUnramifiedExtension`: `K^{ur}` is Galois over `K`.
+* `AlgHom.map_maximalUnramifiedExtension_le`: for an extension `L/K` of local fields, a
+  `K`-algebra map from an extension of `K` to an extension of `L` sends `K^{ur}` into `L^{ur}`.
 * `IntermediateField.le_maximalUnramifiedExtension_iff`: for `Ω` separably closed, a finite
   intermediate field lies in `K^{ur}` exactly when it is unramified over `K`.
 * `TauCeti.maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self`,
   `TauCeti.eq_maximalUnramifiedFrobenius_iff`: Frobenius is the unique automorphism raising the
-  roots of the polynomials `X^{q^f} − X` to the `q`-th power.
-* `TauCeti.coe_maximalUnramifiedFrobenius_apply_of_mem`: it restricts to the arithmetic Frobenius of
-  each `K_f`.
+  roots of the polynomials `X^{q^f} − X` to the `q`-th power; its `n`-th power raises them to the
+  `q^n`-th power (`TauCeti.maximalUnramifiedFrobenius_pow_apply_of_pow_natCard_pow_eq_self`).
+* `TauCeti.coe_maximalUnramifiedFrobenius_apply_of_mem`,
+  `TauCeti.coe_maximalUnramifiedFrobenius_zpow_apply_of_mem`: it and its integral powers restrict
+  to the arithmetic Frobenius of each `K_f` and its powers.
 * `TauCeti.fixedField_zpowers_maximalUnramifiedFrobenius`,
   `TauCeti.topologicalClosure_zpowers_maximalUnramifiedFrobenius`: it is a topological generator
   of `Gal(K^{ur}/K)`.
@@ -158,7 +162,7 @@ theorem maximalUnramifiedExtension_eq_adjoin :
   simp only [Set.mem_iUnion, Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
   -- `X^{q^0} − X` is zero, so it has no roots.
   exact ⟨fun ⟨f, hne, hx⟩ ↦ ⟨f, fun hf ↦ hne (by simp [hf]), hx⟩,
-    fun ⟨f, hf, hx⟩ ↦ ⟨f, FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, hx⟩⟩
+    fun ⟨f, hf, hx⟩ ↦ ⟨f, X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), hx⟩⟩
 
 variable {K Ω} in
 /-- **Roots of unity of order prime to `p` are unramified.** If the residue characteristic of `K`
@@ -229,6 +233,23 @@ theorem _root_.IntermediateField.le_maximalUnramifiedExtension (E : Intermediate
     [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E] [ValuativeExtension K E]
     [IsUnramified K E] : E ≤ maximalUnramifiedExtension K Ω :=
   E.eq_unramifiedExtension_finrank ▸ unramifiedExtension_le_maximalUnramifiedExtension K Ω _
+
+variable {K Ω} in
+/-- **Unramified elements stay unramified in an extension.** For an extension `L/K` of
+nonarchimedean local fields and a `K`-algebra map `τ : Ω → Ω'` into an extension `Ω'` of `L`, the
+image of `K^{ur}` lies in `L^{ur}`. -/
+theorem _root_.AlgHom.map_maximalUnramifiedExtension_le {L : Type*} [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    {Ω' : Type*} [Field Ω'] [Algebra K Ω'] [Algebra L Ω'] [IsScalarTower K L Ω']
+    (τ : Ω →ₐ[K] Ω') :
+    (maximalUnramifiedExtension K Ω).map τ ≤
+      (maximalUnramifiedExtension L Ω').restrictScalars K := by
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨f, -, hx⟩ := mem_maximalUnramifiedExtension_iff.1 hx
+  -- `τ` carries `K_f` into `K_f ⊆ L_f ⊆ L^{ur}` inside `Ω'`.
+  exact unramifiedExtension_le_maximalUnramifiedExtension L Ω' f
+    (unramifiedExtension_le_restrictScalars_unramifiedExtension (K := K) L f
+      (map_unramifiedExtension_le f τ ⟨x, hx, rfl⟩))
 
 /-- Two `K`-embeddings of `K_f` agreeing on the roots of `X^{q^f} − X` are equal. -/
 private theorem algHom_ext_unramifiedExtension {f : ℕ} {A : Type*} [Field A] [Algebra K A]
@@ -342,6 +363,22 @@ theorem maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self
   exact AlgHom.restrictNormal_commutes (maximalUnramifiedFrobeniusAux K Ω) _ x
 
 variable {K Ω} in
+/-- **The equation of the powers of Frobenius on `K^{ur}`.** The `n`-th power of arithmetic
+Frobenius raises every root of `X^{q^g} − X` in `K^{ur}`, for `g ≠ 0`, to the `q^n`-th power. -/
+theorem maximalUnramifiedFrobenius_pow_apply_of_pow_natCard_pow_eq_self
+    {x : maximalUnramifiedExtension K Ω} {g : ℕ} (hg : g ≠ 0) (hx : x ^ Nat.card 𝓀[K] ^ g = x)
+    (n : ℕ) : (maximalUnramifiedFrobenius K Ω ^ n) x = x ^ Nat.card 𝓀[K] ^ n := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    -- `x ^ q` is again a root of `X^{q^g} − X`.
+    have hxq : (x ^ Nat.card 𝓀[K]) ^ Nat.card 𝓀[K] ^ g = x ^ Nat.card 𝓀[K] := by
+      rw [← pow_mul, mul_comm, pow_mul, hx]
+    rw [pow_succ, AlgEquiv.mul_apply,
+      maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self hg hx, ih hxq, ← pow_mul,
+      ← pow_succ']
+
+variable {K Ω} in
 /-- **Uniqueness of Frobenius on `K^{ur}`.** An automorphism of `K^{ur} / K` is the arithmetic
 Frobenius exactly when it raises every root of every polynomial `X^{q^g} − X`, `g ≠ 0`, lying in
 `K^{ur}` to the `q`-th power. -/
@@ -395,6 +432,39 @@ theorem coe_maximalUnramifiedFrobenius_apply_of_mem {f : ℕ}
   rw [maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self hf hy',
     frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hf hyL, SubmonoidClass.coe_pow,
     SubmonoidClass.coe_pow, coe_inclusion]
+
+variable {K Ω} in
+/-- **Compatibility of the powers of Frobenius with the finite levels.** On the unramified
+extension `K_f` of any degree `f`, the `n`-th power of the arithmetic Frobenius of `K^{ur}` acts as
+the `n`-th power of the arithmetic Frobenius of `K_f / K`, for every integer `n`. -/
+theorem coe_maximalUnramifiedFrobenius_zpow_apply_of_mem {f : ℕ}
+    [ValuativeRel (unramifiedExtension K Ω f)] [TopologicalSpace (unramifiedExtension K Ω f)]
+    [IsNonarchimedeanLocalField (unramifiedExtension K Ω f)]
+    [ValuativeExtension K (unramifiedExtension K Ω f)] [IsUnramified K (unramifiedExtension K Ω f)]
+    (n : ℤ) {x : Ω} (hx : x ∈ unramifiedExtension K Ω f) :
+    ((maximalUnramifiedFrobenius K Ω ^ n)
+        ⟨x, unramifiedExtension_le_maximalUnramifiedExtension K Ω f hx⟩ : Ω) =
+      (frobeniusAlgEquiv (K := K) (L := unramifiedExtension K Ω f) ^ n) ⟨x, hx⟩ := by
+  set Φ := maximalUnramifiedFrobenius K Ω
+  set φ := frobeniusAlgEquiv (K := K) (L := unramifiedExtension K Ω f)
+  have hle := unramifiedExtension_le_maximalUnramifiedExtension K Ω f
+  -- `Φ` and `φ` are intertwined by the inclusion `K_f ⊆ K^{ur}`, and so are `Φ⁻¹` and `φ⁻¹`.
+  have h₁ (y : unramifiedExtension K Ω f) : Φ (inclusion hle y) = inclusion hle (φ y) :=
+    Subtype.ext (coe_maximalUnramifiedFrobenius_apply_of_mem y.2)
+  have h₂ (y : unramifiedExtension K Ω f) : Φ⁻¹ (inclusion hle y) = inclusion hle (φ⁻¹ y) :=
+    Φ.injective <| by
+      rw [h₁, ← AlgEquiv.mul_apply Φ Φ⁻¹, ← AlgEquiv.mul_apply φ φ⁻¹, mul_inv_cancel,
+        mul_inv_cancel, AlgEquiv.one_apply, AlgEquiv.one_apply]
+  suffices h : ∀ y : unramifiedExtension K Ω f,
+      (Φ ^ n) (inclusion hle y) = inclusion hle ((φ ^ n) y) from congrArg Subtype.val (h ⟨x, hx⟩)
+  induction n using Int.induction_on with
+  | zero => intro y; rw [zpow_zero, zpow_zero, AlgEquiv.one_apply, AlgEquiv.one_apply]
+  | succ n ih =>
+    intro y
+    rw [zpow_add_one, zpow_add_one, AlgEquiv.mul_apply, h₁, ih, AlgEquiv.mul_apply]
+  | pred n ih =>
+    intro y
+    rw [zpow_sub_one, zpow_sub_one, AlgEquiv.mul_apply, h₂, ih, AlgEquiv.mul_apply]
 
 variable {K Ω} in
 /-- **Frobenius generates `Gal(K^{ur}/K)` topologically, algebraic form.** The elements of `K^{ur}`

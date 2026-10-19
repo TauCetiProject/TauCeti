@@ -46,9 +46,6 @@ derived subgroup is trivial.
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Propositions 6.17 and 6.18.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
-
-This supplies `G_der`, required in Layer 6 of the ReductiveGroups roadmap, and the
-scheme-theoretic derived subgroup left outstanding by the Layer 5 solvability development.
 -/
 
 public section
@@ -80,6 +77,14 @@ theorem derivedDefiningIdeal_toIdeal_le_ker :
   rw [derivedDefiningIdeal, HopfIdeal.sSup_toIdeal]
   exact iSup_le fun I ↦ I.2
 
+/-- The commutator coordinate morphism vanishes on each element of the derived defining
+ideal. -/
+theorem commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal {x : H}
+    (hx : x ∈ derivedDefiningIdeal (R := R) H) :
+    HopfAlgebra.commutatorAlgHom (R := R) (H := H) x = 0 :=
+  RingHom.mem_ker.mp
+    (derivedDefiningIdeal_toIdeal_le_ker H (HopfIdeal.mem_toIdeal.mpr hx))
+
 /-- A Hopf ideal is contained in the derived defining ideal exactly when the commutator
 coordinate morphism kills it. This is the coordinate universal property of the derived
 subgroup. -/
@@ -108,11 +113,6 @@ noncomputable abbrev derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
     derivedGroupScheme H ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H) :=
   quotientSpecι H (derivedDefiningIdeal H)
-
-/-- The inclusion of the derived group scheme is a closed immersion. -/
-instance isClosedImmersion_derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
-    AlgebraicGeometry.IsClosedImmersion (derivedGroupSchemeι H).hom.hom.left :=
-  inferInstance
 
 /-- Every commutator of algebra-valued points lies in the derived subgroup. -/
 theorem commutator_mem_derivedPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
@@ -207,7 +207,7 @@ theorem le_derivedDefiningIdeal_iff_isNormal_and_isMulCommutative_pointQuotient
     -- Their product map is the lifted identity on the tensor product.
     have hproduct : Algebra.TensorProduct.productMap g.ofConv h.ofConv =
         up := by
-      simp [g, h, AffineGroup.Product.productMap_restrict]
+      simp [g, h, _root_.AlgHom.productMap_comp_includeLeft_includeRight]
     have heval := DFunLike.congr_fun
       (HopfAlgebra.productMap_comp_commutatorAlgHom g h) x
     rw [hproduct] at heval
@@ -235,13 +235,8 @@ theorem derivedDefiningIdeal_eq_augmentation_iff_isCocomm :
       apply WithConv.ofConv_injective
       apply AlgHom.ext
       intro x
-      have hx : x - algebraMap R H (Coalgebra.counit (R := R) x) ∈
-          HopfIdeal.augmentation R H := by
-        rw [HopfIdeal.mem_augmentation]
-        simp
-      have hxzero := hker ((HopfIdeal.mem_toIdeal).mpr hx)
-      rw [RingHom.mem_ker, map_sub, sub_eq_zero] at hxzero
-      simpa [AlgHom.convOne_apply] using hxzero
+      exact (AlgHom.apply_eq_counit_of_augmentation_le_ker _ hker x).trans
+        (AlgHom.convOne_apply x).symm
     rw [HopfAlgebra.toConv_commutatorAlgHom] at hcommutator
     simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
       Bialgebra.TensorProduct.includeRight_toAlgHom] at hcommutator

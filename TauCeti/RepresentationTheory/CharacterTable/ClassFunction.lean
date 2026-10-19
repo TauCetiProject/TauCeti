@@ -15,8 +15,9 @@ public import Mathlib.RepresentationTheory.Character
 This file defines functions on a group that are constant on conjugacy classes. It identifies
 their module with the module of functions on `ConjClasses G`, computes its finite rank when there
 are finitely many conjugacy classes, pulls class functions back along a group homomorphism,
-twists them by a power map, inverts the group element, shows that characters of representations
-are class functions, and evaluates a sum over a finite group one conjugacy class at a time.
+twists them by a power map, inverts the group element, changes their coefficients along a ring
+homomorphism, shows that characters of representations are class functions, and evaluates a sum
+over a finite group one conjugacy class at a time.
 
 Inverting the group element, `TauCeti.ClassFunction.invMap`, is the involution that turns the
 character of a representation into the character of its dual
@@ -187,6 +188,32 @@ theorem invMap_apply (f : ClassFunction k G) (g : G) : (invMap f).1 g = f.1 g⁻
 theorem invMap_invMap (f : ClassFunction k G) : invMap (invMap f) = f :=
   Subtype.ext (funext fun g => by rw [invMap_apply, invMap_apply, inv_inv])
 
+/-- Change of coefficients along a ring homomorphism `σ : k →+* k'`: the class function
+`g ↦ σ (f g)`. Along `algebraMap K L` it carries the character of a representation over `K` to the
+character of its scalar extension to `L` (`TauCeti.ClassFunction.ofFDRep_baseChange`). -/
+def map {k' : Type w} [Semiring k'] (σ : k →+* k') :
+    ClassFunction k G →ₛₗ[σ] ClassFunction k' G where
+  toFun f := ⟨fun g => σ (f.1 g), fun g h => congrArg σ (f.2 g h)⟩
+  map_add' _ _ := Subtype.ext (funext fun _ => map_add σ _ _)
+  map_smul' _ _ := Subtype.ext (funext fun _ => map_mul σ _ _)
+
+/-- Changing coefficients applies the ring homomorphism to each value. -/
+@[simp]
+theorem map_apply {k' : Type w} [Semiring k'] (σ : k →+* k') (f : ClassFunction k G) (g : G) :
+    (map σ f).1 g = σ (f.1 g) :=
+  (rfl)
+
+/-- Changing coefficients along the identity changes nothing. -/
+@[simp]
+theorem map_id (f : ClassFunction k G) : map (RingHom.id k) f = f :=
+  (rfl)
+
+/-- Changing coefficients along `σ₁` and then along `σ₂` is changing them along `σ₂.comp σ₁`. -/
+@[simp]
+theorem map_map {k' : Type w} {k'' : Type w'} [Semiring k'] [Semiring k''] (σ₁ : k →+* k')
+    (σ₂ : k' →+* k'') (f : ClassFunction k G) : map σ₂ (map σ₁ f) = map (σ₂.comp σ₁) f :=
+  (rfl)
+
 /-- Class functions on `G` are linearly equivalent to functions on its conjugacy classes. -/
 noncomputable def equivConjClasses : ClassFunction k G ≃ₗ[k] (ConjClasses G → k) where
   toFun := toConjClasses
@@ -304,3 +331,16 @@ theorem ofFDRep_eq_ofCharacter (V : FDRep k G) : ofFDRep V = ofCharacter V.ρ :=
 end ClassFunction
 
 end TauCeti
+
+namespace MonoidHom
+
+variable {k : Type*} {G : Type*} [Semiring k] [Group G]
+
+/-- A function factoring through a homomorphism into a commutative monoid is a class function,
+conjugation being invisible there; for instance a linear character `χ : G →* kˣ`, read in `k`. -/
+theorem comp_mem_classFunction {M : Type*} [CommMonoid M] (χ : G →* M) (f : M → k) :
+    (fun g => f (χ g)) ∈ TauCeti.ClassFunction k G :=
+  TauCeti.ClassFunction.mem_iff.2 fun g h => by
+    rw [map_mul, map_mul, mul_right_comm, ← map_mul, mul_inv_cancel, map_one, one_mul]
+
+end MonoidHom

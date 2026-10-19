@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Conformal
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Integrand
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
+import Mathlib.Analysis.Complex.Convex
 
 /-!
 # The Schwarz--Christoffel primitive

@@ -98,11 +98,7 @@ theorem toAdd_exponentSum_of_pow_apply [DecidableEq X] (i : X) (n : ℕ) (k : X)
 @[simp]
 theorem exponentSum_padicPow_of [DecidableEq X] (x : X) (a : ℤ_[p]) :
     exponentSum p X ((isProP_freeProP p X).padicPow (of x) a) = ofAdd (Pi.single x a) := by
-  have h := (isProP_freeProP p X).map_padicPow (isProP_multiplicative_pi_padicInt p X)
-    (exponentSum p X : freeProP p X →* Multiplicative (X → ℤ_[p])) (exponentSum p X).continuous
-    (of x) a
-  rw [MonoidHom.coe_ofClass] at h
-  rw [h, exponentSum_of, IsProP.padicPow_ofAdd_pi, ← Pi.single_smul, smul_eq_mul, mul_one]
+  rw [IsProP.map_padicPow_pi, exponentSum_of, toAdd_ofAdd, ← Pi.single_smul, smul_eq_mul, mul_one]
 
 /-- The exponent vector of the `i`-th `ℕ`-indexed generator of `freeProP p (Fin n)` is the
 coordinate vector at `i`; out of range it is `0`. -/
@@ -245,14 +241,15 @@ noncomputable def abelianizationEquiv :
     classical
     obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective x
     have h : (abelianizationInv p X).comp ((TopologicalAbelianization.lift (exponentSum p X)).comp
-        (ContinuousMonoidHom.quotientMk _)) = ContinuousMonoidHom.quotientMk _ :=
+        (Subgroup.quotientMkContinuousMonoidHom _)) = Subgroup.quotientMkContinuousMonoidHom _ :=
       hom_ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-          ContinuousMonoidHom.quotientMk_apply, TopologicalAbelianization.lift_mk, exponentSum_of,
+          Subgroup.quotientMkContinuousMonoidHom_apply, TopologicalAbelianization.lift_mk,
+            exponentSum_of,
           abelianizationInv_ofAdd_single]
     have := DFunLike.congr_fun h y
     simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.quotientMk_apply] using this
+      Subgroup.quotientMkContinuousMonoidHom_apply] using this
   right_inv u := by
     classical
     have h : (TopologicalAbelianization.lift (exponentSum p X)).comp (abelianizationInv p X) =

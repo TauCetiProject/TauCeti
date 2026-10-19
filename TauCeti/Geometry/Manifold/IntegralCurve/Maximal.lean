@@ -67,8 +67,9 @@ arbitrary initial time is recovered by translating the parameter with
 * `maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow`: an interval of existence
   unbounded on both sides is all of `ℝ`.
 * `maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo`: a maximal curve confined to a
-  compact set is defined for all time, and `isMIntegralCurve_maximalIntegralCurve` specializes this
-  to a compact manifold: **a `C^1` vector field on a compact manifold is complete**.
+  compact set is defined for all time, and `isMIntegralCurve_maximalIntegralCurve` specializes
+  this to a compact manifold: **a `C^1` vector field on a compact manifold is complete**
+  (stated as `TauCeti.isCompleteVectorField_of_compactSpace`).
 * `maximalIntegralCurveInterval_eq_univ_iff`: the maximal interval is all of `ℝ` exactly when some
   global integral curve passes through `x` at time `0`.
 

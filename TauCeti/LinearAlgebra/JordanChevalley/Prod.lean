@@ -16,8 +16,7 @@ Semisimple and unipotent linear automorphisms are preserved by componentwise pro
 finite-dimensional modules over a perfect field, the multiplicative Jordan decomposition of a
 product automorphism is therefore computed componentwise.
 
-This supplies product infrastructure for the linear-algebraic functoriality step in Layer 4 of the
-ReductiveGroups roadmap.
+These identities describe the Jordan decomposition on a direct sum of two representations.
 
 ## Main declarations
 
@@ -31,11 +30,26 @@ ReductiveGroups roadmap.
 
 public section
 
-open Polynomial
-
 namespace LinearMap.GeneralLinearGroup
 
 universe u v w
+
+section Semiring
+
+variable {K : Type u} {V : Type v} {W : Type w}
+variable [Semiring K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- The product map of two unipotent automorphisms is unipotent. -/
+theorem IsUnipotent.prodMap {g : GeneralLinearGroup K V} {h : GeneralLinearGroup K W}
+    (hg : IsUnipotent g) (hh : IsUnipotent h) : IsUnipotent (prodMap g h) := by
+  rw [isUnipotent_def] at hg hh ⊢
+  have hsub := map_sub (LinearMap.prodMapRingHom K V W)
+    ((g : Module.End K V), (h : Module.End K W)) 1
+  simp only [map_one, LinearMap.prodMapRingHom_apply] at hsub
+  rw [coe_prodMap, ← hsub]
+  exact hg.prodMap hh
+
+end Semiring
 
 section CommRing
 
@@ -48,18 +62,6 @@ theorem IsSemisimple.prodMap {g : GeneralLinearGroup K V} {h : GeneralLinearGrou
   rw [isSemisimple_def] at hg hh ⊢
   rw [coe_prodMap]
   exact Module.End.IsSemisimple.prodMap hg hh
-
-/-- The product map of two unipotent automorphisms is unipotent. -/
-theorem IsUnipotent.prodMap {g : GeneralLinearGroup K V} {h : GeneralLinearGroup K W}
-    (hg : IsUnipotent g) (hh : IsUnipotent h) : IsUnipotent (prodMap g h) := by
-  rw [isUnipotent_def] at hg hh ⊢
-  have hp := hg.prodMap hh
-  -- Expose the component endomorphisms beneath the product-map and identity coercions.
-  rw [show (GeneralLinearGroup.prodMap g h : Module.End K (V × W)) - 1 =
-      ((g : Module.End K V) - 1).prodMap ((h : Module.End K W) - 1) by
-    rw [coe_prodMap]
-    ext x <;> simp]
-  exact hp
 
 end CommRing
 

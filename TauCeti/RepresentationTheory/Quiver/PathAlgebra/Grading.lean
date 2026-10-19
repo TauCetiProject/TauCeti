@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Combinatorics.Quiver.PathWeight
+public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.RepresentationTheory.Quiver.Radical
 
 /-!
@@ -43,6 +45,8 @@ algebra and equips it with a differential, neither of which is part of `gradeBy`
 * `TauCeti.PathAlgebra.grade`: the degree-`n` piece of the path-length grading, the span of the
   paths of length `n`.
 * `TauCeti.PathAlgebra.gradeBasis`: the paths of length `n` as a `k`-basis of that piece.
+* `TauCeti.PathAlgebra.integerGrade`: the path-length grading extended by zero to integer
+  degrees, for use with internal grading shifts.
 
 ## Main results
 
@@ -65,6 +69,8 @@ algebra and equips it with a differential, neither of which is part of `gradeBy`
   and the arrows span degree `1`.
 * `TauCeti.PathAlgebra.grade_le_pathSpan`: the degree-`n` piece lies in the `n`-th step of the
   length filtration.
+* `TauCeti.PathAlgebra.isInternal_integerGrade`: the integer-indexed pieces still form an
+  internal direct sum.
 
 ## Implementation notes
 
@@ -570,6 +576,38 @@ theorem grade_one_eq_span_range_ofArrow : grade k Q 1 = Submodule.span k
   · rintro ⟨⟨a, b, e⟩, rfl⟩
     exact ⟨⟨a, b, e.toPath⟩, rfl, (ofArrow_eq_ofPath e).symm⟩
 
+variable (k Q)
+
+/-- The arrows form a basis of the degree-one part of the path algebra. -/
+noncomputable def arrowBasis :
+    Module.Basis (Σ a b : Q, a ⟶ b) k (grade k Q 1) := by
+  have hli : LinearIndependent k fun e : Σ a b : Q, a ⟶ b =>
+      (ofArrow e.2.2 : pathAlgebra k Q) := by
+    have hinj : Function.Injective (fun e : Σ a b : Q, a ⟶ b =>
+        (⟨e.1, e.2.1, e.2.2.toPath⟩ : Quiver.TotalPath Q)) := by
+      rintro ⟨a, b, e⟩ ⟨c, d, f⟩ h
+      grind [_root_.Quiver.Hom.toPath]
+    simpa only [Function.comp_def, ← ofArrow_eq_ofPath] using
+      (linearIndependent_ofPath k Q).comp _ hinj
+  exact (Module.Basis.span hli).map
+    (LinearEquiv.ofEq _ _ grade_one_eq_span_range_ofArrow.symm)
+
+/-- A degree-one basis vector is the corresponding arrow in the path algebra. -/
+@[simp]
+theorem coe_arrowBasis_apply (e : Σ a b : Q, a ⟶ b) :
+    (arrowBasis k Q e : pathAlgebra k Q) = ofArrow e.2.2 := by
+  simp [arrowBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+
+/-- Each step of the length filtration splits into its lowest degree and the next step. -/
+theorem pathSpan_eq_grade_sup_pathSpan_succ (n : ℕ) :
+    pathSpan k Q n = grade k Q n ⊔ pathSpan k Q (n + 1) := by
+  rw [pathSpan_eq_span_image_basis, grade_eq_span_image_basis,
+    pathSpan_eq_span_image_basis, ← Submodule.span_union, ← Set.image_union]
+  congr 2
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_union]
+  omega
+
 end Grade
 
 section GradeComm
@@ -611,6 +649,97 @@ theorem decompose_ofPath (x : Quiver.TotalPath Q) :
   DirectSum.decompose_of_mem _ (ofPath_mem_grade x)
 
 end GradedAlgebra
+
+/-! ### Integer-indexed path-length grading -/
+
+section IntegerGrade
+
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+
+/-- The path-length grading of `kQ`, extended by zero from natural to integer degrees. This is the
+indexing used by graded-module shifts. -/
+noncomputable def integerGrade (d : ℤ) : Submodule k (pathAlgebra k Q) :=
+  Graded.extendByZero (grade k Q) d
+
+/-- Extending the path-length grading to the integer degree `n` recovers its natural-degree
+piece. -/
+@[simp]
+theorem integerGrade_ofNat (n : ℕ) : integerGrade k Q n = grade k Q n :=
+  Graded.extendByZero_natCast _ n
+
+/-- The integer path-length grading vanishes in negative degrees. -/
+@[simp]
+theorem integerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) : integerGrade k Q d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
+
+/-- A vertex idempotent has integer degree zero. -/
+theorem vertexIdempotent_mem_integerGrade_zero (i : Q) :
+    (vertexIdempotent k i : pathAlgebra k Q) ∈ integerGrade k Q 0 := by
+  rw [← Nat.cast_zero, integerGrade_ofNat]
+  exact vertexIdempotent_mem_grade_zero i
+
+/-- **Integer degree `0` is the span of the vertex idempotents.** -/
+theorem integerGrade_zero_eq_span_range_vertexIdempotent :
+    integerGrade k Q 0 = Submodule.span k (Set.range (vertexIdempotent k)) := by
+  rw [← Nat.cast_zero, integerGrade_ofNat, grade_zero_eq_span_range_vertexIdempotent]
+
+/-- The integer-indexed path-length pieces form an internal direct sum. -/
+theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade k Q) :=
+  Graded.isInternal_extendByZero (isInternal_grade k Q)
+
+/-- The path algebra is integer graded by path length, with zero pieces in negative degrees. -/
+@[instance_reducible]
+noncomputable def integerGradedAlgebra [Finite Q] : GradedAlgebra (integerGrade k Q) :=
+  let _ := gradedAlgebra k Q
+  Graded.gradedAlgebraExtendByZero (grade k Q)
+
+end IntegerGrade
+
+section OppositeGrade
+
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+
+/-- Path length on the ordinary opposite path algebra. Reversing multiplication does not
+change degree, and introduces no Koszul sign. -/
+noncomputable def opGrade (n : ℕ) : Submodule k (pathAlgebra k Q)ᵐᵒᵖ :=
+  (grade k Q n).map (MulOpposite.opLinearEquiv k).toLinearMap
+
+/-- An opposite element has the path degree of its underlying element. -/
+@[simp]
+theorem mem_opGrade_iff {n : ℕ} {x : (pathAlgebra k Q)ᵐᵒᵖ} :
+    x ∈ opGrade k Q n ↔ x.unop ∈ grade k Q n := by
+  simp [opGrade]
+
+/-- Multiplication in the ordinary opposite adds path lengths. -/
+instance opGrade.gradedMonoid [Finite Q] : SetLike.GradedMonoid (opGrade k Q) where
+  one_mem := (mem_opGrade_iff k Q).2 (SetLike.one_mem_graded (grade k Q))
+  mul_mem := by
+    intro m n x y hx hy
+    rw [mem_opGrade_iff, MulOpposite.unop_mul, add_comm]
+    exact SetLike.mul_mem_graded ((mem_opGrade_iff k Q).1 hy)
+      ((mem_opGrade_iff k Q).1 hx)
+
+end OppositeGrade
+
+section OppositeGradedAlgebra
+
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
+
+/-- The opposite path-length pieces form an internal direct sum. -/
+theorem isInternal_opGrade [Finite Q] : DirectSum.IsInternal (opGrade k Q) := by
+  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+  · exact LinearMap.iSupIndep_map _ (MulOpposite.opLinearEquiv k).injective
+      (isInternal_grade k Q).submodule_iSupIndep
+  · unfold opGrade
+    rw [← Submodule.map_iSup,
+      (isInternal_grade k Q).submodule_iSup_eq_top, Submodule.map_top]
+    exact LinearMap.range_eq_top.2 (MulOpposite.opLinearEquiv k).surjective
+
+/-- The ordinary opposite path algebra is graded by path length. -/
+noncomputable instance opGrade.gradedAlgebra [Finite Q] : GradedAlgebra (opGrade k Q) :=
+  (isInternal_opGrade k Q).gradedAlgebra
+
+end OppositeGradedAlgebra
 
 end PathAlgebra
 

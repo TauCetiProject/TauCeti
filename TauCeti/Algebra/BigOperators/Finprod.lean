@@ -8,17 +8,19 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 
 /-!
-# Products over a disjoint union of index types
+# Regrouping finitely supported products
 
 `Fintype.prod_sum_type` splits a product over `α ⊕ β` into the two partial products, but it needs
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
-restricted families to have finite multiplicative support.
+restricted families to have finite multiplicative support. Regrouping by the fibers of an
+arbitrary map is also available, without finiteness assumptions on the fibers.
 
 ## Main results
 
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
+* `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
 -/
 
 public section
@@ -65,5 +67,22 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
   rw [← finprod_mem_univ, ← range_inl_union_range_inr,
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
+
+/-- Regroup a finitely supported product by the fibers of an arbitrary map. Neither the index
+sets nor the fibers need be finite. -/
+@[to_additive /-- Regroup a finitely supported sum by the fibers of an arbitrary map. Neither the
+index sets nor the fibers need be finite. -/]
+theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : α → M)
+    (hf : (mulSupport f).Finite) :
+    (∏ᶠ b, ∏ᶠ a : {a // g a = b}, f a) = ∏ᶠ a, f a := by
+  classical
+  have hb (b : β) : (∏ᶠ a : {a // g a = b}, f a) =
+      ∏ a ∈ hf.toFinset with g a = b, f a := by
+    exact (finprod_set_coe_eq_finprod_mem (f := f) {a | g a = b}).trans
+      (finprod_mem_eq_prod_filter f {a | g a = b} hf)
+  calc
+    _ = ∏ᶠ b, ∏ a ∈ hf.toFinset with g a = b, f a := finprod_congr hb
+    _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
+    _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
 
 end TauCeti

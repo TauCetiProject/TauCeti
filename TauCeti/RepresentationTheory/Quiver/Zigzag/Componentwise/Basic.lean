@@ -38,10 +38,9 @@ to composites and inverses to inverses.
 
 ## References
 
-This is the componentwise public-algebra target in Layers 0 and 1 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  The low-rank convention follows
-Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.  The dual-number
-implementation is Mathlib's `DualNumber`, rather than a duplicate polynomial-quotient model.
+The low-rank convention follows Huerfano--Khovanov, *A category for the adjoint representation*,
+Section 3. The dual-number implementation is Mathlib's `DualNumber`, rather than a duplicate
+polynomial-quotient model.
 -/
 
 public section

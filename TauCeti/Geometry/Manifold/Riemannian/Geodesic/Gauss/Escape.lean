@@ -43,7 +43,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
 
 /-- **The escape estimate for a normal neighbourhood.** If a `C¹` path starts at the centre
 `p` of a normal domain `U` and meets the complement of `riemannianExp p '' U`, then its length is

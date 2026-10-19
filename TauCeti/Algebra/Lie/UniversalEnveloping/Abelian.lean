@@ -37,17 +37,10 @@ ordered-monomial theorem for an abelian Lie algebra: the ordering of a monomial 
 information here, since the generators commute, so a monomial is recorded by its exponent
 function `n : κ →₀ ℕ` rather than by a sorted word.
 
-One ring-theoretic finiteness property transfers across the comparison with no further Lie theory:
-`U(L)` is a **domain** over a domain when `L` is free as a module
-(`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra. That instance is
-the abelian case of a general Poincaré--Birkhoff--Witt corollary, which over a field holds for every
-Lie algebra; the general statement goes through the associated graded of the PBW filtration and is
-not proved here, the argument below using commutativity of `U(L)`
-throughout.
-
 The comparison also makes `ι` injective on any abelian `L`
-(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), with no hypothesis on `L` as a module: it
-identifies `ι` with the canonical map `L → S(L)`, which the square-zero extension `R ⊕ L` retracts.
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`), with no hypothesis on `L`
+as a module: it identifies `ι` with the canonical map `L → S(L)`, which the square-zero
+extension `R ⊕ L` retracts.
 For a general Lie algebra injectivity is instead a corollary of Poincaré--Birkhoff--Witt, which
 over a commutative ring needs `L` to be free (or at least projective) as an `R`-module, and is
 unconditional only over a field.
@@ -71,12 +64,9 @@ in the Harish-Chandra projection from the center of `U(L)` to `S(H)`.
   the symmetric algebra of `L`**, with the resulting algebra isomorphism `S(L) ≃ₐ[R] U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.mvPolynomialEquiv`: for a basis of `L`, the identification of
   `U(L)` with a polynomial algebra.
-* `TauCeti.UniversalEnvelopingAlgebra.ι_injective`: `ι` is injective, with no hypothesis on `L` as
-  an `R`-module.
-* `TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: the monomial basis of `U(L)`, with
-  `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
-* `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
-  as a module over a domain.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`: `ι` is injective, with no
+  hypothesis on `L` as an `R`-module.
+* `TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: the monomial basis of `U(L)`.
 
 ## References
 
@@ -216,7 +206,7 @@ theorem symmetricAlgebraEquiv_symm_ι' (x : L) :
 the comparison it is the canonical map `L → S(L)`, which is injective for every module. For a
 general Lie algebra injectivity is instead a corollary of the Poincaré--Birkhoff--Witt theorem,
 which over a commutative ring needs `L` to be free (or at least projective) as an `R`-module. -/
-theorem ι_injective :
+theorem ι_injective_of_isLieAbelian :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) := fun x y h ↦
   TauCeti.SymmetricAlgebra.ι_injective R L <| by
     rw [← symmetricAlgebraEquiv_symm_ι R L x, ← symmetricAlgebraEquiv_symm_ι R L y, h]
@@ -279,31 +269,5 @@ canonical generators. -/
 theorem basisMonomials_apply (b : Basis κ R L) (n : κ →₀ ℕ) :
     basisMonomials R L b n = n.prod fun i k ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ k := by
   simp [basisMonomials, Basis.symmetricAlgebra, MvPolynomial.monomial_eq, map_finsuppProd]
-
-/-- **The images of a basis of an abelian Lie algebra are linearly independent in the enveloping
-algebra**: `ι` is an injective linear map. -/
-theorem linearIndependent_ι_basis (b : Basis κ R L) :
-    LinearIndependent R fun i : κ ↦ (_root_.UniversalEnvelopingAlgebra.ι R (b i) : U) := by
-  have h := b.linearIndependent.map'
-    ((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
-    (LinearMap.ker_eq_bot_of_injective (ι_injective R L))
-  simpa [Function.comp_def] using h
-
-/-! ### Domains -/
-
-section Transfer
-
-variable {R L}
-
-/-- **The enveloping algebra of an abelian Lie algebra over a domain is a domain**, when the Lie
-algebra is free as a module: it is then a polynomial algebra over the base ring.
-
-This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is a domain for
-every Lie algebra over a field; the general statement goes through the associated graded of the
-PBW filtration and is not proved here. -/
-instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
-  (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
-
-end Transfer
 
 end TauCeti.UniversalEnvelopingAlgebra

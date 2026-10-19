@@ -5,19 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+public import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # Eisenstein polynomials over discrete valuation rings
 
 The Eisenstein condition over a discrete valuation ring makes the constant coefficient a
-uniformizer.
+uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive `n`.
 
 ## Main results
 
 * `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
   irreducible element.
+* `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` gives Eisenstein polynomials from
+  uniformizers.
 -/
 
 public section
@@ -65,3 +68,19 @@ theorem irreducible_coeff_zero {f : R[X]} (hf : f.IsEisensteinAt (maximalIdeal R
   exact Associated.irreducible ⟨u, by simpa [mul_comm] using hu.symm⟩ hϖ
 
 end Polynomial.IsEisensteinAt
+
+namespace TauCeti
+
+open Polynomial
+
+/-- Over a discrete valuation ring, `X ^ n` minus a uniformizer is Eisenstein for positive `n`. -/
+theorem isEisensteinAt_X_pow_sub_C_of_irreducible
+    {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+    {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
+    (X ^ n - C ϖ).IsEisensteinAt (maximalIdeal R) := by
+  apply isEisensteinAt_X_pow_sub_C (by simp [hϖ.maximalIdeal_eq]) _ hn
+  rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
+    IsDiscreteValuationRing.addVal_uniformizer hϖ]
+  simp
+
+end TauCeti

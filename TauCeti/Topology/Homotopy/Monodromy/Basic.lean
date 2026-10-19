@@ -9,6 +9,8 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Topology.Homotopy.Covering
 
+import Mathlib.Data.Finite.Perm
+
 /-!
 # The subgroup a cover recovers from a chosen lift of the basepoint
 
@@ -50,8 +52,10 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
   action is `IsCoveringMap.monodromyPerm`.
 * `IsCoveringMap.monodromy_eq_self_iff_mem_range`: a loop class of the base fixes the
   chosen lift under monodromy exactly when it is the image of a loop class of the cover.
-* `IsCoveringMap.stabilizer_eq_range`: the same statement for the monodromy
-  `MulAction`.
+* `IsCoveringMap.stabilizer_eq_range`, `IsCoveringMap.comap_stabilizer_monodromyPerm`: the same
+  statement for the monodromy `MulAction` and for the monodromy homomorphism.
+* `IsCoveringMap.monodromyPerm_pow_eq_one`: over a fibre with `d` points, the `n`-th power of
+  every loop class has trivial monodromy whenever `d !` divides `n`.
 * `IsCoveringMap.exists_monodromy_eq_of_joined`,
   `IsCoveringMap.exists_monodromy_eq` and
   `IsCoveringMap.monodromy_isPretransitive`: monodromy carries a lift to any lift joined
@@ -100,6 +104,14 @@ theorem coveringFiberEquiv_apply (hp : IsCoveringMap p) {x y : X}
     coveringFiberEquiv hp γ e = hp.monodromy γ e :=
   Equiv.ofBijective_apply _ _ _
 
+/-- The inverse of monodromy along `γ` is monodromy along the reversed class `γ.symm`. -/
+@[simp]
+theorem coveringFiberEquiv_symm_apply (hp : IsCoveringMap p) {x y : X}
+    (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {y})) :
+    (coveringFiberEquiv hp γ).symm e = hp.monodromy γ.symm e := by
+  rw [Equiv.symm_apply_eq, coveringFiberEquiv_apply, ← hp.monodromy_trans_apply,
+    Path.Homotopic.Quotient.symm_trans, hp.monodromy_refl, id]
+
 /-- The permutation representation of the monodromy action of `π₁(X, x)` on the fibre over `x`
 is Mathlib's monodromy homomorphism `IsCoveringMap.monodromyPerm`, which is defined as it. -/
 theorem _root_.IsCoveringMap.toPermHom_eq_monodromyPerm (hp : IsCoveringMap p) (x : X) :
@@ -118,31 +130,37 @@ The image subgroup on the right is the subgroup of `π₁(X, x)` that the classi
 attaches to the pointed cover `(E, e)`. -/
 theorem _root_.IsCoveringMap.monodromy_eq_self_iff_mem_range (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (γ : FundamentalGroup X x) :
-    hp.monodromy γ e = e ↔
+    hp.monodromy γ.toPath e = e ↔
       γ ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
   have he : p (e : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
-  change hp.monodromy γ e = e ↔
+  -- Rewriting `mapOfEq_apply` cannot type-check the fibre-membership proof `e.2` at implicit
+  -- transparency. Use the explicit equality `he` so the map's basepoint argument is visible.
+  change hp.monodromy γ.toPath e = e ↔
     γ ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range
   constructor
   · intro h
-    refine ⟨(hp.liftPathQuotient γ e).cast rfl (congrArg Subtype.val h.symm), ?_⟩
+    refine ⟨FundamentalGroup.fromPath
+      ((hp.liftPathQuotient γ.toPath e).cast rfl (congrArg Subtype.val h.symm)), ?_⟩
     rw [FundamentalGroup.mapOfEq_apply]
-    let δ := (hp.liftPathQuotient γ e).cast rfl (congrArg Subtype.val h.symm)
+    refine CategoryTheory.End.ext ?_
+    dsimp only [FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
+    let δ := (hp.liftPathQuotient γ.toPath e).cast rfl (congrArg Subtype.val h.symm)
     let γ'' := δ.map ⟨p, hp.continuous⟩
-    let γ' := (hp.liftPathQuotient γ e).map ⟨p, hp.continuous⟩
-    have hγ' : γ' ≍ γ := by
+    let γ' := (hp.liftPathQuotient γ.toPath e).map ⟨p, hp.continuous⟩
+    have hγ' : γ' ≍ γ.toPath := by
       dsimp only [γ']
       rw [hp.map_liftPathQuotient]
       exact Path.Homotopic.Quotient.cast_heq _ _
-    have hγ'' : γ'' ≍ γ := by
+    have hγ'' : γ'' ≍ γ.toPath := by
       dsimp only [γ'', δ]
       rw [Path.Homotopic.Quotient.map_cast]
       exact (show _ ≍ γ' from Path.Homotopic.Quotient.cast_heq _ _).trans hγ'
     apply eq_of_heq
     exact (show _ ≍ γ'' from Path.Homotopic.Quotient.cast_heq _ _).trans hγ''
   · rintro ⟨δ, rfl⟩
-    refine hp.monodromy_eq_of_map_eq δ ?_
+    refine hp.monodromy_eq_of_map_eq δ.toPath ?_
     rw [FundamentalGroup.mapOfEq_apply]
+    dsimp only [FundamentalGroup.toPath, FundamentalGroup.toArrow]
     erw [Path.Homotopic.Quotient.cast_cast]
     exact eq_of_heq (Path.Homotopic.Quotient.cast_heq _ _).symm
 
@@ -157,24 +175,45 @@ theorem _root_.IsCoveringMap.stabilizer_eq_range (hp : IsCoveringMap p) (e : p �
   ext γ
   exact IsCoveringMap.monodromy_eq_self_iff_mem_range hp e γ
 
+/-- The preimage under the monodromy homomorphism `IsCoveringMap.monodromyPerm` of the stabiliser
+of a chosen lift `e` of the basepoint is the image of `π₁(E, e)` under the covering map. -/
+theorem _root_.IsCoveringMap.comap_stabilizer_monodromyPerm (hp : IsCoveringMap p)
+    (e : p ⁻¹' {x}) :
+    (MulAction.stabilizer (Equiv.Perm (p ⁻¹' {x})) e).comap (hp.monodromyPerm x) =
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
+  ext γ
+  rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Equiv.Perm.smul_def,
+    IsCoveringMap.coe_monodromyPerm, IsCoveringMap.monodromy_eq_self_iff_mem_range]
+
+/-- **Over a finite fibre, a suitable power of every loop has trivial monodromy.** If the fibre
+over `x` has `d` points and `d !` divides `n`, then the `n`-th power of every loop class at `x`
+acts trivially on that fibre, because the monodromy permutation lies in a group of order `d !`. -/
+theorem _root_.IsCoveringMap.monodromyPerm_pow_eq_one (hp : IsCoveringMap p)
+    [Finite (p ⁻¹' {x})] {n : ℕ} (hn : (Nat.card (p ⁻¹' {x})).factorial ∣ n)
+    (γ : FundamentalGroup X x) : hp.monodromyPerm x (γ ^ n) = 1 := by
+  obtain ⟨k, rfl⟩ := hn
+  rw [map_pow, pow_mul, ← Nat.card_perm, pow_card_eq_one', one_pow]
+
 /-! ### Transitivity on a fibre -/
 
 /-- A path joining two lifts of the basepoint projects to a loop of the base whose monodromy
 carries the first lift to the second. -/
 theorem _root_.IsCoveringMap.exists_monodromy_eq_of_joined (hp : IsCoveringMap p) {e e' : p ⁻¹' {x}}
-    (h : Joined (e : E) (e' : E)) : ∃ γ : FundamentalGroup X x, hp.monodromy γ e = e' := by
+    (h : Joined (e : E) (e' : E)) : ∃ γ : FundamentalGroup X x, hp.monodromy γ.toPath e = e' := by
   have he : p (e : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
   have he' : p (e' : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e'.2
   set Γ : Path.Homotopic.Quotient (e : E) (e' : E) := Path.Homotopic.Quotient.mk h.somePath
   refine ⟨FundamentalGroup.fromPath
     ((Γ.map ⟨p, hp.continuous⟩).cast he.symm he'.symm), hp.monodromy_eq_of_map_eq Γ ?_⟩
+  dsimp only [FundamentalGroup.toPath, FundamentalGroup.toArrow, FundamentalGroup.fromPath,
+    FundamentalGroup.fromArrow]
   erw [Path.Homotopic.Quotient.cast_cast]
   exact (eq_of_heq (Path.Homotopic.Quotient.cast_heq _ _)).symm
 
 /-- On a fibre of a path-connected cover, monodromy is transitive. -/
 theorem _root_.IsCoveringMap.exists_monodromy_eq
     [PathConnectedSpace E] (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
-    ∃ γ : FundamentalGroup X x, hp.monodromy γ e = e' :=
+    ∃ γ : FundamentalGroup X x, hp.monodromy γ.toPath e = e' :=
   IsCoveringMap.exists_monodromy_eq_of_joined hp (PathConnectedSpace.joined (e : E) (e' : E))
 
 /-- The monodromy action of `π₁(X, x)` on a fibre of a path-connected cover is transitive. -/
@@ -212,7 +251,7 @@ theorem _root_.IsCoveringMap.pathConnectedSpace_iff [PathConnectedSpace X] (hp :
     obtain ⟨γ, hγ⟩ := h.exists_smul_eq f f'
     have hff' : Joined (f : E) (f' : E) := by
       rw [← hγ]
-      exact hp.joined_monodromy γ f
+      exact hp.joined_monodromy γ.toPath f
     exact (hf.trans hff').trans hf'.symm
 
 /-! ### The fibre as a coset space -/
@@ -240,7 +279,8 @@ monodromy translate of the chosen lift. -/
 theorem _root_.IsCoveringMap.fiberEquivQuotientRange_symm_apply_mk
     [PathConnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (IsCoveringMap.fiberEquivQuotientRange hp e).symm (QuotientGroup.mk γ) = hp.monodromy γ e := by
+    (IsCoveringMap.fiberEquivQuotientRange hp e).symm (QuotientGroup.mk γ) =
+      hp.monodromy γ.toPath e := by
   let := hp.fundamentalGroupMulAction x
   have := IsCoveringMap.monodromy_isPretransitive hp x
   -- transporting along the equality of subgroups leaves the coset representative alone,
@@ -253,7 +293,7 @@ theorem _root_.IsCoveringMap.fiberEquivQuotientRange_symm_apply_mk
       (QuotientGroup.mk γ) : p ⁻¹' {x}) = γ • e :=
     MulAction.orbitEquivQuotientStabilizer_symm_apply (FundamentalGroup X x) e γ
   -- which is the monodromy translate, the action being defined by monodromy.
-  have hsmul : γ • e = hp.monodromy γ e := rfl
+  have hsmul : γ • e = hp.monodromy γ.toPath e := rfl
   simp only [IsCoveringMap.fiberEquivQuotientRange, Equiv.symm_trans_apply, Equiv.symm_symm, hq,
     Equiv.subtypeUnivEquiv_apply, ho, hsmul]
 
@@ -271,12 +311,12 @@ theorem _root_.IsCoveringMap.card_fiber_eq_index
 /-- Moving the chosen lift by monodromy conjugates the recovered subgroup. -/
 theorem _root_.IsCoveringMap.range_mapOfEq_monodromy
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ (hp.monodromy γ e).2).range =
+    (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ (hp.monodromy γ.toPath e).2).range =
       ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range).map
         (MulAut.conj γ).toMonoidHom := by
   let := hp.fundamentalGroupMulAction x
   rw [← IsCoveringMap.stabilizer_eq_range hp e, ← IsCoveringMap.stabilizer_eq_range hp
-      (hp.monodromy γ e)]
+      (hp.monodromy γ.toPath e)]
   exact MulAction.stabilizer_smul_eq_stabilizer_map_conj γ e
 
 /-- Two lifts of the basepoint joined by a path in the cover recover conjugate subgroups. -/

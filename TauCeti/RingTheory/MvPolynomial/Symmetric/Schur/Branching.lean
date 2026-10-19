@@ -58,6 +58,8 @@ carrying the top letter `n`.  Those cells are what the last variable counts.
   the cells the sub-shape drops.
 * `TauCeti.BoundedSSYT.weight_eq_mapDomain_add_single`: the resulting splitting of the weight of a
   tableau into the weight of its restriction and the multiplicity of the top letter.
+* `TauCeti.BoundedSSYT.card_weight_eq_sum_interlacingShapes`: the counting form of that splitting,
+  the branching rule for the number of tableaux of a given weight.
 * `TauCeti.diagramSchurPoly_eq_sum_interlacingShapes`: **the branching rule**, as an identity of
   polynomials graded by the last variable.
 * `TauCeti.aeval_snoc_diagramSchurPoly`: the substitution of an arbitrary value for the last
@@ -129,6 +131,41 @@ theorem weight_eq_mapDomain_add_single (T : BoundedSSYT (n + 1) μ) (hν : restr
     have hne : Fin.castSucc j ≠ Fin.last n := (Fin.castSucc_lt_last j).ne
     rw [Finsupp.add_apply, Finsupp.mapDomain_apply_of_injective (Fin.castSucc_injective n),
       Finsupp.single_eq_of_ne hne, add_zero, weight_restrict T hν j]
+
+/-- **The weight-refined branching rule for tableaux.**  The tableaux of shape `μ` in the letters
+`{0, …, n}` with weight `c` are counted by the tableaux of weight `c` restricted to the letters
+`{0, …, n - 1}`, on the shapes `ν` interlacing `μ` with at most `n` rows whose size `|ν|` falls
+short of `|μ|` by the multiplicity `c n` of the top letter.  Summing over all weights recovers the
+unrefined count `TauCeti.BoundedSSYT.card_eq_sum_interlacingShapes`. -/
+theorem card_weight_eq_sum_interlacingShapes (μ : YoungDiagram) (c : Fin (n + 1) → ℕ) :
+    Nat.card {T : BoundedSSYT (n + 1) μ // ⇑(weight T) = c} =
+      ∑ ν ∈ YoungDiagram.interlacingShapes n μ with ν.card + c (Fin.last n) = μ.card,
+        Nat.card {T : BoundedSSYT n ν // ⇑(weight T) = fun i => c i.castSucc} := by
+  classical
+  have key (T : BoundedSSYT (n + 1) μ) : ⇑(weight T) = c ↔
+      (⇑(weight (restrict T (restrictShape T) rfl)) = fun i => c i.castSucc) ∧
+        (restrictShape T).card + c (Fin.last n) = μ.card := by
+    have hlast := card_add_weight_last T
+    simp only [funext_iff, Fin.forall_fin_succ', weight_restrict]
+    exact and_congr_right fun _ => by omega
+  calc Nat.card {T : BoundedSSYT (n + 1) μ // ⇑(weight T) = c}
+      = ∑ T : BoundedSSYT (n + 1) μ,
+          if (⇑(weight (restrict T (restrictShape T) rfl)) = fun i => c i.castSucc) ∧
+            (restrictShape T).card + c (Fin.last n) = μ.card then 1 else 0 := by
+        rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter]
+        exact Finset.sum_congr rfl fun T _ => if_congr (key T) rfl rfl
+    _ = ∑ ν ∈ YoungDiagram.interlacingShapes n μ, ∑ T : BoundedSSYT n ν,
+          if (⇑(weight T) = fun i => c i.castSucc) ∧ ν.card + c (Fin.last n) = μ.card
+          then 1 else 0 :=
+        sum_eq_sum_interlacingShapes n μ fun ν T =>
+          if (⇑(weight T) = fun i => c i.castSucc) ∧ ν.card + c (Fin.last n) = μ.card then 1 else 0
+    _ = _ := by
+        rw [Finset.sum_filter]
+        refine Finset.sum_congr rfl fun ν _ => ?_
+        by_cases h : ν.card + c (Fin.last n) = μ.card
+        · simp only [h, and_true, ↓reduceIte]
+          rw [← Finset.card_filter, ← Fintype.card_subtype, Nat.card_eq_fintype_card]
+        · simp [h]
 
 end BoundedSSYT
 

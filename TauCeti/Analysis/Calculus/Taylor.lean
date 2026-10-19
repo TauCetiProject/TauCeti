@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Taylor
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
 

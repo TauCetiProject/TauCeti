@@ -43,6 +43,19 @@ It requires an authenticated `gh` CLI. In GitHub Actions, set `GH_TOKEN` to
   login also authors a merged PR in the fetched snapshot. This excludes arbitrary external
   commenters without requiring the read-only Actions token to enumerate collaborators; a
   contributor who has authored a merged PR is inside this statistics trust boundary.
+- **Merge time** is GitHub's `mergedAt` for ordinary merges. Bors squash merges
+  leave a closed PR with no `mergedAt`; these use the creation time of the installed
+  `tau-ceti-bors[bot]` app's “Pull request successfully merged into main.” receipt.
+  An editable title prefix, queued approval, staging success, or another account's
+  comment is not evidence of a merge. Native merge timestamps take precedence and
+  each PR counts once. This normalization feeds throughput, latency, contributor
+  totals, the category grids, and pipeline health. Roadmap activity uses it when
+  reading the shared snapshot. The per-roadmap
+  line chart reads the same snapshot, including PR titles and diff sizes.
+  The first run with an old cached snapshot scans the whole comment archive to
+  backfill historical receipts and reconsider scoreboards from bors-only contributors.
+  Later runs carry the receipts forward and scan incrementally with an hour overlap;
+  unchanged cached label timelines do not prevent historical merge repair.
 - Seven-day metrics use complete UTC calendar days. Merge latency is PR creation to
   merge time among PRs merged in that trailing window. Every chart is PLOTTED through the
   last complete UTC day: regenerated every three hours, a final point holding only part of

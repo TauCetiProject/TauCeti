@@ -28,7 +28,8 @@ Thus a statement about the ring can be rewritten into the language of `zHat.lift
 
 This is the ring by which a profinite group is powered: the profinite power of an element `x` of
 a profinite group by `a : ℤ̂` is `zHat.lift x a`, and by naturality of the lift (`zHat.map_lift`)
-powering first by `a` and then by `b` is powering by the product `a * b` defined here.
+powering first by `a` and then by `b` is powering by the product `a * b` defined here. That power,
+`TauCeti.zpowHat`, is developed in `TauCeti.Topology.Algebra.Group.Profinite.ZHat.Pow`.
 
 ## Main definitions
 

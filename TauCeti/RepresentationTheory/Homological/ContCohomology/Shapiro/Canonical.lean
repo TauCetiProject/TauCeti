@@ -17,7 +17,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 For a compact group `G`, a subgroup `U` and a discrete `U`-module `A`, the coinduced module
 `Coind_U^G A` of `TauCeti.DiscreteCoind` comes with the compatible pair consisting of the inclusion
 `U ↪ G` and the counit `Coind_U^G A → A`, evaluation at `1`. Mathlib's functoriality of continuous
-cohomology in compatible pairs turns it into a map in every degree,
+cohomology in compatible pairs turns it into a cochain map
+`TauCeti.ContinuousCohomology.shapiroCochainMap` of homogeneous cochain complexes, and so into a
+map in every degree,
 
 ```text
 Hⁿ(G, Coind_U^G A) ⟶ Hⁿ(U, A),
@@ -50,8 +52,12 @@ carried out in `TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.
 
 ## Main definitions
 
+* `TauCeti.ContinuousCohomology.shapiroCochainMap`: the cochain map
+  `σ ↦ ev₁ ∘ σ ∘ ι` from the homogeneous cochains of `G` with coefficients `Coind_U^G A` to those
+  of `U` with coefficients `A`.
 * `TauCeti.ContinuousCohomology.shapiroMap`: the canonical Shapiro map
-  `Hⁿ(G, Coind_U^G A) ⟶ Hⁿ(U, A)` in `TopModuleCat ℤ`.
+  `Hⁿ(G, Coind_U^G A) ⟶ Hⁿ(U, A)` in `TopModuleCat ℤ`, the map `shapiroCochainMap` induces on
+  homology.
 
 ## Main results
 
@@ -93,18 +99,47 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : Subgroup G) (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
   [DistribMulAction U A]
 
+/-- **The Shapiro cochain map**: the map of homogeneous cochain complexes induced by the
+compatible pair of the inclusion `ι : U ↪ G` and the counit `ev₁ : Coind_U^G A → A`, evaluation at
+`1`, sending a homogeneous cochain `σ` of `G` with coefficients `Coind_U^G A` to the homogeneous
+cochain `ev₁ ∘ σ ∘ ι` of `U` with coefficients `A`. Its map on homology is the canonical Shapiro
+map (`homologyMap_shapiroCochainMap`). For a closed subgroup of a profinite group it is a
+quasi-isomorphism (`TauCeti.ContinuousCohomology.quasiIso_shapiroCochainMap`), but in general
+not an isomorphism of complexes: a degree-`0` homogeneous cochain is determined by its value at
+`1`, so for the discrete group `G` of order `2`, `U = ⊥` and `A = ZMod 2` the degree-`0` terms
+have orders `4` and `2`. -/
+noncomputable def shapiroCochainMap :
+    TopRep.homogeneousCochains (ofDiscreteModule ℤ G (DiscreteCoind G U A)) ⟶
+      TopRep.homogeneousCochains (ofDiscreteModule ℤ U A) :=
+  _root_.ContinuousCohomology.cochainsMap (ContinuousMonoidHom.subgroupSubtype U)
+    (ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+      (DiscreteCoind.eval G U A).toIntLinearMap fun u f => eval_subgroupSubtype_smul G U A u f)
+
+/-- The Shapiro cochain map is Mathlib's cochain map of the compatible pair of the inclusion and
+the counit. -/
+theorem shapiroCochainMap_def :
+    shapiroCochainMap U A = _root_.ContinuousCohomology.cochainsMap
+      (ContinuousMonoidHom.subgroupSubtype U)
+      (ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+        (DiscreteCoind.eval G U A).toIntLinearMap fun u f => eval_subgroupSubtype_smul G U A u f) :=
+  (rfl)
+
 /-- **The canonical Shapiro map** `Hⁿ(G, Coind_U^G A) ⟶ Hⁿ(U, A)` in every degree: the map on
 continuous cohomology induced by the compatible pair of the inclusion `U ↪ G` and the counit
-`Coind_U^G A → A`, evaluation at `1`. It is defined for any topological group `G` and any subgroup
-`U`; Shapiro's lemma is the statement that it is bijective, proved here in degree `0` in this
-generality (`bijective_shapiroMap_zero`) and in degrees at most `2` for a closed subgroup of a
-profinite group (`bijective_shapiroMap_of_le_two`). -/
+`Coind_U^G A → A`, evaluation at `1`, that is, the map `shapiroCochainMap` induces on homology.
+It is defined for any topological group `G` and any subgroup `U`; Shapiro's lemma is the
+statement that it is bijective, proved here in degree `0` in this generality
+(`bijective_shapiroMap_zero`) and in degrees at most `2` for a closed subgroup of a profinite
+group (`bijective_shapiroMap_of_le_two`). -/
 noncomputable def shapiroMap (n : ℕ) :
     continuousCohomology n (ofDiscreteModule ℤ G (DiscreteCoind G U A)) ⟶
       continuousCohomology n (ofDiscreteModule ℤ U A) :=
-  _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
-    (ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
-      (DiscreteCoind.eval G U A).toIntLinearMap fun u f => eval_subgroupSubtype_smul G U A u f) n
+  HomologicalComplex.homologyMap (shapiroCochainMap U A) n
+
+/-- The canonical Shapiro map is the map induced on homology by the Shapiro cochain map. -/
+@[simp]
+theorem homologyMap_shapiroCochainMap (n : ℕ) :
+    HomologicalComplex.homologyMap (shapiroCochainMap U A) n = shapiroMap U A n := (rfl)
 
 /-- The canonical Shapiro map is the compatible-pair map of the inclusion and the counit. -/
 theorem shapiroMap_def (n : ℕ) :

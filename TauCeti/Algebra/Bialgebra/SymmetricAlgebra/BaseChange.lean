@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.SymmetricAlgebra
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
 /-!
 # Base change of symmetric bialgebras
@@ -33,6 +34,8 @@ the ReductiveGroups roadmap's Layer 0 base-change milestone.
 * `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_symm_ι_tmul`: the inverse on pure-tensor
   generators.
 * `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one`: the equivalence on scalar copies.
+
+* `LinearMap.scalarTensorBialgEquiv_comp_map`: naturality under linear maps.
 
 ## References
 
@@ -295,3 +298,25 @@ theorem scalarTensorBialgEquiv_tmul_one (s : K) :
 end SymmetricAlgebra
 
 end TauCeti
+
+namespace LinearMap
+
+open TauCeti.SymmetricAlgebra
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
+/-- The scalar-extension comparison commutes with maps induced by linear maps. -/
+theorem scalarTensorBialgEquiv_comp_map {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : M →ₗ[R] N) :
+    (scalarTensorBialgEquiv (k := R) (K := S) (M := N)).toAlgEquiv.toAlgHom.comp
+        (Algebra.TensorProduct.map (AlgHom.id S S) (SymmetricAlgebra.map R f)) =
+      (SymmetricAlgebra.map S (f.baseChange S)).comp
+        (scalarTensorBialgEquiv (k := R) (K := S) (M := M)).toAlgEquiv.toAlgHom := by
+  apply Algebra.TensorProduct.ext
+  · ext
+  · apply SymmetricAlgebra.algHom_ext
+    ext m
+    simp
+
+end LinearMap

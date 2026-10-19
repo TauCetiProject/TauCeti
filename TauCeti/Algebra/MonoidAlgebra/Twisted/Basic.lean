@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 
@@ -34,7 +35,10 @@ a basis and the multiplication table above holds on the nose.
 ## Main definitions and results
 
 * `TauCeti.IsFactorSet`: a normalized factor set, that is, a normalized multiplicative `2`-cocycle
-  `α : G → G → kˣ`;
+  `α : G → G → kˣ`, with the pointwise product and inverse of factor sets again factor sets
+  (`TauCeti.IsFactorSet.mul`, `TauCeti.IsFactorSet.inv`);
+* `TauCeti.IsFactorSet.exists_eq_apply_mk`: a factor set on a group `G` that is trivial whenever
+  one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.of`: its basis elements, with the multiplication table
   `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, and the
@@ -59,10 +63,16 @@ on `kˣ`: the twisted algebra wants `α` curried, and wants the normalization, w
 identity alone gives only up to the constant `α 1 1`. Carrying the hypotheses in a class keeps the
 type `twistedMonoidAlgebra k G α` free of proof arguments.
 
+`α g h` is the value of the factor set at the ordered pair `(g, h)`. The multiplication
+`e g * e h = (α g h : k) • e (g * h)` follows the left-action convention used for projective
+representations.
+
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
 the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
-is assumed only where an inverse appears, in `TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and
-`TauCeti.TwistedMonoidAlgebra.isUnit_of`.
+is assumed for descent to a quotient group and where an inverse appears, in
+`TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and `TauCeti.TwistedMonoidAlgebra.isUnit_of`.
+The twisted translations themselves need only a multiplication on `G`; they are linearly
+independent whenever `G` has a two-sided identity, without any factor-set identities on `α`.
 
 `twistedMonoidAlgebra k G α` is a `Subalgebra k (Module.End k (G →₀ k))` rather than a fresh type
 carrying a hand-built ring structure on `G →₀ k`. The two are the same algebra:
@@ -72,10 +82,6 @@ carrying a hand-built ring structure on `G →₀ k`. The two are the same algeb
 expected universal property.
 
 ## References
-
-This implements the twisted group algebra of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-whose `twistedMul` is the multiplication realized here.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 3.
 -/
@@ -111,6 +117,23 @@ instance : IsFactorSet (1 : G → G → kˣ) where
   one_left _ := rfl
   one_right _ := rfl
 
+/-- The pointwise product of two factor sets is a factor set. It is the factor set of a tensor
+product of projective representations (`TauCeti.IsProjectiveRep.tensorProduct`). -/
+instance mul (α β : G → G → kˣ) [IsFactorSet α] [IsFactorSet β] : IsFactorSet (α * β) where
+  cocycle g h j := by
+    simp only [Pi.mul_apply]
+    rw [mul_mul_mul_comm, cocycle (α := α), cocycle (α := β), mul_mul_mul_comm]
+  one_left g := by simp [one_left (α := α), one_left (α := β)]
+  one_right g := by simp [one_right (α := α), one_right (α := β)]
+
+/-- The pointwise inverse of a factor set is a factor set. -/
+instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
+  cocycle g h j := by
+    simp only [Pi.inv_apply]
+    rw [← mul_inv, cocycle (α := α), mul_inv]
+  one_left g := by simp [one_left (α := α)]
+  one_right g := by simp [one_right (α := α)]
+
 end Monoid
 
 section Group
@@ -125,11 +148,89 @@ theorem apply_inv_eq_inv_apply (g : G) : α g g⁻¹ = α g⁻¹ g := by
 
 end Group
 
+section Comp
+
+variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
+
+/-- The pullback of a normalized factor set along a homomorphism `f : G →* H` is a normalized
+factor set. -/
+theorem comp (f : G →* H) (β : H → H → kˣ) [IsFactorSet β] :
+    IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂) where
+  cocycle g₁ g₂ g₃ := by simpa only [map_mul] using cocycle (α := β) (f g₁) (f g₂) (f g₃)
+  one_left g := by simpa only [map_one] using one_left (α := β) (f g)
+  one_right g := by simpa only [map_one] using one_right (α := β) (f g)
+
+/-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
+factor set is itself a normalized factor set. -/
+theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective f)
+    (h : IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂)) : IsFactorSet β where
+  -- Each instance of the axioms on `H` is the image under `f` of one on `G`.
+  cocycle a b c := by
+    obtain ⟨g₁, rfl⟩ := hf a
+    obtain ⟨g₂, rfl⟩ := hf b
+    obtain ⟨g₃, rfl⟩ := hf c
+    simpa only [map_mul] using h.cocycle g₁ g₂ g₃
+  one_left a := by
+    obtain ⟨g, rfl⟩ := hf a
+    simpa only [map_one] using h.one_left g
+  one_right a := by
+    obtain ⟨g, rfl⟩ := hf a
+    simpa only [map_one] using h.one_right g
+
+end Comp
+
+section Quotient
+
+/-! ### Descent to a quotient group
+
+A factor set that is trivial whenever one of its arguments lies in a normal subgroup `N` is
+constant on the cosets of `N` in each argument, so it is pulled back from a factor set on `G ⧸ N`.
+-/
+
+variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFactorSet α]
+  {N : Subgroup G}
+
+/-- A factor set that is trivial whenever its second argument lies in `N` does not change when its
+second argument is multiplied on the right by an element of `N`. -/
+theorem apply_mul_right_of_mem (hr : ∀ g, ∀ n ∈ N, α g n = 1) (g h : G) {n : G} (hn : n ∈ N) :
+    α g (h * n) = α g h := by
+  simpa [hr _ _ hn] using (cocycle (α := α) g h n).symm
+
+/-- A factor set that is trivial whenever one of its arguments lies in the normal subgroup `N` does
+not change when its first argument is multiplied on the right by an element of `N`. -/
+theorem apply_mul_left_of_mem [N.Normal] (hr : ∀ g, ∀ n ∈ N, α g n = 1)
+    (hl : ∀ g, ∀ n ∈ N, α n g = 1) (g h : G) {n : G} (hn : n ∈ N) :
+    α (g * n) h = α g h := by
+  have hc : α (g * n) h = α g (n * h) := by
+    simpa [hr _ _ hn, hl _ _ hn] using cocycle (α := α) g n h
+  have hconj : n * h = h * (h⁻¹ * n * h) := by simp [mul_assoc]
+  rw [hc, hconj, apply_mul_right_of_mem hr g h (Subgroup.Normal.conj_mem' ‹_› n hn h)]
+
+/-- **A factor set that is trivial whenever one of its arguments lies in the normal subgroup `N` is
+inflated from `G ⧸ N`**: it is the pullback of a normalized factor set on the quotient. -/
+theorem exists_eq_apply_mk [N.Normal] (hr : ∀ g, ∀ n ∈ N, α g n = 1)
+    (hl : ∀ g, ∀ n ∈ N, α n g = 1) :
+    ∃ β : G ⧸ N → G ⧸ N → kˣ, IsFactorSet β ∧ ∀ g h : G, α g h = β g h := by
+  have hβ (a₁ b₁ a₂ b₂ : G) (ha : QuotientGroup.leftRel N a₁ a₂)
+      (hb : QuotientGroup.leftRel N b₁ b₂) : α a₁ b₁ = α a₂ b₂ := by
+    rw [QuotientGroup.leftRel_apply] at ha hb
+    rw [← mul_inv_cancel_left a₁ a₂, ← mul_inv_cancel_left b₁ b₂,
+      apply_mul_left_of_mem hr hl _ _ ha, apply_mul_right_of_mem hr _ _ hb]
+  let β : G ⧸ N → G ⧸ N → kˣ := Quotient.lift₂ α hβ
+  exact ⟨β, of_comp (QuotientGroup.mk' N) (QuotientGroup.mk'_surjective N) ‹IsFactorSet α›,
+    fun _ _ ↦ rfl⟩
+
+end Quotient
+
 end IsFactorSet
 
 section Translation
 
-variable (k : Type*) {G : Type*} [CommSemiring k] [Monoid G] (α : G → G → kˣ)
+variable (k : Type*) {G : Type*} [CommSemiring k]
+
+section Mul
+
+variable [Mul G] (α : G → G → kˣ)
 
 /-- The `α`-twisted translation by `g` on `G →₀ k`: it sends the basis vector at `h` to `α g h`
 times the basis vector at `g * h`. For the trivial factor set this is the regular representation
@@ -142,7 +243,19 @@ theorem twistedTranslation_single (g h : G) (b : k) :
     twistedTranslation k α g (Finsupp.single h b) = Finsupp.single (g * h) ((α g h : k) * b) := by
   simp [twistedTranslation, Finsupp.lsum_single, Finsupp.smul_single]
 
-variable [IsFactorSet α]
+end Mul
+
+/-- Twisted translations are linearly independent even without the factor-set identities:
+evaluation at the basis vector of `1` gives the standard basis rescaled by units. -/
+theorem linearIndependent_twistedTranslation [MulOneClass G] (α : G → G → kˣ) :
+    LinearIndependent k (twistedTranslation k α) := by
+  refine LinearIndependent.of_comp (LinearMap.applyₗ (Finsupp.single (1 : G) (1 : k))) ?_
+  simpa only [Function.comp_def, LinearMap.applyₗ_apply_apply, twistedTranslation_single,
+    Finsupp.coe_basisSingleOne, Pi.smul_def', Units.smul_def, Finsupp.smul_single,
+    smul_eq_mul, mul_one] using
+    (Finsupp.basisSingleOne (ι := G) (R := k)).linearIndependent.units_smul (fun g ↦ α g 1)
+
+variable [Monoid G] (α : G → G → kˣ) [IsFactorSet α]
 
 @[simp]
 theorem twistedTranslation_one : twistedTranslation k α 1 = 1 := by
@@ -161,18 +274,6 @@ theorem twistedTranslation_mul (g h : G) :
     Finsupp.smul_single, smul_eq_mul, ← mul_assoc]
   congr 1
   rw [← Units.val_mul, ← Units.val_mul, hcoef]
-
-/-- The twisted translations are linearly independent: the translation by `g` is recovered from its
-value at the basis vector of `1`, which is the basis vector of `g`. -/
-theorem linearIndependent_twistedTranslation :
-    LinearIndependent k (twistedTranslation k α) := by
-  refine LinearIndependent.of_comp (LinearMap.applyₗ (Finsupp.single (1 : G) (1 : k))) ?_
-  have h : (LinearMap.applyₗ (R := k) (Finsupp.single (1 : G) (1 : k))) ∘
-      twistedTranslation k α = fun g : G ↦ Finsupp.single g (1 : k) := by
-    funext g
-    simp [IsFactorSet.one_right]
-  rw [h]
-  simpa using (Finsupp.basisSingleOne (ι := G) (R := k)).linearIndependent
 
 end Translation
 
@@ -218,13 +319,13 @@ namespace TwistedMonoidAlgebra
 variable {k G α}
 
 /-- The basis element of `k_α[G]` at `g : G`, namely the `α`-twisted translation by `g`. -/
-@[expose] noncomputable def of (g : G) : twistedMonoidAlgebra k G α :=
+noncomputable def of (g : G) : twistedMonoidAlgebra k G α :=
   ⟨twistedTranslation k α g, twistedTranslation_mem_twistedMonoidAlgebra k G α g⟩
 
 @[simp]
 theorem coe_of (g : G) :
     ((of g : twistedMonoidAlgebra k G α) : Module.End k (G →₀ k)) = twistedTranslation k α g :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem of_one : (of 1 : twistedMonoidAlgebra k G α) = 1 :=
@@ -390,15 +491,6 @@ theorem homOfCoboundary_of (c : G → kˣ)
     homOfCoboundary α β c hc (of g) = (c g : k) • of g :=
   lift_of ..
 
-omit [IsFactorSet α] [IsFactorSet β] in
-/-- The inverse rescaling witnesses the same coboundary relation with the two factor sets
-exchanged; this is what makes `TauCeti.TwistedMonoidAlgebra.homOfCoboundary` invertible. -/
-theorem coboundary_inv (c : G → kˣ)
-    (hc : ∀ g h : G, β g h * c (g * h) = α g h * (c g * c h)) (g h : G) :
-    α g h * (c (g * h))⁻¹ = β g h * ((c g)⁻¹ * (c h)⁻¹) := by
-  have hβ : β g h = α g h * (c g * c h) * (c (g * h))⁻¹ := eq_mul_inv_of_mul_eq (hc g h)
-  rw [hβ, ← mul_inv, mul_right_comm, mul_inv_cancel_right]
-
 /-- **Factor sets differing by a coboundary have isomorphic twisted monoid algebras.** The
 isomorphism rescales the basis element at `g` by `c g`. When `G` is a group, the hypothesis says
 exactly that `α` and `β` are cohomologous, so there `k_α[G]` depends up to isomorphism only on the
@@ -407,7 +499,9 @@ noncomputable def equivOfCoboundary (c : G → kˣ)
     (hc : ∀ g h : G, β g h * c (g * h) = α g h * (c g * c h)) :
     twistedMonoidAlgebra k G β ≃ₐ[k] twistedMonoidAlgebra k G α :=
   AlgEquiv.ofAlgHom (homOfCoboundary α β c hc)
-    (homOfCoboundary β α (fun g ↦ (c g)⁻¹) (coboundary_inv α β c hc))
+    (homOfCoboundary β α (fun g ↦ (c g)⁻¹) (fun g h ↦ by
+      rw [← mul_inv, mul_inv_eq_mul_inv_iff_mul_eq_mul]
+      exact (hc g h).symm))
     (by ext g; simp [smul_smul, ← Units.val_mul])
     (by ext g; simp [smul_smul, ← Units.val_mul])
 

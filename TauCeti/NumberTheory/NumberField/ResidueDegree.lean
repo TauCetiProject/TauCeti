@@ -39,6 +39,8 @@ objects that description involves and records their elementary theory.
   below it raised to any power at most the residue degree.
 * `TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg`: residue degree above one over an
   intermediate number field forces residue degree above one over `ℚ`.
+* `IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one`: a prime of
+  residue degree one over an intermediate number field has the norm of the prime below it.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
 * `IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank`: at most `[E : K]`
@@ -148,6 +150,15 @@ theorem mem_higherDegreePrimes_of_one_lt_inertiaDeg {E : Type*} [Field E] [Algeb
   rw [mem_higherDegreePrimes, Ideal.inertiaDeg_tower (R := ℤ) (𝔓.asIdeal.under (𝓞 K)) 𝔓.asIdeal]
   have := Ideal.inertiaDeg_pos (𝔓.asIdeal.under (𝓞 K)) ℤ
   nlinarith
+
+/-- A height-one prime of `𝓞 E` of residue degree one over a number field `K` below `E` has the
+same absolute norm as the prime of `𝓞 K` below it. -/
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one
+    {E : Type*} [Field E] [NumberField E] [Algebra K E] {𝔓 : HeightOneSpectrum (𝓞 E)}
+    (h : 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1) :
+    Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (𝔓.under (𝓞 K)).asIdeal := by
+  have : 𝔓.asIdeal.LiesOver (𝔓.under (𝓞 K)).asIdeal := ⟨HeightOneSpectrum.under_asIdeal _ 𝔓⟩
+  rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h, pow_one]
 
 /-! ### Fibring the primes over the rational primes below them -/
 

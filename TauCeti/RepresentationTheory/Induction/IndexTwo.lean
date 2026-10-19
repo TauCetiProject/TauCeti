@@ -30,6 +30,8 @@ linear character takes its values in the commutative group `kˣ`, so conjugating
 
 ## Main statements
 
+* `TauCeti.character_indFDRep_eq_add_of_index_two`: the division-free two-coset formula
+  for an arbitrary representation induced from a subgroup of index two.
 * `TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`: **off a subgroup of index two, an
   induced character vanishes.**
 * `TauCeti.character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv`: **on the
@@ -48,6 +50,25 @@ namespace TauCeti
 universe u v
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G} [Finite G]
+
+omit [Finite G] in
+/-- For a subgroup of index two, the induced character has just two summands: those
+at the identity representative and at any representative outside the subgroup.
+No invertibility assumption on the subgroup order is needed. -/
+theorem character_indFDRep_eq_add_of_index_two [N.FiniteIndex]
+    (hindex : N.index = 2) {s : G} (hs : s ∉ N) (A : FDRep k N) (g : G) :
+    (indFDRep A).character g =
+      Function.indTerm A.character g 1 + Function.indTerm A.character g s := by
+  classical
+  let := Fintype.ofFinite (G ⧸ N)
+  rw [character_indFDRep_sum_quotient]
+  simp only [← Function.indTerm_apply]
+  rw [sum_quotient_eq_add_of_index_two hindex hs]
+  exact congrArg₂ (· + ·)
+    (Function.indTerm_eq_of_mk_eq A.character (ClassFunction.mem_iff.mpr A.char_conj) g _ 1
+      (Quotient.out_eq' _))
+    (Function.indTerm_eq_of_mk_eq A.character (ClassFunction.mem_iff.mpr A.char_conj) g _ s
+      (Quotient.out_eq' _))
 
 /-- **Off a subgroup of index two, an induced character vanishes.**  A subgroup of index two is
 normal, so this is `TauCeti.character_indFDRep_eq_zero_of_notMem` stated against the explicit

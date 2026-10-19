@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Newforms.HeckeStability
+public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Stability
 public import TauCeti.NumberTheory.ModularForms.Newforms.Nebentypus
+public import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
 public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
 public import TauCeti.NumberTheory.ModularForms.Petersson.Eigenbasis
 import TauCeti.NumberTheory.ModularForms.SturmBound
@@ -18,8 +19,8 @@ The newforms of level `N` and weight `k` form a Petersson-orthogonal basis of th
 `S_k(Γ₁(N))ⁿᵉʷ`, and those of nebentypus `χ` span its `χ`-part `S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`.
 
 *Orthogonality.* Good Hecke eigenforms whose eigenvalues differ at a prime `p ∤ N` are
-orthogonal: for a common nebentypus `χ` because the Petersson adjoint of `Tₚ` on `S_k(N, χ)` is
-`χ(p)⁻¹ Tₚ`, and otherwise because the nebentypus decomposition is orthogonal. Two distinct
+orthogonal (`HeckeRing.GL2.EigenformAwayFromLevel.peterssonInnerCosets_eq_zero_of_eigenvalue_ne`,
+from the Petersson adjoint of `Tₚ`). Two distinct
 newforms differ in nebentypus or at some good prime, since a newform is determined by its
 nebentypus and its eigenvalues at the good primes.
 
@@ -34,16 +35,18 @@ Hecke eigenvector in the new subspace has `a₁ ≠ 0`, so dividing by `a₁` ma
   subspace that is an eigenvector of every good `Tₚ`, divided by its first coefficient, as a
   newform.
 * `HeckeRing.GL2.Newform.basis`: the newforms, as a basis of `S_k(Γ₁(N))ⁿᵉʷ`.
+* `HeckeRing.GL2.Newform.basisCharSpace N k χ`: the newforms of nebentypus `χ`, as a basis of
+  `S_k(N, χ)ⁿᵉʷ`.
 
 ## Main results
 
-* `HeckeRing.GL2.EigenformAwayFromLevel.peterssonInnerCosets_eq_zero_of_eigenvalue_ne`: good
-  Hecke eigenforms with distinct eigenvalues at a good prime are orthogonal.
 * `HeckeRing.GL2.Newform.peterssonInnerCosets_eq_zero_of_ne`: distinct newforms are orthogonal.
 * `HeckeRing.GL2.Newform.span_image_toCuspForm_eq_cuspFormsNew_inf_cuspFormCharSpace`: the
   newforms of nebentypus `χ` span `S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`.
 * `HeckeRing.GL2.Newform.span_range_toCuspForm_eq_cuspFormsNew`: the newforms span `S_k(Γ₁(N))ⁿᵉʷ`.
 * `HeckeRing.GL2.Newform.linearIndependent_toCuspForm`: the newforms are linearly independent.
+* `HeckeRing.GL2.Newform.finrank_cuspFormsNew_comap_cuspFormCharSpace`: the dimension of
+  `S_k(N, χ)ⁿᵉʷ` is the number of newforms of nebentypus `χ`.
 
 ## References
 
@@ -63,61 +66,6 @@ namespace HeckeRing.GL2
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
 /-! ### Orthogonality -/
-
-namespace EigenformAwayFromLevel
-
-/-- A good Hecke eigenform of nebentypus `χ`, seen in `S_k(N, χ)`, is an eigenvector of the Hecke
-ring generator `Tₚ` at every prime `p` not dividing `N`, with its eigenvalue at `p`. -/
-private theorem heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_eq_smul
-    {f : EigenformAwayFromLevel N k} {x : cuspFormCharSpace k χ} (hχ : f.χ = χ)
-    (hx : f.toCuspForm = (x : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) {p : ℕ} (hp : p.Prime)
-    (hpN : Nat.Coprime p N) :
-    heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) x =
-      f.eigenvalue ⟨p, hp.pos⟩ hpN • x := by
-  obtain ⟨F, χ', hF, a, haF, _⟩ := f
-  obtain rfl : χ' = χ := hχ
-  obtain rfl : ⟨F, hF⟩ = x := Subtype.ext hx
-  simpa only [PNat.mk_coe, heckeTCompositeGamma0_prime N hp] using haF ⟨p, hp.pos⟩ hpN
-
-/-- **Good Hecke eigenforms with distinct eigenvalues are orthogonal.** Two good Hecke
-eigenforms whose eigenvalues differ at a prime `p` not dividing `N` are Petersson-orthogonal. -/
-theorem peterssonInnerCosets_eq_zero_of_eigenvalue_ne {f g : EigenformAwayFromLevel N k}
-    {p : ℕ} (hp : p.Prime) (hpN : Nat.Coprime p N)
-    (hne : f.eigenvalue ⟨p, hp.pos⟩ hpN ≠ g.eigenvalue ⟨p, hp.pos⟩ hpN) :
-    CuspForm.peterssonInnerCosets f.toCuspForm g.toCuspForm = 0 := by
-  -- forms of distinct nebentypus are orthogonal
-  obtain hχ | hχ := ne_or_eq f.χ g.χ
-  · exact CuspForm.peterssonInnerCosets_eq_zero_of_mem_cuspFormCharSpace_of_ne hχ
-      f.mem_charSpace g.mem_charSpace
-  -- the adjoint `χ(p)⁻¹ Tₚ` of `Tₚ`, evaluated on two eigenvectors
-  have key (x y : cuspFormCharSpace k g.χ) (α β : ℂ)
-      (hx : heckeRingHomCuspCharSpace k g.χ (heckeTGeneratorGamma0 N p) x = α • x)
-      (hy : heckeRingHomCuspCharSpace k g.χ (heckeTGeneratorGamma0 N p) y = β • y) :
-      (α - conj ((g.χ (ZMod.unitOfCoprime p hpN) : ℂ)⁻¹ * β)) *
-        CuspForm.peterssonInnerCosets (y : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) x = 0 := by
-    have hadj := isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 (χ := g.χ) k hp
-      hpN x y
-    simp only [LinearMap.flip_apply,
-      TauCeti.CuspForm.peterssonInnerCosetsCharSpaceₛₗ_apply_apply, Pi.smul_apply, hx, hy,
-      Submodule.coe_smul, CuspForm.peterssonInnerCosets_smul_left,
-      CuspForm.peterssonInnerCosets_smul_right] at hadj
-    rw [map_mul]
-    linear_combination hadj
-  let x : cuspFormCharSpace k g.χ := ⟨f.toCuspForm, hχ ▸ f.mem_charSpace⟩
-  let y : cuspFormCharSpace k g.χ := ⟨g.toCuspForm, g.mem_charSpace⟩
-  have hx := heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_eq_smul (x := x) hχ rfl hp hpN
-  have hy := heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_eq_smul (x := y) rfl rfl hp hpN
-  -- `g` pairs nontrivially with itself, so its eigenvalue is fixed by `c ↦ conj (χ(p)⁻¹ * c)`
-  have hfix : conj ((g.χ (ZMod.unitOfCoprime p hpN) : ℂ)⁻¹ * g.eigenvalue ⟨p, hp.pos⟩ hpN) =
-      g.eigenvalue ⟨p, hp.pos⟩ hpN :=
-    (sub_eq_zero.mp ((mul_eq_zero.mp (key y y _ _ hy hy)).resolve_right
-      (mt (CuspForm.peterssonInnerCosets_self_eq_zero _).mp g.ne_zero))).symm
-  have hyx := key x y _ _ hx hy
-  rw [hfix] at hyx
-  rw [← CuspForm.peterssonInnerCosets_conj_symm, (mul_eq_zero.mp hyx).resolve_left
-    (sub_ne_zero.mpr hne), map_zero]
-
-end EigenformAwayFromLevel
 
 namespace Newform
 
@@ -143,15 +91,6 @@ theorem linearIndependent_toCuspForm :
 
 /-! ### Normalising a new eigenvector -/
 
-/-- A nonzero good Hecke eigenvector in the new subspace has nonzero first coefficient. -/
-private theorem qExpansion_coeff_one_ne_zero {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hχ : F ∈ cuspFormCharSpace k χ) (hnew : F ∈ cuspFormsNew N k) (hF : F ≠ 0)
-    (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
-      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨F, hχ⟩ = c • ⟨F, hχ⟩) :
-    (qExpansion 1 F).coeff 1 ≠ 0 := fun h1 ↦
-  hF (eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew (F := ⟨F, hχ⟩)
-    (fun p hp hpN ↦ by rw [heckeTCompositeGamma0_prime N hp]; exact h p hp hpN) h1 hnew)
-
 /-- **A new eigenvector, normalised, is a newform.** A nonzero cusp form of nebentypus `χ` in the
 new subspace that is an eigenvector of the Hecke ring at every prime not dividing `N`, divided
 by its first coefficient (which is nonzero). -/
@@ -163,7 +102,8 @@ noncomputable def ofForallPrime {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
   toEigenformAwayFromLevel :=
     EigenformAwayFromLevel.ofForallPrime (f := ((qExpansion 1 F).coeff 1)⁻¹ • F)
       (Submodule.smul_mem _ _ hχ)
-      (smul_ne_zero (inv_ne_zero (qExpansion_coeff_one_ne_zero hχ hnew hF h)) hF)
+      (smul_ne_zero
+        (inv_ne_zero (qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew hχ hnew hF h)) hF)
       fun p hp hpN ↦ by
         obtain ⟨c, hc⟩ := h p hp hpN
         -- the rescaled form, as an element of `S_k(N, χ)`, is the rescaled element
@@ -178,7 +118,7 @@ noncomputable def ofForallPrime {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     rw [EigenformAwayFromLevel.ofForallPrime_toCuspForm,
       ← CuspForm.qExpansionCoeffₗ_apply one_pos (one_mem_strictPeriods_Gamma1_map N), map_smul,
       CuspForm.qExpansionCoeffₗ_apply, smul_eq_mul,
-      inv_mul_cancel₀ (qExpansion_coeff_one_ne_zero hχ hnew hF h)]
+      inv_mul_cancel₀ (qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew hχ hnew hF h)]
 
 /-- The underlying cusp form of `ofForallPrime` is the supplied form divided by its first
 coefficient. -/
@@ -216,7 +156,7 @@ private theorem mem_span_of_forall_prime {F : cuspFormCharSpace k χ}
       Submodule.span ℂ ((fun f : Newform N k ↦ f.toCuspForm) '' {f | f.χ = χ}) :=
     Submodule.subset_span ⟨_, ofForallPrime_χ hχ hnew hF h, rfl⟩
   rw [ofForallPrime_toCuspForm] at hmem
-  simpa [smul_inv_smul₀ (qExpansion_coeff_one_ne_zero hχ hnew hF h)] using
+  simpa [smul_inv_smul₀ (qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew hχ hnew hF h)] using
     Submodule.smul_mem _ ((qExpansion 1 F).coeff 1) hmem
 
 /-- The new part of a good Hecke eigenvector is a good Hecke eigenvector, with the same
@@ -326,6 +266,62 @@ theorem coe_basis_apply (f : Newform N k) :
 /-- There are finitely many newforms of a given level and weight. -/
 instance : Finite (Newform N k) :=
   Module.Finite.finite_basis (basis N k)
+
+/-- A newform of nebentypus `χ`, as an element of `S_k(N, χ)ⁿᵉʷ`. -/
+private noncomputable def toCuspFormsNewCharSpace {χ : (ZMod N)ˣ →* ℂˣ}
+    (f : {f : Newform N k // f.χ = χ}) :
+    (cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype :=
+  ⟨⟨f.1.toCuspForm, by obtain ⟨f, rfl⟩ := f; exact f.mem_charSpace⟩, f.1.isNew⟩
+
+/-- The inclusion of `S_k(N, χ)ⁿᵉʷ` into `S_k(Γ₁(N))`. -/
+private noncomputable abbrev cuspFormsNewCharSpaceSubtype (χ : (ZMod N)ˣ →* ℂˣ) :
+    (cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype →ₗ[ℂ]
+      CuspForm ((Gamma1 N).map (mapGL ℝ)) k :=
+  (cuspFormCharSpace k χ).subtype ∘ₗ
+    ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype).subtype
+
+private theorem cuspFormsNewCharSpaceSubtype_injective (χ : (ZMod N)ˣ →* ℂˣ) :
+    Function.Injective (cuspFormsNewCharSpaceSubtype (k := k) χ) :=
+  Subtype.val_injective.comp Subtype.val_injective
+
+private theorem linearIndependent_toCuspFormsNewCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
+    LinearIndependent ℂ (toCuspFormsNewCharSpace (k := k) (χ := χ)) :=
+  LinearIndependent.of_comp (cuspFormsNewCharSpaceSubtype χ)
+    (linearIndependent_toCuspForm.comp Subtype.val Subtype.val_injective)
+
+private theorem top_le_span_range_toCuspFormsNewCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
+    ⊤ ≤ Submodule.span ℂ (Set.range (toCuspFormsNewCharSpace (k := k) (χ := χ))) := by
+  rintro F -
+  rw [← Submodule.comap_map_eq_of_injective (cuspFormsNewCharSpaceSubtype_injective χ)
+    (Submodule.span ℂ _), Submodule.map_span, ← Set.range_comp, Submodule.mem_comap]
+  have hrange : Set.range (cuspFormsNewCharSpaceSubtype χ ∘ toCuspFormsNewCharSpace) =
+      (fun f : Newform N k ↦ f.toCuspForm) '' {f | f.χ = χ} := by
+    ext g
+    simp [toCuspFormsNewCharSpace]
+  rw [hrange, span_image_toCuspForm_eq_cuspFormsNew_inf_cuspFormCharSpace]
+  exact ⟨F.2, F.1.2⟩
+
+variable (N k) in
+/-- **The newforms of nebentypus `χ`, as a basis of `S_k(N, χ)ⁿᵉʷ`** (Miyake, Theorem 4.6.13(2)).
+The basis vector at a newform is that newform: `Newform.coe_coe_basisCharSpace_apply`. -/
+noncomputable def basisCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
+    Module.Basis {f : Newform N k // f.χ = χ} ℂ
+      ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) :=
+  Module.Basis.mk (linearIndependent_toCuspFormsNewCharSpace χ)
+    (top_le_span_range_toCuspFormsNewCharSpace χ)
+
+/-- The basis vector of `Newform.basisCharSpace` at a newform is that newform. -/
+@[simp]
+theorem coe_coe_basisCharSpace_apply (χ : (ZMod N)ˣ →* ℂˣ) (f : {f : Newform N k // f.χ = χ}) :
+    ((basisCharSpace N k χ f : cuspFormCharSpace k χ) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      f.1.toCuspForm := by
+  simp [basisCharSpace, toCuspFormsNewCharSpace]
+
+/-- **The dimension of `S_k(N, χ)ⁿᵉʷ` is the number of newforms of nebentypus `χ`.** -/
+theorem finrank_cuspFormsNew_comap_cuspFormCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
+    Module.finrank ℂ ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) =
+      Nat.card {f : Newform N k // f.χ = χ} :=
+  Module.finrank_eq_nat_card_basis (basisCharSpace N k χ)
 
 end Newform
 

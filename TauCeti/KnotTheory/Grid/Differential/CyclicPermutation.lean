@@ -37,6 +37,9 @@ so there the chain relabelings intertwine the differentials for rows and columns
   intertwines the unblocked differentials.
 * `TauCeti.GridDiagram.unblockedDifferential_relabelColumns_finRotate`: the column relabeling,
   followed by renaming the variables, intertwines the unblocked differentials.
+* `TauCeti.GridDiagram.unblockedDifferential_relabelRows_finRotate_apply`,
+  `TauCeti.GridDiagram.unblockedDifferential_relabelColumns_finRotate_apply`: the same two
+  intertwining statements, pointwise.
 * `TauCeti.GridDiagram.fullyBlockedDifferential_relabelRows_finRotate`,
   `TauCeti.GridDiagram.fullyBlockedDifferential_relabelColumns_finRotate`: the chain relabelings
   intertwine the fully blocked differentials.
@@ -137,6 +140,15 @@ theorem unblockedDifferential_relabelRows_finRotate :
     GridChain.relabelRowsEquiv_single, unblockedDifferential_single_apply,
     GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
     GridState.relabelRows_refl, unblockedCoefficient_relabelRows_finRotate]
+
+/-- The chain relabeling by a cyclic permutation of the rows intertwines the unblocked
+differentials pointwise. -/
+@[simp]
+theorem unblockedDifferential_relabelRows_finRotate_apply (c : GridChainMinus R n) :
+    (G.relabelRows (finRotate n)).unblockedDifferential R
+        (GridChain.relabelRowsEquiv (finRotate n) c) =
+      GridChain.relabelRowsEquiv (finRotate n) (G.unblockedDifferential R c) :=
+  LinearMap.congr_fun (G.unblockedDifferential_relabelRows_finRotate R) c
 
 /-- The chain relabeling by a cyclic permutation of the rows intertwines the fully blocked
 differentials of `G` and of the row-permuted diagram. -/
@@ -247,6 +259,15 @@ theorem unblockedDifferential_relabelColumns_finRotate :
     unblockedDifferential_single_apply, GridChain.relabelColumnsRenameEquiv_apply,
     GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm, GridState.relabelColumns_refl,
     unblockedCoefficient_relabelColumns_finRotate]
+
+/-- The chain relabeling by a cyclic permutation of the columns, followed by renaming the
+variables, intertwines the unblocked differentials pointwise. -/
+@[simp]
+theorem unblockedDifferential_relabelColumns_finRotate_apply (c : GridChainMinus R n) :
+    (G.relabelColumns (finRotate n)).unblockedDifferential R
+        (GridChain.relabelColumnsRenameEquiv R (finRotate n) c) =
+      GridChain.relabelColumnsRenameEquiv R (finRotate n) (G.unblockedDifferential R c) :=
+  LinearMap.congr_fun (G.unblockedDifferential_relabelColumns_finRotate R) c
 
 /-- The chain relabeling by a cyclic permutation of the columns intertwines the fully blocked
 differentials of `G` and of the column-permuted diagram. -/

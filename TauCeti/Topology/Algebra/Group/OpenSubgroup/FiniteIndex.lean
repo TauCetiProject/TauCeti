@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
-# Open subgroups of a compact group have finite index
+# Open subgroups of a compact group are compact and have finite index
 
 Mathlib already knows the coset space of an open subgroup `U` of a compact group `G` to be
 finite: `G ⧸ U` is compact and discrete, and that is registered as an instance. The step from
@@ -26,10 +26,16 @@ the structural `Finite (G ⧸ U.toSubgroup)` instance for a bundled `OpenSubgrou
 `FiniteIndex` hypothesis. Only separate continuity of multiplication is assumed, matching the
 hypotheses of the Mathlib instance being used.
 
+The same bundling supplies the other instance an open subgroup of a compact group needs when it
+is handed to an API stated for a compact group, such as the profinite theory of a closed subgroup:
+an open subgroup is closed, so it is compact.
+
 ## Main results
 
 * `OpenSubgroup.finiteIndex_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group has finite index.
+* `OpenSubgroup.compactSpace_toSubgroup`: the underlying subgroup of an open subgroup of a
+  compact group is compact.
 -/
 
 public section
@@ -42,3 +48,13 @@ instance OpenSubgroup.finiteIndex_toSubgroup {G : Type*} [Group G] [TopologicalS
     [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     U.toSubgroup.FiniteIndex :=
   Subgroup.finiteIndex_of_finite_quotient
+
+/-- **An open subgroup of a compact group is compact.** It is closed, being the complement of the
+union of its other cosets, and a closed subset of a compact space is compact. -/
+@[to_additive /-- **An open additive subgroup of a compact additive group is compact.** It is
+closed, being the complement of the union of its other cosets, and a closed subset of a compact
+space is compact. -/]
+instance OpenSubgroup.compactSpace_toSubgroup {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
+    CompactSpace U.toSubgroup :=
+  isCompact_iff_compactSpace.mp U.isClosed.isCompact

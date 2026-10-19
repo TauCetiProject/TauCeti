@@ -45,8 +45,12 @@ these hypotheses the volume element may well be a scalar already, and is `0` as 
 factors is. That it is a *further* central element, and that the centre is then exactly a rank-two
 algebra rather than the scalars, is *not* proved here and needs hypotheses this file does not make
 — a nondegenerate form over a field away from characteristic two, with the list an orthogonal
-basis. For `Q = 0` on `R ^ 3` the Clifford algebra is the exterior algebra and its centre is much
-larger instead. The odd-dimensional splitting does run on the volume element:
+basis. `TauCeti/LinearAlgebra/CliffordAlgebra/Center.lean` makes exactly those: there the volume
+element of an anisotropic orthogonal basis spans the centre together with `1`
+(`CliffordAlgebra.mem_center_iff_exists_eq_add_smul_volume`), which is therefore two-dimensional
+(`CliffordAlgebra.finrank_center_eq_two_of_odd_finrank`). For `Q = 0` on
+`R ^ 3` the Clifford algebra is the exterior algebra and its centre is much larger instead. The
+odd-dimensional splitting does run on the volume element:
 `TauCeti/LinearAlgebra/CliffordAlgebra/OddSplitting.lean` splits the Clifford algebra as two copies
 of its even subalgebra along a central odd square root of one, and
 `CliffordAlgebra.equivEvenProdOfOddLength` feeds it the volume element of an orthogonal spanning
@@ -85,6 +89,8 @@ the values `Q vᵢ` is a unit.
   element of a pairwise orthogonal list by the same sign `(-1) ^ (n.choose 2)`.
 * `CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho`: the two-factor case, the square of the product
   of two orthogonal generators being the scalar `-(Q a * Q b)`.
+* `CliffordAlgebra.neg_one_pow_choose_two_mul_prod_map_ne_zero`: over a field, that scalar is
+  nonzero when no member of the list is isotropic.
 * `CliffordAlgebra.isUnit_prod_map_ι`: an ordered product of generators — orthogonal or not — is
   a unit as soon as the product of the values `Q vᵢ` is.
 * `CliffordAlgebra.prod_map_ι_mul_ι_notMem_range_ι`: over a field, the volume element of an
@@ -356,6 +362,18 @@ private theorem exists_isOrtho_pair_of_mem {l : List V} (hl : l.Pairwise Q.IsOrt
   exact ⟨(s ++ t)[0], hmem _ (List.getElem_mem h0), (s ++ t)[1], hmem _ (List.getElem_mem h1),
     hortho _ (List.getElem_mem h0), hortho _ (List.getElem_mem h1),
     List.pairwise_iff_getElem.mp hpair 0 1 h0 h1 zero_lt_one⟩
+
+/-! ### The scalar square of an anisotropic volume element -/
+
+/-- Over a field, the scalar square `(-1) ^ (n.choose 2) * Q v₁ ⋯ Q vₙ` of the volume element
+(`CliffordAlgebra.prod_map_ι_sq_scalar`) is nonzero as soon as no member of the list is
+isotropic. -/
+theorem neg_one_pow_choose_two_mul_prod_map_ne_zero {l : List V} (haniso : ∀ v ∈ l, Q v ≠ 0) :
+    (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
+  refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
+  intro hmem
+  obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
+  exact haniso v hv hv0
 
 variable [Invertible (2 : K)]
 

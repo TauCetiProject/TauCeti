@@ -11,12 +11,13 @@ public import Mathlib.Probability.Moments.Basic
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
 /-!
-# Moment-generating functions of Gaussian linear functionals
+# Moment- and cumulant-generating functions of Gaussian linear functionals
 
 This file proves that every almost everywhere measurable continuous linear functional of a
 Gaussian measure has finite exponential moments of every real order and computes its
 moment-generating function. It then specializes the general result to inner products against a
-multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form.
+multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form,
+and computes the corresponding cumulant-generating function.
 
 The general results require no norm on the source space. Almost everywhere measurability of
 the functional suffices; the default proof handles continuous functionals when open sets are
@@ -34,6 +35,11 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   directional
   functional of a multivariate Gaussian.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
+* `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
+  polynomial determined by the directional mean and variance.
+* `TauCeti.Probability.integral_exp_nat_mul_sin_gaussianReal` and
+  `TauCeti.Probability.integral_cos_gaussianReal` evaluate two real integrals against the standard
+  Gaussian law.
 
 ## References
 
@@ -85,6 +91,75 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+/-- The sine at frequency `2π` is orthogonal under the standard Gaussian law to every
+exponential with a natural-number exponent. -/
+theorem integral_exp_nat_mul_sin_gaussianReal (n : ℕ) :
+    ∫ y, Real.exp ((n : ℝ) * y) * Real.sin (2 * Real.pi * y) ∂gaussianReal 0 1 = 0 := by
+  let z : ℂ := (n : ℝ) + (2 * Real.pi : ℝ) * Complex.I
+  have hzint : Integrable (fun y : ℝ => Complex.exp (z * y)) (gaussianReal 0 1) := by
+    apply integrable_cexp_mul_of_re_mem_integrableExpSet measurable_id.aemeasurable
+    simp [z]
+  calc
+    _ = ∫ y, (Complex.exp (z * y)).im ∂gaussianReal 0 1 := by
+      congr with y
+      rw [Complex.exp_im]
+      simp only [z, Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re,
+        Complex.I_im, mul_zero, sub_zero, Complex.add_im, Complex.ofReal_im, zero_add,
+        Complex.mul_im, zero_mul, add_zero]
+      congr 2
+      ring_nf
+    _ = (∫ y, Complex.exp (z * y) ∂gaussianReal 0 1).im := integral_im hzint
+    _ = (complexMGF id (gaussianReal 0 1) z).im := by rfl
+    _ = (Complex.exp (z * 0 + (1 : ℂ) * z ^ 2 / 2)).im := by
+      convert congrArg Complex.im (complexMGF_id_gaussianReal (μ := 0) (v := 1) z) using 1
+      norm_num
+    _ = 0 := by
+      rw [Complex.exp_im]
+      have harg : z * 0 + (1 : ℂ) * z ^ 2 / 2 =
+          (((n : ℝ) ^ 2 - (2 * Real.pi) ^ 2) / 2 : ℝ) +
+            ((n : ℝ) * (2 * Real.pi) : ℝ) * Complex.I := by
+        apply Complex.ext
+        · simp [z, pow_two]
+        · simp [z, pow_two]
+          ring_nf
+      rw [harg]
+      simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
+        Complex.I_im, Complex.I_re, mul_one, mul_zero, zero_add]
+      have hsin : Real.sin ((n : ℝ) * (2 * Real.pi)) = 0 := by
+        convert Real.sin_nat_mul_pi (2 * n) using 1
+        push_cast
+        ring_nf
+      simp only [add_zero]
+      rw [hsin, mul_zero]
+
+/-- The cosine transform of the standard Gaussian is `exp (-t² / 2)`. -/
+theorem integral_cos_gaussianReal (t : ℝ) :
+    ∫ y, Real.cos (t * y) ∂gaussianReal 0 1 = Real.exp (-(t ^ 2) / 2) := by
+  have hint : Integrable (fun y : ℝ => Complex.exp (t * y * Complex.I))
+      (gaussianReal 0 1) := by
+    have hone : Integrable (fun _ : ℝ => (1 : ℝ)) (gaussianReal 0 1) := integrable_const 1
+    refine Integrable.mono' (f := fun y : ℝ => Complex.exp (t * y * Complex.I)) hone
+      (by fun_prop) (ae_of_all _ fun y => ?_)
+    rw [Complex.norm_exp]
+    simp
+  calc
+    _ = ∫ y, (Complex.exp (t * y * Complex.I)).re ∂gaussianReal 0 1 := by
+      congr with y
+      rw [Complex.exp_re]
+      simp
+    _ = (∫ y, Complex.exp (t * y * Complex.I) ∂gaussianReal 0 1).re := integral_re hint
+    _ = (charFun (gaussianReal 0 1) t).re := by rw [charFun_apply_real]
+    _ = (Complex.exp (t * 0 * Complex.I - (1 : ℂ) * t ^ 2 / 2)).re := by
+      convert congrArg Complex.re (charFun_gaussianReal (μ := 0) (v := 1) t) using 1
+      norm_num
+    _ = Real.exp (-(t ^ 2) / 2) := by
+      have harg : (t : ℂ) * 0 * Complex.I - (1 : ℂ) * t ^ 2 / 2 =
+          ((-(t ^ 2) / 2 : ℝ) : ℂ) := by
+        push_cast
+        ring_nf
+      rw [harg]
+      exact Complex.exp_ofReal_re _
+
 /-- Every directional linear functional of a multivariate Gaussian has finite exponential moments
 of all real orders.
 
@@ -122,5 +197,17 @@ theorem mgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
       covarianceBilin_multivariateGaussian hS]
     exact (Matrix.inner_toEuclideanCLM S θ θ).symm
   rw [hL, IsGaussian.mgf_dual, hmean, hvar]
+
+/-- The cumulant-generating function of an inner product against a multivariate Gaussian vector
+is the quadratic polynomial determined by its directional mean and variance.
+
+The formula holds for every real order, including for singular positive-semidefinite covariance
+matrices. -/
+@[simp]
+theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (t : ℝ) :
+    cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussian m S) t =
+      t * ⟪θ, m⟫ + t ^ 2 / 2 * ⟪θ, S.toEuclideanLin θ⟫ := by
+  rw [cgf, mgf_inner_multivariateGaussian m θ hS t, Real.log_exp]
 
 end TauCeti.Probability

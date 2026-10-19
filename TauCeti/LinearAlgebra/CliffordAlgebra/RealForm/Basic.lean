@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
+import TauCeti.Algebra.Quaternion.Split
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # The real Clifford algebras `Cliff(p, q)` and the base entries of the Bott table
@@ -17,9 +18,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Real
 Over `ℂ` a nondegenerate quadratic form is determined by its rank, so there is one Clifford algebra
 in each dimension. Over `ℝ` this fails: a nondegenerate real form is classified by its signature
 `(p, q)`, and the resulting algebras `Cliff(p, q)` run through matrix algebras over `ℝ`, `ℂ` and
-`ℍ` in a pattern periodic modulo `8`. This file introduces the family of forms that the pattern is
-indexed by, the coordinate isometries for switching signatures, and the four small entries that
-fix the indexing convention.
+`ℍ`, and products of two copies of such a matrix algebra, in a pattern periodic modulo `8`. This
+file introduces the family of forms that the pattern is indexed by, the coordinate isometries for
+switching signatures, and the four small entries that fix the indexing convention.
 
 `TauCeti.realCliffordForm p q` is the diagonal form on `Fin (p + q) → ℝ` with `+1` in the first `p`
 coordinates and `-1` in the last `q`, written as a `QuadraticMap.weightedSumSquares` against the
@@ -31,8 +32,8 @@ The compact form `realCliffordForm n 0` is positive definite
 (`TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`).
 Negating the form swaps the two signature indices through
 `TauCeti.realCliffordFormNegIsometry`; its coordinate action is given by
-`TauCeti.realCliffordFormNegIsometry_pos_of_neg` and
-`TauCeti.realCliffordFormNegIsometry_neg_of_pos`.
+`TauCeti.realCliffordFormNegIsometry_apply_castAdd` and
+`TauCeti.realCliffordFormNegIsometry_apply_natAdd`.
 
 The sign convention — generators of the *first* `p` coordinates square to `+1` — is not universal:
 sources that make the first generators square to `-1` index the periodicity table by
@@ -46,27 +47,16 @@ four explicit small identifications:
 
 The middle two are Mathlib's `CliffordAlgebraComplex.equiv` and `CliffordAlgebraQuaternion.equiv`
 transported along an isometry, since the forms Mathlib uses there are exactly the `(0,1)` and
-`(0,2)` signature forms in disguise. The outer two are built here from the universal property: a
-single generator squaring to `+1` splits the algebra into two copies of `ℝ`, and a hyperbolic pair
-generates the whole of `M₂(ℝ)`. In both cases the constructed algebra map is proved *surjective* by
-exhibiting explicit preimages, and injectivity is then forced by the dimension count
-`2 ^ (p + q)`, which is the general mechanism the complex structure theorem uses as well.
+`(0,2)` signature forms in disguise. The last is the same transport for the split quaternions
+`ℍ[ℝ,1,-1]`, followed by their splitting `TauCeti.QuaternionAlgebra.oneEquivMatrix`. The first is
+built here from the universal property: a single generator squaring to `+1` splits the algebra into
+two copies of `ℝ`.
 
 ## Implementation notes
 
 `Cliff(p, q)` is spelled `CliffordAlgebra (realCliffordForm p q)` throughout rather than being
 given an abbreviation, so that every lemma about a general `CliffordAlgebra` applies to it without
 unfolding.
-
-Most scaffolding of the four constructions remains `private`. The one- and two-dimensional
-coordinate isometries are public because later low-dimensional reductions compose them, while the
-public algebra interface consists of the four `AlgEquiv`s and the lemmas computing them on a
-generator.
-
-All four identifications are bundled `AlgEquiv`s rather than the `Nonempty` existence statements
-the roadmap asks for, and each comes with a lemma computing it on a generator: it is the
-equivalences and their values, not their bare existence, that the Bott-periodicity step
-`Cliff(p+1, q+1) ≅ Cliff(p, q) ⊗ M₂(ℝ)` will consume.
 
 ## Main definitions
 
@@ -89,7 +79,7 @@ equivalences and their values, not their bare existence, that the Bott-periodici
 
 ## Main results
 
-* `QuadraticForm.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
+* `TauCeti.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
   presentations of the real normal form are isometric.
 * `TauCeti.nondegenerate_realCliffordForm`: the signature forms are nondegenerate.
 * `TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`: the compact signature form is the
@@ -99,8 +89,6 @@ equivalences and their values, not their bare existence, that the Bott-periodici
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7, "The real forms `Cliff(p, q)`".
 * H. B. Lawson, M.-L. Michelsohn, *Spin Geometry*, Princeton (1989), Chapter I, §4.
 -/
 
@@ -140,7 +128,7 @@ theorem realCliffordWeight_of_le {p q : ℕ} {i : Fin (p + q)} (hi : p ≤ (i : 
 
 /-- The orthogonal-sum and coordinate presentations of the real normal form of signature `(p, q)`
 are isometric. -/
-theorem _root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
+theorem equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
     (_root_.QuadraticForm.realSignatureForm p q).Equivalent (realCliffordForm p q) := by
   have hweight : realCliffordWeight p q ∘ finSumFinEquiv =
       Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
@@ -175,14 +163,10 @@ theorem realCliffordForm_zero_eq_weightedSumSquares_one (n : ℕ) :
   intro i _
   rw [realCliffordWeight_of_lt (by omega), one_mul]
 
-/-- The signature forms are nondegenerate: the radical of a weighted sum of squares is spanned by
-the coordinates with weight zero, and every signature weight is `±1`. -/
-theorem nondegenerate_realCliffordForm (p q : ℕ) : (realCliffordForm p q).Nondegenerate := by
-  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, realCliffordForm,
-    QuadraticForm.radical_weightedSumSquares, Submodule.eq_bot_iff]
-  intro v hv
-  funext j
-  exact Pi.mem_spanSubset_iff.1 hv j (realCliffordWeight_ne_zero p q j)
+/-- The signature forms are nondegenerate. -/
+theorem nondegenerate_realCliffordForm (p q : ℕ) : (realCliffordForm p q).Nondegenerate :=
+  QuadraticMap.nondegenerate_weightedSumSquares fun i ↦
+    (realCliffordWeight_ne_zero p q i).isUnit.isRegular
 
 /-- The standard signature form with no negative coordinates is positive definite. -/
 theorem posDef_realCliffordForm_zero (n : ℕ) : (realCliffordForm n 0).PosDef := by
@@ -196,19 +180,20 @@ theorem posDef_realCliffordForm_zero (n : ℕ) : (realCliffordForm n 0).PosDef :
     rw [realCliffordWeight_of_lt (by omega), one_mul]
     exact mul_self_pos.mpr hi
 
+-- `high` priority, so that `simp` uses this rather than expanding the form with
+-- `realCliffordForm_apply`.
+/-- A coordinate vector `Pi.single i x` takes the value `w * x ^ 2`, where `w` is the signature
+weight of its coordinate: `1` at the first `p` coordinates and `-1` at the last `q`. -/
+@[simp high]
+theorem realCliffordForm_apply_single (p q : ℕ) (i : Fin (p + q)) (x : ℝ) :
+    realCliffordForm p q (Pi.single i x) = realCliffordWeight p q i * x ^ 2 := by
+  simp [realCliffordForm, Pi.single_apply, _root_.sq]
+
 /-- Every coordinate unit vector has value one for the compact real Clifford form. -/
 @[simp]
-theorem realCliffordForm_unitVector (n : ℕ) (i : Fin n) :
+theorem realCliffordForm_zero_single_one (n : ℕ) (i : Fin n) :
     realCliffordForm n 0 (Pi.single i 1) = 1 := by
-  classical
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
-  rw [QuadraticMap.weightedSumSquares_apply]
-  simp only [Pi.one_apply, one_smul]
-  rw [Finset.sum_eq_single i]
-  · simp
-  · intro b _ hb
-    simp [hb]
-  · simp
+  rw [realCliffordForm_apply_single, realCliffordWeight_of_lt i.isLt, one_pow, mul_one]
 
 /-- The real Clifford algebra of signature `(p, q)` has dimension `2 ^ (p + q)`, as every Clifford
 algebra of a space of that dimension does. This is the count that forces the surjections built
@@ -218,88 +203,40 @@ theorem finrank_cliffordAlgebra_realCliffordForm (p q : ℕ) :
     finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q) := by
   rw [CliffordAlgebra.finrank_eq_two_pow, Module.finrank_pi, Fintype.card_fin]
 
-private def realCliffordNegIndexEquiv (p q : ℕ) : Fin (p + q) ≃ Fin (q + p) :=
-  finSumFinEquiv.symm |>.trans
-    (Equiv.sumComm (Fin p) (Fin q)) |>.trans
-    finSumFinEquiv
-
-private theorem realCliffordNegIndexEquiv_inl (p q : ℕ) (i : Fin p) :
-    realCliffordNegIndexEquiv p q (finSumFinEquiv (Sum.inl i)) =
-      finSumFinEquiv (Sum.inr i) := by
-  simp [realCliffordNegIndexEquiv]
-
-private theorem realCliffordNegIndexEquiv_inr (p q : ℕ) (i : Fin q) :
-    realCliffordNegIndexEquiv p q (finSumFinEquiv (Sum.inr i)) =
-      finSumFinEquiv (Sum.inl i) := by
-  simp [realCliffordNegIndexEquiv]
-
-private def realCliffordNegLinearEquiv (p q : ℕ) :
-    (Fin (p + q) → ℝ) ≃ₗ[ℝ] (Fin (q + p) → ℝ) :=
-  LinearEquiv.piCongrLeft' ℝ (fun _ : Fin (p + q) ↦ ℝ) (realCliffordNegIndexEquiv p q)
-
-private theorem realCliffordNegWeight (p q : ℕ) (i : Fin (p + q)) :
-    realCliffordWeight q p (realCliffordNegIndexEquiv p q i) =
-      -realCliffordWeight p q i := by
-  rw [← finSumFinEquiv.apply_symm_apply i]
-  rcases finSumFinEquiv.symm i with i | i
-  · simp only [realCliffordNegIndexEquiv, Equiv.trans_apply, Equiv.sumComm_apply,
-      finSumFinEquiv_apply_left]
-    rw [realCliffordWeight_of_le (by simp), realCliffordWeight_of_lt (by simp)]
-  · simp only [realCliffordNegIndexEquiv, Equiv.trans_apply, Equiv.sumComm_apply,
-      finSumFinEquiv_apply_right]
-    rw [realCliffordWeight_of_lt (by simp), realCliffordWeight_of_le (by simp)]
-    norm_num
-
-private theorem realCliffordNegLinearEquiv_apply (p q : ℕ) (x : Fin (p + q) → ℝ)
-    (i : Fin (p + q)) :
-    realCliffordNegLinearEquiv p q x (realCliffordNegIndexEquiv p q i) = x i := by
-  rw [realCliffordNegLinearEquiv, LinearEquiv.piCongrLeft'_apply, Equiv.symm_apply_apply]
+private theorem neg_realCliffordWeight_finAddFlip (p q : ℕ) (i : Fin (q + p)) :
+    -realCliffordWeight p q (finAddFlip i) = realCliffordWeight q p i := by
+  induction i using Fin.addCases <;> simp [realCliffordWeight]
 
 /-- Negating a real signature form swaps its positive and negative coordinates. -/
 def realCliffordFormNegIsometry (p q : ℕ) :
-    (-(realCliffordForm p q)).IsometryEquiv (realCliffordForm q p) :=
-  { realCliffordNegLinearEquiv p q with
-    map_app' := by
-      intro x
-      rw [realCliffordForm_apply, neg_apply, realCliffordForm_apply]
-      let y := realCliffordNegLinearEquiv p q x
-      calc
-        (∑ i, realCliffordWeight q p i * (y i * y i)) =
-            ∑ i, realCliffordWeight q p (realCliffordNegIndexEquiv p q i) *
-              (y (realCliffordNegIndexEquiv p q i) *
-                y (realCliffordNegIndexEquiv p q i)) := by
-          exact (Fintype.sum_equiv (realCliffordNegIndexEquiv p q)
-            (fun i ↦ realCliffordWeight q p (realCliffordNegIndexEquiv p q i) *
-              (y (realCliffordNegIndexEquiv p q i) *
-                y (realCliffordNegIndexEquiv p q i)))
-            (fun i ↦ realCliffordWeight q p i * (y i * y i))
-            (fun _ ↦ rfl)).symm
-        _ = -(∑ i, realCliffordWeight p q i * (x i * x i)) := by
-          dsimp only [y]
-          simp only [realCliffordNegWeight, realCliffordNegLinearEquiv_apply, neg_mul,
-            ← Finset.sum_neg_distrib] }
+    (-(realCliffordForm p q)).IsometryEquiv (realCliffordForm q p) where
+  __ := LinearEquiv.funCongrLeft ℝ ℝ finAddFlip
+  map_app' x := by
+    rw [realCliffordForm_apply, neg_apply, realCliffordForm_apply, ← Finset.sum_neg_distrib,
+      ← (finAddFlip : Fin (q + p) ≃ Fin (p + q)).sum_comp]
+    exact Finset.sum_congr rfl fun i _ ↦ by
+      rw [← neg_realCliffordWeight_finAddFlip, neg_mul, LinearMap.toFun_eq_coe,
+        LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
+
+/-- `realCliffordFormNegIsometry` reads each coordinate through the block swap `finAddFlip`. -/
+@[simp]
+theorem realCliffordFormNegIsometry_apply (p q : ℕ) (x : Fin (p + q) → ℝ) (i : Fin (q + p)) :
+    realCliffordFormNegIsometry p q x i = x (finAddFlip i) := by
+  simp [realCliffordFormNegIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
 
 /-- Negated negative coordinates become positive coordinates under
 `realCliffordFormNegIsometry`. -/
-@[simp]
-theorem realCliffordFormNegIsometry_pos_of_neg (p q : ℕ)
+theorem realCliffordFormNegIsometry_apply_castAdd (p q : ℕ)
     (x : Fin (p + q) → ℝ) (i : Fin q) :
     realCliffordFormNegIsometry p q x (Fin.castAdd p i) = x (Fin.natAdd p i) := by
-  -- The bundled-isometry coercion does not reduce to its private linear equivalence with `dsimp`.
-  change realCliffordNegLinearEquiv p q x _ = _
-  rw [← finSumFinEquiv_apply_left, ← realCliffordNegIndexEquiv_inr,
-    realCliffordNegLinearEquiv_apply, finSumFinEquiv_apply_right]
+  rw [realCliffordFormNegIsometry_apply, finAddFlip_apply_castAdd]
 
 /-- Negated positive coordinates become negative coordinates under
 `realCliffordFormNegIsometry`. -/
-@[simp]
-theorem realCliffordFormNegIsometry_neg_of_pos (p q : ℕ)
+theorem realCliffordFormNegIsometry_apply_natAdd (p q : ℕ)
     (x : Fin (p + q) → ℝ) (i : Fin p) :
     realCliffordFormNegIsometry p q x (Fin.natAdd q i) = x (Fin.castAdd q i) := by
-  -- The bundled-isometry coercion does not reduce to its private linear equivalence with `dsimp`.
-  change realCliffordNegLinearEquiv p q x _ = _
-  rw [← finSumFinEquiv_apply_right, ← realCliffordNegIndexEquiv_inl,
-    realCliffordNegLinearEquiv_apply, finSumFinEquiv_apply_left]
+  rw [realCliffordFormNegIsometry_apply, finAddFlip_apply_natAdd]
 
 /-! ### Standard signature coordinate isometries -/
 
@@ -316,34 +253,6 @@ private def realCliffordSplitLinearEquiv (p₁ p₂ q₁ q₂ : ℕ) :
   (LinearEquiv.piCongrLeft' ℝ (fun _ : Fin ((p₁ + p₂) + (q₁ + q₂)) ↦ ℝ)
       (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂)).trans
     (LinearEquiv.sumArrowLequivProdArrow _ _ ℝ ℝ)
-
-private theorem realCliffordSplitIndexEquiv_symm_inl_pos
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin p₁) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inl (finSumFinEquiv (Sum.inl i))) =
-      finSumFinEquiv (Sum.inl (finSumFinEquiv (Sum.inl i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
-private theorem realCliffordSplitIndexEquiv_symm_inl_neg
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin q₁) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inl (finSumFinEquiv (Sum.inr i))) =
-      finSumFinEquiv (Sum.inr (finSumFinEquiv (Sum.inl i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
-private theorem realCliffordSplitIndexEquiv_symm_inr_pos
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin p₂) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inr (finSumFinEquiv (Sum.inl i))) =
-      finSumFinEquiv (Sum.inl (finSumFinEquiv (Sum.inr i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
-private theorem realCliffordSplitIndexEquiv_symm_inr_neg
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin q₂) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inr (finSumFinEquiv (Sum.inr i))) =
-      finSumFinEquiv (Sum.inr (finSumFinEquiv (Sum.inr i))) := by
-  simp [realCliffordSplitIndexEquiv]
 
 private theorem realCliffordSplitWeight_inl (p₁ p₂ q₁ q₂ : ℕ)
     (i : Fin (p₁ + q₁)) :
@@ -365,18 +274,6 @@ private theorem realCliffordSplitWeight_inr (p₁ p₂ q₁ q₂ : ℕ)
   rcases finSumFinEquiv.symm i with i | i
   · simp [realCliffordSplitIndexEquiv, realCliffordWeight]
   · simp [realCliffordSplitIndexEquiv, realCliffordWeight]
-
-private theorem realCliffordSplitLinearEquiv_fst (p₁ p₂ q₁ q₂ : ℕ)
-    (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin (p₁ + q₁)) :
-    (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).1 i =
-      x ((realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm (Sum.inl i)) := by
-  simp [realCliffordSplitLinearEquiv]
-
-private theorem realCliffordSplitLinearEquiv_snd (p₁ p₂ q₁ q₂ : ℕ)
-    (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin (p₂ + q₂)) :
-    (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 i =
-      x ((realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm (Sum.inr i)) := by
-  simp [realCliffordSplitLinearEquiv]
 
 /-- Splits a standard real signature form into two standard signature blocks. -/
 def realCliffordSplitIsometry (p₁ p₂ q₁ q₂ : ℕ) :
@@ -411,9 +308,7 @@ theorem realCliffordSplitIsometry_fst_pos (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.castAdd (q₁ + q₂) (Fin.castAdd p₂ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).1 _ = _
-  rw [realCliffordSplitLinearEquiv_fst, ← finSumFinEquiv_apply_left,
-    realCliffordSplitIndexEquiv_symm_inl_pos]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The first output block receives the first negative-coordinate block. -/
 @[simp]
@@ -423,9 +318,7 @@ theorem realCliffordSplitIsometry_fst_neg (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.natAdd (p₁ + p₂) (Fin.castAdd q₂ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).1 _ = _
-  rw [realCliffordSplitLinearEquiv_fst, ← finSumFinEquiv_apply_right,
-    realCliffordSplitIndexEquiv_symm_inl_neg]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The second output block receives the second positive-coordinate block. -/
 @[simp]
@@ -435,9 +328,7 @@ theorem realCliffordSplitIsometry_snd_pos (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.castAdd (q₁ + q₂) (Fin.natAdd p₁ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 _ = _
-  rw [realCliffordSplitLinearEquiv_snd, ← finSumFinEquiv_apply_left,
-    realCliffordSplitIndexEquiv_symm_inr_pos]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The second output block receives the second negative-coordinate block. -/
 @[simp]
@@ -447,9 +338,7 @@ theorem realCliffordSplitIsometry_snd_neg (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.natAdd (p₁ + p₂) (Fin.natAdd q₁ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 _ = _
-  rw [realCliffordSplitLinearEquiv_snd, ← finSumFinEquiv_apply_right,
-    realCliffordSplitIndexEquiv_symm_inr_neg]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 private def realCliffordOnePositiveIsometry :
     (realCliffordForm 1 0).IsometryEquiv (QuadraticMap.sq (R := ℝ) (A := ℝ)) :=
@@ -555,7 +444,7 @@ def realCliffordSignSwitchStandardIsometry (p q : ℕ) :
     (QuadraticMap.IsometryEquiv.refl (QuadraticMap.sq (R := ℝ) (A := ℝ)))).trans
       (realCliffordPositiveSplitIsometry q p).symm
 
-private theorem signatureSwitchStandardIsometry_split (p q : ℕ)
+private theorem realCliffordSignSwitchStandardIsometry_split (p q : ℕ)
     (x : Fin (p + q) → ℝ) (r : ℝ) :
     realCliffordPositiveSplitIsometry q p
         (realCliffordSignSwitchStandardIsometry p q (x, r)) =
@@ -570,10 +459,10 @@ theorem realCliffordSignSwitchStandardIsometry_pos_of_neg (p q : ℕ)
     (x : Fin (p + q) → ℝ) (r : ℝ) (i : Fin q) :
     realCliffordSignSwitchStandardIsometry p q (x, r)
         (Fin.castAdd p (Fin.castSucc i)) = x (Fin.natAdd p i) := by
-  have h := congrFun (congrArg Prod.fst (signatureSwitchStandardIsometry_split p q x r))
+  have h := congrFun (congrArg Prod.fst (realCliffordSignSwitchStandardIsometry_split p q x r))
     (Fin.castAdd p i)
   simpa only [realCliffordPositiveSplitIsometry_fst_pos,
-    realCliffordFormNegIsometry_pos_of_neg] using h
+    realCliffordFormNegIsometry_apply_castAdd] using h
 
 /-- The new positive line is the last positive coordinate under
 `realCliffordSignSwitchStandardIsometry`. -/
@@ -582,7 +471,7 @@ theorem realCliffordSignSwitchStandardIsometry_last_pos (p q : ℕ)
     (x : Fin (p + q) → ℝ) (r : ℝ) :
     realCliffordSignSwitchStandardIsometry p q (x, r)
         (Fin.castAdd p (Fin.last q)) = r := by
-  have h := congrArg Prod.snd (signatureSwitchStandardIsometry_split p q x r)
+  have h := congrArg Prod.snd (realCliffordSignSwitchStandardIsometry_split p q x r)
   simpa only [realCliffordPositiveSplitIsometry_snd] using h
 
 /-- Negated positive coordinates become negative coordinates under
@@ -592,31 +481,35 @@ theorem realCliffordSignSwitchStandardIsometry_neg_of_pos (p q : ℕ)
     (x : Fin (p + q) → ℝ) (r : ℝ) (i : Fin p) :
     realCliffordSignSwitchStandardIsometry p q (x, r)
         (Fin.natAdd (q + 1) i) = x (Fin.castAdd q i) := by
-  have h := congrFun (congrArg Prod.fst (signatureSwitchStandardIsometry_split p q x r))
+  have h := congrFun (congrArg Prod.fst (realCliffordSignSwitchStandardIsometry_split p q x r))
     (Fin.natAdd q i)
   simpa only [realCliffordPositiveSplitIsometry_fst_neg,
-    realCliffordFormNegIsometry_neg_of_pos] using h
+    realCliffordFormNegIsometry_apply_natAdd] using h
 
 /-! ### The four base entries, in coordinates -/
 
+/-- The real Clifford form of signature `(1, 0)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_one_zero_apply (v : Fin (1 + 0) → ℝ) :
     realCliffordForm 1 0 v = v 0 * v 0 := by
   rw [realCliffordForm_apply]
   simp [realCliffordWeight]
 
+/-- The real Clifford form of signature `(0, 1)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_zero_one_apply (v : Fin (0 + 1) → ℝ) :
     realCliffordForm 0 1 v = -(v 0 * v 0) := by
   rw [realCliffordForm_apply]
   simp [realCliffordWeight]
 
+/-- The real Clifford form of signature `(0, 2)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_zero_two_apply (v : Fin (0 + 2) → ℝ) :
     realCliffordForm 0 2 v = -(v 0 * v 0) + -(v 1 * v 1) := by
   rw [realCliffordForm_apply, Fin.sum_univ_two]
   simp [realCliffordWeight]
 
+/-- The real Clifford form of signature `(1, 1)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_one_one_apply (v : Fin (1 + 1) → ℝ) :
     realCliffordForm 1 1 v = v 0 * v 0 - v 1 * v 1 := by
@@ -653,13 +546,9 @@ private theorem realCliffordOneZeroToProd_surjective :
 /-- `realCliffordOneZeroToProd` is bijective: it is surjective, and both sides have dimension `2`,
 so surjectivity forces injectivity. -/
 private theorem realCliffordOneZeroToProd_bijective :
-    Function.Bijective realCliffordOneZeroToProd := by
-  have hrank : finrank ℝ (CliffordAlgebra (realCliffordForm 1 0)) = finrank ℝ (ℝ × ℝ) := by
-    rw [finrank_cliffordAlgebra_realCliffordForm, Module.finrank_prod, Module.finrank_self]
-    norm_num
-  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := realCliffordOneZeroToProd.toLinearMap) hrank).2
-    realCliffordOneZeroToProd_surjective, realCliffordOneZeroToProd_surjective⟩
+    Function.Bijective realCliffordOneZeroToProd :=
+  OrzechProperty.bijective_of_surjective_of_finrank_le realCliffordOneZeroToProd.toLinearMap
+    realCliffordOneZeroToProd_surjective (by rw [finrank_cliffordAlgebra_realCliffordForm]; simp)
 
 /-- **`Cliff(1,0) ≅ ℝ × ℝ`**, the first base entry of the real periodicity table: a single
 generator squaring to `+1` splits the algebra. -/
@@ -692,23 +581,17 @@ theorem realCliffordZeroOneIsometry_apply (v : Fin (0 + 1) → ℝ) :
 
 /-- **`Cliff(0,1) ≅ ℂ`**, the second base entry of the real periodicity table: a single generator
 squaring to `-1` is a square root of `-1`. -/
-noncomputable def realCliffordZeroOneEquivComplex :
+def realCliffordZeroOneEquivComplex :
     CliffordAlgebra (realCliffordForm 0 1) ≃ₐ[ℝ] ℂ :=
   (CliffordAlgebra.equivOfIsometry realCliffordZeroOneIsometry).trans
     CliffordAlgebraComplex.equiv
-
-/-- `realCliffordZeroOneEquivComplex` unfolded into the two equivalences it composes. -/
-private theorem realCliffordZeroOneEquivComplex_eq (x : CliffordAlgebra (realCliffordForm 0 1)) :
-    realCliffordZeroOneEquivComplex x =
-      CliffordAlgebraComplex.equiv
-        (CliffordAlgebra.equivOfIsometry realCliffordZeroOneIsometry x) := rfl
 
 /-- `realCliffordZeroOneEquivComplex` sends the generator of the coordinate `v` to the purely
 imaginary complex number `v 0 • Complex.I`. -/
 @[simp]
 theorem realCliffordZeroOneEquivComplex_ι (v : Fin (0 + 1) → ℝ) :
     realCliffordZeroOneEquivComplex (CliffordAlgebra.ι _ v) = v 0 • Complex.I := by
-  rw [realCliffordZeroOneEquivComplex_eq, CliffordAlgebra.equivOfIsometry_apply,
+  rw [realCliffordZeroOneEquivComplex, AlgEquiv.trans_apply, CliffordAlgebra.equivOfIsometry_apply,
     CliffordAlgebra.map_apply_ι]
   simp only [IsometryEquiv.toIsometry_apply, realCliffordZeroOneIsometry_apply,
     CliffordAlgebraComplex.equiv_apply, CliffordAlgebraComplex.toComplex_ι, Complex.real_smul]
@@ -731,27 +614,18 @@ theorem realCliffordZeroTwoIsometry_apply (v : Fin (0 + 2) → ℝ) :
 
 /-- **`Cliff(0,2) ≅ ℍ`**, the third base entry of the real periodicity table: two anticommuting
 generators squaring to `-1` are the quaternion units `i` and `j`. -/
-noncomputable def realCliffordZeroTwoEquivQuaternion :
+def realCliffordZeroTwoEquivQuaternion :
     CliffordAlgebra (realCliffordForm 0 2) ≃ₐ[ℝ] ℍ[ℝ] :=
   (CliffordAlgebra.equivOfIsometry realCliffordZeroTwoIsometry).trans
     CliffordAlgebraQuaternion.equiv
-
-/-- `realCliffordZeroTwoEquivQuaternion` unfolded into the two equivalences it composes. Stating
-this separately is what lets the generator lemma below be proved by rewriting: the codomain of
-`CliffordAlgebraQuaternion.equiv` is `ℍ[ℝ,-1,-1]` rather than the `ℍ[ℝ]` of the statement, so
-`rw [AlgEquiv.trans_apply]` cannot see the composite. -/
-private theorem realCliffordZeroTwoEquivQuaternion_eq
-    (x : CliffordAlgebra (realCliffordForm 0 2)) :
-    realCliffordZeroTwoEquivQuaternion x =
-      CliffordAlgebraQuaternion.equiv
-        (CliffordAlgebra.equivOfIsometry realCliffordZeroTwoIsometry x) := rfl
 
 /-- `realCliffordZeroTwoEquivQuaternion` sends the generator of the coordinate `v` to the imaginary
 quaternion `v 0 * i + v 1 * j`. -/
 @[simp]
 theorem realCliffordZeroTwoEquivQuaternion_ι (v : Fin (0 + 2) → ℝ) :
     realCliffordZeroTwoEquivQuaternion (CliffordAlgebra.ι _ v) = ⟨0, v 0, v 1, 0⟩ := by
-  rw [realCliffordZeroTwoEquivQuaternion_eq, CliffordAlgebra.equivOfIsometry_apply,
+  rw [realCliffordZeroTwoEquivQuaternion, AlgEquiv.trans_apply,
+    CliffordAlgebra.equivOfIsometry_apply,
     CliffordAlgebra.map_apply_ι]
   simp only [IsometryEquiv.toIsometry_apply, CliffordAlgebraQuaternion.equiv_apply,
     CliffordAlgebraQuaternion.toQuaternion_ι, realCliffordZeroTwoIsometry_apply]
@@ -763,65 +637,35 @@ theorem realCliffordZeroTwoEquivQuaternion_star
     (x : CliffordAlgebra (realCliffordForm 0 2)) :
     realCliffordZeroTwoEquivQuaternion (star x) =
       star (realCliffordZeroTwoEquivQuaternion x) := by
-  simp only [realCliffordZeroTwoEquivQuaternion_eq,
+  simp only [realCliffordZeroTwoEquivQuaternion, AlgEquiv.trans_apply,
     CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_star,
     CliffordAlgebraQuaternion.equiv_apply, CliffordAlgebraQuaternion.toQuaternion_star]
 
 /-! ### `Cliff(1,1) ≅ M₂(ℝ)` -/
 
-/-- The algebra map `Cliff(1,1) → M₂(ℝ)` sending the `+1` generator to the diagonal involution
-`!![1, 0; 0, -1]` and the `-1` generator to the rotation `!![0, 1; -1, 0]`. The two matrices
-anticommute, so the map is well defined by the universal property. -/
-private def realCliffordOneOneToMatrix :
-    CliffordAlgebra (realCliffordForm 1 1) →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℝ :=
-  CliffordAlgebra.lift _
-    ⟨(LinearMap.proj 0).smulRight !![1, 0; 0, -1] +
-        (LinearMap.proj 1).smulRight !![0, 1; -1, 0], fun v => by
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        simp [realCliffordForm_one_one_apply, Matrix.mul_apply, Fin.sum_univ_two,
-          Algebra.algebraMap_eq_smul_one] <;> ring⟩
+/-- The `(1,1)` signature form is Mathlib's quaternion form `CliffordAlgebraQuaternion.Q 1 (-1)`
+after negating the second coordinate. -/
+private noncomputable def realCliffordOneOneIsometry :
+    (realCliffordForm 1 1).IsometryEquiv
+      (CliffordAlgebraQuaternion.Q (1 : ℝ) ((-1 : ℝˣ) : ℝ)) :=
+  ⟨(LinearEquiv.finTwoArrow ℝ ℝ : (Fin (1 + 1) → ℝ) ≃ₗ[ℝ] ℝ × ℝ).trans
+      ((LinearEquiv.refl ℝ ℝ).prodCongr (LinearEquiv.neg ℝ)), fun v => by
+    simp [realCliffordForm_one_one_apply]
+    ring⟩
 
-/-- The value of `realCliffordOneOneToMatrix` on a generator. -/
-private theorem realCliffordOneOneToMatrix_ι (v : Fin (1 + 1) → ℝ) :
-    realCliffordOneOneToMatrix (CliffordAlgebra.ι _ v) = !![v 0, v 1; -v 1, -v 0] := by
-  rw [realCliffordOneOneToMatrix, CliffordAlgebra.lift_ι_apply]
-  simp [Matrix.smul_of]
-
-/-- `realCliffordOneOneToMatrix` is surjective: the images of `1`, the two generators and their
-product are the four matrix units up to an invertible change of basis, so every matrix has an
-explicit preimage. With the dimension count `finrank_cliffordAlgebra_realCliffordForm` this makes
-it bijective. -/
-private theorem realCliffordOneOneToMatrix_surjective :
-    Function.Surjective realCliffordOneOneToMatrix := by
-  intro m
-  refine ⟨algebraMap ℝ _ ((m 0 0 + m 1 1) / 2)
-      + ((m 0 0 - m 1 1) / 2) • CliffordAlgebra.ι (realCliffordForm 1 1) (Pi.single 0 1)
-      + ((m 0 1 - m 1 0) / 2) • CliffordAlgebra.ι (realCliffordForm 1 1) (Pi.single 1 1)
-      + ((m 0 1 + m 1 0) / 2) •
-        (CliffordAlgebra.ι (realCliffordForm 1 1) (Pi.single 0 1) *
-          CliffordAlgebra.ι (realCliffordForm 1 1) (Pi.single 1 1)), ?_⟩
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [realCliffordOneOneToMatrix_ι, Algebra.algebraMap_eq_smul_one] <;> ring
-
-/-- `realCliffordOneOneToMatrix` is bijective: it is surjective, and both sides have dimension `4`,
-so surjectivity forces injectivity. -/
-private theorem realCliffordOneOneToMatrix_bijective :
-    Function.Bijective realCliffordOneOneToMatrix := by
-  have hrank : finrank ℝ (CliffordAlgebra (realCliffordForm 1 1)) =
-      finrank ℝ (Matrix (Fin 2) (Fin 2) ℝ) := by
-    rw [finrank_cliffordAlgebra_realCliffordForm, Module.finrank_matrix]
-    simp
-  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := realCliffordOneOneToMatrix.toLinearMap) hrank).2
-    realCliffordOneOneToMatrix_surjective, realCliffordOneOneToMatrix_surjective⟩
+private theorem realCliffordOneOneIsometry_apply (v : Fin (1 + 1) → ℝ) :
+    realCliffordOneOneIsometry v = (v 0, -v 1) :=
+  rfl
 
 /-- **`Cliff(1,1) ≅ M₂(ℝ)`**, the fourth base entry of the real periodicity table and the seed of
-the periodicity step `Cliff(p+1, q+1) ≅ Cliff(p, q) ⊗ M₂(ℝ)`. -/
+the periodicity step `Cliff(p+1, q+1) ≅ Cliff(p, q) ⊗ M₂(ℝ)`: Mathlib's
+`CliffordAlgebraQuaternion.equiv` onto the split quaternions `ℍ[ℝ,1,-1]`, transported along
+`realCliffordOneOneIsometry` and followed by the splitting
+`TauCeti.QuaternionAlgebra.oneEquivMatrix`. -/
 noncomputable def realCliffordOneOneEquivMatrix :
     CliffordAlgebra (realCliffordForm 1 1) ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℝ :=
-  AlgEquiv.ofBijective realCliffordOneOneToMatrix realCliffordOneOneToMatrix_bijective
+  ((CliffordAlgebra.equivOfIsometry realCliffordOneOneIsometry).trans
+    CliffordAlgebraQuaternion.equiv).trans (QuaternionAlgebra.oneEquivMatrix (-1 : ℝˣ))
 
 /-- `realCliffordOneOneEquivMatrix` sends the generator of the coordinate `v` to
 `!![v 0, v 1; -v 1, -v 0]`, the combination `v 0 • !![1, 0; 0, -1] + v 1 • !![0, 1; -1, 0]` of the
@@ -829,6 +673,12 @@ images of the `+1` and `-1` generators. -/
 @[simp]
 theorem realCliffordOneOneEquivMatrix_ι (v : Fin (1 + 1) → ℝ) :
     realCliffordOneOneEquivMatrix (CliffordAlgebra.ι _ v) = !![v 0, v 1; -v 1, -v 0] := by
-  rw [realCliffordOneOneEquivMatrix, AlgEquiv.ofBijective_apply, realCliffordOneOneToMatrix_ι]
+  simp only [realCliffordOneOneEquivMatrix, AlgEquiv.trans_apply,
+    CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_apply_ι,
+    IsometryEquiv.toIsometry_apply, realCliffordOneOneIsometry_apply,
+    CliffordAlgebraQuaternion.equiv_apply, CliffordAlgebraQuaternion.toQuaternion_ι,
+    QuaternionAlgebra.oneEquivMatrix_apply]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
 
 end TauCeti

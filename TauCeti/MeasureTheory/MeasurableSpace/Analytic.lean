@@ -281,7 +281,7 @@ private lemma exists_measurableSet_subset_measure_sdiff_eq_zero_of_forall_exists
     MeasurableSet.iUnion fun n => (hK_compact n).isClosed.measurableSet
   have hG_sub : G ⊆ S := Set.iUnion_subset hK_sub
   have hμSG : μ S ≤ μ G := by
-    refine ENNReal.le_of_forall_pos_le_add fun δ hδ hG_fin => ?_
+    refine ENNReal.le_of_forall_pos_le_add fun δ hδ _ => ?_
     have hδ_ne : (δ : ℝ≥0∞) ≠ 0 := by exact_mod_cast hδ.ne'
     obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hδ_ne
     have hn' : ((n : ℝ≥0∞) + 1)⁻¹ ≤ (δ : ℝ≥0∞) := by

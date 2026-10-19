@@ -118,6 +118,11 @@ theorem infinite_iff_two_le_demushkinRank : Infinite G ↔ 2 ≤ demushkinRank h
 theorem infinite_of_two_le_demushkinRank (h : 2 ≤ demushkinRank hG) : Infinite G :=
   hG.infinite_iff_two_le_demushkinRank.2 h
 
+/-- A Demushkin group whose topological generator rank exceeds one is infinite. -/
+theorem infinite_of_one_lt_topologicalGeneratorRankNat {hfg : IsTopologicallyFinitelyGenerated G}
+    (h : 1 < topologicalGeneratorRankNat G hfg) : Infinite G :=
+  hG.infinite_of_two_le_demushkinRank (by rw [demushkinRank_def]; exact h)
+
 /-- An infinite Demushkin group has rank at least two. -/
 theorem two_le_demushkinRank_of_infinite [Infinite G] : 2 ≤ demushkinRank hG :=
   hG.infinite_iff_two_le_demushkinRank.1 ‹_›

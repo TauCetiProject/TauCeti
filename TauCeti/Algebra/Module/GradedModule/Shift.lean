@@ -85,6 +85,26 @@ theorem shift_shift (G : InternalGrading R M) (c d : ℤ) :
   ext p
   simp [add_assoc]
 
+/-- The Koszul twist of parameter `q` for a grading shifted by `c` differs from the unshifted
+twist by the constant sign `(-1)^(q * c)`: a homogeneous element of degree `p` has degree `p - c`
+after the shift. -/
+theorem koszulTwist_shift {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
+    (G : InternalGrading R M) (c q : ℤ) :
+    (G.shift c).koszulTwist q = (((q * c).negOnePow : ℤ) : R) • G.koszulTwist q := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  have hshift : x ∈ (G.shift c).piece (p - c) := by rwa [shift_piece, sub_add_cancel]
+  rw [koszulTwist_apply_of_mem _ hshift, LinearMap.smul_apply, G.koszulTwist_apply_of_mem hx,
+    smul_smul, ← Int.cast_mul, ← Units.val_mul, mul_sub, Int.negOnePow_sub]
+  congr 3
+  exact mul_comm _ _
+
+/-- The degree-one Koszul twist of the suspended grading is the negative of the unsuspended one. -/
+theorem koszulTwist_one_shift_one {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M]
+    [Module R M] (G : InternalGrading R M) :
+    (G.shift 1).koszulTwist 1 = -G.koszulTwist 1 := by
+  rw [koszulTwist_shift]
+  simp
+
 end InternalGrading
 
 /-- Shifting the source and the target internal grading by the same amount leaves the degree of a

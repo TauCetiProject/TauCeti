@@ -63,6 +63,11 @@ theorem conductor_le_order (O : NumberFieldOrder K) {x : 𝓞 K}
     (hx : x ∈ O.conductor) : (x : K) ∈ O.toSubalgebra := by
   simpa using (O.mem_conductor_iff x).mp hx 1
 
+/-- The conductor, as a set of algebraic integers, is contained in the order. -/
+theorem conductor_le_toRingOfIntegers (O : NumberFieldOrder K) :
+    (O.conductor : Set (𝓞 K)) ⊆ O.toRingOfIntegers :=
+  fun _ hx ↦ O.mem_toRingOfIntegers.mpr (O.conductor_le_order hx)
+
 /-- Every maximal-order ideal contained in an order lies in its conductor. -/
 theorem le_conductor_iff (O : NumberFieldOrder K) (I : Ideal (𝓞 K)) :
     I ≤ O.conductor ↔ ∀ x : 𝓞 K, x ∈ I → (x : K) ∈ O.toSubalgebra := by

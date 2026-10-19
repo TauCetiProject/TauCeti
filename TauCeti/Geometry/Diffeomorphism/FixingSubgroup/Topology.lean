@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
-public import TauCeti.Geometry.Diffeomorphism.Topology
+public import TauCeti.Geometry.Diffeomorphism.Inversion
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
@@ -16,7 +16,8 @@ For a compact source manifold, the weak Whitney topology makes evaluation at eac
 continuous. Consequently, the diffeomorphisms fixing any subset pointwise form a closed
 subgroup: its carrier is the intersection of the equalizer sets `f x = x`. Taking the subset
 to be the boundary gives the relative diffeomorphism group used in homotopy questions about
-manifolds with boundary.
+manifolds with boundary. When the model space is locally compact, these subgroups inherit the
+topological group structure of the ambient diffeomorphism group.
 
 The topology here is the weak Whitney topology on `C^n` diffeomorphisms. It is available for
 any smoothness exponent `n`, including `∞`, and for manifolds with boundary. Only Hausdorffness

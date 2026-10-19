@@ -165,7 +165,7 @@ private theorem rowWeightMatrix_mul_lastArrowMatrix {n : ℕ} (hn : 2 ≤ n) (i 
   classical
   rw [Matrix.mul_apply]
   by_cases hj : j.val + 1 = n
-  · have hjpos : 0 < j.val := by omega
+  · have _ : 0 < j.val := by omega
     have hmem : j.val - 1 < n := by omega
     have hval : ((⟨j.val - 1, hmem⟩ : Fin n) : ℕ) = j.val - 1 := rfl
     rw [Finset.sum_eq_single (⟨j.val - 1, hmem⟩ : Fin n)]
@@ -197,7 +197,7 @@ private theorem rowWeightMatrix_mul_cartanMatrixB {n : ℕ} (hn : 2 ≤ n) :
     rowWeightMatrix n * B n = weightedRowMatrixB n := by
   rw [cartanMatrixB_eq_add, Matrix.mul_add, rowWeightMatrix_mul_cartanMatrixA]
   ext i j
-  have hj : j.val < n := j.isLt
+  have _ : j.val < n := j.isLt
   rw [Matrix.add_apply, rowWeightMatrix_mul_lastArrowMatrix hn]
   simp only [weightedRowMatrix, weightedRowMatrixB, Matrix.of_apply]
   split_ifs <;> push_cast <;> omega

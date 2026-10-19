@@ -506,7 +506,6 @@ lemma inv_conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n)
     (hγ : γ ∈ (SpecialLinearGroup.map (Int.castRingHom (ZMod A.det.natAbs))).ker) :
     g⁻¹ * (γ : GL (Fin n) ℚ) * g ∈ SLnZ n := by
   have hAdet : A.det ≠ 0 := det_ne_zero_of_val_eq n g hA
-  have hnatAbs_ne : NeZero A.det.natAbs := ⟨Int.natAbs_ne_zero.mpr hAdet⟩
   have h_entry : ∀ i j, A.det ∣ (γ.val i j - (1 : Matrix _ _ ℤ) i j) :=
     fun i j ↦ Int.natAbs_dvd.mp (ker_entry_dvd n A.det.natAbs γ hγ i j)
   have hdvd := adjugate_conj_dvd n A γ.val h_entry
@@ -606,7 +605,6 @@ lemma conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n) (Fi
     (hγ : γ ∈ (SpecialLinearGroup.map (Int.castRingHom (ZMod A.det.natAbs))).ker) :
     g * (γ : GL (Fin n) ℚ) * g⁻¹ ∈ SLnZ n := by
   have hAdet : A.det ≠ 0 := det_ne_zero_of_val_eq n g hA
-  have hnatAbs_ne : NeZero A.det.natAbs := ⟨Int.natAbs_ne_zero.mpr hAdet⟩
   have h_entry : ∀ i j, A.det ∣ (γ.val i j - (1 : Matrix _ _ ℤ) i j) :=
     fun i j ↦ Int.natAbs_dvd.mp (ker_entry_dvd n A.det.natAbs γ hγ i j)
   have hdvd := conj_dvd_reverse n A γ.val h_entry

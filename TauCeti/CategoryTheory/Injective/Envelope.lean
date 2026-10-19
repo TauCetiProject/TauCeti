@@ -21,10 +21,10 @@ The definition and results are dual to `TauCeti.IsEssentialEpi` in
 so users do not have to move an injective-envelope argument through the opposite category.
 
 For module categories this is the categorical form of `TauCeti.IsInjectiveEnvelope` from
-`TauCeti/Algebra/Module/Injective/Envelope.lean`: the latter asks that the range be an essential
-submodule, and its `TauCeti.isInjectiveEnvelope_iff_forall_injective` theorem identifies that
-condition with the one used here. The categorical formulation also applies to functor categories,
-in particular to representations of a quiver.
+`TauCeti/Algebra/Module/Injective/Envelope/Basic.lean`: the latter asks that the range be an
+essential submodule. Its `TauCeti.isInjectiveEnvelope_iff_forall_injective` theorem identifies
+that condition with the one used here. The categorical formulation also applies to functor
+categories, in particular to representations of a quiver.
 
 ## Main definitions
 

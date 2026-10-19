@@ -39,10 +39,7 @@ namespace TauCeti.Lie
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The matrix topology selected by the operator norm used for the general linear Lie group. -/
-local instance matrixOperatorTopologicalSpace (n : Type*) [Fintype n] :
-    TopologicalSpace (Matrix n n ℝ) :=
-  Matrix.linftyOpTopologicalSpace n n ℝ
+attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 /-- In the canonical matrix coordinates of the general linear Lie algebra, an element generates a
 one-parameter subgroup in the range of the positive-definite `realCliffordForm n 0`
@@ -60,9 +57,6 @@ theorem forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordFor
     ← Matrix.forall_exp_smul_mem_specialOrthogonalGroup_iff_mem_so]
   simp only [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff,
     TauCeti.expUnit_coe]
-  -- Both sides are now the same condition; only the `GL (Fin n) ℝ` abbreviation for the matrix
-  -- units still has to be unfolded.
-  exact Iff.rfl
 
 /-- A matrix belongs to the real orthogonal Lie algebra exactly when its inverse image under the
 canonical units Lie equivalence belongs to the Lie subalgebra of the positive-definite
@@ -90,8 +84,5 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_
     ← Matrix.forall_exp_smul_mem_specialOrthogonalGroup_iff_mem_so]
   simp only [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff,
     TauCeti.expUnit_coe]
-  -- Both sides are now the same condition; only the `GL (Fin n) ℝ` abbreviation for the matrix
-  -- units still has to be unfolded.
-  exact Iff.rfl
 
 end TauCeti.Lie

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Unipotent
 import TauCeti.LinearAlgebra.GeneralLinearGroup.Intertwining
 
@@ -19,11 +19,10 @@ Let `H` be a Hopf algebra over a commutative semiring `k` and let `K` be a commu
 geometric definition. This file calls `g` **unipotent** when every one of those linear
 automorphisms is unipotent, meaning that its difference from the identity is nilpotent.
 
-For the commutative coordinate Hopf algebra of an affine group scheme, taking `K` to be an
-algebraic closure of `k` is precisely the representation-theoretic definition of a geometric
-unipotent element. The quantification over all finitely generated comodules is essential: testing
-nilpotence in the reduced coordinate ring would instead give the vacuous condition warned against
-in the ReductiveGroups roadmap.
+For the commutative coordinate Hopf algebra of an affine group scheme, taking `K` to be an algebraic
+closure of `k` is precisely the representation-theoretic definition of a geometric unipotent
+element. The quantification over all finitely generated comodules is essential: testing nilpotence
+in the reduced coordinate ring would instead give a vacuous condition.
 
 The predicate is immediately exercised by its basic group-theoretic API. The identity is
 unipotent, as are inverses and natural or integer powers of unipotent points. Products are
@@ -51,9 +50,6 @@ bialgebra morphisms, and hence invariant under bialgebra isomorphisms.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This is the elementwise definition required by Layer 5, "Unipotent groups", of the
-ReductiveGroups roadmap. It uses the representation--comodule dictionary built in Layer 1.
 -/
 
 public section
@@ -106,7 +102,7 @@ theorem isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one
 /-- Precomposing a unipotent point with a bialgebra morphism gives a unipotent point. -/
 theorem IsUnipotentPoint.mapDomain {H' : Type w} [Semiring H'] [_root_.HopfAlgebra k H']
     {g : WithConv (H' →ₐ[k] K)} (hg : IsUnipotentPoint g) (f : H →ₐc[k] H') :
-    IsUnipotentPoint (AlgHom.mapDomain f g) := by
+    IsUnipotentPoint (BialgHom.mapDomain f g) := by
   rw [isUnipotentPoint_def] at hg ⊢
   intro M
   rw [← Comodule.pointsAction_corestrict_obj f M g]
@@ -115,12 +111,12 @@ theorem IsUnipotentPoint.mapDomain {H' : Type w} [Semiring H'] [_root_.HopfAlgeb
 /-- Unipotence of a point is invariant under precomposition by a bialgebra isomorphism. -/
 theorem isUnipotentPoint_mapDomain_iff {H' : Type w} [Semiring H']
     [_root_.HopfAlgebra k H'] (e : H ≃ₐc[k] H') (g : WithConv (H' →ₐ[k] K)) :
-    IsUnipotentPoint (AlgHom.mapDomain (e : H →ₐc[k] H') g) ↔ IsUnipotentPoint g := by
+    IsUnipotentPoint (BialgHom.mapDomain (e : H →ₐc[k] H') g) ↔ IsUnipotentPoint g := by
   constructor
   · intro hg
     have h := hg.mapDomain (e.symm : H' →ₐc[k] H)
-    rw [← AlgHom.mapDomainMulEquiv_symm_apply e,
-      ← AlgHom.mapDomainMulEquiv_apply e] at h
+    rw [← BialgEquiv.mapDomainMulEquiv_symm_apply e,
+      ← BialgEquiv.mapDomainMulEquiv_apply e] at h
     simpa only [MulEquiv.symm_apply_apply] using h
   · intro hg
     exact hg.mapDomain (e : H →ₐc[k] H')

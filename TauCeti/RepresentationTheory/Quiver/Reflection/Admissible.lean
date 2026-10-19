@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Preorder.Finite
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
+public import TauCeti.RepresentationTheory.Quiver.Acyclic.TopologicalSort
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Iterate
 
 /-!
@@ -46,11 +45,9 @@ in the quiver obtained after all the reflections.
 
 ## References
 
-This is the admissible-ordering milestone opening Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, the input the Coxeter
-functor of Layer 4 is assembled from. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
-Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the Representation Theory of
-Associative Algebras* I, VII.5.
+Admissible orderings are the input the Coxeter functor is assembled from. See
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
 -/
 
 public section
@@ -311,48 +308,6 @@ theorem IsSinkAdmissible.isEmpty_hom_self {q : _root_.Quiver.{v} V} {l : List V}
 
 variable [q : _root_.Quiver.{v} V]
 
-/-- A nonempty finite set of vertices of an acyclic quiver contains a vertex emitting no arrow
-into the set: a maximal vertex for the reachability preorder cannot, since an arrow out of it
-would have to be matched by a path back. -/
-private theorem exists_isEmpty_hom_mem (h : IsAcyclic V) {s : Finset V} (hs : s.Nonempty) :
-    ∃ i ∈ s, ∀ b ∈ s, IsEmpty (i ⟶ b) := by
-  let : LE V := ⟨fun a b ↦ Nonempty (Path a b)⟩
-  have : IsTrans V (· ≤ · : V → V → Prop) := ⟨fun a b c hab hbc ↦ by
-    obtain ⟨p⟩ : Nonempty (Path a b) := hab
-    obtain ⟨r⟩ : Nonempty (Path b c) := hbc
-    exact ⟨p.comp r⟩⟩
-  obtain ⟨i, hi, hmax⟩ := Finset.exists_maximal hs
-  refine ⟨i, hi, fun b hb ↦ ⟨fun e ↦ ?_⟩⟩
-  obtain ⟨p⟩ : Nonempty (Path b i) := hmax hb (⟨e.toPath⟩ : Nonempty (Path i b))
-  obtain rfl : i = b := h.eq_of_paths e.toPath p
-  exact (h.isEmpty_hom_self i).elim e
-
-/-- Every finite set of vertices of an acyclic quiver can be listed so that no arrow runs from an
-earlier entry to a later one: peel off a vertex emitting no arrow inside the set, and recurse. -/
-private theorem exists_pairwise_isEmpty_hom (h : IsAcyclic V) (s : Finset V) :
-    ∃ l : List V, l.Nodup ∧ (∀ v : V, v ∈ l ↔ v ∈ s) ∧
-      l.Pairwise fun x y ↦ IsEmpty (x ⟶ y) := by
-  classical
-  induction s using Finset.strongInduction with
-  | _ s ih =>
-    rcases s.eq_empty_or_nonempty with rfl | hs
-    · exact ⟨[], List.nodup_nil, by simp, List.Pairwise.nil⟩
-    · obtain ⟨i, his, hsink⟩ := exists_isEmpty_hom_mem h hs
-      obtain ⟨t, htnd, htmem, htp⟩ := ih (s.erase i) (Finset.erase_ssubset his)
-      have hit : i ∉ t := fun hc ↦ by simpa using (htmem i).mp hc
-      refine ⟨i :: t, List.nodup_cons.mpr ⟨hit, htnd⟩, fun v ↦ ?_,
-        List.pairwise_cons.mpr ⟨fun y hy ↦ hsink y (Finset.mem_of_mem_erase ((htmem y).mp hy)),
-          htp⟩⟩
-      rw [List.mem_cons, htmem v, Finset.mem_erase]
-      constructor
-      · rintro (rfl | ⟨-, hv⟩)
-        · exact his
-        · exact hv
-      · intro hv
-        by_cases hvi : v = i
-        · exact Or.inl hvi
-        · exact Or.inr ⟨hvi, hv⟩
-
 /-- **Every finite acyclic quiver has a sink-admissible ordering of its vertices**: a list without
 repetitions containing every vertex, each entry of which is a sink once its predecessors have been
 reflected. This is what lets the reflection functors at the successive vertices be composed into
@@ -361,7 +316,7 @@ original quiver. -/
 theorem IsAcyclic.exists_isSinkAdmissible [Finite V] (h : IsAcyclic V) :
     ∃ l : List V, l.Nodup ∧ (∀ v : V, v ∈ l) ∧ IsSinkAdmissible q l := by
   let : Fintype V := Fintype.ofFinite V
-  obtain ⟨l, hnd, hmem, hp⟩ := exists_pairwise_isEmpty_hom h Finset.univ
+  obtain ⟨l, hnd, hmem, hp⟩ := h.exists_pairwise_isEmpty_hom Finset.univ
   have hall : ∀ v : V, v ∈ l := fun v ↦ (hmem v).mpr (Finset.mem_univ v)
   exact ⟨l, hnd, hall,
     isSinkAdmissible_of_pairwise_of_forall_mem q hnd hall (fun v ↦ h.isEmpty_hom_self v) hp⟩

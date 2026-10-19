@@ -145,6 +145,18 @@ theorem riemannRochSpace_monotone :
     Monotone (riemannRochSpace : Divisor k F → Submodule k F) :=
   fun _ _ ↦ riemannRochSpace_mono
 
+/-- Taking the minimum of two pole bounds intersects their Riemann–Roch spaces. -/
+@[simp]
+theorem riemannRochSpace_inf (D E : Divisor k F) :
+    riemannRochSpace (D ⊓ E) = riemannRochSpace D ⊓ riemannRochSpace E := by
+  ext f
+  by_cases hf : f = 0
+  · simp [hf]
+  rw [Submodule.mem_inf, mem_riemannRochSpace_iff_neg_le_ord hf,
+    mem_riemannRochSpace_iff_neg_le_ord hf, mem_riemannRochSpace_iff_neg_le_ord hf]
+  simp only [WeilDivisor.coeff_inf, ← forall_and]
+  exact forall_congr' fun P ↦ by omega
+
 /-- If removing any single place of a finite set `T` leaves `L(D)` unchanged, then so does
 removing all of `T` at once: `L(D - ∑_{P ∈ T} P) = L(D)`. -/
 theorem riemannRochSpace_sub_ofFinset_eq {D : Divisor k F} {T : Finset (Place k F)}
@@ -183,6 +195,15 @@ theorem mul_mem_riemannRochSpace_add {A B : Divisor k F} {f g : F}
   have hfP := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hf P
   have hgP := (mem_riemannRochSpace_iff_neg_le_ord hg0).mp hg P
   omega
+
+/-- The `n`-th power of a section of `L(A)` is a section of `L(n A)`. -/
+theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ riemannRochSpace A)
+    (n : ℕ) : f ^ n ∈ riemannRochSpace ((n : ℤ) • A) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
+    exact mul_mem_riemannRochSpace_add ih hf
 
 namespace Divisor
 

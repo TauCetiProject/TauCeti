@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
+public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
+public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
+import TauCeti.FieldTheory.FunctionField.Different.Localization
 
 /-!
-# The different exponent is bounded by the derivative of a generating equation
+# The different exponent and derivatives of generating equations
 
 Let `F' / k'` be an extension of the field extension `F / k` with `F' / F` finite and separable,
 let `P'` be a place of `F'` over the place `P` of `F`, and suppose `F' = F(y)`. If `y` is a root
@@ -20,9 +23,20 @@ provided `ψ'(y) ≠ 0` (Stichtenoth, Theorem 3.5.10(a), where `ψ` is the minim
 `y`). This is the tool that computes different exponents from an explicit equation: a place at
 which `ψ'(y)` is a unit is unramified, with `d(P' ∣ P) = 0`.
 
+When an integral element generates the full local integral closure, the corresponding bound is
+an equality for the derivative of its minimal polynomial (Stichtenoth, Theorem 3.5.10(b)). The
+same holds for a generator of the integral closure `C` in `F'` of an affine model `B` of `F`, at
+every place `P'` finite on `C`.
+
 ## Main results
 
 * `TauCeti.Place.differentExponent_le_ord_aeval_derivative`: `d(P' ∣ P) ≤ ord_{P'} (ψ'(y))`.
+* `TauCeti.Place.differentExponent_le_ord_two_mul_add`: the case of a quadratic equation
+  `z² + u z - v = 0`, where `ψ'(z) = 2 z + u`.
+* `TauCeti.Place.differentExponent_eq_ord_aeval_derivative_minpoly`: equality for a generator of
+  the integral closure.
+* `TauCeti.Place.differentExponent_eq_ord_aeval_derivative_minpoly_of_isIntegralClosure`: equality
+  for a generator of the integral closure of an affine model.
 * `TauCeti.Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one`: if `ψ'(y)` is a
   unit at `P'`, then `d(P' ∣ P) = 0`.
 
@@ -78,13 +92,8 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
   have hinj : Function.Injective (algebraMap (integralClosure A F') F') :=
     FaithfulSMul.algebraMap_injective _ _
   have hqx : aeval x q = 0 := hinj (by rw [← aeval_algebraMap_apply, hx, hqy, map_zero])
-  -- The minimal polynomial of `x` over the integrally closed `𝒪_P` divides `q`, so `q'(x)` is a
-  -- multiple of the element `φ'(x)` of the different ideal.
-  obtain ⟨h, hh⟩ := minpoly.isIntegrallyClosed_dvd (integralClosure.isIntegral x) hqx
-  have hmem : aeval x (derivative q) ∈
-      differentIdeal A (integralClosure A F') := by
-    rw [hh, derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero]
-    exact Ideal.mul_mem_right _ _ (aeval_derivative_mem_differentIdeal A F F' x hgen')
+  have hmem : aeval x (derivative q) ∈ differentIdeal A (integralClosure A F') :=
+    aeval_derivative_mem_differentIdeal_of_aeval_eq_zero (K := F) (L := F') hgen' hqx
   have hval : algebraMap (integralClosure A F') F' (aeval x (derivative q)) =
       aeval y (derivative ψ) := by
     rw [← aeval_algebraMap_apply, hx, ← hq, derivative_map, aeval_map_algebraMap]
@@ -94,6 +103,86 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
     exact hψ' hval.symm
   rw [← hval]
   exact differentExponent_le_ord_of_mem_differentIdeal k F P' hmem hne
+
+/-- **The different exponent of a quadratic equation**: if `F' = F(z)` with
+`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`, as long
+as `2 z + u ≠ 0`. This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
+theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u ∈ P'.integers)
+    (hv : algebraMap F F' v ∈ P'.integers) {z : F'} (hgen : F⟮z⟯ = ⊤)
+    (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0)
+    (hne : 2 * z + algebraMap F F' u ≠ 0) :
+    (differentExponent k F P' : ℤ) ≤ P'.ord (2 * z + algebraMap F F' u) := by
+  have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
+  have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
+      2 * z + algebraMap F F' u := by
+    simp only [derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
+      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
+    norm_num
+  rw [← hderiv]
+  refine differentExponent_le_ord_aeval_derivative k F hgen hψ (fun i ↦ ?_)
+    (by simpa using hz) (by rwa [hderiv])
+  rw [mem_integers_restrict_iff]
+  rcases i with _ | _ | _ | i <;>
+    simp [coeff_X, coeff_C, coeff_X_pow, neg_mem_iff, hu, hv]
+
+/-- For a generator of the integral closure over the valuation ring, the different exponent is
+the order of the derivative of its field minimal polynomial. -/
+theorem differentExponent_eq_ord_aeval_derivative_minpoly
+    {x : integralClosure (P'.restrict k F).integers F'}
+    (hx : Algebra.adjoin (P'.restrict k F).integers {x} = ⊤) :
+    (differentExponent k F P' : ℤ) = P'.ord
+      (aeval (algebraMap (integralClosure (P'.restrict k F).integers F') F' x)
+        (derivative (minpoly F
+          (algebraMap (integralClosure (P'.restrict k F).integers F') F' x)))) := by
+  let A := (P'.restrict k F).integers
+  let B := integralClosure A F'
+  have hdifferent := differentIdeal_eq_span_aeval_derivative_minpoly A F F' B x hx
+  have hderiv0 : aeval x (derivative (minpoly A x)) ≠ 0 := by
+    intro h
+    exact differentIdeal_ne_bot (A := A) (B := B)
+      (by rw [hdifferent, h, Ideal.span_singleton_eq_bot])
+  have hmap : algebraMap B F' (aeval x (derivative (minpoly A x))) =
+      aeval (algebraMap B F' x) (derivative (minpoly F (algebraMap B F' x))) := by
+    rw [minpoly.isIntegrallyClosed_eq_field_fractions F F'
+        (integralClosure.isIntegral x), derivative_map, aeval_map_algebraMap,
+      aeval_algebraMap_apply]
+  rw [← hmap, differentExponent_def, hdifferent,
+    P'.ord_algebraMap_eq_multiplicity_center
+      (algebraMap_mem_integers_of_mem_integralClosure k F P') hderiv0,
+    ← centerIntegralClosure_def]
+
+section AffineModel
+
+variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F]
+  [IsFractionRing B F] [CommRing C] [Algebra C F'] [Algebra B C] [Algebra B F']
+  [IsScalarTower B C F'] [IsScalarTower B F F'] [IsIntegralClosure C B F']
+
+/-- **The different exponent from a generator of an affine model**: if `y` generates the integral
+closure `C` in `F'` of an affine model `B` of `F` as a `B`-algebra, then at every place `P'`
+finite on `C` the different exponent is the order of the derivative of the minimal polynomial
+of `y`. -/
+theorem differentExponent_eq_ord_aeval_derivative_minpoly_of_isIntegralClosure (P' : Place k' F')
+    (hC : ∀ c : C, algebraMap C F' c ∈ P'.integers) {y : C} (hy : Algebra.adjoin B {y} = ⊤) :
+    (differentExponent k F P' : ℤ) =
+      P'.ord (aeval (algebraMap C F' y) (derivative (minpoly F (algebraMap C F' y)))) := by
+  have : IsDomain C := (IsIntegralClosure.algebraMap_injective C B F').isDomain
+  have : Module.IsTorsionFree B F' := .trans_faithfulSMul B F F'
+  have : Module.IsTorsionFree B C := IsIntegralClosure.isTorsionFree B F'
+  have := IsIntegralClosure.isFractionRing_of_finite_extension B F F' C
+  have := IsIntegralClosure.isDedekindDomain B F F' C
+  have hmap : algebraMap C F' (aeval y (derivative (minpoly B y))) =
+      aeval (algebraMap C F' y) (derivative (minpoly F (algebraMap C F' y))) := by
+    rw [minpoly.isIntegrallyClosed_eq_field_fractions F F'
+        (IsIntegralClosure.isIntegral B F' y), derivative_map, aeval_map_algebraMap,
+      aeval_algebraMap_apply]
+  have hne : aeval y (derivative (minpoly B y)) ≠ 0 := fun h ↦
+    (Algebra.IsSeparable.isSeparable F (algebraMap C F' y)).aeval_derivative_ne_zero
+      (minpoly.aeval F _) (by rw [← hmap, h, map_zero])
+  rw [differentExponent_eq_multiplicity_center (B := B) P' hC,
+    differentIdeal_eq_span_aeval_derivative_minpoly B F F' C y hy, ← hmap,
+    P'.ord_algebraMap_eq_multiplicity_center hC hne]
+
+end AffineModel
 
 /-- **A place at which the derivative of a generating equation is a unit is unramified**
 (Stichtenoth, Theorem 3.5.10(a)): if `F' = F(y)`, `y` is a root of a monic `ψ ∈ F[X]` whose

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.Shift
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 
 /-!
 # The shift reduction for the Hille--Yosida theorem
@@ -38,7 +39,7 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- The general `(M, omega)` Hille--Yosida resolvent hypotheses become the exponent-zero
 hypotheses for `A - omega I`.
@@ -47,20 +48,22 @@ This packages exactly the two facts consumed by the zero-exponent Yosida constru
 positive `lambda` is a resolvent point, and every positive power satisfies the sharp
 `M / lambda ^ n` estimate. -/
 theorem hilleYosida_zero_of {A : X →ₗ.[ℝ] X} {M omega : ℝ}
-    (hres : ∀ lambda, omega < lambda → lambda ∈ resolventSet A)
+    (hres : ∀ lambda, omega < lambda → lambda ∈ A.resolventSet)
     (hbound : ∀ n : ℕ, 1 ≤ n → ∀ lambda, omega < lambda →
-      ‖resolvent A lambda ^ n‖ ≤ M / (lambda - omega) ^ n) :
-    (∀ lambda, 0 < lambda → lambda ∈ resolventSet (subScalar A omega)) ∧
+      ‖A.resolvent lambda ^ n‖ ≤ M / (lambda - omega) ^ n) :
+    (∀ lambda, 0 < lambda → lambda ∈ (subScalar A omega).resolventSet) ∧
       ∀ n : ℕ, 1 ≤ n → ∀ lambda, 0 < lambda →
-        ‖resolvent (subScalar A omega) lambda ^ n‖ ≤ M / lambda ^ n := by
+        ‖(subScalar A omega).resolvent lambda ^ n‖ ≤ M / lambda ^ n := by
   constructor
   · intro lambda hlambda
     rw [mem_resolventSet_subScalar_iff]
-    exact hres (lambda + omega) (by linarith)
+    exact hres (lambda + omega) (lt_add_of_pos_left omega hlambda)
   · intro n hn lambda hlambda
-    have hmem : lambda + omega ∈ resolventSet A := hres (lambda + omega) (by linarith)
+    have hmem : lambda + omega ∈ A.resolventSet :=
+      hres (lambda + omega) (lt_add_of_pos_left omega hlambda)
     rw [resolvent_subScalar hmem]
-    simpa only [add_sub_cancel_right] using hbound n hn (lambda + omega) (by linarith)
+    simpa only [add_sub_cancel_right] using
+      hbound n hn (lambda + omega) (lt_add_of_pos_left omega hlambda)
 
 end TauCeti.LinearPMap
 

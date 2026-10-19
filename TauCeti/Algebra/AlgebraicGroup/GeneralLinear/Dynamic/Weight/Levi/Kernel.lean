@@ -38,10 +38,8 @@ holds at the level of defining Hopf ideals, not only after choosing a value alge
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic Levi-decomposition milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap. The kernel identification is the normal-factor input for identifying
-the represented weight parabolic with the semidirect product of its weight-unipotent and
-weight-Levi subgroups.
+The kernel identification is the normal-factor input for identifying the represented weight
+parabolic with the semidirect product of its weight-unipotent and weight-Levi subgroups.
 -/
 
 public section
@@ -58,14 +56,15 @@ variable (R : Type u) [CommRing R] {N : ℕ}
 
 /-- A represented weight-parabolic point lies in the relative weight-unipotent subgroup exactly
 when its represented dynamic limit is the identity of the weight-Levi point group. -/
-@[simp]
+-- Not `@[simp]`: the simp normal form of this membership is the ambient one given by
+-- `mem_weightUnipotentInParabolicPointsSubgroup_iff`.
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one
     (w : Fin N → ℤ) (A : CommAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w) A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup
         (weightParabolicCoordinateHopfAlgebra R w)
         (weightUnipotentInParabolicHopfIdeal R w) A ↔
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (weightParabolicLimitCoordinateMap R w)).app A g = 1 := by
   rcases A with ⟨A⟩
   let p : Cocharacter.parabolic A (weightCocharacter (R := R) w) :=
@@ -175,7 +174,7 @@ theorem kernelHopfIdeal_weightParabolicLimitCoordinateMap (w : Fin N → ℤ) :
       (weightUnipotentInParabolicHopfIdeal R w)
     apply (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff
       (weightParabolicLimitCoordinateMap R w) _ _).mp
-    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     apply (mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one R w _ _).mp
     exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
   · apply hopfIdeal_le_of_quotientGenericPoint_mem R
@@ -183,7 +182,7 @@ theorem kernelHopfIdeal_weightParabolicLimitCoordinateMap (w : Fin N → ℤ) :
       (weightUnipotentInParabolicHopfIdeal R w)
       (CommHopfAlgCat.kernelHopfIdeal (weightParabolicLimitCoordinateMap R w))
     apply (mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one R w _ _).mpr
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     apply (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff
       (weightParabolicLimitCoordinateMap R w) _ _).mpr
     exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _

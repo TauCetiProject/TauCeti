@@ -19,7 +19,7 @@ open TauCeti Set Metric Bornology in
 /-- Carathéodory's boundary extension theorem — a Riemann map onto a Jordan
 domain extends to a homeomorphism of the closures. -/
 theorem caratheodory {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧
       DifferentiableOn ℂ g (ball 0 1) ∧ BijOn g (ball 0 1) Ω ∧

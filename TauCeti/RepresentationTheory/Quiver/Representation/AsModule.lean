@@ -40,7 +40,7 @@ the inclusion back (`TauCeti.QuiverRep.vertexIdempotent_smul`), so the vertex co
 `eᵥ · asModule` is exactly the image of `Mᵥ` (`TauCeti.QuiverRep.vertexComponent_asModule`) and the
 inclusion is a `k`-linear isomorphism onto it, `TauCeti.QuiverRep.vertexComponentEquiv`.  Those
 isomorphisms are natural in the path, because a path acts on the image of `Mₐ` through `M.map p`
-(`TauCeti.QuiverRep.smul_ofVertex`, whence
+(`TauCeti.QuiverRep.ofPath_smul_ofVertex`, whence
 `TauCeti.QuiverRep.pathMap_vertexComponentEquiv`); assembling them with
 `CategoryTheory.NatIso.ofComponents` gives the natural isomorphism
 `TauCeti.QuiverRep.asModuleIso`.  Transported to the model
@@ -67,9 +67,9 @@ that isomorphism becomes `TauCeti.QuiverRep.asModuleShrinkIso`, the essential su
 
 ## Main results
 
-* `TauCeti.QuiverRep.smul_ofPath`: a basis path acts on `asModule` by reading off the component at
+* `TauCeti.QuiverRep.ofPath_smul`: a basis path acts on `asModule` by reading off the component at
   its source, applying the structure map and putting the result in the component at its target;
-  the two cases used below are `TauCeti.QuiverRep.smul_ofVertex` and
+  the two cases used below are `TauCeti.QuiverRep.ofPath_smul_ofVertex` and
   `TauCeti.QuiverRep.vertexIdempotent_smul`, the latter saying that the vertex idempotent `eᵥ` acts
   as the projection onto the summand `Mᵥ`, whence
   `TauCeti.QuiverRep.vertexComponent_asModule`: the vertex component of `asModule` at `v` is the
@@ -120,12 +120,6 @@ forward direction is identified with that model by
 `asModule` itself at that universe.
 
 ## References
-
-This is the essential-surjectivity half of `quiverRepEquivalence`, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the
-equivalence "sending a module `M` to the representation `v ↦ eᵥ M`, with an arrow acting by left
-multiplication, and inverting through the idempotent decomposition `M = ⨁ᵥ eᵥ M`"; the fully
-faithful half is `TauCeti.quiverRepFunctorFullyFaithful`.
 
 The plan of the file follows Mathlib's group-algebra analogue: the type synonym carrying a module
 structure through `Module.compHom`, the equivalence with the underlying type and the shape of the
@@ -223,11 +217,12 @@ noncomputable def toEnd : pathAlgebra k Q →ₐ[k] Module.End k (DirectSum Q (v
 theorem toEnd_ofPath (x : Quiver.TotalPath Q) : toEnd k Q M (ofPath x) = pathEnd k Q M x := by
   rw [toEnd, PathAlgebra.liftAlgHom_ofPath]
 
-/-- A loop at `v` acts on `⨁_u M_u` through the summand `M_v` only. -/
-theorem toEnd_ofPath_loop {v : Q} (p : _root_.Quiver.Path v v) :
-    toEnd k Q M (ofPath ⟨v, v, p⟩) =
-      DirectSum.lof k Q (vertexSpace k Q M) v ∘ₗ mapₗ k Q M p ∘ₗ
-        DirectSum.component k Q (vertexSpace k Q M) v := by
+/-- The basis element of a path `p` from `a` to `b` acts on `⨁_u M_u` by reading off the
+`a`-component, applying the structure map of `p`, and including the result in the `b`-summand. -/
+theorem toEnd_ofPath_mk {a b : Q} (p : _root_.Quiver.Path a b) :
+    toEnd k Q M (ofPath ⟨a, b, p⟩) =
+      DirectSum.lof k Q (vertexSpace k Q M) b ∘ₗ mapₗ k Q M p ∘ₗ
+        DirectSum.component k Q (vertexSpace k Q M) a := by
   rw [toEnd_ofPath]
   exact LinearMap.ext fun z => pathEnd_mk_apply k Q M p z
 
@@ -241,7 +236,7 @@ theorem toEnd_single (x : Quiver.TotalPath Q) (c : k) :
 `TauCeti.QuiverRep.mapₗ_nil` is the projection onto that summand. -/
 theorem toEnd_vertexIdempotent (v : Q) :
     toEnd k Q M (vertexIdempotent k v) = pathEnd k Q M ⟨v, v, _root_.Quiver.Path.nil⟩ := by
-  rw [vertexIdempotent_eq_single, toEnd_single, one_smul]
+  rw [vertexIdempotent_eq_ofPath, toEnd_ofPath]
 
 /-- The module over the path algebra carried by a representation of `Q`.
 
@@ -280,7 +275,7 @@ reconciled: the public identification is its `k`-linear upgrade
 private def asModuleAddEquiv : asModule k Q M ≃+ DirectSum Q (vertexSpace k Q M) := AddEquiv.refl _
 
 /-- The defining action, read through the identity additive equivalence; the public form is
-`TauCeti.QuiverRep.smul_asModule_def`. -/
+`TauCeti.QuiverRep.asModuleEquiv_map_smul`. -/
 private theorem asModuleAddEquiv_smul_pathAlgebra (f : pathAlgebra k Q) (x : asModule k Q M) :
     asModuleAddEquiv k Q M (f • x) = toEnd k Q M f (asModuleAddEquiv k Q M x) := (rfl)
 
@@ -299,10 +294,13 @@ This is the identification consumers should go through, the `k`-action on
 noncomputable def asModuleEquiv : asModule k Q M ≃ₗ[k] DirectSum Q (vertexSpace k Q M) :=
   { asModuleAddEquiv k Q M with map_smul' := asModuleAddEquiv_smul k Q M }
 
-/-- The defining action on `TauCeti.QuiverRep.asModule`: an element of the path algebra acts
-through `TauCeti.QuiverRep.toEnd`. -/
-theorem smul_asModule_def (f : pathAlgebra k Q) (x : asModule k Q M) :
-    f • x = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
+/-- The defining action on `TauCeti.QuiverRep.asModule`: read through
+`TauCeti.QuiverRep.asModuleEquiv`, an element of the path algebra acts through
+`TauCeti.QuiverRep.toEnd`. The statement and its name follow Mathlib's
+`Representation.asModuleEquiv_map_smul` for the group algebra. -/
+@[simp]
+theorem asModuleEquiv_map_smul (f : pathAlgebra k Q) (x : asModule k Q M) :
+    asModuleEquiv k Q M (f • x) = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
 
 /-- The inclusion of a vertex space into the module carried by a representation. -/
 noncomputable def ofVertex (v : Q) : vertexSpace k Q M v →ₗ[k] asModule k Q M :=
@@ -355,38 +353,33 @@ theorem sum_ofVertex_toVertex [Fintype Q] (x : asModule k Q M) :
 theorem ofVertex_injective (v : Q) : Function.Injective (ofVertex k Q M v) :=
   Function.LeftInverse.injective (toVertex_ofVertex k Q M v)
 
--- Not `@[simp]`: the specialized `TauCeti.QuiverRep.smul_ofVertex` and
--- `TauCeti.QuiverRep.vertexIdempotent_smul` are the simp-normal forms of the action, this one
--- being stated on an arbitrary element and so introducing `TauCeti.QuiverRep.toVertex` where they
--- do not.
+-- Not `@[simp]`: on an arbitrary element this introduces `TauCeti.QuiverRep.toVertex`, and as a
+-- simp lemma it would make the specialized `TauCeti.QuiverRep.ofPath_smul_ofVertex`, the
+-- simp-normal form of the action on a vertex component, provable by `simp`.
 /-- **A basis path acts by transporting the component at its source**: it reads off that
 component, applies the structure map, and puts the result in the component at its target. This is
 `TauCeti.QuiverRep.pathEnd` read on `TauCeti.QuiverRep.asModule`. -/
-theorem smul_ofPath {a b : Q} (p : _root_.Quiver.Path a b) (x : asModule k Q M) :
+theorem ofPath_smul {a b : Q} (p : _root_.Quiver.Path a b) (x : asModule k Q M) :
     (ofPath ⟨a, b, p⟩ : pathAlgebra k Q) • x
       = ofVertex k Q M b (mapₗ k Q M p (toVertex k Q M a x)) := by
   apply (asModuleEquiv k Q M).injective
-  rw [smul_asModule_def, toEnd_ofPath, pathEnd_mk_apply, asModuleEquiv_ofVertex, toVertex_apply]
-  -- what is left is the outer `TauCeti.QuiverRep.asModuleEquiv`, which is the identity map
-  rfl
+  rw [asModuleEquiv_map_smul, toEnd_ofPath, pathEnd_mk_apply, asModuleEquiv_ofVertex,
+    toVertex_apply]
 
 /-- **A path acts on the image of its source through the structure map**: this is the naturality
 that makes `TauCeti.QuiverRep.asModuleIso` a morphism of representations. -/
 @[simp]
-theorem smul_ofVertex {a b : Q} (p : _root_.Quiver.Path a b) (z : vertexSpace k Q M a) :
+theorem ofPath_smul_ofVertex {a b : Q} (p : _root_.Quiver.Path a b) (z : vertexSpace k Q M a) :
     (ofPath ⟨a, b, p⟩ : pathAlgebra k Q) • ofVertex k Q M a z
       = ofVertex k Q M b (mapₗ k Q M p z) := by
-  rw [smul_ofPath, toVertex_ofVertex]
+  rw [ofPath_smul, toVertex_ofVertex]
 
 /-- **The vertex idempotent acts as the projection onto its summand**, the fact from which the
 vertex component of `TauCeti.QuiverRep.asModule` is read off. -/
 @[simp]
 theorem vertexIdempotent_smul (v : Q) (x : asModule k Q M) :
     (vertexIdempotent k v : pathAlgebra k Q) • x = ofVertex k Q M v (toVertex k Q M v x) := by
-  have h : (vertexIdempotent k v : pathAlgebra k Q)
-      = ofPath ⟨v, v, _root_.Quiver.Path.nil⟩ := by
-    rw [vertexIdempotent_eq_single, ofPath_eq_single]
-  rw [h, smul_ofPath, mapₗ_nil, LinearMap.id_coe, id_eq]
+  rw [vertexIdempotent_eq_ofPath, ofPath_smul, mapₗ_nil, LinearMap.id_coe, id_eq]
 
 /-- **The vertex component is the image of the vertex space**: the piece of
 `TauCeti.QuiverRep.asModule` that the vertex idempotent fixes is the summand `Mᵥ`. -/
@@ -408,7 +401,7 @@ noncomputable def vertexComponentEquiv (v : Q) :
 /-- The identification of a vertex space with a vertex component is the inclusion of the
 summand. -/
 @[simp]
-theorem coe_vertexComponentEquiv (v : Q) (z : vertexSpace k Q M v) :
+theorem coe_vertexComponentEquiv_apply (v : Q) (z : vertexSpace k Q M v) :
     (vertexComponentEquiv k Q M v z : asModule k Q M) = ofVertex k Q M v z := (rfl)
 
 /-- **The identification is natural in the path**: the action of a path on the vertex components of
@@ -419,7 +412,8 @@ theorem pathMap_vertexComponentEquiv {a b : Q} (p : _root_.Quiver.Path a b)
     pathMap k (asModule k Q M) p (vertexComponentEquiv k Q M a z)
       = vertexComponentEquiv k Q M b (mapₗ k Q M p z) := by
   apply Subtype.ext
-  rw [coe_pathMap_apply, coe_vertexComponentEquiv, coe_vertexComponentEquiv, smul_ofVertex]
+  rw [coe_pathMap_apply, coe_vertexComponentEquiv_apply, coe_vertexComponentEquiv_apply,
+    ofPath_smul_ofVertex]
 
 /-- `TauCeti.QuiverRep.pathMap_vertexComponentEquiv` read backwards through the identification:
 this is the elementwise naturality square of the isomorphisms below, in the form in which the
@@ -471,11 +465,8 @@ variable (M : QuiverRep.{u, v, w, t} k Q)
 /-- **The module carried by a representation is no larger than the representation**: over a finite
 vertex set the direct sum `⨁ᵥ Mᵥ` is a finite product of the vertex spaces, so it has a model in
 their universe even though it is indexed by a vertex type that may live in a larger one. -/
-instance small_asModule : Small.{t} (asModule k Q M) := by
-  classical
-  have : Fintype Q := Fintype.ofFinite Q
-  have : Small.{t} Q := small_map (Finite.equivFin Q)
-  exact small_map (α := asModule k Q M) (DFinsupp.equivFunOnFintype (β := vertexSpace k Q M))
+instance small_asModule : Small.{t} (asModule k Q M) :=
+  inferInstanceAs (Small.{t} (Π₀ i, vertexSpace k Q M i))
 
 /-- **The module carried by a representation, in the universe of the representation**: a model of
 `TauCeti.QuiverRep.asModule` in `Type t`, as an object of `ModuleCat (kQ)`.  It is bundled as an

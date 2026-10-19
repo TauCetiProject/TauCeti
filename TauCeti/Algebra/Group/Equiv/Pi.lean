@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Group.Equiv.Basic
 
 /-!
 # Additive equivalences of Pi types
@@ -15,14 +16,25 @@ pairs regroups into a pair of families. In the torsion decomposition of an ellip
 primary component of `E[N]` is a product of two cyclic groups; regrouping lets the Chinese
 remainder theorem reassemble the first and second cyclic factors separately into `ZMod N`.
 
-## Main definitions
+Coordinate transport by `AddEquiv.arrowCongr` inverts by reversing both the coordinate and
+alphabet equivalences.
+
+## Main declarations
 
 * `TauCeti.AddEquiv.arrowProdEquivProdArrow`: `(∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i)`.
+* `AddEquiv.arrowCongr_symm`: inversion reverses both equivalences in function transport.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Inverting additive function transport reverses the equivalences of both the domain and
+the codomain. -/
+@[simp]
+theorem _root_.AddEquiv.arrowCongr_symm {ι κ A B : Type*} [Add A] [Add B]
+    (e : ι ≃ κ) (f : A ≃+ B) :
+    (AddEquiv.arrowCongr e f).symm = AddEquiv.arrowCongr e.symm f.symm := (rfl)
 
 namespace AddEquiv
 

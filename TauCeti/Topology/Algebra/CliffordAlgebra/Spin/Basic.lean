@@ -45,7 +45,8 @@ topologized special orthogonal group.
 ## Main results
 
 * `QuadraticMap.Isometry.continuous_spinGroupMap` proves continuity of the Spin-group map induced
-  by an isometry of quadratic spaces.
+  by an isometry of quadratic spaces, and `QuadraticMap.IsometryEquiv.continuous_spinGroupEquiv`
+  that of the Spin-group equivalence induced by an isometric equivalence.
 * `QuadraticMap.Isometry.isEmbedding_spinGroupMap` restricts an embedding of the induced Clifford
   map to the corresponding Spin groups.
 * `CliffordAlgebra.instIsTopologicalGroupSpinGroup` equips `spinGroup Q` with a topological
@@ -125,6 +126,20 @@ theorem continuous_spinGroupMap (f : Q →qᵢ P) : Continuous f.spinGroupMap :=
 
 end QuadraticMap.Isometry
 
+namespace QuadraticMap.IsometryEquiv
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R]
+  {V : Type*} {W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+  {Q : QuadraticForm R V} {P : QuadraticForm R W}
+
+/-- The Spin-group equivalence induced by an isometric equivalence of quadratic spaces is
+continuous for the canonical subtype topologies. -/
+@[fun_prop]
+theorem continuous_spinGroupEquiv (e : Q.IsometryEquiv P) : Continuous e.spinGroupEquiv :=
+  e.toIsometry.continuous_spinGroupMap.congr fun x ↦ (e.spinGroupEquiv_apply x).symm
+
+end QuadraticMap.IsometryEquiv
+
 
 namespace CliffordAlgebra
 
@@ -198,13 +213,13 @@ theorem continuous_spinToSpecialOrthogonal_pi [Invertible (2 : R)]
   apply (TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     Q).isInducing.continuous_iff.mpr
   have h : Continuous
-      ((TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear Q).comp
+      ((QuadraticMap.specialOrthogonalToGeneralLinear Q).comp
         (spinToSpecialOrthogonal Q)) := by
     apply Continuous.of_coeHom_comp
     apply continuous_matrix
     intro i j
     simpa only [MonoidHom.comp_apply, Units.coeHom_apply,
-      TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply,
+      QuadraticMap.specialOrthogonalToGeneralLinear_apply,
       coe_spinToSpecialOrthogonal_apply, Function.comp_def] using
       (continuous_apply i).comp
         (continuous_spinVectorAction_apply Q (Pi.single j 1))

@@ -7,9 +7,10 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+import Mathlib.Algebra.Group.Subgroup.Actions
 
 /-!
-# Conjugation by an element of a normal subgroup, seen through a commutative target
+# Conjugation of subgroups
 
 A normal subgroup `N` of `G` carries the conjugation action `MulAut.conjNormal` of the whole of
 `G`. Conjugation by an element of `N` itself is inner, so a homomorphism `ψ : N →* M` to a
@@ -17,6 +18,9 @@ A normal subgroup `N` of `G` carries the conjugation action `MulAut.conjNormal` 
 
 Dually, conjugation cannot move a *central* element: a subgroup containing one has every
 conjugate containing it too.
+
+For an action of `G` on a type, translation by `g` carries the orbits of a subgroup `H` onto the
+orbits of its conjugate `g H g⁻¹`.
 
 ## Main statements
 
@@ -26,6 +30,8 @@ conjugate containing it too.
   conjugates.
 * `Subgroup.inclusion_conj_smul`: the inclusion of a normal subgroup into a larger normal
   subgroup commutes with conjugation.
+* `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
+  same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
 -/
 
 public section
@@ -66,3 +72,24 @@ theorem inclusion_conj_smul {G : Type*} [Group G] {H K : Subgroup G} [H.Normal] 
       coe_inclusion]
 
 end Subgroup
+
+namespace TauCeti.MulAction
+
+open scoped Pointwise
+
+/-- **Orbits of conjugate subgroups correspond under translation**: if `H'` is the conjugate
+`g H g⁻¹` of `H`, then `g • x` and `g • y` lie in the same `H'`-orbit exactly when `x` and `y` lie
+in the same `H`-orbit. -/
+theorem orbitRel_smul_smul_iff_of_conjAct_smul_eq {G X : Type*} [Group G] [MulAction G X]
+    {H H' : Subgroup G} {g : G} (h : ConjAct.toConjAct g • H = H') (x y : X) :
+    _root_.MulAction.orbitRel H' X (g • x) (g • y) ↔ _root_.MulAction.orbitRel H X x y := by
+  subst h
+  simp only [_root_.MulAction.orbitRel_apply, _root_.MulAction.mem_orbit_iff, Subtype.exists,
+    Subgroup.mk_smul, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv,
+    ConjAct.toConjAct_smul, inv_inv]
+  refine ⟨fun ⟨k, hk, hkx⟩ ↦ ⟨g⁻¹ * k * g, hk, ?_⟩, fun ⟨k, hk, hkx⟩ ↦ ⟨g * k * g⁻¹, ?_, ?_⟩⟩
+  · rw [mul_smul, mul_smul, hkx, inv_smul_smul]
+  · simpa [mul_assoc] using hk
+  · rw [mul_smul, mul_smul, inv_smul_smul, hkx]
+
+end TauCeti.MulAction

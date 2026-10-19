@@ -25,9 +25,6 @@ diagonal split torus.
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12--13.
 * T. A. Springer, *Linear Algebraic Groups*, Sections 6.2--6.3.
-
-This advances the dynamic approach to parabolics and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -47,34 +44,11 @@ private theorem weightLeviDefiningHopfIdeal_le_ker_diagonalTorusCoordinateMap
     (weightLeviDefiningHopfIdeal R w).toIdeal ≤
       RingHom.ker
         (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom.toRingHom := by
-  rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal,
-    weightParabolicDefiningHopfIdeal_toIdeal,
-    weightParabolicDefiningHopfIdeal_toIdeal]
-  apply sup_le
-  · rw [Ideal.span_le]
-    intro x hx
-    rw [mem_weightParabolicRelationSet_iff] at hx
-    obtain ⟨i, j, hij, rfl⟩ := hx
-    rw [SetLike.mem_coe, RingHom.mem_ker]
-    -- The kernel API exposes the underlying `RingHom`; the coordinate API uses the bundled map.
-    change (diagonalTorusCoordinateMap (R := R) (N := N)).hom
-      (coordinateHopfAlgebraAlgEquiv R N
-        (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0
-    have hne : i ≠ j := fun h ↦ hij.ne (congrArg w h)
-    simpa only [hne, ↓reduceIte] using
-      diagonalTorusCoordinateMap_X (R := R) (N := N) i j
-  · rw [Ideal.span_le]
-    intro x hx
-    rw [mem_weightParabolicRelationSet_iff] at hx
-    obtain ⟨i, j, hij, rfl⟩ := hx
-    rw [SetLike.mem_coe, RingHom.mem_ker]
-    -- The kernel API exposes the underlying `RingHom`; the coordinate API uses the bundled map.
-    change (diagonalTorusCoordinateMap (R := R) (N := N)).hom
-      (coordinateHopfAlgebraAlgEquiv R N
-        (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0
-    have hne : i ≠ j := fun h ↦ hij.ne (congrArg (-w) h)
-    simpa only [hne, ↓reduceIte] using
-      diagonalTorusCoordinateMap_X (R := R) (N := N) i j
+  apply weightLeviDefiningHopfIdeal_toIdeal_le_ker R w
+  intro i j hij
+  have hne : i ≠ j := fun h ↦ hij (congrArg w h)
+  simpa only [hne, ↓reduceIte, BialgHom.coe_toAlgHom] using
+    diagonalTorusCoordinateMap_X (R := R) (N := N) i j
 
 /-- Restriction from a weight Levi to the diagonal torus. The construction exists for every
 weight because diagonal matrices preserve every weight space. -/
@@ -103,24 +77,25 @@ private theorem mapPointsFunctor_weightLeviDiagonalCoordinateMap_app
         (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))) A) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w) A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (weightLeviDiagonalCoordinateMap R w)).app A f) =
       diagonalTorusPoints f := by
-  -- `quotientPointsHom` and `mapPointsFunctor` use definitionally equal presentations of the
+  -- `quotientPointsHom` and `CommHopfAlgCat.Hom.mapPointsFunctor` use definitionally equal
+  -- presentations of the
   -- quotient point type, but no theorem rewrites across the residual `GrpCat` wrapper.
-  change (CommHopfAlgCat.mapPointsFunctor
+  change (CommHopfAlgCat.Hom.mapPointsFunctor
       (CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w))).app A
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (weightLeviDiagonalCoordinateMap R w)).app A f) = _
-  rw [← CommHopfAlgCat.mapPointsFunctor_comp_app_apply,
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     weightLeviCoordinateMap_comp_weightLeviDiagonalCoordinateMap]
   exact mapPointsFunctor_diagonalTorusCoordinateMap_app A f
 
 private theorem bijective_mapPointsFunctor_weightLeviDiagonalCoordinateMap_app
     (w : Fin N → ℤ) (hw : Function.Injective w) (A : CommAlgCat.{u} R) :
     Function.Bijective
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (weightLeviDiagonalCoordinateMap R w)).app A) := by
   constructor
   · intro f g hfg
@@ -164,7 +139,7 @@ private theorem bijective_mapPointsFunctor_weightLeviDiagonalCoordinateMap_app
 
 private theorem isIso_mapPointsFunctor_weightLeviDiagonalCoordinateMap
     (w : Fin N → ℤ) (hw : Function.Injective w) :
-    IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (weightLeviDiagonalCoordinateMap R w)) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro A
@@ -179,7 +154,7 @@ noncomputable def weightLeviDiagonalCoordinateIso
       CommHopfAlgCat.of R
         (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) := by
   let f := weightLeviDiagonalCoordinateMap R w
-  let _ : IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u} f) := by
+  let _ : IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} f) := by
     dsimp only [f]
     exact isIso_mapPointsFunctor_weightLeviDiagonalCoordinateMap R w hw
   let _ : IsIso f := CommHopfAlgCat.isIso_of_isIso_mapPointsFunctor f

@@ -8,22 +8,27 @@ module
 public import Mathlib.LinearAlgebra.Basis.Basic
 
 /-!
-# Reading a vector off a one-point coordinate support
+# Basic lemmas about bases
 
 A vector whose coordinates in a basis vanish outside a single index is that one coordinate times
 the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`, which it runs
 through in the same direction, for the common situation where what one holds is a bound on the
 support rather than an explicit `Finsupp.single`.
 
-Nothing here needs more than a semiring of scalars, since only `Finsupp.support_subset_singleton`
-and the coordinate isomorphism are involved.
+These lemmas need no additive inverses: they hold over a semiring of scalars. Their proofs combine
+coordinate isomorphisms and `Finsupp.support_subset_singleton` with basis extensionality and
+linear-map composition.
 
 ## Main results
 
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
+* `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
+  intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
+* `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
+  the ambient module, are linearly independent.
 -/
 
 public section
@@ -54,6 +59,16 @@ theorem repr_map_eq_of_map_basis
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
 
+/-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
+theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
+    (b : Module.Basis ι K V) (e : V →ₗ[K] W) (f : Module.End K V) (g : Module.End K W)
+    (h : ∀ i, e (f (b i)) = g (e (b i))) (x : V) : e (f x) = g (e x) := by
+  have hmap : e.comp f = g.comp e := by
+    apply b.ext
+    intro i
+    simpa only [LinearMap.comp_apply] using h i
+  exact LinearMap.congr_fun hmap x
+
 /-- The coordinates with respect to the basis `b.map f` transported along a linear equivalence
 `f` are the coordinates with respect to `b` of the vector transported back along `f`. Not a simp
 lemma: simp already unfolds the left side through `Module.Basis.coord_apply`. -/
@@ -61,5 +76,17 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
+
+section Submodule
+
+variable {R M n : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {U : Submodule R M}
+
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, are linearly
+independent. -/
+theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
+    LinearIndependent R fun i ↦ (b i : M) :=
+  b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
+
+end Submodule
 
 end Module.Basis

@@ -32,6 +32,8 @@ In the namespace `TauCeti.RiemannianIsometry`:
   connections** under Riemannian isometries.
 * `mfderiv_leviCivitaConnection_mpullback`: the same statement for Mathlib's
   `CovariantDerivative.leviCivitaConnection`.
+* `leviCivitaConnection_mpullback_apply_mpullback`: the vector-field form
+  `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)`.
 
 ## References
 
@@ -119,8 +121,9 @@ theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (Φ : RiemannianIsomet
   have hXx : mpullback I J Φ X x = v := by
     rw [mpullback_apply, hXv]
     exact (Φ.toDiffeomorph.isInvertible_mfderiv (by simp)).inverse_apply_self v
-  refine TauCeti.eq_of_forall_inner_section_eq (I := J) (V := fun y : N ↦ TangentSpace J y) F
-    fun Z hZ ↦ ?_
+  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (Φ x) ?_
+  ext Z hZ
+  dsimp only
   have hMk := hM.two_inner_eq_koszul (hpull hX) (hpull hY) (hpull hZ)
   have hNk := hN.two_inner_eq_koszul hX hY hZ
   rw [Φ.koszul_mpullback hX hY hZ, hXx] at hMk
@@ -143,6 +146,17 @@ theorem mfderiv_leviCivitaConnection_mpullback (Φ : RiemannianIsometry I J M N)
   Φ.mfderiv_apply_mpullback_of_isLeviCivitaConnection
     (isLeviCivitaConnection_leviCivitaConnection I) (isLeviCivitaConnection_leviCivitaConnection J)
     hY v
+
+/-- The covariant derivative of a pulled-back vector field in a pulled-back direction is the
+pullback of the covariant derivative: `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)` at `x`. -/
+theorem leviCivitaConnection_mpullback_apply_mpullback (Φ : RiemannianIsometry I J M N)
+    {Y Z : Π y : N, TangentSpace J y} {x : M} (hZ : MDiffAt (T% Z) (Φ x)) :
+    leviCivitaConnection I M (mpullback I J Φ Z) x (mpullback I J Φ Y x) =
+      mpullback I J Φ (fun y ↦ leviCivitaConnection J N Z y (Y y)) x := by
+  apply Φ.mfderiv_injective x
+  rw [Φ.mfderiv_leviCivitaConnection_mpullback hZ, ← coe_toDiffeomorph Φ,
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp),
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp)]
 
 end TauCeti.RiemannianIsometry
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Spectrum
-public import TauCeti.Analysis.Matrix.UnitaryGroup
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
 
 /-!

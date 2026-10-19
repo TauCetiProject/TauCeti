@@ -33,7 +33,7 @@ together with the Kostka theory of `TauCeti.Combinatorics.Young.Kostka`:
   alphabet, since columns are strict and the entry in row `i` is at least `i`.
 * `TauCeti.coeff_diagramSchurPoly_rowLenWeight`: the coefficient at the exponent recording the row
   lengths of `μ` is `1`, the highest-weight tableau being the unique one of that content.
-* `TauCeti.coeff_diagramSchurPoly_diagramOf_eq_zero_of_not_dominates`: for partitions, the
+* `TauCeti.coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates`: for partitions, the
   exponent recording the parts of `ν` occurs in `s_μ` only if `μ` dominates `ν`. Together with the
   previous item this is the triangularity of the Schur polynomials against the dominance order,
   and `TauCeti.coeff_diagramSchurPoly_eq_zero_of_sum_lt` is the partial-sum form it comes from.
@@ -64,7 +64,8 @@ involution, and it lives downstream in
   `TauCeti.coeff_schurPoly_partWeight` reads it at the exponent of a partition.
 * `TauCeti.eval_diagramSchurPoly`: evaluating a Schur polynomial sums the monomials of its
   tableaux.
-* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
+* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT` and
+  `TauCeti.eval_one_schurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
   tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
@@ -84,6 +85,7 @@ public section
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
 open Finset MvPolynomial
 
 namespace BoundedSSYT
@@ -336,8 +338,8 @@ variable {n : ℕ} (μ ν : n.Partition)
 coefficient of `s_μ` at the exponent recording the parts of `ν` is the image in `R` of `K_{μν}`.
 The row bound is what makes the exponent record all of `ν`: an alphabet shorter than the number of
 parts of `ν` would truncate it. -/
-theorem coeff_diagramSchurPoly_diagramOf (h : (diagramOf ν).colLen 0 ≤ N) :
-    (diagramSchurPoly N R (diagramOf μ)).coeff (rowLenWeight N (diagramOf ν))
+theorem coeff_diagramSchurPoly_ofPartition (h : (ofPartition ν).colLen 0 ≤ N) :
+    (diagramSchurPoly N R (ofPartition μ)).coeff (rowLenWeight N (ofPartition ν))
       = (kostkaNumber μ ν : R) := by
   rw [coeff_diagramSchurPoly, mapDomain_rowLenWeight h, kostkaNumber_def]
 
@@ -345,14 +347,14 @@ theorem coeff_diagramSchurPoly_diagramOf (h : (diagramOf ν).colLen 0 ≤ N) :
 parts of `ν` occurs in `s_μ` only if `μ` dominates `ν`. No row bound is needed: an alphabet too
 short to record all of `ν` truncates the exponent to one of degree less than `n`, where `s_μ`
 vanishes by homogeneity. -/
-theorem coeff_diagramSchurPoly_diagramOf_eq_zero_of_not_dominates (hd : ¬ Dominates μ ν) :
-    (diagramSchurPoly N R (diagramOf μ)).coeff (rowLenWeight N (diagramOf ν)) = 0 := by
-  rcases le_or_gt ((diagramOf ν).colLen 0) N with h | h
-  · rw [coeff_diagramSchurPoly_diagramOf μ ν h, kostkaNumber_eq_zero_of_not_dominates hd,
+theorem coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates (hd : ¬ Dominates μ ν) :
+    (diagramSchurPoly N R (ofPartition μ)).coeff (rowLenWeight N (ofPartition ν)) = 0 := by
+  rcases le_or_gt ((ofPartition ν).colLen 0) N with h | h
+  · rw [coeff_diagramSchurPoly_ofPartition μ ν h, kostkaNumber_eq_zero_of_not_dominates hd,
       Nat.cast_zero]
   · refine isHomogeneous_diagramSchurPoly.coeff_eq_zero ?_
-    rw [card_diagramOf]
-    exact ((degree_rowLenWeight_lt h).trans_eq (card_diagramOf ν)).ne
+    rw [card_ofPartition]
+    exact ((degree_rowLenWeight_lt h).trans_eq (card_ofPartition ν)).ne
 
 end Partition
 
@@ -366,7 +368,7 @@ polynomial `TauCeti.diagramSchurPoly` of the Young diagram of `μ` in the alphab
 not matter, `s_μ` being symmetric (`TauCeti.schurPoly_isSymmetric`, proved downstream). -/
 noncomputable def schurPoly (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] {n : ℕ}
     (μ : n.Partition) : MvPolynomial σ R :=
-  rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (diagramOf μ))
+  rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (ofPartition μ))
 
 /-- The Schur polynomial of a partition is the Schur polynomial of its Young diagram, renamed
 along the chosen ordering of the alphabet.  As for `TauCeti.diagramSchurPoly_eq_sum`, the body of
@@ -374,17 +376,25 @@ along the chosen ordering of the alphabet.  As for `TauCeti.diagramSchurPoly_eq_
 module rewrites with. -/
 theorem schurPoly_eq_rename (μ : n.Partition) :
     schurPoly σ R μ
-      = rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (diagramOf μ)) :=
+      = rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (ofPartition μ)) :=
   (rfl)
+
+/-- **A Schur polynomial evaluated at one counts bounded semistandard tableaux**: the value of
+`s_μ` at the all-ones point of the alphabet `σ` is the number of semistandard tableaux of shape
+`μ` with entries below the number of letters of `σ`. -/
+@[simp] theorem eval_one_schurPoly_eq_card_boundedSSYT (μ : n.Partition) :
+    eval (fun _ : σ => (1 : R)) (schurPoly σ R μ) =
+      (Nat.card (BoundedSSYT (Fintype.card σ) (ofPartition μ)) : R) := by
+  simp [schurPoly_eq_rename, eval_rename, Function.comp_def]
 
 /-- The exponent vector on the alphabet `σ` recording the parts of `ν`, read through the ordering
 `Fintype.equivFin σ`: the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`. -/
 noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partition) : σ →₀ ℕ :=
-  Finsupp.mapDomain (Fintype.equivFin σ).symm (rowLenWeight (Fintype.card σ) (diagramOf ν))
+  Finsupp.mapDomain (Fintype.equivFin σ).symm (rowLenWeight (Fintype.card σ) (ofPartition ν))
 
 @[simp]
 theorem partWeight_apply (ν : n.Partition) (x : σ) :
-    partWeight σ ν x = (diagramOf ν).rowLen (Fintype.equivFin σ x) := by
+    partWeight σ ν x = (ofPartition ν).rowLen (Fintype.equivFin σ x) := by
   conv_lhs => rw [partWeight, ← (Fintype.equivFin σ).symm_apply_apply x]
   rw [Finsupp.mapDomain_apply_of_injective (Fintype.equivFin σ).symm.injective, rowLenWeight_apply]
 
@@ -395,7 +405,7 @@ exponent obtained from `d` by the ordering of the alphabet, the coefficient of `
 in `R` of the Kostka number of `μ` and the content that `d` extends to by zero. -/
 theorem coeff_schurPoly_mapDomain (d : Fin (Fintype.card σ) →₀ ℕ) :
     (schurPoly σ R μ).coeff (Finsupp.mapDomain (Fintype.equivFin σ).symm d)
-      = (diagramKostkaNumber (diagramOf μ) (Finsupp.mapDomain Fin.val d) : R) := by
+      = (diagramKostkaNumber (ofPartition μ) (Finsupp.mapDomain Fin.val d) : R) := by
   rw [schurPoly, MvPolynomial.coeff_rename_mapDomain _ (Fintype.equivFin σ).symm.injective,
     coeff_diagramSchurPoly]
 
@@ -404,7 +414,7 @@ coefficient of `s_μ` at an arbitrary exponent `d` is the image in `R` of the Ko
 and the content obtained from `d` by numbering the alphabet with `Fintype.equivFin`. -/
 theorem coeff_schurPoly (d : σ →₀ ℕ) :
     (schurPoly σ R μ).coeff d
-      = (diagramKostkaNumber (diagramOf μ)
+      = (diagramKostkaNumber (ofPartition μ)
           (Finsupp.mapDomain (fun x => (Fintype.equivFin σ x : ℕ)) d) : R) := by
   have hd : Finsupp.mapDomain (Fintype.equivFin σ).symm
       (Finsupp.mapDomain (Fintype.equivFin σ) d) = d := by
@@ -418,7 +428,7 @@ theorem coeff_schurPoly (d : σ →₀ ℕ) :
 of `s_μ` at the exponent recording the parts of `ν` is the image in `R` of `K_{μν}`. The row bound
 is what makes the exponent record all of `ν`: an alphabet with fewer letters than `ν` has parts
 would truncate the record. -/
-theorem coeff_schurPoly_partWeight (h : (diagramOf ν).colLen 0 ≤ Fintype.card σ) :
+theorem coeff_schurPoly_partWeight (h : (ofPartition ν).colLen 0 ≤ Fintype.card σ) :
     (schurPoly σ R μ).coeff (partWeight σ ν) = (kostkaNumber μ ν : R) := by
   rw [partWeight, coeff_schurPoly_mapDomain, mapDomain_rowLenWeight h, kostkaNumber_def]
 
@@ -429,7 +439,7 @@ theorem coeff_schurPoly_partWeight_eq_zero_of_not_dominates (hd : ¬ Dominates �
     (schurPoly σ R μ).coeff (partWeight σ ν) = 0 := by
   rw [partWeight, schurPoly]
   rw [MvPolynomial.coeff_rename_mapDomain _ (Fintype.equivFin σ).symm.injective]
-  exact coeff_diagramSchurPoly_diagramOf_eq_zero_of_not_dominates μ ν hd
+  exact coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates μ ν hd
 
 /-- Scalars pass through a Schur polynomial: every coefficient is the cast of a natural number,
 namely of a Kostka number, and casts of natural numbers are preserved by semiring homomorphisms. -/
@@ -441,23 +451,23 @@ theorem map_schurPoly {S : Type*} [CommSemiring S] (f : R →+* S) :
 empty tableau contributing the empty monomial. -/
 @[simp]
 theorem schurPoly_partition_zero (p : Nat.Partition 0) : schurPoly σ R p = 1 := by
-  have hbot : diagramOf p = ⊥ :=
-    YoungDiagram.ext ((Finset.card_eq_zero.mp (card_diagramOf p)).trans
+  have hbot : ofPartition p = ⊥ :=
+    YoungDiagram.ext ((Finset.card_eq_zero.mp (card_ofPartition p)).trans
       YoungDiagram.cells_bot.symm)
   rw [schurPoly, hbot, diagramSchurPoly_bot, map_one]
 
 /-- **A Schur polynomial vanishes exactly for a partition with more parts than the alphabet has
 letters.** -/
 theorem schurPoly_eq_zero_iff [Nontrivial R] :
-    schurPoly σ R μ = 0 ↔ Fintype.card σ < (diagramOf μ).colLen 0 := by
+    schurPoly σ R μ = 0 ↔ Fintype.card σ < (ofPartition μ).colLen 0 := by
   rw [schurPoly, map_eq_zero_iff _ (rename_injective _ (Fintype.equivFin σ).symm.injective),
     diagramSchurPoly_eq_zero_iff]
 
 /-- **A Schur polynomial is homogeneous** of degree the natural number its partition partitions: a
 tableau of that shape has one entry per cell. -/
 theorem isHomogeneous_schurPoly : (schurPoly σ R μ).IsHomogeneous n := by
-  have h := isHomogeneous_diagramSchurPoly (N := Fintype.card σ) (R := R) (μ := diagramOf μ)
-  rw [card_diagramOf μ] at h
+  have h := isHomogeneous_diagramSchurPoly (N := Fintype.card σ) (R := R) (μ := ofPartition μ)
+  rw [card_ofPartition μ] at h
   rw [schurPoly]
   exact h.rename_isHomogeneous
 

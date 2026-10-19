@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.FrattiniSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # One step of the Frattini series is a pro-`p` Frattini subgroup

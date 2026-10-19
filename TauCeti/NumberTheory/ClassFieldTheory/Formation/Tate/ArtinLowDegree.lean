@@ -12,8 +12,9 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 /-!
 # Low-degree functoriality for finite normal layers
 
-The Artin map is obtained by reading Tate's isomorphism between degrees `-2` and `0` through two
-canonical identifications. This file records how the degree `-2` identification behaves under a
+The Artin map is obtained by reading Tate's isomorphism between degrees `-2` and `0` through the
+layer's low-degree identifications; the degree `-2` one carries the sign normalization required by
+the character formula. This file records how the degree `-2` identification behaves under a
 restriction of finite normal layers. Restriction in degree `-2` is group-theoretic transfer, while
 corestriction is induced by inclusion of Galois groups.
 
@@ -51,16 +52,17 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
     (T : LayerRestriction small big) (x : big.TrivialTateH (-2)) :
     small.tateHMinusTwoEquivAbelianization (T.trivialTateRes (-2) x) =
       T.transferHom (big.tateHMinusTwoEquivAbelianization x) := by
-  rw [T.trivialTateRes_neg_two, ModuleCat.comp_apply]
+  rw [NormalLayer.tateHMinusTwoEquivAbelianization_apply,
+    NormalLayer.tateHMinusTwoEquivAbelianization_apply, map_neg, neg_inj,
+    T.trivialTateRes_neg_two, ModuleCat.comp_apply]
   rw [T.transferHom_eq_map_comp_lift_transfer, AddMonoidHom.comp_apply]
   apply (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive.injective
-  have hc := T.tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
+  have hc := T.HNegTwoAddEquivAbelianization_trivialTateRangeIso_hom_neg_two
     ((T.trivialTateRangeIso (-2)).inv
     (TauCeti.TateCohomology.HNegTwoRes (Rep.trivial ℤ big.Gal ℤ) T.galHom.range x))
   rw [Iso.inv_hom_id_apply] at hc
   have hr := TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_HNegTwoRes
     T.galHom.range x
-  rw [← NormalLayer.tateHMinusTwoEquivAbelianization_apply] at hr
   -- `abelianizationCongr` is definitionally `Abelianization.map` in both directions, and the
   -- additive equivalence and right unitor coerce to their underlying functions here.
   calc
@@ -71,7 +73,7 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
             T.galHom.range x)) := hc.symm
     _ = (Abelianization.lift
         (Abelianization.of : T.galHom.range →* Abelianization T.galHom.range).transfer).toAdditive
-          (big.tateHMinusTwoEquivAbelianization x) := hr
+          (TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x) := hr
     _ = _ := by
       let E := (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive
       exact (E.apply_symm_apply _).symm
@@ -82,10 +84,11 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateCor
     (T : LayerRestriction small big) (x : small.TrivialTateH (-2)) :
     big.tateHMinusTwoEquivAbelianization (T.trivialTateCor (-2) x) =
       T.inclusionHom (small.tateHMinusTwoEquivAbelianization x) := by
-  rw [T.trivialTateCor_neg_two, ModuleCat.comp_apply,
-    NormalLayer.tateHMinusTwoEquivAbelianization_apply,
+  rw [NormalLayer.tateHMinusTwoEquivAbelianization_apply,
+    NormalLayer.tateHMinusTwoEquivAbelianization_apply, map_neg, neg_inj,
+    T.trivialTateCor_neg_two, ModuleCat.comp_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_HNegTwoCor,
-    T.tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two]
+    T.HNegTwoAddEquivAbelianization_trivialTateRangeIso_hom_neg_two]
   rw [T.inclusionHom_apply, MonoidHom.toAdditive_apply_apply,
     MonoidHom.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,
     toMul_ofMul, Abelianization.map_map_apply]

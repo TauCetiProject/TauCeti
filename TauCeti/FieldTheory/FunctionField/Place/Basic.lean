@@ -51,6 +51,8 @@ equivalence is needed and equality of places *is* equality of valuations
   (`TauCeti.Place.transcendental_of_ord_ne_zero`). In particular the constant field
   `algebraicClosure k F` is contained in `𝒪_P`
   (`TauCeti.Place.mem_integers_of_mem_algebraicClosure`).
+* `TauCeti.Place.eq_of_valuation_sub_lt_one`: a function agrees with at most one constant to first
+  order at a place.
 * `TauCeti.Place.integers_injective`: a place is determined by its valuation ring
   (Stichtenoth, Theorem 1.1.13), and `TauCeti.Place.eq_of_integers_le`: the valuation ring of a
   place is a maximal proper subring of `F`, so a place whose valuation ring contains that of
@@ -128,6 +130,12 @@ theorem valuation_injective : Function.Injective (valuation : Place k F → Valu
 Definition 1.1.4). -/
 def integers : ValuationSubring F := P.valuation.valuationSubring
 
+/-- The defining equation of `Place.integers`: the valuation ring of a place is Mathlib's valuation
+subring of its underlying valuation. The body of `Place.integers` is not exposed to importing
+modules, so this is how generic valuation-subring constructions are transported to it. -/
+theorem integers_def : P.integers = P.valuation.valuationSubring :=
+  (rfl)
+
 @[simp]
 theorem mem_integers_iff {f : F} : f ∈ P.integers ↔ P.valuation f ≤ 1 := (Iff.rfl)
 
@@ -138,14 +146,21 @@ noncomputable def ord (f : F) : ℤ := Valuation.ord P.valuation f
 theorem ord_def (f : F) : P.ord f = -WithZero.log (P.valuation f) :=
   Valuation.ord_def P.valuation f
 
+/-- The order function of a place is the order function of its underlying valuation. The body of
+`Place.ord` is not exposed to importing modules, so this is how generic `Valuation.ord` results
+are transported to it. -/
+@[simp]
+theorem ord_valuation (f : F) : Valuation.ord P.valuation f = P.ord f :=
+  (rfl)
+
 /-- The translation between the multiplicative and additive views of a place. -/
 theorem valuation_eq_exp_neg_ord {f : F} (hf : f ≠ 0) :
     P.valuation f = WithZero.exp (-P.ord f) :=
-  Valuation.valuation_eq_exp_neg_ord P.valuation hf
+  Valuation.valuation_eq_exp_neg_ord P.valuation (P.valuation.ne_zero_iff.mpr hf)
 
 theorem ord_eq_iff_valuation_eq_exp_neg {f : F} (hf : f ≠ 0) {n : ℤ} :
     P.ord f = n ↔ P.valuation f = WithZero.exp (-n) :=
-  Valuation.ord_eq_iff_valuation_eq_exp_neg P.valuation hf
+  Valuation.ord_eq_iff_valuation_eq_exp_neg P.valuation (P.valuation.ne_zero_iff.mpr hf)
 
 @[simp]
 theorem ord_zero : P.ord 0 = 0 := Valuation.ord_zero P.valuation
@@ -154,11 +169,11 @@ theorem ord_zero : P.ord 0 = 0 := Valuation.ord_zero P.valuation
 theorem ord_one : P.ord 1 = 0 := Valuation.ord_one P.valuation
 
 theorem ord_mul {f g : F} (hf : f ≠ 0) (hg : g ≠ 0) : P.ord (f * g) = P.ord f + P.ord g :=
-  Valuation.ord_mul P.valuation hf hg
+  Valuation.ord_mul P.valuation (P.valuation.ne_zero_iff.mpr hf) (P.valuation.ne_zero_iff.mpr hg)
 
 theorem ord_prod {ι : Type*} (s : Finset ι) {f : ι → F} (hf : ∀ i ∈ s, f i ≠ 0) :
     P.ord (∏ i ∈ s, f i) = ∑ i ∈ s, P.ord (f i) :=
-  Valuation.ord_prod P.valuation s hf
+  Valuation.ord_prod P.valuation s fun i hi ↦ P.valuation.ne_zero_iff.mpr (hf i hi)
 
 @[simp]
 theorem ord_inv (f : F) : P.ord f⁻¹ = -P.ord f := Valuation.ord_inv P.valuation f
@@ -245,26 +260,29 @@ theorem mem_integers_iff_ord_nonneg {f : F} : f ∈ P.integers ↔ 0 ≤ P.ord f
 value `ord_P 0 = 0`. -/
 theorem min_ord_le_ord_add {f g : F} (h : f + g ≠ 0) :
     min (P.ord f) (P.ord g) ≤ P.ord (f + g) :=
-  Valuation.min_ord_le_ord_add P.valuation h
+  Valuation.min_ord_le_ord_add P.valuation (P.valuation.ne_zero_iff.mpr h)
 
 /-- The **strict triangle inequality** (Stichtenoth, Lemma 1.1.11): if two nonzero elements
 have distinct orders, the order of their sum is the smaller of the two. -/
 theorem ord_add_eq_min_of_ord_ne {f g : F} (hf : f ≠ 0) (hg : g ≠ 0)
     (h : P.ord f ≠ P.ord g) : P.ord (f + g) = min (P.ord f) (P.ord g) :=
-  Valuation.ord_add_eq_min_of_ord_ne P.valuation hf hg h
+  Valuation.ord_add_eq_min_of_ord_ne P.valuation
+    (P.valuation.ne_zero_iff.mpr hf) (P.valuation.ne_zero_iff.mpr hg) h
 
 /-- A finite sum one of whose summands has strictly least order at `P` does not vanish. -/
 theorem sum_ne_zero_of_forall_ord_lt {ι : Type*} {s : Finset ι} {f : ι → F} {j : ι} (hj : j ∈ s)
     (hfj : f j ≠ 0) (hlt : ∀ i ∈ s, i ≠ j → P.ord (f j) < P.ord (f i)) :
     ∑ i ∈ s, f i ≠ 0 :=
-  Valuation.sum_ne_zero_of_forall_ord_lt P.valuation hj hfj hlt
+  P.valuation.ne_zero_iff.mp <| Valuation.map_sum_ne_zero_of_forall_ord_lt P.valuation hj
+    (P.valuation.ne_zero_iff.mpr hfj) fun i hi hij _ ↦ hlt i hi hij
 
 /-- The **strict triangle inequality for a finite sum**: a summand of strictly least order at `P`
 dictates the order of the sum. -/
 theorem ord_sum_eq_of_forall_lt {ι : Type*} {s : Finset ι} {f : ι → F} {j : ι} (hj : j ∈ s)
     (hfj : f j ≠ 0) (hlt : ∀ i ∈ s, i ≠ j → P.ord (f j) < P.ord (f i)) :
     P.ord (∑ i ∈ s, f i) = P.ord (f j) :=
-  Valuation.ord_sum_eq_of_forall_lt P.valuation hj hfj hlt
+  Valuation.ord_sum_eq_of_forall_lt P.valuation hj
+    (P.valuation.ne_zero_iff.mpr hfj) fun i hi hij _ ↦ hlt i hi hij
 
 /-- **Functions of pairwise distinct orders are linearly independent over the constants**: a
 family of nonzero functions whose orders at `P` are pairwise distinct is `k`-linearly independent,
@@ -328,6 +346,16 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
   · exact zero_mem _
   · exact P.mem_integers_iff.mpr
       (le_of_eq (P.valuation_eq_one_of_isAlgebraic (mem_algebraicClosure_iff.mp hf) hf0))
+
+/-- **A function agrees with at most one constant to first order**: if `f - a` and `f - b` both
+vanish at `P` for constants `a` and `b`, then `a = b`, the difference `b - a` being a constant
+that vanishes at `P`. -/
+theorem eq_of_valuation_sub_lt_one {f : F} {a b : k} (ha : P.valuation (f - algebraMap k F a) < 1)
+    (hb : P.valuation (f - algebraMap k F b) < 1) : a = b := by
+  by_contra hne
+  have h := Valuation.map_sub_lt P.valuation hb ha
+  rw [sub_sub_sub_cancel_left, ← _root_.map_sub, P.isTrivialOn.eq_one _ (sub_ne_zero.mpr hne)] at h
+  exact lt_irrefl _ h
 
 end Constants
 
@@ -462,6 +490,14 @@ theorem coe_algebraMap_constants (c : k) :
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/
 noncomputable abbrev ResidueField : Type v := IsLocalRing.ResidueField P.integers
+
+/-- The canonical map from an algebra acting compatibly on the valuation ring to the residue
+field is reduction after the map to the valuation ring. -/
+theorem algebraMap_residueField {R : Type*} [CommSemiring R] [Algebra R P.integers]
+    [Algebra R P.ResidueField] [IsScalarTower R P.integers P.ResidueField] (r : R) :
+    algebraMap R P.ResidueField r =
+      IsLocalRing.residue P.integers (algebraMap R P.integers r) := by
+  rw [IsScalarTower.algebraMap_apply R P.integers _, IsLocalRing.ResidueField.algebraMap_eq]
 
 /-- Evaluation at a place vanishes exactly on elements of positive valuation. -/
 theorem residue_eq_zero_iff_valuation_lt_one {f : P.integers} :

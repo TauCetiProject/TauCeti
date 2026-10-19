@@ -63,7 +63,7 @@ theorem _root_.Polynomial.eval_mul_pos_of_no_roots (p : R[X]) {a b : R} (hab : a
       have := hq.natDegree_pos
       omega
     have hqpos : 0 < q.eval a * q.eval b := hdeg.elim
-      (fun h => linear_eval_mul_pos_of_no_roots h hab hq')
+      (fun h => eval_mul_pos_of_natDegree_le_one_of_no_roots h.le hab hq')
       (fun h => irreducible_quadratic_eval_mul_pos hq h a b)
     simpa only [eval_mul, mul_mul_mul_comm] using mul_pos hqpos (ih hp')
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # The simply connected root datum of type `Dₙ`
@@ -427,7 +428,7 @@ private lemma sum_typeDSimpleSupport {α : Type*} [AddCommMonoid α] (hn : 4 ≤
       (e.sum_comp (fun j => if h : (j : ℕ) < n then f ⟨j, h⟩ else 0)).symm
     _ = ∑ i : Fin n, f i := by
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       rw [he_apply]
       simp
 

@@ -151,7 +151,6 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     push_cast
     ring
   have hγK : (γ : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hγ0
-  have hεK : ((ε : 𝓞 K) : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr ε.ne_zero
   have hposratio : IsTotallyPositive ((γ : K) / quadraticConj hmin hgen (γ : K)) := by
     rw [hσγK, div_mul_eq_div_div_swap, div_self hγK]
     simpa using hpos.inv

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.CategoryTheory.ObjectProperty.FactorsThrough
 
 /-!
 # Relative injectives in an exact category
@@ -45,7 +46,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]
@@ -78,6 +79,19 @@ theorem comp_factorThru {I : C} (hI : E.isInjective I) {X Y : C} {i : X ⟶ Y}
   (hI hi f).choose_spec
 
 end isInjective
+
+/-- Factoring through any relative injective is equivalent to extending across a fixed
+inflation into a relative injective. -/
+theorem factorsThrough_injective_iff_exists_extension (E : ExactStructure C)
+    {X I Y : C} (i : X ⟶ I)
+    (hi : E.IsInflation i) (hI : E.isInjective I) (f : X ⟶ Y) :
+    E.isInjective.FactorsThrough f ↔ ∃ g : I ⟶ Y, i ≫ g = f := by
+  constructor
+  · intro hf
+    obtain ⟨J, hJ, a, b, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).mp hf
+    exact ⟨hJ.factorThru hi a ≫ b, by simp⟩
+  · rintro ⟨g, rfl⟩
+    exact ObjectProperty.factorsThrough_comp E.isInjective hI i g
 
 /-- Relative injectives are closed under retracts. -/
 instance : (E.isInjective).IsStableUnderRetracts where
@@ -350,6 +364,26 @@ def op {X : C} (P : E.ProjectivePresentation X) :
   conflation := (E.op_conflation_op_iff _).mpr P.conflation
   isInjective := (E.isProjective_iff_isInjective_op P.P).mp P.isProjective
 
+/-- The middle term of the opposite presentation is the opposite projective term. -/
+@[simp] theorem op_I {X : C} (P : E.ProjectivePresentation X) :
+    P.op.I = Opposite.op P.P := (rfl)
+
+/-- The cokernel term of the opposite presentation is the opposite kernel term. -/
+@[simp] theorem op_K {X : C} (P : E.ProjectivePresentation X) :
+    P.op.K = Opposite.op P.K := (rfl)
+
+/-- After identifying the middle term, the opposite presentation starts with the opposite
+deflation. -/
+@[simp] theorem op_i {X : C} (P : E.ProjectivePresentation X) :
+    P.op.i ≫ eqToHom P.op_I = P.p.op :=
+  Category.comp_id P.p.op
+
+/-- After identifying the middle and cokernel terms, the opposite presentation ends with the
+opposite inflation. -/
+@[simp] theorem op_p {X : C} (P : E.ProjectivePresentation X) :
+    eqToHom P.op_I.symm ≫ P.op.p ≫ eqToHom P.op_K = P.i.op :=
+  (Category.id_comp (P.i.op ≫ 𝟙 _)).trans (Category.comp_id P.i.op)
+
 /-- Unopposing a projective presentation gives an injective presentation. -/
 def unop {X : Cᵒᵖ} (P : E.op.ProjectivePresentation X) :
     E.InjectivePresentation X.unop where
@@ -380,6 +414,31 @@ theorem enoughProjectives_iff_op_enoughInjectives :
     exact ⟨fun X ↦ ⟨(h.projectivePresentation X.unop).op⟩⟩
   · intro h
     exact ⟨fun X ↦ ⟨(h.injectivePresentation (Opposite.op X)).unop⟩⟩
+
+section Equivalence
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] {E' : ExactStructure D}
+
+/-- A conflation-exact equivalence preserves and reflects relative injectivity. -/
+theorem isInjective_map_equivalence_iff (E : ExactStructure C) (E' : ExactStructure D)
+    (e : C ≌ D) [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) (I : C) :
+    E'.isInjective (e.functor.obj I) ↔ E.isInjective I := by
+  have : e.op.functor.Additive := inferInstanceAs e.functor.op.Additive
+  rw [isInjective_iff_isProjective_op, isInjective_iff_isProjective_op]
+  exact E.op.isProjective_map_equivalence_iff E'.op e.op hF.op hG.op (Opposite.op I)
+
+/-- Enough relative injectives transfer along an additive equivalence that preserves
+conflations in both directions. -/
+theorem EnoughInjectives.of_equivalence (h : E.EnoughInjectives) (e : C ≌ D)
+    [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) : E'.EnoughInjectives :=
+  have : e.op.functor.Additive := inferInstanceAs e.functor.op.Additive
+  enoughInjectives_iff_op_enoughProjectives.2
+    ((enoughInjectives_iff_op_enoughProjectives.1 h).of_equivalence e.op hF.op hG.op)
+
+end Equivalence
 
 end ExactStructure
 

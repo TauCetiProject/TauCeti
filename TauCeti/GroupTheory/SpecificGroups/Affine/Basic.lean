@@ -27,7 +27,8 @@ elements are Frobenius groups; their Frobenius kernels are identified in
 ## Main definitions and results
 
 * `TauCeti.affineAction`: multiplication by a unit on the additive group of a ring.
-* `TauCeti.AffineGroup`: the semidirect product `F ⋊ Fˣ` for this action.
+* `TauCeti.AffineGroup`: the semidirect product `F ⋊ Fˣ` for this action, acting faithfully on
+  `F` by affine maps (`TauCeti.AffineGroup.smul_def`).
 * `TauCeti.affineTranslationSubgroup` and `TauCeti.affineLinearSubgroup`: the two canonical
   factors.
 * `TauCeti.isComplement'_affineTranslationSubgroup_affineLinearSubgroup`: the two factors are
@@ -68,6 +69,30 @@ abbrev AffineGroup (F : Type*) [Ring F] :=
 /-- A one-dimensional affine group over a finite ring is finite. -/
 instance {F : Type*} [Ring F] [Finite F] : Finite (AffineGroup F) :=
   Finite.of_equiv (Multiplicative F × Fˣ) SemidirectProduct.equivProd.symm
+
+/-- An element `(b, a)` of the affine group sends `x` to `b + a * x`. -/
+instance {F : Type*} [Ring F] : SMul (AffineGroup F) F where
+  smul g x := g.left.toAdd + (g.right : F) * x
+
+/-- An element `(b, a)` of the affine group acts by `x ↦ b + a * x`. -/
+theorem AffineGroup.smul_def {F : Type*} [Ring F] (g : AffineGroup F) (x : F) :
+    g • x = g.left.toAdd + (g.right : F) * x :=
+  (rfl)
+
+/-- The affine group acts on its ring by affine maps. -/
+instance {F : Type*} [Ring F] : MulAction (AffineGroup F) F where
+  one_smul x := by simp [AffineGroup.smul_def]
+  mul_smul g h x := by simp [AffineGroup.smul_def, mul_add, mul_assoc, add_assoc]
+
+/-- The affine group acts faithfully on its ring: an affine map is determined by its values at
+`0` and `1`. -/
+instance {F : Type*} [Ring F] : FaithfulSMul (AffineGroup F) F where
+  eq_of_smul_eq_smul {g h} hgh := by
+    have h0 := hgh 0
+    have h1 := hgh 1
+    simp only [AffineGroup.smul_def, mul_zero, add_zero, mul_one] at h0 h1
+    rw [h0, add_right_inj] at h1
+    exact SemidirectProduct.ext (Multiplicative.ext h0) (Units.ext h1)
 
 /-- The normal subgroup of translations in the affine group. -/
 def affineTranslationSubgroup (F : Type*) [Ring F] : Subgroup (AffineGroup F) :=

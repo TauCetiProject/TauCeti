@@ -30,6 +30,11 @@ It reuses `PiTensorProduct.reindex`; the convention is
 * `permTensorActionAlgHom` is its `Representation.asAlgebraHom` extension to `R[S_d]`.
 * `TauCeti.tensorPowerBasis` is the monomial basis of `(Rⁿ)^{⊗d}`, on which the action is a
   reindexing.
+
+## Main results
+
+* `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
+  basis supplies.
 -/
 
 public section
@@ -139,6 +144,13 @@ theorem permTensorActionAlgHom_of (σ : Equiv.Perm (Fin d)) :
       permTensorAction R n d σ := by
   rw [permTensorActionAlgHom_def, Representation.asAlgebraHom_of]
 
+/-- The group-algebra action of `a ∈ R[S_d]` is the coefficient-weighted sum of the permutation
+actions. -/
+theorem permTensorActionAlgHom_eq_sum (a : MonoidAlgebra R (Equiv.Perm (Fin d))) :
+    permTensorActionAlgHom R n d a = ∑ σ, a.coeff σ • permTensorAction R n d σ := by
+  simp [permTensorActionAlgHom_def, Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply,
+    Finsupp.sum_fintype]
+
 /-- The group-algebra action on a pure tensor of `(Fin n → R)^{⊗d}` is the corresponding finite
 linear combination of reindexed pure tensors. -/
 @[simp]
@@ -155,11 +167,25 @@ noncomputable def tensorPowerBasis :
     Module.Basis (Fin d → Fin n) R (⨂[R] _ : Fin d, Fin n → R) :=
   Basis.piTensorProduct fun _ => Pi.basisFun R (Fin n)
 
+/-- The monomial basis is the tensor product of the standard bases.  The definition is not
+exposed, so this is its defining equation, used to compare it with the `Basis.piTensorProduct`
+spelling of the weight theory. -/
+theorem tensorPowerBasis_def :
+    tensorPowerBasis R n d = Basis.piTensorProduct fun _ : Fin d => Pi.basisFun R (Fin n) :=
+  (rfl)
+
 @[simp]
 theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
     tensorPowerBasis R n d f = PiTensorProduct.tprod R fun i => Pi.single (f i) (1 : R) := by
   classical
   rw [tensorPowerBasis, Basis.piTensorProduct_apply]
+  simp
+
+/-- **The dimension of `(Rⁿ)^{⊗d}` is `nᵈ`**, read off the monomial basis
+`TauCeti.tensorPowerBasis`, whose index type is `Fin d → Fin n`. -/
+theorem finrank_tensorPower [StrongRankCondition R] :
+    Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
+  rw [Module.finrank_eq_card_basis (tensorPowerBasis R n d), Fintype.card_fun]
   simp
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already

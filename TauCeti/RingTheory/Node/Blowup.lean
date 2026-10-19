@@ -30,6 +30,10 @@ discrete valuation ring are regular at their origin
 the local computation behind the resolution of the nodes of a model of a curve over a discrete
 valuation ring by repeated blowups of closed points.
 
+## Main definitions
+
+* `TauCeti.NodeAlgebra.originIdeal π a`: the ideal `(π, x, y)` of `R[x, y] ⧸ (xy - a)`.
+
 ## Main results
 
 * `TauCeti.NodeAlgebra.affineBlowupBaseEquiv`: the `π`-chart of the blowup of `xy = πⁿ⁺²` at
@@ -60,6 +64,26 @@ namespace TauCeti.NodeAlgebra
 open Ideal MvPolynomial TauCeti.Localization
 
 variable {R : Type*} [CommRing R]
+
+/-! ### The ideal of the origin -/
+
+/-- The ideal `(π, x, y)` of `R[x, y] ⧸ (xy - a)`. It cuts out the origin of the fibre over
+`V(π)`; for `a = πⁿ⁺²` with `π` a uniformizer of a discrete valuation ring, it is the ideal of the
+singular point of the node. -/
+def originIdeal (π a : R) : Ideal (NodeAlgebra R a) :=
+  span {algebraMap R _ π, coord a 0, coord a 1}
+
+theorem originIdeal_def (π a : R) :
+    originIdeal π a = span {algebraMap R _ π, coord a 0, coord a 1} :=
+  (rfl)
+
+@[simp]
+theorem algebraMap_mem_originIdeal (π a : R) : algebraMap R _ π ∈ originIdeal π a :=
+  subset_span (by simp)
+
+@[simp]
+theorem coord_mem_originIdeal (π a : R) (i : Fin 2) : coord a i ∈ originIdeal π a :=
+  subset_span (by fin_cases i <;> simp)
 
 /-! ### Images of algebra maps out of a node -/
 
@@ -190,12 +214,12 @@ private theorem baseChartHom_injective (hπ : π ∈ nonZeroDivisors R) :
 
 private theorem range_baseChartHom :
     (baseChartHom π n S).range =
-      ((span {algebraMap R _ π, coord (π ^ (n + 2)) 0, coord (π ^ (n + 2)) 1}).affineBlowup
+      ((originIdeal π (π ^ (n + 2))).affineBlowup
         (algebraMap R (NodeAlgebra R (π ^ (n + 2))) π) S).restrictScalars R := by
   refine le_antisymm (range_le_restrictScalars _ fun j ↦ ?_) ?_
   · rw [baseChartHom_coord]
-    exact divBy_mem_affineBlowup (subset_span (by fin_cases j <;> simp))
-  · rw [affineBlowup_eq_adjoin_of_span_eq rfl]
+    exact divBy_mem_affineBlowup (coord_mem_originIdeal π _ j)
+  · rw [affineBlowup_eq_adjoin_of_span_eq (originIdeal_def π _).symm]
     refine adjoin_le_range _ ?_ fun j ↦
       (AlgHom.mem_range _).mpr ⟨algebraMap R _ π * coord (π ^ n) j, ?_⟩
     · rintro _ ⟨z, hz, rfl⟩
@@ -212,7 +236,7 @@ variable (n S) in
 `R[u, v] ⧸ (uv - πⁿ)`, with `u = x/π` and `v = y/π`. -/
 def affineBlowupBaseEquiv (hπ : π ∈ nonZeroDivisors R) :
     NodeAlgebra R (π ^ n) ≃ₐ[R]
-      (span {algebraMap R _ π, coord (π ^ (n + 2)) 0, coord (π ^ (n + 2)) 1}).affineBlowup
+      (originIdeal π (π ^ (n + 2))).affineBlowup
         (algebraMap R (NodeAlgebra R (π ^ (n + 2))) π) S :=
   (AlgEquiv.ofInjective _ (baseChartHom_injective hπ)).trans
     (Subalgebra.equivOfEq _ _ range_baseChartHom)
@@ -304,7 +328,7 @@ private theorem coordChartHom_injective (hπ : π ∈ nonZeroDivisors R) :
 
 private theorem range_coordChartHom :
     (coordChartHom π n i S).range =
-      ((span {algebraMap R _ π, coord (π ^ (n + 2)) 0, coord (π ^ (n + 2)) 1}).affineBlowup
+      ((originIdeal π (π ^ (n + 2))).affineBlowup
         (coord (π ^ (n + 2)) i) S).restrictScalars R := by
   have hj : ∀ j : Fin 2, j = i ∨ j = 1 - i := by
     intro j
@@ -318,8 +342,8 @@ private theorem range_coordChartHom :
   · rw [coordChartHom_coord_zero]
     exact Subalgebra.algebraMap_mem _ _
   · rw [coordChartHom_coord_one]
-    exact divBy_mem_affineBlowup (subset_span (by simp))
-  · rw [affineBlowup_eq_adjoin_of_span_eq rfl]
+    exact divBy_mem_affineBlowup (algebraMap_mem_originIdeal π _)
+  · rw [affineBlowup_eq_adjoin_of_span_eq (originIdeal_def π _).symm]
     refine adjoin_le_range _ ?_ fun j ↦ ?_
     · rintro _ ⟨z, hz, rfl⟩
       have hself : divBy (coord (π ^ (n + 2)) i) (coord (π ^ (n + 2)) i) ∈
@@ -342,7 +366,7 @@ blowup algebra `A[I/xᵢ]` is the node `R[x, t] ⧸ (xt - π)`, with `x = xᵢ` 
 coordinate becomes `x_{1-i}/xᵢ = πⁿt²`. -/
 def affineBlowupCoordEquiv (hπ : π ∈ nonZeroDivisors R) :
     NodeAlgebra R π ≃ₐ[R]
-      (span {algebraMap R _ π, coord (π ^ (n + 2)) 0, coord (π ^ (n + 2)) 1}).affineBlowup
+      (originIdeal π (π ^ (n + 2))).affineBlowup
         (coord (π ^ (n + 2)) i) S :=
   (AlgEquiv.ofInjective _ (coordChartHom_injective hπ)).trans
     (Subalgebra.equivOfEq _ _ range_coordChartHom)

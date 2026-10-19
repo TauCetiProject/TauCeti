@@ -15,7 +15,10 @@ The *energy* of a curve `γ` in a Riemannian manifold between the parameters `a`
 `E(γ) = ½ ∫_a^b ‖γ'(t)‖² dt`, where `γ'` is the velocity `TauCeti.Manifold.curveVelocity`.  This
 file defines it and records its elementary properties: it vanishes on constant curves and on
 degenerate parameter intervals, changes sign under reversal of the parameter interval, and is
-nonnegative on positively oriented ones, and adds over adjacent parameter intervals.  Its first
+nonnegative on positively oriented ones, and adds over adjacent parameter intervals.  On a
+parameter set `s` containing the interval, it may equally be computed from the within-set velocity
+`TauCeti.Manifold.curveVelocityWithin`, which is the form used for geodesics on closed intervals,
+where the unrestricted velocity can take junk values at the endpoints.  Its first
 variation is in `TauCeti.Geometry.Manifold.Riemannian.FirstVariation`, and its value on geodesic
 segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed`.
 
@@ -28,6 +31,8 @@ segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed`.
   orientation of the parameter interval and nonnegative on positively oriented ones.
 * `TauCeti.Manifold.energy_add_adjacent`: the energy is additive over adjacent parameter
   intervals.
+* `TauCeti.Manifold.energy_eq_integral_curveVelocityWithin`: the energy computed from the velocity
+  within any parameter set containing the interval.
 
 ## References
 
@@ -38,8 +43,8 @@ segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed`.
 
 public section
 
-open Bundle
-open scoped Manifold
+open Bundle Set
+open scoped Manifold Topology
 
 noncomputable section
 
@@ -90,6 +95,17 @@ theorem energy_add_adjacent (γ : ℝ → M) {a b c : ℝ}
     energy I γ a b + energy I γ b c = energy I γ a c := by
   rw [energy_def, energy_def, energy_def, ← add_div,
     intervalIntegral.integral_add_adjacent_intervals hab hbc]
+
+/-- On any parameter set `s` containing the interval between `a` and `b`, the energy may be
+computed from the velocity within `s`.  The two velocities agree on the open interval, so no
+regularity of `γ` is needed. -/
+theorem energy_eq_integral_curveVelocityWithin (γ : ℝ → M) {s : Set ℝ} {a b : ℝ}
+    (hs : uIcc a b ⊆ s) :
+    energy I γ a b = (∫ t in a..b, ‖curveVelocityWithin I γ s t‖ ^ 2) / 2 := by
+  rw [energy_def, intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_]
+  have hmem : s ∈ 𝓝 t :=
+    mem_interior_iff_mem_nhds.mp (interior_mono hs (by rwa [uIcc, interior_Icc]))
+  simp only [curveVelocityWithin_of_mem_nhds hmem]
 
 end TauCeti.Manifold
 

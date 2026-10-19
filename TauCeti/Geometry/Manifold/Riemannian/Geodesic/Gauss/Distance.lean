@@ -78,7 +78,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
 
 namespace IsNormalDomain
 
@@ -278,7 +277,7 @@ section Metric
 variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
   {p : M} {U : Set (TangentSpace I p)} {r : ℝ} {v : TangentSpace I p}
 
 /-- If the closed tangent ball of radius `r` lies in a normal domain at `p`, then the distance

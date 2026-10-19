@@ -12,9 +12,9 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 /-!
 # The bilinear pairing of finite-group class functions
 
-This file defines the normalized bilinear pairing on class functions of a finite group.  When
-the coefficient field is algebraically closed and the group order is invertible, irreducible
-characters are orthonormal for this pairing.
+This file defines the normalized bilinear pairing on class functions of a finite group over a
+semifield. When the coefficient field is algebraically closed and the group order is invertible,
+irreducible characters are orthonormal for this pairing.
 
 The pairing is bilinear, rather than Hermitian: complex conjugation enters only after restricting
 to virtual characters.
@@ -27,7 +27,6 @@ function in the basis of irreducible characters into the second orthogonality re
 
 ## References
 
-* [Character Theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md), Layer 0.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2.
 -/
 
@@ -39,20 +38,11 @@ universe u v
 
 namespace ClassFunction
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G]
+variable {k : Type u} {G : Type v} [Group G] [Fintype G]
 
-omit [Group G] in
-private theorem card_inv_mul_sum_mul_smul (c : k) (f₁ f₂ : G → k) :
-    (Nat.card G : k)⁻¹ * ∑ g : G, f₁ g * (c * f₂ g) =
-      c * ((Nat.card G : k)⁻¹ * ∑ g : G, f₁ g * f₂ g) := by
-  calc
-    _ = (Nat.card G : k)⁻¹ * (c * ∑ g : G, f₁ g * f₂ g) := by
-      congr 1
-      rw [Finset.mul_sum]
-      apply Finset.sum_congr rfl
-      intro g _
-      ring
-    _ = _ := by ring
+section Semifield
+
+variable [Semifield k]
 
 /-- The normalized bilinear pairing of class functions on a finite group. -/
 noncomputable def characterPairing :
@@ -65,15 +55,14 @@ noncomputable def characterPairing :
     (by
       intro c f₁ f₂
       simp only [Submodule.coe_smul, Pi.smul_apply, smul_eq_mul]
-      simpa [mul_comm, mul_left_comm, mul_assoc] using
-        card_inv_mul_sum_mul_smul (G := G) c f₁.1 fun g => f₂.1 g⁻¹)
+      simp [Finset.mul_sum, mul_left_comm, mul_assoc])
     (by
       intro f₁ f₂ f₃
       simp [mul_add, Finset.sum_add_distrib])
     (by
       intro c f₁ f₂
       simp only [Submodule.coe_smul, Pi.smul_apply, smul_eq_mul]
-      simpa using card_inv_mul_sum_mul_smul (G := G) c f₁.1 fun g => f₂.1 g⁻¹)
+      simp [Finset.mul_sum, mul_left_comm])
 
 /-- The defining formula for the character pairing. -/
 theorem characterPairing_apply (f₁ f₂ : ClassFunction k G) :
@@ -98,6 +87,14 @@ theorem characterPairing_symm (f₁ f₂ : ClassFunction k G) :
 theorem characterPairing_isSymm :
     characterPairing (k := k) (G := G).IsSymm :=
   ⟨characterPairing_symm⟩
+
+/-- **The character pairing commutes with a change of coefficient semifield**: pairing the images
+of two class functions under a semiring homomorphism `σ` gives the image of their pairing. -/
+@[simp]
+theorem characterPairing_map {k' : Type*} [Semifield k'] (σ : k →+* k')
+    (f₁ f₂ : ClassFunction k G) :
+    characterPairing (map σ f₁) (map σ f₂) = σ (characterPairing f₁ f₂) := by
+  simp [characterPairing_apply]
 
 /-- **The character pairing is invariant under inverting the group element**: the inversion twist
 `TauCeti.ClassFunction.invMap` is an isometry of the pairing. -/
@@ -145,21 +142,25 @@ theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
       rw [(Fintype.card_ofFinset (p := {g | IsConj g x})
         (Finset.univ.filter fun g => IsConj g x) (by simp)).symm]
 
-/-- The character pairing is nondegenerate when the group order is invertible in the field. -/
+/-- The character pairing is nondegenerate when the group order is invertible in the semifield. -/
 theorem characterPairing_nondegenerate [Invertible (Nat.card G : k)] :
     characterPairing (k := k) (G := G).Nondegenerate := by
   classical
-  refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    (B := characterPairing (k := k) (G := G)) characterPairing_isSymm.isRefl).mpr ?_
-  intro f hf
-  apply Subtype.ext
-  funext x
-  by_contra hfx
-  have hpair := hf (classIndicator (k := k) x⁻¹)
-  rw [characterPairing_classIndicator_inv] at hpair
-  exact (mul_ne_zero (inv_ne_zero (Invertible.ne_zero _))
-    (mul_ne_zero (ConjClasses.card_carrier_cast_ne_zero (R := k) _ (Invertible.ne_zero _))
-      hfx)) hpair
+  have hleft : (characterPairing (k := k) (G := G)).SeparatingLeft := by
+    intro f hf
+    apply Subtype.ext
+    funext x
+    by_contra hfx
+    have hpair := hf (classIndicator (k := k) x⁻¹)
+    rw [characterPairing_classIndicator_inv] at hpair
+    exact (mul_ne_zero (inv_ne_zero (Invertible.ne_zero _))
+      (mul_ne_zero (ConjClasses.card_carrier_cast_ne_zero (R := k) _ (Invertible.ne_zero _))
+        hfx)) hpair
+  exact ⟨hleft, fun f hf => hleft f fun g => (characterPairing_symm f g).trans (hf g)⟩
+
+end Semifield
+
+variable [Field k]
 
 /-- The pairing of two representation characters is Mathlib's normalized character sum. -/
 theorem characterPairing_ofCharacter {V W : Type*} [AddCommGroup V] [Module k V]
@@ -185,6 +186,24 @@ theorem characterPairing_ofCharacter_eq_finrank {V W : Type*} [AddCommGroup V] [
       Module.finrank k (Representation.IntertwiningMap σ ρ) := by
   rw [characterPairing_ofCharacter]
   exact Representation.card_inv_mul_sum_char_mul_char_eq_finrank σ ρ
+
+/-- When `σ` admits no nonzero intertwiner into `ρ`, the norm of `χ_ρ - χ_σ` is
+`dim End(ρ) + dim End(σ)`: the cross terms are the dimensions of the intertwiner spaces between
+`ρ` and `σ` in the two directions, which agree by symmetry of the pairing. -/
+theorem characterPairing_ofCharacter_sub_self {V W : Type*} [AddCommGroup V] [Module k V]
+    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    [Invertible (Nat.card G : k)] (ρ : Representation k G V) (σ : Representation k G W)
+    [Subsingleton (Representation.IntertwiningMap σ ρ)] :
+    characterPairing (ofCharacter ρ - ofCharacter σ) (ofCharacter ρ - ofCharacter σ) =
+      Module.finrank k (Representation.IntertwiningMap ρ ρ) +
+        Module.finrank k (Representation.IntertwiningMap σ σ) := by
+  have hρσ : characterPairing (ofCharacter ρ) (ofCharacter σ) = 0 := by
+    rw [characterPairing_ofCharacter_eq_finrank, Module.finrank_zero_of_subsingleton,
+      Nat.cast_zero]
+  simp only [map_sub, LinearMap.sub_apply]
+  rw [characterPairing_symm (ofCharacter σ), hρσ, characterPairing_ofCharacter_eq_finrank,
+    characterPairing_ofCharacter_eq_finrank]
+  ring
 
 open scoped Classical in
 /-- The character pairing of irreducible characters is Kronecker orthonormal. -/

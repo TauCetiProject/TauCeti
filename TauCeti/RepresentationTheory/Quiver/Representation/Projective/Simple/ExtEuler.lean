@@ -47,7 +47,6 @@ private theorem finiteDimensional_hom_vertexSimpleModuleResolution_X₁ (i : Q)
   let e := vertexSimpleModuleResolutionX₁Iso k i
   have hf : ∀ a : J, FiniteDimensional k (P a ⟶ Y) := fun a ↦
     finiteDimensional_hom_indecProjModule k Q a.1 Y (hY a.1 a.2)
-  have hp := finiteDimensional_hom_biproduct k P Y hf
   exact Module.Finite.equiv (CategoryTheory.Linear.homCongr k e (Iso.refl Y)).symm
 
 /-- A vertex simple is Euler-admissible when the target has finite-dimensional spaces at
@@ -103,7 +102,7 @@ private theorem finrank_hom_vertexSimpleModuleResolution_X₁ (i : Q)
   calc
     _ = Module.finrank k (⨁ P ⟶ Y) :=
       (CategoryTheory.Linear.homCongr k e (Iso.refl Y)).finrank_eq
-    _ = ∑ a : J, Module.finrank k (P a ⟶ Y) := finrank_hom_biproduct k P Y hf
+    _ = ∑ a : J, Module.finrank k (P a ⟶ Y) := finrank_hom_biproduct k P Y
     _ = _ := by
       simp only [P, finrank_hom_indecProjModule]
       apply Finset.sum_congr

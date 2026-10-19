@@ -44,7 +44,7 @@ geometric reading likewise requires positive determinant.
 
 These integrals are the raw material of the period pairing between cusp forms and modular
 symbols, whose integrand `f(z) P(z, 1)` and convergence are treated in
-`TauCeti.NumberTheory.ModularForms.ModularSymbols.PeriodIntegral`.
+`TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral`.
 
 ## Main definitions
 

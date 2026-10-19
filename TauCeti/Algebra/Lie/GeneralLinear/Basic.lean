@@ -52,6 +52,8 @@ sits *inside* the derived ideal and the two are not complementary.
 * `TauCeti.derivedSeries_one_eq_slIdeal`: the derived ideal of `gl n R` is `TauCeti.slIdeal R n`, so
   by `TauCeti.mem_slIdeal_iff` it consists of the trace-zero matrices, and
   `TauCeti.derivedSeries_one_toLieSubalgebra_eq_sl` reads this as `LieAlgebra.SpecialLinear.sl n R`.
+* `LieAlgebra.SpecialLinear.mem_sl_iff`: membership in `LieAlgebra.SpecialLinear.sl n R` is the
+  vanishing of the trace.
 * `TauCeti.isCompl_center_derivedSeries_one_matrix`: when `Fintype.card n` is invertible in `R`,
   the centre and the derived ideal are complementary submodules of `gl n R`.
 * `TauCeti.exists_sl_add_smul_one_eq`: every matrix is a trace-zero matrix plus a scalar matrix
@@ -280,6 +282,13 @@ theorem slIdeal_toLieSubalgebra_eq_sl :
     (slIdeal R n : LieSubalgebra R (Matrix n n R)) = LieAlgebra.SpecialLinear.sl n R :=
   SetLike.ext fun _ => (mem_slIdeal_iff (R := R) (n := n)).trans
     (LinearMap.mem_ker (f := Matrix.traceLinearMap n R R)).symm
+
+/-- Membership in Mathlib's special linear Lie algebra `sl n R` is the vanishing of the trace. -/
+@[simp]
+theorem _root_.LieAlgebra.SpecialLinear.mem_sl_iff {A : Matrix n n R} :
+    A ∈ LieAlgebra.SpecialLinear.sl n R ↔ A.trace = 0 := by
+  rw [← slIdeal_toLieSubalgebra_eq_sl R n]
+  exact mem_slIdeal_iff
 
 /-! ### The derived ideal of `gl n R` -/
 

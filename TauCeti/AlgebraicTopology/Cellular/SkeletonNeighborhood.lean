@@ -67,6 +67,18 @@ def skeletonPairToNeighborhood (n : ℕ) : skeletonPair C n ⟶ skeletonNeighbor
   TopPair.ofInclusionMap _ _ (ContinuousMap.id _) fun _ hx ↦
     skeletonLT_subset_skeletonNeighborhood n hx
 
+@[simp]
+lemma skeletonPairToNeighborhood_fst_apply (n : ℕ) (x : (skeletonPair C n).fst) :
+    ConcreteCategory.hom (X := TopCat.of (skeletonLT C (n + 1)))
+      (TopPair.Hom.fst (skeletonPairToNeighborhood C n)) x = x :=
+  TopPair.ofInclusionMap_fst_apply _ _ x
+
+@[simp]
+lemma skeletonPairToNeighborhood_snd_apply (n : ℕ) (x : (skeletonPair C n).snd) :
+    (ConcreteCategory.hom (X := TopCat.of (skeletonLT C n))
+      (TopPair.Hom.snd (skeletonPairToNeighborhood C n)) x).1 = x.1 :=
+  TopPair.ofInclusionMap_snd_apply _ _ x
+
 /-- The radial deformation retraction, as a map of pairs
 `(Xⁿ, TauCeti.skeletonNeighborhood C n) ⟶ (Xⁿ, Xⁿ⁻¹)`; it is a homotopy inverse of
 `TauCeti.skeletonPairToNeighborhood`. -/
