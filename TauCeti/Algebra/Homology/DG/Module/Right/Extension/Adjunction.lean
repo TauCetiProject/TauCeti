@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Module
 public import TauCeti.Algebra.Homology.DG.Module.Right.Extension.Basic
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Functor
 
@@ -249,11 +250,9 @@ namespace DGRightModuleCat
 /-- **Extension of scalars** along a DG algebra morphism `f : A ⟶ B`, as a functor from right
 DG `A`-modules to right DG `B`-modules: `M ↦ M ⊗_A B` and `g ↦ g ⊗ 1`. -/
 noncomputable def extendScalars (f : DGAlgHom hA hB) :
-    DGRightModuleCat.{uR, uA, max uB uM} hA ⥤ DGRightModuleCat.{uR, uB, max uB uM} hB where
-  obj M := of (M.isDGRightModule.extendScalars f)
-  map g := g.extendScalars f
-  map_id _ := DGRightModuleHom.extendScalars_id f
-  map_comp g k := DGRightModuleHom.extendScalars_comp f k g
+    DGRightModuleCat.{uR, uA, max uB uM} hA ⥤ DGRightModuleCat.{uR, uB, max uB uM} hB :=
+  (tensorBimoduleFunctor (hB := hA) (hC := hB)).flip.obj
+    (DGBimoduleCat.of (DGAlgHom.isDGBimodule_codomainBimodule f))
 
 /-- The underlying `R`-module of a bundled extension is the balanced tensor product. -/
 noncomputable def extendScalarsEquiv (f : DGAlgHom hA hB)
@@ -268,7 +267,12 @@ theorem extendScalarsEquiv_map (f : DGAlgHom hA hB)
     (x : (extendScalars f).obj M) :
     extendScalarsEquiv f N ((extendScalars f).map g x) =
       g.extendScalars f (extendScalarsEquiv f M x) := by
-  rfl
+  change tensorBimoduleMap g (𝟙 _) x = g.extendScalars f x
+  induction x using BalancedTensorProduct.induction_on with
+  | ht m b =>
+    rw [DGRightModuleHom.extendScalars_tmul]
+    exact (tensorBimoduleMap_tmul g (𝟙 _) m b).trans (by rw [DGBimoduleCat.id_apply])
+  | ha x y hx hy => simp only [map_add, hx, hy]
 
 /-- The underlying equivalence of a bundled extension respects the right action. -/
 @[simp]
@@ -297,29 +301,12 @@ theorem extendScalarsEquiv_differential (f : DGAlgHom hA hB)
   rfl
 
 instance (f : DGAlgHom hA hB) : (extendScalars.{uR, uA, uB, uM} f).Additive where
-  map_add {M N} g k := by
-    apply hom_ext
-    intro x
-    apply (extendScalarsEquiv f N).injective
-    simp only [add_apply, map_add, extendScalarsEquiv_map]
-    induction extendScalarsEquiv f M x using BalancedTensorProduct.induction_on with
-    | ht m y =>
-      rw [DGRightModuleHom.extendScalars_tmul, DGRightModuleHom.extendScalars_tmul,
-        DGRightModuleHom.extendScalars_tmul, DGRightModuleHom.add_apply,
-        BalancedTensorProduct.add_tmul]
-    | ha y z hy hz => simp only [map_add, hy, hz]; abel
+  map_add := by
+    intro M N g g'
+    exact tensorBimoduleMap_add_left g g' _
 
 instance (f : DGAlgHom hA hB) : (extendScalars.{uR, uA, uB, uM} f).Linear R where
-  map_smul {M N} g r := by
-    apply hom_ext
-    intro x
-    apply (extendScalarsEquiv f N).injective
-    simp only [smul_apply, map_smul, extendScalarsEquiv_map]
-    induction extendScalarsEquiv f M x using BalancedTensorProduct.induction_on with
-    | ht m y =>
-      rw [DGRightModuleHom.extendScalars_tmul, DGRightModuleHom.extendScalars_tmul,
-        DGRightModuleHom.smul_apply, BalancedTensorProduct.smul_tmul]
-    | ha y z hy hz => simp only [map_add, hy, hz, smul_add]
+  map_smul _ _ := tensorBimoduleMap_smul_left _ _ _
 
 /-- The bundled extended object is the object obtained by bundling the unbundled balanced tensor
 product. This is the identity isomorphism; it is named because `extendScalars` is not exposed, so

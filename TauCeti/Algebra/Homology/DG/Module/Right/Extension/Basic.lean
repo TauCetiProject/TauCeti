@@ -111,6 +111,7 @@ variable (f : DGAlgHom hA hB)
 
 /-- The grading of the extended module `M ⊗_A B`: the total grading of the balanced tensor
 product, with `|m ⊗ b| = |m| + |b|`. -/
+@[expose]
 noncomputable def extendScalarsGrading (q : ℤ) :
     Submodule R (DGRightModule.ExtendScalars f M) :=
   (BalancedTensorProduct.grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
@@ -156,6 +157,7 @@ theorem map_mem_of_mem_extendScalarsGrading {Q : Type*} [AddCommGroup Q] [Module
 
 /-- The differential of the extended module `M ⊗_A B`: the balanced tensor differential
 `d(m ⊗ b) = dM(m) ⊗ b + (-1)^|m| m ⊗ dB(b)`. -/
+@[expose]
 noncomputable def extendScalarsDifferential (hM : IsDGRightModule hA ℳ dM) :
     DGRightModule.ExtendScalars f M →ₗ[R] DGRightModule.ExtendScalars f M :=
   BalancedTensorProduct.differential hM
@@ -210,7 +212,9 @@ variable {M : Type uM} {N : Type uN} {P : Type uP}
 variable (f : DGAlgHom hA hB)
 
 /-- **Extension of scalars of a morphism.**  A morphism `g : M ⟶ N` of right DG `A`-modules
-induces the morphism `g ⊗ 1 : M ⊗_A B ⟶ N ⊗_A B` of right DG `B`-modules. -/
+induces the morphism `g ⊗ 1 : M ⊗_A B ⟶ N ⊗_A B` of right DG `B`-modules.
+The underlying balanced-tensor map allows the source and target modules to live in different
+universes; a morphism in a fixed bundled module category requires the same carrier universe. -/
 noncomputable def extendScalars (g : DGRightModuleHom hM hN) :
     DGRightModuleHom (hM.extendScalars f) (hN.extendScalars f) where
   toLinearMap :=
