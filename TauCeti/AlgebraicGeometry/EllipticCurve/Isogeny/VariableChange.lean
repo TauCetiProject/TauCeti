@@ -323,8 +323,6 @@ private theorem exists_pullback_X_eq_of_degree_eq_one (φ : Isogeny W₁ W₂) (
   have hv (w : W₂.CoordinateRing) :
       v₂ (algebraMap W₂.CoordinateRing W₂.FunctionField w) = W₁.infinityPlace (φ.pullback w) :=
     comap_fieldPullback_apply_algebraMap φ _ w
-  have := W₁.isIntegrallyClosed_coordinateRing
-  have := W₂.isIntegrallyClosed_coordinateRing
   have hx₁ := one_lt_infinityPlace_X W₁
   obtain ⟨f, hf⟩ := exists_algebraMap_eq_pullback_of_degree_eq_one φ hφ
     (AdjoinRoot.of W₂.polynomial Polynomial.X)
@@ -362,8 +360,6 @@ private theorem exists_pullback_root_eq_of_degree_eq_one (φ : Isogeny W₁ W₂
   have hv (w : W₂.CoordinateRing) :
       v₂ (algebraMap W₂.CoordinateRing W₂.FunctionField w) = W₁.infinityPlace (φ.pullback w) :=
     comap_fieldPullback_apply_algebraMap φ _ w
-  have := W₁.isIntegrallyClosed_coordinateRing
-  have := W₂.isIntegrallyClosed_coordinateRing
   obtain ⟨g, hg⟩ := exists_algebraMap_eq_pullback_of_degree_eq_one φ hφ
     (AdjoinRoot.root W₂.polynomial)
   obtain ⟨ψ, hψφ, -⟩ := exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one φ hφ

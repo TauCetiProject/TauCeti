@@ -74,7 +74,7 @@ theorem integral_volumeIoiPow (k : ℕ) (h : ℝ → F) :
 /-- The polar-coordinate identification of `μ` with the product of `μ.toSphere` and the radial
 measure, for an integrable function: the transported integrand is integrable for the product
 measure, and integrates to `∫ f ∂μ`. -/
-private lemma integrable_and_integral_eq_integral_prod_toSphere (f : E → F)
+theorem integrable_and_integral_eq_integral_prod_toSphere (f : E → F)
     (hf : Integrable f μ) :
     Integrable (fun p : sphere (0 : E) 1 × Ioi (0 : ℝ) ↦ f ((p.2 : ℝ) • (p.1 : E)))
         (μ.toSphere.prod (Measure.volumeIoiPow (Module.finrank ℝ E - 1))) ∧
