@@ -635,8 +635,8 @@ theorem cohomologicalMap_mem_range_μ_iff (h2 : IsUnit ((2 : ℕ) : K))
     cohomologicalMap W h2 (.ofAdd c) ∈ (WeierstrassCurve.Affine.μ (W := W.toAffine)).range ↔
       c ∈ (W.kummerMap 2 h2).range := by
   rw [← cohomologicalMap_comp_kummerMap W h2, MonoidHom.range_comp,
-    Subgroup.mem_map_iff_mem (cohomologicalMap_injective W h2)]
-  exact Iff.rfl
+    Subgroup.mem_map_iff_mem (cohomologicalMap_injective W h2),
+    MonoidHom.coe_toMultiplicative_range, Multiplicative.mem_toSubgroup, toAdd_ofAdd]
 
 end TwoDescent
 

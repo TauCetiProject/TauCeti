@@ -69,8 +69,6 @@ theorem mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_range_μ
   rw [W.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap tau h2]
   apply forall_congr'
   intro i
-  exact (TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff
-    (W.baseChange (L i))
-      (by rw [← map_natCast (algebraMap K (L i))]; exact h2.map (algebraMap K (L i)))).symm
+  exact (TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff (W.baseChange (L i)) _).symm
 
 end WeierstrassCurve
