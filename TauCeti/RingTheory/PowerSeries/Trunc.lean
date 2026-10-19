@@ -18,9 +18,10 @@ This file collects facts used to compare power series to a finite order `m`:
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
 * the `m`-truncations of `d⁄dX φ`, `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, and integer powers and
   logarithmic-derivative products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite
-  truncation of the input, and
+  truncation of the input,
 * the coefficients of a finite expansion `∑_{i < m} aᵢ Xⁱ` are the `aᵢ`, read as zero from degree
-  `m` on.
+  `m` on, and
+* the coefficients of a polynomial times a power series expand along the polynomial monomials.
 
 ## Main results
 
@@ -35,6 +36,8 @@ This file collects facts used to compare power series to a finite order `m`:
   `PowerSeries.trunc_coe_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
   `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depend only on `trunc m u` and `trunc (m + 1) u`.
 * `PowerSeries.coeff_sum_C_mul_X_pow`: the coefficients of `∑ i : Fin m, C (a i) * X ^ i`.
+* `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
+  polynomial `p` of degree less than `N`.
 -/
 
 public section
@@ -107,6 +110,14 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
   · refine Finset.sum_eq_zero fun i _ ↦ ?_
     have hni : n ≠ (i : ℕ) := (i.2.trans_le (not_lt.mp h)).ne'
     simp [hni]
+
+/-- The coefficients of the product of a polynomial `p` and a power series `g`, expanded along the
+monomials of `p` below any bound `N` on its degree. -/
+theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p.natDegree < N)
+    (n : ℕ) : coeff n ((p : R⟦X⟧) * g) = ∑ i ∈ Finset.range N, p.coeff i * coeff n (X ^ i * g) := by
+  rw [← Polynomial.eval₂_C_X_eq_coe, Polynomial.eval₂_eq_sum_range' _ hN, Finset.sum_mul,
+    map_sum]
+  simp [mul_assoc, coeff_C_mul]
 
 end Semiring
 

@@ -153,3 +153,28 @@ theorem bijective_liftCoinvariants_of_faithfullyFlat
     exact (coe_liftCoinvariants_apply hI f hker.le y).trans hy
 
 end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat.Hom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+universe u v
+
+/-- An idempotent invariant under the kernel of a faithfully flat affine-group morphism
+is the pullback of an idempotent on the target. No finite-type hypothesis is needed. -/
+theorem exists_map_eq_of_isIdempotentElem_mem_coinvariants
+    {R : Type u} [CommRing R] {H K : CommHopfAlgCat.{v} R} (f : H ⟶ K)
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) {e : K}
+    (he : IsIdempotentElem e) (hcoinv : e ∈ (kernelHopfIdeal f).coinvariants) :
+    ∃ a : H, IsIdempotentElem a ∧ f.hom a = e := by
+  rw [coinvariants_kernelHopfIdeal_eq_range f hf] at hcoinv
+  obtain ⟨a, ha⟩ := hcoinv
+  -- The range witness evaluates the underlying AlgHom; refold the bialgebra morphism.
+  change f.hom a = e at ha
+  refine ⟨a, ?_, ha⟩
+  have hinj : Function.Injective f.hom := hf.injective
+  apply hinj
+  rw [map_mul, ha]
+  exact he
+
+end CommHopfAlgCat.Hom

@@ -47,19 +47,16 @@ end CommSemiring
 
 section CommRing
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
   {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*}
 
 /-- Integral unit signs act on orientations by retaining or reversing the ray. -/
 theorem Orientation.intCast_units_smul_eq_ite (u : ℤˣ) (o : Orientation R M ι) :
     (Units.map (Int.castRingHom R).toMonoidHom u) • o = if u = 1 then o else -o := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simp
-  · rw [ite_eq_right (by decide)]
-    exact Module.Ray.units_smul_of_neg _ (by norm_num) _
+  rcases Int.units_eq_one_or u with rfl | rfl <;> simp [Module.Ray.neg_units_smul]
 
 /-- Distinct integral unit signs induce distinct orientations. -/
-theorem Orientation.intCast_units_smul_injective (o : Orientation R M ι) :
+theorem Orientation.intCast_units_smul_injective [IsDomain R] (o : Orientation R M ι) :
     Function.Injective (fun u : ℤˣ ↦ (Units.map (Int.castRingHom R).toMonoidHom u) • o) := by
   intro u v huv
   simp only [intCast_units_smul_eq_ite] at huv
@@ -111,10 +108,7 @@ the index type has the dimension of the space. -/
 theorem Orientation.intCast_units_smul_ite_eq [FiniteDimensional R M]
     (model o : Orientation R M ι) (hι : Fintype.card ι = finrank R M) :
     (Units.map (Int.castRingHom R).toMonoidHom (if o = model then 1 else -1)) • model = o := by
-  rcases eq_or_eq_neg o model hι with h | h
-  · simp [h]
-  · rw [h]
-    rw [ite_eq_right (Module.Ray.ne_neg_self model).symm]
-    exact Module.Ray.units_smul_of_neg _ (by norm_num) _
+  rcases eq_or_eq_neg o model hι with h | h <;>
+    simp [h, (Module.Ray.ne_neg_self model).symm]
 
 end Field

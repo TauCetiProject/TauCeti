@@ -43,10 +43,19 @@ every finite place and to `R_w` at every real place, hence a global form with in
 The construction is not canonical: the local realization theorem is an existence statement, and
 so is the theorem here.
 
+Conversely, the hypotheses of 72:1 make a family of local forms a realization of an admissible
+system. A family `U_v`, `R_w` of rank `n ≥ 1` whose discriminants are the images of one global
+class `d`, whose finite Hasse invariants are trivial at almost every place and whose Hasse product
+is one realizes the system of rank `n`, discriminant `d`, the Hasse invariants of the `U_v` and the
+positive indices of the `R_w`, and that system is admissible. The small-rank conditions of
+admissibility hold automatically for any family of regular local forms.
+
 ## Main definitions
 
 * `TauCeti.NumberField.QuadraticForm.GlobalFormInvariants.IsLocalRealization`: a family of
   local forms realizes the system `I`.
+* `TauCeti.NumberField.QuadraticForm.GlobalFormInvariants.ofLocalForms`: the system of invariants
+  of a family of local forms, with a chosen global discriminant.
 
 ## Main results
 
@@ -62,6 +71,14 @@ so is the theorem here.
   `GlobalFormInvariants.IsLocalRealization.finprod_localHasse_mul_prod_eq_one`: for a family
   realizing an admissible system, the real discriminants are images of the global discriminant,
   the finite Hasse invariants have finite support, and the Hasse product is one.
+* `GlobalFormInvariants.IsLocalRealization.isAdmissible_iff`: conversely, a system realized by a
+  family of local forms is admissible exactly when its rank is positive, the real discriminants
+  are images of the global discriminant, and the finite Hasse invariants of the family have finite
+  support and Hasse product one.
+* `GlobalFormInvariants.isLocalRealization_ofLocalForms`,
+  `GlobalFormInvariants.isAdmissible_ofLocalForms`: a family of regular local forms of positive
+  rank with discriminants coming from one global class, almost everywhere trivial Hasse invariants
+  and Hasse product one realizes an admissible system, its own system `ofLocalForms`.
 
 ## References
 
@@ -183,7 +200,152 @@ theorem prod_localHasse_mul_prod_eq_one (hI : I.IsAdmissible)
   rw [← finprod_eq_prod_of_mulSupport_subset _ hS]
   exact hL.finprod_localHasse_mul_prod_eq_one hI
 
+open scoped Classical in
+/-- **Admissibility of a locally realized system.** A system of invariants realized by a family of
+regular local forms is admissible exactly when its rank is positive, the discriminant of the form
+at every real place is the image of the global discriminant, the local Hasse invariants of the
+forms at the finite places are trivial at almost every place, and their product with the real
+Hasse signs `(-1)^(q(q-1)/2)`, `q` the negative index, is one.
+
+The two small-rank conditions of admissibility need no hypothesis: in rank one, and in rank two
+with discriminant `[-1]`, every regular form over a nonarchimedean local field has trivial local
+Hasse invariant. -/
+theorem isAdmissible_iff :
+    I.IsAdmissible ↔ 1 ≤ I.rank ∧
+      (∀ w, RegularFormClass.discr (formClass (R w) (hL.nondegenerate_real w)) =
+        I.discrAtRealPlace w) ∧
+      (Function.HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 K) ↦
+        letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+        RegularFormClass.localHasse (formClass (U v) (hL.nondegenerate_finite v))) ∧
+      (∏ᶠ v : HeightOneSpectrum (𝓞 K),
+        letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+        RegularFormClass.localHasse (formClass (U v) (hL.nondegenerate_finite v))) *
+        ∏ w, (-1 : ℤˣ) ^ (sigNeg (R w)).choose 2 = 1 := by
+  refine ⟨fun hI ↦ ⟨hI.one_le_rank, hL.discr_real hI, hL.hasFiniteMulSupport_localHasse hI,
+    hL.finprod_localHasse_mul_prod_eq_one hI⟩, fun ⟨hn, hd, hs, hp⟩ ↦ ?_⟩
+  have hrank (v : HeightOneSpectrum (𝓞 K)) :
+      (formClass (U v) (hL.nondegenerate_finite v)).rank = I.rank := by
+    simp
+  refine
+    { one_le_rank := hn
+      realPositiveIndex_le_rank := fun w ↦ ?_
+      discrAtRealPlace_eq := fun w ↦ ?_
+      hasFiniteMulSupport_finiteHasse := by simpa only [hL.localHasse_finite] using hs
+      finiteHasse_eq_one_of_rank_eq_one := fun h1 v ↦ ?_
+      finiteHasse_eq_one_of_rank_eq_two := fun h2 v hdv ↦ ?_
+      hasseProduct_eq_one := ?_ }
+  · have h := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate (R w) (hL.nondegenerate_real w)
+    rw [Module.finrank_fin_fun, hL.sigPos_real] at h
+    omega
+  · rw [← hd w, QuadraticForm.discr_formClass_eq_sigNeg_nsmul, hL.sigNeg_real]
+  · let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    rw [← hL.localHasse_finite]
+    exact RegularFormClass.localHasse_eq_one_of_rank_le_one ((hrank v).trans h1).le
+  · let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    rw [← hL.localHasse_finite]
+    exact RegularFormClass.localHasse_eq_one_of_rank_eq_two_of_discr_eq_neg_one
+      ((hrank v).trans h2) ((hL.discr_finite v).trans hdv)
+  · simpa only [hL.localHasse_finite, hL.neg_one_pow_choose_sigNeg_eq_realHasse,
+      ← hasseProduct_def] using hp
+
 end IsLocalRealization
+
+section LocalForms
+
+variable {n : ℕ} (d : SquareClassGroup K)
+  (U : ∀ v : HeightOneSpectrum (𝓞 K),
+    _root_.QuadraticForm (v.adicCompletion K) (Fin n → v.adicCompletion K))
+  (hU : ∀ v, (U v).Nondegenerate)
+  (R : {w : InfinitePlace K // w.IsReal} → _root_.QuadraticForm ℝ (Fin n → ℝ))
+
+/-- **The system of invariants of a family of local forms.** For a global square class `d` and
+regular forms `U v` over the completions `K_v` and `R w` over `ℝ`, all on the coordinate space of
+dimension `n`, this is the system of rank `n` and global discriminant `d` whose Hasse sign at a
+finite place `v` is the local Hasse invariant of `U v` and whose positive index at a real place
+`w` is that of `R w`.
+
+The body is exposed so that the rank of `ofLocalForms d U hU R` reduces to `n`: the forms `U v`
+and `R w` live on `Fin n`, and `IsLocalRealization` asks for forms on the coordinate space of the
+rank of the system. -/
+@[expose]
+noncomputable def ofLocalForms : GlobalFormInvariants K where
+  rank := n
+  discr := d
+  finiteHasse v :=
+    letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    RegularFormClass.localHasse (formClass (U v) (hU v))
+  realPositiveIndex w := sigPos (R w)
+
+/-- The rank of the system of a family of local forms is the dimension `n`. -/
+@[simp]
+theorem ofLocalForms_rank : (ofLocalForms d U hU R).rank = n :=
+  (rfl)
+
+/-- The global discriminant of the system of a family of local forms is the chosen class `d`. -/
+@[simp]
+theorem ofLocalForms_discr : (ofLocalForms d U hU R).discr = d :=
+  (rfl)
+
+/-- The Hasse sign at a finite place `v` of the system of a family of local forms is the local
+Hasse invariant of `U v`. -/
+@[simp]
+theorem ofLocalForms_finiteHasse (v : HeightOneSpectrum (𝓞 K)) :
+    letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    (ofLocalForms d U hU R).finiteHasse v =
+      RegularFormClass.localHasse (formClass (U v) (hU v)) :=
+  (rfl)
+
+/-- The positive index at a real place `w` of the system of a family of local forms is the
+positive index of `R w`. -/
+@[simp]
+theorem ofLocalForms_realPositiveIndex (w : {w : InfinitePlace K // w.IsReal}) :
+    (ofLocalForms d U hU R).realPositiveIndex w = sigPos (R w) :=
+  (rfl)
+
+variable {d U R}
+
+/-- A family of regular local forms whose discriminants at the finite places are the images of a
+global square class `d` realizes the system of invariants it defines with `d`. -/
+theorem isLocalRealization_ofLocalForms
+    (hUd : ∀ v, RegularFormClass.discr (formClass (U v) (hU v)) =
+      (algebraMap K (v.adicCompletion K)).squareClassMap d)
+    (hR : ∀ w, (R w).Nondegenerate) :
+    (ofLocalForms d U hU R).IsLocalRealization U R where
+  nondegenerate_finite := hU
+  discr_finite v := (hUd v).trans (by rw [discrAtFinitePlace_def, ofLocalForms_discr])
+  localHasse_finite v := (ofLocalForms_finiteHasse d U hU R v).symm
+  nondegenerate_real := hR
+  sigPos_real w := (ofLocalForms_realPositiveIndex d U hU R w).symm
+
+open scoped Classical in
+/-- **The local data of a global form with prescribed localizations is admissible.** Let `U v` and
+`R w` be regular forms of rank `n ≥ 1` over the finite completions and over `ℝ` at the real places
+of `K`, whose discriminants are the images of one global square class `d`, whose local Hasse
+invariants are trivial at almost every finite place, and whose Hasse product, with the real Hasse
+signs `(-1)^(q(q-1)/2)` for the negative indices `q`, is one. Then the system of invariants of the
+family is admissible.
+
+These are the hypotheses of O'Meara's existence theorem 72:1 for a global form with prescribed
+localizations. Since the family realizes its own system (`isLocalRealization_ofLocalForms`), such a
+family is a local realization of an admissible system. -/
+theorem isAdmissible_ofLocalForms (hn : 1 ≤ n)
+    (hUd : ∀ v, RegularFormClass.discr (formClass (U v) (hU v)) =
+      (algebraMap K (v.adicCompletion K)).squareClassMap d)
+    (hR : ∀ w, (R w).Nondegenerate)
+    (hRd : ∀ w, RegularFormClass.discr (formClass (R w) (hR w)) =
+      (embedding_of_isReal w.2).squareClassMap d)
+    (hs : Function.HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 K) ↦
+      letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+      RegularFormClass.localHasse (formClass (U v) (hU v)))
+    (hp : (∏ᶠ v : HeightOneSpectrum (𝓞 K),
+      letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+      RegularFormClass.localHasse (formClass (U v) (hU v))) *
+        ∏ w, (-1 : ℤˣ) ^ (sigNeg (R w)).choose 2 = 1) :
+    (ofLocalForms d U hU R).IsAdmissible :=
+  ((isLocalRealization_ofLocalForms hU hUd hR).isAdmissible_iff).mpr
+    ⟨hn, fun w ↦ (hRd w).trans (by rw [discrAtRealPlace_def, ofLocalForms_discr]), hs, hp⟩
+
+end LocalForms
 
 namespace IsAdmissible
 

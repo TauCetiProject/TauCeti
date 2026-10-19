@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
 import TauCeti.Probability.Independence.InfinitePi
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Conditional independence of disjoint parts of an i.i.d. family
@@ -67,10 +66,10 @@ theorem ConditionallyIIDWith.jointLaw_pair_domRestrict [IsFiniteMeasure μ]
     _ = (μ.map ν).bind fun P => (Measure.dirac P).prod
           ((Measure.infinitePi fun _ : S => (P : Measure α)).prod
             (Measure.infinitePi fun _ : T => (P : Measure α))) := by
-          rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
+          rw [iidMixtureLaw_def, Measure.map_bind
             (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const
               (ι' := ℕ) (id : ProbabilityMeasure α → ProbabilityMeasure α)
-              measurable_id).aemeasurable hF]
+              measurable_id).aemeasurable hF.aemeasurable]
           congr 1
           funext P
           calc
