@@ -12,8 +12,9 @@ public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Naturality
 
 For a nonzero modulus, a monomial change of coordinates preserves the rational form used in
 Construction A exactly when each of its coefficients is a sign. At modulus zero the form is zero,
-so every monomial map preserves it. Thus a monomial code equivalence has a coordinatewise
-isometric lift precisely when its coefficients modulo the modulus are reductions of signs.
+so every monomial map preserves it. Thus, for a nonzero modulus, a monomial code equivalence has
+a coordinatewise isometric lift precisely when its coefficients modulo the modulus are reductions
+of signs.
 The existing signed-coordinate isometry then supplies the lattice isometry.
 -/
 
@@ -44,7 +45,8 @@ theorem form_monomialEquiv_iff (m : ℕ) [NeZero m] (u : ι → ℚˣ) (e : ι �
     simp only [form_apply]
     rw [(dotProduct_monomialEquiv_iff u e).mpr h x y]
 
-/-- Rational monomial isometries are precisely signed coordinate changes. -/
+/-- For a nonzero modulus, rational monomial isometries of the Construction A form are precisely
+signed coordinate changes. -/
 theorem monomialEquiv_preserves_form_iff_exists_signed (m : ℕ) [NeZero m] (u : ι → ℚˣ)
     (e : ι ≃ κ) :
     (∀ x y : ι → ℚ, form m (monomialEquiv u e x) (monomialEquiv u e y) =
