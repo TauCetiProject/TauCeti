@@ -83,11 +83,6 @@ theorem twistedInvolution_twistedInvolution (α : CStarAction G A) (f : C_c(G, A
     map_smul, Complex.star_def, Complex.conj_ofReal,
     apply_inv_apply, smul_smul, hc', one_smul]
 
-/-- The twisted involution is an involutive function. -/
-theorem twistedInvolution_involutive (α : CStarAction G A) :
-    Function.Involutive α.twistedInvolution :=
-  α.twistedInvolution_twistedInvolution
-
 /-- The norm of an involuted coefficient includes precisely the modular weight. -/
 @[simp↓]
 theorem norm_twistedInvolution_apply (α : CStarAction G A) (f : C_c(G, A)) (s : G) :
