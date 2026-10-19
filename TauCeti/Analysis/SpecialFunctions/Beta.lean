@@ -61,7 +61,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `1 / 2 < s`, with total mass `√ν * Β(1 / 2, s - 1 / 2)`;
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`.
+* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 
 ## Implementation notes
 
