@@ -41,27 +41,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 namespace TauCeti
 
-omit [FiniteDimensional ℝ E] in
-/-- If the installed fibre metric is `g`, completeness of the installed Riemannian distance gives
-completeness of the Riemannian distance of `g`, in the form of `HyperbolicMetric.complete`. This
-transports completeness along an equality of fibre metrics, which cannot be rewritten inside the
-instance-dependent arguments. -/
-theorem completeSpace_ofRiemannianMetric_of_eq
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-    (hg : RiemannianBundle.g = g.toRiemannianMetric)
-    (h : @CompleteSpace M
-      (MetricSpace.ofRiemannianMetric I M).toPseudoMetricSpace.toUniformSpace) :
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-      IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
-        (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
-    @CompleteSpace M (MetricSpace.ofRiemannianMetric I M).toPseudoMetricSpace.toUniformSpace := by
-  obtain ⟨_⟩ := inst
-  subst hg
-  exact h
-
 /-- A complete smooth Riemannian metric of constant curvature `-1` on `M`. -/
 @[ext]
 structure HyperbolicMetric where
