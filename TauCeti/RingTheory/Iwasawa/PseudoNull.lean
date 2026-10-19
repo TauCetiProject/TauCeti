@@ -11,14 +11,11 @@ public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Support
 
-import Mathlib.NumberTheory.Padics.RingHoms
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.KrullDimension.PID
 import Mathlib.RingTheory.LocalRing.Quotient
-import Mathlib.RingTheory.PowerSeries.Ideal
+import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Finiteness.Cardinality
 import TauCeti.RingTheory.Ideal.Height
-import TauCeti.RingTheory.PowerSeries.Ideal
 
 /-!
 # Pseudo-null modules
@@ -205,30 +202,20 @@ open PowerSeries in
 example (p : ℕ) [Fact p.Prime] :
     IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p]), X}) ∧
       ¬ IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) := by
-  have hker : RingHom.ker (map (PadicInt.toZMod (p := p))) = Ideal.span {C (p : ℤ_[p])} := by
-    rw [ker_map_of_fg _ (IsNoetherian.noetherian _), PadicInt.ker_toZMod,
-      PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton]
-  have hP : (Ideal.span {C (p : ℤ_[p])}).IsPrime := hker ▸ RingHom.ker_isPrime _
   refine ⟨(isPseudoNull_quotient_iff _).mpr fun 𝔮 h𝔮 ↦ ?_, fun h ↦ ?_⟩
   · have hX : X ∉ Ideal.span {C (p : ℤ_[p])} := by
-      rw [← hker, RingHom.mem_ker, map_X]
+      rw [← PadicInt.ker_map_toZMod, RingHom.mem_ker, map_X]
       exact X_ne_zero
-    have h0 : (⊥ : Ideal ℤ_[p]⟦X⟧) < Ideal.span {C (p : ℤ_[p])} := by
-      refine bot_lt_iff_ne_bot.mpr fun h ↦ ?_
-      rw [Ideal.span_singleton_eq_bot, map_eq_zero_iff _ C_injective, Nat.cast_eq_zero] at h
-      exact (Fact.out : p.Prime).ne_zero h
     have h1 : Ideal.span {C (p : ℤ_[p])} < 𝔮.asIdeal := by
       refine lt_of_le_of_ne (Ideal.span_le.mpr ?_) fun h ↦ hX (h ▸ h𝔮 (Ideal.subset_span ?_))
       · exact Set.singleton_subset_iff.mpr (h𝔮 (Ideal.subset_span (by simp)))
       · simp
-    have h2 := Ideal.height_add_one_le_of_lt_of_isPrime h0
-    rw [Ideal.height_bot, zero_add] at h2
-    exact lt_of_lt_of_le (by norm_num)
-      ((add_le_add_left h2 1).trans (Ideal.height_add_one_le_of_lt_of_isPrime h1))
-  · refine ((isPseudoNull_quotient_iff _).mp h ⟨_, hP⟩ le_rfl).not_ge ?_
-    refine Ideal.height_span_singleton_le_one fun hu ↦
-      (PadicInt.irreducible_p (p := p)).not_isUnit ?_
-    simpa using hu.map constantCoeff
+    have := PadicInt.isPrime_span_C_p (p := p)
+    have h2 := Ideal.height_add_one_le_of_lt_of_isPrime h1
+    rw [PadicInt.height_span_C_p] at h2
+    exact lt_of_lt_of_le (by norm_num) h2
+  · exact ((isPseudoNull_quotient_iff _).mp h ⟨_, PadicInt.isPrime_span_C_p⟩ le_rfl).ne'
+      PadicInt.height_span_C_p
 
 -- Over the discrete valuation ring `ℤ_p`, of dimension one, `ℤ_p ⧸ (p) = 𝔽_p` is not pseudo-null.
 example (p : ℕ) [Fact p.Prime] : ¬ IsPseudoNull ℤ_[p] (ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p])}) := by
