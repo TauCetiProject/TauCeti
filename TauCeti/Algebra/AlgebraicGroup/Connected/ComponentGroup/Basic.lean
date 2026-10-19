@@ -68,14 +68,6 @@ abbrev rationalKernelPoint (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   AlgHom.kernelPoint g.ofConv
 
 omit [IsAlgClosed k] in
-/-- Membership in the prime ideal of a rational point is vanishing at that point. -/
-theorem mem_rationalKernelPoint_asIdeal (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (x : H) :
-    x ∈ (rationalKernelPoint H g).asIdeal ↔ g.ofConv x = 0 := by
-  rw [rationalKernelPoint, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-  rfl
-
-omit [IsAlgClosed k] in
 /-- The prime-spectrum point underlying the identity rational point is the augmentation point. -/
 @[simp]
 theorem rationalKernelPoint_one (H : FiniteTypeCommHopfAlgCat.{u, u} k) :

@@ -118,7 +118,7 @@ theorem geometricComponentMap_mapValue (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   apply PrimeSpectrum.ext
   ext x
   rw [PrimeSpectrum.asIdeal_smul, Ideal.mem_pointwise_smul_iff_inv_smul_mem]
-  rw [mem_rationalKernelPoint_asIdeal, mem_rationalKernelPoint_asIdeal]
+  simp only [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, AlgHom.coe_toRingHom]
   rw [heval]
   exact smul_eq_zero_iff_eq σ
 
