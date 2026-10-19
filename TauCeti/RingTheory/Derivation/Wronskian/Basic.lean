@@ -10,16 +10,18 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RingTheory.Derivation.Basic
 
 /-!
-# Wronskians over differential fields
+# Wronskians and linear independence
 
 The Wronskian of a finite family is the determinant whose rows are its successive
 derivatives. It is nonzero exactly when the family is linearly independent over the
-constant field of the derivation. The constant-field hypothesis is explicit: every element
-killed by the derivation must come from the scalar field. No characteristic assumption is
-needed with this hypothesis.
+constant field of the derivation when the scalars act faithfully. The constant-field
+hypothesis is explicit: every element killed by the derivation must come from the scalars.
+No characteristic assumption is needed with this hypothesis.
 
 Scalar changes of generators multiply the Wronskian by the determinant of the coefficient
-matrix, so an invertible change of basis preserves its nonvanishing.
+matrix, so an invertible change of basis preserves its nonvanishing. This law holds over
+commutative rings. In an integral domain, nonvanishing implies linear independence over any
+faithfully acting scalar semiring; the converse requires an ambient differential field.
 
 This criterion supplies the nonvanishing required to define ramification divisors of linear
 series by Wronskians. The differential-field argument follows the Wronskian method in
@@ -87,20 +89,41 @@ theorem wronskian_sum_smul (D : Derivation k F F) {n : ℕ} (f : Fin n → F)
       mul_comm]
   rw [wronskian_def, hmatrix, Matrix.det_mul, ← RingHom.map_det, ← wronskian_def]
 
+/-- An invertible scalar change of generators preserves nonvanishing of the Wronskian.
+This does not require the scalars to contain every constant of the derivation. -/
+theorem wronskian_sum_smul_ne_zero_iff (D : Derivation k F F) {n : ℕ} (f : Fin n → F)
+    (A : Matrix (Fin n) (Fin n) k) (hA : IsUnit A.det) :
+    D.wronskian (fun j ↦ ∑ i, A i j • f i) ≠ 0 ↔ D.wronskian f ≠ 0 := by
+  rw [D.wronskian_sum_smul]
+  simpa using ((hA.map (algebraMap k F)).mul_left_inj (b := D.wronskian f) (c := 0)).not
+
 end
 
-variable [Field k] [Field F] [Algebra k F]
+/-- Nonzero Wronskian implies linear independence over any faithfully acting scalar
+semiring, even if the derivation has additional constants. -/
+theorem linearIndependent_of_wronskian_ne_zero [CommSemiring k] [CommRing F]
+    [IsDomain F] [Algebra k F] [FaithfulSMul k F] (D : Derivation k F F)
+    {n : ℕ} {f : Fin n → F} (hw : D.wronskian f ≠ 0) : LinearIndependent k f := by
+  classical
+  rw [wronskian_def] at hw
+  apply Fintype.linearIndependent_iffₛ.mpr
+  intro a b hab j
+  apply FaithfulSMul.algebraMap_injective k F
+  have hjets :
+      (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j)) *ᵥ
+          (fun j ↦ algebraMap k F (a j)) =
+        (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j)) *ᵥ
+          (fun j ↦ algebraMap k F (b j)) := by
+    ext i
+    have h := congrArg (D.toLinearMap ^ i.val) hab
+    simp only [map_sum, LinearMap.map_smul] at h
+    simpa [Matrix.mulVec, dotProduct, Algebra.smul_def, Module.End.pow_apply, mul_comm] using h
+  exact congrFun (Matrix.mulVec_injective_of_det_ne_zero hw hjets) j
 
-/-- An invertible scalar change of generators preserves nonvanishing of the Wronskian.
-This does not require the scalar field to contain every constant of the derivation. -/
-theorem wronskian_sum_smul_ne_zero_iff (D : Derivation k F F) {n : ℕ} (f : Fin n → F)
-    (A : Matrix (Fin n) (Fin n) k) (hA : A.det ≠ 0) :
-    D.wronskian (fun j ↦ ∑ i, A i j • f i) ≠ 0 ↔ D.wronskian f ≠ 0 := by
-  rw [D.wronskian_sum_smul, mul_ne_zero_iff]
-  simp [hA]
-
-/-- A linearly independent family over the constant field has nonzero Wronskian. -/
-theorem wronskian_ne_zero_of_linearIndependent (D : Derivation k F F)
+/-- A linearly independent family has nonzero Wronskian if every constant of the
+derivation comes from the scalars. -/
+theorem wronskian_ne_zero_of_linearIndependent [CommSemiring k] [Field F] [Algebra k F]
+    (D : Derivation k F F)
     (hconst : ∀ y : F, D y = 0 → ∃ a : k, algebraMap k F a = y)
     {n : ℕ} {f : Fin n → F} (hf : LinearIndependent k f) : D.wronskian f ≠ 0 := by
   classical
@@ -156,36 +179,14 @@ theorem wronskian_ne_zero_of_linearIndependent (D : Derivation k F F)
     choose a ha using fun j ↦ hconst (b j) (hkill j)
     have hrel : ∑ j, a j • f j = 0 := by
       simpa [M, ← ha, Algebra.smul_def, mul_comm] using hMb 0
-    have hazero := Fintype.linearIndependent_iff.mp hf a hrel (Fin.last n)
+    have hazero := Fintype.linearIndependent_iffₛ.mp hf a 0 (by simpa using hrel) (Fin.last n)
     have := ha (Fin.last n)
     simp [hazero, hb] at this
 
-/-- Nonzero Wronskian implies linear independence over the scalar field, even if the
-derivation has additional constants. -/
-theorem linearIndependent_of_wronskian_ne_zero (D : Derivation k F F)
-    {n : ℕ} {f : Fin n → F} (hw : D.wronskian f ≠ 0) : LinearIndependent k f := by
-  classical
-  rw [wronskian_def] at hw
-  apply Fintype.linearIndependent_iff.mpr
-  intro a ha
-  have hjet (m : ℕ) : ∑ j, algebraMap k F (a j) * (D : F → F)^[m] (f j) = 0 := by
-    induction m with
-    | zero => simpa [Algebra.smul_def] using ha
-    | succ m ih =>
-      have h := congrArg D ih
-      simpa [map_sum, Function.iterate_succ_apply', D.leibniz] using h
-  have hker :
-      (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j)) *ᵥ
-        (fun j ↦ algebraMap k F (a j)) = 0 := by
-    ext i
-    simpa [Matrix.mulVec, dotProduct, mul_comm] using hjet i.val
-  have hz := Matrix.eq_zero_of_mulVec_eq_zero hw hker
-  intro j
-  exact (algebraMap k F).injective (by simpa using congrFun hz j)
-
-/-- The Wronskian detects linear independence when the scalar field is exactly the
-constant field of the derivation. -/
-theorem wronskian_ne_zero_iff (D : Derivation k F F)
+/-- The Wronskian detects linear independence when the scalars embed faithfully and
+contain every constant of the derivation. -/
+theorem wronskian_ne_zero_iff [CommSemiring k] [Field F] [Algebra k F]
+    [FaithfulSMul k F] (D : Derivation k F F)
     (hconst : ∀ y : F, D y = 0 → ∃ a : k, algebraMap k F a = y)
     {n : ℕ} (f : Fin n → F) : D.wronskian f ≠ 0 ↔ LinearIndependent k f :=
   ⟨D.linearIndependent_of_wronskian_ne_zero,
