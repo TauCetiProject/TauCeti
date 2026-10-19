@@ -166,8 +166,10 @@ theorem cond_pi_poissonMeasure_zero_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     Set.preimage_singleton] at hmass
   simpa [poissonMeasure_singleton, hn] using hmass
 
+-- Simplify before `Finset.sum_eq_zero_iff` rewrites the conditioning event.
 /-- At all-zero rates, conditioning on total zero gives the point mass at the zero count
 vector, without introducing normalized weights for the zero vector of rates. -/
+@[simp↓]
 theorem cond_pi_poissonMeasure_zero :
     cond (Measure.pi (fun _ : ι => poissonMeasure 0)) {k | ∑ i, k i = 0} =
       Measure.dirac 0 := by
