@@ -32,13 +32,14 @@ so that the bracket in degree `i` carries the exponent `(-1) ^ (i + 1)`. With th
 complex concentrated in degrees `1` and `0` has torsion the inverse of the determinant of its
 differential (`HomologicalComplex.reidemeisterTorsion_eq_det_zpow`); for instance multiplication
 by `a ≠ 0` on `F`, from degree `1` to degree `0`, has torsion `a⁻¹`. The torsion of a complex
-that is not acyclic is defined to be `0` (`HomologicalComplex.reidemeisterTorsion`).
+that is not acyclic is defined to be `0` (`HomologicalComplex.reidemeisterTorsion`), and so is
+that of an unbounded complex, for which the alternating product is not defined.
 
 For a bounded complex the alternating product does not depend on the boundary bases nor on the
 lifts (`HomologicalComplex.reidemeisterTorsion_eq_finprod`): changing the lifts does not change
 any bracket, and changing `bⱼ` multiplies the brackets in degrees `j + 1` and `j` by the same
-determinant, which enters with opposite exponents. The torsion vanishes exactly when the complex
-is not acyclic (`HomologicalComplex.reidemeisterTorsion_eq_zero_iff`).
+determinant, which enters with opposite exponents. The torsion of a bounded complex vanishes
+exactly when the complex is not acyclic (`HomologicalComplex.reidemeisterTorsion_eq_zero_iff`).
 
 ## Main declarations
 
@@ -46,8 +47,8 @@ is not acyclic (`HomologicalComplex.reidemeisterTorsion_eq_zero_iff`).
 * `HomologicalComplex.reidemeisterTorsion`: the torsion of a based chain complex.
 * `HomologicalComplex.reidemeisterTorsion_eq_finprod`: for a bounded acyclic complex, the torsion
   is the alternating product of the brackets for any boundary bases and lifts.
-* `HomologicalComplex.reidemeisterTorsion_eq_zero_iff`: the torsion vanishes if and only if the
-  complex is not acyclic.
+* `HomologicalComplex.reidemeisterTorsion_eq_zero_iff`: the torsion of a bounded complex vanishes
+  if and only if the complex is not acyclic.
 * `HomologicalComplex.reidemeisterTorsion_eq_det_zpow`: the torsion of an acyclic complex
   concentrated in two consecutive degrees.
 
@@ -184,25 +185,28 @@ private def torsionOfAcyclic (h : C.Acyclic) : F :=
     (chosenLift C c j) (chosenLift_spec C c j) ^ (j.negOnePow : ℤ)
 
 /-- The torsion of a chain complex of vector spaces with ordered bases `c i` of each `C.X i`: the
-alternating product `∏ⱼ [bⱼ₊₁ sⱼ / cⱼ₊₁] ^ ((-1) ^ j)` of the brackets when `C` is acyclic, for a
-choice of bases `bⱼ` of the boundaries and lifts `sⱼ` of `bⱼ`, and `0` otherwise. For a bounded
-complex the product does not depend on these choices (`reidemeisterTorsion_eq_finprod`). -/
+alternating product `∏ⱼ [bⱼ₊₁ sⱼ / cⱼ₊₁] ^ ((-1) ^ j)` of the brackets when `C` is acyclic and
+bounded (only finitely many `n i` are nonzero), for a choice of bases `bⱼ` of the boundaries and
+lifts `sⱼ` of `bⱼ`, and `0` otherwise. The product does not depend on these choices
+(`reidemeisterTorsion_eq_finprod`). -/
 def reidemeisterTorsion : F := by
   classical
-  exact if h : C.Acyclic then torsionOfAcyclic C c h else 0
+  exact if h : C.Acyclic ∧ {i | n i ≠ 0}.Finite then torsionOfAcyclic C c h.1 else 0
 
 /-- The torsion of a complex that is not acyclic is `0`. -/
 theorem reidemeisterTorsion_of_not_acyclic (h : ¬C.Acyclic) : C.reidemeisterTorsion c = 0 := by
   simp [reidemeisterTorsion, h]
 
-/-- The torsion of an acyclic complex is nonzero. -/
-theorem reidemeisterTorsion_ne_zero (h : C.Acyclic) : C.reidemeisterTorsion c ≠ 0 := by
-  rw [reidemeisterTorsion, dite_eq_left h, torsionOfAcyclic]
+/-- The torsion of a bounded acyclic complex is nonzero. -/
+theorem reidemeisterTorsion_ne_zero (hn : {i | n i ≠ 0}.Finite) (h : C.Acyclic) :
+    C.reidemeisterTorsion c ≠ 0 := by
+  rw [reidemeisterTorsion, dite_eq_left ⟨h, hn⟩, torsionOfAcyclic]
   exact finprod_ne_zero fun j ↦ zpow_ne_zero _ (torsionBracket_ne_zero c _ _ _ _ _)
 
-/-- The torsion of a based complex vanishes if and only if the complex is not acyclic. -/
-theorem reidemeisterTorsion_eq_zero_iff : C.reidemeisterTorsion c = 0 ↔ ¬C.Acyclic :=
-  ⟨fun h₀ h ↦ C.reidemeisterTorsion_ne_zero c h h₀, C.reidemeisterTorsion_of_not_acyclic c⟩
+/-- The torsion of a bounded based complex vanishes if and only if the complex is not acyclic. -/
+theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
+    C.reidemeisterTorsion c = 0 ↔ ¬C.Acyclic :=
+  ⟨fun h₀ h ↦ C.reidemeisterTorsion_ne_zero c hn h h₀, C.reidemeisterTorsion_of_not_acyclic c⟩
 
 include c in
 /-- The determinant of one basis of the boundaries with respect to another is `1` in a degree
@@ -279,7 +283,7 @@ theorem reidemeisterTorsion_eq_finprod
     C.reidemeisterTorsion c =
       ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
         (j.negOnePow : ℤ) := by
-  rw [reidemeisterTorsion, dite_eq_left h, torsionOfAcyclic]
+  rw [reidemeisterTorsion, dite_eq_left ⟨h, hn⟩, torsionOfAcyclic]
   exact finprod_torsionBracket_eq hn h b (chosenBasis C c) s (chosenLift C c) hs
     (chosenLift_spec C c)
 
