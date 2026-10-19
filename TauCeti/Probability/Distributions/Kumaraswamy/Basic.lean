@@ -245,13 +245,19 @@ end Transfer
 interval. -/
 theorem support_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     (kumaraswamyMeasure a b).support = Icc 0 1 := by
-  rw [kumaraswamyMeasure_eq_withDensity, ← closure_Ioo zero_ne_one]
-  refine support_withDensity_volume_eq_closure isOpen_Ioo
-    (measurable_kumaraswamyPDF a b).aemeasurable ?_ ?_
-  · intro x hx
-    simpa [kumaraswamyPDF_eq_ofReal] using kumaraswamyPDFReal_pos ha hb hx
-  · rw [← kumaraswamyMeasure_eq_withDensity, closure_Ioo zero_ne_one]
-    exact ae_mem_Icc_kumaraswamyMeasure a b
+  have hsupp : Function.support (kumaraswamyPDF a b) = Ioo 0 1 := by
+    ext x
+    rw [Function.mem_support]
+    constructor
+    · intro hx
+      by_contra h
+      exact hx (kumaraswamyPDF_of_notMem_Ioo h a b)
+    · intro hx
+      rw [kumaraswamyPDF_eq_ofReal, ENNReal.ofReal_ne_zero_iff]
+      exact kumaraswamyPDFReal_pos ha hb hx
+  rw [kumaraswamyMeasure_eq_withDensity,
+    Measure.support_withDensity_eq_closure (measurable_kumaraswamyPDF a b) isOpen_Ioo hsupp,
+    closure_Ioo zero_ne_one]
 
 /-! ### The power map to the Beta `(1, b)` law -/
 

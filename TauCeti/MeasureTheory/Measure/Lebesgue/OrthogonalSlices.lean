@@ -19,6 +19,10 @@ Replacing a set by a volume-a.e. equal representative changes almost every secti
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
 
+Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
+`{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
+of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume.
+
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
 preservation for linear isometries and for the `L²` product.
@@ -123,5 +127,55 @@ theorem volume_eq_zero_iff_ae_volume_lineSection_eq_zero (e : E) (he : ‖e‖ =
   rw [volume_eq_lintegral_volume_lineSection e he hs,
     lintegral_eq_zero_iff' (aemeasurable_volume_lineSection e he hs)]
   rfl
+
+/-- The hyperplane sections of a Borel set along a unit vector have measurable volume as a
+function of the height. -/
+theorem measurable_volume_hyperplaneSection (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : MeasurableSet s) :
+    Measurable fun t : ℝ ↦ volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  convert measurable_measure_prodMk_right (μ := (volume : Measure (ℝ ∙ e)ᗮ))
+    (hs.preimage (measurePreserving_orthogonalLineEquiv e he).measurable) using 3 with t
+  ext y
+  simp
+
+/-- Cavalieri's formula along a unit vector: the volume of a Lebesgue-measurable set is the
+integral over heights of the volumes of its orthogonal hyperplane sections. -/
+theorem volume_eq_lintegral_volume_hyperplaneSection (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : NullMeasurableSet s volume) :
+    volume s = ∫⁻ t : ℝ, volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  have hBorel {u : Set E} (hu : MeasurableSet u) :
+      volume u = ∫⁻ t : ℝ, volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ u} := by
+    rw [← (measurePreserving_orthogonalLineEquiv e he).measure_preimage hu.nullMeasurableSet,
+      Measure.prod_apply_symm (hu.preimage (measurePreserving_orthogonalLineEquiv e he).measurable)]
+    congr 1 with t
+    congr 1 with y
+    simp
+  -- The sections of `s` lie between those of a measurable subset and a measurable superset,
+  -- both of the same volume as `s`.
+  obtain ⟨u, hus, hu, hue⟩ := hs.exists_measurable_subset_ae_eq
+  refine le_antisymm ?_ ?_
+  · rw [← measure_congr hue, hBorel hu]
+    exact lintegral_mono fun t ↦ measure_mono fun y hy ↦ hus hy
+  · rw [← measure_toMeasurable s, hBorel (measurableSet_toMeasurable volume s)]
+    exact lintegral_mono fun t ↦ measure_mono fun y hy ↦ subset_toMeasurable volume s hy
+
+/-- The hyperplane sections of a bounded set have finite volume. -/
+theorem _root_.Bornology.IsBounded.volume_hyperplaneSection_lt_top {s : Set E}
+    (hs : Bornology.IsBounded s) (e : E) (t : ℝ) :
+    volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} < ∞ :=
+  ((Isometry.of_dist_eq fun y z : (ℝ ∙ e)ᗮ ↦ by
+    simp [dist_add_right, Subtype.dist_eq]).antilipschitzWith.isBounded_preimage hs).measure_lt_top
+
+/-- Cavalieri's formula for the part of a Lebesgue-measurable set at heights in a Borel set `I`
+along a unit vector `e`. -/
+theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : NullMeasurableSet s volume) {I : Set ℝ} (hI : MeasurableSet I) :
+    volume {x ∈ s | ⟪e, x⟫ ∈ I} =
+      ∫⁻ t in I, volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  have hm : Measurable fun x : E ↦ ⟪e, x⟫ := (continuous_const.inner continuous_id).measurable
+  rw [volume_eq_lintegral_volume_hyperplaneSection e he (s := {x ∈ s | ⟪e, x⟫ ∈ I})
+    (hs.inter (hI.preimage hm).nullMeasurableSet), ← lintegral_indicator hI]
+  congr 1 with t
+  by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
 
 end TauCeti

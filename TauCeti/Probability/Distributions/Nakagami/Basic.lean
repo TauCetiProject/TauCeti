@@ -229,14 +229,19 @@ and empty otherwise. -/
 theorem support_nakagamiMeasure (m Ω : ℝ) :
     (nakagamiMeasure m Ω).support = if 0 < m ∧ 0 < Ω then Ici 0 else ∅ := by
   split_ifs with h
-  · rw [nakagamiMeasure_eq_withDensity, ← closure_Ioi]
-    refine support_withDensity_volume_eq_closure isOpen_Ioi
-      (measurable_nakagamiPDF m Ω).aemeasurable ?_ ?_
-    · intro x hx
-      rw [nakagamiPDF_eq_ofReal]
-      exact (ENNReal.ofReal_pos.2 ((nakagamiPDFReal_pos_iff h.1 h.2).2 hx)).ne'
-    · rw [← nakagamiMeasure_eq_withDensity, closure_Ioi]
-      exact (ae_pos_nakagamiMeasure m Ω).mono fun _ hx ↦ hx.le
+  · have hsupp : Function.support (nakagamiPDF m Ω) = Ioi 0 := by
+      ext x
+      rw [Function.mem_support]
+      constructor
+      · intro hx
+        by_contra hpos
+        exact hx (nakagamiPDF_of_nonpos (le_of_not_gt hpos))
+      · intro hx
+        rw [nakagamiPDF_eq_ofReal, ENNReal.ofReal_ne_zero_iff]
+        exact (nakagamiPDFReal_pos_iff h.1 h.2).2 hx
+    rw [nakagamiMeasure_eq_withDensity,
+      Measure.support_withDensity_eq_closure (measurable_nakagamiPDF m Ω) isOpen_Ioi hsupp,
+      closure_Ioi]
   · simp [nakagamiMeasure_of_not_pos h, Measure.support_zero]
 
 /-- Squaring a Nakagami variable recovers its defining Gamma law. -/

@@ -63,16 +63,6 @@ namespace Isogeny
 variable {F : Type*} [Field F] [DecidableEq F] {W₁ W₂ : WeierstrassCurve.Affine F}
   [W₁.IsElliptic] [W₂.IsElliptic] (φ : Isogeny W₁ W₂)
 
-local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
-
-local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
-
-local instance : IsDedekindDomain W₁.CoordinateRing :=
-  W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
-local instance : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The class-group point map evaluates at affine points, given trivial residue extensions over
 the target point.** If the place of the affine point `(x, y)` of `W₁` restricts along `φ^*` to the
 place of the affine point `(x', y')` of `W₂` — that is, if `φ^* x₂` and `φ^* y₂` take the values

@@ -54,7 +54,8 @@ single double coset shows that each summand depends only on the double coset `Vs
 ## Main definitions
 
 * `Subgroup.mackeyTransversal`: the transversal of `G ⧸ U` adapted to the double cosets `V \ G / U`.
-* `Subgroup.continuousMackeyToH`: the conjugation `V ⊓ sUs⁻¹ → U` as a continuous homomorphism.
+* `Subgroup.continuousMackeyToH`: the conjugation `V ⊓ sUs⁻¹ → U` as a continuous homomorphism;
+  `Subgroup.continuous_mackeyToH` states the continuity of `TauCeti.mackeyToH` itself.
 * `TauCeti.ContCohomology.explicitMackeyTerm0`, `explicitMackeyTerm1`, `explicitMackeyTerm2`: the
   summand `cor^V_{V ⊓ sUs⁻¹} ∘ (s)_* ∘ res` attached to `s` in degrees zero, one and two.
 
@@ -165,6 +166,11 @@ theorem continuousMackeyToH_apply [ContinuousMul G] (s : G)
 theorem coe_continuousMackeyToH [ContinuousMul G] (s : G) :
     (continuousMackeyToH U V s : (mackeySubgroup s U V).subgroupOf V →* U) = mackeyToH s U V :=
   (rfl)
+
+/-- The conjugation `TauCeti.mackeyToH s U V : V ⊓ sUs⁻¹ → U`, `y ↦ s⁻¹ y s`, is continuous. -/
+@[fun_prop]
+theorem continuous_mackeyToH [ContinuousMul G] (s : G) : Continuous (mackeyToH s U V) :=
+  (continuousMackeyToH U V s).continuous
 
 end Topological
 

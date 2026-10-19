@@ -30,7 +30,10 @@ the extension across the axis, and holomorphy off it.
 
 Combined with the principle of isolated zeros for the holomorphic extension, it also shows that
 the zeros on the real axis of such a function, zero-free in the upper half-plane, are isolated:
-`TauCeti.eventually_ne_zero_of_real_on_axis`.
+`TauCeti.eventually_ne_zero_of_real_on_axis`. Consequently a function continuous up to the axis
+and holomorphic and zero-free in the upper half-plane cannot vanish on a whole boundary interval,
+`TauCeti.exists_mem_Ioo_ne_zero_of_ne_zero`, so it is nonzero at real points on both sides of any
+real point, `TauCeti.exists_lt_lt_ne_zero_of_ne_zero`.
 
 As with the rest of the L0–L3/L4 conformal-mapping material, this is coordinated with the upstream
 Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505; L4 (reflection) is not part of
@@ -109,5 +112,51 @@ theorem eventually_ne_zero_of_real_on_axis {x r : ℝ} (hr : 0 < r)
     filter_upwards [h.filter_mono (nhdsWithin_mono _ hsub), mem_nhdsWithin_of_mem_nhds hxr,
       self_mem_nhdsWithin] with z hz hzr hzH
     rwa [← hFf ⟨hzr, hzH.1⟩]
+
+/-- **A zero-free function does not vanish on a whole boundary interval.** Let `f` be continuous
+on the closed upper half of a disc about a real point `x`, and holomorphic and zero-free on its
+open upper half. Then `f` is nonzero somewhere on the diameter `(x - r, x + r)`. -/
+theorem exists_mem_Ioo_ne_zero_of_ne_zero {x r : ℝ} (hr : 0 < r)
+    (hcont : ContinuousOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}))
+    (hne : ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → f z ≠ 0) :
+    ∃ y ∈ Ioo (x - r) (x + r), f y ≠ 0 := by
+  by_contra! h
+  -- a function vanishing on the diameter is real there, so its zero at `x` would be isolated
+  have hreal (z : ℂ) (hz : z ∈ Metric.ball (x : ℂ) r) (hz0 : z.im = 0) : (f z).im = 0 := by
+    have hzx : ((z.re : ℝ) : ℂ) = z := Complex.ext (by simp) (by simp [hz0])
+    rw [Metric.mem_ball, dist_of_im_eq (by simp [hz0]), ofReal_re, Real.dist_eq,
+      abs_sub_lt_iff] at hz
+    rw [← hzx, h _ ⟨by linarith, by linarith⟩, zero_im]
+  obtain ⟨ε, hε, hsub⟩ := Metric.mem_nhdsWithin_iff.mp
+    (eventually_ne_zero_of_real_on_axis hr hcont hholo hreal hne)
+  have ht : 0 < min ε r / 2 := by positivity
+  have htε : min ε r / 2 < ε := by linarith [min_le_left ε r]
+  have htr : min ε r / 2 < r := by linarith [min_le_right ε r]
+  refine hsub ⟨?_, ?_, ?_⟩ (h (x + min ε r / 2) ⟨by linarith, by linarith⟩)
+  · simpa [dist_of_im_eq, Real.dist_eq, abs_of_pos (lt_min hε hr)] using htε
+  · simp
+  · simpa using ht.ne'
+
+/-- **Boundary non-zeros on both sides of a point.** Let `f` be continuous on the closed upper half
+of a disc of radius `r` about a real point `x`, and holomorphic and zero-free on its open upper
+half. Then `f` is nonzero at a real point of `(x - r, x)` and at a real point of `(x, x + r)`. -/
+theorem exists_lt_lt_ne_zero_of_ne_zero {x r : ℝ} (hr : 0 < r)
+    (hcont : ContinuousOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}))
+    (hne : ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → f z ≠ 0) :
+    ∃ y₁ y₂ : ℝ, x - r < y₁ ∧ y₁ < x ∧ x < y₂ ∧ y₂ < x + r ∧ f y₁ ≠ 0 ∧ f y₂ ≠ 0 := by
+  -- apply `exists_mem_Ioo_ne_zero_of_ne_zero` to the half-radius discs about `x ± r / 2`
+  have h (c : ℝ) (hc : |c - x| = r / 2) : ∃ y ∈ Ioo (c - r / 2) (c + r / 2), f y ≠ 0 := by
+    have hsub : Metric.ball (c : ℂ) (r / 2) ⊆ Metric.ball (x : ℂ) r :=
+      Metric.ball_subset_ball' (by rw [dist_of_im_eq (by simp)]; simp [Real.dist_eq, hc])
+    exact exists_mem_Ioo_ne_zero_of_ne_zero (half_pos hr)
+      (hcont.mono (inter_subset_inter_left _ hsub))
+      (hholo.mono (inter_subset_inter_left _ hsub)) fun z hz => hne z (hsub hz)
+  obtain ⟨y₁, ⟨h₁, h₁'⟩, hy₁⟩ := h (x - r / 2) (by rw [sub_sub_cancel_left, abs_neg,
+    abs_of_pos (half_pos hr)])
+  obtain ⟨y₂, ⟨h₂, h₂'⟩, hy₂⟩ := h (x + r / 2) (by rw [add_sub_cancel_left,
+    abs_of_pos (half_pos hr)])
+  exact ⟨y₁, y₂, by linarith, by linarith, by linarith, by linarith, hy₁, hy₂⟩
 
 end TauCeti

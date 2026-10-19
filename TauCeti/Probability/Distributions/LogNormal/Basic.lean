@@ -146,6 +146,11 @@ def logNormalPDFReal (m : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ :=
 def logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (logNormalPDFReal m v x)
 
+/-- The extended-real log-normal density is obtained from its real density by `ENNReal.ofReal`. -/
+theorem logNormalPDF_eq_ofReal (m : ℝ) (v : ℝ≥0) (x : ℝ) :
+    logNormalPDF m v x = ENNReal.ofReal (logNormalPDFReal m v x) :=
+  (rfl)
+
 /-- The log-normal density vanishes off the positive half-line. -/
 @[simp]
 theorem logNormalPDFReal_of_nonpos (hx : x ≤ 0) (m : ℝ) (v : ℝ≥0) :
@@ -291,13 +296,9 @@ positive mass. -/
 @[simp]
 theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
     (logNormalMeasure m v).support = Ici 0 := by
-  rw [logNormalMeasure_eq_withDensity m hv, ← closure_Ioi]
-  refine support_withDensity_volume_eq_closure isOpen_Ioi
-    (measurable_logNormalPDF m v).aemeasurable ?_ ?_
-  · intro x hx
-    exact (logNormalPDF_pos m hv hx).ne'
-  · rw [← logNormalMeasure_eq_withDensity m hv, closure_Ioi]
-    exact (ae_pos_logNormalMeasure m v).mono fun _ hx ↦ hx.le
+  rw [logNormalMeasure_eq_withDensity m hv,
+    Measure.support_withDensity_eq_closure (measurable_logNormalPDF m v) isOpen_Ioi
+      (support_logNormalPDF m hv), closure_Ioi]
 
 /-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
 theorem support_logNormalMeasure_zero_var (m : ℝ) :
@@ -320,6 +321,14 @@ theorem cdf_logNormalMeasure_eq (m : ℝ) (hv : v ≠ 0) (x : ℝ) :
     rw [logNormalMeasure_map_exp, Measure.map_apply measurable_exp measurableSet_Iic, hpre,
       ← measureReal_def, ← cdf_eq_real]
     exact cdf_gaussianReal_eq m hv (Real.log x)
+
+/-- A log-normal law of positive log-variance has positive survival at every finite point. -/
+theorem cdf_logNormalMeasure_lt_one (m : ℝ) (hv : v ≠ 0) (x : ℝ) :
+    cdf (logNormalMeasure m v) x < 1 := by
+  rw [cdf_logNormalMeasure_eq m hv]
+  split_ifs
+  · norm_num
+  · linarith [Real.erf_lt_one ((Real.log x - m) / √(2 * (v : ℝ)))]
 
 /-- At the singular boundary `v = 0` the cdf of the log-normal law is a step function. -/
 theorem cdf_logNormalMeasure_zero_var (m x : ℝ) :
