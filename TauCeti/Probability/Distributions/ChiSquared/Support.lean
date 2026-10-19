@@ -6,8 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
+public import TauCeti.Probability.Distributions.Gamma.Support
 public import TauCeti.MeasureTheory.Measure.Dirac
-import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Support of chi-squared laws
@@ -54,16 +54,7 @@ theorem support_chiSquaredMeasure (k : ℝ) :
   · simp [chiSquaredMeasure_of_neg hk, hk.ne, not_lt.mpr hk.le]
   · simp [chiSquaredMeasure_zero]
   · simp only [hk.ne', hk, ite_false, ite_true]
-    rw [chiSquaredMeasure_eq_gammaMeasure hk, gammaMeasure_eq_withDensity_restrict_Ioi,
-      ← withDensity_indicator measurableSet_Ioi]
-    apply (Measure.support_withDensity_eq_closure
-      ((measurable_gammaPDF (k / 2) (1 / 2)).indicator measurableSet_Ioi)
-      isOpen_Ioi ?_).trans (closure_Ioi 0)
-    ext x
-    by_cases hx : 0 < x
-    · simp only [Function.mem_support, mem_Ioi, hx, indicator_of_mem, iff_true, gammaPDF]
-      exact ENNReal.ofReal_ne_zero_iff.mpr
-        (gammaPDFReal_pos (a := k / 2) (r := 1 / 2) (by positivity) (by norm_num) hx)
-    · simp [Function.mem_support, hx]
+    rw [chiSquaredMeasure_eq_gammaMeasure hk,
+      support_gammaMeasure (by positivity) (by norm_num)]
 
 end TauCeti.Probability
