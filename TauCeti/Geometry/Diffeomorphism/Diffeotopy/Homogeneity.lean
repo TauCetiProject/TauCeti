@@ -12,8 +12,9 @@ import Mathlib.Geometry.Manifold.VectorField.Pullback
 /-!
 # Homogeneity of connected manifolds
 
-Any two points of a connected open subset `U` of a finite-dimensional boundaryless manifold `M`
-are exchanged by a diffeotopy of `M` which fixes every point outside a compact subset of `U`.
+For any two points `x` and `y` of a connected open subset `U` of a finite-dimensional
+boundaryless manifold `M`, some diffeotopy of `M` which fixes every point outside a compact subset
+of `U` carries `x` to `y`.
 In particular the diffeomorphisms of a connected manifold isotopic to the identity act
 transitively on it.
 
@@ -29,10 +30,11 @@ theorem): it moves the centre of one ball to the centre of the other.
 
 ## Main results
 
-* `TauCeti.exists_diffeotopy_final_apply_eq_of_isPreconnected`: two points of a preconnected
-  open set `U` are exchanged by a diffeotopy fixing everything outside a compact subset of `U`.
-* `TauCeti.exists_diffeotopy_final_apply_eq`: two points of a connected manifold are exchanged by
-  a compactly supported diffeotopy.
+* `TauCeti.exists_diffeotopy_final_apply_eq_of_isPreconnected`: a point of a preconnected
+  open set `U` is carried to any other point of `U` by a diffeotopy fixing everything outside a
+  compact subset of `U`.
+* `TauCeti.exists_diffeotopy_final_apply_eq`: a point of a connected manifold is carried to any
+  other point by a compactly supported diffeotopy.
 
 ## References
 
@@ -225,10 +227,10 @@ private theorem eventually_exists_diffeotopy_final_apply_eq (hm : 1 ≤ m)
   rw [Set.Icc.coe_one, one_mul, h1]
   simp only [one_smul, hd, add_sub_cancel, e.left_inv hys]
 
-/-- **Homogeneity lemma.** Two points of a preconnected open subset `U` of a finite-dimensional
-boundaryless manifold are exchanged by a diffeotopy fixing everything outside a compact subset
-of `U`. For a `C^n` manifold the diffeotopy is `C^m` for every `m` with `1 ≤ m` and
-`m + 1 ≤ n`; in particular it is smooth on a smooth manifold. -/
+/-- **Homogeneity lemma.** For two points `x` and `y` of a preconnected open subset `U` of a
+finite-dimensional boundaryless manifold, some diffeotopy fixing everything outside a compact
+subset of `U` has final map sending `x` to `y`. For a `C^n` manifold the diffeotopy is `C^m`
+for every `m` with `1 ≤ m` and `m + 1 ≤ n`; in particular it is smooth on a smooth manifold. -/
 theorem exists_diffeotopy_final_apply_eq_of_isPreconnected (hm : 1 ≤ m)
     (hmn : (m : ℕ∞ω) + 1 ≤ n) {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U) {x y : M}
     (hx : x ∈ U) (hy : y ∈ U) :
@@ -245,9 +247,9 @@ theorem exists_diffeotopy_final_apply_eq_of_isPreconnected (hm : 1 ≤ m)
     refine ⟨Φ.symm, K, hK, hKU, fun t z hz ↦ Φ.symm_apply_eq_self_iff.2 (hΦK t hz), ?_⟩
     rw [Diffeotopy.final_symm, ← hab, Diffeomorph.symm_apply_apply]
 
-/-- **Homogeneity lemma.** Two points of a connected finite-dimensional boundaryless manifold are
-exchanged by a compactly supported diffeotopy. For a `C^n` manifold the diffeotopy is `C^m` for
-every `m` with `1 ≤ m` and `m + 1 ≤ n`. -/
+/-- **Homogeneity lemma.** For two points `x` and `y` of a connected finite-dimensional
+boundaryless manifold, some compactly supported diffeotopy has final map sending `x` to `y`.
+For a `C^n` manifold the diffeotopy is `C^m` for every `m` with `1 ≤ m` and `m + 1 ≤ n`. -/
 theorem exists_diffeotopy_final_apply_eq [PreconnectedSpace M] (hm : 1 ≤ m)
     (hmn : (m : ℕ∞ω) + 1 ≤ n) (x y : M) :
     ∃ (Φ : Diffeotopy I m M) (K : Set M), IsCompact K ∧
