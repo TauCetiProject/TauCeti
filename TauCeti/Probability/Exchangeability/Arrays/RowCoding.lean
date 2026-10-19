@@ -13,7 +13,6 @@ public import TauCeti.Probability.Process.Array.RowCoding
 import TauCeti.Probability.DeFinetti.Coding
 -- Non-public: measurability of pushforward on probability measures is used in the symmetry proof.
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Coupled row coding for separately exchangeable arrays
@@ -88,7 +87,7 @@ theorem ConditionallyIIDWith.jointLaw_arrayRow_eq_arrayRowCodingLaw
       arrayRowCodingLaw (μ.map ν) := by
   have hX : ∀ p, AEMeasurable (X p) μ :=
     aemeasurable_entry_of_aemeasurable_arrayRow h.aemeasurable
-  rw [← map_uncurry_jointPathLaw_arrayRow hX h.measurable_directing,
+  rw [← map_uncurry_jointPathLaw_arrayRow hX h.measurable_directing.aemeasurable,
     h.jointPathLaw_eq_map_unitIntervalCoding, arrayRowCodingLaw_def]
   have hinner : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
       (q.1, fun i ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
@@ -229,10 +228,9 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
   have hmix : (iidMixtureLaw π id).map J = iidMixtureLaw (π.map f) id := by
     rw [iidMixtureLaw_def, iidMixtureLaw_def]
     simp only [id_eq]
-    rw [TauCeti.MeasureTheory.map_bind hkernel.aemeasurable hJ]
+    rw [Measure.map_bind hkernel.aemeasurable hJ.aemeasurable]
     simp_rw [hfib]
-    rw [TauCeti.MeasureTheory.bind_map hf.aemeasurable hkernel.aemeasurable]
-    rfl
+    rw [Measure.bind_map hf.aemeasurable hkernel.aemeasurable]
   have hJlaw : (iidMixtureLaw π id).map J = iidMixtureLaw π id := by
     rw [hmix, hπ]
   have hH : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦

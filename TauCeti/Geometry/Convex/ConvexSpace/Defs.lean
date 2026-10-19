@@ -10,47 +10,63 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 /-!
 # Faces of the standard simplex
 
-Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f` along injective
-maps `f`, which embed a standard simplex as a face of a larger one.  Such a map keeps the weights
-of a point, so it is injective.  For `f = j.succAbove` its image is the facet on which the `j`-th
-weight vanishes, so a function taking a constant value on every facet takes that value wherever
-some weight vanishes.  Two facets, opposite `j < k`, meet in the codimension-two face opposite both:
-a common point of the two facets comes from that face through both composites of face maps, the
-two sides of the simplicial identity `SimplexCategory.δ_comp_δ`.
+Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
+map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
+one and keeps the weights of a point, so it is injective.  For `f = j.succAbove` its image is the
+facet on which the `j`-th weight vanishes, so a function taking a constant value on every facet
+takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
+codimension-two face opposite both: a common point of the two facets comes from that face through
+both composites of face maps, the two sides of the simplicial identity
+`SimplexCategory.δ_comp_δ`.
 -/
 
 public section
 
 namespace Convexity.StdSimplex
 
+section AddCommMonoid
+
+variable {R : Type*} [LE R] [AddCommMonoid R] [One R]
+
 /-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
-theorem ext_fin_three {R : Type*} [PartialOrder R] [Semiring R]
-    {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
-    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y :=
-  ext <| Finsupp.ext fun
+theorem ext_fin_three {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
+    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y := by
+  cases x
+  cases y
+  congr 1
+  exact Finsupp.ext fun
     | ⟨0, _⟩ => h0
     | ⟨1, _⟩ => h1
     | ⟨2, _⟩ => h2
 
+/-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
+@[simp]
+theorem total_fin_three (x : StdSimplex R (Fin 3)) :
+    x.weights 0 + x.weights 1 + x.weights 2 = 1 := by
+  simpa [Finsupp.sum_fintype, Fin.sum_univ_three] using x.total
+
+/-- The weights of the last two vertices of a point of the standard `2`-simplex add up to at
+most `1`. -/
+theorem weights_one_add_weights_two_le_one [AddRightMono R] (x : StdSimplex R (Fin 3)) :
+    x.weights 1 + x.weights 2 ≤ 1 := by
+  rw [← x.total_fin_three, add_assoc]
+  exact le_add_of_nonneg_left (x.nonneg 0)
+
+end AddCommMonoid
+
 variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
+
+/-- Mapping a standard simplex adds the weights over each fibre of the map. -/
+theorem weights_map_apply [Fintype X] [DecidableEq Y]
+    (f : X → Y) (x : StdSimplex R X) (y : Y) :
+    (x.map f).weights y = ∑ i with f i = y, x.weights i := by
+  simp [weights_map, Finsupp.mapDomain_fintype, Finset.sum_apply, Finsupp.single_apply,
+    Finset.sum_filter]
 
 /-- Along an injective map, the weight at the image of a point is the weight at that point. -/
 theorem weights_map_apply_of_injective {f : X → Y} (hf : f.Injective) (x : StdSimplex R X)
     (a : X) : (x.map f).weights (f a) = x.weights a :=
   Finsupp.mapDomain_apply_of_injective hf _ _
-
-omit [IsStrictOrderedRing R] in
-/-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
-theorem total_fin_three (x : StdSimplex R (Fin 3)) :
-    x.weights 0 + x.weights 1 + x.weights 2 = 1 := by
-  rw [← x.total_of_fintype, Fin.sum_univ_three]
-
-/-- The weights of the last two vertices of a point of the standard `2`-simplex add up to at
-most `1`. -/
-theorem weights_one_add_weights_two_le_one (x : StdSimplex R (Fin 3)) :
-    x.weights 1 + x.weights 2 ≤ 1 := by
-  rw [← x.total_fin_three, add_assoc]
-  exact le_add_of_nonneg_left (x.weights_nonneg 0)
 
 /-- The map of standard simplices along an injective map is injective. -/
 theorem map_injective {f : X → Y} (hf : f.Injective) : (map (R := R) f).Injective := by

@@ -87,6 +87,14 @@ lemma skeletonLT_eq_complex_of_isEmpty_cell (n : ℕ)
   exact (openCell_subset_skeletonLT m j).trans
     (skeletonLT_mono (by exact_mod_cast hm))
 
+/-- If there are no cells of dimension less than `n`, the stage `skeletonLT C n` is the base. -/
+lemma skeletonLT_eq_base_of_isEmpty_cell (n : ℕ) (hn : ∀ m < n, IsEmpty (cell C m)) :
+    (skeletonLT C (n : ℕ∞) : Set X) = D := by
+  rw [← iUnion_openCell_eq_skeletonLT, union_eq_left]
+  refine iUnion₂_subset fun m hm ↦ ?_
+  have := hn m (by exact_mod_cast hm)
+  simp
+
 variable {C}
 
 /-- The characteristic map of an `n`-cell sends the open unit ball into its open cell, which is

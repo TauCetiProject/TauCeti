@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
@@ -23,7 +24,8 @@ is derived, not assumed.
 This file proves the elementary theory of that law: it is a probability measure, it is carried by
 the positive half-line, its density against Lebesgue measure is
 `(x * √(2 * π * v))⁻¹ * exp (-(log x - m) ^ 2 / (2 * v))` for `v ≠ 0`, its cdf is the
-error-function formula in `log x`, all of its raw moments are `exp (n * m + n ^ 2 * v / 2)`, its
+error-function formula in `log x`, all of its real-power moments are
+`exp (q * m + q ^ 2 * v / 2)`, its
 exponential moments exist exactly for nonpositive `t`, and the family is measurable in its
 parameters.
 
@@ -45,9 +47,11 @@ hence the general mean and variance, need no hypothesis on `v` at all.
 * `logNormalMeasure_eq_withDensity`, `hasPDF_of_hasLaw_logNormalMeasure` and
   `rnDeriv_logNormalMeasure` — the density, the `HasPDF` bridge and the Radon–Nikodym derivative;
 * `cdf_logNormalMeasure_eq` and `cdf_logNormalMeasure_zero_var` — the cdf and its boundary form;
-* `integral_pow_logNormalMeasure`, `integral_id_logNormalMeasure` and
-  `variance_id_logNormalMeasure` — the raw moments `exp (n * m + n ^ 2 * v / 2)`, the mean
-  `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
+* `support_logNormalMeasure` and `support_logNormalMeasure_zero_var` — the topological support of
+  the positive-variance family and its Dirac boundary;
+* `integral_rpow_logNormalMeasure`, `integral_id_logNormalMeasure` and
+  `variance_id_logNormalMeasure` — the real-power moments `exp (q * m + q ^ 2 * v / 2)`, the
+  mean `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
 * `integrableExpSet_id_logNormalMeasure` — the exponential moments exist exactly for `t ≤ 0`, with
   `not_integrable_exp_mul_logNormalMeasure` the matching non-integrability for `t > 0`;
 * `integral_id_logNormalMeasure_zero_var` and `variance_id_logNormalMeasure_zero_var` — the
@@ -60,8 +64,9 @@ hence the general mean and variance, need no hypothesis on `v` at all.
 ## Implementation
 
 Everything except the density and the failure of the exponential moments is read off the Gaussian
-law through the pushforward. The moments are the Gaussian moment-generating function evaluated at
-natural numbers, the cdf is the Gaussian cdf at `log x` because `exp ⁻¹' Iic x = Iic (log x)` for
+law through the pushforward. The real-power moments are the Gaussian moment-generating function
+evaluated at real exponents, the cdf is the Gaussian cdf at `log x` because
+`exp ⁻¹' Iic x = Iic (log x)` for
 `0 < x`, and the boundary law is `Measure.map_dirac`.
 
 The density is the one genuine change of variables. Since `Real.exp` is injective with derivative
@@ -74,11 +79,8 @@ The failure of the exponential moments for `t > 0` is a growth statement:
 function, pulled back along `exp`, is eventually at least `1` on a half-line of infinite Lebesgue
 measure.
 
-## References
+## Reference
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, the **Log-normal** target,
-  together with the log-normal case of the items 1–4 required of every family in "What every
-  distribution must provide".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
   Wiley (1994), ch. 14.
 -/
@@ -144,6 +146,11 @@ def logNormalPDFReal (m : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ :=
 def logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (logNormalPDFReal m v x)
 
+/-- The extended-real log-normal density is obtained from its real density by `ENNReal.ofReal`. -/
+theorem logNormalPDF_eq_ofReal (m : ℝ) (v : ℝ≥0) (x : ℝ) :
+    logNormalPDF m v x = ENNReal.ofReal (logNormalPDFReal m v x) :=
+  (rfl)
+
 /-- The log-normal density vanishes off the positive half-line. -/
 @[simp]
 theorem logNormalPDFReal_of_nonpos (hx : x ≤ 0) (m : ℝ) (v : ℝ≥0) :
@@ -182,6 +189,33 @@ theorem logNormalPDFReal_nonneg (m : ℝ) (v : ℝ≥0) (x : ℝ) : 0 ≤ logNor
   · rw [logNormalPDFReal_of_nonpos hx]
   · rw [logNormalPDFReal_eq_gaussianPDFReal hx]
     exact mul_nonneg (inv_nonneg.mpr hx.le) (gaussianPDFReal_nonneg m v _)
+
+/-- The real-valued log-normal density is positive on the positive half-line when the log-variance
+is nonzero. -/
+theorem logNormalPDFReal_pos (m : ℝ) (hv : v ≠ 0) (hx : 0 < x) :
+    0 < logNormalPDFReal m v x := by
+  rw [logNormalPDFReal_eq_gaussianPDFReal hx]
+  exact mul_pos (inv_pos.mpr hx) (gaussianPDFReal_pos m v (Real.log x) hv)
+
+/-- The `ℝ≥0∞`-valued log-normal density is positive on the positive half-line when the log-variance
+is nonzero. -/
+theorem logNormalPDF_pos (m : ℝ) (hv : v ≠ 0) (hx : 0 < x) : 0 < logNormalPDF m v x := by
+  rw [logNormalPDF, ENNReal.ofReal_pos]
+  exact logNormalPDFReal_pos m hv hx
+
+/-- For nonzero log-variance, the function support of the log-normal density is the positive
+half-line. -/
+@[simp]
+theorem support_logNormalPDF (m : ℝ) (hv : v ≠ 0) :
+    Function.support (logNormalPDF m v) = Ioi 0 := by
+  ext x
+  rw [Function.mem_support]
+  simp only [Set.mem_Ioi]
+  constructor
+  · intro h
+    by_contra hx
+    exact h (logNormalPDF_of_nonpos (le_of_not_gt hx) m v)
+  · exact fun hx => (logNormalPDF_pos m hv hx).ne'
 
 @[simp]
 theorem toReal_logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) :
@@ -254,6 +288,23 @@ theorem rnDeriv_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
   rw [logNormalMeasure_eq_withDensity m hv]
   exact Measure.rnDeriv_withDensity volume (measurable_logNormalPDF m v)
 
+/-! ### Topological support -/
+
+/-- **The topological support of a nondegenerate log-normal law** is the closed nonnegative
+half-line. Although the law is almost surely strictly positive, every neighborhood of zero has
+positive mass. -/
+@[simp]
+theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
+    (logNormalMeasure m v).support = Ici 0 := by
+  rw [logNormalMeasure_eq_withDensity m hv,
+    Measure.support_withDensity_eq_closure (measurable_logNormalPDF m v) isOpen_Ioi
+      (support_logNormalPDF m hv), closure_Ioi]
+
+/-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
+theorem support_logNormalMeasure_zero_var (m : ℝ) :
+    (logNormalMeasure m 0).support = {Real.exp m} := by
+  rw [logNormalMeasure_zero_var, Measure.support_dirac, closure_singleton]
+
 /-! ### The cumulative distribution function -/
 
 /-- **The cumulative distribution function of the log-normal law** with nonzero log-variance. -/
@@ -271,6 +322,14 @@ theorem cdf_logNormalMeasure_eq (m : ℝ) (hv : v ≠ 0) (x : ℝ) :
       ← measureReal_def, ← cdf_eq_real]
     exact cdf_gaussianReal_eq m hv (Real.log x)
 
+/-- A log-normal law of positive log-variance has positive survival at every finite point. -/
+theorem cdf_logNormalMeasure_lt_one (m : ℝ) (hv : v ≠ 0) (x : ℝ) :
+    cdf (logNormalMeasure m v) x < 1 := by
+  rw [cdf_logNormalMeasure_eq m hv]
+  split_ifs
+  · norm_num
+  · linarith [Real.erf_lt_one ((Real.log x - m) / √(2 * (v : ℝ)))]
+
 /-- At the singular boundary `v = 0` the cdf of the log-normal law is a step function. -/
 theorem cdf_logNormalMeasure_zero_var (m x : ℝ) :
     cdf (logNormalMeasure m 0) x = if Real.exp m ≤ x then 1 else 0 := by
@@ -278,26 +337,39 @@ theorem cdf_logNormalMeasure_zero_var (m x : ℝ) :
 
 /-! ### Moments -/
 
-/-- Every power of a log-normal variable is integrable. -/
-theorem integrable_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    Integrable (fun x => x ^ n) (logNormalMeasure m v) := by
+/-- Every real power of a log-normal variable is integrable. -/
+theorem integrable_rpow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
+    Integrable (fun x => x ^ q) (logNormalMeasure m v) := by
   rw [logNormalMeasure_map_exp,
     integrable_map_measure (by fun_prop) measurable_exp.aemeasurable]
-  simpa only [Function.comp_def, Real.exp_nat_mul] using
-    integrable_exp_mul_gaussianReal (μ := m) (v := v) n
+  simpa only [Function.comp_def, ← Real.exp_mul, mul_comm] using
+    integrable_exp_mul_gaussianReal (μ := m) (v := v) q
 
-/-- **The raw moments of the log-normal law.** They are the Gaussian moment-generating function
-evaluated at natural numbers, and the formula is valid at the boundary `v = 0` as well. -/
-theorem integral_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    ∫ x, x ^ n ∂logNormalMeasure m v = Real.exp ((n : ℝ) * m + (n : ℝ) ^ 2 * (v : ℝ) / 2) := by
+/-- **The real-power moments of the log-normal law.** They are the Gaussian moment-generating
+function evaluated at the exponent, and the formula includes negative powers and the boundary
+`v = 0`. -/
+theorem integral_rpow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
+    ∫ x, x ^ q ∂logNormalMeasure m v = Real.exp (q * m + q ^ 2 * (v : ℝ) / 2) := by
   rw [logNormalMeasure_map_exp, integral_map measurable_exp.aemeasurable (by fun_prop)]
-  have h : ∫ y, Real.exp y ^ n ∂gaussianReal m v = mgf id (gaussianReal m v) n := by
+  have h : ∫ y, Real.exp y ^ q ∂gaussianReal m v = mgf id (gaussianReal m v) q := by
     rw [mgf]
     refine integral_congr_ae (ae_of_all _ fun y => ?_)
     simp only [id_eq]
-    rw [← Real.exp_nat_mul]
+    rw [← Real.exp_mul]
+    congr 1
+    ring
   rw [h, mgf_id_gaussianReal]
   ring_nf
+
+/-- Every natural power of a log-normal variable is integrable. -/
+theorem integrable_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    Integrable (fun x => x ^ n) (logNormalMeasure m v) := by
+  simpa only [Real.rpow_natCast] using integrable_rpow_logNormalMeasure m v (n : ℝ)
+
+/-- The natural raw moments of the log-normal law. -/
+theorem integral_pow_logNormalMeasure (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    ∫ x, x ^ n ∂logNormalMeasure m v = Real.exp ((n : ℝ) * m + (n : ℝ) ^ 2 * (v : ℝ) / 2) := by
+  simpa only [Real.rpow_natCast] using integral_rpow_logNormalMeasure m v (n : ℝ)
 
 /-- The mean of the log-normal law is `exp (m + v / 2)`. -/
 theorem integral_id_logNormalMeasure (m : ℝ) (v : ℝ≥0) :

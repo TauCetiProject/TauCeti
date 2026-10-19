@@ -11,8 +11,9 @@ import Mathlib.Algebra.Polynomial.Eval.Degree
 /-!
 # Polynomial derivatives
 
-This file records auxiliary results relating Mathlib's polynomial derivative APIs and controlling
-degrees of derivatives under coefficient maps.
+This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
+iterated derivatives after a linear change of variables, and controlling degrees of derivatives
+under coefficient maps.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function.
 
@@ -35,6 +36,17 @@ function. -/
 theorem _root_.Polynomial.coe_derivative' [CommSemiring R] :
     ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
   _root_.funext derivative'_apply
+
+/-- The `k`-th derivative of `p (a X)` is `a ^ k p⁽ᵏ⁾ (a X)`. -/
+theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X]) (a : R)
+    (k : ℕ) :
+    derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_comp, derivative_C_mul_X,
+      Function.iterate_succ_apply', pow_succ, C_mul]
+    ring
 
 variable [Semiring R] [Semiring S] [HasUniqueDiv S]
 

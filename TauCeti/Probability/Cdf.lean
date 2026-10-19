@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
@@ -32,12 +33,25 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
 * `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
   strict increase of the cdf;
+* `MeasureTheory.Measure.support_eq_univ_of_strictMono_cdf` shows that a strictly increasing cdf
+  has full topological support;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
+* `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
+  its cdf;
+* `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
+  evaluate the cdf of the image of a real law under absolute value, and
+  `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
+* `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
+  lies in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
-* `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
+* `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
+* `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
+  integer floor, including at negative points;
+* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` shows that every level below one is
+  reached by a finite cumulative mass of a natural-valued law.
 
 ## Adapted from
 
@@ -61,6 +75,51 @@ open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
 
+/-- Below the level `1` some point has cumulative mass at least the level, because the cumulative
+distribution function tends to `1` at `+∞`. -/
+theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
+    {x : ℝ | t ≤ cdf μ x}.Nonempty :=
+  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
+
+/-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
+`1 - cdf μ x`. -/
+theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
+    (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
+  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
+    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+
+/-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
+`[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
+theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
+    cdf (μ.map (|·|)) x = cdf μ x - μ.real (Iio (-x)) := by
+  have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
+    ext y
+    simp [abs_le, and_comm]
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
+      measurableSet_Iio, cdf_eq_real]
+
+/-- The image of `μ` under absolute value puts no mass on the negative half-line. -/
+theorem cdf_map_abs_of_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : x < 0) :
+    cdf (μ.map (|·|)) x = 0 := by
+  have hpre : (|·|) ⁻¹' Iic x = ∅ :=
+    eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_empty]
+
+/-- The cdf of the image of a symmetric law under absolute value at `x ≥ 0` is
+`2 * cdf μ x - 1`. -/
+theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
+  rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
+  ring
+
+/-- The cdf of an integer-valued law cast to the reals is its cumulative mass through the integer
+floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
+theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
+    cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, Int.preimage_Iic]
+
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
 /-- At a nonnegative point, the cdf of a natural-valued law cast to the reals is the cumulative
@@ -83,6 +142,14 @@ theorem cdf_map_natCast_of_neg {x : ℝ} (hx : x < 0) :
     exact lt_of_lt_of_le hx (Nat.cast_nonneg k)
   rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre,
     measureReal_empty]
+
+/-- Every level below one is reached by a finite cumulative mass of a natural-valued probability
+law. This existence proof supplies the witness required by `Nat.find`. -/
+theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u ≤ μ.real (Iic k) := by
+  obtain ⟨x, hx⟩ := nonempty_setOf_le_cdf (μ.map (Nat.cast : ℕ → ℝ)) hu
+  refine ⟨⌈x⌉₊, ?_⟩
+  have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
+  simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
 
 /-- **CDF continuity from null singletons.** The cumulative distribution function of a
 probability measure on `ℝ` is continuous when every singleton has measure zero. -/
@@ -140,6 +207,17 @@ theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] 
     _ ↔ cdf ν a < cdf ν b := by
       rw [StieltjesFunction.measure_Ioc, ENNReal.ofReal_pos, sub_pos]
 
+/-- A real probability law with a strictly increasing cdf has full topological support. -/
+theorem support_eq_univ_of_strictMono_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    (hν : StrictMono (cdf ν)) : ν.support = Set.univ := by
+  rw [Set.eq_univ_iff_forall]
+  intro x
+  rw [mem_support_iff_forall]
+  intro U hU
+  obtain ⟨a, b, hx, hab⟩ := mem_nhds_iff_exists_Ioo_subset.mp hU
+  have hIoc : 0 < ν (Ioc a x) := (measure_Ioc_pos_iff_cdf_lt ν).mpr (hν hx.1)
+  exact hIoc.trans_le (measure_mono fun y hy ↦ hab ⟨hy.1, hy.2.trans_lt hx.2⟩)
+
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/
 theorem cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν]
@@ -185,6 +263,31 @@ theorem cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullS
     exact hνS
 
 end MeasureTheory.Measure
+
+namespace Set.OrdConnected
+
+/-- A point `q` at which the level `t` lies between the left limit and the value of the cumulative
+distribution function lies in every interval of full mass: otherwise the interval lies entirely
+on one side of `q`, and the mass on that side is `0` or `1`. -/
+theorem mem_of_measureReal_Iio_le_of_le_cdf {μ : Measure ℝ} {s : Set ℝ} {t : ℝ}
+    [IsProbabilityMeasure μ] (hs : s.OrdConnected) (hμs : ∀ᵐ x ∂μ, x ∈ s) {q : ℝ}
+    (hIio : μ.real (Iio q) ≤ t) (hIic : t ≤ cdf μ q) (h0 : 0 < t) (h1 : t < 1) : q ∈ s := by
+  by_contra hq
+  have hside : (∀ x ∈ s, x < q) ∨ ∀ x ∈ s, q < x := by
+    by_contra! h
+    obtain ⟨⟨a, ha, hqa⟩, b, hb, hbq⟩ := h
+    exact hq (hs.out hb ha ⟨hbq, hqa⟩)
+  rcases hside with hlt | hgt
+  · have hfull : μ (Iio q) = μ univ :=
+      (ae_mem_iff_measure_eq measurableSet_Iio.nullMeasurableSet).1 (hμs.mono hlt)
+    rw [measureReal_def, hfull, measure_univ, ENNReal.toReal_one] at hIio
+    exact hIio.not_gt h1
+  · have hnull : μ (Iic q) = 0 :=
+      measure_eq_zero_iff_ae_notMem.2 (hμs.mono fun x hx hxq ↦ (hgt x hx).not_ge hxq)
+    rw [cdf_eq_real, measureReal_def, hnull, ENNReal.toReal_zero] at hIic
+    exact hIic.not_gt h0
+
+end Set.OrdConnected
 
 namespace TauCeti.Probability
 
