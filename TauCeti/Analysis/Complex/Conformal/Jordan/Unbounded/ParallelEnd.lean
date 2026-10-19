@@ -56,7 +56,7 @@ namespace TauCeti
 variable {f g : ℂ → ℂ} {q : ℂ}
 
 /-- On the upper half-plane the map is recovered from its inverted coordinate. -/
-private theorem eq_add_inv_of_inverted_coordinate
+theorem eq_add_inv_of_inverted_coordinate
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet) {z : ℂ}
     (hz : z ∈ upperHalfPlaneSet) : f z = q + (g z)⁻¹ := by
   rw [hgf hz, inv_inv, add_sub_cancel]
