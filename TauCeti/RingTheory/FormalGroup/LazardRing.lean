@@ -46,6 +46,8 @@ its base change along exactly one ring homomorphism `L →+* R`.
 
 * `FormalGroup.coeff_single_zero`, `FormalGroup.coeff_single_one`: the coefficients of `Xⁿ` and
   `Yⁿ` in a formal group law are `1` for `n = 1` and `0` otherwise.
+* `TauCeti.coeff_lazardSeries_eq`: the coefficient of an arbitrary monomial in
+  `X + Y + ∑ aᵢⱼ Xⁱ Yʲ`.
 * `TauCeti.lazardSeries_coeff_toPowerSeries`: every formal group law is the series
   `X + Y + ∑ aᵢⱼ Xⁱ Yʲ` of its coefficients.
 * `TauCeti.LazardRing.coeff_formalGroup`: the coefficient of `Xⁱ Yʲ` in the universal formal
@@ -115,8 +117,9 @@ def lazardSeries (a : ℕ+ × ℕ+ → A) : MvPowerSeries (Fin 2) A := fun d ↦
   if d 0 ≠ 0 ∧ d 1 ≠ 0 then a ((d 0).toPNat', (d 1).toPNat')
   else if d 0 + d 1 = 1 then 1 else 0
 
-/-- The coefficients of `X + Y + ∑ aᵢⱼ Xⁱ Yʲ`, as they are defined. -/
-private theorem coeff_lazardSeries_eq (a : ℕ+ × ℕ+ → A) (d : Fin 2 →₀ ℕ) :
+/-- The coefficient of an arbitrary monomial `X^(d 0) Y^(d 1)` in `X + Y + ∑ aᵢⱼ Xⁱ Yʲ`: it is
+`aᵢⱼ` when both exponents are positive, `1` for the monomials `X` and `Y`, and `0` otherwise. -/
+theorem coeff_lazardSeries_eq (a : ℕ+ × ℕ+ → A) (d : Fin 2 →₀ ℕ) :
     coeff d (lazardSeries a) =
       if d 0 ≠ 0 ∧ d 1 ≠ 0 then a ((d 0).toPNat', (d 1).toPNat')
       else if d 0 + d 1 = 1 then 1 else 0 :=
