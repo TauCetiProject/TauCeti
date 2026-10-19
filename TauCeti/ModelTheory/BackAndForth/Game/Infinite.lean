@@ -191,34 +191,62 @@ namespace CoherentEFStrategy
 
 variable {L}
 
+/-- Reindexing the reached positions of a coherent strategy gives a tuple back-and-forth
+system containing its starting pair, even when the starting tuples are nonempty. -/
+theorem exists_isTupleBFSystem_mem (s : CoherentEFStrategy L a b) :
+    ∃ S : Set (Σ n, (Fin n → M) × (Fin n → N)),
+      IsTupleBFSystem (L := L) S ∧ ⟨n, a, b⟩ ∈ S := by
+  let S : Set (Σ k, (Fin k → M) × (Fin k → N)) :=
+    {p | ∃ (h : List (M ⊕ N)) (f : Fin p.1 → Fin (n + h.length)),
+      p.2.1 = s.left h ∘ f ∧ p.2.2 = s.right h ∘ f}
+  refine ⟨S, ?_, [], id, ?_, ?_⟩
+  · constructor
+    · exact ⟨[], Fin.elim0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+    · rintro k c d ⟨h, f, hc, hd⟩
+      dsimp only at f hc hd
+      subst c d
+      exact (sameAtomicType_iff _ _).mpr
+        ⟨fun i j => (s.sameAtomicType h).eq_iff (f i) (f j),
+          fun r g => (s.sameAtomicType h).rel_iff r (f ∘ g)⟩
+    · rintro k c d ⟨h, f, hc, hd⟩
+      dsimp only at f hc hd
+      subst c d
+      intro x
+      refine ⟨s.right (.inl x :: h) (last _), .inl x :: h,
+        snoc (Fin.castSucc ∘ f) (last _), ?_, ?_⟩
+      · funext i
+        exact lastCases (by simp) (fun j => by simp) i
+      · funext i
+        exact lastCases (by simp) (fun j => by simp) i
+    · rintro k c d ⟨h, f, hc, hd⟩
+      dsimp only at f hc hd
+      subst c d
+      intro y
+      refine ⟨s.left (.inr y :: h) (last _), .inr y :: h,
+        snoc (Fin.castSucc ∘ f) (last _), ?_, ?_⟩
+      · funext i
+        exact lastCases (by simp) (fun j => by simp) i
+      · funext i
+        exact lastCases (by simp) (fun j => by simp) i
+  · simp
+  · simp
+
+/-- A pair admits a coherent strategy exactly when it belongs to a tuple back-and-forth
+system. This includes arbitrary starting tuples. -/
+theorem nonempty_iff_exists_isTupleBFSystem_mem :
+    Nonempty (CoherentEFStrategy L a b) ↔
+      ∃ S : Set (Σ n, (Fin n → M) × (Fin n → N)),
+        IsTupleBFSystem (L := L) S ∧ ⟨n, a, b⟩ ∈ S :=
+  ⟨fun ⟨s⟩ => s.exists_isTupleBFSystem_mem,
+    fun ⟨_, hS, hab⟩ => ⟨hS.coherentEFStrategy hab⟩⟩
+
 /-- The reached positions of a coherent strategy from the empty tuples form a tuple
 back-and-forth system. -/
 theorem exists_isTupleBFSystem
     (s : CoherentEFStrategy L (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N)) :
     ∃ S : Set (Σ n, (Fin n → M) × (Fin n → N)), IsTupleBFSystem (L := L) S := by
-  let pos (h : List (M ⊕ N)) : Σ n, (Fin n → M) × (Fin n → N) :=
-    ⟨0 + h.length, s.left h, s.right h⟩
-  refine ⟨Set.range pos, ?_⟩
-  constructor
-  · exact ⟨[], by simp [pos, s.left_nil, s.right_nil]⟩
-  · suffices ∀ p ∈ Set.range pos, SameAtomicType (L := L) p.2.1 p.2.2 from
-      fun {_ _ _} hp => this _ hp
-    rintro p ⟨h, rfl⟩
-    exact s.sameAtomicType h
-  · suffices ∀ p ∈ Set.range pos, ∀ x : M, ∃ y : N,
-        ⟨p.1 + 1, snoc p.2.1 x, snoc p.2.2 y⟩ ∈ Set.range pos from
-      fun {_ _ _} hp => this _ hp
-    rintro p ⟨h, rfl⟩ x
-    refine ⟨s.right (.inl x :: h) (last _), .inl x :: h, ?_⟩
-    exact congrArg (Sigma.mk (0 + h.length + 1))
-      (Prod.ext (s.forth_left h x) (s.forth_right h x))
-  · suffices ∀ p ∈ Set.range pos, ∀ y : N, ∃ x : M,
-        ⟨p.1 + 1, snoc p.2.1 x, snoc p.2.2 y⟩ ∈ Set.range pos from
-      fun {_ _ _} hp => this _ hp
-    rintro p ⟨h, rfl⟩ y
-    refine ⟨s.left (.inr y :: h) (last _), .inr y :: h, ?_⟩
-    exact congrArg (Sigma.mk (0 + h.length + 1))
-      (Prod.ext (s.back_left h y) (s.back_right h y))
+  obtain ⟨S, hS, _⟩ := s.exists_isTupleBFSystem_mem
+  exact ⟨S, hS⟩
 
 end CoherentEFStrategy
 
