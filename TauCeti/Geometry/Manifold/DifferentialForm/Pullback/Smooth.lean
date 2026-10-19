@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Smooth pullback of differential forms
@@ -77,6 +78,49 @@ theorem inCoordinates_mpullbackWithin (ω : RoughForm I' M' F k) (f : M → M')
     congrArg (fun a ↦ a v) h
 
 end RoughForm
+
+/-- In a pullback trivialization, a bundle-valued pullback is the coordinate pullback of the
+original form. The tangent fibre is read in the fixed charts at `x` and `f x`; the second
+hypothesis supplies the target tangent trivialization needed to cancel its linear map with its
+inverse. This pointwise identity is the coordinate input for smooth bundle-valued pullbacks. -/
+theorem bundleMpullbackWithin_inCoordinates
+    {V' : M' → Type*} [∀ y, AddCommGroup (V' y)] [∀ y, Module ℝ (V' y)]
+    [∀ y, TopologicalSpace (V' y)] [TopologicalSpace (TotalSpace F V')]
+    [FiberBundle F V'] [VectorBundle ℝ F V']
+    (ω : RoughBundleForm I' M' V' k) (f : M → M') (s : Set M) (x y : M)
+    (hyT : f y ∈ (trivializationAt E' (TangentSpace I') (f x)).baseSet) :
+    (((trivializationAt F V' (f x)).continuousLinearMapAt ℝ (f y)).compContinuousAlternatingMap
+      (bundleMpullbackWithin I I' f s ω y)).compContinuousLinearMap
+        ((trivializationAt E (TangentSpace I) x).symmL ℝ y) =
+      (ContinuousAlternatingMap.inCoordinates E' F (f x) (f y) (f x) (f y)
+        (ω (f y))).compContinuousLinearMap
+        (inTangentCoordinates I I' id f (mfderivWithin I I' f s) x y) := by
+  ext v
+  simp only [ContinuousAlternatingMap.inCoordinates,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe]
+  simp only [Trivialization.continuousLinearMapAt_apply, Function.comp_apply,
+    bundleMpullbackWithin_apply]
+  simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates,
+    Trivialization.linearMapAt_apply]
+  by_cases hyF : f y ∈ (trivializationAt F V' (f x)).baseSet
+  · simp only [ite_eq_left hyF]
+    have key (u : TangentSpace I' (f y)) :
+        (trivializationAt E' (TangentSpace I') (f x)).symmL ℝ (f y)
+            ((trivializationAt E' (TangentSpace I') (f x)).continuousLinearMapAt ℝ
+              (f y) u) = u := by
+      rw [Trivialization.symmL_apply _ hyT,
+        Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply]
+      rw [ite_eq_left hyT]
+      exact Trivialization.symm_apply_apply_mk _ hyT u
+    congr 1
+    congr 1
+    congr 1
+    congr 1
+    funext i
+    simp only [ContinuousLinearMap.comp_apply, Function.comp_apply, id_eq]
+    rw [key]
+  · simp only [ite_eq_right hyF]
 
 /-- A form of regularity `C^m` pulls back to a `C^m` section along a `C^n` map when `m + 1 ≤ n`.
 The derivative defining pullback is taken within the unique-differentiability set `s`. -/
