@@ -125,31 +125,24 @@ theorem timeDependentFlow_trans (v : ℝ → E → E) {K : ℝ≥0}
   rw [hsum, globalSolution_timeDependentSuspension v hv r t x] at h
   simpa only using (congrArg Prod.snd h).symm
 
-/-- Evolving from `s` to `t` and back to `s` returns the initial point.  This is not a `simp`
-lemma because `timeDependentFlow_trans` and `timeDependentFlow_self` already prove it. -/
-theorem timeDependentFlow_timeDependentFlow_swap (v : ℝ → E → E) {K : ℝ≥0}
-    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) (x : E) :
-    timeDependentFlow v hv t s (timeDependentFlow v hv s t x) = x := by
-  simp
-
 /-- The evolution from `t` back to `s` is inverse to the evolution from `s` to `t`. -/
 @[simp]
 theorem timeDependentFlow_comp_swap (v : ℝ → E → E) {K : ℝ≥0}
     (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
     timeDependentFlow v hv t s ∘ timeDependentFlow v hv s t = id :=
-  funext <| timeDependentFlow_timeDependentFlow_swap v hv s t
+  funext fun _ ↦ by simp
 
 /-- The evolution from `t` back to `s` is a left inverse of the evolution from `s` to `t`. -/
 theorem leftInverse_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
     (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
     LeftInverse (timeDependentFlow v hv t s) (timeDependentFlow v hv s t) :=
-  timeDependentFlow_timeDependentFlow_swap v hv s t
+  fun _ ↦ by simp
 
 /-- The evolution from `t` back to `s` is a right inverse of the evolution from `s` to `t`. -/
 theorem rightInverse_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
     (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
     RightInverse (timeDependentFlow v hv t s) (timeDependentFlow v hv s t) :=
-  timeDependentFlow_timeDependentFlow_swap v hv t s
+  fun _ ↦ by simp
 
 /-- Each time map of the time-dependent flow is bijective. -/
 theorem bijective_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
