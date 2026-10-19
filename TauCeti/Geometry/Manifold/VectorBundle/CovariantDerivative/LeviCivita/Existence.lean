@@ -24,7 +24,7 @@ connection laws and uniqueness only concern differentiable fields.
 * B. O'Neill, *Semi-Riemannian Geometry with Applications to Relativity*, Ch. 3, Thm. 11.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Thm. 5.10.
 * `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic`: the
-  Koszul tensoriality and Leibniz arguments generalized here from inner products.
+  shared bilinear Koszul tensoriality and Leibniz identities used in the construction.
 * `Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita`: the construction
   using `TensorialAt.mkHom₂`, adapted here by replacing the Riesz isomorphism with the
   nondegenerate metric's sharp isomorphism.
@@ -43,75 +43,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   (g : ContMDiffNondegenerateMetric (I := I) (M := M))
-  {X Y Y' Z : Π x : M, TangentSpace I x} {x : M} {f : M → ℝ}
-
-section Koszul
-
-variable [CompleteSpace E]
-
-/-- The Koszul expression is additive in the differentiated vector field. -/
-theorem koszul_add_second (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
-    (hY' : MDiffAt (T% Y') x) (hZ : MDiffAt (T% Z) x) :
-    g.koszul X (Y + Y') Z x = g.koszul X Y Z x + g.koszul X Y' Z x := by
-  simp only [koszul_apply, Pi.add_apply, map_add, add_apply,
-    mvfderiv_fun_add (g.mdifferentiableAt_apply hY hZ) (g.mdifferentiableAt_apply hY' hZ),
-    mvfderiv_fun_add (g.mdifferentiableAt_apply hX hY) (g.mdifferentiableAt_apply hX hY'),
-    mlieBracket_add_right hY hY', mlieBracket_add_left hY hY']
-  ring
-
-/-- The Koszul expression obeys the connection Leibniz rule in its second argument. -/
-theorem koszul_smul_second (hf : MDiffAt f x) (hX : MDiffAt (T% X) x)
-    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
-    g.koszul X (f • Y) Z x =
-      f x * g.koszul X Y Z x + 2 * d% f x (X x) * g x (Y x) (Z x) := by
-  simp only [koszul_apply, Pi.smul_apply', map_smul, smul_apply,
-    smul_eq_mul, mvfderiv_fun_mul hf (g.mdifferentiableAt_apply hY hZ),
-    mvfderiv_fun_mul hf (g.mdifferentiableAt_apply hX hY),
-    mlieBracket_smul_right hf hY, mlieBracket_smul_left (W := Z) hf hY]
-  simp only [map_add, map_smul, map_neg, add_apply,
-    smul_apply, smul_eq_mul, neg_smul, neg_apply]
-  rw [g.apply_comm x (Y x) (X x)]
-  ring
-
-/-- The Koszul expression is tensorial in its first argument. -/
-theorem tensorialAt_koszul_first (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
-    TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ g.koszul X Y Z x) x where
-  smul {f X} hf hX := by
-    have hs := g.koszul_smul_second (X := Y) (Y := X) hf hY hX hZ
-    have hswap := g.koszul_sub_koszul_swap_first_two (X := f • X) (Y := Y) (Z := Z) (x := x)
-    have hswapX := g.koszul_sub_koszul_swap_first_two (X := X) (Y := Y) (Z := Z) (x := x)
-    rw [mlieBracket_smul_left hf hX] at hswap
-    simp only [map_add, map_smul, map_neg, add_apply,
-      smul_apply, smul_eq_mul, neg_smul, neg_apply] at hswap
-    linear_combination hswap + hs - f x * hswapX
-  add {X X'} hX hX' := by
-    have hs := g.koszul_add_second (X := Y) hY hX hX' hZ
-    have hswap := g.koszul_sub_koszul_swap_first_two (X := X + X') (Y := Y) (Z := Z) (x := x)
-    have hswapX := g.koszul_sub_koszul_swap_first_two (X := X) (Y := Y) (Z := Z) (x := x)
-    have hswapX' := g.koszul_sub_koszul_swap_first_two (X := X') (Y := Y) (Z := Z) (x := x)
-    rw [mlieBracket_add_left hX hX', map_add, add_apply] at hswap
-    linarith
-
-/-- The Koszul expression is tensorial in its third argument. -/
-theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
-    TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ g.koszul X Y Z x) x where
-  smul {f Z} hf hZ := by
-    simp only [koszul_apply, Pi.smul_apply', map_smul, smul_apply,
-      smul_eq_mul, mvfderiv_fun_mul hf (g.mdifferentiableAt_apply hY hZ),
-      mvfderiv_fun_mul hf (g.mdifferentiableAt_apply hZ hX),
-      mlieBracket_smul_right hf hZ]
-    simp only [map_add, map_smul, add_apply,
-      smul_apply, smul_eq_mul]
-    rw [g.apply_comm x (Z x) (Y x)]
-    ring
-  add {Z Z'} hZ hZ' := by
-    simp only [koszul_apply, Pi.add_apply, map_add, add_apply,
-      mvfderiv_fun_add (g.mdifferentiableAt_apply hY hZ) (g.mdifferentiableAt_apply hY hZ'),
-      mvfderiv_fun_add (g.mdifferentiableAt_apply hZ hX) (g.mdifferentiableAt_apply hZ' hX),
-      mlieBracket_add_right hZ hZ']
-    ring
-
-end Koszul
+  {X Y Z : Π x : M, TangentSpace I x} {x : M}
 
 variable [FiniteDimensional ℝ E]
 

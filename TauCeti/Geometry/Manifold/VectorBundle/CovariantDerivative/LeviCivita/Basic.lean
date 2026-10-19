@@ -204,6 +204,105 @@ theorem torsion_eq_zero_of_two_apply_eq_koszulBilinear [FiniteDimensional ℝ E]
   simp only [map_sub, sub_apply]
   linarith
 
+section BilinearTensorial
+
+variable [IsManifold I 2 M] [CompleteSpace E]
+  {X' Y' : Π x : M, TangentSpace I x} {f : M → ℝ}
+  (hdiff : ∀ {Y Z : Π x : M, TangentSpace I x},
+    MDiffAt (T% Y) x → MDiffAt (T% Z) x → MDiffAt (fun y ↦ b y (Y y) (Z y)) x)
+
+include hdiff
+
+/-- The Koszul expression is additive in the differentiated vector field. -/
+theorem koszulBilinear_add_second (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (hY' : MDiffAt (T% Y') x) (hZ : MDiffAt (T% Z) x) :
+    koszulBilinear I b X (Y + Y') Z x =
+      koszulBilinear I b X Y Z x + koszulBilinear I b X Y' Z x := by
+  simp only [koszulBilinear_apply, Pi.add_apply, map_add, add_apply,
+    mvfderiv_fun_add (hdiff hY hZ) (hdiff hY' hZ),
+    mvfderiv_fun_add (hdiff hX hY) (hdiff hX hY'),
+    mlieBracket_add_right hY hY', mlieBracket_add_left hY hY']
+  ring
+
+/-- The Koszul expression obeys the connection Leibniz rule in its second argument. -/
+theorem koszulBilinear_smul_second
+    (hb : ∀ x v w, b x v w = b x w v) (hf : MDiffAt f x) (hX : MDiffAt (T% X) x)
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    koszulBilinear I b X (f • Y) Z x =
+      f x * koszulBilinear I b X Y Z x + 2 * d% f x (X x) * b x (Y x) (Z x) := by
+  simp only [koszulBilinear_apply, Pi.smul_apply', map_smul, smul_apply,
+    smul_eq_mul, mvfderiv_fun_mul hf (hdiff hY hZ),
+    mvfderiv_fun_mul hf (hdiff hX hY),
+    mlieBracket_smul_right hf hY, mlieBracket_smul_left (W := Z) hf hY]
+  simp only [map_add, map_smul, map_neg, add_apply,
+    smul_apply, smul_eq_mul, neg_smul, neg_apply]
+  rw [hb x (Y x) (X x)]
+  ring
+
+/-- The Koszul expression is additive in its first argument. -/
+theorem koszulBilinear_add_first
+    (hb : ∀ x v w, b x v w = b x w v) (hX : MDiffAt (T% X) x) (hX' : MDiffAt (T% X') x)
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    koszulBilinear I b (X + X') Y Z x =
+      koszulBilinear I b X Y Z x + koszulBilinear I b X' Y Z x := by
+  have hsum := koszulBilinear_add_second hdiff (I := I) (X := Y) (Y := X) (Y' := X') (Z := Z)
+    hY hX hX' hZ
+  have hswap := koszulBilinear_sub_koszulBilinear_swap_first_two hb
+    (I := I) (X := X + X') (Y := Y) (Z := Z) (x := x)
+  have hswapX := koszulBilinear_sub_koszulBilinear_swap_first_two hb
+    (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
+  have hswapX' := koszulBilinear_sub_koszulBilinear_swap_first_two hb
+    (I := I) (X := X') (Y := Y) (Z := Z) (x := x)
+  rw [mlieBracket_add_left hX hX', map_add, add_apply] at hswap
+  linarith
+
+/-- The Koszul expression is tensorial in its first argument: replacing `X` by `f • X` multiplies
+it by `f x`. This follows from the second-slot Leibniz rule and the swap identity. -/
+theorem koszulBilinear_smul_first
+    (hb : ∀ x v w, b x v w = b x w v) (hf : MDiffAt f x) (hX : MDiffAt (T% X) x)
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    koszulBilinear I b (f • X) Y Z x = f x * koszulBilinear I b X Y Z x := by
+  have hsmul := koszulBilinear_smul_second hdiff hb (I := I) (X := Y) (Y := X) (Z := Z) hf hY hX hZ
+  have hswap := koszulBilinear_sub_koszulBilinear_swap_first_two hb
+    (I := I) (X := f • X) (Y := Y) (Z := Z) (x := x)
+  have hswapX := koszulBilinear_sub_koszulBilinear_swap_first_two hb
+    (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
+  rw [mlieBracket_smul_left hf hX] at hswap
+  simp only [map_add, add_apply, neg_smul, map_neg, neg_apply, map_smul, smul_apply,
+    smul_eq_mul] at hswap
+  linear_combination hswap + hsmul - f x * hswapX
+
+/-- The Koszul expression is tensorial in its first argument. Together with
+`TauCeti.Manifold.tensorialAt_koszulBilinear_third` this presents it as a continuous bilinear form
+on the tangent fibre, which is the shape in which the Levi-Civita connection gets built. -/
+theorem tensorialAt_koszulBilinear_first
+    (hb : ∀ x v w, b x v w = b x w v) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ koszulBilinear I b X Y Z x) x where
+  smul hf hX := by simpa using koszulBilinear_smul_first hdiff hb hf hX hY hZ
+  add hX hX' := koszulBilinear_add_first hdiff hb hX hX' hY hZ
+
+/-- The Koszul expression is tensorial in its third argument. -/
+theorem tensorialAt_koszulBilinear_third
+    (hb : ∀ x v w, b x v w = b x w v) (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
+    TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ koszulBilinear I b X Y Z x) x where
+  smul {f Z} hf hZ := by
+    simp only [koszulBilinear_apply, Pi.smul_apply', map_smul, smul_apply,
+      smul_eq_mul, mvfderiv_fun_mul hf (hdiff hY hZ),
+      mvfderiv_fun_mul hf (hdiff hZ hX),
+      mlieBracket_smul_right hf hZ]
+    simp only [map_add, map_smul, add_apply,
+      smul_apply, smul_eq_mul]
+    rw [hb x (Z x) (Y x)]
+    ring
+  add {Z Z'} hZ hZ' := by
+    simp only [koszulBilinear_apply, Pi.add_apply, map_add, add_apply,
+      mvfderiv_fun_add (hdiff hY hZ) (hdiff hY hZ'),
+      mvfderiv_fun_add (hdiff hZ hX) (hdiff hZ' hX),
+      mlieBracket_add_right hZ hZ']
+    ring
+
+end BilinearTensorial
+
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
@@ -283,17 +382,9 @@ variable {X' Y' : Π x : M, TangentSpace I x} {f : M → ℝ}
 theorem koszul_add_second (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
     (hY' : MDiffAt (T% Y') x) (hZ : MDiffAt (T% Z) x) :
     koszul I X (Y + Y') Z x = koszul I X Y Z x + koszul I X Y' Z x := by
-  have e₁ : (fun y ↦ inner ℝ ((Y + Y') y) (Z y)) =
-      fun y ↦ inner ℝ (Y y) (Z y) + inner ℝ (Y' y) (Z y) := funext fun _ ↦ inner_add_left ..
-  have e₂ : (fun y ↦ inner ℝ (X y) ((Y + Y') y)) =
-      fun y ↦ inner ℝ (X y) (Y y) + inner ℝ (X y) (Y' y) := funext fun _ ↦ inner_add_right ..
-  have e₃ : (Y + Y') x = Y x + Y' x := rfl
-  rw [koszul_apply, koszul_apply, koszul_apply, e₁, e₂, e₃,
-    mvfderiv_fun_add (mdifferentiableAt_inner hY hZ) (mdifferentiableAt_inner hY' hZ),
-    mvfderiv_fun_add (mdifferentiableAt_inner hX hY) (mdifferentiableAt_inner hX hY'),
-    mlieBracket_add_right hY hY', mlieBracket_add_left hY hY']
-  simp only [add_apply, map_add, inner_add_left, inner_add_right]
-  ring
+  simpa only [koszul, innerSL_apply_apply ℝ] using
+    (koszulBilinear_add_second (b := fun _ ↦ innerSL ℝ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV) hX hY hY' hZ)
 
 /-- The Leibniz rule for the Koszul expression in its second argument: replacing `Y` by `f • Y`
 multiplies the expression by `f x` and adds `2 (df X) ⟪Y, Z⟫`. This is the identity behind the
@@ -302,88 +393,49 @@ theorem koszul_smul_second (hf : MDiffAt f x) (hX : MDiffAt (T% X) x) (hY : MDif
     (hZ : MDiffAt (T% Z) x) :
     koszul I X (f • Y) Z x =
       f x * koszul I X Y Z x + 2 * d% f x (X x) * inner ℝ (Y x) (Z x) := by
-  have e₁ : (fun y ↦ inner ℝ ((f • Y) y) (Z y)) = fun y ↦ f y * inner ℝ (Y y) (Z y) :=
-    funext fun _ ↦ real_inner_smul_left ..
-  have e₂ : (fun y ↦ inner ℝ (X y) ((f • Y) y)) = fun y ↦ f y * inner ℝ (X y) (Y y) :=
-    funext fun _ ↦ real_inner_smul_right ..
-  have e₃ : (f • Y) x = f x • Y x := rfl
-  rw [koszul_apply, koszul_apply, e₁, e₂, e₃,
-    mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
-    mvfderiv_fun_mul hf (mdifferentiableAt_inner hX hY),
-    mlieBracket_smul_right hf hY, mlieBracket_smul_left (W := Z) hf hY]
-  simp only [add_apply, smul_apply, smul_eq_mul, map_smul, inner_add_left, neg_smul,
-    inner_neg_left, real_inner_smul_left, real_inner_smul_right]
-  rw [real_inner_comm (Y x) (X x)]
-  ring
+  simpa only [koszul, innerSL_apply_apply ℝ] using
+    (koszulBilinear_smul_second (b := fun _ ↦ innerSL ℝ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV)
+      (fun _ v w ↦ real_inner_comm w v) hf hX hY hZ)
 
 /-- The Koszul expression is additive in its first argument. -/
 theorem koszul_add_first (hX : MDiffAt (T% X) x) (hX' : MDiffAt (T% X') x)
     (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     koszul I (X + X') Y Z x = koszul I X Y Z x + koszul I X' Y Z x := by
-  have hsum := koszul_add_second (I := I) (X := Y) (Y := X) (Y' := X') (Z := Z)
-    hY hX hX' hZ
-  have hswap := koszul_sub_koszul_swap_first_two
-    (I := I) (X := X + X') (Y := Y) (Z := Z) (x := x)
-  have hswapX := koszul_sub_koszul_swap_first_two
-    (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
-  have hswapX' := koszul_sub_koszul_swap_first_two
-    (I := I) (X := X') (Y := Y) (Z := Z) (x := x)
-  rw [mlieBracket_add_left hX hX', inner_add_left] at hswap
-  linarith
+  simpa only [koszul, innerSL_apply_apply ℝ] using
+    (koszulBilinear_add_first (b := fun _ ↦ innerSL ℝ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV)
+      (fun _ v w ↦ real_inner_comm w v) hX hX' hY hZ)
 
 /-- The Koszul expression is tensorial in its first argument: replacing `X` by `f • X` multiplies
 it by `f x`. This follows from the second-slot Leibniz rule and the swap identity. -/
 theorem koszul_smul_first (hf : MDiffAt f x) (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
     (hZ : MDiffAt (T% Z) x) : koszul I (f • X) Y Z x = f x * koszul I X Y Z x := by
-  have hsmul := koszul_smul_second (I := I) (X := Y) (Y := X) (Z := Z) hf hY hX hZ
-  have hswap := koszul_sub_koszul_swap_first_two
-    (I := I) (X := f • X) (Y := Y) (Z := Z) (x := x)
-  have hswapX := koszul_sub_koszul_swap_first_two
-    (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
-  rw [mlieBracket_smul_left hf hX] at hswap
-  simp only [inner_add_left, neg_smul, inner_neg_left, real_inner_smul_left] at hswap
-  linear_combination hswap + hsmul - f x * hswapX
+  simpa only [koszul, innerSL_apply_apply ℝ] using
+    (koszulBilinear_smul_first (b := fun _ ↦ innerSL ℝ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV)
+      (fun _ v w ↦ real_inner_comm w v) hf hX hY hZ)
 
 /-- The Koszul expression is tensorial in its first argument. Together with
 `TauCeti.Manifold.tensorialAt_koszul_third` this presents it as a continuous bilinear form on the
 tangent fibre, which is the shape in which the Levi-Civita connection gets built. -/
 theorem tensorialAt_koszul_first (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
-    TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x where
-  smul hf hX := by simpa using koszul_smul_first hf hX hY hZ
-  add hX hX' := koszul_add_first hX hX' hY hZ
+    TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x := by
+  simpa only [koszul, innerSL_apply_apply ℝ] using
+    (tensorialAt_koszulBilinear_first (b := fun _ ↦ innerSL ℝ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV)
+      (fun _ v w ↦ real_inner_comm w v) hY hZ)
 
 /-- The Koszul expression is tensorial in its third argument: replacing `Z` by `f • Z` multiplies
 it by `f x`, and it is additive in `Z`. Together with
 `CovariantDerivative.isLeviCivitaConnection_iff` this is what turns the Koszul formula from a
 characterisation of the Levi-Civita connection into a construction of it. -/
 theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
-    TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x where
-  smul {f Z} hf hZ := by
-    have e₁ : (fun y ↦ inner ℝ (Y y) ((f • Z) y)) = fun y ↦ f y * inner ℝ (Y y) (Z y) :=
-      funext fun _ ↦ real_inner_smul_right ..
-    have e₂ : (fun y ↦ inner ℝ ((f • Z) y) (X y)) = fun y ↦ f y * inner ℝ (Z y) (X y) :=
-      funext fun _ ↦ real_inner_smul_left ..
-    have e₃ : (f • Z) x = f x • Z x := rfl
-    rw [koszul_apply, koszul_apply, e₁, e₂, e₃,
-      mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
-      mvfderiv_fun_mul hf (mdifferentiableAt_inner hZ hX),
-      mlieBracket_smul_right hf hZ, mlieBracket_smul_right (V := Y) hf hZ]
-    simp only [add_apply, smul_apply, smul_eq_mul, map_smul, inner_add_left,
-      real_inner_smul_left, real_inner_smul_right]
-    rw [real_inner_comm (Z x) (Y x)]
-    ring
-  add {Z Z'} hZ hZ' := by
-    have e₁ : (fun y ↦ inner ℝ (Y y) ((Z + Z') y)) =
-        fun y ↦ inner ℝ (Y y) (Z y) + inner ℝ (Y y) (Z' y) := funext fun _ ↦ inner_add_right ..
-    have e₂ : (fun y ↦ inner ℝ ((Z + Z') y) (X y)) =
-        fun y ↦ inner ℝ (Z y) (X y) + inner ℝ (Z' y) (X y) := funext fun _ ↦ inner_add_left ..
-    have e₃ : (Z + Z') x = Z x + Z' x := rfl
-    rw [koszul_apply, koszul_apply, koszul_apply, e₁, e₂, e₃,
-      mvfderiv_fun_add (mdifferentiableAt_inner hY hZ) (mdifferentiableAt_inner hY hZ'),
-      mvfderiv_fun_add (mdifferentiableAt_inner hZ hX) (mdifferentiableAt_inner hZ' hX),
-      mlieBracket_add_right hZ hZ', mlieBracket_add_right (V := Y) hZ hZ']
-    simp only [add_apply, map_add, inner_add_left, inner_add_right]
-    ring
+    TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x := by
+  simpa only [koszul, innerSL_apply_apply ℝ] using
+    (tensorialAt_koszulBilinear_third (b := fun _ ↦ innerSL ℝ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV)
+      (fun _ v w ↦ real_inner_comm w v) hX hY)
 
 end Tensorial
 
