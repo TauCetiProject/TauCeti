@@ -48,12 +48,6 @@ namespace TauCeti.Probability
 
 variable {a b q : ℝ}
 
-/-- A real power of `exp y` is an exponential in `y`. -/
-private lemma rpow_comp_exp (q : ℝ) :
-    (fun x : ℝ => x ^ q) ∘ Real.exp = fun y => Real.exp (q * y) := by
-  funext y
-  rw [Function.comp_apply, ← Real.exp_mul, mul_comm]
-
 /-! ### Real-power moments -/
 
 /-- **The sharp real-power moment criterion.** A real power `X ^ q` of a log-logistic variable is
@@ -61,8 +55,12 @@ integrable exactly when `|q| < b`. -/
 @[simp]
 theorem integrable_rpow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : ℝ) :
     Integrable (fun x : ℝ => x ^ q) (logLogisticMeasure a b) ↔ |q| < b := by
+  -- Pulled back along `exp`, the real power `x ^ q` is the exponential `exp (q * y)`.
+  have hcomp : (fun x : ℝ => x ^ q) ∘ Real.exp = fun y => Real.exp (q * y) := by
+    funext y
+    rw [Function.comp_apply, ← Real.exp_mul, mul_comm]
   rw [logLogisticMeasure_of_pos ha hb,
-    integrable_map_measure (by fun_prop) Real.measurable_exp.aemeasurable, rpow_comp_exp,
+    integrable_map_measure (by fun_prop) Real.measurable_exp.aemeasurable, hcomp,
     integrable_exp_mul_id_logisticMeasure_iff (inv_pos.mpr hb), div_inv_eq_mul, neg_one_mul,
     one_div, inv_inv, abs_lt]
 
@@ -144,9 +142,8 @@ theorem variance_id_logLogisticMeasure (ha : 0 < a) (hb : 2 < b) :
 
 /-! ### Exponential moments -/
 
-/-- **The exponential moments of a log-logistic law exist exactly at nonpositive rates.** At a
-positive rate the moment of order `b` would be finite, contradicting the sharp moment
-criterion. -/
+/-- **The exponential moments of a log-logistic law exist exactly at nonpositive rates.**
+`exp (t * X)` is integrable if and only if `t ≤ 0`. -/
 @[simp]
 theorem integrable_exp_mul_id_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
     Integrable (fun x : ℝ => Real.exp (t * x)) (logLogisticMeasure a b) ↔ t ≤ 0 := by
