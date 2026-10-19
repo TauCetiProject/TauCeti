@@ -83,7 +83,7 @@ theorem lintegral_volumeIoiPow (k : ℕ) (h : ℝ → ℝ≥0∞) :
       (measurable_subtype_coe.pow_const k).ennreal_ofReal
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
     ← lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) * h r)]
-  rfl
+  simp only [Pi.mul_apply]
 
 /-- **Integration in polar coordinates**, for nonnegative functions. A measurable function
 `f : E → ℝ≥0∞` on a finite-dimensional real normed space is integrated by first integrating along
