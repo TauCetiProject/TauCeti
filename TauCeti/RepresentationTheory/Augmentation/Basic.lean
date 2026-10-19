@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 

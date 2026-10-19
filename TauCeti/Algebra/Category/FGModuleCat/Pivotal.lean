@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Rigid
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Symmetric
 public import TauCeti.LinearAlgebra.Trace.Coevaluation
@@ -25,7 +26,7 @@ classical one:
 
 ## Main results
 
-* `FGModuleCat.drinfeldIso_hom_hom`: the pivotal isomorphism, which is the Drinfeld isomorphism,
+* `FGModuleCat.drinfeldIso_hom_hom_hom`: the pivotal isomorphism, which is the Drinfeld isomorphism,
   is the double-dual evaluation map;
 * `FGModuleCat.trace_eq_smul`: the categorical trace is the linear trace;
 * `FGModuleCat.quantumDim_eq_smul`: the quantum dimension is the dimension.
@@ -49,13 +50,14 @@ variable {K : Type u} [Field K]
 canonical pivotal isomorphism `pivotalIsoApp V` by `TauCeti.pivotalIsoApp_eq_drinfeldIso`, is the
 evaluation map of `V` into its double dual. -/
 @[simp]
-theorem drinfeldIso_hom_hom (V : FGModuleCat.{u} K) :
+theorem drinfeldIso_hom_hom_hom (V : FGModuleCat.{u} K) :
     (drinfeldIso V).hom.hom.hom = Dual.eval K V := by
   ext x
   refine LinearMap.ext fun (ξ : Dual K V) => ?_
   have h := congrArg (fun g : V ⊗ Vᘁ ⟶ 𝟙_ (FGModuleCat K) => g.hom.hom (x ⊗ₜ ξ))
     (drinfeldIso_hom_comp_evaluation V)
-  -- Both evaluations in `h` are `contractLeft`, so `h` says `(drinfeldIso V).hom x ξ = ξ x`.
+  simp only [hom_hom_comp, evaluation_hom_hom, braiding_hom_hom_hom] at h
+  -- Evaluating the contractions on `x ⊗ₜ ξ`, `h` says `(drinfeldIso V).hom x ξ = ξ x`.
   exact h
 
 /-- The categorical trace of an endomorphism of a finite-dimensional vector space is its linear
@@ -68,8 +70,8 @@ theorem trace_eq_smul {V : FGModuleCat.{u} K} (f : V ⟶ V) :
     ObjectProperty.FullSubcategory.id_hom, ModuleCat.hom_smul, ModuleCat.hom_id,
     LinearMap.smul_apply, LinearMap.id_coe, id_eq, smul_eq_mul, mul_one]
   rw [trace_eq_braiding, LinearMap.trace_eq_contractLeft_comm_rTensor_coevaluation]
-  -- The coevaluation, braiding and evaluation of `FGModuleCat K` are `coevaluation K V`,
-  -- `TensorProduct.comm` and `contractLeft K V` by definition.
+  simp only [hom_hom_comp, coevaluation_hom_hom, braiding_hom_hom_hom, evaluation_hom_hom]
+  -- Both sides are the same composite of linear maps applied to `1`.
   rfl
 
 /-- The quantum dimension of a finite-dimensional vector space is its dimension, acting on the

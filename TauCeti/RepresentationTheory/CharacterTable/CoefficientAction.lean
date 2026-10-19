@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 import TauCeti.RepresentationTheory.BaseChange
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Changing coefficients of virtual characters

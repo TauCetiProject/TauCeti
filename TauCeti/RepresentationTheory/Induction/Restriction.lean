@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.CategoryTheory.Action.Restriction
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup

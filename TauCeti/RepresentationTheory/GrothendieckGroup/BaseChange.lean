@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.GrothendieckGroup.FDRep
 -- Non-public: the isomorphism constructor `LinearEquiv.toFDRepIso` is used only inside the
 -- proofs of `TauCeti.baseChangeK0_id`, `baseChangeK0_of_ofMulAction` and `baseChangeK0_comp`.
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Base change on the Grothendieck ring of finite-dimensional representations

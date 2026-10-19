@@ -41,17 +41,36 @@ namespace Action
 variable {V : Type*} [Category* V] [MonoidalCategory V] [RightRigidCategory V]
   {H : Type*} [Group H]
 
+omit [MonoidalCategory V] [RightRigidCategory V] in
+/-- The counit along which `Action V H` inherits its right duals has identity components. -/
+private theorem toEquivalence_counitIso_hom_app_app (F : SingleObj H ⥤ V) (x : SingleObj H) :
+    ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app F).hom.app x =
+      𝟙 _ :=
+  rfl
+
+omit [MonoidalCategory V] [RightRigidCategory V] in
+/-- The inverse of the counit along which `Action V H` inherits its right duals has identity
+components. -/
+private theorem toEquivalence_counitIso_inv_app_app (F : SingleObj H ⥤ V) (x : SingleObj H) :
+    ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app F).inv.app x =
+      𝟙 _ := by
+  simp
+  -- Both sides are identities of `F.obj x`, with `x` the unique object `PUnit.unit`.
+  rfl
+
 /-- The evaluation of a dual action is the evaluation of the dual of the underlying object. -/
 @[simp]
 theorem evaluation_hom (X : Action V H) : (ε_ X Xᘁ).hom = ε_ X.V X.Vᘁ := by
   -- Mathlib defines `ε_ X Xᘁ` as a preimage under the equivalence with the functor category, so
-  -- we read off the underlying morphism as the component of its image there.
+  -- we read off the underlying morphism as the component of its image there. The goal is only
+  -- well typed up to unfolding that equivalence, which is why `erw` rather than `rw` is needed.
   change ((functorCategoryEquivalence V H).functor.map (ε_ X Xᘁ)).app (SingleObj.star H) = _
   -- The structure maps of the equivalence are identities, and the right dual of the functor
   -- category is transported across the counit, whose component is an identity.
   erw [Functor.map_preimage, NatTrans.comp_app, NatTrans.comp_app, Category.id_comp,
-    Category.comp_id, TauCeti.exactPairingCongrRight_evaluation, NatTrans.comp_app,
-    Monoidal.FunctorCategory.whiskerRight_app, id_whiskerRight, Category.id_comp]
+    Category.comp_id, exactPairingCongrRight_evaluation, NatTrans.comp_app,
+    Monoidal.FunctorCategory.whiskerRight_app, toEquivalence_counitIso_hom_app_app,
+    id_whiskerRight, Category.id_comp]
   rfl
 
 /-- The coevaluation of a dual action is the coevaluation of the dual of the underlying
@@ -61,13 +80,9 @@ theorem coevaluation_hom (X : Action V H) : (η_ X Xᘁ).hom = η_ X.V X.Vᘁ :=
   -- As for `Action.evaluation_hom`, read off the component of the image in the functor category.
   change ((functorCategoryEquivalence V H).functor.map (η_ X Xᘁ)).app (SingleObj.star H) = _
   erw [Functor.map_preimage, NatTrans.comp_app, NatTrans.comp_app, Category.id_comp,
-    Category.comp_id, TauCeti.exactPairingCongrRight_coevaluation, NatTrans.comp_app,
-    Monoidal.FunctorCategory.whiskerLeft_app]
-  -- The inverse of the counit component of the equivalence is the identity.
-  dsimp [Adjunction.toEquivalence, Equivalence.toAdjunction]
-  erw [asIso_inv, NatIso.isIso_inv_app]
-  dsimp [functorCategoryEquivalence, FunctorCategoryEquivalence.counitIso]
-  erw [IsIso.inv_id, MonoidalCategory.whiskerLeft_id, Category.comp_id]
+    Category.comp_id, exactPairingCongrRight_coevaluation, NatTrans.comp_app,
+    Monoidal.FunctorCategory.whiskerLeft_app, toEquivalence_counitIso_inv_app_app,
+    whiskerLeft_id, Category.comp_id]
   rfl
 
 variable [BraidedCategory V]

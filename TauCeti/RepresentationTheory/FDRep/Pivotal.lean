@@ -29,8 +29,8 @@ categories of actions are computed on underlying objects (`Action.drinfeldIso_ho
 
 ## Main results
 
-* `FDRep.drinfeldIso_hom_hom_hom`: the pivotal isomorphism, which is the Drinfeld isomorphism, is
-  the double-dual evaluation map;
+* `FDRep.drinfeldIso_hom_hom_hom_hom`: the pivotal isomorphism, which is the Drinfeld
+  isomorphism, is the double-dual evaluation map;
 * `FDRep.trace_eq_smul`: the categorical trace is the linear trace;
 * `FDRep.quantumDim_eq_smul`: the quantum dimension is the dimension.
 
@@ -52,10 +52,10 @@ variable {k : Type u} {G : Type v} [Field k] [Group G]
 /-- The Drinfeld isomorphism `V ≅ Vᘁᘁ` of a finite-dimensional representation, which is the
 canonical pivotal isomorphism `pivotalIsoApp V` by `TauCeti.pivotalIsoApp_eq_drinfeldIso`, is on
 underlying vector spaces the evaluation map into the double dual. -/
-theorem drinfeldIso_hom_hom_hom (V : FDRep k G) :
+theorem drinfeldIso_hom_hom_hom_hom (V : FDRep k G) :
     (drinfeldIso V).hom.hom.hom.hom = Dual.eval k V := by
   rw [Action.drinfeldIso_hom_hom]
-  exact FGModuleCat.drinfeldIso_hom_hom V.V
+  exact FGModuleCat.drinfeldIso_hom_hom_hom V.V
 
 /-- The categorical trace of an equivariant endomorphism of a finite-dimensional representation
 is its linear trace, acting on the trivial representation by scalar multiplication. -/

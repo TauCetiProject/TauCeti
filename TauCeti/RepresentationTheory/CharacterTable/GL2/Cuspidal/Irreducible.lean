@@ -12,7 +12,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: nontriviality of the canonical primitive complex additive character of `F`.
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 -- Non-public: bundling a representation with `FDRep.of` preserves its character.
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
