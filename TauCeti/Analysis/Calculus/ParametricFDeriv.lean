@@ -34,8 +34,6 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
-* `TauCeti.fderiv_apply_zero_prodMk_of_timeSlice_eq`: the spatial Jacobian of a map whose
-  fixed-parameter slice has constant first component.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
 * `ContDiffAt.deriv_parameterCurve_eventuallyEq_timeFDeriv`: near a point, the derivatives of the
   parameter curves are the parameter-velocity field.
@@ -143,22 +141,6 @@ theorem fderiv_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
   (hasFDerivAt_timeSlice hF).fderiv
 
 namespace TauCeti
-
-/-- If the fixed-parameter slice `fun y ↦ F (t, y)` has constant first component `c` and second
-component `g`, then the spatial Jacobian of `F` at `(t, x)` is `0` in the first component and the
-derivative of `g` in the second. -/
-theorem fderiv_apply_zero_prodMk_of_timeSlice_eq {F₁ F₂ : Type*} [NormedAddCommGroup F₁]
-    [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] {F : 𝕜 × E → F₁ × F₂}
-    {t : 𝕜} {x : E} {c : F₁} {g : E → F₂} (hF : DifferentiableAt 𝕜 F (t, x))
-    (hslice : (fun y ↦ F (t, y)) = fun y ↦ (c, g y)) (w : E) :
-    fderiv 𝕜 F (t, x) (0, w) = (0, fderiv 𝕜 g x w) := by
-  have hg : DifferentiableAt 𝕜 g x := by
-    have h := (hasFDerivAt_timeSlice hF).differentiableAt
-    rw [hslice] at h
-    exact h.snd
-  rw [← spatialFDeriv_apply, ← fderiv_timeSlice hF, hslice,
-    DifferentiableAt.fderiv_prodMk (differentiableAt_const _) hg]
-  simp
 
 /-- **The chain rule along a curve.** If `F` is differentiable at `(t, γ t)` and `γ` has velocity
 `v` at `t`, then `s ↦ F (s, γ s)` has derivative the parameter velocity of `F` plus its spatial

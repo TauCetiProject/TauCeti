@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Flow.Variational
-import TauCeti.Analysis.Calculus.ParametricFDeriv
+public import TauCeti.Analysis.ODE.GlobalSolution
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 
 /-!
@@ -29,14 +28,9 @@ law of an ordinary `Flow`.
 * `TauCeti.timeDependentFlow`: the global evolution map of a time-dependent field whose
   suspension is globally Lipschitz.
 * `TauCeti.hasDerivAt_timeDependentFlow`: the evolution solves `x' = v(t, x)`.
-* `TauCeti.flowOfLipschitz_timeDependentSuspension`: the suspended flow tracks the current time and
-  the time-dependent flow.
 * `TauCeti.timeDependentFlow_trans`: evolution through an intermediate time composes.
 * `TauCeti.timeDependentFlow_eq_integral`: the integral equation from time `s` to time `t`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
-* `TauCeti.contDiff_timeDependentFlow_apply`: smooth dependence on the initial point.
-* `TauCeti.hasDerivAt_fderiv_timeDependentFlow_apply`: the variational equation with respect to
-  the initial point.
 
 The construction uses the global autonomous Picard--Lindelöf solution from
 `TauCeti.Analysis.ODE.GlobalSolution`.
@@ -94,14 +88,6 @@ theorem globalSolution_timeDependentSuspension (v : ℝ → E → E) {K : ℝ≥
   · rw [fst_globalSolution_timeDependentSuspension]
     ring
   · rfl
-
-/-- The flow of the suspended field, started at time `s`, consists of the current time and the
-time-dependent flow. -/
-theorem flowOfLipschitz_timeDependentSuspension (v : ℝ → E → E) {K : ℝ≥0}
-    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) (x : E) :
-    flowOfLipschitz (timeDependentSuspension v) hv (t - s) (s, x) =
-      (t, timeDependentFlow v hv s t x) := by
-  rw [flowOfLipschitz_apply, globalSolution_timeDependentSuspension]
 
 /-- A time-dependent flow starts at its prescribed initial point. -/
 @[simp]
@@ -168,50 +154,6 @@ theorem continuous_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
   convert continuous_snd.comp h using 1
   funext p
   rfl
-
-section Variational
-
-variable {v : ℝ → E → E} {K : ℝ≥0}
-
-/-- At fixed initial and final times, a time-dependent flow is `C^(n+1)` in its initial point
-when the suspended vector field is `C^(n+1)`. -/
-theorem contDiff_timeDependentFlow_apply (n : ℕ)
-    (hv : LipschitzWith K (timeDependentSuspension v))
-    (hvs : ContDiff ℝ (n + 1) (timeDependentSuspension v)) (s t : ℝ) :
-    ContDiff ℝ (n + 1) (timeDependentFlow v hv s t) := by
-  have hflow := contDiff_flowOfLipschitz_apply n _ hv hvs (t - s)
-  have hpair : ContDiff ℝ (n + 1) (fun x : E ↦ (s, x)) := by fun_prop
-  have hcomp := (hflow.comp hpair).snd
-  convert hcomp using 1
-  funext x
-  simp only [Function.comp_apply, flowOfLipschitz_timeDependentSuspension]
-
-/-- **The nonautonomous variational equation.** The derivative of the evolution map with
-respect to its initial point solves the linearized time-dependent equation
-`w' = Dₓv(t, φ(s,t,x)) w`. -/
-theorem hasDerivAt_fderiv_timeDependentFlow_apply
-    (hv : LipschitzWith K (timeDependentSuspension v))
-    (hvs : ContDiff ℝ 1 (timeDependentSuspension v)) (s t : ℝ) (x u : E) :
-    HasDerivAt (fun r ↦ fderiv ℝ (timeDependentFlow v hv s r) x u)
-      (fderiv ℝ (v t) (timeDependentFlow v hv s t x)
-        (fderiv ℝ (timeDependentFlow v hv s t) x u)) t := by
-  let F := timeDependentSuspension v
-  have hF (r : ℝ) (y w : E) : fderiv ℝ F (r, y) (0, w) = (0, fderiv ℝ (v r) y w) :=
-    fderiv_apply_zero_prodMk_of_timeSlice_eq (hvs.differentiable one_ne_zero (r, y))
-      (funext fun z ↦ timeDependentSuspension_apply v r z) w
-  have hA (r : ℝ) : fderiv ℝ (flowOfLipschitz F hv (r - s)) (s, x) (0, u) =
-      (0, fderiv ℝ (timeDependentFlow v hv s r) x u) :=
-    fderiv_apply_zero_prodMk_of_timeSlice_eq
-      (differentiable_flowOfLipschitz_apply hv hvs (r - s) (s, x))
-      (funext fun y ↦ flowOfLipschitz_timeDependentSuspension v hv s r y) u
-  have hd : HasDerivAt (fun r ↦ fderiv ℝ (flowOfLipschitz F hv (r - s)) (s, x) (0, u))
-      (fderiv ℝ F (flowOfLipschitz F hv (t - s) (s, x))
-        (fderiv ℝ (flowOfLipschitz F hv (t - s)) (s, x) (0, u))) t :=
-    (hasDerivAt_fderiv_flowOfLipschitz_apply hv hvs (s, x) (0, u) (t - s)).comp_sub_const t s
-  simp only [hA, F, flowOfLipschitz_timeDependentSuspension, hF] at hd
-  simpa [Function.comp_def] using hasFDerivAt_snd.comp_hasDerivAt t hd
-
-end Variational
 
 /-- The construction does not depend on the chosen Lipschitz bound for the suspended field. -/
 theorem timeDependentFlow_congr (v : ℝ → E → E) {K K' : ℝ≥0}

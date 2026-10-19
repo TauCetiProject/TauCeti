@@ -159,13 +159,19 @@ theorem apply_fderiv_timeDependentHamiltonianFlow_of_contDiff_suspension
         (fderiv ℝ (omega.timeDependentHamiltonianFlow H hX s t) x v) = omega u v := by
   rw [omega.timeDependentHamiltonianFlow_eq H hX]
   set φ := timeDependentFlow (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s
+  have hvs : ContDiff ℝ 1 fun p : ℝ × V ↦ omega.hamiltonianVectorField (H p.1) p.2 := by
+    convert hSusp.snd using 1
+    funext ⟨r, y⟩
+    simp
   have hd (r : ℝ) : HasDerivAt
       (fun q ↦ omega (fderiv ℝ (φ q) x u) (fderiv ℝ (φ q) x v)) 0 r := by
-    have hu := hasDerivAt_fderiv_timeDependentFlow_apply hX hSusp s r x u
-    have hv := hasDerivAt_fderiv_timeDependentFlow_apply hX hSusp s r x v
+    have hφ := hasDerivAt_fderiv_timeDependentFlow hX hvs s r x
+    have hu := hφ.clm_apply (hasDerivAt_const r u)
+    have hv := hφ.clm_apply (hasDerivAt_const r v)
     have hp := omega.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear
       (fun _ ↦ hu) (fun _ ↦ hv)
-    simp only [LinearMap.toContinuousBilinearMap_apply] at hp
+    simp only [LinearMap.toContinuousBilinearMap_apply, ContinuousLinearMap.comp_apply, map_zero,
+      add_zero] at hp
     convert hp using 1
     simpa only [add_comm] using (omega.apply_fderiv_hamiltonianVectorField_add
       (hslice r).contDiffAt (fderiv ℝ (φ r) x u) (fderiv ℝ (φ r) x v)).symm
