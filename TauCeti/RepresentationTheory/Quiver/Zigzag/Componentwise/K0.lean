@@ -21,12 +21,6 @@ whose projectives retain the degree-two generator of the dual-number factor. The
 the projectives on which the zigzag braid complexes act, rather than projectives of the
 relation quotient with its different isolated-vertex convention.
 
-We prove indecomposability from the degree-zero endomorphism dimension. Idempotent graded
-dimensions distinguish distinct vertex projectives even after arbitrary internal shifts:
-at the first vertex, their values at one are respectively two and at most one. Completeness
-of the homogeneous vertex idempotents then gives exhaustiveness and the basis via the
-general graded Krull–Schmidt construction.
-
 The graded Cartan map sends a vertex-projective class to a class with coordinate `1 + q²`
 at that vertex, `q` at adjacent vertices, and zero elsewhere. The heads of the vertex projectives
 form the simple-class basis of the graded module Grothendieck group, with the idempotent
