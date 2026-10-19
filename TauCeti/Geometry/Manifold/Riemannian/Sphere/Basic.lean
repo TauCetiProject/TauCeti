@@ -36,6 +36,7 @@ Thurston's eight model geometries.
   product of their images in `E`.
 * `TauCeti.norm_tangentSpace_sphere`: the round norm of a tangent vector is the norm of its image
   in `E`.
+* `TauCeti.inner_coe_mvfderiv_subtypeVal_sphere`: tangent vectors are orthogonal to the radius.
 
 ## References
 
@@ -126,5 +127,14 @@ theorem coe_sphereTangentEquiv_apply (x : sphere (0 : E) 1)
     LinearIsometryEquiv.coe_ofEq_apply]
   rw [LinearIsometry.equivRange_apply_coe]
   exact mvfderiv_apply_eq_mfderiv_apply _ x v
+
+/-- The image of a tangent vector under the differential of the sphere inclusion is orthogonal
+to the radius vector. -/
+theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    inner ℝ (x : E) (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) = 0 := by
+  have h := (sphereTangentEquiv x v).2
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_sphereTangentEquiv_apply] at h
+  rwa [mvfderiv_apply_eq_mfderiv_apply]
 
 end TauCeti
