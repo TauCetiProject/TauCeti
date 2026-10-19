@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.GenLoop.Loop
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
@@ -433,15 +434,6 @@ namespace TauCeti
 open HomotopyGroup
 
 variable {X : Type*} [TopologicalSpace X]
-
-/-- A pointed space is path connected if and only if its zeroth homotopy set `π_ 0 X x` is a
-subsingleton. -/
-theorem pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (x : X) :
-    PathConnectedSpace X ↔ Subsingleton (π_ 0 X x) := by
-  rw [pathConnectedSpace_iff_zerothHomotopy]
-  have hne : Nonempty (ZerothHomotopy X) := ⟨ZerothHomotopy.mk x⟩
-  simp only [hne, true_and]
-  exact (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) x).symm.subsingleton_congr
 
 /-- The fixed-interval loop space `Ω X x` is path connected if and only if the fundamental group
 `FundamentalGroup X x` is trivial. -/

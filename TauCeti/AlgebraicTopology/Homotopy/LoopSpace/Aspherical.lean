@@ -39,9 +39,6 @@ normalized cubical chains, are treated.
   `TauCeti.MooreLoopSpace.isZero_homology_normalizedCubicalChainComplex_double`,
   `TauCeti.MooreLoopSpace.isZero_homology_singularChains_double`: vanishing of the positive-degree
   homology of `Ω²X` and `ΩᴹΩᴹX` over any coefficient ring when `πₙ₊₂(X, x)` vanishes for all `n`.
-* `TauCeti.subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex`,
-  `TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`: inductive Hurewicz
-  criterion for vanishing of all homotopy groups of a simply connected space.
 * `TauCeti.pathConnectedSpace_doubleLoopSpace_and_forall_isZero_homology_singularChains_iff`,
   `TauCeti.MooreLoopSpace.pathConnectedSpace_double_and_forall_isZero_homology_singularChains_iff`:
   `Ω²X` and `ΩᴹΩᴹX` have the integral homology of a point if and only if `πₙ₊₂(X, x)` vanishes for
@@ -195,34 +192,6 @@ end ArbitraryRing
 section IntegralHomology
 
 variable {X : Type} [TopologicalSpace X]
-
-/-- **Inductive Hurewicz vanishing criterion (normalized cubical homology).** If `X` is path
-connected with trivial `π_ 1 X x` and its integral normalized cubical homology vanishes in every
-degree `n + 2`, then all homotopy groups `π_ k X x` are trivial. -/
-theorem subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex (x : X)
-    [PathConnectedSpace X] [Subsingleton (π_ 1 X x)]
-    (hH : ∀ n : ℕ,
-      IsZero (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)))
-    (k : ℕ) : Subsingleton (π_ k X x) := by
-  induction k using Nat.strong_induction_on with
-  | h k ih =>
-    match k with
-    | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).mp inferInstance
-    | 1 => exact inferInstance
-    | n + 2 =>
-      let := ModuleCat.subsingleton_of_isZero (hH n)
-      exact (Additive.ofMul.trans (cubicalHurewiczAddEquiv ih).toEquiv).subsingleton_congr.mpr
-        inferInstance
-
-/-- **Inductive Hurewicz vanishing criterion (singular homology).** If `X` is path connected with
-trivial `π_ 1 X x` and its integral singular homology vanishes in every degree `n + 2`, then all
-homotopy groups `π_ k X x` are trivial. -/
-theorem subsingleton_homotopyGroup_of_isZero_homology_singularChains (x : X)
-    [PathConnectedSpace X] [Subsingleton (π_ 1 X x)]
-    (hH : ∀ n : ℕ, IsZero (((singularChains ℤ).obj (TopCat.of X)).homology (n + 2)))
-    (k : ℕ) : Subsingleton (π_ k X x) :=
-  subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex x
-    (fun n ↦ (hH n).of_iso (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).symm) k
 
 /-- The fixed-interval loop space `Ω X x` is path connected with vanishing positive-degree integral
 singular homology if and only if `π_ (n + 1) X x` is trivial for every `n : ℕ`. -/
