@@ -21,6 +21,7 @@ affine criterion and the ring-level theorem
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.IsRegular`: regularity of a scheme.
+* `TauCeti.AlgebraicGeometry.isRegular_iff_forall_stalk`: the stalkwise characterization.
 * `TauCeti.AlgebraicGeometry.isRegular_Spec_iff`: regularity of an affine scheme.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.of_isRegular`: regular schemes are normal.
 
@@ -47,6 +48,14 @@ class IsRegular (X : Scheme.{u}) : Prop extends IsLocallyNoetherian X where
 
 attribute [instance] IsRegular.isRegularLocalRing_stalk
 
+variable {X : Scheme.{u}}
+
+/-- A scheme is regular iff it is locally Noetherian and every stalk is a regular local ring. -/
+@[simp] theorem isRegular_iff_forall_stalk :
+    IsRegular X ↔ IsLocallyNoetherian X ∧
+      ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
+  ⟨fun _ ↦ ⟨inferInstance, fun _ ↦ inferInstance⟩, fun ⟨_, hStalk⟩ ↦ ⟨hStalk⟩⟩
+
 /-- The spectrum of a regular ring is regular. -/
 instance isRegular_Spec (R : CommRingCat.{u}) [IsRegularRing R] : IsRegular (Spec R) where
   isRegularLocalRing_stalk _ := inferInstance
@@ -59,8 +68,6 @@ theorem isRegular_Spec_iff (R : CommRingCat.{u}) :
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   have : IsNoetherianRing R := isLocallyNoetherian_Spec.mp inferInstance
   exact (isRegularRing_iff_isRegularLocalRing_stalk_Spec R).mpr fun _ ↦ inferInstance
-
-variable {X : Scheme.{u}}
 
 /-- A regular scheme is normal. Stacks, Lemma 28.9.4 (0569). -/
 @[stacks 0569]
