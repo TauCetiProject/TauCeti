@@ -120,21 +120,20 @@ theorem map_maximalIdeal_eq_pow_ramificationIdxAt [IsDominant f] [IsIntegral X] 
 /-- The pointwise ramification index equals the DVR exponent characterized by the maximal-ideal
 identity in Stacks, Definition 15.113.1 (09E4).
 
-Divergence from Stacks: only the source stalk needs to be a DVR; the target stalk may be any
-reduced scheme stalk of positive dimension under this dominant morphism. -/
+Divergence from Stacks: only the source stalk needs to be a DVR. No dominance or assumption
+on the target is required when the maximal-ideal power identity is supplied. -/
 @[stacks 09E4 "comparison with the exponent in the maximal-ideal identity"]
-theorem ramificationIdxAt_eq_dvr [IsDominant f] [IsIntegral X] [IsReduced Y]
-    [IsLocallyNoetherian X] [IsNormalScheme X] (x : X) (hx : coheight x = 1)
-    (hfx : coheight (f x) ≠ 0) {exponent : ℕ}
+theorem ramificationIdxAt_eq_dvr [IsLocallyNoetherian X] [IsNormalScheme X]
+    (x : X) (hx : coheight x = 1) {exponent : ℕ}
     (hexponent : (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
       maximalIdeal (X.presheaf.stalk x) ^ exponent) :
     f.ramificationIdxAt x = exponent := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
   have : IsDiscreteValuationRing (X.presheaf.stalk x) :=
     IsNormalScheme.isDiscreteValuationRing_stalk X x hx
-  have hpowers : StrictAnti (fun power : ℕ ↦ maximalIdeal (X.presheaf.stalk x) ^ power) :=
-    strictAnti_nat_of_succ_lt (Ideal.pow_succ_lt_pow
-      (IsDiscreteValuationRing.not_a_field (X.presheaf.stalk x)))
-  exact hpowers.injective ((f.map_maximalIdeal_eq_pow_ramificationIdxAt x hx hfx).symm.trans
-    hexponent)
+  rw [ramificationIdxAt_def]
+  exact IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow hexponent
 
 end AlgebraicGeometry.Scheme.Hom

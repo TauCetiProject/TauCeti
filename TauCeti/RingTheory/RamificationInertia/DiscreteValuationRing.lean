@@ -22,6 +22,8 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
 
 * `IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`: `𝔪_S T = 𝔪_T ^ e` with `e` the
   ramification index of `𝔪_T` over `S`.
+* `IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals any
+  exponent satisfying this maximal-ideal identity.
 
 ## References
 
@@ -64,5 +66,19 @@ theorem map_maximalIdeal_eq_pow_ramificationIdx
     rw [hpow]
     exact (Ideal.pow_succ_lt_pow (not_a_field T) n).not_ge
   rw [hidx, hpow]
+
+/-- For a local homomorphism to a DVR, the exponent in a maximal-ideal power identity is the
+ramification index. This is the exponent characterization of Stacks, Definition 15.113.1 (09E4),
+with no DVR assumption on the base ring. -/
+@[stacks 09E4 "exponent characterization with arbitrary local base ring"]
+theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
+    (hexponent : (maximalIdeal S).map (algebraMap S T) = maximalIdeal T ^ exponent) :
+    (maximalIdeal T).ramificationIdx S = exponent := by
+  have hpowers : StrictAnti (fun power : ℕ ↦ maximalIdeal T ^ power) :=
+    strictAnti_nat_of_succ_lt (Ideal.pow_succ_lt_pow (not_a_field T))
+  have hmap : (maximalIdeal S).map (algebraMap S T) ≠ ⊥ := by
+    rw [hexponent]
+    exact ne_of_gt (lt_of_le_of_lt bot_le (hpowers (Nat.lt_succ_self exponent)))
+  exact hpowers.injective ((map_maximalIdeal_eq_pow_ramificationIdx hmap).symm.trans hexponent)
 
 end IsDiscreteValuationRing
