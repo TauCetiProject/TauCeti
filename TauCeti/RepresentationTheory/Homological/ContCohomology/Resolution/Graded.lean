@@ -375,14 +375,14 @@ evaluating the outermost variable of a positive-degree term at `1`, and vanishes
 zero. It is the total map of `TopRep.resolutionModuleHomotopy`, and it is not equivariant. -/
 noncomputable def gradedResolutionHomotopy :
     X.gradedResolutionModule →ₗ[R] X.gradedResolutionModule :=
-  CochainComplex.directSumHomotopy (resolutionModuleHomotopy X)
+  (resolutionModuleHomotopy X).directSumHomotopy
 
 /-- The contracting homotopy vanishes in degree zero. -/
 @[simp]
 theorem gradedResolutionHomotopy_lof_zero [DecidableEq ℕ] (F : (resolutionX X 1).V) :
     X.gradedResolutionHomotopy (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 F) =
       0 :=
-  CochainComplex.directSumHomotopy_lof_zero (resolutionModuleHomotopy X) F
+  Homotopy.directSumHomotopy_lof_zero (resolutionModuleHomotopy X) F
 
 /-- In positive degree, the contracting homotopy evaluates the outermost variable at `1`. -/
 @[simp]
@@ -392,7 +392,7 @@ theorem gradedResolutionHomotopy_lof_succ [DecidableEq ℕ] (n : ℕ)
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1) F) =
       DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n (F 1) := by
   rw [gradedResolutionHomotopy, ← resolutionModuleComplex_lof,
-    CochainComplex.directSumHomotopy_lof_succ, resolutionModuleHomotopy_hom_succ,
+    Homotopy.directSumHomotopy_lof_succ, resolutionModuleHomotopy_hom_succ,
     ModuleCat.hom_ofHom, ContinuousLinearMap.coe_coe, ContinuousMap.evalCLM_apply]
 
 /-- The contracting homotopy vanishes on the augmentation. -/
@@ -441,7 +441,7 @@ theorem gradedResolutionDifferential_gradedResolutionHomotopy_add (x : X.gradedR
           resolutionModuleProj_f_succ, Limits.zero_comp, ModuleCat.hom_zero,
           LinearMap.zero_apply, map_zero]
     | add y z hy hz => simp only [map_add, hy, hz]
-  have h := CochainComplex.directSumDifferential_directSumHomotopy_add
+  have h := Homotopy.directSumDifferential_directSumHomotopy_add
     (resolutionModuleHomotopy X) x
   rwa [CochainComplex.directSumMap_id, LinearMap.id_apply, hproj] at h
 
@@ -449,7 +449,7 @@ theorem gradedResolutionDifferential_gradedResolutionHomotopy_add (x : X.gradedR
 theorem isHomogeneous_gradedResolutionHomotopy :
     TauCeti.LinearMap.IsHomogeneous X.gradedResolutionHomotopy X.gradedResolutionPiece
       X.gradedResolutionPiece (-1) :=
-  CochainComplex.isHomogeneous_directSumHomotopy (resolutionModuleHomotopy X)
+  Homotopy.isHomogeneous_directSumHomotopy (resolutionModuleHomotopy X)
 
 variable {X} {Y : TopRep.{max v w} R G}
 

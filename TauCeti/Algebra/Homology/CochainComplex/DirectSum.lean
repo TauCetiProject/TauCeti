@@ -171,9 +171,15 @@ theorem isHomogeneous_directSumMap (f : K ⟶ L) :
     obtain ⟨y, rfl⟩ := hx
     exact ⟨_, (directSumMap_lof f n y).symm⟩
 
-section Homotopy
+end CochainComplex
 
-variable {f g : K ⟶ L}
+namespace Homotopy
+
+open CochainComplex
+
+universe u v
+
+variable {R : Type u} [Ring R] {K L : CochainComplex (ModuleCat.{v} R) ℕ} {f g : K ⟶ L}
 
 /-- The total map of a homotopy between cochain morphisms: it lowers the summand index by one,
 applying the component `H.hom (n + 1) n` to the degree-`n + 1` summand, and vanishes on the
@@ -247,5 +253,3 @@ theorem isHomogeneous_directSumHomotopy (H : Homotopy f g) :
         add_neg_cancel_right] using L.lof_mem_directSumPiece n ((H.hom (n + 1) n).hom y)
 
 end Homotopy
-
-end CochainComplex
