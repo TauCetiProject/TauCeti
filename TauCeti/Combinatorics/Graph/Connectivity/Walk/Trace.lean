@@ -40,7 +40,7 @@ def walkGraph (G : Graph α β) {x y : α} (p : G.Walk x y) : Graph α β :=
 
 namespace Walk
 
-@[simp]
+@[simp, grind =]
 theorem vertexSet_walkGraph (p : G.Walk x y) :
     V(G.walkGraph p) = {a | a ∈ p.support} :=
   (rfl)
@@ -59,14 +59,14 @@ theorem mem_edgeSet_walkGraph (p : G.Walk x y) (e : β) :
     · simpa
 
 /-- The edge set of a traced graph is the set represented by the walk's edge list. -/
-@[simp]
+@[simp, grind =]
 theorem edgeSet_walkGraph (p : G.Walk x y) :
     E(G.walkGraph p) = {e | e ∈ p.edges} :=
   Set.ext fun e ↦ p.mem_edgeSet_walkGraph e
 
 /-- The links of a traced graph are precisely the ambient links whose identities occur in the
 walk. -/
-@[simp]
+@[simp, grind =]
 theorem walkGraph_isLink (p : G.Walk x y) (e : β) (a b : α) :
     (G.walkGraph p).IsLink e a b ↔ G.IsLink e a b ∧ e ∈ p.edges := by
   simp only [walkGraph, deleteEdges_isLink, induce_isLink, mem_ofPred_eq, not_not]
@@ -130,7 +130,7 @@ theorem walkGraph_le_walkGraph_iff (p : G.Walk x y) (q : G.Walk z w) :
     exact ⟨hab, he hep⟩
 
 /-- Mapping a walk to a supergraph does not change its traced graph. -/
-@[simp]
+@[simp, grind =]
 theorem walkGraph_mapLe (h : G ≤ H) (p : G.Walk x y) :
     H.walkGraph (p.mapLe h) = G.walkGraph p := by
   apply Graph.ext
@@ -151,7 +151,7 @@ theorem walkGraph_transfer (h : G ≤ H) (p : H.Walk x y)
   rw [← walkGraph_mapLe h, mapLe_transfer]
 
 /-- A zero-length walk traces the edgeless graph on its base vertex. -/
-@[simp]
+@[simp, grind =]
 theorem walkGraph_nil (G : Graph α β) (x : α) :
     G.walkGraph (Walk.nil : G.Walk x x) = Graph.noEdge {x} β := by
   apply Graph.ext
@@ -205,13 +205,12 @@ theorem walkGraph_append (p : G.Walk x y) (q : G.Walk y z) :
 
 /-- Prepending an edge takes the compatible union of its one-edge trace and the remaining
 walk's trace. -/
-@[simp]
 theorem walkGraph_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     G.walkGraph (.cons e h p) = (h.toWalk.walkGraph_compatible p).union := by
   simpa only [h.toWalk_eq_cons, cons_append, nil_append] using walkGraph_append h.toWalk p
 
 /-- Reversing a walk does not change its traced graph. -/
-@[simp]
+@[simp, grind =]
 theorem walkGraph_reverse (p : G.Walk x y) : G.walkGraph p.reverse = G.walkGraph p := by
   apply Graph.ext
   · ext a
