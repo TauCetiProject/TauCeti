@@ -368,6 +368,15 @@ end Extremal
   classical
   simp [isAdmissible_iff]
 
+/-- A minimum cut for a pair of singleton terminal sets has the usual source-membership,
+sink-exclusion, and optimality characterization. -/
+theorem isMinimum_singleton_iff [Preorder K] {f : Finset V → K} {s t : V}
+    {S : Finset V} :
+    IsMinimum f {s} {t} S ↔
+      s ∈ S ∧ t ∉ S ∧ ∀ T, s ∈ T → t ∉ T → f S ≤ f T := by
+  simp only [isMinimum_iff, isAdmissible_singleton]
+  aesop
+
 /-!
 ## Examples
 

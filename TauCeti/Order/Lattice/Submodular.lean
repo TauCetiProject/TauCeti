@@ -21,6 +21,7 @@ particular graph or network representation.
 ## Main declarations
 
 * `TauCeti.IsSubmodular`: the submodular inequality on a lattice.
+* `TauCeti.IsSymmSubmodular`: a symmetric submodular function on finite vertex sets.
 * `TauCeti.IsSubmodular.add`: sums of submodular functions are submodular.
 * `TauCeti.IsSubmodular.comp_latticeHom`: precomposition by a lattice homomorphism preserves
   submodularity.
@@ -38,6 +39,16 @@ variable {K L M : Type*}
 sum of its values at the original pair. -/
 def IsSubmodular [Add K] [LE K] [Lattice L] (f : L → K) : Prop :=
   ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b
+
+/-- A function on finite vertex sets is symmetric submodular if it is invariant under taking
+complements and is submodular. Symmetry is additional data: the submodular theory itself does not
+require it. -/
+structure IsSymmSubmodular {V : Type*} [Fintype V] [DecidableEq V]
+    [Add K] [LE K] (f : Finset V → K) : Prop where
+  /-- A set and its complement have the same value. -/
+  symm (S : Finset V) : f Sᶜ = f S
+  /-- The set function satisfies the submodular inequality. -/
+  submodular : IsSubmodular f
 
 /-- A function is submodular exactly when it satisfies the submodular inequality at every pair. -/
 theorem isSubmodular_def [Add K] [LE K] [Lattice L] (f : L → K) :
