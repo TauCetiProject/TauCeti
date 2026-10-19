@@ -226,6 +226,8 @@ def main(argv=None):
     ap.add_argument("--state-in", help="previous progress/retries JSON checkpoint")
     ap.add_argument("--state-out", help="where to checkpoint progress, including on failure")
     args = ap.parse_args(argv)
+    if any(number <= 0 for number in args.pr):
+        ap.error('--pr must be a positive PR number')
     state = load_progress(args.state_in, args.since)
     output = None if args.dry_run else args.state_out
     lock = threading.Lock()
