@@ -189,6 +189,13 @@ theorem mem_ofSubcells_support (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
       ⟨coordPair_mem_pairSupport₀₂ hx, h₀, h₂⟩,
       ⟨coordPair_mem_pairSupport₁₂ hx, h₁, h₂⟩⟩
 
+/-- The support of a vertex restriction, as a filter of the parent support. -/
+theorem support_ofSubcells (P : Polyad3 S) (a₀ a₁ a₂ : Finset V) :
+    (ofSubcells P a₀ a₁ a₂).support =
+      {x ∈ P.support | x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂} := by
+  ext x
+  rw [mem_ofSubcells_support, mem_filter]
+
 /-- Restricting to the whole parent cells preserves the support, including repeated cells. -/
 @[simp]
 theorem support_ofSubcells_cells (P : Polyad3 S) :
