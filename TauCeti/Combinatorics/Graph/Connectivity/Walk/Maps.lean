@@ -102,16 +102,6 @@ theorem mapLe_nil_iff (h : G ≤ H) (p : G.Walk x y) : (p.mapLe h).Nil ↔ p.Nil
   cases p <;> simp
 
 @[simp]
-theorem mapLe_eq_nil_iff (h : G ≤ H) (p : G.Walk x x) :
-    p.mapLe h = nil ↔ p = nil := by
-  rw [eq_nil_iff_nil, eq_nil_iff_nil, mapLe_nil_iff]
-
-@[simp]
-theorem mapLe_ne_nil_iff (h : G ≤ H) (p : G.Walk x x) :
-    p.mapLe h ≠ nil ↔ p ≠ nil :=
-  not_congr (mapLe_eq_nil_iff h p)
-
-@[simp]
 theorem isTrail_mapLe (h : G ≤ H) (p : G.Walk x y) :
     (p.mapLe h).IsTrail ↔ p.IsTrail := by
   rw [isTrail_def, isTrail_def, edges_mapLe_eq_edges]
@@ -129,7 +119,7 @@ alias ⟨IsPath.of_mapLe, IsPath.mapLe⟩ := isPath_mapLe
 theorem isCycle_mapLe (h : G ≤ H) (p : G.Walk x x) :
     (p.mapLe h).IsCycle ↔ p.IsCycle := by
   simp only [isCycle_def, edges_mapLe_eq_edges, support_mapLe_eq_support,
-    mapLe_ne_nil_iff]
+    ne_eq, eq_nil_iff_nil, mapLe_nil_iff]
 
 alias ⟨IsCycle.of_mapLe, IsCycle.mapLe⟩ := isCycle_mapLe
 
@@ -230,18 +220,6 @@ theorem transfer_nil_iff (hGH : G ≤ H) (p : H.Walk x y)
   cases p <;> simp
 
 @[simp]
-theorem transfer_eq_nil_iff (hGH : G ≤ H) (p : H.Walk x x)
-    (hp : ∀ e, e ∈ p.edges → e ∈ E(G)) :
-    p.transfer hGH hp = nil ↔ p = nil := by
-  rw [eq_nil_iff_nil, eq_nil_iff_nil, transfer_nil_iff]
-
-@[simp]
-theorem transfer_ne_nil_iff (hGH : G ≤ H) (p : H.Walk x x)
-    (hp : ∀ e, e ∈ p.edges → e ∈ E(G)) :
-    p.transfer hGH hp ≠ nil ↔ p ≠ nil :=
-  not_congr (transfer_eq_nil_iff hGH p hp)
-
-@[simp]
 theorem isTrail_transfer (hGH : G ≤ H) (p : H.Walk x y)
     (hp : ∀ e, e ∈ p.edges → e ∈ E(G)) :
     (p.transfer hGH hp).IsTrail ↔ p.IsTrail := by
@@ -257,7 +235,8 @@ theorem isPath_transfer (hGH : G ≤ H) (p : H.Walk x y)
 theorem isCycle_transfer (hGH : G ≤ H) (p : H.Walk x x)
     (hp : ∀ e, e ∈ p.edges → e ∈ E(G)) :
     (p.transfer hGH hp).IsCycle ↔ p.IsCycle := by
-  simp only [isCycle_def, edges_transfer, support_transfer, transfer_ne_nil_iff]
+  simp only [isCycle_def, edges_transfer, support_transfer, ne_eq, eq_nil_iff_nil,
+    transfer_nil_iff]
 
 @[simp]
 theorem mapLe_transfer (hGH : G ≤ H) (p : H.Walk x y)
