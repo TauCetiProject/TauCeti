@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.Algebra.FiniteSupport.Basic
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Algebra.Ring.NegOnePow
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.Basis.Exact
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The torsion of a based chain complex over a field
@@ -84,18 +83,20 @@ private def bracketBasis : Basis (Fin p ⊕ Fin q) F (C.X (j + 1)) :=
   Basis.ofExactLift (Submodule.injective_subtype _)
     (exact_subtype_rangeRestrict (by simp) (by simp) h) b₁ b₀ s fun k ↦ Subtype.ext (hs k)
 
-include c h b₁ b₀ s hs in
+include c h b₁ b₀ in
 private theorem eq_add_of_exactAt : n (j + 1) = p + q := by
-  have h₁ := finrank_eq_card_basis (c (j + 1))
-  have h₂ := finrank_eq_card_basis (bracketBasis h b₁ b₀ s hs)
-  simp only [Fintype.card_fin, Fintype.card_sum] at h₁ h₂
-  omega
+  let _ : Module.Finite F (C.X (j + 1)) := .of_basis (c (j + 1))
+  have hdim := (exact_subtype_rangeRestrict (i := j + 1 + 1) (k := j)
+    (by simp) (by simp) h).finrank_eq_add
+    (Submodule.injective_subtype _) (C.d (j + 1) j).hom.surjective_rangeRestrict
+  simpa only [finrank_eq_card_basis (c (j + 1)), finrank_eq_card_basis b₁,
+    finrank_eq_card_basis b₀, Fintype.card_fin] using hdim
 
 /-- The bracket `[b₁ s / cⱼ₊₁]`: the determinant, with respect to the basis `c (j + 1)` of `Cⱼ₊₁`,
 of the family made of a basis `b₁` of the boundaries `Bⱼ₊₁ ⊆ Cⱼ₊₁` followed by lifts `s` of a
 basis `b₀` of the boundaries `Bⱼ ⊆ Cⱼ`. -/
 def torsionBracket : F :=
-  ((c (j + 1)).reindex ((finCongr (eq_add_of_exactAt c h b₁ b₀ s hs)).trans
+  ((c (j + 1)).reindex ((finCongr (eq_add_of_exactAt c h b₁ b₀)).trans
     finSumFinEquiv.symm)).det (bracketBasis h b₁ b₀ s hs)
 
 /-- Replacing the boundary bases and the lifts in a bracket multiplies it by the determinants of
@@ -125,12 +126,12 @@ dimension `n (j + 1)` is `p`), the bracket is the determinant of the basis `b₁
 theorem torsionBracket_eq_det_left (hp : n (j + 1) = p) :
     torsionBracket c h b₁ b₀ s hs =
       (c (j + 1)).det fun k ↦ (b₁ (Fin.cast hp k) : C.X (j + 1)) := by
-  have hq : q = 0 := by have := eq_add_of_exactAt c h b₁ b₀ s hs; omega
+  have hq : q = 0 := by have := eq_add_of_exactAt c h b₁ b₀; omega
   subst hq
   rw [torsionBracket, Basis.det_reindex]
   congr 1
   ext k
-  have : Fin.cast (eq_add_of_exactAt c h b₁ b₀ s hs) k = Fin.castAdd 0 (Fin.cast hp k) :=
+  have : Fin.cast (eq_add_of_exactAt c h b₁ b₀) k = Fin.castAdd 0 (Fin.cast hp k) :=
     Fin.ext rfl
   rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
     finSumFinEquiv_symm_apply_castAdd, bracketBasis, Basis.ofExactLift_inl]
@@ -141,12 +142,12 @@ dimension `n (j + 1)` is `q`), the bracket is the determinant of the lifts `s` o
 of `Bⱼ`. -/
 theorem torsionBracket_eq_det_right (hq : n (j + 1) = q) :
     torsionBracket c h b₁ b₀ s hs = (c (j + 1)).det (s ∘ Fin.cast hq) := by
-  have hp : p = 0 := by have := eq_add_of_exactAt c h b₁ b₀ s hs; omega
+  have hp : p = 0 := by have := eq_add_of_exactAt c h b₁ b₀; omega
   subst hp
   rw [torsionBracket, Basis.det_reindex]
   congr 1
   ext k
-  have : Fin.cast (eq_add_of_exactAt c h b₁ b₀ s hs) k = Fin.natAdd 0 (Fin.cast hq k) :=
+  have : Fin.cast (eq_add_of_exactAt c h b₁ b₀) k = Fin.natAdd 0 (Fin.cast hq k) :=
     Fin.ext (by simp)
   rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
     finSumFinEquiv_symm_apply_natAdd, bracketBasis, Basis.ofExactLift_inr]
