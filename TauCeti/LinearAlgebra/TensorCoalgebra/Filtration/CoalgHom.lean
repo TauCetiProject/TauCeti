@@ -21,9 +21,14 @@ length at most `2 e + 1` at most one block is collapsed, and `F` agrees there wi
 This is the length bound behind gauge transformations of `A∞` structures: such a transformation
 changes the Taylor map on short words only through one insertion of `φ`.
 
-The proof does not expand `coalgHom`.  Both `F - id - coderiv φ` and `F - id` have vanishing letter
-component, and the co-Leibniz rules of `F - id` and `coderiv φ` express the deconcatenation of
-their values through shorter words, so both vanish by induction along the conilpotence filtration.
+The proof does not expand `coalgHom`.  It shows by induction along the conilpotence filtration
+first that `F - id` vanishes on the words of length at most `e`, and then that
+`F - id - coderiv φ` vanishes on the words of length at most `2 e + 1`.  The letter component of
+`F - id` is `φ`, which vanishes on the words of length at most `e`, while that of
+`F - id - coderiv φ` is zero.  The co-Leibniz rules of `F` and `coderiv φ` express the
+deconcatenation of a value through values on shorter words; in the second induction this leaves
+the term `(F - id) ⊗ (F - id)`, which vanishes since every cut of a word of length at most
+`2 e + 1` has a half of length at most `e`.
 
 ## Main results
 
