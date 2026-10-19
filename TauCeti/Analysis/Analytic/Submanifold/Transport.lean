@@ -32,10 +32,21 @@ theorem IsAnalyticChart.preimage (hc : IsAnalyticChart d S c)
     (e : (Fin n → 𝕜) ≃ₜ (Fin n → 𝕜))
     (he : AnalyticOnNhd 𝕜 e univ) (he' : AnalyticOnNhd 𝕜 e.symm univ) :
     IsAnalyticChart d (e ⁻¹' S) (e.toOpenPartialHomeomorph.trans c) := by
-  refine ⟨fun x hx ↦ (hc.analyticOnNhd _ hx.2).comp (he x (mem_univ _)),
-    fun y hy ↦ (he' _ (mem_univ _)).comp (hc.analyticOnNhd_symm _ hy.1), ?_⟩
-  intro x hx
-  exact hc.isImage hx.2
+  -- Composition pulls the chart source back along e and sends x to c (e x).
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx
+    rw [OpenPartialHomeomorph.trans_source] at hx
+    simpa only [OpenPartialHomeomorph.coe_trans] using
+      (hc.analyticOnNhd _ hx.2).comp (he x (mem_univ _))
+  · intro y hy
+    rw [OpenPartialHomeomorph.trans_target] at hy
+    simpa only [OpenPartialHomeomorph.coe_trans_symm,
+      Homeomorph.toOpenPartialHomeomorph_symm_apply] using
+      (he' _ (mem_univ _)).comp (hc.analyticOnNhd_symm _ hy.1)
+  · intro x hx
+    rw [OpenPartialHomeomorph.trans_source] at hx
+    simpa only [OpenPartialHomeomorph.trans_apply,
+      Homeomorph.toOpenPartialHomeomorph_apply, mem_preimage] using hc.isImage hx.2
 
 /-- An analytic change of ambient coordinates preserves analytic submanifolds and their
 dimension. The inverse must also be analytic. -/
@@ -47,7 +58,10 @@ theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
   · obtain ⟨y, hy⟩ := hS.nonempty
     exact ⟨e.symm y, by simpa using hy⟩
   · obtain ⟨c, hxc, hc⟩ := hS.exists_isAnalyticChart (e x) hx
-    exact ⟨e.toOpenPartialHomeomorph.trans c, ⟨mem_univ _, hxc⟩,
-      hc.preimage e he he'⟩
+    refine ⟨e.toOpenPartialHomeomorph.trans c, ?_, hc.preimage e he he'⟩
+    -- The homeomorphism has full source, so the composite source is e ⁻¹' c.source.
+    simpa only [OpenPartialHomeomorph.trans_source,
+      Homeomorph.toOpenPartialHomeomorph_source, Homeomorph.toOpenPartialHomeomorph_apply,
+      univ_inter, mem_preimage] using hxc
 
 end TauCeti
