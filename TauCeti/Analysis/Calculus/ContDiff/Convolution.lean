@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.MeasureTheory.Group.Integral
+public import TauCeti.Analysis.Calculus.ContDiff.Integrable
 public import TauCeti.Analysis.Convolution
 
 /-!
@@ -27,8 +28,8 @@ The dominated results use a measure invariant under translations and negation. T
 negation and open sets are measurable. The continuity theorem needs a seminormed abelian
 domain, any nontrivially normed scalar field, and second-countability of either the domain or
 the kernel's codomain. The convolution codomain also carries the real normed-space structure
-needed for the Bochner integral. The derivative statements use a second-countable real normed
-domain.
+needed for the Bochner integral. The dominated derivative statements use a second-countable
+real normed domain.
 
 The iterated derivative of `f ⋆[L, μ] g` is a convolution against the iterated derivative of `g`,
 for the bilinear map `L_n` sending `(a, B)` to the multilinear map `m ↦ L a (B m)`
@@ -113,32 +114,6 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 section
 
-variable [NormedAddCommGroup G] [NormedSpace ℝ G] [SecondCountableTopology G]
-  [OpensMeasurableSpace G]
-
-/-- If `g` is `C^N` with dominated derivatives and `n + 1 ≤ N`, then `D^n g` satisfies the
-hypotheses of `hasFDerivAt_convolution_right_of_dominated`. -/
-private theorem iteratedFDeriv_dominated (hg : ContDiff ℝ N g)
-    (hgφ : ∀ n : ℕ, n ≤ N → ∃ φ : G → ℝ, Integrable φ μ ∧
-      ∀ z h, ‖h‖ ≤ 1 → ‖iteratedFDeriv ℝ n g (z + h)‖ ≤ φ z) {n : ℕ} (hn : (n + 1 : ℕ) ≤ N) :
-    ContDiff ℝ 1 (iteratedFDeriv ℝ n g) ∧ Integrable (iteratedFDeriv ℝ n g) μ ∧
-      ∃ φ : G → ℝ, Integrable φ μ ∧
-        ∀ z h, ‖h‖ ≤ 1 → ‖fderiv ℝ (iteratedFDeriv ℝ n g) (z + h)‖ ≤ φ z := by
-  have hn' : (n : ℕ∞) ≤ N := le_trans (by exact_mod_cast n.le_succ) hn
-  obtain ⟨φ₀, hφ₀, hgφ₀⟩ := hgφ n hn'
-  obtain ⟨φ₁, hφ₁, hgφ₁⟩ := hgφ (n + 1) hn
-  have hgn : ContDiff ℝ 1 (iteratedFDeriv ℝ n g) :=
-    hg.iteratedFDeriv_right (by rw [add_comm]; exact_mod_cast hn)
-  refine ⟨hgn, hφ₀.mono' hgn.continuous.aestronglyMeasurable (ae_of_all _ fun z => ?_),
-    φ₁, hφ₁, fun z h hh => ?_⟩
-  · simpa using hgφ₀ z 0 (by simp)
-  · rw [norm_fderiv_iteratedFDeriv]
-    exact hgφ₁ z h hh
-
-end
-
-section
-
 variable [NormedAddCommGroup G] [NormedSpace ℝ G] [OpensMeasurableSpace G] [MeasurableAdd G]
   [MeasurableNeg G] [SecondCountableTopology G] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
 
@@ -189,7 +164,7 @@ theorem iteratedFDeriv_convolution_right_of_dominated (hf : AEStronglyMeasurable
   | succ n ih =>
     have hn' : (n : ℕ∞) ≤ N := le_trans (by exact_mod_cast n.le_succ) hn
     funext x
-    obtain ⟨hgn, hgi, φ, hφ, hgφn⟩ := iteratedFDeriv_dominated (μ := μ) hg hgφ hn
+    obtain ⟨hgn, hgi, φ, hφ, hgφn⟩ := hg.iteratedFDeriv_dominated (μ := μ) hgφ hn
     rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, ih hn',
       (hasFDerivAt_convolution_right_of_dominated _ hf hfM hgn hgi hφ hgφn x).fderiv,
       convolution_def, convolution_def]
@@ -218,7 +193,7 @@ theorem contDiff_convolution_right_of_dominated (hf : AEStronglyMeasurable f μ)
       (hg.continuous_iteratedFDeriv (by exact_mod_cast hm)) hφ hgφm
   · rw [iteratedFDeriv_convolution_right_of_dominated L hf hfM hg hgφ hm.le]
     obtain ⟨hgn, hgi, φ, hφ, hgφn⟩ :=
-      iteratedFDeriv_dominated (μ := μ) hg hgφ (Order.add_one_le_of_lt hm)
+      hg.iteratedFDeriv_dominated (μ := μ) hgφ (Order.add_one_le_of_lt hm)
     exact (hasFDerivAt_convolution_right_of_dominated _ hf hfM hgn hgi hφ hgφn x).differentiableAt
 
 /-- **Smoothness of a convolution**, with the smooth factor on the left. -/

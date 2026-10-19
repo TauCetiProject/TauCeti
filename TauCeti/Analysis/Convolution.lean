@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convolution
 
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Group.Integral
 
 /-!
@@ -43,23 +44,16 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- An essentially bounded function convolves with an integrable function at every point. -/
 theorem convolutionExists_of_ae_norm_le_of_integrable (hf : AEStronglyMeasurable f μ)
     (hfM : ∀ᵐ t ∂μ, ‖f t‖ ≤ M) (hg : Integrable g μ) : ConvolutionExists f g L μ := fun x => by
-  refine ((hg.comp_sub_left x).norm.const_mul (‖L‖ * M)).mono'
-    (L.aestronglyMeasurable_comp₂ hf (hg.comp_sub_left x).aestronglyMeasurable) ?_
-  filter_upwards [hfM] with t ht
-  refine (L.le_opNorm₂ _ _).trans ?_
-  gcongr
+  simpa only [ConvolutionExistsAt, Function.comp_def] using
+    L.integrable_of_bilin_of_bdd_left M hf hfM (hg.comp_sub_left x)
 
 /-- An integrable function convolves with an essentially bounded function at every point. -/
 theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
     (hg : AEStronglyMeasurable g μ) (hgM : ∀ᵐ t ∂μ, ‖g t‖ ≤ M) : ConvolutionExists f g L μ :=
   fun x => by
     have hsub := (Measure.measurePreserving_sub_left μ x).quasiMeasurePreserving
-    refine ((hf.norm.const_mul ‖L‖).mul_const M).mono'
-      (L.aestronglyMeasurable_comp₂ hf.aestronglyMeasurable
-        (hg.comp_quasiMeasurePreserving hsub)) ?_
-    filter_upwards [hsub.ae hgM] with t ht
-    refine (L.le_opNorm₂ _ _).trans ?_
-    gcongr
+    simpa only [ConvolutionExistsAt, Function.comp_def] using
+      L.integrable_of_bilin_of_bdd_right M hf (hg.comp_quasiMeasurePreserving hsub) (hsub.ae hgM)
 
 end MeasureTheory
 
