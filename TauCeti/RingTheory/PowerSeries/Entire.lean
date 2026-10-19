@@ -19,17 +19,18 @@ radius, that is, `‖aₙ‖ rⁿ → 0` for every `r`. Over a complete ultramet
 radius. Entire series are the natural home of Fredholm determinants of compact operators and of
 their factorisations by polynomials.
 
-Restrictedness at one radius implies restrictedness at every smaller one, so it suffices to test
-positive radii (`PowerSeries.isEntire_iff_forall_pos`), or the radii along any sequence tending
-to infinity (`PowerSeries.isEntire_iff_of_tendsto`). Over any normed ring, the entire series form
-the subring `PowerSeries.IsEntire.subring`. Entire series are stable under Hasse derivatives,
-rescaling `f(X) ↦ f(aX)` and coefficientwise application of bounded ring homomorphisms.
+Restrictedness at a radius `r` implies restrictedness at every radius `s` with `|s| ≤ |r|`, so
+it suffices to test positive radii (`PowerSeries.isEntire_iff_forall_pos`), or the radii along
+any sequence tending to infinity (`PowerSeries.isEntire_iff_of_tendsto`). Over any normed ring,
+the entire series form the subring `PowerSeries.IsEntire.subring`. Entire series are stable
+under Hasse derivatives, rescaling `f(X) ↦ f(aX)` and coefficientwise application of bounded ring
+homomorphisms.
 
 Over a normed ring with `‖a‖ < 1`, the series `∑ a^(n²) Xⁿ` is entire
 (`PowerSeries.isEntire_mk_pow_sq`), while for `a ≠ 0` and a multiplicative norm the series
 `∑ aⁿ Xⁿ` is not, failing to be restricted at the radius `‖a‖⁻¹`
-(`PowerSeries.not_isEntire_mk_pow`), although it is restricted at every radius below
-`‖a‖⁻¹`. These are the standard examples separating entire series from series
+(`PowerSeries.not_isEntire_mk_pow`), although it is restricted at every radius `r` with
+`|r| < ‖a‖⁻¹`. These are the standard examples separating entire series from series
 restricted at a fixed radius.
 
 ## Main definitions
