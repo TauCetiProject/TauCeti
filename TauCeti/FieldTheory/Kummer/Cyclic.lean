@@ -174,9 +174,9 @@ theorem isCyclic_of_pow_eq_of_adjoin_eq_top [FiniteDimensional K L] (hb : b ≠ 
   ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
 
 include hζ in
-/-- **A radical extension extracts a root of `b` of the order of its degree.** Let `L = K(s)` with
-`sⁿ = b ≠ 0`, where `K` contains a primitive `n`-th root of unity. Then `s ^ [L : K]` lies in `K`:
-it is some `c ∈ K` with `c ^ (n / [L : K]) = b`. -/
+/-- **The `[L : K]`-th power of a Kummer generator lies in `K`.** Let `L = K(s)` with
+`sⁿ = b ≠ 0`, where `K` contains a primitive `n`-th root of unity. Then `s ^ [L : K]` is some
+`c ∈ K` with `c ^ (n / [L : K]) = b`, an `(n / [L : K])`-th root of `b` in `K`. -/
 theorem exists_pow_finrank_eq_algebraMap [FiniteDimensional K L] (hb : b ≠ 0)
     (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
     ∃ c : K, s ^ finrank K L = algebraMap K L c ∧ c ^ (n / finrank K L) = b := by
