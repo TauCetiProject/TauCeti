@@ -76,7 +76,7 @@ variable {R : Type*} [CommRing R]
 
 attribute [simp] constantCoeff_toPowerSeries
 
-/-- Power series can be substituted into a formal coordinate. -/
+/-- A formal coordinate can be substituted into any power series. -/
 theorem hasSubst (φ : FormalCoordinate R) : HasSubst φ.toPowerSeries :=
   .of_constantCoeff_zero' φ.constantCoeff_toPowerSeries
 
