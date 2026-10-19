@@ -61,13 +61,6 @@ theorem contMDiffAt_christoffelSecondKind_family
     (hnm : n + 1 ≤ m) (hnd : (g z.1 z.2).toBilinForm.Nondegenerate) :
     ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
       (fun q : P × E ↦ christoffelSecondKind (g q.1) q.2) z := by
-  -- Explicit scalars identify the derivative component of the first-jet model space.
-  let : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
-    ContinuousLinearMap.toNormedAddCommGroup (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
-      (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
-  let : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
-    ContinuousLinearMap.toNormedSpace (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
-      (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
   simpa only [christoffelSecondKind_eq_christoffelSecondKindOfJet, Function.comp_def] using
     (contDiffAt_christoffelSecondKindOfJet (j := (g z.1 z.2, fderiv ℝ (g z.1) z.2))
       (isInvertible_of_separatingLeft hnd.1)).comp_contMDiffAt
