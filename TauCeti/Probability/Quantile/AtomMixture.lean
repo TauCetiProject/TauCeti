@@ -68,7 +68,7 @@ theorem quantile_atomMixture_eq_atom (hμ : μ (Iio c) = 0)
 
 /-- Above the combined atom at a lower support boundary, remove the added weight and rescale the
 probability level to obtain the quantile of the base law. -/
-theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ∈ Ioo 0 1)
+theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ≤ 1)
     (hlt : (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} < u) :
     (μ.atomMixture c w).quantile u =
       μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
@@ -76,13 +76,14 @@ theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ∈ Ioo 0 1)
     intro hw
     subst w
     norm_num at hlt
-    exact (lt_asymm hlt hu.2).elim
+    exact (not_lt_of_ge hu) hlt
   have hwlt : (w : ℝ) < 1 := unitInterval.lt_one_iff_ne_one.mpr hw
   have hden : 0 < 1 - (w : ℝ) := sub_pos.mpr hwlt
   have hw_le_u : (w : ℝ) < u := by
     have hnonneg : 0 ≤ (1 - (w : ℝ)) * μ.real {c} :=
       mul_nonneg (sub_nonneg.mpr (unitInterval.le_one w)) measureReal_nonneg
     linarith
+  have hu0 : 0 < u := (unitInterval.nonneg w).trans_lt hw_le_u
   have hv0 : 0 < (u - (w : ℝ)) / (1 - (w : ℝ)) := div_pos (sub_pos.mpr hw_le_u) hden
   apply quantile_eq_of_le_cdf_iff
   intro x
@@ -94,18 +95,18 @@ theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ∈ Ioo 0 1)
     rw [TauCeti.Probability.cdf_atomMixture, ite_eq_right hx,
       cdf_eq_zero_of_lt_of_measure_Iio_eq_zero μ hμ hx']
     simp only [mul_zero, add_zero]
-    exact iff_of_false (not_le_of_gt hu.1) (not_le_of_gt hv0)
+    exact iff_of_false (not_le_of_gt hu0) (not_le_of_gt hv0)
 
 /-- The quantile of an atom mixture at a lower support boundary: it is the boundary point through
 the combined atom there and otherwise is the rescaled quantile of the base law. This includes the
 pure-atom endpoint `w = 1`. -/
 theorem quantile_atomMixture (hμ : μ (Iio c) = 0) (w : unitInterval)
-    (hu : u ∈ Ioo 0 1) :
+    (hu : u ∈ Ioc 0 1) :
     (μ.atomMixture c w).quantile u =
       if u ≤ (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} then c
       else μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
   split_ifs with h
   · exact quantile_atomMixture_eq_atom hμ hu.1 h
-  · exact quantile_atomMixture_of_lt hμ hu (lt_of_not_ge h)
+  · exact quantile_atomMixture_of_lt hμ hu.2 (lt_of_not_ge h)
 
 end MeasureTheory.Measure
