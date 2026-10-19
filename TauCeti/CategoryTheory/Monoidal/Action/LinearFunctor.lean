@@ -195,10 +195,7 @@ instance comp (τ' : F₂ ⟶ F₃) [IsLeftLinear τ C] [IsLeftLinear τ' C] :
 left-linear structures of `Functor.LaxLeftLinear.comp`. -/
 instance hcomp {G₁ G₂ : D' ⥤ D''} [G₁.LaxLeftLinear C] [G₂.LaxLeftLinear C] (τ' : G₁ ⟶ G₂)
     [IsLeftLinear τ C] [IsLeftLinear τ' C] : IsLeftLinear (τ ◫ τ') C where
-  μₗ_comp_app c d := by
-    rw [hcomp_app, hcomp_app, Functor.LaxLeftLinear.comp_μₗ, Functor.LaxLeftLinear.comp_μₗ,
-      Category.assoc, τ'.naturality_assoc, μₗ_comp_app_assoc, ← G₂.map_comp, μₗ_comp_app,
-      G₂.map_comp, ← μₗ_naturality_right_assoc, actionHomRight_comp_assoc]
+  μₗ_comp_app c d := by simp [← Functor.map_comp]
 
 instance whiskerRight {G : D' ⥤ D''} [G.LaxLeftLinear C] [IsLeftLinear τ C] :
     IsLeftLinear (Functor.whiskerRight τ G) C := by
@@ -244,9 +241,8 @@ variable {C : Type*} [Category* C] [MonoidalCategory C]
 instance (e : F₁ ≅ F₂) [NatTrans.IsLeftLinear e.hom C] :
     NatTrans.IsLeftLinear e.inv C where
   μₗ_comp_app c d := by
-    rw [← cancel_mono (e.hom.app (c ⊙ₗ d)), Category.assoc, Category.assoc, inv_hom_id_app,
-      Category.comp_id, NatTrans.IsLeftLinear.μₗ_comp_app, ← actionHomRight_comp_assoc,
-      inv_hom_id_app, actionHomRight_id, Category.id_comp]
+    rw [← cancel_mono (e.hom.app (c ⊙ₗ d))]
+    simp [← actionHomRight_comp_assoc]
 
 end CategoryTheory.Iso
 
