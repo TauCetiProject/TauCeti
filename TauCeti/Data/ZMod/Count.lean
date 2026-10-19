@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.Index
 
@@ -23,12 +24,15 @@ information as a division by `m` without a quotient appearing.
 Splitting a modulus into pairwise coprime factors multiplies the counts: conditions imposed on
 the separate factors are independent, so the number of residues satisfying all of them is the
 product of the individual counts. This is the Chinese remainder theorem `ZMod.prodEquivPi` in
-counting form.
+counting form. In particular the number of roots modulo `n` of an integer polynomial is the product
+of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
 ## Main results
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.card_filter_forall_natCast_val`: counting independent conditions on coprime factors.
+* `ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors`: the number of roots of an integer polynomial
+  modulo `n` is multiplicative over the prime-power factorization of `n`.
 * `ZMod.card_filter_not_self_dvd_val`: the residues whose representative the modulus does not
   divide, the base case of such a count.
 -/
@@ -110,5 +114,25 @@ theorem card_filter_forall_natCast_val {ι : Type*} [Fintype ι] (a : ι → ℕ
     ((prodEquivPi a hcop).toEquiv.subtypeEquiv fun x => by simp only [hval]; rfl).trans
       Equiv.subtypePiEquivPi
   simpa only [Fintype.card_subtype, Fintype.card_pi] using Fintype.card_congr e
+
+/-- **Counting roots prime power by prime power.** For `n ≠ 0`, the number of roots modulo `n` of
+an integer polynomial `P` is the product, over the primes `p ∣ n`, of its numbers of roots modulo
+the exact prime powers `p ^ vₚ(n)`. -/
+theorem natCard_aeval_eq_zero_eq_prod_primeFactors (hn : n ≠ 0) (P : Polynomial ℤ) :
+    Nat.card {x : ZMod n // Polynomial.aeval x P = 0} =
+      ∏ p ∈ n.primeFactors,
+        Nat.card {x : ZMod (p ^ n.factorization p) // Polynomial.aeval x P = 0} := by
+  let e := equivPi n hn
+  have he (x : ZMod n) (p : n.primeFactors) :
+      Polynomial.aeval (e x p) P = e (Polynomial.aeval x P) p :=
+    Polynomial.aeval_algHom_apply ((Pi.evalRingHom _ p).comp e.toRingHom).toIntAlgHom x P
+  have e' : {x : ZMod n // Polynomial.aeval x P = 0} ≃
+      ∀ p : n.primeFactors, {y : ZMod (p ^ n.factorization p) // Polynomial.aeval y P = 0} :=
+    (e.toEquiv.subtypeEquiv fun x ↦ by
+      rw [RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe, ← map_eq_zero_iff e e.injective,
+        funext_iff]
+      simp only [he, Pi.zero_apply]).trans Equiv.subtypePiEquivPi
+  rw [Nat.card_congr e', Nat.card_pi, Finset.prod_coe_sort n.primeFactors
+    (fun p ↦ Nat.card {y : ZMod (p ^ n.factorization p) // Polynomial.aeval y P = 0})]
 
 end ZMod
