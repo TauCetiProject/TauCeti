@@ -102,8 +102,8 @@ variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
 is scalar. -/
 theorem ad_eq_zero_iff (X : Matrix ι ι R) :
     LieAlgebra.ad R (Matrix ι ι R) X = 0 ↔ X ∈ Set.range (scalar ι) := by
-  rw [TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center, ← Subalgebra.mem_toSubring,
-    Subalgebra.center_toSubring, ← SetLike.mem_coe, Subring.coe_center, Matrix.center_eq_range]
+  rw [TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center]
+  simp [← Matrix.center_eq_range, Subalgebra.mem_center_iff, Semigroup.mem_center_iff]
 
 noncomputable section
 
