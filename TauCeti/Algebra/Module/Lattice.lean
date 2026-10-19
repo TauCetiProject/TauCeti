@@ -9,8 +9,7 @@ public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.IsTensorProduct
+public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Full submodule lattices
@@ -39,8 +38,8 @@ domain rationalizes to its ambient vector space over the fraction field.
   submodule into its ambient vector space over the fraction field is a base change.
 * `TauCeti.Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
   of a free full lattice submodule to its ambient vector space.
-* `TauCeti.TensorProduct.unitTmulEquiv`: a finite free module is the full lattice of unit pure
-  tensors in its scalar extension.
+* `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
+  vector lies in a free full lattice submodule.
 * `TauCeti.TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
@@ -261,14 +260,6 @@ section CommRing
 
 variable [CommRing R] [CommRing K] [Algebra R K]
 
-/-- The unit pure tensors are the `R`-span of the base change of any basis. -/
-theorem range_mk_one_eq_span [AddCommMonoid M] [Module R M] {ι : Type*} (b : Basis ι R M) :
-    LinearMap.range (TensorProduct.mk R K M 1) =
-      Submodule.span R (Set.range (b.baseChange K)) := by
-  rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
-  exact congrArg (Submodule.span R)
-    (congrArg Set.range (funext fun i ↦ (Basis.baseChange_apply K b i).symm))
-
 /-- The unit pure tensors form a full lattice in the scalar extension of a finite module. -/
 instance isLattice_range_mk_one [AddCommMonoid M] [Module R M] [Module.Finite R M] :
     (LinearMap.range (TensorProduct.mk R K M 1)).IsLattice K where
@@ -287,36 +278,7 @@ instance isLattice_range_mk_one [AddCommMonoid M] [Module R M] [Module.Finite R 
 end CommRing
 
 variable [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M] [Module.Free R M]
-
-variable (R K M) in
-/-- A finite free module is canonically isomorphic to the lattice of unit pure tensors in its
-scalar extension. -/
-noncomputable def unitTmulEquiv : M ≃ₗ[R] LinearMap.range (TensorProduct.mk R K M 1) :=
-  LinearEquiv.ofInjective _ (Module.Flat.tensorProduct_mk_injective R M K)
-
-/-- The lattice of unit pure tensors is free, being a copy of the module it comes from. -/
-instance free_range_mk_one :
-    Module.Free R (LinearMap.range (TensorProduct.mk R K M 1)) :=
-  Module.Free.of_equiv (unitTmulEquiv R K M)
-
-/-- The unit-tensor equivalence sends a vector to its unit pure tensor. This equation
-characterizes the equivalence. -/
-@[simp]
-theorem coe_unitTmulEquiv_apply (m : M) :
-    (unitTmulEquiv R K M m : K ⊗[R] M) = 1 ⊗ₜ[R] m := by
-  rw [unitTmulEquiv, LinearEquiv.ofInjective_apply, TensorProduct.mk_apply]
-
-/-- The inverse unit-tensor equivalence recovers a vector from its unit pure tensor. -/
-@[simp]
-theorem unitTmulEquiv_symm_tmul (m : M)
-    (h : (1 : K) ⊗ₜ[R] m ∈ LinearMap.range (TensorProduct.mk R K M 1)) :
-    (unitTmulEquiv R K M).symm ⟨1 ⊗ₜ[R] m, h⟩ = m := by
-  apply (unitTmulEquiv R K M).injective
-  rw [LinearEquiv.apply_symm_apply]
-  exact Subtype.ext (coe_unitTmulEquiv_apply m).symm
-
-variable [IsDomain R] [Module.Finite R M]
+variable [AddCommGroup M] [Module R M] [Module.Free R M] [IsDomain R] [Module.Finite R M]
 
 /-- Rationalizing the unit-tensor lattice recovers the scalar extension it sits in: base-changing
 the unit-tensor equivalence and then rationalizing is the identity. -/
@@ -341,3 +303,27 @@ theorem unitTmulEquiv_baseChange_trans_rationalizationEquiv :
 end TensorProduct
 
 end TauCeti
+
+namespace Submodule.IsLattice
+
+universe u v w
+
+variable {R : Type u} {K : Type v} {V' : Type w}
+variable [CommRing R] [IsDomain R]
+variable [Field K] [Algebra R K] [IsFractionRing R K]
+variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
+
+variable (K) in
+/-- Some nonzero multiple of every ambient vector lies in a free full lattice submodule. -/
+theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
+    (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
+  have hS : IsLocalizedModule (nonZeroDivisors R) S.subtype :=
+    (isLocalizedModule_iff_isBaseChange (nonZeroDivisors R) K _).mpr
+      (TauCeti.Submodule.IsLattice.isBaseChange_subtype S)
+  obtain ⟨⟨x, r⟩, hr⟩ := hS.surj v
+  refine ⟨r, nonZeroDivisors.coe_ne_zero r, ?_⟩
+  rw [Submonoid.smul_def] at hr
+  rw [hr]
+  exact x.2
+
+end Submodule.IsLattice

@@ -403,7 +403,8 @@ theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] 
 gives opposite Koszul signs.** For `c ∉ s` and `k ∈ s` in a linear order, the sign of inserting `c`
 into `s` and then deleting `k` is the opposite of the sign of deleting `k` from `s` and then
 inserting `c`. -/
-theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [Ring R]
+theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [Monoid R]
+    [HasDistribNeg R]
     {s : Finset α} {c k : α} (hc : c ∉ s) (hk : k ∈ s) :
     (-1 : R) ^ ({j ∈ s | j < c}).card * (-1) ^ ({j ∈ insert c s | j < k}).card =
       -((-1) ^ ({j ∈ s | j < k}).card * (-1) ^ ({j ∈ s.erase k | j < c}).card) := by
@@ -421,25 +422,20 @@ theorem neg_one_pow_card_filter_lt_mul_insert {α R : Type*} [LinearOrder α] [R
 
 /-- **Deleting two distinct elements of an ordered finset in either order gives opposite Koszul
 signs.** -/
-theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Ring R]
+theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Monoid R]
+    [HasDistribNeg R]
     {s : Finset α} {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i ≠ j) :
     (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card =
       -((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase j | k < i}).card) := by
-  have herase (t : Finset α) : {k ∈ t.erase i | k < i} = {k ∈ t | k < i} := by
-    rw [filter_erase, erase_eq_of_notMem (by simp)]
-  have h := neg_one_pow_card_filter_lt_mul_insert (R := R) (notMem_erase i s)
-    (mem_erase.2 ⟨hij.symm, hj⟩)
-  rw [insert_erase hi, erase_right_comm, herase, herase] at h
-  calc (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card
-    _ = ((-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s | k < j}).card) *
-          ((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase i | k < j}).card) := by
-        simp only [← pow_add]
-        exact neg_one_pow_congr (by grind)
-    _ = -((-1 : R) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ s.erase j | k < i}).card) := by
-        rw [h, neg_mul]
-        congr 1
-        simp only [← pow_add]
-        exact neg_one_pow_congr (by grind)
+  rcases hij.lt_or_gt with hij | hji
+  · have hi' : i ∈ {k ∈ s | k < j} := mem_filter.2 ⟨hi, hij⟩
+    have hj' : j ∉ {k ∈ s | k < i} := by simp [hij.not_gt]
+    simp only [filter_erase, erase_eq_of_notMem hj', ← card_erase_add_one hi', pow_succ]
+    simp [← pow_add, add_comm]
+  · have hi' : i ∉ {k ∈ s | k < j} := by simp [hji.not_gt]
+    have hj' : j ∈ {k ∈ s | k < i} := mem_filter.2 ⟨hj, hji⟩
+    simp only [filter_erase, erase_eq_of_notMem hi', ← card_erase_add_one hj', pow_succ]
+    simp [← pow_add, add_comm]
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/

@@ -51,7 +51,7 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
 * `TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal`: Hensel's lemma for a polynomial
   that need not be monic.
 * `TauCeti.HenselianLocalRing.exists_conic_eq`: a smooth conic perturbed by a cubic in the
-  maximal ideal has a solution over the ring whenever its residue equation is solvable.
+  maximal ideal lifts each solution of its residue equation to a solution over the ring.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 
@@ -191,26 +191,26 @@ theorem exists_isRoot_sub_mem_maximalIdeal {R : Type*} [CommRing R] [HenselianLo
   set g := f.comp (X + C a₀) with hg
   have hc : g.coeff 0 ∈ maximalIdeal R := by simpa [hg, coeff_zero_eq_eval_zero] using h₁
   have hu : IsUnit (g.coeff 1) := by
-    have h : (derivative g).eval 0 = f.derivative.eval a₀ := by simp [hg, derivative_comp]
-    rw [← coeff_zero_eq_eval_zero, coeff_derivative, zero_add, Nat.cast_zero, zero_add,
-      mul_one] at h
-    rwa [h]
+    simpa only [hg, ← taylor_apply, taylor_coeff_one] using h₂
   obtain ⟨b, hb, hgb⟩ := exists_mem_maximalIdeal_eval_eq_zero g hc hu
   refine ⟨b + a₀, by simpa [IsRoot, hg, eval_comp] using hgb, by rwa [add_sub_cancel_right]⟩
 
 /-- Over a Henselian local ring, suppose `a₁² + 4 a₂` and `A` are units and `z ∈ 𝔪`.
-If `Y² + a₁ X Y − a₂ X² − z X³ = A` is solvable modulo `𝔪`, it has a solution in the ring. -/
+Every solution of `Y² + a₁ X Y − a₂ X² − z X³ = A` modulo `𝔪` lifts to a solution in the ring
+with the same residues in both coordinates. -/
 theorem exists_conic_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
     {a₁ a₂ z A X₀ Y₀ : R} (hb₂ : IsUnit (a₁ ^ 2 + 4 * a₂)) (hz : z ∈ maximalIdeal R)
     (hA : IsUnit A) (h₀ : Y₀ ^ 2 + a₁ * X₀ * Y₀ - a₂ * X₀ ^ 2 - z * X₀ ^ 3 - A ∈ maximalIdeal R) :
-    ∃ X Y : R, Y ^ 2 + a₁ * X * Y - a₂ * X ^ 2 - z * X ^ 3 - A = 0 := by
+    ∃ X Y : R, Y ^ 2 + a₁ * X * Y - a₂ * X ^ 2 - z * X ^ 3 - A = 0 ∧
+      X - X₀ ∈ maximalIdeal R ∧ Y - Y₀ ∈ maximalIdeal R := by
   by_cases hY : IsUnit (2 * Y₀ + a₁ * X₀)
   · -- Hensel's lemma in `Y`
-    obtain ⟨Y, hY', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+    obtain ⟨Y, hY', hYY₀⟩ := exists_isRoot_sub_mem_maximalIdeal
       (X ^ 2 + C (a₁ * X₀) * X - C (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A)) (a₀ := Y₀)
       (by convert h₀ using 1; simp; ring) (by convert hY using 1; simp [derivative_pow])
-    exact ⟨X₀, Y, by linear_combination (by simpa using hY'.eq_zero :
-      Y ^ 2 + a₁ * X₀ * Y - (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A) = 0)⟩
+    refine ⟨X₀, Y, ?_, by simp, hYY₀⟩
+    linear_combination (by simpa using hY'.eq_zero :
+      Y ^ 2 + a₁ * X₀ * Y - (a₂ * X₀ ^ 2 + z * X₀ ^ 3 + A) = 0)
   · -- otherwise `∂/∂X` is a unit, since both partials in `𝔪` would force `X₀, Y₀, A ∈ 𝔪`
     have hX : IsUnit (-3 * z * X₀ ^ 2 - 2 * a₂ * X₀ + a₁ * Y₀) := by
       by_contra hX
@@ -227,11 +227,12 @@ theorem exists_conic_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
         linear_combination 2 * residue R a₂ * hY + residue R a₁ * hX +
           3 * residue R a₁ * residue R X₀ ^ 2 * hz0
       exact hA (by rw [hX₀, hY₀, hz0] at h00; linear_combination -h00)
-    obtain ⟨X', hX', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+    obtain ⟨X', hX', hXX₀⟩ := exists_isRoot_sub_mem_maximalIdeal
       (-C z * X ^ 3 - C a₂ * X ^ 2 + C (a₁ * Y₀) * X + C (Y₀ ^ 2 - A)) (a₀ := X₀)
       (by convert h₀ using 1; simp; ring) (by convert hX using 1; simp [derivative_pow]; ring)
-    exact ⟨X', Y₀, by linear_combination (by simpa using hX'.eq_zero :
-      -(z * X' ^ 3) - a₂ * X' ^ 2 + a₁ * Y₀ * X' + (Y₀ ^ 2 - A) = 0)⟩
+    refine ⟨X', Y₀, ?_, hXX₀, by simp⟩
+    linear_combination (by simpa using hX'.eq_zero :
+      -(z * X' ^ 3) - a₂ * X' ^ 2 + a₁ * Y₀ * X' + (Y₀ ^ 2 - A) = 0)
 
 end HenselianLocalRing
 

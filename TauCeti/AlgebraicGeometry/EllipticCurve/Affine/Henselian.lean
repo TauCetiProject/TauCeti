@@ -211,7 +211,7 @@ theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Ty
   rw [QuadraticAlgebra.algebraNorm_eq_norm, QuadraticAlgebra.norm_def] at hq
   obtain ⟨X₀, hX₀⟩ := residue_surjective q.im
   obtain ⟨Y₀, hY₀⟩ := residue_surjective q.re
-  obtain ⟨X, Y, hXY⟩ := TauCeti.HenselianLocalRing.exists_conic_eq
+  obtain ⟨X, Y, hXY, -, -⟩ := TauCeti.HenselianLocalRing.exists_conic_eq
     (A := A) (X₀ := X₀) (Y₀ := Y₀) (by rwa [← b₂]) hz
     (u.isUnit.mul hw.unit⁻¹.isUnit).neg (by
       refine (residue_eq_zero_iff _).1 ?_

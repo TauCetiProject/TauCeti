@@ -81,7 +81,7 @@ end TauCeti.Probability
 namespace Finset
 
 /-- A function is integrable against a uniform law on a finite set. -/
-theorem integrable_uniformOn_finset [NormedAddCommGroup E] (s : Finset α) (f : α → E) :
+theorem integrable_uniformOn_finset [SeminormedAddGroup E] (s : Finset α) (f : α → E) :
     Integrable f (uniformOn (s : Set α)) := by
   rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset]
   exact integrable_finsetSum_measure.2 fun _ hx ↦
@@ -172,11 +172,11 @@ namespace TauCeti.Probability
 
 /-- The uniform measure on all of a nonempty finite type is a probability measure. -/
 instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [Nonempty α]
-    [MeasurableSpace α] [MeasurableSingletonClass α] :
+    [MeasurableSpace α] :
     IsProbabilityMeasure (Measure.uniformOfFinset (Finset.univ : Finset α)) := by
-  rw [← Finset.uniformOn_coe_finset_eq_uniformOfFinset]
-  simpa using isProbabilityMeasure_uniformOn
-    (s := (Set.univ : Set α)) Set.finite_univ Set.univ_nonempty
+  constructor
+  simp [Measure.uniformOfFinset, Measure.finsetSum_apply, Finset.sum_const, nsmul_eq_mul,
+    ENNReal.mul_inv_cancel, Fintype.card_ne_zero]
 
 /-- Two independent uniform samples from `Fin 2` differ with probability `1 / 2`. -/
 @[simp]
