@@ -70,6 +70,48 @@ theorem generalizedParetoMap_of_shape_ne_zero {ξ : ℝ} (hξ : ξ ≠ 0) (s e :
     generalizedParetoMap s ξ e = s * (Real.exp (ξ * e) - 1) / ξ := by
   simp [generalizedParetoMap, hξ]
 
+/-- The generalized Pareto transformation sends zero to zero. -/
+@[simp]
+theorem generalizedParetoMap_zero_right (s ξ : ℝ) :
+    generalizedParetoMap s ξ 0 = 0 := by
+  simp [generalizedParetoMap]
+
+/-- At positive scale, the generalized Pareto transformation is strictly increasing in its
+exponential input, for every shape parameter. -/
+theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    StrictMono (generalizedParetoMap s ξ) := by
+  intro x y hxy
+  by_cases hξ : ξ = 0
+  · simp only [hξ, generalizedParetoMap_zero]
+    exact mul_lt_mul_of_pos_left hxy hs
+  rw [generalizedParetoMap_of_shape_ne_zero hξ,
+    generalizedParetoMap_of_shape_ne_zero hξ]
+  rcases lt_or_gt_of_ne hξ with hξ | hξ
+  · rw [div_eq_mul_inv, div_eq_mul_inv]
+    have he : Real.exp (ξ * y) < Real.exp (ξ * x) :=
+      Real.exp_lt_exp.mpr (mul_lt_mul_of_neg_left hxy hξ)
+    exact mul_lt_mul_of_neg_right (mul_lt_mul_of_pos_left (sub_lt_sub_right he 1) hs)
+      (inv_lt_zero.mpr hξ)
+  · rw [div_eq_mul_inv, div_eq_mul_inv]
+    have he : Real.exp (ξ * x) < Real.exp (ξ * y) :=
+      Real.exp_lt_exp.mpr (mul_lt_mul_of_pos_left hxy hξ)
+    exact mul_lt_mul_of_pos_right (mul_lt_mul_of_pos_left (sub_lt_sub_right he 1) hs)
+      (inv_pos.mpr hξ)
+
+/-- The generalized Pareto transformation is continuous in its exponential input. -/
+theorem continuous_generalizedParetoMap (s ξ : ℝ) :
+    Continuous (generalizedParetoMap s ξ) := by
+  by_cases hξ : ξ = 0
+  · subst ξ
+    rw [show generalizedParetoMap s 0 = fun e => s * e by
+      funext e
+      exact generalizedParetoMap_zero s e]
+    fun_prop
+  · rw [show generalizedParetoMap s ξ = fun e => s * (Real.exp (ξ * e) - 1) / ξ by
+      funext e
+      exact generalizedParetoMap_of_shape_ne_zero hξ s e]
+    fun_prop
+
 /-- The generalized Pareto transformation is measurable jointly in scale, shape, and input. -/
 @[fun_prop]
 theorem measurable_generalizedParetoMap :
