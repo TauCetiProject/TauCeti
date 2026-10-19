@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Intervals
+public import TauCeti.Algebra.BigOperators.Fin
 public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Algebra.Order.Group.Unbundled.Basic
@@ -82,9 +82,8 @@ theorem sum_Iic_tupleSpacings (a b : R) (x : Fin n → R) (i : Fin (n + 1)) :
 @[simp]
 theorem sum_tupleSpacings (a b : R) (x : Fin n → R) :
     ∑ i, tupleSpacings a b x i = b - a := by
-  have ht : Finset.Iic (Fin.last n) = Finset.univ := by
-    rw [← Fin.top_eq_last, Finset.Iic_top]
-  simpa only [ht, Fin.snoc_last] using sum_Iic_tupleSpacings a b x (Fin.last n)
+  simpa [tupleSpacings] using
+    Fin.sum_univ_succ_sub_castSucc (Fin.cons a (Fin.snoc x b) : Fin (n + 2) → R)
 
 @[simp]
 theorem tupleSpacings_empty (a b : R) (x : Fin 0 → R) :

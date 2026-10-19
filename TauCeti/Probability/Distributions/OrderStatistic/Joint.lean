@@ -101,6 +101,15 @@ theorem map_orderStatistics_pi :
 
 end Atomless
 
+/-- The strictly increasing tuples in an open interval form a measurable set. -/
+theorem measurableSet_strictMono_mem_Ioo (n : ℕ) (a b : ℝ) :
+    MeasurableSet {y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo a b} := by
+  simp only [StrictMono, ofPred_and, ofPred_forall]
+  exact (MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
+    MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
+      (measurable_pi_apply j)).inter
+    (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
+
 /-- The joint density of the increasingly sorted unit-uniform sample is `n!` on the
 strictly increasing open unit cube and zero elsewhere, relative to product volume.
 The formula also holds for the empty tuple. -/
@@ -122,14 +131,8 @@ theorem map_orderStatistics_pi_uniformMeasure (n : ℕ) :
       volume.restrict (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) := by
     simp_rw [hunit]
     exact (Measure.restrict_pi_pi _ _).symm
-  have hmeas : MeasurableSet
-      {y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
-    simp only [StrictMono, ofPred_and, ofPred_forall]
-    exact (MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
-      MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
-        (measurable_pi_apply j)).inter
-      (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
-  rw [map_orderStatistics_pi, hprod, withDensity_indicator hmeas, withDensity_const]
+  rw [map_orderStatistics_pi, hprod,
+    withDensity_indicator (measurableSet_strictMono_mem_Ioo n 0 1), withDensity_const]
   have hsets : {y : Fin n → ℝ | StrictMono y} ∩
       (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) =
         {y | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
