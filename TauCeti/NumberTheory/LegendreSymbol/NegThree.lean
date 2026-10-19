@@ -30,8 +30,6 @@ namespace TauCeti
 /-- **The Legendre symbol `(-3 | p)`.** For an odd prime `p`, `(-3 | p) = (p | 3)`. -/
 theorem legendreSym.at_neg_three {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
     legendreSym p (-3) = legendreSym 3 p := by
-  rcases eq_or_ne p 3 with rfl | hp3
-  · rfl
   have hodd : p % 2 = 1 := (Fact.out : p.Prime).mod_two_eq_one_iff_ne_two.mpr hp
   have hrec := _root_.legendreSym.quadratic_reciprocity' (p := 3) (q := p) (by norm_num) hp
   push_cast at hrec

@@ -33,6 +33,8 @@ of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.e
 * `ZMod.card_filter_forall_natCast_val`: counting independent conditions on coprime factors.
 * `ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors`: the number of roots of an integer polynomial
   modulo `n` is multiplicative over the prime-power factorization of `n`.
+* `ZMod.natCard_aeval_eq_zero_eq_zero_of_dvd`: an integer polynomial with no roots modulo `m` has
+  none modulo any multiple of `m`.
 * `ZMod.card_filter_not_self_dvd_val`: the residues whose representative the modulus does not
   divide, the base case of such a count.
 -/
@@ -134,5 +136,14 @@ theorem natCard_aeval_eq_zero_eq_prod_primeFactors (hn : n ≠ 0) (P : Polynomia
       simp only [he, Pi.zero_apply]).trans Equiv.subtypePiEquivPi
   rw [Nat.card_congr e', Nat.card_pi, Finset.prod_coe_sort n.primeFactors
     (fun p ↦ Nat.card {y : ZMod (p ^ n.factorization p) // Polynomial.aeval y P = 0})]
+
+/-- **No roots modulo a divisor.** If an integer polynomial `P` has no roots modulo `m`, then it
+has none modulo any multiple `n` of `m`, since a root modulo `n` reduces to one modulo `m`. -/
+theorem natCard_aeval_eq_zero_eq_zero_of_dvd (hmn : m ∣ n) {P : Polynomial ℤ}
+    (hP : ∀ y : ZMod m, Polynomial.aeval y P ≠ 0) :
+    Nat.card {x : ZMod n // Polynomial.aeval x P = 0} = 0 := by
+  refine Nat.card_eq_zero.mpr (.inl ⟨fun ⟨x, hx⟩ ↦ hP (castHom hmn (ZMod m) x) ?_⟩)
+  have h := Polynomial.aeval_algHom_apply (castHom hmn (ZMod m)).toIntAlgHom x P
+  rwa [hx, map_zero] at h
 
 end ZMod
