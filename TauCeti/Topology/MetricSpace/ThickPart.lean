@@ -70,8 +70,7 @@ theorem smul_mem_thickPart_iff {ε : ℝ} (g : G) {x : X} :
   have hconj : g⁻¹ * h * g ≠ 1 := by
     rwa [Ne, mul_assoc, inv_mul_eq_one, eq_comm, mul_eq_right]
   calc ε ≤ dist ((g⁻¹ * h * g) • x) x := hx _ hconj
-    _ = dist (h • g • x) (g • x) := by
-      rw [← dist_smul g, smul_smul, ← mul_assoc, ← mul_assoc, mul_inv_cancel, one_mul,
-        mul_smul]
+    _ = dist (g • (g⁻¹ * h * g) • x) (g • x) := (dist_smul g _ _).symm
+    _ = dist (h • g • x) (g • x) := by simp [mul_smul]
 
 end TauCeti
