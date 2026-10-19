@@ -7,6 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
+import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
+
 /-!
 # Plücker coordinates
 
@@ -28,9 +31,16 @@ as the sum of products of their Plücker coordinates. Over a commutative star ri
 `ℂ`, applying it to a family and its conjugate writes the Hermitian Gram determinant of the
 family as the sum of the squared absolute values of its Plücker coordinates.
 
+Over a field, the Plücker coordinates of complementary orthogonal families are complementary
+minors: if `x` and `y` are linearly independent families of `p` and `q` vectors with
+`p + q = #ι`, and every `x i` has dot product zero with every `y j`, then, up to a common nonzero
+factor and signs, the coordinate of `y` at a `q`-element subset `t` is the coordinate of `x` at
+the complement of `t`. This is what makes the height of a subspace equal to the height of its
+orthogonal complement.
+
 All results hold over an arbitrary commutative ring except the comparison with linear
-independence, which is over a field. The empty family has a single Plücker coordinate, equal to
-`1`, and a family of more than `#ι` vectors has none.
+independence and the complementary minors, which are over a field. The empty family has a single
+Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has none.
 
 ## Main definitions
 
@@ -46,11 +56,15 @@ independence, which is over a field. The empty family has a single Plücker coor
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
+* `TauCeti.exists_plucker_eq_plucker_compl`: the Plücker coordinates of complementary orthogonal
+  families are complementary minors, up to a common nonzero factor and signs.
 
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), §2.8.
+* J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
+  Theorem*, Ann. of Math. 177 (2013), §6.1, (6.13).
 
 The proofs use Mathlib's exterior-power basis `Module.Basis.exteriorPower` and its coordinate
 formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Morrison.
@@ -59,6 +73,8 @@ formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Mo
 public section
 
 open Set Set.powersetCard exteriorPower
+
+open scoped Matrix
 
 namespace TauCeti
 
@@ -167,6 +183,107 @@ theorem plucker_ne_zero_iff [Finite ι] (x : Fin p → ι → K) :
     ext s
     exact plucker_eq_repr_ιMulti x s
   rw [h, Finsupp.coe_eq_zero, LinearEquiv.map_eq_zero_iff]
+
+/-! ### Complementary minors -/
+
+variable [Fintype ι] {q : ℕ}
+
+/-- The Plücker coordinate of `y` at `t` is the determinant of the pairings of `y` with the
+standard basis vectors at the elements of `t`. -/
+private theorem plucker_eq_det_mul_transpose_single (y : Fin q → ι → K) (t : powersetCard ι q) :
+    plucker y t = (Matrix.of y *
+      (Matrix.of fun j ↦ Pi.single (ofFinEmbEquiv.symm t j) (1 : K)).transpose).det := by
+  rw [plucker_apply]
+  congr 1
+  ext i j
+  simp [Matrix.mul_apply, Pi.single_apply]
+
+/-- Against any identification `e` of the index types, the determinant of `x` followed by the
+standard basis vectors at the elements of `t` is, up to sign, the Plücker coordinate of `x` at the
+complement of `t`. -/
+private theorem exists_det_sumElim_single_eq (hm : p + q = Fintype.card ι)
+    (e : Fin p ⊕ Fin q ≃ ι) (x : Fin p → ι → K) (t : powersetCard ι q) :
+    ∃ ε : ℤˣ, (Matrix.of fun a b ↦
+        Sum.elim x (fun j ↦ Pi.single (ofFinEmbEquiv.symm t j) (1 : K)) a (e b)).det =
+      ((ε : ℤ) : K) * plucker x (compl hm t) := by
+  set f := ofFinEmbEquiv.symm (compl hm t)
+  set g := ofFinEmbEquiv.symm t
+  have hfg : ∀ i j, f i ≠ g j := fun i j h ↦ by
+    have h₁ := (mem_range_ofFinEmbEquiv_symm_iff_mem (compl hm t) (f i)).1 ⟨i, rfl⟩
+    have h₂ := (mem_range_ofFinEmbEquiv_symm_iff_mem t (g j)).1 ⟨j, rfl⟩
+    exact mem_compl.1 h₁ (h ▸ h₂)
+  have hσ : Function.Bijective (Sum.elim f g) :=
+    (Fintype.bijective_iff_injective_and_card _).2
+      ⟨f.injective.sumElim g.injective hfg, by simp [hm]⟩
+  set σ := Equiv.ofBijective _ hσ
+  -- Listing the columns as the complement of `t` followed by `t` gives a block triangular matrix.
+  have hN : (Matrix.of fun a b ↦ Sum.elim x (fun j ↦ Pi.single (g j) (1 : K)) a (σ b)) =
+      Matrix.fromBlocks (Matrix.of fun i j ↦ x i (f j)) (Matrix.of fun i j ↦ x i (g j)) 0 1 := by
+    ext a b
+    rcases a with i | j <;> rcases b with i' | j'
+    · simp [σ]
+    · simp [σ]
+    · simp [σ, (hfg i' j).symm]
+    · simp [σ, Pi.single_apply, Matrix.one_apply, g.injective.eq_iff, eq_comm]
+  refine ⟨Equiv.Perm.sign (e.trans σ.symm), ?_⟩
+  have h : (Matrix.of fun a b ↦ Sum.elim x (fun j ↦ Pi.single (g j) (1 : K)) a (e b)) =
+      (Matrix.of fun a b ↦ Sum.elim x (fun j ↦ Pi.single (g j) (1 : K)) a (σ b)).submatrix id
+        (e.trans σ.symm) := by
+    ext a b
+    simp
+  rw [h, Matrix.det_permute', hN, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one,
+    plucker_apply]
+
+/-- **Complementary minors.** Let `x` and `y` be linearly independent families of `p` and `q`
+vectors in `K^ι`, with `p + q = #ι`, such that every `x i` has dot product zero with every `y j`;
+so `y` is a basis of the orthogonal complement of the span of `x`. Then, up to a common nonzero
+factor `c` and signs, the Plücker coordinate of `y` at a `q`-element subset `t` of `ι` is the
+Plücker coordinate of `x` at the complement of `t`. -/
+theorem exists_plucker_eq_plucker_compl (hm : p + q = Fintype.card ι) {x : Fin p → ι → K}
+    {y : Fin q → ι → K} (hx : LinearIndependent K x) (hy : LinearIndependent K y)
+    (hxy : ∀ i j, x i ⬝ᵥ y j = 0) :
+    ∃ c : K, c ≠ 0 ∧ ∀ t : powersetCard ι q,
+      plucker y t = c * plucker x (compl hm t) ∨ plucker y t = -(c * plucker x (compl hm t)) := by
+  have hsurj : Function.Surjective (Matrix.of y).mulVec := hy.mulVec_surjective
+  choose w hw using fun j ↦ hsurj (Pi.single j 1)
+  -- The vectors orthogonal to every `y j` are the span of `x`, by counting dimensions.
+  have hker : LinearMap.ker (Matrix.of y).mulVecLin ≤ Submodule.span K (range x) := by
+    have hle : Submodule.span K (range x) ≤ LinearMap.ker (Matrix.of y).mulVecLin := by
+      rw [Submodule.span_le]
+      rintro _ ⟨i, rfl⟩
+      ext j
+      simp [Matrix.mulVec, dotProduct_comm, hxy]
+    refine (Submodule.eq_of_le_of_finrank_eq hle ?_).ge
+    have h := LinearMap.finrank_range_add_finrank_ker (Matrix.of y).mulVecLin
+    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, Module.finrank_fin_fun,
+      Module.finrank_fintype_fun_eq_card] at h
+    rw [finrank_span_eq_card hx, Fintype.card_fin]
+    omega
+  obtain ⟨e⟩ : Nonempty (Fin p ⊕ Fin q ≃ ι) := ⟨Fintype.equivOfCardEq (by simp [hm])⟩
+  set D := (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det
+  have key : ∀ t, ∃ ε : ℤˣ, plucker y t * D = ((ε : ℤ) : K) * plucker x (compl hm t) := by
+    intro t
+    obtain ⟨ε, hε⟩ := exists_det_sumElim_single_eq hm e x t
+    exact ⟨ε, by
+      rw [plucker_eq_det_mul_transpose_single, ← Matrix.det_sumElim_eq_det_mul e hker hw, hε]⟩
+  -- Some Plücker coordinate of `x` is nonzero, so `D` is nonzero.
+  have hD : D ≠ 0 := by
+    obtain ⟨s, hs⟩ : ∃ s, plucker x s ≠ 0 := Function.ne_iff.1 ((plucker_ne_zero_iff x).2 hx)
+    obtain ⟨ε, hε⟩ := key ((compl hm).symm s)
+    rw [Equiv.apply_symm_apply] at hε
+    rintro h
+    rw [h, mul_zero, eq_comm, mul_eq_zero] at hε
+    exact hε.elim (by rcases Int.units_eq_one_or ε with rfl | rfl <;> simp) hs
+  refine ⟨D⁻¹, inv_ne_zero hD, fun t ↦ ?_⟩
+  obtain ⟨ε, hε⟩ := key t
+  rw [← eq_mul_inv_iff_mul_eq₀ hD] at hε
+  rcases Int.units_eq_one_or ε with rfl | rfl
+  · left
+    rw [hε]
+    simp [mul_comm]
+  · right
+    rw [hε]
+    simp [mul_comm]
 
 end Field
 
