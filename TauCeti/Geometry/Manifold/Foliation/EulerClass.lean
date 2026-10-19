@@ -40,8 +40,10 @@ predicates are the surface conditions themselves.
 
 Thurston proved that the Euler class of a taut foliation of a closed hyperbolic `3`-manifold
 satisfies the Euler class inequality (`TauCeti.ThurstonEulerClassInequality`), and conjectured
-conversely that every integral class for which the inequality is sharp is the Euler class of a
-taut foliation (`TauCeti.EulerClassOneConjecture`). Yazdi found counterexamples
+conversely that every even integral class for which the inequality is sharp is the Euler class of
+a taut foliation (`TauCeti.EulerClassOneConjecture`). Evenness is necessary: the Euler class of an
+oriented plane field `ξ` on a closed orientable `3`-manifold reduces mod `2` to
+`w₂(ξ) = w₂(M) = 0`, so it is divisible by `2`. Yazdi found even counterexamples
 (`TauCeti.YazdiEulerClassOneTheorem`), refuting the conjecture
 (`TauCeti.YazdiEulerClassOneTheorem.not_eulerClassOneConjecture`). These statements are
 recorded, not proved; foliations in them are smooth, so the counterexample statement is the
@@ -302,8 +304,9 @@ def ThurstonEulerClassInequality : Prop :=
           (ModuleCat.of ℤ ℤ) 2, F.IsEulerClass e → EulerClassBounded e
 
 /-- **Thurston's Euler class one conjecture**: on a closed orientable hyperbolic `3`-manifold `M`,
-every integral class `e ∈ H²(M; ℤ)` for which the Euler class inequality is sharp is an Euler
-class of a smooth taut codimension-one foliation of `M`.
+every even integral class `e ∈ H²(M; ℤ)` for which the Euler class inequality is sharp is an
+Euler class of a smooth taut codimension-one foliation of `M`. Evenness is necessary, since the
+Euler class of an oriented plane field on `M` reduces mod `2` to `w₂(M) = 0`.
 
 The conjecture is false, by Yazdi
 (`TauCeti.YazdiEulerClassOneTheorem.not_eulerClassOneConjecture`). -/
@@ -313,7 +316,7 @@ def EulerClassOneConjecture : Prop :=
     IsHyperbolic (I := 𝓡 3) (M := M) →
       haveI : IsManifold (𝓡 3) (∞ + 1) M := .of_le (n := ∞) (by simp)
       ∀ e : (TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
-        (ModuleCat.of ℤ ℤ) 2, EulerClassNormOne e →
+        (ModuleCat.of ℤ ℤ) 2, Even e → EulerClassNormOne e →
           ∃ F : Foliation (𝓡 3) ∞ M 2, F.Taut ∧ F.IsEulerClass e
 
 section ClosedHyperbolic
@@ -332,37 +335,37 @@ theorem ThurstonEulerClassInequality.eulerClassBounded (h : ThurstonEulerClassIn
         (ModuleCat.of ℤ ℤ) 2, F.IsEulerClass e → EulerClassBounded e :=
   h M hM
 
-/-- Under the Euler class one conjecture, every integral class of a closed orientable hyperbolic
-`3`-manifold for which the Euler class inequality is sharp is an Euler class of a smooth taut
-codimension-one foliation. -/
+/-- Under the Euler class one conjecture, every even integral class of a closed orientable
+hyperbolic `3`-manifold for which the Euler class inequality is sharp is an Euler class of a
+smooth taut codimension-one foliation. -/
 theorem EulerClassOneConjecture.exists_taut_isEulerClass (h : EulerClassOneConjecture)
     (hM : IsHyperbolic (I := 𝓡 3) (M := M))
     {e : (TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) 2}
-    (he : EulerClassNormOne e) :
+    (he₂ : Even e) (he : EulerClassNormOne e) :
     haveI : IsManifold (𝓡 3) (∞ + 1) M := .of_le (n := ∞) (by simp)
     ∃ F : Foliation (𝓡 3) ∞ M 2, F.Taut ∧ F.IsEulerClass e :=
-  h M hM e he
+  h M hM e he₂ he
 
 end ClosedHyperbolic
 
-/-- **Yazdi's theorem**: some closed orientable hyperbolic `3`-manifold `M` carries an integral
-class `e ∈ H²(M; ℤ)` for which the Euler class inequality is sharp, but which is not an Euler
-class of any smooth taut codimension-one foliation of `M`. -/
+/-- **Yazdi's theorem**: some closed orientable hyperbolic `3`-manifold `M` carries an even
+integral class `e ∈ H²(M; ℤ)` for which the Euler class inequality is sharp, but which is not an
+Euler class of any smooth taut codimension-one foliation of `M`. -/
 def YazdiEulerClassOneTheorem : Prop :=
   ∃ (M : Type) (_ : MetricSpace M) (_ : ChartedSpace (EuclideanSpace ℝ (Fin 3)) M)
     (_ : IsManifold (𝓡 3) ∞ M) (_ : CompactSpace M) (_ : ConnectedSpace M)
     (_ : Orientable (𝓡 3) M), IsHyperbolic (I := 𝓡 3) (M := M) ∧
       haveI : IsManifold (𝓡 3) (∞ + 1) M := .of_le (n := ∞) (by simp)
       ∃ e : (TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
-        (ModuleCat.of ℤ ℤ) 2, EulerClassNormOne e ∧
+        (ModuleCat.of ℤ ℤ) 2, Even e ∧ EulerClassNormOne e ∧
           ∀ F : Foliation (𝓡 3) ∞ M 2, F.Taut → ¬ F.IsEulerClass e
 
 /-- **Yazdi's theorem refutes the Euler class one conjecture.** -/
 theorem YazdiEulerClassOneTheorem.not_eulerClassOneConjecture (h : YazdiEulerClassOneTheorem) :
     ¬ EulerClassOneConjecture := by
   intro hc
-  obtain ⟨M, _, _, _, _, _, _, hM, e, he, hF⟩ := h
-  obtain ⟨F, hF₁, hF₂⟩ := hc.exists_taut_isEulerClass hM he
+  obtain ⟨M, _, _, _, _, _, _, hM, e, he₂, he, hF⟩ := h
+  obtain ⟨F, hF₁, hF₂⟩ := hc.exists_taut_isEulerClass hM he₂ he
   exact hF F hF₁ hF₂
 
 end TauCeti
