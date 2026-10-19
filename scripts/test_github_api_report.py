@@ -1,10 +1,15 @@
 """Offline coverage and accounting regressions for the API usage report."""
 
 import json
+import contextlib
+import io
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
+import github_api
 import github_api_report as report
 
 
@@ -53,6 +58,29 @@ class ReportTests(unittest.TestCase):
         runs = [{"id": 1, "name": "worker"}] * 2
         with tempfile.TemporaryDirectory() as root, self.assertRaises(ValueError):
             report.summarize(runs, Path(root))
+
+    def test_client_classifies_graphql_200_and_secondary_403_for_the_report(self):
+        for status, body, headers in [
+            (200, {'errors': [{'type': 'RATE_LIMITED', 'message': 'API rate limit already exceeded'}]},
+             'X-RateLimit-Resource: graphql\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 9999999999\n'),
+            (403, {'message': 'Please wait before trying again'},
+             'Retry-After: 600\nX-RateLimit-Remaining: 100\n')]:
+            raw = f'HTTP/2.0 {status}\n' + headers + '\n' + json.dumps(body)
+            result = subprocess.CompletedProcess([], int(status >= 400), raw, '')
+            output = io.StringIO()
+            path = 'graphql' if status == 200 else 'repos/o/r/labels'
+            with (patch.object(github_api.subprocess, 'run', return_value=result),
+                  contextlib.redirect_stderr(output), self.assertRaises(github_api.Deferred)):
+                github_api.GitHub(max_wait=0).request('POST', path, {}, read=True)
+            requests, _, limited, _ = report.inspect_log(output.getvalue())
+            self.assertEqual(len(requests), 1)
+            self.assertTrue(limited)
+
+    def test_skipped_decisions_are_distinct_from_response_counts(self):
+        requests, _, _, skipped = report.inspect_log(
+            'github-api-skip: {"kind":"roadmap-label","credential":"app-write"}')
+        self.assertEqual(requests, [])
+        self.assertEqual(skipped, {'roadmap-label': 1})
 
     def test_shared_quota_drops_do_not_inflate_this_workers_request_count(self):
         with tempfile.TemporaryDirectory() as root:

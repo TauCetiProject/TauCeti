@@ -179,6 +179,9 @@ class GitHub:
                        (headers.get("retry-after") or headers.get("x-ratelimit-remaining") == "0" or
                         any(word in message for word in ("rate limit", "abuse detection", "creating content too quickly", "was submitted too quickly"))))
             if limited:
+                print("github-api-limited: " + json.dumps({"credential": credential,
+                      "resource": headers.get("x-ratelimit-resource", "core"),
+                      "status": status}), file=sys.stderr)
                 now = time.time()
                 delay = retry_after(headers.get("retry-after"), now)
                 primary = headers.get("x-ratelimit-remaining") == "0" or (

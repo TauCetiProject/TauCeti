@@ -20,7 +20,7 @@ ROLE = re.compile(r"[a-z][a-z0-9-]{0,40}\Z")
 
 
 def payload(line):
-    """Remove gh's job/step/timestamp prefix, excluding echoed shell commands."""
+    """Remove gh's optional job/step/timestamp prefix, preserving shell echo text."""
     return PREFIX.sub("", line).strip()
 
 
@@ -34,7 +34,7 @@ def number(value):
 
 
 def inspect_log(text):
-    """Return observed request rows, query-point totals, and rate-limit evidence.
+    """Return requests, query-point totals, rate-limit evidence and skipped decisions.
 
     Response rows count actual attempts, including retries. Summary lines supply
     GraphQL costs only, so requests are never counted twice. Merge-engine errors
@@ -68,6 +68,10 @@ def inspect_log(text):
                 row = json.loads(line.removeprefix("github-api-skip: "))
                 if row.get("kind") in {"roadmap-label", "structure-comment"}:
                     skipped[row["kind"]] += 1
+            elif line.startswith("github-api-limited: "):
+                row = json.loads(line.removeprefix("github-api-limited: "))
+                if row.get("status") in (403, 429):
+                    limited = True
             elif line.startswith("{"):
                 row = json.loads(line)
                 if row.get("schema") == "tauceti-merge.api-error/v1" and row.get("rate_limit_kind"):
