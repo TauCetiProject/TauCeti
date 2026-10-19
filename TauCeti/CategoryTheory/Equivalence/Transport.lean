@@ -177,27 +177,27 @@ theorem Equivalence.autoequivalenceClassCongr_symm (e : C ≌ D) :
     Equivalence.endofunctorClassCongr_symm, ← Units.mapEquiv_symm]
   rfl
 
-/-- The functor transported across an equivalence intertwines with the original
-functor across that equivalence. -/
-def Equivalence.transportedAutoequivalenceIso (e : C ≌ D) (F : C ≌ C) :
-    e.functor ⋙ ((e.symm.trans F).trans e).functor ≅ F.functor ⋙ e.functor :=
-  (Functor.associator e.functor (e.inverse ⋙ F.functor) e.functor).symm ≪≫
-    Functor.isoWhiskerRight (e.funInvIdAssoc F.functor) e.functor
+/-- The endofunctor transported across an equivalence intertwines with the original
+endofunctor across that equivalence. -/
+def Equivalence.transportedEndofunctorIso (e : C ≌ D) (F : C ⥤ C) :
+    e.functor ⋙ ((e.inverse ⋙ F) ⋙ e.functor) ≅ F ⋙ e.functor :=
+  (Functor.associator e.functor (e.inverse ⋙ F) e.functor).symm ≪≫
+    Functor.isoWhiskerRight (e.funInvIdAssoc F) e.functor
 
 /-- The intertwiner is induced by the inverse of the equivalence's unit. -/
 @[simp]
-theorem Equivalence.transportedAutoequivalenceIso_hom_app
-    (e : C ≌ D) (F : C ≌ C) (X : C) :
-    (e.transportedAutoequivalenceIso F).hom.app X =
-      e.functor.map (F.functor.map (e.unitIso.inv.app X)) := by
-  simp [Equivalence.transportedAutoequivalenceIso]
+theorem Equivalence.transportedEndofunctorIso_hom_app
+    (e : C ≌ D) (F : C ⥤ C) (X : C) :
+    (e.transportedEndofunctorIso F).hom.app X =
+      e.functor.map (F.map (e.unitIso.inv.app X)) := by
+  simp [Equivalence.transportedEndofunctorIso]
 
 /-- The inverse intertwiner is induced by the equivalence's unit. -/
 @[simp]
-theorem Equivalence.transportedAutoequivalenceIso_inv_app
-    (e : C ≌ D) (F : C ≌ C) (X : C) :
-    (e.transportedAutoequivalenceIso F).inv.app X =
-      e.functor.map (F.functor.map (e.unitIso.hom.app X)) := by
-  simp [Equivalence.transportedAutoequivalenceIso]
+theorem Equivalence.transportedEndofunctorIso_inv_app
+    (e : C ≌ D) (F : C ⥤ C) (X : C) :
+    (e.transportedEndofunctorIso F).inv.app X =
+      e.functor.map (F.map (e.unitIso.hom.app X)) := by
+  simp [Equivalence.transportedEndofunctorIso]
 
 end CategoryTheory
