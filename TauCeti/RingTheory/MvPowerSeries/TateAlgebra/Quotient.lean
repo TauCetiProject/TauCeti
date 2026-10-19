@@ -50,21 +50,19 @@ theorem exists_restrictedMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
 theorem isOpenMap_restrictedMap {L : ℝ} (hL : 0 < L)
     (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖) :
     IsOpenMap (restrictedMap (c := c) φ hφ) := by
-  intro U hU
-  rw [Metric.isOpen_iff]
-  rintro _ ⟨f, hf, rfl⟩
-  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.mp hU f hf
+  apply IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr
+  refine (Metric.nhds_basis_ball.le_basis_iff
+    (Metric.nhds_basis_ball.map (restrictedMap φ hφ))).mpr ?_
+  intro ε hε
   refine ⟨ε / L, div_pos hε hL, ?_⟩
   intro g hg
-  obtain ⟨q, hq, hqn⟩ := exists_restrictedMap_eq_and_norm_le φ hφ hL.le hlift
-    (g - restrictedMap φ hφ f)
-  refine ⟨f + q, hεU ?_, ?_⟩
-  · have hg' : ‖g - restrictedMap φ hφ f‖ < ε / L := by
-      simpa only [Metric.mem_ball, dist_eq_norm] using hg
-    have hq' : ‖q‖ < ε := hqn.trans_lt <| by
-      simpa only [mul_comm] using (lt_div_iff₀ hL).mp hg'
-    simpa only [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left] using hq'
-  · simp only [map_add, hq, add_sub_cancel]
+  obtain ⟨f, hf, hfn⟩ := exists_restrictedMap_eq_and_norm_le φ hφ hL.le hlift g
+  refine ⟨f, ?_, hf⟩
+  have hg' : ‖g‖ < ε / L := by
+    simpa only [Metric.mem_ball, dist_zero_right] using hg
+  have hf' : ‖f‖ < ε := hfn.trans_lt <| by
+    simpa only [mul_comm] using (lt_div_iff₀ hL).mp hg'
+  simpa only [Metric.mem_ball, dist_zero_right] using hf'
 
 /-- A bounded coefficient homomorphism with uniformly bounded lifts induces a quotient map
 for the Gauss norm topologies at arbitrary positive polyradii. -/
