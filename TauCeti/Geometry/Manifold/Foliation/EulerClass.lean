@@ -242,6 +242,15 @@ def EulerClassNormOne
 variable {e : (TopCat.of X).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
   (ModuleCat.of ℤ ℤ) 2}
 
+/-- A class satisfying the Euler class inequality obeys the bound `|⟨e, f_*[S]⟩| ≤ -χ(S)` on
+every embedded closed connected oriented surface `S` with `χ(S) ≤ 0`. -/
+theorem EulerClassBounded.abs_le (he : EulerClassBounded e) (S : Type) [TopologicalSpace S]
+    [T2Space S] [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] [CompactSpace S] [ConnectedSpace S]
+    [FiniteCWType S] (o : HomologicalOrientation S (EuclideanSpace ℝ (Fin 2)) 2) {f : C(S, X)}
+    (hf : IsEmbedding f) (hS : eulerChar S ≤ 0) :
+    |o.evalFundamentalClass finrank_euclideanSpace_fin (ModuleCat.of ℤ ℤ) f e| ≤ -eulerChar S :=
+  he S o f hf hS
+
 /-- The zero class satisfies the Euler class inequality. -/
 theorem eulerClassBounded_zero :
     EulerClassBounded (0 : (TopCat.of X).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
@@ -264,11 +273,35 @@ theorem EulerClassBounded.evalFundamentalClass_eq_zero (he : EulerClassBounded e
     (o : HomologicalOrientation S (EuclideanSpace ℝ (Fin 2)) 2) {f : C(S, X)}
     (hf : IsEmbedding f) (hS : eulerChar S = 0) :
     o.evalFundamentalClass finrank_euclideanSpace_fin (ModuleCat.of ℤ ℤ) f e = 0 :=
-  abs_nonpos_iff.mp ((he S o f hf hS.le).trans (by rw [hS, neg_zero]))
+  abs_nonpos_iff.mp ((he.abs_le S o hf hS.le).trans (by rw [hS, neg_zero]))
+
+/-- A class satisfying the Euler class inequality is sharp for it once some embedded closed
+connected oriented surface `S` with `χ(S) < 0` has `|⟨e, f_*[S]⟩| = -χ(S)`. -/
+theorem EulerClassBounded.eulerClassNormOne (he : EulerClassBounded e) (S : Type)
+    [TopologicalSpace S] [T2Space S] [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
+    [CompactSpace S] [ConnectedSpace S] [FiniteCWType S]
+    (o : HomologicalOrientation S (EuclideanSpace ℝ (Fin 2)) 2) {f : C(S, X)}
+    (hf : IsEmbedding f) (hS : eulerChar S < 0)
+    (heq : |o.evalFundamentalClass finrank_euclideanSpace_fin (ModuleCat.of ℤ ℤ) f e| =
+      -eulerChar S) :
+    EulerClassNormOne e :=
+  ⟨he, S, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, o, f, hf, hS, heq⟩
 
 /-- A class for which the Euler class inequality is sharp satisfies it. -/
 theorem EulerClassNormOne.eulerClassBounded (he : EulerClassNormOne e) : EulerClassBounded e :=
   he.1
+
+/-- A class for which the Euler class inequality is sharp has a sharpness witness: an embedded
+closed connected oriented surface `S` with `χ(S) < 0` and `|⟨e, f_*[S]⟩| = -χ(S)`. -/
+theorem EulerClassNormOne.exists_abs_eq (he : EulerClassNormOne e) :
+    ∃ (S : Type) (_ : TopologicalSpace S) (_ : T2Space S)
+      (_ : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S) (_ : CompactSpace S) (_ : ConnectedSpace S)
+      (_ : FiniteCWType S) (o : HomologicalOrientation S (EuclideanSpace ℝ (Fin 2)) 2)
+      (f : C(S, X)), IsEmbedding f ∧ eulerChar S < 0 ∧
+        |o.evalFundamentalClass finrank_euclideanSpace_fin (ModuleCat.of ℤ ℤ) f e| =
+          -eulerChar S :=
+  he.2
 
 /-- The Euler class inequality is sharp for a class exactly when it is sharp for its
 negative. -/
