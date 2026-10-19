@@ -39,6 +39,7 @@ itself serves as the ultrametric domain):
   quotient map and admits a constant `C > 0` such that every `y : N` lifts to `x : M` with
   `‖x‖ ≤ C * ‖y‖` (`ContinuousLinearMap.exists_preimage_norm_le_of_isTate`).
 * **Closed-range strictness and antilipschitz criteria**: a continuous linear map with closed range
+  from a complete ultrametric seminormed module to a complete normed module over a Tate ring
   is strict and admits linear preimage bounds on its range; if it is also injective, it is
   antilipschitz and induces a `ContinuousLinearEquiv` onto its range
   (`ContinuousLinearMap.isClosed_range_iff_antilipschitz_of_injective_of_isTate`,
@@ -293,7 +294,8 @@ theorem exists_preimage_norm_le_of_isTate (f : M →L[R] N) (hsurj : Surjective 
     ∃ C > 0, ∀ y : N, ∃ x : M, f x = y ∧ ‖x‖ ≤ C * ‖y‖ :=
   f.toLinearMap.exists_preimage_norm_le_of_surjective f.continuous hsurj
 
-/-- A continuous linear map `f : M →L[R] N` with closed range is a strict morphism
+/-- A continuous linear map `f : M →L[R] N` with closed range from a complete ultrametric
+seminormed module to a complete normed module over a Tate ring is a strict morphism
 (`Topology.IsStrictMap`). -/
 theorem isStrictMap_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hclosed : IsClosed (Set.range f)) : Topology.IsStrictMap f :=
@@ -302,14 +304,16 @@ theorem isStrictMap_of_isClosed_range_of_isTate (f : M →L[R] N)
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
     (by rwa [LinearMap.coe_range])
 
-/-- A continuous linear map `f : M →L[R] N` with closed range is open onto its range. -/
+/-- A continuous linear map `f : M →L[R] N` with closed range from a complete ultrametric
+seminormed module to a complete normed module over a Tate ring is open onto its range. -/
 theorem isOpenMap_rangeRestrict_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hclosed : IsClosed (Set.range f)) : IsOpenMap f.rangeRestrict :=
   (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp
     (f.isStrictMap_of_isClosed_range_of_isTate hclosed)).isOpenMap
 
-/-- **Quantitative preimage bound for closed-range operators**: if `f : M →L[R] N` has closed
-range, there exists `C > 0` such that every `y ∈ Set.range f` lifts to `x : M` with `f x = y` and
+/-- **Quantitative preimage bound for closed-range operators**: if `f : M →L[R] N` from a complete
+ultrametric seminormed module to a complete normed module over a Tate ring has closed range,
+there exists `C > 0` such that every `y ∈ Set.range f` lifts to `x : M` with `f x = y` and
 `‖x‖ ≤ C * ‖y‖`. -/
 theorem exists_preimage_norm_le_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hclosed : IsClosed (Set.range f)) :
@@ -322,8 +326,8 @@ theorem exists_preimage_norm_le_of_isClosed_range_of_isTate (f : M →L[R] N)
   obtain ⟨x, hx, hnorm⟩ := hlift ⟨y, hy⟩
   exact ⟨x, congrArg Subtype.val hx, hnorm⟩
 
-/-- If `f : M →L[R] N` is injective and has closed range, then `‖x‖ ≤ C * ‖f x‖` for some
-`C > 0`. -/
+/-- If `f : M →L[R] N` from a complete ultrametric seminormed module to a complete normed module
+over a Tate ring is injective and has closed range, then `‖x‖ ≤ C * ‖f x‖` for some `C > 0`. -/
 theorem exists_norm_le_of_injective_of_isClosed_range_of_isTate (f : M →L[R] N) (hinj : Injective f)
     (hclosed : IsClosed (Set.range f)) :
     ∃ C > 0, ∀ x : M, ‖x‖ ≤ C * ‖f x‖ := by
@@ -332,8 +336,9 @@ theorem exists_norm_le_of_injective_of_isClosed_range_of_isTate (f : M →L[R] N
   obtain ⟨x', hx', hnorm⟩ := hlift (f x) ⟨x, rfl⟩
   rwa [hinj hx'] at hnorm
 
-/-- If `f : M →L[R] N` is injective and has closed range, then `f` is `AntilipschitzWith K` for
-some `K ≠ 0`. -/
+/-- If `f : M →L[R] N` from a complete ultrametric seminormed module to a complete normed module
+over a Tate ring is injective and has closed range, then `f` is `AntilipschitzWith K` for some
+`K ≠ 0`. -/
 theorem antilipschitz_of_injective_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hinj : Injective f) (hclosed : IsClosed (Set.range f)) :
     ∃ K : ℝ≥0, K ≠ 0 ∧ AntilipschitzWith K f := by
