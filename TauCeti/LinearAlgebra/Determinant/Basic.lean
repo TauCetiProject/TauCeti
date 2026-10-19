@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -38,6 +39,12 @@ The file also records one identity for the determinant of a matrix with one row 
 alongside Mathlib's `Matrix.det_updateRow_add` and `Matrix.det_updateRow_smul`: Jacobi's formula
 in row form, that rescaling one row entry by entry along a fixed vector of factors and summing the
 results over the rows multiplies the determinant by the total of the factors.
+
+It also records three facts used to compute ideals of maximal minors: the vanishing of an
+alternating map on a family with too many arguments in a small span (over a domain this is
+`AlternatingMap.map_linearDependent`, but here no cancellation is available), the determinant in
+a product basis of a block-diagonal family, and Cramer's rule for an endomorphism of a free module
+of finite rank.
 
 Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
 linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
@@ -69,6 +76,11 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `AlternatingMap.map_eq_zero_of_mem_span`: an alternating map vanishes when more than `k` of
+  its arguments lie in the span of `k` vectors, over any semiring.
+* `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
+  the two factors is the product of the two determinants.
+* `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
 
@@ -146,6 +158,53 @@ theorem compLinearMap_eq_det_smul [Finite ι] (b : Basis ι R M) (ω : M [⋀^ι
   simp [← Function.comp_def, mul_smul]
 
 end AlternatingMap
+
+namespace AlternatingMap
+
+variable {ι R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- **An alternating map vanishes when too many arguments lie in a small span.** If more than `k`
+of the arguments lie in the span of `k` vectors, then the value is zero. Over a domain this
+follows from `AlternatingMap.map_linearDependent`; here the ring is arbitrary. -/
+theorem map_eq_zero_of_mem_span [Finite ι] (f : M [⋀^ι]→ₗ[R] N) {v : ι → M} {t : Finset ι}
+    {k : ℕ} (c : Fin k → M) (ht : k < t.card)
+    (hv : ∀ i ∈ t, v i ∈ Submodule.span R (Set.range c)) : f v = 0 := by
+  classical
+  cases nonempty_fintype ι
+  -- Expand the arguments indexed by `t` along `c`; the other arguments stay fixed.
+  let s : ι → Set M := fun i ↦ if i ∈ t then Set.range c else {v i}
+  have hs (i : ι) : v i ∈ Submodule.span R (s i) := by
+    by_cases hi : i ∈ t
+    · simpa [s, hi] using hv i hi
+    · simp [s, hi]
+  refine (Submodule.mem_bot R).1 <| Submodule.span_le.2 ?_ <|
+    f.toMultilinearMap.map_mem_span_image_pi s hs
+  rintro _ ⟨w, hw, rfl⟩
+  -- Each expanded family takes more than `k` values in `range c` on `t`, so two coincide.
+  have hwc (i : t) : w i ∈ Set.range c := by simpa [s, i.2] using hw i trivial
+  choose g hg using hwc
+  obtain ⟨i, j, hij, hgij⟩ := Fintype.exists_ne_map_eq_of_card_lt g (by simpa using ht)
+  simpa using f.map_eq_zero_of_eq w (by rw [← hg i, ← hg j, hgij]) (Subtype.coe_ne_coe.2 hij)
+
+end AlternatingMap
+
+namespace Module.Basis
+
+variable {ι ι' R M M' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
+
+/-- The determinant in a product basis of a family whose first arguments lie in the first factor
+and whose last arguments lie in the second factor is the product of the two determinants. -/
+theorem prod_det_sumElim (b : Basis ι R M) (b' : Basis ι' R M') (v : ι → M) (v' : ι' → M') :
+    (b.prod b').det (Sum.elim (LinearMap.inl R M M' ∘ v) (LinearMap.inr R M M' ∘ v')) =
+      b.det v * b'.det v' := by
+  have h : (b.prod b').toMatrix (Sum.elim (LinearMap.inl R M M' ∘ v)
+      (LinearMap.inr R M M' ∘ v')) = Matrix.fromBlocks (b.toMatrix v) 0 0 (b'.toMatrix v') := by
+    ext (i | i) (j | j) <;> simp [Basis.toMatrix_apply]
+  rw [det_apply, h, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+
+end Module.Basis
 
 namespace LinearMap
 
@@ -225,6 +284,19 @@ theorem det_one_add_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Modu
   rw [← det_toMatrix b, ← det_toMatrix b', map_add, map_add, toMatrix_one, toMatrix_one,
     toMatrix_comp b b' b, toMatrix_comp b' b b']
   exact Matrix.det_one_add_mul_comm _ _
+
+/-- **Cramer's rule for an endomorphism.** The determinant of an endomorphism `φ` of a free
+module of finite rank multiplies every vector into the range of `φ`: `det φ • x = φ (adj φ x)`,
+for the adjugate `adj φ` of `φ`. -/
+theorem det_smul_mem_range {F : Type*} [AddCommGroup F] [Module R F] [Module.Free R F]
+    [Module.Finite R F] (φ : F →ₗ[R] F) (x : F) : LinearMap.det φ • x ∈ range φ := by
+  classical
+  let b := Free.chooseBasis R F
+  refine ⟨Matrix.toLin b b (toMatrix b b φ).adjugate x, ?_⟩
+  have h := congr(Matrix.toLin b b $((toMatrix b b φ).mul_adjugate) x)
+  rw [Matrix.toLin_mul b b b, Matrix.toLin_toMatrix, map_smul, Matrix.toLin_one,
+    det_toMatrix] at h
+  simpa using h
 
 end LinearMap
 
