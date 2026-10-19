@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
 
 import Mathlib.RingTheory.AdicCompletion.Noetherian
-import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.RingTheory.Finiteness.Tower
 
 /-!
@@ -17,8 +16,8 @@ import TauCeti.RingTheory.Finiteness.Tower
 Let `A` be a complete Hausdorff Huber ring with a pair of definition `(A₀, I)` such that `A₀` is
 noetherian, and let `M` be a finitely generated `A`-module with its natural topology
 (`IsModuleTopology A M`). This file proves that `M` is Hausdorff and that every `A`-submodule of
-`M` is closed, and that every `A₀`-submodule `M₀ ⊆ M` spanning `M` over `A` is open in `M`
-(Huber, *A generalization of formal schemes and rigid analytic varieties*, Lemma 2.3(ii)).
+`M` is closed (Huber, *A generalization of formal schemes and rigid analytic varieties*,
+Lemma 2.3(ii)).
 
 The ring of definition of a complete Hausdorff Huber ring is `I`-adically complete
 (`TauCeti.Huber.PairOfDefinition.isAdicComplete_idealOfDefinition`). When `A₀` is noetherian,
@@ -37,8 +36,6 @@ rings the corresponding statements are `TauCeti.Huber.IsTateRing.t2Space_moduleT
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.isOpen_of_span_eq_top`: an `A₀`-submodule spanning a finite
-  module over `A` is open.
 * `TauCeti.Huber.PairOfDefinition.t2Space_of_isNoetherianRing`: a finite module is Hausdorff.
 * `TauCeti.Huber.PairOfDefinition.isClosed_of_isNoetherianRing`: every submodule of a finite
   module is closed.
@@ -59,30 +56,6 @@ namespace TauCeti.Huber.PairOfDefinition
 variable {A : Type*} [CommRing A]
 
 variable {M : Type*} [AddCommGroup M] [Module A M]
-
-section TopologicalSpace
-
-variable [Module.Finite A M] [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace M]
-  [IsModuleTopology A M]
-
-/-- **A spanning lattice is open.** If `M` is a finite `A`-module with its natural topology, every
-`A₀`-submodule of `M` spanning `M` over `A` is open in `M`. -/
-theorem isOpen_of_span_eq_top (P : PairOfDefinition A) {M₀ : Submodule P.ringOfDefinition M}
-    (hspan : Submodule.span A (M₀ : Set M) = ⊤) : IsOpen (M₀ : Set M) := by
-  have := IsModuleTopology.isTopologicalAddGroup A M
-  -- `M₀` contains the `A₀`-span `L` of finitely many of its elements, still spanning `M`.
-  obtain ⟨t, htM₀, ht⟩ := (Submodule.fg_span_iff_fg_span_finset_subset (M₀ : Set M)).mp
-    (hspan ▸ Module.Finite.fg_top)
-  let L := Submodule.span P.ringOfDefinition (t : Set M)
-  have hLspan : Submodule.span A (L : Set M) = ⊤ := by
-    rw [Submodule.span_span_of_tower, ← ht, hspan]
-  have hL : (L : Set M) ∈ 𝓝 0 := by
-    simpa using (P.hasBasis_nhds_zero_idealOfDefinition_pow_smul ⟨t, rfl⟩ hLspan).mem_of_mem
-      (i := 0) trivial
-  exact M₀.toAddSubgroup.isOpen_of_mem_nhds
-    (mem_of_superset hL (Submodule.span_le.mpr htM₀))
-
-end TopologicalSpace
 
 section Complete
 
