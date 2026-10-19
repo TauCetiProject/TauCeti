@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import Mathlib.Analysis.Normed.Group.Ultra
 
 /-!
 # Scalar lattice gauges
@@ -24,10 +25,12 @@ For a balanced absorbent `s` with `s + s ⊆ s`, the gauge scales exactly,
 `TauCeti.latticeGaugeSeminorm`. Its open unit ball lies in `s`, and `s` lies in its closed unit
 ball. Rescaling `s` by a nonzero scalar `c` divides the gauge by `‖c‖`, and on the scalar line
 the gauge of the closed unit ball is the norm.
-If `M` is a topological module and `s` is a bounded neighbourhood of zero, the open gauge balls
-are a basis of neighbourhoods of zero, so the gauge induces the topology of `M` and its uniform
-structure, so it is complete when `M` is; its zero set is the closure of zero, so it is a norm
-exactly when `M` is Hausdorff.
+If `M` is a topological module and `s` is a balanced bounded neighbourhood of zero, the open gauge
+balls are a basis of neighbourhoods of zero, so the gauge induces the topology of `M` and its
+uniform structure, so it is complete when `M` is; its zero set is the closure of zero, so it is a
+norm exactly when `M` is Hausdorff. If moreover `s + s ⊆ s` and `M` is Hausdorff, the gauge is
+bundled as a complete ultrametric norm `TauCeti.latticeGaugeNormedAddCommGroup` inducing the
+uniform structure of `M`.
 Finally, the gauges of a lattice `A₀` in an algebra `A` and of a lattice `M₀` in an `A`-module
 are compatible: `A₀ • M₀ ⊆ M₀` gives
 `latticeGauge K M₀ (a • m) ≤ latticeGauge K A₀ a * latticeGauge K M₀ m`; in particular the gauge
@@ -39,6 +42,9 @@ a nonzero Hausdorff algebra.
 * `TauCeti.latticeGauge`: the scalar lattice gauge of a subset of a module over a normed field.
 * `TauCeti.latticeGaugeSeminorm`: the gauge of a balanced absorbent set closed under addition,
   as a seminorm.
+* `TauCeti.latticeGaugeNormedAddCommGroup`, `TauCeti.latticeGaugeNormedSpace`: in a Hausdorff
+  uniform module, the gauge of a balanced bounded neighbourhood of zero closed under addition, as
+  a norm inducing the given uniform structure.
 
 ## Main results
 
@@ -46,11 +52,15 @@ a nonzero Hausdorff algebra.
 * `TauCeti.latticeGauge_smul_left`, `TauCeti.latticeGauge_mono`: dependence on the lattice.
 * `TauCeti.isNonarchimedean_latticeGauge`: the gauge is ultrametric.
 * `TauCeti.hasBasis_latticeGauge`, `TauCeti.withSeminorms_latticeGaugeSeminorm`: the gauge of a
-  bounded neighbourhood of zero induces the topology.
+  balanced bounded neighbourhood of zero (closed under addition, for the seminorm) induces the
+  topology.
 * `TauCeti.hasBasis_uniformity_latticeGauge`, `TauCeti.exists_tendsto_latticeGauge_sub`: it also
   induces the uniform structure, and is complete when `M` is.
 * `TauCeti.latticeGauge_eq_zero_iff`, `TauCeti.t2Space_iff_forall_latticeGauge_eq_zero_iff`: its
   zero set is the closure of zero, so it separates points exactly in the Hausdorff case.
+* `TauCeti.isUltrametricDist_latticeGaugeNormedAddCommGroup`,
+  `TauCeti.completeSpace_latticeGaugeNormedAddCommGroup`: the bundled norm is ultrametric, and
+  complete when `M` is.
 * `TauCeti.latticeGauge_smul_le`, `TauCeti.latticeGauge_mul_le`, `TauCeti.latticeGauge_one`:
   compatibility with module and algebra structures.
 
@@ -73,7 +83,8 @@ variable (K : Type*) {M : Type*} [NormedField K] [AddCommGroup M] [Module K M]
 
 /-- The scalar lattice gauge `inf {‖c‖ | c ≠ 0, x ∈ c • s}` of a subset `s` of a `K`-module.
 It is the nonarchimedean counterpart of the Minkowski functional `gauge`, with nonzero scalars
-of `K` in place of positive reals. Its value is `0` at points that `s` does not absorb. -/
+of `K` in place of positive reals. Its value is `0` when `x ∉ c • s` for every nonzero `c` (the
+infimum of the empty set). -/
 noncomputable def latticeGauge (s : Set M) (x : M) : ℝ :=
   sInf (norm '' {c : K | c ≠ 0 ∧ x ∈ c • s})
 
@@ -289,6 +300,59 @@ theorem exists_tendsto_latticeGauge_sub [CompleteSpace M] (hb : Balanced K s) (h
     hr.trans_le (latticeGauge_nonneg _ _), fun r hr ↦ ?_⟩⟩
   exact (hasBasis_latticeGauge hb hs₀ hbd).tendsto_right_iff.1 (tendsto_sub_nhds_zero_iff.2 hx)
     r hr
+
+variable [T2Space M]
+
+variable (K) in
+/-- In a Hausdorff uniform module, the gauge of a balanced bounded neighbourhood `s` of zero closed
+under addition, as a norm whose uniform structure is the given one of `M`. This is not an
+instance: see note [reducible non-instances]. -/
+noncomputable abbrev latticeGaugeNormedAddCommGroup (hb : Balanced K s) (hadd : s + s ⊆ s)
+    (hs₀ : s ∈ 𝓝 0) (hbd : IsVonNBounded K s) : NormedAddCommGroup M :=
+  letI : Norm M := ⟨latticeGauge K s⟩
+  have core : NormedSpace.Core K M :=
+    { norm_nonneg := latticeGauge_nonneg s
+      norm_smul := latticeGauge_smul s
+      norm_triangle x y := (isNonarchimedean_latticeGauge hb hadd (absorbent_nhds_zero hs₀) x
+        y).trans <| max_le_add_of_nonneg (latticeGauge_nonneg s x) (latticeGauge_nonneg s y)
+      norm_eq_zero_iff := (t2Space_iff_forall_latticeGauge_eq_zero_iff hb hs₀ hbd).1 inferInstance }
+  .ofCoreReplaceUniformity core <| (hasBasis_uniformity_latticeGauge hb hs₀ hbd).eq_of_same_basis <|
+    (@Metric.uniformity_basis_dist M (.ofSeminormedSpaceCore core.toCore)).congr (fun _ ↦ .rfl)
+      fun _ _ ↦ by simp only [dist, neg_add_eq_sub]; rfl
+
+/-- The norm of `TauCeti.latticeGaugeNormedAddCommGroup` is the lattice gauge. -/
+theorem latticeGaugeNormedAddCommGroup_norm (hb : Balanced K s) (hadd : s + s ⊆ s)
+    (hs₀ : s ∈ 𝓝 0) (hbd : IsVonNBounded K s) (x : M) :
+    letI := latticeGaugeNormedAddCommGroup K hb hadd hs₀ hbd
+    ‖x‖ = latticeGauge K s x :=
+  (rfl)
+
+variable (K) in
+/-- The bundled lattice gauge norm `TauCeti.latticeGaugeNormedAddCommGroup` scales exactly by
+scalars of `K`, so it makes `M` a normed `K`-space. This is not an instance: see note
+[reducible non-instances]. -/
+noncomputable abbrev latticeGaugeNormedSpace (hb : Balanced K s) (hadd : s + s ⊆ s)
+    (hs₀ : s ∈ 𝓝 0) (hbd : IsVonNBounded K s) :
+    letI := latticeGaugeNormedAddCommGroup K hb hadd hs₀ hbd
+    NormedSpace K M :=
+  letI := latticeGaugeNormedAddCommGroup K hb hadd hs₀ hbd
+  { norm_smul_le a x := (latticeGauge_smul s a x).le }
+
+/-- The bundled lattice gauge norm is ultrametric. -/
+theorem isUltrametricDist_latticeGaugeNormedAddCommGroup (hb : Balanced K s) (hadd : s + s ⊆ s)
+    (hs₀ : s ∈ 𝓝 0) (hbd : IsVonNBounded K s) :
+    letI := latticeGaugeNormedAddCommGroup K hb hadd hs₀ hbd
+    IsUltrametricDist M :=
+  letI := latticeGaugeNormedAddCommGroup K hb hadd hs₀ hbd
+  .isUltrametricDist_of_isNonarchimedean_norm <|
+    isNonarchimedean_latticeGauge hb hadd (absorbent_nhds_zero hs₀)
+
+/-- The bundled lattice gauge norm is complete when `M` is, since it induces the uniform structure
+of `M`. -/
+theorem completeSpace_latticeGaugeNormedAddCommGroup [CompleteSpace M] (hb : Balanced K s)
+    (hadd : s + s ⊆ s) (hs₀ : s ∈ 𝓝 0) (hbd : IsVonNBounded K s) :
+    @CompleteSpace M (latticeGaugeNormedAddCommGroup K hb hadd hs₀ hbd).toUniformSpace :=
+  ‹_›
 
 end Uniformity
 
