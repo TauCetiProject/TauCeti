@@ -171,6 +171,20 @@ theorem pullback_inner
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
 
+/-! The identity map is the first functoriality law for pullback metrics.  It is
+stated for arbitrary proofs of smoothness and injectivity so that it rewrites
+pullbacks without exposing proof terms in downstream APIs. -/
+
+/-- Pulling a Riemannian metric back along the identity leaves its inner product unchanged. -/
+theorem pullback_id_inner
+    (g : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y))
+    (hf : ContMDiff I I (n + 1) id)
+    (hinj : ∀ x, Function.Injective (mfderiv I I id x)) (x : M)
+    (v w : TangentSpace I x) :
+    (g.pullback id hf hinj).inner x v w = g.inner x v w := by
+  rw [pullback_inner]
+  simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
+
 
 end ContMDiffRiemannianMetric
 
