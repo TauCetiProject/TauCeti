@@ -226,6 +226,15 @@ theorem residueFormQuotientPairing_nondegenerate (a b : ℤ) :
     intro f hf
     exact hg (Submodule.Quotient.mk ⟨f, hf⟩)
 
+private theorem residueForm_sum_single_right (a b j : ℤ) (c : Finset.Ico a b → R)
+    (hj : -1 - j ∈ Finset.Ico a b) (r : R) :
+    residueForm R (∑ k : Finset.Ico a b, single (k : ℤ) (c k)) (single j r) =
+      c ⟨-1 - j, hj⟩ * r := by
+  rw [residueForm_single_right, coeff_sum,
+    Finset.sum_eq_single ⟨_, hj⟩ (fun k _ hk ↦ coeff_single_of_ne ?_) (by simp),
+    coeff_single_same]
+  exact fun h ↦ hk (Subtype.ext h.symm)
+
 /-- The residue form induces a perfect pairing between the finite free quotients `U_a / U_b` and
 `U_{-b} / U_{-a}`: every functional `φ` on `U_{-b} / U_{-a}` is the residue pairing with the
 class of `∑ₖ φ(X⁻¹⁻ᵏ) Xᵏ`, the sum over `a ≤ k < b`. -/
@@ -245,10 +254,9 @@ instance residueFormQuotientPairing.instIsPerfPair (a b : ℤ) :
   have hsmul : (⟨single (j : ℤ) r, single_mem_lattice hj.1 r⟩ : lattice R R (-b)) =
       r • ⟨_, hmem ⟨_, hk⟩⟩ := Subtype.ext <| by ext n; simp [coeff_single]
   rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    latticeQuotientEquiv_symm_single, residueFormQuotientPairing_mk_mk, residueForm_single_right,
-    coeff_sum, Finset.sum_eq_single ⟨_, hk⟩ (fun k _ hk' ↦ coeff_single_of_ne ?_) (by simp),
-    coeff_single_same, hsmul, Submodule.Quotient.mk_smul, map_smul, smul_eq_mul, mul_comm]
-  exact fun h ↦ hk' (Subtype.ext h.symm)
+    latticeQuotientEquiv_symm_single, residueFormQuotientPairing_mk_mk,
+    residueForm_sum_single_right R a b (j : ℤ) _ hk, hsmul, Submodule.Quotient.mk_smul,
+    map_smul, smul_eq_mul, mul_comm]
 
 end Quotient
 
