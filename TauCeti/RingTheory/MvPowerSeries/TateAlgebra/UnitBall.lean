@@ -218,6 +218,7 @@ theorem mem_ker_restrictedReduction {f : T°} :
   rw [RingHom.mem_ker, restrictedReduction_eq_zero_iff]
 
 /-- The reduction of a polynomial with integral coefficients is its coefficientwise reduction. -/
+@[simp]
 theorem restrictedReduction_restrictedIntegerEquiv (q : MvPolynomial σ 𝒪[K]) :
     restrictedReduction (restrictedIntegerEquiv
         ⟨(q : MvPowerSeries σ 𝒪[K]), MvPolynomial.isRestricted _ q⟩) =
@@ -247,6 +248,7 @@ theorem restrictedReductionQuotientEquiv_mk (f : T°) :
     restrictedReductionQuotientEquiv (Ideal.Quotient.mk _ f) = restrictedReduction f := (rfl)
 
 /-- A constant of norm at most one reduces to the constant polynomial on its residue. -/
+@[simp]
 theorem restrictedReduction_algebraMap (a : 𝒪[K]) (h : algebraMap K T a ∈ T°) :
     restrictedReduction ⟨algebraMap K T a, h⟩ = MvPolynomial.C (residue 𝒪[K] a) := by
   classical
@@ -261,6 +263,7 @@ theorem restrictedReduction_algebraMap (a : 𝒪[K]) (h : algebraMap K T a ∈ T
   rw [this, restrictedReduction_restrictedIntegerEquiv, MvPolynomial.map_C]
 
 /-- Each variable reduces to the corresponding variable. -/
+@[simp]
 theorem restrictedReduction_X (i : σ) (h : (⟨X i, isRestricted_X _ i⟩ : T) ∈ T°) :
     restrictedReduction ⟨⟨X i, isRestricted_X _ i⟩, h⟩ = MvPolynomial.X i := by
   classical
