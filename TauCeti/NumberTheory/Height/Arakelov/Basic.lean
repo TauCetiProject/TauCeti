@@ -19,7 +19,9 @@ field-degree power, with the usual projective junk value one at the zero tuple.
 
 The local formula and its normalization follow Evertse--Ferretti, where this Euclidean height is
 used for Plücker coordinates of subspaces. The elementary API here records the zero convention,
-reindexing, and the corresponding logarithmic and affine heights.
+reindexing, and the corresponding logarithmic and affine heights. Over `ℚ`, the Euclidean height
+of a tuple of coprime integers is its Euclidean norm
+(`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one`).
 
 ## Main definitions
 
@@ -33,6 +35,11 @@ reindexing, and the corresponding logarithmic and affine heights.
 
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
   Theorem*, Ann. of Math. 177 (2013), §6.1 and §6.3.
+
+`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one` is adapted from Ralf Stephan's
+`NumberField.arakelovMulHeight_intCast_of_gcd_eq_one` in `ArithmeticHeights/RationalLattice.lean`
+of [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0).
 -/
 
 public noncomputable section
@@ -401,5 +408,26 @@ theorem arakelovMulHeightAff_zero {ι : Type*} [Finite ι] :
 theorem arakelovLogHeightAff_zero {ι : Type*} [Finite ι] :
     arakelovLogHeightAff (0 : ι → K) = 0 := by
   simp [arakelovLogHeightAff]
+
+/-- Over `ℚ`, the Euclidean height of a tuple of coprime integers is its Euclidean norm: the finite
+places do not contribute. This is the Euclidean analogue of Mathlib's
+`Rat.mulHeight_eq_max_abs_of_gcd_eq_one`. -/
+theorem height2_intCast_eq_sqrt_of_gcd_eq_one {ι : Type*} [Fintype ι] {x : ι → ℤ}
+    (hx : Finset.univ.gcd x = 1) :
+    height2 (((↑) : ℤ → ℚ) ∘ x) = √(∑ i, (x i : ℝ) ^ 2) := by
+  have : Nonempty ι := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    simp at hx
+  have hw : (default : InfinitePlace ℚ).IsReal := by
+    rw [Subsingleton.elim default Rat.infinitePlace]
+    exact Rat.isReal_infinitePlace
+  rw [height2_eq, finprod_eq_one_of_forall_eq_one fun v ↦ by
+    rw [Function.comp_def, Rat.iSup_finitePlace_apply_eq_one_of_gcd_eq_one v hx, Real.one_rpow]]
+  simp only [Finset.univ_unique, comp_apply, map_intCast, Complex.norm_intCast, sq_abs,
+    finrank_self, Nat.cast_one, mul_one, Finset.prod_singleton, InfinitePlace.mult, hw, ite_true,
+    one_div, Real.sqrt_eq_rpow]
+  -- The two sides differ only in the `Fintype` instance on `ι` used to form the sums.
+  convert rfl
 
 end TauCeti

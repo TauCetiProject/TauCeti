@@ -271,11 +271,11 @@ theorem Represents.of_isSquare_div {K V : Type*} [Semifield K] [AddCommMonoid V]
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
-/-- **A represented regular form splits off.** If a regular form `Q₁` is represented by a regular
-form `Q` on a finite-dimensional space, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which `Q` is
-regular, namely the orthogonal complement of the image of `Q₁`. -/
-theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)] [FiniteDimensional K V]
-    {V₁ : Type*} [AddCommGroup V₁] [Module K V₁]
+/-- **A represented finite-dimensional regular form splits off.** If a finite-dimensional regular
+form `Q₁` is represented by a regular form `Q`, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which
+`Q` is regular, namely the orthogonal complement of the image of `Q₁`. -/
+theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)]
+    {V₁ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
     {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (h : Q₁.IsRepresentedBy Q)
     (hQ₁ : Q₁.Nondegenerate) (hQ : Q.Nondegenerate) :
     ∃ P : Submodule K V, (Q.restrict P).Nondegenerate ∧ Q.Equivalent (Q₁.prod (Q.restrict P)) := by

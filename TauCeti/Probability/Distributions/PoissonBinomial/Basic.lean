@@ -25,6 +25,7 @@ distributed real random variables.
 * `poissonBinomialMeasure` is the native law on `ℕ`;
 * `poissonBinomialMeasure_singleton` gives its singleton masses as a sum over subsets;
 * `integral_poissonBinomialMeasure` writes integration as a finite sum over success sets;
+* `poissonBinomialMeasure_singleton_ne_zero_iff` identifies the exact interval of possible counts;
 * `pgf_poissonBinomialMeasure` gives its probability-generating function;
 * `iIndepFun.hasLaw_sum_poissonBinomialMeasure` identifies independent Bernoulli sums;
 * `map_sum_pi_bernoulliMeasure` gives the corresponding product-measure pushforward;
@@ -71,6 +72,19 @@ theorem poissonBinomialWeight_def [DecidableEq ι] (p : ι → unitInterval) (s 
     simp
   · intros
     rfl
+
+/-- A success set has nonzero weight exactly when it contains every certain success and
+contains no trial whose success probability is zero. -/
+@[simp]
+theorem poissonBinomialWeight_ne_zero_iff (p : ι → unitInterval) (s : Finset ι) :
+    poissonBinomialWeight p s ≠ 0 ↔
+      (∀ i ∈ s, p i ≠ 0) ∧ (∀ i ∉ s, p i ≠ 1) := by
+  classical
+  have hzero (q : unitInterval) : unitInterval.toNNReal q = 0 ↔ q = 0 := by
+    rw [← NNReal.coe_eq_zero, unitInterval.coe_toNNReal]
+    exact Set.Icc.coe_eq_zero
+  simp [poissonBinomialWeight_def, Finset.prod_ne_zero_iff, hzero,
+    unitInterval.symm_eq_zero]
 
 /-- The Poisson-binomial law with success probabilities `p` is the weighted sum of point masses
 at the cardinalities of all possible success sets. -/
@@ -152,6 +166,43 @@ theorem poissonBinomialMeasure_real_singleton (p : ι → unitInterval) (k : ℕ
   · simp only [ENNReal.coe_toReal]
   · intro s hs
     simp
+
+open Classical in
+/-- The possible counts run from the number of certain successes to the number of trials with
+nonzero success probability, including both endpoints and every count between them. -/
+theorem poissonBinomialMeasure_singleton_ne_zero_iff (p : ι → unitInterval) (k : ℕ) :
+    poissonBinomialMeasure p {k} ≠ 0 ↔
+      (Finset.univ.filter fun i ↦ p i = 1).card ≤ k ∧
+        k ≤ (Finset.univ.filter fun i ↦ p i ≠ 0).card := by
+  classical
+  rw [poissonBinomialMeasure_singleton, ← pos_iff_ne_zero, Finset.sum_pos_iff]
+  constructor
+  · rintro ⟨s, hs, hweight⟩
+    have hcard : s.card = k := (Finset.mem_powersetCard.mp hs).2
+    have hw := (poissonBinomialWeight_ne_zero_iff p s).mp (by simpa using hweight.ne')
+    constructor
+    · rw [← hcard]
+      apply Finset.card_le_card
+      intro i hi
+      by_contra hnot
+      exact hw.2 i hnot (by simpa using hi)
+    · rw [← hcard]
+      exact Finset.card_le_card fun i hi ↦ by simp [hw.1 i hi]
+  · rintro ⟨hlower, hupper⟩
+    have hsub : (Finset.univ.filter fun i ↦ p i = 1) ⊆
+        Finset.univ.filter fun i ↦ p i ≠ 0 := by
+      intro i hi
+      simp_all
+    obtain ⟨s, hlow, hupp, hcard⟩ :=
+      Finset.exists_subsuperset_card_eq hsub hlower hupper
+    refine ⟨s, Finset.mem_powersetCard.mpr ⟨Finset.subset_univ s, hcard⟩, ?_⟩
+    have hw : poissonBinomialWeight p s ≠ 0 :=
+      (poissonBinomialWeight_ne_zero_iff p s).mpr ⟨?_, ?_⟩
+    · simpa only [pos_iff_ne_zero, ENNReal.coe_ne_zero] using hw
+    · intro i hi
+      simpa using hupp hi
+    · intro i hi hone
+      exact hi (hlow (by simp [hone]))
 
 /-- A Poisson-binomial law has no mass above the number of trials. -/
 theorem poissonBinomialMeasure_singleton_eq_zero (p : ι → unitInterval) {k : ℕ}
