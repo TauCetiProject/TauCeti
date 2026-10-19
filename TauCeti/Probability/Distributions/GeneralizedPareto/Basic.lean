@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.MeasureTheory.Measure.Atom
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Distributions.Gamma.Basic
 
@@ -92,7 +93,7 @@ theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
 
 /-- The generalized Pareto transformation is continuous in its exponential input. -/
 @[fun_prop]
-theorem continuous_generalizedParetoMap (s ξ : ℝ) :
+theorem continuous_generalizedParetoMap_right (s ξ : ℝ) :
     Continuous (generalizedParetoMap s ξ) := by
   unfold generalizedParetoMap
   split_ifs <;> fun_prop
@@ -163,6 +164,13 @@ theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ
   rw [generalizedParetoMeasure_of_pos hs]
   let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
   infer_instance
+
+/-- Every singleton has zero generalized Pareto measure at positive scale. -/
+theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    NullSingletonClass (generalizedParetoMeasure s ξ) := by
+  rw [generalizedParetoMeasure_of_pos hs]
+  exact Measure.nullSingletonClass_map_of_injective
+    (measurable_generalizedParetoMap_right s ξ) (strictMono_generalizedParetoMap hs ξ).injective
 
 /-- A variable obtained from a rate-one exponential variable by the generalized Pareto
 transformation has the corresponding generalized Pareto law. -/

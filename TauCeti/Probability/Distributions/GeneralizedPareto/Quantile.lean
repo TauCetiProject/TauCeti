@@ -34,15 +34,23 @@ namespace TauCeti.Probability
 
 variable {s ξ u : ℝ}
 
+/-- The generalized Pareto quantile is the transformation of the rate-one exponential quantile
+at every interior probability level. -/
+theorem quantile_generalizedParetoMeasure_eq_generalizedParetoMap (hs : 0 < s) (ξ : ℝ)
+    (hu : u ∈ Ioo 0 1) :
+    (generalizedParetoMeasure s ξ).quantile u =
+      generalizedParetoMap s ξ ((expMeasure 1).quantile u) := by
+  let _ := isProbabilityMeasure_expMeasure one_pos
+  rw [generalizedParetoMeasure_of_pos hs,
+    Measure.quantile_map_of_monotone (strictMono_generalizedParetoMap hs ξ).monotone
+      (continuous_generalizedParetoMap_right s ξ) hu.1 hu.2]
+
 /-- The generalized Pareto quantile at an interior probability level, including the exponential
 branch at shape zero. -/
 theorem quantile_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) (hu : u ∈ Ioo 0 1) :
     (generalizedParetoMeasure s ξ).quantile u =
       if ξ = 0 then -s * Real.log (1 - u) else s * ((1 - u) ^ (-ξ) - 1) / ξ := by
-  let _ := isProbabilityMeasure_expMeasure one_pos
-  rw [generalizedParetoMeasure_of_pos hs,
-    Measure.quantile_map_of_monotone (strictMono_generalizedParetoMap hs ξ).monotone
-      (continuous_generalizedParetoMap s ξ) hu.1 hu.2,
+  rw [quantile_generalizedParetoMeasure_eq_generalizedParetoMap hs ξ hu,
     quantile_expMeasure one_pos hu, div_one]
   by_cases hξ : ξ = 0
   · simp [hξ]
@@ -50,6 +58,13 @@ theorem quantile_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) (hu : u ∈ Io
       Real.rpow_def_of_pos (sub_pos.mpr hu.2)]
     have hexp : ξ * -Real.log (1 - u) = Real.log (1 - u) * -ξ := by ring
     rw [hexp]
+
+/-- At nonzero shape and an interior probability level, the generalized Pareto quantile has
+its power formula. -/
+theorem quantile_generalizedParetoMeasure_of_shape_ne_zero (hs : 0 < s) (hξ : ξ ≠ 0)
+    (hu : u ∈ Ioo 0 1) :
+    (generalizedParetoMeasure s ξ).quantile u = s * ((1 - u) ^ (-ξ) - 1) / ξ := by
+  rw [quantile_generalizedParetoMeasure hs ξ hu, ite_eq_right hξ]
 
 /-- Generalized Pareto quantiles are strictly increasing on the open unit interval. -/
 theorem strictMonoOn_quantile_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
@@ -65,32 +80,26 @@ theorem continuousOn_quantile_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
     by_cases hξ : ξ = 0
     · simp only [ite_eq_left hξ]
       intro u hu
-      have : 1 - u ≠ 0 := (sub_pos.mpr hu.2).ne'
-      exact (continuousAt_const.mul
-        ((continuousAt_const.sub continuousAt_id).log this)).continuousWithinAt
+      apply ContinuousAt.continuousWithinAt
+      fun_prop (disch := exact (sub_pos.mpr hu.2).ne')
     · simp only [ite_eq_right hξ]
       intro u hu
-      have : 1 - u ≠ 0 := (sub_pos.mpr hu.2).ne'
-      exact ((continuousAt_const.mul
-        (((continuousAt_const.sub continuousAt_id).rpow_const (Or.inl this)).sub
-          continuousAt_const)).div_const ξ).continuousWithinAt
+      apply ContinuousAt.continuousWithinAt
+      fun_prop (disch := left; exact (sub_pos.mpr hu.2).ne')
   exact hc.congr (fun u hu => quantile_generalizedParetoMeasure hs ξ hu)
 
 /-- Generalized Pareto quantiles tend to the lower support endpoint zero. -/
 theorem tendsto_quantile_generalizedParetoMeasure_nhdsGT_zero (hs : 0 < s) (ξ : ℝ) :
     Tendsto (fun u => ((generalizedParetoMeasure s ξ).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
-  let _ := isProbabilityMeasure_expMeasure one_pos
   apply EReal.tendsto_coe.2
-  have hcont := (continuous_generalizedParetoMap s ξ).continuousAt (x := 0)
+  have hcont := (continuous_generalizedParetoMap_right s ξ).continuousAt (x := 0)
   have hsource := EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero one_pos)
   have hlim := hcont.tendsto.comp hsource
   rw [generalizedParetoMap_apply_zero] at hlim
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-  rw [generalizedParetoMeasure_of_pos hs,
-    Measure.quantile_map_of_monotone (strictMono_generalizedParetoMap hs ξ).monotone
-      (continuous_generalizedParetoMap s ξ) hu.1 hu.2, Function.comp_apply]
+  rw [quantile_generalizedParetoMeasure_eq_generalizedParetoMap hs ξ hu, Function.comp_apply]
 
 /-- Negative-shape generalized Pareto quantiles tend to the finite upper support endpoint. -/
 theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg (hs : 0 < s)
@@ -105,7 +114,7 @@ theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg (hs : 0 < s)
     mul_one] at hlim
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-  rw [quantile_generalizedParetoMeasure hs ξ hu, ite_eq_right hξ.ne]
+  rw [quantile_generalizedParetoMeasure_of_shape_ne_zero hs hξ.ne hu]
 
 /-- Nonnegative-shape generalized Pareto quantiles tend to positive infinity. -/
 theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (hs : 0 < s)
@@ -126,6 +135,6 @@ theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (hs : 0 <
   have hlim := (hsubpow.const_mul_atTop hs).atTop_div_const hξ
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-  rw [quantile_generalizedParetoMeasure hs ξ hu, ite_eq_right hξ.ne']
+  rw [quantile_generalizedParetoMeasure_of_shape_ne_zero hs hξ.ne' hu]
 
 end TauCeti.Probability

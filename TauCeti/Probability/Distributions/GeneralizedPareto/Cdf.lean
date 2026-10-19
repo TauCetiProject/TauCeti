@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
-import TauCeti.MeasureTheory.Measure.Atom
 import TauCeti.Probability.Cdf
 
 /-!
@@ -38,7 +37,7 @@ namespace TauCeti.Probability
 variable {s ξ x : ℝ}
 
 /-- The cdf at a transformed point is the cdf of the source exponential variable. -/
-theorem cdf_generalizedParetoMeasure_map (hs : 0 < s) (ξ e : ℝ) :
+theorem cdf_generalizedParetoMeasure_generalizedParetoMap (hs : 0 < s) (ξ e : ℝ) :
     cdf (generalizedParetoMeasure s ξ) (generalizedParetoMap s ξ e) =
       cdf (expMeasure 1) e := by
   let _ := isProbabilityMeasure_expMeasure one_pos
@@ -53,7 +52,7 @@ theorem cdf_generalizedParetoMeasure_map (hs : 0 < s) (ξ e : ℝ) :
 /-- The generalized Pareto cdf vanishes at and below zero. -/
 theorem cdf_generalizedParetoMeasure_of_nonpos (hs : 0 < s) (ξ : ℝ) (hx : x ≤ 0) :
     cdf (generalizedParetoMeasure s ξ) x = 0 := by
-  have hcdf := cdf_generalizedParetoMeasure_map hs ξ 0
+  have hcdf := cdf_generalizedParetoMeasure_generalizedParetoMap hs ξ 0
   rw [generalizedParetoMap_apply_zero, cdf_expMeasure_eq one_pos] at hcdf
   simp only [le_refl, ite_true, mul_zero, neg_zero, Real.exp_zero, sub_self] at hcdf
   exact le_antisymm (hcdf ▸ monotone_cdf _ hx) (cdf_nonneg _ _)
@@ -73,13 +72,13 @@ theorem cdf_generalizedParetoMeasure_of_shape_ne_zero (hs : 0 < s) (hξ : ξ ≠
   have he : 0 ≤ Real.log (1 + ξ * x / s) / ξ := by
     apply (strictMono_generalizedParetoMap hs ξ).le_iff_le.mp
     simpa only [hinv, generalizedParetoMap_apply_zero] using hx
-  rw [← hinv, cdf_generalizedParetoMeasure_map hs, cdf_expMeasure_eq one_pos,
+  rw [← hinv, cdf_generalizedParetoMeasure_generalizedParetoMap hs, cdf_expMeasure_eq one_pos,
     ite_eq_left he, hinv, one_mul, Real.rpow_def_of_pos hw]
   congr 2
   ring
 
 /-- For negative shape the cdf is one at and beyond the finite upper endpoint. -/
-theorem cdf_generalizedParetoMeasure_of_endpoint_le (hs : 0 < s) (hξ : ξ < 0)
+theorem cdf_generalizedParetoMeasure_eq_one_of_neg_div_le (hs : 0 < s) (hξ : ξ < 0)
     (hx : -s / ξ ≤ x) : cdf (generalizedParetoMeasure s ξ) x = 1 := by
   let _ := isProbabilityMeasure_expMeasure one_pos
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
@@ -111,7 +110,7 @@ theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
       by_contra h
       have := div_nonneg (mul_nonneg (le_of_not_gt h) (le_of_not_ge hx)) hs.le
       linarith
-    apply cdf_generalizedParetoMeasure_of_endpoint_le hs hξneg
+    apply cdf_generalizedParetoMeasure_eq_one_of_neg_div_le hs hξneg
     apply (div_le_iff_of_neg hξneg).2
     have := (div_le_iff₀ hs).1 (show ξ * x / s ≤ -1 by linarith)
     nlinarith
@@ -120,14 +119,8 @@ theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
 endpoints. -/
 theorem continuous_cdf_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
     Continuous (cdf (generalizedParetoMeasure s ξ)) := by
-  let _ := isProbabilityMeasure_expMeasure one_pos
-  let _ : NullSingletonClass (expMeasure 1) := by
-    rw [expMeasure_eq_withDensity]
-    infer_instance
-  rw [generalizedParetoMeasure_of_pos hs]
-  let _ := Measure.nullSingletonClass_map_of_injective
-    (μ := expMeasure 1) (measurable_generalizedParetoMap_right s ξ)
-    (strictMono_generalizedParetoMap hs ξ).injective
+  let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
+  let _ := nullSingletonClass_generalizedParetoMeasure hs ξ
   exact Measure.continuous_cdf_of_noAtoms _
 
 end TauCeti.Probability
