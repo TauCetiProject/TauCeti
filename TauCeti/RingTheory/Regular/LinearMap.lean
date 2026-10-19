@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.Algebra.Module.Submodule.Equiv
 import TauCeti.Algebra.Module.Projective.LinearMap
 
 /-!
@@ -44,7 +43,7 @@ section LinearMap
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup N]
   [Module R M] [Module R N]
 
-/-- The second element of a regular sequence on the target remains regular after quotienting
+/-- The second element of a weakly regular pair on the target remains regular after quotienting
 the module of linear maps by the first element. -/
 theorem IsSMulRegular.quotSMulTop_linearMap {first second : R}
     (regular : IsSMulRegular N first)
