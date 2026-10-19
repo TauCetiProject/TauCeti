@@ -32,10 +32,11 @@ The notion is equivalently a statement about the coset spaces. For `g : G` the n
 of `H` fixed by `g` is related to the number of elements of `H` conjugate to `g` by the
 division-free identity
 
-`#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`,
+`#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`
 
-where `C_G(g)` is the centralizer of `g`, written as the stabilizer of `g` for the conjugation
-action `ConjAct G`, and `[g]` is the conjugacy class of `g`. Both sides count the `x : G` with
+(`Subgroup.natCard_fixedBy_mul_natCard`, in `TauCeti.GroupTheory.QuotientGroup.Basic`), where
+`C_G(g)` is the centralizer of `g`, written as the stabilizer of `g` for the conjugation action
+`ConjAct G`, and `[g]` is the conjugacy class of `g`. Both sides count the `x : G` with
 `x⁻¹ g x ∈ H`: on the left they are grouped by their coset `x H`, which `g` then fixes, and on the
 right by the conjugate `x⁻¹ g x`, whose fibre is a coset of the centralizer. Summing the defining
 counts over the conjugacy classes shows that almost-conjugate subgroups of a finite group have the
@@ -57,14 +58,12 @@ Through the classification of permutation representations by fixed-point counts 
 
 * `Subgroup.AlmostConjugate.refl`, `.symm`, `.trans`: almost-conjugacy is an equivalence relation.
 * `Subgroup.AlmostConjugate.map` and `Subgroup.AlmostConjugate.comap`: it is transported along
-  group isomorphisms, by `Subgroup.natCard_mem_carrier_map_and_mem_map`, with
-  `Subgroup.exists_map_conj_comap_eq_iff` the matching statement for conjugacy itself.
+  group isomorphisms, by `Subgroup.natCard_mem_carrier_map_and_mem_map`. The matching statement
+  for conjugacy itself is `Subgroup.exists_map_conj_comap_eq_iff`, in
+  `TauCeti.Algebra.Group.Subgroup.Conjugates`.
 * `Subgroup.almostConjugate_conj_smul` and `Subgroup.almostConjugate_conj_smul_iff`: conjugate
   subgroups are almost conjugate, and almost-conjugacy is invariant under simultaneous
   conjugation.
-* `Subgroup.natCard_stabilizer_mul_natCard_mem_carrier`: the `x` with `x⁻¹ g x ∈ H`, counted by
-  the conjugate they produce; with `Subgroup.natCard_mul_natCard_fixedBy`, which counts them by
-  their cosets, it gives `Subgroup.natCard_fixedBy_mul_natCard`, the fixed-coset identity above.
 * `Subgroup.natCard_eq_sum_natCard_mem_carrier`: the order of a subgroup of a finite group is the
   sum over the conjugacy classes of the number of its elements in each.
 * `Subgroup.AlmostConjugate.natCard_eq` and `Subgroup.AlmostConjugate.index_eq`: almost-conjugate
@@ -183,22 +182,6 @@ theorem AlmostConjugate.comap {H K : Subgroup Γ} (h : H.AlmostConjugate K) (e :
   rw [comap_equiv_eq_map_symm, comap_equiv_eq_map_symm]
   exact h.map e.symm
 
-/-- **Conjugacy of subgroups is pulled back along group isomorphisms.** For an isomorphism
-`e : G ≃* Γ`, the preimages of two subgroups of `Γ` are conjugate in `G` exactly when the
-subgroups themselves are conjugate in `Γ`. -/
-theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
-    (∃ σ : G, (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) = K.comap (e : G →* Γ)) ↔
-      ∃ τ : Γ, H.map (MulAut.conj τ : Γ →* Γ) = K := by
-  have key (σ : G) : (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) =
-      (H.map (MulAut.conj (e σ) : Γ →* Γ)).comap (e : G →* Γ) := by
-    -- The commuting square of conjugation with `e.symm`, conjugating by `e.symm (e σ) = σ`.
-    rw [comap_equiv_eq_map_symm, comap_equiv_eq_map_symm]
-    simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulEquiv.symm_apply_apply] using
-      (map_map_conj H (e.symm : Γ →* G) (e σ)).symm
-  have hinj : Function.Injective (comap (e : G →* Γ)) := comap_injective e.surjective
-  refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨e σ, hinj (by rwa [← key])⟩, fun ⟨τ, hτ⟩ ↦ ⟨e.symm τ, ?_⟩⟩
-  rw [key, MulEquiv.apply_symm_apply, hτ]
-
 /-- **Conjugate subgroups are almost conjugate.** An inner automorphism maps every conjugacy class
 to itself, so it does not change the number of elements a subgroup has in it. -/
 @[simp]
@@ -216,49 +199,6 @@ theorem almostConjugate_conj_smul_iff (g : G) :
     (MulAut.conj g • H).AlmostConjugate (MulAut.conj g • K) ↔ H.AlmostConjugate K :=
   ⟨fun h ↦ ((almostConjugate_conj_smul g H).trans h).trans (almostConjugate_conj_smul g K).symm,
     fun h ↦ ((almostConjugate_conj_smul g H).symm.trans h).trans (almostConjugate_conj_smul g K)⟩
-
-/-! ### Fixed cosets -/
-
-/-- The elements `x` of `G` with `x⁻¹ g x ∈ H`, counted by the conjugate they produce: there are
-`|C_G(g)|` of them over each element of `H` conjugate to `g`, where the centralizer `C_G(g)` is the
-stabilizer of `g` for the conjugation action. This is the companion of
-`Subgroup.natCard_mul_natCard_fixedBy`, which counts the same elements by their cosets. -/
-theorem natCard_stabilizer_mul_natCard_mem_carrier (H : Subgroup G) (g : G) :
-    Nat.card (stabilizer (ConjAct G) g) *
-        Nat.card {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} =
-      Nat.card {x : G // x⁻¹ * g * x ∈ H} := by
-  -- Reparametrize by `c = x⁻¹` in `ConjAct G`, for which `x⁻¹ * g * x = c • g`.
-  have e₁ : {x : G // x⁻¹ * g * x ∈ H} ≃ {c : ConjAct G // c • g ∈ H} :=
-    (Equiv.inv G).trans ConjAct.toConjAct.toEquiv |>.subtypeEquiv fun x ↦ by
-      simp [ConjAct.smul_def]
-  -- The conjugates `c • g` are the points of the orbit of `g`, identified with `G ⧸ C_G(g)`.
-  set T : Set (ConjAct G ⧸ stabilizer (ConjAct G) g) :=
-    {q | ofQuotientStabilizer (ConjAct G) g q ∈ H}
-  have hset : {c : ConjAct G | c • g ∈ H} = QuotientGroup.mk ⁻¹' T := by
-    ext c
-    simp [T, ofQuotientStabilizer_mk]
-  have e₂ : T ≃ {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} :=
-    ((orbitEquivQuotientStabilizer (ConjAct G) g).symm.subtypeEquiv
-        (p := (· ∈ T)) (q := fun y : orbit (ConjAct G) g ↦ (y : G) ∈ H) fun q ↦ by
-          induction q using QuotientGroup.induction_on
-          simp [T, ofQuotientStabilizer_mk]).trans <|
-      (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ orbit (ConjAct G) g) (· ∈ H)).trans <|
-        Equiv.subtypeEquivRight fun x ↦ by rw [ConjAct.orbit_eq_carrier_conjClasses]
-  rw [Nat.card_congr e₁, ← Nat.card_congr e₂, ← Nat.card_prod,
-    ← Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet _ T), ← hset, Set.coe_ofPred]
-
-/-- **The fixed-coset identity.** For a subgroup `H` of a group `G` and `g : G`,
-
-`#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`,
-
-where the centralizer `C_G(g)` is the stabilizer of `g` for the conjugation action and `[g]` is
-the conjugacy class of `g`. Both sides count the `x : G` with `x⁻¹ g x ∈ H`; no finiteness is
-needed, with the convention that `Nat.card` of an infinite type is `0`. -/
-theorem natCard_fixedBy_mul_natCard (H : Subgroup G) (g : G) :
-    Nat.card (fixedBy (G ⧸ H) g) * Nat.card H =
-      Nat.card (stabilizer (ConjAct G) g) *
-        Nat.card {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} := by
-  rw [mul_comm, natCard_mul_natCard_fixedBy, natCard_stabilizer_mul_natCard_mem_carrier]
 
 section Finite
 
