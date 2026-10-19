@@ -139,8 +139,8 @@ theorem riskNeutralPrice_def (h : ℝ → ℝ) (s r σ τ : ℝ) :
 theorem riskNeutralPrice_zero (h : ℝ → ℝ) (s r σ : ℝ) : riskNeutralPrice h s r σ 0 = h s := by
   simp [riskNeutralPrice_def]
 
-/-- The discounted stock price is a risk-neutral martingale: the stock itself, as a payoff, is
-priced at the current spot. -/
+/-- The stock itself, as a payoff, is priced at the current spot: the discounted risk-neutral
+expectation `exp (-r τ) * E[S_τ]` of the terminal spot equals `s`. -/
 theorem riskNeutralPrice_id (s r σ : ℝ) (hτ : 0 ≤ τ) : riskNeutralPrice id s r σ τ = s := by
   simp only [riskNeutralPrice_def, id_eq]
   rw [← setIntegral_univ, setIntegral_terminalSpot s r σ hτ,
@@ -214,10 +214,29 @@ theorem callPrice_sub_putPrice (s r σ K τ : ℝ) :
 theorem lt_terminalSpot_iff (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) (z : ℝ) :
     K < terminalSpot s r σ τ z ↔ -dMinus s r σ K τ < z := by
   have ha : 0 < σ * √τ := mul_pos hσ (sqrt_pos.2 hτ)
-  rw [terminalSpot_def, ← div_lt_iff₀' hs, ← log_lt_iff_lt_exp (div_pos hK hs),
-    dMinus_eq s r σ K hτ.le, neg_lt, lt_div_iff₀ ha, log_div hK.ne' hs.ne',
-    log_div hs.ne' hK.ne']
-  constructor <;> intro h <;> linarith
+  -- Take logarithms: `K < s e^a` iff `log (K / s) < a`.
+  calc K < terminalSpot s r σ τ z ↔ log (K / s) < (r - σ ^ 2 / 2) * τ + σ * √τ * z := by
+        rw [terminalSpot_def, ← div_lt_iff₀' hs, log_lt_iff_lt_exp (div_pos hK hs)]
+    _ ↔ -dMinus s r σ K τ < z := by
+        rw [dMinus_eq s r σ K hτ.le, neg_lt, lt_div_iff₀ ha, log_div hK.ne' hs.ne',
+          log_div hs.ne' hK.ne']
+        constructor <;> intro h <;> linarith
+
+/-- The strike leg of the call: the in-the-money event `{-d₋ < Z}` has probability `Φ(d₋)`. -/
+private theorem measureReal_Ioi_neg_dMinus (s r σ K τ : ℝ) :
+    (gaussianReal 0 1).real (Ioi (-dMinus s r σ K τ)) =
+      cdf (gaussianReal 0 1) (dMinus s r σ K τ) := by
+  simp [TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf _ one_ne_zero]
+
+/-- The stock leg of the call: on the in-the-money event `{-d₋ < Z}` the terminal spot integrates
+to `s e^{rτ} Φ(d₊)`. -/
+private theorem setIntegral_Ioi_neg_dMinus_terminalSpot (s r σ K : ℝ) (hτ : 0 ≤ τ) :
+    ∫ z in Ioi (-dMinus s r σ K τ), terminalSpot s r σ τ z ∂gaussianReal 0 1 =
+      s * exp (r * τ) * cdf (gaussianReal 0 1) (dPlus s r σ K τ) := by
+  rw [setIntegral_terminalSpot s r σ hτ,
+    TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf _ one_ne_zero, dMinus_def]
+  congr 2
+  simp
 
 /-- **The Black–Scholes call formula.** The discounted risk-neutral expectation of the call payoff
 `(S_τ - K)⁺` is `s Φ(d₊) - K e^{-rτ} Φ(d₋)`. -/
@@ -234,13 +253,9 @@ theorem riskNeutralPrice_call (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 
       exact sub_nonpos.2 (not_lt.1 (mt (lt_terminalSpot_iff hs hσ hK hτ z).1 hz))
   rw [riskNeutralPrice_def, hpay, integral_indicator measurableSet_Ioi,
     integral_sub (integrable_terminalSpot s r σ τ).integrableOn (integrable_const K),
-    setIntegral_terminalSpot s r σ hτ.le, setIntegral_const, smul_eq_mul,
-    TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf _ one_ne_zero,
-    TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf _ one_ne_zero, callPrice_def,
-    dMinus_def]
-  simp only [NNReal.coe_one, sqrt_one, div_one]
-  rw [show σ * √τ - -(dPlus s r σ K τ - σ * √τ) = dPlus s r σ K τ by ring,
-    show 0 - -(dPlus s r σ K τ - σ * √τ) = dPlus s r σ K τ - σ * √τ by ring]
+    setIntegral_Ioi_neg_dMinus_terminalSpot s r σ K hτ.le, setIntegral_const, smul_eq_mul,
+    measureReal_Ioi_neg_dMinus, callPrice_def]
+  -- The discount factor cancels the forward growth of the stock leg.
   have hexp : exp (-r * τ) * exp (r * τ) = 1 := by rw [← exp_add]; simp
   linear_combination (s * cdf (gaussianReal 0 1) (dPlus s r σ K τ)) * hexp
 
@@ -263,9 +278,9 @@ theorem riskNeutralPrice_put (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 <
     hint.sub (integrable_const K)
   have hpos : Integrable (fun z => (terminalSpot s r σ τ z - K)⁺) (gaussianReal 0 1) := by
     simpa only [posPart_def] using hsub.pos_part
-  rw [hpay, integral_sub hpos hsub,
-    integral_sub hint (integrable_const K), mul_sub, mul_sub, hcall, hid,
-    integral_const, probReal_univ, one_smul]
-  linear_combination callPrice_sub_putPrice s r σ K τ
+  -- Split the integral by linearity, then combine the call price, the stock price and parity.
+  rw [hpay, integral_sub hpos hsub, integral_sub hint (integrable_const K), integral_const,
+    probReal_univ, one_smul]
+  linear_combination hcall - hid + callPrice_sub_putPrice s r σ K τ
 
 end TauCeti.BlackScholes
