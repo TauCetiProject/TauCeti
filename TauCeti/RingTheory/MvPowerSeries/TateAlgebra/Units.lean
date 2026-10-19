@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Ring.MulUnit
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
-import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
 # Units of restricted power series
@@ -21,10 +20,11 @@ f = a * (1 - x),    x = a⁻¹ * (a - f),    ‖x‖ = ‖f - a‖ / ‖a‖ < 1
 ```
 
 so it is invertible with inverse given by the Neumann series `∑ₙ xⁿ a⁻¹`, and it is again a
-multiplicative unit, of norm `‖a‖`. No commutativity of `R` and no multiplicativity of its norm
-is needed; in particular `R` may have nilpotents. Over the dual numbers `K[ε]` the series
-`1 + εX` is a unit although its coefficient `ε` may have norm one, so the converse below does not
-extend to such rings.
+multiplicative unit, of norm `‖a‖`. This is the Neumann series criterion
+`TauCeti.IsNormMulUnit.of_norm_sub_lt` applied to the constant series `a`. No commutativity of
+`R` and no multiplicativity of its norm is needed; in particular `R` may have nilpotents. Over
+the dual numbers `K[ε]` the series `1 + εX` is a unit although its coefficient `ε` may have norm
+one, so the converse below does not extend to such rings.
 
 When the norm of `R` is multiplicative and `R` is nontrivial, the converse holds: a restricted
 series is a unit exactly when its constant coefficient is a unit and strictly dominates the
@@ -66,15 +66,11 @@ section NormedRing
 
 variable {σ R : Type*} [NormedRing R] [IsUltrametricDist R] {c : σ → ℝ}
 
-/-- The factorization `f = a * (1 - a⁻¹ * (a - f))` behind the Neumann series criterion. -/
-private theorem eq_C_mul_one_sub (a : Rˣ) (f : IsRestricted.subring (R := R) c) :
-    f = ⟨C (a : R), isRestricted_C c _⟩ *
-      (1 - ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ * (⟨C (a : R), isRestricted_C c _⟩ - f)) := by
-  have h : (⟨C (a : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) *
-      ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ = 1 :=
-    (Units.map
-      (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c)).toMonoidHom a).mul_inv
-  rw [mul_sub, mul_one, ← mul_assoc, h, one_mul, sub_sub_cancel]
+/-- The constant-series embedding into the restricted series sends `a` to the constant `C a`. -/
+private theorem codRestrict_C_eq (a : R) :
+    C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c) a =
+      ⟨C a, isRestricted_C c a⟩ :=
+  Subtype.ext (RingHom.codRestrict_apply _ _ _ a)
 
 variable [∀ i, Fact (0 < c i)]
 
@@ -85,19 +81,9 @@ variable [NormOneClass R]
 /-- Constant series preserve multiplicative units, since taking constant series is a
 norm-preserving ring homomorphism. -/
 theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
-    IsNormMulUnit (⟨C u, isRestricted_C c u⟩ : IsRestricted.subring (R := R) c) :=
-  hu.map (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c)) (norm_C (c := c))
-
-/-- If `‖f - a‖ < ‖a‖` for a multiplicative unit `a`, then `a⁻¹ * (a - f)` has norm less than
-one. -/
-private theorem norm_C_inv_mul_sub_lt_one {a : Rˣ} (ha : IsNormMulUnit (a : R))
-    {f : IsRestricted.subring (R := R) c}
-    (hf : ‖f - ⟨C (a : R), isRestricted_C c _⟩‖ < ‖(a : R)‖) :
-    ‖(⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) *
-      (⟨C (a : R), isRestricted_C c _⟩ - f)‖ < 1 := by
-  rw [(isNormMulUnit_C ha.units_inv).norm_mul, norm_C, (Units.isNormMulUnit_iff_norm_inv a).mp ha,
-    norm_sub_rev, inv_mul_lt_one₀ ((norm_nonneg _).trans_lt hf)]
-  exact hf
+    IsNormMulUnit (⟨C u, isRestricted_C c u⟩ : IsRestricted.subring (R := R) c) := by
+  rw [← codRestrict_C_eq]
+  exact hu.map _ fun a ↦ by rw [codRestrict_C_eq, norm_C]
 
 variable [CompleteSpace R]
 
@@ -106,11 +92,8 @@ whose distance from a constant multiplicative unit `a` is less than `‖a‖` is
 unit. -/
 theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     {f : IsRestricted.subring (R := R) c} (hf : ‖f - ⟨C a, isRestricted_C c a⟩‖ < ‖a‖) :
-    IsNormMulUnit f := by
-  obtain ⟨u, rfl⟩ := ha.isUnit
-  rw [eq_C_mul_one_sub u f, sub_eq_add_neg]
-  exact (isNormMulUnit_C ha).mul
-    (isNormMulUnit_one_add (by rw [norm_neg]; exact norm_C_inv_mul_sub_lt_one ha hf))
+    IsNormMulUnit f :=
+  (isNormMulUnit_C ha).of_norm_sub_lt (by rwa [norm_C])
 
 /-- **The Neumann series of the inverse.** If `‖f - a‖ < ‖a‖` for a constant multiplicative unit
 `a`, then `x = a⁻¹ * (a - f)` has norm less than one and `f⁻¹ = ∑ₙ xⁿ * a⁻¹`. -/
@@ -121,28 +104,23 @@ theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
       ((⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) *
         (⟨C (a : R), isRestricted_C c _⟩ - f)) ^ n * ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩)
       (Ring.inverse f) := by
-  have hA := (isNormMulUnit_C (c := c) ha).isUnit
-  have hB : Ring.inverse (⟨C (a : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) =
-      ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ :=
-    Ring.inverse_unit
-      (Units.map (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c)).toMonoidHom a)
-  have hf' : Ring.inverse f = Ring.inverse (1 - ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ *
-      (⟨C (a : R), isRestricted_C c _⟩ - f)) * ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ := by
-    conv_lhs => rw [eq_C_mul_one_sub a f]
-    rw [Ring.inverse_mul (.inl hA), hB]
-  rw [hf']
-  exact (hasSum_geom_series_inverse _ (norm_C_inv_mul_sub_lt_one ha hf)).mul_right _
+  set A := Units.map (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c) :
+    R →* IsRestricted.subring (R := R) c) a
+  have hA : (A : IsRestricted.subring (R := R) c) = ⟨C (a : R), isRestricted_C c _⟩ := by
+    rw [Units.coe_map, MonoidHom.coe_ofClass, codRestrict_C_eq]
+  have hA' : ((A⁻¹ : (IsRestricted.subring (R := R) c)ˣ) : IsRestricted.subring (R := R) c) =
+      ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ := by
+    rw [← map_inv, Units.coe_map, MonoidHom.coe_ofClass, codRestrict_C_eq]
+  have h := IsNormMulUnit.hasSum_inverse_of_norm_sub_lt (u := A) (hA ▸ isNormMulUnit_C ha)
+    (by rwa [hA, norm_C])
+  rwa [hA, hA'] at h
 
 /-- If `‖f - a‖ < ‖a‖` for a constant multiplicative unit `a`, then the inverse of `f` has norm
 `‖a‖⁻¹`. -/
 theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     {f : IsRestricted.subring (R := R) c} (hf : ‖f - ⟨C a, isRestricted_C c a⟩‖ < ‖a‖) :
     ‖Ring.inverse f‖ = ‖a‖⁻¹ := by
-  obtain ⟨u, hu⟩ := (isNormMulUnit_of_norm_sub_C_lt ha hf).isUnit
-  have h := (Units.isNormMulUnit_iff_norm_inv u).mp (hu ▸ isNormMulUnit_of_norm_sub_C_lt ha hf)
-  rw [← hu, Ring.inverse_unit, h, hu, ← IsUltrametricDist.norm_eq_of_norm_sub_lt_left
-    (x := (⟨C a, isRestricted_C c a⟩ : IsRestricted.subring (R := R) c))
-    (by rwa [norm_sub_rev, norm_C]), norm_C]
+  rw [(isNormMulUnit_C ha).norm_inverse_of_norm_sub_lt (by rwa [norm_C]), norm_C]
 
 /-- **Dominant constant coefficient.** Over a complete ultrametric norm-one ring, a restricted
 series whose constant coefficient is a multiplicative unit strictly dominating the weighted norm
