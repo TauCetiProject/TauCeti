@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.LinearAlgebra.Matrix.Determinant.ZeroRowSum
+public import TauCeti.Logic.Equiv.Sum
 public import TauCeti.NumberTheory.NumberField.SUnits.Lattice
 
 /-!
@@ -187,19 +188,6 @@ private theorem sum_fullLogMatrix {ι : Type*}
   rw [Fintype.sum_sum_type]
   exact sum_mult_mul_log_add_sum_log_finitePlace S (ε i)
 
-/-- The disjoint union of the elements other than `a` and of `β`, as the subtype of `α ⊕ β` of the
-elements other than `Sum.inl a`. -/
-private def sumSubtypeNeEquiv {α β : Type*} (a : α) :
-    ({x // x ≠ a} ⊕ β) ≃ {j : α ⊕ β // j ≠ Sum.inl a} :=
-  ((Equiv.subtypeSum (p := (· ≠ Sum.inl a))).trans (Equiv.sumCongr
-    (Equiv.subtypeEquivRight fun _ ↦ Sum.inl_injective.ne_iff)
-    (Equiv.subtypeUnivEquiv fun _ ↦ Sum.inr_ne_inl))).symm
-
-@[simp]
-private theorem coe_sumSubtypeNeEquiv {α β : Type*} (a : α) (x : {x // x ≠ a} ⊕ β) :
-    (sumSubtypeNeEquiv a x : α ⊕ β) = Sum.map Subtype.val id x := by
-  rcases x with x | y <;> simp [sumSubtypeNeEquiv, Equiv.subtypeSum]
-
 /-- The square matrix of weighted logarithms of a family of `S`-units, without the column of the
 infinite place `w'`: the row of `ε i` lists `mult w * log (w (ε i))` at the infinite places
 `w ≠ w'` and `log ‖ε i‖_v` at the places `v ∈ S`, in the order given by `e`. -/
@@ -228,7 +216,7 @@ gives the matrix of the determinant formula. -/
 private theorem fullLogMatrix_submatrix {ι : Type*}
     (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K) (w' : InfinitePlace K)
     (e : ι ≃ ({w // w ≠ w'} ⊕ S)) :
-    (fullLogMatrix ε).submatrix id (fun k ↦ ((e.trans (sumSubtypeNeEquiv w')) k :
+    (fullLogMatrix ε).submatrix id (fun k ↦ ((e.trans (Equiv.sumSubtypeNe w')) k :
       InfinitePlace K ⊕ S)) = logMatrix ε w' e := by
   ext i k
   rcases hk : e k with w | v <;> simp [fullLogMatrix, logMatrix_apply, hk]
