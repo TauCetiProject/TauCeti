@@ -46,6 +46,8 @@ The construction follows the generated positive Geck comparison in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum`,
 using the E₆ generator comparisons in `TauCeti.Algebra.Lie.E6.Minuscule.Generated.Basic` and the
 common-kernel and quotient-transport API in `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange`.
+The carrier-level restriction and intrinsic-ideal transport proofs adapt
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Positive.BaseChange`.
 -/
 
 public section
