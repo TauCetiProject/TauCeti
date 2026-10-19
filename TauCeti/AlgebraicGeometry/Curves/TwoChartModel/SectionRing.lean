@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
-public import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing.Basic
 
 /-!
 # The section-ring charts of the two-chart model
