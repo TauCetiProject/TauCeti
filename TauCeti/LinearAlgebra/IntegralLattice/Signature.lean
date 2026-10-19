@@ -22,10 +22,9 @@ and `sigNeg`; the null index is the dimension of the kernel of the bilinear form
 Positive- and negative-semidefiniteness are expressed using Mathlib's bilinear-form predicates.
 The characteristic theorems relate every predicate both to the signature and to the usual
 elementwise inequalities. In particular, an indefinite lattice has vectors of both signs, and a
-degenerate lattice has a nonzero vector in its radical. The signed determinant vanishes exactly
-when the null index is positive, and otherwise has sign `(-1)^{n₋}`. The final section proves that
-an integral-lattice isometry transports the radical and preserves all three inertia indices and
-every definiteness predicate.
+degenerate lattice has a nonzero vector in its radical. The final section proves that an
+integral-lattice isometry transports the radical and preserves all three inertia indices and every
+definiteness predicate.
 
 ## References
 
@@ -39,8 +38,11 @@ every definiteness predicate.
 * `TauCeti.IntegralLattice.IsPosSemidef` and related definiteness predicates.
 * `TauCeti.IntegralLattice.isPosDef_ofGramMatrix_iff`: a lattice presented by a Gram matrix is
   positive definite exactly when the matrix is, read over `ℚ`.
-* `TauCeti.IntegralLattice.sign_determinant`: the determinant-sign formula
-  `sign (det L) = (-1)^{n₋}` for a nondegenerate lattice.
+* `TauCeti.IntegralLattice.determinant_eq_neg_one_pow_sigNeg_mul_discriminant`: the sign of the
+  determinant is `(-1) ^ n₋`.
+* `TauCeti.IntegralLattice.finrank_eq_of_signature_eq`: equal signatures force equal ranks, and
+  `TauCeti.IntegralLattice.IsPosDef.signature_eq`: a positive definite lattice of rank `n` has
+  signature `(n, 0, 0)`.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -92,6 +94,71 @@ theorem signature_sum_eq_finrank :
     (Q := L.form.toQuadraticMap)
   rw [L.radical_toQuadraticMap] at h
   simpa only [sigPos, sigNull, sigNeg, add_comm, add_left_comm, add_assoc] using h
+
+/-- Integral lattices with equal signatures have equal ranks. -/
+theorem finrank_eq_of_signature_eq {M : IntegralLattice W} (h : L.signature = M.signature) :
+    Module.finrank ℤ L = Module.finrank ℤ M := by
+  rw [L.finrank_carrier, M.finrank_carrier, ← L.signature_sum_eq_finrank,
+    ← M.signature_sum_eq_finrank]
+  exact congrArg (fun s : ℕ × ℕ × ℕ ↦ s.1 + s.2.1 + s.2.2) h
+
+/-- **The sign of the determinant is `(-1) ^ n₋`.** The signed determinant of an integral lattice
+is its discriminant times `(-1)` to the negative index of inertia: in an orthogonal rational basis
+the Gram matrix is diagonal with exactly `n₋` negative entries, and a change of basis multiplies
+the determinant by a positive square. A degenerate lattice has determinant and discriminant `0`. -/
+theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
+    L.determinant = (-1) ^ L.sigNeg * L.discriminant := by
+  classical
+  have := L.finiteDimensional
+  by_cases hnd : L.form.Nondegenerate
+  swap
+  · have h0 : L.determinant = 0 := not_ne_iff.mp (mt L.determinant_ne_zero_iff.mp hnd)
+    simp [discriminant_def, h0]
+  -- Compare a lattice basis with an orthogonal basis `v` of the rational form.
+  obtain ⟨v, hv⟩ := LinearMap.BilinForm.exists_orthogonal_basis
+    (LinearMap.BilinForm.isSymm_iff.mp L.isSymm)
+  let e := (Module.Free.chooseBasis ℤ L).reindex (L.rationalBasis.indexEquiv v)
+  let b := e.extendOfIsLattice ℚ
+  set d : Fin (Module.finrank ℚ V) → ℚ := fun i ↦ L.form (v i) (v i)
+  have hd : ∀ i, d i ≠ 0 := hv.not_isOrtho_basis_self_of_separatingLeft hnd.1
+  have hdiag : LinearMap.BilinForm.toMatrix v L.form = Matrix.diagonal d := by
+    ext i j
+    rw [LinearMap.BilinForm.toMatrix_apply, Matrix.diagonal_apply]
+    split_ifs with h
+    · rw [h]
+    · exact hv h
+  -- Sylvester's law of inertia counts the negative diagonal entries.
+  have hneg : L.sigNeg = (Finset.univ.filter fun i ↦ d i < 0).card := by
+    have hQ : (QuadraticMap.associated (R := ℚ) L.form.toQuadraticMap).IsOrthoᵢ v := by
+      rwa [QuadraticMap.associated_left_inverse ℚ fun x y ↦ L.isSymm.eq x y]
+    rw [sigNeg, QuadraticForm.sigNeg_of_equiv_weightedSumSquares
+      ⟨QuadraticForm.isometryEquivWeightedSumSquares _ v hQ⟩,
+      Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+    rfl
+  have hdet : (L.determinant : ℚ) * (b.toMatrix v).det ^ 2 = ∏ i, d i := by
+    rw [← Matrix.det_diagonal, ← hdiag, ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b,
+      Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, L.determinant_eq_gramDet e,
+      intCast_gramDet]
+    ring
+  -- The sign of `∏ i, d i` is `(-1) ^ L.sigNeg`, and `(b.toMatrix v).det ^ 2` is positive.
+  have habs : ∏ i, |d i| = (-1) ^ L.sigNeg * ∏ i, d i := by
+    have hsign : (-1 : ℚ) ^ (Finset.univ.filter fun i ↦ d i < 0).card =
+        ∏ i, if d i < 0 then -1 else 1 := by
+      rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const_one, mul_one]
+    rw [hneg, hsign, ← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    split_ifs with h
+    · rw [abs_of_neg h]; ring
+    · rw [abs_of_nonneg (not_lt.mp h)]; ring
+  have hpos : (0 : ℚ) < (-1) ^ L.sigNeg * L.determinant := by
+    have h := Finset.prod_pos fun i (_ : i ∈ Finset.univ) ↦ abs_pos.mpr (hd i)
+    rw [habs, ← hdet, ← mul_assoc] at h
+    exact pos_of_mul_pos_left h (sq_nonneg _)
+  have hpos' : 0 < (-1) ^ L.sigNeg * L.determinant := by exact_mod_cast hpos
+  have h1 : |L.determinant| = (-1) ^ L.sigNeg * L.determinant := by
+    rw [← abs_of_pos hpos', abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
+  rw [discriminant_def, Int.natCast_natAbs, h1, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg,
+    one_pow, one_mul]
 
 /-- An integral lattice is positive-definite when its quadratic form is positive on every nonzero
 vector. -/
@@ -194,6 +261,13 @@ theorem isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero :
   exact LinearMap.BilinForm.posDef_toQuadraticMap_iff_finrank_ker_eq_zero_and_sigNeg_eq_zero
     L.form L.isSymm
 
+/-- A positive definite lattice has signature `(n, 0, 0)`, where `n` is its rank. -/
+theorem IsPosDef.signature_eq (hLp : L.IsPosDef) : L.signature = (Module.finrank ℤ L, 0, 0) := by
+  obtain ⟨h0, hneg⟩ := L.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero.mp hLp
+  have hsum := L.signature_sum_eq_finrank
+  rw [h0, hneg, add_zero, add_zero, ← L.finrank_carrier] at hsum
+  simp only [signature, hsum, h0, hneg]
+
 /-- Negative-definiteness is negative-semidefiniteness together with nondegeneracy. -/
 @[grind =]
 theorem isNegDef_iff_isNegSemidef_and_nondegenerate :
@@ -251,21 +325,6 @@ theorem isIndefinite_iff_exists_pos_and_exists_neg :
     L.isNegSemidef_iff]
   simp only [not_forall, not_le]
   exact and_comm
-
-/-- The signed determinant of a lattice is nonzero exactly when its null index vanishes. -/
-theorem determinant_ne_zero_iff_sigNull_eq_zero : L.determinant ≠ 0 ↔ L.sigNull = 0 := by
-  rw [L.determinant_ne_zero_iff, ← not_iff_not, ← L.isDegenerate_iff_not_nondegenerate,
-    L.isDegenerate_iff_sigNull_pos, Nat.pos_iff_ne_zero]
-
-/-- **The determinant-sign formula.** The signed determinant of a nondegenerate lattice has sign
-`(-1)^{n₋}`, where `n₋` is its negative index of inertia. -/
-theorem sign_determinant (hL : L.form.Nondegenerate) :
-    SignType.sign L.determinant = (-1) ^ L.sigNeg := by
-  classical
-  have := L.finiteDimensional
-  let e := Module.Free.chooseBasis ℤ L
-  rw [← sign_intCast (α := ℚ), L.determinant_eq_gramDet e, intCast_gramDet,
-    LinearMap.BilinForm.sign_det_toMatrix L.form L.isSymm hL]
 
 namespace Isometry
 

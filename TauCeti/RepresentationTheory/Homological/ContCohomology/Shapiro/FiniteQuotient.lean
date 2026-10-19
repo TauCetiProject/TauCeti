@@ -127,7 +127,7 @@ private theorem apply_mul_of_mem (F : DiscreteCoind G (C.comap (QuotientGroup.mk
       ((ofSmoothDiscrete R _).obj (comapInflation V C B)).V) (g : G) {x : G}
     (hx : x ∈ V.toSubgroup) : F (g * x) = F g := by
   have h1 : QuotientGroup.mk' V.toSubgroup (g * x * g⁻¹) = 1 :=
-    (QuotientGroup.eq_one_iff _).2 (Subgroup.Normal.conj_mem inferInstance x hx g)
+    (QuotientGroup.eq_one_iff _).2 (Subgroup.Normal.conj_mem x hx g)
   have hgx : g * x * g⁻¹ ∈ C.comap (QuotientGroup.mk' V.toSubgroup) := by
     rw [Subgroup.mem_comap, h1]
     exact one_mem C

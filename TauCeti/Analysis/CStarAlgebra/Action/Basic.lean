@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Dynamics.Flow.Basic
 
 /-!
 # Continuous actions on C⋆-algebras
@@ -18,6 +19,8 @@ continuity needed when an action is applied to a coefficient-valued convolution 
 
 Actions can be pulled back along continuous group homomorphisms and transported along
 star-algebra equivalences. The latter construction expresses conjugacy of dynamical systems.
+Membership in a subset invariant in the sense of Mathlib's `IsInvariant` is unchanged by the
+action.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 The joint-continuity argument uses Mathlib's `StarAlgEquiv.isometry` and
@@ -79,6 +82,12 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
   rw [← mul_apply]
   simp
 
+/-- Membership in an invariant subset is unchanged by the action. -/
+@[simp]
+theorem _root_.IsInvariant.cstarAction_apply_mem_iff {α : CStarAction G A} {s : Set A}
+    (hs : IsInvariant (fun g a ↦ α g a) s) (g : G) (a : A) : α g a ∈ s ↔ a ∈ s :=
+  hs.apply_mem_iff (fun g a ↦ α.inv_apply_apply g a) g a
+
 /-- Point-norm continuity implies joint continuity of the action. -/
 @[fun_prop]
 theorem continuous (α : CStarAction G A) : Continuous fun p : G × A => α p.1 p.2 :=
@@ -91,6 +100,23 @@ theorem continuous_apply (α : CStarAction G A) {X : Type*} [TopologicalSpace X]
     {g : X → G} {a : X → A} (hg : Continuous g) (ha : Continuous a) :
     Continuous fun x => α (g x) (a x) :=
   α.continuous.comp (hg.prodMk ha)
+
+/-- The inverse of an automorphism of the action is the action of the inverse element. -/
+@[simp]
+theorem symm_apply (α : CStarAction G A) (g : G) (a : A) : (α g).symm a = α g⁻¹ a :=
+  (α g).symm_apply_eq.mpr (α.apply_inv_apply g a).symm
+
+/-- Orbits through inverses are continuous. Continuity of inversion in `G` is not needed, since
+`‖α g⁻¹ a - α h⁻¹ a‖ = ‖α h b - α g b‖` for `b = α h⁻¹ a`. -/
+theorem continuous_inv_apply (α : CStarAction G A) (a : A) : Continuous fun g => α g⁻¹ a := by
+  refine continuous_iff_continuousAt.2 fun h => ?_
+  have hdist (g : G) : dist (α g⁻¹ a) (α h⁻¹ a) = dist (α g (α h⁻¹ a)) a := by
+    rw [← (StarAlgEquiv.isometry (α g)).dist_eq, apply_inv_apply, dist_comm]
+  have hlim : Filter.Tendsto (fun g => α g (α h⁻¹ a)) (nhds h) (nhds a) := by
+    simpa using (α.continuous_orbit (α h⁻¹ a)).tendsto h
+  rw [tendsto_iff_dist_tendsto_zero] at hlim
+  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
+  simpa only [hdist] using hlim
 
 /-- The trivial action, including on the zero algebra. -/
 def trivial : CStarAction G A where

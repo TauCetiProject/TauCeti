@@ -21,9 +21,8 @@ to `ℚ_p`.
 
 The genus determines the signed determinant. Integral local isometry at `p` changes the
 determinant by the square of a unit of `ℤ_p`, so the absolute determinants have the same
-`p`-adic valuation at every prime and are therefore equal. The real signature fixes the sign:
-the determinant vanishes exactly when the null index is positive, and otherwise has sign
-`(-1)^{n₋}`.
+`p`-adic valuation at every prime and are therefore equal. The real signature fixes the sign,
+since the signed determinant is `(-1) ^ n₋` times the absolute determinant.
 
 For lattices with equal nonzero signed determinants, the local tests reduce to the finite set
 of prime factors of twice the absolute determinant. Outside that set, the local determinants
@@ -97,21 +96,10 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
     obtain ⟨u, hu⟩ := L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p
       (h.localIntegralForm_equivalent p)
     exact Associated.symm ⟨u ^ 2, by rw [hu, Units.val_pow_eq_pow_val, mul_comm]⟩
-  have hnull : L.sigNull = M.sigNull := congrArg (fun s ↦ s.2.1) h.signature_eq
   have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) h.signature_eq
-  have hsign : SignType.sign L.determinant = SignType.sign M.determinant := by
-    by_cases hL : L.determinant = 0
-    · have hM : M.determinant = 0 := by
-        rwa [← not_ne_iff, M.determinant_ne_zero_iff_sigNull_eq_zero, ← hnull,
-          ← L.determinant_ne_zero_iff_sigNull_eq_zero, not_ne_iff]
-      rw [hL, hM]
-    · have hM : M.determinant ≠ 0 := by
-        rwa [M.determinant_ne_zero_iff_sigNull_eq_zero, ← hnull,
-          ← L.determinant_ne_zero_iff_sigNull_eq_zero]
-      rw [L.sign_determinant (L.determinant_ne_zero_iff.mp hL),
-        M.sign_determinant (M.determinant_ne_zero_iff.mp hM), hneg]
-  rw [← Int.sign_mul_natAbs L.determinant, ← Int.sign_mul_natAbs M.determinant,
-    Int.sign_eq_sign, Int.sign_eq_sign, hsign, habs]
+  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, discriminant_def,
+    discriminant_def, habs]
 
 end SameGenus
 
@@ -134,15 +122,12 @@ theorem sameGenus_iff_localIntegralForm_equivalent_primeFactors
   · intro h
     exact ⟨h.signature_eq, fun p _ _ ↦ h.localIntegralForm_equivalent p⟩
   · rintro ⟨hsig, hlocal⟩
-    have hrank : Module.finrank ℤ L = Module.finrank ℤ M := by
-      rw [L.finrank_carrier, M.finrank_carrier,
-        ← L.signature_sum_eq_finrank, ← M.signature_sum_eq_finrank]
-      exact congrArg (fun s : ℕ × ℕ × ℕ ↦ s.1 + s.2.1 + s.2.2) hsig
     have hn : 2 * L.determinant.natAbs ≠ 0 :=
       mul_ne_zero (by decide) (Int.natAbs_ne_zero.mpr hdet0)
     refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ ?_⟩
     by_cases hp : p ∣ 2 * L.determinant.natAbs
     · exact hlocal p ((Fact.out : p.Prime).mem_primeFactors hp hn)
-    · exact L.localIntegralForm_equivalent_of_not_dvd M hrank hdet hp
+    · exact L.localIntegralForm_equivalent_of_not_dvd M (L.finrank_eq_of_signature_eq hsig)
+        hdet hp
 
 end TauCeti.IntegralLattice

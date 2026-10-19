@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.FormalCharacter
+import TauCeti.Algebra.Lie.Weights.Semisimple
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
@@ -46,12 +47,8 @@ theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → K) :
     rw [eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact Submodule.mem_iSup_of_mem (μ i x) (Module.End.mem_eigenspace_iff.mpr (hb i x))
-  ext m
-  rw [mem_genWeightSpace, mem_weightSpace]
-  refine forall_congr' fun x => ?_
-  rw [← Module.End.mem_maxGenEigenspace,
-    (hss x).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace,
-    Module.End.mem_eigenspace_iff, LieModule.toEnd_apply_apply]
+  exact TauCeti.genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
+    (fun x ↦ (hss x).isFinitelySemisimple) χ
 
 omit [LieRing.IsNilpotent L] in
 /-- With distinct basis weights, the weight space at a basis weight is its basis-vector line. -/

@@ -57,8 +57,13 @@ morphism.
 * `CategoryTheory.ExactPairing.rightMate_associator_hom`,
   `CategoryTheory.ExactPairing.rightMate_leftUnitor_hom` and
   `CategoryTheory.ExactPairing.rightMate_rightUnitor_hom`: mates of the structure morphisms;
-* `TauCeti.rightAdjointMate_eq_rightMate` and `CategoryTheory.ExactPairing.rightDualIso_hom`:
-  Mathlib's `rightAdjointMate` and `rightDualIso` as mates;
+* `CategoryTheory.ExactPairing.rightMate_evaluation` and
+  `CategoryTheory.ExactPairing.rightMate_coevaluation`: the mate of an evaluation is a
+  coevaluation, and conversely;
+* `TauCeti.rightAdjointMate_eq_rightMate`, `CategoryTheory.ExactPairing.rightDualIso_hom` and
+  `CategoryTheory.ExactPairing.rightDualIso_inv`: Mathlib's `rightAdjointMate` and `rightDualIso`
+  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation` and
+  `rightDualIso_inv_whiskerRight_evaluation`;
 * `CategoryTheory.ExactPairing.leftDualHom_ext`: morphisms into a left dual agree once they agree
   after evaluation;
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
@@ -233,6 +238,55 @@ theorem rightDualIso_hom {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : 
     rw [rightMate_comp_evaluation]
     -- `rightDualIso` is defined as the mate of `𝟙 X` with `p₂` and `p₁` made ambient.
     exact @rightAdjointMate_comp_evaluation C _ _ X X ⟨Y₂⟩ ⟨Y₁⟩ (𝟙 X))
+
+/-- The inverse of the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂` is the mate of the identity of
+`X` taken in the other direction. -/
+theorem rightDualIso_inv {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : ExactPairing X Y₂) :
+    (rightDualIso p₁ p₂).inv = rightMate p₁ p₂ (𝟙 X) :=
+  -- `(rightDualIso p₁ p₂).inv` and `(rightDualIso p₂ p₁).hom` are the same mate of `𝟙 X`.
+  rightDualIso_hom p₂ p₁
+
+/-- Through the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂`, the evaluation of `p₂` is the
+evaluation of `p₁`. -/
+@[reassoc]
+theorem rightDualIso_hom_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).hom ▷ X ≫ ε_ X Y₂ = ε_ X Y₁ := by
+  rw [rightDualIso_hom, rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id,
+    Category.id_comp]
+
+/-- Through the inverse comparison `(rightDualIso p₁ p₂).inv : Y₂ ⟶ Y₁`, the evaluation of `p₁` is
+the evaluation of `p₂`. -/
+@[reassoc]
+theorem rightDualIso_inv_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).inv ▷ X ≫ ε_ X Y₁ = ε_ X Y₂ := by
+  rw [rightDualIso_inv, ← rightDualIso_hom, rightDualIso_hom_whiskerRight_evaluation]
+
+/-- The mate of the evaluation `ε_ X X' : X' ⊗ X ⟶ 𝟙_ C`, taken with respect to the tensor product
+pairing of `(X', X'')` with `(X, X')` and the self-pairing of the unit, is the coevaluation
+`η_ X' X'' : 𝟙_ C ⟶ X' ⊗ X''`. -/
+theorem rightMate_evaluation {X X' X'' : C} (pX : ExactPairing X X') (pX' : ExactPairing X' X'') :
+    rightMate (tensor : ExactPairing (X' ⊗ X) (X' ⊗ X'')) exactPairingUnit (ε_ X X') =
+      η_ X' X'' := by
+  refine rightHom_ext (X := X' ⊗ X) ?_
+  rw [rightMate_comp_evaluation, tensor_evaluation, TauCeti.ExactPairing.unit_evaluation]
+  calc
+    _ = 𝟙 _ ⊗≫ (η_ X' X'' ▷ X' ⊗≫ X' ◁ ε_ X' X'') ▷ X ⊗≫ ε_ X X' := by
+      rw [evaluation_coevaluation'']; monoidal
+    _ = _ := by monoidal
+
+/-- The mate of the coevaluation `η_ X X' : 𝟙_ C ⟶ X ⊗ X'`, taken with respect to the self-pairing
+of the unit and the tensor product pairing of `(X, X')` with `(X', X'')`, is the evaluation
+`ε_ X' X'' : X'' ⊗ X' ⟶ 𝟙_ C`. -/
+theorem rightMate_coevaluation {X X' X'' : C} (pX : ExactPairing X X')
+    (pX' : ExactPairing X' X'') :
+    rightMate exactPairingUnit (tensor : ExactPairing (X ⊗ X') (X'' ⊗ X')) (η_ X X') =
+      ε_ X' X'' := by
+  refine rightHom_ext (X := 𝟙_ C) ?_
+  rw [rightMate_comp_evaluation, tensor_evaluation, TauCeti.ExactPairing.unit_evaluation]
+  calc
+    _ = 𝟙 _ ⊗≫ X'' ◁ (X' ◁ η_ X X' ⊗≫ ε_ X X' ▷ X') ⊗≫ ε_ X' X'' := by monoidal
+    _ = _ := by
+      rw [coevaluation_evaluation'']; monoidal
 
 /-! ### Left adjoint mates -/
 
