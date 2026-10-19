@@ -105,8 +105,7 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{
   {M : Type v} [AddCommGroup M] [Module R M] [Module.Finite R M]
 
 /-- For an `M`-regular element `x` of the maximal ideal, `M ⧸ x M` is Cohen–Macaulay if and only if
-`M` is: dividing by `x` lowers both the depth and the dimension of the support by one.
-Stacks, Lemma 10.103.5 (0C6G). -/
+`M` is. Stacks, Lemma 10.103.5 (0C6G). -/
 @[stacks 0C6G]
 theorem isCohenMacaulay_quotSMulTop_iff {x : R} (reg : IsSMulRegular M x)
     (hx : x ∈ maximalIdeal R) : IsCohenMacaulay R (QuotSMulTop x M) ↔ IsCohenMacaulay R M := by
@@ -118,8 +117,7 @@ theorem isCohenMacaulay_quotSMulTop_iff {x : R} (reg : IsSMulRegular M x)
     WithBot.coe_add, WithBot.coe_one, ENat.WithBot.add_one_cancel]
 
 /-- For an `M`-regular sequence `r₁, …, rₙ`, `M ⧸ (r₁, …, rₙ) M` is Cohen–Macaulay if and only if
-`M` is: dividing by the sequence lowers both the depth and the dimension of the support by `n`.
-Stacks, Lemma 10.103.5 (0C6G), applied `n` times. -/
+`M` is. Stacks, Lemma 10.103.5 (0C6G), applied `n` times. -/
 theorem isCohenMacaulay_quotient_ofList_smul_iff (rs : List R) (reg : IsRegular M rs) :
     IsCohenMacaulay R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)) ↔ IsCohenMacaulay R M := by
   have := reg.nontrivial
@@ -129,8 +127,7 @@ theorem isCohenMacaulay_quotient_ofList_smul_iff (rs : List R) (reg : IsRegular 
     ← supportDim_add_length_eq_supportDim_of_isRegular rs reg, WithBot.coe_add,
     WithBot.coe_natCast, ENat.WithBot.add_natCast_cancel]
 
-/-- Every finite module over a Noetherian local ring of dimension zero is Cohen–Macaulay: the
-dimension of its support is at most zero. -/
+/-- Every finite module over a Noetherian local ring of dimension zero is Cohen–Macaulay. -/
 theorem isCohenMacaulay_of_krullDimLE_zero [Ring.KrullDimLE 0 R] : IsCohenMacaulay R M := by
   cases subsingleton_or_nontrivial M
   · exact isCohenMacaulay_of_subsingleton
@@ -144,8 +141,7 @@ namespace Module
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [IsDomain R]
 
-/-- A Noetherian local domain of dimension at most one is Cohen–Macaulay over itself: a nonzero
-element of the maximal ideal is regular, so the depth is at least one unless `R` is a field. -/
+/-- A Noetherian local domain of dimension at most one is Cohen–Macaulay over itself. -/
 theorem isCohenMacaulay_self_of_isDomain_of_krullDimLE_one [Ring.KrullDimLE 1 R] :
     IsCohenMacaulay R R := by
   rw [isCohenMacaulay_iff_supportDim_le_depth, supportDim_self_eq_ringKrullDim]

@@ -19,6 +19,8 @@ basic facts relating depth to dimension and to quotients by regular sequences.
 
 ## Main results
 
+* `RingTheory.Sequence.IsRegular.mem_maximalIdeal`: over a local ring, every element of an
+  `M`-regular sequence lies in the maximal ideal.
 * `IsLocalRing.depth_le_supportDim`: the depth of a finite nonzero module over a Noetherian local
   ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)).
 * `IsLocalRing.depth_quotSMulTop_succ_eq_depth`: dividing a finite module by an `M`-regular element
@@ -36,6 +38,15 @@ public section
 universe u v
 
 open IsLocalRing RingTheory.Sequence Pointwise
+
+/-- Over a local ring, every element of an `M`-regular sequence lies in the maximal ideal. -/
+theorem RingTheory.Sequence.IsRegular.mem_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R]
+    {M : Type*} [AddCommGroup M] [Module R M] {rs : List R} (reg : IsRegular M rs) {r : R}
+    (hr : r ∈ rs) : r ∈ maximalIdeal R := by
+  by_contra h
+  refine reg.top_ne_smul ?_
+  rw [Ideal.eq_top_of_isUnit_mem (Ideal.ofList rs) (Ideal.subset_span hr)
+    (notMem_maximalIdeal.1 h), Submodule.top_smul]
 
 namespace IsLocalRing
 
@@ -55,8 +66,9 @@ theorem depth_le_supportDim [IsNoetherianRing R] [Module.Finite R M] [Nontrivial
   obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1
     (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
   have h := Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg
-  rw [← hd, ← he, ← WithBot.coe_natCast, ← WithBot.coe_add, WithBot.coe_inj] at h
-  exact h ▸ le_add_self
+  rw [← hd, ← he] at h
+  have h' : e + rs.length = d := by exact_mod_cast h
+  exact h' ▸ le_add_self
 
 /-- Dividing a module `M` by an `M`-regular element `x` lowers the depth by at most one. No
 finiteness or Noetherian hypothesis is needed. -/
@@ -100,10 +112,8 @@ theorem depth_add_length_eq_depth_of_isRegular [IsNoetherianRing R] [Module.Fini
     exact depth_eq_of_linearEquiv (Submodule.quotEquivOfEqBot _ (by simp))
   | cons x rs ih =>
     obtain ⟨hx, hrs⟩ := (isRegular_cons_iff M x rs).1 reg
-    have mem : x ∈ maximalIdeal R := by
-      simpa using fun isu ↦ reg.2 (by simp [Ideal.span_singleton_eq_top.mpr isu])
     rw [depth_eq_of_linearEquiv (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M x rs),
-      ← depth_quotSMulTop_succ_eq_depth hx mem, ← ih hrs, List.length_cons, Nat.cast_succ,
-      add_assoc]
+      ← depth_quotSMulTop_succ_eq_depth hx (reg.mem_maximalIdeal List.mem_cons_self), ← ih hrs,
+      List.length_cons, Nat.cast_succ, add_assoc]
 
 end IsLocalRing
