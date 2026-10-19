@@ -54,10 +54,11 @@ categories with periodic derived categories.
   (2018), 199–236, Section 3.3.
 -/
 
--- Bodies are exposed: morphisms of the orbit category must be visibly elements of the direct
--- sums `Hom X Y` downstream, where additive functors out of `D/[n]` are defined summand by
--- summand, and the projection and periodicity are computed from their homogeneous pieces.
-@[expose] public section
+-- Only the representation of morphisms is exposed: the hom groups `Hom`, the instances, `idHom`,
+-- and `homOf`, so that downstream morphisms of `D/[n]` are visibly elements of the direct sums
+-- and additive functors out of `D/[n]` can be defined summand by summand. Composition and the
+-- shift isomorphisms are used through their characteristic lemmas.
+public section
 
 noncomputable section
 
@@ -100,7 +101,7 @@ def compHom (X Y Z : OrbitCategory D n) : Hom X Y →+ Hom Y Z →+ Hom X Z :=
     DirectSum.toAddMonoid fun j ↦ (compPiece X Y Z i j).flip
 
 /-- The identity of `X` in the orbit category: the identity of `X.obj` placed in degree zero. -/
-def idHom (X : OrbitCategory D n) : Hom X X :=
+@[expose] def idHom (X : OrbitCategory D n) : Hom X X :=
   DirectSum.of (fun j : ℤ ↦ ShiftedHom X.obj X.obj (n * j)) 0
     (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X.obj))
 
@@ -156,7 +157,7 @@ instance : Preadditive (OrbitCategory D n) where
 
 /-- The inclusion of the homogeneous piece of degree `i`, the morphisms `X ⟶ Y⟦n * i⟧` of `D`,
 into the orbit hom group from `X` to `Y`. -/
-def homOf {X Y : D} (i : ℤ) :
+@[expose] def homOf {X Y : D} (i : ℤ) :
     ShiftedHom X Y (n * i) →+ ((⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) :=
   DirectSum.of (fun j : ℤ ↦ ShiftedHom X Y (n * j)) i
 
@@ -250,12 +251,18 @@ def shiftIso (X : D) (m i : ℤ) (h : n * i = m) :
     obtain rfl : c = 0 := by assumption
     simp [ShiftedHom.comp, ShiftedHom.mk₀, shiftFunctorCompIsoId, shiftFunctorZero']
 
+-- The bodies of `shiftIso` and `shiftNatIso` are not exposed, so these lemmas are proved by
+-- tactic `rfl` inside this module rather than exported as definitional lemmas.
+@[simp]
 theorem shiftIso_hom (X : D) (m i : ℤ) (h : n * i = m) :
-    (shiftIso (n := n) X m i h).hom = homOf i (eqToHom (by rw [h])) := rfl
+    (shiftIso (n := n) X m i h).hom = homOf i (eqToHom (by rw [h])) := by
+  rfl
 
+@[simp]
 theorem shiftIso_inv (X : D) (m i : ℤ) (h : n * i = m) :
     (shiftIso (n := n) X m i h).inv =
-      homOf (-i) ((shiftFunctorCompIsoId D m (n * -i) (by rw [← h]; ring)).inv.app X) := rfl
+      homOf (-i) ((shiftFunctorCompIsoId D m (n * -i) (by rw [← h]; ring)).inv.app X) := by
+  rfl
 
 /-- For `m = n * i`, the shift by `m` becomes isomorphic to the identity in the orbit
 category, with components `shiftIso`. -/
@@ -263,15 +270,17 @@ def shiftNatIso (m i : ℤ) (h : n * i = m) :
     shiftFunctor D m ⋙ projection (n := n) ≅ projection :=
   NatIso.ofComponents (fun X ↦ shiftIso X m i h) fun f ↦ by
     subst h
-    simp [shiftIso_hom]
+    simp
 
 @[simp]
 theorem shiftNatIso_hom_app (m i : ℤ) (h : n * i = m) (X : D) :
-    (shiftNatIso m i h).hom.app X = (shiftIso X m i h).hom := rfl
+    (shiftNatIso m i h).hom.app X = (shiftIso X m i h).hom := by
+  rfl
 
 @[simp]
 theorem shiftNatIso_inv_app (m i : ℤ) (h : n * i = m) (X : D) :
-    (shiftNatIso m i h).inv.app X = (shiftIso X m i h).inv := rfl
+    (shiftNatIso m i h).inv.app X = (shiftIso X m i h).inv := by
+  rfl
 
 /-- The periodicity isomorphism `[n] ⋙ π ≅ π` of the projection to the orbit category. Its
 component at `X` is the identity of `X⟦n⟧`, viewed as a morphism `X⟦n⟧ ⟶ X` of degree `1`. -/
