@@ -165,6 +165,33 @@ theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M �
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
 
+/-! ### Bundled smooth-form interface -/
+
+/-- The exterior derivative of the paired wedge of smooth forms, with the product supplied by
+`SmoothForm.wedgeWith`. This is the bundled entry point for the pointwise Leibniz rule above. -/
+theorem mextDeriv_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
+    (v : Fin (k + l + 1) → TangentSpace I x) :
+    mextDeriv (SmoothForm.wedgeWith μ φ ψ : RoughForm I M F₃ (k + l)) x v =
+      RoughForm.wedgeWith μ (mextDeriv φ.1) ψ.1 x
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.1 (mextDeriv ψ.1) x
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  rw [SmoothForm.coe_wedgeWith]
+  exact mextDeriv_wedgeWith_apply μ φ ψ x v
+
+/-- The exterior derivative of the real wedge of smooth forms, with the product supplied by
+`SmoothForm.wedge`. -/
+theorem mextDeriv_wedge (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
+    (v : Fin (k + l + 1) → TangentSpace I x) :
+    mextDeriv (SmoothForm.wedge φ ψ : RoughForm I M ℝ (k + l)) x v =
+      RoughForm.wedge (mextDeriv φ.1) ψ.1 x
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv ψ.1) x
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  rw [SmoothForm.coe_wedge]
+  exact mextDeriv_wedge_apply φ ψ x v
+
 end SmoothForm
 
 end TauCeti
