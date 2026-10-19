@@ -54,8 +54,6 @@ the vanishing of the endomorphism-valued one-form `CovariantDerivative.differenc
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "The Levi-Civita connection".
 * [mathlib4#36845](https://github.com/leanprover-community/mathlib4/pull/36845): the first-slot
   tensoriality and second-slot Leibniz identities follow its design.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 2, Thm. 3.6.
@@ -86,7 +84,8 @@ variable {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)] [FiberBundle F V]
 
 variable {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
-  [∀ x, NormedAddCommGroup (V' x)] [∀ x, NormedSpace ℝ (V' x)] [FiberBundle F' V']
+  [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)] [∀ x, TopologicalSpace (V' x)]
+  [FiberBundle F' V']
 
 variable (F F') in
 /-- Two continuous linear maps between fibres are equal if their values on differentiable sections
@@ -283,16 +282,10 @@ variable {X' Y' : Π x : M, TangentSpace I x} {f : M → ℝ}
 theorem koszul_add_second (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
     (hY' : MDiffAt (T% Y') x) (hZ : MDiffAt (T% Z) x) :
     koszul I X (Y + Y') Z x = koszul I X Y Z x + koszul I X Y' Z x := by
-  have e₁ : (fun y ↦ inner ℝ ((Y + Y') y) (Z y)) =
-      fun y ↦ inner ℝ (Y y) (Z y) + inner ℝ (Y' y) (Z y) := funext fun _ ↦ inner_add_left ..
-  have e₂ : (fun y ↦ inner ℝ (X y) ((Y + Y') y)) =
-      fun y ↦ inner ℝ (X y) (Y y) + inner ℝ (X y) (Y' y) := funext fun _ ↦ inner_add_right ..
-  have e₃ : (Y + Y') x = Y x + Y' x := rfl
-  rw [koszul_apply, koszul_apply, koszul_apply, e₁, e₂, e₃,
+  simp (disch := assumption) only [koszul_apply, Pi.add_apply, inner_add_left, inner_add_right,
     mvfderiv_fun_add (mdifferentiableAt_inner hY hZ) (mdifferentiableAt_inner hY' hZ),
     mvfderiv_fun_add (mdifferentiableAt_inner hX hY) (mdifferentiableAt_inner hX hY'),
-    mlieBracket_add_right hY hY', mlieBracket_add_left hY hY']
-  simp only [add_apply, map_add, inner_add_left, inner_add_right]
+    add_apply, map_add, mlieBracket_add_right, mlieBracket_add_left]
   ring
 
 /-- The Leibniz rule for the Koszul expression in its second argument: replacing `Y` by `f • Y`
@@ -302,18 +295,12 @@ theorem koszul_smul_second (hf : MDiffAt f x) (hX : MDiffAt (T% X) x) (hY : MDif
     (hZ : MDiffAt (T% Z) x) :
     koszul I X (f • Y) Z x =
       f x * koszul I X Y Z x + 2 * d% f x (X x) * inner ℝ (Y x) (Z x) := by
-  have e₁ : (fun y ↦ inner ℝ ((f • Y) y) (Z y)) = fun y ↦ f y * inner ℝ (Y y) (Z y) :=
-    funext fun _ ↦ real_inner_smul_left ..
-  have e₂ : (fun y ↦ inner ℝ (X y) ((f • Y) y)) = fun y ↦ f y * inner ℝ (X y) (Y y) :=
-    funext fun _ ↦ real_inner_smul_right ..
-  have e₃ : (f • Y) x = f x • Y x := rfl
-  rw [koszul_apply, koszul_apply, e₁, e₂, e₃,
-    mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
-    mvfderiv_fun_mul hf (mdifferentiableAt_inner hX hY),
-    mlieBracket_smul_right hf hY, mlieBracket_smul_left (W := Z) hf hY]
-  simp only [add_apply, smul_apply, smul_eq_mul, map_smul, inner_add_left, neg_smul,
-    inner_neg_left, real_inner_smul_left, real_inner_smul_right]
-  rw [real_inner_comm (Y x) (X x)]
+  simp (disch := assumption) only [koszul_apply, Pi.smul_apply', real_inner_smul_left,
+    real_inner_smul_right, mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
+    mvfderiv_fun_mul hf (mdifferentiableAt_inner hX hY), add_apply, smul_apply, map_smul,
+    mlieBracket_smul_right, mlieBracket_smul_left, inner_add_left, inner_neg_left,
+    neg_smul, smul_eq_mul]
+  simp_rw [real_inner_comm]
   ring
 
 /-- The Koszul expression is additive in its first argument. -/
@@ -359,30 +346,17 @@ characterisation of the Levi-Civita connection into a construction of it. -/
 theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
     TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x where
   smul {f Z} hf hZ := by
-    have e₁ : (fun y ↦ inner ℝ (Y y) ((f • Z) y)) = fun y ↦ f y * inner ℝ (Y y) (Z y) :=
-      funext fun _ ↦ real_inner_smul_right ..
-    have e₂ : (fun y ↦ inner ℝ ((f • Z) y) (X y)) = fun y ↦ f y * inner ℝ (Z y) (X y) :=
-      funext fun _ ↦ real_inner_smul_left ..
-    have e₃ : (f • Z) x = f x • Z x := rfl
-    rw [koszul_apply, koszul_apply, e₁, e₂, e₃,
-      mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
-      mvfderiv_fun_mul hf (mdifferentiableAt_inner hZ hX),
-      mlieBracket_smul_right hf hZ, mlieBracket_smul_right (V := Y) hf hZ]
-    simp only [add_apply, smul_apply, smul_eq_mul, map_smul, inner_add_left,
-      real_inner_smul_left, real_inner_smul_right]
-    rw [real_inner_comm (Z x) (Y x)]
+    simp (disch := assumption) only [koszul_apply, Pi.smul_apply', real_inner_smul_left,
+      real_inner_smul_right, mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
+      mvfderiv_fun_mul hf (mdifferentiableAt_inner hZ hX), add_apply, smul_apply, map_smul,
+      mlieBracket_smul_right, inner_add_left, smul_eq_mul]
+    simp_rw [real_inner_comm]
     ring
   add {Z Z'} hZ hZ' := by
-    have e₁ : (fun y ↦ inner ℝ (Y y) ((Z + Z') y)) =
-        fun y ↦ inner ℝ (Y y) (Z y) + inner ℝ (Y y) (Z' y) := funext fun _ ↦ inner_add_right ..
-    have e₂ : (fun y ↦ inner ℝ ((Z + Z') y) (X y)) =
-        fun y ↦ inner ℝ (Z y) (X y) + inner ℝ (Z' y) (X y) := funext fun _ ↦ inner_add_left ..
-    have e₃ : (Z + Z') x = Z x + Z' x := rfl
-    rw [koszul_apply, koszul_apply, koszul_apply, e₁, e₂, e₃,
+    simp (disch := assumption) only [koszul_apply, Pi.add_apply, inner_add_left, inner_add_right,
       mvfderiv_fun_add (mdifferentiableAt_inner hY hZ) (mdifferentiableAt_inner hY hZ'),
       mvfderiv_fun_add (mdifferentiableAt_inner hZ hX) (mdifferentiableAt_inner hZ' hX),
-      mlieBracket_add_right hZ hZ', mlieBracket_add_right (V := Y) hZ hZ']
-    simp only [add_apply, map_add, inner_add_left, inner_add_right]
+      add_apply, map_add, mlieBracket_add_right]
     ring
 
 end Tensorial
