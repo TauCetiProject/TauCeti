@@ -52,12 +52,11 @@ theorem LocallyLifts.locallyLiftsOrConst {n : ℕ} {q : X → Q} {u : Set (𝔼�
 theorem locallyLiftsOrConst_iff_locallyLifts {n : ℕ} {q : X → Q} (hq : Surjective q)
     {u : Set (𝔼ⁿ)} (hu : IsOpen u) {p : 𝔼ⁿ → Q} :
     LocallyLiftsOrConst q u p ↔ LocallyLifts q u p := by
-  refine ⟨fun hp z hz ↦ ?_, fun hp ↦ hp.locallyLiftsOrConst hu⟩
-  obtain ⟨v, hv, hzv, hvu, hl | ⟨y, hy⟩⟩ := hp z hz
-  · obtain ⟨w, hw, hzw, hwv, hlw⟩ := hl z hzv
-    exact ⟨w, hw, hzw, hwv.trans hvu, hlw⟩
+  refine ⟨fun hp ↦ locallyLifts_of_locally hu fun z hz ↦ ?_, fun hp ↦ hp.locallyLiftsOrConst hu⟩
+  obtain ⟨v, hv, hzv, -, hl | ⟨y, hy⟩⟩ := hp z hz
+  · exact ⟨v, hv, hzv, hl⟩
   · obtain ⟨x, rfl⟩ := hq y
-    exact ⟨v, hv, hzv, hvu, fun _ ↦ x, isPlotOn_const v x, fun _ ha ↦ (hy ha).symm⟩
+    exact ⟨v, hv, hzv, (locallyLifts_const q hv x).congr fun _ ha ↦ (hy ha).symm⟩
 
 /-- Local lifts or constants depend only on the restriction of the map to its domain. -/
 theorem LocallyLiftsOrConst.congr {n : ℕ} {q : X → Q} {u : Set (𝔼ⁿ)} {p p' : 𝔼ⁿ → Q}
@@ -150,9 +149,8 @@ theorem dSmooth_coinducedDiffeology_rng (q : X → Q) :
     @_root_.Diffeology.DSmooth X Q inferInstance (coinducedDiffeology q) q := by
   intro n p hp
   rw [isPlot_coinducedDiffeology_iff]
-  refine LocallyLifts.locallyLiftsOrConst (fun z _ ↦ ?_) isOpen_univ
-  exact ⟨univ, isOpen_univ, mem_univ z, Subset.rfl, p, isPlotOn_of_isPlot hp univ,
-    eqOn_refl _ _⟩
+  exact ((isPlotOn_of_isPlot hp univ).locallyLifts_comp q isOpen_univ).locallyLiftsOrConst
+    isOpen_univ
 
 /-- The coinduced diffeology is the finest diffeology making the map smooth. -/
 theorem coinducedDiffeology_le_iff (q : X → Q) {d : DiffeologicalSpace Q} :

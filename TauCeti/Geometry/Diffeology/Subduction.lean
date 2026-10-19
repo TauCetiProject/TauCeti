@@ -32,9 +32,26 @@ variable {X Q Y : Type*} [DiffeologicalSpace X]
 
 /-- A map to the target locally lifts through a map on a subset if every point has an open
 neighborhood in the subset on which the map agrees with the image of a source plot. -/
-@[expose] def LocallyLifts (q : X → Q) {n : ℕ} (u : Set (𝔼ⁿ)) (p : 𝔼ⁿ → Q) : Prop :=
+def LocallyLifts (q : X → Q) {n : ℕ} (u : Set (𝔼ⁿ)) (p : 𝔼ⁿ → Q) : Prop :=
   ∀ z ∈ u, ∃ v : Set (𝔼ⁿ), IsOpen v ∧ z ∈ v ∧ v ⊆ u ∧
     ∃ lift : 𝔼ⁿ → X, IsPlotOn v lift ∧ EqOn (q ∘ lift) p v
+
+/-- A map locally lifts on a subset exactly when every point has an open neighborhood in the
+subset on which the map agrees with the image of a source plot. -/
+theorem locallyLifts_iff {n : ℕ} {q : X → Q} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → Q} :
+    LocallyLifts q u p ↔ ∀ z ∈ u, ∃ v : Set (𝔼ⁿ), IsOpen v ∧ z ∈ v ∧ v ⊆ u ∧
+      ∃ lift : 𝔼ⁿ → X, IsPlotOn v lift ∧ EqOn (q ∘ lift) p v :=
+  Iff.rfl
+
+/-- The image of a plot on an open subset locally lifts through the map on that subset. -/
+theorem IsPlotOn.locallyLifts_comp {n : ℕ} (q : X → Q) {u : Set (𝔼ⁿ)} {lift : 𝔼ⁿ → X}
+    (hlift : IsPlotOn u lift) (hu : IsOpen u) : LocallyLifts q u (q ∘ lift) :=
+  fun _ hz ↦ ⟨u, hu, hz, Subset.rfl, lift, hlift, eqOn_refl _ _⟩
+
+/-- The constant map at an image point locally lifts through the map on every open subset. -/
+theorem locallyLifts_const {n : ℕ} (q : X → Q) {u : Set (𝔼ⁿ)} (hu : IsOpen u) (x : X) :
+    LocallyLifts q u (fun _ ↦ q x) :=
+  (isPlotOn_const u x).locallyLifts_comp q hu
 
 /-- The local lifting property depends only on the restriction of the map to its domain. -/
 theorem LocallyLifts.congr {n : ℕ} {q : X → Q} {u : Set (𝔼ⁿ)} {p p' : 𝔼ⁿ → Q}
@@ -107,6 +124,11 @@ structure IsSubduction [DiffeologicalSpace Q] (q : X → Q) : Prop where
   dSmooth : _root_.Diffeology.DSmooth q
   /-- Every plot of the target locally lifts through a subduction. -/
   locallyLifts {n : ℕ} {p : 𝔼ⁿ → Q} : _root_.Diffeology.IsPlot p → LocallyLifts q univ p
+
+/-- The plots of the target of a subduction are exactly the maps that locally lift through it. -/
+theorem IsSubduction.isPlot_iff [DiffeologicalSpace Q] {q : X → Q} (hq : IsSubduction q)
+    {n : ℕ} {p : 𝔼ⁿ → Q} : _root_.Diffeology.IsPlot p ↔ LocallyLifts q univ p :=
+  ⟨hq.locallyLifts, fun hp ↦ (hp.isPlotOn hq.dSmooth).isPlot⟩
 
 /-- Descent along a subduction: a function from the target is smooth exactly when its composite
 with the subduction is smooth. -/
