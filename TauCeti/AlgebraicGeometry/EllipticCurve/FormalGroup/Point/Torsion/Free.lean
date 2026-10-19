@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.KerReduction
-public import TauCeti.RingTheory.FormalGroup.NSMul
+public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 -- Proof-only: evaluating a power series at a point, and evaluating a renamed series.
 import TauCeti.RingTheory.MvPowerSeries.Rename
 import TauCeti.RingTheory.PowerSeries.Evaluation
