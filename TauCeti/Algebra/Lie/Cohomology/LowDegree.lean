@@ -26,6 +26,8 @@ and by normalization arguments for Lie algebra two-cocycles.
 * `TauCeti.LieModule.Cohomology.d₀₁Cocycle`: the differential with codomain restricted to cocycles.
 * `TauCeti.LieModule.Cohomology.oneCoboundary`: the principal one-cocycles inside the cocycles.
 * `TauCeti.LieModule.Cohomology.firstCohomology`: first Lie algebra cohomology.
+* `TauCeti.LieModule.Cohomology.firstCohomologyLift`: descend a linear map from cocycles to first
+  cohomology.
 
 ## References
 
@@ -123,6 +125,34 @@ abbrev firstCohomology := oneCocycle R L M ⧸ oneCoboundary R L M
 /-- The quotient map from one-cocycles to first cohomology. -/
 def firstCohomologyMk : oneCocycle R L M →ₗ[R] firstCohomology R L M :=
   (oneCoboundary R L M).mkQ
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Descend a linear map on one-cocycles that vanishes on principal cocycles to first
+cohomology. -/
+def firstCohomologyLift (f : oneCocycle R L M →ₗ[R] N)
+    (h : ∀ m, f (d₀₁Cocycle R L M m) = 0) : firstCohomology R L M →ₗ[R] N :=
+  (oneCoboundary R L M).liftQ f fun x hx ↦ by
+    rw [LinearMap.mem_ker]
+    obtain ⟨m, rfl⟩ := (mem_oneCoboundary_iff (R := R) (L := L) (M := M)).1 hx
+    exact h m
+
+@[simp]
+theorem firstCohomologyLift_mk (f : oneCocycle R L M →ₗ[R] N)
+    (h : ∀ m, f (d₀₁Cocycle R L M m) = 0) (x : oneCocycle R L M) :
+    firstCohomologyLift R L M f h (firstCohomologyMk R L M x) = f x := (rfl)
+
+/-- A linear map from first cohomology is determined by its values on cocycle representatives. -/
+theorem firstCohomologyLift_unique (f : oneCocycle R L M →ₗ[R] N)
+    (h : ∀ m, f (d₀₁Cocycle R L M m) = 0) (g : firstCohomology R L M →ₗ[R] N)
+    (hg : g.comp (firstCohomologyMk R L M) = f) :
+    g = firstCohomologyLift R L M f h := by
+  apply LinearMap.ext
+  intro q
+  obtain ⟨x, rfl⟩ := (oneCoboundary R L M).mkQ_surjective q
+  change g (firstCohomologyMk R L M x) =
+    firstCohomologyLift R L M f h (firstCohomologyMk R L M x)
+  rw [firstCohomologyLift_mk, ← LinearMap.comp_apply, hg]
 
 @[simp]
 theorem firstCohomologyMk_eq_zero_iff (f : oneCocycle R L M) :
