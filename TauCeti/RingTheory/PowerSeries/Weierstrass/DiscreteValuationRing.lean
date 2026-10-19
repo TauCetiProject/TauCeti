@@ -51,7 +51,8 @@ powers, this is additivity of the order on the domain `k⟦X⟧`.
 
 ## Main results
 
-* `PowerSeries.C_pow_dvd_iff_le_muInvariant`: `C (π ^ k) ∣ f ↔ k ≤ μ(f)` for a uniformiser `π`.
+* `PowerSeries.C_dvd_iff_addVal_le_muInvariant`: `C a ∣ f ↔ v(a) ≤ μ(f)`; in particular
+  `PowerSeries.C_pow_dvd_iff_le_muInvariant`: `C (π ^ k) ∣ f ↔ k ≤ μ(f)` for a uniformiser `π`.
 * `PowerSeries.order_map_residue_eq_lambdaInvariant`: if `μ(f) = 0`, the reduction of `f` modulo
   the maximal ideal has order `λ(f)`.
 * `PowerSeries.exists_pow_mul_distinguished_mul_unit`: Weierstrass preparation with a uniformiser
@@ -190,10 +191,15 @@ theorem order_map_residue_eq_lambdaInvariant {f : O⟦X⟧} (hf : f.muInvariant 
       ← addVal_eq_zero_iff]
     exact (hf ▸ muInvariant_lt_addVal_coeff hi).ne'
 
+/-- The constant `a` divides `f` exactly when `v(a) ≤ μ(f)`. -/
+theorem C_dvd_iff_addVal_le_muInvariant (a : O) {f : O⟦X⟧} :
+    C a ∣ f ↔ addVal O a ≤ f.muInvariant := by
+  simp only [C_dvd_iff_dvd_coeff, le_muInvariant_iff, ← addVal_le_iff_dvd]
+
 /-- For a uniformiser `π`, the constant `π ^ k` divides `f` exactly when `k ≤ μ(f)`. -/
 theorem C_pow_dvd_iff_le_muInvariant {π : O} (hπ : Irreducible π) {f : O⟦X⟧} {k : ℕ} :
     C (π ^ k) ∣ f ↔ (k : ℕ∞) ≤ f.muInvariant := by
-  simp only [C_dvd_iff_dvd_coeff, le_muInvariant_iff, ← addVal_le_iff_dvd, hπ.addVal_pow]
+  rw [C_dvd_iff_addVal_le_muInvariant, hπ.addVal_pow]
 
 /-- A nonzero power series is `π ^ μ(f)` times a series of μ-invariant zero. -/
 theorem exists_eq_C_pow_mul {π : O} (hπ : Irreducible π) {f : O⟦X⟧} (hf : f ≠ 0) :
