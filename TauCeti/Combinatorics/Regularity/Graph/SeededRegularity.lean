@@ -204,10 +204,8 @@ theorem exists_regular_exact_refining_equipartition (P : Finpartition (univ : Fi
   rw [nestedRefinementBound_def] at hα
   set a := initialBound δ 0
   set k := #P.parts
-  have hk : 0 < k := by
-    refine Nat.pos_of_ne_zero fun hk ↦ (bound_pos δ (a * k)).not_ge (hα.trans_eq ?_)
-    rw [card_eq_zero, parts_eq_empty_iff, bot_eq_empty, univ_eq_empty_iff] at hk
-    exact Fintype.card_eq_zero
+  have hk : 0 < k := card_pos.2 <| P.parts_nonempty <|
+    (card_pos.1 ((bound_pos δ _).trans_le hα)).ne_empty
   obtain ⟨P₁, hP₁, hP₁card, hP₁P⟩ := hP.exists_refining_equipartition_card_eq_mul
     (initialBound_pos δ 0).ne' (by rw [card_univ]; exact (le_bound δ _).trans hα)
   -- The energy induction runs below `P₁`, whose `a * k` parts are as many as Szemerédi's
@@ -216,14 +214,16 @@ theorem exists_regular_exact_refining_equipartition (P : Finpartition (univ : Fi
   have hmono : stepBound^[N] (a * k) ≤ stepBound^[N] (initialBound δ (a * k)) :=
     Monotone.iterate stepBound_mono N (le_initialBound δ _)
   have hak : a ≤ a * k := Nat.le_mul_of_pos_right a hk
-  rw [bound] at hα
+  have hbound : stepBound^[N] (a * k) * 16 ^ stepBound^[N] (a * k) ≤
+      nestedRefinementBound δ k := by
+    rw [nestedRefinementBound_def, bound]
+    gcongr
   obtain ⟨Q, hQP₁, hQ, hQG, hQcard⟩ := szemeredi_regularity_le G hP₁
     (hP₁card ▸ (seven_le_initialBound δ 0).trans hak)
     (hP₁card ▸ (hundred_lt_pow_initialBound_mul hδ 0).le.trans (by gcongr; norm_num))
-    (hP₁card ▸ (Nat.mul_le_mul hmono (Nat.pow_le_pow_right (by norm_num) hmono)).trans hα)
+    (hP₁card ▸ hbound.trans (by rwa [nestedRefinementBound_def]))
   refine ⟨Q, hQP₁.trans hP₁P, hQ, hQG, hQcard.trans ?_⟩
-  rw [hP₁card, iterate_succ_apply', stepBound, nestedRefinementBound_def, bound]
-  exact Nat.mul_le_mul hmono <|
-    (Nat.pow_le_pow_left (by norm_num) _).trans (Nat.pow_le_pow_right (by norm_num) hmono)
+  rw [hP₁card, iterate_succ_apply', stepBound]
+  exact hbound.trans' (by gcongr; norm_num)
 
 end SimpleGraph
