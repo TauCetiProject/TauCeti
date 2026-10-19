@@ -68,7 +68,8 @@ multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjectiv
 * `TauCeti.ClassFieldTheory.invMap_relBrInfl_unramified`: the same, for an unramified extension
   embedded in `Kˢ` by an arbitrary embedding.
 * `TauCeti.ClassFieldTheory.range_invMap_comp_relBrInfl`: the invariants of the classes split by a
-  finite Galois extension of degree `n` form the subgroup of `ℚ/ℤ` of order `n`.
+  finite normal extension `L/K` embedded in `Kˢ` by `σ` are the elements of `ℚ/ℤ` killed by
+  `[L : K]`.
 * `TauCeti.ClassFieldTheory.invMap_brRes`: the restriction square
   `inv_L (brRes x) = [L : K] • inv_K x`.
 * `TauCeti.ClassFieldTheory.brRes_surjective`: restriction of Brauer classes is surjective.
