@@ -197,6 +197,11 @@ def reidemeisterTorsion : F := by
 theorem reidemeisterTorsion_of_not_acyclic (h : ¬C.Acyclic) : C.reidemeisterTorsion c = 0 := by
   simp [reidemeisterTorsion, h]
 
+/-- The torsion of an unbounded complex, one with infinitely many nonzero `n i`, is `0`. -/
+theorem reidemeisterTorsion_of_not_finite (hn : ¬{i | n i ≠ 0}.Finite) :
+    C.reidemeisterTorsion c = 0 := by
+  simp [reidemeisterTorsion, hn]
+
 /-- The torsion of a bounded acyclic complex is nonzero. -/
 theorem reidemeisterTorsion_ne_zero (hn : {i | n i ≠ 0}.Finite) (h : C.Acyclic) :
     C.reidemeisterTorsion c ≠ 0 := by
@@ -240,6 +245,7 @@ private theorem finprod_torsionBracket_eq
         (j.negOnePow : ℤ) := by
   set δ : ℤ → F := fun j ↦ (b j).det (b' j)
   have hδ (j : ℤ) : δ j ≠ 0 := (Basis.isUnit_det _ _).ne_zero
+  have hδ_one {j : ℤ} (hj : n j = 0) : δ j = 1 := det_eq_one_of_eq_zero C c hj _ _
   have hn' : {j : ℤ | n (j + 1) ≠ 0}.Finite :=
     hn.preimage (add_left_injective (1 : ℤ)).injOn
   have hT : Function.HasFiniteMulSupport fun j : ℤ ↦
@@ -248,10 +254,10 @@ private theorem finprod_torsionBracket_eq
       rw [torsionBracket_eq_one c _ _ _ _ _ (by simpa using hj), one_zpow]
   have hδ₀ : Function.HasFiniteMulSupport fun j : ℤ ↦ δ j ^ (j.negOnePow : ℤ) :=
     hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      rw [show δ _ = 1 from det_eq_one_of_eq_zero C c (by simpa using hj) _ _, one_zpow]
+      rw [hδ_one (by simpa using hj), one_zpow]
   have hδ₁ : Function.HasFiniteMulSupport fun j : ℤ ↦ δ (j + 1) ^ (j.negOnePow : ℤ) :=
     hn'.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      rw [show δ _ = 1 from det_eq_one_of_eq_zero C c (by simpa using hj) _ _, one_zpow]
+      rw [hδ_one (by simpa using hj), one_zpow]
   -- The factors `δ (j + 1)` enter with the exponents opposite to those of the factors `δ j`.
   have hshift :
       ∏ᶠ j : ℤ, δ (j + 1) ^ (j.negOnePow : ℤ) = (∏ᶠ j : ℤ, δ j ^ (j.negOnePow : ℤ))⁻¹ := by

@@ -72,9 +72,12 @@ private theorem exactLiftEquiv_apply_snd (c : Basis σ R C) (s : σ → B)
 
 private theorem exactLiftEquiv_symm_inr (c : Basis σ R C) (s : σ → B)
     (hs : ∀ j, g (s j) = c j) (j : σ) : (exactLiftEquiv hf hfg c s hs).symm (0, c j) = s j := by
-  have := congrArg (fun l : { l : C →ₗ[R] B // g ∘ₗ l = .id } ↦ l.1 (c j))
-    ((hfg.splitSurjectiveEquiv hf).symm_apply_apply ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩)
-  simpa [exactLiftEquiv, Function.Exact.splitSurjectiveEquiv] using this
+  let l : { l : C →ₗ[R] B // g ∘ₗ l = .id } := ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩
+  -- The inverse of `splitSurjectiveEquiv` sends a splitting `e` to the section `e.symm ∘ₗ inr`,
+  -- so the first step holds by definition.
+  calc (exactLiftEquiv hf hfg c s hs).symm (0, c j)
+      = ((hfg.splitSurjectiveEquiv hf).symm (hfg.splitSurjectiveEquiv hf l)).1 (c j) := rfl
+    _ = s j := by rw [Equiv.symm_apply_apply, constr_basis]
 
 variable (hf hfg)
 
@@ -87,11 +90,13 @@ def ofExactLift (a : Basis κ R A) (c : Basis σ R C) (s : σ → B) (hs : ∀ j
 
 variable (a : Basis κ R A) (c : Basis σ R C) (s : σ → B) (hs : ∀ j, g (s j) = c j)
 
+/-- On the left summand, `ofExactLift` is the image of the basis `a` of `A`. -/
 @[simp]
 theorem ofExactLift_inl (i : κ) : ofExactLift hf hfg a c s hs (Sum.inl i) = f (a i) := by
   rw [ofExactLift, map_apply, LinearEquiv.symm_apply_eq, exactLiftEquiv_apply]
   ext <;> simp
 
+/-- On the right summand, `ofExactLift` is the chosen family `s` of lifts. -/
 @[simp]
 theorem ofExactLift_inr (j : σ) : ofExactLift hf hfg a c s hs (Sum.inr j) = s j := by
   rw [ofExactLift, map_apply, ← exactLiftEquiv_symm_inr (hf := hf) (hfg := hfg) c s hs j]
@@ -112,9 +117,9 @@ theorem ofExactLift_repr_apply_inl (x : A) (i : κ) :
     (ofExactLift hf hfg a c s hs).repr (f x) (Sum.inl i) = a.repr x i := by
   simp [ofExactLift, prod_repr_inl, exactLiftEquiv_apply]
 
-section CommRing
+section CommSemiring
 
-variable {R A B C : Type*} [CommRing R] [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
+variable {R A B C : Type*} [CommSemiring R] [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
   [Module R A] [Module R B] [Module R C] {f : A →ₗ[R] B} {g : B →ₗ[R] C} {κ σ : Type*}
   (hf : Function.Injective f) (hfg : Function.Exact f g)
   (a a' : Basis κ R A) (c c' : Basis σ R C) (s s' : σ → B)
@@ -133,7 +138,16 @@ theorem toMatrix_ofExactLift :
   · simp [toMatrix_apply, hfg.apply_apply_eq_zero]
   · simp [toMatrix_apply, hs']
 
-variable [Fintype κ] [Fintype σ] [DecidableEq κ] [DecidableEq σ]
+end CommSemiring
+
+section CommRing
+
+variable {R A B C : Type*} [CommRing R] [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
+  [Module R A] [Module R B] [Module R C] {f : A →ₗ[R] B} {g : B →ₗ[R] C} {κ σ : Type*}
+  (hf : Function.Injective f) (hfg : Function.Exact f g)
+  (a a' : Basis κ R A) (c c' : Basis σ R C) (s s' : σ → B)
+  (hs : ∀ j, g (s j) = c j) (hs' : ∀ j, g (s' j) = c' j)
+  [Fintype κ] [Fintype σ] [DecidableEq κ] [DecidableEq σ]
 
 /-- The determinant of one basis of the form `ofExactLift` with respect to another is the
 product of the determinants of the bases of `A` and of `C`; in particular it does not depend on
