@@ -47,16 +47,18 @@ def toStronglyContinuousGroup (α : CStarAction (Multiplicative ℝ) A) :
   toFun t := (α.toContinuousLinearMap (Multiplicative.ofAdd t)).restrictScalars ℝ
   map_zero' := by
     ext a
-    exact α.one_apply a
+    simp
   map_add' s t := by
     ext a
-    exact α.mul_apply (Multiplicative.ofAdd s) (Multiplicative.ofAdd t) a
-  continuousAt_zero' a := (α.continuous_orbit a).continuousAt
+    simp [ofAdd_add, mul_apply]
+  continuousAt_zero' a := by
+    simp only [ContinuousLinearMap.coe_restrictScalars', toContinuousLinearMap_apply]
+    exact ((α.continuous_orbit a).comp continuous_ofAdd).continuousAt
 
 @[simp]
 theorem toStronglyContinuousGroup_apply (α : CStarAction (Multiplicative ℝ) A)
     (t : ℝ) (a : A) : α.toStronglyContinuousGroup t a = α (Multiplicative.ofAdd t) a :=
-  (rfl)
+  toContinuousLinearMap_apply α _ a
 
 /-- The operators of a C⋆-action are complex linear. -/
 theorem toStronglyContinuousGroup_isComplexLinear

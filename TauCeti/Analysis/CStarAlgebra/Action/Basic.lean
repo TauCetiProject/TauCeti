@@ -84,7 +84,7 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
   simp
 
 /-- The automorphism by which a group element acts, as a continuous complex linear map. -/
-@[expose] def toContinuousLinearMap (α : CStarAction G A) (g : G) : A →L[ℂ] A where
+def toContinuousLinearMap (α : CStarAction G A) (g : G) : A →L[ℂ] A where
   toFun := α g
   map_add' := map_add _
   map_smul' := map_smul _

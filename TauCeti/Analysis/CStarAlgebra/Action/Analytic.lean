@@ -107,7 +107,7 @@ theorem entireExtension_add_ofReal (h : α.IsEntireAnalytic a) (z : ℂ) (t : �
     ((α.toContinuousLinearMap (Multiplicative.ofAdd t)).differentiable.comp hF) fun s => by
       simp only [Function.comp_apply, id_eq, toContinuousLinearMap_apply, ← Complex.ofReal_add,
         h.entireExtension_ofReal, ofAdd_add, mul_comm (Multiplicative.ofAdd s), mul_apply]
-  exact congrFun this z
+  simpa using congrFun this z
 
 /-- The values of the complex-time extension are again entire analytic. -/
 theorem isEntireAnalytic_entireExtension (h : α.IsEntireAnalytic a) (z : ℂ) :
