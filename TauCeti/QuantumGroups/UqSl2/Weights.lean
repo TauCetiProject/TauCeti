@@ -65,6 +65,18 @@ theorem weight_ne_zero {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) (hv0 :
   rintro rfl
   exact hv0 (by rwa [weightSpace_zero, Submodule.mem_bot] at hv)
 
+/-- On a vector of weight `μ`, the generator `K⁻¹` acts by `μ⁻¹`. -/
+theorem kInv_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
+    kInv q • v = μ⁻¹ • v := by
+  have hv' : v = μ • kInv q • v := by
+    rw [← smul_comm, ← mem_weightSpace_iff.mp hv, smul_smul, kInv_mul_k, one_smul]
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · rw [zero_smul] at hv'
+    simp [hv']
+  · calc
+      kInv q • v = μ⁻¹ • μ • kInv q • v := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
+      _ = μ⁻¹ • v := by rw [← hv']
+
 /-- Raising a weight vector multiplies its weight by `q²`. -/
 theorem e_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
     e q • v ∈ weightSpace q V (q ^ 2 * μ) := by
@@ -105,28 +117,32 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℂ V]
 
-/-- At a generic parameter, the raising string through any weight vector terminates. -/
-theorem exists_e_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
-    {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) : ∃ n : ℕ, e q ^ n • v = 0 := by
-  by_cases hv0 : v = 0
-  · exact ⟨0, by simp [hv0]⟩
+/-- At a generic parameter `p`, a sequence of vectors whose `n`-th term has weight
+`(p²)ⁿ μ` eventually vanishes: otherwise the finite spectrum of `K` would contain an infinite
+geometric progression. -/
+theorem exists_eq_zero_of_forall_mem_weightSpace {p : ℂ} (hp : IsGenericQuantumParameter p)
+    {μ : ℂ} {w : ℕ → V} (hw : ∀ n, w n ∈ weightSpace q V ((p ^ 2) ^ n * μ)) :
+    ∃ n : ℕ, w n = 0 := by
   by_contra! h
-  have hmu := weight_ne_zero hv hv0
+  have hmu : μ ≠ 0 := by simpa using weight_ne_zero (hw 0) (h 0)
   let ev : ℕ → (Algebra.lsmul ℂ ℂ V (k q)).Eigenvalues := fun n =>
-    ⟨(q ^ 2) ^ n * μ, Module.End.hasEigenvalue_of_hasEigenvector
-      ⟨e_pow_smul_mem_weightSpace hv n, h n⟩⟩
+    ⟨(p ^ 2) ^ n * μ, Module.End.hasEigenvalue_of_hasEigenvector ⟨hw n, h n⟩⟩
   apply not_injective_infinite_finite ev
   intro n m hnm
-  have hp : q ^ (2 * n) = q ^ (2 * m) := by
+  have hp' : p ^ (2 * n) = p ^ (2 * m) := by
     simpa only [ev, ← pow_mul, mul_left_inj' hmu] using congrArg Subtype.val hnm
-  let u : ℂˣ := Units.mk0 q hq.ne_zero
-  have hu : ¬IsOfFinOrder u := by
-    rw [isOfFinOrder_iff_pow_eq_one]
-    rintro ⟨r, hr, hu⟩
-    exact hq.pow_ne_one hr (congrArg Units.val hu)
-  have hp' : u ^ (2 * n) = u ^ (2 * m) := Units.ext hp
-  have := (injective_pow_iff_not_isOfFinOrder.mpr hu) hp'
+  have := hp.pow_injective hp'
   omega
+
+/-- At a generic parameter, the raising string through any weight vector terminates. -/
+theorem exists_e_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
+    {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) : ∃ n : ℕ, e q ^ n • v = 0 :=
+  exists_eq_zero_of_forall_mem_weightSpace hq (e_pow_smul_mem_weightSpace hv)
+
+/-- At a generic parameter, the lowering string through any weight vector terminates. -/
+theorem exists_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
+    {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) : ∃ n : ℕ, f q ^ n • v = 0 :=
+  exists_eq_zero_of_forall_mem_weightSpace hq.inv (f_pow_smul_mem_weightSpace hv)
 
 /-- Every nonzero finite-dimensional module at a generic parameter has a highest-weight
 vector. No diagonalizability of `K` is assumed. -/

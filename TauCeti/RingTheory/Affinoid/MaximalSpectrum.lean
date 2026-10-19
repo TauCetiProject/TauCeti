@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.Basic
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Jacobson
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
@@ -17,10 +18,13 @@ import Mathlib.RingTheory.Ideal.GoingUp
 The residue field at every maximal ideal of an affinoid algebra over a complete ultrametric
 field is finite over the ground field. Consequently, an algebra map into an affinoid algebra
 contracts maximal ideals to maximal ideals, even when its source is not affinoid. This gives the
-contravariant map on maximal spectra used for classical points of affinoid spaces.
+contravariant map on maximal spectra used for classical points of affinoid spaces. Every affinoid
+algebra is moreover a Jacobson ring, so its maximal ideals, the classical points, determine every
+radical ideal: each prime ideal is the intersection of the maximal ideals containing it.
 
 The residue-field finiteness is the affinoid form of the Tate-algebra Nullstellensatz proved in
-`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz`.
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz`, and the Jacobson property descends
+from `TauCeti.MvPowerSeries.isJacobsonRing` along a presentation.
 -/
 
 public section
@@ -41,6 +45,12 @@ theorem finite_quotient_of_isMaximal (hA : IsAffinoidAlgebra K A) (m : Ideal A)
     [m.IsMaximal] : Module.Finite K (A ⧸ m) := by
   obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
   exact _root_.TauCeti.MvPowerSeries.finite_quotient_of_surjective hπ m
+
+/-- **Affinoid algebras are Jacobson rings.** Every prime ideal of an affinoid algebra is the
+intersection of the maximal ideals containing it. -/
+theorem isJacobsonRing (hA : IsAffinoidAlgebra K A) : IsJacobsonRing A := by
+  obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
+  exact isJacobsonRing_of_surjective ⟨π.toRingHom, hπ⟩
 
 /-- An algebra map into an affinoid algebra contracts a maximal ideal to a maximal ideal.
 The source algebra need not itself be affinoid. -/

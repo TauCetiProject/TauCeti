@@ -166,6 +166,30 @@ theorem of_injective
   · let _ := hs j hj
     exact (hf j).subsingleton
 
+/-- A finite product of families with finite Laurent support has finite Laurent support. -/
+theorem pi {ι : Type*} [Finite ι] {W : ι → ℤ → Type v'}
+    [∀ i j, AddCommGroup (W i j)] [∀ i j, Module k (W i j)]
+    (h : ∀ i, HasFiniteLaurentSupport k (W i)) :
+    HasFiniteLaurentSupport k (fun j ↦ ∀ i, W i j) := by
+  classical
+  let := Fintype.ofFinite ι
+  choose s hs using fun i ↦ (h i).exists_finset
+  refine of_finset (fun j ↦ ?_) (Finset.univ.biUnion s) fun j hj ↦ ?_
+  · have := fun i ↦ (h i).finiteDimensional j
+    infer_instance
+  · have := fun i ↦ hs i j (fun hji ↦ hj (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, hji⟩))
+    infer_instance
+
+/-- A coordinate family of a product with finite Laurent support has finite Laurent support. -/
+theorem of_pi {ι : Type*} {W : ι → ℤ → Type v'}
+    [∀ i j, AddCommGroup (W i j)] [∀ i j, Module k (W i j)]
+    (h : HasFiniteLaurentSupport k (fun j ↦ ∀ i, W i j)) (i : ι) :
+    HasFiniteLaurentSupport k (W i) := by
+  classical
+  exact h.of_injective (fun j ↦ LinearMap.single k (fun i ↦ W i j) i)
+    (fun j ↦ by simpa only [LinearMap.coe_single] using
+      Pi.single_injective (M := fun i ↦ W i j) i)
+
 /-- A finite Laurent support is preserved by translating the degree index. -/
 theorem reindex_add (h : HasFiniteLaurentSupport k V) (r : ℤ) :
     HasFiniteLaurentSupport k (fun j => V (j + r)) := by

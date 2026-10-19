@@ -24,7 +24,8 @@ Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
-(`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`).
+(`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`).
 -/
 
 public section
@@ -68,6 +69,13 @@ theorem adjoint_sndₗ :
 end WithLp
 
 namespace LinearMap
+
+/-- The determinant of the adjoint of an endomorphism is the conjugate of its determinant. -/
+@[simp]
+theorem det_adjoint (f : E →ₗ[𝕜] E) : (adjoint f).det = star f.det := by
+  let b := stdOrthonormalBasis 𝕜 E
+  rw [← det_toMatrix b.toBasis, ← det_toMatrix b.toBasis, toMatrix_adjoint b b,
+    Matrix.det_conjTranspose]
 
 /-- If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`, then also `‖C† y‖ ≤ c * ‖y‖` for every `y`. -/
 theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)

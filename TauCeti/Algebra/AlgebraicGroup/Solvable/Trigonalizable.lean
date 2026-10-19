@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists

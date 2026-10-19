@@ -364,10 +364,11 @@ theorem fixedField_zpowers_maximalUnramifiedFrobenius_pow (f : ℕ+) :
       (unramifiedExtension K Ω f).comap (maximalUnramifiedExtension K Ω).val := by
   set H := Subgroup.zpowers (maximalUnramifiedFrobenius K Ω ^ (f : ℕ))
   set E := (unramifiedExtension K Ω f).comap (maximalUnramifiedExtension K Ω).val
-  refine le_antisymm ?_ ((le_iff_le _ _).2 ?_)
+  refine le_antisymm ?_ ((le_fixedField_iff_le_fixingSubgroup _ _).2 ?_)
   · -- The closed subgroup fixing the fixed field of `H` contains the closure of `H`.
     rw [← InfiniteGalois.fixedField_fixingSubgroup E, fixingSubgroup_comap_unramifiedExtension]
-    exact (le_iff_le _ _).2 (Subgroup.topologicalClosure_minimal _ ((le_iff_le _ _).1 le_rfl)
+    exact (le_fixedField_iff_le_fixingSubgroup _ _).2 (Subgroup.topologicalClosure_minimal _
+      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
       (InfiniteGalois.fixingSubgroup_isClosed _))
   · rw [fixingSubgroup_comap_unramifiedExtension]
     exact Subgroup.le_topologicalClosure H
