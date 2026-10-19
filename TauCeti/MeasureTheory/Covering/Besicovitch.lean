@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Covering.Besicovitch
 
 /-!
-# Lebesgue density points of null-measurable sets
+# Density points of null-measurable sets
 
 For a null-measurable set `s`, the proportion of the complement `sᶜ` in a set of positive
 finite measure is one minus the proportion of `s`. Consequently `s` has density one along a
@@ -19,8 +19,8 @@ For a locally finite measure on a space with the Besicovitch covering property, 
 density theorem `Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet` identifies the
 limit of `μ (s ∩ closedBall x r) / μ (closedBall x r)` almost everywhere. We record its set
 form: a null-measurable set agrees almost everywhere with its set of density-one points. That
-set is a canonical representative of the a.e. class of `s`, since it depends on `s` only
-through `μ`.
+set is a canonical representative of the `μ`-a.e. class of `s`, since it depends only on that
+class.
 -/
 
 public section
@@ -61,8 +61,8 @@ theorem tendsto_measure_compl_inter_div_iff (hs : NullMeasurableSet s μ) {l : F
 variable [MetricSpace α] [SecondCountableTopology α] [BorelSpace α] [HasBesicovitchCovering α]
   [IsLocallyFiniteMeasure μ]
 
-/-- A null-measurable set agrees almost everywhere with its set of Lebesgue density points,
-the points at which its proportion of closed balls tends to one. -/
+/-- A null-measurable set agrees almost everywhere with its set of density points with
+respect to `μ`, the points at which its proportion of closed balls tends to one. -/
 theorem ae_eq_setOf_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
     s =ᵐ[μ] {x | Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0)
       (𝓝 1)} := by

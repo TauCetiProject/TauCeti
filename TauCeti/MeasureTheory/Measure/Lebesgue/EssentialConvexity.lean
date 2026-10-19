@@ -26,8 +26,8 @@ interval property it covers the middle cylinder up to a null set, or it misses o
 entirely, and then that cylinder loses at least as much as the middle one. Integrating over
 the transverse coordinates bounds the missing volume of the middle cylinder by the missing
 volumes of the end cylinders. These are negligible by Mathlib's
-`MeasureTheory.Measure.tendsto_addHaar_inter_smul_zero_of_density_zero`. Only the exceptional
-transverse null set of the direction `e` is used.
+`MeasureTheory.Measure.tendsto_addHaar_inter_smul_zero_of_density_zero_aux2`. Only the
+exceptional transverse null set of the direction `e` is used.
 
 Interval sections in every direction are the necessary condition for equality in Steiner's
 perimeter inequality found by Cagnetti, Colombo, De Philippis and Maggi, *Rigidity of equality
@@ -149,9 +149,6 @@ private theorem lineSection_compl_inter_singleton_add_smul_lineCylinder (he : �
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-private theorem volume_lineCylinder_ne_top (he : ‖e‖ = 1) : volume (lineCylinder e) ≠ ∞ :=
-  ((measure_mono (lineCylinder_subset_closedBall he)).trans_lt measure_closedBall_lt_top).ne
-
 private theorem measurableSet_singleton_add_smul_lineCylinder (w : E) (r : ℝ) :
     MeasurableSet ({w} + r • lineCylinder e) := by
   rw [singleton_add, image_add_left]
@@ -197,26 +194,12 @@ private theorem tendsto_volume_compl_inter_lineCylinder_div (he : ‖e‖ = 1) {
       volume (closedBall x r) ≠ 0 ∧ volume (closedBall x r) ≠ ∞ := by
     filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
     exact ⟨(measure_closedBall_pos volume x hr).ne', measure_closedBall_lt_top.ne⟩
-  have hT := Measure.tendsto_addHaar_inter_smul_zero_of_density_zero volume sᶜ x
-    ((hs.tendsto_measure_compl_inter_div_iff hball).2 hx) (lineCylinder e)
-    isClosed_lineCylinder.measurableSet (volume_lineCylinder_ne_top he)
-  have hC : volume (lineCylinder e) / volume (closedBall (0 : E) 1) ≠ ∞ :=
-    ENNReal.div_ne_top (volume_lineCylinder_ne_top he)
-      (measure_closedBall_pos volume (0 : E) one_pos).ne'
-  have hmul := ENNReal.Tendsto.mul_const hT (Or.inr hC)
-  rw [zero_mul] at hmul
-  refine hmul.congr' ?_
+  refine (Measure.tendsto_addHaar_inter_smul_zero_of_density_zero_aux2 volume sᶜ x
+    ((hs.tendsto_measure_compl_inter_div_iff hball).2 hx) (lineCylinder e) (closedBall 0 1)
+    (measure_closedBall_pos volume 0 one_pos).ne' 2 two_pos
+    (lineCylinder_subset_closedBall he)).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-  have hQ0 : volume ({x} + r • lineCylinder e) ≠ 0 := by
-    exact (measure_closedBall_pos volume x hr).ne' ∘
-      measure_mono_null (closedBall_subset_singleton_add_smul_lineCylinder he x hr)
-  have hQtop : volume ({x} + r • lineCylinder e) ≠ ∞ := by
-    simp only [Measure.addHaar_smul, singleton_add, image_add_left, measure_preimage_add]
-    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (volume_lineCylinder_ne_top he)
-  rw [← Measure.addHaar_singleton_add_smul_div_singleton_add_smul volume hr.ne' x x
-      (lineCylinder e) (closedBall 0 1),
-    ← closedBall_eq_singleton_add_smul x hr, div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv,
-    mul_assoc, ← mul_assoc _⁻¹, ENNReal.inv_mul_cancel hQ0 hQtop, one_mul]
+  rw [← closedBall_eq_singleton_add_smul x hr]
 
 /-- **Density points along a line with interval sections.** Suppose that almost every line
 section of a Lebesgue-measurable set `s` in the unit direction `e` agrees a.e. with an interval.
@@ -290,8 +273,10 @@ theorem convex_setOf_tendsto_volume_inter_closedBall_div {s : Set E}
     (h e he) (by positivity) (mul_le_of_le_one_left hd.le (by linarith)) hx hz
 
 /-- **Essential convexity.** A Lebesgue-measurable set whose line sections, in every unit
-direction, almost all agree a.e. with intervals agrees almost everywhere with a convex set,
-namely its set of Lebesgue density points. -/
+direction, almost all agree a.e. with intervals agrees almost everywhere with a convex set.
+A canonical such set is its set of Lebesgue density points, by
+`TauCeti.convex_setOf_tendsto_volume_inter_closedBall_div` and
+`MeasureTheory.NullMeasurableSet.ae_eq_setOf_tendsto_measure_inter_div`. -/
 theorem exists_convex_ae_eq_of_ae_lineSection_ordConnected {s : Set E}
     (hs : NullMeasurableSet s volume)
     (h : ∀ e : E, ‖e‖ = 1 → ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, ∃ I : Set ℝ, I.OrdConnected ∧
