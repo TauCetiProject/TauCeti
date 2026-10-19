@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory
-public import Mathlib.Algebra.Homology.Single
 public import TauCeti.Algebra.Homology.Bifunctor.Associator
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
-public import TauCeti.Algebra.Homology.Bifunctor.Support
+public import TauCeti.Algebra.Homology.Bifunctor.Unitor
 
 /-!
 # Bifunctors on homotopy categories
@@ -27,10 +26,10 @@ F.map₂HomotopyCategory c₁ c₂ c : K(C₁) ⥤ K(C₂) ⥤ K(D)
 on homotopy categories, which agrees with the totalized bifunctor on the images of complexes.
 In particular a homotopy equivalence in either variable becomes an isomorphism.
 
-If `F.obj X ≅ 𝟭 D` for an object `X` of `C₁`, then the complex `X[0]` acts as the identity:
-`mapBifunctor X[0] K F c ≅ K`, naturally in `K`. This holds already for complexes, for every
-complex shape `c` with tensor signs (`ComplexShape.TensorSigns`), and descends to an isomorphism
-between the functor of the homotopy category given by `X[0]` and the identity functor.
+If `F.obj X ≅ 𝟭 D` for an object `X` of `C₁`, then the left unitor
+`CategoryTheory.Functor.mapBifunctorLeftUnitor : mapBifunctor X[0] K F c ≅ K` on complexes
+descends to an isomorphism between the functor of the homotopy category given by `X[0]` and the
+identity functor.
 
 Similarly, an associator between two composite trifunctors induces, through Mathlib's
 `HomologicalComplex.mapBifunctorAssociator`, an isomorphism between acting by a total complex
@@ -44,16 +43,11 @@ on homotopy categories.
 
 * `CategoryTheory.Functor.map₂HomotopyCategory`: the bifunctor on homotopy categories induced by
   a bifunctor `F`.
-* `CategoryTheory.Functor.mapBifunctorLeftUnitor`: the isomorphism `mapBifunctor X[0] K F c ≅ K`
-  attached to `e : F.obj X ≅ 𝟭 D`.
-* `CategoryTheory.Functor.map₂HomotopyCategoryLeftUnitor`: its descent, an isomorphism between
+* `CategoryTheory.Functor.map₂HomotopyCategoryLeftUnitor`: the descent of the left unitor
+  `CategoryTheory.Functor.mapBifunctorLeftUnitor`, an isomorphism between
   `(F.map₂HomotopyCategory c c c).obj X[0]` and the identity functor of `K(D)`.
 * `CategoryTheory.Functor.map₂HomotopyCategoryAssociator`: the descent of the totalized
   associator to homotopy categories.
-
-The left unitor adapts Mathlib's `CategoryTheory.GradedObject.mapBifunctorLeftUnitor` and the
-left unitor `HomologicalComplex.leftUnitor` of the monoidal structure on homological complexes,
-both due to Joël Riou, from tensor products to arbitrary bifunctors on complexes.
 -/
 
 public section
@@ -131,102 +125,6 @@ lemma map₂HomotopyCategory_map_app {K₁ L₁ : HomologicalComplex C₁ c₁} 
         ((HomotopyCategory.quotient C₂ c₂).obj K₂) =
       (HomotopyCategory.quotient D c).map (mapBifunctorMap f₁ (𝟙 K₂) F c) :=
   (rfl)
-
-section MapBifunctorLeftUnitor
-
-variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
-  [HasZeroMorphisms C] [HasZeroObject C] [Preadditive D]
-  (F : C ⥤ D ⥤ D) [F.PreservesZeroMorphisms] [∀ X, (F.obj X).PreservesZeroMorphisms]
-  (X : C) (e : F.obj X ≅ 𝟭 D)
-  {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.TensorSigns]
-
-open HomologicalComplex
-
-/-- The term of degree `j` of `mapBifunctor X[0] K F c` is `K.X j`, given `e : F.obj X ≅ 𝟭 D`. -/
-private def mapBifunctorLeftUnitorX (K : HomologicalComplex D c)
-    [HasMapBifunctor ((single C c 0).obj X) K F c] (j : I) :
-    (mapBifunctor ((single C c 0).obj X) K F c).X j ≅ K.X j :=
-  mapBifunctorSingleSummandIso _ K F c 0 j j (zero_add j) (fun p q hpq hne ↦ by
-      have hp : p ≠ 0 := by
-        rintro rfl
-        exact hne ⟨rfl, by simpa using hpq⟩
-      exact (F.flip.obj (K.X q)).map_isZero (isZero_single_obj_X c 0 X p hp)) ≪≫
-    (F.mapIso (singleObjXSelf c 0 X)).app (K.X j) ≪≫ e.app (K.X j)
-
-private lemma mapBifunctorLeftUnitorX_inv (K : HomologicalComplex D c)
-    [HasMapBifunctor ((single C c 0).obj X) K F c] (j : I) :
-    (mapBifunctorLeftUnitorX F X e K j).inv =
-      e.inv.app (K.X j) ≫ (F.map (singleObjXSelf c 0 X).inv).app (K.X j) ≫
-        ιMapBifunctor _ K F c 0 j j (zero_add j) := by
-  simp [mapBifunctorLeftUnitorX]
-
-private lemma mapBifunctorLeftUnitorX_inv_comm (K : HomologicalComplex D c)
-    [HasMapBifunctor ((single C c 0).obj X) K F c] (j j' : I) :
-    (mapBifunctorLeftUnitorX F X e K j).inv ≫
-        (mapBifunctor ((single C c 0).obj X) K F c).d j j' =
-      K.d j j' ≫ (mapBifunctorLeftUnitorX F X e K j').inv := by
-  by_cases hjj' : c.Rel j j'
-  · -- The first-variable differential vanishes since `X[0]` has zero differential.
-    have hd₁ : mapBifunctor.d₁ ((single C c 0).obj X) K F c 0 j j' = 0 := by
-      by_cases h₁ : c.Rel 0 (c.next 0)
-      · by_cases h₂ : ComplexShape.π c c c (c.next 0, j) = j'
-        · rw [mapBifunctor.d₁_eq _ _ _ _ h₁ _ _ h₂, single_obj_d, Functor.map_zero,
-            NatTrans.app_zero, zero_comp, smul_zero]
-        · rw [mapBifunctor.d₁_eq_zero' _ _ _ _ h₁ _ _ h₂]
-      · rw [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ h₁]
-    have hε : ComplexShape.ε₂ c c c (0, j) = 1 := by simp
-    rw [mapBifunctorLeftUnitorX_inv, mapBifunctorLeftUnitorX_inv]
-    simp only [assoc, mapBifunctor.d_eq, Preadditive.comp_add, mapBifunctor.ι_D₁,
-      mapBifunctor.ι_D₂, hd₁, comp_zero, zero_add,
-      mapBifunctor.d₂_eq _ _ _ _ _ hjj' _ (by simp : ComplexShape.π c c c (0, j') = j'), hε,
-      one_smul]
-    rw [← NatTrans.naturality_assoc, ← e.inv.naturality_assoc, Functor.id_map]
-  · simp only [shape _ _ _ hjj', comp_zero, zero_comp]
-
-/-- The left unitor `mapBifunctor X[0] K F c ≅ K` attached to an isomorphism
-`e : F.obj X ≅ 𝟭 D`. -/
-def mapBifunctorLeftUnitor (K : HomologicalComplex D c)
-    [HasMapBifunctor ((single C c 0).obj X) K F c] :
-    mapBifunctor ((single C c 0).obj X) K F c ≅ K :=
-  (Hom.isoOfComponents (fun j ↦ (mapBifunctorLeftUnitorX F X e K j).symm)
-    (fun j j' _ ↦ mapBifunctorLeftUnitorX_inv_comm F X e K j j')).symm
-
-@[reassoc (attr := simp)]
-lemma ι_mapBifunctorLeftUnitor_hom_f (K : HomologicalComplex D c)
-    [HasMapBifunctor ((single C c 0).obj X) K F c] (j : I) :
-    ιMapBifunctor _ K F c 0 j j (zero_add j) ≫ (mapBifunctorLeftUnitor F X e K).hom.f j =
-      (F.map (singleObjXSelf c 0 X).hom).app (K.X j) ≫ e.hom.app (K.X j) := by
-  simp [mapBifunctorLeftUnitor, mapBifunctorLeftUnitorX]
-
-lemma mapBifunctorLeftUnitor_inv_f (K : HomologicalComplex D c)
-    [HasMapBifunctor ((single C c 0).obj X) K F c] (j : I) :
-    (mapBifunctorLeftUnitor F X e K).inv.f j =
-      e.inv.app (K.X j) ≫ (F.map (singleObjXSelf c 0 X).inv).app (K.X j) ≫
-        ιMapBifunctor _ K F c 0 j j (zero_add j) :=
-  mapBifunctorLeftUnitorX_inv F X e K j
-
-@[reassoc]
-lemma mapBifunctorLeftUnitor_inv_naturality {K L : HomologicalComplex D c} (f : K ⟶ L)
-    [HasMapBifunctor ((single C c 0).obj X) K F c]
-    [HasMapBifunctor ((single C c 0).obj X) L F c] :
-    f ≫ (mapBifunctorLeftUnitor F X e L).inv =
-      (mapBifunctorLeftUnitor F X e K).inv ≫ mapBifunctorMap (𝟙 _) f F c := by
-  ext j
-  have h := (F.map (singleObjXSelf c 0 X).inv).naturality (f.f j)
-  have h' := e.inv.naturality (f.f j)
-  dsimp at h h'
-  simp [mapBifunctorLeftUnitor_inv_f, reassoc_of% h, reassoc_of% h']
-
-@[reassoc]
-lemma mapBifunctorLeftUnitor_naturality {K L : HomologicalComplex D c} (f : K ⟶ L)
-    [HasMapBifunctor ((single C c 0).obj X) K F c]
-    [HasMapBifunctor ((single C c 0).obj X) L F c] :
-    mapBifunctorMap (𝟙 _) f F c ≫ (mapBifunctorLeftUnitor F X e L).hom =
-      (mapBifunctorLeftUnitor F X e K).hom ≫ f := by
-  rw [← cancel_mono (mapBifunctorLeftUnitor F X e L).inv, assoc, assoc, Iso.hom_inv_id,
-    comp_id, mapBifunctorLeftUnitor_inv_naturality, Iso.hom_inv_id_assoc]
-
-end MapBifunctorLeftUnitor
 
 section LeftUnitor
 
