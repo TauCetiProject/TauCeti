@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Topology.Algebra.Module.BilinearForm
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
 /-!
 # Joint regularity of Christoffel symbols in metric families
@@ -62,71 +61,18 @@ theorem contMDiffAt_christoffelSecondKind_family
     (hnm : n + 1 ≤ m) (hnd : (g z.1 z.2).toBilinForm.Nondegenerate) :
     ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
       (fun q : P × E ↦ christoffelSecondKind (g q.1) q.2) z := by
-  -- Explicit scalar parameters let instance synthesis read the nested operator space.
+  -- Explicit scalars identify the derivative component of the first-jet model space.
   let : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
     ContinuousLinearMap.toNormedAddCommGroup (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
       (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
   let : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
     ContinuousLinearMap.toNormedSpace (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
       (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
-  -- Differentiate only in the base variable, while both inputs of the family vary.
-  have hD : ContMDiffAt (J.prod 𝓘(ℝ, E))
-      𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) n
-      (fun q : P × E ↦ fderiv ℝ (g q.1) q.2) z :=
-    contMDiffAt_fderiv_family hg hnm
-  -- Raise the index by the inverse metric, which is smooth near the nondegenerate point.
-  have hinv : ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, (E →L[ℝ] ℝ) →L[ℝ] E) n
-      (fun q : P × E ↦ (g q.1 q.2).inverse) z :=
-    ContDiffAt.comp_contMDiffAt (f := Function.uncurry g)
-      (isInvertible_of_separatingLeft hnd.1).contDiffAt_map_inverse
-      (hg.of_le (le_self_add.trans hnm))
-  have hflip : ContMDiffAt (J.prod 𝓘(ℝ, E))
-      𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) n
-      (fun q : P × E ↦ (fderiv ℝ (g q.1) q.2).flip) z :=
-    (flipₗᵢ ℝ E E (E →L[ℝ] ℝ)).toContinuousLinearEquiv.toContinuousLinearMap.contMDiffAt.comp
-      z hD
-  -- Compose this inverse with the three permutations of the differentiated metric.
-  let : NormedAddCommGroup ((E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E) :=
-    ContinuousLinearMap.toNormedAddCommGroup (𝕜 := ℝ) (𝕜₂ := ℝ)
-      (E := E →L[ℝ] E →L[ℝ] ℝ) (F := E →L[ℝ] E) (σ₁₂ := RingHom.id ℝ)
-  let : NormedSpace ℝ ((E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E) :=
-    ContinuousLinearMap.toNormedSpace (𝕜 := ℝ) (𝕜₂ := ℝ)
-      (E := E →L[ℝ] E →L[ℝ] ℝ) (F := E →L[ℝ] E) (σ₁₂ := RingHom.id ℝ)
-  have hcomp : ContMDiffAt (J.prod 𝓘(ℝ, E))
-      𝓘(ℝ, (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E) n
-      (fun q : P × E ↦ compL ℝ E (E →L[ℝ] ℝ) E (g q.1 q.2).inverse) z :=
-    (compL ℝ E (E →L[ℝ] ℝ) E).contMDiffAt.comp z hinv
-  have hperm : ContMDiffAt (J.prod 𝓘(ℝ, E))
-      𝓘(ℝ, (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E) n
-      (fun q : P × E ↦ compL ℝ E (E →L[ℝ] ℝ) E (g q.1 q.2).inverse ∘L
-        (flipₗᵢ ℝ E E ℝ).toContinuousLinearEquiv.toContinuousLinearMap) z :=
-    ContMDiffAt.clm_comp (𝕜 := ℝ) (F₁ := E →L[ℝ] E →L[ℝ] ℝ)
-      (F₂ := E →L[ℝ] E →L[ℝ] ℝ) (F₃ := E →L[ℝ] E) hcomp
-      (contMDiffAt_const (c :=
-        (flipₗᵢ ℝ E E ℝ).toContinuousLinearEquiv.toContinuousLinearMap))
-  have hlast := ContMDiffAt.clm_comp (𝕜 := ℝ) (F₁ := E →L[ℝ] E →L[ℝ] ℝ)
-    (F₂ := E) (F₃ := E →L[ℝ] E) hperm hflip
-  have hfirst := ContMDiffAt.clm_comp (𝕜 := ℝ) (F₁ := E →L[ℝ] E →L[ℝ] ℝ)
-    (F₂ := E) (F₃ := E →L[ℝ] E) hcomp hD
-  have hsecond := ContMDiffAt.clm_comp (𝕜 := ℝ) (F₁ := E →L[ℝ] E →L[ℝ] ℝ)
-    (F₂ := E) (F₃ := E →L[ℝ] E) hcomp hflip
-  have : IsBoundedSMul ℝ (E →L[ℝ] E →L[ℝ] E) :=
-    NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := E →L[ℝ] E →L[ℝ] E)
-  have hscale : ContDiff ℝ n
-      (fun A : E →L[ℝ] E →L[ℝ] E ↦ (2⁻¹ : ℝ) • A) :=
-    (contDiff_const (𝕜 := ℝ) (c := (2⁻¹ : ℝ))).smul
-      (contDiff_id (𝕜 := ℝ) (E := E →L[ℝ] E →L[ℝ] E) (n := n))
-  -- Assemble the Koszul combination and identify it through the evaluation API.
-  have hscaled := hscale.contMDiff.contMDiffAt.comp z ((hfirst.add hsecond).sub hlast)
-  convert hscaled using 1
-  ext q u v
-  have hFK : christoffelFirstKind (g q.1) q.2 u v = (2⁻¹ : ℝ) •
-      (fderiv ℝ (g q.1) q.2 u v + fderiv ℝ (g q.1) q.2 v u -
-        ((fderiv ℝ (g q.1) q.2).flip u).flip v) := by
-    ext w
-    simp [christoffelFirstKind_apply, div_eq_inv_mul]
-  rw [christoffelSecondKind_apply, hFK]
-  simp
+  simpa only [christoffelSecondKind_eq_christoffelSecondKindOfJet, Function.comp_def] using
+    (contDiffAt_christoffelSecondKindOfJet (j := (g z.1 z.2, fderiv ℝ (g z.1) z.2))
+      (isInvertible_of_separatingLeft hnd.1)).comp_contMDiffAt
+      (f := fun q : P × E ↦ (g q.1 q.2, fderiv ℝ (g q.1) q.2))
+      ((hg.of_le (le_self_add.trans hnm)).prodMk_space (contMDiffAt_fderiv_family hg hnm))
 
 /-- On an open parameter/base domain, the Christoffel symbols of a `C^m` nondegenerate family
 are jointly `C^n`, for `n + 1 ≤ m`. No product decomposition of the domain is required. -/
