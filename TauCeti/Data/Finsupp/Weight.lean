@@ -37,7 +37,8 @@ sums the coefficients in that block. For natural-valued exponents, this is the d
   occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_lt_add_smul_add_weight_filter_gt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
-* `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block is the degree in that block.
+* `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
+  natural-valued exponents, this is the degree in that block.
 -/
 
 public section
