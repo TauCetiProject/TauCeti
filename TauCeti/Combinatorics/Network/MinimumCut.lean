@@ -17,10 +17,11 @@ import Mathlib.Tactic.FinCases
 # Terminal-set minimum cuts
 
 A terminal cut is a finite vertex set containing all source terminals and no sink terminals.
-For an arbitrary set function, finite vertex sets and disjoint terminals guarantee attainment
-of a minimum. For a submodular function, the minimizing sides form a finite distributive
-lattice under inclusion, with a smallest and a largest side. These extremal sides describe
-which vertices occur in every minimum cut and which occur in at least one.
+For a set function with linearly ordered values on a finite vertex type, disjoint terminal
+sets guarantee attainment of a minimum. For a submodular function, the minimizing sides form
+a distributive sublattice under inclusion; on a finite vertex type with linearly ordered
+values, it is finite, with a smallest and a largest side. These extremal sides describe which
+vertices occur in every minimum cut and which occur in at least one.
 
 The theory is independent of a graph representation and does not require symmetry of the
 set function. Either terminal set may be empty.
@@ -76,7 +77,8 @@ def IsMinimum [Preorder K] (f : Finset V → K) (A B S : Finset V) : Prop :=
 /-- Membership and optimality characterize a minimum terminal cut. -/
 theorem isMinimum_iff [Preorder K] {f : Finset V → K} {A B S : Finset V} :
     IsMinimum f A B S ↔
-      IsAdmissible A B S ∧ ∀ T, IsAdmissible A B T → f S ≤ f T := Iff.rfl
+      IsAdmissible A B S ∧ ∀ T, IsAdmissible A B T → f S ≤ f T :=
+  and_congr_right fun _ ↦ isMinOn_iff
 
 /-- Every minimum side is an admissible cut. -/
 theorem IsMinimum.admissible [Preorder K] {f : Finset V → K} {A B S : Finset V}
@@ -84,7 +86,8 @@ theorem IsMinimum.admissible [Preorder K] {f : Finset V → K} {A B S : Finset V
 
 /-- The value at a minimum side bounds the value at any admissible cut. -/
 theorem IsMinimum.le [Preorder K] {f : Finset V → K} {A B S T : Finset V}
-    (hS : IsMinimum f A B S) (hT : IsAdmissible A B T) : f S ≤ f T := hS.2 hT
+    (hS : IsMinimum f A B S) (hT : IsAdmissible A B T) : f S ≤ f T :=
+  isMinOn_iff.mp hS.2 T hT
 
 /-- All minimum cuts have the same value. -/
 theorem IsMinimum.value_eq [PartialOrder K] {f : Finset V → K} {A B S T : Finset V}
@@ -97,7 +100,7 @@ theorem exists_minimum [Finite V] [LinearOrder K] (f : Finset V → K)
   let := Fintype.ofFinite V
   obtain ⟨S, hS, hmin⟩ := Set.exists_min_image {S | IsAdmissible A B S} f
     (Set.toFinite _) ⟨A, isAdmissible_self hAB⟩
-  exact ⟨S, hS, hmin⟩
+  exact ⟨S, hS, isMinOn_iff.mpr hmin⟩
 
 section Value
 
@@ -119,7 +122,7 @@ theorem isMinimum_iff_value_eq (hAB : Disjoint A B) {S : Finset V} :
   · intro hS
     exact ⟨hS.admissible, hS.value_eq (Classical.choose_spec (exists_minimum f hAB))⟩
   · rintro ⟨hS, heq⟩
-    exact ⟨hS, fun T hT ↦ heq.le.trans (minimumValue_le f hAB hT)⟩
+    exact isMinimum_iff.mpr ⟨hS, fun T hT ↦ heq.le.trans (minimumValue_le f hAB hT)⟩
 
 end Value
 
@@ -219,29 +222,30 @@ variable {f : Finset V → K} (hf : IsSubmodular f) {A B : Finset V}
 
 include hf
 
-/-- Minimum terminal cuts have a least side under inclusion. -/
-theorem exists_isLeast (hAB : Disjoint A B) :
-    ∃ S, IsLeast {T | IsMinimum f A B T} S := by
+/-- The finite nonempty lattice of minimum cuts has bottom and top elements. -/
+noncomputable abbrev minimizersBoundedOrder (hAB : Disjoint A B) :
+    BoundedOrder (minimizers hf A B) := by
   let := Fintype.ofFinite V
   let L := minimizers hf A B
   let : Fintype L := Fintype.ofFinite L
   have : Nonempty L := by
     obtain ⟨S, hS⟩ := exists_minimum f hAB
-    exact ⟨⟨S, hS⟩⟩
-  let := Fintype.toBoundedOrder L
+    exact ⟨⟨S, (mem_minimizers hf A B).mpr hS⟩⟩
+  exact Fintype.toBoundedOrder L
+
+/-- Minimum terminal cuts have a least side under inclusion. -/
+theorem exists_isLeast (hAB : Disjoint A B) :
+    ∃ S, IsLeast {T | IsMinimum f A B T} S := by
+  let L := minimizers hf A B
+  let := minimizersBoundedOrder hf hAB
   refine ⟨(⊥ : L), (⊥ : L).property, fun T hT ↦ ?_⟩
   exact Subtype.coe_le_coe.mpr (bot_le (a := (⟨T, hT⟩ : L)))
 
 /-- Minimum terminal cuts have a greatest side under inclusion. -/
 theorem exists_isGreatest (hAB : Disjoint A B) :
     ∃ S, IsGreatest {T | IsMinimum f A B T} S := by
-  let := Fintype.ofFinite V
   let L := minimizers hf A B
-  let : Fintype L := Fintype.ofFinite L
-  have : Nonempty L := by
-    obtain ⟨S, hS⟩ := exists_minimum f hAB
-    exact ⟨⟨S, hS⟩⟩
-  let := Fintype.toBoundedOrder L
+  let := minimizersBoundedOrder hf hAB
   refine ⟨(⊤ : L), (⊤ : L).property, fun T hT ↦ ?_⟩
   exact Subtype.coe_le_coe.mpr (le_top (a := (⟨T, hT⟩ : L)))
 
@@ -263,6 +267,16 @@ theorem isGreatest_largest (hAB : Disjoint A B) :
     IsGreatest {T | IsMinimum f A B T} (largest hf hAB) :=
   Classical.choose_spec (exists_isGreatest hf hAB)
 
+/-- The smallest minimum side belongs to the minimizer lattice. -/
+theorem smallest_mem_minimizers (hAB : Disjoint A B) :
+    smallest hf hAB ∈ minimizers hf A B :=
+  (mem_minimizers hf A B).mpr (isLeast_smallest hf hAB).1
+
+/-- The largest minimum side belongs to the minimizer lattice. -/
+theorem largest_mem_minimizers (hAB : Disjoint A B) :
+    largest hf hAB ∈ minimizers hf A B :=
+  (mem_minimizers hf A B).mpr (isGreatest_largest hf hAB).1
+
 /-- The least property characterizes the smallest side uniquely. -/
 theorem smallest_eq_iff (hAB : Disjoint A B) {S : Finset V} :
     smallest hf hAB = S ↔ IsLeast {T | IsMinimum f A B T} S :=
@@ -272,6 +286,32 @@ theorem smallest_eq_iff (hAB : Disjoint A B) {S : Finset V} :
 theorem largest_eq_iff (hAB : Disjoint A B) {S : Finset V} :
     largest hf hAB = S ↔ IsGreatest {T | IsMinimum f A B T} S :=
   ⟨fun h ↦ h ▸ isGreatest_largest hf hAB, fun h ↦ (isGreatest_largest hf hAB).unique h⟩
+
+/-- Relabeling vertices transports the smallest minimum source side. -/
+theorem smallest_map [DecidableEq W] [Finite W] (e : V ≃ W)
+    {g : Finset W → K} (hg : IsSubmodular g)
+    (hfg : ∀ S, g (S.map e.toEmbedding) = f S) (hAB : Disjoint A B) :
+    smallest hg ((Finset.disjoint_map e.toEmbedding).mpr hAB) =
+      (smallest hf hAB).map e.toEmbedding := by
+  apply (smallest_eq_iff hg _).mpr
+  refine ⟨(isMinimum_map_iff e hfg).mpr (isLeast_smallest hf hAB).1, ?_⟩
+  intro T hT
+  obtain ⟨S, rfl⟩ := e.finsetCongr.surjective T
+  exact Finset.map_subset_map.mpr
+    ((isLeast_smallest hf hAB).2 ((isMinimum_map_iff e hfg).mp hT))
+
+/-- Relabeling vertices transports the largest minimum source side. -/
+theorem largest_map [DecidableEq W] [Finite W] (e : V ≃ W)
+    {g : Finset W → K} (hg : IsSubmodular g)
+    (hfg : ∀ S, g (S.map e.toEmbedding) = f S) (hAB : Disjoint A B) :
+    largest hg ((Finset.disjoint_map e.toEmbedding).mpr hAB) =
+      (largest hf hAB).map e.toEmbedding := by
+  apply (largest_eq_iff hg _).mpr
+  refine ⟨(isMinimum_map_iff e hfg).mpr (isGreatest_largest hf hAB).1, ?_⟩
+  intro T hT
+  obtain ⟨S, rfl⟩ := e.finsetCongr.surjective T
+  exact Finset.map_subset_map.mpr
+    ((isGreatest_largest hf hAB).2 ((isMinimum_map_iff e hfg).mp hT))
 
 /-- A vertex belongs to the smallest cut exactly when it belongs to every minimum cut. -/
 @[simp] theorem mem_smallest_iff (hAB : Disjoint A B) {v : V} :
