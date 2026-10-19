@@ -19,8 +19,8 @@ nonzero vector is annihilated by every `π a`, and `π e ξ → ξ` along an inc
 unit.
 
 A nondegenerate representation extends uniquely to a unital star-algebra homomorphism
-`π.multiplierExtension hπ : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H)` of the multiplier algebra. It is
-characterized by `π̄ m * π a = π (m * a)`, and it is the strong limit of `π (m * e)` along an
+`π' := π.multiplierExtension hπ : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H)` of the multiplier algebra. It is
+characterized by `π' m * π a = π (m * a)`, and it is the strong limit of `π (m * e)` along an
 increasing approximate unit `e`. This extension is how covariant pairs `(π, U)` with unitary
 multipliers `U_s` are obtained from nondegenerate representations of crossed products.
 
@@ -174,7 +174,7 @@ private theorem exists_mul_eq (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) :
   obtain ⟨T, hT, -⟩ := exists_tendsto hπ (CStarAlgebra.increasingApproximateUnit A) m
   exact ⟨T, hT⟩
 
-/-- The operator `π̄ m` determined by `π̄ m * π a = π (m * a)`. -/
+/-- The operator `π' m` determined by `π' m * π a = π (m * a)`. -/
 private def extensionOp (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) : H →L[ℂ] H :=
   (exists_mul_eq hπ m).choose
 
@@ -191,7 +191,7 @@ private theorem mul_extensionOp (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) (a
   hπ.ext fun b => by rw [mul_assoc, extensionOp_mul, ← map_mul, ← map_mul, m.central]
 
 /-- The extension of a nondegenerate representation to the multiplier algebra: the unique
-operator `π̄ m` with `π̄ m * π a = π (m * a)` for every `a`. -/
+operator `π' m` with `π' m * π a = π (m * a)` for every `a`. -/
 def multiplierExtension (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H) where
   toFun := extensionOp hπ
   map_one' := (eq_extensionOp hπ fun a => by simp).symm
@@ -210,13 +210,13 @@ def multiplierExtension (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →⋆ₐ[ℂ]
 
 variable (hπ : π.IsNondegenerate)
 
-/-- The defining identity `π̄ m * π a = π (m * a)` of the multiplier extension. -/
+/-- The defining identity `π' m * π a = π (m * a)` of the multiplier extension. -/
 @[simp]
 theorem multiplierExtension_mul (m : 𝓜(ℂ, A)) (a : A) :
     π.multiplierExtension hπ m * π a = π (m.fst a) :=
   extensionOp_mul hπ m a
 
-/-- The right-handed identity `π a * π̄ m = π (a * m)` of the multiplier extension. -/
+/-- The right-handed identity `π a * π' m = π (a * m)` of the multiplier extension. -/
 @[simp]
 theorem mul_multiplierExtension (m : 𝓜(ℂ, A)) (a : A) :
     π a * π.multiplierExtension hπ m = π (m.snd a) :=
@@ -228,7 +228,7 @@ theorem multiplierExtension_apply_apply (m : 𝓜(ℂ, A)) (a : A) (ξ : H) :
     π.multiplierExtension hπ m (π a ξ) = π (m.fst a) ξ :=
   congr($(multiplierExtension_mul hπ m a) ξ)
 
-/-- An operator equals `π̄ m` exactly when it satisfies the defining identity. -/
+/-- An operator equals `π' m` exactly when it satisfies the defining identity. -/
 theorem eq_multiplierExtension_iff {m : 𝓜(ℂ, A)} {T : H →L[ℂ] H} :
     T = π.multiplierExtension hπ m ↔ ∀ a, T * π a = π (m.fst a) :=
   ⟨fun h a => h ▸ multiplierExtension_mul hπ m a, eq_extensionOp hπ⟩
@@ -247,7 +247,7 @@ theorem eq_multiplierExtension_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) 
   rw [← hψ, ← map_mul, DoubleCentralizer.mul_coe_eq_coe_fst, hψ]
 
 /-- Along an increasing approximate unit `e`, the operators `π (m * e)` converge strongly to the
-multiplier extension `π̄ m`. -/
+multiplier extension `π' m`. -/
 theorem tendsto_multiplierExtension_apply [PartialOrder A] {l : Filter A}
     (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (ξ : H) :
     Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (π.multiplierExtension hπ m ξ)) := by
@@ -257,7 +257,7 @@ theorem tendsto_multiplierExtension_apply [PartialOrder A] {l : Filter A}
 
 /-- Strict continuity of a norm-bounded family of multipliers gives strong continuity of its image
 under the multiplier extension: if `x ↦ u x * a` is norm continuous for every `a` and
-`‖u x‖ ≤ C`, then `x ↦ π̄ (u x) ξ` is continuous for every vector `ξ`. Only the left half of
+`‖u x‖ ≤ C`, then `x ↦ π' (u x) ξ` is continuous for every vector `ξ`. Only the left half of
 strict continuity is needed. This applies to strictly continuous unitary multiplier groups. -/
 theorem continuous_multiplierExtension_apply {X : Type*} [TopologicalSpace X]
     {u : X → 𝓜(ℂ, A)} (hu : ∀ a, Continuous fun x => (u x).fst a) {C : ℝ}
