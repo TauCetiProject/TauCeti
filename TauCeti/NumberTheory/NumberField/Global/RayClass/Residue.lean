@@ -46,6 +46,8 @@ class.
   other together with positivity at its real places.
 * `TauCeti.GlobalNumberFields.IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul`: an element
   congruent to one is a quotient of two algebraic integers congruent to one.
+* `IsCongrOne.exists_sub_one_mem_and_isTotallyPositive_and_algebraMap_eq_mul`: the denominator
+  may moreover be chosen nonzero and totally positive.
 * `TauCeti.GlobalNumberFields.residueHom_surjective`: every residue unit modulo the finite part is
   the reduction of an element of `Kˣ` that is a unit at that finite part.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_refl` and
@@ -156,6 +158,36 @@ theorem IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul {𝔪 : Modulus K} {
   refine ⟨a, b, Ideal.Quotient.eq.mp ?_, hb, hab⟩
   rw [map_one, ← residue_eq ⟨x, hxp⟩ hb hab, ← coe_residueHom,
     residueHom_eq_one_of_mem_congruenceSubgroup (mem_congruenceSubgroup.mpr hx), Units.val_one]
+
+/-- **An element congruent to one is a quotient of integers congruent to one, with a nonzero
+totally positive denominator.** If `IsCongrOne 𝔪 x`, then `x = a / b` with `a b : 𝓞 K` both
+congruent to one modulo `𝔪.finitePart` and `b` nonzero and totally positive. In particular `a` is
+nonzero and has the sign of `x` at every real place. -/
+theorem IsCongrOne.exists_sub_one_mem_and_isTotallyPositive_and_algebraMap_eq_mul
+    {𝔪 : Modulus K} {x : Kˣ} (hx : IsCongrOne 𝔪 x) :
+    ∃ a b : 𝓞 K, a - 1 ∈ 𝔪.finitePart ∧ b - 1 ∈ 𝔪.finitePart ∧ b ≠ 0 ∧
+      IsTotallyPositive (b : K) ∧ algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * (x : K) := by
+  obtain ⟨a, b, ha, hb, hab⟩ := hx.exists_sub_one_mem_and_algebraMap_eq_mul
+  obtain ⟨p, q, hq, hpq⟩ := IsFractionRing.div_surjective (A := 𝓞 K) (x : K)
+  have hq0 : algebraMap (𝓞 K) K q ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr (nonZeroDivisors.ne_zero hq)
+  have hH : 𝔪.finitePart * Ideal.span {q} ≠ ⊥ := mul_ne_zero 𝔪.finitePart_ne_bot
+    (Ideal.span_singleton_eq_bot.not.mpr (nonZeroDivisors.ne_zero hq))
+  -- Moving `b` inside `𝔪.finitePart * (q)` keeps it a denominator of `x` congruent to one, and
+  -- makes it nonzero and totally positive.
+  obtain ⟨c, hc0, hcb, hcpos⟩ := exists_isTotallyPositive_sub_mem hH b
+  obtain ⟨f, hf, hfq⟩ := Ideal.mem_mul_span_singleton.mp hcb
+  refine ⟨a + f * p, c, ?_, ?_, hc0, hcpos, ?_⟩
+  · rw [add_sub_right_comm]
+    exact 𝔪.finitePart.add_mem ha (𝔪.finitePart.mul_mem_right p hf)
+  · rw [← sub_add_sub_cancel c b 1]
+    exact 𝔪.finitePart.add_mem (Ideal.mul_le_left hcb) hb
+  · have hqx : algebraMap (𝓞 K) K q * (x : K) = algebraMap (𝓞 K) K p := by
+      rw [← hpq]
+      field_simp
+    rw [← sub_add_cancel c b, ← hfq]
+    simp only [map_add, map_mul]
+    linear_combination hab - algebraMap (𝓞 K) K f * hqx
 
 /-! ### Surjectivity of the reduction -/
 
