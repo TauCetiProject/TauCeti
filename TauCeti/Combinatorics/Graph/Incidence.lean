@@ -164,6 +164,7 @@ theorem incidenceCount_banana_left (x y : α) (E : Set β) :
 
 /-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
 number of actual edges. -/
+@[simp]
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceCount x = E.ncard := by
   simp [incidenceCount]
@@ -262,43 +263,35 @@ theorem incidentEdges_mono {S T : Finset G.vertexSet} (hST : S ⊆ T) :
   rintro ⟨x, hx, hex⟩
   exact ⟨x, hST hx, hex⟩
 
-/-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
-theorem card_incidentEdges_singleton (x : G.vertexSet) :
-    (G.incidentEdges {x}).card = G.incidenceCount x.1 := by
-  rw [incidenceCount, ← Set.ncard_coe_finset,
-    ← Set.ncard_image_of_injective
-      (↑(G.incidentEdges {x}) : Set G.edgeSet) Subtype.val_injective]
+omit [Fintype G.edgeSet] in
+private theorem card_eq_ncard_of_image_val {s : Finset G.edgeSet} {A : Set β}
+    (hA : A ⊆ G.edgeSet) (h : ∀ e : G.edgeSet, e ∈ s ↔ e.1 ∈ A) :
+    s.card = A.ncard := by
+  rw [← Set.ncard_coe_finset,
+    ← Set.ncard_image_of_injective (↑s : Set G.edgeSet) Subtype.val_injective]
   congr 1
   ext e
   constructor
   · rintro ⟨e', he', rfl⟩
-    obtain ⟨y, hy, hey⟩ := G.mem_incidentEdges.mp he'
-    simp only [Finset.mem_singleton] at hy
-    subst y
-    exact hey
+    exact (h e').mp he'
   · intro he
-    have heG := G.incidenceSet_subset_edgeSet x.1 he
-    refine ⟨⟨e, heG⟩, ?_, rfl⟩
-    exact G.mem_incidentEdges.mpr ⟨x, by simp, he⟩
+    exact ⟨⟨e, hA he⟩, (h ⟨e, hA he⟩).mpr he, rfl⟩
+
+/-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
+theorem card_incidentEdges_singleton (x : G.vertexSet) :
+    (G.incidentEdges {x}).card = G.incidenceCount x.1 := by
+  rw [incidenceCount]
+  apply G.card_eq_ncard_of_image_val (G.incidenceSet_subset_edgeSet x.1)
+  intro e
+  simp
 
 /-- The number of internal edges of a singleton is the number of loops at its vertex. -/
 theorem card_internalEdges_singleton (x : G.vertexSet) :
     (G.internalEdges {x}).card = (G.loopSet x.1).ncard := by
-  rw [← Set.ncard_coe_finset,
-    ← Set.ncard_image_of_injective
-      (↑(G.internalEdges {x}) : Set G.edgeSet) Subtype.val_injective]
-  congr 1
-  ext e
-  constructor
-  · rintro ⟨e', he', rfl⟩
-    obtain ⟨y, hy, z, hz, heyz⟩ := G.mem_internalEdges.mp he'
-    simp only [Finset.mem_singleton] at hy hz
-    subst y
-    subst z
-    exact heyz
-  · intro he
-    refine ⟨⟨e, he.edge_mem⟩, ?_, rfl⟩
-    exact G.mem_internalEdges.mpr ⟨x, by simp, x, by simp, he⟩
+  apply G.card_eq_ncard_of_image_val
+    ((G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1))
+  intro e
+  simp
 
 end
 
