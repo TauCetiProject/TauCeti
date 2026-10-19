@@ -30,8 +30,6 @@ excluded because its generator has degree two and it is not the quadratic presen
 * `TauCeti.exists_not_exists_isLinear_zigzagGradedSimple_of_iso`: every finite graph on at least
   two vertices isomorphic to a valid Dynkin diagram has a vertex simple without a linear graded
   projective resolution.
-* `TauCeti.exists_not_exists_isLinear_zigzagGradedSimple_diagramGraph`: specialization to the
-  standard Dynkin diagrams.
 
 ## References
 
@@ -87,16 +85,5 @@ theorem exists_not_exists_isLinear_zigzagGradedSimple_of_iso {V : Type u} {G : S
   let o := Orientation.ofLinearOrder G
   have _ := finiteDimensional_preprojectiveAlgebra_of_iso k e o
   exact exists_not_exists_isLinear_zigzagGradedSimple_of_finiteDimensional_preprojective k hns o
-
-/-- **Every valid standard Dynkin diagram with at least two vertices has a zigzag vertex simple
-without a linear resolution.** -/
-theorem exists_not_exists_isLinear_zigzagGradedSimple_diagramGraph
-    (t : DynkinType) (ht : t.Valid) (hrank : 2 ≤ t.rank) :
-    ∃ v : Fin t.rank,
-      ¬ ∃ r : GradedProjectiveResolution.{w, max w, max w, max w}
-        (zigzagIntegerGrade k (diagramGraph t.cartanMatrix))
-        (zigzagGradedSimple k (diagramGraph t.cartanMatrix) v).grading, r.IsLinear := by
-  let _ : Nontrivial (Fin t.rank) := Fin.nontrivial_iff_two_le.mpr hrank
-  exact exists_not_exists_isLinear_zigzagGradedSimple_of_iso k ht SimpleGraph.Iso.refl
 
 end TauCeti

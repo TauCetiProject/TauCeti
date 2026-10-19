@@ -397,7 +397,7 @@ end SimpleGraph.Coloring
 
 namespace SimpleGraph.IsBipartite
 
-open TauCeti TauCeti.DoubledQuiver
+open _root_.Quiver TauCeti TauCeti.DoubledQuiver TauCeti.PathAlgebra
 
 universe u w
 
@@ -415,6 +415,31 @@ noncomputable def signlessPreprojectiveAlgebraEquiv (o : Orientation G) :
     signlessPreprojectiveAlgebra k (DoubledQuiver G) ≃ₐ[k]
       preprojectiveAlgebra k (OrientedQuiver G o) :=
   hG.coloringBool.signlessPreprojectiveAlgebraEquiv k o
+
+/-- The bipartite comparison sends a doubled-path-algebra class through the orientation
+identification and the chosen two-colouring's head-colour sign rescaling. -/
+@[simp]
+theorem signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk (o : Orientation G)
+    (x : pathAlgebra k (DoubledQuiver G)) :
+    hG.signlessPreprojectiveAlgebraEquiv k o (signlessPreprojectiveMk k _ x) =
+      preprojectiveMk k (OrientedQuiver G o)
+        (rescale (doubledLabelling k fun _ j _ =>
+          if hG.coloringBool.orientedColor o j then (1 : k) else -1)
+          (orientationPathAlgebraEquiv o k x)) :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk k o x
+
+/-- The inverse bipartite comparison rescales by the chosen two-colouring's head-colour sign
+and applies the inverse orientation path-algebra identification. -/
+@[simp]
+theorem signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk (o : Orientation G)
+    (x : pathAlgebra k (Symmetrify (OrientedQuiver G o))) :
+    (hG.signlessPreprojectiveAlgebraEquiv k o).symm
+        (preprojectiveMk k (OrientedQuiver G o) x) =
+      signlessPreprojectiveMk k (DoubledQuiver G)
+        ((orientationPathAlgebraEquiv o k).symm
+          (rescale (doubledLabelling k fun _ j _ =>
+            if hG.coloringBool.orientedColor o j then (1 : k) else -1) x)) :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk k o x
 
 end SimpleGraph.IsBipartite
 
