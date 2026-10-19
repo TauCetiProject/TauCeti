@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Poisson.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
-public import TauCeti.Probability.Independence.ConvolutionPower
+public import TauCeti.MeasureTheory.Group.ConvolutionPower
 
 /-!
 # Compound Poisson distributions
