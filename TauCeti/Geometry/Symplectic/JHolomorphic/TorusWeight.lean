@@ -26,7 +26,8 @@ counts the negative signs among the three nontrivially twisted operators. The se
 Each has constant term `1`, so the divisions take place in the unit group of `ℤ⟦X⟧`, using the
 inverse `PowerSeries.invOfUnit`. For a finite family of pairwise disjoint tori the total weight
 of the configurations with total multiplicity `n` is the `n`-th coefficient of the product of
-their local series, as computed by `PowerSeries.coeff_prod`.
+their local series, which `TauCeti.coeff_prod_torusWeightSeries` expands as a sum of products of
+local weights.
 
 This file constructs only this series data and its coefficients; it assumes no geometric
 regularity and gives no curve-count interpretation.
@@ -35,6 +36,10 @@ regularity and gives no curve-count interpretation.
 
 * `TauCeti.torusWeightSeries σ i`: the local series `f_(σ, i)`, where `σ = true` stands for a
   positive determinant sign and `σ = false` for a negative one.
+* `TauCeti.torusWeight σ i m`: the local weight `w_(σ, i)(m) = [t ^ m] f_(σ, i)`.
+* `TauCeti.coeff_prod_torusWeightSeries`: the weight of a finite configuration of tori with total
+  multiplicity `n` is the sum, over all distributions of `n` among the tori, of the products of
+  the local weights.
 * `TauCeti.torusWeightSeries_not_mul`, `TauCeti.isUnit_torusWeightSeries`: the series of
   opposite sign and equal index are mutually inverse units.
 * `TauCeti.torusWeightSeries_true_zero`, `TauCeti.torusWeightSeries_true_one`,
@@ -75,6 +80,22 @@ and each negative series is the inverse of the positive series with the same ind
 of the torus with multiplicity `m` is the coefficient `coeff m (torusWeightSeries σ i)`. -/
 noncomputable def torusWeightSeries (σ : Bool) (i : Fin 4) : ℤ⟦X⟧ :=
   if σ then positiveSeries i else invOfUnit (positiveSeries i) 1
+
+/-- The local weight `w_(σ, i)(m) ∈ ℤ` of an embedded square-zero pseudoholomorphic torus with
+label `(σ, i)` appearing with multiplicity `m`: the `m`-th coefficient of `torusWeightSeries σ i`.
+-/
+noncomputable def torusWeight (σ : Bool) (i : Fin 4) (m : ℕ) : ℤ :=
+  coeff m (torusWeightSeries σ i)
+
+/-- For a finite family `s` of tori, the torus `c` carrying the label `(σ c, i c)`, the `n`-th
+coefficient of the product of the local series is the sum, over all ways `l` of distributing the
+total multiplicity `n` among the tori, of the products of the local weights `w_(σ c, i c)(l c)`.
+-/
+theorem coeff_prod_torusWeightSeries {ι : Type*} [DecidableEq ι] (s : Finset ι) (σ : ι → Bool)
+    (i : ι → Fin 4) (n : ℕ) :
+    coeff n (∏ c ∈ s, torusWeightSeries (σ c) (i c)) =
+      ∑ l ∈ s.finsuppAntidiag n, ∏ c ∈ s, torusWeight (σ c) (i c) (l c) :=
+  coeff_prod _ n s
 
 /-- Every local series has constant term `1`, so the multiplicity-zero weight is `1`. -/
 @[simp]
@@ -183,8 +204,8 @@ theorem coeff_torusWeightSeries_true_two (m : ℕ) :
   · simp
   · simp [mul_add, coeff_mul_X_pow']
   · simp only [mul_add, map_add, mul_one]
-    rw [show n + 1 + 1 = n + 2 by omega, coeff_mul_X_pow]
-    simp [coeff_X, Nat.add_div_right, pow_succ]
+    rw [coeff_mul_X_pow']
+    simp [coeff_X, Nat.add_assoc, Nat.add_div_right, pow_succ]
 
 /-- The multiplicity weights of `f_(+,3) = (1 + X) (1 - X ^ 2) / (1 + X ^ 2)` are
 `1, 1, -2, -2, 2, 2, …`. -/
@@ -204,10 +225,10 @@ theorem coeff_torusWeightSeries_true_three (m : ℕ) :
   · simp only [mul_add, map_add, mul_one]
     rw [coeff_mul_X_pow']
     simp [mul_sub, add_mul, coeff_X, pow_succ]
-  · rw [show n + 1 + 1 + 1 + 1 = (n + 2) + 2 by omega]
-    simp only [mul_add, map_add, mul_one]
+  · simp only [mul_add, map_add, mul_one]
     rw [coeff_mul_X_pow']
-    simp [mul_sub, add_mul, coeff_X, Nat.add_div_right, pow_succ]
+    have h : (n + 4) / 2 = n / 2 + 2 := by omega
+    simp [mul_sub, add_mul, coeff_X, Nat.add_assoc, h, pow_succ]
 
 /-- The multiplicity weights of `f_(-,1) = 1 / (1 + X)` are `1, -1, 1, -1, …`. -/
 @[simp]
