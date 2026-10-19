@@ -26,7 +26,6 @@ open scoped Manifold
 namespace Prod
 
 /-- The manifold exterior derivative of `x dy` is `dx ∧ dy`. -/
-@[simp]
 theorem mextDeriv_realPlaneXDy :
     TauCeti.mextDeriv (I := 𝓘(ℝ, ℝ × ℝ)) (M := ℝ × ℝ) (F := ℝ) (k := 1)
         ((fun p ↦ _root_.Prod.realPlaneXDy p) : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ))
