@@ -9,7 +9,6 @@ public import TauCeti.Algebra.BigOperators.Fin
 public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Algebra.Order.Group.Unbundled.Basic
-public import Mathlib.MeasureTheory.Group.Arithmetic
 
 /-!
 # Gaps between points of an interval
@@ -55,23 +54,6 @@ theorem tupleSpacings_castSucc_succ (a b : R) (x : Fin (n + 1) → R) (i : Fin n
     tupleSpacings a b x i.castSucc.succ = x i.succ - x i.castSucc := by
   simp only [tupleSpacings, Fin.castSucc_succ, Fin.cons_succ, Fin.snoc_castSucc]
   rw [← Fin.castSucc_succ, Fin.snoc_castSucc]
-
-/-- Taking spacings is measurable for any measurable subtraction. -/
-@[fun_prop]
-theorem measurable_tupleSpacings [MeasurableSpace R] [MeasurableSub₂ R] (a b : R) :
-    Measurable (tupleSpacings a b (n := n)) := by
-  have he (i : Fin (n + 2)) : Measurable (fun x : Fin n → R ↦
-      (Fin.cons a (Fin.snoc x b) : Fin (n + 2) → R) i) := by
-    induction i using Fin.cases with
-    | zero => simp
-    | succ i =>
-      induction i using Fin.lastCases with
-      | last => simp
-      | cast i => simpa using (measurable_pi_apply i : Measurable (fun x : Fin n → R ↦ x i))
-  refine Measurable.of_eval fun i ↦ ?_
-  convert (he i.succ).sub (he i.castSucc) using 1
-  ext x
-  exact tupleSpacings_apply a b x i
 
 /-- Initial sums of the gaps recover the corresponding point, relative to the left endpoint. -/
 theorem sum_Iic_tupleSpacings (a b : R) (x : Fin n → R) (i : Fin (n + 1)) :

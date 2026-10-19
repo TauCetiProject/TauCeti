@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
+public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 public import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Independence.InfinitePi
 
@@ -39,21 +40,6 @@ section Atomless
 variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
   [SecondCountableTopology α] [MeasurableSpace α] [BorelSpace α]
   {n : ℕ} {μ : Measure α} [IsProbabilityMeasure μ] [NullSingletonClass μ]
-
-/-- Strictly increasing finite tuples form a measurable set. -/
-theorem measurableSet_setOf_strictMono :
-    MeasurableSet {x : Fin n → α | StrictMono x} := by
-  simp only [StrictMono, ofPred_forall]
-  exact MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
-    MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
-      (measurable_pi_apply j)
-
-/-- The strictly increasing tuples in an open interval form a measurable set. -/
-theorem measurableSet_strictMono_mem_Ioo (n : ℕ) (a b : α) :
-    MeasurableSet {y : Fin n → α | StrictMono y ∧ ∀ i, y i ∈ Ioo a b} := by
-  simp only [ofPred_and, ofPred_forall]
-  exact measurableSet_setOf_strictMono.inter
-    (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
 
 /-- Sorting an atomless iid sample multiplies the product law restricted to the strictly
 increasing chamber by `n!`. This includes the empty sample. -/
