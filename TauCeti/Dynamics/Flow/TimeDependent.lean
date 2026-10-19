@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Flow.Variational
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 
 /-!
@@ -176,74 +177,6 @@ theorem contDiff_timeDependentFlow_apply (n : ℕ)
   simpa only [Function.comp_apply, flowOfLipschitz_apply] using (congrArg Prod.snd
     (globalSolution_timeDependentSuspension v hv s t x)).symm
 
-/-- At fixed initial and final times, a time-dependent flow is differentiable in its initial
-point when the suspended vector field is `C¹`. -/
-theorem differentiable_timeDependentFlow_apply
-    (hv : LipschitzWith K (timeDependentSuspension v))
-    (hvs : ContDiff ℝ 1 (timeDependentSuspension v)) (s t : ℝ) :
-    Differentiable ℝ (timeDependentFlow v hv s t) :=
-  (contDiff_timeDependentFlow_apply 0 hv hvs s t).differentiable one_ne_zero
-
-/-- The derivative of a time-dependent flow in the initial point is the spatial component of
-the derivative of the suspended autonomous flow, applied to a spatial variation. -/
-theorem fderiv_flowOfLipschitz_timeDependentSuspension_apply
-    (hv : LipschitzWith K (timeDependentSuspension v))
-    (hvs : ContDiff ℝ 1 (timeDependentSuspension v)) (s t : ℝ) (x u : E) :
-    fderiv ℝ (flowOfLipschitz (timeDependentSuspension v) hv (t - s)) (s, x) (0, u) =
-      (0, fderiv ℝ (timeDependentFlow v hv s t) x u) := by
-  have hflow := differentiable_flowOfLipschitz_apply hv hvs (t - s)
-  have heq : (fun y : E ↦
-      flowOfLipschitz (timeDependentSuspension v) hv (t - s) (s, y)) =
-      fun y ↦ (t, timeDependentFlow v hv s t y) := by
-    funext y
-    simpa only [flowOfLipschitz_apply] using
-      globalSolution_timeDependentSuspension v hv s t y
-  have hcomp := (hflow (s, x)).hasFDerivAt.comp x
-    (hasFDerivAt_prodMk_right (𝕜 := ℝ) s x)
-  have hright := (hasFDerivAt_const t x).prodMk
-    ((differentiable_timeDependentFlow_apply hv hvs s t x).hasFDerivAt)
-  have hcomp_apply := congrArg (fun L : E →L[ℝ] ℝ × E ↦ L u) hcomp.fderiv
-  have hslice_eq :
-      (flowOfLipschitz (timeDependentSuspension v) hv (t - s)) ∘ Prod.mk s =
-        fun y : E ↦ flowOfLipschitz (timeDependentSuspension v) hv (t - s) (s, y) := rfl
-  calc
-    _ = fderiv ℝ (fun y : E ↦
-        flowOfLipschitz (timeDependentSuspension v) hv (t - s) (s, y)) x u := by
-      rw [← hslice_eq]
-      simpa only [Function.comp_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.inr_apply] using hcomp_apply.symm
-    _ = fderiv ℝ (fun y ↦ (t, timeDependentFlow v hv s t y)) x u := by rw [heq]
-    _ = _ := by rw [hright.fderiv]; simp
-
-omit [CompleteSpace E] in
-/-- The derivative of the suspended field in a purely spatial direction is the spatial
-derivative of the original time-dependent field. -/
-theorem fderiv_timeDependentSuspension_zero_prod
-    (hvs : ContDiff ℝ 1 (timeDependentSuspension v)) (t : ℝ) (x u : E) :
-    fderiv ℝ (timeDependentSuspension v) (t, x) (0, u) =
-      (0, fderiv ℝ (v t) x u) := by
-  have heq : (fun y : E ↦ timeDependentSuspension v (t, y)) = fun y ↦ (1, v t y) := by
-    funext y
-    simp
-  have hfull := hvs.differentiable one_ne_zero
-  have hslice : Differentiable ℝ (v t) := by
-    have hpair : Differentiable ℝ (fun y : E ↦ (t, y)) := by fun_prop
-    have h := (hfull.fun_comp hpair).snd
-    simpa only [timeDependentSuspension_apply] using h
-  have hcomp := (hfull (t, x)).hasFDerivAt.comp x
-    (hasFDerivAt_prodMk_right (𝕜 := ℝ) t x)
-  have hright := (hasFDerivAt_const (1 : ℝ) x).prodMk (hslice x).hasFDerivAt
-  have hcomp_apply := congrArg (fun L : E →L[ℝ] ℝ × E ↦ L u) hcomp.fderiv
-  have hslice_eq : timeDependentSuspension v ∘ Prod.mk t =
-      fun y : E ↦ timeDependentSuspension v (t, y) := rfl
-  calc
-    _ = fderiv ℝ (fun y : E ↦ timeDependentSuspension v (t, y)) x u := by
-      rw [← hslice_eq]
-      simpa only [Function.comp_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.inr_apply] using hcomp_apply.symm
-    _ = fderiv ℝ (fun y ↦ (1, v t y)) x u := by rw [heq]
-    _ = _ := by rw [hright.fderiv]; simp
-
 /-- **The nonautonomous variational equation.** The derivative of the evolution map with
 respect to its initial point solves the linearized time-dependent equation
 `w' = Dₓv(t, φ(s,t,x)) w`. -/
@@ -254,29 +187,34 @@ theorem hasDerivAt_fderiv_timeDependentFlow_apply
       (fderiv ℝ (v t) (timeDependentFlow v hv s t x)
         (fderiv ℝ (timeDependentFlow v hv s t) x u)) t := by
   let F := timeDependentSuspension v
-  let A : ℝ → ℝ × E := fun r ↦
-    fderiv ℝ (flowOfLipschitz F hv (r - s)) (s, x) (0, u)
-  have hA : HasDerivAt A
-      (fderiv ℝ F (flowOfLipschitz F hv (t - s) (s, x)) (A t)) t := by
-    simpa only [A] using
-      (hasDerivAt_fderiv_flowOfLipschitz_apply hv hvs (s, x) (0, u) (t - s)).comp_sub_const t s
-  have hAsnd : HasDerivAt (fun r ↦ (A r).2)
-      (fderiv ℝ F (flowOfLipschitz F hv (t - s) (s, x)) (A t)).2 t :=
-    (hasFDerivAt_snd.comp_hasDerivAt t hA).congr_deriv (by simp)
-  have hflow : flowOfLipschitz F hv (t - s) (s, x) =
-      (t, timeDependentFlow v hv s t x) :=
-    by simpa only [F, flowOfLipschitz_apply] using
-      globalSolution_timeDependentSuspension v hv s t x
-  have hAt : A t = (0, fderiv ℝ (timeDependentFlow v hv s t) x u) :=
-    fderiv_flowOfLipschitz_timeDependentSuspension_apply hv hvs s t x u
-  have hfun : (fun r ↦ (A r).2) =
-      fun r ↦ fderiv ℝ (timeDependentFlow v hv s r) x u := by
-    funext r
-    exact congrArg Prod.snd
-      (fderiv_flowOfLipschitz_timeDependentSuspension_apply hv hvs s r x u)
-  rw [hfun] at hAsnd
-  rw [hflow, hAt] at hAsnd
-  simpa only [F, fderiv_timeDependentSuspension_zero_prod hvs] using hAsnd
+  have hFd := hvs.differentiable one_ne_zero
+  have hvd (r : ℝ) : Differentiable ℝ (v r) := fun y ↦ by
+    simpa only [F, timeDependentSuspension_apply] using
+      (hasFDerivAt_timeSlice (hFd (r, y))).differentiableAt.snd
+  have hF (r : ℝ) (y w : E) : fderiv ℝ F (r, y) (0, w) = (0, fderiv ℝ (v r) y w) := by
+    have hslice : (fun z : E ↦ F (r, z)) = fun z ↦ (1, v r z) :=
+      funext fun z ↦ timeDependentSuspension_apply v r z
+    rw [← spatialFDeriv_apply, ← fderiv_timeSlice (hFd (r, y)), hslice,
+      DifferentiableAt.fderiv_prodMk (differentiableAt_const _) (hvd r y)]
+    simp
+  have hA (r : ℝ) : fderiv ℝ (flowOfLipschitz F hv (r - s)) (s, x) (0, u) =
+      (0, fderiv ℝ (timeDependentFlow v hv s r) x u) := by
+    have hslice : (fun y : E ↦ flowOfLipschitz F hv (r - s) (s, y)) =
+        fun y ↦ (r, timeDependentFlow v hv s r y) := funext fun y ↦ by
+      simpa only [F, flowOfLipschitz_apply] using globalSolution_timeDependentSuspension v hv s r y
+    rw [← spatialFDeriv_apply,
+      ← fderiv_timeSlice (differentiable_flowOfLipschitz_apply hv hvs (r - s) (s, x)), hslice,
+      DifferentiableAt.fderiv_prodMk (differentiableAt_const _)
+        ((contDiff_timeDependentFlow_apply 0 hv hvs s r).differentiable one_ne_zero x)]
+    simp
+  have hflow : flowOfLipschitz F hv (t - s) (s, x) = (t, timeDependentFlow v hv s t x) := by
+    simpa only [F, flowOfLipschitz_apply] using globalSolution_timeDependentSuspension v hv s t x
+  have hd : HasDerivAt (fun r ↦ fderiv ℝ (flowOfLipschitz F hv (r - s)) (s, x) (0, u))
+      (fderiv ℝ F (flowOfLipschitz F hv (t - s) (s, x))
+        (fderiv ℝ (flowOfLipschitz F hv (t - s)) (s, x) (0, u))) t :=
+    (hasDerivAt_fderiv_flowOfLipschitz_apply hv hvs (s, x) (0, u) (t - s)).comp_sub_const t s
+  simp only [hA, hflow, hF] at hd
+  simpa [Function.comp_def] using hasFDerivAt_snd.comp_hasDerivAt t hd
 
 end Variational
 
