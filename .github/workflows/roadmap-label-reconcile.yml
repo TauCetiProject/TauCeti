@@ -46,14 +46,16 @@ jobs:
 
       # State contains only input hashes, canonical labels, and bounded retries.
       # Prefer the newest completed run with an artifact; cancelled pending runs
-      # may have none. Only this trusted main-branch workflow produces the state.
+      # may have none. Fork PR runs can also have a head branch named main;
+      # only scheduled/manual runs from this repository may supply trusted state.
       - name: Restore recovery state
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          ids=$(gh api "repos/$REPO/actions/workflows/roadmap-label-reconcile.yml/runs?status=completed&branch=main&per_page=10" --jq '.workflow_runs[].id')
+          ids=$(gh api "repos/$REPO/actions/workflows/roadmap-label-reconcile.yml/runs?status=completed&branch=main&per_page=10" \
+            --jq '.workflow_runs[] | select((.event == "schedule" or .event == "workflow_dispatch") and .head_branch == "main" and .head_repository.full_name == "TauCetiProject/TauCeti") | .id')
           mkdir -p "$RUNNER_TEMP/roadmap-state-in"
           for id in $ids; do
             if gh run download "$id" -R "$REPO" -n roadmap-label-state -D "$RUNNER_TEMP/roadmap-state-in" 2>/dev/null; then

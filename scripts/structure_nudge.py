@@ -151,6 +151,13 @@ def _local_tree() -> set[str]:
 
 
 def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> int:
+    """Analyze added Lean paths using a supplied snapshot or one fetched through ``api``.
+
+    Skip incomplete diffs. Print findings when read-only; with ``apply``, create
+    or update this bot's marker comment and remove its duplicates, preserving
+    human comments. Return zero for completed analysis and propagate API errors
+    so the caller can warn or queue recovery.
+    """
     snapshot = snapshot if snapshot is not None else pr_snapshot(api, repo, pr)
     if snapshot["info"].get("incomplete_files"):
         print(f"::notice::structure-nudge: PR #{pr}: incomplete diff; skipping analysis")

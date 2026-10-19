@@ -89,8 +89,10 @@ inputs/policy change or a manual full scan resets the state.
 Rate limits, transport outages, listing errors,
 and failed artifact uploads fail the workflow and retain the previous successful
 window. Completed progress is saved even on a deferred run, so the next pass can
-skip its successful prefix. The state comes only from this main-branch workflow;
-closed PRs are pruned after a complete listing.
+skip its successful prefix. State restoration accepts only scheduled or manually
+dispatched runs from this repository's main branch, excluding fork PR runs even
+when their head branch is named main. Saved retry timestamps must be finite,
+nonnegative numbers. Closed PRs are pruned after a complete listing.
 
 Without a state handoff, local recovery uses the previous successful run's start,
 with two minutes of overlap, plus PRs missing a valid label. Per-PR failures then

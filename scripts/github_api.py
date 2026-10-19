@@ -61,6 +61,7 @@ def response(raw):
 
 
 def retry_after(value, now):
+    """Return a nonnegative wait from seconds or an HTTP date; invalid values give zero."""
     if not value:
         return 0
     try:
@@ -117,6 +118,13 @@ class GitHub:
               "path": path, "status": status, "resource": resource, **quota}), file=sys.stderr)
 
     def request(self, method, path, data=None, *, read=None):
+        """Return parsed JSON using the read/write credential selected by ``read``.
+
+        GET defaults to a read; GraphQL queries explicitly opt in. Apply bounded
+        quota waits, read retries and idempotent update retries, but do not repeat
+        an ambiguous creation POST. Raise ``Deferred`` when quota waits exceed
+        the budget, or ``APIError`` for other unsuccessful responses.
+        """
         read = method == "GET" if read is None else read
         credential, env = self._credential(read)
         now = time.time()
@@ -203,9 +211,11 @@ class GitHub:
         raise AssertionError("unreachable")
 
     def graphql(self, query, variables):
+        """Run a read-only query with the read credential and return its data object."""
         return self.request("POST", "graphql", {"query": query, "variables": variables}, read=True)["data"]
 
     def pages(self, path):
+        """Yield REST list pages, recording each request and propagating API errors."""
         # Explicit page numbers keep every response (and its rate-limit headers) visible.
         page = 1
         while True:
@@ -218,9 +228,11 @@ class GitHub:
             page += 1
 
     def items(self, path):
+        """Return every item from a paginated REST list, or propagate its failure."""
         return [row for page in self.pages(path) for row in page]
 
     def report(self):
+        """Write request/quota counters to stderr and the optional Actions step summary."""
         summary = json.dumps(self.stats, sort_keys=True)
         print("github-api-summary: " + summary, file=sys.stderr)
         target = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -230,6 +242,7 @@ class GitHub:
 
 
 def fingerprint(info):
+    """Return head/base/body/state identity used to reject mixed paginated snapshots."""
     return (info["head"]["sha"], info["base"]["sha"], info.get("body") or "", info["state"])
 
 
@@ -274,6 +287,7 @@ query($owner: String!, $name: String!, $first: Int!, $after: String) {
 
 
 def snapshot_info(row):
+    """Normalize GraphQL PR metadata to the REST-shaped fields used by the classifier."""
     return {"title": row["title"], "body": row["body"], "state": row["state"].lower(),
             "head": {"sha": row["headRefOid"]},
             "base": {"sha": row["baseRefOid"], "ref": row["baseRefName"]},

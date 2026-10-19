@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import functools
 import hashlib
+import math
 import os
 import json
 import pathlib
@@ -352,6 +353,10 @@ class RecoveryState:
                     raise RuntimeError("invalid recovery retry/input hash")
                 if record["attempts"] == 0 and not isinstance(record.get("label"), str):
                     raise RuntimeError("invalid recovery success label")
+                if "retry_at" in record:
+                    retry_at = record["retry_at"]
+                    if type(retry_at) not in (int, float) or not 0 <= retry_at < math.inf:
+                        raise RuntimeError("invalid recovery retry timestamp")
                 self.records[int(number)] = record
         if reset:
             self.records.clear()
@@ -414,6 +419,14 @@ class RecoveryState:
 
 
 def run_pr(api, args, areas, pr, snapshot=None, preserve_labels=False):
+    """Return a PR's label, optionally applying it and an advisory structure comment.
+
+    Reuse a supplied metadata/files snapshot or fetch one through ``api``.
+    Incomplete diffs classify conservatively and skip nudges. ``preserve_labels``
+    suppresses label writes for historical backfills; structure analysis remains
+    independent. Record the processed input hash and completeness on ``args``
+    for recovery, and propagate label errors to its retry handling.
+    """
     snapshot = snapshot if snapshot is not None else pr_snapshot(api, args.repo, pr)
     info = snapshot["info"]
     title, body = info.get("title") or "", info.get("body") or ""
@@ -465,6 +478,13 @@ def recovery_since(api, repo):
 
 
 def candidates(api, args, areas):
+    """Yield PR numbers needing inspection, without changing GitHub state.
+
+    Page open PRs for recovery or all PRs for backfills. Saved input hashes and
+    retries select recovery work; without state, use the successful-run window
+    plus missing/invalid labels. A truncated recovery listing raises instead of
+    allowing its progress to be treated as complete.
+    """
     since = args.since
     if args.reconcile_open and since == "auto" and not getattr(args, "_state", None):
         since = recovery_since(api, args.repo)

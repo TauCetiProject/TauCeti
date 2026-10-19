@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -591,6 +592,52 @@ class Recovery(unittest.TestCase):
             path = Path(directory) / "state.json"
             path.write_text("invalid JSON")
             self.assertEqual(rl.RecoveryState(path, reset=True).records, {})
+
+    def test_recovery_rejects_invalid_retry_timestamps_before_selection(self):
+        invalid = (None, "x", True, [], {}, -1, float("nan"), float("inf"), -float("inf"))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            for retry_at in invalid:
+                with self.subTest(retry_at=retry_at):
+                    record = {"key": rl.input_key(info(), {"PDE"}),
+                              "attempts": rl.MAX_RETRIES, "retry_at": retry_at}
+                    path.write_text(json.dumps({"version": 1, "prs": {"1": record}}))
+                    with self.assertRaisesRegex(RuntimeError, "invalid recovery retry timestamp"):
+                        rl.RecoveryState(path)
+                    self.assertEqual(rl.RecoveryState(path, reset=True).records, {})
+
+    def test_recovery_loads_finite_retry_timestamps_and_resumes_when_due(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            for retry_at in (0, 1000, 1000.5):
+                with self.subTest(retry_at=retry_at):
+                    record = {"key": rl.input_key(info(), {"PDE"}),
+                              "attempts": rl.MAX_RETRIES, "retry_at": retry_at}
+                    path.write_text(json.dumps({"version": 1, "prs": {"1": record}}))
+                    restored = rl.RecoveryState(path)
+                    with patch.object(rl.time, "time", return_value=1001):
+                        self.assertTrue(restored.select(info(), {"PDE"}))
+                    self.assertNotIn(1, restored.records)
+
+    def test_restore_only_selects_trusted_main_schedule_and_dispatch_runs(self):
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github/workflows/roadmap-label-reconcile.yml").read_text()
+        step = workflow.split("      - name: Restore recovery state\n", 1)[1].split("\n      - ", 1)[0]
+        selector = re.search(r"--jq '([^']+)'", step).group(1)
+        self.assertIn("status=completed&branch=main", step)
+        trusted = {"head_branch": "main", "head_repository": {"full_name": "TauCetiProject/TauCeti"}}
+        runs = [dict(trusted, id=1, event="pull_request"),
+                dict(trusted, id=2, event="pull_request_target"),
+                dict(trusted, id=3, event="push"),
+                dict(trusted, id=4, event="schedule", head_repository={"full_name": "fork/TauCeti"}),
+                dict(trusted, id=5, event="workflow_dispatch", head_repository={"full_name": "fork/TauCeti"}),
+                dict(trusted, id=6, event="workflow_dispatch", head_branch="feature"),
+                dict(trusted, id=7, event="schedule", head_repository=None),
+                dict(trusted, id=8, event="schedule"),
+                dict(trusted, id=9, event="workflow_dispatch")]
+        result = subprocess.run(["jq", "-r", selector], input=json.dumps({"workflow_runs": runs}),
+                                capture_output=True, text=True, check=True)
+        self.assertEqual(result.stdout.splitlines(), ["8", "9"])
 
     def test_bad_pr_does_not_fail_recovery_window_when_retry_handoff_is_saved(self):
         api = Mock()
