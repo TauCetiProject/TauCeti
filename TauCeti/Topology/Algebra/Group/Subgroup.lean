@@ -49,6 +49,8 @@ series of a profinite group.
   with its copy inside a larger subgroup respects every restricted ambient action.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
   using `U.subgroupOf D`, is continuous.
+* `Continuous.subgroupHom`: a homomorphism of subgroups computing a continuous ambient
+  homomorphism is continuous.
 * `Dense.denseRange_subgroupOf_codRestrict`: a dense subgroup meets an open subgroup densely.
 * `Subgroup.index_comap_of_denseRange`: the preimage of an open subgroup under a homomorphism with
   dense range has the same index.
@@ -161,6 +163,13 @@ of `D`, is continuous. -/
 theorem continuous_subgroupOf_codRestrict (D U : Subgroup G) :
     Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) :=
   (continuous_subtype_val.comp continuous_subtype_val).codRestrict _
+
+/-- A homomorphism of subgroups is continuous if its values are those of a continuous
+homomorphism of the ambient groups. -/
+theorem _root_.Continuous.subgroupHom {G' : Type*} [Group G'] [TopologicalSpace G']
+    {U : Subgroup G} {U' : Subgroup G'} {φ : G →* G'} (hφ : Continuous φ) {ψ : U →* U'}
+    (hψ : ∀ u, (ψ u : G') = φ u) : Continuous ψ :=
+  continuous_induced_rng.2 ((hφ.comp continuous_subtype_val).congr fun u ↦ (hψ u).symm)
 
 /-- **A dense subgroup meets an open subgroup densely.** If `D` is dense and `U` is open, the
 inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into `U` has dense
