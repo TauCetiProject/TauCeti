@@ -40,6 +40,8 @@ most `2 / 3` in absolute value, because then every conjugate has modulus at most
   conjugates all have real and imaginary parts at most `2 / 3` in absolute value is zero.
 * `NumberField.exists_ne_zero_int_vec_abs_le_of_house_le`: Siegel's lemma over `K` with unknowns
   in `ℤ`.
+* `NumberField.sum_mul_intCast_eq_zero_of_mulVec_eq_zero`: such a solution satisfies each row
+  equation `∑ⱼ aᵢⱼ xⱼ = 0` in `K`.
 
 ## References
 
@@ -221,5 +223,12 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
           rw [Pi.sub_apply]
           exact_mod_cast this
       _ ≤ _ := Nat.floor_le (by positivity)
+
+omit [NumberField K] [Fintype α] in
+/-- An integer solution `x` of `a x = 0` over `𝓞 K` solves every row equation in `K`:
+`∑ⱼ aᵢⱼ xⱼ = 0`. -/
+theorem sum_mul_intCast_eq_zero_of_mulVec_eq_zero {a : Matrix α β (𝓞 K)} {x : β → ℤ}
+    (hax : a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0) (i : α) : ∑ j, (a i j : K) * x j = 0 := by
+  simpa [Matrix.mulVec, dotProduct] using congrArg (algebraMap (𝓞 K) K) (congrFun hax i)
 
 end NumberField

@@ -35,8 +35,8 @@ dual is also a left dual.
 * `TauCeti.pivotalIsoApp`: the component `φ_X : X ≅ Xᘁᘁ`;
 * `TauCeti.pivotalIsoApp_hom_naturality` and `TauCeti.rightAdjointMate_rightAdjointMate`: the
   double mate `fᘁᘁ` of `f : X ⟶ Y` is `φ_X⁻¹ ≫ f ≫ φ_Y`;
-* `TauCeti.pivotalIsoApp_unit_hom` and `TauCeti.pivotalIsoApp_tensor_hom`: monoidality of `φ`,
-  in components;
+* `TauCeti.pivotalIsoApp_unit_hom`, `TauCeti.pivotalIsoApp_unit_inv` and
+  `TauCeti.pivotalIsoApp_tensor_hom`: monoidality of `φ`, in components;
 * `TauCeti.pivotalIsoApp_rightDual`: the Freyd–Yetter identity `φ_{Xᘁ} = (φ_X⁻¹)ᘁ`, with its
   inverse form `TauCeti.pivotalIsoApp_rightDual_inv`;
 * `TauCeti.pivotalExactPairing`: the exact pairing `ExactPairing Xᘁ X` obtained from `φ_X`.
@@ -115,6 +115,13 @@ theorem pivotalIsoApp_unit_hom :
     (pivotalIsoApp (𝟙_ C)).hom = ε (doubleRightDualFunctor C) :=
   -- The unit comparison of the identity functor is the identity.
   (Category.id_comp _).symm.trans (NatTrans.IsMonoidal.unit (τ := (pivotalIso (C := C)).hom))
+
+/-- The inverse of the component of the pivotal isomorphism at the unit is the inverse unit
+comparison of the double right dual functor. -/
+theorem pivotalIsoApp_unit_inv :
+    (pivotalIsoApp (𝟙_ C)).inv = η (doubleRightDualFunctor C) :=
+  Iso.inv_ext ((congrArg (· ≫ η (doubleRightDualFunctor C)) pivotalIsoApp_unit_hom).trans
+    (Functor.Monoidal.ε_η _))
 
 /-- The component of the pivotal isomorphism at a tensor product is the tensor product of the
 components, followed by the tensor comparison of the double right dual functor. -/

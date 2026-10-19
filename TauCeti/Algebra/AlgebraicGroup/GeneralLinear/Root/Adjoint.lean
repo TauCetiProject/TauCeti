@@ -16,8 +16,9 @@ indexed by ordered pairs `i ≠ j`. Independently, the nontrivial weights of the
 adjoint representation have been classified as the same characters. This file identifies the
 two constructions exactly.
 
-Thus the roots packaged by `GeneralLinear.diagonalRootDatum` are neither merely an abstract
-coordinate model nor just a subset of the adjoint weights: their range is the complete set
+Over any nontrivial commutative base ring, the roots of `GeneralLinear.diagonalRootDatum`
+are neither merely an abstract coordinate model nor just a subset of the adjoint weights:
+their range is the complete set
 `Derivation.nontrivialAdjointWeights` for the diagonal-torus morphism. The induced equivalence
 records the canonical root indexing. The existing adjoint classification then identifies each
 root space with the line spanned by the corresponding matrix unit `E_ij`.
@@ -50,7 +51,7 @@ universe u
 
 noncomputable section
 
-variable {k : Type u} [Field k] {n : ℕ}
+variable {k : Type u} [CommRing k] [Nontrivial k] {n : ℕ}
 
 /-- A character of the diagonal torus is a nontrivial adjoint weight exactly when it is the
 multiplicative form of a root in `diagonalRootDatum`. -/

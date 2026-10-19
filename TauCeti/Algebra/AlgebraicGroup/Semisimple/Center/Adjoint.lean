@@ -40,12 +40,13 @@ variable {k : Type u} [Field k] [CharZero k]
 semisimple group in characteristic zero, over an arbitrary ground field. -/
 theorem adjointSemisimple_centerQuotient (hH : semisimpleCommHopfAlgProperty k H) :
     adjointSemisimpleCommHopfAlgProperty k
-      ⟨hH.centerQuotient, hH.semisimple_centerQuotient⟩ := by
-  let _ : Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra hH.centerQuotient.obj) :=
+      ⟨hH.reductive.centerQuotient, hH.semisimple_centerQuotient⟩ := by
+  let _ : Module.Finite k
+      (CommHopfAlgCat.centerCoordinateHopfAlgebra hH.reductive.centerQuotient.obj) :=
     hH.semisimple_centerQuotient.moduleFinite_centerCoordinate
   apply (adjointSemisimpleCommHopfAlgProperty_iff _).mpr
   exact CommHopfAlgCat.IsIsogeny.centerDefiningIdeal_eq_augmentation_of_kernel_eq_center
     hH.isCentralIsogeny_centerQuotientι.isIsogeny hH.geometricallyConnected
-    hH.kernelHopfIdeal_centerQuotientι_eq
+    hH.reductive.kernelHopfIdeal_centerQuotientι_eq
 
 end TauCeti.semisimpleCommHopfAlgProperty
