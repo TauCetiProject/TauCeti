@@ -90,7 +90,7 @@ theorem lintegral_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) (f : 
 
 /-- At zero noncentrality, the law is the central chi-squared law, including invalid degrees. -/
 @[simp]
-theorem noncentralChiSquaredMeasure_zero (k : ℝ) :
+theorem noncentralChiSquaredMeasure_zero_noncentrality (k : ℝ) :
     noncentralChiSquaredMeasure k 0 = chiSquaredMeasure k := by
   by_cases hk : 0 ≤ k
   · ext s hs
@@ -204,7 +204,7 @@ theorem support_noncentralChiSquaredMeasure (k : ℝ) (l : ℝ≥0) :
   rw [ite_eq_right hkneg]
   by_cases hzero : k = 0 ∧ l = 0
   · rcases hzero with ⟨rfl, rfl⟩
-    rw [noncentralChiSquaredMeasure_zero, support_chiSquaredMeasure]
+    rw [noncentralChiSquaredMeasure_zero_noncentrality, support_chiSquaredMeasure]
     simp
   rw [ite_eq_right hzero]
   have hk : 0 ≤ k := le_of_not_gt hkneg
