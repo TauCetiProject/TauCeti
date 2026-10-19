@@ -17,6 +17,8 @@ import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 -- Proof-only: a root of a quadratic with unit discriminant is simple.
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+-- Proof-only: simplicity of a residue root from the quadratic discriminant.
+import TauCeti.Algebra.QuadraticDiscriminant
 
 /-!
 # Points with singular reduction: the index four case `Iₙ*`
@@ -376,16 +378,14 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
   obtain ⟨hp, -⟩ := stage_data v hϖ (isTateOddStage_zero_of_isTateTerminal_IStar v h)
   obtain ⟨-, hdisc⟩ := isTateEvenStage_of_isTateTerminal_IStar v h
   -- the discriminant `A₄² − 4 A₂ A₆` is a unit, so `2 A₂ z + A₄` is a unit at a root `z`
-  have hD : ¬ ϖ ∣ A₄ ^ 2 - 4 * A₂ * A₆ := by
+  have hD : ¬ ϖ ∣ discrim A₂ A₄ A₆ := by
+    rw [discrim]
     rintro ⟨e, he⟩
     exact hdisc ⟨e, by rw [discrim, h₂, h₄, h₆]; linear_combination ϖ ^ (2 * k + 6) * he⟩
   have hsimple (z : v.valuationSubring) (hz : ϖ ∣ A₂ * z ^ 2 + A₄ * z + A₆) :
-      IsUnit (2 * A₂ * z + A₄) := by
-    rw [isUnit_iff_not_dvd hϖ]
-    intro hd
-    refine hD (hp.dvd_of_dvd_pow (n := 1) ?_)
-    rw [pow_one]
-    exact (dvd_sub (dvd_pow hd two_ne_zero) (hz.mul_left (4 * A₂))).trans (dvd_of_eq (by ring))
+      IsUnit (2 * A₂ * z + A₄) :=
+    (isUnit_iff_not_dvd hϖ).2
+      (TauCeti.not_dvd_two_mul_mul_add_of_not_dvd_discrim hD (by rwa [← sq]))
   -- the cubic `ϖ^(k+1) T³ + A₂ T² + A₄ T + A₆` and its derivative
   set f : v.valuationSubring[X] := C (ϖ ^ (k + 1)) * X ^ 3 + C A₂ * X ^ 2 + C A₄ * X + C A₆ with hf
   have heval (z : v.valuationSubring) :
