@@ -89,7 +89,7 @@ theorem isNeighbourhood_self : IsNeighbourhood I (CommAlgCat.of R R) :=
 
 /-- Two maps out of an algebra whose reduced map is surjective (for instance, a neighbourhood)
 agree after quotienting their target by the extended ideal. -/
-theorem quotient_mk_eq_of_reducedMap_surjective {B C : Type v} [CommRing B] [CommRing C]
+theorem quotient_mk_eq_of_reducedMap_surjective {B : Type v} {C : Type*} [CommRing B] [CommRing C]
     [Algebra R B] [Algebra R C] (hB : Function.Surjective (reducedMap I B))
     (f g : B →ₐ[R] C) (b : B) :
     Ideal.Quotient.mk (I.map (algebraMap R C)) (f b) =
