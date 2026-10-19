@@ -40,6 +40,14 @@ class SourceOptionsTests(unittest.TestCase):
             'macro "at_hyp" h:ident : tactic => `(tactic| simp at $h:ident)\n'
             'local\nmacro_rules | `(finish) => `(tactic| trivial)\n'
             'local macro_rules | `($a ^ $n:num) => `(HPow.hPow $a ($n : Nat))\n'), [])
+        self.assertEqual(forbidden_lines(
+            '@[inherit_doc] local macro "finish" : tactic => `(tactic| trivial)\n'
+            '@[inherit_doc]local macro "finish_adjacent" : tactic => `(tactic| trivial)\n'
+            '/- A comment boundary. -/local macro "after_comment" : tactic => `(tactic| trivial)\n'
+            '/-- A local proof abbreviation. -/\n'
+            'local macro "finish_again" : tactic => `(tactic| trivial)\n'
+            'namespace Foo local macro "inline_finish" : tactic => `(tactic| trivial)\n'
+            'end Foo\n'), [])
 
     def test_rejects_nonlocal_macros_and_local_bodies_with_forbidden_tokens(self):
         for source in [
@@ -81,6 +89,19 @@ class SourceOptionsTests(unittest.TestCase):
         self.assertEqual(forbidden_lines(
             '@[simp, /- ] -/ tactic finish] def tool := 1\n'), [1])
 
+    def test_attribute_openers_can_touch_identifiers_and_all_entries_are_checked(self):
+        for source in [
+            'theorem t : True := trivial@[command_elab finishCmd] def elabFinish := 1',
+            'theorem t : True := trivial@[init act] opaque r : IO.Ref Nat',
+            '@[inherit_doc my_init, init act] opaque r : IO.Ref Nat',
+            '@[inherit_doc Foo.my_tactic, tactic finish] def evalFinish := 1',
+        ]:
+            with self.subTest(source=source):
+                self.assertEqual(forbidden_lines(source), [1])
+        self.assertEqual(forbidden_tokens('@[init act, command_elab finishCmd] def r := 1'),
+                         {1: {'init', 'command_elab'}})
+        self.assertEqual(forbidden_lines('@[inherit_doc my_init] def foo := 1'), [])
+
     def test_policy_comments_and_longer_names_are_allowed(self):
         self.assertEqual(forbidden_lines(
             '/- meta unsafe /- elab -/ initialize macro tactic -/\n'
@@ -115,6 +136,74 @@ class SourceOptionsTests(unittest.TestCase):
                 self.assertEqual(forbidden_lines(source), [2])
         self.assertEqual(forbidden_lines('def text := "local macro"\n'), [1])
 
+    def test_interpolation_cannot_make_line_comment_local_authorize_a_global_macro(self):
+        source = ('def t : String := s!"{\'"\'}" -- " local\n'
+                  'macro "finish" : tactic => `(tactic| trivial)\n')
+        self.assertEqual(forbidden_lines(source), [2])
+        rules = 'local syntax "finish" : tactic\n' + source.replace(
+            'macro "finish" : tactic =>', 'macro_rules | `(tactic| finish) =>')
+        self.assertEqual(forbidden_lines(rules), [3])
+
+    def test_name_literal_and_qualified_name_cannot_authorize_a_global_macro(self):
+        self.assertEqual(forbidden_lines(
+            'def tag := `local\nmacro "finish" : tactic => `(tactic| trivial)\n'), [2])
+        self.assertEqual(forbidden_lines(
+            'def Foo.«local» := 0\nexample := Foo.local\n'
+            'macro "finish" : tactic => `(tactic| trivial)\n'), [3])
+        self.assertEqual(forbidden_lines(
+            'def tag := ``local\nmacro_rules | `(finish) => `(tactic| trivial)\n'), [2])
+
+    def test_symbol_commands_do_not_require_identifier_boundaries(self):
+        for symbol in ['#eval', '#eval!', '#count_heartbeats', '#count_heartbeats!']:
+            for source in [symbol + 'IO.FS.writeFile "x" ""',
+                           'theorem t : True := trivial' + symbol + ' (pure () : IO Unit)',
+                           symbol + "'a' |> fun _ => (pure () : IO Unit)"]:
+                with self.subTest(source=source):
+                    self.assertEqual(forbidden_lines(source), [1])
+        self.assertEqual(forbidden_tokens('#count_heartbeatsin\nexample : True := by trivial'),
+                         {1: {'#count_heartbeats'}})
+
+    def test_lean_identifier_ranges_and_postfix_symbol_boundaries(self):
+        # Letter-like symbols are identifier characters in Lean, unlike Python's word class.
+        for letter in ['℘', '℮', '™', '⅋', 'α', 'é', '𝒜']:
+            with self.subTest(letter=letter):
+                self.assertEqual(forbidden_lines(f'def {letter}meta := 1'), [])
+                self.assertEqual(forbidden_lines(
+                    f'example ({letter}local : Nat) : Nat := {letter}local\n'
+                    'macro "finish" : tactic => `(tactic| trivial)'), [2])
+        # These postfix symbols are letters to Python but delimit identifiers in Lean.
+        for symbol in ['ᶜ', 'ˣ', 'ᵒᵖ', 'ᵀ', 'ᵐᵒᵖ', 'λ', 'Π', 'Σ']:
+            for command in ['run_cmd pure ()', 'set_option maxHeartbeats 0 in',
+                            'macro "finish" : tactic => `(tactic| trivial)',
+                            'attribute [tactic finish] tool']:
+                with self.subTest(symbol=symbol, command=command):
+                    self.assertEqual(forbidden_lines('example := s' + symbol + command), [1])
+        # Rest-only characters can be notation tokens when not attached to an identifier.
+        for symbol in ['!', '?', '₁', 'ᵢ']:
+            self.assertEqual(forbidden_lines('example := (1)' + symbol + 'run_cmd pure ()'), [1])
+        self.assertEqual(forbidden_lines('example := !foo_run_cmd\nexample := ?foo1macro'), [])
+
+    def test_numeric_literals_can_touch_keywords_without_hiding_them(self):
+        for numeral in ['1', '0x1', '0b1', '1e2', '1.0']:
+            for command in ['run_cmd pure ()', 'set_option maxHeartbeats 0 in',
+                            'macro "finish" : tactic => `(tactic| trivial)',
+                            'attribute [init act] r']:
+                with self.subTest(numeral=numeral, command=command):
+                    self.assertEqual(forbidden_lines('example := ' + numeral + command), [1])
+        self.assertEqual(forbidden_lines(
+            'def foo1meta := 1\ndef bar2macro := 1\n'), [])
+        self.assertEqual(forbidden_lines(
+            'def foo1local := 1\nexample := foo1local\n'
+            'macro "finish" : tactic => `(tactic| trivial)\n'), [3])
+        self.assertEqual(forbidden_lines(
+            'example (℘local : Nat) : Nat := 1℘local\n'
+            'macro "finish" : tactic => `(tactic| trivial)\n'), [2])
+        # Lean treats this unassigned Greek code point as letter-like; the approximate shared
+        # masker can misread the primes inside its identifier as a character literal.
+        self.assertEqual(forbidden_lines(
+            "example (\u03a2'a'local : Nat) : Nat := \u03a2'a'local\n"
+            'macro "finish" : tactic => `(tactic| trivial)\n'), [2])
+
     def test_character_literals_cannot_hide_adjacent_forbidden_code_from_fast_path(self):
         for source in ["'a'meta def tool := 1", "'a'#eval (pure () : IO Unit)"]:
             with self.subTest(source=source):
@@ -128,6 +217,15 @@ class SourceOptionsTests(unittest.TestCase):
             'attribute /- gap -/ [builtin_init act] r',
             '-- "quoted" local\nmacro "finish" : tactic => `(tactic| trivial)',
             'local /- gap -/\nmacro "finish" : tactic => `(tactic| trivial)',
+            '#evalIO.FS.writeFile "x" ""',
+            'theorem t : True := trivial#eval! (pure () : IO Unit)',
+            'example := sᶜrun_cmd pure ()', 'example := 0x1run_cmd pure ()',
+            'example (℘local : Nat) : Nat := ℘local\n'
+            'macro "finish" : tactic => `(tactic| trivial)',
+            'theorem t : True := trivial@[init act] opaque r : IO.Ref Nat',
+            '@[inherit_doc my_init, init act] opaque r : IO.Ref Nat',
+            'def t : String := s!"{\'"\'}" -- " local\n'
+            'macro "finish" : tactic => `(tactic| trivial)',
         ]
         for source in sources:
             with self.subTest(source=source):

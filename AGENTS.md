@@ -61,6 +61,8 @@ scope do not coincide.
   Local macro and macro_rules definitions remain allowed, including existing local syntax needed
   for elaboration performance. Their bodies still require review: this is a conservative token
   check, not a parser or a guarantee that local macros contain no metaprogramming.
+  Write the local modifier after whitespace, a comment boundary, or a closing attribute bracket;
+  source text inside comments, literals, or longer identifiers cannot supply this exception.
   The import-header guard also rejects direct Lean, Lake, and Mathlib.Lean implementation imports;
   use mathematical modules and Mathlib tactic imports instead. Neither guard loads candidate code.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
