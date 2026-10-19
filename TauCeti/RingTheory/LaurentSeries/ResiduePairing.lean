@@ -14,9 +14,9 @@ For Laurent series over a commutative ring, this file packages the bilinear form
 
 `(f, g) ↦ Res(f dg) = (f * g').coeff (-1)`.
 
-The pairing is skew-symmetric over every commutative ring and alternating when multiplication by
-positive natural numbers has no zero divisors on the additive group, as it does over the
-characteristic-zero fields used for current algebras.  It satisfies the cyclic identity obtained
+The pairing is alternating, hence skew-symmetric, over every commutative ring: in the residue of
+`f df` the terms indexed by `Xⁱ` and `X⁻ⁱ` cancel in pairs, so no characteristic assumption is
+needed.  It satisfies the cyclic identity obtained
 by taking the residue of `d(fgh)`.  Its value on monomials fixes the sign convention, and it
 vanishes on two power series.  Over a field it is continuous for the Laurent valuation topology.
 
@@ -27,6 +27,7 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 
 * `LaurentSeries.residuePairing`: the bilinear form `Res(f dg)`.
 * `LaurentSeries.residuePairing_eq_neg_swap`: integration by parts for residues.
+* `LaurentSeries.residuePairing_self`: alternation over every commutative ring.
 * `LaurentSeries.residuePairing_mul_add_cyclic`: the cyclic identity.
 * `LaurentSeries.residuePairing_single`: its value on Laurent monomials.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
@@ -78,17 +79,39 @@ theorem residuePairing_eq_neg_swap (f g : R⸨X⸩) :
   rw [residuePairing_apply, residuePairing_apply]
   linear_combination -h
 
-/-- The residue pairing is alternating. -/
+/-- The residue pairing is alternating over every commutative ring. -/
 @[simp]
-theorem residuePairing_self [NoZeroSMulDivisors ℕ R] (f : R⸨X⸩) :
+theorem residuePairing_self (f : R⸨X⸩) :
     residuePairing R f f = 0 := by
-  have h := congrArg (fun q : R⸨X⸩ ↦ q.coeff (-1)) (derivative_mul f f)
-  have htwo : (2 : ℕ) • residuePairing R f f = 0 := by
-    simp only [coeff_neg_one_derivative, coeff_add] at h
-    rw [mul_comm (derivative R f) f] at h
-    rw [residuePairing_apply, two_nsmul]
-    exact h.symm
-  exact (eq_zero_or_eq_zero_of_smul_eq_zero htwo).resolve_left two_ne_zero
+  -- Index the residue by pairs `(i, j)` with `i + j = -1`, `Xⁱ` from `f` and `Xʲ` from `f'`;
+  -- the swap `(i, j) ↦ (j + 1, i - 1)` pairs the terms `(j + 1) fᵢ fⱼ₊₁` and `i fⱼ₊₁ fᵢ`.
+  have hT : ((· - 1) '' f.support).IsPWO :=
+    f.isPWO_support.image_of_monotone fun _ _ h ↦ by simpa using h
+  have hmem (j : ℤ) : j ∈ (· - 1) '' f.support ↔ j + 1 ∈ f.support :=
+    ⟨by rintro ⟨i, hi, rfl⟩; simpa using hi, fun h ↦ ⟨j + 1, h, by simp⟩⟩
+  have hsupp : (derivative R f).support ⊆ (· - 1) '' f.support := fun j hj ↦ by
+    rw [hmem]
+    intro h
+    exact hj (by rw [coeff_derivative, h, smul_zero])
+  rw [residuePairing_apply, coeff_mul_right' hT hsupp]
+  refine Finset.sum_involution (fun ij _ ↦ (ij.2 + 1, ij.1 - 1)) ?_ ?_ ?_ ?_
+  · rintro ⟨i, j⟩ hij
+    rw [Finset.mem_antidiagonal] at hij
+    simp only [coeff_derivative, sub_add_cancel]
+    rw [mul_smul_comm, mul_smul_comm, mul_comm (f.coeff (j + 1)), ← add_smul,
+      show j + 1 + i = 0 by omega, zero_smul]
+  · rintro ⟨i, j⟩ hij hne heq
+    rw [Finset.mem_antidiagonal] at hij
+    simp only [Prod.mk.injEq] at heq
+    have hj : j + 1 = 0 := by omega
+    apply hne
+    simp [hj]
+  · rintro ⟨i, j⟩ hij
+    rw [Finset.mem_antidiagonal] at hij ⊢
+    obtain ⟨hi, hj, hij⟩ := hij
+    exact ⟨(hmem j).1 hj, (hmem _).2 (by simpa using hi), by omega⟩
+  · rintro ⟨i, j⟩ _
+    simp
 
 /-- Multiplication may be moved between the first input and the differentiated second input,
 up to the correction supplied by Leibniz's rule. -/
