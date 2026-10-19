@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
-public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Multiplication
+public import TauCeti.RingTheory.LaurentSeries.Lattice
 
 /-!
 # Residue duality for Laurent series
@@ -18,37 +18,37 @@ For Laurent series over a commutative ring `R`, this file studies the symmetric 
 
 `(f, g) ↦ Res(f g dX) = (f * g).coeff (-1)`,
 
-the residue analogue of the trace form `Algebra.traceForm`, together with the lattices
-`U_a = Xᵃ R⟦X⟧` of Laurent series whose coefficients vanish below `a`. Over a field these are the
-closed balls of the valuation topology.
+the residue analogue of the trace form `Algebra.traceForm`, and its interaction with the lattices
+`U_a = Xᵃ R⟦X⟧` of `TauCeti.LaurentSeries.lattice`.
 
 The form is nondegenerate, since pairing with the monomial `X⁻¹⁻ⁿ` reads off the coefficient of
 `Xⁿ`. The orthogonal complement of `U_a` is exactly `U_{-a}`: the product of a series in `U_a`
 and a series in `U_{-a}` has no negative exponents, and the monomials `Xᵏ`, `k ≥ a`, detect every
 coefficient below `-a`. Consequently the form descends to a pairing
-`U_a / U_b × U_{-b} / U_{-a} → R`, which is nondegenerate over every commutative ring and perfect
-over a field. The coefficients at the exponents `a ≤ n < b` identify `U_a / U_b` with `R^{b - a}`,
-so these quotients are finite free of rank `b - a`. This finite-level duality is the input for
-describing continuous linear functionals on a Laurent-series field, which vanish on some `U_a`,
-through the residue form.
+`U_a / U_b × U_{-b} / U_{-a} → R`, which is perfect over every commutative ring. The coefficients
+at the exponents `a ≤ n < b` identify `U_a / U_b` with `R^{b - a}`, so these quotients are finite
+free of rank `b - a`, and in these coordinates the pairing matches the coefficient of `Xⁿ` with
+that of `X⁻¹⁻ⁿ`. This finite-level duality is the input for describing continuous linear
+functionals on a Laurent-series field, which vanish on some `U_a`, through the residue form.
 
 ## Main definitions
 
-* `TauCeti.LaurentSeries.lattice R a`: the `R`-submodule `U_a = Xᵃ R⟦X⟧`.
 * `TauCeti.LaurentSeries.residueForm R`: the bilinear form `Res(f g dX)`.
 * `TauCeti.LaurentSeries.latticeQuotientEquiv R a b`: the coefficient identification of
   `U_a / U_b` with functions on the exponents `a ≤ n < b`.
-* `TauCeti.LaurentSeries.residueQuotientPairing R a b`: the induced pairing
+* `TauCeti.LaurentSeries.residueFormQuotientPairing R a b`: the induced pairing
   `U_a / U_b × U_{-b} / U_{-a} → R`.
 
 ## Main results
 
 * `TauCeti.LaurentSeries.residueForm_nondegenerate`: the residue form is nondegenerate.
-* `TauCeti.LaurentSeries.orthogonal_lattice`: the orthogonal complement of `U_a` is `U_{-a}`.
+* `TauCeti.LaurentSeries.residueForm_orthogonal_lattice`: the orthogonal complement of `U_a` is
+  `U_{-a}`.
 * `TauCeti.LaurentSeries.finrank_latticeQuotient`: `U_a / U_b` has rank `b - a`.
-* `TauCeti.LaurentSeries.residueQuotientPairing_nondegenerate`: the induced pairing is
+* `TauCeti.LaurentSeries.residueFormQuotientPairing_nondegenerate`: the induced pairing is
   nondegenerate.
-* `TauCeti.LaurentSeries.residueQuotientPairing.instIsPerfPair`: over a field it is perfect.
+* `TauCeti.LaurentSeries.residueFormQuotientPairing.instIsPerfPair`: the induced pairing is
+  perfect.
 -/
 
 public section
@@ -57,81 +57,6 @@ open HahnSeries
 open scoped LaurentSeries PowerSeries
 
 namespace TauCeti.LaurentSeries
-
-section Lattice
-
-variable (R : Type*) [Semiring R]
-
-/-- The lattice `U_a = Xᵃ R⟦X⟧` of Laurent series whose coefficients vanish at every exponent
-below `a`, as an `R`-submodule of `R⸨X⸩`. -/
-def lattice (a : ℤ) : Submodule R R⸨X⸩ where
-  carrier := {f | ∀ n < a, f.coeff n = 0}
-  add_mem' hf hg n hn := by rw [coeff_add, hf n hn, hg n hn, add_zero]
-  zero_mem' _ _ := coeff_zero
-  smul_mem' r f hf n hn := by rw [coeff_smul, hf n hn, smul_zero]
-
-variable {R}
-
-/-- Membership in `U_a` is the vanishing of every coefficient below `a`. -/
-theorem mem_lattice_iff {a : ℤ} {f : R⸨X⸩} : f ∈ lattice R a ↔ ∀ n < a, f.coeff n = 0 :=
-  Iff.rfl
-
-/-- Membership in `U_a` is the order bound `a ≤ ord f`. -/
-theorem mem_lattice_iff_le_orderTop {a : ℤ} {f : R⸨X⸩} :
-    f ∈ lattice R a ↔ (a : WithTop ℤ) ≤ f.orderTop := by
-  rw [mem_lattice_iff, le_orderTop_iff_forall]
-  simp only [WithTop.coe_lt_coe]
-
-/-- A series in `U_a` has zero coefficient at every exponent below `a`. -/
-theorem coeff_eq_zero_of_mem_lattice {a n : ℤ} {f : R⸨X⸩} (hf : f ∈ lattice R a) (hn : n < a) :
-    f.coeff n = 0 :=
-  hf n hn
-
-/-- The monomial `r Xⁿ` lies in `U_a` once `a ≤ n`. -/
-theorem single_mem_lattice {a n : ℤ} (h : a ≤ n) (r : R) : single n r ∈ lattice R a :=
-  fun _ hm ↦ coeff_single_of_ne (by omega)
-
-/-- The lattices decrease as the exponent bound increases. -/
-theorem lattice_antitone : Antitone (lattice R) :=
-  fun _ _ h _ hf n hn ↦ hf n (hn.trans_le h)
-
-/-- Over a nontrivial semiring, `U_b ⊆ U_a` exactly when `a ≤ b`. -/
-theorem lattice_le_lattice_iff [Nontrivial R] {a b : ℤ} : lattice R b ≤ lattice R a ↔ a ≤ b := by
-  refine ⟨fun h ↦ ?_, fun h ↦ lattice_antitone h⟩
-  by_contra! hba
-  have := h (single_mem_lattice le_rfl 1) b hba
-  rw [coeff_single_same] at this
-  exact one_ne_zero this
-
-/-- Every Laurent series lies in some lattice `U_a`. -/
-theorem iSup_lattice : ⨆ a, lattice R a = ⊤ :=
-  eq_top_iff.mpr fun f _ ↦ Submodule.mem_iSup_of_mem f.order fun _ hn ↦
-    coeff_eq_zero_of_lt_order hn
-
-/-- Only `0` lies in every lattice `U_a`. -/
-theorem iInf_lattice : ⨅ a, lattice R a = ⊥ := by
-  refine eq_bot_iff.mpr fun f hf ↦ ?_
-  rw [Submodule.mem_iInf] at hf
-  rw [Submodule.mem_bot]
-  ext n
-  exact hf (n + 1) n (Int.lt_succ n)
-
-/-- A formal power series lies in `U_0`. -/
-theorem coe_powerSeries_mem_lattice_zero (p : R⟦X⟧) : (p : R⸨X⸩) ∈ lattice R 0 := fun n hn ↦ by
-  rw [PowerSeries.coeff_coe, ite_eq_left hn]
-
-/-- The lattices multiply as `U_a U_b ⊆ U_{a + b}`. -/
-theorem mul_mem_lattice {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R a) (hg : g ∈ lattice R b) :
-    f * g ∈ lattice R (a + b) := by
-  rw [mem_lattice_iff_le_orderTop] at hf hg ⊢
-  exact (WithTop.coe_add a b ▸ add_le_add hf hg).trans orderTop_add_le_mul
-
-/-- Over a field, `U_a` is the closed valuation ball `{f | v f ≤ exp (-a)}`. -/
-theorem mem_lattice_iff_valuation_le {K : Type*} [Field K] {a : ℤ} {f : K⸨X⸩} :
-    f ∈ lattice K a ↔ Valued.v f ≤ WithZero.exp (-a) :=
-  (_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).symm
-
-end Lattice
 
 section Form
 
@@ -174,15 +99,17 @@ theorem residueForm_nondegenerate : (residueForm R).Nondegenerate := by
   exact ⟨hleft, fun g hg ↦ hleft g fun f ↦ by rw [residueForm_isSymm.eq, hg]⟩
 
 /-- Series in `U_a` and `U_b` with `0 ≤ a + b` have zero residue pairing. -/
-theorem residueForm_eq_zero_of_mem_lattice {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R a)
-    (hg : g ∈ lattice R b) (hab : 0 ≤ a + b) : residueForm R f g = 0 :=
+theorem residueForm_eq_zero_of_mem_lattice {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R R a)
+    (hg : g ∈ lattice R R b) (hab : 0 ≤ a + b) : residueForm R f g = 0 :=
   coeff_eq_zero_of_mem_lattice (mul_mem_lattice hf hg) (by omega)
 
 /-- The orthogonal complement of the lattice `U_a` for the residue form is `U_{-a}`. -/
-theorem orthogonal_lattice (a : ℤ) : (residueForm R).orthogonal (lattice R a) = lattice R (-a) := by
+theorem residueForm_orthogonal_lattice (a : ℤ) :
+    (residueForm R).orthogonal (lattice R R a) = lattice R R (-a) := by
   ext g
   rw [LinearMap.BilinForm.mem_orthogonal_iff]
-  refine ⟨fun hg n hn ↦ ?_, fun hg f hf ↦ residueForm_eq_zero_of_mem_lattice hf hg (by omega)⟩
+  refine ⟨fun hg ↦ mem_lattice_iff.mpr fun n hn ↦ ?_,
+    fun hg f hf ↦ residueForm_eq_zero_of_mem_lattice hf hg (by omega)⟩
   have := hg (single (-1 - n) 1) (single_mem_lattice (by omega) 1)
   rwa [residueForm_single_left, sub_sub_cancel, one_mul] at this
 
@@ -193,20 +120,20 @@ section Quotient
 variable (R : Type*) [CommRing R]
 
 /-- The coefficient map `U_a → R^{[a, b)}`, whose kernel is `U_b`. -/
-private noncomputable def latticeCoeff (a b : ℤ) : lattice R a →ₗ[R] Finset.Ico a b → R :=
-  LinearMap.pi fun k ↦ (coeff.linearMap (k : ℤ)).comp (lattice R a).subtype
+private noncomputable def latticeCoeff (a b : ℤ) : lattice R R a →ₗ[R] Finset.Ico a b → R :=
+  LinearMap.pi fun k ↦ (coeff.linearMap (k : ℤ)).comp (lattice R R a).subtype
 
-private theorem latticeCoeff_apply (a b : ℤ) (f : lattice R a) (k : Finset.Ico a b) :
+private theorem latticeCoeff_apply (a b : ℤ) (f : lattice R R a) (k : Finset.Ico a b) :
     latticeCoeff R a b f k = (f : R⸨X⸩).coeff k := by
   simp [latticeCoeff]
 
 private theorem ker_latticeCoeff (a b : ℤ) :
-    LinearMap.ker (latticeCoeff R a b) = (lattice R b).comap (lattice R a).subtype := by
+    LinearMap.ker (latticeCoeff R a b) = (lattice R R b).comap (lattice R R a).subtype := by
   ext ⟨f, hf⟩
   simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.subtype_apply, mem_lattice_iff,
     funext_iff, latticeCoeff_apply, Pi.zero_apply, Subtype.forall,
     Finset.mem_Ico]
-  exact ⟨fun h n hn ↦ (lt_or_ge n a).elim (hf n) fun han ↦ h n ⟨han, hn⟩,
+  exact ⟨fun h n hn ↦ (lt_or_ge n a).elim (coeff_eq_zero_of_mem_lattice hf) fun han ↦ h n ⟨han, hn⟩,
     fun h n hn ↦ h n hn.2⟩
 
 private theorem latticeCoeff_surjective (a b : ℤ) : Function.Surjective (latticeCoeff R a b) := by
@@ -219,38 +146,54 @@ private theorem latticeCoeff_surjective (a b : ℤ) : Function.Surjective (latti
 /-- The coefficients at the exponents `a ≤ n < b` identify the quotient `U_a / U_b` with the
 functions on these exponents. -/
 noncomputable def latticeQuotientEquiv (a b : ℤ) :
-    (lattice R a ⧸ (lattice R b).comap (lattice R a).subtype) ≃ₗ[R] (Finset.Ico a b → R) :=
+    (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) ≃ₗ[R] (Finset.Ico a b → R) :=
   (Submodule.quotEquivOfEq _ _ (ker_latticeCoeff R a b).symm).trans
     ((latticeCoeff R a b).quotKerEquivOfSurjective (latticeCoeff_surjective R a b))
 
 /-- The class of `f ∈ U_a` in `U_a / U_b` corresponds to the coefficients of `f` at the
 exponents `a ≤ n < b`. -/
 @[simp]
-theorem latticeQuotientEquiv_mk (a b : ℤ) (f : lattice R a) (k : Finset.Ico a b) :
+theorem latticeQuotientEquiv_mk (a b : ℤ) (f : lattice R R a) (k : Finset.Ico a b) :
     latticeQuotientEquiv R a b (Submodule.Quotient.mk f) k = (f : R⸨X⸩).coeff k := by
   rw [latticeQuotientEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearMap.quotKerEquivOfSurjective_apply_mk, latticeCoeff_apply]
 
+/-- The function supported at one exponent `a ≤ k < b` corresponds to the class of the monomial
+`r Xᵏ` in `U_a / U_b`. -/
+@[simp]
+theorem latticeQuotientEquiv_symm_single (a b : ℤ) (k : Finset.Ico a b) (r : R) :
+    (latticeQuotientEquiv R a b).symm (Pi.single k r) =
+      Submodule.Quotient.mk ⟨single (k : ℤ) r, single_mem_lattice (Finset.mem_Ico.mp k.2).1 r⟩ := by
+  rw [LinearEquiv.symm_apply_eq]
+  funext j
+  rw [latticeQuotientEquiv_mk]
+  obtain rfl | hjk := eq_or_ne j k
+  · rw [coeff_single_same, Pi.single_eq_same]
+  · rw [coeff_single_of_ne (Subtype.coe_ne_coe.mpr hjk), Pi.single_eq_of_ne hjk]
+
 /-- `U_a / U_b` is a free module, via its coefficients at the exponents `a ≤ n < b`. -/
-instance (a b : ℤ) : Module.Free R (lattice R a ⧸ (lattice R b).comap (lattice R a).subtype) :=
+instance (a b : ℤ) :
+    Module.Free R (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) :=
   .of_equiv (latticeQuotientEquiv R a b).symm
 
 /-- `U_a / U_b` is a finite module, via its coefficients at the exponents `a ≤ n < b`. -/
-instance (a b : ℤ) : Module.Finite R (lattice R a ⧸ (lattice R b).comap (lattice R a).subtype) :=
+instance (a b : ℤ) :
+    Module.Finite R (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) :=
   .equiv (latticeQuotientEquiv R a b).symm
 
 /-- The quotient `U_a / U_b` has rank `b - a` (and is zero when `b ≤ a`). -/
 theorem finrank_latticeQuotient [Nontrivial R] (a b : ℤ) :
-    Module.finrank R (lattice R a ⧸ (lattice R b).comap (lattice R a).subtype) = (b - a).toNat := by
+    Module.finrank R (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) =
+      (b - a).toNat := by
   rw [(latticeQuotientEquiv R a b).finrank_eq, Module.finrank_fintype_fun_eq_card,
     Fintype.card_coe, Int.card_Ico]
 
 /-- The residue form descends to a pairing `U_a / U_b × U_{-b} / U_{-a} → R`: series in `U_a` and
 `U_{-a}`, or in `U_b` and `U_{-b}`, have zero residue pairing. -/
-noncomputable def residueQuotientPairing (a b : ℤ) :
-    (lattice R a ⧸ (lattice R b).comap (lattice R a).subtype) →ₗ[R]
-      (lattice R (-b) ⧸ (lattice R (-a)).comap (lattice R (-b)).subtype) →ₗ[R] R :=
-  ((residueForm R).compl₁₂ (lattice R a).subtype (lattice R (-b)).subtype).liftQ₂ _ _
+noncomputable def residueFormQuotientPairing (a b : ℤ) :
+    (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) →ₗ[R]
+      (lattice R R (-b) ⧸ (lattice R R (-a)).comap (lattice R R (-b)).subtype) →ₗ[R] R :=
+  ((residueForm R).compl₁₂ (lattice R R a).subtype (lattice R R (-b)).subtype).liftQ₂ _ _
     (fun f hf ↦ LinearMap.mem_ker.mpr <| LinearMap.ext fun g ↦
       residueForm_eq_zero_of_mem_lattice (R := R) hf g.2 (by omega))
     (fun g hg ↦ LinearMap.mem_ker.mpr <| LinearMap.ext fun f ↦
@@ -258,38 +201,54 @@ noncomputable def residueQuotientPairing (a b : ℤ) :
 
 /-- On classes of series, the induced pairing is the residue form. -/
 @[simp]
-theorem residueQuotientPairing_mk_mk (a b : ℤ) (f : lattice R a) (g : lattice R (-b)) :
-    residueQuotientPairing R a b (Submodule.Quotient.mk f) (Submodule.Quotient.mk g) =
+theorem residueFormQuotientPairing_mk_mk (a b : ℤ) (f : lattice R R a) (g : lattice R R (-b)) :
+    residueFormQuotientPairing R a b (Submodule.Quotient.mk f) (Submodule.Quotient.mk g) =
       residueForm R f g := by
-  rw [residueQuotientPairing, LinearMap.liftQ₂_mk, LinearMap.compl₁₂_apply,
+  rw [residueFormQuotientPairing, LinearMap.liftQ₂_mk, LinearMap.compl₁₂_apply,
     Submodule.subtype_apply, Submodule.subtype_apply]
 
 /-- The pairing `U_a / U_b × U_{-b} / U_{-a} → R` induced by the residue form is nondegenerate on
 both sides. -/
-theorem residueQuotientPairing_nondegenerate (a b : ℤ) :
-    (residueQuotientPairing R a b).Nondegenerate := by
+theorem residueFormQuotientPairing_nondegenerate (a b : ℤ) :
+    (residueFormQuotientPairing R a b).Nondegenerate := by
   constructor
   · rintro ⟨f⟩ hf
     refine (Submodule.Quotient.mk_eq_zero _).mpr ?_
-    rw [Submodule.mem_comap, Submodule.subtype_apply, ← neg_neg b, ← orthogonal_lattice,
+    rw [Submodule.mem_comap, Submodule.subtype_apply, ← neg_neg b, ← residueForm_orthogonal_lattice,
       LinearMap.BilinForm.mem_orthogonal_iff]
     intro g hg
     rw [residueForm_isSymm.eq]
     exact hf (Submodule.Quotient.mk ⟨g, hg⟩)
   · rintro ⟨g⟩ hg
     refine (Submodule.Quotient.mk_eq_zero _).mpr ?_
-    rw [Submodule.mem_comap, Submodule.subtype_apply, ← orthogonal_lattice,
+    rw [Submodule.mem_comap, Submodule.subtype_apply, ← residueForm_orthogonal_lattice,
       LinearMap.BilinForm.mem_orthogonal_iff]
     intro f hf
     exact hg (Submodule.Quotient.mk ⟨f, hf⟩)
 
-/-- Over a field, the residue form induces a perfect pairing between the finite-dimensional
-quotients `U_a / U_b` and `U_{-b} / U_{-a}`. -/
-instance residueQuotientPairing.instIsPerfPair (K : Type*) [Field K] (a b : ℤ) :
-    (residueQuotientPairing K a b).IsPerfPair := by
-  have h := residueQuotientPairing_nondegenerate K a b
-  exact .of_injective (LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp h.1))
-    (LinearMap.ker_eq_bot.mp (LinearMap.separatingRight_iff_flip_ker_eq_bot.mp h.2))
+/-- The residue form induces a perfect pairing between the finite free quotients `U_a / U_b` and
+`U_{-b} / U_{-a}`: every functional `φ` on `U_{-b} / U_{-a}` is the residue pairing with the
+class of `∑ₖ φ(X⁻¹⁻ᵏ) Xᵏ`, the sum over `a ≤ k < b`. -/
+instance residueFormQuotientPairing.instIsPerfPair (a b : ℤ) :
+    (residueFormQuotientPairing R a b).IsPerfPair := by
+  refine .of_bijective _ ⟨LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp
+    (residueFormQuotientPairing_nondegenerate R a b).1), fun φ ↦ ?_⟩
+  have hmem (k : Finset.Ico a b) : single (-1 - (k : ℤ)) (1 : R) ∈ lattice R R (-b) :=
+    single_mem_lattice (by have := (Finset.mem_Ico.mp k.2).2; omega) 1
+  refine ⟨Submodule.Quotient.mk ⟨∑ k : Finset.Ico a b,
+    single (k : ℤ) (φ (Submodule.Quotient.mk ⟨_, hmem k⟩)), Submodule.sum_mem _ fun k _ ↦
+      single_mem_lattice (Finset.mem_Ico.mp k.2).1 _⟩, ?_⟩
+  refine (LinearMap.cancel_right (latticeQuotientEquiv R (-b) (-a)).symm.surjective).mp
+    (LinearMap.pi_ext fun j r ↦ ?_)
+  have hj := Finset.mem_Ico.mp j.2
+  have hk : -1 - (j : ℤ) ∈ Finset.Ico a b := Finset.mem_Ico.mpr ⟨by omega, by omega⟩
+  have hsmul : (⟨single (j : ℤ) r, single_mem_lattice hj.1 r⟩ : lattice R R (-b)) =
+      r • ⟨_, hmem ⟨_, hk⟩⟩ := Subtype.ext <| by ext n; simp [coeff_single]
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    latticeQuotientEquiv_symm_single, residueFormQuotientPairing_mk_mk, residueForm_single_right,
+    coeff_sum, Finset.sum_eq_single ⟨_, hk⟩ (fun k _ hk' ↦ coeff_single_of_ne ?_) (by simp),
+    coeff_single_same, hsmul, Submodule.Quotient.mk_smul, map_smul, smul_eq_mul, mul_comm]
+  exact fun h ↦ hk' (Subtype.ext h.symm)
 
 end Quotient
 
