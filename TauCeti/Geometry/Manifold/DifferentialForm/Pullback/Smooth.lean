@@ -16,7 +16,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 /-!
 # Smooth pullback of differential forms
 
-A `C^(n+1)` map pulls a `C^n` fixed-coefficient differential form back to a `C^n` form.
+A `C^(n+1)` map pulls a `C^n` differential form back to a `C^n` form.
 The relative theorem uses derivatives within the source set, so it applies at boundary and
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
@@ -25,7 +25,8 @@ Its underlying rough form is the existing `TauCeti.mpullback`.
 
 In tangent coordinates, pullback precomposes the form's coordinates with those of Mathlib's
 `mfderivWithin`, via `ContinuousAlternatingMap.compContinuousLinearMap`. This expresses
-pullback regularity in terms of maps between fixed model fibres.
+pullback regularity in terms of maps between fixed model fibres, including forms with values in
+a vector bundle.
 
 ## References
 
@@ -51,6 +52,31 @@ variable {E H M E' H' M' F : Type*}
   {k : ℕ} {m n : WithTop ℕ∞} {f : M → M'} {s : Set M} {t : Set M'} {x : M}
   {ω : RoughForm I' M' F k}
 
+/-- Read with the coefficient trivialization of `V'` at `f x` and the tangent trivializations at
+`x` and `f x`, a bundle-valued pullback is the form's coordinates precomposed with the
+coordinates of `mfderivWithin`. The target tangent trivialization must be valid at `f y`. -/
+theorem inCoordinates_bundleMpullbackWithin
+    {V' : M' → Type*} [∀ y, AddCommGroup (V' y)] [∀ y, Module ℝ (V' y)]
+    [∀ y, TopologicalSpace (V' y)] [TopologicalSpace (TotalSpace F V')]
+    [FiberBundle F V'] [VectorBundle ℝ F V']
+    (ω : RoughBundleForm I' M' V' k) (f : M → M') (s : Set M) (x y : M)
+    (hyT : f y ∈ (trivializationAt E' (TangentSpace I') (f x)).baseSet) :
+    ContinuousAlternatingMap.inCoordinates E F x y (f x) (f y)
+      (bundleMpullbackWithin I I' f s ω y) =
+      (ContinuousAlternatingMap.inCoordinates E' F (f x) (f y) (f x) (f y)
+        (ω (f y))).compContinuousLinearMap
+        (inTangentCoordinates I I' id f (mfderivWithin I I' f s) x y) := by
+  have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
+    (F₁ := E) (F₂ := E') (F₃ := F) (x₀ := x) (z₀ := f x)
+    (ω (f y)) (mfderivWithin I I' f s y) hyT
+  ext v
+  simp only [ContinuousAlternatingMap.inCoordinates,
+    ContinuousLinearMap.inCoordinates, inTangentCoordinates,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
+    ContinuousLinearMap.coe_comp, bundleMpullbackWithin_apply, id_eq]
+  simp only [Trivialization.symmL_continuousLinearMapAt _ hyT]
+
 namespace RoughForm
 
 /-- In fibre coordinates, pullback precomposes the form's coordinates with the derivative's
@@ -62,65 +88,19 @@ theorem inCoordinates_mpullbackWithin (ω : RoughForm I' M' F k) (f : M → M')
       (ContinuousAlternatingMap.inCoordinates E' F (f x) (f y) (f x) (f y)
         (ω (f y))).compContinuousLinearMap
           (inTangentCoordinates I I' id f (mfderivWithin I I' f s) x y) := by
-  have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
-    (F₁ := E) (F₂ := E') (F₃ := F) (x₀ := x) (z₀ := f x)
-    (ω (f y)) (mfderivWithin I I' f s y) hy
+  have h := inCoordinates_bundleMpullbackWithin (I := I) (I' := I') (F := F)
+    (V' := Trivial M' F) ω f s x y hy
   ext v
-  -- Both coefficient bundles are trivial: their coordinate maps are identities, even though
-  -- their base spaces differ. Evaluate first so the rough pullback's application law applies.
   simpa only [ContinuousAlternatingMap.inCoordinates,
     Bundle.Trivial.eq_trivialization M F (trivializationAt F (Trivial M F) x),
     Bundle.Trivial.eq_trivialization M' F (trivializationAt F (Trivial M' F) (f x)),
     Bundle.Trivial.continuousLinearMapAt_trivialization,
     ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
-    ContinuousLinearMap.id_apply, inTangentCoordinates, id_eq, mpullbackWithin_apply] using
-    congrArg (fun a ↦ a v) h
+    ContinuousLinearMap.id_apply, inTangentCoordinates, id_eq, mpullbackWithin_apply,
+    bundleMpullbackWithin_apply] using congrArg (fun a ↦ a v) h
 
 end RoughForm
-
-/-- In a pullback trivialization, a bundle-valued pullback is the coordinate pullback of the
-original form. The tangent fibre is read in the fixed charts at `x` and `f x`; the second
-hypothesis supplies the target tangent trivialization needed to cancel its linear map with its
-inverse. This pointwise identity is the coordinate input for smooth bundle-valued pullbacks. -/
-theorem bundleMpullbackWithin_inCoordinates
-    {V' : M' → Type*} [∀ y, AddCommGroup (V' y)] [∀ y, Module ℝ (V' y)]
-    [∀ y, TopologicalSpace (V' y)] [TopologicalSpace (TotalSpace F V')]
-    [FiberBundle F V'] [VectorBundle ℝ F V']
-    (ω : RoughBundleForm I' M' V' k) (f : M → M') (s : Set M) (x y : M)
-    (hyT : f y ∈ (trivializationAt E' (TangentSpace I') (f x)).baseSet) :
-    (((trivializationAt F V' (f x)).continuousLinearMapAt ℝ (f y)).compContinuousAlternatingMap
-      (bundleMpullbackWithin I I' f s ω y)).compContinuousLinearMap
-        ((trivializationAt E (TangentSpace I) x).symmL ℝ y) =
-      (ContinuousAlternatingMap.inCoordinates E' F (f x) (f y) (f x) (f y)
-        (ω (f y))).compContinuousLinearMap
-        (inTangentCoordinates I I' id f (mfderivWithin I I' f s) x y) := by
-  ext v
-  simp only [ContinuousAlternatingMap.inCoordinates,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe]
-  simp only [Trivialization.continuousLinearMapAt_apply, Function.comp_apply,
-    bundleMpullbackWithin_apply]
-  simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates,
-    Trivialization.linearMapAt_apply]
-  by_cases hyF : f y ∈ (trivializationAt F V' (f x)).baseSet
-  · simp only [ite_eq_left hyF]
-    have key (u : TangentSpace I' (f y)) :
-        (trivializationAt E' (TangentSpace I') (f x)).symmL ℝ (f y)
-            ((trivializationAt E' (TangentSpace I') (f x)).continuousLinearMapAt ℝ
-              (f y) u) = u := by
-      rw [Trivialization.symmL_apply _ hyT,
-        Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply]
-      rw [ite_eq_left hyT]
-      exact Trivialization.symm_apply_apply_mk _ hyT u
-    congr 1
-    congr 1
-    congr 1
-    congr 1
-    funext i
-    simp only [ContinuousLinearMap.comp_apply, Function.comp_apply, id_eq]
-    rw [key]
-  · simp only [ite_eq_right hyF]
 
 /-- A form of regularity `C^m` pulls back to a `C^m` section along a `C^n` map when `m + 1 ≤ n`.
 The derivative defining pullback is taken within the unique-differentiability set `s`. -/
