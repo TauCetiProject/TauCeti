@@ -82,6 +82,13 @@ with the empty maximum zero. -/
 def IsOrthonormalFamily (e : I → M) : Prop :=
   ∀ (s : Finset I) (a : I → R), ‖∑ i ∈ s, a i • e i‖₊ = s.sup fun i ↦ ‖a i‖₊
 
+/-- An orthonormal family is characterized by the norm formula for every finite linear
+combination. This is the introduction and elimination interface for `IsOrthonormalFamily`. -/
+theorem isOrthonormalFamily_def {e : I → M} :
+    IsOrthonormalFamily R e ↔
+      ∀ (s : Finset I) (a : I → R), ‖∑ i ∈ s, a i • e i‖₊ = s.sup fun i ↦ ‖a i‖₊ :=
+  Iff.rfl
+
 variable (R) in
 /-- An **orthonormal basis** of a normed module is an orthonormal family whose span is dense. -/
 structure IsOrthonormalBasis (e : I → M) : Prop where
@@ -95,6 +102,15 @@ variable (R) in
 `C₀(I, R)` of families on a discrete index type tending to zero along the cofinite filter. -/
 def IsONable (M : Type u) [SeminormedAddCommGroup M] [Module R M] : Prop :=
   ∃ (I : Type u) (_ : TopologicalSpace I) (_ : DiscreteTopology I), Nonempty (M ≃ₗᵢ[R] C₀(I, R))
+
+variable (R) in
+/-- A module is orthonormalisable exactly when it is linearly isometric to `C₀(I, R)` for
+some discrete index type `I`. This is the introduction and elimination interface for `IsONable`. -/
+theorem isONable_def (M : Type u) [SeminormedAddCommGroup M] [Module R M] :
+    IsONable R M ↔
+      ∃ (I : Type u) (_ : TopologicalSpace I) (_ : DiscreteTopology I),
+        Nonempty (M ≃ₗᵢ[R] C₀(I, R)) :=
+  Iff.rfl
 
 end Defs
 
