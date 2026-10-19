@@ -92,7 +92,7 @@ arguments. -/
 theorem christoffelFirstKind_comm (hsymm : ∀ᶠ y in 𝓝 x, (g y).toBilinForm.IsSymm) (u v : E) :
     christoffelFirstKind g x u v = christoffelFirstKind g x v u := by
   have hc : ∀ᶠ y in 𝓝 x, ∀ a b, g y a b = g y b a :=
-    hsymm.mono fun _ hy a b ↦ by simpa using hy.eq a b
+    hsymm.mono fun _ ↦ isSymm_toBilinForm_iff.1
   ext w
   simp only [christoffelFirstKind_apply, fderiv_apply_apply_comm hc w u v]
   ring
@@ -103,7 +103,7 @@ theorem christoffelFirstKind_add_christoffelFirstKind
     (hsymm : ∀ᶠ y in 𝓝 x, (g y).toBilinForm.IsSymm) (u v w : E) :
     christoffelFirstKind g x u v w + christoffelFirstKind g x u w v = fderiv ℝ g x u v w := by
   have hc : ∀ᶠ y in 𝓝 x, ∀ a b, g y a b = g y b a :=
-    hsymm.mono fun _ hy a b ↦ by simpa using hy.eq a b
+    hsymm.mono fun _ ↦ isSymm_toBilinForm_iff.1
   simp only [christoffelFirstKind_apply, fderiv_apply_apply_comm hc u w v,
     fderiv_apply_apply_comm hc v u w, fderiv_apply_apply_comm hc w u v]
   ring
@@ -143,7 +143,7 @@ gives the Christoffel symbols of the first kind: `g(Γ(u, v), w) = Γ₁(u, v)(w
 @[simp]
 theorem apply_christoffelSecondKind (hnd : (g x).toBilinForm.Nondegenerate) (u v w : E) :
     g x (christoffelSecondKind g x u v) w = christoffelFirstKind g x u v w := by
-  rw [christoffelSecondKind_apply, (isInvertible_of_nondegenerate hnd).self_apply_inverse]
+  rw [christoffelSecondKind_apply, (isInvertible_of_separatingLeft hnd.1).self_apply_inverse]
 
 /-- **Metric compatibility in coordinates.** The derivative of a symmetric nondegenerate metric
 is `Dg(u)(v, w) = g(Γ(u, v), w) + g(v, Γ(u, w))`. -/
@@ -152,8 +152,8 @@ theorem fderiv_apply_eq_christoffelSecondKind_add
     (u v w : E) :
     fderiv ℝ g x u v w =
       g x (christoffelSecondKind g x u v) w + g x v (christoffelSecondKind g x u w) := by
-  have hv : g x v (christoffelSecondKind g x u w) = g x (christoffelSecondKind g x u w) v := by
-    simpa using hsymm.self_of_nhds.eq v (christoffelSecondKind g x u w)
+  have hv : g x v (christoffelSecondKind g x u w) = g x (christoffelSecondKind g x u w) v :=
+    isSymm_toBilinForm_iff.1 hsymm.self_of_nhds _ _
   rw [hv, apply_christoffelSecondKind hnd, apply_christoffelSecondKind hnd,
     christoffelFirstKind_add_christoffelFirstKind hsymm]
 
@@ -165,9 +165,9 @@ theorem eq_christoffelSecondKind_of_fderiv_apply_eq (hsymm : (g x).toBilinForm.I
     (hA : ∀ u v, A u v = A v u)
     (hcomp : ∀ u v w, fderiv ℝ g x u v w = g x (A u v) w + g x v (A u w)) :
     A = christoffelSecondKind g x := by
-  have hg (a b : E) : g x a b = g x b a := by simpa using hsymm.eq a b
+  have hg := isSymm_toBilinForm_iff.1 hsymm
   ext u v : 2
-  refine (isInvertible_of_nondegenerate hnd).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  refine (isInvertible_of_separatingLeft hnd.1).injective (ContinuousLinearMap.ext fun w ↦ ?_)
   -- The Koszul combination of three compatibility identities isolates `2 g(A(u, v), w)`.
   have h₁ := hcomp u v w
   have h₂ := hcomp v u w
@@ -205,9 +205,8 @@ theorem contDiffOn_christoffelFirstKind {m n : WithTop ℕ∞} {U : Set E} (hU :
       fun y hy ↦ ?_
     have hd : DifferentiableAt ℝ g y :=
       (hg.contDiffAt (hU.mem_nhds hy)).differentiableAt (fun h0 ↦ by simp [h0] at hnm)
-    rw [fderiv_clm_apply (hd.clm_apply (differentiableAt_const b)) (differentiableAt_const c),
-      fderiv_clm_apply hd (differentiableAt_const b)]
-    simp
+    rw [fderiv_clm_apply_const_apply (hd.clm_apply (differentiableAt_const b)),
+      fderiv_clm_apply_const_apply hd]
   refine contDiffOn_clm_apply.2 fun w ↦ ?_
   simp only [christoffelFirstKind_apply]
   exact (((hcoeff u v w).add (hcoeff v u w)).sub (hcoeff w u v)).div_const 2
@@ -220,7 +219,7 @@ theorem contDiffOn_christoffelSecondKind {m n : WithTop ℕ∞} {U : Set E} (hU 
     (hnd : ∀ y ∈ U, (g y).toBilinForm.Nondegenerate) :
     ContDiffOn ℝ n (christoffelSecondKind g) U := by
   have hinv : ContDiffOn ℝ n (fun y ↦ (g y).inverse) U := fun y hy ↦
-    ((isInvertible_of_nondegenerate (hnd y hy)).contDiffAt_map_inverse.comp y
+    ((isInvertible_of_separatingLeft (hnd y hy).1).contDiffAt_map_inverse.comp y
       ((hg.of_le (le_self_add.trans hnm)).contDiffAt (hU.mem_nhds hy))).contDiffWithinAt
   refine contDiffOn_clm_apply.2 fun u ↦ contDiffOn_clm_apply.2 fun v ↦ ?_
   simp only [christoffelSecondKind_apply]
@@ -255,7 +254,7 @@ theorem repr_christoffelSecondKind {ι : Type*} [Fintype ι] [DecidableEq ι]
     refine Finset.sum_congr rfl fun p _ ↦ ?_
     rw [mul_comm]
     congr 1
-    simpa using hsymm.eq (b l) (b p)
+    exact isSymm_toBilinForm_iff.1 hsymm (b l) (b p)
   have hc : c = G⁻¹ *ᵥ r := by
     rw [← hGc, Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hG, Matrix.one_mulVec]
   have := congrFun hc k

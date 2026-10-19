@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The Levi-Civita connection in global linear coordinates
@@ -192,7 +193,8 @@ theorem leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind
     rw [ContinuousLinearMap.toBilinForm_apply, hinner, inner_self_eq_zero] at h
     simpa using h
   have hnd : (g x).toBilinForm.Nondegenerate :=
-    ⟨hsep, fun a ha ↦ hsep a fun b ↦ by simpa [hcomm x a b] using ha b⟩
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (ContinuousLinearMap.isSymm_toBilinForm_iff.2 (hcomm x)).isRefl |>.2 hsep
   refine leviCivitaConnection_model_space_eq_fderiv_add hg hgx hV u _ fun w ↦ ?_
   rw [apply_christoffelSecondKind hnd, christoffelFirstKind_apply,
     TauCeti.fderiv_apply_apply_comm (Filter.Eventually.of_forall (hcomm ·))
