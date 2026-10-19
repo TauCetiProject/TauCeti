@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Unit
 
 /-!
 # The universal property of relative Spec
@@ -30,7 +31,12 @@ of the affine opens of `X`. Both constructions are natural in `T` and in `A`.
 * `CategoryTheory.CommMon.relativeSpecHomEquiv`: the bijection between morphisms over `X` and
   algebra maps;
 * `CategoryTheory.CommMon.relativeSpecLift_comp_pushforwardStructureAlgebraMap` and
-  `CategoryTheory.CommMon.relativeSpecLift_comp`: naturality in the test scheme and in the algebra.
+  `CategoryTheory.CommMon.relativeSpecLift_comp`: naturality in the test scheme and in the algebra;
+* `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
+  schemes over `X`;
+* `TauCeti.AlgebraicGeometry.relativeSpecHomIso X`: the bijection as a natural isomorphism of
+  functors of quasi-coherent algebras and schemes over `X`, with components
+  `CommMon.relativeSpecHomEquiv`.
 
 ## References
 
@@ -196,7 +202,7 @@ private lemma relativeSpecLift_appLE (φ : A ⟶ q.pushforwardStructureAlgebra)
   have hι : ⊤ ≤ ι ⁻¹ᵁ P := A.top_le_preimage_relativeSpecToBase U
   have hcomp : ∀ {Z : Scheme.{u}} (f : Z ⟶ Spec (CommRingCat.of Γ(A.X, U.toOpens))),
       ⊤ ≤ (f ≫ ι) ⁻¹ᵁ P :=
-    fun f x _ ↦ hι (show f x ∈ (⊤ : TopologicalSpace.Opens _) from _root_.trivial)
+    fun f x _ ↦ hι (Set.mem_univ (f x))
   -- Transport `appLE` along an equality of morphisms; its inclusion argument depends on them.
   have hcongr : ∀ (f g : W.toScheme ⟶ A.relativeSpec) (_ : f = g) (e₁ : ⊤ ≤ f ⁻¹ᵁ P)
       (e₂ : ⊤ ≤ g ⁻¹ᵁ P), f.appLE P ⊤ e₁ = g.appLE P ⊤ e₂ := by
@@ -243,7 +249,7 @@ private lemma liftSections_comp {T' : Scheme.{u}} (g : T' ⟶ T)
 
 /-- On the inverse image of an affine open `U` of `X`, the lift is the spectrum of the ring map
 `Γ(A.X, U) ⟶ Γ(T, q⁻¹ U)` induced by `φ`, followed by the chart of `Spec_X A` over `U`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ι_relativeSpecLift (φ : A ⟶ q.pushforwardStructureAlgebra) (U : X.AffineZariskiSite) :
     (q ⁻¹ᵁ U.toOpens).ι ≫ relativeSpecLift φ =
       (q ⁻¹ᵁ U.toOpens).toSpecΓ ≫
@@ -390,3 +396,100 @@ lemma relativeSpecLift_comp (f : B ⟶ A) (φ : A ⟶ q.pushforwardStructureAlge
 end
 
 end CategoryTheory.CommMon
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
+noncomputable section
+
+/-- The function-algebra functor on all schemes over `X`: `q : T ⟶ X` goes to its algebra of
+regular functions `q_* 𝒪_T`, and a morphism over `X` goes to pullback of regular functions along
+it. -/
+@[expose]
+def overFunctions (X : Scheme.{u}) : (Over X)ᵒᵖ ⥤ CommMon X.Modules where
+  obj T := T.unop.hom.pushforwardStructureAlgebra
+  map g := Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (Over.w g.unop)
+  map_id _ := Scheme.Hom.pushforwardStructureAlgebraMap_id
+  map_comp g g' := Scheme.Hom.pushforwardStructureAlgebraMap_comp g'.unop.left g.unop.left
+    (Over.w g'.unop) (Over.w g.unop)
+
+/-- The function algebra of `q : T ⟶ X` is `q_* 𝒪_T`. -/
+@[simp]
+lemma overFunctions_obj {X : Scheme.{u}} (T : (Over X)ᵒᵖ) :
+    (overFunctions X).obj T = T.unop.hom.pushforwardStructureAlgebra :=
+  (rfl)
+
+/-- A morphism over `X` acts on function algebras by pullback of regular functions. -/
+@[simp]
+lemma overFunctions_map {X : Scheme.{u}} {T T' : (Over X)ᵒᵖ} (g : T ⟶ T') :
+    (overFunctions X).map g =
+      Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (Over.w g.unop) :=
+  (rfl)
+
+variable {X : Scheme.{u}} in
+/-- `CommMon.relativeSpecHomEquiv` with morphisms over `X` read in `Over X`. -/
+private def relativeSpecOverHomEquiv (A : QuasicoherentAlgebra X) (T : Over X) :
+    (T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((relativeSpec X).obj (op A))) ≃
+      (A.obj ⟶ T.hom.pushforwardStructureAlgebra) where
+  toFun g := A.obj.relativeSpecHomEquiv T.hom ⟨g.left, Over.w g⟩
+  invFun φ := Over.homMk (CommMon.relativeSpecLift φ)
+    (CommMon.relativeSpecLift_relativeSpecToBase φ)
+  left_inv g := Over.OverMorphism.ext
+    (CommMon.relativeSpecLift_relativeSpecPushforwardIso_inv_comp g.left (Over.w g))
+  right_inv :=
+    CommMon.relativeSpecPushforwardIso_inv_pushforwardStructureAlgebraMap_relativeSpecLift
+
+variable {X : Scheme.{u}} in
+private lemma relativeSpecOverHomEquiv_comp (A : QuasicoherentAlgebra X) {T' T : Over X}
+    (g : T' ⟶ T)
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((relativeSpec X).obj (op A))) :
+    relativeSpecOverHomEquiv A T' (g ≫ t) =
+      relativeSpecOverHomEquiv A T t ≫
+        Scheme.Hom.pushforwardStructureAlgebraMap g.left (Over.w g) :=
+  (congrArg _ (Scheme.Hom.pushforwardStructureAlgebraMap_comp g.left t.left (Over.w g)
+    (Over.w t))).trans (Category.assoc _ _ _).symm
+
+variable {X : Scheme.{u}} in
+private lemma relativeSpecOverHomEquiv_comp_relativeSpecMap {A B : QuasicoherentAlgebra X}
+    (f : B ⟶ A) {T : Over X}
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((relativeSpec X).obj (op A))) :
+    relativeSpecOverHomEquiv B T
+        (t ≫ (MorphismProperty.Over.forget _ _ X).map ((relativeSpec X).map f.op)) =
+      f.hom ≫ relativeSpecOverHomEquiv A T t := by
+  rw [← Equiv.eq_symm_apply]
+  refine Over.OverMorphism.ext ((CommMon.relativeSpecLift_comp f.hom _).trans ?_).symm
+  exact congrArg (· ≫ _)
+    (CommMon.relativeSpecLift_relativeSpecPushforwardIso_inv_comp t.left (Over.w t))
+
+/-- **The functor-of-points universal property of relative Spec**, natural in the algebra `A`
+and in the scheme `T` over `X`: morphisms `T ⟶ Spec_X A` over `X` correspond to morphisms of
+`𝒪_X`-algebras `A ⟶ q_* 𝒪_T`. Its components are `CommMon.relativeSpecHomEquiv`. -/
+def relativeSpecHomIso (X : Scheme.{u}) :
+    relativeSpec X ⋙ MorphismProperty.Over.forget _ _ X ⋙ yoneda ≅
+      (ObjectProperty.ι _ : QuasicoherentAlgebra X ⥤ CommMon X.Modules).op ⋙ coyoneda ⋙
+        (Functor.whiskeringLeft _ _ _).obj (overFunctions X) :=
+  NatIso.ofComponents (fun A ↦ NatIso.ofComponents (fun T ↦
+    (relativeSpecOverHomEquiv A.unop T.unop).toIso)
+    (fun g ↦ by ext t; exact relativeSpecOverHomEquiv_comp _ g.unop t))
+    (fun f ↦ by ext T t; exact relativeSpecOverHomEquiv_comp_relativeSpecMap f.unop t)
+
+variable {X : Scheme.{u}}
+
+/-- The components of `relativeSpecHomIso` are `CommMon.relativeSpecHomEquiv`. -/
+lemma relativeSpecHomIso_hom_app_app (A : (QuasicoherentAlgebra X)ᵒᵖ) (T : (Over X)ᵒᵖ)
+    (t : T.unop ⟶ (MorphismProperty.Over.forget _ _ X).obj ((relativeSpec X).obj A)) :
+    ((relativeSpecHomIso X).hom.app A).app T t =
+      A.unop.obj.relativeSpecHomEquiv T.unop.hom ⟨t.left, Over.w t⟩ :=
+  (rfl)
+
+/-- The inverse components of `relativeSpecHomIso` are given by `CommMon.relativeSpecLift`. -/
+lemma relativeSpecHomIso_inv_app_app (A : (QuasicoherentAlgebra X)ᵒᵖ) (T : (Over X)ᵒᵖ)
+    (φ : A.unop.obj ⟶ T.unop.hom.pushforwardStructureAlgebra) :
+    ((relativeSpecHomIso X).inv.app A).app T φ =
+      Over.homMk (CommMon.relativeSpecLift φ) (CommMon.relativeSpecLift_relativeSpecToBase φ) :=
+  (rfl)
+
+end
+
+end TauCeti.AlgebraicGeometry
