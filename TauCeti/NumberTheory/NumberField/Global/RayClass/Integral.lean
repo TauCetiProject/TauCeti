@@ -43,7 +43,7 @@ everything: this is the moving lemma, `idealClass_surjective`.
 * `TauCeti.GlobalNumberFields.idealClass_surjective`: **the moving lemma**, that every ray class is
   the class of a nonzero integral ideal prime to the modulus.
 * `TauCeti.GlobalNumberFields.RayClassGroup.hom_ext`: homomorphisms out of the ray class group
-  agreeing after `idealClass 𝔪` are equal; `eq_idealClassLift` is the matching uniqueness of
+  agreeing after `idealClass 𝔪` are equal; `idealClassLift_unique` is the matching uniqueness of
   `idealClassLift`.
 * `TauCeti.GlobalNumberFields.mem_ker_idealClassLift`: the kernel of `idealClassLift φ hφ` consists
   of the ray classes of the integral ideals killed by `φ`.
@@ -249,7 +249,7 @@ theorem RayClassGroup.hom_ext {𝔪 : Modulus K} {M : Type*} [Monoid M]
 
 /-- **Uniqueness of the factorization through the ray class map.**  A homomorphism out of
 `RayClassGroup 𝔪` whose composite with `idealClass 𝔪` is `φ` is `idealClassLift φ hφ`. -/
-theorem eq_idealClassLift {𝔪 : Modulus K} {M : Type*} [Monoid M]
+theorem idealClassLift_unique {𝔪 : Modulus K} {M : Type*} [Monoid M]
     {φ : integralIdealsPrimeTo 𝔪 →* M} (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
     {f : RayClassGroup 𝔪 →* M} (h : f.comp (idealClass 𝔪) = φ) : f = idealClassLift φ hφ :=
   RayClassGroup.hom_ext (by rw [h, idealClassLift_comp_idealClass])
