@@ -246,10 +246,10 @@ private theorem generalizedParetoMap_weight (hs : 0 < s) (hξ : ξ ≠ 0) {e : �
     (mul_pos hs (Real.exp_pos _)), ← ENNReal.ofReal_mul
     (mul_nonneg hs.le (Real.exp_pos _).le)]
   congr 1
-  have hexponent : ξ * e * (-1 / ξ - 1) = -e - ξ * e := by
+  have hexponent : ξ * e * (-1 / ξ - 1) = -e + -(ξ * e) := by
     field_simp [hξ]
-  rw [hbase, ← Real.exp_mul, hexponent,
-    show -e - ξ * e = -e + -(ξ * e) by ring, Real.exp_add, Real.exp_neg]
+    ring
+  rw [hbase, ← Real.exp_mul, hexponent, Real.exp_add, Real.exp_neg]
   field_simp [hs.ne']
   calc
     Real.exp (ξ * e) * Real.exp (-(ξ * e)) = Real.exp (ξ * e + -(ξ * e)) :=
