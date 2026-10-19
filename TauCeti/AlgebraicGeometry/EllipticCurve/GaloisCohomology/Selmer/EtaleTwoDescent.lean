@@ -33,6 +33,10 @@ descent images.
 * `WeierstrassCurve.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_range_μ`: membership in
   the cohomological `2`-Selmer group is equivalent to membership of every local explicit image in
   the corresponding local `x - T` image.
+* `WeierstrassCurve.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition`: since the
+  cohomological descent map commutes with change of field
+  (`TauCeti.TwoDescent.cohomologicalMap_torsionRes`), the same membership is the explicit local
+  condition `WeierstrassCurve.Affine.localCondition` on the global descent image.
 
 ## References
 
@@ -70,5 +74,19 @@ theorem mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_range_μ
   apply forall_congr'
   intro i
   exact (TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff (W.baseChange (L i)) _).symm
+
+
+/-- **The cohomological `2`-Selmer group is cut out by the explicit local conditions.** A class is
+in the cohomological `2`-Selmer group exactly when its image under the cohomological descent map
+satisfies the explicit local `2`-descent condition at every chosen extension field. -/
+theorem mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition
+    (h2 : IsUnit ((2 : ℕ) : K)) {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    c ∈ W.selmerGroup tau 2 ↔
+      ∀ i, TauCeti.TwoDescent.cohomologicalMap W h2 (.ofAdd c) ∈
+        W.toAffine.localCondition (L i) := by
+  classical
+  rw [W.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_range_μ L tau h2]
+  refine forall_congr' fun i ↦ ?_
+  rw [TauCeti.TwoDescent.cohomologicalMap_torsionRes, Affine.mem_localCondition_iff]
 
 end WeierstrassCurve

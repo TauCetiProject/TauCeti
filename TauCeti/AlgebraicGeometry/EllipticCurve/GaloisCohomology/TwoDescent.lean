@@ -62,6 +62,8 @@ unit is the image of the Kummer cocycle `σ ↦ σ Q - Q` of `P`.
 * `WeierstrassCurve.coe_toMul_twoTorsionCharacter`: the character is `1` on `{O, T}` and `-1` off
   it.
 * `WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`: the character is `e₂(·, T)`.
+* `WeierstrassCurve.twoTorsionCharacter_eq_weilPairingCoeff`: the same, as an equality with the
+  coefficient map `WeierstrassCurve.weilPairingCoeff` of `T`.
 * `WeierstrassCurve.explicitCoeff1_twoTorsionCharacter_kummerMap`: the image of the Kummer class of
   `P` under the character is the Kummer class of `x(P) - e`.
 
@@ -243,6 +245,15 @@ theorem twoTorsionCharacter_eq_weilPairing [W.IsElliptic] (h2 : IsUnit ((2 : ℕ
     exact Isogeny.eq_zero_of_forall_weilPairing_eq_zero _ _ _ hall
   rw [twoTorsionCharacter_apply, ite_eq_right hS,
     (eq_zero_or_eq_mu2NegOne (e (φ S))).resolve_left he]
+
+/-- **`twoTorsionCharacter` is the coefficient map `WeierstrassCurve.weilPairingCoeff` of `T`**,
+the bundled form of `WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`. -/
+theorem twoTorsionCharacter_eq_weilPairingCoeff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+    W.twoTorsionCharacter hT hψ h2 = W.weilPairingCoeff 2 h2 ⟨some e t hT, by
+      rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul,
+        (Affine.Point.some_add_self_eq_zero_iff hT).2 hψ]⟩ := by
+  ext S
+  rw [twoTorsionCharacter_eq_weilPairing, weilPairingCoeff_apply, twoTorsionCoeff]
 
 end Character
 
