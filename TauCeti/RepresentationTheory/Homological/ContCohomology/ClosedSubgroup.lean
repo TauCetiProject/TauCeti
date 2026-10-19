@@ -199,10 +199,9 @@ end Invariants
 
 /-! ### The colimit description -/
 
-omit [DiscreteTopology X.V]
-
 variable {n : ℕ}
 
+omit [DiscreteTopology X.V] in
 /-- **A class restricting to zero on a closed subgroup restricts to zero on an open subgroup
 containing it.** For a profinite group `G`, a smooth discrete representation `X` and a closed
 subgroup `H`, a class of `Hⁿ(G, X)` whose restriction to `H` vanishes has vanishing restriction
@@ -266,6 +265,7 @@ theorem exists_openSubgroup_le_res_eq_zero (hX : IsSmoothDiscrete k X) {H : Subg
   calc φV.f n (K.d m n Wc) = φV.f n (F + K.d m n Wc) := by rw [map_add, hFV, zero_add]
     _ = φV.f n (K.iCycles n z) := by rw [hFdef, sub_add_cancel]
 
+omit [DiscreteTopology X.V] in
 /-- **Every class of positive degree dies on some open subgroup.** For a profinite group `G` and a
 smooth discrete representation `X`, every class of `Hⁿ⁺¹(G, X)` restricts to zero on some open
 subgroup of `G`: it restricts to zero on the closed trivial subgroup, which has no cohomology in
@@ -278,6 +278,7 @@ theorem exists_openSubgroup_res_eq_zero (hX : IsSmoothDiscrete k X)
     (H := ⊥) (Subgroup.coe_bot (G := G) ▸ isClosed_singleton) (x := x) (Subsingleton.elim _ _)
   exact ⟨V, hV⟩
 
+omit [DiscreteTopology X.V] in
 /-- **Every class of a closed subgroup is restricted from an open subgroup containing it.** For a
 profinite group `G`, a smooth discrete representation `X` and a closed subgroup `H`, every class
 of `Hⁿ(H, X)` is the restriction of a class of `Hⁿ(V, X)` for some open subgroup `V ⊇ H`. This is

@@ -151,6 +151,21 @@ theorem symm_iff (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
 
 end BFEquiv
 
+/-- An isomorphism carries every tuple to a tuple back-and-forth equivalent to it at every
+level. In particular, tuples in one automorphism orbit are equivalent at every level. -/
+theorem _root_.FirstOrder.Language.Equiv.bfEquiv (e : M ≃[L] N) (α : Ordinal.{o}) {n : ℕ}
+    (a : Fin n → M) : BFEquiv (L := L) α n a (e ∘ a) := by
+  induction α using Ordinal.limitRecOn generalizing n with
+  | zero =>
+    refine BFEquiv.zero.mpr ((sameAtomicType_iff _ _).mpr ⟨fun i j => ?_, fun r f => ?_⟩)
+    · exact e.injective.eq_iff.symm
+    · exact (e.map_rel r (a ∘ f)).symm
+  | add_one α ih =>
+    refine (BFEquiv.add_one α a _).mpr ⟨ih a, fun x => ⟨e x, ?_⟩, fun y => ⟨e.symm y, ?_⟩⟩
+    · simpa only [Fin.comp_snoc] using ih (snoc a x)
+    · simpa only [Fin.comp_snoc, e.apply_symm_apply] using ih (snoc a (e.symm y))
+  | limit α hα ih => exact (BFEquiv.limit hα a _).mpr fun β hβ => ih β hβ a
+
 /-! ## Empty-structure regression examples -/
 
 namespace BackAndForthExamples

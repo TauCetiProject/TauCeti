@@ -22,11 +22,15 @@ an `n × n` matrix contributes to a volume density `√(det G)`.
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
 
+A positive power `x ↦ x ^ a` maps the open unit interval onto itself, with inverse `y ↦ y ^ a⁻¹`.
+This is the image needed when a change of variables `y = x ^ a` is performed on `(0, 1)`.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
 * `Real.sqrt_pow_eq_rpow`: `√(x ^ n) = x ^ (n / 2)` for `0 ≤ x`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
+* `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 -/
 
 public section
@@ -52,5 +56,14 @@ theorem pow_le_rpow_pow_of_le_mul {b δ : ℝ} (hb : 1 ≤ b) {n r : ℕ} (hn : 
     b ^ n ≤ (b ^ δ) ^ r := by
   rw [← rpow_mul_natCast (by linarith), ← rpow_natCast]
   exact rpow_le_rpow_of_exponent_le hb hn
+
+/-- A positive power `x ↦ x ^ a` maps the open unit interval onto itself. -/
+theorem image_rpow_Ioo_zero_one {a : ℝ} (ha : 0 < a) :
+    (fun x : ℝ ↦ x ^ a) '' Set.Ioo 0 1 = Set.Ioo 0 1 := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨y ^ a⁻¹, ⟨rpow_pos_of_pos hy.1 _,
+    rpow_lt_one hy.1.le hy.2 (inv_pos.mpr ha)⟩, rpow_inv_rpow hy.1.le ha.ne'⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨rpow_pos_of_pos hx.1 a, rpow_lt_one hx.1.le hx.2 ha⟩
 
 end Real

@@ -18,16 +18,16 @@ the hyperplane `(ℝ ∙ p)ᗮ`. The homeomorphism removes the component of `x` 
 lifts a point `y` of the ball to `y + √(1 - ‖y‖²) • p`.
 
 The closed hemispheres around `p` and `-p` cover the sphere and meet in the equator, the unit
-sphere of `(ℝ ∙ p)ᗮ`, included in `S` by `TauCeti.equatorInclusion p`. Closed hemispheres are the
-discs out of which the sphere is built in the inductive computations of the homology of the
-complement of an embedded sphere.
+sphere of `(ℝ ∙ p)ᗮ`, included in `S` by `TauCeti.equatorInclusion (p : E)`. Closed hemispheres
+are the discs out of which the sphere is built in the inductive computations of the homology
+of the complement of an embedded sphere.
 
 ## Main definitions
 
 * `TauCeti.hemisphereHomeomorph p`: the closed hemisphere around `p` is homeomorphic to the closed
   unit ball of `(ℝ ∙ p)ᗮ`.
-* `TauCeti.equatorInclusion p`: the inclusion of the equator, the unit sphere of `(ℝ ∙ p)ᗮ`, into
-  the unit sphere of `E`.
+* `TauCeti.equatorInclusion p`: for any vector `p` and radius `r`, the inclusion of the sphere
+  of radius `r` in `(ℝ ∙ p)ᗮ` into the sphere of radius `r` in `E`.
 
 ## Main results
 
@@ -36,6 +36,7 @@ complement of an embedded sphere.
 * `TauCeti.frontier_setOf_inner_nonneg`: the equator is the frontier of each closed hemisphere.
 * `TauCeti.range_equatorInclusion`: the equator is the intersection of the closed hemispheres
   around `p` and `-p`.
+* `TauCeti.isometry_equatorInclusion`: the equator inclusion preserves distances.
 -/
 
 public section
@@ -47,7 +48,11 @@ open scoped RealInnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
+variable {E : Type*}
+
+section Hemisphere
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
 /-- Removing from a point of the unit sphere its component along a unit vector `p` gives a vector
 orthogonal to `p` of norm at most one. -/
@@ -122,65 +127,73 @@ theorem coe_hemisphereHomeomorph_symm_apply (y : closedBall (0 : (ℝ ∙ (p : E
       ((y : (ℝ ∙ (p : E))ᗮ) : E) + √(1 - ‖(y : (ℝ ∙ (p : E))ᗮ)‖ ^ 2) • (p : E) :=
   (rfl)
 
-/-- The inclusion of the equator, the unit sphere of `(ℝ ∙ p)ᗮ`, into the unit sphere of `E`. -/
-def equatorInclusion : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → sphere (0 : E) 1 :=
-  fun y ↦ ⟨((y : (ℝ ∙ (p : E))ᗮ) : E), mem_sphere_zero_iff_norm.2
+end Hemisphere
+
+section Equator
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : E) {r : ℝ}
+
+/-- The inclusion of the equator, the sphere of radius `r` in `(ℝ ∙ p)ᗮ`, into the sphere of
+radius `r` in `E`. The vector `p` need not be a unit vector. -/
+def equatorInclusion : sphere (0 : (ℝ ∙ p)ᗮ) r → sphere (0 : E) r :=
+  fun y ↦ ⟨((y : (ℝ ∙ p)ᗮ) : E), mem_sphere_zero_iff_norm.2
     ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere y))⟩
 
 /-- `TauCeti.equatorInclusion p` is the inclusion of `(ℝ ∙ p)ᗮ` into `E`. -/
 @[simp]
-theorem coe_equatorInclusion_apply (y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
-    (equatorInclusion p y : E) = ((y : (ℝ ∙ (p : E))ᗮ) : E) :=
+theorem coe_equatorInclusion_apply (y : sphere (0 : (ℝ ∙ p)ᗮ) r) :
+    (equatorInclusion p y : E) = ((y : (ℝ ∙ p)ᗮ) : E) :=
   (rfl)
 
-/-- The inclusion of the equator is continuous. -/
-theorem continuous_equatorInclusion : Continuous (equatorInclusion p) := by
-  unfold equatorInclusion
-  fun_prop
+/-- The inclusion of the equator preserves distances. -/
+theorem isometry_equatorInclusion : Isometry (equatorInclusion (r := r) p) := by
+  intro x y
+  exact ((isometry_subtype_coe (α := E)).comp isometry_subtype_coe).edist_eq x y
 
-/-- The inclusion of the equator is injective. -/
-theorem injective_equatorInclusion : Function.Injective (equatorInclusion p) := fun _ _ hyy' ↦
-  Subtype.ext (Subtype.ext (congrArg (fun z : sphere (0 : E) 1 ↦ (z : E)) hyy'))
+/-- The inclusion of the equator is continuous. -/
+@[fun_prop]
+theorem continuous_equatorInclusion : Continuous (equatorInclusion (r := r) p) :=
+  (isometry_equatorInclusion p).continuous
 
 /-- The equator is the set of points of the sphere orthogonal to `p`, the intersection of the two
 closed hemispheres around `p` and `-p`. -/
 theorem range_equatorInclusion :
-    range (equatorInclusion p) = {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} ∩
-      {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), ((-p : sphere (0 : E) 1) : E)⟫} := by
+    range (equatorInclusion p) = {x : sphere (0 : E) r | 0 ≤ ⟪(x : E), p⟫} ∩
+      {x : sphere (0 : E) r | 0 ≤ ⟪(x : E), -p⟫} := by
   refine Set.ext fun x ↦ ?_
-  simp only [mem_inter_iff, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg,
+  simp only [mem_inter_iff, mem_ofPred_eq, inner_neg_right, neg_nonneg,
     ← le_antisymm_iff, eq_comm (a := (0 : ℝ))]
   constructor
   · rintro ⟨y, rfl⟩
-    rw [real_inner_comm]
-    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (y : (ℝ ∙ (p : E))ᗮ).2
+    exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ p)ᗮ).2
   · intro hx
-    refine ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_right.2 ?_⟩,
+    exact ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 hx⟩,
       mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere x)⟩, rfl⟩
-    rwa [real_inner_comm]
 
-/-- The norm of `x - t • p`, for a point `x` of the unit sphere orthogonal to `p`. -/
-private lemma norm_sub_smul_of_inner_eq_zero (x : sphere (0 : E) 1)
-    (hx : ⟪(x : E), (p : E)⟫ = 0) (t : ℝ) : ‖(x : E) - t • (p : E)‖ = √(1 + t ^ 2) := by
-  rw [← Real.sqrt_sq (norm_nonneg _), norm_sub_sq_real, real_inner_smul_right, hx, norm_smul,
-    mul_pow, Real.norm_eq_abs, sq_abs, norm_eq_of_mem_sphere x, norm_eq_of_mem_sphere p]
-  ring_nf
+end Equator
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
 /-- The normalization of `x - t • p`, for a point `x` of the unit sphere orthogonal to `p`: for
 `t > 0` it moves from `x` towards `-p` along a great circle. -/
 private def normalizeSubSmul (x : sphere (0 : E) 1) (hx : ⟪(x : E), (p : E)⟫ = 0) (t : ℝ) :
     sphere (0 : E) 1 :=
   ⟨(√(1 + t ^ 2))⁻¹ • ((x : E) - t • (p : E)), mem_sphere_zero_iff_norm.2 <| by
+    have hnorm : ‖(x : E) - t • (p : E)‖ = √(1 + t ^ 2) := by
+      have h : ⟪(x : E), t • (p : E)⟫ = 0 := by simp [real_inner_smul_right, hx]
+      simpa only [norm_smul, norm_eq_of_mem_sphere x, norm_eq_of_mem_sphere p, mul_one,
+        Real.norm_eq_abs, ← sq, sq_abs, one_pow] using norm_sub_eq_sqrt_iff_real_inner_eq_zero.2 h
     have hpos : 0 < √(1 + t ^ 2) := Real.sqrt_pos.2 (by positivity)
-    rw [norm_smul, norm_sub_smul_of_inner_eq_zero p x hx, Real.norm_eq_abs,
+    rw [norm_smul, hnorm, Real.norm_eq_abs,
       abs_of_pos (inv_pos.2 hpos), inv_mul_cancel₀ hpos.ne']⟩
 
 /-- The frontier of the closed hemisphere around `p` in the unit sphere is the equator. -/
 theorem frontier_setOf_inner_nonneg :
-    frontier {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} = range (equatorInclusion p) := by
+    frontier {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} =
+      range (equatorInclusion (p : E)) := by
   rw [range_equatorInclusion]
   refine Set.ext fun x ↦ ?_
-  simp only [mem_inter_iff, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg]
+  simp only [mem_inter_iff, mem_ofPred_eq, inner_neg_right, neg_nonneg]
   constructor
   · intro hx
     have hx := frontier_le_subset_eq continuous_const (by fun_prop) hx
