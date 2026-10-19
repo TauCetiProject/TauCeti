@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Veronese
 
 /-!
 # The section ring of a divisor
@@ -21,8 +22,11 @@ Let `F / k` be an algebraic function field and `D` a divisor of `F`. Since
 `F[X]` of polynomials `∑ fₙ Xⁿ` with `fₙ ∈ L(nD)`, graded by the power of `X`.
 
 Section rings of divisors are the graded rings from which projective models of a curve are built
-as `Proj`. This file computes the rings of the standard affine charts `D₊(f Xⁿ)` of `Proj` of the
-section ring, and which of these charts cover it. If `f Xⁿ` is homogeneous of degree `n`
+as `Proj`. If a section ring is finitely generated, then sufficiently divisible Veronese subrings
+are generated in degree one: for some `e > 0`, and every positive multiple `e'` of `e`,
+`L(m e' D) = L(e' D) ^ m` for `m > 0`. This file also computes the rings of the standard affine
+charts `D₊(f Xⁿ)` of `Proj` of the section ring, and which of these charts cover it. If `f Xⁿ` is
+homogeneous of degree `n`
 with `f ∈ L(nD)` nonzero, the degree-zero fractions `g Xⁿʳ / (f Xⁿ)ʳ`, with `g ∈ L(nrD)`, are
 the functions `g / fʳ`, and these are exactly the functions regular at every place `P` at which
 `f` attains the bound `ord_P f ≥ -n D(P)` defining `L(nD)`, that is, every place outside the
@@ -56,6 +60,8 @@ charts from which `TauCeti.AlgebraicGeometry.twoChartModel` is glued.
 * `TauCeti.Divisor.mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace`: for `f ∈ L(nD)`,
   a function `z` is regular at every place `P` where `ord_P f = -n D(P)` exactly when
   `z fʳ ∈ L(nrD)` for some `r`.
+* `TauCeti.Divisor.exists_riemannRochSpace_mul_eq_pow`: if the section ring of `D` is finitely
+  generated, then sufficiently divisible section rings are generated in degree one.
 * `TauCeti.Divisor.sectionRingAwayEquiv_mk`: the isomorphism sends `g Xⁿʳ / (f Xⁿ)ʳ` to `g / fʳ`.
 * `TauCeti.Divisor.irrelevant_le_radical_span_monomialDegreeOne`: sections of `L(D)` without a
   common base point generate the irrelevant ideal up to radical.
@@ -182,7 +188,7 @@ theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunct
     push_cast at this
     nlinarith
 
-/-! ### The homogeneous localizations of the section ring -/
+/-! ### Veronese section rings -/
 
 /-- Evaluation at `X = 1`, `∑ fₙ Xⁿ ↦ ∑ fₙ`, on the section ring. It sends a homogeneous element
 `f Xⁿ` to `f`. -/
@@ -198,6 +204,52 @@ private theorem evalOne_apply (D : Divisor k F) (f : sectionRing D) :
 private theorem evalOne_of_mem {D : Divisor k F} {n : ℕ} {f : sectionRing D}
     (hf : f ∈ sectionRingGrade D n) : evalOne D f = (f : F[X]).coeff n := by
   rw [evalOne_apply, coeffSubalgebra.eval_one_of_mem_grade hf]
+
+private theorem map_evalOne_sectionRingGrade (D : Divisor k F) (n : ℕ) :
+    Submodule.map (evalOne D).toLinearMap (sectionRingGrade D n) =
+      riemannRochSpace (n • D) := by
+  ext z
+  constructor
+  · rintro ⟨f, hf, rfl⟩
+    change evalOne D f ∈ riemannRochSpace (n • D)
+    rw [evalOne_of_mem hf]
+    exact mem_coeffSubalgebra_iff.mp f.2 n
+  · intro hz
+    let f := coeffSubalgebra.monomial (fun i : ℕ ↦ riemannRochSpace (i • D)) n z hz
+    have hf : f ∈ sectionRingGrade D n := coeffSubalgebra.monomial_mem_grade _ _ _
+    refine ⟨f, hf, ?_⟩
+    change evalOne D f = z
+    rw [evalOne_of_mem hf, coeffSubalgebra.coe_monomial, coeff_monomial_same]
+
+/-- **Sufficiently divisible section rings are generated in degree one.** If the section ring of
+`D` is finitely generated over `k`, then there is an `e > 0` such that for every positive multiple
+`e'` of `e` and every `m > 0`, every section in `L(m e' D)` is a sum of products of `m` sections
+in `L(e' D)`. -/
+theorem exists_riemannRochSpace_mul_eq_pow (D : Divisor k F)
+    [Algebra.FiniteType k (sectionRing D)] :
+    ∃ e, 0 < e ∧ ∀ ⦃e'⦄, e ∣ e' → 0 < e' → ∀ ⦃m⦄, m ≠ 0 →
+      riemannRochSpace ((m * e') • D) = riemannRochSpace (e' • D) ^ m := by
+  let _ : IsScalarTower k (sectionRingGrade D 0) (sectionRing D) :=
+    ⟨fun r s a ↦ by
+      rw [Algebra.smul_def (r • s) a, Algebra.smul_def r (s • a),
+        Algebra.smul_def s a, ← mul_assoc]
+      congr 2
+      apply Subtype.ext
+      change ((r • (s : sectionRing D) : sectionRing D) : F[X]) =
+        ((algebraMap k (sectionRing D) r * (s : sectionRing D) : sectionRing D) : F[X])
+      exact congrArg (fun x : sectionRing D ↦ (x : F[X]))
+        (Algebra.smul_def r (s : sectionRing D))⟩
+  let _ : Algebra.FiniteType (sectionRingGrade D 0) (sectionRing D) :=
+    Algebra.FiniteType.of_restrictScalars_finiteType k _ _
+  obtain ⟨e, he, hgen⟩ :=
+    TauCeti.GradedAlgebra.exists_grade_mul_eq_pow (sectionRingGrade D)
+  refine ⟨e, he, fun {e'} he' he'0 {m} hm ↦ ?_⟩
+  have hgrade := hgen (e' := e') he' he'0 (m := m) hm
+  have hmap := congrArg (Submodule.map (evalOne D).toLinearMap) hgrade
+  rw [map_evalOne_sectionRingGrade, Submodule.map_pow, map_evalOne_sectionRingGrade] at hmap
+  exact hmap
+
+/-! ### The homogeneous localizations of the section ring -/
 
 variable (hF : IsFunctionField k F) {D : Divisor k F} {n : ℕ} {f : sectionRing D}
   (hf : f ∈ sectionRingGrade D n) (hf0 : f ≠ 0)
