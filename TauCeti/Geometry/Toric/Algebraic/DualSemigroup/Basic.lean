@@ -121,7 +121,6 @@ noncomputable def dualSemigroupMap (hi : IsIntegralLattice i) (hi' : IsIntegralL
     exact (mem_dualSemigroup hi' m).1 hm (hστ hx)
 
 /-- The map on dual semigroups is precomposition by the underlying map of lattices. -/
-@[simp]
 theorem dualSemigroupMap_apply (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
     (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
     (hστ : Set.MapsTo g σ τ) (m : dualSemigroup hi' τ) (n : N) :
@@ -130,16 +129,16 @@ theorem dualSemigroupMap_apply (hi : IsIntegralLattice i) (hi' : IsIntegralLatti
 
 /-- The underlying character of the image of a character under the map on dual semigroups is
 its precomposition with the underlying map of lattices. -/
+@[simp]
 theorem coe_dualSemigroupMap (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
     (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
     (hστ : Set.MapsTo g σ τ) (m : dualSemigroup hi' τ) :
     (dualSemigroupMap hi hi' f g hfg hστ m : N →+ ℤ) = (m : N' →+ ℤ).comp f := by
   ext n
-  simp
+  simp [dualSemigroupMap_apply]
 
 /-- Along the identity of a lattice, a cone inclusion `σ ≤ σ'` induces the inclusion of dual
 semigroups: the image of a character is the same character. -/
-@[simp]
 theorem coe_dualSemigroupMap_id (hi : IsIntegralLattice i) {σ' : PointedCone ℝ V}
     (hσσ' : Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) σ σ') (m : dualSemigroup hi σ') :
     (dualSemigroupMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) hσσ' m : N →+ ℤ) =
