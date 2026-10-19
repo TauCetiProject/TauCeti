@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Split exactness of the rows of the cyclic bicomplex
@@ -33,37 +34,10 @@ public section
 
 namespace TauCeti
 
-variable (R A M : Type*)
+variable {R A M : Type*} [CommRing R] [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M]
+  {n : ℕ} [Invertible (n + 1 : R)]
 
-section Semiring
-
-variable [Semiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M]
-  [SMulCommClass R R M]
-
-/-- On a cyclic cochain, the cyclic norm is multiplication by the number of arguments. -/
-theorem cyclicNorm_apply_of_mem_cyclicCochains {n : ℕ}
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
-    (hφ : φ ∈ cyclicCochains R A M n) :
-    cyclicNorm R A M n φ = (n + 1 : R) • φ := by
-  have hfix := mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ
-  simp only [cyclicNorm_def, LinearMap.sum_apply, Module.End.pow_apply,
-    Function.iterate_fixed hfix]
-  rw [Finset.sum_const, Finset.card_range, ← Nat.cast_smul_eq_nsmul R,
-    Nat.cast_add, Nat.cast_one]
-
-/-- The fixed-point submodule of the cyclic operator is the kernel of `1 - λ`. -/
-theorem ker_one_sub_cyclicOperator (n : ℕ) :
-    LinearMap.ker (1 - cyclicOperator R A M n) = cyclicCochains R A M n := by
-  ext φ
-  simp only [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero,
-    mem_cyclicCochains_iff_cyclicOperator_apply_eq_self]
-  exact eq_comm
-
-end Semiring
-
-variable [CommRing R] [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M]
-  (n : ℕ) [Invertible (n + 1 : R)]
-
+variable (R A M n) in
 /-- Averaging over cyclic rotations projects onto the cyclic cochains. -/
 noncomputable def cyclicAverage :
     Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
@@ -84,7 +58,7 @@ theorem cyclicAverage_mem_cyclicCochains
 theorem cyclicAverage_apply_of_mem_cyclicCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ cyclicCochains R A M n) : cyclicAverage R A M n φ = φ := by
-  rw [cyclicAverage_apply, cyclicNorm_apply_of_mem_cyclicCochains R A M hφ,
+  rw [cyclicAverage_apply, cyclicNorm_apply_of_mem_cyclicCochains hφ,
     invOf_smul_smul]
 
 /-- The cyclic average is idempotent. -/
@@ -92,18 +66,45 @@ theorem cyclicAverage_apply_of_mem_cyclicCochains
 theorem cyclicAverage_cyclicAverage
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n (cyclicAverage R A M n φ) = cyclicAverage R A M n φ :=
-  cyclicAverage_apply_of_mem_cyclicCochains R A M n
-    (cyclicAverage_mem_cyclicCochains R A M n φ)
+  cyclicAverage_apply_of_mem_cyclicCochains
+    (cyclicAverage_mem_cyclicCochains φ)
+
+/-- The cyclic average is an idempotent endomorphism. -/
+theorem isIdempotentElem_cyclicAverage : IsIdempotentElem (cyclicAverage R A M n) :=
+  LinearMap.ext cyclicAverage_cyclicAverage
+
+/-- The cyclic average absorbs itself under composition. -/
+@[simp]
+theorem cyclicAverage_mul_cyclicAverage :
+    cyclicAverage R A M n * cyclicAverage R A M n = cyclicAverage R A M n :=
+  isIdempotentElem_cyclicAverage.eq
+
+/-- The cyclic average absorbs the cyclic operator on the left: `λ P = P`. -/
+@[simp]
+theorem cyclicOperator_mul_cyclicAverage :
+    cyclicOperator R A M n * cyclicAverage R A M n = cyclicAverage R A M n := by
+  rw [cyclicAverage, mul_smul_comm, cyclicOperator_mul_cyclicNorm]
+
+/-- The cyclic average absorbs the cyclic operator on the right: `P λ = P`. -/
+@[simp]
+theorem cyclicAverage_mul_cyclicOperator :
+    cyclicAverage R A M n * cyclicOperator R A M n = cyclicAverage R A M n := by
+  rw [cyclicAverage, smul_mul_assoc, cyclicNorm_mul_cyclicOperator]
+
+/-- Averaging and the cyclic norm have the same kernel. -/
+@[simp]
+theorem ker_cyclicAverage :
+    LinearMap.ker (cyclicAverage R A M n) = LinearMap.ker (cyclicNorm R A M n) := by
+  ext φ
+  simp only [LinearMap.mem_ker, cyclicAverage_apply, invOf_smul_eq_iff, smul_zero]
 
 /-- The image of averaging is exactly the cyclic cochains. -/
 theorem range_cyclicAverage :
-    LinearMap.range (cyclicAverage R A M n) = cyclicCochains R A M n := by
-  apply le_antisymm
-  · rintro _ ⟨φ, rfl⟩
-    exact cyclicAverage_mem_cyclicCochains R A M n φ
-  · intro φ hφ
-    exact ⟨φ, cyclicAverage_apply_of_mem_cyclicCochains R A M n hφ⟩
+    LinearMap.range (cyclicAverage R A M n) = cyclicCochains R A M n :=
+  LinearMap.IsProj.range ⟨cyclicAverage_mem_cyclicCochains,
+    fun _ hφ ↦ cyclicAverage_apply_of_mem_cyclicCochains hφ⟩
 
+variable (R A M n) in
 /-- The cyclic row homotopy. Its product with `1 - λ` on either side is `1 - P`,
 where `P` is cyclic averaging. -/
 noncomputable def cyclicRowHomotopy :
@@ -111,11 +112,16 @@ noncomputable def cyclicRowHomotopy :
   ⅟(n + 1 : R) • ∑ j ∈ Finset.range (n + 1),
     ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k
 
+variable (R A M n) in
 /-- The explicit finite-sum formula for the cyclic row homotopy. -/
 theorem cyclicRowHomotopy_def :
     cyclicRowHomotopy R A M n = ⅟(n + 1 : R) •
       ∑ j ∈ Finset.range (n + 1), ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k :=
   (rfl)
+
+private theorem invOf_natCast_smul_nsmul {E : Type*} [AddCommMonoid E] [Module R E]
+    (x : E) : ⅟(n + 1 : R) • ((n + 1) • x) = x := by
+  simp [← Nat.cast_smul_eq_nsmul R]
 
 /-- The row homotopy splits `1 - λ` on the left, up to the cyclic projection. -/
 theorem one_sub_cyclicOperator_mul_cyclicRowHomotopy :
@@ -124,8 +130,7 @@ theorem one_sub_cyclicOperator_mul_cyclicRowHomotopy :
   rw [cyclicRowHomotopy_def, mul_smul_comm, Finset.mul_sum]
   simp only [mul_neg_geom_sum, Finset.sum_sub_distrib, Finset.sum_const,
     Finset.card_range, ← cyclicNorm_def]
-  rw [smul_sub, ← Nat.cast_smul_eq_nsmul R, Nat.cast_add, Nat.cast_one,
-    invOf_smul_smul, cyclicAverage]
+  rw [smul_sub, invOf_natCast_smul_nsmul, cyclicAverage]
 
 /-- The row homotopy splits `1 - λ` on the right, up to the cyclic projection. -/
 theorem cyclicRowHomotopy_mul_one_sub_cyclicOperator :
@@ -134,8 +139,15 @@ theorem cyclicRowHomotopy_mul_one_sub_cyclicOperator :
   rw [cyclicRowHomotopy_def, smul_mul_assoc, Finset.sum_mul]
   simp only [geom_sum_mul_neg, Finset.sum_sub_distrib, Finset.sum_const,
     Finset.card_range, ← cyclicNorm_def]
-  rw [smul_sub, ← Nat.cast_smul_eq_nsmul R, Nat.cast_add, Nat.cast_one,
-    invOf_smul_smul, cyclicAverage]
+  rw [smul_sub, invOf_natCast_smul_nsmul, cyclicAverage]
+
+/-- Applying the row homotopy gives a preimage of `φ - P φ` under `1 - λ`. -/
+theorem one_sub_cyclicOperator_apply_cyclicRowHomotopy
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (1 - cyclicOperator R A M n) (cyclicRowHomotopy R A M n φ) =
+      φ - cyclicAverage R A M n φ := by
+  simpa only [Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply] using
+    LinearMap.congr_fun one_sub_cyclicOperator_mul_cyclicRowHomotopy φ
 
 /-- The cyclic norm surjects onto the cyclic cochains. -/
 theorem range_cyclicNorm :
@@ -145,13 +157,13 @@ theorem range_cyclicNorm :
     exact cyclicNorm_mem_cyclicCochains φ
   · intro φ hφ
     refine ⟨⅟(n + 1 : R) • φ, ?_⟩
-    rw [map_smul, cyclicNorm_apply_of_mem_cyclicCochains R A M hφ, invOf_smul_smul]
+    rw [map_smul, cyclicNorm_apply_of_mem_cyclicCochains hφ, invOf_smul_smul]
 
 /-- Exactness of a cyclic-bicomplex row at a term following `N`. -/
 theorem range_cyclicNorm_eq_ker_one_sub_cyclicOperator :
     LinearMap.range (cyclicNorm R A M n) =
       LinearMap.ker (1 - cyclicOperator R A M n) := by
-  rw [range_cyclicNorm R A M n, ker_one_sub_cyclicOperator]
+  rw [range_cyclicNorm, ker_one_sub_cyclicOperator]
 
 /-- Exactness of a cyclic-bicomplex row at a term following `1 - λ`.
 For a cochain killed by `N`, the row homotopy gives an explicit preimage. -/
@@ -164,8 +176,7 @@ theorem range_one_sub_cyclicOperator_eq_ker_cyclicNorm :
     rw [← Module.End.mul_apply, cyclicNorm_mul_cyclicOperator, sub_self]
   · intro φ hφ
     refine ⟨cyclicRowHomotopy R A M n φ, ?_⟩
-    have h := LinearMap.congr_fun
-      (one_sub_cyclicOperator_mul_cyclicRowHomotopy R A M n) φ
-    simpa [Module.End.mul_apply, cyclicAverage_apply, LinearMap.mem_ker.1 hφ] using h
+    rw [one_sub_cyclicOperator_apply_cyclicRowHomotopy, cyclicAverage_apply,
+      LinearMap.mem_ker.1 hφ, smul_zero, sub_zero]
 
 end TauCeti
