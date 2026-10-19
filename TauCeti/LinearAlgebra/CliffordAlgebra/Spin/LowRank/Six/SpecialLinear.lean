@@ -1034,7 +1034,7 @@ private theorem spinGroupToSpecialLinear_bijective
 /-- The first Clifford factor gives the Spin-to-special-linear equivalence associated to a
 polarization of a six-dimensional quadratic space, in the chosen even half-spin basis. -/
 noncomputable def spinGroupMulEquivSpecialLinearGroup
-    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
     [FiniteDimensional K V]
     (hline : P.line = ⊥)
     (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
