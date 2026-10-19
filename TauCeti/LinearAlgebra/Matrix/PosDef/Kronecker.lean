@@ -20,6 +20,8 @@ holds over a nonassociative semiring with an arbitrary star operation.
 ## Main results
 
 * `Matrix.IsSymm.kronecker`: the Kronecker product of symmetric matrices is symmetric.
+* `Matrix.finsupp_sum_one_kronecker`: the finitely supported quadratic expression for `1 ⊗ₖ A`
+  decomposes into the expressions for `A` on its blocks.
 * `Matrix.PosDef.one_kronecker`: if `A` is positive definite, so is `1 ⊗ₖ A`.
 -/
 
@@ -44,6 +46,20 @@ theorem _root_.Matrix.star_dotProduct_one_kronecker_mulVec [NonAssocSemiring R] 
       ∑ i, star (fun j => x (i, j)) ⬝ᵥ (A *ᵥ fun j => x (i, j)) := by
   simp [dotProduct, mulVec, Fintype.sum_prod_type, one_apply, ite_mul, Finset.sum_ite_eq]
 
+/-- The finitely supported quadratic expression for `1 ⊗ₖ A` is the sum of those for `A`
+on the blocks. -/
+theorem _root_.Matrix.finsupp_sum_one_kronecker [NonAssocSemiring R] [Star R] [DecidableEq m]
+    (A : Matrix n n R) (x : m × n →₀ R) :
+    (x.sum fun i xi => x.sum fun j xj => star xi * ((1 : Matrix m m R) ⊗ₖ A) i j * xj) =
+      x.curry.sum (fun _ y => y.sum fun i yi => y.sum fun j yj => star yi * A i j * yj) := by
+  classical
+  rw [← Finsupp.uncurry_curry x]
+  simp only [Finsupp.sum_uncurry_index, Finsupp.curry_uncurry]
+  refine Finsupp.sum_congr fun i hi => ?_
+  refine Finsupp.sum_congr fun a ha => ?_
+  simp [one_apply, mul_ite, ite_mul, Finsupp.sum, Finset.sum_ite_irrel,
+    -Finsupp.support_curry, Finsupp.mem_support_iff.mp hi]
+
 /-- If `A` is positive definite, then so is the block-diagonal matrix `1 ⊗ₖ A`. -/
 theorem _root_.Matrix.PosDef.one_kronecker [Ring R] [PartialOrder R] [StarRing R]
     [IsOrderedAddMonoid R] [DecidableEq m] {A : Matrix n n R}
@@ -58,14 +74,7 @@ theorem _root_.Matrix.PosDef.one_kronecker [Ring R] [PartialOrder R] [StarRing R
     apply hx
     ext ⟨i, j⟩
     exact congrArg (fun y : m →₀ n →₀ R => y i j) h
-  have hpos : 0 < x.curry.sum (fun _ y => y.sum fun i yi =>
-      y.sum fun j yj => star yi * A i j * yj) :=
-    Finsupp.sum_pos (fun i hi => hA.2 (Finsupp.mem_support_iff.mp hi)) hc
-  convert hpos using 1
-  rw [← Finsupp.uncurry_curry x]
-  simp only [Finsupp.sum_uncurry_index, Finsupp.curry_uncurry]
-  simp +contextual only [Finsupp.sum, kroneckerMap_apply, one_apply,
-    mul_ite, ite_mul, one_mul, zero_mul, mul_zero, Finset.sum_ite_irrel,
-    Finset.sum_const_zero, Finset.sum_ite_eq, ite_true]
+  rw [finsupp_sum_one_kronecker]
+  exact Finsupp.sum_pos (fun i hi => hA.2 (Finsupp.mem_support_iff.mp hi)) hc
 
 end TauCeti
