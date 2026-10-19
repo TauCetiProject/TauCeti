@@ -22,6 +22,8 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
+* `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
+  `C^n` at a point is `C^m` at every tangent vector over that point, when `m + 1 ≤ n`.
 * `ContMDiff.contMDiff_mvfderiv_apply`: applying the differential of a `C^n` function on the
   tangent bundle is `C^m` when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_mvfderiv_apply`: the derivative of a `C^n` function along a `C^m`
@@ -39,6 +41,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   directional derivatives with manifold directional derivatives.
 * `TauCeti.eventuallyEq_chart_directionalDerivative`: this identification holds near the chart
   centre within the model range.
+* `TauCeti.eventually_mdifferentiableAt_of_contMDiffAt`: regularity of at least
+  `minSmoothness 𝕜 2` at a point implies differentiability throughout a neighbourhood.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
   forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
   is differentiable as a map of the space.

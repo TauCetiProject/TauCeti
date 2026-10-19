@@ -34,6 +34,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   gradient from it.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
   differential does.
+* `TauCeti.Manifold.contMDiffAt_mgradient`: for a `C^n` metric, a function that is `C^{n+1}`
+  at a point has a `C^n` gradient there.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
 -/

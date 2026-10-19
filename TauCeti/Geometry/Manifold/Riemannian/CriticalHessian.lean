@@ -24,8 +24,6 @@ metric. Metric and connection independence are asserted only at critical points.
 
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, §2.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer, 2014, Chapter 1.
-* Mathlib's metric-compatibility identity
-  `CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq`.
 -/
 
 public section
