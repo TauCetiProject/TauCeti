@@ -231,6 +231,18 @@ class GitHub:
         """Return every item from a paginated REST list, or propagate its failure."""
         return [row for page in self.pages(path) for row in page]
 
+    def skip_write(self, kind):
+        """Count an unchanged label/comment decision, without making a request.
+
+        Counts describe decisions, not hypothetical HTTP requests saved; one
+        label decision can otherwise require several mutations.
+        """
+        credential, _ = self._credential(False)
+        stat = self.stats.setdefault(credential, {"requests": 0, "reads": 0, "writes": 0, "buckets": {}})
+        skipped = stat.setdefault("skipped_writes", {})
+        skipped[kind] = skipped.get(kind, 0) + 1
+        print("github-api-skip: " + json.dumps({"credential": credential, "kind": kind}), file=sys.stderr)
+
     def report(self):
         """Write request/quota counters to stderr and the optional Actions step summary."""
         summary = json.dumps(self.stats, sort_keys=True)
