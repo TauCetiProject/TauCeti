@@ -45,25 +45,6 @@ theorem vertexSet_walkGraph (p : G.Walk x y) :
     V(G.walkGraph p) = {a | a ∈ p.support} :=
   (rfl)
 
-/-- An edge belongs to the graph traced by a walk exactly when the walk traverses it. -/
-theorem mem_edgeSet_walkGraph (p : G.Walk x y) (e : β) :
-    e ∈ E(G.walkGraph p) ↔ e ∈ p.edges := by
-  constructor
-  · simp only [walkGraph, edgeSet_deleteEdges, mem_sdiff, mem_ofPred_eq, not_not, and_imp]
-    exact fun _ he ↦ he
-  · intro he
-    obtain ⟨a, b, hab⟩ := G.exists_isLink_of_mem_edgeSet (p.edges_subset_edgeSet he)
-    refine ⟨⟨a, b, hab, ?_, ?_⟩, ?_⟩
-    · exact p.mem_support_of_isLink_of_mem_edges hab he
-    · exact p.mem_support_of_isLink_of_mem_edges hab.symm he
-    · simpa
-
-/-- The edge set of a traced graph is the set represented by the walk's edge list. -/
-@[simp, grind =]
-theorem edgeSet_walkGraph (p : G.Walk x y) :
-    E(G.walkGraph p) = {e | e ∈ p.edges} :=
-  Set.ext fun e ↦ p.mem_edgeSet_walkGraph e
-
 /-- The links of a traced graph are precisely the ambient links whose identities occur in the
 walk. -/
 @[simp, grind =]
@@ -76,6 +57,22 @@ theorem walkGraph_isLink (p : G.Walk x y) (e : β) (a b : α) :
   · rintro ⟨hab, he⟩
     exact ⟨⟨hab, p.mem_support_of_isLink_of_mem_edges hab he,
       p.mem_support_of_isLink_of_mem_edges hab.symm he⟩, he⟩
+
+/-- An edge belongs to the graph traced by a walk exactly when the walk traverses it. -/
+theorem mem_edgeSet_walkGraph (p : G.Walk x y) (e : β) :
+    e ∈ E(G.walkGraph p) ↔ e ∈ p.edges := by
+  constructor
+  · simp only [walkGraph, edgeSet_deleteEdges, mem_sdiff, mem_ofPred_eq, not_not, and_imp]
+    exact fun _ he ↦ he
+  · intro he
+    obtain ⟨a, b, hab⟩ := G.exists_isLink_of_mem_edgeSet (p.edges_subset_edgeSet he)
+    exact ((p.walkGraph_isLink e a b).mpr ⟨hab, he⟩).edge_mem
+
+/-- The edge set of a traced graph is the set represented by the walk's edge list. -/
+@[simp, grind =]
+theorem edgeSet_walkGraph (p : G.Walk x y) :
+    E(G.walkGraph p) = {e | e ∈ p.edges} :=
+  Set.ext fun e ↦ p.mem_edgeSet_walkGraph e
 
 /-- A traced graph is a subgraph of the ambient graph when the walk starts at an actual vertex. -/
 theorem walkGraph_le (p : G.Walk x y) (hx : x ∈ V(G)) : G.walkGraph p ≤ G := by
