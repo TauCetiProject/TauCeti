@@ -68,16 +68,33 @@ private lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : 
     hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
   congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
 
-/-- **The Hurewicz map is the cubical Hurewicz map up to a universal sign.** There is a unit
-`ε` of `ℤ` such that for every space `X`, point `x` and class `a ∈ πₙ₊₂(X, x)`, the Hurewicz class
-of `a` with integer coefficients is `ε` times the cubical Hurewicz class of `a`, read in simplicial
-singular homology through the inverse cubical--simplicial comparison. -/
-theorem exists_hurewicz_eq_units_smul_cubicalHurewicz (n : ℕ) :
-    ∃ ε : ℤˣ, ∀ (X : Type) [TopologicalSpace X] (x : X) (a : HomotopyGroup (Fin (n + 2)) X x),
-      (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 =
-        (ε : ℤ) • (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).inv
-          (cubicalHurewicz ℤ (n + 1) a) := by
-  -- The universal example is the tautological loop `ι` of the sphere `Sⁿ⁺²`.
+/-- The cubical Hurewicz class of a generalized loop `p`, read in simplicial singular homology, is
+the image of that of the tautological loop `TauCeti.sphereGenLoop (n + 2)` under
+`(GenLoop.toSphere p)_*`. -/
+private lemma singularCubicalHomologyIso_inv_cubicalHurewicz_mk {X : Type} [TopologicalSpace X]
+    {x : X} {n : ℕ} (p : Ω^ (Fin (n + 2)) X x) :
+    (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).inv
+        (cubicalHurewicz ℤ (n + 1) (⟦p⟧ : HomotopyGroup (Fin (n + 2)) X x)) =
+      HomologicalComplex.homologyMap
+        ((singularChains ℤ).map (TopCat.ofHom (GenLoop.toSphere p))) (n + 2)
+        ((singularCubicalHomologyIso ℤ _ (n + 2)).inv (cubicalHurewicz ℤ (n + 1)
+          (⟦sphereGenLoop (n + 2)⟧ : HomotopyGroup (Fin (n + 2)) _ _))) := by
+  have h := singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality ℤ (GenLoop.toSphere p)
+    (GenLoop.toSphere_sphereNorthPole p) (Additive.ofMul ⟦sphereGenLoop (n + 2)⟧)
+  rw [cubicalHurewiczHom_apply, cubicalHurewiczHom_apply] at h
+  have hp : (⟦p⟧ : HomotopyGroup (Fin (n + 2)) X x) = HomotopyGroup.map (GenLoop.toSphere p)
+      (GenLoop.toSphere_sphereNorthPole p) ⟦sphereGenLoop (n + 2)⟧ := by
+    rw [HomotopyGroup.map_mk, GenLoop.map_toSphere_sphereGenLoop]
+  rw [hp]
+  exact h.symm
+
+/-- **On the sphere, the two Hurewicz classes of the tautological loop differ by a unit.** The
+Hurewicz class of `TauCeti.sphereGenLoop (n + 2)` with integer coefficients is a unit multiple of
+its cubical Hurewicz class, read in simplicial singular homology. -/
+private lemma exists_hurewicz_sphereGenLoop_eq_units_smul (n : ℕ) :
+    ∃ ε : ℤˣ, (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 2))).hom 1 =
+      (ε : ℤ) • (singularCubicalHomologyIso ℤ _ (n + 2)).inv (cubicalHurewicz ℤ (n + 1)
+        (⟦sphereGenLoop (n + 2)⟧ : HomotopyGroup (Fin (n + 2)) _ _)) := by
   let ι := sphereGenLoop (n + 2)
   have hS (k : ℕ) (hk : k < n + 2) : Subsingleton (HomotopyGroup (Fin k)
       (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) (sphereNorthPole (n + 2))) :=
@@ -108,39 +125,34 @@ theorem exists_hurewicz_eq_units_smul_cubicalHurewicz (n : ℕ) :
   have hmj : m * j = 1 := e.injective <| by
     rw [he, he, mul_smul, ← he j, hj, ← map_zsmul, ← hι, hurewiczIntHom_apply, one_smul]
     exact congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ℤ)) (hurewicz_mk (ModuleCat.of ℤ ℤ) (n + 1) ι)
-  refine ⟨⟨j, m, by rw [mul_comm, hmj], hmj⟩, fun X _ x a ↦ ?_⟩
-  -- On the sphere, `g = j • c a₁`.
   have hc : c a₁ = (singularCubicalHomologyIso ℤ _ (n + 2)).inv
       (cubicalHurewicz ℤ (n + 1) (⟦ι⟧ : HomotopyGroup (Fin (n + 2)) _ _)) :=
     (cubicalHurewiczSingularHomologyAddEquiv_apply hS a₁).trans
       (congrArg _ (cubicalHurewiczHom_apply ℤ (n + 1) a₁))
   have hsphere : g = j • c a₁ := by
     rw [← hm, he, smul_smul, mul_comm, hmj, one_smul]
-  -- Every class is the image of `⟦ι⟧` under a based map, and both maps are natural.
+  exact ⟨⟨j, m, by rw [mul_comm, hmj], hmj⟩, hsphere.trans (congrArg ((j : ℤ) • ·) hc)⟩
+
+/-- **The Hurewicz map is the cubical Hurewicz map up to a universal sign.** There is a unit
+`ε` of `ℤ` such that for every space `X`, point `x` and class `a ∈ πₙ₊₂(X, x)`, the Hurewicz class
+of `a` with integer coefficients is `ε` times the cubical Hurewicz class of `a`, read in simplicial
+singular homology through the inverse cubical--simplicial comparison. -/
+theorem exists_hurewicz_eq_units_smul_cubicalHurewicz (n : ℕ) :
+    ∃ ε : ℤˣ, ∀ (X : Type) [TopologicalSpace X] (x : X) (a : HomotopyGroup (Fin (n + 2)) X x),
+      (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 =
+        (ε : ℤ) • (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).inv
+          (cubicalHurewicz ℤ (n + 1) a) := by
+  obtain ⟨ε, hε⟩ := exists_hurewicz_sphereGenLoop_eq_units_smul n
+  refine ⟨ε, fun X _ x a ↦ ?_⟩
+  -- Every class is the image of the tautological class of the sphere under a based map, and both
+  -- maps are natural.
   induction a using Quotient.inductionOn with | h p => ?_
-  let f := GenLoop.toSphere p
-  have hf := GenLoop.toSphere_sphereNorthPole p
-  have hp : (⟦p⟧ : HomotopyGroup (Fin (n + 2)) X x) = HomotopyGroup.map f hf ⟦ι⟧ := by
-    rw [HomotopyGroup.map_mk, GenLoop.map_toSphere_sphereGenLoop]
-  have hnat : HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) (n + 2)
-      ((singularCubicalHomologyIso ℤ _ (n + 2)).inv
-        (cubicalHurewicz ℤ (n + 1) (⟦ι⟧ : HomotopyGroup (Fin (n + 2)) _ _))) =
-      (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).inv
-        (cubicalHurewicz ℤ (n + 1) (⟦p⟧ : HomotopyGroup (Fin (n + 2)) X x)) := by
-    have h := singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality ℤ f hf a₁
-    rw [cubicalHurewiczHom_apply, cubicalHurewiczHom_apply] at h
-    rw [hp]
-    exact h
-  have hhur : (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) ⟦p⟧).hom 1 =
-      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1 + 1)).obj (ModuleCat.of ℤ ℤ)).map
-        (TopCat.ofHom f)).hom g := by
-    rw [hp]
-    exact congrArg (fun φ ↦ ModuleCat.Hom.hom φ (1 : ℤ))
-      ((hurewicz_map (ModuleCat.of ℤ ℤ) (n + 1) f hf ⟦ι⟧).trans
-        (congrArg (· ≫ _) (hurewicz_mk (ModuleCat.of ℤ ℤ) (n + 1) ι)))
-  refine hhur.trans ?_
-  rw [hsphere, map_zsmul]
-  exact congrArg ((j : ℤ) • ·) ((congrArg _ hc).trans hnat)
+  rw [hurewicz_mk, GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp, ModuleCat.hom_comp,
+    LinearMap.comp_apply, hε, singularCubicalHomologyIso_inv_cubicalHurewicz_mk p]
+  -- The map induced on singular homology is, by definition, the homology map of the induced chain
+  -- map.
+  exact map_zsmul (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1 + 1)).obj
+    (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom (GenLoop.toSphere p))).hom _ _
 
 variable {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
 

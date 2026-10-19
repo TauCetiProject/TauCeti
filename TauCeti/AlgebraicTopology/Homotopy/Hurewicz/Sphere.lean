@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
-public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # The Hurewicz class of the tautological loop of a sphere
@@ -24,8 +24,10 @@ coefficients `R` in any abelian category with coproducts
 sphere.
 
 Every generalized loop factors through the tautological one
-(`GenLoop.map_toSphere_sphereGenLoop`), so this is the universal example of the Hurewicz map: it
-pins down the Hurewicz map on all spaces up to its value on `π_{n+1}(Sⁿ⁺¹)`.
+(`GenLoop.map_toSphere_sphereGenLoop`), so this is the universal example of the Hurewicz map: every
+Hurewicz class is the image of that of the tautological loop
+(`GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp`), which pins down the Hurewicz map on all spaces
+up to its value on `π_{n+1}(Sⁿ⁺¹)`.
 
 The proof reads the Hurewicz class in the local homology `Hₙ₊₁(Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})` at the south pole
 `s`, the image of the centre `0` of the disk `Dⁿ⁺¹` under `TauCeti.closedBallToSphere`, through
@@ -33,13 +35,12 @@ which `TauCeti.cubeToSphere` factors.
 
 * The punctured sphere `Sⁿ⁺¹ ∖ {s}` is contractible, so `Hₙ₊₁(Sⁿ⁺¹) ⟶ Hₙ₊₁(Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})` is an
   isomorphism.
-* The boundary sphere `Sⁿ` of the disk is a deformation retract of `Dⁿ⁺¹ ∖ {0}`
-  (`StarConvex.sphereHomotopyEquiv`), so by the five lemma
-  `(Dⁿ⁺¹, Sⁿ) ⟶ (Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0})` induces isomorphisms on relative homology.
+* The boundary sphere `Sⁿ` of the disk is a deformation retract of `Dⁿ⁺¹ ∖ {0}`, so
+  `(Dⁿ⁺¹, Sⁿ) ⟶ (Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0})` induces isomorphisms on relative homology
+  (`TauCeti.isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter`).
 * The collapse map is a homeomorphism from the open ball onto `Sⁿ⁺¹ ∖ {N}`, and only the centre
-  goes to `s`. Excising the boundary sphere of the disk and the north pole of the sphere
-  (`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`,
-  `TopPair.isIso_singularHomologyMap_of_open_cover`) shows that
+  goes to `s`. So it is a chart at the centre of the disk, and the local homology comparison
+  `TauCeti.singularHomologyComplSingletonIsoOfChart` shows that
   `(Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0}) ⟶ (Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})` induces isomorphisms on relative homology.
 
 ## References
@@ -73,25 +74,6 @@ private lemma diskToSphere_apply (z : TopCat.disk.{0} (n + 1)) :
       (z : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down :=
   (rfl)
 
-/-- The centre of the disk `Dⁿ⁺¹`. -/
-private def diskCenter : TopCat.disk.{0} (n + 1) :=
-  (ULift.up ⟨0, mem_closedBall_self zero_le_one⟩ :
-    ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-
-/-- The south pole of `Sⁿ⁺¹`, the image of the centre of the disk. -/
-private abbrev southPole : sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 :=
-  diskToSphere n (diskCenter n)
-
-/-- Only the centre of the disk goes to the south pole. -/
-private lemma diskToSphere_eq_southPole_iff {z : TopCat.disk.{0} (n + 1)} :
-    diskToSphere n z = southPole n ↔ z = diskCenter n := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  rw [southPole, diskToSphere_apply, diskToSphere_apply,
-    closedBallToSphere_eq_closedBallToSphere_iff] at h
-  rcases h with h | ⟨-, h⟩
-  · exact ULift.ext h
-  · simp [diskCenter] at h
-
 /-- Only the boundary sphere of the disk goes to the north pole. -/
 private lemma diskToSphere_eq_sphereNorthPole_iff {z : TopCat.disk.{0} (n + 1)} :
     diskToSphere n z = sphereNorthPole (n + 1) ↔
@@ -99,158 +81,128 @@ private lemma diskToSphere_eq_sphereNorthPole_iff {z : TopCat.disk.{0} (n + 1)} 
   rw [diskToSphere_apply, closedBallToSphere_eq_sphereNorthPole_iff,
     mem_range_diskBoundaryInclusion_iff]
 
-private lemma southPole_ne_sphereNorthPole : southPole n ≠ sphereNorthPole (n + 1) := by
-  rw [Ne, diskToSphere_eq_sphereNorthPole_iff, mem_range_diskBoundaryInclusion_iff]
-  simp [diskCenter]
-
-/-! ### The boundary sphere is a deformation retract of the punctured disk -/
-
-/-- The inclusion of pairs `(Dⁿ⁺¹, Sⁿ) ⟶ (Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0})`. -/
-private def diskBoundaryPairToComplCenter :
-    diskBoundaryPair.{0} (n + 1) ⟶
-      TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{0} (n + 1))) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun s ↦ ⟨TopCat.diskBoundaryInclusion (n + 1) s, fun h ↦ by
-    have := (mem_range_diskBoundaryInclusion_iff _).1 ⟨s, rfl⟩
-    rw [h] at this
-    simp [diskCenter] at this⟩,
-    (TopCat.diskBoundaryInclusion (n + 1)).hom.continuous.subtype_mk _⟩) rfl
-
-/-- The punctured closed ball of `EuclideanSpace ℝ (Fin (n + 1))` is the punctured disk
-`Dⁿ⁺¹ ∖ {0}`. -/
-private def complCenterHomeomorph :
-    ↥(closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 \ {0}) ≃ₜ
-      ↥({diskCenter n}ᶜ : Set (TopCat.disk.{0} (n + 1))) where
-  toFun z := ⟨(ULift.up ⟨z, z.2.1⟩ : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)),
-    fun h ↦ z.2.2 (congrArg (fun w : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-      ↦ (w.down : EuclideanSpace ℝ (Fin (n + 1)))) h)⟩
-  invFun w := ⟨((w : TopCat.disk.{0} (n + 1)) :
-      ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down,
-    ((w : TopCat.disk.{0} (n + 1)) :
-      ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down.2,
-    fun h ↦ w.2 (ULift.ext (Subtype.ext h))⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-variable {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C] (R : C)
-
-/-- **The punctured disk retracts onto its boundary**: `(Dⁿ⁺¹, Sⁿ) ⟶ (Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0})` induces
-isomorphisms on relative singular homology. -/
-private lemma isIso_singularHomologyMap_diskBoundaryPairToComplCenter (k : ℕ) :
-    IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplCenter n) R k) := by
-  have hfst (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.fst (diskBoundaryPairToComplCenter n))) R m) := by
-    have : IsIso (TopPair.Hom.fst (diskBoundaryPairToComplCenter n)) := IsIso.id _
-    infer_instance
-  -- The subspace map is the inclusion of the boundary sphere into the punctured disk, a homotopy
-  -- equivalence by radial projection.
-  let e := (Homeomorph.ulift.{0} (X := sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-      TopCat.diskBoundary.{0} (n + 1) ≃ₜ _).toHomotopyEquiv.trans
-    ((((convex_closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1).starConvex
-      (mem_closedBall_self zero_le_one)).sphereHomotopyEquiv one_pos
-        sphere_subset_closedBall).trans (complCenterHomeomorph n).toHomotopyEquiv)
-  have he : TopCat.ofHom e.toFun = TopPair.Hom.snd (diskBoundaryPairToComplCenter n) := by
-    ext s
-    apply ULift.ext
-    apply Subtype.ext
-    exact (StarConvex.coe_sphereHomotopyEquiv_apply _ _ _ _).trans
-      (TopCat.coe_diskBoundaryInclusion_apply_down (n + 1) s).symm
-  have hsnd (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.snd (diskBoundaryPairToComplCenter n))) R m) := by
-    have := (e.singularHomologyIso R m).isIso_hom
-    rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, he] at this
-    exact this
-  exact TopPair.isIso_singularHomologyMap_of_isIso R _ k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
-    fun m _ ↦ hsnd m
-
-/-! ### The collapse map near the centre of the disk -/
-
-private lemma mapsTo_diskToSphere_compl :
-    MapsTo (diskToSphere n) ({diskCenter n}ᶜ : Set (TopCat.disk.{0} (n + 1)))
-      ({southPole n}ᶜ : Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))) :=
-  fun _ hz h ↦ hz ((diskToSphere_eq_southPole_iff n).1 h)
-
-/-- The collapse map as a map of pairs `(Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0}) ⟶ (Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})`. -/
-private def diskToSpherePairMap :
-    TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{0} (n + 1))) ⟶
-      TopPair.ofSubset
-        ({southPole n}ᶜ : Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))) :=
-  TopPair.ofSubsetMap (diskToSphere n) (mapsTo_diskToSphere_compl n)
+/-! ### The collapse map on the interior of the disk -/
 
 /-- The interior of the disk, the preimage of the complement of the north pole. -/
 private abbrev diskInterior : Set (TopCat.disk.{0} (n + 1)) :=
   diskToSphere n ⁻¹' {sphereNorthPole (n + 1)}ᶜ
 
-/-- On the interior of the disk the collapse map is an embedding. -/
-private lemma isEmbedding_diskToSphere_restrict :
-    IsEmbedding (fun z : diskInterior n ↦ diskToSphere n z.1) := by
-  refine IsEmbedding.subtypeVal.comp (g := Subtype.val) (f := ({sphereNorthPole (n + 1)}ᶜ :
-    Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)).restrictPreimage (diskToSphere n)) ?_
+/-- The collapse map is a bijection from the interior of the disk onto the complement of the
+north pole. -/
+private lemma bijOn_diskToSphere :
+    BijOn (diskToSphere n) (diskInterior n) {sphereNorthPole (n + 1)}ᶜ := by
+  refine ⟨fun _ hz ↦ hz, fun z hz w hw h ↦ ?_, fun y hy ↦ ?_⟩
+  · rw [diskToSphere_apply, diskToSphere_apply, closedBallToSphere_eq_closedBallToSphere_iff] at h
+    rcases h with h | ⟨h, -⟩
+    · exact ULift.ext h
+    · exact (hz ((diskToSphere_eq_sphereNorthPole_iff n).2
+        ((mem_range_diskBoundaryInclusion_iff _).2 h))).elim
+  · obtain ⟨z, hz⟩ := closedBallToSphere_surjective (n := n + 1) y
+    have hz' : diskToSphere n
+        (ULift.up z : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) = y :=
+      (diskToSphere_apply n _).trans hz
+    exact ⟨_, Set.mem_compl_singleton_iff.2 (hz' ▸ hy), hz'⟩
+
+/-- On the interior of the disk the collapse map is an open embedding. -/
+private lemma isOpenEmbedding_diskToSphere_domRestrict :
+    IsOpenEmbedding ((diskInterior n).domRestrict (diskToSphere n)) := by
   have : CompactSpace (TopCat.disk.{0} (n + 1)) :=
     (Homeomorph.ulift.{0}
       (X := closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).symm.compactSpace
-  refine (IsClosedEmbedding.of_continuous_injective_isClosedMap
-    ((diskToSphere n).hom.continuous.restrictPreimage) ?_
-    (IsClosedMap.restrictPreimage (diskToSphere n).hom.continuous.isClosedMap _)).isEmbedding
-  intro z w h
-  have h' : diskToSphere n z = diskToSphere n w := congrArg Subtype.val h
-  rw [diskToSphere_apply, diskToSphere_apply, closedBallToSphere_eq_closedBallToSphere_iff] at h'
-  rcases h' with h' | ⟨h', -⟩
-  · exact Subtype.ext (ULift.ext h')
-  · exact (z.2 ((diskToSphere_eq_sphereNorthPole_iff n).2
-      ((mem_range_diskBoundaryInclusion_iff _).2 h'))).elim
+  refine ⟨IsEmbedding.subtypeVal.comp (g := Subtype.val) (f := ({sphereNorthPole (n + 1)}ᶜ :
+    Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)).restrictPreimage (diskToSphere n))
+      (IsClosedEmbedding.of_continuous_injective_isClosedMap
+        ((diskToSphere n).hom.continuous.restrictPreimage) ?_
+        (IsClosedMap.restrictPreimage (diskToSphere n).hom.continuous.isClosedMap _)).isEmbedding,
+    ?_⟩
+  · exact fun z w h ↦ Subtype.ext ((bijOn_diskToSphere n).injOn z.2 w.2 (congrArg Subtype.val h))
+  · rw [range_domRestrict, (bijOn_diskToSphere n).image_eq]
+    exact isOpen_compl_singleton
+
+/-- The collapse map as an open partial homeomorphism from the interior of the disk onto the
+complement of the north pole. -/
+private def diskToSphereChart :
+    OpenPartialHomeomorph (TopCat.disk.{0} (n + 1))
+      (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) :=
+  OpenPartialHomeomorph.ofContinuousOpenRestrict
+    ((bijOn_diskToSphere n).toPartialEquiv _ _ _) (diskToSphere n).hom.continuous.continuousOn
+    (isOpenEmbedding_diskToSphere_domRestrict n).isOpenMap
+    (isOpen_compl_singleton.preimage (diskToSphere n).hom.continuous)
+
+private lemma diskToSphereChart_apply (z : TopCat.disk.{0} (n + 1)) :
+    diskToSphereChart n z = diskToSphere n z :=
+  (rfl)
+
+/-- The south pole of `Sⁿ⁺¹`, the image of the centre of the disk. -/
+private abbrev southPole : sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 :=
+  diskToSphereChart n (diskCenter (n + 1))
+
+/-- Only the centre of the disk goes to the south pole. -/
+private lemma diskToSphere_eq_southPole_iff {z : TopCat.disk.{0} (n + 1)} :
+    diskToSphere n z = southPole n ↔ z = diskCenter (n + 1) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  rw [southPole, diskToSphereChart_apply, diskToSphere_apply, diskToSphere_apply,
+    closedBallToSphere_eq_closedBallToSphere_iff] at h
+  rcases h with h | ⟨-, h⟩
+  · exact ULift.ext h
+  · simp at h
+
+private lemma southPole_ne_sphereNorthPole : southPole n ≠ sphereNorthPole (n + 1) := by
+  rw [Ne, southPole, diskToSphereChart_apply, diskToSphere_eq_sphereNorthPole_iff]
+  exact diskCenter_notMem_range_diskBoundaryInclusion (n + 1)
+
+private lemma diskCenter_mem_diskToSphereChart_source :
+    diskCenter (n + 1) ∈ (diskToSphereChart n).source :=
+  southPole_ne_sphereNorthPole n
+
+private lemma mapsTo_diskToSphere_compl :
+    MapsTo (diskToSphere n) ({diskCenter (n + 1)}ᶜ : Set (TopCat.disk.{0} (n + 1)))
+      ({southPole n}ᶜ : Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))) :=
+  fun _ hz h ↦ hz ((diskToSphere_eq_southPole_iff n).1 h)
+
+/-- The collapse map as a map of pairs `(Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0}) ⟶ (Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})`. -/
+private def diskToSpherePairMap :
+    TopPair.ofSubset ({diskCenter (n + 1)}ᶜ : Set (TopCat.disk.{0} (n + 1))) ⟶
+      TopPair.ofSubset
+        ({southPole n}ᶜ : Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))) :=
+  TopPair.ofSubsetMap (diskToSphere n) (mapsTo_diskToSphere_compl n)
+
+variable {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C] (R : C)
 
 /-- **Local homology at the centre of the disk.** The collapse map induces isomorphisms
-`Hₖ(Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0}) ≅ Hₖ(Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})`. -/
+`Hₖ(Dⁿ⁺¹, Dⁿ⁺¹ ∖ {0}) ≅ Hₖ(Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})`, since it is a homeomorphism near the centre. -/
 private lemma isIso_singularHomologyMap_diskToSpherePairMap (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (diskToSpherePairMap n) R k) := by
-  have hcU : diskCenter n ∈ diskInterior n := southPole_ne_sphereNorthPole n
-  have hexc := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
-    (X := TopCat.disk.{0} (n + 1)) (isOpen_compl_singleton.preimage (diskToSphere n).hom.continuous)
-    isClosed_singleton (singleton_subset_iff.2 hcU) k
-  have hfst' (z : diskInterior n) : TopPair.Hom.fst
-      (TopPair.excisionMap (diskInterior n) {diskCenter n}ᶜ ≫ diskToSpherePairMap n) z =
-        diskToSphere n z.1 := by
-    exact (congrArg (TopPair.Hom.fst (diskToSpherePairMap n))
-      (TopPair.excisionMap_fst_apply (diskInterior n) {diskCenter n}ᶜ z)).trans
-        (TopPair.ofSubsetMap_fst_apply (diskToSphere n) _ z.1)
-  have hfst : ⇑(ConcreteCategory.hom (TopPair.Hom.fst
-      (TopPair.excisionMap (diskInterior n) {diskCenter n}ᶜ ≫ diskToSpherePairMap n))) =
-        fun z : diskInterior n ↦ diskToSphere n z.1 :=
-    funext hfst'
-  -- Excise the boundary of the disk and the north pole of the sphere.
-  have hcomp : IsIso (TopPair.singularHomologyMap
-      (TopPair.excisionMap (diskInterior n) {diskCenter n}ᶜ ≫ diskToSpherePairMap n) R k) := by
-    refine TopPair.isIso_singularHomologyMap_of_open_cover R _ ?_ ?_
-      (fun b : Bool ↦ bif b
-        then ({southPole n}ᶜ : Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))
-        else ({sphereNorthPole (n + 1)}ᶜ :
-          Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))))
-      (fun b ↦ by
-        cases b
-        · exact isOpen_compl_singleton (X := sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
-        · exact isOpen_compl_singleton (X := sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))
-      ?_ (fun b ↦ ?_) k
-    · rw [hfst]
-      exact isEmbedding_diskToSphere_restrict n
-    · intro z hz
-      rw [TopPair.range_ofSubset_map] at hz ⊢
-      exact fun h ↦ hz ((hfst' z).trans (congrArg (diskToSphere n) (Set.mem_singleton_iff.1 h)))
-    · refine eq_univ_of_forall fun y ↦ mem_iUnion.2 ?_
-      by_cases hy : y = southPole n
-      · exact ⟨false, hy ▸ southPole_ne_sphereNorthPole n⟩
-      · exact ⟨true, hy⟩
-    · cases b
-      · refine Or.inr fun y (hy : y ≠ sphereNorthPole (n + 1)) ↦ ?_
-        obtain ⟨z, hz⟩ := closedBallToSphere_surjective (n := n + 1) y
-        have hz' : diskToSphere n
-            (ULift.up z : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) = y := hz
-        exact ⟨⟨_, show _ ∈ ({sphereNorthPole (n + 1)}ᶜ : Set _) from hz' ▸ hy⟩,
-          (hfst' _).trans hz'⟩
-      · exact Or.inl TopPair.range_ofSubset_map.symm.subset
-  rw [TopPair.singularHomologyMap_comp] at hcomp
-  exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ hexc hcomp
+  have hx := diskCenter_mem_diskToSphereChart_source n
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
+    (X := TopCat.of (TopCat.disk.{0} (n + 1))) (diskToSphereChart n).open_source
+    isClosed_singleton (singleton_subset_iff.2 hx) k
+  have hfac := singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom
+    R (diskToSphereChart n) hx k
+  rw [← TopPair.singularHomologyMap_comp] at hfac
+  -- Excision onto the source followed by the collapse map is the homeomorphism of the chart
+  -- followed by excision onto the target.
+  have hpair : TopPair.excisionMap (X := TopCat.of (TopCat.disk.{0} (n + 1)))
+      (diskToSphereChart n).source {diskCenter (n + 1)}ᶜ ≫ diskToSpherePairMap n =
+      (TopPair.ofSubsetIso (X := TopCat.of (diskToSphereChart n).source)
+        (Y := TopCat.of (diskToSphereChart n).target) (diskToSphereChart n).toHomeomorphSourceTarget
+        (B := Subtype.val ⁻¹' {diskCenter (n + 1)}ᶜ)
+        (B' := Subtype.val ⁻¹' {diskToSphereChart n (diskCenter (n + 1))}ᶜ)
+        fun z ↦ ((diskToSphereChart n).injOn.eq_iff z.2 hx).not.symm).hom ≫
+      TopPair.excisionMap (X := TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))
+        (diskToSphereChart n).target {diskToSphereChart n (diskCenter (n + 1))}ᶜ := by
+    apply TopPair.hom_ext_of_fst
+    ext z
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply]
+    -- The ambient spaces of these pairs are subspaces presented through `TopPair.ofSubset`, so
+    -- the evaluation lemmas only match after unfolding.
+    erw [TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
+      TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+    rfl
+  rw [← hpair, TopPair.singularHomologyMap_comp, cancel_epi] at hfac
+  rw [← hfac]
+  infer_instance
 
 /-! ### The Hurewicz class of the tautological loop -/
 
@@ -269,7 +221,7 @@ private lemma diskBoundaryPairToCube_comp_toCubeBoundaryPairHom :
     diskBoundaryPairToCube.{0} (n + 1) ≫
         GenLoop.toCubeBoundaryPairHom (sphereGenLoop (n + 1)) ≫
           TopPair.ofSubsetMap (𝟙 _) (mapsTo_id_sphereNorthPole n) =
-      diskBoundaryPairToComplCenter n ≫ diskToSpherePairMap n := by
+      diskBoundaryPairToComplDiskCenter (n + 1) ≫ diskToSpherePairMap n := by
   apply TopPair.hom_ext_of_fst
   ext z
   rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
@@ -280,8 +232,9 @@ private lemma diskBoundaryPairToCube_comp_toCubeBoundaryPairHom :
   erw [TopPair.ofSubsetMap_fst_apply]
   rw [sphereGenLoop_apply, cubeToSphere_apply]
   erw [Homeomorph.symm_apply_apply]
-  -- Both sides are now the collapse map at `z`: `diskBoundaryPairToComplCenter` is the identity
-  -- on the disk, and `TauCeti.diskToSphere_apply` holds by definition.
+  rw [diskBoundaryPairToComplDiskCenter_fst]
+  -- Both sides are now the collapse map at `z`, since `TauCeti.diskToSphere_apply` holds by
+  -- definition.
   rfl
 
 /-- **The Hurewicz class of the tautological loop generates the top homology of the sphere.**
@@ -307,29 +260,45 @@ instance isIso_hurewicz_sphereGenLoop :
   have : ContractibleSpace (TopPair.ofSubset ({southPole n}ᶜ :
       Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))).snd :=
     contractibleSpace_sphere_compl_singleton _
-  have hπs : IsIso ((TopPair.ofSubset ({southPole n}ᶜ :
-      Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))).singularHomologyπ
-        R (n + 1)) :=
+  -- The source of the quotient map is the homology of the singular simplicial set; it is stated
+  -- here as the singular homology of the sphere, the form it takes after the Hurewicz class, so
+  -- that instance search finds it there.
+  have : IsIso (X := ((singularHomologyFunctor C (n + 1)).obj R).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))
+      ((TopPair.ofSubset ({southPole n}ᶜ :
+        Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))).singularHomologyπ
+          R (n + 1)) :=
     TopPair.isIso_singularHomologyπ_of_contractibleSpace _ R n
-  have := isIso_singularHomologyMap_diskBoundaryPairToComplCenter n R (n + 1)
+  have := isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter R (n + 1) (n + 1)
   have := isIso_singularHomologyMap_diskToSpherePairMap n R (n + 1)
   have hfac : GenLoop.hurewicz R (sphereGenLoop (n + 1)) ≫
       (TopPair.ofSubset ({southPole n}ᶜ :
         Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))).singularHomologyπ
           R (n + 1) =
       (singularHomologyDiskBoundaryPairIso R (n + 1)).inv ≫
-        TopPair.singularHomologyMap (diskBoundaryPairToComplCenter n) R (n + 1) ≫
+        TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter (n + 1)) R (n + 1) ≫
           TopPair.singularHomologyMap (diskToSpherePairMap n) R (n + 1) := by
     rw [← hπ, GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_assoc,
       singularHomologyCubeBoundaryPairIso_inv, Category.assoc,
       ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
       diskBoundaryPairToCube_comp_toCubeBoundaryPairHom, TopPair.singularHomologyMap_comp]
-  have : IsIso (GenLoop.hurewicz R (sphereGenLoop (n + 1)) ≫
-      (TopPair.ofSubset ({southPole n}ᶜ :
-        Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))).singularHomologyπ
-          R (n + 1)) := by
-    rw [hfac]
-    infer_instance
-  exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hπs this
+  exact IsIso.of_isIso_fac_right hfac
 
 end TauCeti
+
+namespace GenLoop
+
+open TauCeti
+
+variable {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C] (R : C) {n : ℕ}
+  {X : Type} [TopologicalSpace X] {x : X}
+
+/-- **Every Hurewicz class is the image of that of the tautological loop**: the Hurewicz class of
+a generalized loop `p` is the image of the Hurewicz class of `TauCeti.sphereGenLoop (n + 1)` under
+`(GenLoop.toSphere p)_* : Hₙ₊₁(Sⁿ⁺¹; R) ⟶ Hₙ₊₁(X; R)`. -/
+theorem hurewicz_eq_hurewicz_sphereGenLoop_comp (p : Ω^ (Fin (n + 1)) X x) :
+    hurewicz R p = hurewicz R (sphereGenLoop (n + 1)) ≫
+      ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom (toSphere p)) := by
+  rw [← hurewicz_map R (toSphere p) (toSphere_sphereNorthPole p), map_toSphere_sphereGenLoop]
+
+end GenLoop
