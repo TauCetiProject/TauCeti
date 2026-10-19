@@ -184,11 +184,6 @@ private def OnStrand (D₁ D₂ : BrauerDiagram k) (i : Fin k) (t : Fin k ⊕ Fi
   ∃ s, stackStart D₁ D₂ (Sum.inl i) = Sum.inr s ∧
     ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s t
 
-private theorem OnStrand.step {i : Fin k} {t v : Fin k ⊕ Fin k} (ht : OnStrand D₁ D₂ i t)
-    (h : stackStep D₁ D₂ t = Sum.inr v) : OnStrand D₁ D₂ i v :=
-  let ⟨s, hs, hpath⟩ := ht
-  ⟨s, hs, hpath.tail h⟩
-
 /-- A strand reaches the middle point `a` about to run down through `D₂` only along a cap of
 `D₁` ending at `a`. -/
 private theorem OnStrand.exists_of_inr {i a : Fin k} (ht : OnStrand D₁ D₂ i (Sum.inr a)) :
@@ -225,18 +220,10 @@ private theorem OnStrand.exists_of_inl {i a : Fin k} (ht : OnStrand D₁ D₂ i 
 `D₁` above `D₂` at a middle point of the strand leads to another middle point of the strand. -/
 private theorem OnStrand.exists_of_middleAdj {i c : Fin k} {t : Fin k ⊕ Fin k}
     (ht : OnStrand D₁ D₂ i t) (h : MiddleAdj D₁ D₂ (middlePoint t) c) :
-    ∃ t', OnStrand D₁ D₂ i t' ∧ middlePoint t' = c := by
-  rw [middleAdj_def] at h
-  rcases t with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h <;> rcases h with h | h
-  · exact ⟨Sum.inr c, ht.step (stackStep_inl_eq_inr_iff.mpr ⟨c, rfl, h⟩), middlePoint_inr c⟩
-  · rcases ht.exists_of_inl with hi | ⟨b, hb, hba⟩
-    · simp [D₂.apply_eq_of_apply_eq hi] at h
-    · rw [D₂.apply_eq_of_apply_eq hba] at h
-      exact ⟨Sum.inr b, hb, (middlePoint_inr b).trans (Sum.inr_injective h)⟩
-  · obtain ⟨b, hb, hba⟩ := ht.exists_of_inr
-    rw [D₁.apply_eq_of_apply_eq hba] at h
-    exact ⟨Sum.inl b, hb, (middlePoint_inl b).trans (Sum.inl_injective h)⟩
-  · exact ⟨Sum.inl c, ht.step (stackStep_inr_eq_inr_iff.mpr ⟨c, rfl, h⟩), middlePoint_inl c⟩
+    ∃ t', OnStrand D₁ D₂ i t' ∧ middlePoint t' = c :=
+  let ⟨s, hs, hpath⟩ := ht
+  let ⟨t', hpath', ht'⟩ := exists_reflTransGen_stackStep_of_middleAdj hs hpath h
+  ⟨t', ⟨s, hs, hpath'⟩, ht'⟩
 
 /-- A through strand of `D₂` leaving a middle point of the strand from the bottom point `i` down to
 the bottom point `i'` either retraces the first arc of the strand or ends it: then `D₁ ∘ D₂` has a

@@ -61,6 +61,8 @@ count are independent pieces of the same multiplication.
   there are at most `k / 2` loops.
 * `TauCeti.not_onMiddleLoop_of_reflTransGen_stackStep`: a strand of the stack never visits a
   point of a middle loop.
+* `TauCeti.exists_reflTransGen_stackStep_of_middleAdj`: a strand of the stack visits every
+  middle point adjacent to one it visits.
 
 ## References
 
@@ -417,5 +419,39 @@ theorem not_onMiddleLoop_of_reflTransGen_stackStep (D₁ D₂ : BrauerDiagram k)
   induction hpath with
   | refl => exact not_onMiddleLoop_of_stackStart D₁ D₂ hstart
   | @tail u v _ hstep ih => exact fun hv => ih (onMiddleLoop_of_stackStep D₁ D₂ hstep hv)
+
+/-! ### Strands are closed under the middle graph -/
+
+/-- **A strand is closed under the middle graph.** If a middle point is visited by the strand of
+the stack starting at the outer point `y`, so is every middle point adjacent to it: one arc at
+the point is the arc the strand continues along, and the other is the arc it arrived by. -/
+theorem exists_reflTransGen_stackStep_of_middleAdj {y s₀ s : Fin k ⊕ Fin k}
+    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
+    (hs : Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ s) {b : Fin k}
+    (hadj : MiddleAdj D₁ D₂ (middlePoint s) b) :
+    ∃ t, Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ t ∧
+      middlePoint t = b := by
+  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at hadj <;>
+    rcases (middleAdj_def D₁ D₂ _ _).mp hadj with h | h
+  · exact ⟨Sum.inr b, hs.tail (by simp [h]), middlePoint_inr b⟩
+  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
+    · obtain ⟨hy, hy'⟩ := stackStart_eq_inr_inl_iff.mp h₀
+      rw [h] at hy'
+      subst hy'
+      simp at hy
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hstep
+      rw [h, Sum.inr.injEq] at hc
+      subst hc
+      exact ⟨Sum.inr b, hw, middlePoint_inr b⟩
+  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
+    · obtain ⟨hy, hy'⟩ := stackStart_eq_inr_inr_iff.mp h₀
+      rw [h] at hy'
+      subst hy'
+      simp at hy
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hstep
+      rw [h, Sum.inl.injEq] at hc
+      subst hc
+      exact ⟨Sum.inl b, hw, middlePoint_inl b⟩
+  · exact ⟨Sum.inl b, hs.tail (by simp [h]), middlePoint_inl b⟩
 
 end TauCeti

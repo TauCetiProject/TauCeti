@@ -222,36 +222,6 @@ private theorem exists_stackStart_eq_inr {a : Fin k} {y : Fin k ⊕ Fin k}
 private abbrev StackRel (D₁ D₂ : BrauerDiagram k) (s t : Fin k ⊕ Fin k) : Prop :=
   stackStep D₁ D₂ s = Sum.inr t
 
-/-- **A strand is closed under the middle graph.** If a middle point is visited by the strand of
-the stack starting at the outer point `y`, so is every middle point adjacent to it: one arc at
-the point is the arc the strand continues along, and the other is the arc it arrived by. -/
-private theorem exists_reflTransGen_of_middleAdj {y : Fin k ⊕ Fin k} {s₀ s : Fin k ⊕ Fin k}
-    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀) (hs : Relation.ReflTransGen (StackRel D₁ D₂) s₀ s)
-    {b : Fin k} (hadj : MiddleAdj D₁ D₂ (middlePoint s) b) :
-    ∃ t, Relation.ReflTransGen (StackRel D₁ D₂) s₀ t ∧ middlePoint t = b := by
-  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at hadj <;>
-    rcases (middleAdj_def D₁ D₂ _ _).mp hadj with h | h
-  · exact ⟨Sum.inr b, hs.tail (by simp [StackRel, h]), middlePoint_inr b⟩
-  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
-    · obtain ⟨hy, hy'⟩ := stackStart_eq_inr_inl_iff.mp h₀
-      rw [h] at hy'
-      subst hy'
-      simp at hy
-    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hstep
-      rw [h, Sum.inr.injEq] at hc
-      subst hc
-      exact ⟨Sum.inr b, hw, middlePoint_inr b⟩
-  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
-    · obtain ⟨hy, hy'⟩ := stackStart_eq_inr_inr_iff.mp h₀
-      rw [h] at hy'
-      subst hy'
-      simp at hy
-    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hstep
-      rw [h, Sum.inl.injEq] at hc
-      subst hc
-      exact ⟨Sum.inl b, hw, middlePoint_inl b⟩
-  · exact ⟨Sum.inl b, hs.tail (by simp [StackRel, h]), middlePoint_inl b⟩
-
 /-- **The ends of a strand.** A through strand at a middle point visited by the strand of the
 stack starting at the outer point `y` leads back to `y` or on to the far end of that strand. -/
 private theorem eq_or_composeDiagram_val_eq_of_isAttach {y : Fin k ⊕ Fin k}
@@ -294,7 +264,7 @@ private theorem label_eq_of_isAttach (hC : (composeDiagram D₁ D₂).IsConstant
     | refl => exact ⟨s₀, .refl, hs₀⟩
     | tail _ hadj ih =>
       obtain ⟨s, hs, rfl⟩ := ih
-      exact exists_reflTransGen_of_middleAdj h₀ hs hadj
+      exact exists_reflTransGen_stackStep_of_middleAdj h₀ hs hadj
   obtain ⟨s, hs, rfl⟩ := hreach b hab
   rcases eq_or_composeDiagram_val_eq_of_isAttach h₀ hs hz with rfl | hyz
   · rfl
