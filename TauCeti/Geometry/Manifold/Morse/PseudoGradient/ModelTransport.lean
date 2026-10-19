@@ -219,9 +219,7 @@ end IsAdaptedPseudoGradient
 
 namespace IsMorse
 
-/-- Every Morse function on a compact arbitrary-model manifold has an adapted pseudo-gradient.
-The field is obtained by applying the native existence theorem on the canonical self-modelled
-copy and pulling its result back. -/
+/-- Every Morse function on a compact arbitrary-model manifold has an adapted pseudo-gradient. -/
 theorem exists_isAdaptedPseudoGradient [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M]
     {f : M → ℝ} (hf : TauCeti.IsMorse I f) :
     ∃ X : (x : M) → TangentSpace I x, IsAdaptedPseudoGradient I f X := by
