@@ -241,8 +241,9 @@ variable [PartialOrder K] [ordered : IsOrderedAddMonoid K]
 original interval exactly to the reversed interval. -/
 @[simp]
 theorem reorientAssignment_mem_Icc_iff (σ : Assignment Q Bool) (lo hi f : Assignment Q K) :
-    reorientAssignment σ f ∈ Set.Icc (reorientLower σ lo hi) (reorientUpper σ lo hi) ↔
-      f ∈ Set.Icc lo hi := by
+    reorientLower σ lo hi ≤ reorientAssignment σ f ∧
+        reorientAssignment σ f ≤ reorientUpper σ lo hi ↔
+      lo ≤ f ∧ f ≤ hi := by
   constructor
   · intro hf
     constructor <;> intro x y e
@@ -283,28 +284,24 @@ theorem reorient_Hom (N : Network K V) (σ : TauCeti.Assignment N.Hom Bool) :
   (rfl)
 
 include ordered in
-@[simp]
 theorem reorient_lower_keep (N : Network K V) (σ : TauCeti.Assignment N.Hom Bool) {x y : V}
     (e : N.Hom x y) (h : ¬ σ e) :
     (N.reorient σ).lower (ReorientHom.keep σ e h) = N.lower e :=
   (rfl)
 
 include ordered in
-@[simp]
 theorem reorient_lower_flip (N : Network K V) (σ : TauCeti.Assignment N.Hom Bool) {x y : V}
     (e : N.Hom y x) (h : σ e) :
     (N.reorient σ).lower (ReorientHom.flip σ e h) = -N.upper e :=
   (rfl)
 
 include ordered in
-@[simp]
 theorem reorient_upper_keep (N : Network K V) (σ : TauCeti.Assignment N.Hom Bool) {x y : V}
     (e : N.Hom x y) (h : ¬ σ e) :
     (N.reorient σ).upper (ReorientHom.keep σ e h) = N.upper e :=
   (rfl)
 
 include ordered in
-@[simp]
 theorem reorient_upper_flip (N : Network K V) (σ : TauCeti.Assignment N.Hom Bool) {x y : V}
     (e : N.Hom y x) (h : σ e) :
     (N.reorient σ).upper (ReorientHom.flip σ e h) = -N.lower e :=
