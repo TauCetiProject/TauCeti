@@ -21,7 +21,8 @@ without choosing a Borel representative permanently.
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
-of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume.
+of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume,
+and hyperplane sections through interior points have positive volume.
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -165,6 +166,21 @@ theorem _root_.Bornology.IsBounded.volume_hyperplaneSection_lt_top {s : Set E}
     volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} < ∞ :=
   ((Isometry.of_dist_eq fun y z : (ℝ ∙ e)ᗮ ↦ by
     simp [dist_add_right, Subtype.dist_eq]).antilipschitzWith.isBounded_preimage hs).measure_lt_top
+
+/-- The hyperplane section along a unit vector through an interior point of a set has positive
+volume. -/
+theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c : ℝ}
+    (hc : c ∈ (fun x ↦ ⟪e, x⟫) '' interior s) :
+    0 < volume {y : (ℝ ∙ e)ᗮ | (y : E) + c • e ∈ s} := by
+  obtain ⟨x, hx, rfl⟩ := hc
+  dsimp only
+  -- The transverse coordinate of `x` lies in the open preimage of the interior of `s`.
+  have hU : IsOpen {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s} :=
+    isOpen_interior.preimage (continuous_subtype_val.add continuous_const)
+  refine (hU.measure_pos volume ⟨((orthogonalLineEquiv e he).symm x).1, ?_⟩).trans_le
+    (measure_mono fun y (hy : (y : E) + ⟪e, x⟫ • e ∈ interior s) ↦
+      (interior_subset hy : (y : E) + ⟪e, x⟫ • e ∈ s))
+  simpa [orthogonalLineEquiv_symm_fst] using hx
 
 /-- Cavalieri's formula for the part of a Lebesgue-measurable set at heights in a Borel set `I`
 along a unit vector `e`. -/
