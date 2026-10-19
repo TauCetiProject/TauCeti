@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -52,7 +56,7 @@ variable {E H M F₁ F₂ F₃ : Type*}
 
 /-- In valid coefficient trivializations, coordinates of a bundle wedge are the paired wedge
 of the coordinates, with the pairing itself also expressed in coordinates. -/
-theorem bundleWedgeWith_inCoordinates
+theorem inCoordinates_bundleWedgeWith
     (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) (x₀ y : M)
@@ -115,7 +119,7 @@ theorem _root_.ContMDiffWithinAt.bundleWedgeWith_form
         (FiberBundle.mem_baseSet_trivializationAt F₂ V₂ x),
       (trivializationAt F₃ V₃ x).open_baseSet.mem_nhds
         (FiberBundle.mem_baseSet_trivializationAt F₃ V₃ x)] with y h₁ h₂ h₃
-    exact bundleWedgeWith_inCoordinates μ hμ φ ψ x y h₁ h₂ h₃
+    exact inCoordinates_bundleWedgeWith μ hμ φ ψ x y h₁ h₂ h₃
   exact h.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
 
 /-- A `C^n` bundle pairing takes `C^n` bundle-valued forms to a `C^n` form on a set. -/
