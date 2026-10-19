@@ -215,27 +215,15 @@ theorem integral_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : 
       2 * π ^ (((finrank ℝ E : ℝ) + 1) / 2) / Gamma (((finrank ℝ E : ℝ) + 1) / 2) := by
   set n := finrank ℝ E with hn_def
   have hn0 : (0 : ℝ) < n := by exact_mod_cast hn₀
-  set ψ : ℝ → ℝ := fun r ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ n with hψ
-  have hpow : (fun x ↦ bubble t b x ^ criticalExponent n) = fun x ↦ ψ ‖x - b‖ := by
-    funext x
-    exact bubble_rpow_criticalExponent hn ht b x
-  -- Rescale: `ψ ‖y‖ = (2 / t) ^ n (1 + ‖t⁻¹ • y‖²) ^ (-n)`.
-  have hscale (y : E) : ψ ‖y‖ =
-      (2 / t) ^ n * (1 + ‖t⁻¹ • y‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2) := by
-    have hQ : 0 < t ^ 2 + ‖y‖ ^ 2 := by positivity
-    simp only [hψ]
-    rw [show -(2 * (n : ℝ)) / 2 = -(n : ℝ) by ring, Real.rpow_neg (by positivity),
-      Real.rpow_natCast, norm_smul, norm_inv, Real.norm_of_nonneg ht.le, div_pow, div_pow,
-      mul_pow]
-    field_simp
-    rw [div_pow, ← pow_mul, ← pow_mul, mul_comm 2 n]
-    field_simp
-  have hψb := integral_sub_right_eq_self (μ := volume) (fun y ↦ ψ ‖y‖) b
   have hr : (n : ℝ) < 2 * n := by linarith
-  rw [hpow, hψb, integral_congr_ae (.of_forall hscale), integral_const_mul,
+  have hJ := integral_rpow_neg_one_add_norm_sq (V := E) hr
+  rw [show -(2 * (n : ℝ)) / 2 = -n by ring] at hJ
+  -- Rescale: `U_{t,b} ^ pₙ = (2 / t) ^ n (1 + ‖t⁻¹ • (x - b)‖²) ^ (-n)`.
+  rw [integral_congr_ae (.of_forall
+      (bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq hn ht b)),
+    integral_const_mul, integral_sub_right_eq_self (fun y ↦ (1 + ‖t⁻¹ • y‖ ^ 2) ^ (-(n : ℝ))) b,
     Measure.integral_comp_inv_smul_of_nonneg volume
-      (fun z : E ↦ (1 + ‖z‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2)) ht.le,
-    integral_rpow_neg_one_add_norm_sq hr,
+      (fun z : E ↦ (1 + ‖z‖ ^ 2) ^ (-(n : ℝ))) ht.le, hJ,
     show (2 * (n : ℝ) - n) / 2 = n / 2 by ring, show 2 * (n : ℝ) / 2 = n by ring, smul_eq_mul]
   -- Legendre's duplication formula at `n / 2`.
   have hdup := Real.Gamma_mul_Gamma_add_half ((n : ℝ) / 2)

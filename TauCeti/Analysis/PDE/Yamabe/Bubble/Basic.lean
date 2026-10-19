@@ -46,7 +46,9 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_pos`, `TauCeti.Yamabe.contDiff_bubble`: positivity and smoothness.
 * `TauCeti.Yamabe.bubble_zero_sub`, `TauCeti.Yamabe.bubble_zero_smul`: every bubble is a
   translate of a rescaled standard bubble `U_{1,0}`.
-* `TauCeti.Yamabe.bubble_rpow_criticalExponent`: the critical power of a bubble.
+* `TauCeti.Yamabe.bubble_rpow_criticalExponent`,
+  `TauCeti.Yamabe.bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq`: the critical
+  power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
 * `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of
   a bubble and the square of the norm of its differential.
 * `TauCeti.Yamabe.laplacian_div_add_norm_sub_sq_rpow`: the Laplacian of an arbitrary real power
@@ -142,6 +144,17 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
   have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
   rw [bubble_apply, criticalExponent_def, ← Real.rpow_mul (by positivity),
     ← Real.rpow_natCast _ (finrank ℝ E)]
+  congr 1
+  field_simp
+
+/-- In dimension `n ≠ 2`, the critical power of a bubble is a rescaled translate of a power of the
+Japanese bracket: `U_{t,b}(x) ^ pₙ = (2 / t) ^ n (1 + ‖t⁻¹ (x - b)‖²) ^ (-n)`. -/
+theorem bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq (hn : finrank ℝ E ≠ 2)
+    {t : ℝ} (ht : 0 < t) (b x : E) :
+    bubble t b x ^ criticalExponent (finrank ℝ E) =
+      (2 / t) ^ finrank ℝ E * (1 + ‖t⁻¹ • (x - b)‖ ^ 2) ^ (-(finrank ℝ E : ℝ)) := by
+  rw [bubble_rpow_criticalExponent hn ht, Real.rpow_neg (by positivity), Real.rpow_natCast,
+    ← inv_pow, ← mul_pow, norm_smul, norm_inv, Real.norm_of_nonneg ht.le]
   congr 1
   field_simp
 

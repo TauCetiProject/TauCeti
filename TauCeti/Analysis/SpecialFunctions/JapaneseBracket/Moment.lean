@@ -25,8 +25,8 @@ including the moments of the Yamabe bubbles.
 
 * `TauCeti.integrable_norm_sq_pow_mul_rpow_neg_one_add_norm_sq`: integrability of every
   subcritical even moment.
-* `TauCeti.integral_norm_sq_pow_mul_rpow_neg_one_add_norm_sq`: its value in terms of Euler's beta
-  function and the volume of the unit ball.
+* `TauCeti.integral_norm_sq_pow_mul_rpow_neg_one_add_norm_sq`: its value, for any additive Haar
+  measure, in terms of Euler's beta function and the measure of the unit ball.
 
 ## References
 
@@ -64,59 +64,31 @@ theorem integrable_norm_sq_pow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ
       congr 1
       ring
 
-/-- The `2m`-th radial moment of the Japanese bracket power.  The factor
-`dim V * volume.real (ball 0 1)` is the area of the unit sphere in `V`. -/
-theorem integral_norm_sq_pow_mul_rpow_neg_one_add_norm_sq [Nontrivial V] (m : ℕ) {r : ℝ}
-    (hr : (finrank ℝ V : ℝ) + 2 * m < r) :
-    ∫ x : V, (‖x‖ ^ 2) ^ m * (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂volume =
-      (finrank ℝ V : ℝ) * volume.real (ball (0 : V) 1) *
+/-- The `2m`-th radial moment of the Japanese bracket power, for an additive Haar measure `μ`.
+For Lebesgue measure the factor `dim V * volume.real (ball 0 1)` is the area of the unit sphere in
+`V`. -/
+theorem integral_norm_sq_pow_mul_rpow_neg_one_add_norm_sq [Nontrivial V] (μ : Measure V)
+    [μ.IsAddHaarMeasure] (m : ℕ) {r : ℝ} (hr : (finrank ℝ V : ℝ) + 2 * m < r) :
+    ∫ x : V, (‖x‖ ^ 2) ^ m * (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ =
+      (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) *
         (beta (((finrank ℝ V : ℝ) + 2 * m) / 2)
           ((r - finrank ℝ V - 2 * m) / 2) / 2) := by
   set d := finrank ℝ V with hd
   have hd0 : 0 < d := finrank_pos
-  set a : ℝ := ((d : ℝ) + 2 * m) / 2 with ha
-  set b : ℝ := (r - d - 2 * m) / 2 with hb
-  have ha0 : 0 < a := by
-    rw [ha]
-    positivity
-  have hb0 : 0 < b := by
-    rw [hb]
-    linarith
-  have hab : a + b = r / 2 := by
-    rw [ha, hb]
-    ring
+  -- In polar coordinates the moment is the radial beta integral with `s = d + 2m`.
   have hrad :
       ∫ y in Ioi (0 : ℝ), y ^ (d - 1) • ((y ^ 2) ^ m * (1 + y ^ 2) ^ (-r / 2)) =
-        beta a b / 2 := by
-    have h := integral_comp_rpow_Ioi
-      (fun u : ℝ ↦ (1 / 2 : ℝ) * (u ^ (a - 1) * (1 + u) ^ (-(a + b))))
-      (p := 2) two_ne_zero
-    rw [integral_const_mul, integral_rpow_mul_one_add_rpow ha0 hb0] at h
-    have hbeta_div : beta a b / 2 = 1 / 2 * beta a b := by ring
-    rw [hbeta_div, ← h]
-    refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
-    have hpow : (y ^ 2) ^ (a - 1) * y = y ^ (d - 1) * (y ^ 2) ^ m := by
-      calc
-        (y ^ 2) ^ (a - 1) * y = y ^ (2 * (a - 1)) * y ^ (1 : ℝ) := by
-          rw [← Real.rpow_natCast y 2, ← Real.rpow_mul hy.le, Real.rpow_one]
-          norm_num
-        _ = y ^ (2 * (a - 1) + 1) := (Real.rpow_add hy _ _).symm
-        _ = y ^ (((d : ℝ) - 1) + 2 * (m : ℝ)) := by
-          congr 1
-          rw [ha]
-          ring
-        _ = y ^ ((d : ℝ) - 1) * y ^ (2 * (m : ℝ)) := Real.rpow_add hy _ _
-        _ = y ^ (d - 1) * (y ^ 2) ^ m := by
-          rw [← Real.rpow_natCast y (d - 1), Nat.cast_sub hd0, Nat.cast_one, ← pow_mul,
-            ← Real.rpow_natCast y (2 * m)]
-          norm_num
-    simp only [smul_eq_mul, hab, abs_two, neg_div]
-    have hassoc : y ^ (d - 1) * ((y ^ 2) ^ m * (1 + y ^ 2) ^ (-(r / 2))) =
-        (y ^ (d - 1) * (y ^ 2) ^ m) * (1 + y ^ 2) ^ (-(r / 2)) := by ring
-    rw [hassoc, ← hpow]
-    norm_num
+        beta (((d : ℝ) + 2 * m) / 2) ((r - d - 2 * m) / 2) / 2 := by
+    rw [show r - d - 2 * m = r - (d + 2 * m) by ring,
+      ← integral_rpow_mul_one_add_sq_rpow (by positivity) hr]
+    refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+    have hpow : y ^ ((d : ℝ) + 2 * m - 1) = y ^ (d - 1) * (y ^ 2) ^ m := by
+      rw [show (d : ℝ) + 2 * m - 1 = ((d - 1 + 2 * m : ℕ) : ℝ) by
+        push_cast [Nat.cast_sub hd0]; ring, Real.rpow_natCast]
+      ring
+    rw [smul_eq_mul, hpow]
     ring
-  rw [integral_fun_norm_addHaar volume
+  rw [integral_fun_norm_addHaar μ
     (fun y : ℝ ↦ (y ^ 2) ^ m * (1 + y ^ 2) ^ (-r / 2)), hrad, nsmul_eq_mul,
     smul_eq_mul, ← hd]
   ring

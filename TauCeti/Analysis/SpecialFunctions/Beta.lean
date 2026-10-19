@@ -49,6 +49,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `TauCeti.integral_rpow_mul_one_add_rpow` — Euler's second beta integral and its sharp
   integrability criterion,
   `∫ x in Ioi 0, x ^ (a - 1) * (1 + x) ^ (-(a + b)) = Β(a, b)`;
+* `TauCeti.integral_rpow_mul_one_add_sq_rpow` — the radial form
+  `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2` of the second
+  integral, obtained by substituting `u = y ^ 2`;
 * `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
   second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
@@ -457,6 +460,24 @@ theorem integral_one_add_sq_div_rpow {ν s : ℝ} (hν : 0 < ν) (hs : 1 / 2 < s
   have h := Measure.integral_comp_inv_mul_left (fun y : ℝ => (1 + y ^ 2) ^ (-s)) √ν
   simp only [Real.inv_sqrt_mul_sq hν.le, abs_of_nonneg (Real.sqrt_nonneg ν), smul_eq_mul] at h
   rw [h, integral_one_add_sq_rpow hs]
+
+/-- **Euler's second beta integral in radial form.** For `0 < s < r`, the substitution `u = y ^ 2`
+gives `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2`. This is
+the radial integral of the Japanese bracket power `(1 + ‖x‖ ^ 2) ^ (-r / 2)`. -/
+theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
+    ∫ y in Ioi (0 : ℝ), y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) =
+      beta (s / 2) ((r - s) / 2) / 2 := by
+  have h := integral_comp_rpow_Ioi
+    (fun u : ℝ ↦ u ^ (s / 2 - 1) * (1 + u) ^ (-(s / 2 + (r - s) / 2))) two_ne_zero
+  rw [integral_rpow_mul_one_add_rpow (by positivity) (by linarith)] at h
+  rw [← h, ← integral_div]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+  have hpow : (y ^ (2 : ℝ)) ^ (s / 2 - 1) * y = y ^ (s - 1) := by
+    rw [← Real.rpow_mul hy.le, ← Real.rpow_add_one hy.ne']
+    ring_nf
+  rw [← hpow, Real.rpow_two]
+  norm_num
+  ring_nf
 
 end SecondIntegral
 

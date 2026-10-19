@@ -24,7 +24,8 @@ file computes the integral against its canonical Lebesgue measure `volume`:
 
 Integrating in polar coordinates and substituting `u = ‖x‖ ^ 2` turns the integral into Euler's
 second beta integral `∫₀^∞ u ^ (a - 1) (1 + u) ^ (-(a + b)) du = Β(a, b)` with `a = d / 2` and
-`b = (r - d) / 2` (`TauCeti.integral_rpow_mul_one_add_rpow`). For `r = d + 1` this is the
+`b = (r - d) / 2` (`TauCeti.integral_rpow_mul_one_add_rpow`, in the radial form
+`TauCeti.integral_rpow_mul_one_add_sq_rpow`). For `r = d + 1` this is the
 normalization of the multivariate Cauchy distribution and of the Poisson kernel of a half-space.
 
 ## Main declarations
@@ -159,20 +160,9 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   -- The radial integral is half of Euler's second beta integral, after `u = y ^ 2`.
   have hrad : ∫ y in Ioi (0 : ℝ), y ^ (d - 1) • (1 + y ^ 2) ^ (-r / 2) =
       beta (d / 2) ((r - d) / 2) / 2 := by
-    have h := integral_comp_rpow_Ioi (fun u : ℝ ↦
-      (1 / 2 : ℝ) * (u ^ ((d : ℝ) / 2 - 1) * (1 + u) ^ (-((d : ℝ) / 2 + (r - d) / 2))))
-      (p := 2) two_ne_zero
-    rw [integral_const_mul, integral_rpow_mul_one_add_rpow (by positivity) (by linarith)] at h
-    rw [show beta (d / 2) ((r - d) / 2) / 2 = 1 / 2 * beta (d / 2) ((r - d) / 2) by ring, ← h]
-    refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
-    have hpow : (y ^ 2) ^ ((d : ℝ) / 2 - 1) * y = y ^ (d - 1) := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul hy.le, ← Real.rpow_natCast,
-        Nat.cast_sub hd0, Nat.cast_one, ← Real.rpow_add_one hy.ne']
-      ring_nf
-    simp only [smul_eq_mul, hsum, abs_two, neg_div]
-    rw [← hpow]
-    norm_num
-    ring
+    rw [← integral_rpow_mul_one_add_sq_rpow (by positivity) hr]
+    refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+    rw [smul_eq_mul, ← Real.rpow_natCast, Nat.cast_sub hd0, Nat.cast_one]
   have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
   rw [integral_fun_norm_addHaar volume (fun t ↦ (1 + t ^ 2) ^ (-r / 2)), hrad, volume_real_unitBall,
     beta, nsmul_eq_mul, smul_eq_mul, Gamma_add_one (by positivity), hsum, ← hd]
