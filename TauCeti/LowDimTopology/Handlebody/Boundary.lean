@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.FrontierProduct
-public import TauCeti.LowDimTopology.Handlebody
+public import TauCeti.LowDimTopology.Handlebody.Basic
 
 /-!
 # The boundary surjection for a handlebody

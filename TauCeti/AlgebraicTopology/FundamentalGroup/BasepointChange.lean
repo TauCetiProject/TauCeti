@@ -505,7 +505,6 @@ namespace TauCeti
 open FundamentalGroup
 
 /-- Applying a continuous map commutes with changing the basepoint along a path. -/
-@[simp]
 lemma map_fundamentalGroupMulEquivOfPath
     {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
     (f : C(X, Y)) (p : Path x y) (g : FundamentalGroup X x) :
