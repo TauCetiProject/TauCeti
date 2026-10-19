@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Adjunction.Basic
 public import TauCeti.Algebra.Homology.DG.Bimodule.InternalHom.Functor
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Module
-import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The tensor--Hom adjunction for differential graded modules
@@ -168,11 +167,8 @@ private theorem map_d_tmul {p : ℤ}
       f (tmul R A (L.differential l) m) +
         p.negOnePow • f (tmul R A l (M.differential m)) := by
   rw [DGRightModuleCat.map_d f,
-    DGRightModuleCat.tensorBimoduleObj_differential_tmul hl, map_add,
-    TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R)]
-  congr 1
-  exact (f.toLinearMap.map_smul_of_tower (TauCeti.negOnePowCast R p) _).trans
-    (TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R) p _).symm
+    DGRightModuleCat.tensorBimoduleObj_differential_tmul hl, map_add]
+  exact congrArg _ (map_zsmul_unit f.toLinearMap p.negOnePow _)
 
 /-- Currying a DG module morphism out of a balanced tensor product. -/
 private def curry (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
@@ -277,11 +273,8 @@ private def uncurry (g : L ⟶ M.internalHomObj N) :
             have h := congrArg (fun k ↦ k m) (DGRightModuleCat.map_d g l)
             rw [DGRightModule.InternalHom.differential_apply_of_mem _ _
               (Graded.map_mem g l.2)] at h
-            rw [TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R)] at h
             rw [uncurryLinearMap_tmul, DGRightModuleCat.tensorBimoduleObj_differential_tmul l.2,
-              map_add, uncurryLinearMap_tmul,
-              TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R),
-              (uncurryLinearMap g).map_smul_of_tower, uncurryLinearMap_tmul]
+              map_add, uncurryLinearMap_tmul, map_zsmul_unit, uncurryLinearMap_tmul]
             exact eq_add_of_sub_eq h
         | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
     | ha x y hx hy => simp only [map_add, hx, hy]
@@ -379,21 +372,24 @@ theorem tensorInternalHomAdjunction_homEquiv
   rw [tensorInternalHomAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
 
 /-- The unit of the tensor--internal-Hom adjunction sends `l` to `m ↦ l ⊗ m`. -/
+-- Evaluate before `simp` unfolds the functor composites in the coercion's type.
+@[simp↓]
 theorem tensorInternalHomAdjunction_unit_app_apply_apply
     (L : DGRightModuleCat.{uR, uA, u} hA) (l : L) (m : M) :
-    (show M.internalHomObj (DGRightModuleCat.tensorBimoduleObj L M) from
-      (tensorInternalHomAdjunction (M := M)).unit.app L l) m = tmul R A l m := by
-  rw [tensorInternalHomAdjunction]
-  change tensorHomEquiv (M := M) L _ (𝟙 _) l m = _
-  rw [tensorHomEquiv_apply_apply, DGRightModuleCat.id_apply]
+    DFunLike.coe (F := M.internalHomObj (DGRightModuleCat.tensorBimoduleObj L M))
+      ((tensorInternalHomAdjunction (M := M)).unit.app L l) m = tmul R A l m := by
+  rw [← Adjunction.homEquiv_id, tensorInternalHomAdjunction_homEquiv]
+  exact (tensorHomEquiv_apply_apply (M := M) (𝟙 _) l m).trans
+    (by rw [DGRightModuleCat.id_apply])
 
 /-- The counit of the tensor--internal-Hom adjunction is evaluation. -/
+-- Evaluate before `simp` unfolds the functor composites in the coercion's type.
+@[simp↓]
 theorem tensorInternalHomAdjunction_counit_app_tmul
     (N : DGRightModuleCat.{uR, uB, u} hB) (g : M.internalHomObj N) (m : M) :
     (tensorInternalHomAdjunction (M := M)).counit.app N (tmul R A g m) = g m := by
-  rw [tensorInternalHomAdjunction]
-  change (tensorHomEquiv (M := M) (M.internalHomObj N) N).symm (𝟙 _)
-    (tmul R A g m) = _
-  rw [tensorHomEquiv_symm_apply_tmul, DGRightModuleCat.id_apply]
+  rw [← Adjunction.homEquiv_symm_id, tensorInternalHomAdjunction_homEquiv]
+  exact (tensorHomEquiv_symm_apply_tmul (M := M) (𝟙 _) g m).trans
+    (congrArg (fun k ↦ k m) (DGRightModuleCat.id_apply _ g))
 
 end TauCeti.DGBimoduleCat
