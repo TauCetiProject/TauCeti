@@ -7,21 +7,22 @@ module
 
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-public import Mathlib.RingTheory.Derivation.Basic
+public import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # Wronskians and linear independence
 
 The Wronskian of a finite family is the determinant whose rows are its successive
-derivatives. It is nonzero exactly when the family is linearly independent over the
-constant field of the derivation when the scalars act faithfully. The constant-field
+derivatives. In a differential field, it is nonzero exactly when the family is linearly independent
+over the constant field of the derivation when the scalars act faithfully. The constant-field
 hypothesis is explicit: every element killed by the derivation must come from the scalars.
 No characteristic assumption is needed with this hypothesis.
 
 Scalar changes of generators multiply the Wronskian by the determinant of the coefficient
 matrix, so an invertible change of basis preserves its nonvanishing. This law holds over
-commutative rings. In an integral domain, nonvanishing implies linear independence over any
-faithfully acting scalar semiring; the converse requires an ambient differential field.
+commutative rings. A Wronskian that is a non-zero-divisor implies linear independence over any
+faithfully acting scalar semiring. In an integral domain, nonvanishing suffices; the converse
+requires an ambient differential field.
 
 This criterion supplies the nonvanishing required to define ramification divisors of linear
 series by Wronskians. The differential-field argument follows the Wronskian method in
@@ -81,12 +82,9 @@ theorem wronskian_sum_smul (D : Derivation k F F) {n : ℕ} (f : Fin n → F)
         (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j)) *
           (algebraMap k F).mapMatrix A := by
     ext i j
-    -- Use the bundled endomorphism so its powers supply sum and scalar linearity.
-    change (D.toLinearMap : Module.End k F)^[i.val] (∑ l, A l j • f l) = _
-    rw [← Module.End.pow_apply, map_sum]
-    simp only [LinearMap.map_smul]
-    simp [Module.End.pow_apply, Matrix.mul_apply, Algebra.smul_def,
-      mul_comm]
+    simp only [Matrix.of_apply]
+    rw [D.iterate_sum_smul]
+    simp [Matrix.mul_apply, Algebra.smul_def, mul_comm]
   rw [wronskian_def, hmatrix, Matrix.det_mul, ← RingHom.map_det, ← wronskian_def]
 
 /-- An invertible scalar change of generators preserves nonvanishing of the Wronskian.
@@ -99,11 +97,12 @@ theorem wronskian_sum_smul_ne_zero_iff (D : Derivation k F F) {n : ℕ} (f : Fin
 
 end
 
-/-- Nonzero Wronskian implies linear independence over any faithfully acting scalar
-semiring, even if the derivation has additional constants. -/
-theorem linearIndependent_of_wronskian_ne_zero [CommSemiring k] [CommRing F]
-    [IsDomain F] [Algebra k F] [FaithfulSMul k F] (D : Derivation k F F)
-    {n : ℕ} {f : Fin n → F} (hw : D.wronskian f ≠ 0) : LinearIndependent k f := by
+/-- A Wronskian that is a non-zero-divisor implies linear independence over any faithfully
+acting scalar semiring, even if the derivation has additional constants. -/
+theorem linearIndependent_of_wronskian_mem_nonZeroDivisors [CommSemiring k] [CommRing F]
+    [Algebra k F] [FaithfulSMul k F] (D : Derivation k F F)
+    {n : ℕ} {f : Fin n → F} (hw : D.wronskian f ∈ nonZeroDivisors F) :
+    LinearIndependent k f := by
   classical
   rw [wronskian_def] at hw
   apply Fintype.linearIndependent_iffₛ.mpr
@@ -115,10 +114,17 @@ theorem linearIndependent_of_wronskian_ne_zero [CommSemiring k] [CommRing F]
         (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j)) *ᵥ
           (fun j ↦ algebraMap k F (b j)) := by
     ext i
-    have h := congrArg (D.toLinearMap ^ i.val) hab
-    simp only [map_sum, LinearMap.map_smul] at h
-    simpa [Matrix.mulVec, dotProduct, Algebra.smul_def, Module.End.pow_apply, mul_comm] using h
-  exact congrFun (Matrix.mulVec_injective_of_det_ne_zero hw hjets) j
+    have h := congrArg (D : F → F)^[i.val] hab
+    simp only [D.iterate_sum_smul] at h
+    simpa [Matrix.mulVec, dotProduct, Algebra.smul_def, mul_comm] using h
+  exact congrFun (Matrix.mulVec_injective_of_det_mem_nonZeroDivisors hw hjets) j
+
+/-- Nonzero Wronskian implies linear independence over any faithfully acting scalar
+semiring, even if the derivation has additional constants. -/
+theorem linearIndependent_of_wronskian_ne_zero [CommSemiring k] [CommRing F]
+    [NoZeroDivisors F] [Algebra k F] [FaithfulSMul k F] (D : Derivation k F F)
+    {n : ℕ} {f : Fin n → F} (hw : D.wronskian f ≠ 0) : LinearIndependent k f :=
+  D.linearIndependent_of_wronskian_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hw)
 
 /-- A linearly independent family has nonzero Wronskian if every constant of the
 derivation comes from the scalars. -/
