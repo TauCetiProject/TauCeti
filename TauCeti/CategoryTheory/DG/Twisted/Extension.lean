@@ -26,9 +26,9 @@ The extension comes with inclusions `TauCeti.DGTwistedObject.extensionInl`,
 `TauCeti.DGTwistedObject.extensionSnd` of degree zero satisfying the biproduct equations.  The
 inclusion of `P` and the projection onto `Q` are closed, so `P ⟶ extension P Q g ⟶ Q` is a
 sequence of closed degree-zero morphisms with zero composite, split as graded objects.  The
-splitting is not closed: the differential of the inclusion of `Q` is `g` followed by the inclusion
-of `P`, and the differential of the projection onto `P` is minus the projection onto `Q` followed
-by `g`.
+splitting need not be closed: the differential of the inclusion of `Q` is `g` followed by the
+inclusion of `P`, and the differential of the projection onto `P` is minus the projection onto `Q`
+followed by `g`.
 
 With `P = Y[0]`, `Q = X[1]` and `g` a closed degree-zero morphism `f : X ⟶ Y` viewed as a
 degree-one morphism `X[1] ⟶ Y[0]`, the extension is the cone of `f`, the basic construction of
@@ -74,7 +74,7 @@ namespace DGTwistedObject
 
 variable (R : Type v) [CommRing R] {E : Type u} [DGCategory R E]
 
-open DGAdditiveClosure (dgHom_ext sum_dgHomEquiv_dgId_dgComp sum_dgComp_dgHomEquiv_dgId)
+open DGAdditiveClosure (dgHom_ext)
 
 /- `matrixEquiv` is a local name for `TauCeti.DGAdditiveClosure.dgHomEquiv`, which identifies a
 morphism of the additive closure with its matrix of entries; the unqualified name `dgHomEquiv`
@@ -238,27 +238,14 @@ theorem dgDifferential_extensionTwist {P Q : DGTwistedObject R (DGAdditiveClosur
   dgHom_ext R fun i j ↦ by
     rw [DGAdditiveClosure.dgHomEquiv_dgDifferential, DGAdditiveClosure.dgHomEquiv_dgComp,
       Fintype.sum_sum_type]
-    rcases i with i | i <;> rcases j with j | j
-    · rw [dgHomEquiv_extensionTwist_inl_inl, dgDifferential_twist_apply]
-      refine ((congrArg₂ (· + ·) (Fintype.sum_congr _ _ fun k ↦ ?_)
-        (Finset.sum_eq_zero fun k _ ↦ ?_)).trans (add_zero _)).symm
-      · rw [dgHomEquiv_extensionTwist_inl_inl, dgHomEquiv_extensionTwist_inl_inl]
-      · rw [dgHomEquiv_extensionTwist_inl_inr, zero_dgComp]
-    · rw [dgHomEquiv_extensionTwist_inl_inr, map_zero]
-      refine ((congrArg₂ (· + ·) (Finset.sum_eq_zero fun k _ ↦ ?_)
-        (Finset.sum_eq_zero fun k _ ↦ ?_)).trans (add_zero 0)).symm
-      · rw [dgHomEquiv_extensionTwist_inl_inr, dgComp_zero]
-      · rw [dgHomEquiv_extensionTwist_inl_inr, zero_dgComp]
-    · rw [dgHomEquiv_extensionTwist_inr_inl, dgDifferential_apply_of_closed hg]
-      refine (add_comm _ _).trans (congrArg₂ (· + ·) (Fintype.sum_congr _ _ fun k ↦ ?_)
-        (Fintype.sum_congr _ _ fun k ↦ ?_))
-      · rw [dgHomEquiv_extensionTwist_inr_inl, dgHomEquiv_extensionTwist_inl_inl]
-      · rw [dgHomEquiv_extensionTwist_inr_inr, dgHomEquiv_extensionTwist_inr_inl]
-    · rw [dgHomEquiv_extensionTwist_inr_inr, dgDifferential_twist_apply]
-      refine ((congrArg₂ (· + ·) (Finset.sum_eq_zero fun k _ ↦ ?_)
-        (Fintype.sum_congr _ _ fun k ↦ ?_)).trans (zero_add _)).symm
-      · rw [dgHomEquiv_extensionTwist_inl_inr, dgComp_zero]
-      · rw [dgHomEquiv_extensionTwist_inr_inr, dgHomEquiv_extensionTwist_inr_inr]
+    rcases i with i | i <;> rcases j with j | j <;>
+      simp only [↓dgHomEquiv_extensionTwist_inl_inl, ↓dgHomEquiv_extensionTwist_inl_inr,
+        ↓dgHomEquiv_extensionTwist_inr_inl, ↓dgHomEquiv_extensionTwist_inr_inr, zero_dgComp,
+        dgComp_zero, map_zero, Finset.sum_const_zero, add_zero, zero_add]
+    · exact dgDifferential_twist_apply R P i j
+    · rw [dgDifferential_apply_of_closed hg]
+      exact add_comm _ _
+    · exact dgDifferential_twist_apply R Q i j
 
 /-! ### The extension -/
 
@@ -274,6 +261,37 @@ noncomputable abbrev extension (P Q : DGTwistedObject R (DGAdditiveClosure E)) (
   obj := P.obj.sum Q.obj
   twist := extensionTwist R P Q g
   dgDifferential_twist := dgDifferential_extensionTwist hg
+
+section twist
+
+variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
+  (hg : dgDifferential R 1 g = 0)
+
+/- The entries of the twist of an extension, stated with the twist written as a projection of the
+extension, the form in which it appears in the matrix entries of morphisms out of and into the
+extension; `simp` does not see through this projection to the entry lemmas of
+`TauCeti.DGTwistedObject.extensionTwist`. -/
+
+private theorem dgHomEquiv_twist_extension_inl_inl (i j : P.obj.ι) :
+    matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inl j) =
+      matrixEquiv R _ _ 1 P.twist i j :=
+  dgHomEquiv_extensionTwist_inl_inl R P Q g i j
+
+private theorem dgHomEquiv_twist_extension_inl_inr (i : P.obj.ι) (j : Q.obj.ι) :
+    matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inr j) = 0 :=
+  dgHomEquiv_extensionTwist_inl_inr R P Q g i j
+
+private theorem dgHomEquiv_twist_extension_inr_inl (i : Q.obj.ι) (j : P.obj.ι) :
+    matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inl j) =
+      matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) i j :=
+  dgHomEquiv_extensionTwist_inr_inl R P Q g i j
+
+private theorem dgHomEquiv_twist_extension_inr_inr (i j : Q.obj.ι) :
+    matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inr j) =
+      matrixEquiv R _ _ 1 Q.twist i j :=
+  dgHomEquiv_extensionTwist_inr_inr R P Q g i j
+
+end twist
 
 /-! ### The structure maps of an extension -/
 
@@ -313,12 +331,12 @@ noncomputable def extensionInl : DGHom R 0 P (extension P Q g hg) :=
   (dgHomEquiv R _ _ 0).symm ((matrixEquiv R _ _ 0).symm (inlMatrix R P Q))
 
 /-- The inclusion `Q ⟶ extension P Q g` of the second summand, a morphism of degree zero which
-is not closed: its differential is `g` followed by the inclusion of `P`. -/
+need not be closed: its differential is `g` followed by the inclusion of `P`. -/
 noncomputable def extensionInr : DGHom R 0 Q (extension P Q g hg) :=
   (dgHomEquiv R _ _ 0).symm ((matrixEquiv R _ _ 0).symm (inrMatrix R P Q))
 
 /-- The projection `extension P Q g ⟶ P` onto the first summand, a morphism of degree zero
-which is not closed: its differential is minus the projection onto `Q` followed by `g`. -/
+which need not be closed: its differential is minus the projection onto `Q` followed by `g`. -/
 noncomputable def extensionFst : DGHom R 0 (extension P Q g hg) P :=
   (dgHomEquiv R _ _ 0).symm ((matrixEquiv R _ _ 0).symm (fstMatrix R P Q))
 
@@ -404,115 +422,42 @@ variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
 @[simp↓]
 theorem dgDifferential_extensionInl : dgDifferential R 0 (extensionInl R hg) = 0 :=
   dgHom_ext' (n := 1) fun i k ↦ by
-    rw [dgDifferential_apply_zero, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply]
-    rcases k with j | j
-    · rw [dgHomEquiv_extensionInl_inl, d_zero_one_dgHomEquiv_dgId, zero_add,
-        sub_eq_zero, Fintype.sum_sum_type]
-      refine ((congrArg₂ (· + ·) (Fintype.sum_congr _ _ fun l ↦ ?_)
-        (Finset.sum_eq_zero fun l _ ↦ ?_)).trans ((add_zero _).trans
-          (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 1 P.twist l j) i))).trans
-        ((Fintype.sum_congr _ _ fun l ↦ ?_).trans
-          (sum_dgComp_dgHomEquiv_dgId R (fun l ↦ matrixEquiv R _ _ 1 P.twist i l) j)).symm
-      · rw [dgHomEquiv_extensionInl_inl, dgHomEquiv_extensionTwist_inl_inl]
-      · rw [dgHomEquiv_extensionInl_inr, zero_dgComp]
-      · rw [dgHomEquiv_extensionInl_inl]
-    · rw [dgHomEquiv_extensionInl_inr, map_zero, zero_add, sub_eq_zero, Fintype.sum_sum_type]
-      refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-        (Finset.sum_eq_zero fun l _ ↦ ?_)).trans
-          ((add_zero 0).trans (Finset.sum_eq_zero fun l _ ↦ ?_).symm)
-      · rw [dgHomEquiv_extensionTwist_inl_inr, dgComp_zero]
-      · rw [dgHomEquiv_extensionInl_inr, zero_dgComp]
-      · rw [dgHomEquiv_extensionInl_inr, dgComp_zero]
+    rw [dgDifferential_apply_zero, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply,
+      Fintype.sum_sum_type]
+    rcases k with j | j <;> simp [-DGCategoryData.dgId_toDGCategory, d_zero_one_dgHomEquiv_dgId,
+      ↓dgHomEquiv_twist_extension_inl_inl, ↓dgHomEquiv_twist_extension_inl_inr,
+      ↓dgHomEquiv_twist_extension_inr_inl, ↓dgHomEquiv_twist_extension_inr_inr]
 
 /-- The projection of an extension onto `Q` is closed. -/
 @[simp↓]
 theorem dgDifferential_extensionSnd : dgDifferential R 0 (extensionSnd R hg) = 0 :=
   dgHom_ext' (n := 1) fun k j ↦ by
-    rw [dgDifferential_apply_zero, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply]
-    rcases k with i | i
-    · rw [dgHomEquiv_extensionSnd_inl, map_zero, zero_add, sub_eq_zero, Fintype.sum_sum_type]
-      refine (Finset.sum_eq_zero fun l _ ↦ ?_).trans ((add_zero 0).symm.trans
-        (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_).symm
-          (Finset.sum_eq_zero fun l _ ↦ ?_).symm))
-      · rw [dgHomEquiv_extensionSnd_inl, zero_dgComp]
-      · rw [dgHomEquiv_extensionSnd_inl, dgComp_zero]
-      · rw [dgHomEquiv_extensionTwist_inl_inr, zero_dgComp]
-    · rw [dgHomEquiv_extensionSnd_inr, d_zero_one_dgHomEquiv_dgId R Q.obj i j, zero_add,
-        sub_eq_zero, Fintype.sum_sum_type]
-      refine ((Fintype.sum_congr _ _ fun l ↦ ?_).trans
-        (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 1 Q.twist l j) i)).trans
-          ((congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-            (Fintype.sum_congr _ _ fun l ↦ ?_)).trans ((zero_add _).trans
-              (sum_dgComp_dgHomEquiv_dgId R
-                (fun l ↦ matrixEquiv R _ _ 1 Q.twist i l) j))).symm
-      · rw [dgHomEquiv_extensionSnd_inr]
-      · rw [dgHomEquiv_extensionSnd_inl, dgComp_zero]
-      · rw [dgHomEquiv_extensionTwist_inr_inr, dgHomEquiv_extensionSnd_inr]
+    rw [dgDifferential_apply_zero, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply,
+      Fintype.sum_sum_type]
+    rcases k with i | i <;> simp [-DGCategoryData.dgId_toDGCategory, d_zero_one_dgHomEquiv_dgId,
+      ↓dgHomEquiv_twist_extension_inl_inl, ↓dgHomEquiv_twist_extension_inl_inr,
+      ↓dgHomEquiv_twist_extension_inr_inl, ↓dgHomEquiv_twist_extension_inr_inr]
 
 /-- The differential of the inclusion of `Q` into an extension along `g` is `g` followed by the
 inclusion of `P`. -/
 theorem dgDifferential_extensionInr :
     dgDifferential R 0 (extensionInr R hg) = dgComp R g (extensionInl R hg) (add_zero 1) :=
   dgHom_ext' (n := 1) fun i k ↦ by
-    rw [dgDifferential_apply_zero, dgComp_apply]
-    rcases k with j | j
-    · rw [dgHomEquiv_extensionInr_inl, map_zero, zero_add, Fintype.sum_sum_type]
-      refine (congrArg₂ (· - ·) (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-        ((Fintype.sum_congr _ _ fun l ↦ ?_).trans (sum_dgHomEquiv_dgId_dgComp R
-          (fun l ↦ matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) l j) i)))
-            (Finset.sum_eq_zero fun l _ ↦ ?_)).trans ?_
-      · rw [dgHomEquiv_extensionInr_inl, zero_dgComp]
-      · rw [dgHomEquiv_extensionInr_inr, dgHomEquiv_extensionTwist_inr_inl]
-      · rw [dgHomEquiv_extensionInr_inl, dgComp_zero]
-      · rw [zero_add, sub_zero]
-        exact ((Fintype.sum_congr _ _ fun l ↦ by rw [dgHomEquiv_extensionInl_inl]).trans
-          (sum_dgComp_dgHomEquiv_dgId R
-            (fun l ↦ matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) i l) j)).symm
-    · rw [dgHomEquiv_extensionInr_inr, d_zero_one_dgHomEquiv_dgId, zero_add, Fintype.sum_sum_type]
-      refine (sub_eq_zero.mpr ?_).trans (Finset.sum_eq_zero fun l _ ↦ ?_).symm
-      · refine ((congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-          (Fintype.sum_congr _ _ fun l ↦ ?_)).trans ((zero_add _).trans
-            (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 1 Q.twist l j) i))).trans
-          ((Fintype.sum_congr _ _ fun l ↦ ?_).trans
-            (sum_dgComp_dgHomEquiv_dgId R (fun l ↦ matrixEquiv R _ _ 1 Q.twist i l) j)).symm
-        · rw [dgHomEquiv_extensionInr_inl, zero_dgComp]
-        · rw [dgHomEquiv_extensionInr_inr, dgHomEquiv_extensionTwist_inr_inr]
-        · rw [dgHomEquiv_extensionInr_inr]
-      · rw [dgHomEquiv_extensionInl_inr, dgComp_zero]
+    rw [dgDifferential_apply_zero, dgComp_apply, Fintype.sum_sum_type]
+    rcases k with j | j <;> simp [-DGCategoryData.dgId_toDGCategory, d_zero_one_dgHomEquiv_dgId,
+      ↓dgHomEquiv_twist_extension_inl_inl, ↓dgHomEquiv_twist_extension_inl_inr,
+      ↓dgHomEquiv_twist_extension_inr_inl, ↓dgHomEquiv_twist_extension_inr_inr]
 
 /-- The differential of the projection of an extension along `g` onto `P` is minus the
 projection onto `Q` followed by `g`. -/
 theorem dgDifferential_extensionFst :
     dgDifferential R 0 (extensionFst R hg) = -dgComp R (extensionSnd R hg) g (zero_add 1) :=
   dgHom_ext' (n := 1) fun k j ↦ by
-    rw [dgDifferential_apply_zero, map_neg, map_neg, Pi.neg_apply, Pi.neg_apply, dgComp_apply]
-    rcases k with i | i
-    · rw [dgHomEquiv_extensionFst_inl, d_zero_one_dgHomEquiv_dgId R P.obj i j, zero_add,
-        Fintype.sum_sum_type]
-      refine (sub_eq_zero.mpr ?_).trans (neg_eq_zero.mpr (Finset.sum_eq_zero fun l _ ↦ ?_)).symm
-      · refine ((Fintype.sum_congr _ _ fun l ↦ ?_).trans
-          (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 1 P.twist l j) i)).trans
-            ((congrArg₂ (· + ·) (Fintype.sum_congr _ _ fun l ↦ ?_)
-              (Finset.sum_eq_zero fun l _ ↦ ?_)).trans ((add_zero _).trans
-                (sum_dgComp_dgHomEquiv_dgId R
-                  (fun l ↦ matrixEquiv R _ _ 1 P.twist i l) j))).symm
-        · rw [dgHomEquiv_extensionFst_inl]
-        · rw [dgHomEquiv_extensionTwist_inl_inl, dgHomEquiv_extensionFst_inl]
-        · rw [dgHomEquiv_extensionFst_inr, dgComp_zero]
-      · rw [dgHomEquiv_extensionSnd_inl, zero_dgComp]
-    · rw [dgHomEquiv_extensionFst_inr, map_zero, zero_add, Fintype.sum_sum_type]
-      refine (congrArg₂ (· - ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-        ((congrArg₂ (· + ·) (Fintype.sum_congr _ _ fun l ↦ ?_)
-          (Finset.sum_eq_zero fun l _ ↦ ?_)).trans ((add_zero _).trans
-            (sum_dgComp_dgHomEquiv_dgId R
-              (fun l ↦ matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) i l) j)))).trans
-        ((zero_sub _).trans (congrArg _ ((Fintype.sum_congr _ _ fun l ↦ ?_).trans
-          (sum_dgHomEquiv_dgId_dgComp R
-            (fun l ↦ matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) l j) i)).symm))
-      · rw [dgHomEquiv_extensionFst_inr, zero_dgComp]
-      · rw [dgHomEquiv_extensionTwist_inr_inl, dgHomEquiv_extensionFst_inl]
-      · rw [dgHomEquiv_extensionFst_inr, dgComp_zero]
-      · rw [dgHomEquiv_extensionSnd_inr]
+    rw [dgDifferential_apply_zero, map_neg, map_neg, Pi.neg_apply, Pi.neg_apply, dgComp_apply,
+      Fintype.sum_sum_type]
+    rcases k with i | i <;> simp [-DGCategoryData.dgId_toDGCategory, d_zero_one_dgHomEquiv_dgId,
+      ↓dgHomEquiv_twist_extension_inl_inl, ↓dgHomEquiv_twist_extension_inl_inr,
+      ↓dgHomEquiv_twist_extension_inr_inl, ↓dgHomEquiv_twist_extension_inr_inr]
 
 end differentials
 
@@ -530,11 +475,7 @@ theorem dgComp_extensionInl_extensionFst :
     dgComp R (extensionInl R hg) (extensionFst R hg) (add_zero 0) = dgId R P :=
   dgHom_ext' fun i j ↦ by
     rw [dgComp_apply, dgId_apply, Fintype.sum_sum_type]
-    refine (congrArg₂ (· + ·) (Fintype.sum_congr _ _ fun l ↦ ?_)
-      (Finset.sum_eq_zero fun l _ ↦ ?_)).trans ((add_zero _).trans
-        (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 0 (dgId R P.obj) l j) i))
-    · rw [dgHomEquiv_extensionInl_inl, dgHomEquiv_extensionFst_inl]
-    · rw [dgHomEquiv_extensionInl_inr, zero_dgComp]
+    simp [-DGCategoryData.dgId_toDGCategory]
 
 /-- The inclusion of `P` into an extension followed by the projection onto `Q` vanishes. -/
 @[simp↓]
@@ -542,10 +483,7 @@ theorem dgComp_extensionInl_extensionSnd :
     dgComp R (extensionInl R hg) (extensionSnd R hg) (add_zero 0) = 0 :=
   dgHom_ext' fun i j ↦ by
     rw [dgComp_apply, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply, Fintype.sum_sum_type]
-    refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-      (Finset.sum_eq_zero fun l _ ↦ ?_)).trans (add_zero 0)
-    · rw [dgHomEquiv_extensionSnd_inl, dgComp_zero]
-    · rw [dgHomEquiv_extensionInl_inr, zero_dgComp]
+    simp
 
 /-- The inclusion of `Q` into an extension followed by the projection onto `P` vanishes. -/
 @[simp↓]
@@ -553,10 +491,7 @@ theorem dgComp_extensionInr_extensionFst :
     dgComp R (extensionInr R hg) (extensionFst R hg) (add_zero 0) = 0 :=
   dgHom_ext' fun i j ↦ by
     rw [dgComp_apply, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply, Fintype.sum_sum_type]
-    refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-      (Finset.sum_eq_zero fun l _ ↦ ?_)).trans (add_zero 0)
-    · rw [dgHomEquiv_extensionInr_inl, zero_dgComp]
-    · rw [dgHomEquiv_extensionFst_inr, dgComp_zero]
+    simp
 
 /-- The inclusion of `Q` into an extension followed by the projection onto `Q` is the
 identity. -/
@@ -565,11 +500,7 @@ theorem dgComp_extensionInr_extensionSnd :
     dgComp R (extensionInr R hg) (extensionSnd R hg) (add_zero 0) = dgId R Q :=
   dgHom_ext' fun i j ↦ by
     rw [dgComp_apply, dgId_apply, Fintype.sum_sum_type]
-    refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-      (Fintype.sum_congr _ _ fun l ↦ ?_)).trans ((zero_add _).trans
-        (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 0 (dgId R Q.obj) l j) i))
-    · rw [dgHomEquiv_extensionInr_inl, zero_dgComp]
-    · rw [dgHomEquiv_extensionInr_inr, dgHomEquiv_extensionSnd_inr]
+    simp [-DGCategoryData.dgId_toDGCategory]
 
 /-- **An extension is the direct sum of `P` and `Q` as a graded object**: the projections
 followed by the inclusions sum to the identity. -/
@@ -580,27 +511,13 @@ theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
     rw [map_add, map_add, Pi.add_apply, Pi.add_apply, dgComp_apply, dgComp_apply, dgId_apply]
     rcases a with i | i <;> rcases b with j | j
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inl]
-      refine (congrArg₂ (· + ·) ((Fintype.sum_congr _ _ fun l ↦ ?_).trans
-        (sum_dgHomEquiv_dgId_dgComp R (fun l ↦ matrixEquiv R _ _ 0 (dgId R P.obj) l j) i))
-          (Finset.sum_eq_zero fun l _ ↦ ?_)).trans (add_zero _)
-      · rw [dgHomEquiv_extensionFst_inl, dgHomEquiv_extensionInl_inl]
-      · rw [dgHomEquiv_extensionSnd_inl, zero_dgComp]
+      simp [-DGCategoryData.dgId_toDGCategory]
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inr]
-      refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-        (Finset.sum_eq_zero fun l _ ↦ ?_)).trans (add_zero 0)
-      · rw [dgHomEquiv_extensionInl_inr, dgComp_zero]
-      · rw [dgHomEquiv_extensionSnd_inl, zero_dgComp]
+      simp
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inl]
-      refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-        (Finset.sum_eq_zero fun l _ ↦ ?_)).trans (add_zero 0)
-      · rw [dgHomEquiv_extensionFst_inr, zero_dgComp]
-      · rw [dgHomEquiv_extensionInr_inl, dgComp_zero]
+      simp
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inr]
-      refine (congrArg₂ (· + ·) (Finset.sum_eq_zero fun l _ ↦ ?_)
-        ((Fintype.sum_congr _ _ fun l ↦ ?_).trans (sum_dgHomEquiv_dgId_dgComp R
-          (fun l ↦ matrixEquiv R _ _ 0 (dgId R Q.obj) l j) i))).trans (zero_add _)
-      · rw [dgHomEquiv_extensionFst_inr, zero_dgComp]
-      · rw [dgHomEquiv_extensionSnd_inr, dgHomEquiv_extensionInr_inr]
+      simp [-DGCategoryData.dgId_toDGCategory]
 
 end biproduct
 

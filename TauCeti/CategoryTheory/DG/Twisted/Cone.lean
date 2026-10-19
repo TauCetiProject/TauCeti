@@ -109,6 +109,7 @@ section cone
 variable {X Y : C} (f : DGHom R 0 X Y) (hf : dgDifferential R 0 f = 0)
 
 /-- The block of the twisting matrix of the cone from `X[1]` to `Y[0]` is `f`. -/
+@[simp↓]
 theorem dgHomEquiv_twist_cone_inr_inl (u u' : PUnit) :
     DGShiftClosure.dgHomEquiv R ⟨X, 1⟩ ⟨Y, 0⟩ 1
         (matrixEquiv R _ _ 1 (cone f hf).twist (.inr u) (.inl u')) =
