@@ -138,12 +138,13 @@ noncomputable def fromExtendScalars (hP : IsDGRightModule hB ℳP dP)
       coe_toLinearMap]
   have hFb (a : A) (m : M) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
       F (op a • m) x = F m (a • x) := by
-    rw [hF, hF, map_smul, DGRightModule.RestrictScalars.val_op_smul,
-      DGAlgHom.bimoduleOf_symm_smul_left, op_mul, mul_smul]
+    simp only [hF, map_smul, DGRightModule.RestrictScalars.val_op_smul,
+      Algebra.TensorProduct.smul_moduleLeft, Bimodule.symm_smul, unop_one, mul_one,
+      GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom, op_mul, mul_smul]
   have hFs (b : Bᵐᵒᵖ) (m : M) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
       F m (b • x) = b • F m x := by
-    rw [hF, hF, DGAlgHom.bimoduleOf_symm_smul_right, ← mul_smul, smul_eq_mul_unop, op_mul,
-      op_unop]
+    simp only [hF, Algebra.TensorProduct.smul_moduleRight, Bimodule.symm_smul, map_one,
+      one_mul, op_mul, op_unop, mul_smul]
   { toFun := BalancedTensorProduct.lift F hFb
     map_add' := map_add _
     map_smul' := BalancedTensorProduct.lift_smul_right Bᵐᵒᵖ F hFb hFs
