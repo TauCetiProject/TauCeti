@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.Existence
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.LocalRealization
 public import TauCeti.NumberTheory.QuadraticForm.Global.SignPrescription
-import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.QuadraticForm.Global.Classification
 import TauCeti.NumberTheory.QuadraticForm.Global.DiagonalApproximation
 import TauCeti.NumberTheory.QuadraticForm.Global.Discrepancy
@@ -110,10 +109,7 @@ theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index
     hWR ⟨w, Finset.mem_univ w⟩
   -- Step 2: the places where `W_v` and `U_v` differ are those where the Hasse signs differ; they
   -- are finitely many, and an even number by the two Hasse product formulas.
-  have hJ : (W.globalInvariants hW).hasseProduct = 1 :=
-    W.globalInvariants_hasseProduct_eq_one_of_subsingleton_h1_globalFormation hW
-      fun _ _ _ _ V ↦ ClassFieldTheory.subsingleton_h1_globalFormation_of_forall_index_le h
-        (ClassFieldTheory.NormalLayer.ofOpenNormal V)
+  have hJ : (W.globalInvariants hW).hasseProduct = 1 := W.globalInvariants_hasseProduct_eq_one hW
   have hreal (w : {w : InfinitePlace K // w.IsReal}) :
       I.realHasse w = (W.globalInvariants hW).realHasse w := by
     simp [(hL.atRealPlace_equivalent_iff_realPositiveIndex_eq hW (by simp) w).mp (hWR' w)]

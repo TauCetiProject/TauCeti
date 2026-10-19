@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.QuadraticForm.Global.IdeleCharacter
 import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
-import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
+import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.FirstInequality
 import TauCeti.NumberTheory.QuadraticForm.Global.Nonsquare
 import TauCeti.NumberTheory.QuadraticForm.Global.ProductFormula
 
@@ -37,12 +37,11 @@ An idele that is a local non-norm exactly at the places of `S ∪ T` lies in `ke
 `#S + #T` is even, so it is `a · N(y)` for some `a ∈ Kˣ`; this `a` has the prescribed symbols.
 
 This file proves the kernel description and sign prescription from the product formula for `b` and
-the index bound for one `L`. It then derives both inputs from the Kummer case of the second
-fundamental inequality, the bound `[C_F : N_{L/F}(C_L)] ≤ p` for cyclic extensions `L/F` of prime
-degree `p` with `μ_p ⊆ F`: the Kummer case gives the vanishing of `H¹` of the idele classes and so
-the product formula, and at `p = 2` together with the first inequality it gives the norm index of
-`K(√b)/K`. Finally, choosing `b` by weak approximation gives the version in which `b` is not
-prescribed (O'Meara 71:19).
+the index bound for one `L`. The product formula is Hilbert reciprocity. The index bound is derived
+from the Kummer case of the second fundamental inequality, the bound `[C_F : N_{L/F}(C_L)] ≤ p` for
+cyclic extensions `L/F` of prime degree `p` with `μ_p ⊆ F`: at `p = 2`, together with the first
+inequality, it gives the norm index of `K(√b)/K`. Finally, choosing `b` by weak approximation gives
+the version in which `b` is not prescribed (O'Meara 71:19).
 
 ## Main results
 
@@ -180,11 +179,7 @@ theorem exists_hilbertSymbol_eq_ite_of_forall_index_le (b : Kˣ)
         hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = if v ∈ S then -1 else 1) ∧
       ∀ w : {w : InfinitePlace K // w.IsReal},
         hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = if w ∈ T then -1 else 1 := by
-  -- The Kummer case gives `H¹`-vanishing of the idele classes, hence the product formula.
-  have hprod (a : Kˣ) :=
-    finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_subsingleton_h1_globalFormation
-      (fun _ _ _ _ V ↦ ClassFieldTheory.subsingleton_h1_globalFormation_of_forall_index_le h
-        (ClassFieldTheory.NormalLayer.ofOpenNormal V)) a b
+  have hprod (a : Kˣ) := finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one a b
   by_cases hsq : IsSquare (b : K)
   · -- A square of `K` is a square at every place, so no place can be prescribed.
     have hsq' : IsSquare b := isSquare_units_val_iff.mp hsq
