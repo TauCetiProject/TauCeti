@@ -31,6 +31,8 @@ finite étale quotient of the component group.
 
 public section
 
+open CategoryTheory
+
 namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 universe u
@@ -55,10 +57,37 @@ theorem coinvariants_identityComponentHopfIdeal_eq_range
   apply CommHopfAlgCat.coinvariants_kernelHopfIdeal_eq_range
   apply (CommHopfAlgCat.faithfullyFlat_iff_injective_of_isGeometricallyReduced
     (componentCoordinateHom H)).mpr
-  have hinj : Function.Injective (componentCoordinateHom H).hom.toAlgHom := by
-    rw [hmap]
-    exact componentCoordinateMap_injective H
-  simpa only [BialgHom.coe_toAlgHom] using hinj
+  exact componentCoordinateHom_injective H
+
+/-- The constant component coordinate algebra is canonically isomorphic to the
+identity-component coinvariants, including for nonreduced affine groups. -/
+noncomputable def componentCoinvariantsIso (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    CommHopfAlgCat.of k
+        (ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) ≅
+      CommHopfAlgCat.coinvariants (isNormal_identityComponentHopfIdeal H) := by
+  let C := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))
+  let _ : Algebra.IsGeometricallyReduced k C := isGeometricallyReduced_of_smooth k C
+  let f := CommHopfAlgCat.liftCoinvariants (isNormal_identityComponentHopfIdeal H)
+    (componentCoordinateHom H) (kernelHopfIdeal_componentCoordinateHom H).le
+  have hff := (CommHopfAlgCat.faithfullyFlat_iff_injective_of_isGeometricallyReduced
+    (componentCoordinateHom H)).mpr (componentCoordinateHom_injective H)
+  have hbij := CommHopfAlgCat.bijective_liftCoinvariants_of_faithfullyFlat
+    (isNormal_identityComponentHopfIdeal H) (componentCoordinateHom H) hff
+    (kernelHopfIdeal_componentCoordinateHom H)
+  let _ : IsIso f := (ConcreteCategory.isIso_iff_bijective f).mpr hbij
+  exact asIso f
+
+/-- The comparison with coinvariants recovers the component coordinate morphism after
+composition with the coinvariant inclusion. -/
+@[reassoc (attr := simp)]
+theorem componentCoinvariantsIso_hom_comp (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    (componentCoinvariantsIso H).hom ≫
+        CommHopfAlgCat.coinvariantsι (isNormal_identityComponentHopfIdeal H) =
+      componentCoordinateHom H := by
+  ext x
+  exact CommHopfAlgCat.coe_liftCoinvariants_apply
+    (isNormal_identityComponentHopfIdeal H) (componentCoordinateHom H)
+    (kernelHopfIdeal_componentCoordinateHom H).le x
 
 /-- The invariant functions of a subgroup containing the identity component are
 finite-dimensional. Normality and reducedness are not required. -/
