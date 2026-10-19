@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import Mathlib.RingTheory.PowerSeries.Trunc
 
 /-!
 # Substitution of power series: orders, and the binomial series
@@ -31,6 +32,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
+* `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
+* `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a series of
+  zero constant coefficient is a substitution.
 * `TauCeti.hasSubst_binomialSeries_sub_one`: `(1 + X) ^ u - 1` can be substituted.
 -/
 
@@ -76,6 +80,41 @@ theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : 
   have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
   rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
+
+section Algebra
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The linear coefficient of `f (a)`, for `a` of zero constant coefficient, is the product of
+the linear coefficients of `f` and `a`. -/
+theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧) :
+    coeff 1 (f.subst a) = algebraMap R S (coeff 1 f) * coeff 1 a := by
+  obtain ⟨b, rfl⟩ := X_dvd_iff.mpr ha
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ 1, pow_one, Algebra.smul_def]
+  -- `(X * b) ^ d` has no linear term unless `d = 1`
+  rintro (_ | _ | d) hd
+  · simp
+  · exact absurd rfl hd
+  · simp [mul_pow, coeff_X_pow_mul']
+
+/-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` has zero constant coefficient is the
+substitution `f ↦ f (σ X)`. No continuity hypothesis is needed: `σ` agrees with the substitution
+on polynomials, and every power series is a polynomial up to a multiple of `X ^ (n + 1)`, which
+both maps send into multiples of `(σ X) ^ (n + 1)`. -/
+theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : constantCoeff (σ X) = 0) :
+    σ = substAlgHom (.of_constantCoeff_zero' hσ) := by
+  have hpoly : σ.comp (Polynomial.coeToPowerSeries.algHom R) =
+      (substAlgHom (.of_constantCoeff_zero' hσ)).comp (Polynomial.coeToPowerSeries.algHom R) :=
+    Polynomial.algHom_ext (by simp [substAlgHom_X])
+  refine AlgHom.ext fun f ↦ ext fun n ↦ ?_
+  obtain ⟨b, hb⟩ := X_dvd_iff.mpr hσ
+  have key (g : S⟦X⟧) : coeff n (σ X ^ (n + 1) * g) = 0 := by
+    simp [hb, mul_pow, mul_assoc, coeff_X_pow_mul']
+  rw [eq_X_pow_mul_shift_add_trunc (n + 1) f]
+  simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
+  exact congr(coeff n ($hpoly (trunc (n + 1) f)))
+
+end Algebra
 
 end PowerSeries
 
