@@ -43,6 +43,8 @@ of unity.
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
+* `TauCeti.hasEnoughRootsOfUnity_of_isPrimitiveRoot`: a domain containing a primitive `n`-th
+  root of unity has enough `n`-th roots of unity.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
@@ -108,6 +110,11 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
   rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
     (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
   rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
+
+/-- A domain containing a primitive `n`-th root of unity has enough `n`-th roots of unity. -/
+theorem hasEnoughRootsOfUnity_of_isPrimitiveRoot [IsDomain R] {n : ℕ} [NeZero n]
+    {ζ : R} (hζ : IsPrimitiveRoot ζ n) : HasEnoughRootsOfUnity R n :=
+  ⟨⟨ζ, hζ⟩, rootsOfUnity.isCyclic R n⟩
 
 /-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
 `n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,
