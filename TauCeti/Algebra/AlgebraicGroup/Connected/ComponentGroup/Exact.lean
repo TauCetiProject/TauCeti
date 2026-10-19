@@ -59,7 +59,6 @@ private theorem exists_kernel_point_of_mapComponentGroup_eq_one (f : Q ⟶ G)
   let S := N.map (rationalComponentMap G)
   let indicator : ConnectedComponents (PrimeSpectrum G) → k := fun D ↦ if D ∈ S then 1 else 0
   let e := componentFunctionAlgHom G indicator
-  -- The components meeting the kernel form a subgroup, so their indicator is invariant.
   have hi : IsIdempotentElem indicator := by
     ext D
     simp only [indicator, Pi.mul_apply]
@@ -68,46 +67,32 @@ private theorem exists_kernel_point_of_mapComponentGroup_eq_one (f : Q ⟶ G)
   have heval (g : HopfAlgebra.points (R := k) (H := G) (CommAlgCat.of k k)) :
       g.ofConv e = indicator (rationalComponentMap G g) :=
     eval_componentFunctionAlgHom G g indicator
+  -- The components meeting the kernel form a subgroup, so their indicator is invariant.
   have hecoinv : e ∈ (CommHopfAlgCat.kernelHopfIdeal f.hom).coinvariants := by
-    apply (HopfIdeal.mem_coinvariants_iff_forall_rational_mul_of_isIdempotentElem _ he).mpr
+    apply (HopfIdeal.mem_coinvariants_iff_forall_mul_of_isIdempotentElem (K := k) _ he).mpr
     intro g n hn
     have hnS : rationalComponentMap G n ∈ S := Subgroup.mem_map.mpr ⟨n, hn, rfl⟩
     simp only [heval, map_mul, indicator, S.mul_mem_cancel_right hnS]
-  rw [CommHopfAlgCat.coinvariants_kernelHopfIdeal_eq_range f.hom hf] at hecoinv
-  obtain ⟨a, ha⟩ := hecoinv
-  have ha' : f.hom.hom a = e := ha
-  have haidem : IsIdempotentElem a := by
-    apply hf.injective
-    rw [map_mul, ha]
-    exact he
+  obtain ⟨a, haidem, ha⟩ :=
+    f.hom.exists_map_eq_of_isIdempotentElem_mem_coinvariants hf he hecoinv
   have hε : (Bialgebra.counitAlgHom k Q) a = 1 := by
-    have h := AlgHom.congr_fun (BialgHom.counitAlgHom_comp f.hom.hom) a
-    have heone : (Bialgebra.counitAlgHom k G) e = 1 := by
-      simpa only [AlgHom.convOne_apply, Algebra.algebraMap_self_apply, map_one,
-        indicator, Subgroup.one_mem, ite_true, Bialgebra.counitAlgHom_apply] using
-        heval (1 : HopfAlgebra.points (R := k) (H := G) (CommAlgCat.of k k))
-    simpa only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, ha', heone] using h.symm
+    calc
+      Bialgebra.counitAlgHom k Q a = Bialgebra.counitAlgHom k G (f.hom.hom a) :=
+        (AlgHom.congr_fun (BialgHom.counitAlgHom_comp f.hom.hom) a).symm
+      _ = 1 := by
+        rw [ha, Bialgebra.counitAlgHom_apply, counit_componentFunctionAlgHom]
+        simp only [indicator, Subgroup.one_mem, ite_true]
   obtain ⟨g, hg⟩ := rationalComponentMap_surjective G C
   let q := BialgHom.mapDomain (A := k) f.hom.hom g
   have hq : rationalComponentMap Q q = 1 := by
     rw [← mapComponentGroup_rationalComponentMap f, hg, hC]
-  have hqmem : rationalKernelPoint Q q ∈
-      connectedComponent (Bialgebra.augmentationPoint k Q : PrimeSpectrum Q) := by
-    apply ConnectedComponents.coe_eq_coe'.mp
-    exact (rationalComponentMap_apply Q q).symm.trans
-      (hq.trans (rationalKernelPoint_one_component Q).symm)
-  -- The descended idempotent is one at the identity, hence on its whole component.
-  have hopen := PrimeSpectrum.isClopen_iff.mpr ⟨a, haidem, rfl⟩
-  have hidentity : (Bialgebra.augmentationPoint k Q : PrimeSpectrum Q) ∈
-      PrimeSpectrum.basicOpen a :=
-    (AlgHom.kernelPoint_mem_basicOpen_iff (Bialgebra.counitAlgHom k Q) a).mpr
-      (hε.trans_ne one_ne_zero)
+  -- The descended idempotent is nonzero on the whole identity component.
   have hnonzero : q.ofConv a ≠ 0 :=
-    (AlgHom.kernelPoint_mem_basicOpen_iff q.ofConv a).mp
-      (hopen.connectedComponent_subset hidentity hqmem)
+    ofConv_ne_zero_of_isIdempotentElem_of_rationalComponentMap_eq_one Q haidem
+      (hε.trans_ne one_ne_zero) q hq
   have he_nonzero : g.ofConv e ≠ 0 := by
     simpa only [q, BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
-      BialgHom.coe_toAlgHom, ha'] using hnonzero
+      BialgHom.coe_toAlgHom, ha] using hnonzero
   have hCS : C ∈ S := by
     by_contra hnot
     apply he_nonzero
@@ -115,8 +100,8 @@ private theorem exists_kernel_point_of_mapComponentGroup_eq_one (f : Q ⟶ G)
   exact Subgroup.mem_map.mp hCS
 
 /-- The kernel of the component homomorphism consists exactly of the components meeting the
-scheme-theoretic kernel. This holds for faithfully flat maps between arbitrary finite-type
-affine groups, including nonreduced groups in positive characteristic. -/
+scheme-theoretic kernel. This holds for faithfully flat maps between finite-type affine groups
+over an algebraically closed field, including nonreduced groups in positive characteristic. -/
 theorem ker_mapComponentGroup (f : Q ⟶ G)
     (hf : f.hom.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     (mapComponentGroup f).ker =

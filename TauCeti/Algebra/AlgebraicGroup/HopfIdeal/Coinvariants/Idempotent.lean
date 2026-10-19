@@ -11,10 +11,10 @@ import Mathlib.RingTheory.FiniteStability
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
-# Detecting invariant idempotents on rational points
+# Detecting invariant idempotents on algebraically closed points
 
-For an idempotent function on an affine group of finite type over an algebraically closed
-field, invariance under a closed subgroup can be tested on rational points. Neither the
+For an idempotent function on an affine group of finite type over a field, invariance under a
+closed subgroup can be tested on points valued in an algebraically closed extension. Neither the
 group nor the subgroup needs to be reduced. This permits descent of unions of connected
 components along faithfully flat group homomorphisms.
 
@@ -35,16 +35,17 @@ namespace TauCeti.HopfIdeal
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k K : Type u} [Field k] [Field K] [Algebra k K] [IsAlgClosed K]
   {H : CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
 
 /-- An idempotent function is invariant under a closed subgroup exactly when its values on
-rational points are invariant. The subgroup and the ambient group may be nonreduced. -/
-theorem mem_coinvariants_iff_forall_rational_mul_of_isIdempotentElem
+points valued in an algebraically closed extension are invariant. The subgroup and the ambient
+group may be nonreduced. -/
+theorem mem_coinvariants_iff_forall_mul_of_isIdempotentElem
     (I : HopfIdeal k H) {e : H} (he : IsIdempotentElem e) :
     e ∈ I.coinvariants ↔
-      ∀ (g n : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)),
-        n ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k) →
+      ∀ (g n : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k K)),
+        n ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k K) →
           (g * n).ofConv e = g.ofConv e := by
   refine ⟨fun h g n hn ↦ ofConv_mul_apply_of_mem_coinvariants h g hn, fun h ↦ ?_⟩
   let coact := (Algebra.TensorProduct.map (AlgHom.id k H)
@@ -55,11 +56,11 @@ theorem mem_coinvariants_iff_forall_rational_mul_of_isIdempotentElem
       inferInstance inferInstance
   apply mem_coinvariants_iff.mpr
   apply eq_of_isIdempotentElem_of_forall_algHom_apply_eq
-    (k := k) (K := k) (he.map coact) (he.map inc)
+    (k := k) (K := K) (he.map coact) (he.map inc)
   intro p
   let g := p.comp inc
   let n := (p.comp Algebra.TensorProduct.includeRight).comp (Ideal.Quotient.mkₐ k I.toIdeal)
-  have hn : toConv n ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k) := by
+  have hn : toConv n ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k K) := by
     apply (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H I _ _).mpr
     intro x hx
     simp [n, Ideal.Quotient.eq_zero_iff_mem.mpr (mem_toIdeal.mpr hx)]
