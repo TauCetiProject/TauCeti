@@ -25,8 +25,7 @@ two-power level from their values at `-1` and `5`.
 
 * `ZMod.unitsTwoPowFive`: the class of `5` in `(ZMod (2 ^ (e + 3)))ˣ`.
 * `ZMod.orderOf_unitsTwoPowFive`: it has order `2 ^ (e + 1)`.
-* `ZMod.unitsMap_unitsTwoPowFive`, `ZMod.unitsMap_neg_one`: reduction modulo `4` sends `5`
-  to `1`, and reduction modulo any divisor sends `-1` to `-1`.
+* `ZMod.unitsMap_unitsTwoPowFive`: reduction modulo `4` sends `5` to `1`.
 * `ZMod.neg_one_notMem_zpowers_unitsTwoPowFive`: `-1` is not a power of `5`.
 * `ZMod.unitsTwoPowEquiv`: the isomorphism with `ℤ/2 × ℤ/2^(e+1)`.
 * `ZMod.unitsTwoPowEquiv_symm_apply`, `ZMod.unitsTwoPowEquiv_neg_one`,
@@ -61,12 +60,6 @@ theorem orderOf_unitsTwoPowFive : orderOf (unitsTwoPowFive e) = 2 ^ (e + 1) := b
   rw [← orderOf_units, coe_unitsTwoPowFive]
   exact ZMod.orderOf_five (e + 1)
 
-/-- Reduction modulo a divisor sends the unit `-1` to `-1`. -/
-@[simp]
-theorem unitsMap_neg_one {m n : ℕ} (h : n ∣ m) : unitsMap h (-1) = -1 := by
-  ext
-  simp [unitsMap_val, cast_neg h, cast_one h]
-
 /-- Reduction modulo `4` sends the unit `5` modulo `2 ^ (e + 3)` to `1`. -/
 @[simp]
 theorem unitsMap_unitsTwoPowFive (h : 4 ∣ 2 ^ (e + 3)) : unitsMap h (unitsTwoPowFive e) = 1 := by
@@ -84,7 +77,9 @@ theorem neg_one_notMem_zpowers_unitsTwoPowFive :
     rw [Subgroup.zpowers_le, MonoidHom.mem_ker, unitsMap_unitsTwoPowFive]
   intro h
   have h' := hle h
-  rw [MonoidHom.mem_ker, unitsMap_neg_one] at h'
+  have hneg : unitsMap h4 (-1) = -1 := by
+    simpa only [unitsMap_def] using Units.map_neg_one (castHom h4 (ZMod 4))
+  rw [MonoidHom.mem_ker, hneg] at h'
   exact absurd h' (by decide)
 
 /-- The homomorphism `(s, k) ↦ (-1) ^ s * 5 ^ k`, well defined since `(-1) ^ 2 = 1` and

@@ -63,7 +63,8 @@ theorem exists_character_units_two_pow (n : ℕ) :
     exact_mod_cast (pow_dvd_pow 2 (show 2 ≤ n + 3 by omega))
   let ρ := ZMod.unitsMap h4
   have hρu : ρ u = 1 := ZMod.unitsMap_unitsTwoPowFive n h4
-  have hρneg : ρ (-1) = -1 := ZMod.unitsMap_neg_one h4
+  have hρneg : ρ (-1) = -1 := by
+    simpa only [ρ, ZMod.unitsMap_def] using Units.map_neg_one (ZMod.castHom h4 (ZMod 4))
   let χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ) :=
     if χ₀ (Additive.ofMul (-1)) = 0 then χ₀ + δ.comp ρ.toAdditive else χ₀
   have hχu : χ (Additive.ofMul u) = ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) := by
