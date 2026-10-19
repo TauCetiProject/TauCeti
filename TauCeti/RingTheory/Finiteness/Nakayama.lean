@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Nakayama
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+-- Proof-only: ideals of `ℤ` are principal.
+import Mathlib.RingTheory.Int.Basic
 
 /-!
-# A Nakayama lemma with weighted generators
+# Nakayama's lemma with weighted generators, and over `ℤ`
 
 Let `M` be a module over a commutative ring `R`, spanned by a finite family `b`, and let `I` be an
 ideal. Mathlib's `Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul` says that if
@@ -25,6 +28,10 @@ determinant of `diag e - θ` kills every `b k`, and it is `∏ᵢ e i` modulo `I
 This is the commutative-algebra step of the proof, due to Artin and Tate, that the transfer of a
 finite group into its commutator subgroup is trivial: there `R` is the integral group ring of a
 finite abelian group, `I` its augmentation ideal and `e i` the orders of a basis of the group.
+
+The file also records the form of Nakayama's lemma over `ℤ` used to pass from statements modulo
+every prime to integral statements: a finitely generated subgroup `N` of an abelian group with
+`N = p • N` for every prime `p` is zero (`Submodule.eq_bot_of_forall_prime_le_smul`).
 
 ## References
 
@@ -71,5 +78,25 @@ theorem exists_sub_prod_mem_and_smul_eq_zero (I : Ideal R) {b : ι → M}
     | zero => exact smul_zero _
     | add x y _ _ hx hy => rw [smul_add, hx, hy, add_zero]
     | smul r x _ hx => rw [smul_comm, hx, smul_zero]
+
+/-- **Nakayama's lemma over `ℤ`.** A finitely generated subgroup `N` of an abelian group with
+`N ≤ p • N` for every prime `p` is zero. -/
+theorem eq_bot_of_forall_prime_le_smul {M : Type*} [AddCommGroup M] {N : Submodule ℤ M}
+    (hN : N.FG) (h : ∀ p : ℕ, p.Prime → N ≤ Ideal.span {(p : ℤ)} • N) : N = ⊥ := by
+  rw [← annihilator_eq_top_iff]
+  obtain ⟨a, ha⟩ := (IsPrincipalIdealRing.principal N.annihilator).principal
+  rw [ha, Ideal.submodule_span_eq, Ideal.span_singleton_eq_top, Int.isUnit_iff_natAbs_eq]
+  by_contra ha1
+  -- Some `r ≡ 1 (mod p)` kills `N`, for a prime `p` dividing the generator of the annihilator.
+  have hp := Nat.minFac_prime ha1
+  obtain ⟨r, hr1, hr⟩ := exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul _ N hN (h _ hp)
+  have hra : r ∈ Ideal.span {a} := by
+    rw [← Ideal.submodule_span_eq, ← ha]
+    exact mem_annihilator.2 hr
+  rw [Ideal.mem_span_singleton] at hra hr1
+  have hpa : (a.natAbs.minFac : ℤ) ∣ a := Int.natCast_dvd.2 (Nat.minFac_dvd _)
+  have h1 : (a.natAbs.minFac : ℤ) ∣ 1 := by
+    simpa using dvd_sub (hpa.trans hra) hr1
+  exact hp.one_lt.ne' (by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) h1)
 
 end Submodule

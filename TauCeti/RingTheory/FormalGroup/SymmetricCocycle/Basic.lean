@@ -43,7 +43,9 @@ additive 2-cocycle of degree `n`, compatible with every change of coefficients, 
 coefficients generate the unit ideal of `ℤ`. Consequently `r • C_n = 0` forces `r = 0` in *every*
 commutative ring `R`, including rings with torsion: the multiple of `C_n` representing a cocycle
 is unique. The converse, existence, is the symmetric 2-cocycle lemma: every homogeneous symmetric
-additive 2-cocycle of degree `n` is a multiple of `C_n`.
+additive 2-cocycle of degree `n` is a multiple of `C_n`
+(`TauCeti.exists_eq_smul_lazardCocycle`, in
+`TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification`).
 
 ## Main definitions
 
