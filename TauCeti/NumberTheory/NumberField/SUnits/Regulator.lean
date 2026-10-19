@@ -216,6 +216,13 @@ private theorem logMatrix_apply {ι : Type*} (ε : ι → (S : Set (HeightOneSpe
       (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k) :=
   rfl
 
+private theorem logMatrix_eq {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
+    (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) :
+    logMatrix ε w' e = Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
+      (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
+      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k) :=
+  rfl
+
 /-- Deleting the column of the infinite place `w'` from the full matrix of weighted logarithms
 gives the matrix of the determinant formula. -/
 private theorem fullLogMatrix_submatrix {ι : Type*}
@@ -257,7 +264,7 @@ theorem regulator_eq_abs_det {ι : Type*} [Fintype ι] [DecidableEq ι]
     ext i k
     rcases hk : e₀ k with w | v <;> simp [logMatrix_apply, hk]
   -- Then move the omitted place from `w₀` to `w'`.
-  change regulator S = |(logMatrix ε w' e).det|
+  rw [← logMatrix_eq]
   rw [h₀, ← fullLogMatrix_submatrix, ← fullLogMatrix_submatrix]
   exact Matrix.abs_det_submatrix_eq_of_sum_eq_zero _ (sum_fullLogMatrix ε) _ _
 
