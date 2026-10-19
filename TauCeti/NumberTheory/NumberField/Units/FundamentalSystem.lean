@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.NumberTheory.NumberField.Units.Log.Embedding
+import Mathlib.Data.Fin.Tuple.Sort
 import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
 import TauCeti.NumberTheory.NumberField.Units.Log.Ball
@@ -27,7 +28,9 @@ When the `ℓ¹` norms of the `u j` increase with `j`, the `j`-th member of `ε`
 `max 1 ((j + 1) / 2)` times as long as `u j` (`ZLattice.exists_basis_gauge_le_max_one_mul`), so
 the product of the norms grows at most by `r! / 2 ^ (r - 1)`, where `r = rank K`. The height of a
 unit is bounded by the `ℓ¹` norm of its logarithmic embedding, so this bounds the product of the
-heights of `ε` by `r! / 2 ^ (r - 1)` times the product of the `ℓ¹` norms of the `u j`.
+heights of `ε` by `r! / 2 ^ (r - 1)` times the product of the `ℓ¹` norms of the `u j`. That
+product does not depend on the order of the `u j`, so after sorting `u` by `ℓ¹` norm the product
+bounds hold for every independent family.
 
 Units realizing the successive minima of the unit lattice with respect to the `ℓ¹` ball have
 increasing `ℓ¹` norms, and Minkowski's second theorem bounds the product of these norms by
@@ -128,36 +131,36 @@ theorem exists_fundSystem_sum_abs_logEmbedding_le_max_one_mul {u : Fin (rank K) 
 
 open Classical in
 /-- **A fundamental system of controlled height.** If the logarithmic embeddings of
-`u 0, …, u (r - 1)` are linearly independent and their `ℓ¹` norms increase, where `r = rank K`,
-some fundamental system `ε` has `∏ i, logHeight₁ (ε i) ≤ r! / 2 ^ (r - 1) * ∏ i, ‖log u i‖₁`,
-where `‖log x‖₁` is the `ℓ¹` norm of the logarithmic embedding of `x`. -/
+`u 0, …, u (r - 1)` are linearly independent, where `r = rank K`, some fundamental system `ε` has
+`∏ i, logHeight₁ (ε i) ≤ r! / 2 ^ (r - 1) * ∏ i, ‖log u i‖₁`, where `‖log x‖₁` is the `ℓ¹` norm
+of the logarithmic embedding of `x`. -/
 theorem exists_fundSystem_prod_logHeight₁_le_of_isMaxRank {u : Fin (rank K) → (𝓞 K)ˣ}
-    (hu : IsMaxRank u)
-    (hmono : Monotone fun i ↦ ∑ w, |logEmbedding K (Additive.ofMul (u i)) w|) :
+    (hu : IsMaxRank u) :
     ∃ ε : Fin (rank K) → (𝓞 K)ˣ, Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤ ∧
       ∏ i, logHeight₁ (ε i : K) ≤ ((rank K).factorial : ℝ) / 2 ^ (rank K - 1) *
         ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (u i)) w| := by
-  obtain ⟨ε, hε, hle⟩ := exists_fundSystem_sum_abs_logEmbedding_le_max_one_mul hu hmono
+  let n : Fin (rank K) → ℝ := fun i ↦ ∑ w, |logEmbedding K (Additive.ofMul (u i)) w|
+  obtain ⟨ε, hε, hle⟩ := exists_fundSystem_sum_abs_logEmbedding_le_max_one_mul
+    (u := u ∘ Tuple.sort n) (hu.comp _ (Tuple.sort n).injective) (Tuple.monotone_sort n)
   refine ⟨ε, hε, ?_⟩
-  rw [← prod_max_one_add_one_div_two, ← Finset.prod_mul_distrib]
+  rw [← Equiv.prod_comp (Tuple.sort n) n, ← prod_max_one_add_one_div_two,
+    ← Finset.prod_mul_distrib]
   refine Finset.prod_le_prod₀ (fun i _ ↦ zero_le_logHeight₁ _) fun i _ ↦ ?_
-  have h := two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (ε i)
-  linarith [hle i]
+  exact (le_of_mul_le_mul_left (two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (ε i))
+    two_pos).trans (hle i)
 
 open Classical in
 /-- **A fundamental system of controlled absolute height.** If the logarithmic embeddings of
-`u 0, …, u (r - 1)` are linearly independent and their `ℓ¹` norms increase, where `r = rank K`,
-some fundamental system `ε` has
-`∏ i, absLogHeight₁ (ε i) ≤ r! / (2 ^ (r - 1) * [K : ℚ] ^ r) * ∏ i, ‖log u i‖₁`,
-where `‖log x‖₁` is the `ℓ¹` norm of the logarithmic embedding of `x`. -/
+`u 0, …, u (r - 1)` are linearly independent, where `r = rank K`, some fundamental system `ε`
+has `∏ i, absLogHeight₁ (ε i) ≤ r! / (2 ^ (r - 1) * [K : ℚ] ^ r) * ∏ i, ‖log u i‖₁`, where
+`‖log x‖₁` is the `ℓ¹` norm of the logarithmic embedding of `x`. -/
 theorem exists_fundSystem_prod_absLogHeight₁_le_of_isMaxRank {u : Fin (rank K) → (𝓞 K)ˣ}
-    (hu : IsMaxRank u)
-    (hmono : Monotone fun i ↦ ∑ w, |logEmbedding K (Additive.ofMul (u i)) w|) :
+    (hu : IsMaxRank u) :
     ∃ ε : Fin (rank K) → (𝓞 K)ˣ, Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤ ∧
       ∏ i, absLogHeight₁ (ε i : K) ≤
         ((rank K).factorial : ℝ) / (2 ^ (rank K - 1) * (finrank ℚ K : ℝ) ^ rank K) *
           ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (u i)) w| := by
-  obtain ⟨ε, hε, hle⟩ := exists_fundSystem_prod_logHeight₁_le_of_isMaxRank hu hmono
+  obtain ⟨ε, hε, hle⟩ := exists_fundSystem_prod_logHeight₁_le_of_isMaxRank hu
   refine ⟨ε, hε, ?_⟩
   have hd : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
   simp_rw [absLogHeight₁_eq_div, Finset.prod_div_distrib, Finset.prod_const, Finset.card_univ,
