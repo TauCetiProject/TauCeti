@@ -52,6 +52,8 @@ That classification is not proved here; the results below take `δ` as given.
 * `SimpleGraph.Connected.exists_pos_smul_le_sum`: on a connected graph, a nonzero nonnegative
   weight with `c • δ i ≤ ∑_{j ∼ i} δ j` can be replaced by a positive one. In particular this
   applies to superadditive weights, for which `c • δ i = 2 * δ i`.
+* `SimpleGraph.exists_adj_of_pos_two_mul_le_sum`: a positive superadditive weight on a graph
+  leaves no isolated vertex.
 
 ## References
 
@@ -338,6 +340,20 @@ theorem Connected.exists_pos_smul_le_sum (hG : G.Connected) {c : C} {δ : V → 
   · simp only [Finset.sum_apply, smul_sum]
     rw [sum_comm]
     exact sum_le_sum fun w _ => (hx w).2 i
+
+omit [DecidableEq V] in
+/-- **A positive superadditive weight on a graph excludes isolated vertices.** If a weight `δ` on
+the vertices of a finite simple graph, over a strictly ordered commutative ring, is positive at
+every vertex and satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex, then every vertex of the graph
+has a neighbour. -/
+theorem exists_adj_of_pos_two_mul_le_sum
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    (δ : V → S) (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j)
+    (i : V) : ∃ j, G.Adj i j := by
+  obtain ⟨j, hj, -⟩ :=
+    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
+  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
 
 end Superadditive
 

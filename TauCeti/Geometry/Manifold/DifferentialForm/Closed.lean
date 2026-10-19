@@ -56,12 +56,8 @@ theorem isClosed_zero : (0 : SmoothForm I M F k).IsClosed := by
 theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
     (h' : form'.IsClosed) : (form + form').IsClosed := by
   rw [isClosed_def, SmoothForm.add_toRoughForm]
-  have hform : IsSmoothForm I ∞ form.1 := by
-    exact (isSmoothForm_def ∞ _).mpr
-      ((isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp form.2))
-  have hform' : IsSmoothForm I ∞ form'.1 := by
-    exact (isSmoothForm_def ∞ _).mpr
-      ((isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp form'.2))
+  have hform : IsSmoothForm I ∞ form.1 := form.isSmoothForm
+  have hform' : IsSmoothForm I ∞ form'.1 := form'.isSmoothForm
   funext x
   rw [mextDeriv_add
     ((hform.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp))

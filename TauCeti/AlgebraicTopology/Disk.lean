@@ -12,6 +12,7 @@ public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
+public import TauCeti.Topology.Homotopy.Extension.Ball
 
 import TauCeti.Topology.UnitInterval.OpenSquare
 
@@ -22,7 +23,10 @@ The closed Euclidean disk is contractible, and its boundary is path-connected wh
 dimension at least two.  The disk is a `T₃` space, in particular Hausdorff, so the inclusion of its
 boundary sphere is a closed embedding (`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
-the topological input for relative-homology calculations.
+the topological input for relative-homology calculations. A map out of the boundary sphere is
+null-homotopic exactly when it extends over the disk
+(`TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq`), which is how maps are
+extended over attached cells.
 
 Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 `EuclideanSpace ℝ (Fin n)`.  It is homeomorphic to the unit sphere of the Euclidean space
@@ -100,6 +104,24 @@ lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u
   rfl
 
 end TauCeti.TopCat
+
+namespace TopCat.Hom
+
+/-- **A map out of the boundary sphere of a disk is null-homotopic exactly when it extends over
+the disk.** -/
+theorem nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq {Y : TopCat.{u}} {n : ℕ}
+    (φ : TopCat.diskBoundary.{u} n ⟶ Y) :
+    φ.hom.Nullhomotopic ↔ ∃ F : TopCat.disk.{u} n ⟶ Y, TopCat.diskBoundaryInclusion n ≫ F = φ := by
+  constructor
+  · intro hφ
+    obtain ⟨G, hG⟩ := (ContinuousMap.nullhomotopic_iff_exists_extension_closedBall
+      (φ.hom.comp ⟨ULift.up, continuous_uliftUp⟩)).1 (hφ.comp_left _)
+    exact ⟨TopCat.ofHom (G.comp ⟨ULift.down, continuous_uliftDown⟩), by ext s; exact hG s.down⟩
+  · rintro ⟨F, rfl⟩
+    exact ((id_nullhomotopic (TopCat.disk n)).comp_right F.hom).comp_left
+      (TopCat.diskBoundaryInclusion n).hom
+
+end TopCat.Hom
 
 namespace TauCeti
 
