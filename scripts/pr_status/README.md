@@ -312,3 +312,9 @@ checkout described above. `test_zulip` covers review reactions, PR post
 rendering, legacy-message rewriting, batch continuation, dry runs, and rate-limit
 retry. All GitHub and Zulip reads and writes are stubbed, so these need no
 network.
+
+GitHub reads require `gh` and `jq`. The read helper captures response headers,
+honors `Retry-After` and exhausted-quota reset times, and applies jq filters
+locally after decoding JSON response boundaries. Paginated bodies never include
+HTTP headers. If the requested wait exceeds the remaining 180-second sleep
+budget, it stops immediately and holds later reads until that deadline.
