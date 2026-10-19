@@ -96,6 +96,15 @@ theorem root_geckWeylRootIndex (l : List (Fin t.rank)) (i : Fin t.rank) :
       t.geckWeylWordProd ht l • (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) :=
   (RootPairing.weylGroup_apply_root _ _ _).symm
 
+/-- The simple root at `i`, evaluated on the inverse Weyl translate of `s`, is the root at
+`geckWeylRootIndex l i` evaluated on `s`. -/
+theorem torusCharacter_geckWeylTorusAction_inv_root_simpleIndex (l : List (Fin t.rank))
+    (i : Fin t.rank) (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    torusCharacter (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s)
+        ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) =
+      torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
+  rw [torusCharacter_geckWeylTorusAction, inv_inv, root_geckWeylRootIndex]
+
 /-- The empty word attaches the simple root itself. -/
 @[simp]
 theorem geckWeylRootIndex_nil (i : Fin t.rank) :
@@ -247,15 +256,14 @@ theorem geckWeightTorusPoints_conj_geckWeylRootSubgroupPoints (l : List (Fin t.r
   -- Write `s` as the word's action on `s' = w⁻¹ • s`, so that the torus point of `s` is the
   -- conjugate of the torus point of `s'` by the word's Weyl representative.
   set s' := t.geckWeylTorusAction ht A w⁻¹ s
-  have hs : t.geckWeylWordTorusAction ht l A s' = s := by
-    rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, ← MulAut.mul_apply, ← map_mul,
-      mul_inv_cancel, map_one, MulAut.one_apply]
+  have hs : t.geckWeylWordTorusAction ht l A s' = s :=
+    t.geckWeylWordTorusAction_geckWeylTorusAction_inv ht l A s
   have hT := t.geckWeylWordPoint_conj_geckWeightTorusPoints ht l A s'
   rw [hs] at hT
   have hchar :
       (torusCharacter s' ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) : A) =
-        torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
-    rw [torusCharacter_geckWeylTorusAction, inv_inv, root_geckWeylRootIndex]
+        torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) :=
+    congrArg Units.val (t.torusCharacter_geckWeylTorusAction_inv_root_simpleIndex ht l i A s)
   simp only [geckWeylRootSubgroupPoints_apply, ← hT, ← hchar,
     ← t.geckWeightTorusPoints_conj_geckRootSubgroupPoints_root_simpleIndex ht i A s' u]
   group

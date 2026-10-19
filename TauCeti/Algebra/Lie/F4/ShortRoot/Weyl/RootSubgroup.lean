@@ -120,29 +120,6 @@ theorem map_weylRootSubgroupPoints {A : Type v} {B : Type w} [CommRing A] [CommR
 
 /-! ## The pinning equation at every root -/
 
--- These two root-datum identities are stated over `Fin t.rank`: rewriting with the generic Weyl
--- lemmas directly in goals about `Fin 4`-indexed words fails, since `Fin 4` and `Fin F4.rank`
--- agree only after unfolding `rank`.
-
-/-- The word action undoes the abstract action of the inverse of the element it spells. -/
-private theorem geckWeylWordTorusAction_geckWeylTorusAction_inv (t : DynkinType) (ht : t.Valid)
-    (l : List (Fin t.rank)) (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
-    t.geckWeylWordTorusAction ht l A
-        (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s) = s := by
-  rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, ← MulAut.mul_apply, ← map_mul,
-    mul_inv_cancel, map_one, MulAut.one_apply]
-
-/-- The simple root at `i`, evaluated on the inverse Weyl translate of `s`, is the root at
-`geckWeylRootIndex l i` evaluated on `s`. -/
-private theorem torusCharacter_geckWeylTorusAction_inv_root_simpleIndex (t : DynkinType)
-    (ht : t.Valid) (l : List (Fin t.rank)) (i : Fin t.rank) (A : Type v) [CommRing A]
-    (s : Fin t.rank → Aˣ) :
-    TauCeti.torusCharacter (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s)
-        ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) =
-      TauCeti.torusCharacter s
-        ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
-  rw [t.torusCharacter_geckWeylTorusAction, inv_inv, t.root_geckWeylRootIndex]
-
 /-- **The pinning equation of a Weyl-transported root subgroup.** Conjugation by a weight-torus
 point `s` rescales the parameter of `x_{l,i}` by the character of the root at
 `F4.geckWeylRootIndex valid_F4 l i`, that is `w αᵢ` with `w` the Weyl-group element spelled
@@ -162,14 +139,14 @@ theorem weightTorusPoints_conj_weylRootSubgroupPoints (l : List (Fin 4)) (i : Fi
   have hT : weylWordPoint l A * weightTorusPoints A s' * (weylWordPoint l A)⁻¹ =
       weightTorusPoints A s :=
     (weylWordPoint_conj_weightTorusPoints l A s').trans
-      (congrArg _ (geckWeylWordTorusAction_geckWeylTorusAction_inv F4 valid_F4 l A s))
+      (congrArg _ (F4.geckWeylWordTorusAction_geckWeylTorusAction_inv valid_F4 l A s))
   have hchar :
       (TauCeti.torusCharacter s'
           ((F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i)) : A) =
         TauCeti.torusCharacter s
           ((F4.simplyConnectedRootDatum valid_F4).root (F4.geckWeylRootIndex valid_F4 l i)) :=
     congrArg Units.val
-      (torusCharacter_geckWeylTorusAction_inv_root_simpleIndex F4 valid_F4 l i A s)
+      (F4.torusCharacter_geckWeylTorusAction_inv_root_simpleIndex valid_F4 l i A s)
   rw [weylRootSubgroupPoints_apply, weylRootSubgroupPoints_apply, ← hT, ← hchar,
     ← weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex valid_F4 i A s' u]
   group
