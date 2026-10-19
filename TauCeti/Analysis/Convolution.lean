@@ -28,7 +28,8 @@ linear map, for instance to mollify the image of a function in a dual space.
 
 Mollification by a nonnegative real kernel `ρ` of integral `1` supported in `ball 0 R` preserves
 one-sided bounds: a lower (upper) bound on `g` over `ball x₀ R` is a lower (upper) bound on
-`(ρ ⋆ g) x₀`. So as the supports of the kernels shrink, the mollifications of a function lower
+`(ρ ⋆ g) x₀`, and a bound on the norm of a vector-valued `f` over `ball x₀ R` bounds the norm of
+`(ρ ⋆ f) x₀`. So as the supports of the kernels shrink, the mollifications of a function lower
 (upper) semicontinuous at `x₀` eventually lie almost above (below) its value there, and the minimum
 (maximum) of the mollification and the function tends to that value.
 
@@ -40,6 +41,8 @@ one-sided bounds: a lower (upper) bound on `g` over `ball x₀ R` is a lower (up
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
 * `MeasureTheory.le_convolution_lsmul_of_forall_le` and
   `MeasureTheory.convolution_lsmul_le_of_forall_le`: one-sided bounds on a ball pass to the
+  mollification at its centre.
+* `MeasureTheory.norm_convolution_lsmul_le_of_forall_norm_le`: a norm bound on a ball passes to the
   mollification at its centre.
 * `MeasureTheory.eventually_lt_convolution_lsmul_of_lowerSemicontinuousAt` and
   `MeasureTheory.eventually_convolution_lsmul_lt_of_upperSemicontinuousAt`: mollification by
@@ -128,6 +131,24 @@ theorem convolution_lsmul_le_of_forall_le (hρs : Function.support ρ ⊆ ball 0
   have := le_convolution_lsmul_of_forall_le (c := -c) (g := fun y ↦ -g y) hρs hρ0 hρ1
     (by simpa [ConvolutionExistsAt] using hg.integrable.neg) fun y hy ↦ neg_le_neg (h y hy)
   linarith
+
+/-- **Sup-norm bounds survive mollification.** If `ρ` is a nonnegative kernel of integral `1`
+supported in `ball 0 R` and `‖f‖ ≤ M` on `ball x₀ R`, then `‖(ρ ⋆ f) x₀‖ ≤ M`. -/
+theorem norm_convolution_lsmul_le_of_forall_norm_le {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [CompleteSpace E'] [BorelSpace G] [SecondCountableTopology G]
+    [μ.IsAddLeftInvariant] [SFinite μ] {f : G → E'} {M : ℝ}
+    (hρs : Function.support ρ ⊆ ball 0 R) (hρ0 : ∀ y, 0 ≤ ρ y) (hρ1 : ∫ y, ρ y ∂μ = 1)
+    (hf : AEStronglyMeasurable f μ) (h : ∀ y ∈ ball x₀ R, ‖f y‖ ≤ M) :
+    ‖(ρ ⋆[lsmul ℝ ℝ, μ] f) x₀‖ ≤ M := by
+  -- The kernel has integral `1`, so its support, and hence `ball 0 R`, is nonempty.
+  have hR : 0 < R := by
+    by_contra hR
+    have hρ : ρ = 0 := Function.support_eq_empty_iff.1
+      (Set.subset_empty_iff.1 (hρs.trans (ball_eq_empty.2 (not_lt.1 hR)).subset))
+    simp [hρ] at hρ1
+  simpa using dist_convolution_le (z₀ := (0 : E'))
+    ((norm_nonneg _).trans (h x₀ (mem_ball_self hR))) hρs hρ0 hρ1 hf
+    (fun y hy ↦ by simpa using h y hy)
 
 variable {ι : Type*} {l : Filter ι} {ρ : ι → G → ℝ}
 

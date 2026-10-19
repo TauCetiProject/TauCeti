@@ -78,14 +78,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 
 namespace IsContinuityEquation
 
-/-- Mollifying by a normalized bump does not increase the sup norm. -/
-private theorem norm_normed_convolution_le (β : ContDiffBump (0 : ℝ × E))
-    (hu : LocallyIntegrable u m) (huM : ∀ q, ‖u q‖ ≤ M) (q : ℝ × E) :
-    ‖(β.normed m ⋆[lsmul ℝ ℝ, m] u) q‖ ≤ M := by
-  simpa using dist_convolution_le (z₀ := (0 : ℝ)) ((norm_nonneg _).trans (huM 0))
-    β.support_normed_eq.subset β.nonneg_normed β.integral_normed hu.aestronglyMeasurable
-    (fun q _ ↦ by simpa using huM q) (x₀ := q)
-
 /-- **Smooth subsolutions.** Let `t ↦ νₜ` be a curve of finite measures, narrowly continuous on
 `[a, b]`, solving the continuity equation with velocity `v` on `(a, b)`. For a bounded `C¹`
 function `u` of time and space with bounded derivative such that
@@ -120,7 +112,8 @@ private theorem ofReal_integral_convolution_sub_le_lintegral
       ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (L (v t x)) ∂(ν t : Measure E) := by
   refine h.ofReal_integral_sub_integral_le_lintegral_of_fderiv_le hν hab
     (β.hasCompactSupport_normed.contDiff_convolution_left _ β.contDiff_normed hu)
-    (norm_normed_convolution_le β hu huM)
+    (fun _ ↦ norm_convolution_lsmul_le_of_forall_norm_le β.support_normed_eq.subset
+      β.nonneg_normed β.integral_normed hu.aestronglyMeasurable fun q _ ↦ huM q)
     (β.hasCompactSupport_normed.norm_fderiv_convolution_left_le β.contDiff_normed hu huM)
     fun t ht x w ↦ β.hasCompactSupport_normed.fderiv_convolution_left_apply_le β.contDiff_normed
       β.nonneg_normed β.integral_normed hu ?_
@@ -160,7 +153,9 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
     tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
   let ψ (n : ℕ) : ℝ × E → ℝ := (β n).normed m ⋆[lsmul ℝ ℝ, m] u
   have hψM (n : ℕ) (q : ℝ × E) : |ψ n q| ≤ M := by
-    simpa [Real.norm_eq_abs] using norm_normed_convolution_le (β n) hloc huM q
+    simpa [Real.norm_eq_abs] using norm_convolution_lsmul_le_of_forall_norm_le
+      (β n).support_normed_eq.subset (β n).nonneg_normed (β n).integral_normed
+      hloc.aestronglyMeasurable fun q _ ↦ huM q
   have huM' (q : ℝ × E) : |u q| ≤ M := by simpa [Real.norm_eq_abs] using huM q
   have hψmeas (n : ℕ) (t : ℝ) : Measurable fun x : E ↦ ψ n (t, x) :=
     (((β n).hasCompactSupport_normed.continuous_convolution_left _ (β n).continuous_normed
