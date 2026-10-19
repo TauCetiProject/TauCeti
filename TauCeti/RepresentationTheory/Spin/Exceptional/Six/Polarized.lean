@@ -60,22 +60,6 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 -- Formal lineage: the split comparison was introduced in Tau Ceti PR #16324, and the
 -- arbitrary-form group endpoint in `Six.Group` was introduced in Tau Ceti PR #17008.
 
-private theorem polarizedSpinGroupFirstFactor_matrix
-    [Invertible (2 : K)] (P : SpinPolarizationData Q)
-    [FiniteDimensional K V]
-    [FiniteDimensional K (spinPlus Q P)]
-    (hline : P.line = ⊥)
-    (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
-    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
-    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
-    let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-    let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-      (P.nondegenerate_of_line_eq_bot hline) hV
-    (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
-      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
-  exact coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
-    P hline hW hplus hV b hb s
-
 private noncomputable def polarizedSpinGroupMulHom
     [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
     (hline : P.line = ⊥)
@@ -95,7 +79,8 @@ private noncomputable def polarizedSpinGroupMulHom
               LinearMap.toMatrix b b
                 (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
             simpa only [e, u] using
-              polarizedSpinGroupFirstFactor_matrix P hline hW hplus hV b hb s
+              coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+                P hline hW hplus hV b hb s
           rw [hm, LinearMap.det_toMatrix]
           exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
       map_one' := Subtype.ext (by
@@ -128,7 +113,8 @@ private theorem polarizedSpinGroupMulHom_matrix
   -- The definition of the local homomorphism contains a special-linear subtype.  Its matrix
   -- projection is definitionally this first-factor value, which is the form of the helper above.
   change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = _
-  exact polarizedSpinGroupFirstFactor_matrix P hline hW hplus hV b hb s
+  exact coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    P hline hW hplus hV b hb s
 
 private theorem polarizedSpinGroupMulHom_bijective
     [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]

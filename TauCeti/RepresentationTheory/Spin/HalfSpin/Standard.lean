@@ -35,7 +35,8 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V}
 
 /-- A matrix formula for the even half-spin action identifies that representation with the
-standard representation pulled back along the corresponding special-linear equivalence. -/
+standard representation pulled back along the corresponding homomorphism to the special linear
+group. -/
 theorem nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action
     {n : ℕ} {P : SpinPolarizationData Q} (hline : P.line = ⊥)
     (b : Basis (Fin n) K (spinPlus Q P))
