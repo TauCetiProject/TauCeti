@@ -23,6 +23,8 @@ exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
 
 ## Main results
 
+* `CliffordAlgebra.algebraMap_mem_spinGroup_of_isUnit`: a square root of unity lies in the Spin
+  group as soon as the quadratic form takes a unit value.
 * `CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff`: a Spin element is in the kernel
 exactly when it is `1` or the canonical scalar `-1`.
 * `QuadraticMap.Isometry.spinGroupMap_negOne`: maps induced by quadratic isometries preserve the
@@ -65,21 +67,20 @@ section Scalar
 
 variable {K : Type u} [Field K] [Module K M]
 
-/-! ### The scalar `-1` in the Spin group -/
+/-! ### Square roots of unity, and the scalar `-1`, in the Spin group -/
 
-/-- The scalar `-1` belongs to the Spin group when the quadratic form is a unit
-on some vector. -/
-theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
-    (hvQ : IsUnit (Q v)) :
-    (-1 : CliffordAlgebra Q) ∈ spinGroup Q := by
+/-- A square root of unity belongs to the Spin group when the quadratic form is a unit on some
+vector: it is the product of the two invertible vectors `ζ (Q v)⁻¹ • v` and `v`. -/
+theorem algebraMap_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
+    (hvQ : IsUnit (Q v)) {ζ : R} (hζ : ζ ^ 2 = 1) :
+    algebraMap R (CliffordAlgebra Q) ζ ∈ spinGroup Q := by
   let _ : Invertible (Q v) := hvQ.invertible
-  let a : R := -⅟(Q v)
-  have ha : IsUnit a := (isUnit_of_invertible (⅟(Q v))).neg
-  let _ : Invertible a := ha.invertible
+  let a : R := ζ * ⅟(Q v)
+  have ha : IsUnit a := (IsUnit.of_pow_eq_one hζ two_ne_zero).mul (isUnit_of_invertible _)
   have havQ : IsUnit (Q (a • v)) := QuadraticMap.isUnit_apply_smul ha hvQ
   let _ : Invertible (Q (a • v)) := havQ.invertible
   let x := unitι Q (a • v) * unitι Q v
-  have hx : (x : CliffordAlgebra Q) = -1 := by
+  have hx : (x : CliffordAlgebra Q) = algebraMap R _ ζ := by
     simp only [x, Units.val_mul, coe_unitι, map_smul, Algebra.smul_def]
     rw [mul_assoc, ι_sq_scalar, ← map_mul]
     simp [a]
@@ -87,8 +88,16 @@ theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
   refine ⟨?_, ?_⟩
   · refine ⟨⟨x, mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _), hx⟩,
       ?_⟩
-    simp [Unitary.mem_iff]
-  · exact (CliffordAlgebra.even Q).neg_mem (CliffordAlgebra.even Q).one_mem
+    rw [SetLike.mem_coe, Unitary.mem_iff, star_algebraMap, ← map_mul, ← sq, hζ, map_one]
+    exact ⟨rfl, rfl⟩
+  · exact (CliffordAlgebra.even Q).algebraMap_mem ζ
+
+/-- The scalar `-1` belongs to the Spin group when the quadratic form is a unit
+on some vector. -/
+theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
+    (hvQ : IsUnit (Q v)) :
+    (-1 : CliffordAlgebra Q) ∈ spinGroup Q := by
+  simpa using algebraMap_mem_spinGroup_of_isUnit Q v hvQ (ζ := -1) neg_one_sq
 
 /-- The scalar `-1` belongs to the Spin group of a nonzero quadratic form over a field. -/
 theorem neg_one_mem_spinGroup (Q : QuadraticForm K M) (hQ : Q ≠ 0) :
