@@ -6,10 +6,12 @@ Authors: Claude, Codex, The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Exponential
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
+import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Probability.Density
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
@@ -37,12 +39,15 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 
 ## Main results
 
-* `integrable_expMeasure_iff`, `integral_expMeasure_eq` — integrability and integration against
-  the exponential law, transferred to the real density;
+* `integrable_expMeasure_iff`, `integral_expMeasure_eq`,
+  `integrable_expMeasure_iff_integrableOn_Ioi`, `integral_expMeasure_eq_integral_Ioi` —
+  integrability and integration against the exponential law, transferred to the real density;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
+* `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
+  integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
@@ -79,6 +84,14 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
+/-- `expMeasure r` is its exponential density against Lebesgue measure restricted to the
+positive half-line. -/
+theorem expMeasure_eq_withDensity_restrict_Ioi (r : ℝ) :
+    expMeasure r = (volume.restrict (Ioi (0 : ℝ))).withDensity (exponentialPDF r) := by
+  -- Mathlib defines the exponential measure and density as the shape-one Gamma versions.
+  change gammaMeasure 1 r = (volume.restrict (Ioi (0 : ℝ))).withDensity (gammaPDF 1 r)
+  exact gammaMeasure_eq_withDensity_restrict_Ioi 1 r
+
 /-- The measure `expMeasure r` is concentrated on the positive reals, for every `r`. For `0 < r`
 this says an exponential random variable is almost surely positive; for `r ≤ 0` the measure is
 zero and the statement holds trivially. -/
@@ -111,6 +124,21 @@ theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
   rw [expMeasure_eq_withDensity_ofReal]
   exact Probability.integral_withDensity_ofReal
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
+
+/-- Integrability against an exponential law is integrability of the weighted integrand over
+`(0, ∞)`. -/
+theorem integrable_expMeasure_iff_integrableOn_Ioi (hr : 0 < r) (g : ℝ → E) :
+    Integrable g (expMeasure r) ↔
+      IntegrableOn (fun x => (r * exp (-(r * x))) • g x) (Ioi 0) := by
+  rw [expMeasure, integrable_gammaMeasure_iff_integrableOn_Ioi one_pos hr]
+  simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one]
+
+/-- An integral against an exponential law is the set integral of the weighted integrand over
+`(0, ∞)`. -/
+theorem integral_expMeasure_eq_integral_Ioi (hr : 0 < r) (g : ℝ → E) :
+    ∫ x, g x ∂expMeasure r = ∫ x in Ioi 0, (r * exp (-(r * x))) • g x := by
+  rw [expMeasure, integral_gammaMeasure_eq_integral_Ioi one_pos hr]
+  simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one]
 
 end Transfer
 
@@ -146,6 +174,58 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 @[simp]
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
+
+/-- The logarithm belongs to every finite `Lᵖ` space under a positive-rate exponential law. -/
+theorem memLp_log_expMeasure (hr : 0 < r) (p : ℝ≥0) : MemLp log p (expMeasure r) := by
+  apply memLp_of_mem_interior_integrableExpSet
+  apply interior_mono (s := Ioi (-1))
+  · intro t ht
+    rw [integrableExpSet, expMeasure]
+    refine ((integrable_rpow_gammaMeasure_iff one_pos hr t).2 ht).congr ?_
+    filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
+    rw [Real.rpow_def_of_pos hx]
+    congr 1
+    ring
+  · simp
+
+/-- The logarithm is integrable under every positive-rate exponential law. -/
+@[simp]
+theorem integrable_log_expMeasure (hr : 0 < r) : Integrable log (expMeasure r) :=
+  memLp_one_iff_integrable.mp (memLp_log_expMeasure hr 1)
+
+/-- The mean of the logarithm under an exponential law of positive rate `r` is
+`-γ - log r`. -/
+@[simp]
+theorem integral_log_expMeasure (hr : 0 < r) :
+    ∫ e : ℝ, log e ∂expMeasure r = -Real.eulerMascheroniConstant - log r := by
+  rw [integral_expMeasure_eq_integral_Ioi hr]
+  simp only [smul_eq_mul]
+  have hscale := integral_comp_mul_left_Ioi'
+    (fun y : ℝ => exp (-y) * log (y / r)) 0 hr
+  simp only [mul_zero, mul_div_cancel_left₀ _ hr.ne', smul_eq_mul] at hscale
+  have hlog : IntegrableOn (fun x : ℝ => log x * exp (-x)) (Ioi 0) := by
+    simpa only [one_mul, mul_one, neg_mul, smul_eq_mul, mul_comm] using
+      (integrable_expMeasure_iff_integrableOn_Ioi one_pos log).mp
+        (integrable_log_expMeasure one_pos)
+  calc
+    (∫ x in Ioi 0, r * exp (-(r * x)) * log x) =
+        r * ∫ x in Ioi 0, exp (-(r * x)) * log x := by
+      rw [← integral_const_mul]
+      congr 1
+      funext x
+      ring
+    _ = ∫ x in Ioi 0, exp (-x) * log (x / r) := hscale
+    (∫ x in Ioi 0, exp (-x) * log (x / r)) =
+        ∫ x in Ioi 0, log x * exp (-x) - log r * exp (-x) := by
+      apply setIntegral_congr_fun measurableSet_Ioi
+      intro x hx
+      dsimp only
+      rw [log_div (ne_of_gt hx) hr.ne']
+      ring
+    _ = -Real.eulerMascheroniConstant - log r := by
+      rw [integral_sub hlog ((integrableOn_exp_neg_Ioi 0).const_mul _),
+        integral_const_mul, integral_exp_neg_Ioi_zero]
+      linarith [Real.eulerMascheroniConstant_eq_neg_integral_log]
 
 /-- **The exact exponential-integrability threshold.** The integrand `exp (t * x)` is integrable
 against an exponential law with positive rate `r` exactly when `t < r`. -/
