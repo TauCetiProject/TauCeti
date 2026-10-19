@@ -90,7 +90,7 @@ theorem totalVariationOn_comp_add_right (hVO : MapsTo (· + h) V Ω)
 preimage open set. -/
 theorem totalVariationOn_comap_add_right :
     totalVariationOn μ
-        (Opens.comap ⟨(· + h), continuous_id.add continuous_const⟩ Ω)
+        (Opens.comap (ContinuousMap.addRight h) Ω)
         (fun x => u (x + h)) =
       totalVariationOn μ Ω u := by
   apply totalVariationOn_comp_add_right
@@ -125,7 +125,7 @@ theorem perimeter_preimage_add_right (hVO : MapsTo (· + h) V Ω)
 /-- Perimeter is invariant when a set and its ambient open set are both pulled back by the same
 translation. -/
 theorem perimeter_comap_add_right :
-    perimeter μ (Opens.comap ⟨(· + h), continuous_id.add continuous_const⟩ Ω)
+    perimeter μ (Opens.comap (ContinuousMap.addRight h) Ω)
         ((· + h) ⁻¹' s) =
       perimeter μ Ω s := by
   rw [perimeter_def, perimeter_def, indicator_one_preimage_add_right]
