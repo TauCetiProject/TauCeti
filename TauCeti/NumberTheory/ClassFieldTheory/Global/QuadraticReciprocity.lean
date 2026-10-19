@@ -157,30 +157,8 @@ theorem coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInva
     Finset.prod_eq_one fun w _ ↦ (hilbertSymbol_unitAtRealPlace_eq_one_iff w a b).2
       (Or.inl (by simpa [ha] using (Fact.out : p.Prime).pos)), Units.val_one, mul_one]
 
-/-- **Quadratic reciprocity is Hilbert reciprocity for two odd primes.** For distinct odd primes
-`p` and `q`, the cohomological Hilbert invariants of `p` and `q` sum to zero over the places of
-`ℚ` exactly when `(p / q) (q / p) = (-1) ^ ((p - 1)/2 · (q - 1)/2)`. So Hilbert's reciprocity law
-`∑_v inv_v((p) ∪ (q)) = 0` gives the quadratic reciprocity law, its dyadic factor being the sign. -/
-theorem sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_eq_zero_iff
-    (hp : p ≠ 2) (hq : q ≠ 2) (hpq : p ≠ q) (ha : (a : ℚ) = p) (hb : (b : ℚ) = q) :
-    (∑ v ∈ finiteHilbertSupport ℚ a b, finiteHilbertInvariantAt ℚ v a b) +
-        ∑ w : InfinitePlace ℚ, infiniteHilbertInvariantAt ℚ w a b = 0 ↔
-      legendreSym q p * legendreSym p q = (-1) ^ (p / 2 * (q / 2)) := by
-  rw [← hilbertSign_eq_one_iff, Units.ext_iff,
-    coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt hp hq hpq ha
-      hb, Units.val_one]
-  have hs : ((-1 : ℤ) ^ (p / 2 * (q / 2))) * (-1) ^ (p / 2 * (q / 2)) = 1 := by
-    rw [← mul_pow]
-    simp
-  constructor <;> intro h
-  · linear_combination (-1 : ℤ) ^ (p / 2 * (q / 2)) * h -
-      legendreSym p q * legendreSym q p * hs
-  · linear_combination (-1 : ℤ) ^ (p / 2 * (q / 2)) * h + hs
-
-/-! ### The supplementary laws -/
-
 /-- Reading the sign `s · y` of a Hilbert reciprocity sum, with `s * s = 1`, as the equation
-`y = s`: this turns the evaluated sign of the sum into a supplementary law. -/
+`y = s`: this turns the evaluated sign of the sum into a reciprocity law. -/
 private theorem sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_eq_zero_iff_of
     {s y : ℤ} (hs : s * s = 1)
     (h : ((hilbertSign ((∑ v ∈ finiteHilbertSupport ℚ a b, finiteHilbertInvariantAt ℚ v a b) +
@@ -191,6 +169,23 @@ private theorem sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_
   constructor <;> intro h
   · linear_combination s * h - y * hs
   · linear_combination s * h + hs
+
+/-- **Quadratic reciprocity is Hilbert reciprocity for two odd primes.** For distinct odd primes
+`p` and `q`, the cohomological Hilbert invariants of `p` and `q` sum to zero over the places of
+`ℚ` exactly when `(p / q) (q / p) = (-1) ^ ((p - 1)/2 · (q - 1)/2)`. So Hilbert's reciprocity law
+`∑_v inv_v((p) ∪ (q)) = 0` gives the quadratic reciprocity law, its dyadic factor being the sign. -/
+theorem sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_eq_zero_iff
+    (hp : p ≠ 2) (hq : q ≠ 2) (hpq : p ≠ q) (ha : (a : ℚ) = p) (hb : (b : ℚ) = q) :
+    (∑ v ∈ finiteHilbertSupport ℚ a b, finiteHilbertInvariantAt ℚ v a b) +
+        ∑ w : InfinitePlace ℚ, infiniteHilbertInvariantAt ℚ w a b = 0 ↔
+      legendreSym q p * legendreSym p q = (-1) ^ (p / 2 * (q / 2)) := by
+  refine sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_eq_zero_iff_of
+    (by rw [← mul_pow]; simp) ?_
+  rw [coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt hp hq hpq ha
+    hb]
+  ring
+
+/-! ### The supplementary laws -/
 
 /-- **The finite part of the Hilbert product formula for an odd prime and a power of `2` up to
 sign.** Let `p` be an odd prime and `m` an integer divisible by no odd prime. Then the product over
