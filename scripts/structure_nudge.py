@@ -13,10 +13,10 @@ prefixes of its basename and report, as one advisory PR comment:
   definitions-only) and each ``PrefixBar.lean`` becoming ``Prefix/Bar.lean``,
   and places the new file there: move as you add.
 
-This check is advisory by construction: findings exit ``0``, every failure is
-downgraded to a ``::warning::`` annotation and exit ``0``, and the workflow step
-that runs it is ``continue-on-error``. It must never feed the ``build`` commit
-status.
+roadmap_label.py calls this check with a shared PR snapshot. Findings return
+``0``. Event runs turn its errors into ``::warning::`` annotations; recovery
+runs queue them for bounded retry. The standalone CLI warns and exits ``0`` on
+errors. This check never writes the ``build`` commit status.
 
 Tokenizer (the formal spec; see the tests for the fixture set): a basename splits
 into the tokens matched left to right by

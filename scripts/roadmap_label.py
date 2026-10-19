@@ -39,7 +39,8 @@ evidence.
 API calls shell out to authenticated `gh`. GH_READ_TOKEN can separate reads
 from App writes (GH_TOKEN). --reconcile-open repairs missed event runs;
 --sync-labels maintains label presentation separately from per-PR writes.
-`classify` and the parsing helpers are pure and are what the tests exercise.
+test_roadmap_label.py covers the pure classifier and parsing helpers;
+test_roadmap_api.py covers the API, mutation, and recovery paths.
 """
 
 from __future__ import annotations
