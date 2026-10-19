@@ -138,6 +138,7 @@ private theorem isAlgebraic_quotient (hA : IsAffinoidAlgebra K A) (x : MaximalSp
   have := hA.finite_quotient_of_isMaximal x.asIdeal
   infer_instance
 
+/-- The absolute value `|f(x)|` vanishes exactly when `f` lies in the maximal ideal `x`. -/
 theorem pointNorm_eq_zero_iff (hA : IsAffinoidAlgebra K A) {x : MaximalSpectrum A} {f : A} :
     pointNorm K x f = 0 ↔ f ∈ x.asIdeal := by
   let := Ideal.Quotient.field x.asIdeal
@@ -147,6 +148,8 @@ theorem pointNorm_eq_zero_iff (hA : IsAffinoidAlgebra K A) {x : MaximalSpectrum 
     fun h ↦ ?_⟩
   rw [pointNorm, h, spectralNorm_zero]
 
+/-- The absolute value at a classical point is multiplicative:
+`|(f * g)(x)| = |f(x)| * |g(x)|`. -/
 theorem pointNorm_mul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f g : A) :
     pointNorm K x (f * g) = pointNorm K x f * pointNorm K x g := by
   let := Ideal.Quotient.field x.asIdeal
@@ -154,12 +157,15 @@ theorem pointNorm_mul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f g 
   -- The spectral norm is multiplicative as the bundled `spectralMulAlgNorm`.
   simp only [pointNorm, map_mul, ← spectralMulAlgNorm_def]
 
+/-- `|(f ^ n)(x)| = |f(x)| ^ n` at every classical point `x`. -/
 theorem pointNorm_pow (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) (n : ℕ) :
     pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, hA.pointNorm_mul, ih, pow_succ]
 
+/-- The absolute value at a classical point is homogeneous for scalars of `K`:
+`|(c • f)(x)| = ‖c‖ * |f(x)|`. -/
 theorem pointNorm_smul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (c : K) (f : A) :
     pointNorm K x (c • f) = ‖c‖ * pointNorm K x f := by
   rw [Algebra.smul_def, hA.pointNorm_mul, pointNorm_algebraMap]
@@ -266,6 +272,7 @@ theorem bddAbove_range_pointNorm (hA : IsAffinoidAlgebra K A) (f : A) :
   rw [← hA.pointNorm_maximalSpectrumComap π x t]
   exact (isAffinoidAlgebra_tate (K := K) (σ := Fin n)).pointNorm_le_norm _ t
 
+/-- Each absolute value `|f(x)|` is bounded by the supremum seminorm `|f|sup`. -/
 theorem pointNorm_le_supSeminorm (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) :
     pointNorm K x f ≤ supSeminorm K f :=
   le_ciSup (hA.bddAbove_range_pointNorm f) x
@@ -280,6 +287,7 @@ theorem supSeminorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     supSeminorm K f ≤ ‖f‖ :=
   supSeminorm_le (norm_nonneg f) fun x ↦ hA.pointNorm_le_norm x f
 
+/-- The supremum seminorm is submultiplicative: `|f * g|sup ≤ |f|sup * |g|sup`. -/
 theorem supSeminorm_mul_le (hA : IsAffinoidAlgebra K A) (f g : A) :
     supSeminorm K (f * g) ≤ supSeminorm K f * supSeminorm K g :=
   supSeminorm_le (mul_nonneg (supSeminorm_nonneg f) (supSeminorm_nonneg g)) fun x ↦ by
@@ -294,6 +302,7 @@ theorem supSeminorm_add_le (hA : IsAffinoidAlgebra K A) (f g : A) :
     (hA.pointNorm_add_le x f g).trans
       (max_le_max (hA.pointNorm_le_supSeminorm x f) (hA.pointNorm_le_supSeminorm x g))
 
+/-- The supremum seminorm is nonarchimedean. -/
 theorem isNonarchimedean_supSeminorm (hA : IsAffinoidAlgebra K A) :
     IsNonarchimedean (supSeminorm K : A → ℝ) :=
   hA.supSeminorm_add_le
@@ -303,6 +312,7 @@ theorem supSeminorm_neg (hA : IsAffinoidAlgebra K A) (f : A) :
     supSeminorm K (-f) = supSeminorm K f := by
   simp only [supSeminorm, hA.pointNorm_neg]
 
+/-- The supremum seminorm is homogeneous for scalars of `K`: `|c • f|sup = ‖c‖ * |f|sup`. -/
 theorem supSeminorm_smul (hA : IsAffinoidAlgebra K A) (c : K) (f : A) :
     supSeminorm K (c • f) = ‖c‖ * supSeminorm K f := by
   simp only [supSeminorm, hA.pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
