@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Separation.Hausdorff
-public import TauCeti.Topology.Constructions
+public import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Quotients gluing only finitely many points
@@ -30,9 +30,10 @@ the glued points it is an open copy of the complement of the flags.
 * `Setoid.isClosedMap_quotient_mk`: the quotient map is closed when `X` is T₁.
 * `Setoid.t2Space_quotient`: the quotient is Hausdorff when `X` is.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk`: the quotient map restricted to the complement of
-  `t` is an open embedding when `X` is T₁, and `Setoid.image_quotient_mk_compl` identifies its
-  image with the complement of the image of `t`. This specializes
-  `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen` from `TauCeti.Topology.Constructions`.
+  `t` is an open embedding when `X` is T₁; `Setoid.image_quotient_mk_compl` from
+  `TauCeti.Topology.Constructions.Basic` identifies its image with the complement of the image of
+  `t`. This specializes `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen` from the same
+  file.
 
 Compactness of the quotient of a compact space is Mathlib's `Quotient.compactSpace`.
 -/
@@ -68,21 +69,6 @@ private theorem mem_diff_of_rel (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x �
   · have hxA : x ∈ A := by_contra fun h => hx.2 ⟨hst hxy hne, h⟩
     have hyA : y ∈ A := hA hxA hxy
     exact ⟨hAU hyA, fun h => h.2 hyA⟩
-
-/-- If an equivalence relation identifies only points of a finite set `t`, then the quotient map
-sends the complement of `t` onto the complement of the image of `t`. -/
-theorem image_quotient_mk_compl (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x ∈ t) :
-    Quotient.mk s '' tᶜ = (Quotient.mk s '' t)ᶜ := by
-  ext q
-  induction q using Quotient.inductionOn with | h y => ?_
-  simp only [mem_image, mem_compl_iff, Quotient.eq, not_exists, not_and]
-  constructor
-  · rintro ⟨x, hx, hxy⟩ z hz hzy
-    by_cases hne : x = z
-    · exact hx (hne ▸ hz)
-    · exact hx (hst (s.trans hxy (s.symm hzy)) hne)
-  · intro h
-    exact ⟨y, fun hy => h y hy (s.refl y), s.refl y⟩
 
 variable [TopologicalSpace X] (ht : t.Finite) (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x ∈ t)
 include ht hst

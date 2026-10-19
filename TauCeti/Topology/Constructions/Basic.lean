@@ -14,6 +14,8 @@ This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s 
 
 ## Main results
 
+* `Setoid.image_quotient_mk_compl`: if `s` identifies only points of `t`, the quotient map sends
+  the complement of `t` onto the complement of the image of `t`.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
@@ -25,7 +27,24 @@ open Set Topology
 
 namespace Setoid
 
-variable {X : Type*} [TopologicalSpace X] (s : Setoid X)
+variable {X : Type*} (s : Setoid X)
+
+/-- If an equivalence relation identifies only points of a set `t`, then the quotient map sends the
+complement of `t` onto the complement of the image of `t`. -/
+theorem image_quotient_mk_compl {t : Set X} (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x ∈ t) :
+    Quotient.mk s '' tᶜ = (Quotient.mk s '' t)ᶜ := by
+  ext q
+  induction q using Quotient.inductionOn with | h y => ?_
+  simp only [mem_image, mem_compl_iff, Quotient.eq, not_exists, not_and]
+  constructor
+  · rintro ⟨x, hx, hxy⟩ z hz hzy
+    by_cases hne : x = z
+    · exact hx (hne ▸ hz)
+    · exact hx (hst (s.trans hxy (s.symm hzy)) hne)
+  · intro h
+    exact ⟨y, fun hy => h y hy (s.refl y), s.refl y⟩
+
+variable [TopologicalSpace X]
 
 /-- The image in `Quotient s` of an open set closed under the relation `s` is open. -/
 theorem isOpen_image_quotient_mk {U : Set X} (hU : IsOpen U)
