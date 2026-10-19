@@ -58,8 +58,6 @@ variable {K : Type*} [Field K] [NumberField K] (S : Finset (HeightOneSpectrum (
 
 /-! ### The S-regulator -/
 
-variable (S)
-
 open Classical in
 /-- The `S`-regulator is the covolume of the `S`-unit lattice. -/
 def regulator : ‚Ñù := ZLattice.covolume (unitLattice S)
