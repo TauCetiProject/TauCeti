@@ -24,7 +24,7 @@ general API of `TauCeti.cellAttachment` applies to it. The map `f` extends to
 `TauCeti.cwApproximationStepMap f z n` out of it: over a cell of the first kind through a
 null-homotopy of the composite of its attaching map with `f`, and over the cell attached for `γ` by
 `γ` itself, read on the disk through `TauCeti.diskHomeomorphCube`. On homotopy groups at the base
-point:
+point, the first two items below assume that `Z` is Hausdorff, while the third holds for any `Z`:
 
 * attaching `(n + 1)`-cells changes no `πₖ` with `k < n` and is surjective on `πₙ` (Hatcher,
   Corollary 4.12), so the extension is bijective on `πₖ` for `k < n` exactly when `f` is
@@ -36,8 +36,9 @@ point:
 * the cell attached for `γ` is a sphere sent onto `γ`, so the extension is surjective on `πₙ₊₁`
   (`TauCeti.surjective_homotopyGroupMap_cwApproximationStepMap_succ`).
 
-So if `f` is bijective on `πₖ` for `k < n` and surjective on `πₙ`, the extension is bijective on
-`πₖ` for `k ≤ n` and surjective on `πₙ₊₁`, which is the inductive step of Hatcher's construction.
+So if `Z` is Hausdorff and `f` is bijective on `πₖ` for `k < n` and surjective on `πₙ`, the
+extension is bijective on `πₖ` for `k ≤ n` and surjective on `πₙ₊₁`, which is the inductive step
+of Hatcher's construction.
 All statements are about the homotopy groups at `z` and at its images.
 
 ## Main definitions
@@ -49,13 +50,14 @@ All statements are about the homotopy groups at `z` and at its images.
 
 ## Main results
 
-* `TauCeti.injective_homotopyGroupMap_cwApproximationStepMap`: the extension is injective on `πₙ`.
+* `TauCeti.injective_homotopyGroupMap_cwApproximationStepMap`: for Hausdorff `Z`, the extension is
+  injective on `πₙ`.
 * `TauCeti.surjective_homotopyGroupMap_cwApproximationStepMap_succ`: the extension is surjective on
   `πₙ₊₁`.
-* `TauCeti.bijective_homotopyGroupMap_cwApproximationStepMap_iff_of_lt`: below `n`, the extension
-  is bijective on `πₖ` exactly when `f` is.
-* `TauCeti.bijective_homotopyGroupMap_cwApproximationStepMap_iff_surjective`: the extension is
-  bijective on `πₙ` exactly when `f` is surjective on `πₙ`.
+* `TauCeti.bijective_homotopyGroupMap_cwApproximationStepMap_iff_of_lt`: for Hausdorff `Z`, below
+  `n`, the extension is bijective on `πₖ` exactly when `f` is.
+* `TauCeti.bijective_homotopyGroupMap_cwApproximationStepMap_iff_surjective`: for Hausdorff `Z`, the
+  extension is bijective on `πₙ` exactly when `f` is surjective on `πₙ`.
 
 ## References
 
