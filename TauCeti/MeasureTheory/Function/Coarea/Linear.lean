@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.NormDet
 public import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 
+import TauCeti.Analysis.Fredholm.Adjoint
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
@@ -49,6 +50,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
 /-- The Hausdorff integral on a linear fiber is the volume integral on any translate of the
 kernel parametrizing that fiber. This also holds for weights without a measurability assumption. -/
+@[simp]
 theorem lintegral_linear_fiber {x : E} (f : E → ℝ≥0∞) :
     ∫⁻ z in L ⁻¹' {L x}, f z ∂μHE[Module.finrank ℝ L.ker] =
       ∫⁻ z : L.ker, f (x + z) := by
@@ -74,7 +76,8 @@ theorem lintegral_coarea_linear (hL : Surjective L) {f : E → ℝ≥0∞}
     ENNReal.ofReal L.adjoint.normDet * ∫⁻ x, f x ∂(volume : Measure E) =
       ∫⁻ y : F, ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]
         ∂(volume : Measure F) := by
-  let R := orthogonalKerEquivOfSurjective L hL
+  let R := (L.orthogonalKerEquivRange L.range.closed_of_finiteDimensional).trans
+    (LinearIsometryEquiv.ofTop F L.range (LinearMap.range_eq_top.mpr hL)).toContinuousLinearEquiv
   let H : F → ℝ≥0∞ := fun y ↦
     ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]
   have harea :=
@@ -83,8 +86,12 @@ theorem lintegral_coarea_linear (hL : Surjective L) {f : E → ℝ≥0∞}
   have hchange : (∫⁻ y, H y ∂(volume : Measure F)) = ENNReal.ofReal L.adjoint.normDet *
       ∫⁻ u : L.kerᗮ, H (R u) := by
     have hrange : range R.toContinuousLinearMap = univ := R.surjective.range_eq
-    have hJ : R.toContinuousLinearMap.toLinearMap.normDet = L.adjoint.normDet :=
-      normDet_orthogonalKerEquivOfSurjective L hL
+    have hJ : R.toContinuousLinearMap.toLinearMap.normDet = L.adjoint.normDet := by
+      have hR : R.toContinuousLinearMap.toLinearMap = L.toLinearMap.domRestrict L.kerᗮ := by
+        ext u
+        simp [R]
+      rw [hR]
+      exact normDet_domRestrict_orthogonal_ker L hL
     simp only [image_univ, hrange, restrict_univ,
       R.toContinuousLinearMap.fderiv, hJ,
       lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
@@ -103,7 +110,7 @@ theorem lintegral_coarea_linear (hL : Surjective L) {f : E → ℝ≥0∞}
   · exact lintegral_prod _ hp
   apply lintegral_congr
   intro u
-  have hRu : R u = L u := orthogonalKerEquivOfSurjective_apply L hL u
+  have hRu : R u = L u := by simp [R]
   rw [hRu]
   simp only [H, lintegral_linear_fiber]
   simp only [e, Submodule.measurableEquivProd_symm_apply, vadd_eq_add, add_zero]
@@ -116,11 +123,16 @@ Borel measurable function of the target point. -/
 theorem measurable_lintegral_linear_fiber (hL : Surjective L) {f : E → ℝ≥0∞}
     (hf : Measurable f) :
     Measurable (fun y : F ↦ ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]) := by
-  let R := orthogonalKerEquivOfSurjective L hL
+  let : FiniteDimensional ℝ F := Module.Finite.of_surjective L.toLinearMap hL
+  let R := (L.orthogonalKerEquivRange L.range.closed_of_finiteDimensional).trans
+    (LinearIsometryEquiv.ofTop F L.range (LinearMap.range_eq_top.mpr hL)).toContinuousLinearEquiv
   have hcoord (y : F) :
       (∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]) =
         ∫⁻ z : L.ker, f ((R.symm y : E) + z) := by
-    have hy : L (R.symm y : E) = y := orthogonalKerEquivOfSurjective_symm_apply L hL y
+    have hR (u : L.kerᗮ) : R u = L u := by simp [R]
+    have hy : L (R.symm y : E) = y := by
+      rw [← hR]
+      exact R.apply_symm_apply y
     conv_lhs => rw [← hy]
     exact lintegral_linear_fiber f
   simp_rw [hcoord]

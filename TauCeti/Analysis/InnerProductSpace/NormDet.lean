@@ -41,10 +41,8 @@ identity.
   and its adjoint have the same norm determinant.
 * `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
   same Jacobian.
-* `TauCeti.orthogonalKerEquivOfSurjective`: a surjective map restricted to
-  the orthogonal complement of its kernel, as a continuous linear equivalence.
-* `TauCeti.normDet_orthogonalKerEquivOfSurjective`: the norm determinant of
-  this restriction equals that of the adjoint.
+* `TauCeti.normDet_domRestrict_orthogonal_ker`: the norm determinant of a surjective map
+  restricted to the orthogonal complement of its kernel equals that of its adjoint.
 * `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
 -/
 
@@ -166,51 +164,29 @@ theorem normDet_adjoint_of_finrank_eq {𝕜 U V : Type*} [RCLike 𝕜]
 
 open scoped RealInnerProductSpace
 
-/-- A surjective linear map restricts to a continuous linear equivalence from the orthogonal
-complement of its kernel onto the target. -/
-noncomputable def orthogonalKerEquivOfSurjective (L : U →L[ℝ] V) (hL : Surjective L) :
-    L.kerᗮ ≃L[ℝ] V :=
-  (LinearEquiv.ofBijective (L.toLinearMap.domRestrict L.kerᗮ)
-    ⟨LinearMap.injective_domRestrict_iff.mpr L.ker.isCompl_orthogonal.disjoint.symm,
-      (LinearMap.surjective_domRestrict_iff hL).mpr
-        L.ker.isCompl_orthogonal.symm.codisjoint⟩).toContinuousLinearEquiv
-
-omit [FiniteDimensional ℝ V] in
-/-- The orthogonal-kernel restriction equivalence acts by the original map. -/
-@[simp]
-theorem orthogonalKerEquivOfSurjective_apply (L : U →L[ℝ] V) (hL : Surjective L)
-    (u : L.kerᗮ) : orthogonalKerEquivOfSurjective L hL u = L u := (rfl)
-
-omit [FiniteDimensional ℝ V] in
-/-- Applying the original map to the inverse orthogonal-kernel restriction recovers the
-target point. -/
-@[simp]
-theorem orthogonalKerEquivOfSurjective_symm_apply (L : U →L[ℝ] V) (hL : Surjective L)
-    (y : V) : L ((orthogonalKerEquivOfSurjective L hL).symm y : U) = y := by
-  simpa only [orthogonalKerEquivOfSurjective_apply] using
-    (orthogonalKerEquivOfSurjective L hL).apply_symm_apply y
-
 /-- The norm determinant of a surjective map restricted to the orthogonal complement of its
 kernel equals the norm determinant of its adjoint. -/
-theorem normDet_orthogonalKerEquivOfSurjective (L : U →L[ℝ] V) (hL : Surjective L) :
-    (orthogonalKerEquivOfSurjective L hL).toLinearMap.normDet = L.adjoint.normDet := by
+theorem normDet_domRestrict_orthogonal_ker (L : U →L[ℝ] V) (hL : Surjective L) :
+    (L.toLinearMap.domRestrict L.kerᗮ).normDet = L.adjoint.normDet := by
   let P := L.kerᗮ
   have hmem (y : V) : L.toLinearMap.adjoint y ∈ P := by
     simpa only [P, LinearMap.orthogonal_ker] using
       (LinearMap.mem_range_self L.toLinearMap.adjoint y)
-  have heq : (orthogonalKerEquivOfSurjective L hL).toLinearMap.adjoint =
+  have heq : (L.toLinearMap.domRestrict L.kerᗮ).adjoint =
       L.toLinearMap.adjoint.codRestrict P hmem := by
     apply LinearMap.ext
     intro y
     apply ext_inner_right ℝ
     intro u
     rw [LinearMap.adjoint_inner_left, Submodule.coe_inner,
-      LinearEquiv.coe_toLinearMap, ContinuousLinearEquiv.coe_toLinearEquiv,
-      orthogonalKerEquivOfSurjective_apply,
-      LinearMap.codRestrict_apply]
+      LinearMap.domRestrict_apply, LinearMap.codRestrict_apply]
     exact (L.toLinearMap.adjoint_inner_left u y).symm
-  rw [← normDet_adjoint_of_finrank_eq _
-    (orthogonalKerEquivOfSurjective L hL).toLinearEquiv.finrank_eq,
+  have hdim : Module.finrank ℝ L.kerᗮ = Module.finrank ℝ V :=
+    (LinearEquiv.ofBijective (L.toLinearMap.domRestrict L.kerᗮ)
+      ⟨LinearMap.injective_domRestrict_iff.mpr L.ker.isCompl_orthogonal.disjoint.symm,
+        (LinearMap.surjective_domRestrict_iff hL).mpr
+          L.ker.isCompl_orthogonal.symm.codisjoint⟩).finrank_eq
+  rw [← normDet_adjoint_of_finrank_eq _ hdim,
     heq, LinearMap.normDet_codRestrict, ContinuousLinearMap.adjoint_toLinearMap]
 
 end TauCeti
