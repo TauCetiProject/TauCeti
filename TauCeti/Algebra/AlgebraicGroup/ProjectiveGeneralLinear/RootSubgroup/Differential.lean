@@ -61,9 +61,9 @@ theorem tangentEnd_derivationComp_rootSubgroup (hij : i ≠ j)
     tangentEnd n (derivationComp (B := B) (rootSubgroupCoordinateMap hij).hom d) =
       LinearMap.mulLeft B (Matrix.single i j (AdditiveGroup.gaTangentLinearEquiv d)) -
         LinearMap.mulRight B (Matrix.single i j (AdditiveGroup.gaTangentLinearEquiv d)) := by
-  rw [rootSubgroupCoordinateMap_def, CommHopfAlgCat.hom_comp, derivationComp_comp,
-    LinearMap.comp_apply, tangentEnd_derivationComp_conjugationMap,
-    GeneralLinear.tangentMatrix_derivationComp_rootSubgroup]
+  rw [tangentEnd_apply, tangentMatrix_quotientLieHom_derivationComp_rootSubgroup]
+  simp only [map_sub, toLinAlgEquiv_conjugationMatrix,
+    LinearMap.mulLeft_one, LinearMap.mulRight_one, LinearMap.comp_id, LinearMap.id_comp]
 
 /-- A tangent vector lies in the differential image of `xᵢⱼ` exactly when its
 action on the matrix algebra is commutator with a scalar multiple of `Eᵢⱼ`. -/

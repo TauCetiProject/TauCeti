@@ -100,6 +100,14 @@ theorem toMatrix_mulLeft_comp_mulRight (X Y : Matrix (Fin n) (Fin n) S) :
   simp [LinearMap.toMatrix_apply, conjugationMatrix_apply, Matrix.mul_apply, Matrix.single_apply,
     ite_and, Finset.sum_ite_eq]
 
+/-- In the matrix-unit basis, the conjugation matrix acts by left and right multiplication. -/
+@[simp]
+theorem toLinAlgEquiv_conjugationMatrix (X Y : Matrix (Fin n) (Fin n) S) :
+    Matrix.toLinAlgEquiv (matrixUnitBasis n S) (conjugationMatrix X Y) =
+      LinearMap.mulLeft S X ∘ₗ LinearMap.mulRight S Y := by
+  rw [← toMatrix_mulLeft_comp_mulRight]
+  exact (Matrix.toLinAlgEquiv (matrixUnitBasis n S)).apply_symm_apply _
+
 /-- The conjugation matrix of the identity is the identity. -/
 @[simp]
 theorem conjugationMatrix_one : conjugationMatrix (1 : Matrix (Fin n) (Fin n) S) 1 = 1 := by
