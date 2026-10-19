@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
@@ -26,6 +27,12 @@ homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_ap
 `TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`. This
 is the topological half of the deformation of sublevels across a band without critical points,
 where the motion is the flow of a vector field `X` with `df(X) = -1` on the band.
+
+If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
+`{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
+strictly decreases along flow lines starting on the level `a`, the level `f⁻¹(b)` exactly onto
+`f⁻¹(a)` (`Flow.apply_eq_iff_of_apply_eq_sub`). This is the topological half of the
+homeomorphism between the sublevels on either side of a band without critical points.
 -/
 
 public section
@@ -129,3 +136,71 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
 
 end TauCeti
+
+namespace Flow
+
+variable {X : Type*} [TopologicalSpace X] {f : X → ℝ} {a b : ℝ} (φ : Flow ℝ X)
+
+/-- **Sublevels along a unit-speed descent.** Let `φ` be a flow along whose lines `f` never
+increases in positive time, and which lowers `f` at unit speed through the band `a ≤ f ≤ b`. Then
+the time-`(b - a)` map of `φ` carries a point into `{f ≤ a}` exactly when the point lies in
+`{f ≤ b}`. -/
+theorem apply_le_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t) (x : X) :
+    f (φ (b - a) x) ≤ a ↔ f x ≤ b := by
+  have hba : (0 : ℝ) ≤ b - a := sub_nonneg.2 hab
+  constructor
+  · intro h
+    by_contra! hb
+    -- The flow line of `x` crosses the level `b` at a positive time `t₀ ≤ b - a`, and from there
+    -- descends at unit speed for the remaining time `b - a - t₀`, staying strictly above `a`.
+    obtain ⟨t₀, ⟨ht₀, ht₀'⟩, hft₀⟩ : ∃ t₀ ∈ Icc 0 (b - a), f (φ t₀ x) = b :=
+      intermediate_value_Icc' hba
+      (hf.comp (φ.continuous continuous_id continuous_const)).continuousOn
+      ⟨h.trans hab, by simpa using hb.le⟩
+    have ht₀pos : 0 < t₀ := by
+      refine ht₀.lt_of_ne fun h0 ↦ ?_
+      rw [← h0, Flow.map_zero_apply] at hft₀
+      linarith
+    have hft : f (φ (b - a - t₀) (φ t₀ x)) = f (φ t₀ x) - (b - a - t₀) :=
+      hφf _ _ (by linarith) (by rw [hft₀]; linarith) hft₀.le
+    rw [← Flow.map_add, sub_add_cancel] at hft
+    linarith
+  · intro hb
+    rcases le_or_gt (f x) a with hxa | hxa
+    · calc f (φ (b - a) x) ≤ f (φ 0 x) := hanti x (mem_Ici.2 le_rfl) hba hba
+        _ ≤ a := by rwa [Flow.map_zero_apply]
+    · have h1 := hφf x (f x - a) (by linarith) (by linarith) hb
+      calc f (φ (b - a) x) ≤ f (φ (f x - a) x) :=
+            hanti x (mem_Ici.2 (by linarith)) (mem_Ici.2 hba) (by linarith)
+        _ = a := by rw [h1]; ring
+
+/-- **Levels along a unit-speed descent.** Under the hypotheses of
+`Flow.apply_le_iff_of_apply_eq_sub`, suppose moreover that `f` drops strictly below `a`
+along the flow line of every point of the level `f⁻¹(a)`. Then the time-`(b - a)` map of `φ`
+carries a point into `f⁻¹(a)` exactly when the point lies in `f⁻¹(b)`. -/
+theorem apply_eq_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) (x : X) :
+    f (φ (b - a) x) = a ↔ f x = b := by
+  constructor
+  · intro h
+    have hb := (φ.apply_le_iff_of_apply_eq_sub hf hab hanti hφf x).1 h.le
+    refine hb.eq_of_not_lt fun hb' ↦ ?_
+    rcases lt_or_ge (f x) a with hxa | hxa
+    · -- Below the level `a`, the flow line never rises back to `a`.
+      have := hanti x (mem_Ici.2 le_rfl) (mem_Ici.2 (sub_nonneg.2 hab)) (sub_nonneg.2 hab)
+      simp only [Flow.map_zero_apply] at this
+      linarith
+    · -- The flow line reaches the level `a` at time `f x - a < b - a`, and then drops below it.
+      have h1 := hφf x (f x - a) (by linarith) (by linarith) hb
+      have h2 := hφa (φ (f x - a) x) (b - f x) (by rw [h1]; ring) (by linarith)
+      rw [← Flow.map_add, show b - f x + (f x - a) = b - a by ring] at h2
+      linarith
+  · intro h
+    rw [hφf x (b - a) (sub_nonneg.2 hab) (by rw [h]; linarith) h.le, h]
+    ring
+
+end Flow

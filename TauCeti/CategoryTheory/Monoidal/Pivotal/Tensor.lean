@@ -79,8 +79,7 @@ theorem pivotalExactPairing_tensor_evaluation (X Y : C) :
         ε_ ((Yᘁ : C) ⊗ (Xᘁ : C)) (((Yᘁ : C) ⊗ (Xᘁ : C))ᘁ : C) =
       @evaluation C _ _ (Yᘁ ⊗ Xᘁ) (X ⊗ Y)
         (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X)) := by
-    rw [comp_whiskerRight, Category.assoc, rightDualTensorIso, rightDualIso_inv,
-      rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp,
+    rw [comp_whiskerRight, Category.assoc, rightDualTensorIso_inv_whiskerRight_evaluation,
       tensor_evaluation,
       @tensor_evaluation C _ _ _ _ _ _ (pivotalExactPairing Y) (pivotalExactPairing X),
       pivotalExactPairing_evaluation, pivotalExactPairing_evaluation, tensorHom_def']
@@ -135,12 +134,9 @@ theorem pivotalExactPairing_tensor_coevaluation (X Y : C) :
 from the left, inside the left trace of `g`. -/
 theorem leftTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
     leftTrace (f ⊗ₘ g) = leftTrace ((λ_ Y).inv ≫ leftTrace f ▷ Y ≫ (λ_ Y).hom ≫ g) := by
-  have hε : ε_ (X ⊗ Y) (X ⊗ Y)ᘁ =
-      (rightDualTensorIso X Y).hom ▷ (X ⊗ Y) ≫ ε_ (X ⊗ Y) ((Yᘁ : C) ⊗ (Xᘁ : C)) := by
-    rw [rightDualTensorIso, rightDualIso_hom, rightMate_comp_evaluation,
-      MonoidalCategory.whiskerLeft_id, Category.id_comp]
   -- Replace the dual `(X ⊗ Y)ᘁ` by `Yᘁ ⊗ Xᘁ` with the tensor product pairings.
-  rw [leftTrace_def, hε, whisker_exchange_assoc, pivotalExactPairing_tensor_coevaluation_assoc]
+  rw [leftTrace_def, ← rightDualTensorIso_hom_whiskerRight_evaluation, whisker_exchange_assoc,
+    pivotalExactPairing_tensor_coevaluation_assoc]
   refine (@ExactPairing.coevaluation_whiskerLeft_tensorHom_evaluation C _ _ _ _ _ _
     (pivotalExactPairing X) _ (pivotalExactPairing Y) _ f g).trans ?_
   rw [leftTrace_def, leftTrace_def]
@@ -149,13 +145,9 @@ theorem leftTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
 from the right, inside the right trace of `f`. -/
 theorem rightTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
     rightTrace (f ⊗ₘ g) = rightTrace (f ≫ (ρ_ X).inv ≫ X ◁ rightTrace g ≫ (ρ_ X).hom) := by
-  have hη : η_ (X ⊗ Y) (X ⊗ Y)ᘁ ≫ (X ⊗ Y) ◁ (rightDualTensorIso X Y).hom =
-      η_ (X ⊗ Y) ((Yᘁ : C) ⊗ (Xᘁ : C)) := by
-    rw [rightDualTensorIso, rightDualIso_hom, coevaluation_comp_rightMate, id_whiskerRight,
-      Category.comp_id]
   -- Replace the dual `(X ⊗ Y)ᘁ` by `Yᘁ ⊗ Xᘁ` with the tensor product pairings.
   rw [rightTrace_def, pivotalExactPairing_tensor_evaluation, ← whisker_exchange_assoc,
-    reassoc_of% hη]
+    coevaluation_comp_whiskerLeft_rightDualTensorIso_hom_assoc]
   refine (@ExactPairing.coevaluation_tensorHom_whiskerRight_evaluation C _ _ _ _ _ _
     (pivotalExactPairing X) _ (pivotalExactPairing Y) _ f g).trans ?_
   rw [rightTrace_def, rightTrace_def]

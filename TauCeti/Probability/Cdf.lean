@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
@@ -32,6 +33,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
 * `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
   strict increase of the cdf;
+* `MeasureTheory.Measure.support_eq_univ_of_strictMono_cdf` shows that a strictly increasing cdf
+  has full topological support;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
@@ -203,6 +206,17 @@ theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] 
     0 < ν (Ioc a b) ↔ 0 < (cdf ν).measure (Ioc a b) := by rw [measure_cdf]
     _ ↔ cdf ν a < cdf ν b := by
       rw [StieltjesFunction.measure_Ioc, ENNReal.ofReal_pos, sub_pos]
+
+/-- A real probability law with a strictly increasing cdf has full topological support. -/
+theorem support_eq_univ_of_strictMono_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    (hν : StrictMono (cdf ν)) : ν.support = Set.univ := by
+  rw [Set.eq_univ_iff_forall]
+  intro x
+  rw [mem_support_iff_forall]
+  intro U hU
+  obtain ⟨a, b, hx, hab⟩ := mem_nhds_iff_exists_Ioo_subset.mp hU
+  have hIoc : 0 < ν (Ioc a x) := (measure_Ioc_pos_iff_cdf_lt ν).mpr (hν hx.1)
+  exact hIoc.trans_le (measure_mono fun y hy ↦ hab ⟨hy.1, hy.2.trans_lt hx.2⟩)
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/

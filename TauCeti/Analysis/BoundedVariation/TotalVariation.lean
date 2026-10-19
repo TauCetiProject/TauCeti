@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
 # The total variation of a function on an open set
@@ -50,6 +52,13 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
   under convergence in `L¹_loc(Ω)`.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative.
+* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
+  measure this is an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
+  variation the `L¹` norm of its weak derivative
+  (`TauCeti.HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn`).
+* `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz
+  function, in particular a `C¹` one, the total variation is `∫_Ω ‖Du‖` for its classical
+  derivative.
 
 ## References
 
@@ -257,13 +266,54 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
     {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) :
     totalVariationOn μ Ω u ≤ ∫⁻ x in Ω, ‖U x‖ₑ ∂μ := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  rw [h.integral_divergenceCLM_mul_eq_neg_integral φ, ← lintegral_indicator Ω.isOpen.measurableSet]
+  rw [h.integral_divergenceCLM_mul_eq_neg_integral φ]
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
   rw [← Real.enorm_eq_ofReal_abs]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
-  by_cases hx : x ∈ (Ω : Set E)
-  · rw [Set.indicator_of_mem hx, enorm_le_iff_norm_le]
-    exact ((U x).le_opNorm (φ x)).trans (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
-  · simp [image_eq_zero_of_notMem_tsupport fun hmem => hx (φ.tsupport_subset hmem)]
+  exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
+
+section Haar
+
+variable [BorelSpace E] [μ.IsAddHaarMeasure]
+
+/-- **The total variation of a weakly differentiable function.** If `u` has weak derivative `U`
+on `Ω`, then against an additive Haar measure `|Du|(Ω) = ∫_Ω ‖U‖`. In particular a function in
+`W^{1,1}(Ω)` has bounded variation on `Ω`, and its variation is the `L¹(Ω)` norm of its weak
+derivative. -/
+theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L[ℝ] ℝ}
+    (h : HasWeakFDerivOn μ Ω u U) :
+    totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖U x‖ₑ ∂μ := by
+  rw [← h.locallyIntegrableOn_deriv.iSup_ofReal_integral_apply_eq_setLIntegral_enorm,
+    totalVariationOn_def]
+  -- Integration by parts turns `∫ div φ * u` into `∫ U (-φ)`, and `φ ↦ -φ` permutes the
+  -- admissible test vector fields.
+  have key (φ : 𝓓(Ω, E)) :
+      ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ := by
+    rw [h.integral_divergenceCLM_mul_eq_neg_integral φ, ← integral_neg]
+    simp
+  simp_rw [key]
+  refine le_antisymm (iSup₂_le fun φ hφ => ?_) (iSup₂_le fun φ hφ => ?_)
+  · exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
+      ENNReal.ofReal (∫ x, U x (φ x) ∂μ)) (-φ) (fun x => by simpa using hφ x) le_rfl
+  · exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
+      ENNReal.ofReal (∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ)) (-φ) (fun x => by simpa using hφ x)
+      (by simp)
+
+/-- A weakly differentiable function has finite total variation on `Ω`, against an additive Haar
+measure, exactly when its weak derivative is integrable on `Ω`. -/
+theorem HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn {U : E → E →L[ℝ] ℝ}
+    (h : HasWeakFDerivOn μ Ω u U) : totalVariationOn μ Ω u < ∞ ↔ IntegrableOn U Ω μ := by
+  rw [h.totalVariationOn_eq_setLIntegral_enorm, ← hasFiniteIntegral_iff_enorm]
+  exact ⟨fun hfi => ⟨h.locallyIntegrableOn_deriv.aestronglyMeasurable, hfi⟩,
+    Integrable.hasFiniteIntegral⟩
+
+/-- **The total variation of a locally Lipschitz function**, in particular of a `C¹` function,
+is the integral of the norm of its classical derivative: `|Du|(Ω) = ∫_Ω ‖Du‖`, against an
+additive Haar measure. -/
+theorem _root_.LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv
+    (hu : LocallyLipschitzOn Ω u) :
+    totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ :=
+  hu.hasWeakFDerivOn_fderiv.totalVariationOn_eq_setLIntegral_enorm
+
+end Haar
 
 end TauCeti

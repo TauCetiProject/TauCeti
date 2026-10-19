@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Polynomial.L1Norm
 
+import TauCeti.Algebra.Polynomial.Taylor
+
 /-!
 # Values of Thue's auxiliary polynomials near `α`
 
@@ -22,6 +24,9 @@ bound is applied at a good rational approximation `ξ₁` of `α`: there
 `Dᵏ P (ξ₁) - ξ₂ Dᵏ Q (ξ₁) = V (ξ₁) (ξ₁ - α) ^ (r - k) + (α - ξ₂) Dᵏ Q (ξ₁)`. The factors
 `V (ξ₁)` and `Dᵏ Q (ξ₁)` are at most `C₂ ^ r`, while `ξ₁ - α` and `α - ξ₂` are small.
 
+If `(X - α) ^ r` divides `P - α Q`, the two bounds combine to
+`‖Dᵏ P (z) - w Dᵏ Q (z)‖ ≤ C₂ ^ r (‖z - α‖ ^ (r - k) + ‖w - α‖)` for `‖z - α‖ ≤ 1` and every `w`.
+
 The derivative bound holds over any seminormed ring whose norm preserves one. The quotient bound
 also assumes commutativity, as in the motivating example `ℂ`.
 
@@ -29,6 +34,7 @@ also assumes commutativity, as in the motivating example `ℂ`.
 
 * `TauCeti.norm_eval_hasseDeriv_le_pow_of_norm_sub_le_one`: the bound for `Dᵏ Q`.
 * `TauCeti.norm_eval_le_pow_of_hasseDeriv_sub_eq_mul`: the bound for `V`.
+* `TauCeti.norm_eval_hasseDeriv_sub_mul_le`: the bound for `Dᵏ P (z) - w Dᵏ Q (z)`.
 
 ## References
 
@@ -117,6 +123,36 @@ theorem norm_eval_le_pow_of_hasseDeriv_sub_eq_mul {P Q V : R[X]} {α z : R} {k m
     _ = (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r := by
       rw [Real.rpow_add (by linarith), Real.rpow_one, mul_pow, mul_pow, mul_pow]
       ring
+
+/-- **Values of Thue's auxiliary polynomials at two points near `α`** (Evertse, proof of
+Theorem 6.14). Let `r > 0`, let `P` and `Q` have degree at most `δ r` and coefficient length at
+most `C₁ ^ r`, and suppose that `(X - α) ^ r` divides `P - α Q`. If `‖z - α‖ ≤ 1`, then for every
+`k` and `w`, `‖Dᵏ P (z) - w Dᵏ Q (z)‖ ≤ C₂ ^ r (‖z - α‖ ^ (r - k) + ‖w - α‖)`, where
+`C₂ = 2 ^ δ (1 + ‖α‖) ^ (1 + δ) C₁`. -/
+theorem norm_eval_hasseDeriv_sub_mul_le {P Q : R[X]} {α z : R} (w : R) (k : ℕ) {r : ℕ}
+    {δ C₁ : ℝ} (hr : 0 < r) (hP : (P.natDegree : ℝ) ≤ δ * r) (hQ : (Q.natDegree : ℝ) ≤ δ * r)
+    (hPC : P.l1Norm ≤ C₁ ^ r) (hQC : Q.l1Norm ≤ C₁ ^ r) (hdvd : (X - C α) ^ r ∣ P - C α * Q)
+    (hz : ‖z - α‖ ≤ 1) :
+    ‖(hasseDeriv k P).eval z - w * (hasseDeriv k Q).eval z‖ ≤
+      (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r * (‖z - α‖ ^ (r - k) + ‖w - α‖) := by
+  obtain ⟨V, hV⟩ := pow_sub_dvd_hasseDeriv_of_pow_dvd k hdvd
+  rw [map_sub, ← smul_eq_C_mul, map_smul, smul_eq_C_mul, mul_comm _ V] at hV
+  have hVz := norm_eval_le_pow_of_hasseDeriv_sub_eq_mul hr hP hQ hPC hQC hV hz
+  have hQz := norm_eval_hasseDeriv_le_pow_of_norm_sub_le_one (k := k) hQ hQC hz
+  -- Evaluating `Dᵏ P - α Dᵏ Q = V (X - α) ^ (r - k)` at `z` splits the value in two terms.
+  have hsplit : (hasseDeriv k P).eval z - w * (hasseDeriv k Q).eval z =
+      V.eval z * (z - α) ^ (r - k) + (α - w) * (hasseDeriv k Q).eval z := by
+    have := congrArg (eval z) hV
+    simp only [eval_sub, eval_mul, eval_C, eval_pow, eval_X] at this
+    linear_combination this
+  rw [hsplit, norm_sub_rev w α]
+  calc
+    _ ≤ ‖V.eval z‖ * ‖z - α‖ ^ (r - k) + ‖α - w‖ * ‖(hasseDeriv k Q).eval z‖ := by
+      grw [norm_add_le, norm_mul_le, norm_mul_le, norm_pow_le]
+    _ ≤ (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r * ‖z - α‖ ^ (r - k) +
+          ‖α - w‖ * (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r := by
+      grw [hVz, hQz]
+    _ = _ := by ring
 
 end SeminormedCommRing
 
