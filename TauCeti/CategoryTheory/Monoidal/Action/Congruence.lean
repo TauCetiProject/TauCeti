@@ -25,6 +25,16 @@ restriction uses the native full-subcategory action.
 The fixing isomorphisms are only required to exist separately for each group element.
 They carry no multiplication coherence or rational integration data. No normality or
 monotonicity of `K` is needed for these comparisons.
+
+## References
+
+`congruenceInvariant` follows the objectwise `K_N`-invariance condition in Frenkel's
+local-category discussion:
+
+* Edward Frenkel, [Langlands Correspondence for Loop Groups](https://math.berkeley.edu/~frenkel/loop.pdf),
+  §1.3.4 (congruence subgroups and stability under twisting).
+* Edward Frenkel and Dennis Gaitsgory,
+  [Local geometric Langlands correspondence and affine Kac–Moody algebras](https://arxiv.org/abs/math/0508382).
 -/
 
 public section
@@ -52,7 +62,6 @@ def IsObjectwiseCongruenceInvariant (C : Type*) [Category* C]
     [MonoidalLeftAction (Discrete H) C] : Prop :=
   ∀ X : C, congruenceInvariant K X
 
-@[simp]
 lemma isObjectwiseCongruenceInvariant_iff :
     IsObjectwiseCongruenceInvariant K C ↔ ∀ X : C, congruenceInvariant K X := by
   rfl
@@ -125,6 +134,7 @@ lemma congruenceInvariant_fullSubcategory_iff (X : P.FullSubcategory) :
 
 /-- A stable full subcategory is objectwise congruence invariant exactly when all objects
 satisfying its defining property are congruence invariant in the ambient category. -/
+@[simp]
 lemma isObjectwiseCongruenceInvariant_fullSubcategory_iff :
     IsObjectwiseCongruenceInvariant K P.FullSubcategory ↔ P ≤ congruenceInvariant K := by
   constructor
