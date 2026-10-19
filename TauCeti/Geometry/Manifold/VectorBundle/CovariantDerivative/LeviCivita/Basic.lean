@@ -108,7 +108,7 @@ namespace Manifold
 
 variable (I) in
 /-- The right-hand side of the Koszul formula for a pointwise bilinear pairing `b`. -/
-@[expose] def koszulBilinear
+def koszulBilinear
     (b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
     (X Y Z : Π x : M, TangentSpace I x) (x : M) : ℝ :=
   mvfderiv I (fun y ↦ b y (Y y) (Z y)) x (X x)
@@ -128,8 +128,7 @@ theorem koszulBilinear_apply
         - mvfderiv I (fun y ↦ b y (X y) (Y y)) x (Z x)
         + b x (mlieBracket I X Y x) (Z x)
         - b x (mlieBracket I X Z x) (Y x)
-        - b x (mlieBracket I Y Z x) (X x) :=
-  rfl
+        - b x (mlieBracket I Y Z x) (X x) := (rfl)
 
 variable
   {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
@@ -216,12 +215,7 @@ evaluated at `x`. It depends on the Riemannian metric alone; for the Levi-Civita
 that metric it computes `2 ⟪∇_X Y, Z⟫`, by
 `CovariantDerivative.IsLeviCivitaConnection.two_inner_eq_koszul`. -/
 def koszul (X Y Z : Π x : M, TangentSpace I x) (x : M) : ℝ :=
-  mvfderiv I (fun y ↦ inner ℝ (Y y) (Z y)) x (X x)
-    + mvfderiv I (fun y ↦ inner ℝ (Z y) (X y)) x (Y x)
-    - mvfderiv I (fun y ↦ inner ℝ (X y) (Y y)) x (Z x)
-    + inner ℝ (mlieBracket I X Y x) (Z x)
-    - inner ℝ (mlieBracket I X Z x) (Y x)
-    - inner ℝ (mlieBracket I Y Z x) (X x)
+  koszulBilinear I (fun _ ↦ innerSL ℝ) X Y Z x
 
 /-- The defining formula for the Koszul expression, available outside the module where
 `TauCeti.Manifold.koszul` is defined. -/
@@ -239,8 +233,7 @@ product of the Lie bracket with the third argument. This is the identity behind 
 half of `CovariantDerivative.isLeviCivitaConnection_iff`. -/
 theorem koszul_sub_koszul_swap_first_two :
     koszul I X Y Z x - koszul I Y X Z x = 2 * inner ℝ (mlieBracket I X Y x) (Z x) := by
-  have hinner (y : M) (v w : TangentSpace I y) : innerSL ℝ v w = inner ℝ v w := rfl
-  simpa only [koszul, koszulBilinear, hinner] using
+  simpa only [koszul, innerSL_apply_apply ℝ] using
     (koszulBilinear_sub_koszulBilinear_swap_first_two
       (b := fun _ ↦ innerSL ℝ) (fun _ v w ↦ real_inner_comm w v) (X := X) (Y := Y)
         (Z := Z) (x := x))
@@ -251,8 +244,7 @@ their inner product along the first argument. This is the identity behind the me
 theorem koszul_add_koszul_swap_last_two :
     koszul I Z X Y x + koszul I Z Y X x =
       2 * mvfderiv I (fun y ↦ inner ℝ (X y) (Y y)) x (Z x) := by
-  have hinner (y : M) (v w : TangentSpace I y) : innerSL ℝ v w = inner ℝ v w := rfl
-  simpa only [koszul, koszulBilinear, hinner] using
+  simpa only [koszul, innerSL_apply_apply ℝ] using
     (koszulBilinear_add_koszulBilinear_swap_last_two
       (b := fun _ ↦ innerSL ℝ) (fun _ v w ↦ real_inner_comm w v) (X := X) (Y := Y)
         (Z := Z) (x := x))
@@ -296,7 +288,7 @@ theorem koszul_add_second (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
   have e₂ : (fun y ↦ inner ℝ (X y) ((Y + Y') y)) =
       fun y ↦ inner ℝ (X y) (Y y) + inner ℝ (X y) (Y' y) := funext fun _ ↦ inner_add_right ..
   have e₃ : (Y + Y') x = Y x + Y' x := rfl
-  rw [koszul, koszul, koszul, e₁, e₂, e₃,
+  rw [koszul_apply, koszul_apply, koszul_apply, e₁, e₂, e₃,
     mvfderiv_fun_add (mdifferentiableAt_inner hY hZ) (mdifferentiableAt_inner hY' hZ),
     mvfderiv_fun_add (mdifferentiableAt_inner hX hY) (mdifferentiableAt_inner hX hY'),
     mlieBracket_add_right hY hY', mlieBracket_add_left hY hY']
@@ -315,7 +307,8 @@ theorem koszul_smul_second (hf : MDiffAt f x) (hX : MDiffAt (T% X) x) (hY : MDif
   have e₂ : (fun y ↦ inner ℝ (X y) ((f • Y) y)) = fun y ↦ f y * inner ℝ (X y) (Y y) :=
     funext fun _ ↦ real_inner_smul_right ..
   have e₃ : (f • Y) x = f x • Y x := rfl
-  rw [koszul, koszul, e₁, e₂, e₃, mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
+  rw [koszul_apply, koszul_apply, e₁, e₂, e₃,
+    mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
     mvfderiv_fun_mul hf (mdifferentiableAt_inner hX hY),
     mlieBracket_smul_right hf hY, mlieBracket_smul_left (W := Z) hf hY]
   simp only [add_apply, smul_apply, smul_eq_mul, map_smul, inner_add_left, neg_smul,
@@ -371,7 +364,8 @@ theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
     have e₂ : (fun y ↦ inner ℝ ((f • Z) y) (X y)) = fun y ↦ f y * inner ℝ (Z y) (X y) :=
       funext fun _ ↦ real_inner_smul_left ..
     have e₃ : (f • Z) x = f x • Z x := rfl
-    rw [koszul, koszul, e₁, e₂, e₃, mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
+    rw [koszul_apply, koszul_apply, e₁, e₂, e₃,
+      mvfderiv_fun_mul hf (mdifferentiableAt_inner hY hZ),
       mvfderiv_fun_mul hf (mdifferentiableAt_inner hZ hX),
       mlieBracket_smul_right hf hZ, mlieBracket_smul_right (V := Y) hf hZ]
     simp only [add_apply, smul_apply, smul_eq_mul, map_smul, inner_add_left,
@@ -384,7 +378,7 @@ theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
     have e₂ : (fun y ↦ inner ℝ ((Z + Z') y) (X y)) =
         fun y ↦ inner ℝ (Z y) (X y) + inner ℝ (Z' y) (X y) := funext fun _ ↦ inner_add_left ..
     have e₃ : (Z + Z') x = Z x + Z' x := rfl
-    rw [koszul, koszul, koszul, e₁, e₂, e₃,
+    rw [koszul_apply, koszul_apply, koszul_apply, e₁, e₂, e₃,
       mvfderiv_fun_add (mdifferentiableAt_inner hY hZ) (mdifferentiableAt_inner hY hZ'),
       mvfderiv_fun_add (mdifferentiableAt_inner hZ hX) (mdifferentiableAt_inner hZ' hX),
       mlieBracket_add_right hZ hZ', mlieBracket_add_right (V := Y) hZ hZ']
@@ -404,22 +398,26 @@ namespace CovariantDerivative
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [FiniteDimensional ℝ E]
-  {cov cov' : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
+  {cov cov' : CovariantDerivative I F V}
 
 /-- Two covariant derivatives have zero difference if they agree on every section differentiable
 at the point where they are evaluated. -/
 theorem difference_eq_zero_of_forall
-    (h : ∀ (x : M) (Y : Π x : M, TangentSpace I x), MDiffAt (T% Y) x → cov Y x = cov' Y x) :
+    (h : ∀ (x : M) (Y : Π x : M, V x), MDiffAt (T% Y) x → cov Y x = cov' Y x) :
     cov.difference cov' = 0 := by
   ext x v
-  have hv : MDiffAt (T% (extend E v : Π y : M, TangentSpace I y)) x :=
-    mdifferentiableAt_extend I E v
+  have hv : MDiffAt (T% (extend F v : Π y : M, V y)) x :=
+    mdifferentiableAt_extend I F v
   have hd := IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
     cov'.isCovariantDerivativeOnUniv (x := x) (Set.mem_univ x) hv
   rw [extend_apply_self] at hd
-  simp [CovariantDerivative.difference, hd, h x (extend E v) hv]
+  simp [CovariantDerivative.difference, hd, h x (extend F v) hv]
 
 end CovariantDerivative
 
@@ -444,7 +442,7 @@ theorem IsLeviCivitaConnection.two_inner_eq_koszul (h : cov.IsLeviCivitaConnecti
   have hk := h.apply_eq I hX hY hZ
   -- Reduce the beta-redexes introduced by the local notations in `apply_eq`.
   simp only at hk
-  rw [hk, TauCeti.Manifold.koszul, mlieBracket_swap_apply (V := Y),
+  rw [hk, TauCeti.Manifold.koszul_apply, mlieBracket_swap_apply (V := Y),
     mlieBracket_swap_apply (V := Z) (W := Y), real_inner_comm (Y x) (mlieBracket I X Z x),
     real_inner_comm (Z x) (mlieBracket I X Y x), real_inner_comm (X x) (mlieBracket I Y Z x)]
   simp only [inner_neg_right]
@@ -457,25 +455,25 @@ theorem isLeviCivitaConnection_iff :
       MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
       2 * inner ℝ (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszul I X Y Z x := by
   refine ⟨fun h _ _ _ _ hX hY hZ ↦ h.two_inner_eq_koszul hX hY hZ, fun h ↦ ⟨?_, ?_⟩⟩
-  all_goals
-    let b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ := fun _ ↦ innerSL ℝ
-    have hinner (y : M) (v w : TangentSpace I y) : b y v w = inner ℝ v w := rfl
-    have hb (y : M) (v w : TangentSpace I y) : b y v w = b y w v := by
-      rw [hinner, hinner, real_inner_comm]
-    have hk : ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
-        MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
-        2 * b x (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszulBilinear I b X Y Z x := by
-      intro x X Y Z hX hY hZ
-      simpa only [hinner, TauCeti.Manifold.koszul, TauCeti.Manifold.koszulBilinear] using
-        h hX hY hZ
   · rw [CovariantDerivative.isMetricCompatible_iff]
     intro x X Y Z hX hY hZ
-    simpa only [hinner] using
-      (TauCeti.Manifold.metricProductRule_of_two_apply_eq_koszulBilinear hb hk hX hY hZ)
+    simpa only [innerSL_apply_apply ℝ] using
+      (TauCeti.Manifold.metricProductRule_of_two_apply_eq_koszulBilinear
+        (b := fun _ ↦ innerSL ℝ) (fun _ v w ↦ real_inner_comm w v)
+        (by
+          intro x X Y Z hX hY hZ
+          simpa only [TauCeti.Manifold.koszul, innerSL_apply_apply ℝ] using h hX hY hZ)
+        hX hY hZ)
   · have hinjective (x : M) : Function.Injective fun u : TangentSpace I x ↦
-        fun (Z : Π x : M, TangentSpace I x) (_ : MDiffAt (T% Z) x) ↦ b x u (Z x) := by
-      simpa only [hinner] using injective_inner_mdifferentiableAt_section I E (TangentSpace I) x
-    exact TauCeti.Manifold.torsion_eq_zero_of_two_apply_eq_koszulBilinear hb hinjective hk
+        fun (Z : Π x : M, TangentSpace I x) (_ : MDiffAt (T% Z) x) ↦
+          innerSL ℝ u (Z x) := by
+      simpa only [innerSL_apply_apply ℝ] using
+        injective_inner_mdifferentiableAt_section I E (TangentSpace I) x
+    exact TauCeti.Manifold.torsion_eq_zero_of_two_apply_eq_koszulBilinear
+      (b := fun _ ↦ innerSL ℝ) (fun _ v w ↦ real_inner_comm w v) hinjective
+      (by
+        intro x X Y Z hX hY hZ
+        simpa only [TauCeti.Manifold.koszul, innerSL_apply_apply ℝ] using h hX hY hZ)
 
 /-- **Uniqueness of the Levi-Civita connection**, as the vanishing of the endomorphism-valued
 one-form measuring the difference of two connections. On a single differentiable section this is

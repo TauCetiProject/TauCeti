@@ -267,14 +267,9 @@ its metric, viewed as a nondegenerate metric. -/
 theorem isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
-    (Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-      (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)).toNondegenerateMetric
-        |>.IsLeviCivitaConnection
+    (ofRiemannianBundle I M).IsLeviCivitaConnection
       (CovariantDerivative.leviCivitaConnection I M) :=
-  (isLeviCivitaConnection_iff_of_apply_eq_inner (fun x v w ↦ by
-    simp only [Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric_apply,
-      Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-    rfl)).mpr
+  (isLeviCivitaConnection_iff_of_apply_eq_inner (ofRiemannianBundle_apply I M)).mpr
     (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetric
