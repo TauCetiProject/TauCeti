@@ -17,14 +17,15 @@ connection, without a torsion assumption. In particular, the Riemannian Hessian 
 Levi–Civita connection is the critical Hessian. Thus its value at a critical point is independent
 of the chosen metric and connection, and the intrinsic Morse index can be read from it.
 
-The comparison uses `TauCeti.criticalHessian_apply_eq_mvfderiv` and Mathlib's metric-compatibility
-product rule `CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq`. It does not assert metric
-or connection independence at noncritical points.
+The comparison requires only `C²` regularity of the function at the critical point and a `C¹`
+metric. Metric and connection independence are asserted only at critical points.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, §2.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer, 2014, Chapter 1.
+* Mathlib's metric-compatibility identity
+  `CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq`.
 -/
 
 public section
