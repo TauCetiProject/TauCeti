@@ -113,13 +113,14 @@ theorem integral_id_generalizedParetoMeasure (hs : 0 < s) (hξ : ξ < 1) :
   by_cases hξ0 : ξ = 0
   · subst ξ
     simp [generalizedParetoMeasure_zero hs, integral_id_expMeasure (inv_pos.mpr hs)]
-  rw [generalizedParetoMeasure_of_shape_ne_zero hs hξ0,
-    integral_map (by fun_prop) (by fun_prop), integral_div, integral_const_mul,
-    integral_sub ((integrable_exp_mul_expMeasure_iff one_pos).2 hξ) (integrable_const 1)]
+  have he : Integrable id ((expMeasure 1).map fun e => exp (ξ * e)) := by
+    rw [integrable_map_measure (by fun_prop) (by fun_prop)]
+    exact (integrable_exp_mul_expMeasure_iff one_pos).2 hξ
+  rw [generalizedParetoMeasure_eq_map_affine hs hξ0, integral_id_map_affine he,
+    integral_map (by fun_prop) (by fun_prop)]
   have hm : (∫ e, exp (ξ * e) ∂expMeasure 1) = 1 / (1 - ξ) := by
     simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ
   rw [hm]
-  simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
   field_simp
   ring
 
@@ -134,27 +135,24 @@ theorem integral_sq_generalizedParetoMeasure (hs : 0 < s) (hξ : 2 * ξ < 1) :
   · subst ξ
     rw [generalizedParetoMeasure_zero hs, integral_sq_expMeasure (inv_pos.mpr hs)]
     simp
-  have he : Integrable (fun e => exp (ξ * e)) (expMeasure 1) :=
-    (integrable_exp_mul_expMeasure_iff one_pos).2 hξ1
   have he2 : Integrable (fun e => exp ((2 * ξ) * e)) (expMeasure 1) :=
     (integrable_exp_mul_expMeasure_iff one_pos).2 hξ
-  have hpow (e : ℝ) : (s * (exp (ξ * e) - 1) / ξ) ^ 2 =
-      (s / ξ) ^ 2 * (exp ((2 * ξ) * e) - 2 * exp (ξ * e) + 1) := by
-    have hexp : (2 * ξ) * e = ξ * e + ξ * e := by ring
-    rw [hexp, exp_add]
-    ring
-  rw [generalizedParetoMeasure_of_shape_ne_zero hs hξ0,
-    integral_map (by fun_prop) (by fun_prop)]
-  simp_rw [hpow]
-  rw [integral_const_mul, integral_add (f := fun e => exp ((2 * ξ) * e) - 2 * exp (ξ * e))
-      (he2.sub (he.const_mul 2)) (integrable_const 1),
-    integral_sub he2 (he.const_mul 2), integral_const_mul]
+  have hsq : Integrable (fun y : ℝ => |y| ^ 2)
+      ((expMeasure 1).map fun e => exp (ξ * e)) := by
+    rw [integrable_map_measure (by fun_prop) (by fun_prop)]
+    simpa only [Function.comp_def, abs_of_pos (exp_pos _), ← exp_nat_mul,
+      Nat.cast_ofNat, ← mul_assoc] using he2
   have hm1 : (∫ e, exp (ξ * e) ∂expMeasure 1) = 1 / (1 - ξ) := by
     simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ1
   have hm2 : (∫ e, exp ((2 * ξ) * e) ∂expMeasure 1) = 1 / (1 - 2 * ξ) := by
     simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ
-  rw [hm1, hm2]
-  simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
+  have hm := moment_id_map_affine (a := -(s / ξ)) (b := s / ξ) hsq
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, moment_def, Pi.pow_apply, id_eq] at hm
+  norm_num at hm
+  rw [integral_map (φ := fun e => exp (ξ * e)) (by fun_prop) (by fun_prop),
+    integral_map (φ := fun e => exp (ξ * e)) (by fun_prop) (by fun_prop)] at hm
+  simp only [← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc, hm1, hm2] at hm
+  rw [generalizedParetoMeasure_eq_map_affine hs hξ0, hm]
   field_simp (disch := grind)
   ring
 
@@ -163,13 +161,25 @@ theorem integral_sq_generalizedParetoMeasure (hs : 0 < s) (hξ : 2 * ξ < 1) :
 theorem variance_id_generalizedParetoMeasure (hs : 0 < s) (hξ : 2 * ξ < 1) :
     Var[id; generalizedParetoMeasure s ξ] =
       s ^ 2 / ((1 - ξ) ^ 2 * (1 - 2 * ξ)) := by
-  let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
-  have hLp : MemLp id 2 (generalizedParetoMeasure s ξ) :=
-    (memLp_id_generalizedParetoMeasure_iff hs 2).2 (by simpa using hξ)
-  rw [variance_eq_sub hLp]
-  simp only [Pi.pow_apply, id_eq, integral_sq_generalizedParetoMeasure hs hξ,
-    integral_id_generalizedParetoMeasure hs (by linarith : ξ < 1)]
-  field_simp
+  let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
+  have hξ1 : ξ < 1 := by linarith
+  by_cases hξ0 : ξ = 0
+  · subst ξ
+    simp [generalizedParetoMeasure_zero hs, variance_id_expMeasure (inv_pos.mpr hs)]
+  have he2 : Integrable (fun e => exp ((2 * ξ) * e)) (expMeasure 1) :=
+    (integrable_exp_mul_expMeasure_iff one_pos).2 hξ
+  have hLp : MemLp (fun e => exp (ξ * e)) 2 (expMeasure 1) := by
+    apply (memLp_two_iff_integrable_sq (by fun_prop)).2
+    simpa only [← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc] using he2
+  rw [generalizedParetoMeasure_eq_map_affine hs hξ0, variance_id_map_affine,
+    variance_id_map (by fun_prop), variance_eq_sub hLp]
+  simp only [Pi.pow_apply, ← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc]
+  have hm1 : (∫ e, exp (ξ * e) ∂expMeasure 1) = 1 / (1 - ξ) := by
+    simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ1
+  have hm2 : (∫ e, exp ((2 * ξ) * e) ∂expMeasure 1) = 1 / (1 - 2 * ξ) := by
+    simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ
+  rw [hm1, hm2]
+  field_simp (disch := grind)
   ring
 
 end TauCeti.Probability
