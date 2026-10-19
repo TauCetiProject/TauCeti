@@ -9,11 +9,17 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
-# Dimension roots of Lebesgue volume under dilation
+# Haar measure under dilations and affine maps
 
 The dimension root of outer volume scales by the absolute value of a real dilation
 in a positive-dimensional real inner product space. The identity applies to arbitrary
 sets and infinite outer volumes, and supplies the scaling law for volume inequalities.
+
+An affine map of a finite-dimensional real normed space multiplies every additive Haar measure
+by the absolute value of the determinant of its linear part
+(`MeasureTheory.Measure.addHaar_image_affineMap`, and
+`MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`.
 -/
 
 public section
@@ -36,3 +42,25 @@ theorem volume_smul_rpow {A : Set E} (hn : Module.finrank ℝ E ≠ 0) (c : ℝ)
     Real.pow_rpow_inv_natCast (abs_nonneg c) hn]
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] (μ : Measure F) [μ.IsAddHaarMeasure]
+
+/-- The image of a set under an affine map has Haar measure equal to the absolute value of the
+determinant of the linear part times the measure of the set. -/
+theorem addHaar_image_affineMap (f : F →ᵃ[ℝ] F) (s : Set F) :
+    μ (f '' s) = ENNReal.ofReal |LinearMap.det f.linear| * μ s := by
+  have hf : f '' s = (fun y ↦ y + f 0) '' (f.linear '' s) := by
+    rw [image_image]
+    exact image_congr fun x _ ↦ by simpa using f.map_vadd 0 x
+  rw [hf, image_add_right, measure_preimage_add_right, addHaar_image_linearMap]
+
+/-- The image of a set under an affine equivalence has Haar measure equal to the absolute value of
+the determinant of the linear part times the measure of the set. -/
+theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
+    μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
+  addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
+
+end MeasureTheory.Measure

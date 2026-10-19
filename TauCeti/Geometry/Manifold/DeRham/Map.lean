@@ -49,17 +49,9 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
     closedForms I' M' k →ₗ[ℝ] closedForms I M k :=
   ((SmoothForm.mpullback f hf).domRestrict (closedForms I' M' k)).codRestrict
     (closedForms I M k) fun φ ↦ by
-      rw [mem_closedForms]
-      have hclosed := (mem_closedForms (I := I') (M := M') φ.1).mp φ.2
-      have hreg : IsSmoothBundleForm (I := I') (F := ℝ)
-          (V := Bundle.Trivial M' ℝ) 1 φ.1.1 := by
-        rw [isSmoothBundleForm_def]
-        exact ((isSmoothBundleForm_def ∞ φ.1.1).mp
-          (mem_smoothForms.mp φ.1.2)).of_le (by simp)
-      -- The codomain restriction hides the underlying smooth form from the naturality theorem.
-      change mextDeriv (SmoothForm.mpullback f hf φ.1).1 = 0
-      rw [SmoothForm.coe_mpullback, ← mpullback_mextDeriv (hf.of_le (by simp)) hreg,
-        hclosed, TauCeti.mpullback_zero]
+      rw [mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.domRestrict_apply,
+        SmoothForm.mextDerivₗ_mpullback,
+        (mem_closedForms_iff_mextDerivₗ_eq_zero I' φ.1).mp φ.2, map_zero]
 
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
@@ -98,20 +90,8 @@ theorem mpullback_mem_exactForms (f : M → M') (hf : ContMDiff I I' ∞ f) (k :
   | succ k =>
       rw [exactForms_succ, LinearMap.mem_range] at hφ ⊢
       obtain ⟨ψ, hψ⟩ := hφ
-      refine ⟨SmoothForm.mpullback f hf ψ, ?_⟩
-      apply Subtype.ext
-      have hψ' := congrArg Subtype.val hψ
-      simp only [mextDerivₗ_apply] at hψ' ⊢
-      have hreg : IsSmoothBundleForm (I := I') (F := ℝ)
-          (V := Bundle.Trivial M' ℝ) 1 ψ.1 := by
-        rw [isSmoothBundleForm_def]
-        exact ((isSmoothBundleForm_def ∞ ψ.1).mp
-          (mem_smoothForms.mp ψ.2)).of_le (by simp)
-      -- Subtype extensionality leaves smooth-form coercions that naturality cannot match directly.
-      change mextDeriv (SmoothForm.mpullback f hf ψ).1 =
-        (SmoothForm.mpullback f hf φ.1).1
-      rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-        ← mpullback_mextDeriv (hf.of_le (by simp)) hreg, hψ']
+      exact ⟨SmoothForm.mpullback f hf ψ, by
+        rw [SmoothForm.mextDerivₗ_mpullback, hψ, coe_mpullback]⟩
 
 end closedForms
 

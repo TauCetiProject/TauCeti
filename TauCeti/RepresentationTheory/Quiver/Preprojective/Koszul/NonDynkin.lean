@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GradedResolution
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.Basic
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InfiniteDimensional
 
 /-!
@@ -42,6 +44,12 @@ theorem of Etingof and Eu; for orientations of graphs which are not trees it is 
   Koszul complexes are then linear projective resolutions.
 * `TauCeti.preprojectiveHilbertSeries_eq_inv_of_not_exists_dynkinType_iso`: **the Hilbert series of
   the preprojective algebra of a connected non-Dynkin graph is `((1 + t²) I - t A)⁻¹`.**
+
+* `forall_preprojectiveKoszulLeft_injective_iff` and
+  `forall_preprojectiveKoszulLeft_injective_iff_not_finiteDimensional`: **the Koszulity dichotomy
+  for preprojective algebras of oriented graphs**: the left Koszul differential is injective at
+  every vertex if and only if the graph is not a Dynkin diagram, and if and only if the
+  preprojective algebra is infinite-dimensional.
 
 ## References
 
@@ -519,5 +527,49 @@ theorem preprojectiveHilbertSeries_eq_inv_of_not_exists_dynkinType_iso :
     (mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso k hG hD o)).symm
 
 end Graph
+
+section Dichotomy
+
+open DoubledQuiver
+
+variable (k : Type w) [Field k] {V : Type u} {G : SimpleGraph V} [Finite V]
+
+/-- For a nonempty finite quiver whose preprojective algebra is finite-dimensional, the left Koszul
+differential fails to be injective at some vertex. -/
+theorem exists_not_preprojectiveKoszulLeft_injective_of_finiteDimensional
+    {Q : Type*} [Quiver Q] [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] [Nonempty Q]
+    [FiniteDimensional k (preprojectiveAlgebra k Q)] :
+    ∃ v : Q, ¬ Function.Injective (preprojectiveKoszulLeft k v) := by
+  obtain ⟨v, y, hy, hb, hy0⟩ :=
+    exists_ne_zero_forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero k Q
+  exact ⟨v, fun h => hy0 ((preprojectiveKoszulLeft_injective_iff k v).1 h y hy hb)⟩
+
+/-- **The Koszulity dichotomy for preprojective algebras of oriented graphs**: for a connected
+finite simple graph `G` and any orientation `o` of `G`, the left Koszul differential of
+`Π_k(OrientedQuiver G o)` is injective at every vertex if and only if `G` is not isomorphic to the
+diagram of any valid Dynkin type. -/
+theorem forall_preprojectiveKoszulLeft_injective_iff (hG : G.Connected) (o : Orientation G) :
+    (∀ v : OrientedQuiver G o, Function.Injective (preprojectiveKoszulLeft k v)) ↔
+      ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix) := by
+  refine ⟨fun h ⟨_, _, ⟨e⟩⟩ => ?_,
+    fun hD v => preprojectiveKoszulLeft_injective_of_not_exists_dynkinType_iso k hG hD o v⟩
+  have _ : Nonempty V := hG.nonempty
+  have _ : Nonempty (OrientedQuiver G o) := (OrientedQuiver.vertexEquiv G o).symm.nonempty
+  have _ := finiteDimensional_preprojectiveAlgebra_of_iso k e o
+  obtain ⟨v, hv⟩ :=
+    exists_not_preprojectiveKoszulLeft_injective_of_finiteDimensional k (Q := OrientedQuiver G o)
+  exact hv (h v)
+
+/-- For a connected finite simple graph `G` and any orientation `o` of `G`, the left Koszul
+differential of `Π_k(OrientedQuiver G o)` is injective at every vertex if and only if
+`Π_k(OrientedQuiver G o)` is infinite-dimensional. -/
+theorem forall_preprojectiveKoszulLeft_injective_iff_not_finiteDimensional
+    (hG : G.Connected) (o : Orientation G) :
+    (∀ v : OrientedQuiver G o, Function.Injective (preprojectiveKoszulLeft k v)) ↔
+      ¬ FiniteDimensional k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
+  rw [forall_preprojectiveKoszulLeft_injective_iff k hG o,
+    finiteDimensional_preprojectiveAlgebra_orientedQuiver_iff k hG o]
+
+end Dichotomy
 
 end TauCeti

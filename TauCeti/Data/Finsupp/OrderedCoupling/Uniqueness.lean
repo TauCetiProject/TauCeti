@@ -56,8 +56,9 @@ theorem sum_indicator_prod_eq_right_and_le_of_support_imp {δ : Type*} [AddCommM
     · by_cases hps : f p ∈ s <;> simp [hpt, hps, hw p]
 
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling equals one
-coordinate lower-set mass, and that mass is at most the other. -/
-theorem sum_indicator_prod_eq_left_or_right [Preorder α] [Preorder β] [AddCommMonoid G]
+coordinate lower-set mass, and that mass is at most the other. The coordinate relations need
+not be reflexive or transitive. -/
+theorem sum_indicator_prod_eq_left_or_right [LE α] [LE β] [AddCommMonoid G]
     [Preorder G] [IsOrderedAddMonoid G] (w : (α × β) →₀ G) (hw : ∀ p, 0 ≤ w p)
     (hc : IsChain (· ≤ ·) (w.support : Set (α × β)))
     {s : Set α} {t : Set β} (hs : IsLowerSet s) (ht : IsLowerSet t) :
@@ -92,7 +93,7 @@ theorem sum_indicator_prod_eq_left_or_right [Preorder α] [Preorder β] [AddComm
 
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling is the infimum
 of the masses of its two coordinate lower sets. -/
-theorem sum_indicator_prod_eq_inf [Preorder α] [Preorder β] [AddCommMonoid G] [SemilatticeInf G]
+theorem sum_indicator_prod_eq_inf [LE α] [LE β] [AddCommMonoid G] [SemilatticeInf G]
     [IsOrderedAddMonoid G] (w : (α × β) →₀ G) (hw : ∀ p, 0 ≤ w p)
     (hc : IsChain (· ≤ ·) (w.support : Set (α × β)))
     {s : Set α} {t : Set β} (hs : IsLowerSet s) (ht : IsLowerSet t) :
@@ -144,23 +145,14 @@ theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β
       u.sum (fun a r => s.indicator (fun _ => r) a)) hfst
     have hg := congrArg (fun u : β →₀ G =>
       u.sum (fun b r => t.indicator (fun _ => r) b)) hsnd
-    rw [sum_mapDomain_index (h := fun a r => s.indicator (fun _ => r) a)
-      (by simp) (by simp [indicator_add]),
-      sum_mapDomain_index (h := fun a r => s.indicator (fun _ => r) a)
-        (by simp) (by simp [indicator_add])] at hf
-    rw [sum_mapDomain_index (h := fun b r => t.indicator (fun _ => r) b)
-      (by simp) (by simp [indicator_add]),
-      sum_mapDomain_index (h := fun b r => t.indicator (fun _ => r) b)
-        (by simp) (by simp [indicator_add])] at hg
+    simp only [sum_mapDomain_index (h := fun a (r : G) => s.indicator (fun _ => r) a)
+      (by simp) (by simp [indicator_add])] at hf
+    simp only [sum_mapDomain_index (h := fun b (r : G) => t.indicator (fun _ => r) b)
+      (by simp) (by simp [indicator_add])] at hg
     have hwmass := sum_indicator_prod_eq_left_or_right w hw hcw hs ht
     have hvmass := sum_indicator_prod_eq_left_or_right v hv hcv hs ht
     rw [hf, hg] at hwmass
-    rcases hwmass with ⟨hwrect, hwle⟩ | ⟨hwrect, hwle⟩ <;>
-      rcases hvmass with ⟨hvrect, hvle⟩ | ⟨hvrect, hvle⟩
-    · exact hwrect.trans hvrect.symm
-    · exact hwrect.trans ((le_antisymm hwle hvle).trans hvrect.symm)
-    · exact hwrect.trans ((le_antisymm hwle hvle).trans hvrect.symm)
-    · exact hwrect.trans hvrect.symm
+    grind
   ext ⟨a, b⟩
   have hwrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod w a b
   have hvrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod v a b
