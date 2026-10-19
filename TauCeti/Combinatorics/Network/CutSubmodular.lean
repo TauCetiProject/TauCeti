@@ -20,8 +20,8 @@ assignments with signed lower bounds.
 ## Main results
 
 * `TauCeti.isSubmodular_outgoingArrowSum`: nonnegative outgoing arrow capacity is submodular.
-* `TauCeti.cutBound_eq_arrowSum_sub_sum_excessAt`: the upper cut bound is a nonnegative outgoing
-  capacity shifted by the excess of the lower bound.
+* `TauCeti.cutBound_eq_arrowSum_sub_sum_excessAt`: the upper cut bound is an outgoing arrow sum
+  shifted by the excess of the lower bound.
 * `TauCeti.isSubmodular_cutBound`: a pair of ordered signed bounds has a submodular upper cut bound.
 -/
 
@@ -56,8 +56,8 @@ theorem isSubmodular_outgoingArrowSum [AddCommMonoid K] [PartialOrder K]
     by_cases hwS : w ∈ S <;> by_cases hwT : w ∈ T <;>
     simp_all
 
-/-- The signed upper cut bound is the outgoing capacity for the nonnegative difference between
-upper and lower bounds, minus the total excess of the lower bound on the source side. -/
+/-- The signed upper cut bound is the outgoing arrow sum for the difference between upper and lower
+bounds, minus the total excess of the lower bound on the source side. -/
 theorem cutBound_eq_arrowSum_sub_sum_excessAt [AddCommGroup K]
     (lo hi : Assignment Q K) (S : Finset V) :
     cutBound lo hi S = arrowSum (hi - lo) S Sᶜ - ∑ v ∈ S, excessAt lo v := by
