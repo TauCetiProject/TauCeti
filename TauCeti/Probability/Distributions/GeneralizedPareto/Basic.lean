@@ -70,6 +70,11 @@ theorem generalizedParetoMap_of_shape_ne_zero {ξ : ℝ} (hξ : ξ ≠ 0) (s e :
     generalizedParetoMap s ξ e = s * (Real.exp (ξ * e) - 1) / ξ := by
   simp [generalizedParetoMap, hξ]
 
+/-- The generalized Pareto transformation sends input zero to zero at every scale and shape. -/
+@[simp]
+theorem generalizedParetoMap_apply_zero (s ξ : ℝ) : generalizedParetoMap s ξ 0 = 0 := by
+  simp [generalizedParetoMap]
+
 /-- The generalized Pareto transformation is measurable jointly in scale, shape, and input. -/
 @[fun_prop]
 theorem measurable_generalizedParetoMap :
@@ -84,6 +89,31 @@ theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
     Measurable (generalizedParetoMap s ξ) :=
   measurable_generalizedParetoMap.comp
     ((measurable_const.prodMk measurable_const).prodMk measurable_id)
+
+/-- The generalized Pareto transformation is continuous in its exponential input. -/
+@[fun_prop]
+theorem continuous_generalizedParetoMap (s ξ : ℝ) :
+    Continuous (generalizedParetoMap s ξ) := by
+  unfold generalizedParetoMap
+  split_ifs <;> fun_prop
+
+/-- At positive scale the generalized Pareto transformation is strictly increasing, for every
+real shape. -/
+theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    StrictMono (generalizedParetoMap s ξ) := by
+  by_cases hξ : ξ = 0
+  · subst ξ
+    intro a b hab
+    simpa only [generalizedParetoMap_zero] using mul_lt_mul_of_pos_left hab hs
+  intro a b hab
+  simp only [generalizedParetoMap_of_shape_ne_zero hξ]
+  rcases lt_or_gt_of_ne hξ with hξ | hξ
+  · apply (div_lt_div_right_of_neg hξ).2
+    exact mul_lt_mul_of_pos_left
+      (sub_lt_sub_right (Real.exp_lt_exp.mpr (mul_lt_mul_of_neg_left hab hξ)) 1) hs
+  · apply (div_lt_div_iff_of_pos_right hξ).2
+    exact mul_lt_mul_of_pos_left
+      (sub_lt_sub_right (Real.exp_lt_exp.mpr (mul_lt_mul_of_pos_left hab hξ)) 1) hs
 
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
