@@ -59,7 +59,9 @@ function `X₁ / X₀` on that chart going to `X`.
 
 * `TauCeti.AlgebraicGeometry.projectiveLine.awayEquivPolynomial_mk`: the chart isomorphism
   sends `p / Xᵢⁿ` to the dehomogenization of `p`.
-* `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_awayι`: the two charts cover `ℙ¹_R`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_awayι` and
+  `TauCeti.AlgebraicGeometry.projectiveLine.basicOpen_coord_sup_eq_top`: the two charts cover
+  `ℙ¹_R`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isIntegral`: `ℙ¹_R` is integral over a domain.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`: its local rings are
   regular over a regular ring.
@@ -241,6 +243,17 @@ theorem exists_eq_awayι (p : projectiveLine R) : ∃ i q, awayι R i q = p := b
   rw [← Proj.opensRange_awayι 𝒜 _ (coord_mem R i) one_pos] at hi
   obtain ⟨q, rfl⟩ := hi
   exact ⟨i, q, rfl⟩
+
+/-- **The standard charts `D₊(X₀)` and `D₊(X₁)` cover the projective line.** -/
+theorem basicOpen_coord_sup_eq_top :
+    Proj.basicOpen 𝒜 (coord R 0) ⊔ Proj.basicOpen 𝒜 (coord R 1) = ⊤ := by
+  refine eq_top_iff.mpr fun p _ ↦ ?_
+  obtain ⟨i, q, rfl⟩ := exists_eq_awayι R p
+  have h : awayι R i q ∈ Proj.basicOpen 𝒜 (coord R i) := by
+    rw [← Proj.opensRange_awayι 𝒜 _ (coord_mem R i) one_pos]
+    exact ⟨q, rfl⟩
+  fin_cases i
+  exacts [TopologicalSpace.Opens.mem_sup.mpr (.inl h), TopologicalSpace.Opens.mem_sup.mpr (.inr h)]
 
 /-- **The projective line over a domain is integral**: `R[X₀, X₁]` is a domain with a nonzero form
 of positive degree. -/
