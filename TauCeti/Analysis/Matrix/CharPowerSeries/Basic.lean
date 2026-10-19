@@ -28,20 +28,27 @@ are exactly the coefficients of `det (1 - X A)`, Mathlib's `Matrix.charpolyRev`
 Fredholm determinant `det (1 - T A)` of Serre's theory of completely continuous endomorphisms
 of nonarchimedean Banach spaces, once the defining sums are known to converge.
 
-Over a complete ultrametric normed ring with `‖1‖ = 1`, convergence and growth are governed by
-row bounds: if `‖A i j‖ ≤ r i` for all entries, then
+Over an ultrametric seminormed commutative ring, a product majorant
+`‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i` controls convergence and growth:
 
-* each principal minor is bounded by `∏ i ∈ s, r i` (`Matrix.norm_principalMinor_le`), and
-  each coefficient by any common bound of those products (`Matrix.norm_charCoeff_le`);
-* if `r` tends to zero along the cofinite filter, the principal minors of each size form a
-  summable family (`Matrix.summable_principalMinor`);
-* if `ρ * r i ≤ q ≤ 1` off a finite set `T` and `ρ * r i ≤ B` everywhere, with `1 ≤ B`, then
-  `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)` (`Matrix.norm_charCoeff_mul_pow_le`);
+* any common nonnegative bound on the size-`n` principal minors bounds the coefficient
+  (`Matrix.norm_charCoeff_le_of_principalMinor_le`);
+* if `r` tends to zero along the cofinite filter and the ring is complete, the principal
+  minors of each size form a summable family (`Matrix.summable_principalMinor_of_le_prod`);
+* if `ρ * r i ≤ q ≤ 1` off a finite set `T` and `ρ * r i ≤ B` everywhere, with `ρ > 0`,
+  `0 ≤ q` and `1 ≤ B`, then `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`
+  (`Matrix.norm_charCoeff_mul_pow_le_of_le_prod`);
 * if `r` tends to zero along the cofinite filter, the series is restricted at every radius,
-  that is, entire (`Matrix.isRestricted_charPowerSeries`).
+  that is, entire (`Matrix.isRestricted_charPowerSeries_of_le_prod`).
+
+Only summability requires completeness; none of these estimates requires `‖1‖ = 1`.
+Over an ultrametric normed commutative ring with `‖1‖ = 1`, row bounds `‖A i j‖ ≤ r i`
+supply the product majorant (`Matrix.norm_principalMinor_le`). They give the row-bound
+corollaries `Matrix.norm_charCoeff_le`, `Matrix.summable_principalMinor`,
+`Matrix.norm_charCoeff_mul_pow_le`, and `Matrix.isRestricted_charPowerSeries`.
 
 The tail estimate depends on `A` only through `r`, so it is uniform over every family of matrices
-sharing one row majorant. The coefficients do not depend on an enumeration of the index type
+sharing one product majorant. The coefficients do not depend on an enumeration of the index type
 (`Matrix.charCoeff_submatrix_equiv`).
 
 The series is compatible with the operations on matrices that act on each principal minor:
@@ -61,8 +68,9 @@ The product-majorant results `Matrix.summable_principalMinor_of_le_prod` and
 They also apply to two-sided entry bounds whose diagonal products tend to zero, even
 when the rows themselves do not decay.
 
-The summability hypotheses in the last two are needed because the coefficients are
-unconditional sums: the image of a non-summable family of minors may be summable with a nonzero
+The summability hypotheses in `Matrix.charPowerSeries_map` and
+`Matrix.charPowerSeries_smul` are needed because the coefficients are unconditional sums: the
+image of a non-summable family of minors may be summable with a nonzero
 sum.
 
 ## Main definitions
@@ -74,7 +82,7 @@ sum.
 
 The coefficients are defined by an unconditional `tsum`, which is zero when the family is not
 summable. Statements about their values that need convergence carry the corresponding row-decay
-hypotheses; the norm bounds hold without them.
+or product-majorant hypotheses; the norm bounds hold without them.
 
 ## References
 
@@ -317,7 +325,7 @@ theorem summable_principalMinor_of_le_prod [CompleteSpace R] {A : Matrix ι ι R
   rw [tendsto_zero_iff_norm_tendsto_zero]
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun s ↦ hA s) ?_
   have hr₀ (i : ι) : 0 ≤ r i := by
-    simpa using (norm_nonneg _).trans (hA {i})
+    simpa only [prod_singleton] using (norm_nonneg _).trans (hA {i})
   obtain ⟨M, hM⟩ := hr.bddAbove_range_of_cofinite
   set M' := max 1 M
   have hM' : 1 ≤ M' := le_max_left _ _
@@ -361,7 +369,7 @@ theorem norm_charCoeff_mul_pow_le_of_le_prod {A : Matrix ι ι R} {r : ι → �
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (n : ℕ) :
     ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) := by
   have hr₀ (i : ι) : 0 ≤ ρ * r i :=
-    mul_nonneg hρ.le (by simpa using (norm_nonneg _).trans (hA {i}))
+    mul_nonneg hρ.le (by simpa only [prod_singleton] using (norm_nonneg _).trans (hA {i}))
   have hρn : 0 < ρ ^ n := pow_pos hρ n
   rw [← le_div_iff₀ hρn]
   refine norm_charCoeff_le_of_principalMinor_le (div_nonneg (mul_nonneg (pow_nonneg (by linarith) _)

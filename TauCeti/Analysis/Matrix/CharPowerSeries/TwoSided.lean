@@ -38,6 +38,19 @@ public section
 
 open Filter Finset Topology
 
+namespace TauCeti
+
+private theorem tendsto_zpow_mul_cofinite {ι : Type*} {σ : ℝ}
+    (hσ₀ : 0 < σ) (hσ₁ : σ < 1) {w w' : ι → ℤ}
+    (hw : Tendsto (fun i ↦ w i - w' i) cofinite atTop) :
+    Tendsto (fun i ↦ σ ^ w i * σ ^ (-w' i)) cofinite (𝓝 0) := by
+  simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg, Function.comp_def,
+    Real.rpow_intCast] using
+    (tendsto_rpow_atTop_of_base_lt_one σ (by linarith) hσ₁).comp
+      (tendsto_intCast_atTop_atTop.comp hw)
+
+end TauCeti
+
 namespace Matrix
 
 variable {ι R : Type*} [DecidableEq ι]
@@ -75,13 +88,10 @@ theorem summable_principalMinor_of_zpow [CompleteSpace R] {A : Matrix ι ι R} {
     (hσ₀ : 0 < σ) (hσ₁ : σ < 1) {w w' : ι → ℤ}
     (hA : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j))
     (hw : Tendsto (fun i ↦ w i - w' i) cofinite atTop) (n : ℕ) :
-    Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s := by
-  refine summable_principalMinor_of_le_prod (r := fun i ↦ σ ^ (w i - w' i)) (fun s ↦ ?_)
-    ?_ n
-  · simpa only [prod_zpow_eq_zpow_sum₀ _ hσ₀.ne'] using norm_principalMinor_le_zpow hσ₀ hA s
-  · simpa only [Function.comp_def, Real.rpow_intCast] using
-      (tendsto_rpow_atTop_of_base_lt_one σ (by linarith) hσ₁).comp
-        (tendsto_intCast_atTop_atTop.comp hw)
+    Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s :=
+  summable_principalMinor_of_two_sided (c := fun i ↦ σ ^ w i) (d := fun j ↦ σ ^ (-w' j))
+    (by simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg] using hA)
+    (TauCeti.tendsto_zpow_mul_cofinite hσ₀ hσ₁ hw) n
 
 /-- Cofinite growth of the diagonal weight differences gives an entire matrix minor
 series. This applies to two-sided bounds independently of any operator realization. -/
@@ -89,12 +99,9 @@ theorem isRestricted_charPowerSeries_of_zpow {A : Matrix ι ι R} {σ : ℝ}
     (hσ₀ : 0 < σ) (hσ₁ : σ < 1) {w w' : ι → ℤ}
     (hA : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j))
     (hw : Tendsto (fun i ↦ w i - w' i) cofinite atTop) (ρ : ℝ) :
-    A.charPowerSeries.IsRestricted ρ := by
-  refine isRestricted_charPowerSeries_of_le_prod (r := fun i ↦ σ ^ (w i - w' i))
-    (fun s ↦ ?_) ?_ ρ
-  · simpa only [prod_zpow_eq_zpow_sum₀ _ hσ₀.ne'] using norm_principalMinor_le_zpow hσ₀ hA s
-  · simpa only [Function.comp_def, Real.rpow_intCast] using
-      (tendsto_rpow_atTop_of_base_lt_one σ (by linarith) hσ₁).comp
-        (tendsto_intCast_atTop_atTop.comp hw)
+    A.charPowerSeries.IsRestricted ρ :=
+  isRestricted_charPowerSeries_of_two_sided (c := fun i ↦ σ ^ w i) (d := fun j ↦ σ ^ (-w' j))
+    (by simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg] using hA)
+    (TauCeti.tendsto_zpow_mul_cofinite hσ₀ hσ₁ hw) ρ
 
 end Matrix

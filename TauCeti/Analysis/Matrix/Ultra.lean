@@ -27,8 +27,12 @@ Taking `d = 1` gives the bound of a determinant by the product of row bounds
 (`Matrix.norm_coeff_charpolyRev_le`). These are the estimates from which convergence and growth of
 Fredholm determinants of compact operators on nonarchimedean Banach spaces are derived.
 
+Two-sided entry bounds also control each principal minor by the product of the diagonal
+factors `c i * d i` (`Matrix.norm_principalMinor_le_prod_mul`).
 The two-sided form `‖A i j‖ ≤ σ ^ (w i - w' j)`, with integer weights `w`, `w'` and
-`0 < σ ≤ 1`, bounds the `k`-th coefficient by `σ ^ m` whenever `m` is a lower bound for the sums
+`0 < σ ≤ 1`, bounds each principal minor by `σ ^ (∑ i ∈ s, (w i - w' i))`
+(`Matrix.norm_principalMinor_le_zpow`) and the `k`-th coefficient by `σ ^ m` whenever `m` is a
+lower bound for the sums
 `∑ i ∈ s, (w i - w' i)` over the `k`-element sets `s` (`Matrix.norm_coeff_charpolyRev_le_zpow`).
 The bound depends only on the differences `w i - w' i` along the diagonal, although the entry
 bounds compare a row weight with an unrelated column weight.
@@ -36,7 +40,8 @@ bounds compare a row weight with an unrelated column weight.
 ## Main results
 
 * `Matrix.norm_det_le_prod_mul_prod`, `Matrix.norm_det_le_prod_of_norm_le`,
-  `Matrix.norm_principalMinor_le`: determinant and principal-minor bounds.
+  `Matrix.norm_principalMinor_le`, `Matrix.norm_principalMinor_le_prod_mul`,
+  `Matrix.norm_principalMinor_le_zpow`: determinant and principal-minor bounds.
 * `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
 * `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
