@@ -321,6 +321,24 @@ theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V
   | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
   | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
 
+/-- A complex subspace of a `UqSl2 q`-module that is stable under `E`, `F`, `K` and `K⁻¹` is
+stable under every element of `UqSl2 q`. -/
+theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
+    (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
+    (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
+  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
+    rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction generalizing x with
+  | mem a ha =>
+    obtain ⟨g, rfl⟩ := ha
+    cases g
+    exacts [he x hx, hf x hx, hk x hx, hkInv x hx]
+  | algebraMap c => rw [algebraMap_smul]; exact W.smul_mem c hx
+  | add a b _ _ ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
+  | mul a b _ _ ha hb => rw [mul_smul]; exact ha (hb hx)
+
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where
   toFun F :=
