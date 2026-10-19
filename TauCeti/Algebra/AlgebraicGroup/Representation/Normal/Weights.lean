@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Normal.Finite
 public import TauCeti.RingTheory.FiniteType.FiniteRange
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation

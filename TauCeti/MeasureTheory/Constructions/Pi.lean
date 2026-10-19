@@ -51,6 +51,13 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 `finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
 the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
+**Extensionality from boxes.** A finite measure on a finite product space, which need not be a
+product measure, is determined by its values on measurable boxes `Set.univ.pi s`, because boxes
+form a π-system generating the product σ-algebra and contain the whole space. The same holds on
+`γ × (∀ i, α i)` for the products `S ×ˢ Set.univ.pi s`. These are the box analogues of Mathlib's
+`MeasureTheory.Measure.ext_prod`; Mathlib's `MeasureTheory.Measure.pi_eq` covers only the case
+where one side is a product measure.
+
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
@@ -68,6 +75,10 @@ the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 * `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
   on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
   product measures.
+* `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
+  measurable boxes are equal;
+* `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
+  on products of a measurable set and a measurable box are equal.
 
 ## Implementation
 
@@ -341,3 +352,38 @@ theorem measurePreserving_finFourArrowPairPair (μ : Measure β) [SigmaFinite μ
 end FinArrow
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+
+/-- **Finite measures on a finite product are determined by boxes.** Two measures on
+`∀ i, α i` agreeing on every measurable box `Set.univ.pi s` are equal, provided the first is finite;
+the box `Set.univ` then makes the second finite too. -/
+theorem ext_pi {μ ν : Measure (∀ i, α i)} [IsFiniteMeasure μ]
+    (h : ∀ s : ∀ i, Set (α i), (∀ i, MeasurableSet (s i)) → μ (univ.pi s) = ν (univ.pi s)) :
+    μ = ν := by
+  refine ext_of_generate_finite _ generateFrom_pi.symm isPiSystem_pi ?_ ?_
+  · rintro _ ⟨s, hs, rfl⟩
+    exact h s fun i ↦ hs i (mem_univ i)
+  · simpa using h (fun _ ↦ univ) fun _ ↦ .univ
+
+/-- **Finite measures on `γ × (∀ i, α i)` are determined by box rectangles.** Two measures agreeing
+on every product `S ×ˢ Set.univ.pi s` of a measurable set and a measurable box are equal, provided
+the first is finite. -/
+theorem ext_prod_pi {γ : Type*} [MeasurableSpace γ] {μ ν : Measure (γ × ∀ i, α i)}
+    [IsFiniteMeasure μ]
+    (h : ∀ S : Set γ, MeasurableSet S → ∀ s : ∀ i, Set (α i), (∀ i, MeasurableSet (s i)) →
+      μ (S ×ˢ univ.pi s) = ν (S ×ˢ univ.pi s)) :
+    μ = ν := by
+  refine ext_of_generate_finite (image2 (· ×ˢ ·) {S : Set γ | MeasurableSet S}
+    (univ.pi '' univ.pi fun i ↦ {s : Set (α i) | MeasurableSet s})) ?_ ?_ ?_ ?_
+  · exact (generateFrom_eq_prod MeasurableSpace.generateFrom_measurableSet generateFrom_pi
+      isCountablySpanning_measurableSet
+      (IsCountablySpanning.pi fun _ ↦ isCountablySpanning_measurableSet)).symm
+  · exact MeasurableSpace.isPiSystem_measurableSet.prod isPiSystem_pi
+  · rintro _ ⟨S, hS, _, ⟨s, hs, rfl⟩, rfl⟩
+    exact h S hS s fun i ↦ hs i (mem_univ i)
+  · simpa using h univ .univ (fun _ ↦ univ) fun _ ↦ .univ
+
+end MeasureTheory.Measure

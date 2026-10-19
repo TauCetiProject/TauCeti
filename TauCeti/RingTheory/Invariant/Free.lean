@@ -12,7 +12,9 @@ public import Mathlib.RingTheory.Unramified.Finite
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
 # Free actions of finite groups on rings
@@ -62,6 +64,10 @@ preimages in `R`, so the identity is a finite dual basis of `A` over `R` and `A`
   a finite `R`-module, and if `R → A` is injective it is projective and faithfully flat.
 * `TauCeti.MulSemiringAction.formallyUnramified`, `TauCeti.MulSemiringAction.etale`: `A` is
   formally unramified over `R`, and étale if `R → A` is injective.
+* `TauCeti.MulSemiringAction.exists_sum_smul_eq_one`: for a free action with invariant ring `R`
+  and `R → A` injective, some element has trace `∑ g, g • c = 1`.
+* `TauCeti.MulSemiringAction.span_range_smul_sub_eq_top_iff`: on a finite-type algebra over a
+  field, freeness of `g` means that `g` fixes no point valued in an algebraically closed field.
 
 ## References
 
@@ -333,6 +339,66 @@ theorem etale [Finite G] [FaithfulSMul R A]
   have := Module.finitePresentation_of_projective R A
   exact .of_formallyUnramified_of_flat
 
+/-- For a free action of a finite group with invariant ring `R`, if `R → A` is injective then
+some element of `A` has trace `∑ g, g • c` equal to `1`. Equivalently, the trace `A → R` is
+surjective. -/
+theorem exists_sum_smul_eq_one [Fintype G] [FaithfulSMul R A]
+    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤) :
+    ∃ c : A, ∑ g : G, g • c = 1 := by
+  classical
+  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
+  obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
+  -- The traces lying in `R` form an ideal of `R`; its extension to `A` contains
+  -- `1 = ∑ i, xᵢ * ∑ g, g • yᵢ`, so integrality of `A` over `R` makes it the unit ideal.
+  let t : A →ₗ[R] A := ∑ g : G, (MulSemiringAction.toAlgHom R A g).toLinearMap
+  let I : Ideal R := (LinearMap.range t).comap (Algebra.linearMap R A)
+  have hone : ∑ p ∈ S, p.1 * ∑ g : G, g • p.2 = 1 := by
+    simp only [Finset.mul_sum]
+    rw [Finset.sum_comm]
+    simp [hS]
+  have hI : I = ⊤ := by
+    have := Algebra.IsInvariant.isIntegral R A G
+    refine (Ideal.map_eq_top_iff (algebraMap R A) (FaithfulSMul.algebraMap_injective R A)
+      fun a ↦ Algebra.IsIntegral.isIntegral a).mp ?_
+    rw [Ideal.eq_top_iff_one, ← hone]
+    refine Ideal.sum_mem _ fun p _ ↦ Ideal.mul_mem_left _ _ ?_
+    obtain ⟨r, hr⟩ :=
+      Algebra.IsInvariant.isInvariant (A := R) _ (smul_sum_smul (G := G) · p.2)
+    rw [← hr]
+    exact Ideal.mem_map_of_mem _ ⟨p.2, by simp [t, hr]⟩
+  obtain ⟨c, hc⟩ := (show (1 : R) ∈ I from hI ▸ Submodule.mem_top)
+  exact ⟨c, by simpa [t] using hc⟩
+
 end Invariant
+
+section Points
+
+variable {k K : Type*} [Field k] [Field K] [IsAlgClosed K] [Algebra k K]
+  [Algebra k A] [Algebra.FiniteType k A] [SMulCommClass G k A]
+
+/-- On a finite-type algebra over a field, the elements `g • a - a` generate the unit ideal
+exactly when `g` fixes no point valued in an algebraically closed extension field. Thus freeness
+in the sense of `tensorToPi_surjective_iff` can be tested on geometric points. -/
+theorem span_range_smul_sub_eq_top_iff (g : G) :
+    Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤ ↔
+      ∀ x : A →ₐ[k] K, x.comp (MulSemiringAction.toAlgHom k A g) ≠ x := by
+  constructor
+  · intro h x hx
+    have hle : Ideal.span (Set.range fun a : A ↦ g • a - a) ≤ RingHom.ker x.toRingHom := by
+      rw [Ideal.span_le]
+      rintro _ ⟨a, rfl⟩
+      simpa [sub_eq_zero] using DFunLike.congr_fun hx a
+    rw [h] at hle
+    simpa using hle (Submodule.mem_top (x := (1 : A)))
+  · intro h
+    by_contra hne
+    obtain ⟨x, hle, -⟩ := exists_algHom_apply_ne_zero_of_notMem_radical (k := k) (K := K)
+      (Ideal.span (Set.range fun a : A ↦ g • a - a)) (x := 1)
+      fun h1 ↦ hne (Ideal.radical_eq_top.mp ((Ideal.eq_top_iff_one _).mpr h1))
+    refine h x (AlgHom.ext fun a ↦ ?_)
+    have ha : x (g • a - a) = 0 := hle (Ideal.subset_span ⟨a, rfl⟩)
+    simpa [sub_eq_zero] using ha
+
+end Points
 
 end TauCeti.MulSemiringAction

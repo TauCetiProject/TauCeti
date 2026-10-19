@@ -83,7 +83,7 @@ theorem integral_bilinear_fderiv_apply_comm (B : V →L[ℝ] V →L[ℝ] W) (hu 
   have hcs : ∀ F G : E → V, HasCompactSupport G → HasCompactSupport fun x ↦ B (F x) (G x) :=
     fun F G hG ↦ hG.mono fun x hx ↦ by
       simp only [Function.mem_support] at hx ⊢
-      contrapose! hx
+      contrapose hx
       simp [hx]
   -- the derivative in the direction `w` of the derivative of `u` in the direction `v`
   have hsnd : ∀ (v w : E) (x : E),

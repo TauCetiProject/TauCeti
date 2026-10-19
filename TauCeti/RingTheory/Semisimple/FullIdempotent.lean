@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 import TauCeti.RingTheory.Idempotents.Matrix
 import TauCeti.RingTheory.TwoSidedIdeal.Full
 

@@ -456,3 +456,8 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
 }
 @media (max-width: 520px) { .pb-tiles { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: no-preference) { .pb-row td { transition: background 120ms; } }
+
+.ci-live { margin: 2rem 0; padding: 1.2rem 1.5rem; border: 1px solid var(--border, #334155); border-radius: 12px; }
+.ci-live[data-stale="true"] [data-ci-status] { color: #fbbf24; }
+.ci-live ul { max-height: 18rem; overflow: auto; }
+.ci-chart-age { font-size: .85rem; opacity: .8; }
