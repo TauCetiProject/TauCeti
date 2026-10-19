@@ -981,7 +981,7 @@ private theorem spinGroupToSpecialLinear_coe
   rfl
 
 private theorem spinGroupToSpecialLinear_matrix
-    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
     [FiniteDimensional K V]
     (hline : P.line = ⊥)
     (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
