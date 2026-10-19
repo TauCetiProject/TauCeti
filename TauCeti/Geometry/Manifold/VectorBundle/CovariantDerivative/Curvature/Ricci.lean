@@ -28,9 +28,10 @@ and the metric need not vary smoothly. Compactness and absence of boundary are n
 We give the coordinate formula in any basis and the inner-product formula in an
 orthonormal basis. The constant-curvature calculation fixes the sign convention:
 `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` gives `Ric = (dim - 1) κ g`.
-The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart.
 The calculation is stated for any bilinear form in place of `κ g`, and then specialised
 to `κ g`.
+
+The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is

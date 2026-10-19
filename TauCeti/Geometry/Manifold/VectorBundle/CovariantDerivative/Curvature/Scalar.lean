@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
@@ -16,7 +17,9 @@ The scalar curvature of a connection on a Riemannian tangent bundle is the metri
 Ricci tensor. The definition is basis-free; in an orthonormal basis it is the sum of the diagonal
 Ricci curvatures. In the chart-local frame of a tangent trivialization it is the classical
 contraction `gⁱʲ Rᵢⱼ` of the Ricci coefficients against the inverse Gram matrix. Applying it to
-the Levi-Civita connection gives the scalar curvature of a Riemannian manifold.
+the Levi-Civita connection gives the scalar curvature of a Riemannian manifold; for a smooth
+metric `g`, `Bundle.ContMDiffRiemannianMetric.scalarCurvature` records it as a function of `g`, so
+that several metrics on one manifold can be compared.
 
 As for `CovariantDerivative.ricciTensor`, the connection need not preserve the metric or be torsion
 free. The pointwise formulas do not need the metric to vary smoothly; for a smooth metric, the
@@ -173,3 +176,35 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
   ring
 
 end CovariantDerivative
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+
+/-- The scalar curvature of a smooth Riemannian metric `g`: the scalar curvature of the
+Levi-Civita connection of `g`, with `g` as the fibre inner product. -/
+def scalarCurvature (x : M) : ℝ :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+
+/-- The scalar curvature of `g` is that of its Levi-Civita connection, with `g` installed as the
+fibre inner product. -/
+theorem scalarCurvature_def (x : M) :
+    g.scalarCurvature x =
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x :=
+  (rfl)
+
+/-- The scalar curvature of a smooth Riemannian metric is a smooth function. -/
+theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  exact (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature
+
+/-- The scalar curvature of a smooth Riemannian metric is continuous. -/
+theorem continuous_scalarCurvature : Continuous g.scalarCurvature :=
+  g.contMDiff_scalarCurvature.continuous
+
+end Bundle.ContMDiffRiemannianMetric

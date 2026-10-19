@@ -6,26 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 
 /-!
-# Scalar curvature of a smooth metric and positive scalar curvature
+# Positive scalar curvature
 
-The scalar curvature of a smooth Riemannian metric `g` on the tangent bundle is the scalar
-curvature of the Levi-Civita connection of `g`, computed with the inner products of `g` itself.
-Recording it as a function of `g`, rather than of an ambient `RiemannianBundle` instance, lets
-several metrics on one manifold be compared, as is needed for spaces and families of metrics.
-
-A smooth metric has positive scalar curvature when its scalar curvature is positive at every
-point. Since scalar curvature is a smooth function of the point, on a compact manifold such a
-metric has scalar curvature bounded below by a positive constant. No assumption on the boundary
-is made.
+A smooth Riemannian metric `g` on the tangent bundle has positive scalar curvature when its
+scalar curvature `Bundle.ContMDiffRiemannianMetric.scalarCurvature`, that of the Levi-Civita
+connection of `g`, is positive at every point. Since scalar curvature is a smooth function of
+the point, on a compact manifold such a metric has scalar curvature bounded below by a positive
+constant. No assumption on the boundary is made.
 
 ## Main definitions and results
 
-* `Bundle.ContMDiffRiemannianMetric.scalarCurvature`: the scalar curvature of a smooth metric.
-* `Bundle.ContMDiffRiemannianMetric.contMDiff_scalarCurvature`: it is a smooth function.
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature`: positivity at every point.
+* `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.exists_pos_le`: on a compact
+  manifold, positive scalar curvature has a uniform positive lower bound.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff_exists_pos_le`: on a compact
   manifold, positive scalar curvature is equivalent to a uniform positive lower bound.
 
@@ -50,29 +45,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-
-/-- The scalar curvature of a smooth Riemannian metric `g`: the scalar curvature of the
-Levi-Civita connection of `g`, with `g` as the fibre inner product. -/
-def scalarCurvature (x : M) : ℝ :=
-  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-
-/-- The scalar curvature of `g` is that of its Levi-Civita connection, with `g` installed as the
-fibre inner product. -/
-theorem scalarCurvature_def (x : M) :
-    g.scalarCurvature x =
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x :=
-  (rfl)
-
-/-- The scalar curvature of a smooth Riemannian metric is a smooth function. -/
-theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  exact (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature
-
-/-- The scalar curvature of a smooth Riemannian metric is continuous. -/
-theorem continuous_scalarCurvature : Continuous g.scalarCurvature :=
-  g.contMDiff_scalarCurvature.continuous
 
 /-- A smooth Riemannian metric has positive scalar curvature if its scalar curvature is positive
 at every point. -/
