@@ -98,19 +98,37 @@ theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
     exact mul_lt_mul_of_pos_right (mul_lt_mul_of_pos_left (sub_lt_sub_right he 1) hs)
       (inv_pos.mpr hξ)
 
+/-- Applying the generalized Pareto transformation to its logarithmic inverse recovers the
+original input in the interior of the support. -/
+theorem generalizedParetoMap_log_div {s ξ x : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0)
+    (hx : 0 < 1 + ξ * x / s) :
+    generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) = x := by
+  rw [generalizedParetoMap_of_shape_ne_zero hξ]
+  have hmul : ξ * (Real.log (1 + ξ * x / s) / ξ) = Real.log (1 + ξ * x / s) := by
+    field_simp
+  rw [hmul, Real.exp_log hx]
+  field_simp
+  ring
+
+/-- In the interior of the support, comparison with a generalized Pareto value is equivalent
+to comparison with its logarithmic inverse. -/
+theorem generalizedParetoMap_le_iff {s ξ x : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0)
+    (hx : 0 < 1 + ξ * x / s) (e : ℝ) :
+    generalizedParetoMap s ξ e ≤ x ↔ e ≤ Real.log (1 + ξ * x / s) / ξ := by
+  calc
+    generalizedParetoMap s ξ e ≤ x ↔
+        generalizedParetoMap s ξ e ≤
+          generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) := by
+      rw [generalizedParetoMap_log_div hs hξ hx]
+    _ ↔ e ≤ Real.log (1 + ξ * x / s) / ξ :=
+      (strictMono_generalizedParetoMap hs ξ).le_iff_le
+
 /-- The generalized Pareto transformation is continuous in its exponential input. -/
+@[fun_prop]
 theorem continuous_generalizedParetoMap (s ξ : ℝ) :
     Continuous (generalizedParetoMap s ξ) := by
-  by_cases hξ : ξ = 0
-  · subst ξ
-    rw [show generalizedParetoMap s 0 = fun e => s * e by
-      funext e
-      exact generalizedParetoMap_zero s e]
-    fun_prop
-  · rw [show generalizedParetoMap s ξ = fun e => s * (Real.exp (ξ * e) - 1) / ξ by
-      funext e
-      exact generalizedParetoMap_of_shape_ne_zero hξ s e]
-    fun_prop
+  unfold generalizedParetoMap
+  split_ifs <;> fun_prop
 
 /-- The generalized Pareto transformation is measurable jointly in scale, shape, and input. -/
 @[fun_prop]
