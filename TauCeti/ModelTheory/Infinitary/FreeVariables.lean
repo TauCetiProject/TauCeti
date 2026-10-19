@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Reindex
+public import TauCeti.ModelTheory.Infinitary.Operations
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -19,7 +20,7 @@ bound-variable slot and therefore do not change this support.
 Realization depends only on the free valuation on this set. For a countable branching carrier
 the support is countable, and for an embedded first-order formula it is exactly Mathlib's
 `BoundedFormula.freeVarFinset`. Coded connectives collect the support of their original branches,
-and carrier transport preserves support.
+and carrier transport and bound-variable relabelling preserve support.
 -/
 
 public section
@@ -43,6 +44,14 @@ theorem term_realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type
   have hv : v₁ ∘ ((↑) : (↑t.varFinsetLeft : Set α) → α) = v₂ ∘ (↑) :=
     funext fun a => h a.property
   rw [hv]
+
+/-- Relabelling right variables preserves a term's finite left-variable support. -/
+theorem term_varFinsetLeft_relabel [DecidableEq α] {β γ : Type*}
+    (f : β → γ) (t : L.Term (α ⊕ β)) :
+    (t.relabel (Sum.map id f)).varFinsetLeft = t.varFinsetLeft := by
+  induction t with
+  | var a => cases a <;> simp
+  | func g ts ih => simp [ih]
 
 namespace BoundedFormulaInf
 
@@ -141,6 +150,26 @@ theorem freeVarSupport_exs (φ : L.BoundedFormulaInf ι α n) :
   induction n with
   | zero => rw [FirstOrder.Language.BoundedFormulaInf.exs_zero]
   | succ n ih => rw [FirstOrder.Language.BoundedFormulaInf.exs_succ, ih, freeVarSupport_ex]
+
+/-- Relabelling bound-variable slots preserves syntactic free-variable support. -/
+@[simp]
+theorem freeVarSupport_mapBound {m : ℕ} (f : Fin m → Fin n)
+    (φ : L.BoundedFormulaInf ι α m) : freeVarSupport (φ.mapBound f) = freeVarSupport φ := by
+  classical
+  induction φ generalizing n with
+  | falsum => simp
+  | equal t₁ t₂ => simp [term_varFinsetLeft_relabel]
+  | rel R ts => simp [term_varFinsetLeft_relabel]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- Weakening the bound-variable context preserves syntactic free-variable support. -/
+@[simp]
+theorem freeVarSupport_castLE {m : ℕ} (h : m ≤ n) (φ : L.BoundedFormulaInf ι α m) :
+    freeVarSupport (φ.castLE h) = freeVarSupport φ := by
+  rw [FirstOrder.Language.BoundedFormulaInf.castLE_def, freeVarSupport_mapBound]
 
 private theorem mem_freeVarSupport_pad {κ : Type uκ} (c : IndexCoding ι κ)
     (d : L.BoundedFormulaInf κ α n) (φs : ι → L.BoundedFormulaInf κ α n) (k : κ) (a : α) :
