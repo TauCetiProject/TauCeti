@@ -102,11 +102,110 @@ theorem continuousLinearMap_ext_of_forall_inner_section_eq {x : M} {A B : V' x �
 
 end Nondegenerate
 
-variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
 /-! ### The Koszul expression -/
 
 namespace Manifold
+
+variable (I) in
+/-- The right-hand side of the Koszul formula for a pointwise bilinear pairing `b`. -/
+@[expose] def koszulBilinear
+    (b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+    (X Y Z : Π x : M, TangentSpace I x) (x : M) : ℝ :=
+  mvfderiv I (fun y ↦ b y (Y y) (Z y)) x (X x)
+    + mvfderiv I (fun y ↦ b y (Z y) (X y)) x (Y x)
+    - mvfderiv I (fun y ↦ b y (X y) (Y y)) x (Z x)
+    + b x (mlieBracket I X Y x) (Z x)
+    - b x (mlieBracket I X Z x) (Y x)
+    - b x (mlieBracket I Y Z x) (X x)
+
+/-- The defining formula for the Koszul expression of a pointwise bilinear pairing. -/
+theorem koszulBilinear_apply
+    (b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+    (X Y Z : Π x : M, TangentSpace I x) (x : M) :
+    koszulBilinear I b X Y Z x =
+      mvfderiv I (fun y ↦ b y (Y y) (Z y)) x (X x)
+        + mvfderiv I (fun y ↦ b y (Z y) (X y)) x (Y x)
+        - mvfderiv I (fun y ↦ b y (X y) (Y y)) x (Z x)
+        + b x (mlieBracket I X Y x) (Z x)
+        - b x (mlieBracket I X Z x) (Y x)
+        - b x (mlieBracket I Y Z x) (X x) :=
+  rfl
+
+variable
+  {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+  {X Y Z : Π x : M, TangentSpace I x} {x : M}
+
+/-- Antisymmetrizing the bilinear Koszul expression in its first two arguments returns twice the
+pairing of the Lie bracket with the third argument. -/
+theorem koszulBilinear_sub_koszulBilinear_swap_first_two
+    (hb : ∀ x v w, b x v w = b x w v) :
+    koszulBilinear I b X Y Z x - koszulBilinear I b Y X Z x =
+      2 * b x (mlieBracket I X Y x) (Z x) := by
+  have hsection (U V : Π x : M, TangentSpace I x) :
+      (fun y ↦ b y (U y) (V y)) = fun y ↦ b y (V y) (U y) :=
+    funext fun y ↦ hb y _ _
+  rw [koszulBilinear, koszulBilinear, hsection Z Y, hsection Y X, hsection X Z,
+    mlieBracket_swap_apply (V := Y) (W := X)]
+  simp only [map_neg, neg_apply]
+  ring
+
+/-- Symmetrizing the bilinear Koszul expression in its last two arguments returns twice the
+derivative of their pairing along the first argument. -/
+theorem koszulBilinear_add_koszulBilinear_swap_last_two
+    (hb : ∀ x v w, b x v w = b x w v) :
+    koszulBilinear I b Z X Y x + koszulBilinear I b Z Y X x =
+      2 * mvfderiv I (fun y ↦ b y (X y) (Y y)) x (Z x) := by
+  have hsection (U V : Π x : M, TangentSpace I x) :
+      (fun y ↦ b y (U y) (V y)) = fun y ↦ b y (V y) (U y) :=
+    funext fun y ↦ hb y _ _
+  rw [koszulBilinear, koszulBilinear, hsection Y X, hsection Y Z, hsection X Z,
+    mlieBracket_swap_apply (V := Y) (W := X)]
+  simp only [map_neg, neg_apply]
+  ring
+
+/-- The Koszul identity for a symmetric pointwise bilinear pairing implies its metric product
+rule along differentiable vector fields. -/
+theorem metricProductRule_of_two_apply_eq_koszulBilinear
+    [IsManifold I 1 M]
+    {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    (hb : ∀ x v w, b x v w = b x w v)
+    (h : ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
+      MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
+      2 * b x (cov Y x (X x)) (Z x) = koszulBilinear I b X Y Z x) :
+    ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
+      MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
+      mvfderiv I (fun y ↦ b y (Y y) (Z y)) x (X x) =
+        b x (cov Y x (X x)) (Z x) + b x (Y x) (cov Z x (X x)) := by
+  intro x X Y Z hX hY hZ
+  have hXY := h hX hY hZ
+  have hYX := h hX hZ hY
+  have key := koszulBilinear_add_koszulBilinear_swap_last_two hb
+    (X := Y) (Y := Z) (Z := X) (x := x)
+  rw [hb x (Y x) (cov Z x (X x))]
+  linarith
+
+/-- The Koszul identity for a symmetric nondegenerate pointwise bilinear pairing implies that the
+connection is torsion free. -/
+theorem torsion_eq_zero_of_two_apply_eq_koszulBilinear [FiniteDimensional ℝ E]
+    [IsManifold I 2 M] {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    (hb : ∀ x v w, b x v w = b x w v)
+    (hinjective : ∀ x, Function.Injective fun u : TangentSpace I x ↦
+      fun (Z : Π x : M, TangentSpace I x) (_ : MDiffAt (T% Z) x) ↦ b x u (Z x))
+    (h : ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
+      MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
+      2 * b x (cov Y x (X x)) (Z x) = koszulBilinear I b X Y Z x) :
+    cov.torsion = 0 := by
+  refine cov.torsion_eq_zero_iff.mpr fun {X Y x} hX hY ↦ ?_
+  refine hinjective x ?_
+  ext Z hZ
+  have hXY := h hX hY hZ
+  have hYX := h hY hX hZ
+  have key := koszulBilinear_sub_koszulBilinear_swap_first_two hb
+    (X := X) (Y := Y) (Z := Z) (x := x)
+  simp only [map_sub, sub_apply]
+  linarith
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
 /-- The right-hand side of the Koszul formula,
@@ -135,22 +234,16 @@ theorem koszul_apply (X Y Z : Π x : M, TangentSpace I x) (x : M) :
         - inner ℝ (mlieBracket I X Z x) (Y x)
         - inner ℝ (mlieBracket I Y Z x) (X x) := (rfl)
 
-variable {X Y Z : Π x : M, TangentSpace I x} {x : M}
-
-/-- Swapping the two inner arguments of a pointwise inner product of sections. -/
-private theorem inner_section_comm (Y Z : Π x : M, TangentSpace I x) :
-    (fun y ↦ inner ℝ (Y y) (Z y)) = fun y ↦ inner ℝ (Z y) (Y y) :=
-  funext fun _ ↦ real_inner_comm _ _
-
 /-- Antisymmetrising the Koszul expression in its first two arguments returns twice the inner
 product of the Lie bracket with the third argument. This is the identity behind the torsion-free
 half of `CovariantDerivative.isLeviCivitaConnection_iff`. -/
 theorem koszul_sub_koszul_swap_first_two :
     koszul I X Y Z x - koszul I Y X Z x = 2 * inner ℝ (mlieBracket I X Y x) (Z x) := by
-  rw [koszul, koszul, inner_section_comm Z Y, inner_section_comm Y X, inner_section_comm X Z,
-    mlieBracket_swap_apply (V := Y) (W := X)]
-  simp only [inner_neg_left]
-  ring
+  have hinner (y : M) (v w : TangentSpace I y) : innerSL ℝ v w = inner ℝ v w := rfl
+  simpa only [koszul, koszulBilinear, hinner] using
+    (koszulBilinear_sub_koszulBilinear_swap_first_two
+      (b := fun _ ↦ innerSL ℝ) (fun _ v w ↦ real_inner_comm w v) (X := X) (Y := Y)
+        (Z := Z) (x := x))
 
 /-- Symmetrising the Koszul expression in its last two arguments returns twice the derivative of
 their inner product along the first argument. This is the identity behind the metric half of
@@ -158,10 +251,11 @@ their inner product along the first argument. This is the identity behind the me
 theorem koszul_add_koszul_swap_last_two :
     koszul I Z X Y x + koszul I Z Y X x =
       2 * mvfderiv I (fun y ↦ inner ℝ (X y) (Y y)) x (Z x) := by
-  rw [koszul, koszul, inner_section_comm Y X, inner_section_comm Y Z, inner_section_comm X Z,
-    mlieBracket_swap_apply (V := Y) (W := X)]
-  simp only [inner_neg_left]
-  ring
+  have hinner (y : M) (v w : TangentSpace I y) : innerSL ℝ v w = inner ℝ v w := rfl
+  simpa only [koszul, koszulBilinear, hinner] using
+    (koszulBilinear_add_koszulBilinear_swap_last_two
+      (b := fun _ ↦ innerSL ℝ) (fun _ v w ↦ real_inner_comm w v) (X := X) (Y := Y)
+        (Z := Z) (x := x))
 
 section InnerDifferentiability
 
@@ -310,6 +404,30 @@ namespace CovariantDerivative
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [FiniteDimensional ℝ E]
+  {cov cov' : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+
+/-- Two covariant derivatives have zero difference if they agree on every section differentiable
+at the point where they are evaluated. -/
+theorem difference_eq_zero_of_forall
+    (h : ∀ (x : M) (Y : Π x : M, TangentSpace I x), MDiffAt (T% Y) x → cov Y x = cov' Y x) :
+    cov.difference cov' = 0 := by
+  ext x v
+  have hv : MDiffAt (T% (extend E v : Π y : M, TangentSpace I y)) x :=
+    mdifferentiableAt_extend I E v
+  have hd := IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
+    cov'.isCovariantDerivativeOnUniv (x := x) (Set.mem_univ x) hv
+  rw [extend_apply_self] at hd
+  simp [CovariantDerivative.difference, hd, h x (extend E v) hv]
+
+end CovariantDerivative
+
+namespace CovariantDerivative
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E] [IsManifold I 2 M]
@@ -339,40 +457,33 @@ theorem isLeviCivitaConnection_iff :
       MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
       2 * inner ℝ (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszul I X Y Z x := by
   refine ⟨fun h _ _ _ _ hX hY hZ ↦ h.two_inner_eq_koszul hX hY hZ, fun h ↦ ⟨?_, ?_⟩⟩
+  all_goals
+    let b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ := fun _ ↦ innerSL ℝ
+    have hinner (y : M) (v w : TangentSpace I y) : b y v w = inner ℝ v w := rfl
+    have hb (y : M) (v w : TangentSpace I y) : b y v w = b y w v := by
+      rw [hinner, hinner, real_inner_comm]
+    have hk : ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
+        MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
+        2 * b x (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszulBilinear I b X Y Z x := by
+      intro x X Y Z hX hY hZ
+      simpa only [hinner, TauCeti.Manifold.koszul, TauCeti.Manifold.koszulBilinear] using
+        h hX hY hZ
   · rw [CovariantDerivative.isMetricCompatible_iff]
     intro x X Y Z hX hY hZ
-    have hXY := h hX hY hZ
-    have hYX := h hX hZ hY
-    have key := TauCeti.Manifold.koszul_add_koszul_swap_last_two
-      (I := I) (X := Y) (Y := Z) (Z := X) (x := x)
-    -- Normalize the beta-redexes introduced by the local notations in `isMetricCompatible_iff`.
-    simp only
-    rw [real_inner_comm (cov Z x (X x)) (Y x)]
-    linarith
-  · refine cov.torsion_eq_zero_iff.mpr fun {X Y x} hX hY ↦ ?_
-    refine injective_inner_mdifferentiableAt_section I E (TangentSpace I) x ?_
-    ext Z hZ
-    have hXY := h hX hY hZ
-    have hYX := h hY hX hZ
-    have key := TauCeti.Manifold.koszul_sub_koszul_swap_first_two
-      (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
-    simp only [inner_sub_left]
-    linarith
+    simpa only [hinner] using
+      (TauCeti.Manifold.metricProductRule_of_two_apply_eq_koszulBilinear hb hk hX hY hZ)
+  · have hinjective (x : M) : Function.Injective fun u : TangentSpace I x ↦
+        fun (Z : Π x : M, TangentSpace I x) (_ : MDiffAt (T% Z) x) ↦ b x u (Z x) := by
+      simpa only [hinner] using injective_inner_mdifferentiableAt_section I E (TangentSpace I) x
+    exact TauCeti.Manifold.torsion_eq_zero_of_two_apply_eq_koszulBilinear hb hinjective hk
 
 /-- **Uniqueness of the Levi-Civita connection**, as the vanishing of the endomorphism-valued
 one-form measuring the difference of two connections. On a single differentiable section this is
 Mathlib's `CovariantDerivative.IsLeviCivitaConnection.uniqueness`. -/
 theorem IsLeviCivitaConnection.difference_eq_zero (h : cov.IsLeviCivitaConnection)
-    (h' : cov'.IsLeviCivitaConnection) : cov.difference cov' = 0 := by
-  ext x v
-  have hv : MDiffAt (T% (extend E v : Π y : M, TangentSpace I y)) x :=
-    mdifferentiableAt_extend I E v
-  have hd := IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
-    cov'.isCovariantDerivativeOnUniv (x := x) (Set.mem_univ x) hv
-  rw [extend_apply_self] at hd
-  have hu : cov (extend E v) x = cov' (extend E v) x :=
-    ContinuousLinearMap.ext (h.uniqueness (hcov' := h') (hY := hv))
-  simp [CovariantDerivative.difference, hd, hu]
+    (h' : cov'.IsLeviCivitaConnection) : cov.difference cov' = 0 :=
+  difference_eq_zero_of_forall fun _ _ hY ↦
+    ContinuousLinearMap.ext (h.uniqueness (hcov' := h') (hY := hY))
 
 /-- **The Koszul formula** for Mathlib's Levi-Civita connection
 `CovariantDerivative.leviCivitaConnection`, in terms of `TauCeti.Manifold.koszul`. -/

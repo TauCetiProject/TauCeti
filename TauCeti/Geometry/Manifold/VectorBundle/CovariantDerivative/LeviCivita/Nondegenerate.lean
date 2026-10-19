@@ -33,7 +33,7 @@ the uniqueness half of the fundamental theorem of pseudo-Riemannian geometry.
 For the metric of a Riemannian bundle instance, these notions agree with Mathlib's
 `CovariantDerivative.IsMetricCompatible` and `CovariantDerivative.IsLeviCivitaConnection`, and
 Mathlib's `CovariantDerivative.leviCivitaConnection` is a Levi-Civita connection of
-`TauCeti.Manifold.ContMDiffNondegenerateMetric.ofRiemannianBundle`.
+the nondegenerate metric obtained from the bundled Riemannian metric.
 
 ## Main definitions and results
 
@@ -58,6 +58,12 @@ Mathlib's `CovariantDerivative.leviCivitaConnection` is a Levi-Civita connection
   Ch. 3, Thm. 11.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018),
   Thm. 5.10.
+* `Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita`: the
+  `injective_inner_mdifferentiableAt_vectorField`, `IsLeviCivitaConnection.apply_eq_extend`, and
+  `IsLeviCivitaConnection.uniqueness` arguments adapted here, with the inner product replaced by
+  `g` and positivity by nondegeneracy.
+* `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic`: the
+  positive-definite Koszul development generalized here to `g`.
 -/
 
 public section
@@ -99,12 +105,7 @@ theorem injective_apply_mdifferentiableAt_vectorField (x : M) :
 evaluated at `x`. For a Levi-Civita connection `∇` of `g` it computes `2 g(∇_X Y, Z)`, by
 `TauCeti.Manifold.ContMDiffNondegenerateMetric.IsLeviCivitaConnection.two_apply_eq_koszul`. -/
 def koszul (X Y Z : Π x : M, TangentSpace I x) (x : M) : ℝ :=
-  mvfderiv I (fun y ↦ g y (Y y) (Z y)) x (X x)
-    + mvfderiv I (fun y ↦ g y (Z y) (X y)) x (Y x)
-    - mvfderiv I (fun y ↦ g y (X y) (Y y)) x (Z x)
-    + g x (mlieBracket I X Y x) (Z x)
-    - g x (mlieBracket I X Z x) (Y x)
-    - g x (mlieBracket I Y Z x) (X x)
+  TauCeti.Manifold.koszulBilinear I g X Y Z x
 
 /-- The defining formula for the Koszul expression of a nondegenerate metric. -/
 theorem koszul_apply (X Y Z : Π x : M, TangentSpace I x) (x : M) :
@@ -114,30 +115,21 @@ theorem koszul_apply (X Y Z : Π x : M, TangentSpace I x) (x : M) :
         - mvfderiv I (fun y ↦ g y (X y) (Y y)) x (Z x)
         + g x (mlieBracket I X Y x) (Z x)
         - g x (mlieBracket I X Z x) (Y x)
-        - g x (mlieBracket I Y Z x) (X x) := (rfl)
-
-/-- Swapping the two tangent arguments of the pointwise pairing of two vector fields. -/
-private theorem apply_section_comm (Y Z : Π x : M, TangentSpace I x) :
-    (fun y ↦ g y (Y y) (Z y)) = fun y ↦ g y (Z y) (Y y) :=
-  funext fun y ↦ g.apply_comm y _ _
+        - g x (mlieBracket I Y Z x) (X x) :=
+  TauCeti.Manifold.koszulBilinear_apply g X Y Z x
 
 /-- Antisymmetrizing the Koszul expression in its first two arguments returns twice the pairing
 of the Lie bracket with the third argument. -/
 theorem koszul_sub_koszul_swap_first_two :
-    g.koszul X Y Z x - g.koszul Y X Z x = 2 * g x (mlieBracket I X Y x) (Z x) := by
-  rw [koszul, koszul, g.apply_section_comm Z Y, g.apply_section_comm Y X,
-    g.apply_section_comm X Z, mlieBracket_swap_apply (V := Y) (W := X)]
-  simp only [map_neg, neg_apply]
-  ring
+    g.koszul X Y Z x - g.koszul Y X Z x = 2 * g x (mlieBracket I X Y x) (Z x) :=
+  TauCeti.Manifold.koszulBilinear_sub_koszulBilinear_swap_first_two g.apply_comm
 
 /-- Symmetrizing the Koszul expression in its last two arguments returns twice the derivative of
 their pairing along the first argument. -/
 theorem koszul_add_koszul_swap_last_two :
-    g.koszul Z X Y x + g.koszul Z Y X x = 2 * mvfderiv I (fun y ↦ g y (X y) (Y y)) x (Z x) := by
-  rw [koszul, koszul, g.apply_section_comm Y X, g.apply_section_comm Y Z,
-    g.apply_section_comm X Z, mlieBracket_swap_apply (V := Y) (W := X)]
-  simp only [map_neg, neg_apply]
-  ring
+    g.koszul Z X Y x + g.koszul Z Y X x =
+      2 * mvfderiv I (fun y ↦ g y (X y) (Y y)) x (Z x) :=
+  TauCeti.Manifold.koszulBilinear_add_koszulBilinear_swap_last_two g.apply_comm
 
 /-- For a metric whose pairing is the inner product of a Riemannian bundle instance, the Koszul
 expression is `TauCeti.Manifold.koszul`. -/
@@ -155,6 +147,15 @@ def IsMetricCompatible (cov : CovariantDerivative I E (fun x : M ↦ TangentSpac
   ∀ ⦃x : M⦄ ⦃Y Z : Π x : M, TangentSpace I x⦄, MDiffAt (T% Y) x → MDiffAt (T% Z) x →
     ∀ v : TangentSpace I x,
       mvfderiv I (fun y ↦ g y (Y y) (Z y)) x v = g x (cov Y x v) (Z x) + g x (Y x) (cov Z x v)
+
+/-- Compatibility with a nondegenerate metric, in its defining arbitrary-tangent-vector form. -/
+theorem isMetricCompatible_def :
+    g.IsMetricCompatible cov ↔
+      ∀ ⦃x : M⦄ ⦃Y Z : Π x : M, TangentSpace I x⦄,
+        MDiffAt (T% Y) x → MDiffAt (T% Z) x → ∀ v : TangentSpace I x,
+          mvfderiv I (fun y ↦ g y (Y y) (Z y)) x v =
+            g x (cov Y x v) (Z x) + g x (Y x) (cov Z x v) :=
+  Iff.rfl
 
 variable {g}
 
@@ -220,20 +221,10 @@ theorem isLeviCivitaConnection_iff :
       MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
       2 * g x (cov Y x (X x)) (Z x) = g.koszul X Y Z x := by
   refine ⟨fun h _ _ _ _ hX hY hZ ↦ h.two_apply_eq_koszul hX hY hZ, fun h ↦ ⟨?_, ?_⟩⟩
-  · refine isMetricCompatible_iff.mpr fun x X Y Z hX hY hZ ↦ ?_
-    have hXY := h hX hY hZ
-    have hYX := h hX hZ hY
-    have key := g.koszul_add_koszul_swap_last_two (X := Y) (Y := Z) (Z := X) (x := x)
-    rw [g.apply_comm x (Y x) (cov Z x (X x))]
-    linarith
-  · refine cov.torsion_eq_zero_iff.mpr fun {X Y x} hX hY ↦ ?_
-    refine g.injective_apply_mdifferentiableAt_vectorField x ?_
-    ext Z hZ
-    have hXY := h hX hY hZ
-    have hYX := h hY hX hZ
-    have key := g.koszul_sub_koszul_swap_first_two (X := X) (Y := Y) (Z := Z) (x := x)
-    simp only [map_sub, sub_apply]
-    linarith
+  · exact isMetricCompatible_iff.mpr
+      (TauCeti.Manifold.metricProductRule_of_two_apply_eq_koszulBilinear g.apply_comm h)
+  · exact TauCeti.Manifold.torsion_eq_zero_of_two_apply_eq_koszulBilinear g.apply_comm
+      g.injective_apply_mdifferentiableAt_vectorField h
 
 /-- **Uniqueness of the Levi-Civita connection** of a nondegenerate metric: two Levi-Civita
 connections of `g` agree on every vector field differentiable at the base point.
@@ -254,15 +245,9 @@ theorem IsLeviCivitaConnection.uniqueness (h : g.IsLeviCivitaConnection cov)
 /-- Uniqueness of the Levi-Civita connection of a nondegenerate metric, as the vanishing of the
 endomorphism-valued one-form `CovariantDerivative.difference` of two of them. -/
 theorem IsLeviCivitaConnection.difference_eq_zero (h : g.IsLeviCivitaConnection cov)
-    (h' : g.IsLeviCivitaConnection cov') : cov.difference cov' = 0 := by
-  ext x v
-  have hv := mdifferentiableAt_extend I E v
-  have hd := IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
-    cov'.isCovariantDerivativeOnUniv (x := x) (Set.mem_univ x) hv
-  rw [extend_apply_self] at hd
-  have hu : cov (extend E v) x = cov' (extend E v) x :=
-    ContinuousLinearMap.ext (h.uniqueness h' hv)
-  simp [CovariantDerivative.difference, hd, hu]
+    (h' : g.IsLeviCivitaConnection cov') : cov.difference cov' = 0 :=
+  CovariantDerivative.difference_eq_zero_of_forall fun _ _ hY ↦
+    ContinuousLinearMap.ext (h.uniqueness h' hY)
 
 /-! ### The positive-definite specialization -/
 
@@ -278,16 +263,18 @@ theorem isLeviCivitaConnection_iff_of_apply_eq_inner
 
 variable (I M) in
 /-- Mathlib's Levi-Civita connection of a smooth Riemannian manifold is a Levi-Civita connection of
-its metric, viewed as a nondegenerate metric. The order-one instance
-`IsContMDiffRiemannianBundle I 1` required by `CovariantDerivative.leviCivitaConnection` is carried
-alongside the smooth one, since instance search does not derive it. -/
+its metric, viewed as a nondegenerate metric. -/
 theorem isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] :
-    (ofRiemannianBundle I M).IsLeviCivitaConnection
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
+    (Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
+      (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)).toNondegenerateMetric
+        |>.IsLeviCivitaConnection
       (CovariantDerivative.leviCivitaConnection I M) :=
-  (isLeviCivitaConnection_iff_of_apply_eq_inner (ofRiemannianBundle_apply I M)).mpr
+  (isLeviCivitaConnection_iff_of_apply_eq_inner (fun x v w ↦ by
+    simp only [Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric_apply,
+      Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+    rfl)).mpr
     (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetric
