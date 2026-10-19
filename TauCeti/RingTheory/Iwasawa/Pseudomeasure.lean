@@ -87,6 +87,7 @@ theorem mem_pseudomeasures_iff {z : Q} :
 theorem pseudomeasures_eq_top (h : ∀ g, δ g = 1) : pseudomeasures δ Q = ⊤ :=
   eq_top_iff.2 fun z _ => mem_pseudomeasures_iff.2 fun g => ⟨0, by simp [h g]⟩
 
+/-- Every element of `R` is a pseudo-measure: `(δ g - 1) * r` comes from `R`. -/
 theorem algebraMap_mem_pseudomeasures (r : R) : algebraMap R Q r ∈ pseudomeasures δ Q :=
   mem_pseudomeasures_iff.2 fun g => ⟨(δ g - 1) * r, map_mul _ _ _⟩
 
@@ -98,9 +99,12 @@ def integral : R →ₗ[R] pseudomeasures δ Q :=
 
 variable {δ Q}
 
+/-- An integral pseudo-measure is the image of its element of `R` in `Q`. -/
 @[simp]
 theorem coe_integral (r : R) : (integral δ Q r : Q) = algebraMap R Q r := (rfl)
 
+/-- The inclusion of `R` into the pseudo-measures is injective when `R → Q` is, that is, when
+`Q` is a faithful `R`-algebra (for instance the total quotient ring of `R`). -/
 theorem integral_injective [FaithfulSMul R Q] : Function.Injective (integral δ Q) :=
   fun _ _ h => FaithfulSMul.algebraMap_injective R Q congr(($h : Q))
 
@@ -117,6 +121,7 @@ def numerator (g : G) : pseudomeasures δ Q →ₗ[R] R :=
         obtain ⟨r, hr⟩ := mem_pseudomeasures_iff.1 z.2 g
         exact ⟨r, by simpa using hr⟩)
 
+/-- The defining property of the cleared numerator: its image in `Q` is `(δ g - 1) * z`. -/
 @[simp]
 theorem algebraMap_numerator (g : G) (z : pseudomeasures δ Q) :
     algebraMap R Q (numerator δ Q g z) = algebraMap R Q (δ g - 1) * z := by
@@ -124,14 +129,18 @@ theorem algebraMap_numerator (g : G) (z : pseudomeasures δ Q) :
     ← LinearEquiv.ofInjective_apply _ (h := FaithfulSMul.algebraMap_injective R Q)]
   simp [numerator]
 
+/-- Uniqueness of the cleared numerator: since `R → Q` is injective, any `r : R` whose image in
+`Q` is `(δ g - 1) * z` is the numerator of `z` at `g`. -/
 theorem numerator_eq_of_algebraMap_eq {g : G} {z : pseudomeasures δ Q} {r : R}
     (h : algebraMap R Q r = algebraMap R Q (δ g - 1) * z) : numerator δ Q g z = r :=
   FaithfulSMul.algebraMap_injective R Q <| by rw [algebraMap_numerator, h]
 
+/-- The cleared numerator of the integral pseudo-measure `r` at `g` is `(δ g - 1) * r`. -/
 @[simp]
 theorem numerator_integral (g : G) (r : R) : numerator δ Q g (integral δ Q r) = (δ g - 1) * r :=
   numerator_eq_of_algebraMap_eq <| by simp
 
+/-- The clearing factor at `g = 1` is `δ 1 - 1 = 0`, so every cleared numerator at `1` vanishes. -/
 @[simp]
 theorem numerator_one : numerator δ Q (1 : G) = 0 :=
   LinearMap.ext fun _ => numerator_eq_of_algebraMap_eq <| by simp
@@ -158,13 +167,18 @@ def evalAt (g : G) (hg : IsUnit (algebraMap R A (δ g - 1))) :
 
 variable {A}
 
+/-- Unfolding the evaluation: `z` is sent to `(δ g - 1)⁻¹ * numerator δ Q g z` in `A`. -/
 theorem evalAt_apply (g : G) (hg : IsUnit (algebraMap R A (δ g - 1))) (z : pseudomeasures δ Q) :
     evalAt δ Q A g hg z = ↑hg.unit⁻¹ * algebraMap R A (numerator δ Q g z) := (rfl)
 
+/-- The cleared identity for the evaluation: multiplying the value of `z` by the image of the
+admissible clearing factor `δ g - 1` in `A` gives the image of the cleared numerator of `z` at
+`g`. Since that clearing factor is a unit of `A`, this determines the value. -/
 theorem evalAt_spec (g : G) (hg : IsUnit (algebraMap R A (δ g - 1))) (z : pseudomeasures δ Q) :
     algebraMap R A (δ g - 1) * evalAt δ Q A g hg z = algebraMap R A (numerator δ Q g z) := by
   rw [evalAt_apply, ← mul_assoc, IsUnit.mul_val_inv, one_mul]
 
+/-- The evaluation extends the structure map `R → A` on integral pseudo-measures. -/
 @[simp]
 theorem evalAt_integral (g : G) (hg : IsUnit (algebraMap R A (δ g - 1))) (r : R) :
     evalAt δ Q A g hg (integral δ Q r) = algebraMap R A r := by
