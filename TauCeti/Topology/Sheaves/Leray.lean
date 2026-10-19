@@ -146,7 +146,7 @@ private lemma isZero_homology_cechComplex_under [Finite ι]
     (asIso (HomologicalComplex.homologyMap
       (cechAugmentation U isTerminalTop (Injective.under F).obj) (k + 1))).symm
 
-/-- The Čech connecting map `Ȟⁿ(U, Q) ⟶ Ȟⁿ⁺¹(U, F)` is onto. -/
+/-- The Čech connecting map `Hⁿ(U, Q) ⟶ Hⁿ⁺¹(U, F)` is onto. -/
 private lemma epi_δ_cechSeq [Finite ι] {F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
     (hF : IsLerayProd U F) (n : ℕ) :
     Epi ((cechSeq_shortExact hF).δ n (n + 1) rfl) :=
@@ -199,7 +199,7 @@ private def cechIsoOne [Finite ι] (F : Sheaf (Opens.grothendieckTopology X) Add
         (injectiveCokernelSequence_shortExact F) 0 1 rfl)), hEH.g_desc_assoc, Category.assoc,
         hEC.g_desc, Iso.inv_hom_id_assoc, Category.comp_id] }
 
-/-- The degree-one comparison commutes with the connecting maps `Ȟ⁰(U, Q) ⟶ Ȟ¹(U, F)` and
+/-- The degree-one comparison commutes with the Čech connecting map `H⁰(U, Q) ⟶ H¹(U, F)` and
 `H⁰(Q) ⟶ H¹(F)`. -/
 private lemma δ_comp_cechIsoOne_hom [Finite ι]
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) (hF : IsLerayProd U F) :
