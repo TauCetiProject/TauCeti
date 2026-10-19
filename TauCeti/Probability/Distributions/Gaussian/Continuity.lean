@@ -60,15 +60,11 @@ theorem continuous_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq �
   intro p a hp
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
-  have hcov (i j : ι) : Continuous (fun p :
-      EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦ p.2.1 i j) :=
-    (continuous_subtype_val.comp continuous_snd).matrix_elem i j
   have hquad : Continuous (fun p :
       EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-        (t ⬝ᵥ p.2.1 *ᵥ t : ℝ)) := by
-    simp only [Matrix.mulVec, dotProduct]
-    exact continuous_finsetSum _ fun i _ ↦ continuous_const.mul
-      (continuous_finsetSum _ fun j _ ↦ (hcov i j).mul continuous_const)
+        (t ⬝ᵥ p.2.1 *ᵥ t : ℝ)) :=
+    continuous_const.dotProduct
+      ((continuous_subtype_val.comp continuous_snd).matrix_mulVec continuous_const)
   have hmean : Continuous (fun p :
       EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦ (⟪t, p.1⟫ : ℝ)) :=
     continuous_const.inner continuous_fst
