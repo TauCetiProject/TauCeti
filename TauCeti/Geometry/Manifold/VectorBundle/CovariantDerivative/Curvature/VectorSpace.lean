@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Euclidean
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 
 /-!
 # Euclidean space is flat
@@ -72,7 +72,6 @@ theorem curvatureTensor_leviCivitaConnection_model_space (x : F) :
 
 /-- The Ricci tensor of the standard Riemannian metric on a finite-dimensional real
 inner-product space vanishes. -/
-@[simp]
 theorem ricciTensor_leviCivitaConnection_model_space (x : F) :
     (leviCivitaConnection (modelWithCornersSelf ℝ F) F).ricciTensor x = 0 :=
   ricciTensor_eq_zero_of_curvatureTensor_eq_zero _ x
