@@ -57,6 +57,7 @@ def entireExtension (α : CStarAction (Multiplicative ℝ) A) (a : A) : ℂ → 
 variable {α : CStarAction (Multiplicative ℝ) A} {a b : A}
 
 /-- The complex-time extension vanishes away from the entire analytic elements. -/
+@[simp]
 theorem entireExtension_of_not_isEntireAnalytic (h : ¬α.IsEntireAnalytic a) :
     α.entireExtension a = 0 := by
   rw [entireExtension, dite_eq_right h]
@@ -70,12 +71,14 @@ theorem differentiable_entireExtension (h : α.IsEntireAnalytic a) :
   exact h.choose_spec.1
 
 /-- At real times the complex-time extension is the action. -/
+@[simp]
 theorem entireExtension_ofReal (h : α.IsEntireAnalytic a) (t : ℝ) :
     α.entireExtension a t = α (Multiplicative.ofAdd t) a := by
   rw [entireExtension, dite_eq_left h]
   exact h.choose_spec.2 t
 
 /-- At time zero the complex-time extension is the identity. -/
+@[simp]
 theorem entireExtension_apply_zero (h : α.IsEntireAnalytic a) : α.entireExtension a 0 = a := by
   simpa using h.entireExtension_ofReal 0
 
@@ -184,6 +187,7 @@ theorem add (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) :
     simp [ha.entireExtension_ofReal, hb.entireExtension_ofReal]⟩
 
 /-- The complex-time extension is additive. -/
+@[simp]
 theorem entireExtension_add (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) (z : ℂ) :
     α.entireExtension (a + b) z = α.entireExtension a z + α.entireExtension b z :=
   congrFun (entireExtension_eq_of_differentiable
@@ -196,6 +200,7 @@ theorem smul (c : ℂ) (ha : α.IsEntireAnalytic a) : α.IsEntireAnalytic (c •
     simp [ha.entireExtension_ofReal]⟩
 
 /-- The complex-time extension is complex linear. -/
+@[simp]
 theorem entireExtension_smul (c : ℂ) (ha : α.IsEntireAnalytic a) (z : ℂ) :
     α.entireExtension (c • a) z = c • α.entireExtension a z :=
   congrFun (entireExtension_eq_of_differentiable
@@ -215,6 +220,7 @@ theorem neg (ha : α.IsEntireAnalytic a) : α.IsEntireAnalytic (-a) :=
   ⟨_, ha.differentiable_entireExtension.neg, fun t => by simp [ha.entireExtension_ofReal]⟩
 
 /-- The complex-time extension commutes with negation. -/
+@[simp]
 theorem entireExtension_neg (ha : α.IsEntireAnalytic a) (z : ℂ) :
     α.entireExtension (-a) z = -α.entireExtension a z :=
   congrFun (entireExtension_eq_of_differentiable ha.differentiable_entireExtension.neg fun t => by
@@ -227,6 +233,7 @@ theorem sub (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) :
     simp [ha.entireExtension_ofReal, hb.entireExtension_ofReal]⟩
 
 /-- The complex-time extension commutes with subtraction. -/
+@[simp]
 theorem entireExtension_sub (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) (z : ℂ) :
     α.entireExtension (a - b) z = α.entireExtension a z - α.entireExtension b z :=
   congrFun (entireExtension_eq_of_differentiable
@@ -240,6 +247,7 @@ theorem mul (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) :
     fun t => by simp [ha.entireExtension_ofReal, hb.entireExtension_ofReal]⟩
 
 /-- The complex-time extension is multiplicative: `α_z (a b) = α_z a α_z b`. -/
+@[simp]
 theorem entireExtension_mul (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b) (z : ℂ) :
     α.entireExtension (a * b) z = α.entireExtension a z * α.entireExtension b z :=
   congrFun (entireExtension_eq_of_differentiable (ha.differentiable_entireExtension_mul hb)
@@ -257,6 +265,7 @@ theorem star (ha : α.IsEntireAnalytic a) : α.IsEntireAnalytic (star a) :=
     simp [ha.entireExtension_ofReal, map_star]⟩
 
 /-- **Star relation.** `α_z (a⋆) = (α_{conj z} a)⋆`. -/
+@[simp]
 theorem entireExtension_star (ha : α.IsEntireAnalytic a) (z : ℂ) :
     α.entireExtension (Star.star a) z = Star.star (α.entireExtension a (conj z)) :=
   congrFun (entireExtension_eq_of_differentiable ha.differentiable_star_entireExtension_conj
