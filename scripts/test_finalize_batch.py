@@ -189,6 +189,26 @@ class FinalizerTests(unittest.TestCase):
             self.assertEqual(request.call_args.kwargs["timeout"], 15)
             response.read.assert_called_once_with(finalizer.MAX_BYTES + 1)
 
+    def test_jobs_and_run_attempt_reads_require_revalidation_but_status_post_is_unchanged(self):
+        with patch.dict(os.environ, GH_TOKEN="test-token"), patch.object(finalizer.urllib.request, "urlopen") as opener:
+            response = opener.return_value.__enter__.return_value
+            response.read.return_value = b'{}'
+            for path in ["/actions/runs/12/attempts/2/jobs?per_page=100", "/actions/runs/12"]:
+                finalizer.api(path)
+                request = opener.call_args.args[0]
+                self.assertEqual(request.get_method(), "GET")
+                self.assertEqual(request.full_url, finalizer.API_ROOT + path)
+                self.assertEqual(request.get_header("Cache-control"), "no-cache, no-store")
+                self.assertEqual(request.get_header("Pragma"), "no-cache")
+                self.assertEqual(opener.call_args.kwargs["timeout"], 15)
+            payload = dict(state="failure", context="build")
+            finalizer.api("/statuses/" + "a" * 40, payload)
+            request = opener.call_args.args[0]
+            self.assertEqual(request.get_method(), "POST")
+            self.assertEqual(json.loads(request.data), payload)
+            self.assertIsNone(request.get_header("Cache-control"))
+            self.assertIsNone(request.get_header("Pragma"))
+
     def test_final_post_honors_retry_after_with_a_bounded_recovery_budget(self):
         for retry_after in ["60", "Thu, 01 Jan 1970 00:01:00 GMT", "600", "invalid"]:
             with self.subTest(retry_after=retry_after):
