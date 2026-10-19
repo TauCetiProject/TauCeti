@@ -47,6 +47,8 @@ so `σ ↦ permToBrauer σ` extends to an injective algebra map from the group a
   `TauCeti.BrauerAlgebra.coeff` in the diagram basis.
 * `TauCeti.BrauerAlgebra.of`: the basis element of a Brauer diagram.
 * `TauCeti.BrauerAlgebra.basis`: the diagram basis.
+* `TauCeti.BrauerAlgebra.lift`: the algebra map out of the Brauer algebra extending an assignment
+  on the diagrams that sends the identity diagram to `1` and obeys the loop rule.
 * `TauCeti.BrauerAlgebra.ofPerm`: the algebra map from the group algebra of `Sₖ`.
 
 ## Main results
@@ -55,7 +57,7 @@ so `σ ↦ permToBrauer σ` extends to an injective algebra map from the group a
 * `TauCeti.BrauerAlgebra.one_def`: the unit is the identity diagram.
 * `TauCeti.BrauerAlgebra.finrank_eq_doubleFactorial`: the Brauer algebra has rank `(2 * k - 1)‼`.
 * `TauCeti.BrauerAlgebra.algHom_ext`: an algebra map out of the Brauer algebra is determined by
-  its values on the diagrams.
+  its values on the diagrams; `TauCeti.BrauerAlgebra.eq_lift` identifies it with a lift.
 * `TauCeti.BrauerAlgebra.ofPerm_injective`: the group algebra of `Sₖ` embeds.
 * `TauCeti.BrauerAlgebra.of_capCup_mul_of_capCup`,
   `TauCeti.BrauerAlgebra.of_permToBrauer_swap_mul_of_capCup` and
@@ -319,6 +321,40 @@ theorem finrank_eq_doubleFactorial [StrongRankCondition R] :
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra R A] {f g : BrauerAlgebra R δ k →ₐ[R] A}
     (h : ∀ D, f (of D) = g (of D)) : f = g :=
   AlgHom.toLinearMap_injective <| (basis R δ k).ext fun D => by simpa using h D
+
+section lift
+
+variable {A : Type*} [Semiring A] [Algebra R A]
+
+/-- **Maps out of the Brauer algebra.** An assignment of elements of an `R`-algebra to the
+diagrams that sends the identity diagram to `1` and obeys the loop rule extends to an algebra
+map. -/
+noncomputable def lift (F : BrauerDiagram k → A) (h_one : F (permToBrauer 1) = 1)
+    (h_mul : ∀ D₁ D₂, F D₁ * F D₂ = δ ^ middleLoopCount D₁ D₂ • F (composeDiagram D₁ D₂)) :
+    BrauerAlgebra R δ k →ₐ[R] A :=
+  have hF (D : BrauerDiagram k) : (basis R δ k).constr R F (of D) = F D :=
+    (basis R δ k).constr_basis R F D
+  AlgHom.ofLinearMap ((basis R δ k).constr R F) (by rw [one_def, hF, h_one]) fun x y =>
+    LinearMap.congr_fun₂ (f := (LinearMap.mul R _).compr₂ ((basis R δ k).constr R F))
+      (g := (LinearMap.mul R A).compl₁₂ ((basis R δ k).constr R F) ((basis R δ k).constr R F))
+      ((basis R δ k).ext fun D₁ => (basis R δ k).ext fun D₂ => by
+        simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
+          basis_apply, of_mul_of, map_smul, hF, h_mul]) x y
+
+@[simp]
+theorem lift_of (F : BrauerDiagram k → A) (h_one : F (permToBrauer 1) = 1)
+    (h_mul : ∀ D₁ D₂, F D₁ * F D₂ = δ ^ middleLoopCount D₁ D₂ • F (composeDiagram D₁ D₂))
+    (D : BrauerDiagram k) : lift F h_one h_mul (of D : BrauerAlgebra R δ k) = F D :=
+  (basis R δ k).constr_basis R F D
+
+/-- An algebra map out of the Brauer algebra is the lift of its values on the diagrams. -/
+theorem eq_lift (F : BrauerDiagram k → A) (h_one : F (permToBrauer 1) = 1)
+    (h_mul : ∀ D₁ D₂, F D₁ * F D₂ = δ ^ middleLoopCount D₁ D₂ • F (composeDiagram D₁ D₂))
+    {f : BrauerAlgebra R δ k →ₐ[R] A} (h : ∀ D, f (of D) = F D) :
+    f = lift F h_one h_mul :=
+  algHom_ext fun D => by simp [h]
+
+end lift
 
 /-! ### The symmetric group inside the Brauer algebra -/
 
