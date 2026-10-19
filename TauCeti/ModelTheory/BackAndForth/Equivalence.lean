@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.BackAndForth.AtomicType
 public import Mathlib.Data.Fin.Tuple.Basic
+public import TauCeti.Data.Fin.Tuple.Basic
 public import Mathlib.SetTheory.Ordinal.Arithmetic
 
 /-!
@@ -38,13 +39,6 @@ open FirstOrder Fin
 variable {L : Language.{u, v}} [L.IsRelational]
 variable {M : Type w} {N : Type w'} {P : Type w''}
 variable [L.Structure M] [L.Structure N] [L.Structure P]
-
-/-- Reindexing a tuple and then adjoining its final entry commutes with adjoining an entry. -/
-theorem snoc_comp_snoc_castSucc_comp {Q : Sort*} {m n : ℕ} (c : Fin n → Q) (z : Q)
-    (g : Fin m → Fin n) :
-    snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
-  funext i
-  exact lastCases (by simp) (fun j => by simp) i
 
 /-- Ordinal back-and-forth equivalence of tuples. At successors the previous level is retained,
 in addition to the forth and back requirements. The language is relational. -/

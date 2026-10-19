@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
-# Insertions at adjacent positions of a tuple
+# Insertions and appends in tuples
 
 The positions `k.castSucc` and `k.succ` of `Fin (m + 1)` are adjacent: each one skips the other
 to land on `k` (`Fin.succAbove_castSucc_self`, `Fin.succAbove_succ_self`). This file reads off
@@ -21,6 +21,8 @@ insertions there.
   one of two adjacent positions, the other position holds the `k`-th entry of the tuple.
 * `Fin.update_insertNth_castSucc`: inserting at `k.castSucc` and updating `k.succ` is inserting at
   `k.succ` and updating `k.castSucc`.
+* `Fin.snoc_comp_snoc_castSucc_comp`: reindexing along `g` and then appending agrees with
+  appending and then reindexing along the extension of `g` that fixes the last position.
 -/
 
 public section
@@ -57,5 +59,11 @@ theorem update_insertNth_castSucc (k : Fin m) (y : Fin m → α) (u v : α) :
   · rw [Function.update_of_ne h'.ne', Function.update_of_ne h.ne', insertNth_apply_above h,
       insertNth_apply_above h']
     simp
+
+/-- Reindexing a tuple and then adjoining its final entry commutes with adjoining an entry. -/
+theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : Fin m → Fin n) :
+    snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
+  funext i
+  exact lastCases (by simp) (fun j => by simp) i
 
 end Fin
