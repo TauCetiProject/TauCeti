@@ -274,6 +274,22 @@ theorem coordinatePermMulEquivWeylGroup_indexEquiv_apply
     rw [coordinatePermMulEquivWeylGroup_val,
       coordinatePermRootDatumAut_indexEquiv]
 
+/-- The Weyl group of the coordinate-difference datum acts faithfully on root indices,
+even though the roots need not span the full coordinate lattice. -/
+theorem coordinateRootDatum_weylGroupToPerm_injective :
+    Function.Injective (coordinateRootDatum σ).weylGroupToPerm := by
+  intro w v h
+  obtain ⟨e, rfl⟩ := coordinatePermMulEquivWeylGroup.surjective w
+  obtain ⟨f, rfl⟩ := coordinatePermMulEquivWeylGroup.surjective v
+  congr 1
+  apply coordinatePermRootIndexHom_injective
+  apply Equiv.ext
+  intro p
+  simpa only [coordinatePermRootIndexHom_apply,
+    RootPairing.weylGroupToPerm, MonoidHom.domRestrict_apply,
+    RootPairing.Equiv.indexHom_apply, coordinatePermMulEquivWeylGroup_indexEquiv_apply] using
+    congrArg (fun g : Equiv.Perm (CoordinateRootIndex σ) ↦ g p) h
+
 /-- A coordinate transposition corresponds to the reflection in the associated root. -/
 @[simp]
 theorem coordinatePermMulEquivWeylGroup_swap [DecidableEq σ]
