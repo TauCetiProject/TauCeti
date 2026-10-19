@@ -27,7 +27,8 @@ only for `n > 2`, which is the setting of the Yamabe problem.
 
 Classically, for `n > 2`, `U_{t,b} ^ (4 / (n - 2))` times the Euclidean metric is the pullback of
 the unit round metric of `Sⁿ` under `x ↦ σ⁻¹ ((x - b) / t)`, with `σ` a stereographic projection;
-this identification is not formalized here. Accordingly, the bubble solves the conformal Laplacian
+this identification is `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub`, for Mathlib's
+stereographic charts. Accordingly, the bubble solves the conformal Laplacian
 equation whose right-hand side carries the scalar curvature `n (n - 1)` of the unit sphere:
 
 `aₙ (-Δ U_{t,b}) = n (n - 1) U_{t,b} ^ (pₙ - 1)`.
@@ -47,6 +48,8 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_zero_sub`, `TauCeti.Yamabe.bubble_zero_smul`: every bubble is a
   translate of a rescaled standard bubble `U_{1,0}`.
 * `TauCeti.Yamabe.bubble_rpow_criticalExponent`: the critical power of a bubble.
+* `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
+  `U_{t,b} ^ (4 / (n - 2))` of a bubble.
 * `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of
   a bubble and the square of the norm of its differential.
 * `TauCeti.Yamabe.laplacian_div_add_norm_sub_sq_rpow`: the Laplacian of an arbitrary real power
@@ -144,6 +147,17 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
     ← Real.rpow_natCast _ (finrank ℝ E)]
   congr 1
   field_simp
+
+/-- In dimension `n ≠ 2`, the Yamabe conformal factor of a bubble is
+`U_{t,b} ^ (4 / (n - 2)) = (2 t / (t² + ‖x - b‖²)) ^ 2`. -/
+theorem bubble_rpow_four_div_finrank_sub_two (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 0 < t)
+    (b x : E) :
+    bubble t b x ^ (4 / ((finrank ℝ E : ℝ) - 2)) = (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ 2 := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
+  have hexp : ((finrank ℝ E : ℝ) - 2) / 2 * (4 / ((finrank ℝ E : ℝ) - 2)) = (2 : ℕ) := by
+    field_simp
+    norm_num
+  rw [bubble_apply, ← Real.rpow_mul (by positivity), hexp, Real.rpow_natCast]
 
 section Gradient
 
