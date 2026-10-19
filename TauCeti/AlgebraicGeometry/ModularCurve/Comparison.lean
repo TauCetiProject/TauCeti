@@ -288,10 +288,6 @@ whose representing schemes are étale over their bases. Together with
 `Ell/B`. -/
 theorem hasProperty_etale_gammaRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
     (gammaRelRepData B N).HasProperty @Etale := by
-  have : MorphismProperty.IsStableUnderComposition @Etale :=
-    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
-  have : MorphismProperty.RespectsIso @Etale :=
-    MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ _ (_ : IsIso _) ↦ inferInstance
   exact ((gammaRelRepData B N).hasProperty_iff_of_iso gammaNaiveRelRepData
     (gammaIsoGammaNaive B N hN) @Etale).mpr (hasProperty_etale_gammaNaiveRelRepData hN)
 

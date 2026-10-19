@@ -32,12 +32,6 @@ theorem support_finset_prod {X : Scheme} {ι : Type*} (s : Finset ι) (I : ι �
   | empty => simp
   | insert a s ha ih => simp [Finset.prod_insert ha, ih]
 
-/-- The support of a finite product of ideal sheaves, as a set, is the union of their supports. -/
-theorem coe_support_finset_prod {X : Scheme} {ι : Type*} (s : Finset ι)
-    (I : ι → X.IdealSheafData) :
-    ((∏ i ∈ s, I i).support : Set X) = ⋃ i ∈ s, (I i).support := by
-  simp
-
 /-- The support of a product of ideal sheaves indexed by a finite type, as a set, is the union of
 their supports. -/
 theorem coe_support_prod {X : Scheme} {ι : Type*} [Fintype ι] (I : ι → X.IdealSheafData) :

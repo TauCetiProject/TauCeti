@@ -63,6 +63,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
   are stable under automorphisms of `(ℤ/Nℤ)²`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isDrinfeldBasis_one`: every homomorphism is a
   Drinfeld basis of `E[1]`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis.range_eq_ker`: over any field,
+  the image of a Drinfeld basis is exactly the group of rational `N`-torsion points.
 
 ## References
 
@@ -101,6 +103,31 @@ theorem IsDrinfeldBasis.pointsDivisor_eq
     {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
     (h : E.IsDrinfeldBasis N φ) : E.pointsDivisor φ = (E.torsionι N).left.ker :=
   h
+
+section Field
+
+variable {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}
+  {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)}
+
+/-- **Over a field, the image of a Drinfeld basis of `E[N]` is `E[N](K)`.** The points `φ a` are
+exactly the `K`-points of `E` killed by `N`. No hypothesis on the characteristic of `K` is
+needed. -/
+theorem IsDrinfeldBasis.range_eq_ker (h : E.IsDrinfeldBasis N φ) :
+    φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
+  ext x
+  simp only [MonoidHom.mem_range, MonoidHom.mem_ker, IsMonHom.monoidHom_apply]
+  obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨a, rfl⟩
+    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
+      ext <;> simp [nsmul_eq_mul]
+    rw [comp_mulBy, zpow_natCast, ← map_pow, ha, map_one]
+  · rw [← Set.mem_range, ← mem_support_pointsDivisor_iff φ x p, h.pointsDivisor_eq,
+      Scheme.Hom.support_ker]
+    refine subset_closure ⟨(E.torsionLift x hx).left p, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, E.torsionLift_torsionι x hx]
+
+end Field
 
 /-- **A Drinfeld basis is a homomorphism with `∑_a [φ a] = [N]⁻¹[0]`.** -/
 theorem isDrinfeldBasis_iff

@@ -111,9 +111,8 @@ theorem gammaEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gamma B N).obj (op
 theorem gamma_hom_ext {P : ModuliProblem B} {f g : P ⟶ gamma B N}
     (h : ∀ (X : EllObj B) (α : P.obj (op X)),
       (gammaEquiv X (f.app (op X) α)).1 = (gammaEquiv X (g.app (op X) α)).1) :
-    f = g := by
-  ext X α
-  exact (gammaEquiv X.unop).injective (Subtype.ext (h X.unop α))
+    f = g :=
+  homLevel_hom_ext h
 
 variable (B N) in
 /-- Precomposing Drinfeld bases with an automorphism of `(ℤ/Nℤ)²` is an endomorphism of the moduli
@@ -142,24 +141,10 @@ Drinfeld basis `φ : (ℤ/Nℤ)² →* E(S)` with `g` gives another Drinfeld bas
 (`EllipticCurveGeom.isDrinfeldBasis_comp_mulEquiv_iff`). Since `φ ∘ (g h) = (φ ∘ g) ∘ h`, this is a
 right action, that is, a homomorphism from `(GL₂(ℤ/Nℤ))ᵐᵒᵖ` to `Aut (gamma B N)`. No invertibility
 hypothesis on `N` is needed. -/
-noncomputable def gammaAction : (GL (Fin 2) (ZMod N))ᵐᵒᵖ →* Aut (gamma B N) where
-  toFun g := Aut.of
-    { hom := gammaMap B N (zmodProdMulAutEquiv N g.unop)
-      inv := gammaMap B N (zmodProdMulAutEquiv N g.unop).symm
-      hom_inv_id := by ext; simp
-      inv_hom_id := by ext; simp }
-  map_one' := by
-    apply Aut.ext
-    apply Iso.ext
-    refine gamma_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
-    change _ = (gammaEquiv X α).1 a
-    simp
-  map_mul' g h := by
-    apply Aut.ext
-    rw [Aut.mul_asIso]
-    apply Iso.ext
-    refine gamma_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
-    simp
+noncomputable def gammaAction : (GL (Fin 2) (ZMod N))ᵐᵒᵖ →* Aut (gamma B N) :=
+  (homLevelAction (hp := EllObj.Hom.isDrinfeldBasis_pointsPullback) B _
+    (fun _ _ σ h ↦ (EllipticCurveGeom.isDrinfeldBasis_comp_mulEquiv_iff σ).mpr h)).comp
+      (MonoidHom.op (zmodProdMulAutEquiv N).toMonoidHom)
 
 /-- A matrix `g` sends a `[Γ(N)]`-structure `φ : (ℤ/Nℤ)² →* E(S)` to `φ ∘ g`. -/
 @[simp]
@@ -167,7 +152,7 @@ theorem gammaEquiv_gammaAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X :
     (α : (gamma B N).obj (op X)) :
     (gammaEquiv X ((gammaAction B N g).asIso.hom.app (op X) α)).1 =
       (gammaEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
-  gammaEquiv_gammaMap_app _ X α
+  homLevelEquiv_homLevelAction_hom_app _ _ X α
 
 /-- The inverse of the automorphism of `[Γ(N)]` given by a matrix `g` sends a `[Γ(N)]`-structure
 `φ : (ℤ/Nℤ)² →* E(S)` to `φ ∘ g⁻¹`. -/
@@ -176,7 +161,7 @@ theorem gammaEquiv_gammaAction_inv_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X :
     (α : (gamma B N).obj (op X)) :
     (gammaEquiv X ((gammaAction B N g).asIso.inv.app (op X) α)).1 =
       (gammaEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
-  gammaEquiv_gammaMap_app _ X α
+  homLevelEquiv_homLevelAction_inv_app _ _ X α
 
 /-- Every homomorphism from the trivial group `(ℤ/1ℤ)²` is a Drinfeld basis of `E[1]`, so an object
 of `Ell/B` has exactly one `[Γ(1)]`-structure. -/

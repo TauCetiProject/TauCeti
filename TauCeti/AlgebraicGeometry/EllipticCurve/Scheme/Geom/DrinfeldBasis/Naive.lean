@@ -39,8 +39,6 @@ Drinfeld bases of `E[N]` (`EllipticCurveGeom.IsDrinfeldBasis`) with naive `[Γ(N
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.isDrinfeldBasis`: every naive
   `[Γ(N)]`-structure is a Drinfeld basis, over an arbitrary base.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis.range_eq_ker`: over a field, the
-  image of a Drinfeld basis of `E[N]` is `E[N](K)`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis.left_apply_ne_zero`: on a fibre
   where `N` is invertible, no `φ a` with `a ≠ 1` meets the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis.isFiberwiseInjective`: where `N` is
@@ -104,32 +102,6 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
       subschemeι_ker_torsionι_left_structureMap, IsIso.hom_inv_id_assoc]
     funext s
     simp [E.finrank_torsion_hom hn, sq])).symm
-
-section Field
-
-variable {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}
-  {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)}
-
-/-- **Over a field, the image of a Drinfeld basis of `E[N]` is `E[N](K)`.** Every `K`-point of `E`
-killed by `N` lies on the closed subscheme `E[N]`, hence on the divisor `∑_a [φ a]`, whose support
-is the union of the images of the sections `φ a`. No hypothesis on the characteristic of `K` is
-needed. -/
-theorem IsDrinfeldBasis.range_eq_ker (h : E.IsDrinfeldBasis N φ) :
-    φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
-  ext x
-  simp only [MonoidHom.mem_range, MonoidHom.mem_ker, IsMonHom.monoidHom_apply]
-  obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
-  refine ⟨?_, fun hx ↦ ?_⟩
-  · rintro ⟨a, rfl⟩
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    rw [comp_mulBy, zpow_natCast, ← map_pow, ha, map_one]
-  · rw [← Set.mem_range, ← mem_support_pointsDivisor_iff φ x p, h.pointsDivisor_eq,
-      Scheme.Hom.support_ker]
-    refine subset_closure ⟨(E.torsionLift x hx).left p, ?_⟩
-    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, E.torsionLift_torsionι x hx]
-
-end Field
 
 /-- **A Drinfeld basis of `E[N]` is injective on every fibre where `N` is invertible.** If `φ` is a
 Drinfeld basis of `E[N]` and `N` is invertible in the residue field at `s`, then for every `a ≠ 1`
