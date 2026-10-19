@@ -40,12 +40,11 @@ public section
 open Filter Function Set Topology
 open scoped ContDiff Manifold
 
-namespace TauCeti
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {f : M → ℝ}
   [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 
+open TauCeti in
 /-- **Existence of a pseudo-gradient near a compact set.** Let `K` be a compact subset of a
 regular Hausdorff sigma-compact manifold and let `f` be smooth. If every critical point of `f` in
 `K` is nondegenerate,
@@ -244,6 +243,8 @@ theorem IsCompact.exists_contMDiff_pseudoGradientOn_nhds [T2Space M] [SigmaCompa
       simp only [mem_iInter, mem_singleton_iff] at this
       exact this x hxC hyA
     simpa only [ψ, MorseChart.restr_field] using hsy
+
+namespace TauCeti
 
 /-- A Morse function has a smooth pseudo-gradient on a neighbourhood of every compact set. The
 field retains the exact linear normal form on smaller Morse charts around the critical points in
