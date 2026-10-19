@@ -36,6 +36,9 @@ glued along the torus `‖x.fst‖ = ‖x.snd‖`, the genus-one Heegaard splitt
 
 * `TauCeti.frontier_setOf_norm_fst_le_norm_snd` and `TauCeti.frontier_setOf_norm_snd_le_norm_fst`:
   the frontier of each piece in the unit sphere is the set where `‖x.fst‖ = ‖x.snd‖`.
+* `TauCeti.norm_sphereProdFstLeHomeomorph_fst_eq_one_iff` and
+  `TauCeti.norm_sphereProdSndLeHomeomorph_snd_eq_one_iff`: each homeomorphism carries this common
+  frontier onto the product of the two unit spheres.
 
 ## References
 
@@ -188,6 +191,16 @@ theorem coe_sphereProdFstLeHomeomorph_symm_apply (p : closedBall (0 : F) 1 × sp
         (√(1 + ‖(p.1 : F)‖ ^ 2))⁻¹ • (p.2 : G)) :=
   (rfl)
 
+/-- `TauCeti.sphereProdFstLeHomeomorph` carries the common frontier `‖x.fst‖ = ‖x.snd‖` onto
+`sphere (0 : F) 1 × sphere (0 : G) 1`, the boundary of `closedBall (0 : F) 1 × sphere (0 : G) 1`. -/
+theorem norm_sphereProdFstLeHomeomorph_fst_eq_one_iff
+    (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).fst‖ ≤
+        ‖(x : WithLp 2 (F × G)).snd‖}) :
+    ‖((sphereProdFstLeHomeomorph F G x).1 : F)‖ = 1 ↔
+      ‖(x : WithLp 2 (F × G)).fst‖ = ‖(x : WithLp 2 (F × G)).snd‖ := by
+  rw [coe_sphereProdFstLeHomeomorph_apply_fst, norm_smul, norm_inv, norm_norm,
+    inv_mul_eq_one₀ (norm_snd_pos x.1.2 x.2).ne', eq_comm]
+
 /-- The frontier of the piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere of `WithLp 2 (F × G)` is the
 set where `‖x.fst‖ = ‖x.snd‖`. -/
 theorem frontier_setOf_norm_fst_le_norm_snd :
@@ -248,15 +261,35 @@ def sphereProdSndLeHomeomorph :
   (sphereProdComm.subtype fun x ↦ by simp [coe_sphereProdComm_apply]).trans <|
     (sphereProdFstLeHomeomorph G F).trans (Homeomorph.prodComm _ _)
 
+/-- `TauCeti.sphereProdSndLeHomeomorph` is `TauCeti.sphereProdFstLeHomeomorph` after the coordinate
+swap. Unfolding the definition directly leaves the domain of `TauCeti.sphereProdFstLeHomeomorph`
+in the form produced by `Homeomorph.subtype`, on which `simp` does not apply the simp lemmas of
+`TauCeti.sphereProdFstLeHomeomorph`; this lemma restates the composite with the domain written as
+in those simp lemmas. -/
+private theorem sphereProdSndLeHomeomorph_apply
+    (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
+        ‖(x : WithLp 2 (F × G)).fst‖}) :
+    sphereProdSndLeHomeomorph F G x =
+      (sphereProdFstLeHomeomorph G F ⟨sphereProdComm x.1, by
+        simp only [mem_ofPred_eq, coe_sphereProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+        exact x.2⟩).swap :=
+  rfl
+
+/-- The inverse of `TauCeti.sphereProdSndLeHomeomorph` through the coordinate swap, for the same
+reason as `TauCeti.sphereProdSndLeHomeomorph_apply`. -/
+private theorem coe_sphereProdSndLeHomeomorph_symm_apply_eq
+    (p : sphere (0 : F) 1 × closedBall (0 : G) 1) :
+    ((sphereProdSndLeHomeomorph F G).symm p : sphere (0 : WithLp 2 (F × G)) 1) =
+      sphereProdComm.symm ((sphereProdFstLeHomeomorph G F).symm p.swap) :=
+  rfl
+
 @[simp]
 theorem coe_sphereProdSndLeHomeomorph_apply_fst
     (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
         ‖(x : WithLp 2 (F × G)).fst‖}) :
     ((sphereProdSndLeHomeomorph F G x).1 : F) =
       ‖(x : WithLp 2 (F × G)).fst‖⁻¹ • (x : WithLp 2 (F × G)).fst := by
-  rw [sphereProdSndLeHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
-    Homeomorph.coe_prodComm, Prod.fst_swap, coe_sphereProdFstLeHomeomorph_apply_snd]
-  simp [coe_sphereProdComm_apply]
+  simp [sphereProdSndLeHomeomorph_apply, coe_sphereProdComm_apply]
 
 @[simp]
 theorem coe_sphereProdSndLeHomeomorph_apply_snd
@@ -264,9 +297,7 @@ theorem coe_sphereProdSndLeHomeomorph_apply_snd
         ‖(x : WithLp 2 (F × G)).fst‖}) :
     ((sphereProdSndLeHomeomorph F G x).2 : G) =
       ‖(x : WithLp 2 (F × G)).fst‖⁻¹ • (x : WithLp 2 (F × G)).snd := by
-  rw [sphereProdSndLeHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
-    Homeomorph.coe_prodComm, Prod.snd_swap, coe_sphereProdFstLeHomeomorph_apply_fst]
-  simp [coe_sphereProdComm_apply]
+  simp [sphereProdSndLeHomeomorph_apply, coe_sphereProdComm_apply]
 
 @[simp]
 theorem coe_sphereProdSndLeHomeomorph_symm_apply (p : sphere (0 : F) 1 × closedBall (0 : G) 1) :
@@ -274,10 +305,18 @@ theorem coe_sphereProdSndLeHomeomorph_symm_apply (p : sphere (0 : F) 1 × closed
         WithLp 2 (F × G)) =
       WithLp.toLp 2 ((√(1 + ‖(p.2 : G)‖ ^ 2))⁻¹ • (p.1 : F),
         (√(1 + ‖(p.2 : G)‖ ^ 2))⁻¹ • (p.2 : G)) := by
-  simp only [sphereProdSndLeHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodComm_symm,
-    Homeomorph.coe_prodComm, Homeomorph.subtype_symm_apply_coe, coe_sphereProdComm_symm_apply]
-  rw [coe_sphereProdFstLeHomeomorph_symm_apply]
-  simp
+  simp [coe_sphereProdSndLeHomeomorph_symm_apply_eq, coe_sphereProdComm_symm_apply]
+
+/-- `TauCeti.sphereProdSndLeHomeomorph` carries the common frontier `‖x.fst‖ = ‖x.snd‖` onto
+`sphere (0 : F) 1 × sphere (0 : G) 1`, the boundary of `sphere (0 : F) 1 × closedBall (0 : G) 1`. -/
+theorem norm_sphereProdSndLeHomeomorph_snd_eq_one_iff
+    (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
+        ‖(x : WithLp 2 (F × G)).fst‖}) :
+    ‖((sphereProdSndLeHomeomorph F G x).2 : G)‖ = 1 ↔
+      ‖(x : WithLp 2 (F × G)).fst‖ = ‖(x : WithLp 2 (F × G)).snd‖ := by
+  rw [sphereProdSndLeHomeomorph_apply, Prod.snd_swap,
+    norm_sphereProdFstLeHomeomorph_fst_eq_one_iff]
+  simp [coe_sphereProdComm_apply, eq_comm]
 
 /-- The frontier of the piece `‖x.snd‖ ≤ ‖x.fst‖` of the unit sphere of `WithLp 2 (F × G)` is the
 set where `‖x.fst‖ = ‖x.snd‖`. -/
