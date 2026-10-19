@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Matrix.Sqrt
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
@@ -41,6 +42,10 @@ form into the one of `S⁻¹`.
 * `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
+* `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
+  covariance is the affine range `m + range S`;
+* `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
+  this affine range;
 * `TauCeti.Probability.multivariateGaussian_eq_withDensity` — the density presentation of the law;
 * `TauCeti.Probability.hasPDF_of_hasLaw_multivariateGaussian` and
   `TauCeti.Probability.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF`
@@ -165,6 +170,67 @@ theorem stdGaussian_eq_withDensity :
   refine withDensity_congr_ae (.of_forall fun y => congrArg ENNReal.ofReal ?_)
   rw [prod_gaussianPDFReal_zero_one, MeasurableEquiv.coe_toLp_symm,
     ← EuclideanSpace.real_norm_sq_eq]
+
+omit [DecidableEq ι] in
+/-- The standard Gaussian measure on a finite-dimensional Euclidean space has full support. -/
+@[simp]
+theorem support_stdGaussian :
+    (stdGaussian (EuclideanSpace ℝ ι)).support = Set.univ := by
+  rw [stdGaussian_eq_withDensity]
+  let f : EuclideanSpace ℝ ι → ℝ≥0∞ := fun x =>
+    ENNReal.ofReal ((2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-‖x‖ ^ 2 / 2))
+  have hf : Measurable f := by
+    fun_prop
+  have hsupp : Function.support f = Set.univ := by
+    ext x
+    simp only [Function.mem_support, Set.mem_univ, iff_true, ne_eq, ENNReal.ofReal_eq_zero,
+      not_le, f]
+    positivity
+  simpa only [f, closure_univ] using
+    (Measure.support_withDensity_eq_closure (μ := volume) hf isOpen_univ hsupp)
+
+/-- The support of a multivariate Gaussian measure with positive-semidefinite covariance is the
+affine range of its covariance. -/
+@[simp]
+theorem support_multivariateGaussian (hS : S.PosSemidef) (m : EuclideanSpace ℝ ι) :
+    (multivariateGaussian m S).support =
+      (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
+        Set (EuclideanSpace ℝ ι)) := by
+  rw [multivariateGaussian,
+    Measure.support_map_eq_closure_range _ support_stdGaussian (by fun_prop),
+    ← hS.range_toEuclideanLin_sqrt]
+  let A : AffineSubspace ℝ (EuclideanSpace ℝ ι) :=
+    AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin (CFC.sqrt S)))
+  have hAclosed : IsClosed (A : Set (EuclideanSpace ℝ ι)) := A.closed_of_finiteDimensional
+  have hCLM : ∀ x : EuclideanSpace ℝ ι,
+      Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x =
+        Matrix.toEuclideanLin (CFC.sqrt S) x := fun x => by
+    rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+  have hrange : Set.range (fun x => m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x) =
+      (A : Set (EuclideanSpace ℝ ι)) := by
+    ext y
+    simp only [Set.mem_range, SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, A]
+    constructor
+    · rintro ⟨x, rfl⟩
+      rw [hCLM, add_sub_cancel_left]
+      exact LinearMap.mem_range_self _ x
+    · rintro ⟨x, hx⟩
+      refine ⟨x, ?_⟩
+      rw [hCLM, hx]
+      abel
+  rw [hrange, hAclosed.closure_eq]
+
+/-- A multivariate Gaussian measure with positive-semidefinite covariance is almost surely in the
+affine range of its covariance. -/
+theorem ae_mem_affineRange_multivariateGaussian (hS : S.PosSemidef)
+    (m : EuclideanSpace ℝ ι) :
+    ∀ᵐ x ∂multivariateGaussian m S,
+      x ∈ (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
+        Set (EuclideanSpace ℝ ι)) := by
+  change (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
+    Set (EuclideanSpace ℝ ι)) ∈ ae (multivariateGaussian m S)
+  rw [← support_multivariateGaussian hS m]
+  exact (multivariateGaussian m S).support_mem_ae
 
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
