@@ -290,6 +290,17 @@ theorem mem_arrowSet_induced {W : Set V} {a : Σ x y, N.Hom x y} :
     a ∈ (N.inducedSubnetwork W).arrowSet ↔ a.1 ∈ W ∧ a.2.1 ∈ W :=
   Iff.rfl
 
+/-- A subnetwork lies in the subnetwork induced by `W` exactly when its vertices lie in `W`. -/
+@[simp]
+theorem le_induced_iff {S : N.Subnetwork} {W : Set V} :
+    S ≤ N.inducedSubnetwork W ↔ S.vertexSet ⊆ W := by
+  constructor
+  · exact fun h ↦ h.1
+  · intro h
+    refine ⟨h, ?_⟩
+    intro a ha
+    exact ⟨h (S.source_mem a ha), h (S.target_mem a ha)⟩
+
 /-- The singleton subnetwork at `x`, with no arrows (including no ambient loops). -/
 def _root_.TauCeti.Network.singletonSubnetwork (N : Network K V) (x : V) : N.Subnetwork where
   vertexSet := {x}
