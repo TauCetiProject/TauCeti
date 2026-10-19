@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.LinearAlgebra.CliffordAlgebra.FiltrationGradedEquiv
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
@@ -86,14 +87,6 @@ theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
         -- Remove the span-subtype coercion from the extension equation.
         change d (w i) = 0 at h
         exact h
-      have hcontract (l : List M) (hl : ∀ x ∈ l, d x = 0) :
-          contractLeft d (l.map (ι Q)).prod = 0 := by
-        induction l with
-        | nil => simp
-        | cons x l ih =>
-            rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, hl x List.mem_cons_self,
-              zero_smul, zero_sub]
-            simp only [ih (fun y hy => hl y (List.mem_cons_of_mem x hy)), mul_zero, neg_zero]
       intro hzero
       rw [List.ofFn_succ, List.prod_cons] at hzero
       simp only [Function.comp_apply] at hzero
@@ -101,8 +94,7 @@ theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
       rw [map_zero, contractLeft_ι_mul, hd_zero, one_smul] at hzero'
       have htail : contractLeft d (List.ofFn ((ι Q) ∘ w)).prod = 0 := by
         rw [← List.map_ofFn]
-        apply hcontract
-        intro x hx
+        refine contractLeft_prod_map_ι_eq_zero fun x hx => ?_
         rw [List.mem_ofFn] at hx
         obtain ⟨i, rfl⟩ := hx
         exact hd_succ i

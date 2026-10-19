@@ -54,6 +54,8 @@ preserved by every algebra isomorphism between Clifford algebras of finite-dimen
 * `CliffordAlgebra.scalarTrace_eq_zero_of_mem_evenOdd_one`: the scalar part of an odd element is
   zero.
 * `CliffordAlgebra.scalarTrace_mul_comm`: cyclicity, `τ (x * y) = τ (y * x)`.
+* `CliffordAlgebra.scalarTrace_ι_mul_prod_map_ι_eq_zero`: `τ` vanishes on `ι Q a * p` for `p` a
+  product of vectors orthogonal to `a`.
 * `CliffordAlgebra.eq_smul_scalarTrace`: for `M` spanned by pairwise orthogonal vectors, every
   cyclic functional invariant under the grade involution is `f 1 • τ`.
 * `CliffordAlgebra.trace_mulLeft_eq_finrank_mul_scalarTrace`: the regular-trace formula for a
@@ -182,6 +184,12 @@ private theorem apply_ι_mul_prod_eq_zero (f : CliffordAlgebra Q →ₗ[R] R)
   · nth_rewrite 1 [hmul]
     rw [prod_map_ι_mul_ι_of_forall_isOrtho h, ho.neg_one_pow, neg_one_smul, map_neg]
 
+/-- The scalar part vanishes on `ι Q a * p`, for `p` an ordered product of vectors orthogonal to
+`a`. -/
+theorem scalarTrace_ι_mul_prod_map_ι_eq_zero {a : M} {l : List M} (h : ∀ x ∈ l, Q.IsOrtho x a) :
+    scalarTrace Q (ι Q a * (l.map (ι Q)).prod) = 0 :=
+  apply_ι_mul_prod_eq_zero _ scalarTrace_mul_comm scalarTrace_involute h
+
 /-- **The scalar part is the unique normalized cyclic functional invariant under the grade
 involution**, as soon as `M` is spanned by a list of pairwise orthogonal vectors: every such
 functional `f` is `f 1 • scalarTrace Q`. Both sides vanish on every product of at least one of the
@@ -198,8 +206,7 @@ theorem eq_smul_scalarTrace {l : List M} (hl : l.Pairwise Q.IsOrtho)
     have horth : ∀ x ∈ t, Q.IsOrtho x a := fun x hx =>
       QuadraticMap.isOrtho_comm.mp (List.rel_of_pairwise_cons (hl.sublist ht) hx)
     simp only [List.map_cons, List.prod_cons, LinearMap.smul_apply, smul_eq_mul,
-      apply_ι_mul_prod_eq_zero f hmul hinv horth,
-      apply_ι_mul_prod_eq_zero (scalarTrace Q) scalarTrace_mul_comm scalarTrace_involute horth,
+      apply_ι_mul_prod_eq_zero f hmul hinv horth, scalarTrace_ι_mul_prod_map_ι_eq_zero horth,
       mul_zero]
 
 /-- **The scalar part is the normalized trace of the left regular representation**, for a finite

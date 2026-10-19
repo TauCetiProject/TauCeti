@@ -27,8 +27,8 @@ replaces an occupied coordinate with an unoccupied one, with the product of thei
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
 
-The basis vectors of index sets with one or two elements are the corresponding products of the
-exterior-algebra generators, in increasing order.
+Every basis vector is the product of the exterior-algebra generators of the basis vectors in its
+index set, in increasing order; the index sets with one or two elements are recorded separately.
 -/
 
 public section
@@ -260,6 +260,17 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
     rw [← hsign, ← hfilter]
     exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i (insert i s)
       (Finset.mem_insert_self i s)
+
+/-- The exterior-basis vector indexed by `s` is the product of the generators of the basis vectors
+indexed by `s`, in increasing order. -/
+theorem basis_eq_prod_map_sort {I : Type w} [LinearOrder I] (b : Module.Basis I R M)
+    (s : Finset I) :
+    b.ExteriorAlgebra s = ((s.sort.map b).map (ExteriorAlgebra.ι R)).prod := by
+  rw [ExteriorAlgebra.basis_apply_ofCard b rfl, ExteriorAlgebra.ιMulti_family,
+    ExteriorAlgebra.ιMulti_apply]
+  congr 1
+  refine List.ext_getElem (by simp) fun n h₁ h₂ => ?_
+  simp [Set.powersetCard.ofFinEmbEquiv_symm_apply, Finset.orderEmbOfFin_apply]
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/

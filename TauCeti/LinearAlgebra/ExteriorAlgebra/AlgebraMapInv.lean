@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
--- Private: `CliffordAlgebra.contractRight_ι_mul` is used only inside a proof.
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+-- Private: `CliffordAlgebra.contractRight_ι_mul` and
+-- `TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort` are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # The constant term of an exterior algebra element
@@ -30,6 +33,8 @@ cyclic.
   involution and reversion preserve the constant term.
 * `ExteriorAlgebra.algebraMapInv_contractRight`: left and right contraction against the same
   functional have the same constant term.
+* `ExteriorAlgebra.algebraMapInv_basis`: among the vectors of the exterior basis
+  `Module.Basis.ExteriorAlgebra`, only the one indexed by `∅` has a nonzero constant term.
 -/
 
 public section
@@ -76,5 +81,16 @@ theorem algebraMapInv_contractRight (d : Module.Dual R M) (x : ExteriorAlgebra R
   | ι_mul x m _ =>
     rw [contractRight_ι_mul, contractLeft_ι_mul]
     simp
+
+/-- The constant term of the exterior-basis vector indexed by `s` is `1` if `s` is empty and `0`
+otherwise. -/
+@[simp]
+theorem algebraMapInv_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M) (s : Finset I) :
+    algebraMapInv (b.ExteriorAlgebra s) = if s = ∅ then 1 else 0 := by
+  rw [TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort, map_list_prod]
+  split_ifs with hs
+  · simp [hs]
+  · obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hs
+    exact List.prod_eq_zero (by simpa using ⟨i, hi⟩)
 
 end ExteriorAlgebra

@@ -58,6 +58,10 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   for the isomorphism with the exterior algebra.
 * `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
   isomorphism on left and right vector factors.
+* `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero`: a contraction kills a product of vectors
+  in its kernel.
+* `CliffordAlgebra.equivExterior_prod_map_ι`: that isomorphism sends an ordered product of
+  pairwise orthogonal vectors to their exterior product.
 
 ## References
 
@@ -144,6 +148,15 @@ theorem contractRight_ι_mul (d : Module.Dual R M) (a : M) (x : CliffordAlgebra 
     contractRight (ι Q a * x) d = ι Q a * contractRight x d + d a • involute x := by
   simp [contractRight_eq, contractLeft_mul_ι, reverse_involute_commute.eq]
 
+/-- A contraction kills an ordered product of vectors on each of which the functional vanishes. -/
+theorem contractLeft_prod_map_ι_eq_zero {d : Module.Dual R M} {l : List M}
+    (h : ∀ m ∈ l, d m = 0) : contractLeft d (l.map (ι Q)).prod = 0 := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.forall_mem_cons] at h
+    simp [contractLeft_ι_mul, h.1, ih h.2]
+
 /-- **Left and right contraction commute**: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`. This is the statement
 left as a `TODO` after `CliffordAlgebra.contractRight_comm` in Mathlib. -/
 theorem contractRight_contractLeft (d d' : Module.Dual R M) (x : CliffordAlgebra Q) :
@@ -227,6 +240,18 @@ theorem equivExterior_mul_ι (x : CliffordAlgebra Q) (m : M) :
         contractRight (equivExterior Q x) (QuadraticMap.associated (-Q) m) := by
   rw [← QuadraticMap.associated_flip]
   exact changeForm_mul_ι changeForm.associated_neg_proof x m
+
+/-- `CliffordAlgebra.equivExterior` sends an ordered product of pairwise orthogonal vectors to their
+exterior product: every contraction term of `CliffordAlgebra.equivExterior_ι_mul` vanishes. -/
+theorem equivExterior_prod_map_ι {l : List M} (hl : l.Pairwise Q.IsOrtho) :
+    equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
+  induction l with
+  | nil => simp [equivExterior]
+  | cons a l ih =>
+    rw [List.pairwise_cons] at hl
+    rw [List.map_cons, List.prod_cons, equivExterior_ι_mul, ih hl.2, List.map_cons, List.prod_cons,
+      contractLeft_prod_map_ι_eq_zero fun m hm => ?_, sub_zero]
+    simpa [QuadraticMap.associated_isOrtho] using hl.1 m hm
 
 /-- `CliffordAlgebra.equivExterior` intertwines the grade involutions.
 
