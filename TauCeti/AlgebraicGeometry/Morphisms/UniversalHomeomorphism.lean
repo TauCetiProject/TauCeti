@@ -157,6 +157,36 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
   exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, hinj, hsurj⟩
 
+/-- The affine universal-homeomorphism criterion: a ring map is integral, induces an injection
+on maps into every field, and is surjective on prime spectra. Under `Spec`, precomposition by
+the ring map corresponds to postcomposition by the scheme map. -/
+theorem universalHomeomorphism_affineComparison {R S : CommRingCat.{u}} (φ : R ⟶ S) :
+    IsUniversalHomeomorphism (Spec.map φ) ↔
+      φ.hom.IsIntegral ∧
+        (∀ (K : Type u) [Field K],
+          Function.Injective (fun g : S ⟶ CommRingCat.of K ↦ φ ≫ g)) ∧
+        Function.Surjective (PrimeSpectrum.comap φ.hom) := by
+  have hfield : UniversallyInjective (Spec.map φ) ↔
+      ∀ (K : Type u) [Field K],
+        Function.Injective (fun g : Spec (CommRingCat.of K) ⟶ Spec S ↦ g ≫ Spec.map φ) :=
+    (tfae_universallyInjective (Spec.map φ)).out 1 2
+  rw [isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective,
+    IsIntegralHom.SpecMap_iff, hfield]
+  refine and_congr Iff.rfl (and_congr ?_ ?_)
+  · constructor
+    · intro h K _ g₁ g₂ hg
+      apply Spec.map_injective
+      apply h K
+      simpa only [← Spec.map_comp] using congrArg Spec.map hg
+    · intro h K _ g₁ g₂ hg
+      obtain ⟨f₁, rfl⟩ := Spec.map_surjective g₁
+      obtain ⟨f₂, rfl⟩ := Spec.map_surjective g₂
+      apply congrArg Spec.map
+      apply h K
+      exact Spec.map_injective (by simpa only [Spec.map_comp] using hg)
+  · simp only [surjective_iff, Function.Surjective, Spec.map_apply]
+    rfl
+
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/
 instance isUniversalHomeomorphism_isStableUnderComposition :
     MorphismProperty.IsStableUnderComposition @IsUniversalHomeomorphism.{u} where
