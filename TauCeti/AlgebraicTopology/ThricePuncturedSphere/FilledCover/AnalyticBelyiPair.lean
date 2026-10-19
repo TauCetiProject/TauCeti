@@ -32,6 +32,17 @@ underlying topological branched cover is the filled cover
 `TauCeti.ConnectedCover.toTopBranchedCover`
 (`TauCeti.ConnectedCover.toTopBranchedCoverIsoClass_toAnalyticBelyiPair`).
 
+Since a homeomorphism over the sphere between analytic Belyi pairs is holomorphic
+(`TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`), the filled pair is well defined on isomorphism
+classes of covers (`TauCeti.ConnectedCoverClass.toAnalyticBelyiPair`). With the uniqueness of the
+compactification (`TauCeti.TopBranchedCover.IsoClass.restrict_bijective`) it follows that every
+topological branched cover of the sphere with branch values in `{0, 1, ∞}` carries a complex
+structure making it an analytic Belyi pair, unique up to isomorphism
+(`TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_bijective`). Equivalently, analytic Belyi
+pairs of degree `n` up to isomorphism correspond to connected degree-`n` covers of `ℂ ∖ {0, 1}` up
+to isomorphism, by restriction and filling
+(`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`).
+
 ## Main results
 
 * `TauCeti.FilledCover.contMDiff_fillMap`, `TauCeti.FilledCover.mdifferentiable_fillMap`: the
@@ -41,14 +52,23 @@ underlying topological branched cover is the filled cover
 * `TauCeti.ConnectedCover.degree_toAnalyticBelyiPair`: its degree is the degree of the cover.
 * `TauCeti.ConnectedCover.toTopBranchedCoverIsoClass_toAnalyticBelyiPair`: its underlying
   topological branched cover is the filled branched cover of the cover.
+* `TauCeti.ConnectedCoverClass.toAnalyticBelyiPair`: the filled analytic Belyi pair of an
+  isomorphism class of connected covers.
+* `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_bijective`: analytic Belyi pairs and
+  topological branched covers of degree `n` have the same isomorphism classes.
+* `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`: isomorphism classes of analytic
+  Belyi pairs of degree `n` are isomorphism classes of connected degree-`n` covers of
+  `ℂ ∖ {0, 1}`.
 
 ## References
 
 * O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer 1981,
-  §8, Theorem 8.4 (an unbranched proper holomorphic covering of `X ∖ A` extends across `A`).
+  §8, Theorems 8.4 and 8.5 (an unbranched proper holomorphic covering of `X ∖ A` extends across
+  `A`, uniquely up to biholomorphism over `X`).
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
-  §1.2.7 (Lemma 1.80: the extended map is holomorphic in the added charts).
+  §1.2.7 (Lemma 1.80: the extended map is holomorphic in the added charts, and Proposition 1.81:
+  its uniqueness).
 -/
 
 public noncomputable section
@@ -178,5 +198,89 @@ theorem toTopBranchedCoverIsoClass_toAnalyticBelyiPair :
         (AnalyticBelyiPair.toTopBranchedCover_π_apply _ _ z).symm⟩⟩
 
 end ConnectedCover
+
+/-! ### Isomorphism classes -/
+
+/-- **The filled analytic Belyi pair of an isomorphism class of covers.** Filling the punctures of a
+connected degree-`n` cover of `ℂ ∖ {0, 1}` is well defined on isomorphism classes: an isomorphism of
+covers extends to a homeomorphism of filled covers over the sphere
+(`TauCeti.ConnectedCover.toTopBranchedCoverIso`), which is holomorphic. -/
+def ConnectedCoverClass.toAnalyticBelyiPair {n : ℕ} :
+    ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+      Quotient (AnalyticBelyiPair.isoSetoid.{0} n) :=
+  lift (fun C ↦ ⟦⟨C.toAnalyticBelyiPair, C.degree_toAnalyticBelyiPair⟩⟧) fun _ _ ⟨f⟩ ↦
+    Quotient.sound <| AnalyticBelyiPair.isoSetoid_r.2
+      ⟨.ofHomeomorph (ConnectedCover.toTopBranchedCoverIso f).toHomeomorph fun x ↦ by
+        rw [ConnectedCover.coe_β_toAnalyticBelyiPair, ConnectedCover.coe_β_toAnalyticBelyiPair]
+        exact (ConnectedCover.toTopBranchedCoverIso f).π_apply x⟩
+
+/-- The filled analytic Belyi pair of the class of `C` is the class of the filled pair of `C`. -/
+@[simp]
+theorem ConnectedCoverClass.toAnalyticBelyiPair_mk {n : ℕ}
+    (C : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    (mk C).toAnalyticBelyiPair = ⟦⟨C.toAnalyticBelyiPair, C.degree_toAnalyticBelyiPair⟩⟧ :=
+  lift_mk _ _ C
+
+/-- The topological branched cover underlying the filled analytic Belyi pair of a class of covers
+is the filled branched cover of that class. -/
+@[simp]
+theorem ConnectedCoverClass.toTopBranchedCoverIsoClass_toAnalyticBelyiPair {n : ℕ}
+    (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    AnalyticBelyiPair.toTopBranchedCoverIsoClass n c.toAnalyticBelyiPair =
+      c.toTopBranchedCover := by
+  obtain ⟨C, rfl⟩ := mk_surjective c
+  rw [toAnalyticBelyiPair_mk, toTopBranchedCover_mk,
+    ConnectedCover.toTopBranchedCoverIsoClass_toAnalyticBelyiPair]
+
+namespace AnalyticBelyiPair
+
+/-- **Every topological branched cover of the sphere with branch values in `{0, 1, ∞}` comes from an
+analytic Belyi pair**: up to isomorphism, it is the underlying branched cover of the filled pair of
+its unbranched part. -/
+theorem toTopBranchedCoverIsoClass_surjective (n : ℕ) :
+    Surjective (toTopBranchedCoverIsoClass.{0} n) := fun t ↦
+  ⟨t.restrict.toAnalyticBelyiPair, by
+    rw [ConnectedCoverClass.toTopBranchedCoverIsoClass_toAnalyticBelyiPair]
+    exact TopBranchedCover.IsoClass.restrict_injective (by simp)⟩
+
+/-- **Analytic Belyi pairs are topological branched covers.** Forgetting the complex structure is a
+bijection from isomorphism classes of analytic Belyi pairs of degree `n` to isomorphism classes of
+topological branched covers of the sphere of degree `n` with branch values in `{0, 1, ∞}`: every
+such branched cover carries a complex structure making it an analytic Belyi pair, unique up to
+isomorphism. -/
+theorem toTopBranchedCoverIsoClass_bijective (n : ℕ) :
+    Bijective (toTopBranchedCoverIsoClass.{0} n) :=
+  ⟨toTopBranchedCoverIsoClass_injective n, toTopBranchedCoverIsoClass_surjective n⟩
+
+/-- **Analytic Belyi pairs are classified by finite covers of the thrice-punctured sphere.**
+Restricting the Belyi map over `ℂ ∖ {0, 1}` and filling the punctures are inverse bijections between
+isomorphism classes of analytic Belyi pairs of degree `n` and isomorphism classes of connected
+degree-`n` covers of `ℂ ∖ {0, 1}`. -/
+def isoClassEquivConnectedCoverClass (n : ℕ) :
+    Quotient (isoSetoid.{0} n) ≃
+      ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n where
+  toFun P := (toTopBranchedCoverIsoClass n P).restrict
+  invFun c := c.toAnalyticBelyiPair
+  left_inv P := toTopBranchedCoverIsoClass_injective n <| by
+    rw [ConnectedCoverClass.toTopBranchedCoverIsoClass_toAnalyticBelyiPair]
+    exact TopBranchedCover.IsoClass.restrict_injective (by simp)
+  right_inv c := by simp
+
+/-- The equivalence `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass` restricts the
+underlying topological branched cover over `ℂ ∖ {0, 1}`. -/
+@[simp]
+theorem isoClassEquivConnectedCoverClass_apply {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    isoClassEquivConnectedCoverClass n P = (toTopBranchedCoverIsoClass n P).restrict :=
+  (rfl)
+
+/-- The inverse of `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass` is the filled
+analytic Belyi pair. -/
+@[simp]
+theorem isoClassEquivConnectedCoverClass_symm_apply {n : ℕ}
+    (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    (isoClassEquivConnectedCoverClass n).symm c = c.toAnalyticBelyiPair :=
+  (rfl)
+
+end AnalyticBelyiPair
 
 end TauCeti

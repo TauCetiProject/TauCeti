@@ -252,8 +252,6 @@ private theorem degreeOneSum_surjective : Function.Surjective (degreeOneSum p X)
       ∃ a : X → ℤ_[p], ∑ k, a k • gradedMkZero 0 _ (freeProP.of k) = y := by
     obtain ⟨a, ha⟩ := (lcsGradedPiece_zero_freeProP_bijective p X).2 y
     exact ⟨a, by simpa only [hF.gradedMkZero_padicPow] using ha⟩
-  have : CompactSpace (pLowerCentralSeries 0 (freeProP p X) 0) :=
-    isCompact_iff_compactSpace.mp (isClosed_pLowerCentralSeries 0).isCompact
   intro z
   simp only [degreeOneSum_eq_linearCombination]
   obtain ⟨y, rfl⟩ := exists_sum_gradedBracket_eq_of_range 0 freeProP.of

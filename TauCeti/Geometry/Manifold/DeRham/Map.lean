@@ -42,16 +42,6 @@ variable {E H E' H' E'' H'' : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
   [TopologicalSpace M''] [ChartedSpace H'' M''] [IsManifold I'' 2 M'']
 
-/-- Pullback of smooth forms along a smooth map commutes with the exterior derivative. -/
-theorem SmoothForm.mextDerivₗ_mpullback {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) (φ : SmoothForm I' M' F k) :
-    mextDerivₗ I k (SmoothForm.mpullback f hf φ) =
-      SmoothForm.mpullback f hf (mextDerivₗ I' k φ) := by
-  apply Subtype.ext
-  rw [mextDerivₗ_apply, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, mextDerivₗ_apply]
-  exact (mpullback_mextDeriv (hf.of_le (by simp)) ((isSmoothBundleForm_def 1 φ.1).mpr
-    (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).of_le (by simp)))).symm
-
 namespace closedForms
 
 /-- Pullback of closed smooth forms along a smooth map. -/

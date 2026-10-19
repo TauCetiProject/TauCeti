@@ -43,7 +43,7 @@ of `d` i.i.d. exponentials of rate `r` is exponential of rate `d * r`.
 * `TauCeti.Probability.cdf_max_iid`, `TauCeti.Probability.cdf_min_iid` — the corresponding powers
   for a common marginal law.
 
-The other order statistics are in `TauCeti.Probability.Distributions.OrderStatistic`, where
+The other order statistics are in `TauCeti.Probability.Distributions.OrderStatistic.Basic`, where
 `TauCeti.orderStatistic_zero` and `TauCeti.orderStatistic_last` identify
 the minimum and the maximum as the extreme order statistics.
 -/
