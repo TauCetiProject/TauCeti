@@ -158,29 +158,20 @@ theorem apply_fderiv_timeDependentHamiltonianFlow_of_contDiff_suspension
     omega (fderiv ℝ (omega.timeDependentHamiltonianFlow H hX s t) x u)
         (fderiv ℝ (omega.timeDependentHamiltonianFlow H hX s t) x v) = omega u v := by
   rw [omega.timeDependentHamiltonianFlow_eq H hX]
+  set φ := timeDependentFlow (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s
   have hd (r : ℝ) : HasDerivAt
-      (fun q ↦ omega
-        (fderiv ℝ (timeDependentFlow
-          (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s q) x u)
-        (fderiv ℝ (timeDependentFlow
-          (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s q) x v)) 0 r := by
+      (fun q ↦ omega (fderiv ℝ (φ q) x u) (fderiv ℝ (φ q) x v)) 0 r := by
     have hu := hasDerivAt_fderiv_timeDependentFlow_apply hX hSusp s r x u
     have hv := hasDerivAt_fderiv_timeDependentFlow_apply hX hSusp s r x v
     have hp := omega.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear
       (fun _ ↦ hu) (fun _ ↦ hv)
+    simp only [LinearMap.toContinuousBilinearMap_apply] at hp
     convert hp using 1
-    · rfl
-    · simpa only [LinearMap.toContinuousBilinearMap_apply, add_comm] using
-        (omega.apply_fderiv_hamiltonianVectorField_add (hslice r).contDiffAt
-          (fderiv ℝ (timeDependentFlow
-            (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s r) x u)
-          (fderiv ℝ (timeDependentFlow
-            (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s r) x v)).symm
+    simpa only [add_comm] using (omega.apply_fderiv_hamiltonianVectorField_add
+      (hslice r).contDiffAt (fderiv ℝ (φ r) x u) (fderiv ℝ (φ r) x v)).symm
   have hc := is_const_of_deriv_eq_zero (fun r ↦ (hd r).differentiableAt)
     (fun r ↦ (hd r).deriv) t s
-  have hself : timeDependentFlow
-      (fun a y ↦ omega.hamiltonianVectorField (H a) y) hX s s = id :=
-    funext fun y ↦ timeDependentFlow_self _ hX s y
+  have hself : φ s = id := funext fun y ↦ timeDependentFlow_self _ hX s y
   simpa only [hself, fderiv_id, ContinuousLinearMap.id_apply] using hc
 
 /-- Each evolution map of a jointly `C²` time-dependent Hamiltonian preserves the symplectic
