@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Full
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.EventualContainment
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 import TauCeti.NumberTheory.Padics.RatCast
 import TauCeti.Topology.Algebra.Group.Subgroup
 
@@ -33,6 +34,10 @@ along `Spin → SO`, whose rational fibres have at most two points for a nondege
 The same argument applies to degenerate forms for `O` and `SO` whenever eventual containment
 in an integral family is supplied explicitly.
 
+In rank at most one, `SO(V)(ℚ)` is trivial even for a degenerate form, so its full adelic
+diagonal is discrete without either nondegeneracy or an eventual-integrality hypothesis.
+The corresponding `O` and `Spin` results below retain their nondegeneracy hypothesis.
+
 ## Main results
 
 * `OrthogonalCompactOpens.discreteTopology_range_fullAdelicOrthogonalDiagonal`,
@@ -41,6 +46,8 @@ in an integral family is supplied explicitly.
   are discrete in the full adelic groups.
 * The `O` and `SO` criteria with suffix `_of_eventually_integral` also
   apply to degenerate forms.
+* `discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_finrank_le_one` removes the
+  nondegeneracy hypothesis for `SO` in rank at most one.
 
 ## References
 
@@ -185,6 +192,18 @@ theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_eventually
   obtain ⟨W, hW, hfin⟩ :=
     U.exists_mem_nhds_finite_preimage_fullAdelicSpecialOrthogonalDiagonal hU
   exact MonoidHom.discreteTopology_range_of_finite_preimage _ hW hfin
+
+/-- **Low-rank rational proper isometries are discrete in the full adeles.** In rank at most one,
+the rational special orthogonal group is trivial, so neither nondegeneracy nor an integrality
+hypothesis on the compatible compact-open tuple is needed. -/
+theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_finrank_le_one
+    (hV : Module.finrank ℚ V ≤ 1) :
+    DiscreteTopology U.fullAdelicSpecialOrthogonalDiagonal.range := by
+  have hbot := specialOrthogonalGroup_eq_bot_of_finrank_le_one Q hV
+  let _ : Subsingleton (specialOrthogonalGroup Q) := hbot ▸ inferInstance
+  let _ : Subsingleton U.fullAdelicSpecialOrthogonalDiagonal.range :=
+    (Set.subsingleton_coe _).mpr U.fullAdelicSpecialOrthogonalDiagonal.subsingleton_coe_range
+  exact Subsingleton.discreteTopology
 
 /-- Rational isometries of a nondegenerate rational quadratic space form a discrete subgroup of
 the full adelic orthogonal group for every compatible compact-open reference family. -/

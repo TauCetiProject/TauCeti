@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Valuation.FinsetDvd
 

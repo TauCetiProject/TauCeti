@@ -278,6 +278,13 @@ theorem kyFanGauge_def (T : E →L[𝕜] F) (k : ℕ) :
     T.kyFanGauge k = ∑ n ∈ Finset.range k, T.singularValue n := by
   rw [kyFanGauge]
 
+/-- Each finite Ky Fan gauge is continuous for the operator norm topology. -/
+@[fun_prop]
+theorem continuous_kyFanGauge (k : ℕ) :
+    Continuous fun T : E →L[𝕜] F ↦ T.kyFanGauge k := by
+  simp only [kyFanGauge_def]
+  exact continuous_finsetSum _ fun n _ ↦ continuous_singularValue n
+
 /-- The empty Ky Fan gauge vanishes. -/
 @[simp]
 theorem kyFanGauge_zero (T : E →L[𝕜] F) : T.kyFanGauge 0 = 0 := by

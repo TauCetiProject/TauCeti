@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Module
-import TauCeti.Algebra.Lie.Submodule.Atom
+public import TauCeti.Algebra.Lie.Submodule.Atom
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # The maximal submodule of a highest weight module, and its irreducible quotient
@@ -45,14 +46,13 @@ goes through.
 
 * `TauCeti.genWeightSpace_sup_genWeightSpaceSpan_eq_top_of_isHighestWeightVector_of_lieSpan_eq_top`:
   a highest weight module is the sum of its `lam`-weight space and the span of its other weight
-  spaces, and `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan_ne` says the two meet trivially.
+  spaces, which meet trivially by `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan_ne`.
 * `TauCeti.le_genWeightSpaceSpan_ne_of_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: **a Lie
   submodule of a highest weight module which misses the generator misses the whole top weight
   space**, being contained in the span of the other weight spaces.
-* `TauCeti.notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top` and
-  `TauCeti.disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: for a
-  Lie submodule of a highest weight module, being proper, missing the generator and meeting the
-  top weight space trivially are the same condition.
+* `TauCeti.disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: for a
+  Lie submodule of a highest weight module, missing the generator and meeting the top weight space
+  trivially are the same condition.
 * `TauCeti.notMem_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top` and
   `TauCeti.isGreatest_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top`: **the maximal
   submodule of a highest weight module is its greatest proper submodule**, so by
@@ -75,19 +75,14 @@ the greatest proper submodule, and the results asserting that carry the hypothes
 intrinsically, rather than as the sum of the submodules missing a chosen generator, is what makes
 it manifestly independent of the choice of generator.
 
-Nothing here needs the module to be finite-dimensional: the Verma module of Layer 3 of the roadmap,
-whose irreducible quotient is `L(lam)`, is infinite-dimensional, and it is the module this file
-exists to be applied to. In particular the weight spaces are the *generalized* ones throughout, and
-the one place where an honest eigenvector is needed is the generator itself, which is one by the
+Nothing here needs the module to be finite-dimensional: the Verma module
+`TauCeti.VermaModule b lam`, whose quotient by `TauCeti.maximalSubmodule` is `L(lam)`
+(`TauCeti.irreducibleQuotient b lam`), is in general infinite-dimensional, and it is the module this
+file is applied to. In particular the weight spaces are the *generalized* ones throughout, and the
+one place where an honest eigenvector is needed is the generator itself, which is one by the
 definition of `TauCeti.IsHighestWeightVector`.
 
 ## References
-
-This is the "irreducible quotient `L(λ)`" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: "`M(λ)` has a **unique maximal
-submodule** (the sum of all submodules meeting the `λ`-weight space trivially), hence a unique
-irreducible quotient `L(λ)`". Since the Verma module `M(λ)` itself is not yet built, the statements
-are proved for an arbitrary highest weight module, which is how `L(λ)` will consume them.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.3.
 -/
@@ -100,62 +95,61 @@ open LieAlgebra LieModule Module
 
 universe u v w x
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+/-! ### The weight spaces other than the top one, and the maximal submodule -/
+
+section MaximalSubmodule
+
+variable {K : Type u} {L : Type v} [CommRing K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L} [LieRing.IsNilpotent H]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  {lam : Dual K H}
 
-/-! ### Powers of a shifted Cartan operator -/
+variable (H M) in
+/-- **The sum of all the Lie submodules meeting the `lam`-weight space trivially.** For a highest
+weight module of weight `lam` this is the greatest proper submodule
+(`TauCeti.isGreatest_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top`), and the
+quotient by it is the unique irreducible quotient; for an arbitrary module it is only the sum
+named. -/
+def maximalSubmodule (lam : Dual K H) : LieSubmodule K L M :=
+  sSup {N : LieSubmodule K L M |
+    Disjoint (N : Submodule K M)
+      (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)}
 
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-/-- A submodule stable under the action of `x : H` is stable under every power of `x - mu`. This is
-applied both to a Lie submodule and to a span of weight spaces. -/
-private theorem pow_toEnd_sub_smul_mem {P : Submodule K M} {x : H}
-    (hP : ∀ m ∈ P, toEnd K H M x m ∈ P) (mu : K) (k : ℕ) :
-    ∀ m ∈ P, ((toEnd K H M x - mu • (1 : Module.End K M)) ^ k) m ∈ P := by
-  induction k with
-  | zero => intro m hm; simpa using hm
-  | succ k ih =>
-    intro m hm
-    rw [pow_succ, Module.End.mul_apply]
-    refine ih _ ?_
-    have hsub : (toEnd K H M x - mu • (1 : Module.End K M)) m = toEnd K H M x m - mu • m := by
-      simp
-    rw [hsub]
-    exact sub_mem (hP m hm) (Submodule.smul_mem _ _ hm)
+/-- The supremum description underlying `maximalSubmodule`. -/
+theorem maximalSubmodule_eq_sSup :
+    maximalSubmodule H M lam =
+      sSup {N : LieSubmodule K L M |
+        Disjoint (N : Submodule K M)
+          (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)} := by
+  rw [maximalSubmodule]
 
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-/-- An honest eigenvector of `x : H` with eigenvalue `nu` is an eigenvector of every power of
-`⁅x, -⁆ - mu`, with eigenvalue `(nu - mu) ^ k`. -/
-private theorem pow_toEnd_sub_smul_apply {x : H} {mu nu : K} {v : M}
-    (hv : ⁅(x : L), v⁆ = nu • v) (k : ℕ) :
-    ((toEnd K H M x - mu • (1 : Module.End K M)) ^ k) v = (nu - mu) ^ k • v := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, Module.End.mul_apply]
-    have hsub : (toEnd K H M x - mu • (1 : Module.End K M)) v = (nu - mu) • v := by
-      simp [LieSubalgebra.coe_bracket_of_module, hv, sub_smul]
-    rw [hsub, map_smul, ih, smul_smul, pow_succ, mul_comm]
+/-- A Lie submodule meeting the `lam`-weight space trivially lies in the maximal submodule. -/
+theorem le_maximalSubmodule {N : LieSubmodule K L M}
+    (h : Disjoint (N : Submodule K M)
+      (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)) :
+    N ≤ maximalSubmodule H M lam :=
+  le_sSup h
 
-/-! ### The weight spaces other than the top one -/
+/-- The maximal submodule lies in `P` exactly when every submodule meeting the `lam`-weight space
+trivially lies in `P`. -/
+@[simp]
+theorem maximalSubmodule_le_iff {P : LieSubmodule K L M} :
+    maximalSubmodule H M lam ≤ P ↔
+      ∀ N : LieSubmodule K L M,
+        Disjoint (N : Submodule K M)
+          (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M) → N ≤ P := by
+  rw [maximalSubmodule_eq_sSup, sSup_le_iff]
+  rfl
 
-variable (b : (IsKilling.rootSystem H).Base) {lam : Dual K H} {v : M}
+end MaximalSubmodule
 
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-variable (H M) [LieRing.IsNilpotent H] in
-/-- **The top weight space is disjoint from the span of the other weight spaces**, the weight
-spaces of a module being independent. -/
-theorem disjoint_genWeightSpace_genWeightSpaceSpan_ne (lam : Dual K H) :
-    Disjoint (genWeightSpace M ((lam : Dual K H) : H → K))
-      (genWeightSpaceSpan H M {chi | chi ≠ ((lam : Dual K H) : H → K)}) :=
-  (iSupIndep_genWeightSpace K H M ((lam : Dual K H) : H → K)).mono_right
-    (genWeightSpaceSpan_le_iff.mpr fun _ hchi => le_iSup₂_of_le _ hchi le_rfl)
-
-variable {b}
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L}
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  {lam : Dual K H} {v : M}
+  [CharZero K] [IsKilling K L] [FiniteDimensional K L]
+  [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+  {b : (IsKilling.rootSystem H).Base}
 
 /-- **A highest weight module is the sum of its top weight space and the span of its other weight
 spaces.** Every weight space of a highest weight module sits at a weight `lam - nu`, which is
@@ -215,14 +209,16 @@ private theorem smul_mem_of_add_mem_iSup (hv : IsHighestWeightVector b lam v)
     have hstab : ∀ n ∈ (⨆ chi ∈ s, (genWeightSpace M (chi : H → K) : Submodule K M)),
         toEnd K H M x n ∈ (⨆ chi ∈ s, (genWeightSpace M (chi : H → K) : Submodule K M)) :=
       fun n hn => hcomap hn
-    have hm'mem := pow_toEnd_sub_smul_mem hstab ((chi0 : H → K) x) k m' hm'
+    have hm'mem := Module.End.pow_sub_smul_one_mem hstab ((chi0 : H → K) x) k m' hm'
     -- the whole element stays inside `N`
     have hNstab : ∀ n ∈ (N : Submodule K M), toEnd K H M x n ∈ (N : Submodule K M) :=
       fun n hn => N.lie_mem hn
-    have hcmN := pow_toEnd_sub_smul_mem hNstab ((chi0 : H → K) x) k _ hcm
+    have hcmN := Module.End.pow_sub_smul_one_mem hNstab ((chi0 : H → K) x) k _ hcm
     -- compute the image
     have hvimage : (f ^ k) (c • v) = (c * d) • v := by
-      rw [map_smul, hf, hdef, pow_toEnd_sub_smul_apply (hv.lie_eq_smul x), smul_smul]
+      rw [map_smul, hf, hdef,
+        Module.End.pow_sub_smul_one_apply_of_apply_eq_smul (by simpa using hv.lie_eq_smul x),
+        smul_smul]
     rw [map_add, map_add, hvimage, hk, zero_add] at hcmN
     have hd : d ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm hx))
     have hcd := ih _ _ hm'mem hcmN
@@ -265,52 +261,7 @@ theorem le_genWeightSpaceSpan_ne_of_notMem_of_isHighestWeightVector_of_lieSpan_e
   rw [genWeightSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
   exact Submodule.mem_iSup_iff_exists_finset.mpr ⟨s, hs⟩
 
-/-! ### The maximal submodule -/
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-variable (H M) [LieRing.IsNilpotent H] in
-/-- **The sum of all the Lie submodules meeting the `lam`-weight space trivially.** For a highest
-weight module of weight `lam` this is the greatest proper submodule
-(`TauCeti.isGreatest_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top`), and the
-quotient by it is the unique irreducible quotient; for an arbitrary module it is only the sum
-named. -/
-def maximalSubmodule (lam : Dual K H) : LieSubmodule K L M :=
-  sSup {N : LieSubmodule K L M |
-    Disjoint (N : Submodule K M)
-      (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)}
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-/-- The supremum description underlying `maximalSubmodule`. -/
-theorem maximalSubmodule_eq_sSup [LieRing.IsNilpotent H] :
-    maximalSubmodule H M lam =
-      sSup {N : LieSubmodule K L M |
-        Disjoint (N : Submodule K M)
-          (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)} := by
-  rw [maximalSubmodule]
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-/-- A Lie submodule meeting the `lam`-weight space trivially lies in the maximal submodule. -/
-theorem le_maximalSubmodule [LieRing.IsNilpotent H] {N : LieSubmodule K L M}
-    (h : Disjoint (N : Submodule K M)
-      (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)) :
-    N ≤ maximalSubmodule H M lam :=
-  le_sSup h
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] in
-/-- The maximal submodule lies in `P` exactly when every submodule meeting the `lam`-weight space
-trivially lies in `P`. -/
-@[simp]
-theorem maximalSubmodule_le_iff [LieRing.IsNilpotent H] {P : LieSubmodule K L M} :
-    maximalSubmodule H M lam ≤ P ↔
-      ∀ N : LieSubmodule K L M,
-        Disjoint (N : Submodule K M)
-          (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M) → N ≤ P := by
-  rw [maximalSubmodule_eq_sSup, sSup_le_iff]
-  rfl
+/-! ### Maximality in a highest weight module -/
 
 /-- In a highest weight module, meeting the top weight space trivially is missing the generator,
 the top weight space being the line the generator spans. -/
@@ -322,16 +273,6 @@ theorem disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_e
   rw [genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen,
     Submodule.disjoint_span_singleton]
   exact ⟨fun h hvN => hv.ne_zero (h hvN), fun h hvN => absurd hvN h⟩
-
-omit [CharZero K] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L] [LieModule K L M] in
-/-- In a highest weight module, a Lie submodule is proper exactly when it misses the generator. -/
-theorem notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top
-    (hgen : LieSubmodule.lieSpan K L {v} = ⊤) {N : LieSubmodule K L M} : v ∉ N ↔ N ≠ ⊤ := by
-  constructor
-  · rintro hvN rfl
-    exact hvN trivial
-  · intro hN hvN
-    exact hN (top_le_iff.mp (hgen ▸ LieSubmodule.lieSpan_le.mpr (by simpa using hvN)))
 
 /-- **The maximal submodule of a highest weight module misses the generator**: each of the
 submodules summed to build it is supported on the weights other than `lam`, hence so is the sum,
@@ -363,10 +304,10 @@ theorem isGreatest_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤) :
     IsGreatest {N : LieSubmodule K L M | N ≠ ⊤} (maximalSubmodule H M lam) := by
   refine ⟨?_, fun N hN => le_maximalSubmodule ?_⟩
-  · exact (notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hgen).mp
+  · exact (notMem_iff_ne_top_of_lieSpan_eq_top hgen).mp
       (notMem_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen)
   · exact (disjoint_genWeightSpace_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_top hv
-      hgen).mpr ((notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hgen).mpr hN)
+      hgen).mpr ((notMem_iff_ne_top_of_lieSpan_eq_top hgen).mpr hN)
 
 /-- A Lie submodule of a highest weight module lies in the maximal submodule exactly when it is
 proper. -/
@@ -387,7 +328,7 @@ theorem le_maximalSubmodule_iff_notMem_of_isHighestWeightVector_of_lieSpan_eq_to
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
     {N : LieSubmodule K L M} : N ≤ maximalSubmodule H M lam ↔ v ∉ N := by
   rw [le_maximalSubmodule_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen,
-    notMem_iff_ne_top_of_isHighestWeightVector_of_lieSpan_eq_top hgen]
+    notMem_iff_ne_top_of_lieSpan_eq_top hgen]
 
 /-- A Lie submodule of a highest weight module lies in the maximal submodule exactly when it meets
 the highest weight space trivially. -/
@@ -411,21 +352,6 @@ theorem eq_top_of_maximalSubmodule_lt_of_isHighestWeightVector_of_lieSpan_eq_top
     (not_le_of_gt hN)
 
 /-! ### The irreducible quotient -/
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] in
-/-- The image of the generator generates the quotient. -/
-theorem lieSpan_mk_eq_top_of_lieSpan_eq_top (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
-    (N : LieSubmodule K L M) :
-    LieSubmodule.lieSpan K L {LieSubmodule.Quotient.mk' N v} = ⊤ := by
-  have hcomap : LieSubmodule.lieSpan K L {v}
-      ≤ (LieSubmodule.lieSpan K L {LieSubmodule.Quotient.mk' N v}).comap
-        (LieSubmodule.Quotient.mk' N) :=
-    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr
-      (LieSubmodule.mem_comap.mpr (LieSubmodule.subset_lieSpan rfl)))
-  refine eq_top_iff.mpr fun q _ => ?_
-  obtain ⟨m, rfl⟩ := LieSubmodule.Quotient.surjective_mk' N q
-  have hm : m ∈ LieSubmodule.lieSpan K L {v} := by rw [hgen]; trivial
-  exact hcomap hm
 
 /-- **The image of the generator in the quotient by the maximal submodule is again a highest weight
 vector of weight `lam`.** It is nonzero because the maximal submodule misses the generator, and the
@@ -459,9 +385,8 @@ theorem isIrreducible_quotient_maximalSubmodule_of_isHighestWeightVector_of_lieS
   isIrreducible_quotient_iff_isCoatom.mpr
     (isCoatom_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen)
 
-variable {Q : Type x} [AddCommGroup Q] [Module K Q] [LieRingModule L Q] [LieModule K L Q]
+variable {Q : Type x} [AddCommGroup Q] [Module K Q] [LieRingModule L Q]
 
-omit [LieModule K L Q] in
 /-- The kernel of every surjection from a highest weight module to a nontrivial irreducible module
 is its maximal submodule. -/
 theorem ker_eq_maximalSubmodule_of_surjective_of_isIrreducible
@@ -521,7 +446,6 @@ noncomputable def quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible
         Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
       exact f.map_lie y m }
 
-omit [LieModule K L Q] in
 @[simp]
 theorem quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible_apply_mk
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)

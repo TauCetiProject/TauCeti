@@ -68,6 +68,9 @@ over a separably closed field in which `n` is invertible.
   elliptic curve over `Spec K` is zero exactly when it meets the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finite_comp_mulBy_eq_one`: for `n ≠ 0`, finitely
   many points of any elliptic curve over `Spec K` are killed by `[n]`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_natCard_torsion_eq`: the field points of
+  the `n`-torsion of any elliptic curve over `Spec K` are counted by the `n`-torsion of a
+  Weierstrass equation of the curve.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.natCard_torsion`: over a separably closed field in
   which `n` is invertible, the `n`-torsion of any elliptic curve has `n.natAbs ^ 2` points with
   values in `Spec K`.
@@ -298,13 +301,17 @@ theorem finite_comp_mulBy_eq_one {n : ℤ} (hn : n ≠ 0) :
     simp [e', hmul', reassoc_of% hx, h0']
   · exact Subtype.ext ((cancel_mono e').mp (congrArg Subtype.val hxy))
 
-/-- **The number of field points of `E[n]`.** For an elliptic curve `E` over a separably closed
-field `K` in which the integer `n` is invertible, the `n`-torsion `E[n]` has exactly
-`n.natAbs ^ 2` points with values in `Spec K`. -/
-theorem natCard_torsion [IsSepClosed K] {n : ℤ} (hn : (n : K) ≠ 0) :
-    Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion n).X) = n.natAbs ^ 2 := by
+open scoped Classical in
+/-- **The field points of `E[n]` are the `n`-torsion of a Weierstrass equation.** An elliptic
+curve `E` over `Spec K` is the curve of an elliptic Weierstrass equation `W`, and for every integer
+`n` the points of `E[n]` with values in `Spec K` are as many as the `n`-torsion points of
+`W.toAffine.Point`. -/
+theorem exists_natCard_torsion_eq : ∃ (W : WeierstrassCurve K) (_ : W.IsElliptic), ∀ n : ℤ,
+    Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion n).X) =
+      Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) := by
   -- `E` is the curve of a Weierstrass equation `W`, through an isomorphism `e` over `Spec K`
   obtain ⟨W, _, e, he, h0⟩ := E.exists_iso_toEllipticCurveGeom
+  refine ⟨W, inferInstance, fun n ↦ ?_⟩
   have hg : IsPullback e.hom W.toEllipticCurveGeom.structureMap E.structureMap (𝟙 _) :=
     .of_horiz_isIso ⟨by simp [he]⟩
   have h0' : W.toEllipticCurveGeom.zero ≫ e.hom = 𝟙 _ ≫ E.zero := by simp [h0]
@@ -312,7 +319,18 @@ theorem natCard_torsion [IsSepClosed K] {n : ℤ} (hn : (n : K) ≠ 0) :
   have := (isPullback_torsionMap n hg h0').isIso_fst_of_isIso
   let eT : (W.toEllipticCurveGeom.torsion n).X ≅ (E.torsion n).X :=
     Over.isoMk (asIso (torsionMap n hg h0')) (by rw [asIso_hom, torsionMap_hom, Category.comp_id])
-  rw [← W.natCard_toEllipticCurveGeom_torsion hn]
-  exact Nat.card_congr ((Iso.refl _).homCongr eT).symm
+  exact Nat.card_congr (((Iso.refl _).homCongr eT).symm.trans
+    ((W.toEllipticCurveGeomTorsionPointsMulEquiv n).toEquiv.trans Multiplicative.toAdd))
+
+/-- **The number of field points of `E[n]`.** For an elliptic curve `E` over a separably closed
+field `K` in which the integer `n` is invertible, the `n`-torsion `E[n]` has exactly
+`n.natAbs ^ 2` points with values in `Spec K`. -/
+theorem natCard_torsion [IsSepClosed K] {n : ℤ} (hn : (n : K) ≠ 0) :
+    Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion n).X) = n.natAbs ^ 2 := by
+  classical
+  obtain ⟨W, _, hW⟩ := E.exists_natCard_torsion_eq
+  rw [hW, ← W.natCard_toEllipticCurveGeom_torsion hn]
+  exact Nat.card_congr ((W.toEllipticCurveGeomTorsionPointsMulEquiv n).toEquiv.trans
+    Multiplicative.toAdd).symm
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

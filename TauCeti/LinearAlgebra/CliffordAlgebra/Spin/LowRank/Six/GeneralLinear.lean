@@ -25,7 +25,8 @@ reversal preserves both factors and imposes determinant one in each.
 The canonical polarization of the hyperbolic space `splitEvenForm K 3` supplies such a model
 through `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`. Its matrix factors have size
 four. In particular, the even unitary group of three rational hyperbolic planes is `GL₄(ℚ)`.
-This file concerns the even unitary carrier, rather than identifying its Spin subgroup.
+This file concerns the even unitary carrier; its Spin subgroup is the subgroup of
+determinant-one matrices, by `TauCeti.hyperbolicSixSpinEquivSpecialLinear`.
 
 ## References
 
@@ -338,18 +339,36 @@ namespace TauCeti
 
 open _root_.CliffordAlgebra Module
 
-universe u
+/-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
+even half-spin action in the basis used by `Algebra.endAlgEquivMatrix`. -/
+theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+    {Q : QuadraticForm K V} [Invertible (2 : K)] (P : SpinPolarizationData Q)
+    [FiniteDimensional K V] [FiniteDimensional K (spinPlus Q P)] (hline : P.line = ⊥)
+    (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4) (hV : finrank K V = 6)
+    (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
+    let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+    let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+      (P.nondegenerate_of_line_eq_bot hline) hV
+    (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+  dsimp
+  calc
+    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+        (spinGroupToEven Q s)).1 := by
+      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+        CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
+        (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
+      simpa using congrArg Prod.fst
+        (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
+          (spinGroupToEven Q s))
+    _ = _ := by
+      rw [Algebra.endAlgEquivMatrix_apply K _ _]
+      rw [hb]
 
 variable (K : Type u) [Field K]
-
-private theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 6 := by
-  simp [SplitEvenSpace]
-
-private theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
-  Submodule.finrank_eq_zero.not.1 <| by
-    rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-      ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))]
-    norm_num
 
 variable [NeZero (2 : K)]
 
@@ -362,17 +381,16 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
     even (splitEvenForm K 3) ≃ₐ[K]
       Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K := by
   simpa using (splitEvenPolarization K 3).evenCliffordEquivProdMatrix
-    (hyperbolicSix_W_ne_bot K) ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))
+    (l := 3)
+    (splitEvenPolarization_W_ne_bot K (by norm_num))
+      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
-        (Submodule.finrank_eq_zero.not.1 <| by
-          rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-            (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 3) = 2 * 3)]
-          norm_num)
-        (by simp [SplitEvenSpace]) x := by
+        (splitEvenPolarization_W_ne_bot K (by norm_num))
+        (finrank_splitEvenSpace K 3) x := by
   simp [hyperbolicSixEvenEquivMatrixProd]
 
 /-- The even unitary group of three hyperbolic planes is the four-dimensional general linear
@@ -380,7 +398,8 @@ group. In particular, specializing `K` to `ℚ` gives the split rational six-dim
 noncomputable def hyperbolicSixEvenUnitaryEquivGeneralLinear :
     evenUnitaryGroup (splitEvenForm K 3) ≃* Matrix.GeneralLinearGroup (Fin 4) K :=
   (hyperbolicSixEvenEquivMatrixProd K).evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-    (nondegenerate_splitEvenForm K 3) (hyperbolicSix_finrank K)
+    (nondegenerate_splitEvenForm K 3)
+      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic general linear equivalence is the first half-spin matrix component. -/
 @[simp]

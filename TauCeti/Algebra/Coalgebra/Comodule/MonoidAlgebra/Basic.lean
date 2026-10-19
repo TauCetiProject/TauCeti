@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.Coalgebra.MonoidAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
@@ -153,6 +153,37 @@ theorem tensorCoeffEquiv_symm_single (g : G) (v : V) :
   classical
   simp [tensorCoeffEquiv, LinearEquiv.symm_lTensor]
 
+/-- Contracting the last leg of the comultiplication against a basis coefficient leaves
+that coefficient times the corresponding group-like basis vector. -/
+@[simp]
+theorem tensorComponent_monoidCoeff_comul (g : G) (a : MonoidAlgebra R G) :
+    LinearMap.tensorComponent (monoidCoeff R G g) (Coalgebra.comul a) =
+      a.coeff g • MonoidAlgebra.single g (1 : R) := by
+  classical
+  have h : LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ Coalgebra.comul =
+      (monoidCoeff R G g).smulRight (MonoidAlgebra.single g (1 : R)) := by
+    refine MonoidAlgebra.lhom_ext' fun h ↦ ?_
+    ext r
+    by_cases hh : h = g <;> simp [MonoidAlgebra.comul_single, hh]
+  simpa only [LinearMap.comp_apply, LinearMap.smulRight_apply, monoidCoeff_apply] using
+    LinearMap.congr_fun h a
+
+/-- Contracting the last leg of the comultiplication on a tensor with `R[G]` leaves
+its coefficient tensored with the corresponding group-like basis vector. -/
+@[simp]
+theorem tensorComponent_monoidCoeff_comul_lTensor (g : G)
+    (b : V ⊗[R] MonoidAlgebra R G) :
+    (LinearMap.tensorComponent (monoidCoeff R G g)).lTensor V
+        (Coalgebra.comul.lTensor V b) =
+      LinearMap.tensorComponent (monoidCoeff R G g) b ⊗ₜ[R]
+        MonoidAlgebra.single g 1 := by
+  induction b using TensorProduct.inductionOn with
+  | add b c hb hc => simp [hb, hc, TensorProduct.add_tmul]
+  | tmul v a =>
+    rw [LinearMap.lTensor_tmul, LinearMap.lTensor_tmul, tensorComponent_monoidCoeff_comul]
+    simp only [LinearMap.tensorComponent_tmul, monoidCoeff_apply,
+      TensorProduct.smul_tmul, MonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+
 end Component
 
 /-! ## The weight components of a comodule -/
@@ -247,54 +278,36 @@ variable {R G V}
 
 /-- Composed with the comultiplication of `R[G]`, the pair of coefficient maps at equal indices is
 a single coefficient map: the elements `single g 1` are group-like. -/
-private theorem pairCoeff_comp_comul_self (g : G) :
-    pairCoeff (R := R) (monoidCoeff R G g) (monoidCoeff R G g) ∘ₗ
+private theorem coeff_comp_tensorComponent_comp_comul_self (g : G) :
+    monoidCoeff R G g ∘ₗ _root_.LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ
         Coalgebra.comul (R := R) (A := MonoidAlgebra R G) = monoidCoeff R G g := by
-  refine MonoidAlgebra.lhom_ext' fun k => ?_
-  ext
-  by_cases hk : k = g <;>
-    simp [monoidCoeff, MonoidAlgebra.comul_single, hk]
+  classical
+  exact LinearMap.ext fun a ↦ by simp
 
 /-- Composed with the comultiplication of `R[G]`, the pair of coefficient maps at distinct indices
 vanishes. -/
-private theorem pairCoeff_comp_comul_of_ne {h g : G} (hne : h ≠ g) :
-    pairCoeff (R := R) (monoidCoeff R G h) (monoidCoeff R G g) ∘ₗ
+private theorem coeff_comp_tensorComponent_comp_comul_of_ne {h g : G} (hne : h ≠ g) :
+    monoidCoeff R G h ∘ₗ _root_.LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ
         Coalgebra.comul (R := R) (A := MonoidAlgebra R G) = 0 := by
-  refine MonoidAlgebra.lhom_ext' fun k => ?_
-  ext
-  by_cases hk : k = g <;>
-    simp [monoidCoeff, MonoidAlgebra.comul_single, hk, hne]
+  classical
+  exact LinearMap.ext fun a ↦ by simp [hne]
 
 variable [Comodule R (MonoidAlgebra R G) V]
-
-private theorem weightProj_weightProj_eq (h g : G) (v : V) :
-    weightProj R G V h (weightProj R G V g v) =
-      tensorPairComponent (R := R) (M := V) (monoidCoeff R G h) (monoidCoeff R G g)
-        ((Coalgebra.comul (R := R) (A := MonoidAlgebra R G)).lTensor V
-          (coact (R := R) (C := MonoidAlgebra R G) v)) :=
-  coactComponent_coactComponent (R := R) (C := MonoidAlgebra R G) (M := V)
-    (monoidCoeff R G h) (monoidCoeff R G g) v
 
 /-- **The weight projections are idempotent.** -/
 @[simp]
 theorem weightProj_weightProj_self (g : G) (v : V) :
     weightProj R G V g (weightProj R G V g v) = weightProj R G V g v := by
-  rw [weightProj_weightProj_eq]
-  have h := tensorPairComponent_comp_lTensor_comul (M := V)
-    (pairCoeff_comp_comul_self (R := R) (G := G) g)
-  simpa only [LinearMap.coe_comp, Function.comp_apply, weightProj_apply] using
-    congr($h (coact (R := R) (C := MonoidAlgebra R G) v))
+  simp only [weightProj, coactComponent_coactComponent,
+    coeff_comp_tensorComponent_comp_comul_self]
 
 /-- **The weight projections at distinct indices are orthogonal.** -/
 @[simp]
 theorem weightProj_weightProj_of_ne {h g : G} (hne : h ≠ g) (v : V) :
     weightProj R G V h (weightProj R G V g v) = 0 := by
-  rw [weightProj_weightProj_eq]
-  have h0 := tensorPairComponent_comp_lTensor_comul (M := V)
-    (pairCoeff_comp_comul_of_ne (R := R) (G := G) hne)
-  have := congr($h0 (coact (R := R) (C := MonoidAlgebra R G) v))
-  simpa only [LinearMap.coe_comp, Function.comp_apply, _root_.LinearMap.tensorComponent_zero,
-    LinearMap.zero_apply] using this
+  rw [weightProj, weightProj, coactComponent_coactComponent,
+    coeff_comp_tensorComponent_comp_comul_of_ne hne, coactComponent_apply]
+  simp
 
 end Coassoc
 
@@ -538,7 +551,7 @@ theorem range_weightProj (g : G) :
 
 private theorem finite_setOf_weightSpace_ne_bot_aux [Module.Finite R V] :
     {g : G | weightSpace R G V g ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg (iSupIndep_weightSpace R G V)
+  (iSupIndep_weightSpace R G V).finite_ne_bot_of_fg
     (by rw [iSup_weightSpace_eq_top R G V]; exact Module.Finite.fg_top)
 
 /-- **A comodule over `R[G]` that is finitely generated as a module has only finitely many

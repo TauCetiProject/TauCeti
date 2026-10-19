@@ -570,6 +570,24 @@ theorem restrictedMvPowerSeriesSubmodule_ext {k : ℕ} {A M : Type*} [Semiring A
       ((g : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s) : f = g :=
   Subtype.ext (funext h)
 
+/-- The monomial `m Tˢ` with coefficient `m ∈ M`, as an `A`-linear map `M → M⟨T₁, …, Tₖ⟩`. -/
+noncomputable def restrictedMvPowerSeriesSubmoduleMonomial {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] (s : Fin k →₀ ℕ) :
+    M →ₗ[A] restrictedMvPowerSeriesSubmodule k A M :=
+  (LinearMap.single A (fun _ : Fin k →₀ ℕ ↦ M) s).codRestrict _ fun _ ↦
+    mem_restrictedMvPowerSeriesSubmodule.mpr <| isRestricted_of_hasFiniteSupport <|
+      (Set.finite_singleton s).subset Pi.support_single_subset
+
+/-- The coefficients of the monomial `m Tˢ`: `m` at `s` and `0` elsewhere. -/
+@[simp]
+theorem coeff_restrictedMvPowerSeriesSubmoduleMonomial {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] (s : Fin k →₀ ℕ) (m : M) (t : Fin k →₀ ℕ) :
+    (((restrictedMvPowerSeriesSubmoduleMonomial (A := A) s m :
+        restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) :
+      (Fin k →₀ ℕ) → M) t = (Pi.single s m : (Fin k →₀ ℕ) → M) t := (rfl)
+
 /-- **`M ↦ M⟨T₁, …, Tₖ⟩` is functorial**: an `A`-linear map continuous **at `0`** induces one on
 restricted series, coefficientwise. Only continuity at `0` is used — see `IsRestricted.map`. -/
 noncomputable def restrictedMvPowerSeriesSubmoduleMap {k : ℕ} {A M N : Type*} [Semiring A]
@@ -592,6 +610,18 @@ theorem coeff_restrictedMvPowerSeriesSubmoduleMap {k : ℕ} {A M N : Type*} [Sem
     (((restrictedMvPowerSeriesSubmoduleMap (k := k) φ hφ f :
         restrictedMvPowerSeriesSubmodule k A N) : MvPowerSeries (Fin k) N) :
       (Fin k →₀ ℕ) → N) s = φ (((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s) := (rfl)
+
+/-- The map induced on restricted series by a linear map `φ` sends `m Tˢ` to `φ(m) Tˢ`. -/
+@[simp]
+theorem restrictedMvPowerSeriesSubmoduleMap_monomial {k : ℕ} {A M N : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] [AddCommMonoid N] [TopologicalSpace N] [Module A N]
+    [ContinuousAdd N] [ContinuousConstSMul A N] (φ : M →ₗ[A] N) (hφ : ContinuousAt φ 0)
+    (s : Fin k →₀ ℕ) (m : M) :
+    restrictedMvPowerSeriesSubmoduleMap φ hφ (restrictedMvPowerSeriesSubmoduleMonomial s m) =
+      restrictedMvPowerSeriesSubmoduleMonomial s (φ m) := by
+  ext t
+  by_cases ht : t = s <;> simp [ht]
 
 /-- The identity induces the identity. -/
 @[simp]

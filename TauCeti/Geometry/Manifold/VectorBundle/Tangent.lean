@@ -34,6 +34,8 @@ inverse tangent-bundle trivializations act componentwise.
 
 ## Main results
 
+* `TauCeti.Manifold.mfderiv_atlas_eq_continuousLinearMapAt`: the derivative of an atlas chart
+  is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
@@ -95,6 +97,22 @@ variable
 section BasePoint
 
 variable [IsManifold I 1 M]
+
+/-- The derivative of an atlas chart reads tangent vectors in that chart's core trivialization. -/
+theorem mfderiv_atlas_eq_continuousLinearMapAt (e : atlas H M) {x : M}
+    (hx : x ∈ e.val.source) :
+    mfderiv I I e.val x =
+      ((tangentBundleCore I M).localTriv e).continuousLinearMapAt 𝕜 x := by
+  rw [(tangentBundleCore I M).localTriv_continuousLinearMapAt hx,
+    (mdifferentiableAt_atlas e.property hx).mfderiv]
+  simp only [writtenInExtChartAt, extChartAt_self_eq]
+  rw [tangentBundleCore_coordChange, tangentBundleCore_indexAt, achart_val]
+  simp only [extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_assoc]
+  -- At this foundational bridge, both implementation casts identify the tangent fibre with E.
+  ext v
+  simp only [ContinuousLinearMap.comp_apply, tangentSpaceCastModel]
+  rfl
+
 
 /-- Read in the canonical trivialization at `x`, a tangent vector at `x` itself is its own
 coordinate vector: the trivialization is built from the chart at `x`, whose transition function
@@ -620,6 +638,16 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
   rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
     mfderiv_subtype_val, mfderiv_subtype_val] at h
   exact h.symm
+
+/-- The differential of the inclusion of nested open submanifolds is the identity of the common
+model vector space. -/
+@[simp]
+theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
+    (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
+  have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
+    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
+  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
+  exact h'
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :

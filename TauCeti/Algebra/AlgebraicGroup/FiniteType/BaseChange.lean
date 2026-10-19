@@ -202,58 +202,23 @@ theorem baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom
 theorem baseChangeMap_includeLeft_injective
     (H L : FiniteTypeCommHopfAlgCat.{u, v} k) :
     Function.Injective (toBialgHom (baseChangeMap (K := K) (includeLeft H L))) := by
-  let H' := baseChange (K := K) H
-  let L' := baseChange (K := K) L
-  let e := baseChangeTensorProductIso K H L
-  apply Function.Injective.of_comp (f := toBialgHom e.hom)
-  have hcomp := congrArg toBialgHom
-    (baseChangeMap_includeLeft_comp_baseChangeTensorProductIso_hom K H L)
-  rw [toBialgHom_comp] at hcomp
-  -- `includeLeft` is a finite-type categorical abbreviation for this bialgebra map. There is
-  -- deliberately no duplicate categorical `toBialgHom` lemma, so expose that abbreviation here.
-  change (toBialgHom e.hom).comp (toBialgHom (baseChangeMap (K := K) (includeLeft H L))) =
-    Bialgebra.TensorProduct.includeLeft at hcomp
-  -- Mathlib's algebra-level inclusion theorem requires `Module.Flat K H'`, which is not
-  -- available for an arbitrary Hopf algebra. The counit projection gives a retraction without
-  -- adding that unnecessary hypothesis.
-  have hinclude : Function.Injective
-      (Bialgebra.TensorProduct.includeLeft (R := K) (H₁ := H') (H₂ := L')) := by
-    apply Function.LeftInverse.injective
-      (g := Bialgebra.TensorProduct.projectLeft (R := K) (H₁ := H') (H₂ := L'))
-    intro x
-    simp only [← BialgHom.comp_apply,
-      Bialgebra.TensorProduct.projectLeft_comp_includeLeft, BialgHom.id_apply]
-  intro x y hxy
-  apply hinclude
-  simpa only [Function.comp_apply, ← BialgHom.comp_apply, hcomp] using hxy
+  apply Function.Injective.of_comp
+    (f := toBialgHom (baseChangeTensorProductIso K H L).hom)
+  have h := includeLeft_injective (baseChange (K := K) H) (baseChange (K := K) L)
+  rw [← baseChangeMap_includeLeft_comp_baseChangeTensorProductIso_hom K H L,
+    toBialgHom_comp] at h
+  exact h
 
 /-- The base change of the right coordinate inclusion into a product is injective. -/
 theorem baseChangeMap_includeRight_injective
     (H L : FiniteTypeCommHopfAlgCat.{u, v} k) :
     Function.Injective (toBialgHom (baseChangeMap (K := K) (includeRight H L))) := by
-  let H' := baseChange (K := K) H
-  let L' := baseChange (K := K) L
-  let e := baseChangeTensorProductIso K H L
-  apply Function.Injective.of_comp (f := toBialgHom e.hom)
-  have hcomp := congrArg toBialgHom
-    (baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom K H L)
-  rw [toBialgHom_comp] at hcomp
-  -- `includeRight` is likewise only a finite-type wrapper around the concrete bialgebra map;
-  -- expose the abbreviation rather than adding a second public statement of that identity.
-  change (toBialgHom e.hom).comp (toBialgHom (baseChangeMap (K := K) (includeRight H L))) =
-    Bialgebra.TensorProduct.includeRight at hcomp
-  -- As on the left, the bialgebra projection proves injectivity without the flatness
-  -- hypothesis required by Mathlib's algebra-level tensor-product inclusion theorem.
-  have hinclude : Function.Injective
-      (Bialgebra.TensorProduct.includeRight (R := K) (H₁ := H') (H₂ := L')) := by
-    apply Function.LeftInverse.injective
-      (g := Bialgebra.TensorProduct.projectRight (R := K) (H₁ := H') (H₂ := L'))
-    intro x
-    simp only [← BialgHom.comp_apply,
-      Bialgebra.TensorProduct.projectRight_comp_includeRight, BialgHom.id_apply]
-  intro x y hxy
-  apply hinclude
-  simpa only [Function.comp_apply, ← BialgHom.comp_apply, hcomp] using hxy
+  apply Function.Injective.of_comp
+    (f := toBialgHom (baseChangeTensorProductIso K H L).hom)
+  have h := includeRight_injective (baseChange (K := K) H) (baseChange (K := K) L)
+  rw [← baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom K H L,
+    toBialgHom_comp] at h
+  exact h
 
 /-- Lift an isomorphism between specified underlying base-changed Hopf algebras to the
 finite-type full subcategory. The object equalities record the chosen presentations of the
@@ -326,8 +291,8 @@ lemma baseChangePointsMulEquiv_mapValue
 lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
     baseChangePointsMulEquiv (K := K) A H
-        (AlgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
-      AlgHom.mapDomain
+        (BialgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
+      BialgHom.mapDomain
         (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         (toBialgHom φ)
         (baseChangePointsMulEquiv (K := K) A L f) :=

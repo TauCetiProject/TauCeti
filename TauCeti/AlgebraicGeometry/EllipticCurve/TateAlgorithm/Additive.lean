@@ -10,7 +10,7 @@ public import Mathlib.FieldTheory.Perfect
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 

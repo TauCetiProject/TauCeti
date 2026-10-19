@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.SeparationQuotient
+public import TauCeti.Topology.Algebra.GroupCompletion
 import TauCeti.RingTheory.Huber.Continuous.ValuativeCriterion
 import TauCeti.RingTheory.Ideal.OneAddLocalisation
 import Mathlib.RingTheory.Valuation.LocalSubring
@@ -28,15 +29,28 @@ The ideal-theoretic result `Ideal.exists_forall_pow_eq_pow` makes the powers of 
 constant. Their images are a neighbourhood basis of zero in `A`, so the closure of zero is open
 and the separated quotient is discrete.
 
-## Main result
+The criterion is then read in three further forms. Since `Cont A` is the adic spectrum for the
+smallest plus ring, it applies to the analytic points of `Cont A`. For a Hausdorff Huber ring the
+separated quotient is the ring itself, so the analytic locus is empty exactly when the ring is
+discrete; for a complete Hausdorff Huber ring this is Wedhorn's Remark 7.50. Finally, the
+separated completion `Â` is discrete exactly when the separated quotient is.
+
+## Main results
 
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_empty_iff_discrete_separationQuotient`:
   **Wedhorn Proposition 7.49(2)**, the analytic locus is empty exactly when the separated
   quotient is discrete.
+* `cont_inter_setOf_isAnalyticPoint_eq_empty_iff_discrete_separationQuotient`, in the same
+  namespace: the same criterion for the analytic points of `Cont A`.
+* `TauCeti.ValuationSpectrum.spaAnalytic_eq_empty_iff_discreteTopology`: for a separated Huber
+  ring, the analytic locus is empty exactly when the ring is discrete (Remark 7.50).
+* `TauCeti.ValuationSpectrum.spaAnalytic_eq_empty_iff_discreteTopology_completion`: the analytic
+  locus is empty exactly when the completion `Â` is discrete.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition 7.49(2).
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition 7.49(2) and
+  Remark 7.50.
 
 -/
 
@@ -218,5 +232,43 @@ theorem spaAnalytic_eq_empty_iff_discrete_separationQuotient [IsHuberRing A]
       QuotientAddGroup.discreteTopology hopen
     exact (UniformSpace.sepQuotHomeomorphRingQuot A).symm.discreteTopology
   · exact spaAnalytic_eq_empty_of_discrete_separationQuotient Aplus
+
+/-- **Wedhorn Proposition 7.49(2), form for `Cont A`.** A Huber ring has no continuous analytic
+point exactly when its separated quotient is discrete. -/
+theorem cont_inter_setOf_isAnalyticPoint_eq_empty_iff_discrete_separationQuotient
+    [IsHuberRing A] :
+    cont A ∩ {v | IsAnalyticPoint v} = ∅ ↔ DiscreteTopology (SeparationQuotient A) := by
+  rw [← spa_bot, ← spaAnalytic_def]
+  exact spaAnalytic_eq_empty_iff_discrete_separationQuotient ⊥ bot_le
+
+/-- **Wedhorn Proposition 7.49(2) for a separated Huber ring.** If `Aplus` consists of
+power-bounded elements, the analytic locus of a Huber ring `A` which is `T0` (equivalently,
+Hausdorff) is empty if and only if `A` is discrete. In particular a complete Hausdorff Huber pair
+with empty analytic locus is discrete (Wedhorn's Remark 7.50). -/
+theorem spaAnalytic_eq_empty_iff_discreteTopology [IsHuberRing A] [T0Space A]
+    (Aplus : Subring A) (hAplus : Aplus ≤ powerBoundedSubring A) :
+    spaAnalytic Aplus = ∅ ↔ DiscreteTopology A := by
+  -- every ideal of a discrete ring is open, so no point is analytic
+  refine ⟨fun h ↦ ?_, fun _ ↦ Set.eq_empty_of_forall_notMem fun v hv ↦
+    (isAnalyticPoint_def v).mp ((mem_spaAnalytic_iff Aplus v).mp hv).2 (isOpen_discrete _)⟩
+  rw [spaAnalytic_eq_empty_iff_discrete_separationQuotient Aplus hAplus] at h
+  exact SeparationQuotient.isInducing_mk.isEmbedding.discreteTopology
+
+end TauCeti.ValuationSpectrum
+
+namespace TauCeti.ValuationSpectrum
+
+open TauCeti.Huber UniformSpace
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+
+/-- **The completion half of Wedhorn Proposition 7.49(2).** If `Aplus` consists of power-bounded
+elements, the analytic locus of a Huber pair is empty exactly when the separated completion `Â` of
+the Huber ring is discrete. -/
+theorem spaAnalytic_eq_empty_iff_discreteTopology_completion [IsHuberRing A]
+    (Aplus : Subring A) (hAplus : Aplus ≤ powerBoundedSubring A) :
+    spaAnalytic Aplus = ∅ ↔ DiscreteTopology (Completion A) := by
+  rw [spaAnalytic_eq_empty_iff_discrete_separationQuotient Aplus hAplus,
+    Completion.discreteTopology_iff_separationQuotient]
 
 end TauCeti.ValuationSpectrum

@@ -99,4 +99,38 @@ theorem orderAt_le_of_analyticAt_mul_eq [Fintype σ]
   simp only [zero_smul, add_zero] at hbound
   exact (hbound.trans le_self_add).trans_eq (horder.trans hm)
 
+/-- Rescaling the distinguished coordinate by an analytic factor, together with multiplication
+by an analytic function, cannot lower ambient order. The identity is required only for base
+points near `a`. -/
+theorem orderAt_le_of_eval_cons_mul_mul_eq {n : ℕ}
+    (f g : MvPolynomial (Fin (n + 1)) 𝕜) {l μ : (Fin n → 𝕜) → 𝕜} {a : Fin n → 𝕜} (z : 𝕜)
+    (hl : AnalyticAt 𝕜 l a) (hμ : AnalyticAt 𝕜 μ a)
+    (h : ∀ᶠ y in 𝓝 a, ∀ t,
+      eval (Fin.cons (l y * t) y) f * μ y = eval (Fin.cons t y) g) :
+    f.orderAt (Fin.cons (l a * z) a) ≤ g.orderAt (Fin.cons z a) := by
+  let T : (Fin (n + 1) → 𝕜) →L[𝕜] Fin n → 𝕜 :=
+    ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj i.succ
+  have hT (x : Fin (n + 1) → 𝕜) : T x = Fin.tail x := rfl
+  have hTa : T (Fin.cons z a) = a := by rw [hT, Fin.tail_cons]
+  have hlT : AnalyticAt 𝕜 (fun x ↦ l (T x)) (Fin.cons z a) :=
+    hl.comp_of_eq (T.analyticAt _) hTa
+  have hμT : AnalyticAt 𝕜 (fun x ↦ μ (T x)) (Fin.cons z a) :=
+    hμ.comp_of_eq (T.analyticAt _) hTa
+  have hcoord (i : Fin (n + 1)) :
+      AnalyticAt 𝕜 (fun x : Fin (n + 1) → 𝕜 ↦ x i) (Fin.cons z a) :=
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin (n + 1) ↦ 𝕜) i).analyticAt _
+  have hg (i : Fin (n + 1)) : AnalyticAt 𝕜
+      (fun x ↦ (Fin.cons (l (T x) * x 0) (T x) : Fin (n + 1) → 𝕜) i) (Fin.cons z a) := by
+    cases i using Fin.cases with
+    | zero =>
+      simp only [Fin.cons_zero]
+      exact hlT.fun_mul (hcoord 0)
+    | succ i => simpa only [Fin.cons_succ, hT, Fin.tail] using hcoord i.succ
+  have heq : ∀ᶠ x in 𝓝 (Fin.cons z a : Fin (n + 1) → 𝕜),
+      eval (Fin.cons (l (T x) * x 0) (T x)) f * μ (T x) = eval x g := by
+    filter_upwards [T.continuous.continuousAt.preimage_mem_nhds (hTa ▸ h)] with x hx
+    rw [hx (x 0), hT, Fin.cons_self_tail]
+  simpa only [hTa, Fin.cons_zero] using
+    orderAt_le_of_analyticAt_mul_eq f g (Fin.cons z a) hg hμT heq
+
 end MvPolynomial

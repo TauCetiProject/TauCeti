@@ -47,8 +47,12 @@ separation `Module.End.PointSpectraSeparated A ⊤ B ⊤ δ` with `0 < δ` suppl
 
 ## Main statements
 
+* `OrthonormalBasis.sum_sum_inner_mul_inner_mul_inner`: the expansion
+  `⟪x, T y⟫ = ∑ᵢ ∑ⱼ ⟪x, uᵢ⟫ ⟪uᵢ, T vⱼ⟫ ⟪vⱼ, y⟫` in orthonormal bases `(uᵢ)`, `(vⱼ)`.
 * `OrthonormalBasis.sum_inner_smul_rankOne`: for orthonormal bases `(uᵢ)`, `(vⱼ)`, every operator
   `C` is the sum of `⟪uᵢ, C vⱼ⟫` times the rank-one operators `rankOne 𝕜 uᵢ vⱼ`.
+* `ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one`: the Sylvester operator is unchanged
+  when `A` and `B` are shifted by the same scalar.
 * `ContinuousLinearMap.add_mul_norm_le_norm_comp_add_comp`: if the forms of `A` and `B` are
   bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖`.
 * `ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_le_re_inner_of_re_inner_le`,
@@ -98,6 +102,17 @@ theorem sum_inner_smul_rankOne (u : OrthonormalBasis ι 𝕜 E) (v : Orthonormal
     rankOne_apply, map_sum, map_smul, smul_apply]
   exact Finset.sum_comm
 
+/-- **Matrix coefficients of an inner product.** For orthonormal bases `(uᵢ)` of `E` and `(vⱼ)` of
+`F`, `⟪x, T y⟫ = ∑ᵢ ∑ⱼ ⟪x, uᵢ⟫ ⟪uᵢ, T vⱼ⟫ ⟪vⱼ, y⟫` for every linear map `T : F →ₗ[𝕜] E`. -/
+theorem sum_sum_inner_mul_inner_mul_inner (u : OrthonormalBasis ι 𝕜 E)
+    (v : OrthonormalBasis κ 𝕜 F) (T : F →ₗ[𝕜] E) (x : E) (y : F) :
+    ∑ i, ∑ j, ⟪x, u i⟫_𝕜 * ⟪u i, T (v j)⟫_𝕜 * ⟪v j, y⟫_𝕜 = ⟪x, T y⟫_𝕜 := by
+  rw [← u.sum_inner_mul_inner x (T y)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  conv_rhs => rw [← v.sum_repr' y]
+  simp only [map_sum, map_smul, inner_sum, inner_smul_right, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
+
 end OrthonormalBasis
 
 namespace ContinuousLinearMap
@@ -117,6 +132,14 @@ noncomputable def sylvester (A : E →L[𝕜] E) (B : F →L[𝕜] F) : (F →L[
 theorem sylvester_apply (A : E →L[𝕜] E) (B : F →L[𝕜] F) (X : F →L[𝕜] E) :
     A.sylvester B X = A ∘L X - X ∘L B := by
   simp [sylvester]
+
+/-- The Sylvester operator is unchanged when both operators are shifted by the same scalar:
+`(A - c) X - X (B - c) = A X - X B`. -/
+@[simp]
+theorem sub_smul_one_sylvester_sub_smul_one (A : E →L[𝕜] E) (B : F →L[𝕜] F) (c : 𝕜) :
+    (A - c • 1).sylvester (B - c • 1) = A.sylvester B := by
+  ext X y
+  simp [sub_comp, comp_sub]
 
 end Normed
 

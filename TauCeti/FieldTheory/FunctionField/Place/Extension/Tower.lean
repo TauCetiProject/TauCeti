@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.SeparableClosure
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 import Mathlib.FieldTheory.PurelyInseparable.Tower
+import TauCeti.FieldTheory.SeparableDegree
 
 /-!
 # Towers of extensions of places
 
 Restriction of places is functorial through a tower of algebraic field extensions. The
-ramification index and relative residue degree are multiplicative in the same tower. These are
+ramification index, the relative residue degree, and the inseparable degree of the residue
+extension are multiplicative in the same tower. These are
 the tower statements in Stichtenoth, *Algebraic Function Fields and Codes*, Proposition 3.1.6.
 
 The constants are allowed to grow with the function fields. Thus the setup contains parallel
@@ -29,7 +32,8 @@ extension algebraic.
   restricting directly to `F₀`.
 * `TauCeti.Place.ramificationIdx_restrict_mul`: ramification indices multiply in a tower.
 * `TauCeti.Place.relativeDegree_restrict_mul`: relative residue degrees multiply in a tower.
-* `TauCeti.Place.finInsepDegree_residueField_restrict_mul`: so do inseparable residue degrees.
+* `TauCeti.Place.finInsepDegree_residueField_restrict_mul`: inseparable degrees of residue
+  extensions multiply in a tower.
 * `TauCeti.Place.isSeparable_residueField_restrict_top` and
   `TauCeti.Place.isSeparable_residueField_restrict_bot`: a separable residue extension stays
   separable on each step of the tower.
@@ -93,13 +97,9 @@ theorem ramificationIdx_restrict_mul (P : Place k₂ F₂) :
   apply Valuation.ordIndex_eq_mul_of_forall_ord_eq _ _
     (e := Valuation.ordIndex (P.valuation.comap (algebraMap F₁ F₂)))
   intro x
-  have hP (y : F₂) : Valuation.ord P.valuation y = P.ord y := by
-    rw [Valuation.ord_def, P.ord_def]
-  have hP₁ (y : F₁) : Valuation.ord (P.restrict k₁ F₁).valuation y =
-      (P.restrict k₁ F₁).ord y := by
-    rw [Valuation.ord_def, (P.restrict k₁ F₁).ord_def]
   rw [Valuation.ord_comap, Valuation.ord_comap,
-    IsScalarTower.algebraMap_apply F₀ F₁ F₂, hP, hP₁, ord_algebraMap_restrict k₁ F₁ P,
+    IsScalarTower.algebraMap_apply F₀ F₁ F₂, ord_valuation, ord_valuation,
+    ord_algebraMap_restrict k₁ F₁ P,
     ramificationIdx_def]
 
 /-- Read through the identification `(P ∩ F₁) ∩ F₀ = P ∩ F₀` of `TauCeti.Place.restrict_restrict`,
@@ -170,13 +170,13 @@ theorem relativeDegree_restrict_mul (P : Place k₂ F₂) :
       ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
       (P.restrict k₁ F₁).ResidueField P.ResidueField).symm
 
-/-- **Inseparable residue degrees are multiplicative in towers**: the inseparable degree of the
-residue extension of `P` over `F₀` is the product of those of `P` over `F₁` and of `P ∩ F₁`
-over `F₀`, the bottom step read at the twice-restricted place `(P ∩ F₁) ∩ F₀`. -/
+/-- **Inseparable residue degrees are multiplicative in towers**:
+`[F₂_P : F₀_{P ∩ F₀}]ᵢ = [F₂_P : F₁_{P ∩ F₁}]ᵢ [F₁_{P ∩ F₁} : F₀_{P ∩ F₀}]ᵢ`, the bottom step read
+at the twice-restricted place `(P ∩ F₁) ∩ F₀`. -/
 theorem finInsepDegree_residueField_restrict_mul (P : Place k₂ F₂) :
     Field.finInsepDegree
-        (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
-        P.ResidueField =
+        (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P
+          (Algebra.IsIntegral.trans F₁)).ResidueField P.ResidueField =
       Field.finInsepDegree (P.restrict k₁ F₁).ResidueField P.ResidueField *
         Field.finInsepDegree ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
           (P.restrict k₁ F₁).ResidueField := by
@@ -191,22 +191,20 @@ theorem finInsepDegree_residueField_restrict_mul (P : Place k₂ F₂) :
   let _ : IsScalarTower ((P.restrict k₁ F₁).restrict k₀ F₀).integers
       (P.restrict k₁ F₁).integers P.integers :=
     IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  -- Insert the identification of the residue fields of `P ∩ F₀` and `(P ∩ F₁) ∩ F₀` as a
-  -- separable bottom step of the tower, which contributes inseparable degree one.
+  -- Compare the two bottom residue fields along the identification of the two places.
   let c := RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
     (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).symm
   let _ : Algebra (P.restrict k₀ F₀).ResidueField
-      ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField := c.toRingHom.toAlgebra
-  have : IsScalarTower (P.restrict k₀ F₀).ResidueField
+      ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField := (c : _ →+* _).toAlgebra
+  let _ : IsScalarTower (P.restrict k₀ F₀).ResidueField
       ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField :=
-    .of_algebraMap_eq' (algebraMap_comp_cast_restrict_restrict P).symm
-  have : Algebra.IsSeparable (P.restrict k₀ F₀).ResidueField
-      ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField :=
-    Algebra.IsSeparable.of_equiv_equiv (RingEquiv.refl _) c rfl
-  rw [← Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic _
-      ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField, Algebra.IsSeparable.finInsepDegree_eq,
-    one_mul, ← Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic _
-      (P.restrict k₁ F₁).ResidueField, mul_comm]
+    IsScalarTower.of_algebraMap_eq fun x ↦
+      (RingHom.congr_fun (algebraMap_comp_cast_restrict_restrict P) x).symm
+  rw [← Field.finInsepDegree_eq_of_surjective
+    (E := ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField) c.surjective, mul_comm]
+  exact (Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic
+    ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField (P.restrict k₁ F₁).ResidueField
+    P.ResidueField).symm
 
 /-- Separability of the residue extension of `P` over `F₀` passes to both steps of the tower of
 residue fields through `P ∩ F₁`, the bottom step read at the twice-restricted place

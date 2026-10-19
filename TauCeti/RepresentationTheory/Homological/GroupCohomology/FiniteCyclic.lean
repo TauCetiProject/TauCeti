@@ -163,7 +163,7 @@ private theorem geomSum_add_sub_geomSum_mod (i j : ℕ) (hi : i < orderOf g) (hj
   · rw [Nat.mod_eq_of_lt (not_le.1 h), sub_self]
 
 private theorem barToPeriodic₂_comm :
-    barToPeriodic₂ k g hg ≫ (leftRegular k G).norm =
+    barToPeriodic₂ k g hg ≫ (leftRegular k G).norm.asHom =
       Rep.barComplex.d k G 1 ≫ barToPeriodic₁ k g hg := by
   refine free_ext _ _ _ _ _ fun x => ?_
   rw [Rep.hom_comp, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
@@ -185,7 +185,7 @@ private theorem barToPeriodic₂_comm :
   have hS : geomSum k g (i + j) =
       geomSum k g i + ∑ l ∈ Finset.range j, MonoidAlgebra.single (g ^ (i + l)) 1 :=
     Finset.sum_range_add _ _ _
-  have hN : (leftRegular k G).norm.hom
+  have hN : (leftRegular k G).norm.asHom.hom
       (if orderOf g ≤ i + j then MonoidAlgebra.single 1 1 else 0) =
       if orderOf g ≤ i + j then ∑ x : G, MonoidAlgebra.single x (1 : k) else 0 := by
     split_ifs

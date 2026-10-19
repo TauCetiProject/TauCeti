@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # The norm on unit groups
@@ -34,6 +35,8 @@ finiteness where the value is computed.
 * `TauCeti.Algebra.pow_finrank_mem_range_normUnits`: in a free algebra, the `finrank`-th power of
   a unit of the base is a norm; `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits` does the
   same for every `n`-th power with `n` a multiple of the rank.
+* `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits_baseChange`: powers by the rank of a
+  free algebra are norms after any commutative base change.
 * `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 * `TauCeti.pow_finrank_mem_normGroup`: the `[L : K]`-th power of an element of `Kˣ` is a norm.
 -/
@@ -54,11 +57,18 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
 
+/-- **The norm of a scalar.** In a free `R`-algebra `S`, the norm of a unit `a` of `R`, viewed in
+`S`, is `a ^ finrank R S`. -/
+@[simp]
+theorem Algebra.normUnits_unitsMap_algebraMap [Module.Free R S] (a : Rˣ) :
+    Algebra.normUnits R (Units.map (algebraMap R S : R →* S) a) = a ^ Module.finrank R S :=
+  Units.ext <| by simp
+
 /-- **Powers by the rank are norms.** In a free `R`-algebra `S` the norm of `a ∈ R` is
 `a ^ finrank R S`, so that power of a unit of `R` is the norm of a unit of `S`. -/
 theorem Algebra.pow_finrank_mem_range_normUnits [Module.Free R S] (a : Rˣ) :
     a ^ Module.finrank R S ∈ (Algebra.normUnits R : Sˣ →* Rˣ).range :=
-  ⟨Units.map (algebraMap R S : R →* S) a, Units.ext <| by simp⟩
+  ⟨Units.map (algebraMap R S : R →* S) a, Algebra.normUnits_unitsMap_algebraMap R a⟩
 
 /-- **Powers by a multiple of the rank are norms.** In a free `R`-algebra `S` whose rank divides
 `n`, every `n`-th power of a unit of `R` is the norm of a unit of `S`. -/
@@ -69,6 +79,26 @@ theorem Algebra.range_powMonoidHom_le_range_normUnits [Module.Free R S] {n : ℕ
   obtain ⟨k, rfl⟩ := hn
   rw [powMonoidHom_apply, pow_mul']
   exact Algebra.pow_finrank_mem_range_normUnits R (a ^ k)
+
+section BaseChange
+
+open scoped TensorProduct
+
+variable (S) [Module.Free R S]
+
+/-- **Powers by the rank are norms after base change.** For a free `R`-algebra `S` and any
+commutative `R`-algebra `F`, a `Module.finrank R S`-th power in `Fˣ` is the norm of a unit of
+`F ⊗[R] S`. When `F` is nontrivial, base change preserves the rank. If `S` is not module-finite
+over `R`, the exponent is `0` and the statement is trivial. -/
+theorem Algebra.range_powMonoidHom_le_range_normUnits_baseChange
+    (F : Type*) [CommRing F] [Algebra R F] :
+    (powMonoidHom (Module.finrank R S) : Fˣ →* Fˣ).range ≤
+      (Algebra.normUnits F (S := F ⊗[R] S)).range := by
+  nontriviality F
+  have : Nontrivial R := (algebraMap R F).domain_nontrivial
+  exact Algebra.range_powMonoidHom_le_range_normUnits F (by rw [Module.finrank_baseChange])
+
+end BaseChange
 
 section NormGroup
 

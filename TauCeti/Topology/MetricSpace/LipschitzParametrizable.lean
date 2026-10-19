@@ -9,8 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.Topology.MetricSpace.HausdorffDimension
-public import Mathlib.MeasureTheory.Measure.Haar.Unique
+public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 
 /-!
 # Lipschitz-parametrizable sets
@@ -226,8 +225,8 @@ theorem image_unitCube_of_contDiffOn {ι G : Type*} [Fintype ι] [NormedAddCommG
   have hmaps : Set.MapsTo T (Icc (0 : Fin d → ℝ) 1) (Icc (0 : ι → ℝ) 1) :=
     fun y hy ↦ ⟨fun i ↦ hy.1 _, fun i ↦ hy.2 _⟩
   have hdiff : ContDiffOn ℝ 1 (f ∘ T) (Icc (0 : Fin d → ℝ) 1) :=
-    ContDiffOn.comp hf (ContDiff.contDiffOn (contDiff_pi.mpr fun i ↦ contDiff_apply ℝ ℝ (e i)))
-      hmaps
+    ContDiffOn.comp hf
+      (ContDiff.contDiffOn (contDiff_pi.mpr fun i ↦ contDiff_apply ℝ (fun _ ↦ ℝ) (e i))) hmaps
   -- A `C¹` map is Lipschitz on the compact convex cube, so `f ∘ T` is a single chart.
   obtain ⟨C, hC⟩ :=
     ContDiffOn.exists_lipschitzOnWith hdiff one_ne_zero (convex_Icc _ _) isCompact_Icc
@@ -314,15 +313,13 @@ theorem measure_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (μ : Measure E) [μ.IsAddHaarMeasure] {d : ℕ} {S : Set E}
     (hS : IsLipschitzParametrizable d S) (hd : d < Module.finrank ℝ E) : μ S = 0 := by
   obtain ⟨n, C, f, hf, hSf⟩ := isLipschitzParametrizable_iff.1 hS
-  have hμ : μ ≪ μH[(Module.finrank ℝ E : ℝ)] :=
-    Measure.absolutelyContinuous_isAddHaarMeasure μ _
   have hdim : dimH (Set.univ : Set (Fin d → ℝ)) = d := by
     rw [Real.dimH_univ_eq_finrank, Module.finrank_pi]
     simp only [Fintype.card_fin]
   apply measure_mono_null hSf
   apply measure_iUnion_null
   intro i
-  apply measure_zero_of_dimH_lt (μ := μ) (d := (Module.finrank ℝ E : NNReal)) hμ
+  apply addHaar_eq_zero_of_dimH_lt_finrank μ
   calc
     dimH (f i '' Icc (0 : Fin d → ℝ) 1) ≤ dimH (Icc (0 : Fin d → ℝ) 1) :=
       (hf i).dimH_image_le

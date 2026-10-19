@@ -292,7 +292,7 @@ theorem homeomorphMulEquivOfEq_mob01_periph0 :
     simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
     simp
   -- Both sides are the classes of explicit paths, `⟦γ0⟧` being `Path.Homotopic.Quotient.mk γ0`.
-  exact congrArg Path.Homotopic.Quotient.mk hpath
+  exact CategoryTheory.End.ext (congrArg Path.Homotopic.Quotient.mk hpath)
 
 /-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periph1` to
 `periph0`. -/
@@ -307,7 +307,7 @@ theorem homeomorphMulEquivOfEq_mob01_periph1 :
     simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
     simp
   -- Both sides are the classes of explicit paths, `⟦γ1⟧` being `Path.Homotopic.Quotient.mk γ1`.
-  exact congrArg Path.Homotopic.Quotient.mk hpath
+  exact CategoryTheory.End.ext (congrArg Path.Homotopic.Quotient.mk hpath)
 
 /-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periphInf` to its
 conjugate `periph1⁻¹ * periphInf * periph1`, the third component of the branch-point operation

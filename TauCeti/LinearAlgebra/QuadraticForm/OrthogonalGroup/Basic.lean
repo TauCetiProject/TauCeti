@@ -111,6 +111,8 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   spellings of the reflection in the literature
   (`TauCeti.QuadraticMap.reflection_apply_eq_sub_div` and
   `TauCeti.QuadraticMap.reflection_apply_eq_sub_two_mul_div`) are the same map.
+* `QuadraticForm.mixedReflectionFormula_apply_self`: the incorrect mixed convention with
+  coefficient `2 * polar Q v v / Q v` sends `v` to `-3 • v`.
 * `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
   group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
   `x + y`.
@@ -1120,6 +1122,30 @@ sides vanish when `Q v = 0`. -/
 theorem polar_div_eq_two_mul_polar_div_polar [NeZero (2 : K)] (v x : V) :
     polar Q v x / Q v = 2 * polar Q v x / polar Q v v := by
   rw [polar_self, nsmul_eq_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero]
+
+/-- **The mixed reflection formula gives the wrong value.** If the factor `2` from the
+half-polar convention is combined with Mathlib's un-halved polar form while the denominator is
+left as `Q v`, the resulting expression sends `v` to `-3 • v`. -/
+theorem mixedReflectionFormula_apply_self (v : V) (hv : Q v ≠ 0) :
+    v - (2 * polar Q v v / Q v) • v = (-3 : K) • v := by
+  rw [polar_self, nsmul_eq_mul, Nat.cast_ofNat]
+  field_simp
+  module
+
+/-- When `2 ≠ 0`, the mixed reflection formula does not negate an anisotropic vector, so it
+cannot be either of the two valid formulas for the reflection in that vector. -/
+theorem mixedReflectionFormula_apply_self_ne [NeZero (2 : K)] (v : V) (hv : Q v ≠ 0) :
+    v - (2 * polar Q v v / Q v) • v ≠ -v := by
+  rw [mixedReflectionFormula_apply_self Q v hv]
+  have hv₀ : v ≠ 0 := fun h ↦ hv (by simp [h])
+  have hcoeff : (-3 : K) ≠ -1 := by
+    intro h
+    apply NeZero.ne (2 : K)
+    calc
+      (2 : K) = (-1) - (-3) := by ring
+      _ = 0 := sub_eq_zero.mpr h.symm
+  simpa only [neg_smul, one_smul] using
+    (smul_left_injective K hv₀).ne hcoeff
 
 end QuadraticForm
 

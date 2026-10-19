@@ -8,15 +8,16 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.AB
 
 /-!
-# Exact products of modules with independent universes
+# Exact products and coproducts of modules with independent universes
 
-Products of modules are exact even when the coefficient ring and the modules live in different
-universes. This supplies the exactness needed to commute cohomology with products of cochain
-complexes. The index type must be small in the universe of the modules.
+Products and coproducts of modules are exact even when the coefficient ring and the modules live
+in different universes. This supplies the exactness needed for homology with varying coefficients
+and to commute cohomology with products of cochain complexes. The index type must be small in the
+universe of the modules.
 
-The argument is Mathlib's `AB4Star` instance for `ModuleCat`, by Dagur Asgeirsson: transfer
-exactness from abelian groups along the forgetful functor. Here the index type is first replaced
-by a small copy, and the ring universe is independent of the module universe.
+The arguments follow Mathlib's AB instances for `ModuleCat`, by Dagur Asgeirsson: transfer
+exactness from abelian groups along the forgetful functor. For products, the index type is first
+replaced by a small copy. In both cases the ring universe is independent of the module universe.
 -/
 
 public section
@@ -26,6 +27,12 @@ open CategoryTheory Limits
 universe w v u
 
 namespace TauCeti
+
+/-- Coproducts of modules are exact, with no restriction on the universe of the coefficient
+ring. -/
+instance moduleCat_ab4OfSize (R : Type u) [Ring R] : AB4OfSize.{v} (ModuleCat.{v} R) where
+  ofShape I := HasExactColimitsOfShape.domain_of_functor (Discrete I)
+    (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
 
 /-- Products of modules indexed by a small type are exact, with no restriction on the universe
 of the coefficient ring. -/

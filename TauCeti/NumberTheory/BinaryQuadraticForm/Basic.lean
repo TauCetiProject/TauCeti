@@ -353,6 +353,13 @@ theorem discrim_emod_four_eq_zero_or_one (f : BinaryQuadraticForm ℤ) :
   rw [discrim_def, Int.discrim_emod_four]
   exact Int.emod_two_eq_zero_or_one f.b
 
+/-- A form of nonsquare discriminant has nonzero leading coefficient. -/
+theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
+    (hf : ¬ IsSquare f.discrim) : f.a ≠ 0 := by
+  intro ha
+  apply hf
+  exact ⟨f.b, by simp [discrim_def, _root_.discrim, ha, pow_two]⟩
+
 /-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
 of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
 entries of `γ`. -/

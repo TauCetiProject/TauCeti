@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified.Basic
 public import Mathlib.FieldTheory.Normal.Closure
 
 /-!
@@ -67,7 +68,7 @@ is unramified over `F` exactly when its restrictions to `E₁` and to `E₂` are
 theorem isUnramified_restrict_sup_iff_of_isGalois (Q : Place k M) (E₁ E₂ : IntermediateField F M) :
     IsUnramified k F (Q.restrict k ↥(E₁ ⊔ E₂)) ↔
       IsUnramified k F (Q.restrict k E₁) ∧ IsUnramified k F (Q.restrict k E₂) := by
-  simp only [← le_inertiaField_iff, sup_le_iff]
+  simp only [isUnramified_iff, ← le_inertiaField_iff, sup_le_iff]
 
 /-- **A place is unramified in an intermediate field exactly when that field lies in every inertia
 field above it**: in a finite Galois extension `M / F` of function fields, every place of `E`
@@ -77,12 +78,13 @@ theorem forall_isUnramified_iff_forall_le_inertiaField (hF : IsFunctionField k F
     (P : Place k F) (E : IntermediateField F M) :
     (∀ R : Place k E, R.restrict k F = P → IsUnramified k F R) ↔
       ∀ Q : Place k M, Q.restrict k F = P → E ≤ inertiaField F Q := by
-  refine ⟨fun h Q hQ ↦ (le_inertiaField_iff Q E).mpr (h _ ((restrict_restrict Q).trans hQ)),
+  simp only [isUnramified_iff]
+  refine ⟨fun h Q hQ ↦ (le_inertiaField_iff F Q E).mpr (h _ ((restrict_restrict Q).trans hQ)),
     fun h R hR ↦ ?_⟩
   -- Every place of `E` is the restriction of a place of `M`.
   obtain ⟨Q, rfl⟩ := restrict_surjective_of_finiteDimensional
     (hF.finite_extension (E := E)) (hF.finite_extension (E := M)) R
-  exact (le_inertiaField_iff Q E).mp (h Q ((restrict_restrict Q).symm.trans hR))
+  exact (le_inertiaField_iff F Q E).mp (h Q ((restrict_restrict Q).symm.trans hR))
 
 /-- In a finite Galois extension, a place is unramified in a compositum exactly when it is
 unramified in both constituents. -/

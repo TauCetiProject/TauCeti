@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Group
 
@@ -41,10 +42,14 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
 * `Subgroup.compositeTransversal`: representatives for `G/V` obtained by composing
   representatives for `G/U` and `U/V`.
+* `Subgroup.sum_compositeTransversal`: the sum of the action along a composite transversal is
+  the iterated sum along its two constituent transversals.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
 * `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
   homomorphism has finite index.
+* `Subgroup.finiteIndex_map_mk'`: the instance making the image of a finite-index subgroup in a
+  quotient group finite-index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
@@ -115,6 +120,32 @@ theorem compositeTransversal_spec (G : Type u) [Group G] (U V : Subgroup G) (hVU
             (QuotientGroup.mk (s (e q).2)) := rfl
         _ = _ := congrArg _ (hs (e q).2)
     _ = q := e.symm_apply_apply q
+
+section
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- Summing the action along a composite transversal is the iterated sum along the two
+transversals of the subgroup tower. The coefficient space need only be an additive commutative
+monoid. -/
+theorem sum_compositeTransversal {G M : Type*} [Group G] [AddCommMonoid M]
+    [DistribMulAction G M] (U V : Subgroup G) (hVU : V ≤ U) [U.FiniteIndex] [V.FiniteIndex]
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U) (m : M) :
+    ∑ q : G ⧸ V, Subgroup.compositeTransversal G U V (hVU := hVU) t ht s q • m =
+      ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • m := by
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
+  rw [← e.symm.sum_comp, Fintype.sum_prod_type]
+  apply Finset.sum_congr rfl
+  intro a _
+  rw [Finset.smul_sum]
+  apply Finset.sum_congr rfl
+  intro b _
+  simp only [Subgroup.compositeTransversal_apply, e, e.apply_symm_apply, mul_smul,
+    Subgroup.smul_def]
+
+end
 
 end Subgroup
 
@@ -229,6 +260,13 @@ theorem finiteIndex_of_map_eq {G N : Type*} [Group G] [Group N] (H : Subgroup G)
     K.FiniteIndex :=
   ⟨h ▸ ne_zero_of_dvd_ne_zero FiniteIndex.index_ne_zero (H.index_map_dvd hf)⟩
 
+/-- The image of a finite-index subgroup in a quotient group has finite index. -/
+@[to_additive /-- The image of a finite-index additive subgroup in a quotient additive group has
+finite index. -/]
+instance finiteIndex_map_mk' {G : Type*} [Group G] (H : Subgroup G) [H.FiniteIndex]
+    (N : Subgroup G) [N.Normal] : (H.map (QuotientGroup.mk' N)).FiniteIndex :=
+  .map_of_surjective _ (QuotientGroup.mk'_surjective N)
+
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —
 that name the distinct translates of `𝒟` tiling a `Γ` fundamental domain, since `q` and `-q`
@@ -289,6 +327,9 @@ has the same relative index in `H ⊔ N` as in `N`, that is `[H ⊔ N : H] = [N 
 
 This is the counterpart of Mathlib's `Subgroup.relIndex_sup_right`, which measures the index of the
 normal factor instead. -/
+@[to_additive TauCeti.relIndex_sup_of_le_normalizer
+  /-- If an additive subgroup `H` normalises `N`, then `H` has the same relative index in
+  `H ⊔ N` as in `N`: `[H ⊔ N : H] = [N : H ⊓ N]`. -/]
 theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
     H.relIndex (H ⊔ N) = H.relIndex N := by
   -- The inclusion `N → H ⊔ N` induces a bijection on cosets of `H`.
