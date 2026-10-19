@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.Combinatorics.Quiver.Reorient
+public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
@@ -40,9 +41,9 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
   recovers the adjacency counts of the graph.
 * `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
-  against the arrow counts of an orientation in both directions is its neighbour sum.
-* `SimpleGraph.exists_adj_of_pos_two_mul_le_sum`: a positive superadditive weight on a graph
-  leaves no isolated vertex.
+  against the arrow counts of an orientation in both directions is its neighbour sum, via which a
+  positive superadditive weight on the oriented quiver excludes isolated vertices
+  (`TauCeti.DoubledQuiver.OrientedQuiver.exists_adj_of_pos_two_mul_le_sum`).
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
@@ -57,29 +58,6 @@ This is the orientation comparison required in Layer 0 of
 -/
 
 public section
-
-/-!
-### A superadditive weight on a graph excludes isolated vertices
--/
-
-namespace SimpleGraph
-
-variable {V : Type*} {G : SimpleGraph V}
-
-/-- **A positive superadditive weight on a graph excludes isolated vertices.** If a weight `δ` on
-the vertices of a finite simple graph, over a strictly ordered commutative ring, is positive at
-every vertex and satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex, then every vertex of the graph
-has a neighbour. -/
-theorem exists_adj_of_pos_two_mul_le_sum [Fintype V] [DecidableRel G.Adj]
-    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
-    (δ : V → S) (hδ : ∀ i, 0 < δ i)
-    (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j)
-    (i : V) : ∃ j, G.Adj i j := by
-  obtain ⟨j, hj, -⟩ :=
-    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
-  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
-
-end SimpleGraph
 
 namespace TauCeti
 

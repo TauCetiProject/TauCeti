@@ -42,7 +42,8 @@ simple graph has a positive definite form `2I - A` exactly when it is a Dynkin d
 * `SimpleGraph.exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso`: a connected graph which is
   not a Dynkin diagram carries a positive weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex;
   such a graph has no isolated vertex
-  (`SimpleGraph.exists_adj_of_pos_two_mul_le_sum`, in `Quiver/Zigzag/Orientation.lean`).
+  (`SimpleGraph.exists_adj_of_pos_two_mul_le_sum`,
+  in `Combinatorics/SimpleGraph/AdditiveFunction.lean`).
 
 ## References
 
