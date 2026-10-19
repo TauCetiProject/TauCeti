@@ -33,7 +33,7 @@ along its block sum is the product of symmetric sequences used to define symmetr
   Section 2.1.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory MonoidalCategory
 
@@ -88,7 +88,7 @@ lemma toEquiv_inv (f : n ⟶ m) : (inv f).toEquiv = f.toEquiv.symm := by
   rfl
 
 /-- The isomorphism of `FiniteBijection` given by a bijection of the standard finite sets. -/
-@[simps]
+@[expose, simps]
 def isoMk (e : Fin n.len ≃ Fin m.len) : n ≅ m where
   hom := ⟨e⟩
   inv := ⟨e.symm⟩
@@ -96,7 +96,7 @@ def isoMk (e : Fin n.len ≃ Fin m.len) : n ≅ m where
   inv_hom_id := Hom.ext e.symm_trans_self
 
 /-- Isomorphisms of `FiniteBijection` are the bijections of the standard finite sets. -/
-@[simps]
+@[expose, simps]
 def isoEquiv : (n ≅ m) ≃ (Fin n.len ≃ Fin m.len) where
   toFun e := e.hom.toEquiv
   invFun := isoMk
@@ -109,7 +109,7 @@ lemma skeletal : Skeletal FiniteBijection := fun _ _ ⟨e⟩ ↦
 
 /-- The automorphism group of an object of `FiniteBijection` is the symmetric group of the
 standard finite set it stands for. -/
-@[simps]
+@[expose, simps]
 def autMulEquiv (n : FiniteBijection) : Aut n ≃* Equiv.Perm (Fin n.len) where
   toFun e := e.asIso.hom.toEquiv
   invFun σ := .of (isoMk σ)
@@ -142,40 +142,52 @@ lemma toEquiv_tensorHom {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : n' ⟶ 
     (f ⊗ₘ g).toEquiv =
       finSumFinEquiv.symm.trans ((f.toEquiv.sumCongr g.toEquiv).trans finSumFinEquiv) := rfl
 
+lemma toEquiv_whiskerLeft (n : FiniteBijection) {m m' : FiniteBijection} (g : m ⟶ m') :
+    (n ◁ g).toEquiv = finSumFinEquiv.symm.trans
+      (((Equiv.refl (Fin n.len)).sumCongr g.toEquiv).trans finSumFinEquiv) := rfl
+
+lemma toEquiv_whiskerRight {n n' : FiniteBijection} (f : n ⟶ n') (m : FiniteBijection) :
+    (f ▷ m).toEquiv = finSumFinEquiv.symm.trans
+      ((f.toEquiv.sumCongr (Equiv.refl (Fin m.len))).trans finSumFinEquiv) := rfl
+
 @[simp]
 lemma toEquiv_tensorHom_castAdd {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : n' ⟶ m')
     (i : Fin n.len) :
-    (f ⊗ₘ g).toEquiv (Fin.castAdd n'.len i) = Fin.castAdd m'.len (f.toEquiv i) :=
-  congrArg (fun x ↦ finSumFinEquiv (Sum.map f.toEquiv g.toEquiv x))
-    (finSumFinEquiv_symm_apply_castAdd i)
+    (f ⊗ₘ g).toEquiv (Fin.castAdd n'.len i) = Fin.castAdd m'.len (f.toEquiv i) := by
+  rw [toEquiv_tensorHom, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd]
+  simp
 
 @[simp]
 lemma toEquiv_tensorHom_natAdd {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : n' ⟶ m')
     (i : Fin n'.len) :
-    (f ⊗ₘ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd m.len (g.toEquiv i) :=
-  congrArg (fun x ↦ finSumFinEquiv (Sum.map f.toEquiv g.toEquiv x))
-    (finSumFinEquiv_symm_apply_natAdd i)
+    (f ⊗ₘ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd m.len (g.toEquiv i) := by
+  rw [toEquiv_tensorHom, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd]
+  simp
 
 @[simp]
 lemma toEquiv_whiskerLeft_castAdd (n : FiniteBijection) {m m' : FiniteBijection} (g : m ⟶ m')
-    (i : Fin n.len) : (n ◁ g).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m'.len i :=
-  congrArg (fun x ↦ finSumFinEquiv (Sum.map id g.toEquiv x)) (finSumFinEquiv_symm_apply_castAdd i)
+    (i : Fin n.len) : (n ◁ g).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m'.len i := by
+  rw [toEquiv_whiskerLeft, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd]
+  simp
 
 @[simp]
 lemma toEquiv_whiskerLeft_natAdd (n : FiniteBijection) {m m' : FiniteBijection} (g : m ⟶ m')
-    (i : Fin m.len) : (n ◁ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n.len (g.toEquiv i) :=
-  congrArg (fun x ↦ finSumFinEquiv (Sum.map id g.toEquiv x)) (finSumFinEquiv_symm_apply_natAdd i)
+    (i : Fin m.len) : (n ◁ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n.len (g.toEquiv i) := by
+  rw [toEquiv_whiskerLeft, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd]
+  simp
 
 @[simp]
 lemma toEquiv_whiskerRight_castAdd {n n' : FiniteBijection} (f : n ⟶ n') (m : FiniteBijection)
     (i : Fin n.len) :
-    (f ▷ m).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m.len (f.toEquiv i) :=
-  congrArg (fun x ↦ finSumFinEquiv (Sum.map f.toEquiv id x)) (finSumFinEquiv_symm_apply_castAdd i)
+    (f ▷ m).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m.len (f.toEquiv i) := by
+  rw [toEquiv_whiskerRight, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd]
+  simp
 
 @[simp]
 lemma toEquiv_whiskerRight_natAdd {n n' : FiniteBijection} (f : n ⟶ n') (m : FiniteBijection)
-    (i : Fin m.len) : (f ▷ m).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n'.len i :=
-  congrArg (fun x ↦ finSumFinEquiv (Sum.map f.toEquiv id x)) (finSumFinEquiv_symm_apply_natAdd i)
+    (i : Fin m.len) : (f ▷ m).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n'.len i := by
+  rw [toEquiv_whiskerRight, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd]
+  simp
 
 lemma toEquiv_associator_hom (n m k : FiniteBijection) :
     (α_ n m k).hom.toEquiv = finCongr (Nat.add_assoc n.len m.len k.len) := rfl
@@ -292,6 +304,9 @@ instance : MonoidalCategory FiniteBijection where
 of the symmetric monoidal structure on `FiniteBijection`. -/
 def braiding (n m : FiniteBijection) : n ⊗ m ≅ m ⊗ n := isoMk finAddFlip
 
+/- The `SymmetricCategory` instance below is built from `braiding`, so its coherence goals mention
+`braiding n m` rather than `β_ n m`; `simp` needs these private copies of the public block lemmas
+`toEquiv_braiding_hom_castAdd` and `toEquiv_braiding_hom_natAdd` to match them. -/
 @[simp]
 private lemma toEquiv_braiding_hom_castAdd' (n m : FiniteBijection) (i : Fin n.len) :
     (braiding n m).hom.toEquiv (Fin.castAdd m.len i) = Fin.natAdd m.len i :=
@@ -324,7 +339,7 @@ instance : SymmetricCategory FiniteBijection where
     ext i
     induction i using Fin.addCases <;> simp
 
-lemma toEquiv_braiding_hom (n m : FiniteBijection) : (β_ n m).hom.toEquiv = finAddFlip := rfl
+lemma toEquiv_braiding_hom (n m : FiniteBijection) : (β_ n m).hom.toEquiv = finAddFlip := (rfl)
 
 @[simp]
 lemma toEquiv_braiding_hom_castAdd (n m : FiniteBijection) (i : Fin n.len) :
@@ -335,6 +350,19 @@ lemma toEquiv_braiding_hom_castAdd (n m : FiniteBijection) (i : Fin n.len) :
 lemma toEquiv_braiding_hom_natAdd (n m : FiniteBijection) (i : Fin m.len) :
     (β_ n m).hom.toEquiv (Fin.natAdd n.len i) = Fin.castAdd n.len i :=
   toEquiv_braiding_hom_natAdd' n m i
+
+lemma toEquiv_braiding_inv (n m : FiniteBijection) :
+    (β_ n m).inv.toEquiv = finAddFlip := (rfl)
+
+@[simp]
+lemma toEquiv_braiding_inv_castAdd (n m : FiniteBijection) (i : Fin m.len) :
+    (β_ n m).inv.toEquiv (Fin.castAdd n.len i) = Fin.natAdd n.len i := by
+  rw [toEquiv_braiding_inv, finAddFlip_apply_castAdd]
+
+@[simp]
+lemma toEquiv_braiding_inv_natAdd (n m : FiniteBijection) (i : Fin n.len) :
+    (β_ n m).inv.toEquiv (Fin.natAdd m.len i) = Fin.castAdd m.len i := by
+  rw [toEquiv_braiding_inv, finAddFlip_apply_natAdd]
 
 end FiniteBijection
 
