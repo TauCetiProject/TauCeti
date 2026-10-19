@@ -46,7 +46,6 @@ theorem vertexSet_walkGraph (p : G.Walk x y) :
   (rfl)
 
 /-- An edge belongs to the graph traced by a walk exactly when the walk traverses it. -/
-@[simp]
 theorem mem_edgeSet_walkGraph (p : G.Walk x y) (e : β) :
     e ∈ E(G.walkGraph p) ↔ e ∈ p.edges := by
   constructor
