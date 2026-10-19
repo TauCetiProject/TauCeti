@@ -470,16 +470,15 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
     have ha : a ∈ P.domain := γ.source ▸ hγ 0
     rw [P.localHomologyTransport_mk R γ hγ k,
       ← localHomologyRestriction_comp R (P.singleton_subset_closedImage ha) (subset_univ _),
-      ← P.iso_hom R ha, Category.assoc, Iso.hom_inv_id_assoc, Patch.iso_hom,
-      localHomologyRestriction_comp]
+      ← P.iso_hom R ha, Category.assoc, Iso.hom_inv_id_assoc]
+    simp [Patch.iso_hom]
   -- The path classes along which the restrictions are compatible form a subgroupoid.
   let S : Subgroupoid (FundamentalGroupoid M) :=
     { arrows c d := {f | localHomologyRestriction R (subset_univ {c.as}) k ≫
         localHomologyTransport R M E k f = localHomologyRestriction R (subset_univ {d.as}) k}
       inv {c d f} hf := by
-        rw [Set.mem_ofPred_eq, Groupoid.inv_eq_inv, ← hf, Category.assoc,
-          ← localHomologyTransport_comp, IsIso.hom_inv_id, localHomologyTransport_id,
-          Category.comp_id]
+        rw [Set.mem_ofPred_eq, ← hf]
+        simp [← localHomologyTransport_comp]
       mul {c d e f} hf {g} hg := by
         rw [Set.mem_ofPred_eq, localHomologyTransport_comp, ← Category.assoc, hf, hg] }
   -- It contains the classes of paths inside the domains of patches, so it is everything.
