@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Zeroth cubical homology with local coefficients
@@ -16,7 +17,10 @@ the colimit of `L` over the fundamental groupoid.  Its generators are the classe
 points, and its relations identify a coefficient with its parallel transport along a path: a path
 is a cubical `1`-chain whose boundary is the difference of the two end points, one of them with
 the transported coefficient.  The identification is induced by the augmentation of `0`-chains into
-the colimit.
+the colimit.  The argument follows the one for singular chains with local coefficients in
+`TauCeti.AlgebraicTopology.Singular.Twisted.Zero` (`twistedHomology₀IsoColimit`), with the
+cubical `1`-chain of a path in place of the singular `1`-simplex, and the cubical augmentation in
+place of the simplicial one.
 
 ## Main definitions
 
@@ -43,6 +47,8 @@ the colimit.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
 * A. Hatcher, *Algebraic Topology*, Section 3.H.
+* `TauCeti/AlgebraicTopology/Singular/Twisted/Zero.lean`: the colimit description of zeroth
+  singular homology with local coefficients, whose proof this file adapts.
 -/
 
 public section
@@ -294,13 +300,6 @@ lemma pOpcycles_comp_normalizedTwistedCubicalHomology₀IsoColimit_hom :
   rw [← ιCube_eq] at h
   exact h.trans (augment_ofCube (colimit.cocone L) c a).symm
 
-universe t in
-/-- The passage from degree-zero chains to zeroth homology is natural. -/
-private lemma π_comp_homologyMap {K K' : ChainComplex (ModuleCat.{t} R) ℕ} (φ : K ⟶ K') :
-    K.pOpcycles 0 ≫ K.isoHomologyι₀.inv ≫ HomologicalComplex.homologyMap φ 0 =
-      φ.f 0 ≫ K'.pOpcycles 0 ≫ K'.isoHomologyι₀.inv := by
-  rw [ChainComplex.isoHomologyι₀_inv_naturality, HomologicalComplex.p_opcyclesMap_assoc]
-
 /-- A morphism of local systems acts on `0`-chains of a `0`-cube by its component at the
 point. -/
 private lemma ofCubeHom_comp_coefficientMap_f {K : LocalCoefficientSystem.{u, v, max v w} R X}
@@ -321,7 +320,8 @@ lemma ιNormalizedTwistedCubicalHomology₀_coefficientMap
   refine ModuleCat.hom_ext (LinearMap.ext fun a ↦ ?_)
   -- The fibre at the constant `0`-cube is the fibre at `x` by definition.
   exact (ConcreteCategory.congr_hom
-    (π_comp_homologyMap (normalizedTwistedCubicalChainComplexCoefficientMap η))
+    (ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap
+      (normalizedTwistedCubicalChainComplexCoefficientMap η))
       (ofCubeHom L (ContinuousMap.const _ x) a)).trans
     (congrArg (ConcreteCategory.hom (K.normalizedTwistedCubicalChainComplex.pOpcycles 0 ≫
       K.normalizedTwistedCubicalChainComplex.isoHomologyι₀.inv))
