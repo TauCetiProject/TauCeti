@@ -43,6 +43,11 @@ noncomputable instance isProbabilityMeasure_arcsineMeasure :
     IsProbabilityMeasure arcsineMeasure :=
   isProbabilityMeasureBeta (by norm_num) (by norm_num)
 
+/-- The arcsine law has no atoms, including at the endpoints of its support. -/
+instance : NullSingletonClass arcsineMeasure := by
+  rw [arcsineMeasure_eq_betaMeasure, betaMeasure]
+  infer_instance
+
 /-- An arcsine variable lies almost everywhere in the open unit interval. -/
 theorem ae_mem_Ioo_arcsineMeasure : ∀ᵐ x ∂arcsineMeasure, x ∈ Ioo (0 : ℝ) 1 := by
   simpa only [arcsineMeasure] using ae_mem_Ioo_betaMeasure (1 / 2) (1 / 2)

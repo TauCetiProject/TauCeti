@@ -65,6 +65,18 @@ theorem weight_ne_zero {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) (hv0 :
   rintro rfl
   exact hv0 (by rwa [weightSpace_zero, Submodule.mem_bot] at hv)
 
+/-- On a vector of weight `μ`, the generator `K⁻¹` acts by `μ⁻¹`. -/
+theorem kInv_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
+    kInv q • v = μ⁻¹ • v := by
+  have hv' : v = μ • kInv q • v := by
+    rw [← smul_comm, ← mem_weightSpace_iff.mp hv, smul_smul, kInv_mul_k, one_smul]
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · rw [zero_smul] at hv'
+    simp [hv']
+  · calc
+      kInv q • v = μ⁻¹ • μ • kInv q • v := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
+      _ = μ⁻¹ • v := by rw [← hv']
+
 /-- Raising a weight vector multiplies its weight by `q²`. -/
 theorem e_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
     e q • v ∈ weightSpace q V (q ^ 2 * μ) := by
@@ -119,12 +131,7 @@ theorem exists_eq_zero_of_forall_mem_weightSpace {p : ℂ} (hp : IsGenericQuantu
   intro n m hnm
   have hp' : p ^ (2 * n) = p ^ (2 * m) := by
     simpa only [ev, ← pow_mul, mul_left_inj' hmu] using congrArg Subtype.val hnm
-  let u : ℂˣ := Units.mk0 p hp.ne_zero
-  have hu : ¬IsOfFinOrder u := by
-    rw [isOfFinOrder_iff_pow_eq_one]
-    rintro ⟨r, hr, hu⟩
-    exact hp.pow_ne_one hr (congrArg Units.val hu)
-  have := (injective_pow_iff_not_isOfFinOrder.mpr hu) (Units.ext hp' : u ^ (2 * n) = u ^ (2 * m))
+  have := hp.pow_injective hp'
   omega
 
 /-- At a generic parameter, the raising string through any weight vector terminates. -/
