@@ -59,24 +59,6 @@ def dropUntil {x y : α} : (p : G.Walk x y) → (a : α) → a ∈ p.support →
         dropUntil p a (by simpa [Ne.symm hxa] using ha)
 
 @[simp]
-private theorem takeUntil_nil {ha : x ∈ (Graph.Walk.nil : G.Walk x x).support} :
-    (Graph.Walk.nil : G.Walk x x).takeUntil x ha = Graph.Walk.nil := (rfl)
-
-@[simp]
-private theorem dropUntil_nil {ha : x ∈ (Graph.Walk.nil : G.Walk x x).support} :
-    (Graph.Walk.nil : G.Walk x x).dropUntil x ha = Graph.Walk.nil := (rfl)
-
-@[simp]
-private theorem takeUntil_cons_first (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
-    (Graph.Walk.cons e h p).takeUntil x (Graph.Walk.cons e h p).start_mem_support =
-      Graph.Walk.nil := by simp [takeUntil]
-
-@[simp]
-private theorem dropUntil_cons_first (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
-    (Graph.Walk.cons e h p).dropUntil x (Graph.Walk.cons e h p).start_mem_support =
-      Graph.Walk.cons e h p := by simp [dropUntil]
-
-@[simp]
 theorem takeUntil_cons_of_ne (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
     (hxa : x ≠ a) (ha : a ∈ (Graph.Walk.cons e h p).support) :
     (Graph.Walk.cons e h p).takeUntil a ha =
@@ -93,12 +75,12 @@ theorem dropUntil_cons_of_ne (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
 @[simp]
 theorem takeUntil_first (p : G.Walk x y) :
     p.takeUntil x p.start_mem_support = Graph.Walk.nil := by
-  cases p <;> simp
+  cases p <;> simp [takeUntil]
 
 @[simp]
 theorem dropUntil_first (p : G.Walk x y) :
     p.dropUntil x p.start_mem_support = p := by
-  cases p <;> simp
+  cases p <;> simp [dropUntil]
 
 /-- Splitting at a vertex and rejoining the two pieces recovers the original walk. -/
 @[simp]
