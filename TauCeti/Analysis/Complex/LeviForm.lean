@@ -285,7 +285,8 @@ theorem _root_.IsCompact.exists_pos_mul_sq_norm_le_re_leviForm [FiniteDimensiona
     have hu : ‖v‖⁻¹ • v ∈ sphere (0 : V) 1 := by
       rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hv'.ne']
     have hsmul : φ (x, ‖v‖⁻¹ • v) = (‖v‖ ^ 2)⁻¹ * ((B x).toBilinForm.leviForm v v).re := by
-      simp [φ, smul_comm I ‖v‖⁻¹]
+      simp only [φ, LinearMap.BilinForm.re_leviForm_apply, ContinuousLinearMap.toBilinForm_apply,
+        map_smul, smul_apply, smul_eq_mul, smul_comm I ‖v‖⁻¹]
       ring
     have := h _ hu
     rw [hsmul, inv_mul_eq_div, le_div_iff₀ (by positivity)] at this
@@ -310,6 +311,7 @@ theorem _root_.IsCompact.exists_pos_forall_sub_mul_sq_norm_le_re_leviForm
     ∃ c > 0, ∀ g : V → ℝ, ∀ x ∈ K, ∀ v,
       (c - ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ / 2) * ‖v‖ ^ 2 ≤
         (leviForm g x v v).re := by
+  simp only [leviForm_def] at hpos ⊢
   obtain ⟨c, hc, hle⟩ := hK.exists_pos_mul_sq_norm_le_re_leviForm hf hpos
   exact ⟨c, hc, fun g x hx v ↦ sub_mul_sq_norm_le_re_leviForm_toBilinForm_apply_self (hle x hx v)⟩
 
@@ -338,13 +340,14 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
       ∀ g : V → ℝ, ∀ x ∈ U,
         ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ < ε x →
           ∀ v, v ≠ 0 → 0 < (leviForm g x v v).re := by
+  simp only [leviForm_def] at hpos ⊢
   set S := {B : V →L[ℝ] V →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re}
   have hS : IsOpen S := isOpen_setOf_forall_re_leviForm_toBilinForm_pos
   have hmem (x : V) : x ∈ U → fderiv ℝ (fderiv ℝ f) x ∈ S := hpos x
   rcases Sᶜ.eq_empty_or_nonempty with hempty | hne
   · -- Every form has positive definite Levi form, so any tolerance works.
     refine ⟨fun _ ↦ 1, continuousOn_const, fun _ _ ↦ one_pos, fun g x _ _ ↦ ?_⟩
-    have h : fderiv ℝ (fderiv ℝ g) x ∈ S := (compl_empty_iff.1 hempty).symm ▸ mem_univ _
+    have h : fderiv ℝ (fderiv ℝ g) x ∈ S := by simp [compl_empty_iff.1 hempty]
     exact h
   -- Take the distance from the second derivative of `f` to the closed complement of `S`.
   refine ⟨fun x ↦ infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ,
