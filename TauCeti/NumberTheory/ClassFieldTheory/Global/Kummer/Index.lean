@@ -201,19 +201,18 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card
 /-- **The Kummer case of the second fundamental inequality.** Let `L/K` be a Galois extension of
 number fields of prime degree `p`, and suppose that `K` contains the `p`-th roots of unity. Then
 the idele-class norm group has index at most `p`:
-`[C_K : N_{L/K}(C_L)] ≤ p`.
-
-Choose a finite set `S` containing the places above `p` and the ramified places of `L/K`, whose
-classes generate the class group. Kummer theory embeds `L` into `M = K(U_S^{1/p})`. The auxiliary
-places theorem supplies `T` with `p ^ #T = [M : L]` and an inclusion
-`E_{S,T} ⊆ N_{L/K}(C_L)`. The index formula for `E_{S,T}`, together with
-`[M : K] = p ^ (#S + r₁ + r₂)`, then cancels the factor `p ^ #T` and gives the bound. -/
+`[C_K : N_{L/K}(C_L)] ≤ p`. -/
 theorem index_range_ideleClassNormMap_le_of_finrank_prime
     (K L : Type) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
     [IsGalois K L] (p : ℕ) [Fact p.Prime] [HasEnoughRootsOfUnity K p]
     (hfin : Module.finrank K L = p) :
     (GlobalNumberFields.ideleClassNormMap K L).range.index ≤ p := by
   classical
+  -- Choose a finite set `S` containing the places above `p` and the ramified places of `L/K`,
+  -- whose classes generate the class group. Kummer theory embeds `L` into `M = K(U_S^{1/p})`.
+  -- The auxiliary places theorem supplies `T` with `p ^ #T = [M : L]` and an inclusion
+  -- `E_{S,T} ⊆ N_{L/K}(C_L)`. The index formula for `E_{S,T}`, together with
+  -- `[M : K] = p ^ (#S + r₁ + r₂)`, then cancels the factor `p ^ #T` and gives the bound.
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let F := ι.fieldRange
   have hFfin : Module.finrank K F = p :=
@@ -283,8 +282,6 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
     (K := K) (Fact.out : p.Prime) hST hS hpS hsurj
   have hMfin : Module.finrank K M =
       p ^ (Fintype.card (InfinitePlace K) + S.card) := by
-    change Module.finrank K (kummerField (SeparableClosure K) p
-      ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K)) = _
     rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
       Nat.card_coe_set_eq, Set.ncard_coe_finset]
   let _ : Module.Free F' M := Module.Free.of_divisionRing F' M
@@ -296,16 +293,11 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
   have hdvd : (GlobalNumberFields.ideleClassNormMap K F').range.index ∣ p := by
     rw [← hauxIndex]
     exact Subgroup.index_dvd_of_le hnorm
-  have hFle : (GlobalNumberFields.ideleClassNormMap K F).range.index ≤ p := by
-    change ((GlobalNumberFields.ideleClassNormMap K F :
-      IdeleClassGroup (NumberField.RingOfIntegers F) F →*
-        IdeleClassGroup (NumberField.RingOfIntegers K) K).range.index ≤ p)
-    rw [← GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv eFM]
-    exact Nat.le_of_dvd (Fact.out : p.Prime).pos hdvd
-  change ((GlobalNumberFields.ideleClassNormMap K L :
-    IdeleClassGroup (NumberField.RingOfIntegers L) L →*
-      IdeleClassGroup (NumberField.RingOfIntegers K) K).range.index ≤ p)
-  rw [GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv ι.equivFieldRange]
-  exact hFle
+  have hFle : (GlobalNumberFields.ideleClassNormMap K F).range.index ≤ p :=
+    (congrArg Subgroup.index
+      (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv eFM)).symm.trans_le
+      (Nat.le_of_dvd (Fact.out : p.Prime).pos hdvd)
+  exact (congrArg Subgroup.index
+    (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv ι.equivFieldRange)).trans_le hFle
 
 end TauCeti.ClassFieldTheory
