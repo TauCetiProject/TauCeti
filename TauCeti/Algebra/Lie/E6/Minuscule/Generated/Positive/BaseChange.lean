@@ -20,6 +20,14 @@ The generator comparisons hold over arbitrary commutative rings. Freeness is nee
 change of the common-kernel Hopf ideal. No identification with the specialization of the integral
 positive subgroup, or Borel maximality, is asserted.
 
+For Borel recognition, `HopfIdeal.IsBorel` tests maximality after extension to an algebraic
+closure. The equation `map_baseChangeHopfIdeal_carrierDefiningIdeal` at that extension
+identifies the ideal in this test with `carrierDefiningIdeal` over the closure, inside the full
+generated carrier there.
+Thus `HopfIdeal.IsBorelOverAlgClosed.of_map_eq` transports a Borel maximality proof for that
+concrete positive subgroup back to the required geometric fibre. Identification with the
+integral specialization remains a separate step in constructing a pinned integral group.
+
 ## Main declarations
 
 * `map_baseChangeHopfIdeal_definingIdeal`: transport of the ambient defining ideal.
