@@ -48,6 +48,9 @@ completeness of `O` and no finiteness of its residue field is needed for this.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
   (5.3.6).
 * H. Matsumura, *Commutative Ring Theory*, §14 and §15.
+* The generation of ideals of `R⟦X⟧` from their constant coefficients, used for the maximal ideal
+  and its generators here, is Mathlib's `Mathlib.RingTheory.PowerSeries.Ideal`, by Riccardo
+  Brasca, Anthony Fernandes and Marc Robin.
 -/
 
 public section
@@ -119,7 +122,7 @@ noncomputable def residueFieldEquiv : ResidueField R⟦X⟧ ≃+* ResidueField R
 /-- The residue field equivalence takes the residue class of `f` to that of its constant
 coefficient. -/
 @[simp]
-theorem residueFieldEquiv_residue (f : R⟦X⟧) :
+theorem _root_.PowerSeries.residueFieldEquiv_residue (f : R⟦X⟧) :
     residueFieldEquiv (residue R⟦X⟧ f) = residue R (constantCoeff f) := by
   rw [residueFieldEquiv, RingEquiv.ofBijective_apply, IsLocalRing.ResidueField.map_residue]
 
