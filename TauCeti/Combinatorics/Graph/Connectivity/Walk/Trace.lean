@@ -31,7 +31,7 @@ universe u v
 
 namespace Graph
 
-variable {α : Type u} {β : Type v} {G : Graph α β}
+variable {α : Type u} {β : Type v} {G H : Graph α β}
 variable {w x y z : α}
 
 /-- The graph consisting of the vertices and edge identities traversed by a walk. -/
@@ -129,6 +129,27 @@ theorem walkGraph_le_walkGraph_iff (p : G.Walk x y) (q : G.Walk z w) :
     rcases (p.walkGraph_isLink e a b).mp hab with ⟨hab, hep⟩
     exact ⟨hab, he hep⟩
 
+/-- Mapping a walk to a supergraph does not change its traced graph. -/
+@[simp]
+theorem walkGraph_mapLe (h : G ≤ H) (p : G.Walk x y) :
+    H.walkGraph (p.mapLe h) = G.walkGraph p := by
+  apply Graph.ext
+  · simp
+  · intro e a b
+    simp only [walkGraph_isLink, edges_mapLe_eq_edges]
+    constructor
+    · rintro ⟨hab, he⟩
+      exact ⟨(h.isLink_iff (p.edges_subset_edgeSet he)).mpr hab, he⟩
+    · rintro ⟨hab, he⟩
+      exact ⟨h.isLink_mono hab, he⟩
+
+/-- Restricting a walk to a subgraph containing its edges does not change its traced graph. -/
+@[simp]
+theorem walkGraph_transfer (h : G ≤ H) (p : H.Walk x y)
+    (hp : ∀ e, e ∈ p.edges → e ∈ E(G)) :
+    G.walkGraph (p.transfer h hp) = H.walkGraph p := by
+  rw [← walkGraph_mapLe h, mapLe_transfer]
+
 /-- A zero-length walk traces the edgeless graph on its base vertex. -/
 @[simp]
 theorem walkGraph_nil (G : Graph α β) (x : α) :
@@ -140,7 +161,8 @@ theorem walkGraph_nil (G : Graph α β) (x : α) :
     simp
 
 /-- A one-edge walk traces exactly that edge and its endpoints. -/
-theorem walkGraph_toWalk {e : β} (h : G.IsLink e x y) :
+@[simp]
+theorem _root_.Graph.IsLink.walkGraph_toWalk {e : β} (h : G.IsLink e x y) :
     G.walkGraph h.toWalk = (G.induce {x, y}).restrict {e} := by
   apply Graph.ext
   · ext a
@@ -180,6 +202,13 @@ theorem walkGraph_append (p : G.Walk x y) (q : G.Walk y z) :
   · intro e a b
     simp only [walkGraph_isLink, Compatible.union_isLink, edges_append, List.mem_append]
     tauto
+
+/-- Prepending an edge takes the compatible union of its one-edge trace and the remaining
+walk's trace. -/
+@[simp]
+theorem walkGraph_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
+    G.walkGraph (.cons e h p) = (h.toWalk.walkGraph_compatible p).union := by
+  simpa only [h.toWalk_eq_cons, cons_append, nil_append] using walkGraph_append h.toWalk p
 
 /-- Reversing a walk does not change its traced graph. -/
 @[simp]
