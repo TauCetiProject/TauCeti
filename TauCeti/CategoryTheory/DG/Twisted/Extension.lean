@@ -551,19 +551,21 @@ theorem dgDifferential_neg_dgComp_extensionFst_extensionInr
         (-dgComp R (dgComp R (extensionFst R hg) g' (zero_add (-1))) (extensionInr R hg)
           (add_zero (-1))) =
       dgId R (extension P Q g hg) := by
+  -- The inverse pairs cancel inside the two terms produced by the Leibniz rule.
+  have hsnd : dgComp R (dgComp R (extensionSnd R hg) g (zero_add 1)) g' (add_neg_cancel 1) =
+      extensionSnd R hg := by
+    rw [dgComp_assoc R _ g g' (zero_add 1) (add_neg_cancel 1) (by omega), hgg', dgComp_dgId]
+  have hfst : dgComp R (dgComp R (extensionFst R hg) g' (zero_add (-1)))
+      (dgComp R g (extensionInl R hg) (add_zero 1)) (neg_add_cancel 1) =
+      dgComp R (extensionFst R hg) (extensionInl R hg) (add_zero 0) := by
+    rw [dgComp_assoc R _ g' _ (zero_add (-1)) (neg_add_cancel 1) (by omega),
+      ← dgComp_assoc R g' g _ (neg_add_cancel 1) (add_zero 1) (by omega), hg'g, dgId_dgComp]
   -- Expand by the Leibniz rule; `g'` is closed, being inverse to the closed morphism `g`.
   rw [map_neg, dgDifferential_dgComp, dgDifferential_dgComp, dgDifferential_extensionFst,
-    dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g,
-    dgComp_zero, smul_zero, add_zero, neg_dgComp, neg_dgComp, Int.negOnePow_neg,
-    Int.negOnePow_one, Units.neg_smul, one_smul]
-  -- The two remaining terms are `-(snd ≫ g ≫ g' ≫ inr)` and `-(fst ≫ g' ≫ g ≫ inl)`; cancel the
-  -- inverse pairs and recognise the biproduct decomposition of the identity.
-  rw [dgComp_assoc R (extensionSnd R hg) g g' (zero_add 1) (add_neg_cancel 1) (by omega), hgg',
-    dgComp_dgId,
-    dgComp_assoc R (extensionFst R hg) g' (dgComp R g (extensionInl R hg) (add_zero 1))
-      (zero_add (-1)) (neg_add_cancel 1) (by omega),
-    ← dgComp_assoc R g' g (extensionInl R hg) (neg_add_cancel 1) (add_zero 1) (by omega), hg'g,
-    dgId_dgComp, ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+    dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g]
+  simp only [dgComp_zero, smul_zero, add_zero, neg_dgComp, Int.negOnePow_neg, Int.negOnePow_one,
+    Units.neg_smul, one_smul, hsnd, hfst]
+  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
   abel
 
 /-- **An extension along an invertible morphism is contractible**: if the closed degree-one

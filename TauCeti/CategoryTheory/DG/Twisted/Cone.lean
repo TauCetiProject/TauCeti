@@ -145,6 +145,7 @@ theorem dgHomEquiv_twist_cone_inr_inr (u u' : PUnit) :
 
 variable (X Y) in
 /-- **The cone of the zero morphism is the direct sum** `Y[0] ⊕ X[1]` with the zero twist. -/
+@[simp]
 theorem cone_zero :
     cone (0 : DGHom R 0 X Y) (map_zero _) =
       ofObj R ((shiftedObj R Y 0).obj.sum (shiftedObj R X 1).obj) := by
@@ -186,15 +187,18 @@ private theorem dgComp_oneTerm_eq_dgId {X Y : C} {f : DGHom R 0 X Y} {f' : DGHom
         ((DGShiftClosure.dgHomEquiv R ⟨Y, s⟩ ⟨X, r⟩ (-n)).symm
           (castDeg R (by dsimp only; omega) f'))) (add_neg_cancel n) =
       dgId R (shiftedObj R X r) := by
+  -- The shift-closure sign is trivial.
+  have hsign : ((r - s) * (n + (s - r))).negOnePow = 1 := by
+    rw [show (r - s) * (n + (s - r)) = 0 by rw [hn]; ring, Int.negOnePow_zero]
   refine (EnrichedFunctor.dgMap_dgComp _ _ _ _).symm.trans
     (Eq.trans ?_ (EnrichedFunctor.dgMap_dgId _ (⟨X, r⟩ : DGShiftClosure C)))
   congr 1
   apply (DGShiftClosure.dgHomEquiv R _ _ 0).injective
   rw [DGShiftClosure.dgHomEquiv_dgComp, DGShiftClosure.dgHomEquiv_dgId,
     LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-  simp only [← castDeg_def]
-  rw [show (r - s) * (n + (s - r)) = 0 by rw [hn]; ring, Int.negOnePow_zero, one_smul,
-    castDeg_dgComp R (p := 0) (n := 0) (by omega) (by omega),
+  simp only [← castDeg_def, hsign, one_smul]
+  -- Transport the degrees back to zero and apply `h`.
+  rw [castDeg_dgComp R (p := 0) (n := 0) (by omega) (by omega),
     dgComp_castDeg R (q := 0) (n := 0) (by omega) rfl, castDeg_self, h]
 
 private theorem coneMorphism_eq {X Y : C} (f : DGHom R 0 X Y) :
