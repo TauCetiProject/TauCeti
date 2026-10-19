@@ -51,7 +51,9 @@ A cone of the star subdivision contains the ray through `u_σ` exactly when the 
 containing it contains `σ`. Indeed, a face of `σ` containing `u_σ` contains every `u_ρ`, so is
 `σ`; and a cone omitting `u_σ` is a cone of `Φ` not containing `σ`. This identifies the cones of
 the star subdivision lying over the cones containing `σ`, which describes the exceptional divisor
-of the blow-down.
+of the blow-down. Dually, the cones of the star subdivision lying over the cones of `Φ` not
+containing `σ` are exactly those cones themselves, so away from the exceptional divisor the
+blow-down changes nothing.
 
 ## Main declarations
 
@@ -80,6 +82,8 @@ of the blow-down.
   through `u_σ`.
 * `TauCeti.Toric.Fan.starSubdivisionAlongRay_le_iff_le_leastCone`: a cone of the star subdivision
   contains this ray exactly when the least cone of `Φ` containing it contains `σ`.
+* `TauCeti.Toric.Fan.not_le_leastCone_starSubdivisionAlong_iff`: the cones of the star subdivision
+  lying over the cones of `Φ` not containing `σ` are those cones themselves.
 
 ## References
 
@@ -809,6 +813,35 @@ theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
       hρ₀A) (primitiveGenerator_mem Φ.lattice hτr.toIsToricCone ρ₀)))
     rw [OrderIso.apply_symm_apply] at hρ₀
     exact (hρ₀S hρ₀).elim
+
+/-- Away from the cones containing `σ` the star subdivision of `Φ` along a nonzero cone `σ` changes
+nothing: a cone of the star subdivision has a least cone in `Φ` not containing `σ` exactly when it
+is a cone of `Φ` not containing `σ`. -/
+theorem not_le_leastCone_starSubdivisionAlong_iff (hσ0 : σ ≠ ⊥) {C : PointedCone ℝ V}
+    (hC : C ∈ (Φ.starSubdivisionAlong hΦ hσ).cones) :
+    ¬σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone hC ↔
+      C ∈ Φ.cones ∧ ¬σ ≤ C := by
+  set f := (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom
+  have hreal : f.realMap = LinearMap.id := IsSubdivision.toFanHom_realMap _
+  have hCL : C ≤ f.leastCone hC := by
+    simpa [hreal] using f.map_le_leastCone hC
+  constructor
+  · intro hσL
+    refine ⟨?_, fun h ↦ hσL (h.trans hCL)⟩
+    rcases (Φ.mem_starSubdivisionAlong_cones hΦ hσ).1 hC with
+      ⟨hCΦ, -⟩ | ⟨τ, hτ, hστ, S, -, rfl⟩
+    · exact hCΦ
+    by_cases hS : none ∈ S
+    · -- The cone contains the ray through `u_σ`, so its least cone contains `σ`.
+      refine (hσL ((Φ.starSubdivisionAlongRay_le_iff_le_leastCone hΦ hσ hσ0 ⟨_, hC⟩).1 ?_)).elim
+      rw [← Subtype.coe_le_coe, coe_toCone_starSubdivisionAlongRay,
+        Submodule.span_singleton_le_iff_mem, ← starSubdivisionGenerator_none_faceFinset Φ hσ hτ hστ]
+      exact PointedCone.subset_hull ⟨_, ⟨none, hS, rfl⟩, rfl⟩
+    · exact Φ.mem_of_isFaceOf hτ
+        (isFaceOf_starSubdivisionCone Φ.lattice _ (isRegular_iff.1 hΦ _ hτ) hS)
+  · rintro ⟨hCΦ, hσC⟩
+    -- A cone of `Φ` is its own least cone.
+    rwa [(f.leastCone_le hC hCΦ (by rw [hreal, PointedCone.map_id])).antisymm hCL]
 
 end Along
 
