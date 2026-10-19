@@ -32,12 +32,6 @@ namespace Network
 variable {K : Type w}
 variable {V : Type u} {W : Type u'} {X : Type u''}
 
-private theorem assignment_homOfEq {Q : V → V → Type v} {R : Type w'}
-    (f : TauCeti.Assignment Q R) {x y x' y' : V} (a : Q x y) (hx : x = x') (hy : y = y') :
-    f (@Quiver.homOfEq V ⟨Q⟩ x y x' y' a hx hy) = f a := by
-  subst x' y'
-  rfl
-
 section LE
 
 variable [LE K]
@@ -64,45 +58,56 @@ scoped infix:25 " ≃ₙ " => Network.Iso
 
 namespace Iso
 
-/-- The identity isomorphism of a bounded network.  Its body is exposed so that the dependent
-arrow family can reduce in exported projection lemmas. -/
-@[refl, expose] def refl (N : Network K V) : N ≃ₙ N where
+/-- The identity isomorphism of a bounded network. -/
+@[refl] def refl (N : Network K V) : N ≃ₙ N where
   vertexEquiv := Equiv.refl V
   homEquiv _ _ := Equiv.refl _
   map_lower _ := rfl
   map_upper _ := rfl
 
-/-- The composite of two bounded-network isomorphisms.  Its body is exposed so that the dependent
-arrow family can reduce in exported projection lemmas. -/
-@[trans, expose] def trans (e : N ≃ₙ N') (f : N' ≃ₙ N'') : N ≃ₙ N'' where
+/-- The composite of two bounded-network isomorphisms. -/
+@[trans] def trans (e : N ≃ₙ N') (f : N' ≃ₙ N'') : N ≃ₙ N'' where
   vertexEquiv := e.vertexEquiv.trans f.vertexEquiv
   homEquiv x y := (e.homEquiv x y).trans (f.homEquiv (e.vertexEquiv x) (e.vertexEquiv y))
   map_lower a := (f.map_lower (e.homEquiv _ _ a)).trans (e.map_lower a)
   map_upper a := (f.map_upper (e.homEquiv _ _ a)).trans (e.map_upper a)
 
+/-- The identity isomorphism uses the identity vertex equivalence. -/
+theorem refl_vertexEquiv (N : Network K V) :
+    (refl N).vertexEquiv = Equiv.refl V :=
+  (rfl)
+
 /-- The identity isomorphism fixes vertices. -/
 @[simp]
 theorem refl_vertexEquiv_apply (N : Network K V) (x : V) : (refl N).vertexEquiv x = x :=
-  rfl
+  (rfl)
 
-/-- The identity isomorphism uses the identity arrow equivalence. -/
+/-- The identity isomorphism fixes every arrow, after transporting its endpoints. -/
 @[simp]
-theorem refl_homEquiv (N : Network K V) (x y : V) :
-    (refl N).homEquiv x y = Equiv.refl (N.Hom x y) :=
-  rfl
+theorem refl_homEquiv_apply (N : Network K V) (x y : V) (a : N.Hom x y) :
+    @Quiver.homOfEq V ⟨N.Hom⟩ _ _ x y ((refl N).homEquiv x y a)
+      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = a :=
+  (rfl)
+
+/-- Composition uses the composite vertex equivalence. -/
+theorem trans_vertexEquiv (e : N ≃ₙ N') (f : N' ≃ₙ N'') :
+    (e.trans f).vertexEquiv = e.vertexEquiv.trans f.vertexEquiv :=
+  (rfl)
 
 /-- Composition applies the two vertex equivalences in order. -/
 @[simp]
 theorem trans_vertexEquiv_apply (e : N ≃ₙ N') (f : N' ≃ₙ N'') (x : V) :
     (e.trans f).vertexEquiv x = f.vertexEquiv (e.vertexEquiv x) :=
-  rfl
+  (rfl)
 
-/-- Composition uses the composite arrow equivalence. -/
+/-- Composition applies the two arrow equivalences in order, after transporting endpoints. -/
 @[simp]
-theorem trans_homEquiv (e : N ≃ₙ N') (f : N' ≃ₙ N'') (x y : V) :
-    (e.trans f).homEquiv x y =
-      (e.homEquiv x y).trans (f.homEquiv (e.vertexEquiv x) (e.vertexEquiv y)) :=
-  rfl
+theorem trans_homEquiv_apply (e : N ≃ₙ N') (f : N' ≃ₙ N'') (x y : V)
+    (a : N.Hom x y) :
+    @Quiver.homOfEq X ⟨N''.Hom⟩ _ _ _ _ ((e.trans f).homEquiv x y a)
+      (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y) =
+        f.homEquiv _ _ (e.homEquiv x y a) :=
+  (rfl)
 
 /-- The inverse arrow equivalence over arbitrary vertices of the target network. -/
 def inverseHomEquiv (e : N ≃ₙ N') (x y : W) :
@@ -115,9 +120,8 @@ def inverseHomEquiv (e : N ≃ₙ N') (x y : W) :
   left_inv a := by simp
   right_inv a := by simp
 
-/-- Reverse a bounded-network isomorphism.  Its body is exposed so that the dependent arrow
-family can reduce over the inverse vertex equivalence in exported projection lemmas. -/
-@[symm, expose] def symm (e : N ≃ₙ N') : N' ≃ₙ N where
+/-- Reverse a bounded-network isomorphism. -/
+@[symm] def symm (e : N ≃ₙ N') : N' ≃ₙ N where
   vertexEquiv := e.vertexEquiv.symm
   homEquiv := e.inverseHomEquiv
   map_lower := by
@@ -140,16 +144,23 @@ family can reduce over the inverse vertex equivalence in exported projection lem
       _ = N'.upper a := assignment_homOfEq N'.upper a _ _
 
 /-- The inverse isomorphism uses the inverse vertex equivalence. -/
+theorem symm_vertexEquiv (e : N ≃ₙ N') :
+    e.symm.vertexEquiv = e.vertexEquiv.symm :=
+  (rfl)
+
+/-- The inverse isomorphism applies the inverse vertex equivalence. -/
 @[simp]
 theorem symm_vertexEquiv_apply (e : N ≃ₙ N') (x : W) :
     e.symm.vertexEquiv x = e.vertexEquiv.symm x :=
-  rfl
+  (rfl)
 
-/-- The inverse isomorphism uses the inverse arrow equivalence. -/
+/-- The inverse isomorphism uses the inverse arrow equivalence, after transporting endpoints. -/
 @[simp]
-theorem symm_homEquiv (e : N ≃ₙ N') (x y : W) :
-    e.symm.homEquiv x y = e.inverseHomEquiv x y :=
-  rfl
+theorem symm_homEquiv_apply (e : N ≃ₙ N') (x y : W) (a : N'.Hom x y) :
+    @Quiver.homOfEq V ⟨N.Hom⟩ _ _ _ _ (e.symm.homEquiv x y a)
+      (symm_vertexEquiv_apply e x) (symm_vertexEquiv_apply e y) =
+        e.inverseHomEquiv x y a :=
+  (rfl)
 
 /-- Transport assignments along a bounded-network isomorphism. -/
 def assignmentEquiv (e : N ≃ₙ N') (R : Type w') : N.Assignment R ≃ N'.Assignment R :=
@@ -323,15 +334,37 @@ def mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
 /-- The identity network isomorphism fixes every path. -/
 @[simp]
 theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
-    (refl N).mapPath p = p := by
-  exact @Prefunctor.mapPath_id V (Quiver.mk N.Hom) x y p
+    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y ((refl N).mapPath p)
+      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = p := by
+  apply eq_of_heq
+  refine (@Quiver.homOfEq_heq_left_iff V ⟨fun x y ↦ N.Path x y⟩ _ _ _ _
+    ((refl N).mapPath p) p (refl_vertexEquiv_apply N x)
+      (refl_vertexEquiv_apply N y)).2 ?_
+  change @Prefunctor.mapPath V (Quiver.mk N.Hom) V (Quiver.mk N.Hom)
+    (refl N).toPrefunctor x y p ≍ p
+  exact (toPrefunctor_refl N).symm ▸
+    (@Prefunctor.mapPath_id V (Quiver.mk N.Hom) x y p).heq
 
 /-- Transport along a composite isomorphism applies the two path transports in order. -/
 @[simp]
 theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
-    {x y : V} (p : N.Path x y) : (e.trans f).mapPath p = f.mapPath (e.mapPath p) := by
-  exact @Prefunctor.mapPath_comp_apply V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
-    e.toPrefunctor X (Quiver.mk N''.Hom) f.toPrefunctor x y p
+    {x y : V} (p : N.Path x y) :
+    @Quiver.homOfEq X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _ ((e.trans f).mapPath p)
+      (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y) =
+        f.mapPath (e.mapPath p) := by
+  apply eq_of_heq
+  refine (@Quiver.homOfEq_heq_left_iff X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _
+    ((e.trans f).mapPath p) (f.mapPath (e.mapPath p)) (trans_vertexEquiv_apply e f x)
+      (trans_vertexEquiv_apply e f y)).2 ?_
+  change @Prefunctor.mapPath V (Quiver.mk N.Hom) X (Quiver.mk N''.Hom)
+    (e.trans f).toPrefunctor x y p ≍
+      @Prefunctor.mapPath W (Quiver.mk N'.Hom) X (Quiver.mk N''.Hom) f.toPrefunctor
+        (e.vertexEquiv x) (e.vertexEquiv y)
+        (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
+          e.toPrefunctor x y p)
+  exact (toPrefunctor_trans e f).symm ▸
+    (@Prefunctor.mapPath_comp_apply V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
+      e.toPrefunctor X (Quiver.mk N''.Hom) f.toPrefunctor x y p).heq
 
 /-- Path transport preserves the empty path. -/
 @[simp]

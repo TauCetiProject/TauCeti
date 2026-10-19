@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Tactic.TypeStar
 
 /-!
@@ -26,6 +27,13 @@ namespace TauCeti
 endpoints are strict-implicit so that applying an assignment to an arrow infers them from the
 arrow. -/
 abbrev Assignment (Hom : V → V → Type v) (K : Type w) := ∀ ⦃x y : V⦄, Hom x y → K
+
+/-- Assignment evaluation is invariant under transport of the arrow endpoints. -/
+theorem assignment_homOfEq {Hom : V → V → Type v} {K : Type w}
+    (f : Assignment Hom K) {x y x' y' : V} (a : Hom x y) (hx : x = x') (hy : y = y') :
+    f (@Quiver.homOfEq V ⟨Hom⟩ x y x' y' a hx hy) = f a := by
+  subst x' y'
+  rfl
 
 /-- A directed network with finite lower and upper bounds on every arrow.
 
