@@ -15,10 +15,9 @@ import TauCeti.RingTheory.KrullDimension.FiniteType
 A finite dominant morphism of integral schemes sends codimension-one points to
 codimension-one points when its target is locally of finite type over a field.
 More generally, it preserves the coheight of every point.
-On affine charts, Noether normalization compares both prime heights with their
-common contraction to a polynomial subalgebra, where going down applies.
-The field-algebra structure on a target chart comes from the given structure
-morphism, rather than an additional choice of finite-type algebra instances.
+No normality or global Noetherian hypothesis is required. The coheight-one
+specialization supplies the preservation hypothesis for mapping codimension-one
+points with `AlgebraicGeometry.Scheme.Hom.codimensionOneMap`.
 
 ## Main results
 

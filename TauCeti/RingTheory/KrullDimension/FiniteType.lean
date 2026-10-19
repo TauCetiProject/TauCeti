@@ -125,9 +125,10 @@ variable (k) in
 /-- A finite faithful extension of domains preserves prime heights when the base is a finitely
 generated algebra over a field. -/
 theorem _root_.Ideal.height_eq_height_under_of_finite_of_finiteType {R S : Type*}
-    [CommRing R] [CommRing S] [IsDomain R] [IsDomain S] [Algebra k R]
+    [CommRing R] [CommRing S] [IsDomain S] [Algebra k R]
     [Algebra.FiniteType k R] [Algebra R S] [Module.Finite R S] [FaithfulSMul R S]
     (prime : Ideal S) [prime.IsPrime] : prime.height = (prime.under R).height := by
+  have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain (algebraMap R S)
   obtain ⟨numVars, embedding, hinj, hfinite⟩ := exists_finite_inj_algHom_of_fg k R
   let polynomial := MvPolynomial (Fin numVars) k
   let : Algebra polynomial R := embedding.toRingHom.toAlgebra
