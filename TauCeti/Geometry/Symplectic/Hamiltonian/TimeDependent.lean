@@ -88,6 +88,14 @@ theorem continuous_timeDependentHamiltonianFlow (omega : SymplecticForm V)
       omega.timeDependentHamiltonianFlow H hX p.1.1 p.1.2 p.2 :=
   continuous_timeDependentFlow _ hX
 
+/-- The construction does not depend on the chosen Lipschitz bound for the suspended Hamiltonian
+vector field. -/
+theorem timeDependentHamiltonianFlow_congr (omega : SymplecticForm V) (H : ℝ → V → ℝ)
+    {K K' : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hX' : LipschitzWith K' (omega.timeDependentHamiltonianSuspension H)) :
+    omega.timeDependentHamiltonianFlow H hX = omega.timeDependentHamiltonianFlow H hX' :=
+  timeDependentFlow_congr _ hX hX'
+
 /-- Orbits solve the evolution equation for the `fderiv`-defined Hamiltonian vector field. -/
 theorem hasDerivAt_timeDependentHamiltonianFlow (omega : SymplecticForm V)
     (H : ℝ → V → ℝ) {K : ℝ≥0}
