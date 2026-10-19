@@ -187,6 +187,23 @@ theorem isConstantCurvatureTensor_iff
           κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) :=
   (Iff.rfl)
 
+/-- If the installed fibre metric is `g`, then `g` has constant-curvature tensor `κ` precisely
+when the Levi-Civita connection satisfies the constant-curvature equation. This transports the
+predicate along an equality of fibre metrics, which cannot be rewritten inside the
+instance-dependent arguments. -/
+theorem isConstantCurvatureTensor_iff_of_eq
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ)
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) :
+    g.IsConstantCurvatureTensor κ ↔
+      ∀ (x : M) (w u v : TangentSpace I x),
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
+          κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
+
 /-- The pointwise curvature equation carried by the smooth metric predicate `h`. -/
 theorem IsConstantCurvatureTensor.curvatureTensor_eq
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ)

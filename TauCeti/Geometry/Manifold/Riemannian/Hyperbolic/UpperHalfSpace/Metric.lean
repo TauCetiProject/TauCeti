@@ -41,15 +41,15 @@ local notation "J" => 𝓘(ℝ, P)
 /-- The standard complete metric of constant curvature `-1` on upper half-space. -/
 def hyperbolicMetric : HyperbolicMetric (I := J) (M := UpperHalfSpace E) where
   metric := riemannianMetric.ofLE le_top
-  complete := completeSpace_of_riemannianMetric
-  curvature := by
-    rw [ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff]
-    exact curvatureTensor_eq
+  complete := completeSpace_ofRiemannianMetric_of_eq _
+    (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm completeSpace_of_riemannianMetric
+  curvature := (ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff_of_eq _ _
+    (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm).mpr curvatureTensor_eq
 
 /-- Forgetting completeness and curvature recovers the standard upper-half-space metric. -/
 @[simp] theorem hyperbolicMetric_toRiemannianMetric :
     (hyperbolicMetric (E := E)).metric.toRiemannianMetric = riemannianMetric.toRiemannianMetric :=
-  (rfl)
+  ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _
 
 /-- Upper half-space with its standard manifold structure admits a complete hyperbolic metric. -/
 theorem isHyperbolic : IsHyperbolic (I := J) (M := UpperHalfSpace E) :=
