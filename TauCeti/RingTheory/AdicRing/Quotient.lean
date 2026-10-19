@@ -14,8 +14,8 @@ import TauCeti.RingTheory.AdicCompletion.Finite
 # Quotients of noetherian complete adic rings
 
 The instance `TauCeti.IsAdicRing.quotient` shows that the quotient of a noetherian complete
-adic ring by any ideal is again a complete adic ring with its quotient topology. Its proof
-uses the image of a finitely generated ideal of definition and finite-module adic completeness.
+adic ring by any ideal is again a complete adic ring with its quotient topology. Thus imposing
+ideal relations preserves the complete adic structure in the noetherian setting.
 
 ## References
 
