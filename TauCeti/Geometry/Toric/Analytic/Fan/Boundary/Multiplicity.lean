@@ -78,9 +78,8 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
   let F := f ∘ P.symm
   let γ := Φ.analyticAffineChartι hΦ σ ∘ coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r
   have hP (z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
-      P.symm (Φ.analyticAffineChartι hΦ σ z) = z := by
-    rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g ∞ z]
-    exact P.toPartialEquiv.left_inv (by simp [P])
+      P.symm (Φ.analyticAffineChartι hΦ σ z) = z :=
+    Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g ∞ z
   have hF (z : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
       F (Φ.analyticAffineChartι hΦ σ z) = f z := congrArg f (hP z)
   have hf : ContMDiff 𝓘(ℂ, (Fin (Nat.card (ToricRay σ.1)) → ℂ) × (Fin l → ℂ))
@@ -94,7 +93,7 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
       (contMDiff_coneChartRaySlice Φ.lattice hσ.toIsToricCone hB κ g x' r ∞)
   · have hx0 : (coneChartEquiv Φ.lattice hσ.toIsToricCone hB x0).1 r = 0 := hxρ
     have hslice : coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r 0 = x0 := by
-      rw [← hx0, coneChartEquiv_fst_apply, coneChartRaySlice_apply_coord]
+      rw [← hx0, coneChartEquiv_fst_apply, coneChartRaySlice_self]
     exact congrArg (Φ.analyticAffineChartι hΦ σ) hslice
   · intro t
     rw [Φ.analyticAffineChartPartialDiffeomorph_target]

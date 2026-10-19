@@ -60,7 +60,7 @@ theorem coneChartEquiv_coneChartRaySlice
 
 /-- A ray slice passes through its base point at the original value of that coordinate. -/
 @[simp]
-theorem coneChartRaySlice_apply_coord
+theorem coneChartRaySlice_self
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) (ρ : ToricRay σ) :
     coneChartRaySlice hi hσ hb x ρ
       (x (MonoidAlgebra.single (ofAdd (dualSemigroupCoord hi hσ hb (Sum.inl ρ))) 1)) = x := by
@@ -89,7 +89,7 @@ theorem coneChartRaySlice_apply_single
   rw [Finsupp.prod, Finsupp.prod]
   apply Finset.prod_congr rfl
   intro ρ' hρ'
-  have hne : ρ' ≠ ρ := Finset.ne_of_mem_erase (by
+  obtain ⟨hne, -⟩ := Finset.mem_erase.mp (by
     simpa only [Finsupp.support_erase] using hρ')
   simp [hne]
 
@@ -109,10 +109,10 @@ theorem analyticOrderAt_coneChartRaySlice_apply_single
   let c : ℂ := (a.1.erase ρ).prod (fun ρ' n ↦ (coneChartEquiv hi hσ hb x).1 ρ' ^ n) *
     (a.2.prod fun j n ↦ (coneChartEquiv hi hσ hb x).2 j ^ n : ℂˣ)
   have hc : c ≠ 0 := mul_ne_zero
-    (Finsupp.prod_ne_zero_iff.mpr fun ρ' hρ' ↦
-      pow_ne_zero _ (hx ρ' (Finset.mem_of_mem_erase (by
-        simpa only [Finsupp.support_erase] using hρ')) (Finset.ne_of_mem_erase (by
-        simpa only [Finsupp.support_erase] using hρ'))))
+    (Finsupp.prod_ne_zero_iff.mpr fun ρ' hρ' ↦ by
+      obtain ⟨hne, hmem⟩ := Finset.mem_erase.mp (by
+        simpa only [Finsupp.support_erase] using hρ')
+      exact pow_ne_zero _ (hx ρ' hmem hne))
     (Units.ne_zero _)
   have heq : (fun t ↦ coneChartRaySlice hi hσ hb x ρ t
       (MonoidAlgebra.single (ofAdd m) 1)) = fun t ↦ t ^ a.1 ρ * c := by
@@ -166,13 +166,9 @@ theorem contMDiff_coneChartRaySlice {k l s : ℕ}
   rw [heq]
   apply ContDiff.contMDiff
   apply ContDiff.prodMk
-  · apply contDiff_pi.mpr
-    intro a
-    by_cases h : κ.symm a = ρ
-    · simp only [h, update_self]
-      exact contDiff_id
-    · simp only [update_of_ne h]
-      exact contDiff_const
+  · let := Fintype.ofEquiv (Fin k) κ.symm
+    exact contDiff_pi.mpr fun a ↦
+      (contDiff_apply ℂ (fun _ : ToricRay σ ↦ ℂ) (κ.symm a)).comp (contDiff_update _ _ ρ)
   · exact contDiff_const
 
 end TauCeti.Toric
