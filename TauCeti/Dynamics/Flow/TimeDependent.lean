@@ -111,6 +111,7 @@ theorem hasDerivAt_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
   all_goals simp only [Γ, timeDependentFlow]
 
 /-- Time-dependent evolution through an intermediate time is the same as direct evolution. -/
+@[simp]
 theorem timeDependentFlow_trans (v : ℝ → E → E) {K : ℝ≥0}
     (hv : LipschitzWith K (timeDependentSuspension v)) (r s t : ℝ) (x : E) :
     timeDependentFlow v hv s t (timeDependentFlow v hv r s x) =

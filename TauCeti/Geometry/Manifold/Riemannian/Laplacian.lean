@@ -10,6 +10,8 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+public import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -58,6 +60,66 @@ theorem divergence_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSp
       LinearMap.trace ℝ (TangentSpace I x)
         (CovariantDerivative.leviCivitaConnection I M X x).toLinearMap := by
   rw [divergence]
+
+/-- A `C^(n + 1)` vector field on a `C^m` Riemannian manifold with `C^k` metric has `C^n`
+divergence when `n + 2 ≤ m` and `n + 1 ≤ k`. -/
+theorem contMDiff_divergence {n m k : ℕ∞ω}
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M] [IsManifold I m M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {X : (x : M) → TangentSpace I x}
+    (hX : ContMDiff I I.tangent (n + 1)
+      (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) :
+    ContMDiff I 𝓘(ℝ) n (divergence I X) := by
+  have hA : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E) y
+        ((CovariantDerivative.leviCivitaConnection I M X y))) Set.univ := by
+    exact CovariantDerivative.contMDiffOn_leviCivitaConnection (n := n) (m := m) (k := k)
+      isOpen_univ hm hk hX.contMDiffOn
+  intro x
+  let _ : IsManifold I (n + 1) M := IsManifold.of_le (n := m)
+    ((by gcongr; norm_num : n + 1 ≤ n + 2).trans hm)
+  let _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  let e := trivializationAt E (TangentSpace I) x
+  let eh := e.continuousLinearMap (RingHom.id ℝ) e
+  have he : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E) y
+        ((CovariantDerivative.leviCivitaConnection I M X y))) e.baseSet := hA.mono (by simp)
+  have heh : ContMDiffOn I 𝓘(ℝ, E →L[ℝ] E) n
+      (fun y ↦ (eh ⟨y, CovariantDerivative.leviCivitaConnection I M X y⟩).2) e.baseSet := by
+    rw [← eh.contMDiffOn_section_iff e.open_baseSet (by simp [eh])]
+    exact he
+  have ht : ContMDiffOn I 𝓘(ℝ) n
+      (fun y ↦ TauCeti.traceCLM ℝ E
+        ((eh ⟨y, CovariantDerivative.leviCivitaConnection I M X y⟩).2)) e.baseSet := by
+    exact ContMDiffOn.clm_apply contMDiffOn_const heh
+  have hEq (y : M) (hy : y ∈ e.baseSet) :
+      TauCeti.traceCLM ℝ E ((eh ⟨y, CovariantDerivative.leviCivitaConnection I M X y⟩).2) =
+        divergence I X y := by
+    let L := e.continuousLinearEquivAt ℝ y hy
+    have hconj : (eh ⟨y, CovariantDerivative.leviCivitaConnection I M X y⟩).2 =
+        L.toContinuousLinearMap.comp
+          ((CovariantDerivative.leviCivitaConnection I M X y).comp
+            L.symm.toContinuousLinearMap) := by
+      ext v
+      simp [eh, L, Bundle.Trivialization.continuousLinearMap_apply,
+        Bundle.Trivialization.symm_continuousLinearEquivAt_eq',
+        e.continuousLinearMapAt_apply_of_mem ℝ hy]
+    rw [hconj, TauCeti.traceCLM_apply, divergence]
+    have hcomp :
+        (L.toContinuousLinearMap.comp
+          ((CovariantDerivative.leviCivitaConnection I M X y).comp
+            L.symm.toContinuousLinearMap)).toLinearMap =
+          L.toLinearEquiv.conj
+            (CovariantDerivative.leviCivitaConnection I M X y).toLinearMap := by
+      ext v
+      rfl
+    rw [hcomp, LinearMap.trace_conj']
+  refine (ht.congr (fun y hy ↦ (hEq y hy).symm)).contMDiffAt
+    (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) x))
 
 /-- The scalar Hessian of `f`, pairing the covariant derivative of its gradient with a second
 tangent vector. -/

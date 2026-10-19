@@ -13,20 +13,21 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 
 For a time-dependent Hamiltonian `H : ℝ → V → ℝ`, the associated nonautonomous vector
 field is `X_H(t, x) = X_{H_t}(x)`, with the convention
-`ω(X_H(t, x), ·) = d(H_t)_x`.  Suspending this field by the clock equation and assuming that
-the resulting field on `ℝ × V` is globally Lipschitz produces a global two-time Hamiltonian
-evolution.
+`ω(X_H(t, x), v) = fderiv ℝ (H t) x v`; when `H t` is differentiable at `x`, this is its
+differential there.  Suspending this field by the clock equation and assuming that the resulting
+field on `ℝ × V` is globally Lipschitz produces a global two-time Hamiltonian evolution.
 
-The flow solves Hamilton's equation, starts at the prescribed point, is jointly continuous, and
-satisfies the composition law through intermediate times.  For an autonomous Hamiltonian it
-recovers the existing Hamiltonian flow at elapsed time `t - s`; the required Lipschitz hypothesis
-on the suspension follows directly from the one on the autonomous Hamiltonian vector field.
+The flow solves the evolution equation for this `fderiv`-defined vector field, starts at the
+prescribed point, is jointly continuous, and satisfies the composition law through intermediate
+times.  For an autonomous Hamiltonian it recovers the existing Hamiltonian flow at elapsed time
+`t - s`; the required Lipschitz hypothesis on the suspension follows directly from the one on the
+autonomous Hamiltonian vector field.
 
 ## Main declarations
 
 * `TauCeti.SymplecticForm.timeDependentHamiltonianSuspension`: the suspended Hamiltonian field.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`: its global two-time evolution.
-* `TauCeti.SymplecticForm.hasDerivAt_timeDependentHamiltonianFlow`: Hamilton's equation.
+* `TauCeti.SymplecticForm.hasDerivAt_timeDependentHamiltonianFlow`: the evolution equation.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow_const`: recovery of the autonomous flow.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
@@ -70,6 +71,7 @@ theorem timeDependentHamiltonianFlow_self (omega : SymplecticForm V) (H : ℝ �
   timeDependentFlow_self _ hX s x
 
 /-- Time-dependent Hamiltonian evolution through an intermediate time composes. -/
+@[simp]
 theorem timeDependentHamiltonianFlow_trans (omega : SymplecticForm V) (H : ℝ → V → ℝ)
     {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
     (r s t : ℝ) (x : V) :
@@ -86,7 +88,7 @@ theorem continuous_timeDependentHamiltonianFlow (omega : SymplecticForm V)
       omega.timeDependentHamiltonianFlow H hX p.1.1 p.1.2 p.2 :=
   continuous_timeDependentFlow _ hX
 
-/-- Orbits of the time-dependent Hamiltonian evolution solve Hamilton's equation. -/
+/-- Orbits solve the evolution equation for the `fderiv`-defined Hamiltonian vector field. -/
 theorem hasDerivAt_timeDependentHamiltonianFlow (omega : SymplecticForm V)
     (H : ℝ → V → ℝ) {K : ℝ≥0}
     (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
@@ -109,7 +111,8 @@ theorem lipschitzWith_timeDependentHamiltonianSuspension_const (omega : Symplect
   rw [show omega.timeDependentHamiltonianSuspension (fun _ ↦ H) =
     (fun p : ℝ × V ↦ ((1 : ℝ), omega.hamiltonianVectorField H p.2)) by
       funext p
-      rw [show p = (p.1, p.2) by rfl, timeDependentHamiltonianSuspension_apply]]
+      rcases p with ⟨t, x⟩
+      simp]
   exact h
 
 /-- For an autonomous Hamiltonian, the time-dependent evolution is the ordinary Hamiltonian flow
