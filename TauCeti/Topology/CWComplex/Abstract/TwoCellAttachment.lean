@@ -75,14 +75,6 @@ namespace TwoCellAttachment
 
 variable {X : Type u} [TopologicalSpace X] {x : X} {ι : Type u} (γ : ι → Path x x)
 
-/-- A point of the disk `𝔻 2` lies on its boundary circle exactly when the corresponding point of
-the square `I × I` lies on the boundary of the square. -/
-private lemma piFinTwo_diskHomeomorphCube_notMem_iff (z : TopCat.disk.{u} 2) :
-    Homeomorph.piFinTwo (fun _ ↦ I) (diskHomeomorphCube 2 z) ∉ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1 ↔
-      z ∈ range (TopCat.diskBoundaryInclusion.{u} 2) := by
-  rw [← diskHomeomorphCube_mem_boundary_iff, unitInterval.notMem_Ioo_prod_Ioo_iff]
-  simp [Cube.boundary, Fin.exists_fin_two, or_assoc]
-
 /-- The characteristic map of the `i`-th cell, on the disk `𝔻 2`: the characteristic map
 `TauCeti.TwoCellAttachment.cell γ i` of the square, through the homeomorphism
 `TauCeti.diskHomeomorphCube` of the disk with the square `I^(Fin 2) = I × I`. -/
