@@ -50,9 +50,6 @@ X*(T) = ULift (Fin n) →₀ ℤ,    X_*(T) = ULift (Fin n) → ℤ.
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 19.7 and Section 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
-
-This advances Layer 7, "Root datum of `(G, T)`", of the ReductiveGroups roadmap through its
-standard `GL_n` split-coordinate example.
 -/
 
 public section
@@ -235,7 +232,7 @@ theorem ofAdd_diagonalRoot {n : ℕ} (i j : Fin n) :
 
 /-- Every root in the diagonal coordinate root datum occurs as a nontrivial adjoint weight of
 `GL_n`. This is the proved inclusion from the packaged root set into the adjoint weight set. -/
-theorem ofAdd_root_mem_nontrivialAdjointWeights {k : Type u} [Field k] {n : ℕ}
+theorem ofAdd_root_mem_nontrivialAdjointWeights {k : Type u} [CommRing k] [Nontrivial k] {n : ℕ}
     (p : DiagonalRootIndex n) :
     Multiplicative.ofAdd
         ((diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).root p) ∈

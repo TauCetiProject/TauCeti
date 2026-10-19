@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.LocallyConvex.Bounded
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
@@ -17,7 +18,7 @@ the inner product of tangent vectors `(v₁, v₂)` and `(w₁, w₂)` at `(x, y
 `⟪v₁, w₁⟫ + ⟪v₂, w₂⟫`: the two factors are orthogonal and each carries its own metric. This file
 constructs that metric and shows that it is `C^n`, respectively continuous, when the metrics of
 both factors are. Products such as `S² × ℝ` and `ℍ² × ℝ` are among Thurston's model geometries,
-and isometries of products are in `TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod`.
+and isometries of products are in `TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Basic`.
 
 ## Main definitions
 
@@ -33,6 +34,11 @@ and isometries of products are in `TauCeti.Geometry.Manifold.Riemannian.Isometry
 
 * `TauCeti.Manifold.inner_tangentSpace_prod`: the inner product of the product metric is the sum
   of the inner products of the components.
+* `TauCeti.Manifold.inner_tangentSpace_prod_mk_zero` and
+  `TauCeti.Manifold.inner_tangentSpace_prod_zero_mk`: tangent vectors supported in one factor
+  have that factor's inner product.
+* `TauCeti.Manifold.tangentSpaceProdLinearIsometryEquiv`: in the product metric, the tangent space
+  of `M × N` is isometric to the `L²` product of the tangent spaces of the factors.
 
 ## References
 
@@ -286,6 +292,51 @@ theorem inner_tangentSpace_prod (p : M × N) (v w : TangentSpace (I.prod J) p) :
     inner ℝ v w =
       inner ℝ (tangentSpaceProdEquiv p v).1 (tangentSpaceProdEquiv p w).1 +
         inner ℝ (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 :=
+  (rfl)
+
+/-- Tangent vectors supported in the first factor have that factor's inner product. -/
+@[simp]
+theorem inner_tangentSpace_prod_mk_zero (p : M × N) (v w : TangentSpace I p.1) :
+    inner ℝ (E := TangentSpace (I.prod J) p)
+      ((v, 0) : TangentSpace I p.1 × TangentSpace J p.2)
+      ((w, 0) : TangentSpace I p.1 × TangentSpace J p.2) = inner ℝ v w := by
+  have h := inner_tangentSpace_prod p
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (v, 0))
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (w, 0))
+  simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero] at h
+  simpa only [tangentSpaceProdEquiv_symm_apply] using h
+
+/-- Tangent vectors supported in the second factor have that factor's inner product. -/
+@[simp]
+theorem inner_tangentSpace_prod_zero_mk (p : M × N) (v w : TangentSpace J p.2) :
+    inner ℝ (E := TangentSpace (I.prod J) p)
+      ((0, v) : TangentSpace I p.1 × TangentSpace J p.2)
+      ((0, w) : TangentSpace I p.1 × TangentSpace J p.2) = inner ℝ v w := by
+  have h := inner_tangentSpace_prod p
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (0, v))
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (0, w))
+  simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, zero_add] at h
+  simpa only [tangentSpaceProdEquiv_symm_apply] using h
+
+/-- In the product metric, the tangent space of `M × N` at `p` is isometric to the `L²` product of
+the tangent spaces of the factors, via the canonical identification `tangentSpaceProdEquiv`.
+Orthonormal bases of the two factors therefore combine into an orthonormal basis of the product
+(`OrthonormalBasis.prod`). -/
+def tangentSpaceProdLinearIsometryEquiv (p : M × N) :
+    TangentSpace (I.prod J) p ≃ₗᵢ[ℝ] WithLp 2 (TangentSpace I p.1 × TangentSpace J p.2) :=
+  ((tangentSpaceProdEquiv p).toLinearEquiv.trans
+    (WithLp.linearEquiv 2 ℝ (TangentSpace I p.1 × TangentSpace J p.2)).symm).isometryOfInner
+    fun v w ↦ by simp [WithLp.coe_symm_linearEquiv]
+
+@[simp]
+theorem tangentSpaceProdLinearIsometryEquiv_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
+    tangentSpaceProdLinearIsometryEquiv p v = WithLp.toLp 2 (tangentSpaceProdEquiv p v) :=
+  (rfl)
+
+@[simp]
+theorem tangentSpaceProdLinearIsometryEquiv_symm_apply (p : M × N)
+    (v : WithLp 2 (TangentSpace I p.1 × TangentSpace J p.2)) :
+    (tangentSpaceProdLinearIsometryEquiv p).symm v = (tangentSpaceProdEquiv p).symm v.ofLp :=
   (rfl)
 
 end TauCeti.Manifold

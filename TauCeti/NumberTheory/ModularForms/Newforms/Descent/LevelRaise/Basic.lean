@@ -67,7 +67,6 @@ theorem smul_slash_scaleGL_slash_descendMatrix (hp : p.Prime) (hpN : p ∣ N) {F
       smul_slash_scaleGL_slash_upperTriRep k (one_mem_strictPeriods_Gamma1_map _)]
   · have hpsq : ¬ p ^ 2 ∣ N := fun h ↦ by
       have h1 := descendMatrixCount_of_sq_dvd h
-      have h2 := v.isLt
       omega
     have hmem : descendExtraGamma p N ∈ Gamma1 (N / p) :=
       Gamma_le_Gamma1 (N / p)

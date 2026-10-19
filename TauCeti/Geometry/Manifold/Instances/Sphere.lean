@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
-public import TauCeti.Geometry.Manifold.Immersion
+public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
@@ -22,9 +22,12 @@ linear isometries
 
 Mathlib charts the unit sphere of an `(n + 1)`-dimensional real inner product space by
 stereographic projection, the preferred chart at `v` projecting from the antipode `-v`
-(`EuclideanSpace.instChartedSpaceSphere`). This file records the two facts about these charts
+(`EuclideanSpace.instChartedSpaceSphere`). This file records the facts about these charts
 that computations in a chart at a chosen point use: which stereographic projection the preferred
-chart is, and that the extended chart at `v` sends `v` to the origin of the model space.
+chart is, that the extended chart at `v` sends `v` to the origin of the model space, and that the
+inverse of a stereographic chart is a smooth embedding of the model space into the sphere. Read in
+the ambient space, the inverse of stereographic projection has injective derivative, so it is a
+regular parametrization of the sphere minus a point.
 
 It then uses the charts to show that a linear isometry `ι : F →ₗᵢ[ℝ] E` restricts to a smooth
 embedding of unit spheres, `LinearIsometry.unitSphereMap`. Stereographic projection is defined
@@ -43,8 +46,12 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 
 ## Main results
 
+* `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
+  from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
+* `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
+  smooth embedding of the model space into the sphere.
 * `LinearIsometry.stereographic'_unitSphereMap`: the stereographic charts read a linear isometry
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
@@ -65,6 +72,33 @@ open scoped Manifold InnerProductSpace ContDiff
 
 namespace TauCeti
 
+section Stereographic
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The inverse of stereographic projection from a unit vector `v` has injective derivative at
+every point of the hyperplane `(ℝ ∙ v)ᗮ`. -/
+theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w : (ℝ ∙ v)ᗮ) :
+    Injective (fderiv ℝ (stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)) w) := by
+  set ψ := stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)
+  have hd : DifferentiableAt ℝ ψ w :=
+    (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero w
+  -- Stereographic projection is a left inverse of `ψ`, differentiable near `ψ w ≠ v`.
+  have hnorm : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hne : innerSL ℝ v (ψ w) ≠ 1 := by
+    rw [innerSL_apply_apply, Ne, inner_eq_one_iff_of_norm_eq_one hv hnorm]
+    exact fun h => stereoInvFun_ne_north_pole hv w (Subtype.ext h.symm)
+  have hst : DifferentiableAt ℝ (stereoToFun v) (ψ w) :=
+    ((contDiffOn_stereoToFun (n := 1)).differentiableOn one_ne_zero).differentiableAt
+      ((isOpen_ne_fun (innerSL ℝ v).continuous continuous_const).mem_nhds hne)
+  have hcomp : fderiv ℝ (stereoToFun v) (ψ w) ∘L fderiv ℝ ψ w = ContinuousLinearMap.id ℝ _ := by
+    rw [← fderiv_comp w hst hd, show stereoToFun v ∘ ψ = id from funext (stereo_right_inv hv),
+      fderiv_id]
+  exact Function.LeftInverse.injective (g := fderiv ℝ (stereoToFun v) (ψ w)) fun u => by
+    simpa using congrArg (fun L => L u) hcomp
+
+end Stereographic
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
@@ -80,6 +114,21 @@ theorem extChartAt_sphere_apply_self (v : sphere (0 : E) 1) : extChartAt (𝓡 n
   rw [extChartAt_coe, modelWithCornersSelf_coe, id_comp, chartAt_sphere, stereographic',
     OpenPartialHomeomorph.trans_apply, stereographic_neg_apply,
     Homeomorph.toOpenPartialHomeomorph_apply, LinearIsometryEquiv.coe_toHomeomorph, map_zero]
+
+/-- The inverse of a stereographic chart is a smooth embedding of the model Euclidean space into
+the sphere, onto the complement of the centre of projection: read in that same chart it is the
+identity. -/
+theorem isSmoothEmbedding_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞ω} :
+    IsSmoothEmbedding (𝓡 n) (𝓡 n) k (stereographic' n v).symm := by
+  refine ⟨IsImmersionOfComplement.isImmersion (F := PUnit.{1}) fun w ↦ ?_,
+    ((stereographic' n v).symm.isOpenEmbedding (by simp)).isEmbedding⟩
+  refine IsImmersionAtOfComplement.mk_of_charts (ContinuousLinearEquiv.prodUnique ℝ _ _)
+    (OpenPartialHomeomorph.refl _) (stereographic' n v) (mem_univ w)
+    ((stereographic' n v).map_target (by simp))
+    (IsManifold.chart_mem_maximalAtlas (I := 𝓡 n) (n := k) w)
+    (IsManifold.subset_maximalAtlas ⟨v, rfl⟩)
+    (fun u _ ↦ (stereographic' n v).map_target (by simp)) fun u _ ↦ ?_
+  simp
 
 end TauCeti
 

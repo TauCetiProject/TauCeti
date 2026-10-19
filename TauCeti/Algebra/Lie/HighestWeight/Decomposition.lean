@@ -32,9 +32,9 @@ multiplicities are nonzero, so all but finitely many summands are indexed by the
 
 The companion statement `LieModule.nonempty_lieModuleEquiv_isotypicComponent` of
 `TauCeti/Algebra/Lie/UniversalEnveloping/Multiplicity.lean` decomposes one isotypic component as a
-power `S^{⊕ m}` of a single irreducible. It is not what proves the theorem below, since nothing
-so far exhibits `M` as the direct sum of its isotypic components; the decomposition into
-irreducibles is regrouped directly instead.
+power `S^{⊕ m}` of a single irreducible. It is not what proves the theorem below: the proof does not
+decompose `M` into its isotypic components, but regroups the decomposition into irreducibles
+directly.
 
 ## The argument
 
@@ -86,15 +86,13 @@ multiplicity the sum omits is zero.
   decomposition** `M ≃ ⨁_λ L(λ)^{m λ}`.
 * `TauCeti.isotypicMultiplicity_irreducibleQuotient_eq_zero_of_not_isDominantIntegral`: `L(λ)` of
   a non-dominant weight `λ` has multiplicity zero in every finite-dimensional module.
+* `TauCeti.genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero`:
+  an irreducible with nonzero multiplicity has its highest weight among the weights of `M`.
 * `TauCeti.irreducibleFormalCharacter_ne_zero`: **the character of `L(lam)` is nonzero.**
 * `TauCeti.formalCharacter_eq_finsum_isotypicMultiplicity_smul`: **the character of a
   finite-dimensional module is the multiplicity-weighted sum of the irreducible characters.**
 
 ## References
-
-This is the packaged-decomposition item of the milestone "isotypic components and multiplicities,
-through the enveloping-algebra dictionary" in the Layer 6 decomposition toolkit of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.3 (complete
   reducibility) and §§20.3, 21.2 (the classification of the finite-dimensional irreducible
@@ -151,8 +149,10 @@ theorem natCard_eq_isotypicMultiplicity_irreducibleQuotient {lam : Dual K H}
           ⟨e.trans (hc i).some⟩).symm
     · exact fun hi ↦ ⟨(hi ▸ (hc i).some).symm⟩
   rw [LieModule.isotypicMultiplicity_eq_ncard_of_isInternal N h hirr, hset]
-  -- `Set.ncard` is `Nat.card` of the coercion, and `↥{i | c i = lam}` is `{i // c i = lam}`.
-  exact Nat.card_coe_set_eq _
+  -- `Set.ncard` is `Nat.card` of the coercion, and `↥{i | c i = lam}` is equivalent to
+  -- `{i // c i = lam}`.
+  rw [← Nat.card_coe_set_eq]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by simp)
 
 end Count
 
@@ -310,5 +310,26 @@ theorem formalCharacter_eq_finsum_isotypicMultiplicity_smul [FiniteDimensional K
   rw [Finset.sum_comp (fun lam ↦ irreducibleFormalCharacter b lam) d]
   refine Finset.sum_congr rfl fun lam _ ↦ ?_
   rw [← Nat.cast_smul_eq_nsmul ℤ, hcard lam]
+
+variable (b) in
+/-- **Any irreducible `L(lam)` occurring with nonzero multiplicity in `M` has `lam` as a weight of
+`M`.** A nonzero morphism `L(lam) →ₗ⁅K,L⁆ M` cannot kill the canonical generator (which spans
+`L(lam)` over `L`), so it sends that generator to a highest weight vector of weight `lam` in `M`
+(`TauCeti.IsHighestWeightVector.map`). -/
+theorem genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero
+    {lam : Dual K H}
+    (h : LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam) ≠ 0) :
+    genWeightSpace M (lam : H → K) ≠ ⊥ := by
+  have hsub : ¬ Subsingleton (irreducibleQuotient b lam →ₗ⁅K,L⁆ M) := fun hsub ↦
+    h (by rw [LieModule.isotypicMultiplicity_def]; exact finrank_zero_of_subsingleton)
+  obtain ⟨f, hf⟩ : ∃ f : irreducibleQuotient b lam →ₗ⁅K,L⁆ M, f ≠ 0 := by
+    rw [not_subsingleton_iff_nontrivial] at hsub
+    exact exists_ne 0
+  have hfv : f (irreducibleQuotientGenerator b lam) ≠ 0 := fun h0 ↦ by
+    have htop : f.ker = ⊤ := top_unique <| by
+      rw [← lieSpan_irreducibleQuotientGenerator_eq_top b lam, LieSubmodule.lieSpan_le]
+      exact Set.singleton_subset_iff.mpr h0
+    exact hf (LieModuleHom.ext fun x ↦ (htop ▸ LieSubmodule.mem_top x : x ∈ f.ker))
+  exact ((isHighestWeightVector_irreducibleQuotientGenerator b lam).map f hfv).genWeightSpace_ne_bot
 
 end TauCeti

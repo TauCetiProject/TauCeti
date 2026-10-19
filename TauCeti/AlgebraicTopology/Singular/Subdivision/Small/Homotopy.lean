@@ -78,7 +78,7 @@ def smallSingularSubdivisionChainMap :
     (X.smallSingularSubcomplex U : SSet).chainComplex R ⟶
       (X.smallSingularSubcomplex U : SSet).chainComplex R where
   f n := smallSingularSubdivisionX R U n
-  comm' i j hij := by
+  comm' i j _ := by
     apply (cancel_mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f j)).1
     simp only [Category.assoc, ← HomologicalComplex.Hom.comm,
       ← HomologicalComplex.Hom.comm_assoc, smallSingularSubdivisionX_ι_assoc,

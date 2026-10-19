@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Dual
 import TauCeti.Algebra.Coalgebra.Comodule.PointSeparation
 
@@ -30,9 +30,8 @@ The dual coefficients are essential. For the standard one-dimensional representa
 generate `R[T, T⁻¹]`. Thus a criterion using only the original coefficient algebra would fail
 even for the identity representation of `𝔾ₘ`.
 
-This completes the ReductiveGroups roadmap's Layer 1 target "Faithfulness done right": faithful
-means that the representation morphism is a closed immersion, and this geometric condition is
-equivalent to generation of the coordinate ring by matrix coefficients and their duals.
+Faithful means that the representation morphism is a closed immersion, and this geometric condition
+is equivalent to generation of the coordinate ring by matrix coefficients and their duals.
 
 ## Main declarations
 
@@ -44,6 +43,8 @@ equivalent to generation of the coordinate ring by matrix coefficients and their
   bialgebra morphism preserves faithfulness.
 * `TauCeti.Comodule.pointsAction_injective_of_isFaithful`: a faithful comodule separates
   algebra-valued points.
+* `TauCeti.Comodule.eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful`: a point acting
+  trivially on a faithful comodule is the identity point.
 * `TauCeti.Comodule.isClosedImmersion_coordinateGroupSchemeHom_iff_of_bases`: faithfulness is
   independent of the chosen finite basis.
 
@@ -324,7 +325,7 @@ theorem pointsAction_injective_of_isFaithful
     -- current Mathlib pin, so expose its definition before applying the convolution-inverse API.
     change g.ofConv (HopfAlgebraStruct.antipode k x) =
       h.ofConv (HopfAlgebraStruct.antipode k x)
-    simpa only [← AlgHom.convInv_apply] using hInvCoefficients hx
+    simpa only [← WithConv.algHom_inv_apply] using hInvCoefficients hx
   rcases hV with ⟨d, b, hb⟩
   have hgenerate :
       matrixCoefficientSubalgebra (R := k) (C := H) (M := V) ⊔
@@ -334,6 +335,19 @@ theorem pointsAction_injective_of_isFaithful
   exact WithConv.ofConv_injective
     (AlgHom.ext_on_codisjoint (codisjoint_iff.mpr hgenerate)
       hCoefficients hAntipodeCoefficients)
+
+/-- A point acting as the identity of the general linear group of a faithful comodule is the
+identity point. -/
+theorem eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful
+    {K : Type x} [CommRing K] [Algebra k K]
+    (hV : IsFaithful (k := k) (H := H) (V := V)) {g : WithConv (H →ₐ[k] K)}
+    (hg : LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction V g) = 1) :
+    g = 1 := by
+  apply pointsAction_injective_of_isFaithful hV
+  rw [map_one]
+  refine LinearEquiv.ext fun x ↦ ?_
+  simpa only [LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, one_smul, LinearEquiv.coe_one,
+    id_eq] using congrArg (· • x) hg
 
 section Dual
 

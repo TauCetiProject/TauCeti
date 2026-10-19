@@ -159,7 +159,7 @@ theorem fullyBlockedDifferential_sq_single_apply_swapColumns_swapColumns_eq_zero
   rw [G.fullyBlockedDifferential_sq_single_apply_eq_decompositionCount,
     G.fullyBlockedDecompositionCount_def]
   have hsum :
-      ∑ D ∈ G.fullyBlockedDecompositions x
+      ∑ _ ∈ G.fullyBlockedDecompositions x
           ((x.swapColumns a b).swapColumns c d), (1 : ZMod 2) = 0 := by
     refine Finset.sum_involution
       (fun D _ => D.commute (GridRectangleDecomposition.hasDisjointSides_of_disjoint x hab hcd
@@ -174,8 +174,7 @@ variable [CharP R 2]
 between a grid state and the state obtained from it by two disjoint column transpositions
 vanishes.
 
-This is the sum-level form of the disjoint case, and the form the remaining one-common-side case
-will consume. -/
+This is the sum-level form of the disjoint case. -/
 theorem
     sum_unblockedCoefficient_mul_unblockedCoefficient_swapColumns_swapColumns_eq_zero_of_disjoint
     (x : GridState n) {a b c d : Fin n} (hab : a ≠ b) (hcd : c ≠ d)

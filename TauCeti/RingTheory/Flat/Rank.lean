@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Pi
-public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
-public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.RingTheory.Artinian.Finrank
 
 /-!
 # Multiplicativity of the rank of finite flat modules in towers
@@ -28,7 +25,8 @@ The rank of `M` at a prime `p` of `R` is the dimension of the fibre `κ(p) ⊗[R
 module over the fibre `κ(p) ⊗[R] A`, a finite `κ(p)`-algebra. The tower formula therefore reduces
 to a statement over a finite algebra `A` over a field `k`. Such an `A` is Artinian, hence the
 product of its finitely many localizations `A_q`, so a finite flat `A`-module `M` splits as the
-product of the free `A_q`-modules `A_q ⊗[A] M`. This gives
+product of the free `A_q`-modules `A_q ⊗[A] M`
+(`TauCeti.Module.finrank_eq_finsum_finrank_localization_tensorProduct`). This gives
 `finrank k M = ∑ᶠ q, rankAtStalk M q * finrank k A_q`
 (`TauCeti.Module.finrank_eq_finsum_rankAtStalk_mul`).
 
@@ -67,24 +65,8 @@ is the sum, over the finitely many primes `q` of `A`, of the rank of `M` at `q` 
 theorem finrank_eq_finsum_rankAtStalk_mul :
     finrank k M = ∑ᶠ q : PrimeSpectrum A,
       rankAtStalk M q * finrank k (Localization.AtPrime q.asIdeal) := by
-  classical
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  have := Fintype.ofFinite (PrimeSpectrum A)
-  -- `A` is the product of its localizations, so `M` is the product of the `A_q ⊗[A] M`.
-  let e : M ≃ₗ[A] ∀ q : PrimeSpectrum A, Localization.AtPrime q.asIdeal ⊗[A] M :=
-    (TensorProduct.lid A M).symm ≪≫ₗ
-      TensorProduct.congr (PrimeSpectrum.toPiLocalizationEquiv A).toLinearEquiv (.refl A M) ≪≫ₗ
-      TensorProduct.piLeft (R := A) (N := M)
-        (M := fun q : PrimeSpectrum A ↦ Localization.AtPrime q.asIdeal)
-  have : Module.Finite k (∀ q : PrimeSpectrum A, Localization.AtPrime q.asIdeal ⊗[A] M) :=
-    have : Module.Finite k M := .trans A M
-    .equiv (e.restrictScalars k)
-  have (q : PrimeSpectrum A) : Module.Finite k (Localization.AtPrime q.asIdeal ⊗[A] M) :=
-    .of_surjective (LinearMap.proj (R := k)
-      (φ := fun q : PrimeSpectrum A ↦ Localization.AtPrime q.asIdeal ⊗[A] M) q)
-      (Function.surjective_eval q)
-  rw [(e.restrictScalars k).finrank_eq, Module.finrank_pi_fintype, finsum_eq_sum_of_fintype]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [finrank_eq_finsum_finrank_localization_tensorProduct k (A := A) M]
+  refine finsum_congr fun q ↦ ?_
   -- Each factor `A_q ⊗[A] M` is free over the local ring `A_q`, of rank `rankAtStalk M q`.
   rw [← Module.finrank_mul_finrank k (Localization.AtPrime q.asIdeal), mul_comm,
     rankAtStalk_eq_finrank_tensorProduct]

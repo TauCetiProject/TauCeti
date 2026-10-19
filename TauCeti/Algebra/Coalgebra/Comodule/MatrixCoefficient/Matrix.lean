@@ -38,10 +38,8 @@ therefore a unit.
 
 ## References
 
-This is the standard coefficient matrix of a finite free corepresentation; see Sweedler,
-*Hopf Algebras*, Chapter 2, and Milne, *Algebraic Groups* (2017), Chapter 4, Remark 4.1. It
-supplies a prerequisite for `ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1,
-"Faithfulness done right".
+This is the standard coefficient matrix of a finite free corepresentation; see Sweedler, *Hopf
+Algebras*, Chapter 2, and Milne, *Algebraic Groups* (2017), Chapter 4, Remark 4.1.
 -/
 
 public section

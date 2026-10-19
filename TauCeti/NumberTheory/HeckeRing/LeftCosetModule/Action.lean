@@ -67,8 +67,8 @@ private lemma op_smul_assoc (r : R) (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H 
   refine (Finsupp.sum_smul_index fun D ↦ ?_).trans ?_
   · exact Finsupp.sum_congr (g2 := fun _ _ ↦ 0) (fun q _ ↦ Finset.sum_eq_zero fun i _ ↦ by
       simp) |>.trans (Finsupp.sum_fun_zero m)
-  · refine Eq.trans (Finsupp.sum_congr fun D b₁ ↦ ?_) Finsupp.smul_sum.symm
-    refine Eq.trans (Finsupp.sum_congr fun q b₂ ↦ ?_) Finsupp.smul_sum.symm
+  · refine Eq.trans (Finsupp.sum_congr fun D _ ↦ ?_) Finsupp.smul_sum.symm
+    refine Eq.trans (Finsupp.sum_congr fun q _ ↦ ?_) Finsupp.smul_sum.symm
     rw [Finset.smul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by
       rw [Finsupp.smul_single, smul_eq_mul]
@@ -98,10 +98,10 @@ private lemma op_smul_comm (r : R) (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H R
     MulOpposite.op t • (r • m) = r • (MulOpposite.op t • m) := by
   classical
   simp only [smul_eq_sum]
-  refine Eq.trans (Finsupp.sum_congr fun D b₁ ↦ ?_) Finsupp.smul_sum.symm
+  refine Eq.trans (Finsupp.sum_congr fun D _ ↦ ?_) Finsupp.smul_sum.symm
   refine Eq.trans (Finsupp.sum_smul_index fun q ↦ ?_) ?_
   · exact Finset.sum_eq_zero fun i _ ↦ by simp
-  · refine Eq.trans (Finsupp.sum_congr fun q b₂ ↦ ?_) Finsupp.smul_sum.symm
+  · refine Eq.trans (Finsupp.sum_congr fun q _ ↦ ?_) Finsupp.smul_sum.symm
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Finsupp.smul_single, smul_eq_mul]

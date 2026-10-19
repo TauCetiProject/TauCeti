@@ -76,7 +76,7 @@ public section
 
 open MeasureTheory
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

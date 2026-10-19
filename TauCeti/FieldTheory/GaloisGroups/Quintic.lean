@@ -153,7 +153,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_of_lt_three
 quintic with a label and a separable specialized `F₂₀` resolvent, that resolvent has a root in the
 base field exactly for the labels `5T1`, `5T2` and `5T3`. -/
 theorem HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff (h : HasGaloisLabel f j)
-    (hf : f.Monic) (hres : (quinticF20Spec.specialize F f).Separable) :
+    (hf : f.Monic) (hres : ResolventSeparationEvidence quinticF20Spec f) :
     (∃ a : F, (quinticF20Spec.specialize F f).IsRoot a) ↔ (j : ℕ) < 3 := by
   rw [← isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec hf h.separable h.irreducible
     h.natDegree_eq hres, h.isSolvable_iff_five]
@@ -198,7 +198,7 @@ monic quintic whose discriminant is not a square and whose separable `F₂₀` r
 the base field has the Frobenius group of order twenty on its five roots. -/
 theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf : f.Monic)
     (hchar : ringChar F ≠ 2) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
-    (hdisc : ¬ IsSquare f.discr) (hres : (quinticF20Spec.specialize F f).Separable) {a : F}
+    (hdisc : ¬ IsSquare f.discr) (hres : ResolventSeparationEvidence quinticF20Spec f) {a : F}
     (ha : (quinticF20Spec.specialize F f).IsRoot a) :
     HasGaloisLabel f (⟨2, by simp⟩ : TransitiveGroupIndex 5) := by
   have hsep : f.Separable := hf.discr_ne_zero_iff.mp fun h0 => hdisc ⟨0, by simp [h0]⟩
@@ -216,7 +216,7 @@ resolvent has a root in the base field has either the cyclic group or the dihedr
 ten on its five roots. -/
 theorem hasGaloisLabel_five_zero_or_one_of_isSquare_discr_of_isRoot (hf : f.Monic)
     (hchar : ringChar F ≠ 2) (hsep : f.Separable) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
-    (hdisc : IsSquare f.discr) (hres : (quinticF20Spec.specialize F f).Separable) {a : F}
+    (hdisc : IsSquare f.discr) (hres : ResolventSeparationEvidence quinticF20Spec f) {a : F}
     (ha : (quinticF20Spec.specialize F f).IsRoot a) :
     HasGaloisLabel f (⟨0, by simp⟩ : TransitiveGroupIndex 5) ∨
       HasGaloisLabel f (⟨1, by simp⟩ : TransitiveGroupIndex 5) := by

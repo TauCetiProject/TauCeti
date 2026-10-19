@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Basic
-public import TauCeti.AlgebraicGeometry.Curves.SingularLocus
+public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.RingTheory.Node.Jacobian.Locus
 

@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
@@ -32,6 +32,9 @@ class group.
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.ideleNorm`: the idele norm, a homomorphism to `ℝ≥0ˣ`.
+* `TauCeti.GlobalNumberFields.ideleNormSection`: the continuous section of the idele norm at an
+  infinite place `w`, the idele whose `w`-coordinate is `t ^ (1 / m_w)` and whose other
+  coordinates are `1`.
 
 ## Main results
 
@@ -48,6 +51,8 @@ class group.
   the idele norm is the normalized absolute value at that place.
 * `TauCeti.GlobalNumberFields.continuous_ideleNorm`: the idele norm is continuous, because the
   finite factors are locally constant on the idele group.
+* `TauCeti.GlobalNumberFields.ideleNorm_ideleNormSection`: the section is right inverse to the
+  idele norm.
 * `TauCeti.GlobalNumberFields.ideleNorm_surjective`: every positive real number is an idele norm.
 * `TauCeti.GlobalNumberFields.mixedEmbedding_norm_eq_ideleNorm`: for an idele whose finite part is
   an everywhere-integral unit, its idele norm equals the mixed norm of its infinite part.
@@ -343,25 +348,50 @@ theorem coe_ideleNorm_ofCompletion (w : InfinitePlace K) (u : w.Completionˣ) :
     simp [w'.ideleInfiniteCoord_ofCompletion_of_ne hw']) (by simp)]
   simp
 
+/-! ### The section at one infinite place -/
+
+variable (K) in
+/-- The continuous section of the idele norm at the infinite place `w`: the idele whose
+`w`-coordinate is the positive real number `t ^ (1 / m_w)` and whose other coordinates are `1`. -/
+def ideleNormSection (w : InfinitePlace K) : ℝ≥0ˣ →ₜ* IdeleGroup (𝓞 K) K where
+  toMonoidHom := (IdeleGroup.ofCompletion (𝓞 K) K w).comp (completionNormSection w)
+  continuous_toFun :=
+    (IdeleGroup.continuous_ofCompletion (𝓞 K) K w).comp (completionNormSection w).continuous
+
+/-- The section of the idele norm at `w` is concentrated at `w`, with coordinate
+`completionNormSection w t`. -/
+theorem ideleNormSection_apply (w : InfinitePlace K) (t : ℝ≥0ˣ) :
+    ideleNormSection K w t = IdeleGroup.ofCompletion (𝓞 K) K w (completionNormSection w t) :=
+  (rfl)
+
+/-- **The section is right inverse to the idele norm.** -/
+@[simp]
+theorem ideleNorm_ideleNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
+    ideleNorm (ideleNormSection K w t) = t :=
+  Units.ext <| NNReal.eq <| by
+    rw [ideleNormSection_apply, coe_ideleNorm_ofCompletion,
+      completionNormalizedAbsValue_completionNormSection]
+
 /-! ### Continuity and surjectivity -/
 
 /-- An idele whose finite coordinates, and those of its inverse, are all integral has finite
 coordinates of norm `1`. -/
-private lemma norm_ideleFiniteCoord_eq_one_of_forall_mem {u : IdeleGroup (𝓞 K) K}
-    (hu : ∀ v : HeightOneSpectrum (𝓞 K),
-      (u : AdeleRing (𝓞 K) K).2 v ∈ v.adicCompletionIntegers K)
-    (hu' : ∀ v : HeightOneSpectrum (𝓞 K),
-      ((u⁻¹ : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K).2 v ∈ v.adicCompletionIntegers K)
+private lemma norm_ideleFiniteCoord_eq_one_of_mem_integralAdeles {u : IdeleGroup (𝓞 K) K}
+    (hu : (u : AdeleRing (𝓞 K) K).2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K)
+    (hu' : ((u⁻¹ : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K).2 ∈
+      FiniteAdeleRing.integralAdeles (𝓞 K) K)
     (v : HeightOneSpectrum (𝓞 K)) :
     ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ = 1 := by
   have h₁ : ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ ≤ 1 :=
     Valued.toNormedField.norm_le_one_iff.mpr <| by
       simpa only [HeightOneSpectrum.coe_ideleFiniteCoord,
-        HeightOneSpectrum.mem_adicCompletionIntegers] using hu v
+        HeightOneSpectrum.mem_adicCompletionIntegers] using
+        FiniteAdeleRing.mem_integralAdeles.mp hu v
   have h₂ : ‖(v.ideleFiniteCoord u⁻¹ : v.adicCompletion K)‖ ≤ 1 :=
     Valued.toNormedField.norm_le_one_iff.mpr <| by
       simpa only [HeightOneSpectrum.coe_ideleFiniteCoord,
-        HeightOneSpectrum.mem_adicCompletionIntegers] using hu' v
+        HeightOneSpectrum.mem_adicCompletionIntegers] using
+        FiniteAdeleRing.mem_integralAdeles.mp hu' v
   have h : ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ *
       ‖(v.ideleFiniteCoord u⁻¹ : v.adicCompletion K)‖ = 1 := by
     rw [← norm_mul, ← Units.val_mul, ← map_mul, mul_inv_cancel, map_one, Units.val_one, norm_one]
@@ -372,10 +402,8 @@ private lemma norm_ideleFiniteCoord_eq_one_of_forall_mem {u : IdeleGroup (𝓞 K
 whose finite coordinates are units of the valuation rings form an open neighbourhood of `1` on
 which every finite factor is `1`. -/
 private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
-  let W : Set (AdeleRing (𝓞 K) K) :=
-    {a | ∀ v : HeightOneSpectrum (𝓞 K), a.2 v ∈ v.adicCompletionIntegers K}
-  have hW : IsOpen W := (RestrictedProduct.isOpen_forall_mem fun v ↦
-    Valued.isOpen_valuationSubring _).preimage continuous_snd
+  let W : Set (AdeleRing (𝓞 K) K) := {a | a.2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K}
+  have hW : IsOpen W := (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
   let U : Set (IdeleGroup (𝓞 K) K) := {u | (u : AdeleRing (𝓞 K) K) ∈ W ∧
     ((u⁻¹ : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K) ∈ W}
   have hU : IsOpen U :=
@@ -388,7 +416,7 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
         (((continuous_apply w).comp continuous_fst).comp Units.continuous_val)
   have hU_eq (u : IdeleGroup (𝓞 K) K) (hu : u ∈ U) :
       ideleNormAux u = ∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord u) := by
-    rw [ideleNormAux, finprod_congr (norm_ideleFiniteCoord_eq_one_of_forall_mem hu.1 hu.2),
+    rw [ideleNormAux, finprod_congr (norm_ideleFiniteCoord_eq_one_of_mem_integralAdeles hu.1 hu.2),
       finprod_one, mul_one]
   refine continuous_iff_continuousAt.mpr fun x ↦ ?_
   have hmul : Continuous fun y : IdeleGroup (𝓞 K) K ↦ x⁻¹ * y := continuous_const.mul continuous_id
@@ -396,8 +424,9 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
     hmul.continuousAt.preimage_mem_nhds <|
       hU.mem_nhds <| by
         rw [inv_mul_cancel]
-        exact ⟨fun v ↦ (v.adicCompletionIntegers K).one_mem,
-          fun v ↦ (v.adicCompletionIntegers K).one_mem⟩
+        exact ⟨(FiniteAdeleRing.integralAdeles (𝓞 K) K).one_mem, by
+          rw [inv_one]
+          exact (FiniteAdeleRing.integralAdeles (𝓞 K) K).one_mem⟩
   refine (((continuous_const (y := ideleNormAux x)).mul (hinf.comp hmul)).continuousAt
     (x := x)).congr ?_
   filter_upwards [hx] with y hy
@@ -412,14 +441,7 @@ theorem continuous_ideleNorm : Continuous (ideleNorm (K := K)) := by
 /-- The idele norm is surjective: every positive real number is the idele norm of an idele
 concentrated at a single infinite place. -/
 theorem ideleNorm_surjective : Function.Surjective (ideleNorm (K := K)) := by
-  intro t
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  obtain ⟨x, hx⟩ := exists_completionNormalizedAbsValue_eq w (t : ℝ≥0).coe_nonneg
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    rw [map_zero] at hx
-    exact t.ne_zero (by exact_mod_cast hx.symm)
-  refine ⟨IdeleGroup.ofCompletion (𝓞 K) K w (Units.mk0 x hx0), Units.ext <| NNReal.eq ?_⟩
-  rw [coe_ideleNorm_ofCompletion, Units.val_mk0, hx]
+  exact Function.RightInverse.surjective (ideleNorm_ideleNormSection w)
 
 end TauCeti.GlobalNumberFields

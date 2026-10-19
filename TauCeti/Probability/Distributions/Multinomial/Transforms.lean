@@ -138,11 +138,11 @@ theorem charFun_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
   push_cast
   rw [Finset.sum_pow_eq_sum_piAntidiag]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   rw [Finset.sum_mul, Complex.exp_sum, mul_assoc, ← Finset.prod_mul_distrib]
   congr 1
   apply Finset.prod_congr rfl
-  intro i hi
+  intro i _
   rw [mul_pow, ← Complex.exp_nat_mul]
   congr 1
   ring_nf

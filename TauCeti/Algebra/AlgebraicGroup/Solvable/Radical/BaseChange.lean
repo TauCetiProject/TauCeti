@@ -50,9 +50,6 @@ Equality requires descent of an arbitrary radical candidate over `K` and is not 
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 * `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange`: proves the analogous descent of
   radical triviality for the unipotent radical.
-
-This advances the scalar-extension compatibility of the radical in Layer 6, "Reductive and
-semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

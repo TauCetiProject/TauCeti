@@ -52,15 +52,10 @@ universe u v w t
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-local instance : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
-
 local notation "kQ" => pathAlgebra k Q
 local notation "E" => quiverRepEquivalence k Q
 local notation "F" => quiverRepFunctor k Q
 
-local instance : Module.Finite k kQ := module_finite_pathAlgebra k Q
 local instance : IsArtinianRing kQ := IsArtinianRing.of_finite k kQ
 local instance : IsNoetherianRing kQ := IsNoetherianRing.of_finite k kQ
 
@@ -121,10 +116,6 @@ representations. -/
 theorem isFinDim_arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
     (hM : IsFinDim k Q M) : IsFinDim k Q (arTranslate.{u, v, w, t} k Q M hM) := by
   let P := arPresentation.{u, v, w, t} k Q M hM
-  have : Module.Finite k (AuslanderReitenTranspose P.p) :=
-    Module.Finite.trans kQᵐᵒᵖ _
-  have : Module.Finite kQ (AuslanderReitenTranslate k P.p) :=
-    Module.Finite.of_restrictScalars_finite k kQ _
   let T := ModuleCat.of kQ (AuslanderReitenTranslate k P.p)
   -- The bundled functor restricts scalars along the algebra map; pin that action rather
   -- than allowing typeclass search to use the unbundled dual's scalar action.

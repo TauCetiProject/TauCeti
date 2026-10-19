@@ -14,16 +14,18 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 # Smooth almost complex structures on manifolds
 
 This file lifts the pointwise linear algebra of `TauCeti.AlmostComplexStructure` to smooth
-manifolds. A smooth almost complex structure is a smooth section of the endomorphism bundle of
-the tangent bundle whose square is fiberwise minus the identity. Its value at each point is the
-existing pointwise almost complex structure on that tangent space.
+manifolds. A smooth almost complex structure is a smooth section of the endomorphism bundle of the
+tangent bundle whose square is fiberwise minus the identity. Its value at each point is a pointwise
+almost complex structure on that tangent space.
 
-The smoothness is part of the structure itself, while relations to a symplectic form are not
-fields of it. Tameness and compatibility are currently available only pointwise, as
-`TauCeti.SymplecticForm.Tames` and `TauCeti.SymplecticForm.Compatible` on a real module, so they
-can only be stated for the tangent-fiber structures produced by `almostComplexStructureAt`. This
-is the manifold-level definition needed in Lane F2.1 of the analytic Heegaard Floer roadmap
-before manifold-valued `J`-holomorphic maps can be stated.
+The smoothness is part of the structure itself, while relations to a symplectic form are not fields
+of it. Tameness and compatibility with a smooth two-form are `TauCeti.SmoothTwoForm.Tames` and
+`TauCeti.SmoothTwoForm.Compatible` in `TauCeti.Geometry.Symplectic.Manifold.TwoForm`. For a
+fiberwise nondegenerate form, `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.compatible_iff` reduce them to the pointwise
+`TauCeti.SymplecticForm.Tames` and `TauCeti.SymplecticForm.Compatible` for the tangent-fiber
+structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorphic maps
+(`TauCeti.Geometry.Symplectic.Manifold.JHolomorphic`) are stated with this definition.
 
 ## Main declarations
 
@@ -93,7 +95,7 @@ instance : CoeFun (SmoothAlmostComplexStructure I M) fun _ =>
     (x : M) → TangentSpace I x → TangentSpace I x :=
   ⟨fun J x ↦ J.toEndomorphism x⟩
 
-/-- The value of a smooth almost complex structure at a point, as the existing pointwise
+/-- The value of a smooth almost complex structure at a point, as a pointwise
 `AlmostComplexStructure` on that tangent space. -/
 def almostComplexStructureAt (J : SmoothAlmostComplexStructure I M) (x : M) :
     AlmostComplexStructure (TangentSpace I x) where

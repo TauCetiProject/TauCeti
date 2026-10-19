@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChainRule
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Caccioppoli inequality for truncations of weak subsolutions
@@ -239,44 +238,19 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
           ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu ≤
         (2 * Lam / lam) ^ 2 * (c / (R - r)) ^ 2 *
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-  obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
-  refine ⟨2 * (c + 1), by positivity, ?_⟩
+  obtain ⟨c, hc0, hc⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  refine ⟨c, hc0, ?_⟩
   intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hr hrR hball
-  -- A cutoff equal to one on `ball x₀ r` and supported in
-  -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hc x₀ hr (by linarith : r < (r + R) / 2)
-  have htsR : tsupport ψ ⊆ ball x₀ R :=
-    hts.trans (closedBall_subset_ball (by linarith))
-  have htsΩ : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := htsR.trans hball
-  have hcpt : HasCompactSupport ψ :=
-    (isCompact_closedBall x₀ ((r + R) / 2)).of_isClosed_subset (isClosed_tsupport ψ) hts
-  set G : ℝ := 2 * (c + 1) / (R - r)
-  have hG : ∀ x, ‖∇ ψ x‖ ≤ G := fun x => (hgrad x).trans (by
-    rw [(by ring : (r + R) / 2 - r = (R - r) / 2), div_div_eq_mul_div]
-    exact div_le_div_of_nonneg_right (by linarith) (by linarith))
   set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
-  -- Caccioppoli's inequality for `w`, with zero forcing.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwLp
-    hψ hcpt htsΩ
-  -- On `B(x₀, r)` the cutoff is one.
-  have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
-      ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
-      (fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable hrange measurableSet_ball
-      (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
-  -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
-  have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-      G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=
-    (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG measurableSet_ball htsR
-      hwLp.integrable_sq (by
-        filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx
-        rw [hx])).trans_eq (by rw [inter_eq_right.2 hball])
-  calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
-      ≤ (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu :=
-        hleft.trans hcacc
-    _ ≤ (2 * Lam / lam) ^ 2 * (G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu) :=
-        mul_le_mul_of_nonneg_left hright (sq_nonneg _)
-    _ = _ := by rw [div_pow, mul_assoc]
+  -- Caccioppoli's inequality for `w`, with zero forcing, localized to the balls.
+  have hloc := hc w (A := (2 * Lam / lam) ^ 2) (B := 0) (sq_nonneg _) le_rfl hr hrR hball
+    fun ψ hψ hcpt hts => by
+      simpa using h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwLp
+        hψ hcpt hts
+  refine hloc.trans_eq ?_
+  rw [add_zero, integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hball (by
+    filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx
+    rw [hx]))]
 
 end PDE
 

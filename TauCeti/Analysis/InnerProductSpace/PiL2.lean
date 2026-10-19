@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 
 /-!
@@ -25,21 +26,11 @@ Borel measurable structure on the scalar field.
 * `TauCeti.euclideanFiberSum` sums the coordinates of a Euclidean vector over each fibre of a map
   of index types.
 
-The Euclidean norm bounds the sum of coordinate norms by the square root of the number of
-coordinates. This finite-dimensional Cauchy--Schwarz estimate also controls matrix actions
-from entrywise bounds.
+## Additional results
 
-## Additional result
-
-* `EuclideanSpace.sum_norm_le_sqrt_card_mul_norm`: the sum of coordinate norms is at most the
-  square root of the coordinate count times the Euclidean norm.
-
-## Source
-
-The coordinate-norm estimate is adapted from
-`ForTauCeti/Analysis/Matrix/EntrywiseOpNorm.lean` in the
-[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization).
-Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
+* `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
+  `𝕜 × 𝕜ⁿ`.
 -/
 
 public section
@@ -50,27 +41,52 @@ open scoped BigOperators
 
 namespace EuclideanSpace
 
-variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
-/--
-**`ℓ¹ ≤ √card · ℓ²` on Euclidean space.** For `x : EuclideanSpace 𝕜 ι`,
-`∑ i, ‖x i‖ ≤ √(card ι) · ‖x‖`.
--/
-theorem sum_norm_le_sqrt_card_mul_norm
-    (x : EuclideanSpace 𝕜 ι) :
-    ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
-  have hcs : (∑ i, ‖x i‖) ^ 2 ≤ (Fintype.card ι : ℝ) * ∑ i, ‖x i‖ ^ 2 := by
-    simpa [Finset.card_univ] using
-      sq_sum_le_card_mul_sum_sq (s := (Finset.univ : Finset ι)) (f := fun i => ‖x i‖)
-  have hnorm : ‖x‖ ^ 2 = ∑ i, ‖x i‖ ^ 2 := EuclideanSpace.norm_sq_eq x
-  have hsum_nonneg : 0 ≤ ∑ i, ‖x i‖ := Finset.sum_nonneg fun i _ => norm_nonneg _
-  have hrhs_nonneg : 0 ≤ Real.sqrt (Fintype.card ι) * ‖x‖ :=
-    mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _)
-  have hsq : (∑ i, ‖x i‖) ^ 2 ≤ (Real.sqrt (Fintype.card ι) * ‖x‖) ^ 2 := by
-    have hrw : (Real.sqrt (Fintype.card ι) * ‖x‖) ^ 2 = (Fintype.card ι : ℝ) * ‖x‖ ^ 2 := by
-      rw [mul_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (Fintype.card ι : ℝ))]
-    rw [hrw, hnorm]; exact hcs
-  exact (abs_le_of_sq_le_sq' hsq hrhs_nonneg).2
+/-- The square root of the dimension of a nonzero Euclidean space is positive. -/
+theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
+  Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+variable [RCLike 𝕜]
+
+variable (𝕜) in
+/-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
+equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
+coordinates. -/
+def consEquivL (n : ℕ) : (𝕜 × EuclideanSpace 𝕜 (Fin n)) ≃L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)) :=
+  ((ContinuousLinearEquiv.refl 𝕜 𝕜).prodCongr (EuclideanSpace.equiv (Fin n) 𝕜)).trans
+    ((Fin.consEquivL 𝕜 fun _ => 𝕜).trans (EuclideanSpace.equiv (Fin (n + 1)) 𝕜).symm)
+
+theorem consEquivL_apply {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    consEquivL 𝕜 n z = WithLp.toLp 2 (Fin.cons z.1 (WithLp.ofLp z.2)) := by
+  ext i
+  simp [consEquivL, Fin.consEquivL_apply, PiLp.coe_continuousLinearEquiv]
+
+@[simp]
+theorem consEquivL_apply_zero {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    consEquivL 𝕜 n z 0 = z.1 := by
+  simp [consEquivL_apply]
+
+@[simp]
+theorem consEquivL_apply_succ {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (i : Fin n) :
+    consEquivL 𝕜 n z i.succ = z.2 i := by
+  simp [consEquivL_apply]
+
+theorem consEquivL_symm_apply {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    (consEquivL 𝕜 n).symm x = (x 0, WithLp.toLp 2 (Fin.tail (WithLp.ofLp x))) := by
+  rw [ContinuousLinearEquiv.symm_apply_eq]
+  ext i
+  refine Fin.cases ?_ (fun j => ?_) i <;> simp [Fin.tail]
+
+@[simp]
+theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    ((consEquivL 𝕜 n).symm x).1 = x 0 := by
+  simp [consEquivL_symm_apply]
+
+@[simp]
+theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
+    ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
+  simp [consEquivL_symm_apply, Fin.tail]
 
 end EuclideanSpace
 

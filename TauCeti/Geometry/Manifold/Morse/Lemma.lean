@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # The Morse lemma on a smooth manifold
@@ -31,6 +31,8 @@ stable and unstable manifolds are then studied.
   nondegenerate quadratic form.
 * `TauCeti.MorseChart.restr`: the restriction of a Morse chart to an open neighbourhood of its
   centre.
+* `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
+  weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
   manifold, for a function smooth near the critical point.
 * `TauCeti.IsMorse.nonempty_morseChart`: every critical point of a Morse function has a Morse
@@ -49,10 +51,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → ℝ} {x : M}
 
 variable (E) in
@@ -95,30 +95,102 @@ noncomputable def restr (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx 
 
 variable (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx : x ∈ s)
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The chart of a restricted Morse chart is the restricted chart. -/
 @[simp]
 theorem restr_toChart : (φ.restr hs hx).toChart = φ.toChart.restr s := by
   rw [restr]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- Restricting a Morse chart does not change its coordinates. -/
 @[simp]
 theorem restr_coord : (φ.restr hs hx).coord = φ.coord := by
   rw [restr]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- Restricting a Morse chart does not change its weights. -/
 @[simp]
 theorem restr_weight : (φ.restr hs hx).weight = φ.weight := by
   rw [restr]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The source of a restricted Morse chart. -/
 theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s :=
   φ.toChart.restr_source' s hs
 
+/-- A point of the chart is the point with its own coordinates. -/
+theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
+    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
+  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
+
+/-- The chart sends `0` back to the critical point. -/
+@[simp]
+theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
+  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+
+/-- The centre is the only point of the source sent to `0`. -/
+theorem toChart_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) : φ.toChart y = 0 ↔ y = x := by
+  refine ⟨fun h ↦ φ.toChart.injOn hy φ.mem_source ?_, fun h ↦ h ▸ φ.apply_self⟩
+  rw [h, φ.apply_self]
+
+/-- The critical point is the point with coordinates `0`. -/
+theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
+  rw [map_zero, toChart_symm_zero]
+
+/-- The chart of a Morse chart lies in the maximal atlas of class `C¹`. -/
+theorem mem_maximalAtlas_one : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
+  IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
+
+/-- The chart of a Morse chart is differentiable on its source. -/
+theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
+  mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
+
+variable [FiniteDimensional ℝ E]
+
+/-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
+opposite weights. -/
+noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    MorseChart E (-f) x where
+  toChart := φ.toChart
+  mem_maximalAtlas := φ.mem_maximalAtlas
+  mem_source := φ.mem_source
+  apply_self := φ.apply_self
+  coord := φ.coord
+  weight := -φ.weight
+  weight_eq_neg_one_or_eq_one i := by
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
+  ncard_weight_neg := by
+    have hidx := h.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    have hset : {i | (-φ.weight) i < 0} = {i | φ.weight i < 0}ᶜ := by
+      ext i
+      rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
+    have hc := Set.ncard_add_ncard_compl {i | φ.weight i < 0}
+    rw [Nat.card_eq_fintype_card, Fintype.card_fin, φ.ncard_weight_neg] at hc
+    rw [hset]
+    omega
+  eq_quadratic y hy := by
+    rw [Pi.neg_apply, Pi.neg_apply, φ.eq_quadratic y hy]
+    simp only [Pi.neg_apply, neg_mul, Finset.sum_neg_distrib]
+    ring
+
+/-- The negated Morse chart has the same chart. -/
+@[simp]
+theorem neg_toChart (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).toChart = φ.toChart := by
+  rw [neg]
+
+/-- The negated Morse chart has the same coordinates. -/
+@[simp]
+theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).coord = φ.coord := by
+  rw [neg]
+
+/-- The negated Morse chart has the opposite weights. -/
+@[simp]
+theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).weight = -φ.weight := by
+  rw [neg]
+
 end MorseChart
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
 that is smooth at every point of a neighbourhood of `x`, on a manifold modelled on a
@@ -134,24 +206,23 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y)
     (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) : Nonempty (MorseChart E f x) := by
   obtain ⟨s, hfs, hsopen, hxs⟩ := _root_.eventually_nhds_iff.1 hf
-  have hs : s ∈ 𝓝 x := hsopen.mem_nhds hxs
   replace hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f s := fun y hy ↦ (hfs y hy).contMDiffWithinAt
   set c := chartAt E x with hc
   set g : E → ℝ := f ∘ (extChartAt 𝓘(ℝ, E) x).symm with hgdef
-  set a : E := extChartAt 𝓘(ℝ, E) x x with hadef
-  set U := (extChartAt 𝓘(ℝ, E) x).target ∩ (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' interior s
-    with hUdef
+  set a : E := extChartAt 𝓘(ℝ, E) x x
+  set U := (extChartAt 𝓘(ℝ, E) x).target ∩ (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' s
   have hU : IsOpen U := (continuousOn_extChartAt_symm x).isOpen_inter_preimage
-    (isOpen_extChartAt_target x) isOpen_interior
+    (isOpen_extChartAt_target x) hsopen
   have haU : a ∈ U := ⟨mem_extChartAt_target x, by
     rw [mem_preimage, extChartAt_to_inv]
-    exact mem_interior_iff_mem_nhds.2 hs⟩
+    exact hxs⟩
   have hg : ContDiffOn ℝ ∞ g U :=
-    ((hf.mono interior_subset).comp ((contMDiffOn_extChartAt_symm x).mono inter_subset_left)
+    (hf.comp ((contMDiffOn_extChartAt_symm x).mono inter_subset_left)
       fun _ hz ↦ hz.2).contDiffOn
   have h' : IsNondegenerateCriticalPoint g a := (isManifoldNondegenerateCriticalPoint_iff _).1 h
   obtain ⟨φ, -, haφ, hφa, hφ, hφsymm, hφg⟩ :=
-    h'.exists_morse_chart_of_contDiffOn (hU.mem_nhds haU) hg
+    h'.exists_morse_chart_of_contDiffOn (n := ⊤) (hU.mem_nhds haU)
+      (by simpa [← one_add_one_eq_two, ← add_assoc] using hg) (by simp)
   obtain ⟨w, hw, ⟨e⟩⟩ := h'.exists_hessianQuadraticForm_equivalent_weightedSumSquares
   have hext : ∀ y, extChartAt 𝓘(ℝ, E) x y = c y := fun y ↦ by simp [hc]
   have hleft : ∀ y ∈ c.source, g (c y) = f y := fun y hy ↦ by
@@ -184,9 +255,7 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
 /-- Every critical point of a Morse function has a Morse chart. -/
 theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : Nonempty (MorseChart E f x) :=
-  ((isMorse_iff.1 hf).2 x ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1
-    hx)).nonempty_morseChart (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
-
-end Manifold
+  (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx).nonempty_morseChart
+    (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
 
 end TauCeti

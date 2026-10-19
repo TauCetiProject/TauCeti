@@ -58,8 +58,8 @@ theorem map_comul_orbitCoordinates_of_mem_weightSpace
       Comodule.orbitCoordinates (H := H) m s ⊗ₜ[R] (χ.val ^ n) := by
   induction hs using Submodule.pow_induction_on_left' with
   | algebraMap a => simp
-  | add x y i hx hy ihx ihy => simp only [map_add, ihx, ihy, TensorProduct.add_tmul]
-  | mem_mul x hx i y hy ih =>
+  | add x y i _ _ ihx ihy => simp only [map_add, ihx, ihy, TensorProduct.add_tmul]
+  | mem_mul x hx i y _ ih =>
       obtain ⟨φ, rfl⟩ := hx
       have hχ := I.map_comul_matrixCoefficient_of_mem_weightSpace χ hm φ
       simp only [map_mul, Comodule.orbitCoordinates_ι, ih, pow_succ]

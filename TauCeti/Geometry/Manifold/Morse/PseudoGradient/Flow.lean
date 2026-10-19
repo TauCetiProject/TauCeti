@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 
@@ -28,6 +29,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.contMDiff_flow_uncurry` and
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
+* `TauCeti.IsAdaptedPseudoGradient.neg_flow`: the flow of `-X` is the reversed flow, so the unstable
+  sets of `X` are the stable sets of `-X`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
@@ -68,17 +71,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 /-- An adapted pseudo-gradient on a compact boundaryless manifold is complete. -/
-theorem maximalIntegralCurveInterval_eq_univ (hX : IsAdaptedPseudoGradient f X) (x : M) :
-    maximalIntegralCurveInterval X x = univ :=
+theorem isCompleteVectorField (hX : IsAdaptedPseudoGradient f X) :
+    IsCompleteVectorField X :=
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  maximalIntegralCurveInterval_eq_univ_of_compactSpace (hX.contMDiff.of_le (by simp))
+  isCompleteVectorField_of_compactSpace (hX.contMDiff.of_le (by simp))
 
 /-- The flow of an adapted pseudo-gradient on a compact boundaryless manifold. -/
 noncomputable def flow (hX : IsAdaptedPseudoGradient f X) : Flow ℝ M :=
-  globalFlow X (hX.contMDiff.of_le (by simp)) hX.maximalIntegralCurveInterval_eq_univ
+  globalFlow X (hX.contMDiff.of_le (by simp)) hX.isCompleteVectorField
 
 variable (hX : IsAdaptedPseudoGradient f X)
-include hX
 
 /-- The flow at time `t` is the maximal integral curve of the pseudo-gradient at time `t`. -/
 theorem flow_apply (t : ℝ) (y : M) : hX.flow t y = maximalIntegralCurve X y t := by
@@ -86,25 +88,24 @@ theorem flow_apply (t : ℝ) (y : M) : hX.flow t y = maximalIntegralCurve X y t 
 
 /-- The orbits of the flow are integral curves of the pseudo-gradient. -/
 theorem isMIntegralCurve_flow (y : M) : IsMIntegralCurve (fun t ↦ hX.flow t y) X :=
-  isMIntegralCurve_globalFlow _ hX.maximalIntegralCurveInterval_eq_univ y
+  isMIntegralCurve_globalFlow _ hX.isCompleteVectorField y
 
 /-- The flow of an adapted pseudo-gradient is smooth in time and space. -/
 theorem contMDiff_flow_uncurry :
     ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) ∞ fun p : ℝ × M ↦ hX.flow p.1 p.2 :=
-  contMDiff_globalFlow_uncurry hX.maximalIntegralCurveInterval_eq_univ (n := ⊤) le_top
+  contMDiff_globalFlow_uncurry hX.isCompleteVectorField (n := ⊤) le_top
     hX.contMDiff
 
 /-- For a fixed time `t`, the time-`t` map of the flow is smooth. -/
 theorem contMDiff_flow_apply (t : ℝ) : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (hX.flow t) :=
-  contMDiff_globalFlow_apply hX.maximalIntegralCurveInterval_eq_univ (n := ⊤) le_top
+  contMDiff_globalFlow_apply hX.isCompleteVectorField (n := ⊤) le_top
     hX.contMDiff t
 
-omit hX in
 /-- The time-`t` map of the flow of an adapted pseudo-gradient, as a diffeomorphism. Its inverse
 is the time-`(-t)` map. -/
-noncomputable def flowDiffeomorph (hX : IsAdaptedPseudoGradient f X) (t : ℝ) :
+noncomputable def flowDiffeomorph (t : ℝ) :
     M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
-  globalFlowDiffeomorph hX.maximalIntegralCurveInterval_eq_univ (n := ⊤) le_top hX.contMDiff t
+  globalFlowDiffeomorph hX.isCompleteVectorField (n := ⊤) le_top hX.contMDiff t
 
 /-- The diffeomorphism `flowDiffeomorph t` is the time-`t` map of the flow. -/
 @[simp]
@@ -131,7 +132,7 @@ theorem antitone_flow (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (y : M) :
 /-- Critical points of `f` are rest points of the flow. -/
 theorem flow_apply_of_mfderiv_eq_zero {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (t : ℝ) :
     hX.flow t x = x :=
-  globalFlow_eq_of_isMIntegralCurve _ hX.maximalIntegralCurveInterval_eq_univ
+  globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField
     (isMIntegralCurve_const (hX.eq_zero_of_mfderiv_eq_zero hx)) t
 
 /-- A point along whose orbit `f` is constant is a critical point of `f`. -/
@@ -148,7 +149,8 @@ theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous (hX.antitone_flow hdf)
-    hf.finite_setOf_mfderiv_eq_zero (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq (hdf z) hz) y
+    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
+    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq (hdf z) hz) y
 
 /-- **Every orbit converges backward in time to a critical point.** -/
 theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
@@ -159,7 +161,7 @@ theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     (fun y ↦ fun s t hst ↦ by
       simp only [Flow.reverse_apply, Pi.neg_apply]
       exact neg_le_neg (hX.antitone_flow hdf y (neg_le_neg hst)))
-    hf.finite_setOf_mfderiv_eq_zero
+    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
     (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq (hdf z) fun t ↦ by
       have := hz (-t)
       simp only [Flow.reverse_apply, neg_neg, Pi.neg_apply] at this
@@ -227,6 +229,23 @@ theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) 
     rcases hcrit c hc with rfl | rfl
     · exact hpc
     · exact absurd (hb ▸ hpc) hpb
+
+/-- The flow of `-X` is the flow of `X` run backwards. -/
+theorem neg_flow (hf : IsMorse 𝓘(ℝ, E) f) :
+    (hX.neg hf).flow = hX.flow.reverse := by
+  ext t y
+  have hγ : IsMIntegralCurve ((fun s ↦ hX.flow s y) ∘ (· * (-1 : ℝ))) (-X) := by
+    have := (hX.isMIntegralCurve_flow y).comp_mul (-1)
+    rwa [neg_one_smul] at this
+  have h := globalFlow_eq_of_isMIntegralCurve ((hX.neg hf).contMDiff.of_le (by simp))
+    (hX.neg hf).isCompleteVectorField hγ t
+  simp only [comp_apply, mul_neg_one, neg_zero, Flow.map_zero_apply] at h
+  rw [Flow.reverse_apply, ← h, (hX.neg hf).flow_apply, globalFlow_apply]
+
+/-- The unstable set of a critical point is its stable set for the reversed pseudo-gradient. -/
+theorem unstableSet_eq_stableSet_neg (hf : IsMorse 𝓘(ℝ, E) f) (x : M) :
+    hX.flow.unstableSet x = (hX.neg hf).flow.stableSet x := by
+  rw [hX.neg_flow hf, Flow.stableSet_reverse]
 
 end IsAdaptedPseudoGradient
 

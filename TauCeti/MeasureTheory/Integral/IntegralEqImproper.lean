@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Derivatives of improper tail integrals
@@ -17,10 +19,13 @@ the whole ray, the derivative identity also gives a formula for every higher ite
 derivative. These results apply to Banach-space-valued integrands and support differential
 closure arguments for improper integrals.
 
+For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
+ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
+
 ## References
 
-* Mathlib's `intervalIntegral.integral_Ioi_sub_Ioi'` and
-  `intervalIntegral.integral_hasDerivAt_right`.
+* Mathlib's `intervalIntegral.integral_Ioi_sub_Ioi'`,
+  `intervalIntegral.integral_hasDerivAt_right` and `HasCompactSupport.integral_Ioi_deriv_eq`.
 -/
 
 public section
@@ -66,3 +71,28 @@ theorem iteratedDeriv_integral_Ioi (hint : IntegrableOn f (Ioi a))
   rw [iteratedDeriv_succ', heq.iteratedDeriv_eq n, iteratedDeriv_fun_neg]
 
 end MeasureTheory.IntegrableOn
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- Integrating the derivative of a compactly supported `C¹` map `u` along the ray from `w` in a
+nonzero direction `e` recovers `-u w`. This is `HasCompactSupport.integral_Ioi_deriv_eq` applied to
+the restriction `r ↦ u (w + r • e)` of `u` to the line through `w` in direction `e`. -/
+theorem _root_.HasCompactSupport.integral_Ioi_fderiv_apply_ray {u : E → F}
+    (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u) (w : E) {e : E} (he : e ≠ 0) :
+    ∫ r in Ioi (0 : ℝ), fderiv ℝ u (w + r • e) e = -u w := by
+  have hline : HasCompactSupport fun r : ℝ => u (w + r • e) :=
+    hc.comp_isClosedEmbedding
+      ((Homeomorph.addLeft w).isClosedEmbedding.comp (isClosedEmbedding_smul_left he))
+  have hderiv : ∀ r : ℝ, deriv (fun r : ℝ => u (w + r • e)) r = fderiv ℝ u (w + r • e) e :=
+    fun r => by
+      have h : HasDerivAt (fun r : ℝ => w + r • e) e r := by
+        simpa using ((hasDerivAt_id r).smul_const e).const_add w
+      exact (((hu.differentiable one_ne_zero) _).hasFDerivAt.comp_hasDerivAt r h).deriv
+  have h := hline.integral_Ioi_deriv_eq (f := fun r : ℝ => u (w + r • e))
+    (hu.comp (by fun_prop : ContDiff ℝ 1 fun r : ℝ => w + r • e)) 0
+  simpa only [hderiv, zero_smul, add_zero] using h
+
+end TauCeti

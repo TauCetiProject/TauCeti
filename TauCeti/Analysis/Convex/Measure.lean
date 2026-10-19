@@ -7,12 +7,16 @@ module
 
 public import Mathlib.Analysis.Convex.Measure
 
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+
 /-!
 # Measure of convex sets
 
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
-interior (`Convex.ae_mem_interior`).
+interior (`Convex.ae_mem_interior`). A convex set has positive Haar measure exactly when its
+interior is nonempty, equivalently when its affine span is the whole space
+(`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
 A convex set containing a ball of radius `r > 0` and a point at distance `L` from its centre has
 measure at least `2 ^ (-(n + 1)) * μ (ball 0 1) * L * r ^ (n - 1)`, which is the order of the
@@ -32,6 +36,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 point, since the frontier of the set is null for every additive Haar measure. -/
 theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s :=
   (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.le
+
+/-- A convex set in a finite-dimensional real normed space has zero additive Haar measure exactly
+when its interior is empty. -/
+theorem Convex.addHaar_eq_zero_iff_interior_eq_empty (hs : Convex ℝ s) :
+    μ s = 0 ↔ interior s = ∅ := by
+  rw [← measure_interior_of_null_frontier (hs.addHaar_frontier μ)]
+  exact isOpen_interior.measure_eq_zero_iff μ
+
+/-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
+exactly when its interior is nonempty. -/
+theorem Convex.addHaar_pos_iff_interior_nonempty (hs : Convex ℝ s) :
+    0 < μ s ↔ (interior s).Nonempty := by
+  simpa only [pos_iff_ne_zero, Set.nonempty_iff_ne_empty] using
+    not_congr hs.addHaar_eq_zero_iff_interior_eq_empty
+
+/-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
+exactly when its affine span is the whole space. -/
+theorem Convex.addHaar_pos_iff_affineSpan_eq_top (hs : Convex ℝ s) :
+    0 < μ s ↔ affineSpan ℝ s = ⊤ := by
+  rw [hs.addHaar_pos_iff_interior_nonempty, hs.interior_nonempty_iff_affineSpan_eq_top]
 
 /-- **A convex set containing a ball and a point is large.** In a finite-dimensional real normed
 space `E` of dimension `n`, if a convex set `s` contains the ball of radius `r > 0` about `x` and

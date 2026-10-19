@@ -94,7 +94,6 @@ theorem tendsto_hypergeometricMeasure_real_singleton (p : unitInterval) (K : ℕ
     have hnN : n ≤ N := le_trans (le_max_left n 1) hN
     have hNpos : 0 < N := lt_of_lt_of_le (by omega) hN
     rw [hypergeometricMeasure_real_singleton hKN hnN k, ite_eq_left hkn]
-    have hNne : (N : ℝ) ≠ 0 := by exact_mod_cast hNpos.ne'
     have hchooseN : (N.choose n : ℝ) ≠ 0 := by
       exact_mod_cast Nat.choose_ne_zero hnN
     simp only [Pi.div_apply, id_eq]

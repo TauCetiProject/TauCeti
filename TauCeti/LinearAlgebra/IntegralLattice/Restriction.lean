@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
+public import TauCeti.LinearAlgebra.IntegralLattice.Ideals
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -42,6 +43,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
   original carrier, retaining the original rational ambient space; it inherits nondegeneracy and,
   by `isEven_restrictFull`, evenness.
+* `TauCeti.IntegralLattice.inf`: the full restriction to the intersection of two carriers on the
+  same rational space, with the form of the first lattice.
 * `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
   when the embedded submodule is full.
 
@@ -108,6 +111,28 @@ theorem integralForm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule
 theorem integralNorm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule ℤ L) (s : S) :
     (L.restrict S).integralNorm (L.restrictCarrierEquiv S s) = L.integralNorm s := by
   rw [integralNorm_apply, integralForm_restrictCarrierEquiv, integralNorm_apply]
+
+/-- Restriction to any carrier submodule gives containment of scale ideals. -/
+theorem scaleIdeal_restrict_le (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).scaleIdeal ≤ L.scaleIdeal := by
+  apply (L.restrict S).scaleIdeal_le_of_integralForm_eq
+    (S.subtype.comp (L.restrictCarrierEquiv S).symm.toLinearMap)
+  intro x y
+  simpa only [LinearEquiv.apply_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Submodule.subtype_apply] using
+    L.integralForm_restrictCarrierEquiv S
+      ((L.restrictCarrierEquiv S).symm x) ((L.restrictCarrierEquiv S).symm y)
+
+/-- Restriction to any carrier submodule gives containment of norm ideals. -/
+theorem normIdeal_restrict_le (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).normIdeal ≤ L.normIdeal := by
+  apply (L.restrict S).normIdeal_le_of_integralForm_eq
+    (S.subtype.comp (L.restrictCarrierEquiv S).symm.toLinearMap)
+  intro x y
+  simpa only [LinearEquiv.apply_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Submodule.subtype_apply] using
+    L.integralForm_restrictCarrierEquiv S
+      ((L.restrictCarrierEquiv S).symm x) ((L.restrictCarrierEquiv S).symm y)
 
 /-- A restricted lattice is even exactly when the original integral norm is even on the
 submodule. In particular restriction preserves evenness. -/
@@ -201,6 +226,27 @@ theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodu
   rw [restrictFull_carrier] at hx
   obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hN hx⟩
   exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
+
+/-- The intersection of the carriers of two integral lattices on the same rational space is a
+full lattice. -/
+instance isLattice_carrier_inf (L M : IntegralLattice V) : (L.carrier ⊓ M.carrier).IsLattice ℚ :=
+  have := L.finiteDimensional
+  inferInstance
+
+/-- The integral lattice on the intersection of the carriers of `L` and `M`, with the form of
+`L`. -/
+noncomputable def inf (L M : IntegralLattice V) : IntegralLattice V :=
+  L.restrictFull (L.carrier ⊓ M.carrier) inf_le_left
+
+/-- The carrier of `L.inf M` is the intersection of the two carriers. -/
+@[simp]
+theorem inf_carrier (L M : IntegralLattice V) : (L.inf M).carrier = L.carrier ⊓ M.carrier :=
+  restrictFull_carrier ..
+
+/-- The lattice `L.inf M` carries the form of `L`. -/
+@[simp]
+theorem inf_form (L M : IntegralLattice V) : (L.inf M).form = L.form :=
+  restrictFull_form ..
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
 private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ L)

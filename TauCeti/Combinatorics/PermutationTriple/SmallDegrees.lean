@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.OfTriple
+public import TauCeti.Combinatorics.PermutationTriple.BranchPoints
 import Mathlib.GroupTheory.Perm.Cycle.Concrete
 -- Kernel reduction of the finite searches needs the unexposed cycle-data and cycle-factor bodies.
 import all TauCeti.Combinatorics.PermutationTriple.CycleData
@@ -29,10 +30,17 @@ triples up to relabeling, determines their Euler characteristics, genera, and ge
 counts the twenty-six isomorphism classes, and shows that every inhabited ordered passport through
 degree four contains a single class.
 
+Forgetting the branch-point ordering gives one, one, three, and eight orbits in degrees one
+through four. The unordered full cycle partitions classify these branch-point orbits, not
+ordered passports or Galois orbits. Their complete tables allow one-per-branch-point-orbit
+records to be compared with the ordered classification without conflating the two.
+
 ## References
 
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
   Mathematical Sciences 141, Springer 2004, §1.5.
+* M. Musty, S. Schiavone, J. Sijsling, J. Voight, *A database of Belyi maps*, Algorithm 2.3.1,
+  for tabulation up to branch-point permutation.
 -/
 
 open Equiv
@@ -190,6 +198,44 @@ theorem image_cycleData_three :
         ({3}, {3}, {3})} := by
   decide +kernel
 
+private theorem image_unorderedCycleData {n : ℕ} :
+    (Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.1.unorderedCycleData) =
+      ((Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.1.cycleData)).image
+        (fun d => ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ))) := by
+  simp only [Finset.image_image, Function.comp_def, ← unorderedCycleData_def]
+
+/-- The unique unordered cycle datum in degree one. -/
+theorem image_unorderedCycleData_one :
+    (Finset.univ : Finset (ConnectedTriple 1)).image (fun t => t.1.unorderedCycleData) =
+      {{({1} : Multiset ℕ), {1}, {1}}} := by
+  rw [image_unorderedCycleData, image_cycleData_one]
+  rfl
+
+/-- The three ordered degree-two classes form a single branch-point orbit. -/
+theorem image_unorderedCycleData_two :
+    (Finset.univ : Finset (ConnectedTriple 2)).image (fun t => t.1.unorderedCycleData) =
+      {{({1, 1} : Multiset ℕ), {2}, {2}}} := by
+  rw [image_unorderedCycleData, image_cycleData_two]
+  decide +kernel
+
+/-- The complete degree-three branch-point orbit table, expressed by unordered full cycle
+partitions. Repeated partitions remain repeated in each datum. -/
+theorem image_unorderedCycleData_three :
+    (Finset.univ : Finset (ConnectedTriple 3)).image (fun t => t.1.unorderedCycleData) =
+      {{({1, 1, 1} : Multiset ℕ), {3}, {3}}, {{2, 1}, {2, 1}, {3}}, {{3}, {3}, {3}}} := by
+  rw [image_unorderedCycleData, image_cycleData_three]
+  decide +kernel
+
+/-- The complete degree-four branch-point orbit table: eight unordered full cycle data
+arise from the twenty-six ordered classes. -/
+theorem image_unorderedCycleData_four :
+    (Finset.univ : Finset (ConnectedTriple 4)).image (fun t => t.1.unorderedCycleData) =
+      {{({1, 1, 1, 1} : Multiset ℕ), {4}, {4}}, {{2, 1, 1}, {2, 2}, {4}},
+        {{2, 1, 1}, {3, 1}, {4}}, {{2, 2}, {2, 2}, {2, 2}}, {{2, 2}, {3, 1}, {3, 1}},
+        {{2, 2}, {4}, {4}}, {{3, 1}, {3, 1}, {3, 1}}, {{3, 1}, {4}, {4}}} := by
+  rw [image_unorderedCycleData, image_cycleData_four]
+  decide +kernel
+
 /-- A connected degree-four triple has Euler characteristic zero precisely for the six cycle
 data obtained by placing two full four-cycles beside either two two-cycles or a three-cycle and
 a fixed point; all other degree-four classes have Euler characteristic two. -/
@@ -312,6 +358,29 @@ theorem geometryType_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
 end PermutationTriple
 
 namespace ConnectedIsoClass
+
+/-- Through degree four, unordered full cycle partitions classify branch-point orbits of
+connected isomorphism classes. This is coarser than the classification of ordered passports. -/
+theorem mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four {n : ℕ} (hn : n ≤ 4)
+    (t t' : ConnectedTriple n) :
+    mk t' ∈ MulAction.orbit (Perm (Fin 3))ᵐᵒᵖ (mk t) ↔
+      t.1.unorderedCycleData = t'.1.unorderedCycleData := by
+  rw [MulAction.mem_orbit_iff,
+    PermutationTriple.unorderedCycleData_eq_iff_exists_reindexBranchPoints]
+  constructor
+  · rintro ⟨ρ, hρ⟩
+    refine ⟨ρ.unop, ?_⟩
+    rw [← ConnectedTriple.coe_reindexBranchPoints]
+    apply (PermutationTriple.equivalent_iff_cycleData_eq_of_degree_le_four hn
+      (t.reindexBranchPoints ρ.unop) t').mp
+    apply mk_eq_mk_iff_equivalent.mp
+    rwa [← MulOpposite.op_unop ρ, op_smul_mk] at hρ
+  · rintro ⟨ρ, hρ⟩
+    refine ⟨MulOpposite.op ρ, ?_⟩
+    rw [op_smul_mk, mk_eq_mk_iff_equivalent]
+    exact (PermutationTriple.equivalent_iff_cycleData_eq_of_degree_le_four hn
+      (t.reindexBranchPoints ρ) t').mpr (by
+        simpa only [ConnectedTriple.coe_reindexBranchPoints] using hρ)
 
 /-- There are twenty-six isomorphism classes of connected permutation triples of degree four. -/
 theorem card_four : Fintype.card (ConnectedIsoClass 4) = 26 := by

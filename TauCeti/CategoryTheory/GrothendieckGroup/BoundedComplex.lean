@@ -8,14 +8,14 @@ module
 public import TauCeti.Algebra.Homology.Contractible
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
-public import Mathlib.Algebra.Ring.NegOnePow
 
 /-!
 # The Euler characteristic of a bounded complex in split `K₀`
 
-For a cochain complex `K` over an additive category `C` and a biproduct-additive invariant `v`,
-the alternating sum
+For a cochain complex `K` over a category `C` with zero morphisms and binary biproducts, and a
+biproduct-additive invariant `v`, the alternating sum
 
 ```text
 ∑ n ∈ s, (-1)ⁿ v(Kⁿ)
@@ -26,9 +26,10 @@ is the class map of split `K₀`, this is `TauCeti.SplitK0.eulerChar K s`. As in
 (`TauCeti.AbelianK0.eulerChar`), the summation range is data: no `finsum` is used, and what
 boundedness buys is that every range containing the support of `K` gives the same value.
 
-The main theorem is **homotopy invariance**: the Euler characteristic of a bounded complex depends
-only on its homotopy type. Its heart is the vanishing on contractible complexes, which is the
-statement that the even and the odd parts of a contractible bounded complex are isomorphic
+When `C` is additive, the main theorem is **homotopy invariance**: the Euler characteristic of a
+bounded complex depends only on its homotopy type. Its heart is the vanishing on contractible
+complexes, which is the statement that the even and the odd parts of a contractible bounded
+complex are isomorphic
 (`Homotopy.biproductEvenIsoBiproductOdd`). Homotopy invariance follows from it through the
 mapping cone: the cone of a homotopy equivalence is contractible, and its terms are the biproducts
 `Kⁿ⁺¹ ⊞ Lⁿ`, so its Euler characteristic is `χ(L) - χ(K)`.
@@ -38,7 +39,7 @@ and the triangulated `K₀` of its bounded homotopy category, which sends a boun
 alternating sum of the classes of its terms: homotopy invariance makes that assignment well
 defined on the objects of the homotopy category, and the mapping-cone formula makes it additive
 on distinguished triangles. The comparison itself is proved in
-`TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy`.
+`TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy.Basic`.
 
 ## Main definitions
 
@@ -54,7 +55,7 @@ on distinguished triangles. The comparison itself is proved in
   `TauCeti.SplitK0.eulerChar_eq_of_homotopyEquiv`: **homotopy invariance** of the Euler
   characteristic of bounded complexes.
 * `TauCeti.SplitK0.eulerChar_mappingCone` and `TauCeti.SplitK0.eulerChar_shift`: the Euler
-  characteristic of a mapping cone is `χ(L) - χ(K)`, and that of the shift `K⟦1⟧` is `-χ(K)`.
+  characteristic of a mapping cone is `χ(L) - χ(K)`, and shifting by `m` multiplies it by `(-1)ᵐ`.
 * `TauCeti.SplitK0.eulerChar_eq_eulerChar`: independence of the summation range for a bounded
   complex.
 
@@ -73,15 +74,16 @@ open CategoryTheory CategoryTheory.Limits ZeroObject HomologicalComplex
 
 universe w v u
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+variable {C : Type u} [Category.{v} C]
 
 namespace SplitK0.AdditiveInvariant
 
-variable {G : Type*} [AddCommGroup G] (v : SplitK0.AdditiveInvariant C G)
+variable {G : Type*} [AddCommGroup G]
 
 section Range
 
-variable (K : CochainComplex C ℤ)
+variable [HasZeroMorphisms C] [HasBinaryBiproducts C] (v : SplitK0.AdditiveInvariant C G)
+  (K : CochainComplex C ℤ)
 
 /-- Two finite sets of degrees both containing the support of a complex give the same alternating
 sum of the values of an additive invariant on its terms. -/
@@ -89,27 +91,30 @@ theorem sum_negOnePow_obj_X_eq_of_isZero {s t : Finset ℤ} (hs : ∀ n, n ∉ s
     (ht : ∀ n, n ∉ t → IsZero (K.X n)) :
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
       ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
-  have h₁ : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
-      ∑ n ∈ s ∪ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
-    Finset.sum_subset Finset.subset_union_left fun n _ hn => by
-      rw [v.obj_eq_zero_of_isZero (hs n hn), smul_zero]
-  have h₂ : ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
-      ∑ n ∈ s ∪ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
-    Finset.sum_subset Finset.subset_union_right fun n _ hn => by
-      rw [v.obj_eq_zero_of_isZero (ht n hn), smul_zero]
-  rw [h₁, h₂]
-
-/-- The Euler characteristic of the shift `K⟦1⟧` over `s` is minus the Euler characteristic of `K`
-over the translate `s + 1`. -/
-theorem sum_negOnePow_obj_X_shift (s : Finset ℤ) :
-    ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj ((K⟦(1 : ℤ)⟧).X n) =
-      -∑ n ∈ s.map (Equiv.addRight (1 : ℤ)).toEmbedding, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
-  rw [Finset.sum_map, ← Finset.sum_neg_distrib]
-  refine Finset.sum_congr rfl fun n _ => ?_
-  rw [v.map_iso (eqToIso (CochainComplex.shiftFunctor_obj_X' K 1 n))]
-  simp [Int.negOnePow_succ]
+  simpa only [TauCeti.finiteEulerSum_def] using
+    TauCeti.finiteEulerSum_eq_of_eq_zero (fun n ↦ v.obj (K.X n))
+      (fun n hn ↦ v.obj_eq_zero_of_isZero (hs n hn))
+      (fun n hn ↦ v.obj_eq_zero_of_isZero (ht n hn))
 
 end Range
+
+variable [Preadditive C] [HasBinaryBiproducts C] (v : SplitK0.AdditiveInvariant C G)
+
+/-- The Euler characteristic of the shift `K⟦m⟧` over `s` is `(-1)ᵐ` times the Euler
+characteristic of `K` over the translate `s + m`. -/
+theorem sum_negOnePow_obj_X_shift (K : CochainComplex C ℤ) (m : ℤ) (s : Finset ℤ) :
+    ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj ((K⟦m⟧).X n) =
+      (m.negOnePow : ℤ) •
+        ∑ n ∈ s.map (Equiv.addRight m).toEmbedding, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
+  calc
+    _ = TauCeti.finiteEulerSum (fun n ↦ v.obj (K.X (n + m))) s := by
+      rw [TauCeti.finiteEulerSum_def]
+      apply Finset.sum_congr rfl
+      intro n _
+      rw [v.map_iso (eqToIso (CochainComplex.shiftFunctor_obj_X' K m n))]
+    _ = _ := by
+      simpa only [TauCeti.finiteEulerSum_def] using
+        TauCeti.finiteEulerSum_reindex_add (fun n ↦ v.obj (K.X n)) m s
 
 section MappingCone
 
@@ -132,8 +137,6 @@ theorem sum_negOnePow_obj_X_mappingCone (f : K ⟶ L) (s : Finset ℤ) :
   rw [v.map_iso e, v.map_biprod]
   simp [Int.negOnePow_succ, smul_add, add_comm]
 
-variable [HasZeroObject C]
-
 /-- **A contractible complex has vanishing Euler characteristic.** If the identity of `K` is
 null-homotopic and the terms of `K` vanish outside the finite set `s` of degrees, then the
 alternating sum over `s` of the values of a biproduct-additive invariant on the terms of `K` is
@@ -141,6 +144,8 @@ zero. -/
 theorem sum_negOnePow_obj_X_eq_zero_of_homotopy_id_zero (h : Homotopy (𝟙 K) 0) {s : Finset ℤ}
     (hs : ∀ n, n ∉ s → IsZero (K.X n)) :
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) = 0 := by
+  obtain ⟨n, hn⟩ := s.exists_notMem
+  have := (hs n hn).hasZeroObject
   have := hasFiniteBiproducts_of_hasBinaryBiproducts (C := C)
   have key := v.map_iso (h.biproductEvenIsoBiproductOdd hs)
   rw [v.obj_biproduct, v.obj_biproduct, Finset.sum_coe_sort _ fun n => v.obj (K.X n),
@@ -165,6 +170,8 @@ theorem sum_negOnePow_obj_X_eq_of_homotopyEquiv (e : HomotopyEquiv K L) {s t : F
     (hs : ∀ n, n ∉ s → IsZero (K.X n)) (ht : ∀ n, n ∉ t → IsZero (L.X n)) :
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
       ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (L.X n) := by
+  obtain ⟨n, hn⟩ := s.exists_notMem
+  have := (hs n hn).hasZeroObject
   -- The cone of `e.hom` is supported on `u`, while `K` is supported on `u + 1`.
   set u : Finset ℤ := t ∪ s.map (Equiv.addRight (-1 : ℤ)).toEmbedding with hu
   have hK : ∀ n, n ∉ u.map (Equiv.addRight (1 : ℤ)).toEmbedding → IsZero (K.X n) := by
@@ -189,11 +196,12 @@ end SplitK0.AdditiveInvariant
 
 namespace SplitK0
 
-variable [EssentiallySmall.{w} C]
-
 section CochainComplex
 
-variable (K : CochainComplex C ℤ)
+section Range
+
+variable [HasZeroMorphisms C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
+  (K : CochainComplex C ℤ)
 
 /-- The alternating class `∑ n ∈ s, (-1)ⁿ [Kⁿ]` in split `K₀` of the terms of a cochain complex
 over a finite set `s` of degrees. The set of degrees is data: the value is the truncation of the
@@ -226,11 +234,17 @@ theorem eulerChar_eq_eulerChar (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
   eulerChar_eq_eulerChar_of_isZero K (fun _ hn => K.isZero_X_of_notMem_Icc a b fun h => hn (hs h))
     fun _ hn => K.isZero_X_of_notMem_Icc a b fun h => hn (ht h)
 
-/-- The Euler characteristic of the shift `K⟦1⟧` over `s` is minus the Euler characteristic of `K`
-over the translate `s + 1`. -/
-theorem eulerChar_shift (s : Finset ℤ) :
-    eulerChar (K⟦(1 : ℤ)⟧) s = -eulerChar K (s.map (Equiv.addRight (1 : ℤ)).toEmbedding) := by
-  simpa [eulerChar] using (ofInvariant C).sum_negOnePow_obj_X_shift K s
+end Range
+
+variable [Preadditive C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
+  (K : CochainComplex C ℤ)
+
+/-- The Euler characteristic of the shift `K⟦m⟧` over `s` is `(-1)ᵐ` times the Euler
+characteristic of `K` over the translate `s + m`. -/
+theorem eulerChar_shift (m : ℤ) (s : Finset ℤ) :
+    eulerChar (K⟦m⟧) s =
+      (m.negOnePow : ℤ) • eulerChar K (s.map (Equiv.addRight m).toEmbedding) := by
+  simpa [eulerChar] using (ofInvariant C).sum_negOnePow_obj_X_shift K m s
 
 variable {K} {L : CochainComplex C ℤ}
 
@@ -257,8 +271,6 @@ theorem eulerChar_mappingCone_of_isZero (f : K ⟶ L) {s t u : Finset ℤ}
     hu n fun h ↦ hn (by simp [hv, h])
   rw [eulerChar_eq_eulerChar_of_isZero _ hu hcone, eulerChar_mappingCone,
     eulerChar_eq_eulerChar_of_isZero _ hL ht, eulerChar_eq_eulerChar_of_isZero _ hK hs]
-
-variable [HasZeroObject C]
 
 /-- **A contractible complex has vanishing Euler characteristic**, over any finite set of degrees
 containing its support. -/

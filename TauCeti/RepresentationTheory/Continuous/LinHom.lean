@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Character
+import TauCeti.RepresentationTheory.LinHom.Irreducible
 
 /-!
 # The Hom representation of two continuous representations
@@ -59,6 +60,7 @@ this one along `LinearMap.toContinuousLinearMap`.
   `ContRepresentation.mem_linHom_invariants_iff_isIntertwining`: the same read on the invariant
   subspace.
 * `ContRepresentation.character_linHom`: its character is `χ_π(g⁻¹) · χ_ρ(g)`.
+* `ContRepresentation.isIrreducible_biLinHom`: irreducibility of the two-sided Hom action.
 
 ## References
 
@@ -280,5 +282,31 @@ theorem character_linHom (hπ : Continuous π) (hρ : Continuous ρ) (g : G) :
   rw [h, Representation.char_linHom, coe_character, coe_character]
 
 end Character
+
+section Irreducible
+
+variable {𝕜 G H V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [IsAlgClosed 𝕜]
+  [Group G] [Group H] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [FiniteDimensional 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [FiniteDimensional 𝕜 W]
+
+/-- The two-sided action on continuous linear maps is irreducible for finite-dimensional
+irreducible source and target representations over an algebraically closed field. Neither
+unitarity nor compactness of the groups is needed. -/
+theorem isIrreducible_biLinHom (π : ContRepresentation 𝕜 H V)
+    (ρ : ContRepresentation 𝕜 G W) (hπ : π.toRepresentation.IsIrreducible)
+    (hρ : ρ.toRepresentation.IsIrreducible) :
+    (biLinHom π ρ).toRepresentation.IsIrreducible := by
+  apply Representation.isIrreducible_of_linearEquiv
+    (LinearMap.toContinuousLinearMap : (V →ₗ[𝕜] W) ≃ₗ[𝕜] V →L[𝕜] W)
+    (ρ := Representation.linHom
+      (π.toRepresentation.comp (MonoidHom.snd G H))
+      (ρ.toRepresentation.comp (MonoidHom.fst G H)))
+  · intro p T
+    ext v
+    simp [Representation.linHom_apply, ContRepresentation.toMonoidHom_apply]
+  · exact Representation.isIrreducible_linHom_comp_snd_comp_fst _ _ hπ hρ
+
+end Irreducible
 
 end ContRepresentation

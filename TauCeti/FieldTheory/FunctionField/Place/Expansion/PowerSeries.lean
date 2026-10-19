@@ -14,7 +14,11 @@ public import Mathlib.RingTheory.PowerSeries.Order
 At a rational place with chosen uniformizer `t`, the compatible finite expansions define a
 `k`-algebra embedding of the valuation ring into `k[[T]]`. Its coefficients characterize
 congruence modulo every order-filtration step, so the embedding preserves orders and sends
-`t` to `T`. These statements do not require completeness.
+`t` to `T`. These statements do not require completeness. When the field is complete for the
+order filtration, every power series is an expansion
+(`TauCeti.Place.powerSeriesExpansion_surjective`); this applies to the completion at a rational
+place, and to the completion at any place with separable residue field viewed as a rational place
+over its coefficient field.
 
 ## References
 
@@ -126,6 +130,40 @@ theorem powerSeriesExpansion_uniformizer :
   rw [P.coeff_powerSeriesExpansion hP ht (n + 1) _ ⟨n, by omega⟩,
     P.truncatedExpansion_uniformizer hP ht]
   simp [PowerSeries.coeff_X]
+
+/-- **Every power series is an expansion** when the field is complete for the order filtration of
+the rational place: if every sequence whose terms agree to increasing order, `g n ≡ g m` to order
+`m` whenever `m ≤ n`, is approximated to order `n` by a single function, then every power series
+is the uniformizer expansion of an integral function. -/
+theorem powerSeriesExpansion_surjective
+    (hcomplete : ∀ g : ℕ → F, (∀ ⦃m n : ℕ⦄, m ≤ n → g n - g m ∈ P.filtration m) →
+      ∃ x : F, ∀ n : ℕ, x - g n ∈ P.filtration n) :
+    Function.Surjective (P.powerSeriesExpansion hP ht) := by
+  intro f
+  -- The partial sums of `∑ cᵢ tⁱ` agree to increasing order, as `tⁱ` has order `i`.
+  let g : ℕ → F := fun n ↦
+    ∑ i ∈ Finset.range n, algebraMap k F (PowerSeries.coeff i f) * t ^ i
+  have hg : ∀ ⦃m n : ℕ⦄, m ≤ n → g n - g m ∈ P.filtration m := by
+    intro m n hmn
+    rw [← Finset.sum_Ico_eq_sub _ hmn]
+    refine Submodule.sum_mem _ fun i hi ↦ ?_
+    have hmi : (m : ℤ) ≤ i := by exact_mod_cast (Finset.mem_Ico.mp hi).1
+    refine P.filtration_antitone hmi ?_
+    have hpow := P.mem_filtration_ord (t ^ i)
+    rw [ord_pow, ht, mul_one] at hpow
+    simpa only [zero_add] using P.mul_mem_filtration
+      (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers _)) hpow
+  obtain ⟨x, hx⟩ := hcomplete g hg
+  have hxint : x ∈ P.integers := by
+    simpa [g, mem_filtration_zero_iff] using hx 0
+  refine ⟨⟨x, hxint⟩, ?_⟩
+  ext n
+  have heq := (P.truncatedExpansion_eq_iff hP ht (n + 1) ⟨x, hxint⟩
+    (fun i ↦ PowerSeries.coeff i f)).mpr (by
+      rw [Fin.sum_univ_eq_sum_range
+        (fun i : ℕ ↦ algebraMap k F (PowerSeries.coeff i f) * t ^ i)]
+      exact hx (n + 1))
+  rw [P.coeff_powerSeriesExpansion hP ht (n + 1) _ ⟨n, by omega⟩, heq]
 
 /-- The order of a nonzero integral function is the first nonzero degree of its
 power-series expansion. -/

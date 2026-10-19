@@ -13,7 +13,8 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 A field isomorphism transports finite and infinite adeles by restriction of places and the
 induced maps of completions. The resulting ring equivalences are continuous in both directions
 and commute with the diagonal embeddings. Their composition laws give the Galois action on the
-full adele ring, with the discrete topology on the finite automorphism group.
+finite adele ring and on the full adele ring, with the discrete topology on the finite automorphism
+group; the former is the finite component of the latter.
 
 The construction uses `finiteAdeleExtension` and `infiniteAdeleExtension` with the algebra
 structure induced by the field isomorphism. In particular, it preserves the restricted-product
@@ -110,6 +111,36 @@ theorem infiniteAdeleEquiv_trans (M : Type*) [Field M]
       infiniteAdeleEquiv K M (e.trans f) := by
   ext a : 1
   exact RingHom.congr_fun (infiniteMap_comp K L M e f) a
+
+section InfiniteGalois
+
+variable [Algebra K L]
+
+/-- The action of the field automorphism group on infinite adeles, by ring automorphisms. It is
+the infinite component of `adeleGaloisAction` (`adeleGaloisAction_fst`). -/
+noncomputable def infiniteAdeleGaloisAction :
+    (L ≃ₐ[K] L) →* (InfiniteAdeleRing L ≃+* InfiniteAdeleRing L) where
+  toFun σ := infiniteAdeleEquiv L L σ.toRingEquiv
+  map_one' := infiniteAdeleEquiv_refl L
+  map_mul' σ τ := by
+    ext a : 1
+    exact (RingEquiv.congr_fun
+      (infiniteAdeleEquiv_trans L L L τ.toRingEquiv σ.toRingEquiv) a).symm
+
+/-- Evaluation of the Galois action on infinite adeles uses transport along the underlying field
+automorphism. -/
+theorem infiniteAdeleGaloisAction_apply (σ : L ≃ₐ[K] L) (a : InfiniteAdeleRing L) :
+    infiniteAdeleGaloisAction K L σ a = infiniteAdeleEquiv L L σ.toRingEquiv a :=
+  (rfl)
+
+/-- The Galois action on infinite adeles extends the action on the diagonally embedded number
+field. -/
+@[simp]
+theorem infiniteAdeleGaloisAction_algebraMap (σ : L ≃ₐ[K] L) (x : L) :
+    infiniteAdeleGaloisAction K L σ (algebraMap L _ x) = algebraMap L _ (σ x) :=
+  infiniteAdeleEquiv_algebraMap L L σ.toRingEquiv x
+
+end InfiniteGalois
 
 variable [NumberField K] [NumberField L]
 
@@ -243,10 +274,36 @@ theorem adeleEquiv_trans (M : Type*) [Field M] [NumberField M]
 
 section Galois
 
-omit [NumberField K]
-
 variable [Algebra K L]
 
+omit [NumberField K] in
+/-- The action of the field automorphism group on finite adeles, by ring automorphisms. It is
+the finite component of `adeleGaloisAction` (`adeleGaloisAction_snd`). -/
+noncomputable def finiteAdeleGaloisAction :
+    (L ≃ₐ[K] L) →* (FiniteAdeleRing (𝓞 L) L ≃+* FiniteAdeleRing (𝓞 L) L) where
+  toFun σ := finiteAdeleEquiv L L σ.toRingEquiv
+  map_one' := finiteAdeleEquiv_refl L
+  map_mul' σ τ := by
+    ext a : 1
+    exact (RingEquiv.congr_fun
+      (finiteAdeleEquiv_trans L L L τ.toRingEquiv σ.toRingEquiv) a).symm
+
+omit [NumberField K] in
+/-- Evaluation of the Galois action on finite adeles uses transport along the underlying field
+automorphism. -/
+theorem finiteAdeleGaloisAction_apply (σ : L ≃ₐ[K] L) (a : FiniteAdeleRing (𝓞 L) L) :
+    finiteAdeleGaloisAction K L σ a = finiteAdeleEquiv L L σ.toRingEquiv a :=
+  (rfl)
+
+omit [NumberField K] in
+/-- The Galois action on finite adeles extends the action on the diagonally embedded number
+field. -/
+@[simp]
+theorem finiteAdeleGaloisAction_algebraMap (σ : L ≃ₐ[K] L) (x : L) :
+    finiteAdeleGaloisAction K L σ (algebraMap L _ x) = algebraMap L _ (σ x) :=
+  finiteAdeleEquiv_algebraMap L L σ.toRingEquiv x
+
+omit [NumberField K] in
 /-- The action of the field automorphism group on full adeles, by continuous ring automorphisms.
 No normality hypothesis is needed to act; for a Galois extension this is the Galois action. -/
 noncomputable def adeleGaloisAction :
@@ -258,17 +315,36 @@ noncomputable def adeleGaloisAction :
     exact (RingEquiv.congr_fun
       (adeleEquiv_trans L L L τ.toRingEquiv σ.toRingEquiv) a).symm
 
+omit [NumberField K] in
 /-- Evaluation of the Galois action uses transport along the underlying field automorphism. -/
 theorem adeleGaloisAction_apply (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
     adeleGaloisAction K L σ a = adeleEquiv L L σ.toRingEquiv a :=
   (rfl)
 
+omit [NumberField K] in
+/-- The finite component of the Galois action on full adeles is the Galois action on finite
+adeles. -/
+@[simp]
+theorem adeleGaloisAction_snd (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
+    (adeleGaloisAction K L σ a).2 = finiteAdeleGaloisAction K L σ a.2 :=
+  (rfl)
+
+omit [NumberField K] in
 /-- The Galois action extends the action on the diagonally embedded number field. -/
 @[simp]
 theorem adeleGaloisAction_algebraMap (σ : L ≃ₐ[K] L) (x : L) :
     adeleGaloisAction K L σ (algebraMap L _ x) = algebraMap L _ (σ x) :=
   adeleEquiv_algebraMap L L σ.toRingEquiv x
 
+omit [NumberField K] in
+/-- The infinite component of the Galois action on full adeles is the Galois action on infinite
+adeles. -/
+@[simp]
+theorem adeleGaloisAction_fst (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
+    (adeleGaloisAction K L σ a).1 = infiniteAdeleGaloisAction K L σ a.1 :=
+  (rfl)
+
+omit [NumberField K] in
 /-- The Galois action fixes every adele extended from the base field, not only principal adeles. -/
 @[simp]
 theorem adeleGaloisAction_adeleExtension [NumberField K] (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 K) K) :
@@ -291,12 +367,14 @@ theorem adeleGaloisAction_adeleExtension [NumberField K] (σ : L ≃ₐ[K] L) (a
   · simp only [adeleGaloisAction_apply, adeleEquiv_snd, adeleExtension_snd]
     exact RingHom.congr_fun hf a.2
 
+omit [NumberField K] in
 /-- Every automorphism acts continuously on full adeles. -/
 @[continuity, fun_prop]
 theorem continuous_adeleGaloisAction (σ : L ≃ₐ[K] L) :
     Continuous (adeleGaloisAction K L σ) :=
   continuous_adeleEquiv L L σ.toRingEquiv
 
+omit [NumberField K] in
 /-- The action is jointly continuous when the automorphism group has its discrete topology,
 as is appropriate for a finite extension. -/
 theorem continuous_adeleGaloisAction_uncurry [TopologicalSpace (L ≃ₐ[K] L)]
@@ -304,23 +382,27 @@ theorem continuous_adeleGaloisAction_uncurry [TopologicalSpace (L ≃ₐ[K] L)]
     Continuous (fun p : (L ≃ₐ[K] L) × AdeleRing (𝓞 L) L ↦ adeleGaloisAction K L p.1 p.2) :=
   continuous_prod_of_discrete_left.mpr (continuous_adeleGaloisAction K L)
 
+omit [NumberField K] in
 /-- The Galois action as a semiring action, available in the `AdeleGaloisAction` scope.
 It is not a global instance, so competing actions on an adele ring remain available. -/
 @[reducible]
 noncomputable def adeleMulSemiringAction : MulSemiringAction (L ≃ₐ[K] L) (AdeleRing (𝓞 L) L) :=
   MulSemiringAction.compHom _ (adeleGaloisAction K L)
 
+omit [NumberField K] in
 scoped[AdeleGaloisAction] attribute [instance]
   TauCeti.GlobalNumberFields.adeleMulSemiringAction
 
 open scoped AdeleGaloisAction
 
+omit [NumberField K] in
 /-- The scoped Galois action is evaluation of `adeleGaloisAction`. -/
 @[simp]
 theorem adele_smul_def (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
     σ • a = adeleGaloisAction K L σ a :=
   (rfl)
 
+omit [NumberField K] in
 /-- With the discrete topology on field automorphisms, the scoped Galois action is continuous. -/
 instance [TopologicalSpace (L ≃ₐ[K] L)] [DiscreteTopology (L ≃ₐ[K] L)] :
     ContinuousSMul (L ≃ₐ[K] L) (AdeleRing (𝓞 L) L) :=

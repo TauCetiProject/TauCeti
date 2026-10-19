@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -183,6 +184,22 @@ theorem eq_curvatureTensor_iff (x : M)
     rw [curvatureTensor_apply cov x hX hY hσ]
     exact h X Y σ hX hY hσ
 
+/-- Two smooth connections which agree on every smooth section have the same curvature tensor.
+A connection is unconstrained on sections which are not differentiable, so this is the form in
+which two connections determined by the same data, such as two Levi-Civita connections of one
+metric, are compared. -/
+theorem curvatureTensor_congr {cov' : CovariantDerivative I F V}
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ σ : Π y : M, V y, CMDiff ∞ (T% σ) → ∀ y, cov σ y = cov' σ y) (x : M) :
+    cov.curvatureTensor x = cov'.curvatureTensor x := by
+  refine (eq_curvatureTensor_iff cov' x _).2 fun X Y σ hX hY hσ ↦ ?_
+  have hinner (Z : Π y : M, TangentSpace I y) :
+      (fun y ↦ cov σ y (Z y)) = fun y ↦ cov' σ y (Z y) :=
+    funext fun y ↦ by rw [h σ hσ y]
+  rw [curvatureTensor_apply cov x hX hY hσ, curvatureOperator_apply, curvatureOperator_apply,
+    hinner Y, hinner X, h σ hσ x, h _ (cov'.contMDiff_apply hY hσ) x,
+    h _ (cov'.contMDiff_apply hX hσ) x]
+
 /-- Swapping the two tangent-vector arguments negates the curvature endomorphism. -/
 theorem curvatureTensor_antisymm (x : M) (u v : TangentSpace I x) :
     cov.curvatureTensor x u v = -cov.curvatureTensor x v u := by
@@ -202,5 +219,15 @@ theorem curvatureTensor_self (x : M) (u : TangentSpace I x) :
   obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
   obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
   simp [curvatureTensor_apply cov x hX hX hσ]
+
+/-- On a base of tangent dimension at most one, every smooth connection has zero
+curvature: the alternating pair of tangent arguments is necessarily dependent. -/
+theorem curvatureTensor_eq_zero_of_finrank_le_one (x : M)
+    (hdim : Module.finrank ℝ (TangentSpace I x) ≤ 1) : cov.curvatureTensor x = 0 := by
+  obtain ⟨z, hz⟩ := finrank_le_one_iff.mp hdim
+  ext u v w
+  obtain ⟨a, rfl⟩ := hz u
+  obtain ⟨b, rfl⟩ := hz v
+  simp
 
 end CovariantDerivative

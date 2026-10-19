@@ -33,6 +33,8 @@ The Selmer group of the fraction field of `B` relative to these primes is
 
 * `IsDedekindDomain.HeightOneSpectrum.liesOver_under`: the `LiesOver` instance relating a prime
   to its contraction, which the `under`-indexed results downstream need.
+* `IsDedekindDomain.HeightOneSpectrum.under_eq_of_liesOver`: a prime lying over `v` contracts
+  to `v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_surjective`: every height one prime of `R` lies
   under one of `B`.
 * `IsDedekindDomain.HeightOneSpectrum.under_under`: contraction through a tower agrees with
@@ -83,6 +85,12 @@ instance liesOver_under (w : HeightOneSpectrum B) :
     w.asIdeal.LiesOver (under R w).asIdeal :=
   ⟨rfl⟩
 
+variable {R B} in
+/-- A height one prime of `B` lying over the height one prime `v` of `R` contracts to `v`. -/
+theorem under_eq_of_liesOver {v : HeightOneSpectrum R} {w : HeightOneSpectrum B}
+    (hw : w.asIdeal.LiesOver v.asIdeal) : under R w = v :=
+  asIdeal_injective hw.over.symm
+
 /-- **Every height one prime of `R` lies under one of `B`**, for an integral extension of domains
 with injective algebra map: contraction `HeightOneSpectrum B → HeightOneSpectrum R` is
 surjective. -/
@@ -95,14 +103,14 @@ theorem under_surjective [FaithfulSMul R B] :
 
 section UnderTower
 
-variable {A C : Type*} [CommRing A] [IsDomain A] [CommRing C] [IsDomain C]
+variable {A C : Type*} [CommRing A] [CommRing C] [IsDomain C]
   [Algebra A R] [Algebra R C] [Algebra A C] [IsScalarTower A R C]
-  [Algebra.IsIntegral A R] [Algebra.IsIntegral R C]
+  [Algebra.IsIntegral R C]
 
 /-- Contracting a height-one prime through an intermediate integral domain agrees with direct
 contraction. -/
 @[simp]
-theorem under_under (w : HeightOneSpectrum C) :
+theorem under_under [IsDomain A] [Algebra.IsIntegral A R] (w : HeightOneSpectrum C) :
     letI : Algebra.IsIntegral A C := Algebra.IsIntegral.trans R
     (w.under R).under A = w.under A := by
   apply asIdeal_injective
@@ -133,7 +141,6 @@ def liesOverTowerEquiv (v : HeightOneSpectrum A) :
     rfl
   right_inv u := Subtype.ext (by rfl)
 
-omit [IsDomain A] [Algebra.IsIntegral A R] in
 @[simp]
 theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
     (p : Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
@@ -141,7 +148,6 @@ theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
     (liesOverTowerEquiv (R := R) (C := C) v p).1 = p.2.1 :=
   by simp [liesOverTowerEquiv]
 
-omit [IsDomain A] [Algebra.IsIntegral A R] in
 /-- The inverse of `liesOverTowerEquiv` passes through the contraction of `u` to `R`. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_fst (v : HeightOneSpectrum A)
@@ -149,7 +155,6 @@ theorem liesOverTowerEquiv_symm_apply_fst (v : HeightOneSpectrum A)
     ((liesOverTowerEquiv (R := R) v).symm u).1.1 = u.1.under R :=
   by simp [liesOverTowerEquiv]
 
-omit [IsDomain A] [Algebra.IsIntegral A R] in
 /-- The inverse of `liesOverTowerEquiv` keeps `u` as the top prime. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_snd (v : HeightOneSpectrum A)
@@ -190,8 +195,8 @@ prime of `R`. The extension need not be integral, and `R` need not be Dedekind. 
 instance finite_liesOver [IsDedekindDomain B] (v : HeightOneSpectrum R) :
     Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} := by
   have h := Ideal.finite_factors (Ideal.map_ne_bot_of_ne_bot (S := B) v.ne_bot)
-  exact (h.subset fun w hw ↦ Ideal.dvd_iff_le.mpr
-    (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
+  exact (h.subset (t := {w : HeightOneSpectrum B | w.asIdeal.LiesOver v.asIdeal}) fun w hw ↦
+    Ideal.dvd_iff_le.mpr (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
 
 end
 

@@ -19,7 +19,7 @@ import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 -- Non-public: the `q`-power map fixes the units coming from `F`.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: lifting a unit of `E` lying in `F` to a unit of `F`.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 -- Non-public: a nontrivial additive character of a finite field sums to zero.
 import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: a nontrivial character of a finite group into a domain sums to zero.
@@ -119,7 +119,6 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep
           (GL2ScalarUnipotent.mulEquiv F (a, Multiplicative.ofAdd y))⁻¹ =
       (if y = 0 then (Fintype.card F : ℂ) else 0) - ψ (-y) := by
     intro a y
-    have hμa : (μ a : ℂ) ≠ 0 := Units.ne_zero _
     have hψy : ψ y ≠ 0 := (ψ.val_isUnit y).ne_zero
     rw [character_GL2ScalarUnipotentRep, map_inv, GL2ScalarUnipotent.linearChar_mulEquiv,
       GL2ScalarUnipotent.coe_mulEquiv_apply_eq_jordanGL]

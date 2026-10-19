@@ -21,7 +21,8 @@ Chevalley's theorem to projective orbit morphisms.
 The convention is that `M` consists of homogeneous linear coordinates. For the space of
 lines in a finite locally free representation `V`, use `M = V∨`.
 
-`SymmetricAlgebra.projToSpec` is the structural morphism over `R`. Its properness and
+`SymmetricAlgebra.projToSpec` is the structural morphism over `R`, which makes
+`Proj(Sym M)` a scheme over `Spec R`. Its properness and
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
 standard affine charts. Its source is Jacobson whenever `Spec R` is Jacobson.
@@ -88,6 +89,21 @@ instance instIsProperProjToSpec [Module.Finite R M] : IsProper (projToSpec R M) 
   have := isIso_scalarSpecMap R M
   rw [projToSpec_def]
   infer_instance
+
+/-- The projective spectrum of a symmetric algebra is a scheme over its coefficient ring, through
+the coefficient morphism `projToSpec`. -/
+noncomputable instance instOverProj : (Proj (homogeneousSubmodule R M)).Over (Spec (.of R)) :=
+  ⟨projToSpec R M⟩
+
+/-- The structure morphism of the projective spectrum of a symmetric algebra is `projToSpec`. -/
+theorem over_eq_projToSpec : Proj (homogeneousSubmodule R M) ↘ Spec (.of R) = projToSpec R M :=
+  (rfl)
+
+/-- The projective spectrum of a finite module is proper over the coefficient ring, as a scheme
+over it. -/
+instance instIsProperOver [Module.Finite R M] :
+    IsProper (Proj (homogeneousSubmodule R M) ↘ Spec (.of R)) :=
+  instIsProperProjToSpec R M
 
 /-- The projective spectrum of a finite module is quasi-compact, over any coefficient ring. -/
 instance instCompactSpaceProj [Module.Finite R M] :

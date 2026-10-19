@@ -14,7 +14,7 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
 
 The standard upper-triangular group is the dynamic parabolic for the injective weights
 `i ↦ n - 1 - i`. Its weight-unipotent subgroup consists exactly of upper-unitriangular
-matrices. Specializing the injective-weight calculation therefore identifies this subgroup with
+matrices. Specializing the weight-parabolic calculation therefore identifies this subgroup with
 the unipotent radical of the upper-triangular affine group.
 
 ## Main declaration
@@ -45,7 +45,7 @@ noncomputable section
 
 /-- The relative weight-unipotent ideal cuts out exactly the existing upper-unitriangular
 matrix group, compatibly with the upper-triangular inclusion into `GL_n`. -/
-@[simp]
+@[simp↓ high]
 theorem mem_upperUnitriangularPointsSubgroup_iff
     (R : Type u) [CommRing R] (n : ℕ) {A : Type v} [CommRing A] [Algebra R A]
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n)
@@ -99,7 +99,7 @@ theorem unipotentRadicalDefiningIdeal_finiteTypeCoordinateHopfAlgebra
     FiniteTypeCommHopfAlgCat.comapOfSurjective_unipotentRadicalDefiningIdeal e
   have hWeight :=
     unipotentRadicalDefiningIdeal_weightParabolicFiniteTypeCoordinateHopfAlgebra
-      k (weights n) (weights_injective n)
+      k (weights n)
   ext x
   rw [HopfIdeal.mem_comapOfSurjective, ← hRadical, HopfIdeal.mem_comapOfSurjective]
   have hx := congrArg (fun I ↦ x ∈ I) hWeight

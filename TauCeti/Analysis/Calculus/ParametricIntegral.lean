@@ -34,6 +34,12 @@ derivatives of `F` in `x` (`TauCeti.hasFDerivAt_integral_smul_of_contDiffOn`).  
 not be continuous; this is the regularity of kernel integrals such as the Poisson integral of
 integrable boundary data on a sphere.
 
+The parameter may also range over a convex set `s` with unique derivatives that need not be open:
+if `F` is `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, the integral is `C^n` on `s`
+(`Convex.contDiffOn_integral_smul_of_contDiffOn`), with derivative within `s` the integral of the
+partial derivatives within `s` (`Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn`). This
+is the regularity of the Poincaré homotopy operator on a closed half-ball.
+
 ## References
 
 * [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
@@ -62,8 +68,6 @@ theorem hasFDerivAt_integral_Icc_of_contDiff
   let h' : E → ℝ → E →L[ℝ] F := fun x t ↦
     (fderiv ℝ h.uncurry (x, t)).comp (ContinuousLinearMap.inl ℝ E ℝ)
   have hh' : Continuous h'.uncurry := by
-    have hd : Continuous (fderiv ℝ h.uncurry) :=
-      (hh.fderiv_right (m := 0) (by norm_num)).continuous
     fun_prop
   obtain ⟨C, hC⟩ := (isCompact_Icc : IsCompact (Set.Icc (0 : ℝ) 1)).exists_eventually_norm_le
     (F := h'.uncurry) (x₀ := x₀) isOpen_univ (fun _ _ ↦ hh'.continuousAt)
@@ -108,8 +112,6 @@ private theorem contDiff_integral_Icc_of_contDiff_nat
       let h' : V → ℝ → V →L[ℝ] W := fun x t ↦
         (fderiv ℝ h.uncurry (x, t)).comp (ContinuousLinearMap.inl ℝ V ℝ)
       have hh' : ContDiff ℝ n h'.uncurry := by
-        have hd : ContDiff ℝ n (fderiv ℝ h.uncurry) :=
-          hh.fderiv_right (m := n) (by norm_num)
         fun_prop
       have hsmooth : ContDiff ℝ ((n : ℕ∞ω) + 1)
           (fun x ↦ ∫ t in Set.Icc (0 : ℝ) 1, h x t) := by
@@ -151,7 +153,7 @@ theorem hasDerivAt_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
     IntervalIntegrable (fun t ↦ fderiv ℝ G (x₀, t) (1, 0)) volume a b ∧
       HasDerivAt (fun x ↦ ∫ t in a..b, G (x, t))
         (∫ t in a..b, fderiv ℝ G (x₀, t) (1, 0)) x₀ := by
-  obtain ⟨u, v, huo, hvo, hu, hv, huv⟩ :=
+  obtain ⟨u, v, huo, _, hu, hv, huv⟩ :=
     generalized_tube_lemma isCompact_singleton isCompact_uIcc hU hsub
   have hx₀u : x₀ ∈ u := hu (Set.mem_singleton x₀)
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (huo.mem_nhds hx₀u)
@@ -319,6 +321,147 @@ theorem contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup 
     fun y ↦ (map_smul _ _ _).symm
   simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
     ContinuousLinearEquiv.apply_symm_apply]
+
+/-! ### Parameters in a convex set
+
+The parameter `x` now ranges over a convex set `s`, which need not be open, and the integrand is
+only assumed to be `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives. Derivatives are taken
+within `s`. This is the setting of a closed half-ball, the image of a boundary chart. -/
+
+section Convex
+
+variable {s : Set E}
+
+/-- **Differentiation under the integral sign within a convex set.** If `F` is `C¹` on a set
+`W ⊆ E × P` with unique derivatives, `s` is convex, and `s × ι(α) ⊆ W`, then integrating
+`F (x, ι y)` against an integrable weight `g` is differentiable within `s` at every point `x₀` of
+`s` at which `s` has unique derivatives, with derivative the integral of the partial derivatives
+of `F` in `x` within `s`. -/
+theorem _root_.Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {F : E × P → G} (hg : Integrable g μ)
+    (hι : Continuous ι) (hs : Convex ℝ s) (hW : UniqueDiffOn ℝ W) (hF : ContDiffOn ℝ 1 F W)
+    (hsW : ∀ x ∈ s, ∀ y, (x, ι y) ∈ W) {x₀ : E} (hx₀ : x₀ ∈ s)
+    (hsu : UniqueDiffWithinAt ℝ s x₀) :
+    HasFDerivWithinAt (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ)
+      (∫ y, g y • fderivWithin ℝ (fun x ↦ F (x, ι y)) s x₀ ∂μ) s x₀ := by
+  -- the partial derivative in `x`, continuous on `W`
+  set D : E × P → E →L[ℝ] G := fun p ↦ (fderivWithin ℝ F W p).comp (.inl ℝ E P)
+  have hD : ContinuousOn D W :=
+    (ContinuousLinearMap.precomp G (.inl ℝ E P)).continuous.comp_continuousOn
+      (hF.continuousOn_fderivWithin hW le_rfl)
+  have hderiv (x : E) (hx : x ∈ s) (y : α) :
+      HasFDerivWithinAt (fun x ↦ F (x, ι y)) (D (x, ι y)) s x :=
+    (hF.differentiableOn one_ne_zero _ (hsW x hx y)).hasFDerivWithinAt.comp x
+      (hasFDerivAt_prodMk_left x (ι y)).hasFDerivWithinAt fun x' hx' ↦ hsW x' hx' y
+  -- the partial derivative is uniformly close to its value at `x₀` for `x` near `x₀` in `s`
+  have hunif (ε : ℝ) (hε : 0 < ε) :
+      ∃ v ∈ 𝓝[s] x₀, ∀ x ∈ v, ∀ y ∈ univ, dist (D (x, ι y)) (D (x₀, ι y)) < ε :=
+    isCompact_univ.mem_uniformity_of_prod (f := fun x y ↦ D (x, ι y))
+      (hD.comp (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn
+        fun p hp ↦ hsW _ hp.1 _) hx₀ (Metric.dist_mem_uniformity hε)
+  rw [show (∫ y, g y • fderivWithin ℝ (fun x ↦ F (x, ι y)) s x₀ ∂μ) = ∫ y, g y • D (x₀, ι y) ∂μ
+    from integral_congr_ae (ae_of_all _ fun y ↦ by
+      dsimp only
+      rw [(hderiv x₀ hx₀ y).fderivWithin hsu]),
+    hasFDerivWithinAt_iff_isLittleO, Asymptotics.isLittleO_iff]
+  intro c hc
+  set ε := c / ((∫ y, ‖g y‖ ∂μ) + 1)
+  have hgn : 0 ≤ ∫ y, ‖g y‖ ∂μ := integral_nonneg fun _ ↦ norm_nonneg _
+  have hε : 0 < ε := div_pos hc (by linarith)
+  obtain ⟨v, hv, hvD⟩ := hunif ε hε
+  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhdsWithin_iff.1 hv
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Metric.ball_mem_nhds x₀ hδ)]
+    with x hx hxδ
+  -- the mean value inequality on the convex set `s ∩ ball x₀ δ`, for each parameter `y`
+  have hsδ : Convex ℝ (s ∩ Metric.ball x₀ δ) := hs.inter (convex_ball x₀ δ)
+  have hvD' (z : E) (hz : z ∈ s ∩ Metric.ball x₀ δ) (y : α) :
+      ‖D (z, ι y) - D (x₀, ι y)‖ < ε := by
+    simpa only [dist_eq_norm] using hvD z (hball ⟨hz.2, hz.1⟩) y (mem_univ y)
+  have hpt (y : α) : ‖F (x, ι y) - F (x₀, ι y) - D (x₀, ι y) (x - x₀)‖ ≤ ε * ‖x - x₀‖ :=
+    hsδ.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun z ↦ F (z, ι y))
+      (f' := fun z ↦ D (z, ι y))
+      (fun z (hz : z ∈ s ∩ Metric.ball x₀ δ) ↦ (hderiv z hz.1 y).mono inter_subset_left)
+      (fun z hz ↦ (hvD' z hz y).le)
+      ⟨hx₀, Metric.mem_ball_self hδ⟩ ⟨hx, hxδ⟩
+  have hDx : ContinuousOn (fun p ↦ D p (x - x₀)) W :=
+    (ContinuousLinearMap.apply ℝ G (x - x₀)).continuous.comp_continuousOn hD
+  calc ‖(∫ y, g y • F (x, ι y) ∂μ) - (∫ y, g y • F (x₀, ι y) ∂μ) -
+        (∫ y, g y • D (x₀, ι y) ∂μ) (x - x₀)‖
+      = ‖∫ y, g y • (F (x, ι y) - F (x₀, ι y) - D (x₀, ι y) (x - x₀)) ∂μ‖ := by
+        have hFx := integrable_smul_of_continuousOn hg hι hF.continuousOn (hsW x hx)
+        have hFx₀ := integrable_smul_of_continuousOn hg hι hF.continuousOn (hsW x₀ hx₀)
+        rw [ContinuousLinearMap.integral_apply
+          (integrable_smul_of_continuousOn hg hι hD (hsW x₀ hx₀))]
+        simp only [smul_apply, smul_sub]
+        rw [integral_sub (by exact hFx.sub hFx₀ :
+            Integrable (fun y ↦ g y • F (x, ι y) - g y • F (x₀, ι y)) μ)
+          (integrable_smul_of_continuousOn hg hι hDx (hsW x₀ hx₀)), integral_sub hFx hFx₀]
+    _ ≤ ∫ y, ‖g y‖ * (ε * ‖x - x₀‖) ∂μ := by
+        refine norm_integral_le_of_norm_le ((hg.norm.mul_const _)) (ae_of_all _ fun y ↦ ?_)
+        rw [norm_smul]
+        exact mul_le_mul_of_nonneg_left (hpt y) (norm_nonneg _)
+    _ = (∫ y, ‖g y‖ ∂μ) * ε * ‖x - x₀‖ := by rw [integral_mul_const, mul_assoc]
+    _ ≤ c * ‖x - x₀‖ := by
+        refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+        rw [mul_div_assoc', div_le_iff₀ (by linarith)]
+        nlinarith
+
+private theorem _root_.Convex.contDiffOn_integral_smul_nat {G : Type max u v}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] (m : ℕ) {F : E × P → G} (hg : Integrable g μ)
+    (hι : Continuous ι) (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ s) (hW : UniqueDiffOn ℝ W)
+    (hF : ContDiffOn ℝ m F W) (hsW : ∀ x ∈ s, ∀ y, (x, ι y) ∈ W) :
+    ContDiffOn ℝ m (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) s := by
+  induction m generalizing G with
+  | zero =>
+      have hc : ContinuousOn (fun p : E × α ↦ F (p.1, ι p.2)) (s ×ˢ univ) :=
+        hF.continuousOn.comp (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn
+          fun p hp ↦ hsW _ hp.1 _
+      refine contDiffOn_zero.2 <|
+        (continuousOn_integral_bilinear_of_locally_integrable_of_compact_support
+          (ContinuousLinearMap.lsmul ℝ ℝ) isCompact_univ (f := fun x y ↦ F (x, ι y)) hc
+          (fun _ _ _ h ↦ absurd (mem_univ _) h) hg.integrableOn).congr fun x _ ↦ by simp
+  | succ m ih =>
+      have hF' : ContDiffOn ℝ ((m : WithTop ℕ∞) + 1) F W := by exact_mod_cast hF
+      have hderiv := fun x hx ↦ hs.hasFDerivWithinAt_integral_smul_of_contDiffOn hg hι hW
+        (hF'.of_le le_add_self) hsW hx (hsu x hx)
+      rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_fderivWithin hsu]
+      refine ⟨fun x hx ↦ (hderiv x hx).differentiableWithinAt, fun h ↦ absurd h (by simp), ?_⟩
+      refine (ih (F := fun p ↦ (fderivWithin ℝ F W p).comp (.inl ℝ E P))
+        (((ContinuousLinearMap.precomp G (.inl ℝ E P)).contDiff.comp_contDiffOn
+          (hF'.fderivWithin hW le_rfl)).congr fun _ _ ↦ by simp)).congr fun x hx ↦ ?_
+      rw [(hderiv x hx).fderivWithin (hsu x hx)]
+      refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
+      have hpart : HasFDerivWithinAt (fun x ↦ F (x, ι y))
+          ((fderivWithin ℝ F W (x, ι y)).comp (.inl ℝ E P)) s x :=
+        ((hF'.of_le le_add_self).differentiableOn one_ne_zero _
+          (hsW x hx y)).hasFDerivWithinAt.comp x
+            (hasFDerivAt_prodMk_left x (ι y)).hasFDerivWithinAt fun x' hx' ↦ hsW x' hx' y
+      dsimp only
+      rw [hpart.fderivWithin (hsu x hx)]
+
+/-- **Smoothness of integrals over a compact parameter space, within a convex set.** If `F` is
+`C^n` on a set `W ⊆ E × P` with unique derivatives, `s` is convex with unique derivatives, and
+`s × ι(α) ⊆ W`, then integrating `F (x, ι y)` against an integrable weight `g` is `C^n` in `x`
+on `s`. -/
+theorem _root_.Convex.contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {n : ℕ∞} {F : E × P → G} (hg : Integrable g μ) (hι : Continuous ι)
+    (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ s) (hW : UniqueDiffOn ℝ W) (hF : ContDiffOn ℝ n F W)
+    (hsW : ∀ x ∈ s, ∀ y, (x, ι y) ∈ W) :
+    ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) s := by
+  let eG : Type max u v := ULift.{u} G
+  let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
+  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, ι y)) ∂μ) s := by
+    rw [contDiffOn_iff_forall_nat_le]
+    intro m hm
+    exact hs.contDiffOn_integral_smul_nat m hg hι hsu hW
+      (isoG.symm.contDiff.comp_contDiffOn (hF.of_le (by exact_mod_cast hm))) hsW
+  refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
+  have hsmul : ∀ y, g y • isoG.symm (F (x, ι y)) = isoG.symm (g y • F (x, ι y)) :=
+    fun y ↦ (map_smul _ _ _).symm
+  simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+end Convex
 
 end CompactParameter
 

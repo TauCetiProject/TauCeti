@@ -15,11 +15,9 @@ This file records the standard normalization step for positive-definite function
 nonnegative real number `(F 0).re` gives a positive-definite function whose value at the origin
 is `1`.
 
-This is part of the normalization API requested in Part C of the `OneParameterSemigroups`
-roadmap ("Positive-definite functions and Bochner's theorem"). Normalized positive-definite
-functions are the convenient form for characteristic functions and for the later Bochner and
-GNS/Kolmogorov constructions: after normalization, the general bound `‖F a‖ ≤ (F 0).re` becomes
-the familiar `‖F a‖ ≤ 1`.
+Normalized positive-definite functions are the convenient form for characteristic functions and for
+the Bochner and GNS/Kolmogorov constructions: after normalization, the general bound
+`‖F a‖ ≤ (F 0).re` becomes the familiar `‖F a‖ ≤ 1`.
 
 The file deliberately keeps the hypotheses unbundled. It proves lemmas about the explicit
 normalized function rather than introducing a new bundled predicate.

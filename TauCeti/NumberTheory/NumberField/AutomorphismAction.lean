@@ -39,6 +39,8 @@ recorded once here rather than reconstructed at each use site.
   into the top ring of integers gives the action of the original automorphism.
 * `NumberField.RingOfIntegers.smulCommClass`: `Gal(F/K)` acting on `𝓞 F` commutes with the
   `𝓞 K`-action.
+* `NumberField.RingOfIntegers.unitsMulDistribMulAction`: `Gal(F/K)` acts on the units
+  `(𝓞 F)ˣ`.
 * `AlgEquiv.mapAlgEquiv_symm_autCongr_smul`: restriction to rings of integers intertwines
   conjugation of automorphisms along an algebra equivalence.
 -/
@@ -101,6 +103,15 @@ instance RingOfIntegers.smulCommClass : SMulCommClass (F ≃ₐ[K] F) (𝓞 K) (
     -- The remaining factor is the image of `𝓞 K`; route it through `K`, which `σ` fixes.
     rw [← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 F) F,
       IsScalarTower.algebraMap_apply (𝓞 K) K F, AlgEquiv.commutes]
+
+variable (K F) in
+/-- **The Galois action on the units of `𝓞 F`.** An automorphism of `F` over `K` acts on `𝓞 F`
+by ring automorphisms, so it acts on the units `(𝓞 F)ˣ`, multiplicatively. Mathlib's
+`Units.mulDistribMulActionRight` is not a global instance, since for a group acting on itself by
+conjugation it would clash with `ConjAct`; here the acting group is the automorphism group, so
+there is no such clash. -/
+instance RingOfIntegers.unitsMulDistribMulAction : MulDistribMulAction (F ≃ₐ[K] F) (𝓞 F)ˣ :=
+  Units.mulDistribMulActionRight
 
 end NumberField
 

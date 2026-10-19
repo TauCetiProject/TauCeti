@@ -55,7 +55,7 @@ theorem JNumCenter_diagonal_rotate (m : GridState n) :
   refine Fintype.sum_equiv Fin.revPerm _ _ (fun c => ?_)
   simp only [Fin.revPerm_apply, rotate_apply]
   have hc := c.isLt
-  have hm := (m c).isLt
+  have _ := (m c).isLt
   simp only [Fin.val_min, Fin.val_max, Fin.val_rev]
   omega
 

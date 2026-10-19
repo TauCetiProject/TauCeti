@@ -98,8 +98,7 @@ variable [_root_.LieModule.IsIrreducible R L M] [_root_.LieModule.IsIrreducible 
 
 -- The `LieAlgebra` and `LieModule` instances above are needed only to state the irreducibility
 -- hypotheses; the results themselves are about the underlying `LieRingModule` structure.
-omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N]
-
+omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- **Schur's lemma for Lie modules, in its bijectivity form**: a nonzero morphism between
 irreducible Lie modules is bijective. Its kernel is a Lie submodule of `M` other than `⊤` and its
 range is a Lie submodule of `N` other than `⊥`, and irreducibility leaves no other option. -/
@@ -116,21 +115,25 @@ theorem bijective_of_ne_zero {f : M →ₗ⁅R,L⁆ N} (hf : f ≠ 0) : Function
     rw [h, LieSubmodule.mem_bot] at hmem
     simpa using hmem
 
+omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- A nonzero morphism between irreducible Lie modules makes them equivalent. -/
 theorem nonempty_lieModuleEquiv_of_ne_zero {f : M →ₗ⁅R,L⁆ N} (hf : f ≠ 0) :
     Nonempty (M ≃ₗ⁅R,L⁆ N) :=
   ⟨LieModuleEquiv.ofBijective f (bijective_of_ne_zero hf)⟩
 
+omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- **Inequivalent irreducible Lie modules admit only the zero morphism.** -/
 theorem eq_zero_of_isEmpty_lieModuleEquiv (h : IsEmpty (M ≃ₗ⁅R,L⁆ N)) (f : M →ₗ⁅R,L⁆ N) : f = 0 :=
   by_contra fun hf ↦ (nonempty_lieModuleEquiv_of_ne_zero hf).elim h.elim
 
+omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- The morphism space between inequivalent irreducible Lie modules is trivial. -/
 theorem subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (h : IsEmpty (M ≃ₗ⁅R,L⁆ N)) :
     Subsingleton (M →ₗ⁅R,L⁆ N) :=
   ⟨fun f g ↦ by
     rw [eq_zero_of_isEmpty_lieModuleEquiv h f, eq_zero_of_isEmpty_lieModuleEquiv h g]⟩
 
+omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- **Two irreducible Lie modules are equivalent exactly when they admit a nonzero morphism.** -/
 theorem nonempty_lieModuleEquiv_iff_exists_ne_zero :
     Nonempty (M ≃ₗ⁅R,L⁆ N) ↔ ∃ f : M →ₗ⁅R,L⁆ N, f ≠ 0 := by

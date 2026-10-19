@@ -30,6 +30,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   of squares along an equivalence of index types gives an isometric quadratic form.
 * `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
   agree after reindexing are equivalent.
+* `QuadraticForm.equivalent_zero_iff_finrank_eq_zero`: a form is isometric to the canonical
+  zero-dimensional form exactly when its space has dimension zero.
 -/
 
 public section
@@ -116,8 +118,8 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
-    {M₃ : Type*} {N : Type w} [CommSemiring R] [AddCommGroup M₁] [Module R M₁]
-    [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃] [AddCommGroup N]
+    {M₃ : Type*} {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid N]
     [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     {Q₃ : QuadraticMap R M₃ N} (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) (x : M₁) :
     f.trans g x = g (f x) :=
@@ -182,5 +184,19 @@ theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
     (QuadraticForm.weightedSumSquaresCongr h)).symm⟩
 
 end Reindex
+
+/-- A quadratic form is isometric to the canonical zero-dimensional form exactly when
+its underlying space has dimension zero. -/
+@[simp]
+theorem _root_.QuadraticForm.equivalent_zero_iff_finrank_eq_zero {K V : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V) :
+    Q.Equivalent (0 : QuadraticForm K (Fin 0 → K)) ↔ Module.finrank K V = 0 := by
+  constructor
+  · rintro ⟨e⟩
+    simpa using e.toLinearEquiv.finrank_eq
+  · intro h
+    have := Module.finrank_zero_iff.mp h
+    exact ⟨{ LinearEquiv.ofSubsingleton V (Fin 0 → K) with
+      map_app' x := by rw [zero_apply, Subsingleton.elim x 0, map_zero] }⟩
 
 end TauCeti

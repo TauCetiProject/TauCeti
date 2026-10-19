@@ -12,11 +12,15 @@
 # Inputs (environment):
 #   GH_TOKEN, REPO   GitHub API access and the repository
 #   EVENT            pull_request_target | workflow_dispatch | merge_group | repository_dispatch | push
-#   NUM              the PR number (pull_request_target, workflow_dispatch)
+#   IS_BATCH         trusted workflow's canonical batch classification; false selects PR scope
+#                    for repository_dispatch, otherwise dispatches keep the batch fallback
+#   NUM              the PR number (pull_request_target, workflow_dispatch, non-batch dispatch)
 #   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
 #                    the exact head being built, so the scope is bound to that immutable commit
-#   HEAD_REPO        for a PR, the head repository (owner/name), which may be a fork
-#   SCOPE_REPO       exact candidate checkout, with its .git/objects available locally
+#   HEAD_REPO        for any PR build above, its head repository (owner/name), possibly a fork
+#   SCOPE_REPO       tested candidate checkout, with its .git/objects available locally
+#   TESTED_BASE, TESTED_HEAD  optional local B/T endpoints for a prospective integration;
+#                    BASE/HEAD still select immutable raw-head GitHub policy metadata
 # Output: if scoped, OUT_DIR/modules.txt lists the changed TauCeti modules (possibly none) and
 # `LINT_ONLY_MODULES=OUT_DIR/modules.txt` is appended to $GITHUB_ENV; if not,
 # `LINT_ONLY_MODULES=` is. OUT_DIR/unmatched.txt lists every changed `.lean` file that is not one of
@@ -38,6 +42,13 @@ full() {
   echo "LINT_ONLY_MODULES=" >> "$GITHUB_ENV"
   exit 0
 }
+
+# Human approval dispatches CI for one PR, not a staging batch. Ordinary PR commit
+# titles need not contain squash-style (#N) suffixes; requiring those here would
+# incorrectly fall back to whole-library lint and report unrelated inherited errors.
+if [ "$EVENT" = "repository_dispatch" ] && [ "${IS_BATCH:-}" = "false" ]; then
+  EVENT=workflow_dispatch
+fi
 
 case "$EVENT" in
   pull_request_target|workflow_dispatch)
@@ -71,22 +82,22 @@ case "$EVENT" in
   *) full "event $EVENT" ;;
 esac
 
-for pr in $prs; do
-  if ! info=$(gh api "repos/$REPO/pulls/$pr" --jq '[.head.ref, ([.labels[].name] | join(","))] | @tsv'); then
-    full "PR #$pr lint policy metadata is unavailable"
-  fi
-  IFS=$'\t' read -r head_ref labels <<<"$info"
-  case "$head_ref" in lint-repair/*) full "#$pr is a lint repair PR ($head_ref)" ;; esac
-  case ",$labels," in *,full-lint,*) full "#$pr is labelled full-lint" ;; esac
-done
+tool_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Only an entirely validated policy response may select the local module scope.
+# Pass the attributed numbers on stdin, not through shell evaluation or Git config.
+if ! reason=$(python3 "$tool_dir/lint_scope_policy.py" "$REPO" <<<"$prs"); then
+  full "${reason:-PR lint policy metadata is unavailable}"
+fi
 
 # GitHub's file list stops at 300 entries; use only its immutable merge-base
 # metadata. The full local tree diff has no such cap. Do not consult live PR files.
 merge_base=$(jq -r '.merge_base_commit.sha // empty' <<<"$compare")
 [[ "$merge_base" =~ ^[0-9a-f]{40}$ ]] || full "no exact merge base"
 [ -n "${SCOPE_REPO:-}" ] || full "no local candidate checkout"
-tool_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-if ! python3 "$tool_dir/lint_scope_files.py" "$SCOPE_REPO" "$merge_base" "$HEAD" \
+# Label/review identity above stays raw H. The local module list follows T vs B
+# when the build prepared an integration; deleted/renamed modules then match the
+# actual checked-out sources. Other callers keep their existing exact-head contract.
+if ! python3 "$tool_dir/lint_scope_files.py" "$SCOPE_REPO" "${TESTED_BASE:-$merge_base}" "${TESTED_HEAD:-$HEAD}" \
     > "$OUT_DIR/files.nul"; then
   full "the immutable local diff is unavailable"
 fi
