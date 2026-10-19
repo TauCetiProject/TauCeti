@@ -30,7 +30,7 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry.Scheme.Modules
+namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry.Scheme.Modules
 
@@ -66,4 +66,4 @@ theorem restrictExteriorPowerIso_hom_app (n : ℕ) (M : Y.Modules) :
 
 end
 
-end TauCeti.AlgebraicGeometry.Scheme.Modules
+end TauCeti.AlgebraicGeometry
