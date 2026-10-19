@@ -97,6 +97,23 @@ theorem bimoduleOf_symm_bimoduleDifferential
       dB ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm b) := by
   simp [bimoduleDifferential]
 
+/-- Reading the restricted left action on the canonical coefficient gives multiplication by `f`. -/
+@[simp]
+theorem bimoduleOf_symm_smul_left (a : A) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
+    (Bimodule.of f.toGradedAlgHom.toAlgHom).symm (a • x) =
+      f a * (Bimodule.of f.toGradedAlgHom.toAlgHom).symm x := by
+  simp only [Algebra.TensorProduct.smul_moduleLeft, Bimodule.symm_smul, unop_one, mul_one,
+    GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom]
+
+/-- Reading the restricted right action on the canonical coefficient gives the target action. -/
+@[simp]
+theorem bimoduleOf_symm_smul_right (b : Bᵐᵒᵖ)
+    (x : Bimodule f.toGradedAlgHom.toAlgHom) :
+    (Bimodule.of f.toGradedAlgHom.toAlgHom).symm (b • x) =
+      b • (Bimodule.of f.toGradedAlgHom.toAlgHom).symm x := by
+  simp only [Algebra.TensorProduct.smul_moduleRight, Bimodule.symm_smul, map_one, one_mul,
+    smul_eq_mul_unop]
+
 /-- The left action of `A` on `{}_f B` respects the transported grading. -/
 noncomputable instance bimoduleGradedSMulLeft : SetLike.GradedSMul Aₙ f.bimoduleGrading where
   smul_mem {p q a b} ha hb := by

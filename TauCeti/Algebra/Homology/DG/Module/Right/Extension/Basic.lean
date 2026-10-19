@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Bimodule.Codomain
+public import TauCeti.Algebra.Homology.DG.Bimodule.OfHom
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
@@ -14,8 +14,9 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
 A morphism `f : A ⟶ B` of differential graded algebras turns every right DG `A`-module `M` into
 the right DG `B`-module `M ⊗_A B`.  Here `B` is the DG `(A, B)`-bimodule
-`TauCeti.DGAlgHom.CodomainBimodule f`, on which `A` acts on the left through `f`, and the tensor
-product is the ordinary balanced tensor product.  Its grading is the total grading
+`TauCeti.Bimodule f.toGradedAlgHom.toAlgHom`, on which `A` acts on the left
+through `f`. The tensor product is the ordinary balanced tensor product. Its grading is
+the total grading
 `|m ⊗ b| = |m| + |b|`, its differential is
 `d(m ⊗ b) = dM(m) ⊗ b + (-1)^|m| m ⊗ dB(b)`, and `B` acts by `(m ⊗ b) b' = m ⊗ b b'`.
 
@@ -61,13 +62,13 @@ local instance {M : Type*} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   infer_instance
 
 local instance (f : DGAlgHom hA hB) : SetLike.GradedSMul 𝒜
-    (InternalGrading.ofDecomposition (DGAlgHom.codomainBimoduleGrading f)).piece := by
+    (InternalGrading.ofDecomposition (DGAlgHom.bimoduleGrading f)).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
 local instance (f : DGAlgHom hA hB) :
     SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece
-      (InternalGrading.ofDecomposition (DGAlgHom.codomainBimoduleGrading f)).piece := by
+      (InternalGrading.ofDecomposition (DGAlgHom.bimoduleGrading f)).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
@@ -78,7 +79,7 @@ algebra morphism `f : A ⟶ B`: the balanced tensor product of `M` with the codo
 of `f`. -/
 abbrev ExtendScalars (f : DGAlgHom hA hB) (M : Type uM)
     [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] : Type (max uM uB) :=
-  BalancedTensorProduct R A M (DGAlgHom.CodomainBimodule f)
+  BalancedTensorProduct R A M (Bimodule f.toGradedAlgHom.toAlgHom)
 
 namespace ExtendScalars
 
@@ -86,13 +87,13 @@ variable (f : DGAlgHom hA hB) (M : Type uM)
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
 
 /-- The right `B`-action on `M ⊗_A B`, by right multiplication on the second factor. -/
-instance : Module Bᵐᵒᵖ (ExtendScalars f M) :=
+noncomputable instance : Module Bᵐᵒᵖ (ExtendScalars f M) :=
   BalancedTensorProduct.rightModule (k := R) (A := A) (M := M)
-    (N := DGAlgHom.CodomainBimodule f) Bᵐᵒᵖ
+    (N := Bimodule f.toGradedAlgHom.toAlgHom) Bᵐᵒᵖ
 
 instance : IsScalarTower R Bᵐᵒᵖ (ExtendScalars f M) :=
   BalancedTensorProduct.rightIsScalarTower (k := R) (A := A) (M := M)
-    (N := DGAlgHom.CodomainBimodule f) Bᵐᵒᵖ
+    (N := Bimodule f.toGradedAlgHom.toAlgHom) Bᵐᵒᵖ
 
 end ExtendScalars
 
@@ -111,11 +112,18 @@ variable (f : DGAlgHom hA hB)
 
 /-- The grading of the extended module `M ⊗_A B`: the total grading of the balanced tensor
 product, with `|m ⊗ b| = |m| + |b|`. -/
-@[expose]
 noncomputable def extendScalarsGrading (q : ℤ) :
     Submodule R (DGRightModule.ExtendScalars f M) :=
   (BalancedTensorProduct.grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-    (InternalGrading.ofDecomposition (DGAlgHom.codomainBimoduleGrading f))).piece q
+    (InternalGrading.ofDecomposition (DGAlgHom.bimoduleGrading f))).piece q
+
+omit [IsScalarTower R Aᵐᵒᵖ M] in
+/-- The extension grading is the canonical balanced-tensor grading. This bridge identifies
+it with the object grading of the bundled tensor functor without exposing its definition. -/
+theorem extendScalarsGrading_eq_tensorGrading (q : ℤ) :
+    extendScalarsGrading (ℳ := ℳ) f q =
+      (BalancedTensorProduct.grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition (DGAlgHom.bimoduleGrading f))).piece q := (rfl)
 
 /- The grading is by definition the grading of an `InternalGrading`, which carries a
 decomposition; we read the instance off that definition. -/
@@ -123,66 +131,71 @@ decomposition; we read the instance off that definition. -/
 noncomputable instance : DirectSum.Decomposition (extendScalarsGrading (ℳ := ℳ) f) :=
   inferInstanceAs (DirectSum.Decomposition
     (BalancedTensorProduct.grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-      (InternalGrading.ofDecomposition (DGAlgHom.codomainBimoduleGrading f))).piece)
+      (InternalGrading.ofDecomposition (DGAlgHom.bimoduleGrading f))).piece)
 
 /-- The right `B`-action on the extended module adds degrees. -/
 instance : SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece
     (extendScalarsGrading (ℳ := ℳ) f) :=
   BalancedTensorProduct.gradedSMul_right (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-    (InternalGrading.ofDecomposition (DGAlgHom.codomainBimoduleGrading f)) Bᵐᵒᵖ
+    (InternalGrading.ofDecomposition (DGAlgHom.bimoduleGrading f)) Bᵐᵒᵖ
     (InternalGrading.ofDecomposition ℬ).opposite.piece
 
 omit [IsScalarTower R Aᵐᵒᵖ M] in
 /-- Degrees add on homogeneous pure tensors of the extended module. -/
-theorem tmul_mem_extendScalarsGrading {p q : ℤ} {m : M} {x : DGAlgHom.CodomainBimodule f}
-    (hm : m ∈ ℳ p) (hx : x.val ∈ ℬ q) :
+theorem tmul_mem_extendScalarsGrading {p q : ℤ} {m : M} {x : Bimodule f.toGradedAlgHom.toAlgHom}
+    (hm : m ∈ ℳ p) (hx : ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) ∈ ℬ q) :
     BalancedTensorProduct.tmul R A m x ∈ extendScalarsGrading (ℳ := ℳ) f (p + q) :=
   BalancedTensorProduct.tmul_mem_grading (𝒜 := 𝒜) _ _
     (by rwa [InternalGrading.ofDecomposition_piece])
-    (by rwa [InternalGrading.ofDecomposition_piece, DGAlgHom.mem_codomainBimoduleGrading_iff])
+    (by rwa [InternalGrading.ofDecomposition_piece, DGAlgHom.mem_bimoduleGrading_iff])
 
 omit [IsScalarTower R Aᵐᵒᵖ M] in
 /-- A linear map out of the extended module shifts degrees by `s` as soon as it does so on
 homogeneous pure tensors. -/
 theorem map_mem_of_mem_extendScalarsGrading {Q : Type*} [AddCommGroup Q] [Module R Q]
     (𝓠 : ℤ → Submodule R Q) (F : DGRightModule.ExtendScalars f M →ₗ[R] Q) (s : ℤ)
-    (hF : ∀ {p q : ℤ} {m : M} {x : DGAlgHom.CodomainBimodule f},
-      m ∈ ℳ p → x.val ∈ ℬ q → F (BalancedTensorProduct.tmul R A m x) ∈ 𝓠 (p + q + s))
+    (hF : ∀ {p q : ℤ} {m : M} {x : Bimodule f.toGradedAlgHom.toAlgHom},
+      m ∈ ℳ p →
+        ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) ∈ ℬ q →
+        F (BalancedTensorProduct.tmul R A m x) ∈ 𝓠 (p + q + s))
     {p : ℤ} {z : DGRightModule.ExtendScalars f M}
     (hz : z ∈ extendScalarsGrading (ℳ := ℳ) f p) : F z ∈ 𝓠 (p + s) :=
   BalancedTensorProduct.map_mem_of_tmul (𝒜 := 𝒜) _ _ 𝓠 F s
     (fun hm hx ↦ hF (by rwa [InternalGrading.ofDecomposition_piece] at hm)
       (by rwa [InternalGrading.ofDecomposition_piece,
-        DGAlgHom.mem_codomainBimoduleGrading_iff] at hx)) hz
+        DGAlgHom.mem_bimoduleGrading_iff] at hx)) hz
 
 /-- The differential of the extended module `M ⊗_A B`: the balanced tensor differential
 `d(m ⊗ b) = dM(m) ⊗ b + (-1)^|m| m ⊗ dB(b)`. -/
-@[expose]
 noncomputable def extendScalarsDifferential (hM : IsDGRightModule hA ℳ dM) :
     DGRightModule.ExtendScalars f M →ₗ[R] DGRightModule.ExtendScalars f M :=
   BalancedTensorProduct.differential hM
-    (DGAlgHom.isDGBimodule_codomainBimodule f).toIsDGLeftModule
+    (DGAlgHom.isDGBimodule f).toIsDGLeftModule
+
+/-- The extension differential is the canonical balanced-tensor differential. This bridge
+identifies the bundled tensor differential without exposing the construction body. -/
+theorem extendScalarsDifferential_eq_tensorDifferential (hM : IsDGRightModule hA ℳ dM) :
+    hM.extendScalarsDifferential f =
+      BalancedTensorProduct.differential hM (DGAlgHom.isDGBimodule f).toIsDGLeftModule := (rfl)
 
 /-- The differential of the extended module on a pure tensor with homogeneous first factor. -/
 theorem extendScalarsDifferential_tmul_of_mem (hM : IsDGRightModule hA ℳ dM) {q : ℤ} {m : M}
-    (hm : m ∈ ℳ q) (x : DGAlgHom.CodomainBimodule f) :
+    (hm : m ∈ ℳ q) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
     hM.extendScalarsDifferential f (BalancedTensorProduct.tmul R A m x) =
       BalancedTensorProduct.tmul R A (dM m) x +
         ((q.negOnePow : ℤ) : R) • BalancedTensorProduct.tmul R A m
-          (DGAlgHom.codomainBimoduleDifferential f x) :=
+          (DGAlgHom.bimoduleDifferential f x) :=
   BalancedTensorProduct.differential_tmul_of_mem hM _ hm x
 
 /-- The extended differential of `m ⊗ 1` is `dM(m) ⊗ 1`, since the unit of `B` is a cycle. -/
 @[simp]
 theorem extendScalarsDifferential_tmul_one (hM : IsDGRightModule hA ℳ dM) (m : M) :
     hM.extendScalarsDifferential f
-        (BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1)) =
-      BalancedTensorProduct.tmul R A (dM m) (DGAlgHom.CodomainBimodule.mk 1) := by
+        (BalancedTensorProduct.tmul R A m (Bimodule.of f.toGradedAlgHom.toAlgHom 1)) =
+      BalancedTensorProduct.tmul R A (dM m) (Bimodule.of f.toGradedAlgHom.toAlgHom 1) := by
   rw [extendScalarsDifferential, BalancedTensorProduct.differential_tmul]
-  have h : DGAlgHom.codomainBimoduleDifferential f (DGAlgHom.CodomainBimodule.mk 1) = 0 :=
-    DGAlgHom.CodomainBimodule.ext (by
-      rw [DGAlgHom.val_codomainBimoduleDifferential, hB.map_one_eq_zero,
-        DGAlgHom.CodomainBimodule.val_zero])
+  have h : DGAlgHom.bimoduleDifferential f (Bimodule.of f.toGradedAlgHom.toAlgHom 1) = 0 := by
+    rw [DGAlgHom.bimoduleDifferential_bimoduleOf, hB.map_one_eq_zero, map_zero]
   simp only [h, BalancedTensorProduct.tmul_zero, add_zero]
 
 /-- **Extension of scalars.**  For a DG algebra morphism `f : A ⟶ B` and a right DG
@@ -190,7 +203,7 @@ theorem extendScalarsDifferential_tmul_one (hM : IsDGRightModule hA ℳ dM) (m :
 theorem extendScalars (hM : IsDGRightModule hA ℳ dM) :
     IsDGRightModule hB (extendScalarsGrading (ℳ := ℳ) f) (hM.extendScalarsDifferential f) :=
   BalancedTensorProduct.isDGRightModule_tensorProduct hM
-    (DGAlgHom.isDGBimodule_codomainBimodule f)
+    (DGAlgHom.isDGBimodule f)
 
 end IsDGRightModule
 
@@ -219,7 +232,8 @@ noncomputable def extendScalars (g : DGRightModuleHom hM hN) :
     DGRightModuleHom (hM.extendScalars f) (hN.extendScalars f) where
   toLinearMap :=
     { toFun := BalancedTensorProduct.map (A := A) (g.toLinearMap.restrictScalars R)
-        (LinearMap.id : DGAlgHom.CodomainBimodule f →ₗ[R] DGAlgHom.CodomainBimodule f)
+        (LinearMap.id : Bimodule f.toGradedAlgHom.toAlgHom →ₗ[R]
+          Bimodule f.toGradedAlgHom.toAlgHom)
         (fun a m ↦ map_smul g (op a) m) (fun _ _ ↦ rfl)
       map_add' := map_add _
       map_smul' := BalancedTensorProduct.map_smul_right Bᵐᵒᵖ _ _ _ _ (fun _ _ ↦ rfl) }
@@ -241,15 +255,15 @@ noncomputable def extendScalars (g : DGRightModuleHom hM hN) :
           Graded.map_mem g hx
     simp only [IsDGRightModule.extendScalarsDifferential, LinearMap.coe_mk, AddHom.coe_mk]
     have h := BalancedTensorProduct.differential_naturality hM
-      (DGAlgHom.isDGBimodule_codomainBimodule f).toIsDGLeftModule hN
-      (DGAlgHom.isDGBimodule_codomainBimodule f).toIsDGLeftModule _ LinearMap.id
+      (DGAlgHom.isDGBimodule f).toIsDGLeftModule hN
+      (DGAlgHom.isDGBimodule f).toIsDGLeftModule _ LinearMap.id
       (fun a m ↦ map_smul g (op a) m) (fun _ _ ↦ rfl) hg₀ (LinearMap.ext g.map_d) rfl
     exact LinearMap.congr_fun h x
 
 /-- Extension of scalars of a morphism acts on the first factor of a pure tensor. -/
 @[simp]
 theorem extendScalars_tmul (g : DGRightModuleHom hM hN) (m : M)
-    (x : DGAlgHom.CodomainBimodule f) :
+    (x : Bimodule f.toGradedAlgHom.toAlgHom) :
     g.extendScalars f (BalancedTensorProduct.tmul R A m x) =
       BalancedTensorProduct.tmul R A (g m) x :=
   BalancedTensorProduct.map_tmul _ _ _ _ m x

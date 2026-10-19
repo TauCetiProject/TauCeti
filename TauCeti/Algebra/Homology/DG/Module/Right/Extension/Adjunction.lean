@@ -77,18 +77,19 @@ variable (f : DGAlgHom hA hB)
 noncomputable def toRestrictScalars (g : DGRightModuleHom (hM.extendScalars f) hP) :
     DGRightModuleHom hM (hP.restrictScalars f) where
   toFun m := DGRightModule.RestrictScalars.mk
-    (g (BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1)))
+    (g (BalancedTensorProduct.tmul R A m (Bimodule.of f.toGradedAlgHom.toAlgHom 1)))
   map_add' m m' := by
     apply DGRightModule.RestrictScalars.ext
     simp [BalancedTensorProduct.add_tmul]
   map_smul' a m := by
     apply DGRightModule.RestrictScalars.ext
-    have h : (BalancedTensorProduct.tmul R A (a • m) (DGAlgHom.CodomainBimodule.mk 1) :
+    have h : (BalancedTensorProduct.tmul R A (a • m) (Bimodule.of f.toGradedAlgHom.toAlgHom 1) :
         DGRightModule.ExtendScalars f M) =
-        op (f a.unop) • BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1) := by
+        op (f a.unop) •
+          BalancedTensorProduct.tmul R A m (Bimodule.of f.toGradedAlgHom.toAlgHom 1) := by
       rw [BalancedTensorProduct.smul_tmul_right, ← op_unop a, BalancedTensorProduct.balance]
       congr 1
-      ext
+      apply (Bimodule.of f.toGradedAlgHom.toAlgHom).symm.injective
       simp
     simp only [RingHom.id_apply, DGRightModule.RestrictScalars.val_smul_eq, h, map_smul,
       AlgHom.op_apply_apply, GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom]
@@ -96,7 +97,8 @@ noncomputable def toRestrictScalars (g : DGRightModuleHom (hM.extendScalars f) h
     rw [IsDGRightModule.mem_restrictScalarsGrading_iff,
       DGRightModule.RestrictScalars.linearEquiv_apply]
     have h1 := IsDGRightModule.tmul_mem_extendScalarsGrading f hm
-      (x := DGAlgHom.CodomainBimodule.mk 1) SetLike.GradedOne.one_mem
+      (x := (Bimodule.of f.toGradedAlgHom.toAlgHom) 1)
+      (by simpa only [LinearEquiv.symm_apply_apply] using (SetLike.GradedOne.one_mem (A := ℬ)))
     rw [add_zero] at h1
     exact Graded.map_mem g h1
   map_d' m := by
@@ -108,17 +110,17 @@ noncomputable def toRestrictScalars (g : DGRightModuleHom (hM.extendScalars f) h
 @[simp]
 theorem val_toRestrictScalars (g : DGRightModuleHom (hM.extendScalars f) hP) (m : M) :
     (g.toRestrictScalars f m).val =
-      g (BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1)) := by
+      g (BalancedTensorProduct.tmul R A m (Bimodule.of f.toGradedAlgHom.toAlgHom 1)) := by
   rfl
 
 /-- The right action `(y, b) ↦ y b` of `B` on `P`, as an `R`-bilinear map out of `P` and the
 codomain bimodule. -/
-private noncomputable def actRight : P →ₗ[R] DGAlgHom.CodomainBimodule f →ₗ[R] P :=
+private noncomputable def actRight : P →ₗ[R] (Bimodule f.toGradedAlgHom.toAlgHom) →ₗ[R] P :=
   ((Algebra.lsmul R R P).toLinearMap ∘ₗ (MulOpposite.opLinearEquiv R).toLinearMap ∘ₗ
-    (DGAlgHom.CodomainBimodule.linearEquiv f).toLinearMap).flip
+    ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm).toLinearMap).flip
 
-private theorem actRight_apply (y : P) (x : DGAlgHom.CodomainBimodule f) :
-    actRight f y x = op x.val • y := by
+private theorem actRight_apply (y : P) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
+    actRight f y x = op ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) • y := by
   simp [actRight]
 
 /-- The morphism `m ⊗ b ↦ φ(m) b` of right DG `B`-modules `M ⊗_A B ⟶ P` attached to a morphism
@@ -126,20 +128,21 @@ private theorem actRight_apply (y : P) (x : DGAlgHom.CodomainBimodule f) :
 noncomputable def fromExtendScalars (hP : IsDGRightModule hB ℳP dP)
     (φ : DGRightModuleHom hM (hP.restrictScalars f)) :
     DGRightModuleHom (hM.extendScalars f) hP :=
-  let F : M →ₗ[R] DGAlgHom.CodomainBimodule f →ₗ[R] P :=
+  let F : M →ₗ[R] (Bimodule f.toGradedAlgHom.toAlgHom) →ₗ[R] P :=
     actRight f ∘ₗ (DGRightModule.RestrictScalars.linearEquiv f P).toLinearMap ∘ₗ
       φ.toLinearMap.restrictScalars R
-  have hF (m : M) (x : DGAlgHom.CodomainBimodule f) : F m x = op x.val • (φ m).val := by
+  have hF (m : M) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
+      F m x = op ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) • (φ m).val := by
     simp only [F, LinearMap.comp_apply, actRight_apply, LinearEquiv.coe_coe,
       DGRightModule.RestrictScalars.linearEquiv_apply, LinearMap.coe_restrictScalars,
       coe_toLinearMap]
-  have hFb (a : A) (m : M) (x : DGAlgHom.CodomainBimodule f) :
+  have hFb (a : A) (m : M) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
       F (op a • m) x = F m (a • x) := by
     rw [hF, hF, map_smul, DGRightModule.RestrictScalars.val_op_smul,
-      DGAlgHom.CodomainBimodule.val_smul_left, op_mul, mul_smul]
-  have hFs (b : Bᵐᵒᵖ) (m : M) (x : DGAlgHom.CodomainBimodule f) :
+      DGAlgHom.bimoduleOf_symm_smul_left, op_mul, mul_smul]
+  have hFs (b : Bᵐᵒᵖ) (m : M) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
       F m (b • x) = b • F m x := by
-    rw [hF, hF, DGAlgHom.CodomainBimodule.val_smul_right, ← mul_smul, smul_eq_mul_unop, op_mul,
+    rw [hF, hF, DGAlgHom.bimoduleOf_symm_smul_right, ← mul_smul, smul_eq_mul_unop, op_mul,
       op_unop]
   { toFun := BalancedTensorProduct.lift F hFb
     map_add' := map_add _
@@ -153,7 +156,8 @@ noncomputable def fromExtendScalars (hP : IsDGRightModule hB ℳP dP)
           rw [IsDGRightModule.mem_restrictScalarsGrading_iff,
             DGRightModule.RestrictScalars.linearEquiv_apply] at hφ
           exact SetLike.GradedSMul.smul_mem
-            (((InternalGrading.ofDecomposition ℬ).op_mem_opposite_piece_iff r x.val).2
+            (((InternalGrading.ofDecomposition ℬ).op_mem_opposite_piece_iff r
+              ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x)).2
               (by rwa [InternalGrading.ofDecomposition_piece])) hφ) hz
     map_d' z := by
       have key : dP ∘ₗ BalancedTensorProduct.lift F hFb =
@@ -173,14 +177,16 @@ noncomputable def fromExtendScalars (hP : IsDGRightModule hB ℳP dP)
               congrArg DGRightModule.RestrictScalars.val (φ.map_d m)
           rw [LinearMap.comp_apply, LinearMap.comp_apply,
             IsDGRightModule.extendScalarsDifferential_tmul_of_mem f hM m.2, Int.cast_smul_eq_zsmul]
-          simp [hF, hP.leibniz hφm x.val, hd, Units.smul_def]
+          simp [hF, hP.leibniz hφm ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x), hd,
+            Units.smul_def]
       exact LinearMap.congr_fun key z }
 
 /-- The morphism out of the extension sends `m ⊗ b` to `φ(m) b`. -/
 @[simp]
 theorem fromExtendScalars_tmul (φ : DGRightModuleHom hM (hP.restrictScalars f)) (m : M)
-    (x : DGAlgHom.CodomainBimodule f) :
-    φ.fromExtendScalars f hP (BalancedTensorProduct.tmul R A m x) = op x.val • (φ m).val := by
+    (x : Bimodule f.toGradedAlgHom.toAlgHom) :
+    φ.fromExtendScalars f hP (BalancedTensorProduct.tmul R A m x) =
+      op ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) • (φ m).val := by
   simp only [fromExtendScalars, coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
     BalancedTensorProduct.lift_tmul, LinearMap.comp_apply, actRight_apply, LinearEquiv.coe_coe,
     DGRightModule.RestrictScalars.linearEquiv_apply, LinearMap.coe_restrictScalars,
@@ -228,7 +234,7 @@ noncomputable def extendRestrictScalarsEquiv (hM : IsDGRightModule hA ℳ dM)
     rw [fromExtendScalars_tmul, val_toRestrictScalars, ← map_smul,
       BalancedTensorProduct.smul_tmul_right]
     congr 2
-    ext
+    apply (Bimodule.of f.toGradedAlgHom.toAlgHom).symm.injective
     simp
   right_inv φ := by
     ext m
@@ -252,7 +258,7 @@ DG `A`-modules to right DG `B`-modules: `M ↦ M ⊗_A B` and `g ↦ g ⊗ 1`. -
 noncomputable def extendScalars (f : DGAlgHom hA hB) :
     DGRightModuleCat.{uR, uA, max uB uM} hA ⥤ DGRightModuleCat.{uR, uB, max uB uM} hB :=
   (tensorBimoduleFunctor (hB := hA) (hC := hB)).flip.obj
-    (DGBimoduleCat.of (DGAlgHom.isDGBimodule_codomainBimodule f))
+    (DGBimoduleCat.of f.isDGBimodule)
 
 /-- The underlying `R`-module of a bundled extension is the balanced tensor product. -/
 noncomputable def extendScalarsEquiv (f : DGAlgHom hA hB)
@@ -267,6 +273,8 @@ theorem extendScalarsEquiv_map (f : DGAlgHom hA hB)
     (x : (extendScalars f).obj M) :
     extendScalarsEquiv f N ((extendScalars f).map g x) =
       g.extendScalars f (extendScalarsEquiv f M x) := by
+  -- Specializing the exposed tensor bifunctor evaluates its map as `tensorBimoduleMap`;
+  -- both carrier equivalences are identity linear maps on the same balanced tensor product.
   change tensorBimoduleMap g (𝟙 _) x = g.extendScalars f x
   induction x using BalancedTensorProduct.induction_on with
   | ht m b =>
@@ -290,6 +298,7 @@ theorem mem_extendScalars_obj_grading (f : DGAlgHom hA hB)
     x ∈ ((extendScalars f).obj M).grading q ↔
       extendScalarsEquiv f M x ∈
         IsDGRightModule.extendScalarsGrading (M := M) (ℳ := M.grading) f q := by
+  rw [IsDGRightModule.extendScalarsGrading_eq_tensorGrading]
   rfl
 
 /-- The differential of a bundled extension is the balanced tensor differential. -/
@@ -298,6 +307,7 @@ theorem extendScalarsEquiv_differential (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
     extendScalarsEquiv f M (((extendScalars f).obj M).differential x) =
       M.isDGRightModule.extendScalarsDifferential f (extendScalarsEquiv f M x) := by
+  rw [IsDGRightModule.extendScalarsDifferential_eq_tensorDifferential]
   rfl
 
 instance (f : DGAlgHom hA hB) : (extendScalars.{uR, uA, uB, uM} f).Additive where
@@ -314,16 +324,14 @@ the identification is only visible inside this module. -/
 private noncomputable def extendScalarsObjIso (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) :
     (extendScalars f).obj M ≅ of (M.isDGRightModule.extendScalars f) :=
-  Iso.refl _
+  isoMk (LinearEquiv.refl Bᵐᵒᵖ _) (mem_extendScalars_obj_grading f M)
+    (fun x ↦ (extendScalarsEquiv_differential f M x).symm)
 
 /-- The canonical extended-object isomorphism acts by the carrier equivalence. -/
 private theorem extendScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
     (extendScalarsObjIso f M).hom x = extendScalarsEquiv f M x := by
-  -- Retype the identity morphism at its own endpoints.
-  change ((𝟙 ((extendScalars f).obj M) : (extendScalars f).obj M ⟶ _) x) = _
-  rw [id_apply]
-  rfl
+  exact isoMk_hom_apply _ _ _ x
 
 /-- The inverse canonical extended-object isomorphism inverts the carrier equivalence. -/
 private theorem extendScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
@@ -416,7 +424,7 @@ theorem extendRestrictScalarsAdj_homEquiv_apply_apply (f : DGAlgHom hA hB)
     (g : (extendScalars f).obj M ⟶ P) (m : M) :
     restrictScalarsEquiv f P ((extendRestrictScalarsAdj f).homEquiv M P g m) =
       g ((extendScalarsEquiv f M).symm
-        (BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1))) := by
+        (BalancedTensorProduct.tmul R A m (Bimodule.of f.toGradedAlgHom.toAlgHom 1))) := by
   rw [extendRestrictScalarsAdj, Adjunction.mkOfHomEquiv_homEquiv,
     extendRestrictScalarsHomEquiv_apply, comp_apply,
     restrictScalarsObjIso_inv_apply, LinearEquiv.apply_symm_apply]
@@ -428,10 +436,10 @@ theorem extendRestrictScalarsAdj_homEquiv_symm_apply_tmul (f : DGAlgHom hA hB)
     {M : DGRightModuleCat.{uR, uA, max uB uM} hA}
     {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
     (φ : M ⟶ (restrictScalars f).obj P) (m : M)
-    (x : DGAlgHom.CodomainBimodule f) :
+    (x : Bimodule f.toGradedAlgHom.toAlgHom) :
     ((extendRestrictScalarsAdj f).homEquiv M P).symm φ
         ((extendScalarsEquiv f M).symm (BalancedTensorProduct.tmul R A m x)) =
-      op x.val • restrictScalarsEquiv f P (φ m) := by
+      op ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) • restrictScalarsEquiv f P (φ m) := by
   rw [extendRestrictScalarsAdj, Adjunction.mkOfHomEquiv_homEquiv,
     extendRestrictScalarsHomEquiv_symm_apply, comp_apply,
     extendScalarsObjIso_hom_apply, LinearEquiv.apply_symm_apply]
@@ -446,7 +454,7 @@ theorem extendRestrictScalarsAdj_unit_app_apply (f : DGAlgHom hA hB)
         (restrictScalarsEquiv f ((extendScalars f).obj M)
           (DFunLike.coe (F := M ⟶ (restrictScalars f).obj ((extendScalars f).obj M))
             ((extendRestrictScalarsAdj f).unit.app M) m)) =
-      BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1) := by
+      BalancedTensorProduct.tmul R A m (Bimodule.of f.toGradedAlgHom.toAlgHom 1) := by
   have h := extendRestrictScalarsAdj_homEquiv_apply_apply f
     (g := 𝟙 ((extendScalars f).obj M)) m
   rw [Adjunction.homEquiv_unit] at h
@@ -459,12 +467,12 @@ theorem extendRestrictScalarsAdj_unit_app_apply (f : DGAlgHom hA hB)
 @[simp]
 theorem extendRestrictScalarsAdj_counit_app_apply_tmul (f : DGAlgHom hA hB)
     (P : DGRightModuleCat.{uR, uB, max uB uM} hB)
-    (m : (restrictScalars f).obj P) (x : DGAlgHom.CodomainBimodule f) :
+    (m : (restrictScalars f).obj P) (x : Bimodule f.toGradedAlgHom.toAlgHom) :
     DFunLike.coe (F := (extendScalars f).obj ((restrictScalars f).obj P) ⟶ P)
         ((extendRestrictScalarsAdj f).counit.app P)
         ((extendScalarsEquiv f ((restrictScalars f).obj P)).symm
           (BalancedTensorProduct.tmul R A m x)) =
-      op x.val • restrictScalarsEquiv f P m := by
+      op ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x) • restrictScalarsEquiv f P m := by
   have h := extendRestrictScalarsAdj_homEquiv_symm_apply_tmul f
     (φ := 𝟙 ((restrictScalars f).obj P)) m x
   rw [Adjunction.homEquiv_counit] at h
