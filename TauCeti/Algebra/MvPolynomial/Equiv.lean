@@ -295,3 +295,21 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
 end Last
 
 end MvPolynomial
+
+namespace TauCeti
+
+open _root_.MvPolynomial
+
+variable {R : Type*} [CommSemiring R]
+
+/-- Specializing the first variable `X₀` of `P` to `a` does not increase the partial degrees in
+the remaining variables. -/
+theorem degreeOf_eval_finSuccEquiv_le {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R) (a : R)
+    (j : Fin n) :
+    degreeOf j ((finSuccEquiv R n P).eval (C a)) ≤ degreeOf j.succ P := by
+  rw [Polynomial.eval_eq_sum_range]
+  refine (degreeOf_sum_le j _ _).trans (Finset.sup_le fun m _ ↦ ?_)
+  rw [← map_pow, mul_comm]
+  exact (degreeOf_C_mul_le _ j _).trans (degreeOf_coeff_finSuccEquiv P j m)
+
+end TauCeti

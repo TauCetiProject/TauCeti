@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 import Mathlib.Data.Int.Interval
@@ -31,18 +32,19 @@ polynomial `P : MvPolynomial σ R` in finitely many variables with partial degre
 `P.degreeOf j ≤ s j` has an integer point `z : σ → ℤ` with `|z j| ≤ B j` and a multi-index
 `i : σ →₀ ℕ` with `i j ≤ s j / B j` at which `(∂^i P)(z) ≠ 0` (Evertse 1996, §7, Lemma 25).
 
+The core finite-grid results work in any characteristic: on a product of finite sets `S j`,
+partial degrees strictly below `(S j).card * (M j + 1)` guarantee a nonzero jet of coordinate
+orders at most `M j`. The integer-grid statements follow by counting integer points and orders.
+
 ## Main results
 
-* `Polynomial.sum_rootMultiplicity_le_natDegree`: over an integral domain, the sum of the root
-  multiplicities of `p : R[X]` over any finite set of points is at most `p.natDegree`.
-* `Polynomial.exists_eval_hasseDeriv_intCast_ne_zero`: for `p : R[X]` nonzero of degree `≤ s` and
-  `B > 0`, there exist `z : ℤ` and `i : ℕ` with `|z| ≤ B`, `i ≤ s / B`, and
+* `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_ne_zero`,
+  `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_ne_zero`: nonvanishing on finite grids.
+* `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_intCast_ne_zero`: for nonzero `p : R[X]` of
+  degree `≤ s` and `B > 0`, there exist `z : ℤ` and `i : ℕ` with `|z| ≤ B`, `i ≤ s / B`, and
   `(hasseDeriv i p).eval (z : R) ≠ 0`.
-* `MvPolynomial.exists_eval_hasseDeriv_finSuccEquiv_ne_zero`: single-variable specialization step
-  producing a grid point `(z, k)` in the first variable whose specialized `k`-th Hasse derivative is
-  nonzero in the remaining variables.
-* `MvPolynomial.exists_eval_hasseDeriv_intCast_ne_zero`: Evertse's Lemma 25 on nonvanishing of a
-  Hasse derivative on a rectangular integer grid.
+* `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_intCast_ne_zero`: Evertse's Lemma 25 on
+  nonvanishing of a Hasse derivative on a rectangular integer grid.
 
 ## References
 
@@ -52,22 +54,13 @@ polynomial `P : MvPolynomial σ R` in finitely many variables with partial degre
 
 public section
 
+namespace TauCeti.Grid
+
 namespace Polynomial
 
-variable {R : Type*}
+open _root_.Polynomial
 
-/-- Over an integral domain, the sum of the root multiplicities of a polynomial `p` over any
-finite set of points is at most `p.natDegree`. -/
-theorem sum_rootMultiplicity_le_natDegree [CommRing R] [IsDomain R] (p : R[X]) (s : Finset R) :
-    ∑ a ∈ s, p.rootMultiplicity a ≤ p.natDegree := by
-  classical
-  calc ∑ a ∈ s, p.rootMultiplicity a
-      = ∑ a ∈ s, p.roots.count a := Finset.sum_congr rfl fun a _ ↦ (count_roots p).symm
-    _ ≤ ∑ a ∈ p.roots.toFinset, p.roots.count a :=
-        Finset.sum_le_sum_of_ne_zero fun a _ ha ↦
-          Multiset.mem_toFinset.2 (Multiset.count_ne_zero.1 ha)
-    _ = p.roots.card := Multiset.toFinset_sum_count_eq p.roots
-    _ ≤ p.natDegree := card_roots' p
+variable {R : Type*}
 
 /-- For any degree bound `s : ℕ` and positive parameter `B : ℝ`, the number of integer grid points
 in `[-⌊B⌋₊, ⌊B⌋₊]` times the number of derivative orders in `[0, ⌊s / B⌋₊]` strictly exceeds
@@ -83,6 +76,20 @@ private theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : �
           mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
   exact_mod_cast h3
 
+/-- A nonzero polynomial has a nonvanishing Hasse derivative of order at most `N` at a point
+of `S` whenever `S.card * (N + 1)` exceeds its degree. -/
+theorem exists_eval_hasseDeriv_ne_zero [CommRing R] [IsDomain R] {p : R[X]} (hp : p ≠ 0)
+    (S : Finset R) (N : ℕ) (hdeg : p.natDegree < S.card * (N + 1)) :
+    ∃ a ∈ S, ∃ i ≤ N, (hasseDeriv i p).eval a ≠ 0 := by
+  by_contra! h
+  have hmult (a : R) (ha : a ∈ S) : N + 1 ≤ p.rootMultiplicity a :=
+    le_rootMultiplicity_of_eval_hasseDeriv_eq_zero hp fun i hi ↦ h a ha i (by omega)
+  have hsum : S.card * (N + 1) ≤ p.natDegree := by
+    calc S.card * (N + 1) = ∑ _a ∈ S, (N + 1) := by rw [Finset.sum_const, smul_eq_mul]
+      _ ≤ ∑ a ∈ S, p.rootMultiplicity a := Finset.sum_le_sum hmult
+      _ ≤ p.natDegree := sum_rootMultiplicity_le_natDegree p S
+  exact hdeg.not_ge hsum
+
 /-- Over an integral domain of characteristic zero, for any nonzero polynomial `p : R[X]` of degree
 at most `s` and any `B > 0`, there exist an integer `z` with `|z| ≤ B` and an order `i` with
 `i ≤ s / B` such that the `i`-th Hasse derivative of `p` does not vanish at `z`. -/
@@ -90,29 +97,19 @@ theorem exists_eval_hasseDeriv_intCast_ne_zero [CommRing R] [IsDomain R] [CharZe
     {p : R[X]} (hp : p ≠ 0) {s : ℕ} (hs : p.natDegree ≤ s) {B : ℝ} (hB : 0 < B) :
     ∃ z : ℤ, ∃ i : ℕ,
       (z.natAbs : ℝ) ≤ B ∧ (i : ℝ) ≤ (s : ℝ) / B ∧ (hasseDeriv i p).eval (z : R) ≠ 0 := by
-  by_contra! h
-  set M : ℕ := ⌊B⌋₊
-  set N : ℕ := ⌊(s : ℝ) / B⌋₊
-  let I : Finset ℤ := Finset.Icc (-(M : ℤ)) (M : ℤ)
-  have hcard : I.card = 2 * M + 1 := by
+  let I : Finset ℤ := Finset.Icc (-(⌊B⌋₊ : ℤ)) (⌊B⌋₊ : ℤ)
+  have hcard : I.card = 2 * ⌊B⌋₊ + 1 := by
     rw [Int.card_Icc]
     omega
-  have hmult (z : ℤ) (hz : z ∈ I) : N + 1 ≤ p.rootMultiplicity (z : R) := by
-    obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 hz
-    have hza : (z.natAbs : ℝ) ≤ B :=
-      (Nat.cast_le.2 (by omega : z.natAbs ≤ M)).trans (Nat.floor_le hB.le)
-    refine le_rootMultiplicity_of_eval_hasseDeriv_eq_zero hp fun i hi ↦ h z i hza ?_
-    exact (Nat.cast_le.2 (Nat.le_of_lt_succ hi)).trans
-      (Nat.floor_le (div_nonneg (Nat.cast_nonneg s) hB.le))
-  have hsum : (2 * M + 1) * (N + 1) ≤ s := by
-    calc (2 * M + 1) * (N + 1)
-        = ∑ _z ∈ I, (N + 1) := by rw [Finset.sum_const, hcard, smul_eq_mul]
-      _ ≤ ∑ z ∈ I, p.rootMultiplicity (z : R) := Finset.sum_le_sum hmult
-      _ = ∑ r ∈ I.map ⟨Int.cast, Int.cast_injective⟩, p.rootMultiplicity r :=
-          (Finset.sum_map I ⟨Int.cast, Int.cast_injective⟩ p.rootMultiplicity).symm
-      _ ≤ p.natDegree := p.sum_rootMultiplicity_le_natDegree _
-      _ ≤ s := hs
-  exact (lt_two_mul_floor_add_one_mul_floor_div_add_one s hB).not_ge hsum
+  obtain ⟨a, ha, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero hp
+    (I.map ⟨Int.cast, Int.cast_injective⟩) ⌊(s : ℝ) / B⌋₊ (by
+      rw [Finset.card_map, hcard]
+      exact hs.trans_lt (lt_two_mul_floor_add_one_mul_floor_div_add_one s hB))
+  obtain ⟨z, hz, rfl⟩ := Finset.mem_map.1 ha
+  obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 hz
+  refine ⟨z, i, ?_, ?_, hne⟩
+  · exact (Nat.cast_le.2 (by omega : z.natAbs ≤ ⌊B⌋₊)).trans (Nat.floor_le hB.le)
+  · exact (Nat.cast_le.2 hi).trans (Nat.floor_le (div_nonneg (Nat.cast_nonneg s) hB.le))
 
 /-- For `p = X (X - 1) (X + 1) = X³ - X` over `ℤ` with `s = 3` and `B = 1`, `p` vanishes in order
 `i = 0` at every integer `z ∈ {-1, 0, 1}`, while its first Hasse derivative `3 X² - 1` is nonzero
@@ -148,60 +145,69 @@ end Polynomial
 
 namespace MvPolynomial
 
+open _root_.MvPolynomial
+
 variable {R : Type*}
 
-/-- Over an integral domain of characteristic zero, for any nonzero polynomial
-`P : MvPolynomial (Fin (n + 1)) R` with `P.degreeOf 0 ≤ s` and any `B > 0`, there exist an integer
-`z` with `|z| ≤ B` and an order `k` with `k ≤ s / B` such that specializing `X₀` to `z` in the
-`k`-th univariate Hasse derivative of `finSuccEquiv R n P` gives a nonzero polynomial in the
-remaining variables. -/
-theorem exists_eval_hasseDeriv_finSuccEquiv_ne_zero {n : ℕ} [CommRing R] [IsDomain R]
-    [CharZero R] {P : MvPolynomial (Fin (n + 1)) R} (hP : P ≠ 0) {s : ℕ}
-    (hs : P.degreeOf 0 ≤ s) {B : ℝ} (hB : 0 < B) :
-    ∃ z : ℤ, ∃ k : ℕ,
-      (z.natAbs : ℝ) ≤ B ∧ (k : ℝ) ≤ (s : ℝ) / B ∧
-      (Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C (z : R)) ≠ 0 := by
-  obtain ⟨z, k, hz, hk, hne⟩ := (finSuccEquiv R n P).exists_eval_hasseDeriv_intCast_ne_zero
-    ((EmbeddingLike.map_ne_zero_iff (f := finSuccEquiv R n)).2 hP)
-    ((natDegree_finSuccEquiv P).le.trans hs) hB
-  exact ⟨z, k, hz, hk, by rwa [_root_.map_intCast]⟩
-
-/-- Inductive form of `exists_eval_hasseDeriv_intCast_ne_zero` on `Fin n`. -/
-private theorem exists_eval_hasseDeriv_intCast_ne_zero_fin {n : ℕ} [CommRing R] [IsDomain R]
-    [CharZero R] {P : MvPolynomial (Fin n) R} (hP : P ≠ 0) (s : Fin n → ℕ)
-    (hs : ∀ j, P.degreeOf j ≤ s j) (B : Fin n → ℝ) (hB : ∀ j, 0 < B j) :
-    ∃ z : Fin n → ℤ, ∃ i : Fin n →₀ ℕ,
-      (∀ j, ((z j).natAbs : ℝ) ≤ B j) ∧
-      (∀ j, (i j : ℝ) ≤ (s j : ℝ) / B j) ∧
-      eval (fun j ↦ (z j : R)) (hasseDeriv i P) ≠ 0 := by
+/-- Inductive form of `exists_eval_hasseDeriv_ne_zero` on `Fin n`. -/
+private theorem exists_eval_hasseDeriv_ne_zero_fin {n : ℕ} [CommRing R] [IsDomain R]
+    {P : MvPolynomial (Fin n) R} (hP : P ≠ 0) (S : Fin n → Finset R) (M : Fin n → ℕ)
+    (hdeg : ∀ j, P.degreeOf j < (S j).card * (M j + 1)) :
+    ∃ x : Fin n → R, (∀ j, x j ∈ S j) ∧ ∃ i : Fin n →₀ ℕ,
+      (∀ j, i j ≤ M j) ∧ eval x (hasseDeriv i P) ≠ 0 := by
   induction n with
   | zero =>
-    refine ⟨0, 0, fun j ↦ j.elim0, fun j ↦ j.elim0, ?_⟩
+    refine ⟨0, fun j ↦ j.elim0, 0, fun j ↦ j.elim0, ?_⟩
     rw [hasseDeriv_zero, LinearMap.id_apply]
     intro h0
-    exact hP ((eq_C_of_isEmpty P).trans (by
-      rw [← constantCoeff_eq, ← eval_zero, Subsingleton.elim 0 (fun j ↦ _), h0, map_zero]))
+    apply hP
+    rw [eq_C_of_isEmpty P] at h0 ⊢
+    simpa using congrArg (C : R → MvPolynomial (Fin 0) R) h0
   | succ n ih =>
-    obtain ⟨z₀, k, hz₀, hk, hQ⟩ :=
-      exists_eval_hasseDeriv_finSuccEquiv_ne_zero hP (hs 0) (hB 0)
-    obtain ⟨z', i', hz', hi', hne⟩ := ih hQ (s ∘ Fin.succ)
-      (fun j ↦ (degreeOf_eval_hasseDeriv_finSuccEquiv_le P (z₀ : R) k j).trans (hs j.succ))
-      (B ∘ Fin.succ) (fun j ↦ hB j.succ)
-    refine ⟨Fin.cons z₀ z', i'.cons k, ?_, ?_, ?_⟩
+    obtain ⟨a, ha, k, hk, hQ⟩ := Polynomial.exists_eval_hasseDeriv_ne_zero
+      ((EmbeddingLike.map_ne_zero_iff (f := finSuccEquiv R n)).2 hP)
+      ((S 0).map ⟨C, C_injective _ _⟩) (M 0) (by
+        simpa only [natDegree_finSuccEquiv, Finset.card_map] using hdeg 0)
+    obtain ⟨a, haS, rfl⟩ := Finset.mem_map.1 ha
+    simp only [Function.Embedding.coeFn_mk] at hQ
+    obtain ⟨x, hx, i, hi, hne⟩ := ih hQ (S ∘ Fin.succ) (M ∘ Fin.succ)
+      (fun j ↦ (degreeOf_eval_hasseDeriv_finSuccEquiv_le P a k j).trans_lt (hdeg j.succ))
+    refine ⟨Fin.cons a x, ?_, i.cons k, ?_, ?_⟩
     · intro j
       cases j using Fin.cases with
-      | zero => exact hz₀
-      | succ j => exact hz' j
+      | zero => exact haS
+      | succ j => exact hx j
     · intro j
       cases j using Fin.cases with
       | zero => exact hk
-      | succ j => exact hi' j
-    · have hcons : (fun j : Fin (n + 1) ↦ (Fin.cons (α := fun _ ↦ ℤ) z₀ z' j : R)) =
-          Fin.cons (z₀ : R) (fun j ↦ (z' j : R)) := by
-        ext j
-        cases j using Fin.cases <;> rfl
-      rw [hcons, ← eval_hasseDeriv_eval_finSuccEquiv]
-      exact hne
+      | succ j => exact hi j
+    · rwa [eval_hasseDeriv_eval_hasseDeriv_finSuccEquiv] at hne
+
+/-- A nonzero polynomial on a product of finite sets has a nonvanishing Hasse derivative with
+coordinate orders bounded by `M`, provided each grid size times `M j + 1` exceeds the corresponding
+partial degree. The coefficient ring may be an integral domain of any characteristic. -/
+theorem exists_eval_hasseDeriv_ne_zero {σ : Type*} [Finite σ] [CommRing R] [IsDomain R]
+    {P : MvPolynomial σ R} (hP : P ≠ 0) (S : σ → Finset R) (M : σ → ℕ)
+    (hdeg : ∀ j, P.degreeOf j < (S j).card * (M j + 1)) :
+    ∃ x : σ → R, (∀ j, x j ∈ S j) ∧ ∃ i : σ →₀ ℕ,
+      (∀ j, i j ≤ M j) ∧ eval x (hasseDeriv i P) ≠ 0 := by
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
+  have hPe : rename e P ≠ 0 := (EmbeddingLike.map_ne_zero_iff (f := renameEquiv R e)).2 hP
+  have hdege (j : Fin n) :
+      (rename e P).degreeOf j < (S (e.symm j)).card * (M (e.symm j) + 1) := by
+    classical
+    conv_lhs => rw [← e.apply_symm_apply j, degreeOf_rename_of_injective e.injective]
+    exact hdeg (e.symm j)
+  obtain ⟨x, hx, i, hi, hne⟩ :=
+    exists_eval_hasseDeriv_ne_zero_fin hPe (S ∘ e.symm) (M ∘ e.symm) hdege
+  refine ⟨x ∘ e, fun j ↦ ?_, i.equivMapDomain e.symm, fun j ↦ ?_, ?_⟩
+  · simpa using hx (e j)
+  · simpa using hi (e j)
+  · have hi_eq : (i.equivMapDomain e.symm).mapDomain e = i := by
+      ext j
+      simp [Finsupp.mapDomain_equiv_apply]
+    rw [← hi_eq, eval_hasseDeriv_rename e.injective] at hne
+    exact hne
 
 /-- **Nonvanishing of Hasse derivatives on a rectangular integer grid**
 (Evertse 1996, §7, Lemma 25). Over an integral domain `R` of characteristic zero, for any nonzero
@@ -216,23 +222,25 @@ theorem exists_eval_hasseDeriv_intCast_ne_zero {σ : Type*} [Finite σ] [CommRin
       (∀ j, ((z j).natAbs : ℝ) ≤ B j) ∧
       (∀ j, (i j : ℝ) ≤ (s j : ℝ) / B j) ∧
       eval (fun j ↦ (z j : R)) (hasseDeriv i P) ≠ 0 := by
-  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
-  have hPe : rename e P ≠ 0 := (EmbeddingLike.map_ne_zero_iff (f := renameEquiv R e)).2 hP
-  have hse (j : Fin n) : (rename e P).degreeOf j ≤ s (e.symm j) := by
-    classical
-    conv_lhs => rw [← e.apply_symm_apply j, degreeOf_rename_of_injective e.injective]
-    exact hs (e.symm j)
-  obtain ⟨z, i, hz, hi, hne⟩ :=
-    exists_eval_hasseDeriv_intCast_ne_zero_fin hPe (s ∘ e.symm) hse (B ∘ e.symm)
-      (fun j ↦ hB (e.symm j))
-  refine ⟨z ∘ e, i.equivMapDomain e.symm, fun j ↦ ?_, fun j ↦ ?_, ?_⟩
-  · simpa using hz (e j)
-  · simpa using hi (e j)
-  · have hi_eq : (i.equivMapDomain e.symm).mapDomain e = i := by
-      ext j
-      simp [Finsupp.mapDomain_equiv_apply]
-    rw [← hi_eq, eval_hasseDeriv_rename e.injective] at hne
-    exact hne
+  let I (j : σ) : Finset ℤ := Finset.Icc (-(⌊B j⌋₊ : ℤ)) (⌊B j⌋₊ : ℤ)
+  have hcard (j : σ) : (I j).card = 2 * ⌊B j⌋₊ + 1 := by
+    rw [Int.card_Icc]
+    omega
+  obtain ⟨x, hx, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero hP
+    (fun j ↦ (I j).map ⟨Int.cast, Int.cast_injective⟩) (fun j ↦ ⌊(s j : ℝ) / B j⌋₊)
+    (fun j ↦ by
+      rw [Finset.card_map, hcard]
+      exact (hs j).trans_lt
+        (Polynomial.lt_two_mul_floor_add_one_mul_floor_div_add_one (s j) (hB j)))
+  choose z hz hzx using fun j ↦ Finset.mem_map.1 (hx j)
+  refine ⟨z, i, ?_, ?_, ?_⟩
+  · intro j
+    obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 (hz j)
+    exact (Nat.cast_le.2 (by omega : (z j).natAbs ≤ ⌊B j⌋₊)).trans (Nat.floor_le (hB j).le)
+  · intro j
+    exact (Nat.cast_le.2 (hi j)).trans
+      (Nat.floor_le (div_nonneg (Nat.cast_nonneg (s j)) (hB j).le))
+  · simpa only [← funext hzx, Function.Embedding.coeFn_mk] using hne
 
 /-- In `0` variables, a nonzero constant polynomial `C c : MvPolynomial (Fin 0) ℤ` is already
 nonzero at `z = 0` in derivative order `i = 0`. -/
@@ -263,3 +271,5 @@ example :
   simp [hne]
 
 end MvPolynomial
+
+end TauCeti.Grid
