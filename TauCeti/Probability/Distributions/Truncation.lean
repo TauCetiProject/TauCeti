@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.ConditionalProbability
+public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.Probability.Quantile
 public import TauCeti.MeasureTheory.Measure.LowerSet
 
@@ -28,7 +28,6 @@ Consequently, at an interior level `u`, its quantile is the quantile of `μ` at 
 `L + u * (R - L)`. The strict hypothesis `L < R` says exactly that the conditioning interval has
 positive mass. No atomlessness or nondegeneracy assumption on the conditional law is needed.
 The underlying statements for differences of measurable lower sets also allow unbounded cuts.
-If the relevant endpoint atoms vanish, the conditional measures agree across conventions.
 
 ## Main results
 

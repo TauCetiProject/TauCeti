@@ -35,8 +35,8 @@ theorem measureReal_inter_of_isLowerSet (hs : IsLowerSet s) (ht : IsLowerSet t)
   · rw [inter_eq_left.mpr h, min_eq_left (measureReal_mono h hμt)]
   · rw [inter_eq_right.mpr h, min_eq_right (measureReal_mono h hμs)]
 
-/-- Removing a measurable lower set from another finite-mass lower set subtracts their real
-measures, with a lower bound of zero. -/
+/-- Removing a measurable lower set from another lower set, both of finite mass, subtracts their
+real measures, with a lower bound of zero. -/
 theorem measureReal_sdiff_of_isLowerSet (hs : IsLowerSet s) (ht : IsLowerSet t)
     (hmt : MeasurableSet t) (hμs : μ s ≠ ∞ := by finiteness)
     (hμt : μ t ≠ ∞ := by finiteness) :
