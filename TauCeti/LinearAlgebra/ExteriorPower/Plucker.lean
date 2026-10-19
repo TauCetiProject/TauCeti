@@ -58,8 +58,9 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
-* `TauCeti.exists_plucker_eq_plucker_compl`: the Plücker coordinates of complementary orthogonal
-  families are complementary minors, up to a common nonzero factor and signs.
+* `TauCeti.exists_plucker_eq_mul_plucker_compl_or_eq_neg`: the Plücker coordinates of
+  complementary orthogonal families are complementary minors, up to a common nonzero factor and
+  signs.
 * `TauCeti.gcd_plucker_eq_one`: the Plücker coordinates of a basis of a saturated submodule of
   `ℤ^ι` are coprime.
 
@@ -247,9 +248,9 @@ vectors in `K^ι`, with `p + q = #ι`, such that every `x i` has dot product zer
 so `y` is a basis of the orthogonal complement of the span of `x`. Then, up to a common nonzero
 factor `c` and signs, the Plücker coordinate of `y` at a `q`-element subset `t` of `ι` is the
 Plücker coordinate of `x` at the complement of `t`. -/
-theorem exists_plucker_eq_plucker_compl (hm : p + q = Fintype.card ι) {x : Fin p → ι → K}
-    {y : Fin q → ι → K} (hx : LinearIndependent K x) (hy : LinearIndependent K y)
-    (hxy : ∀ i j, x i ⬝ᵥ y j = 0) :
+theorem exists_plucker_eq_mul_plucker_compl_or_eq_neg (hm : p + q = Fintype.card ι)
+    {x : Fin p → ι → K} {y : Fin q → ι → K} (hx : LinearIndependent K x)
+    (hy : LinearIndependent K y) (hxy : ∀ i j, x i ⬝ᵥ y j = 0) :
     ∃ c : K, c ≠ 0 ∧ ∀ t : powersetCard ι q,
       plucker y t = c * plucker x (compl hm t) ∨ plucker y t = -(c * plucker x (compl hm t)) := by
   have hsurj : Function.Surjective (Matrix.of y).mulVec := hy.mulVec_surjective

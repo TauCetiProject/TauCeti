@@ -200,7 +200,8 @@ theorem relativeSubspaceHeight_euclideanDual [Fintype ι] :
     relativeSubspaceHeight U.euclideanDual = relativeSubspaceHeight U := by
   let b := finBasis K U
   let b' := finBasis K U.euclideanDual
-  obtain ⟨c, hc, h⟩ := exists_plucker_eq_plucker_compl (finrank_add_finrank_euclideanDual U)
+  obtain ⟨c, hc, h⟩ :=
+    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
     b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
     fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
   rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
