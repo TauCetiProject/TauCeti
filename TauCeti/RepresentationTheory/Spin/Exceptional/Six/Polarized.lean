@@ -109,9 +109,13 @@ private noncomputable def polarizedSpinGroupMulHom
           rw [hm, LinearMap.det_toMatrix]
           exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
       map_one' := Subtype.ext (by
+        -- `Subtype.ext` leaves the special-linear carrier; expose its matrix projection so
+        -- the homomorphism's `map_one` and the unit's value can rewrite the goal.
         change (u (spinGroupToEvenUnitary Q 1) : Matrix (Fin 4) (Fin 4) K) = 1
         rw [map_one, map_one, Units.val_one])
       map_mul' := fun s t ↦ Subtype.ext (by
+        -- The multiplication law is available for the underlying unit-valued map, not for the
+        -- special-linear subtype wrapper introduced by `Subtype.ext`; expose that projection.
         change (u (spinGroupToEvenUnitary Q (s * t)) : Matrix (Fin 4) (Fin 4) K) =
           (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) *
             (u (spinGroupToEvenUnitary Q t) : Matrix (Fin 4) (Fin 4) K)
@@ -131,6 +135,8 @@ private theorem polarizedSpinGroupMulHom_matrix
   let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
   let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
     (P.nondegenerate_of_line_eq_bot hline) hV
+  -- The definition of the local homomorphism contains a special-linear subtype.  Its matrix
+  -- projection is definitionally this first-factor value, which is the form of the helper above.
   change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = _
   exact polarizedSpinGroupFirstFactor_matrix P hline hW hplus hV b hb s
 
@@ -162,6 +168,8 @@ private theorem polarizedSpinGroupMulHom_bijective
     obtain ⟨s, hs⟩ :=
       exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline hWfin a hdet
     refine ⟨s, Subtype.ext ?_⟩
+    -- The target still contains the special-linear subtype produced by the local homomorphism;
+    -- expose its matrix projection so its matrix formula and `hs` can rewrite it.
     change (polarizedSpinGroupMulHom P hline hWfin hW hplus hV b hb s :
       Matrix (Fin 4) (Fin 4) K) = A
     rw [polarizedSpinGroupMulHom_matrix P hline hWfin hW hplus hV b hb s, hs]
