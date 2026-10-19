@@ -43,7 +43,9 @@ H_{Π(Q)}(t) = C_G(-t)⁻¹.
 It holds for every orientation of `G` at which every Koszul complex is a resolution, and this file
 proves it unconditionally for every orientation without sinks. A connected graph has an orientation
 without sinks exactly when it is not a tree, so the non-Dynkin trees, such as `D~ₙ` and `E₆~`,
-`E₇~`, `E₈~`, are covered only through the conditional form.
+`E₇~`, `E₈~`, are covered here only through the conditional form. The theorem of Etingof and Eu
+discharges it for every orientation of a connected non-Dynkin graph
+(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso`).
 
 ## Main results
 

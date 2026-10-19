@@ -15,7 +15,8 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 Dimension-counting criteria for nontrivial submodule intersection: two subspaces of a
 finite-dimensional space whose dimensions sum to more than the ambient dimension meet
 nontrivially, and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
-nontrivially.
+nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
+`m`-dimensional space has codimension at most the codimension of `W`.
 
 The rank of a product `V.prod W` of subspaces is the sum of their ranks, and consequently the
 rank of a product map `f.prodMap g` is the sum of the ranks of `f` and `g`.
@@ -48,6 +49,21 @@ theorem lift_rank_le_of_disjoint_ker {M : Type u} {N : Type v} [AddCommGroup M] 
     (injective_iff_map_eq_zero _).mpr fun y hy ↦ Subtype.ext (disjoint_def.mp h y y.2 hy)
   exact (lift_rank_range_of_injective _ hinj).symm.le.trans
     (Cardinal.lift_le.mpr (LinearMap.rank_comp_le_left _ _))
+
+/-- The preimage of a subspace `W` under a linear map `f : M → N` of finite-dimensional spaces
+has codimension at most the codimension of `W`: `dim M + dim W ≤ dim (f⁻¹ W) + dim N`. -/
+theorem finrank_add_finrank_le_finrank_comap_add_finrank {M N : Type*} [AddCommGroup M]
+    [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N] [FiniteDimensional 𝕜 M] [FiniteDimensional 𝕜 N]
+    (f : M →ₗ[𝕜] N) (W : Submodule 𝕜 N) :
+    finrank 𝕜 M + finrank 𝕜 W ≤ finrank 𝕜 (W.comap f) + finrank 𝕜 N := by
+  -- The preimage is the kernel of `M → N ⧸ W`; apply rank–nullity to that map.
+  have hker : LinearMap.ker (W.mkQ ∘ₗ f) = W.comap f := by
+    rw [LinearMap.ker_comp, ker_mkQ]
+  have h₁ := LinearMap.finrank_range_add_finrank_ker (W.mkQ ∘ₗ f)
+  have h₂ := (W.mkQ ∘ₗ f).range.finrank_le
+  have h₃ := W.finrank_quotient_add_finrank
+  rw [hker] at h₁
+  omega
 
 /-- The rank of a product of subspaces is the sum of their ranks. -/
 theorem rank_prod {M : Type u} {N : Type v} [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N]

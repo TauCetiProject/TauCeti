@@ -32,6 +32,8 @@ while tracking its degree.
   as a morphism of topological representations, naturally in the coefficients.
 * `gradedResolutionTopRepMap` bundles coefficient maps, preserving identities, composition,
   and the differential.
+* `TauCeti.smoothGradedResolutionFunctor` packages the smooth total resolution functorially.
+* `TauCeti.smoothGradedResolutionAugmentation` is its natural coefficient augmentation.
 
 ## References
 
@@ -526,3 +528,74 @@ example :
   simp [F, d_zero, ContRepresentation.coind₁ι_toFun] at hv
 
 end TopRep
+
+namespace TauCeti
+
+universe u v w
+
+variable {R : Type u} [Ring R] [TopologicalSpace R] [DiscreteTopology R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+
+/-- The total shifted coinduced resolution, as a functor on smooth discrete coefficient
+representations. -/
+@[expose] noncomputable def smoothGradedResolutionFunctor :
+    SmoothDiscreteTopRep.{u, v, max v w} R G ⥤
+      SmoothDiscreteTopRep.{u, v, max v w} R G where
+  obj A := ⟨A.obj.gradedResolutionTopRep,
+    A.obj.isSmoothDiscrete_gradedResolutionTopRep A.property⟩
+  map f := ObjectProperty.homMk (TopRep.gradedResolutionTopRepMap f.hom)
+  map_id A := ObjectProperty.hom_ext _ A.obj.gradedResolutionTopRepMap_id
+  map_comp f g := ObjectProperty.hom_ext _
+    (TopRep.gradedResolutionTopRepMap_comp f.hom g.hom)
+
+/-- The smooth total-resolution functor sends a coefficient object to its total shifted
+coinduced resolution.
+
+This is not a simp lemma: rewriting the objects would take the morphism-evaluation lemmas, such as
+`smoothGradedResolutionAugmentationApp_hom_apply`, out of simp-normal form. -/
+theorem smoothGradedResolutionFunctor_obj (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    (smoothGradedResolutionFunctor (R := R) (G := G)).obj A =
+      ⟨A.obj.gradedResolutionTopRep, A.obj.isSmoothDiscrete_gradedResolutionTopRep A.property⟩ :=
+  rfl
+
+/-- The smooth total-resolution functor acts on morphisms by the induced map of total
+resolutions. -/
+@[simp]
+theorem smoothGradedResolutionFunctor_map {A B : SmoothDiscreteTopRep.{u, v, max v w} R G}
+    (f : A ⟶ B) :
+    (smoothGradedResolutionFunctor (R := R) (G := G)).map f =
+      ObjectProperty.homMk (TopRep.gradedResolutionTopRepMap f.hom) :=
+  rfl
+
+/-- The coefficient augmentation into the total shifted coinduced resolution. -/
+noncomputable def smoothGradedResolutionAugmentationApp
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    A ⟶ (smoothGradedResolutionFunctor (R := R) (G := G)).obj A :=
+  ObjectProperty.homMk A.obj.gradedResolutionTopRepAugmentation
+
+/-- The coefficient augmentations into the total shifted coinduced resolution are natural among
+smooth discrete coefficient representations. -/
+noncomputable def smoothGradedResolutionAugmentation :
+    𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R G) ⟶
+      smoothGradedResolutionFunctor (R := R) (G := G) where
+  app A := smoothGradedResolutionAugmentationApp A
+  naturality := fun {_ _} f ↦
+    (ObjectProperty.hom_ext _
+      (TopRep.gradedResolutionTopRepMap_augmentation f.hom)).symm
+
+/-- The component of the smooth total-resolution augmentation is the named augmentation. -/
+@[simp]
+theorem smoothGradedResolutionAugmentation_app (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    (smoothGradedResolutionAugmentation (R := R) (G := G)).app A =
+      smoothGradedResolutionAugmentationApp A :=
+  congrArg (fun α ↦ α.app A) smoothGradedResolutionAugmentation.eq_1
+
+/-- The smooth total-resolution augmentation acts by the ordinary augmentation on carriers. -/
+@[simp]
+theorem smoothGradedResolutionAugmentationApp_hom_apply
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.V) :
+    (smoothGradedResolutionAugmentationApp A).hom.hom x =
+      A.obj.gradedResolutionAugmentation x :=
+  (rfl)
+
+end TauCeti

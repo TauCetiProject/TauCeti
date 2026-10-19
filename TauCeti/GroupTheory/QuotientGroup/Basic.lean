@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Algebra.Group.Subgroup.Finite
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Left translation on a coset space
@@ -37,6 +37,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 ## Main statements
 
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
+* `Subgroup.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
+  index of `H` in the conjugate of `K` by `s⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
@@ -100,6 +102,19 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
   rw [← mem_stabilizer_iff, stabilizer_quotientGroup_mk,
     Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def, MulAut.conj_apply]
   simp
+
+/-- The size of the orbit of `sH` under a subgroup `K` is the relative index of `H` in the
+conjugate of `K` by `s⁻¹`. -/
+theorem _root_.Subgroup.card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
+    Nat.card (orbit K ((s : G) : G ⧸ H)) =
+      H.relIndex (MulAut.conj s⁻¹ • K) := by
+  -- The stabilizer of `sH` in `K` is `sHs⁻¹` read inside `K`; orbit-stabilizer then gives the
+  -- index of `sHs⁻¹` in `K`, which conjugation by `s⁻¹` turns into the stated relative index.
+  have hstab : stabilizer K ((s : G) : G ⧸ H) = (MulAut.conj s • H).subgroupOf K := by
+    ext k
+    simp [← stabilizer_quotientGroup_mk]
+  rw [← Subgroup.relIndex_pointwise_smul (MulAut.conj s), map_inv, smul_inv_smul,
+    Subgroup.relIndex, ← hstab, Nat.card_coe_set_eq, index_stabilizer]
 
 /-- The elements `x` of `G` with `x⁻¹ g x ∈ H` are the preimage of the `g`-fixed points of `G ⧸ H`,
 a union of `|(G ⧸ H)^g|` cosets of `H`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.CategoryTheory.Subobject.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.CommGrp_
+public import TauCeti.CategoryTheory.Monoidal.Grp.Over
 
 /-!
 # Closed subgroup schemes
@@ -53,21 +54,8 @@ def closedSubgroupMorphismProperty (X : Scheme.{u}) :
 instance closedSubgroupMorphismProperty_respectsIso (X : Scheme.{u}) :
     (closedSubgroupMorphismProperty X).RespectsIso := by
   unfold closedSubgroupMorphismProperty
-  let _ : MorphismProperty.RespectsIso (@IsClosedImmersion) :=
-    AlgebraicGeometry.IsClosedImmersion.respectsIso
   exact MorphismProperty.RespectsIso.inverseImage (@IsClosedImmersion)
     (Grp.forget _ ⋙ Over.forget _)
-
-/-- A group-scheme morphism whose underlying scheme morphism is a closed immersion is a
-monomorphism. -/
-instance (priority := 900) mono_of_isClosedImmersion_underlying {X : Scheme.{u}}
-    {G K : Grp (Over X)} (f : G ⟶ K) [IsClosedImmersion f.hom.hom.left] : Mono f := by
-  apply (Grp.forget _ ⋙ Over.forget _).mono_of_mono_map
-  -- The composite forgetful functor maps `f` to `f.hom.hom.left`; its source and target are
-  -- definitionally the underlying schemes, so the dependent `Mono` proposition needs this
-  -- conversion after reflecting monomorphisms.
-  change Mono f.hom.hom.left
-  infer_instance
 
 /-- A morphism has `closedSubgroupMorphismProperty` exactly when its underlying scheme morphism is
 a closed immersion. -/
@@ -75,7 +63,6 @@ a closed immersion. -/
 lemma closedSubgroupMorphismProperty_iff (X : Scheme.{u})
     {G K : Grp (Over X)} (f : G ⟶ K) :
     closedSubgroupMorphismProperty X f ↔ IsClosedImmersion f.hom.hom.left := by
-  unfold closedSubgroupMorphismProperty MorphismProperty.inverseImage
   rfl
 
 /-- A closed subgroup scheme of `G` is a categorical subobject represented by a closed immersion
@@ -101,10 +88,7 @@ subobject represented by that arrow. -/
 @[simp]
 lemma coe_mk {K : Grp (Over X)} (i : K ⟶ G)
     [IsClosedImmersion i.hom.hom.left] :
-    (mk i).1 = Subobject.mk i :=
-  by
-    unfold mk
-    rfl
+    (mk i).1 = Subobject.mk i := (rfl)
 
 /-- The closed subgroup represented by a closed immersion is canonically isomorphic to the source
 of that immersion. -/
@@ -141,22 +125,14 @@ private lemma closedSubgroupMorphismProperty_map_arrow {H : Grp (Over X)} (e : G
       (closedSubgroupMorphismProperty X).cancel_right_of_respectsIso]
     exact hP
 
-/-- Mathlib's `Subobject.mapIsoToOrderIso_symm_apply` is stated for `RelIso.symm`, which does not
-match the `OrderIso.symm` of `Subobject.mapIsoToOrderIso` syntactically; this restates it. -/
-private lemma mapIsoToOrderIso_symm_apply {H : Grp (Over X)} (e : G ≅ H) (P : Subobject H) :
-    (Subobject.mapIsoToOrderIso e).symm P = (Subobject.map e.inv).obj P :=
-  Subobject.mapIsoToOrderIso_symm_apply e P
-
 /-- Closed subgroups are transported along an isomorphism of ambient group schemes by
 postcomposing their representing arrows with the isomorphism. -/
 noncomputable def mapIso {H : Grp (Over X)} (e : G ≅ H) :
     ClosedSubgroupScheme G ≃o ClosedSubgroupScheme H where
-  toFun P := ⟨Subobject.mapIsoToOrderIso e P.1, by
-    rw [Subobject.mapIsoToOrderIso_apply]
-    exact closedSubgroupMorphismProperty_map_arrow e P.2⟩
-  invFun P := ⟨(Subobject.mapIsoToOrderIso e).symm P.1, by
-    rw [mapIsoToOrderIso_symm_apply]
-    exact closedSubgroupMorphismProperty_map_arrow e.symm P.2⟩
+  toFun P := ⟨(Subobject.map e.hom).obj P.1,
+    closedSubgroupMorphismProperty_map_arrow e P.2⟩
+  invFun P := ⟨(Subobject.map e.inv).obj P.1,
+    closedSubgroupMorphismProperty_map_arrow e.symm P.2⟩
   left_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).symm_apply_apply P.1)
   right_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).apply_symm_apply P.1)
   map_rel_iff' := (Subobject.mapIsoToOrderIso e).map_rel_iff
@@ -164,10 +140,7 @@ noncomputable def mapIso {H : Grp (Over X)} (e : G ≅ H) :
 /-- The subobject underlying a transported closed subgroup is the transported subobject. -/
 @[simp]
 lemma coe_mapIso {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme G) :
-    (mapIso e P).1 = Subobject.mapIsoToOrderIso e P.1 := by
-  -- `mapIso` is not exposed, so it is unfolded first; its `toFun` is this subobject by definition.
-  unfold mapIso
-  rfl
+    (mapIso e P).1 = (Subobject.map e.hom).obj P.1 := (rfl)
 
 /-- Postcomposing a closed immersion with an isomorphism of group schemes gives a closed
 immersion. -/
@@ -186,17 +159,13 @@ lemma mapIso_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ G)
     [IsClosedImmersion i.hom.hom.left] :
     mapIso e (mk i) = mk (i ≫ e.hom) :=
   Subtype.ext (by
-    rw [coe_mapIso, coe_mk, coe_mk, Subobject.mapIsoToOrderIso_apply, Subobject.map_mk])
+    rw [coe_mapIso, coe_mk, coe_mk, Subobject.map_mk])
 
 /-- The subobject underlying a closed subgroup transported back along an isomorphism is the
 subobject transported back along it. -/
 @[simp]
 lemma coe_mapIso_symm {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme H) :
-    ((mapIso e).symm P).1 = (Subobject.mapIsoToOrderIso e).symm P.1 := by
-  -- `mapIso` is not exposed, so it is unfolded first; its `invFun` is this subobject by
-  -- definition.
-  unfold mapIso
-  rfl
+    ((mapIso e).symm P).1 = (Subobject.map e.inv).obj P.1 := (rfl)
 
 /-- Postcomposing a closed immersion with the inverse of an isomorphism of group schemes gives a
 closed immersion. -/
@@ -212,7 +181,7 @@ lemma mapIso_symm_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ H)
     [IsClosedImmersion i.hom.hom.left] :
     (mapIso e).symm (mk i) = mk (i ≫ e.inv) :=
   Subtype.ext (by
-    rw [coe_mapIso_symm, coe_mk, coe_mk, mapIsoToOrderIso_symm_apply, Subobject.map_mk])
+    rw [coe_mapIso_symm, coe_mk, coe_mk, Subobject.map_mk])
 
 end ClosedSubgroupScheme
 
