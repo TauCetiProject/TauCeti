@@ -26,8 +26,7 @@ against a subsolution bounds its boundary terms by the action of the velocity fi
 The left side is a Kantorovich dual value when `u (a, ·)` and `u (b, ·)` are dual potentials for a
 transport cost, and for `L w = ‖w‖ ^ p` the right side is the `p`-action of `v`. This is the
 inequality behind the lower bound `W_p (ν_a, ν_b) ^ p ≤ ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt` of the
-Benamou–Brenier formula, whose subsolutions are Hopf–Lax functions
-(`TauCeti.hopfLax_norm_rpow_add_add_smul_le`).
+Benamou–Brenier formula, whose subsolutions are Hopf–Lax functions.
 
 For a `C¹` subsolution with bounded values and derivative, the inequality is the integrated
 continuity equation `TauCeti.IsContinuityEquation.intervalIntegral_integral_fderiv_eq_sub`. Hopf–Lax
@@ -41,8 +40,12 @@ are bounded `C¹` subsolutions with bounded derivative
 eventually almost below `u` on the initial slice and almost above `u` on the final slice
 (`MeasureTheory.eventually_convolution_lsmul_lt_of_upperSemicontinuousAt` and
 `MeasureTheory.eventually_lt_convolution_lsmul_of_lowerSemicontinuousAt`), which is the direction
-the inequality needs. Hopf–Lax functions are upper semicontinuous
-(`TauCeti.upperSemicontinuousOn_hopfLax`).
+the inequality needs. Hopf–Lax functions satisfy the difference form only at positive times
+(`TauCeti.hopfLax_norm_rpow_add_add_smul_le`), and are upper semicontinuous there when the initial
+datum and the Lagrangian are bounded below (`TauCeti.upperSemicontinuousOn_hopfLax`). So they must
+be shifted in time, to make the strip lie in positive times, before this theorem applies to them;
+lower semicontinuity on the final slice is a separate hypothesis that the cited results do not
+supply.
 
 The right side is the `ℝ≥0∞`-valued integral of the positive part of `L (vₜ x)`, so neither the
 integrability of the action nor a sign condition on `L` is assumed.
@@ -74,6 +77,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   {L : E → ℝ} {ν : ℝ → FiniteMeasure E} {m : Measure (ℝ × E)} [m.IsAddHaarMeasure]
 
 namespace IsContinuityEquation
+
+/-- Mollifying by a normalized bump does not increase the sup norm. -/
+private theorem norm_normed_convolution_le (β : ContDiffBump (0 : ℝ × E))
+    (hu : LocallyIntegrable u m) (huM : ∀ q, ‖u q‖ ≤ M) (q : ℝ × E) :
+    ‖(β.normed m ⋆[lsmul ℝ ℝ, m] u) q‖ ≤ M := by
+  simpa using dist_convolution_le (z₀ := (0 : ℝ)) ((norm_nonneg _).trans (huM 0))
+    β.support_normed_eq.subset β.nonneg_normed β.integral_normed hu.aestronglyMeasurable
+    (fun q _ ↦ by simpa using huM q) (x₀ := q)
 
 /-- **Smooth subsolutions.** Let `t ↦ νₜ` be a curve of finite measures, narrowly continuous on
 `[a, b]`, solving the continuity equation with velocity `v` on `(a, b)`. For a bounded `C¹`
@@ -107,13 +118,9 @@ private theorem ofReal_integral_convolution_sub_le_lintegral
     ENNReal.ofReal (∫ x, (β.normed m ⋆[lsmul ℝ ℝ, m] u) (b, x) ∂(ν b : Measure E) -
         ∫ x, (β.normed m ⋆[lsmul ℝ ℝ, m] u) (a, x) ∂(ν a : Measure E)) ≤
       ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (L (v t x)) ∂(ν t : Measure E) := by
-  have hM : 0 ≤ M := (norm_nonneg _).trans (huM 0)
-  have hψM (q : ℝ × E) : ‖(β.normed m ⋆[lsmul ℝ ℝ, m] u) q‖ ≤ M := by
-    simpa using dist_convolution_le (z₀ := (0 : ℝ)) hM β.support_normed_eq.subset
-      β.nonneg_normed β.integral_normed hu.aestronglyMeasurable
-      (fun q _ ↦ by simpa using huM q) (x₀ := q)
   refine h.ofReal_integral_sub_integral_le_lintegral_of_fderiv_le hν hab
-    (β.hasCompactSupport_normed.contDiff_convolution_left _ β.contDiff_normed hu) hψM
+    (β.hasCompactSupport_normed.contDiff_convolution_left _ β.contDiff_normed hu)
+    (norm_normed_convolution_le β hu huM)
     (β.hasCompactSupport_normed.norm_fderiv_convolution_left_le β.contDiff_normed hu huM)
     fun t ht x w ↦ β.hasCompactSupport_normed.fderiv_convolution_left_apply_le β.contDiff_normed
       β.nonneg_normed β.integral_normed hu ?_
@@ -143,50 +150,30 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
     ENNReal.ofReal (∫ x, u (b, x) ∂(ν b : Measure E) - ∫ x, u (a, x) ∂(ν a : Measure E)) ≤
       ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (L (v t x)) ∂(ν t : Measure E) := by
   let m : Measure (ℝ × E) := Measure.addHaar
-  have hM : 0 ≤ M := (norm_nonneg _).trans (huM 0)
   have hloc : LocallyIntegrable u m :=
     (locallyIntegrable_const M).mono hu.aestronglyMeasurable
       (ae_of_all _ fun q ↦ (huM q).trans (le_abs_self M))
   -- Normalized bumps of radius `r / (n + 2) < r`, shrinking to `0`.
   let β (n : ℕ) : ContDiffBump (0 : ℝ × E) :=
-    ⟨r / (2 * (n + 2)), r / (n + 2), by positivity, by
-      rw [div_lt_div_iff_of_pos_left hr (by positivity) (by positivity)]
-      linarith⟩
-  have hrOut : Tendsto (fun n ↦ (β n).rOut) atTop (𝓝 0) := by
-    have := (tendsto_one_div_add_atTop_nhds_zero_nat.comp (tendsto_add_atTop_nat 1)).const_mul r
-    rw [mul_zero] at this
-    refine this.congr fun n ↦ ?_
-    simp only [Function.comp_apply, Nat.cast_add, Nat.cast_one, β]
-    ring
+    ⟨r / (n + 2) / 2, r / (n + 2), by positivity, half_lt_self (by positivity)⟩
+  have hrOut : Tendsto (fun n ↦ (β n).rOut) atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
   let ψ (n : ℕ) : ℝ × E → ℝ := (β n).normed m ⋆[lsmul ℝ ℝ, m] u
   have hψM (n : ℕ) (q : ℝ × E) : |ψ n q| ≤ M := by
-    simpa using dist_convolution_le (z₀ := (0 : ℝ)) hM (β n).support_normed_eq.subset
-      (β n).nonneg_normed (β n).integral_normed hu.aestronglyMeasurable
-      (fun q _ ↦ by simpa using huM q) (x₀ := q)
+    simpa [Real.norm_eq_abs] using norm_normed_convolution_le (β n) hloc huM q
   have huM' (q : ℝ × E) : |u q| ≤ M := by simpa [Real.norm_eq_abs] using huM q
   have hψmeas (n : ℕ) (t : ℝ) : Measurable fun x : E ↦ ψ n (t, x) :=
     (((β n).hasCompactSupport_normed.continuous_convolution_left _ (β n).continuous_normed
       hloc).comp (Continuous.prodMk_right t)).measurable
   have hmeas (t : ℝ) : Measurable fun x : E ↦ u (t, x) := hu.comp measurable_prodMk_left
-  -- Where `u` is lower semicontinuous, `min (ψ n q) (u q) → u q`, and where it is upper
-  -- semicontinuous, `max (ψ n q) (u q) → u q`.
+  -- The normalized bumps are mollifiers whose supports shrink to `0`.
   have hρ0 : ∀ᶠ n in atTop, ∀ y, 0 ≤ (β n).normed m y := .of_forall fun n ↦ (β n).nonneg_normed
   have hρ1 : ∀ᶠ n in atTop, ∫ y, (β n).normed m y ∂m = 1 :=
     .of_forall fun n ↦ (β n).integral_normed
   have hconv (q : ℝ × E) : ∀ᶠ n in atTop, ConvolutionExistsAt ((β n).normed m) u q (lsmul ℝ ℝ) m :=
     .of_forall fun n ↦
       (β n).hasCompactSupport_normed.convolutionExists_left _ (β n).continuous_normed hloc q
-  have hmin {q : ℝ × E} (hq : LowerSemicontinuousAt u q) :
-      Tendsto (fun n ↦ min (ψ n q) (u q)) atTop (𝓝 (u q)) :=
-    tendsto_order.2 ⟨fun c hc ↦ (eventually_lt_convolution_lsmul_of_lowerSemicontinuousAt hρ0 hρ1
-      (ContDiffBump.tendsto_support_normed_smallSets hrOut) (hconv q) hq hc).mono
-        fun n hn ↦ lt_min hn hc, fun c hc ↦ .of_forall fun n ↦ (min_le_right _ _).trans_lt hc⟩
-  have hmax {q : ℝ × E} (hq : UpperSemicontinuousAt u q) :
-      Tendsto (fun n ↦ max (ψ n q) (u q)) atTop (𝓝 (u q)) :=
-    tendsto_order.2 ⟨fun c hc ↦ .of_forall fun n ↦ hc.trans_le (le_max_right _ _), fun c hc ↦
-      (eventually_convolution_lsmul_lt_of_upperSemicontinuousAt hρ0 hρ1
-        (ContDiffBump.tendsto_support_normed_smallSets hrOut) (hconv q) hq hc).mono
-          fun n hn ↦ max_lt hn hc⟩
+  have hρs := ContDiffBump.tendsto_support_normed_smallSets (μ := m) hrOut
   -- Integrate over the boundary slices, by dominated convergence.
   have hbM (n : ℕ) (x : E) : ‖min (ψ n (b, x)) (u (b, x))‖ ≤ M := by
     rw [Real.norm_eq_abs]
@@ -198,10 +185,14 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
       max_le (abs_le.1 (hψM n _)).2 (abs_le.1 (huM' _)).2⟩
   have hlimb := tendsto_integral_of_dominated_convergence (μ := (ν b : Measure E)) (fun _ ↦ M)
     (fun n ↦ ((hψmeas n b).min (hmeas b)).aestronglyMeasurable) (integrable_const M)
-    (fun n ↦ ae_of_all _ (hbM n)) (hub.mono fun x hx ↦ hmin hx)
+    (fun n ↦ ae_of_all _ (hbM n))
+    (hub.mono fun _ hx ↦
+      tendsto_min_convolution_lsmul_of_lowerSemicontinuousAt hρ0 hρ1 hρs (hconv _) hx)
   have hlima := tendsto_integral_of_dominated_convergence (μ := (ν a : Measure E)) (fun _ ↦ M)
     (fun n ↦ ((hψmeas n a).max (hmeas a)).aestronglyMeasurable) (integrable_const M)
-    (fun n ↦ ae_of_all _ (haM n)) (hua.mono fun x hx ↦ hmax hx)
+    (fun n ↦ ae_of_all _ (haM n))
+    (hua.mono fun _ hx ↦
+      tendsto_max_convolution_lsmul_of_upperSemicontinuousAt hρ0 hρ1 hρs (hconv _) hx)
   have hint {t : ℝ} {f : E → ℝ} (hf : Measurable f) (hfM : ∀ x, ‖f x‖ ≤ M) :
       Integrable f (ν t : Measure E) :=
     .of_bound hf.aestronglyMeasurable M (ae_of_all _ hfM)

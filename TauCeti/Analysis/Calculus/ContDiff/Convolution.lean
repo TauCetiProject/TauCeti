@@ -45,9 +45,7 @@ For mollification by a nonnegative compactly supported kernel `ρ` of integral `
 records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
 forward differences of `u` in a direction pass to the directional derivative of `ρ ⋆ u`: this is
 how a nonsmooth subsolution of a Hamilton–Jacobi inequality, such as a Hopf–Lax function, becomes
-a smooth one. And a bounded `u` has a mollification with bounded derivative. One-sided bounds on
-the values pass to the mollification as well, so as the support of the kernel shrinks, the
-mollifications of a lower (upper) semicontinuous function eventually lie almost above (below) it.
+a smooth one. And a bounded `u` has a mollification with bounded derivative.
 
 ## Main declarations
 
@@ -65,12 +63,6 @@ mollifications of a lower (upper) semicontinuous function eventually lie almost 
   the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
 * `HasCompactSupport.norm_fderiv_convolution_left_le`: the mollification of a function bounded by
   `M` has derivative bounded by `M * ∫ ‖Dρ‖`.
-* `MeasureTheory.le_convolution_lsmul_of_forall_le` and
-  `MeasureTheory.convolution_lsmul_le_of_forall_le`: one-sided bounds on a ball pass to the
-  mollification at its centre.
-* `MeasureTheory.eventually_lt_convolution_lsmul_of_lowerSemicontinuousAt` and
-  `MeasureTheory.eventually_convolution_lsmul_lt_of_upperSemicontinuousAt`: mollification by
-  shrinking kernels at a point of lower (upper) semicontinuity.
 -/
 
 public section
@@ -309,71 +301,5 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
     ring
 
 end Mollifier
-
-section OneSided
-
-variable {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G] {μ : Measure G}
-  {ρ g : G → ℝ} {x₀ : G} {R c : ℝ}
-
-/-- **Lower bounds survive mollification.** If `ρ` is a nonnegative kernel of integral `1`
-supported in `ball 0 R` and `c ≤ g` on `ball x₀ R`, then `c ≤ (ρ ⋆ g) x₀`. -/
-theorem le_convolution_lsmul_of_forall_le (hρs : Function.support ρ ⊆ ball 0 R)
-    (hρ0 : ∀ y, 0 ≤ ρ y) (hρ1 : ∫ y, ρ y ∂μ = 1) (hg : ConvolutionExistsAt ρ g x₀ (lsmul ℝ ℝ) μ)
-    (h : ∀ y ∈ ball x₀ R, c ≤ g y) : c ≤ (ρ ⋆[lsmul ℝ ℝ, μ] g) x₀ := by
-  calc c = ∫ y, ρ y * c ∂μ := by rw [integral_mul_const, hρ1, one_mul]
-    _ ≤ (ρ ⋆[lsmul ℝ ℝ, μ] g) x₀ := by
-      rw [convolution_def]
-      refine integral_mono ((integrable_of_integral_eq_one hρ1).mul_const c) hg.integrable
-        fun y ↦ ?_
-      by_cases hy : ρ y = 0
-      · simp [hy]
-      have hy' : y ∈ ball (0 : G) R := hρs hy
-      rw [mem_ball_zero_iff] at hy'
-      exact mul_le_mul_of_nonneg_left (h _ (by simpa [dist_eq_norm] using hy')) (hρ0 y)
-
-/-- **Upper bounds survive mollification.** If `ρ` is a nonnegative kernel of integral `1`
-supported in `ball 0 R` and `g ≤ c` on `ball x₀ R`, then `(ρ ⋆ g) x₀ ≤ c`. -/
-theorem convolution_lsmul_le_of_forall_le (hρs : Function.support ρ ⊆ ball 0 R)
-    (hρ0 : ∀ y, 0 ≤ ρ y) (hρ1 : ∫ y, ρ y ∂μ = 1) (hg : ConvolutionExistsAt ρ g x₀ (lsmul ℝ ℝ) μ)
-    (h : ∀ y ∈ ball x₀ R, g y ≤ c) : (ρ ⋆[lsmul ℝ ℝ, μ] g) x₀ ≤ c := by
-  have hneg : (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦ -g y) x₀ = -(ρ ⋆[lsmul ℝ ℝ, μ] g) x₀ := by
-    simp [convolution_def, integral_neg]
-  have := le_convolution_lsmul_of_forall_le (c := -c) (g := fun y ↦ -g y) hρs hρ0 hρ1
-    (by simpa [ConvolutionExistsAt] using hg.integrable.neg) fun y hy ↦ neg_le_neg (h y hy)
-  linarith
-
-variable {ι : Type*} {l : Filter ι} {ρ : ι → G → ℝ}
-
-/-- **Mollification and lower semicontinuity.** Let `ρ i` be nonnegative kernels of integral `1`
-whose supports shrink to `0`. If `g` is lower semicontinuous at `x₀`, then every `c < g x₀` is
-eventually below `(ρ i ⋆ g) x₀`. -/
-theorem eventually_lt_convolution_lsmul_of_lowerSemicontinuousAt
-    (hρ0 : ∀ᶠ i in l, ∀ y, 0 ≤ ρ i y) (hρ1 : ∀ᶠ i in l, ∫ y, ρ i y ∂μ = 1)
-    (hρs : Tendsto (fun i ↦ Function.support (ρ i)) l (𝓝 0).smallSets)
-    (hg : ∀ᶠ i in l, ConvolutionExistsAt (ρ i) g x₀ (lsmul ℝ ℝ) μ)
-    (hgx : LowerSemicontinuousAt g x₀) (hc : c < g x₀) :
-    ∀ᶠ i in l, c < (ρ i ⋆[lsmul ℝ ℝ, μ] g) x₀ := by
-  obtain ⟨c', hcc', hc'⟩ := exists_between hc
-  obtain ⟨r, hr, hrs⟩ := Metric.mem_nhds_iff.1 (hgx c' hc')
-  filter_upwards [hρ0, hρ1, hg, tendsto_smallSets_iff.1 hρs _ (ball_mem_nhds 0 hr)]
-    with i h0 h1 hgi hsi
-  exact hcc'.trans_le (le_convolution_lsmul_of_forall_le hsi h0 h1 hgi fun y hy ↦ (hrs hy).le)
-
-/-- **Mollification and upper semicontinuity.** Let `ρ i` be nonnegative kernels of integral `1`
-whose supports shrink to `0`. If `g` is upper semicontinuous at `x₀`, then every `c > g x₀` is
-eventually above `(ρ i ⋆ g) x₀`. -/
-theorem eventually_convolution_lsmul_lt_of_upperSemicontinuousAt
-    (hρ0 : ∀ᶠ i in l, ∀ y, 0 ≤ ρ i y) (hρ1 : ∀ᶠ i in l, ∫ y, ρ i y ∂μ = 1)
-    (hρs : Tendsto (fun i ↦ Function.support (ρ i)) l (𝓝 0).smallSets)
-    (hg : ∀ᶠ i in l, ConvolutionExistsAt (ρ i) g x₀ (lsmul ℝ ℝ) μ)
-    (hgx : UpperSemicontinuousAt g x₀) (hc : g x₀ < c) :
-    ∀ᶠ i in l, (ρ i ⋆[lsmul ℝ ℝ, μ] g) x₀ < c := by
-  obtain ⟨c', hc', hcc'⟩ := exists_between hc
-  obtain ⟨r, hr, hrs⟩ := Metric.mem_nhds_iff.1 (hgx c' hc')
-  filter_upwards [hρ0, hρ1, hg, tendsto_smallSets_iff.1 hρs _ (ball_mem_nhds 0 hr)]
-    with i h0 h1 hgi hsi
-  exact (convolution_lsmul_le_of_forall_le hsi h0 h1 hgi fun y hy ↦ (hrs hy).le).trans_lt hcc'
-
-end OneSided
 
 end MeasureTheory
