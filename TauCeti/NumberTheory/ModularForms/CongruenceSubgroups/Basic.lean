@@ -5,16 +5,20 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Data.Nat.Factorization.Defs
 public import Mathlib.GroupTheory.Index
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 import Mathlib.Algebra.Field.ZMod
+import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.Data.Nat.Factorization.Induction
+import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
-# Congruence subgroups: the pair `Γ₁(N) ⊴ Γ₀(N)`, the index of `Γ₀(pᵏ)`, and the level
+# Congruence subgroups: the pair `Γ₁(N) ⊴ Γ₀(N)`, the index of `Γ₀(N)`, and the level
 
 Foundational results about the pair `Γ₁(N) ≤ Γ₀(N)` beyond Mathlib's
 `Mathlib.NumberTheory.ModularForms.CongruenceSubgroups`: `Γ₀(N)` normalizes `Γ₁(N)` (also
@@ -25,7 +29,9 @@ location of `-I`: it always lies in `Γ₀(N)`, with lower-right entry the unit 
 lies in `Γ₁(N)` exactly when `N ∣ 2`; and every power of the translation matrix `T` lies in
 `Γ₁(N)`, at every level.  The file then computes the index of `Γ₀` at
 prime-power levels — the degree count of Shimura, Theorem 3.24 — which lives here because it
-is congruence-subgroup arithmetic consumed by, but independent of, the Hecke-ring layer.
+is congruence-subgroup arithmetic consumed by, but independent of, the Hecke-ring layer. Strong
+approximation makes this index multiplicative in the level, which gives Dedekind's formula
+`[SL₂(ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)` at every level.
 
 A final section records how the *principal* congruence subgroups compose with the arithmetic
 of the level: `Γ` is antitone in the level like the other two families, it sits inside those
@@ -111,12 +117,22 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.intCast_apply_one_one_eq_of_mem_Gamma0_of_eq`: entry congruences for
   elements of `Γ₀`, the shapes the descent factorisations produce.
 * `CongruenceSubgroup.Gamma_lcm_eq_inf`: `Γ(lcm a b) = Γ(a) ⊓ Γ(b)`, with the coprime case
-  `CongruenceSubgroup.Gamma_mul_eq_inf_of_coprime`.
+  `CongruenceSubgroup.Gamma_mul_eq_inf_of_coprime`; `CongruenceSubgroup.Gamma0_lcm_eq_inf` and
+  `CongruenceSubgroup.Gamma0_mul_eq_inf_of_coprime` are the same for `Γ₀`.
+* `CongruenceSubgroup.Gamma0_relIndex_Gamma0_of_coprime`: for coprime `a` and `b`,
+  `[Γ₀(b) : Γ₀(a) ⊓ Γ₀(b)] = [SL₂(ℤ) : Γ₀(a)]`.
+* `CongruenceSubgroup.Gamma0_index_mul_of_coprime`: the index of `Γ₀` is multiplicative in the
+  level.
+* `CongruenceSubgroup.Gamma0_index_eq_prod_factorization` and
+  `CongruenceSubgroup.Gamma0_index_mul_prod_primeFactors`: `[SL₂(ℤ) : Γ₀(N)]` is
+  `∏_{pᵏ ∥ N} p^(k-1) (p + 1) = N ∏_{p ∣ N} (1 + 1/p)` for `N ≠ 0`.
 
 ## References
 
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
   Lemma 3.28 and Theorem 3.24.
+* Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, Exercise 1.2.3, for the
+  index of `Γ₀(N)`.
 -/
 
 public section
@@ -677,22 +693,6 @@ theorem Gamma0_prime_power_index (p : ℕ) (hp : Nat.Prime p) (k : ℕ) (hk : 0 
 
 /-! ### The Chinese-remainder decomposition `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` -/
 
-/-- Two integers agreeing modulo `gcd m n` are simultaneously congruent to a single lift,
-modulo `m` and modulo `n`: the Bézout coefficients give the lift explicitly. -/
-private lemma exists_int_modEq_of_modEq_gcd {m n x y : ℤ} (h : x ≡ y [ZMOD ↑(Int.gcd m n)]) :
-    ∃ z : ℤ, z ≡ x [ZMOD m] ∧ z ≡ y [ZMOD n] := by
-  rw [Int.modEq_iff_dvd] at h
-  obtain ⟨k, hk⟩ := h
-  have hbez := Int.gcd_eq_gcd_ab m n
-  refine ⟨x + m * (Int.gcdA m n * k), ?_, ?_⟩
-  · exact Int.modEq_iff_dvd.mpr ⟨-(Int.gcdA m n * k), by ring⟩
-  · refine Int.modEq_iff_dvd.mpr ⟨Int.gcdB m n * k, ?_⟩
-    -- `hk : y - x = gcd m n * k` is the divisibility witness; solved for `y` it is the shape
-    -- `hbez` can be substituted into.
-    have hy : y = x + (↑(Int.gcd m n) : ℤ) * k := by linarith
-    rw [hy, hbez]
-    ring
-
 /-- Entries of a `Γ(N)` matrix agree with the identity's modulo `N`. -/
 private lemma intCast_apply_modEq_one_of_mem_Gamma (N : ℕ) (γ : SL(2, ℤ))
     (hγ : γ ∈ Gamma N) (i j : Fin 2) :
@@ -793,7 +793,7 @@ private lemma exists_matrix_modEq_one_modEq_of_mem_Gamma_gcd {a b : ℕ} {γ : S
     have hgcd : (↑(Int.gcd (a : ℤ) (b : ℤ)) : ℤ) = ↑(Nat.gcd a b) := by simp [Int.gcd]
     rw [hgcd]
     exact intCast_apply_modEq_one_of_mem_Gamma _ γ hγ
-  choose z hza hzb using fun i j => exists_int_modEq_of_modEq_gcd (hcompat i j)
+  choose z hza hzb using fun i j => Int.exists_modEq_and_modEq_of_modEq_gcd (hcompat i j)
   exact ⟨Matrix.of z, hza, hzb⟩
 
 /-- **Shimura, Lemma 3.28.** `Γ(gcd a b) = Γ(a) ⊔ Γ(b)`: the join of two principal congruence
@@ -883,6 +883,84 @@ theorem Gamma_lcm_eq_inf (a b : ℕ) : Gamma (Nat.lcm a b) = Gamma a ⊓ Gamma b
 theorem Gamma_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
     Gamma (a * b) = Gamma a ⊓ Gamma b := by
   rw [← hab.lcm_eq_mul, Gamma_lcm_eq_inf]
+
+/-- **`Γ₀(lcm a b) = Γ₀(a) ⊓ Γ₀(b)`**: the lower-left entry is divisible by `lcm a b` exactly
+when it is divisible by both `a` and `b`. -/
+theorem Gamma0_lcm_eq_inf (a b : ℕ) : Gamma0 (Nat.lcm a b) = Gamma0 a ⊓ Gamma0 b := by
+  ext γ
+  simp only [Subgroup.mem_inf, mem_Gamma0_iff_dvd, Int.natCast_dvd, Nat.lcm_dvd_iff]
+
+/-- **`Γ₀(a b) = Γ₀(a) ⊓ Γ₀(b)` for coprime `a` and `b`**: `Gamma0_lcm_eq_inf` at coprime
+levels. -/
+theorem Gamma0_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
+    Gamma0 (a * b) = Gamma0 a ⊓ Gamma0 b := by
+  rw [← hab.lcm_eq_mul, Gamma0_lcm_eq_inf]
+
+/-! ### The index of `Γ₀(N)` at every level -/
+
+/-- At level one every matrix lies in `Γ₀(1)`. -/
+@[simp]
+theorem Gamma0_one_top : Gamma0 1 = ⊤ :=
+  eq_top_iff.mpr fun γ _ ↦ mem_Gamma0_iff_dvd.mpr (by simp)
+
+/-- For coprime levels `a` and `b`, `Γ₀(a)` has the same index in `Γ₀(b)` as in `SL₂(ℤ)`:
+`[Γ₀(b) : Γ₀(a) ⊓ Γ₀(b)] = [SL₂(ℤ) : Γ₀(a)]`. -/
+theorem Gamma0_relIndex_Gamma0_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
+    (Gamma0 a).relIndex (Gamma0 b) = (Gamma0 a).index := by
+  -- a zero level forces the other level to be `1`, where `Γ₀(1) = ⊤`
+  rcases eq_or_ne a 0 with rfl | ha
+  · obtain rfl := Nat.coprime_zero_left _ |>.mp hab
+    simp
+  have : NeZero a := ⟨ha⟩
+  have : (Gamma b).Normal := Gamma_normal b
+  -- `Γ(a) ⊔ Γ(b) = Γ(1) = ⊤` and `Γ(a) ≤ Γ₀(a)`, so `Γ₀(a)` and `Γ(b)` generate everything
+  have hsup : Gamma0 a ⊔ Gamma b = ⊤ := top_unique <| by
+    rw [← Gamma_one_top, ← hab.gcd_eq_one, Gamma_gcd_eq_sup]
+    exact sup_le_sup_right (Gamma_le_Gamma0 a) _
+  have hΓ : (Gamma0 a).relIndex (Gamma b) = (Gamma0 a).index := by
+    rw [← Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal, hsup,
+      Subgroup.relIndex_top_right]
+  have hne : (Gamma0 a).relIndex ⊤ ≠ 0 := by
+    rw [Subgroup.relIndex_top_right]
+    exact Subgroup.FiniteIndex.index_ne_zero
+  refine le_antisymm ?_ ?_
+  · rw [← Subgroup.relIndex_top_right]
+    exact Subgroup.relIndex_le_of_le_right le_top hne
+  · rw [← hΓ]
+    exact Subgroup.relIndex_le_of_le_right (Gamma_le_Gamma0 b)
+      (Subgroup.relIndex_ne_zero_trans hne (by simp))
+
+/-- **The index of `Γ₀` is multiplicative in the level.** For coprime `a` and `b`,
+`[SL₂(ℤ) : Γ₀(a b)] = [SL₂(ℤ) : Γ₀(a)] · [SL₂(ℤ) : Γ₀(b)]`. -/
+theorem Gamma0_index_mul_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
+    (Gamma0 (a * b)).index = (Gamma0 a).index * (Gamma0 b).index := by
+  rw [Gamma0_mul_eq_inf_of_coprime hab, Subgroup.index_inf,
+    Gamma0_relIndex_Gamma0_of_coprime hab]
+
+/-- **The index of `Γ₀(N)`**, as a product over the prime factorization of the level:
+`[SL₂(ℤ) : Γ₀(N)] = ∏_{pᵏ ∥ N} p^(k-1) (p + 1)` for `N ≠ 0`.
+
+The proof is adapted from Mathlib's `Nat.totient_eq_prod_factorization`. -/
+theorem Gamma0_index_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
+    (Gamma0 N).index = N.factorization.prod fun p k ↦ p ^ (k - 1) * (p + 1) := by
+  rw [Nat.multiplicative_factorization (fun n ↦ (Gamma0 n).index)
+    (fun _ _ ↦ Gamma0_index_mul_of_coprime) (by simp) hN]
+  refine Finsupp.prod_congr fun p hp ↦ ?_
+  exact Gamma0_prime_power_index p (Nat.prime_of_mem_primeFactors hp) _
+    (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hp))
+
+/-- **Dedekind's formula for the index of `Γ₀(N)`**:
+`[SL₂(ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)`, with the denominators cleared.
+
+The proof is adapted from Mathlib's `Nat.totient_mul_prod_primeFactors`. -/
+theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} (hN : N ≠ 0) :
+    (Gamma0 N).index * ∏ p ∈ N.primeFactors, p = N * ∏ p ∈ N.primeFactors, (p + 1) := by
+  rw [Gamma0_index_eq_prod_factorization hN]
+  conv_rhs => arg 1; rw [← Nat.prod_factorization_pow_eq_self hN]
+  simp only [Nat.prod_primeFactors_prod_factorization, ← Finsupp.prod_mul]
+  refine Finsupp.prod_congr (M := ℕ) (N := ℕ) fun p hp ↦ ?_
+  rw [Finsupp.mem_support_iff, ← zero_lt_iff] at hp
+  rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hp]
 
 end CongruenceSubgroup
 

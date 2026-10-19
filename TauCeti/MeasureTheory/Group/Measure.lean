@@ -8,14 +8,16 @@ module
 public import Mathlib.MeasureTheory.Group.Measure
 
 /-!
-# Measures invariant under addition
+# Measures and the group operations
 
 This file records measure formulas for finite families of disjoint additive translates.  In
 lattice-point counting, the formula turns disjoint translates of a fundamental-domain cell into
 measure bounds that can be compared with the number of cells. For a subgroup of finite index in a
 larger subgroup, the same count reads off the measure of the smaller subgroup from that of the
 larger one and the relative index; over a nonarchimedean local field this computes the Haar
-measure of a box of ideals inside the box of integers.
+measure of a box of ideals inside the box of integers. It also records that inverting or
+negating a probability measure gives a probability measure, so that the law of `X⁻¹` or `-X` can
+be used wherever a probability law is expected.
 
 ## Main results
 
@@ -23,6 +25,12 @@ measure of a box of ideals inside the box of integers.
   equal to the number of translates times the measure of the original set.
 * `Subgroup.relIndex_mul_measure`: for `H ≤ K` of finite relative index, the relative index
   times the measure of `H` is the measure of `K`, for any left-invariant measure.
+* `Measure.isProbabilityMeasure_inv`, `Measure.isProbabilityMeasure_neg`: the inverse and the
+  negation of a probability measure are probability measures.
+* `Measure.map_inv_comp`, `Measure.map_neg_comp`: composing a pushforward from the inverted or
+  negated measure with inversion or negation recovers the original pushforward.
+* `Measure.ae_inv_mem_preimage`, `Measure.ae_neg_mem_preimage`: a full-mass set reflects to a
+  full-mass set for the inverted or negated measure.
 -/
 
 public section
@@ -86,3 +94,37 @@ theorem relIndex_mul_measure {H K : Subgroup G} (hHK : H ≤ K) (hindex : H.relI
     Subtype.range_coe] at h
 
 end Subgroup
+
+namespace MeasureTheory.Measure
+
+/-- The inverse of a probability measure is a probability measure. -/
+@[to_additive /-- The negation of a probability measure is a probability measure. -/]
+instance isProbabilityMeasure_inv {G : Type*} [MeasurableSpace G] [Inv G] (μ : Measure G)
+    [IsProbabilityMeasure μ] : IsProbabilityMeasure μ.inv := by
+  rw [inv_def]
+  infer_instance
+
+/-- Pushing an inverted measure forward along `f` after inversion gives the pushforward of the
+original measure along `f`. -/
+@[to_additive /-- Pushing a negated measure forward along `f` after negation gives the pushforward
+of the original measure along `f`. -/]
+theorem map_inv_comp {G H : Type*} [MeasurableSpace G] [MeasurableSpace H] [InvolutiveInv G]
+    [MeasurableInv G] (μ : Measure G) {f : G → H} (hf : AEMeasurable (f ∘ Inv.inv) μ.inv) :
+    μ.inv.map (f ∘ Inv.inv) = μ.map f := by
+  rw [inv_def] at hf ⊢
+  rw [AEMeasurable.map_map_of_aemeasurable hf measurable_inv.aemeasurable]
+  congr 1
+  ext x
+  simp
+
+/-- A set of full measure reflects to a set of full measure for the inverted measure. -/
+@[to_additive /-- A set of full measure reflects to a set of full measure for the negated
+measure. -/]
+theorem ae_inv_mem_preimage {G : Type*} [MeasurableSpace G] [InvolutiveInv G] [MeasurableInv G]
+    (μ : Measure G) {s : Set G} (hs : MeasurableSet s) (hμs : ∀ᵐ x ∂μ, x ∈ s) :
+    ∀ᵐ x ∂μ.inv, x ∈ Inv.inv ⁻¹' s := by
+  simp only [Set.mem_preimage]
+  rw [inv_def, ae_map_iff measurable_inv.aemeasurable (measurable_inv hs)]
+  simpa only [inv_inv] using hμs
+
+end MeasureTheory.Measure

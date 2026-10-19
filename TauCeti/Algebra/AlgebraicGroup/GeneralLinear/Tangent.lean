@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Smooth
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 
 /-!
@@ -372,7 +373,7 @@ theorem tangentLieEquivMatrix_apply (d : Derivation R (H (R := R) n)
   change tangentMatrix n d = tangentMatrix n d
   rfl
 
-variable {k : Type u} [Field k] {n : ℕ}
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-- The cotangent-dual Lie algebra of `GL_n` identified linearly with `n × n` matrices. -/
 def cotangentDualMatrixEquiv :

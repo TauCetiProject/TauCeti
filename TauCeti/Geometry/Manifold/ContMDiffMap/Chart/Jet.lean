@@ -92,8 +92,7 @@ theorem chartIteratedFDeriv_zero_apply
 
 section NormedSpace
 
-omit [IsManifold I n M]
-
+omit [IsManifold I n M] in
 /-- For the identity chart of a normed space, the chart derivative is the ordinary iterated
 derivative, evaluated on the subtype representing the whole chart target.
 
