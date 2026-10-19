@@ -32,10 +32,9 @@ of the affine opens of `X`. Both constructions are natural in `T` and in `A`.
   algebra maps;
 * `CategoryTheory.CommMon.relativeSpecLift_comp_pushforwardStructureAlgebraMap` and
   `CategoryTheory.CommMon.relativeSpecLift_comp`: naturality in the test scheme and in the algebra;
-* `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
-  schemes over `X`;
 * `TauCeti.AlgebraicGeometry.relativeSpecHomIso X`: the bijection as a natural isomorphism of
-  functors of quasi-coherent algebras and schemes over `X`, with components
+  functors of quasi-coherent algebras and schemes over `X` (whose target uses the function-algebra
+  functor `TauCeti.AlgebraicGeometry.overFunctions X`), with components
   `CommMon.relativeSpecHomEquiv`.
 
 ## References
@@ -402,30 +401,6 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 noncomputable section
-
-/-- The function-algebra functor on all schemes over `X`: `q : T ⟶ X` goes to its algebra of
-regular functions `q_* 𝒪_T`, and a morphism over `X` goes to pullback of regular functions along
-it. -/
-@[expose]
-def overFunctions (X : Scheme.{u}) : (Over X)ᵒᵖ ⥤ CommMon X.Modules where
-  obj T := T.unop.hom.pushforwardStructureAlgebra
-  map g := Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (Over.w g.unop)
-  map_id _ := Scheme.Hom.pushforwardStructureAlgebraMap_id
-  map_comp g g' := Scheme.Hom.pushforwardStructureAlgebraMap_comp g'.unop.left g.unop.left
-    (Over.w g'.unop) (Over.w g.unop)
-
-/-- The function algebra of `q : T ⟶ X` is `q_* 𝒪_T`. -/
-@[simp]
-lemma overFunctions_obj {X : Scheme.{u}} (T : (Over X)ᵒᵖ) :
-    (overFunctions X).obj T = T.unop.hom.pushforwardStructureAlgebra :=
-  (rfl)
-
-/-- A morphism over `X` acts on function algebras by pullback of regular functions. -/
-@[simp]
-lemma overFunctions_map {X : Scheme.{u}} {T T' : (Over X)ᵒᵖ} (g : T ⟶ T') :
-    (overFunctions X).map g =
-      Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (Over.w g.unop) :=
-  (rfl)
 
 variable {X : Scheme.{u}} in
 /-- `CommMon.relativeSpecHomEquiv` with morphisms over `X` read in `Over X`. -/
