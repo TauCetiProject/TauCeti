@@ -6,20 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
+import TauCeti.Probability.Cdf
 
 /-!
-# Cumulative distribution function of the generalized Pareto law
+# Cumulative distribution functions of generalized Pareto laws
 
-For positive scale `s`, the generalized Pareto cdf is zero below zero. On its support it is
-`1 - (1 + ξ * x / s) ^ (-1 / ξ)` for nonzero shape `ξ`, with the exponential limit
-`1 - exp (-x / s)` at shape zero. When `ξ < 0`, the cdf is one at and above the finite upper
-endpoint `-s / ξ`.
+For positive scale `s` and nonzero shape `ξ`, the generalized Pareto cdf is
+`1 - (1 + ξ * x / s) ^ (-1 / ξ)` on the nonnegative part of its support interior.
+It is zero at and below zero, and one at and above the finite upper endpoint `-s / ξ`
+when `ξ < 0`. At zero shape it is the exponential cdf.
 
-## Main results
-
-* `TauCeti.Probability.cdf_generalizedParetoMeasure_of_shape_ne_zero` gives the nonzero-shape
-  formula in the interior of the support.
-* `TauCeti.Probability.cdf_generalizedParetoMeasure_eq` gives all shape and support branches.
+The proofs use the increasing exponential-variable transformation. Its cdf identity at a
+transformed point also gives a direct way to compute probabilities without choosing a shape
+branch.
 
 ## References
 
@@ -31,114 +30,97 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Real Set
+open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
 
 variable {s ξ x : ℝ}
 
-private lemma cdf_generalizedParetoMeasure_eq_preimage (hs : 0 < s) (ξ x : ℝ) :
-    cdf (generalizedParetoMeasure s ξ) x =
-      (expMeasure 1).real (generalizedParetoMap s ξ ⁻¹' Iic x) := by
+/-- The cdf at a transformed point is the cdf of the source exponential variable. -/
+theorem cdf_generalizedParetoMeasure_generalizedParetoMap (hs : 0 < s) (ξ e : ℝ) :
+    cdf (generalizedParetoMeasure s ξ) (generalizedParetoMap s ξ e) =
+      cdf (expMeasure 1) e := by
+  let _ := isProbabilityMeasure_expMeasure one_pos
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
   rw [cdf_eq_real, generalizedParetoMeasure_of_pos hs,
-    map_measureReal_apply (measurable_generalizedParetoMap_right s ξ) measurableSet_Iic]
+    map_measureReal_apply (measurable_generalizedParetoMap_right s ξ) measurableSet_Iic,
+    cdf_eq_real]
+  congr 1
+  ext y
+  exact (strictMono_generalizedParetoMap hs ξ).le_iff_le
 
-private lemma nonneg_log_div_shape (hs : 0 < s) (hξ : ξ ≠ 0) (hx : 0 ≤ x)
-    (hbase : 0 < 1 + ξ * x / s) :
-    0 ≤ log (1 + ξ * x / s) / ξ := by
-  rcases lt_or_gt_of_ne hξ with hξ | hξ
-  · exact div_nonneg_of_nonpos
-      (log_nonpos hbase.le (by
-        have : ξ * x / s ≤ 0 := div_nonpos_of_nonpos_of_nonneg
-          (mul_nonpos_of_nonpos_of_nonneg hξ.le hx) hs.le
-        linarith)) hξ.le
-  · exact div_nonneg (log_nonneg (by
-      have : 0 ≤ ξ * x / s := div_nonneg (mul_nonneg hξ.le hx) hs.le
-      linarith)) hξ.le
+/-- The generalized Pareto cdf vanishes at and below zero. -/
+theorem cdf_generalizedParetoMeasure_of_nonpos (hs : 0 < s) (ξ : ℝ) (hx : x ≤ 0) :
+    cdf (generalizedParetoMeasure s ξ) x = 0 := by
+  have hcdf := cdf_generalizedParetoMeasure_generalizedParetoMap hs ξ 0
+  rw [generalizedParetoMap_apply_zero, cdf_expMeasure_eq one_pos] at hcdf
+  simp only [le_refl, ite_true, mul_zero, neg_zero, Real.exp_zero, sub_self] at hcdf
+  exact le_antisymm (hcdf ▸ monotone_cdf _ hx) (cdf_nonneg _ _)
 
-/-- On the interior of its support, the cdf of a positive-scale, nonzero-shape generalized
-Pareto law is `1 - (1 + ξ * x / s) ^ (-1 / ξ)`. -/
+/-- At nonzero shape the generalized Pareto cdf has its usual power formula wherever
+`x ≥ 0` and `1 + ξ * x / s > 0`. -/
 theorem cdf_generalizedParetoMeasure_of_shape_ne_zero (hs : 0 < s) (hξ : ξ ≠ 0)
-    (hx : 0 ≤ x) (hbase : 0 < 1 + ξ * x / s) :
-    cdf (generalizedParetoMeasure s ξ) x =
-      1 - (1 + ξ * x / s) ^ (-1 / ξ) := by
-  let z := log (1 + ξ * x / s) / ξ
-  have hz : 0 ≤ z := nonneg_log_div_shape hs hξ hx hbase
-  have hpre : generalizedParetoMap s ξ ⁻¹' Iic x = Iic z := by
-    ext e
-    simp only [mem_preimage, mem_Iic]
-    exact generalizedParetoMap_le_iff hs hξ hbase e
-  let _ := isProbabilityMeasure_expMeasure one_pos
-  rw [cdf_generalizedParetoMeasure_eq_preimage hs ξ x, hpre, ← cdf_eq_real,
-    cdf_expMeasure_eq one_pos, ite_eq_left hz, one_mul]
-  rw [Real.rpow_def_of_pos hbase]
+    (hx : 0 ≤ x) (hw : 0 < 1 + ξ * x / s) :
+    cdf (generalizedParetoMeasure s ξ) x = 1 - (1 + ξ * x / s) ^ (-1 / ξ) := by
+  have hinv : generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) = x := by
+    rw [generalizedParetoMap_of_shape_ne_zero hξ]
+    have hcancel : ξ * (Real.log (1 + ξ * x / s) / ξ) =
+        Real.log (1 + ξ * x / s) := by field_simp
+    rw [hcancel, Real.exp_log hw]
+    field_simp
+    ring
+  have he : 0 ≤ Real.log (1 + ξ * x / s) / ξ := by
+    apply (strictMono_generalizedParetoMap hs ξ).le_iff_le.mp
+    simpa only [hinv, generalizedParetoMap_apply_zero] using hx
+  rw [← hinv, cdf_generalizedParetoMeasure_generalizedParetoMap hs, cdf_expMeasure_eq one_pos,
+    ite_eq_left he, hinv, one_mul, Real.rpow_def_of_pos hw]
   congr 2
-  dsimp only [z]
   ring
 
-/-- The cdf of a positive-scale generalized Pareto law vanishes below zero. -/
-theorem cdf_generalizedParetoMeasure_eq_zero_of_neg (hs : 0 < s) (ξ : ℝ) (hx : x < 0) :
-    cdf (generalizedParetoMeasure s ξ) x = 0 := by
-  rw [cdf_generalizedParetoMeasure_eq_preimage hs ξ x]
-  have hpre : generalizedParetoMap s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] ∅ := by
-    filter_upwards [ae_pos_expMeasure 1] with e he
-    have hg : 0 < generalizedParetoMap s ξ e := by
-      simpa using strictMono_generalizedParetoMap hs ξ he
-    simp [not_le_of_gt (hx.trans hg)]
-  rw [measureReal_congr hpre, measureReal_empty]
-
-/-- For negative shape, the generalized Pareto cdf is one at and above its finite upper
-endpoint. -/
-theorem cdf_generalizedParetoMeasure_eq_one (hs : 0 < s) (hξ : ξ < 0)
-    (hbase : 1 + ξ * x / s ≤ 0) :
-    cdf (generalizedParetoMeasure s ξ) x = 1 := by
-  have hendpoint : -s / ξ ≤ x := by
-    rw [div_le_iff_of_neg hξ]
-    have hscaled := mul_le_mul_of_nonneg_left hbase hs.le
-    field_simp at hscaled
-    linarith
-  have hpre : generalizedParetoMap s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] Set.univ := by
-    filter_upwards [ae_pos_expMeasure 1] with e he
-    simp only [mem_preimage, mem_Iic, mem_univ]
-    rw [generalizedParetoMap_of_shape_ne_zero hξ.ne]
-    have hexp : 0 < exp (ξ * e) := exp_pos _
-    have hbound : s * (exp (ξ * e) - 1) / ξ < -s / ξ := by
-      rw [div_eq_mul_inv, div_eq_mul_inv]
-      exact mul_lt_mul_of_neg_right (by nlinarith [mul_pos hs hexp]) (inv_lt_zero.mpr hξ)
-    simp [hbound.le.trans hendpoint]
+/-- For negative shape the cdf is one at and beyond the finite upper endpoint. -/
+theorem cdf_generalizedParetoMeasure_eq_one_of_neg_div_le (hs : 0 < s) (hξ : ξ < 0)
+    (hx : -s / ξ ≤ x) : cdf (generalizedParetoMeasure s ξ) x = 1 := by
   let _ := isProbabilityMeasure_expMeasure one_pos
-  rw [cdf_generalizedParetoMeasure_eq_preimage hs ξ x, measureReal_congr hpre,
-    probReal_univ]
+  let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
+  have hpre : (generalizedParetoMap s ξ) ⁻¹' Iic x = univ := by
+    apply eq_univ_of_forall
+    intro e
+    apply le_trans _ hx
+    rw [generalizedParetoMap_of_shape_ne_zero hξ.ne, div_le_div_right_of_neg hξ]
+    nlinarith [mul_pos hs (Real.exp_pos (ξ * e))]
+  rw [cdf_eq_real, generalizedParetoMeasure_of_pos hs,
+    map_measureReal_apply (measurable_generalizedParetoMap_right s ξ) measurableSet_Iic,
+    hpre]
+  simp
 
-/-- The cdf of a positive-scale generalized Pareto law, including the exponential branch and
-the finite upper endpoint for negative shape. -/
+/-- The full generalized Pareto cdf, with its lower, zero-shape, and finite-upper-endpoint
+branches explicit. -/
 theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
     cdf (generalizedParetoMeasure s ξ) x =
-      if x < 0 then 0
-      else if ξ = 0 then 1 - exp (-x / s)
-      else if 0 < 1 + ξ * x / s then 1 - (1 + ξ * x / s) ^ (-1 / ξ)
-      else 1 := by
-  by_cases hx : x < 0
-  · rw [ite_eq_left hx, cdf_generalizedParetoMeasure_eq_zero_of_neg hs ξ hx]
-  rw [ite_eq_right hx]
-  have hx0 : 0 ≤ x := not_lt.mp hx
-  by_cases hξ : ξ = 0
-  · subst ξ
-    rw [ite_eq_left rfl, generalizedParetoMeasure_zero hs,
-      cdf_expMeasure_eq (inv_pos.mpr hs), ite_eq_left hx0]
+      if x ≤ 0 then 0 else if ξ = 0 then 1 - Real.exp (-x / s)
+      else if 0 < 1 + ξ * x / s then 1 - (1 + ξ * x / s) ^ (-1 / ξ) else 1 := by
+  split_ifs with hx hξ hw
+  · exact cdf_generalizedParetoMeasure_of_nonpos hs ξ hx
+  · rw [hξ, generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+      ite_eq_left (le_of_not_ge hx)]
     congr 2
-    field_simp
-  rw [ite_eq_right hξ]
-  by_cases hbase : 0 < 1 + ξ * x / s
-  · rw [ite_eq_left hbase,
-      cdf_generalizedParetoMeasure_of_shape_ne_zero hs hξ hx0 hbase]
-  rw [ite_eq_right hbase]
-  have hξ0 : ξ < 0 := by
-    rcases lt_or_gt_of_ne hξ with hξ | hξ
-    · exact hξ
-    · have : 0 ≤ ξ * x / s := div_nonneg (mul_nonneg hξ.le hx0) hs.le
+    ring
+  · exact cdf_generalizedParetoMeasure_of_shape_ne_zero hs hξ (le_of_not_ge hx) hw
+  · have hξneg : ξ < 0 := by
+      by_contra h
+      have := div_nonneg (mul_nonneg (le_of_not_gt h) (le_of_not_ge hx)) hs.le
       linarith
-  exact cdf_generalizedParetoMeasure_eq_one hs hξ0 (not_lt.mp hbase)
+    apply cdf_generalizedParetoMeasure_eq_one_of_neg_div_le hs hξneg
+    apply (div_le_iff_of_neg hξneg).2
+    have := (div_le_iff₀ hs).1 (show ξ * x / s ≤ -1 by linarith)
+    nlinarith
+
+/-- The generalized Pareto cdf is continuous at every real point, including both support
+endpoints. -/
+theorem continuous_cdf_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
+    Continuous (cdf (generalizedParetoMeasure s ξ)) := by
+  let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
+  let _ := nullSingletonClass_generalizedParetoMeasure hs ξ
+  exact Measure.continuous_cdf_of_noAtoms _
 
 end TauCeti.Probability

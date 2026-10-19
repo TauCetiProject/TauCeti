@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.MeasureTheory.Measure.Atom
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Distributions.Gamma.Basic
 
@@ -70,65 +71,10 @@ theorem generalizedParetoMap_of_shape_ne_zero {ξ : ℝ} (hξ : ξ ≠ 0) (s e :
     generalizedParetoMap s ξ e = s * (Real.exp (ξ * e) - 1) / ξ := by
   simp [generalizedParetoMap, hξ]
 
-/-- The generalized Pareto transformation sends zero to zero. -/
+/-- The generalized Pareto transformation sends input zero to zero at every scale and shape. -/
 @[simp]
-theorem generalizedParetoMap_zero_right (s ξ : ℝ) :
-    generalizedParetoMap s ξ 0 = 0 := by
+theorem generalizedParetoMap_apply_zero (s ξ : ℝ) : generalizedParetoMap s ξ 0 = 0 := by
   simp [generalizedParetoMap]
-
-/-- At positive scale, the generalized Pareto transformation is strictly increasing in its
-exponential input, for every shape parameter. -/
-theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
-    StrictMono (generalizedParetoMap s ξ) := by
-  intro x y hxy
-  by_cases hξ : ξ = 0
-  · simp only [hξ, generalizedParetoMap_zero]
-    exact mul_lt_mul_of_pos_left hxy hs
-  rw [generalizedParetoMap_of_shape_ne_zero hξ,
-    generalizedParetoMap_of_shape_ne_zero hξ]
-  rcases lt_or_gt_of_ne hξ with hξ | hξ
-  · rw [div_eq_mul_inv, div_eq_mul_inv]
-    have he : Real.exp (ξ * y) < Real.exp (ξ * x) :=
-      Real.exp_lt_exp.mpr (mul_lt_mul_of_neg_left hxy hξ)
-    exact mul_lt_mul_of_neg_right (mul_lt_mul_of_pos_left (sub_lt_sub_right he 1) hs)
-      (inv_lt_zero.mpr hξ)
-  · rw [div_eq_mul_inv, div_eq_mul_inv]
-    have he : Real.exp (ξ * x) < Real.exp (ξ * y) :=
-      Real.exp_lt_exp.mpr (mul_lt_mul_of_pos_left hxy hξ)
-    exact mul_lt_mul_of_pos_right (mul_lt_mul_of_pos_left (sub_lt_sub_right he 1) hs)
-      (inv_pos.mpr hξ)
-
-/-- Applying the generalized Pareto transformation to its logarithmic inverse recovers the
-original input in the interior of the support. -/
-theorem generalizedParetoMap_log_div {s ξ x : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0)
-    (hx : 0 < 1 + ξ * x / s) :
-    generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) = x := by
-  rw [generalizedParetoMap_of_shape_ne_zero hξ]
-  have hmul : ξ * (Real.log (1 + ξ * x / s) / ξ) = Real.log (1 + ξ * x / s) := by
-    field_simp
-  rw [hmul, Real.exp_log hx]
-  field_simp
-  ring
-
-/-- In the interior of the support, comparison with a generalized Pareto value is equivalent
-to comparison with its logarithmic inverse. -/
-theorem generalizedParetoMap_le_iff {s ξ x : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0)
-    (hx : 0 < 1 + ξ * x / s) (e : ℝ) :
-    generalizedParetoMap s ξ e ≤ x ↔ e ≤ Real.log (1 + ξ * x / s) / ξ := by
-  calc
-    generalizedParetoMap s ξ e ≤ x ↔
-        generalizedParetoMap s ξ e ≤
-          generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) := by
-      rw [generalizedParetoMap_log_div hs hξ hx]
-    _ ↔ e ≤ Real.log (1 + ξ * x / s) / ξ :=
-      (strictMono_generalizedParetoMap hs ξ).le_iff_le
-
-/-- The generalized Pareto transformation is continuous in its exponential input. -/
-@[fun_prop]
-theorem continuous_generalizedParetoMap (s ξ : ℝ) :
-    Continuous (generalizedParetoMap s ξ) := by
-  unfold generalizedParetoMap
-  split_ifs <;> fun_prop
 
 /-- The generalized Pareto transformation is measurable jointly in scale, shape, and input. -/
 @[fun_prop]
@@ -144,6 +90,31 @@ theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
     Measurable (generalizedParetoMap s ξ) :=
   measurable_generalizedParetoMap.comp
     ((measurable_const.prodMk measurable_const).prodMk measurable_id)
+
+/-- The generalized Pareto transformation is continuous in its exponential input. -/
+@[fun_prop]
+theorem continuous_generalizedParetoMap_right (s ξ : ℝ) :
+    Continuous (generalizedParetoMap s ξ) := by
+  unfold generalizedParetoMap
+  split_ifs <;> fun_prop
+
+/-- At positive scale the generalized Pareto transformation is strictly increasing, for every
+real shape. -/
+theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    StrictMono (generalizedParetoMap s ξ) := by
+  by_cases hξ : ξ = 0
+  · subst ξ
+    intro a b hab
+    simpa only [generalizedParetoMap_zero] using mul_lt_mul_of_pos_left hab hs
+  intro a b hab
+  simp only [generalizedParetoMap_of_shape_ne_zero hξ]
+  rcases lt_or_gt_of_ne hξ with hξ | hξ
+  · apply (div_lt_div_right_of_neg hξ).2
+    exact mul_lt_mul_of_pos_left
+      (sub_lt_sub_right (Real.exp_lt_exp.mpr (mul_lt_mul_of_neg_left hab hξ)) 1) hs
+  · apply (div_lt_div_iff_of_pos_right hξ).2
+    exact mul_lt_mul_of_pos_left
+      (sub_lt_sub_right (Real.exp_lt_exp.mpr (mul_lt_mul_of_pos_left hab hξ)) 1) hs
 
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
@@ -193,6 +164,13 @@ theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ
   rw [generalizedParetoMeasure_of_pos hs]
   let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
   infer_instance
+
+/-- Every singleton has zero generalized Pareto measure at positive scale. -/
+theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    NullSingletonClass (generalizedParetoMeasure s ξ) := by
+  rw [generalizedParetoMeasure_of_pos hs]
+  exact Measure.nullSingletonClass_map_of_injective
+    (measurable_generalizedParetoMap_right s ξ) (strictMono_generalizedParetoMap hs ξ).injective
 
 /-- A variable obtained from a rate-one exponential variable by the generalized Pareto
 transformation has the corresponding generalized Pareto law. -/
