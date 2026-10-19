@@ -19,7 +19,8 @@ When it agrees locally with an open sector, its frontier away from the vertex li
 bounding rays, and the vertex itself lies on the frontier. When it agrees far out with an open
 sector of opening less than `2π`, some point lies outside its closure. When it agrees far out with
 an open half-strip, its frontier far out lies on the two bounding rays, and again some point lies
-outside its closure; the same holds when far out it misses an open half-strip. The exponential
+outside its closure; the same holds when far out it misses an open half-strip. Far out, the
+exterior of a closed half-strip, an end of opening `2π`, is preconnected. The exponential
 coordinate `exp (π * I - ζ)` is injective on the closed strip `0 ≤ im ζ ≤ π`, real on its bounding
 lines and in the upper half-plane inside it, and on the closed half-strip it tends to `0` at
 infinity. These facts supply the boundary conditions for polygonal conformal maps.
@@ -346,6 +347,110 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
     (continuous_im.comp hζc).continuousAt.eventually (isOpen_Ioo.mem_nhds him)]
     with z hzρ hzre hzim hzU
   exact hU z hzρ hzU ⟨hzre, hzim⟩
+
+/-- The far part `{ρ < ‖w - c‖}` of the exterior of the closed half-strip
+`{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}` is preconnected.  This is the part far out of
+an end of opening `2 * π`; under a conformal map, its preimage therefore lies on one side of any
+crosscut whose image it avoids. -/
+theorem isPreconnected_far_halfStripExterior (ρ : ℝ) (c b : ℂ) :
+    IsPreconnected {w : ℂ | ρ < ‖w - c‖ ∧
+      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · convert isPreconnected_empty (α := ℂ) using 1
+    ext w
+    simp [Real.pi_nonneg]
+  -- first in the normalized coordinate `ζ = (w - c) / b`, outside the disc of radius `R`
+  set R : ℝ := ρ / ‖b‖
+  set D : Set ℂ := {ζ : ℂ | R < ‖ζ‖ ∧ (ζ.re < 0 ∨ ζ.im ∉ Icc 0 Real.pi)}
+  have hpi := Real.pi_pos
+  have hR := le_abs_self R
+  have hR' := abs_nonneg R
+  -- moving away from the origin along a coordinate direction increases the norm
+  have hnorm {y ζ : ℂ} (hy : y ∈ D) (hre : |y.re| ≤ |ζ.re|) (him : |y.im| ≤ |ζ.im|) :
+      R < ‖ζ‖ := by
+    refine hy.1.trans_le ?_
+    rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.sq_norm,
+      normSq_apply, normSq_apply, ← sq, ← sq, ← sq, ← sq, ← sq_abs y.re, ← sq_abs y.im,
+      ← sq_abs ζ.re, ← sq_abs ζ.im]
+    gcongr
+  -- three pairwise meeting half-planes lie in `D`
+  set L : Set ℂ := {ζ : ℂ | ζ.re < -|R|}
+  set Hu : Set ℂ := {ζ : ℂ | |R| + Real.pi < ζ.im}
+  set Hd : Set ℂ := {ζ : ℂ | ζ.im < -|R|}
+  have hL : L ⊆ D := fun ζ (hζ : ζ.re < -|R|) => ⟨by
+    have : |R| < |ζ.re| := by linarith [neg_le_abs ζ.re]
+    linarith [abs_re_le_norm ζ], Or.inl (by linarith)⟩
+  have hHu : Hu ⊆ D := fun ζ (hζ : |R| + Real.pi < ζ.im) => ⟨by
+    have : |R| < |ζ.im| := by linarith [le_abs_self ζ.im]
+    linarith [abs_im_le_norm ζ], Or.inr fun h => by linarith [h.2]⟩
+  have hHd : Hd ⊆ D := fun ζ (hζ : ζ.im < -|R|) => ⟨by
+    have : |R| < |ζ.im| := by linarith [neg_le_abs ζ.im]
+    linarith [abs_im_le_norm ζ], Or.inr fun h => by linarith [h.1]⟩
+  have hB : IsPreconnected (L ∪ Hu ∪ Hd) := by
+    refine ((convex_halfSpace_re_lt _).isPreconnected.union' ?_
+      (convex_halfSpace_im_gt _).isPreconnected).union' ?_ (convex_halfSpace_im_lt _).isPreconnected
+    · exact ⟨⟨-|R| - 1, |R| + Real.pi + 1⟩, by simp, by simp⟩
+    · exact ⟨⟨-|R| - 1, -|R| - 1⟩, Or.inl (show (-|R| - 1 : ℝ) < -|R| by linarith),
+        show (-|R| - 1 : ℝ) < -|R| by linarith⟩
+  -- every point of `D` is joined to them by a horizontal or vertical ray in `D`
+  have hray (y : ℂ) (hy : y ∈ D) : ∃ C : Set ℂ, Convex ℝ C ∧ y ∈ C ∧ C ⊆ D ∧
+      (C ∩ (L ∪ Hu ∪ Hd)).Nonempty := by
+    rcases hy.2 with hre | him
+    · -- to the left, into `L`
+      refine ⟨{ζ | ζ.re ≤ y.re} ∩ {ζ | y.im ≤ ζ.im} ∩ {ζ | ζ.im ≤ y.im},
+        ((convex_halfSpace_re_le _).inter (convex_halfSpace_im_ge _)).inter
+          (convex_halfSpace_im_le _), by simp,
+        fun ζ ⟨⟨(h₁ : _ ≤ _), (h₂ : _ ≤ _)⟩, (h₃ : _ ≤ _)⟩ =>
+          ⟨hnorm hy ?_ ?_, Or.inl (h₁.trans_lt hre)⟩,
+        ⟨⟨y.re - |R| - 1, y.im⟩, ⟨⟨show y.re - |R| - 1 ≤ y.re by linarith, by simp⟩, by simp⟩,
+          Or.inl (Or.inl (show y.re - |R| - 1 < -|R| by linarith))⟩⟩
+      · rw [abs_of_neg hre, abs_of_neg (h₁.trans_lt hre)]
+        exact neg_le_neg h₁
+      · rw [le_antisymm h₃ h₂]
+    rw [mem_Icc, not_and_or, not_le, not_le] at him
+    rcases him with him | him
+    · -- downwards, into `Hd`
+      refine ⟨{ζ | y.re ≤ ζ.re} ∩ {ζ | ζ.re ≤ y.re} ∩ {ζ | ζ.im ≤ y.im},
+        ((convex_halfSpace_re_ge _).inter (convex_halfSpace_re_le _)).inter
+          (convex_halfSpace_im_le _), by simp,
+        fun ζ ⟨⟨(h₁ : _ ≤ _), (h₂ : _ ≤ _)⟩, (h₃ : _ ≤ _)⟩ =>
+          ⟨hnorm hy ?_ ?_, Or.inr fun h => by linarith [h.1]⟩,
+        ⟨⟨y.re, y.im - |R| - 1⟩, ⟨⟨by simp, by simp⟩, show y.im - |R| - 1 ≤ y.im by linarith⟩,
+          Or.inr (show y.im - |R| - 1 < -|R| by linarith)⟩⟩
+      · rw [le_antisymm h₂ h₁]
+      · rw [abs_of_neg him, abs_of_neg (h₃.trans_lt him)]
+        exact neg_le_neg h₃
+    · -- upwards, into `Hu`
+      refine ⟨{ζ | y.re ≤ ζ.re} ∩ {ζ | ζ.re ≤ y.re} ∩ {ζ | y.im ≤ ζ.im},
+        ((convex_halfSpace_re_ge _).inter (convex_halfSpace_re_le _)).inter
+          (convex_halfSpace_im_ge _), by simp,
+        fun ζ ⟨⟨(h₁ : _ ≤ _), (h₂ : _ ≤ _)⟩, (h₃ : _ ≤ _)⟩ =>
+          ⟨hnorm hy ?_ ?_, Or.inr fun h => by linarith [h.2]⟩,
+        ⟨⟨y.re, y.im + |R| + 1⟩, ⟨⟨by simp, by simp⟩, show y.im ≤ y.im + |R| + 1 by linarith⟩,
+          Or.inl (Or.inr (show |R| + Real.pi < y.im + |R| + 1 by linarith))⟩⟩
+      · rw [le_antisymm h₂ h₁]
+      · rw [abs_of_pos (by linarith), abs_of_pos (by linarith)]
+        exact h₃
+  have hD : IsPreconnected D := by
+    refine isPreconnected_of_forall ⟨-|R| - 1, 0⟩ fun y hy => ?_
+    obtain ⟨C, hC, hyC, hCD, hCB⟩ := hray y hy
+    exact ⟨C ∪ (L ∪ Hu ∪ Hd), union_subset hCD (union_subset (union_subset hL hHu) hHd),
+      Or.inr (Or.inl (Or.inl (show -|R| - 1 < -|R| by linarith))), Or.inl hyC,
+      hC.isPreconnected.union' hCB hB⟩
+  -- then transport `D` by the affine map `ζ ↦ c + b * ζ`
+  convert hD.image (fun ζ => c + b * ζ) (by fun_prop) using 1
+  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  ext w
+  constructor
+  · rintro ⟨hw, hext⟩
+    refine ⟨(w - c) / b, ⟨?_, hext⟩, by field_simp; ring⟩
+    rw [norm_div]
+    exact div_lt_div_of_pos_right hw hb'
+  · rintro ⟨ζ, ⟨hζ, hext⟩, rfl⟩
+    have hζ' : (c + b * ζ - c) / b = ζ := by field_simp; ring
+    refine ⟨?_, by rwa [hζ']⟩
+    rw [add_sub_cancel_left, norm_mul]
+    rwa [div_lt_iff₀' hb'] at hζ
 
 end TauCeti
 
