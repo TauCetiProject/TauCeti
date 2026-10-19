@@ -287,6 +287,26 @@ theorem largest_eq_iff (hAB : Disjoint A B) {S : Finset V} :
     largest hf hAB = S ↔ IsGreatest {T | IsMinimum f A B T} S :=
   ⟨fun h ↦ h ▸ isGreatest_largest hf hAB, fun h ↦ (isGreatest_largest hf hAB).unique h⟩
 
+/-- The bottom of the bounded minimizer lattice is the smallest minimum source side. -/
+@[simp] theorem coe_bot_minimizers (hAB : Disjoint A B) :
+    letI := minimizersBoundedOrder hf hAB
+    ((⊥ : minimizers hf A B) : Finset V) = smallest hf hAB := by
+  let := minimizersBoundedOrder hf hAB
+  symm
+  apply (smallest_eq_iff hf hAB).mpr
+  exact ⟨(⊥ : minimizers hf A B).property, fun T hT ↦
+    Subtype.coe_le_coe.mpr (bot_le (a := (⟨T, hT⟩ : minimizers hf A B)))⟩
+
+/-- The top of the bounded minimizer lattice is the largest minimum source side. -/
+@[simp] theorem coe_top_minimizers (hAB : Disjoint A B) :
+    letI := minimizersBoundedOrder hf hAB
+    ((⊤ : minimizers hf A B) : Finset V) = largest hf hAB := by
+  let := minimizersBoundedOrder hf hAB
+  symm
+  apply (largest_eq_iff hf hAB).mpr
+  exact ⟨(⊤ : minimizers hf A B).property, fun T hT ↦
+    Subtype.coe_le_coe.mpr (le_top (a := (⟨T, hT⟩ : minimizers hf A B)))⟩
+
 /-- Relabeling vertices transports the smallest minimum source side. -/
 theorem smallest_map [DecidableEq W] [Finite W] (e : V ≃ W)
     {g : Finset W → K} (hg : IsSubmodular g)
