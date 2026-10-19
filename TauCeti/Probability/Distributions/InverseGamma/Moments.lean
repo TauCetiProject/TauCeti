@@ -13,7 +13,7 @@ import TauCeti.Probability.Moments.IntegrableExpMul
 /-!
 # Moments of the inverse-gamma distribution
 
-This file proves the natural moments, mean, variance, sharp moment thresholds, and exact
+This file proves the real and natural moments, mean, variance, sharp moment thresholds, and exact
 exponential-integrability domain of the inverse-gamma distribution.
 -/
 
@@ -32,14 +32,39 @@ variable {a r t : ℝ}
 
 /-! ### Moments -/
 
+/-- A real power is integrable under a valid inverse-gamma law exactly when its exponent is below
+the shape parameter. -/
+@[simp]
+theorem integrable_rpow_inverseGammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (q : ℝ) :
+    Integrable (fun x : ℝ ↦ x ^ q) (inverseGammaMeasure a r) ↔ q < a := by
+  rw [inverseGammaMeasure_of_pos ha hr,
+    integrable_map_measure (by fun_prop) measurable_inv.aemeasurable]
+  have h_inv : (fun x : ℝ ↦ x⁻¹ ^ q) =ᵐ[gammaMeasure a r] fun x ↦ x ^ (-q) :=
+    .of_forall fun x ↦ (Real.rpow_neg_eq_inv_rpow x q).symm
+  simp only [Function.comp_def]
+  rw [integrable_congr h_inv, integrable_rpow_gammaMeasure_iff ha hr]
+  constructor <;> intro h <;> linarith
+
+/-- **Real-power moments of a valid inverse-gamma law.** The `q`th moment exists for `q < a` and
+equals `r ^ q * Gamma (a - q) / Gamma a`. -/
+@[simp]
+theorem integral_rpow_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (hq : q < a) :
+    ∫ x, x ^ q ∂inverseGammaMeasure a r =
+      r ^ q * Real.Gamma (a - q) / Real.Gamma a := by
+  rw [inverseGammaMeasure_of_pos ha hr,
+    integral_map measurable_inv.aemeasurable (by fun_prop)]
+  have h_inv : (fun x : ℝ ↦ x⁻¹ ^ q) =ᵐ[gammaMeasure a r] fun x ↦ x ^ (-q) :=
+    .of_forall fun x ↦ (Real.rpow_neg_eq_inv_rpow x q).symm
+  rw [integral_congr_ae h_inv,
+    integral_rpow_gammaMeasure ha hr (q := -q) (by linarith)]
+  simp only [neg_neg, sub_eq_add_neg]
+
 /-- A natural power is integrable under a valid inverse-gamma law exactly below the shape. -/
 @[simp]
 theorem integrable_pow_inverseGammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (inverseGammaMeasure a r) ↔ (n : ℝ) < a := by
-  rw [inverseGammaMeasure_of_pos ha hr,
-    integrable_map_measure (by fun_prop) measurable_inv.aemeasurable]
-  simpa only [Function.comp_def, inv_pow] using
-    TauCeti.Probability.integrable_inv_pow_gammaMeasure_iff ha hr n
+  simpa only [Real.rpow_natCast] using
+    integrable_rpow_inverseGammaMeasure_iff ha hr (n : ℝ)
 
 /-- **Natural moments of a valid inverse-gamma law.**  The `n`th moment exists for `n < a` and
 equals `r ^ n * Gamma (a - n) / Gamma a`. -/
@@ -49,9 +74,8 @@ theorem integral_pow_inverseGammaMeasure (hr : 0 < r) (n : ℕ)
     ∫ x, x ^ n ∂inverseGammaMeasure a r =
       r ^ n * Real.Gamma (a - n) / Real.Gamma a := by
   have ha : 0 < a := lt_of_le_of_lt (Nat.cast_nonneg n) hn
-  rw [inverseGammaMeasure_of_pos ha hr,
-    integral_map measurable_inv.aemeasurable (by fun_prop)]
-  simpa only [inv_pow] using TauCeti.Probability.integral_inv_pow_gammaMeasure hr n hn
+  simpa only [Real.rpow_natCast] using
+    integral_rpow_inverseGammaMeasure ha hr hn
 
 /-- The mean of an inverse-gamma law is `r / (a - 1)` when `1 < a`. -/
 @[simp]

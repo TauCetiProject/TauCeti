@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Radical API for quadratic forms
@@ -42,22 +43,22 @@ regular case.
 * `QuadraticMap.nondegenerate_restrict_of_isCompl_radical`: a radical complement is regular.
 * `QuadraticForm.exists_equivalent_zero_radical_prod`: a quadratic form splits
   as the zero form on its radical and a regular complement.
-* `QuadraticForm.finrank_radical_eq_of_equivalent_zero_prod` and
-  `QuadraticForm.finrank_zeroPart_eq_of_equivalent_zero_prod`: the zero summand in a decomposition
-  into a zero form and a regular form has dimension equal to the radical.
+* `QuadraticMap.finrank_radical_eq_of_equivalent_zero_prod` and
+  `QuadraticMap.finrank_zeroPart_eq_of_equivalent_zero_prod`: the zero summand in a decomposition
+  into a zero map and a map with trivial radical has finrank equal to the radical.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
-* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
-  nondegenerately is complementary to its polar orthogonal complement.
-* `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular finite-dimensional
-  quadratic space, the orthogonal complement of a regular subspace is regular.
+* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
+  form restricts nondegenerately is complementary to its polar orthogonal complement.
+* `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular quadratic space,
+  the orthogonal complement of a finite-dimensional regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic map on a nontrivial module is
   nonzero.
 * `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
-  for a nondegenerate quadratic form.
+  for a nondegenerate quadratic map when `2` is invertible.
 * `QuadraticMap.Isometry.injective_of_radical_eq_bot`: an isometry out of a quadratic map with
   trivial radical is injective.
 * `QuadraticMap.liftOfSurjective`: descent of a quadratic map along a surjective linear map whose
@@ -217,7 +218,7 @@ theorem radical_lift_radical (Q : QuadraticMap R M P) :
 on `M ⧸ Q.radical` has no radical: a class orthogonal to every class is represented by a vector
 in `Q.radical`, hence is zero. This is the regular quotient used in the Witt decomposition of a
 possibly degenerate form. -/
-theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticForm R M) :
+theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticMap R M P) :
     (Q.lift Q.radical le_rfl).Nondegenerate := by
   rw [nondegenerate_iff_radical_eq_bot, radical_lift_radical]
 
@@ -300,12 +301,6 @@ section QuotientByRadical
 
 variable {N : Type*} [AddCommGroup N] [Module R N]
 
-private theorem quotientEquivOfIsCompl_symm_apply {S : Submodule R M}
-    (W : Submodule R M) (hW : IsCompl S W) (x : W) :
-    (S.quotientEquivOfIsCompl W hW).symm x =
-      (Submodule.Quotient.mk (x : M) : M ⧸ S) :=
-  LinearMap.congr_fun (Submodule.toLinearMap_symm_quotientEquivOfIsCompl hW) x
-
 /-- The restriction of a quadratic map to a complement of its radical is isometric to the
 quadratic map descended to the quotient by the radical. -/
 noncomputable def IsometryEquiv.restrictComplementLiftRadical (Q : QuadraticMap R M P)
@@ -315,16 +310,18 @@ noncomputable def IsometryEquiv.restrictComplementLiftRadical (Q : QuadraticMap 
   map_app' x := by
     -- Expose the quotient equivalence hidden by the isometry-equivalence coercion.
     change Q.lift Q.radical le_rfl ((Q.radical.quotientEquivOfIsCompl W hW).symm x) = _
-    rw [quotientEquivOfIsCompl_symm_apply]
-    simp only [QuadraticMap.lift_mk, QuadraticMap.restrict_apply]
+    have hx : (Q.radical.quotientEquivOfIsCompl W hW).symm x =
+        (Submodule.Quotient.mk (x : M) : M ⧸ Q.radical) :=
+      LinearMap.congr_fun (Submodule.toLinearMap_symm_quotientEquivOfIsCompl hW) x
+    rw [hx, QuadraticMap.lift_mk, QuadraticMap.restrict_apply]
 
 /-- The complement-to-quotient isometry sends a vector to its quotient class. -/
 @[simp]
 theorem IsometryEquiv.restrictComplementLiftRadical_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : W) :
     IsometryEquiv.restrictComplementLiftRadical Q W hW x =
-      (Submodule.Quotient.mk (x : M) : M ⧸ Q.radical) := by
-  exact quotientEquivOfIsCompl_symm_apply W hW x
+      (Submodule.Quotient.mk (x : M) : M ⧸ Q.radical) :=
+  LinearMap.congr_fun (Submodule.toLinearMap_symm_quotientEquivOfIsCompl hW) x
 
 /-- The inverse complement-to-quotient isometry is the quotient equivalence. -/
 @[simp]
@@ -485,9 +482,9 @@ namespace QuadraticMap.Nondegenerate
 variable {R M M' P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup M'] [Module R M'] [AddCommGroup P] [Module R P]
 
-/-- The polar functional of a nonzero vector is nonzero for a nondegenerate quadratic form. -/
-theorem polarBilin_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-    [Invertible (2 : K)] {Q : QuadraticForm K V} {u : V}
+/-- When two is invertible, the polar linear map of a nonzero vector is nonzero for a
+nondegenerate quadratic map. -/
+theorem polarBilin_ne_zero [Invertible (2 : R)] {Q : QuadraticMap R M P} {u : M}
     (hQ : Q.Nondegenerate) (hu : u ≠ 0) : Q.polarBilin u ≠ 0 :=
   fun h => hu ((nondegenerate_polar_iff.mpr hQ).1 u fun y => by rw [h, LinearMap.zero_apply])
 
@@ -516,19 +513,22 @@ theorem exists_isUnit {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 section Orthogonal
 
 variable {K : Type*} [Field K] [Invertible (2 : K)] {V : Type*} [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] {Q : QuadraticForm K V} {W : Submodule K V}
+  {Q : QuadraticForm K V} {W : Submodule K V} [FiniteDimensional K W]
 
-/-- A subspace on which a quadratic form restricts nondegenerately is complementary to its
-orthogonal complement. -/
+/-- A finite-dimensional subspace on which a quadratic form restricts nondegenerately is
+complementary to its orthogonal complement, even in an infinite-dimensional ambient space. -/
 theorem isCompl_orthogonal (hW : (Q.restrict W).Nondegenerate) :
     IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) := by
-  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
-    Q.isSymm_polarBilin.isRefl
   have hpolar := QuadraticMap.nondegenerate_polar_iff.mpr hW
-  rwa [QuadraticMap.polarBilin_restrict] at hpolar
+  rw [QuadraticMap.polarBilin_restrict] at hpolar
+  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective Q.polarBilin W
+    (Q.isSymm_polarBilin.restrict W)
+  have hinj := LinearMap.ker_eq_bot.mp (LinearMap.BilinForm.Nondegenerate.ker_eq_bot hpolar)
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    Subspace.dual_finrank_eq.symm).mp hinj⟩
 
-/-- In a regular finite-dimensional quadratic space, the orthogonal complement of a regular
-subspace is regular. -/
+/-- In a regular quadratic space, the orthogonal complement of a finite-dimensional regular
+subspace is regular, even when the ambient space is infinite-dimensional. -/
 theorem nondegenerate_restrict_orthogonal (hQ : Q.Nondegenerate)
     (hW : (Q.restrict W).Nondegenerate) :
     (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
@@ -538,11 +538,9 @@ theorem nondegenerate_restrict_orthogonal (hQ : Q.Nondegenerate)
     hW.isCompl_orthogonal
   apply QuadraticMap.nondegenerate_polar_iff.mp
   rw [QuadraticMap.polarBilin_restrict]
-  exact
-    (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
-      (B := Q.polarBilin) hBsymm).mpr (by
-      rw [LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
-      exact hcomp.symm)
+  apply Q.polarBilin.nondegenerate_restrict_of_disjoint_orthogonal hBsymm
+  exact hcomp.symm.disjoint.mono_right
+    (LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl Q.polarBilin hBsymm hB.2 W hcomp).le
 
 end Orthogonal
 
@@ -715,6 +713,26 @@ theorem nonempty_linearEquiv_radical_of_equivalent_zero_prod (Q : QuadraticMap R
   exact ⟨((LinearEquiv.ofInjective _ LinearMap.inl_injective).trans
     (LinearEquiv.ofEq _ _ hrad)).trans (e.toLinearEquiv.submoduleMap Q.radical).symm⟩
 
+/-- If a quadratic map is isometric to a zero map orthogonally summed with a map of trivial
+radical, the finrank of its radical is the finrank of the zero summand. -/
+theorem finrank_radical_eq_of_equivalent_zero_prod
+    (Q : QuadraticMap R M P) (A : QuadraticMap R N P) (hA : A.radical = ⊥)
+    (e : Q.Equivalent ((0 : QuadraticMap R T P).prod A)) :
+    Module.finrank R Q.radical = Module.finrank R T :=
+  (Q.nonempty_linearEquiv_radical_of_equivalent_zero_prod e hA).some.finrank_eq.symm
+
+/-- The finranks of the zero summands agree whenever one quadratic map is isometric to two
+orthogonal sums of a zero map and a map of trivial radical. -/
+theorem finrank_zeroPart_eq_of_equivalent_zero_prod
+    {N' T' : Type*} [AddCommGroup N'] [Module R N'] [AddCommGroup T'] [Module R T']
+    (Q : QuadraticMap R M P) (A : QuadraticMap R N P) (B : QuadraticMap R N' P)
+    (hA : A.radical = ⊥) (hB : B.radical = ⊥)
+    (e : Q.Equivalent ((0 : QuadraticMap R T P).prod A))
+    (e' : Q.Equivalent ((0 : QuadraticMap R T' P).prod B)) :
+    Module.finrank R T = Module.finrank R T' := by
+  rw [← finrank_radical_eq_of_equivalent_zero_prod Q A hA e,
+    ← finrank_radical_eq_of_equivalent_zero_prod Q B hB e']
+
 end RegularPart
 
 end QuadraticMap
@@ -736,65 +754,8 @@ theorem exists_equivalent_zero_radical_prod
     ∃ C : Submodule K V, IsCompl Q.radical C ∧ (Q.restrict C).Nondegenerate ∧
       Q.Equivalent ((0 : QuadraticForm K Q.radical).prod (Q.restrict C)) := by
   obtain ⟨C, hC⟩ := Q.radical.exists_isCompl
-  -- The product-isometry API imports this module, so construct the splitting isometry here.
-  have heq : ((Q.restrict C).prod (Q.restrict Q.radical)).IsometryEquiv Q :=
-    { toLinearEquiv := C.prodEquivOfIsCompl Q.radical hC.symm
-      map_app' := fun x => by
-        -- Normalize the bundled isometry goal with `change` so `map_add` applies directly:
-        -- `Submodule.prodEquivOfIsCompl` evaluates to the sum of the coerced components,
-        -- and `QuadraticMap.prod` and `QuadraticMap.restrict` evaluate to the sum of their
-        -- values under `Q`. These reductions are definitional.
-        change Q ((x.1 : V) + x.2) = Q x.1 + Q x.2
-        rw [QuadraticMap.map_add Q]
-        have hx : (x.2 : V) ∈ LinearMap.BilinForm.orthogonal Q.polarBilin C := by
-          rw [Q.orthogonal_polarBilin_eq_radical_of_isCompl hC]
-          exact x.2.2
-        rw [← QuadraticMap.polarBilin_apply_apply, hx x.1 x.1.2, add_zero] }
-  have hradZero : Q.restrict Q.radical = (0 : QuadraticForm K Q.radical) := by
-    ext x
-    exact (QuadraticMap.mem_radical_iff'.mp x.2).1
-  refine ⟨C, hC, Q.nondegenerate_restrict_of_isCompl_radical hC, ?_⟩
-  rw [hradZero] at heq
-  exact ⟨heq.symm.trans (QuadraticMap.IsometryEquiv.prodComm _ _)⟩
-
-omit [Invertible (2 : K)] in
-/-- If a quadratic form is isometric to a zero form orthogonally summed with a regular form, the
-dimension of its radical is the dimension of the zero summand. -/
-theorem finrank_radical_eq_of_equivalent_zero_prod
-    {V R W : Type*} [AddCommGroup V] [Module K V]
-    [AddCommGroup R] [Module K R] [FiniteDimensional K R]
-    [AddCommGroup W] [Module K W]
-    (Q : QuadraticForm K V) (A : QuadraticForm K W) (hA : A.Nondegenerate)
-    (e : Q.Equivalent ((0 : QuadraticForm K R).prod A)) :
-    Module.finrank K Q.radical = Module.finrank K R := by
-  have hradA : ((0 : QuadraticForm K R).prod A).radical =
-      (⊤ : Submodule K R).prod (⊥ : Submodule K W) := by
-    rw [QuadraticMap.radical_zero_prod, hA.radical_eq_bot]
-  have hdimA : Module.finrank K R = Module.finrank K ((0 : QuadraticForm K R).prod A).radical := by
-    rw [hradA]
-    calc
-      Module.finrank K R = Module.finrank K
-          ((⊤ : Submodule K R) × (⊥ : Submodule K W)) := by
-        rw [Module.finrank_prod, finrank_top, finrank_bot, add_zero]
-      _ = Module.finrank K ((⊤ : Submodule K R).prod (⊥ : Submodule K W)) :=
-        (Submodule.prodEquiv _ _).finrank_eq.symm
-  exact (QuadraticMap.Equivalent.rank_radical_eq e).trans hdimA.symm
-
-omit [Invertible (2 : K)] in
-/-- The dimensions of the zero summands agree whenever one quadratic form is isometric to two
-orthogonal sums of a zero form and a regular form. -/
-theorem finrank_zeroPart_eq_of_equivalent_zero_prod
-    {V R S W W' : Type*} [AddCommGroup V] [Module K V]
-    [AddCommGroup R] [Module K R] [FiniteDimensional K R]
-    [AddCommGroup S] [Module K S] [FiniteDimensional K S]
-    [AddCommGroup W] [Module K W]
-    [AddCommGroup W'] [Module K W']
-    (Q : QuadraticForm K V) (A : QuadraticForm K W) (B : QuadraticForm K W')
-    (hA : A.Nondegenerate) (hB : B.Nondegenerate)
-    (e : Q.Equivalent ((0 : QuadraticForm K R).prod A))
-    (e' : Q.Equivalent ((0 : QuadraticForm K S).prod B)) :
-    Module.finrank K R = Module.finrank K S := by
-  rw [← finrank_radical_eq_of_equivalent_zero_prod Q A hA e,
-    ← finrank_radical_eq_of_equivalent_zero_prod Q B hB e']
+  exact ⟨C, hC, Q.nondegenerate_restrict_of_isCompl_radical hC,
+    ⟨(QuadraticMap.IsometryEquiv.restrictProdRadicalOfIsCompl Q C hC).symm.trans
+      (QuadraticMap.IsometryEquiv.prodComm _ _)⟩⟩
 
 end QuadraticForm

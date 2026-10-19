@@ -37,7 +37,8 @@ every affine chart of a fan contains the dense torus.
 * `TauCeti.Toric.Fan.subfan`: a subset of the cones of a fan which is closed under faces is a fan,
   and `TauCeti.Toric.Fan.ofCone_eq_subfan` identifies the subfan of the faces of a cone of a fan
   with the fan of that cone. A subfan of a subfan is a subfan of the ambient fan,
-  `TauCeti.Toric.Fan.subfan_subfan`.
+  `TauCeti.Toric.Fan.subfan_subfan`. The cones not containing a given cone form a subfan,
+  `TauCeti.Toric.Fan.setOf_not_le_closedUnderFaces`.
 * `TauCeti.Toric.FanHom`: a morphism of fans, namely a map of the integral vectors, a compatible
   real-linear map, and the condition that every source cone lands in some target cone.
 * `TauCeti.Toric.FanHom.realMap_eq`: the real-linear part of a fan morphism is determined by its
@@ -177,6 +178,13 @@ def IsComplete : Prop := Φ.support = Set.univ
 theorem isComplete_iff : Φ.IsComplete ↔ ∀ x : V, ∃ σ ∈ Φ.cones, x ∈ σ := by
   simp [IsComplete, Set.eq_univ_iff_forall]
 
+variable {Φ} in
+/-- A complete fan is nonempty: some cone contains the origin. In particular, the empty fan is
+not complete. -/
+theorem IsComplete.nonempty_cones (h : Φ.IsComplete) : Nonempty Φ.cones :=
+  let ⟨σ, hσ, _⟩ := Φ.isComplete_iff.1 h 0
+  ⟨⟨σ, hσ⟩⟩
+
 /-! ### The fan of a single cone -/
 
 /-- The faces of a toric cone form a fan, the fan of the affine toric variety of that cone. -/
@@ -288,6 +296,11 @@ variable (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
 @[simp]
 theorem subfan_cones : (Φ.subfan S hS hface).cones = S := (rfl)
 
+/-- The empty subfan of a fan has no cones. -/
+instance (hS : ∅ ⊆ Φ.cones) (hface : ∀ ⦃σ τ⦄, σ ∈ (∅ : Set (PointedCone ℝ V)) →
+    τ.IsFaceOf σ → τ ∈ (∅ : Set (PointedCone ℝ V))) : IsEmpty (Φ.subfan ∅ hS hface).cones :=
+  Set.isEmpty_coe_sort.2 rfl
+
 /-- A subfan uses the ambient fan's integral lattice. -/
 @[simp]
 theorem subfan_lattice : (Φ.subfan S hS hface).lattice = Φ.lattice := (rfl)
@@ -314,6 +327,17 @@ theorem subfan_subfan (T : Set (PointedCone ℝ V)) (hT : T ⊆ (Φ.subfan S hS 
 theorem isFaceOf_subset_cones (hσ : σ ∈ Φ.cones) :
     {τ : PointedCone ℝ V | τ.IsFaceOf σ} ⊆ Φ.cones :=
   fun _ hτ ↦ Φ.mem_of_isFaceOf hσ hτ
+
+/-- The cones of a fan not containing a given cone are cones of the fan. -/
+theorem setOf_not_le_subset_cones (σ : PointedCone ℝ V) :
+    {τ | τ ∈ Φ.cones ∧ ¬σ ≤ τ} ⊆ Φ.cones :=
+  fun _ hτ ↦ hτ.1
+
+/-- The cones of a fan not containing a given cone are closed under faces, so they form a subfan of
+it. -/
+theorem setOf_not_le_closedUnderFaces (σ : PointedCone ℝ V) :
+    ∀ ⦃τ υ⦄, τ ∈ {τ | τ ∈ Φ.cones ∧ ¬σ ≤ τ} → υ.IsFaceOf τ → υ ∈ {τ | τ ∈ Φ.cones ∧ ¬σ ≤ τ} :=
+  fun _ _ hτ hυ ↦ ⟨Φ.mem_of_isFaceOf hτ.1 hυ, fun h ↦ hτ.2 (h.trans hυ.le)⟩
 
 /-- The subfan of the faces of a cone of a fan is the fan of that cone. -/
 theorem ofCone_eq_subfan (hσ : σ ∈ Φ.cones) :

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Homotopy.Cube.Basic
+public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
@@ -38,7 +39,9 @@ and `GenLoop.sphereEquiv` identifies generalized loops with pointed maps.  Two g
 homotopic relative to the boundary of the cube exactly when the corresponding maps are homotopic
 relative to the north pole (`GenLoop.homotopic_iff_toSphere`), so `πₙ(X, x)` is the set of
 pointed homotopy classes of maps `(Sⁿ, e_last) → (X, x)` (`HomotopyGroup.sphereEquiv`).  The
-identification is natural in based maps (`GenLoop.toSphere_map`).
+identification is natural in based maps (`GenLoop.toSphere_map`).  A class is trivial exactly
+when its map out of the sphere is null-homotopic, by a free homotopy that need not fix the north
+pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 
 ## Main declarations
 
@@ -51,11 +54,17 @@ identification is natural in based maps (`GenLoop.toSphere_map`).
   (`TauCeti.isQuotientMap_cubeToSphere`) collapsing exactly the boundary
   (`TauCeti.cubeToSphere_eq_cubeToSphere_iff`, `TauCeti.cubeToSphere_eq_sphereNorthPole_iff`).
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
+* `TauCeti.sphereGenLoop`: `TauCeti.cubeToSphere` as a generalized loop of the sphere.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
-  sphere.
+  sphere; `p` is the image of `TauCeti.sphereGenLoop` under `GenLoop.toSphere p`
+  (`GenLoop.map_toSphere_sphereGenLoop`).
+* `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
+  Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
   boundary of the cube is homotopy relative to the north pole, and `πₙ(X, x)` is the set of pointed
   homotopy classes of maps `Sⁿ → X`, the classes of `TauCeti.pointedHomotopySetoid`.
+* `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
+  corresponding map `Sⁿ → X` is freely null-homotopic.
 
 ## References
 
@@ -317,6 +326,19 @@ theorem cubeToSphere_eq_cubeToSphere_iff {y z : I^(Fin n)} :
     ⟨fun h ↦ (diskHomeomorphCube.{0} n).symm.injective (ULift.ext h), fun h ↦ h ▸ rfl⟩
 
 variable (n) in
+/-- **The tautological generalized loop of the sphere**: `TauCeti.cubeToSphere`, which sends the
+boundary of the cube to the north pole, as a generalized loop at the north pole. Every generalized
+loop `p` is its image under the pointed map `GenLoop.toSphere p`
+(`GenLoop.map_toSphere_sphereGenLoop`). -/
+def sphereGenLoop :
+    Ω^ (Fin n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (sphereNorthPole n) :=
+  ⟨cubeToSphere n, fun _ hy ↦ cubeToSphere_eq_sphereNorthPole_iff.2 hy⟩
+
+@[simp]
+lemma sphereGenLoop_apply (y : I^(Fin n)) : sphereGenLoop n y = cubeToSphere n y :=
+  (rfl)
+
+variable (n) in
 /-- `TauCeti.cubeToSphere` is surjective in positive dimension. -/
 theorem cubeToSphere_surjective [NeZero n] : Function.Surjective (cubeToSphere n) :=
   (closedBallToSphere_surjective).comp <|
@@ -404,6 +426,21 @@ theorem toSphere_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X x) :
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp
 
+/-- **Every generalized loop is an image of the tautological loop**: `p` is the image of
+`TauCeti.sphereGenLoop n` under the pointed map `GenLoop.toSphere p` out of the sphere. -/
+@[simp]
+theorem map_toSphere_sphereGenLoop (p : Ω^ (Fin n) X x) :
+    GenLoop.map (toSphere p) (toSphere_sphereNorthPole p) (sphereGenLoop n) = p := by
+  ext z
+  simp
+
+/-- The constant generalized loop corresponds to the constant map out of the sphere. -/
+@[simp]
+theorem toSphere_const : toSphere (const : Ω^ (Fin n) X x) = ContinuousMap.const _ x := by
+  ext s
+  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+  simp [const_apply]
+
 variable (n X x) in
 /-- **Generalized loops are pointed maps out of the sphere.**  The bijection between generalized
 loops `(I^n, ∂I^n) → (X, x)` and pointed maps `(Sⁿ, e_last) → (X, x)` out of the unit sphere of
@@ -431,6 +468,13 @@ lemma coe_sphereEquiv_apply (p : Ω^ (Fin n) X x) : (sphereEquiv n X x p).1 = to
 lemma coe_sphereEquiv_symm_apply
     (f : {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x}) :
     ((sphereEquiv n X x).symm f).1 = f.1.comp (cubeToSphere n) :=
+  (rfl)
+
+@[simp]
+lemma sphereEquiv_symm_apply_apply
+    (f : {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x})
+    (z : I^(Fin n)) :
+    (sphereEquiv n X x).symm f z = f.1 (cubeToSphere n z) :=
   (rfl)
 
 /-- **Homotopies of generalized loops are pointed homotopies of maps out of the sphere.**  Two
@@ -476,6 +520,25 @@ theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
 
 end GenLoop
 
+namespace GenLoop
+
+universe u
+
+variable {n : ℕ} [NeZero n] {X : TopCat.{u}} {x : X}
+
+/-- The attaching map `∂𝔻 (n + 1) ⟶ X` of the `(n + 1)`-cell that kills the class of a generalized
+loop `p`: the pointed map `Sⁿ → X` corresponding to `p` (`GenLoop.toSphere`), with its source
+written as Mathlib's sphere `TopCat.diskBoundary (n + 1)`. -/
+def diskBoundaryMap (p : Ω^ (Fin n) X x) : TopCat.diskBoundary.{u} (n + 1) ⟶ X :=
+  TopCat.ofHom ((GenLoop.toSphere p).comp ⟨ULift.down, continuous_uliftDown⟩)
+
+@[simp]
+theorem diskBoundaryMap_apply (p : Ω^ (Fin n) X x) (s : TopCat.diskBoundary.{u} (n + 1)) :
+    diskBoundaryMap p s = GenLoop.toSphere p s.down :=
+  (rfl)
+
+end GenLoop
+
 namespace HomotopyGroup
 
 open TauCeti
@@ -497,5 +560,25 @@ lemma sphereEquiv_mk (p : Ω^ (Fin n) X x) :
     sphereEquiv n X x ⟦p⟧ = ⟦GenLoop.sphereEquiv n X x p⟧ := by
   unfold sphereEquiv
   exact Quotient.congr_mk _ _ p
+
+/-- **A homotopy class is trivial exactly when its sphere map is null-homotopic.** The class of a
+generalized loop `p` is the identity of `πₙ(X, x)` if and only if the corresponding map
+`GenLoop.toSphere p : Sⁿ → X` is freely homotopic to a constant map. -/
+theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
+    (⟦p⟧ : HomotopyGroup (Fin n) X x) = (1 : HomotopyGroup (Fin n) X x) ↔
+      (GenLoop.toSphere p).Nullhomotopic := by
+  constructor
+  · intro h
+    have h' := (GenLoop.homotopic_iff_toSphere.1 (Quotient.exact (h.trans one_def))).homotopic
+    rw [GenLoop.toSphere_const] at h'
+    exact ⟨x, h'⟩
+  · intro h
+    -- `p` is the image under `GenLoop.toSphere p` of the tautological generalized loop of the
+    -- sphere, the one corresponding to its identity map.
+    have hp : GenLoop.map (GenLoop.toSphere p) (GenLoop.toSphere_sphereNorthPole p)
+        ((GenLoop.sphereEquiv n _ _).symm ⟨ContinuousMap.id _, ContinuousMap.id_apply _⟩) = p :=
+      GenLoop.ext _ _ fun z ↦ by simp
+    rw [← hp, ← map_mk]
+    exact map_eq_one_of_nullhomotopic h _ _
 
 end HomotopyGroup

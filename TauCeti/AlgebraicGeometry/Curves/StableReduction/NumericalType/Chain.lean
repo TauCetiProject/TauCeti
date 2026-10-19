@@ -545,6 +545,31 @@ theorem sum_range_multiplicity_mul_intersection_eq_zero {t : ℕ} {c : ℕ → T
   · intro a ha b hb hab
     exact hinj a (mem_range.mp ha) b (mem_range.mp hb) hab
 
+/-- For a sequence of components `c 0, …, c (t - 1)` which are distinct below `t`, together with
+a finite set `S` of further components disjoint from them, when these exhaust a numerical type,
+the fibre relation at any component splits into a sum over the positions below `t` and a sum
+over `S`. -/
+theorem sum_range_add_sum_intersection_mul_multiplicity_eq_zero {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j) {S : Finset T.Component}
+    (hS : ∀ i < t, c i ∉ S) (hcard : Fintype.card T.Component = t + #S) (x : T.Component) :
+    ∑ j ∈ range t, T.intersection x (c j) * T.multiplicity (c j) +
+      ∑ y ∈ S, T.intersection x y * T.multiplicity y = 0 := by
+  classical
+  have hinj' : Set.InjOn c (range t) := fun a ha b hb hab ↦
+    hinj a (mem_range.mp ha) b (mem_range.mp hb) hab
+  have hdisj : Disjoint ((range t).image c) S := by
+    rw [disjoint_left]
+    intro y hy
+    obtain ⟨i, hi, rfl⟩ := mem_image.mp hy
+    exact hS i (mem_range.mp hi)
+  have hu : (range t).image c ∪ S = univ := by
+    apply eq_univ_of_card
+    rw [card_union_of_disjoint hdisj, card_image_of_injOn hinj', card_range, hcard]
+  have h := T.fiber_relation x
+  rw [← hu, sum_union hdisj, sum_image hinj'] at h
+  rw [← h]
+  congr 1 <;> exact sum_congr rfl fun _ _ ↦ mul_comm _ _
+
 /-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
 type and meet only when consecutive, the fibre relation at the left end has only its diagonal
 and adjacent terms. -/

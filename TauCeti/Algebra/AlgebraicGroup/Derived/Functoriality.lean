@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
@@ -29,6 +30,8 @@ subgroup schemes.
 
 * `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_map_le`: the derived defining ideals are
   functorial.
+* `CommHopfAlgCat.Hom.kernelHopfIdeal_le_derivedDefiningIdeal`: a morphism from a
+  cocommutative Hopf algebra has kernel contained in the derived defining ideal.
 * `TauCeti.CommHopfAlgCat.derivedMap`: the induced morphism on derived coordinate algebras.
 * `TauCeti.CommHopfAlgCat.derivedFunctor`: the derived coordinate algebra as an endofunctor.
 * `TauCeti.CommHopfAlgCat.derivedQuotientNatTrans`: the ambient quotient maps as a natural
@@ -196,3 +199,47 @@ theorem derivedQuotientNatTrans_app (H : _root_.CommHopfAlgCat.{v} R) :
 end CommHopfAlgCat
 
 end TauCeti
+
+namespace BialgHom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+/-- For an injective morphism between flat commutative Hopf algebras, the commutator
+coordinate morphism vanishes on every element whose image lies in the target's derived
+defining ideal. -/
+theorem commutatorAlgHom_eq_zero_of_map_mem_derivedDefiningIdeal
+    {R H K : Type*} [CommSemiring R] [CommSemiring H] [CommSemiring K]
+    [HopfAlgebra R H] [HopfAlgebra R K] [Module.Flat R H] [Module.Flat R K]
+    (f : H →ₐc[R] K) (hf : Function.Injective f) {x : H}
+    (hx : f x ∈ derivedDefiningIdeal (R := R) K) :
+    TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) x = 0 := by
+  -- The bialgebra tensor map has the same underlying function as the tensor map of
+  -- the underlying linear maps, so the linear-map injectivity lemma applies definitionally.
+  have hmap : Function.Injective (Bialgebra.TensorProduct.map f f) :=
+    TensorProduct.map_injective_of_flat_flat
+      (f : H →ₗ[R] K) (f : H →ₗ[R] K) hf hf
+  apply hmap
+  have hnatural : (Bialgebra.TensorProduct.map f f)
+      (TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := H) x) =
+        TauCeti.HopfAlgebra.commutatorAlgHom (R := R) (H := K) (f x) :=
+    DFunLike.congr_fun (TauCeti.HopfAlgebra.map_comp_commutatorAlgHom f) x
+  rw [hnatural, commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal K hx, map_zero]
+
+end BialgHom
+
+namespace CommHopfAlgCat.Hom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+/-- A homomorphism to a commutative affine group kills the derived subgroup of its source.
+In coordinates, the scheme-theoretic kernel ideal of a morphism from a cocommutative Hopf
+algebra is contained in the derived defining ideal, without flatness or injectivity assumptions. -/
+theorem kernelHopfIdeal_le_derivedDefiningIdeal
+    {R : Type u} [CommRing R] {Q H : CommHopfAlgCat.{v} R}
+    [Coalgebra.IsCocomm R Q] (f : Q ⟶ H) :
+    kernelHopfIdeal f ≤ derivedDefiningIdeal H := by
+  rw [kernelHopfIdeal_def,
+    ← (derivedDefiningIdeal_eq_augmentation_iff_isCocomm Q).mpr inferInstance]
+  exact derivedDefiningIdeal_map_le f.hom
+
+end CommHopfAlgCat.Hom

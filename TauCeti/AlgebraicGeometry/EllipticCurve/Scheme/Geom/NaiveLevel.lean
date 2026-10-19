@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Equalizer
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
@@ -48,7 +49,10 @@ For a finite group `A` and a homomorphism `u : A →* E(H)` to the points of `E`
 scheme `H` over `S`, the points of `H` at which `u` is injective on the fibre form an open subset,
 the **naive locus** of `u` (`EllipticCurveGeom.naiveLocus`), since the zero section has closed
 image. When `u` is universal among homomorphisms from `A`, as the universal pair of points of
-`E[N]` is for `A = (ℤ/Nℤ)²`, the naive locus represents the naive `A`-structures.
+`E[N]` is for `A = (ℤ/Nℤ)²`, the naive locus represents the naive `A`-structures. If `N` is
+invertible on `S` and every point `u a` is killed by `N`, the naive locus is also closed
+(`EllipticCurveGeom.isClopen_naiveLocus`), because two points killed by `N` agree on an open and
+closed set; so it is finite over `S` when `H` is (`EllipticCurveGeom.isFinite_naiveLocusOver_hom`).
 
 The group law on points of `E` is written multiplicatively, following `EllipticCurveGeom.mulBy`.
 
@@ -76,6 +80,10 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   injectivity on fibres is injectivity on the fibre over every residue field.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOpen_naiveLocus`: for finite `A`, the naive locus
   is open, and `range_left_subset_naiveLocus_iff` characterises the points landing in it.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClopen_naiveLocus` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_naiveLocusOver_hom`: where `N` is
+  invertible and `u` takes values killed by `N`, the naive locus is open and closed, and finite
+  over `S` when `H` is.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_iff`: the naive
   `[Γ₁(N)]` condition, as `kP` missing the zero section for `0 < k < N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`: the naive
@@ -227,6 +235,43 @@ theorem naiveLocusOver_hom_mem [Finite A] {W : MorphismProperty Scheme.{u}}
     [W.IsStableUnderComposition] (hW : @IsOpenImmersion ≤ W) (h : W H.hom) :
     W (naiveLocusOver u).hom :=
   W.comp_mem _ _ (hW _ inferInstance) h
+
+/-- **The naive locus is closed where `N` is invertible.** If the natural number `N` is invertible
+in every residue field of `S` and every point `u a` is killed by `N`, then the naive locus of `u` is
+open and closed in `H`, for a finite group `A`. Each point `u a` with `a ≠ 1` meets the zero section
+on the set where it agrees with the zero point, and two points killed by `N` agree on an open and
+closed set (`EllipticCurveGeom.isClopen_range_equalizer_ι_left_of_mulBy_eq_one`). -/
+theorem isClopen_naiveLocus [Finite A] {N : ℕ} (hN : ∀ s : S, (N : S.residueField s) ≠ 0)
+    (hu : ∀ a, u a ^ N = 1) : IsClopen (naiveLocus u) := by
+  have h : naiveLocus u = ⋂ (a : A) (_ : a ≠ 1), (Set.range (equalizer.ι (u a) 1).left)ᶜ := by
+    ext h
+    simp [range_equalizer_ι_left_one]
+  rw [h]
+  refine isClopen_iInter_of_finite fun a ↦ isClopen_iInter_of_finite fun _ ↦
+    (E.isClopen_range_equalizer_ι_left_of_mulBy_eq_one (n := N) (fun s ↦ ?_) ?_ (by simp)).compl
+  · exact_mod_cast hN s
+  · rw [comp_mulBy, zpow_natCast, hu a]
+
+/-- Where `N` is invertible and every point `u a` is killed by `N`, the inclusion of the naive locus
+of `u` into `H` is a closed immersion as well as an open immersion. -/
+theorem isClosedImmersion_naiveLocusι_left [Finite A] {N : ℕ}
+    (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hu : ∀ a, u a ^ N = 1) :
+    IsClosedImmersion (naiveLocusι u).left := by
+  rw [naiveLocusι_left]
+  apply IsClosedImmersion.of_isPreimmersion
+  rw [Scheme.Opens.range_ι, coe_naiveLocusOpens]
+  exact (isClopen_naiveLocus u hN hu).isClosed
+
+/-- **The naive locus is finite where `N` is invertible.** If `H` is finite over `S`, the natural
+number `N` is invertible in every residue field of `S` and every point `u a` is killed by `N`, then
+the naive locus of `u` is finite over `S`, for a finite group `A`: it is a closed subscheme of
+`H`. -/
+theorem isFinite_naiveLocusOver_hom [Finite A] {N : ℕ} (hN : ∀ s : S, (N : S.residueField s) ≠ 0)
+    (hu : ∀ a, u a ^ N = 1) [IsFinite H.hom] : IsFinite (naiveLocusOver u).hom := by
+  have := isClosedImmersion_naiveLocusι_left u hN hu
+  rw [naiveLocusι_left] at this
+  dsimp only [naiveLocusOver, Over.mk_hom]
+  infer_instance
 
 end NaiveLocus
 

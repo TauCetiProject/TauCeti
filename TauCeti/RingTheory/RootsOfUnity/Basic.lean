@@ -57,6 +57,12 @@ noncomputable section
 
 namespace TauCeti
 
+/-- An injective monoid homomorphism is injective on roots of unity. -/
+theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoid S]
+    [FunLike F R S] [MonoidHomClass F R S] (f : F) (n : ℕ) (hf : Function.Injective f) :
+    Function.Injective (restrictRootsOfUnity f n) :=
+  fun _ _ h ↦ Subtype.ext (Units.map_injective hf (congrArg Subtype.val h))
+
 variable {R : Type*} [CommRing R]
 
 /-- Every finite-order element of a commutative ring is integral over `ℤ`. -/

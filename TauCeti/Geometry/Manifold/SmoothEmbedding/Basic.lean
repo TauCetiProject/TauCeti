@@ -96,7 +96,7 @@ theorem coe_toContMDiffMap (f : SmoothEmbedding I J n M N) :
 
 /-- The continuous map underlying a bundled smooth embedding. -/
 abbrev toContinuousMap (f : SmoothEmbedding I J n M N) : C(M, N) :=
-  _root_.toContinuousMap f
+  ContinuousMap.ofClass f
 
 @[simp]
 theorem toContinuousMap_apply (f : SmoothEmbedding I J n M N) (x : M) :
@@ -111,7 +111,7 @@ theorem coe_toContinuousMap (f : SmoothEmbedding I J n M N) :
 /-- The underlying continuous map determines a bundled smooth embedding. -/
 theorem toContinuousMap_injective :
     Function.Injective (toContinuousMap : SmoothEmbedding I J n M N → C(M, N)) :=
-  ContinuousMap.coe_injective'
+  ContinuousMap.injective_ofClass
 
 theorem toContinuousMap_inj {f g : SmoothEmbedding I J n M N} :
     (toContinuousMap f : C(M, N)) = toContinuousMap g ↔ f = g :=

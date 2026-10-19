@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
