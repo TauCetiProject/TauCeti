@@ -22,8 +22,9 @@ Applied to the Weyl tensor, which is trace-free and has these antisymmetries, th
 Weyl tensor of a three-dimensional Riemannian manifold vanishes, so that its Riemann curvature is
 determined by its Ricci curvature.
 
-The scalars form a commutative ring without zero divisors in which `2 ≠ 0`. In characteristic `2`
-the statement fails: `T(x, y, z, w) = x₁ y₁ z₂ w₂` on `𝔽₂³` is a counterexample.
+The scalars form a commutative ring in which `2` is left regular, that is, multiplication by `2`
+is injective. In characteristic `2` the statement fails: `T(x, y, z, w) = x₁ y₁ z₂ w₂` on `𝔽₂³`
+is a counterexample.
 
 ## Main declarations
 
@@ -40,19 +41,19 @@ public section
 
 namespace LinearMap
 
-variable {R M ι : Type*} [CommRing R] [NoZeroDivisors R] [NeZero (2 : R)]
-  [AddCommGroup M] [Module R M] [Fintype ι]
+variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
 
 /-- A quadrilinear form `T` on a module with a basis `(bᵢ)` of three elements which is
 antisymmetric in its first and in its last pair of arguments, and whose contraction
-`∑ᵢ T(bᵢ, y, z, bᵢ)` vanishes, is zero. For an orthonormal basis of an inner product space this
-contraction is the Ricci contraction of `T`. -/
-theorem eq_zero_of_sum_basis_eq_zero_of_card_eq_three (b : Module.Basis ι R M)
-    (hι : Fintype.card ι = 3) {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] R}
+`∑ᵢ T(bᵢ, y, z, bᵢ)` vanishes, is zero, provided multiplication by `2` is injective on the
+scalars. For an orthonormal basis of an inner product space this contraction is the Ricci
+contraction of `T`. -/
+theorem eq_zero_of_sum_basis_eq_zero_of_card_eq_three (h2 : IsLeftRegular (2 : R))
+    (b : Module.Basis ι R M) (hι : Fintype.card ι = 3) {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] R}
     (h₁ : ∀ x y z w, T x y z w = -T y x z w) (h₂ : ∀ x y z w, T x y z w = -T x y w z)
     (hT : ∀ y z, ∑ i, T (b i) y z (b i) = 0) : T = 0 := by
-  have h2 : ∀ a : R, a + a = 0 → a = 0 := fun a ha ↦
-    (mul_eq_zero.mp ((two_mul a).trans ha)).resolve_left two_ne_zero
+  replace h2 : ∀ a : R, a + a = 0 → a = 0 := fun a ha ↦
+    h2 <| by simpa only [mul_zero, two_mul] using ha
   have hd₁ : ∀ x z w, T x x z w = 0 := fun x z w ↦ h2 _ (by linear_combination h₁ x x z w)
   have hd₂ : ∀ x y z, T x y z z = 0 := fun x y z ↦ h2 _ (by linear_combination h₂ x y z z)
   have hs : ∀ x y, T x y y x = T y x x y := fun x y ↦ by

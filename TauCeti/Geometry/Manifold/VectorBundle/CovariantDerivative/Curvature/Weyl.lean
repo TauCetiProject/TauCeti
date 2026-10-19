@@ -182,6 +182,7 @@ theorem IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three
     (x : M) (hn : Module.finrank ℝ (TangentSpace I x) = 3) :
     cov.weylTensor x = 0 :=
   LinearMap.eq_zero_of_sum_basis_eq_zero_of_card_eq_three
+    (two_ne_zero (α := ℝ)).isUnit.isRegular.left
     (stdOrthonormalBasis ℝ (TangentSpace I x)).toBasis (by simpa using hn)
     (cov.weylTensor_antisymm_first x)
     (IsMetricCompatible.weylTensor_antisymm_last (cov := cov) hcov x)
