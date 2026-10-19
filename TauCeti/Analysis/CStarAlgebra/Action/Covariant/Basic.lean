@@ -59,6 +59,7 @@ theorem ext {P Q : CovariantRepresentation α H}
   rfl
 
 /-- Covariance as an equality of bounded operators. -/
+@[simp]
 theorem group_mul_coefficient (P : CovariantRepresentation α H) (g : G) (a : A) :
     P.group g * P.coefficient a = P.coefficient (α g a) * P.group g := by
   ext v
