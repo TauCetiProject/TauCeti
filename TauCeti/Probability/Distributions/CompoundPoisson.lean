@@ -1,28 +1,27 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 Tau Ceti Authors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Codex
 -/
 module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-public import Mathlib.Probability.Distributions.Poisson.Basic
+public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
-
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Probability.Distributions.Poisson.Basic
+public import TauCeti.Probability.Distributions.Poisson.Basic
+public import TauCeti.Probability.Distributions.Poisson.Measurability
+public import TauCeti.MeasureTheory.Group.ConvolutionPower
 
 /-!
-# Convolution powers and compound Poisson laws
+# Compound Poisson distributions
 
-For a measure `μ` on an additive monoid, the convolution power `μ.convolutionPower n` is the
-`n`-fold convolution of `μ` with itself, with `μ.convolutionPower 0 = δ₀`. When `μ` is the law of
-each of `n` independent random variables, it is the law of their sum.
+This file uses convolution powers as the jump-count kernel of a compound Poisson distribution. Thus
+`compoundPoissonMeasure r μ` first draws a Poisson count of rate `r`, then sums that many
+independent jumps with law `μ`.
 
-For a rate `r : ℝ≥0` and a jump law `μ`, the compound Poisson law
-`compoundPoissonMeasure r μ = (poissonMeasure r).bind μ.convolutionPower` is the law of
-`X₁ + ⋯ + X_N` where `N` is Poisson of rate `r` and the `Xᵢ` have law `μ`, all independent. It is
-the countable mixture `∑ₙ Po(r){n} • μ^{∗n}` of the convolution powers.
+The core API records the Poisson mixture formula and the two degenerate cases: rate zero and jumps
+concentrated at zero. These facts are the measure-theoretic foundation for later moment and
+transform calculations.
 
 The main results are that compound Poisson laws with a common jump law convolve by adding their
 rates, and that on a finite-dimensional real inner product space the characteristic function is
@@ -30,23 +29,10 @@ rates, and that on a finite-dimensional real inner product space the characteris
 monoid: the convolution powers satisfy `μ^{∗(m + n)} = μ^{∗m} ∗ μ^{∗n}`, so mixing them commutes
 with convolution of the mixing laws on `ℕ`, and the Poisson laws on `ℕ` add their rates.
 
-## Main definitions
-
-* `MeasureTheory.Measure.convolutionPower` — the convolution powers of a measure;
-* `TauCeti.Probability.compoundPoissonMeasure` — the compound Poisson law of rate `r` and jump
-  law `μ`.
-
 ## Main results
 
-* `MeasureTheory.Measure.convolutionPower_add` — `μ^{∗(m + n)} = μ^{∗m} ∗ μ^{∗n}`;
-* `ProbabilityTheory.iIndepFun.hasLaw_sum_range_convolutionPower` — a sum of `n` independent
-  variables of law `μ` has law `μ^{∗n}`;
 * `MeasureTheory.Measure.charFun_convolutionPower` — the characteristic function of `μ^{∗n}` is
   the `n`-th power of that of `μ`;
-* `TauCeti.Probability.compoundPoissonMeasure_eq_sum` — the compound Poisson law as a
-  Poisson-weighted sum of convolution powers;
-* `TauCeti.Probability.compoundPoissonMeasure_zero_left`,
-  `TauCeti.Probability.compoundPoissonMeasure_dirac_zero` — rate zero and zero jumps give `δ₀`;
 * `TauCeti.Probability.compoundPoissonMeasure_conv_compoundPoissonMeasure` — rates add under
   convolution at a fixed jump law;
 * `TauCeti.Probability.charFun_compoundPoissonMeasure` — the characteristic function
@@ -60,79 +46,16 @@ with convolution of the mixing laws on `ℕ`, and the Poisson laws on `ℕ` add 
 
 public section
 
-open MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal Nat
+noncomputable section
+
+open MeasureTheory ProbabilityTheory Real Set
+open scoped ENNReal NNReal Nat MeasureTheory
 
 namespace MeasureTheory.Measure
 
-variable {E : Type*} [AddMonoid E] [MeasurableSpace E] {μ : Measure E}
+section AddMonoid
 
-/-- The `n`-th convolution power of a measure `μ` on an additive monoid: the Dirac mass at `0`
-for `n = 0`, and `μ.convolutionPower n ∗ μ` for `n + 1`. For a probability measure `μ` it is the
-law of a sum of `n` independent random variables of law `μ`. -/
-noncomputable def convolutionPower (μ : Measure E) : ℕ → Measure E
-  | 0 => dirac 0
-  | n + 1 => convolutionPower μ n ∗ μ
-
-/-- The zeroth convolution power is the Dirac mass at `0`. -/
-@[simp]
-theorem convolutionPower_zero (μ : Measure E) : μ.convolutionPower 0 = dirac 0 := by
-  rw [convolutionPower]
-
-/-- The defining recursion of convolution powers: `μ^{∗(n + 1)} = μ^{∗n} ∗ μ`. -/
-theorem convolutionPower_succ (μ : Measure E) (n : ℕ) :
-    μ.convolutionPower (n + 1) = μ.convolutionPower n ∗ μ := by
-  rw [convolutionPower]
-
-instance [SFinite μ] (n : ℕ) : SFinite (μ.convolutionPower n) := by
-  induction n with
-  | zero => rw [convolutionPower_zero]; infer_instance
-  | succ n ih => rw [convolutionPower_succ]; infer_instance
-
-instance [IsFiniteMeasure μ] (n : ℕ) : IsFiniteMeasure (μ.convolutionPower n) := by
-  induction n with
-  | zero => rw [convolutionPower_zero]; infer_instance
-  | succ n ih => rw [convolutionPower_succ]; infer_instance
-
-instance [IsProbabilityMeasure μ] (n : ℕ) : IsProbabilityMeasure (μ.convolutionPower n) := by
-  induction n with
-  | zero => rw [convolutionPower_zero]; infer_instance
-  | succ n ih => rw [convolutionPower_succ]; infer_instance
-
-variable [MeasurableAdd₂ E]
-
-/-- The first convolution power of an s-finite measure is the measure itself. -/
-@[simp]
-theorem convolutionPower_one (μ : Measure E) [SFinite μ] : μ.convolutionPower 1 = μ := by
-  rw [convolutionPower_succ, convolutionPower_zero, dirac_zero_conv]
-
-/-- Convolution powers add their exponents. -/
-theorem convolutionPower_add (μ : Measure E) [SFinite μ] (m n : ℕ) :
-    μ.convolutionPower (m + n) = μ.convolutionPower m ∗ μ.convolutionPower n := by
-  induction n with
-  | zero => rw [Nat.add_zero, convolutionPower_zero, conv_dirac_zero]
-  | succ n ih => rw [← Nat.add_assoc, convolutionPower_succ, ih, convolutionPower_succ, conv_assoc]
-
-/-- Convolution powers also satisfy the recursion `μ^{∗(n + 1)} = μ ∗ μ^{∗n}`. -/
-theorem convolutionPower_succ' (μ : Measure E) [SFinite μ] (n : ℕ) :
-    μ.convolutionPower (n + 1) = μ ∗ μ.convolutionPower n := by
-  rw [Nat.add_comm, convolutionPower_add, convolutionPower_one]
-
-/-- Every convolution power of the Dirac mass at `0` is the Dirac mass at `0`. -/
-@[simp]
-theorem convolutionPower_dirac_zero (n : ℕ) : (dirac (0 : E)).convolutionPower n = dirac 0 := by
-  induction n with
-  | zero => rw [convolutionPower_zero]
-  | succ n ih => rw [convolutionPower_succ, ih, conv_dirac_zero]
-
-/-- Pushing forward along a measurable additive monoid homomorphism commutes with convolution
-powers. -/
-theorem map_convolutionPower {F : Type*} [AddMonoid F] [MeasurableSpace F] [MeasurableAdd₂ F]
-    (μ : Measure E) [SFinite μ] (f : E →+ F) (hf : Measurable f) (n : ℕ) :
-    (μ.convolutionPower n).map f = (μ.map f).convolutionPower n := by
-  induction n with
-  | zero => rw [convolutionPower_zero, convolutionPower_zero, map_dirac' hf, map_zero]
-  | succ n ih => rw [convolutionPower_succ, convolutionPower_succ, map_conv_addMonoidHom _ hf, ih]
+variable {E : Type*} [AddMonoid E] [MeasurableSpace E] [MeasurableAdd₂ E]
 
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
 with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when
@@ -160,31 +83,9 @@ theorem bind_conv_bind {K : ℕ → Measure E} [∀ n, SFinite (K n)]
         refine lintegral_congr fun n => ?_
         rw [hK, lintegral_conv hf]
 
-end MeasureTheory.Measure
+end AddMonoid
 
-namespace ProbabilityTheory.iIndepFun
-
-variable {Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
-  [AddCommMonoid E] [MeasurableSpace E] [MeasurableAdd₂ E]
-
-/-- A sum of `n` independent random variables, each with law `μ`, has law `μ^{∗n}`. -/
-theorem hasLaw_sum_range_convolutionPower {μ : Measure E} {X : ℕ → Ω → E}
-    (hX : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (n : ℕ) :
-    HasLaw (∑ i ∈ Finset.range n, X i) (μ.convolutionPower n) P := by
-  have : IsProbabilityMeasure μ := (hlaw 0).isProbabilityMeasure_iff.mp inferInstance
-  induction n with
-  | zero =>
-    refine ⟨aemeasurable_const, ?_⟩
-    rw [Finset.sum_range_zero, Measure.convolutionPower_zero, Pi.zero_def, Measure.map_const,
-      measure_univ, one_smul]
-  | succ n ih =>
-    rw [Finset.sum_range_succ, Measure.convolutionPower_succ]
-    exact IndepFun.hasLaw_add ih (hlaw n) <|
-      hX.indepFun_finsetSum_of_notMem₀ (fun i => (hlaw i).aemeasurable) Finset.notMem_range_self
-
-end ProbabilityTheory.iIndepFun
-
-namespace MeasureTheory.Measure
+section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E]
@@ -198,88 +99,144 @@ theorem charFun_convolutionPower (μ : Measure E) [IsFiniteMeasure μ] (n : ℕ)
   | zero => simp
   | succ n ih => rw [convolutionPower_succ, charFun_conv, ih, pow_succ]
 
+end InnerProductSpace
+
 end MeasureTheory.Measure
 
 namespace TauCeti.Probability
 
-section AddMonoid
+variable {α : Type*} [MeasurableSpace α] [AddMonoid α]
 
-variable {E : Type*} [AddMonoid E] [MeasurableSpace E]
-
-/-- The compound Poisson law with rate `r` and jump law `μ`: the law of `X₁ + ⋯ + X_N` for `N`
-Poisson of rate `r` and `Xᵢ` of law `μ`, all independent, defined as the mixture of the
-convolution powers `μ^{∗n}` by the Poisson law of rate `r`. -/
-noncomputable def compoundPoissonMeasure (r : ℝ≥0) (μ : Measure E) : Measure E :=
+/-- The compound Poisson law with rate `r` and jump measure `μ`: mix the convolution powers of
+`μ` against a Poisson-distributed number of jumps. -/
+def compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) : Measure α :=
   (poissonMeasure r).bind μ.convolutionPower
 
-/-- The compound Poisson law is the Poisson-weighted sum `∑ₙ Po(r){n} • μ^{∗n}` of the
-convolution powers of its jump law. -/
-theorem compoundPoissonMeasure_eq_sum (r : ℝ≥0) (μ : Measure E) :
-    compoundPoissonMeasure r μ =
-      Measure.sum fun n => poissonMeasure r {n} • μ.convolutionPower n := by
-  have hK : Measurable μ.convolutionPower := measurable_of_countable _
-  rw [compoundPoissonMeasure]
-  conv_lhs => rw [← Measure.sum_smul_dirac (poissonMeasure r)]
-  rw [Measure.bind_sum _ _ hK.aemeasurable]
-  refine congrArg Measure.sum (funext fun n => ?_)
-  rw [Measure.bind_smul _ _ hK.aemeasurable, Measure.dirac_bind hK]
+/-- A compound Poisson law is the Poisson mixture of the convolution powers of its jump law. -/
+theorem compoundPoissonMeasure_def (r : ℝ≥0) (μ : Measure α) :
+    compoundPoissonMeasure r μ = (poissonMeasure r).bind μ.convolutionPower := (rfl)
 
-/-- The mass of a measurable set under a compound Poisson law is the Poisson-weighted series of
-its masses under the convolution powers of the jump law. -/
-theorem compoundPoissonMeasure_apply (r : ℝ≥0) (μ : Measure E) {s : Set E}
-    (hs : MeasurableSet s) :
-    compoundPoissonMeasure r μ s = ∑' n, poissonMeasure r {n} * μ.convolutionPower n s := by
-  simp [compoundPoissonMeasure_eq_sum, Measure.sum_apply _ hs]
+/-- At a fixed jump measure, the compound Poisson law depends measurably on its rate. -/
+@[fun_prop]
+theorem measurable_compoundPoissonMeasure (μ : Measure α) :
+    Measurable fun r : ℝ≥0 => compoundPoissonMeasure r μ := by
+  exact (Measure.measurable_bind' Measurable.of_discrete).comp measurable_poissonMeasure
 
-instance (r : ℝ≥0) (μ : Measure E) [SFinite μ] : SFinite (compoundPoissonMeasure r μ) := by
+/-- The compound Poisson law is the Poisson-weighted sum of the convolution powers of its jump
+measure. -/
+theorem compoundPoissonMeasure_eq_sum (r : ℝ≥0) (μ : Measure α) :
+    compoundPoissonMeasure r μ = Measure.sum fun n =>
+      ENNReal.ofReal (exp (-r) * r ^ n / n !) • μ.convolutionPower n := by
+  rw [compoundPoissonMeasure_def, poissonMeasure, Measure.bind_sum]
+  · congr 1
+    funext n
+    rw [Measure.bind_smul _ _ Measurable.of_discrete.aemeasurable,
+      Measure.dirac_bind Measurable.of_discrete]
+  · exact Measurable.of_discrete.aemeasurable
+
+/-- A compound Poisson law with a probability jump measure is a probability measure. -/
+instance isProbabilityMeasure_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α)
+    [IsProbabilityMeasure μ] :
+    IsProbabilityMeasure (compoundPoissonMeasure r μ) := by
+  rw [compoundPoissonMeasure_def]
+  exact MeasureTheory.isProbabilityMeasure_bind Measurable.of_discrete.aemeasurable
+    (ae_of_all _ fun n => inferInstance)
+
+/-- A compound Poisson law with an s-finite jump measure is s-finite. -/
+instance sfinite_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) [SFinite μ] :
+    SFinite (compoundPoissonMeasure r μ) := by
   rw [compoundPoissonMeasure_eq_sum]
   infer_instance
 
-instance (r : ℝ≥0) (μ : Measure E) [IsProbabilityMeasure μ] :
-    IsProbabilityMeasure (compoundPoissonMeasure r μ) :=
-  isProbabilityMeasure_bind (measurable_of_countable _).aemeasurable (ae_of_all _ inferInstance)
+/-- Integration against a compound Poisson law is the Poisson average of integration against its
+convolution powers. -/
+theorem lintegral_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) (f : α → ℝ≥0∞)
+    (hf : Measurable f) :
+    ∫⁻ x, f x ∂compoundPoissonMeasure r μ =
+      ∫⁻ n, ∫⁻ x, f x ∂μ.convolutionPower n ∂poissonMeasure r := by
+  rw [compoundPoissonMeasure_def]
+  exact Measure.lintegral_bind Measurable.of_discrete.aemeasurable
+    hf.aemeasurable
 
-/-- The compound Poisson law of rate zero is the Dirac mass at `0`. -/
+/-- The mass assigned by a compound Poisson law to a measurable set is the Poisson average of
+the masses assigned by its convolution powers. -/
+theorem compoundPoissonMeasure_apply (r : ℝ≥0) (μ : Measure α) {s : Set α}
+    (hs : MeasurableSet s) :
+    compoundPoissonMeasure r μ s =
+      ∫⁻ n, μ.convolutionPower n s ∂poissonMeasure r := by
+  rw [compoundPoissonMeasure_def, Measure.bind_apply hs Measurable.of_discrete.aemeasurable]
+
+/-- The measurable-set formula for a compound Poisson law as a Poisson-weighted series. -/
+theorem compoundPoissonMeasure_apply_eq_tsum (r : ℝ≥0) (μ : Measure α) {s : Set α}
+    (hs : MeasurableSet s) :
+    compoundPoissonMeasure r μ s =
+      ∑' n, ENNReal.ofReal (exp (-r) * r ^ n / n !) * μ.convolutionPower n s := by
+  rw [compoundPoissonMeasure_eq_sum, Measure.sum_apply _ hs]
+  simp_rw [Measure.smul_apply, smul_eq_mul]
+
+/-- The compound Poisson law is jointly measurable in its rate and probability jump law. -/
+@[fun_prop]
+theorem measurable_compoundPoissonMeasure_probability [MeasurableAdd₂ α] :
+    Measurable fun p : ℝ≥0 × ProbabilityMeasure α =>
+      compoundPoissonMeasure p.1 (p.2 : Measure α) := by
+  refine Measure.measurable_measure.2 fun s hs => ?_
+  simp_rw [compoundPoissonMeasure_apply_eq_tsum _ _ hs]
+  refine Measurable.tsum fun n => ?_
+  exact (ENNReal.measurable_ofReal.comp (by fun_prop)).mul
+    ((Measure.measurable_coe hs).comp
+      ((Measure.measurable_convolutionPower n).comp measurable_snd))
+
+/-- At rate zero, no jumps occur and the compound Poisson law is concentrated at zero. -/
 @[simp]
-theorem compoundPoissonMeasure_zero_left (μ : Measure E) :
+theorem compoundPoissonMeasure_zero (μ : Measure α) :
     compoundPoissonMeasure 0 μ = Measure.dirac 0 := by
-  rw [compoundPoissonMeasure, poissonMeasure_zero, Measure.dirac_bind (measurable_of_countable _),
-    Measure.convolutionPower_zero]
+  rw [compoundPoissonMeasure_def, poissonMeasure_zero,
+    Measure.dirac_bind Measurable.of_discrete]
+  exact Measure.convolutionPower_zero μ
 
-variable [MeasurableAdd₂ E]
-
-/-- The compound Poisson law with jumps equal to `0` is the Dirac mass at `0`. -/
+/-- If every jump is zero, the compound Poisson sum is zero at every rate. -/
 @[simp]
-theorem compoundPoissonMeasure_dirac_zero (r : ℝ≥0) :
-    compoundPoissonMeasure r (Measure.dirac (0 : E)) = Measure.dirac 0 := by
-  rw [compoundPoissonMeasure, funext (Measure.convolutionPower_dirac_zero (E := E)),
-    Measure.bind_const, measure_univ, one_smul]
+theorem compoundPoissonMeasure_dirac_zero [MeasurableAdd₂ α] (r : ℝ≥0) :
+    compoundPoissonMeasure r (Measure.dirac (0 : α)) = Measure.dirac 0 := by
+  rw [compoundPoissonMeasure_def]
+  rw [Measure.bind_congr_right
+    (ae_of_all _ fun n => Measure.convolutionPower_dirac_zero (α := α) n)]
+  simp
+
+/-- A compound Poisson law with a Dirac jump law is the pushforward of its Poisson count by
+repeated addition of the atom. -/
+theorem compoundPoissonMeasure_dirac [MeasurableAdd₂ α] (r : ℝ≥0) (x : α) :
+    compoundPoissonMeasure r (Measure.dirac x) =
+      (poissonMeasure r).map fun n => n • x := by
+  rw [compoundPoissonMeasure_def]
+  rw [Measure.bind_congr_right
+    (ae_of_all _ fun n => Measure.convolutionPower_dirac x n)]
+  exact Measure.bind_dirac_eq_map _ Measurable.of_discrete
 
 /-- Compound Poisson laws with the same jump law convolve by adding their rates. -/
-theorem compoundPoissonMeasure_conv_compoundPoissonMeasure (r s : ℝ≥0) (μ : Measure E)
-    [SFinite μ] :
+theorem compoundPoissonMeasure_conv_compoundPoissonMeasure [MeasurableAdd₂ α] (r s : ℝ≥0)
+    (μ : Measure α) [SFinite μ] :
     compoundPoissonMeasure r μ ∗ compoundPoissonMeasure s μ = compoundPoissonMeasure (r + s) μ := by
   have : SFinite ((poissonMeasure s).bind μ.convolutionPower) :=
     inferInstanceAs (SFinite (compoundPoissonMeasure s μ))
-  simp only [compoundPoissonMeasure]
+  simp only [compoundPoissonMeasure_def]
   rw [Measure.bind_conv_bind (Measure.convolutionPower_add μ), poissonMeasure_conv_poissonMeasure]
 
 /-- Pushing a compound Poisson law forward along a measurable additive monoid homomorphism
 pushes its jump law forward and keeps its rate. -/
-theorem map_compoundPoissonMeasure {F : Type*} [AddMonoid F] [MeasurableSpace F]
-    [MeasurableAdd₂ F] (r : ℝ≥0) (μ : Measure E) [SFinite μ] (f : E →+ F) (hf : Measurable f) :
+theorem map_compoundPoissonMeasure [MeasurableAdd₂ α] {β : Type*} [MeasurableSpace β]
+    [AddMonoid β] [MeasurableAdd₂ β] (r : ℝ≥0) (μ : Measure α) [SFinite μ] (f : α →+ β)
+    (hf : Measurable f) :
     (compoundPoissonMeasure r μ).map f = compoundPoissonMeasure r (μ.map f) := by
-  rw [compoundPoissonMeasure, compoundPoissonMeasure,
-    Measure.map_bind (measurable_of_countable _).aemeasurable hf.aemeasurable]
+  rw [compoundPoissonMeasure_def, compoundPoissonMeasure_def,
+    Measure.map_bind Measurable.of_discrete.aemeasurable hf.aemeasurable]
   exact congrArg _ (funext (Measure.map_convolutionPower μ f hf))
-
-end AddMonoid
 
 /-- The sum of two independent random variables with compound Poisson laws of rates `r` and `s`
 and a common jump law `μ` is compound Poisson with rate `r + s` and jump law `μ`. -/
-theorem _root_.ProbabilityTheory.IndepFun.hasLaw_add_compoundPoissonMeasure {Ω E : Type*}
-    [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P] [AddMonoid E] [MeasurableSpace E]
-    [MeasurableAdd₂ E] {r s : ℝ≥0} {μ : Measure E} [SFinite μ] {X Y : Ω → E}
+theorem _root_.ProbabilityTheory.IndepFun.hasLaw_add_compoundPoissonMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P] [MeasurableAdd₂ α] {r s : ℝ≥0}
+    {μ : Measure α} [SFinite μ] {X Y : Ω → α}
     (hXY : IndepFun X Y P) (hX : HasLaw X (compoundPoissonMeasure r μ) P)
     (hY : HasLaw Y (compoundPoissonMeasure s μ) P) :
     HasLaw (X + Y) (compoundPoissonMeasure (r + s) μ) P := by
@@ -300,12 +257,11 @@ theorem charFun_compoundPoissonMeasure {E : Type*} [NormedAddCommGroup E] [Inner
   rw [charFun_apply]
   rw [compoundPoissonMeasure_eq_sum] at hint ⊢
   rw [integral_sum_measure hint]
-  simp_rw [integral_smul_measure, ← charFun_apply, Measure.charFun_convolutionPower,
-    ← measureReal_def, poissonMeasure_real_singleton]
-  calc ∑' n, (Real.exp (-r) * r ^ n / n ! : ℝ) • charFun μ t ^ n
+  simp_rw [integral_smul_measure, ← charFun_apply, Measure.charFun_convolutionPower]
+  calc ∑' n, (ENNReal.ofReal (Real.exp (-r) * r ^ n / n !)).toReal • charFun μ t ^ n
   _ = ∑' n, (Real.exp (-r) : ℂ) * ((r * charFun μ t) ^ n / n !) := by
       congr with n
-      rw [Complex.real_smul]
+      rw [ENNReal.toReal_ofReal (by positivity), Complex.real_smul]
       push_cast
       ring
   _ = (Real.exp (-r) : ℂ) * Complex.exp (r * charFun μ t) := by

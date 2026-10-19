@@ -27,6 +27,7 @@ support graph. Diagonal pairs never contribute to a cut and are ignored by the s
 
 * `TauCeti.isSubmodular_pairCutCapacity`: a nonnegative pair-capacity function has a submodular
   cut function.
+* `TauCeti.isSymmSubmodular_pairCutCapacity`: the same cut function is symmetric submodular.
 -/
 
 public section
@@ -83,6 +84,12 @@ theorem isSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid 
     by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
       by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
       simp_all
+
+/-- The cut function of nonnegative weights on unordered pairs is symmetric submodular. -/
+theorem isSymmSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid K]
+    [PartialOrder K] [IsOrderedAddMonoid K] (c : Sym2 V → K) (hc : 0 ≤ c) :
+    IsSymmSubmodular (pairCutCapacity c) :=
+  ⟨pairCutCapacity_compl c, isSubmodular_pairCutCapacity c hc⟩
 
 /-- Diagonal values do not affect pair cut capacities. -/
 theorem pairCutCapacity_eq_of_offDiagonal_eq [Fintype V] [AddCommMonoid K]
