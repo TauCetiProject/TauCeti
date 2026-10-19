@@ -30,7 +30,9 @@ the extension across the axis, and holomorphy off it.
 
 Combined with the principle of isolated zeros for the holomorphic extension, it also shows that
 the zeros on the real axis of such a function, zero-free in the upper half-plane, are isolated:
-`TauCeti.eventually_ne_zero_of_real_on_axis`.
+`TauCeti.eventually_ne_zero_of_real_on_axis`. Consequently a function continuous up to the axis
+and holomorphic and zero-free in the upper half-plane cannot vanish on a whole boundary interval:
+`TauCeti.exists_mem_Ioo_ne_zero_of_ne_zero`.
 
 As with the rest of the L0–L3/L4 conformal-mapping material, this is coordinated with the upstream
 Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505; L4 (reflection) is not part of
@@ -109,5 +111,32 @@ theorem eventually_ne_zero_of_real_on_axis {x r : ℝ} (hr : 0 < r)
     filter_upwards [h.filter_mono (nhdsWithin_mono _ hsub), mem_nhdsWithin_of_mem_nhds hxr,
       self_mem_nhdsWithin] with z hz hzr hzH
     rwa [← hFf ⟨hzr, hzH.1⟩]
+
+/-- **A zero-free function does not vanish on a whole boundary interval.** Let `f` be continuous
+on the closed upper half of a disc about a real point `x`, and holomorphic and zero-free on its
+open upper half. Then `f` is nonzero somewhere on the diameter `(x - r, x + r)`. -/
+theorem exists_mem_Ioo_ne_zero_of_ne_zero {x r : ℝ} (hr : 0 < r)
+    (hcont : ContinuousOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}))
+    (hne : ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → f z ≠ 0) :
+    ∃ y ∈ Ioo (x - r) (x + r), f y ≠ 0 := by
+  by_contra! h
+  -- a function vanishing on the diameter is real there, so its zero at `x` would be isolated
+  have hreal (z : ℂ) (hz : z ∈ Metric.ball (x : ℂ) r) (hz0 : z.im = 0) : (f z).im = 0 := by
+    have hzx : ((z.re : ℝ) : ℂ) = z := Complex.ext (by simp) (by simp [hz0])
+    rw [← hzx, Metric.mem_ball, Complex.dist_eq, ← ofReal_sub, norm_real, Real.norm_eq_abs,
+      abs_sub_lt_iff] at hz
+    rw [← hzx, h _ ⟨by linarith, by linarith⟩, zero_im]
+  obtain ⟨ε, hε, hsub⟩ := Metric.mem_nhdsWithin_iff.mp
+    (eventually_ne_zero_of_real_on_axis hr hcont hholo hreal hne)
+  have ht : 0 < min ε r / 2 := by positivity
+  have htε : min ε r / 2 < ε := by linarith [min_le_left ε r]
+  have htr : min ε r / 2 < r := by linarith [min_le_right ε r]
+  refine hsub ⟨?_, ?_, ?_⟩ (h (x + min ε r / 2) ⟨by linarith, by linarith⟩)
+  · rw [Metric.mem_ball, Complex.dist_eq, ← ofReal_sub, norm_real, Real.norm_eq_abs,
+      add_sub_cancel_left, abs_of_pos ht]
+    exact htε
+  · simp
+  · simpa using ht.ne'
 
 end TauCeti
