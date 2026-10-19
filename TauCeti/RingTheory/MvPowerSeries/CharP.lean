@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.RingTheory.Ideal.Span
-public import Mathlib.RingTheory.MvPowerSeries.Order
+public import TauCeti.RingTheory.MvPowerSeries.Order
 import Mathlib.Algebra.CharP.Defs
 import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.Data.Nat.Choose.Factorization
@@ -28,8 +28,6 @@ This is the coefficient argument behind Katz–Mazur, Lemma 5.3.4, applied to fo
 
 ## Main results
 
-* `MvPowerSeries.two_le_order_sub_X_add_X`: over a ring, such an `f` differs from `X + Y` by a
-  series of order at least two.
 * `MvPowerSeries.coeff_single_add_single_pow_eq_choose`: the coefficient of `Xⁱ Y^(q - i)` in
   `f ^ q` is `q.choose i`.
 * `MvPowerSeries.natCast_choose_eq_zero_of_pow_mem_span`: if moreover `f ^ q ∈ (X ^ q, Y ^ q)`,
@@ -50,24 +48,6 @@ namespace MvPowerSeries
 
 variable {R : Type*} {f : MvPowerSeries (Fin 2) R}
 
-section Ring
-
-variable [Ring R]
-
-/-- A power series in two variables with zero constant coefficient and linear part `X + Y` differs
-from `X + Y` by a series of order at least two. -/
-theorem two_le_order_sub_X_add_X (h₀ : f.constantCoeff = 0)
-    (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) :
-    2 ≤ (f - (X 0 + X 1)).order := by
-  refine nat_le_order (n := 2) fun d hd => ?_
-  have hdeg : d.degree = 0 ∨ d.degree = 1 := by omega
-  rcases hdeg with hdeg | hdeg
-  · simp [(degree_eq_zero_iff d).mp hdeg, h₀]
-  · obtain ⟨j, rfl⟩ := (Set.ext_iff.mp range_single_one d).mpr hdeg
-    fin_cases j <;> simp [hX, hY, coeff_X, single_eq_single_iff]
-
-end Ring
-
 variable [Semiring R]
 
 /-- If `f ∈ R⟦X, Y⟧` has zero constant coefficient and linear part `X + Y`, then the part of total
@@ -76,30 +56,13 @@ degree `q` of `f ^ q` is `(X + Y) ^ q`: the coefficient of `Xⁱ Y^(q - i)` in `
 theorem coeff_single_add_single_pow_eq_choose (h₀ : f.constantCoeff = 0)
     (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) {q i : ℕ} (hi : i ≤ q) :
     coeff (single 0 i + single 1 (q - i)) (f ^ q) = q.choose i := by
-  have hlin : homogeneousComponent 1 f = X 0 + X 1 := by
-    ext d
-    rw [coeff_homogeneousComponent]
-    by_cases hdeg : d.degree = 1
-    · obtain ⟨j, rfl⟩ := (Set.ext_iff.mp range_single_one d).mpr hdeg
-      fin_cases j <;> simp [hX, hY, coeff_X, single_eq_single_iff]
-    · have hX' : d ≠ single 0 1 := fun h ↦ hdeg (by simp [h])
-      have hY' : d ≠ single 1 1 := fun h ↦ hdeg (by simp [h])
-      simp [hdeg, coeff_X, hX', hY']
-  -- Multiplication of lowest-degree homogeneous components computes the degree-q part of f^q.
-  have hpow : ∀ q : ℕ, homogeneousComponent q (f ^ q) = (X 0 + X 1) ^ q := by
-    intro q
-    induction q with
-    | zero =>
-      ext d
-      by_cases hd : d = 0 <;> simp [coeff_homogeneousComponent, coeff_one, degree_eq_zero_iff, hd]
-    | succ q ih =>
-      rw [pow_succ, homogeneousComponent_mul_of_le_order
-        (le_order_pow_of_constantCoeff_eq_zero q h₀)
-        (one_le_order_iff_constCoeff_eq_zero.mpr h₀), ih, hlin, pow_succ]
+  have hpow : homogeneousComponent q (f ^ q) = (X 0 + X 1) ^ q := by
+    simpa only [mul_one, homogeneousComponent_one_eq_X_add_X hX hY] using
+      homogeneousComponent_pow_of_le_order (one_le_order_iff_constCoeff_eq_zero.mpr h₀) q
   have hd : (single (0 : Fin 2) i + single 1 (q - i)).degree = q := by
     rw [map_add, degree_single, degree_single]
     exact Nat.add_sub_cancel' hi
-  have heq := congrArg (coeff (single (0 : Fin 2) i + single 1 (q - i))) (hpow q)
+  have heq := congrArg (coeff (single (0 : Fin 2) i + single 1 (q - i))) hpow
   rw [coeff_homogeneousComponent, ite_eq_left hd] at heq
   have hnat : coeff (single (0 : Fin 2) i + single 1 (q - i))
       ((X 0 + X 1 : MvPowerSeries (Fin 2) ℕ) ^ q) = q.choose i := by
