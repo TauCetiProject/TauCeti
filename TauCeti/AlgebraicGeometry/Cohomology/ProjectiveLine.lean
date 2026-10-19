@@ -16,8 +16,9 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 
 Let `ℙ¹_R = Proj R[X₀, X₁]` be the projective line over a commutative ring `R`
 (`TauCeti.AlgebraicGeometry.projectiveLine`). This file computes the cohomology of its structure
-sheaf: `H⁰(ℙ¹_R, 𝒪) = R` and `Hⁿ(ℙ¹_R, 𝒪) = 0` for `n ≥ 1`. This is the case `m = 0` of the
-computation of `Hⁿ(ℙ¹_R, 𝒪(m))` (Hartshorne, Theorem III.5.1).
+sheaf: `H⁰(ℙ¹_R, 𝒪) = R` over any ring, and `Hⁿ(ℙ¹_R, 𝒪) = 0` for `n ≥ 1` when `R` is
+Noetherian. This is the case `m = 0` of the computation of `Hⁿ(ℙ¹_R, 𝒪(m))` (Hartshorne,
+Theorem III.5.1).
 
 The computation uses the cover of `ℙ¹_R` by the standard charts `D₊(X₀)` and `D₊(X₁)`, with
 overlap `D₊(X₀X₁)`. Their rings of functions are the degree-zero homogeneous localizations, which
@@ -204,45 +205,9 @@ private theorem exists_eq_algebraMap_of_ρ₀_eq_ρ₁ {a₀ : Away 𝒜 (coord 
 
 /-! ### Functions on the standard charts -/
 
-/-- On the chart `D₊(Xᵢ)`, the constant function `c` of the projective line is the fraction
-`c / 1`. -/
-private theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
-    Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ c) =
-      (projectiveLine R).presheaf.map (homOfLE le_top).op
-        (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) c) := by
-  have e : (Proj.basicOpen 𝒜 (coord R i)).ι ≫ (projectiveLine R ↘ Spec (.of R)) =
-      Proj.basicOpenToSpec 𝒜 (coord R i) ≫
-        Spec.map (CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i)))) := by
-    rw [← awayι_over]
-    dsimp only [awayι]
-    rw [← Proj.basicOpenIsoSpec_inv_ι 𝒜 _ (coord_mem R i) one_pos,
-      ← Proj.basicOpenIsoSpec_hom 𝒜 _ (coord_mem R i) one_pos, Category.assoc,
-      Iso.hom_inv_id_assoc]
-  have hι : (projectiveLine R).presheaf.map (homOfLE le_top).op ≫
-      (Proj.basicOpen 𝒜 (coord R i)).topIso.inv = (Proj.basicOpen 𝒜 (coord R i)).ι.appTop := by
-    rw [Scheme.Opens.topIso_inv, Scheme.Opens.ι_appTop]
-    -- both sides restrict along an inclusion `D₊(Xᵢ) ≤ ⊤`, and such inclusions are unique
-    exact ((projectiveLine R).presheaf.map_comp _ _).symm
-  have key : CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i))) ≫
-      Proj.awayToSection 𝒜 (coord R i) = (Scheme.ΓSpecIso (.of R)).inv ≫
-        (projectiveLine R ↘ Spec (.of R)).appTop ≫
-          (projectiveLine R).presheaf.map (homOfLE le_top).op := by
-    rw [← cancel_mono (Proj.basicOpen 𝒜 (coord R i)).topIso.inv]
-    simp only [Category.assoc]
-    rw [hι, ← Scheme.Hom.comp_appTop, e, Scheme.Hom.comp_appTop,
-      ← reassoc_of% Scheme.ΓSpecIso_inv_naturality, Scheme.Hom.appTop,
-      Proj.basicOpenToSpec_app_top, Iso.inv_hom_id_assoc]
-  simpa using congr($key c)
-
 /-- The product `X₀X₁` is a form of degree two. -/
 private theorem coord_mul_coord_mem : coord R 0 * coord R 1 ∈ 𝒜 (1 + 1) :=
   SetLike.mul_mem_graded (coord_mem R 0) (coord_mem R 1)
-
-/-- The fractions of degree zero with denominator a power of `f` are the functions on `D₊(f)`. -/
-private theorem awayToSection_bijective {f : SymmetricAlgebra R (Fin 2 → R)} {m : ℕ} (hf : f ∈ 𝒜 m)
-    (hm : 0 < m) : Function.Bijective (Proj.awayToSection 𝒜 f) := by
-  rw [← Proj.basicOpenIsoAway_hom 𝒜 f hf hm]
-  exact (Proj.basicOpenIsoAway 𝒜 f hf hm).commRingCatIsoToRingEquiv.bijective
 
 /-- Restricting a function on `D₊(X₀)` to `D₊(X₀X₁)` is `ρ₀` on fractions. -/
 private theorem map_awayToSection_ρ₀ (h : Proj.basicOpen 𝒜 (coord R 0 * coord R 1) ≤
@@ -272,7 +237,9 @@ private theorem exists_map_sub_map_eq (b : Γ(projectiveLine R,
         (projectiveLine R).presheaf.map (homOfLE h₁).op t = b from
     h _ (Proj.basicOpen_mul _ _ _) inf_le_left inf_le_right b
   rintro W rfl h₀ h₁ b
-  obtain ⟨c, rfl⟩ := (awayToSection_bijective R (coord_mul_coord_mem R) two_pos).2 b
+  have hσ : Function.Surjective (Proj.awayToSection 𝒜 (coord R 0 * coord R 1)) :=
+    (Proj.basicOpenIsoAway 𝒜 _ (coord_mul_coord_mem R) two_pos).commRingCatIsoToRingEquiv.surjective
+  obtain ⟨c, rfl⟩ := hσ b
   obtain ⟨a₀, a₁, rfl⟩ := exists_ρ₀_sub_ρ₁_eq R c
   exact ⟨Proj.awayToSection 𝒜 _ a₀, Proj.awayToSection 𝒜 _ a₁, by
     rw [map_awayToSection_ρ₀, map_awayToSection_ρ₁, map_sub]⟩
@@ -285,17 +252,21 @@ open Scheme.Modules
 `Γ(ℙ¹_R, 𝒪)` is bijective. -/
 theorem bijective_baseRingToGlobalSections :
     Function.Bijective (baseRingToGlobalSections R (projectiveLine R)) := by
-  have hσ (i : Fin 2) := awayToSection_bijective R (coord_mem R i) one_pos
-  have hres (i : Fin 2) (c : R) := awayToSection_algebraMap R i c
+  have hσ (i : Fin 2) : Function.Bijective (Proj.awayToSection 𝒜 (coord R i)) :=
+    (Proj.basicOpenIsoAway 𝒜 _ (coord_mem R i) one_pos).commRingCatIsoToRingEquiv.bijective
+  have hres (i : Fin 2) (c : R) : Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ c) =
+      (projectiveLine R).presheaf.map (homOfLE le_top).op
+        (baseRingToGlobalSections R (projectiveLine R) c) := by
+    rw [baseRingToGlobalSections_apply]
+    exact awayToSection_algebraMap R i c
   refine ⟨fun c c' h ↦ ?_, fun s ↦ ?_⟩
   · -- restricted to `D₊(X₀)`, the constants `c` and `c'` are the constant polynomials
     have h₀ := congrArg ((projectiveLine R).presheaf.map
       (homOfLE (le_top (a := Proj.basicOpen 𝒜 (coord R 0)))).op) h
     rw [← hres, ← hres] at h₀
     have := congrArg (awayEquivPolynomial R 0) ((hσ 0).1 h₀)
-    rwa [AlgEquiv.commutes, AlgEquiv.commutes, Polynomial.algebraMap_apply,
-      Polynomial.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, RingHom.id_apply,
-      C_inj] at this
+    simp only [AlgEquiv.commutes] at this
+    exact C_injective this
   · -- the restrictions of `s` to the two charts agree on the overlap, so they are a constant
     obtain ⟨a₀, ha₀⟩ := (hσ 0).2 ((projectiveLine R).presheaf.map
       (homOfLE (le_top (a := Proj.basicOpen 𝒜 (coord R 0)))).op s)
@@ -305,7 +276,10 @@ theorem bijective_baseRingToGlobalSections :
         Proj.basicOpen 𝒜 (coord R 0 * coord R 1) ≤ Proj.basicOpen 𝒜 (coord R i) :=
       (Proj.basicOpen_mul _ _ _).trans_le (by fin_cases i; exacts [inf_le_left, inf_le_right])
     have h : ρ₀ R a₀ = ρ₁ R a₁ := by
-      refine (awayToSection_bijective R (coord_mul_coord_mem R) two_pos).1 ?_
+      have hσ₀₁ : Function.Injective (Proj.awayToSection 𝒜 (coord R 0 * coord R 1)) :=
+        (Proj.basicOpenIsoAway 𝒜 _ (coord_mul_coord_mem R)
+          two_pos).commRingCatIsoToRingEquiv.injective
+      refine hσ₀₁ ?_
       rw [← map_awayToSection_ρ₀ R (hW 0), ← map_awayToSection_ρ₁ R (hW 1), ha₀, ha₁,
         ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← Functor.map_comp, ← Functor.map_comp]
       congr 2
@@ -320,8 +294,7 @@ theorem bijective_baseRingToGlobalSections :
 /-- Over a Noetherian ring, the functions on a standard chart form a Noetherian ring. -/
 private theorem isNoetherianRing_basicOpen_coord [IsNoetherianRing R] (i : Fin 2) :
     IsNoetherianRing Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) :=
-  isNoetherianRing_of_ringEquiv R[X] ((Proj.basicOpenIsoAway 𝒜 _ (coord_mem R i)
-    one_pos).commRingCatIsoToRingEquiv.symm.trans (awayEquivPolynomial R i).toRingEquiv).symm
+  image_awayι_top R i ▸ isNoetherianRing_of_ringEquiv R[X] (chartSectionsEquiv R i).symm
 
 /-- **The structure sheaf of the projective line has no first cohomology** over a Noetherian
 ring. -/
@@ -374,13 +347,14 @@ noncomputable def cohomologyZeroTrivialLinearEquiv :
 /-- Under `cohomologyZeroTrivialLinearEquiv`, an element `r` of the base ring is the class of the
 constant function `r`. -/
 theorem cohomologyZeroTrivialLinearEquiv_symm_apply (r : R) :
-    cohomologyZeroBaseLinearEquiv R _ _ (trivialCohomologyBaseLinearEquiv R _ 0
-      ((cohomologyZeroTrivialLinearEquiv R).symm r)) =
-        baseRingToGlobalSections R (projectiveLine R) r := by
+    (cohomologyZeroTrivialLinearEquiv R).symm r = (trivialCohomologyBaseLinearEquiv R _ 0).symm
+      ((cohomologyZeroBaseLinearEquiv R _
+        (SheafOfModules.unit (projectiveLine R).ringCatSheaf)).symm
+          (baseRingToGlobalSections R (projectiveLine R) r)) := by
   simp only [cohomologyZeroTrivialLinearEquiv, LinearEquiv.trans_symm, LinearEquiv.symm_symm,
-    LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, LinearEquiv.ofBijective_apply,
-    Algebra.linearMap_apply, structureSheafSectionsBaseLinearEquiv_symm_apply]
-  exact (LinearEquiv.apply_symm_apply _ _).trans <| ConcreteCategory.congr_hom
+    LinearEquiv.trans_apply, LinearEquiv.ofBijective_apply, Algebra.linearMap_apply,
+    structureSheafSectionsBaseLinearEquiv_symm_apply]
+  exact congrArg _ <| congrArg _ <| ConcreteCategory.congr_hom
     (Scheme.baseRingToStructurePresheaf_app_top R (projectiveLine R)) r
 
 variable (k : Type u) [Field k]
