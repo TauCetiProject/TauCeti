@@ -75,7 +75,7 @@ noncomputable def tensorInducedMackeyIso (A : DiscreteRep.{u, v, w} R U) :
     piTensorProduct (fun D ↦
         tensorInduced _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D)) (t D)
           (res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) A)) ≅
-      res V.subtype V.continuous_subtype (tensorInduced U hU s A) where
+      res V.subtype continuous_subtype_val (tensorInduced U hU s A) where
   hom := (Subgroup.tensorInducedMackey U V r hr t A.ρ s).toIntertwiningMap
   inv := (Subgroup.tensorInducedMackey U V r hr t A.ρ s).symm.toIntertwiningMap
   hom_inv_id := Representation.IntertwiningMap.ext <| LinearMap.ext <|
@@ -114,7 +114,7 @@ theorem tensorInducedMackeyIso_hom_naturality {A B : DiscreteRep.{u, v, w} R U} 
           ((resFunctor (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D))).map f)) ≫
         (tensorInducedMackeyIso U V hU r hr t s B).hom =
       (tensorInducedMackeyIso U V hU r hr t s A).hom ≫
-        (resFunctor V.subtype V.continuous_subtype).map
+        (resFunctor V.subtype continuous_subtype_val).map
           ((tensorInductionFunctor U hU s).map f) := by
   have e : ((piTensorProductFunctor R V _).map fun D ↦
       (tensorInductionFunctor _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D)) (t D)).map
@@ -162,7 +162,7 @@ noncomputable def smoothTensorInducedMackeyIso (A : SmoothDiscreteTopRep.{u, v, 
                   (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D))
                     ((ofSmoothDiscrete R U).obj A))))))) ≅
       (toSmoothDiscrete R V).obj
-        (DiscreteRep.res V.subtype V.continuous_subtype
+        (DiscreteRep.res V.subtype continuous_subtype_val
           ((ofSmoothDiscrete R G).obj
             ((toSmoothDiscrete R G).obj
               (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))))) :=
@@ -197,7 +197,7 @@ theorem smoothTensorInducedMackeyIso_hom_naturality
                 (U.continuous_mackeyToH V (r D))).map f))) ≫
         (smoothTensorInducedMackeyIso U V hU r hr t s B).hom =
       (smoothTensorInducedMackeyIso U V hU r hr t s A).hom ≫
-        (smoothResFunctor R V.subtype V.continuous_subtype).map
+        (smoothResFunctor R V.subtype continuous_subtype_val).map
           ((smoothTensorInductionFunctor R G U hU s).map f) := by
   simp only [smoothTensorInductionFunctor_map, smoothResFunctor_map]
   apply ObjectProperty.hom_ext
