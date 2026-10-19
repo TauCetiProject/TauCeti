@@ -442,15 +442,16 @@ theorem _root_.BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective
     (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
     (y : Module.Dual R (Bialgebra.CotangentSpace R L)) :
     dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α ↔ y ∈ adjointWeightSpace π α := by
+  refine ⟨?_, φ.dualCotangentMap_mem_adjointWeightSpace π α⟩
+  intro hy
   let A := CommAlgCat.of R (MonoidAlgebra R M)
   have hinj := Module.Flat.lTensor_preserves_injective_linearMap (M := A)
     (dualCotangentMap φ) hφ
-  rw [mem_adjointWeightSpace_iff_universalPointAction,
-    mem_adjointWeightSpace_iff_universalPointAction]
-  conv_rhs => rw [← hinj.eq_iff]
-  rw [BialgHom.lTensor_dualCotangentMap_adjointAction, LinearMap.lTensor_tmul,
-    LinearMap.lTensor_tmul]
-  simp only [BialgHom.mapDomain_apply, BialgHom.comp_toAlgHom, A]
+  apply (mem_adjointWeightSpace_iff_universalPointAction π α y).mpr
+  apply hinj
+  rw [BialgHom.lTensor_dualCotangentMap_adjointAction]
+  simpa [A] using
+    (mem_adjointWeightSpace_iff_universalPointAction (π.comp φ) α _).mp hy
 
 /-- **The differential of a closed immersion detects adjoint weight spaces.** Let
 `φ : H →ₐc[R] L` be surjective, so that it represents a closed immersion `Spec L → Spec H`, and let

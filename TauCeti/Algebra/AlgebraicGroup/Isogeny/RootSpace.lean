@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.WeightSpace
 
 /-!
-# Adjoint weight spaces under isogenies
+# Adjoint weight spaces under separable isogenies
 
 An isogeny between smooth affine groups with étale kernel identifies their Lie algebras.
 For any homomorphism from a diagonalizable group into the source, the differential identifies
@@ -25,13 +24,6 @@ gives `π.comp f.hom`. Neither maximality nor centrality is required for the wei
 The étale-kernel hypothesis is essential: a Frobenius isogeny can have zero differential.
 The comparison therefore applies in any characteristic, without asserting it for inseparable
 isogenies.
-
-For homomorphisms with central kernel, the differential is injective on every nontrivial
-weight space even when the kernel is infinitesimal. Accordingly every nontrivial source
-weight occurs in the target after restriction to the same diagonalizable group. These
-conclusions require neither finiteness nor faithful flatness, and do not assert surjectivity
-on weight spaces. The kernel lies in the Lie algebra of the scheme-theoretic center,
-which has only trivial adjoint weight.
 
 The Lie equivalence is `IsIsogeny.lieEquivOfEtaleKernel`, transported through cotangent
 duality. Weight compatibility uses equivariance over the universal point of the diagonalizable
@@ -106,49 +98,3 @@ theorem nontrivialAdjointWeights_comp (hf : IsIsogeny f)
     (hf.dualCotangentMap_bijective_of_etaleKernel hker) π
 
 end TauCeti.CommHopfAlgCat.IsIsogeny
-
-namespace TauCeti.CommHopfAlgCat
-
-universe u
-
-open Derivation
-
-variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
-  [Module.Finite k (Bialgebra.CotangentSpace k K)]
-  {X : Type u} [CommGroup X]
-
-/-- A homomorphism with scheme-theoretically central kernel has injective differential on
-every nontrivial adjoint weight space. This applies to inseparable central isogenies: the
-kernel may be infinitesimal, and its tangent space contributes only trivial weights.
-Neither finiteness nor faithful flatness of the homomorphism is required. -/
-theorem injOn_dualCotangentMap_adjointWeightSpace_of_isCentral_kernel
-    (f : H ⟶ K) (hcentral : (kernelHopfIdeal f).IsCentral)
-    (π : K →ₐc[k] MonoidAlgebra k X) {α : X} (hα : α ≠ 1) :
-    Set.InjOn (dualCotangentMap f.hom) (adjointWeightSpace π α) := by
-  intro x hx y hy hxy
-  apply sub_eq_zero.mp
-  apply hcentral.eq_zero_of_mem_adjointWeightSpace π hα (Submodule.sub_mem _ hx hy)
-  rw [lieSubalgebra_kernelHopfIdeal, LieIdeal.mem_toLieSubalgebra, LieHom.mem_ker,
-    derivationCompLieHom_apply, ← cotangentLinearEquiv_dualCotangentMap]
-  simp [map_sub, hxy]
-
-variable [Module.Finite k (Bialgebra.CotangentSpace k H)]
-
-/-- A homomorphism with central kernel preserves every nontrivial adjoint weight occurring
-in its source. Both weight sets are indexed by the characters of the same diagonalizable
-group, mapped into the target by composition. No separability assumption is needed. -/
-theorem nontrivialAdjointWeights_subset_comp_of_isCentral_kernel
-    (f : H ⟶ K) (hcentral : (kernelHopfIdeal f).IsCentral)
-    (π : K →ₐc[k] MonoidAlgebra k X) :
-    nontrivialAdjointWeights π ⊆ nontrivialAdjointWeights (π.comp f.hom) := by
-  intro α hα
-  rw [mem_nontrivialAdjointWeights] at hα ⊢
-  obtain ⟨hα, hspace⟩ := hα
-  obtain ⟨x, hx, hxne⟩ := (Submodule.ne_bot_iff _).mp hspace
-  refine ⟨hα, (Submodule.ne_bot_iff _).mpr ⟨dualCotangentMap f.hom x,
-    f.hom.dualCotangentMap_mem_adjointWeightSpace π α hx, ?_⟩⟩
-  intro hzero
-  exact hxne ((injOn_dualCotangentMap_adjointWeightSpace_of_isCentral_kernel f hcentral π hα)
-    hx (Submodule.zero_mem _) (hzero.trans (map_zero _).symm))
-
-end TauCeti.CommHopfAlgCat
