@@ -238,9 +238,9 @@ theorem hasDenominatorPower_familyNumerators [IsTopologicalRing A]
 
 /-! ### The universal property -/
 
-/-- **The fractions `t/sᵢ` are power-bounded in `A(T/s)`.** Each `sᵢ` is also a unit in `A(T/s)`,
-since it divides `∏ⱼ sⱼ` (`IsLocalization.Away.isUnit_of_dvd`), so `A(T/s)` itself satisfies the
-conditions of its universal property. -/
+/-- **Each fraction `t/sᵢ` is power-bounded in `A(T/s)`**, since it lies in the bounded subring
+`D`. That `A(T/s)` satisfies the conditions of its universal property, in which the fractions must
+form a power-bounded set, is the stronger `isBounded_submonoidClosure_familyNumerators`. -/
 theorem isPowerBounded_of_algebraMap_mul_eq_familyNumerators [SeparatelyContinuousMul A]
     (hden : HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S) {i : ι} {t : A}
     (ht : t ∈ T i) {x : S} (hx : algebraMap A S (s i) * x = algebraMap A S t) :

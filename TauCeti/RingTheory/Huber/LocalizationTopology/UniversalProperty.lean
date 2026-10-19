@@ -21,9 +21,9 @@ power-bounded elements need not be bounded.
 The construction of the topology is in `LocalizationTopology.Basic`, and the completion `A⟨T/s⟩`
 in `LocalizationTopology.Completion`.
 
-The power-boundedness prerequisites this needs — `isPowerBounded_of_mem_locSubring` and
-`isPowerBounded_divBy`, which say every element of `D`, in particular each fraction `t/s`, is
-power-bounded — are in `LocalizationTopology.Basic` and imported from there.
+The power-boundedness prerequisite this needs — `isBounded_submonoidClosure_divBy`, which says
+the fractions `t/s` form a power-bounded set in `Aₛ`, since they lie in the bounded subring `D`
+(`isBounded_locSubring`) — is in `LocalizationTopology.Basic` and imported from there.
 
 ## Main results
 
@@ -132,9 +132,12 @@ private theorem exists_pow_mul_locSubring_mem_of_isBounded {B : Type*} [Ring B]
     exact G.add_mem (hx b hb) (hy b hb)
   | smul a x _ hx =>
     intro b hb
-    rw [Algebra.smul_def, IsScalarTower.algebraMap_apply P.ringOfDefinition A S,
-      Algebra.algebraMap_ofSubsemiring_apply, mul_comm (algebraMap A S a) x, mul_assoc,
-      ← map_mul (algebraMap A S), ← MulMemClass.coe_mul]
+    have e : a • x * algebraMap A S (b : A) =
+        x * algebraMap A S ((a * b : P.ringOfDefinition) : A) := by
+      simp [Algebra.smul_def, IsScalarTower.algebraMap_apply P.ringOfDefinition A S,
+        Algebra.algebraMap_ofSubsemiring_apply]
+      ring
+    rw [e]
     exact hx (a * b) (Ideal.mul_mem_left _ a hb)
 
 /-- The same statement for a finite numerator set `U`, asking only that each fraction be sent to a
