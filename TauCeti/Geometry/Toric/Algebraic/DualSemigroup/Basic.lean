@@ -88,15 +88,16 @@ theorem dualSemigroup_bot (hi : IsIntegralLattice i) :
   ext m
   simp
 
-/-- The dual semigroup of the whole space is trivial: a real-linear functional nonnegative
-everywhere vanishes, and real extension of integral characters is injective. -/
+/-- The dual semigroup of the whole space is trivial: the dual cone of the whole space is zero
+(`PointedCone.dual_univ`), and real extension of integral characters is injective. -/
 @[simp]
 theorem dualSemigroup_top (hi : IsIntegralLattice i) :
     dualSemigroup hi (⊤ : PointedCone ℝ V) = ⊥ := by
   refine eq_bot_iff.2 fun m hm ↦ AddSubmonoid.mem_bot.2 <| hi.realCharacter_injective ?_
-  rw [map_zero]
-  refine LinearMap.ext fun x ↦ le_antisymm ?_ ((mem_dualSemigroup hi m).1 hm Submodule.mem_top)
-  simpa using (mem_dualSemigroup hi m).1 hm (Submodule.mem_top (x := -x))
+  have h : hi.realCharacter m ∈ PointedCone.dual (Module.Dual.eval ℝ V) Set.univ := hm
+  rwa [PointedCone.dual_univ (p := Module.Dual.eval ℝ V) fun f g hfg ↦
+    LinearMap.ext fun x ↦ LinearMap.congr_fun hfg x, Submodule.zero_eq_bot,
+    Submodule.mem_bot, ← map_zero hi.realCharacter] at h
 
 /-- The dual semigroup of the whole space has a single element, so the complex monoid algebra
 of the corresponding affine toric chart is `ℂ` (`MonoidAlgebra.uniqueAlgEquiv`), and the chart
