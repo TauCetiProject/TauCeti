@@ -67,17 +67,6 @@ private theorem hasLaw_sum_cast_poissonBinomialMeasure (p : ι → unitInterval)
     (measurable_from_nat.comp (measurable_pi_apply i)).aemeasurable, ?_⟩
   exact map_sum_natCast_pi_bernoulliMeasure p
 
-private theorem hasLaw_natCast_bernoulliMeasure (p : unitInterval) :
-    HasLaw (Nat.cast : ℕ → ℝ) Ber((1 : ℝ), 0, p) Ber((1 : ℕ), 0, p) :=
-  ⟨Measurable.of_discrete.aemeasurable, by simp [map_bernoulliMeasure]⟩
-
-private theorem hasLaw_cast_eval_bernoulliMeasure (p : ι → unitInterval) (i : ι) :
-    HasLaw (fun x : ι → ℕ ↦ (x i : ℝ)) Ber((1 : ℝ), 0, p i)
-      (Measure.pi fun i : ι ↦ Ber((1 : ℕ), 0, p i)) := by
-  simpa [Function.comp_def] using
-    (hasLaw_natCast_bernoulliMeasure (p i)).comp
-      (measurePreserving_eval (fun i : ι ↦ Ber((1 : ℕ), 0, p i)) i).hasLaw
-
 /-- The mean of a real-cast Poisson-binomial law is the sum of its success probabilities. -/
 @[simp]
 theorem integral_id_map_cast_poissonBinomialMeasure (p : ι → unitInterval) :

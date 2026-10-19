@@ -89,10 +89,7 @@ theorem charFun_map_cast_poissonBinomialMeasure (p : ι → unitInterval) (t : �
   apply Finset.prod_congr rfl
   intro i _
   have hcast : HasLaw (X i) Ber((1 : ℝ), 0, p i) P := by
-    have hi : HasLaw (Nat.cast : ℕ → ℝ) Ber((1 : ℝ), 0, p i) Ber((1 : ℕ), 0, p i) :=
-      ⟨Measurable.of_discrete.aemeasurable, by simp [map_bernoulliMeasure]⟩
-    simpa [P, X, Function.comp_def] using
-      hi.comp (measurePreserving_eval (fun i : ι ↦ Ber((1 : ℕ), 0, p i)) i).hasLaw
+    simpa [P, X] using hasLaw_cast_eval_bernoulliMeasure p i
   rw [hcast.map_eq, charFun_bernoulliMeasure]
 
 end TauCeti.Probability
