@@ -106,14 +106,19 @@ theorem totalVariationOn_comap_smul (hr : 0 < r) :
     apply Opens.mem_comap.mpr
     simpa [smul_inv_smul₀ hr.ne'] using hy
 
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
+private theorem perimeter_preimage_smul_eq_totalVariationOn :
+    perimeter μ V ((r • ·) ⁻¹' s) = totalVariationOn μ V (fun x => s.indicator 1 (r • x)) := by
+  simp only [perimeter_def, ← Set.indicator_comp_right, Function.comp_def, Pi.one_def]
+
 /-- Pulling a set back by a positive dilation bounds perimeter by its inverse surface factor
 when the dilated domain is contained in the original domain. -/
 theorem perimeter_preimage_smul_le (hr : 0 < r)
     (hVO : MapsTo (fun x : E => r • x) V Ω) :
     perimeter μ V ((r • ·) ⁻¹' s) ≤
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
-  simpa only [perimeter_def, ← Set.indicator_comp_right, Function.comp_def, Pi.one_def] using
-    (totalVariationOn_comp_smul_le (μ := μ) (u := s.indicator 1) hr hVO)
+  rw [perimeter_preimage_smul_eq_totalVariationOn, perimeter_def]
+  exact totalVariationOn_comp_smul_le hr hVO
 
 /-- Pulling back a set and its open domain by a positive dilation scales perimeter by the
 inverse surface factor. No finite-volume assumption is needed. -/
@@ -121,15 +126,15 @@ theorem perimeter_preimage_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x
     (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
     perimeter μ V ((r • ·) ⁻¹' s) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
-  simpa only [perimeter_def, ← Set.indicator_comp_right, Function.comp_def, Pi.one_def] using
-    (totalVariationOn_comp_smul (μ := μ) (u := s.indicator 1) hr hVO hOV)
+  rw [perimeter_preimage_smul_eq_totalVariationOn, perimeter_def]
+  exact totalVariationOn_comp_smul hr hVO hOV
 
 /-- Perimeter scaling with the preimage domain written canonically. -/
 theorem perimeter_comap_smul (hr : 0 < r) :
     perimeter μ (Opens.comap ⟨(r • ·), by fun_prop⟩ Ω) ((r • ·) ⁻¹' s) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
-  simpa only [perimeter_def, ← Set.indicator_comp_right, Function.comp_def, Pi.one_def] using
-    (totalVariationOn_comap_smul (μ := μ) (u := s.indicator 1) hr)
+  rw [perimeter_preimage_smul_eq_totalVariationOn, perimeter_def]
+  exact totalVariationOn_comap_smul hr
 
 /-- Dilating a set and its ambient open domain by a positive ratio scales perimeter by
 `r ^ (n - 1)` in positive dimension. This includes sets of infinite volume or perimeter. -/

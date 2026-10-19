@@ -39,6 +39,7 @@ def dilateTestFunction (hr : r ≠ 0) (hVO : MapsTo (fun x : E => r • x) V Ω)
     by
       intro y hy
       have hy' : r⁻¹ • y ∈ tsupport (φ : E → F) := by
+        -- Composition with this homeomorphism is definitionally the lambda defining the dilation.
         have hycomp : y ∈ tsupport
             ((φ : E → F) ∘ Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr)) := hy
         rw [tsupport_comp_eq_preimage] at hycomp
@@ -58,6 +59,18 @@ theorem fderiv_dilateTestFunction (hr : r ≠ 0) (hVO : MapsTo (fun x : E => r �
     fderiv ℝ (dilateTestFunction hr hVO φ : E → F) y =
       r⁻¹ • fderiv ℝ (φ : E → F) (r⁻¹ • y) :=
   fderiv_comp_smul _
+
+/-- The directional derivative of a dilated test function acquires the inverse dilation factor. -/
+@[simp]
+theorem lineDeriv_dilateTestFunction (hr : r ≠ 0) (hVO : MapsTo (fun x : E => r • x) V Ω)
+    (φ : 𝓓(V, F)) (y w : E) :
+    lineDeriv ℝ (dilateTestFunction hr hVO φ : E → F) y w =
+      r⁻¹ • lineDeriv ℝ (φ : E → F) (r⁻¹ • y) w := by
+  have hd := (dilateTestFunction hr hVO φ).contDiff.differentiable (by simp)
+  rw [(hd y).lineDeriv_eq_fderiv,
+    (φ.contDiff.differentiable (by simp) (r⁻¹ • y)).lineDeriv_eq_fderiv,
+    fderiv_dilateTestFunction]
+  rfl
 
 /-- The divergence of a dilated test vector field acquires the inverse dilation factor. -/
 @[simp]
