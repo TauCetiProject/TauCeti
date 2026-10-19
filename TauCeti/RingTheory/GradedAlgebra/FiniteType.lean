@@ -31,6 +31,9 @@ supplied by exactness of invariants, in place of the Reynolds operator of the cl
 
 * `Subalgebra.fg_of_decompose_mem_of_comap_map_le`: a subalgebra closed under homogeneous
   components and with ideal contraction is finitely generated.
+* `TauCeti.GradedAlgebra.exists_finset_adjoin_eq_top_and_mem_grade_ne_zero`: a finite-type
+  semiring graded algebra is generated over its degree-zero part by finitely many homogeneous
+  elements of nonzero degree.
 
 ## References
 
@@ -100,3 +103,33 @@ theorem fg_of_decompose_mem_of_comap_map_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (�
   exact Subalgebra.sum_mem _ fun n _ ↦ key n _ (hBdecompose x hx n) (SetLike.coe_mem _)
 
 end Subalgebra
+
+namespace TauCeti.GradedAlgebra
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
+
+/-- A graded algebra of finite type over `𝒜 0` is generated over `𝒜 0` by finitely many
+homogeneous elements of positive degree. This is the semiring version of Mathlib's
+`GradedAlgebra.exists_finset_adjoin_eq_top_and_homogeneous_ne_zero`, which is stated for rings. -/
+theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (𝒜 0) A] :
+    ∃ s : Finset A, Algebra.adjoin (𝒜 0) (s : Set A) = ⊤ ∧ ∀ x ∈ s, ∃ n ≠ 0, x ∈ 𝒜 n := by
+  classical
+  -- As in the ring proof, take the nonzero-degree homogeneous components of finite generators.
+  obtain ⟨F, hF⟩ := Algebra.FiniteType.out (R := 𝒜 0) (A := A)
+  refine ⟨F.biUnion fun f ↦ ((decompose 𝒜 f).support.filter (· ≠ 0)).image
+    fun n ↦ (decompose 𝒜 f n : A), ?_, ?_⟩
+  · rw [← top_le_iff, ← hF, Algebra.adjoin_le_iff]
+    intro f hf
+    rw [← sum_support_decompose 𝒜 f]
+    refine sum_mem fun n hn ↦ ?_
+    by_cases hn0 : n = 0
+    · subst hn0
+      exact Subalgebra.algebraMap_mem _ (decompose 𝒜 f 0)
+    · exact Algebra.subset_adjoin
+        (by simpa using ⟨f, hf, n, ⟨DFinsupp.mem_support_iff.mp hn, hn0⟩, rfl⟩)
+  · simp only [Finset.mem_biUnion, Finset.mem_image, Finset.mem_filter]
+    rintro _ ⟨f, -, n, ⟨-, hn0⟩, rfl⟩
+    exact ⟨n, hn0, (decompose 𝒜 f n).2⟩
+
+end TauCeti.GradedAlgebra

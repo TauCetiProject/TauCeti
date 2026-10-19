@@ -30,6 +30,8 @@ discreteness of `Γ` is assumed.
 
 * `ConvexPolygon.SidePairing.orderOf_cycleMap_mul_cycleAngleSum`: the order of the cycle
   transformation at a finite vertex times its cycle angle sum is `2π`.
+* `ConvexPolygon.SidePairing.cycleAngleSum_eq_two_pi_div`: equivalently, the cycle angle sum at
+  a finite vertex is `2π` divided by the finite order of the cycle transformation.
 * `ConvexPolygon.SidePairing.exists_partialCycleMap_eq_of_smul_vertex_eq`: every transformation
   identifying two finite vertices occurs among the partial cycle products around the first.
 * `ConvexPolygon.SidePairing.smul_eq_self_iff_mem_zpowers_cycleMap`: an element of `Γ` fixes
@@ -207,6 +209,28 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
   rw [σ.orderOf_cycleMap_of_cycleAngleSum hz (t := t)
     (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]
   exact hSt
+
+/-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
+has finite order. -/
+theorem orderOf_cycleMap_ne_zero {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    orderOf (σ.cycleMap j) ≠ 0 := by
+  intro h0
+  have h := σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj
+  rw [h0, Nat.cast_zero, zero_mul] at h
+  exact Real.two_pi_pos.ne h
+
+/-- At a finite vertex of a polygon with disjoint translated interiors, the cycle angle sum is
+`2π` divided by the order of the cycle transformation. -/
+theorem cycleAngleSum_eq_two_pi_div {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    σ.cycleAngleSum j = 2 * π / orderOf (σ.cycleMap j) := by
+  rw [eq_div_iff (Nat.cast_ne_zero.2 (σ.orderOf_cycleMap_ne_zero hz hmap hdisj)), mul_comm,
+    σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj]
 
 /-- The tiles containing a finite vertex are exactly the inverse partial cycle tiles before
 one full turn. This classifies all tiles at the vertex, without assuming that its preimage

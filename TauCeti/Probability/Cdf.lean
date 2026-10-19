@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
@@ -24,10 +25,24 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
+  mass below a point has cdf zero there;
+* `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
+  `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` show that survival starts
+  at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
 * `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
   strict increase of the cdf;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
+* `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
+  its cdf;
+* `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
+  evaluate the cdf of the image of a real law under absolute value, and
+  `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
+  mass of the open ray to its left;
+* `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
+  lies in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
 
@@ -52,6 +67,39 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
+`1 - cdf μ x`. -/
+theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
+    (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
+  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
+    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+
+/-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
+`[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
+theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
+    cdf (μ.map (|·|)) x = cdf μ x - μ.real (Iio (-x)) := by
+  have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
+    ext y
+    simp [abs_le, and_comm]
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
+      measurableSet_Iio, cdf_eq_real]
+
+/-- The image of `μ` under absolute value puts no mass on the negative half-line. -/
+theorem cdf_map_abs_of_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : x < 0) :
+    cdf (μ.map (|·|)) x = 0 := by
+  have hpre : (|·|) ⁻¹' Iic x = ∅ :=
+    eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
+  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+    measureReal_empty]
+
+/-- The cdf of the image of a symmetric law under absolute value at `x ≥ 0` is
+`2 * cdf μ x - 1`. -/
+theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
+  rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
+  ring
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
@@ -92,12 +140,36 @@ theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
     ((cdf ν).right_continuous x).rightLim_eq]
 
+/-- The left limit of the cumulative distribution function of a real probability law at a point is
+the mass of the open ray to the left of that point. -/
+theorem leftLim_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    leftLim (cdf ν) x = ν.real (Iio x) := by
+  have h := (cdf ν).measure_Iio (tendsto_cdf_atBot ν) x
+  rw [measure_cdf, sub_zero] at h
+  have hnonneg : 0 ≤ leftLim (cdf ν) x :=
+    (cdf_nonneg ν (x - 1)).trans ((cdf ν).mono.le_leftLim (by linarith))
+  rw [measureReal_def, h, ENNReal.toReal_ofReal hnonneg]
+
+/-- The mass of the open ray to the left of a point is at most a level exactly when the cumulative
+distribution function stays at most that level at every point strictly to the left. -/
+theorem measureReal_Iio_le_iff_forall_cdf_le (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {x t : ℝ} : ν.real (Iio x) ≤ t ↔ ∀ y < x, cdf ν y ≤ t := by
+  rw [← leftLim_cdf]
+  exact ⟨fun h y hy ↦ ((cdf ν).mono.le_leftLim hy).trans h, fun h ↦
+    le_of_tendsto ((cdf ν).mono.tendsto_leftLim x) (eventually_nhdsWithin_of_forall h)⟩
+
 /-- The mass of a bounded interval `Ioc a b` is the increment of the cumulative distribution
 function between its endpoints. -/
 theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ}
     (hab : a ≤ b) : ν.real (Ioc a b) = cdf ν b - cdf ν a := by
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
+
+/-- An atomless law that gives no mass to the open half-line below `c` has cdf zero at `c`. -/
+theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by
+  have h : ν (Iic c) = 0 := (measure_congr Iio_ae_eq_Iic).symm.trans hc
+  rw [cdf_eq_real, measureReal_def, h, ENNReal.toReal_zero]
 
 /-- A half-open interval has positive mass exactly when the cdf strictly increases across its
 endpoints. -/
@@ -153,3 +225,49 @@ theorem cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullS
     exact hνS
 
 end MeasureTheory.Measure
+
+namespace Set.OrdConnected
+
+/-- A point `q` at which the level `t` lies between the left limit and the value of the cumulative
+distribution function lies in every interval of full mass: otherwise the interval lies entirely
+on one side of `q`, and the mass on that side is `0` or `1`. -/
+theorem mem_of_measureReal_Iio_le_of_le_cdf {μ : Measure ℝ} {s : Set ℝ} {t : ℝ}
+    [IsProbabilityMeasure μ] (hs : s.OrdConnected) (hμs : ∀ᵐ x ∂μ, x ∈ s) {q : ℝ}
+    (hIio : μ.real (Iio q) ≤ t) (hIic : t ≤ cdf μ q) (h0 : 0 < t) (h1 : t < 1) : q ∈ s := by
+  by_contra hq
+  have hside : (∀ x ∈ s, x < q) ∨ ∀ x ∈ s, q < x := by
+    by_contra! h
+    obtain ⟨⟨a, ha, hqa⟩, b, hb, hbq⟩ := h
+    exact hq (hs.out hb ha ⟨hbq, hqa⟩)
+  rcases hside with hlt | hgt
+  · have hfull : μ (Iio q) = μ univ :=
+      (ae_mem_iff_measure_eq measurableSet_Iio.nullMeasurableSet).1 (hμs.mono hlt)
+    rw [measureReal_def, hfull, measure_univ, ENNReal.toReal_one] at hIio
+    exact hIio.not_gt h1
+  · have hnull : μ (Iic q) = 0 :=
+      measure_eq_zero_iff_ae_notMem.2 (hμs.mono fun x hx hxq ↦ (hgt x hx).not_ge hxq)
+    rw [cdf_eq_real, measureReal_def, hnull, ENNReal.toReal_zero] at hIic
+    exact hIic.not_gt h0
+
+end Set.OrdConnected
+
+namespace TauCeti.Probability
+
+variable {μ : Measure ℝ}
+
+/-- **Survival starts at one.** An atomless probability law carried by the nonnegative half-line
+has survival probability one at zero. -/
+theorem one_sub_cdf_zero_eq_one [IsProbabilityMeasure μ] [NullSingletonClass μ]
+    (h0 : μ (Iio 0) = 0) :
+    1 - cdf μ 0 = 1 := by
+  rw [Measure.cdf_eq_zero_of_measure_Iio_eq_zero μ h0, sub_zero]
+
+/-- **Survival starts at one for an absolutely continuous law.** A probability law absolutely
+continuous with respect to Lebesgue measure and carried by the nonnegative half-line has survival
+probability one at zero. -/
+theorem one_sub_cdf_zero_eq_one_of_absolutelyContinuous [IsProbabilityMeasure μ]
+    (hac : μ ≪ (volume : Measure ℝ)) (h0 : μ (Iio 0) = 0) : 1 - cdf μ 0 = 1 := by
+  have : NullSingletonClass μ := ⟨fun t ↦ hac (measure_singleton t)⟩
+  exact one_sub_cdf_zero_eq_one h0
+
+end TauCeti.Probability

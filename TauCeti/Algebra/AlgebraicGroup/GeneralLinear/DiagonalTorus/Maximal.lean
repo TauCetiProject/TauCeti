@@ -16,8 +16,10 @@ import TauCeti.Algebra.GroupWithZero.Units.Basic
 # Maximality of the diagonal torus in the general linear group
 
 Over any field, the diagonal torus of `GL_n` is a maximal torus. Over an algebraically closed
-field, it is moreover maximal among reduced commutative closed subgroup schemes. In Hopf
-coordinates, its defining ideal is the kernel of the surjective restriction morphism from
+field, it is moreover maximal among reduced commutative closed subgroup schemes. The defining
+ideal and its quotient presentation work over every commutative ring and commute with arbitrary
+base change. In Hopf coordinates, the defining ideal is the kernel of the surjective
+restriction morphism from
 `O(GL_n)` to the Laurent coordinate ring of the split torus.
 
 The proof compares algebraically closed points. A reduced commutative closed subgroup containing
@@ -64,16 +66,25 @@ universe u
 
 noncomputable section
 
-variable (k : Type u) [Field k] (n : ℕ)
+section Ring
+
+variable (k : Type u) [CommRing k] (n : ℕ)
 
 /-- The Hopf ideal defining the diagonal torus inside the coordinate Hopf algebra of `GL_n`.
 
 It is the ordinary kernel of the surjective restriction morphism to the split-torus coordinate
-ring, packaged as a Hopf ideal. -/
+ring, packaged as a Hopf ideal. This construction works over every commutative base ring. -/
 noncomputable def diagonalTorusDefiningIdeal :
     HopfIdeal k (coordinateHopfAlgebra k n) :=
   HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (N := n)).hom
     (diagonalTorusCoordinateMap_surjective k n)
+
+/-- The diagonal-torus defining ideal is the Hopf kernel of restriction to diagonal
+coordinates. -/
+theorem diagonalTorusDefiningIdeal_eq_ker :
+    diagonalTorusDefiningIdeal k n =
+      HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (N := n)).hom
+        (diagonalTorusCoordinateMap_surjective k n) := (rfl)
 
 /-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
 @[simp]
@@ -110,7 +121,7 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
 @[simp]
 theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
-    (K : Type u) [Field K] [Algebra k K] :
+    (K : Type u) [CommRing K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n)).map
         (coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
       diagonalTorusDefiningIdeal K n :=
@@ -134,6 +145,18 @@ theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
 grind_pattern splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
   diagonalTorusDefiningIdeal k n
 
+/-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
+theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
+    CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+        (diagonalTorusDefiningIdeal k n) A =
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
+        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
+  HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
+
+end Ring
+
+variable (k : Type u) [Field k] (n : ℕ)
+
 /-- The quotient coordinate Hopf algebra of the diagonal torus is a torus. -/
 theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
     torusCommHopfAlgProperty k
@@ -145,14 +168,6 @@ theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
 
 grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
   diagonalTorusDefiningIdeal k n
-
-/-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
-theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
-    CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
-        (diagonalTorusDefiningIdeal k n) A =
-      ((CommHopfAlgCat.Hom.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
-  HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 variable [IsAlgClosed k]
 
