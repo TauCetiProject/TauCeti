@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # The corner of a diagonal matrix unit
