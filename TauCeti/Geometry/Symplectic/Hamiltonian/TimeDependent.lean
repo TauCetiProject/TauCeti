@@ -45,14 +45,17 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- The autonomous suspension of the time-dependent Hamiltonian vector field: the clock advances
-at speed one and the spatial component is `X_{H_t}`. Its body is exposed so that a Lipschitz
-certificate for it is also one for the generic suspension, as `timeDependentHamiltonianFlow_eq`
-requires. -/
-@[expose]
+at speed one and the spatial component is `X_{H_t}`. -/
 noncomputable def timeDependentHamiltonianSuspension (omega : SymplecticForm V)
     (H : ℝ → V → ℝ) :
     ℝ × V → ℝ × V :=
   timeDependentSuspension fun t x ↦ omega.hamiltonianVectorField (H t) x
+
+/-- The Hamiltonian suspension is the generic time-dependent suspension of the Hamiltonian
+vector field. -/
+theorem timeDependentHamiltonianSuspension_eq (omega : SymplecticForm V) (H : ℝ → V → ℝ) :
+    omega.timeDependentHamiltonianSuspension H =
+      timeDependentSuspension fun t x ↦ omega.hamiltonianVectorField (H t) x := (rfl)
 
 @[simp]
 theorem timeDependentHamiltonianSuspension_apply (omega : SymplecticForm V)
@@ -72,7 +75,8 @@ vector field. -/
 theorem timeDependentHamiltonianFlow_eq (omega : SymplecticForm V) (H : ℝ → V → ℝ)
     {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H)) :
     omega.timeDependentHamiltonianFlow H hX =
-      timeDependentFlow (fun u y ↦ omega.hamiltonianVectorField (H u) y) hX := (rfl)
+      timeDependentFlow (fun u y ↦ omega.hamiltonianVectorField (H u) y)
+        (omega.timeDependentHamiltonianSuspension_eq H ▸ hX) := (rfl)
 
 /-- The time-dependent Hamiltonian evolution starts at its prescribed point. -/
 @[simp]
