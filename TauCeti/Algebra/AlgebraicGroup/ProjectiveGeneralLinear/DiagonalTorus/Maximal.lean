@@ -97,18 +97,6 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{w} R)
       ((CommHopfAlgCat.Hom.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A).hom.range :=
   HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
-private theorem innerAut_diagGL_normalize {A : Type w} [CommRing A]
-    (d : Fin (r + 1) → Aˣ) :
-    Matrix.GeneralLinearGroup.innerAut (diagGL d) =
-      Matrix.GeneralLinearGroup.innerAut
-        (diagGL (Fin.lastCases 1 (fun i ↦ d i.castSucc / d (Fin.last r)))) := by
-  have hd : (d / fun _ ↦ d (Fin.last r)) =
-      Fin.lastCases 1 (fun i ↦ d i.castSucc / d (Fin.last r)) := by
-    funext i
-    refine Fin.lastCases ?_ (fun j ↦ ?_) i <;> simp
-  simpa only [map_div, diagGL_const, Matrix.GeneralLinearGroup.innerAut_scalar, div_one]
-    using congrArg (fun d ↦ Matrix.GeneralLinearGroup.innerAut (diagGL d)) hd
-
 /-- On algebra-valued points, membership in the projective diagonal torus is conjugation
 by a diagonal matrix with last entry one. This includes nonreduced value algebras. -/
 @[simp↓]
@@ -163,14 +151,15 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
     have hpI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le _ hI A hp
     have hc := (CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup
       (coordinateHopfAlgebra (r + 1) k) I A).is_comm.comm ⟨q, hq⟩ ⟨p, hpI⟩
-    have hc' : Commute f (pointsMulEquiv (r + 1) k A p) := by
-      exact (show Commute q p from congrArg Subtype.val hc).map (pointsMulEquiv (r + 1) k A)
+    have hqp : Commute q p := congrArg Subtype.val hc
+    have hc' : Commute f (pointsMulEquiv (r + 1) k A p) :=
+      hqp.map (pointsMulEquiv (r + 1) k A)
     have hpn : pointsMulEquiv (r + 1) k A p =
         Matrix.GeneralLinearGroup.innerAut
           (diagGL (Fin.lastCases 1 (fun i ↦ d i.castSucc / d (Fin.last r)))) := by
       dsimp only [p]
       rw [pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap, MulEquiv.apply_symm_apply]
-    rwa [hpn, ← innerAut_diagGL_normalize] at hc'
+    rwa [hpn, ← Matrix.GeneralLinearGroup.innerAut_diagGL_normalize] at hc'
   have hdiag : (g : Matrix (Fin (r + 1)) (Fin (r + 1)) (AlgebraicClosure k)).IsDiag :=
     g.isDiag_of_commute_innerAut_diagGL (fun d ↦ hg ▸ hcomm d)
   obtain ⟨d, hd⟩ := TauCeti.mem_diagonalTorus_iff_exists_diagGL.mp
@@ -178,7 +167,7 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
   apply (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff r k A q).mpr
   refine ⟨fun i ↦ d i.down.castSucc / d (Fin.last r), ?_⟩
   exact hg.symm.trans ((congrArg Matrix.GeneralLinearGroup.innerAut hd).symm.trans
-    (innerAut_diagGL_normalize r d))
+    (Matrix.GeneralLinearGroup.innerAut_diagGL_normalize r d))
 
 /-- The normalized rank-`r` diagonal torus is a maximal torus in `PGL_{r+1}` over every field. -/
 @[grind =>]

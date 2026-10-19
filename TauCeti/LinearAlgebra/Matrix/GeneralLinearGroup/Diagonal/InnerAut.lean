@@ -34,13 +34,19 @@ namespace Matrix.GeneralLinearGroup
 
 variable {ι K : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- Conjugation by an invertible scalar matrix is the identity algebra automorphism. -/
-@[simp]
-theorem innerAut_scalar [CommSemiring K] (a : Kˣ) : innerAut (scalar ι a) = 1 := by
-  ext X i j
-  rw [innerAut_apply, ← map_inv (scalar ι) a, coe_scalar, coe_scalar]
-  simp only [scalar_apply, mul_diagonal, diagonal_mul, AlgEquiv.one_apply]
-  rw [mul_right_comm, Units.mul_inv, one_mul]
+/-- Dividing each diagonal entry by the last one preserves conjugation and makes the
+last diagonal entry equal to one. -/
+theorem innerAut_diagGL_normalize (r : ℕ) {A : Type*} [CommSemiring A]
+    (d : Fin (r + 1) → Aˣ) :
+    innerAut (diagGL d) =
+      innerAut
+        (diagGL (Fin.lastCases 1 (fun i ↦ d i.castSucc / d (Fin.last r)))) := by
+  have hd : (d / fun _ ↦ d (Fin.last r)) =
+      Fin.lastCases 1 (fun i ↦ d i.castSucc / d (Fin.last r)) := by
+    funext i
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i <;> simp
+  simpa only [map_div, diagGL_const, innerAut_scalar, div_one]
+    using congrArg (fun d ↦ innerAut (diagGL d)) hd
 
 variable [Field K] [Infinite K]
 
@@ -95,8 +101,9 @@ theorem isDiag_of_commute_innerAut_diagGL (g : GL ι K)
         intro h
         exact ht1 ((mul_left_cancel₀ ht0 (by simpa using h)).symm)
       · simpa only [d, Function.update_of_ne ha, Pi.one_apply, Units.val_one] using htsq.symm
-    exact (mul_eq_mul_right_iff.mp (show (d a : K) * g j a = (t * t) * g j a by
-      simpa [mul_comm, mul_assoc] using h)).resolve_left hcoef
+    have hmul : (d a : K) * g j a = (t * t) * g j a := by
+      simpa [mul_comm, mul_assoc] using h
+    exact (mul_eq_mul_right_iff.mp hmul).resolve_left hcoef
   have h := congrArg (fun M : Matrix ι ι K ↦ M j j) g.val_inv
   simp [Matrix.mul_apply, hrow] at h
 
