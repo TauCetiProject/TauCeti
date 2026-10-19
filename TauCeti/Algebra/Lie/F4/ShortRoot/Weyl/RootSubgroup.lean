@@ -147,8 +147,12 @@ def rootSubgroupPresentation (k : Fin F4.numRoots) : List (Fin 4) × Fin 4 :=
 /-- The selected presentation at a positive simple root is the empty word at that node. -/
 @[simp]
 theorem rootSubgroupPresentation_simpleIndex (i : Fin 4) :
-    rootSubgroupPresentation (Fin.castAdd 44 i) = ([], i) :=
-  simpleIndex_F4 valid_F4 i ▸ F4.geckRootSubgroupPresentation_simpleIndex valid_F4 i
+    rootSubgroupPresentation (Fin.castAdd 44 i) = ([], i) := by
+  unfold rootSubgroupPresentation
+  rw [← simpleIndex_F4 valid_F4 i]
+  -- `F4.rank` reduces to `4`, so the generic lemma at `i : Fin F4.rank` applies to `i : Fin 4`;
+  -- `rw` cannot perform this cast because the generic pattern is ill-typed at `Fin 4`.
+  exact F4.geckRootSubgroupPresentation_simpleIndex valid_F4 i
 
 /-- The selected Weyl-word presentation represents its root index. -/
 @[simp]
@@ -182,8 +186,9 @@ theorem rootSubgroupPointsAt_simpleIndex (i : Fin 4) (A : Type v) [CommRing A] :
 theorem map_rootSubgroupPointsAt {A : Type v} {B : Type w} [CommRing A] [CommRing B]
     (f : A →+* B) (k : Fin F4.numRoots) (u : Multiplicative A) :
     (pointsPresentation A).map (pointsPresentation B) f (rootSubgroupPointsAt k A u) =
-      rootSubgroupPointsAt k B (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) :=
-  map_weylRootSubgroupPoints f _ _ u
+      rootSubgroupPointsAt k B (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
+  rw [rootSubgroupPointsAt_def, rootSubgroupPointsAt_def]
+  exact map_weylRootSubgroupPoints f _ _ u
 
 /-- **The pinning equation of the selected root subgroup at every root.** Conjugation by a
 weight-torus point `s` rescales the parameter of the selected root subgroup at `k` by the
@@ -197,6 +202,7 @@ theorem weightTorusPoints_conj_rootSubgroupPointsAt (k : Fin F4.numRoots)
             Multiplicative.toAdd u)) := by
   have h := weightTorusPoints_conj_weylRootSubgroupPoints (rootSubgroupPresentation k).1
     (rootSubgroupPresentation k).2 A s u
+  rw [rootSubgroupPointsAt_def]
   rwa [weylRootIndex_rootSubgroupPresentation] at h
 
 end
