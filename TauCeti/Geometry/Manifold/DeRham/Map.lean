@@ -51,15 +51,17 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
     (closedForms I M k) fun φ ↦ by
       rw [mem_closedForms]
       have hclosed := (mem_closedForms (I := I') (M := M') φ.1).mp φ.2
-      have hreg : IsSmoothBundleForm (I := I') (F := ℝ)
-          (V := Bundle.Trivial M' ℝ) 1 φ.1.1 := by
-        rw [isSmoothBundleForm_def]
-        exact ((isSmoothBundleForm_def ∞ φ.1.1).mp
-          (mem_smoothForms.mp φ.1.2)).of_le (by simp)
+      have hclosed' : mextDerivₗ I' k φ.1 = 0 := by
+        apply Subtype.ext
+        rw [mextDerivₗ_apply]
+        exact hclosed
       -- The codomain restriction hides the underlying smooth form from the naturality theorem.
       change mextDeriv (SmoothForm.mpullback f hf φ.1).1 = 0
-      rw [SmoothForm.coe_mpullback, ← mpullback_mextDeriv (hf.of_le (by simp)) hreg,
-        hclosed, TauCeti.mpullback_zero]
+      have hnat := congrArg Subtype.val
+        (SmoothForm.mpullback_mextDerivₗ f hf k φ.1)
+      simp only [mextDerivₗ_apply] at hnat
+      rw [← hnat, hclosed', map_zero]
+      rfl
 
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
@@ -100,18 +102,15 @@ theorem mpullback_mem_exactForms (f : M → M') (hf : ContMDiff I I' ∞ f) (k :
       obtain ⟨ψ, hψ⟩ := hφ
       refine ⟨SmoothForm.mpullback f hf ψ, ?_⟩
       apply Subtype.ext
-      have hψ' := congrArg Subtype.val hψ
-      simp only [mextDerivₗ_apply] at hψ' ⊢
-      have hreg : IsSmoothBundleForm (I := I') (F := ℝ)
-          (V := Bundle.Trivial M' ℝ) 1 ψ.1 := by
-        rw [isSmoothBundleForm_def]
-        exact ((isSmoothBundleForm_def ∞ ψ.1).mp
-          (mem_smoothForms.mp ψ.2)).of_le (by simp)
+      simp only [mextDerivₗ_apply]
+      rw [coe_mpullback]
       -- Subtype extensionality leaves smooth-form coercions that naturality cannot match directly.
-      change mextDeriv (SmoothForm.mpullback f hf ψ).1 =
-        (SmoothForm.mpullback f hf φ.1).1
-      rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-        ← mpullback_mextDeriv (hf.of_le (by simp)) hreg, hψ']
+      have hpull := congrArg (SmoothForm.mpullback f hf) hψ
+      have hpull' := congrArg Subtype.val hpull
+      have hnat := congrArg Subtype.val
+        (SmoothForm.mpullback_mextDerivₗ f hf k ψ)
+      simp only [mextDerivₗ_apply] at hnat
+      rw [← hnat, hpull']
 
 end closedForms
 

@@ -220,16 +220,16 @@ theorem mpullback_mextDeriv {f : M → M'} (hf : ContMDiff I I' 2 f)
 namespace SmoothForm
 
 /-- Smooth pullback intertwines the bundled exterior-derivative maps. -/
-theorem mpullback_mextDeriv (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
+theorem mpullback_mextDerivₗ (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
     (φ : SmoothForm I' M' F k) :
     mpullback f hf (mextDerivₗ I' k φ) =
       mextDerivₗ I k (mpullback f hf φ) := by
   apply Subtype.ext
   rw [coe_mpullback, mextDerivₗ_apply, mextDerivₗ_apply]
   rw [coe_mpullback]
-  have hφ : IsSmoothBundleForm (I := I') (F := F) (V := Trivial M' F) 1 φ.1 := by
-    rw [isSmoothBundleForm_def]
-    exact ((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).of_le (by simp)
+  have hφ : IsSmoothBundleForm (I := I') (F := F) (V := Trivial M' F) 1 φ.1 :=
+    (isSmoothBundleForm_def 1 φ.1).mpr
+      (((isSmoothBundleForm_def ∞ φ.1).mp φ.isSmoothBundleForm).of_le (by simp))
   apply TauCeti.mpullback_mextDeriv (hf.of_le (by simp))
   exact hφ
 
