@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
-import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
 # Joint regularity of Christoffel symbols in metric families
@@ -25,10 +24,13 @@ metrics read in local charts. A `C^m` family has `C^n` Christoffel symbols when 
 Nondegeneracy is needed at the point in the local theorem and throughout the domain in the
 setwise theorem. Symmetry is unnecessary for regularity; no signature or positivity is assumed.
 
-The construction reuses `christoffelSecondKind` and Mathlib's
-`ContMDiffAt.mfderiv` for the smooth dependence of partial derivatives, followed by smooth
-inversion of the metric. This supplies the local analytic input for smooth families of
-Levi-Civita connections.
+Joint regularity of `christoffelSecondKind` supplies the local analytic input for smooth
+families of Levi-Civita connections.
+
+## Formal sources
+
+* Tau Ceti's `christoffelSecondKind`.
+* Mathlib's `ContMDiffAt.mfderiv` and smooth inversion of continuous linear maps.
 
 ## References
 
@@ -76,20 +78,12 @@ theorem contMDiffAt_christoffelSecondKind_family
         (fun q : (P × E) × E ↦ g q.1.1 q.2) (z, z.2) :=
       hg.comp (z, z.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
     have h := hfamily.mfderiv (fun q : P × E ↦ g q.1) Prod.snd contMDiffAt_snd hnm
-    -- Both differentiated manifolds are model vector spaces, so their tangent coordinate
-    -- changes are identities. The parameter manifold is not being trivialized here.
+    -- The differentiated source and target are vector spaces; their tangent charts are trivial.
     convert h using 1
     ext q : 1
-    rw [inTangentCoordinates_eq_mfderiv_comp_abuse (by simp) (by simp)]
-    simp only [extChartAt, OpenPartialHomeomorph.extend, chartAt_self_eq,
-      OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
-      PartialEquiv.coe_trans, PartialEquiv.refl_coe, Function.comp_apply, id_eq,
-      Function.comp_id, mfderiv_id, PartialEquiv.coe_trans_symm, PartialEquiv.refl_symm,
-      modelWithCornersSelf_coe, Set.range_id, mfderivWithin_univ]
-    rw [mfderiv_eq_fderiv]
-    -- Evaluate the canonical identifications of tangent spaces to vector spaces.
-    ext u v w
-    rfl
+    erw [inTangentCoordinates_model_space (I := 𝓘(ℝ, E))
+      (I' := 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ))]
+    exact (mfderiv_eq_fderiv (𝕜 := ℝ) (f := g q.1) (x := q.2)).symm
   -- Raise the index by the inverse metric, which is smooth near the nondegenerate point.
   have hinv : ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, (E →L[ℝ] ℝ) →L[ℝ] E) n
       (fun q : P × E ↦ (g q.1 q.2).inverse) z :=
