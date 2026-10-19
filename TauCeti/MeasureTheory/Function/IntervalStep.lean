@@ -84,7 +84,7 @@ theorem exists_intervalStep_dist_lt [PseudoMetricSpace E] (g : ℝ → E) {a b �
   have hd : dist (a + (⌊(t - a) / ((b - a) / N)⌋₊ : ℝ) * ((b - a) / N)) t < η := by
     rw [Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hs1)]
     linarith
-  exact hg _ hs t ht hd
+  simpa only [intervalStep] using hg _ hs t ht hd
 
 /-- The sampled step function is constant between two successive subdivision nodes. -/
 theorem intervalStep_eq {a δ t : ℝ} (hδ : 0 < δ) (g : ℝ → E) (i : ℕ)
