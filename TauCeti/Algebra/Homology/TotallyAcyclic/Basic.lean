@@ -44,6 +44,8 @@ and `Z⁰(P)`.
 
 * `CochainComplex.IsTotallyAcyclic`: a totally acyclic complex of finitely generated projective
   modules.
+* `TauCeti.TotallyAcyclicComplex`: the full subcategory of totally acyclic complexes of finitely
+  generated projective modules.
 * `TauCeti.IsGorensteinProjective`: the modules isomorphic to the degree-zero cycles of a totally
   acyclic complex.
 * `TauCeti.alternatingMulRightComplex`: the two-periodic complex `⋯ → A --·a--> A --·b--> A → ⋯`
@@ -231,6 +233,11 @@ end IsTotallyAcyclic
 end CochainComplex
 
 namespace TauCeti
+
+/-- The full subcategory of totally acyclic complexes of finitely generated projective modules. -/
+abbrev TotallyAcyclicComplex (A : Type u) [Ring A] :=
+  ObjectProperty.FullSubcategory
+    (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic)
 
 variable (A : Type u) [Ring A]
 

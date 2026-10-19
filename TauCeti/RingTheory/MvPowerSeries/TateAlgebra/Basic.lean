@@ -35,6 +35,7 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
   largest norm-achieving exponent for any monomial order.
 * `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
@@ -45,7 +46,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
   coefficient ring are dense.
 * `MvPowerSeries.isRestricted_renameEquiv_iff`: renaming the variables along an equivalence
-  reindexes the polyradii.
+  reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
+  algebra isomorphism of restricted-series subrings.
 * `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
   `r` times the product of the variables.
 * Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
@@ -160,6 +162,15 @@ theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
   have hM : ‖f‖ ≤ ε := (norm_le_iff hε0).mpr fun t ↦
     hε t ((norm_coeff_mul_prod_le f t).lt_of_ne (h t))
   exact hM.not_gt hεM
+
+/-- A strict bound on the norm is exactly a strict bound on every weighted coefficient norm,
+since the norm is attained. -/
+theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
+    ‖f‖ < r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < r := by
+  refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans_lt h, fun h ↦ ?_⟩
+  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  rw [norm_eq_gaussNorm, ← ht]
+  exact h t
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
@@ -348,7 +359,7 @@ theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
     rw [← norm_eq_gaussNorm (⟨g, hg⟩ : IsRestricted.subring c)]
     exact norm_pos_iff.mpr fun h ↦ hg0 (congrArg Subtype.val h)
   refine gaussNorm_mul_eq_mul norm c f g hf.hasGaussNorm hg.hasGaussNorm
-    (isRestricted.mul c hf hg).hasGaussNorm norm_nonneg norm_zero
+    (hf.mul hg).hasGaussNorm norm_nonneg norm_zero
     IsUltrametricDist.isNonarchimedean_norm norm_mul norm_neg
     (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, ?_⟩
   intro p hp hne
@@ -408,6 +419,12 @@ noncomputable instance instAlgebraIsRestrictedSubring :
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
 
+/-- Without variables every restricted series is a constant. -/
+theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
+  let ⟨r, hr⟩ := C_surjective (g : MvPowerSeries σ R)
+  ⟨r, Subtype.ext hr⟩
+
 /-- A restricted monomial `r Xᵗ` is the constant `r` times the monomial `Xᵗ` in the variables. -/
 theorem mk_monomial_eq_algebraMap_mul_prod (t : σ →₀ ℕ) (r : R) :
     (⟨monomial t r, isRestricted_monomial c t r⟩ : IsRestricted.subring (R := R) c) =
@@ -458,6 +475,23 @@ theorem isRestricted_renameEquiv_iff (e : σ ≃ τ) {c : τ → ℝ} {f : MvPow
     simp [hc, Finsupp.prod_equivMapDomain]
   rw [IsRestricted, IsRestricted, h, ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
   exact (tendsto_comap'_iff (by rw [(Finsupp.equivCongrLeft e).range_eq_univ]; exact univ_mem)).symm
+
+variable [IsUltrametricDist R]
+
+/-- **Renaming the variables of restricted series.** Renaming along an equivalence `e : σ ≃ τ` is
+an `R`-algebra isomorphism from the series restricted at the reindexed polyradii `c ∘ e` to the
+series restricted at `c`. -/
+noncomputable def IsRestricted.renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ) :
+    IsRestricted.subring (R := R) (c ∘ e) ≃ₐ[R] IsRestricted.subring (R := R) c :=
+  AlgEquiv.ofRingEquiv (f := (renameEquiv R e).toRingEquiv.restrict _ _ fun _ ↦
+    (isRestricted_renameEquiv_iff e).symm) fun r ↦ Subtype.ext (rename_C _ r)
+
+/-- The renaming isomorphism of restricted series is `MvPowerSeries.renameEquiv` on the
+underlying series. -/
+@[simp]
+theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
+    (f : IsRestricted.subring (R := R) (c ∘ e)) :
+    (renameAlgEquiv e c f : MvPowerSeries τ R) = renameEquiv R e f := (rfl)
 
 end Rename
 

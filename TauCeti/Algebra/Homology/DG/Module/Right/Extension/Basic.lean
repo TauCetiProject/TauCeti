@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Bimodule.Codomain
-public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct
+public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
 /-!

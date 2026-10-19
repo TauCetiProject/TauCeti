@@ -27,13 +27,19 @@ injective on classes rigidified along `s`, with image the kernel of `s^* : Pic(Y
 (`TauCeti.AlgebraicGeometry.RigidifiedLineBundleClass.mk_toLineBundleClass_bijective`). No
 hypothesis on `f` beyond the existence of the section is needed.
 
+The bijection respects the group laws. Rigidified line bundles form a group under tensor product
+(`TauCeti.AlgebraicGeometry.LineBundle.Rigidified.TensorProduct`), pullback of rigidified classes
+is a group homomorphism, and forgetting the rigidification is a group homomorphism, so the
+rigidified Picard functor is a presheaf of commutative groups isomorphic to the relative Picard
+presheaf.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.relativePicardPresheaf`: the presheaf of commutative groups
   `T ↦ Pic(X_T) / Pic(T)` on schemes over `S`;
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardFunctorIso`: the rigidified Picard functor of
-  `(X, x₀)` is naturally isomorphic to the underlying presheaf of sets of the relative Picard
-  presheaf.
+  `(X, x₀)` is naturally isomorphic to the relative Picard presheaf, as presheaves of commutative
+  groups.
 
 ## References
 
@@ -106,37 +112,70 @@ lemma relativePicardPresheaf_map_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
 
 variable (x₀ : S ⟶ X) (hx₀ : x₀ ≫ f = 𝟙 S)
 
-/-- **The rigidified Picard functor is the relative Picard presheaf.** For a morphism
-`f : X ⟶ S` with a section `x₀`, forgetting the rigidification identifies the classes of line
-bundles on `X_T` rigidified along `x₀_T` with `Pic(X_T) / Pic(T)`, naturally in the scheme `T`
-over `S`. -/
-def rigidifiedPicardFunctorIso :
-    rigidifiedPicardFunctor f x₀ hx₀ ≅ relativePicardPresheaf f ⋙ forget CommGrpCat :=
-  NatIso.ofComponents (fun T ↦ (Equiv.ofBijective
-    (fun a : (rigidifiedPicardFunctor f x₀ hx₀).obj T ↦
+private def rigidifiedPicardComparisonHom (T : (Over S)ᵒᵖ) :
+    RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop) →*
+      LineBundleClass (pullback T.unop.hom f) ⧸
+        (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range :=
+  (QuotientGroup.mk' _).comp RigidifiedLineBundleClass.toLineBundleClassHom
+
+@[simp]
+private lemma rigidifiedPicardComparisonHom_apply (T : (Over S)ᵒᵖ)
+    (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
+    rigidifiedPicardComparisonHom f x₀ hx₀ T a =
       (QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass a) :
-        (relativePicardPresheaf f).obj T))
-    (RigidifiedLineBundleClass.mk_toLineBundleClass_bijective
-      (baseChangeSection_fst f x₀ hx₀ T.unop))).toIso) (by
+        LineBundleClass (pullback T.unop.hom f) ⧸
+          (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range) := by
+  rw [rigidifiedPicardComparisonHom, MonoidHom.comp_apply,
+    RigidifiedLineBundleClass.toLineBundleClassHom_apply, QuotientGroup.mk'_apply]
+
+private lemma rigidifiedPicardComparisonHom_bijective (T : (Over S)ᵒᵖ) :
+    Function.Bijective (rigidifiedPicardComparisonHom f x₀ hx₀ T) := by
+  have h := RigidifiedLineBundleClass.mk_toLineBundleClass_bijective
+    (baseChangeSection_fst f x₀ hx₀ T.unop)
+  constructor
+  · intro a b hab
+    apply h.1
+    simpa only [rigidifiedPicardComparisonHom_apply] using hab
+  · intro b
+    obtain ⟨a, ha⟩ := h.2 b
+    exact ⟨a, by simpa only [rigidifiedPicardComparisonHom_apply] using ha⟩
+
+/-- Forgetting the rigidification commutes with pullback along morphisms over `S`. -/
+private lemma rigidifiedPicardComparisonHom_naturality {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
+    (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
+    rigidifiedPicardComparisonHom f x₀ hx₀ T' ((rigidifiedPicardFunctor f x₀ hx₀).map φ a) =
+      (relativePicardPresheaf f).map φ (rigidifiedPicardComparisonHom f x₀ hx₀ T a) := by
+  rw [rigidifiedPicardFunctor_map_apply, rigidifiedPicardComparisonHom_apply,
+    rigidifiedPicardComparisonHom_apply, relativePicardPresheaf_map_mk]
+  exact congrArg QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass_pullback _ a)
+
+/-- **The rigidified Picard functor is the relative Picard presheaf.** For a morphism
+`f : X ⟶ S` with a section `x₀`, forgetting the rigidification identifies the group of classes of
+line bundles on `X_T` rigidified along `x₀_T`, under tensor product, with `Pic(X_T) / Pic(T)`,
+naturally in the scheme `T` over `S`. -/
+def rigidifiedPicardFunctorIso :
+    rigidifiedPicardFunctor f x₀ hx₀ ≅ relativePicardPresheaf f :=
+  NatIso.ofComponents (fun T ↦ (MulEquiv.ofBijective
+    (rigidifiedPicardComparisonHom f x₀ hx₀ T)
+    (rigidifiedPicardComparisonHom_bijective f x₀ hx₀ T)).toCommGrpIso) (by
       intro T T' φ
       ext a
-      -- Both components send a class to the image of its underlying line-bundle class (by
-      -- definition of `Equiv.ofBijective` and `Equiv.toIso`; the rewriting lemmas for these do not
-      -- apply because the objects of the functors only unfold to the carriers at default
-      -- transparency), so naturality is compatibility of forgetting the rigidification with
-      -- pullback.
-      exact (congrArg QuotientGroup.mk
-        (RigidifiedLineBundleClass.toLineBundleClass_pullback _ a)).trans
-          (relativePicardPresheaf_map_mk f φ _).symm)
+      -- The components are typed on the carriers, which the functors' objects only unfold to at
+      -- default transparency, so the rewriting lemmas for `MulEquiv.toCommGrpIso` and
+      -- `MulEquiv.ofBijective` do not apply; `exact` checks the unfolding at default transparency.
+      exact rigidifiedPicardComparisonHom_naturality f x₀ hx₀ φ a)
 
 /-- The comparison `rigidifiedPicardFunctorIso` sends the class of a rigidified line bundle to the
 image of its underlying line-bundle class. -/
-lemma rigidifiedPicardFunctorIso_hom_app (T : (Over S)ᵒᵖ)
-    (a : (rigidifiedPicardFunctor f x₀ hx₀).obj T) :
+@[simp]
+lemma rigidifiedPicardFunctorIso_hom_app_apply (T : (Over S)ᵒᵖ)
+    (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
     (rigidifiedPicardFunctorIso f x₀ hx₀).hom.app T a =
       (QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass a) :
         (relativePicardPresheaf f).obj T) :=
-  (rfl)
+  -- As in `rigidifiedPicardFunctorIso`, the component is `rigidifiedPicardComparisonHom` only
+  -- after unfolding at default transparency.
+  rigidifiedPicardComparisonHom_apply f x₀ hx₀ T a
 
 end
 

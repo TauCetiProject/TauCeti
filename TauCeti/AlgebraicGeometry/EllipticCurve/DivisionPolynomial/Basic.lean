@@ -7,13 +7,15 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Formula
 
 /-!
 # Identities among the division polynomials
 
 Two identities the Nagell–Lutz route needs and Mathlib lacks — one univariate, one bivariate —
 and the consumer the univariate one exists for, followed by three evaluations of `Ψ₃` that
-reduce a Weierstrass curve to Tate normal form.
+reduce a Weierstrass curve to Tate normal form, and Mathlib's projective doubling formula `dblXYZ`
+at `[x : y : 1]` written through `ψ₂` and `Ψ₃`.
 
 Mathlib gives the univariate polynomials `Φₙ` in two registers. `Φ_three` and `Φ_four` are stated
 through the division polynomials `Ψ₃`, `preΨ₄` and `Ψ₂Sq`; `Φ_two` is stated through the
@@ -40,8 +42,15 @@ a curve in characteristic-≠-2 normal form.
   `sψ₂ = a₄ + 2a₂x - a₁y + 3x²`, where `ψ₂ = 2y + a₁x + a₃`, then
   `(a₂ - sa₁ + 3x - s²) ψ₂² = Ψ₃(x)`. The factor `a₂ - sa₁ + 3x - s²` is the coefficient `a₂` of
   `W` after the change of variables `(1, x, s, y)`.
+* `WeierstrassCurve.Projective.dblXYZ_some`: the cleared form of the same computation in projective
+  coordinates. If `(x, y)` lies on `W`, Mathlib's doubling formula at `[x : y : 1]` is
+  `ψ₂³ • [x : -y - a₁x - a₃ : 1] - Ψ₃(x) • [ψ₂ : W_X - a₁ψ₂ : 0]`, where `W_X` is the partial
+  derivative of the Weierstrass equation in `x`. So, when `ψ₂` is a unit, twice `(x, y)` is
+  `-(x, y)` exactly when `Ψ₃(x) = 0`.
 * `WeierstrassCurve.eval_variableChange_Ψ₂Sq`: after a change of variables `C`, the polynomial
   `Ψ₂Sq` becomes `u⁻⁶ Ψ₂Sq(u²x + r)`.
+* `WeierstrassCurve.eval_variableChange_Ψ₃`: after a change of variables `C`, the polynomial
+  `Ψ₃` becomes `u⁻⁸ Ψ₃(u²x + r)`.
 
 Everything here holds over an arbitrary commutative ring, with no ellipticity and no division. Of
 the first three, the first has no hypothesis at all; the second's is an equation between ring
@@ -55,9 +64,16 @@ normal form (`TauCeti/AlgebraicGeometry/EllipticCurve/TateNormalForm.lean`): onc
 moved to `(0, 0)` with horizontal tangent, `b₈ = a₂a₃²`, so the normalisation `a₂ = a₃` is read off
 `Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` asks that the point lie on the curve.
 
+`Projective.dblXYZ_some` is not part of that route. It is the projective doubling formula at an
+affine point of the curve, and it is what identifies the sections of the projective model killed
+by `3` over an arbitrary base ring
+(`TauCeti/AlgebraicGeometry/EllipticCurve/Scheme/MulBy/ThreeTorsion.lean`).
+
 The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
 an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
-(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`).
+(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`). The one for `Ψ₃` transports the
+condition that a point has order `3` along a change of variables
+(`TauCeti/AlgebraicGeometry/EllipticCurve/LevelThreeNormalForm.lean`).
 
 Declarations here are stated in the root
 `WeierstrassCurve` namespace, not under `TauCeti`, because they extend Mathlib's own
@@ -76,7 +92,8 @@ argument runs on, and `evalEval_ψ₂_of_isCharNeTwoNF` is what turns `ψ₂` in
 is short. The rest of that route has since landed — the point-level doubling formula in
 `DivisionPolynomial/Descent.lean` and the integrality theorem as
 `isInteger_or_order_two_of_torsion` — so the consumers named above now exist. Nothing in this file
-assumes them: every declaration here is a statement about polynomials.
+assumes them: every declaration here is an identity among polynomials, their evaluations, or
+Mathlib's projective formulas.
 
 ## Provenance
 
@@ -172,16 +189,60 @@ theorem a₂_mul_ψ₂_sq_eq_eval_Ψ₃ {W : WeierstrassCurve R} {x y : R} (h : 
   linear_combination (-W.a₁ * (2 * y + W.a₁ * x + W.a₃) - (s * (2 * y + W.a₁ * x + W.a₃) +
     (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2))) * hs + (W.a₁ ^ 2 + 4 * W.a₂ + 12 * x) * h
 
+/-- **The projective doubling formula at an affine point, through `Ψ₃`.** If `(x, y)` lies on
+`W`, then Mathlib's doubling formula `dblXYZ` at the point representative `[x : y : 1]` is
+
+`ψ₂³ • [x : -y - a₁x - a₃ : 1] - Ψ₃(x) • [ψ₂ : W_X - a₁ψ₂ : 0]`,
+
+where `ψ₂ = 2y + a₁x + a₃` and `W_X = a₁y - (3x² + 2a₂x + a₄)` are the two partial derivatives of
+the Weierstrass equation at `(x, y)`. The first term is `ψ₂³` times the representative of
+`-(x, y)`. -/
+theorem Projective.dblXYZ_some {W : WeierstrassCurve R} {x y : R} (h : W.toAffine.Equation x y) :
+    W.toProjective.dblXYZ ![x, y, 1] =
+      W.ψ₂.evalEval x y ^ 3 • ![x, W.toAffine.negY x y, 1] +
+        (-W.Ψ₃.eval x) • ![W.ψ₂.evalEval x y,
+          W.toAffine.polynomialX.evalEval x y - W.a₁ * W.ψ₂.evalEval x y, 0] := by
+  have hE : W.toProjective.Equation ![x, y, 1] := (Projective.equation_some _ _).mpr h
+  have hX := Projective.dblX_eq' hE
+  have hY := Projective.negDblY_eq' hE
+  have h' := (Affine.equation_iff' x y).mp h
+  simp only [Projective.eval_polynomialX, Projective.negY, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at hX hY
+  simp only [ψ₂, Affine.evalEval_polynomialY, Affine.evalEval_polynomialX, eval_Ψ₃, b₂, b₄, b₆, b₈]
+  -- `(-(a₁² + 4a₂) - 12x) · h'` exhibits `W_X² - a₁W_Xψ₂ - a₂ψ₂² - 3xψ₂²` as `-Ψ₃(x)` on the
+  -- curve, and `dblX_eq'`, `negDblY_eq'` give the coordinates of `dblXYZ` through that combination
+  ext i
+  fin_cases i
+  · simp [Projective.dblXYZ]
+    linear_combination hX + (2 * y + W.a₁ * x + W.a₃) * ((-(W.a₁ ^ 2 + 4 * W.a₂) - 12 * x) * h')
+  · simp [Projective.dblXYZ, Projective.dblY, Projective.dblZ, Projective.negY]
+    linear_combination -hY - W.a₁ * hX + (W.a₁ * y - (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) -
+      W.a₁ * (2 * y + W.a₁ * x + W.a₃)) * ((-(W.a₁ ^ 2 + 4 * W.a₂) - 12 * x) * h')
+  · simp [Projective.dblXYZ, Projective.dblZ, Projective.negY]
+    ring
+
+/-- `x = u⁻² (u² x)` for the scaling `u` of a change of variables. -/
+private theorem VariableChange.eq_inv_sq_mul (C : VariableChange R) (x : R) :
+    x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
+  linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
+
 /-- After a change of variables `C`, the polynomial `Ψ₂Sq`, which agrees with `(2y + a₁x + a₃)²`
 on the curve, transforms as `Ψ₂Sq'(x) = u⁻⁶ Ψ₂Sq(u²x + r)`. -/
 theorem eval_variableChange_Ψ₂Sq (C : VariableChange R) (x : R) :
     (C • W).Ψ₂Sq.eval x = C.u⁻¹ ^ 6 * W.Ψ₂Sq.eval (C.u ^ 2 * x + C.r) := by
   -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
-  have hx : x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
-    linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
-  conv_lhs => rw [hx]
+  conv_lhs => rw [VariableChange.eq_inv_sq_mul C x]
   simp only [Ψ₂Sq, eval_add, eval_mul, eval_pow, eval_C, eval_X, variableChange_b₂,
     variableChange_b₄, variableChange_b₆]
+  ring
+
+/-- After a change of variables `C`, the `3`-division polynomial transforms as
+`Ψ₃'(x) = u⁻⁸ Ψ₃(u²x + r)`. -/
+theorem eval_variableChange_Ψ₃ (C : VariableChange R) (x : R) :
+    (C • W).Ψ₃.eval x = C.u⁻¹ ^ 8 * W.Ψ₃.eval (C.u ^ 2 * x + C.r) := by
+  -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
+  conv_lhs => rw [VariableChange.eq_inv_sq_mul C x]
+  simp only [eval_Ψ₃, variableChange_b₂, variableChange_b₄, variableChange_b₆, variableChange_b₈]
   ring
 
 end WeierstrassCurve

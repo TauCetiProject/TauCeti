@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
 
 /-!
 # Unramified Kummer classes at good reduction
@@ -22,6 +24,10 @@ unramified. Indeed inertia fixes every `m`-division point of a rational point, s
 the unramified local condition used to control ramification of Selmer classes.
 Consequently a Selmer class restricts to an unramified class at each nonarchimedean local
 field in its defining family where the equation has good reduction and `m` is a residue unit.
+Unramifiedness is also stable under restriction to any extension of nonarchimedean local fields,
+since the inertia subgroup of the larger field maps into that of the smaller one. This carries the
+local conditions at the places of a number field to the places of a finite extension, such as the
+`m`-division field, as the proof of the finiteness of Selmer groups requires (Silverman X.4.2).
 
 ## References
 
@@ -53,6 +59,20 @@ theorem mem_unramifiedTorsionCohomology_iff
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
         ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) c = 0 :=
   (Iff.rfl)
+
+/-- **Unramified classes restrict to unramified classes.** For an extension `L/K` of
+nonarchimedean local fields and a `K`-embedding `τ : Kˢ → Lˢ` of separable closures, restriction
+`H¹(K, E[m]) → H¹(L, E[m])` along `τ` sends unramified classes to unramified classes, because the
+inertia subgroup of `L` maps into that of `K`. No reduction hypothesis on `W` is needed. -/
+theorem torsionRes_mem_unramifiedTorsionCohomology {L : Type*} [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
+    (hc : c ∈ W.unramifiedTorsionCohomology m) :
+    W.torsionRes τ m c ∈ (W⁄L).unramifiedTorsionCohomology m := by
+  rw [mem_unramifiedTorsionCohomology_iff, torsionRes_eq_explicitMap1]
+  exact (absoluteGaloisGroupMap τ).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
+    (τ.map_absoluteGaloisGroupMap_inertiaSubgroup_le) hc
 
 variable [IsIntegral 𝒪[K] W] [(integralModel 𝒪[K] W).IsElliptic]
 
@@ -186,5 +206,55 @@ theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
   exact (W⁄(L i)).range_kummerMap_le_unramifiedTorsionCohomology m
     hmres
     ((W.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap τ hm).mp hc i)
+
+/-! ### Classes unramified outside `S` -/
+
+section Dedekind
+
+open IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K)
+  (τ : ∀ v : HeightOneSpectrum R,
+    SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+  (S : Set (HeightOneSpectrum R)) (m : ℕ)
+
+/-- **The classes of `H¹(G_K, E[m])` unramified outside `S`**: those whose restriction to the
+completion `K_v` along `τ v`, for every prime `v ∉ S`, is unramified, that is, vanishes on the
+inertia subgroup of `K_v`. -/
+def unramifiedOutsideTorsionCohomology :
+    AddSubgroup (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :=
+  ⨅ (v : HeightOneSpectrum R) (_ : v ∉ S),
+    ((W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m).comap (W.torsionRes (τ v) m)
+
+variable {W τ S m}
+
+/-- A class is unramified outside `S` exactly when its restriction to every `K_v` with `v ∉ S`
+is unramified. -/
+@[simp]
+theorem mem_unramifiedOutsideTorsionCohomology_iff
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
+    c ∈ W.unramifiedOutsideTorsionCohomology τ S m ↔
+      ∀ v ∉ S, W.torsionRes (τ v) m c ∈ (W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m := by
+  simp only [unramifiedOutsideTorsionCohomology, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
+
+/-- **Selmer classes are unramified outside the bad primes.** If `W` has good reduction at every
+prime `v ∉ S` and no prime outside `S` divides `m`, then every class of the `m`-Selmer group
+relative to the completions `K_v` is unramified outside `S`. -/
+theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
+    (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K))).IsElliptic)
+    (hS : ∀ v ∉ S, (m : R) ∉ v.asIdeal) :
+    W.selmerGroup τ m ≤ W.unramifiedOutsideTorsionCohomology τ S m := by
+  intro c hc
+  rw [mem_unramifiedOutsideTorsionCohomology_iff]
+  intro v hv
+  obtain ⟨_, _⟩ := hgood v hv
+  refine W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v ?_ hc
+  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
+  exact hS v hv
+
+end Dedekind
 
 end WeierstrassCurve

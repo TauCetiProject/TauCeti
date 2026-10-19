@@ -46,8 +46,8 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
 
 /-- Degreewise recursion for the powers of a chain endomorphism. -/
 lemma pow_f_succ (m : ℕ) (i : ι) :
-    (End.of s ^ (m + 1)).f i = (End.of s ^ m).f i ≫ s.f i := by
-  rw [pow_succ', End.mul_def, comp_f]
+    (End.of s ^ (m + 1)).asHom.f i = (End.of s ^ m).asHom.f i ≫ s.f i := by
+  rw [pow_succ', End.mul_asHom, comp_f]
 
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/
@@ -254,3 +254,23 @@ lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
   simp
 
 end ChainComplex
+
+namespace HomologicalComplex
+
+section HomologyTransport
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [CategoryWithHomology C]
+  {ι : Type*} {c : ComplexShape ι} {L L' M M' : HomologicalComplex C c}
+
+/-- A morphism transported along equalities of complexes induces the corresponding transport
+of the homology map. -/
+lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
+    (τ : M ⟶ M') (hτ : τ = eqToHom hM ≫ ψ ≫ eqToHom hM'.symm) (q : ι) :
+    homologyMap τ q ≫ eqToHom (congrArg (·.homology q) hM') =
+      eqToHom (congrArg (·.homology q) hM) ≫ homologyMap ψ q := by
+  subst hM hM' hτ
+  simp
+
+end HomologyTransport
+
+end HomologicalComplex

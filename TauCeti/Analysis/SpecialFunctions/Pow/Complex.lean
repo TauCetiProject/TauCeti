@@ -180,7 +180,7 @@ theorem tendsto_prod_one_sub_mul_cpow_sub_linear_div_sq {ι : Type*} [Fintype ι
   have hq := analyticAt_prod_one_sub_mul_cpow a e
   have hq' := hasDerivAt_prod_one_sub_mul_cpow a e
   have hq'' := hasDerivAt_deriv_prod_one_sub_mul_cpow a e
-  have hseries := hq.hasFPowerSeriesAt.has_fpower_series_dslope_fslope
+  have hseries := hq.hasFPowerSeriesAt.dslope_fslope
   have hcoeff : deriv (dslope q 0) 0 =
       ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2 := by
     have h := hseries.deriv

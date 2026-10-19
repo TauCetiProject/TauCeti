@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.FrechetMean.Basic
+public import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.MeasureTheory.MeasurableSpace.Selection
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
@@ -38,8 +39,10 @@ pseudo-extended-metric space.
 
 * `TauCeti.continuous_frechetPower_sum_smul_dirac` — the power functional of a weighted family of
   points depends jointly continuously on the points and the center;
-* `TauCeti.IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf` — a barycenter of a weighted family
-  of points attains the least value of the power functional;
+* `TauCeti.IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf` and
+  `TauCeti.isFrechetBarycenter_sum_smul_dirac_iff` — a barycenter of a weighted family of points
+  attains the least value of the power functional, and in a pseudometric space every point
+  attaining it is a barycenter;
 * `TauCeti.frechetRadius_sum_smul_dirac_le_add` and
   `TauCeti.continuous_iInf_frechetPower_sum_smul_dirac` — the Fréchet radius is `1`-Lipschitz in
   the family of points, and the least value of the power functional is continuous in it;
@@ -103,10 +106,7 @@ theorem frechetRadius_sum_smul_dirac_le_add (hp : 1 ≤ p) (hw : ∑ j, w j = 1)
   -- Both weighted laws are pushforwards of one weighted law on the index type.
   let : MeasurableSpace J := ⊤
   set ν : Measure J := ∑ j, w j • Measure.dirac j
-  have hν : IsProbabilityMeasure ν := ⟨by
-    simp only [ν, Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply, measure_univ,
-      ENNReal.smul_def, smul_eq_mul, mul_one]
-    rw [← ENNReal.ofNNReal_finsetSum, hw, ENNReal.coe_one]⟩
+  have hν : IsProbabilityMeasure ν := isProbabilityMeasure_sum_smul_dirac hw fun j ↦ j
   have hR (z : J → X) : frechetRadius p (∑ j, w j • Measure.dirac (z j)) x =
       eLpNorm (fun j ↦ edist x (z j)) p ν := by
     have hmap : ν.map z = ∑ j, w j • Measure.dirac (z j) := by
@@ -154,6 +154,45 @@ theorem continuous_iInf_frechetPower_sum_smul_dirac (hp : 1 ≤ p) (hp_top : p �
 
 end WeightedPoints
 
+section PseudoMetric
+
+variable [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+
+/-- In a pseudometric space, the `p`-Fréchet radius of a weighted law of finitely many points is
+finite at every center, for a finite nonzero exponent. -/
+theorem frechetRadius_sum_smul_dirac_ne_top {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp_top : p ≠ ⊤)
+    (w : J → ℝ≥0) (y : J → X) (x : X) :
+    frechetRadius p (∑ j, w j • Measure.dirac (y j)) x ≠ ⊤ := by
+  have hpower : frechetPower p (∑ j, w j • Measure.dirac (y j)) x ≠ ⊤ := by
+    rw [frechetPower_sum_smul_dirac]
+    refine ENNReal.sum_ne_top.2 fun j _ ↦ ?_
+    rw [ENNReal.smul_def, smul_eq_mul]
+    exact ENNReal.mul_ne_top ENNReal.coe_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg (edist_ne_top _ _))
+  intro h
+  rw [← frechetRadius_rpow_eq_frechetPower hp₀ hp_top
+    (continuous_const.edist continuous_id).measurable.aemeasurable, h,
+    ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp₀ hp_top)] at hpower
+  exact hpower rfl
+
+/-- In a pseudometric space and for a finite nonzero exponent, a point is a `p`-Fréchet barycenter
+of the weighted law `∑ j, w j • δ_{y j}` exactly when it attains the least value
+`inf_z ∑ j, w j * d(z, y j) ^ p` of the power functional. -/
+theorem isFrechetBarycenter_sum_smul_dirac_iff {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp_top : p ≠ ⊤)
+    {w : J → ℝ≥0} {y : J → X} {x : X} :
+    IsFrechetBarycenter p (∑ j, w j • Measure.dirac (y j)) x ↔
+      ∑ j, (w j : ℝ≥0∞) * edist x (y j) ^ p.toReal =
+        ⨅ z, ∑ j, (w j : ℝ≥0∞) * edist z (y j) ^ p.toReal := by
+  have hm (z : X) : AEMeasurable (fun x ↦ edist z x) (∑ j, w j • Measure.dirac (y j)) :=
+    (continuous_const.edist continuous_id).measurable.aemeasurable
+  refine ⟨IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf hp₀ hp_top, fun h ↦ ?_⟩
+  refine (isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top (hm x) hm).2
+    ⟨frechetRadius_sum_smul_dirac_ne_top hp₀ hp_top w y x, fun z ↦ ?_⟩
+  simp only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul, h]
+  exact iInf_le _ z
+
+end PseudoMetric
+
 variable [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- **Measurable barycenter application** (Le Gouic–Loubes). On a proper metric space, for
@@ -166,21 +205,7 @@ theorem exists_measurable_isFrechetBarycenter_sum_smul_dirac [ProperSpace X] {p 
   have hp₀ : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hm (μ : Measure X) (z : X) : AEMeasurable (fun x ↦ edist z x) μ :=
     (continuous_const.edist continuous_id).measurable.aemeasurable
-  -- the power functional is finite, hence so is the radius
-  have hpower (y : J → X) (x : X) :
-      frechetPower p (∑ j, w j • Measure.dirac (y j)) x ≠ ⊤ := by
-    rw [frechetPower_sum_smul_dirac]
-    refine ENNReal.sum_ne_top.2 fun j _ ↦ ?_
-    rw [ENNReal.smul_def, smul_eq_mul]
-    exact ENNReal.mul_ne_top ENNReal.coe_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg (edist_ne_top _ _))
-  have hradius (y : J → X) (x : X) :
-      frechetRadius p (∑ j, w j • Measure.dirac (y j)) x ≠ ⊤ := by
-    intro h
-    have h' := hpower y x
-    rw [← frechetRadius_rpow_eq_frechetPower hp₀ hp_top (hm _ x), h,
-      ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp₀ hp_top)] at h'
-    exact h' rfl
+  have hradius := frechetRadius_sum_smul_dirac_ne_top (X := X) hp₀ hp_top w
   have hbary (y : J → X) (x : X) :
       IsFrechetBarycenter p (∑ j, w j • Measure.dirac (y j)) x ↔
         IsMinOn (frechetPower p (∑ j, w j • Measure.dirac (y j))) univ x := by
@@ -193,11 +218,7 @@ theorem exists_measurable_isFrechetBarycenter_sum_smul_dirac [ProperSpace X] {p 
     simp at hw
   have hmin (y : J → X) :
       ∃ x, IsMinOn (frechetPower p (∑ j, w j • Measure.dirac (y j))) univ x := by
-    have : IsProbabilityMeasure (∑ j, w j • Measure.dirac (y j)) := by
-      constructor
-      simp only [Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply, measure_univ,
-        ENNReal.smul_def, smul_eq_mul, mul_one]
-      rw [← ENNReal.ofNNReal_finsetSum, hw, ENNReal.coe_one]
+    have := isProbabilityMeasure_sum_smul_dirac hw y
     obtain ⟨x, hx⟩ := exists_isFrechetBarycenter hp _ (hradius y (y (Classical.arbitrary J)))
     exact ⟨x, (hbary y x).1 hx⟩
   obtain ⟨T, hT, hTmin⟩ :=

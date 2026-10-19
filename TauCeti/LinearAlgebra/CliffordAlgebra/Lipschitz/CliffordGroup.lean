@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 -- only inside the proof.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The Lipschitz group as the twisted-conjugation stabiliser of the vectors

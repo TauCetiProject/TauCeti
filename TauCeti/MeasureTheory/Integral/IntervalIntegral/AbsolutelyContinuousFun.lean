@@ -7,11 +7,15 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Calculus along absolutely continuous curves
@@ -35,6 +39,14 @@ fundamental-theorem results to curves.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` and
   `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub_of_finiteDimensional`: integrability and
   the fundamental theorem for the canonical derivative of such a curve.
+* `AbsolutelyContinuousOnInterval.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt`:
+  integration by parts with supplied almost-everywhere derivatives.
+* `AbsolutelyContinuousOnInterval.integral_div_eq_log_sub_log`: the fundamental theorem for the
+  logarithmic derivative of a nonvanishing absolutely continuous real function.
+* `TauCeti.Probability.survival_eq_exp_integral_hazard`: a positive absolutely continuous
+  survival function is reconstructed from its hazard rate.
+* `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
+  with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space.
 -/
@@ -127,7 +139,109 @@ theorem norm_sub_le_integral_norm_deriv_sub [FiniteDimensional ℝ F] {p : ℝ �
     (intervalIntegral.integral_mono_interval le_rfl ht.1 ht.2
       (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) (hpI.sub hγI).norm)
 
+omit [NormedSpace ℝ F] in
+/-- An AC curve is almost everywhere measurable on the ordered half-open parameter interval. -/
+theorem aemeasurable_restrict_Ioc [MeasurableSpace F] [BorelSpace F]
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
+    AEMeasurable γ (volume.restrict (Ioc a b)) :=
+  (hγ.continuousOn.mono
+    (fun _ ht ↦ (uIcc_of_le hab).symm ▸ Ioc_subset_Icc_self ht)).aemeasurable measurableSet_Ioc
+
+/-- The derivative of a finite-dimensional AC curve is integrable on the ordered half-open
+parameter interval. -/
+theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
+    IntegrableOn (deriv γ) (Ioc a b) := by
+  simpa only [uIoc_of_le hab] using hγ.intervalIntegrable_deriv_of_finiteDimensional.def'
+
 end AbsolutelyContinuousOnInterval
+
+namespace AbsolutelyContinuousOnInterval
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [FiniteDimensional ℝ A]
+  {f f' g g' : ℝ → A} {a b : ℝ}
+
+/-- **Integration by parts** for absolutely continuous functions valued in a finite-dimensional
+real normed ring. The derivatives may be supplied only almost everywhere. -/
+theorem integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hg : AbsolutelyContinuousOnInterval g a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t)
+    (hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (g' t) t) :
+    ∫ t in a..b, f t * g' t = f b * g b - f a * g a - ∫ t in a..b, f' t * g t := by
+  have hprod : AbsolutelyContinuousOnInterval (fun t ↦ f t * g t) a b := by
+    have hmul : ContDiff ℝ 1 (fun p : A × A ↦ p.1 * p.2) := contDiff_mul
+    exact (hf.prodMk hg).comp_of_contDiffAt (φ := fun p : A × A ↦ p.1 * p.2)
+      (fun _ _ ↦ hmul.contDiffAt)
+  have hder : ∀ᵐ t, t ∈ uIoc a b →
+      HasDerivAt (fun t ↦ f t * g t) (f' t * g t + f t * g' t) t := by
+    filter_upwards [hff', hgg'] with t ht hu hmem
+    exact (ht hmem).mul (hu hmem)
+  have h := hprod.integral_eq_sub_of_ae_hasDerivAt hder
+  rw [intervalIntegral.integral_add
+    ((hf.intervalIntegrable_of_ae_hasDerivAt hff').mul_continuousOn hg.continuousOn)
+    ((hg.intervalIntegrable_of_ae_hasDerivAt hgg').continuousOn_mul hf.continuousOn)] at h
+  exact eq_sub_of_add_eq' h
+
+end AbsolutelyContinuousOnInterval
+
+namespace AbsolutelyContinuousOnInterval
+
+variable {f V : ℝ → ℝ} {a b : ℝ}
+
+private theorem ae_hasDerivAt_log (h0 : ∀ t ∈ uIcc a b, f t ≠ 0)
+    (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
+    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ Real.log (f t)) (V t / f t) t := by
+  filter_upwards [hV] with t ht hmem
+  exact (ht hmem).log (h0 t (uIoc_subset_uIcc hmem))
+
+/-- The logarithmic derivative `V / f` of an absolutely continuous real function `f` that does not
+vanish on the interval is interval integrable, where `V` is the derivative of `f` at almost every
+point. -/
+theorem intervalIntegrable_div_of_ae_hasDerivAt (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
+    IntervalIntegrable (fun t ↦ V t / f t) volume a b :=
+  (hf.log h0).intervalIntegrable_of_ae_hasDerivAt (ae_hasDerivAt_log h0 hV)
+
+/-- The fundamental theorem of calculus for the logarithmic derivative: if `f` is absolutely
+continuous and nonvanishing on the interval, with derivative `V` at almost every point, then
+`∫ t in a..b, V t / f t = log (f b) - log (f a)`. -/
+theorem integral_div_eq_log_sub_log (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
+    ∫ t in a..b, V t / f t = Real.log (f b) - Real.log (f a) :=
+  (hf.log h0).integral_eq_sub_of_ae_hasDerivAt (ae_hasDerivAt_log h0 hV)
+
+end AbsolutelyContinuousOnInterval
+
+namespace TauCeti.Probability
+
+variable {f : ℝ → ℝ} {a x : ℝ}
+
+/-- **Survival reconstruction from the hazard rate.** If `S` is absolutely continuous on the
+interval between `a` and `x`, is positive there, and has derivative `-f` almost everywhere, then
+the hazard rate `f / S` is interval integrable and
+`S x = S a * exp (-∫ t in a..x, f t / S t)`. -/
+theorem survival_eq_exp_integral_hazard {S : ℝ → ℝ}
+    (hS : AbsolutelyContinuousOnInterval S a x) (hpos : ∀ t ∈ uIcc a x, 0 < S t)
+    (hderiv : ∀ᵐ t, t ∈ uIoc a x → HasDerivAt S (-f t) t) :
+    IntervalIntegrable (fun t => f t / S t) volume a x ∧
+      S x = S a * Real.exp (-∫ t in a..x, f t / S t) := by
+  have hne : ∀ t ∈ uIcc a x, S t ≠ 0 := fun t ht => (hpos t ht).ne'
+  have hint : IntervalIntegrable (fun t => f t / S t) volume a x := by
+    have h : (fun t => f t / S t) = -fun t => -f t / S t := by
+      ext t
+      simp [neg_div]
+    rw [h]
+    exact (hS.intervalIntegrable_div_of_ae_hasDerivAt hne hderiv).neg
+  refine ⟨hint, ?_⟩
+  have h := hS.integral_div_eq_log_sub_log hne hderiv
+  simp only [neg_div, intervalIntegral.integral_neg] at h
+  have ha : 0 < S a := hpos a left_mem_uIcc
+  have hx : 0 < S x := hpos x right_mem_uIcc
+  rw [h, Real.exp_sub, Real.exp_log hx, Real.exp_log ha]
+  field_simp
+
+end TauCeti.Probability
 
 /-- An indefinite interval integral in a real normed space is absolutely continuous on its
 integrability interval, provided its base point belongs to that interval. -/
@@ -150,3 +264,26 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
   rw [dist_eq_norm, intervalIntegral.integral_interval_sub_left hx hy,
     Real.dist_eq, intervalIntegral.integral_interval_sub_left hx.norm hy.norm]
   exact intervalIntegral.norm_integral_le_abs_integral_norm
+
+/-- A continuous curve with an integrable derivative outside a countable exceptional set is
+absolutely continuous on its parameter interval. -/
+theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {f f' : ℝ → F} {a b : ℝ} {s : Set ℝ} (hf : ContinuousOn f (uIcc a b))
+    (hs : s.Countable)
+    (hd : ∀ t ∈ Ioo (min a b) (max a b) \ s, HasDerivAt f (f' t) t)
+    (hi : IntervalIntegrable f' volume a b) : AbsolutelyContinuousOnInterval f a b := by
+  have hbase : min a b ∈ uIcc a b := ⟨le_rfl, min_le_max⟩
+  have hI := hi.absolutelyContinuousOnInterval_intervalIntegral' hbase
+  have hc : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ f (min a b)) a b :=
+    (LipschitzWith.const (f (min a b))).lipschitzOnWith.absolutelyContinuousOnInterval
+  apply (hc.add hI).congr
+  intro t ht
+  have hsub : uIcc (min a b) t ⊆ uIcc a b := uIcc_subset_uIcc hbase ht
+  have hFTC := integral_eq_of_hasDerivAt_off_countable f f' hs (hf.mono hsub)
+    (fun u hu ↦ hd u ⟨⟨by simpa only [min_eq_left ht.1] using hu.1.1,
+      (by simpa only [max_eq_right ht.1] using hu.1.2 : u < t).trans_le ht.2⟩, hu.2⟩)
+    (hi.mono_set hsub)
+  change f (min a b) + (∫ u in min a b..t, f' u) = f t
+  rw [hFTC]
+  abel

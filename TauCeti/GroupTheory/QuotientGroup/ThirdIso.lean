@@ -27,6 +27,8 @@ themselves, so it cannot reindex a family.
 
 * `QuotientGroup.quotientQuotientEquivQuotientSup`: the bijection
   `(G ⧸ N) ⧸ H.map (mk' N) ≃ G ⧸ (H ⊔ N)`, sending the class of `g` to the class of `g`.
+* `QuotientGroup.quotientEquivQuotientMapOfLE`: for `N ≤ H`, the bijection
+  `G ⧸ H ≃ (G ⧸ N) ⧸ H.map (mk' N)` in the direction of the quotient map `G → G ⧸ N`.
 -/
 
 public section
@@ -83,5 +85,30 @@ class of `g`. -/, simp]
 theorem quotientQuotientEquivQuotientSup_symm_mk (H N : Subgroup G) [N.Normal] (g : G) :
     (quotientQuotientEquivQuotientSup H N).symm (g : G ⧸ (H ⊔ N)) =
       ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) := (rfl)
+
+/-- For a normal subgroup `N` contained in `H`, the cosets of `H` in `G` are the cosets of the image
+of `H` in `G ⧸ N`, the class of `g` going to the nested class of `g`. This is the inverse of
+`quotientQuotientEquivQuotientSup` with `H ⊔ N` rewritten to `H`, oriented along the quotient map
+`G → G ⧸ N`. -/
+@[to_additive /-- For a normal subgroup `N` contained in `H`, the cosets of `H` in `G` are the
+cosets of the image of `H` in `G ⧸ N`, the class of `g` going to the nested class of `g`. -/]
+def quotientEquivQuotientMapOfLE {H N : Subgroup G} [N.Normal] (h : N ≤ H) :
+    G ⧸ H ≃ (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N) :=
+  (Subgroup.quotientEquivOfEq (sup_eq_left.mpr h)).symm.trans
+    (quotientQuotientEquivQuotientSup H N).symm
+
+/-- The equivalence sends the class of `g` to the nested class of `g`. -/
+@[to_additive (attr := simp) /-- The equivalence sends the class of `g` to the nested class of
+`g`. -/]
+theorem quotientEquivQuotientMapOfLE_mk {H N : Subgroup G} [N.Normal] (h : N ≤ H) (g : G) :
+    quotientEquivQuotientMapOfLE h (g : G ⧸ H) =
+      ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) := (rfl)
+
+/-- The inverse equivalence sends the nested class of `g` to the class of `g`. -/
+@[to_additive (attr := simp) /-- The inverse equivalence sends the nested class of `g` to the
+class of `g`. -/]
+theorem quotientEquivQuotientMapOfLE_symm_mk {H N : Subgroup G} [N.Normal] (h : N ≤ H) (g : G) :
+    (quotientEquivQuotientMapOfLE h).symm
+        ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) = (g : G ⧸ H) := (rfl)
 
 end QuotientGroup

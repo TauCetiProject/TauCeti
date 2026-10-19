@@ -120,6 +120,11 @@ theorem restriction_surjective : Function.Surjective (restriction A).hom := by
 def carrierDefiningIdeal : HopfIdeal A (generatedCoordinateHopfAlgebra A) :=
   HopfIdeal.kerOfSurjective (restriction A).hom (restriction_surjective A)
 
+/-- The intrinsic positive ideal is the kernel of restriction from the full carrier. -/
+theorem carrierDefiningIdeal_def :
+    carrierDefiningIdeal A =
+      HopfIdeal.kerOfSurjective (restriction A).hom (restriction_surjective A) := (rfl)
+
 @[simp]
 theorem mem_carrierDefiningIdeal (x : generatedCoordinateHopfAlgebra A) :
     x ∈ carrierDefiningIdeal A ↔ (restriction A).hom x = 0 :=
@@ -201,11 +206,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     (generator k)
   rintro (i | ⟨⟩)
-  · rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
-    intro K _ _ _
-    have := AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k K
-    let e := Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) K
-    exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
+  · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
       (SplitTorus.characterGroup (Fin 6))
 

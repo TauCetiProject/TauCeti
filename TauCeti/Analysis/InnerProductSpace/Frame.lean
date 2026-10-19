@@ -90,6 +90,11 @@ space. -/
 noncomputable def synthesisMap (v : ι → E) : EuclideanSpace 𝕜 ι →ₗ[𝕜] E :=
   Fintype.linearCombination 𝕜 v ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap
 
+/-- The range of synthesis is the span of the finite family. -/
+theorem range_synthesisMap (v : ι → E) :
+    LinearMap.range (synthesisMap 𝕜 v) = Submodule.span 𝕜 (Set.range v) := by
+  rw [synthesisMap, LinearEquiv.range_comp, Fintype.range_linearCombination]
+
 omit [Fintype ι] in
 @[simp]
 theorem analysisMap_apply (v : ι → E) (x : E) (i : ι) : analysisMap 𝕜 v x i = ⟪v i, x⟫_𝕜 :=

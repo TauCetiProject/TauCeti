@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -16,8 +17,9 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 For a manifold modeled on Mathlib's Euclidean half-space, this file records the sign convention
 for an outward tangent vector.  Mathlib puts the boundary coordinate in slot `0`; outward vectors
 therefore have a negative slot-`0` derivative.  The definition uses the preferred chart through
-`mfderiv`; coordinate independence requires suitable differentiable chart compatibility and an
-invariance theorem.  This is the interface used by the boundary orientation and Stokes
+`mfderiv`; the positive normal derivative of actual chart transitions proves coordinate
+independence in `isOutwardPointing_iff_tangentCoordChange`. This is the interface used by boundary
+orientation and Stokes
 constructions.
 
 The sign convention follows J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition
@@ -57,6 +59,20 @@ theorem isOutwardPointing_iff {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x} :
           (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
             (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 < 0 := Iff.rfl
 
+/-- Outwardness can be tested in any preferred chart containing the boundary point. -/
+theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1 M]
+    {x α : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) x) :
+    IsOutwardPointing x v ↔ (tangentCoordChange (𝓡∂ (n + 1)) x α x v) 0 < 0 := by
+  obtain ⟨a, ha, hnormal⟩ := tangentCoordChange_normal_pos hx (mem_extChartAt_source x) hα
+  rw [isOutwardPointing_iff, and_iff_right hx, mfderiv_extChartAt_self]
+  -- The preferred tangent fibre is the model space and fromTangentSpace is its
+  -- identity identification; expose the evaluation before applying the normal factor.
+  change (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) v < 0 ↔ _
+  exact (smul_neg_iff_of_pos_left ha).symm.trans (iff_of_eq
+    (congrArg (fun r : ℝ ↦ r < 0) (hnormal v).symm))
+
 namespace IsOutwardPointing
 
 /-- An outward-pointing vector is based at a boundary point. -/
@@ -90,6 +106,22 @@ theorem add {x : M} {v w : TangentSpace (𝓡∂ (n + 1)) x}
   refine ⟨hx, ?_⟩
   rw [ContinuousLinearMap.map_add, map_add]
   simpa using add_neg hv hw
+
+/-- The outward-pointing vectors at a fixed point form a convex set.  This is the pointwise
+interface used when smooth local outward fields are glued by a partition of unity. -/
+theorem convex (x : M) :
+    Convex ℝ {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
+  intro v hv w hw a b ha hb hab
+  by_cases ha0 : a = 0
+  · have hb1 : b = 1 := by linarith
+    subst a
+    simpa [hb1] using hw
+  by_cases hb0 : b = 0
+  · have ha1 : a = 1 := by linarith
+    subst b
+    simpa [ha1] using hv
+  exact (hv.smul_pos (lt_of_le_of_ne ha (Ne.symm ha0))).add
+    (hw.smul_pos (lt_of_le_of_ne hb (Ne.symm hb0)))
 
 /-- An outward vector is nonzero. -/
 theorem ne_zero {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
@@ -176,6 +208,21 @@ theorem smul {f : M → ℝ} (hV : IsOutwardPointingField V)
     (hpos : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 < f x) :
     IsOutwardPointingField (fun x ↦ f x • V x) := by
   refine ⟨hf.smul_section hV.1, fun x hx ↦ (hV.2 x hx).smul_pos (hpos x hx)⟩
+
+/-- Smooth convex combinations of outward-pointing fields remain outward-pointing.
+The coefficients are smooth globally, nonnegative on the boundary, and sum to one there. -/
+theorem smul_add_smul {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+    (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W)
+    {f g : M → ℝ} (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
+    (hg : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ g)
+    (hf_nonneg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 ≤ f x)
+    (hg_nonneg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 ≤ g x)
+    (hfg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, f x + g x = 1) :
+    IsOutwardPointingField (fun x ↦ f x • V x + g x • W x) := by
+  refine ⟨(hf.smul_section hV.contMDiff).add_section (hg.smul_section hW.contMDiff), ?_⟩
+  intro x hx
+  exact (IsOutwardPointing.convex x) (hV.isOutwardPointing hx) (hW.isOutwardPointing hx)
+    (hf_nonneg x hx) (hg_nonneg x hx) (hfg x hx)
 
 end IsOutwardPointingField
 

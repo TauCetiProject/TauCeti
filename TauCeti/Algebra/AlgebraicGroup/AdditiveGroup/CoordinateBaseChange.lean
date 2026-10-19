@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
@@ -40,6 +41,8 @@ equivalence has no such restriction.
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebraBaseChangeIso`: the bundled isomorphism.
 * `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra`:
   the base-changed coordinate algebra has connected prime spectrum over a domain.
+* `TauCeti.AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra`:
+  the additive group is geometrically connected over every field.
 
 ## References
 
@@ -74,5 +77,16 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra
   let e := coordinateHopfAlgebraBaseChangeIso k K
   exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
     (ConcreteCategory.bijective_of_isIso e.hom).1
+
+/-- The coordinate Hopf algebra of the additive group is geometrically connected over every
+field. -/
+theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
+    (k : Type u) [Field k] :
+    geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
+  rw [geometricallyConnectedCommHopfAlgProperty_iff]
+  intro K _ _
+  have := connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k K
+  let e := Algebra.TensorProduct.comm k (coordinateHopfAlgebra k) K
+  exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
 
 end TauCeti.AdditiveGroup

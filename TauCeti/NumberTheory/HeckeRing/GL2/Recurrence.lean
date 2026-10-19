@@ -64,36 +64,6 @@ lemma heckeTDiag_p_prime_pow_eq (k : ℕ) (hk : 0 < k) :
   rw [show k - 1 + 1 = k from Nat.succ_pred_eq_of_pos hk] at h0
   simpa [pow_zero, zero_add, pow_one] using h0.symm
 
-include hp in
-/-- `T(p⁰) = 1`.
-
-Not a restatement of `heckeT_one`: the work is normalizing the `ℕ+` *index* `⟨p ^ 0, _⟩` to
-`1`, which needs `Subtype.ext` and so cannot be reached by rewriting `pow_zero` under the
-positivity proof. Used at four call sites. -/
-private lemma heckeT_prime_pow_zero : heckeT ⟨p ^ 0, pow_pos hp.pos 0⟩ = 1 := by
-  rw [show (⟨p ^ 0, pow_pos hp.pos 0⟩ : ℕ+) = 1 from Subtype.ext (pow_zero p)]
-  exact heckeT_one
-
-omit hp in
-/-- `T(1, p¹) = T(1, p)`.
-
-Deliberately *not* inlined as `pow_one`. In the goals where it is used, `p ^ 1` also occurs as
-`heckeT ⟨p ^ 1, _⟩`, where the exponent appears inside the positivity proof; rewriting with
-`pow_one` there fails with "motive is not type correct". Stating the rewrite against
-`heckeTDiag` confines it to the one occurrence that carries no dependent proof. -/
-private lemma heckeTDiag_one_prime_pow_one : heckeTDiag 1 (p ^ 1) = heckeTDiag 1 p := by
-  rw [pow_one]
-
-include hp in
-/-- `T(p¹) = T(p)`: normalizing the exponent in the index.
-
-As with `heckeT_prime_pow_zero`, the content is the `ℕ+` index equality `⟨p ^ 1, _⟩ = ⟨p, _⟩`,
-which `Subtype.ext` supplies and a bare `pow_one` rewrite cannot, since the exponent also
-occurs inside the positivity proof. Used at four call sites. -/
-private lemma heckeT_prime_pow_one : heckeT ⟨p ^ 1, pow_pos hp.pos 1⟩ = heckeT ⟨p, hp.pos⟩ := by
-  congr 1
-  exact Subtype.ext (pow_one p)
-
 /-- **The scalar operator is central**, in the form `T(1, p) · T(p,p) = T(p,p) · T(1, p)`.
 Every commutation below is this one transported: the `T(p)` form is it after
 `heckeT_prime`, and the `p • T(p,p)` form is that scaled. Primality plays no part. -/
@@ -108,7 +78,7 @@ include hp in
 /-- `T(p)` commutes with the scalar operator `T(p,p)`. The shape the recurrence steps meet,
 whose left factor is written `T(p)` rather than `T(1, p)`. -/
 private lemma commute_heckeT_prime_heckeTScalar :
-    Commute (heckeT ⟨p, hp.pos⟩) (heckeTScalar p) := by
+    Commute (heckeT p) (heckeTScalar p) := by
   rw [heckeT_prime p hp]
   exact commute_heckeTDiag_one_heckeTScalar p
 
@@ -117,12 +87,10 @@ include hp in
 `k` into the key product identity, then rearrange. -/
 private lemma heckeT_prime_pow_recurrence_step (k : ℕ) (hk_pos : 0 < k)
     (ih : ∀ j : ℕ, j < k + 2 → 0 < j →
-      heckeT ⟨p ^ (j + 1), pow_pos hp.pos (j + 1)⟩ =
-        heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ j, pow_pos hp.pos j⟩ -
-          (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (j - 1), pow_pos hp.pos (j - 1)⟩)) :
-    heckeT ⟨p ^ (k + 2 + 1), pow_pos hp.pos (k + 2 + 1)⟩ =
-      heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ (k + 2), pow_pos hp.pos (k + 2)⟩ -
-        (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (k + 1), pow_pos hp.pos (k + 1)⟩) := by
+      heckeT (p ^ (j + 1)) =
+        heckeT p * heckeT (p ^ j) - (p : ℤ) • (heckeTScalar p * heckeT (p ^ (j - 1)))) :
+    heckeT (p ^ (k + 2 + 1)) =
+      heckeT p * heckeT (p ^ (k + 2)) - (p : ℤ) • (heckeTScalar p * heckeT (p ^ (k + 1))) := by
   have h5 := heckeT_prime_mul_heckeTDiag_one_prime_pow p hp (k + 2)
   rw [heckeTDiag_p_prime_pow_eq p (k + 2) (by omega)] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (k + 2 + 1) (by omega)
@@ -140,17 +108,14 @@ private lemma heckeT_prime_pow_recurrence_step (k : ℕ) (hk_pos : 0 < k)
   conv at h5 => rhs; rw [mul_sub]
   -- the scalar operator is central, and the induction hypothesis rewrites `T(p) · T(pᵏ)`
   have hcomm := (commute_heckeT_prime_heckeTScalar p hp).eq
-  have hih : heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ k, pow_pos hp.pos k⟩ =
-      heckeT ⟨p ^ (k + 1), pow_pos hp.pos (k + 1)⟩ +
-        (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (k - 1), pow_pos hp.pos (k - 1)⟩) := by
+  have hih : heckeT p * heckeT (p ^ k) =
+      heckeT (p ^ (k + 1)) + (p : ℤ) • (heckeTScalar p * heckeT (p ^ (k - 1))) := by
     rw [ih k (by omega) hk_pos]
     abel
   rw [smul_sub,
-    ← mul_assoc (heckeT ⟨p, hp.pos⟩) (heckeTScalar p)
-      (heckeT ⟨p ^ k, pow_pos hp.pos k⟩),
+    ← mul_assoc (heckeT p) (heckeTScalar p) (heckeT (p ^ k)),
     hcomm,
-    mul_assoc (heckeTScalar p) (heckeT ⟨p, hp.pos⟩)
-      (heckeT ⟨p ^ k, pow_pos hp.pos k⟩),
+    mul_assoc (heckeTScalar p) (heckeT p) (heckeT (p ^ k)),
     hih, mul_add (heckeTScalar p), mul_smul_comm (p : ℤ),
     ← mul_assoc (heckeTScalar p) (heckeTScalar p), sub_eq_iff_eq_add] at h5
   linear_combination (norm := module) -h5
@@ -158,9 +123,8 @@ private lemma heckeT_prime_pow_recurrence_step (k : ℕ) (hk_pos : 0 < k)
 include hp in
 /-- The prime-power recurrence at `k = 1`: `T(p²) = T(p)² − p · T(p,p)`. -/
 private lemma heckeT_prime_pow_recurrence_one :
-    heckeT ⟨p ^ (1 + 1), pow_pos hp.pos (1 + 1)⟩ =
-      heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ 1, pow_pos hp.pos 1⟩ -
-        (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (1 - 1), pow_pos hp.pos (1 - 1)⟩) := by
+    heckeT (p ^ (1 + 1)) =
+      heckeT p * heckeT (p ^ 1) - (p : ℤ) • (heckeTScalar p * heckeT (p ^ (1 - 1))) := by
   have h5 := heckeT_prime_mul_heckeTDiag_one_prime_pow p hp 1
   rw [heckeTDiag_p_prime_pow_eq p 1 (by omega)] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (1 + 1) (by omega)
@@ -170,19 +134,16 @@ private lemma heckeT_prime_pow_recurrence_one :
   conv at h2 => rhs; rw [show (1 + 1) - 2 = 1 - 1 by omega]
   rw [h2] at h5
   simp only [Nat.sub_self, ite_true] at h5 ⊢
-  rw [heckeT_prime_pow_zero p hp, pow_zero, heckeTDiag_one_one, mul_one] at h5
-  rw [heckeT_prime_pow_zero p hp, mul_one, heckeT_prime_pow_one p hp]
-  rw [heckeTDiag_one_prime_pow_one, heckeT_prime p hp] at h5
-  rw [heckeT_prime p hp]
+  rw [pow_zero, heckeT_one, heckeTDiag_one_one, mul_one, pow_one, heckeT_prime p hp] at h5
+  rw [pow_zero, heckeT_one, mul_one, pow_one, heckeT_prime p hp]
   rw [add_smul, one_smul] at h5
   linear_combination (norm := module) -h5
 
 include hp in
 /-- The prime-power recurrence at `k = 2`: `T(p³) = T(p) · T(p²) − p · T(p,p) · T(p)`. -/
 private lemma heckeT_prime_pow_recurrence_two :
-    heckeT ⟨p ^ (2 + 1), pow_pos hp.pos (2 + 1)⟩ =
-      heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ 2, pow_pos hp.pos 2⟩ -
-        (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (2 - 1), pow_pos hp.pos (2 - 1)⟩) := by
+    heckeT (p ^ (2 + 1)) =
+      heckeT p * heckeT (p ^ 2) - (p : ℤ) • (heckeTScalar p * heckeT (p ^ (2 - 1))) := by
   have h5 := heckeT_prime_mul_heckeTDiag_one_prime_pow p hp 2
   rw [heckeTDiag_p_prime_pow_eq p 2 (by omega)] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (2 + 1) (by omega)
@@ -197,9 +158,8 @@ private lemma heckeT_prime_pow_recurrence_two :
   rw [heckeTDiag_one_prime_pow_eq p hp 2 (by omega)] at h5
   rw [mul_sub] at h5
   simp only [Nat.sub_self] at h5 ⊢
-  rw [heckeT_prime_pow_zero p hp, mul_one, heckeTDiag_one_prime_pow_one, heckeT_prime p hp] at h5
-  rw [heckeT_prime_pow_one p hp] at h5 ⊢
-  rw [heckeT_prime p hp] at h5 ⊢
+  rw [pow_zero, heckeT_one, mul_one, pow_one, heckeT_prime p hp] at h5
+  rw [pow_one, heckeT_prime p hp]
   rw [(commute_heckeTDiag_one_heckeTScalar p).eq] at h5
   linear_combination (norm := module) -h5
 
@@ -208,9 +168,8 @@ include hp in
 `T(p^(k+1)) = T(p) · T(pᵏ) − p · T(p,p) · T(p^(k−1))` for `k ≥ 1`, which determines every
 `T(pᵏ)` from `T(p)` and the scalar operator. -/
 theorem heckeT_prime_pow_recurrence : ∀ k : ℕ, 0 < k →
-    heckeT ⟨p ^ (k + 1), pow_pos hp.pos (k + 1)⟩ =
-      heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ k, pow_pos hp.pos k⟩ -
-        (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (k - 1), pow_pos hp.pos (k - 1)⟩) := by
+    heckeT (p ^ (k + 1)) =
+      heckeT p * heckeT (p ^ k) - (p : ℤ) • (heckeTScalar p * heckeT (p ^ (k - 1))) := by
   intro k
   induction k using Nat.strongRecOn with
   | _ k ih =>
@@ -238,7 +197,7 @@ include hp in
 formula hands to `linearRec₂_mul_eq_sum_pow_mul`, whose hypothesis is exactly that the two
 recurrence coefficients commute. -/
 private lemma commute_heckeT_prime_smul_heckeTScalar :
-    Commute (heckeT ⟨p, hp.pos⟩) ((p : ℤ) • heckeTScalar p) :=
+    Commute (heckeT p) ((p : ℤ) • heckeTScalar p) :=
   (commute_heckeT_prime_heckeTScalar p hp).smul_right _
 
 include hp in
@@ -249,19 +208,17 @@ This is `TauCeti.linearRec₂_mul_eq_sum_pow_mul` at `d = fun r ↦ T(pʳ)`, `D 
 `S = p • T(p,p)`; all that is left is to match the summand, since the general statement writes
 `S ^ i * _` where this one writes `pⁱ • (T(p,p)ⁱ * _)`. -/
 theorem heckeT_prime_pow_mul : ∀ r s : ℕ, r ≤ s →
-    heckeT ⟨p ^ r, pow_pos hp.pos r⟩ * heckeT ⟨p ^ s, pow_pos hp.pos s⟩ =
-      ∑ i ∈ Finset.range (r + 1), (p : ℤ) ^ i • (heckeTScalar p ^ i *
-        heckeT ⟨p ^ (r + s - 2 * i), pow_pos hp.pos (r + s - 2 * i)⟩) := by
+    heckeT (p ^ r) * heckeT (p ^ s) =
+      ∑ i ∈ Finset.range (r + 1),
+        (p : ℤ) ^ i • (heckeTScalar p ^ i * heckeT (p ^ (r + s - 2 * i))) := by
   intro r s hrs
-  have hrec : ∀ n : ℕ, heckeT ⟨p ^ (n + 2), pow_pos hp.pos (n + 2)⟩ =
-      heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ (n + 1), pow_pos hp.pos (n + 1)⟩ -
-        ((p : ℤ) • heckeTScalar p) * heckeT ⟨p ^ n, pow_pos hp.pos n⟩ := by
+  have hrec : ∀ n : ℕ, heckeT (p ^ (n + 2)) =
+      heckeT p * heckeT (p ^ (n + 1)) - ((p : ℤ) • heckeTScalar p) * heckeT (p ^ n) := by
     intro n
     have h := heckeT_prime_pow_recurrence p hp (n + 1) (by omega)
     rw [show n + 1 + 1 = n + 2 by omega, show n + 1 - 1 = n by omega] at h
     rw [h, smul_mul_assoc]
-  rw [TauCeti.linearRec₂_mul_eq_sum_pow_mul (d := fun n ↦ heckeT ⟨p ^ n, pow_pos hp.pos n⟩)
-    (heckeT_prime_pow_zero p hp) (heckeT_prime_pow_one p hp)
+  rw [TauCeti.linearRec₂_mul_eq_sum_pow_mul (d := fun n ↦ heckeT (p ^ n)) (by simp) (by simp)
     (commute_heckeT_prime_smul_heckeTScalar p hp) hrec hrs]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [smul_pow, smul_mul_assoc]
 

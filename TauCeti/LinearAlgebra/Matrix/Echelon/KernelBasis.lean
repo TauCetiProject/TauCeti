@@ -372,7 +372,7 @@ theorem range_kernelVector_freeColumn_eq_kernelBasis :
     (Set.range fun j : {j : Fin n // IsFreeColumn (List.ofFn A) j} =>
       kernelVector (List.ofFn A) j.1) = {v : Fin n → F | v ∈ kernelBasis A} := by
   ext v
-  rw [Set.mem_ofPred_eq, mem_kernelBasis, Set.mem_range]
+  rw [Set.mem_range, Set.mem_ofPred_eq, mem_kernelBasis]
   constructor
   · rintro ⟨⟨j, hj⟩, rfl⟩
     exact ⟨j, hj, rfl⟩

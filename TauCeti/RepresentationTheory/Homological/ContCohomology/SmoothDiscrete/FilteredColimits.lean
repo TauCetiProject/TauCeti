@@ -75,7 +75,7 @@ private theorem ι_map_apply {i j : J} (f : i ⟶ j) (y : (X.obj i).obj.V) :
 
 /-- The action on the colimit restricts to the action at each stage. -/
 private theorem ρ_ι_apply (g : G) {j : J} (y : (X.obj j).obj.V) :
-    ((colimit (X ⋙ toAction k G)).ρ g).hom (ι X j y) = ι X j ((X.obj j).obj.ρ g y) :=
+    ((colimit (X ⋙ toAction k G)).ρ g).asHom.hom (ι X j y) = ι X j ((X.obj j).obj.ρ g y) :=
   (ConcreteCategory.congr_hom ((colimit.ι (X ⋙ toAction k G) j).comm g) y).symm
 
 /-- The colimit module, with the discrete topology. -/
@@ -87,13 +87,13 @@ private local instance : DiscreteTopology (colimit (X ⋙ toAction k G)).V := �
 the colimit in `Action (ModuleCat k) G`. -/
 private noncomputable def colimitρ : ContRepresentation k G (colimit (X ⋙ toAction k G)).V :=
   .ofMonoidHom
-    { toFun g := ⟨((colimit (X ⋙ toAction k G)).ρ g).hom, continuous_of_discreteTopology⟩
+    { toFun g := ⟨((colimit (X ⋙ toAction k G)).ρ g).asHom.hom, continuous_of_discreteTopology⟩
       map_one' := by ext; simp
       map_mul' g h := by ext; simp }
 
 /-- `colimitρ X` acts through the action of the colimit in `Action (ModuleCat k) G`. -/
 private theorem colimitρ_apply (g : G) (x : (colimit (X ⋙ toAction k G)).V) :
-    colimitρ X g x = ((colimit (X ⋙ toAction k G)).ρ g).hom x :=
+    colimitρ X g x = ((colimit (X ⋙ toAction k G)).ρ g).asHom.hom x :=
   rfl
 
 /-- The representation on the colimit restricts to the representation at each stage. -/

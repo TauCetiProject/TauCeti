@@ -1,0 +1,58 @@
+name: Restore an exact official Lean toolchain
+description: Restore-only consumer of the isolated dependency warmer's release snapshots.
+inputs:
+  project-dir:
+    required: true
+    description: Directory holding an already-attested lean-toolchain.
+  tooling-dir:
+    required: true
+    description: Workflow-pinned checkout containing scripts/toolchain_snapshot.py.
+  cold:
+    default: 'false'
+    description: Skip cache restoration for cold-path verification.
+outputs:
+  path:
+    value: ${{ steps.path.outputs.path }}
+    description: Exact installed toolchain directory on this ephemeral runner.
+  key:
+    value: ${{ steps.path.outputs.key }}
+    description: Exact snapshot key; no prefix or other-toolchain fallback.
+  cache-hit:
+    value: ${{ steps.restore.outputs.cache-hit }}
+    description: Transport hit; validation can still reject the snapshot.
+runs:
+  using: composite
+  steps:
+    - id: path
+      shell: bash
+      env:
+        PROJECT: ${{ inputs.project-dir }}
+        TOOLING: ${{ inputs.tooling-dir }}
+        PIN_HASH: ${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}
+      run: |
+        set -euo pipefail
+        test -n "$PIN_HASH"
+        echo "path=$(python3 "$TOOLING/scripts/toolchain_snapshot.py" path "$PROJECT/lean-toolchain")" >> "$GITHUB_OUTPUT"
+        echo "key=official-lean-v1-${{ runner.os }}-${{ runner.arch }}-$PIN_HASH" >> "$GITHUB_OUTPUT"
+    - id: restore
+      if: inputs.cold != 'true'
+      continue-on-error: true
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.path.outputs.path }}
+        key: ${{ steps.path.outputs.key }}
+    - name: Verify snapshot or install the official release
+      shell: bash
+      env:
+        PROJECT: ${{ inputs.project-dir }}
+        TOOLING: ${{ inputs.tooling-dir }}
+        SNAPSHOT: ${{ steps.path.outputs.path }}
+      run: |
+        set -euo pipefail
+        export PATH="$HOME/.elan/bin:$PATH"
+        if ! python3 "$TOOLING/scripts/toolchain_snapshot.py" verify "$PROJECT/lean-toolchain" --root "$SNAPSHOT"; then
+          echo '::notice::toolchain snapshot absent/invalid; installing from leanprover/lean4'
+          rm -rf -- "$SNAPSHOT"
+          elan toolchain install "$(cat "$PROJECT/lean-toolchain")"
+        fi
+        ELAN_TOOLCHAIN="$(cat "$PROJECT/lean-toolchain")" lean --version

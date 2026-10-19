@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.FunLike.Graded
+public import Mathlib.Algebra.GradedFunLike
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 
 /-!

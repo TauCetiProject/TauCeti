@@ -25,6 +25,8 @@ for any topology on the coefficient ring.
 
 * `isEmbedding_psl2zToPSL2R`: the natural injection from the integral projective special linear
   group to the real one is a topological embedding.
+* `Subgroup.discreteTopology_map_sl2zToPSL2R`: the image in `PSL(2, ℝ)` of any subgroup of
+  `SL(2, ℤ)` is discrete.
 * `Matrix.ProjectiveSpecialLinearGroup.continuous_upperRightHom`: projective translations depend
   continuously on their parameter.
 -/
@@ -78,6 +80,13 @@ instance : DiscreteTopology psl2zToPSL2R.range := by
 
 end TauCeti
 
+/-- The image in `PSL(2, ℝ)` of a subgroup of `SL(2, ℤ)` is discrete, as a subgroup of the
+discrete image of `PSL(2, ℤ)`. -/
+instance Subgroup.discreteTopology_map_sl2zToPSL2R (H : Subgroup SL(2, ℤ)) :
+    DiscreteTopology (H.map sl2zToPSL2R) :=
+  .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range)
+    H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 /-- The translation `upperRightHom x ∈ PSL(2, R)` depends continuously on `x` for any topology
@@ -90,7 +99,8 @@ theorem continuous_upperRightHom {R : Type*} [CommRing R] [TopologicalSpace R] :
     refine continuous_matrix fun i j ↦ ?_
     simp only [SpecialLinearGroup.transvection_coe, Matrix.add_apply]
     fin_cases i <;> fin_cases j <;> simp [continuous_const, continuous_id']
-  exact (continuous_quot_mk.comp (Topology.IsInducing.subtypeVal.continuous_iff.mpr h)).congr
+  exact (continuous_quot_mk.comp
+    (Topology.IsEmbedding.subtypeVal.isInducing.continuous_iff.mpr h)).congr
     fun x ↦ (upperRightHom_apply x).symm
 
 end Matrix.ProjectiveSpecialLinearGroup

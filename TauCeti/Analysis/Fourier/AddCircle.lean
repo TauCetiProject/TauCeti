@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
 
 /-!
@@ -57,12 +58,16 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
+  `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
   of whose Fourier coefficients vanish is the zero function.
 * `AddChar.exists_fourierAddChar_eq`: **every continuous additive character of the circle is a
   Fourier monomial.**
 * `AddChar.norm_apply_eq_one_of_continuous`: consequently a continuous additive character of the
   circle takes values of modulus one.
+* `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
+  essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 
 ## Tags
 
@@ -72,6 +77,7 @@ Fourier, additive circle, character, Pontryagin dual
 public section
 
 open MeasureTheory AddCircle
+open scoped ENNReal
 
 variable {T : ℝ}
 
@@ -101,6 +107,28 @@ theorem fourier_injective (hT : T ≠ 0) : Function.Injective (fourier (T := T))
           rw [← Complex.exp_sub, he]
       _ = 1 := by rw [hx, div_self (Complex.exp_ne_zero _)]
   norm_num at hcontra
+
+/-- The Fourier monomial of frequency `1` in terms of the cosine and sine of `2π t / T`. -/
+theorem fourier_one_coe_apply (t : ℝ) :
+    fourier 1 (t : AddCircle T) =
+      Real.cos (2 * Real.pi * t / T) + Real.sin (2 * Real.pi * t / T) * Complex.I := by
+  have : 2 * Real.pi * Complex.I * ((1 : ℤ) : ℂ) * t / (T : ℂ) =
+      ((2 * Real.pi * t / T : ℝ) : ℂ) * Complex.I := by
+    push_cast
+    ring
+  rw [fourier_coe_apply, this, Complex.exp_mul_I]
+  simp
+
+/-- The Fourier monomial of frequency `-1` in terms of the cosine and sine of `2π t / T`. -/
+theorem fourier_neg_one_coe_apply (t : ℝ) :
+    fourier (-1) (t : AddCircle T) =
+      Real.cos (2 * Real.pi * t / T) - Real.sin (2 * Real.pi * t / T) * Complex.I := by
+  have : 2 * Real.pi * Complex.I * ((-1 : ℤ) : ℂ) * t / (T : ℂ) =
+      ((-(2 * Real.pi * t / T)) : ℝ) * Complex.I := by
+    push_cast
+    ring
+  rw [fourier_coe_apply, this, Complex.exp_mul_I]
+  simp [sub_eq_add_neg]
 
 /-- **The `n`-th Fourier monomial as a bundled additive character of the circle.** It is Mathlib's
 `AddCircle.toCircle_addChar` precomposed with multiplication by `n` and postcomposed with the
@@ -172,6 +200,27 @@ theorem eq_zero_of_forall_fourierCoeff_eq_zero (F : C(AddCircle T, ℂ))
   rfl
 
 end ContinuousMap
+
+namespace TauCeti
+
+/-- Multiplying an `L²` Fourier mode `e_m` by an essentially bounded function `a` shifts the
+Fourier coefficients of `a` by `m`. -/
+theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T))) (m n : ℤ) :
+    fourierCoeff (a • fourierBasis (T := T) m : Lp ℂ 2 (haarAddCircle (T := T))) n =
+      fourierCoeff a (n - m) := by
+  have hae : (a • fourierBasis (T := T) m : Lp ℂ 2 (haarAddCircle (T := T))) =ᵐ[haarAddCircle]
+      fun x ↦ fourier m x * a x := by
+    filter_upwards [Lp.coeFn_lpSMul (r := 2) a (fourierBasis (T := T) m),
+      coeFn_fourierLp (T := T) 2 m] with x hx hm
+    rw [hx, Pi.smul_apply', coe_fourierBasis, hm, smul_eq_mul, mul_comm]
+  rw [fourierCoeff_congr_ae hae, fourierCoeff, fourierCoeff]
+  congr 1
+  funext x
+  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, ← fourier_add]
+  congr 3
+  ring
+
+end TauCeti
 
 namespace AddChar
 
