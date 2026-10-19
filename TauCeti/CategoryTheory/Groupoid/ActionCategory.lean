@@ -212,6 +212,10 @@ def autMulEquivOfMemFixedPoints {x : X} (hx : x ∈ fixedPoints G X) :
 theorem autMulEquivOfMemFixedPoints_apply {x : X} (hx : x ∈ fixedPoints G X)
     (e : Aut (objEquiv G X x)) : autMulEquivOfMemFixedPoints G hx e = e.asIso.hom.hom := (rfl)
 
+@[simp]
+theorem autMulEquivOfMemFixedPoints_symm_apply_hom_hom {x : X} (hx : x ∈ fixedPoints G X)
+    (g : G) : ((autMulEquivOfMemFixedPoints G hx).symm g).asIso.hom.hom = g := (rfl)
+
 /-- If the group is nontrivial, the point quotient `[*/G]` is not equivalent to a thin category;
 in particular it is not equivalent to the point with trivial isotropy. -/
 theorem isEmpty_equivalence_punit [Nontrivial G] {D : Type*} [Category D] [Quiver.IsThin D] :
