@@ -7,18 +7,21 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
 # Scalar curvature of a smooth connection
 
 The scalar curvature of a connection on a Riemannian tangent bundle is the metric trace of its
 Ricci tensor. The definition is basis-free; in an orthonormal basis it is the sum of the diagonal
-Ricci curvatures. Applying it to the Levi-Civita connection gives the scalar curvature of a
-Riemannian manifold.
+Ricci curvatures. In the chart-local frame of a tangent trivialization it is the classical
+contraction `gⁱʲ Rᵢⱼ` of the Ricci coefficients against the inverse Gram matrix. Applying it to
+the Levi-Civita connection gives the scalar curvature of a Riemannian manifold.
 
 As for `CovariantDerivative.ricciTensor`, the connection need not preserve the metric or be torsion
-free. The metric need not vary smoothly, because this file concerns the pointwise contraction.
-Compactness and absence of boundary are not required.
+free. The pointwise formulas do not need the metric to vary smoothly; for a smooth metric, the
+chart formula shows that scalar curvature is a smooth function. Compactness and absence of
+boundary are not required.
 
 For the convention
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)`, the scalar curvature is `n (n - 1) κ` in
@@ -64,6 +67,56 @@ theorem scalarCurvature_eq_sum {i : Type*} [Fintype i] (x : M)
     cov.scalarCurvature x = ∑ j, cov.ricciTensor x (b j) (b j) := by
   rw [scalarCurvature_apply]
   exact TauCeti.bilinFormTrace_eq_sum _ b
+
+open Riemannian.Tensor in
+/-- In the chart-local frame `eᵢ` at `a`, scalar curvature is the contraction `gⁱʲ Ric(eᵢ, eⱼ)`
+of the Ricci coefficients against the inverse Gram matrix of the frame. This holds at every point
+of the chart source; the frame need not be orthonormal. -/
+theorem scalarCurvature_eq_sum_chartInvGramMatrix (a : M) {x : M}
+    (hx : x ∈ (chartAt H a).source) :
+    cov.scalarCurvature x = ∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
+      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) := by
+  have hx' : x ∈ (trivializationAt E (TangentSpace I) a).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hx
+  let b := (trivializationAt E (TangentSpace I) a).basisAt (Module.finBasis ℝ E) hx'
+  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) a i x :=
+    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) a hx i).symm
+  have hgram : Matrix.gram ℝ b = chartGramMatrix (I := I) a x := by
+    ext i j
+    rw [Matrix.gram_apply, chartGramMatrix_apply, hb]
+  have hinv : (Matrix.gram ℝ b)⁻¹ = chartInvGramMatrix (I := I) a x :=
+    Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) a hx)
+  rw [scalarCurvature_apply, TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
+
+open Riemannian.Tensor in
+/-- The scalar curvature of a smooth connection on the tangent bundle is smooth when the metric is
+smooth. Neither metric compatibility nor vanishing torsion is required, so this applies in
+particular to the Levi-Civita connection of a smooth metric. -/
+theorem contMDiff_scalarCurvature
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] :
+    ContMDiff I 𝓘(ℝ) ∞ cov.scalarCurvature := by
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  intro a
+  have hGinv (i j : Fin (Module.finrank ℝ E)) :
+      ContMDiffOn I 𝓘(ℝ) ∞ (fun x ↦ chartInvGramMatrix (I := I) a x i j)
+        (chartAt H a).source := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using
+      contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) a i j
+  have hsum : ContMDiffOn I 𝓘(ℝ) ∞
+      (fun x ↦ ∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
+        cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x))
+      (chartAt H a).source :=
+    contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
+      (hGinv i j).mul (cov.contMDiffOn_ricciTensor_chartLocalFrame a i j)
+  exact (hsum.congr fun x hx ↦ cov.scalarCurvature_eq_sum_chartInvGramMatrix a hx).contMDiffAt
+    ((chartAt H a).open_source.mem_nhds (mem_chart_source H a))
+
+/-- The scalar curvature of a smooth connection on the tangent bundle is continuous when the
+metric is smooth. -/
+theorem continuous_scalarCurvature
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] :
+    Continuous cov.scalarCurvature :=
+  cov.contMDiff_scalarCurvature.continuous
 
 /-- In an orthonormal basis, scalar curvature is the double contraction of the curvature
 tensor. The inner sum contracts the curvature output against its first argument; the outer sum
