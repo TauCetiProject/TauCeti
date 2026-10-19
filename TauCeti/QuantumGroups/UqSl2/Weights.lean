@@ -14,13 +14,16 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 /-!
 # Weights and highest vectors for U_q(sl₂)
 
-The weight spaces of a native `UqSl2 q`-module are the eigenspaces of the action of `K`.
-The generators `E` and `F` shift weights by `q²` and `q⁻²`, respectively. At a generic
-parameter, raising a weight vector in a finite-dimensional module eventually kills it:
-otherwise the finite spectrum of `K` would contain an infinite geometric progression.
-Consequently every nonzero finite-dimensional module has a highest-weight vector, without
-any assumption that `K` is diagonalizable. This is the starting point for classifying
-finite-dimensional simple modules.
+The weight spaces of a native `UqSl2 q`-module are the eigenspaces of the action of `K`, and
+its generalized weight spaces are the maximal generalized eigenspaces of `K`. The generators
+`E` and `F` shift both kinds of weight by `q²` and `q⁻²`, respectively. A finite-dimensional
+module is the direct sum of its generalized weight spaces, whether or not `K` is
+diagonalizable. At a generic parameter, raising or lowering any vector of a finite-dimensional
+module therefore eventually kills it: otherwise the finite spectrum of `K` would contain an
+infinite geometric progression. Consequently every nonzero finite-dimensional module has a
+highest-weight vector. This is the starting point for classifying finite-dimensional simple
+modules, and the generalized weight decomposition is the setting of the finite-dimensional
+complete-reducibility argument.
 
 The action conventions are those of A. Virelizier, *Quantum groups*, Sections 2.3--2.4.
 -/
@@ -113,20 +116,104 @@ theorem f_pow_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q 
   | succ n ih =>
     simpa [pow_succ', mul_smul, mul_assoc] using f_smul_mem_weightSpace ih
 
+/-! ### Generalized weight spaces -/
+
+/-- The generalized `μ`-weight space of a module is the native maximal generalized eigenspace of
+the action of `K`: the vectors killed by some power of `K - μ`. -/
+def genWeightSpace (q : ℂ) (V : Type*) [AddCommGroup V] [Module ℂ V]
+    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (μ : ℂ) : Submodule ℂ V :=
+  (Algebra.lsmul ℂ ℂ V (k q)).maxGenEigenspace μ
+
+/-- The generalized weight space agrees with the native maximal generalized eigenspace of the
+action of `K`. -/
+theorem genWeightSpace_def (μ : ℂ) :
+    genWeightSpace q V μ = (Algebra.lsmul ℂ ℂ V (k q)).maxGenEigenspace μ := (rfl)
+
+/-- Membership in a generalized weight space means that some power of `K - μ` kills the
+vector. -/
+@[simp]
+theorem mem_genWeightSpace_iff {μ : ℂ} {v : V} :
+    v ∈ genWeightSpace q V μ ↔ ∃ n : ℕ, (k q - algebraMap ℂ (UqSl2 q) μ) ^ n • v = 0 := by
+  rw [genWeightSpace_def, Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
+    ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
+  simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
+
+/-- Every weight space lies in the generalized weight space of the same weight. -/
+theorem weightSpace_le_genWeightSpace (μ : ℂ) : weightSpace q V μ ≤ genWeightSpace q V μ :=
+  Module.End.eigenspace_le_maxGenEigenspace
+
+/-- The generalized zero-weight space vanishes because `K` is invertible. -/
+@[simp]
+theorem genWeightSpace_zero : genWeightSpace q V 0 = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr fun v hv => ?_
+  obtain ⟨n, hn⟩ := mem_genWeightSpace_iff.mp hv
+  rw [map_zero, sub_zero, ← kUnit_val, ← Units.val_pow_eq_pow_val] at hn
+  exact ((kUnit q ^ n).isUnit.smul_eq_zero).mp hn
+
+/-- An element `a` that `q`-commutes with `K` in the form `K a = c (a K)` maps the generalized
+`μ`-weight space into the generalized `c μ`-weight space. -/
+theorem smul_mem_genWeightSpace_of_k_mul {a : UqSl2 q} {c μ : ℂ} (ha : k q * a = c • (a * k q))
+    {v : V} (hv : v ∈ genWeightSpace q V μ) : a • v ∈ genWeightSpace q V (c * μ) := by
+  obtain ⟨n, hn⟩ := mem_genWeightSpace_iff.mp hv
+  refine mem_genWeightSpace_iff.mpr ⟨n, ?_⟩
+  -- `(K - c μ) a = a (c (K - μ))`, so the powers of the two factors intertwine `a`.
+  have h : SemiconjBy a (c • (k q - algebraMap ℂ (UqSl2 q) μ))
+      (k q - algebraMap ℂ (UqSl2 q) (c * μ)) := by
+    rw [SemiconjBy, sub_mul, ha, map_mul, mul_assoc, Algebra.commutes μ a, ← Algebra.smul_def,
+      ← smul_sub, mul_smul_comm, mul_sub]
+  rw [← mul_smul, ← (h.pow_right n).eq, smul_pow, mul_smul, smul_assoc, hn, smul_zero, smul_zero]
+
+/-- Raising a generalized weight vector multiplies its generalized weight by `q²`. -/
+theorem e_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSpace q V μ) :
+    e q • v ∈ genWeightSpace q V (q ^ 2 * μ) :=
+  smul_mem_genWeightSpace_of_k_mul k_mul_e hv
+
+/-- Lowering a generalized weight vector multiplies its generalized weight by `q⁻²`. -/
+theorem f_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSpace q V μ) :
+    f q • v ∈ genWeightSpace q V (q⁻¹ ^ 2 * μ) :=
+  smul_mem_genWeightSpace_of_k_mul k_mul_f hv
+
+/-- The generalized weight after `n` raising operations. -/
+theorem e_pow_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSpace q V μ) (n : ℕ) :
+    e q ^ n • v ∈ genWeightSpace q V ((q ^ 2) ^ n * μ) := by
+  induction n with
+  | zero => simpa using hv
+  | succ n ih =>
+    simpa [pow_succ', mul_smul, mul_assoc] using e_smul_mem_genWeightSpace ih
+
+/-- The generalized weight after `n` lowering operations. -/
+theorem f_pow_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSpace q V μ) (n : ℕ) :
+    f q ^ n • v ∈ genWeightSpace q V ((q⁻¹ ^ 2) ^ n * μ) := by
+  induction n with
+  | zero => simpa using hv
+  | succ n ih =>
+    simpa [pow_succ', mul_smul, mul_assoc] using f_smul_mem_genWeightSpace ih
+
+/-- Generalized weight spaces for distinct weights are independent. -/
+theorem iSupIndep_genWeightSpace : iSupIndep (genWeightSpace q V) :=
+  Module.End.independent_maxGenEigenspace _
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℂ V]
 
-/-- At a generic parameter `p`, a sequence of vectors whose `n`-th term has weight
+/-- A finite-dimensional module is the sum of its generalized weight spaces. -/
+theorem iSup_genWeightSpace_eq_top : ⨆ μ, genWeightSpace q V μ = ⊤ :=
+  Module.End.iSup_maxGenEigenspace_eq_top _
+
+/-- At a generic parameter `p`, a sequence of vectors whose `n`-th term has generalized weight
 `(p²)ⁿ μ` eventually vanishes: otherwise the finite spectrum of `K` would contain an infinite
 geometric progression. -/
-theorem exists_eq_zero_of_forall_mem_weightSpace {p : ℂ} (hp : IsGenericQuantumParameter p)
-    {μ : ℂ} {w : ℕ → V} (hw : ∀ n, w n ∈ weightSpace q V ((p ^ 2) ^ n * μ)) :
+theorem exists_eq_zero_of_forall_mem_genWeightSpace {p : ℂ} (hp : IsGenericQuantumParameter p)
+    {μ : ℂ} {w : ℕ → V} (hw : ∀ n, w n ∈ genWeightSpace q V ((p ^ 2) ^ n * μ)) :
     ∃ n : ℕ, w n = 0 := by
   by_contra! h
-  have hmu : μ ≠ 0 := by simpa using weight_ne_zero (hw 0) (h 0)
+  have hmu : μ ≠ 0 := by
+    rintro rfl
+    exact h 0 (by simpa using hw 0)
   let ev : ℕ → (Algebra.lsmul ℂ ℂ V (k q)).Eigenvalues := fun n =>
-    ⟨(p ^ 2) ^ n * μ, Module.End.hasEigenvalue_of_hasEigenvector ⟨hw n, h n⟩⟩
+    ⟨(p ^ 2) ^ n * μ,
+      Module.End.HasUnifEigenvalue.lt zero_lt_one ((Submodule.ne_bot_iff _).mpr ⟨_, hw n, h n⟩)⟩
   apply not_injective_infinite_finite ev
   intro n m hnm
   have hp' : p ^ (2 * n) = p ^ (2 * m) := by
@@ -134,15 +221,30 @@ theorem exists_eq_zero_of_forall_mem_weightSpace {p : ℂ} (hp : IsGenericQuantu
   have := hp.pow_injective hp'
   omega
 
-/-- At a generic parameter, the raising string through any weight vector terminates. -/
-theorem exists_e_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
-    {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) : ∃ n : ℕ, e q ^ n • v = 0 :=
-  exists_eq_zero_of_forall_mem_weightSpace hq (e_pow_smul_mem_weightSpace hv)
+/-- An element that eventually kills every generalized weight vector of a finite-dimensional
+module eventually kills every vector. -/
+private theorem exists_pow_smul_eq_zero_of_genWeightSpace {a : UqSl2 q}
+    (h : ∀ μ, ∀ v ∈ genWeightSpace q V μ, ∃ n : ℕ, a ^ n • v = 0) (v : V) :
+    ∃ n : ℕ, a ^ n • v = 0 := by
+  -- The vectors killed by a power of `a` form the generalized `0`-eigenspace of its action.
+  have hle : ⊤ ≤ (Algebra.lsmul ℂ ℂ V a).maxGenEigenspace 0 := by
+    rw [← iSup_genWeightSpace_eq_top (q := q)]
+    exact iSup_le fun μ v hv => by simpa [← map_pow] using h μ v hv
+  simpa [← map_pow] using hle Submodule.mem_top
 
-/-- At a generic parameter, the lowering string through any weight vector terminates. -/
-theorem exists_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q)
-    {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) : ∃ n : ℕ, f q ^ n • v = 0 :=
-  exists_eq_zero_of_forall_mem_weightSpace hq.inv (f_pow_smul_mem_weightSpace hv)
+/-- At a generic parameter, the raising string through any vector of a finite-dimensional module
+terminates: `E` acts locally nilpotently. -/
+theorem exists_e_pow_smul_eq_zero (hq : IsGenericQuantumParameter q) (v : V) :
+    ∃ n : ℕ, e q ^ n • v = 0 :=
+  exists_pow_smul_eq_zero_of_genWeightSpace (fun _ _ hv =>
+    exists_eq_zero_of_forall_mem_genWeightSpace hq (e_pow_smul_mem_genWeightSpace hv)) v
+
+/-- At a generic parameter, the lowering string through any vector of a finite-dimensional
+module terminates: `F` acts locally nilpotently. -/
+theorem exists_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q) (v : V) :
+    ∃ n : ℕ, f q ^ n • v = 0 :=
+  exists_pow_smul_eq_zero_of_genWeightSpace (fun _ _ hv =>
+    exists_eq_zero_of_forall_mem_genWeightSpace hq.inv (f_pow_smul_mem_genWeightSpace hv)) v
 
 /-- Every nonzero finite-dimensional module at a generic parameter has a highest-weight
 vector. No diagonalizability of `K` is assumed. -/
@@ -151,7 +253,7 @@ theorem exists_highest_weight_vector (hq : IsGenericQuantumParameter q) [Nontriv
   classical
   obtain ⟨μ, hμ⟩ := (Algebra.lsmul ℂ ℂ V (k q)).exists_eigenvalue
   obtain ⟨v, hv, hv0⟩ := hμ.exists_hasEigenvector
-  have ht := exists_e_pow_smul_eq_zero hq hv
+  have ht := exists_e_pow_smul_eq_zero hq v
   let n := Nat.find ht
   have hn : 0 < n := by
     by_contra! hn
