@@ -131,12 +131,15 @@ theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
         (∑ j, (MvPolynomial.X j : MvPolynomial ι T) ⊗ₜ[T] Algebra.TensorProduct.basis T b j) =
       MvPolynomial.map (algebraMap K T) (Algebra.norm (MvPolynomial ι K)
         (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
-  classical
-  rw [Algebra.norm_eq_matrix_det
-    (Algebra.TensorProduct.basis _ (Algebra.TensorProduct.basis T b)),
-    Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis _ b), RingHom.map_det]
-  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
-  simp [Algebra.leftMulMatrix_eq_repr_mul, Finset.sum_mul, Matrix.sum_apply, Matrix.map_apply]
+  let := Module.Free.of_basis b
+  let := Module.Finite.of_basis b
+  -- Reassociate and remove the middle copy of `T`, allowing `B` to be noncommutative.
+  let e := (Algebra.TensorProduct.assoc K T (MvPolynomial ι T) (MvPolynomial ι T) T B).symm.trans
+    (Algebra.TensorProduct.congr (Algebra.TensorProduct.rid T (MvPolynomial ι T)
+      (MvPolynomial ι T)) (.refl : B ≃ₐ[K] B))
+  refine Eq.trans ?_ (Algebra.norm_rTensor (MvPolynomial.mapAlgHom (Algebra.ofId K T)) _)
+  rw [← Algebra.norm_eq_of_algEquiv e]
+  simp [e]
 
 end GenericNorm
 
