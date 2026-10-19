@@ -204,7 +204,8 @@ variable (I) in
 /-- The Mayer–Vietoris short complex `Ω^•(U ⊔ V) ⟶ Ω^•(U) ⊞ Ω^•(V) ⟶ Ω^•(U ⊓ V)` of de Rham
 complexes, with first map the pair of restrictions and second map the difference of the
 restrictions. -/
-abbrev mayerVietorisShortComplex (U V : Opens M) : ShortComplex (CochainComplex (ModuleCat ℝ) ℕ) :=
+@[expose] def mayerVietorisShortComplex (U V : Opens M) :
+    ShortComplex (CochainComplex (ModuleCat ℝ) ℕ) :=
   ShortComplex.mk
     (biprod.lift
       (deRhamComplex.map (I := I) (I' := I)
@@ -226,6 +227,26 @@ abbrev mayerVietorisShortComplex (U V : Opens M) : ShortComplex (CochainComplex 
 theorem mayerVietorisShortComplex_X₁ (U V : Opens M) :
     (mayerVietorisShortComplex I U V).X₁ = deRhamComplex I (U ⊔ V : Opens M) := (rfl)
 
+/-- The first map of the Mayer–Vietoris short complex is the pair of restrictions to `U` and
+to `V`. -/
+theorem mayerVietorisShortComplex_f (U V : Opens M) :
+    (mayerVietorisShortComplex I U V).f =
+      biprod.lift
+        (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _))
+        (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _)) := (rfl)
+
+/-- The second map of the Mayer–Vietoris short complex is the difference of the restrictions to
+`U ⊓ V` from `U` and from `V`. -/
+theorem mayerVietorisShortComplex_g (U V : Opens M) :
+    (mayerVietorisShortComplex I U V).g =
+      biprod.desc
+        (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _))
+        (-deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _)) := (rfl)
+
 /-- The middle term of the Mayer–Vietoris short complex is the biproduct of the de Rham complexes
 of `U` and `V`. -/
 theorem mayerVietorisShortComplex_X₂ (U V : Opens M) :
@@ -243,6 +264,7 @@ theorem mayerVietorisShortComplex_shortExact [FiniteDimensional ℝ E] [IsManifo
     (mayerVietorisShortComplex I U V).ShortExact := by
   -- In each degree, transport the exactness of the restriction maps of smooth forms along the
   -- identification of `(Ω^•(U) ⊞ Ω^•(V))^k` with the product module `Ωᵏ(U) × Ωᵏ(V)`.
+  unfold mayerVietorisShortComplex
   refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun k ↦ ?_
   have hinl : biprod.inl ≫ (ModuleCat.biprodIsoProd (.of ℝ (SmoothForm I U ℝ k))
       (.of ℝ (SmoothForm I V ℝ k))).hom = ModuleCat.ofHom (LinearMap.inl ℝ _ _) := by

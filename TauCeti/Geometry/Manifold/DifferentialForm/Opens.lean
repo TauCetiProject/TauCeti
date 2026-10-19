@@ -167,9 +167,9 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
   refine (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦ ?_
   filter_upwards [hzero x hx] with y hy
   by_cases hyU : (y : M) ∈ U
-  · change RoughForm.extendByZero W _ (Opens.inclusion h ⟨y, hyU⟩) = 0
+  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
     rw [RoughForm.extendByZero_inclusion]
-    exact (congrArg (· • ω ⟨y, hyU⟩) hy).trans (zero_smul ℝ _)
+    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
   · exact RoughForm.extendByZero_apply_of_notMem _ hyU
 
 end TauCeti
