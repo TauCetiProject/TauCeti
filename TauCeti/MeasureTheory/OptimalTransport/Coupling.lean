@@ -394,9 +394,10 @@ protected theorem map₀ (hπ : IsCoupling π μ ν) {f : X → X'} {g : Y → Y
         exact congrArg (Measure.map g) hπ.measurePreserving_snd.map_eq
 
 /-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
-coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
+coupling of `μ, ν` and an s-finite coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and
+`ν ⊗ ν'`. The first plan may be an arbitrary measure. -/
 protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
-    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
     IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
       (μ.prod μ') (ν.prod ν') := by
   have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=
@@ -416,9 +417,10 @@ protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'}
     exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
 
 /-- **Running a coupling alongside an independent sample.** If `π` couples `μ` and `ν`, then
-sampling `(x, y) ∼ π` and an independent `z ∼ η` and applying `f (·, z)` and `g (·, z)` to the two
-coordinates couples the pushforwards of `μ ⊗ η` along `f` and of `ν ⊗ η` along `g`. -/
-protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν) [SFinite π]
+sampling `(x, y) ∼ π` and an independent `z ∼ η` for an s-finite measure `η` and applying
+`f (·, z)` and `g (·, z)` to the two coordinates couples the pushforwards of `μ ⊗ η` along `f`
+and of `ν ⊗ η` along `g`. No s-finiteness assumption on `π` is needed. -/
+protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν)
     (η : Measure H) [SFinite η] {f : X × H → X'} {g : Y × H → Y'} (hf : Measurable f)
     (hg : Measurable g) :
     IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
@@ -429,8 +431,9 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
     infer_instance
   have h := (hπ.prodProdProdComm η.isCoupling_diagonalCoupling).map hf hg
   have hprod : π.prod η.diagonalCoupling =
-      (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
-    ((MeasurePreserving.id π).prod η.measurePreserving_diagonal).map_eq.symm
+      (π.prod η).map (Prod.map id fun z ↦ (z, z)) := by
+    simpa only [Measure.map_id, η.measurePreserving_diagonal.map_eq] using
+      Measure.map_prod_map π η measurable_id η.measurePreserving_diagonal.measurable
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 

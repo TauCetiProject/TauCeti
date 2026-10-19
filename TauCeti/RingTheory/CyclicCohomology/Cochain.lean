@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import Mathlib.Algebra.Module.BigOperators
+import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Algebra.BigOperators.AlternatingSum
 
 /-!
@@ -264,6 +266,19 @@ theorem comp_hochschildFace {B F : Type*} [Mul B] [FunLike F A B] [MulHomClass F
   | cast j =>
     rw [hochschildFace_castSucc, hochschildFace_castSucc, Fin.comp_contractNth _ _ (map_mul f)]
 
+/-- Every Hochschild face fixes a constant tuple whose entry is idempotent. -/
+theorem hochschildFace_const_of_isIdempotentElem {x : A} (hx : IsIdempotentElem x)
+    (i : Fin (n + 2)) : hochschildFace i (fun _ ↦ x) = fun _ ↦ x := by
+  induction i using Fin.lastCases with
+  | last =>
+    rw [hochschildFace_last, hx.eq]
+    funext k
+    cases k using Fin.cases <;> simp
+  | cast j =>
+    rw [hochschildFace_castSucc]
+    funext k
+    simp only [Fin.contractNth, hx.eq, ite_self]
+
 end Mul
 
 /-- The simplicial identity `dᵢ ∘ d_{j+1} = d_j ∘ dᵢ` for `i ≤ j` between Hochschild faces. -/
@@ -419,6 +434,14 @@ theorem cyclicCochains_apply_finRotate_symm (φ : cyclicCochains R A M n)
       (-1 : ℤ) ^ n • (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) a :=
   (mem_cyclicCochains_iff.1 φ.property) a
 
+variable {R A M} in
+/-- On a constant tuple, a cyclic cochain of odd degree takes a value `v` with `v = -v`. -/
+theorem apply_const_eq_neg_of_mem_cyclicCochains
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    (hn : Odd n) (x : A) : φ (fun _ ↦ x) = -φ (fun _ ↦ x) := by
+  have h := hφ fun _ ↦ x
+  simpa only [Function.comp_def, hn.neg_one_pow, neg_one_smul] using h
+
 /-- Every `0`-cochain is cyclic. -/
 @[simp]
 theorem cyclicCochains_zero : cyclicCochains R A M 0 = ⊤ :=
@@ -520,6 +543,17 @@ theorem hochschildCoboundary_zero_eq_zero_iff (φ : MultilinearMap R (fun _ : Fi
     simpa using hxy
   · ext a
     rw [hochschildCoboundary_zero_apply, h, sub_self, zero_apply]
+
+variable {R A M} in
+/-- All faces fix a constant tuple with idempotent entry, so on such a tuple the Hochschild
+coboundary of a degree-`n` cochain vanishes for even `n` and is the cochain itself for odd `n`. -/
+theorem hochschildCoboundary_apply_const_of_isIdempotentElem
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) {e : A} (he : IsIdempotentElem e) :
+    hochschildCoboundary R A M n φ (fun _ ↦ e) = if Even n then 0 else φ (fun _ ↦ e) := by
+  simp only [hochschildCoboundary_apply, hochschildFace_const_of_isIdempotentElem he,
+    ← Finset.sum_smul]
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ (-1 : ℤ) ^ i) (n + 2), neg_one_geom_sum]
+  split_ifs <;> simp_all [Nat.even_add_one]
 
 /-- The Hochschild coboundary preserves cyclic cochains. When the multiplication is associative,
 so that `b ∘ b = 0`, the cyclic cochains therefore form a subcomplex. -/

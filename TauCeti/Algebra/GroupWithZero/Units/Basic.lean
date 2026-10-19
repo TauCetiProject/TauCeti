@@ -114,25 +114,3 @@ theorem isUnit_natCast_of_isUnit_natCast {R S F : Type*} [Semiring R] [Semiring 
   IsUnit.of_map f (n : R) (by rwa [map_natCast])
 
 end TauCeti
-
-namespace Units
-
-/-- A nonnegative power of the product of two units gives consecutive monomial exponents
-after multiplication by the first unit. -/
-theorem val_mul_zpow_natCast_mul {K : Type*} [CommGroupWithZero K] (u v : Kˣ) (n : ℕ) :
-    ((u * v : Kˣ) : K) ^ (n : ℤ) * (u : K) = (u : K) ^ (n + 1) * (v : K) ^ n := by
-  simp only [Units.val_mul, zpow_natCast, mul_pow, pow_succ]
-  ac_rfl
-
-/-- A strictly negative power of the product of two units gives the inverse monomial with
-the consecutive exponents exchanged. -/
-theorem val_mul_zpow_neg_natCast_succ_mul {K : Type*} [CommGroupWithZero K]
-    (u v : Kˣ) (n : ℕ) :
-    ((u * v : Kˣ) : K) ^ (-((n : ℤ) + 1)) * (u : K) =
-      ((v : K) ^ (n + 1) * (u : K) ^ n)⁻¹ := by
-  have h : (u * v) ^ (-((n : ℤ) + 1)) * u = (v ^ (n + 1) * u ^ n)⁻¹ := by
-    simp [zpow_neg, zpow_add, mul_pow, pow_succ, mul_assoc, mul_left_comm, mul_comm]
-  simpa only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_inv_eq_inv_val,
-    Units.val_pow_eq_pow_val] using congrArg (fun w : Kˣ ↦ (w : K)) h
-
-end Units
