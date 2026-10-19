@@ -118,11 +118,10 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {A : Matrix ι ι ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {lam Lam : ℝ} {K : ℝ≥0}
 
-omit [DecidableEq ι] in
 /-- **Discrete integration by parts for a Lipschitz coefficient field.** Testing the difference
 quotient of `u` against `v` is the same, up to sign, as testing `u` against the difference
 quotient of `v` with the opposite step, with an error controlled by the Lipschitz constant `K` of
@@ -181,7 +180,6 @@ theorem abs_energyFormH1_differenceQuotient_add_le
         rw [hτ, norm_smul, norm_neg, Real.norm_eq_abs]
         field_simp
 
-omit [DecidableEq ι] in
 /-- **Discrete integration by parts for the constant-coefficient energy form.** Testing the
 difference quotient of `u` against `v` is the same, up to sign, as testing `u` against the
 difference quotient of `v` with the opposite step:
@@ -211,7 +209,7 @@ solution `u ∈ H¹₀(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `u = 0` on `�
 for every step `t`, the bound being independent of `t`. No regularity of `∂Ω` is assumed. Only
 the values of `a` on `Ω` enter the hypotheses; no conditions are imposed outside the domain. -/
 theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWith_of_mapsTo
-    {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι}
+    [DecidableEq ι] {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι}
     (hw : ∀ t : ℝ, MapsTo (· + t • w) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
@@ -289,7 +287,7 @@ exactly the weak equation tested against every `H¹(ℝⁿ)` function. This is t
 `TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWith_of_mapsTo`.
 -/
 theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
-    (ha : UniformlyEllipticOn Set.univ a lam Lam)
+    [DecidableEq ι] (ha : UniformlyEllipticOn Set.univ a lam Lam)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet a 0 0 f u)
@@ -300,7 +298,6 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
     (fun s => Set.mapsTo_univ (· + s • w) _)
     hK.lipschitzOnWith hu t
 
-omit [DecidableEq ι] in
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** For a
 constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`,
 
@@ -333,7 +330,7 @@ Let `a` be uniformly elliptic on `Ω` with lower constant `λ`, and let its bili
 
 The estimate is global on `Ω`, up to the boundary, and no regularity of `∂Ω` is assumed. -/
 theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzOnWith_of_mapsTo
-    {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι}
+    [DecidableEq ι] {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι}
     (hw : ∀ t : ℝ, MapsTo (· + t • w) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
@@ -402,7 +399,7 @@ This is the `H²` estimate in quantitative, direction-by-direction form, and the
 `UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzOnWith_of_mapsTo`.
 -/
 theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith
-    (ha : UniformlyEllipticOn Set.univ a lam Lam)
+    [DecidableEq ι] (ha : UniformlyEllipticOn Set.univ a lam Lam)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet a 0 0 f u)
@@ -415,7 +412,6 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
     (fun s => Set.mapsTo_univ (· + s • w) _)
     hK.lipschitzOnWith hu y
 
-omit [DecidableEq ι] in
 /-- **The second-order weak directional derivatives of a whole-space weak solution.** For a
 constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`, the
 derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every direction `w`, with
@@ -447,7 +443,7 @@ first-order part of an element of `W^{2,2}(ℝⁿ)`: its weak gradient is again 
 differentiable, with `L²` derivative. The quantitative form of the statement is
 `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith`. -/
 theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith
-    (ha : UniformlyEllipticOn Set.univ a lam Lam)
+    [DecidableEq ι] (ha : UniformlyEllipticOn Set.univ a lam Lam)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet a 0 0 f u) :
@@ -458,7 +454,6 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith
         (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
       exact ⟨G, hG⟩
 
-omit [DecidableEq ι] in
 /-- **A whole-space weak solution lies in `H²(ℝⁿ)`.** For a constant, uniformly elliptic `A`, a
 weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(ℝⁿ)` is the first-order part of an
 element of `W^{2,2}(ℝⁿ)`. This is the constant-coefficient case of

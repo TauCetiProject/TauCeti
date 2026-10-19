@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.CentralPoint
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Basic
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
@@ -91,6 +91,8 @@ Chevalley--Demazure carrier presented as a Hopf-ideal quotient. See J. S. Milne,
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory TensorProduct
 

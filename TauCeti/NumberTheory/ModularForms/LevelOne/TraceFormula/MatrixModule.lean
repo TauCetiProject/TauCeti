@@ -39,6 +39,8 @@ Elements of the group ring `k[ℳₙ]` are given by weights on integral matrices
 `TauCeti.TraceFormulaMatrixModule.ofWeight n w B hw`, over any semiring `k`, gives the class of `A`
 the coefficient `w A + w (-A)` (`TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`), a bound `B`
 on the entries of the determinant-`n` matrices of nonzero weight making the support finite.
+Its right coset sums are the sums of `w` over the matrices in the coset
+(`TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`).
 
 ## References
 
@@ -591,7 +593,7 @@ theorem TraceFormulaMatrixModule.toConjAct_smul (g : PSL(2, ℤ)) (x : TraceForm
 
 namespace TraceFormulaMatrixModule
 
-open MonoidAlgebra
+open MonoidAlgebra MulAction
 
 variable {k : Type*} [Semiring k] {n : ℤ}
 
@@ -620,6 +622,53 @@ theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
     (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
   simp [ofWeight, Finsupp.ofSupportFinite_coe]
 
+/-- **The right coset sums of an element given by a weight**: for `n ≠ 0`, the sum of the
+coefficients of `ofWeight n w B hw` over the right coset `x Γ` is the sum of `w` over the
+determinant-`n` matrices whose class lies in `x Γ`. Each class `±A` contributes `w A + w (-A)`, so
+both representatives of a class are counted. -/
+theorem mapDomain_orbitRel_mk_coeff_ofWeight (hn : n ≠ 0)
+    (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (x : TraceFormulaMatrixModule n) :
+    (ofWeight n w B hw).coeff.mapDomain
+        (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n))) ⟦x⟧ =
+      ∑ᶠ A ∈ mk ⁻¹' orbit PSL(2, ℤ)ᵐᵒᵖ x, w A.1 := by
+  classical
+  set F := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n B).toFinset
+  have hF (A : TraceFormulaMatrix n) (h : w A.1 ≠ 0) : A ∈ F := by
+    simpa [F] using hw A h
+  -- the element is the sum of the matrices of `F`, each with its weight
+  have hcoeff : (ofWeight n w B hw).coeff = ∑ A ∈ F, Finsupp.single (mk A) (w A.1) := by
+    ext y
+    induction y using TraceFormulaMatrixModule.induction with | h C => ?_
+    have hC : C ≠ -C := fun h ↦ hn <| by
+      have h₀ : C.1 = 0 := by
+        have h₁ : C.1 = -C.1 := congrArg Subtype.val h
+        rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
+        exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
+      rw [← C.2, h₀]
+      simp
+    rw [coeff_ofWeight_mk, Finsupp.finsetSum_apply, Finset.sum_eq_add C (-C) hC]
+    · simp
+    · intro A _ hA
+      have : ¬(A = C ∨ A = -C) := by tauto
+      simpa [Finsupp.single_apply, mk_eq_iff] using fun h ↦ (this h).elim
+    · intro hCF
+      by_contra h
+      exact hCF (hF C (by simpa using h))
+    · intro hCF
+      by_contra h
+      exact hCF (hF (-C) (by simpa using h))
+  have hq (y : TraceFormulaMatrixModule n) :
+      (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n)) y = ⟦x⟧) ↔
+        y ∈ orbit PSL(2, ℤ)ᵐᵒᵖ x :=
+    Quotient.eq.trans orbitRel_apply
+  rw [hcoeff, Finsupp.mapDomain_finsetSum]
+  simp only [Finsupp.mapDomain_single, Finsupp.finsetSum_apply, Finsupp.single_apply, hq]
+  rw [← Finset.sum_filter]
+  refine (finsum_mem_eq_sum_of_subset _ (fun A hA ↦ ?_) fun A hA ↦ ?_).symm
+  · exact Finset.mem_filter.mpr ⟨hF A hA.2, hA.1⟩
+  · exact (Finset.mem_filter.mp hA).2
 
 end TraceFormulaMatrixModule
 

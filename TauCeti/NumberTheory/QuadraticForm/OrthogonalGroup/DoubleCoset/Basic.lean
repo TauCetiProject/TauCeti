@@ -112,7 +112,10 @@ def finiteAdelicOrthogonalDoubleCosetConj (g : U.finiteAdelicOrthogonal) :
   DoubleCoset.quotientConjRight U.finiteAdelicOrthogonalDiagonal.range
     (integralSubgroup U.orthogonal) g
 
-/-- Orthogonal right translation sends the class of `x` to the class of `x * g`. -/
+/-- Orthogonal right translation sends the class of `x` to the class of `x * g`.
+
+Not a `simp` lemma: the codomain contains a coerced mapped subgroup, which `simp` rewrites to a
+set image in the dependent type. -/
 theorem finiteAdelicOrthogonalDoubleCosetConj_apply_mk (g x : U.finiteAdelicOrthogonal) :
     U.finiteAdelicOrthogonalDoubleCosetConj g
         (DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
@@ -124,7 +127,10 @@ theorem finiteAdelicOrthogonalDoubleCosetConj_apply_mk (g x : U.finiteAdelicOrth
   DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicOrthogonalDiagonal.range
     (integralSubgroup U.orthogonal) g x
 
-/-- The inverse orthogonal right translation sends the class of `y` to the class of `y * g⁻¹`. -/
+/-- The inverse orthogonal right translation sends the class of `y` to the class of `y * g⁻¹`.
+
+Not a `simp` lemma, for the same dependent-type reason as
+`finiteAdelicOrthogonalDoubleCosetConj_apply_mk`. -/
 theorem finiteAdelicOrthogonalDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicOrthogonal) :
     (U.finiteAdelicOrthogonalDoubleCosetConj g).symm
         (DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
@@ -169,7 +175,10 @@ def finiteAdelicSpinDoubleCosetConj (g : U.finiteAdelicSpin) :
           Set U.finiteAdelicSpin) :=
   DoubleCoset.quotientConjRight U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) g
 
-/-- Spin right translation sends the class of `x` to the class of `x * g`. -/
+/-- Spin right translation sends the class of `x` to the class of `x * g`.
+
+Not a `simp` lemma: the codomain contains a coerced mapped subgroup, which `simp` rewrites to a
+set image in the dependent type. -/
 theorem finiteAdelicSpinDoubleCosetConj_apply_mk (g x : U.finiteAdelicSpin) :
     U.finiteAdelicSpinDoubleCosetConj g
         (DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) x) =
@@ -179,7 +188,10 @@ theorem finiteAdelicSpinDoubleCosetConj_apply_mk (g x : U.finiteAdelicSpin) :
   DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicSpinDiagonal.range
     (integralSubgroup U.spin) g x
 
-/-- The inverse Spin right translation sends the class of `y` to the class of `y * g⁻¹`. -/
+/-- The inverse Spin right translation sends the class of `y` to the class of `y * g⁻¹`.
+
+Not a `simp` lemma, for the same dependent-type reason as
+`finiteAdelicSpinDoubleCosetConj_apply_mk`. -/
 theorem finiteAdelicSpinDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicSpin) :
     (U.finiteAdelicSpinDoubleCosetConj g).symm
         (DoubleCoset.mk U.finiteAdelicSpinDiagonal.range
@@ -237,7 +249,10 @@ def finiteAdelicSpecialOrthogonalDoubleCosetConj
   DoubleCoset.quotientConjRight U.finiteAdelicSpecialOrthogonalDiagonal.range
     (integralSubgroup U.specialOrthogonal) g
 
-/-- Special-orthogonal right translation sends the class of `x` to the class of `x * g`. -/
+/-- Special-orthogonal right translation sends the class of `x` to the class of `x * g`.
+
+Not a `simp` lemma: the codomain contains a coerced mapped subgroup, which `simp` rewrites to a
+set image in the dependent type. -/
 theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_apply_mk
     (g x : U.finiteAdelicSpecialOrthogonal) :
     U.finiteAdelicSpecialOrthogonalDoubleCosetConj g
@@ -251,7 +266,10 @@ theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_apply_mk
     (integralSubgroup U.specialOrthogonal) g x
 
 /-- The inverse special-orthogonal right translation sends the class of `y` to the class of
-`y * g⁻¹`. -/
+`y * g⁻¹`.
+
+Not a `simp` lemma, for the same dependent-type reason as
+`finiteAdelicSpecialOrthogonalDoubleCosetConj_apply_mk`. -/
 theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_symm_apply_mk
     (g y : U.finiteAdelicSpecialOrthogonal) :
     (U.finiteAdelicSpecialOrthogonalDoubleCosetConj g).symm
@@ -281,8 +299,8 @@ def finiteAdelicOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
       (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
         U.finiteAdelicOrthogonal →* U'.finiteAdelicOrthogonal) =
       U'.finiteAdelicOrthogonalDiagonal.range) :
-    U.finiteAdelicOrthogonalDoubleCoset ≃ U'.finiteAdelicOrthogonalDoubleCoset := by
-  apply DoubleCoset.quotientCongr U.finiteAdelicOrthogonalDiagonal.range
+    U.finiteAdelicOrthogonalDoubleCoset ≃ U'.finiteAdelicOrthogonalDoubleCoset :=
+  DoubleCoset.quotientCongr U.finiteAdelicOrthogonalDiagonal.range
     (integralSubgroup U.orthogonal)
     (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ)
@@ -342,8 +360,8 @@ def finiteAdelicSpinDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
     (hdiag : U.finiteAdelicSpinDiagonal.range.map
       (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
         U.finiteAdelicSpin →* U'.finiteAdelicSpin) = U'.finiteAdelicSpinDiagonal.range) :
-    U.finiteAdelicSpinDoubleCoset ≃ U'.finiteAdelicSpinDoubleCoset := by
-  apply DoubleCoset.quotientCongr U.finiteAdelicSpinDiagonal.range
+    U.finiteAdelicSpinDoubleCoset ≃ U'.finiteAdelicSpinDoubleCoset :=
+  DoubleCoset.quotientCongr U.finiteAdelicSpinDiagonal.range
     (integralSubgroup U.spin)
     (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ)
@@ -402,8 +420,8 @@ def finiteAdelicSpecialOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q
         U.finiteAdelicSpecialOrthogonal →* U'.finiteAdelicSpecialOrthogonal) =
       U'.finiteAdelicSpecialOrthogonalDiagonal.range) :
     U.finiteAdelicSpecialOrthogonalDoubleCoset ≃
-      U'.finiteAdelicSpecialOrthogonalDoubleCoset := by
-  apply DoubleCoset.quotientCongr U.finiteAdelicSpecialOrthogonalDiagonal.range
+      U'.finiteAdelicSpecialOrthogonalDoubleCoset :=
+  DoubleCoset.quotientCongr U.finiteAdelicSpecialOrthogonalDiagonal.range
     (integralSubgroup U.specialOrthogonal)
     (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ))
     hdiag (map_integralSubgroup_restrictedProductCongrRight U.specialOrthogonal

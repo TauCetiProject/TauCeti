@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
 public import TauCeti.Geometry.Euclidean.Inversion
@@ -416,7 +417,7 @@ theorem isOrientedAtlas_closedBall {k : ℕ∞ω} [NeZero k]
   · intro x
     by_cases hx : φ₀ x = -e₀
     · obtain ⟨r, hr, hr'⟩ := exists_det_eq_one_apply_eq_neg
-        (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n) ▸ hn) (v := -e₀) (by simp)
+        (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n) ▸ hn) (-e₀)
       refine ⟨closedBallChart (φ₀.trans r), ⟨φ₀.trans r, ?_, rfl⟩, ?_⟩
       · have : φ₀.symm.trans (φ₀.trans r) = r := by ext; simp
         simp only [S, mem_ofPred_eq, this, hr, zero_lt_one]
@@ -597,5 +598,17 @@ theorem _root_.LinearIsometryEquiv.unitClosedBallDiffeomorph_symm (e : F ≃ₗ�
   (rfl)
 
 end LinearIsometry
+
+/-- The closed complex unit disk uses its existing half-space atlas without a local dimension
+instance at each consumer. -/
+instance instChartedSpaceClosedBallComplex :
+    ChartedSpace (EuclideanHalfSpace 2) (closedBall (0 : ℂ) 1) :=
+  have : Fact (Module.finrank ℝ ℂ = 2) := ⟨Complex.finrank_real_complex⟩
+  instChartedSpaceClosedBall
+
+/-- The existing complex unit disk atlas is analytic. -/
+instance instIsManifoldClosedBallComplex : IsManifold (𝓡∂ 2) ω (closedBall (0 : ℂ) 1) :=
+  have : Fact (Module.finrank ℝ ℂ = 2) := ⟨Complex.finrank_real_complex⟩
+  instIsManifoldClosedBall
 
 end TauCeti

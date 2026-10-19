@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # Corner words for the type-`D` preprojective algebra

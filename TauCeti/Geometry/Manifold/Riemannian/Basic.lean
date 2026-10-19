@@ -24,6 +24,8 @@ to a fixed vector, depends continuously on the base point.
   induces the ambient Riemannian distance.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
+* `Bundle.ContMDiffRiemannianMetric.inner_riemannianBundle`: conversely, installing a metric as the
+  `RiemannianBundle` instance makes its inner product the fiber inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
@@ -79,6 +81,13 @@ theorem ofIsContMDiffRiemannianBundle_inner
       RiemannianBundle.g.inner x v w := by
   rfl
 
+/-- Once a `C^n` Riemannian metric `g` is installed as the `RiemannianBundle` instance, the inner
+product of each fiber is `g.inner`. -/
+theorem inner_riemannianBundle (g : ContMDiffRiemannianMetric IB n F V) (x : B) (v w : V x) :
+    letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+    Inner.inner ℝ v w = g.inner x v w := by
+  rfl
+
 end Bundle.ContMDiffRiemannianMetric
 
 namespace Bundle.IsContinuousRiemannianBundle
@@ -125,7 +134,7 @@ end IsContMDiffRiemannianBundle
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
@@ -136,7 +145,6 @@ def InducesRiemannianDistance
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   IsRiemannianManifold I M
 
-omit [FiniteDimensional ℝ E] in
 /-- The metric's induced-distance condition yields the corresponding Riemannian-manifold
 structure after installing its metric bundle. -/
 theorem InducesRiemannianDistance.toIsRiemannianManifold
@@ -155,13 +163,14 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Let `f` be a `C^n` map, `1 ≤ n`, from an open subset `U` of a real normed space to a manifold
 whose tangent spaces carry a continuous Riemannian metric. For each fixed vector `ξ`, the
 Riemannian norm of `df_z ξ` depends continuously on `z ∈ U`. -/
-theorem ContMDiffOn.continuousOn_norm_mfderiv {f : F → M} {U : Set F} {n : ℕ∞ω}
+theorem ContMDiffOn.continuousOn_norm_mfderiv
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    {f : F → M} {U : Set F} {n : ℕ∞ω}
     (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hn : 1 ≤ n) (hU : IsOpen U) (ξ : F) :
     ContinuousOn (fun z ↦ ‖mfderiv 𝓘(ℝ, F) I f z ξ‖) U :=
   -- the lifted directional derivative `z ↦ (f z, df_z ξ)` is continuous into `TM`, and the
@@ -169,7 +178,6 @@ theorem ContMDiffOn.continuousOn_norm_mfderiv {f : F → M} {U : Set F} {n : ℕ
   (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
     (hf.contMDiffOn_totalSpaceMk_mfderiv_apply (m := 0) (by simpa using hn) hU ξ).continuousOn
 
-omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- Let `f` be a `C^n` map from an open subset `U` of a real normed space to a manifold whose
 tangent spaces carry a `C^m` Riemannian metric, with `m + 1 ≤ n`. For fixed vectors `ξ` and `η`,
 the Riemannian inner product `⟪df_z ξ, df_z η⟫` is a `C^m` function of `z ∈ U`. -/

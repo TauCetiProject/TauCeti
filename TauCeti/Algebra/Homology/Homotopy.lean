@@ -37,6 +37,10 @@ complexes from its components `h n : P.X n ⟶ Q.X (n + 1)`, given all at once t
 homotopy identities in degree zero and in positive degrees.  It is the non-inductive counterpart of
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
+
+`Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
+homotopic maps as a factorization through a term of the target complex. In particular, these
+maps agree after passing to a stable category that kills that term.
 -/
 
 @[expose] public section
@@ -48,6 +52,19 @@ open CategoryTheory Limits
 universe v u
 
 namespace Homotopy
+
+/-- On cycles, the difference of homotopic maps factors through the preceding target term.
+This identity does not require exactness of either complex. -/
+theorem cyclesMap_sub_eq {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {K L : HomologicalComplex C c} {f g : K ⟶ L}
+    (h : Homotopy f g) (i : ι) [K.HasHomology i] [L.HasHomology i] :
+    HomologicalComplex.cyclesMap f i - HomologicalComplex.cyclesMap g i =
+      K.iCycles i ≫ h.hom i (c.prev i) ≫ L.toCycles (c.prev i) i := by
+  apply (cancel_mono (L.iCycles i)).mp
+  simp only [Preadditive.sub_comp, HomologicalComplex.cyclesMap_i, Category.assoc,
+    HomologicalComplex.toCycles_i]
+  rw [h.comm i]
+  simp [dNext, prevD, Preadditive.comp_add, ← Category.assoc]
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}

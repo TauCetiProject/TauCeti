@@ -312,6 +312,13 @@ theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V)
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
   (rfl)
 
+/-- The inverse identification of `G ⧸ V` with the Galois group of `V ◁ ⊤` sends the class of `u`
+to the class of `u`. -/
+@[simp]
+theorem galOfOpenNormalEquiv_symm_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V).ground) :
+    (galOfOpenNormalEquiv V).symm (QuotientGroup.mk (u : G)) = QuotientGroup.mk u :=
+  (MulEquiv.symm_apply_eq _).2 (galOfOpenNormalEquiv_mk V u).symm
+
 /-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
 whole group. -/
 def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :

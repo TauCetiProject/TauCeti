@@ -9,6 +9,8 @@ public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Residu
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Residual.SameSide
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Sum
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Residual.Assembly
+import TauCeti.KnotTheory.Grid.Commutation.Overlap.Partners
+import TauCeti.Algebra.CharP.Two
 
 /-!
 # The grid commutation map is a chain map
@@ -106,15 +108,21 @@ theorem commutationMap_comp_unblockedDifferential :
     (G.commutationMap R C).comp (G.unblockedDifferential R) =
       ((G.swapColumns C.column (finRotate n C.column)).unblockedDifferential R).comp
         (G.commutationMap R C) := by
-  -- In characteristic two every element is its own additive inverse, so addition cancels.
-  have : IsLeftCancelAdd R := ⟨fun a b c h => (CharTwo.add_cancel_left a b).symm.trans <|
-    (congrArg (a + ·) h).trans (CharTwo.add_cancel_left a c)⟩
-  have := AddCommMagma.IsLeftCancelAdd.toIsCancelAdd R
-  refine (G.commutationMap_comp_unblockedDifferential_eq_iff_initialPentagon_overlap C R).2
+  classical
+  refine (G.commutationMap_comp_unblockedDifferential_eq_iff_sdiff_crossOverlapPartners C R).2
     fun x z hzx => ?_
-  rw [G.sum_rectangleInitialPentagonWeight_overlap_eq_sum_partners C R hzx,
-    G.sum_initialPentagonRectangleWeight_overlap_eq_sum_partners C R hzx]
-  -- Both sides are the four initial-side recut-partner sums and the two turn-cut sums.
-  ac_rfl
+  have hterminal := G.sum_pentagonRectangleWeight_overlap_eq_sum_partners C R hzx
+  rw [← G.sum_crossOverlapPartners C (G.pentagonRectangleWeight C R) hzx,
+    ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C hzx)
+      (f := G.pentagonRectangleWeight C R)] at hterminal
+  have hinitial := G.sum_initialPentagonRectangleWeight_overlap_eq_sum_partners C R hzx
+  rw [← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R) hzx,
+    ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C hzx)
+      (f := G.initialPentagonRectangleWeight C R)] at hinitial
+  -- Remove each disjoint recut-partner union once, leaving exactly the turn cuts.
+  have := isCancelAdd_of_charTwo R
+  exact congrArg₂ (· + ·)
+    (add_right_cancel (hterminal.trans (add_comm _ _)))
+    (add_right_cancel (hinitial.trans (add_comm _ _)))
 
 end TauCeti.GridDiagram

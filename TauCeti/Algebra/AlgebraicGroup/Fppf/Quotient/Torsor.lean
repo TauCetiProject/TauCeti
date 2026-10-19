@@ -52,6 +52,8 @@ No representability of `G / V(I)` is asserted.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory ConcreteCategory Opposite
 open CategoryTheory.Limits
 open CategoryTheory.MonoidalCategory

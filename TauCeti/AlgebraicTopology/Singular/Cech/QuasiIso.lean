@@ -54,8 +54,23 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
 section Preadditive
 
-variable {C : Type v} [Category C] [Preadditive C] [HasZeroObject C] [HasCoproducts.{u} C]
-  [HasCoproducts.{0} C] (R : C)
+variable {C : Type v} [Category C] [Preadditive C] [HasZeroObject C] [HasCoproducts.{u} C] (R : C)
+
+/-- The column of the augmentation onto the small chains, followed by their inclusion, is the
+column of the augmentation onto all singular chains. -/
+private lemma openCoverSmallSingularAugmentation_f_zero_comp :
+    ((openCoverSmallSingularAugmentation U R).f 0 ≫
+        (HomologicalComplex.singleObjXSelf _ 0 _).hom) ≫
+      SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R =
+    (openCoverSingularAugmentation U R).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom := by
+  simp only [← openCoverSmallSingularAugmentation_comp_single₀_map, HomologicalComplex.comp_f,
+    openCoverSmallSingularAugmentation_f_zero, ChainComplex.single₀_map_f_zero,
+    ChainComplex.single₀ObjXSelf, Iso.refl_hom]
+  -- Both identities are on the singular chains, small for `U` on the left and all of them on the
+  -- right; they are not identified syntactically with the targets of the adjacent maps.
+  exact (congrArg (· ≫ _) (Category.comp_id _)).trans (Category.comp_id _).symm
+
+variable [HasCoproducts.{0} C]
 
 /-- The augmentation of the total Čech--singular complex of a family of open sets onto the
 singular chains of the ambient space. -/
@@ -89,21 +104,6 @@ theorem ιTotal_openCoverSingularTotalAugmentation_f_succ (p q n : ℕ)
     (openCoverSingularBicomplex U R).ιTotal (ComplexShape.down ℕ) (p + 1) q n h ≫
         (openCoverSingularTotalAugmentation U R).f n = 0 :=
   HomologicalComplex₂.ιTotal_totalAugmentation_f_succ _ _ _ p q n h
-
-omit [HasCoproducts.{0} C] in
-/-- The column of the augmentation onto the small chains, followed by their inclusion, is the
-column of the augmentation onto all singular chains. -/
-private lemma openCoverSmallSingularAugmentation_f_zero_comp :
-    ((openCoverSmallSingularAugmentation U R).f 0 ≫
-        (HomologicalComplex.singleObjXSelf _ 0 _).hom) ≫
-      SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R =
-    (openCoverSingularAugmentation U R).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom := by
-  simp only [← openCoverSmallSingularAugmentation_comp_single₀_map, HomologicalComplex.comp_f,
-    openCoverSmallSingularAugmentation_f_zero, ChainComplex.single₀_map_f_zero,
-    ChainComplex.single₀ObjXSelf, Iso.refl_hom]
-  -- Both identities are on the singular chains, small for `U` on the left and all of them on the
-  -- right; they are not identified syntactically with the targets of the adjacent maps.
-  exact (congrArg (· ≫ _) (Category.comp_id _)).trans (Category.comp_id _).symm
 
 end Preadditive
 

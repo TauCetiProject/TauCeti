@@ -46,7 +46,7 @@ closed-subgroup inclusion assumes the source Hopf algebra `H` is commutative.
 
 This is the kernels part of the dictionary between Hopf ideals and closed subgroup schemes. It
 uses the first isomorphism theorem `TauCeti.HopfIdeal.kerLiftBialgEquiv` and the
-contravariant points functoriality `TauCeti.AlgHom.mapDomainMulEquiv`.
+contravariant points functoriality `BialgEquiv.mapDomainMulEquiv`.
 -/
 
 public section
@@ -74,7 +74,7 @@ Contravariantly, this is induced by the bialgebra equivalence
 noncomputable def quotientKerPointsMulEquiv (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R) :
     WithConv (H ⧸ (kerOfSurjective f hf).toIdeal →ₐ[R] A) ≃* WithConv (K →ₐ[R] A) :=
-  (AlgHom.mapDomainMulEquiv (A := A) (kerLiftBialgEquiv f hf)).symm
+  (BialgEquiv.mapDomainMulEquiv (A := A) (kerLiftBialgEquiv f hf)).symm
 
 /-- The quotient-kernel point equivalence acts by pre-composition with the inverse
 bialgebra equivalence `K ≃ₐc[R] H ⧸ kerOfSurjective f`. -/
@@ -82,10 +82,10 @@ theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (H ⧸ (kerOfSurjective f hf).toIdeal →ₐ[R] A)) :
     quotientKerPointsMulEquiv f hf A g =
-      AlgHom.mapDomain (A := A)
+      BialgHom.mapDomain (A := A)
         ((kerLiftBialgEquiv f hf).symm :
           K →ₐc[R] H ⧸ (kerOfSurjective f hf).toIdeal) g := by
-  rw [quotientKerPointsMulEquiv, AlgHom.mapDomainMulEquiv_symm_apply]
+  rw [quotientKerPointsMulEquiv, BialgEquiv.mapDomainMulEquiv_symm_apply]
 
 /-- The inverse quotient-kernel point equivalence acts by pre-composition with the
 bialgebra equivalence `H ⧸ kerOfSurjective f ≃ₐc[R] K`. -/
@@ -93,9 +93,9 @@ theorem quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (K →ₐ[R] A)) :
     (quotientKerPointsMulEquiv f hf A).symm g =
-      AlgHom.mapDomain (A := A)
+      BialgHom.mapDomain (A := A)
         (kerLiftBialgEquiv f hf : H ⧸ (kerOfSurjective f hf).toIdeal →ₐc[R] K) g := by
-  rw [quotientKerPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply]
+  rw [quotientKerPointsMulEquiv, MulEquiv.symm_symm, BialgEquiv.mapDomainMulEquiv_apply]
 
 /-- The quotient-kernel point equivalence is natural in the value algebra. -/
 theorem quotientKerPointsMulEquiv_mapValue {B : Type*} [CommRing B] [Algebra R B]
@@ -106,7 +106,7 @@ theorem quotientKerPointsMulEquiv_mapValue {B : Type*} [CommRing B] [Algebra R B
       AlgHom.mapValue (H := K) χ (quotientKerPointsMulEquiv f hf A g) := by
   rw [quotientKerPointsMulEquiv_apply, quotientKerPointsMulEquiv_apply]
   exact DFunLike.congr_fun
-    (AlgHom.mapValue_mapDomain
+    (BialgHom.mapValue_mapDomain
       ((kerLiftBialgEquiv f hf).symm :
         K →ₐc[R] H ⧸ (kerOfSurjective f hf).toIdeal) χ) g
 
@@ -120,7 +120,7 @@ theorem mapValue_quotientKerPointsMulEquiv_symm_apply {B : Type*} [CommRing B] [
         (AlgHom.mapValue (H := K) χ g) := by
   rw [quotientKerPointsMulEquiv_symm_apply, quotientKerPointsMulEquiv_symm_apply]
   exact (DFunLike.congr_fun
-    (AlgHom.mapValue_mapDomain
+    (BialgHom.mapValue_mapDomain
       (kerLiftBialgEquiv f hf : H ⧸ (kerOfSurjective f hf).toIdeal →ₐc[R] K) χ) g).symm
 
 end RingSource
@@ -137,12 +137,12 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R]
     CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
         (kerOfSurjective f hf) A
         ((quotientKerPointsMulEquiv f hf A).symm g) =
-      AlgHom.mapDomain f g := by
+      BialgHom.mapDomain f g := by
   ext h
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply, quotientKerPointsMulEquiv_symm_apply,
-    AlgHom.mapDomain_apply_apply, kerLiftBialgEquiv_toBialgHom, Ideal.Quotient.mkₐ_eq_mk,
+    BialgHom.mapDomain_apply_apply, kerLiftBialgEquiv_toBialgHom, Ideal.Quotient.mkₐ_eq_mk,
     kerLiftBialgHom_mk]
-  rw [AlgHom.mapDomain_apply_apply]
+  rw [BialgHom.mapDomain_apply_apply]
 
 /-- Pointwise form of `quotientPointsHom_quotientKerPointsMulEquiv_symm_apply`. -/
 theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply_apply
@@ -151,7 +151,7 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply_apply
     (CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
         (kerOfSurjective f hf) A
         ((quotientKerPointsMulEquiv f hf A).symm g)).ofConv h = g.ofConv (f h) := by
-  rw [quotientPointsHom_quotientKerPointsMulEquiv_symm_apply, AlgHom.mapDomain_apply_apply]
+  rw [quotientPointsHom_quotientKerPointsMulEquiv_symm_apply, BialgHom.mapDomain_apply_apply]
 
 /-- For an arbitrary point of `H ⧸ kerOfSurjective f`, the quotient-points inclusion agrees
 with first identifying it as a `K`-point and then pre-composing along `f`. -/
@@ -160,7 +160,7 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
     (g : HopfAlgebra.points (R := R) (H := H ⧸ (kerOfSurjective f hf).toIdeal) A) :
     CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
         (kerOfSurjective f hf) A g =
-      AlgHom.mapDomain f (quotientKerPointsMulEquiv f hf A g) := by
+      BialgHom.mapDomain f (quotientKerPointsMulEquiv f hf A g) := by
   convert quotientPointsHom_quotientKerPointsMulEquiv_symm_apply f hf A
     (quotientKerPointsMulEquiv f hf A g)
   exact (MulEquiv.symm_apply_apply (quotientKerPointsMulEquiv f hf A) g).symm
@@ -172,7 +172,7 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_apply_apply (f : H →ₐc[R
     (CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
         (kerOfSurjective f hf) A g).ofConv h =
       (quotientKerPointsMulEquiv f hf A g).ofConv (f h) := by
-  rw [quotientPointsHom_quotientKerPointsMulEquiv_apply, AlgHom.mapDomain_apply_apply]
+  rw [quotientPointsHom_quotientKerPointsMulEquiv_apply, BialgHom.mapDomain_apply_apply]
 
 /-- The closed subgroup cut out by the kernel of a surjective Hopf-algebra morphism has, on
 every value algebra, exactly the points obtained by pre-composition with that morphism. -/
@@ -180,7 +180,7 @@ theorem quotientPointsSubgroup_kerOfSurjective_eq_range (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R) :
     CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
         (kerOfSurjective f hf) A =
-      (AlgHom.mapDomain (A := A) f).range := by
+      (BialgHom.mapDomain (A := A) f).range := by
   ext g
   constructor
   · rintro ⟨q, rfl⟩

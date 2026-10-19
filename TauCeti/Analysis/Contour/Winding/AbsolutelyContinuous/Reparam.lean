@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Reparam
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 /-!
 # Winding numbers under absolutely continuous reparametrizations
@@ -88,5 +89,27 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_comp_of_antitoneOn
   exact cauchyPVExistsAt_of_avoidance hγ.continuousOn
     (fun t ht heq ↦ hz ⟨t, ht, heq⟩)
     (hγ.intervalIntegrable_inv_sub_mul_deriv hz)
+
+/-- Affine normalization to the unit interval preserves the off-trace winding number, with
+the original interval orientation, including constant intervals. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_comp_lineMap
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hz : z ∉ γ '' uIcc a b) :
+    Contour.windingNumber (γ ∘ AffineMap.lineMap a b) 0 1 z =
+      Contour.windingNumber γ a b z := by
+  have ho : MonotoneOn (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) ∨
+      AntitoneOn (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) :=
+    (le_total a b).imp
+      (fun h ↦ (AffineMap.lineMap_mono h).monotoneOn _)
+      (fun h ↦ (AffineMap.lineMap_anti h).antitoneOn _)
+  have hγ' : AbsolutelyContinuousOnInterval γ
+      (AffineMap.lineMap a b (0 : ℝ)) (AffineMap.lineMap a b (1 : ℝ)) := by
+    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using hγ
+  have hz' : z ∉ γ '' uIcc (AffineMap.lineMap a b (0 : ℝ)) (AffineMap.lineMap a b (1 : ℝ)) := by
+    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using hz
+  simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using
+    AbsolutelyContinuousOnInterval.windingNumber_comp hγ'
+      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
+      zero_le_one ho hz'
 
 end TauCeti.Contour

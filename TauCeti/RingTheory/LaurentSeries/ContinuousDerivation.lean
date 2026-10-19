@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
+public import Mathlib.Algebra.Lie.Subalgebra
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.Derivation.Localization
-public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 
 /-!
@@ -26,6 +27,10 @@ that agree on a dense subset are equal.
 
 The continuous derivations form an `F`-submodule `TauCeti.continuousDerivations K` of
 `Derivation K F F`, which `TauCeti.continuousDerivationsEquiv K` identifies with `F` itself.
+Their commutator makes them a Lie subalgebra of the Laurent derivations, whose Lie structure
+and coefficient formula are defined in `LaurentSeries.Derivative`. The subalgebras preserving the
+embedded power-series ring and its maximal ideal are respectively `K⟦X⟧ D` and `X K⟦X⟧ D`. These
+classifications hold in every characteristic.
 
 ## Main results
 
@@ -37,14 +42,20 @@ The continuous derivations form an `F`-submodule `TauCeti.continuousDerivations 
 * `Derivation.continuous_iff_exists_eq_smul_laurentSeriesDerivation`: a derivation is continuous
   if and only if it is a multiple of `D`, and `TauCeti.smul_laurentSeriesDerivation_inj`: the
   multiple is unique.
+* `Derivation.apply_eq_laurentSeriesDerivation_smul` and
+  `Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul`: the same
+  classification for derivations into any `F`-module with its module topology, `δ f = D f • δ X`.
 * `TauCeti.continuousDerivations`: the `F`-submodule of continuous derivations, and
   `TauCeti.continuousDerivationsEquiv`: its identification with `F` sending `a` to `a • D`.
+* `TauCeti.continuousDerivationsLieSubalgebra`: continuous derivations as a Lie subalgebra.
+* `TauCeti.mem_powerSeriesPreservingDerivations_iff` and
+  `TauCeti.mem_maximalIdealPreservingDerivations_iff`: the two coefficient classifications.
 -/
 
 public section
 
 open HahnSeries Polynomial RatFunc
-open scoped LaurentSeries
+open scoped LaurentSeries PowerSeries
 
 /-- A polynomial evaluated at the parameter `X = single 1 1` of `R⸨X⸩` is its image as a Laurent
 series. -/
@@ -116,6 +127,32 @@ theorem continuous_iff_exists_eq_smul_laurentSeriesDerivation {δ : Derivation K
   rintro ⟨a, rfl⟩
   exact TauCeti.continuous_smul_laurentSeriesDerivation a
 
+variable {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
+  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [IsModuleTopology K⸨X⸩ M]
+
+/-- **Continuous derivations of Laurent series into a topological module.** A `K`-derivation
+`δ : K⸨X⸩ → M` into a `K⸨X⸩`-module with its module topology that is continuous for the valuation
+topology satisfies `δ f = D f • δ X`, where `D` is the formal derivative. -/
+theorem apply_eq_laurentSeriesDerivation_smul (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
+    (f : K⸨X⸩) : δ f = TauCeti.laurentSeriesDerivation K f • δ (single 1 1) := by
+  let b := Module.Free.chooseBasis K⸨X⸩ M
+  refine b.ext_elem fun i ↦ ?_
+  -- Each coordinate of `δ` is a continuous derivation of `K⸨X⸩` into itself.
+  have hc : Continuous ((b.coord i).compDer δ) :=
+    (IsModuleTopology.continuous_of_linearMap (b.coord i)).comp hδ
+  simpa [mul_comm] using congr($(((b.coord i).compDer δ).eq_smul_laurentSeriesDerivation hc) f)
+
+/-- A `K`-derivation of `K⸨X⸩` into a `K⸨X⸩`-module with its module topology is continuous if and
+only if it is `f ↦ D f • m` for some `m`, where `D` is the formal derivative. -/
+theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Derivation K K⸨X⸩ M} :
+    Continuous δ ↔ ∃ m : M, ∀ f, δ f = TauCeti.laurentSeriesDerivation K f • m := by
+  refine ⟨fun hδ ↦ ⟨_, δ.apply_eq_laurentSeriesDerivation_smul hδ⟩, ?_⟩
+  rintro ⟨m, hm⟩
+  have h : (δ : K⸨X⸩ → M) = fun f ↦ LaurentSeries.derivative K f • m :=
+    funext fun f ↦ by simp [hm]
+  rw [h]
+  exact LaurentSeries.continuous_derivative.smul continuous_const
+
 end Derivation
 
 namespace TauCeti
@@ -155,5 +192,141 @@ theorem coe_continuousDerivationsEquiv_apply (a : K⸨X⸩) :
 theorem continuousDerivationsEquiv_symm_apply (δ : continuousDerivations K) :
     (continuousDerivationsEquiv K).symm δ = (δ : Derivation K K⸨X⸩ K⸨X⸩) (single 1 1) :=
   (rfl)
+
+variable (K) in
+/-- Continuous Laurent derivations, with their commutator Lie algebra structure over `K`. -/
+noncomputable def continuousDerivationsLieSubalgebra :
+    LieSubalgebra K (Derivation K K⸨X⸩ K⸨X⸩) where
+  toSubmodule := (continuousDerivations K).restrictScalars K
+  lie_mem' {δ ε} hδ hε :=
+    ((hδ.comp hε).sub (hε.comp hδ)).congr
+      (fun f ↦ (Derivation.laurentSeries_commutator_apply δ ε f).symm)
+
+@[simp]
+theorem mem_continuousDerivationsLieSubalgebra {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    δ ∈ continuousDerivationsLieSubalgebra K ↔ Continuous δ :=
+  Iff.rfl
+
+variable (K) in
+/-- Continuous Laurent vector fields preserving the power-series ring `K⟦X⟧`. -/
+noncomputable def powerSeriesPreservingDerivations :
+    LieSubalgebra K (Derivation K K⸨X⸩ K⸨X⸩) where
+  carrier := {δ | Continuous δ ∧ ∀ f : K⟦X⟧, ∃ g : K⟦X⟧, δ (f : K⸨X⸩) = g}
+  zero_mem' := ⟨continuous_zero, fun _ ↦ ⟨0, by simp⟩⟩
+  add_mem' := by
+    rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
+    refine ⟨hδ.add hε, fun f ↦ ?_⟩
+    obtain ⟨g, hg⟩ := hδp f
+    obtain ⟨h, hh⟩ := hεp f
+    exact ⟨g + h, by simp [hg, hh]⟩
+  smul_mem' := by
+    rintro c δ ⟨hδ, hδp⟩
+    refine ⟨?_, fun f ↦ ?_⟩
+    · exact (continuousDerivationsLieSubalgebra K).smul_mem c hδ
+    · obtain ⟨g, hg⟩ := hδp f
+      exact ⟨c • g, by simp only [Derivation.smul_apply, hg, PowerSeries.coe_smul]⟩
+  lie_mem' := by
+    rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
+    refine ⟨?_, fun f ↦ ?_⟩
+    · exact (continuousDerivationsLieSubalgebra K).lie_mem hδ hε
+    · obtain ⟨g, hg⟩ := hδp f
+      obtain ⟨h, hh⟩ := hεp f
+      obtain ⟨i, hi⟩ := hδp h
+      obtain ⟨j, hj⟩ := hεp g
+      exact ⟨i - j, by simp [Derivation.laurentSeries_commutator_apply, hg, hh, hi, hj]⟩
+
+/-- Membership in the power-series-preserving Lie subalgebra means continuity and preservation
+of the embedded power-series ring. -/
+@[simp]
+theorem mem_powerSeriesPreservingDerivations {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    δ ∈ powerSeriesPreservingDerivations K ↔
+      Continuous δ ∧ ∀ f : K⟦X⟧, ∃ g : K⟦X⟧, δ (f : K⸨X⸩) = g :=
+  Iff.rfl
+
+/-- A continuous Laurent vector field preserves power series exactly when its coefficient
+is a power series: the subalgebra is `K⟦X⟧ D`. -/
+theorem mem_powerSeriesPreservingDerivations_iff {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    δ ∈ powerSeriesPreservingDerivations K ↔
+      ∃ a : K⟦X⟧, δ = (a : K⸨X⸩) • laurentSeriesDerivation K := by
+  rw [mem_powerSeriesPreservingDerivations]
+  constructor
+  · rintro ⟨hδ, hp⟩
+    obtain ⟨a, ha⟩ := hp PowerSeries.X
+    refine ⟨a, ?_⟩
+    rw [δ.eq_smul_laurentSeriesDerivation hδ, ← ha, PowerSeries.coe_X]
+  · rintro ⟨a, rfl⟩
+    refine ⟨continuous_smul_laurentSeriesDerivation _, fun f ↦ ?_⟩
+    exact ⟨a * PowerSeries.derivative f, by
+      simp only [Derivation.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
+        PowerSeries.coe_mul, PowerSeries.coe_derivative]⟩
+
+variable (K) in
+/-- Continuous Laurent vector fields preserving the maximal ideal `X K⟦X⟧` of `K⟦X⟧`.
+The ideal is presented by its multiples of `X`, avoiding a new carrier for the embedded ideal. -/
+noncomputable def maximalIdealPreservingDerivations :
+    LieSubalgebra K (Derivation K K⸨X⸩ K⸨X⸩) where
+  carrier := {δ | Continuous δ ∧ ∀ f : K⟦X⟧, ∃ g : K⟦X⟧,
+    δ ((PowerSeries.X * f : K⟦X⟧) : K⸨X⸩) = ((PowerSeries.X * g : K⟦X⟧) : K⸨X⸩)}
+  zero_mem' := ⟨continuous_zero, fun _ ↦ ⟨0, by simp⟩⟩
+  add_mem' := by
+    rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
+    refine ⟨hδ.add hε, fun f ↦ ?_⟩
+    obtain ⟨g, hg⟩ := hδp f
+    obtain ⟨h, hh⟩ := hεp f
+    exact ⟨g + h, by simp only [Derivation.add_apply, hg, hh, mul_add, PowerSeries.coe_add]⟩
+  smul_mem' := by
+    rintro c δ ⟨hδ, hδp⟩
+    refine ⟨?_, fun f ↦ ?_⟩
+    · exact (continuousDerivationsLieSubalgebra K).smul_mem c hδ
+    · obtain ⟨g, hg⟩ := hδp f
+      exact ⟨c • g, by
+        simp only [Derivation.smul_apply, hg, mul_smul_comm, PowerSeries.coe_smul]⟩
+  lie_mem' := by
+    rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
+    refine ⟨?_, fun f ↦ ?_⟩
+    · exact (continuousDerivationsLieSubalgebra K).lie_mem hδ hε
+    · obtain ⟨g, hg⟩ := hδp f
+      obtain ⟨h, hh⟩ := hεp f
+      obtain ⟨i, hi⟩ := hδp h
+      obtain ⟨j, hj⟩ := hεp g
+      exact ⟨i - j, by
+        simp only [Derivation.laurentSeries_commutator_apply, hg, hh, hi, hj, mul_sub,
+          PowerSeries.coe_sub]⟩
+
+/-- Membership in the maximal-ideal-preserving Lie subalgebra means continuity and
+preservation of all power-series multiples of `X`. -/
+@[simp]
+theorem mem_maximalIdealPreservingDerivations {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    δ ∈ maximalIdealPreservingDerivations K ↔
+      Continuous δ ∧ ∀ f : K⟦X⟧, ∃ g : K⟦X⟧,
+        δ ((PowerSeries.X * f : K⟦X⟧) : K⸨X⸩) =
+          ((PowerSeries.X * g : K⟦X⟧) : K⸨X⸩) :=
+  Iff.rfl
+
+/-- A continuous Laurent vector field preserves the maximal ideal exactly when its coefficient
+is a multiple of `X` in the power-series ring: the subalgebra is `X K⟦X⟧ D`. -/
+theorem mem_maximalIdealPreservingDerivations_iff {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    δ ∈ maximalIdealPreservingDerivations K ↔
+      ∃ a : K⟦X⟧, δ =
+        ((PowerSeries.X * a : K⟦X⟧) : K⸨X⸩) • laurentSeriesDerivation K := by
+  rw [mem_maximalIdealPreservingDerivations]
+  constructor
+  · rintro ⟨hδ, hp⟩
+    obtain ⟨a, ha⟩ := hp 1
+    refine ⟨a, ?_⟩
+    rw [δ.eq_smul_laurentSeriesDerivation hδ]
+    simpa using congrArg (· • laurentSeriesDerivation K) ha
+  · rintro ⟨a, rfl⟩
+    refine ⟨continuous_smul_laurentSeriesDerivation _, fun f ↦ ?_⟩
+    refine ⟨a * PowerSeries.derivative (PowerSeries.X * f), ?_⟩
+    simp only [Derivation.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
+      PowerSeries.coe_mul, PowerSeries.coe_derivative, mul_assoc]
+
+/-- Maximal-ideal-preserving continuous Laurent vector fields preserve power series. -/
+theorem maximalIdealPreservingDerivations_le_powerSeriesPreservingDerivations :
+    maximalIdealPreservingDerivations K ≤ powerSeriesPreservingDerivations K := by
+  intro δ hδ
+  obtain ⟨a, rfl⟩ := mem_maximalIdealPreservingDerivations_iff.mp hδ
+  exact mem_powerSeriesPreservingDerivations_iff.mpr ⟨PowerSeries.X * a, rfl⟩
 
 end TauCeti

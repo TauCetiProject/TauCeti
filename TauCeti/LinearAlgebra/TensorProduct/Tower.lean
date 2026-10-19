@@ -30,7 +30,7 @@ open TensorProduct
 of the `R`-algebra map `A →ₐ[R] B`. -/
 @[simp]
 theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Type*}
-    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [CommSemiring R] [CommSemiring A] [Semiring B] [Algebra R A] [Algebra R B] [Algebra A B]
     [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (x : A ⊗[R] M) :
     AlgebraTensorModule.rTensor R M (Algebra.linearMap A B) x =
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by

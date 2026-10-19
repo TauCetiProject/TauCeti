@@ -21,8 +21,9 @@ outside it. Convexity means that its real increments on consecutive finite
 heights are nondecreasing. The finite domain may be empty, a singleton, a bounded
 interval, or a half-line; infinity never supplies a genuine edge slope.
 
-This file proves supporting-line and chord inequalities, recovers heights from an
-anchor and consecutive increments, and characterises convexity by second
+This file proves supporting-line and chord inequalities, including existence of
+affine minorants through finite heights and separation at infinite heights. It
+recovers heights from an anchor and consecutive increments, and characterises convexity by second
 differences. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
@@ -244,6 +245,24 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     (sub_nonneg.mpr (Nat.cast_le.mpr hij) : (0 : ℝ) ≤ j - i)
   nlinarith
 
+/-- Moving two indices one step towards each other does not increase the sum of their
+heights: for `i ≤ k`, the inner pair `i + 1, k + 1` has sum at most that of the outer pair
+`i, k + 2`. If either outer height is infinite, the bound is trivial. -/
+theorem succ_add_succ_le_add {i k : ℕ} (hik : i ≤ k) :
+    h (i + 1) + h (k + 1) ≤ h i + h (k + 2) := by
+  by_cases hi : h i = ⊤
+  · simp [hi]
+  by_cases hk : h (k + 2) = ⊤
+  · simp [hk]
+  have hi' := hh.ne_top_of_le_of_le hi hk (Nat.le_succ i) (by omega)
+  have hk' := hh.ne_top_of_le_of_le hi hk (by omega) (Nat.le_succ (k + 1))
+  have hs := hh.monotoneOn (a := i) (b := k + 1) ⟨hi, hi'⟩ ⟨hk', hk⟩ (by omega)
+  simp only [unitSlope] at hs
+  rw [← WithTop.coe_untop₀_of_ne_top hi, ← WithTop.coe_untop₀_of_ne_top hk,
+    ← WithTop.coe_untop₀_of_ne_top hi', ← WithTop.coe_untop₀_of_ne_top hk',
+    ← WithTop.coe_add, ← WithTop.coe_add, WithTop.coe_le_coe]
+  linarith
+
 /-- An intermediate height is at most the larger of two outer heights. If either
 outer height is infinite, the bound is trivial. -/
 theorem le_max {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) : h j ≤ max (h i) (h k) := by
@@ -266,30 +285,95 @@ theorem le_max {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) : h j ≤ max (h i)
   refine le_of_mul_le_mul_left ?_ hik'
   nlinarith
 
+/-- At a finite height of a convex sequence, some real affine minorant passes
+through that height. This includes isolated finite heights. -/
+theorem exists_affine_minorant_eq {n : ℕ}
+    (hn : h n ≠ ⊤) :
+    ∃ c σ : ℝ, (∀ k : ℕ, ((c + σ * k : ℝ) : WithTop ℝ) ≤ h k) ∧
+      c + σ * n = (h n).untop₀ := by
+  have hedge {i : ℕ} (hi : h i ≠ ⊤) (hi' : h (i + 1) ≠ ⊤)
+      (hin : i = n ∨ i + 1 = n) :
+      ∃ c σ : ℝ, (∀ k : ℕ, ((c + σ * k : ℝ) : WithTop ℝ) ≤ h k) ∧
+        c + σ * n = (h n).untop₀ := by
+    refine ⟨(h i).untop₀ - unitSlope h i * i, unitSlope h i, fun k => ?_, ?_⟩
+    · convert hh.supportingLine_le hi hi' k using 2; ring
+    · rcases hin with rfl | rfl
+      · ring
+      · simp only [unitSlope_def, Nat.cast_add, Nat.cast_one]
+        ring
+  by_cases hn' : h (n + 1) ≠ ⊤
+  · exact hedge hn hn' (.inl rfl)
+  by_cases hprev : ∃ i, i + 1 = n ∧ h i ≠ ⊤
+  · obtain ⟨i, hi, hif⟩ := hprev
+    exact hedge hif (hi ▸ hn) (.inr hi)
+  refine ⟨(h n).untop₀, 0, fun k => ?_, by simp⟩
+  by_cases hk : h k = ⊤
+  · simp [hk]
+  have hkn : k = n := by
+    rcases lt_trichotomy k n with hkn | hkn | hnk
+    · obtain ⟨i, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+      exact False.elim (hprev ⟨i, by omega,
+        hh.ne_top_of_le_of_le hk hn (by omega) (by omega)⟩)
+    · exact hkn
+    · exact False.elim (hn' (hh.ne_top_of_le_of_le hn hk (by omega) hnk))
+  simp [hkn, WithTop.coe_untop₀_of_ne_top hn]
+
 /-- Every convex height sequence has a real affine lower bound, including the
 empty and singleton cases. -/
 theorem isAdmissible : IsAdmissible h := by
-  by_cases hedge : ∃ n, h n ≠ ⊤ ∧ h (n + 1) ≠ ⊤
-  · obtain ⟨n, hn, hn'⟩ := hedge
-    refine ⟨(h n).untop₀ - (n : ℝ) * unitSlope h n, unitSlope h n, ?_⟩
+  by_cases hfinite : ∃ n, h n ≠ ⊤
+  · obtain ⟨n, hn⟩ := hfinite
+    obtain ⟨c, σ, hline, _⟩ := hh.exists_affine_minorant_eq hn
+    exact ⟨c, σ, hline⟩
+  · refine ⟨0, 0, ?_⟩
     intro k
-    convert hh.supportingLine_le hn hn' k using 2; ring
-  · by_cases hfinite : ∃ n, h n ≠ ⊤
-    · obtain ⟨n, hn⟩ := hfinite
-      refine ⟨(h n).untop₀, 0, ?_⟩
-      intro k
-      by_cases hk : h k = ⊤
-      · simp [hk]
-      · have hkn : k = n := by
-          by_contra hne
-          rcases lt_or_gt_of_ne hne with hlt | hgt
-          · exact hedge ⟨k, hk, hh.ne_top_of_le_of_le hk hn (by omega) hlt⟩
-          · exact hedge ⟨n, hn, hh.ne_top_of_le_of_le hn hk (by omega) hgt⟩
-        simp [hkn, WithTop.coe_untop₀_of_ne_top hn]
-    · refine ⟨0, 0, ?_⟩
-      intro k
-      have hk : h k = ⊤ := not_not.mp (fun hk => hfinite ⟨k, hk⟩)
-      simp [hk]
+    have hk : h k = ⊤ := not_not.mp (fun hk => hfinite ⟨k, hk⟩)
+    simp [hk]
+
+/-- Every real number below a convex height is bounded above by the value of
+some affine minorant there. Infinite heights are recovered by arbitrarily high
+minorants, including outside the finite domain and for the empty sequence. -/
+theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
+    (r : WithTop ℝ) ≤ h n ↔
+      ∃ c σ : ℝ, (∀ k : ℕ, ((c + σ * k : ℝ) : WithTop ℝ) ≤ h k) ∧ r ≤ c + σ * n := by
+  refine ⟨fun hr => ?_, fun ⟨c, σ, hline, hr⟩ =>
+    (WithTop.coe_le_coe.mpr hr).trans (hline n)⟩
+  by_cases hn : h n ≠ ⊤
+  · obtain ⟨c, σ, hline, heq⟩ := hh.exists_affine_minorant_eq hn
+    exact ⟨c, σ, hline, heq ▸ (by
+      rwa [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe] at hr)⟩
+  obtain ⟨d, m, hdm⟩ := isAdmissible_iff.mp hh.isAdmissible
+  let δ := max 0 (r - (d + m * n))
+  have hδ : 0 ≤ δ := le_max_left _ _
+  have hrδ : r ≤ d + m * n + δ := by
+    have := le_max_right 0 (r - (d + m * n))
+    dsimp [δ]
+    linarith
+  by_cases hleft : ∃ i, i < n ∧ h i ≠ ⊤
+  · -- The finite domain lies strictly to the left; an upward tilt raises the missing height.
+    obtain ⟨i, hin, hi⟩ := hleft
+    refine ⟨d - δ * ((n : ℝ) - 1), m + δ, fun k => ?_, by nlinarith⟩
+    by_cases hk : h k = ⊤
+    · simp [hk]
+    have hkn : k < n := lt_of_not_ge fun hnk =>
+      hn (hh.ne_top_of_le_of_le hi hk hin.le hnk)
+    have hkn' : (k : ℝ) ≤ (n : ℝ) - 1 := by
+      have : (k : ℝ) + 1 ≤ n := by exact_mod_cast hkn
+      linarith
+    refine le_trans (WithTop.coe_le_coe.mpr ?_) (hdm k)
+    nlinarith [mul_nonneg hδ (sub_nonneg.mpr hkn')]
+  · -- The finite domain lies strictly to the right; a downward tilt raises the missing height.
+    refine ⟨d + δ * ((n : ℝ) + 1), m - δ, fun k => ?_, by nlinarith⟩
+    by_cases hk : h k = ⊤
+    · simp [hk]
+    have hnk : n < k := by
+      rcases lt_trichotomy k n with hkn | rfl | hnk
+      · exact False.elim (hleft ⟨k, hkn, hk⟩)
+      · exact False.elim (hn hk)
+      · exact hnk
+    have hnk' : (n : ℝ) + 1 ≤ k := by exact_mod_cast hnk
+    refine le_trans (WithTop.coe_le_coe.mpr ?_) (hdm k)
+    nlinarith [mul_nonneg hδ (sub_nonneg.mpr hnk')]
 
 end IsConvexSeq
 
