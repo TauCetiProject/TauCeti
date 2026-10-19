@@ -12,8 +12,8 @@ import TauCeti.MeasureTheory.Measure.WithDensity
 /-!
 # Support of chi-squared laws
 
-Positive-degree chi-squared laws are almost surely positive and have topological support
-`[0, ∞)`. At degree zero the support is the singleton zero; negative degrees give the zero
+Positive-degree chi-squared laws have no atoms, are almost surely positive, and have topological
+support `[0, ∞)`. At degree zero the support is the singleton zero; negative degrees give the zero
 measure. These statements also describe the components used in Poisson mixtures of chi-squared
 laws.
 -/
@@ -23,6 +23,12 @@ public section
 open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
+
+/-- A chi-squared law of positive degree has no atoms. -/
+theorem nullSingletonClass_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
+    NullSingletonClass (chiSquaredMeasure k) := by
+  rw [chiSquaredMeasure_eq_gammaMeasure hk]
+  infer_instance
 
 /-- A chi-squared variable of positive degree is positive almost surely. -/
 theorem ae_pos_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
