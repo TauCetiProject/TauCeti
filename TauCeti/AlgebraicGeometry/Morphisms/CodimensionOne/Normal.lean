@@ -51,7 +51,8 @@ universe u
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target preserves
-the coheight of every point. -/
+the coheight of every point. Source integrality supplies the domain structure on affine sections
+required by the going-down theorem. -/
 theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
     [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) : coheight (f x) = coheight x := by
   have himage : IsIrreducible (Set.range f) := by
@@ -86,6 +87,7 @@ theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
   have hsource : coheight x = coheight Q := by
     rw [← coheight_eq_of_isOpenImmersion hV.fromSpec, hV.fromSpec_primeIdealOf]
   rw [htarget, hsource, ← idealHeight_eq_coheight, ← idealHeight_eq_coheight, ← hcontract]
+  have : IsDomain Γ(X, f ⁻¹ᵁ U) := inferInstance
   exact (Ideal.height_eq_height_under_of_quasiFinite _).symm
 
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target sends
