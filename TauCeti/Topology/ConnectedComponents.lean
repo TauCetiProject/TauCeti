@@ -46,6 +46,9 @@ space by them.
   irreducible components implies finiteness of the connected components.
 * `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
+* `Setoid.preconnectedSpace_quotient_iff`: the quotient of a locally connected space by an
+  equivalence relation is preconnected exactly when any two connected components are joined by a
+  chain of components, consecutive ones containing related points.
 -/
 
 public section
@@ -323,3 +326,66 @@ theorem natCard_connectedComponents_eq_of_iUnion_eq_univ {ι : Type*} [Finite ι
     (Equiv.sigmaUnique ι _))
 
 end TauCeti
+
+namespace Setoid
+
+variable (s : Setoid X)
+
+/-- The quotient of a space by `s` is preconnected if any two connected components of the space
+are joined by a finite chain of components, consecutive ones containing points related by `s`.
+This is how a space glued from connected pieces along a connected incidence graph is seen to be
+connected. -/
+theorem preconnectedSpace_quotient_of_reflTransGen
+    (h : ∀ a b : ConnectedComponents X, Relation.ReflTransGen
+      (fun a b ↦ ∃ x y, s x y ∧ ConnectedComponents.mk x = a ∧ ConnectedComponents.mk y = b) a b) :
+    PreconnectedSpace (Quotient s) := by
+  -- The quotient is the union of the images of the components, linked along the chains.
+  have hU : ⋃ a : ConnectedComponents X, Quotient.mk s '' (ConnectedComponents.mk ⁻¹' {a}) =
+      univ :=
+    eq_univ_of_forall fun q ↦ q.inductionOn fun x ↦ mem_iUnion.2 ⟨_, x, rfl, rfl⟩
+  refine ⟨hU ▸ IsPreconnected.iUnion_of_reflTransGen (fun a ↦ ?_) fun a b ↦
+    Relation.ReflTransGen.mono ?_ a b (h a b)⟩
+  · obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe a
+    rw [connectedComponents_preimage_singleton]
+    exact isPreconnected_connectedComponent.image _ continuous_quotient_mk'.continuousOn
+  · rintro a b ⟨x, y, hxy, rfl, rfl⟩
+    exact ⟨Quotient.mk s x, ⟨x, rfl, rfl⟩, y, rfl, (Quotient.sound hxy).symm⟩
+
+/-- If the quotient of a locally connected space by `s` is preconnected, then any two connected
+components of the space are joined by a finite chain of components, consecutive ones containing
+points related by `s`. -/
+theorem reflTransGen_of_preconnectedSpace_quotient [LocallyConnectedSpace X]
+    [PreconnectedSpace (Quotient s)] (a b : ConnectedComponents X) :
+    Relation.ReflTransGen
+      (fun a b ↦ ∃ x y, s x y ∧ ConnectedComponents.mk x = a ∧ ConnectedComponents.mk y = b)
+      a b := by
+  -- The components reachable from `a` cover a clopen subset `U` of `X` closed under `s`, whose
+  -- image in the quotient is therefore clopen, nonempty, and hence everything.
+  set U : Set X := ConnectedComponents.mk ⁻¹' {b | Relation.ReflTransGen
+    (fun a b ↦ ∃ x y, s x y ∧ ConnectedComponents.mk x = a ∧ ConnectedComponents.mk y = b) a b}
+  have hpre : Quotient.mk s ⁻¹' (Quotient.mk s '' U) = U := by
+    refine Subset.antisymm ?_ (subset_preimage_image _ _)
+    rintro y ⟨x, hx, hxy⟩
+    exact Relation.ReflTransGen.tail hx ⟨x, y, Quotient.exact hxy, rfl, rfl⟩
+  have hU : IsClopen U := (isClopen_discrete _).preimage ConnectedComponents.continuous_coe
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  have hV : IsClopen (Quotient.mk s '' U) := by
+    rw [← hpre] at hU
+    exact ⟨hq.isClosed_preimage.1 hU.1, hq.isOpen_preimage.1 hU.2⟩
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe a
+  obtain ⟨y, rfl⟩ := ConnectedComponents.surjective_coe b
+  have hy : y ∈ Quotient.mk s ⁻¹' (Quotient.mk s '' U) := by
+    rw [mem_preimage, hV.eq_univ ⟨_, x, Relation.ReflTransGen.refl, rfl⟩]
+    exact mem_univ _
+  rwa [hpre] at hy
+
+/-- The quotient of a locally connected space by `s` is preconnected exactly when any two
+connected components of the space are joined by a finite chain of components, consecutive ones
+containing points related by `s`. -/
+theorem preconnectedSpace_quotient_iff [LocallyConnectedSpace X] :
+    PreconnectedSpace (Quotient s) ↔ ∀ a b : ConnectedComponents X, Relation.ReflTransGen
+      (fun a b ↦ ∃ x y, s x y ∧ ConnectedComponents.mk x = a ∧ ConnectedComponents.mk y = b) a b :=
+  ⟨fun _ ↦ s.reflTransGen_of_preconnectedSpace_quotient,
+    s.preconnectedSpace_quotient_of_reflTransGen⟩
+
+end Setoid
