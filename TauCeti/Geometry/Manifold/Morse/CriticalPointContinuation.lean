@@ -41,30 +41,6 @@ namespace TauCeti
 variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace P]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-private theorem isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas
-    {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
-    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M)
-    {f : M → ℝ} {v : E} (hv : v ∈ (c.extend 𝓘(ℝ, E)).target)
-    (h : IsNondegenerateCriticalPoint (f ∘ (c.extend 𝓘(ℝ, E)).symm) v) :
-    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f ((c.extend 𝓘(ℝ, E)).symm v) := by
-  have hs : (c.extend 𝓘(ℝ, E)).symm v ∈ c.source := by
-    simpa only [OpenPartialHomeomorph.extend_source] using (c.extend 𝓘(ℝ, E)).map_target hv
-  apply (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he hs).mpr
-  simpa only [(c.extend 𝓘(ℝ, E)).right_inv hv] using h
-
-private theorem manifoldMorseIndex_symm_of_mem_maximalAtlas
-    {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
-    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M)
-    {f : M → ℝ} {v : E} (hv : v ∈ (c.extend 𝓘(ℝ, E)).target)
-    (h : IsNondegenerateCriticalPoint (f ∘ (c.extend 𝓘(ℝ, E)).symm) v) :
-    manifoldMorseIndex 𝓘(ℝ, E) f ((c.extend 𝓘(ℝ, E)).symm v) =
-      morseIndex (f ∘ (c.extend 𝓘(ℝ, E)).symm) v := by
-  have hs : (c.extend 𝓘(ℝ, E)).symm v ∈ c.source := by
-    simpa only [OpenPartialHomeomorph.extend_source] using (c.extend 𝓘(ℝ, E)).map_target hv
-  have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
-  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
-    hnd.mvfderiv_eq_zero, (c.extend 𝓘(ℝ, E)).right_inv hv]
-
 variable [FiniteDimensional ℝ E]
 
 private theorem exists_criticalPoint_continuation_self
