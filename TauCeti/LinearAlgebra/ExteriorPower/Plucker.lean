@@ -79,6 +79,15 @@ theorem plucker_apply (x : Fin p → ι → R) (s : powersetCard ι p) :
 theorem plucker_of_isEmpty (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
   Matrix.det_isEmpty
 
+/-- The Plücker coordinate of a single vector at the singleton `{i}` is its `i`-th coordinate. -/
+@[simp]
+theorem plucker_ofSingleton (x : Fin 1 → ι → R) (i : ι) : plucker x (ofSingleton i) = x 0 i := by
+  -- The only element of the singleton `{i}`, listed in increasing order, is `i`.
+  have hi : ofFinEmbEquiv.symm (ofSingleton i) 0 = i :=
+    Finset.mem_singleton.1 <| mem_coe_iff.2 <|
+      (mem_range_ofFinEmbEquiv_symm_iff_mem (ofSingleton i) _).1 ⟨0, rfl⟩
+  simp [plucker_apply, Matrix.det_unique, hi]
+
 /-- Plücker coordinates commute with ring homomorphisms applied to all coordinates. -/
 theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard ι p) :
     plucker (fun i k ↦ f (x i k)) s = f (plucker x s) := by

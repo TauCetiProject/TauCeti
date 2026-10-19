@@ -33,13 +33,14 @@ the representation of a logistic variable as a difference of independent Gumbel 
   random-variable form `TauCeti.Probability.hasLaw_affine_gumbelMeasure`;
 * `TauCeti.Probability.measurable_gumbelMeasure` proves measurability in the parameters;
 * `TauCeti.Probability.cdf_gumbelMeasure_eq` computes the cdf;
+* `TauCeti.Probability.support_gumbelMeasure` identifies its topological support;
 * `TauCeti.Probability.quantile_gumbelMeasure` computes the quantile, and the two following
   theorems give its one-sided endpoint limits.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
-  Wiley (1994), ch. 21.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
+  Wiley (1995), ch. 22.
 -/
 
 public section
@@ -162,6 +163,18 @@ theorem strictMono_cdf_gumbelMeasure (hs : 0 < s) (m : ℝ) :
   apply neg_lt_neg
   apply Real.exp_lt_exp.mpr
   exact neg_lt_neg (div_lt_div_of_pos_right (sub_lt_sub_right hxy m) hs)
+
+/-- A positive-scale Gumbel law has full topological support. -/
+@[simp]
+theorem support_gumbelMeasure (hs : 0 < s) (m : ℝ) :
+    (gumbelMeasure m s).support = Set.univ := by
+  let _ := isProbabilityMeasure_gumbelMeasure hs m
+  exact Measure.support_eq_univ_of_strictMono_cdf _ (strictMono_cdf_gumbelMeasure hs m)
+
+/-- A nonpositive-scale Gumbel measure has empty topological support. -/
+theorem support_gumbelMeasure_of_nonpos (hs : s ≤ 0) (m : ℝ) :
+    (gumbelMeasure m s).support = ∅ := by
+  rw [gumbelMeasure_of_nonpos hs, Measure.support_zero]
 
 /-- The quantile of a positive-scale Gumbel law is `m - s * log (-log u)` for every interior
 level `u`. -/
