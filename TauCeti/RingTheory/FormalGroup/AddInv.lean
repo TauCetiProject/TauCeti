@@ -150,6 +150,7 @@ private theorem coeff_subst_addInv_sum (n : ℕ) :
           simp [hd])
 
 /-- The inverse coordinate is a left inverse: `F(i(X), X) = 0`. -/
+@[simp]
 theorem subst_addInvX_X : F.toPowerSeries.subst ![addInvX F, X] = 0 := by
   ext n
   rw [map_zero, ← coeff_subst_addInv_sum F n, coeff,
@@ -171,8 +172,9 @@ theorem subst_addInvX_X : F.toPowerSeries.subst ![addInvX F, X] = 0 := by
     rw [sub_mul] at hQ
     exact (sub_eq_iff_eq_add.mp hQ).trans (add_comm _ _)
   rw [heq]
+  have hn : ¬n + 1 ≤ n := Nat.not_succ_le_self n
   simp only [coeff_coeToMvPowerSeries, map_add, coeff_X_pow_mul',
-    show ¬n + 1 ≤ n by omega, ite_false, add_zero]
+    hn, ite_false, add_zero]
 
 variable {σ : Type*}
 
@@ -225,7 +227,9 @@ theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
   · intro h
     have h' : y + x = 0 := Subtype.ext h
     have heq : y = -x := eq_neg_of_add_eq_zero_left h'
-    exact congrArg (fun z : F.Point σ ↦ z.val) heq
+    have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
+    rw [neg_point_val] at hval
+    simpa only [x, y] using hval
 
 /-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
 @[simp]
@@ -235,6 +239,22 @@ theorem subst_self_addInvX {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f
   have h := congrArg (fun z : F.Point σ ↦ z.val) (add_neg_cancel x)
   rw [FormalGroup.add_apply, neg_point_val, FormalGroup.zero_apply] at h
   exact h
+
+/-- A right inverse of a native point is obtained by substituting it into `addInvX`. -/
+theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
+    (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
+    g = PowerSeries.subst f (addInvX F) ↔ F.toPowerSeries.subst ![f, g] = 0 := by
+  let x : F.Point σ := ⟨f, hf⟩
+  let y : F.Point σ := ⟨g, hg⟩
+  constructor
+  · rintro rfl
+    exact subst_self_addInvX F hf
+  · intro h
+    have h' : x + y = 0 := Subtype.ext h
+    have heq : y = -x := eq_neg_of_add_eq_zero_right h'
+    have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
+    rw [neg_point_val] at hval
+    simpa only [x, y] using hval
 
 /-- Inverting twice returns the original coordinate. -/
 @[simp]
@@ -248,6 +268,12 @@ theorem subst_addInvX_addInvX : PowerSeries.subst (addInvX F) (addInvX F) = X :=
 theorem eq_addInvX_iff {g : PowerSeries R} (hg : constantCoeff g = 0) :
     g = addInvX F ↔ F.toPowerSeries.subst ![g, X] = 0 := by
   simpa only [PowerSeries.X_subst] using eq_subst_addInvX_iff F
+    PowerSeries.HasSubst.X' (PowerSeries.HasSubst.of_constantCoeff_zero' hg)
+
+/-- The zero-constant inverse coordinate is uniquely characterized by its right inverse law. -/
+theorem eq_addInvX_iff_right {g : PowerSeries R} (hg : constantCoeff g = 0) :
+    g = addInvX F ↔ F.toPowerSeries.subst ![X, g] = 0 := by
+  simpa only [PowerSeries.X_subst] using eq_subst_addInvX_iff_right F
     PowerSeries.HasSubst.X' (PowerSeries.HasSubst.of_constantCoeff_zero' hg)
 
 end TauCeti
