@@ -12,10 +12,15 @@ public import Mathlib.CategoryTheory.Monoidal.Mon
 /-!
 # Monoid objects
 
-This file provides general-purpose facts about monoid objects and their commutativity.
+This file provides general-purpose facts about monoid objects, their monomorphisms, and their
+commutativity.
 
 ## Main declarations
 
+* `CategoryTheory.Mon.mono_of_mono_hom`: monicity of an underlying morphism implies monicity of
+  the morphism of monoid objects.
+* `CategoryTheory.Mon.mono_of_mono_left`: the corresponding reflection for monoid objects in a
+  slice category.
 * `TauCeti.isCommMonObj_of_grp_iso`: commutativity of a group object is preserved by isomorphism.
 * `TauCeti.isCommMonObj_of_mono`: a monoid subobject of a commutative monoid object is commutative.
 * `TauCeti.monObj_eq_of_mono`: a monomorphism admits at most one compatible monoid structure.
@@ -33,6 +38,25 @@ public section
 
 open CategoryTheory
 open scoped CategoryTheory.MonObj
+
+namespace CategoryTheory.Mon
+
+universe u v
+
+/-- A morphism of monoid objects is monic if its underlying morphism is monic. -/
+instance (priority := 900) mono_of_mono_hom {C : Type u} [Category.{v} C]
+    [MonoidalCategory C] {M N : Mon C} (f : M ⟶ N) [hf : Mono f.hom] : Mono f :=
+  -- The forgetful functor maps `f` to `f.hom` by definition.
+  (Mon.forget C).mono_of_mono_map hf
+
+/-- A morphism of monoid objects over a base is monic if its underlying morphism is monic. -/
+instance (priority := 900) mono_of_mono_left {C : Type u} [Category.{v} C] {X : C}
+    [MonoidalCategory (Over X)] {M N : Mon (Over X)} (f : M ⟶ N)
+    [Mono f.hom.left] : Mono f := by
+  have := Over.mono_of_mono_left f.hom
+  exact mono_of_mono_hom f
+
+end CategoryTheory.Mon
 
 namespace TauCeti
 

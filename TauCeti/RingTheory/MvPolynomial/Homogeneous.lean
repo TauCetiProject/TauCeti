@@ -19,8 +19,10 @@ The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof support
 notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
-positive degree, and `hp.homogeneousComponent_mul_right` records that multiplying on the right by
-a homogeneous polynomial of degree `d` shifts homogeneous components by `d`.
+positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
+polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
+multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
+by `d`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
@@ -98,6 +100,21 @@ theorem constantCoeff_eq_zero {σ R : Type*} [CommSemiring R]
     _root_.MvPolynomial.constantCoeff p = 0 := by
   rw [_root_.MvPolynomial.constantCoeff_eq]
   exact hp.coeff_eq_zero (by simpa using hn.symm)
+
+/-- Substituting polynomials of degree at most one for the variables of a homogeneous
+polynomial of degree `n` gives a polynomial of degree at most `n`. For instance, the
+dehomogenization `F(X, 1)` of a binary form `F` of degree `n` has degree at most `n`. -/
+theorem natDegree_aeval_le {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) {v : σ → Polynomial R}
+    (hv : ∀ i, (v i).natDegree ≤ 1) : (_root_.MvPolynomial.aeval v p).natDegree ≤ n := by
+  conv_lhs => rw [p.as_sum]
+  rw [map_sum]
+  refine Polynomial.natDegree_sum_le_of_forall_le _ _ fun s hs ↦ ?_
+  rw [aeval_monomial, Polynomial.algebraMap_eq]
+  refine (Polynomial.natDegree_C_mul_le _ _).trans <| (Polynomial.natDegree_prod_le _ _).trans ?_
+  rw [← hp (mem_support_iff.mp hs), Finsupp.weight_apply, Finsupp.sum]
+  refine Finset.sum_le_sum fun i _ ↦ (Polynomial.natDegree_pow_le).trans ?_
+  simpa using Nat.mul_le_mul_left (s i) (hv i)
 
 attribute [local instance] gradedAlgebra in
 /-- Multiplying by a polynomial homogeneous of degree `d` shifts homogeneous components by `d`:

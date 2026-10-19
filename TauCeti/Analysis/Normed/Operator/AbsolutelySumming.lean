@@ -24,6 +24,8 @@ The gauge is absolutely homogeneous and subadditive, and satisfies the two-sided
 `πₚ(A ∘ T ∘ B) ≤ ‖A‖ πₚ(T) ‖B‖`. Over real or complex scalars it dominates the operator norm,
 takes the value `‖f‖ ‖y‖` on the rank-one operator `x ↦ f x • y`, and is lower semicontinuous for
 the operator-norm topology, which is the input for completeness of the summing-norm ideal.
+At exponent `∞` it is the operator norm, and it decreases as the exponent grows:
+`π_q(T) ≤ π_p(T)` for `p ≤ q`, so absolutely `p`-summing operators are absolutely `q`-summing.
 
 ## Main declarations
 
@@ -36,7 +38,11 @@ the operator-norm topology, which is the input for completeness of the summing-n
 * `ContinuousLinearMap.enorm_le_summingENorm`: `‖T‖ ≤ πₚ(T)`.
 * `ContinuousLinearMap.summingENorm_smulRight`: the rank-one value.
 * `ContinuousLinearMap.lowerSemicontinuous_summingENorm`: lower semicontinuity.
+* `ContinuousLinearMap.summingENorm_top`: `π_∞(T) = ‖T‖`.
+* `ContinuousLinearMap.summingENorm_le_summingENorm_of_exponent_le`: `π_q(T) ≤ π_p(T)` for
+  `p ≤ q`.
 * `TauCeti.absolutelySummingOperators`: the submodule of absolutely `p`-summing operators.
+* `TauCeti.absolutelySummingOperators_le_of_exponent_le`: the inclusion of these submodules.
 
 ## References
 
@@ -295,6 +301,66 @@ theorem summingENorm_smulRight (f : StrongDual 𝕜 E) (y : F) :
         ENNReal.ofReal_mul (norm_nonneg _)]
     _ ≤ _ := enorm_le_summingENorm _
 
+/-- At exponent `∞` the summing gauge is the operator norm. -/
+@[simp]
+theorem summingENorm_top (T : E →L[𝕜] F) : T.summingENorm ∞ = ‖T‖ₑ := by
+  refine le_antisymm ?_ (enorm_le_summingENorm T)
+  rw [← ofReal_norm, summingENorm_le_ofReal_iff (norm_nonneg T)]
+  intro n x
+  rw [weakLpNorm_top]
+  exact PiLp.norm_toLp_comp_le (norm_nonneg T) T.le_opNorm x
+
+/-- **Inclusion of summing operators.** The summing gauge decreases as the exponent grows:
+`π_q(T) ≤ π_p(T)` for `p ≤ q`. -/
+theorem summingENorm_le_summingENorm_of_exponent_le {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
+    (T : E →L[𝕜] F) : T.summingENorm q ≤ T.summingENorm p := by
+  rcases eq_or_ne q ∞ with rfl | hq
+  · simpa using enorm_le_summingENorm (p := p) T
+  rcases hpq.eq_or_lt with rfl | hpq
+  · exact le_rfl
+  rcases eq_or_ne (T.summingENorm p) ∞ with hT | hT
+  · simp [hT]
+  -- Write `P < Q` for the real exponents and `s = P Q / (Q - P)`, so `1 / P = 1 / s + 1 / Q`.
+  set P := p.toReal with hPdef
+  set Q := q.toReal with hQdef
+  have hP : 0 < P := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hpq.ne_top
+  have hPQ : P < Q := ENNReal.toReal_strict_mono hq hpq
+  have hQ : 0 < Q := hP.trans hPQ
+  have hQP : 0 < Q - P := sub_pos.2 hPQ
+  have hs : (P * Q / (Q - P)).HolderTriple Q P :=
+    ⟨by field_simp; ring, div_pos (mul_pos hP hQ) hQP, hQ⟩
+  rw [← ENNReal.ofReal_toReal hT, summingENorm_le_ofReal_iff ENNReal.toReal_nonneg]
+  intro n x
+  rw [PiLp.norm_eq_sum hQ, ← hQdef]
+  set S := ∑ i, ‖T (x i)‖ ^ Q
+  have hS0 : 0 ≤ S := Finset.sum_nonneg fun i _ ↦ by positivity
+  rcases hS0.eq_or_lt with hS | hS
+  · rw [← hS, Real.zero_rpow (one_div_pos.2 hQ).ne']
+    positivity
+  -- Apply the `p`-summing inequality to `cᵢ • xᵢ` with weights `cᵢ = ‖T xᵢ‖ ^ ((Q - P) / P)`.
+  let c : Fin n → 𝕜 := fun i ↦ ((‖T (x i)‖ ^ ((Q - P) / P) : ℝ) : 𝕜)
+  have hc (i : Fin n) : ‖c i‖ = ‖T (x i)‖ ^ ((Q - P) / P) := by
+    simp [c, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
+  have hcs : ∑ i, ‖c i‖ ^ (P * Q / (Q - P)) = S := by
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [hc, ← Real.rpow_mul (norm_nonneg _)]
+    congr 1
+    field_simp
+  have hTc : ‖WithLp.toLp p (fun i ↦ T (c i • x i))‖ = S ^ (1 / P) := by
+    rw [PiLp.norm_eq_sum hP, ← hPdef]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [PiLp.toLp_apply, map_smul, norm_smul, hc,
+      ← Real.rpow_add_one' (norm_nonneg _) (by positivity),
+      ← Real.rpow_mul (norm_nonneg _)]
+    congr 1
+    field_simp
+    ring
+  have key := (norm_toLp_le_toReal_summingENorm_mul hT fun i ↦ c i • x i).trans
+    (mul_le_mul_of_nonneg_left (weakLpNorm_smul_le p hs c x) ENNReal.toReal_nonneg)
+  rw [hTc, hcs, hs.one_div_eq, Real.rpow_add hS, mul_left_comm] at key
+  exact le_of_mul_le_mul_left key (Real.rpow_pos_of_pos hS _)
+
 /-- The `p`-summing gauge is lower semicontinuous for the operator-norm topology. -/
 theorem lowerSemicontinuous_summingENorm :
     LowerSemicontinuous (summingENorm p : (E →L[𝕜] F) → ℝ≥0∞) := by
@@ -318,6 +384,8 @@ end RCLike
 end ContinuousLinearMap
 
 namespace TauCeti
+
+section NormedField
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] (p : ℝ≥0∞) [Fact (1 ≤ p)]
   {E F G : Type*}
@@ -375,5 +443,21 @@ theorem smulRight_mem_absolutelySummingOperators (f : StrongDual 𝕜 E) (y : F)
     f.smulRight y ∈ absolutelySummingOperators 𝕜 p E F :=
   (ContinuousLinearMap.summingENorm_smulRight_le f y).trans_lt
     (ENNReal.mul_lt_top enorm_lt_top enorm_lt_top)
+
+end NormedField
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Absolutely `p`-summing operators are absolutely `q`-summing for `p ≤ q`. -/
+theorem absolutelySummingOperators_le_of_exponent_le {p q : ℝ≥0∞} [Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    absolutelySummingOperators 𝕜 p E F ≤ absolutelySummingOperators 𝕜 q E F :=
+  fun T hT ↦ (T.summingENorm_le_summingENorm_of_exponent_le hpq).trans_lt hT
+
+end RCLike
 
 end TauCeti
