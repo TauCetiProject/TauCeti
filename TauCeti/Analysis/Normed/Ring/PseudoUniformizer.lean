@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Normed
-public import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.Analysis.Normed.Monoid.MulUnit
 
 /-!
 # Multiplicative pseudo-uniformisers of seminormed rings
