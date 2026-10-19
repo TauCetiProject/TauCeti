@@ -59,7 +59,6 @@ instance sfinite_convolutionPower (μ : Measure α) [SFinite μ] (n : ℕ) :
 variable [MeasurableAdd₂ α]
 
 /-- The first convolution power is the original measure. -/
-@[simp]
 theorem convolutionPower_one (μ : Measure α) [SFinite μ] : μ.convolutionPower 1 = μ := by
   rw [convolutionPower_succ, convolutionPower_zero, dirac_zero_conv]
 
@@ -198,7 +197,7 @@ theorem compoundPoissonMeasure_eq_sum (r : ℝ≥0) (μ : Measure α) :
 
 /-- A compound Poisson law with a probability jump measure is a probability measure. -/
 instance isProbabilityMeasure_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α)
-    [MeasurableAdd₂ α] [IsProbabilityMeasure μ] :
+    [IsProbabilityMeasure μ] :
     IsProbabilityMeasure (compoundPoissonMeasure r μ) := by
   rw [compoundPoissonMeasure_def]
   exact MeasureTheory.isProbabilityMeasure_bind Measurable.of_discrete.aemeasurable
