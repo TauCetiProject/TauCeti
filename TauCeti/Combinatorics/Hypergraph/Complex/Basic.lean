@@ -110,6 +110,10 @@ theorem finite_faces_toPreAbstractSimplicialComplex (C : HypergraphComplex r V) 
   obtain ⟨-, hle, hface⟩ := hs
   exact mem_biUnion.mpr ⟨⟨s.card, Nat.lt_succ_of_le hle⟩, mem_univ _, hface⟩
 
+private theorem mem_preAbstractSimplicialComplex_faces (K : PreAbstractSimplicialComplex V)
+    {s : Finset V} : s ∈ K.faces ↔ s ∈ K :=
+  Iff.rfl
+
 /-- Keep the faces of cardinality at most `r` of a finite precomplex and adjoin the empty face.
 On a finite ambient type, the finiteness proof can be supplied by `Set.toFinite _`.
 With an expected `HypergraphComplex r V` type, use `.ofPreAbstractSimplicialComplex K hfinite`. -/
@@ -128,9 +132,11 @@ noncomputable def ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialCompl
       · simp [subset_empty.mp hts]
       · by_cases ht : t = ∅
         · simp [ht]
-        · exact mem_insert_of_mem (hfinite.mem_toFinset.mpr
-            ((K.isRelLowerSet_faces (hfinite.mem_toFinset.mp hs)).2 hts
-              (nonempty_iff_ne_empty.mpr ht)))
+        · have hsK := (mem_preAbstractSimplicialComplex_faces K).mp
+            (hfinite.mem_toFinset.mp hs)
+          have htK := (K.isRelLowerSet_faces hsK).2 hts (nonempty_iff_ne_empty.mpr ht)
+          exact mem_insert_of_mem (hfinite.mem_toFinset.mpr
+            ((mem_preAbstractSimplicialComplex_faces K).mpr htK))
     empty_mem := by simp }
 
 /-- The finite conversion adds exactly the empty face and groups faces by cardinality. -/
@@ -140,8 +146,8 @@ theorem mem_faces_ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialCompl
     s ∈ (ofPreAbstractSimplicialComplex K hfinite).faces k hk ↔
       (s = ∅ ∨ s ∈ K) ∧ s.card = k := by
   classical
-  simp only [ofPreAbstractSimplicialComplex, mem_filter, mem_insert, Set.Finite.mem_toFinset]
-  rfl
+  simp only [ofPreAbstractSimplicialComplex, mem_filter, mem_insert, Set.Finite.mem_toFinset,
+    mem_preAbstractSimplicialComplex_faces]
 
 /-- Adjoining and then forgetting the empty face recovers the original finite precomplex. -/
 @[simp]
@@ -158,7 +164,8 @@ theorem toPreAbstractSimplicialComplex_ofPreAbstractSimplicialComplex
     · exact (not_nonempty_empty hne).elim
     · exact hs
   · intro hs
-    refine ⟨(K.isRelLowerSet_faces hs).1, hcard s hs, ?_⟩
+    refine ⟨(K.isRelLowerSet_faces
+      ((mem_preAbstractSimplicialComplex_faces K).mpr hs)).1, hcard s hs, ?_⟩
     exact (mem_faces_ofPreAbstractSimplicialComplex K hfinite s.card (hcard s hs)).mpr
       ⟨Or.inr hs, rfl⟩
 
