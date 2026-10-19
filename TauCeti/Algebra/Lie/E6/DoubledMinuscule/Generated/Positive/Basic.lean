@@ -145,6 +145,8 @@ theorem kerOfSurjective_restriction :
     (by rintro (i | ⟨⟩) <;> exact generatedCoordinateMap_comp_generatedCoordinateLift A _)
     (restriction A) (generatedCoordinateMap_comp_restriction A)
 
+/-- Membership in the positive subgroup's carrier defining ideal is equivalent to vanishing
+after restriction to the positive subgroup. -/
 @[simp]
 theorem mem_carrierDefiningIdeal (x : generatedCoordinateHopfAlgebra A) :
     x ∈ carrierDefiningIdeal A ↔ (restriction A).hom x = 0 := by
