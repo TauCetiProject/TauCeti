@@ -84,13 +84,8 @@ theorem contMDiff_projectiveSpaceHomeomorph (r : ℕ∞ω) :
     rw [contMDiff_pi_module_iff]
     exact fun j ↦ (contMDiff_apply_single hi hσ.toIsToricCone hB κ g _ r).congr fun y ↦
       projectiveSpaceHomogeneousCoordinate_def b hi k y _
-  have hparam : ContMDiff 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin n → ℂ) r
-      (ComplexProjectiveSpace.affineChart k').symm := by
-    rw [← contMDiffOn_univ, ← ComplexProjectiveSpace.affineChart_target k']
-    exact contMDiffOn_symm_of_mem_maximalAtlas
-      (IsManifold.subset_maximalAtlas (ComplexProjectiveSpace.mem_atlas_iff _ |>.2 ⟨k', rfl⟩))
-  refine (((hparam.comp hcoord).comp_contMDiffOn P.symm.contMDiffOn).contMDiffAt
-    (P.open_target.mem_nhds hp)).congr_of_eventuallyEq ?_
+  refine ((((ComplexProjectiveSpace.contMDiff_affineChart_symm k' r).comp hcoord).comp_contMDiffOn
+    P.symm.contMDiffOn).contMDiffAt (P.open_target.mem_nhds hp)).congr_of_eventuallyEq ?_
   filter_upwards [P.open_target.mem_nhds hp] with y hy
   have hy' := P.right_inv hy
   rw [Fan.analyticAffineChartPartialDiffeomorph_apply] at hy'
@@ -132,18 +127,12 @@ theorem contMDiff_projectiveSpaceHomeomorph_symm (r : ℕ∞ω) :
   -- On the affine open of `k'`, the toric coordinates are affine in the standard chart.
   have hratio : ContDiff ℂ r fun z : Fin n → ℂ ↦
       fun j : {j : Option (Fin n) // j ≠ k} ↦
-        Fin.insertNth (α := fun _ ↦ ℂ) k' 1 z ((finSuccEquiv n).symm j) := by
-    refine contDiff_pi.2 fun j ↦ ?_
-    induction (finSuccEquiv n).symm j using k'.succAboveCases with
-    | x => simpa only [Fin.insertNth_apply_same] using contDiff_const
-    | p j => simpa only [Fin.insertNth_apply_succAbove] using contDiff_apply ℂ (fun _ ↦ ℂ) j
-  have hchart : ContMDiffOn 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin n → ℂ) r
-      (ComplexProjectiveSpace.affineChart k') (ComplexProjectiveSpace.affineOpen k') := by
-    rw [← ComplexProjectiveSpace.affineChart_source k']
-    exact contMDiffOn_of_mem_maximalAtlas
-      (IsManifold.subset_maximalAtlas (ComplexProjectiveSpace.mem_atlas_iff _ |>.2 ⟨k', rfl⟩))
+        Fin.insertNth (α := fun _ ↦ ℂ) k' 1 z ((finSuccEquiv n).symm j) :=
+    contDiff_pi.2 fun j ↦
+      contDiff_pi.1 (ComplexProjectiveSpace.contDiff_insertNth_one k' r) ((finSuccEquiv n).symm j)
   refine (((((Φ).contMDiff_analyticAffineChartι hΦ (Fan.projectiveSpaceMaximalCone b hi k)
-    hB κ g r).comp D.symm.contMDiff).comp hratio.contMDiff).comp_contMDiffOn hchart
+    hB κ g r).comp D.symm.contMDiff).comp hratio.contMDiff).comp_contMDiffOn
+      (ComplexProjectiveSpace.contMDiffOn_affineChart k' r)
       |>.contMDiffAt hopen).congr_of_eventuallyEq ?_
   have hD : ⇑D.symm = ⇑(projectiveSpacePointHomeomorph b hi k g).symm := by
     rw [← Diffeomorph.coe_toHomeomorph_symm, projectiveSpacePointDiffeomorph_toHomeomorph]
