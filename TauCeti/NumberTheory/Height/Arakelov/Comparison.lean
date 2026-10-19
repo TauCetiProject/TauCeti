@@ -11,12 +11,13 @@ public import TauCeti.NumberTheory.Height.ProjectiveTuple
 /-!
 # Comparison of Euclidean and sup heights
 
-The Euclidean height `height2` and the projective height `Height.mulHeight` of a tuple over a
-number field `K` have the same local factors at the finite places. At an infinite place one uses
-the Euclidean norm of the embedded tuple and the other its maximum norm, and for a tuple indexed
-by `ι` these satisfy `max ≤ ℓ² ≤ √#ι · max`. Taking the product over the places gives
-`H_K(x) ≤ arakelovMulHeight x ≤ √#ι ^ [K : ℚ] · H_K(x)` for the relative heights, and
-`H(x) ≤ height2 x ≤ √#ι · H(x)` for the absolute heights of a nonzero tuple, where `H` is
+The relative Euclidean height `arakelovMulHeight` and the projective height `Height.mulHeight`
+of a tuple over a number field `K` have the same local factors at the finite places. At an
+infinite place one uses the Euclidean norm of the embedded tuple and the other its maximum norm,
+and for a tuple indexed by `ι` these satisfy `max ≤ ℓ² ≤ √#ι · max`. Taking the product over the
+places gives `H_K(x) ≤ arakelovMulHeight x ≤ √#ι ^ [K : ℚ] · H_K(x)` for the relative heights.
+For a nonzero tuple the absolute Euclidean height `height2` is the `[K : ℚ]`-th root of
+`arakelovMulHeight`, so `H(x) ≤ height2 x ≤ √#ι · H(x)`, where `H` is
 `absoluteProjectiveTupleHeight`.
 
 These comparisons transfer bounds between the two normalizations. For instance, a bound for the
