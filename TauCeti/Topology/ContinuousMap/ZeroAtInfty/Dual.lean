@@ -19,11 +19,15 @@ vectors. The index type is arbitrary, including empty and uncountable types; no 
 chosen, and for `ι = ℕ` this is the classical identification `c₀* = ℓ¹`.
 
 The forward map restricts Mathlib's pairing `lp.dualPairing` between `ℓ¹` and `ℓ∞` along the
-inclusion of `C₀(ι, 𝕜)` into `ℓ∞`. The pairing is bilinear, including over complex scalars: the
-coefficients of a functional are its values on coordinate vectors, without conjugation.
+isometric inclusion `ZeroAtInftyContinuousMap.toLpInfty` of `C₀(ι, 𝕜)` into `ℓ∞`, which is
+defined for an arbitrary topological space `α` and normed group `E`. The pairing is bilinear,
+including over complex scalars: the coefficients of a functional are its values on coordinate
+vectors, without conjugation.
 
 ## Main declarations
 
+* `ZeroAtInftyContinuousMap.toLpInfty`: the inclusion of `C₀(α, E)` into `ℓ∞`, as a linear
+  isometry.
 * `ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul`: every continuous linear functional on
   `C₀(ι, 𝕜)` is given by its coordinate series.
 * `ZeroAtInftyContinuousMap.sum_norm_apply_single_one_le`: the coordinate values of a functional
@@ -44,6 +48,29 @@ noncomputable section
 open scoped ENNReal ZeroAtInfty ComplexConjugate
 
 namespace ZeroAtInftyContinuousMap
+
+section LpInfty
+
+variable (𝕜 : Type*) {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedRing 𝕜]
+  [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- The inclusion of `C₀(α, E)` into the bounded families `ℓ∞(α, E)`, as a linear isometry. -/
+def toLpInfty : C₀(α, E) →ₗᵢ[𝕜] lp (fun _ : α ↦ E) ∞ where
+  toFun f := ⟨⇑f, memℓp_infty ⟨‖f‖, Set.forall_mem_range.2 (norm_coe_le_norm f)⟩⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  norm_map' f := by
+    rw [lp.norm_eq_ciSup, norm_eq_iSup_norm]
+    rfl
+
+variable {𝕜}
+
+/-- The inclusion of `C₀(α, E)` into `ℓ∞` does not change values. -/
+@[simp]
+theorem toLpInfty_apply (f : C₀(α, E)) (x : α) : toLpInfty 𝕜 f x = f x :=
+  (rfl)
+
+end LpInfty
 
 variable {𝕜 ι : Type*} [TopologicalSpace ι] [DiscreteTopology ι]
 
@@ -103,21 +130,15 @@ def dualEquiv : lp (fun _ : ι ↦ 𝕜) 1 ≃ₗᵢ[𝕜] StrongDual 𝕜 C₀(
   classical
   have hmul : ‖ContinuousLinearMap.mul 𝕜 𝕜‖ ≤ ((1 : NNReal) : ℝ) := by
     simpa only [NNReal.coe_one] using ContinuousLinearMap.opNorm_mul_le 𝕜 𝕜
-  -- The contractive inclusion of `C₀(ι, 𝕜)` into `ℓ∞`.
-  let J : C₀(ι, 𝕜) →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞ :=
-    LinearMap.mkContinuous
-      { toFun f := ⟨⇑f, memℓp_infty ⟨‖f‖, Set.forall_mem_range.2 (norm_coe_le_norm f)⟩⟩
-        map_add' _ _ := rfl
-        map_smul' _ _ := rfl } 1 fun f ↦ by
-      simpa using lp.norm_le_of_forall_le (norm_nonneg f) (norm_coe_le_norm f)
-  have hJ : ‖J‖ ≤ 1 := LinearMap.mkContinuous_norm_le _ zero_le_one _
-  have hJ_apply (f : C₀(ι, 𝕜)) (i : ι) : J f i = f i := rfl
+  let J : C₀(ι, 𝕜) →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞ := (toLpInfty 𝕜).toContinuousLinearMap
+  have hJ : ‖J‖ ≤ 1 := LinearIsometry.norm_toContinuousLinearMap_le _
   let D := lp.dualPairing (𝕜 := 𝕜) 1 ∞ (fun _ : ι ↦ ContinuousLinearMap.mul 𝕜 𝕜) (fun _ ↦ hmul)
   let P : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] StrongDual 𝕜 C₀(ι, 𝕜) :=
     ContinuousLinearMap.precomp 𝕜 J ∘L D
   have hP (a : lp (fun _ : ι ↦ 𝕜) 1) (i : ι) (z : 𝕜) : P a (single i z) = a i * z := by
     simp only [P, D, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply,
-      lp.dualPairing_apply, ContinuousLinearMap.mul_apply', hJ_apply, coe_single, Pi.single_apply,
+      lp.dualPairing_apply, ContinuousLinearMap.mul_apply', J,
+      LinearIsometry.coe_toContinuousLinearMap, toLpInfty_apply, coe_single, Pi.single_apply,
       mul_ite, mul_zero, tsum_ite_eq]
   have hnorm (a : lp (fun _ : ι ↦ 𝕜) 1) : ‖P a‖ = ‖a‖ := by
     apply le_antisymm
@@ -138,8 +159,8 @@ def dualEquiv : lp (fun _ : ι ↦ 𝕜) 1 ≃ₗᵢ[𝕜] StrongDual 𝕜 C₀(
 
 /-- The forward duality map is the scalar series pairing. -/
 theorem dualEquiv_apply (a : lp (fun _ : ι ↦ 𝕜) 1) (f : C₀(ι, 𝕜)) :
-    dualEquiv 𝕜 ι a f = ∑' i, a i * f i :=
-  (rfl)
+    dualEquiv 𝕜 ι a f = ∑' i, a i * f i := by
+  simp [dualEquiv, LinearIsometryEquiv.coe_ofSurjective, lp.dualPairing_apply]
 
 variable [DecidableEq ι]
 
