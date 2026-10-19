@@ -154,23 +154,15 @@ theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε 
 /-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
 `s`, then `∫_s ‖g + h‖² ≤ 2 ∫_s ‖g‖² + 2 ∫_s ‖h‖²`. -/
 theorem setIntegral_norm_add_sq_le {X F : Type*} [MeasurableSpace X] {μ : Measure X}
-    [NormedAddCommGroup F] {g h : X → F} {s : Set X}
+    [SeminormedAddGroup F] {g h : X → F} {s : Set X}
     (hg : IntegrableOn (fun x => ‖g x‖ ^ 2) s μ) (hh : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
     ∫ x in s, ‖g x + h x‖ ^ 2 ∂μ ≤ 2 * ∫ x in s, ‖g x‖ ^ 2 ∂μ + 2 * ∫ x in s, ‖h x‖ ^ 2 ∂μ := by
-  have h0 : 0 ≤ 2 * ∫ x in s, ‖g x‖ ^ 2 ∂μ + 2 * ∫ x in s, ‖h x‖ ^ 2 ∂μ := by
-    have := setIntegral_nonneg_of_ae_restrict (μ := μ) (s := s) (f := fun x => ‖g x‖ ^ 2)
-      (ae_of_all _ fun _ => by positivity)
-    have := setIntegral_nonneg_of_ae_restrict (μ := μ) (s := s) (f := fun x => ‖h x‖ ^ 2)
-      (ae_of_all _ fun _ => by positivity)
-    positivity
-  by_cases hgh : IntegrableOn (fun x => ‖g x + h x‖ ^ 2) s μ
-  · rw [← integral_const_mul, ← integral_const_mul,
-      ← integral_add (hg.const_mul 2) (hh.const_mul 2)]
-    refine integral_mono hgh ((hg.const_mul 2).add (hh.const_mul 2)) fun x => ?_
-    have := (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le (g x) (h x)) 2).trans add_sq_le
-    simpa only [Pi.add_apply, mul_add] using this
-  · rw [integral_undef hgh]
-    exact h0
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add (hg.const_mul 2) (hh.const_mul 2)]
+  refine integral_mono_of_nonneg (ae_of_all _ fun x => sq_nonneg _)
+    ((hg.const_mul 2).add (hh.const_mul 2)) (ae_of_all _ fun x => ?_)
+  have := (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le (g x) (h x)) 2).trans add_sq_le
+  simpa only [Pi.add_apply, mul_add] using this
 
 /-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
 theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
@@ -185,21 +177,10 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
       Even.convexOn_pow (by norm_num : Even 2)
     have hjensen := hconv.map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
       hS hS_top (ae_of_all _ fun _ => Set.mem_univ _) hf hf_sq
-    rw [setAverage_eq, setAverage_eq] at hjensen
-    simp only [smul_eq_mul] at hjensen
-    have hkey : (μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2
-        ≤ (μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ := by
-      calc
-        (μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2 =
-            ((μ.real S)⁻¹ * ∫ x in S, f x ∂μ) ^ 2 := by ring
-        _ ≤ _ := hjensen
-    calc
-      (∫ x in S, f x ∂μ) ^ 2 =
-          μ.real S ^ 2 * ((μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2) := by
-            field_simp
-      _ ≤ μ.real S ^ 2 * ((μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ) :=
-        mul_le_mul_of_nonneg_left hkey (sq_nonneg _)
-      _ = μ.real S * ∫ x in S, f x ^ 2 ∂μ := by field_simp
+    simp only [setAverage_eq, smul_eq_mul, mul_pow] at hjensen
+    have hkey := mul_le_mul_of_nonneg_left hjensen (sq_nonneg (μ.real S))
+    field_simp at hkey
+    exact hkey
 
 /-- A weight `ψ` with values in `[0, 1]` that equals one on a measurable set `t ⊆ s` bounds the
 integral of a nonnegative function over `t` by the `ψ²`-weighted integral over `s`. -/
@@ -258,19 +239,18 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
     simp
 
 /-- **`L¹` convergence in Bochner form is `eLpNorm _ 1` convergence.** If `∫ ‖f i - g‖ → 0` along
-`l`, with every `f i` and `g` integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
+`l` and the differences `f i - g` are eventually integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
 theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [MeasurableSpace Ω]
     [NormedAddCommGroup E] {μ : Measure Ω} {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
-    (hf : ∀ i, Integrable (f i) μ) (hg : Integrable g μ)
+    (hf : ∀ᶠ i in l, Integrable (f i - g) μ)
     (h : Tendsto (fun i => ∫ ω, ‖f i ω - g ω‖ ∂μ) l (𝓝 0)) :
     Tendsto (fun i => eLpNorm (f i - g) 1 μ) l (𝓝 0) := by
-  have heq : ∀ i, eLpNorm (f i - g) 1 μ = ENNReal.ofReal (∫ ω, ‖f i ω - g ω‖ ∂μ) := by
-    intro i
-    rw [eLpNorm_one_eq_lintegral_enorm ((hf i).sub hg).aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_enorm ((hf i).sub hg)]
-    simp [Pi.sub_apply]
-  simp_rw [heq]
-  simpa [Function.comp_def] using (ENNReal.continuous_ofReal.tendsto 0).comp h
+  refine Tendsto.congr' ?_ (by
+    simpa only [ENNReal.ofReal_zero] using (ENNReal.continuous_ofReal.tendsto 0).comp h)
+  filter_upwards [hf] with i hi
+  rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_enorm hi]
+  simp only [Function.comp_apply, Pi.sub_apply]
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone
