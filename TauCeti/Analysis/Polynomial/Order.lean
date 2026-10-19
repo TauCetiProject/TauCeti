@@ -15,7 +15,8 @@ public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 
 At zero, the analytic order of polynomial evaluation equals its trailing degree, including
 infinite order for the zero polynomial. This connects coefficient calculations for polynomial
-slices to the analytic order used in preparation theorems.
+slices to the analytic order used in preparation theorems. At an arbitrary point, the analytic
+order of a nonzero polynomial function is the root multiplicity of the polynomial there.
 -/
 
 public section
@@ -52,5 +53,16 @@ theorem analyticOrderAt_eval_zero (p : Polynomial 𝕜) :
   exact Eventually.of_forall fun t ↦ by
     conv_lhs => rw [hq]
     simp only [eval_mul, eval_pow, eval_X, sub_zero, smul_eq_mul]
+
+/-- The analytic order of a nonzero polynomial function at a point is the multiplicity of that
+point as a root of the polynomial. -/
+theorem analyticOrderAt_eval {p : Polynomial 𝕜} (hp : p ≠ 0) (a : 𝕜) :
+    analyticOrderAt (fun t ↦ p.eval t) a = p.rootMultiplicity a := by
+  obtain ⟨q, hpq, hq⟩ := p.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hp a
+  refine ((AnalyticOnNhd.eval_polynomial p) a (Set.mem_univ _)).analyticOrderAt_eq_natCast.2
+    ⟨fun t ↦ q.eval t, (AnalyticOnNhd.eval_polynomial q) a (Set.mem_univ _),
+      fun h ↦ hq (dvd_iff_isRoot.2 h), .of_forall fun t ↦ ?_⟩
+  conv_lhs => rw [hpq]
+  simp only [eval_mul, eval_pow, eval_sub, eval_X, eval_C, smul_eq_mul]
 
 end Polynomial

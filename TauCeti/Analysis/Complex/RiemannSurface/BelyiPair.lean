@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
+public import TauCeti.Analysis.Complex.RiemannSurface.Polynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
@@ -55,7 +56,9 @@ topological branched covers. Consequently this construction descends to isomorph
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
 (`TauCeti.AnalyticBelyiPair.pow`). For `n = 1` this is the trivial pair, the identity of the
-sphere.
+sphere. The polynomial `z ↦ 4z(1 - z)` is a Belyi map of degree `2`, unramified over `0` and
+ramified of index `2` over `1` and `∞`, so that its ramification partitions over `0`, `1` and `∞`
+are `[1, 1]`, `[2]` and `[2]` (`TauCeti.AnalyticBelyiPair.chebyshev`).
 
 ## Main declarations
 
@@ -91,6 +94,11 @@ sphere.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass`: the induced map on isomorphism classes.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
+* `TauCeti.AnalyticBelyiPair.chebyshev`: the map `z ↦ 4z(1 - z)` of the sphere, of degree `2`
+  (`TauCeti.AnalyticBelyiPair.degree_β_chebyshev`), with branch values `1` and `∞`
+  (`TauCeti.AnalyticBelyiPair.branchValues_β_chebyshev`); its fibres and local multiplicities
+  over `0`, `1` and `∞` are `TauCeti.RiemannSurface.onePointMap_four_mul_mul_one_sub_preimage_zero`
+  and its companions.
 
 ## References
 
@@ -358,6 +366,170 @@ def pow {n : ℕ} (hn : n ≠ 0) : AnalyticBelyiPair.{0} where
 @[simp]
 theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun z : ℂ ↦ z ^ n :=
   FiniteHolomorphicMap.coe_spherePow hn
+
+end AnalyticBelyiPair
+
+/-! ### The Belyi map `z ↦ 4z(1 - z)` -/
+
+section FourMulMulOneSub
+
+open Polynomial
+
+/-- The polynomial `4X(1 - X)` has degree `2`. -/
+private theorem natDegree_four_mul_X_mul_one_sub_X : (C 4 * X * (1 - X) : ℂ[X]).natDegree = 2 := by
+  compute_degree!
+
+private theorem natDegree_four_mul_X_mul_one_sub_X_pos :
+    0 < (C 4 * X * (1 - X) : ℂ[X]).natDegree := by
+  rw [natDegree_four_mul_X_mul_one_sub_X]
+  exact two_pos
+
+/-- The extension of `4X(1 - X)` to the Riemann sphere is the extension of `z ↦ 4z(1 - z)`. -/
+private theorem onePointMap_eval_four_mul_X_mul_one_sub_X :
+    (OnePoint.map fun z : ℂ ↦ (C 4 * X * (1 - X) : ℂ[X]).eval z) =
+      OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z) := by
+  simp
+
+/-- The derivative `4 - 8z` of `4z(1 - z)` vanishes only at `1/2`. -/
+private theorem isRoot_derivative_four_mul_X_mul_one_sub_X_iff {z : ℂ} :
+    (derivative (C 4 * X * (1 - X) : ℂ[X])).IsRoot z ↔ z = 2⁻¹ := by
+  simp only [IsRoot, derivative_mul, derivative_C, derivative_X, derivative_sub, derivative_one,
+    eval_add, eval_mul, eval_C, eval_X, eval_sub, eval_one, eval_zero]
+  constructor <;> intro h
+  · linear_combination (-1 / 8 : ℂ) * h
+  · linear_combination (-8 : ℂ) * h
+
+namespace RiemannSurface
+
+/-- The map `z ↦ 4z(1 - z)` of the Riemann sphere has degree `2`. -/
+@[simp]
+theorem degree_onePointMap_four_mul_mul_one_sub :
+    degree (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) = 2 := by
+  rw [← onePointMap_eval_four_mul_X_mul_one_sub_X,
+    degree_onePointMap_eval natDegree_four_mul_X_mul_one_sub_X_pos,
+    natDegree_four_mul_X_mul_one_sub_X]
+
+/-- The fibre of `z ↦ 4z(1 - z)` over `0` consists of the two points `0` and `1`. -/
+theorem onePointMap_four_mul_mul_one_sub_preimage_zero :
+    (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) ⁻¹' {((0 : ℂ) : OnePoint ℂ)} =
+      {((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ)} := by
+  ext x
+  induction x using OnePoint.rec with
+  | infty => simp
+  | coe z => simp [sub_eq_zero, eq_comm (a := (1 : ℂ))]
+
+/-- The fibre of `z ↦ 4z(1 - z)` over `1` is the single point `1/2`. -/
+theorem onePointMap_four_mul_mul_one_sub_preimage_one :
+    (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) ⁻¹' {((1 : ℂ) : OnePoint ℂ)} =
+      {((2⁻¹ : ℂ) : OnePoint ℂ)} := by
+  ext x
+  induction x using OnePoint.rec with
+  | infty => simp
+  | coe z =>
+    simp only [mem_preimage, map_some, mem_singleton_iff, coe_eq_coe]
+    constructor
+    · intro h
+      have h' : (2 * z - 1) ^ 2 = 0 := by linear_combination -h
+      linear_combination (1 / 2 : ℂ) * (pow_eq_zero_iff two_ne_zero).1 h'
+    · rintro rfl
+      norm_num
+
+/-- The fibre of `z ↦ 4z(1 - z)` over `∞` is the single point `∞`. -/
+theorem onePointMap_four_mul_mul_one_sub_preimage_infty :
+    (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) ⁻¹' {(∞ : OnePoint ℂ)} = {∞} := by
+  ext x
+  induction x using OnePoint.rec with
+  | infty => simp
+  | coe z => simp
+
+/-- The map `z ↦ 4z(1 - z)` is unramified away from `1/2` and `∞`, in particular at the two points
+`0` and `1` over `0`. -/
+theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_coe {z : ℂ} (hz : z ≠ 2⁻¹) :
+    localMultiplicity (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) (z : OnePoint ℂ) = 1 := by
+  rw [← onePointMap_eval_four_mul_X_mul_one_sub_X]
+  exact localMultiplicity_onePointMap_eval_coe_of_not_isRoot
+    natDegree_four_mul_X_mul_one_sub_X_pos (isRoot_derivative_four_mul_X_mul_one_sub_X_iff.not.2 hz)
+
+/-- The map `z ↦ 4z(1 - z)` is ramified of index `2` at `1/2`, the only point over `1`. -/
+@[simp]
+theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_half :
+    localMultiplicity (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) ((2⁻¹ : ℂ) : OnePoint ℂ) = 2 := by
+  have h : (C 4 * X * (1 - X) : ℂ[X]) - C ((C 4 * X * (1 - X) : ℂ[X]).eval 2⁻¹) =
+      C (-4) * (X - C 2⁻¹) ^ 2 :=
+    Polynomial.funext fun z ↦ by
+      simp only [eval_sub, eval_mul, eval_C, eval_X, eval_one, eval_pow]
+      ring
+  rw [← onePointMap_eval_four_mul_X_mul_one_sub_X,
+    localMultiplicity_onePointMap_eval_coe natDegree_four_mul_X_mul_one_sub_X_pos, h,
+    rootMultiplicity_mul_X_sub_C_pow (by simp), rootMultiplicity_C, zero_add]
+
+/-- The map `z ↦ 4z(1 - z)` is ramified of index `2` at `∞`, the only point over `∞`. -/
+@[simp]
+theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_infty :
+    localMultiplicity (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) (∞ : OnePoint ℂ) = 2 := by
+  rw [← onePointMap_eval_four_mul_X_mul_one_sub_X,
+    localMultiplicity_onePointMap_eval_infty natDegree_four_mul_X_mul_one_sub_X_pos,
+    natDegree_four_mul_X_mul_one_sub_X]
+
+/-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`. -/
+private theorem branchValues_spherePolynomial_four_mul_X_mul_one_sub_X :
+    (FiniteHolomorphicMap.spherePolynomial natDegree_four_mul_X_mul_one_sub_X_pos).branchValues =
+      {((1 : ℂ) : OnePoint ℂ), ∞} := by
+  ext y
+  rw [FiniteHolomorphicMap.mem_branchValues_iff, FiniteHolomorphicMap.coe_spherePolynomial,
+    onePointMap_eval_four_mul_X_mul_one_sub_X]
+  constructor
+  · rintro ⟨x, rfl, hx⟩
+    induction x using OnePoint.rec with
+    | infty => simp
+    | coe z =>
+      obtain rfl : z = 2⁻¹ := by
+        by_contra hz
+        rw [localMultiplicity_onePointMap_four_mul_mul_one_sub_coe hz] at hx
+        exact lt_irrefl 1 hx
+      norm_num
+  · rintro (rfl | rfl)
+    · exact ⟨((2⁻¹ : ℂ) : OnePoint ℂ), by norm_num, by simp⟩
+    · exact ⟨∞, by simp, by simp⟩
+
+end RiemannSurface
+
+end FourMulMulOneSub
+
+/-- **The map `z ↦ 4z(1 - z)` is a Belyi map.** The Riemann sphere with the map `z ↦ 4z(1 - z)`,
+sending `∞` to `∞`, is an analytic Belyi pair of degree `2`. It is unramified over `0`, whose
+preimages are `0` and `1`, and ramified of index `2` over `1`, at `1/2`, and over `∞`, at `∞`, so
+its ramification partitions over `0`, `1` and `∞` are `[1, 1]`, `[2]` and `[2]`. The map is
+`z ↦ (1 - T₂(1 - 2z)) / 2` for the Chebyshev polynomial `T₂ = 2x² - 1`. -/
+-- The body is exposed so that the surface of the pair is `OnePoint ℂ` by definition.
+@[expose]
+def AnalyticBelyiPair.chebyshev : AnalyticBelyiPair.{0} where
+  X := OnePoint ℂ
+  β := .spherePolynomial (p := Polynomial.C 4 * Polynomial.X * (1 - Polynomial.X)) <| by
+    rw [show (Polynomial.C 4 * Polynomial.X * (1 - Polynomial.X) : Polynomial ℂ).natDegree = 2 by
+      compute_degree!]
+    exact two_pos
+  branchValues_subset := by
+    rw [RiemannSurface.branchValues_spherePolynomial_four_mul_X_mul_one_sub_X]
+    simp
+
+namespace AnalyticBelyiPair
+
+/-- The Belyi map of `chebyshev` is the map `z ↦ 4z(1 - z)` of the sphere. -/
+@[simp]
+theorem coe_β_chebyshev : ⇑chebyshev.β = OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z) :=
+  (FiniteHolomorphicMap.coe_spherePolynomial _).trans onePointMap_eval_four_mul_X_mul_one_sub_X
+
+/-- The Belyi map `z ↦ 4z(1 - z)` has degree `2`. -/
+@[simp]
+theorem degree_β_chebyshev : degree chebyshev.β = 2 :=
+  -- The surface of `chebyshev` is `OnePoint ℂ` by definition, so `coe_β_chebyshev` applies.
+  (congrArg degree coe_β_chebyshev).trans degree_onePointMap_four_mul_mul_one_sub
+
+/-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`: it is unramified over `0`. -/
+theorem branchValues_β_chebyshev : chebyshev.β.branchValues = {((1 : ℂ) : OnePoint ℂ), ∞} :=
+  -- `chebyshev.β` is the polynomial map of `4X(1 - X)` by definition.
+  branchValues_spherePolynomial_four_mul_X_mul_one_sub_X
 
 end AnalyticBelyiPair
 
