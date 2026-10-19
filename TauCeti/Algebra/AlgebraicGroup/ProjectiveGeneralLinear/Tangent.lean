@@ -65,6 +65,20 @@ theorem tangentEnd_apply
         (HopfIdeal.quotientLieHom (definingHopfIdeal n R) d)) := by
   simp [tangentEnd, GeneralLinear.tangentLieEquivMatrix_apply]
 
+/-- An inner representative gives the ambient tangent matrix by the two Kronecker
+multiplication matrices. This formula does not require a choice of normalization. -/
+theorem tangentMatrix_eq_of_tangentEnd_eq
+    (d : Derivation R (coordinateHopfAlgebra n R)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra n R) B))
+    (X : Matrix (Fin n) (Fin n) B)
+    (hd : tangentEnd (R := R) n d = LinearMap.mulLeft B X - LinearMap.mulRight B X) :
+    GeneralLinear.tangentMatrix (n * n)
+        (HopfIdeal.quotientLieHom (definingHopfIdeal n R) d) =
+      conjugationMatrix X 1 - conjugationMatrix 1 X := by
+  apply (Matrix.toLinAlgEquiv (matrixUnitBasis n B)).injective
+  rw [← tangentEnd_apply, hd, map_sub]
+  simp
+
 private theorem tangentMatrix_conjugationMap_eq_map
     (d : Derivation R (GeneralLinear.coordinateHopfAlgebra R n)
       (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B)) :

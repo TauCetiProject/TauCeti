@@ -28,7 +28,8 @@ If the spectra of `A` and `B` are at distance at least `δ`, every factor `(α�
 `δ²`, and therefore `δ ‖X‖_F ≤ ‖A X - X B‖_F`. Equivalently, every solution of the Sylvester
 equation `A X - X B = C` satisfies `δ ‖X‖_F ≤ ‖C‖_F`. For the Frobenius seminorm the constant is
 `1`; the corresponding bound for a general unitarily invariant seminorm under the same pairwise
-separation hypothesis carries the constant `π / 2`.
+separation hypothesis carries the constant `π / 2` (see
+`TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Pairwise`).
 
 ## The interval/exterior bound
 
