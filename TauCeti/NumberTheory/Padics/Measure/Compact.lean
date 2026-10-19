@@ -22,6 +22,13 @@ nonzero test function by a value of maximal norm and using `ℤ_[p]`-linearity.
 This supplies weak compactness without a countability hypothesis on the compact space.
 No norm or topology instance on measures is installed.
 
+## Main declarations
+
+* `TauCeti.AbstractMeasure.norm_integral_apply_le μ f` bounds the integral of a test function.
+* `TauCeti.AbstractMeasure.lipschitzWith_integral μ` gives the uniform Lipschitz bound.
+* `TauCeti.AbstractMeasure.isClosedEmbedding_integral_eval_weak` gives the closed evaluation image.
+* `TauCeti.AbstractMeasure.compactSpace_integralMeasures_weak` gives weak compactness.
+
 ## References
 
 J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*,
