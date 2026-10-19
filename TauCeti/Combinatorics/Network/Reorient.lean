@@ -69,9 +69,9 @@ def flip (σ : ∀ ⦃x y : V⦄, Q x y → Bool) {x y : V} (e : Q x y) (h : σ 
 
 end ReorientedHom
 
-section AddCommGroup
+section Neg
 
-variable [AddCommGroup K]
+variable [Neg K]
 
 /-- Transport an assignment across a reorientation, negating the value on every reversed arrow. -/
 def reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (f : Assignment Q K) :
@@ -83,37 +83,6 @@ def unreorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
     (f : Assignment (ReorientedHom Q σ) K) : Assignment Q K :=
   fun {_ _} e ↦ if h : σ e then -f (ReorientedHom.flip σ e h)
     else f (ReorientedHom.keep σ e h)
-
-/-- Reorienting assignments is an additive equivalence.  Its inverse uses the same selected
-arrows and negates their values again. -/
-def reorientAssignmentEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) :
-    Assignment Q K ≃+ Assignment (ReorientedHom Q σ) K where
-  toFun := reorientAssignment σ
-  invFun := unreorientAssignment σ
-  left_inv f := by
-    funext x y e
-    by_cases h : σ e
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, h]
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, h]
-  right_inv f := by
-    funext x y e
-    obtain e | e := e
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.2]
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.2]
-  map_add' f g := by
-    funext x y e
-    obtain e | e := e <;> simp [reorientAssignment, add_comm]
-
-@[simp]
-theorem reorientAssignmentEquiv_apply (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
-    (f : Assignment Q K) : reorientAssignmentEquiv σ f = reorientAssignment σ f :=
-  (rfl)
-
-@[simp]
-theorem reorientAssignmentEquiv_symm_apply (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
-    (f : Assignment (ReorientedHom Q σ) K) :
-    (reorientAssignmentEquiv σ).symm f = unreorientAssignment σ f :=
-  (rfl)
 
 @[simp]
 theorem reorientAssignment_keep (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
@@ -171,6 +140,43 @@ theorem reorientUpper_keep (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Ass
 theorem reorientUpper_flip (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
     {x y : V} (e : Q x y) (h : σ e) :
     reorientUpper σ lo hi (ReorientedHom.flip σ e h) = -lo e :=
+  (rfl)
+
+end Neg
+
+section AddCommGroup
+
+variable [AddCommGroup K]
+
+/-- Reorienting assignments is an additive equivalence.  Its inverse uses the same selected
+arrows and negates their values again. -/
+def reorientAssignmentEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) :
+    Assignment Q K ≃+ Assignment (ReorientedHom Q σ) K where
+  toFun := reorientAssignment σ
+  invFun := unreorientAssignment σ
+  left_inv f := by
+    funext x y e
+    by_cases h : σ e
+    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, h]
+    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, h]
+  right_inv f := by
+    funext x y e
+    obtain e | e := e
+    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.2]
+    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.2]
+  map_add' f g := by
+    funext x y e
+    obtain e | e := e <;> simp [reorientAssignment, add_comm]
+
+@[simp]
+theorem reorientAssignmentEquiv_apply (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    (f : Assignment Q K) : reorientAssignmentEquiv σ f = reorientAssignment σ f :=
+  (rfl)
+
+@[simp]
+theorem reorientAssignmentEquiv_symm_apply (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    (f : Assignment (ReorientedHom Q σ) K) :
+    (reorientAssignmentEquiv σ).symm f = unreorientAssignment σ f :=
   (rfl)
 
 section Order
