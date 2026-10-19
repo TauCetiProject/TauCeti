@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
-public import Mathlib.RingTheory.AdicCompletion.Topology
 
-import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.Topology.Algebra.OpenSubgroup
-import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Finiteness.Tower
 
 /-!
@@ -33,14 +31,12 @@ itself needs no noetherian hypothesis: it holds over any complete first-countabl
 
 These are the facts about finite modules that Huber's sheafiness theorem for rings with a
 noetherian ring of definition uses, alongside the strictness of linear maps
-(`TauCeti.Huber.PairOfDefinition.isStrictMap_of_isNoetherianRing`). For strongly noetherian Tate
+(`TauCeti.Huber.PairOfDefinition.isStrictMap_of_isNoetherianRing`). For complete noetherian Tate
 rings the corresponding statements are `TauCeti.Huber.IsTateRing.t2Space_moduleTopology` and
 `TauCeti.Huber.isClosed_of_isNoetherian`; here `A` need not be Tate.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.isAdicComplete_idealOfDefinition`: the ring of definition of a
-  complete Hausdorff Huber ring is complete for its ideal of definition.
 * `TauCeti.Huber.PairOfDefinition.isOpen_of_span_eq_top`: an `A₀`-submodule spanning a finite
   module over `A` is open.
 * `TauCeti.Huber.PairOfDefinition.t2Space_of_isNoetherianRing`: a finite module is Hausdorff.
@@ -61,18 +57,6 @@ open Filter Topology
 namespace TauCeti.Huber.PairOfDefinition
 
 variable {A : Type*} [CommRing A]
-
-/-- **The ring of definition of a complete Hausdorff Huber ring is adically complete.** If `A` is
-complete and Hausdorff, then for every pair of definition `(A₀, I)` the ring `A₀` is `I`-adically
-complete: being an open subgroup it is closed, hence complete, and its topology is `I`-adic. -/
-instance isAdicComplete_idealOfDefinition [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A]
-    [T0Space A] (P : PairOfDefinition A) :
-    IsAdicComplete P.idealOfDefinition P.ringOfDefinition := by
-  have : IsUniformAddGroup P.ringOfDefinition := P.ringOfDefinition.toAddSubgroup.isUniformAddGroup
-  have hclosed : IsClosed (P.ringOfDefinition : Set A) :=
-    P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
-  have : CompleteSpace P.ringOfDefinition := hclosed.completeSpace_coe
-  exact P.isAdic_idealOfDefinition.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
 
 variable {M : Type*} [AddCommGroup M] [Module A M]
 
