@@ -152,11 +152,16 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     (f g : K → K)
     (hf : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, a (d + 1) * r ^ (d + 1)) = f r)
     (hg : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, b (d + 1) * r ^ (d + 1)) = g r)
-    (hinv : ∀ r, f r⁻¹ = g r) (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hinv : ∀ r, f r⁻¹ = g r) (q u : Kˣ)
     (hqu : ‖(q : K) * (u : K)‖ < 1) (hqui : ‖(q : K) * (u : K)⁻¹‖ < 1) :
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
         (a d * (u : K) ^ d + b d * (u : K)⁻¹ ^ d)) * (q : K) ^ n)
       ((∑' n : ℤ, f ((q : K) ^ n * (u : K))) - f (u : K)) := by
+  have hq : ‖(q : K)‖ < 1 := by
+    have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
+    rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
+      ← pow_two, norm_pow] at h
+    exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
   have hsmall {v : K} (hv : ‖(q : K) * v‖ < 1) (n : ℕ+) :
       ‖(q : K) ^ (n : ℕ) * v‖ < 1 := by
     have hn : (n : ℕ) = ((n : ℕ) - 1) + 1 := (Nat.sub_add_cancel n.pos).symm
