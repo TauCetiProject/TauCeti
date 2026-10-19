@@ -218,7 +218,8 @@ theorem walkGraph_reverse (p : G.Walk x y) : G.walkGraph p.reverse = G.walkGraph
   · intro e a b
     simp [walkGraph_isLink, edges_reverse]
 
-/-- Erasing loops from a walk can only shrink its traced graph. -/
+/-- Bypassing repeated vertices (removing closed sub-walks) can only shrink a walk's traced
+graph. -/
 theorem walkGraph_bypass_le [DecidableEq α] (p : G.Walk x y) :
     G.walkGraph p.bypass ≤ G.walkGraph p :=
   (walkGraph_le_walkGraph_iff p.bypass p).mpr
