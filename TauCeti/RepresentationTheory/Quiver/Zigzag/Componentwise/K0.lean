@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.CartanMap
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Idempotents
+-- Idempotent.Projective imports this privately; the brick criterion is needed below.
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
