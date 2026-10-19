@@ -96,13 +96,15 @@ theorem spinVectorAction_realCliffordSpinGroupEquivNeg (x : realCliffordSpinGrou
   exact (QuadraticMap.Isometry.spinGroupMap_spinVectorAction _ _ v).trans
     (congrArg _ (LinearEquiv.congr_fun (spinVectorAction_spinGroupEquivNeg _ x) v))
 
-/-- In positive dimension, i.e. given `NeZero (p + q)` and `NeZero (q + p)`,
-`realCliffordSpinGroupEquivNeg` sends the central element `-1` to `-1`. -/
+/-- In positive dimension, i.e. given `NeZero (p + q)`, `realCliffordSpinGroupEquivNeg` sends the
+central element `-1` to `-1`. -/
 @[simp]
-theorem realCliffordSpinGroupEquivNeg_negOne [NeZero (p + q)] [NeZero (q + p)] :
+theorem realCliffordSpinGroupEquivNeg_negOne [NeZero (p + q)] :
     realCliffordSpinGroupEquivNeg p q
         (spinGroup.negOne (realCliffordForm p q) (nondegenerate_realCliffordForm p q).ne_zero) =
-      spinGroup.negOne (realCliffordForm q p) (nondegenerate_realCliffordForm q p).ne_zero := by
+      spinGroup.negOne (realCliffordForm q p)
+        (haveI : NeZero (q + p) := ⟨by rw [add_comm]; exact NeZero.ne _⟩
+        (nondegenerate_realCliffordForm q p).ne_zero) := by
   rw [realCliffordSpinGroupEquivNeg, MulEquiv.trans_apply, spinGroupEquivNeg_negOne,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.spinGroupMap_negOne]
 
