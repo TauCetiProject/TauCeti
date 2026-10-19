@@ -53,13 +53,30 @@ theorem legacySmoothTwoFormEquiv_apply [IsManifold I 1 M]
     (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) x ![v, w] = φ.eval₂ x v w := by
   simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_apply, SmoothForm.eval₂_apply]
 
-/-- The migrated closedness predicate is exactly vanishing of the generic exterior derivative. -/
+/-- The generic exterior derivative vanishes exactly when every chart expression of the migrated
+two-form has zero flat exterior derivative on the model range. -/
 theorem legacySmoothTwoFormEquiv_isClosed_iff [IsManifold I 1 M]
     (φ : TauCeti.SmoothTwoForm I M) :
     mextDeriv (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) = 0 ↔
-      SmoothForm.IsClosed φ := by
-  rw [SmoothForm.isClosed_def]
-  rfl
+      ∀ x₀ z, z ∈ (extChartAt I x₀).target →
+        extDerivWithin ((φ : RoughForm I M ℝ 2).inChartAt x₀) (Set.range I) z = 0 := by
+  let ψ : RoughForm I M ℝ 2 := legacySmoothTwoFormEquiv φ
+  have hψ : IsSmoothForm I 1 ψ := by
+    have hφ : IsSmoothForm I ∞ (φ : RoughForm I M ℝ 2) := φ.isSmoothForm
+    rw [isSmoothForm_def] at hφ ⊢
+    simpa [ψ, legacySmoothTwoFormEquiv] using hφ.of_le (by norm_num)
+  constructor
+  · intro h x₀ z hz
+    change extDerivWithin (ψ.inChartAt x₀) (Set.range I) z = 0
+    rw [← hψ.inChartAt_mextDeriv_eq x₀ hz, h, RoughForm.inChartAt_zero]
+    simp
+  · intro h
+    change ∀ x₀ z, z ∈ (extChartAt I x₀).target →
+      extDerivWithin (ψ.inChartAt x₀) (Set.range I) z = 0 at h
+    change mextDeriv ψ = 0
+    funext x
+    rw [mextDeriv_def]
+    exact h x (extChartAt I x x) (mem_extChartAt_target x)
 
 namespace SmoothTwoForm
 
