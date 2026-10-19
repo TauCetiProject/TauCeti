@@ -10,6 +10,7 @@ public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Ring.NegOnePow
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.Basis.Exact
 
 /-!
@@ -66,16 +67,6 @@ open CategoryTheory Module
 
 namespace HomologicalComplex
 
-/-- At a degree where a chain complex of modules is exact, the inclusion of the boundaries and the
-differential onto the next boundaries form a short exact sequence `0 → Bⱼ₊₁ → Cⱼ₊₁ → Bⱼ → 0`. -/
-theorem exact_subtype_rangeRestrict {R : Type*} [Ring R] (C : ChainComplex (ModuleCat R) ℤ)
-    {j : ℤ} (h : C.ExactAt (j + 1)) :
-    Function.Exact (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom).subtype
-      (C.d (j + 1) j).hom.rangeRestrict := by
-  rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype]
-  exact ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((C.exactAt_iff' (j + 1 + 1) (j + 1) j (by simp) (by simp)).1 h)).symm
-
 variable {F : Type*} [Field F] (C : ChainComplex (ModuleCat F) ℤ)
 
 variable {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
@@ -90,8 +81,8 @@ variable {C} {j : ℤ} (h : C.ExactAt (j + 1)) {p q : ℕ}
 /-- The basis `(b₁, s)` of `Cⱼ₊₁` made of a basis `b₁` of the boundaries `Bⱼ₊₁` followed by lifts
 `s` of a basis `b₀` of the boundaries `Bⱼ`. -/
 private def bracketBasis : Basis (Fin p ⊕ Fin q) F (C.X (j + 1)) :=
-  Basis.ofExactLift (Submodule.injective_subtype _) (C.exact_subtype_rangeRestrict h) b₁ b₀ s
-    fun k ↦ Subtype.ext (hs k)
+  Basis.ofExactLift (Submodule.injective_subtype _)
+    (exact_subtype_rangeRestrict (by simp) (by simp) h) b₁ b₀ s fun k ↦ Subtype.ext (hs k)
 
 include c h b₁ b₀ s hs in
 private theorem eq_add_of_exactAt : n (j + 1) = p + q := by
@@ -124,6 +115,7 @@ theorem torsionBracket_ne_zero : torsionBracket c h b₁ b₀ s hs ≠ 0 :=
   (Basis.isUnit_det _ _).ne_zero
 
 /-- The bracket in a degree where the complex vanishes is `1`. -/
+@[simp]
 theorem torsionBracket_eq_one (hn : n (j + 1) = 0) : torsionBracket c h b₁ b₀ s hs = 1 := by
   have : IsEmpty (Fin (n (j + 1))) := by rw [hn]; infer_instance
   simp [torsionBracket, Basis.det_reindex]
@@ -194,10 +186,12 @@ def reidemeisterTorsion : F := by
   exact if h : C.Acyclic ∧ {i | n i ≠ 0}.Finite then torsionOfAcyclic C c h.1 else 0
 
 /-- The torsion of a complex that is not acyclic is `0`. -/
+@[simp]
 theorem reidemeisterTorsion_of_not_acyclic (h : ¬C.Acyclic) : C.reidemeisterTorsion c = 0 := by
   simp [reidemeisterTorsion, h]
 
 /-- The torsion of an unbounded complex, one with infinitely many nonzero `n i`, is `0`. -/
+@[simp]
 theorem reidemeisterTorsion_of_not_finite (hn : ¬{i | n i ≠ 0}.Finite) :
     C.reidemeisterTorsion c = 0 := by
   simp [reidemeisterTorsion, hn]
@@ -310,8 +304,8 @@ include c h hn in
 private theorem injective_d_of_concentrated :
     Function.Injective (C.d (j + 1 + 1) (j + 1)).hom := by
   rw [← LinearMap.ker_eq_bot, ← LinearMap.ker_rangeRestrict,
-    (C.exact_subtype_rangeRestrict (j := j + 1) (h _)).linearMap_ker_eq, Submodule.range_subtype,
-    eq_bot_iff]
+    (exact_subtype_rangeRestrict (i := j + 1 + 1 + 1) (k := j + 1) (by simp) (by simp)
+      (h (j + 1 + 1))).linearMap_ker_eq, Submodule.range_subtype, eq_bot_iff]
   rintro _ ⟨x, rfl⟩
   rw [eq_zero_of_eq_zero (c := c) (hn (j + 1 + 1 + 1) (by omega) (by omega)) x, map_zero]
   exact zero_mem _
