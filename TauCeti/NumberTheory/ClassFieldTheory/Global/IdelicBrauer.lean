@@ -19,11 +19,9 @@ has image the subgroup killed by the local degree `[L_w : K_v]`.
 Every element of that subgroup is realized by an idelic cohomology class supported at `v`,
 with zero semi-local components at every other finite place and at every infinite place.
 Thus a place of full local degree supplies an idelic class with invariant `1 / [L : K]`.
-This is the local construction used to obtain generators for the global invariant map.
+The invariant coordinates are recorded separately at each place, before taking their sum.
 
-The construction uses `idelesCohomologyLocalization_surjective` and the positive-degree
-Shapiro isomorphism `HeightOneSpectrum.semilocalUnitsTateCohomologyIsoPos`. It asserts no
-global reciprocity or local-global principle for quadratic forms.
+The construction combines positive-degree Shapiro with `idelesCohomologyLocalization_surjective`.
 
 ## References
 
@@ -46,77 +44,72 @@ variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L]
   [w.asIdeal.LiesOver v.asIdeal]
   (σ : w.adicCompletion L →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
 
-/-- The local Brauer invariant of a semi-local degree-two class: Shapiro to `L_wˣ`,
-then relative Brauer inflation and the invariant of `K_v`. -/
-def semilocalBrauerInvariant :
+/-- Shapiro's identification of semi-local degree-two cohomology with the relative Brauer
+group of the completion at the given place `w` above `v`. -/
+def semilocalBrauerShapiroEquiv :
+    tateCohomology (semilocalUnitsRep L v) 2 ≃+
+      groupCohomology (Rep.ofMulDistribMulAction
+        Gal(w.adicCompletion L/v.adicCompletion K) (w.adicCompletion L)ˣ) 2 :=
+  (v.semilocalUnitsTateCohomologyIsoPos w 2 ≪≫
+    (_root_.TateCohomology.isoGroupCohomology 2).app
+      (Rep.ofAlgebraAutOnUnits
+        (v.adicCompletion K) (w.adicCompletion L))).toLinearEquiv.toAddEquiv
+
+/-- The semi-local Brauer equivalence is Shapiro followed by the Tate-to-ordinary comparison. -/
+theorem semilocalBrauerShapiroEquiv_apply
+    (x : tateCohomology (semilocalUnitsRep L v) 2) :
+    semilocalBrauerShapiroEquiv v w x =
+      ((_root_.TateCohomology.isoGroupCohomology 2).app
+        (Rep.ofAlgebraAutOnUnits (v.adicCompletion K) (w.adicCompletion L))).hom
+          ((v.semilocalUnitsTateCohomologyIsoPos w 2).hom x) :=
+  (rfl)
+
+/-- The local invariant computed through the chosen place `w` above `v` and embedding
+`σ : L_w → K_vˢ`: Shapiro, relative Brauer inflation, then the invariant of `K_v`.
+Independence of these choices is not established here. -/
+def semilocalInv :
     tateCohomology (semilocalUnitsRep L v) 2 →+ AddCircle (1 : ℚ) :=
   (invMap (v.adicCompletion K)).toAddMonoidHom.comp
     ((relBrInfl (v.adicCompletion K) (w.adicCompletion L) σ).comp
-      ((v.semilocalUnitsTateCohomologyIsoPos w 2 ≪≫
-        (_root_.TateCohomology.isoGroupCohomology 2).app
-          (Rep.ofAlgebraAutOnUnits
-            (v.adicCompletion K) (w.adicCompletion L))).toLinearEquiv.toAddEquiv.toAddMonoidHom))
+      (semilocalBrauerShapiroEquiv v w).toAddMonoidHom)
 
 /-- The semi-local invariant is the invariant of the inflated Shapiro class. -/
-theorem semilocalBrauerInvariant_apply (x : tateCohomology (semilocalUnitsRep L v) 2) :
-    semilocalBrauerInvariant v w σ x = invMap (v.adicCompletion K)
+theorem semilocalInv_apply (x : tateCohomology (semilocalUnitsRep L v) 2) :
+    semilocalInv v w σ x = invMap (v.adicCompletion K)
       (relBrInfl (v.adicCompletion K) (w.adicCompletion L) σ
-        (((_root_.TateCohomology.isoGroupCohomology 2).app
-          (Rep.ofAlgebraAutOnUnits (v.adicCompletion K) (w.adicCompletion L))).hom
-            ((v.semilocalUnitsTateCohomologyIsoPos w 2).hom x))) :=
+        (semilocalBrauerShapiroEquiv v w x)) :=
   (rfl)
 
 /-- A semi-local Brauer class is determined by its invariant. -/
-theorem semilocalBrauerInvariant_injective :
-    Function.Injective (semilocalBrauerInvariant v w σ) :=
+theorem semilocalInv_injective : Function.Injective (semilocalInv v w σ) :=
   (invMap (v.adicCompletion K)).injective.comp
     ((relBrInfl_injective (v.adicCompletion K) (w.adicCompletion L) σ).comp
-      (v.semilocalUnitsTateCohomologyIsoPos w 2 ≪≫
-        (_root_.TateCohomology.isoGroupCohomology 2).app
-          (Rep.ofAlgebraAutOnUnits
-            (v.adicCompletion K) (w.adicCompletion L))).toLinearEquiv.injective)
+      (semilocalBrauerShapiroEquiv v w).injective)
 
 @[simp]
-theorem semilocalBrauerInvariant_eq_zero_iff
+theorem semilocalInv_eq_zero_iff
     (x : tateCohomology (semilocalUnitsRep L v) 2) :
-    semilocalBrauerInvariant v w σ x = 0 ↔ x = 0 :=
-  map_eq_zero_iff _ (semilocalBrauerInvariant_injective v w σ)
+    semilocalInv v w σ x = 0 ↔ x = 0 :=
+  map_eq_zero_iff _ (semilocalInv_injective v w σ)
 
 /-- The possible semi-local invariants are exactly those killed by the local degree. -/
-theorem mem_range_semilocalBrauerInvariant_iff (t : AddCircle (1 : ℚ)) :
-    t ∈ (semilocalBrauerInvariant v w σ).range ↔
+theorem mem_range_semilocalInv_iff (t : AddCircle (1 : ℚ)) :
+    t ∈ (semilocalInv v w σ).range ↔
       Module.finrank (v.adicCompletion K) (w.adicCompletion L) • t = 0 := by
-  let e := (v.semilocalUnitsTateCohomologyIsoPos w 2 ≪≫
-    (_root_.TateCohomology.isoGroupCohomology 2).app
-      (Rep.ofAlgebraAutOnUnits (v.adicCompletion K) (w.adicCompletion L))).toLinearEquiv
-  constructor
-  · rintro ⟨x, rfl⟩
-    have hx := (mem_range_relBrInfl_iff_brBaseChange_eq_zero (v.adicCompletion K)
-      (w.adicCompletion L) σ _).mp ⟨e x, rfl⟩
-    exact (invMap_brRes (v.adicCompletion K) (w.adicCompletion L) σ _).symm.trans
-      ((congrArg (invMap (w.adicCompletion L))
-        ((brBaseChange_eq_brRes (v.adicCompletion K) (w.adicCompletion L) σ).symm ▸ hx)).trans
-          (map_zero _))
-  · intro ht
-    let b := (invMap (v.adicCompletion K)).symm t
-    have hb : Module.finrank (v.adicCompletion K) (w.adicCompletion L) • b = 0 :=
-      (invMap (v.adicCompletion K)).injective (by
-        rw [map_nsmul, AddEquiv.apply_symm_apply, ht, map_zero])
-    obtain ⟨y, hy⟩ := (mem_range_relBrInfl_iff_brBaseChange_eq_zero (v.adicCompletion K)
-      (w.adicCompletion L) σ b).mpr
-        (brBaseChange_eq_zero_of_dvd_finrank (v.adicCompletion K) (w.adicCompletion L)
-          dvd_rfl b hb)
-    refine ⟨e.symm y, ?_⟩
-    exact (congrArg (invMap (v.adicCompletion K))
-      ((congrArg (relBrInfl (v.adicCompletion K) (w.adicCompletion L) σ)
-        (e.apply_symm_apply y)).trans hy)).trans (AddEquiv.apply_symm_apply _ t)
+  -- Pass from bundled hom composition to a function range to use surjectivity of Shapiro.
+  change t ∈ Set.range ((invMap (v.adicCompletion K) ∘
+    relBrInfl (v.adicCompletion K) (w.adicCompletion L) σ) ∘
+      semilocalBrauerShapiroEquiv v w) ↔ _
+  rw [(semilocalBrauerShapiroEquiv v w).surjective.range_comp,
+    range_invMap_comp_relBrInfl]
+  exact AddSubgroup.torsionBy.nsmul_iff
 
 /-- Every allowable invariant is realized by an idelic class supported at one finite place.
 All other semi-local components, including the archimedean ones, vanish. -/
-theorem exists_idelesCohomology_single_place_invariant (t : AddCircle (1 : ℚ))
+theorem exists_semilocalInv_eq_of_finrank_nsmul_eq_zero (t : AddCircle (1 : ℚ))
     (ht : Module.finrank (v.adicCompletion K) (w.adicCompletion L) • t = 0) :
     ∃ x : tateCohomology (idelesRep K L) ((2 : ℕ) : ℤ),
-      semilocalBrauerInvariant v w σ
+      semilocalInv v w σ
         (((tateCohomologyFunctor ((2 : ℕ) : ℤ)).map (idelesToSemilocalUnits L v)).hom x) = t ∧
       (∀ u : HeightOneSpectrum (𝓞 K), u ≠ v →
         ((tateCohomologyFunctor ((2 : ℕ) : ℤ)).map (idelesToSemilocalUnits L u)).hom x = 0) ∧
@@ -124,12 +117,12 @@ theorem exists_idelesCohomology_single_place_invariant (t : AddCircle (1 : ℚ))
         ((tateCohomologyFunctor ((2 : ℕ) : ℤ)).map
           (idelesToInfiniteSemilocalUnits L u)).hom x = 0 := by
   classical
-  obtain ⟨y, hy⟩ := (mem_range_semilocalBrauerInvariant_iff v w σ t).mpr ht
+  obtain ⟨y, hy⟩ := (mem_range_semilocalInv_iff v w σ t).mpr ht
   obtain ⟨x, hx⟩ := idelesCohomologyLocalization_surjective K L 2 (DFinsupp.single v y, 0)
   refine ⟨x, ?_, fun u hu ↦ ?_, fun u ↦ ?_⟩
   · have h := congrArg (fun z ↦ z.1 v) hx
     simp only [idelesCohomologyLocalization_fst_apply, DFinsupp.single_eq_same] at h
-    exact (congrArg (semilocalBrauerInvariant v w σ) h).trans hy
+    exact (congrArg (semilocalInv v w σ) h).trans hy
   · have h := congrArg (fun z ↦ z.1 u) hx
     simpa only [idelesCohomologyLocalization_fst_apply, DFinsupp.single_eq_of_ne hu] using h
   · simpa only [idelesCohomologyLocalization_snd_apply, Pi.zero_apply] using
@@ -138,9 +131,9 @@ theorem exists_idelesCohomology_single_place_invariant (t : AddCircle (1 : ℚ))
 /-- A finite place supplies an idelic class with invariant the reciprocal of its local degree,
 with zero components at every other place. At a place of full local degree this is `1 / [L : K]`.
 The prescribed semi-local component has additive order exactly the local degree. -/
-theorem exists_idelesCohomology_single_place_one_div :
+theorem exists_semilocalInv_eq_one_div_finrank :
     ∃ x : tateCohomology (idelesRep K L) ((2 : ℕ) : ℤ),
-      semilocalBrauerInvariant v w σ
+      semilocalInv v w σ
         (((tateCohomologyFunctor ((2 : ℕ) : ℤ)).map (idelesToSemilocalUnits L v)).hom x) =
           ((1 / Module.finrank (v.adicCompletion K) (w.adicCompletion L) : ℚ) : AddCircle (1 : ℚ)) ∧
       (∀ u : HeightOneSpectrum (𝓞 K), u ≠ v →
@@ -156,11 +149,11 @@ theorem exists_idelesCohomology_single_place_one_div :
   have hord := AddCircle.addOrderOf_period_div (p := (1 : ℚ)) hn
   have ht := addOrderOf_nsmul_eq_zero ((1 / n : ℚ) : AddCircle (1 : ℚ))
   rw [hord] at ht
-  obtain ⟨x, hx, hfin, hinf⟩ := exists_idelesCohomology_single_place_invariant v w σ
+  obtain ⟨x, hx, hfin, hinf⟩ := exists_semilocalInv_eq_of_finrank_nsmul_eq_zero v w σ
     ((1 / n : ℚ) : AddCircle (1 : ℚ)) ht
   refine ⟨x, hx, hfin, hinf, ?_⟩
-  rw [← addOrderOf_injective (semilocalBrauerInvariant v w σ)
-    (semilocalBrauerInvariant_injective v w σ), hx]
+  rw [← addOrderOf_injective (semilocalInv v w σ)
+    (semilocalInv_injective v w σ), hx]
   exact hord
 
 end TauCeti.ClassFieldTheory
