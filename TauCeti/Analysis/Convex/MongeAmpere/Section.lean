@@ -8,9 +8,10 @@ module
 public import TauCeti.Analysis.Convex.MongeAmpere.Affine
 public import TauCeti.Analysis.Convex.MongeAmpere.Comparison
 public import TauCeti.Analysis.Convex.Section.Basic
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convex.AffineNormalization
+import TauCeti.Analysis.Convex.StrictConvexSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Volume of sections of solutions of the Monge–Ampère equation
@@ -20,7 +21,8 @@ Let `E` be a real inner product space of finite dimension `n ≥ 1` with an addi
 mass of `v` on `G`, the volume of `G` and the depth of `v` below its boundary values control
 each other, with constants depending only on `E` and `μ`:
 
-* if `v ≥ 0` on the frontier of `G`, then `(-v x₀) ^ n ≤ C μ(G) MA_v(G)` for every `x₀ ∈ G`;
+* if `v ≥ 0` on the frontier of `G`, then `(max 0 (-v x₀)) ^ n ≤ C μ(G) MA_v(G)` for every
+  `x₀ ∈ G`;
 * if `v ≤ 0` on the frontier of `G`, `v ≥ -h` on `G` and `MA_v ≥ λ μ` on `G`, then
   `λ μ(G)² ≤ C hⁿ`.
 
@@ -47,7 +49,7 @@ point for the geometry of sections used in the regularity theory of the Monge–
 * `TauCeti.mongeAmpereMeasure_ite_mul_norm_sq_add` — the Monge–Ampère measure of
   `y ↦ (a / 2) ‖y‖² + c` on an open convex set is `aⁿ μ`;
 * `TauCeti.exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure` — the depth bound
-  `(-v x₀) ^ n ≤ C μ(G) MA_v(G)`;
+  `(max 0 (-v x₀)) ^ n ≤ C μ(G) MA_v(G)`;
 * `TauCeti.exists_mul_measure_sq_le_mul_ofReal_pow` — the volume bound `λ μ(G)² ≤ C hⁿ`;
 * `TauCeti.exists_ofReal_pow_le_mul_measure_convexSection_mul_mongeAmpereMeasure` and
   `TauCeti.exists_mul_measure_convexSection_sq_le_mul_ofReal_pow` — the corresponding lower and
@@ -72,33 +74,7 @@ namespace TauCeti
 open MeasureTheory Measure Set Metric Module
 open scoped ENNReal NNReal Gradient
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- For `a ≥ 0` the quadratic `y ↦ (a / 2) ‖y‖² + c` is convex on every convex set. -/
-private theorem convexOn_mul_norm_sq_add {U : Set E} (hUc : Convex ℝ U) {a : ℝ} (ha : 0 ≤ a)
-    (c : ℝ) : ConvexOn ℝ U fun y : E => a / 2 * ‖y‖ ^ 2 + c :=
-  (((convexOn_norm hUc).pow (fun _ _ => norm_nonneg _) 2).smul
-    (by positivity : 0 ≤ a / 2)).add_const c
-
-variable [FiniteDimensional ℝ E]
-
-/-- The quadratic `y ↦ (a / 2) ‖y‖² + c` has gradient `y ↦ a • y`, hence Hessian `a • id`. -/
-private theorem hasFDerivAt_gradient_mul_norm_sq_add (a c : ℝ) (y : E) :
-    HasGradientAt (fun y : E => a / 2 * ‖y‖ ^ 2 + c) (a • y) y ∧
-      HasFDerivAt (∇ fun y : E => a / 2 * ‖y‖ ^ 2 + c) (a • ContinuousLinearMap.id ℝ E) y := by
-  have hgrad (y : E) : HasGradientAt (fun y : E => a / 2 * ‖y‖ ^ 2 + c) (a • y) y := by
-    rw [hasGradientAt_iff_hasFDerivAt]
-    refine (((HasFDerivAt.norm_sq (hasFDerivAt_id y)).const_mul (a / 2)).add_const
-      c).congr_fderiv ?_
-    ext z
-    simp only [InnerProductSpace.toDual_apply_apply, _root_.smul_apply,
-      ContinuousLinearMap.comp_apply, innerSL_apply_apply, ContinuousLinearMap.id_apply, id_eq,
-      smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, real_inner_smul_left]
-    ring
-  refine ⟨hgrad y, ?_⟩
-  rw [show (∇ fun y : E => a / 2 * ‖y‖ ^ 2 + c) = fun y => a • y from
-    funext fun y => (hgrad y).gradient]
-  exact (hasFDerivAt_id y).const_smul a
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
@@ -110,11 +86,16 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     (hU : IsOpen U) (hUc : Convex ℝ U) {a : ℝ} (ha : 0 ≤ a) (c : ℝ) :
     mongeAmpereMeasure μ (fun y => if y ∈ U then ((a / 2 * ‖y‖ ^ 2 + c : ℝ) : EReal) else ⊤) =
       ENNReal.ofReal (a ^ finrank ℝ E) • μ.restrict U := by
-  have h := hasFDerivAt_gradient_mul_norm_sq_add (E := E) a c
+  -- The gradient is `y ↦ a • y`, hence the Hessian is `a • id`.
+  have hH (y : E) :
+      HasFDerivAt (∇ fun y : E => a / 2 * ‖y‖ ^ 2 + c) (a • ContinuousLinearMap.id ℝ E) y := by
+    rw [show (∇ fun y : E => a / 2 * ‖y‖ ^ 2 + c) = fun y => a • y from
+      funext (gradient_mul_norm_sq_add a c)]
+    exact (hasFDerivAt_id y).const_smul a
   rw [mongeAmpereMeasure_ite_eq_withDensity_det μ hU (convexOn_mul_norm_sq_add hUc ha c)
-    (fun y _ => (h y).1.differentiableAt.differentiableWithinAt)
-    (fun y _ => (h y).2.differentiableAt.differentiableWithinAt)]
-  simp only [(h _).2.fderiv, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
+    (fun y _ => (hasGradientAt_mul_norm_sq_add a c y).differentiableAt.differentiableWithinAt)
+    (fun y _ => (hH y).differentiableAt.differentiableWithinAt)]
+  simp only [(hH _).fderiv, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
@@ -137,9 +118,9 @@ variable [Nontrivial E]
 /-- **The depth of a convex function is controlled by its volume and Monge–Ampère mass.** There
 is a constant `C`, depending only on `E` and `μ`, such that for every bounded open set `G`, every
 `v` convex on `G`, continuous on its closure and nonnegative on its frontier, and every `x₀ ∈ G`,
-`(-v x₀) ^ n ≤ C μ(G) MA_v(G)` for the Monge–Ampère measure of `v` extended by `⊤` off `G`, where
-`n = finrank ℝ E`. Unlike the Aleksandrov maximum principle it involves no diameter or distance,
-so it is invariant under affine changes of coordinates. -/
+`(max 0 (-v x₀)) ^ n ≤ C μ(G) MA_v(G)` for the Monge–Ampère measure of `v` extended by `⊤` off
+`G`, where `n = finrank ℝ E`. Unlike the Aleksandrov maximum principle it involves no diameter
+or distance, so it is invariant under affine changes of coordinates. -/
 theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
     ∃ C : ℝ≥0, ∀ (G : Set E) [DecidablePred (· ∈ G)] (v : E → ℝ), IsOpen G →
       Bornology.IsBounded G → ConvexOn ℝ G v → ContinuousOn v (closure G) →
