@@ -6,13 +6,14 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Semicircle.Basic
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import TauCeti.Analysis.SpecialFunctions.Beta
 
 /-!
 # Density of the semicircle law
 
 The unit-radius semicircle law has the continuous density `2 / π * √(1 - x²)`.
-The real square root makes this expression zero outside `[-1, 1]`, including its endpoints.
+The real square root makes this expression zero outside the open interval `(-1, 1)`,
+in particular at the endpoints `±1`.
 The affine Beta realization gives the density-measure equality and the random-variable
 and Radon–Nikodym interfaces.
 
@@ -73,21 +74,12 @@ theorem continuous_semicirclePDFReal : Continuous semicirclePDFReal := by
 theorem measurable_semicirclePDF : Measurable semicirclePDF :=
   continuous_semicirclePDFReal.measurable.ennreal_ofReal
 
-private lemma beta_three_halves : beta (3 / 2) (3 / 2) = π / 8 := by
-  have hg : Gamma (3 / 2) = √π / 2 := by
-    rw [show (3 / 2 : ℝ) = 1 / 2 + 1 by norm_num, Gamma_add_one (by norm_num),
-      Gamma_one_half_eq]
-    ring
-  rw [beta, hg]
-  norm_num
-  nlinarith [sq_sqrt pi_pos.le]
-
 private lemma half_betaPDFReal (x : ℝ) :
     (1 / 2 : ℝ) * betaPDFReal (3 / 2) (3 / 2) ((x + 1) / 2) =
       semicirclePDFReal x := by
   rw [betaPDFReal, semicirclePDFReal_apply]
   split_ifs with hx
-  · rw [beta_three_halves]
+  · rw [beta_three_halves_three_halves]
     norm_num only [show (3 / 2 - 1 : ℝ) = 1 / 2 by norm_num, ← sqrt_eq_rpow]
     rw [mul_assoc, ← sqrt_mul (by linarith : 0 ≤ (x + 1) / 2),
       show (x + 1) / 2 * (1 - (x + 1) / 2) = (1 - x ^ 2) / 4 by ring,
