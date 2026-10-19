@@ -18,15 +18,15 @@ public import TauCeti.RingTheory.KrullDimension.Fiber
 Let `f : X ⟶ Y` be a finite dominant morphism of integral schemes with `Y` locally Noetherian and
 normal. Then `f` preserves the codimension of every point, and in particular sends points of
 codimension one to points of codimension one. This supplies the input `hf` of
-`TauCeti.NormalSchemes.codimensionOneMap`. Without normality of `Y` this fails (Stacks, Section
-110.19 (02JE)).
+`AlgebraicGeometry.Scheme.Hom.codimensionOneMap`. Without normality of `Y` this fails
+(Stacks, Section 110.19 (02JE)).
 
 ## Main results
 
-* `TauCeti.NormalSchemes.coheight_apply_eq_coheight`: a finite dominant morphism of integral
+* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_coheight`: a finite dominant morphism of integral
   schemes with locally Noetherian normal target preserves the coheight of every point.
-* `TauCeti.NormalSchemes.coheight_apply_eq_one_of_isNormalScheme`: in particular it sends points of
-  coheight one to points of coheight one.
+* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_one_of_isNormalScheme`: in particular it sends
+  points of coheight one to points of coheight one.
 
 ## References
 
@@ -44,7 +44,7 @@ public section
 
 open CategoryTheory AlgebraicGeometry Order TauCeti.AlgebraicGeometry
 
-namespace TauCeti.NormalSchemes
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -90,10 +90,12 @@ theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
 
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target sends
 points of coheight one to points of coheight one (going down, Stacks, Proposition 10.38.7
-(00H8)). -/
+(00H8)). This is the scheme-theoretic codimension consequence of going down, rather than
+the ring-theoretic existence statement of that tag. -/
+@[stacks 00H8 "codimension-one consequence for finite dominant morphisms to normal schemes"]
 theorem coheight_apply_eq_one_of_isNormalScheme [IsLocallyNoetherian Y] [IsNormalScheme Y]
     [IsFinite f] [IsDominant f] [IsIntegral X]
     (x : X) (hx : coheight x = 1) : coheight (f x) = 1 :=
   (coheight_apply_eq_coheight f x).trans hx
 
-end TauCeti.NormalSchemes
+end AlgebraicGeometry.Scheme.Hom

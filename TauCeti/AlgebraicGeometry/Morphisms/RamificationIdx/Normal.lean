@@ -26,12 +26,14 @@ rings (Stacks, Definition 15.113.1 (09E4)).
 
 ## Main results
 
-* `TauCeti.NormalSchemes.ramificationIdxAt_comp`: `e_x(f ≫ g) = e_x(f) e_{f(x)}(g)` when `f` is a
-  dominant morphism from an integral scheme and `f x` has coheight one on a locally Noetherian
-  normal scheme.
-* `TauCeti.NormalSchemes.map_maximalIdeal_eq_pow_ramificationIdxAt`: at a point of coheight one of
-  a locally Noetherian normal integral scheme and for a dominant map to a reduced scheme with
-  non-generic image point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp`: ramification indices multiply for a
+  dominant morphism from an integral scheme when the intermediate point has coheight one on a
+  locally Noetherian normal scheme.
+* `AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_eq_pow_ramificationIdxAt`: at a point of coheight
+  one of a locally Noetherian normal integral scheme and for a dominant map to a reduced scheme
+  with non-generic image point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_dvr`: the index equals any exponent satisfying
+  the maximal-ideal identity of Stacks, Definition 15.113.1 (09E4).
 
 ## References
 
@@ -48,7 +50,7 @@ public section
 
 open CategoryTheory AlgebraicGeometry Order IsLocalRing TauCeti.AlgebraicGeometry
 
-namespace TauCeti.NormalSchemes
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -115,4 +117,24 @@ theorem map_maximalIdeal_eq_pow_ramificationIdxAt [IsDominant f] [IsIntegral X] 
   rw [ramificationIdxAt_def]
   exact IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hmap
 
-end TauCeti.NormalSchemes
+/-- The pointwise ramification index equals the DVR exponent characterized by the maximal-ideal
+identity in Stacks, Definition 15.113.1 (09E4).
+
+Divergence from Stacks: only the source stalk needs to be a DVR; the target stalk may be any
+reduced scheme stalk of positive dimension under this dominant morphism. -/
+@[stacks 09E4 "comparison with the exponent in the maximal-ideal identity"]
+theorem ramificationIdxAt_eq_dvr [IsDominant f] [IsIntegral X] [IsReduced Y]
+    [IsLocallyNoetherian X] [IsNormalScheme X] (x : X) (hx : coheight x = 1)
+    (hfx : coheight (f x) ≠ 0) {exponent : ℕ}
+    (hexponent : (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
+      maximalIdeal (X.presheaf.stalk x) ^ exponent) :
+    f.ramificationIdxAt x = exponent := by
+  have : IsDiscreteValuationRing (X.presheaf.stalk x) :=
+    IsNormalScheme.isDiscreteValuationRing_stalk X x hx
+  have hpowers : StrictAnti (fun power : ℕ ↦ maximalIdeal (X.presheaf.stalk x) ^ power) :=
+    strictAnti_nat_of_succ_lt (Ideal.pow_succ_lt_pow
+      (IsDiscreteValuationRing.not_a_field (X.presheaf.stalk x)))
+  exact hpowers.injective ((f.map_maximalIdeal_eq_pow_ramificationIdxAt x hx hfx).symm.trans
+    hexponent)
+
+end AlgebraicGeometry.Scheme.Hom
