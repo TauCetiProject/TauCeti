@@ -96,8 +96,9 @@ theorem antipodeEquiv_apply (x : UqSl2 q) :
 theorem antipodeEquiv_symm_apply (x : (UqSl2 q)ᵐᵒᵖ) :
     (antipodeEquiv q).symm x = k q * antipode ℂ x.unop * kInv q := by
   rw [AlgEquiv.symm_apply_eq, antipodeEquiv_apply, ← MulOpposite.unop_inj, MulOpposite.unop_op]
-  simp [antipode_mul_antidistrib, antipode_antipode, mul_assoc]
-  simp [← mul_assoc]
+  simp only [antipode_mul_antidistrib, antipode_antipode, antipode_k, antipode_kInv]
+  -- `K (K⁻¹ x K K⁻¹) = x`
+  rw [mul_assoc, mul_assoc, k_mul_kInv, mul_one, ← mul_assoc, k_mul_kInv, one_mul]
 
 /-- The inverse of the antipode sends `E` to `-E K⁻¹`. -/
 @[simp]
