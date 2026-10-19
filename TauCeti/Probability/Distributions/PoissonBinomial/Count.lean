@@ -60,14 +60,14 @@ namespace TauCeti.Probability
 
 /-- Under a product of probability laws, counting coordinates in prescribed measurable sets
 gives the Poisson-binomial law of their event masses. Empty products give the count zero. -/
-theorem map_card_filter_mem_pi
+theorem hasLaw_card_filter_mem_pi
     {ι : Type*} {α : ι → Type*} [Fintype ι] [∀ i, MeasurableSpace (α i)]
     (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
     {s : ∀ i, Set (α i)} [∀ i, DecidablePred (· ∈ s i)]
     (hs : ∀ i, MeasurableSet (s i)) :
-    (Measure.pi μ).map (fun x ↦ #{i | x i ∈ s i}) =
-      poissonBinomialMeasure (fun i ↦ ⟨(μ i).real (s i), by simp⟩) := by
-  exact ((iIndepFun_pi (X := fun _ ↦ id) fun _ ↦ aemeasurable_id).hasLaw_card_filter_mem
-    (fun i ↦ (measurePreserving_eval μ i).hasLaw) hs).map_eq
+    HasLaw (fun x ↦ #{i | x i ∈ s i})
+      (poissonBinomialMeasure fun i ↦ ⟨(μ i).real (s i), by simp⟩) (Measure.pi μ) := by
+  exact (iIndepFun_pi (X := fun _ ↦ id) fun _ ↦ aemeasurable_id).hasLaw_card_filter_mem
+    (fun i ↦ (measurePreserving_eval μ i).hasLaw) hs
 
 end TauCeti.Probability
