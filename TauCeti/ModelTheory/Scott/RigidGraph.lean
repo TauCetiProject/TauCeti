@@ -144,7 +144,8 @@ theorem internalScottRank_rigidSixGraph :
     letI := rigidSixGraph.structure
     internalScottRank (L := Language.graph) (Fin 6) = 3 := by
   rw [show (3 : Ordinal) = 2 + 1 by norm_num]
-  exact internalScottRank_eq_add_one_of (fun _ a => two_mem_orbitStable_rigidSixGraph a)
+  exact internalScottRank_eq_add_one_of_mem_orbitStable_of_orbitRank_eq
+    (fun _ a => two_mem_orbitStable_rigidSixGraph a)
     (orbitRank_rigidSixGraph 0)
 
 end TauCeti

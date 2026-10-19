@@ -13,7 +13,8 @@ public import Mathlib.Data.Fin.Tuple.Basic
 The positions `k.castSucc` and `k.succ` of `Fin (m + 1)` are adjacent: each one skips the other
 to land on `k` (`Fin.succAbove_castSucc_self`, `Fin.succAbove_succ_self`). This file reads off
 the entry of an insertion at one of them in the other position, and compares updating the two
-insertions there.
+insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
+send the last position to the last position.
 
 ## Main results
 
@@ -60,7 +61,8 @@ theorem update_insertNth_castSucc (k : Fin m) (y : Fin m → α) (u v : α) :
       insertNth_apply_above h']
     simp
 
-/-- Reindexing a tuple and then adjoining its final entry commutes with adjoining an entry. -/
+/-- Appending `z` to `c` and reindexing along the extension of `g` that sends the last position
+to the last position is the same as appending `z` to `c ∘ g`. -/
 theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : Fin m → Fin n) :
     snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
   funext i

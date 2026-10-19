@@ -153,7 +153,8 @@ theorem orbitRank_lt_internalScottRank (a : Fin n → M) :
 
 /-- If every tuple is orbit-stable at `α` and some tuple has orbit rank `α`, then the
 internal Scott rank is exactly the successor of `α`. -/
-theorem internalScottRank_eq_add_one_of {m : ℕ} {a₀ : Fin m → M} {α : Ordinal.{w}}
+theorem internalScottRank_eq_add_one_of_mem_orbitStable_of_orbitRank_eq {m : ℕ} {a₀ : Fin m → M}
+    {α : Ordinal.{w}}
     (hα : ∀ n (a : Fin n → M), α ∈ orbitStable (L := L) a)
     (h₀ : orbitRank (L := L) a₀ = α) :
     internalScottRank (L := L) M = α + 1 := by

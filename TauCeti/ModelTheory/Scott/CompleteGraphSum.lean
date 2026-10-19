@@ -177,7 +177,8 @@ theorem internalScottRank_completeGraph_two_sum_three :
     letI := (completeGraph (Fin 2) ⊕g completeGraph (Fin 3)).structure
     internalScottRank (L := Language.graph) (Fin 2 ⊕ Fin 3) = 3 := by
   rw [show (3 : Ordinal) = 2 + 1 by norm_num]
-  exact internalScottRank_eq_add_one_of (fun _ a => two_mem_orbitStable a)
+  exact internalScottRank_eq_add_one_of_mem_orbitStable_of_orbitRank_eq
+    (fun _ a => two_mem_orbitStable a)
     (orbitRank_completeGraph_two_sum_three (Sum.inl 0))
 
 end TauCeti
