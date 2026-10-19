@@ -235,16 +235,17 @@ private lemma isMonHom_eqToHom_comp_iff (A : QuasicoherentAlgebra Y) (B : CommMo
   have hone : η[((pullback f).obj A).obj.X] ≫ eqToHom (pullback_obj_X f A) ≫ φ = η[B.X] ↔
       (Scheme.Modules.pullback f).map η[A.obj.X] ≫ φ =
         Functor.OplaxMonoidal.η (Scheme.Modules.pullback f) ≫ η[B.X] := by
-    rw [pullback_obj_one, Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp, Scheme.Modules.pullback_η, Iso.inv_comp_eq]
+    rw [pullback_obj_one]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [Scheme.Modules.pullback_η, Iso.inv_comp_eq]
   have hmul : μ[((pullback f).obj A).obj.X] ≫ eqToHom (pullback_obj_X f A) ≫ φ =
         ((eqToHom (pullback_obj_X f A) ≫ φ) ⊗ₘ (eqToHom (pullback_obj_X f A) ≫ φ)) ≫ μ[B.X] ↔
       (Scheme.Modules.pullback f).map μ[A.obj.X] ≫ φ =
         Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X ≫
           (φ ⊗ₘ φ) ≫ μ[B.X] := by
-    rw [pullback_obj_mul, ← tensorHom_comp_tensorHom, Category.assoc, Category.assoc,
-      Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-      cancel_epi, IsIso.inv_comp_eq]
+    rw [pullback_obj_mul, ← tensorHom_comp_tensorHom]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [cancel_epi, IsIso.inv_comp_eq]
   rw [← hone, ← hmul]
   exact ⟨fun h ↦ ⟨h.one_hom, h.mul_hom⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
