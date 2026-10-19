@@ -59,7 +59,10 @@ theorem sphereYamabeConstant_mul_roundSphereVolume_rpow {n : ℕ} (hn : n ≠ 0)
     sphereYamabeConstant n * roundSphereVolume n ^ (((n : ℝ) - 2) / n) =
       n * (n - 1) * roundSphereVolume n := by
   have hn' : (n : ℝ) ≠ 0 := by exact_mod_cast hn
-  rw [sphereYamabeConstant_def, mul_assoc, ← Real.rpow_add (roundSphereVolume_pos n),
-    show 2 / (n : ℝ) + ((n : ℝ) - 2) / n = 1 by field_simp; ring, Real.rpow_one]
+  have hexp : 2 / (n : ℝ) + ((n : ℝ) - 2) / n = 1 := by
+    field_simp
+    ring
+  rw [sphereYamabeConstant_def, mul_assoc, ← Real.rpow_add (roundSphereVolume_pos n), hexp,
+    Real.rpow_one]
 
 end TauCeti.Yamabe

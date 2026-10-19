@@ -257,11 +257,13 @@ theorem euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal :
   · simp [hn, Real.Gamma_zero]
   have : Nontrivial E := Module.nontrivial_of_finrank_pos hn
   have hn' : (0 : ℝ) < finrank ℝ E / 2 := by positivity
-  rw [InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul, ← ENNReal.ofReal_natCast,
-    ← ENNReal.ofReal_mul (Nat.cast_nonneg _), Real.Gamma_add_one hn'.ne', Real.sqrt_eq_rpow,
-    ← Real.rpow_mul_natCast Real.pi_pos.le]
-  congr 1
-  field_simp
+  -- The real identity `n · √π ^ n / Γ(n / 2 + 1) = 2 π ^ (n / 2) / Γ(n / 2)`.
+  have hreal : (finrank ℝ E : ℝ) * (√Real.pi ^ finrank ℝ E / Real.Gamma (finrank ℝ E / 2 + 1)) =
+      2 * Real.pi ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma (finrank ℝ E / 2) := by
+    rw [Real.Gamma_add_one hn'.ne', Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast Real.pi_pos.le]
+    field_simp
+  rw [InnerProductSpace.volume_ball, ← hreal, ENNReal.ofReal_mul (Nat.cast_nonneg _)]
+  simp
 
 /-- A sphere of radius `r > 0` in an `n`-dimensional real inner product space has
 `(n - 1)`-dimensional Hausdorff measure `n ω_n r ^ (n - 1)`, where `ω_n` is the volume of the

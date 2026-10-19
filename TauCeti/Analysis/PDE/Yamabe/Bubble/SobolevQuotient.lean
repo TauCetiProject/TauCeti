@@ -82,7 +82,8 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_sphereYamabeC
         (∫ x, bubble t b x ^ criticalExponent (finrank ℝ E)) ^
           (2 / criticalExponent (finrank ℝ E)) := by
   have hp : 2 / criticalExponent (finrank ℝ E) = ((finrank ℝ E : ℝ) - 2) / finrank ℝ E := by
-    have h₀ : (finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast (show finrank ℝ E ≠ 0 by omega)
+    have hn₀ : finrank ℝ E ≠ 0 := by omega
+    have h₀ : (finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hn₀
     have h₂ : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn.ne')
     rw [criticalExponent_def]
     field_simp
