@@ -42,17 +42,14 @@ example :
     exact iff_of_true (le_refl 1) (le_refl 0)
   obtain ⟨f, a, ha, hb, -⟩ := h.exists_fgEquiv
   obtain ⟨g, h0, hfg⟩ := hext f 0
-  have h1 : (1 : ℕ) ∈ g.1.dom := PartialEquiv.dom_le_dom hfg (ha 0 ▸ (a 0).2)
-  have hg1 : (g.1.toEquiv ⟨1, h1⟩ : ℕ) = 0 := by
-    have := congrArg Subtype.val (PartialEquiv.toEquiv_inclusion_apply hfg (a 0))
-    have h1a : (⟨1, h1⟩ : g.1.dom) = Substructure.inclusion (PartialEquiv.dom_le_dom hfg) (a 0) :=
-      Subtype.ext (ha 0).symm
-    rw [h1a, this]
-    simpa using hb 0
-  have hle : (g.1.toEquiv ⟨0, h0⟩ : ℕ) ≤ g.1.toEquiv ⟨1, h1⟩ :=
-    (g.1.toEquiv.map_rel (leSymb (L := Language.order)) ![⟨0, h0⟩, ⟨1, h1⟩]).2 zero_le_one
+  -- `g` extends `f`, so it sends `a 0 = 1` to `0`, and must send `0` below `0`.
+  have h1 : (a 0 : ℕ) ∈ g.1.dom := PartialEquiv.dom_le_dom hfg (a 0).2
+  have hg1 : (g.1.toEquiv ⟨a 0, h1⟩ : ℕ) = 0 :=
+    (PartialEquiv.toEquiv_apply_of_le hfg (a 0).2).trans (by simpa using hb 0)
+  have hle : (g.1.toEquiv ⟨0, h0⟩ : ℕ) ≤ g.1.toEquiv ⟨a 0, h1⟩ :=
+    (g.1.toEquiv.map_rel (leSymb (L := Language.order)) ![⟨0, h0⟩, ⟨a 0, h1⟩]).2 (Nat.zero_le _)
   rw [hg1, Nat.le_zero] at hle
-  exact absurd (congrArg Subtype.val (g.1.toEquiv.injective (Subtype.ext (hle.trans hg1.symm))))
-    (by simp)
+  have h01 := congrArg Subtype.val (g.1.toEquiv.injective (Subtype.ext (hle.trans hg1.symm)))
+  simp [ha 0] at h01
 
 end TauCeti
