@@ -25,7 +25,6 @@ rank.
 
 ## Main definitions
 
-* `TauCeti.Subpolyad3.unionSupport`: the union of the supports of a finite family of subpolyads.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad`: `(δ, r)`-regularity over a polyad.
 * `TauCeti.Colored3Graph.IsVertexBoxRegularOverPolyad`: regularity on vertex-box restrictions.
 
@@ -57,65 +56,6 @@ open Finset
 namespace TauCeti
 
 variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] {S : PairSkeleton3 κ₂ V} {P : Polyad3 S}
-
-namespace Subpolyad3
-
-/-- The union of the supports of a finite family of subpolyads of `P`. -/
-noncomputable def unionSupport {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P) :
-    Finset {x : Fin 3 → V // Function.Injective x} :=
-  univ.biUnion fun i ↦ (Q i).support
-
-variable {ι : Type*} [Fintype ι]
-
-/-- A triple lies in the union support when it lies in the support of some member. -/
-@[simp]
-theorem mem_unionSupport {Q : ι → Subpolyad3 P} {x : {x : Fin 3 → V // Function.Injective x}} :
-    x ∈ unionSupport Q ↔ ∃ i, x ∈ (Q i).support := by
-  simp [unionSupport]
-
-/-- Each member's support lies in the union support. -/
-theorem support_subset_unionSupport (Q : ι → Subpolyad3 P) (i : ι) :
-    (Q i).support ⊆ unionSupport Q :=
-  fun _ hx ↦ mem_unionSupport.2 ⟨i, hx⟩
-
-/-- The union support lies in the support of the parent polyad. -/
-theorem unionSupport_subset (Q : ι → Subpolyad3 P) : unionSupport Q ⊆ P.support := by
-  intro x hx
-  obtain ⟨i, hi⟩ := mem_unionSupport.1 hx
-  exact (Q i).support_subset hi
-
-/-- The empty family has empty union support. -/
-@[simp]
-theorem unionSupport_of_isEmpty [IsEmpty ι] (Q : ι → Subpolyad3 P) : unionSupport Q = ∅ := by
-  ext x
-  simp
-
-/-- A family with a single member has that member's support as union support. -/
-@[simp]
-theorem unionSupport_unique [Unique ι] (Q : ι → Subpolyad3 P) :
-    unionSupport Q = (Q default).support := by
-  ext x
-  simp [Unique.exists_iff]
-
-/-- A family of at most `r` subpolyads has the same union support as a family indexed by
-`Fin r`, padded by the restriction to empty vertex sets. -/
-theorem exists_unionSupport_eq_of_card_le {r : ℕ} (Q : ι → Subpolyad3 P)
-    (hr : Fintype.card ι ≤ r) : ∃ Q' : Fin r → Subpolyad3 P, unionSupport Q' = unionSupport Q := by
-  let e := Fintype.equivFin ι
-  refine ⟨fun j ↦ if h : (j : ℕ) < Fintype.card ι then Q (e.symm ⟨j, h⟩) else
-    ofSubcells P ∅ ∅ ∅, ?_⟩
-  ext x
-  simp only [mem_unionSupport]
-  constructor
-  · rintro ⟨j, hj⟩
-    split_ifs at hj with h
-    · exact ⟨_, hj⟩
-    · simp at hj
-  · rintro ⟨i, hi⟩
-    refine ⟨⟨e i, (e i).2.trans_le hr⟩, ?_⟩
-    simpa [(e i).2] using hi
-
-end Subpolyad3
 
 namespace Colored3Graph
 
