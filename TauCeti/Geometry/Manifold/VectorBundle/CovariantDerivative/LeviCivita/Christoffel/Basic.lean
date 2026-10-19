@@ -147,10 +147,13 @@ theorem christoffelSecondKind_eq_christoffelSecondKindOfJet
 section JetRegularity
 
 -- Explicit scalar parameters guide instance synthesis through the nested operator spaces.
-local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
+/-- The canonical normed additive group on metric derivatives, with explicit real scalars. -/
+local instance instNormedAddCommGroupTrilinearForm :
+    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
   ContinuousLinearMap.toNormedAddCommGroup (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
     (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
-local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
+/-- The canonical real normed space on metric derivatives. -/
+local instance instNormedSpaceTrilinearForm : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
   ContinuousLinearMap.toNormedSpace (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
     (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
 
