@@ -24,8 +24,8 @@ pair of distinct ends therefore preserves every cut capacity.
 ## Main result
 
 * `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
-* `Graph.isSubmodular_edgeCutCapacity`: a nonnegative edge-capacity function has a symmetric
-  submodular cut function.
+* `Graph.isSubmodular_edgeCutCapacity`: a nonnegative edge-capacity function has a submodular cut
+  function.
 * `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
 -/
 

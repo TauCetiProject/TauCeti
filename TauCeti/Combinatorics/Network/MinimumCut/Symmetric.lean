@@ -29,94 +29,53 @@ variable {V K : Type*}
 
 namespace TerminalCut
 
-/-- Complementing a source side exchanges the source and sink terminal sets. -/
+/-- Complementing a minimum cut exchanges its source and sink terminal sets. -/
+theorem IsMinimum.compl [Fintype V] [DecidableEq V] [Preorder K]
+    {f : Finset V → K} (hf : ∀ S, f Sᶜ = f S) {A B S : Finset V}
+    (hS : IsMinimum f A B S) : IsMinimum f B A Sᶜ := by
+  refine isMinimum_iff.mpr ⟨hS.admissible.compl, fun T hT ↦ ?_⟩
+  simpa only [hf] using hS.le hT.compl
+
+/-- Complementing a minimum cut exchanges its source and sink terminal sets. -/
 @[simp]
-theorem isAdmissible_compl_iff [Fintype V] [DecidableEq V] {A B S : Finset V} :
-    IsAdmissible B A Sᶜ ↔ IsAdmissible A B S := by
+theorem isMinimum_compl_iff [Fintype V] [DecidableEq V] [Preorder K]
+    {f : Finset V → K} (hf : ∀ S, f Sᶜ = f S) {A B S : Finset V} :
+    IsMinimum f B A Sᶜ ↔ IsMinimum f A B S := by
   constructor
   · intro hS
-    apply isAdmissible_iff.mpr
-    refine ⟨fun v hvA ↦ ?_, Finset.disjoint_left.mpr fun v hvS hvB ↦ ?_⟩
-    · by_contra hvS
-      exact Finset.disjoint_left.mp hS.disjoint (mem_compl.mpr hvS) hvA
-    · exact (mem_compl.mp (hS.subset hvB)) hvS
-  · intro hS
-    apply isAdmissible_iff.mpr
-    refine ⟨fun v hvB ↦ mem_compl.mpr fun hvS ↦
-      Finset.disjoint_left.mp hS.disjoint hvS hvB, Finset.disjoint_left.mpr fun v hvSc hvA ↦ ?_⟩
-    exact (mem_compl.mp hvSc) (hS.subset hvA)
+    simpa only [compl_compl] using hS.compl hf
+  · exact fun hS ↦ hS.compl hf
+
+/-- For a symmetric set function, exchanging the terminal sets does not change the minimum cut
+value. -/
+theorem minimumValue_comm [Fintype V] [DecidableEq V] [LinearOrder K]
+    {f : Finset V → K} (hf : ∀ S, f Sᶜ = f S) {A B : Finset V} (hAB : Disjoint A B) :
+    minimumValue f hAB = minimumValue f hAB.symm := by
+  obtain ⟨S, hS⟩ := exists_minimum f hAB
+  have hSc : IsMinimum f B A Sᶜ := hS.compl hf
+  calc
+    minimumValue f hAB = f S := ((isMinimum_iff_value_eq f hAB).mp hS).2.symm
+    _ = f Sᶜ := (hf S).symm
+    _ = minimumValue f hAB.symm := ((isMinimum_iff_value_eq f hAB.symm).mp hSc).2
 
 end TerminalCut
 
 namespace IsSymmSubmodular
 
-variable [Fintype V] [DecidableEq V]
-
-section Preorder
-
-variable [AddCommMonoid K] [Preorder K]
+variable [Fintype V] [DecidableEq V] [AddCommMonoid K] [LinearOrder K]
 variable {f : Finset V → K}
-
-/-- Complementing a minimum cut exchanges its source and sink terminal sets. -/
-@[simp]
-theorem isMinimum_compl_iff (hf : IsSymmSubmodular f) {A B S : Finset V} :
-    TerminalCut.IsMinimum f B A Sᶜ ↔ TerminalCut.IsMinimum f A B S := by
-  constructor
-  · intro hS
-    refine TerminalCut.isMinimum_iff.mpr ⟨TerminalCut.isAdmissible_compl_iff.mp hS.admissible,
-      fun T hT ↦ ?_⟩
-    have hTc : TerminalCut.IsAdmissible B A Tᶜ :=
-      TerminalCut.isAdmissible_compl_iff.mpr hT
-    simpa only [IsSymmSubmodular.symm hf] using hS.le hTc
-  · intro hS
-    refine TerminalCut.isMinimum_iff.mpr ⟨TerminalCut.isAdmissible_compl_iff.mpr hS.admissible,
-      fun T hT ↦ ?_⟩
-    have hTc : TerminalCut.IsAdmissible A B Tᶜ := by
-      simpa only [compl_compl] using
-        (TerminalCut.isAdmissible_compl_iff (A := B) (B := A) (S := T)).mpr hT
-    simpa only [IsSymmSubmodular.symm hf] using hS.le hTc
-
-/-- Complementing a minimum singleton-terminal cut reverses its terminals. -/
-theorem isMinimum_singleton_compl_iff (hf : IsSymmSubmodular f) {s t : V}
-    {S : Finset V} :
-    TerminalCut.IsMinimum f {t} {s} Sᶜ ↔ TerminalCut.IsMinimum f {s} {t} S :=
-  isMinimum_compl_iff hf
-
-end Preorder
-
-section LinearOrder
-
-variable [AddCommMonoid K] [LinearOrder K]
-variable {f : Finset V → K}
-
-/-- For a symmetric set function, exchanging the terminal sets does not change the minimum cut
-value. -/
-theorem minimumValue_comm (hf : IsSymmSubmodular f) {A B : Finset V}
-    (hAB : Disjoint A B) :
-    TerminalCut.minimumValue f hAB = TerminalCut.minimumValue f hAB.symm := by
-  obtain ⟨S, hS⟩ := TerminalCut.exists_minimum f hAB
-  have hSc : TerminalCut.IsMinimum f B A Sᶜ := (isMinimum_compl_iff hf).mpr hS
-  calc
-    TerminalCut.minimumValue f hAB = f S :=
-      ((TerminalCut.isMinimum_iff_value_eq f hAB).mp hS).2.symm
-    _ = f Sᶜ := (IsSymmSubmodular.symm hf S).symm
-    _ = TerminalCut.minimumValue f hAB.symm :=
-      ((TerminalCut.isMinimum_iff_value_eq f hAB.symm).mp hSc).2
 
 /-- Exchanging terminal sets sends the smallest minimum source side to the complement of the
 largest one. -/
-theorem smallest_comm [IsOrderedCancelAddMonoid K] (hf : IsSymmSubmodular f)
+theorem smallest_symm_eq_compl_largest [IsOrderedCancelAddMonoid K] (hf : IsSymmSubmodular f)
     {A B : Finset V} (hAB : Disjoint A B) :
     TerminalCut.smallest hf.submodular hAB.symm =
       (TerminalCut.largest hf.submodular hAB)ᶜ := by
   apply (TerminalCut.smallest_eq_iff hf.submodular hAB.symm).mpr
   constructor
-  · exact (isMinimum_compl_iff hf).mpr
-      (TerminalCut.isGreatest_largest hf.submodular hAB).1
+  · exact (TerminalCut.isGreatest_largest hf.submodular hAB).1.compl hf.symm
   · intro T hT v hv
-    have hTc : TerminalCut.IsMinimum f A B Tᶜ := by
-      simpa only [compl_compl] using
-        (isMinimum_compl_iff hf (A := B) (B := A) (S := T)).mpr hT
+    have hTc : TerminalCut.IsMinimum f A B Tᶜ := hT.compl hf.symm
     have hsub := (TerminalCut.isGreatest_largest hf.submodular hAB).2 hTc
     simp only [mem_compl] at hv
     by_contra hvT
@@ -124,30 +83,19 @@ theorem smallest_comm [IsOrderedCancelAddMonoid K] (hf : IsSymmSubmodular f)
 
 /-- Exchanging terminal sets sends the largest minimum source side to the complement of the
 smallest one. -/
-theorem largest_comm [IsOrderedCancelAddMonoid K] (hf : IsSymmSubmodular f)
+theorem largest_symm_eq_compl_smallest [IsOrderedCancelAddMonoid K] (hf : IsSymmSubmodular f)
     {A B : Finset V} (hAB : Disjoint A B) :
     TerminalCut.largest hf.submodular hAB.symm =
       (TerminalCut.smallest hf.submodular hAB)ᶜ := by
   apply (TerminalCut.largest_eq_iff hf.submodular hAB.symm).mpr
   constructor
-  · exact (isMinimum_compl_iff hf).mpr
-      (TerminalCut.isLeast_smallest hf.submodular hAB).1
+  · exact (TerminalCut.isLeast_smallest hf.submodular hAB).1.compl hf.symm
   · intro T hT v hv
-    have hTc : TerminalCut.IsMinimum f A B Tᶜ := by
-      simpa only [compl_compl] using
-        (isMinimum_compl_iff hf (A := B) (B := A) (S := T)).mpr hT
+    have hTc : TerminalCut.IsMinimum f A B Tᶜ := hT.compl hf.symm
     have hsub := (TerminalCut.isLeast_smallest hf.submodular hAB).2 hTc
     simp only [mem_compl]
     intro hvSmallest
     exact (mem_compl.mp (hsub hvSmallest)) hv
-
-/-- Reversing distinct singleton terminals does not change the minimum cut value. -/
-theorem minimumValue_singleton_comm (hf : IsSymmSubmodular f) {s t : V} (hst : s ≠ t) :
-    TerminalCut.minimumValue f (A := {s}) (B := {t}) (by simpa using hst) =
-      TerminalCut.minimumValue f (A := {t}) (B := {s}) (by simpa using hst.symm) :=
-  minimumValue_comm hf (by simpa using hst)
-
-end LinearOrder
 
 end IsSymmSubmodular
 

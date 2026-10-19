@@ -54,6 +54,18 @@ theorem isAdmissible_iff_mem_Icc [DecidableEq V] [Fintype V] {A B S : Finset V} 
     IsAdmissible A B S ↔ S ∈ Set.Icc A Bᶜ := by
   simp [isAdmissible_iff, Finset.disjoint_left, Finset.subset_iff]
 
+/-- Complementing a source side exchanges the source and sink terminal sets. -/
+@[simp]
+theorem isAdmissible_compl_iff [Fintype V] [DecidableEq V] {A B S : Finset V} :
+    IsAdmissible B A Sᶜ ↔ IsAdmissible A B S := by
+  simp [isAdmissible_iff, Finset.disjoint_left, Finset.subset_iff]
+  grind
+
+/-- The complement of an admissible side is admissible for the exchanged terminal sets. -/
+theorem IsAdmissible.compl [Fintype V] [DecidableEq V] {A B S : Finset V}
+    (hS : IsAdmissible A B S) : IsAdmissible B A Sᶜ :=
+  isAdmissible_compl_iff.mpr hS
+
 /-- Disjoint terminal sets admit the source terminal set itself as a cut. -/
 theorem isAdmissible_self {A B : Finset V} (hAB : Disjoint A B) :
     IsAdmissible A B A := ⟨Subset.rfl, hAB⟩
