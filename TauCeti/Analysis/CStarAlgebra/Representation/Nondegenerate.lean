@@ -26,14 +26,16 @@ multipliers `U_s` are obtained from nondegenerate representations of crossed pro
 
 ## Main declarations
 
-* `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`.
+* `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
+  `isNondegenerate_iff_dense`.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
   of an increasing approximate unit converges strongly to the identity.
 * `NonUnitalStarAlgHom.multiplierExtension`: the extension to the multiplier algebra, with its
-  characterizing identities `multiplierExtension_mul` and `mul_multiplierExtension`, the
-  uniqueness statement `eq_multiplierExtension_of_apply_coe`, and the strong-limit formula
+  characterizing identities `multiplierExtension_mul_eq_fst` and
+  `mul_multiplierExtension_eq_snd`, the uniqueness statement
+  `eq_multiplierExtension_of_apply_coe`, and the strong-limit formula
   `tendsto_multiplierExtension_apply`.
 
 ## References
@@ -61,6 +63,11 @@ def IsNondegenerate (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : Prop :=
   Dense (Submodule.span ℂ (⋃ a, Set.range (π a)) : Set H)
 
 variable {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+
+/-- Unfolding lemma: nondegeneracy is density of the span of the vectors `π a ξ`. -/
+theorem isNondegenerate_iff_dense :
+    π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ a, Set.range (π a)) : Set H) :=
+  Iff.rfl
 
 /-- Operators agreeing after composition with every operator of a nondegenerate representation
 are equal. -/
@@ -212,13 +219,13 @@ variable (hπ : π.IsNondegenerate)
 
 /-- The defining identity `π' m * π a = π (m * a)` of the multiplier extension. -/
 @[simp]
-theorem multiplierExtension_mul (m : 𝓜(ℂ, A)) (a : A) :
+theorem multiplierExtension_mul_eq_fst (m : 𝓜(ℂ, A)) (a : A) :
     π.multiplierExtension hπ m * π a = π (m.fst a) :=
   extensionOp_mul hπ m a
 
 /-- The right-handed identity `π a * π' m = π (a * m)` of the multiplier extension. -/
 @[simp]
-theorem mul_multiplierExtension (m : 𝓜(ℂ, A)) (a : A) :
+theorem mul_multiplierExtension_eq_snd (m : 𝓜(ℂ, A)) (a : A) :
     π a * π.multiplierExtension hπ m = π (m.snd a) :=
   mul_extensionOp hπ m a
 
@@ -226,12 +233,12 @@ theorem mul_multiplierExtension (m : 𝓜(ℂ, A)) (a : A) :
 @[simp]
 theorem multiplierExtension_apply_apply (m : 𝓜(ℂ, A)) (a : A) (ξ : H) :
     π.multiplierExtension hπ m (π a ξ) = π (m.fst a) ξ :=
-  congr($(multiplierExtension_mul hπ m a) ξ)
+  congr($(multiplierExtension_mul_eq_fst hπ m a) ξ)
 
 /-- An operator equals `π' m` exactly when it satisfies the defining identity. -/
 theorem eq_multiplierExtension_iff {m : 𝓜(ℂ, A)} {T : H →L[ℂ] H} :
     T = π.multiplierExtension hπ m ↔ ∀ a, T * π a = π (m.fst a) :=
-  ⟨fun h a => h ▸ multiplierExtension_mul hπ m a, eq_extensionOp hπ⟩
+  ⟨fun h a => h ▸ multiplierExtension_mul_eq_fst hπ m a, eq_extensionOp hπ⟩
 
 /-- The multiplier extension restricts to `π` on `A`. -/
 @[simp]
