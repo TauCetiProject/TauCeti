@@ -332,6 +332,15 @@ lemma cotangentLinearEquiv_dualCotangentMap (φ : A →ₐc[R] A')
   rw [dualCotangentMap, LinearMap.dualMap_apply']
   exact cotangentLinearEquiv_comp_cotangentSpaceMap φ y
 
+/-- A surjective coordinate map induces an injective differential on cotangent duals. -/
+lemma _root_.BialgHom.dualCotangentMap_injective_of_surjective (φ : A →ₐc[R] A')
+    (hφ : Function.Surjective φ) : Function.Injective (dualCotangentMap φ) := by
+  intro x y hxy
+  apply (cotangentLinearEquiv (R := R) (A := A') (B := R)).injective
+  apply derivationComp_injective_of_surjective φ hφ
+  simpa only [← cotangentLinearEquiv_dualCotangentMap] using
+    congrArg (cotangentLinearEquiv (R := R) (A := A) (B := R)) hxy
+
 /-- The differential on cotangent duals of a derivation is its precomposition along `φ`. -/
 lemma dualCotangentMap_cotangentLinearEquiv_symm (φ : A →ₐc[R] A')
     (d : Derivation R A' (Bialgebra.CounitAlgebra R A' R)) :
