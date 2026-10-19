@@ -50,6 +50,10 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K] [CompleteSpace K]
 
+omit [CompleteSpace K] in
+private lemma norm_natCast_le_mul_pow_one (d : ℕ) : ‖(d : K)‖ ≤ 1 * (d : ℝ) ^ 1 := by
+  simpa using (Nat.norm_cast_le (α := K) d)
+
 /-- On the annulus `‖q * u‖ < 1`, `‖q * u⁻¹‖ < 1`, the first Tate coordinate has a convergent
 `q`-expansion with finite Laurent-polynomial coefficients. Its constant term is `u / (1 - u)²`. -/
 theorem hasSum_tateUniformizationX_sub (q u : Kˣ)
@@ -57,20 +61,15 @@ theorem hasSum_tateUniformizationX_sub (q u : Kˣ)
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
         (d : K) * ((u : K) ^ d + (u : K)⁻¹ ^ d - 2)) * (q : K) ^ n)
       (tateUniformizationX q u - (u : K) / (1 - (u : K)) ^ 2) := by
-  have hq : ‖(q : K)‖ < 1 := by
-    have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
-    rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
-      ← pow_two, norm_pow] at h
-    exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
-  have ha (d : ℕ) : ‖(d : K)‖ ≤ 1 * (d : ℝ) ^ 1 := by
-    simpa using (Nat.norm_cast_le (α := K) d)
+  have hq := norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one u hqu hqui
   have ht := hasSum_sum_divisors_mul_pow_sub
-    (fun d ↦ (d : K)) (fun d ↦ (d : K)) ha ha
+    (fun d ↦ (d : K)) (fun d ↦ (d : K))
+    norm_natCast_le_mul_pow_one norm_natCast_le_mul_pow_one
     (fun r ↦ r / (1 - r) ^ 2) (fun r ↦ r / (1 - r) ^ 2)
     tsum_natCast_succ_mul_pow_succ tsum_natCast_succ_mul_pow_succ
     (fun r ↦ inv_div_one_sub_inv_sq r) q u hqu hqui
   have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
-    (fun d ↦ (d : K)) ha hq).summable.hasSum
+    (fun d ↦ (d : K)) norm_natCast_le_mul_pow_one hq).summable.hasSum
   convert ht.sub (hs.mul_left 2) using 1
   · funext n
     simp only [Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
@@ -103,13 +102,7 @@ theorem hasSum_tateUniformizationY_sub (q u : Kˣ)
           (d : K))) *
           (q : K) ^ n)
       (tateUniformizationY q u - (u : K) ^ 2 / (1 - (u : K)) ^ 3) := by
-  have hq : ‖(q : K)‖ < 1 := by
-    have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
-    rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
-      ← pow_two, norm_pow] at h
-    exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
-  have ha (d : ℕ) : ‖(d : K)‖ ≤ 1 * (d : ℝ) ^ 1 := by
-    simpa using (Nat.norm_cast_le (α := K) d)
+  have hq := norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one u hqu hqui
   have hp (d : ℕ) : ‖(d.choose 2 : K)‖ ≤ 1 * (d : ℝ) ^ 2 := by
     calc
       _ ≤ (d.choose 2 : ℝ) := by simpa using (Nat.norm_cast_le (α := K) (d.choose 2))
@@ -133,7 +126,7 @@ theorem hasSum_tateUniformizationY_sub (q u : Kˣ)
     tsum_choose_two_mul_pow_succ tsum_neg_choose_two_mul_pow_succ
     (fun r ↦ inv_sq_div_one_sub_inv_cube r) q u hqu hqui
   have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
-    (fun d ↦ (d : K)) ha hq).summable.hasSum
+    (fun d ↦ (d : K)) norm_natCast_le_mul_pow_one hq).summable.hasSum
   convert ht.add hs using 1
   · funext n
     simp only [Finset.sum_mul, ← Finset.sum_add_distrib]

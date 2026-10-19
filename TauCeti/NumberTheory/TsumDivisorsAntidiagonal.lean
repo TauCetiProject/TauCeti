@@ -57,6 +57,16 @@ namespace TauCeti
 variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
 
 omit [CompleteSpace K] in
+/-- Multiplying a parameter in the open unit ball by further powers of `q` keeps it there. -/
+theorem norm_pow_pnat_mul_lt_one {q v : K} (hq : ‖q‖ < 1) (hqv : ‖q * v‖ < 1)
+    (n : ℕ+) : ‖q ^ (n : ℕ) * v‖ < 1 := by
+  have hn : (n : ℕ) = ((n : ℕ) - 1) + 1 := (Nat.sub_add_cancel n.pos).symm
+  rw [hn, pow_succ, mul_assoc]
+  exact (norm_mul_le _ _).trans_lt <| lt_of_le_of_lt
+    (mul_le_of_le_one_left (norm_nonneg _)
+      ((norm_pow_le _ _).trans (pow_le_one₀ (norm_nonneg _) hq.le))) hqv
+
+omit [CompleteSpace K] in
 /-- A Lambert-series family with weights of polynomial growth is absolutely summable when
 both `‖q‖ < 1` and `‖q * u‖ < 1`. -/
 theorem summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
@@ -140,9 +150,36 @@ theorem hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ}
   rw [tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * q ^ ((n : ℕ) * d))]
   simp only [pow_mul]
 
+/-- A geometric expansion with polynomially bounded weights gives a summable sequence
+when evaluated at `qⁿ * u` for positive `n` on the annulus of convergence. -/
+theorem summable_apply_pow_pnat_mul_of_tsum_eq (a : ℕ → K) {C : ℝ} {k : ℕ}
+    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k) {q u : K}
+    (hq : ‖q‖ < 1) (hqu : ‖q * u‖ < 1) (f : K → K)
+    (hf : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, a (d + 1) * r ^ (d + 1)) = f r) :
+    Summable (fun n : ℕ+ ↦ f (q ^ (n : ℕ) * u)) := by
+  have h := (summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow a ha hq hqu).of_norm.prod
+  convert h using 1
+  funext n
+  rw [← hf _ (norm_pow_pnat_mul_lt_one hq hqu n),
+    tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * u ^ d * q ^ ((n : ℕ) * d))]
+  apply tsum_congr
+  intro d
+  rw [mul_pow, ← pow_mul]
+  ring
+
 section NormedField
 
 variable {K : Type*} [NormedField K] [CompleteSpace K]
+
+omit [CompleteSpace K] in
+/-- If multiplying by both a unit and its inverse has norm less than one, the original
+element has norm less than one. -/
+theorem norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one {q : K} (u : Kˣ)
+    (hqu : ‖q * (u : K)‖ < 1) (hqui : ‖q * (u : K)⁻¹‖ < 1) : ‖q‖ < 1 := by
+  have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
+  rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
+    ← pow_two, norm_pow] at h
+  exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
 
 /-- If a summand and its reciprocal have geometric expansions with polynomially bounded
 weights, their bilateral series, minus the index-zero term, has a
@@ -157,31 +194,7 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
         (a d * (u : K) ^ d + b d * (u : K)⁻¹ ^ d)) * (q : K) ^ n)
       ((∑' n : ℤ, f ((q : K) ^ n * (u : K))) - f (u : K)) := by
-  have hq : ‖(q : K)‖ < 1 := by
-    have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
-    rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
-      ← pow_two, norm_pow] at h
-    exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
-  have hsmall {v : K} (hv : ‖(q : K) * v‖ < 1) (n : ℕ+) :
-      ‖(q : K) ^ (n : ℕ) * v‖ < 1 := by
-    have hn : (n : ℕ) = ((n : ℕ) - 1) + 1 := (Nat.sub_add_cancel n.pos).symm
-    rw [hn, pow_succ, mul_assoc, norm_mul]
-    exact lt_of_le_of_lt (mul_le_of_le_one_left (norm_nonneg _)
-      (by rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hq.le)) hv
-  have htail (c : ℕ → K) {E : ℝ} {m : ℕ}
-      (hc : ∀ d, ‖c d‖ ≤ E * (d : ℝ) ^ m) (v : K) (hv : ‖(q : K) * v‖ < 1)
-      (F : K → K)
-      (hF : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, c (d + 1) * r ^ (d + 1)) = F r) :
-      Summable (fun n : ℕ+ ↦ F ((q : K) ^ (n : ℕ) * v)) := by
-    have h := (summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow c hc hq hv).of_norm.prod
-    convert h using 1
-    funext n
-    rw [← hF _ (hsmall hv n),
-      tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ c d * v ^ d * (q : K) ^ ((n : ℕ) * d))]
-    apply tsum_congr
-    intro d
-    rw [mul_pow, ← pow_mul]
-    ring
+  have hq := norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one u hqu hqui
   have hneg (n : ℕ+) : f (((q : K) ^ (n : ℕ))⁻¹ * (u : K)) =
       g ((q : K) ^ (n : ℕ) * (u : K)⁻¹) := by
     simpa only [mul_inv, inv_inv] using hinv ((q : K) ^ (n : ℕ) * (u : K)⁻¹)
@@ -189,10 +202,11 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     apply Summable.of_nat_of_neg
     · simpa only [zpow_natCast] using
         (summable_pnat_iff_summable_nat (f := fun n : ℕ ↦ f ((q : K) ^ n * (u : K)))).mp
-          (htail a ha (u : K) hqu f hf)
+          (summable_apply_pow_pnat_mul_of_tsum_eq a ha hq hqu f hf)
     · apply (summable_pnat_iff_summable_nat
         (f := fun n : ℕ ↦ f ((q : K) ^ (-(n : ℤ)) * (u : K)))).mp
-      simpa only [zpow_neg, zpow_natCast, hneg] using htail b hb (u : K)⁻¹ hqui g hg
+      simpa only [zpow_neg, zpow_natCast, hneg] using
+        summable_apply_pow_pnat_mul_of_tsum_eq b hb hq hqui g hg
   have hp := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq hqu
   have hm := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow b hb hq hqui
   convert hp.add hm using 1
@@ -201,7 +215,8 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
   · have hsplit := tsum_int_eq_zero_add_tsum_pnat hs
     simp only [zpow_natCast, zpow_neg, zpow_zero, one_mul] at hsplit
     simp_rw [hneg] at hsplit
-    simp_rw [hf _ (hsmall hqu _), hg _ (hsmall hqui _)]
+    simp_rw [hf _ (norm_pow_pnat_mul_lt_one hq hqu _),
+      hg _ (norm_pow_pnat_mul_lt_one hq hqui _)]
     rw [hsplit]
     ring
 
