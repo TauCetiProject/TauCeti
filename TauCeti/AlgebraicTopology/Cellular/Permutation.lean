@@ -14,10 +14,11 @@ public import TauCeti.AlgebraicTopology.Cellular.Map
 Let `f` be a map between relative CW complexes that carries the base into the base and the
 characteristic map of every cell onto the characteristic map of a cell of the same dimension:
 `f ∘ φᵢ = φᵢ'` on the closed unit ball. Such a map is cellular
-(`TauCeti.isCellular_of_map_eq`), and on cellular chains it relabels the cells: the summand of
-the cell `i` in the cellular chain group `Hₙ(Xⁿ, Xⁿ⁻¹)` is sent identically onto the summand of
-`i'` (`TauCeti.ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap`). With coefficients in a
-ring this says that `f` sends each cellular basis vector to a cellular basis vector, with no sign
+(`TauCeti.isCellular_of_map_eq`, in `TauCeti.Topology.CWComplex.Classical.Map`), and on cellular
+chains it relabels the cells: the summand of the cell `i` in the cellular chain group
+`Hₙ(Xⁿ, Xⁿ⁻¹)` is sent identically onto the summand of `i'`
+(`TauCeti.ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap`). With coefficients in a ring
+this says that `f` sends each cellular basis vector to a cellular basis vector, with no sign
 (`TauCeti.cellularChainGroupMap_cellularChainBasis`).
 
 The deck transformations of the lift of a CW structure along a covering map are maps of this kind,
@@ -42,22 +43,6 @@ namespace TauCeti
 
 variable {X Y : Type w} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y]
   {D : Set X} {E : Set Y} (C : Set X) [RelCWComplex C D] (C' : Set Y) [RelCWComplex C' E]
-
-/-- A map of relative CW complexes carrying the base into the base and the characteristic map of
-every cell onto the characteristic map of a cell of the same dimension, on the open unit ball,
-is cellular. -/
-lemma isCellular_of_map_eq {f : TopCat.of C ⟶ TopCat.of C'}
-    (hD : ∀ x : C, x.1 ∈ D → (f x).1 ∈ E)
-    (hf : ∀ (n : ℕ) (i : cell C n), ∃ i' : cell C' n, ∀ x ∈ ball (0 : Fin n → ℝ) 1,
-      ∀ hx : map n i x ∈ C, (f ⟨map n i x, hx⟩).1 = map n i' x) :
-    IsCellular C C' f := by
-  rintro n ⟨x, hxC⟩ (hx : x ∈ skeletonLT C n)
-  change (f ⟨x, hxC⟩).1 ∈ skeletonLT C' n  -- the membership of a subtype point in a set
-  rw [RelCWComplex.mem_skeletonLT_iff] at hx ⊢
-  obtain hxD | ⟨m, hm, i, y, hy, rfl⟩ := hx
-  · exact Or.inl (hD _ hxD)
-  · obtain ⟨i', hi'⟩ := hf m i
-    exact Or.inr ⟨m, hm, i', y, hy, (hi' y hy hxC).symm⟩
 
 /-- The summand of the cell `j` in `TauCeti.cellularChainGroupIso` is induced by the
 characteristic map of `j`, read on the Euclidean disk through the radial rescaling. -/
