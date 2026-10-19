@@ -59,7 +59,7 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 -- arbitrary-form group endpoint in `Six.Group` was introduced in Tau Ceti PR #17008.
 
 private theorem polarizedSpinGroupFirstFactor_matrix
-    [NeZero (2 : K)] [Invertible (2 : K)] (P : SpinPolarizationData Q)
+    [Invertible (2 : K)] (P : SpinPolarizationData Q)
     [FiniteDimensional K V]
     [FiniteDimensional K (spinPlus Q P)]
     (hline : P.line = ⊥)
