@@ -30,9 +30,10 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Real Set Topology
+open TauCeti.Probability
 open scoped NNReal Nat
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 variable {u : ℝ}
 
@@ -80,4 +81,4 @@ theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsGT_zero
   rw [(quantile_map_cast_mixedPoissonMeasure_eq_zero_iff ρ hu').2 hu.2.le]
   rfl
 
-end TauCeti.Probability
+end MeasureTheory.Measure
