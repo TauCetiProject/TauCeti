@@ -68,8 +68,9 @@ private theorem contMDiff_height (a : E) :
 private theorem mvfderiv_height (a : E) (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
     mvfderiv (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p v =
       inner ℝ a (mvfderiv (𝓡 n) ι p v) := by
-  change mvfderiv _ ((innerSL ℝ a) ∘ ι) p v = _
-  rw [TauCeti.mvfderiv_comp_apply_of_differentiableAt (innerSL ℝ a).differentiableAt
+  have h : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) = innerSL ℝ a ∘ ι :=
+    funext fun q ↦ (innerSL_apply_apply ℝ a (q : E)).symm
+  rw [h, TauCeti.mvfderiv_comp_apply_of_differentiableAt (innerSL ℝ a).differentiableAt
     ((contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero),
     (innerSL ℝ a).fderiv, innerSL_apply_apply]
 

@@ -48,8 +48,8 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     intro w
     rw [mvfderiv_apply_eq_mfderiv_apply (fun y ↦ (g y, g' y)) x w, hpair.mfderiv]
     exact ContinuousLinearMap.prod_apply _ _ _
-  change mvfderiv I ((fun p : F × F ↦ inner 𝕜 p.1 p.2) ∘ fun y ↦ (g y, g' y)) x v = _
-  rw [TauCeti.mvfderiv_comp_apply_of_differentiableAt
+  rw [← Function.comp_def (fun p : F × F ↦ inner 𝕜 p.1 p.2) fun y ↦ (g y, g' y),
+    TauCeti.mvfderiv_comp_apply_of_differentiableAt
     (g := fun y ↦ (g y, g' y)) (φ := fun p : F × F ↦ inner 𝕜 p.1 p.2)
     hinner.differentiableAt hpair.mdifferentiableAt, hinner.fderiv,
     hpair', fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
