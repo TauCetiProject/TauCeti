@@ -24,12 +24,11 @@ This bridge is useful when regularity estimates give continuous representatives 
 Sobolev derivative fields. In particular, Hölder regularity of weak second derivatives can
 then yield classical second differentiability, without extra Sobolev derivatives.
 
-Locally, mollifications have derivatives converging uniformly on a smaller ball.
-`ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable` supplies convergence of their
-values at one point, and `cauchy_map_of_uniformCauchySeqOn_fderiv` propagates it over the ball.
-Mathlib's `hasFDerivAt_of_tendstoUniformlyOn` then gives the classical derivative, and
-`exists_contDiffOn_ae_eq_of_locally` glues the local representatives. No boundary regularity
-or global integrability assumption is needed.
+Use `HasWeakFDerivOn.exists_contDiffOn_one_ae_eq` for a continuous derivative field, or
+`HasWeakFDerivOn.exists_contDiffOn_succ_ae_eq` for higher regularity. Both results return
+almost-everywhere agreement and identify the classical derivative at every point of the open
+domain. They apply to Banach-valued functions on finite-dimensional real normed spaces with
+additive Haar measure. No boundary regularity or global integrability assumption is needed.
 
 ## References
 
@@ -50,6 +49,10 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E}
   {u : E → F} {U : E → E →L[ℝ] F}
 
+/- Locally, mollifications have derivatives converging uniformly on a smaller ball.
+`ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable` supplies convergence of their
+values at one point, and `cauchy_map_of_uniformCauchySeqOn_fderiv` propagates it over the ball.
+Mathlib's `hasFDerivAt_of_tendstoUniformlyOn` then gives the classical derivative. -/
 private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     {x : E} {r : ℝ} (hr : 0 < r) (h : HasWeakFDerivOn mu ⟨ball x r, isOpen_ball⟩ u U)
     (hu : IntegrableOn u (ball x r) mu) (hU : IntegrableOn U (ball x r) mu)
