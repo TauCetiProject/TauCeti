@@ -31,36 +31,34 @@ public section
 
 open TensorProduct
 
-namespace TauCeti
-
 namespace Bialgebra.TensorProduct
 
 universe u v w x
 
 variable {R H₁ H₂ : Type*} [CommSemiring R]
-variable [Semiring H₁] [Semiring H₂] [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
+variable [Semiring H₁] [Semiring H₂] [Bialgebra R H₁] [Bialgebra R H₂]
 
 /-- The left inclusion `x ↦ x ⊗ₜ 1` of a bialgebra into a tensor product of bialgebras,
 packaged as a bialgebra morphism. It is the unit `R →ₐc[R] H₂` tensored on the right with `H₁`,
 precomposed with the right-unit isomorphism `H₁ ≃ₐc[R] H₁ ⊗[R] R`. -/
 noncomputable def includeLeft : H₁ →ₐc[R] H₁ ⊗[R] H₂ :=
-  (_root_.Bialgebra.TensorProduct.map (BialgHom.id R H₁) (_root_.Bialgebra.unitBialgHom R H₂)).comp
-    (_root_.Bialgebra.TensorProduct.rid R R H₁).symm.toBialgHom
+  (Bialgebra.TensorProduct.map (BialgHom.id R H₁) (Bialgebra.unitBialgHom R H₂)).comp
+    (Bialgebra.TensorProduct.rid R R H₁).symm.toBialgHom
 
 /-- The right inclusion `y ↦ 1 ⊗ₜ y` of a bialgebra into a tensor product of bialgebras,
 packaged as a bialgebra morphism. It is the unit `R →ₐc[R] H₁` tensored on the left with `H₂`,
 precomposed with the left-unit isomorphism `H₂ ≃ₐc[R] R ⊗[R] H₂`. -/
 noncomputable def includeRight : H₂ →ₐc[R] H₁ ⊗[R] H₂ :=
-  (_root_.Bialgebra.TensorProduct.map (_root_.Bialgebra.unitBialgHom R H₁) (BialgHom.id R H₂)).comp
-    (_root_.Bialgebra.TensorProduct.lid R H₂).symm.toBialgHom
+  (Bialgebra.TensorProduct.map (Bialgebra.unitBialgHom R H₁) (BialgHom.id R H₂)).comp
+    (Bialgebra.TensorProduct.lid R H₂).symm.toBialgHom
 
 @[simp]
 theorem includeLeft_apply (x : H₁) : includeLeft (H₂ := H₂) x = x ⊗ₜ[R] (1 : H₂) := by
-  simp [includeLeft, _root_.Bialgebra.unitBialgHom, Algebra.ofId_apply]
+  simp [includeLeft, Bialgebra.unitBialgHom, Algebra.ofId_apply]
 
 @[simp]
 theorem includeRight_apply (y : H₂) : includeRight (H₁ := H₁) y = (1 : H₁) ⊗ₜ[R] y := by
-  simp [includeRight, _root_.Bialgebra.unitBialgHom, Algebra.ofId_apply]
+  simp [includeRight, Bialgebra.unitBialgHom, Algebra.ofId_apply]
 
 @[simp]
 theorem includeLeft_toAlgHom :
@@ -77,15 +75,15 @@ theorem includeRight_toAlgHom :
 /-- The left projection `H₁ ⊗[R] H₂ → H₁`, given on pure tensors by
 `x ⊗ₜ y ↦ ε(y) • x`, as a bialgebra morphism. -/
 noncomputable def projectLeft : H₁ ⊗[R] H₂ →ₐc[R] H₁ :=
-  (_root_.Bialgebra.TensorProduct.rid R R H₁).toBialgHom.comp <|
-    _root_.Bialgebra.TensorProduct.map (BialgHom.id R H₁)
-      (_root_.Bialgebra.counitBialgHom R H₂)
+  (Bialgebra.TensorProduct.rid R R H₁).toBialgHom.comp <|
+    Bialgebra.TensorProduct.map (BialgHom.id R H₁)
+      (Bialgebra.counitBialgHom R H₂)
 
 /-- The right projection `H₁ ⊗[R] H₂ → H₂`, given on pure tensors by
 `x ⊗ₜ y ↦ ε(x) • y`, as a bialgebra morphism. -/
 noncomputable def projectRight : H₁ ⊗[R] H₂ →ₐc[R] H₂ :=
-  (_root_.Bialgebra.TensorProduct.lid R H₂).toBialgHom.comp <|
-    _root_.Bialgebra.TensorProduct.map (_root_.Bialgebra.counitBialgHom R H₁)
+  (Bialgebra.TensorProduct.lid R H₂).toBialgHom.comp <|
+    Bialgebra.TensorProduct.map (Bialgebra.counitBialgHom R H₁)
       (BialgHom.id R H₂)
 
 @[simp]
@@ -118,22 +116,22 @@ section BaseChange
 
 variable (k : Type u) (K : Type w) [CommSemiring k] [CommSemiring K] [Algebra k K]
 variable (H : Type v) (L : Type x) [Semiring H] [Semiring L]
-variable [_root_.Bialgebra k H] [_root_.Bialgebra k L]
+variable [Bialgebra k H] [Bialgebra k L]
 
 private theorem baseChangeTensorAlgEquiv_counit_comp :
     (Bialgebra.counitAlgHom K
         ((K ⊗[k] H) ⊗[K] (K ⊗[k] L))).comp
-      (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom =
+      (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom =
     Bialgebra.counitAlgHom K (K ⊗[k] (H ⊗[k] L)) := by
   ext h <;> simp [Algebra.smul_def]
 
 private theorem baseChangeTensorAlgEquiv_map_comp_comul :
     (Algebra.TensorProduct.map
-        (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
-        (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom).comp
+        (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
+        (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom).comp
       (Bialgebra.comulAlgHom K (K ⊗[k] (H ⊗[k] L))) =
     (Bialgebra.comulAlgHom K ((K ⊗[k] H) ⊗[K] (K ⊗[k] L))).comp
-      (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom := by
+      (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom := by
   apply AlgHom.toLinearMap_injective
   ext h l
   simp [← (Coalgebra.Repr.arbitrary k h).eq, ← (Coalgebra.Repr.arbitrary k l).eq,
@@ -148,7 +146,7 @@ groups. -/
 noncomputable def baseChangeTensorBialgEquiv :
     K ⊗[k] (H ⊗[k] L) ≃ₐc[K]
       ((K ⊗[k] H) ⊗[K] (K ⊗[k] L)) :=
-  BialgEquiv.ofAlgEquiv (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L)
+  BialgEquiv.ofAlgEquiv (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L)
     (R := K) (A := K ⊗[k] (H ⊗[k] L))
     (B := (K ⊗[k] H) ⊗[K] (K ⊗[k] L))
     (baseChangeTensorAlgEquiv_counit_comp k K H L)
@@ -158,7 +156,7 @@ noncomputable def baseChangeTensorBialgEquiv :
 @[simp]
 theorem baseChangeTensorBialgEquiv_toAlgEquiv :
     (baseChangeTensorBialgEquiv k K H L).toAlgEquiv =
-      Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L :=
+      TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L :=
   (rfl)
 
 /-- On a pure tensor, the product/base-change equivalence puts the scalar in the first
@@ -168,7 +166,7 @@ theorem baseChangeTensorBialgEquiv_tmul (s : K) (h : H) (l : L) :
     baseChangeTensorBialgEquiv k K H L (s ⊗ₜ[k] (h ⊗ₜ[k] l)) =
       (s ⊗ₜ[k] h) ⊗ₜ[K] (1 ⊗ₜ[k] l) := by
   rw [← BialgEquiv.coe_toAlgEquiv, baseChangeTensorBialgEquiv_toAlgEquiv]
-  exact Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul k K H L s h l
+  exact TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul k K H L s h l
 
 /-- The inverse product/base-change equivalence multiplies the two scalar coefficients. -/
 @[simp]
@@ -180,11 +178,9 @@ theorem baseChangeTensorBialgEquiv_symm_tmul
   apply EquivLike.injective (baseChangeTensorBialgEquiv k K H L)
   rw [BialgEquiv.apply_symm_apply]
   simpa only [← BialgEquiv.coe_toAlgEquiv, baseChangeTensorBialgEquiv_toAlgEquiv] using
-    (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).symm_apply_eq.mp
-      (Algebra.TensorProduct.baseChangeTensorAlgEquiv_symm_tmul k K H L s t h l)
+    (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).symm_apply_eq.mp
+      (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_symm_tmul k K H L s t h l)
 
 end BaseChange
 
 end Bialgebra.TensorProduct
-
-end TauCeti

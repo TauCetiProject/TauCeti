@@ -69,9 +69,9 @@ private noncomputable def tensorProductComponents :
       _root_.Derivation R H₁ (Bialgebra.CounitAlgebra R H₁ B) ×
         _root_.Derivation R H₂ (Bialgebra.CounitAlgebra R H₂ B) :=
   (derivationCompLieHom (B := B)
-      (TauCeti.Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂))).prod
+      (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂))).prod
     (derivationCompLieHom (B := B)
-      (TauCeti.Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H₁) (H₂ := H₂)))
+      (Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H₁) (H₂ := H₂)))
 
 /-- Extend two tangent vectors to the tensor product along the counit projections and add them. -/
 private noncomputable def ofTensorProductComponents :
@@ -79,11 +79,11 @@ private noncomputable def ofTensorProductComponents :
         _root_.Derivation R H₂ (Bialgebra.CounitAlgebra R H₂ B)) →ₗ[B]
       _root_.Derivation R (H₁ ⊗[R] H₂) (Bialgebra.CounitAlgebra R (H₁ ⊗[R] H₂) B) :=
   ((derivationCompLieHom (B := B)
-      (TauCeti.Bialgebra.TensorProduct.projectLeft
+      (Bialgebra.TensorProduct.projectLeft
         (R := R) (H₁ := H₁) (H₂ := H₂))).toLinearMap.comp
       (LinearMap.fst B _ _)) +
     ((derivationCompLieHom (B := B)
-      (TauCeti.Bialgebra.TensorProduct.projectRight
+      (Bialgebra.TensorProduct.projectRight
         (R := R) (H₁ := H₁) (H₂ := H₂))).toLinearMap.comp
       (LinearMap.snd B _ _))
 
@@ -98,16 +98,16 @@ private theorem tensorProductComponents_ofTensorProductComponents_fst
     LinearMap.fst_apply, LinearMap.snd_apply]
   rw [map_add]
   have hdiag := derivationComp_derivationComp_eq_self_of_comp_eq_id (B := B)
-    (TauCeti.Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H₁) (H₂ := H₂))
-    (TauCeti.Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂))
-    TauCeti.Bialgebra.TensorProduct.projectLeft_comp_includeLeft d.1
+    (Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H₁) (H₂ := H₂))
+    (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂))
+    Bialgebra.TensorProduct.projectLeft_comp_includeLeft d.1
   rw [hdiag]
   have hcross := derivationComp_derivationComp_eq_zero_of_comp_eq_counit_smul_one (B := B)
-    (TauCeti.Bialgebra.TensorProduct.projectRight (R := R) (H₁ := H₁) (H₂ := H₂))
-    (TauCeti.Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂))
+    (Bialgebra.TensorProduct.projectRight (R := R) (H₁ := H₁) (H₂ := H₂))
+    (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂))
     (fun h => by
-      simp only [BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.includeLeft_toAlgHom,
-        Algebra.TensorProduct.includeLeft_apply, TauCeti.Bialgebra.TensorProduct.projectRight_tmul])
+      simp only [BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeLeft_toAlgHom,
+        Algebra.TensorProduct.includeLeft_apply, Bialgebra.TensorProduct.projectRight_tmul])
     d.2
   rw [hcross, add_zero]
 
@@ -122,16 +122,16 @@ private theorem tensorProductComponents_ofTensorProductComponents_snd
     LinearMap.fst_apply, LinearMap.snd_apply]
   rw [map_add]
   have hdiag := derivationComp_derivationComp_eq_self_of_comp_eq_id (B := B)
-    (TauCeti.Bialgebra.TensorProduct.projectRight (R := R) (H₁ := H₁) (H₂ := H₂))
-    (TauCeti.Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H₁) (H₂ := H₂))
-    TauCeti.Bialgebra.TensorProduct.projectRight_comp_includeRight d.2
+    (Bialgebra.TensorProduct.projectRight (R := R) (H₁ := H₁) (H₂ := H₂))
+    (Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H₁) (H₂ := H₂))
+    Bialgebra.TensorProduct.projectRight_comp_includeRight d.2
   rw [hdiag]
   have hcross := derivationComp_derivationComp_eq_zero_of_comp_eq_counit_smul_one (B := B)
-    (TauCeti.Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H₁) (H₂ := H₂))
-    (TauCeti.Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H₁) (H₂ := H₂))
+    (Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H₁) (H₂ := H₂))
+    (Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H₁) (H₂ := H₂))
     (fun h => by
-      simp only [BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.includeRight_toAlgHom,
-        Algebra.TensorProduct.includeRight_apply, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul])
+      simp only [BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeRight_toAlgHom,
+        Algebra.TensorProduct.includeRight_apply, Bialgebra.TensorProduct.projectLeft_tmul])
     d.1
   rw [hcross, zero_add]
 
@@ -163,25 +163,25 @@ private theorem ofTensorProductComponents_tensorProductComponents
       -- restate that representation before evaluating it on the pure tensor.
       change
         (derivationComp (B := B)
-              (TauCeti.Bialgebra.TensorProduct.projectLeft
+              (Bialgebra.TensorProduct.projectLeft
                 (R := R) (H₁ := H₁) (H₂ := H₂))
               (derivationComp (B := B)
-                (TauCeti.Bialgebra.TensorProduct.includeLeft
+                (Bialgebra.TensorProduct.includeLeft
                   (R := R) (H₁ := H₁) (H₂ := H₂)) d) +
             derivationComp (B := B)
-              (TauCeti.Bialgebra.TensorProduct.projectRight
+              (Bialgebra.TensorProduct.projectRight
                 (R := R) (H₁ := H₁) (H₂ := H₂))
               (derivationComp (B := B)
-                (TauCeti.Bialgebra.TensorProduct.includeRight
+                (Bialgebra.TensorProduct.includeRight
                   (R := R) (H₁ := H₁) (H₂ := H₂)) d)) (h₁ ⊗ₜ[R] h₂) =
           d (h₁ ⊗ₜ[R] h₂)
       rw [Derivation.add_apply, derivationComp_apply, derivationComp_apply,
         derivationComp_apply, derivationComp_apply]
-      simp only [BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul,
-        TauCeti.Bialgebra.TensorProduct.projectRight_tmul]
+      simp only [BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.projectLeft_tmul,
+        Bialgebra.TensorProduct.projectRight_tmul]
       rw [_root_.map_smul,
-        TauCeti.Bialgebra.TensorProduct.includeLeft_apply,
-        TauCeti.Bialgebra.TensorProduct.includeRight_apply, TensorProduct.tmul_smul]
+        Bialgebra.TensorProduct.includeLeft_apply,
+        Bialgebra.TensorProduct.includeRight_apply, TensorProduct.tmul_smul]
       rw [Derivation.map_smul, Derivation.map_smul]
       -- The two projected terms are the two summands in the Leibniz rule for
       -- `(1 ⊗ h₂) * (h₁ ⊗ 1) = h₁ ⊗ h₂`.
@@ -219,9 +219,9 @@ theorem tensorProductLieEquiv_apply
     (d : _root_.Derivation R (H₁ ⊗[R] H₂) (Bialgebra.CounitAlgebra R (H₁ ⊗[R] H₂) B)) :
     tensorProductLieEquiv d =
       (derivationComp (B := B)
-          (TauCeti.Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂)) d,
+          (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H₁) (H₂ := H₂)) d,
         derivationComp (B := B)
-          (TauCeti.Bialgebra.TensorProduct.includeRight
+          (Bialgebra.TensorProduct.includeRight
             (R := R) (H₁ := H₁) (H₂ := H₂)) d) := by
   -- The forward function of the equivalence is definitionally `tensorProductComponents`.
   change tensorProductComponents d = _
@@ -235,9 +235,9 @@ theorem tensorProductLieEquiv_symm_apply
       _root_.Derivation R H₂ (Bialgebra.CounitAlgebra R H₂ B)) :
     (tensorProductLieEquiv (R := R) (B := B) (H₁ := H₁) (H₂ := H₂)).symm d =
       derivationComp (B := B)
-          (TauCeti.Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H₁) (H₂ := H₂)) d.1 +
+          (Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H₁) (H₂ := H₂)) d.1 +
         derivationComp (B := B)
-          (TauCeti.Bialgebra.TensorProduct.projectRight
+          (Bialgebra.TensorProduct.projectRight
             (R := R) (H₁ := H₁) (H₂ := H₂)) d.2 := by
   -- The inverse function of the equivalence is definitionally `ofTensorProductComponents`.
   change ofTensorProductComponents d = _
@@ -257,8 +257,8 @@ theorem tensorProductLieEquiv_symm_apply_tmul
         Coalgebra.counit (R := R) h₁ •
           Bialgebra.CounitAlgebra.algEquivSelf R H₂ B (d.2 h₂) := by
   simp only [tensorProductLieEquiv_symm_apply, Derivation.add_apply, derivationComp_apply,
-    BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul,
-    TauCeti.Bialgebra.TensorProduct.projectRight_tmul, Derivation.map_smul, map_smul,
+    BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.projectLeft_tmul,
+    Bialgebra.TensorProduct.projectRight_tmul, Derivation.map_smul, map_smul,
     Bialgebra.CounitAlgebra.algEquivSelf_apply]
   -- The remaining equality identifies the three exposed counit-coefficient synonyms with `B`.
   rfl

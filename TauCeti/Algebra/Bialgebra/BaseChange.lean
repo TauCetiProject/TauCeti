@@ -48,7 +48,7 @@ Galois extension be recognised over an algebraic closure.
 ## References
 
 * This formalization is adapted from the sibling comparison
-  `TauCeti.Bialgebra.TensorProduct.baseChangeTensorBialgEquiv` between base change and tensor
+  `Bialgebra.TensorProduct.baseChangeTensorBialgEquiv` between base change and tensor
   products.
 -/
 

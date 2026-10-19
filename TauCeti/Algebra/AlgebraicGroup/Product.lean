@@ -31,8 +31,8 @@ instances of pre-composition with the bialgebra morphisms from
 
 ## Main definitions
 
-* `TauCeti.Bialgebra.TensorProduct.includeLeft` and
-  `TauCeti.Bialgebra.TensorProduct.includeRight`: the inclusions `x ↦ x ⊗ₜ 1` and
+* `Bialgebra.TensorProduct.includeLeft` and
+  `Bialgebra.TensorProduct.includeRight`: the inclusions `x ↦ x ⊗ₜ 1` and
   `y ↦ 1 ⊗ₜ y` packaged as bialgebra morphisms.
 * `TauCeti.AffineGroup.Product.pointsMulEquiv`: the convolution monoid isomorphism between
   `(H₁ ⊗[R] H₂) →ₐ[R] A` and the product `(H₁ →ₐ[R] A) × (H₂ →ₐ[R] A)`. When `H₁` and `H₂` are
@@ -61,7 +61,7 @@ namespace TauCeti
 
 namespace AffineGroup.Product
 
-open _root_.TauCeti.Bialgebra.TensorProduct
+open _root_.Bialgebra.TensorProduct
 
 variable {R H₁ H₂ A : Type*} [CommSemiring R]
 variable [Semiring H₁] [Semiring H₂] [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
