@@ -24,6 +24,8 @@ space construction agrees with the manifold construction.
 After `open TauCeti`, the plot conversion lemmas support dot notation: `hp.isPlot` turns
 a smooth Cartesian parametrization into a plot, and `hp.contMDiff` turns a plot into a smooth
 manifold map. The equivalence is also available as `isPlot_iff_contMDiff`.
+Likewise, `hf.dSmooth` and `hf.contMDiff` convert between manifold and diffeological
+smoothness, with the equivalence available as `dSmooth_iff_contMDiff`.
 
 The plot axioms and compatibility interface follow Mathlib's
 `DiffeologicalSpace.ofCorePlotsOn` and `Diffeology.IsContDiffCompatible`.
@@ -95,6 +97,16 @@ protected theorem Diffeology.IsPlot.contMDiff {n : ℕ} {p : EuclideanSpace ℝ 
     (hp : IsPlot p) : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p :=
   isPlot_iff_contMDiff.mp hp
 
+/-- A smooth manifold map between compatible diffeologies is diffeologically smooth.
+This implication needs neither finite-dimensionality nor smooth atlas assumptions. -/
+@[fun_prop]
+protected theorem ContMDiff.dSmooth
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+    [DiffeologicalSpace N] [IsContMDiffCompatible F N] {f : M → N}
+    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f) : DSmooth f :=
+  fun _ _ hp => isPlot_iff_contMDiff.mpr (hf.comp (isPlot_iff_contMDiff.mp hp))
+
 end
 
 instance : @IsContMDiffCompatible E _ _ M _ _ (manifoldDiffeology E M) := by
@@ -156,6 +168,12 @@ theorem dSmooth_iff_contMDiff {f : M → N} :
   · intro hf n p hp
     exact IsContMDiffCompatible.isPlot_iff.mpr
       (hf.comp (IsContMDiffCompatible.isPlot_iff.mp hp))
+
+/-- A diffeologically smooth map from a finite-dimensional smooth manifold to a compatible
+charted space is smooth as a manifold map. -/
+protected theorem Diffeology.DSmooth.contMDiff {f : M → N} (hf : DSmooth f) :
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f :=
+  dSmooth_iff_contMDiff.mp hf
 
 /-- A normed-space-compatible diffeology is also compatible with the normed space's
 canonical manifold structure. No finite-dimensionality is needed for this implication. -/
