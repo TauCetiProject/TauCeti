@@ -337,13 +337,13 @@ every nonzero finite-dimensional representation has a weight vector. -/
 private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
     ∀ (H : Type v) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H] [IsReduced H]
       [ConnectedSpace (PrimeSpectrum H)],
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ →
+      Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ →
       ∀ (M : Type w) [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
         [Nontrivial M], HasNonzeroWeightVector k H M := by
   induction n with
   | zero =>
     intro H _ _ _ _ _ hn M _ _ _ _ _
-    rw [derivedSeries_zero] at hn
+    rw [Subgroup.derivedSeries_zero] at hn
     have hone (g : WithConv (H →ₐ[k] k)) : g = 1 := Subgroup.mem_bot.mp (hn ▸ Subgroup.mem_top g)
     apply hasNonzeroWeightVector_of_pairwise_commute
     intro g h _

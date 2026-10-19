@@ -1,0 +1,194 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.Probability.Distributions.Gamma.Basic
+
+/-!
+# The generalized Pareto distribution
+
+The generalized Pareto law with scale `s > 0` and shape `ξ` is obtained from a rate-one
+exponential variable `E`. For nonzero shape, the transformation is
+
+`s * (exp (ξ * E) - 1) / ξ`,
+
+while at shape zero it is `s * E`. Thus the zero-shape law is the exponential law with rate
+`s⁻¹`. A nonpositive scale gives the zero measure.
+
+This file provides the construction, its probability and parameter-measurability interfaces,
+and closure under positive scaling. These are the measure-level foundations for the density,
+cdf, quantile, moment, threshold-stability, and exponential-integrability theory of the family.
+
+## Main definitions
+
+* `TauCeti.Probability.generalizedParetoMap` is the transformation of a rate-one exponential
+  variable.
+* `TauCeti.Probability.generalizedParetoMeasure` is its pushforward law.
+
+## Main results
+
+* `generalizedParetoMeasure_zero` identifies the zero-shape law with an exponential law.
+* `isProbabilityMeasure_generalizedParetoMeasure` proves normalization at positive scale.
+* `hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure` gives the random-variable construction.
+* `map_mul_generalizedParetoMeasure` gives positive scaling.
+* `measurable_generalizedParetoMeasure` proves joint parameter measurability.
+
+## References
+
+* S. Coles, *An Introduction to Statistical Modeling of Extreme Values*, Springer (2001),
+  Chapter 4.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory ProbabilityTheory
+
+namespace TauCeti.Probability
+
+/-- The exponential-variable transformation defining the generalized Pareto family.
+
+At shape zero this is multiplication by the scale. At nonzero shape it is
+`e ↦ s * (exp (ξ * e) - 1) / ξ`. -/
+def generalizedParetoMap (s ξ e : ℝ) : ℝ :=
+  if ξ = 0 then s * e else s * (Real.exp (ξ * e) - 1) / ξ
+
+/-- At shape zero, the generalized Pareto transformation is multiplication by its scale. -/
+@[simp]
+theorem generalizedParetoMap_zero (s e : ℝ) :
+    generalizedParetoMap s 0 e = s * e := by
+  simp [generalizedParetoMap]
+
+/-- At nonzero shape, the generalized Pareto transformation uses its exponential formula. -/
+theorem generalizedParetoMap_of_shape_ne_zero {ξ : ℝ} (hξ : ξ ≠ 0) (s e : ℝ) :
+    generalizedParetoMap s ξ e = s * (Real.exp (ξ * e) - 1) / ξ := by
+  simp [generalizedParetoMap, hξ]
+
+/-- The generalized Pareto transformation is measurable jointly in scale, shape, and input. -/
+@[fun_prop]
+theorem measurable_generalizedParetoMap :
+    Measurable fun p : (ℝ × ℝ) × ℝ => generalizedParetoMap p.1.1 p.1.2 p.2 := by
+  simp only [generalizedParetoMap]
+  exact Measurable.ite (measurableSet_eq_fun measurable_fst.snd measurable_const) (by fun_prop)
+    (by fun_prop)
+
+/-- The generalized Pareto transformation is measurable in its exponential input. -/
+@[fun_prop]
+theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
+    Measurable (generalizedParetoMap s ξ) :=
+  measurable_generalizedParetoMap.comp
+    ((measurable_const.prodMk measurable_const).prodMk measurable_id)
+
+/-- The generalized Pareto measure with scale `s` and shape `ξ`.
+
+For positive scale this is the pushforward of a rate-one exponential law by
+`generalizedParetoMap`. For nonpositive scale it is the zero measure. -/
+def generalizedParetoMeasure (s ξ : ℝ) : Measure ℝ :=
+  if 0 < s then (expMeasure 1).map (generalizedParetoMap s ξ) else 0
+
+/-- For positive scale, the generalized Pareto law is its prescribed exponential pushforward. -/
+theorem generalizedParetoMeasure_of_pos {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    generalizedParetoMeasure s ξ = (expMeasure 1).map (generalizedParetoMap s ξ) := by
+  simp [generalizedParetoMeasure, hs]
+
+/-- A nonpositive scale gives the zero generalized Pareto measure. -/
+@[simp]
+theorem generalizedParetoMeasure_of_nonpos {s : ℝ} (hs : s ≤ 0) (ξ : ℝ) :
+    generalizedParetoMeasure s ξ = 0 := by
+  simp [generalizedParetoMeasure, not_lt.mpr hs]
+
+/-- The zero-shape generalized Pareto law with positive scale is the exponential law with rate
+`s⁻¹`. -/
+@[simp]
+theorem generalizedParetoMeasure_zero {s : ℝ} (hs : 0 < s) :
+    generalizedParetoMeasure s 0 = expMeasure s⁻¹ := by
+  calc
+    generalizedParetoMeasure s 0 = (expMeasure 1).map (s * ·) := by
+      rw [generalizedParetoMeasure_of_pos hs]
+      congr 1
+      funext e
+      exact generalizedParetoMap_zero s e
+    _ = expMeasure s⁻¹ := by
+      simpa only [expMeasure, one_div] using gammaMeasure_map_const_mul one_pos one_pos hs
+
+/-- For nonzero shape and positive scale, the generalized Pareto law is the pushforward of a
+rate-one exponential law under `e ↦ s * (exp (ξ * e) - 1) / ξ`. -/
+theorem generalizedParetoMeasure_of_shape_ne_zero {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) :
+    generalizedParetoMeasure s ξ =
+      (expMeasure 1).map fun e => s * (Real.exp (ξ * e) - 1) / ξ := by
+  rw [generalizedParetoMeasure_of_pos hs]
+  congr 1
+  funext e
+  exact generalizedParetoMap_of_shape_ne_zero hξ s e
+
+/-- A generalized Pareto law with positive scale is a probability measure. -/
+theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    IsProbabilityMeasure (generalizedParetoMeasure s ξ) := by
+  rw [generalizedParetoMeasure_of_pos hs]
+  let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
+  infer_instance
+
+/-- A variable obtained from a rate-one exponential variable by the generalized Pareto
+transformation has the corresponding generalized Pareto law. -/
+theorem hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {E : Ω → ℝ}
+    {s : ℝ} (hs : 0 < s) (ξ : ℝ) (hE : HasLaw E (expMeasure 1) P) :
+    HasLaw (fun ω => generalizedParetoMap s ξ (E ω))
+      (generalizedParetoMeasure s ξ) P := by
+  rw [generalizedParetoMeasure_of_pos hs]
+  exact (hasLaw_map (measurable_generalizedParetoMap_right s ξ).aemeasurable).comp hE
+
+/-- If `E` has the rate-one exponential law, then its nonzero-shape exponential transformation
+has the corresponding generalized Pareto law. -/
+theorem hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure_of_shape_ne_zero
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {E : Ω → ℝ}
+    {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) (hE : HasLaw E (expMeasure 1) P) :
+    HasLaw (fun ω => s * (Real.exp (ξ * E ω) - 1) / ξ)
+      (generalizedParetoMeasure s ξ) P := by
+  rw [generalizedParetoMeasure_of_shape_ne_zero hs hξ]
+  exact (hasLaw_map (by fun_prop : Measurable fun e : ℝ =>
+    s * (Real.exp (ξ * e) - 1) / ξ).aemeasurable).comp hE
+
+/-- Multiplication by a positive constant rescales a generalized Pareto law and leaves its shape
+fixed. The equality also respects the nonpositive-scale zero branch. -/
+theorem map_mul_generalizedParetoMeasure {c : ℝ} (hc : 0 < c) (s ξ : ℝ) :
+    (generalizedParetoMeasure s ξ).map (c * ·) = generalizedParetoMeasure (c * s) ξ := by
+  rcases le_or_gt s 0 with hs | hs
+  · rw [generalizedParetoMeasure_of_nonpos hs,
+      generalizedParetoMeasure_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hc.le hs),
+      Measure.map_zero]
+  · rw [generalizedParetoMeasure_of_pos hs,
+      generalizedParetoMeasure_of_pos (mul_pos hc hs),
+      Measure.map_map (by fun_prop) (measurable_generalizedParetoMap_right s ξ)]
+    congr 1
+    funext e
+    simp only [Function.comp_apply, generalizedParetoMap]
+    split_ifs <;> ring
+
+/-- The random-variable form of positive scaling for generalized Pareto laws. -/
+theorem hasLaw_mul_generalizedParetoMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+    {s ξ c : ℝ} (hc : 0 < c) (hX : HasLaw X (generalizedParetoMeasure s ξ) P) :
+    HasLaw (fun ω => c * X ω) (generalizedParetoMeasure (c * s) ξ) P := by
+  rw [← map_mul_generalizedParetoMeasure hc]
+  exact (hasLaw_map (by fun_prop : Measurable fun x : ℝ => c * x).aemeasurable).comp hX
+
+/-- The generalized Pareto family is jointly measurable in scale and shape, including the
+nonpositive-scale zero-measure branch. -/
+@[fun_prop]
+theorem measurable_generalizedParetoMeasure :
+    Measurable fun p : ℝ × ℝ => generalizedParetoMeasure p.1 p.2 := by
+  let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
+  apply Measurable.ite (measurableSet_lt measurable_const measurable_fst)
+  · exact TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry
+      (ν := expMeasure 1) (f := fun p : ℝ × ℝ => generalizedParetoMap p.1 p.2)
+      measurable_generalizedParetoMap
+  · exact measurable_const
+
+end TauCeti.Probability

@@ -35,7 +35,7 @@ full matrix of weighted logarithms, over all places in `S` and at infinity, sum 
   `TauCeti.NumberField.SUnit.isFundSystem_iff_basis`: fundamental systems are exactly the families
   whose `S`-logarithmic images form a basis of the `S`-unit lattice.
 * `TauCeti.NumberField.SUnit.regulator`: the `S`-regulator, with
-  `TauCeti.NumberField.SUnit.regulator_pos`.
+  `TauCeti.NumberField.SUnit.regulator_pos` and `TauCeti.NumberField.SUnit.regulator_ne_zero`.
 * `TauCeti.NumberField.SUnit.regulator_eq_abs_det`: the determinant formula for the
   `S`-regulator, the `S`-analogue of Mathlib's `NumberField.Units.regulator_eq_det`.
 * `TauCeti.NumberField.SUnit.regulator_empty`: the `∅`-regulator is the regulator of `K`.
@@ -152,12 +152,11 @@ theorem isFundSystem_iff_basis {ι : Type*} [Fintype ι]
 variable (S)
 
 open Classical in
-/-- The `S`-regulator: the covolume of the `S`-unit lattice. -/
-def regulator : ℝ :=
-  ZLattice.covolume (unitLattice S)
+/-- The `S`-regulator is the covolume of the `S`-unit lattice. -/
+def regulator : ℝ := ZLattice.covolume (unitLattice S)
 
 open Classical in
-/-- The `S`-regulator is the covolume of the `S`-unit lattice. -/
+/-- The defining covolume formula for the `S`-regulator. -/
 theorem regulator_def : regulator S = ZLattice.covolume (unitLattice S) :=
   (rfl)
 

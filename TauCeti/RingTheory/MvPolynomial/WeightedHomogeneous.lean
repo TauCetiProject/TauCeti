@@ -8,12 +8,15 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
-# Weighted homogeneity under substitution of homogeneous polynomials
+# Weighted homogeneity under substitution
 
-Give the variable `i` the weight `w i`, and substitute for it a polynomial that is homogeneous of
-degree `w i`. A weighted homogeneous polynomial of weight `m` then becomes a homogeneous
-polynomial of degree `m`. When the substitution is injective the converse holds: a polynomial
-whose substitution is homogeneous of degree `m` is itself weighted homogeneous of weight `m`.
+Give the variable `i` the weight `w i`, and substitute for it a polynomial that is weighted
+homogeneous of weight `w i` for weights `v` on the target variables. A weighted homogeneous
+polynomial of weight `m` then becomes weighted homogeneous of weight `m` for the weights `v`. The
+homogeneous case is `v = 1`: substituting polynomials homogeneous of degree `w i` turns a weighted
+homogeneous polynomial of weight `m` into a homogeneous polynomial of degree `m`. In this case,
+when the substitution is injective, the converse holds: a polynomial whose substitution is
+homogeneous of degree `m` is itself weighted homogeneous of weight `m`.
 
 The motivating substitution sends the variable `i` of `MvPolynomial (Fin n) R` to the elementary
 symmetric polynomial `eᵢ₊₁`, which is homogeneous of degree `i + 1`
@@ -25,10 +28,10 @@ such symmetric polynomials (`MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`).
 
 ## Main results
 
-* `MvPolynomial.IsWeightedHomogeneous.isHomogeneous_aeval`: substituting homogeneous polynomials
-  of the weights turns weighted homogeneity into homogeneity.
-* `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse, for an injective
-  substitution.
+* `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
+  homogeneous of the weights of the variables preserves weighted homogeneity.
+* `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
+  case, for an injective substitution.
 -/
 
 public section
@@ -41,22 +44,22 @@ section CommSemiring
 
 variable [CommSemiring R]
 
-/-- Substituting, for each variable `i`, a polynomial homogeneous of degree `w i` into a
-polynomial that is weighted homogeneous of weight `m` for the weights `w` gives a homogeneous
-polynomial of degree `m`. -/
-theorem IsWeightedHomogeneous.isHomogeneous_aeval {w : σ → ℕ} {φ : MvPolynomial σ R} {m : ℕ}
-    (hφ : φ.IsWeightedHomogeneous w m) {g : σ → MvPolynomial τ R}
-    (hg : ∀ i, (g i).IsHomogeneous (w i)) : (aeval g φ).IsHomogeneous m := by
+/-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
+`w i` for the weights `v` into a polynomial that is weighted homogeneous of weight `m` for the
+weights `w` gives a polynomial that is weighted homogeneous of weight `m` for the weights `v`. -/
+theorem IsWeightedHomogeneous.aeval {M : Type*} [AddCommMonoid M] {w : σ → M} {v : τ → M}
+    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {g : σ → MvPolynomial τ R}
+    (hg : ∀ i, (g i).IsWeightedHomogeneous v (w i)) :
+    (MvPolynomial.aeval g φ).IsWeightedHomogeneous v m := by
   induction hφ using IsWeightedHomogeneous.induction_on with
-  | zero => simpa using isHomogeneous_zero τ R m
+  | zero => simpa using isWeightedHomogeneous_zero R v m
   | add p q _ _ ihp ihq => simpa using ihp.add ihq
   | monomial d r hr =>
     rw [aeval_monomial, Finsupp.prod, algebraMap_eq]
-    have hprod := IsHomogeneous.prod d.support (fun i => g i ^ d i) (fun i => w i * d i)
-      fun i _ => (hg i).pow (d i)
-    convert (isHomogeneous_C τ r).mul hprod using 1
+    have hprod := IsWeightedHomogeneous.prod d.support (fun i => g i ^ d i)
+      (fun i => d i • w i) fun i _ => (hg i).pow (d i)
+    convert (isWeightedHomogeneous_C v r).mul hprod using 1
     rw [← hr, Finsupp.weight_apply, Finsupp.sum, zero_add]
-    exact Finset.sum_congr rfl fun i _ => by rw [smul_eq_mul, mul_comm]
 
 /-- **Weighted homogeneity from homogeneity of a substitution.** If `g i` is homogeneous of
 degree `w i` for every variable `i` and substitution of the `g i` is injective, then a polynomial
@@ -73,7 +76,7 @@ theorem isWeightedHomogeneous_of_isHomogeneous_aeval {w : σ → ℕ} {g : σ �
     rw [← finsum_eq_sum _ (weightedHomogeneousComponent_finsupp φ),
       sum_weightedHomogeneousComponent]
   have hcomp (n : ℕ) : (aeval g (weightedHomogeneousComponent w n φ)).IsHomogeneous n :=
-    (weightedHomogeneousComponent_isWeightedHomogeneous n φ).isHomogeneous_aeval hg
+    (weightedHomogeneousComponent_isWeightedHomogeneous n φ).aeval hg
   have key : aeval g φ = aeval g (weightedHomogeneousComponent w m φ) := by
     calc aeval g φ = homogeneousComponent m (aeval g φ) := (homogeneousComponent_eq_self h).symm
       _ = ∑ n ∈ s, homogeneousComponent m (aeval g (weightedHomogeneousComponent w n φ)) := by

@@ -58,6 +58,8 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   fixed parameter over a perfect field.
 * `TauCeti.nontrivial_kaehlerDifferential`, `TauCeti.finrank_kaehlerDifferential_pos`: an
   essentially finite type field extension that is not algebraic has nonzero Kähler differentials.
+* `TauCeti.transcendental_and_isSeparable_adjoin_of_D_ne_zero`: when `dim_F Ω[F⁄k] = 1`, every
+  element with nonzero differential is separating.
 * `TauCeti.finrank_kaehlerDifferential_eq_one_iff`: `dim_F Ω[F⁄k] = 1` exactly
   when an essentially finite type transcendental extension `F / k` has a separating element.
 * `TauCeti.two_le_finrank_kaehlerDifferential_iff`: without a separating element,
@@ -257,22 +259,13 @@ section TranscendentalDimension
 
 variable [Algebra.EssFiniteType k F] [Algebra.Transcendental k F]
 
-/-- **The Kähler differentials of an essentially finite type transcendental field extension
-are one-dimensional exactly when it admits a single separating element**:
-`dim_F Ω[F⁄k] = 1` if and only if
-some `x` transcendental over `k` makes `F / k(x)` separable. -/
-theorem finrank_kaehlerDifferential_eq_one_iff :
-    finrank F Ω[F⁄k] = 1 ↔ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  refine ⟨fun h ↦ ?_, fun ⟨x, hx, _⟩ ↦ finrank_kaehlerDifferential_eq_one_of_separating hx⟩
-  -- Some `d y` is nonzero, so it spans `Ω[F⁄k]`. Then `Ω[F⁄k(y)]` vanishes and `F / k(y)` is
-  -- separable; `y` is transcendental, since otherwise `F` would be algebraic over `k`.
-  obtain ⟨y, hy⟩ : ∃ y : F, D k F y ≠ 0 := by
-    by_contra! H
-    have := nontrivial_kaehlerDifferential (k := k) (F := F)
-    refine (top_ne_bot : (⊤ : Submodule F Ω[F⁄k]) ≠ ⊥) ?_
-    rw [← KaehlerDifferential.span_range_derivation k F, Submodule.span_eq_bot]
-    rintro _ ⟨z, rfl⟩
-    exact H z
+/-- **An element with nonzero differential is separating** when the Kähler differentials are
+one-dimensional: if `dim_F Ω[F⁄k] = 1` and `d y ≠ 0`, then `y` is transcendental over `k` and
+`F / k(y)` is separable. -/
+theorem transcendental_and_isSeparable_adjoin_of_D_ne_zero (h : finrank F Ω[F⁄k] = 1) {y : F}
+    (hy : D k F y ≠ 0) : Transcendental k y ∧ Algebra.IsSeparable k⟮y⟯ F := by
+  -- `d y` spans `Ω[F⁄k]`, so `Ω[F⁄k(y)]` vanishes and `F / k(y)` is separable; `y` is
+  -- transcendental, since otherwise `F` would be algebraic over `k`.
   have hrange : (KaehlerDifferential.mapBaseChange k k⟮y⟯ F).range = ⊤ := by
     rw [eq_top_iff, ← (span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one h _).mpr hy,
       Submodule.span_le, Set.singleton_subset_iff]
@@ -282,10 +275,27 @@ theorem finrank_kaehlerDifferential_eq_one_iff :
     ⟨(subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮y⟯ F).mpr hrange⟩
   have : Algebra.EssFiniteType k⟮y⟯ F := .of_comp k k⟮y⟯ F
   have := Algebra.FormallyUnramified.isSeparable k⟮y⟯ F
-  refine ⟨y, fun halg ↦ ?_, this⟩
+  refine ⟨fun halg ↦ ?_, this⟩
   have : FiniteDimensional k k⟮y⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
   have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮y⟯ F
   exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
+
+/-- **The Kähler differentials of an essentially finite type transcendental field extension
+are one-dimensional exactly when it admits a single separating element**:
+`dim_F Ω[F⁄k] = 1` if and only if
+some `x` transcendental over `k` makes `F / k(x)` separable. -/
+theorem finrank_kaehlerDifferential_eq_one_iff :
+    finrank F Ω[F⁄k] = 1 ↔ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx, _⟩ ↦ finrank_kaehlerDifferential_eq_one_of_separating hx⟩
+  -- Some `d y` is nonzero, and such a `y` is separating.
+  obtain ⟨y, hy⟩ : ∃ y : F, D k F y ≠ 0 := by
+    by_contra! H
+    have := nontrivial_kaehlerDifferential (k := k) (F := F)
+    refine (top_ne_bot : (⊤ : Submodule F Ω[F⁄k]) ≠ ⊥) ?_
+    rw [← KaehlerDifferential.span_range_derivation k F, Submodule.span_eq_bot]
+    rintro _ ⟨z, rfl⟩
+    exact H z
+  exact ⟨y, transcendental_and_isSeparable_adjoin_of_D_ne_zero h hy⟩
 
 /-- **The Kähler differentials jump in dimension without a separating element**: an essentially
 finite type transcendental field extension `F / k` has `dim_F Ω[F⁄k] ≥ 2` exactly when no `x`
