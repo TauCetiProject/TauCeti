@@ -83,6 +83,14 @@ def diagonalTorusCoordinateMap :
   conjugationMap (r + 1) R ≫
     GeneralLinear.weightTorusCoordinateMap (diagonalLiftWeight r)
 
+/-- Restriction to the normalized diagonal torus is conjugation by a diagonal matrix
+whose last entry is one and whose other entries are the coordinate characters. -/
+theorem diagonalTorusCoordinateMap_def :
+    diagonalTorusCoordinateMap r R = conjugationMap (r + 1) R ≫
+      GeneralLinear.weightTorusCoordinateMap
+        (fun (j : Fin (r + 1)) (i : ULift.{u} (Fin r)) ↦
+          if j = i.down.castSucc then 1 else 0) := (rfl)
+
 private theorem map_genericMatrix_diagonalLift :
     (GeneralLinear.genericMatrix R (r + 1)).map
         (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom =
