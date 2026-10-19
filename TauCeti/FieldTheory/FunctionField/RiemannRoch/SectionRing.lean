@@ -211,15 +211,14 @@ private theorem map_evalOne_sectionRingGrade (D : Divisor k F) (n : ℕ) :
   ext z
   constructor
   · rintro ⟨f, hf, rfl⟩
-    change evalOne D f ∈ riemannRochSpace (n • D)
-    rw [evalOne_of_mem hf]
+    rw [AlgHom.toLinearMap_apply, evalOne_of_mem hf]
     exact mem_coeffSubalgebra_iff.mp f.2 n
   · intro hz
     let f := coeffSubalgebra.monomial (fun i : ℕ ↦ riemannRochSpace (i • D)) n z hz
     have hf : f ∈ sectionRingGrade D n := coeffSubalgebra.monomial_mem_grade _ _ _
     refine ⟨f, hf, ?_⟩
-    change evalOne D f = z
-    rw [evalOne_of_mem hf, coeffSubalgebra.coe_monomial, coeff_monomial_same]
+    rw [AlgHom.toLinearMap_apply, evalOne_of_mem hf, coeffSubalgebra.coe_monomial,
+      coeff_monomial_same]
 
 /-- **Sufficiently divisible section rings are generated in degree one.** If the section ring of
 `D` is finitely generated over `k`, then there is an `e > 0` such that for every positive multiple
@@ -231,14 +230,8 @@ theorem exists_riemannRochSpace_mul_eq_pow (D : Divisor k F)
       riemannRochSpace ((m * e') • D) = riemannRochSpace (e' • D) ^ m := by
   let _ : IsScalarTower k (sectionRingGrade D 0) (sectionRing D) :=
     ⟨fun r s a ↦ by
-      rw [Algebra.smul_def (r • s) a, Algebra.smul_def r (s • a),
-        Algebra.smul_def s a, ← mul_assoc]
-      congr 2
-      apply Subtype.ext
-      change ((r • (s : sectionRing D) : sectionRing D) : F[X]) =
-        ((algebraMap k (sectionRing D) r * (s : sectionRing D) : sectionRing D) : F[X])
-      exact congrArg (fun x : sectionRing D ↦ (x : F[X]))
-        (Algebra.smul_def r (s : sectionRing D))⟩
+      rw [Algebra.smul_def (r • s) a, Algebra.smul_def s a, SetLike.GradeZero.algebraMap_apply,
+        SetLike.GradeZero.algebraMap_apply, Submodule.coe_smul, smul_mul_assoc]⟩
   let _ : Algebra.FiniteType (sectionRingGrade D 0) (sectionRing D) :=
     Algebra.FiniteType.of_restrictScalars_finiteType k _ _
   obtain ⟨e, he, hgen⟩ :=
