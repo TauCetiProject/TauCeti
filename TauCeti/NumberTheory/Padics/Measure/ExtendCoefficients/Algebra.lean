@@ -12,13 +12,16 @@ public import TauCeti.NumberTheory.Padics.Measure.CharacterIntegral
 # Coefficient extension and convolution
 
 Extension of coefficients from the closed unit ball respects the right-handed convolution of
-measures on a profinite topological monoid. Thus `extendCoefficientsRingHom` makes the extension
-available to ring-theoretic constructions, without requiring the monoid to be commutative or the
+measures on a profinite topological monoid. The ring homomorphism
+`TauCeti.AbstractMeasure.extendCoefficientsRingHom` makes the extension available to ring-theoretic
+constructions, without requiring the monoid to be commutative or the
 source coefficient ring to be normed or complete. The coefficient homomorphism is assumed
-continuous; in particular an isometric coefficient embedding satisfies this hypothesis.
+continuous; an isometric coefficient embedding satisfies this hypothesis when the source carries
+its norm topology.
 
-Composing this extension with character integration gives `extendedCharacterRingHom`, the scalar
-map used to evaluate pseudomeasures after clearing a character-dependent denominator. Its values
+Composing this extension with character integration gives
+`TauCeti.ContinuousMonoidHom.extendedCharacterRingHom`, the scalar map used to evaluate
+pseudomeasures after clearing a character-dependent denominator. Its values
 on source-valued characters agree with the original integrals after applying the coefficient map.
 No map on a total quotient ring is asserted.
 
@@ -41,8 +44,11 @@ namespace TauCeti
 variable {G O K : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
   [TotallyDisconnectedSpace G] [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
   [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
-  (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
   [Monoid G] [ContinuousMul G]
+
+namespace AbstractMeasure
+
+variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
 
 /-- Right convolution of an extended measure with a coefficient-extended test function is the
 coefficient extension of the original right convolution. -/
@@ -84,32 +90,44 @@ theorem coe_extendCoefficientsRingHom :
     ⇑(extendCoefficientsRingHom (G := G) j hj hjc) = extendCoefficients j hj :=
   (rfl)
 
+end AbstractMeasure
+
+namespace ContinuousMonoidHom
+
+variable (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
+
 /-- Integration of a scalar-valued continuous character after extending integral coefficients.
 This is a ring map on measures, not on their total quotient ring. -/
-def extendedCharacterRingHom (χ : G →ₜ* K) : D(G, O) →+* K :=
-  χ.characterIntegralAlgHom.toRingHom.comp (extendCoefficientsRingHom j hj hjc)
+def extendedCharacterRingHom : D(G, O) →+* K :=
+  χ.characterIntegralAlgHom.toRingHom.comp (AbstractMeasure.extendCoefficientsRingHom j hj hjc)
 
 /-- The extended character map integrates the character against the extended measure. -/
 @[simp]
-theorem extendedCharacterRingHom_apply (χ : G →ₜ* K) (μ : D(G, O)) :
-    extendedCharacterRingHom j hj hjc χ μ = extendCoefficients j hj μ χ := by
+theorem extendedCharacterRingHom_apply (μ : D(G, O)) :
+    extendedCharacterRingHom χ j hj hjc μ = extendCoefficients j hj μ χ := by
   simp [extendedCharacterRingHom]
 
 /-- The extended character map recovers the character on a Dirac measure. -/
-theorem extendedCharacterRingHom_dirac (χ : G →ₜ* K) (x : G) :
-    extendedCharacterRingHom j hj hjc χ (dirac O x) = χ x := by
+theorem extendedCharacterRingHom_dirac (x : G) :
+    extendedCharacterRingHom χ j hj hjc (dirac O x) = χ x := by
   simp
 
 /-- If a scalar-valued character is obtained by applying `j` to an `O`-valued character, its
 extended integral is `j` applied to the original character integral. -/
-theorem extendedCharacterRingHom_eq_of_forall_eq (χ : G →ₜ* K) (κ : G →ₜ* O)
+theorem extendedCharacterRingHom_eq_of_forall_eq (κ : G →ₜ* O)
     (hχ : ∀ x, χ x = j (κ x)) (μ : D(G, O)) :
-    extendedCharacterRingHom j hj hjc χ μ = j (κ.characterIntegralAlgHom μ) := by
+    extendedCharacterRingHom χ j hj hjc μ = j (κ.characterIntegralAlgHom μ) := by
   have htest : (χ : C(G, K)) = (⟨j, hjc⟩ : C(O, K)).comp κ := by
     ext x
     exact hχ x
   rw [extendedCharacterRingHom_apply, htest, extendCoefficients_apply_comp,
     ContinuousMonoidHom.characterIntegralAlgHom_apply]
+
+end ContinuousMonoidHom
+
+open TauCeti.AbstractMeasure TauCeti.ContinuousMonoidHom
+
+variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
 
 /-! These computations check the multiplicity and the order of the convolution factors. -/
 
@@ -119,11 +137,11 @@ example (x y : G) (a b : O) :
   simp [smul_smul, mul_comm, dirac_mul_dirac]
 
 example (χ : G →ₜ* K) (x : G) (a : O) :
-    extendedCharacterRingHom j hj hjc χ (a • dirac O x) = j a * χ x := by
+    extendedCharacterRingHom χ j hj hjc (a • dirac O x) = j a * χ x := by
   simp
 
 example (χ : G →ₜ* K) (x : G) :
-    extendedCharacterRingHom j hj hjc χ (dirac O x - 1) = χ x - 1 := by
+    extendedCharacterRingHom χ j hj hjc (dirac O x - 1) = χ x - 1 := by
   rw [map_sub, map_one]
   simp
 
