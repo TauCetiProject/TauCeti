@@ -420,6 +420,21 @@ variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Finite R (Bialgebra.CotangentSpace R L)]
   [Module.Projective R (Bialgebra.CotangentSpace R L)]
 
+/-- The differential of a group homomorphism carries an adjoint weight vector to a vector
+of the same weight, after restricting along the same diagonalizable group in the source. -/
+theorem _root_.BialgHom.dualCotangentMap_mem_adjointWeightSpace (φ : H →ₐc[R] L)
+    (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
+    {y : Module.Dual R (Bialgebra.CotangentSpace R L)}
+    (hy : y ∈ adjointWeightSpace π α) :
+    dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α := by
+  let A := CommAlgCat.of R (MonoidAlgebra R M)
+  have h := congrArg ((dualCotangentMap φ).lTensor A)
+    ((mem_adjointWeightSpace_iff_universalPointAction π α y).mp hy)
+  rw [BialgHom.lTensor_dualCotangentMap_adjointAction, LinearMap.lTensor_tmul,
+    LinearMap.lTensor_tmul] at h
+  apply (mem_adjointWeightSpace_iff_universalPointAction (π.comp φ) α _).mpr
+  simpa only [BialgHom.mapDomain_apply, BialgHom.comp_toAlgHom, A] using h
+
 /-- A homomorphism with injective differential detects adjoint weights for any homomorphism
 from a diagonalizable group into its source. No injectivity of the coordinate map is needed. -/
 theorem _root_.BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective (φ : H →ₐc[R] L)
