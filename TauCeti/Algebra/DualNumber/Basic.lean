@@ -17,7 +17,8 @@ instances make bilinear multiplication and convolution available with that modul
 Dual numbers over an Artinian ring are also Artinian, using their product module structure.
 Multiplication by `ε` is exact over a commutative ring.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
-their value on `ε`.
+their value on `ε`. The dual numbers are free of rank two on the basis `1, ε`, so linear maps
+out of them are determined by their values on `1` and `ε`.
 -/
 
 public section
@@ -80,3 +81,54 @@ theorem apply_dualNumber {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring
     AlgHom.comp_apply, inlAlgHom_apply] using hz.symm
 
 end AlgHom
+
+namespace TauCeti
+
+open TrivSqZeroExt DualNumber
+
+section DualNumberBasis
+
+variable (R : Type*) [Semiring R]
+
+/-- The basis `1, ε` of the dual numbers `R[ε]` as a free `R`-module of rank two. -/
+noncomputable def dualNumberBasis : Module.Basis (Fin 2) R (DualNumber R) :=
+  .ofEquivFun
+    { toFun x := ![x.fst, x.snd]
+      invFun f := inl (f 0) + inr (f 1)
+      map_add' x y := by ext i; fin_cases i <;> simp
+      map_smul' r x := by ext i; fin_cases i <;> simp
+      left_inv x := by ext <;> simp
+      right_inv f := by ext i; fin_cases i <;> simp }
+
+/-- The first basis vector of `TauCeti.dualNumberBasis` is `1`. -/
+@[simp]
+theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 := by
+  ext <;> simp [dualNumberBasis]
+
+/-- The second basis vector of `TauCeti.dualNumberBasis` is `ε`. -/
+@[simp]
+theorem dualNumberBasis_one : dualNumberBasis R 1 = eps := by
+  ext <;> simp [dualNumberBasis]
+
+variable {R}
+
+/-- The coordinate of `x` along `1` is its scalar part. -/
+@[simp]
+theorem dualNumberBasis_repr_zero (x : DualNumber R) :
+    (dualNumberBasis R).repr x 0 = x.fst := by
+  simp [dualNumberBasis]
+
+/-- The coordinate of `x` along `ε` is its infinitesimal part. -/
+@[simp]
+theorem dualNumberBasis_repr_one (x : DualNumber R) :
+    (dualNumberBasis R).repr x 1 = x.snd := by
+  simp [dualNumberBasis]
+
+/-- A linear map out of the dual numbers is determined by its values on `1` and `ε`. -/
+theorem dualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
+    ⦃f g : DualNumber R →ₗ[R] M⦄ (h1 : f 1 = g 1) (hε : f eps = g eps) : f = g :=
+  (dualNumberBasis R).ext fun i => by fin_cases i <;> simpa
+
+end DualNumberBasis
+
+end TauCeti
