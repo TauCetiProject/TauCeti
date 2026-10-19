@@ -294,3 +294,16 @@ theorem bypass_eq_self_iff_isPath {p : G.Walk x y} : p.bypass = p ↔ p.IsPath :
 end Extraction
 
 end Graph.Walk
+
+namespace Graph.Reachable
+
+variable {α : Type u} {β : Type v} {G : Graph α β} {x y : α}
+
+/-- Every pair of reachable vertices is joined by a path retaining actual multigraph edge
+identities. -/
+theorem exists_isPath (h : G.Reachable x y) :
+    ∃ p : G.Walk x y, p.IsPath := by
+  classical
+  exact h.elim fun p => ⟨p.bypass, p.bypass_isPath⟩
+
+end Graph.Reachable
