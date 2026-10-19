@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 
 /-!
 # Translation of test functions
@@ -19,7 +20,10 @@ invariance of weak derivatives and distributional variation.
 
 * `TauCeti.translateTestFunction`: translate a test function while changing its domain.
 * `TauCeti.translateTestFunction_apply`: evaluation of a translated test function.
+* `TauCeti.fderiv_translateTestFunction`: Fréchet derivatives commute with translation.
 * `TauCeti.lineDeriv_translateTestFunction`: directional derivatives commute with translation.
+* `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a test vector field commutes
+  with translation.
 -/
 
 public section
@@ -28,7 +32,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Set TopologicalSpace
+open Set TestFunction TopologicalSpace
 open scoped Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -67,6 +71,14 @@ theorem translateTestFunction_apply (hVO : MapsTo (· + h) V Omega)
     (phi : 𝓓(V, F)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
   (rfl)
 
+/-- The Fréchet derivative of a translated test function is the translated Fréchet
+derivative. -/
+@[simp]
+theorem fderiv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
+    (phi : 𝓓(V, F)) (y : E) :
+    fderiv ℝ (translateTestFunction hVO phi : E → F) y = fderiv ℝ (phi : E → F) (y - h) :=
+  fderiv_comp_sub (f := (phi : E → F)) h
+
 /-- The directional derivative of a translated test function is the translated directional
 derivative. -/
 @[simp]
@@ -79,5 +91,14 @@ theorem lineDeriv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
   funext t
   congr 1
   abel
+
+/-- The divergence of a translated test vector field is the translate of its divergence. -/
+@[simp]
+theorem divergenceCLM_translateTestFunction [FiniteDimensional ℝ E]
+    (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, E)) :
+    divergenceCLM (translateTestFunction hVO phi) =
+      translateTestFunction hVO (divergenceCLM phi) := by
+  ext y
+  simp only [divergenceCLM_apply, fderiv_translateTestFunction, translateTestFunction_apply]
 
 end TauCeti

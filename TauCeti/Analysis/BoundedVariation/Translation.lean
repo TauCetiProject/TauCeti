@@ -19,8 +19,9 @@ open sets are exact translates. The corresponding statements for perimeter trans
 same translation.
 
 The proof translates each admissible compactly supported test vector field in the opposite
-direction. Translation preserves both its pointwise norm and its divergence, and an additive Haar
-measure makes the resulting distributional pairings equal.
+direction. Translation preserves both its pointwise norm and its divergence, and a
+right-invariant measure, such as an additive Haar measure, makes the resulting distributional
+pairings equal.
 
 These results give the translation part of affine-isometric transport for BV functions and sets of
 finite perimeter. No integrability, measurability, boundedness, or finiteness assumption is needed.
@@ -53,27 +54,9 @@ open scoped Distributions
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
 
-/-- The trace of the derivative of a translated test vector field is the corresponding translate
-of its divergence. -/
-@[simp]
-theorem trace_fderiv_translateTestFunction (hVO : MapsTo (· + h) V Ω)
-    (φ : 𝓓(V, E)) (y : E) :
-    LinearMap.trace ℝ E
-        (fderiv ℝ (translateTestFunction hVO φ : E → E) y : E →ₗ[ℝ] E) =
-      divergenceCLM φ (y - h) := by
-  rw [← divergenceCLM_apply]
-  let b := stdOrthonormalBasis ℝ E
-  rw [divergenceCLM_apply_eq_sum b, divergenceCLM_apply_eq_sum b]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  simp only [lineDeriv, translateTestFunction_apply, sub_eq_add_neg]
-  congr 1
-  funext t
-  congr 2
-  abel
-
 section Variation
 
-variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddRightInvariant]
   {u : E → ℝ} {s : Set E}
 
 /-- Translating a function from `Ω` back to `V` does not increase its total variation when
@@ -85,7 +68,7 @@ theorem totalVariationOn_comp_add_right_le (hVO : MapsTo (· + h) V Ω) :
   have hpair :
       (∫ x, divergenceCLM φ x * u (x + h) ∂μ) =
         ∫ y, divergenceCLM ψ y * u y ∂μ := by
-    simpa only [ψ, divergenceCLM_apply, trace_fderiv_translateTestFunction,
+    simpa only [ψ, divergenceCLM_translateTestFunction, translateTestFunction_apply,
       add_sub_cancel_right] using
       integral_add_right_eq_self (fun y => divergenceCLM ψ y * u y) h
   rw [hpair]
@@ -101,12 +84,7 @@ theorem totalVariationOn_comp_add_right (hVO : MapsTo (· + h) V Ω)
   apply le_antisymm (totalVariationOn_comp_add_right_le hVO)
   have hle := totalVariationOn_comp_add_right_le (μ := μ)
     (u := fun x => u (x + h)) (h := -h) (V := Ω) (Ω := V) (by simpa [sub_eq_add_neg] using hOV)
-  have hu : (fun x => u (x + -h + h)) = u := by
-    funext x
-    congr 1
-    abel
-  rw [hu] at hle
-  exact hle
+  simpa using hle
 
 /-- Total variation is invariant when the translated domain is written canonically as the
 preimage open set. -/
@@ -117,22 +95,23 @@ theorem totalVariationOn_comap_add_right :
       totalVariationOn μ Ω u := by
   apply totalVariationOn_comp_add_right
   · intro x hx
-    exact hx
+    exact Opens.mem_comap.mp hx
   · intro y hy
-    change y - h + h ∈ Ω
-    simpa
+    simpa [Opens.mem_comap] using hy
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The indicator of a translated set is the translated indicator. -/
+private theorem indicator_one_preimage_add_right :
+    ((· + h) ⁻¹' s).indicator (1 : E → ℝ) = fun x => s.indicator 1 (x + h) := by
+  funext x
+  simpa only [Function.comp_def, Pi.one_def] using
+    (Set.indicator_comp_right (s := s) (g := fun _ => (1 : ℝ)) (fun y : E => y + h) (x := x))
 
 /-- Translating a set and an open domain together cannot increase perimeter when the translated
 domain lies in the original domain. -/
 theorem perimeter_preimage_add_right_le (hVO : MapsTo (· + h) V Ω) :
     perimeter μ V ((· + h) ⁻¹' s) ≤ perimeter μ Ω s := by
-  rw [perimeter_def, perimeter_def]
-  have hindicator : ((· + h) ⁻¹' s).indicator (1 : E → ℝ) =
-      fun x => s.indicator 1 (x + h) := by
-    funext x
-    simpa only [Function.comp_def, Pi.one_def] using
-      (Set.indicator_comp_right (s := s) (g := fun _ => (1 : ℝ)) (fun y : E => y + h) (x := x))
-  rw [hindicator]
+  rw [perimeter_def, perimeter_def, indicator_one_preimage_add_right]
   exact totalVariationOn_comp_add_right_le hVO
 
 /-- **Translation invariance of perimeter.** If translation by `h` identifies `V` with `Ω`, then
@@ -140,13 +119,7 @@ the perimeter in `V` of the translate by `-h` of `s` equals the perimeter of `s`
 theorem perimeter_preimage_add_right (hVO : MapsTo (· + h) V Ω)
     (hOV : MapsTo (· - h) Ω V) :
     perimeter μ V ((· + h) ⁻¹' s) = perimeter μ Ω s := by
-  rw [perimeter_def, perimeter_def]
-  have hindicator : ((· + h) ⁻¹' s).indicator (1 : E → ℝ) =
-      fun x => s.indicator 1 (x + h) := by
-    funext x
-    simpa only [Function.comp_def, Pi.one_def] using
-      (Set.indicator_comp_right (s := s) (g := fun _ => (1 : ℝ)) (fun y : E => y + h) (x := x))
-  rw [hindicator]
+  rw [perimeter_def, perimeter_def, indicator_one_preimage_add_right]
   exact totalVariationOn_comp_add_right hVO hOV
 
 /-- Perimeter is invariant when a set and its ambient open set are both pulled back by the same
@@ -155,12 +128,8 @@ theorem perimeter_comap_add_right :
     perimeter μ (Opens.comap ⟨(· + h), continuous_id.add continuous_const⟩ Ω)
         ((· + h) ⁻¹' s) =
       perimeter μ Ω s := by
-  apply perimeter_preimage_add_right
-  · intro x hx
-    exact hx
-  · intro y hy
-    change y - h + h ∈ Ω
-    simpa
+  rw [perimeter_def, perimeter_def, indicator_one_preimage_add_right]
+  exact totalVariationOn_comap_add_right
 
 end Variation
 
