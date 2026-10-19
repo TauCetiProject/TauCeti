@@ -305,7 +305,7 @@ private theorem finsum_weight_cosetMatrices {d₀ m : ℤ} (hd₀ : 0 < d₀) (h
       · exact abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inl h₃))) i j
   have hw₂ : (s ∩ Function.support fun M ↦ weight M + w₂ M).Finite :=
     (hw.union h₂).subset fun M ⟨hM, h⟩ ↦ by
-      by_contra! h'
+      by_contra h'
       simp_all
   -- `T₁ = Tₙ + T₂ + T₃ + T₄`, and `T₁`, `T₂` have the same coset sums
   have key : ∑ᶠ M ∈ s, (weight M + w₂ M + weight₃₄ M) =
