@@ -118,12 +118,13 @@ theorem PotentialIso.trans {P : Type*} [L.Structure P] (h₁ : PotentialIso (L :
   let comp (f : L.FGEquiv M N) (g : L.FGEquiv N P) (h : f.1.cod ≤ g.1.dom) : L.FGEquiv M P :=
     ⟨g.1.comp f.1 h, by rw [PartialEquiv.dom_comp]; exact f.2⟩
   refine ⟨{k | ∃ f ∈ S, ∃ g ∈ T, ∃ h, k = comp f g h}, ?_, ?_, ?_⟩
-  · obtain ⟨g, hg, h, -⟩ := FGEquiv.exists_le_of_fg_le_dom hTf hg₀ (f₀.1.dom_fg_iff_cod_fg.1 f₀.2)
+  · obtain ⟨g, hg, h, -⟩ :=
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₀ (f₀.1.dom_fg_iff_cod_fg.1 f₀.2)
     exact ⟨_, f₀, hf₀, g, hg, h, rfl⟩
   · rintro _ ⟨f, hf, g, hg, h, rfl⟩ m
     obtain ⟨f', hf', hm, hff'⟩ := hSf f hf m
     obtain ⟨g', hg', h', hgg'⟩ :=
-      FGEquiv.exists_le_of_fg_le_dom hTf hg (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg (f'.1.dom_fg_iff_cod_fg.1 f'.2)
     exact ⟨_, ⟨f', hf', g', hg', h', rfl⟩, by rwa [PartialEquiv.dom_comp],
       PartialEquiv.comp_le_comp hff' hgg' h h'⟩
   · rintro _ ⟨f, hf, g, hg, h, rfl⟩ p
@@ -133,7 +134,7 @@ theorem PotentialIso.trans {P : Type*} [L.Structure P] (h₁ : PotentialIso (L :
     let y := g₁.1.toEquiv.symm ⟨p, hp⟩
     obtain ⟨f', hf', hy, hff'⟩ := hSb f hf y
     obtain ⟨g', hg', h', hg₁g'⟩ :=
-      FGEquiv.exists_le_of_fg_le_dom hTf hg₁ (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₁ (f'.1.dom_fg_iff_cod_fg.1 f'.2)
     refine ⟨_, ⟨f', hf', g', hg', h', rfl⟩, (PartialEquiv.mem_cod_comp _ _ h').2 ⟨⟨y, hy⟩, ?_⟩,
       PartialEquiv.comp_le_comp hff' (hgg₁.trans hg₁g') h h'⟩
     -- The extension `g'` agrees with `g₁` at `y`, which `g₁` sends to `p`.

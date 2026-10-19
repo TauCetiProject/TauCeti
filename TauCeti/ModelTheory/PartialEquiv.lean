@@ -24,7 +24,7 @@ the image under `g` of the codomain of `f`. It is monotone in both partial equiv
   with a smaller one on the smaller domain.
 * `FirstOrder.Language.PartialEquiv.mem_cod_comp`: the codomain of a composite.
 * `FirstOrder.Language.PartialEquiv.comp_le_comp`: composition is monotone in both arguments.
-* `FirstOrder.Language.FGEquiv.exists_le_of_fg_le_dom`: in a family of finitely generated
+* `FirstOrder.Language.FGEquiv.exists_le_and_le_dom_of_fg`: in a family of finitely generated
   partial equivalences closed under forth extensions, every member extends to cover any finitely
   generated substructure.
 -/
@@ -112,7 +112,7 @@ open PartialEquiv
 /-- In a family of finitely generated partial equivalences closed under forth extensions, every
 member extends within the family to one whose domain contains a given finitely generated
 substructure. -/
-theorem FGEquiv.exists_le_of_fg_le_dom {T : Set (L.FGEquiv M N)}
+theorem FGEquiv.exists_le_and_le_dom_of_fg {T : Set (L.FGEquiv M N)}
     (hT : ∀ g ∈ T, ∀ m : M, ∃ g' ∈ T, m ∈ g'.1.dom ∧ g ≤ g') {g : L.FGEquiv M N} (hg : g ∈ T)
     {A : L.Substructure M} (hA : A.FG) : ∃ g' ∈ T, A ≤ g'.1.dom ∧ g ≤ g' := by
   classical
