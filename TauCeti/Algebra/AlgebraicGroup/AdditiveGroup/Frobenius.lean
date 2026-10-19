@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 
 /-!
@@ -42,11 +42,13 @@ where `R` has prime characteristic `p`.
   `a ↦ aᵖ` on points.
 * `TauCeti.AdditiveGroup.mapValue_frobeniusEnd`: the Frobenius endomorphism is natural in the
   value algebra.
+* `TauCeti.AdditiveGroup.frobeniusHom`: the relative Frobenius as a group-scheme morphism,
+  with its parameter formula on scheme-valued points.
 
 ## References
 
 The additive-group points dictionary `TauCeti.AdditiveGroup.gaPointsMulEquiv` and the
-coordinate-bialgebra functoriality `TauCeti.AlgHom.mapDomain` are Tau Ceti's. The freshman's
+coordinate-bialgebra functoriality `BialgHom.mapDomain` are Tau Ceti's. The freshman's
 dream `add_pow_expChar`, the symmetric-algebra bialgebra structure, and the bialgebra-hom
 constructor `BialgHom.ofAlgHom` are Mathlib's.
 -/
@@ -134,7 +136,7 @@ variable {A : Type v} [CommSemiring A] [Algebra R A]
 its `p`-th power, `a ↦ aᵖ`. -/
 noncomputable def frobeniusEnd :
     WithConv (SymmetricAlgebra R R →ₐ[R] A) →* WithConv (SymmetricAlgebra R R →ₐ[R] A) :=
-  AlgHom.mapDomain (frobeniusBialgHom R p)
+  BialgHom.mapDomain (frobeniusBialgHom R p)
 
 /-- **The Frobenius endomorphism acts as `a ↦ aᵖ` on points.** Reading a `𝔾ₐ`-point off on the
 generator `x = ι 1`, the Frobenius endomorphism raises the resulting element of `A` to its `p`-th
@@ -146,7 +148,7 @@ simp-normal form. -/
 theorem toAdd_gaPointsMulEquiv_frobeniusEnd (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv (frobeniusEnd R p F)) =
       Multiplicative.toAdd (gaPointsMulEquiv F) ^ p := by
-  simp only [toAdd_gaPointsMulEquiv, frobeniusEnd, AlgHom.mapDomain_apply_apply,
+  simp only [toAdd_gaPointsMulEquiv, frobeniusEnd, BialgHom.mapDomain_apply_apply,
     frobeniusBialgHom_ι_one, map_pow]
 
 variable {B : Type w} [CommSemiring B] [Algebra R B]
@@ -156,7 +158,54 @@ value-algebra functoriality `AlgHom.mapValue`. -/
 theorem mapValue_frobeniusEnd (χ : A →ₐ[R] B) :
     (frobeniusEnd R p (A := B)).comp (AlgHom.mapValue (H := SymmetricAlgebra R R) χ) =
       (AlgHom.mapValue (H := SymmetricAlgebra R R) χ).comp (frobeniusEnd R p (A := A)) :=
-  AlgHom.mapValue_mapDomain (frobeniusBialgHom R p) χ
+  BialgHom.mapValue_mapDomain (frobeniusBialgHom R p) χ
+
+end AdditiveGroup
+
+namespace AdditiveGroup
+
+open CategoryTheory AlgebraicGeometry
+open scoped CategoryTheory.MonObj
+
+variable (R : Type u) [CommRing R] (p : ℕ) [ExpChar R p]
+
+/-- The relative Frobenius of the additive group scheme, induced by the coordinate map
+`x ↦ xᵖ`. The coefficients in the base ring are fixed. -/
+noncomputable def frobeniusHom : groupScheme R ⟶ groupScheme R :=
+  eqToHom (groupScheme_def R) ≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+      (CommHopfAlgCat.ofHom (frobeniusBialgHom R p)).op ≫
+    eqToHom (groupScheme_def R).symm
+
+/-- The additive relative Frobenius is relative spectrum of the coordinate map `x ↦ xᵖ`. -/
+theorem frobeniusHom_def :
+    frobeniusHom R p =
+      eqToHom (groupScheme_def R) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+          (CommHopfAlgCat.ofHom (frobeniusBialgHom R p)).op ≫
+        eqToHom (groupScheme_def R).symm :=
+  (rfl)
+
+/-- On scheme-valued points, relative Frobenius raises the additive parameter to its
+`p`th power, including over nonreduced value rings. -/
+@[simp]
+theorem toAdd_schemePointsMulEquiv_comp_frobeniusHom
+    (A : Type u) [CommRing A] [Algebra R A]
+    (q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
+      (groupScheme R).X) :
+    Multiplicative.toAdd (schemePointsMulEquiv A (q ≫ (frobeniusHom R p).hom.hom)) =
+      Multiplicative.toAdd (schemePointsMulEquiv A q) ^ p := by
+  obtain ⟨f, rfl⟩ := (groupSchemePointMulEquiv A).surjective q
+  have hf := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain (R := R) A
+    (groupScheme_def R) (groupScheme_def R)
+    (groupSchemePointMulEquiv A) (groupSchemePointMulEquiv A)
+    (groupSchemePointMulEquiv_apply_left A) (groupSchemePointMulEquiv_apply_left A)
+    (CommHopfAlgCat.ofHom (frobeniusBialgHom R p)) f
+  rw [← frobeniusHom_def, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hf
+  rw [hf, schemePointsMulEquiv_groupSchemePointMulEquiv,
+    schemePointsMulEquiv_groupSchemePointMulEquiv]
+  simpa only [frobeniusEnd, BialgHom.mapDomain_apply, CommHopfAlgCat.hom_ofHom] using
+    toAdd_gaPointsMulEquiv_frobeniusEnd R p f
 
 end AdditiveGroup
 

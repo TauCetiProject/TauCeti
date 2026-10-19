@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Cyclotomic
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
@@ -135,15 +136,15 @@ private theorem absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_sel
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K π)
     {f : ℕ} (hf : f ≠ 0) {x : SeparableClosure K} (hx : x ^ Nat.card 𝓀[K] ^ f = x) :
     absoluteGaloisGroupRestrictEquiv K σ x = x ^ Nat.card 𝓀[K] := by
-  let := finiteExtensionValuativeRel K (𝓤 f)
-  let := finiteExtensionNormedFieldTopology K (𝓤 f)
+  let := algebraicExtensionValuativeRel K (𝓤 f)
+  let := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have := algebraicExtension_valuativeExtension K (𝓤 f)
   have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension hf
   let : CommGroup Gal(𝓤 f/K) := IsCyclic.commGroup
   have hmem : x ∈ 𝓤 f := rootSet_subset_unramifiedExtension K _ f <| by
     rw [mem_rootSet]
-    refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, ?_⟩
+    refine ⟨X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), ?_⟩
     simp [hx]
   -- The restriction of `σ` to the unramified extension is arithmetic Frobenius, since both
   -- represent the Artin symbol of `π` in its abelian Galois group.
@@ -172,17 +173,9 @@ theorem localArtinMap_cyclotomic_uniformizer (L : Type*) [Field L] [Algebra K L]
     rintro rfl
     exact (Finite.one_lt_card (α := 𝓀[K])).ne' (Nat.coprime_zero_right _ |>.mp hm)
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap K π)
-  set τ' := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K τ)
-  -- `σ` and the restriction `τ'` of `τ` represent the same Artin symbol, so they agree on `ζ`,
-  -- on which `Gal(L/K)` acts through the abelian group `(ℤ/dℤ)ˣ`.
-  have hστ : σ ζ = τ' ζ := by
-    have hζ' := IsPrimitiveRoot.orderOf ζ
-    have : NeZero (orderOf ζ) :=
-      ⟨(orderOf_pos_iff.2 (isOfFinOrder_iff_pow_eq_one.2 ⟨m, Nat.pos_of_ne_zero hm0, hζ⟩)).ne'⟩
-    have h := congrArg (Abelianization.lift (hζ'.autToPow K))
-      (Additive.ofMul.injective (hσ.symm.trans (artinMap_restrict K L ι π τ hτ)))
-    rw [Abelianization.lift_apply_of, Abelianization.lift_apply_of] at h
-    rw [← hζ'.autToPow_spec K σ, ← hζ'.autToPow_spec K τ', h]
+  -- `σ` and the restriction of `τ` represent the same Artin symbol, so they agree on `ζ`.
+  have hστ := AlgEquiv.apply_eq_apply_of_abelianization_of_eq
+    (Additive.ofMul.injective (hσ.symm.trans (artinMap_restrict K L ι π τ hτ))) hm0 hζ
   -- `τ` acts on the root of unity `ι ζ` by the `q`-th power map.
   have hιζ := absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_self K hπ hτ
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero hm0)).ne'
@@ -335,7 +328,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_
   have hm : 2 ^ 2 ≤ m :=
     (Nat.pow_le_pow_left hp.two_le 2).trans (Nat.pow_le_pow_right hp.pos (by omega))
   have : NeZero m := ⟨pow_ne_zero _ hp.ne_zero⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure ℚ_[p]) m
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure ℚ_[p]) m
   let E := IntermediateField.adjoin ℚ_[p] {ζ}
   have := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ_[p]
   have := IsCyclotomicExtension.finiteDimensional {m} ℚ_[p] E

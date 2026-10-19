@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Morphism
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
 
 /-!
 # The addition morphism commutes with pointed cartesian morphisms of Weierstrass models

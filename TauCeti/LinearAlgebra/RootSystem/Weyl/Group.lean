@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
-public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Permutation actions of Weyl groups
@@ -153,6 +153,12 @@ theorem weylGroupToPerm_injective_of_span_eq_top
 theorem weylGroupToPerm_injective
     [P.IsRootSystem] : Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective P).comp Subtype.val_injective
+
+/-- The Weyl-group permutation is the root-index equivalence of the underlying automorphism.
+Use this explicitly: `MonoidHom.domRestrict_apply` already simplifies its left-hand side. -/
+lemma weylGroupToPerm_apply (w : P.weylGroup) (i : ι) :
+    P.weylGroupToPerm w i = (w : P.Aut).indexEquiv i :=
+  rfl
 
 /-- The Weyl-group permutation of a simple reflection is the corresponding root-index
 reflection. -/

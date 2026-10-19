@@ -27,11 +27,9 @@ the familiar identity
 
 `AJ_{y₀}(x) = AJ_{x₀}(x) + AJ_{y₀}(x₀)`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A (`Pic⁰ X = ker deg`) and is
-a direct formal prerequisite for Layer F's normalized Abel-Jacobi morphism `aj : X ⟶ Jac X`,
-where choosing a rational base point forces `x₀ ↦ 0` and changing that choice should be a
-translation.  No external mathematics is vendored; the proofs use only the existing
-`WeilDivisor`, `OrderSystem.divisorClass`, and abstract Abel-Jacobi API.
+For the normalized Abel-Jacobi morphism `aj : X ⟶ Jac X`, choosing a rational base point forces
+`x₀ ↦ 0`, and changing that choice is a translation. No external mathematics is vendored; the proofs
+use only the `WeilDivisor`, `OrderSystem.divisorClass`, and abstract Abel-Jacobi API.
 -/
 
 @[expose] public section

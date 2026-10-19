@@ -80,7 +80,7 @@ private theorem eLpNorm_fderiv_testFunction_eq (phi : 𝓓((⊤ : Opens E), ℝ)
       (phi.hasCompactSupport.fderiv ℝ)).aestronglyMeasurable
   have hgrad : AEStronglyMeasurable (∇ (phi : E → ℝ)) mu :=
     ((continuous_gradient_testFunction phi).stronglyMeasurable_of_hasCompactSupport
-      (hasCompactSupport_gradient_testFunction phi)).aestronglyMeasurable
+      phi.hasCompactSupport.gradient).aestronglyMeasurable
   exact eLpNorm_congr_norm_ae hfderiv hgrad
     (.of_forall fun x => (norm_gradient_eq_norm_fderiv _ x).symm)
 

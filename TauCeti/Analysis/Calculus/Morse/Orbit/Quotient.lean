@@ -23,9 +23,9 @@ The construction uses `Flow.IsNegativeGradient.exists_continuous_levelSlice` and
 `Function.RightInverse.homeomorph` for a continuous retraction. No Morse nondegeneracy,
 transversality, or finite-dimensionality is needed for this topological identification.
 
-Use `TauCeti.connectingOrbitSetoid φ p q` for the orbit relation and
-`TauCeti.orbitQuotientHomeomorphLevelSlice hφ hf hfp hfq hc` for the identification.
-The characterization lemmas are in the same `TauCeti` namespace.
+Use `φ.connectingOrbitSetoid p q` for the orbit relation and
+`hφ.orbitQuotientHomeomorphLevelSlice hf hfp hfq hc` for the identification.
+The characterization lemmas share their definitions' receiver namespaces.
 
 ## References
 
@@ -36,9 +36,7 @@ The characterization lemmas are in the same `TauCeti` namespace.
 public section
 
 open Set Topology
-open _root_.Flow
-
-namespace TauCeti
+namespace Flow
 
 section OrbitRelation
 
@@ -58,6 +56,8 @@ theorem connectingOrbitSetoid_apply
   Iff.rfl
 
 end OrbitRelation
+
+namespace IsNegativeGradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {φ : _root_.Flow ℝ E} {f : E → ℝ} {p q : E}
@@ -138,4 +138,6 @@ theorem orbitQuotientHomeomorphLevelSlice_mk_eq_iff
   rw [← Homeomorph.eq_symm_apply, orbitQuotientHomeomorphLevelSlice_symm_apply, Quotient.eq]
   exact connectingOrbitSetoid_apply _ _
 
-end TauCeti
+end IsNegativeGradient
+
+end Flow

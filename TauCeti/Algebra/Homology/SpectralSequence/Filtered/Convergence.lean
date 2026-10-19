@@ -43,12 +43,9 @@ variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ} (F : �
 /-- The abutment `H^n(⊥ ≤ ⊤)` of the spectral object of a filtration of `K` is `H^n(K)`. -/
 noncomputable def filtrationAbutmentIso (n : ℤ) :
     (spectralObject (filtrationFunctor F hF)).abutment n ≅ K.homology n :=
-  have hz : (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)) = 0 := by
-    refine IsZero.eq_of_src ?_ _ _
-    rw [filtrationFunctor_obj, filtrationEInt_bot]
-    exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
   spectralObjectHIsoCokernel _ _ n ≪≫ (HomologicalComplex.homologyFunctor C _ n).mapIso
-    (cokernelIsoOfEq hz ≪≫ cokernelZeroIsoTarget ≪≫ filtrationFunctorObjIso F hF ⊤ ≪≫
+    (cokernelIsoOfEq (filtrationFunctor_map_bot_top F hF) ≪≫ cokernelZeroIsoTarget ≪≫
+      filtrationFunctorObjIso F hF ⊤ ≪≫
       eqToIso (congrArg (fun S : Subobject K => (S : CochainComplex C ℤ))
         (filtrationEInt_top F)) ≪≫ asIso (⊤ : Subobject K).arrow)
 
@@ -56,13 +53,13 @@ noncomputable def filtrationAbutmentIso (n : ℤ) :
 lemma isZero_filtrationAbutmentFiltration {a : ℤ} (ha : F a = ⊥) (n : ℤ) :
     IsZero ((spectralObject (filtrationFunctor F hF)).abutmentFiltration a n) :=
   Abelian.SpectralObject.isZero_abutmentFiltration _
-    (isZero_spectralObject_H_bot F hF a n (isZero_homology_of_eq_bot F ha n))
+    (isZero_spectralObject_H_bot F hF a n ((F a).isZero_homology_of_eq_bot ha n))
 
 /-- The `b`th piece of the filtration of `H^n(K)` is everything when `F_b = ⊤`. -/
 lemma isIso_filtrationAbutmentFiltrationι {b : ℤ} (hb : F b = ⊤) (n : ℤ) :
     IsIso ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationι b n) :=
   Abelian.SpectralObject.isIso_abutmentFiltrationι _
-    (isZero_spectralObject_H_top F hF b n (isZero_homology_cokernel_of_eq_top F hb n))
+    (isZero_spectralObject_H_top F hF b n ((F b).isZero_homology_cokernel_of_eq_top hb n))
 
 /-- **Strong convergence for a finite filtration.** If `F_a = ⊥` and `F_b = ⊤`, then on every page
 `r ≥ 2` with `q - r + 2 ≤ a` and `b ≤ q + r - 1`, the object at `pq = (p, q)` is the graded piece

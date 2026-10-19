@@ -68,14 +68,14 @@ whole of `K` while `X ^ 1 - X = 0` has empty root set. -/
 theorem coe_frobeniusFixedSubfield_eq_rootSet (hn : n ≠ 0) :
     (frobeniusFixedSubfield K p n : Set K) = (X ^ p ^ n - X : K[X]).rootSet K := by
   have hne : (X ^ p ^ n - X : K[X]) ≠ 0 :=
-    FiniteField.X_pow_card_pow_sub_X_ne_zero K hn (Fact.out (p := p.Prime)).one_lt
+    X_pow_sub_X_ne_zero (Nat.one_lt_pow hn (Fact.out (p := p.Prime)).one_lt)
   ext a
   simp [Polynomial.mem_rootSet, hne, sub_eq_zero]
 
 /-- The equivalence used to count the Frobenius-fixed subfield: its elements are exactly the roots
 of `X ^ p ^ n - X`, a separable polynomial of degree `p ^ n`. The public form of this is
 `coe_frobeniusFixedSubfield_eq_rootSet`. -/
-private def frobeniusFixedSubfieldEquivRootSet (hn : n ≠ 0) :
+private noncomputable def frobeniusFixedSubfieldEquivRootSet (hn : n ≠ 0) :
     frobeniusFixedSubfield K p n ≃ (X ^ p ^ n - X : K[X]).rootSet K :=
   Set.equivOfEq (coe_frobeniusFixedSubfield_eq_rootSet K p n hn)
 
@@ -134,7 +134,7 @@ theorem card_frobeniusFixedSubfield (hn : n ≠ 0) :
     IsSepClosed.splits_domain _ hsep
   rw [Nat.card_congr (frobeniusFixedSubfieldEquivRootSet K p n hn), Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplit,
-    FiniteField.X_pow_card_pow_sub_X_natDegree_eq K hn (Fact.out (p := p.Prime)).one_lt]
+    natDegree_X_pow_sub_X (Nat.one_lt_pow hn (Fact.out (p := p.Prime)).one_lt)]
 
 /-- The Frobenius-fixed subfield of a separably closed field is a copy of Mathlib's
 `GaloisField p n`, the two being finite fields of the same cardinality. The isomorphism is not

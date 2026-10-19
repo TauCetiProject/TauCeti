@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.DG.HomotopyCategory
+public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
+public import Mathlib.CategoryTheory.Whiskering
 
 /-!
 # Closed morphisms and the underlying category of a DG category
@@ -13,6 +15,9 @@ public import TauCeti.CategoryTheory.DG.HomotopyCategory
 Mathlib's `ForgetEnrichment` regards a morphism of an enriched category as a map from the tensor
 unit to a Hom object.  For a DG category, such a map is exactly a closed morphism of degree zero.
 This file makes the comparison explicit and sends a closed morphism to its class in `H⁰`.
+Precomposition with that quotient functor is fully faithful: natural transformations between
+functors out of `H⁰` are determined by their components on closed objects, and naturality can
+be checked on closed representatives.
 
 The underlying category is used rather than introducing a second category of cocycles.  This
 allows Mathlib's enriched functors and natural transformations to act on closed morphisms without
@@ -21,6 +26,10 @@ copying their definitions.
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 1.
+* David Wärn and the Mathlib contributors, `Mathlib.CategoryTheory.Quotient`, especially
+  `Quotient.natTransLift`, `Quotient.full_whiskeringLeft_functor`, and
+  `Quotient.faithful_whiskeringLeft_functor`. The descent proofs below adapt their lifting
+  argument to `dgClosedToHomotopy`.
 -/
 
 public section
@@ -168,6 +177,36 @@ theorem dgClosedHom_comp
   rw [← ModuleCat.comp_apply, ← dgCompMap_def]
   exact dgCompMap_tmul R (by omega) _ _
 
+/-- Enriched postcomposition `eHomWhiskerLeft` with an underlying morphism `g` postcomposes a
+homogeneous morphism with the closed component of `g`. -/
+@[simp]
+theorem eHomWhiskerLeft_f_apply (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C)
+    {Y Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (g : Y ⟶ Z) (p : ℤ)
+    (f : DGHom R p (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
+      (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)) :
+    ((eHomWhiskerLeft (CochainComplex (ModuleCat.{v} R) ℤ) X g).f p).hom f =
+      dgComp R f (dgClosedHom R g) (add_zero p) := by
+  rw [eHomWhiskerLeft, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    rightUnitor_inv_f, rightUnitor'_inv]
+  simp only [Category.assoc, ι_whiskerLeft_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
+  rw [← dgCompMap_tmul, dgCompMap_def]
+  rfl
+
+/-- Enriched precomposition `eHomWhiskerRight` with an underlying morphism `g` precomposes a
+homogeneous morphism with the closed component of `g`. -/
+@[simp]
+theorem eHomWhiskerRight_f_apply {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
+    (g : X ⟶ Y) (Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) (p : ℤ)
+    (f : DGHom R p (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)
+      (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Z)) :
+    ((eHomWhiskerRight (CochainComplex (ModuleCat.{v} R) ℤ) g Z).f p).hom f =
+      dgComp R (dgClosedHom R g) f (zero_add p) := by
+  rw [eHomWhiskerRight, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    leftUnitor_inv_f, leftUnitor'_inv]
+  simp only [Category.assoc, ι_whiskerRight_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
+  rw [← dgCompMap_tmul, dgCompMap_def]
+  rfl
+
 /-- The underlying morphism constructed from the DG identity is the identity. -/
 @[simp]
 theorem dgClosedHomOf_dgId (X : C) :
@@ -263,5 +302,51 @@ theorem dgClosedToHomotopy_map_eq_zero_iff
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) :=
   DGHomotopyCategory.homOf_eq_zero_iff R (dgClosedHom_mem_dgCycles R f)
+
+/-! ### Descent of natural transformations -/
+
+section Descent
+
+universe vE uE
+
+variable (E : Type uE) [Category.{vE} E]
+
+-- The quotient retains the DG objects, so its object projections reduce in component formulas.
+attribute [local implicit_reducible] dgClosedToHomotopy
+  DGHomotopyCategory.of DGHomotopyCategory.underlying
+
+/-- Natural transformations out of the DG homotopy category descend from closed objects. -/
+instance full_whiskeringLeft_dgClosedToHomotopy :
+    ((Functor.whiskeringLeft
+      (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C)
+      (DGHomotopyCategory R C) E).obj (dgClosedToHomotopy R)).Full where
+  map_surjective := by
+    intro F G τ
+    let α : F ⟶ G :=
+      { app X := τ.app (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ)
+          (DGHomotopyCategory.underlying R X))
+        naturality {X Y} f := by
+          obtain ⟨g, hg⟩ := (dgClosedToHomotopy R).map_surjective
+            (X := ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ)
+              (DGHomotopyCategory.underlying R X))
+            (Y := ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ)
+              (DGHomotopyCategory.underlying R Y)) f
+          simpa only [Functor.whiskeringLeft_obj_obj, Functor.comp_map, hg] using τ.naturality g }
+    refine ⟨α, ?_⟩
+    ext X
+    rfl
+
+/-- Natural transformations out of the DG homotopy category are determined on closed objects. -/
+instance faithful_whiskeringLeft_dgClosedToHomotopy :
+    ((Functor.whiskeringLeft
+      (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C)
+      (DGHomotopyCategory R C) E).obj (dgClosedToHomotopy R)).Faithful where
+  map_injective := by
+    intro F G α β hαβ
+    ext X
+    exact congrArg (fun τ ↦ τ.app (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ)
+      (DGHomotopyCategory.underlying R X))) hαβ
+
+end Descent
 
 end TauCeti

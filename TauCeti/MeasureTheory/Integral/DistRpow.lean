@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -21,6 +22,9 @@ for `0 ≤ s`, `n < s` and `R > 0`, the extended-valued bound
 
 (`TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`). When `A < ∞` the right-hand side is finite, so
 `dist x y ^ (-s)` is integrable on `{x | R < dist x y}`. The exponent `n` need not be an integer.
+For an additive Haar measure on a finite-dimensional real normed space the growth bound holds with
+`n` the dimension and `A` the measure of the unit ball
+(`MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`).
 
 The proof splits the region `dist x y > R` into the dyadic annuli `2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R`.
 On the `k`-th annulus `dist x y ^ (-s)` is at most `(2ᵏ R) ^ (-s)`, and the annulus lies in a
@@ -30,6 +34,8 @@ with ratio `2 ^ (n - s)`.
 ## Main declarations
 
 * `TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`: the tail bound for `dist x y ^ (-s)`.
+* `MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`: the tail bound for `‖x‖ ^ (-s)`
+  under an additive Haar measure, for `s` above the dimension.
 -/
 
 public section
@@ -104,3 +110,24 @@ theorem setLIntegral_ofReal_dist_rpow_neg_le {y : X} {A : ℝ≥0∞} {n s : ℝ
         ring
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric
+
+/-- **The tail of a negative power of the norm.** For an additive Haar measure `μ` on a
+finite-dimensional real normed space of dimension `n`, `n < s` and `R > 0`,
+
+`∫_{‖x‖ > R} ‖x‖ ^ (-s) dx ≤ μ (B(0, 1)) 2ⁿ R ^ (n - s) / (1 - 2 ^ (n - s))`. -/
+theorem setLIntegral_ofReal_norm_rpow_neg_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] {s : ℝ} (hs : Module.finrank ℝ E < s) {R : ℝ}
+    (hR : 0 < R) :
+    ∫⁻ x in {x | R < ‖x‖}, ENNReal.ofReal (‖x‖ ^ (-s)) ∂μ ≤
+      μ (ball 0 1) * ENNReal.ofReal (2 ^ (Module.finrank ℝ E : ℝ) /
+        (1 - 2 ^ (Module.finrank ℝ E - s)) * R ^ (Module.finrank ℝ E - s)) := by
+  simpa using TauCeti.setLIntegral_ofReal_dist_rpow_neg_le (y := 0) (μ := μ) (A := μ (ball 0 1))
+    (fun r hr ↦ by rw [Measure.addHaar_closedBall μ 0 hr.le, mul_comm, Real.rpow_natCast])
+    ((Nat.cast_nonneg _).trans hs.le) hs hR
+
+end MeasureTheory.Measure

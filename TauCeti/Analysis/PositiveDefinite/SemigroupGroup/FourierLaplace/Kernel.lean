@@ -64,9 +64,6 @@ masses — is in `TauCeti.Analysis.PositiveDefinite.SemigroupGroup.Time.Slice.Me
 
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Theorem 4.1.13.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-  ("BCR semigroup--Bochner"), the existence half.
 -/
 
 public section

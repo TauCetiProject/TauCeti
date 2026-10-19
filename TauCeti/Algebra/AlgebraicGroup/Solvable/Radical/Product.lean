@@ -42,9 +42,8 @@ The declarations are in `TauCeti.HopfIdeal.IsSolvableRadicalCandidate`.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a, 6.a.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap by
-proving binary-product closure for connected normal smooth solvable closed subgroups. This is
-the closure input that makes a maximal-dimensional candidate the solvable radical.
+This proves binary-product closure for connected normal smooth solvable closed subgroups: the
+closure input that makes a maximal-dimensional candidate the solvable radical.
 -/
 
 public section

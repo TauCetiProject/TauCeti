@@ -79,10 +79,13 @@ finite-dimensional representations.
   invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
+  invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
   be compared along a surjective homomorphism of groups.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
+* `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -316,6 +319,13 @@ variable {k G H V V' W W' : Type*} [CommRing k] [Group G] [Group H]
   [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
   [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
 
+/-- The tensor product of invariant vectors is an invariant vector of the tensor product
+representation. -/
+theorem tmul_mem_invariants_tprod {X : Representation k G V} {Y : Representation k G W}
+    {v : V} {w : W} (hv : v ∈ X.invariants) (hw : w ∈ Y.invariants) :
+    v ⊗ₜ[k] w ∈ (X.tprod Y).invariants :=
+  fun g ↦ by rw [tprod_apply, TensorProduct.map_tmul, hv g, hw g]
+
 /-- **Invariant dimensions of tensor products along a surjective homomorphism of groups.** If the
 restrictions of `X` and `Y` along a surjective `f : G →* H` are equivalent to `X'` and `Y'`, then
 `X ⊗ Y` and `X' ⊗ Y'` have invariants of the same dimension: restriction along `f` does not change
@@ -334,6 +344,12 @@ namespace Rep
 
 open CategoryTheory
 open scoped MonoidAlgebra
+
+/-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
+@[simp]
+theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
+    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.1 = x.1 := by
+  simpa [sub_hom, sub_eq_zero] using x.2
 
 variable {k G : Type*} [CommRing k] [Group G]
 

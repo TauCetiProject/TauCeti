@@ -5,7 +5,8 @@ Authors: Jon Crall, Claude Opus 4.8
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Entrywise bounds for the Euclidean action of a matrix
@@ -18,7 +19,7 @@ constant `n * ε`. The bounds include matrices with empty row or column types.
 ## Main results
 
 * `Matrix.norm_toEuclideanLin_le_of_entry_le`: rectangular entrywise-to-action bound.
-* `Matrix.norm_toEuclideanLin_le_of_entry_le_fin`: square `Fin n` specialization.
+* `Matrix.norm_toEuclideanLin_le_of_entry_le_square`: square finite-index specialization.
 
 ## Source
 
@@ -29,7 +30,9 @@ Adapted from `ForTauCeti/Analysis/Matrix/EntrywiseOpNorm.lean` in the
 
 public section
 
-namespace Matrix
+namespace TauCeti
+
+open Matrix
 
 open scoped BigOperators
 
@@ -37,7 +40,7 @@ open scoped BigOperators
 action has norm at most `√(card ι) * ε * √(card κ)` times the input norm.
 
 Both index types may be empty; in that case the action is zero, even if `ε` is negative. -/
-theorem norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     [Fintype ι] [Fintype κ] [DecidableEq κ]
     {A : Matrix ι κ 𝕜} {ε : ℝ} (hentry : ∀ i j, ‖A i j‖ ≤ ε)
     (x : EuclideanSpace 𝕜 κ) :
@@ -72,7 +75,7 @@ theorem norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
           _ = ε * ∑ j : κ, ‖x j‖ := by rw [Finset.mul_sum]
           _ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
             exact mul_le_mul_of_nonneg_left
-              (EuclideanSpace.sum_norm_le_sqrt_card_mul_norm x) heps
+              (PiLp.sum_norm_le_sqrt_card_mul_norm x) heps
       have hnorm_sq : ‖Matrix.toEuclideanLin A x‖ ^ 2
           ≤ (Fintype.card ι : ℝ) *
             (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
@@ -112,19 +115,19 @@ theorem norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     simp [hzero, hcard]
 
 /-- The square finite-index form of the entrywise-to-Euclidean operator bound:
-`‖A x‖ ≤ n * ε * ‖x‖` when `‖A i j‖ ≤ ε`. -/
-theorem norm_toEuclideanLin_le_of_entry_le_fin {𝕜 : Type*} [RCLike 𝕜]
-    {n : ℕ} {A : Matrix (Fin n) (Fin n) 𝕜} {ε : ℝ}
+`‖A x‖ ≤ card ι * ε * ‖x‖` when `‖A i j‖ ≤ ε`. -/
+theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le_square {𝕜 ι : Type*} [RCLike 𝕜]
+    [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜} {ε : ℝ}
     (hentry : ∀ i j, ‖A i j‖ ≤ ε)
-    (x : EuclideanSpace 𝕜 (Fin n)) :
-    ‖Matrix.toEuclideanLin A x‖ ≤ (n : ℝ) * ε * ‖x‖ := by
+    (x : EuclideanSpace 𝕜 ι) :
+    ‖Matrix.toEuclideanLin A x‖ ≤ (Fintype.card ι : ℝ) * ε * ‖x‖ := by
   have h := norm_toEuclideanLin_le_of_entry_le hentry x
-  have hs : (Real.sqrt (n : ℝ)) ^ 2 = (n : ℝ) := Real.sq_sqrt (by positivity)
+  have hs : Real.sqrt (Fintype.card ι : ℝ) ^ 2 = (Fintype.card ι : ℝ) :=
+    Real.sq_sqrt (Nat.cast_nonneg _)
   calc
     ‖Matrix.toEuclideanLin A x‖ ≤
-        Real.sqrt (n : ℝ) * ε * Real.sqrt (n : ℝ) * ‖x‖ := by
-      simpa only [Fintype.card_fin] using h
-    _ = (Real.sqrt (n : ℝ)) ^ 2 * ε * ‖x‖ := by ring
-    _ = (n : ℝ) * ε * ‖x‖ := by rw [hs]
+        Real.sqrt (Fintype.card ι) * ε * Real.sqrt (Fintype.card ι) * ‖x‖ := h
+    _ = Real.sqrt (Fintype.card ι) ^ 2 * ε * ‖x‖ := by ring
+    _ = (Fintype.card ι : ℝ) * ε * ‖x‖ := by rw [hs]
 
-end Matrix
+end TauCeti

@@ -89,13 +89,7 @@ theorem laplacian_convolution_eq_neg_of_integral_laplacian_mul [μ.IsNegInvarian
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) : Δ (K ⋆[lsmul ℝ ℝ, μ] f) = -f := by
   rw [hc.laplacian_convolution_right _ hK hf]
   funext x
-  have hΔc : HasCompactSupport (Δ f) :=
-    hc.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset f))
-  have hΔcont : Continuous (Δ f) := by
-    rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-    have := hf.continuous_iteratedFDeriv (m := 2) le_rfl
-    fun_prop
-  have hint := hΔc.convolutionExists_right (lsmul ℝ ℝ) hK hΔcont x
+  have hint := hc.laplacian.convolutionExists_right (lsmul ℝ ℝ) hK hf.continuous_laplacian x
   -- Test against every continuous linear functional `φ`, which reduces to real values.
   refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
   have hφf : ContDiff ℝ 2 (φ ∘ f) := φ.contDiff.comp hf

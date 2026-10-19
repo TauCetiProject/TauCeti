@@ -158,7 +158,7 @@ theorem algebraMap_intertwiningMap_spechtModule_bijective {n : ℕ} (mu : n.Part
     Function.Bijective
       (algebraMap ℚ (Representation.IntertwiningMap (spechtModule mu).ρ (spechtModule mu).ρ)) := by
   constructor
-  · obtain ⟨t⟩ := YoungTableau.nonempty (diagramOf mu)
+  · obtain ⟨t⟩ := YoungTableau.nonempty (YoungDiagram.ofPartition mu)
     let et : (spechtModule mu).V :=
       ⟨polytabloid t, polytabloid_mem_spechtSubrepresentation t⟩
     refine algebraMap_intertwiningMap_injective (v := et) ?_
@@ -167,13 +167,13 @@ theorem algebraMap_intertwiningMap_spechtModule_bijective {n : ℕ} (mu : n.Part
     refine polytabloid_ne_zero t ?_
     simpa only [et, ZeroMemClass.coe_zero] using congrArg
       (fun v : (spechtModule mu).V =>
-        ((v : (spechtSubrepresentation (diagramOf mu)).toSubmodule) :
-          (permutationModule (shapePartition (diagramOf mu))).V)) het
+        ((v : (spechtSubrepresentation (YoungDiagram.ofPartition mu)).toSubmodule) :
+          (permutationModule (shapePartition (YoungDiagram.ofPartition mu))).V)) het
   · intro f
-    let e := (finCongr (card_diagramOf mu).symm).permCongrHom
+    let e := (finCongr (YoungDiagram.card_ofPartition mu).symm).permCongrHom
     let f' : Representation.IntertwiningMap
-        (spechtSubrepresentation (diagramOf mu)).toRepresentation
-        (spechtSubrepresentation (diagramOf mu)).toRepresentation :=
+        (spechtSubrepresentation (YoungDiagram.ofPartition mu)).toRepresentation
+        (spechtSubrepresentation (YoungDiagram.ofPartition mu)).toRepresentation :=
       { toLinearMap := f.toLinearMap
         isIntertwining' g := by
           have hf := f.isIntertwining' (e.symm g)
@@ -181,7 +181,7 @@ theorem algebraMap_intertwiningMap_spechtModule_bijective {n : ℕ} (mu : n.Part
             MulEquiv.coe_toMonoidHom, e, MulEquiv.apply_symm_apply] using hf }
     obtain ⟨q, hq⟩ :=
       (algebraMap_intertwiningMap_spechtSubrepresentation_bijective
-        (diagramOf mu)).surjective f'
+        (YoungDiagram.ofPartition mu)).surjective f'
     refine ⟨q, ?_⟩
     apply Representation.IntertwiningMap.ext
     apply LinearMap.ext

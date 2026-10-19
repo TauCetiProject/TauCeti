@@ -28,7 +28,9 @@ monoidal functors, using Mathlib's `Functor.mapCommMon` and `Functor.mapCommMonN
 * `AlgebraicGeometry.Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply`: on
   sections over `U`, it is the map `Γ(W, q⁻¹ U) ⟶ Γ(V, p⁻¹ U)` induced by `g`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_id` and
-  `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp`: functoriality.
+  `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp`: functoriality;
+* `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
+  schemes over `X`.
 
 ## References
 
@@ -119,3 +121,37 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp (g
 end
 
 end TauCeti
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
+noncomputable section
+
+/-- The function-algebra functor on all schemes over `X`: `q : T ⟶ X` goes to its algebra of
+regular functions `q_* 𝒪_T`, and a morphism over `X` goes to pullback of regular functions along
+it. -/
+@[expose]
+def overFunctions (X : Scheme.{u}) : (Over X)ᵒᵖ ⥤ CommMon X.Modules where
+  obj T := T.unop.hom.pushforwardStructureAlgebra
+  map g := Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (Over.w g.unop)
+  map_id _ := Scheme.Hom.pushforwardStructureAlgebraMap_id
+  map_comp g g' := Scheme.Hom.pushforwardStructureAlgebraMap_comp g'.unop.left g.unop.left
+    (Over.w g'.unop) (Over.w g.unop)
+
+/-- The function algebra of `q : T ⟶ X` is `q_* 𝒪_T`. -/
+@[simp]
+lemma overFunctions_obj {X : Scheme.{u}} (T : (Over X)ᵒᵖ) :
+    (overFunctions X).obj T = T.unop.hom.pushforwardStructureAlgebra :=
+  (rfl)
+
+/-- A morphism over `X` acts on function algebras by pullback of regular functions. -/
+@[simp]
+lemma overFunctions_map {X : Scheme.{u}} {T T' : (Over X)ᵒᵖ} (g : T ⟶ T') :
+    (overFunctions X).map g =
+      Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (Over.w g.unop) :=
+  (rfl)
+
+end
+
+end TauCeti.AlgebraicGeometry

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Freudenthal's multiplicity recursion
@@ -75,12 +76,6 @@ particular it applies to a finite-dimensional `TauCeti.irreducibleQuotient`.
 
 ## References
 
-This is the "Freudenthal's multiplicity formula" item of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`freudenthal_multiplicity_formula` is pinned in the accompanying `Suggested.lean`, with the
-Freudenthal double sum packaged opaquely there "so the recursion is expressible before the
-positive-root sum machinery is in place"; that machinery is in place, so the sum is written out.
-
 * H. Freudenthal, *Zur Berechnung der Charaktere der halbeinfachen Lieschen Gruppen I*,
   Indag. Math. **16** (1954), 369--376.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.3.
@@ -95,13 +90,20 @@ open LinearMap (trace)
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K]
-  [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L}
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-  [FiniteDimensional K M]
 
 /-! ### The two-sided root string -/
+
+section StringTerm
+
+variable [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
+
+private theorem invForm_add_zsmul (mu alpha : Dual K H) (i : ℤ) :
+    invForm (mu + i • alpha) alpha = invForm mu alpha + (i : K) * invForm alpha alpha := by
+  rw [← Int.cast_smul_eq_zsmul K i alpha, map_add, LinearMap.add_apply, map_smul,
+    LinearMap.smul_apply, smul_eq_mul]
 
 variable (M) in
 /-- The Freudenthal summand at the `i`-th rung of the `α`-string through `μ`, indexed by `ℤ` so
@@ -110,133 +112,28 @@ private noncomputable def stringTerm (mu alpha : Dual K H) (i : ℤ) : K :=
   (finrank K (genWeightSpace M ((mu + i • alpha : Dual K H) : H → K)) : K) *
     invForm (mu + i • alpha) alpha
 
-omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K M] in
 private theorem stringTerm_zero (mu alpha : Dual K H) :
     stringTerm M mu alpha 0 =
       (finrank K (genWeightSpace M (mu : H → K)) : K) * invForm mu alpha := by
   rw [stringTerm, zero_zsmul, add_zero]
 
-omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K M] in
 private theorem stringTerm_natCast (mu alpha : Dual K H) (j : ℕ) :
     stringTerm M mu alpha (j : ℤ) =
       (finrank K (genWeightSpace M ((mu + j • alpha : Dual K H) : H → K)) : K) *
         invForm (mu + j • alpha) alpha := by
   rw [stringTerm, natCast_zsmul]
 
-omit [CharZero K] [IsAlgClosed K] [IsKilling K L] [FiniteDimensional K L]
-  [H.IsCartanSubalgebra] in
-private theorem neg_natCast_zsmul (alpha : Dual K H) (j : ℕ) :
-    (-(j : ℤ)) • alpha = j • (-alpha) := by
-  rw [neg_zsmul, natCast_zsmul, smul_neg]
-
-omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K M] in
 private theorem stringTerm_neg_natCast (mu alpha : Dual K H) (j : ℕ) :
     stringTerm M mu alpha (-(j : ℤ)) =
       -((finrank K (genWeightSpace M ((mu + j • (-alpha) : Dual K H) : H → K)) : K) *
         invForm (mu + j • (-alpha)) (-alpha)) := by
-  rw [stringTerm, neg_natCast_zsmul, map_neg, mul_neg, neg_neg]
+  rw [stringTerm, neg_zsmul, natCast_zsmul, smul_neg, map_neg, mul_neg, neg_neg]
 
-omit [IsAlgClosed K] [IsKilling K L] in
-private theorem coe_add_zsmul (mu : Dual K H) (alpha : Weight K H L) (i : ℤ) :
-    ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = i • (⇑alpha : H → K) + (mu : H → K) := by
-  ext x
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, Weight.toLinear_apply, Pi.add_apply,
-    Pi.smul_apply]
-  abel
+end StringTerm
 
-omit [CharZero K] [IsAlgClosed K] in
-private theorem invForm_add_zsmul (mu alpha : Dual K H) (i : ℤ) :
-    invForm (mu + i • alpha) alpha = invForm mu alpha + (i : K) * invForm alpha alpha := by
-  rw [← Int.cast_smul_eq_zsmul K i alpha, map_add, LinearMap.add_apply, map_smul,
-    LinearMap.smul_apply, smul_eq_mul]
+variable [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
+  [FiniteDimensional K M]
 
-/-- **The two rungs exchanged by the reflection carry opposite summands.** Reflecting the
-`α`-string matches the rung `i` with the rung `-i - ⟨μ, α^∨⟩`, preserving the multiplicity and
-negating the pairing with `α`. -/
-private theorem stringTerm_add_stringTerm_eq_zero {alpha : Weight K H L} {mu : Dual K H} {n : ℤ}
-    (hn : mu (IsKilling.coroot alpha) = (n : K)) (i : ℤ) :
-    stringTerm M mu (alpha : Dual K H) i + stringTerm M mu (alpha : Dual K H) (-i - n) = 0 := by
-  have hdim : (finrank K (genWeightSpace M
-        ((mu + (-i - n) • (alpha : Dual K H) : Dual K H) : H → K)) : K) =
-      (finrank K (genWeightSpace M
-        ((mu + i • (alpha : Dual K H) : Dual K H) : H → K)) : K) := by
-    have hkey := finrank_weightSpace_neg_sub_zsmul_add (M := M) (α := alpha) (χ := (mu : H → K))
-      hn i
-    rw [coe_add_zsmul mu alpha, coe_add_zsmul mu alpha, genWeightSpace_eq_weightSpace,
-      genWeightSpace_eq_weightSpace]
-    exact_mod_cast hkey
-  have hform : invForm (mu + i • (alpha : Dual K H)) (alpha : Dual K H) +
-      invForm (mu + (-i - n) • (alpha : Dual K H)) (alpha : Dual K H) = 0 := by
-    have hcoroot := invForm_coroot_weight (H := H) mu alpha
-    rw [hn] at hcoroot
-    rw [invForm_add_zsmul, invForm_add_zsmul]
-    push_cast
-    linear_combination -hcoroot
-  rw [stringTerm, stringTerm, hdim, ← mul_add, hform, mul_zero]
-
-/-- **The summands of a two-sided root string cancel in pairs.** The reflection `i ↦ -i - n` is an
-involution of any interval `Finset.Icc a c` with `a + c = -n`, and it negates the summands. -/
-private theorem sum_Icc_stringTerm_eq_zero {alpha : Weight K H L} {mu : Dual K H} {n : ℤ}
-    (hn : mu (IsKilling.coroot alpha) = (n : K)) {a c : ℤ} (hac : a + c = -n) :
-    ∑ i ∈ Finset.Icc a c, stringTerm M mu (alpha : Dual K H) i = 0 := by
-  refine Finset.sum_involution (fun i _ ↦ -i - n)
-    (fun i _ ↦ stringTerm_add_stringTerm_eq_zero hn i) (fun i _ hne heq ↦ hne ?_)
-    (fun i hi ↦ ?_) (fun i _ ↦ by ring)
-  · have h := stringTerm_add_stringTerm_eq_zero (M := M) hn i
-    rw [heq, ← two_mul] at h
-    exact (mul_eq_zero.mp h).resolve_left two_ne_zero
-  · rw [Finset.mem_Icc] at hi ⊢
-    omega
-
-omit [CharZero K] [IsAlgClosed K] in
-/-- Splitting a symmetric interval into its two halves, which overlap in the rung `0`. -/
-private theorem sum_Icc_eq_add_sum_range (F : ℤ → K) (N : ℕ) :
-    (∑ i ∈ Finset.Icc (-(N : ℤ)) N, F i) + F 0 =
-      (∑ j ∈ Finset.range (N + 1), F j) + ∑ j ∈ Finset.range (N + 1), F (-(j : ℤ)) := by
-  classical
-  set s : Finset ℤ := (Finset.range (N + 1)).image (fun j : ℕ ↦ (j : ℤ)) with hs
-  set t : Finset ℤ := (Finset.range (N + 1)).image (fun j : ℕ ↦ -(j : ℤ)) with ht
-  have hunion : s ∪ t = Finset.Icc (-(N : ℤ)) N := by
-    ext i
-    simp only [hs, ht, Finset.mem_union, Finset.mem_image, Finset.mem_range, Finset.mem_Icc]
-    constructor
-    · rintro (⟨j, hj, rfl⟩ | ⟨j, hj, rfl⟩) <;> omega
-    · intro hi
-      rcases le_or_gt 0 i with h | h
-      · exact Or.inl ⟨i.toNat, by omega, by omega⟩
-      · exact Or.inr ⟨(-i).toNat, by omega, by omega⟩
-  have hinter : s ∩ t = {(0 : ℤ)} := by
-    ext i
-    simp only [hs, ht, Finset.mem_inter, Finset.mem_image, Finset.mem_range, Finset.mem_singleton]
-    constructor
-    · rintro ⟨⟨j, _, rfl⟩, k, _, hk'⟩
-      omega
-    · rintro rfl
-      exact ⟨⟨0, by omega, by simp⟩, 0, by omega, by simp⟩
-  have hkey := Finset.sum_union_inter (s₁ := s) (s₂ := t) (f := F)
-  rw [hunion, hinter, Finset.sum_singleton] at hkey
-  rw [hkey, hs, ht, Finset.sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
-    Finset.sum_image (fun _ _ _ _ h ↦ by omega)]
-
-omit [IsAlgClosed K] [IsKilling K L] [FiniteDimensional K L] in
-/-- Past a uniform bound every rung of the two-sided string is missing. -/
-private theorem exists_forall_genWeightSpace_add_zsmul_eq_bot {alpha : Dual K H}
-    (halpha : alpha ≠ 0) (mu : Dual K H) :
-    ∃ N : ℕ, ∀ i : ℤ, N ≤ i.natAbs →
-      genWeightSpace M ((mu + i • alpha : Dual K H) : H → K) = ⊥ := by
-  obtain ⟨N₁, hN₁⟩ := exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) halpha mu
-  obtain ⟨N₂, hN₂⟩ :=
-    exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) (neg_ne_zero.mpr halpha) mu
-  refine ⟨max N₁ N₂, fun i hi ↦ ?_⟩
-  rcases le_or_gt 0 i with h | h
-  · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = (j : ℤ) := ⟨i.toNat, by omega⟩
-    rw [natCast_zsmul]
-    exact hN₁ j (by omega)
-  · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = -(j : ℤ) := ⟨(-i).toNat, by omega⟩
-    rw [neg_natCast_zsmul]
-    exact hN₂ j (by omega)
-
-omit [IsAlgClosed K] in
 /-- A string sum is a sum over any long enough initial segment of `ℕ`, the summands off the string
 vanishing. -/
 private theorem sum_weightString_erase_eq_sum_range {beta : Dual K H} (hbeta : beta ≠ 0)
@@ -260,7 +157,6 @@ private theorem sum_weightString_erase_eq_sum_range {beta : Dual K H} (hbeta : b
         ⟨(Finset.mem_erase.mp hjs).1, (mem_weightString_iff hbeta mu).mpr hne⟩)
     rw [LieSubmodule.finrank_eq_zero_of_eq_bot hbot', Nat.cast_zero, zero_mul]
 
-omit [IsAlgClosed K] in
 /-- A Freudenthal string sum telescopes along its own direction: after erasing the zeroth rung, the
 sum above `μ` is the first summand at `μ + β` plus the corresponding sum above `μ + β`, also with
 its zeroth rung erased. -/
@@ -294,6 +190,47 @@ theorem sum_weightString_erase_zero_eq_add_sum_erase_zero {beta : Dual K H}
     rw [add_assoc mu beta, ← succ_nsmul']
   rw [zero_add, one_nsmul]
   exact congrArg _ (Finset.sum_congr rfl fun k _ ↦ by rw [hrung])
+
+variable [IsAlgClosed K]
+
+/-- **The two rungs exchanged by the reflection carry opposite summands.** Reflecting the
+`α`-string matches the rung `i` with the rung `-i - ⟨μ, α^∨⟩`, preserving the multiplicity and
+negating the pairing with `α`. -/
+private theorem stringTerm_add_stringTerm_eq_zero {alpha : Weight K H L} {mu : Dual K H} {n : ℤ}
+    (hn : mu (IsKilling.coroot alpha) = (n : K)) (i : ℤ) :
+    stringTerm M mu (alpha : Dual K H) i + stringTerm M mu (alpha : Dual K H) (-i - n) = 0 := by
+  have hdim : (finrank K (genWeightSpace M
+        ((mu + (-i - n) • (alpha : Dual K H) : Dual K H) : H → K)) : K) =
+      (finrank K (genWeightSpace M
+        ((mu + i • (alpha : Dual K H) : Dual K H) : H → K)) : K) := by
+    have hkey := finrank_weightSpace_neg_sub_zsmul_add (M := M) (α := alpha) (χ := (mu : H → K))
+      hn i
+    rw [LinearMap.coe_add, LinearMap.coe_add, LinearMap.coe_smul, LinearMap.coe_smul,
+      Weight.coe_coe, add_comm ⇑mu, add_comm ⇑mu, genWeightSpace_eq_weightSpace,
+      genWeightSpace_eq_weightSpace]
+    exact_mod_cast hkey
+  have hform : invForm (mu + i • (alpha : Dual K H)) (alpha : Dual K H) +
+      invForm (mu + (-i - n) • (alpha : Dual K H)) (alpha : Dual K H) = 0 := by
+    have hcoroot := invForm_coroot_weight (H := H) mu alpha
+    rw [hn] at hcoroot
+    rw [invForm_add_zsmul, invForm_add_zsmul]
+    push_cast
+    linear_combination -hcoroot
+  rw [stringTerm, stringTerm, hdim, ← mul_add, hform, mul_zero]
+
+/-- **The summands of a two-sided root string cancel in pairs.** The reflection `i ↦ -i - n` is an
+involution of any interval `Finset.Icc a c` with `a + c = -n`, and it negates the summands. -/
+private theorem sum_Icc_stringTerm_eq_zero {alpha : Weight K H L} {mu : Dual K H} {n : ℤ}
+    (hn : mu (IsKilling.coroot alpha) = (n : K)) {a c : ℤ} (hac : a + c = -n) :
+    ∑ i ∈ Finset.Icc a c, stringTerm M mu (alpha : Dual K H) i = 0 := by
+  refine Finset.sum_involution (fun i _ ↦ -i - n)
+    (fun i _ ↦ stringTerm_add_stringTerm_eq_zero hn i) (fun i _ hne heq ↦ hne ?_)
+    (fun i hi ↦ ?_) (fun i _ ↦ by ring)
+  · have h := stringTerm_add_stringTerm_eq_zero (M := M) hn i
+    rw [heq, ← two_mul] at h
+    exact (mul_eq_zero.mp h).resolve_left two_ne_zero
+  · rw [Finset.mem_Icc] at hi ⊢
+    omega
 
 /-- **Integrality along the string.** If any rung of the two-sided `α`-string through `μ` is a
 weight of `M`, then `μ` takes an integer value on the coroot `α^∨`: the rung does, by the
@@ -339,7 +276,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
         (finrank K (genWeightSpace M (mu : H → K)) : K) * invForm mu (alpha : Dual K H) := by
   classical
   have halphaD : (alpha : Dual K H) ≠ 0 := Weight.coe_toLinear_ne_zero_iff.mpr halpha
-  obtain ⟨N, hN⟩ := exists_forall_genWeightSpace_add_zsmul_eq_bot (M := M) halphaD mu
+  obtain ⟨N, hN⟩ := exists_genWeightSpace_add_zsmul_eq_bot_of_le_natAbs (M := M) halphaD mu
   have hbotPos : ∀ j : ℕ, N ≤ j →
       genWeightSpace M ((mu + j • (alpha : Dual K H) : Dual K H) : H → K) = ⊥ := by
     intro j hj
@@ -348,8 +285,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
   have hbotNeg : ∀ j : ℕ, N ≤ j →
       genWeightSpace M ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K) = ⊥ := by
     intro j hj
-    have h := hN (-(j : ℤ)) (by omega)
-    rwa [neg_natCast_zsmul] at h
+    simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hN (-(j : ℤ)) (by omega)
   by_cases hint : ∃ n : ℤ, mu (IsKilling.coroot alpha) = (n : K)
   case neg =>
     -- No rung of the string is a weight at all, so every term in sight vanishes.
@@ -365,8 +301,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
     have hemptyNeg : weightString M (neg_ne_zero.mpr halphaD) mu = ∅ := by
       rw [weightString_eq_empty_iff]
       intro j
-      have h := hbot (-(j : ℤ))
-      rwa [neg_natCast_zsmul] at h
+      simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hbot (-(j : ℤ))
     have hmu : finrank K (genWeightSpace M (mu : H → K)) = 0 := by
       refine LieSubmodule.finrank_eq_zero_of_eq_bot ?_
       have h := hbot 0

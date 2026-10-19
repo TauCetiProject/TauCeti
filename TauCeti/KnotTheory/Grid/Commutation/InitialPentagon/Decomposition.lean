@@ -83,6 +83,12 @@ namespace GridRectangleInitialPentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+/-- The underlying two-step rectangle decomposition, as a `GridRectangleDecomposition` so that
+the rectangle-decomposition API applies to it by dot notation. -/
+abbrev toGridRectangleDecomposition (D : GridRectangleInitialPentagonDecomposition a s x z) :
+    GridRectangleDecomposition x z :=
+  D.toGridTwoStepDecomposition
+
 /-- Recover the initial-side pentagon from the second rectangle and its turn-point constraints. -/
 def pentagon (D : GridRectangleInitialPentagonDecomposition a s x z) :
     GridInitialPentagonBetween a s D.middle z where
@@ -130,6 +136,12 @@ end GridRectangleInitialPentagonDecomposition
 namespace GridInitialPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+
+/-- The underlying two-step rectangle decomposition, as a `GridRectangleDecomposition` so that
+the rectangle-decomposition API applies to it by dot notation. -/
+abbrev toGridRectangleDecomposition (D : GridInitialPentagonRectangleDecomposition a s x z) :
+    GridRectangleDecomposition x z :=
+  D.toGridTwoStepDecomposition
 
 /-- Recover the initial-side pentagon from the first rectangle and its turn-point constraints. -/
 def pentagon (D : GridInitialPentagonRectangleDecomposition a s x z) :
@@ -250,6 +262,25 @@ theorem mem_rectangleInitialPentagonDecompositions {x z : GridState n}
         D.pentagon ∈ G.initialPentagons C D.middle z := by
   classical
   simp [rectangleInitialPentagonDecompositions]
+
+/-- The first rectangle underlying a counted rectangle--initial-side pentagon domain is empty. -/
+theorem toGridRectangleDecomposition_first_isEmpty_of_mem_rectangleInitialPentagonDecompositions
+    {x z : GridState n} {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
+    D.toGridRectangleDecomposition.first.IsEmpty := by
+  have hempty := ((G.mem_unblockedRectangles _).1
+    ((G.mem_rectangleInitialPentagonDecompositions C D).1 hD).1).1
+  exact hempty
+
+/-- The second rectangle underlying a counted rectangle--initial-side pentagon domain is empty. -/
+theorem toGridRectangleDecomposition_second_isEmpty_of_mem_rectangleInitialPentagonDecompositions
+    {x z : GridState n} {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
+    D.toGridRectangleDecomposition.second.IsEmpty := by
+  have hempty := ((G.mem_initialPentagons _).1
+    ((G.mem_rectangleInitialPentagonDecompositions C D).1 hD).2).1
+  simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
+    using hempty
 
 /-- The counted initial-side pentagon--rectangle domains: an initial-side pentagon counted by
 the commutation map and a rectangle of the commuted diagram. -/
@@ -445,6 +476,33 @@ theorem mem_initialPentagonRectangleDecompositions_of_val_add_val_eq {x z : Grid
     GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween,
     (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
     ← G.disjoint_map_swapColumns_XSet_iff]
+  exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
+    (Finset.disjoint_union_left.mp hX).2⟩
+
+/-- A rectangle followed by an initial-side pentagon is counted when its underlying rectangles
+are empty and its composite domain agrees, with multiplicity, with a counted initial-side pentagon
+followed by a rectangle. Read the latter rectangle with the two commuted columns exchanged. -/
+theorem mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq_initialPentagonRectangle
+    {x z : GridState n}
+    {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    {E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hE : E ∈ G.initialPentagonRectangleDecompositions C x z)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
+    (h : D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val =
+      E.pentagon.coveredSquares.val +
+        (E.second.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr
+            (Equiv.refl (Fin n))).toEmbedding).val) :
+    D ∈ G.rectangleInitialPentagonDecompositions C x z := by
+  rw [mem_initialPentagonRectangleDecompositions, mem_initialPentagons,
+    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
+    ← G.disjoint_map_swapColumns_XSet_iff] at hE
+  have hunion := congrArg Multiset.toFinset h
+  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
+  have hX := Finset.disjoint_union_left.mpr ⟨hE.1.2, hE.2.2⟩
+  rw [← hunion] at hX
+  rw [mem_rectangleInitialPentagonDecompositions, mem_unblockedRectangles, mem_initialPentagons,
+    GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
   exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
     (Finset.disjoint_union_left.mp hX).2⟩
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Shift
 public import TauCeti.CategoryTheory.Exact.Stable.Triangulated
-public import TauCeti.CategoryTheory.Localization.Triangulated
 
 /-!
 # The homotopy category of matrix factorizations is triangulated
@@ -77,12 +76,8 @@ variable (S w)
 are the images of Happel's distinguished triangles under the equivalence with the componentwise
 split stable category. -/
 noncomputable instance instPretriangulated : Pretriangulated (HomotopyCategory (S := S) (w := w)) :=
-  letI := (splitExact_isFrobenius S w).stableHasShift
-  letI := (splitExact_isFrobenius S w).stableShiftFunctor_additive
-  letI := (splitExact_isFrobenius S w).stablePretriangulated
-  letI := stableToHomotopyCommShift S w
-  Triangulated.Localization.pretriangulated (stableToHomotopy S w)
-    (MorphismProperty.isomorphisms _)
+  (splitExact_isFrobenius S w).pretriangulatedOfCommShiftEquivalence
+      (stableToHomotopy S w) (stableToHomotopyCommShift S w)
 
 end HomotopyCategory
 
@@ -95,11 +90,8 @@ theorem stableToHomotopy_isTriangulated :
     letI := (splitExact_isFrobenius S w).stablePretriangulated
     letI := stableToHomotopyCommShift S w
     (stableToHomotopy S w).IsTriangulated :=
-  letI := (splitExact_isFrobenius S w).stableHasShift
-  letI := (splitExact_isFrobenius S w).stableShiftFunctor_additive
-  letI := (splitExact_isFrobenius S w).stablePretriangulated
-  letI := stableToHomotopyCommShift S w
-  Triangulated.Localization.isTriangulated_functor _ (MorphismProperty.isomorphisms _)
+  (splitExact_isFrobenius S w).isTriangulated_functor_ofCommShiftEquivalence
+      (stableToHomotopy S w) (stableToHomotopyCommShift S w)
 
 namespace HomotopyCategory
 
@@ -107,14 +99,8 @@ variable (S w) in
 /-- **The homotopy category of matrix factorizations is triangulated**, with the shift by `1`
 given by the parity shift. -/
 instance instIsTriangulated : IsTriangulated (HomotopyCategory (S := S) (w := w)) :=
-  letI := (splitExact_isFrobenius S w).stableHasShift
-  letI := (splitExact_isFrobenius S w).stableShiftFunctor_additive
-  letI := (splitExact_isFrobenius S w).stablePretriangulated
-  letI := stableToHomotopyCommShift S w
-  haveI := (splitExact_isFrobenius S w).stableIsTriangulated
-  haveI := stableToHomotopy_isTriangulated S w
-  Triangulated.Localization.isTriangulated (stableToHomotopy S w)
-    (MorphismProperty.isomorphisms _)
+  (splitExact_isFrobenius S w).isTriangulated_ofCommShiftEquivalence
+      (stableToHomotopy S w) (stableToHomotopyCommShift S w)
 
 variable {T : ShortComplex (MatrixFactorization S w)}
 
@@ -185,9 +171,10 @@ theorem mk_distinguished_of_conflation (hT : (splitExact S w).Conflation T)
   let := (splitExact_isFrobenius S w).stableShiftFunctor_additive
   let := (splitExact_isFrobenius S w).stablePretriangulated
   let := stableToHomotopyCommShift S w
-  refine ⟨_, mapStableConflationTriangleIso hT a δ ha hδ, ?_⟩
-  rw [ExactStructure.IsFrobenius.stablePretriangulated_distinguishedTriangles]
-  exact (splitExact_isFrobenius S w).stableConflationTriangle_mem T hT
+  exact isomorphic_distinguished _
+    ((splitExact_isFrobenius S w).map_stableConflationTriangle_mem_distTriang
+      (stableToHomotopy S w) (stableToHomotopyCommShift S w) T hT) _
+    (mapStableConflationTriangleIso hT a δ ha hδ)
 
 variable (S w) in
 /-- The distinguished triangles of the homotopy category of matrix factorizations are exactly the
@@ -203,15 +190,15 @@ theorem mem_distTriang_iff (D : Triangle (HomotopyCategory (S := S) (w := w))) :
           ((nullHomotopic (S := S) (w := w)).quotientFunctor.map T.g)
           ((nullHomotopic (S := S) (w := w)).quotientFunctor.map δ ≫
             (parityShiftCompQuotientFunctorIso S w).hom.app T.X₁)) := by
-  refine ⟨fun ⟨D', e, hD'⟩ ↦ ?_, fun ⟨T, hT, a, δ, ha, hδ, ⟨e⟩⟩ ↦
+  refine ⟨fun hD ↦ ?_, fun ⟨T, hT, a, δ, ha, hδ, ⟨e⟩⟩ ↦
     isomorphic_distinguished _ (mk_distinguished_of_conflation hT a δ ha hδ) _ e⟩
   let := (splitExact_isFrobenius S w).stableHasShift
   let := (splitExact_isFrobenius S w).stableShiftFunctor_additive
   let := (splitExact_isFrobenius S w).stablePretriangulated
   let := stableToHomotopyCommShift S w
-  rw [ExactStructure.IsFrobenius.stablePretriangulated_distinguishedTriangles] at hD'
-  obtain ⟨T, hT, ⟨e'⟩⟩ :=
-    ((splitExact_isFrobenius S w).mem_stableDistinguishedTriangles_iff D').1 hD'
+  obtain ⟨T, hT, ⟨e⟩⟩ :=
+    ((splitExact_isFrobenius S w).mem_distTriang_ofCommShiftEquivalence_iff
+      (stableToHomotopy S w) (stableToHomotopyCommShift S w) D).1 hD
   -- Extend the inclusion into the disk sum across the inflation of `T`, and pass to cokernels.
   have hI := (splitSuspensionPresentation T.X₁).isInjective
   have hi := (splitExact S w).isInflation_f hT
@@ -220,7 +207,7 @@ theorem mem_distTriang_iff (D : Triangle (HomotopyCategory (S := S) (w := w))) :
   have hkc := (splitExact S w).isKernelCokernelPair T hT
   refine ⟨T, hT, a, hkc.desc (a ≫ diskSumToParityShift T.X₁)
     (by rw [reassoc_of% ha, toDiskSum_comp_diskSumToParityShift]), ha, hkc.g_desc _ _, ⟨?_⟩⟩
-  exact e ≪≫ (stableToHomotopy S w).mapTriangle.mapIso e' ≪≫
+  exact e ≪≫
     (mapStableConflationTriangleIso hT a _ ha (hkc.g_desc _ _)).symm
 
 end HomotopyCategory

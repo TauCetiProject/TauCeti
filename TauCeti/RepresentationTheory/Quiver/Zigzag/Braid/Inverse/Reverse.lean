@@ -11,12 +11,21 @@ public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
 /-!
 # The inverse graded braid complex followed by the braid complex
 
-This tensor order has the same three graded terms as the forward product. Here the
-second-factor differential has the negative cochain sign, so the Ui{−2} coordinate
-of the middle term is negated. The actual two differential blocks are then identities,
-and the three-term cancellation criterion contracts the totalization to the regular
-graded bimodule in degree zero. The result includes arbitrary finite graphs and
-commutative coefficient rings, including isolated vertices.
+The cochain tensor product `Bᵢ' ⊗ Bᵢ` has the same three graded terms as `Bᵢ ⊗ Bᵢ'`
+(`TauCeti.zigzagBraidComplexTensorInverseHomotopyEquiv`). The second-factor differential
+carries the cochain sign `(-1) ^ p`, which is `-1` on the block out of the `(1, -1)` summand,
+so the Ui{−2} coordinate of the middle term is negated. The two differential blocks are then
+identities, and the three-term cancellation criterion contracts the totalization to the regular
+graded bimodule in degree zero: `TauCeti.zigzagBraidInverseTensorComplexHomotopyEquiv`. The
+result includes arbitrary finite graphs and commutative coefficient rings, including isolated
+vertices.
+
+## References
+
+* M. Khovanov and P. Seidel, *Quivers, Floer cohomology, and braid group actions*, J. Amer. Math.
+  Soc. 15 (2002) (the complexes `R_i` and `R_i'` of the zigzag algebra `A_m`).
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, J. Algebra 246
+  (2001) (zigzag algebras of arbitrary graphs and the same complexes).
 -/
 
 public section
@@ -25,15 +34,12 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits MulOpposite
-open scoped TensorProduct
+open CategoryTheory CategoryTheory.Limits
 
 universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
-local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
-local notation "E" => Z ⊗[k] Zᵐᵒᵖ
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
 local notation "F" => zigzagBimoduleTensor k G
@@ -61,8 +67,7 @@ private theorem isZero_reverseInverseProduct_X (i : V) (n : ℤ)
   apply (IsZero.iff_id_eq_zero _).2
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
-  -- Cochain totalization assigns the tensor pair the sum of its two indices.
-  change p + q = n at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
 
 private def reverseMinusPairIso (i : V) :
@@ -123,7 +128,7 @@ private def reverseZeroIso (i : V) : (reverseInverseProduct k G i).X 0 ≅
         omega)) ≪≫
     biprod.mapIso (reverseRegularPairIso k G i) (reverseMiddlePairIso k G i)
 
-private theorem reverseCoevaluationProjection (i : V) :
+private theorem reverse_coevaluation_projection (i : V) :
     ((F).map ((zigzagBraidInverseComplex k G i).d 0 1)).app
         ((zigzagBraidComplex k G i).X (-1)) ≫
       ((F).map (zigzagBraidInverseComplexXIso₁ k G i).hom).app
@@ -172,9 +177,9 @@ private theorem reverseMiddlePair_coevaluation (i : V) :
     ((F).obj ((U i).shiftObj (-2))).map (zigzagBraidComplexXIso₀ k G i).hom ≫
     (zigzagBraidSelfTensorShiftLeftIso k G i).hom ≫ biprod.map (-𝟙 _) (𝟙 _) ≫ biprod.snd = _
   simp only [biprod.map_snd, Category.comp_id]
-  exact reverseCoevaluationProjection k G i
+  exact reverse_coevaluation_projection k G i
 
-private theorem reverseEvaluationTransport (i : V) :
+private theorem reverse_evaluation_transport (i : V) :
     ((F).obj ((zigzagBraidInverseComplex k G i).X 1)).map
         ((zigzagBraidComplex k G i).d (-1) 0) ≫ (reverseOnePairIso k G i).hom =
       ((F).map (zigzagBraidInverseComplexXIso₁ k G i).hom).app
@@ -206,7 +211,7 @@ private theorem reverseMiddlePair_evaluation (i : V) :
       ((F).obj ((zigzagBraidInverseComplex k G i).X 1)).map
         ((zigzagBraidComplex k G i).d (-1) 0) ≫ (reverseOnePairIso k G i).hom =
           -𝟙 ((U i).shiftObj (-2)) := by
-  rw [reverseEvaluationTransport]
+  rw [reverse_evaluation_transport]
   -- Expand the inverse component identification to expose its sign and cancel
   -- the transported isomorphisms.
   change biprod.inl ≫ biprod.map (-𝟙 _) (𝟙 _) ≫ (zigzagBraidSelfTensorShiftLeftIso k G i).inv ≫
@@ -243,13 +248,13 @@ private theorem reverseMiddlePair_evaluation (i : V) :
     zigzagBraidSelfTensorShiftLeftIso_inl_inv]
   exact zigzagBraidSelfTensorShiftLeftInl_evaluation k G i
 
-private theorem reverse_d_third (i : V) :
+private theorem reverse_d_snd_snd (i : V) :
     (reverseInverseProduct k G i).d (-1) 0 ≫ (reverseZeroIso k G i).hom ≫
       biprod.snd ≫ biprod.snd = (reverseMinusIso k G i).hom := by
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
   -- Only the pair (0,-1) can contribute to total degree -1.
-  change p + q = -1 at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   by_cases hp : p = 0
   · subst p
     have hq : q = -1 := by omega
@@ -277,7 +282,7 @@ private theorem reverse_d_third (i : V) :
     exact reverseMiddlePair_coevaluation k G i
   · exact (isZero_reverseInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
 
-private theorem reverse_d_middle (i : V) :
+private theorem reverse_inl_inr_d (i : V) :
     (biprod.inl : (U i).shiftObj (-2) ⟶ (U i).shiftObj (-2) ⊞ U i) ≫
       biprod.inr ≫ (reverseZeroIso k G i).inv ≫
       (reverseInverseProduct k G i).d 0 1 ≫ (reverseOneIso k G i).hom =
@@ -311,10 +316,10 @@ private def reverseCancellationData (i : V) :
   zeroIso := reverseZeroIso k G i
   oneIso := reverseOneIso k G i
   vanish := isZero_reverseInverseProduct_X k G i
-  d_snd_snd := reverse_d_third k G i
-  inl_inr_d := reverse_d_middle k G i
+  d_snd_snd := reverse_d_snd_snd k G i
+  inl_inr_d := reverse_inl_inr_d k G i
 
-/-- The actual inverse graded braid complex followed by the braid complex is homotopy
+/-- The inverse graded braid complex followed by the braid complex is homotopy
 equivalent to the regular graded zigzag bimodule in cochain degree zero. -/
 def zigzagBraidInverseTensorComplexHomotopyEquiv (i : V) :
     HomotopyEquiv

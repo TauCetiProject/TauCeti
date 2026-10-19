@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
 
 /-!
 # Pullback of internal Hom from a finite locally free sheaf
@@ -16,7 +16,7 @@ comparison `f* 𝓗om(E, F) ⟶ 𝓗om(f* E, f* F)` is an isomorphism for every 
 `f : X ⟶ Y`. No flatness assumption on `f` or finiteness assumption on `F` is needed.
 
 The comparison for quasicoherent sources and its evaluation and curry equations are defined in
-`TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom`. This module specializes its
+`TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic`. This module specializes its
 exact-pairing invertibility criterion to the internal-Hom dual of a finite locally free sheaf.
 
 ## References

@@ -86,6 +86,10 @@ theorem componentCount_IIIStar : IIIStar.componentCount = 8 := (rfl)
 @[simp]
 theorem componentCount_IIStar : IIStar.componentCount = 9 := (rfl)
 
+/-- Every reduction symbol has at least one component. -/
+theorem componentCount_pos (symbol : ReductionSymbol) : 0 < symbol.componentCount := by
+  cases symbol <;> simp
+
 /-- The algorithmic Ogg exponent attached to a symbol and a minimal discriminant
 valuation `vΔ`: `vΔ - m + 1`, where `m` is the component count. It is integer-valued so that the
 formula remains exact for arbitrary inputs; when the symbol and equation come from Tate's

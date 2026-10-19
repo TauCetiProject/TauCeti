@@ -60,10 +60,6 @@ open scoped TensorProduct
 
 noncomputable section
 
-/-- The canonical invertibility witness for two over the rationals. -/
-local instance integralCompactOpenInvertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {ι : Type*} [Fintype ι] [DecidableEq ι]
 

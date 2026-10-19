@@ -103,6 +103,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -214,6 +215,20 @@ theorem integral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → E}
     (hf : AEStronglyMeasurable f ν) : ∫ p, f p.2 ∂π = ∫ y, f y ∂ν := by
   rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
   exact (integral_map measurable_snd.aemeasurable hf).symm
+
+/-- A nonnegative a.e.-measurable function of the first coordinate has the same lower integral
+against a coupling as against its first marginal. -/
+theorem lintegral_comp_fst (hπ : IsCoupling π μ ν) {f : X → ℝ≥0∞}
+    (hf : AEMeasurable f μ) : ∫⁻ p, f p.1 ∂π = ∫⁻ x, f x ∂μ := by
+  rw [← hπ.measurePreserving_fst.map_eq] at hf ⊢
+  exact (lintegral_map' hf measurable_fst.aemeasurable).symm
+
+/-- A nonnegative a.e.-measurable function of the second coordinate has the same lower integral
+against a coupling as against its second marginal. -/
+theorem lintegral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → ℝ≥0∞}
+    (hf : AEMeasurable f ν) : ∫⁻ p, f p.2 ∂π = ∫⁻ y, f y ∂ν := by
+  rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
+  exact (lintegral_map' hf measurable_snd.aemeasurable).symm
 
 /-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
 above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for
@@ -358,10 +373,31 @@ protected theorem map_right (hπ : IsCoupling π μ ν) {g : Y → Y'} (hg : Mea
     IsCoupling (π.map (Prod.map id g)) μ (ν.map g) := by
   simpa only [Measure.map_id] using hπ.map measurable_id hg
 
+/-- Pushing a coupling forward coordinatewise along maps that are almost everywhere measurable for
+the two marginals couples the two pushforwards. -/
+protected theorem map₀ (hπ : IsCoupling π μ ν) {f : X → X'} {g : Y → Y'} (hf : AEMeasurable f μ)
+    (hg : AEMeasurable g ν) : IsCoupling (π.map (Prod.map f g)) (μ.map f) (ν.map g) := by
+  have hfπ := hf.comp_quasiMeasurePreserving hπ.measurePreserving_fst.quasiMeasurePreserving
+  have hgπ := hg.comp_quasiMeasurePreserving hπ.measurePreserving_snd.quasiMeasurePreserving
+  constructor
+  · calc
+      _ = π.map (f ∘ Prod.fst) := Measure.fst_map_prodMk₀ hfπ hgπ
+      _ = μ.map f := by
+        rw [← AEMeasurable.map_map_of_aemeasurable
+          (hπ.measurePreserving_fst.map_eq.symm ▸ hf) measurable_fst.aemeasurable]
+        exact congrArg (Measure.map f) hπ.measurePreserving_fst.map_eq
+  · calc
+      _ = π.map (g ∘ Prod.snd) := Measure.snd_map_prodMk₀ hfπ hgπ
+      _ = ν.map g := by
+        rw [← AEMeasurable.map_map_of_aemeasurable
+          (hπ.measurePreserving_snd.map_eq.symm ▸ hg) measurable_snd.aemeasurable]
+        exact congrArg (Measure.map g) hπ.measurePreserving_snd.map_eq
+
 /-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
-coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
+coupling of `μ, ν` and an s-finite coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and
+`ν ⊗ ν'`. The first plan may be an arbitrary measure. -/
 protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
-    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
     IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
       (μ.prod μ') (ν.prod ν') := by
   have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=
@@ -381,9 +417,10 @@ protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'}
     exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
 
 /-- **Running a coupling alongside an independent sample.** If `π` couples `μ` and `ν`, then
-sampling `(x, y) ∼ π` and an independent `z ∼ η` and applying `f (·, z)` and `g (·, z)` to the two
-coordinates couples the pushforwards of `μ ⊗ η` along `f` and of `ν ⊗ η` along `g`. -/
-protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν) [SFinite π]
+sampling `(x, y) ∼ π` and an independent `z ∼ η` for an s-finite measure `η` and applying
+`f (·, z)` and `g (·, z)` to the two coordinates couples the pushforwards of `μ ⊗ η` along `f`
+and of `ν ⊗ η` along `g`. No s-finiteness assumption on `π` is needed. -/
+protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν)
     (η : Measure H) [SFinite η] {f : X × H → X'} {g : Y × H → Y'} (hf : Measurable f)
     (hg : Measurable g) :
     IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
@@ -394,8 +431,9 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
     infer_instance
   have h := (hπ.prodProdProdComm η.isCoupling_diagonalCoupling).map hf hg
   have hprod : π.prod η.diagonalCoupling =
-      (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
-    ((MeasurePreserving.id π).prod η.measurePreserving_diagonal).map_eq.symm
+      (π.prod η).map (Prod.map id fun z ↦ (z, z)) := by
+    simpa only [Measure.map_id, η.measurePreserving_diagonal.map_eq] using
+      Measure.map_prod_map π η measurable_id η.measurePreserving_diagonal.measurable
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 

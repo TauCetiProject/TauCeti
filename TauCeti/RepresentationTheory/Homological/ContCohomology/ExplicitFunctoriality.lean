@@ -26,7 +26,13 @@ degrees, and `explicitRes1_eq_explicitMap1`, `explicitRes2_eq_explicitMap2`,
 `explicitCoeff1_eq_explicitMap1` and `explicitCoeff2_eq_explicitMap2` exhibit each of them as the
 compatible pair it is, so that a theorem proved for a general pair specializes to all four. They
 are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
-`explicitCoeff0_eq_explicitMap0`. The constructions `explicitCoeff1Equiv` and
+`explicitCoeff0_eq_explicitMap0`. If `φ : H → G` maps a subgroup `T` into a subgroup `S`, pullback
+along `φ` sends classes restricting to zero on `S` to classes restricting to zero on `T`
+(`ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le`). Pullback along an
+isomorphism onto a subgroup `S` followed by its inclusion, with bijective discrete coefficients,
+vanishes exactly when restriction to `S` does (`explicitMap1_eq_zero_iff_explicitRes1_eq_zero`).
+The constructions
+`explicitCoeff1Equiv` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
@@ -147,8 +153,8 @@ section Naturality
 
 /-! The naturality squares are where the differentials enter, so this is the first point at which
 the coefficients have to be commutative groups carrying a distributive scalar action. Commutativity
-is necessary because `d0` and `d1` are additive homomorphisms; their formulas are not additive for
-a general noncommutative additive group. -/
+is necessary because `d0`, `d1` and `d2` are additive homomorphisms; their formulas are not
+additive for a general noncommutative additive group. -/
 
 variable {G : Type uG} {H : Type uH} {M : Type uM} {N : Type uN}
   [Monoid G] [Monoid H] [AddCommGroup M] [AddCommGroup N]
@@ -169,6 +175,12 @@ theorem cochainsMap2_d1 (φ : H →* G) (f : M →+ N)
   obtain ⟨h, k⟩ := p
   simp only [cochainsMap2_apply, d1_apply, map_add, map_sub, hequiv, cochainsMap1_apply,
     map_mul]
+
+/-- The degree-two differential is natural in compatible pairs, evaluated at a point. -/
+theorem d2_cochainsMap2_apply (φ : H →* G) (f : M →+ N)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : G × G → M) (h k j : H) :
+    d2 H N (cochainsMap2 φ f c) (h, k, j) = f (d2 G M c (φ h, φ k, φ j)) := by
+  simp only [d2_apply, cochainsMap2_apply, map_add, map_sub, hequiv, map_mul]
 
 /-- A compatible pair sends degree-one coboundaries to degree-one coboundaries. -/
 theorem cochainsMap1_mem_B1 (φ : H →* G) (f : M →+ N)
@@ -217,12 +229,11 @@ theorem cochainsMap2_mem_Z2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
     {c : G × G → M} (hc : c ∈ Z2 G M) :
     cochainsMap2 (φ : H →* G) f c ∈ Z2 H N := by
-  refine mem_Z2_iff.2 ⟨continuous_cochainsMap2 φ f hf (mem_Z2_iff.1 hc).1, ?_⟩
-  intro h k j
-  simp only [cochainsMap2_apply, map_mul]
-  rw [← hequiv h, ← map_add, ← map_add]
-  exact congrArg f ((mem_Z2_iff.1 hc).2 ((φ : H →* G) h) ((φ : H →* G) k)
-    ((φ : H →* G) j))
+  refine mem_Z2_iff.2 ⟨continuous_cochainsMap2 φ f hf (mem_Z2_iff.1 hc).1,
+    d2_apply_eq_zero_iff.1 ?_⟩
+  ext ⟨h, k, j⟩
+  rw [d2_cochainsMap2_apply (φ : H →* G) f hequiv, d2_apply_eq_zero_iff.2 (mem_Z2_iff.1 hc).2,
+    Pi.zero_apply, map_zero, Pi.zero_apply]
 
 /-- The pullback of continuous degree-one cocycles along a compatible pair, sending a cocycle `c`
 to `h ↦ f (c (φ h))`. -/
@@ -627,6 +638,57 @@ theorem explicitRes1_comp (S : Subgroup G) (T : Subgroup S) :
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul M T) (fun _ _ => rfl)).symm
 
+variable {G M} in
+/-- **Pullback preserves vanishing on compatible subgroups.** If `φ : H → G` maps a subgroup `T`
+of `H` into a subgroup `S` of `G`, then pulling back along a compatible pair `(φ, f)` a class of
+`H¹(G, M)` whose restriction to `S` vanishes gives a class whose restriction to `T` vanishes. For
+Galois groups of local fields and their inertia subgroups, this says that unramified classes pull
+back to unramified classes. -/
+theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
+    {H : Type uH} [Group H] [TopologicalSpace H]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {S : Subgroup G} {T : Subgroup H}
+    (hTS : T.map (φ : H →* G) ≤ S) {c : H1 G M} (hc : explicitRes1 G M S c = 0) :
+    explicitRes1 H N T (explicitMap1 G M H N φ f hf hequiv c) = 0 := by
+  -- The restriction `φ|_T : T → S`, completing the commuting square with the inclusions.
+  let φT : T →ₜ* S :=
+    { toMonoidHom := ((φ : H →* G).comp T.subtype).codRestrict S fun t ↦ hTS ⟨t, t.2, rfl⟩
+      continuous_toFun := (φ.continuous.comp continuous_subtype_val).subtype_mk _ }
+  rw [explicitRes1_eq_explicitMap1, explicitMap1_explicitMap1_of_comp_eq G M H N φ f hf hequiv
+    T N (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id N) continuous_id
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N T) (ContinuousMonoidHom.subgroupSubtype S)
+    (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) φT f hf
+    (fun t ↦ hequiv t) rfl rfl, ← explicitRes1_eq_explicitMap1, hc, map_zero]
+
+variable {G M} in
+/-- **Pullback along an isomorphism onto a subgroup detects restriction to that subgroup.** If
+`φ : H → G` is a continuous isomorphism `e : H ≃ₜ* S` onto a subgroup `S` of `G` followed by the
+inclusion, and `f : M → N` is a compatible bijection of discrete coefficient modules, then a class
+of `H¹(G, M)` pulls back to zero along `(φ, f)` exactly when its restriction to `S` vanishes: the
+pullback is restriction to `S` followed by the equivalence `explicitMap1Equiv` along `(e, f)`. -/
+theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero [DiscreteTopology M]
+    {H : Type uH} [Group H] [TopologicalSpace H]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
+    {S : Subgroup G} (e : H ≃ₜ* S) {φ : H →ₜ* G}
+    (hφ : φ = (ContinuousMonoidHom.subgroupSubtype S).comp (e : H →ₜ* S)) {f : M →+ N}
+    (hf : Function.Bijective f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    {c : H1 G M} :
+    explicitMap1 G M H N φ f continuous_of_discreteTopology hequiv c = 0 ↔
+      explicitRes1 G M S c = 0 := by
+  subst hφ
+  have h := explicitMap1_comp G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
+    continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) H N e
+    (AddEquiv.ofBijective f hf).toAddMonoidHom continuous_of_discreteTopology hequiv hequiv
+  rw [← explicitRes1_eq_explicitMap1] at h
+  rw [explicitMap1_congr_of_eq G M H N _ _ f
+      ((AddEquiv.ofBijective f hf).toAddMonoidHom.comp (AddMonoidHom.id M))
+      (hq := continuous_of_discreteTopology) (hψ := hequiv) rfl rfl,
+    DFunLike.congr_fun h c, AddMonoidHom.comp_apply,
+    ← explicitMap1Equiv_apply S M H N e (AddEquiv.ofBijective f hf) continuous_of_discreteTopology
+      continuous_of_discreteTopology hequiv, AddEquivClass.map_eq_zero_iff]
+
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/
 def explicitRes2 (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] :
@@ -876,7 +938,7 @@ theorem explicitCoeff2Equiv_symm_apply [ContinuousMul G] {N : Type uN} [AddCommG
 /-- A bijective equivariant homomorphism of discrete coefficient modules induces a bijection on
 explicit first cohomology. -/
 theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGroup N]
-    [TopologicalSpace N] [IsTopologicalAddGroup N] [DiscreteTopology N] [DistribMulAction G N]
+    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
     [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff1 G M f continuous_of_discreteTopology) := by
   have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
@@ -894,7 +956,7 @@ theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGrou
 /-- A bijective equivariant homomorphism of discrete coefficient modules induces a bijection on
 explicit second cohomology. -/
 theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Type uN}
-    [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [DiscreteTopology N]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff2 G M f continuous_of_discreteTopology) := by
   have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)

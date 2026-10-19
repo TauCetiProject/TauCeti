@@ -332,6 +332,13 @@ noncomputable def cocharacterLatticeLinearEquivDual (T : MultiplicativeTypeCommH
       Module.Dual ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
   (cocharacterLatticeEquivDual T).addEquiv.linearEquiv ℤ
 
+/-- Two geometric cocharacters are equal when their functionals agree on every character. -/
+theorem cocharacterLattice_ext {T : MultiplicativeTypeCommHopfAlgCat k}
+    {f g : cocharacterLattice T}
+    (h : ∀ x, cocharacterLatticeLinearEquivDual T f x = cocharacterLatticeLinearEquivDual T g x) :
+    f = g :=
+  (cocharacterLatticeLinearEquivDual T).injective (LinearMap.ext h)
+
 private theorem pairing_cocharacterMonoidHom (T : MultiplicativeTypeCommHopfAlgCat k)
     (x : CommHopfAlgCat.additiveCharacterGroup T.obj.obj) (f : cocharacterLattice T) :
     DiagonalizableGroup.pairing (geometricCharacterFGEquiv T x.toMul)

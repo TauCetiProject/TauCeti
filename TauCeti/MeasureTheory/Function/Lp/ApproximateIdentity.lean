@@ -32,6 +32,10 @@ This is the `Lᵖ` convergence input for mollification in Sobolev spaces.  Toget
 of mollification and weak differentiation, it approximates both the value and every weak derivative
 by the same smooth kernel.
 
+The averaging operator is represented almost everywhere by the classical convolution with
+the normalized bump. This formula applies to every `MemLp` representative, with no global
+integrability or compact support assumption on the function.
+
 ## Main declarations
 
 * `TauCeti.normedBumpLp`: averaging an `Lᵖ` function against a normalized smooth bump, as a
@@ -40,6 +44,8 @@ by the same smooth kernel.
 * `TauCeti.normedBumpLp_eq_normedBumpAverageL`: this operator is the normalized-bump average of
   the `Lᵖ` translation action.
 * `TauCeti.normedBumpLp_eq_convolutionLp`: this operator is convolution with the normalized bump.
+* `TauCeti.normedBumpLp_ae_eq_convolution`: its pointwise representative is the classical
+  convolution with the normalized bump.
 * `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
   linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
@@ -52,6 +58,11 @@ by the same smooth kernel.
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1; H. Brezis,
 *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Proposition 4.21.
+
+The pointwise representative formula follows LeanPool's
+`RellichKondrachov/L2Compactness/Smoothing.lean`, especially its `smoothFun` and `smoothL2`
+constructions, and Tau Ceti's `RepresentationTheory/Compact/Convolution.lean`, especially
+`convolutionCLM_toLp_apply`.
 -/
 
 public section
@@ -104,6 +115,14 @@ theorem normedBumpLp_eq_convolutionLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : 
   ext1 f
   rw [normedBumpLp_apply, convolutionLp_apply hp phi.integrable_normed]
 
+/-- The `Lᵖ` approximate identity is represented almost everywhere by the usual pointwise
+convolution of any `MemLp` representative. -/
+theorem normedBumpLp_ae_eq_convolution [CompleteSpace F] (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) {f : E → F} (hf : MemLp f p mu) :
+    normedBumpLp hp phi mu (hf.toLp f) =ᵐ[mu] phi.normed mu ⋆[lsmul ℝ ℝ, mu] f := by
+  rw [normedBumpLp_eq_convolutionLp]
+  exact convolutionLp_ae_eq_convolution hp phi.integrable_normed hf
+
 /-- Averaging against a normalized bump commutes with postcomposition by a continuous linear map
 between Banach spaces. -/
 theorem compLpL_normedBumpLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -145,8 +164,7 @@ theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l 
     Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p mu) l (nhds 0) := by
   refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
     (tendsto_normedBumpLp hp hphi (hf.toLp f))).congr fun i ↦ eLpNorm_congr_ae ?_
-  rw [normedBumpLp_eq_convolutionLp]
-  filter_upwards [convolutionLp_ae_eq_convolution hp (phi i).integrable_normed hf, hf.coeFn_toLp]
+  filter_upwards [normedBumpLp_ae_eq_convolution hp (phi i) hf, hf.coeFn_toLp]
     with x h₁ h₂
   rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
 

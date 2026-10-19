@@ -62,8 +62,6 @@ computation on `Ω` alone.
 
 ## References
 
-This proves the "normalization and degree recovery" item of Layer 5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 3, and J. D. Dixon, *High speed
 computation of group characters*, Numer. Math. **10** (1967), 446-450.
 -/

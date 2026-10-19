@@ -8,16 +8,21 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic
 
 /-!
-# The associated cover of the regular action
+# Examples of covers attached to fundamental-group sets
 
 The left regular action of the fundamental group gives back the universal cover. The
 comparison sends `⟦u, g⟧` to `g⁻¹ • u`, and its inverse sends `u` to `⟦u, 1⟧`. It commutes
 with the projections to the base, so this identifies the covers, not just their total spaces.
 The fundamental group carries the discrete topology as a label set.
 
-The construction uses `TauCeti.BalancedProduct.homeomorphSelf`, without any freeness or
-covering assumption. In particular, the comparison exists for the based-path space even
-when the base does not satisfy the hypotheses for a universal covering map.
+The balanced-product construction also applies to arbitrary actions, including an action on a
+one-point set. In that case its projection is a homeomorphism onto the base, so the construction
+recovers the trivial one-sheeted cover. This needs only that the base is path connected and
+locally path connected.
+
+The construction for the regular action uses `TauCeti.BalancedProduct.homeomorphSelf`, without
+any freeness or covering assumption. In particular, the comparison exists for the based-path
+space even when the base does not satisfy the hypotheses for a universal covering map.
 
 ## References
 
@@ -27,10 +32,16 @@ when the base does not satisfy the hypotheses for a universal covering map.
 public section
 noncomputable section
 
+universe u
+
 namespace TauCeti.UniversalCover
 
-variable {X : Type*} [TopologicalSpace X] (x₀ : X)
-  [TopologicalSpace (FundamentalGroup X x₀)] [DiscreteTopology (FundamentalGroup X x₀)]
+variable {X : Type u} [TopologicalSpace X] (x₀ : X)
+
+section RegularAction
+
+variable [TopologicalSpace (FundamentalGroup X x₀)]
+  [DiscreteTopology (FundamentalGroup X x₀)]
 
 local instance : ContinuousSMul (FundamentalGroup X x₀) (UniversalCover x₀) :=
   ⟨continuous_prod_of_discrete_left.mpr continuous_const_smul⟩
@@ -66,5 +77,51 @@ theorem proj_actionCoverRegularHomeomorph
   | h p =>
     rcases p with ⟨u, g⟩
     simp only [actionCoverRegularHomeomorph_mk, proj_smul, actionCoverProj_mk]
+
+end RegularAction
+
+section Subsingleton
+
+variable (A : Type u) [MulAction (FundamentalGroup X x₀) A]
+
+/-- The projection of the cover attached to a subsingleton action is injective. -/
+theorem actionCoverProj_injective [Subsingleton A] :
+    Function.Injective (actionCoverProj x₀ A) := by
+  intro z w hzw
+  induction z using Quotient.inductionOn with
+  | h p =>
+    induction w using Quotient.inductionOn with
+    | h q =>
+      rcases p with ⟨e, a⟩
+      rcases q with ⟨e', a'⟩
+      simp only [actionCoverProj_mk] at hzw
+      obtain ⟨g, hg⟩ := proj_eq_iff_mem_orbit.mp hzw
+      exact Quotient.sound ⟨g, Prod.ext hg (Subsingleton.elim _ _)⟩
+
+variable [TopologicalSpace A] [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+  [Subsingleton A] [Nonempty A]
+
+/-- The cover attached to an action on a one-point set is homeomorphic to its base by its
+projection. -/
+def actionCoverHomeomorphOfSubsingleton : ActionCover x₀ A ≃ₜ X :=
+  Equiv.toHomeomorphOfContinuousOpen
+    (Equiv.ofBijective (actionCoverProj x₀ A)
+      ⟨actionCoverProj_injective x₀ A, actionCoverProj_surjective x₀ A⟩)
+    (continuous_actionCoverProj x₀ A) (isOpenMap_actionCoverProj x₀ A)
+
+/-- The one-point-cover homeomorphism is the projection of the associated cover. -/
+@[simp]
+theorem actionCoverHomeomorphOfSubsingleton_apply (z : ActionCover x₀ A) :
+    actionCoverHomeomorphOfSubsingleton x₀ A z = actionCoverProj x₀ A z :=
+  (rfl)
+
+/-- The inverse one-point-cover homeomorphism sends an endpoint to the class of any lift with
+that endpoint, paired with any label. -/
+theorem actionCoverHomeomorphOfSubsingleton_symm_apply_proj (e : UniversalCover x₀) (a : A) :
+    (actionCoverHomeomorphOfSubsingleton x₀ A).symm (proj e) =
+      BalancedProduct.mk (FundamentalGroup X x₀) e a := by
+  rw [Homeomorph.symm_apply_eq, actionCoverHomeomorphOfSubsingleton_apply, actionCoverProj_mk]
+
+end Subsingleton
 
 end TauCeti.UniversalCover

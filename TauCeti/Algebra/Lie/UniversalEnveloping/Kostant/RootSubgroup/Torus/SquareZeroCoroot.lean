@@ -104,8 +104,7 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
       -- divided power; the two agree on `V` by `coe_kostantRootOperator_apply`.
       refine congrArg (fun p : M => a ⊗ₜ[ℤ] m + (Multiplicative.toAdd t * a) ⊗ₜ[ℤ] p) ?_
       refine Subtype.ext ?_
-      rw [coe_integralDividedPower_apply, coe_kostantRootOperator_apply,
-        Associative.dividedPower_one, Module.End.smul_def]
+      rw [coe_integralDividedPower_one_apply, coe_kostantRootOperator_apply, Module.End.smul_def]
   | add z₁ z₂ h₁ h₂ => simp only [map_add, h₁, h₂]
 
 variable {i j : ι} {c : κ}
@@ -171,8 +170,8 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
     kostantCoordinateCocharacter M b wt A c u ∈
       kostantElementarySubgroup e h ρ M hM hnil A := by
-  let := IsAddTorsionFree.of_module_rat V
-  let := IsAddTorsionFree.of_module_rat (Module.End ℚ V)
+  let := HasUniqueDiv.of_module_rat V
+  let := HasUniqueDiv.of_module_rat (Module.End ℚ V)
   have hEE : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) = 0 := by rw [← pow_two]; exact hsqi
   have hFF : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
@@ -198,8 +197,10 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
       -(2 • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) := by
     have hb := hT.lie_h_f_nsmul
     rwa [LieRing.of_associative_ring_bracket] at hb
-  have hEFE := Sl2.e_mul_f_mul_e_of_mul_self_eq_zero hEE hef hhe
-  have hFEF := Sl2.f_mul_e_mul_f_of_mul_self_eq_zero hFF hef hhf
+  have h2 : IsSMulRegular (Module.End ℚ V) (2 : ℕ) :=
+    IsSMulRegular.nat_of_hasUniqueDiv (by decide)
+  have hEFE := Sl2.e_mul_f_mul_e_of_mul_self_eq_zero h2 hEE hef hhe
+  have hFEF := Sl2.f_mul_e_mul_f_of_mul_self_eq_zero h2 hFF hef hhf
   -- the integral root operators and their base changes
   have hXX := kostantRootOperator_mul_eq_zero e h ρ M hM hEE
   have hYY := kostantRootOperator_mul_eq_zero e h ρ M hM hFF

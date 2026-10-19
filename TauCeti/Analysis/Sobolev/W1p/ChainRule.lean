@@ -67,7 +67,8 @@ by approximation, and the *order* of the two limits matters.
 * `TauCeti.W1p.hasWeakFDerivOn_posPart`: the weak gradient of the positive part.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
-* `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`.
+* `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`, and
+  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
   `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
 * `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
@@ -972,6 +973,22 @@ theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
   filter_upwards [W1p.value_posPartAbove_ae hp (le_refl 0) u,
     Lp.coeFn_posPart (W1p.value u)] with x hx hy
   rw [hx, hy, sub_zero]
+
+/-- Truncating `(u - k)⁺` above a further level `l ≥ 0` truncates `u` above `k + l`. -/
+@[simp]
+theorem W1p.posPartAbove_posPartAbove (hp : p ≠ ∞) {k l : ℝ} (hk : 0 ≤ k) (hl : 0 ≤ l)
+    (u : W1p mu Omega p) :
+    W1p.posPartAbove hp hl (W1p.posPartAbove hp hk u) =
+      W1p.posPartAbove hp (add_nonneg hk hl) u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [W1p.value_posPartAbove_ae hp hl (W1p.posPartAbove hp hk u),
+    W1p.value_posPartAbove_ae hp hk u, W1p.value_posPartAbove_ae hp (add_nonneg hk hl) u]
+    with x hx hy hz
+  rw [hx, hy, hz]
+  rcases le_or_gt (W1p.value u x) k with h | h
+  · rw [max_eq_right (sub_nonpos.2 h), zero_sub, max_eq_right (by linarith),
+      max_eq_right (by linarith)]
+  · rw [max_eq_left (sub_pos.2 h).le, sub_sub]
 
 /-- The positive part of an almost everywhere nonnegative Sobolev function is the function
 itself. -/

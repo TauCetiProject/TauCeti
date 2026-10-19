@@ -50,13 +50,18 @@ at `0` while releasing the first.
   the cube is contractible.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
+* `TauCeti.cubeBoundarySetoid`: the equivalence relation identifying all boundary points, whose
+  quotient is the cube modulo its boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
+* `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
   coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
   of `I^(Option N)`.
+* `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
+  `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
 -/
 
 public section
@@ -74,6 +79,12 @@ theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :
     exacts [⟨none, h⟩, ⟨some k, hk⟩]
 
 open scoped Topology unitInterval in
+/-- The cube over an empty index type is a point, and its boundary is empty. -/
+@[simp]
+theorem Cube.boundary_eq_empty {N : Type*} [IsEmpty N] : Cube.boundary N = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ ⟨i, _⟩ ↦ isEmptyElim i
+
+open scoped Topology unitInterval in
 /-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate
 is `0` or `1`, or its remaining coordinates `Fin.tail y` lie on the boundary of `I^(Fin n)`. -/
 theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :
@@ -87,6 +98,14 @@ theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :
   · rintro (h | ⟨k, hk⟩)
     exacts [⟨0, h⟩, ⟨k.succ, hk⟩]
 
+open scoped Topology unitInterval in
+/-- A point of the cube `I^(Fin 1)` lies on its boundary exactly when its coordinate is `0` or
+`1`. -/
+theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
+    y ∈ Cube.boundary (Fin 1) ↔ y 0 = 0 ∨ y 0 = 1 := by
+  rw [Cube.boundary_fin_succ_iff]
+  simp
+
 namespace TauCeti
 
 open scoped Topology
@@ -94,12 +113,36 @@ open unitInterval
 
 variable {N : Type*}
 
-/-- A point `(s, t)` of `I × I^N` whose first coordinate is `0` or `1`, or whose second coordinate
-lies on the boundary of `I^N`, corresponds to a point on the boundary of `I^(Option N)`. -/
-theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
-    (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
-    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
-  Cube.boundary_option_iff.2 (by simpa using h)
+/-- The boundary of the cube `I × I^N`: the points whose first coordinate is `0` or `1`, or whose
+second coordinate lies on the boundary of `I^N`. -/
+def Cube.prodBoundary (N : Type*) : Set (I × I^N) :=
+  {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N}
+
+@[simp]
+theorem Cube.mem_prodBoundary_iff {y : I × I^N} :
+    y ∈ Cube.prodBoundary N ↔ (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N :=
+  Iff.rfl
+
+theorem Cube.mk_zero_mem_prodBoundary (t : I^N) : ((0, t) : I × I^N) ∈ Cube.prodBoundary N :=
+  .inl (.inl rfl)
+
+theorem Cube.mk_mem_prodBoundary {s : I} {t : I^N} (h : s = 1 ∨ t ∈ Cube.boundary N) :
+    ((s, t) : I × I^N) ∈ Cube.prodBoundary N :=
+  h.elim (fun hs => .inl (.inr hs)) .inr
+
+/-- `TauCeti.piOptionEquivProdHomeomorph` identifies the boundary of `I^(Option N)` with the
+boundary of `I × I^N`. -/
+theorem piOptionEquivProdHomeomorph_mem_prodBoundary_iff {y : I^(Option N)} :
+    piOptionEquivProdHomeomorph (fun _ => I) y ∈ Cube.prodBoundary N ↔
+      y ∈ Cube.boundary (Option N) := by
+  simp [Cube.boundary_option_iff]
+
+/-- A point on the boundary of `I × I^N` corresponds to a point on the boundary of
+`I^(Option N)`. -/
+theorem piOptionEquivProdHomeomorph_symm_mem_boundary {y : I × I^N}
+    (h : y ∈ Cube.prodBoundary N) :
+    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm y ∈ Cube.boundary (Option N) :=
+  piOptionEquivProdHomeomorph_mem_prodBoundary_iff.1 (by rwa [Homeomorph.apply_symm_apply])
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/
@@ -146,6 +189,22 @@ theorem isPathConnected_cube : IsPathConnected (Set.univ : Set (I^N)) :=
 /-- The corner `0` lies on the boundary of the cube (any coordinate is `0`). -/
 theorem zero_mem_cubeBoundary [Nonempty N] : (0 : I^N) ∈ Cube.boundary N :=
   ⟨Classical.arbitrary N, Or.inl rfl⟩
+
+variable (N) in
+/-- The equivalence relation on the cube `I^N` identifying all points of its boundary with each
+other, and no other points.  The quotient is the cube modulo its boundary. -/
+def cubeBoundarySetoid : Setoid (I^N) where
+  r y z := y = z ∨ y ∈ Cube.boundary N ∧ z ∈ Cube.boundary N
+  iseqv :=
+    { refl := fun _ ↦ .inl rfl
+      symm := fun h ↦ h.elim (fun h ↦ .inl h.symm) fun h ↦ .inr h.symm
+      trans := by
+        rintro _ _ _ (rfl | ⟨hy, hz⟩) (rfl | ⟨hz', hw⟩)
+        exacts [.inl rfl, .inr ⟨hz', hw⟩, .inr ⟨hy, hz⟩, .inr ⟨hy, hw⟩] }
+
+lemma cubeBoundarySetoid_iff {y z : I^N} :
+    cubeBoundarySetoid N y z ↔ y = z ∨ y ∈ Cube.boundary N ∧ z ∈ Cube.boundary N :=
+  Iff.rfl
 
 section Paths
 

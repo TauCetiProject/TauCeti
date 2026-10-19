@@ -99,7 +99,7 @@ theorem rootSubgroupToBaseChangeCoordinateMap_surjective (k : Fin 7 ⊕ Fin 7) :
     (baseChangeCoordinateIso A) e
 
 /-- The named integral weight-torus coordinate map is surjective. -/
-private theorem weightTorusIntegralCoordinateMap_surjective :
+theorem weightTorusIntegralCoordinateMap_surjective :
     Function.Surjective weightTorusIntegralCoordinateMap.hom := by
   apply Function.Surjective.of_comp
     (g := (CommHopfAlgCat.mkQuotient
@@ -181,7 +181,7 @@ noncomputable def baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
 @[simp]
 theorem coe_baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
     (baseChangeRootSubgroupClosedSubgroup A k).1 =
-      letI := mono_of_isClosedImmersion_underlying (baseChangeRootSubgroup A k)
+      letI := Grp.mono_of_mono_left (baseChangeRootSubgroup A k)
       Subobject.mk (baseChangeRootSubgroup A k) :=
   ClosedSubgroupScheme.coe_mk _
 

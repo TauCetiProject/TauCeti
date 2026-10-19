@@ -112,7 +112,7 @@ private lemma raisedCharWeight_intCast (htuv : t * (u * v) ∣ N) (x : Fin 2 →
 
 private lemma charEisensteinSeriesMFRaise_eq_weighted (hk : 3 ≤ k)
     (htuv : t * (u * v) ∣ N) :
-    ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N))
+    ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N))
       (charEisensteinSeriesMFRaise ψ φ t hk htuv) =
         weightedEisensteinSeriesMF (raisedCharWeight N t ψ φ) hk := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
@@ -128,7 +128,7 @@ private lemma charEisensteinSeriesMFRaise_eq_weighted (hk : 3 ≤ k)
     · exact mul_left_cancel₀ ht0 h0
     · exact h1
   ext z
-  simp only [ModularForm.coe_ofLe, coe_weightedEisensteinSeriesMF,
+  simp only [ModularForm.coe_restrict, coe_weightedEisensteinSeriesMF,
     weightedEisensteinSeries_def]
   rw [charEisensteinSeriesMFRaise_apply_eq_tsum ψ φ hk htuv]
   -- The raised weight is supported on the image of the diagonal lattice embedding.
@@ -217,5 +217,29 @@ theorem disjoint_eisensteinSubspace_range_cuspToModFormCharSpace (hk : 3 ≤ (k 
       (LinearMap.range (cuspToModFormCharSpace (k : ℤ) χ)) := by
   exact (isCompl_congruenceEisensteinSubspace_charSpace_range_cuspToModFormCharSpace
     hk χ).disjoint.mono_left (eisensteinSubspace_le_congruenceEisensteinSubspace χ hk)
+
+/-- The constant terms at all cusps determine an element of the prescribed-nebentypus
+Eisenstein subspace. This is the injectivity half of identifying that subspace with the
+constant-term data; the converse spanning statement is separate. -/
+theorem constantTermsOnEisensteinSubspace_injective (hk : 3 ≤ (k : ℤ)) :
+    Function.Injective fun f : eisensteinSubspace χ hk ↦
+      ModularForm.constantTerms (Γ := (Gamma1 N).map (mapGL ℝ)) (k := (k : ℤ))
+        (f : modFormCharSpace (k : ℤ) χ) := by
+  intro f g hfg
+  apply Subtype.ext
+  have hker : (f : modFormCharSpace (k : ℤ) χ) - g ∈
+      LinearMap.ker (ModularForm.constantTerms.comp (modFormCharSpace (k : ℤ) χ).subtype) := by
+    rw [LinearMap.mem_ker, LinearMap.comp_apply]
+    -- Expose the character-space coercion so linearity acts on the subtraction.
+    change ModularForm.constantTerms
+      (Γ := (Gamma1 N).map (mapGL ℝ)) (k := (k : ℤ))
+      ((f : modFormCharSpace (k : ℤ) χ) - g) = 0
+    rw [map_sub, sub_eq_zero]
+    exact hfg
+  rw [← range_cuspToModFormCharSpace_eq_ker_constantTerms] at hker
+  have hfE : (f : modFormCharSpace (k : ℤ) χ) - g ∈ eisensteinSubspace χ hk :=
+    Submodule.sub_mem _ f.2 g.2
+  exact sub_eq_zero.mp ((Submodule.disjoint_def.mp
+    (disjoint_eisensteinSubspace_range_cuspToModFormCharSpace χ hk)) _ hfE hker)
 
 end TauCeti

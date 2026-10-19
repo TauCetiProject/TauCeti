@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
-public import Mathlib.RingTheory.Bialgebra.GroupLike
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Map
 
@@ -20,7 +18,8 @@ sends each standard basis element to its underlying group-like element. Its line
 the span of the group-like elements, and its subcoalgebra image is the subcoalgebra spanned by all
 group-like elements. The morphism is injective exactly when the underlying group-like elements are
 linearly independent, and it is a bialgebra equivalence when they are also spanning. Over a
-commutative domain, linear independence is automatic when the carrier of `H` is torsion-free.
+commutative domain `R`, linear independence is automatic when `H` is torsion-free as an
+`R`-module.
 
 ## Main declarations
 
@@ -34,10 +33,10 @@ commutative domain, linear independence is automatic when the carrier of `H` is 
   equivalent to linear independence of the group-like elements.
 * `TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop`: the equivalence obtained
   from linear independence and spanning.
-* `TauCeti.GroupLike.liftGroupLikeBialgHom_injective`: injectivity over a domain for a torsion-free
-  carrier.
+* `TauCeti.GroupLike.liftGroupLikeBialgHom_injective`: injectivity over a domain when `H` is
+  torsion-free as a module.
 * `TauCeti.GroupLike.evaluationBialgEquiv`: the specialized equivalence over a domain when the
-  group-like elements span a torsion-free carrier.
+  group-like elements span `H` and `H` is torsion-free as a module.
 
 ## References
 
@@ -228,17 +227,8 @@ the full subcoalgebra. -/
 theorem liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top :
     Function.Surjective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)) ↔
       Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤ := by
-  rw [liftGroupLikeBialgHom_surjective_iff_span_eq_top]
-  constructor
-  · intro h
-    apply Subcoalgebra.ext
-    intro x
-    rw [Subcoalgebra.mem_groupLikeSetSpan]
-    simp [h]
-  · intro h
-    have hsubmodule := congrArg Subcoalgebra.toSubmodule h
-    simpa only [Subcoalgebra.groupLikeSetSpan_toSubmodule,
-      Subcoalgebra.top_toSubmodule, Set.image_univ] using hsubmodule
+  rw [Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top,
+    liftGroupLikeBialgHom_surjective_iff_span_eq_top]
 
 /-- Evaluation is injective exactly when the underlying group-like elements are linearly
 independent. -/
@@ -309,18 +299,18 @@ end Semiring
 
 section Domain
 
-variable (R : Type u) (H : Type v)
 variable [CommRing R] [IsDomain R] [Ring H] [Bialgebra R H]
 variable [Module.IsTorsionFree R H]
 
-/-- Over a commutative domain, evaluation is injective when the carrier is torsion-free. -/
+/-- Over a commutative domain `R`, evaluation is injective when `H` is torsion-free as an
+`R`-module. -/
 theorem liftGroupLikeBialgHom_injective :
-    Function.Injective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)) := by
-  exact (liftGroupLikeBialgHom_injective_iff_linearIndependent R H).2
+    Function.Injective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)) :=
+  (liftGroupLikeBialgHom_injective_iff_linearIndependent R H).2
     (linearIndep_groupLikeVal (R := R) (A := H))
 
-/-- If the group-like elements span a torsion-free bialgebra over a commutative domain, evaluation
-is a bialgebra equivalence. -/
+/-- If the group-like elements span a bialgebra `H` over a commutative domain `R`, and `H` is
+torsion-free as an `R`-module, evaluation is a bialgebra equivalence. -/
 noncomputable def evaluationBialgEquiv
     (hspan : Submodule.span R
       (Set.range (_root_.GroupLike.val (R := R) (A := H))) = ⊤) :

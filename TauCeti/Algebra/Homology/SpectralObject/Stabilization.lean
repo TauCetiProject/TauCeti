@@ -64,4 +64,26 @@ noncomputable def spectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : 
     X.isoMapFourδ₄Toδ₃' ⊥ _ _ _ ⊤ bot_le (coe_le_coe_add_one pq.2) h₂₃ le_top (n - 1) n (n + 1)
       h₃
 
+/-- The isomorphism `spectralSequencePageXIsoEInfty` is characterized by the canonical maps from
+`E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)` to the page object and to `X.EInfty q n`. -/
+@[reassoc]
+lemma mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (n : ℤ) (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
+    (h₃ : IsZero ((X.H (n - 1)).obj
+      (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤)))))
+    (h₀₁ : ((pq.2 - r + 2 : ℤ) : EInt) ≤ pq.2)
+    (h₂₃ : ((pq.2 + 1 : ℤ) : EInt) ≤ ((pq.2 + r - 1 : ℤ) : EInt)) :
+    X.mapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le h₀₁ (coe_le_coe_add_one pq.2) h₂₃ (n - 1) n (n + 1)
+        (sub_add_cancel n 1) rfl ≫
+      (X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
+        ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1) hn
+        (sub_add_cancel n 1) rfl).inv ≫
+      (X.spectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
+    X.mapFourδ₄Toδ₃' ⊥ _ _ _ ⊤ bot_le (coe_le_coe_add_one pq.2) h₂₃ le_top (n - 1) n (n + 1)
+      (sub_add_cancel n 1) rfl := by
+  rw [spectralSequencePageXIsoEInfty]
+  simp
+
 end CategoryTheory.Abelian.SpectralObject

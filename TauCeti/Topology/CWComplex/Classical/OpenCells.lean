@@ -34,8 +34,12 @@ difference of the two skeleta.
   unit ball onto the open cell.
 * `TauCeti.isClosed_skeletonLT_union_iUnion_closedCell`: adjoining any family of closed `n`-cells
   to the `(n-1)`-skeleton gives a closed set.
+* `TauCeti.notMem_skeletonLT_union_of_mem_openCell`: a point of an open `n`-cell lies outside the
+  closed set obtained by adjoining all the other closed `n`-cells to the `(n-1)`-skeleton.
 * `TauCeti.skeletonLT_succ_diff_skeletonLT`: the difference of two consecutive skeleta is the
   union of the open cells of the top dimension.
+* `TauCeti.notMem_skeletonLT_of_mem_openCell`: a point of an open `n`-cell lies outside the
+  `(n-1)`-skeleton.
 * `TauCeti.disjoint_closedCell_openCell_of_ne`: a closed cell of dimension at most `n` other than
   a given `n`-cell misses its open cell.
 * `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
@@ -103,6 +107,11 @@ lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i))
 
 variable [T2Space X]
 
+/-- A point of an open `n`-cell does not lie in the `(n-1)`-skeleton. -/
+lemma notMem_skeletonLT_of_mem_openCell {i : cell C n} {x : X} (hx : x ∈ openCell n i) :
+    x ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
+  (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx
+
 /-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its
 frontier lies in the `(m-1)`-skeleton and its open cell is a different open cell. -/
 lemma disjoint_closedCell_openCell_of_ne {m : ℕ} (hm : m ≤ n) {i : cell C m} {j : cell C n}
@@ -148,6 +157,16 @@ lemma isClosed_skeletonLT_union_iUnion_closedCell (J : Set (cell C n)) :
   -- An open cell of higher dimension misses the whole `n`-skeleton.
   · exact Or.inl ((disjoint_skeletonLT_openCell (mod_cast hm)).mono_left hsucc)
 
+/-- A point of an open `n`-cell lies outside the `(n-1)`-skeleton and every other closed
+`n`-cell. -/
+lemma notMem_skeletonLT_union_of_mem_openCell {i : cell C n} {x : X} (hx : x ∈ openCell n i) :
+    x ∉ (skeletonLT C (n : ℕ∞) : Set X) ∪ ⋃ j ∈ ({i}ᶜ : Set (cell C n)), closedCell n j := by
+  rintro (hx' | hx')
+  · exact notMem_skeletonLT_of_mem_openCell n hx hx'
+  · obtain ⟨j, hj, hxj⟩ := mem_iUnion₂.1 hx'
+    exact (disjoint_closedCell_openCell_of_ne n le_rfl fun h ↦
+      hj (eq_of_heq (Sigma.mk.inj_iff.1 h).2)).notMem_of_mem_left hxj hx
+
 /-- **The difference of two consecutive skeleta is the union of the open cells of the top
 dimension.** -/
 lemma skeletonLT_succ_diff_skeletonLT :
@@ -186,25 +205,16 @@ lemma isOpen_preimage_val_openCell {S : Set X}
       (Subtype.val ⁻¹' ((skeletonLT C (n : ℕ∞) : Set X) ∪
         ⋃ j ∈ ({i}ᶜ : Set (cell C n)), closedCell n j))ᶜ := by
     ext x
-    simp only [mem_preimage, mem_compl_iff, mem_union, not_or, not_exists, mem_iUnion]
-    constructor
-    · intro hx
-      refine ⟨(disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx, ?_⟩
-      rintro j hji hj
-      rw [← cellFrontier_union_openCell_eq_closedCell] at hj
-      obtain hj | hj := hj
-      · exact (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx
-          (cellFrontier_subset_skeletonLT n j hj)
-      · exact (disjoint_openCell_of_ne fun hh ↦
-          hji (eq_of_heq (Sigma.mk.inj_iff.1 hh).2)).notMem_of_mem_left hj hx
-    · rintro ⟨hxn, h⟩
-      -- A point of the `n`-skeleton outside the `(n-1)`-skeleton lies in some open `n`-cell, and
-      -- the open cells other than `i` lie in the excluded closed cells.
-      by_contra hxi
-      refine hxn (mem_skeletonLT_of_forall_notMem_openCell n (hS x.2) fun k hk ↦ ?_)
-      by_cases hki : k = i
-      · exact hxi (hki ▸ hk)
-      · exact h k (by simpa using hki) (openCell_subset_closedCell n k hk)
+    refine ⟨notMem_skeletonLT_union_of_mem_openCell n, fun hx ↦ ?_⟩
+    simp only [mem_preimage, mem_compl_iff, mem_union, not_or, not_exists, mem_iUnion] at hx
+    obtain ⟨hxn, h⟩ := hx
+    -- A point of the `n`-skeleton outside the `(n-1)`-skeleton lies in some open `n`-cell, and
+    -- the open cells other than `i` lie in the excluded closed cells.
+    by_contra hxi
+    refine hxn (mem_skeletonLT_of_forall_notMem_openCell n (hS x.2) fun k hk ↦ ?_)
+    by_cases hki : k = i
+    · exact hxi (hki ▸ hk)
+    · exact h k (by simpa using hki) (openCell_subset_closedCell n k hk)
   rw [hcompl]
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
     continuous_subtype_val).isOpen_compl

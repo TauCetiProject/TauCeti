@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.RepresentationTheory.Coinvariants
+import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # Products of representations
@@ -30,6 +31,9 @@ be chosen in every factor at once.
 * `Representation.pi ρ`: the product of a family of representations.
 * `Rep.pi M`: the product of a family of objects of `Rep k G`.
 * `Rep.piLift f`: the morphism into `Rep.pi M` with prescribed components `f i : A ⟶ M i`.
+* `Rep.piProj M i`: the projection of `Rep.pi M` onto `M i`.
+* `Rep.piMap f`: the product of a family of morphisms `f i : M i ⟶ N i`.
+* `Rep.resPiIso M f`: restriction along `f` commutes with products.
 
 ## Main results
 
@@ -40,6 +44,7 @@ be chosen in every factor at once.
   every component does.
 * `Representation.mem_coinvariantsKer_pi_iff`: for a finite monoid, an element of the product lies
   in the coinvariant kernel exactly when every component does.
+* `Rep.shortExact_pi`: a product of short exact sequences of representations is short exact.
 -/
 
 public section
@@ -113,7 +118,11 @@ end Representation
 
 namespace Rep
 
+open CategoryTheory
+
 universe w
+
+section Semiring
 
 variable {k G : Type*} [Semiring k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
 
@@ -133,5 +142,76 @@ noncomputable def piLift {A : Rep.{w} k G} (f : ∀ i, A ⟶ M i) : A ⟶ pi M :
 theorem piLift_hom_apply {A : Rep.{w} k G} (f : ∀ i, A ⟶ M i) (x : A) (i : ι) :
     (piLift f).hom x i = (f i).hom x :=
   (rfl)
+
+variable (M) in
+/-- The projection of `Rep.pi M` onto the factor `M i`. -/
+noncomputable def piProj (i : ι) : pi M ⟶ M i :=
+  ofHom (LinearMap.intertwiningMap_of_isIntertwiningMap _ _ (LinearMap.proj i) fun _ _ ↦ rfl)
+
+/-- `Rep.piProj M i` takes the `i`-th component. -/
+@[simp]
+theorem piProj_hom_apply (i : ι) (x : pi M) : (piProj M i).hom x = x i :=
+  (rfl)
+
+/-- The `i`-th component of `Rep.piLift f` is `f i`. -/
+@[reassoc (attr := simp)]
+theorem piLift_piProj {A : Rep.{w} k G} (f : ∀ i, A ⟶ M i) (i : ι) :
+    piLift f ≫ piProj M i = f i :=
+  (rfl)
+
+/-- The product of a family of morphisms `f i : M i ⟶ N i`, acting factor by factor. -/
+noncomputable def piMap {N : ι → Rep.{w} k G} (f : ∀ i, M i ⟶ N i) : pi M ⟶ pi N :=
+  piLift fun i ↦ piProj M i ≫ f i
+
+/-- `Rep.piMap f` applies `f i` to the `i`-th component. -/
+@[simp]
+theorem piMap_hom_apply {N : ι → Rep.{w} k G} (f : ∀ i, M i ⟶ N i) (x : pi M) (i : ι) :
+    (piMap f).hom x i = (f i).hom (x i) :=
+  (rfl)
+
+/-- The `i`-th component of `Rep.piMap f` is `f i` on the `i`-th factor. -/
+@[reassoc (attr := simp)]
+theorem piMap_piProj {N : ι → Rep.{w} k G} (f : ∀ i, M i ⟶ N i) (i : ι) :
+    piMap f ≫ piProj N i = piProj M i ≫ f i :=
+  (rfl)
+
+variable (M) in
+/-- **Restriction commutes with products**: the restriction of `Rep.pi M` along `f : H →* G` is
+the product of the restrictions, by the identity of the underlying module. -/
+noncomputable def resPiIso {H : Type*} [Monoid H] (f : H →* G) :
+    res f (pi M) ≅ pi fun i ↦ res f (M i) :=
+  mkIso (.mk (LinearEquiv.refl k _) fun _ ↦ rfl)
+
+/-- `Rep.resPiIso` is the identity on underlying elements. -/
+@[simp]
+theorem resPiIso_hom_hom_apply {H : Type*} [Monoid H] (f : H →* G) (x : pi M) :
+    (resPiIso M f).hom.hom x = x :=
+  (rfl)
+
+end Semiring
+
+section Ring
+
+variable {k G : Type*} [Ring k] [Monoid G] {ι : Type w}
+
+/-- **A product of short exact sequences of representations is short exact**: injectivity,
+surjectivity and exactness of linear maps are all checked factor by factor. -/
+theorem shortExact_pi (S : ι → ShortComplex (Rep.{w} k G)) (hS : ∀ i, (S i).ShortExact) :
+    (ShortComplex.mk (piMap fun i ↦ (S i).f) (piMap fun i ↦ (S i).g)
+      (by ext x i; exact congr($((S i).zero).hom (x i)))).ShortExact := by
+  have hf (i : ι) := (Rep.mono_iff_injective _).1 (hS i).mono_f
+  have hg (i : ι) := (Rep.epi_iff_surjective _).1 (hS i).epi_g
+  have hfg (i : ι) := (exact_iff_function_exact _).1 (hS i).exact
+  refine .mk' ((exact_iff_function_exact _).2 fun y ↦ ⟨fun h ↦ ?_, ?_⟩)
+    ((Rep.mono_iff_injective _).2 fun x x' h ↦ funext fun i ↦ hf i (congrFun h i))
+    ((Rep.epi_iff_surjective _).2 fun z ↦ ⟨fun i ↦ (hg i (z i)).choose,
+      funext fun i ↦ (hg i (z i)).choose_spec⟩)
+  · choose x hx using fun i ↦ ((hfg i) (y i)).1 (congrFun h i)
+    exact ⟨x, funext hx⟩
+  · rintro ⟨x, rfl⟩
+    funext i
+    exact ((hfg i) _).2 ⟨x i, rfl⟩
+
+end Ring
 
 end Rep

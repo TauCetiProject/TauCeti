@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 -- Proof-only: the integral model of an equation over `R`, for the examples.
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+-- Proof-only: the curve `y² = x³ - x`, for the examples.
+import TauCeti.AlgebraicGeometry.EllipticCurve.CurveX3SubX
 -- Proof-only: the trace criterion for supersingularity over a finite field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Supersingular
 
@@ -351,17 +353,15 @@ example [CharP (ResidueField R) 2] :
 /-- `y² = x³ - x` has good supersingular reduction over every discrete valuation ring of residue
 characteristic `3`: its discriminant `64` is a unit there and its `b₂ = 0` is not. -/
 example [CharP (ResidueField R) 3] :
-    ((⟨0, 0, 0, -1, 0⟩ : WeierstrassCurve R).baseChange K).HasGoodSupersingularReduction R 3 := by
-  have : IsIntegral R ((⟨0, 0, 0, -1, 0⟩ : WeierstrassCurve R).baseChange K) := ⟨_, rfl⟩
-  have hI := integralModel_eq_of_baseChange_eq (R := R) (W₀ := ⟨0, 0, 0, -1, 0⟩) (K := K) rfl
-  have : ((⟨0, 0, 0, -1, 0⟩ : WeierstrassCurve R).baseChange K).HasGoodReduction R := by
+    ((TauCeti.CurveX3SubX.curve R).baseChange K).HasGoodSupersingularReduction R 3 := by
+  have : IsIntegral R ((TauCeti.CurveX3SubX.curve R).baseChange K) := ⟨_, rfl⟩
+  have hI :=
+    integralModel_eq_of_baseChange_eq (R := R) (W₀ := TauCeti.CurveX3SubX.curve R) (K := K) rfl
+  have : ((TauCeti.CurveX3SubX.curve R).baseChange K).HasGoodReduction R := by
     rw [hasGoodReduction_iff_isUnit_integralModel_Δ, hI, ← residue_ne_zero_iff_isUnit]
-    have hΔ : (⟨0, 0, 0, -1, 0⟩ : WeierstrassCurve R).Δ = 64 := by
-      simp only [Δ, b₂, b₄, b₆, b₈]
-      ring
     have h64 : (64 : ResidueField R) = 1 := by
       linear_combination (21 : ResidueField R) * CharP.ofNat_eq_zero (ResidueField R) 3
-    rw [hΔ, map_ofNat, h64]
+    rw [TauCeti.CurveX3SubX.Δ_curve, map_ofNat, h64]
     exact one_ne_zero
   rw [hasGoodSupersingularReduction_iff_not_isUnit_b₂_of_char_three, hI]
   simp [b₂]

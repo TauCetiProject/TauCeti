@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Preserves
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
 public import TauCeti.Algebra.Lie.G2.ShortRoot.AdmissibleLattice
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.MaximalTorus
@@ -50,6 +50,8 @@ connected group scheme of type `G₂`, and no Borel subgroup or pinning is const
 
 ## Main results
 
+* `TauCeti.G2ShortRoot.PrimeField.tangentMatrix_symm_lie`: the matrix of the bracket of two
+  tangent vectors of the carrier is the commutator of their matrices.
 * `TauCeti.G2ShortRoot.PrimeField.tangentMatrix_mul_crossOperatorPrime`: tangent matrices of the
   carrier are derivations of the cross product.
 * `TauCeti.G2ShortRoot.PrimeField.tangentMatrix_rootVector`: the matrix of a root vector is the
@@ -87,6 +89,8 @@ open TauCeti.DynkinType
 
 noncomputable section
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 /-- The matrix in `𝔤𝔩₇(𝔽₃)` of a tangent vector at the identity of the short-root type-`G₂`
 carrier over `𝔽₃`: the differential of the closed embedding of the carrier into `GL₇`, with the
 Lie algebra of the carrier modelled as the dual of its augmentation cotangent space. -/
@@ -117,6 +121,19 @@ theorem tangentMatrix_injective : Function.Injective tangentMatrix := by
   exact (Derivation.cotangentLinearEquiv (B := ZMod 3)).injective
     (HopfIdeal.quotientLieHom_injective _ ((GeneralLinear.tangentLinearEquivMatrix 7).injective h))
 
+/-- **The carrier tangent matrix carries brackets to commutators.** The matrix in `𝔤𝔩₇(𝔽₃)` of the
+bracket of two tangent vectors of the carrier, read as counit-valued derivations, is the
+commutator of their matrices. -/
+@[simp]
+theorem tangentMatrix_symm_lie
+    (d e : Derivation (ZMod 3) carrierAlgebra
+      (Bialgebra.CounitAlgebra (ZMod 3) carrierAlgebra (ZMod 3))) :
+    tangentMatrix ((Derivation.cotangentLinearEquiv (B := ZMod 3)).symm ⁅d, e⁆) =
+      ⁅tangentMatrix ((Derivation.cotangentLinearEquiv (B := ZMod 3)).symm d),
+        tangentMatrix ((Derivation.cotangentLinearEquiv (B := ZMod 3)).symm e)⁆ := by
+  rw [tangentMatrix_apply, tangentMatrix_apply, tangentMatrix_apply]
+  simp only [LinearEquiv.apply_symm_apply, LieHom.map_lie, GeneralLinear.tangentMatrix_lie]
+
 /-- **The tangent matrices of the carrier are derivations of the cross product.** Differentiating
 `g (u × v) = (g u) × (g v)` at the identity gives `X (eₖ × v) = (X eₖ) × v + eₖ × (X v)`. -/
 theorem tangentMatrix_mul_crossOperatorPrime
@@ -125,21 +142,12 @@ theorem tangentMatrix_mul_crossOperatorPrime
       ConstantMultiplication.imageStructureMatrix (ZMod 3) 7 crossOperatorPrime
           (tangentMatrix x) k +
         crossOperatorPrime k * tangentMatrix x := by
-  have hmem : HopfIdeal.quotientLieHom (CommHopfAlgCat.commonKernelHopfIdeal generator)
-      (Derivation.cotangentLinearEquiv (B := ZMod 3) x) ∈
-        HopfIdeal.lieSubalgebra (B := ZMod 3)
-          (ConstantMultiplication.definingHopfIdeal (ZMod 3) 7 crossOperatorPrime) := by
-    rw [HopfIdeal.mem_lieSubalgebra_iff]
-    intro y hy
-    have hcarrier := (HopfIdeal.mem_lieSubalgebra_iff _ _).mp
-      (HopfIdeal.quotientLieEquiv (B := ZMod 3) (CommHopfAlgCat.commonKernelHopfIdeal generator)
-        (Derivation.cotangentLinearEquiv (B := ZMod 3) x)).2
-    rw [HopfIdeal.quotientLieEquiv_apply_coe] at hcarrier
-    exact hcarrier y (HopfIdeal.toIdeal_le_toIdeal.mpr
-      (definingIdeal_def ▸ constantMultiplicationDefiningHopfIdeal_le_definingIdeal) hy)
-  have h := (ConstantMultiplication.mem_lieSubalgebra_definingHopfIdeal_iff _ _).mp hmem k
   simpa only [Algebra.algebraMap_self, RingHom.coe_id, Matrix.map_id,
-    ← tangentMatrix_apply] using h
+    ← tangentMatrix_apply] using
+    GeneralLinear.tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le
+      7 generator crossOperatorPrime
+      (definingIdeal_def ▸ constantMultiplicationDefiningHopfIdeal_le_definingIdeal)
+      (Derivation.cotangentLinearEquiv (B := ZMod 3) x) k
 
 /-! ## The differentials of the numbered simple root subgroups -/
 
@@ -206,7 +214,7 @@ have the weight of a numbered simple root generator is a multiple of that genera
 the explicit structure constants of `TauCeti.G2ShortRoot.crossOperator` at a few entries; the
 remaining entries vanish by the weight condition. -/
 
-/- Normalization for one entry of the derivation equation of an explicit matrix: expand the matrix
+/-- Normalization for one entry of the derivation equation of an explicit matrix: expand the matrix
 products and the structure constants, then reduce the coefficients modulo three. -/
 local macro "cross_entry_norm" : tactic =>
   `(tactic| (simp [Matrix.mul_apply, Fin.sum_univ_succ,

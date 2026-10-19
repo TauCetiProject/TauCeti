@@ -31,10 +31,14 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
 * `TauCeti.dirichletDomain G p`: the Dirichlet domain of the centre `p`.
 * `TauCeti.isClosed_dirichletDomain`: it is closed.
 * `TauCeti.smul_dirichletDomain`: translating the Dirichlet domain translates its centre.
+* `TauCeti.dist_le_dist_smul_of_mem_dirichletDomain`: a point of the Dirichlet domain is a point
+  of its orbit closest to the centre.
 * `TauCeti.finite_dirichletCompetitors`: on a bounded set, only finitely many acting elements can
   move the centre to a point at least as close as the centre.
 * `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a bounded set, the Dirichlet domain is
   cut out by finitely many of its defining inequalities.
+* `TauCeti.eventually_forall_dist_lt_of_forall_dist_lt`: strict dominance over a selected family
+  of orbit points persists on a neighbourhood.
 * `TauCeti.mem_interior_dirichletDomain_of_forall_dist_lt`: strict dominance over distinct orbit
   points implies interior membership.
 * `TauCeti.exists_smul_mem_dirichletDomain`: for a properly discontinuous isometric action on a
@@ -153,28 +157,40 @@ theorem exists_finset_dirichletDomain_inter_eq [ProperSpace X] [ProperlyDisconti
     · exact hx g hg
     · exact le_of_not_ge fun h ↦ hg ⟨x, hxK, h⟩
 
-/-- Strict dominance over every distinct orbit point puts a point in the interior of the
-Dirichlet domain. Elements fixing the centre are allowed. -/
-theorem mem_interior_dirichletDomain_of_forall_dist_lt
-    [ProperSpace X] [ProperlyDiscontinuousSMul G X] {p x : X}
-    (hx : ∀ g : G, g • p ≠ p → dist x p < dist x (g • p)) :
-    x ∈ interior (dirichletDomain G p) := by
-  let S := {g ∈ dirichletCompetitors G p (closedBall x 1) | g • p ≠ p}
+/-- For a properly discontinuous action on a proper space, strict dominance over any selected
+family of orbit points persists throughout a neighbourhood. The selected family need not be
+finite. -/
+theorem eventually_forall_dist_lt_of_forall_dist_lt
+    [ProperSpace X] [ProperlyDiscontinuousSMul G X] {p x : X} {s : Set G}
+    (hx : ∀ g ∈ s, dist x p < dist x (g • p)) :
+    ∀ᶠ y in 𝓝 x, ∀ g ∈ s, dist y p < dist y (g • p) := by
+  let S := dirichletCompetitors G p (closedBall x 1) ∩ s
   have hS : S.Finite := (finite_dirichletCompetitors (G := G) p isBounded_closedBall).subset
     fun _ hg ↦ hg.1
   have hU : (⋂ g ∈ S, {y | dist y p < dist y (g • p)}) ∈ 𝓝 x :=
     (biInter_mem hS).mpr fun g hg ↦
       (isOpen_lt (continuous_id.dist continuous_const)
         (continuous_id.dist continuous_const)).mem_nhds (hx g hg.2)
-  refine mem_interior_iff_mem_nhds.mpr (mem_of_superset
-    (inter_mem (closedBall_mem_nhds x zero_lt_one) hU) ?_)
+  refine mem_of_superset (inter_mem (closedBall_mem_nhds x zero_lt_one) hU) ?_
   rintro y ⟨hyB, hyU⟩
+  intro g hgs
+  by_cases hg : g ∈ dirichletCompetitors G p (closedBall x 1)
+  · exact mem_iInter₂.mp hyU g ⟨hg, hgs⟩
+  · exact lt_of_not_ge fun h ↦ hg (mem_dirichletCompetitors.mpr ⟨y, hyB, h⟩)
+
+/-- Strict dominance over every distinct orbit point puts a point in the interior of the
+Dirichlet domain. Elements fixing the centre are allowed. -/
+theorem mem_interior_dirichletDomain_of_forall_dist_lt
+    [ProperSpace X] [ProperlyDiscontinuousSMul G X] {p x : X}
+    (hx : ∀ g : G, g • p ≠ p → dist x p < dist x (g • p)) :
+    x ∈ interior (dirichletDomain G p) := by
+  refine mem_interior_iff_mem_nhds.mpr ?_
+  filter_upwards [eventually_forall_dist_lt_of_forall_dist_lt
+    (s := {g : G | g • p ≠ p}) hx] with y hy
   refine mem_dirichletDomain.mpr fun g ↦ ?_
   by_cases hgp : g • p = p
   · simp [hgp]
-  by_cases hg : g ∈ dirichletCompetitors G p (closedBall x 1)
-  · exact (mem_iInter₂.mp hyU g ⟨hg, hgp⟩).le
-  · exact le_of_not_ge fun h ↦ hg (mem_dirichletCompetitors.mpr ⟨y, hyB, h⟩)
+  · exact (hy g hgp).le
 
 end SMul
 
@@ -210,6 +226,12 @@ theorem smul_dirichletDomain (g : G) (p : X) :
   refine ⟨fun H h ↦ ?_, fun H h ↦ ?_⟩
   · simpa [mul_smul] using H (g⁻¹ * h * g)
   · simpa [mul_smul] using H (g * h * g⁻¹)
+
+/-- A point of a Dirichlet domain is a point of its orbit closest to the centre. -/
+theorem dist_le_dist_smul_of_mem_dirichletDomain {p x : X} (hx : x ∈ dirichletDomain G p)
+    (g : G) : dist x p ≤ dist (g • x) p :=
+  calc dist x p ≤ dist x (g⁻¹ • p) := hx g⁻¹
+    _ = dist (g • x) p := by rw [← dist_smul g, smul_inv_smul]
 
 variable [ProperSpace X] [ProperlyDiscontinuousSMul G X]
 
