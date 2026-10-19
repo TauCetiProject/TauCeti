@@ -638,7 +638,7 @@ jobs:
             exit 1
           fi
 
-      - name: Reject option overrides and heartbeat instrumentation
+      - name: Reject option overrides and metaprogramming (allow local macros)
         if: ${{ env.INFRA != '1' }}
         run: |
           python3 gate/scripts/check_source_options.py pr/TauCeti/ pr/TauCeti.lean

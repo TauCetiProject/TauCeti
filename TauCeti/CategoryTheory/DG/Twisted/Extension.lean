@@ -30,6 +30,11 @@ splitting need not be closed: the differential of the inclusion of `Q` is `g` fo
 inclusion of `P`, and the differential of the projection onto `P` is minus the projection onto `Q`
 followed by `g`.
 
+If `g` is invertible, with inverse `g' : P ⟶ Q` of degree `-1`, the extension is contractible:
+minus the projection onto `P`, followed by `g'` and the inclusion of `Q`, is a degree `-1`
+endomorphism whose differential is the identity, so the extension is a zero object of the
+homotopy category.
+
 With `P = Y[0]`, `Q = X[1]` and `g` a closed degree-zero morphism `f : X ⟶ Y` viewed as a
 degree-one morphism `X[1] ⟶ Y[0]`, the extension is the cone of `f`, the basic construction of
 the pretriangulated envelope of Bondal and Kapranov; see
@@ -55,6 +60,9 @@ the pretriangulated envelope of Bondal and Kapranov; see
 * `TauCeti.DGTwistedObject.dgComp_extensionInl_extensionSnd` and the other biproduct equations:
   the composite `P ⟶ extension P Q g ⟶ Q` vanishes, and the inclusions and projections exhibit
   the extension as the direct sum of `P` and `Q` as a graded object.
+* `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_extensionFst_extensionInr` and
+  `TauCeti.DGTwistedObject.isZero_of_extension`: an extension along an invertible morphism is
+  contractible.
 
 ## References
 
@@ -524,6 +532,53 @@ theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
       simp [-DGCategoryData.dgId_toDGCategory]
 
 end biproduct
+
+/-! ### Extensions along invertible morphisms are contractible -/
+
+section contractible
+
+variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
+  (hg : dgDifferential R 1 g = 0) {g' : DGHom R (-1) P Q}
+
+/-- **The contracting homotopy of an extension along an invertible morphism**: if the closed
+degree-one morphism `g : Q ⟶ P` has an inverse `g' : P ⟶ Q` of degree `-1`, then the differential
+of minus the projection onto `P`, followed by `g'` and the inclusion of `Q`, is the identity of the
+extension. -/
+theorem dgDifferential_neg_dgComp_extensionFst_extensionInr
+    (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+    (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
+    dgDifferential R (-1)
+        (-dgComp R (dgComp R (extensionFst R hg) g' (zero_add (-1))) (extensionInr R hg)
+          (add_zero (-1))) =
+      dgId R (extension P Q g hg) := by
+  -- The inverse pairs cancel inside the two terms produced by the Leibniz rule.
+  have hsnd : dgComp R (dgComp R (extensionSnd R hg) g (zero_add 1)) g' (add_neg_cancel 1) =
+      extensionSnd R hg := by
+    rw [dgComp_assoc R _ g g' (zero_add 1) (add_neg_cancel 1) (by omega), hgg', dgComp_dgId]
+  have hfst : dgComp R (dgComp R (extensionFst R hg) g' (zero_add (-1)))
+      (dgComp R g (extensionInl R hg) (add_zero 1)) (neg_add_cancel 1) =
+      dgComp R (extensionFst R hg) (extensionInl R hg) (add_zero 0) := by
+    rw [dgComp_assoc R _ g' _ (zero_add (-1)) (neg_add_cancel 1) (by omega),
+      ← dgComp_assoc R g' g _ (neg_add_cancel 1) (add_zero 1) (by omega), hg'g, dgId_dgComp]
+  -- Expand by the Leibniz rule; `g'` is closed, being inverse to the closed morphism `g`.
+  rw [map_neg, dgDifferential_dgComp, dgDifferential_dgComp, dgDifferential_extensionFst,
+    dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g]
+  simp only [dgComp_zero, smul_zero, add_zero, neg_dgComp, Int.negOnePow_neg, Int.negOnePow_one,
+    Units.neg_smul, one_smul, hsnd, hfst]
+  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  abel
+
+/-- **An extension along an invertible morphism is contractible**: if the closed degree-one
+morphism `g : Q ⟶ P` has an inverse of degree `-1`, then the extension of `Q` by `P` along `g` is
+a zero object of the homotopy category. -/
+theorem isZero_of_extension (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+    (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
+    Limits.IsZero (DGHomotopyCategory.of R (extension P Q g hg)) :=
+  (DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries R _).mpr
+    ((mem_dgBoundaries R).mpr
+      ⟨_, dgDifferential_neg_dgComp_extensionFst_extensionInr R hg hgg' hg'g⟩)
+
+end contractible
 
 end DGTwistedObject
 
