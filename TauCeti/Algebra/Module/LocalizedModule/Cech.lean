@@ -9,6 +9,10 @@ public import Mathlib.RingTheory.LocalProperties.Exactness
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.Algebra.Module.LocalizedModule.Map
 
+import Mathlib.Algebra.Module.LocalizedModule.Away
+import TauCeti.Algebra.Algebra.IsUnit
+import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+
 /-!
 # The Čech complex of localizations
 
@@ -71,30 +75,11 @@ section Restriction
 
 variable {M : Type*} [AddCommGroup M] [Module R M]
 
-/-- Powers of a scalar acting invertibly act invertibly. -/
-private theorem isUnit_powers {N : Type*} [AddCommGroup N] [Module R N] {a : R}
-    (h : IsUnit (algebraMap R (Module.End R N) a)) (x : Submonoid.powers a) :
-    IsUnit (algebraMap R (Module.End R N) x) := by
-  obtain ⟨_, k, rfl⟩ := x
-  simpa using h.pow k
-
-/-- A divisor of a scalar acting invertibly acts invertibly. -/
-private theorem isUnit_of_dvd {N : Type*} [AddCommGroup N] [Module R N] {a c : R} (hac : a ∣ c)
-    (hc : IsUnit (algebraMap R (Module.End R N) c)) :
-    IsUnit (algebraMap R (Module.End R N) a) := by
-  obtain ⟨b, rfl⟩ := hac
-  rw [map_mul, (Algebra.commute_algebraMap_left _ _).isUnit_mul_iff] at hc
-  exact hc.1
-
-private theorem isUnit_self (c : R) :
-    IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers c) M)) c) :=
-  IsLocalizedModule.map_units (mkLinearMap (.powers c) M) ⟨c, Submonoid.mem_powers c⟩
-
 /-- The canonical map `M_a → M_c`, defined when `a` acts invertibly on `M_c`. -/
 private noncomputable def restr {a c : R}
     (h : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers c) M)) a)) :
     LocalizedModule (.powers a) M →ₗ[R] LocalizedModule (.powers c) M :=
-  LocalizedModule.lift _ (mkLinearMap _ M) (isUnit_powers h)
+  LocalizedModule.lift _ (mkLinearMap _ M) h.algebraMap_powers
 
 private theorem restr_comp_mkLinearMap {a c : R}
     (h : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers c) M)) a)) :
@@ -105,7 +90,7 @@ private theorem restr_ext {a c : R}
     (h : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers c) M)) a))
     {g g' : LocalizedModule (.powers a) M →ₗ[R] LocalizedModule (.powers c) M}
     (e : g ∘ₗ mkLinearMap _ M = g' ∘ₗ mkLinearMap _ M) : g = g' :=
-  IsLocalizedModule.ext _ (mkLinearMap _ M) (isUnit_powers h) e
+  IsLocalizedModule.ext _ (mkLinearMap _ M) h.algebraMap_powers e
 
 private theorem restr_restr {a b c : R}
     (h₁ : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers b) M)) a))
@@ -129,7 +114,7 @@ private theorem restr_map {N : Type*} [AddCommGroup N] [Module R N] (g : M →�
     (x : LocalizedModule (.powers a) M) :
     IsLocalizedModule.map (.powers c) (mkLinearMap _ M) (mkLinearMap _ N) g (restr hM x) =
       restr hN (IsLocalizedModule.map (.powers a) (mkLinearMap _ M) (mkLinearMap _ N) g x) := by
-  refine LinearMap.congr_fun (IsLocalizedModule.ext _ (mkLinearMap _ M) (isUnit_powers hN)
+  refine LinearMap.congr_fun (IsLocalizedModule.ext _ (mkLinearMap _ M) hN.algebraMap_powers
     (j := IsLocalizedModule.map (.powers c) (mkLinearMap _ M) (mkLinearMap _ N) g ∘ₗ restr hM)
     (k := restr hN ∘ₗ
       IsLocalizedModule.map (.powers a) (mkLinearMap _ M) (mkLinearMap _ N) g) ?_) x
@@ -188,25 +173,6 @@ private theorem sgn_insert_add {S : Finset ι} {a j : ι} (ha : a ∈ S) (hj : j
 
 end Signs
 
-/-- A double sum over ordered pairs of distinct elements of `S` vanishes when the summand is
-antisymmetric. -/
-private theorem sum_sum_erase_eq_zero {ι A : Type*} [DecidableEq ι] [AddCommGroup A]
-    (S : Finset ι) (F : ι → ι → A) (hF : ∀ a ∈ S, ∀ b ∈ S, a ≠ b → F a b + F b a = 0) :
-    ∑ a ∈ S, ∑ b ∈ S.erase a, F a b = 0 := by
-  rw [Finset.sum_sigma']
-  refine Finset.sum_involution (fun x _ ↦ ⟨x.2, x.1⟩) ?_ ?_ ?_ ?_
-  · rintro ⟨a, b⟩ hx
-    simp only [Finset.mem_sigma, Finset.mem_erase] at hx
-    exact hF a hx.1 b hx.2.2 (Ne.symm hx.2.1)
-  · rintro ⟨a, b⟩ hx _ h
-    simp only [Finset.mem_sigma, Finset.mem_erase] at hx
-    exact hx.2.1 (congrArg Sigma.fst h)
-  · rintro ⟨a, b⟩ hx
-    simp only [Finset.mem_sigma, Finset.mem_erase] at hx ⊢
-    exact ⟨hx.2.2, Ne.symm hx.2.1, hx.1⟩
-  · rintro ⟨a, b⟩ _
-    rfl
-
 variable (M : Type*) [AddCommGroup M] [Module R M] {ι : Type*} (f : ι → R)
 
 /-! ### The complex -/
@@ -221,7 +187,8 @@ canonical map `M → M_{f_S}`, which exists since `f_T` divides `f_S`. -/
 noncomputable def cechLocalizationRestriction {T S : Finset ι} (h : T ⊆ S) :
     LocalizedModule (.powers (∏ i ∈ T, f i)) M →ₗ[R]
       LocalizedModule (.powers (∏ i ∈ S, f i)) M :=
-  restr (isUnit_of_dvd (Finset.prod_dvd_prod_of_subset T S f h) (isUnit_self _))
+  restr <| (IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _).algebraMap_of_dvd
+    (Finset.prod_dvd_prod_of_subset T S f h)
 
 /-- The restriction maps extend the canonical maps from `M`. -/
 @[simp]
@@ -290,7 +257,8 @@ private theorem rc_of_card_ne {q : ℕ} {S T : Finset ι} (hT : T.card ≠ q) (x
 
 private theorem rc_self {q : ℕ} (S : {S : Finset ι // S.card = q}) (x : Term M f q) :
     rc M f q S.1 S.1 x = x S := by
-  rw [rc_eq M f (isUnit_self _), restr_self, proj_of_card M f S.2]
+  rw [rc_eq M f (IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _), restr_self,
+    proj_of_card M f S.2]
 
 private theorem restr_rc {q : ℕ} {S T U : Finset ι}
     (h₁ : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers (∏ i ∈ T, f i)) M))
@@ -306,7 +274,8 @@ private theorem restr_rc {q : ℕ} {S T U : Finset ι}
 private theorem isUnit_of_subset {T S : Finset ι} (h : T ⊆ S) :
     IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers (∏ i ∈ S, f i)) M))
       (∏ i ∈ T, f i)) :=
-  isUnit_of_dvd (Finset.prod_dvd_prod_of_subset T S f h) (isUnit_self _)
+  (IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _).algebraMap_of_dvd
+    (Finset.prod_dvd_prod_of_subset T S f h)
 
 variable {M f} in
 /-- The map induced on the products of localizations by a linear map `g : M → N`. -/
@@ -376,7 +345,7 @@ private theorem rc_D {q : ℕ} {S T : Finset ι}
   rw [rc_eq M f hTS, proj_of_card M f hT, D_apply, map_sum]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [map_smul, restr_rc M f (isUnit_of_subset M f (T.erase_subset a)) hTS
-    (isUnit_of_dvd (Finset.prod_dvd_prod_of_subset _ _ f (T.erase_subset a)) hTS)]
+    (hTS.algebraMap_of_dvd (Finset.prod_dvd_prod_of_subset _ _ f (T.erase_subset a)))]
 
 private theorem D_D (q : ℕ) (x : Term M f q) : D M f (q + 1) (D M f q x) = 0 := by
   funext S
@@ -389,7 +358,7 @@ private theorem D_D (q : ℕ) (x : Term M f q) : D M f (q + 1) (D M f q x) = 0 :
       (by rw [Finset.card_erase_of_mem ha, S.2]; rfl), Finset.smul_sum]
     simp only [mul_smul]
   rw [Finset.sum_congr rfl key]
-  refine sum_sum_erase_eq_zero _ _ fun a ha b hb hab ↦ ?_
+  refine Finset.sum_sum_erase_eq_zero _ fun a ha b hb hab ↦ ?_
   rw [Finset.erase_right_comm (a := b), ← add_smul, sgn_erase_add ha hb hab, zero_smul]
 
 /-! ### The contracting homotopy after inverting `f j` -/
@@ -424,10 +393,11 @@ divides `f j * f_S`. -/
 private theorem isUnit_of_dvd_mul {S T : Finset ι} (h : ∏ i ∈ T, f i ∣ f j * ∏ i ∈ S, f i) :
     IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers (∏ i ∈ S, f i)) M))
       (∏ i ∈ T, f i)) := by
-  refine isUnit_of_dvd h ?_
+  refine IsUnit.algebraMap_of_dvd ?_ h
   rw [map_mul]
   exact (IsLocalizedModule.isUnit_algebraMap_of_isUnit (.powers (∏ i ∈ S, f i))
-    (mkLinearMap _ M) hj).mul (isUnit_self _)
+    (mkLinearMap _ M) hj).mul
+    (IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _)
 
 private theorem rc_H {q : ℕ} {S T : Finset ι}
     (hTS : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers (∏ i ∈ S, f i)) M))
@@ -436,7 +406,7 @@ private theorem rc_H {q : ℕ} {S T : Finset ι}
   rw [rc_eq M f hTS, proj_of_card M f hT, H_apply, map_smul]
   congr 1
   refine restr_rc M f (isUnit_of_dvd_mul hj (prod_insert_dvd j T)) hTS
-    (isUnit_of_dvd (prod_insert_dvd j T) ?_) y
+    (IsUnit.algebraMap_of_dvd ?_ (prod_insert_dvd j T)) y
   rw [map_mul]
   exact (IsLocalizedModule.isUnit_algebraMap_of_isUnit (.powers (∏ i ∈ S, f i))
     (mkLinearMap _ M) hj).mul hTS
@@ -564,7 +534,7 @@ omit [LinearOrder ι] in
 private theorem isUnit_of_mem_range {r : Set.range f} {j : ι} (hj : f j = r.1) :
     IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers r.1) M)) (f j)) := by
   rw [hj]
-  exact isUnit_self _
+  exact IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _
 
 private theorem injective_D_zero_of_span [Finite ι] (hf : Ideal.span (Set.range f) = ⊤) :
     Function.Injective (D M f 0) := by
