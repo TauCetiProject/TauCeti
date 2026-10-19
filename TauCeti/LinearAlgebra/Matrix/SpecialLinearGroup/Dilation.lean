@@ -23,8 +23,8 @@ by hyperbolic distance `|s|`, upward for `s > 0` and downward for `s < 0`.
 ## Main declarations
 
 * `Matrix.SpecialLinearGroup.dilation`: the dilation matrix, with entries `coe_dilation`.
-* `Matrix.SpecialLinearGroup.dilation_add`, `dilation_inv`: the family is a one-parameter
-  subgroup.
+* `Matrix.SpecialLinearGroup.dilation_add`, `dilation_inv`, `dilation_zpow`: the family is a
+  one-parameter subgroup.
 * `Matrix.SpecialLinearGroup.eq_dilation_two_mul_log`: every diagonal matrix of `SL(2, ℝ)` with
   positive entries is a dilation.
 -/
@@ -66,6 +66,21 @@ theorem dilation_add (s t : ℝ) : dilation (s + t) = dilation s * dilation t :=
 @[simp]
 theorem dilation_inv (s : ℝ) : (dilation s)⁻¹ = dilation (-s) :=
   inv_eq_of_mul_eq_one_right (by rw [← dilation_add, add_neg_cancel, dilation_zero])
+
+/-- The integer powers of `dilation s` are the dilations by the integer multiples of `s`. -/
+theorem dilation_zpow (s : ℝ) (k : ℤ) : dilation s ^ k = dilation (k * s) := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+      rw [zpow_add_one, ih, ← dilation_add]
+      congr 1
+      push_cast
+      ring
+  | pred n ih =>
+      rw [zpow_sub_one, ih, dilation_inv, ← dilation_add]
+      congr 1
+      push_cast
+      ring
 
 /-- A diagonal matrix of `SL(2, ℝ)` with positive entries is a dilation: the one by twice the
 logarithm of its top-left entry. -/
