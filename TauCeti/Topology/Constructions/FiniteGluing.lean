@@ -108,7 +108,8 @@ theorem isClosed_setOf_rel [T2Space X] : IsClosed {p : X × X | s p.1 p.2} := by
 quotient map is closed. -/
 theorem isClosedMap_quotient_mk [T1Space X] : IsClosedMap (Quotient.mk s) := by
   intro C hC
-  rw [← (isQuotientMap_quotient_mk s).isClosed_preimage]
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  rw [← hq.isClosed_preimage]
   have hsub : Quotient.mk s ⁻¹' (Quotient.mk s '' C) = C ∪ {y ∈ t | ∃ x ∈ C, s x y} := by
     refine Subset.antisymm ?_ ?_
     · rintro y ⟨x, hx, hxy⟩

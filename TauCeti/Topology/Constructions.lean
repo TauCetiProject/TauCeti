@@ -14,7 +14,6 @@ This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s 
 
 ## Main results
 
-* `Setoid.isQuotientMap_quotient_mk`: `Quotient.mk s` is a quotient map.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
@@ -28,11 +27,6 @@ namespace Setoid
 
 variable {X : Type*} [TopologicalSpace X] (s : Setoid X)
 
-/-- `Quotient.mk s` is a quotient map; `isQuotientMap_quotient_mk'` states this for the
-definitionally equal `Quotient.mk'`. -/
-theorem isQuotientMap_quotient_mk : IsQuotientMap (Quotient.mk s) :=
-  isQuotientMap_quotient_mk'
-
 /-- The image in `Quotient s` of an open set closed under the relation `s` is open. -/
 theorem isOpen_image_quotient_mk {U : Set X} (hU : IsOpen U)
     (hsat : ∀ ⦃x y⦄, x ∈ U → s x y → y ∈ U) : IsOpen (Quotient.mk s '' U) := by
@@ -40,7 +34,8 @@ theorem isOpen_image_quotient_mk {U : Set X} (hU : IsOpen U)
     refine Subset.antisymm ?_ (subset_preimage_image _ _)
     rintro y ⟨x, hx, hxy⟩
     exact hsat hx (Quotient.exact hxy)
-  rwa [← (isQuotientMap_quotient_mk s).isOpen_preimage, hsatU]
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  rwa [← hq.isOpen_preimage, hsatU]
 
 /-- If every point of an open set `U` is related by `s` only to itself, then the quotient map
 restricted to `U` is an open embedding. -/
