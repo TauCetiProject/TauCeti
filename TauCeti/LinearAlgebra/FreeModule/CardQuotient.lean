@@ -33,10 +33,8 @@ for `k ≠ 0`.
   acting on `ι → R`.
 * `Matrix.card_quotient_range_mulVecLin_eq_pow`: over a discrete valuation ring, if `det A` is
   associated to `ϖ ^ k` for a uniformizer `ϖ`, the quotient has `q ^ k` elements.
-* `TauCeti.natCard_quotient_eq_natCard_quotient_span_det_equiv`: the comparison
-  for an inclusion equipped with a linear equivalence onto the submodule.
-* `TauCeti.finite_quotient_range_mulVecLin_of_associated_det`: finiteness of the image quotient
-  when the residue field is finite.
+* `TauCeti.finite_quotient_range_mulVecLin`: finiteness of the image quotient for a
+  square matrix with nonzero determinant when the residue field is finite.
 -/
 
 public section
@@ -131,43 +129,18 @@ end Matrix
 
 namespace TauCeti
 
-section PrincipalIdealDomain
-
-variable {R M : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
-  [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
-
-/-- The index of a lattice inclusion over a PID is the cardinality of the quotient by its
-determinant ideal. -/
-theorem natCard_quotient_eq_natCard_quotient_span_det_equiv (N : Submodule R M)
-    (e : M ≃ₗ[R] N) :
-    Nat.card (M ⧸ N) =
-      Nat.card (R ⧸ Ideal.span {LinearMap.det (N.subtype.comp e.toLinearMap)}) := by
-  have hinj : Function.Injective (N.subtype.comp e.toLinearMap) :=
-    N.subtype_injective.comp e.injective
-  have hdet : LinearMap.det (N.subtype.comp e.toLinearMap) ≠ 0 := by
-    intro hzero
-    exact (LinearMap.det_eq_zero_iff_ker_ne_bot.mp hzero) (LinearMap.ker_eq_bot.mpr hinj)
-  have hrange : LinearMap.range (N.subtype.comp e.toLinearMap) = N := by
-    rw [LinearMap.range_comp, LinearEquiv.range, Submodule.map_top, N.range_subtype]
-  simpa only [hrange] using
-    _root_.LinearMap.card_quotient_range_eq_card_quotient_span_det hdet
-
-end PrincipalIdealDomain
-
-section DiscreteValuationRing
-
 variable {R ι : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   [Fintype ι] [DecidableEq ι]
 
-/-- A square matrix over a DVR with determinant associated to a power of a uniformizer
-has finite cokernel when the residue field is finite. -/
-theorem finite_quotient_range_mulVecLin_of_associated_det (A : Matrix ι ι R)
-    [Finite (IsLocalRing.ResidueField R)] {π : R} (hπ : Irreducible π) {k : ℕ}
-    (hdet : Associated A.det (π ^ k)) : Finite ((ι → R) ⧸ LinearMap.range A.mulVecLin) := by
+/-- A square matrix over a discrete valuation ring with nonzero determinant has finite cokernel
+when the residue field is finite. -/
+theorem finite_quotient_range_mulVecLin {A : Matrix ι ι R}
+    [Finite (IsLocalRing.ResidueField R)] (hA : A.det ≠ 0) :
+    Finite ((ι → R) ⧸ LinearMap.range A.mulVecLin) := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  obtain ⟨k, hdet⟩ := IsDiscreteValuationRing.associated_pow_irreducible hA hπ
   apply Nat.finite_of_card_ne_zero
   rw [_root_.Matrix.card_quotient_range_mulVecLin_eq_pow hπ hdet]
   exact pow_ne_zero _ Nat.card_pos.ne'
-
-end DiscreteValuationRing
 
 end TauCeti

@@ -92,7 +92,9 @@ theorem measure_image_mulVec_univ_pi_integer (μ : Measure (ι → K)) [μ.IsAdd
     rw [AddSubgroup.index_eq_card]
     -- The quotient by a submodule is by definition the quotient by its additive subgroup.
     exact Matrix.card_quotient_range_mulVecLin_eq_pow hϖ hk
-  have _ : H.FiniteIndex := ⟨by rw [hindex]; exact pow_ne_zero _ Nat.card_pos.ne'⟩
+  have _ : H.FiniteIndex := AddSubgroup.finiteIndex_iff_finite_quotient.mpr
+    (TauCeti.finite_quotient_range_mulVecLin
+      (hk.ne_zero_iff.mpr (pow_ne_zero k hϖ.ne_zero)))
   have hH : MeasurableSet (H : Set (ι → 𝒪[K])) :=
     (isCompact_range (by fun_prop : Continuous A.mulVecLin)).isClosed.measurableSet
   have himage : j '' H = (A.map (algebraMap 𝒪[K] K)).mulVec '' range j := by
