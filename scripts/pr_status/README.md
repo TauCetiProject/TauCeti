@@ -47,6 +47,21 @@ reconciliation.
 The backfill updates label descriptions once, continues after individual errors,
 and reports failures. A rate limit stops the remaining pass visibly.
 
+PR-status batches checkpoint pending PR numbers and retry counts after each completed
+PR. The workflow restores the latest verified `pr-status-progress` artifact, including
+from failed runs, and uploads progress with `always()`. A retained quota deadline
+defers the next batch before any App reads. Finishing a resumed scan advances its
+watermark only to the original discovery time; the next scan overlaps that boundary
+to catch changes during the interruption. Active CI is refreshed when resuming.
+
+Restoration verifies the producing workflow and event through GitHub. A
+`pull_request_target` run executes trusted base code even when its recorded head
+repository is a fork; ordinary `pull_request` runs cannot supply progress. Other
+accepted events (`workflow_run` and `issue_comment`) must name upstream `main`.
+The former retry-only artifact is migrated at deployment. Missing/expired state
+uses the existing bounded time-window fallback; a hard runner loss before upload
+can repeat work since the last uploaded checkpoint.
+
 The workflows check out the exact policy revision used by Auto-merge, without
 persisting credentials. The workflow-pin tests require labels, the health report,
 and their tests to use that same revision. For local commands, check out that

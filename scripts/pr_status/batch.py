@@ -4,8 +4,8 @@ Usage: batch.py --since <ISO time> [--pr <number>]...
 
 pr-status.yml runs this once per burst of PR events instead of once per event. Its concurrency
 group admits one run at a time and keeps only the newest waiting one, so a burst of events costs at
-most two runs; each run reconciles every PR touched since the previous successful run started,
-which covers the events whose own runs were collapsed away.
+most two runs. A checkpoint preserves pending PRs and the discovery boundary,
+covering collapsed events without repeating a completed prefix after an interruption.
 
 A PR has had activity since T if any of these holds:
 
@@ -24,9 +24,13 @@ current state instead:
     what the opened/reopened events did, without letting later churn on a closed PR resurrect it.
 
 A rate limit or a configuration error (missing Zulip credentials, a listing past GitHub's cap) fails
-the run, so it is not counted as the watermark and the next run covers its window again. A single
-PR's failure does not: that PR is handed to the next run through --retry-out/--retry-in and retried
+the run. The next run resumes its pending work; only finishing the scan advances its watermark. A single
+PR's failure does not: that PR is handed to the next run through --state-out/--state-in and retried
 up to MAX_RETRIES times, so one broken PR cannot hold every later run back.
+
+Checkpoints contain PR numbers, retry counts, UTC window boundaries and a finite quota
+deadline; no PR bodies or credentials. A forced runner loss before artifact upload can
+repeat work from the last uploaded checkpoint. Missing state uses the workflow fallback.
 
 Requires authenticated gh, TAUCETI_REVIEW_RUNNER (for labels), and ZULIP_EMAIL/ZULIP_API_KEY.
 """
@@ -37,6 +41,10 @@ import argparse
 import datetime as dt
 import json
 import os
+import math
+from pathlib import Path
+import threading
+import time
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
@@ -142,92 +150,174 @@ def running_prs(heads: dict[str, list[int]], running: set[str], number: int) -> 
     return any(number in ns and s in running for s, ns in heads.items())
 
 
+def load_progress(path, since):
+    """Load a validated checkpoint, or start at the fallback window boundary.
+
+    A checkpoint records an unfinished scan's pending PRs and start time. Its
+    watermark advances to that scan's start, never to a later resuming run's
+    start, so events arriving during interruptions remain discoverable.
+    """
+    state = {"version": 1, "watermark": since, "active": None, "retry": {}, "blocked_until": 0}
+    if path and Path(path).is_file():
+        loaded = json.loads(Path(path).read_text())
+        # Migrate the former retry-only artifact on the first deployment.
+        if isinstance(loaded, dict) and all(k.isdigit() for k in loaded):
+            state['retry'] = loaded
+        else:
+            state = loaded
+    if not isinstance(state, dict) or state.get('version') != 1:
+        raise ValueError('Invalid progress version')
+    def timestamp(value):
+        if not isinstance(value, str):
+            raise ValueError('Invalid progress timestamp')
+        parsed = dt.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        if parsed.utcoffset() != dt.timedelta(0):
+            raise ValueError('Progress timestamps must be UTC')
+    timestamp(state['watermark'])
+    blocked = state['blocked_until']
+    if type(blocked) not in (int, float) or not 0 <= blocked < math.inf:
+        raise ValueError('Invalid quota deadline')
+    retry = state['retry']
+    if not isinstance(retry, dict) or any(not k.isdigit() or int(k) <= 0 or
+            type(v) is not int or not 1 <= v <= MAX_RETRIES for k, v in retry.items()):
+        raise ValueError('Invalid retry queue')
+    active = state['active']
+    if active is not None:
+        timestamp(active['started_at'])
+        for field in ('pending', 'opened'):
+            numbers = active[field]
+            if not isinstance(numbers, list) or any(type(n) is not int or n <= 0 for n in numbers) or len(set(numbers)) != len(numbers):
+                raise ValueError('Invalid pending PRs')
+        if not set(active['opened']) <= set(active['pending']):
+            raise ValueError('Opened PRs must still be pending')
+    return state
+
+
+def save_progress(path, state):
+    """Atomically checkpoint pending work, retries and this process's quota hold.
+
+    Called under the worker lock after each completed PR and in the outer
+    finally block. The workflow uploads this file even when reconciliation fails.
+    """
+    state['blocked_until'] = max(state['blocked_until'], core._BLOCKED_UNTIL)
+    if path:
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix('.tmp')
+        temporary.write_text(json.dumps(state, sort_keys=True))
+        temporary.replace(target)
+
+
+def currently_running(heads):
+    """Refresh active build heads on resume without rediscovering completed work."""
+    running = set()
+    for status in ACTIVE:
+        for run in workflow_runs('pr-build.yml', f'status={status}&event=pull_request_target'):
+            if run['head_sha'] in heads:
+                running.add(run['head_sha'])
+    return running
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--since", required=True, help="ISO-8601 UTC time")
+    ap.add_argument("--since", required=True, help="fallback window start, ISO-8601 UTC")
     ap.add_argument("--pr", type=int, action="append", default=[], help="a PR to reconcile regardless")
-    ap.add_argument("--dry-run", action="store_true", help="list the PRs that would be reconciled; write nothing")
-    ap.add_argument("--retry-in", help="JSON {pr: failed attempts} from the previous run, to retry")
-    ap.add_argument("--retry-out", help="where to write this run's {pr: failed attempts}")
+    ap.add_argument("--dry-run", action="store_true", help="list work; write nothing")
+    ap.add_argument("--state-in", help="previous progress/retries JSON checkpoint")
+    ap.add_argument("--state-out", help="where to checkpoint progress, including on failure")
     args = ap.parse_args(argv)
-
-    heads = open_heads()
-    by_update, opened = updated_prs(args.since)
-    by_runs, running = touched_by_runs(args.since, heads)
-    retry = {}
-    if args.retry_in and os.path.exists(args.retry_in):
-        try:
-            retry = {int(k): int(v) for k, v in json.load(open(args.retry_in)).items()}
-        except (ValueError, OSError):
-            retry = {}
-    ordered = list(dict.fromkeys(args.pr + by_update + sorted(by_runs) + sorted(retry)))
-    log(f"since {args.since}: {len(ordered)} PRs to reconcile "
-        f"({len(by_update)} updated, {len(by_runs)} with build or review runs, {len(args.pr)} named)")
-
-    if args.dry_run:
-        log(f"opened in the window: {sorted(opened)}")
-        for number in ordered:
-            log(f"would reconcile #{number}" + (" (CI running)" if running_prs(heads, running, number) else ""))
-        return 0
-
-    email = (os.environ.get("ZULIP_EMAIL") or "").strip()
-    api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
-    if not (email and api_key):
-        return zulip.fail_config("ZULIP_EMAIL / ZULIP_API_KEY not set (no bot configured)")
-    z = zulip.Zulip(email, api_key, (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip())
+    state = load_progress(args.state_in, args.since)
+    output = None if args.dry_run else args.state_out
+    lock = threading.Lock()
     try:
-        bot_id = z.my_user_id()
-    except zulip.ConfigError as exc:
-        return zulip.fail_config(str(exc))
-
-    label_failures, zulip_failures, stop = [], [], []
-
-    def one(number: int):
-        if stop:
-            return
+        if state['blocked_until'] > time.time():
+            log(f"deferred until epoch {state['blocked_until']}; pending work retained")
+            return 0 if args.dry_run else 1
+        if state['active'] is None:
+            started = iso(dt.datetime.now(dt.timezone.utc))
+            since = iso(dt.datetime.fromisoformat(state['watermark'].replace('Z', '+00:00')) - dt.timedelta(minutes=2))
+            heads = open_heads()
+            by_update, opened = updated_prs(since)
+            by_runs, running = touched_by_runs(since, heads)
+            ordered = list(dict.fromkeys(args.pr + by_update + sorted(by_runs) + sorted(int(n) for n in state['retry'])))
+            state['active'] = {"started_at": started, "pending": ordered,
+                               "opened": sorted(set(ordered) & opened)}
+        else:
+            active = state['active']
+            active['pending'] = list(dict.fromkeys(args.pr + active['pending']))
+            # Refresh current CI rather than displaying the old scan's running flag.
+            heads = open_heads()
+            running = currently_running(heads)
+        active = state['active']
+        ordered, opened = list(active['pending']), set(active['opened'])
+        log(f"scan {active['started_at']}: {len(ordered)} pending PRs; {len(state['retry'])} queued retries")
+        if args.dry_run:
+            for number in ordered:
+                log(f"would reconcile #{number}")
+            return 0
+        save_progress(output, state)
+        email, api_key = (os.environ.get('ZULIP_EMAIL') or '').strip(), (os.environ.get('ZULIP_API_KEY') or '').strip()
+        if not (email and api_key):
+            return zulip.fail_config('ZULIP_EMAIL / ZULIP_API_KEY not set (no bot configured)')
+        z = zulip.Zulip(email, api_key, (os.environ.get('ZULIP_SITE') or 'https://leanprover.zulipchat.com').strip())
         try:
-            labels.reconcile(str(number))
-        except core.RateLimited as exc:
-            stop.append(f"rate limited: {exc}")
-            return
-        except Exception as exc:  # one PR's failure must not starve the rest
-            label_failures.append(number)
-            log(f"PR #{number}: label reconciliation failed: {exc}")
-        ci = "running" if running_prs(heads, running, number) else None
-        try:
-            # A PR opened in this window gets its post unconditionally, as the `opened` event did;
-            # any other gets one only while open, so churn on a closed PR never creates a late post.
-            zulip.reconcile(z, str(number), number in opened, ci, bot_id=bot_id, create_if_open=True)
+            bot_id = z.my_user_id()
         except zulip.ConfigError as exc:
-            stop.append(f"Zulip configuration: {exc}")
-        except core.RateLimited as exc:
-            stop.append(f"rate limited: {exc}")
-        except Exception as exc:
-            zulip_failures.append(number)
-            log(f"PR #{number}: Zulip reconciliation failed: {exc}")
+            return zulip.fail_config(str(exc))
+        stop, failures = [], []
 
-    with ThreadPoolExecutor(max_workers=PARALLEL) as pool:
-        list(pool.map(one, ordered))
-    if stop:
-        if stop[0].startswith("Zulip"):
-            return zulip.fail_config(stop[0])
-        log(f"stopping: {stop[0]}")
-        return 1
-    log(f"done: {len(ordered)} PRs; label failures {label_failures}; Zulip failures {zulip_failures}")
-    # A PR that failed is retried by the next run (up to MAX_RETRIES times) rather than failing this
-    # one: a failed run would hold the watermark back, and one PR that keeps failing would then make
-    # every later run redo an ever-growing window. Rate limits and configuration errors, which are
-    # not about one PR, do fail the run (above).
-    failed = set(label_failures) | set(zulip_failures)
-    carry = {n: retry.get(n, 0) + 1 for n in failed if retry.get(n, 0) + 1 <= MAX_RETRIES}
-    dropped = sorted(n for n in failed if n not in carry)
-    if dropped:
-        log(f"::warning::giving up on PRs after {MAX_RETRIES} failed attempts: {dropped} "
-            "(the hourly sweep in pr-labels.yml still reconciles their labels)")
-    if args.retry_out:
-        with open(args.retry_out, "w") as fh:
-            json.dump({str(k): v for k, v in carry.items()}, fh)
-    return 0
+        def one(number):
+            if stop:
+                return
+            failed = False
+            try:
+                labels.reconcile(str(number))
+            except core.RateLimited as exc:
+                stop.append(str(exc))
+                return
+            except Exception as exc:
+                failed = True
+                log(f"PR #{number}: label reconciliation failed: {exc}")
+            try:
+                ci = 'running' if running_prs(heads, running, number) else None
+                zulip.reconcile(z, str(number), number in opened, ci, bot_id=bot_id, create_if_open=True)
+            except (zulip.ConfigError, core.RateLimited) as exc:
+                stop.append(str(exc))
+                return
+            except Exception as exc:
+                failed = True
+                log(f"PR #{number}: Zulip reconciliation failed: {exc}")
+            with lock:
+                key = str(number)
+                if failed:
+                    failures.append(number)
+                    attempt = state['retry'].get(key, 0) + 1
+                    if attempt <= MAX_RETRIES:
+                        state['retry'][key] = attempt
+                    else:
+                        state['retry'].pop(key, None)
+                        log(f"::warning::giving up on PR #{number} after {MAX_RETRIES} retries")
+                else:
+                    state['retry'].pop(key, None)
+                active['pending'].remove(number)
+                if number in active['opened']:
+                    active['opened'].remove(number)
+                save_progress(output, state)
+
+        with ThreadPoolExecutor(max_workers=PARALLEL) as pool:
+            list(pool.map(one, ordered))
+        if stop:
+            log(f"stopping: {stop[0]}; {len(active['pending'])} PRs retained")
+            return 1
+        # A resumed run's creation time would skip changes that arrived after
+        # the original scan. Advance only to the original discovery boundary.
+        state['watermark'] = active['started_at']
+        state['active'] = None
+        log(f"done: {len(ordered)} PRs; failures queued for retry: {failures}")
+        return 0
+    finally:
+        if not args.dry_run:
+            save_progress(output, state)
 
 
 if __name__ == "__main__":

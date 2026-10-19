@@ -131,6 +131,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
           python3 scripts/test_stack_policy.py
           python3 scripts/pr_status/test_pr_labels.py
+          python3 scripts/pr_status/test_batch.py
           python3 scripts/pr_status/test_zulip.py
           python3 scripts/pr_status/test_conflicts.py
           python3 scripts/test_structure_nudge.py
