@@ -12,6 +12,8 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.PowerSeries.Inverse
+import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 
 /-!
@@ -27,10 +29,11 @@ q = ∑ₙ (∑ₖ a_{n+d+k} bₖ) Xⁿ
 
 converges coefficientwise, is again entire, and satisfies `f = p * q + r` for a polynomial `r` of
 degree less than `d`. The coefficients `bₖ` grow at most geometrically, which is what makes the
-inner sums converge however fast the radius of `f` is tested. Over an ultrametric ring with
-`‖1‖ = 1`, a monic polynomial is distinguished of its degree at every large radius, so the
-Weierstrass division estimate makes `q` and `r` unique among divisions with entire quotient. In
-particular they agree with ordinary polynomial division when `f` is a polynomial.
+inner sums converge however fast the radius of `f` is tested
+(`PowerSeries.norm_coeff_invOfUnit_coe_le`). When `f` is a polynomial, `q` and `r` are the
+quotient and remainder of ordinary polynomial division. Over an ultrametric ring with `‖1‖ = 1`,
+a monic polynomial is distinguished of its degree at every large radius, so the Weierstrass
+division estimate makes `q` and `r` unique among divisions with entire quotient.
 
 This is the division of entire series by polynomials used in the Fredholm theory of compact
 operators, whose Fredholm determinants are entire series.
@@ -43,18 +46,21 @@ operators, whose Fredholm determinants are entire series.
 
 ## Main results
 
-* `PowerSeries.norm_coeff_invOfUnit_coe_le`: the inverse of a polynomial with invertible constant
-  coefficient has geometrically bounded coefficients.
 * `PowerSeries.hasSum_coeff_divByMonic`: for entire `f`, the coefficients of `q` are the sums
   `∑ₖ a_{n+d+k} bₖ`.
 * `PowerSeries.IsEntire.divByMonic`: the quotient of an entire series is entire.
 * `PowerSeries.IsEntire.modByMonic_add_divByMonic`: the division identity `r + p * q = f`.
-* `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
-  with entire quotient and remainder of degree less than `d` is this one.
-* `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: the remainder vanishes exactly when `p` divides
-  `f` with entire quotient.
+* `PowerSeries.IsEntire.add_divByMonic` and `PowerSeries.IsEntire.smul_divByMonic`, with their
+  `modByMonic` companions: on entire series, quotient and remainder are additive and
+  `R`-linear.
 * `PowerSeries.divByMonic_coe` and `PowerSeries.modByMonic_coe`: on polynomials, these are
   `Polynomial.divByMonic` and `Polynomial.modByMonic`.
+* `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
+  with entire quotient and remainder of degree less than `d` is this one.
+* `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
+  `‖1‖ = 1`, dividing `p * q` by `p` returns `q` for entire `q`.
+* `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
+  remainder vanishes exactly when `p` divides `f` with entire quotient.
 
 ## References
 
@@ -68,56 +74,6 @@ namespace PowerSeries
 
 open Filter Finset
 open scoped Topology
-
-section NormedRing
-
-variable {R : Type*} [NormedRing R]
-
-/-- **Geometric growth of the inverse of a polynomial.** If the constant coefficient of a
-polynomial `p` is a unit `u`, the coefficients of the power series inverse of `p` are bounded by
-`‖u⁻¹‖ * (1 + ‖u⁻¹‖ * ∑ᵢ ‖pᵢ‖) ^ k`. -/
-theorem norm_coeff_invOfUnit_coe_le (p : Polynomial R) (u : Rˣ) (k : ℕ) :
-    ‖coeff k (invOfUnit (p : R⟦X⟧) u)‖ ≤
-      ‖(↑u⁻¹ : R)‖ * (1 + ‖(↑u⁻¹ : R)‖ * ∑ i ∈ p.support, ‖p.coeff i‖) ^ k := by
-  set A := ‖(↑u⁻¹ : R)‖
-  set s := ∑ i ∈ p.support, ‖p.coeff i‖
-  have hA : 0 ≤ A := norm_nonneg _
-  have hs : 0 ≤ s := sum_nonneg fun _ _ ↦ norm_nonneg _
-  have hC : 1 ≤ 1 + A * s := le_add_of_nonneg_right (mul_nonneg hA hs)
-  induction k using Nat.strong_induction_on with
-  | _ k ih =>
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · simp [coeff_invOfUnit, A]
-  rw [coeff_invOfUnit, ite_eq_right hk.ne', neg_mul, norm_neg]
-  simp only [Polynomial.coeff_coe]
-  -- Each term of the recursion is bounded by `‖pᵢ‖ * A * C ^ (k - 1)`.
-  have hterm (x : ℕ × ℕ) : ‖if x.2 < k then p.coeff x.1 * coeff x.2 (invOfUnit (p : R⟦X⟧) u)
-      else 0‖ ≤ ‖p.coeff x.1‖ * (A * (1 + A * s) ^ (k - 1)) := by
-    split_ifs with hx
-    · refine (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-      exact (ih x.2 hx).trans (mul_le_mul_of_nonneg_left
-        (pow_le_pow_right₀ hC (by omega)) hA)
-    · rw [norm_zero]
-      positivity
-  have hsupp : ∑ x ∈ antidiagonal k, ‖p.coeff x.1‖ ≤ s := by
-    rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk, ← sum_filter_of_ne (p := (· ∈ p.support))
-      fun i _ hi ↦ Polynomial.mem_support_iff.mpr fun h ↦ hi (by simp [h])]
-    exact sum_le_sum_of_subset_of_nonneg (fun _ hi ↦ (mem_filter.mp hi).2)
-      fun _ _ _ ↦ norm_nonneg _
-  calc ‖(↑u⁻¹ : R) * ∑ x ∈ antidiagonal k, if x.2 < k then
-          p.coeff x.1 * coeff x.2 (invOfUnit (p : R⟦X⟧) u) else 0‖
-      ≤ A * ∑ x ∈ antidiagonal k, ‖p.coeff x.1‖ * (A * (1 + A * s) ^ (k - 1)) :=
-        (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left
-          ((norm_sum_le _ _).trans (sum_le_sum fun x _ ↦ hterm x)) hA)
-    _ ≤ A * (s * (A * (1 + A * s) ^ (k - 1))) := by
-        rw [← sum_mul]
-        gcongr
-    _ = A * (A * s) * (1 + A * s) ^ (k - 1) := by ring
-    _ ≤ A * (1 + A * s) * (1 + A * s) ^ (k - 1) := by gcongr; linarith
-    _ = A * (1 + A * s) ^ k := by
-        rw [mul_assoc, ← pow_succ', Nat.sub_add_cancel hk]
-
-end NormedRing
 
 section TopologicalRing
 
@@ -174,6 +130,17 @@ theorem divByMonic_one (f : R⟦X⟧) : f.divByMonic 1 = f := by
 theorem modByMonic_one (f : R⟦X⟧) : f.modByMonic 1 = 0 := by
   ext n
   simp [coeff_modByMonic]
+
+/-- The quotient of `0` is `0`. -/
+@[simp]
+theorem zero_divByMonic (p : Polynomial R) : (0 : R⟦X⟧).divByMonic p = 0 := by
+  ext n
+  simp [coeff_divByMonic]
+
+/-- The remainder of `0` is `0`. -/
+@[simp]
+theorem zero_modByMonic (p : Polynomial R) : (0 : R⟦X⟧).modByMonic p = 0 := by
+  simp [modByMonic]
 
 end TopologicalRing
 
@@ -239,13 +206,6 @@ theorem IsEntire.divByMonic (hf : f.IsEntire) (p : Polynomial R) : (f.divByMonic
         rw [div_pow]
         ring
 
-/-- Coefficients of the product of a polynomial and a power series, expanded along the
-monomials of the polynomial. -/
-private theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p.natDegree < N)
-    (n : ℕ) : coeff n ((p : R⟦X⟧) * g) = ∑ i ∈ range N, p.coeff i * coeff n (X ^ i * g) := by
-  rw [← Polynomial.eval₂_C_X_eq_coe, Polynomial.eval₂_eq_sum_range' _ hN, sum_mul, map_sum]
-  simp [mul_assoc, coeff_C_mul]
-
 variable [CompleteSpace R]
 
 /-- **The coefficient formula for entire division.** For an entire series `f`, the sums defining
@@ -306,6 +266,78 @@ theorem IsEntire.modByMonic_add_divByMonic (hf : f.IsEntire) (hp : p.Monic) :
   · rw [map_sub, sub_add_cancel]
   · rw [zero_add, hf.coeff_coe_mul_divByMonic hp (not_lt.mp hm)]
 
+/-- On entire series, the quotient is additive. -/
+theorem IsEntire.add_divByMonic {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire)
+    (p : Polynomial R) : (f + g).divByMonic p = f.divByMonic p + g.divByMonic p := by
+  ext n
+  rw [map_add, coeff_divByMonic]
+  simp_rw [map_add, add_mul]
+  exact ((hasSum_coeff_divByMonic hf p n).add (hasSum_coeff_divByMonic hg p n)).tsum_eq
+
+/-- On entire series, the remainder is additive. -/
+theorem IsEntire.add_modByMonic {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire)
+    (p : Polynomial R) : (f + g).modByMonic p = f.modByMonic p + g.modByMonic p := by
+  rw [modByMonic, modByMonic, modByMonic, hf.add_divByMonic hg, ← map_add]
+  congr 1
+  ring
+
+/-- On entire series, the quotient commutes with scalar multiplication. -/
+theorem IsEntire.smul_divByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
+    (a • f).divByMonic p = a • f.divByMonic p := by
+  ext n
+  rw [coeff_smul, coeff_divByMonic]
+  simp_rw [coeff_smul, smul_eq_mul, mul_assoc]
+  exact ((hasSum_coeff_divByMonic hf p n).mul_left a).tsum_eq
+
+/-- On entire series, the remainder commutes with scalar multiplication. -/
+theorem IsEntire.smul_modByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
+    (a • f).modByMonic p = a • f.modByMonic p := by
+  rw [modByMonic, modByMonic, hf.smul_divByMonic, ← map_smul, mul_smul_comm, smul_sub]
+
+/-- On a polynomial, entire division is polynomial division: the quotient vanishes past the
+degree of the polynomial, so the division identity is one of polynomials. -/
+private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
+    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) ∧ (g : R⟦X⟧).modByMonic p = g %ₘ p := by
+  nontriviality R
+  set q := (g : R⟦X⟧).divByMonic p
+  have hq : q = (trunc (g.natDegree + 1) q : R⟦X⟧) := by
+    ext n
+    rw [Polynomial.coeff_coe, coeff_trunc]
+    split_ifs with hn
+    · rfl
+    rw [coeff_divByMonic]
+    refine (tsum_congr fun k ↦ ?_).trans tsum_zero
+    rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
+  have hdiv : ((g : R⟦X⟧).modByMonic p : R⟦X⟧) + p * q = g :=
+    (isEntire_coe g).modByMonic_add_divByMonic hp
+  rw [hq, ← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.coe_inj] at hdiv
+  obtain ⟨h₁, h₂⟩ := Polynomial.div_modByMonic_unique _ _ hp
+    ⟨hdiv, degree_modByMonic_lt _ hp.ne_zero⟩
+  exact ⟨hq.trans (by rw [h₁]), h₂.symm⟩
+
+/-- On a polynomial, the quotient of entire division is the quotient of polynomial division. -/
+@[simp]
+theorem divByMonic_coe (g : Polynomial R) (hp : p.Monic) :
+    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) :=
+  (divByMonic_coe_and_modByMonic_coe g hp).1
+
+/-- On a polynomial, the remainder of entire division is the remainder of polynomial division. -/
+@[simp]
+theorem modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
+    (g : R⟦X⟧).modByMonic p = g %ₘ p :=
+  (divByMonic_coe_and_modByMonic_coe g hp).2
+
+/-- A polynomial of degree less than `p` has quotient `0` on division by `p`. -/
+theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
+    (hg : g.degree < p.degree) : (g : R⟦X⟧).divByMonic p = 0 := by
+  rw [divByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).1,
+    Polynomial.coe_zero]
+
+/-- A polynomial of degree less than `p` is its own remainder on division by `p`. -/
+theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
+    (hg : g.degree < p.degree) : (g : R⟦X⟧).modByMonic p = g := by
+  rw [modByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).2]
+
 section Ultrametric
 
 variable [IsUltrametricDist R] [NormOneClass R]
@@ -318,16 +350,9 @@ theorem divByMonic_modByMonic_unique (q : R⟦X⟧) (r : Polynomial R) (hp : p.M
     f.divByMonic p = q ∧ f.modByMonic p = r := by
   obtain ⟨rfl, hr⟩ := h
   have hf : ((r : R⟦X⟧) + p * q).IsEntire := (isEntire_coe r).add ((isEntire_coe p).mul hq)
-  -- `p` is distinguished of its degree at a radius bounding all its coefficients.
-  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
-  have hc (i : ℕ) : ‖p.coeff i‖ ≤ c := by
-    by_cases hi : i ∈ p.support
-    · exact (single_le_sum (fun j _ ↦ norm_nonneg (p.coeff j)) hi).trans (le_add_of_nonneg_left
-        zero_le_one)
-    · rw [Polynomial.notMem_support_iff.mp hi, norm_zero]
-      exact add_nonneg zero_le_one (sum_nonneg fun _ _ ↦ norm_nonneg _)
   have : Nontrivial R := NormOneClass.nontrivial
-  have hdist := hp.isDistinguished hc
+  have hdist := hp.isDistinguished_one_add_sum_norm_coeff
+  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
   have hc0 : 0 < c := by positivity
   have hrem (r' : Polynomial R) (hr' : r'.degree < p.degree) :
       ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun m hm ↦ by
@@ -342,34 +367,35 @@ theorem divByMonic_modByMonic_unique (q : R⟦X⟧) (r : Polynomial R) (hp : p.M
     (hrem _ (degree_modByMonic_lt _ hp.ne_zero)) (hrem r hr) (by linear_combination hdiv)
   exact ⟨hq', Polynomial.coe_inj.mp hr'⟩
 
-/-- An entire series leaves no remainder on division by a monic polynomial `p` exactly when it
-is `p` times an entire series. -/
+/-- Dividing `p * q` by `p`, for entire `q`, gives quotient `q` and remainder `0`. -/
+private theorem IsEntire.coe_mul_divByMonic_and_modByMonic {q : R⟦X⟧} (hq : q.IsEntire)
+    (hp : p.Monic) :
+    ((p : R⟦X⟧) * q).divByMonic p = q ∧ ((p : R⟦X⟧) * q).modByMonic p = 0 := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  refine divByMonic_modByMonic_unique q 0 hp hq ⟨by simp, ?_⟩
+  rw [Polynomial.degree_zero, bot_lt_iff_ne_bot, Ne, Polynomial.degree_eq_bot]
+  exact hp.ne_zero
+
+/-- Over an ultrametric ring with `‖1‖ = 1`, dividing `p * q` by the monic polynomial `p`, for
+entire `q`, returns `q`. -/
+theorem IsEntire.coe_mul_divByMonic_cancel_left {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Monic) :
+    ((p : R⟦X⟧) * q).divByMonic p = q :=
+  (hq.coe_mul_divByMonic_and_modByMonic hp).1
+
+/-- Over an ultrametric ring with `‖1‖ = 1`, `p * q` leaves no remainder on division by the
+monic polynomial `p`, for entire `q`. -/
+theorem IsEntire.coe_mul_modByMonic {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Monic) :
+    ((p : R⟦X⟧) * q).modByMonic p = 0 :=
+  (hq.coe_mul_divByMonic_and_modByMonic hp).2
+
+/-- Over an ultrametric ring with `‖1‖ = 1`, an entire series leaves no remainder on division by
+a monic polynomial `p` exactly when it is `p` times an entire series. -/
 theorem IsEntire.modByMonic_eq_zero_iff (hf : f.IsEntire) (hp : p.Monic) :
     f.modByMonic p = 0 ↔ ∃ q : R⟦X⟧, q.IsEntire ∧ f = p * q := by
   refine ⟨fun h ↦ ⟨f.divByMonic p, hf.divByMonic p, ?_⟩, fun ⟨q, hq, hfq⟩ ↦ ?_⟩
   · simpa [h] using (hf.modByMonic_add_divByMonic hp).symm
-  · have : Nontrivial R := NormOneClass.nontrivial
-    refine (divByMonic_modByMonic_unique q 0 hp hq ⟨by simp [hfq], ?_⟩).2
-    rw [Polynomial.degree_zero, bot_lt_iff_ne_bot, Ne, Polynomial.degree_eq_bot]
-    exact hp.ne_zero
-
-/-- On a polynomial, the quotient of entire division is the quotient of polynomial division. -/
-@[simp]
-theorem divByMonic_coe (g : Polynomial R) (hp : p.Monic) :
-    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) := by
-  have : Nontrivial R := NormOneClass.nontrivial
-  refine (divByMonic_modByMonic_unique _ (g %ₘ p) hp (isEntire_coe _) ⟨?_,
-    Polynomial.degree_modByMonic_lt g hp⟩).1
-  rw [← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.modByMonic_add_div g p]
-
-/-- On a polynomial, the remainder of entire division is the remainder of polynomial division. -/
-@[simp]
-theorem modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
-    (g : R⟦X⟧).modByMonic p = g %ₘ p := by
-  have : Nontrivial R := NormOneClass.nontrivial
-  refine (divByMonic_modByMonic_unique (g /ₘ p : Polynomial R) _ hp (isEntire_coe _) ⟨?_,
-    Polynomial.degree_modByMonic_lt g hp⟩).2
-  rw [← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.modByMonic_add_div g p]
+  · rw [hfq]
+    exact hq.coe_mul_modByMonic hp
 
 end Ultrametric
 
