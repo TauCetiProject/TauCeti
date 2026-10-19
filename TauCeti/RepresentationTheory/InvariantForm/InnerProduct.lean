@@ -11,13 +11,14 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates
 
 /-!
-# Invariant inner products for finite group actions
+# Invariant inner products for finite actions
 
-A real inner product can be summed over a finite group action by linear automorphisms.  The
-resulting positive-definite symmetric bilinear form is preserved by the action, without any
-faithfulness assumption.  Its positive sublevel sets are invariant neighbourhoods of the origin,
-open in finite dimensions, and arbitrarily small such sublevel sets fit inside a prescribed open
-neighbourhood.
+A real inner product can be summed over a finite monoid representation.  The resulting
+positive-definite symmetric bilinear form controls the original norm, and its positive strict
+sublevel sets are neighbourhoods of the origin, open in finite dimensions; arbitrarily small such
+sublevel sets fit inside a prescribed open neighbourhood.  When the monoid is a group, so that it
+acts by linear automorphisms, the form is preserved by the action, without any faithfulness
+assumption, and so are its sublevel sets.
 
 These invariant ellipsoids are the linear-algebraic shrinking device in finite-action charts: an
 equivariant chart about a fixed point can be restricted to an invariant ball while retaining every
@@ -33,10 +34,12 @@ linearization; see S. Bochner, *Compact groups of differentiable transformations
 
 * `Representation.posDef_toQuadraticMap_sumOfConjugatesForm_inner`: the orbit-sum inner product is
   positive definite.
-* `Representation.invariantInnerSublevel`: its invariant sublevel sets, open in finite
+* `Representation.sumOfConjugatesInnerSublevel`: its strict sublevel sets, open in finite
   dimensions.
-* `Representation.exists_pos_invariantInnerSublevel_subset`: arbitrarily small invariant sublevel
-  sets exist.
+* `Representation.exists_pos_sumOfConjugatesInnerSublevel_subset`: arbitrarily small such
+  sublevel sets exist.
+* `Representation.preimage_sumOfConjugatesInnerSublevel`: for a group, every element preserves
+  these sublevel sets.
 -/
 
 public section
@@ -58,12 +61,10 @@ theorem sumOfConjugatesForm_inner_apply_self (ρ : Representation ℝ G V) (x : 
 
 /-- The orbit-sum inner product is positive definite. -/
 theorem posDef_toQuadraticMap_sumOfConjugatesForm_inner (ρ : Representation ℝ G V) :
-    (sumOfConjugatesForm ρ (innerₗ V)).toQuadraticMap.PosDef := by
-  intro x hx
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, sumOfConjugatesForm_inner_apply_self]
-  refine Finset.sum_pos' (fun g _ ↦ sq_nonneg ‖ρ g x‖) ⟨1, Finset.mem_univ _, ?_⟩
-  rw [map_one, Module.End.one_apply]
-  exact pow_pos (norm_pos_iff.mpr hx) 2
+    (sumOfConjugatesForm ρ (innerₗ V)).toQuadraticMap.PosDef :=
+  posDef_toQuadraticMap_sumOfConjugatesForm fun x hx ↦ by
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, innerₗ_apply_apply]
+    exact real_inner_self_pos.mpr hx
 
 /-- The orbit-sum quadratic value varies continuously in finite dimensions. -/
 theorem continuous_sumOfConjugatesForm_inner_apply_self [FiniteDimensional ℝ V]
@@ -76,33 +77,34 @@ theorem continuous_sumOfConjugatesForm_inner_apply_self [FiniteDimensional ℝ V
 /-- The orbit-sum inner product controls the original squared norm through the identity summand. -/
 theorem norm_sq_le_sumOfConjugatesForm_inner_apply_self (ρ : Representation ℝ G V) (x : V) :
     ‖x‖ ^ 2 ≤ sumOfConjugatesForm ρ (innerₗ V) x x := by
-  rw [sumOfConjugatesForm_inner_apply_self]
-  have h := Finset.single_le_sum (fun g _ ↦ sq_nonneg ‖ρ g x‖) (Finset.mem_univ (1 : G))
-  rwa [map_one, Module.End.one_apply] at h
+  have h := le_sumOfConjugatesForm_apply_self (σ := ρ) (B := innerₗ V)
+    (fun _ ↦ real_inner_self_nonneg) x
+  rwa [innerₗ_apply_apply, real_inner_self_eq_norm_sq] at h
 
-/-- The positive sublevel set of the orbit-sum inner product.  The parameter is its squared
-radius. -/
-def invariantInnerSublevel (ρ : Representation ℝ G V) (c : ℝ) : Set V :=
+/-- The strict sublevel set `{x | ∑ g, ‖ρ g x‖ ^ 2 < c}` of the orbit-sum inner product; the
+parameter `c` is a squared radius, and the set is nonempty exactly when `0 < c`.  When `G` is a
+group the set is `ρ`-invariant (`Representation.preimage_sumOfConjugatesInnerSublevel`). -/
+def sumOfConjugatesInnerSublevel (ρ : Representation ℝ G V) (c : ℝ) : Set V :=
   {x | sumOfConjugatesForm ρ (innerₗ V) x x < c}
 
 @[simp]
-theorem mem_invariantInnerSublevel (ρ : Representation ℝ G V) {c : ℝ} {x : V} :
-    x ∈ ρ.invariantInnerSublevel c ↔ sumOfConjugatesForm ρ (innerₗ V) x x < c := Iff.rfl
+theorem mem_sumOfConjugatesInnerSublevel (ρ : Representation ℝ G V) {c : ℝ} {x : V} :
+    x ∈ ρ.sumOfConjugatesInnerSublevel c ↔ sumOfConjugatesForm ρ (innerₗ V) x x < c := Iff.rfl
 
-/-- Invariant inner sublevel sets are open in finite dimensions. -/
-theorem isOpen_invariantInnerSublevel [FiniteDimensional ℝ V] (ρ : Representation ℝ G V)
-    (c : ℝ) : IsOpen (ρ.invariantInnerSublevel c) :=
+/-- The orbit-sum inner sublevel sets are open in finite dimensions. -/
+theorem isOpen_sumOfConjugatesInnerSublevel [FiniteDimensional ℝ V] (ρ : Representation ℝ G V)
+    (c : ℝ) : IsOpen (ρ.sumOfConjugatesInnerSublevel c) :=
   isOpen_lt ρ.continuous_sumOfConjugatesForm_inner_apply_self continuous_const
 
-/-- Every open neighbourhood of the origin contains a positive invariant inner sublevel set. -/
-theorem exists_pos_invariantInnerSublevel_subset (ρ : Representation ℝ G V) {U : Set V}
+/-- Every open neighbourhood of the origin contains a positive orbit-sum inner sublevel set. -/
+theorem exists_pos_sumOfConjugatesInnerSublevel_subset (ρ : Representation ℝ G V) {U : Set V}
     (hU : IsOpen U) (h0 : 0 ∈ U) :
-    ∃ c > 0, ρ.invariantInnerSublevel c ⊆ U := by
+    ∃ c > 0, ρ.sumOfConjugatesInnerSublevel c ⊆ U := by
   obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 hU 0 h0
   refine ⟨r ^ 2, pow_pos hr 2, fun x hx ↦ hrU ?_⟩
   rw [Metric.mem_ball, dist_zero_right]
   have hsq := (ρ.norm_sq_le_sumOfConjugatesForm_inner_apply_self x).trans_lt
-    ((ρ.mem_invariantInnerSublevel).1 hx)
+    ((ρ.mem_sumOfConjugatesInnerSublevel).1 hx)
   exact (pow_lt_pow_iff_left₀ (norm_nonneg x) hr.le two_ne_zero).1 hsq
 
 end Monoid
@@ -112,12 +114,12 @@ section Group
 variable {G V : Type*} [Group G] [Fintype G]
 variable [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- Every group element preserves every invariant inner sublevel set. -/
+/-- Every group element preserves every orbit-sum inner sublevel set. -/
 @[simp]
-theorem preimage_invariantInnerSublevel (ρ : Representation ℝ G V) (g : G) (c : ℝ) :
-    ρ g ⁻¹' ρ.invariantInnerSublevel c = ρ.invariantInnerSublevel c := by
+theorem preimage_sumOfConjugatesInnerSublevel (ρ : Representation ℝ G V) (g : G) (c : ℝ) :
+    ρ g ⁻¹' ρ.sumOfConjugatesInnerSublevel c = ρ.sumOfConjugatesInnerSublevel c := by
   ext x
-  simp only [Set.mem_preimage, mem_invariantInnerSublevel]
+  simp only [Set.mem_preimage, mem_sumOfConjugatesInnerSublevel]
   rw [isInvariantForm_sumOfConjugatesForm ρ (innerₗ V) |>.apply]
 
 end Group
