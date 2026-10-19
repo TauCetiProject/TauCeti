@@ -130,6 +130,17 @@ theorem lastSign_append (l₁ l₂ : List R) :
     lastSign (l₁ ++ l₂) = if lastSign l₂ = 0 then lastSign l₁ else lastSign l₂ := by
   simp only [← firstSign_reverse, reverse_append, firstSign_append]
 
+/-- Prepending an entry determines the trailing sign only when the rest of the
+list vanishes identically. -/
+theorem lastSign_cons (a : R) (l : List R) :
+    lastSign (a :: l) = if lastSign l = 0 then SignType.sign a else lastSign l := by
+  rw [← singleton_append, lastSign_append, lastSign_singleton]
+
+/-- A list has trailing sign `0` exactly when it has leading sign `0`. -/
+theorem lastSign_eq_zero_iff_firstSign_eq_zero {l : List R} :
+    lastSign l = 0 ↔ firstSign l = 0 := by
+  rw [lastSign_eq_zero_iff, firstSign_eq_zero_iff]
+
 /-- Concatenating two lists adds their sign variations, plus one exactly when the
 last nonzero entry of the first list and the first nonzero entry of the second
 have opposite signs. -/
@@ -140,15 +151,12 @@ theorem signVariations_append (l₁ l₂ : List R) :
   induction l₁ with
   | nil => simp
   | cons a l ih =>
-    rw [cons_append, signVariations_cons, ih, signVariations_cons, firstSign_append,
-      ← singleton_append, lastSign_append, lastSign_singleton]
     by_cases hl : firstSign l = 0
-    · have hl' : lastSign l = 0 := by
-        rwa [lastSign_eq_zero_iff, ← firstSign_eq_zero_iff]
-      simp [hl, hl', signVariations_eq_zero_of_forall_eq_zero (firstSign_eq_zero_iff.mp hl)]
-    · have hl' : lastSign l ≠ 0 := by
-        rwa [ne_eq, lastSign_eq_zero_iff, ← firstSign_eq_zero_iff]
-      simp only [hl, hl', ite_false]
+    · simp [signVariations_cons, firstSign_append, lastSign_cons, ih, hl,
+        lastSign_eq_zero_iff_firstSign_eq_zero.mpr hl,
+        signVariations_eq_zero_of_forall_eq_zero (firstSign_eq_zero_iff.mp hl)]
+    · simp [signVariations_cons, firstSign_append, lastSign_cons, ih, hl,
+        lastSign_eq_zero_iff_firstSign_eq_zero.not.mpr hl]
       omega
 
 /-- Reversing a list does not change its sign variations. -/
@@ -158,8 +166,7 @@ theorem signVariations_reverse (l : List R) :
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [reverse_cons, signVariations_append, ih, lastSign_reverse, firstSign_singleton,
-      signVariations_singleton, signVariations_cons, mul_comm]
+    simp [signVariations_append, signVariations_cons, ih, mul_comm]
     omega
 
 /-- The sign variations of a list split at any nonzero entry. -/
