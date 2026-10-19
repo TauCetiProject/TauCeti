@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
@@ -40,8 +41,6 @@ identity.
   image of `1`.
 * `LinearMap.normDet_adjoint`: between spaces of equal dimension, the adjoint has the same
   Jacobian.
-* `LinearMap.finrank_orthogonal_ker_of_surjective`: the orthogonal complement of the kernel of a
-  surjective map has the dimension of the codomain.
 * `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
@@ -80,15 +79,6 @@ theorem normDet_adjoint {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U] 
   let bw := (stdOrthonormalBasis 𝕜 W).reindex (finCongr h.symm)
   rw [f.normDet_eq_norm_det_toMatrix bu bw, f.adjoint.normDet_eq_norm_det_toMatrix bw bu,
     toMatrix_adjoint, Matrix.det_conjTranspose, norm_star]
-
-/-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
-codomain. -/
-theorem finrank_orthogonal_ker_of_surjective {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U]
-    [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup W]
-    [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] (f : U →ₗ[𝕜] W)
-    (hf : Function.Surjective f) :
-    Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 W := by
-  rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
 
 /-- The Jacobian of the adjoint of a surjective linear map is the Jacobian of the restriction of
 the map to the orthogonal complement of its kernel. This restriction is a linear isomorphism onto

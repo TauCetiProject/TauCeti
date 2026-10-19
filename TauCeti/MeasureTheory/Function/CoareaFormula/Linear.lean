@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
@@ -93,8 +94,14 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   have hMinj : Function.Injective M := by
     refine (injective_iff_map_eq_zero M).2 fun w hw ↦ Subtype.ext ?_
     exact inner_self_eq_zero.1 (w.2 _ hw)
-  let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M
-    ⟨hMinj, (injective_iff_surjective_of_finrank_eq_finrank hdim).mp hMinj⟩).toContinuousLinearEquiv
+  have hMbij : Function.Bijective M :=
+    ⟨hMinj, (injective_iff_surjective_of_finrank_eq_finrank hdim).mp hMinj⟩
+  let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M hMbij).toContinuousLinearEquiv
+  have he (w : W) : e w = L w := by
+    calc
+      e w = LinearEquiv.ofBijective M hMbij w := rfl
+      _ = M w := LinearEquiv.ofBijective_apply M (hf := hMbij) w
+      _ = L w := rfl
   refine ⟨e, ?_, fun g y ↦ ?_⟩
   · -- Lebesgue measure on `F` is the image of Lebesgue measure on `W`, scaled by the Jacobian.
     ext t ht
@@ -104,9 +111,9 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
       InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
     congr 1
     ext y
-    exact ⟨fun hy ↦ ⟨e.symm y, by simpa using hy, e.apply_symm_apply y⟩,
-      by rintro ⟨w, hw, rfl⟩; exact hw⟩
-  · have hy : L (e.symm y : E) = y := e.apply_symm_apply y
+    exact ⟨fun hy ↦ ⟨e.symm y, by simpa [M, ← he] using hy, e.apply_symm_apply y⟩,
+      by rintro ⟨w, hw, rfl⟩; simpa [M, ← he] using hw⟩
+  · have hy : L (e.symm y : E) = y := by rw [← he, e.apply_symm_apply]
     rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hy,
       show finrank ℝ E - finrank ℝ F = finrank ℝ (ker L) by omega]
 
