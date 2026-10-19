@@ -19,12 +19,13 @@ input slots against the form, and its cups insert the copairing into two output 
 monomial basis `TauCeti.tensorPowerBasis` the coefficient of the output basis tensor `e_v` in the
 image of the input basis tensor `e_u` is `1` when the labelling `Sum.elim u v` of the boundary
 points of `D` is constant on its arcs, and `0` otherwise
-(`TauCeti.BrauerDiagram.orthogonalMatrix`).
+(`TauCeti.BrauerDiagram.orthogonalActionMatrix`).
 
 These operators multiply by the loop rule of the Brauer algebra at the loop value `δ = n`, a closed
-loop evaluating to the trace `n` of the form (`TauCeti.BrauerDiagram.orthogonalMatrix_mul`, which
-rests on the count `TauCeti.BrauerDiagram.natCard_middleLabelling`), so they assemble into an
-algebra map `TauCeti.brauerActionOrth` from the Brauer algebra `B_k(n)` to the endomorphisms of
+loop evaluating to the trace `n` of the form
+(`TauCeti.BrauerDiagram.orthogonalActionMatrix_mul`, which rests on the count
+`TauCeti.BrauerDiagram.natCard_middleLabelling`), so they assemble into an algebra map
+`TauCeti.brauerActionOrth` from the Brauer algebra `B_k(n)` to the endomorphisms of
 `V^{⊗k}`. It extends the two families of generators already available: on a permutation diagram
 it is the permutation action `TauCeti.permTensorAction` of `Sₖ` on the tensor factors, so it
 restricts along `TauCeti.BrauerAlgebra.ofPerm` to the group-algebra action
@@ -39,13 +40,13 @@ not part of this file.
 
 ## Main definitions
 
-* `TauCeti.BrauerDiagram.orthogonalMatrix`: the matrix of a Brauer diagram acting on the tensor
-  power of `ι → R`, indexed by the labellings of the strands.
+* `TauCeti.BrauerDiagram.orthogonalActionMatrix`: the matrix of a Brauer diagram acting on the
+  tensor power of `ι → R`, indexed by the labellings of the strands.
 * `TauCeti.brauerActionOrth`: the action of the Brauer algebra `B_k(n)` on `(Rⁿ)^{⊗k}`.
 
 ## Main results
 
-* `TauCeti.BrauerDiagram.orthogonalMatrix_mul`: **the loop rule for the matrices**,
+* `TauCeti.BrauerDiagram.orthogonalActionMatrix_mul`: **the loop rule for the matrices**,
   `M(D₁) * M(D₂) = |ι| ^ c • M(D₁ ∘ D₂)` with `c` the number of closed middle loops.
 * `TauCeti.brauerActionOrth_of_tensorPowerBasis`: a diagram sends a monomial basis tensor to the
   sum of the basis tensors whose labels, together with those of the input, are constant on its
@@ -79,18 +80,18 @@ variable (R : Type u) [CommSemiring R] (ι : Type*) [DecidableEq ι] {k : ℕ}
 standard symmetric form, in the monomial basis indexed by the labellings `Fin k → ι` of the strands:
 the entry in the row of the output labelling `v` and the column of the input labelling `u` is `1`
 when `Sum.elim u v` is constant on the arcs of `D`, and `0` otherwise. -/
-def orthogonalMatrix (D : BrauerDiagram k) : Matrix (Fin k → ι) (Fin k → ι) R :=
+def orthogonalActionMatrix (D : BrauerDiagram k) : Matrix (Fin k → ι) (Fin k → ι) R :=
   Matrix.of fun v u => if D.IsConstantOnArcs (Sum.elim u v) then 1 else 0
 
 @[simp]
-theorem orthogonalMatrix_apply (D : BrauerDiagram k) (v u : Fin k → ι) :
-    D.orthogonalMatrix R ι v u = if D.IsConstantOnArcs (Sum.elim u v) then 1 else 0 :=
+theorem orthogonalActionMatrix_apply (D : BrauerDiagram k) (v u : Fin k → ι) :
+    D.orthogonalActionMatrix R ι v u = if D.IsConstantOnArcs (Sum.elim u v) then 1 else 0 :=
   (rfl)
 
 /-- The identity diagram has the identity matrix. -/
 @[simp]
-theorem orthogonalMatrix_permToBrauer_one :
-    (permToBrauer 1).orthogonalMatrix R ι = (1 : Matrix (Fin k → ι) (Fin k → ι) R) := by
+theorem orthogonalActionMatrix_permToBrauer_one :
+    (permToBrauer 1).orthogonalActionMatrix R ι = (1 : Matrix (Fin k → ι) (Fin k → ι) R) := by
   ext v u
   simp [isConstantOnArcs_permToBrauer_iff, Matrix.one_apply, ← funext_iff]
 
@@ -98,17 +99,17 @@ theorem orthogonalMatrix_permToBrauer_one :
 `D₂` is the matrix of the composite `TauCeti.composeDiagram D₁ D₂`, scaled by `|ι|` to the number of
 closed middle loops: summing over the labellings of the middle boundary counts the free labels of
 those loops. -/
-theorem orthogonalMatrix_mul [Fintype ι] (D₁ D₂ : BrauerDiagram k) :
-    D₁.orthogonalMatrix R ι * D₂.orthogonalMatrix R ι =
+theorem orthogonalActionMatrix_mul [Fintype ι] (D₁ D₂ : BrauerDiagram k) :
+    D₁.orthogonalActionMatrix R ι * D₂.orthogonalActionMatrix R ι =
       (Fintype.card ι : R) ^ middleLoopCount D₁ D₂ •
-        (composeDiagram D₁ D₂).orthogonalMatrix R ι := by
+        (composeDiagram D₁ D₂).orthogonalActionMatrix R ι := by
   ext v u
-  have hsum : (D₁.orthogonalMatrix R ι * D₂.orthogonalMatrix R ι) v u =
+  have hsum : (D₁.orthogonalActionMatrix R ι * D₂.orthogonalActionMatrix R ι) v u =
       (Nat.card {m : Fin k → ι // D₁.IsConstantOnArcs (Sum.elim m v) ∧
         D₂.IsConstantOnArcs (Sum.elim u m)} : R) := by
-    simp only [Matrix.mul_apply, orthogonalMatrix_apply, ite_zero_mul_ite_zero, mul_one]
+    simp only [Matrix.mul_apply, orthogonalActionMatrix_apply, ite_zero_mul_ite_zero, mul_one]
     rw [Finset.sum_boole, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  rw [hsum, Matrix.smul_apply, orthogonalMatrix_apply, smul_eq_mul]
+  rw [hsum, Matrix.smul_apply, orthogonalActionMatrix_apply, smul_eq_mul]
   split_ifs with hC
   · rw [natCard_middleLabelling hC, Nat.card_eq_fintype_card, mul_one, Nat.cast_pow]
   · have : IsEmpty {m : Fin k → ι // D₁.IsConstantOnArcs (Sum.elim m v) ∧
@@ -121,24 +122,25 @@ variable (R : Type u) [CommSemiring R] (n k : ℕ)
 
 /-- **The Brauer algebra acting on a tensor power of `Rⁿ`.** The Brauer algebra `B_k(n)` at the
 loop value `n = dim Rⁿ` acts on `(Rⁿ)^{⊗k}` through the standard symmetric form: a diagram acts
-by the matrix `TauCeti.BrauerDiagram.orthogonalMatrix` in the monomial basis, and these matrices
-obey the loop rule (`TauCeti.BrauerDiagram.orthogonalMatrix_mul`). -/
+by the matrix `TauCeti.BrauerDiagram.orthogonalActionMatrix` in the monomial basis, and these
+matrices obey the loop rule (`TauCeti.BrauerDiagram.orthogonalActionMatrix_mul`). -/
 noncomputable def brauerActionOrth :
     BrauerAlgebra R (n : R) k →ₐ[R] Module.End R (⨂[R] _ : Fin k, Fin n → R) :=
   BrauerAlgebra.lift
     (fun D => Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-      (D.orthogonalMatrix R (Fin n)))
+      (D.orthogonalActionMatrix R (Fin n)))
     (by
-      rw [BrauerDiagram.orthogonalMatrix_permToBrauer_one, Matrix.toLin_one, Module.End.one_eq_id])
+      rw [BrauerDiagram.orthogonalActionMatrix_permToBrauer_one, Matrix.toLin_one,
+        Module.End.one_eq_id])
     fun D₁ D₂ => by
-      rw [Module.End.mul_eq_comp, ← Matrix.toLin_mul, BrauerDiagram.orthogonalMatrix_mul,
+      rw [Module.End.mul_eq_comp, ← Matrix.toLin_mul, BrauerDiagram.orthogonalActionMatrix_mul,
         Fintype.card_fin, map_smul]
 
 /-- A Brauer diagram acts by its matrix in the monomial basis. -/
 theorem brauerActionOrth_of (D : BrauerDiagram k) :
     brauerActionOrth R n k (BrauerAlgebra.of D) =
       Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-        (D.orthogonalMatrix R (Fin n)) :=
+        (D.orthogonalActionMatrix R (Fin n)) :=
   BrauerAlgebra.lift_of ..
 
 /-- **A Brauer diagram on a monomial basis tensor.** The diagram `D` sends the basis tensor `e_u`
@@ -149,7 +151,7 @@ theorem brauerActionOrth_of_tensorPowerBasis (D : BrauerDiagram k) (u : Fin k �
       ∑ v with D.IsConstantOnArcs (Sum.elim u v), tensorPowerBasis R n k v := by
   rw [brauerActionOrth_of, Matrix.toLin_self, Finset.sum_filter]
   refine Finset.sum_congr rfl fun v _ => ?_
-  rw [BrauerDiagram.orthogonalMatrix_apply]
+  rw [BrauerDiagram.orthogonalActionMatrix_apply]
   split_ifs <;> simp
 
 /-- **Permutation diagrams act by permuting the tensor factors.** The diagram of `σ` acts on
