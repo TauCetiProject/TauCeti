@@ -26,8 +26,8 @@ the two points of `S⁰`.
   unit cube onto the complement of the pole.
 * `TauCeti.sphereCWComplex h`: the CW structure, which is finite
   (`TauCeti.finite_sphereCWComplex`) with one cell in dimension `0` and one in dimension `n`
-  (`TauCeti.nat_card_cell_sphereCWComplex`); for `1 ≤ k ≤ n` its `k`-skeleton is the pole
-  (`TauCeti.skeletonLT_sphereCWComplex`).
+  (`TauCeti.nat_card_cell_sphereCWComplex`); for `1 ≤ k ≤ n`, `skeletonLT k` (the
+  `(k - 1)`-skeleton) is the pole (`TauCeti.skeletonLT_sphereCWComplex`).
 * `TauCeti.finiteCWType_sphere`: the unit sphere of every finite-dimensional real normed space has
   finite CW type.
 
@@ -267,8 +267,8 @@ theorem isEmpty_cell_sphereCWComplex {m : ℕ} (hm : n + 1 ≤ m) :
     IsEmpty (cell (sphere (0 : EuclideanSpace ℝ ι) 1) m) :=
   isEmpty_sphereCell hm
 
-/-- For `1 ≤ k ≤ n`, the `k`-skeleton of the CW structure on `Sⁿ`, the union of its cells of
-dimension less than `k`, is the pole. -/
+/-- For `1 ≤ k ≤ n`, `skeletonLT k` of the CW structure on `Sⁿ`, the `(k - 1)`-skeleton (the union
+of the cells of dimension less than `k`), is the pole. -/
 theorem skeletonLT_sphereCWComplex {k : ℕ∞} (hk : 1 ≤ k) (hkn : k ≤ n) :
     letI := sphereCWComplex h
     (skeletonLT (sphere (0 : EuclideanSpace ℝ ι) 1) k : Set (EuclideanSpace ℝ ι)) =
