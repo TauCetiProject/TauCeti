@@ -26,10 +26,14 @@ of these points.
 The Cauchy–Binet formula expresses the determinant of the `p × p` product of two such families
 as the sum of products of their Plücker coordinates. Over a commutative star ring, for instance
 `ℂ`, applying it to a family and its conjugate writes the Hermitian Gram determinant of the
-family as the sum of the squared absolute values of its Plücker coordinates.
+family as the sum of the squared absolute values of its Plücker coordinates. For the rows of a
+matrix `A`, applying it to `A` against itself writes `det (A * Aᵀ)` as the sum of the squares of
+the maximal minors of `A`; over a linearly ordered field this determinant is therefore nonzero
+exactly when the rows are linearly independent.
 
-All results hold over an arbitrary commutative ring except the comparison with linear
-independence, which is over a field. The empty family has a single Plücker coordinate, equal to
+All results hold over an arbitrary commutative ring except the comparisons with linear
+independence, which are over a field, and the sign statements for `det (A * Aᵀ)`, which are over
+a linearly ordered commutative ring. The empty family has a single Plücker coordinate, equal to
 `1`, and a family of more than `#ι` vectors has none.
 
 ## Main definitions
@@ -46,6 +50,15 @@ independence, which is over a field. The empty family has a single Plücker coor
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
+* `Matrix.plucker_row_mul`: the matrix form of `TauCeti.plucker_sum_smul`, for the rows of
+  `U * A`.
+* `Matrix.det_mul_transpose_self_eq_sum_sq`: the Gram determinant `det (A * Aᵀ)` is the sum of
+  the squares of the maximal minors of `A`.
+* `Matrix.det_mul_transpose_self_nonneg`, `Matrix.det_mul_transpose_self_eq_zero_iff`,
+  `Matrix.det_mul_transpose_self_pos_iff`: over a linearly ordered commutative ring it is
+  nonnegative, and it vanishes exactly when every maximal minor does.
+* `Matrix.det_mul_transpose_self_ne_zero_iff`: over a linearly ordered field it is nonzero exactly
+  when the rows of `A` are linearly independent.
 
 ## References
 
@@ -54,6 +67,11 @@ independence, which is over a field. The empty family has a single Plücker coor
 
 The proofs use Mathlib's exterior-power basis `Module.Basis.exteriorPower` and its coordinate
 formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Morrison.
+
+The matrix statements `Matrix.plucker_row_mul` and `Matrix.det_mul_transpose_self_*` follow Ralf
+Stephan's `ArithmeticHeights/RowSpace.lean` and `ArithmeticHeights/CauchyBinet.lean` in
+[`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/tree/09835cb23557ae5ae0cf55a9c4ab9055f5d60338/ArithmeticHeights)
+(Apache 2.0).
 -/
 
 public section
@@ -171,3 +189,62 @@ theorem plucker_ne_zero_iff [Finite ι] (x : Fin p → ι → K) :
 end Field
 
 end TauCeti
+
+/-! ### Plücker coordinates of the rows of a matrix -/
+
+namespace Matrix
+
+open TauCeti
+
+variable {R ι : Type*} [CommRing R] [LinearOrder ι] {p : ℕ}
+
+/-- Multiplying a matrix on the left by a square matrix `U` multiplies the Plücker coordinates of
+its rows by `det U`. -/
+theorem plucker_row_mul (U : Matrix (Fin p) (Fin p) R) (A : Matrix (Fin p) ι R)
+    (s : powersetCard ι p) : plucker (U * A).row s = U.det * plucker A.row s := by
+  rw [← plucker_sum_smul]
+  congr 1
+  ext i k
+  simp [Matrix.mul_apply, Finset.sum_apply]
+
+/-- **The Gram determinant as a sum of squares.** The determinant of `A * Aᵀ` is the sum of the
+squares of the maximal minors of `A`; this is the Cauchy–Binet formula for `A` against itself. -/
+theorem det_mul_transpose_self_eq_sum_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
+    (A * Aᵀ).det = ∑ s, plucker A.row s ^ 2 := by
+  have hA : Matrix.of A.row = A := by rw [row_eq_self, Equiv.apply_symm_apply]
+  simpa [hA, sq] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+
+section LinearOrder
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Fintype ι]
+
+/-- Over a linearly ordered commutative ring the Gram determinant of the rows of a matrix is
+nonnegative. -/
+theorem det_mul_transpose_self_nonneg (A : Matrix (Fin p) ι R) : 0 ≤ (A * Aᵀ).det := by
+  rw [det_mul_transpose_self_eq_sum_sq]
+  exact Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+
+/-- Over a linearly ordered commutative ring the Gram determinant of the rows of a matrix vanishes
+exactly when all maximal minors vanish. -/
+theorem det_mul_transpose_self_eq_zero_iff (A : Matrix (Fin p) ι R) :
+    (A * Aᵀ).det = 0 ↔ plucker A.row = 0 := by
+  rw [det_mul_transpose_self_eq_sum_sq,
+    Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _, funext_iff]
+  simp
+
+/-- Over a linearly ordered commutative ring the Gram determinant of the rows of a matrix is
+positive exactly when some maximal minor is nonzero. -/
+theorem det_mul_transpose_self_pos_iff (A : Matrix (Fin p) ι R) :
+    0 < (A * Aᵀ).det ↔ plucker A.row ≠ 0 := by
+  rw [(det_mul_transpose_self_nonneg A).lt_iff_ne', ne_eq, det_mul_transpose_self_eq_zero_iff]
+
+end LinearOrder
+
+/-- Over a linearly ordered field the rows of a matrix are linearly independent exactly when their
+Gram determinant is nonzero. -/
+theorem det_mul_transpose_self_ne_zero_iff {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] [Fintype ι] (A : Matrix (Fin p) ι K) :
+    (A * Aᵀ).det ≠ 0 ↔ LinearIndependent K A.row := by
+  rw [ne_eq, det_mul_transpose_self_eq_zero_iff, ← ne_eq, plucker_ne_zero_iff]
+
+end Matrix
