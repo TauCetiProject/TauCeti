@@ -19,7 +19,9 @@ root subgroup to the negative one, negating the parameter. All equations hold ov
 commutative ring, including rings with nilpotents and rings of characteristic two.
 
 These explicit representatives allow simple root subgroups to be transported along
-reflections when constructing nonsimple root subgroups. They do not identify the
+reflections when constructing nonsimple root subgroups. Their products along words in the
+simple reflections act on the weight torus through the corresponding Weyl-word action and
+normalize it. They do not identify the
 normalizer quotient with the Weyl group or identify the carrier with a pinned reductive group.
 
 The proofs specialize the integral `sl₂` conjugation results in
@@ -147,6 +149,76 @@ theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin 4) (A : Type v
     (Function.Involutive.surjective
       (F4.geckSimpleReflectionTorusPoint_geckSimpleReflectionTorusPoint valid_F4 i A))
     (simpleWeylPoint_conj_weightTorusPoints i A)
+
+/-! ## Products along words -/
+
+/-- **The point of the short-root carrier represented by a word in the simple reflections.** -/
+def weylWordPoint (l : List (Fin 4)) (A : Type v) [CommRing A] : points A :=
+  (l.map fun i ↦ simpleWeylPoint i A).prod
+
+/-- The empty word represents the identity point. -/
+@[simp]
+theorem weylWordPoint_nil (A : Type v) [CommRing A] : weylWordPoint [] A = 1 := by
+  simp [weylWordPoint]
+
+/-- Prepending a node multiplies its simple Weyl representative on the left. -/
+@[simp]
+theorem weylWordPoint_cons (i : Fin 4) (l : List (Fin 4)) (A : Type v) [CommRing A] :
+    weylWordPoint (i :: l) A = simpleWeylPoint i A * weylWordPoint l A := by
+  simp [weylWordPoint]
+
+/-- Concatenation of words corresponds to multiplication of their representatives. -/
+@[simp]
+theorem weylWordPoint_append (l l' : List (Fin 4)) (A : Type v) [CommRing A] :
+    weylWordPoint (l ++ l') A = weylWordPoint l A * weylWordPoint l' A := by
+  simp only [weylWordPoint, List.map_append, List.prod_append]
+
+/-- Weyl-word representatives commute with change of value ring. -/
+@[simp]
+theorem map_weylWordPoint {A : Type v} {B : Type w} [CommRing A] [CommRing B]
+    (f : A →+* B) (l : List (Fin 4)) :
+    (pointsPresentation A).map (pointsPresentation B) f (weylWordPoint l A) =
+      weylWordPoint l B := by
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+    rw [weylWordPoint_cons, map_mul, map_simpleWeylPoint, ih, weylWordPoint_cons]
+
+/-- **Conjugation by a Weyl-word representative realizes the corresponding abstract Weyl-word
+action on the represented weight torus.** -/
+@[simp]
+theorem weylWordPoint_conj_weightTorusPoints (l : List (Fin 4))
+    (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) :
+    weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹ =
+      weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) := by
+  induction l with
+  | nil =>
+      rw [weylWordPoint_nil, one_mul, inv_one, mul_one]
+      exact congrArg _ (DFunLike.congr_fun (F4.geckWeylWordTorusAction_nil valid_F4 A) s).symm
+  | cons i l ih =>
+      rw [weylWordPoint_cons]
+      calc
+        (simpleWeylPoint i A * weylWordPoint l A) * weightTorusPoints A s *
+              (simpleWeylPoint i A * weylWordPoint l A)⁻¹ =
+            simpleWeylPoint i A *
+              (weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹) *
+              (simpleWeylPoint i A)⁻¹ := by group
+        _ = simpleWeylPoint i A *
+              weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) *
+              (simpleWeylPoint i A)⁻¹ := by rw [ih]
+        _ = weightTorusPoints A
+              (F4.geckSimpleReflectionTorusPoint valid_F4 i A
+                (F4.geckWeylWordTorusAction valid_F4 l A s)) :=
+          simpleWeylPoint_conj_weightTorusPoints i A _
+        _ = weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 (i :: l) A s) :=
+          congrArg _ (DFunLike.congr_fun (F4.geckWeylWordTorusAction_cons valid_F4 i l A) s).symm
+
+/-- Every Weyl-word representative normalizes the represented weight torus. -/
+theorem weylWordPoint_mem_normalizer_weightTorusPoints (l : List (Fin 4))
+    (A : Type v) [CommRing A] :
+    weylWordPoint l A ∈ Subgroup.normalizer (weightTorusPoints A).range :=
+  Subgroup.list_prod_mem _ (List.forall_mem_map.2 fun i _ ↦
+    simpleWeylPoint_mem_normalizer_weightTorusPoints i A)
 
 end
 

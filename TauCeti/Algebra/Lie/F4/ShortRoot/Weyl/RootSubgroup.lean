@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.F4.ShortRoot.RootDatum
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Weyl.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.RootSubgroup
 
@@ -22,19 +23,21 @@ x_{l,i}(u) = n_l xᵢ(u) n_l⁻¹
 
 at the root `w αᵢ`, where `w` is the Weyl-group element spelled by `l`. Every root of the
 simply connected type-`F₄` root datum has such a presentation. The resulting homomorphisms are
-natural in the commutative value ring. The Weyl-word representatives also act on the short-root
-carrier's represented weight torus through the corresponding abstract Weyl-word action.
+natural in the commutative value ring, and the represented weight torus rescales the parameter
+of `x_{l,i}` through the character of the root `w αᵢ`:
+
+```text
+s x_{l,i}(u) s⁻¹ = x_{l,i}((w αᵢ)(s) u).
+```
 
 The root-indexed family below fixes one Weyl-word presentation of each root, choosing the empty
-word at positive simple roots. It does not compare two presentations of the same root; such a
-comparison may change the sign of the parameter. The all-root pinning equation and the
-representation of these pointwise homomorphisms by closed subgroup-scheme morphisms are left to
-subsequent constructions.
+word at positive simple roots, so it satisfies the pinning equation at every root. It does not
+compare two presentations of the same root; such a comparison may change the sign of the
+parameter. The representation of these pointwise homomorphisms by closed subgroup-scheme
+morphisms is left to subsequent constructions.
 
 ## Main definitions
 
-* `TauCeti.F4ShortRoot.weylWordPoint`: the carrier point represented by a word in the simple
-  reflections.
 * `TauCeti.F4ShortRoot.weylRootSubgroupPoints`: the root-subgroup homomorphism attached to a word
   and a simple node.
 * `TauCeti.F4ShortRoot.rootSubgroupPointsAt`: a selected root-subgroup homomorphism for every root
@@ -42,8 +45,9 @@ subsequent constructions.
 
 ## Main results
 
-* `TauCeti.F4ShortRoot.weylWordPoint_conj_weightTorusPoints`: Weyl-word representatives act on the
-  represented torus through the abstract Weyl-word action.
+* `TauCeti.F4ShortRoot.weightTorusPoints_conj_weylRootSubgroupPoints` and
+  `TauCeti.F4ShortRoot.weightTorusPoints_conj_rootSubgroupPointsAt`: the pinning equations at the
+  root attached to a word and node, and at every root index.
 * `TauCeti.F4ShortRoot.map_weylRootSubgroupPoints`: naturality under change of value ring.
 
 ## References
@@ -66,94 +70,11 @@ universe v w
 
 noncomputable section
 
-/-! ## Weyl-word representatives -/
-
-/-- **The point of the short-root carrier represented by a word in the simple reflections.** -/
-def weylWordPoint (l : List (Fin 4)) (A : Type v) [CommRing A] : points A :=
-  (l.map fun i ↦ simpleWeylPoint i A).prod
-
-/-- The empty word represents the identity point. -/
-@[simp]
-theorem weylWordPoint_nil (A : Type v) [CommRing A] : weylWordPoint [] A = 1 := by
-  simp [weylWordPoint]
-
-/-- Prepending a node multiplies its simple Weyl representative on the left. -/
-@[simp]
-theorem weylWordPoint_cons (i : Fin 4) (l : List (Fin 4)) (A : Type v) [CommRing A] :
-    weylWordPoint (i :: l) A = simpleWeylPoint i A * weylWordPoint l A := by
-  simp [weylWordPoint]
-
-/-- Concatenation of words corresponds to multiplication of their representatives. -/
-@[simp]
-theorem weylWordPoint_append (l l' : List (Fin 4)) (A : Type v) [CommRing A] :
-    weylWordPoint (l ++ l') A = weylWordPoint l A * weylWordPoint l' A := by
-  simp only [weylWordPoint, List.map_append, List.prod_append]
-
-/-- Weyl-word representatives commute with change of value ring. -/
-@[simp]
-theorem map_weylWordPoint {A : Type v} {B : Type w} [CommRing A] [CommRing B]
-    (f : A →+* B) (l : List (Fin 4)) :
-    (pointsPresentation A).map (pointsPresentation B) f (weylWordPoint l A) =
-      weylWordPoint l B := by
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-    rw [weylWordPoint_cons, map_mul, map_simpleWeylPoint, ih, weylWordPoint_cons]
-
-/-- **Conjugation by a Weyl-word representative realizes the corresponding abstract Weyl-word
-action on the represented weight torus.** -/
-@[simp]
-theorem weylWordPoint_conj_weightTorusPoints (l : List (Fin 4))
-    (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) :
-    weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹ =
-      weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) := by
-  induction l with
-  | nil =>
-      rw [weylWordPoint_nil]
-      simp only [one_mul, inv_one, mul_one]
-      congr 1
-      have h := DFunLike.congr_fun
-        (F4.geckWeylWordTorusAction_nil valid_F4 A) s
-      change F4.geckWeylWordTorusAction valid_F4 [] A s = s at h
-      exact h.symm
-  | cons i l ih =>
-      rw [weylWordPoint_cons]
-      calc
-        (simpleWeylPoint i A * weylWordPoint l A) * weightTorusPoints A s *
-              (simpleWeylPoint i A * weylWordPoint l A)⁻¹ =
-            simpleWeylPoint i A *
-              (weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹) *
-              (simpleWeylPoint i A)⁻¹ := by group
-        _ = simpleWeylPoint i A *
-              weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) *
-              (simpleWeylPoint i A)⁻¹ := by rw [ih]
-        _ = weightTorusPoints A
-              (F4.geckSimpleReflectionTorusPoint valid_F4 i A
-                (F4.geckWeylWordTorusAction valid_F4 l A s)) :=
-          simpleWeylPoint_conj_weightTorusPoints i A _
-        _ = weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 (i :: l) A s) := by
-          congr 1
-          have h := DFunLike.congr_fun
-            (F4.geckWeylWordTorusAction_cons valid_F4 i l A) s
-          change F4.geckWeylWordTorusAction valid_F4 (i :: l) A s =
-            F4.geckSimpleReflectionTorusPoint valid_F4 i A
-              (F4.geckWeylWordTorusAction valid_F4 l A s) at h
-          exact h.symm
-
-/-- Every Weyl-word representative normalizes the represented weight torus. -/
-theorem weylWordPoint_mem_normalizer_weightTorusPoints (l : List (Fin 4))
-    (A : Type v) [CommRing A] :
-    weylWordPoint l A ∈ Subgroup.normalizer (weightTorusPoints A).range := by
-  induction l with
-  | nil => exact Subgroup.one_mem _
-  | cons i l ih =>
-      rw [weylWordPoint_cons]
-      exact Subgroup.mul_mem _ (simpleWeylPoint_mem_normalizer_weightTorusPoints i A) ih
-
 /-! ## Root subgroups transported along Weyl words -/
 
 /-- **The short-root carrier's root subgroup attached to a Weyl word and a simple node**:
-`x_{l,i}(u) = n_l xᵢ(u) n_l⁻¹`. Its root is `F4.geckWeylRootIndex valid_F4 l i`. -/
+`x_{l,i}(u) = n_l xᵢ(u) n_l⁻¹`. Its root is `F4.geckWeylRootIndex valid_F4 l i`, by
+`weightTorusPoints_conj_weylRootSubgroupPoints`. -/
 def weylRootSubgroupPoints (l : List (Fin 4)) (i : Fin 4) (A : Type v) [CommRing A] :
     Multiplicative A →* points A :=
   (MulAut.conj (weylWordPoint l A)).toMonoidHom.comp (rootSubgroupPoints (.inl i) A)
@@ -197,27 +118,81 @@ theorem map_weylRootSubgroupPoints {A : Type v} {B : Type w} [CommRing A] [CommR
   rw [weylRootSubgroupPoints_apply, weylRootSubgroupPoints_apply, map_mul, map_mul, map_inv,
     map_weylWordPoint, map_rootSubgroupPoints]
 
+/-! ## The pinning equation at every root -/
+
+-- These two root-datum identities are stated over `Fin t.rank`: rewriting with the generic Weyl
+-- lemmas directly in goals about `Fin 4`-indexed words fails, since `Fin 4` and `Fin F4.rank`
+-- agree only after unfolding `rank`.
+
+/-- The word action undoes the abstract action of the inverse of the element it spells. -/
+private theorem geckWeylWordTorusAction_geckWeylTorusAction_inv (t : DynkinType) (ht : t.Valid)
+    (l : List (Fin t.rank)) (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    t.geckWeylWordTorusAction ht l A
+        (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s) = s := by
+  rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, ← MulAut.mul_apply, ← map_mul,
+    mul_inv_cancel, map_one, MulAut.one_apply]
+
+/-- The simple root at `i`, evaluated on the inverse Weyl translate of `s`, is the root at
+`geckWeylRootIndex l i` evaluated on `s`. -/
+private theorem torusCharacter_geckWeylTorusAction_inv_root_simpleIndex (t : DynkinType)
+    (ht : t.Valid) (l : List (Fin t.rank)) (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Fin t.rank → Aˣ) :
+    TauCeti.torusCharacter (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s)
+        ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) =
+      TauCeti.torusCharacter s
+        ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
+  rw [t.torusCharacter_geckWeylTorusAction, inv_inv, t.root_geckWeylRootIndex]
+
+/-- **The pinning equation of a Weyl-transported root subgroup.** Conjugation by a weight-torus
+point `s` rescales the parameter of `x_{l,i}` by the character of the root at
+`F4.geckWeylRootIndex valid_F4 l i`, that is `w αᵢ` with `w` the Weyl-group element spelled
+by `l`. -/
+theorem weightTorusPoints_conj_weylRootSubgroupPoints (l : List (Fin 4)) (i : Fin 4)
+    (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) (u : Multiplicative A) :
+    weightTorusPoints A s * weylRootSubgroupPoints l i A u * (weightTorusPoints A s)⁻¹ =
+      weylRootSubgroupPoints l i A
+        (Multiplicative.ofAdd
+          ((TauCeti.torusCharacter s
+              ((F4.simplyConnectedRootDatum valid_F4).root
+                (F4.geckWeylRootIndex valid_F4 l i)) : A) *
+            Multiplicative.toAdd u)) := by
+  -- Write `s` as the word's action on `s' = w⁻¹ • s`, so that the torus point of `s` is the
+  -- conjugate of the torus point of `s'` by the word's Weyl representative.
+  set s' : Fin 4 → Aˣ := F4.geckWeylTorusAction valid_F4 A (F4.geckWeylWordProd valid_F4 l)⁻¹ s
+  have hT : weylWordPoint l A * weightTorusPoints A s' * (weylWordPoint l A)⁻¹ =
+      weightTorusPoints A s :=
+    (weylWordPoint_conj_weightTorusPoints l A s').trans
+      (congrArg _ (geckWeylWordTorusAction_geckWeylTorusAction_inv F4 valid_F4 l A s))
+  have hchar :
+      (TauCeti.torusCharacter s'
+          ((F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i)) : A) =
+        TauCeti.torusCharacter s
+          ((F4.simplyConnectedRootDatum valid_F4).root (F4.geckWeylRootIndex valid_F4 l i)) :=
+    congrArg Units.val
+      (torusCharacter_geckWeylTorusAction_inv_root_simpleIndex F4 valid_F4 l i A s)
+  rw [weylRootSubgroupPoints_apply, weylRootSubgroupPoints_apply, ← hT, ← hchar,
+    ← weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex valid_F4 i A s' u]
+  group
+
 /-! ## A selected family indexed by every root -/
 
 /-- A selected Weyl-word presentation of every type-`F₄` root, specialized to the concrete
 rank-four node type. Positive simple roots use the empty word. -/
-def rootSubgroupPresentation (k : Fin F4.numRoots) : List (Fin 4) × Fin 4 := by
-  simpa only [rank_F4] using F4.geckRootSubgroupPresentation valid_F4 k
+def rootSubgroupPresentation (k : Fin F4.numRoots) : List (Fin 4) × Fin 4 :=
+  F4.geckRootSubgroupPresentation valid_F4 k
 
 /-- The selected presentation at a positive simple root is the empty word at that node. -/
 @[simp]
 theorem rootSubgroupPresentation_simpleIndex (i : Fin 4) :
-    rootSubgroupPresentation (Fin.castAdd 44 i) = ([], i) := by
-  simpa only [rootSubgroupPresentation, rank_F4, simpleIndex_F4] using
-    F4.geckRootSubgroupPresentation_simpleIndex valid_F4 i
+    rootSubgroupPresentation (Fin.castAdd 44 i) = ([], i) :=
+  simpleIndex_F4 valid_F4 i ▸ F4.geckRootSubgroupPresentation_simpleIndex valid_F4 i
 
 /-- The selected Weyl-word presentation represents its root index. -/
 @[simp]
 theorem weylRootIndex_rootSubgroupPresentation (k : Fin F4.numRoots) :
     F4.geckWeylRootIndex valid_F4 (rootSubgroupPresentation k).1
-      (rootSubgroupPresentation k).2 = k := by
-  simpa only [rootSubgroupPresentation, rank_F4] using
-    F4.geckWeylRootIndex_geckRootSubgroupPresentation valid_F4 k
+      (rootSubgroupPresentation k).2 = k :=
+  F4.geckWeylRootIndex_geckRootSubgroupPresentation valid_F4 k
 
 /-- **A selected root subgroup of the short-root carrier at every root index.** The selected
 Weyl-word presentation is `rootSubgroupPresentation`; no independence of the presentation is
@@ -226,20 +201,40 @@ def rootSubgroupPointsAt (k : Fin F4.numRoots) (A : Type v) [CommRing A] :
     Multiplicative A →* points A :=
   weylRootSubgroupPoints (rootSubgroupPresentation k).1 (rootSubgroupPresentation k).2 A
 
+/-- The selected root subgroup at `k` is the Weyl-transported root subgroup of the selected
+presentation of `k`. -/
+theorem rootSubgroupPointsAt_def (k : Fin F4.numRoots) (A : Type v) [CommRing A] :
+    rootSubgroupPointsAt k A =
+      weylRootSubgroupPoints (rootSubgroupPresentation k).1 (rootSubgroupPresentation k).2 A :=
+  (rfl)
+
 /-- At a positive simple root, the selected family recovers the pinned raising subgroup. -/
 @[simp]
 theorem rootSubgroupPointsAt_simpleIndex (i : Fin 4) (A : Type v) [CommRing A] :
     rootSubgroupPointsAt (Fin.castAdd 44 i) A = rootSubgroupPoints (.inl i) A := by
-  change weylRootSubgroupPoints (rootSubgroupPresentation (Fin.castAdd 44 i)).1
-      (rootSubgroupPresentation (Fin.castAdd 44 i)).2 A = rootSubgroupPoints (.inl i) A
-  rw [rootSubgroupPresentation_simpleIndex, weylRootSubgroupPoints_nil]
+  rw [rootSubgroupPointsAt_def (Fin.castAdd 44 i), rootSubgroupPresentation_simpleIndex,
+    weylRootSubgroupPoints_nil]
 
 /-- The selected root-indexed family commutes with change of value ring. -/
 theorem map_rootSubgroupPointsAt {A : Type v} {B : Type w} [CommRing A] [CommRing B]
     (f : A →+* B) (k : Fin F4.numRoots) (u : Multiplicative A) :
     (pointsPresentation A).map (pointsPresentation B) f (rootSubgroupPointsAt k A u) =
-      rootSubgroupPointsAt k B (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
-  exact map_weylRootSubgroupPoints f _ _ u
+      rootSubgroupPointsAt k B (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) :=
+  map_weylRootSubgroupPoints f _ _ u
+
+/-- **The pinning equation of the selected root subgroup at every root.** Conjugation by a
+weight-torus point `s` rescales the parameter of the selected root subgroup at `k` by the
+character of the root at `k`. -/
+theorem weightTorusPoints_conj_rootSubgroupPointsAt (k : Fin F4.numRoots)
+    (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) (u : Multiplicative A) :
+    weightTorusPoints A s * rootSubgroupPointsAt k A u * (weightTorusPoints A s)⁻¹ =
+      rootSubgroupPointsAt k A
+        (Multiplicative.ofAdd
+          ((TauCeti.torusCharacter s ((F4.simplyConnectedRootDatum valid_F4).root k) : A) *
+            Multiplicative.toAdd u)) := by
+  have h := weightTorusPoints_conj_weylRootSubgroupPoints (rootSubgroupPresentation k).1
+    (rootSubgroupPresentation k).2 A s u
+  rwa [weylRootIndex_rootSubgroupPresentation] at h
 
 end
 
