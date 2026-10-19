@@ -14,7 +14,6 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import TauCeti.Algebra.Group.Conj
-public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
