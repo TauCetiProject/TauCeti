@@ -18,7 +18,8 @@ the scalar degree-two specialization, and its bilinear, evaluation, and constant
 are derived from `SmoothForm`.
 
 The degree-two specialization supplies the bilinear view used by the symplectic modules while
-retaining the generic form's alternating-map and smooth-section structure.
+retaining the generic form's alternating-map and smooth-section structure. Its closedness criterion
+is expressed by vanishing of the chartwise exterior derivative within the model range.
 -/
 
 public section
@@ -39,44 +40,43 @@ abbrev SmoothTwoForm (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] : Type _ :=
   SmoothForm I M ℝ 2
 
-/-- The migration equivalence from the former smooth two-form carrier to the generic degree-two
-smooth form.  `SmoothTwoForm` is now this generic carrier, so the equivalence is the identity; the
-named declaration records the migration boundary for code that checks the old interface. -/
+/-- The identity linear equivalence on degree-two real smooth forms, viewed through
+`SmoothTwoForm`. -/
 noncomputable def legacySmoothTwoFormEquiv [IsManifold I 1 M] :
     TauCeti.SmoothTwoForm I M ≃ₗ[ℝ] SmoothForm I M ℝ 2 :=
   LinearEquiv.refl ℝ _
 
-/-- The migration equivalence preserves evaluation on every ordered pair of tangent vectors. -/
+/-- Applying the identity equivalence leaves a degree-two smooth form unchanged. -/
 @[simp]
+theorem legacySmoothTwoFormEquiv_apply_eq [IsManifold I 1 M]
+    (φ : TauCeti.SmoothTwoForm I M) :
+    legacySmoothTwoFormEquiv φ = φ :=
+  by simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_apply]
+
+/-- Applying the inverse identity equivalence leaves a degree-two smooth form unchanged. -/
+@[simp]
+theorem legacySmoothTwoFormEquiv_symm_apply [IsManifold I 1 M]
+    (φ : SmoothForm I M ℝ 2) :
+    legacySmoothTwoFormEquiv.symm φ = φ :=
+  by simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+
+/-- Evaluating the identity equivalence on an ordered pair gives the two-form evaluation. -/
 theorem legacySmoothTwoFormEquiv_apply [IsManifold I 1 M]
     (φ : TauCeti.SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
     (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) x ![v, w] = φ.eval₂ x v w := by
-  simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_apply, SmoothForm.eval₂_apply]
+  rw [legacySmoothTwoFormEquiv_apply_eq]
+  exact (SmoothForm.eval₂_apply φ x v w).symm
 
-/-- The generic exterior derivative vanishes exactly when every chart expression of the migrated
-two-form has zero flat exterior derivative on the model range. -/
+/-- A smooth two-form is closed exactly when the exterior derivative of every chart expression
+within the model range vanishes at every point of the chart target. -/
 theorem legacySmoothTwoFormEquiv_isClosed_iff [IsManifold I 1 M]
     (φ : TauCeti.SmoothTwoForm I M) :
-    mextDeriv (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) = 0 ↔
+    (legacySmoothTwoFormEquiv φ).IsClosed ↔
       ∀ x₀ z, z ∈ (extChartAt I x₀).target →
         extDerivWithin ((φ : RoughForm I M ℝ 2).inChartAt x₀) (Set.range I) z = 0 := by
-  let ψ : RoughForm I M ℝ 2 := legacySmoothTwoFormEquiv φ
-  have hψ : IsSmoothForm I 1 ψ := by
-    have hφ : IsSmoothForm I ∞ (φ : RoughForm I M ℝ 2) := φ.isSmoothForm
-    rw [isSmoothForm_def] at hφ ⊢
-    simpa [ψ, legacySmoothTwoFormEquiv] using hφ.of_le (by norm_num)
-  constructor
-  · intro h x₀ z hz
-    change extDerivWithin (ψ.inChartAt x₀) (Set.range I) z = 0
-    rw [← hψ.inChartAt_mextDeriv_eq x₀ hz, h, RoughForm.inChartAt_zero]
-    simp
-  · intro h
-    change ∀ x₀ z, z ∈ (extChartAt I x₀).target →
-      extDerivWithin (ψ.inChartAt x₀) (Set.range I) z = 0 at h
-    change mextDeriv ψ = 0
-    funext x
-    rw [mextDeriv_def]
-    exact h x (extChartAt I x x) (mem_extChartAt_target x)
+  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by norm_num)
+  rw [legacySmoothTwoFormEquiv_apply_eq]
+  exact SmoothForm.isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero φ
 
 namespace SmoothTwoForm
 
