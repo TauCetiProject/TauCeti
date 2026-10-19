@@ -64,8 +64,8 @@ theorem orderOf_unitsTwoPowFive : orderOf (unitsTwoPowFive e) = 2 ^ (e + 1) := b
 @[simp]
 theorem unitsMap_unitsTwoPowFive (h : 4 ∣ 2 ^ (e + 3)) : unitsMap h (unitsTwoPowFive e) = 1 := by
   ext
-  rw [unitsMap_val, coe_unitsTwoPowFive,
-    show (5 : ZMod (2 ^ (e + 3))) = ((5 : ℕ) : ZMod (2 ^ (e + 3))) by norm_num, cast_natCast h]
+  -- `ZMod.unitOfCoprime` coerces the natural number `5`, which `ZMod.cast_natCast` reduces.
+  rw [unitsMap_val, unitsTwoPowFive, coe_unitOfCoprime, cast_natCast h]
   decide
 
 /-- The unit `-1` modulo `2 ^ (e + 3)` is not a power of `5`. -/
