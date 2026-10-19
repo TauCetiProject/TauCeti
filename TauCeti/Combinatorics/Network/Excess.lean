@@ -84,6 +84,13 @@ theorem arrowSum_def (f : Assignment Q K) (S T : Finset V) :
     arrowSum f S T = ∑ v ∈ S, ∑ w ∈ T, ∑ e : Q v w, f e :=
   (rfl)
 
+/-- An arrow sum as a sum over every arrow, with an indicator for its endpoints belonging to the
+specified sets. -/
+theorem arrowSum_eq_sum_ite [Fintype V] [DecidableEq V] (f : Assignment Q K)
+    (S T : Finset V) :
+    arrowSum f S T = ∑ v, ∑ w, ∑ e : Q v w, if v ∈ S ∧ w ∈ T then f e else 0 := by
+  simp [arrowSum_def, ite_and]
+
 @[simp]
 theorem arrowSum_zero (S T : Finset V) : arrowSum (0 : Assignment Q K) S T = 0 := by
   simp [arrowSum_def]
