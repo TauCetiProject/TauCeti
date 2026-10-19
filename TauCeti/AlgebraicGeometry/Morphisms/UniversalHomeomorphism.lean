@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
+public import Mathlib.AlgebraicGeometry.Morphisms.Integral
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 
 /-!
@@ -13,8 +13,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 
 A universal homeomorphism is a scheme morphism whose every base change is a homeomorphism on
 underlying spaces. Such maps are surjective, universally injective and universally closed.
-Conversely, these three properties suffice. In particular an integral, universally injective,
-surjective morphism is a universal homeomorphism.
+Conversely, these three properties suffice. Equivalently, a universal homeomorphism is an
+integral, universally injective, surjective morphism.
 
 This criterion applies to Frobenius without imposing finiteness or reducedness assumptions.
 
@@ -22,6 +22,8 @@ This criterion applies to Frobenius without imposing finiteness or reducedness a
 
 * The Stacks Project, [Tag 04DD](https://stacks.math.columbia.edu/tag/04DD), universal
   homeomorphisms.
+* The Stacks Project, [Tag 04DF](https://stacks.math.columbia.edu/tag/04DF), the integral
+  characterization of universal homeomorphisms.
 -/
 
 public section
@@ -61,9 +63,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isHomeomorph_of_isUniversalHomeomorp
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsHomeomorph f :=
   MorphismProperty.universally_le _ _ IsUniversalHomeomorphism.universally_isHomeomorph
 
+/-- Universal homeomorphisms are surjective on points. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : Surjective f :=
   ⟨f.isHomeomorph_of_isUniversalHomeomorphism.surjective⟩
 
+/-- Universal homeomorphisms are universally closed. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyClosed f := by
   rw [universallyClosed_eq]
   have h : topologically IsHomeomorph ≤ topologically IsClosedMap := by
@@ -72,6 +76,7 @@ instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyClosed f := by
   exact MorphismProperty.universally_mono h f
     IsUniversalHomeomorphism.universally_isHomeomorph
 
+/-- Universal homeomorphisms are universally injective. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyInjective f := by
   rw [universallyInjective_eq]
   have h : topologically IsHomeomorph ≤ topologically Function.Injective := by
@@ -80,11 +85,13 @@ instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyInjective f := 
   exact MorphismProperty.universally_mono h f
     IsUniversalHomeomorphism.universally_isHomeomorph
 
+/-- The second pullback projection is a universal homeomorphism when the first input map is. -/
 instance (f : X ⟶ S) (g : Y ⟶ S) [IsUniversalHomeomorphism f] :
     IsUniversalHomeomorphism (pullback.snd f g) :=
   MorphismProperty.IsStableUnderBaseChange.of_isPullback
     (P := @IsUniversalHomeomorphism.{u}) (IsPullback.of_hasPullback f g) inferInstance
 
+/-- The first pullback projection is a universal homeomorphism when the second input map is. -/
 instance (f : X ⟶ S) (g : Y ⟶ S) [IsUniversalHomeomorphism g] :
     IsUniversalHomeomorphism (pullback.fst f g) :=
   MorphismProperty.IsStableUnderBaseChange.of_isPullback
@@ -92,7 +99,7 @@ instance (f : X ⟶ S) (g : Y ⟶ S) [IsUniversalHomeomorphism g] :
 
 /-- Universally closed, universally injective, surjective scheme maps are precisely the
 universal homeomorphisms. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_iff_universallyClosed
+theorem isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective
     (f : X ⟶ Y) :
     IsUniversalHomeomorphism f ↔
       UniversallyClosed f ∧ UniversallyInjective f ∧ Surjective f := by
@@ -112,23 +119,45 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_iff_univers
     exact isHomeomorph_iff_continuous_isClosedMap_bijective.mpr
       ⟨f'.continuous, f'.isClosedMap, f'.injective, f'.surjective⟩
 
+/-- Universal homeomorphisms are integral. -/
+instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsIntegralHom f := by
+  have : IsAffineHom f := isAffineHom_of_isInducing f
+    f.isHomeomorph_of_isUniversalHomeomorphism.isInducing
+    f.isHomeomorph_of_isUniversalHomeomorphism.isClosedEmbedding.isClosed_range
+  exact IsIntegralHom.iff_universallyClosed_and_isAffineHom.mpr
+    ⟨inferInstance, inferInstance⟩
+
+/-- Integral, universally injective, surjective scheme maps are precisely the universal
+homeomorphisms. -/
+theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
+    (f : X ⟶ Y) :
+    IsUniversalHomeomorphism f ↔
+      IsIntegralHom f ∧ UniversallyInjective f ∧ Surjective f := by
+  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance, inferInstance⟩, ?_⟩
+  rintro ⟨hint, hinj, hsurj⟩
+  let := hint
+  exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
+    ⟨inferInstance, hinj, hsurj⟩
+
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/
 instance isUniversalHomeomorphism_isStableUnderComposition :
     MorphismProperty.IsStableUnderComposition @IsUniversalHomeomorphism.{u} where
   comp_mem f g hf hg := by
     let := hf
     let := hg
-    apply ((f ≫ g).isUniversalHomeomorphism_iff_universallyClosed).mpr
+    apply (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective _).mpr
     exact ⟨inferInstance,
       MorphismProperty.comp_mem @UniversallyInjective f g inferInstance inferInstance,
       inferInstance⟩
 
+/-- Typeclass inference recognizes composites of universal homeomorphisms. -/
 instance (f : X ⟶ Y) (g : Y ⟶ Z) [IsUniversalHomeomorphism f]
     [IsUniversalHomeomorphism g] : IsUniversalHomeomorphism (f ≫ g) :=
   MorphismProperty.comp_mem @IsUniversalHomeomorphism f g inferInstance inferInstance
 
+/-- Every isomorphism of schemes is a universal homeomorphism. -/
 instance (f : X ⟶ Y) [IsIso f] : IsUniversalHomeomorphism f :=
-  f.isUniversalHomeomorphism_iff_universallyClosed.mpr
+  (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩
 
 /-- The homeomorphism of underlying spaces induced by a universal homeomorphism of schemes. -/

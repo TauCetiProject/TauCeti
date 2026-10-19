@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Frobenius.Relative
-public import Mathlib.AlgebraicGeometry.Morphisms.Integral
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.Algebra.CharP.Reduced
 
@@ -100,7 +99,8 @@ instance _root_.AlgebraicGeometry.Scheme.universallyInjective_frobenius
 /-- Absolute Frobenius remains a homeomorphism after every base change. -/
 instance _root_.AlgebraicGeometry.Scheme.isUniversalHomeomorphism_frobenius
     (hX : (p : Γ(X, ⊤)) = 0) : AlgebraicGeometry.IsUniversalHomeomorphism (X.frobenius p hX) :=
-  (Scheme.Hom.isUniversalHomeomorphism_iff_universallyClosed _).mpr
+  (AlgebraicGeometry.isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
+    _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩
 
 variable (π : X ⟶ S) (hS : (p : Γ(S, ⊤)) = 0)
@@ -142,7 +142,8 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.surjective_relativeFrobenius :
 perfectness hypothesis on the base. -/
 instance _root_.AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_relativeFrobenius :
     AlgebraicGeometry.IsUniversalHomeomorphism (π.relativeFrobenius p hS) :=
-  (Scheme.Hom.isUniversalHomeomorphism_iff_universallyClosed _).mpr
+  (AlgebraicGeometry.isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
+    _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩
 
 end TauCeti
