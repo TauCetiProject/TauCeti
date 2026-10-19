@@ -69,7 +69,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.Iso.ofRestrict`: the extension of a homeomorphism over the
   thrice-punctured sphere between unbranched parts to an isomorphism of branched covers.
 * `TauCeti.TopBranchedCover.Iso.ofConnectedCoverIso`: the extension of an isomorphism of the
-  unbranched connected covers to an isomorphism of branched covers.
+  unbranched connected covers to an isomorphism of branched covers, inverse to
+  `TauCeti.TopBranchedCover.Iso.connectedCoverIso`.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results
@@ -711,6 +712,23 @@ theorem restrict_ofConnectedCoverIso_connectedCoverHomeomorph
     (ofConnectedCoverIso e).restrict (X.connectedCoverHomeomorph x) =
       Y.connectedCoverHomeomorph (e.hom.hom.left x) := by
   simp [ofConnectedCoverIso]
+
+/-- Restricting the extension of an isomorphism of connected covers recovers it. -/
+@[simp]
+theorem connectedCoverIso_ofConnectedCoverIso
+    (e : X.connectedCover.cover ≅ Y.connectedCover.cover) :
+    (ofConnectedCoverIso e).connectedCoverIso = e := by
+  ext x
+  simp [connectedCoverHomeomorph]
+
+/-- An isomorphism of branched covers is the extension of its restriction to the connected
+covers. -/
+@[simp]
+theorem ofConnectedCoverIso_connectedCoverIso (ι : Iso X Y) :
+    ofConnectedCoverIso ι.connectedCoverIso = ι := by
+  refine restrict_injective (Homeomorph.ext fun z ↦ ?_)
+  obtain ⟨x, rfl⟩ := X.connectedCoverHomeomorph.surjective z
+  simp [connectedCoverHomeomorph]
 
 end Iso
 
