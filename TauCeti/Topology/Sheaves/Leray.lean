@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.Cech
-public import TauCeti.Topology.Sheaves.Flasque
+public import TauCeti.Topology.Sheaves.Flasque.Basic
 
 import Mathlib.Algebra.Category.Grp.AB
 import Mathlib.Data.Fintype.Lattice
