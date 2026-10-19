@@ -98,13 +98,14 @@ theorem integrable_rpow_powerBias_iff {μ : Measure ℝ} {q r : ℝ}
 the original law. The preceding integrability criterion identifies when this is an expectation. -/
 theorem integral_rpow_powerBias {μ : Measure ℝ} {q r : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x)
-    (hq : Integrable (fun x : ℝ => x ^ q) μ)
-    (hpos : 0 < ∫ x, x ^ q ∂μ) :
+    (hq : Integrable (fun x : ℝ => x ^ q) μ) :
     ∫ x, x ^ r ∂μ.powerBias q =
       (∫ x, x ^ (q + r) ∂μ) / ∫ x, x ^ q ∂μ := by
+  have hnonneg : 0 ≤ ∫ x, x ^ q ∂μ :=
+    integral_nonneg_of_ae (hμ.mono fun x hx => Real.rpow_nonneg hx.le q)
   rw [powerBias_def, Measure.integral_weighted (measurable_powerBiasWeight q).aemeasurable,
     lintegral_powerBiasWeight_eq_of_integrable (hμ.mono fun x hx => hx.le) hq,
-    ENNReal.toReal_ofReal hpos.le, smul_eq_mul]
+    ENNReal.toReal_ofReal hnonneg, smul_eq_mul]
   rw [inv_mul_eq_div]
   congr 1
   apply integral_congr_ae
