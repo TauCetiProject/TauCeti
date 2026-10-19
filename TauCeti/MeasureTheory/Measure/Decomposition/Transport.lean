@@ -74,16 +74,11 @@ theorem exists_measurePreserving_of_atomic_assignment
     simp only [T, dite_eq_left x.property]
   have hTdiff : MeasurePreserving T (diffusePart μ) (ν - ρ) := by
     apply hg.congr hTm
-    have hae : ∀ᵐ x ∂diffusePart μ, x ∉ positiveSingletons μ := by
-      apply ae_iff.2
-      simpa only [not_not, ofPred_mem_eq] using
-        (diffusePart_apply μ _ (measurableSet_positiveSingletons μ)).trans
-          (by simp)
+    have hae : ∀ᵐ x ∂diffusePart μ, x ∉ positiveSingletons μ :=
+      measure_eq_zero_iff_ae_notMem.1 diffusePart_apply_positiveSingletons
     exact hae.mono fun x hx ↦ by simp only [T, dite_eq_right hx]
   have hTatomic : (atomicPart μ).map T = ρ := by
-    rw [atomicPart_eq_sum_dirac, Measure.map_sum hTm.aemeasurable]
-    simp only [Measure.map_smul _ hTm.aemeasurable, Measure.map_dirac' hTm, hTf]
-    rfl
+    simpa only [ρ, hTf] using (map_atomicPart_eq_sum_dirac (μ := μ) hTm)
   refine ⟨T, ⟨hTm, ?_⟩, hTf, hTdiff⟩
   rw [← atomicPart_add_diffusePart μ, Measure.map_add _ _ hTm,
     hTatomic, hTdiff.map_eq, add_comm, Measure.sub_add_cancel_of_le hρ]
@@ -104,12 +99,7 @@ theorem exists_hasLaw_iff_exists_atomic_assignment :
     refine ⟨?_, fun x ↦ S x, ?_⟩
     · rw [← hT.map_eq, Measure.map_apply_of_aemeasurable hT.aemeasurable MeasurableSet.univ,
         preimage_univ]
-    have hcount := (countable_positiveSingletons μ).to_subtype
-    have hatomic : (atomicPart μ).map S =
-        Measure.sum fun x : positiveSingletons μ ↦ μ {(x : X)} • Measure.dirac (S x) := by
-      rw [atomicPart_eq_sum_dirac, Measure.map_sum hSm.aemeasurable]
-      simp only [Measure.map_smul _ hSm.aemeasurable, Measure.map_dirac' hSm]
-    rw [← hatomic, ← hS]
+    rw [← map_atomicPart_eq_sum_dirac hSm, ← hS]
     exact Measure.map_mono (atomicPart_le μ) hSm
   · rintro ⟨hmass, f, hf⟩
     obtain ⟨T, hT, -⟩ := exists_measurePreserving_of_atomic_assignment hmass f hf
